@@ -1,0 +1,268 @@
+<big><b>SilcNotifyType Arguments</b></big>
+
+<br />&nbsp;<br />
+The SILC Client Library 'notify' client operation (which is part of the
+SilcClientOperation callback functions) returns different kind of
+notifications from the SILC server to the SILC client.  The 'notify'
+client operation implementation has a variable argument list to deliver
+SilcNotifyType type specific arguments to the application.  This document
+describes these arguments for all notify types to help SILC client
+software developers to handle the incoming notifications.
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>notify Client Library operation</b>
+
+<br />&nbsp;<br />
+The 'notify' client operation callback function prototype is as follows:
+
+<br />&nbsp;<br />
+<tt>
+&nbsp;&nbsp;void (*notify)(SilcClient client, SilcClientConnection conn,
+SilcNotifyType type, ...);
+</tt>
+
+<br />&nbsp;<br />
+The first argument 'client' is the SILC Client Library context, the `conn' 
+is the context for the connection to the remote server, and the `type' is 
+the notify type enumeration sent by the server.  Rest of the arguments are 
+`type' specific and implementation should handle them by the 
+SilcNotifyType for example in a <tt>switch</tt> statement.  The notify 
+types are defined in lib/silccore/silcnotify.h header file.  A short 
+example:
+
+<br />&nbsp;<br />
+<tt>
+&nbsp;&nbsp;switch(type)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;{<br />
+&nbsp;&nbsp;&nbsp;&nbsp;case SILC_NOTIFY_TYPE_NONE:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;case SILC_NOTIFY_TYPE_INVITE:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;case SILC_NOTIFY_TYPE_JOIN:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;...<br />
+&nbsp;&nbsp;&nbsp;&nbsp;}
+</tt>
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>Arguments</b>
+
+<br />&nbsp;<br />
+The following table describes all notify types and arguments that the 
+client library sends in the 'notify' client operation to the application.  
+By default all arguments that the libary sends to application are valid 
+pointers.  However, it is possible that some pointers may be NULL.  If 
+this is the case it is separately mentioned that the argument may be NULL.  
+In this case application must ignore that argument.  The SilcNotifyType 
+arguments per notify type is as follows:
+
+<br />&nbsp;<br />
+<table border="1" width="100%" cellpadding="5">
+
+<tr>
+<td>Name</td>
+<td>Description</td>
+<td width="50%">Variable Arguments</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_NONE</td>
+<td>
+A message from server that usually does not include any critical
+information.  Application may ignore this or display it for the user.
+The 'message' argument may be NULL.
+</td>
+<td width="50%">char *message</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_INVITE</td>
+<td>
+Sent to the client if the user is invited on a channel. The 'channel_name' 
+argument may be NULL.
+</td>
+<td width="50%">SilcClientChannel channel, char *channel_name,
+SilcClientEntry inviter
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_JOIN</td>
+<td>
+Sent when someone joins to a channel.
+</td>
+<td width="50%">SilcClientEntry joining_client, SilcChannelEntry channel
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_LEAVE</td>
+<td>
+Sent when someone leaves (parts) the channel.
+</td>
+<td width="50%">SilcClientEntry leaving_client, SilcChannelEntry channel
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_SIGNOFF</td>
+<td>
+Sent when someone signoff the SILC network.  The 'signoff_message' may be 
+NULL.  The 'leaving_client' SilcClientEntry may be incomplete and contain 
+NULL pointers, application must check it's pointers before attempting to 
+display for example nickname information.
+</td>
+<td width="50%">SilcClientEntry signoff_client, char *signoff_message
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_TOPIC_SET</td>
+<td>
+Sent when the topic of a channel is set/changed.  The 'setter_id_type'
+is used to check what type of pointer the 'setter_entry' is.  For 
+SILC_ID_CLIENT SilcClientEntry, for SILC_ID_SERVER SilcServerEntry and for 
+SILC_ID_CHANNEL SilcChannelEntry.
+</td>
+<td width="50%">SilcIdType setter_id_type, void *setter_entry,
+char *topic, SilcChannelEntry channel
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_NICK_CHANGE</td>
+<td>
+Sent when someone changes their nickname.  The 'old_client_entry' includes 
+the old nickname and the 'new_client_entry' includes the new nickname.  
+Application must understand that the 'old_client_entry' pointer becomes 
+invalid after returning from the function.
+</td>
+<td width="50%">SilcClientEntry old_client_entry,
+SilcClientEntry new_client_entry
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_CMODE_CHANGE</td>
+<td>
+Sent when channel's mode has changed. The 'changer_id_type'
+is used to check what type of pointer the 'changer_entry' is.  For 
+SILC_ID_CLIENT SilcClientEntry, for SILC_ID_SERVER SilcServerEntry and for 
+SILC_ID_CHANNEL SilcChannelEntry.  The 'mode' is the mode mask after the 
+change.  The 'hmac_name' argument may be NULL.
+</td>
+<td width="50%">SilcIdType changer_id_type, void *changer_entry,
+SilcUInt32 mode, NULL, char *hmac_name, SilcChannelEntry channel
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_CUMODE_CHANGE</td>
+<td>
+Sent when a users mode on a channel has changed. The 'changer_id_type'
+is used to check what type of pointer the 'changer_entry' is.  For 
+SILC_ID_CLIENT SilcClientEntry, for SILC_ID_SERVER SilcServerEntry and for 
+SILC_ID_CHANNEL SilcChannelEntry.  The 'mode' is the mode mask after the
+change.  The 'target_client' is the client whose mode was changed.
+</td>
+<td width="50%">SilcIdType changer_id_type, void *changer_entry,
+SilcUInt32 mode, SilcClientEntry target_client, SilcChannelEntry channel
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_MOTD</td>
+<td>
+Message of the Day from the server.
+</td>
+<td width="50%">char *motd
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_CHANNEL_CHANGE</td>
+<td>
+Sent when a channel's Channel ID changes.  It is possible that channel's 
+ID changes and this notify is sent by the server when this happens.  
+Usually application does not need to handle this notify type and may 
+safely ignore it when received.
+</td>
+<td width="50%">SilcChannelEntry channel
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_SERVER_SIGNOFF</td>
+<td>
+Sent when a server quits the network.  The 'clients' is an array 
+SilcClientEntry pointers of size of 'clients_count'.  Each client in the 
+entry is one client signing off from the SILC network.
+</td>
+<td width="50%">NULL, SilcClientEntry *clients, SilcUInt32 clients_count
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_KICKED</td>
+<td>
+Sent when a client (possibly our client) is kicked from a channel.  The 
+'kick_message' may be NULL.  If our client was kicked then 'kicked' is our 
+local SilcClientEntry pointer.
+</td>
+<td width="50%">SilcClientEntry kicked, char *kick_message,
+SilcClientEntry kicker, SilcChannelEntry channel
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_KILLED</td>
+<td>
+Sent when a client (possibly our client) is killed from the network.  The 
+'kill_message' may be NULL.  If our client was killed then 'killed' is our 
+local SilcClientEntry pointer.  The 'killer_type' is used to check what 
+type of pointer the 'killer' is.  For SILC_ID_CLIENT SilcClientEntry, for 
+SILC_ID_SERVER SilcServerEntry and for SILC_ID_CHANNEL SilcChannelEntry.
+</td>
+<td width="50%">SilcClientEntry killed, char *kill_message,
+SilcIdType killer_type, void *killer, SilcChannelEntry channel
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_ERROR</td>
+<td>
+Sent when an error occurs while handling some operation (except command)
+from the client.  Application usually cannot handle this notify type and 
+may safely ignore it.
+</td>
+<td width="50%">SilcStatus error
+</td>
+</tr>
+
+<tr>
+<td>SILC_NOTIFY_TYPE_WATCH</td>
+<td>
+Sent to notify some status change of a client we are wathing.  The 
+SILC_COMMAND_WATCH is used to manage clients we are wathing and this 
+notify type is used to deliver information about that client.  If the 
+client just changed nickname the 'new_nickname' includes the new nickname.  
+Otherwise this pointer is NULL.  The 'user_mode' is the client's mode in 
+the SILC network.  The 'notification' contains the notify type that 
+happened for the 'watched_client' (for example 
+SILC_NOTIFY_TYPE_NICK_CHANGE if the client changed their nickname).
+</td>
+<td width="50%">SilcClientEntry watched_client, char *new_nickname,
+SilcUInt32 user_mode, SilcNotifyType notification
+</td>
+</tr>
+
+</table>
+
+<br />&nbsp;<br />
+SILC protocol defines some additional notify types but those notify types 
+are not delivered to the application.  Some of those notify types are only 
+delivered between servers and routers and clients never receive them.  
+Only the notify types listed above are delivered to application.
