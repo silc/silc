@@ -1,16 +1,15 @@
 /*
 
-  silcpacket.c
+  silcpacket.c 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
   Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -38,7 +37,7 @@
    later time. If `force_send' is TRUE this attempts to write the data
    directly to the network, if FALSE, this returns -2. */
 
-int silc_packet_send(SilcSocketConnection sock, int force_send)
+int silc_packet_send(SilcSocketConnection sock, bool force_send)
 {
   SILC_LOG_DEBUG(("Sending packet to %s:%d [%s]", sock->hostname,
 		  sock->port,  
@@ -87,7 +86,9 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac,
      data area thus this uses the length found in buffer, not the length
      sent as argument. */
   if (hmac) {
-    silc_hmac_make(hmac, buffer->data, buffer->len, mac, &mac_len);
+    silc_hmac_init(hmac);
+    silc_hmac_update(hmac, buffer->data, buffer->len);
+    silc_hmac_final(hmac, mac, &mac_len);
     silc_buffer_put_tail(buffer, mac, mac_len);
     memset(mac, 0, sizeof(mac));
   }
@@ -225,7 +226,10 @@ void silc_packet_send_prepare(SilcSocketConnection sock,
     /* Allocate new buffer. This is done only once per connection. */
     SILC_LOG_DEBUG(("Allocating outgoing data buffer"));
     
-    sock->outbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE);
+    if (totlen > SILC_PACKET_DEFAULT_SIZE)
+      sock->outbuf = silc_buffer_alloc(totlen);
+    else
+      sock->outbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE);
     silc_buffer_pull_tail(sock->outbuf, totlen);
     silc_buffer_pull(sock->outbuf, header_len + padlen);
   } else {
@@ -289,7 +293,7 @@ void silc_packet_receive_process(SilcSocketConnection sock,
     return;
 
   if (hmac)
-    mac_len = hmac->hmac->len;
+    mac_len = silc_hmac_len(hmac);
 
   /* Parse the packets from the data */
   count = 0;
@@ -378,7 +382,9 @@ static int silc_packet_check_mac(SilcHmac hmac, SilcBuffer buffer)
 
     /* Compute HMAC of packet */
     memset(mac, 0, sizeof(mac));
-    silc_hmac_make(hmac, buffer->data, buffer->len, mac, &mac_len);
+    silc_hmac_init(hmac);
+    silc_hmac_update(hmac, buffer->data, buffer->len);
+    silc_hmac_final(hmac, mac, &mac_len);
 
     /* Compare the HMAC's (buffer->tail has the packet's HMAC) */
     if (memcmp(mac, buffer->tail, mac_len)) {
@@ -405,8 +411,8 @@ static int silc_packet_decrypt_rest(SilcCipher cipher, SilcHmac hmac,
 
     /* Pull MAC from packet before decryption */
     if (hmac) {
-      if ((buffer->len - hmac->hmac->len) > SILC_PACKET_MIN_LEN) {
-	silc_buffer_push_tail(buffer, hmac->hmac->len);
+      if ((buffer->len - silc_hmac_len(hmac)) > SILC_PACKET_MIN_LEN) {
+	silc_buffer_push_tail(buffer, silc_hmac_len(hmac));
       } else {
 	SILC_LOG_DEBUG(("Bad MAC length in packet, packet dropped"));
 	return FALSE;
@@ -445,8 +451,8 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
 
     /* Pull MAC from packet before decryption */
     if (hmac) {
-      if ((buffer->len - hmac->hmac->len) > SILC_PACKET_MIN_LEN) {
-	silc_buffer_push_tail(buffer, hmac->hmac->len);
+      if ((buffer->len - silc_hmac_len(hmac)) > SILC_PACKET_MIN_LEN) {
+	silc_buffer_push_tail(buffer, silc_hmac_len(hmac));
       } else {
 	SILC_LOG_DEBUG(("Bad MAC length in packet, packet dropped"));
 	return FALSE;

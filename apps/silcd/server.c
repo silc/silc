@@ -2916,8 +2916,9 @@ bool silc_server_create_channel_key(SilcServer server,
   /* Generate HMAC key from the channel key data and set it */
   if (!channel->hmac)
     silc_hmac_alloc(SILC_DEFAULT_HMAC, NULL, &channel->hmac);
-  silc_hash_make(channel->hmac->hash, channel->key, len, hash);
-  silc_hmac_set_key(channel->hmac, hash, silc_hash_len(channel->hmac->hash));
+  silc_hash_make(silc_hmac_get_hash(channel->hmac), channel->key, len, hash);
+  silc_hmac_set_key(channel->hmac, hash, 
+		    silc_hash_len(silc_hmac_get_hash(channel->hmac)));
   memset(hash, 0, sizeof(hash));
 
   if (server->server_type == SILC_ROUTER) {
@@ -3023,8 +3024,9 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
   /* Generate HMAC key from the channel key data and set it */
   if (!channel->hmac)
     silc_hmac_alloc(SILC_DEFAULT_HMAC, NULL, &channel->hmac);
-  silc_hash_make(channel->hmac->hash, tmp, tmp_len, hash);
-  silc_hmac_set_key(channel->hmac, hash, silc_hash_len(channel->hmac->hash));
+  silc_hash_make(silc_hmac_get_hash(channel->hmac), tmp, tmp_len, hash);
+  silc_hmac_set_key(channel->hmac, hash, 
+		    silc_hash_len(silc_hmac_get_hash(channel->hmac)));
 
   memset(hash, 0, sizeof(hash));
   memset(tmp, 0, tmp_len);

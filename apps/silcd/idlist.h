@@ -80,18 +80,22 @@ typedef struct {
   SilcCipher send_key;
   SilcCipher receive_key;
 
-  /* Re-key context */
-  SilcServerRekey rekey;
-
-  /* Hash selected in the SKE protocol, NULL if not needed at all */
-  SilcHash hash;
-
   /* HMAC */
   SilcHmac hmac_send;
   SilcHmac hmac_receive;
 
+  /* Packet sequence numbers */
+  uint32 psn_send;
+  uint32 psn_receive;
+
+  /* Hash selected in the SKE protocol, NULL if not needed at all */
+  SilcHash hash;
+
   /* Public key */
   SilcPublicKey public_key;
+
+  /* Re-key context */
+  SilcServerRekey rekey;
 
   long last_receive;		/* Time last received data */
   long last_sent;		/* Time last sent data */

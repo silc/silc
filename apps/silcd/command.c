@@ -3146,8 +3146,9 @@ static void silc_server_command_join_channel(SilcServer server,
 					 10, channel->topic,
 					 channel->topic ?
 					 strlen(channel->topic) : 0,
-					 11, channel->hmac->hmac->name,
-					 strlen(channel->hmac->hmac->name),
+					 11, silc_hmac_get_name(channel->hmac),
+					 strlen(silc_hmac_get_name(channel->
+								   hmac)),
 					 12, tmp3, 4,
 					 13, user_list->data, user_list->len,
 					 14, mode_list->data, 
@@ -3780,7 +3781,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 				   FALSE : !server->standalone);
 
       cipher = channel->channel_key->cipher->name;
-      hmac = channel->hmac->hmac->name;
+      hmac = (char *)silc_hmac_get_name(channel->hmac);
     }
   }
   
@@ -3911,10 +3912,11 @@ SILC_SERVER_CMD_FUNC(cmode)
 
       /* Set the HMAC key out of current channel key. The client must do
 	 this locally. */
-      silc_hash_make(channel->hmac->hash, channel->key, channel->key_len / 8, 
+      silc_hash_make(silc_hmac_get_hash(channel->hmac), channel->key, 
+		     channel->key_len / 8, 
 		     hash);
       silc_hmac_set_key(channel->hmac, hash, 
-			silc_hash_len(channel->hmac->hash));
+			silc_hash_len(silc_hmac_get_hash(channel->hmac)));
       memset(hash, 0, sizeof(hash));
     }
   } else {
@@ -3935,10 +3937,11 @@ SILC_SERVER_CMD_FUNC(cmode)
 
       /* Set the HMAC key out of current channel key. The client must do
 	 this locally. */
-      silc_hash_make(channel->hmac->hash, channel->key, channel->key_len / 8, 
+      silc_hash_make(silc_hmac_get_hash(channel->hmac), channel->key, 
+		     channel->key_len / 8, 
 		     hash);
       silc_hmac_set_key(channel->hmac, hash, 
-			silc_hash_len(channel->hmac->hash));
+			silc_hash_len(silc_hmac_get_hash(channel->hmac)));
       memset(hash, 0, sizeof(hash));
     }
   }

@@ -1,16 +1,15 @@
 /*
 
-  silchmac.c
+  silchmac.c 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1999 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +19,20 @@
 /* $Id$ */
 
 #include "silcincludes.h"
+
+/* HMAC context */
+struct SilcHmacStruct {
+  SilcHmacObject *hmac;
+  SilcHash hash;
+  bool allocated_hash;		/* TRUE if the hash was allocated */
+
+  unsigned char *key;
+  uint32 key_len;
+
+  unsigned char inner_pad[64];
+  unsigned char outer_pad[64];
+  void *hash_context;
+};
 
 /* List of dynamically registered HMACs. */
 SilcDList silc_hmac_list = NULL;
@@ -34,6 +47,35 @@ SilcHmacObject silc_default_hmacs[] =
 
   { NULL, 0 }
 };
+
+static void silc_hmac_init_internal(SilcHmac hmac, unsigned char *key,
+				    uint32 key_len)
+{
+  SilcHash hash = hmac->hash;
+  unsigned char hvalue[20];
+  int i;
+
+  memset(hmac->inner_pad, 0, sizeof(hmac->inner_pad));
+  memset(hmac->outer_pad, 0, sizeof(hmac->outer_pad));
+
+  /* If the key length is more than block size of the hash function, the
+     key is hashed. */
+  if (key_len > hash->hash->block_len) {
+    silc_hash_make(hash, key, key_len, hvalue);
+    key = hvalue;
+    key_len = hash->hash->hash_len;
+  }
+
+  /* Copy the key into the pads */
+  memcpy(hmac->inner_pad, key, key_len);
+  memcpy(hmac->outer_pad, key, key_len);
+
+  /* XOR the key with pads */
+  for (i = 0; i < hash->hash->block_len; i++) {
+    hmac->inner_pad[i] ^= 0x36;
+    hmac->outer_pad[i] ^= 0x5c;
+  }
+}
 
 /* Registers a new HMAC into the SILC. This function is used at the
    initialization of the SILC. */
@@ -156,6 +198,13 @@ void silc_hmac_free(SilcHmac hmac)
   if (hmac) {
     if (hmac->allocated_hash)
       silc_hash_free(hmac->hash);
+
+    if (hmac->key) {
+      memset(hmac->key, 0, hmac->key_len);
+      silc_free(hmac->key);
+    }
+
+    silc_free(hmac->hash_context);
     silc_free(hmac);
   }
 }
@@ -165,6 +214,20 @@ void silc_hmac_free(SilcHmac hmac)
 uint32 silc_hmac_len(SilcHmac hmac)
 {
   return hmac->hmac->len;
+}
+
+/* Get hash context */
+
+SilcHash silc_hmac_get_hash(SilcHmac hmac)
+{
+  return hmac->hash;
+}
+
+/* Return name of hmac */
+
+const char *silc_hmac_get_name(SilcHmac hmac)
+{
+  return hmac->hmac->name;
 }
 
 /* Returns TRUE if HMAC `name' is supported. */
@@ -227,59 +290,6 @@ void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
   memcpy(hmac->key, key, key_len);
 }
 
-/* Creates the HMAC. The created keyed hash value is returned to 
-   return_hash argument. */
-
-void silc_hmac_make_internal(SilcHmac hmac, unsigned char *data,
-			     uint32 data_len, unsigned char *key,
-			     uint32 key_len, unsigned char *return_hash)
-{
-  SilcHash hash = hmac->hash;
-  unsigned char inner_pad[64];
-  unsigned char outer_pad[64];
-  unsigned char hvalue[20], mac[20];
-  void *hash_context;
-  int i;
-
-  SILC_LOG_DEBUG(("Making HMAC for message"));
-
-  hash_context = silc_calloc(1, hash->hash->context_len());
-
-  memset(inner_pad, 0, sizeof(inner_pad));
-  memset(outer_pad, 0, sizeof(outer_pad));
-
-  /* If the key length is more than block size of the hash function, the
-     key is hashed. */
-  if (key_len > hash->hash->block_len) {
-    silc_hash_make(hash, key, key_len, hvalue);
-    key = hvalue;
-    key_len = hash->hash->hash_len;
-  }
-
-  /* Copy the key into the pads */
-  memcpy(inner_pad, key, key_len);
-  memcpy(outer_pad, key, key_len);
-
-  /* XOR the key with pads */
-  for (i = 0; i < hash->hash->block_len; i++) {
-    inner_pad[i] ^= 0x36;
-    outer_pad[i] ^= 0x5c;
-  }
-
-  /* Do the HMAC transform (too bad I can't do make_hash directly, sigh) */
-  hash->hash->init(hash_context);
-  hash->hash->update(hash_context, inner_pad, hash->hash->block_len);
-  hash->hash->update(hash_context, data, data_len);
-  hash->hash->final(hash_context, mac);
-  hash->hash->init(hash_context);
-  hash->hash->update(hash_context, outer_pad, hash->hash->block_len);
-  hash->hash->update(hash_context, mac, hash->hash->hash_len);
-  hash->hash->final(hash_context, mac);
-  memcpy(return_hash, mac, hmac->hmac->len);
-  memset(mac, 0, sizeof(mac));
-  silc_free(hash_context);
-}
-
 /* Create the HMAC. This is thee make_hmac function pointer.  This
    uses the internal key set with silc_hmac_set_key. */
 
@@ -287,10 +297,11 @@ void silc_hmac_make(SilcHmac hmac, unsigned char *data,
 		    uint32 data_len, unsigned char *return_hash,
 		    uint32 *return_len)
 {
-  silc_hmac_make_internal(hmac, data, data_len, hmac->key, 
-			  hmac->key_len, return_hash);
-  if (return_len)
-    *return_len = hmac->hmac->len;
+  SILC_LOG_DEBUG(("Making HMAC for message"));
+
+  silc_hmac_init(hmac);
+  silc_hmac_update(hmac, data, data_len);
+  silc_hmac_final(hmac, return_hash, return_len);
 }
 
 /* Creates HMAC just as above except that this doesn't use the internal
@@ -302,9 +313,11 @@ void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
 			     unsigned char *return_hash,
 			     uint32 *return_len)
 {
-  silc_hmac_make_internal(hmac, data, data_len, key, key_len, return_hash);
-  if (return_len)
-    *return_len = hmac->hmac->len;
+  SILC_LOG_DEBUG(("Making HMAC for message"));
+
+  silc_hmac_init_with_key(hmac, key, key_len);
+  silc_hmac_update(hmac, data, data_len);
+  silc_hmac_final(hmac, return_hash, return_len);
 }
 
 /* Creates the HMAC just as above except that the hash value is truncated
@@ -319,8 +332,65 @@ void silc_hmac_make_truncated(SilcHmac hmac, unsigned char *data,
 {
   unsigned char hvalue[20];
 
-  silc_hmac_make_internal(hmac, data, data_len, 
-			  hmac->key, hmac->key_len, hvalue);
+  SILC_LOG_DEBUG(("Making HMAC for message"));
+
+  silc_hmac_init(hmac);
+  silc_hmac_update(hmac, data, data_len);
+  silc_hmac_final(hmac, return_hash, NULL);
   memcpy(return_hash, hvalue, truncated_len);
   memset(hvalue, 0, sizeof(hvalue));
+}
+
+/* Init HMAC for silc_hmac_update and silc_hmac_final. */
+
+void silc_hmac_init(SilcHmac hmac)
+{
+  silc_hmac_init_with_key(hmac, hmac->key, hmac->key_len);
+}
+
+/* Same as above but with specific key */
+
+void silc_hmac_init_with_key(SilcHmac hmac, const unsigned char *key,
+			     uint32 key_len)
+{
+  SilcHash hash = hmac->hash;
+
+  silc_hmac_init_internal(hmac, hmac->key, hmac->key_len);
+
+  if (!hmac->hash_context)
+    hmac->hash_context = silc_calloc(1, hash->hash->context_len());
+
+  hash->hash->init(hmac->hash_context);
+  hash->hash->update(hmac->hash_context, hmac->inner_pad, 
+		     hash->hash->block_len);
+}
+
+/* Add data to be used in the MAC computation. */
+
+void silc_hmac_update(SilcHmac hmac, const unsigned char *data,
+		      uint32 data_len)
+{
+  SilcHash hash = hmac->hash;
+  hash->hash->update(hmac->hash_context, (unsigned char *)data, data_len);
+}
+
+/* Compute the final MAC. */
+
+void silc_hmac_final(SilcHmac hmac, unsigned char *return_hash,
+		     uint32 *return_len)
+{
+  SilcHash hash = hmac->hash;
+  unsigned char mac[20];
+
+  hash->hash->final(hmac->hash_context, mac);
+  hash->hash->init(hmac->hash_context);
+  hash->hash->update(hmac->hash_context, hmac->outer_pad, 
+		     hash->hash->block_len);
+  hash->hash->update(hmac->hash_context, mac, hash->hash->hash_len);
+  hash->hash->final(hmac->hash_context, mac);
+  memcpy(return_hash, mac, hmac->hmac->len);
+  memset(mac, 0, sizeof(mac));
+
+  if (return_len)
+    *return_len = hmac->hmac->len;
 }

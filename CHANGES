@@ -23,6 +23,11 @@ Mon Oct 15 17:42:55 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 	  Affected files silcd/server_util.[ch], silcd/server.c. and
 	  silcd/backup_router.c.
 
+	* ROBODoc documented the lib/silccrypt/silchmac.h.  Added new
+	  function silc_hmac_init, silc_hmac_update, silc_hmac_final,
+	  silc_hmac_get_hash and silc_hmac_get_name.  Affected file
+	  lib/silccrypt/silchmac.c.
+
 Sun Oct 14 18:28:22 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Assure that router cannot reroute the same channel message

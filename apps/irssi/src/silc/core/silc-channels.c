@@ -332,7 +332,7 @@ static void event_cmode(SILC_SERVER_REC *server, va_list va)
 
   mode = silc_client_chmode(modei, 
 			    channel->channel_key->cipher->name,
-			    channel->hmac->hmac->name);
+			    silc_hmac_get_name(channel->hmac));
   
   chanrec = silc_channel_find_entry(server, channel);
   if (chanrec != NULL) {
@@ -1125,8 +1125,8 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 	    strcat(buf, " ");
 	strcat(buf, " ");
 	
-	len = strlen(keys[k]->hmac->hmac->name);
-	strncat(buf, keys[k]->hmac->hmac->name, len > 16 ? 16 : len);
+	len = strlen(silc_hmac_get_name(keys[k]->hmac));
+	strncat(buf, silc_hmac_get_name(keys[k]->hmac), len > 16 ? 16 : len);
 	if (len < 16)
 	  for (i = 0; i < 16 - len; i++)
 	    strcat(buf, " ");

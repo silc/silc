@@ -36,11 +36,13 @@ void silc_idlist_add_data(void *entry, SilcIDListData idata)
   SilcIDListData data = (SilcIDListData)entry;
   data->send_key = idata->send_key;
   data->receive_key = idata->receive_key;
-  data->rekey = idata->rekey;
-  data->hash = idata->hash;
   data->hmac_send = idata->hmac_send;
   data->hmac_receive = idata->hmac_receive;
+  data->psn_send = idata->psn_send;
+  data->psn_receive = idata->psn_receive;
+  data->hash = idata->hash;
   data->public_key = idata->public_key;
+  data->rekey = idata->rekey;
   data->last_receive = idata->last_receive;
   data->last_sent = idata->last_sent;
   data->status = idata->status;

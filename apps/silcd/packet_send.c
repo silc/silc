@@ -903,10 +903,10 @@ void silc_server_send_private_message(SilcServer server,
 		     + packet->dst_id_len + packet->padlen);
     silc_packet_send_prepare(dst_sock, 0, 0, buffer->len);
     silc_buffer_put(dst_sock->outbuf, buffer->data, buffer->len);
-    
+
     /* Re-encrypt packet */
     silc_packet_encrypt(cipher, hmac, dst_sock->outbuf, buffer->len);
-    
+
     /* Send the packet */
     silc_server_packet_send_real(server, dst_sock, FALSE);
 

@@ -145,7 +145,7 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
   conn->rekey->ske_group = silc_ske_group_get_number(group);
 
   /* Save HMAC key to be used in the communication. */
-  silc_hmac_alloc(hmac->hmac->name, NULL, &conn->hmac_send);
+  silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, &conn->hmac_send);
   silc_hmac_set_key(conn->hmac_send, keymat->hmac_key, keymat->hmac_key_len);
   conn->hmac_receive = conn->hmac_send;
 
@@ -768,7 +768,8 @@ silc_client_protocol_rekey_validate(SilcClient client,
   }
 
   if (send) {
-    silc_hmac_alloc(conn->hmac_receive->hmac->name, NULL, &conn->hmac_send);
+    silc_hmac_alloc((char *)silc_hmac_get_name(conn->hmac_receive), NULL, 
+		    &conn->hmac_send);
     silc_hmac_set_key(conn->hmac_send, keymat->hmac_key, 
 		      keymat->hmac_key_len);
   } else {

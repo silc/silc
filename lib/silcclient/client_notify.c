@@ -478,10 +478,11 @@ void silc_client_notify_by_server(SilcClient client,
       if (!silc_hmac_alloc(tmp, NULL, &channel->hmac))
 	goto out;
 
-      silc_hash_make(channel->hmac->hash, channel->key, channel->key_len / 8,
+      silc_hash_make(silc_hmac_get_hash(channel->hmac), 
+		     channel->key, channel->key_len / 8,
 		     hash);
       silc_hmac_set_key(channel->hmac, hash, 
-			silc_hash_len(channel->hmac->hash));
+			silc_hash_len(silc_hmac_get_hash(channel->hmac)));
       memset(hash, 0, sizeof(hash));
     }
 

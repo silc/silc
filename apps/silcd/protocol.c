@@ -268,7 +268,8 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
   }
 
   /* Save HMAC key to be used in the communication. */
-  if (!silc_hmac_alloc(hmac->hmac->name, NULL, &idata->hmac_send)) {
+  if (!silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, 
+		       &idata->hmac_send)) {
     silc_cipher_free(idata->send_key);
     silc_cipher_free(idata->receive_key);
     silc_hash_free(idata->hash);
@@ -283,7 +284,7 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
   SILC_LOG_INFO(("%s (%s) security properties: %s %s %s", 
 		 sock->hostname, sock->ip,
 		 idata->send_key->cipher->name,
-		 idata->hmac_send->hmac->name,
+		 (char *)silc_hmac_get_name(idata->hmac_send),
 		 idata->hash->hash->name));
 
   return TRUE;
@@ -1228,7 +1229,8 @@ silc_server_protocol_rekey_validate(SilcServer server,
   }
 
   if (send) {
-    silc_hmac_alloc(idata->hmac_send->hmac->name, NULL, &idata->hmac_send);
+    silc_hmac_alloc((char *)silc_hmac_get_name(idata->hmac_send), NULL, 
+		    &idata->hmac_send);
     silc_hmac_set_key(idata->hmac_send, keymat->hmac_key, 
 		      keymat->hmac_key_len);
   } else {

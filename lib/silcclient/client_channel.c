@@ -331,7 +331,8 @@ void silc_client_save_channel_key(SilcClientConnection conn,
     channel = (SilcChannelEntry)id_cache->context;
   }
 
-  hmac = channel->hmac ? channel->hmac->hmac->name : SILC_DEFAULT_HMAC;
+  hmac = (channel->hmac ? (char *)silc_hmac_get_name(channel->hmac) : 
+	  SILC_DEFAULT_HMAC);
 
   /* Save the old key for a short period of time so that we can decrypt
      channel message even after the rekey if some client would be sending
@@ -371,8 +372,9 @@ void silc_client_save_channel_key(SilcClientConnection conn,
 
   /* Generate HMAC key from the channel key data and set it */
   silc_hmac_alloc(hmac, NULL, &channel->hmac);
-  silc_hash_make(channel->hmac->hash, key, tmp_len, hash);
-  silc_hmac_set_key(channel->hmac, hash, silc_hash_len(channel->hmac->hash));
+  silc_hash_make(silc_hmac_get_hash(channel->hmac), key, tmp_len, hash);
+  silc_hmac_set_key(channel->hmac, hash, 
+		    silc_hash_len(silc_hmac_get_hash(channel->hmac)));
   memset(hash, 0, sizeof(hash));
 
  out:
@@ -487,8 +489,10 @@ int silc_client_add_channel_private_key(SilcClient client,
 
   /* Generate HMAC key from the channel key data and set it */
   silc_hmac_alloc(hmac, NULL, &entry->hmac);
-  silc_hash_make(entry->hmac->hash, entry->key, entry->key_len, hash);
-  silc_hmac_set_key(entry->hmac, hash, silc_hash_len(entry->hmac->hash));
+  silc_hash_make(silc_hmac_get_hash(entry->hmac), entry->key, 
+		 entry->key_len, hash);
+  silc_hmac_set_key(entry->hmac, hash, 
+		    silc_hash_len(silc_hmac_get_hash(entry->hmac)));
   memset(hash, 0, sizeof(hash));
 
   /* Add to the private keys list */

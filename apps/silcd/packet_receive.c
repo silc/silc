@@ -510,10 +510,11 @@ void silc_server_notify(SilcServer server,
 
       /* Set the HMAC key out of current channel key. The client must do
 	 this locally. */
-      silc_hash_make(channel->hmac->hash, channel->key, channel->key_len / 8, 
+      silc_hash_make(silc_hmac_get_hash(channel->hmac), channel->key, 
+		     channel->key_len / 8, 
 		     hash);
       silc_hmac_set_key(channel->hmac, hash, 
-			silc_hash_len(channel->hmac->hash));
+			silc_hash_len(silc_hmac_get_hash(channel->hmac)));
       memset(hash, 0, sizeof(hash));
     }
 
