@@ -60,7 +60,7 @@ if SILC_DIST_TOOLKIT
 all:  remove libsilc.a libsilcclient.a
 else
 if SILC_DIST_WIN32DLL
-all:  remove libsilc.a libsilcclient.a
+all:  silc.dll silcclient.dll
 else
 all:  remove libsilc.a
 endif
@@ -70,6 +70,19 @@ endif
 remove:
 	-rm -rf libsilc.a
 	-rm -rf libsilcclient.a
+
+if SILC_DIST_WIN32DLL
+# WIN32 DLL generation
+silc.dll: libsilc.a
+	dllwrap --export-all --output-def silc.def \
+	--implib libsilc.a --driver-name $(CC) --target i386-mingw32 \
+	--mno-cygwin -o silc.dll libsilc.a -lwsock32
+
+silcclient.dll: libsilcclient.a
+	dllwrap --export-all --output-def silcclient.def \
+	--implib libsilcclient.a --driver-name $(CC) --target i386-mingw32 \
+	--mno-cygwin -o silcclient.dll libsilcclient.a
+endif
 
 libsilc.a:
 	find $(SILCLIB_DIRS) -type f -name *.o | xargs $(AR) cru libsilc.a

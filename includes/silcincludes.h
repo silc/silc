@@ -118,16 +118,16 @@
 #include <limits.h>
 #endif
 
-#endif				/* !SILC_WIN32 */
-
-#ifndef HAVE_GETOPT_LONG
-#include "../lib/contrib/getopt.h"
-#endif
-
 #ifndef HAVE_REGEX_H
 #include "../lib/contrib/regex.h"
 #else
 #include <regex.h>
+#endif
+
+#endif				/* !SILC_WIN32 */
+
+#ifndef HAVE_GETOPT_LONG
+#include "../lib/contrib/getopt.h"
 #endif
 
 #ifndef TRUE
