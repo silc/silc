@@ -1,4 +1,4 @@
-Mon Apr  9 17:54:44 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+Mon Apr  9 21:54:44 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added silc_pkcs_decode_identifier to decode the public key's
 	  identifier.  Affected file lib/silccrypt/silpkcs.[ch].
@@ -16,6 +16,9 @@ Mon Apr  9 17:54:44 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed a fatal bug in the public and private key file loading.
 	  Affected file lib/silccrypt/silcpkcs.c.
+
+	* Execute the packet parsing for client with zero (0) timeout
+	  if the protocol is active.  Affected file silcd/server.c.
 
 Sun Apr  8 19:30:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
