@@ -109,7 +109,7 @@ do {								\
 				          SILC_TASK_WRITE));	\
 } while(0)
 
-/* Finds socket connection object by file descriptor */		\
+/* Finds socket connection object by file descriptor */
 #define SILC_CLIENT_GET_SOCK(__x, __fd, __sock)			\
 do {								\
   int __i;							\
