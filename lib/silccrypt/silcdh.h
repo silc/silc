@@ -71,7 +71,7 @@ int silc_dh_compute_public(SilcDH dh, SilcInt **y);
 
 /* Sets the remote end's public value y' into the DH context. This must be
    done before computing the secret key. Returns FALSE on error. */
-int silc_dh_set_remote_public(SilcDH dh, SilcInt **y);
+int silc_dh_set_remote_public(SilcDH dh, SilcInt *y);
 
 /* Computes the secret key z = y' ^ x mod p, and returns the key to the
    `z' pointer sent as argument, unless the `z' is NULL. Returns FALSE if
