@@ -1,3 +1,9 @@
+Fri Jun 18 19:26:58 CEST 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check for valid route when receiving packet from router and
+	  when routing it to local server in the cell.  A patch from
+	  Matt Miller.  Affected files silcd/router.c and server.c.
+
 Sat May  1 13:55:54 CEST 2004  Patrik Weiskircher <pat@icore.at>
 
 	* Couldn't detach and reattach twice, because of the previous

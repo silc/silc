@@ -2545,16 +2545,22 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 	packet->dst_id_type == SILC_ID_SERVER &&
 	sock->type != SILC_SOCKET_TYPE_CLIENT &&
 	memcmp(packet->dst_id, server->id_string, server->id_string_len)) {
+      SilcSocketConnection conn;
 
       /* Route the packet to fastest route for the destination ID */
       void *id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
 				packet->dst_id_type);
       if (!id)
 	goto out;
-      silc_server_packet_route(server,
-			       silc_server_route_get(server, id,
-						     packet->dst_id_type),
-			       packet);
+
+      conn = silc_server_route_get(server, id, packet->dst_id_type);
+      if (!conn) {
+	SILC_LOG_WARNING(("Packet to unknown server ID %s, dropped (no route)",
+			  silc_id_render(id, SILC_ID_SERVER)));
+	goto out;
+      }
+
+      silc_server_packet_route(server, conn, packet);
       silc_free(id);
       goto out;
     }
@@ -5366,7 +5372,7 @@ silc_server_get_client_route(SilcServer server,
       dst_sock = silc_server_route_get(server, id, SILC_ID_CLIENT);
 
       silc_free(id);
-      if (idata)
+      if (idata && dst_sock)
 	*idata = (SilcIDListData)dst_sock->user_data;
       return dst_sock;
     }

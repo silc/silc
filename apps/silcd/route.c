@@ -97,11 +97,11 @@ SilcSocketConnection silc_server_route_get(SilcServer server, void *id,
 #endif
 
     router = silc_server_route_check(dest, port);
-    if (!router)
-      return (SilcSocketConnection)server->id_entry->router->connection;
-
-    return (SilcSocketConnection)router->connection;
+    if (router)
+        return (SilcSocketConnection)router->connection;
   }
 
-  return (SilcSocketConnection)server->id_entry->router->connection;
+  return (server->id_entry->router) 
+       ? (SilcSocketConnection)server->id_entry->router->connection
+       : NULL;
 }
