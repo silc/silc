@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2000/07/06 10:20:59  priikone
+ * 	Cipher name in joining is not mandatory, removed check.
+ *
  * Revision 1.5  2000/07/06 07:16:43  priikone
  * 	Fixed a wrong way of sending command replies. The fixed way
  * 	does comply with the protocol.
@@ -891,11 +894,6 @@ SILC_SERVER_CMD_FUNC(join)
   
   /* Get cipher name */
   cipher = silc_command_get_arg_type(cmd->payload, 3, NULL);
-  if (!cipher) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
 
   /* See if the channel exists */
   if (silc_idcache_find_by_data(LCC(channel_name[0]), LCCC(channel_name[0]), 
