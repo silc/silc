@@ -40,13 +40,15 @@ static void silc_client_packet_parse_type(SilcClient client,
    the client. The `application' is application specific user data pointer
    and caller must free it. */
 
-SilcClient silc_client_alloc(SilcClientOperations *ops, void *application)
+SilcClient silc_client_alloc(SilcClientOperations *ops, void *application,
+			     const char *silc_version)
 {
   SilcClient new_client;
 
   new_client = silc_calloc(1, sizeof(*new_client));
   new_client->application = application;
   new_client->ops = ops;
+  new_client->silc_client_version = strdup(silc_version);
 
   return new_client;
 }

@@ -271,7 +271,7 @@ void silc_core_init_finish(void)
   silc_init_userinfo();
 
   /* Allocate SILC client */
-  silc_client = silc_client_alloc(&ops, NULL);
+  silc_client = silc_client_alloc(&ops, NULL, silc_version_string);
 
   /* Load local config file */
   silc_config = silc_client_config_alloc(SILC_CLIENT_HOME_CONFIG_FILE);

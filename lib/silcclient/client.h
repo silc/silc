@@ -186,6 +186,9 @@ struct SilcClientStruct {
   /* Random Number Generator. Application should use this as its primary
      random number generator. */
   SilcRng rng;
+
+  /* Client version. Used to compare to remote host's version strings. */
+  char *silc_client_version;
 };
 
 /* Macros */

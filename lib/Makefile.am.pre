@@ -75,13 +75,13 @@ if SILC_DIST_WIN32DLL
 # WIN32 DLL generation
 silc.dll: libsilc.a
 	dllwrap --export-all --output-def silc.def \
-	--implib libsilc.a --driver-name $(CC) --target i386-mingw32 \
-	--mno-cygwin -o silc.dll libsilc.a -lwsock32
+	--implib silc.a --driver-name $(CC) --target i386-mingw32 \
+	-mno-cygwin -o silc.dll libsilc.a -lwsock32
 
 silcclient.dll: libsilcclient.a
 	dllwrap --export-all --output-def silcclient.def \
-	--implib libsilcclient.a --driver-name $(CC) --target i386-mingw32 \
-	--mno-cygwin -o silcclient.dll libsilcclient.a
+	--implib silcclient.a --driver-name $(CC) --target i386-mingw32 \
+	-mno-cygwin -o silcclient.dll libsilcclient.a -L. -lsilc -lwsock32
 endif
 
 libsilc.a:

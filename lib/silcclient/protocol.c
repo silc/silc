@@ -29,8 +29,6 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth);
 SILC_TASK_CALLBACK(silc_client_protocol_key_exchange);
 SILC_TASK_CALLBACK(silc_client_protocol_rekey);
 
-extern char *silc_version_string;
-
 /*
  * Key Exhange protocol functions
  */
@@ -195,7 +193,7 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   if (cp)
     build = atoi(cp + 1);
 
-  cp = silc_version_string + 9;
+  cp = client->silc_client_version + 9;
   if (!cp)
     status = SILC_SKE_STATUS_BAD_VERSION;
 
@@ -320,14 +318,14 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	/* Start the key exchange by processing the received security
 	   properties packet from initiator. */
 	status = silc_ske_responder_start(ske, ctx->rng, ctx->sock,
-					  silc_version_string,
+					  client->silc_client_version,
 					  ctx->packet->buffer, TRUE);
       } else {
 	SilcSKEStartPayload *start_payload;
 
 	/* Assemble security properties. */
 	silc_ske_assemble_security_properties(ske, SILC_SKE_SP_FLAG_NONE, 
-					      silc_version_string,
+					      client->silc_client_version,
 					      &start_payload);
 
 	/* Start the key exchange by sending our security properties

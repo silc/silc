@@ -30,7 +30,7 @@ needed per application.
 The client object is SilcClient which is usually allocated in following
 manner:
 
-	SilcClient client = silc_client_alloc(&ops, context);
+	SilcClient client = silc_client_alloc(&ops, context, version);
 
 `ops' is the static structure of client operations that library will call.
 `context' can be some application specific context that will be saved into

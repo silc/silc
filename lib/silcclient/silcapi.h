@@ -314,10 +314,13 @@ typedef struct {
  *    Allocates new client object. This has to be done before client may
  *    work. After calling this one must call silc_client_init to initialize
  *    the client. The `application' is application specific user data pointer
- *    and caller must free it.
+ *    and caller must free it. The `silc_version' is the application version
+ *    that will be used to compare against remote host's (usually a server)
+ *    version string.
  *
  ***/
-SilcClient silc_client_alloc(SilcClientOperations *ops, void *application);
+SilcClient silc_client_alloc(SilcClientOperations *ops, void *application,
+			     const char *silc_version);
 
 /****f* silcclient/SilcClientAPI/silc_client_free
  *

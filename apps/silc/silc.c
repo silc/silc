@@ -275,7 +275,7 @@ SILC Secure Internet Live Conferencing, version %s\n",
   app = silc_calloc(1, sizeof(*app));
 
   /* Allocate new client */
-  app->client = silc = silc_client_alloc(&ops, app);
+  app->client = silc = silc_client_alloc(&ops, app, silc_version_string);
   if (!silc)
     goto fail;
 
