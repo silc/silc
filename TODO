@@ -75,6 +75,8 @@ TODO/bugs In SILC Libraries
    that needs to be commited (from Schneier's Yarrow-160 paper).  They 
    should make the RNG even better.
 
+ o IPv6 support for ID's and into the code.
+
  o Some of the ciphers in lib/silccrypt does not implement the SILC
    Crypto API correctly.
 

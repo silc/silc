@@ -2095,7 +2095,7 @@ void silc_server_free_client_data(SilcServer server,
     if (sock->outbuf->data - sock->outbuf->head)
      silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
 
-    silc_server_packet_send_real(server, sock, TRUE);
+    silc_packet_send(sock, TRUE);
 
     SILC_SET_CONNECTION_FOR_INPUT(sock->sock);
     SILC_UNSET_OUTBUF_PENDING(sock);

@@ -1,3 +1,9 @@
+Thu Apr 12 12:01:52 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed bug in client and server to accept the force send if
+	  the packet is send from silc_[server/client]_packet_process
+	  function.  Otherwise the packets are never delivered, oops.
+
 Wed Apr 11 22:10:15 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Disable force sending of packets when REKEY protocol is active.
