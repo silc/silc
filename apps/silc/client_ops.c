@@ -901,7 +901,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	unsigned char *pk;
 	uint32 pk_len;
 
-	id_type = va_arg(vp, SilcIdType);
+	id_type = va_arg(vp, uint32);
 	entry = va_arg(vp, void *);
 	public_key = va_arg(vp, SilcPublicKey);
 

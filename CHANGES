@@ -1,3 +1,7 @@
+Tue May  8 09:04:03 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed a va_arg in silc/client_ops.c.
+
 Sun May  6 13:59:48 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new SilcIDIP structure into the lib/silccore/id.h and
