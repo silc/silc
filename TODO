@@ -64,10 +64,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o Remove the command destructor all together from the server, it is
-   not needed and its usage is buggy when the context is registered
-   to multiple pending commands.
-
  o strerror messages from premature EOF's to signoff messages.
 
  o Backup router related issues

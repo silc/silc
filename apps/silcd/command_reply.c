@@ -292,7 +292,6 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
   }
 
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
-  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_WHOIS);
   silc_server_command_reply_free(cmd);
 }
 
@@ -405,7 +404,6 @@ SILC_SERVER_CMD_REPLY_FUNC(whowas)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_WHOWAS);
-  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_WHOWAS);
   silc_server_command_reply_free(cmd);
 }
 
@@ -652,7 +650,6 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
   }
 
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_IDENTIFY);
-  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_IDENTIFY);
   silc_server_command_reply_free(cmd);
 }
 
@@ -710,7 +707,6 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_INFO);
-  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_INFO);
   silc_server_command_reply_free(cmd);
 }
 
@@ -754,7 +750,6 @@ SILC_SERVER_CMD_REPLY_FUNC(motd)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_MOTD);
-  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_MOTD);
   silc_server_command_reply_free(cmd);
 
   if (entry)
@@ -960,7 +955,6 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
-  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_JOIN);
   silc_free(client_id);
   silc_server_command_reply_free(cmd);
 
@@ -1016,7 +1010,7 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
 	 USERS command reply callback. */
       silc_server_command_pending(server, SILC_COMMAND_IDENTIFY, 
 				  server->cmd_ident,
-				  NULL, silc_server_command_reply_users, cmd);
+				  silc_server_command_reply_users, cmd);
       return;
     }
   }
@@ -1055,7 +1049,6 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
-  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_USERS);
   silc_free(channel_id);
   silc_server_command_reply_free(cmd);
 }
@@ -1136,7 +1129,6 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_GETKEY);
-  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_GETKEY);
   if (idp)
     silc_id_payload_free(idp);
   silc_free(client_id);
@@ -1217,7 +1209,6 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_LIST);
-  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_LIST);
   silc_free(channel_id);
   silc_server_command_reply_free(cmd);
 }

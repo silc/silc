@@ -1,50 +1,74 @@
    Frequently Asked Questions
 
-   [16]1. General Questions
-       [17] 1.1 What is SILC?
-       [18] 1.2 When was SILC Project started?
-       [19] 1.3 Why SILC in the first place?
-       [20] 1.4 What license covers the SILC release?
-       [21] 1.5 Why SILC? Why not IRC3?
-       [22] 1.6 What platforms SILC supports?
-       [23] 1.7 Where can I find more information?
-       [24] 1.8 I would like to help out, what can I do?
+   1. General Questions
+        1.1 What is SILC?
+        1.2 When was SILC Project started?
+        1.3 Why SILC in the first place?
+        1.4 What license covers the SILC release?
+        1.5 Why SILC? Why not IRC3?
+        1.6 What platforms SILC supports?
+        1.7 How do you pronounce SILC?
+        1.8 Where can I find more information?
+        1.9 I would like to help out, what can I do?
 
-   [25]2. Protocol Questions
-       [26] 2.1 What is the status of SILC protocol in the IETF?
-       [27] 2.2 How much the SILC protocol is based on IRC?
-       [28] 2.3 Why use SILC? Why not IRC with SSL?
-       [29] 2.4 Can I talk from SILC network to IRC network?
-       [30] 2.5 Does SILC support file transfer?
-       [31] 2.6 Does SILC support DCC or alike?
-       [32] 2.7 I am behind a firewall, can I use SILC?
-       [33] 2.8 How secure SILC really is?
-       [34] 2.9 Does SILC support instant messaging?
-       [35] 2.10 Why SILC does not have LINKS command like in IRC?
-       [36] 2.11 Why SILC does not have STATS command like in IRC?
-       [37] 2.12 Is anyone outside a channel able to see the channel
+   2. Protocol Questions
+        2.1 What is the status of SILC protocol in the IETF?
+        2.2 How much the SILC protocol is based on IRC?
+        2.3 Why use SILC? Why not IRC with SSL?
+        2.4 Can I talk from SILC network to IRC network?
+        2.5 Does SILC support file transfer?
+        2.6 Does SILC support DCC or alike?
+        2.7 I am behind a firewall, can I use SILC?
+        2.8 How secure SILC really is?
+        2.9 Does SILC support instant messaging?
+        2.10 Why SILC does not have LINKS command like in IRC?
+        2.11 Why SILC does not have STATS command like in IRC?
+        2.12 Is anyone outside a channel able to see the channel
    messages?
-       [38] 2.13 I have suggestions to SILC Protocol, what can I do?
+        2.13 Is it true that all messages are encrypted in SILC?
+        2.14 Can server or SILC operator gain operator mode on a channel?
+        2.15 I have suggestions to SILC Protocol, what can I do?
 
-   [39]3. Client Questions
-       [40] 3.1 Where can I find SILC clients?
-       [41] 3.2 Can I use SILC with IRC client and vice versa?
+   3. Client Questions
+        3.1 Where can I find SILC clients?
+        3.2 Can I use SILC with IRC client and vice versa?
+        3.3 The default theme sucks, where can I find a better one?
+        3.4 How do I send a private message?
+        3.5 How do I negotiate secret key with another user?
+        3.6 How do I negotiate secret keys behind a NAT?
+        3.7 How do I change channel modes?
+        3.8 What does the founder mode on channel mean, and how do I set
+   it?
+        3.9 I am founder of invite only channel, how can I join the
+   channel after I have left it?
+        3.10 How can I op or deop somebody on channel?
+        3.11 How do I set private key for channel, and what does that
+   mean exactly?
+        3.12 How do I transfer a file?
+        3.13 How can I get other users public keys?
+        3.14 How can I see the fingerprint of my public key?
+        3.15 I gave WHOIS to a nick, and it returned multiple replies,
+   why?
+        3.16 Is there a command to see all linked servers?
+        3.17 How do I list the users of a channel?
+        3.18 What is the difference between OPER and SILCOPER commands?
 
-   [42]4. Server Questions
-       [43] 4.1 Where can I find SILC servers?
-       [44] 4.2 Can I run own SILC server?
-       [45] 4.3 What is the difference between SILC server and SILC
-   router?
-       [46] 4.4 Why server says permission denied to write to a log file?
-       [47] 4.5 When I connect to to my server, it says "server does not
+   4. Server Questions
+        4.1 Where can I find SILC servers?
+        4.2 Can I run my own SILC server?
+        4.3 What is the difference between SILC server and SILC router?
+        4.4 Why server says permission denied to write to a log file?
+        4.5 When I connect to to my server, it says "server does not
    support one of your proposed cipher", what is wrong?
+        4.6 Why SILC server runs on privileged port 706?
+        4.7 I see [Unknown] in the log file, what does it mean?
 
-   [48]5. Toolkit Questions
-       [49] 5.1 What is SILC Toolkit?
-       [50] 5.2 Is the SILC Toolkit Reference Manual Available?
-       [51] 5.3 How do I compile the Toolkit on Unix?
-       [52] 5.4 How do I compile the Toolkit on Win32?
-       [53] 5.5 Does the Toolkit package include any sample code?
+   5. Toolkit Questions
+        5.1 What is SILC Toolkit?
+        5.2 Is the SILC Toolkit Reference Manual Available?
+        5.3 How do I compile the Toolkit on Unix?
+        5.4 How do I compile the Toolkit on Win32?
+        5.5 Does the Toolkit package include any sample code?
 
    1. General Questions
 
@@ -104,15 +128,18 @@
    cygwin as far as we know. The SILC Toolkit is distributed for all
    platforms, Unix, Cygwin and native Windows.
 
+   Q: How do you pronounce SILC?
+   A: SILC is usually pronounced as `silk', but you are free to pronounce
+   it the way you want.
+
    Q: Where can I find more information?
    A: For more technical information we suggest reading the SILC Protocol
    specifications. You might also want to take a look at the
-   [54]documentation page on the web page.
+   documentation page on the web page.
 
    Q: I would like to help out, what can I do?
-   A: You might want to take a look at the [55]Contributing page and the
-   [56]TODO list. You might also want to join the SILC development
-   mailing list.
+   A: You might want to take a look at the Contributing page and the TODO
+   list. You might also want to join the SILC development mailing list.
 
    2. Protocol Questions
 
@@ -120,7 +147,10 @@
    A: The SILC protocol specifications has been submitted currently as
    individual submissions. There does not currently exist a working group
    for this sort of project. Our goal is to fully standardize the SILC
-   and thus submit it as RFC to the [57]IETF at a later time.
+   and thus submit it as RFC to the IETF at a later time. This can happen
+   only after we have requested the IETF to accept SILC as RFC. As of
+   today, we have not yet even requested this from the IETF. We want to
+   let the protocol mature a bit more.
 
    Q: How much SILC Protocol is based on IRC?
    A: SILC is not based on IRC. The client superficially resembles IRC
@@ -177,27 +207,29 @@
    time.
 
    Q: I am behind a firewall, can I use SILC?
-   A: Yes. If your network administrator can open the port 706 (TCP) you
-   can use SILC without problems. You may also compile your SILC client
-   with SOCKS support which will proxy your SILC session through the
-   firewall.
+   A: Yes. If your network administrator can open the remote port 706
+   (TCP) you can use SILC without problems. You may also compile your
+   SILC client with SOCKS support which will proxy your SILC session
+   through the firewall.
 
    Q: How secure SILC really is?
-   A: A good question which I don't have an answer for. We have tried to
-   make SILC as secure as possible. However, there is no security
-   protocol or security software that has not been vulnerable to some
-   sort of attacks. SILC is in no means different from this. So, it is
-   suspected that there are security holes in the SILC. These holes just
-   need to be found so that they can be fixed.
+   A: We have tried to make SILC as secure as possible. However, there is
+   no security protocol or security software that has not been vulnerable
+   to some sort of attacks. SILC is in no means different from this. So,
+   it is suspected that there are security holes in the SILC. These holes
+   just need to be found so that they can be fixed. SILC's security
+   features has been developed from attacker's point of view, and we've
+   tried to find all the possible attacks and guard the protocol against
+   them.
 
    But to give you some parameters of security SILC uses the most secure
-   crytographic algorithms such as AES(Rijndael), Twofish, Blowfish, RC5,
-   etc. SILC does not have DES or 3DES as DES is insecure and 3DES is
-   just too slow. SILC also uses cryptographically strong random number
-   generator when it needs random numbers. Public key cryptography uses
-   RSA (PKCS #1) and Diffie-Hellman algorithms. Key lengths for ciphers
-   are initially set to 256. For public key algorithms the starting key
-   length is 1024 bits.
+   crytographic algorithms such as AES (Rijndael), Twofish, Blowfish,
+   RC5, etc. SILC does not have DES or 3DES as DES is insecure and 3DES
+   is just too slow. SILC also uses cryptographically strong random
+   number generator when it needs random numbers. Public key cryptography
+   uses RSA (PKCS #1) and Diffie-Hellman algorithms. Key lengths for
+   ciphers are initially set to 256. For public key algorithms the
+   starting key length is 1024 bits.
 
    But the best answer for this question is that SILC is as secure as its
    weakest link. SILC is open and the protocol is open and in public thus
@@ -206,9 +238,7 @@
    To give a list of attacks that are ineffective against SILC:
 
    - Man-in-the-middle attacks are ineffective if proper public key
-   infrastructure is used. SILC is vulnerable to this attack if the
-   public keys used in the SILC are not verified to be trusted (as any
-   other protocol for that matter).
+   infrastructure is used, and if all public keys are always verified.
    - IP spoofing is ineffective (because of encryption and trusted keys).
    - Attacks that change the contents of the data or add extra data to
    the packets are ineffective (because of encryption and integrity
@@ -217,13 +247,14 @@
    (because of encryption). Everything is encrypted including
    authentication data such as passwords when they are needed.
    - Any sort of cryptanalytic attacks are tried to make ineffective by
-   using the best cryptographic algorithms out there.
+   using the best cryptographic algorithms out there, and by designing
+   the protocol to guard against them.
 
-   Q: Does SILC support instant messaing?
+   Q: Does SILC support instant messaging?
    A: SILC is not an instant message (IM) system, like ICQ and the
    others. SILC is more IRC like system, "real-time", connection-oriented
-   chat and that kind of stuff. But I guess IRC is too called an Instant
-   Messaging system.
+   chat and that kind of stuff. But I guess IRC is too sometimes called
+   an Instant Messaging system.
 
    Q: Why SILC does not have LINKS command like in IRC?
    A: It was felt that this information as an own command in SILC is not
@@ -253,11 +284,27 @@
    therefore cannot see the messages even if they would be compromised.
    So, longer answer results into same as the short one; No.
 
+   Q: Is it true that all messages are encrypted in SILC?
+   A: Most definitely yes. The SILC protocol makes it impossible to send
+   unencrypted messages or packets to the SILC network. All messages are
+   always encrypted, either using session keys, or other secret keys such
+   as channel keys or private message keys.
+
+   Q: Can server or SILC operator gain operator mode on a channel?
+   A: They cannot get operator status, founder status, join invite only
+   channels, escape active bans, escape user limits or anything alike,
+   without explicitly being allowed. Only way to get channel operator
+   status is that someone ops him. Server and SILC operators in the
+   network are normal users with the extra privileges of being able to
+   adminstrate their server. They cannot do anything more than a normal
+   user.
+
    Q: I have suggestions to SILC Protocol, what can I do?
    A: All suggestions and improvements are of course welcome. You should
    read the protocol specifications first to check out whether your idea
    is covered by them already. The best place to make your idea public is
-   the SILC development mailing list.
+   the SILC development mailing list. You might want to checkout the TODO
+   list from the CVS as well.
 
    3. Client Questions
 
@@ -268,11 +315,223 @@
 
    Q: Can I use SILC with IRC client and vice versa?
    A: Generally the answer would be no for both. However, there exist
-   already at least one IRC client that supports SILC, the [58]Irssi
-   client. The current SILC client is actually based on the user
-   interface of the Irssi client. So, yes it is possible to use SILC with
-   some IRC clients and vice versa. But, this does not mean that you can
-   talk from SILC network to IRC network, that is not possible.
+   already at least one IRC client that supports SILC, the Irssi client.
+   The current SILC client is actually based on the user interface of the
+   Irssi client. So, yes it is possible to use SILC with some IRC clients
+   and vice versa. But, this does not mean that you can talk from SILC
+   network to IRC network, that is not possible.
+
+   Q: The default theme sucks, where can I find a better one?
+   A: The Irssi SILC client's theme files are almost 100% compatible with
+   the original Irssi IRC client's themes. You can get those theme files
+   from the Irssi project website. You can also try to make a better
+   theme by yourself.
+
+   Q: How do I send a private message?
+   A: Sending private message is done by using the MSG command. For
+   example, command: /MSG john hello, will send a `hello' message to a
+   nickname `john'. By default private messages are secured with session
+   keys, and the message is re-encrypted by the servers when the message
+   travels to the receiver. If you would like to secure the private
+   messages with a private key, you can negotiate a secret key with the
+   receiver. Always remember to give WHOIS command before sending a
+   private message to assure that you are sending the message to correct
+   person.
+
+   Q: How do I negotiate secret key with another user?
+   A: It is important to negotiate secret keys if you cannot trust the
+   servers and the network you are using. By negotiating a key with the
+   user you want to talk to assures that no one except you and your
+   friend is able to encrypt and decrypt the messages. The secret key
+   negotiation is done with the KEY command. Here is an example of how to
+   negotiate keys for securing private messages.
+
+   By giving command: /KEY MSG john agreement 192.168.2.100, you will
+   send a key negotiation request to a nickname `john'. The 192.168.2.100
+   IP address would be your machine's IP address. You can also define an
+   port to the KEY command after the IP address. If you do not do that
+   the operating system will bind to a port of its choosing. John will
+   receive a notification on the screen that you would like to negotiate
+   secret keys with him, and he will receive the IP address and port
+   where you are listenning for the negotiation. When he gives command:
+   /KEY MSG You negotiate 192.168.2.100 31382, the key negotiation is
+   started. During the key negotiation you will be prompted on the screen
+   to verify and accept John's public key if you do not have his public
+   key already. The John will be prompted to accept your public key as
+   well. After the key negotiation is over all private messages sent
+   between you and John are secured with the negotiated secret key. Note
+   that you must verify the public key you are prompted for, and this is
+   very important since someone could be doing man-in-the-middle attack.
+
+   Q: How do I negotiate secret keys behind a NAT?
+   A: If only you are behind a NAT, or firewall then key negotiation
+   works, but if both you and your friend are behind a NAT then key
+   negotiation will not work, since it is done peer to peer. If you are
+   behind a NAT then you obviously cannot receive key negotiations, and
+   cannot bind to any IP address and port. However, you can still use KEY
+   command to negotiate the keys.
+
+   By giving command: /KEY MSG john agreement, without any other
+   arguments (such as IP address and port) you will send a negotiation
+   request to John, but do not provide an address and port for the John
+   to connect to. When John receives the notification on the screen that
+   you would like to perform key negotiation, he can give command: /KEY
+   MSG You agreement 172.16.100.78, which will send key negotiation
+   request back to you. You will receive the IP address and port where
+   you need to connect in order to perform the negotiation. After
+   receiving the notification you can give command: /KEY MSG john
+   negotiate 172.16.100.78 31181, which will start the key negotiation
+   with John. This way you can negotiate the keys if you are behind a
+   NAT.
+
+   Q: How do I change channel modes?
+   A: The command to manage channel modes is CMODE. With this command you
+   can change the channel status (to change it to secret channel for
+   example), set user limit on the channel, passphrase for the channel,
+   set the channel to use private keys on channel, and set the founder
+   mode.
+
+   Q: What does the founder mode on channel mean, and how do I set it?
+   A: Who ever creates the channel by being the first user to join the
+   channel becomes automatically the founder of the channel. Founder has
+   some extra privileges on the channel. For example, it is not possible
+   to kick the founder off the channel, and there are some channel modes
+   that only the founder of the channel can change. If the creator of the
+   channel wishes to preserve the channel founder mode even if he leave
+   the channel he can set the founder mode for the channel.
+
+   The mode is set by giving command: /CMODE #channel +f -pubkey. This
+   will set the founder mode and will use the public key of the founder
+   as authenticator when the user is reclaiming the mode back. If the
+   founder leaves the channel he will be able to get the founder mode
+   back by using JOIN or CUMODE commmands. Giving command /JOIN #channel
+   -founder -pubkey, will get the founder mode back at the same time he
+   joins the channel, or giving commmand /CUMODE #channel +f -pubkey,
+   will also give the founder mode back on the channel after he has
+   joined the channel.
+
+   If the channel is destroyed after the last client leaves the channel,
+   the founder mode is also reset. Who ever creates the channel after
+   that will also get the channel founder mode automatically. Note also
+   that the founder mode is local. You can reclaim the mode back only on
+   the same server where you set the founder mode in the first place.
+
+   Q: I am founder of invite only channel, how can I join the channel
+   after I have left it?
+   A: Founder can override the invite only status by reclaiming the
+   founder status on the channel using the JOIN command. The channel must
+   have the founder mode set in order for it to work. Reclaiming founder
+   status using JOIN command is important also if the channel has user
+   limit set, and has active bans. Founder can override these conditions
+   as well. However, founder cannot override the passphrase of the
+   channel if it is set. To get the founder mode during JOIN and to
+   override the invite only condition, give command: /JOIN #channel
+   -founder -pubkey. This will join the channel and attempt to reclaim
+   the founder status back to you. Note that you need to be on the same
+   server where you gave the founder mode for the channel for this to
+   work.
+
+   Q: How can I op or deop somebody on channel?
+   A: Giving operator status, or removing the operator status on a
+   channel requires you to have at least operator status, or founder
+   status on the channel. You can give operator status to another user by
+   using CUMODE command. To give ops give the command: /CUMODE #channel
+   +o john, and to remove ops give command: /CUMODE #channel -o john. To
+   indicate current channel you can also use `*' character in #channel's
+   stead.
+
+   Q: How do I set private key for channel, and what does that mean
+   exactly?
+   A: Setting private key for channel requires first to set the private
+   key mode for the channel. You need to be the founder of the channel to
+   be able to do this. Give the command: /CMODE #channel +k. After this
+   mode is set the old channel key will not be used to encrypt and
+   decrypt channel messages. To set the key for the channel use the KEY
+   command. Every user on the channel must do the same thing and set the
+   same key. If some user on the channel does not set the key (or does
+   not know the key) he won't be able to see any messages on the channel.
+   Give the command: /KEY CHANNEL #channel set verysecretkey. This
+   command will set the `verysecretkey' passphrase as key to the
+   #channel. How exactly other users will know this key is out of scope
+   of the SILC protocol. SILC does not provide yet a possibility of
+   negotiating secret key with many users at the same time. For this
+   reason the secret key on the channel is usually a passphrase or a
+   password that all users on the channel have to know. Setting a private
+   key for channel means that only the users on the channel who know the
+   key is able to encrypt and decrypt messages. Servers do not know the
+   key at all. If you remove the private key mode from the channel, all
+   users will start automatically using a new channel key to secure
+   channel messages.
+
+   Q: How do I transfer a file?
+   A: You can transfer files securely using the FILE command. This
+   command will automatically negotiate secret key with the remote user
+   and the file transfer stream is secured using that key. The file
+   transfer stream is always sent peer to peer. If you would like to send
+   a file to another user you can give command: /FILE SEND
+   path/to/the/file john. This command sends, or actually makes the
+   `path/to/the/file' available for download for the user `john'. The
+   John will decide whether he wants to actually download the file. When
+   John gives the command: /FILE RECEIVE, the key negotiation is started.
+   You and John will be prompted to verify and accept each other's public
+   key if you do not have it cached already. After key negotiation is
+   over the file transfer process starts. If you want to cancel the file
+   transfer session, or if John wants to reject the file transfer
+   request, giving the command: /FILE CLOSE will close the session.
+
+   Q: How can I get other users public keys?
+   A: You can get a user's public key using the GETKEY command. This
+   command will fetch the user's public key from the server where the
+   user has connected to. The server has verified that the user posesses
+   the corresponding private key, however, you will be prompted to verify
+   and accept the public key. All client public keys are saved in your
+   local key directory in ~/.silc/clientkeys/. You can also receive
+   clients public keys during key negotiation and file transfers. The
+   GETKEY command can be used to fetch a server's public key as well.
+   Those keys are saved in ~/.silc/serverkeys/ directory.
+
+   Q: How can I see the fingerprint of my public key?
+   A: You can check out your own fingerprint by giving just WHOIS command
+   without any arguments. Additionally you can also dump the contents of
+   the key file using the silc program and giving -S option to it. Your
+   own public key is always saved in ~/.silc/public_key.pub file. To dump
+   your key run silc as: silc -S .silc/public_key.pub. The same way you
+   can dump the contents of any public key inside ~/.silc/clientkeys/ and
+   ~/.silc/serverkeys/ directories. The WHOIS command will also show
+   other users public key fingerprints.
+
+   Q: I gave WHOIS to a nick, and it returned multiple replies, why?
+   A: This will happen if there are several same nicknames in the network
+   at the same time. As you may already know nicknames are not unique in
+   SILC network. This means there can be multiple same nicknames. This
+   also means that you can always have the nickname you want. If WHOIS
+   returns multiple replies, you can distinguish the users by their
+   realname, username, hostname and ultimately by the fingerprint of
+   their public key, which the WHOIS will also show. You will also notice
+   an additional nickname inside a parenthesis. It may show for example:
+   nickname: John (John@otaku). The real nickname is `John', but since
+   there are many John's in the network you can access this one using
+   `John@otaku'. So, if you were to send private message to this
+   particular John you can do it by giving command: /MSG John@otaku
+   hello. This will send `hello' message to the John@otaku.
+
+   Q: Is there a command to see all linked servers?
+   A: No there is not. For longer answer see also this FAQ.
+
+   Q: How do I list the users of a channel?
+   A: The command to list all users on a particular channel is USERS. It
+   is also aliased to WHO command in Irssi SILC Client. To see the users
+   of the current channel give the command: /USERS *. You can replace the
+   `*' with the channel name of your choosing. If the channel is private
+   or secret channel, and you have not joined the channel, you cannot
+   list the users of that channel.
+
+   Q: What is the difference between OPER and SILCOPER commands?
+   A: The OPER command is used to gain server operator privileges on
+   normal SILC server, while SILCOPER is used to gain router operator
+   (also known as SILC operator) privileges on router server. You cannot
+   use SILCOPER command on normal SILC server, it works only on router
+   server.
 
    4. Server Questions
 
@@ -281,7 +540,7 @@
    web page. We are not aware of any other SILC server implementations,
    so far.
 
-   Q: Can I run own SILC server?
+   Q: Can I run my own SILC server?
    A: Yes of course. Download the SILC server package, compile and
    install it. Be sure to check out the installation instructions and the
    README file. You also should decide whether you want to run SILC
@@ -319,6 +578,20 @@
    also possible that the client IS proposing some ciphers that your
    server does not support.
 
+   Q: Why SILC server runs on privileged port 706?
+   A: Ports 706/tcp and 706/udp have been assigned for the SILC protocol
+   by IANA. Server on the network listening above privileged ports
+   (>1023) SHOULD NOT be trusted as it could have been set up by
+   untrusted party. The server normally drops root privileges after
+   startup and then run as user previously defined in silcd.conf.
+
+   Q: I see [Unknown] in the log file, what does it mean?
+   A: You can see in the log file for example: [Info] Closing connection
+   192.168.78.139:3214 [Unknown]. The [Unknown] means that the connection
+   was not authenticated yet, and it is not known whether the connection
+   was a client, server or router. There will appear [Client], [Server]
+   or [Router] if the connection is authenticated at that point.
+
    5. Toolkit Questions
 
    Q: What is SILC Toolkit?
@@ -332,7 +605,7 @@
    Q: Is the SILC Toolkit Reference Manual Available?
    A: Yes, partially completed reference manual is available in the
    Toolkit releases as HTML package and they are available from the
-   silcnet.org website as well at the [59]documentation page.
+   silcnet.org website as well at the documentation page.
 
    Q: How do I compile the Toolkit on Unix?
    A: You should read the INSTALL file from the package and follow its
@@ -350,6 +623,7 @@
 
    Q: Does the Toolkit package include any sample code?
    A: Yes, naturally. It includes sample codes for two different SILC
-   Client implementations, and SILC Server. Win32 samples are included in
-   the win32/ directory, for simple client.
+   Client implementations, and SILC Server. The silcer/ directory
+   includes a simple GUI client based on GTK--, and Win32 samples are
+   included in the win32/ directory, for simple client.
 

@@ -34,7 +34,6 @@ extern SilcServerCommandReply silc_command_reply_list[];
 
 /* Context holding pending command callbacks. */
 typedef struct {
-  SilcServerPendingDestructor destructor;
   SilcCommandCb callback;
   void *context;
 } *SilcServerCommandPendingCallbacks;

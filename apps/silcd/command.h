@@ -58,20 +58,12 @@ typedef struct {
   int users;			/* Reference counter */
 } *SilcServerCommandContext;
 
-/* Pending Command callback destructor. This is called after calling the
-   pending callback or if error occurs while processing the pending command.
-   If error occurs then the callback won't be called at all, and only this
-   destructor is called. The `context' is the context given for the function
-   silc_server_command_pending. */
-typedef void (*SilcServerPendingDestructor)(void *context);
-
 /* Structure holding pending commands. If command is pending it will be
    executed after command reply has been received and executed. */
 typedef struct SilcServerCommandPendingStruct {
   SilcServer server;
   SilcCommand reply_cmd;
   SilcCommandCb callback;
-  SilcServerPendingDestructor destructor;
   void *context;
   uint16 ident;
   struct SilcServerCommandPendingStruct *next;
@@ -96,22 +88,13 @@ void silc_server_command_##func(void *context, void *context2)
 /* Executed pending command. The first argument to the callback function
    is the user specified context. The second argument is always the
    SilcServerCommandReply context. */
-#define SILC_SERVER_PENDING_EXEC(ctx, cmd)     				\
+#define SILC_SERVER_PENDING_EXEC(ctx, cmd)				\
 do {									\
   int _i;								\
   for (_i = 0; _i < ctx->callbacks_count; _i++)				\
     if (ctx->callbacks[_i].callback)					\
       (*ctx->callbacks[_i].callback)(ctx->callbacks[_i].context, ctx);	\
-} while(0)
-
-/* Execute destructor for pending command */
-#define SILC_SERVER_PENDING_DESTRUCTOR(ctx, cmd)			   \
-do {									   \
-  int _i;								   \
-  silc_server_command_pending_del(ctx->server, cmd, ctx->ident);	   \
-  for (_i = 0; _i < ctx->callbacks_count; _i++)				   \
-    if (ctx->callbacks[_i].destructor)					   \
-      (*ctx->callbacks[_i].destructor)(ctx->callbacks[_i].context);	   \
+  silc_server_command_pending_del(ctx->server, cmd, ctx->ident);	\
 } while(0)
 
 /* Prototypes */
@@ -125,7 +108,6 @@ silc_server_command_dup(SilcServerCommandContext ctx);
 bool silc_server_command_pending(SilcServer server,
 				 SilcCommand reply_cmd,
 				 uint16 ident,
-				 SilcServerPendingDestructor destructor,
 				 SilcCommandCb callback,
 				 void *context);
 void silc_server_command_pending_del(SilcServer server,

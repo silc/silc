@@ -304,7 +304,6 @@ silc_server_command_dup(SilcServerCommandContext ctx)
 bool silc_server_command_pending(SilcServer server,
 				 SilcCommand reply_cmd,
 				 uint16 ident,
-				 SilcServerPendingDestructor destructor,
 				 SilcCommandCb callback,
 				 void *context)
 {
@@ -325,7 +324,6 @@ bool silc_server_command_pending(SilcServer server,
   reply->ident = ident;
   reply->context = context;
   reply->callback = callback;
-  reply->destructor = destructor;
   silc_dlist_add(server->pending_commands, reply);
 
   return TRUE;
@@ -369,7 +367,6 @@ silc_server_command_pending_check(SilcServer server,
       callbacks = silc_realloc(callbacks, sizeof(*callbacks) * (i + 1));
       callbacks[i].context = r->context;
       callbacks[i].callback = r->callback;
-      callbacks[i].destructor = r->destructor;
       ctx->ident = ident;
       i++;
     }
@@ -377,14 +374,6 @@ silc_server_command_pending_check(SilcServer server,
 
   *callbacks_count = i;
   return callbacks;
-}
-
-/* Destructor function for pending callbacks. This is called when using
-   pending commands to free the context given for the pending command. */
-
-static void silc_server_command_destructor(void *context)
-{
-  silc_server_command_free((SilcServerCommandContext)context);
 }
 
 /* Sends simple status message as command reply packet */
@@ -593,7 +582,6 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
 	 to the command reply and we're done with this one. */
       silc_server_command_pending(server, SILC_COMMAND_NONE, 
 				  entry->resolve_cmd_ident,
-				  silc_server_command_destructor,
 				  silc_server_command_whois,
 				  silc_server_command_dup(cmd));
       no_res = FALSE;
@@ -676,7 +664,6 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
     /* Reprocess this packet after received reply */
     silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
 				r->ident,
-				silc_server_command_destructor,
 				silc_server_command_whois,
 				silc_server_command_dup(cmd));
     cmd->pending = TRUE;
@@ -846,7 +833,6 @@ silc_server_command_whois_send_router(SilcServerCommandContext cmd)
   /* Reprocess this packet after received reply from router */
   silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
 			      silc_command_get_ident(cmd->payload),
-			      silc_server_command_destructor,
 			      silc_server_command_whois,
 			      silc_server_command_dup(cmd));
   cmd->pending = TRUE;
@@ -996,9 +982,7 @@ SILC_SERVER_CMD_FUNC(whois)
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_WHOIS, cmd, 1, 3328);
 
   ret = silc_server_command_whois_process(cmd);
-
-  if (!ret)
-    silc_server_command_free(cmd);
+  silc_server_command_free(cmd);
 }
 
 /******************************************************************************
@@ -1067,7 +1051,6 @@ silc_server_command_whowas_check(SilcServerCommandContext cmd,
       /* Reprocess this packet after received reply */
       silc_server_command_pending(server, SILC_COMMAND_WHOWAS, 
 				  silc_command_get_ident(cmd->payload),
-				  silc_server_command_destructor,
 				  silc_server_command_whowas, 
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
@@ -1202,7 +1185,6 @@ silc_server_command_whowas_process(SilcServerCommandContext cmd)
     /* Reprocess this packet after received reply from router */
     silc_server_command_pending(server, SILC_COMMAND_WHOWAS, 
 				silc_command_get_ident(cmd->payload),
-				silc_server_command_destructor,
 				silc_server_command_whowas,
 				silc_server_command_dup(cmd));
     cmd->pending = TRUE;
@@ -1264,7 +1246,6 @@ silc_server_command_whowas_process(SilcServerCommandContext cmd)
   silc_free(clients);
   silc_free(nick);
   silc_free(server_name);
-
   return ret;
 }
 
@@ -1278,9 +1259,7 @@ SILC_SERVER_CMD_FUNC(whowas)
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_WHOWAS, cmd, 1, 2);
 
   ret = silc_server_command_whowas_process(cmd);
-
-  if (!ret)
-    silc_server_command_free(cmd);
+  silc_server_command_free(cmd);
 }
 
 /******************************************************************************
@@ -1309,7 +1288,6 @@ silc_server_command_identify_send_router(SilcServerCommandContext cmd)
   /* Reprocess this packet after received reply from router */
   silc_server_command_pending(server, SILC_COMMAND_IDENTIFY, 
 			      silc_command_get_ident(cmd->payload),
-			      silc_server_command_destructor,
 			      silc_server_command_identify,
 			      silc_server_command_dup(cmd));
   cmd->pending = TRUE;
@@ -1627,7 +1605,6 @@ silc_server_command_identify_check_client(SilcServerCommandContext cmd,
 	 to the command reply and we're done with this one. */
       silc_server_command_pending(server, SILC_COMMAND_NONE, 
 				  entry->resolve_cmd_ident,
-				  silc_server_command_destructor,
 				  silc_server_command_identify,
 				  silc_server_command_dup(cmd));
       no_res = FALSE;
@@ -1710,7 +1687,6 @@ silc_server_command_identify_check_client(SilcServerCommandContext cmd,
     /* Reprocess this packet after received reply */
     silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
 				r->ident,
-				silc_server_command_destructor,
 				silc_server_command_identify,
 				silc_server_command_dup(cmd));
     cmd->pending = TRUE;
@@ -1972,9 +1948,7 @@ SILC_SERVER_CMD_FUNC(identify)
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_IDENTIFY, cmd, 1, 3328);
 
   ret = silc_server_command_identify_process(cmd);
-
-  if (!ret)
-    silc_server_command_free(cmd);
+  silc_server_command_free(cmd);
 }
 
 /* Checks string for bad characters and returns TRUE if they are found. */
@@ -2241,13 +2215,12 @@ SILC_SERVER_CMD_FUNC(list)
     /* Reprocess this packet after received reply from router */
     silc_server_command_pending(server, SILC_COMMAND_LIST, 
 				silc_command_get_ident(cmd->payload),
-				silc_server_command_destructor,
 				silc_server_command_list, 
 				silc_server_command_dup(cmd));
     cmd->pending = TRUE;
     silc_command_set_ident(cmd->payload, old_ident);
     silc_buffer_free(tmpbuf);
-    return;
+    goto out;
   }
 
   /* Get Channel ID */
@@ -2491,13 +2464,12 @@ SILC_SERVER_CMD_FUNC(invite)
 	 receiving the reply to the query. */
       silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
 				  server->cmd_ident,
-				  silc_server_command_destructor,
 				  silc_server_command_invite, 
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
       silc_free(channel_id);
       silc_free(dest_id);
-      return;
+      goto out;
     }
 
     /* Check whether the requested client is already on the channel. */
@@ -2895,13 +2867,12 @@ SILC_SERVER_CMD_FUNC(info)
       /* Reprocess this packet after received reply from router */
       silc_server_command_pending(server, SILC_COMMAND_INFO, 
 				  silc_command_get_ident(cmd->payload),
-				  silc_server_command_destructor,
 				  silc_server_command_info,
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
       silc_command_set_ident(cmd->payload, old_ident);
       silc_buffer_free(tmpbuf);
-      return;
+      goto out;
     }
 
     if (!entry && !cmd->pending && !server->standalone) {
@@ -2920,13 +2891,12 @@ SILC_SERVER_CMD_FUNC(info)
       /* Reprocess this packet after received reply from router */
       silc_server_command_pending(server, SILC_COMMAND_INFO, 
 				  silc_command_get_ident(cmd->payload),
-				  silc_server_command_destructor,
 				  silc_server_command_info,
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
       silc_command_set_ident(cmd->payload, old_ident);
       silc_buffer_free(tmpbuf);
-      return;
+      goto out;
     }
   }
 
@@ -3043,11 +3013,11 @@ static void silc_server_command_join_channel(SilcServer server,
       /* The client info is being resolved. Reprocess this packet after
 	 receiving the reply to the query. */
       silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
-				  server->cmd_ident, NULL,
+				  server->cmd_ident,
 				  silc_server_command_join, 
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
-      return;
+      goto out;
     }
 
     cmd->pending = FALSE;
@@ -3419,11 +3389,10 @@ SILC_SERVER_CMD_FUNC(join)
 	  /* Reprocess this packet after received reply from router */
 	  silc_server_command_pending(server, SILC_COMMAND_JOIN, 
 				      silc_command_get_ident(cmd->payload),
-				      silc_server_command_destructor,
 				      silc_server_command_join,
 				      silc_server_command_dup(cmd));
 	  cmd->pending = TRUE;
-	  return;
+	  goto out;
 	}
 	
 	/* We are router and the channel does not seem exist so we will check
@@ -3587,13 +3556,12 @@ SILC_SERVER_CMD_FUNC(motd)
       /* Reprocess this packet after received reply from router */
       silc_server_command_pending(server, SILC_COMMAND_MOTD, 
 				  silc_command_get_ident(cmd->payload),
-				  silc_server_command_destructor,
 				  silc_server_command_motd,
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
       silc_command_set_ident(cmd->payload, old_ident);
       silc_buffer_free(tmpbuf);
-      return;
+      goto out;
     }
 
     if (!entry && !cmd->pending && !server->standalone) {
@@ -3612,13 +3580,12 @@ SILC_SERVER_CMD_FUNC(motd)
       /* Reprocess this packet after received reply from router */
       silc_server_command_pending(server, SILC_COMMAND_MOTD, 
 				  silc_command_get_ident(cmd->payload),
-				  silc_server_command_destructor,
 				  silc_server_command_motd,
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
       silc_command_set_ident(cmd->payload, old_ident);
       silc_buffer_free(tmpbuf);
-      return;
+      goto out;
     }
 
     if (!entry) {
@@ -5158,15 +5125,13 @@ SILC_SERVER_CMD_FUNC(users)
       /* Reprocess this packet after received reply */
       silc_server_command_pending(server, SILC_COMMAND_USERS, 
 				  silc_command_get_ident(cmd->payload),
-				  silc_server_command_destructor,
 				  silc_server_command_users,
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
       silc_command_set_ident(cmd->payload, ident);
-      
       silc_buffer_free(tmpbuf);
       silc_free(id);
-      return;
+      goto out;
     }
 
     /* Check the global list as well. */
@@ -5300,14 +5265,12 @@ SILC_SERVER_CMD_FUNC(getkey)
       /* Reprocess this packet after received reply from router */
       silc_server_command_pending(server, SILC_COMMAND_GETKEY, 
 				  silc_command_get_ident(cmd->payload),
-				  silc_server_command_destructor,
 				  silc_server_command_getkey,
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
-      
       silc_command_set_ident(cmd->payload, old_ident);
       silc_buffer_free(tmpbuf);
-      return;
+      goto out;
     }
 
     if (!client) {
@@ -5366,14 +5329,13 @@ SILC_SERVER_CMD_FUNC(getkey)
       /* Reprocess this packet after received reply from router */
       silc_server_command_pending(server, SILC_COMMAND_GETKEY, 
 				  silc_command_get_ident(cmd->payload),
-				  silc_server_command_destructor,
 				  silc_server_command_getkey,
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
       
       silc_command_set_ident(cmd->payload, old_ident);
       silc_buffer_free(tmpbuf);
-      return;
+      goto out;
     }
 
     if (!server_entry) {

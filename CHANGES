@@ -1,3 +1,10 @@
+Sun Dec 30 13:41:34 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Removed the command destructor entirely from the server's
+	  command and command reply routines.  It is not needed, and
+	  its usage was buggy and caused crashes.  Affected files are
+	  silcd/command[_reply].[ch].
+
 Fri Dec 28 12:43:22 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Cancel protocol and NULL sock->protocol if timeout
