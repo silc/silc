@@ -1120,8 +1120,9 @@ o Public Data Length (2 bytes) - Indicates the length of
 
 o Public Data (variable length) - This is defined only if
   the authentication method is public key.  If it is any other
-  this field does not exist and the Public Data Length field
-  is set to zero (0).
+  this field MAY include a random data for padding purposes.
+  However, in this case the field MUST be ignored by the
+  receiver.
 
   When the authentication method is public key this includes
   128 to 4096 bytes of non-zero random data that is used in
