@@ -1,7 +1,7 @@
 Wed Feb 14 16:03:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Made some sanity checks to silc_server_daemonise like to check
-	  whether the reuqested user and group actually exists.
+	  whether the requested user and group actually exists.
 
 	* Added sanity check to SKE's silc_ske_responder_finish to check
 	  that the public and private key actually is valid. 
