@@ -197,9 +197,10 @@ void silc_client_private_message(SilcClient client,
   flags = silc_private_message_get_flags(payload);
 
   /* Pass the private message to application */
-  client->ops->private_message(client, conn, remote_client, flags,
-			       silc_private_message_get_message(payload, 
-								NULL));
+  client->internal->ops->private_message(
+				 client, conn, remote_client, flags,
+				 silc_private_message_get_message(payload, 
+								  NULL));
 
   /* See if we are away (gone). If we are away we will reply to the
      sender with the set away message. */
@@ -256,14 +257,15 @@ static void silc_client_private_message_key_cb(SilcClient client,
     goto out;
 
   /* Print some info for application */
-  client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
-		   "Received private message key from %s%s%s %s%s%s", 
-		   clients[0]->nickname,
-		   clients[0]->server ? "@" : "",
-		   clients[0]->server ? clients[0]->server : "",
-		   clients[0]->username ? "(" : "",
-		   clients[0]->username ? clients[0]->username : "",
-		   clients[0]->username ? ")" : "");
+  client->internal->ops->say(
+		     client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
+		     "Received private message key from %s%s%s %s%s%s", 
+		     clients[0]->nickname,
+		     clients[0]->server ? "@" : "",
+		     clients[0]->server ? clients[0]->server : "",
+		     clients[0]->username ? "(" : "",
+		     clients[0]->username ? clients[0]->username : "",
+		     clients[0]->username ? ")" : "");
 
  out:
   silc_packet_context_free(packet);
@@ -357,7 +359,7 @@ int silc_client_add_private_message_key(SilcClient client,
   /* Produce the key material as the protocol defines */
   keymat = silc_calloc(1, sizeof(*keymat));
   if (silc_ske_process_key_material_data(key, key_len, 16, 256, 16, 
-					 client->md5hash, keymat) 
+					 client->internal->md5hash, keymat) 
       != SILC_SKE_STATUS_OK)
     return FALSE;
 

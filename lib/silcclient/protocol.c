@@ -97,10 +97,10 @@ void silc_client_protocol_ke_verify_key(SilcSKE ske,
   verify->completion_context = completion_context;
 
   /* Verify public key from user. */
-  client->ops->verify_public_key(client, ctx->sock->user_data, 
-				 ctx->sock->type,
-				 pk_data, pk_len, pk_type,
-				 silc_client_verify_key_cb, verify);
+  client->internal->ops->verify_public_key(client, ctx->sock->user_data, 
+					   ctx->sock->type,
+					   pk_data, pk_len, pk_type,
+					   silc_client_verify_key_cb, verify);
 }
 
 /* Sets the negotiated key material into use for particular connection. */
@@ -197,7 +197,7 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   if (cp)
     build = atoi(cp + 1);
 
-  cp = client->silc_client_version + 9;
+  cp = client->internal->silc_client_version + 9;
   if (!cp)
     status = SILC_SKE_STATUS_BAD_VERSION;
 
@@ -219,8 +219,9 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
     ske->backward_version = 1;
 
   if (status != SILC_SKE_STATUS_OK)
-    client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
-		     "We don't support server version `%s'", version);
+    client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
+			       "We don't support server version `%s'", 
+			       version);
 
   return status;
 }
@@ -245,7 +246,8 @@ static void silc_client_protocol_ke_continue(SilcSKE ske,
 
   if (ske->status != SILC_SKE_STATUS_OK) {
     /* Call failure client operation */
-    client->ops->failure(client, conn, protocol, (void *)ske->status);
+    client->internal->ops->failure(client, conn, protocol, 
+				   (void *)ske->status);
     protocol->state = SILC_PROTOCOL_STATE_ERROR;
     silc_protocol_execute(protocol, client->schedule, 0, 0);
     return;
@@ -311,16 +313,18 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       if (ctx->responder == TRUE) {
 	/* Start the key exchange by processing the received security
 	   properties packet from initiator. */
-	status = silc_ske_responder_start(ske, ctx->rng, ctx->sock,
-					  client->silc_client_version,
-					  ctx->packet->buffer, TRUE);
+	status = 
+	  silc_ske_responder_start(ske, ctx->rng, ctx->sock,
+				   client->internal->silc_client_version,
+				   ctx->packet->buffer, TRUE);
       } else {
 	SilcSKEStartPayload *start_payload;
 
 	/* Assemble security properties. */
-	silc_ske_assemble_security_properties(ske, SILC_SKE_SP_FLAG_MUTUAL, 
-					      client->silc_client_version,
-					      &start_payload);
+	silc_ske_assemble_security_properties(
+				  ske, SILC_SKE_SP_FLAG_MUTUAL, 
+				  client->internal->silc_client_version,
+				  &start_payload);
 
 	/* Start the key exchange by sending our security properties
 	   to the remote end. */
@@ -449,11 +453,13 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 
       if (status != SILC_SKE_STATUS_OK) {
         if (status == SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY) {
-          client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
-			   "Received unsupported server %s public key",
-			   ctx->sock->hostname);
+          client->internal->ops->say(
+			     client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
+			     "Received unsupported server %s public key",
+			     ctx->sock->hostname);
         } else {
-          client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
+          client->internal->ops->say(
+			   client, conn, SILC_CLIENT_MESSAGE_AUDIT,
 			   "Error during key exchange protocol with server %s",
 			   ctx->sock->hostname);
         }
@@ -653,12 +659,13 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
 	  break;
 	}
 
-	client->ops->say(client, conn, SILC_CLIENT_MESSAGE_INFO,
-			 "Password authentication required by server %s",
-			 ctx->sock->hostname);
-	client->ops->ask_passphrase(client, conn,
-				    silc_client_conn_auth_continue,
-				    protocol);
+	client->internal->ops->say(
+			client, conn, SILC_CLIENT_MESSAGE_INFO,
+			"Password authentication required by server %s",
+			ctx->sock->hostname);
+	client->internal->ops->ask_passphrase(client, conn,
+					      silc_client_conn_auth_continue,
+					      protocol);
 	return;
 	break;
 

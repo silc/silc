@@ -152,9 +152,9 @@ SILC_TASK_CALLBACK(silc_client_process_key_agreement)
 
   sock = silc_net_accept_connection(ke->fd);
   if (sock < 0) {
-    client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
-		     "Could not accept key agreement connection: ", 
-		     strerror(errno));
+    client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
+			       "Could not accept key agreement connection: ", 
+			       strerror(errno));
     ke->client_entry->ke = NULL;
     ke->completion(ke->client, ke->conn, ke->client_entry, 
 		   SILC_KEY_AGREEMENT_ERROR, NULL, ke->context);
@@ -180,8 +180,8 @@ SILC_TASK_CALLBACK(silc_client_process_key_agreement)
   /* Perform name and address lookups for the remote host. */
   silc_net_check_host_by_sock(sock, &newsocket->hostname, &newsocket->ip);
   if (!newsocket->hostname && !newsocket->ip) {
-    client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
-		     "Could not resolve the remote IP or hostname");
+    client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
+			       "Could not resolve the remote IP or hostname");
     ke->client_entry->ke = NULL;
     ke->completion(ke->client, ke->conn, ke->client_entry, 
 		   SILC_KEY_AGREEMENT_ERROR, NULL, ke->context);
@@ -324,9 +324,10 @@ void silc_client_send_key_agreement(SilcClient client,
       ke->fd = silc_net_create_server(port, hostname);
 
     if (ke->fd < 0) {
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR, 
-		       "Cannot create listener on %s on port %d: %s", 
-		       (bindhost) ? bindhost:hostname, port, strerror(errno));
+      client->internal->ops->say(
+		     client, conn, SILC_CLIENT_MESSAGE_ERROR, 
+		     "Cannot create listener on %s on port %d: %s", 
+		     (bindhost) ? bindhost:hostname, port, strerror(errno));
       completion(client, conn, client_entry, SILC_KEY_AGREEMENT_FAILURE,
 		 NULL, context);
       silc_free(ke);
@@ -437,12 +438,12 @@ SILC_TASK_CALLBACK(silc_client_perform_key_agreement_start)
   if (opt != 0) {
     if (ctx->tries < 2) {
       /* Connection failed but lets try again */
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		       "Could not connect to client %s: %s",
-		       ctx->host, strerror(opt));
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
-		       "Connecting to port %d of client %s resumed", 
-		       ctx->port, ctx->host);
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+				 "Could not connect to client %s: %s",
+				 ctx->host, strerror(opt));
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
+				 "Connecting to port %d of client %s resumed", 
+				 ctx->port, ctx->host);
 
       /* Unregister old connection try */
       silc_schedule_unset_listen_fd(client->schedule, fd);
@@ -454,9 +455,9 @@ SILC_TASK_CALLBACK(silc_client_perform_key_agreement_start)
       ctx->tries++;
     } else {
       /* Connection failed and we won't try anymore */
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		       "Could not connect to client %s: %s",
-		       ctx->host, strerror(opt));
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+				 "Could not connect to client %s: %s",
+				 ctx->host, strerror(opt));
       silc_schedule_unset_listen_fd(client->schedule, fd);
       silc_net_close_connection(fd);
       silc_schedule_task_del(client->schedule, ctx->task);
@@ -661,7 +662,8 @@ silc_client_key_agreement_resolve_cb(SilcClient client,
     goto out;
 
   /* Call the key_agreement client operation */
-  ret = client->ops->key_agreement(client, conn, clients[0], 
+  ret = client->internal->ops->key_agreement(
+				   client, conn, clients[0], 
 				   silc_key_agreement_get_hostname(payload),
 				   silc_key_agreement_get_port(payload),
 				   &completion, &completion_context);

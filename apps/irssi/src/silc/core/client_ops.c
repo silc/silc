@@ -433,6 +433,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	    silc_free(client_id);
 	  }
 	}
+	break;
       }
       
       if (!success)
@@ -521,10 +522,6 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     {
       SilcClientEntry client_entry;
       
-      /* Identify command is used only internally by the client library
-	 but it still might send some interesting stuff for user interface
-	 so let's print errors. */
-      
       if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
 	/* Print the unknown nick for user */
 	unsigned char *tmp =
@@ -552,9 +549,11 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	    silc_free(client_id);
 	  }
 	}
+	break;
       }
+
+      break;
     }
-    break;
 
   case SILC_COMMAND_WHOWAS:
     {

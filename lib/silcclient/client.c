@@ -53,24 +53,28 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
 
   new_client = silc_calloc(1, sizeof(*new_client));
   new_client->application = application;
-  new_client->ops = ops;
-  new_client->silc_client_version = strdup(silc_version);
-  new_client->params = silc_calloc(1, sizeof(*new_client->params));
+
+  new_client->internal = silc_calloc(1, sizeof(*new_client->internal));
+  new_client->internal->ops = ops;
+  new_client->internal->params = 
+    silc_calloc(1, sizeof(*new_client->internal->params));
+  new_client->internal->silc_client_version = strdup(silc_version);
 
   if (params)
-    memcpy(new_client->params, params, sizeof(*params));
+    memcpy(new_client->internal->params, params, sizeof(*params));
 
-  if (!new_client->params->task_max)
-    new_client->params->task_max = 200;
+  if (!new_client->internal->params->task_max)
+    new_client->internal->params->task_max = 200;
 
-  if (!new_client->params->rekey_secs)
-    new_client->params->rekey_secs = 3600;
+  if (!new_client->internal->params->rekey_secs)
+    new_client->internal->params->rekey_secs = 3600;
 
-  if (!new_client->params->connauth_request_secs)
-    new_client->params->connauth_request_secs = 2;
+  if (!new_client->internal->params->connauth_request_secs)
+    new_client->internal->params->connauth_request_secs = 2;
 
-  new_client->params->
-    nickname_format[sizeof(new_client->params->nickname_format) - 1] = 0;
+  new_client->internal->params->
+    nickname_format[sizeof(new_client->internal->
+			   params->nickname_format) - 1] = 0;
 
   return new_client;
 }
@@ -83,8 +87,9 @@ void silc_client_free(SilcClient client)
     if (client->rng)
       silc_rng_free(client->rng);
 
-    silc_free(client->silc_client_version);
-    silc_free(client->params);
+    silc_free(client->internal->params);
+    silc_free(client->internal->silc_client_version);
+    silc_free(client->internal);
     silc_free(client);
   }
 }
@@ -98,11 +103,11 @@ int silc_client_init(SilcClient client)
   SILC_LOG_DEBUG(("Initializing client"));
 
   /* Initialize hash functions for client to use */
-  silc_hash_alloc("md5", &client->md5hash);
-  silc_hash_alloc("sha1", &client->sha1hash);
+  silc_hash_alloc("md5", &client->internal->md5hash);
+  silc_hash_alloc("sha1", &client->internal->sha1hash);
 
   /* Initialize none cipher */
-  silc_cipher_alloc("none", &client->none_cipher);
+  silc_cipher_alloc("none", &client->internal->none_cipher);
 
   /* Initialize random number generator */
   client->rng = silc_rng_alloc();
@@ -113,10 +118,14 @@ int silc_client_init(SilcClient client)
   silc_client_protocols_register();
 
   /* Initialize the scheduler */
-  client->schedule = silc_schedule_init(client->params->task_max ?
-					client->params->task_max : 200);
+  client->schedule = 
+    silc_schedule_init(client->internal->params->task_max ?
+		       client->internal->params->task_max : 200);
   if (!client->schedule)
     return FALSE;
+
+  /* Register commands */
+  silc_client_commands_register(client);
 
   return TRUE;
 }
@@ -132,6 +141,7 @@ void silc_client_stop(SilcClient client)
   silc_schedule_uninit(client->schedule);
 
   silc_client_protocols_unregister();
+  silc_client_commands_unregister(client);
 
   SILC_LOG_DEBUG(("Client stopped"));
 }
@@ -199,16 +209,17 @@ SilcClientConnection silc_client_add_connection(SilcClient client,
   conn->ftp_sessions = silc_dlist_init();
 
   /* Add the connection to connections table */
-  for (i = 0; i < client->conns_count; i++)
-    if (client->conns && !client->conns[i]) {
-      client->conns[i] = conn;
+  for (i = 0; i < client->internal->conns_count; i++)
+    if (client->internal->conns && !client->internal->conns[i]) {
+      client->internal->conns[i] = conn;
       return conn;
     }
 
-  client->conns = silc_realloc(client->conns, sizeof(*client->conns)
-			       * (client->conns_count + 1));
-  client->conns[client->conns_count] = conn;
-  client->conns_count++;
+  client->internal->conns = 
+    silc_realloc(client->internal->conns, sizeof(*client->internal->conns)
+		 * (client->internal->conns_count + 1));
+  client->internal->conns[client->internal->conns_count] = conn;
+  client->internal->conns_count++;
 
   return conn;
 }
@@ -219,8 +230,8 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
 {
   int i;
 
-  for (i = 0; i < client->conns_count; i++)
-    if (client->conns[i] == conn) {
+  for (i = 0; i < client->internal->conns_count; i++)
+    if (client->internal->conns[i] == conn) {
 
       silc_idcache_free(conn->client_cache);
       silc_idcache_free(conn->channel_cache);
@@ -231,7 +242,7 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
       silc_dlist_uninit(conn->ftp_sessions);
       silc_free(conn);
 
-      client->conns[i] = NULL;
+      client->internal->conns[i] = NULL;
     }
 }
 
@@ -243,24 +254,28 @@ void silc_client_add_socket(SilcClient client, SilcSocketConnection sock)
 {
   int i;
 
-  if (!client->sockets) {
-    client->sockets = silc_calloc(1, sizeof(*client->sockets));
-    client->sockets[0] = silc_socket_dup(sock);
-    client->sockets_count = 1;
+  if (!client->internal->sockets) {
+    client->internal->sockets = 
+      silc_calloc(1, sizeof(*client->internal->sockets));
+    client->internal->sockets[0] = silc_socket_dup(sock);
+    client->internal->sockets_count = 1;
     return;
   }
 
-  for (i = 0; i < client->sockets_count; i++) {
-    if (client->sockets[i] == NULL) {
-      client->sockets[i] = silc_socket_dup(sock);
+  for (i = 0; i < client->internal->sockets_count; i++) {
+    if (client->internal->sockets[i] == NULL) {
+      client->internal->sockets[i] = silc_socket_dup(sock);
       return;
     }
   }
 
-  client->sockets = silc_realloc(client->sockets, sizeof(*client->sockets) *
-				 (client->sockets_count + 1));
-  client->sockets[client->sockets_count] = silc_socket_dup(sock);
-  client->sockets_count++;
+  client->internal->sockets = 
+    silc_realloc(client->internal->sockets, 
+		 sizeof(*client->internal->sockets) *
+		 (client->internal->sockets_count + 1));
+  client->internal->sockets[client->internal->sockets_count] = 
+    silc_socket_dup(sock);
+  client->internal->sockets_count++;
 }
 
 /* Deletes listener socket from the listener sockets table. */
@@ -269,13 +284,13 @@ void silc_client_del_socket(SilcClient client, SilcSocketConnection sock)
 {
   int i;
 
-  if (!client->sockets)
+  if (!client->internal->sockets)
     return;
 
-  for (i = 0; i < client->sockets_count; i++) {
-    if (client->sockets[i] == sock) {
+  for (i = 0; i < client->internal->sockets_count; i++) {
+    if (client->internal->sockets[i] == sock) {
       silc_socket_free(sock);
-      client->sockets[i] = NULL;
+      client->internal->sockets[i] = NULL;
       return;
     }
   }
@@ -327,8 +342,8 @@ int silc_client_connect_to_server(SilcClient client, int port,
 
   conn = silc_client_add_connection(client, host, port, context);
 
-  client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
-		   "Connecting to port %d of server %s", port, host);
+  client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
+			     "Connecting to port %d of server %s", port, host);
 
   /* Allocate internal context for connection process. This is
      needed as we are doing async connecting. */
@@ -391,8 +406,8 @@ bool silc_client_start_key_exchange(SilcClient client,
 		      &protocol, (void *)proto_ctx,
 		      silc_client_connect_to_server_second);
   if (!protocol) {
-    client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		     "Error: Could not start key exchange protocol");
+    client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+			       "Error: Could not start key exchange protocol");
     return FALSE;
   }
   conn->sock->protocol = protocol;
@@ -420,7 +435,7 @@ SILC_TASK_CALLBACK(silc_client_connect_failure)
     (SilcClientKEInternalContext *)context;
   SilcClient client = (SilcClient)ctx->client;
 
-  client->ops->connect(client, ctx->sock->user_data, FALSE);
+  client->internal->ops->connect(client, ctx->sock->user_data, FALSE);
   silc_free(ctx);
 }
 
@@ -442,12 +457,12 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
   if (opt != 0) {
     if (ctx->tries < 2) {
       /* Connection failed but lets try again */
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		       "Could not connect to server %s: %s",
-		       ctx->host, strerror(opt));
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
-		       "Connecting to port %d of server %s resumed", 
-		       ctx->port, ctx->host);
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+				 "Could not connect to server %s: %s",
+				 ctx->host, strerror(opt));
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
+				 "Connecting to port %d of server %s resumed", 
+				 ctx->port, ctx->host);
 
       /* Unregister old connection try */
       silc_schedule_unset_listen_fd(client->schedule, fd);
@@ -459,16 +474,16 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
       ctx->tries++;
     } else {
       /* Connection failed and we won't try anymore */
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		       "Could not connect to server %s: %s",
-		       ctx->host, strerror(opt));
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+				 "Could not connect to server %s: %s",
+				 ctx->host, strerror(opt));
       silc_schedule_unset_listen_fd(client->schedule, fd);
       silc_net_close_connection(fd);
       silc_schedule_task_del(client->schedule, ctx->task);
       silc_free(ctx);
 
       /* Notify application of failure */
-      client->ops->connect(client, conn, FALSE);
+      client->internal->ops->connect(client, conn, FALSE);
       silc_client_del_connection(client, conn);
     }
     return;
@@ -480,7 +495,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
 
   if (!silc_client_start_key_exchange(client, conn, fd)) {
     silc_net_close_connection(fd);
-    client->ops->connect(client, conn, FALSE);
+    client->internal->ops->connect(client, conn, FALSE);
   }
 }
 
@@ -549,15 +564,17 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
   /* Resolve the authentication method to be used in this connection. The
      completion callback is called after the application has resolved
      the authentication method. */
-  client->ops->get_auth_method(client, sock->user_data, sock->hostname,
-			       sock->port, silc_client_resolve_auth_method,
-			       proto_ctx);
+  client->internal->ops->get_auth_method(client, sock->user_data, 
+					 sock->hostname,
+					 sock->port, 
+					 silc_client_resolve_auth_method,
+					 proto_ctx);
 }
 
 /* Authentication method resolving callback. Application calls this function
-   after we've called the client->ops->get_auth_method client operation
-   to resolve the authentication method. We will continue the executiong
-   of the protocol in this function. */
+   after we've called the client->internal->ops->get_auth_method 
+   client operation to resolve the authentication method. We will continue
+   the executiong of the protocol in this function. */
 
 void silc_client_resolve_auth_method(bool success,
 				     SilcProtocolAuthMeth auth_meth,
@@ -652,7 +669,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
   conn->remote_id_data_len = silc_id_get_len(ctx->dest_id, SILC_ID_SERVER);
 
   /* Register re-key timeout */
-  conn->rekey->timeout = client->params->rekey_secs;
+  conn->rekey->timeout = client->internal->params->rekey_secs;
   conn->rekey->context = (void *)client;
   silc_schedule_task_add(client->schedule, conn->sock->sock, 
 			 silc_client_rekey_callback,
@@ -771,14 +788,14 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
 	 close the connection */
       if (SILC_IS_DISCONNECTING(sock)) {
 	if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
-	  client->ops->disconnect(client, conn);
+	  client->internal->ops->disconnect(client, conn);
 	silc_client_close_connection(client, sock, conn);
 	return;
       }
       
       SILC_LOG_DEBUG(("EOF from connection %d", sock->sock));
       if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
-	client->ops->disconnect(client, conn);
+	client->internal->ops->disconnect(client, conn);
       silc_client_close_connection(client, sock, conn);
       return;
     }
@@ -1401,7 +1418,8 @@ void silc_client_disconnected_by_server(SilcClient client,
 
   msg = silc_calloc(message->len + 1, sizeof(char));
   memcpy(msg, message->data, message->len);
-  client->ops->say(client, sock->user_data, SILC_CLIENT_MESSAGE_AUDIT, msg);
+  client->internal->ops->say(client, sock->user_data, 
+			     SILC_CLIENT_MESSAGE_AUDIT, msg);
   silc_free(msg);
 
   SILC_SET_DISCONNECTED(sock);
@@ -1424,7 +1442,8 @@ void silc_client_error_by_server(SilcClient client,
 
   msg = silc_calloc(message->len + 1, sizeof(char));
   memcpy(msg, message->data, message->len);
-  client->ops->say(client, sock->user_data, SILC_CLIENT_MESSAGE_AUDIT, msg);
+  client->internal->ops->say(client, sock->user_data, 
+			     SILC_CLIENT_MESSAGE_AUDIT, msg);
   silc_free(msg);
 }
 
@@ -1483,14 +1502,17 @@ void silc_client_receive_new_id(SilcClient client,
   if (connecting) {
     /* Issue INFO comqmand to fetch the real server name and server information
        and other stuff. */
+    silc_client_command_register(client, SILC_COMMAND_INFO, NULL, NULL,
+				 silc_client_command_reply_info_i, 0, 
+				 ++conn->cmd_ident);
     sidp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
-    silc_client_send_command(client, conn, SILC_COMMAND_INFO,
-			     ++conn->cmd_ident, 1, 2, sidp->data, sidp->len);
+    silc_client_command_send(client, conn, SILC_COMMAND_INFO,
+			     conn->cmd_ident, 1, 2, sidp->data, sidp->len);
     silc_buffer_free(sidp);
 
     /* Notify application of successful connection. We do it here now that
        we've received the Client ID and are allowed to send traffic. */
-    client->ops->connect(client, conn, TRUE);
+    client->internal->ops->connect(client, conn, TRUE);
   }
 }
 
@@ -1618,8 +1640,8 @@ void silc_client_process_failure(SilcClient client,
       SILC_GET32_MSB(failure, packet->buffer->data);
 
     /* Notify application */
-    client->ops->failure(client, sock->user_data, sock->protocol,
-			 (void *)failure);
+    client->internal->ops->failure(client, sock->user_data, sock->protocol,
+				   (void *)failure);
   }
 }
 
@@ -1803,6 +1825,7 @@ silc_client_request_authentication_method(SilcClient client,
   connauth->timeout =
     silc_schedule_task_add(client->schedule, conn->sock->sock, 
 			   silc_client_request_authentication_method_timeout,
-			   conn, client->params->connauth_request_secs, 0,
+			   conn, 
+			   client->internal->params->connauth_request_secs, 0,
 			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }

@@ -32,4 +32,10 @@ include_HEADERS = \
 endif
 
 EXTRA_DIST = \
-	silcdefs.h.in *.h
+	bitmove.h \
+	clientlibincludes.h \
+	silcincludes.h \
+	silcwin32.h \
+	version.h \
+	version_internal.h \
+	silcdefs.h.in

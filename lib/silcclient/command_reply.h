@@ -1,16 +1,15 @@
 /*
 
-  command_reply.h
+  command_reply.h 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
   Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -26,9 +25,6 @@ typedef struct {
   SilcCommandCb cb;
   SilcCommand cmd;
 } SilcClientCommandReply;
-
-/* All client command replys */
-extern SilcClientCommandReply silc_command_reply_list[];
 
 /* Context sent as argument to all command reply functions */
 typedef struct {
@@ -47,12 +43,8 @@ typedef struct {
 
 /* Macros */
 
-/* Macro used for command declaration in command reply list structure */
-#define SILC_CLIENT_CMD_REPLY(func, cmd ) \
-{ silc_client_command_reply_##func, SILC_COMMAND_##cmd }
-
 /* Macro used to declare command reply functions */
-#define SILC_CLIENT_CMD_REPLY_FUNC(func) \
+#define SILC_CLIENT_CMD_REPLY_FUNC(func)				\
 void silc_client_command_reply_##func(void *context, void *context2)
 
 /* Status message structure. Messages are defined below. */
@@ -66,6 +58,7 @@ typedef struct {
 extern const SilcCommandStatusMessage silc_command_status_messages[];
 
 /* Prototypes */
+
 void silc_client_command_reply_process(SilcClient client,
 				       SilcSocketConnection sock,
 				       SilcPacketContext *packet);
@@ -99,5 +92,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(silcoper);
 SILC_CLIENT_CMD_REPLY_FUNC(leave);
 SILC_CLIENT_CMD_REPLY_FUNC(users);
 SILC_CLIENT_CMD_REPLY_FUNC(getkey);
+SILC_CLIENT_CMD_REPLY_FUNC(quit);
+
+/* Internal command reply functions */
+SILC_CLIENT_CMD_REPLY_FUNC(whois_i);
+SILC_CLIENT_CMD_REPLY_FUNC(identify_i);
+SILC_CLIENT_CMD_REPLY_FUNC(info_i);
 
 #endif

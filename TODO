@@ -30,16 +30,7 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o Process the NO_SUCH_CLIENT_ID for WHOIS and IDENTIFY, since it can
-   be received for example after sending MSG to non-existent client.
-   It actually should be done always when it is received and the old
-   entry should be removed.
-
-   Doing this now however causes that /msg nick might give "no such nick"
-   for the first time, and then after the entry is removed /msg nick
-   may actually to go any nick client, which is not desired behaviour.
-   The /msg must be fixed to use the specific nickname user typed 
-   (nick must not match nick@host).
+ o N/A
 
 
 TODO/bugs In SILC Server
@@ -84,7 +75,38 @@ TODO/bugs In SILC Libraries
    than on Unix.  Do it with threads on WIN32.  The function works but
    is not actually async currently.
 
- o Do not let the silcdefs.h lay around in distributions.
+
+TODO in SILC Protocol
+=====================
+
+ o Add "request parameters" or similar to the WHOIS command, which can
+   be used to request various parameters (something not returned by
+   standard WHOIS command) about clients (info that could be fetched
+   even from clients).  Additional specification (or appendix) should 
+   be done to define the payload and the parameters.  It could be used
+   to make the WHOIS command support various search conditions as well.
+   This would be the way to extend the WHOIS command to support various
+   new features without always making the command incompatible to previous
+   version.  To be included in protocol version 1.1.
+
+ o Re-define the Status Payload: it is now 16 bits, split it into two
+   8 bits fields.  First field includes status types from 0 - 9 and
+   10 - n *if* it is not an list of errors.  If it is list of errors then
+   the first field includes 1, 2 and/or 3, and the second field includes
+   the error status 10 - n.  This way it is possible to send multiple
+   errors (list of errors) and we have a way to tell the receiver that
+   there will be other errors as well.  The second field is used only
+   if there is list of errors.  If normal status, or normal (single)
+   error status the second field is set to zero, and must be ignored.
+   Hence, the status works same way as now except for list of errors.
+   To be included in protocol version 1.1.
+
+ o Define that WHOIS and IDENTIFY commands must send list of errors
+   if multiple Client ID (or Channel ID and Server ID for IDENTIFY) was
+   requested and was not found.  Each unfound entry must cause an error
+   command reply to the sender.  Also define that errors must be sent
+   *after* sending successfully found entries (this way receiver may
+   ignore them).  To be included in protocol version 1.1.
 
 
 TODO After 1.0

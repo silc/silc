@@ -1,16 +1,15 @@
 /*
 
-  command.h
+  command.h 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
   Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -21,59 +20,46 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-/* 
-   Structure holding one command and pointer to its function. 
+/* Forward declarations */
+typedef struct SilcClientCommandStruct *SilcClientCommand;
+typedef struct SilcClientCommandContextStruct *SilcClientCommandContext;
 
-   SilcCommandCb cb
+#include "silcapi.h"
+#include "command_reply.h"
 
-       Callback function called when this command is executed.
+/* Structure holding one command and pointer to its function. This
+   structure is allocate into the commands list, and is returned
+   for example by silc_client_command_find function.
 
-   SilcCommand cmd
-
-       The actual command. These are defined in silccore/silccommand.h
-
-   char *name
-
-       Logical name of the command. This is the visible command name
-       that user uses when calling command. Eg. NICK.
-
-   SilcCommandFlag flags
-
-       Flags for the command. These set how command behaves on different
-       situations. Server sets these flags as well, but to be sure
-       that our client never sends wrong commands we preserve the
-       flags on client side as well (actually we preserve them but
-       ignore them :)).
+   To call a command: command->command(cmd, NULL);
+   To call a command reply: command->reply(cmd, NULL);
 
 */
-typedef struct {
-  SilcCommandCb cb;
-  SilcCommand cmd;
-  char *name;
-  SilcCommandFlag flags;
-  uint32 max_args;
-} SilcClientCommand;
-
-/* All client commands */
-extern SilcClientCommand silc_command_list[];
+struct SilcClientCommandStruct {
+  SilcCommand cmd;		   /* Command type */
+  SilcCommandCb command;	   /* Command function */
+  SilcCommandCb reply;		   /* Command reply callback */
+  char *name;			   /* Name of the command (optional) */
+  uint8 max_args;		   /* Maximum arguments (optional)  */
+  uint16 ident;			   /* Identifier for command (optional)  */
+  struct SilcClientCommandStruct *next;
+};
 
 /* Context sent as argument to all commands. This is used by the library
    and application should use this as well. However, application may
    choose to use some own context for its own local command. All library
    commands, however, must use this context. */
-typedef struct {
+struct SilcClientCommandContextStruct {
   SilcClient client;
   SilcClientConnection conn;
-  SilcClientCommand *command;
+  SilcClientCommand command;
   uint32 argc;
   unsigned char **argv;
   uint32 *argv_lens;
   uint32 *argv_types;
   int pending;			/* Command is being re-processed when TRUE */
   int users;			/* Reference counter */
-} *SilcClientCommandContext;
-
-#include "silcapi.h"
+};
 
 /* Structure holding pending commands. If command is pending it will be
    executed after command reply has been executed. */
@@ -89,16 +75,21 @@ typedef struct SilcClientCommandPendingStruct {
 /* List of pending commands */
 extern SilcClientCommandPending *silc_command_pending;
 
-#include "command_reply.h"
 
 /* Macros */
 
-/* Macro used for command declaration in command list structure */
-#define SILC_CLIENT_CMD(func, cmd, name, flags, args) \
-{ silc_client_command_##func, SILC_COMMAND_##cmd, name, flags, args }
+/* Macro used for command registering and unregistering */
+#define SILC_CLIENT_CMD(func, cmd, name, args)				\
+silc_client_command_register(client, SILC_COMMAND_##cmd, name, 		\
+			     silc_client_command_##func,		\
+			     silc_client_command_reply_##func, args, 0)
+#define SILC_CLIENT_CMDU(func, cmd, name)				\
+silc_client_command_unregister(client, SILC_COMMAND_##cmd,		\
+			       silc_client_command_##func,		\
+			       silc_client_command_reply_##func, 0)
 
 /* Macro used to declare command functions */
-#define SILC_CLIENT_CMD_FUNC(func) \
+#define SILC_CLIENT_CMD_FUNC(func)				\
 void silc_client_command_##func(void *context, void *context2)
 
 /* Executed pending command callback */
@@ -117,7 +108,20 @@ do {									\
     (*ctx->destructor)(ctx->context);					\
 } while(0)
 
-/* Prototypes (some prototypes are in the silcapi.h file) */
+bool silc_client_command_register(SilcClient client,
+				  SilcCommand command,
+				  const char *name,
+				  SilcCommandCb command_function,
+				  SilcCommandCb command_reply_function,
+				  uint8 max_args,
+				  uint16 ident);
+bool silc_client_command_unregister(SilcClient client,
+				    SilcCommand command,
+				    SilcCommandCb command_function,
+				    SilcCommandCb command_reply_function,
+				    uint16 ident);
+void silc_client_commands_register(SilcClient client);
+void silc_client_commands_unregister(SilcClient client);
 void silc_client_command_pending_del(SilcClientConnection conn,
 				     SilcCommand reply_cmd,
 				     uint16 ident);

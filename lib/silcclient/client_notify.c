@@ -78,7 +78,10 @@ static void silc_client_notify_by_server_resolve(SilcClient client,
   res->context = client;
   res->sock = silc_socket_dup(conn->sock);
 
-  silc_client_send_command(client, conn, SILC_COMMAND_WHOIS, ++conn->cmd_ident,
+  silc_client_command_register(client, SILC_COMMAND_WHOIS, NULL, NULL,
+			       silc_client_command_reply_whois_i, 0,
+			       ++conn->cmd_ident);
+  silc_client_command_send(client, conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
 			   1, 3, idp->data, idp->len);
   silc_client_command_pending(conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
 			      silc_client_notify_by_server_destructor,
@@ -125,8 +128,8 @@ void silc_client_notify_by_server(SilcClient client,
   switch(type) {
   case SILC_NOTIFY_TYPE_NONE:
     /* Notify application */
-    client->ops->notify(client, conn, type, 
-			silc_argument_get_arg_type(args, 1, NULL));
+    client->internal->ops->notify(client, conn, type, 
+				  silc_argument_get_arg_type(args, 1, NULL));
     break;
 
   case SILC_NOTIFY_TYPE_INVITE:
@@ -174,7 +177,8 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Notify application */
-    client->ops->notify(client, conn, type, channel, tmp, client_entry);
+    client->internal->ops->notify(client, conn, type, channel, tmp, 
+				  client_entry);
     break;
 
   case SILC_NOTIFY_TYPE_JOIN:
@@ -241,7 +245,7 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
-    client->ops->notify(client, conn, type, client_entry, channel);
+    client->internal->ops->notify(client, conn, type, client_entry, channel);
     break;
 
   case SILC_NOTIFY_TYPE_LEAVE:
@@ -291,7 +295,7 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
-    client->ops->notify(client, conn, type, client_entry, channel);
+    client->internal->ops->notify(client, conn, type, client_entry, channel);
     break;
 
   case SILC_NOTIFY_TYPE_SIGNOFF:
@@ -328,7 +332,7 @@ void silc_client_notify_by_server(SilcClient client,
       tmp = NULL;
 
     /* Notify application */
-    client->ops->notify(client, conn, type, client_entry, tmp);
+    client->internal->ops->notify(client, conn, type, client_entry, tmp);
 
     /* Free data */
     silc_client_del_client_entry(client, conn, client_entry);
@@ -418,8 +422,9 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
-    client->ops->notify(client, conn, type, silc_id_payload_get_type(idp),
-			client_entry, tmp, channel);
+    client->internal->ops->notify(client, conn, type, 
+				  silc_id_payload_get_type(idp),
+				  client_entry, tmp, channel);
 
     silc_id_payload_free(idp);
     break;
@@ -482,7 +487,8 @@ void silc_client_notify_by_server(SilcClient client,
 				      client_entry2);
 
     /* Notify application */
-    client->ops->notify(client, conn, type, client_entry, client_entry2);
+    client->internal->ops->notify(client, conn, type, 
+				  client_entry, client_entry2);
 
     /* Free data */
     silc_client_del_client_entry(client, conn, client_entry);
@@ -584,8 +590,9 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
-    client->ops->notify(client, conn, type, silc_id_payload_get_type(idp), 
-			client_entry, mode, NULL, tmp, channel);
+    client->internal->ops->notify(client, conn, type, 
+				  silc_id_payload_get_type(idp), 
+				  client_entry, mode, NULL, tmp, channel);
 
     silc_id_payload_free(idp);
     break;
@@ -659,8 +666,9 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
-    client->ops->notify(client, conn, type, client_entry, mode, 
-			client_entry2, channel);
+    client->internal->ops->notify(client, conn, type, 
+				  client_entry, mode, 
+				  client_entry2, channel);
     break;
 
   case SILC_NOTIFY_TYPE_MOTD:
@@ -676,7 +684,7 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
     
     /* Notify application */
-    client->ops->notify(client, conn, type, tmp);
+    client->internal->ops->notify(client, conn, type, tmp);
     break;
 
   case SILC_NOTIFY_TYPE_CHANNEL_CHANGE:
@@ -727,7 +735,7 @@ void silc_client_notify_by_server(SilcClient client,
 		     channel->id, channel, 0, NULL);
 
     /* Notify application */
-    client->ops->notify(client, conn, type, channel, channel);
+    client->internal->ops->notify(client, conn, type, channel, channel);
     break;
 
   case SILC_NOTIFY_TYPE_KICKED:
@@ -787,8 +795,8 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
-    client->ops->notify(client, conn, type, client_entry, tmp, 
-			client_entry2, channel);
+    client->internal->ops->notify(client, conn, type, client_entry, tmp, 
+				  client_entry2, channel);
 
     /* If I was kicked from channel, remove the channel */
     if (client_entry == conn->local_entry) {
@@ -828,7 +836,7 @@ void silc_client_notify_by_server(SilcClient client,
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
 
     /* Notify application. */
-    client->ops->notify(client, conn, type, client_entry, tmp);
+    client->internal->ops->notify(client, conn, type, client_entry, tmp);
 
     if (client_entry != conn->local_entry) {
       /* Remove client from all channels */
@@ -874,7 +882,8 @@ void silc_client_notify_by_server(SilcClient client,
       /* Notify application. We don't keep server entries so the server
 	 entry is returned as NULL. The client's are returned as array
 	 of SilcClientEntry pointers. */
-      client->ops->notify(client, conn, type, NULL, clients, clients_count);
+      client->internal->ops->notify(client, conn, type, NULL, 
+				    clients, clients_count);
 
       for (i = 0; i < clients_count; i++) {
 	/* Remove client from all channels */

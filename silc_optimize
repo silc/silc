@@ -49,6 +49,13 @@ o Library
 	  and thus not require any memory allocation.  Same will happen
 	  with silc_id_payload_* functions.
 
+	o Rewrite the lib/silcutil/silcprotocol.[ch] not to have 
+	  [un]register functions, but to make it context based all
+	  the way.  The alloc should take as argument the protocol	
+	  type and its callback (not only final callback).  It is not
+	  good that we have now global list of registered protocols.
+
+
 o Server
 
 	o When processing the decrypted and parsed packet we call the

@@ -1123,7 +1123,7 @@ bool silc_client_del_server(SilcClient client, SilcClientConnection conn,
  *
  * SYNOPSIS
  *
- *    SilcClientCommandContext silc_client_command_alloc();
+ *    SilcClientCommandContext silc_client_command_alloc(void);
  *
  * DESCRIPTION
  *
@@ -1134,7 +1134,7 @@ bool silc_client_del_server(SilcClient client, SilcClientConnection conn,
  *    context. 
  *
  ***/
-SilcClientCommandContext silc_client_command_alloc();
+SilcClientCommandContext silc_client_command_alloc(void);
 
 /****f* silcclient/SilcClientAPI/silc_client_command_free
  *
@@ -1171,7 +1171,8 @@ SilcClientCommandContext silc_client_command_dup(SilcClientCommandContext ctx);
  *
  * SYNOPSIS
  *
- *    SilcClientCommand *silc_client_command_find(const char *name);
+ *    SilcClientCommand silc_client_command_find(SilcClient client,
+ *                                               const char *name);
  *
  * DESCRIPTION
  *
@@ -1179,13 +1180,36 @@ SilcClientCommandContext silc_client_command_dup(SilcClientCommandContext ctx);
  *    command is not found. See the `command.[ch]' for the command list. 
  *
  ***/
-SilcClientCommand *silc_client_command_find(const char *name);
+SilcClientCommand silc_client_command_find(SilcClient client,
+					   const char *name);
 
-/****f* silcclient/SilcClientAPI/silc_client_send_command
+/****f* silcclient/SilcClientAPI/silc_client_command_call
  *
  * SYNOPSIS
  *
- *    void silc_client_send_command(SilcClient client, 
+ *    void silc_client_command_call(SilcClientCommand command);
+ *
+ * DESCRIPTION
+ *
+ *    Calls the command (executes it).  Application can call this after
+ *    it has allocated the SilcClientCommandContext with the function
+ *    silc_client_command_alloc and found the command from the client
+ *    library by calling silc_client_command_find.  This will execute
+ *    the command.
+ *
+ *    Application can call the command function directly too if it
+ *    wishes to do so.  See the command.h for details of the
+ *    SilcClientCommand structure.
+ *
+ ***/
+void silc_client_command_call(SilcClientCommand command,
+			      SilcClientCommandContext cmd);
+
+/****f* silcclient/SilcClientAPI/silc_client_command_send
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_command_send(SilcClient client, 
  *                                  SilcClientConnection conn,
  *                                  SilcCommand command, uint16 ident,
  *                                  uint32 argc, ...);
@@ -1193,10 +1217,13 @@ SilcClientCommand *silc_client_command_find(const char *name);
  * DESCRIPTION
  *
  *    Generic function to send any command. The arguments must be sent already
- *    encoded into correct form and in correct order. 
+ *    encoded into correct form and in correct order. If application wants
+ *    to perform the commands by itself, it can do so and send the data
+ *    directly to the server using this function.  If application is using
+ *    the silc_client_command_call, this function is usually not used.
  *
  ***/
-void silc_client_send_command(SilcClient client, SilcClientConnection conn,
+void silc_client_command_send(SilcClient client, SilcClientConnection conn,
 			      SilcCommand command, uint16 ident,
 			      uint32 argc, ...);
 
@@ -1232,9 +1259,13 @@ typedef void (*SilcClientPendingDestructor)(void *context);
  *
  *    Add new pending command to be executed when reply to a command has been
  *    received.  The `reply_cmd' is the command that will call the `callback'
- *    with `context' when reply has been received.  If `ident is non-zero
+ *    with `context' when reply has been received.  If `ident' is non-zero
  *    the `callback' will be executed when received reply with command 
  *    identifier `ident'. 
+ *
+ *    Note that the application is notified about the received command
+ *    reply through the `command_reply' client operation before calling
+ *    the `callback` pending command callback.
  *
  ***/
 void silc_client_command_pending(SilcClientConnection conn,

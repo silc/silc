@@ -22,95 +22,11 @@
 #include "clientlibincludes.h"
 #include "client_internal.h"
 
-typedef struct {
-  SilcClientCommandContext cmd;
-  SilcGetClientCallback completion;
-  char *nickname;
-  char *server;
-  void *context;
-  int found;
-} *GetClientInternal;
+/******************************************************************************
 
-SILC_CLIENT_CMD_FUNC(get_client_callback)
-{
-  GetClientInternal i = (GetClientInternal)context;
-  SilcClientEntry *clients;
-  uint32 clients_count;
+                         Client Searching Locally
 
-  /* Get the clients */
-  clients = silc_client_get_clients_local(i->cmd->client, i->cmd->conn,
-					  i->nickname, i->server,
-					  &clients_count);
-  if (clients) {
-    i->completion(i->cmd->client, i->cmd->conn, clients, 
-		  clients_count, i->context);
-    i->found = TRUE;
-    silc_free(clients);
-  }
-}
-
-static void silc_client_get_client_destructor(void *context)
-{
-  GetClientInternal i = (GetClientInternal)context;
-
-  if (i->found == FALSE)
-    i->completion(i->cmd->client, i->cmd->conn, NULL, 0, i->context);
-
-  silc_client_command_free(i->cmd);
-  if (i->nickname)
-    silc_free(i->nickname);
-  if (i->server)
-    silc_free(i->server);
-  silc_free(i);
-}
-
-/* Finds client entry or entries by the `nickname' and `server'. The 
-   completion callback will be called when the client entries has been found.
-
-   Note: this function is always asynchronous and resolves the client
-   information from the server. Thus, if you already know the client
-   information then use the silc_client_get_client_by_id function to
-   get the client entry since this function may be very slow and should
-   be used only to initially get the client entries. */
-
-void silc_client_get_clients(SilcClient client,
-			     SilcClientConnection conn,
-			     const char *nickname,
-			     const char *server,
-			     SilcGetClientCallback completion,
-			     void *context)
-{
-  char ident[512];
-  SilcClientCommandContext ctx;
-  GetClientInternal i = silc_calloc(1, sizeof(*i));
-      
-  /* No ID found. Do query from the server. The query is done by 
-     sending simple IDENTIFY command to the server. */
-  ctx = silc_client_command_alloc();
-  ctx->client = client;
-  ctx->conn = conn;
-  ctx->command = silc_client_command_find("IDENTIFY");
-  memset(ident, 0, sizeof(ident));
-  snprintf(ident, sizeof(ident), "IDENTIFY %s", nickname);
-  silc_parse_command_line(ident, &ctx->argv, &ctx->argv_lens, 
-			  &ctx->argv_types, &ctx->argc, 2);
-
-  i->cmd = silc_client_command_dup(ctx);
-  i->nickname = nickname ? strdup(nickname) : NULL;
-  i->server = server ? strdup(server) : NULL;
-  i->completion = completion;
-  i->context = context;
-
-  /* Call the command */
-  ctx->command->cb(ctx, NULL);
-
-  /* Add pending callback */
-  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-			      conn->cmd_ident, 
-			      silc_client_get_client_destructor,
-			      silc_client_command_get_client_callback, 
-			      (void *)i);
-}
+******************************************************************************/
 
 /* Same as silc_client_get_clients function but does not resolve anything
    from the server. This checks local cache and returns all matching
@@ -186,6 +102,193 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 
   return clients;
 }
+
+
+/******************************************************************************
+
+                        Client Resolving from Server
+
+******************************************************************************/
+
+typedef struct {
+  SilcClient client;
+  SilcClientConnection conn;
+  SilcGetClientCallback completion;
+  void *context;
+  char *nickname;
+  char *server;
+  bool found;
+} *GetClientInternal;
+
+SILC_CLIENT_CMD_FUNC(get_client_callback)
+{
+  GetClientInternal i = (GetClientInternal)context;
+  SilcClientEntry *clients;
+  uint32 clients_count;
+
+  /* Get the clients */
+  clients = silc_client_get_clients_local(i->client, i->conn,
+					  i->nickname, i->server,
+					  &clients_count);
+  if (clients) {
+    i->completion(i->client, i->conn, clients, 
+		  clients_count, i->context);
+    i->found = TRUE;
+    silc_free(clients);
+  }
+}
+
+static void silc_client_get_client_destructor(void *context)
+{
+  GetClientInternal i = (GetClientInternal)context;
+
+  if (i->found == FALSE)
+    i->completion(i->client, i->conn, NULL, 0, i->context);
+
+  silc_free(i->nickname);
+  silc_free(i->server);
+  silc_free(i);
+}
+
+/* Finds client entry or entries by the `nickname' and `server'. The 
+   completion callback will be called when the client entries has been found.
+
+   Note: this function is always asynchronous and resolves the client
+   information from the server. Thus, if you already know the client
+   information then use the silc_client_get_client_by_id function to
+   get the client entry since this function may be very slow and should
+   be used only to initially get the client entries. */
+
+void silc_client_get_clients(SilcClient client,
+			     SilcClientConnection conn,
+			     const char *nickname,
+			     const char *server,
+			     SilcGetClientCallback completion,
+			     void *context)
+{
+  GetClientInternal i;
+  char *userhost;
+
+  if (!nickname)
+    return;
+
+  i = silc_calloc(1, sizeof(*i));
+  i->client = client;
+  i->conn = conn;
+  i->nickname = strdup(nickname);
+  i->server = server ? strdup(server) : NULL;
+  i->completion = completion;
+  i->context = context;
+
+  if (nickname && server) {
+    userhost = silc_calloc(strlen(nickname) + strlen(server) + 2,
+			   sizeof(*userhost));
+    strncat(userhost, nickname, strlen(nickname));
+    strncat(userhost, "@", 1);
+    strncat(userhost, server, strlen(server));
+  } else {
+    userhost = strdup(nickname);
+  }
+
+  /* Register our own command reply for this command */
+  silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
+			       silc_client_command_reply_identify_i, 0,
+			       ++conn->cmd_ident);
+
+  /* Send the command */
+  silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY, 
+			   conn->cmd_ident, 1, 1, userhost, 
+			   strlen(userhost));
+
+  /* Add pending callback */
+  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
+			      silc_client_get_client_destructor,
+			      silc_client_command_get_client_callback, 
+			      (void *)i);
+
+  silc_free(userhost);
+}
+
+/* The old style function to find client entry. This is used by the
+   library internally. If `query' is TRUE then the client information is
+   requested by the server. The pending command callback must be set
+   by the caller. */
+/* XXX This function should be removed */
+
+SilcClientEntry silc_idlist_get_client(SilcClient client,
+				       SilcClientConnection conn,
+				       const char *nickname,
+				       const char *format,
+				       bool query)
+{
+  SilcIDCacheEntry id_cache;
+  SilcIDCacheList list = NULL;
+  SilcClientEntry entry = NULL;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Find ID from cache */
+  if (!silc_idcache_find_by_name(conn->client_cache, (char *)nickname, 
+				 &list)) {
+  identify:
+
+    if (query) {
+      SILC_LOG_DEBUG(("Requesting Client ID from server"));
+      
+      /* Register our own command reply for this command */
+      silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
+				   silc_client_command_reply_identify_i, 0,
+				   ++conn->cmd_ident);
+
+      /* Send the command */
+      silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY, 
+			       conn->cmd_ident, 1, 1, nickname,
+			       strlen(nickname));
+
+      if (list)
+	silc_idcache_list_free(list);
+
+      return NULL;
+    }
+    return NULL;
+  }
+
+  if (!format) {
+    /* Take first found cache entry */
+    if (!silc_idcache_list_first(list, &id_cache))
+      goto identify;
+
+    entry = (SilcClientEntry)id_cache->context;
+  } else {
+    /* Check multiple cache entries for match */
+    silc_idcache_list_first(list, &id_cache);
+    while (id_cache) {
+      entry = (SilcClientEntry)id_cache->context;
+
+      if (strcasecmp(entry->nickname, format)) {
+	if (!silc_idcache_list_next(list, &id_cache)) {
+	  entry = NULL;
+	  break;
+	} else {
+	  entry = NULL;
+	  continue;
+	}
+      }
+
+      break;
+    }
+
+    /* If match weren't found, request it */
+    if (!entry)
+      goto identify;
+  }
+
+  if (list)
+    silc_idcache_list_free(list);
+
+  return entry;
+}
+
 
 typedef struct {
   SilcClient client;
@@ -356,8 +459,13 @@ void silc_client_get_clients_by_list(SilcClient client,
 			    NULL, 0, NULL, NULL, res_cmd->data, res_cmd->len,
 			    TRUE);
 
-    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				conn->cmd_ident, 
+    /* Register our own command reply for this command */
+    silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
+				 silc_client_command_reply_identify_i, 0,
+				 conn->cmd_ident);
+
+    /* Process the applications request after reply has been received  */
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
 				silc_client_get_clients_list_destructor,
 				silc_client_command_get_clients_list_callback, 
 				(void *)in);
@@ -376,90 +484,6 @@ void silc_client_get_clients_by_list(SilcClient client,
 
   /* We have the clients in cache, get them and call the completion */
   silc_client_command_get_clients_list_callback((void *)in, NULL);
-}
-
-/* The old style function to find client entry. This is used by the
-   library internally. If `query' is TRUE then the client information is
-   requested by the server. The pending command callback must be set
-   by the caller. */
-
-SilcClientEntry silc_idlist_get_client(SilcClient client,
-				       SilcClientConnection conn,
-				       const char *nickname,
-				       const char *format,
-				       bool query)
-{
-  SilcIDCacheEntry id_cache;
-  SilcIDCacheList list = NULL;
-  SilcClientEntry entry = NULL;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Find ID from cache */
-  if (!silc_idcache_find_by_name(conn->client_cache, (char *)nickname, 
-				 &list)) {
-  identify:
-
-    if (query) {
-      char ident[512];
-      SilcClientCommandContext ctx;
-      
-      SILC_LOG_DEBUG(("Requesting Client ID from server"));
-      
-      /* No ID found. Do query from the server. The query is done by 
-	 sending simple IDENTIFY command to the server. */
-      ctx = silc_client_command_alloc();
-      ctx->client = client;
-      ctx->conn = conn;
-      ctx->command = silc_client_command_find("IDENTIFY");
-      memset(ident, 0, sizeof(ident));
-      snprintf(ident, sizeof(ident), "IDENTIFY %s", nickname);
-      silc_parse_command_line(ident, &ctx->argv, &ctx->argv_lens, 
-			      &ctx->argv_types, &ctx->argc, 2);
-      ctx->command->cb(ctx, NULL);
-      
-      if (list)
-	silc_idcache_list_free(list);
-
-      return NULL;
-    }
-    return NULL;
-  }
-
-  if (!format) {
-    /* Take first found cache entry */
-    if (!silc_idcache_list_first(list, &id_cache))
-      goto identify;
-
-    entry = (SilcClientEntry)id_cache->context;
-  } else {
-    /* Check multiple cache entries for match */
-    silc_idcache_list_first(list, &id_cache);
-    while (id_cache) {
-      entry = (SilcClientEntry)id_cache->context;
-
-      if (strcasecmp(entry->nickname, format)) {
-	if (!silc_idcache_list_next(list, &id_cache)) {
-	  entry = NULL;
-	  break;
-	} else {
-	  entry = NULL;
-	  continue;
-	}
-      }
-
-      break;
-    }
-
-    /* If match weren't found, request it */
-    if (!entry)
-      goto identify;
-  }
-
-  if (list)
-    silc_idcache_list_free(list);
-
-  return entry;
 }
 
 /* Finds entry for client by the client's ID. Returns the entry or NULL
@@ -536,25 +560,37 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 
   SILC_LOG_DEBUG(("Start"));
 
-  idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
-  silc_client_send_command(client, conn, SILC_COMMAND_WHOIS, 
-			   ++conn->cmd_ident,
-			   1, 3, idp->data, idp->len);
-  silc_buffer_free(idp);
-
   i->client = client;
   i->conn = conn;
   i->client_id = silc_id_dup(client_id, SILC_ID_CLIENT);
   i->completion = completion;
   i->context = context;
       
+  /* Register our own command reply for this command */
+  silc_client_command_register(client, SILC_COMMAND_WHOIS, NULL, NULL,
+			       silc_client_command_reply_whois_i, 0,
+			       ++conn->cmd_ident);
+
+  /* Send the command */
+  idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+  silc_client_command_send(client, conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
+			   1, 3, idp->data, idp->len);
+  silc_buffer_free(idp);
+
   /* Add pending callback */
-  silc_client_command_pending(conn, SILC_COMMAND_WHOIS, 
-			      conn->cmd_ident, 
+  silc_client_command_pending(conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
 			      silc_client_get_client_by_id_destructor,
 			      silc_client_command_get_client_by_id_callback, 
 			      (void *)i);
 }
+
+
+/******************************************************************************
+
+                Client, Channel and Server entry manipulation
+
+******************************************************************************/
+
 
 /* Creates new client entry and adds it to the ID cache. Returns pointer
    to the new entry. */
@@ -785,21 +821,26 @@ void silc_client_get_channel_by_id_resolve(SilcClient client,
 
   SILC_LOG_DEBUG(("Start"));
 
-  idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
-  silc_client_send_command(client, conn, SILC_COMMAND_IDENTIFY, 
-			   ++conn->cmd_ident,
-			   1, 5, idp->data, idp->len);
-  silc_buffer_free(idp);
-
   i->client = client;
   i->conn = conn;
   i->channel_id = silc_id_dup(channel_id, SILC_ID_CHANNEL);
   i->completion = completion;
   i->context = context;
       
+  /* Register our own command reply for this command */
+  silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
+			       silc_client_command_reply_identify_i, 0,
+			       ++conn->cmd_ident);
+
+  /* Send the command */
+  idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
+  silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY, 
+			   conn->cmd_ident,
+			   1, 5, idp->data, idp->len);
+  silc_buffer_free(idp);
+
   /* Add pending callback */
-  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-			      conn->cmd_ident, 
+  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
 			      silc_client_get_channel_by_id_destructor,
 			      silc_client_command_get_channel_by_id_callback, 
 			      (void *)i);
@@ -822,9 +863,15 @@ SilcChannelEntry silc_idlist_get_channel_by_id(SilcClient client,
     return channel;
 
   if (query) {
+    /* Register our own command reply for this command */
+    silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
+				 silc_client_command_reply_identify_i, 0,
+				 ++conn->cmd_ident);
+
+    /* Send the command */
     idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
-    silc_client_send_command(client, conn, SILC_COMMAND_IDENTIFY, 
-			     ++conn->cmd_ident,
+    silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY, 
+			     conn->cmd_ident,
 			     1, 5, idp->data, idp->len);
     silc_buffer_free(idp);
   }
@@ -902,7 +949,7 @@ void silc_client_nickname_format(SilcClient client,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!client->params->nickname_format[0])
+  if (!client->internal->params->nickname_format[0])
     return;
 
   if (!client_entry->nickname)
@@ -914,7 +961,7 @@ void silc_client_nickname_format(SilcClient client,
   clients = silc_client_get_clients_local(client, conn,
 					  client_entry->nickname, NULL,
 					  &clients_count);
-  if (!clients && !client->params->nickname_force_format)
+  if (!clients && !client->internal->params->nickname_force_format)
     return;
 
   len = 0;
@@ -924,7 +971,7 @@ void silc_client_nickname_format(SilcClient client,
   if (!len)
     return;
 
-  cp = client->params->nickname_format;
+  cp = client->internal->params->nickname_format;
   while (*cp) {
     if (*cp == '%') {
       cp++;

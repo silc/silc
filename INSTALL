@@ -19,32 +19,32 @@ give --help command to the `configure' to see all of them.  Here is listed
 few options that you might want to use.  Please refer to the rest of this
 file for more generic installation instructions.
 
---with-gmp=PATH
+`--with-gmp=PATH'
 
    If you wish to use GMP library for arbitrary precision arithmetic
 library instead of using the MPI library included in the package, you can
 give the --with-gmp=PATH option to the `configure'.  The PATH is the path
 to the GMP library in your system.
 
---disable-asm
+`--disable-asm'
 
    If you have trouble compiling the assembler optimized code in the
 package or does not want to use them, you can give the --disable-asm
 option to the `configure' script.  This will assure that assembler
 optimized code is not compiled in.
 
---enable-debug
+`--enable-debug'
 
    If you would like to enable the debugging for the compiled programs
 you can give this option to the `configure'.
 
---disable-threads
+`--disable-threads'
 
    If you do not want to compile the programs with multi threads support
 you can give --disable-threads option.  In this case all compiled programs
 will work in single thread only.
 
---enable-ipv6
+`--enable-ipv6'
 
    The `configure' will attempt to check for IPv6 support in your system.
    However, if it fails, but you still want to compile in the IPv6 support

@@ -1,3 +1,66 @@
+Sun Dec  9 19:18:41 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the IDENTIFY command reply sending to chech better valid
+	  clients.  It was possible to send incomplete list of replies.
+	  Affected file silcd/command.c.
+
+Sat Dec  8 15:58:31 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_client_command[s]_[un]register functions now to
+	  dynamically register the commands in client library.  Removed
+	  the static table of commands.  This allows the client library
+	  to call commands without causing the application to know about
+	  what commands library has called.
+
+	  Removed the INFO command reply kludge to detect when the command
+	  was called by library.  Now library use its own command reply
+	  function for INFO command.
+
+	  Added function silc_client_command_call to call a command.
+	  Application can use it to call command, not access the structure
+	  directly.
+
+	  Now all commands that are sent by the client library (not
+	  explicitly sent by application) use own command reply functions.
+
+	  Affected files around lib/silcclient/ and in
+	  irssi/src/silc/core/.
+
+	* Fixed the WHOIS command reply sending to chech better valid
+	  clients.  It was possible to send incomplete list of replies.
+
+	  Fixed the WHOIS and IDENTIFY to send the request to router
+	  if normal server did not do it and did not find any results.
+
+	  Affected file silcd/command.c.
+
+Thu Dec  6 17:21:06 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Moved the internal data from SilcClient context into its
+	  own file, not accesible to application.  Affected files
+	  lib/silcclient/client.h and lib/silcclient/client_internal.h,
+	  and other files in client library.
+
+Thu Dec  6 10:37:55 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added doc/examples installation target in Makefile.am.pre.
+	  A patch by salo.
+
+Tue Dec  4 17:43:19 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* If NO_SUCH_CLIENT_ID notify is received for WHOIS or IDENTIFY
+	  commands the found client entry will be removed from the
+	  cache, after notifying application about the error.  Affected
+	  file lib/silcclient/command_reply.c.
+
+	* Changed the /MSG to check for exact nickname user gave, and
+	  not let `nick' match `nick@host' if it is only one found.  Now,
+	  user must type the exact nickname (like nick@host2) even if
+	  there are no more than one same nicks found.  This is to avoid
+	  a possibility of sending nickname to wrong nickname since
+	  `nick' could match `nick@host'.  Affected file is
+	  irssi/src/core/silc-servers.c.
+
 Mon Dec  3 18:49:45 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not print "you are now server operator" or similar when

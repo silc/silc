@@ -80,7 +80,8 @@ static void silc_send_msg_clients(SilcClient client,
   char *nickname = NULL;
 
   if (!clients_count) {
-    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Unknown nick: %s", rec->nick);
+    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, 
+	      "%s: There is no such client", rec->nick);
   } else {
     if (clients_count > 1) {
       silc_parse_userfqdn(rec->nick, &nickname, NULL);
@@ -91,8 +92,8 @@ static void silc_send_msg_clients(SilcClient client,
 					      nickname, rec->nick, 
 					      &clients_count);
       if (!clients) {
-	printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Unknown nick: %s", 
-		  rec->nick);
+	printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, 
+		  "%s: There is no such client", rec->nick);
 	silc_free(nickname);
 	goto out;
       }
@@ -100,6 +101,16 @@ static void silc_send_msg_clients(SilcClient client,
     }
 
     target = clients[0];
+
+    /* Still check for exact math for nickname, this compares the
+       real (formatted) nickname and the nick (maybe formatted) that
+       use gave. This is to assure that `nick' does not match 
+       `nick@host'. */
+    if (strcasecmp(rec->nick, clients[0]->nickname)) {
+      printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, 
+		"%s: There is no such client", rec->nick);
+      goto out;
+    }
 
     /* Send the private message */
     silc_client_send_private_message(client, conn, target, 0,
@@ -321,14 +332,14 @@ void silc_command_exec(SILC_SERVER_REC *server,
   unsigned char **argv;
   uint32 *argv_lens, *argv_types;
   char *data, *tmpcmd;
-  SilcClientCommand *cmd;
+  SilcClientCommand cmd;
   SilcClientCommandContext ctx;
 
   g_return_if_fail(server != NULL);
 
   tmpcmd = g_strdup(command); 
   g_strup(tmpcmd);
-  cmd = silc_client_command_find(tmpcmd);
+  cmd = silc_client_command_find(silc_client, tmpcmd);
   g_free(tmpcmd);
   if (cmd == NULL)
     return;
@@ -351,7 +362,7 @@ void silc_command_exec(SILC_SERVER_REC *server,
   ctx->argv_types = argv_types;
   
   /* Execute command */
-  (*cmd->cb)(ctx, NULL);
+  silc_client_command_call(cmd, ctx);
 }
 
 /* Generic command function to call any SILC command directly. */

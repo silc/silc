@@ -95,7 +95,8 @@ void silc_client_send_channel_message(SilcClient client,
     for (i = 0; i < iv_len; i++) channel->iv[i] = 
 				   silc_rng_get_byte(client->rng);
   else
-    silc_hash_make(client->md5hash, channel->iv, iv_len, channel->iv);
+    silc_hash_make(client->internal->md5hash, channel->iv, iv_len, 
+		   channel->iv);
 
   /* Encode the channel payload. This also encrypts the message payload. */
   payload = silc_channel_message_payload_encode(flags, data_len, data, iv_len, 
@@ -181,9 +182,10 @@ static void silc_client_channel_message_cb(SilcClient client,
     message = silc_channel_message_get_data(res->payload, NULL);
     
     /* Pass the message to application */
-    client->ops->channel_message(client, conn, clients[0], channel,
-				 silc_channel_message_get_flags(res->payload),
-				 message);
+    client->internal->ops->channel_message(
+			       client, conn, clients[0], channel,
+			       silc_channel_message_get_flags(res->payload),
+			       message);
   }
 
  out:
@@ -297,9 +299,10 @@ void silc_client_channel_message(SilcClient client,
   message = silc_channel_message_get_data(payload, NULL);
 
   /* Pass the message to application */
-  client->ops->channel_message(client, conn, chu->client, channel,
-			       silc_channel_message_get_flags(payload),
-			       message);
+  client->internal->ops->channel_message(
+				 client, conn, chu->client, channel,
+				 silc_channel_message_get_flags(payload),
+				 message);
 
  out:
   if (id)
@@ -398,7 +401,9 @@ void silc_client_save_channel_key(SilcClientConnection conn,
   memcpy(channel->key, key, tmp_len);
 
   if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
-    conn->client->ops->say(conn->client, conn, SILC_CLIENT_MESSAGE_AUDIT,
+    conn->client->internal->ops->say(
+			   conn->client, conn, 
+			   SILC_CLIENT_MESSAGE_AUDIT,
 			   "Cannot talk to channel: unsupported cipher %s", 
 			   cipher);
     goto out;
@@ -493,7 +498,7 @@ int silc_client_add_channel_private_key(SilcClient client,
   /* Produce the key material */
   keymat = silc_calloc(1, sizeof(*keymat));
   if (silc_ske_process_key_material_data(key, key_len, 16, 256, 16, 
-					 client->md5hash, keymat) 
+					 client->internal->md5hash, keymat) 
       != SILC_SKE_STATUS_OK)
     return FALSE;
 

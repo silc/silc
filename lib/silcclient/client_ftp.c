@@ -76,12 +76,12 @@ SILC_TASK_CALLBACK(silc_client_ftp_connected)
   if (opt != 0) {
     if (ctx->tries < 2) {
       /* Connection failed but lets try again */
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		       "Could not connect to client %s: %s",
-		       ctx->host, strerror(opt));
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
-		       "Connecting to port %d of client %s resumed", 
-		       ctx->port, ctx->host);
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+				 "Could not connect to client %s: %s",
+				 ctx->host, strerror(opt));
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
+				 "Connecting to port %d of client %s resumed", 
+				 ctx->port, ctx->host);
 
       /* Unregister old connection try */
       silc_schedule_unset_listen_fd(client->schedule, fd);
@@ -93,9 +93,9 @@ SILC_TASK_CALLBACK(silc_client_ftp_connected)
       ctx->tries++;
     } else {
       /* Connection failed and we won't try anymore */
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		       "Could not connect to client %s: %s",
-		       ctx->host, strerror(opt));
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+				 "Could not connect to client %s: %s",
+				 ctx->host, strerror(opt));
       silc_schedule_unset_listen_fd(client->schedule, fd);
       silc_net_close_connection(fd);
       silc_schedule_task_del(client->schedule, ctx->task);
@@ -312,10 +312,11 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
 			       O_RDWR | O_CREAT | O_EXCL);
   if (session->fd < 0) {
     /* Call monitor callback */
-    session->client->ops->say(session->client, session->conn, 
-			      SILC_CLIENT_MESSAGE_ERROR, 
-			      "File `%s' open failed: %s", session->filepath,
-			      strerror(errno));
+    session->client->internal->ops->say(session->client, session->conn, 
+					SILC_CLIENT_MESSAGE_ERROR, 
+					"File `%s' open failed: %s", 
+					session->filepath,
+					strerror(errno));
 
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
@@ -918,9 +919,9 @@ silc_client_file_receive(SilcClient client,
     session->listener = silc_net_create_server(0, session->hostname);
     if (session->listener < 0) {
       SILC_LOG_DEBUG(("Could not create listener"));
-      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR, 
-		       "Cannot create listener on %s: %s", 
-		       session->hostname, strerror(errno));
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR, 
+				 "Cannot create listener on %s: %s", 
+				 session->hostname, strerror(errno));
       return SILC_CLIENT_FILE_ERROR;
     }
     session->port = silc_net_get_local_port(session->listener);
@@ -1034,8 +1035,8 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
     silc_dlist_add(conn->ftp_sessions, session);
 
     /* Let the application know */
-    client->ops->ftp(client, conn, client_entry,
-		     session->session_id, hostname, port);
+    client->internal->ops->ftp(client, conn, client_entry,
+			       session->session_id, hostname, port);
 
     if (hostname && port) {
       session->hostname = strdup(hostname);
