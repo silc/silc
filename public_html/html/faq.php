@@ -610,8 +610,8 @@ decrypt channel messages.  To set the key for the channel use the KEY command.
 Every user on the channel must do the same thing and set the same key.
 If some user on the channel does not set the key (or does not know the key)
 he won't be able to see any messages on the channel.  Give the command: 
-<samp class="highlight">/KEY CHANNEL set verysecretkey</samp>.  This 
-command will set the `verysecretkey' passphrase as key on current channel.
+<samp class="highlight">/KEY CHANNEL #channel set verysecretkey</samp>.  
+This  command will set the `verysecretkey' passphrase as key to #channel.
 How exactly other users will know this key is out of scope of the SILC
 protocol.  SILC does not provide yet a possibility of negotiating secret key
 with many users at the same time.  For this reason the secret key on the
