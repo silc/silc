@@ -150,6 +150,7 @@
 #include "silccommand.h"
 #include "silcchannel.h"
 #include "silcpacket.h"
+#include "silcnotify.h"
 
 #ifdef SILC_SIM
 /* SILC Module library includes */
@@ -163,3 +164,4 @@
 #include "groups.h"
 
 #endif
+

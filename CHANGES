@@ -1,3 +1,28 @@
+Thu Sep 28 23:40:19 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Applied cras's patch to add silc_schedule_one function.  The
+	  function runs scheduler once and returns.
+
+	* Fixed the scheduler after cras messed it up.  The timeout
+	  handling works now as it's supposed to work.
+
+	* Added into lib/silccore/ silcnotify.h to include notify
+	  message types support.  Changed silc_server_send_notify*
+	  functions, in server.[ch], to support those new notify types.
+	  Added the support for the notify types into client library,
+	  as well.  Added new notify client operation into ops.h in
+	  lib/silcclient/.
+
+	* Changed silc_server_packet_send_to_channel to send normal
+	  packets instead of just channel message packets.  The function
+	  is now used to send the notify packets to channels.  It is not
+	  used to send channel message packets anymore, as server never
+	  sends them anymore.
+
+	* Added explicit casting into lib/silcutil/silcbuffmt.c to few
+	  va_arg()s as it seems to require it nowadays.  I guess, if SILC
+	  is compiled with older va_arg() the new code should work anyway.
+
 Wed Sep 13 18:10:14 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Splitted core library.  Core library (lib/silccore) includes

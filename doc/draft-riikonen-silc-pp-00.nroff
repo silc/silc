@@ -936,6 +936,8 @@ Notify Payload.
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|          Notify Type          |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
 |                                                               |
 ~                        Notify Message                         ~
 |                                                               |
@@ -947,6 +949,9 @@ Figure 7:  Notify Payload
 
 
 .in 6
+o Notify Type (2 bytes) - Indicates the type of the notify
+  message.
+
 o Notify Message (variable length) - Human readable notify
   message.
 .in 3
