@@ -367,6 +367,7 @@ SILC_CLIENT_CMD_FUNC(nick_change)
     if (conn->nickname)
       silc_free(conn->nickname);
     conn->nickname = strdup(cmd->argv[1]);
+    conn->local_entry->nickname = conn->nickname;
     COMMAND;
   } else {
     COMMAND_ERROR;

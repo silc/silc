@@ -1,3 +1,8 @@
+Tue Nov 13 00:49:17 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Update conn->local_entry->nickname after giving NICK
+	  command.  Affected file lib/silcclient/command.c.
+
 Sun Nov 11 23:56:39 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Save fingerprint in WHOIS command reply in server.
