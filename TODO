@@ -74,21 +74,6 @@ TODO/bugs In SILC Libraries
    more (silcpkcs.h).
 
 
-TODO in the protocol before SILC 0.x
-====================================
-
- o New commands and features in the commands
-   (draft-riikonen-silc-spec-xx.txt):
-
-	o Define GETKEY command to fetch the public key of a server
-	  and/or a client in the SILC Network.
-	o Define SENDKEY command to send your public key to a client
-	  in the network.  Sending to the server must not be done due
-	  to various security reasons (the server must not trust the
-	  public keys blindly without third party verification; that's
-	  why SENDKEY is not for servers).
-
-
 TODO After 1.0
 ==============
 

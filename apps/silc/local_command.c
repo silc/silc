@@ -90,7 +90,6 @@ SILC_CLIENT_LCMD_FUNC(version)
    private messages are not really commands, they are message packets,
    however, on user interface it is convenient to show them as commands
    as that is the common way of sending private messages (like in IRC). */
-/* XXX supports only one destination */
 
 SILC_CLIENT_LCMD_FUNC(msg)
 {

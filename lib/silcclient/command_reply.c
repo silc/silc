@@ -57,12 +57,13 @@ SilcClientCommandReply silc_command_reply_list[] =
   SILC_CLIENT_CMD_REPLY(cmode, CMODE),
   SILC_CLIENT_CMD_REPLY(cumode, CUMODE),
   SILC_CLIENT_CMD_REPLY(kick, KICK),
+  SILC_CLIENT_CMD_REPLY(ban, BAN),
   SILC_CLIENT_CMD_REPLY(close, CLOSE),
   SILC_CLIENT_CMD_REPLY(shutdown, SHUTDOWN),
   SILC_CLIENT_CMD_REPLY(silcoper, SILCOPER),
   SILC_CLIENT_CMD_REPLY(leave, LEAVE),
   SILC_CLIENT_CMD_REPLY(users, USERS),
-  SILC_CLIENT_CMD_REPLY(ban, BAN),
+  SILC_CLIENT_CMD_REPLY(getkey, GETKEY),
 
   { NULL, 0 },
 };
@@ -106,6 +107,7 @@ const SilcCommandStatusMessage silc_command_status_messages[] = {
   { STAT(BAD_CHANNEL),     "Bad channel name" },
   { STAT(AUTH_FAILED),     "Authentication failed" },
   { STAT(UNKNOWN_ALGORITHM), "Unsupported algorithm" },
+  { STAT(NO_SUCH_SERVER_ID), "No such Server ID" },
 
   { 0, NULL }
 };
@@ -1396,6 +1398,59 @@ SILC_CLIENT_CMD_REPLY_FUNC(connect)
   silc_client_command_reply_free(cmd);
 }
 
+SILC_CLIENT_CMD_REPLY_FUNC(ban)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcCommandStatus status;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelEntry channel;
+  SilcChannelID *channel_id;
+  unsigned char *tmp;
+  uint32 len;
+
+  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    cmd->client->ops->say(cmd->client, conn,
+	     "%s", silc_client_command_status_message(status));
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+
+  /* Take Channel ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
+  if (!tmp)
+    goto out;
+
+  channel_id = silc_id_payload_parse_id(tmp, len);
+  if (!channel_id)
+    goto out;
+
+  /* Get the channel entry */
+  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				   SILC_ID_CHANNEL, &id_cache)) {
+    silc_free(channel_id);
+    COMMAND_REPLY_ERROR;
+    goto out;
+  }
+  
+  channel = (SilcChannelEntry)id_cache->context;
+
+  /* Get the ban list */
+  tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS, channel, tmp));
+
+  /* Execute any pending command callbacks */
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_BAN);
+
+ out:
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_BAN);
+  silc_client_command_reply_free(cmd);
+}
+
 SILC_CLIENT_CMD_REPLY_FUNC(close)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
@@ -1652,16 +1707,26 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   silc_client_command_reply_free(cmd);
 }
 
-SILC_CLIENT_CMD_REPLY_FUNC(ban)
+/* Received command reply to GETKEY command. WE've received the remote
+   client's public key. */
+
+SILC_CLIENT_CMD_REPLY_FUNC(getkey)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcCommandStatus status;
-  SilcIDCacheEntry id_cache = NULL;
-  SilcChannelEntry channel;
-  SilcChannelID *channel_id;
-  unsigned char *tmp;
+  SilcIDCacheEntry id_cache;
+  SilcIDPayload idp = NULL;
+  SilcClientID *client_id = NULL;
+  SilcClientEntry client_entry;
+  SilcSKEPKType type;
+  unsigned char *tmp, *pk;
   uint32 len;
+  uint16 pk_len;
+  SilcIdType id_type;
+  SilcPublicKey public_key = NULL;
+
+  SILC_LOG_DEBUG(("Start"));
 
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
@@ -1672,35 +1737,55 @@ SILC_CLIENT_CMD_REPLY_FUNC(ban)
     goto out;
   }
 
-  /* Take Channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!tmp)
     goto out;
-
-  channel_id = silc_id_payload_parse_id(tmp, len);
-  if (!channel_id)
+  idp = silc_id_payload_parse_data(tmp, len);
+  if (!idp)
     goto out;
 
-  /* Get the channel entry */
-  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				   SILC_ID_CHANNEL, &id_cache)) {
-    silc_free(channel_id);
-    COMMAND_REPLY_ERROR;
+  /* Get the public key payload */
+  tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
+  if (!tmp)
+    goto out;
+
+  /* Decode the public key */
+
+  SILC_GET16_MSB(pk_len, tmp);
+  SILC_GET16_MSB(type, tmp + 2);
+  pk = tmp + 4;
+
+  if (type != SILC_SKE_PK_TYPE_SILC)
+    goto out;
+
+  if (!silc_pkcs_public_key_decode(pk, pk_len, &public_key))
+    goto out;
+
+  id_type = silc_id_payload_get_type(idp);
+  if (id_type == SILC_ID_CLIENT) {
+    client_id = silc_id_payload_get_id(idp);
+
+    if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
+				     SILC_ID_CLIENT, &id_cache))
+      goto out;
+
+    client_entry = (SilcClientEntry)id_cache->context;
+
+    /* Notify application */
+    COMMAND_REPLY((ARGS, id_type, client_entry, public_key));
+  } else if (id_type == SILC_ID_SERVER) {
+    /* XXX we don't have server entries at all */
+    goto out;
+  } else {
     goto out;
   }
-  
-  channel = (SilcChannelEntry)id_cache->context;
-
-  /* Get the ban list */
-  tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
-
-  /* Notify application */
-  COMMAND_REPLY((ARGS, channel, tmp));
-
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_BAN);
 
  out:
-  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_BAN);
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_GETKEY);
+  if (idp)
+    silc_id_payload_free(idp);
+  if (public_key)
+    silc_pkcs_public_key_free(public_key);
+  silc_free(client_id);
   silc_client_command_reply_free(cmd);
 }

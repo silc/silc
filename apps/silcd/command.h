@@ -154,5 +154,6 @@ SILC_SERVER_CMD_FUNC(shutdown);
 SILC_SERVER_CMD_FUNC(silcoper);
 SILC_SERVER_CMD_FUNC(leave);
 SILC_SERVER_CMD_FUNC(users);
+SILC_SERVER_CMD_FUNC(getkey);
 
 #endif

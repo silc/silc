@@ -57,6 +57,7 @@ SilcClientCommand silc_command_list[] =
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_SILC_OPER, 3),
   SILC_CLIENT_CMD(leave, LEAVE, "LEAVE", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(users, USERS, "USERS", SILC_CF_LAG | SILC_CF_REG, 2),
+  SILC_CLIENT_CMD(getkey, GETKEY, "GETKEY", SILC_CF_LAG | SILC_CF_REG, 2),
 
   { NULL, 0, NULL, 0, 0 },
 };
@@ -2042,6 +2043,67 @@ SILC_CLIENT_CMD_FUNC(users)
     cmd->pending = TRUE;
     return;
   }
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
+}
+
+/* Command GETKEY. Used to fetch remote client's public key. */
+
+SILC_CLIENT_CMD_FUNC(getkey)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcClient client = cmd->client;
+  SilcClientEntry client_entry = NULL;
+  uint32 num = 0;
+  char *nickname = NULL, *server = NULL;
+  SilcBuffer idp, buffer;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 2) {
+    client->ops->say(client, conn, "Usage: /GETKEY <nickname>");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  /* Parse the typed nickname. */
+  if (!silc_parse_nickname(cmd->argv[1], &nickname, &server, &num)) {
+    client->ops->say(client, conn, "Bad nickname");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  /* Find client entry */
+  client_entry = silc_idlist_get_client(client, conn, nickname, server, num,
+					TRUE);
+  if (!client_entry) {
+    /* Client entry not found, it was requested thus mark this to be
+       pending command. */
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+				conn->cmd_ident,  
+				silc_client_command_destructor,
+				silc_client_command_getkey, 
+				silc_client_command_dup(cmd));
+    cmd->pending = 1;
+    return;
+  }
+
+  idp = silc_id_payload_encode(client_entry->id, SILC_ID_CLIENT);
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_GETKEY, 0, 1, 
+					  1, idp->data, idp->len);
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+  silc_buffer_free(idp);
 
   /* Notify application */
   COMMAND;

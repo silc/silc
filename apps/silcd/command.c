@@ -71,6 +71,7 @@ SilcServerCommand silc_command_list[] =
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_SILC_OPER),
   SILC_SERVER_CMD(leave, LEAVE, SILC_CF_LAG_STRICT | SILC_CF_REG),
   SILC_SERVER_CMD(users, USERS, SILC_CF_LAG | SILC_CF_REG),
+  SILC_SERVER_CMD(getkey, GETKEY, SILC_CF_LAG | SILC_CF_REG),
 
   { NULL, 0 },
 };
@@ -4757,5 +4758,169 @@ SILC_SERVER_CMD_FUNC(users)
   silc_free(id);
 
  out:
+  silc_server_command_free(cmd);
+}
+
+/* Server side of command GETKEY. This fetches the client's public key
+   from the server where to the client is connected. */
+
+SILC_SERVER_CMD_FUNC(getkey)
+{
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcBuffer packet;
+  SilcClientEntry client;
+  SilcServerEntry server_entry;
+  SilcClientID *client_id = NULL;
+  SilcServerID *server_id = NULL;
+  SilcIDPayload idp = NULL;
+  uint16 ident = silc_command_get_ident(cmd->payload);
+  unsigned char *tmp;
+  uint32 tmp_len;
+  SilcBuffer pk;
+  SilcIdType id_type;
+
+  tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  if (!tmp) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_GETKEY,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+  idp = silc_id_payload_parse_data(tmp, tmp_len);
+  if (!idp) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_GETKEY,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+
+  id_type = silc_id_payload_get_type(idp);
+  if (id_type == SILC_ID_CLIENT) {
+    client_id = silc_id_payload_get_id(idp);
+
+    /* If the client is not found from local list there is no chance it
+       would be locally connected client so send the command further. */
+    client = silc_idlist_find_client_by_id(server->local_list, 
+					   client_id, NULL);
+    
+    if ((!client && !cmd->pending && !server->standalone) ||
+	(client && !client->connection)) {
+      SilcBuffer tmpbuf;
+      uint16 old_ident;
+      SilcSocketConnection dest_sock;
+      
+      dest_sock = silc_server_get_client_route(server, NULL, 0, 
+					       client_id, NULL);
+      if (!dest_sock)
+	goto out;
+      
+      old_ident = silc_command_get_ident(cmd->payload);
+      silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
+      tmpbuf = silc_command_payload_encode_payload(cmd->payload);
+      
+      silc_server_packet_send(server, dest_sock,
+			      SILC_PACKET_COMMAND, cmd->packet->flags,
+			      tmpbuf->data, tmpbuf->len, TRUE);
+      
+      /* Reprocess this packet after received reply from router */
+      silc_server_command_pending(server, SILC_COMMAND_GETKEY, 
+				  silc_command_get_ident(cmd->payload),
+				  silc_server_command_destructor,
+				  silc_server_command_getkey,
+				  silc_server_command_dup(cmd));
+      cmd->pending = TRUE;
+      
+      silc_command_set_ident(cmd->payload, old_ident);
+      silc_buffer_free(tmpbuf);
+      return;
+    }
+
+    if (!client && cmd->pending) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_GETKEY,
+					    SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
+      goto out;
+    }
+
+    /* The client is locally connected, just get the public key and
+       send it back. */
+    tmp = silc_pkcs_public_key_encode(client->data.public_key, &tmp_len);
+    pk = silc_buffer_alloc(4 + tmp_len);
+    silc_buffer_pull_tail(pk, SILC_BUFFER_END(pk));
+    silc_buffer_format(pk,
+		       SILC_STR_UI_SHORT(tmp_len),
+		       SILC_STR_UI_SHORT(SILC_SKE_PK_TYPE_SILC),
+		       SILC_STR_UI_XNSTRING(tmp, tmp_len),
+		       SILC_STR_END);
+    silc_free(tmp);
+
+  } else if (id_type == SILC_ID_SERVER) {
+    server_id = silc_id_payload_get_id(idp);
+
+    /* If the server is not found from local list there is no chance it
+       would be locally connected server so send the command further. */
+    server_entry = silc_idlist_find_server_by_id(server->local_list, 
+						 server_id, NULL);
+    
+    if ((!server_entry && !cmd->pending && !server->standalone) ||
+	(server_entry && !server_entry->connection)) {
+      SilcBuffer tmpbuf;
+      uint16 old_ident;
+      
+      old_ident = silc_command_get_ident(cmd->payload);
+      silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
+      tmpbuf = silc_command_payload_encode_payload(cmd->payload);
+      
+      silc_server_packet_send(server, server->router->connection,
+			      SILC_PACKET_COMMAND, cmd->packet->flags,
+			      tmpbuf->data, tmpbuf->len, TRUE);
+      
+      /* Reprocess this packet after received reply from router */
+      silc_server_command_pending(server, SILC_COMMAND_GETKEY, 
+				  silc_command_get_ident(cmd->payload),
+				  silc_server_command_destructor,
+				  silc_server_command_getkey,
+				  silc_server_command_dup(cmd));
+      cmd->pending = TRUE;
+      
+      silc_command_set_ident(cmd->payload, old_ident);
+      silc_buffer_free(tmpbuf);
+      return;
+    }
+
+    if (!server_entry && cmd->pending) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_GETKEY,
+					    SILC_STATUS_ERR_NO_SUCH_SERVER_ID);
+      goto out;
+    }
+
+    /* The client is locally connected, just get the public key and
+       send it back. */
+    tmp = silc_pkcs_public_key_encode(server_entry->data.public_key, &tmp_len);
+    pk = silc_buffer_alloc(4 + tmp_len);
+    silc_buffer_pull_tail(pk, SILC_BUFFER_END(pk));
+    silc_buffer_format(pk,
+		       SILC_STR_UI_SHORT(tmp_len),
+		       SILC_STR_UI_SHORT(SILC_SKE_PK_TYPE_SILC),
+		       SILC_STR_UI_XNSTRING(tmp, tmp_len),
+		       SILC_STR_END);
+    silc_free(tmp);
+  } else {
+    goto out;
+  }
+
+  tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_GETKEY,
+						SILC_STATUS_OK, ident, 2,
+						2, tmp, tmp_len,
+						3, pk->data, pk->len);
+  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
+			  packet->data, packet->len, FALSE);
+  silc_buffer_free(packet);
+  silc_buffer_free(pk);
+
+ out:
+  if (idp)
+    silc_id_payload_free(idp);
+  silc_free(client_id);
+  silc_free(server_id);
   silc_server_command_free(cmd);
 }

@@ -81,6 +81,7 @@ Table of Contents
             2.3.2.1 ID Payload .................................. 16
             2.3.2.2 Argument Payload ............................ 16
             2.3.2.3 Channel Payload ............................. XXX
+            2.3.2.4 Public Key Payload .......................... XXX
       2.3.3 Disconnect Payload .................................. 17
       2.3.4 Success Payload ..................................... 18
       2.3.5 Failure Payload ..................................... 18
@@ -124,22 +125,23 @@ Figure 2:   SILC Packet Header
 Figure 3:   ID Payload
 Figure 4:   Argument Payload
 Figure 5:   Channel Payload
-Figure 6:   Disconnect Payload
-Figure 7:   Success Payload
-Figure 8:   Failure Payload
-Figure 9:   Reject Payload
-Figure 10:  Notify Payload
-Figure 11:  Error Payload
-Figure 12:  Channel Message Payload
-Figure 13:  Channel Key Payload
-Figure 14:  Private Message Payload
-Figure 15:  Private Message Key Payload
-Figure 16:  Command Payload
-Figure 17:  Connection Auth Request Payload
-Figure 18:  New Client Payload
-Figure 19:  New Server Payload
-Figure 20:  Key Agreement Payload
-Figure 21:  Cell Routers Payload
+Figure 6:   Public Key Payload
+Figure 7:   Disconnect Payload
+Figure 8:   Success Payload
+Figure 9:   Failure Payload
+Figure 10:   Reject Payload
+Figure 11:  Notify Payload
+Figure 12:  Error Payload
+Figure 13:  Channel Message Payload
+Figure 14:  Channel Key Payload
+Figure 15:  Private Message Payload
+Figure 16:  Private Message Key Payload
+Figure 17:  Command Payload
+Figure 18:  Connection Auth Request Payload
+Figure 19:  New Client Payload
+Figure 20:  New Server Payload
+Figure 21:  Key Agreement Payload
+Figure 22:  Cell Routers Payload
 
 
 .ti 0
@@ -916,6 +918,45 @@ o Mode Mask (4 bytes) - A mode.  This can be the mode of the
 
 
 .ti 0
+2.3.2.4 Public Key Payload
+
+Generic Public Key Payload may be used to send different types of
+public keys and certificates.
+
+The following diagram represents the Channel Payload Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       Public Key Length       |        Public Key Type        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~            Public Key of the party (or certificate)           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 6:  Public Key Payload
+
+
+.in 6
+o Public Key Length (2 bytes) - The length of the Public Key
+  (or certificate) field, not including any other field.
+
+o Public Key Type (2 bytes) - The public key (or certificate) 
+  type.  This field indicates the type of the public key in 
+  the packet.  See the [SILC3] for defined public key types.
+
+o Public Key (or certicicate) (variable length) - The
+  public key or certificate.
+.in 3
+
+
+.ti 0
 2.3.3 Disconnect Payload
 
 Disconnect payload is sent upon disconnection.  The payload is simple;
@@ -943,7 +984,7 @@ the Disconnect Payload.
 .in 3
 
 .ce
-Figure 6:  Disconnect Payload
+Figure 7:  Disconnect Payload
 
 
 
@@ -973,7 +1014,7 @@ This maybe any data, including binary or human readable data.
 .in 3
 
 .ce
-Figure 7:  Success Payload
+Figure 8:  Success Payload
 
 
 .in 6
@@ -1005,7 +1046,7 @@ some protocol is sent in the payload.
 .in 3
 
 .ce
-Figure 8:  Failure Payload
+Figure 9:  Failure Payload
 
 
 .in 6
@@ -1039,7 +1080,7 @@ may be binary or human readable data.
 .in 3
 
 .ce
-Figure 9:  Reject Payload
+Figure 10:  Reject Payload
 
 
 .in 6
@@ -1080,7 +1121,7 @@ Notify Payload.
 .in 3
 
 .ce
-Figure 10:  Notify Payload
+Figure 11:  Notify Payload
 
 
 .in 6
@@ -1376,7 +1417,7 @@ that the client takes error packet seriously.
 .in 3
 
 .ce
-Figure 11:  Error Payload
+Figure 12:  Error Payload
 
 
 .in 6
@@ -1451,7 +1492,7 @@ represents the Channel Message Payload.
 .in 3
 
 .ce
-Figure 12:  Channel Message Payload
+Figure 13:  Channel Message Payload
 
 
 .in 6
@@ -1604,7 +1645,7 @@ represents the Channel Key Payload.
 .in 3
 
 .ce
-Figure 13:  Channel Key Payload
+Figure 14:  Channel Key Payload
 
 
 
@@ -1688,7 +1729,7 @@ diagram represents the Private Message Payload.
 .in 3
 
 .ce
-Figure 14:  Private Message Payload
+Figure 15:  Private Message Payload
 
 
 .in 6
@@ -1765,7 +1806,7 @@ diagram represents the Private Message Key Payload.
 .in 3
 
 .ce
-Figure 15:  Private Message Key Payload
+Figure 16:  Private Message Key Payload
 
 
 
@@ -1810,7 +1851,7 @@ represents the Command Payload.
 .in 3
 
 .ce
-Figure 16:  Command Payload
+Figure 17:  Command Payload
 
 
 .in 6
@@ -1892,7 +1933,7 @@ diagram represents the Connection Auth Request Payload.
 .in 3
 
 .ce
-Figure 17:  Connection Auth Request Payload
+Figure 18:  Connection Auth Request Payload
 
 
 .in 6
@@ -2010,7 +2051,7 @@ represents the New Client Payload.
 .in 3
 
 .ce
-Figure 18:  New Client Payload
+Figure 19:  New Client Payload
 
 
 .in 6
@@ -2065,7 +2106,7 @@ the New Server Payload.
 .in 3
 
 .ce
-Figure 19:  New Server Payload
+Figure 20:  New Server Payload
 
 
 .in 6
@@ -2139,7 +2180,7 @@ represents the Key Agreement Payload.
 .in 3
 
 .ce
-Figure 20:  Key Agreement Payload
+Figure 21:  Key Agreement Payload
 
 
 .in 6
@@ -2205,7 +2246,7 @@ represents the Cell Routers Payload.
 .in 3
 
 .ce
-Figure 21:  Cell Routers Payload
+Figure 22:  Cell Routers Payload
 
 
 .in 6

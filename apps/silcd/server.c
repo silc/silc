@@ -3426,7 +3426,7 @@ void silc_server_save_users_on_channel(SilcServer server,
   }
 }
 
-/* Lookups route to the client indicated by `id' client ID. The connection
+/* Lookups route to the client indicated by the `id_data'. The connection
    object and internal data object is returned. Returns NULL if route
    could not be found to the client. If the `client_id' is specified then
    it is used and the `id_data' is ignored. */
@@ -3468,12 +3468,14 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
       /* We are of course in this case the client's router thus the real
 	 "router" of the client is the server who owns the client. Thus
 	 we will send the packet to that server. */
-      *idata = (SilcIDListData)client->router;
+      if (idata)
+	*idata = (SilcIDListData)client->router;
       return client->router->connection;
     }
 
     /* Seems that client really is directly connected to us */
-    *idata = (SilcIDListData)client;
+    if (idata)
+      *idata = (SilcIDListData)client;
     return client->connection;
   }
 
@@ -3481,7 +3483,8 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
      server our action is to send the packet to our router. */
   if (server->server_type == SILC_SERVER && !server->standalone) {
     silc_free(id);
-    *idata = (SilcIDListData)server->router;
+    if (idata)
+      *idata = (SilcIDListData)server->router;
     return server->router->connection;
   }
 
@@ -3496,7 +3499,8 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
       dst_sock = silc_server_route_get(server, id, SILC_ID_CLIENT);
 
       silc_free(id);
-      *idata = (SilcIDListData)dst_sock->user_data;
+      if (idata)
+	*idata = (SilcIDListData)dst_sock->user_data;
       return dst_sock;
     }
   }

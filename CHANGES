@@ -1,10 +1,20 @@
-Sun Apr  8 15:30:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+Sun Apr  8 19:30:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Made the key generation options to the silcd program.  Added
 	  -C option, equivalent to client's option.
 
 	* Added new [ServerKeys] config section to the server.  It
 	  configures the server's public and private key.
+
+	* Defined generic Public Key Payload into the protocol
+	  specification to send specific type of public keys and
+	  certificates.
+
+	* Defined new command SILC_COMMAND_GETKEY to fetch a client's
+	  public key or certificate.
+
+	* Implemented the GETKEY command to the server and to the
+	  client library and on user interface.
 
 Sun Apr  8 01:37:21 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 

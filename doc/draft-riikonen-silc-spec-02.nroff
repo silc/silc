@@ -3238,6 +3238,34 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NOT_ON_CHANNEL
 
 
+   26   SILC_COMMAND_GETKEY
+
+        Max Arguments:  1
+            Arguments:  (1) <ID Payload>
+
+        This command is used to fetch the public key of the client or
+        server indicated by the <ID Payload>.  The public key is fetched
+        from the server where to the client is connected.
+
+        Reply messages to the command:
+
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>      (2) <ID Payload>
+                        (3) <Public Key Payload>
+
+        This command replies with the client's or server's ID and with
+        the <Public Key Payload>.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+            SILC_STATUS_ERR_NO_SUCH_SERVER_ID
+
+
    27 - 199
 
         Currently undefined commands.
@@ -3515,6 +3543,11 @@ List of all defined command status messages following.
 
         "The algorithm was not supported."  The server does not support the
         requested algorithm.
+
+   47   SILC_STATUS_ERR_NO_SUCH_SERVER_ID
+
+        "No such Server ID".  Server ID provided does not exist.
+
 .in 3
 
 

@@ -41,7 +41,9 @@ void silc_connect(SilcClient client, SilcClientConnection conn, int success);
 void silc_disconnect(SilcClient client, SilcClientConnection conn);
 unsigned char *silc_ask_passphrase(SilcClient client, 
 				   SilcClientConnection conn);
-int silc_verify_server_key(SilcClient client, SilcClientConnection conn, 
+int silc_verify_public_key(SilcClient client,
+			   SilcClientConnection conn, 
+			   SilcSocketType conn_type,
 			   unsigned char *pk, uint32 pk_len,
 			   SilcSKEPKType pk_type);
 int silc_get_auth_method(SilcClient client, SilcClientConnection conn,

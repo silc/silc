@@ -56,6 +56,7 @@ SilcServerCommandReply silc_command_reply_list[] =
   SILC_SERVER_CMD_REPLY(motd, MOTD),
   SILC_SERVER_CMD_REPLY(join, JOIN),
   SILC_SERVER_CMD_REPLY(users, USERS),
+  SILC_SERVER_CMD_REPLY(getkey, GETKEY),
 
   { NULL, 0 },
 };
@@ -885,7 +886,92 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
   SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_USERS);
-  if (channel_id)
-    silc_free(channel_id);
+  silc_free(channel_id);
+  silc_server_command_reply_free(cmd);
+}
+
+SILC_SERVER_CMD_REPLY_FUNC(getkey)
+{
+  SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
+  SilcServer server = cmd->server;
+  SilcCommandStatus status;
+  SilcClientEntry client = NULL;
+  SilcServerEntry server_entry = NULL;
+  SilcClientID *client_id = NULL;
+  SilcServerID *server_id = NULL;
+  SilcSKEPKType type;
+  unsigned char *tmp, *pk;
+  uint32 len;
+  uint16 pk_len;
+  SilcIDPayload idp = NULL;
+  SilcIdType id_type;
+  SilcPublicKey public_key = NULL;
+
+  COMMAND_CHECK_STATUS;
+
+  tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
+  if (!tmp)
+    goto out;
+  idp = silc_id_payload_parse_data(tmp, len);
+  if (!idp)
+    goto out;
+
+  /* Get the public key payload */
+  tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
+  if (!tmp)
+    goto out;
+
+  /* Decode the public key */
+
+  SILC_GET16_MSB(pk_len, tmp);
+  SILC_GET16_MSB(type, tmp + 2);
+  pk = tmp + 4;
+
+  if (type != SILC_SKE_PK_TYPE_SILC)
+    goto out;
+
+  if (!silc_pkcs_public_key_decode(pk, pk_len, &public_key))
+    goto out;
+
+  id_type = silc_id_payload_get_type(idp);
+  if (id_type == SILC_ID_CLIENT) {
+    client_id = silc_id_payload_get_id(idp);
+
+    client = silc_idlist_find_client_by_id(server->local_list, client_id,
+					   NULL);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->global_list, 
+					     client_id, NULL);
+      if (!client)
+	goto out;
+    }
+
+    client->data.public_key = public_key;
+  } else if (id_type == SILC_ID_SERVER) {
+    server_id = silc_id_payload_get_id(idp);
+
+    server_entry = silc_idlist_find_server_by_id(server->local_list, server_id,
+						 NULL);
+    if (!server_entry) {
+      server_entry = silc_idlist_find_server_by_id(server->global_list, 
+						   server_id, NULL);
+      if (!server_entry)
+	goto out;
+    }
+
+    server_entry->data.public_key = public_key;
+  } else {
+    goto out;
+  }
+
+ out:
+  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
+  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_USERS);
+  if (idp)
+    silc_id_payload_free(idp);
+  silc_free(client_id);
+  silc_free(server_id);
+  if (public_key)
+    silc_pkcs_public_key_free(public_key);
   silc_server_command_reply_free(cmd);
 }

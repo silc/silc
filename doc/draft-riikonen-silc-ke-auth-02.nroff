@@ -471,6 +471,9 @@ o Public Key Type (2 bytes) - The public key (or certificate)
   sending SILC_PACKET_FAILURE message and the connection should
   be closed immediately.
 
+o Public Key (or certicicate) (variable length) - The
+  public key or certificate.
+
 o Public Data Length (2 bytes) - The length of the Public Data
   field, not including any other field.
 

@@ -85,6 +85,7 @@ typedef enum {
 #define SILC_COMMAND_SILCOPER	        23
 #define SILC_COMMAND_LEAVE		24
 #define SILC_COMMAND_USERS		25
+#define SILC_COMMAND_GETKEY		26
 
 /* Reserved */
 #define SILC_COMMAND_RESERVED           255
@@ -134,6 +135,7 @@ typedef uint16 SilcCommandStatus;
 #define SILC_STATUS_ERR_BAD_CHANNEL         44
 #define SILC_STATUS_ERR_AUTH_FAILED         45
 #define SILC_STATUS_ERR_UNKNOWN_ALGORITHM   46
+#define SILC_STATUS_ERR_NO_SUCH_SERVER_ID   47
 
 /* Prototypes */
 SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer);

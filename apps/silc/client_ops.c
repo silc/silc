@@ -893,6 +893,28 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       }
       break;
 
+    case SILC_COMMAND_GETKEY:
+      {
+	SilcIdType id_type;
+	void *entry;
+	SilcPublicKey public_key;
+	unsigned char *pk;
+	uint32 pk_len;
+
+	id_type = va_arg(vp, SilcIdType);
+	entry = va_arg(vp, void *);
+	public_key = va_arg(vp, SilcPublicKey);
+
+	pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+
+	if (id_type == SILC_ID_CLIENT) {
+	  silc_verify_public_key(client, conn, SILC_SOCKET_TYPE_CLIENT,
+				 pk, pk_len, SILC_SKE_PK_TYPE_SILC);
+	}
+
+	silc_free(pk);
+      }
+
     default:
       break;
     }
