@@ -4,7 +4,7 @@ Quick Installation
    To configure and compile SILC package give the comands:
 
 	./configure
-	make (or gmake)
+	make (or gmake, GNU make is required)
 	make install
 
    This will install the SILC binaries and configuration files into the
