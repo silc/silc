@@ -563,6 +563,14 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   if (!schedule->is_locked)
     SILC_SCHEDULE_LOCK(schedule);
 
+  /* Deliver signals if any has been set to be called */
+  if (schedule->signal_tasks) {
+    SILC_SCHEDULE_UNLOCK(schedule);
+    silc_schedule_internal_signals_call(schedule->internal, schedule);
+    schedule->signal_tasks = FALSE;
+    SILC_SCHEDULE_LOCK(schedule);
+  }
+
   /* If the task queues aren't initialized or we aren't valid anymore
      we will return */
   if ((!schedule->fd_queue && !schedule->timeout_queue 
@@ -586,12 +594,6 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   }
 
   SILC_SCHEDULE_UNLOCK(schedule);
-
-  /* Deliver signals if any has been set to be called */
-  if (schedule->signal_tasks) {
-    silc_schedule_internal_signals_call(schedule->internal, schedule);
-    schedule->signal_tasks = FALSE;
-  }
 
   /* This is the main select(). The program blocks here until some
      of the selected file descriptors change status or the selected

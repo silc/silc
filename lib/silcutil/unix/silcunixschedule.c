@@ -171,15 +171,19 @@ void silc_schedule_internal_signal_register(void *context,
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   int i;
 
+  sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
+
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (!internal->signal_call[i].signal) {
       internal->signal_call[i].signal = signal;
       internal->signal_call[i].callback = callback;
       internal->signal_call[i].context = callback_context;
       internal->signal_call[i].call = FALSE;
+      break;
     }
   }
 
+  sigprocmask(SIG_SETMASK, &internal->signals_blocked, NULL);
   sigaddset(&internal->signals, signal);
 }
 
@@ -190,6 +194,8 @@ void silc_schedule_internal_signal_unregister(void *context,
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   int i;
+
+  sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (internal->signal_call[i].signal == signal &&
@@ -202,6 +208,7 @@ void silc_schedule_internal_signal_unregister(void *context,
     }
   }
 
+  sigprocmask(SIG_SETMASK, &internal->signals_blocked, NULL);
   sigdelset(&internal->signals, signal);
 }
 
@@ -212,10 +219,14 @@ void silc_schedule_internal_signal_call(void *context, SilcUInt32 signal)
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   int i;
 
+  sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
+
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (internal->signal_call[i].signal == signal)
       internal->signal_call[i].call = TRUE;
   }
+
+  sigprocmask(SIG_SETMASK, &internal->signals_blocked, NULL);
 }
                                         
 /* Call all signals */
@@ -226,6 +237,8 @@ void silc_schedule_internal_signals_call(void *context,
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   int i;
 
+  sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
+
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (internal->signal_call[i].call &&
         internal->signal_call[i].callback) {
@@ -235,6 +248,8 @@ void silc_schedule_internal_signals_call(void *context,
       internal->signal_call[i].call = FALSE;
     }
   }
+
+  sigprocmask(SIG_SETMASK, &internal->signals_blocked, NULL);
 }
 
 /* Block registered signals in scheduler. */
