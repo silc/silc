@@ -2887,21 +2887,15 @@ void silc_server_free_sock_user_data(SilcServer server,
 	  server->standalone = TRUE;
 	  backup_router = NULL;
 	} else {
-	  if (server->id_entry == backup_router) {
-	    SILC_LOG_INFO(("We are now new router in this cell"));
-	    SILC_LOG_DEBUG(("We are now new router in this cell"));
-	  } else {
+	  if (server->id_entry != backup_router) {
 	    SILC_LOG_INFO(("New primary router is backup router %s",
 			   backup_router->server_name));
-	    SILC_LOG_DEBUG(("New primary router is backup router %s",
-			    backup_router->server_name));
-	  }
-	  if (server->id_entry != backup_router) {
 	    server->id_entry->router = backup_router;
 	    server->router = backup_router;
 	    server->router_connect = time(0);
 	    server->backup_primary = TRUE;
 	  } else {
+	    SILC_LOG_INFO(("We are now new router in this cell"));
 	    server->id_entry->router = NULL;
 	    server->router = NULL;
 	    server->standalone = TRUE;

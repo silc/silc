@@ -476,8 +476,6 @@ void silc_server_update_clients_by_server(SilcServer server,
   SilcClientEntry client = NULL;
   bool local;
 
-  SILC_LOG_DEBUG(("Start"));
-
   if (from)
     SILC_LOG_DEBUG(("Updating %s", silc_id_render(from->id,
 						  SILC_ID_SERVER)));

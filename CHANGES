@@ -24,6 +24,8 @@ Mon Jun 24 17:47:52 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  closing server and router connections.  Affected file
 	  silcd/server.c.
 
+	* Rewrote some SILC_LOG_DEBUG's in silcd/server_backup.c.
+
 Sun Jun 23 17:32:31 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Don't do SILC_STRING_LANGUAGE encoding if the outbuffer
