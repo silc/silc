@@ -1,6 +1,6 @@
 /*
 
-  silcfileutil.c 
+  silcfileutil.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -45,7 +45,7 @@ int silc_file_read(int fd, unsigned char *buf, SilcUInt32 buf_len)
   return read(fd, (void *)buf, buf_len);
 }
 
-/* Writes `buffer' of length of `len' to file descriptor `fd. */
+/* Writes `buffer' of length of `len' to file descriptor `fd'. */
 
 int silc_file_write(int fd, const char *buffer, SilcUInt32 len)
 {
@@ -61,42 +61,42 @@ int silc_file_close(int fd)
 
 /* Writes a buffer to the file. */
 
-int silc_file_writefile(const char *filename, const char *buffer, 
+int silc_file_writefile(const char *filename, const char *buffer,
 			SilcUInt32 len)
 {
   int fd;
-        
+
   if ((fd = creat(filename, 0644)) == -1) {
     SILC_LOG_ERROR(("Cannot open file %s for writing: %s", filename,
 		    strerror(errno)));
     return -1;
   }
-  
-  if ((silc_file_write(fd, buffer, len)) == -1) {
+
+  if (silc_file_write(fd, buffer, len) == -1) {
     SILC_LOG_ERROR(("Cannot write to file %s: %s", filename, strerror(errno)));
     silc_file_close(fd);
     return -1;
   }
 
   silc_file_close(fd);
-  
+
   return 0;
 }
 
 /* Writes a buffer to the file.  If the file is created specific mode is
    set to the file. */
 
-int silc_file_writefile_mode(const char *filename, const char *buffer, 
+int silc_file_writefile_mode(const char *filename, const char *buffer,
 			     SilcUInt32 len, int mode)
 {
   int fd;
-        
+
   if ((fd = creat(filename, mode)) == -1) {
     SILC_LOG_ERROR(("Cannot open file %s for writing: %s", filename,
 		    strerror(errno)));
     return -1;
   }
-  
+
   if ((silc_file_write(fd, buffer, len)) == -1) {
     SILC_LOG_ERROR(("Cannot write to file %s: %s", filename, strerror(errno)));
     silc_file_close(fd);
@@ -104,7 +104,7 @@ int silc_file_writefile_mode(const char *filename, const char *buffer,
   }
 
   silc_file_close(fd);
-  
+
   return 0;
 }
 
@@ -140,9 +140,9 @@ char *silc_file_readfile(const char *filename, SilcUInt32 *return_len)
     silc_file_close(fd);
     return NULL;
   }
-  
+
   buffer = silc_calloc(filelen + 1, sizeof(char));
-  
+
   if ((silc_file_read(fd, buffer, filelen)) == -1) {
     memset(buffer, 0, sizeof(buffer));
     silc_file_close(fd);
@@ -160,7 +160,7 @@ char *silc_file_readfile(const char *filename, SilcUInt32 *return_len)
   return buffer;
 }
 
-/* Returns files size. Returns 0 on error. */
+/* Returns the size of `filename'. Returns 0 on error. */
 
 SilcUInt64 silc_file_size(const char *filename)
 {
