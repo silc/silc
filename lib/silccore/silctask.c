@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:06:35  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -38,11 +41,6 @@ void silc_task_queue_alloc(SilcTaskQueue *new, int valid)
   SILC_LOG_DEBUG(("Allocating new task queue"));
 
   *new = silc_calloc(1, sizeof(**new));
-  if (*new == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new task queue object: %s", 
-		    strerror(errno)));
-    return;
-  }
 
   /* Set the pointers */
   (*new)->valid = valid;
@@ -371,11 +369,6 @@ SilcTask silc_task_register(SilcTaskQueue queue, int fd,
   }
 
   new = silc_calloc(1, sizeof(*new));
-  if (!new) {
-    SILC_LOG_ERROR(("Could not allocate new task object"));
-    return NULL;
-  }
-
   new->fd = fd;
   new->context = context;
   new->callback = cb;

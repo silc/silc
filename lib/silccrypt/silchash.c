@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:08:43  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -63,16 +66,7 @@ int silc_hash_register(SilcHashObject *hash)
   SILC_LOG_DEBUG(("Registering new hash function"));
 
   new = silc_calloc(1, sizeof(*new));
-  if (!new) {
-    SILC_LOG_ERROR(("Could not allocate new hash list object"));
-    return FALSE;
-  }
-
   new->hash = silc_calloc(1, sizeof(*new->hash));
-  if (!new->hash) {
-    SILC_LOG_ERROR(("Could not allocate new hash object"));
-    return FALSE;
-  }
 
   /* Set the pointers */
   new->hash->name = silc_calloc(1, strlen(hash->name));
@@ -163,10 +157,6 @@ int silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
 
   /* Allocate the new object */
   *new_hash = silc_calloc(1, sizeof(**new_hash));
-  if (*new_hash == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new hash object"));
-    return FALSE;
-  }
 
   if (silc_hash_list) {
     h = silc_hash_list;

@@ -20,11 +20,14 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/05 06:06:35  priikone
+ * 	Global cosmetic change.
+ *
  * Revision 1.2  2000/07/03 05:53:58  priikone
  * 	Fixed file purging bug.  The purging should work now ok.
  *
  * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Importet from internal CVS/Added Log headers.
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */

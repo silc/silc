@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:06:35  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -36,14 +39,9 @@ void silc_socket_alloc(int sock, SilcSocketType type, void *user_data,
 {
   SILC_LOG_DEBUG(("Allocating new socket connection object"));
 
-  *new_socket = silc_calloc(1, sizeof(**new_socket));
-  if (*new_socket == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new socket connection object"));
-    return;
-  }
-
   /* Set the pointers. Incoming and outgoing data buffers
      are allocated by the server when they are first used. */
+  *new_socket = silc_calloc(1, sizeof(**new_socket));
   (*new_socket)->sock = sock;
   (*new_socket)->type = type;
   (*new_socket)->user_data = user_data;

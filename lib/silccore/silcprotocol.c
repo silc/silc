@@ -23,8 +23,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:06:35  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -54,11 +57,6 @@ void silc_protocol_alloc(SilcProtocolType type, SilcProtocol *new_protocol,
   }
 
   *new_protocol = silc_calloc(1, sizeof(**new_protocol));
-  if (*new_protocol == NULL) {
-    SILC_LOG_ERROR(("Cannot allocate new protocol object"));
-    return;
-  }
-
   (*new_protocol)->protocol = (SilcProtocolObject *)&silc_protocol_list[i];
   (*new_protocol)->state = SILC_PROTOCOL_STATE_UNKNOWN;
   (*new_protocol)->context = context;

@@ -21,8 +21,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:06:35  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -114,8 +117,6 @@ int silc_idcache_add(SilcIDCache **cache, unsigned int cache_count,
 
   if (c == NULL) {
     c = silc_calloc(5, sizeof(*c));
-    if (!c)
-      return 0;
     cache_count = 5;
   }
 
@@ -136,8 +137,6 @@ int silc_idcache_add(SilcIDCache **cache, unsigned int cache_count,
 
   if (i == cache_count) {
     c = silc_realloc(c, sizeof(*c) * (cache_count + 5));
-    if (!c)
-      return cache_count;
     for (i = cache_count; i < cache_count + 5; i++) {
       c[i].data = NULL;
       c[i].id = NULL;

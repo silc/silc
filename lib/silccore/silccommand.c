@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:06:35  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -58,10 +61,6 @@ SilcCommandPayload silc_command_parse_payload(SilcBuffer buffer)
   SILC_LOG_DEBUG(("Parsing command payload"));
 
   new = silc_calloc(1, sizeof(*new));
-  if (!new) {
-    SILC_LOG_ERROR(("Could not allocate new command payload"));
-    return NULL;
-  }
 
   /* Parse the Command Payload */
   silc_buffer_unformat(buffer, 

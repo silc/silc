@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:06:35  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -60,10 +63,6 @@ SilcChannelPayload silc_channel_parse_payload(SilcBuffer buffer)
   SILC_LOG_DEBUG(("Parsing channel payload"));
 
   new = silc_calloc(1, sizeof(*new));
-  if (!new) {
-    SILC_LOG_ERROR(("Could not allocate new channel payload"));
-    return NULL;
-  }
 
   /* Parse the Channel Payload. Ignore padding and IV, we don't need
      them. */
@@ -119,8 +118,6 @@ SilcBuffer silc_channel_encode_payload(unsigned short nick_len,
   /* Allocate channel payload buffer */
   len += pad_len;
   buffer = silc_buffer_alloc(len + iv_len);
-  if (!buffer)
-    return NULL;
 
   /* Generate padding */
   for (i = 0; i < pad_len; i++)
@@ -198,10 +195,6 @@ SilcChannelKeyPayload silc_channel_key_parse_payload(SilcBuffer buffer)
   SILC_LOG_DEBUG(("Parsing channel key payload"));
 
   new = silc_calloc(1, sizeof(*new));
-  if (!new) {
-    SILC_LOG_ERROR(("Could not allocate new channel key payload"));
-    return NULL;
-  }
 
   /* Parse the Channel Key Payload */
   silc_buffer_unformat(buffer,
@@ -252,8 +245,6 @@ SilcBuffer silc_channel_key_encode_payload(unsigned short id_len,
      2 + cipher */
   len = 2 + id_len + 2 + key_len + 2 + cipher_len;
   buffer = silc_buffer_alloc(len);
-  if (!buffer)
-    return NULL;
 
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
 

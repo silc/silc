@@ -20,11 +20,14 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/05 06:06:35  priikone
+ * 	Global cosmetic change.
+ *
  * Revision 1.2  2000/06/30 10:49:48  priikone
  * 	Added SOCKS4 and SOCKS5 support for SILC client.
  *
  * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Importet from internal CVS/Added Log headers.
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */

@@ -23,8 +23,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:51  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:06:52  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:51  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -247,7 +250,7 @@ int silc_math_gen_prime(SilcInt *prime, unsigned int bits, int verbose)
 
   /* Init modulo table with the prime candidate and the primes
      in the primetable. */
-  spmods = silc_malloc(sizeof(primetable) * sizeof(unsigned int));
+  spmods = silc_calloc(1, sizeof(primetable) * sizeof(unsigned int));
   for (i = 0; primetable[i] != 0; i++) {
     silc_mp_mod_ui(&tmp, prime, primetable[i]);
     spmods[i] = silc_mp_get_ui(&tmp);

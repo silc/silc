@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:06:35  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -88,13 +91,9 @@ SilcBuffer silc_buffer_alloc(unsigned int len)
 
   /* Allocate new SilcBuffer */
   sb = silc_calloc(1, sizeof(*sb));
-  if (!sb)
-    return NULL;
 
   /* Allocate the actual data area */
-  data = silc_malloc(len);
-  if (!data)
-    return NULL;
+  data = silc_calloc(len, sizeof(*data));
   memset(data, 0, len);
 
   /* Set pointers to the new buffer */

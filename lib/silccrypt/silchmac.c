@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:08:43  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -37,11 +40,6 @@ int silc_hmac_alloc(SilcHash hash, SilcHmac *new_hmac)
   SILC_LOG_DEBUG(("Allocating new hmac object"));
 
   *new_hmac = silc_calloc(1, sizeof(**new_hmac));
-  if (*new_hmac == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new hmac object"));
-    return 0;
-  }
-
   (*new_hmac)->hash = hash;
   (*new_hmac)->set_key = silc_hmac_set_key;
   (*new_hmac)->make_hmac = silc_hmac_make;

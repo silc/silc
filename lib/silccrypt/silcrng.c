@@ -27,8 +27,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:08:43  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -112,10 +115,6 @@ SilcRng silc_rng_alloc()
   SILC_LOG_DEBUG(("Allocating new RNG object"));
 
   new = silc_calloc(1, sizeof(*new));
-  if (!new) {
-    SILC_LOG_ERROR(("Could not allocate new RNG object"));
-    return NULL;
-  }
 
   memset(new->pool, 0, sizeof(new->pool));
   memset(new->key, 0, sizeof(new->key));
@@ -151,13 +150,13 @@ void silc_rng_init(SilcRng rng)
   SILC_LOG_DEBUG(("Initializing RNG object"));
 
   /* Initialize the states for the RNG. */
-  rng->state = silc_malloc(sizeof(*rng->state));
+  rng->state = silc_calloc(1, sizeof(*rng->state));
   rng->state->low = 0;
   rng->state->pos = 8;
   rng->state->next = NULL;
   first = rng->state;
   for (i = SILC_RNG_STATE_NUM - 1; i >= 1; i--) {
-    next = silc_malloc(sizeof(*rng->state));
+    next = silc_calloc(1, sizeof(*rng->state));
     next->low = 
       (i * (sizeof(rng->pool) / SILC_RNG_STATE_NUM));
     next->pos =
@@ -424,8 +423,6 @@ unsigned char *silc_rng_get_rn_string(SilcRng rng, unsigned int len)
   unsigned char *string;
 
   string = silc_calloc((len * 2 + 1), sizeof(unsigned char));
-  if (string == NULL)
-    return NULL;
 
   for (i = 0; i < len; i++)
     sprintf(string + 2 * i, "%02x", silc_rng_get_byte(rng));

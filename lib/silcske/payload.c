@@ -22,8 +22,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:05:15  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -50,10 +53,6 @@ SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,
 
   /* Allocate channel payload buffer. */
   buf = silc_buffer_alloc(payload->len);
-  if (!buf) {
-    SILC_LOG_ERROR(("Could not allocate encode buffer"));
-    return SILC_SKE_STATUS_ERROR;
-  }
 
   silc_buffer_pull_tail(buf, payload->len);
 
@@ -290,10 +289,6 @@ SilcSKEStatus silc_ske_payload_one_encode(SilcSKE ske,
   /* Allocate channel payload buffer. The length of the buffer
      is 2 + e. */
   buf = silc_buffer_alloc(e_len + 2);
-  if (!buf) {
-    SILC_LOG_ERROR(("Could not allocate encode buffer"));
-    return SILC_SKE_STATUS_ERROR;
-  }
 
   silc_buffer_pull_tail(buf, e_len + 2);
 
@@ -406,10 +401,6 @@ SilcSKEStatus silc_ske_payload_two_encode(SilcSKE ske,
      is 2 + 2 + public key + 2 + f + 2 + signature. */
   len = payload->pk_len + 2 + 2 + f_len + 2 + payload->sign_len + 2;
   buf = silc_buffer_alloc(len);
-  if (!buf) {
-    SILC_LOG_ERROR(("Could not allocate encode buffer"));
-    return SILC_SKE_STATUS_ERROR;
-  }
 
   silc_buffer_pull_tail(buf, len);
 

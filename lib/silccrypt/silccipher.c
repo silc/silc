@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:54  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:08:43  priikone
+ * 	Global cosmetic change.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:54  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -75,18 +78,7 @@ int silc_cipher_register(SilcCipherObject *cipher)
   SILC_LOG_DEBUG(("Registering new cipher"));
 
   new = silc_calloc(1, sizeof(*new));
-  if (!new) {
-    SILC_LOG_ERROR(("Could not allocate new cipher list object: %s",
-		    strerror(errno)));
-    return FALSE;
-  }
-
   new->cipher = silc_calloc(1, sizeof(*new->cipher));
-  if (!new->cipher) {
-    SILC_LOG_ERROR(("Could not allocate new cipher object: %s",
-		    strerror(errno)));
-    return FALSE;
-  }
 
   /* Set the pointers */
   new->cipher->name = strdup(cipher->name);
@@ -180,10 +172,6 @@ int silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
 
   /* Allocate the new object */
   *new_cipher = silc_calloc(1, sizeof(**new_cipher));
-  if (*new_cipher == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new cipher object"));
-    return FALSE;
-  }
   
   if (silc_cipher_list) {
 
