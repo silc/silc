@@ -1311,7 +1311,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
   entry->data.last_receive = time(NULL);
 
-  num_sockets = silc_server_num_sockets_by_ip(server, sock->ip);
+  num_sockets = silc_server_num_sockets_by_ip(server, sock->ip, 
+					      ctx->conn_type);
 
   switch (ctx->conn_type) {
   case SILC_SOCKET_TYPE_CLIENT:
@@ -1336,7 +1337,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	max_per_host = conn->param->connections_max_per_host;
       }
 
-      if (num_sockets > max_per_host) {
+      if (num_sockets >= max_per_host) {
 	SILC_LOG_INFO(("Too many connections from %s (%s), closing connection",
 		       sock->hostname, sock->ip));
 	silc_server_disconnect_remote(server, sock, 
@@ -1439,7 +1440,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	backup_router = sconn->backup_router;
       }
 
-      if (num_sockets > max_per_host) {
+      if (num_sockets >= max_per_host) {
 	SILC_LOG_INFO(("Too many connections from %s (%s), closing connection",
 		       sock->hostname, sock->ip));
 	silc_server_disconnect_remote(server, sock, 

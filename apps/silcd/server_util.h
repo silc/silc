@@ -83,6 +83,7 @@ char *silc_server_name_modify_bad(const char *name, SilcUInt32 name_len);
 
 /* Find number of sockets by IP address indicated by `ip'. Returns 0 if
    socket connections with the IP address does not exist. */
-SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip);
+SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
+					 SilcSocketType type);
 
 #endif /* SERVER_UTIL_H */

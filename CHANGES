@@ -1,3 +1,11 @@
+Sun Mar 10 20:07:49 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the server to check correctly the amount of connections
+	  from single host, by checking also the type of the connection.
+	  Fixed also the comparison of number of connections and number
+	  of allowed connections.  Affected files are silcd/server.c, 
+	  server_util.[ch].
+
 Fri Mar  8 17:16:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the USERS command reply to save the user's mode on the
