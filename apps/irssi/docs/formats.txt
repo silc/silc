@@ -1,0 +1,64 @@
+
+ Irssi's colors that you can use in text formats, hilights, etc. :
+
+                           text            text            background
+   ---------------------------------------------------------------------
+   %k      %K      %0      black           bold black      black
+   %r      %R      %1      red             bold red        red
+   %g      %G      %2      green           bold green      green
+   %y      %Y      %3      yellow          bold yellow     yellow
+   %b      %B      %4      blue            bold blue       blue
+   %m      %M      %5      magenta         bold magenta    magenta
+   %p      %P              magenta (think: purple)
+   %c      %C      %6      cyan            bold cyan       cyan
+   %w      %W      %7      white           bold white      white
+   %n      %N              Turn off all colors and other formatting
+   %F                      Blinking on/off (think: flash)
+   %U                      Underline on/off
+   %8                      Reverse on/off
+   %9      %_              Bold on/off
+   %:                      Insert newline
+   %|                      Marks the indentation position
+   %%                      A single %
+
+ In .theme files %n works a bit differently. See default.theme
+ for more information.
+
+
+ MIRC colors that you can use when writing text to channel:
+
+               foreground (fg)     background (bg)
+   -------------------------------------------------------
+    0          white               black 	with 0 as fg
+				   light gray 	with fg > 0
+    1          ligh gray           black
+    2          blue                blue
+    3          green               green
+    4          light red           red		+ blinking fg
+    5          orange              orange
+    6          magenta (purple)    magenta
+    7          red                 red
+    8          yellow              orange	+ blinking fg
+    9          light green         light green	+ blinking fg
+    10         cyan                cyan		
+    11         light cyan          cyan		+ blinking fg
+    12         light blue          blue		+ blinking fg
+    13         light magenta       magenta	+ blinking fg
+    14         gray                black	+ blinking fg 
+    15         light gray          black on black
+                                   gray  on light gray (with bold)
+
+ These colors may differ depending on your terminal.
+
+ How to use these colors ('#' means a number as MIRC color code):
+ 
+ <Ctrl>-b        set bold
+ <Ctrl>-c#[,#]   set foreground and optionally background color
+ <Ctrl>-o        reset all formats to plain text
+ <Ctrl>-v        set inverted color mode
+ <Ctrl>-_        set underline
+ <Ctrl>-7        same as <Ctrl>-_
+ 
+ To reset a mode set it again, f.e.
+   <Ctrl-C>3<Ctrl-V>FOO<Ctrl-V>BAR
+ creates black on green FOO followed by a green on black BAR
