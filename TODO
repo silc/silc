@@ -1,6 +1,8 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o LEAVE does not work correctly, it doesn't leave the channel for real!
+
  o The input line parser in client (librarys) doesn't like extra spaces
    at the end of line (like after commands).
 
