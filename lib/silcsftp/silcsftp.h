@@ -834,194 +834,7 @@ void silc_sftp_extended(SilcSFTP sftp,
 
 /* SFTP Server Interface */
 
-/****s* silcsftp/SilcSFTPAPI/SilcSFTPFilesystem
- *
- * NAME
- * 
- *    typedef struct SilcSFTPFilesystemStruct { ... } *SilcSFTPFilesystem;
- *
- * DESCRIPTION
- *
- *    This structure defines the generic filesystem access.  When the
- *    filesystem is accessed these functions are called to do the requested
- *    filesystem operation.  The level that implements the actual filesystem
- *    must fill this structure with the callback functions providing the
- *    access to the filesystem.  The structure is will be given as
- *    argument to the silc_sftp_server_start function.
- *
- * SOURCE
- */
-typedef struct SilcSFTPFilesystemStruct {
-  /* Find a file handle by the file handle data indicated by the `data'. 
-     If the handle is not found this returns NULL. */
-  SilcSFTPHandle (*sftp_get_handle)(void *context, SilcSFTP sftp,
-				    const unsigned char *data,
-				    uint32 data_len);
-
-  /* Return encoded handle of `handle' or NULL on error. The caller
-     must free the returned buffer. */
-  unsigned char *(*sftp_encode_handle)(void *context, SilcSFTP sftp,
-				       SilcSFTPHandle handle,
-				       uint32 *handle_len);
-
-  /* Open a file indicated by the `filename' with flags indicated by the
-     `pflags', and with attributes indicated by the `attr'.  Calls the
-     `callback' to return the opened file handle. */
-  void (*sftp_open)(void *context, SilcSFTP sftp, 
-		    const char *filename, 
-		    SilcSFTPFileOperation pflags,
-		    SilcSFTPAttributes attr,
-		    SilcSFTPHandleCallback callback,
-		    void *callback_context);
-
-  /* Closes the file indicated by the file handle `handle'.  Calls the
-     `callback' to indicate the status of the closing. */
-  void (*sftp_close)(void *context, SilcSFTP sftp, 
-		     SilcSFTPHandle handle,
-		     SilcSFTPStatusCallback callback,
-		     void *callback_context);
-
-  /* Reads data from the file indicated by the file handle `handle' starting
-     from the offset of `offset' at most `len' bytes.  The `callback' is
-     called to return the read data. */
-  void (*sftp_read)(void *context, SilcSFTP sftp,
-		    SilcSFTPHandle handle, 
-		    uint64 offset, 
-		    uint32 len,
-		    SilcSFTPDataCallback callback,
-		    void *callback_context);
-
-  /* Writes to a file indicated by the file handle `handle' starting from
-     offset of `offset' at most `data_len' bytes of `data'.  The `callback' 
-     is called to indicate the status of the writing. */
-  void (*sftp_write)(void *context, SilcSFTP sftp,
-		     SilcSFTPHandle handle,
-		     uint64 offset,
-		     const unsigned char *data,
-		     uint32 data_len,
-		     SilcSFTPStatusCallback callback,
-		     void *callback_context);
-
-  /* Removes a file indicated by the `filename'.  Calls the `callback'
-     to indicate the status of the removing. */
-  void (*sftp_remove)(void *context, SilcSFTP sftp,
-		      const char *filename,
-		      SilcSFTPStatusCallback callback,
-		      void *callback_context);
-
-  /* Renames a file indicated by the `oldname' to the name `newname'.  The
-     `callback' is called to indicate the status of the renaming. */
-  void (*sftp_rename)(void *context, SilcSFTP sftp,
-		      const char *oldname,
-		      const char *newname,
-		      SilcSFTPStatusCallback callback,
-		      void *callback_context);
-
-  /* Creates a new directory indicated by the `path' with attributes indicated
-     by the `attrs'. The `callback' is called to indicate the status of the
-     creation. */
-  void (*sftp_mkdir)(void *context, SilcSFTP sftp,
-		     const char *path,
-		     SilcSFTPAttributes attrs,
-		     SilcSFTPStatusCallback callback,
-		     void *callback_context);
-
-  /* Removes a directory indicated by the `path' and calls the `callback'
-     to indicate the status of the removal. */
-  void (*sftp_rmdir)(void *context, SilcSFTP sftp,
-		     const char *path,
-		     SilcSFTPStatusCallback callback,
-		     void *callback_context);
-
-  /* Opens a directory indicated by the `path'.  The `callback' is called
-     to return the opened file handle. */
-  void (*sftp_opendir)(void *context, SilcSFTP sftp,
-		       const char *path,
-		       SilcSFTPHandleCallback callback,
-		       void *callback_context);
-
-  /* Reads the contents of the directory indicated by the `handle' and
-     calls the `callback' to return the read file(s) from the directory. */
-  void (*sftp_readdir)(void *context, SilcSFTP sftp,
-		       SilcSFTPHandle handle,
-		       SilcSFTPNameCallback callback,
-		       void *callback_context);
-
-  /* Gets the file attributes for a file indicated by the `path'. This
-     will follow symbolic links also. Calls the `callback' to return the
-     file attributes. */
-  void (*sftp_stat)(void *context, SilcSFTP sftp,
-		    const char *path,
-		    SilcSFTPAttrCallback callback,
-		    void *callback_context);
-
-  /* Gets the file attributes for a file indicated by the `path'. This
-     will not follow symbolic links. Calls the `callback' to return the
-     file attributes. */
-  void (*sftp_lstat)(void *context, SilcSFTP sftp,
-		     const char *path,
-		     SilcSFTPAttrCallback callback,
-		     void *callback_context);
-
-  /* Gets a file attributes for a opened file indicated by the `handle'.
-     Calls the `callback' to return the file attributes. */
-  void (*sftp_fstat)(void *context, SilcSFTP sftp,
-		     SilcSFTPHandle handle,
-		     SilcSFTPAttrCallback callback,
-		     void *callback_context);
-  
-  /* Sets a file attributes to a file indicated by the `path' with the
-     attributes indicated by the `attrs'.  Calls the `callback' to indicate
-     the status of the setting. */
-  void (*sftp_setstat)(void *context, SilcSFTP sftp,
-		       const char *path,
-		       SilcSFTPAttributes attrs,
-		       SilcSFTPStatusCallback callback,
-		       void *callback_context);
-
-  /* Sets a file attributes to a opened file indicated by the `handle' with
-     the attributes indicated by the `attrs'.  Calls the `callback' to
-     indicate the status of the setting. */
-  void (*sftp_fsetstat)(void *context, SilcSFTP sftp,
-			SilcSFTPHandle handle,
-			SilcSFTPAttributes attrs,
-			SilcSFTPStatusCallback callback,
-			void *callback_context);
-
-  /* Reads the target of a symbolic link indicated by the `path'.  The
-     `callback' is called to return the target of the symbolic link. */
-  void (*sftp_readlink)(void *context, SilcSFTP sftp,
-			const char *path,
-			SilcSFTPNameCallback callback,
-			void *callback_context);
-
-  /* Creates a new symbolic link indicated by the `linkpath' to the target
-     indicated by the `targetpath'.  The `callback' is called to indicate
-     the status of creation. */
-  void (*sftp_symlink)(void *context, SilcSFTP sftp,
-		       const char *linkpath,
-		       const char *targetpath,
-		       SilcSFTPStatusCallback callback,
-		       void *callback_context);
-
-  /* Canonicalizes the path indicated by the `path' to a absolute path.
-     The `callback' is called to return the absolute path. */
-  void (*sftp_realpath)(void *context, SilcSFTP sftp,
-			const char *path,
-			SilcSFTPNameCallback callback,
-			void *callback_context);
-
-  /* Performs an extended operation indicated by the `request' with 
-     optional extended operation data indicated by the `data'.  The callback
-     is called to return any data associated with the extended request. */
-  void (*sftp_extended)(void *context, SilcSFTP sftp,
-			const char *request,
-			const unsigned char *data,
-			uint32 data_len,
-			SilcSFTPExtendedCallback callback,
-			void *callback_context);
-} *SilcSFTPFilesystem;
-/****/
+#include "silcsftp_fs.h"
 
 /****f* silcsftp/SilcSFTPAPI/silc_sftp_server_start
  *
@@ -1030,8 +843,7 @@ typedef struct SilcSFTPFilesystemStruct {
  *    SilcSFTP silc_sftp_server_start(SilcSocketConnection sock,
  *                                    SilcSFTPSendPacketCallback send_packet,
  *                                    void *send_context, SilcSFTP sftp,
- *                                    SilcSFTPFilesystem fs,
- *                                    void *fs_context);
+ *                                    SilcSFTPFilesystem fs);
  *
  * DESCRIPTION
  *
@@ -1039,14 +851,13 @@ typedef struct SilcSFTPFilesystemStruct {
  *    created SFTP server context.  This function returns the allocated
  *    SFTP client context or NULL on error. The `send_packet' is called
  *    by the library when it needs to send a packet. The `fs' is the
- *    structure containing filesystem access callbacks.
+ *    filesystem context allocated by the application.
  *
  ***/
 SilcSFTP silc_sftp_server_start(SilcSocketConnection sock,
 				SilcSFTPSendPacketCallback send_packet,
 				void *send_context, 
-				SilcSFTPFilesystem fs,
-				void *fs_context);
+				SilcSFTPFilesystem fs);
 
 /****f* silcsftp/SilcSFTPAPI/silc_sftp_server_shutdown
  *

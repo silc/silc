@@ -26,6 +26,8 @@
 
 #define DIR_SEPARATOR "/"
 
+struct SilcSFTPFilesystemOpsStruct silc_sftp_fs_memory;
+
 /* Memory filesystem entry */
 typedef struct MemFSEntryStruct {
   char *name;                       /* Name of the entry */
@@ -305,8 +307,9 @@ static MemFSFileHandle mem_find_handle(MemFS fs, uint32 handle)
    silc_sftp_fs_memory_free. The `perm' is the permissions for the root
    directory of the filesystem (/ dir). */
 
-void *silc_sftp_fs_memory_alloc(SilcSFTPFSMemoryPerm perm)
+SilcSFTPFilesystem silc_sftp_fs_memory_alloc(SilcSFTPFSMemoryPerm perm)
 {
+  SilcSFTPFilesystem filesystem;
   MemFS fs;
 
   fs = silc_calloc(1, sizeof(*fs));
@@ -316,17 +319,21 @@ void *silc_sftp_fs_memory_alloc(SilcSFTPFSMemoryPerm perm)
   fs->root->directory = TRUE;
   fs->root->name = strdup(DIR_SEPARATOR);
 
-  return (void *)fs;
+  filesystem = silc_calloc(1, sizeof(*filesystem));
+  filesystem->fs = &silc_sftp_fs_memory;
+  filesystem->fs_context = (void *)fs;
+
+  return filesystem;
 }
 
 /* Frees the memory filesystem context. */
 
-void silc_sftp_fs_memory_free(void *context)
+void silc_sftp_fs_memory_free(SilcSFTPFilesystem fs)
 {
-  MemFS fs = (MemFS)context;
+  MemFS memfs = (MemFS)fs->fs_context;
 
-  silc_free(fs->root);
-  silc_free(fs);
+  silc_free(memfs->root);
+  silc_free(memfs);
 }
 
 /* Adds a new directory to the memory filesystem. Returns the directory
@@ -338,20 +345,20 @@ void silc_sftp_fs_memory_free(void *context)
    not free the returned context. The `perm' will indicate the permissions
    for the directory and they work in POSIX style. */
 
-void *silc_sftp_fs_memory_add_dir(void *context, void *dir,
+void *silc_sftp_fs_memory_add_dir(SilcSFTPFilesystem fs, void *dir,
 				  SilcSFTPFSMemoryPerm perm,
 				  const char *name)
 {
-  MemFS fs = (MemFS)context;
+  MemFS memfs = (MemFS)fs->fs_context;
   MemFSEntry entry;
 
   entry = silc_calloc(1, sizeof(*entry));
   entry->perm = perm;
   entry->name = strdup(name);
   entry->directory = TRUE;
-  entry->parent = dir ? dir : fs->root;
+  entry->parent = dir ? dir : memfs->root;
 
-  if (!mem_add_entry(dir ? dir : fs->root, entry, FALSE))
+  if (!mem_add_entry(dir ? dir : memfs->root, entry, FALSE))
     return NULL;
 
   return entry;
@@ -364,21 +371,21 @@ void *silc_sftp_fs_memory_add_dir(void *context, void *dir,
    in memory file system. The filesystem does not allow removing directories
    with remote access using the filesystem access function sftp_rmdir. */
 
-bool silc_sftp_fs_memory_del_dir(void *context, void *dir)
+bool silc_sftp_fs_memory_del_dir(SilcSFTPFilesystem fs, void *dir)
 {
-  MemFS fs = (MemFS)context;
+  MemFS memfs = (MemFS)fs->fs_context;
   bool ret;
 
   if (dir)
     return mem_del_entry(dir, FALSE);
 
   /* Remove from root */
-  ret = mem_del_entry(fs->root, FALSE);
+  ret = mem_del_entry(memfs->root, FALSE);
 
-  fs->root = silc_calloc(1, sizeof(*fs->root));
-  fs->root->perm = fs->root_perm;
-  fs->root->directory = TRUE;
-  fs->root->name = strdup(DIR_SEPARATOR);
+  memfs->root = silc_calloc(1, sizeof(*memfs->root));
+  memfs->root->perm = memfs->root_perm;
+  memfs->root->directory = TRUE;
+  memfs->root->name = strdup(DIR_SEPARATOR);
 
   return ret;
 }
@@ -391,13 +398,12 @@ bool silc_sftp_fs_memory_del_dir(void *context, void *dir)
    file and they work in POSIX style. Returns TRUE if the file was
    added to the directory. */
 
-bool silc_sftp_fs_memory_add_file(void *context,
-				  void *dir,
+bool silc_sftp_fs_memory_add_file(SilcSFTPFilesystem fs, void *dir,
 				  SilcSFTPFSMemoryPerm perm,
 				  const char *filename,
 				  const char *realpath)
 {
-  MemFS fs = (MemFS)context;
+  MemFS memfs = (MemFS)fs->fs_context;
   MemFSEntry entry;
 
   entry = silc_calloc(1, sizeof(*entry));
@@ -406,21 +412,21 @@ bool silc_sftp_fs_memory_add_file(void *context,
   entry->data = strdup(realpath);
   entry->directory = FALSE;
 
-  return mem_add_entry(dir ? dir : fs->root, entry, FALSE);
+  return mem_add_entry(dir ? dir : memfs->root, entry, FALSE);
 }
 
 /* Removes a file indicated by the `filename' from the directory
    indicated by the `dir'. Returns TRUE if the removing was success. */
 
-bool silc_sftp_fs_memory_del_file(void *context, void *dir,
+bool silc_sftp_fs_memory_del_file(SilcSFTPFilesystem fs, void *dir,
 				  const char *filename)
 {
-  MemFS fs = (MemFS)context;
+  MemFS memfs = (MemFS)fs->fs_context;
 
   if (!filename)
     return FALSE;
 
-  return mem_del_entry_name(dir ? dir : fs->root, filename, 
+  return mem_del_entry_name(dir ? dir : memfs->root, filename, 
 			    strlen(filename), FALSE);
 }
 
@@ -1005,7 +1011,7 @@ void mem_extended(void *context, SilcSFTP sftp,
 	      callback_context);
 }
 
-struct SilcSFTPFilesystemStruct silc_sftp_fs_memory = {
+struct SilcSFTPFilesystemOpsStruct silc_sftp_fs_memory = {
   mem_get_handle,
   mem_encode_handle,
   mem_open,

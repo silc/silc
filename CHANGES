@@ -1,3 +1,17 @@
+Fri Oct 12 18:37:24 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the backup resuming protocol to work in multiple
+	  router environment.  Affected file silcd/server_backup.c.
+
+	* Route packet only to one router in the function
+	  silc_server_packet_send_to_channel.  Affected file is
+	  silcd/packet_send.c.
+
+	* Fixed silc_server_send_notify_dest to set the broadcast
+	  flag.  Fixed the silc_server_send_notify_topic to actually
+	  send the TOPIC_CHANGE notify and not SERVER_SIGNOFF notify.
+	  Affected file silcd/packet_send.c.
+
 Thu Oct 11 22:19:26 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the backup router adding and getting interfaces

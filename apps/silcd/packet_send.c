@@ -448,6 +448,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
   SilcHashTableList htl;
   SilcIDListData idata;
   uint32 routed_count = 0;
+  bool gone = FALSE;
 
   /* This doesn't send channel message packets */
   assert(type != SILC_PACKET_CHANNEL_MESSAGE);
@@ -514,6 +515,13 @@ void silc_server_packet_send_to_channel(SilcServer server,
 
       if (sender && sock == sender)
 	continue;
+
+      /* Route only once to router */
+      if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
+	if (gone)
+	  continue;
+	gone = TRUE;
+      }
 
       /* Send the packet */
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
@@ -962,7 +970,7 @@ void silc_server_send_error(SilcServer server,
 
 void silc_server_send_notify(SilcServer server,
 			     SilcSocketConnection sock,
-			     int broadcast,
+			     bool broadcast,
 			     SilcNotifyType type,
 			     uint32 argc, ...)
 {
@@ -992,7 +1000,7 @@ void silc_server_send_notify(SilcServer server,
 
 void silc_server_send_notify_args(SilcServer server,
 				  SilcSocketConnection sock,
-				  int broadcast,
+				  bool broadcast,
 				  SilcNotifyType type,
 				  uint32 argc,
 				  SilcBuffer args)
@@ -1011,7 +1019,7 @@ void silc_server_send_notify_args(SilcServer server,
 
 void silc_server_send_notify_channel_change(SilcServer server,
 					    SilcSocketConnection sock,
-					    int broadcast,
+					    bool broadcast,
 					    SilcChannelID *old_id,
 					    SilcChannelID *new_id)
 {
@@ -1032,7 +1040,7 @@ void silc_server_send_notify_channel_change(SilcServer server,
 
 void silc_server_send_notify_nick_change(SilcServer server,
 					 SilcSocketConnection sock,
-					 int broadcast,
+					 bool broadcast,
 					 SilcClientID *old_id,
 					 SilcClientID *new_id)
 {
@@ -1053,7 +1061,7 @@ void silc_server_send_notify_nick_change(SilcServer server,
 
 void silc_server_send_notify_join(SilcServer server,
 				  SilcSocketConnection sock,
-				  int broadcast,
+				  bool broadcast,
 				  SilcChannelEntry channel,
 				  SilcClientID *client_id)
 {
@@ -1073,7 +1081,7 @@ void silc_server_send_notify_join(SilcServer server,
 
 void silc_server_send_notify_leave(SilcServer server,
 				   SilcSocketConnection sock,
-				   int broadcast,
+				   bool broadcast,
 				   SilcChannelEntry channel,
 				   SilcClientID *client_id)
 {
@@ -1092,7 +1100,7 @@ void silc_server_send_notify_leave(SilcServer server,
 
 void silc_server_send_notify_cmode(SilcServer server,
 				   SilcSocketConnection sock,
-				   int broadcast,
+				   bool broadcast,
 				   SilcChannelEntry channel,
 				   uint32 mode_mask,
 				   void *id, SilcIdType id_type,
@@ -1119,7 +1127,7 @@ void silc_server_send_notify_cmode(SilcServer server,
 
 void silc_server_send_notify_cumode(SilcServer server,
 				    SilcSocketConnection sock,
-				    int broadcast,
+				    bool broadcast,
 				    SilcChannelEntry channel,
 				    uint32 mode_mask,
 				    void *id, SilcIdType id_type,
@@ -1149,7 +1157,7 @@ void silc_server_send_notify_cumode(SilcServer server,
 
 void silc_server_send_notify_signoff(SilcServer server,
 				     SilcSocketConnection sock,
-				     int broadcast,
+				     bool broadcast,
 				     SilcClientID *client_id,
 				     char *message)
 {
@@ -1170,7 +1178,7 @@ void silc_server_send_notify_signoff(SilcServer server,
 
 void silc_server_send_notify_topic_set(SilcServer server,
 				       SilcSocketConnection sock,
-				       int broadcast,
+				       bool broadcast,
 				       SilcChannelEntry channel,
 				       SilcClientID *client_id,
 				       char *topic)
@@ -1179,7 +1187,7 @@ void silc_server_send_notify_topic_set(SilcServer server,
 
   idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
   silc_server_send_notify(server, sock, broadcast,
-			  SILC_NOTIFY_TYPE_SERVER_SIGNOFF,
+			  SILC_NOTIFY_TYPE_TOPIC_SET,
 			  topic ? 2 : 1, 
 			  idp->data, idp->len, 
 			  topic, topic ? strlen(topic) : 0);
@@ -1193,7 +1201,7 @@ void silc_server_send_notify_topic_set(SilcServer server,
 
 void silc_server_send_notify_kicked(SilcServer server,
 				    SilcSocketConnection sock,
-				    int broadcast,
+				    bool broadcast,
 				    SilcChannelEntry channel,
 				    SilcClientID *client_id,
 				    char *comment)
@@ -1214,7 +1222,7 @@ void silc_server_send_notify_kicked(SilcServer server,
 
 void silc_server_send_notify_killed(SilcServer server,
 				    SilcSocketConnection sock,
-				    int broadcast,
+				    bool broadcast,
 				    SilcClientID *client_id,
 				    char *comment)
 {
@@ -1234,7 +1242,7 @@ void silc_server_send_notify_killed(SilcServer server,
 
 void silc_server_send_notify_umode(SilcServer server,
 				   SilcSocketConnection sock,
-				   int broadcast,
+				   bool broadcast,
 				   SilcClientID *client_id,
 				   uint32 mode_mask)
 {
@@ -1257,7 +1265,7 @@ void silc_server_send_notify_umode(SilcServer server,
 
 void silc_server_send_notify_ban(SilcServer server,
 				 SilcSocketConnection sock,
-				 int broadcast,
+				 bool broadcast,
 				 SilcChannelEntry channel,
 				 char *add, char *del)
 {
@@ -1279,7 +1287,7 @@ void silc_server_send_notify_ban(SilcServer server,
 
 void silc_server_send_notify_invite(SilcServer server,
 				    SilcSocketConnection sock,
-				    int broadcast,
+				    bool broadcast,
 				    SilcChannelEntry channel,
 				    SilcClientID *client_id,
 				    char *add, char *del)
@@ -1303,7 +1311,7 @@ void silc_server_send_notify_invite(SilcServer server,
 
 void silc_server_send_notify_dest(SilcServer server,
 				  SilcSocketConnection sock,
-				  int broadcast,
+				  bool broadcast,
 				  void *dest_id,
 				  SilcIdType dest_id_type,
 				  SilcNotifyType type,
@@ -1315,7 +1323,8 @@ void silc_server_send_notify_dest(SilcServer server,
   va_start(ap, argc);
 
   packet = silc_notify_payload_encode(type, argc, ap);
-  silc_server_packet_send_dest(server, sock, SILC_PACKET_NOTIFY, 0, 
+  silc_server_packet_send_dest(server, sock, SILC_PACKET_NOTIFY, 
+			       broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
 			       dest_id, dest_id_type,
 			       packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
@@ -1508,7 +1517,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
 
 void silc_server_send_new_id(SilcServer server,
 			     SilcSocketConnection sock,
-			     int broadcast,
+			     bool broadcast,
 			     void *id, SilcIdType id_type, 
 			     uint32 id_len)
 {
@@ -1538,7 +1547,7 @@ void silc_server_send_new_id(SilcServer server,
 
 void silc_server_send_new_channel(SilcServer server,
 				  SilcSocketConnection sock,
-				  int broadcast,
+				  bool broadcast,
 				  char *channel_name,
 				  void *channel_id, 
 				  uint32 channel_id_len,

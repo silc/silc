@@ -1725,7 +1725,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 			    packet->data, packet->len, TRUE);
     silc_buffer_free(packet);
 
-    /* Mark the server disabled. The data sent earlier will go but nothing
+    /* Mark the router disabled. The data sent earlier will go but nothing
        after this does not go to this connection. */
     idata->status |= SILC_IDLIST_STATUS_DISABLED;
   }

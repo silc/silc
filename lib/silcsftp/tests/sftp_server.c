@@ -19,12 +19,11 @@
 
 #include "silcincludes.h"
 #include "silcsftp.h"
-#include "silcsftp_fs.h"
 
 typedef struct {
   SilcSchedule schedule;
   int sock;
-  void *fs;
+  SilcSFTPFilesystem fs;
   SilcSocketConnection socks[100];
   SilcSFTP sftp[100];
 } *Server;
@@ -126,7 +125,6 @@ SILC_TASK_CALLBACK(accept_connection)
   server->socks[sock] = sc;
   server->sftp[sock] = 
     silc_sftp_server_start(sc, send_packet, server,
-			   (SilcSFTPFilesystem)&silc_sftp_fs_memory, 
 			   server->fs);
   silc_schedule_task_add(server->schedule, sock, packet_process,
 			 server, 0, 0, SILC_TASK_GENERIC,

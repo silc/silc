@@ -20,6 +20,7 @@
 
 #include "silcincludes.h"
 #include "silcsftp.h"
+#include "silcsftp_fs.h"
 #include "sftp_util.h"
 
 /* SFTP Server context */
@@ -28,7 +29,6 @@ typedef struct {
   SilcSFTPSendPacketCallback send_packet;
   void *send_context;
   SilcSFTPFilesystem fs;
-  void *fs_context;
 } *SilcSFTPServer;
 
 /* General routine to send SFTP packet to the SFTP client. */
@@ -123,8 +123,8 @@ static void silc_sftp_server_handle(SilcSFTP sftp,
     return;
   }
 
-  hdata = server->fs->sftp_encode_handle(server->fs_context, sftp,
-					 handle, &hdata_len);
+  hdata = server->fs->fs->sftp_encode_handle(server->fs->fs_context, sftp,
+					     handle, &hdata_len);
   if (!hdata) {
     silc_sftp_send_error(server, SILC_SFTP_STATUS_FAILURE, id);
     return;
@@ -257,8 +257,7 @@ static void silc_sftp_server_extended(SilcSFTP sftp,
 SilcSFTP silc_sftp_server_start(SilcSocketConnection sock,
 				SilcSFTPSendPacketCallback send_packet,
 				void *send_context,
-				SilcSFTPFilesystem fs,
-				void *fs_context)
+				SilcSFTPFilesystem fs)
 {
   SilcSFTPServer server;
 
@@ -267,7 +266,6 @@ SilcSFTP silc_sftp_server_start(SilcSocketConnection sock,
   server->send_packet = send_packet;
   server->send_context = send_context;
   server->fs = fs;
-  server->fs_context = fs_context;
 
   SILC_LOG_DEBUG(("Starting SFTP server %p", server));
 
@@ -362,8 +360,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       }
 
       /* Open operation */
-      server->fs->sftp_open(server->fs_context, sftp, filename, pflags,
-			    attrs, silc_sftp_server_handle, (void *)id);
+      server->fs->fs->sftp_open(server->fs->fs_context, sftp, filename, pflags,
+				attrs, silc_sftp_server_handle, (void *)id);
 
       silc_free(filename);
       silc_sftp_attr_free(attrs);
@@ -386,17 +384,17 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Get the handle */
-      handle = server->fs->sftp_get_handle(server->fs_context, sftp,
-					   (const unsigned char *)hdata,
-					   hdata_len);
+      handle = server->fs->fs->sftp_get_handle(server->fs->fs_context, sftp,
+					       (const unsigned char *)hdata,
+					       hdata_len);
       if (!handle) {
 	silc_sftp_send_error(server, SILC_SFTP_STATUS_NO_SUCH_FILE, id);
 	break;
       }
 
       /* Close operation */
-      server->fs->sftp_close(server->fs_context, sftp, handle,
-			     silc_sftp_server_status, (void *)id);
+      server->fs->fs->sftp_close(server->fs->fs_context, sftp, handle,
+				 silc_sftp_server_status, (void *)id);
     }
     break;
 
@@ -420,17 +418,18 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Get the handle */
-      handle = server->fs->sftp_get_handle(server->fs_context, sftp,
-					   (const unsigned char *)hdata,
-					   hdata_len);
+      handle = server->fs->fs->sftp_get_handle(server->fs->fs_context, sftp,
+					       (const unsigned char *)hdata,
+					       hdata_len);
       if (!handle) {
 	silc_sftp_send_error(server, SILC_SFTP_STATUS_NO_SUCH_FILE, id);
 	break;
       }
 
       /* Read operation */
-      server->fs->sftp_read(server->fs_context, sftp, handle, offset, len,
-			    silc_sftp_server_data, (void *)id);
+      server->fs->fs->sftp_read(server->fs->fs_context, sftp, 
+				handle, offset, len,
+				silc_sftp_server_data, (void *)id);
     }
     break;
 
@@ -456,18 +455,18 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Get the handle */
-      handle = server->fs->sftp_get_handle(server->fs_context, sftp,
-					   (const unsigned char *)hdata,
-					   hdata_len);
+      handle = server->fs->fs->sftp_get_handle(server->fs->fs_context, sftp,
+					       (const unsigned char *)hdata,
+					       hdata_len);
       if (!handle) {
 	silc_sftp_send_error(server, SILC_SFTP_STATUS_NO_SUCH_FILE, id);
 	break;
       }
 
       /* Write operation */
-      server->fs->sftp_write(server->fs_context, sftp, handle, offset, 
-			     (const unsigned char *)data, data_len,
-			     silc_sftp_server_status, (void *)id);
+      server->fs->fs->sftp_write(server->fs->fs_context, sftp, handle, offset, 
+				 (const unsigned char *)data, data_len,
+				 silc_sftp_server_status, (void *)id);
     }
     break;
 
@@ -483,8 +482,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Remove operation */
-      server->fs->sftp_remove(server->fs_context, sftp, filename,
-			      silc_sftp_server_status, (void *)id);
+      server->fs->fs->sftp_remove(server->fs->fs_context, sftp, filename,
+				  silc_sftp_server_status, (void *)id);
 
       silc_free(filename);
     }
@@ -505,8 +504,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Rename operation */
-      server->fs->sftp_rename(server->fs_context, sftp, filename, newname,
-			      silc_sftp_server_status, (void *)id);
+      server->fs->fs->sftp_rename(server->fs->fs_context, sftp, filename, newname,
+				  silc_sftp_server_status, (void *)id);
 
       silc_free(filename);
       silc_free(newname);
@@ -538,8 +537,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       }
 
       /* Mkdir operation */
-      server->fs->sftp_mkdir(server->fs_context, sftp, path, attrs,
-			     silc_sftp_server_status, (void *)id);
+      server->fs->fs->sftp_mkdir(server->fs->fs_context, sftp, path, attrs,
+				 silc_sftp_server_status, (void *)id);
 
       silc_sftp_attr_free(attrs);
       silc_free(path);
@@ -558,8 +557,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Rmdir operation */
-      server->fs->sftp_rmdir(server->fs_context, sftp, path,
-			     silc_sftp_server_status, (void *)id);
+      server->fs->fs->sftp_rmdir(server->fs->fs_context, sftp, path,
+				 silc_sftp_server_status, (void *)id);
 
       silc_free(path);
     }
@@ -577,8 +576,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Opendir operation */
-      server->fs->sftp_opendir(server->fs_context, sftp, path,
-			       silc_sftp_server_handle, (void *)id);
+      server->fs->fs->sftp_opendir(server->fs->fs_context, sftp, path,
+				   silc_sftp_server_handle, (void *)id);
 
       silc_free(path);
     }
@@ -600,17 +599,17 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Get the handle */
-      handle = server->fs->sftp_get_handle(server->fs_context, sftp,
-					   (const unsigned char *)hdata,
-					   hdata_len);
+      handle = server->fs->fs->sftp_get_handle(server->fs->fs_context, sftp,
+					       (const unsigned char *)hdata,
+					       hdata_len);
       if (!handle) {
 	silc_sftp_send_error(server, SILC_SFTP_STATUS_NO_SUCH_FILE, id);
 	break;
       }
 
       /* Readdir operation */
-      server->fs->sftp_readdir(server->fs_context, sftp, handle,
-			       silc_sftp_server_name, (void *)id);
+      server->fs->fs->sftp_readdir(server->fs->fs_context, sftp, handle,
+				   silc_sftp_server_name, (void *)id);
     }
     break;
 
@@ -626,8 +625,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Stat operation */
-      server->fs->sftp_stat(server->fs_context, sftp, path,
-			    silc_sftp_server_attr, (void *)id);
+      server->fs->fs->sftp_stat(server->fs->fs_context, sftp, path,
+				silc_sftp_server_attr, (void *)id);
 
       silc_free(path);
     }
@@ -645,8 +644,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Lstat operation */
-      server->fs->sftp_lstat(server->fs_context, sftp, path,
-			     silc_sftp_server_attr, (void *)id);
+      server->fs->fs->sftp_lstat(server->fs->fs_context, sftp, path,
+				 silc_sftp_server_attr, (void *)id);
 
       silc_free(path);
     }
@@ -668,17 +667,17 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Get the handle */
-      handle = server->fs->sftp_get_handle(server->fs_context, sftp,
-					   (const unsigned char *)hdata,
-					   hdata_len);
+      handle = server->fs->fs->sftp_get_handle(server->fs->fs_context, sftp,
+					       (const unsigned char *)hdata,
+					       hdata_len);
       if (!handle) {
 	silc_sftp_send_error(server, SILC_SFTP_STATUS_NO_SUCH_FILE, id);
 	break;
       }
 
       /* Fstat operation */
-      server->fs->sftp_fstat(server->fs_context, sftp, handle,
-			     silc_sftp_server_attr, (void *)id);
+      server->fs->fs->sftp_fstat(server->fs->fs_context, sftp, handle,
+				 silc_sftp_server_attr, (void *)id);
     }
     break;
 
@@ -707,8 +706,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       }
 
       /* Setstat operation */
-      server->fs->sftp_setstat(server->fs_context, sftp, path, attrs,
-			       silc_sftp_server_status, (void *)id);
+      server->fs->fs->sftp_setstat(server->fs->fs_context, sftp, path, attrs,
+				   silc_sftp_server_status, (void *)id);
 
       silc_sftp_attr_free(attrs);
       silc_free(path);
@@ -741,17 +740,17 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       }
 
       /* Get the handle */
-      handle = server->fs->sftp_get_handle(server->fs_context, sftp,
-					   (const unsigned char *)hdata,
-					   hdata_len);
+      handle = server->fs->fs->sftp_get_handle(server->fs->fs_context, sftp,
+					       (const unsigned char *)hdata,
+					       hdata_len);
       if (!handle) {
 	silc_sftp_send_error(server, SILC_SFTP_STATUS_NO_SUCH_FILE, id);
 	break;
       }
 
       /* Fsetstat operation */
-      server->fs->sftp_fsetstat(server->fs_context, sftp, handle, attrs,
-				silc_sftp_server_status, (void *)id);
+      server->fs->fs->sftp_fsetstat(server->fs->fs_context, sftp, handle, attrs,
+				    silc_sftp_server_status, (void *)id);
 
       silc_sftp_attr_free(attrs);
     }
@@ -769,8 +768,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Readlink operation */
-      server->fs->sftp_readlink(server->fs_context, sftp, path,
-				silc_sftp_server_name, (void *)id);
+      server->fs->fs->sftp_readlink(server->fs->fs_context, sftp, path,
+				    silc_sftp_server_name, (void *)id);
 
       silc_free(path);
     }
@@ -791,8 +790,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Symlink operation */
-      server->fs->sftp_symlink(server->fs_context, sftp, path, target,
-			       silc_sftp_server_status, (void *)id);
+      server->fs->fs->sftp_symlink(server->fs->fs_context, sftp, path, target,
+				   silc_sftp_server_status, (void *)id);
 
       silc_free(path);
       silc_free(target);
@@ -811,8 +810,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 	goto failure;
 
       /* Realpath operation */
-      server->fs->sftp_realpath(server->fs_context, sftp, path,
-				silc_sftp_server_name, (void *)id);
+      server->fs->fs->sftp_realpath(server->fs->fs_context, sftp, path,
+				    silc_sftp_server_name, (void *)id);
 
       silc_free(path);
     }
@@ -843,9 +842,9 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       data_len = buf.len;
 
       /* Extended operation */
-      server->fs->sftp_extended(server->fs_context, sftp, 
-				request, data, data_len,
-				silc_sftp_server_extended, (void *)id);
+      server->fs->fs->sftp_extended(server->fs->fs_context, sftp, 
+				    request, data, data_len,
+				    silc_sftp_server_extended, (void *)id);
 
       silc_free(request);
     }

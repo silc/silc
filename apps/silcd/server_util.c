@@ -381,6 +381,11 @@ void silc_server_update_clients_by_server(SilcServer server,
 
   SILC_LOG_DEBUG(("Start"));
 
+  SILC_LOG_DEBUG(("Updating %s", silc_id_render(from->id,
+						SILC_ID_SERVER)));
+  SILC_LOG_DEBUG(("to %s", silc_id_render(to->id,
+					  SILC_ID_SERVER)));
+
   if (silc_idcache_get_all(server->local_list->clients, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
@@ -394,8 +399,8 @@ void silc_server_update_clients_by_server(SilcServer server,
 
 	if (client->router == from) {
 	  /* Skip clients that are *really* owned by the `from' */
-	  if (SILC_ID_COMPARE(from->id, client->id, 
-			      client->id->ip.data_len)) {
+	  if (remove_from && SILC_ID_COMPARE(from->id, client->id, 
+					     client->id->ip.data_len)) {
 	    SILC_LOG_DEBUG(("Found really owned client, skip it"));
 	    if (!silc_idcache_list_next(list, &id_cache))
 	      break;
@@ -433,8 +438,8 @@ void silc_server_update_clients_by_server(SilcServer server,
 
 	if (client->router == from) {
 	  /* Skip clients that are *really* owned by the `from' */
-	  if (SILC_ID_COMPARE(from->id, client->id, 
-			      client->id->ip.data_len)) {
+	  if (remove_from && SILC_ID_COMPARE(from->id, client->id, 
+					     client->id->ip.data_len)) {
 	    SILC_LOG_DEBUG(("Found really owned client, skip it"));
 	    if (!silc_idcache_list_next(list, &id_cache))
 	      break;
