@@ -1378,6 +1378,7 @@ void silc_client_close_connection_real(SilcClient client,
     /* Free all cache entries */
     SilcIDCacheList list;
     SilcIDCacheEntry entry;
+    SilcClientCommandPending *r;
     bool ret;
 
     if (silc_idcache_get_all(conn->client_cache, &list)) {
@@ -1429,8 +1430,6 @@ void silc_client_close_connection_real(SilcClient client,
       silc_hmac_free(conn->hmac_send);
     if (conn->hmac_receive)
       silc_hmac_free(conn->hmac_receive);
-    if (conn->pending_commands)
-      silc_dlist_uninit(conn->pending_commands);
     if (conn->rekey)
       silc_free(conn->rekey);
 
@@ -1441,6 +1440,12 @@ void silc_client_close_connection_real(SilcClient client,
     }
 
     silc_client_ftp_free_sessions(client, conn);
+
+    silc_dlist_start(conn->pending_commands);
+    while ((r = silc_dlist_get(conn->pending_commands)) != SILC_LIST_END)
+      silc_dlist_del(conn->pending_commands, r);
+    if (conn->pending_commands)
+      silc_dlist_uninit(conn->pending_commands);
 
     memset(conn, 0, sizeof(*conn));
     silc_client_del_connection(client, conn);

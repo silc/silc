@@ -1,3 +1,9 @@
+Mon Apr 29 09:48:12 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Remove pending command callbacks also if the connection
+	  to the server is destroyed.  Affected file is
+	  lib/silcclient/client.c.
+
 Sat Apr 27 19:52:32 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added new QUIET channel user mode that can be used to
