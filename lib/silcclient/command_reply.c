@@ -1061,12 +1061,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     }
 
     /* Join client to the channel */
-    chu = silc_calloc(1, sizeof(*chu));
-    chu->client = client_entry;
-    chu->channel = channel;
-    chu->mode = mode;
-    silc_hash_table_add(channel->user_list, client_entry, chu);
-    silc_hash_table_add(client_entry->channels, channel, chu);
+    if (!silc_client_on_channel(channel, client_entry)) {
+      chu = silc_calloc(1, sizeof(*chu));
+      chu->client = client_entry;
+      chu->channel = channel;
+      chu->mode = mode;
+      silc_hash_table_add(channel->user_list, client_entry, chu);
+      silc_hash_table_add(client_entry->channels, channel, chu);
+    }
 
     silc_free(client_id);
     silc_buffer_pull(client_id_list, idp_len);
@@ -1714,6 +1716,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
       if (!silc_client_on_channel(channel, client_entry)) {
 	chu = silc_calloc(1, sizeof(*chu));
 	chu->client = client_entry;
+	chu->mode = mode;
 	chu->channel = channel;
 	silc_hash_table_add(channel->user_list, client_entry, chu);
 	silc_hash_table_add(client_entry->channels, channel, chu);

@@ -21,6 +21,7 @@ libsilc_core_a_SOURCES = \
 	silc-nicklist.c \
 	silc-queries.c \
 	silc-servers.c \
+	silc-expandos.c \
 	silc-servers-reconnect.c
 
 noinst_HEADERS = \

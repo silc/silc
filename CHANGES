@@ -1,3 +1,15 @@
+Fri Mar  8 17:16:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the USERS command reply to save the user's mode on the
+	  channel as well.  Fixed JOIN command reply to check whether a
+	  client is on channel already and not join it twice.  Affected
+	  file lib/silcclient/command_reply.c.
+
+	* Added new file silc-expandos.c into irssi/silc/core/ to return
+	  various stuff for various signal for the statusbar etc. updating.
+	  Now Irssi SILC client prints channel user modes etc. on the
+	  statusbar.
+
 Thu Mar  7 19:21:22 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed silc_mutex_[un]lock calls in lib/silcutil/silcschedule.c

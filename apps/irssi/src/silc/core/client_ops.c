@@ -397,12 +397,12 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     mode = va_arg(va, SilcUInt32);
     client_entry2 = va_arg(va, SilcClientEntry);
     channel = va_arg(va, SilcChannelEntry);
-    
+
     tmp = silc_client_chumode(mode);
     chanrec = silc_channel_find_entry(server, channel);
     if (chanrec != NULL) {
       SILC_NICK_REC *nick;
-      
+
       if (client_entry2 == server->conn->local_entry)
 	chanrec->chanop = (mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
       
@@ -413,7 +413,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 	signal_emit("nick mode changed", 2, chanrec, nick);
       }
     }
-  
+
     printformat_module("fe-common/silc", server, channel->channel_name,
 		       MSGLEVEL_MODES, SILCTXT_CHANNEL_CUMODE,
 		       channel->channel_name, client_entry2->nickname, 
@@ -425,7 +425,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 			 server, channel->channel_name, MSGLEVEL_CRAP,
 			 SILCTXT_CHANNEL_FOUNDER,
 			 channel->channel_name, client_entry2->nickname);
-    
+
     silc_free(tmp);
     break;
 

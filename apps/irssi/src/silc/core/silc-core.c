@@ -56,6 +56,9 @@ SilcSimContext **sims = NULL;
 SilcUInt32 sims_count = 0;
 #endif
 
+void silc_expandos_init(void);
+void silc_expandos_deinit(void);
+
 static int my_silc_scheduler(void)
 {
   silc_client_run_one(silc_client);
@@ -242,7 +245,7 @@ void silc_opt_callback(poptContext con,
     silc_pkcs_register_default();
     silc_hash_register_default();
     silc_hmac_register_default();
-    silc_client_show_key(arg);
+    silc_client_show_key((char *)arg);
     exit(0);
   }
 
@@ -422,6 +425,7 @@ void silc_core_init(void)
   silc_server_init();
   silc_channels_init();
   silc_queries_init();
+  silc_expandos_init();
 
   idletag = g_timeout_add(5, (GSourceFunc) my_silc_scheduler, NULL);
 
@@ -439,6 +443,7 @@ void silc_core_deinit(void)
     silc_server_deinit();
     silc_channels_deinit();
     silc_queries_deinit();
+    silc_expandos_deinit();
     
     chat_protocol_unregister("SILC");
     
