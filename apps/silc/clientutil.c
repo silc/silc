@@ -20,6 +20,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/10 05:40:05  priikone
+ * 	Added support for verifying incoming public keys from user.
+ * 	Shows fingerprint of the public key now plus other changes.
+ *
  * Revision 1.3  2000/07/07 06:53:45  priikone
  * 	Added support for server public key verification.
  *
@@ -540,7 +544,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   key = silc_pkcs_get_public_key(pkcs, &key_len);
   pub_key = silc_pkcs_public_key_alloc(pkcs->pkcs->name, identifier,
 				       key, key_len);
-  silc_pkcs_save_public_key(pkfile, pub_key);
+  silc_pkcs_save_public_key(pkfile, pub_key, SILC_PKCS_FILE_PEM);
   if (ret_pub_key)
     *ret_pub_key = pub_key;
 
@@ -551,7 +555,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   key = silc_pkcs_get_private_key(pkcs, &key_len);
   prv_key = silc_pkcs_private_key_alloc(pkcs->pkcs->name, key, key_len);
 
-  silc_pkcs_save_private_key(prvfile, prv_key, NULL);
+  silc_pkcs_save_private_key(prvfile, prv_key, NULL, SILC_PKCS_FILE_BIN);
   if (ret_prv_key)
     *ret_prv_key = prv_key;
 
@@ -629,21 +633,22 @@ int silc_client_check_silc_dir()
       fprintf(stderr, "%s\n", strerror(errno));
       return FALSE;
     }
-  }
+  } else {
     
-  /* Check the owner of the dir */
-  if (st.st_uid != 0 && st.st_uid != pw->pw_uid) { 
-    fprintf(stderr, "You don't seem to own `%s' directory\n",
-	    filename);
-    return FALSE;
-  }
-  
-  /* Check the permissions of the dir */
-  if ((st.st_mode & 0777) != 0755) {
-    if ((chmod(filename, 0755)) == -1) {
-      fprintf(stderr, "Permissions for `%s' directory must be 0755\n", 
+    /* Check the owner of the dir */
+    if (st.st_uid != 0 && st.st_uid != pw->pw_uid) { 
+      fprintf(stderr, "You don't seem to own `%s' directory\n",
 	      filename);
       return FALSE;
+    }
+    
+    /* Check the permissions of the dir */
+    if ((st.st_mode & 0777) != 0755) {
+      if ((chmod(filename, 0755)) == -1) {
+	fprintf(stderr, "Permissions for `%s' directory must be 0755\n", 
+		filename);
+	return FALSE;
+      }
     }
   }
 
@@ -783,15 +788,21 @@ int silc_client_load_keys(SilcClient client)
   snprintf(filename, sizeof(filename) - 1, "%s/.silc/%s", 
 	   pw->pw_dir, SILC_CLIENT_PRIVATE_KEY_NAME);
 
-  if (silc_pkcs_load_private_key(filename, &client->private_key) == FALSE)
-    return FALSE;
+  if (silc_pkcs_load_private_key(filename, &client->private_key,
+				 SILC_PKCS_FILE_BIN) == FALSE)
+    if (silc_pkcs_load_private_key(filename, &client->private_key,
+				   SILC_PKCS_FILE_PEM) == FALSE)
+      return FALSE;
 
   memset(filename, 0, sizeof(filename));
   snprintf(filename, sizeof(filename) - 1, "%s/.silc/%s", 
 	   pw->pw_dir, SILC_CLIENT_PUBLIC_KEY_NAME);
 
-  if (silc_pkcs_load_public_key(filename, &client->public_key) == FALSE)
-    return FALSE;
+  if (silc_pkcs_load_public_key(filename, &client->public_key,
+				SILC_PKCS_FILE_PEM) == FALSE)
+    if (silc_pkcs_load_public_key(filename, &client->public_key,
+				  SILC_PKCS_FILE_BIN) == FALSE)
+      return FALSE;
 
   return TRUE;
 }
@@ -807,7 +818,7 @@ int silc_client_verify_server_key(SilcClient client,
 {
   char filename[256];
   char file[256];
-  char *hostname;
+  char *hostname, *fingerprint;
   struct passwd *pw;
   struct stat st;
 
@@ -832,15 +843,19 @@ int silc_client_verify_server_key(SilcClient client,
   /* Check wheter this key already exists */
   if (stat(filename, &st) < 0) {
 
+    fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
     silc_say(client, "Received server %s public key", hostname);
-    /* XXX print fingerprint of the key */
+    silc_say(client, "Fingerprint for the server %s key is", hostname);
+    silc_say(client, "%s", fingerprint);
+    silc_free(fingerprint);
 
     /* Ask user to verify the key and save it */
     if (silc_client_ask_yes_no(client, 
-       "Would you like to accept the server key (y/n)? "))
+       "Would you like to accept the key (y/n)? "))
       {
 	/* Save the key for future checking */
-	silc_pkcs_save_public_key_data(filename, pk, pk_len);
+	silc_pkcs_save_public_key_data(filename, pk, pk_len, 
+				       SILC_PKCS_FILE_PEM);
 	return TRUE;
       }
   } else {
@@ -850,34 +865,47 @@ int silc_client_verify_server_key(SilcClient client,
     unsigned int encpk_len;
 
     /* Load the key file */
-    if (!silc_pkcs_load_public_key(filename, &public_key)) {
-      silc_say(client, "Received server %s public key", hostname);
-      silc_say(client, "Could not load your local copy of the server %s key",
-	       hostname);
-      if (silc_client_ask_yes_no(client, 
-         "Would you like to accept the server key anyway (y/n)? "))
-	{
-	  /* Save the key for future checking */
-	  unlink(filename);
-	  silc_pkcs_save_public_key_data(filename, pk, pk_len);
-	  return TRUE;
-	}
-
-      return FALSE;
-    }
-
+    if (!silc_pkcs_load_public_key(filename, &public_key, 
+				   SILC_PKCS_FILE_PEM))
+      if (!silc_pkcs_load_public_key(filename, &public_key, 
+				     SILC_PKCS_FILE_BIN)) {
+	fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
+	silc_say(client, "Received server %s public key", hostname);
+	silc_say(client, "Fingerprint for the server %s key is", hostname);
+	silc_say(client, "%s", fingerprint);
+	silc_free(fingerprint);
+	silc_say(client, "Could not load your local copy of the server %s key",
+		 hostname);
+	if (silc_client_ask_yes_no(client, 
+	   "Would you like to accept the key anyway (y/n)? "))
+	  {
+	    /* Save the key for future checking */
+	    unlink(filename);
+	    silc_pkcs_save_public_key_data(filename, pk, pk_len,
+					   SILC_PKCS_FILE_PEM);
+	    return TRUE;
+	  }
+	
+	return FALSE;
+      }
+  
     /* Encode the key data */
     encpk = silc_pkcs_public_key_encode(public_key, &encpk_len);
     if (!encpk) {
+      fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
       silc_say(client, "Received server %s public key", hostname);
+      silc_say(client, "Fingerprint for the server %s key is", hostname);
+      silc_say(client, "%s", fingerprint);
+      silc_free(fingerprint);
       silc_say(client, "Your local copy of the server %s key is malformed",
 	       hostname);
       if (silc_client_ask_yes_no(client, 
-         "Would you like to accept the server key anyway (y/n)? "))
+         "Would you like to accept the key anyway (y/n)? "))
 	{
 	  /* Save the key for future checking */
 	  unlink(filename);
-	  silc_pkcs_save_public_key_data(filename, pk, pk_len);
+	  silc_pkcs_save_public_key_data(filename, pk, pk_len,
+					 SILC_PKCS_FILE_PEM);
 	  return TRUE;
 	}
 
@@ -885,7 +913,11 @@ int silc_client_verify_server_key(SilcClient client,
     }
 
     if (memcmp(encpk, pk, encpk_len)) {
+      fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
       silc_say(client, "Received server %s public key", hostname);
+      silc_say(client, "Fingerprint for the server %s key is", hostname);
+      silc_say(client, "%s", fingerprint);
+      silc_free(fingerprint);
       silc_say(client, "Server %s key does not match with your local copy",
 	       hostname);
       silc_say(client, "It is possible that the key has expired or changed");
@@ -894,11 +926,12 @@ int silc_client_verify_server_key(SilcClient client,
       
       /* Ask user to verify the key and save it */
       if (silc_client_ask_yes_no(client, 
-         "Would you like to accept the server key anyway (y/n)? "))
+         "Would you like to accept the key anyway (y/n)? "))
 	{
 	  /* Save the key for future checking */
 	  unlink(filename);
-	  silc_pkcs_save_public_key_data(filename, pk, pk_len);
+	  silc_pkcs_save_public_key_data(filename, pk, pk_len,
+					 SILC_PKCS_FILE_PEM);
 	  return TRUE;
 	}
 
