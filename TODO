@@ -1,6 +1,9 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o Add support for the Requested Attributes in WHOIS (setting information
+   and displaying information).  Do /SET MY_* settings to set them.
+
  o Server password is not used at all.  It is not possible to automize
    the password authentication currently.  The silc_get_auth_method
    in irssi/src/silc/core/client_ops.c should find the connection's
@@ -15,9 +18,6 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o Add support for the <Requested Attributes> in WHOIS.  Sending and
-   reception should be added.
-
  o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
    though).  This should be added and perhaps new client operation
    should be added to notify application that it was received and
@@ -29,6 +29,10 @@ TODO/bugs In SILC Client Library
 
 TODO/bugs In SILC Server
 ========================
+
+ o If client's public key is saved in the server (and doing public key
+   authentication) then the hostname and the username information could
+   be taken from the public key.  Should be a configuration option!
 
  o Backup router related issues:
 
@@ -43,10 +47,6 @@ TODO/bugs In SILC Server
    and process them without any timeouts.  THis must be employed because
    each JOIN command will create and distribute the new channel key
    to everybody on the channel (Fix this to 0.9.x).
-
- o If client's public key is saved in the server (and doing public key
-   authentication) then the hostname and the username information could
-   be taken from the public key.  Should be a configuration option!
 
  o Testing
 

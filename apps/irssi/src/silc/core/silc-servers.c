@@ -391,7 +391,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: SILCOPER <username> [-pubkey] */
 /* SYNTAX: TOPIC <channel> [<topic>] */
 /* SYNTAX: UMODE +|-<modes> */
-/* SYNTAX: WHOIS <nickname>[@<hostname>] [<count>] */
+/* SYNTAX: WHOIS <nickname>[@<hostname>] [-details] [<count>] */
 /* SYNTAX: WHOWAS <nickname>[@<hostname>] [<count>] */
 /* SYNTAX: CLOSE <server> [<port>] */
 /* SYNTAX: SHUTDOWN */

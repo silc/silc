@@ -120,6 +120,9 @@ silc_client_command_pending_check(SilcClientConnection conn,
 				  SilcCommand command, 
 				  SilcUInt16 ident,
 				  SilcUInt32 *callbacks_count);
+void silc_client_command_process(SilcClient client,
+				 SilcSocketConnection sock,
+				 SilcPacketContext *packet);
 SILC_CLIENT_CMD_FUNC(whois);
 SILC_CLIENT_CMD_FUNC(whowas);
 SILC_CLIENT_CMD_FUNC(identify);

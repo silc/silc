@@ -43,6 +43,7 @@ struct SilcClientEntryStruct {
   SilcCipher send_key;		/* Private message key for sending */
   SilcCipher receive_key;	/* Private message key for receiving */
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
+  SilcDList attrs;		/* Requested Attributes (maybe NULL) */
   SilcEntryStatus status;	/* Status mask */
   SilcHashTable channels;	/* All channels client has joined */
   unsigned char *key;		/* Set only if appliation provided the

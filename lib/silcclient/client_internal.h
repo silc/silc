@@ -218,5 +218,8 @@ void silc_client_resume_session(SilcClient client,
 				SilcClientConnection conn,
 				SilcClientResumeSessionCallback callback,
 				void *context);
+SilcBuffer silc_client_attributes_process(SilcClient client,
+					  SilcSocketConnection sock,
+					  SilcDList attrs);
 
 #endif

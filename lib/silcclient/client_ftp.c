@@ -1148,7 +1148,7 @@ void silc_client_ftp(SilcClient client,
 
     /* Resolve the client */
     silc_client_get_client_by_id_resolve(client, sock->user_data, remote_id,
-					 silc_client_ftp_resolve_cb,
+					 NULL, silc_client_ftp_resolve_cb,
 					 silc_packet_context_dup(packet));
     silc_free(remote_id);
   }

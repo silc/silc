@@ -561,6 +561,15 @@ typedef struct {
      nickname string whenever it needs the true nickname. */
   SilcNicknameFormatParse nickname_parse;
 
+  /* If this is set to TRUE then the client will ignore all incoming
+     Requested Attributes queries and does not reply anything back.  This
+     usually leads into situation where server does not anymore send
+     the queries after seeing that client does not reply anything back.
+     If your application does not support Requested Attributes or you do
+     not want to use them set this to TRUE.  See SilcAttribute and
+     silc_client_attribute_add for more information on attributes. */
+  bool ignore_requested_attributes;
+
 } SilcClientParams;
 /***/
 
@@ -1069,6 +1078,7 @@ SilcClientEntry silc_client_get_client_by_id(SilcClient client,
  *    silc_client_get_client_by_id_resolve(SilcClient client,
  *                                         SilcClientConnection conn,
  *                                         SilcClientID *client_id,
+ *                                         SilcBuffer attributes,
  *                                         SilcGetClientCallback completion,
  *                                         void *context);
  *
@@ -1080,10 +1090,18 @@ SilcClientEntry silc_client_get_client_by_id(SilcClient client,
  *    is its ID. When server returns the client information it will be
  *    cache and can be accessed locally at a later time.
  *
+ *    If the `attributes' is non-NULL then the buffer includes Requested
+ *    Attributes which can be used to fetch very detailed information
+ *    about the user. If it is NULL then only normal WHOIS query is
+ *    made (for more information about attributes see SilcAttribute).
+ *    Caller may create the `attributes' with silc_client_attributes_request
+ *    function.
+ *
  ***/
 void silc_client_get_client_by_id_resolve(SilcClient client,
 					  SilcClientConnection conn,
 					  SilcClientID *client_id,
+					  SilcBuffer attributes,
 					  SilcGetClientCallback completion,
 					  void *context);
 
@@ -2180,6 +2198,103 @@ silc_client_file_receive(SilcClient client,
 SilcClientFileError silc_client_file_close(SilcClient client,
 					   SilcClientConnection conn,
 					   SilcUInt32 session_id);
+
+/****f* silcclient/SilcClientAPI/silc_client_attribute_add
+ *
+ * SYNOPSIS
+ *
+ *    SilcAttributePayload
+ *    silc_client_attribute_add(SilcClient client,
+ *                              SilcClientConnection conn,
+ *                              SilcAttribute attribute,
+ *                              void *object,
+ *                              SilcUInt32 object_size);
+ *
+ * DESCRIPTION
+ *
+ *    Add new Requsted Attribute for WHOIS command to the client library.
+ *    The `attribute' object indicated by `object' is added and allocated
+ *    SilcAttributePayload is returned.  The `object' must be of correct
+ *    type and of correct size.  See the SilcAttribute for object types
+ *    for different attributes.  You may also get all added attributes
+ *    from the client with silc_client_attributes_get function.
+ *
+ *    Requested Attributes are different personal information about the
+ *    user, status information and other information which other users
+ *    may query with WHOIS command.  Application may set these so that
+ *    if someone sends WHOIS query these attributes will be replied back
+ *    to the sender.  The library always puts the public key to the
+ *    Requested Attributes, but if application wishes to add additional
+ *    public keys (or certificates) it can be done with this interface.
+ *    Library also always computes digital signature of the attributes
+ *    automatically, so application does not need to do that.
+ *
+ ***/
+SilcAttributePayload silc_client_attribute_add(SilcClient client,
+					       SilcClientConnection conn,
+					       SilcAttribute attribute,
+					       void *object,
+					       SilcUInt32 object_size);
+
+/****f* silcclient/SilcClientAPI/silc_client_attribute_del
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_client_attribute_del(SilcClient client,
+ *                                   SilcClientConnection conn,
+ *                                   SilcAttributePayload attr);
+ *
+ * DESCRIPTION
+ *
+ *    Delete the Requested Attribute indicated by `attribute' from the
+ *    client.  You may get all added attributes with the function
+ *    silc_client_attributes_get.  Returns TRUE if the attribute was
+ *    found and deleted.
+ *
+ ***/
+bool silc_client_attribute_del(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcAttributePayload attr);
+
+/****f* silcclient/SilcClientAPI/silc_client_attributes_get
+ *
+ * SYNOPSIS
+ *
+ *    const SilcHashTable
+ *    silc_client_attributes_get(SilcClient client,
+ *                               SilcClientConnection conn);
+ *
+ * DESCRIPTION
+ *
+ *    Returns pointer to the SilcHashTable which includes all the added
+ *    Requested Attributes.  The caller must not free the hash table.
+ *    The caller may use SilcHashTableList and silc_hash_table_list to
+ *    traverse the table.  Each entry in the hash table is one added
+ *    SilcAttributePayload.  It is possible to delete a attribute
+ *    payload while traversing the table.
+ *
+ ***/
+const SilcHashTable silc_client_attributes_get(SilcClient client,
+					       SilcClientConnection conn);
+
+/****f* silcclient/SilcClientAPI/silc_client_attributes_request
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Constructs a Requested Attributes buffer. If the `attribute' is zero (0)
+ *    then all attributes are requested.  Alternatively, `attribute' and
+ *    all variable arguments can each be requested attribute.  In this case
+ *    the last must be set to zero (0) to complete the variable list of
+ *    requested attributes.  See SilcAttribute for all attributes.
+ *    You can give the returned buffer as argument to for example
+ *    silc_client_get_client_by_id_resolve function.
+ *
+ ***/
+SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...);
 
 #include "client.h"
 #include "command.h"

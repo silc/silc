@@ -241,13 +241,19 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
     client_entry->fingerprint_len = fingerprint_len;
   }
 
+  /* Take Requested Attributes if set. */
+  tmp = silc_argument_get_arg_type(cmd->args, 11, &len);
+  if (tmp)
+    client_entry->attrs = silc_attribute_payload_parse(tmp, len);
+
   client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
 
   /* Notify application */
   if (!cmd->callbacks_count && notify)
     COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
 		   has_channels ? &channels : NULL, mode, idle, 
-		   fingerprint, has_user_modes ? &ch_user_modes : NULL));
+		   fingerprint, has_user_modes ? &ch_user_modes : NULL,
+		   client_entry->attrs));
 }
 
 /* Received reply for WHOIS command. This maybe called several times

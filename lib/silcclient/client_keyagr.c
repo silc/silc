@@ -733,6 +733,7 @@ void silc_client_key_agreement(SilcClient client,
     return;
 
   silc_client_get_client_by_id_resolve(client, sock->user_data, remote_id,
+				       NULL,
 				       silc_client_key_agreement_resolve_cb,
 				       silc_packet_context_dup(packet));
   silc_free(remote_id);

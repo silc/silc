@@ -209,8 +209,8 @@ SILC_CLIENT_CMD_FUNC(whois)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
-  SilcBuffer buffer;
-  unsigned char count[4];
+  SilcBuffer buffer, attrs = NULL;
+  unsigned char count[4], *tmp = NULL;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -234,13 +234,21 @@ SILC_CLIENT_CMD_FUNC(whois)
 					    1, cmd->argv[1], 
 					    cmd->argv_lens[1]);
   } else {
-    int c = atoi(cmd->argv[2]);
-    memset(count, 0, sizeof(count));
-    SILC_PUT32_MSB(c, count);
+    if (!strcasecmp(cmd->argv[2], "-details"))
+      attrs = silc_client_attributes_request(0);
+
+    if (!attrs || cmd->argc > 3) {
+      int c = atoi(cmd->argc > 3 ? cmd->argv[3] : cmd->argv[2]);
+      SILC_PUT32_MSB(c, count);
+      tmp = count;
+    }
+
     buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,
-					    ++conn->cmd_ident, 2,
+					    ++conn->cmd_ident, 3,
 					    1, cmd->argv[1], cmd->argv_lens[1],
-					    2, count, sizeof(count));
+					    2, tmp ? tmp : NULL, tmp ? 4 : 0,
+					    3, attrs ? attrs->data : NULL,
+					    attrs ? attrs->len : 0);
   }
   silc_client_packet_send(cmd->client, cmd->conn->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
@@ -2521,4 +2529,98 @@ void silc_client_commands_unregister(SilcClient client)
   SILC_CLIENT_CMDU(connect, PRIV_CONNECT, "CONNECT");
   SILC_CLIENT_CMDU(close, PRIV_CLOSE, "CLOSE");
   SILC_CLIENT_CMDU(shutdown, PRIV_SHUTDOWN, "SHUTDOWN");
+}
+
+/**** Client side incoming command handling **********************************/
+
+void silc_client_command_process_whois(SilcClient client,
+				       SilcSocketConnection sock,
+				       SilcCommandPayload payload,
+				       SilcArgumentPayload args);
+
+/* Client is able to receive some command packets even though they are
+   special case.  Server may send WHOIS command to the client to retrieve
+   Requested Attributes information for WHOIS query the server is
+   processing. This function currently handles only the WHOIS command,
+   but if in the future for commands may arrive then this can be made
+   to support other commands too. */
+
+void silc_client_command_process(SilcClient client,
+				 SilcSocketConnection sock,
+				 SilcPacketContext *packet)
+{
+  SilcCommandPayload payload;
+  SilcCommand command;
+  SilcArgumentPayload args;
+
+  /* Get command payload from packet */
+  payload = silc_command_payload_parse(packet->buffer->data,
+				       packet->buffer->len);
+  if (!payload) {
+    /* Silently ignore bad reply packet */
+    SILC_LOG_DEBUG(("Bad command packet"));
+    return;
+  }
+
+  /* Get arguments */
+  args = silc_command_get_args(payload);
+  
+  /* Get the command */
+  command = silc_command_get(payload);
+  switch (command) {
+
+  case SILC_COMMAND_WHOIS:
+    /* Ignore everything if requested by application */
+    if (client->internal->params->ignore_requested_attributes)
+      break;
+
+    silc_client_command_process_whois(client, sock, payload, args);
+    break;
+
+  default:
+    break;
+  }
+
+  silc_command_payload_free(payload);
+}
+
+void silc_client_command_process_whois(SilcClient client,
+				       SilcSocketConnection sock,
+				       SilcCommandPayload payload,
+				       SilcArgumentPayload args)
+{
+  SilcDList attrs;
+  unsigned char *tmp;
+  SilcUInt32 tmp_len;
+  SilcBuffer buffer, packet;
+
+  SILC_LOG_DEBUG(("Received WHOIS command"));
+
+  /* Try to take the Requested Attributes */
+  tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+  if (!tmp)
+    return;
+
+  attrs = silc_attribute_payload_parse(tmp, tmp_len);
+  if (!attrs)
+    return;
+
+  /* Process requested attributes */
+  buffer = silc_client_attributes_process(client, sock, attrs);
+  if (!buffer) {
+    silc_attribute_payload_list_free(attrs);
+    return;
+  }
+
+  /* Send the attributes back */
+  packet =
+    silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
+					 SILC_STATUS_OK, 0,
+					 silc_command_get_ident(payload),
+					 1, 11, buffer->data, buffer->len);
+  silc_client_packet_send(client, sock, SILC_PACKET_COMMAND_REPLY,
+			  NULL, 0, NULL, NULL, packet->data, 
+			  packet->len, TRUE);
+  silc_buffer_free(packet);
+  silc_buffer_free(buffer);
 }

@@ -308,7 +308,7 @@ void silc_client_channel_message(SilcClient client,
     SilcChannelClientResolve res = silc_calloc(1, sizeof(*res));
     res->payload = payload;
     res->channel_id = id;
-    silc_client_get_client_by_id_resolve(client, conn, client_id,
+    silc_client_get_client_by_id_resolve(client, conn, client_id, NULL,
 					 silc_client_channel_message_cb,
 					 res);
     payload = NULL;

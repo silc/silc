@@ -960,13 +960,15 @@ void silc_client_packet_parse_type(SilcClient client,
   SilcBuffer buffer = packet->buffer;
   SilcPacketType type = packet->type;
 
-  SILC_LOG_DEBUG(("Parsing packet type %d", type));
+  SILC_LOG_DEBUG(("Parsing %s packet", silc_get_packet_name(type)));
 
   /* Parse the packet type */
   switch(type) {
+
   case SILC_PACKET_DISCONNECT:
     silc_client_disconnected_by_server(client, sock, buffer);
     break;
+
   case SILC_PACKET_SUCCESS:
     /*
      * Success received for something. For now we can have only
@@ -976,6 +978,7 @@ void silc_client_packet_parse_type(SilcClient client,
     if (sock->protocol)
       silc_protocol_execute(sock->protocol, client->schedule, 0, 0);
     break;
+
   case SILC_PACKET_FAILURE:
     /*
      * Failure received for some protocol. Set the protocol state to 
@@ -984,6 +987,7 @@ void silc_client_packet_parse_type(SilcClient client,
      */
     silc_client_process_failure(client, sock, packet);
     break;
+
   case SILC_PACKET_REJECT:
     break;
 
@@ -1007,6 +1011,7 @@ void silc_client_packet_parse_type(SilcClient client,
      */
     silc_client_channel_message(client, sock, packet);
     break;
+
   case SILC_PACKET_CHANNEL_KEY:
     /*
      * Received key for a channel. By receiving this key the client will be
@@ -1022,10 +1027,19 @@ void silc_client_packet_parse_type(SilcClient client,
      */
     silc_client_private_message(client, sock, packet);
     break;
+
   case SILC_PACKET_PRIVATE_MESSAGE_KEY:
     /*
      * Received private message key
      */
+    break;
+
+  case SILC_PACKET_COMMAND:
+    /*
+     * Received command packet, a special case since normally client
+     * does not receive commands.
+     */
+    silc_client_command_process(client, sock, packet);
     break;
 
   case SILC_PACKET_COMMAND_REPLY:
@@ -1094,6 +1108,7 @@ void silc_client_packet_parse_type(SilcClient client,
 		      "protocol active, packet dropped."));
     }
     break;
+
   case SILC_PACKET_KEY_EXCHANGE_2:
     if (sock->protocol && sock->protocol->protocol && 
 	(sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE ||

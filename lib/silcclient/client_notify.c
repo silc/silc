@@ -38,7 +38,8 @@ SILC_TASK_CALLBACK(silc_client_notify_check_client)
   SilcClient client = res->context;
   SilcClientConnection conn = res->sock->user_data;
   SilcClientID *client_id = res->packet;
-  silc_client_get_client_by_id_resolve(client, conn, client_id, NULL, NULL);
+  silc_client_get_client_by_id_resolve(client, conn, client_id,
+				       NULL, NULL, NULL);
   silc_free(client_id);
   silc_socket_free(res->sock);
   silc_free(res);

@@ -1,3 +1,37 @@
+Wed Oct  9 17:22:57 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_attribute_payload_encode_data to directly encode
+	  the data into the attributes buffer.  Renamed function
+	  silc_attribute_payload_parse_list to silc_attribute_payload_parse.
+	  Affected files are lib/silccore/silcattrs.[ch].
+
+	* silc_hash_table_find_foreach calls the foreach function now
+	  once even if the nothing was found with context set to NULL.
+	  Affected file lib/silcutil/silchashtable.[ch].
+
+	* Remove the RESOLVING flag from client entry after received
+	  the Requested Attributes from the client.  Fixed memory leak
+	  in client entry freeing.  Affected files silcd/server_query.c
+	  and idlist.c.
+
+	* Added Requested Attributes support into SILC Client Library.
+	  It is not able to send requested attributes in WHOIS command,
+	  and also receive and process requested attributes.  Added
+	  silc_client_attribute_[add|del] and silc_client_attributes_get
+	  functions.  Added also `ignore_requested_attributes' to the
+	  SilcClientParams to not use attributes in client.  Affected
+	  files are lib/silcclient/command.c, client_attrs.[ch],
+	  silcclient.h, client_internal and client.[ch].
+
+	* Changed the silc_client_get_client_by_id to support Requested
+	  Attributes, it takes them as argument now.  Affected file
+	  is lib/silcclient/silcclient.h, and idlist.c.
+
+	* Added -details option to WHOIS command in Irssi SILC Client
+	  to support the requested attributes.  By default it requests
+	  all attributes.  Affected file lib/silcclient/command.c and
+	  irssi/doc/help/in/whois.in.
+
 Tue Oct  8 17:58:28 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Add also SERVICE attribute for server-constructed attribute

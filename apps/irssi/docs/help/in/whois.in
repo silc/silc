@@ -1,9 +1,30 @@
 
 @SYNTAX:whois@
 
-Shows whois information of the specified client.
-By default, this is aliased to /WI.
+Shows WHOIS information of the specified client. By default,
+this is aliased to /WI. If the -details option is used WHOIS
+will retrieve as detailed information about the user as possible.
+Using this option WHOIS MAY return following information about
+the user:
+
+  o User's public key
+  o Business card of the user (VCard)
+  o List of network services user is currently using
+  o Text and/or multimedia message (MIME, image, etc)
+  o User's personal mood
+  o User's preferred language
+  o User's preferred contact method (chat, email, etc)
+  o User's timezone
+  o User's geographical location
+  o Information about the device user is using (computer, PDA, etc)
+
+It is also possible to receive other information. Note that all
+users do not want to send these informations or may send only
+some of the information. It also possible that none of these
+informations is received.
+
+If you want to send your information in WHOIS you can set the
+information with SET command. See /SET MY.
 
 See also: WHOWAS, CHANNEL
-
 

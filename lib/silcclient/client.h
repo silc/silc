@@ -131,6 +131,9 @@ struct SilcClientConnectionStruct {
   SilcUInt32 next_session_id;
   SilcClientFtpSession active_session;
 
+  /* Requested Attributes */
+  SilcHashTable attrs;
+
   /* Pointer back to the SilcClient. This object is passed to the application
      and the actual client object is accesible through this pointer. */
   SilcClient client;
