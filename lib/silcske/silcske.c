@@ -17,31 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.6  2000/07/19 07:04:37  priikone
- * 	Added version detection support to SKE. Minor bugfixes.
- *
- * Revision 1.5  2000/07/10 05:34:22  priikone
- * 	Added mp binary encoding as protocols defines.
- *
- * Revision 1.4  2000/07/07 06:46:43  priikone
- * 	Removed ske_verify_public_key function as it is not needed
- * 	anymore. Added support to the public key verification as callback
- * 	function. Other minor changes and bug fixes.
- *
- * Revision 1.3  2000/07/06 07:12:39  priikone
- * 	Support for SILC style public keys added.
- *
- * Revision 1.2  2000/07/05 06:05:15  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 #include "payload_internal.h"
@@ -724,24 +700,25 @@ SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status,
 
 SilcSKEStatus 
 silc_ske_assemble_security_properties(SilcSKE ske,
+				      unsigned char flags,
 				      char *version,
 				      SilcSKEStartPayload **return_payload)
 {
   SilcSKEStartPayload *rp;
+  int i;
 
   SILC_LOG_DEBUG(("Assembling KE Start Payload"));
 
   rp = silc_calloc(1, sizeof(*rp));
 
-  /* XXX */
   /* Set flags */
-  rp->flags = 0;
+  rp->flags = flags;
 
-  /* XXX */
-  /* Cookie */
-  rp->cookie = silc_calloc(SILC_SKE_COOKIE_LEN, sizeof(unsigned char));
+  /* Set random cookie */
+  rp->cookie = silc_calloc(SILC_SKE_COOKIE_LEN, sizeof(*rp->cookie));
+  for (i = 0; i < SILC_SKE_COOKIE_LEN; i++)
+    rp->cookie[i] = silc_rng_get_byte(ske->rng);
   rp->cookie_len = SILC_SKE_COOKIE_LEN;
-  memcpy(rp->cookie, "1234567890123456", SILC_SKE_COOKIE_LEN);
 
   /* Put version */
   rp->version = strdup(version);

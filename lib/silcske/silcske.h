@@ -70,6 +70,7 @@ typedef struct {
   unsigned int hmac_key_len;
 } SilcSKEKeyMaterial;
 
+/* Length of cookie in Start Payload */
 #define SILC_SKE_COOKIE_LEN 16
 
 #include "groups.h"
@@ -77,9 +78,9 @@ typedef struct {
 
 /* Security Property Flags. */
 typedef enum {
-  SILC_SKE_SP_FLAG_NONE = (1L << 0),
-  SILC_SKE_SP_FLAG_NO_REPLY = (1L << 1),
-  SILC_SKE_SP_FLAG_PFS = (1L << 2),
+  SILC_SKE_SP_FLAG_NONE      = (1L << 0),
+  SILC_SKE_SP_FLAG_NO_REPLY  = (1L << 1),
+  SILC_SKE_SP_FLAG_PFS       = (1L << 2),
 } SilcSKESecurityPropertyFlag;
 
 /* Security Properties negotiated between key exchange parties. This
@@ -187,6 +188,7 @@ SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status,
 			     void *context);
 SilcSKEStatus 
 silc_ske_assemble_security_properties(SilcSKE ske,
+				      unsigned char flags,
 				      char *version,
 				      SilcSKEStartPayload **return_payload);
 SilcSKEStatus 
