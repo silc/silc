@@ -293,7 +293,7 @@ void silc_client_send_key_agreement(SilcClient client,
 				    SilcClientEntry client_entry,
 				    char *hostname,
 				    int port,
-				    unsigned long timeout_secs,
+				    uint32 timeout_secs,
 				    SilcKeyAgreementCallback completion,
 				    void *context)
 {
@@ -621,7 +621,7 @@ static void
 silc_client_key_agreement_resolve_cb(SilcClient client,
 				     SilcClientConnection conn,
 				     SilcClientEntry *clients,
-				     unsigned int clients_count,
+				     uint32 clients_count,
 				     void *context)
 {
   SilcPacketContext *packet = (SilcPacketContext *)context;

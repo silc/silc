@@ -133,7 +133,7 @@ void silc_hmac_free(SilcHmac hmac)
 
 /* Returns the length of the MAC that the HMAC will produce. */
 
-unsigned int silc_hmac_len(SilcHmac hmac)
+uint32 silc_hmac_len(SilcHmac hmac)
 {
   return hmac->hmac->len;
 }
@@ -188,7 +188,7 @@ char *silc_hmac_get_supported()
 /* Sets the HMAC key used in the HMAC creation */
 
 void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
-		       unsigned int key_len)
+		       uint32 key_len)
 {
   if (hmac->key) {
     memset(hmac->key, 0, hmac->key_len);
@@ -203,8 +203,8 @@ void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
    return_hash argument. */
 
 void silc_hmac_make_internal(SilcHmac hmac, unsigned char *data,
-			     unsigned int data_len, unsigned char *key,
-			     unsigned int key_len, unsigned char *return_hash)
+			     uint32 data_len, unsigned char *key,
+			     uint32 key_len, unsigned char *return_hash)
 {
   SilcHash hash = hmac->hash;
   unsigned char inner_pad[hash->hash->block_len + 1];
@@ -257,8 +257,8 @@ void silc_hmac_make_internal(SilcHmac hmac, unsigned char *data,
    uses the internal key set with silc_hmac_set_key. */
 
 void silc_hmac_make(SilcHmac hmac, unsigned char *data,
-		    unsigned int data_len, unsigned char *return_hash,
-		    unsigned int *return_len)
+		    uint32 data_len, unsigned char *return_hash,
+		    uint32 *return_len)
 {
   silc_hmac_make_internal(hmac, data, data_len, hmac->key, 
 			  hmac->key_len, return_hash);
@@ -270,10 +270,10 @@ void silc_hmac_make(SilcHmac hmac, unsigned char *data,
    key. The key is sent as argument to the function. */
 
 void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
-			     unsigned int data_len, 
-			     unsigned char *key, unsigned int key_len,
+			     uint32 data_len, 
+			     unsigned char *key, uint32 key_len,
 			     unsigned char *return_hash,
-			     unsigned int *return_len)
+			     uint32 *return_len)
 {
   silc_hmac_make_internal(hmac, data, data_len, key, key_len, return_hash);
   if (return_len)
@@ -286,8 +286,8 @@ void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
    routine allows these dangerous truncations. */
 
 void silc_hmac_make_truncated(SilcHmac hmac, unsigned char *data,
-			      unsigned int data_len,
-			      unsigned int truncated_len,
+			      uint32 data_len,
+			      uint32 truncated_len,
 			      unsigned char *return_hash)
 {
   unsigned char hvalue[hmac->hash->hash->hash_len];

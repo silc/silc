@@ -34,7 +34,7 @@ SILC_CLIENT_CMD_FUNC(get_client_callback)
 {
   GetClientInternal i = (GetClientInternal)context;
   SilcClientEntry *clients;
-  unsigned int clients_count;
+  uint32 clients_count;
 
   /* Get the clients */
   clients = silc_client_get_clients_local(i->cmd->client, i->cmd->conn,
@@ -116,7 +116,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 					       SilcClientConnection conn,
 					       char *nickname,
 					       char *server,
-					       unsigned int *clients_count)
+					       uint32 *clients_count)
 {
   SilcIDCacheEntry id_cache;
   SilcIDCacheList list = NULL;
@@ -173,7 +173,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 typedef struct {
   SilcClient client;
   SilcClientConnection conn;
-  unsigned int list_count;
+  uint32 list_count;
   SilcBuffer client_id_list;
   SilcGetClientCallback completion;
   void *context;
@@ -186,11 +186,11 @@ SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
   SilcIDCacheEntry id_cache = NULL;
   SilcBuffer client_id_list = i->client_id_list;
   SilcClientEntry *clients = NULL;
-  unsigned int clients_count = 0;
+  uint32 clients_count = 0;
   int c;
 
   for (c = 0; c < i->list_count; c++) {
-    unsigned short idp_len;
+    uint16 idp_len;
     SilcClientID *client_id;
 
     /* Get Client ID */
@@ -241,7 +241,7 @@ static void silc_client_get_clients_list_destructor(void *context)
 
 void silc_client_get_clients_by_list(SilcClient client,
 				     SilcClientConnection conn,
-				     unsigned int list_count,
+				     uint32 list_count,
 				     SilcBuffer client_id_list,
 				     SilcGetClientCallback completion,
 				     void *context)
@@ -249,7 +249,7 @@ void silc_client_get_clients_by_list(SilcClient client,
   SilcIDCacheEntry id_cache = NULL;
   int i;
   unsigned char **res_argv = NULL;
-  unsigned int *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
+  uint32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
   GetClientsByListInternal in;
 
   in = silc_calloc(1, sizeof(*in));
@@ -261,7 +261,7 @@ void silc_client_get_clients_by_list(SilcClient client,
   in->context = context;
 
   for (i = 0; i < list_count; i++) {
-    unsigned short idp_len;
+    uint16 idp_len;
     SilcClientID *client_id;
     SilcClientEntry entry;
 
@@ -343,7 +343,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
 				       char *nickname,
 				       char *server,
-				       unsigned int num,
+				       uint32 num,
 				       int query)
 {
   SilcIDCacheEntry id_cache;

@@ -25,8 +25,8 @@
 typedef struct SilcClientConfigSectionAlgStruct {
   char *alg_name;
   char *sim_name;
-  unsigned int block_len;
-  unsigned int key_len;
+  uint32 block_len;
+  uint32 key_len;
   struct SilcClientConfigSectionAlgStruct *next;
   struct SilcClientConfigSectionAlgStruct *prev;
 #define SILC_CLIENT_CONFIG_MODNAME "builtin"
@@ -37,7 +37,7 @@ typedef struct SilcClientConfigSectionConnectionStruct {
   char *host;
   int auth_meth;
   char *auth_data;
-  unsigned short port;
+  uint16 port;
   struct SilcClientConfigSectionConnectionStruct *next;
   struct SilcClientConfigSectionConnectionStruct *prev;
 #define SILC_CLIENT_CONFIG_AUTH_METH_PASSWD "passwd"
@@ -91,7 +91,7 @@ typedef enum {
 typedef struct {
   const char *section;
   SilcClientConfigSectionType type;
-  unsigned int maxfields;
+  int maxfields;
 } SilcClientConfigSection;
 
 /* List of all possible config sections in SILC client */
@@ -101,7 +101,7 @@ extern SilcClientConfigSection silc_client_config_sections[];
    from a file to this structure before parsing it further. */
 typedef struct SilcClientConfigParseStruct {
   SilcBuffer line;
-  unsigned int linenum;
+  int linenum;
   SilcClientConfigSection *section;
   struct SilcClientConfigParseStruct *next;
   struct SilcClientConfigParseStruct *prev;
@@ -114,7 +114,7 @@ int silc_client_config_parse(SilcClientConfig config, SilcBuffer buffer,
 			     SilcClientConfigParse *return_config);
 int silc_client_config_parse_lines(SilcClientConfig config, 
 				   SilcClientConfigParse parse_config);
-int silc_client_config_check_sections(unsigned int checkmask);
+int silc_client_config_check_sections(uint32 checkmask);
 void silc_client_config_setlogfiles(SilcClientConfig config);
 void silc_client_config_register_ciphers(SilcClientConfig config);
 void silc_client_config_register_pkcs(SilcClientConfig config);

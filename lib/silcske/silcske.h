@@ -52,7 +52,7 @@ typedef void (*SilcSKECb)(SilcSKE ske, void *context);
 /* Callback function used to verify the received public key. */
 typedef SilcSKEStatus (*SilcSKEVerifyCb)(SilcSKE ske, 
 					 unsigned char *pk_data,
-					 unsigned int pk_len,
+					 uint32 pk_len,
 					 SilcSKEPKType pk_type,
 					 void *context);
 
@@ -61,12 +61,12 @@ typedef SilcSKEStatus (*SilcSKEVerifyCb)(SilcSKE ske,
 typedef struct {
   unsigned char *send_iv;
   unsigned char *receive_iv;
-  unsigned int iv_len;
+  uint32 iv_len;
   unsigned char *send_enc_key;
   unsigned char *receive_enc_key;
-  unsigned int enc_key_len;
+  uint32 enc_key_len;
   unsigned char *hmac_key;
-  unsigned int hmac_key_len;
+  uint32 hmac_key_len;
 } SilcSKEKeyMaterial;
 
 /* Length of cookie in Start Payload */
@@ -117,7 +117,7 @@ struct SilcSKEStruct {
   /* If initiator, this is responders public key. If responder this
      is our own public key. */
   unsigned char *pk;
-  unsigned int pk_len;
+  uint32 pk_len;
 
   /* Random number x, 1 < x < q. This is the secret exponent
      used in Diffie Hellman computations. */
@@ -128,7 +128,7 @@ struct SilcSKEStruct {
   
   /* The hash value HASH of the key exchange */
   unsigned char *hash;
-  unsigned int hash_len;
+  uint32 hash_len;
 
   /* Random Number Generator. This is set by the caller and must
      be free'd by the caller. */
@@ -205,28 +205,28 @@ silc_ske_select_security_properties(SilcSKE ske,
 				    SilcSKEStartPayload *payload,
 				    SilcSKEStartPayload *remote_payload);
 SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcInt n, 
-				  unsigned int len, 
+				  uint32 len, 
 				  SilcInt *rnd);
 SilcSKEStatus silc_ske_make_hash(SilcSKE ske, 
 				 unsigned char *return_hash,
-				 unsigned int *return_hash_len,
+				 uint32 *return_hash_len,
 				 int initiator);
 SilcSKEStatus 
 silc_ske_process_key_material_data(unsigned char *data,
-				   unsigned int data_len,
-				   unsigned int req_iv_len,
-				   unsigned int req_enc_key_len,
-				   unsigned int req_hmac_key_len,
+				   uint32 data_len,
+				   uint32 req_iv_len,
+				   uint32 req_enc_key_len,
+				   uint32 req_hmac_key_len,
 				   SilcHash hash,
 				   SilcSKEKeyMaterial *key);
 SilcSKEStatus silc_ske_process_key_material(SilcSKE ske, 
-					    unsigned int req_iv_len,
-					    unsigned int req_enc_key_len,
-					    unsigned int req_hmac_key_len,
+					    uint32 req_iv_len,
+					    uint32 req_enc_key_len,
+					    uint32 req_hmac_key_len,
 					    SilcSKEKeyMaterial *key);
 SilcSKEStatus silc_ske_check_version(SilcSKE ske,
 				     unsigned char *version,
-				     unsigned int version_len);
+				     uint32 version_len);
 void silc_ske_free_key_material(SilcSKEKeyMaterial *key);
 
 #endif

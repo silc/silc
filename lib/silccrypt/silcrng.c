@@ -31,11 +31,11 @@
 #undef SILC_RNG_DEBUG
 /* #define SILC_RNG_DEBUG */
 
-static unsigned int silc_rng_get_position(SilcRng rng);
+static uint32 silc_rng_get_position(SilcRng rng);
 static void silc_rng_stir_pool(SilcRng rng);
-static void silc_rng_xor(SilcRng rng, unsigned int val, unsigned int pos);
+static void silc_rng_xor(SilcRng rng, uint32 val, unsigned int pos);
 static void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, 
-			       unsigned int len);
+			       uint32 len);
 static void silc_rng_exec_command(SilcRng rng, char *command);
 static void silc_rng_get_hard_noise(SilcRng rng);
 static void silc_rng_get_medium_noise(SilcRng rng);
@@ -50,8 +50,8 @@ static void silc_rng_get_soft_noise(SilcRng rng);
    from the same point of the pool. Short description of the fields
    following.
 
-   unsigned int low
-   unsigned int pos
+   uint32 low
+   uint32 pos
 
        The index for the random pool buffer. Lowest and current
        positions.
@@ -63,8 +63,8 @@ static void silc_rng_get_soft_noise(SilcRng rng);
 
 */
 typedef struct SilcRngStateContext {
-  unsigned int low;
-  unsigned int pos;
+  uint32 low;
+  uint32 pos;
   struct SilcRngStateContext *next;
 } *SilcRngState;
 
@@ -288,9 +288,9 @@ static void silc_rng_exec_command(SilcRng rng, char *command)
    pool. After adding the noise the pool is stirred. */
 
 static void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, 
-			       unsigned int len)
+			       uint32 len)
 {
-  unsigned int i, pos;
+  uint32 i, pos;
 
   pos = silc_rng_get_position(rng);
 
@@ -307,7 +307,7 @@ static void silc_rng_add_noise(SilcRng rng, unsigned char *buffer,
 
 /* XOR's data into the pool */
 
-static void silc_rng_xor(SilcRng rng, unsigned int val, unsigned int pos)
+static void silc_rng_xor(SilcRng rng, uint32 val, unsigned int pos)
 {
   assert(rng != NULL);
   rng->pool[pos] ^= val + val;
@@ -319,7 +319,7 @@ static void silc_rng_xor(SilcRng rng, unsigned int val, unsigned int pos)
 static void silc_rng_stir_pool(SilcRng rng)
 {
   int i;
-  unsigned long iv[5];
+  uint32 iv[5];
 
   /* Get the IV */
   memcpy(iv, &rng->pool[SILC_RNG_POOLSIZE - 256], sizeof(iv));
@@ -353,10 +353,10 @@ static void silc_rng_stir_pool(SilcRng rng)
 /* Returns next position where data is fetched from the pool or
    put to the pool. */
 
-static unsigned int silc_rng_get_position(SilcRng rng)
+static uint32 silc_rng_get_position(SilcRng rng)
 {
   SilcRngState next;
-  unsigned int pos;
+  uint32 pos;
 
   next = rng->state->next;
 
@@ -383,10 +383,10 @@ unsigned char silc_rng_get_byte(SilcRng rng)
 
 /* Returns 16 bit random number */
 
-unsigned short silc_rng_get_rn16(SilcRng rng)
+uint16 silc_rng_get_rn16(SilcRng rng)
 {
   unsigned char rn[2];
-  unsigned short num;
+  uint16 num;
 
   rn[0] = silc_rng_get_byte(rng);
   rn[1] = silc_rng_get_byte(rng);
@@ -397,10 +397,10 @@ unsigned short silc_rng_get_rn16(SilcRng rng)
 
 /* Returns 32 bit random number */
 
-unsigned int silc_rng_get_rn32(SilcRng rng)
+uint32 silc_rng_get_rn32(SilcRng rng)
 {
   unsigned char rn[4];
-  unsigned short num;
+  uint16 num;
 
   rn[0] = silc_rng_get_byte(rng);
   rn[1] = silc_rng_get_byte(rng);
@@ -413,7 +413,7 @@ unsigned int silc_rng_get_rn32(SilcRng rng)
 
 /* Returns random number string. Returned string is in HEX format. */
 
-unsigned char *silc_rng_get_rn_string(SilcRng rng, unsigned int len)
+unsigned char *silc_rng_get_rn_string(SilcRng rng, uint32 len)
 {
   int i;
   unsigned char *string;
@@ -428,7 +428,7 @@ unsigned char *silc_rng_get_rn_string(SilcRng rng, unsigned int len)
 
 /* Returns random number binary data. */
 
-unsigned char *silc_rng_get_rn_data(SilcRng rng, unsigned int len)
+unsigned char *silc_rng_get_rn_data(SilcRng rng, uint32 len)
 {
   int i;
   unsigned char *data;
@@ -480,22 +480,22 @@ unsigned char silc_rng_global_get_byte()
   return global_rng ? silc_rng_get_byte(global_rng) : 0;
 }
 
-unsigned short silc_rng_global_get_rn16()
+uint16 silc_rng_global_get_rn16()
 {
   return global_rng ? silc_rng_get_rn16(global_rng) : 0;
 }
 
-unsigned int silc_rng_global_get_rn32()
+uint32 silc_rng_global_get_rn32()
 {
   return global_rng ? silc_rng_get_rn32(global_rng) : 0;
 }
 
-unsigned char *silc_rng_global_get_rn_string(unsigned int len)
+unsigned char *silc_rng_global_get_rn_string(uint32 len)
 {
   return global_rng ? silc_rng_get_rn_string(global_rng, len) : NULL;
 }
 
-unsigned char *silc_rng_global_get_rn_data(unsigned int len)
+unsigned char *silc_rng_global_get_rn_data(uint32 len)
 {
   return global_rng ? silc_rng_get_rn_data(global_rng, len) : NULL;
 }

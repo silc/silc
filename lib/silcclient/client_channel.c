@@ -38,7 +38,7 @@ void silc_client_send_channel_message(SilcClient client,
 				      SilcChannelPrivateKey key,
 				      SilcMessageFlags flags,
 				      unsigned char *data, 
-				      unsigned int data_len, 
+				      uint32 data_len, 
 				      int force_send)
 {
   int i;
@@ -48,7 +48,7 @@ void silc_client_send_channel_message(SilcClient client,
   SilcCipher cipher;
   SilcHmac hmac;
   unsigned char *id_string;
-  unsigned int iv_len;
+  uint32 iv_len;
 
   SILC_LOG_DEBUG(("Sending packet to channel"));
 
@@ -252,7 +252,7 @@ void silc_client_save_channel_key(SilcClientConnection conn,
 				  SilcChannelEntry channel)
 {
   unsigned char *id_string, *key, *cipher, hash[32];
-  unsigned int tmp_len;
+  uint32 tmp_len;
   SilcChannelID *id;
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelKeyPayload payload;
@@ -362,7 +362,7 @@ int silc_client_add_channel_private_key(SilcClient client,
 					char *cipher,
 					char *hmac,
 					unsigned char *key,
-					unsigned int key_len)
+					uint32 key_len)
 {
   SilcChannelPrivateKey entry;
   unsigned char hash[32];
@@ -516,10 +516,10 @@ SilcChannelPrivateKey *
 silc_client_list_channel_private_keys(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
-				      unsigned int *key_count)
+				      uint32 *key_count)
 {
   SilcChannelPrivateKey *keys = NULL, entry;
-  unsigned int count = 0;
+  uint32 count = 0;
 
   if (!channel->private_keys)
     return NULL;
@@ -540,7 +540,7 @@ silc_client_list_channel_private_keys(SilcClient client,
 /* Frees the SilcChannelPrivateKey array. */
 
 void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
-					   unsigned int key_count)
+					   uint32 key_count)
 {
   silc_free(keys);
 }

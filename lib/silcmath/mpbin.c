@@ -25,11 +25,11 @@
    must be free'd by the caller. If `len' is provided the destination
    buffer is allocated that large. If zero then the size is approximated. */
 
-unsigned char *silc_mp_mp2bin(SilcInt *val, unsigned int len,
-			      unsigned int *ret_len)
+unsigned char *silc_mp_mp2bin(SilcInt *val, uint32 len,
+			      uint32 *ret_len)
 {
   int i;
-  unsigned int size;
+  uint32 size;
   unsigned char *ret;
   SilcInt tmp;
 
@@ -55,10 +55,10 @@ unsigned char *silc_mp_mp2bin(SilcInt *val, unsigned int len,
    returned into `dst' and it's length to the `ret_len'. */
 
 void silc_mp_mp2bin_noalloc(SilcInt *val, unsigned char *dst,
-			    unsigned int dst_len)
+			    uint32 dst_len)
 {
   int i;
-  unsigned int size = dst_len;
+  uint32 size = dst_len;
   SilcInt tmp;
 
   silc_mp_init_set(&tmp, val);
@@ -74,7 +74,7 @@ void silc_mp_mp2bin_noalloc(SilcInt *val, unsigned char *dst,
 /* Decodes binary data into MP integer. The integer sent as argument
    must be initialized. */
 
-void silc_mp_bin2mp(unsigned char *data, unsigned int len, SilcInt *ret)
+void silc_mp_bin2mp(unsigned char *data, uint32 len, SilcInt *ret)
 {
   int i;
 

@@ -80,7 +80,7 @@ typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
        Protocol object for the socket. Currently only one protocol can be
        executing at a time for a particular socket.
 
-   unsigned int flags
+   uint32 flags
 
        Socket flags that indicate the status of the socket. This can
        indicate several different status that can affect the use of the
@@ -93,7 +93,7 @@ typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
 
    char *hostname
    char *ip
-   unsigned short port
+   uint16 port
 
        Resolved hostname, IP address and port of the connection who owns
        this object.
@@ -116,12 +116,12 @@ struct SilcSocketConnectionStruct {
   SilcSocketType type;
   void *user_data;
   SilcProtocol protocol;
-  unsigned int flags;
+  uint32 flags;
   int users;
 
   char *hostname;
   char *ip;
-  unsigned short port;
+  uint16 port;
 
   SilcBuffer inbuf;
   SilcBuffer outbuf;
@@ -131,7 +131,7 @@ struct SilcSocketConnectionStruct {
 
 /* Heartbeat context */
 struct SilcSocketConnectionHB {
-  unsigned long heartbeat;
+  uint32 heartbeat;
   SilcSocketConnectionHBCb hb_callback;
   void *hb_context;
   void *timeout_queue;
@@ -168,7 +168,7 @@ void silc_socket_alloc(int sock, SilcSocketType type, void *user_data,
 void silc_socket_free(SilcSocketConnection sock);
 SilcSocketConnection silc_socket_dup(SilcSocketConnection sock);
 void silc_socket_set_heartbeat(SilcSocketConnection sock, 
-			       unsigned long heartbeat,
+			       uint32 heartbeat,
 			       void *hb_context,
 			       SilcSocketConnectionHBCb hb_callback,
 			       void *timeout_queue);

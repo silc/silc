@@ -3,8 +3,6 @@
 #ifndef MD5_INTERNAL_H
 #define MD5_INTERNAL_H
 
-typedef unsigned long uint32;
-
 struct MD5Context {
 	uint32 buf[4];
 	uint32 bits[2];

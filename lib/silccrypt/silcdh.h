@@ -82,6 +82,6 @@ int silc_dh_compute_key(SilcDH dh, SilcInt **z);
 /* Same as above but returns the computed secret key as octet binary
    string. */
 int silc_dh_compute_key_data(SilcDH dh, unsigned char **z, 
-			     unsigned int *z_len);
+			     uint32 *z_len);
 
 #endif

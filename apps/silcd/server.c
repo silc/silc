@@ -155,7 +155,7 @@ int silc_server_init(SilcServer server)
   {
     unsigned char *public_key;
     unsigned char *private_key;
-    unsigned int pk_len, prv_len;
+    uint32 pk_len, prv_len;
     struct stat st;
 
     if (stat("pubkey.pub", &st) < 0 && stat("privkey.prv", &st) < 0) {
@@ -1912,7 +1912,7 @@ void silc_server_packet_parse_type(SilcServer server,
 /* Creates connection to a remote router. */
 
 void silc_server_create_connection(SilcServer server,
-				   char *remote_host, unsigned int port)
+				   char *remote_host, uint32 port)
 {
   SilcServerConnection sconn;
 
@@ -2136,9 +2136,9 @@ int silc_server_remove_clients_by_server(SilcServer server,
   SilcClientEntry client = NULL;
   SilcBuffer idp;
   SilcClientEntry *clients = NULL;
-  unsigned int clients_c = 0;
+  uint32 clients_c = 0;
   unsigned char **argv = NULL;
-  unsigned int *argv_lens = NULL, *argv_types = NULL, argc = 0;
+  uint32 *argv_lens = NULL, *argv_types = NULL, argc = 0;
   int i;
 
   SILC_LOG_DEBUG(("Start"));
@@ -2161,7 +2161,13 @@ int silc_server_remove_clients_by_server(SilcServer server,
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	client = (SilcClientEntry)id_cache->context;
-	
+	if (client->data.registered == FALSE) {
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  else
+	    continue;
+	}
+
 	if (client->router != entry) {
 	  if (server_signoff && client->connection) {
 	    clients = silc_realloc(clients, 
@@ -2209,6 +2215,12 @@ int silc_server_remove_clients_by_server(SilcServer server,
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	client = (SilcClientEntry)id_cache->context;
+	if (client->data.registered == FALSE) {
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  else
+	    continue;
+	}
 	
 	if (client->router != entry) {
 	  if (server_signoff && client->connection) {
@@ -2742,11 +2754,11 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
 
 void silc_server_create_channel_key(SilcServer server, 
 				    SilcChannelEntry channel,
-				    unsigned int key_len)
+				    uint32 key_len)
 {
   int i;
   unsigned char channel_key[32], hash[32];
-  unsigned int len;
+  uint32 len;
 
   SILC_LOG_DEBUG(("Generating channel key"));
 
@@ -2819,7 +2831,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
   SilcChannelKeyPayload payload = NULL;
   SilcChannelID *id = NULL;
   unsigned char *tmp, hash[32];
-  unsigned int tmp_len;
+  uint32 tmp_len;
   char *cipher;
 
   SILC_LOG_DEBUG(("Start"));
@@ -3075,7 +3087,7 @@ void silc_server_announce_clients(SilcServer server)
 }
 
 static SilcBuffer 
-silc_server_announce_encode_join(unsigned int argc, ...)
+silc_server_announce_encode_join(uint32 argc, ...)
 {
   va_list ap;
 
@@ -3133,7 +3145,7 @@ void silc_server_announce_get_channels(SilcServer server,
   SilcIDCacheEntry id_cache;
   SilcChannelEntry channel;
   unsigned char *cid;
-  unsigned short name_len;
+  uint16 name_len;
   int len;
 
   SILC_LOG_DEBUG(("Start"));
@@ -3250,13 +3262,13 @@ void silc_server_get_users_on_channel(SilcServer server,
 				      SilcChannelEntry channel,
 				      SilcBuffer *user_list,
 				      SilcBuffer *mode_list,
-				      unsigned int *user_count)
+				      uint32 *user_count)
 {
   SilcChannelClientEntry chl;
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
   SilcBuffer idp;
-  unsigned int list_count = 0;
+  uint32 list_count = 0;
 
   client_id_list = silc_buffer_alloc((SILC_ID_CLIENT_LEN + 4) * 
 				     silc_list_count(channel->user_list));
@@ -3296,7 +3308,7 @@ void silc_server_save_users_on_channel(SilcServer server,
 				       SilcClientID *noadd,
 				       SilcBuffer user_list,
 				       SilcBuffer mode_list,
-				       unsigned int user_count)
+				       uint32 user_count)
 {
   int i;
 
@@ -3304,8 +3316,8 @@ void silc_server_save_users_on_channel(SilcServer server,
      whenever server sends notify message to channel. It means two things;
      some user has joined or leaved the channel. XXX TODO! */
   for (i = 0; i < user_count; i++) {
-    unsigned short idp_len;
-    unsigned int mode;
+    uint16 idp_len;
+    uint32 mode;
     SilcClientID *client_id;
     SilcClientEntry client;
 
@@ -3376,7 +3388,7 @@ void silc_server_save_users_on_channel(SilcServer server,
 
 SilcSocketConnection silc_server_get_client_route(SilcServer server,
 						  unsigned char *id_data,
-						  unsigned int id_len,
+						  uint32 id_len,
 						  SilcClientID *client_id,
 						  SilcIDListData *idata)
 {
@@ -3458,7 +3470,7 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
   unsigned char *cid;
-  unsigned short name_len;
+  uint16 name_len;
   int len;
 
   silc_list_start(client->channels);

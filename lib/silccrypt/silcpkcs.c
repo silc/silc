@@ -132,21 +132,21 @@ char *silc_pkcs_get_supported()
 
 /* Returns the length of the key */
 
-unsigned int silc_pkcs_get_key_len(SilcPKCS self)
+uint32 silc_pkcs_get_key_len(SilcPKCS self)
 {
   return self->key_len;
 }
 
 /* Returns SILC style public key */
 
-unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, unsigned int *len)
+unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, uint32 *len)
 {
   return pkcs->pkcs->get_public_key(pkcs->context, len);
 }
 
 /* Returns SILC style private key */
 
-unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, unsigned int *len)
+unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, uint32 *len)
 {
   return pkcs->pkcs->get_private_key(pkcs->context, len);
 }
@@ -162,7 +162,7 @@ int silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key)
 /* Sets public key from data. */
 
 int silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
-				  unsigned int pk_len)
+				  uint32 pk_len)
 {
   return pkcs->pkcs->set_public_key(pkcs->context, pk, pk_len);
 }
@@ -178,31 +178,31 @@ int silc_pkcs_private_key_set(SilcPKCS pkcs, SilcPrivateKey private_key)
 /* Sets private key from data. */
 
 int silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
-				   unsigned int prv_len)
+				   uint32 prv_len)
 {
   return pkcs->pkcs->set_private_key(pkcs->context, prv, prv_len);
 }
 
 /* Encrypts */
 
-int silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src, unsigned int src_len,
-		      unsigned char *dst, unsigned int *dst_len)
+int silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src, uint32 src_len,
+		      unsigned char *dst, uint32 *dst_len)
 {
   return pkcs->pkcs->encrypt(pkcs->context, src, src_len, dst, dst_len);
 }
 
 /* Decrypts */
 
-int silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src, unsigned int src_len,
-		      unsigned char *dst, unsigned int *dst_len)
+int silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src, uint32 src_len,
+		      unsigned char *dst, uint32 *dst_len)
 {
   return pkcs->pkcs->decrypt(pkcs->context, src, src_len, dst, dst_len);
 }
 
 /* Generates signature */
 
-int silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, unsigned int src_len,
-		   unsigned char *dst, unsigned int *dst_len)
+int silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, uint32 src_len,
+		   unsigned char *dst, uint32 *dst_len)
 {
   return pkcs->pkcs->sign(pkcs->context, src, src_len, dst, dst_len);
 }
@@ -210,8 +210,8 @@ int silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, unsigned int src_len,
 /* Verifies signature */
 
 int silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature, 
-		     unsigned int signature_len, unsigned char *data, 
-		     unsigned int data_len)
+		     uint32 signature_len, unsigned char *data, 
+		     uint32 data_len)
 {
   return pkcs->pkcs->verify(pkcs->context, signature, signature_len, 
 			    data, data_len);
@@ -220,11 +220,11 @@ int silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature,
 /* Generates signature with hash. The hash is signed. */
 
 int silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
-			     unsigned char *src, unsigned int src_len,
-			     unsigned char *dst, unsigned int *dst_len)
+			     unsigned char *src, uint32 src_len,
+			     unsigned char *dst, uint32 *dst_len)
 {
   unsigned char hashr[32];
-  unsigned int hash_len;
+  uint32 hash_len;
   int ret;
 
   silc_hash_make(hash, src, src_len, hashr);
@@ -243,12 +243,12 @@ int silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
 
 int silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash, 
 			       unsigned char *signature, 
-			       unsigned int signature_len, 
+			       uint32 signature_len, 
 			       unsigned char *data, 
-			       unsigned int data_len)
+			       uint32 data_len)
 {
   unsigned char hashr[32];
-  unsigned int hash_len;
+  uint32 hash_len;
   int ret;
 
   silc_hash_make(hash, data, data_len, hashr);
@@ -272,7 +272,7 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 {
   SilcBuffer buf;
   char *identifier;
-  unsigned int len, tlen = 0;
+  uint32 len, tlen = 0;
 
   if (!username || !host)
     return NULL;
@@ -363,7 +363,7 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 
 SilcPublicKey silc_pkcs_public_key_alloc(char *name, char *identifier,
 					 unsigned char *pk, 
-					 unsigned int pk_len)
+					 uint32 pk_len)
 {
   SilcPublicKey public_key;
 
@@ -394,7 +394,7 @@ void silc_pkcs_public_key_free(SilcPublicKey public_key)
    duplicated. */
 
 SilcPrivateKey silc_pkcs_private_key_alloc(char *name, unsigned char *prv,
-					   unsigned int prv_len)
+					   uint32 prv_len)
 {
   SilcPrivateKey private_key;
 
@@ -422,7 +422,7 @@ void silc_pkcs_private_key_free(SilcPrivateKey private_key)
    data. */
 
 unsigned char *
-silc_pkcs_public_key_encode(SilcPublicKey public_key, unsigned int *len)
+silc_pkcs_public_key_encode(SilcPublicKey public_key, uint32 *len)
 {
   SilcBuffer buf;
   unsigned char *ret;
@@ -452,13 +452,13 @@ silc_pkcs_public_key_encode(SilcPublicKey public_key, unsigned int *len)
 /* Encodes SILC style public key. Returns the encoded data. */
 
 unsigned char *
-silc_pkcs_public_key_data_encode(unsigned char *pk, unsigned int pk_len,
+silc_pkcs_public_key_data_encode(unsigned char *pk, uint32 pk_len,
 				 char *pkcs, char *identifier, 
-				 unsigned int *len)
+				 uint32 *len)
 {
   SilcBuffer buf;
   unsigned char *ret;
-  unsigned int totlen;
+  uint32 totlen;
 
   totlen = 4 + 2 + strlen(pkcs) + 2 + strlen(identifier) + pk_len;
   buf = silc_buffer_alloc(totlen);
@@ -485,13 +485,13 @@ silc_pkcs_public_key_data_encode(unsigned char *pk, unsigned int pk_len,
 /* Decodes SILC style public key. Returns TRUE if the decoding was
    successful. Allocates new public key as well. */
 
-int silc_pkcs_public_key_decode(unsigned char *data, unsigned int data_len,
+int silc_pkcs_public_key_decode(unsigned char *data, uint32 data_len,
 				SilcPublicKey *public_key)
 {
   SilcBuffer buf;
   SilcPKCS alg;
-  unsigned short pkcs_len, identifier_len;
-  unsigned int totlen, key_len;
+  uint16 pkcs_len, identifier_len;
+  uint32 totlen, key_len;
   unsigned char *pkcs_name = NULL, *ident = NULL, *key_data = NULL;
   int ret;
 
@@ -578,11 +578,11 @@ int silc_pkcs_public_key_decode(unsigned char *data, unsigned int data_len,
 /* Encodes SILC private key from SilcPrivateKey. Returns the encoded data. */
 
 unsigned char *
-silc_pkcs_private_key_encode(SilcPrivateKey private_key, unsigned int *len)
+silc_pkcs_private_key_encode(SilcPrivateKey private_key, uint32 *len)
 {
   SilcBuffer buf;
   unsigned char *ret;
-  unsigned int totlen;
+  uint32 totlen;
 
   totlen = 2 + strlen(private_key->name) + private_key->prv_len;
   buf = silc_buffer_alloc(totlen);
@@ -607,12 +607,12 @@ silc_pkcs_private_key_encode(SilcPrivateKey private_key, unsigned int *len)
 /* Encodes SILC private key. Returns the encoded data. */
 
 unsigned char *
-silc_pkcs_private_key_data_encode(unsigned char *prv, unsigned int prv_len,
-				  char *pkcs, unsigned int *len)
+silc_pkcs_private_key_data_encode(unsigned char *prv, uint32 prv_len,
+				  char *pkcs, uint32 *len)
 {
   SilcBuffer buf;
   unsigned char *ret;
-  unsigned int totlen;
+  uint32 totlen;
 
   totlen = 2 + strlen(pkcs) + prv_len;
   buf = silc_buffer_alloc(totlen);
@@ -636,13 +636,13 @@ silc_pkcs_private_key_data_encode(unsigned char *prv, unsigned int prv_len,
 /* Decodes SILC style public key. Returns TRUE if the decoding was
    successful. Allocates new private key as well. */
 
-int silc_pkcs_private_key_decode(unsigned char *data, unsigned int data_len,
+int silc_pkcs_private_key_decode(unsigned char *data, uint32 data_len,
 				 SilcPrivateKey *private_key)
 {
   SilcBuffer buf;
   SilcPKCS alg;
-  unsigned short pkcs_len;
-  unsigned int key_len;
+  uint16 pkcs_len;
+  uint32 key_len;
   unsigned char *pkcs_name = NULL, *key_data = NULL;
   int ret;
 
@@ -704,11 +704,11 @@ int silc_pkcs_private_key_decode(unsigned char *data, unsigned int data_len,
 
 static int silc_pkcs_save_public_key_internal(char *filename,
 					      unsigned char *data,
-					      unsigned int data_len,
-					      unsigned int encoding)
+					      uint32 data_len,
+					      uint32 encoding)
 {
   SilcBuffer buf;
-  unsigned int len;
+  uint32 len;
 
   switch(encoding) {
   case SILC_PKCS_FILE_BIN:
@@ -743,10 +743,10 @@ static int silc_pkcs_save_public_key_internal(char *filename,
 /* Saves public key into file */
 
 int silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key,
-			      unsigned int encoding)
+			      uint32 encoding)
 {
   unsigned char *data;
-  unsigned int data_len;
+  uint32 data_len;
 
   data = silc_pkcs_public_key_encode(public_key, &data_len);
   return silc_pkcs_save_public_key_internal(filename, data, data_len,
@@ -756,8 +756,8 @@ int silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key,
 /* Saves public key into file */
 
 int silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
-				   unsigned int data_len,
-				   unsigned int encoding)
+				   uint32 data_len,
+				   uint32 encoding)
 {
   return silc_pkcs_save_public_key_internal(filename, data, data_len,
 					    encoding);
@@ -767,11 +767,11 @@ int silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
 
 static int silc_pkcs_save_private_key_internal(char *filename,
 					       unsigned char *data,
-					       unsigned int data_len,
-					       unsigned int encoding)
+					       uint32 data_len,
+					       uint32 encoding)
 {
   SilcBuffer buf;
-  unsigned int len;
+  uint32 len;
 
   switch(encoding) {
   case SILC_PKCS_FILE_BIN:
@@ -808,10 +808,10 @@ static int silc_pkcs_save_private_key_internal(char *filename,
 
 int silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key, 
 			       unsigned char *passphrase,
-			       unsigned int encoding)
+			       uint32 encoding)
 {
   unsigned char *data;
-  unsigned int data_len;
+  uint32 data_len;
 
   data = silc_pkcs_private_key_encode(private_key, &data_len);
   return silc_pkcs_save_private_key_internal(filename, data, data_len,
@@ -822,9 +822,9 @@ int silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key,
 /* XXX The buffer should be encrypted if passphrase is provided. */
 
 int silc_pkcs_save_private_key_data(char *filename, unsigned char *data, 
-				    unsigned int data_len,
+				    uint32 data_len,
 				    unsigned char *passphrase,
-				    unsigned int encoding)
+				    uint32 encoding)
 {
   return silc_pkcs_save_private_key_internal(filename, data, data_len,
 					     encoding);
@@ -834,10 +834,10 @@ int silc_pkcs_save_private_key_data(char *filename, unsigned char *data,
    is loading was successful. */
 
 int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
-			      unsigned int encoding)
+			      uint32 encoding)
 {
   unsigned char *cp, *old, *data, byte;
-  unsigned int i, data_len, len;
+  uint32 i, data_len, len;
 
   old = data = silc_file_read(filename, &data_len);
   if (!data)
@@ -886,10 +886,10 @@ int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
 /* XXX Should support encrypted private key files */
 
 int silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
-			       unsigned int encoding)
+			       uint32 encoding)
 {
   unsigned char *cp, *old, *data, byte;
-  unsigned int i, data_len, len;
+  uint32 i, data_len, len;
 
   old = data = silc_file_read(filename, &data_len);
   if (!data)

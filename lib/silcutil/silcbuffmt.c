@@ -69,7 +69,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
     case SILC_BUFFER_PARAM_SI16_SHORT:
       {
 	unsigned char xf[2];
-	short x = (short)va_arg(ap, int);
+	int16 x = (int16)va_arg(ap, int);
 	HAS_SPACE(dst, 2);
 	SILC_PUT16_MSB(x, xf);
 	silc_buffer_put(dst, xf, 2);
@@ -79,7 +79,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
     case SILC_BUFFER_PARAM_UI16_SHORT:
       {
 	unsigned char xf[2];
-	unsigned short x = (unsigned short)va_arg(ap, int);
+	uint16 x = (uint16)va_arg(ap, int);
 	HAS_SPACE(dst, 2);
 	SILC_PUT16_MSB(x, xf);
 	silc_buffer_put(dst, xf, 2);
@@ -89,7 +89,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
     case SILC_BUFFER_PARAM_SI32_INT:
       {
 	unsigned char xf[4];
-	int x = va_arg(ap, int);
+	int32 x = va_arg(ap, int32);
 	HAS_SPACE(dst, 4);
 	SILC_PUT32_MSB(x, xf);
 	silc_buffer_put(dst, xf, 4);
@@ -99,7 +99,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
     case SILC_BUFFER_PARAM_UI32_INT:
       {
 	unsigned char xf[4];
-	unsigned int x = va_arg(ap, unsigned int);
+	uint32 x = va_arg(ap, uint32);
 	HAS_SPACE(dst, 4);
 	SILC_PUT32_MSB(x, xf);
 	silc_buffer_put(dst, xf, 4);
@@ -112,7 +112,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
     case SILC_BUFFER_PARAM_UI32_STRING_ALLOC:
       {
 	unsigned char *x = va_arg(ap, unsigned char *);
-	int tmp_len = strlen(x);
+	uint32 tmp_len = strlen(x);
 	HAS_SPACE(dst, tmp_len);
 	silc_buffer_put(dst, x, tmp_len);
 	silc_buffer_pull(dst, tmp_len);
@@ -126,7 +126,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
     case SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC:
       {
 	unsigned char *x = va_arg(ap, unsigned char *);
-	unsigned int len = va_arg(ap, unsigned int);
+	uint32 len = va_arg(ap, uint32);
 	HAS_SPACE(dst, len);
 	silc_buffer_put(dst, x, len);
 	silc_buffer_pull(dst, len);
@@ -192,7 +192,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       }
     case SILC_BUFFER_PARAM_SI16_SHORT:
       {
-	short *x = va_arg(ap, short *);
+	int16 *x = va_arg(ap, int16 *);
 	HAS_SPACE(src, 2);
 	if (x)
 	  SILC_GET16_MSB(*x, src->data);
@@ -201,7 +201,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       }
     case SILC_BUFFER_PARAM_UI16_SHORT:
       {
-	unsigned short *x = va_arg(ap, unsigned short *);
+	uint16 *x = va_arg(ap, uint16 *);
 	HAS_SPACE(src, 2);
 	if (x)
 	  SILC_GET16_MSB(*x, src->data);
@@ -210,7 +210,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       }
     case SILC_BUFFER_PARAM_SI32_INT:
       {
-	int *x = va_arg(ap, int *);
+	int32 *x = va_arg(ap, int32 *);
 	HAS_SPACE(src, 4);
 	if (x)
 	  SILC_GET32_MSB(*x, src->data);
@@ -219,7 +219,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       }
     case SILC_BUFFER_PARAM_UI32_INT:
       {
-	unsigned int *x = va_arg(ap, unsigned int *);
+	uint32 *x = va_arg(ap, uint32 *);
 	HAS_SPACE(src, 4);
 	if (x)
 	  SILC_GET32_MSB(*x, src->data);
@@ -228,7 +228,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       }
     case SILC_BUFFER_PARAM_UI16_STRING:
       {
-	unsigned short len2;
+	uint16 len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
 	HAS_SPACE(src, 2);
 	SILC_GET16_MSB(len2, src->data);
@@ -241,7 +241,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       }
     case SILC_BUFFER_PARAM_UI16_STRING_ALLOC:
       {
-	unsigned short len2;
+	uint16 len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
 	HAS_SPACE(src, 2);
 	SILC_GET16_MSB(len2, src->data);
@@ -256,7 +256,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       }
     case SILC_BUFFER_PARAM_UI32_STRING:
       {
-	unsigned int len2;
+	uint32 len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
 	HAS_SPACE(src, 4);
 	SILC_GET32_MSB(len2, src->data);
@@ -269,7 +269,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       }
     case SILC_BUFFER_PARAM_UI32_STRING_ALLOC:
       {
-	unsigned int len2;
+	uint32 len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
 	HAS_SPACE(src, 4);
 	SILC_GET32_MSB(len2, src->data);
@@ -284,9 +284,9 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       }
     case SILC_BUFFER_PARAM_UI16_NSTRING:
       {
-	unsigned short len2;
+	uint16 len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
-	unsigned short *len = va_arg(ap, unsigned short *);
+	uint16 *len = va_arg(ap, unsigned short *);
 	HAS_SPACE(src, 2);
 	SILC_GET16_MSB(len2, src->data);
 	silc_buffer_pull(src, 2);
@@ -300,9 +300,9 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       }
     case SILC_BUFFER_PARAM_UI16_NSTRING_ALLOC:
       {
-	unsigned short len2;
+	uint16 len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
-	unsigned short *len = va_arg(ap, unsigned short *);
+	uint16 *len = va_arg(ap, uint16 *);
 	HAS_SPACE(src, 2);
 	SILC_GET16_MSB(len2, src->data);
 	silc_buffer_pull(src, 2);
@@ -318,9 +318,9 @@ int silc_buffer_unformat(SilcBuffer src, ...)
       }
     case SILC_BUFFER_PARAM_UI32_NSTRING:
       {
-	unsigned int len2;
+	uint32 len2;
 	unsigned char **x = va_arg(ap, unsigned char **);
-	unsigned int *len = va_arg(ap, unsigned int *);
+	uint32 *len = va_arg(ap, uint32 *);
 	HAS_SPACE(src, 4);
 	SILC_GET32_MSB(len2, src->data);
 	silc_buffer_pull(src, 4);
@@ -335,7 +335,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
     case SILC_BUFFER_PARAM_UI_XNSTRING:
       {
 	unsigned char **x = va_arg(ap, unsigned char **);
-	unsigned int len = va_arg(ap, unsigned int);
+	uint32 len = va_arg(ap, uint32);
 	HAS_SPACE(src, len);
 	if (len && x)
 	  *x = src->data;
@@ -345,7 +345,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
     case SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC:
       {
 	unsigned char **x = va_arg(ap, unsigned char **);
-	unsigned int len = va_arg(ap, unsigned int);
+	uint32 len = va_arg(ap, uint32);
 	HAS_SPACE(src, len);
 	if (len && x) {
 	  *x = silc_calloc(len + 1, sizeof(unsigned char));

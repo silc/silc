@@ -32,27 +32,27 @@
 
        Logical name of the cipher.
 
-   unsigned int block_len
+   uint32 block_len
 
        Block size of the cipher.
 
-   unsigned int key_len
+   uint32 key_len
 
        Length of the key of the cipher (in bits).
 
 */
 typedef struct {
   char *name;
-  unsigned int block_len;
+  uint32 block_len;
   unsigned key_len;
 
-  int (*set_key)(void *, const unsigned char *, unsigned int);
-  int (*set_key_with_string)(void *, const unsigned char *, unsigned int);
+  int (*set_key)(void *, const unsigned char *, uint32);
+  int (*set_key_with_string)(void *, const unsigned char *, uint32);
   int (*encrypt)(void *, const unsigned char *, unsigned char *,
-		 unsigned int, unsigned char *);
+		 uint32, unsigned char *);
   int (*decrypt)(void *, const unsigned char *, unsigned char *, 
-		 unsigned int, unsigned char *);
-  unsigned int (*context_len)();
+		 uint32, unsigned char *);
+  uint32 (*context_len)();
 } SilcCipherObject;
 
 #define SILC_CIPHER_MAX_IV_SIZE 16
@@ -66,8 +66,8 @@ typedef struct SilcCipherStruct {
 
   void (*set_iv)(struct SilcCipherStruct *, const unsigned char *);
   void (*get_iv)(struct SilcCipherStruct *, unsigned char *);
-  unsigned int (*get_key_len)(struct SilcCipherStruct *);
-  unsigned int (*get_block_len)(struct SilcCipherStruct *);
+  uint32 (*get_key_len)(struct SilcCipherStruct *);
+  uint32 (*get_block_len)(struct SilcCipherStruct *);
 } *SilcCipher;
 
 /* List of all registered ciphers. */
@@ -94,25 +94,25 @@ extern struct SilcCipherListStruct *silc_cipher_list;
 #define SILC_CIPHER_API_SET_KEY(cipher)			\
 int silc_##cipher##_set_key(void *context,		\
 			    const unsigned char *key,	\
-			    unsigned int keylen)
+			    uint32 keylen)
 #define SILC_CIPHER_API_SET_KEY_WITH_STRING(cipher)			\
 int silc_##cipher##_set_key_with_string(void *context,			\
 					const unsigned char *string,	\
-			 	        unsigned int stringlen)
+			 	        uint32 stringlen)
 #define SILC_CIPHER_API_ENCRYPT_CBC(cipher)			\
 int silc_##cipher##_encrypt_cbc(void *context,			\
 				const unsigned char *src,	\
 		       	        unsigned char *dst,		\
-				unsigned int len,		\
+				uint32 len,		\
 			        unsigned char *iv)
 #define SILC_CIPHER_API_DECRYPT_CBC(cipher)			\
 int silc_##cipher##_decrypt_cbc(void *context,			\
 			      	const unsigned char *src,	\
 				unsigned char *dst,		\
-				unsigned int len,		\
+				uint32 len,		\
 				unsigned char *iv)
 #define SILC_CIPHER_API_CONTEXT_LEN(cipher)			\
-unsigned int silc_##cipher##_context_len()
+uint32 silc_##cipher##_context_len()
 
 /* Prototypes */
 int silc_cipher_register(SilcCipherObject *cipher);
@@ -122,16 +122,16 @@ void silc_cipher_free(SilcCipher cipher);
 int silc_cipher_is_supported(const unsigned char *name);
 char *silc_cipher_get_supported();
 int silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
-			unsigned char *dst, unsigned int len, 
+			unsigned char *dst, uint32 len, 
 			unsigned char *iv);
 int silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
-			unsigned char *dst, unsigned int len, 
+			unsigned char *dst, uint32 len, 
 			unsigned char *iv);
 int silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
-			unsigned int keylen);
+			uint32 keylen);
 void silc_cipher_set_iv(SilcCipher cipher, const unsigned char *iv);
 void silc_cipher_get_iv(SilcCipher cipher, unsigned char *iv);
-unsigned int silc_cipher_get_key_len(SilcCipher cipher);
-unsigned int silc_cipher_get_block_len(SilcCipher cipher);
+uint32 silc_cipher_get_key_len(SilcCipher cipher);
+uint32 silc_cipher_get_block_len(SilcCipher cipher);
 
 #endif

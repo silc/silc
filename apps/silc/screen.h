@@ -38,14 +38,14 @@ typedef struct {
   /* Output windows */
   WINDOW **output_win;
   WINDOW **output_stat_line;
-  unsigned int output_win_count;
+  uint32 output_win_count;
 
   /* Input window at the bottom of the screen */
   WINDOW *input_win;
   unsigned char *input_buffer;
-  unsigned int input_pos;
-  unsigned int input_end;
-  unsigned int cursor_pos;
+  uint32 input_pos;
+  uint32 input_end;
+  uint32 cursor_pos;
   int virtual_window;
 
   /* Bottom line on screen */

@@ -57,7 +57,7 @@ void silc_client_protocol_ke_send_packet(SilcSKE ske,
 
 SilcSKEStatus silc_client_protocol_ke_verify_key(SilcSKE ske,
 						 unsigned char *pk_data,
-						 unsigned int pk_len,
+						 uint32 pk_len,
 						 SilcSKEPKType pk_type,
 						 void *context)
 {
@@ -125,7 +125,7 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
 /* Checks the version string of the server. */
 
 SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
-				     unsigned int len)
+				     uint32 len)
 {
   SilcClientConnection conn = (SilcClientConnection)ske->sock->user_data;
   SilcClient client = (SilcClient)ske->user_data;
@@ -432,7 +432,7 @@ static int
 silc_client_get_public_key_auth(SilcClient client,
 				char *filepath,
 				unsigned char *auth_data,
-				unsigned int *auth_data_len,
+				uint32 *auth_data_len,
 				SilcSKE ske)
 {
   int len;
@@ -498,7 +498,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
       SilcBuffer packet;
       int payload_len = 0;
       unsigned char *auth_data = NULL;
-      unsigned int auth_data_len = 0;
+      uint32 auth_data_len = 0;
 
       switch(ctx->auth_meth) {
       case SILC_AUTH_NONE:

@@ -32,7 +32,7 @@
 
 struct SilcIDPayloadStruct {
   SilcIdType type;
-  unsigned short len;
+  uint16 len;
   unsigned char *id;
 };
 
@@ -77,7 +77,7 @@ SilcIDPayload silc_id_payload_parse(SilcBuffer buffer)
 /* Parses data and return ID payload into payload structure. */
 
 SilcIDPayload silc_id_payload_parse_data(unsigned char *data, 
-					 unsigned int len)
+					 uint32 len)
 {
   SilcIDPayload new;
   SilcBuffer buffer;
@@ -120,11 +120,11 @@ SilcIDPayload silc_id_payload_parse_data(unsigned char *data,
 
 /* Return the ID directly from the raw payload data. */
 
-void *silc_id_payload_parse_id(unsigned char *data, unsigned int len)
+void *silc_id_payload_parse_id(unsigned char *data, uint32 len)
 {
   SilcBuffer buffer;
   SilcIdType type;
-  unsigned short idlen;
+  uint16 idlen;
   unsigned char *id_data;
   int ret;
   void *id;
@@ -168,7 +168,7 @@ SilcBuffer silc_id_payload_encode(void *id, SilcIdType type)
 {
   SilcBuffer buffer;
   unsigned char *id_data;
-  unsigned int len;
+  uint32 len;
 
   SILC_LOG_DEBUG(("Encoding %s ID payload",
 		  type == SILC_ID_CLIENT ? "Client" :
@@ -230,7 +230,7 @@ unsigned char *silc_id_payload_get_data(SilcIDPayload payload)
 
 /* Get length of ID */
 
-unsigned int silc_id_payload_get_len(SilcIDPayload payload)
+uint32 silc_id_payload_get_len(SilcIDPayload payload)
 {
   return payload ? payload->len : 0;
 }
@@ -242,31 +242,31 @@ unsigned int silc_id_payload_get_len(SilcIDPayload payload)
 ******************************************************************************/
 
 struct SilcArgumentPayloadStruct {
-  unsigned int argc;
+  uint32 argc;
   unsigned char **argv;
-  unsigned int *argv_lens;
-  unsigned int *argv_types;
-  unsigned int pos;
+  uint32 *argv_lens;
+  uint32 *argv_types;
+  uint32 pos;
 };
 
 /* Parses arguments and returns them into Argument Payload structure. */
 
 SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
-						unsigned int argc)
+						uint32 argc)
 {
   SilcArgumentPayload new;
-  unsigned short payload_len = 0;
+  uint16 payload_len = 0;
   unsigned char arg_num = 0;
   unsigned char arg_type = 0;
-  unsigned int pull_len = 0;
+  uint32 pull_len = 0;
   int i = 0, ret;
 
   SILC_LOG_DEBUG(("Parsing argument payload"));
 
   new = silc_calloc(1, sizeof(*new));
   new->argv = silc_calloc(argc, sizeof(unsigned char *));
-  new->argv_lens = silc_calloc(argc, sizeof(unsigned int));
-  new->argv_types = silc_calloc(argc, sizeof(unsigned int));
+  new->argv_lens = silc_calloc(argc, sizeof(uint32));
+  new->argv_types = silc_calloc(argc, sizeof(uint32));
     
   /* Get arguments */
   arg_num = 1;
@@ -327,13 +327,13 @@ SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
 
 /* Encodes arguments in to Argument Paylods returning them to SilcBuffer. */
 
-SilcBuffer silc_argument_payload_encode(unsigned int argc,
+SilcBuffer silc_argument_payload_encode(uint32 argc,
 					unsigned char **argv,
-					unsigned int *argv_lens,
-					unsigned int *argv_types)
+					uint32 *argv_lens,
+					uint32 *argv_types)
 {
   SilcBuffer buffer;
-  unsigned int len;
+  uint32 len;
   int i;
 
   SILC_LOG_DEBUG(("Encoding Argument payload"));
@@ -366,7 +366,7 @@ SilcBuffer silc_argument_payload_encode(unsigned int argc,
 SilcBuffer silc_argument_payload_encode_payload(SilcArgumentPayload payload)
 {
   SilcBuffer buffer;
-  unsigned int len;
+  uint32 len;
   int i;
 
   SILC_LOG_DEBUG(("Encoding Argument payload"));
@@ -413,7 +413,7 @@ void silc_argument_payload_free(SilcArgumentPayload payload)
 
 /* Returns number of arguments in payload */
 
-unsigned int silc_argument_get_arg_num(SilcArgumentPayload payload)
+uint32 silc_argument_get_arg_num(SilcArgumentPayload payload)
 {
   return payload ? payload->argc : 0;
 }
@@ -421,7 +421,7 @@ unsigned int silc_argument_get_arg_num(SilcArgumentPayload payload)
 /* Returns first argument from payload. */
 
 unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
-					   unsigned int *ret_len)
+					   uint32 *ret_len)
 {
   if (!payload)
     return NULL;
@@ -437,7 +437,7 @@ unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
 /* Returns next argument from payload or NULL if no more arguments. */
 
 unsigned char *silc_argument_get_next_arg(SilcArgumentPayload payload,
-					  unsigned int *ret_len)
+					  uint32 *ret_len)
 {
   if (!payload)
     return NULL;
@@ -454,8 +454,8 @@ unsigned char *silc_argument_get_next_arg(SilcArgumentPayload payload,
 /* Returns argument which type is `type'. */
 
 unsigned char *silc_argument_get_arg_type(SilcArgumentPayload payload,
-					  unsigned int type,
-					  unsigned int *ret_len)
+					  uint32 type,
+					  uint32 *ret_len)
 {
   int i;
 

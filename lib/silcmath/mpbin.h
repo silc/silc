@@ -21,10 +21,10 @@
 #ifndef MPBIN_H
 #define MPBIN_H
 
-unsigned char *silc_mp_mp2bin(SilcInt *val, unsigned int len,
-			      unsigned int *ret_len);
+unsigned char *silc_mp_mp2bin(SilcInt *val, uint32 len,
+			      uint32 *ret_len);
 void silc_mp_mp2bin_noalloc(SilcInt *val, unsigned char *dst,
-			    unsigned int dst_len);
-void silc_mp_bin2mp(unsigned char *data, unsigned int len, SilcInt *ret);
+			    uint32 dst_len);
+void silc_mp_bin2mp(unsigned char *data, uint32 len, SilcInt *ret);
 
 #endif

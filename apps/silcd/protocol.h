@@ -63,13 +63,13 @@ typedef struct {
   /* Auth method that must be used. This is resolved before this
      connection authentication protocol is started. Used when we are
      initiating. */
-  unsigned int auth_meth;
+  uint32 auth_meth;
 
   /* Authentication data if we alreay know it. This is filled before
      starting the protocol if we know the authentication data. Otherwise
      these are and remain NULL. Used when we are initiating. */
   void *auth_data;
-  unsigned int auth_data_len;
+  uint32 auth_data_len;
 
   /* Destinations ID from KE protocol context */
   void *dest_id;
@@ -77,7 +77,7 @@ typedef struct {
 
   SilcTask timeout_task;
   SilcPacketContext *packet;
-  unsigned short conn_type;
+  uint16 conn_type;
 } SilcServerConnAuthInternalContext;
 
 /* Prototypes */

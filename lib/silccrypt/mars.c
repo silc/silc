@@ -49,7 +49,7 @@ Mean:          373 cycles =    68.7 mbits/sec
 
 SILC_CIPHER_API_SET_KEY(mars)
 {
-  mars_set_key((MarsContext *)context, (unsigned int *)key, keylen);
+  mars_set_key((MarsContext *)context, (uint32 *)key, keylen);
   return TRUE;
 }
 
@@ -80,13 +80,13 @@ SILC_CIPHER_API_CONTEXT_LEN(mars)
 
 SILC_CIPHER_API_ENCRYPT_CBC(mars)
 {
-  unsigned int *in, *out, *tiv;
-  unsigned int tmp[4];
+  uint32 *in, *out, *tiv;
+  uint32 tmp[4];
   int i;
 
-  in = (unsigned int *)src;
-  out = (unsigned int *)dst;
-  tiv = (unsigned int *)iv;
+  in = (uint32 *)src;
+  out = (uint32 *)dst;
+  tiv = (uint32 *)iv;
 
   tmp[0] = in[0] ^ tiv[0];
   tmp[1] = in[1] ^ tiv[1];
@@ -119,13 +119,13 @@ SILC_CIPHER_API_ENCRYPT_CBC(mars)
 
 SILC_CIPHER_API_DECRYPT_CBC(mars)
 {
-  unsigned int *in, *out, *tiv;
-  unsigned int tmp[4], tmp2[4];
+  uint32 *in, *out, *tiv;
+  uint32 tmp[4], tmp2[4];
   int i;
 
-  in = (unsigned int *)src;
-  out = (unsigned int *)dst;
-  tiv = (unsigned int *)iv;
+  in = (uint32 *)src;
+  out = (uint32 *)dst;
+  tiv = (uint32 *)iv;
 
   tmp[0] = in[0];
   tmp[1] = in[1];

@@ -35,17 +35,17 @@ SilcRng silc_rng_alloc();
 void silc_rng_free(SilcRng rng);
 void silc_rng_init(SilcRng rng);
 unsigned char silc_rng_get_byte(SilcRng rng);
-unsigned short silc_rng_get_rn16(SilcRng rng);
-unsigned int silc_rng_get_rn32(SilcRng rng);
-unsigned char *silc_rng_get_rn_string(SilcRng rng, unsigned int len);
-unsigned char *silc_rng_get_rn_data(SilcRng rng, unsigned int len);
+uint16 silc_rng_get_rn16(SilcRng rng);
+uint32 silc_rng_get_rn32(SilcRng rng);
+unsigned char *silc_rng_get_rn_string(SilcRng rng, uint32 len);
+unsigned char *silc_rng_get_rn_data(SilcRng rng, uint32 len);
 
 int silc_rng_global_init(SilcRng rng);
 int silc_rng_global_uninit();
 unsigned char silc_rng_global_get_byte();
-unsigned short silc_rng_global_get_rn16();
-unsigned int silc_rng_global_get_rn32();
-unsigned char *silc_rng_global_get_rn_string(unsigned int len);
-unsigned char *silc_rng_global_get_rn_data(unsigned int len);
+uint16 silc_rng_global_get_rn16();
+uint32 silc_rng_global_get_rn32();
+unsigned char *silc_rng_global_get_rn_string(uint32 len);
+unsigned char *silc_rng_global_get_rn_data(uint32 len);
 
 #endif

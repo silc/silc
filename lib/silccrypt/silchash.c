@@ -197,7 +197,7 @@ void silc_hash_free(SilcHash hash)
 
 /* Returns the length of the hash digest. */
 
-unsigned int silc_hash_len(SilcHash hash)
+uint32 silc_hash_len(SilcHash hash)
 {
   return hash->hash->hash_len;
 }
@@ -273,7 +273,7 @@ char *silc_hash_get_supported()
 /* Creates the hash value and returns it to the return_hash argument. */
 
 void silc_hash_make(SilcHash hash, const unsigned char *data, 
-		    unsigned int len, unsigned char *return_hash)
+		    uint32 len, unsigned char *return_hash)
 {
   hash->hash->init(hash->context);
   hash->hash->update(hash->context, (unsigned char *)data, len);
@@ -285,7 +285,7 @@ void silc_hash_make(SilcHash hash, const unsigned char *data,
    caller. */
 
 char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
-			    unsigned int data_len)
+			    uint32 data_len)
 {
   char fingerprint[64], *cp;
   unsigned char h[32];

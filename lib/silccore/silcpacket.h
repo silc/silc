@@ -94,14 +94,14 @@ typedef unsigned char SilcPacketFlags;
        Packet flags. Flags are defined above.
 
    unsigned char *src_id
-   unsigned short src_id_len
+   uint16 src_id_len
    unsigned char src_id_type
 
        Source ID, its length and type. On packet reception retuned ID's
        are always the hash values of the ID's from the packet.
 
   unsigned char *dst_id;
-  unsigned short dst_id_len;
+  uint16 dst_id_len;
   unsigned char src_id_type;
 
        Destination ID, its length and type. On packet reception retuned
@@ -119,15 +119,15 @@ typedef struct {
   SilcPacketFlags flags;
 
   unsigned char *src_id;
-  unsigned short src_id_len;
+  uint16 src_id_len;
   unsigned char src_id_type;
 
   unsigned char *dst_id;
-  unsigned short dst_id_len;
+  uint16 dst_id_len;
   unsigned char dst_id_type;
 
-  unsigned short truelen;
-  unsigned short padlen;
+  uint16 truelen;
+  uint16 padlen;
 
   /* Back pointers */
   void *context;
@@ -242,12 +242,12 @@ do {									     \
 int silc_packet_write(int sock, SilcBuffer src);
 int silc_packet_send(SilcSocketConnection sock, int force_send);
 void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, 
-			 SilcBuffer buffer, unsigned int len);
+			 SilcBuffer buffer, uint32 len);
 void silc_packet_assemble(SilcPacketContext *ctx);
 void silc_packet_send_prepare(SilcSocketConnection sock,
-			      unsigned int header_len,
-			      unsigned int padlen,
-			      unsigned int data_len);
+			      uint32 header_len,
+			      uint32 padlen,
+			      uint32 data_len);
 int silc_packet_read(int sock, SilcBuffer dest);
 int silc_packet_receive(SilcSocketConnection sock);
 int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,

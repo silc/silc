@@ -30,18 +30,18 @@
 
 /* Authentication Payload structure */
 struct SilcAuthPayloadStruct {
-  unsigned short len;
-  unsigned short auth_method;
-  unsigned short random_len;
+  uint16 len;
+  uint16 auth_method;
+  uint16 random_len;
   unsigned char *random_data;
-  unsigned short auth_len;
+  uint16 auth_len;
   unsigned char *auth_data;
 };
 
 /* Parses and returns Authentication Payload */
 
 SilcAuthPayload silc_auth_payload_parse(unsigned char *data,
-					unsigned int data_len)
+					uint32 data_len)
 {
   SilcBuffer buffer;
   SilcAuthPayload new;
@@ -91,12 +91,12 @@ SilcAuthPayload silc_auth_payload_parse(unsigned char *data,
 
 SilcBuffer silc_auth_payload_encode(SilcAuthMethod method,
 				    unsigned char *random_data,
-				    unsigned short random_len,
+				    uint16 random_len,
 				    unsigned char *auth_data,
-				    unsigned short auth_len)
+				    uint16 auth_len)
 {
   SilcBuffer buffer;
-  unsigned int len;
+  uint32 len;
 
   SILC_LOG_DEBUG(("Encoding Authentication Payload"));
 
@@ -142,7 +142,7 @@ SilcAuthMethod silc_auth_get_method(SilcAuthPayload payload)
 /* Get the authentication data */
 
 unsigned char *silc_auth_get_data(SilcAuthPayload payload,
-				  unsigned int *auth_len)
+				  uint32 *auth_len)
 {
   if (auth_len)
     *auth_len = payload->auth_len;
@@ -162,12 +162,12 @@ unsigned char *silc_auth_get_data(SilcAuthPayload payload,
 static unsigned char *
 silc_auth_public_key_encode_data(SilcPublicKey public_key, 
 				 unsigned char *random,
-				 unsigned int random_len, void *id,
-				 SilcIdType type, unsigned int *ret_len)
+				 uint32 random_len, void *id,
+				 SilcIdType type, uint32 *ret_len)
 {
   SilcBuffer buf;
   unsigned char *pk, *id_data, *ret;
-  unsigned int pk_len, id_len;
+  uint32 pk_len, id_len;
 
   pk = silc_pkcs_public_key_encode(public_key, &pk_len);
   if (!pk)
@@ -212,9 +212,9 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 {
   unsigned char *random;
   unsigned char auth_data[1024];
-  unsigned int auth_len;
+  uint32 auth_len;
   unsigned char *tmp;
-  unsigned int tmp_len;
+  uint32 tmp_len;
   SilcBuffer buf;
   SilcPKCS pkcs;
 
@@ -273,7 +273,7 @@ int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
 				     void *id, SilcIdType type)
 {
   unsigned char *tmp;
-  unsigned int tmp_len;
+  uint32 tmp_len;
   SilcPKCS pkcs;
 
   SILC_LOG_DEBUG(("Verifying authentication data"));
@@ -347,7 +347,7 @@ int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
    `auth_data_len' is ignored. */
 
 int silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
-		     void *auth_data, unsigned int auth_data_len, 
+		     void *auth_data, uint32 auth_data_len, 
 		     SilcHash hash, void *id, SilcIdType type)
 {
   SILC_LOG_DEBUG(("Verifying authentication"));
@@ -387,9 +387,9 @@ int silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
 
 /* Same as above but parses the authentication payload before verify. */
 
-int silc_auth_verify_data(unsigned char *payload, unsigned int payload_len,
+int silc_auth_verify_data(unsigned char *payload, uint32 payload_len,
 			  SilcAuthMethod auth_method, void *auth_data,
-			  unsigned int auth_data_len, SilcHash hash, 
+			  uint32 auth_data_len, SilcHash hash, 
 			  void *id, SilcIdType type)
 {
   SilcAuthPayload auth_payload;
@@ -415,9 +415,9 @@ int silc_auth_verify_data(unsigned char *payload, unsigned int payload_len,
 
 /* The Key Agreement protocol structure */
 struct SilcKeyAgreementPayloadStruct {
-  unsigned short hostname_len;
+  uint16 hostname_len;
   unsigned char *hostname;
-  unsigned int port;
+  uint32 port;
 };
 
 /* Parses and returns an allocated Key Agreement payload. */
@@ -448,10 +448,10 @@ SilcKeyAgreementPayload silc_key_agreement_payload_parse(SilcBuffer buffer)
 /* Encodes the Key Agreement protocol and returns the encoded buffer */
 
 SilcBuffer silc_key_agreement_payload_encode(char *hostname,
-					     unsigned int port)
+					     uint32 port)
 {
   SilcBuffer buffer;
-  unsigned int len = hostname ? strlen(hostname) : 0;
+  uint32 len = hostname ? strlen(hostname) : 0;
 
   SILC_LOG_DEBUG(("Encoding Key Agreement Payload"));
 
@@ -485,7 +485,7 @@ char *silc_key_agreement_get_hostname(SilcKeyAgreementPayload payload)
 
 /* Returns the port in the payload */
 
-unsigned int silc_key_agreement_get_port(SilcKeyAgreementPayload payload)
+uint32 silc_key_agreement_get_port(SilcKeyAgreementPayload payload)
 {
   return payload->port;
 }

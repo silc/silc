@@ -73,7 +73,7 @@
 
 SILC_PKCS_API_INIT(rsa)
 {
-  unsigned int prime_bits = keylen / 2;
+  uint32 prime_bits = keylen / 2;
   SilcInt p, q;
 
   printf("Generating RSA Public and Private keys, might take a while...\n");
@@ -128,7 +128,7 @@ SILC_PKCS_API_GET_PUBLIC_KEY(rsa)
 {
   RsaKey *key = (RsaKey *)context;
   unsigned char *e, *n, *ret;
-  unsigned int e_len, n_len;
+  uint32 e_len, n_len;
   unsigned char tmp[4];
 
   e = silc_mp_mp2bin(&key->e, 0, &e_len);
@@ -167,7 +167,7 @@ SILC_PKCS_API_GET_PRIVATE_KEY(rsa)
 {
   RsaKey *key = (RsaKey *)context;
   unsigned char *e, *n, *d, *ret;
-  unsigned int e_len, n_len, d_len;
+  uint32 e_len, n_len, d_len;
   unsigned char tmp[4];
 
   e = silc_mp_mp2bin(&key->e, 0, &e_len);
@@ -214,7 +214,7 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
 {
   RsaKey *key = (RsaKey *)context;
   unsigned char tmp[4];
-  unsigned int e_len, n_len;
+  uint32 e_len, n_len;
 
   silc_mp_init(&key->e);
   silc_mp_init(&key->n);
@@ -252,7 +252,7 @@ SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
 {
   RsaKey *key = (RsaKey *)context;
   unsigned char tmp[4];
-  unsigned int e_len, n_len, d_len;
+  uint32 e_len, n_len, d_len;
 
   silc_mp_init(&key->e);
   silc_mp_init(&key->n);
@@ -477,7 +477,7 @@ SILC_PKCS_API_VERIFY(rsa)
    to compute the modulus n has to be generated before calling this. They
    are then sent as argument for the function. */
 
-void rsa_generate_keys(RsaKey *key, unsigned int bits, 
+void rsa_generate_keys(RsaKey *key, uint32 bits, 
 		       SilcInt *p, SilcInt *q)
 {
   SilcInt phi, hlp;

@@ -31,7 +31,7 @@ typedef struct {
   SilcInt d;			/* private exponent */
 } RsaKey;
 
-void rsa_generate_keys(RsaKey *key, unsigned int bits, 
+void rsa_generate_keys(RsaKey *key, uint32 bits, 
 		       SilcInt *p, SilcInt *q);
 void rsa_clear_keys(RsaKey *key);
 void rsa_en_de_crypt(SilcInt *cm, SilcInt *mc, 

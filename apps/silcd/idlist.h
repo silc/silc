@@ -37,7 +37,7 @@ typedef struct {
 typedef struct {
   void *context;
   SilcChannelEntry channel;
-  unsigned int key_len;
+  uint32 key_len;
 } *SilcServerChannelRekey;
 
 /*
@@ -64,7 +64,7 @@ typedef struct {
   /* HMAC and raw key data */
   SilcHmac hmac;
   unsigned char *hmac_key;
-  unsigned int hmac_key_len;
+  uint32 hmac_key_len;
 
   /* public key */
   SilcPublicKey public_key;
@@ -166,7 +166,7 @@ struct SilcServerEntryStruct {
 
        Pointer to the client list. This is the client currently on channel.
 
-   unsigned int mode
+   uint32 mode
 
        Client's current mode on the channel.
 
@@ -187,7 +187,7 @@ struct SilcServerEntryStruct {
 */
 typedef struct SilcChannelClientEntryStruct {
   SilcClientEntry client;
-  unsigned int mode;
+  uint32 mode;
   SilcChannelEntry channel;
   struct SilcChannelClientEntryStruct *client_list;
   struct SilcChannelClientEntryStruct *channel_list;
@@ -333,7 +333,7 @@ struct SilcClientEntryStruct {
 
        Logical name of the channel.
 
-   unsigned int mode
+   uint32 mode
 
        Current mode of the channel.  See lib/silccore/silcchannel.h for
        all modes.
@@ -370,7 +370,7 @@ struct SilcClientEntryStruct {
    SilcPublicKey founder_key
    SilcAuthMethod founder_method
    unsigned char *founder_passwd
-   unsigned int founder_passwd_len
+   uint32 founder_passwd_len
 
        If the SILC_CMODE_FOUNDER_AUTH has been set then these will include
        the founder's public key, authentication method and the password
@@ -388,7 +388,7 @@ struct SilcClientEntryStruct {
        The key of the channel (the cipher actually).
 
    unsigned char *key
-   unsigned int key_len
+   uint32 key_len
 
        Raw key data of the channel key.
 
@@ -408,7 +408,7 @@ struct SilcClientEntryStruct {
 */
 struct SilcChannelEntryStruct {
   char *channel_name;
-  unsigned int mode;
+  uint32 mode;
   SilcChannelID *id;
   int global_users;
   char *topic;
@@ -418,9 +418,9 @@ struct SilcChannelEntryStruct {
   SilcPublicKey founder_key;
   SilcAuthMethod founder_method;
   unsigned char *founder_passwd;
-  unsigned int founder_passwd_len;
+  uint32 founder_passwd_len;
 
-  unsigned int user_limit;
+  uint32 user_limit;
   unsigned char *passphrase;
   char *invite_list;
   char *ban_list;
@@ -434,7 +434,7 @@ struct SilcChannelEntryStruct {
   /* Channel keys */
   SilcCipher channel_key;
   unsigned char *key;
-  unsigned int key_len;
+  uint32 key_len;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
   SilcHmac hmac;
 
@@ -523,18 +523,18 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry);
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname, 
-		       unsigned int nickname_len, char *username, 
+		       uint32 nickname_len, char *username, 
 		       char *userinfo, SilcClientID *id, 
 		       SilcServerEntry router, void *connection);
 int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);
 int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 					char *server, 
 					SilcClientEntry **clients,
-					unsigned int *clients_count);
+					uint32 *clients_count);
 int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 				    SilcHash md5hash,
 				    SilcClientEntry **clients,
-				    unsigned int *clients_count);
+				    uint32 *clients_count);
 SilcClientEntry
 silc_idlist_find_client_by_hash(SilcIDList id_list, char *nickname,
 				SilcHash md5hash, SilcIDCacheEntry *ret_entry);
@@ -562,6 +562,6 @@ silc_idlist_replace_channel_id(SilcIDList id_list, SilcChannelID *old_id,
 			       SilcChannelID *new_id);
 SilcChannelEntry *
 silc_idlist_get_channels(SilcIDList id_list, SilcChannelID *channel_id,
-			 unsigned int *channels_count);
+			 uint32 *channels_count);
 
 #endif

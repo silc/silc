@@ -104,8 +104,8 @@ typedef enum {
  * the rules defined in PKCS #1.
  */
 static unsigned char *
-RSA_FormatOneBlock(unsigned int modulusLen, RSA_BlockType blockType,
-		   unsigned char *data, unsigned int data_len)
+RSA_FormatOneBlock(uint32 modulusLen, RSA_BlockType blockType,
+		   unsigned char *data, uint32 data_len)
 {
     unsigned char *block;
     unsigned char *bp;
@@ -180,10 +180,10 @@ RSA_FormatOneBlock(unsigned int modulusLen, RSA_BlockType blockType,
 }
 
 static int
-RSA_FormatBlock(unsigned char **result, unsigned int *result_len,
-		unsigned int modulusLen,
+RSA_FormatBlock(unsigned char **result, uint32 *result_len,
+		uint32 modulusLen,
 		RSA_BlockType blockType, unsigned char *data,
-		unsigned int data_len)
+		uint32 data_len)
 {
     /*
      * XXX For now assume that the data length fits in a single
@@ -237,14 +237,14 @@ RSA_FormatBlock(unsigned char **result, unsigned int *result_len,
  */
 unsigned char *
 RSA_DecodeOneBlock(unsigned char *data,
-		   unsigned int modulusLen,
-		   unsigned int expectedLen,
+		   uint32 modulusLen,
+		   uint32 expectedLen,
 		   RSA_BlockType bt,
-		   unsigned int *pResultLen)
+		   uint32 *pResultLen)
 {
     RSA_BlockType blockType;
     unsigned char *dp, *res;
-    unsigned int i, len = 0;
+    uint32 i, len = 0;
 
     dp = data;
     if (dp[0] != RSA_BLOCK_FIRST_OCTET) {
@@ -316,7 +316,7 @@ SILC_PKCS_API_ENCRYPT(pkcs1)
   SilcInt mp_tmp;
   SilcInt mp_dst;
   unsigned char *padded;
-  unsigned int padded_len, len = key->bits / 8;
+  uint32 padded_len, len = key->bits / 8;
 
   /* Pad data */
   if (!RSA_FormatBlock(&padded, &padded_len, len,
@@ -350,7 +350,7 @@ SILC_PKCS_API_DECRYPT(pkcs1)
   SilcInt mp_tmp;
   SilcInt mp_dst;
   unsigned char *padded, *unpadded;
-  unsigned int padded_len;
+  uint32 padded_len;
 
   silc_mp_init_set_ui(&mp_tmp, 0);
   silc_mp_init_set_ui(&mp_dst, 0);
@@ -395,8 +395,8 @@ SILC_PKCS_API_SIGN(pkcs1)
   SilcInt mp_tmp;
   SilcInt mp_dst;
   unsigned char *padded;
-  unsigned int padded_len;
-  unsigned int len = key->bits / 8;
+  uint32 padded_len;
+  uint32 len = key->bits / 8;
 
   /* Pad data */
   if (!RSA_FormatBlock(&padded, &padded_len, len, RSA_BlockPrivate, 
@@ -431,7 +431,7 @@ SILC_PKCS_API_VERIFY(pkcs1)
   SilcInt mp_tmp2;
   SilcInt mp_dst;
   unsigned char *verify, *unpadded;
-  unsigned int verify_len, len = key->bits / 8;
+  uint32 verify_len, len = key->bits / 8;
 
   silc_mp_init_set_ui(&mp_tmp2, 0);
   silc_mp_init_set_ui(&mp_dst, 0);

@@ -34,9 +34,9 @@ static void
 silc_server_command_send_status_data(SilcServerCommandContext cmd,
 				     SilcCommand command,
 				     SilcCommandStatus status,
-				     unsigned int arg_type,
+				     uint32 arg_type,
 				     unsigned char *arg,
-				     unsigned int arg_len);
+				     uint32 arg_len);
 SILC_TASK_CALLBACK(silc_server_command_process_timeout);
 
 /* Server command list. */
@@ -77,7 +77,7 @@ SilcServerCommand silc_command_list[] =
 
 #define SILC_SERVER_COMMAND_CHECK_ARGC(command, context, min, max)	      \
 do {									      \
-  unsigned int _argc = silc_argument_get_arg_num(cmd->args);		      \
+  uint32 _argc = silc_argument_get_arg_num(cmd->args);		      \
 									      \
   SILC_LOG_DEBUG(("Start"));						      \
 									      \
@@ -277,7 +277,7 @@ silc_server_command_dup(SilcServerCommandContext ctx)
 
 void silc_server_command_pending(SilcServer server,
 				 SilcCommand reply_cmd,
-				 unsigned short ident,
+				 uint16 ident,
 				 SilcServerPendingDestructor destructor,
 				 SilcCommandCb callback,
 				 void *context)
@@ -297,7 +297,7 @@ void silc_server_command_pending(SilcServer server,
 
 void silc_server_command_pending_del(SilcServer server,
 				     SilcCommand reply_cmd,
-				     unsigned short ident)
+				     uint16 ident)
 {
   SilcServerCommandPending *r;
 
@@ -316,7 +316,7 @@ void silc_server_command_pending_del(SilcServer server,
 int silc_server_command_pending_check(SilcServer server,
 				      SilcServerCommandReplyContext ctx,
 				      SilcCommand command, 
-				      unsigned short ident)
+				      uint16 ident)
 {
   SilcServerCommandPending *r;
 
@@ -370,9 +370,9 @@ static void
 silc_server_command_send_status_data(SilcServerCommandContext cmd,
 				     SilcCommand command,
 				     SilcCommandStatus status,
-				     unsigned int arg_type,
+				     uint32 arg_type,
 				     unsigned char *arg,
-				     unsigned int arg_len)
+				     uint32 arg_len)
 {
   SilcBuffer buffer;
 
@@ -397,15 +397,15 @@ silc_server_command_send_status_data(SilcServerCommandContext cmd,
 static int
 silc_server_command_whois_parse(SilcServerCommandContext cmd,
 				SilcClientID ***client_id,
-				unsigned int *client_id_count,
+				uint32 *client_id_count,
 				char **nickname,
 				char **server_name,
 				int *count,
 				SilcCommand command)
 {
   unsigned char *tmp;
-  unsigned int len;
-  unsigned int argc = silc_argument_get_arg_num(cmd->args);
+  uint32 len;
+  uint32 argc = silc_argument_get_arg_num(cmd->args);
   int i, k;
 
   /* If client ID is in the command it must be used instead of nickname */
@@ -477,7 +477,7 @@ silc_server_command_whois_parse(SilcServerCommandContext cmd,
 static char
 silc_server_command_whois_check(SilcServerCommandContext cmd,
 				SilcClientEntry *clients,
-				unsigned int clients_count)
+				uint32 clients_count)
 {
   SilcServer server = cmd->server;
   int i;
@@ -491,7 +491,7 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
 
     if (!entry->nickname || !entry->username || !entry->userinfo) {
       SilcBuffer tmpbuf;
-      unsigned short old_ident;
+      uint16 old_ident;
 
       if (!entry->router)
 	continue;
@@ -526,7 +526,7 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
 static void
 silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
 				     SilcClientEntry *clients,
-				     unsigned int clients_count,
+				     uint32 clients_count,
 				     int count)
 {
   SilcServer server = cmd->server;
@@ -535,7 +535,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
   SilcBuffer packet, idp, channels;
   SilcClientEntry entry;
   SilcCommandStatus status;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint16 ident = silc_command_get_ident(cmd->payload);
   char nh[128], uh[128];
   unsigned char idle[4], mode[4];
   SilcSocketConnection hsock;
@@ -653,10 +653,10 @@ silc_server_command_whois_from_client(SilcServerCommandContext cmd)
 {
   SilcServer server = cmd->server;
   char *nick = NULL, *server_name = NULL;
-  int count = 0, clients_count = 0;
+  int count = 0;
   SilcClientEntry *clients = NULL, entry;
   SilcClientID **client_id = NULL;
-  unsigned int client_id_count = 0;
+  uint32 client_id_count = 0, clients_count = 0;
   int i, ret = 0;
 
   /* Protocol dictates that we must always send the received WHOIS request
@@ -666,7 +666,7 @@ silc_server_command_whois_from_client(SilcServerCommandContext cmd)
   if (server->server_type == SILC_SERVER && !cmd->pending && 
       !server->standalone) {
     SilcBuffer tmpbuf;
-    unsigned short old_ident;
+    uint16 old_ident;
 
     old_ident = silc_command_get_ident(cmd->payload);
     silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
@@ -795,10 +795,10 @@ silc_server_command_whois_from_server(SilcServerCommandContext cmd)
 {
   SilcServer server = cmd->server;
   char *nick = NULL, *server_name = NULL;
-  int count = 0, clients_count = 0;
+  int count = 0;
   SilcClientEntry *clients = NULL, entry;
   SilcClientID **client_id = NULL;
-  unsigned int client_id_count = 0;
+  uint32 client_id_count = 0, clients_count = 0;
   int i, ret = 0;
 
   /* Parse the whois request */
@@ -932,7 +932,7 @@ silc_server_command_whowas_parse(SilcServerCommandContext cmd,
 				 int *count)
 {
   unsigned char *tmp;
-  unsigned int len;
+  uint32 len;
 
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
   if (!tmp) {
@@ -964,7 +964,7 @@ silc_server_command_whowas_parse(SilcServerCommandContext cmd,
 static char
 silc_server_command_whowas_check(SilcServerCommandContext cmd,
 				 SilcClientEntry *clients,
-				 unsigned int clients_count)
+				 uint32 clients_count)
 {
   SilcServer server = cmd->server;
   int i;
@@ -975,7 +975,7 @@ silc_server_command_whowas_check(SilcServerCommandContext cmd,
 
     if (!entry->nickname || !entry->username) {
       SilcBuffer tmpbuf;
-      unsigned short old_ident;
+      uint16 old_ident;
 
       if (!entry->router)
 	continue;
@@ -1010,7 +1010,7 @@ silc_server_command_whowas_check(SilcServerCommandContext cmd,
 static void
 silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
 				      SilcClientEntry *clients,
-				      unsigned int clients_count)
+				      uint32 clients_count)
 {
   SilcServer server = cmd->server;
   char *tmp;
@@ -1018,7 +1018,7 @@ silc_server_command_whowas_send_reply(SilcServerCommandContext cmd,
   SilcBuffer packet, idp;
   SilcClientEntry entry = NULL;
   SilcCommandStatus status;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint16 ident = silc_command_get_ident(cmd->payload);
   char found = FALSE;
   char nh[256], uh[256];
 
@@ -1111,8 +1111,9 @@ silc_server_command_whowas_from_client(SilcServerCommandContext cmd)
 {
   SilcServer server = cmd->server;
   char *nick = NULL, *server_name = NULL;
-  int count = 0, clients_count = 0;
+  int count = 0;
   SilcClientEntry *clients = NULL;
+  uint32 clients_count = 0;
   int ret = 0;
 
   /* Protocol dictates that we must always send the received WHOWAS request
@@ -1122,7 +1123,7 @@ silc_server_command_whowas_from_client(SilcServerCommandContext cmd)
   if (server->server_type == SILC_SERVER && 
       !cmd->pending && !server->standalone) {
     SilcBuffer tmpbuf;
-    unsigned short old_ident;
+    uint16 old_ident;
 
     old_ident = silc_command_get_ident(cmd->payload);
     silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
@@ -1196,8 +1197,9 @@ silc_server_command_whowas_from_server(SilcServerCommandContext cmd)
 {
   SilcServer server = cmd->server;
   char *nick = NULL, *server_name = NULL;
-  int count = 0, clients_count = 0;
+  int count = 0;
   SilcClientEntry *clients = NULL;
+  uint32 clients_count = 0;
   int ret = 0;
 
   /* Parse the whowas request */
@@ -1278,7 +1280,7 @@ SILC_SERVER_CMD_FUNC(whowas)
 static char
 silc_server_command_identify_check(SilcServerCommandContext cmd,
 				   SilcClientEntry *clients,
-				   unsigned int clients_count)
+				   uint32 clients_count)
 {
   SilcServer server = cmd->server;
   int i;
@@ -1292,7 +1294,7 @@ silc_server_command_identify_check(SilcServerCommandContext cmd,
 
     if (!entry->nickname) {
       SilcBuffer tmpbuf;
-      unsigned short old_ident;
+      uint16 old_ident;
       
       if (!entry->router)
 	continue;
@@ -1332,7 +1334,7 @@ silc_server_command_identify_check(SilcServerCommandContext cmd,
 static void
 silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
 					SilcClientEntry *clients,
-					unsigned int clients_count,
+					uint32 clients_count,
 					int count)
 {
   SilcServer server = cmd->server;
@@ -1341,7 +1343,7 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
   SilcBuffer packet, idp;
   SilcClientEntry entry;
   SilcCommandStatus status;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint16 ident = silc_command_get_ident(cmd->payload);
   char nh[256], uh[256];
   SilcSocketConnection hsock;
 
@@ -1432,10 +1434,10 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
 {
   SilcServer server = cmd->server;
   char *nick = NULL, *server_name = NULL;
-  int count = 0, clients_count = 0; 
+  int count = 0;
   SilcClientEntry *clients = NULL, entry;
   SilcClientID **client_id = NULL;
-  unsigned int client_id_count = 0;
+  uint32 client_id_count = 0, clients_count = 0;
   int i, ret = 0;
 
   /* Protocol dictates that we must always send the received IDENTIFY request
@@ -1445,7 +1447,7 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
   if (server->server_type == SILC_SERVER && 
       !cmd->pending && !server->standalone) {
     SilcBuffer tmpbuf;
-    unsigned short old_ident;
+    uint16 old_ident;
 
     old_ident = silc_command_get_ident(cmd->payload);
     silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
@@ -1571,10 +1573,10 @@ silc_server_command_identify_from_server(SilcServerCommandContext cmd)
 {
   SilcServer server = cmd->server;
   char *nick = NULL, *server_name = NULL;
-  int count = 0, clients_count = 0;
+  int count = 0;
   SilcClientEntry *clients = NULL, entry;
   SilcClientID **client_id = NULL;
-  unsigned int client_id_count = 0;
+  uint32 client_id_count = 0, clients_count = 0;
   int i, ret = 0;
 
   /* Parse the IDENTIFY request */
@@ -1716,7 +1718,7 @@ SILC_SERVER_CMD_FUNC(nick)
   SilcBuffer packet, nidp, oidp;
   SilcClientID *new_id;
   char *nick;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint16 ident = silc_command_get_ident(cmd->payload);
 
   if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
@@ -1800,18 +1802,18 @@ SILC_SERVER_CMD_FUNC(nick)
 static void
 silc_server_command_list_send_reply(SilcServerCommandContext cmd,
 				    SilcChannelEntry *lch, 
-				    unsigned int lch_count,
+				    uint32 lch_count,
 				    SilcChannelEntry *gch,
-				    unsigned int gch_count)
+				    uint32 gch_count)
 {
   int i;
   SilcBuffer packet, idp;
   SilcChannelEntry entry;
   SilcCommandStatus status;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint16 ident = silc_command_get_ident(cmd->payload);
   char *topic;
   unsigned char usercount[4];
-  unsigned int users;
+  uint32 users;
 
   for (i = 0; i < lch_count; i++)
     if (lch[i]->mode & SILC_CHANNEL_MODE_SECRET)
@@ -1936,9 +1938,9 @@ SILC_SERVER_CMD_FUNC(list)
   SilcServer server = cmd->server;
   SilcChannelID *channel_id = NULL;
   unsigned char *tmp;
-  unsigned int tmp_len;
+  uint32 tmp_len;
   SilcChannelEntry *lchannels = NULL, *gchannels = NULL;
-  unsigned int lch_count = 0, gch_count = 0;
+  uint32 lch_count = 0, gch_count = 0;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_LIST, cmd, 0, 2);
 
@@ -1983,8 +1985,8 @@ SILC_SERVER_CMD_FUNC(topic)
   SilcChannelClientEntry chl;
   SilcBuffer packet, idp;
   unsigned char *tmp;
-  unsigned int argc, tmp_len;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint32 argc, tmp_len;
+  uint16 ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_TOPIC, cmd, 1, 2);
 
@@ -2107,8 +2109,8 @@ SILC_SERVER_CMD_FUNC(invite)
   SilcIDListData idata;
   SilcBuffer idp, idp2, packet;
   unsigned char *tmp, *add, *del;
-  unsigned int len;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint32 len;
+  uint16 ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_INVITE, cmd, 1, 4);
 
@@ -2346,7 +2348,7 @@ SILC_SERVER_CMD_FUNC(quit)
   SilcSocketConnection sock = cmd->sock;
   QuitInternal q;
   unsigned char *tmp = NULL;
-  unsigned int len = 0;
+  uint32 len = 0;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_QUIT, cmd, 0, 1);
 
@@ -2383,7 +2385,7 @@ SILC_SERVER_CMD_FUNC(kill)
   SilcClientEntry remote_client;
   SilcClientID *client_id;
   unsigned char *tmp, *comment;
-  unsigned int tmp_len, tmp_len2;
+  uint32 tmp_len, tmp_len2;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_KILL, cmd, 1, 2);
 
@@ -2498,9 +2500,9 @@ SILC_SERVER_CMD_FUNC(info)
   SilcServer server = cmd->server;
   SilcBuffer packet, idp;
   unsigned char *tmp;
-  unsigned int tmp_len;
+  uint32 tmp_len;
   char *dest_server, *server_info = NULL, *server_name;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint16 ident = silc_command_get_ident(cmd->payload);
   SilcServerEntry entry = NULL;
   SilcServerID *server_id = NULL;
 
@@ -2566,7 +2568,7 @@ SILC_SERVER_CMD_FUNC(info)
 	server->server_type == SILC_ROUTER && entry && !entry->server_info) {
       /* Send to the server */
       SilcBuffer tmpbuf;
-      unsigned short old_ident;
+      uint16 old_ident;
 
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
@@ -2591,7 +2593,7 @@ SILC_SERVER_CMD_FUNC(info)
     if (!entry && !cmd->pending && !server->standalone) {
       /* Send to the primary router */
       SilcBuffer tmpbuf;
-      unsigned short old_ident;
+      uint16 old_ident;
 
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
@@ -2653,7 +2655,7 @@ SILC_SERVER_CMD_FUNC(ping)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcServerID *id;
-  unsigned int len;
+  uint32 len;
   unsigned char *tmp;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_INFO, cmd, 1, 2);
@@ -2694,16 +2696,16 @@ static void silc_server_command_join_channel(SilcServer server,
 					     SilcChannelEntry channel,
 					     SilcClientID *client_id,
 					     int created,
-					     unsigned int umode)
+					     uint32 umode)
 {
   SilcSocketConnection sock = cmd->sock;
   unsigned char *tmp;
-  unsigned int tmp_len, user_count;
+  uint32 tmp_len, user_count;
   unsigned char *passphrase = NULL, mode[4], tmp2[4], tmp3[4];
   SilcClientEntry client;
   SilcChannelClientEntry chl;
   SilcBuffer reply, chidp, clidp, keyp = NULL, user_list, mode_list;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint16 ident = silc_command_get_ident(cmd->payload);
   char check[512];
 
   SILC_LOG_DEBUG(("Start"));
@@ -2914,10 +2916,10 @@ SILC_SERVER_CMD_FUNC(join)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
-  int tmp_len;
+  uint32 tmp_len;
   char *tmp, *channel_name = NULL, *cipher, *hmac;
   SilcChannelEntry channel;
-  unsigned int umode = 0;
+  uint32 umode = 0;
   int created = FALSE;
   SilcClientID *client_id;
 
@@ -3001,7 +3003,7 @@ SILC_SERVER_CMD_FUNC(join)
 	   or joins the client to it). */
 	if (server->server_type == SILC_SERVER) {
 	  SilcBuffer tmpbuf;
-	  unsigned short old_ident;
+	  uint16 old_ident;
 	  
 	  old_ident = silc_command_get_ident(cmd->payload);
 	  silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
@@ -3100,8 +3102,8 @@ SILC_SERVER_CMD_FUNC(motd)
   SilcServer server = cmd->server;
   SilcBuffer packet, idp;
   char *motd, *dest_server;
-  int motd_len;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint32 motd_len;
+  uint16 ident = silc_command_get_ident(cmd->payload);
   
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_MOTD, cmd, 1, 1);
 
@@ -3157,7 +3159,7 @@ SILC_SERVER_CMD_FUNC(motd)
 	entry && !entry->motd) {
       /* Send to the server */
       SilcBuffer tmpbuf;
-      unsigned short old_ident;
+      uint16 old_ident;
 
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
@@ -3182,7 +3184,7 @@ SILC_SERVER_CMD_FUNC(motd)
     if (!entry && !cmd->pending && !server->standalone) {
       /* Send to the primary router */
       SilcBuffer tmpbuf;
-      unsigned short old_ident;
+      uint16 old_ident;
 
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, silc_rng_get_rn16(server->rng));
@@ -3244,8 +3246,8 @@ SILC_SERVER_CMD_FUNC(umode)
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   SilcBuffer packet;
   unsigned char *tmp_mask;
-  unsigned int mask;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint32 mask;
+  uint16 ident = silc_command_get_ident(cmd->payload);
 
   if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
@@ -3322,7 +3324,7 @@ SILC_SERVER_CMD_FUNC(umode)
 
 int silc_server_check_cmode_rights(SilcChannelEntry channel,
 				   SilcChannelClientEntry client,
-				   unsigned int mode)
+				   uint32 mode)
 {
   int is_op = client->mode & SILC_CHANNEL_UMODE_CHANOP;
   int is_fo = client->mode & SILC_CHANNEL_UMODE_CHANFO;
@@ -3396,8 +3398,8 @@ SILC_SERVER_CMD_FUNC(cmode)
   SilcBuffer packet, cidp;
   unsigned char *tmp, *tmp_id, *tmp_mask;
   char *cipher = NULL, *hmac = NULL;
-  unsigned int mode_mask, tmp_len, tmp_len2;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint32 mode_mask, tmp_len, tmp_len2;
+  uint16 ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CMODE, cmd, 2, 7);
 
@@ -3488,7 +3490,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   
   if (mode_mask & SILC_CHANNEL_MODE_ULIMIT) {
     /* User limit is set on channel */
-    unsigned int user_limit;
+    uint32 user_limit;
       
     /* Get user limit */
     tmp = silc_argument_get_arg_type(cmd->args, 3, NULL);
@@ -3745,9 +3747,9 @@ SILC_SERVER_CMD_FUNC(cumode)
   SilcChannelClientEntry chl;
   SilcBuffer packet, idp;
   unsigned char *tmp_id, *tmp_ch_id, *tmp_mask;
-  unsigned int target_mask, sender_mask = 0, tmp_len, tmp_ch_len;
+  uint32 target_mask, sender_mask = 0, tmp_len, tmp_ch_len;
   int notify = FALSE;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint16 ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CUMODE, cmd, 3, 4);
 
@@ -3863,7 +3865,7 @@ SILC_SERVER_CMD_FUNC(cumode)
   if (target_mask & SILC_CHANNEL_UMODE_CHANFO) {
     /* The client tries to claim the founder rights. */
     unsigned char *tmp_auth;
-    unsigned int tmp_auth_len, auth_len;
+    uint32 tmp_auth_len, auth_len;
     void *auth;
     
     if (target_client != client) {
@@ -3995,7 +3997,7 @@ SILC_SERVER_CMD_FUNC(kick)
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
   SilcBuffer idp;
-  unsigned int tmp_len;
+  uint32 tmp_len;
   unsigned char *tmp, *comment;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_LEAVE, cmd, 1, 3);
@@ -4148,7 +4150,7 @@ SILC_SERVER_CMD_FUNC(oper)
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   unsigned char *username, *auth;
-  unsigned int tmp_len;
+  uint32 tmp_len;
   SilcServerConfigSectionAdminConnection *admin;
   SilcIDListData idata = (SilcIDListData)client;
 
@@ -4221,7 +4223,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   unsigned char *username, *auth;
-  unsigned int tmp_len;
+  uint32 tmp_len;
   SilcServerConfigSectionAdminConnection *admin;
   SilcIDListData idata = (SilcIDListData)client;
 
@@ -4297,8 +4299,8 @@ SILC_SERVER_CMD_FUNC(connect)
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   unsigned char *tmp, *host;
-  unsigned int tmp_len;
-  unsigned int port = SILC_PORT;
+  uint32 tmp_len;
+  uint32 port = SILC_PORT;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CONNECT, cmd, 1, 2);
 
@@ -4356,8 +4358,8 @@ SILC_SERVER_CMD_FUNC(ban)
   SilcChannelClientEntry chl;
   SilcChannelID *channel_id = NULL;
   unsigned char *id, *add, *del;
-  unsigned int id_len, tmp_len;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint32 id_len, tmp_len;
+  uint16 ident = silc_command_get_ident(cmd->payload);
 
   if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
     goto out;
@@ -4489,9 +4491,9 @@ SILC_SERVER_CMD_FUNC(close)
   SilcServerEntry server_entry;
   SilcSocketConnection sock;
   unsigned char *tmp;
-  unsigned int tmp_len;
+  uint32 tmp_len;
   unsigned char *name;
-  unsigned int port = SILC_PORT;
+  uint32 port = SILC_PORT;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CLOSE, cmd, 1, 2);
 
@@ -4582,7 +4584,7 @@ SILC_SERVER_CMD_FUNC(leave)
   SilcClientEntry id_entry = (SilcClientEntry)cmd->sock->user_data;
   SilcChannelID *id = NULL;
   SilcChannelEntry channel;
-  unsigned int len;
+  uint32 len;
   unsigned char *tmp;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_LEAVE, cmd, 1, 2);
@@ -4666,12 +4668,12 @@ SILC_SERVER_CMD_FUNC(users)
   SilcChannelID *id;
   SilcBuffer packet;
   unsigned char *channel_id;
-  unsigned int channel_id_len;
+  uint32 channel_id_len;
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
   unsigned char lc[4];
-  unsigned int list_count = 0;
-  unsigned short ident = silc_command_get_ident(cmd->payload);
+  uint32 list_count = 0;
+  uint16 ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_USERS, cmd, 1, 1);
 

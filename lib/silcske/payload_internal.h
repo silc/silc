@@ -24,42 +24,42 @@
 /* SILC Key Exchange Start Payload */
 typedef struct {
   unsigned char flags;
-  unsigned short len;
+  uint16 len;
 
   unsigned char *cookie;
-  unsigned short cookie_len;
+  uint16 cookie_len;
 
   unsigned char *version;
-  unsigned short version_len;
+  uint16 version_len;
 
-  unsigned short ke_grp_len;
+  uint16 ke_grp_len;
   unsigned char *ke_grp_list;
 
-  unsigned short pkcs_alg_len;
+  uint16 pkcs_alg_len;
   unsigned char *pkcs_alg_list;
 
-  unsigned short enc_alg_len;
+  uint16 enc_alg_len;
   unsigned char *enc_alg_list;
   
-  unsigned short hash_alg_len;
+  uint16 hash_alg_len;
   unsigned char *hash_alg_list;
 
-  unsigned short hmac_alg_len;
+  uint16 hmac_alg_len;
   unsigned char *hmac_alg_list;
 
-  unsigned short comp_alg_len;
+  uint16 comp_alg_len;
   unsigned char *comp_alg_list;
 } SilcSKEStartPayload;
 
 /* SILC Key Exchange Payload */
 typedef struct {
-  unsigned short pk_len;
+  uint16 pk_len;
   unsigned char *pk_data;
-  unsigned short pk_type;
+  uint16 pk_type;
 
   SilcInt x;
 
-  unsigned short sign_len;
+  uint16 sign_len;
   unsigned char *sign_data;
 } SilcSKEKEPayload;
 

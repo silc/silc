@@ -374,7 +374,7 @@ int silc_client_create_key_pair(char *pkcs_name, int bits,
   SilcPrivateKey prv_key;
   SilcRng rng;
   unsigned char *key;
-  unsigned int key_len;
+  uint32 key_len;
   char line[256];
   char *pkfile = NULL, *prvfile = NULL;
 

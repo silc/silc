@@ -21,7 +21,7 @@
 #ifndef SILCPRIMEGEN_H
 #define SILCPRIMEGEN_H
 
-int silc_math_gen_prime(SilcInt *prime, unsigned int bits, int verbose);
+int silc_math_gen_prime(SilcInt *prime, uint32 bits, int verbose);
 int silc_math_prime_test(SilcInt *p);
 void silc_math_primegen_init();
 void silc_math_primegen_uninit();

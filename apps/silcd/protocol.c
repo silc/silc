@@ -132,7 +132,7 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
 /* Check remote host version string */
 
 SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
-				     unsigned int len)
+				     uint32 len)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
 
@@ -453,7 +453,7 @@ static int
 silc_server_public_key_authentication(SilcServer server,
 				      SilcPublicKey pub_key,
 				      unsigned char *sign,
-				      unsigned int sign_len,
+				      uint32 sign_len,
 				      SilcSKE ske)
 {
   SilcPKCS pkcs;
@@ -496,7 +496,7 @@ static int
 silc_server_get_public_key_auth(SilcServer server,
 				SilcPublicKey pub_key,
 				unsigned char *auth_data,
-				unsigned int *auth_data_len,
+				uint32 *auth_data_len,
 				SilcSKE ske)
 {
   int len;
@@ -564,8 +564,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	 * We are receiving party
 	 */
 	int ret;
-	unsigned short payload_len;
-	unsigned short conn_type;
+	uint16 payload_len;
+	uint16 conn_type;
 	unsigned char *auth_data = NULL;
 
 	SILC_LOG_INFO(("Performing authentication protocol for %s (%s)",
@@ -851,7 +851,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	SilcBuffer packet;
 	int payload_len = 0;
 	unsigned char *auth_data = NULL;
-	unsigned int auth_data_len = 0;
+	uint32 auth_data_len = 0;
 	
 	switch(ctx->auth_meth) {
 	case SILC_AUTH_NONE:

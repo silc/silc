@@ -67,7 +67,7 @@ typedef struct {
      starting the protocol if we know the authentication data. Otherwise
      these are and remain NULL. */
   unsigned char *auth_data;
-  unsigned int auth_data_len;
+  uint32 auth_data_len;
 
   SilcTask timeout_task;
 } SilcClientConnAuthInternalContext;
@@ -81,7 +81,7 @@ void silc_client_protocol_ke_send_packet(SilcSKE ske,
 					 void *context);
 SilcSKEStatus silc_client_protocol_ke_verify_key(SilcSKE ske,
 						 unsigned char *pk_data,
-						 unsigned int pk_len,
+						 uint32 pk_len,
 						 SilcSKEPKType pk_type,
 						 void *context);
 void silc_client_protocol_ke_set_keys(SilcSKE ske,

@@ -42,7 +42,7 @@ static void silc_idcache_list_add(SilcIDCacheList list,
        Table of the cache entries allocated by silc_idcache_add function.
        This table is reallocated when new entry is added into the cache.
 
-   unsigned int cache_count
+   uint32 cache_count
 
        Number of cache entries in the cache.
 
@@ -71,7 +71,7 @@ static void silc_idcache_list_add(SilcIDCacheList list,
 */
 struct SilcIDCacheStruct {
   SilcIDCacheEntry cache;
-  unsigned int cache_count;
+  uint32 cache_count;
   int sorted;
   int fast_access[256];
   SilcIDCacheDestructor destructor;
@@ -94,15 +94,15 @@ struct SilcIDCacheStruct {
 struct SilcIDCacheListStruct {
   SilcIDCacheEntry cache[64];
   SilcIDCacheEntry *cache_dyn;
-  unsigned int cache_dyn_count;
-  unsigned int cache_count;
-  unsigned int pos;
+  uint32 cache_dyn_count;
+  uint32 cache_count;
+  uint32 pos;
 };
 
 /* Allocates new ID cache object. The initial amount of allocated entries
    can be sent as argument. If `count' is 0 the system uses default values. */
 
-SilcIDCache silc_idcache_alloc(unsigned int count,
+SilcIDCache silc_idcache_alloc(uint32 count,
 			       SilcIDCacheDestructor destructor)
 {
   SilcIDCache cache;
@@ -397,12 +397,12 @@ int silc_idcache_find_by_context(SilcIDCache cache, void *context,
    however, it is not mandatory. */
 
 int silc_idcache_add(SilcIDCache cache, unsigned char *data, 
-		     unsigned int data_len, SilcIdType id_type, void *id, 
+		     uint32 data_len, SilcIdType id_type, void *id, 
 		     void *context, int sort, int expire)
 {
   int i;
-  unsigned int count;
-  unsigned long curtime = time(NULL);
+  uint32 count;
+  uint32 curtime = time(NULL);
   SilcIDCacheEntry c;
 
   if (!cache || !cache->cache)
@@ -520,7 +520,7 @@ int silc_idcache_del_all(SilcIDCache cache)
 int silc_idcache_purge(SilcIDCache cache)
 {
   SilcIDCacheEntry c;
-  unsigned long curtime = time(NULL);
+  uint32 curtime = time(NULL);
   int i;
 
   if (!cache || !cache->cache)

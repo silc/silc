@@ -90,7 +90,7 @@ typedef enum {
 #define SILC_COMMAND_RESERVED           255
 
 /* Command Status type */
-typedef unsigned short SilcCommandStatus;
+typedef uint16 SilcCommandStatus;
 
 /* Command Status messages */
 #define SILC_STATUS_OK                      0
@@ -138,28 +138,28 @@ typedef unsigned short SilcCommandStatus;
 /* Prototypes */
 SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer);
 SilcBuffer silc_command_payload_encode(SilcCommand cmd,
-				       unsigned int argc,
+				       uint32 argc,
 				       unsigned char **argv,
-				       unsigned int *argv_lens,
-				       unsigned int *argv_types,
-				       unsigned short ident);
+				       uint32 *argv_lens,
+				       uint32 *argv_types,
+				       uint16 ident);
 SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload);
 SilcBuffer silc_command_payload_encode_va(SilcCommand cmd, 
-					  unsigned short ident, 
-					  unsigned int argc, ...);
+					  uint16 ident, 
+					  uint32 argc, ...);
 SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd, 
-					   unsigned short ident, 
-					   unsigned int argc, va_list ap);
+					   uint16 ident, 
+					   uint32 argc, va_list ap);
 SilcBuffer 
 silc_command_reply_payload_encode_va(SilcCommand cmd, 
 				     SilcCommandStatus status,
-				     unsigned short ident,
-				     unsigned int argc, ...);
+				     uint16 ident,
+				     uint32 argc, ...);
 void silc_command_free_payload(SilcCommandPayload payload);
 SilcCommand silc_command_get(SilcCommandPayload payload);
 SilcArgumentPayload silc_command_get_args(SilcCommandPayload payload);
-unsigned short silc_command_get_ident(SilcCommandPayload payload);
-void silc_command_set_ident(SilcCommandPayload payload, unsigned short ident);
+uint16 silc_command_get_ident(SilcCommandPayload payload);
+void silc_command_set_ident(SilcCommandPayload payload, uint16 ident);
 void silc_command_set_command(SilcCommandPayload payload, SilcCommand command);
 
 #endif

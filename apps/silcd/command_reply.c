@@ -70,7 +70,7 @@ void silc_server_command_reply_process(SilcServer server,
   SilcServerCommandReplyContext ctx;
   SilcCommandPayload payload;
   SilcCommand command;
-  unsigned short ident;
+  uint16 ident;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -127,7 +127,6 @@ static char
 silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 {
   SilcServer server = cmd->server;
-  int len, id_len;
   unsigned char *tmp, *id_data;
   char *nickname, *username, *realname;
   SilcClientID *client_id;
@@ -135,7 +134,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   SilcIDCacheEntry cache = NULL;
   char global = FALSE;
   char *nick;
-  unsigned int mode = 0;
+  uint32 mode = 0, len, id_len;
 
   id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
@@ -268,7 +267,7 @@ static char
 silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
 {
   SilcServer server = cmd->server;
-  int len, id_len;
+  uint32 len, id_len;
   unsigned char *id_data;
   char *nickname, *username, *realname;
   SilcClientID *client_id;
@@ -393,7 +392,7 @@ static char
 silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 {
   SilcServer server = cmd->server;
-  int len, id_len;
+  uint32 len, id_len;
   unsigned char *id_data;
   char *nickname, *username;
   SilcClientID *client_id;
@@ -523,7 +522,7 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
   SilcCommandStatus status;
   SilcServerEntry entry;
   SilcServerID *server_id;
-  unsigned int tmp_len;
+  uint32 tmp_len;
   unsigned char *tmp, *name;
 
   COMMAND_CHECK_STATUS;
@@ -579,7 +578,7 @@ SILC_SERVER_CMD_REPLY_FUNC(motd)
   SilcCommandStatus status;
   SilcServerEntry entry = NULL;
   SilcServerID *server_id;
-  unsigned int tmp_len;
+  uint32 tmp_len;
   unsigned char *tmp;
 
   COMMAND_CHECK_STATUS;
@@ -630,10 +629,10 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   SilcClientID *client_id = NULL;
   SilcChannelEntry entry;
   SilcHmac hmac = NULL;
-  unsigned int id_len, len, list_count;
+  uint32 id_len, len, list_count;
   unsigned char *id_string;
   char *channel_name, *tmp;
-  unsigned int mode, created;
+  uint32 mode, created;
   SilcBuffer keyp = NULL, client_id_list = NULL, client_mode_list = NULL;
 
   COMMAND_CHECK_STATUS;
@@ -828,8 +827,8 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
   unsigned char *tmp;
-  unsigned int tmp_len;
-  unsigned int list_count;
+  uint32 tmp_len;
+  uint32 list_count;
 
   COMMAND_CHECK_STATUS;
 

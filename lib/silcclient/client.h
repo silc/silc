@@ -46,7 +46,7 @@ struct SilcClientConnectionStruct {
   /* Decoded local ID so that the above defined ID would not have
      to be decoded for every packet. */
   unsigned char *local_id_data;
-  unsigned int local_id_data_len;
+  uint32 local_id_data_len;
 
   /* Own client entry. */
   SilcClientEntry local_entry;
@@ -65,7 +65,7 @@ struct SilcClientConnectionStruct {
   /* Decoded remote ID so that the above defined ID would not have
      to be decoded for every packet. */
   unsigned char *remote_id_data;
-  unsigned int remote_id_data_len;
+  uint32 remote_id_data_len;
 
   /*
    * Common data 
@@ -75,7 +75,7 @@ struct SilcClientConnectionStruct {
   SilcCipher receive_key;
   SilcHmac hmac;
   unsigned char *hmac_key;
-  unsigned int hmac_key_len;
+  uint32 hmac_key_len;
   SilcHash hash;
 
   /* Client ID and Channel ID cache. Messages transmitted in SILC network
@@ -98,11 +98,11 @@ struct SilcClientConnectionStruct {
   SilcDList pending_commands;
 
   /* Current command identifier, 0 not used */
-  unsigned short cmd_ident;
+  uint16 cmd_ident;
 
   /* Requested pings. */
   SilcClientPing *ping;
-  unsigned int ping_count;
+  uint32 ping_count;
 
   /* Set away message */
   SilcClientAway *away;
@@ -151,14 +151,14 @@ struct SilcClientStruct {
 
   /* Table of connections in client. All the connection data is saved here. */
   SilcClientConnection *conns;
-  unsigned int conns_count;
+  uint32 conns_count;
 
   /* Table of listenning sockets in client.  Client can have listeners
      (like key agreement protocol server) and those sockets are saved here.
      This table is checked always if the connection object cannot be found
      from the `conns' table. */
   SilcSocketConnection *sockets;
-  unsigned int sockets_count;
+  uint32 sockets_count;
 
   /* Generic cipher and hash objects. These can be used and referenced
      by the application as well. */
@@ -229,7 +229,7 @@ void silc_client_packet_send(SilcClient client,
 			     SilcCipher cipher,
 			     SilcHmac hmac,
 			     unsigned char *data, 
-			     unsigned int data_len, 
+			     uint32 data_len, 
 			     int force_send);
 void silc_client_disconnected_by_server(SilcClient client,
 					SilcSocketConnection sock,
@@ -243,7 +243,7 @@ void silc_client_receive_new_id(SilcClient client,
 SilcChannelEntry silc_client_new_channel_id(SilcClient client,
 					    SilcSocketConnection sock,
 					    char *channel_name,
-					    unsigned int mode, 
+					    uint32 mode, 
 					    SilcIDPayload idp);
 void silc_client_save_channel_key(SilcClientConnection conn,
 				  SilcBuffer key_payload, 
@@ -261,9 +261,9 @@ void silc_client_replace_from_channels(SilcClient client,
 				       SilcClientConnection conn,
 				       SilcClientEntry old,
 				       SilcClientEntry new);
-char *silc_client_chmode(unsigned int mode, SilcChannelEntry channel);
-char *silc_client_chumode(unsigned int mode);
-char *silc_client_chumode_char(unsigned int mode);
+char *silc_client_chmode(uint32 mode, SilcChannelEntry channel);
+char *silc_client_chumode(uint32 mode);
+char *silc_client_chumode_char(uint32 mode);
 void silc_client_process_failure(SilcClient client,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);

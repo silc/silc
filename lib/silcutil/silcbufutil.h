@@ -75,7 +75,7 @@ SilcBuffer silc_buffer_clone(SilcBuffer sb)
    except that there is now more space at the end of buffer. */
 
 extern inline
-SilcBuffer silc_buffer_realloc(SilcBuffer sb, unsigned int newsize)
+SilcBuffer silc_buffer_realloc(SilcBuffer sb, uint32 newsize)
 {
   SilcBuffer sb_new;
 

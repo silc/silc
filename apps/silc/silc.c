@@ -514,7 +514,7 @@ static void silc_client_clear_input(SilcClientInternal app)
 static void silc_client_process_message(SilcClientInternal app)
 {
   unsigned char *data;
-  unsigned int len;
+  uint32 len;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -523,9 +523,9 @@ static void silc_client_process_message(SilcClientInternal app)
 
   if (data[0] == '/' && data[1] != ' ') {
     /* Command */
-    unsigned int argc = 0;
+    uint32 argc = 0;
     unsigned char **argv, *tmpcmd;
-    unsigned int *argv_lens, *argv_types;
+    uint32 *argv_lens, *argv_types;
     SilcClientCommand *cmd;
     SilcClientCommandContext ctx;
 
@@ -623,9 +623,9 @@ SILC_TASK_CALLBACK(silc_client_run_commands)
 
   cs = app->config->commands;
   while(cs) {
-    unsigned int argc = 0;
+    uint32 argc = 0;
     unsigned char **argv, *tmpcmd;
-    unsigned int *argv_lens, *argv_types;
+    uint32 *argv_lens, *argv_types;
     SilcClientCommand *cmd;
     SilcClientCommandContext ctx;
 

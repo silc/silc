@@ -25,35 +25,35 @@
    various things. */
 typedef struct {
   /* Local stats (server and router) */
-  unsigned long my_clients;	  /* Locally connected clients */
-  unsigned long my_servers;	  /* Locally connected servers */
-  unsigned long my_routers;	  /* Locally connected routers */
-  unsigned long my_channels;	  /* Locally created channels */
-  unsigned long my_chanclients;	  /* Local clients on local channels */
-  unsigned long my_aways;	  /* Local clients away (XXX) */
-  unsigned long my_server_ops;	  /* Local server operators */
-  unsigned long my_router_ops;	  /* Local router operators */
+  uint32 my_clients;	  /* Locally connected clients */
+  uint32 my_servers;	  /* Locally connected servers */
+  uint32 my_routers;	  /* Locally connected routers */
+  uint32 my_channels;	  /* Locally created channels */
+  uint32 my_chanclients;	  /* Local clients on local channels */
+  uint32 my_aways;	  /* Local clients away (XXX) */
+  uint32 my_server_ops;	  /* Local server operators */
+  uint32 my_router_ops;	  /* Local router operators */
 
   /* Global stats (mainly for router) */
-  unsigned long cell_clients;	  /* All clients in cell */
-  unsigned long cell_servers;	  /* All servers in cell */
-  unsigned long cell_channels;	  /* All channels in cell */
-  unsigned long cell_chanclients; /* All clients on cell's channels */
-  unsigned long clients;	  /* All clients */
-  unsigned long servers;	  /* All servers */
-  unsigned long routers;	  /* All routers */
-  unsigned long channels;	  /* All channels */
-  unsigned long chanclients;	  /* All clients on channels */
-  unsigned long server_ops;	  /* All server operators */
-  unsigned long router_ops;	  /* All router operators */
+  uint32 cell_clients;	  /* All clients in cell */
+  uint32 cell_servers;	  /* All servers in cell */
+  uint32 cell_channels;	  /* All channels in cell */
+  uint32 cell_chanclients; /* All clients on cell's channels */
+  uint32 clients;	  /* All clients */
+  uint32 servers;	  /* All servers */
+  uint32 routers;	  /* All routers */
+  uint32 channels;	  /* All channels */
+  uint32 chanclients;	  /* All clients on channels */
+  uint32 server_ops;	  /* All server operators */
+  uint32 router_ops;	  /* All router operators */
 
   /* General */
-  unsigned long conn_attempts;	  /* Connection attempts */
-  unsigned long conn_failures;	  /* Connection failure */
-  unsigned long auth_attempts;	  /* Authentication attempts */
-  unsigned long auth_failures;	  /* Authentication failures */
-  unsigned long packets_sent;	  /* Sent packets */
-  unsigned long packets_received; /* Received packets */
+  uint32 conn_attempts;	  /* Connection attempts */
+  uint32 conn_failures;	  /* Connection failure */
+  uint32 auth_attempts;	  /* Authentication attempts */
+  uint32 auth_failures;	  /* Authentication failures */
+  uint32 packets_sent;	  /* Sent packets */
+  uint32 packets_received; /* Received packets */
 } SilcServerStatistics;
 
 typedef struct {
@@ -64,8 +64,8 @@ typedef struct {
   int remote_port;
   
   /* Current connection retry info */
-  unsigned int retry_count;
-  unsigned int retry_timeout;
+  uint32 retry_count;
+  uint32 retry_timeout;
 
   /* Back pointer to server */
   SilcServer server;
@@ -83,11 +83,11 @@ struct SilcServerStruct {
   int listenning;
   SilcServerID *id;
   unsigned char *id_string;
-  unsigned int id_string_len;
+  uint32 id_string_len;
   SilcIdType id_type;
 
   /* Current command identifier, 0 not used */
-  unsigned short cmd_ident;
+  uint16 cmd_ident;
 
   /* Server's own ID entry. */
   SilcServerEntry id_entry;
@@ -157,7 +157,7 @@ typedef struct {
 typedef struct {
   SilcServer server;
   SilcSocketConnection sock;
-  unsigned int failure;
+  uint32 failure;
 } *SilcServerFailureContext;
 
 /* Macros */

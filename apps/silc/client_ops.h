@@ -42,13 +42,13 @@ void silc_disconnect(SilcClient client, SilcClientConnection conn);
 unsigned char *silc_ask_passphrase(SilcClient client, 
 				   SilcClientConnection conn);
 int silc_verify_server_key(SilcClient client, SilcClientConnection conn, 
-			   unsigned char *pk, unsigned int pk_len,
+			   unsigned char *pk, uint32 pk_len,
 			   SilcSKEPKType pk_type);
 int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
-			 char *hostname, unsigned short port,
+			 char *hostname, uint16 port,
 			 SilcProtocolAuthMeth *auth_meth,
 			 unsigned char **auth_data,
-			 unsigned int *auth_data_len);
+			 uint32 *auth_data_len);
 void silc_failure(SilcClient client, SilcClientConnection conn, 
 		  SilcProtocol protocol, void *failure);
 int silc_key_agreement(SilcClient client, SilcClientConnection conn,

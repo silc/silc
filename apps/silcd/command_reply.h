@@ -43,7 +43,7 @@ typedef struct {
   SilcServerPendingDestructor destructor;
   SilcCommandCb callback;
   void *context;
-  unsigned short ident;
+  uint16 ident;
 } *SilcServerCommandReplyContext;
 
 /* Macros */

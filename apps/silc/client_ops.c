@@ -104,7 +104,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
   SilcClientEntry client_entry, client_entry2;
   SilcChannelEntry channel_entry;
   char *tmp = NULL;
-  unsigned int tmp_int;
+  uint32 tmp_int;
 
   va_start(vp, type);
 
@@ -201,7 +201,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
   case SILC_NOTIFY_TYPE_CMODE_CHANGE:
     client_entry = va_arg(vp, SilcClientEntry);
-    tmp_int = va_arg(vp, unsigned int);
+    tmp_int = va_arg(vp, uint32);
     (void)va_arg(vp, char *);
     (void)va_arg(vp, char *);
     channel_entry = va_arg(vp, SilcChannelEntry);
@@ -235,7 +235,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
   case SILC_NOTIFY_TYPE_CUMODE_CHANGE:
     client_entry = va_arg(vp, SilcClientEntry);
-    tmp_int = va_arg(vp, unsigned int);
+    tmp_int = va_arg(vp, uint32);
     tmp = silc_client_chumode(tmp_int);
     client_entry2 = va_arg(vp, SilcClientEntry);
     channel_entry = va_arg(vp, SilcChannelEntry);
@@ -324,12 +324,12 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
   case SILC_NOTIFY_TYPE_SERVER_SIGNOFF:
     {
       SilcClientEntry *clients;
-      unsigned int clients_count;
+      uint32 clients_count;
       int i;
 
       (void)va_arg(vp, void *);
       clients = va_arg(vp, SilcClientEntry *);
-      clients_count = va_arg(vp, unsigned int);
+      clients_count = va_arg(vp, uint32);
 
       for (i = 0; i < clients_count; i++) {
 	if (clients[i]->server)
@@ -397,7 +397,7 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 void silc_client_show_users(SilcClient client,
 			    SilcClientConnection conn,
 			    SilcClientEntry *clients,
-			    unsigned int clients_count,
+			    uint32 clients_count,
 			    void *context)
 {
   SilcChannelEntry channel = (SilcChannelEntry)context;
@@ -473,7 +473,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       {
 	char buf[1024], *nickname, *username, *realname;
 	int len;
-	unsigned int idle, mode;
+	uint32 idle, mode;
 	SilcBuffer channels;
 
 	if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
@@ -498,8 +498,8 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	username = va_arg(vp, char *);
 	realname = va_arg(vp, char *);
 	channels = va_arg(vp, SilcBuffer);
-	mode = va_arg(vp, unsigned int);
-	idle = va_arg(vp, unsigned int);
+	mode = va_arg(vp, uint32);
+	idle = va_arg(vp, uint32);
 
 	memset(buf, 0, sizeof(buf));
 
@@ -532,7 +532,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	    silc_dlist_start(list);
 	    while ((entry = silc_dlist_get(list)) != SILC_LIST_END) {
 	      char *m = silc_client_chumode_char(silc_channel_get_mode(entry));
-	      unsigned int name_len;
+	      uint32 name_len;
 	      char *name = silc_channel_get_name(entry, &name_len);
 
 	      if (m)
@@ -639,10 +639,10 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 
     case SILC_COMMAND_JOIN:
       {
-	unsigned int mode;
+	uint32 mode;
 	char *topic;
 	SilcBuffer client_id_list;
-	unsigned int list_count;
+	uint32 list_count;
 	SilcChannelEntry channel;
 
 	if (!success)
@@ -650,14 +650,14 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 
 	app->screen->bottom_line->channel = va_arg(vp, char *);
 	channel = va_arg(vp, SilcChannelEntry);
-	mode = va_arg(vp, unsigned int);
-	(void)va_arg(vp, unsigned int);
+	mode = va_arg(vp, uint32);
+	(void)va_arg(vp, uint32);
 	(void)va_arg(vp, unsigned char *);
 	(void)va_arg(vp, unsigned char *);
 	(void)va_arg(vp, unsigned char *);
 	topic = va_arg(vp, char *);
 	(void)va_arg(vp, unsigned char *);
-	list_count = va_arg(vp, unsigned int);
+	list_count = va_arg(vp, uint32);
 	client_id_list = va_arg(vp, SilcBuffer);
 
 	if (topic)
@@ -692,7 +692,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
     case SILC_COMMAND_LIST:
       {
 	char *topic, *name;
-	unsigned int usercount;
+	int usercount;
 	unsigned char buf[256], tmp[16];
 	int i, len;
 
@@ -702,7 +702,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	(void)va_arg(vp, SilcChannelEntry);
 	name = va_arg(vp, char *);
 	topic = va_arg(vp, char *);
-	usercount = va_arg(vp, unsigned int);
+	usercount = va_arg(vp, int);
 
 	if (status == SILC_STATUS_LIST_START ||
 	    status == SILC_STATUS_OK)
@@ -740,12 +740,12 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 
     case SILC_COMMAND_UMODE:
       {
-	unsigned int mode;
+	uint32 mode;
 
 	if (!success)
 	  return;
 
-	mode = va_arg(vp, unsigned int);
+	mode = va_arg(vp, uint32);
 
 	if (!mode && app->screen->bottom_line->umode) {
 	  silc_free(app->screen->bottom_line->umode);
@@ -979,7 +979,7 @@ unsigned char *silc_ask_passphrase(SilcClient client,
 int silc_verify_public_key(SilcClient client,
 			   SilcClientConnection conn, 
 			   SilcSocketType conn_type,
-			   unsigned char *pk, unsigned int pk_len,
+			   unsigned char *pk, uint32 pk_len,
 			   SilcSKEPKType pk_type)
 {
   SilcSocketConnection sock = conn->sock;
@@ -1034,7 +1034,7 @@ int silc_verify_public_key(SilcClient client,
     /* The key already exists, verify it. */
     SilcPublicKey public_key;
     unsigned char *encpk;
-    unsigned int encpk_len;
+    uint32 encpk_len;
 
     /* Load the key file */
     if (!silc_pkcs_load_public_key(filename, &public_key, 
@@ -1129,10 +1129,10 @@ int silc_verify_public_key(SilcClient client,
    is found and FALSE if not. `conn' may be NULL. */
 
 int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
-			 char *hostname, unsigned short port,
+			 char *hostname, uint16 port,
 			 SilcProtocolAuthMeth *auth_meth,
 			 unsigned char **auth_data,
-			 unsigned int *auth_data_len)
+			 uint32 *auth_data_len)
 {
   SilcClientInternal app = (SilcClientInternal)client->application;
 

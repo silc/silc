@@ -307,7 +307,7 @@ static u32 bf_sbox[256 * 4] =
 
 /* 
  * Round loop unrolling macros, S is a pointer to a S-Box array
- * organized in 4 unsigned longs at a row.
+ * organized in 4 uint32s at a row.
  */
 
 #define GET32_3(x) (((x) & 0xff))

@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:54  priikone
- * Initial revision
+ * Revision 1.2  2001/04/03 19:54:10  priikone
+ * 	updates. New data types.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:54  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -70,13 +73,13 @@ SILC_CIPHER_API_CONTEXT_LEN(rc5)
 
 SILC_CIPHER_API_ENCRYPT_CBC(rc5)
 {
-  unsigned int *in, *out, *tiv;
-  unsigned int tmp[2];
+  uint32 *in, *out, *tiv;
+  uint32 tmp[2];
   int i;
 
-  in = (unsigned int *)src;
-  out = (unsigned int *)dst;
-  tiv = (unsigned int *)iv;
+  in = (uint32 *)src;
+  out = (uint32 *)dst;
+  tiv = (uint32 *)iv;
 
   tmp[0] = in[0] ^ tiv[0];
   tmp[1] = in[1] ^ tiv[1];
@@ -99,13 +102,13 @@ SILC_CIPHER_API_ENCRYPT_CBC(rc5)
 
 SILC_CIPHER_API_DECRYPT_CBC(rc5)
 {
-  unsigned int *in, *out, *tiv;
-  unsigned int tmp[2], tmp2[2];
+  uint32 *in, *out, *tiv;
+  uint32 tmp[2], tmp2[2];
   int i;
 
-  in = (unsigned int *)src;
-  out = (unsigned int *)dst;
-  tiv = (unsigned int *)iv;
+  in = (uint32 *)src;
+  out = (uint32 *)dst;
+  tiv = (uint32 *)iv;
 
   tmp[0] = in[0];
   tmp[1] = in[1];

@@ -101,7 +101,7 @@ SILC_TASK_CALLBACK(silc_socket_heartbeat)
    `timeout_queue' is the application's scheduler timeout queue. */
 
 void silc_socket_set_heartbeat(SilcSocketConnection sock, 
-			       unsigned long heartbeat,
+			       uint32 heartbeat,
 			       void *hb_context,
 			       SilcSocketConnectionHBCb hb_callback,
 			       void *timeout_queue)

@@ -32,10 +32,10 @@
 /* Private Message Payload structure. Contents of this structure is parsed
    from SILC packets. */
 struct SilcPrivateMessagePayloadStruct {
-  unsigned short flags;
-  unsigned short nickname_len;
+  uint16 flags;
+  uint16 nickname_len;
   unsigned char *nickname;
-  unsigned short message_len;
+  uint16 message_len;
   unsigned char *message;
 };
 
@@ -86,16 +86,16 @@ silc_private_message_payload_parse(SilcBuffer buffer, SilcCipher cipher)
    the cipher is provided the packet is also encrypted here.  It is provided
    if the private message private keys are used. */
 
-SilcBuffer silc_private_message_payload_encode(unsigned short flags,
-					       unsigned int nickname_len,
+SilcBuffer silc_private_message_payload_encode(uint16 flags,
+					       uint32 nickname_len,
 					       unsigned char *nickname,
-					       unsigned short data_len,
+					       uint16 data_len,
 					       unsigned char *data,
 					       SilcCipher cipher)
 {
   int i;
   SilcBuffer buffer;
-  unsigned int len, pad_len = 0;
+  uint32 len, pad_len = 0;
   unsigned char pad[SILC_PACKET_MAX_PADLEN];
 
   SILC_LOG_DEBUG(("Encoding private message payload"));
@@ -149,7 +149,7 @@ void silc_private_message_payload_free(SilcPrivateMessagePayload payload)
 
 /* Return flags */
 
-unsigned short 
+uint16 
 silc_private_message_get_flags(SilcPrivateMessagePayload payload)
 {
   return payload->flags;
@@ -159,7 +159,7 @@ silc_private_message_get_flags(SilcPrivateMessagePayload payload)
 
 unsigned char *
 silc_private_message_get_nickname(SilcPrivateMessagePayload payload,
-				  unsigned int *nickname_len)
+				  uint32 *nickname_len)
 {
   if (nickname_len)
     *nickname_len = payload->nickname_len;
@@ -171,7 +171,7 @@ silc_private_message_get_nickname(SilcPrivateMessagePayload payload,
 
 unsigned char *
 silc_private_message_get_message(SilcPrivateMessagePayload payload,
-				 unsigned int *message_len)
+				 uint32 *message_len)
 {
   if (message_len)
     *message_len = payload->message_len;

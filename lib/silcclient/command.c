@@ -78,8 +78,8 @@ SilcClientCommand silc_command_list[] =
    encoded into correct form and in correct order. */
 
 void silc_client_send_command(SilcClient client, SilcClientConnection conn,
-			      SilcCommand command, unsigned short ident,
-			      unsigned int argc, ...)
+			      SilcCommand command, uint16 ident,
+			      uint32 argc, ...)
 {
   SilcBuffer packet;
   va_list ap;
@@ -116,7 +116,7 @@ SilcClientCommand *silc_client_command_find(const char *name)
 
 void silc_client_command_pending(SilcClientConnection conn,
 				 SilcCommand reply_cmd,
-				 unsigned short ident,
+				 uint16 ident,
 				 SilcClientPendingDestructor destructor,
 				 SilcCommandCb callback,
 				 void *context)
@@ -136,7 +136,7 @@ void silc_client_command_pending(SilcClientConnection conn,
 
 void silc_client_command_pending_del(SilcClientConnection conn,
 				     SilcCommand reply_cmd,
-				     unsigned short ident)
+				     uint16 ident)
 {
   SilcClientCommandPending *r;
 
@@ -155,7 +155,7 @@ void silc_client_command_pending_del(SilcClientConnection conn,
 int silc_client_command_pending_check(SilcClientConnection conn,
 				      SilcClientCommandReplyContext ctx,
 				      SilcCommand command, 
-				      unsigned short ident)
+				      uint16 ident)
 {
   SilcClientCommandPending *r;
 
@@ -220,7 +220,7 @@ static void silc_client_command_destructor(void *context)
 void silc_client_command_completion(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcClientEntry clients,
-				    unsigned int clients_count,
+				    uint32 clients_count,
 				    void *context)
 {
 
@@ -539,7 +539,7 @@ SILC_CLIENT_CMD_FUNC(invite)
   SilcClientEntry client_entry = NULL;
   SilcChannelEntry channel;
   SilcBuffer buffer, clidp, chidp;
-  unsigned int num = 0, type = 0;
+  uint32 num = 0, type = 0;
   char *nickname = NULL, *server = NULL, *name;
   char *invite = NULL;
 
@@ -725,7 +725,7 @@ SILC_CLIENT_CMD_FUNC(kill)
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer, idp;
   SilcClientEntry target;
-  unsigned int num = 0;
+  uint32 num = 0;
   char *nickname = NULL, *server = NULL;
 
   if (!cmd->conn) {
@@ -1023,7 +1023,7 @@ SILC_CLIENT_CMD_FUNC(umode)
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer, idp;
   unsigned char *cp, modebuf[4];
-  unsigned int mode, add, len;
+  uint32 mode, add, len;
   int i;
 
   if (!cmd->conn) {
@@ -1118,7 +1118,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
   SilcChannelEntry channel;
   SilcBuffer buffer, chidp, auth = NULL;
   unsigned char *name, *cp, modebuf[4], tmp[4], *arg = NULL;
-  unsigned int mode, add, type, len, arg_len = 0;
+  uint32 mode, add, type, len, arg_len = 0;
   int i;
 
   if (!cmd->conn) {
@@ -1319,9 +1319,9 @@ SILC_CLIENT_CMD_FUNC(cumode)
   SilcClientEntry client_entry;
   SilcBuffer buffer, clidp, chidp, auth = NULL;
   unsigned char *name, *cp, modebuf[4];
-  unsigned int mode = 0, add, len;
+  uint32 mode = 0, add, len;
   char *nickname = NULL, *server = NULL;
-  unsigned int num = 0;
+  uint32 num = 0;
   int i;
 
   if (!cmd->conn) {
@@ -1484,7 +1484,7 @@ SILC_CLIENT_CMD_FUNC(kick)
   SilcBuffer buffer, idp, idp2;
   SilcClientEntry target;
   char *name;
-  unsigned int num = 0;
+  uint32 num = 0;
   char *nickname = NULL, *server = NULL;
 
   if (!cmd->conn) {
@@ -1703,7 +1703,7 @@ SILC_CLIENT_CMD_FUNC(connect)
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer;
   unsigned char port[4];
-  unsigned int tmp;
+  uint32 tmp;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -1828,7 +1828,7 @@ SILC_CLIENT_CMD_FUNC(close)
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer;
   unsigned char port[4];
-  unsigned int tmp;
+  uint32 tmp;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);

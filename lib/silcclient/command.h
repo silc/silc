@@ -53,7 +53,7 @@ typedef struct {
   SilcCommand cmd;
   char *name;
   SilcCommandFlag flags;
-  unsigned int max_args;
+  uint32 max_args;
 } SilcClientCommand;
 
 /* All client commands */
@@ -67,10 +67,10 @@ typedef struct {
   SilcClient client;
   SilcClientConnection conn;
   SilcClientCommand *command;
-  unsigned int argc;
+  uint32 argc;
   unsigned char **argv;
-  unsigned int *argv_lens;
-  unsigned int *argv_types;
+  uint32 *argv_lens;
+  uint32 *argv_types;
   int pending;			/* Command is being re-processed when TRUE */
   int users;			/* Reference counter */
 } *SilcClientCommandContext;
@@ -84,7 +84,7 @@ typedef struct SilcClientCommandPendingStruct {
   SilcCommandCb callback;
   SilcClientPendingDestructor destructor;
   void *context;
-  unsigned short ident;
+  uint16 ident;
   struct SilcClientCommandPendingStruct *next;
 } SilcClientCommandPending;
 
@@ -122,11 +122,11 @@ do {									\
 /* Prototypes (some prototypes are in the silcapi.h file) */
 void silc_client_command_pending_del(SilcClientConnection conn,
 				     SilcCommand reply_cmd,
-				     unsigned short ident);
+				     uint16 ident);
 int silc_client_command_pending_check(SilcClientConnection conn,
 				      SilcClientCommandReplyContext ctx,
 				      SilcCommand command, 
-				      unsigned short ident);
+				      uint16 ident);
 
 SILC_CLIENT_CMD_FUNC(whois);
 SILC_CLIENT_CMD_FUNC(whowas);

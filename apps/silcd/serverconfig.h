@@ -25,8 +25,8 @@
 typedef struct SilcServerConfigSectionAlgStruct {
   char *alg_name;
   char *sim_name;
-  unsigned int block_len;
-  unsigned int key_len;
+  uint32 block_len;
+  uint32 key_len;
   struct SilcServerConfigSectionAlgStruct *next;
   struct SilcServerConfigSectionAlgStruct *prev;
 #define SILC_CONFIG_SERVER_MODNAME "builtin"
@@ -37,7 +37,7 @@ typedef struct {
   char *server_name;
   char *server_ip;
   char *location;
-  unsigned short port;
+  uint16 port;
 } SilcServerConfigSectionServerInfo;
 
 /* Holds server's administrative information from config file */
@@ -52,7 +52,7 @@ typedef struct {
 typedef struct SilcServerConfigSectionListenPortStruct {
   char *host;
   char *remote_ip;
-  unsigned short port;
+  uint16 port;
   struct SilcServerConfigSectionListenPortStruct *next;
   struct SilcServerConfigSectionListenPortStruct *prev;
 } SilcServerConfigSectionListenPort;
@@ -68,7 +68,7 @@ typedef struct {
 typedef struct SilcServerConfigSectionLoggingStruct {
   char *logtype;
   char *filename;
-  unsigned int maxsize;
+  uint32 maxsize;
   struct SilcServerConfigSectionLoggingStruct *next;
   struct SilcServerConfigSectionLoggingStruct *prev;
 
@@ -81,10 +81,10 @@ typedef struct SilcServerConfigSectionLoggingStruct {
 
 /* Holds all configured connection classes */
 typedef struct SilcServerConfigSectionConnectionClassStruct {
-  unsigned int class;
-  unsigned int ping_freq;
-  unsigned int connect_freq;
-  unsigned int max_links;
+  uint32 class;
+  uint32 ping_freq;
+  uint32 connect_freq;
+  uint32 max_links;
   struct SilcServerConfigSectionConnectionClassStruct *next;
   struct SilcServerConfigSectionConnectionClassStruct *prev;
 } SilcServerConfigSectionConnectionClass;
@@ -97,9 +97,9 @@ typedef struct SilcServerConfigSectionClientConnectionStruct {
   char *host;
   SilcAuthMethod auth_meth;
   void *auth_data;
-  unsigned int auth_data_len;
-  unsigned short port;
-  unsigned int class;
+  uint32 auth_data_len;
+  uint16 port;
+  uint32 class;
   struct SilcServerConfigSectionClientConnectionStruct *next;
   struct SilcServerConfigSectionClientConnectionStruct *prev;
 } SilcServerConfigSectionClientConnection;
@@ -111,7 +111,7 @@ typedef struct SilcServerConfigSectionAdminConnectionStruct {
   char *nickname;
   SilcAuthMethod auth_meth;
   void *auth_data;
-  unsigned int auth_data_len;
+  uint32 auth_data_len;
   struct SilcServerConfigSectionAdminConnectionStruct *next;
   struct SilcServerConfigSectionAdminConnectionStruct *prev;
 } SilcServerConfigSectionAdminConnection;
@@ -121,10 +121,10 @@ typedef struct SilcServerConfigSectionServerConnectionStruct {
   char *host;
   SilcAuthMethod auth_meth;
   void *auth_data;
-  unsigned int auth_data_len;
-  unsigned short port;
+  uint32 auth_data_len;
+  uint16 port;
   char *version;
-  unsigned int class;
+  uint32 class;
   int initiator;
   struct SilcServerConfigSectionServerConnectionStruct *next;
   struct SilcServerConfigSectionServerConnectionStruct *prev;
@@ -135,7 +135,7 @@ typedef struct {
   char *host;
   char *time;
   char *comment;
-  unsigned short port;
+  uint16 port;
 } SilcServerConfigSectionDenyConnection;
 
 /* Holds motd file */
@@ -203,7 +203,7 @@ typedef enum {
 typedef struct {
   const char *section;
   SilcServerConfigSectionType type;
-  unsigned int maxfields;
+  int maxfields;
 } SilcServerConfigSection;
 
 /* LIst of all possible config sections in SILC server. */
@@ -213,7 +213,7 @@ extern SilcServerConfigSection silc_server_config_sections[];
    from a file to this structure before parsing it further. */
 typedef struct SilcServerConfigParseStruct {
   SilcBuffer line;
-  unsigned int linenum;
+  int linenum;
   SilcServerConfigSection *section;
   struct SilcServerConfigParseStruct *next;
   struct SilcServerConfigParseStruct *prev;
@@ -246,7 +246,7 @@ int silc_server_config_parse(SilcServerConfig config, SilcBuffer buffer,
 			     SilcServerConfigParse *return_config);
 int silc_server_config_parse_lines(SilcServerConfig config, 
 				   SilcServerConfigParse parse_config);
-int silc_server_config_check_sections(unsigned int checkmask);
+int silc_server_config_check_sections(uint32 checkmask);
 void silc_server_config_setlogfiles(SilcServerConfig config);
 void silc_server_config_register_ciphers(SilcServerConfig config);
 void silc_server_config_register_pkcs(SilcServerConfig config);

@@ -50,7 +50,7 @@ Mean:          500 cycles =    51.2 mbits/sec
 
 SILC_CIPHER_API_SET_KEY(aes)
 {
-  rijndael_set_key((RijndaelContext *)context, (unsigned int *)key, keylen);
+  rijndael_set_key((RijndaelContext *)context, (uint32 *)key, keylen);
   return 1;
 }
 
@@ -82,13 +82,13 @@ SILC_CIPHER_API_CONTEXT_LEN(aes)
 
 SILC_CIPHER_API_ENCRYPT_CBC(aes)
 {
-  unsigned int *in, *out, *tiv;
-  unsigned int tmp[4];
+  uint32 *in, *out, *tiv;
+  uint32 tmp[4];
   int i;
 
-  in = (unsigned int *)src;
-  out = (unsigned int *)dst;
-  tiv = (unsigned int *)iv;
+  in = (uint32 *)src;
+  out = (uint32 *)dst;
+  tiv = (uint32 *)iv;
 
   tmp[0] = in[0] ^ tiv[0];
   tmp[1] = in[1] ^ tiv[1];
@@ -121,13 +121,13 @@ SILC_CIPHER_API_ENCRYPT_CBC(aes)
 
 SILC_CIPHER_API_DECRYPT_CBC(aes)
 {
-  unsigned int *tiv, *in, *out;
-  unsigned int tmp[4], tmp2[4];
+  uint32 *tiv, *in, *out;
+  uint32 tmp[4], tmp2[4];
   int i;
 
-  in = (unsigned int *)src;
-  out = (unsigned int *)dst;
-  tiv = (unsigned int *)iv;
+  in = (uint32 *)src;
+  out = (uint32 *)dst;
+  tiv = (uint32 *)iv;
 
   tmp[0] = in[0];
   tmp[1] = in[1];

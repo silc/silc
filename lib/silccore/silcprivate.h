@@ -28,20 +28,20 @@ typedef struct SilcPrivateMessagePayloadStruct *SilcPrivateMessagePayload;
 
 SilcPrivateMessagePayload 
 silc_private_message_payload_parse(SilcBuffer buffer, SilcCipher cipher);
-SilcBuffer silc_private_message_payload_encode(unsigned short flags,
-					       unsigned int nickname_len,
+SilcBuffer silc_private_message_payload_encode(uint16 flags,
+					       uint32 nickname_len,
 					       unsigned char *nickname,
-					       unsigned short data_len,
+					       uint16 data_len,
 					       unsigned char *data,
 					       SilcCipher cipher);
 void silc_private_message_payload_free(SilcPrivateMessagePayload payload);
-unsigned short 
+uint16 
 silc_private_message_get_flags(SilcPrivateMessagePayload payload);
 unsigned char *
 silc_private_message_get_nickname(SilcPrivateMessagePayload payload,
-				  unsigned int *nickname_len);
+				  uint32 *nickname_len);
 unsigned char *
 silc_private_message_get_message(SilcPrivateMessagePayload payload,
-				 unsigned int *message_len);
+				 uint32 *message_len);
 
 #endif

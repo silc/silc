@@ -109,10 +109,10 @@ int silc_packet_send(SilcSocketConnection sock, int force_send)
    cannot be used. */
 
 void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, 
-			 SilcBuffer buffer, unsigned int len)
+			 SilcBuffer buffer, uint32 len)
 {
   unsigned char mac[32];
-  unsigned int mac_len;
+  uint32 mac_len;
 
   /* Compute HMAC. This assumes that HMAC is created from the entire
      data area thus this uses the length found in buffer, not the length
@@ -243,9 +243,9 @@ void silc_packet_assemble(SilcPacketContext *ctx)
    outgoing buffer in SilcSocketConnection object. */
 
 void silc_packet_send_prepare(SilcSocketConnection sock,
-			      unsigned int header_len,
-			      unsigned int padlen,
-			      unsigned int data_len)
+			      uint32 header_len,
+			      uint32 padlen,
+			      uint32 data_len)
 {
   int totlen, oldlen;
 
@@ -468,7 +468,7 @@ static int silc_packet_check_mac(SilcHmac hmac, SilcBuffer buffer)
   /* Check MAC */
   if (hmac) {
     unsigned char mac[32];
-    unsigned int mac_len;
+    uint32 mac_len;
     
     SILC_LOG_DEBUG(("Verifying MAC"));
 
@@ -537,7 +537,7 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
 {
   /* Decrypt rest of the header plus padding */
   if (cipher) {
-    unsigned short truelen, len1, len2, padlen;
+    uint16 truelen, len1, len2, padlen;
 
     /* Pull MAC from packet before decryption */
     if (hmac) {

@@ -28,7 +28,7 @@
 /* Reads a file to a buffer. The allocated buffer is returned. Length of
    the file read is returned to the return_len argument. */
 
-char *silc_file_read(const char *filename, int *return_len)
+char *silc_file_read(const char *filename, uint32 *return_len)
 {
   int fd;
   char *buffer;
@@ -72,7 +72,7 @@ char *silc_file_read(const char *filename, int *return_len)
 
 /* Writes a buffer to the file. */
 
-int silc_file_write(const char *filename, const char *buffer, int len)
+int silc_file_write(const char *filename, const char *buffer, uint32 len)
 {
   int fd;
         
@@ -95,7 +95,7 @@ int silc_file_write(const char *filename, const char *buffer, int len)
    set to the file. */
 
 int silc_file_write_mode(const char *filename, const char *buffer, 
-			 int len, int mode)
+			 uint32 len, int mode)
 {
   int fd;
         
@@ -202,10 +202,10 @@ static unsigned char pem_enc[64] =
    data string. Note: This is originally public domain code and is 
    still PD. */
 
-char *silc_encode_pem(unsigned char *data, unsigned int len)
+char *silc_encode_pem(unsigned char *data, uint32 len)
 {
   int i, j;
-  unsigned int bits, c, char_count;
+  uint32 bits, c, char_count;
   char *pem;
 
   char_count = 0;
@@ -250,10 +250,10 @@ char *silc_encode_pem(unsigned char *data, unsigned int len)
 
 /* Same as above but puts newline ('\n') every 72 characters. */
 
-char *silc_encode_pem_file(unsigned char *data, unsigned int data_len)
+char *silc_encode_pem_file(unsigned char *data, uint32 data_len)
 {
   int i, j;
-  unsigned int len, cols;
+  uint32 len, cols;
   char *pem, *pem2;
 
   pem = silc_encode_pem(data, data_len);
@@ -278,11 +278,11 @@ char *silc_encode_pem_file(unsigned char *data, unsigned int data_len)
 /* Decodes PEM into data. Returns the decoded data. Note: This is
    originally public domain code and is still PD. */
 
-unsigned char *silc_decode_pem(unsigned char *pem, unsigned int pem_len,
-			       unsigned int *ret_len)
+unsigned char *silc_decode_pem(unsigned char *pem, uint32 pem_len,
+			       uint32 *ret_len)
 {
   int i, j;
-  unsigned int len, c, char_count, bits;
+  uint32 len, c, char_count, bits;
   unsigned char *data;
   static char ialpha[256], decoder[256];
 
@@ -351,9 +351,9 @@ unsigned char *silc_decode_pem(unsigned char *pem, unsigned int pem_len,
    does not know anything about these. */
 
 int silc_parse_nickname(char *string, char **nickname, char **server,
-			unsigned int *num)
+			uint32 *num)
 {
-  unsigned int tlen;
+  uint32 tlen;
   char tmp[256];
 
   if (!string)
@@ -400,10 +400,10 @@ int silc_parse_nickname(char *string, char **nickname, char **server,
 
 void silc_parse_command_line(unsigned char *buffer, 
 			     unsigned char ***parsed,
-			     unsigned int **parsed_lens,
-			     unsigned int **parsed_types,
-			     unsigned int *parsed_num,
-			     unsigned int max_args)
+			     uint32 **parsed_lens,
+			     uint32 **parsed_types,
+			     uint32 *parsed_num,
+			     uint32 max_args)
 {
   int i, len = 0;
   int argc = 0;
@@ -474,7 +474,7 @@ char *silc_format(char *fmt, ...)
 
 static char rid[256];
 
-char *silc_id_render(void *id, unsigned short type)
+char *silc_id_render(void *id, uint16 type)
 {
   char tmp[100];
   unsigned char tmps[2];

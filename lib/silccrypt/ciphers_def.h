@@ -23,8 +23,8 @@
 
 /* General definitions for algorithms */
 typedef unsigned char u1byte;
-typedef unsigned int u4byte;
-typedef unsigned int u32;
+typedef uint32 u4byte;
+typedef uint32 u32;
 
 #define rotr(x, nr) (((x) >> ((int)(nr))) | ((x) << (32 - (int)(nr))))
 #define rotl(x, nr) (((x) << ((int)(nr))) | ((x) >> (32 - (int)(nr))))

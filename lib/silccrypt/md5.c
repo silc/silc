@@ -53,13 +53,13 @@ SILC_HASH_API_CONTEXT_LEN(md5)
 #ifndef HIGHFIRST
 #define byteReverse(buf, len)	/* Nothing */
 #else
-void byteReverse(unsigned char *buf, unsigned longs);
+void byteReverse(unsigned char *buf, uint32s);
 
 #ifndef ASM_MD5
 /*
  * Note: this code is harmless on little-endian machines.
  */
-void byteReverse(unsigned char *buf, unsigned longs)
+void byteReverse(unsigned char *buf, uint32s)
 {
 	uint32 t;
 	do {

@@ -982,7 +982,7 @@ void silc_client_packet_send(SilcClient client,
 			     SilcCipher cipher,
 			     SilcHmac hmac,
 			     unsigned char *data, 
-			     unsigned int data_len, 
+			     uint32 data_len, 
 			     int force_send)
 {
   SilcPacketContext packetdata;
@@ -1234,7 +1234,7 @@ void silc_client_receive_new_id(SilcClient client,
 SilcChannelEntry silc_client_new_channel_id(SilcClient client,
 					    SilcSocketConnection sock,
 					    char *channel_name,
-					    unsigned int mode, 
+					    uint32 mode, 
 					    SilcIDPayload idp)
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
@@ -1343,7 +1343,7 @@ void silc_client_replace_from_channels(SilcClient client,
 
 /* Parses mode mask and returns the mode as string. */
 
-char *silc_client_chmode(unsigned int mode, SilcChannelEntry channel)
+char *silc_client_chmode(uint32 mode, SilcChannelEntry channel)
 {
   char string[100];
 
@@ -1399,7 +1399,7 @@ char *silc_client_chmode(unsigned int mode, SilcChannelEntry channel)
 
 /* Parses channel user mode mask and returns te mode as string */
 
-char *silc_client_chumode(unsigned int mode)
+char *silc_client_chumode(uint32 mode)
 {
   char string[4];
 
@@ -1419,7 +1419,7 @@ char *silc_client_chumode(unsigned int mode)
 
 /* Parses channel user mode and returns it as special mode character. */
 
-char *silc_client_chumode_char(unsigned int mode)
+char *silc_client_chumode_char(uint32 mode)
 {
   char string[4];
 
@@ -1469,7 +1469,7 @@ void silc_client_process_failure(SilcClient client,
 				 SilcPacketContext *packet)
 {
   SilcClientFailureContext *f;
-  unsigned int failure = 0;
+  uint32 failure = 0;
 
   if (sock->protocol) {
     if (packet->buffer->len >= 4)

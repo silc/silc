@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:54  priikone
- * Initial revision
+ * Revision 1.2  2001/04/03 19:54:10  priikone
+ * 	updates. New data types.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:54  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -39,9 +42,9 @@
 
 inline int silc_cast_init(void *context, 
 			  const unsigned char *key, 
-			  unsigned int keylen)
+			  uint32 keylen)
 {
-  cast_set_key((CastContext *)context, (unsigned int *)key, keylen);
+  cast_set_key((CastContext *)context, (uint32 *)key, keylen);
   return 1;
 }
 
@@ -50,7 +53,7 @@ inline int silc_cast_init(void *context,
 
 inline int silc_cast_set_string_as_key(void *context, 
 				       const unsigned char *string,
-				       unsigned int stringlen)
+				       uint32 stringlen)
 {
   /*  SilcHash hash;
   unsigned char key[16];
@@ -68,7 +71,7 @@ inline int silc_cast_set_string_as_key(void *context,
 
 /* Returns the size of the cipher context. */
 
-inline unsigned int silc_cast_context_len()
+inline uint32 silc_cast_context_len()
 {
   return sizeof(CastContext);
 }
@@ -78,16 +81,16 @@ inline unsigned int silc_cast_context_len()
 inline int silc_cast_encrypt_cbc(void *context,
 				 const unsigned char *src,
 				 unsigned char *dst,
-				 unsigned int len,
+				 uint32 len,
 				 unsigned char *iv)
 {
-  unsigned int *in, *out, *tiv;
-  unsigned int tmp[4];
+  uint32 *in, *out, *tiv;
+  uint32 tmp[4];
   int i;
 
-  in = (unsigned int *)src;
-  out = (unsigned int *)dst;
-  tiv = (unsigned int *)iv;
+  in = (uint32 *)src;
+  out = (uint32 *)dst;
+  tiv = (uint32 *)iv;
 
   tmp[0] = in[0] ^ tiv[0];
   tmp[1] = in[1] ^ tiv[1];
@@ -115,15 +118,15 @@ inline int silc_cast_encrypt_cbc(void *context,
 inline int silc_cast_decrypt_cbc(void *context,
 				 const unsigned char *src,
 				 unsigned char *dst,
-				 unsigned int len,
+				 uint32 len,
 				 unsigned char *iv)
 {
-  unsigned int *in, *out, *tiv;
+  uint32 *in, *out, *tiv;
   int i;
 
-  in = (unsigned int *)src;
-  out = (unsigned int *)dst;
-  tiv = (unsigned int *)iv;
+  in = (uint32 *)src;
+  out = (uint32 *)dst;
+  tiv = (uint32 *)iv;
 
   cast_decrypt((CastContext *)context, in, out);
   out[0] ^= tiv[0];

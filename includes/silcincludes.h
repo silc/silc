@@ -137,7 +137,6 @@
 #undef int16
 #undef int32
 #undef int64
-#undef bool
 
 typedef unsigned char uint8;
 typedef signed char int8;
@@ -181,7 +180,9 @@ typedef int32 int64;
 typedef uint32 * void *;
 #endif
 
-typedef unsigned char bool;
+#ifndef bool
+#define bool unsigned char
+#endif
 
 /* Generic global SILC includes */
 #include "bitmove.h"

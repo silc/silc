@@ -293,7 +293,7 @@ void silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
 
 /* Return remote port by socket. */
 
-unsigned short silc_net_get_remote_port(int sock)
+uint16 silc_net_get_remote_port(int sock)
 {
   struct sockaddr_in remote;
   int len;
@@ -308,7 +308,7 @@ unsigned short silc_net_get_remote_port(int sock)
 
 /* Return local port by socket. */
 
-unsigned short silc_net_get_local_port(int sock)
+uint16 silc_net_get_local_port(int sock)
 {
   struct sockaddr_in local;
   int len;

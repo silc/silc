@@ -48,7 +48,7 @@ typedef void (*SilcDebugCb)(char *file, char *function,
 /* Debug hexdump function callback. */
 typedef void (*SilcDebugHexdumpCb)(char *file, char *function, 
 				   int line, unsigned char *data,
-				   unsigned int data_len, char *message);
+				   uint32 data_len, char *message);
 
 /* Default log filenames */
 #define SILC_LOG_FILE_INFO "silcd.log"
@@ -61,10 +61,10 @@ extern char *log_info_file;
 extern char *log_warning_file;
 extern char *log_error_file;
 extern char *log_fatal_file;
-extern unsigned int log_info_size;
-extern unsigned int log_warning_size;
-extern unsigned int log_error_size;
-extern unsigned int log_fatal_size;
+extern uint32 log_info_size;
+extern uint32 log_warning_size;
+extern uint32 log_error_size;
+extern uint32 log_fatal_size;
 
 /* Log macros. */
 #define SILC_LOG_INFO(fmt) (silc_log_output(log_info_file, \
@@ -105,15 +105,15 @@ extern unsigned int log_fatal_size;
 /* Prototypes */
 void silc_log_output_debug(char *file, char *function, 
                            int line, char *string);
-void silc_log_output(const char *filename, unsigned int maxsize,
+void silc_log_output(const char *filename, uint32 maxsize,
                      SilcLogType type, char *string);
 void silc_log_output_hexdump(char *file, char *function, 
 			     int line, void *data_in,
-                             unsigned int len, char *string);
-void silc_log_set_files(char *info, unsigned int info_size, 
-			char *warning, unsigned int warning_size,
-			char *error, unsigned int error_size,
-                        char *fatal, unsigned int fatal_size);
+                             uint32 len, char *string);
+void silc_log_set_files(char *info, uint32 info_size, 
+			char *warning, uint32 warning_size,
+			char *error, uint32 error_size,
+                        char *fatal, uint32 fatal_size);
 void silc_log_set_callbacks(SilcLogCb info, SilcLogCb warning,
 			    SilcLogCb error, SilcLogCb fatal);
 void silc_log_reset_callbacks();

@@ -32,13 +32,13 @@
    the allocated data area. Following short description of the fields
    of the buffer.
 
-   unsigned int truelen;
+   uint32 truelen;
 
        True length of the buffer. This is set at the allocation of the
        buffer and it should not be touched after that. This field should
        be considered read-only.
 
-   unsigned int len;
+   uint32 len;
 
        Length of the currently valid data area. Tells the length of the 
        data at the buffer. This is set to zero at the allocation of the
@@ -112,8 +112,8 @@
 */
 
 typedef struct SilcBufferStruct {
-  unsigned int truelen;
-  unsigned int len;
+  uint32 truelen;
+  uint32 len;
   unsigned char *head;
   unsigned char *data;
   unsigned char *tail;
@@ -131,7 +131,7 @@ typedef SilcBufferObject *SilcBuffer;
 /* Inline functions */
 
 extern inline
-SilcBuffer silc_buffer_alloc(unsigned int len)
+SilcBuffer silc_buffer_alloc(uint32 len)
 {
   SilcBuffer sb;
 
@@ -180,7 +180,7 @@ void silc_buffer_free(SilcBuffer sb)
 */
 
 extern inline 
-unsigned char *silc_buffer_pull(SilcBuffer sb, unsigned int len)
+unsigned char *silc_buffer_pull(SilcBuffer sb, uint32 len)
 {
   unsigned char *old_data = sb->data;
 
@@ -212,7 +212,7 @@ unsigned char *silc_buffer_pull(SilcBuffer sb, unsigned int len)
 */
 
 extern inline 
-unsigned char *silc_buffer_push(SilcBuffer sb, unsigned int len)
+unsigned char *silc_buffer_push(SilcBuffer sb, uint32 len)
 {
   unsigned char *old_data = sb->data;
 
@@ -244,7 +244,7 @@ unsigned char *silc_buffer_push(SilcBuffer sb, unsigned int len)
 */
 
 extern inline 
-unsigned char *silc_buffer_pull_tail(SilcBuffer sb, unsigned int len)
+unsigned char *silc_buffer_pull_tail(SilcBuffer sb, uint32 len)
 {
   unsigned char *old_tail = sb->tail;
 
@@ -276,7 +276,7 @@ unsigned char *silc_buffer_pull_tail(SilcBuffer sb, unsigned int len)
 */
 
 extern inline
-unsigned char *silc_buffer_push_tail(SilcBuffer sb, unsigned int len)
+unsigned char *silc_buffer_push_tail(SilcBuffer sb, uint32 len)
 {
   unsigned char *old_tail = sb->tail;
 
@@ -304,7 +304,7 @@ unsigned char *silc_buffer_push_tail(SilcBuffer sb, unsigned int len)
 extern inline
 unsigned char *silc_buffer_put_head(SilcBuffer sb, 
 				    unsigned char *data,
-				    unsigned int len)
+				    uint32 len)
 {
 #ifdef SILC_DEBUG
   assert((sb->data - sb->head) >= len);
@@ -326,7 +326,7 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
 extern inline
 unsigned char *silc_buffer_put(SilcBuffer sb, 
 			       unsigned char *data,
-			       unsigned int len)
+			       uint32 len)
 {
 #ifdef SILC_DEBUG
   assert((sb->tail - sb->data) >= len);
@@ -348,7 +348,7 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
 extern inline
 unsigned char *silc_buffer_put_tail(SilcBuffer sb, 
 				    unsigned char *data,
-				    unsigned int len)
+				    uint32 len)
 {
 #ifdef SILC_DEBUG
   assert((sb->end - sb->tail) >= len);

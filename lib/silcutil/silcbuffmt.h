@@ -73,23 +73,23 @@ typedef enum {
 #define SILC_STR_SI_CHAR(x) SILC_BUFFER_PARAM_SI8_CHAR, (x)
 #define SILC_STR_UI_CHAR(x) SILC_BUFFER_PARAM_UI8_CHAR, (x)
 
-/* Signed/unsigned short. 
+/* Signed/uint16. 
 
    Formatting:    SILC_STR_SI_SHORT(short)
-                  SILC_STR_UI_SHORT(unsigned short)
+                  SILC_STR_UI_SHORT(uint16)
    Unformatting:  SILC_STR_SI_SHORT(short *)
-                  SILC_STR_UI_SHORT(unsigned short *)
+                  SILC_STR_UI_SHORT(uint16 *)
 
 */
 #define SILC_STR_SI_SHORT(x) SILC_BUFFER_PARAM_SI16_SHORT, (x)
 #define SILC_STR_UI_SHORT(x) SILC_BUFFER_PARAM_UI16_SHORT, (x)
 
-/* Signed/unsigned int. 
+/* Signed/uint32. 
 
    Formatting:    SILC_STR_SI_INT(int)
-                  SILC_STR_UI_INT(unsigned int)
+                  SILC_STR_UI_INT(uint32)
    Unformatting:  SILC_STR_SI_INT(int *)
-                  SILC_STR_UI_INT(unsigned int *)
+                  SILC_STR_UI_INT(uint32 *)
 
 */
 #define SILC_STR_SI_INT(x) SILC_BUFFER_PARAM_SI32_INT, (x)
@@ -130,8 +130,8 @@ typedef enum {
 
 /* Unsigned string. Second argument is the length of the string.
 
-   Formatting:    SILC_STR_UI32_NSTRING(unsigned char *, unsigned int)
-   Unformatting:  SILC_STR_UI32_NSTRING(unsigned char **, unsigned int *)
+   Formatting:    SILC_STR_UI32_NSTRING(unsigned char *, uint32)
+   Unformatting:  SILC_STR_UI32_NSTRING(unsigned char **, uint32 *)
 
    Unformatting procedure will check for length of the string from the
    buffer before trying to get the string out. Thus, one *must* format the
@@ -169,7 +169,7 @@ typedef enum {
    the string.
 
    Formatting:    This is equal to using *_NSTRING
-   Unformatting:  SILC_STR_UI_XNSTRING(unsigned char **, unsigned int)
+   Unformatting:  SILC_STR_UI_XNSTRING(unsigned char **, uint32)
 
    This type can be used to take arbitrary length string from the buffer
    by sending the requested amount of bytes as argument. This differs

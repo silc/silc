@@ -84,7 +84,7 @@ void silc_client_notify_by_server(SilcClient client,
   SilcChannelUser chu;
   SilcIDCacheEntry id_cache = NULL;
   unsigned char *tmp;
-  unsigned int tmp_len, mode;
+  uint32 tmp_len, mode;
 
   payload = silc_notify_payload_parse(buffer);
   if (!payload)
@@ -718,7 +718,7 @@ void silc_client_notify_by_server(SilcClient client,
        * from channels as they quit as well.
        */
       SilcClientEntry *clients = NULL;
-      unsigned int clients_count = 0;
+      uint32 clients_count = 0;
       int i;
 
       for (i = 1; i < silc_argument_get_arg_num(args); i++) {

@@ -30,15 +30,15 @@ typedef struct SilcClientEntryStruct {
   char *username;		/* username[@host] */
   char *server;			/* SILC server name */
   char *realname;		/* Realname (userinfo) */
-  unsigned int num;
-  unsigned int mode;		/* User mode in SILC */
+  uint32 num;
+  uint32 mode;		/* User mode in SILC */
   SilcClientID *id;		/* The Client ID */
   SilcCipher send_key;		/* Private message key for sending */
   SilcCipher receive_key;	/* Private message key for receiving */
   unsigned char *key;		/* Set only if appliation provided the
 				   key material. NULL if the library 
 				   generated the key. */
-  unsigned int key_len;
+  uint32 key_len;
   int generated;		/* TRUE if library generated the key */
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
 } *SilcClientEntry;
@@ -46,7 +46,7 @@ typedef struct SilcClientEntryStruct {
 /* Client and its mode on a channel */
 typedef struct SilcChannelUserStruct {
   SilcClientEntry client;
-  unsigned int mode;
+  uint32 mode;
   struct SilcChannelUserStruct *next;
 } *SilcChannelUser;
 
@@ -55,7 +55,7 @@ typedef struct {
   SilcCipher cipher;		      /* The cipher and key */
   SilcHmac hmac;		      /* The HMAC and hmac key */
   unsigned char *key;		      /* The key data */
-  unsigned int key_len;		      /* The key length */
+  uint32 key_len;		      /* The key length */
 } *SilcChannelPrivateKey;
 
 /* Channel entry context. This is allocate for every channel client has
@@ -63,7 +63,7 @@ typedef struct {
 typedef struct SilcChannelEntryStruct {
   char *channel_name;
   SilcChannelID *id;
-  unsigned int mode;
+  uint32 mode;
   int on_channel;
 
   /* Joined clients */
@@ -72,7 +72,7 @@ typedef struct SilcChannelEntryStruct {
   /* Channel keys */
   SilcCipher channel_key;                    /* The channel key */
   unsigned char *key;			     /* Raw key data */
-  unsigned int key_len;
+  uint32 key_len;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE]; /* Current IV */
   SilcHmac hmac;			     /* Current HMAC */
   SilcDList private_keys;		     /* List of private keys or NULL */
@@ -85,7 +85,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
 				       char *nickname,
 				       char *server,
-				       unsigned int num,
+				       uint32 num,
 				       int query);
 
 #endif

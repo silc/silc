@@ -42,7 +42,7 @@
 #define SILC_ID_CHANNEL 3
 
 /* Type definition for the ID types. */
-typedef unsigned short SilcIdType;
+typedef uint16 SilcIdType;
 
 /* 
    64 bit SilcServerID structure:
@@ -53,8 +53,8 @@ typedef unsigned short SilcIdType;
 */
 typedef struct {
   struct in_addr ip;				/* 32 bit IP */
-  unsigned short port;				/* 16 bit port */
-  unsigned short rnd;				/* 16 bit random number */
+  uint16 port;				/* 16 bit port */
+  uint16 rnd;				/* 16 bit random number */
 } SilcServerID;
 
 /* 
@@ -79,8 +79,8 @@ typedef struct {
 */
 typedef struct {
   struct in_addr ip;				/* 32 bit IP */
-  unsigned short port;				/* 16 bit port */
-  unsigned short rnd;				/* 16 bit random number */
+  uint16 port;				/* 16 bit port */
+  uint16 rnd;				/* 16 bit random number */
 } SilcChannelID;
 
 /* Macros */
@@ -114,8 +114,8 @@ typedef struct {
 
 /* Prototypes */
 unsigned char *silc_id_id2str(void *id, SilcIdType type);
-void *silc_id_str2id(unsigned char *id, unsigned int id_len, SilcIdType type);
-unsigned int silc_id_get_len(SilcIdType type);
+void *silc_id_str2id(unsigned char *id, uint32 id_len, SilcIdType type);
+uint32 silc_id_get_len(SilcIdType type);
 void *silc_id_dup(void *id, SilcIdType type);
 
 #endif

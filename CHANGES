@@ -4,6 +4,14 @@ Tue Apr  3 21:52:42 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  int64 of at least the xintXX size.  If void * is less that 4
 	  bytes uint32 * will be used.  Defined bool as boolean.
 
+	* Changed _ALL_ unsigned long and unsigned int to uint32, 
+	  unsgined short to uint16 in the source tree.
+
+	* Fixed a fatal bug in silc_server_remove_clients_by_server.  Do
+	  not handle clients that has entry->data.registered == FALSE.
+	  They are not in the network anymore.  Affected file is
+	  silcd/server.c.
+
 Tue Apr  3 16:39:19 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented the sending of the SERVER_SIGNOFF notify in the

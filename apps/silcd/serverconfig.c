@@ -129,8 +129,7 @@ void silc_server_config_free(SilcServerConfig config)
 int silc_server_config_parse(SilcServerConfig config, SilcBuffer buffer, 
 			     SilcServerConfigParse *return_config)
 {
-  int i, begin;
-  unsigned int linenum;
+  int i, begin, linenum;
   char line[1024], *cp;
   SilcServerConfigSection *cptr = NULL;
   SilcServerConfigParse parse = *return_config, first = NULL;
@@ -247,7 +246,7 @@ int silc_server_config_parse_lines(SilcServerConfig config,
 				   SilcServerConfigParse parse_config)
 {
   int ret, check = FALSE;
-  unsigned int checkmask;
+  uint32 checkmask;
   char *tmp;
   SilcServerConfigParse pc = parse_config;
   SilcBuffer line;
@@ -1065,7 +1064,7 @@ int silc_server_config_parse_lines(SilcServerConfig config,
 /* This function checks that the mask sent as argument includes all the 
    sections that are mandatory in SILC server. */
 
-int silc_server_config_check_sections(unsigned int checkmask)
+int silc_server_config_check_sections(uint32 checkmask)
 {
   if (!(checkmask & (1L << SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_INFO))) {
     
@@ -1104,7 +1103,7 @@ void silc_server_config_setlogfiles(SilcServerConfig config)
 {
   SilcServerConfigSectionLogging *log;
   char *info, *warning, *error, *fatal;
-  unsigned int info_size, warning_size, error_size, fatal_size;
+  uint32 info_size, warning_size, error_size, fatal_size;
 
   SILC_LOG_DEBUG(("Setting configured log file names"));
 

@@ -69,7 +69,7 @@ typedef struct {
 					 provided it. This is NULL if the
 					 library generated the key or if
 					 the SKE key material was used. */
-  unsigned int key_len;		      /* The key length */
+  uint32 key_len;		      /* The key length */
 } *SilcPrivateMessageKeys;
 
 /******************************************************************************
@@ -159,10 +159,10 @@ typedef struct {
      and `auth_data_len'. The function returns TRUE if authentication method
      is found and FALSE if not. `conn' may be NULL. */
   int (*get_auth_method)(SilcClient client, SilcClientConnection conn,
-			 char *hostname, unsigned short port,
+			 char *hostname, uint16 port,
 			 SilcProtocolAuthMeth *auth_meth,
 			 unsigned char **auth_data,
-			 unsigned int *auth_data_len);
+			 uint32 *auth_data_len);
 
   /* Verifies received public key. The `conn_type' indicates which entity
      (server, client etc.) has sent the public key. If user decides to trust
@@ -171,7 +171,7 @@ typedef struct {
      TRUE. */ 
   int (*verify_public_key)(SilcClient client, SilcClientConnection conn,
 			   SilcSocketType conn_type, unsigned char *pk, 
-			   unsigned int pk_len, SilcSKEPKType pk_type);
+			   uint32 pk_len, SilcSKEPKType pk_type);
 
   /* Ask (interact, that is) a passphrase from user. Returns the passphrase
      or NULL on error. */
@@ -316,7 +316,7 @@ void silc_client_send_channel_message(SilcClient client,
 				      SilcChannelPrivateKey key,
 				      SilcMessageFlags flags,
 				      unsigned char *data, 
-				      unsigned int data_len, 
+				      uint32 data_len, 
 				      int force_send);
 
 /* Sends private message to remote client. If private message key has
@@ -331,7 +331,7 @@ void silc_client_send_private_message(SilcClient client,
 				      SilcClientEntry client_entry,
 				      SilcMessageFlags flags,
 				      unsigned char *data, 
-				      unsigned int data_len, 
+				      uint32 data_len, 
 				      int force_send);
 
 
@@ -344,7 +344,7 @@ void silc_client_send_private_message(SilcClient client,
 typedef void (*SilcGetClientCallback)(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry *clients,
-				      unsigned int clients_count,
+				      uint32 clients_count,
 				      void *context);
 
 /* Finds client entry or entries by the `nickname' and `server'. The 
@@ -368,7 +368,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 					       SilcClientConnection conn,
 					       char *nickname,
 					       char *server,
-					       unsigned int *clients_count);
+					       uint32 *clients_count);
 
 /* Gets client entries by the list of client ID's `client_id_list'. This
    always resolves those client ID's it does not know yet from the server
@@ -378,7 +378,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
    will be called after the entries are available. */
 void silc_client_get_clients_by_list(SilcClient client,
 				     SilcClientConnection conn,
-				     unsigned int list_count,
+				     uint32 list_count,
 				     SilcBuffer client_id_list,
 				     SilcGetClientCallback completion,
 				     void *context);
@@ -429,8 +429,8 @@ SilcClientCommand *silc_client_command_find(const char *name);
 /* Generic function to send any command. The arguments must be sent already
    encoded into correct form and in correct order. */
 void silc_client_send_command(SilcClient client, SilcClientConnection conn,
-			      SilcCommand command, unsigned short ident,
-			      unsigned int argc, ...);
+			      SilcCommand command, uint16 ident,
+			      uint32 argc, ...);
 
 /* Pending Command callback destructor. This is called after calling the
    pending callback or if error occurs while processing the pending command.
@@ -446,7 +446,7 @@ typedef void (*SilcClientPendingDestructor)(void *context);
    identifier `ident'. */
 void silc_client_command_pending(SilcClientConnection conn,
 				 SilcCommand reply_cmd,
-				 unsigned short ident,
+				 uint16 ident,
 				 SilcClientPendingDestructor destructor,
 				 SilcCommandCb callback,
 				 void *context);
@@ -474,7 +474,7 @@ int silc_client_add_private_message_key(SilcClient client,
 					SilcClientEntry client_entry,
 					char *cipher,
 					unsigned char *key,
-					unsigned int key_len,
+					uint32 key_len,
 					int generate_key);
 
 /* Same as above but takes the key material from the SKE key material
@@ -519,12 +519,12 @@ int silc_client_del_private_message_key(SilcClient client,
 SilcPrivateMessageKeys
 silc_client_list_private_message_keys(SilcClient client,
 				      SilcClientConnection conn,
-				      unsigned int *key_count);
+				      uint32 *key_count);
 
 /* Frees the SilcPrivateMessageKeys array returned by the function
    silc_client_list_private_message_keys. */
 void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
-					   unsigned int key_count);
+					   uint32 key_count);
 
 
 /* Channel private key management (client_channel.c, 
@@ -561,7 +561,7 @@ int silc_client_add_channel_private_key(SilcClient client,
 					char *cipher,
 					char *hmac,
 					unsigned char *key,
-					unsigned int key_len);
+					uint32 key_len);
 
 /* Removes all private keys from the `channel'. The old channel key is used
    after calling this to protect the channel messages. Returns FALSE on
@@ -589,11 +589,11 @@ SilcChannelPrivateKey *
 silc_client_list_channel_private_keys(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
-				      unsigned int *key_count);
+				      uint32 *key_count);
 
 /* Frees the SilcChannelPrivateKey array. */
 void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
-					   unsigned int key_count);
+					   uint32 key_count);
 
 
 /* Key Agreement routines (client_keyagr.c) */
@@ -636,7 +636,7 @@ void silc_client_send_key_agreement(SilcClient client,
 				    SilcClientEntry client_entry,
 				    char *hostname,
 				    int port,
-				    unsigned long timeout_secs,
+				    uint32 timeout_secs,
 				    SilcKeyAgreementCallback completion,
 				    void *context);
 

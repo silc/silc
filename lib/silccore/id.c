@@ -62,7 +62,7 @@ unsigned char *silc_id_id2str(void *id, SilcIdType type)
 
 /* Converts string to a ID */
 
-void *silc_id_str2id(unsigned char *id, unsigned int id_len, SilcIdType type)
+void *silc_id_str2id(unsigned char *id, uint32 id_len, SilcIdType type)
 {
 
   switch(type) {
@@ -115,7 +115,7 @@ void *silc_id_str2id(unsigned char *id, unsigned int id_len, SilcIdType type)
 
 /* Returns length of the ID */
 
-unsigned int silc_id_get_len(SilcIdType type)
+uint32 silc_id_get_len(SilcIdType type)
 {
   switch(type) {
   case SILC_ID_SERVER:

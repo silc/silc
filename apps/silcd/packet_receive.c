@@ -45,9 +45,9 @@ void silc_server_notify(SilcServer server,
   SilcServerEntry server_entry;
   SilcChannelClientEntry chl;
   SilcIDCacheEntry cache;
-  unsigned int mode;
+  uint32 mode;
   unsigned char *tmp;
-  unsigned int tmp_len;
+  uint32 tmp_len;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -782,7 +782,7 @@ void silc_server_notify(SilcServer server,
        * Distribute the notify to local clients on channels
        */
       unsigned char *id;
-      unsigned int id_len;
+      uint32 id_len;
     
       SILC_LOG_DEBUG(("KILLED notify"));
       
@@ -960,7 +960,7 @@ void silc_server_notify_list(SilcServer server,
 {
   SilcPacketContext *new;
   SilcBuffer buffer;
-  unsigned short len;
+  uint16 len;
 
   SILC_LOG_DEBUG(("Processing New Notify List"));
 
@@ -1206,8 +1206,8 @@ void silc_server_channel_message(SilcServer server,
       sock->type == SILC_SOCKET_TYPE_ROUTER &&
       !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     SilcBuffer chp;
-    unsigned int iv_len, i;
-    unsigned short data_len, flags;
+    uint32 iv_len, i;
+    uint16 data_len, flags;
 
     iv_len = silc_cipher_get_block_len(channel->channel_key);
     if (channel->iv[0] == '\0')
@@ -1434,7 +1434,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   SilcServerID *server_id;
   SilcIDListData idata;
   unsigned char *server_name, *id_string;
-  unsigned short id_len, name_len;
+  uint16 id_len, name_len;
   int ret;
 
   SILC_LOG_DEBUG(("Creating new server"));
@@ -1647,7 +1647,7 @@ void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
 {
   SilcPacketContext *new_id;
   SilcBuffer idp;
-  unsigned short id_len;
+  uint16 id_len;
 
   SILC_LOG_DEBUG(("Processing New ID List"));
 
@@ -1715,10 +1715,10 @@ void silc_server_new_channel(SilcServer server,
   SilcChannelPayload payload;
   SilcChannelID *channel_id;
   char *channel_name;
-  unsigned int name_len;
+  uint32 name_len;
   unsigned char *id;
-  unsigned int id_len;
-  unsigned int mode;
+  uint32 id_len;
+  uint32 mode;
 
   SILC_LOG_DEBUG(("Processing New Channel"));
 
@@ -1882,7 +1882,7 @@ void silc_server_new_channel_list(SilcServer server,
 {
   SilcPacketContext *new;
   SilcBuffer buffer;
-  unsigned short len1, len2;
+  uint16 len1, len2;
 
   SILC_LOG_DEBUG(("Processing New Channel List"));
 
@@ -1989,7 +1989,7 @@ void silc_server_connection_auth_request(SilcServer server,
 					 SilcPacketContext *packet)
 {
   SilcServerConfigSectionClientConnection *client = NULL;
-  unsigned short conn_type;
+  uint16 conn_type;
   int ret;
   SilcAuthMethod auth_meth;
 

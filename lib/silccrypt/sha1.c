@@ -59,12 +59,12 @@ SILC_HASH_API_CONTEXT_LEN(sha1)
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 
-void SHA1Transform(unsigned long state[5], unsigned char buffer[64])
+void SHA1Transform(uint32 state[5], unsigned char buffer[64])
 {
-unsigned long a, b, c, d, e;
+uint32 a, b, c, d, e;
 typedef union {
     unsigned char c[64];
-    unsigned long l[16];
+    uint32 l[16];
 } CHAR64LONG16;
 CHAR64LONG16* block;
 static unsigned char workspace[64];
@@ -124,9 +124,9 @@ void SHA1Init(SHA1_CTX* context)
 
 /* Run your data through this. */
 
-void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned int len)
+void SHA1Update(SHA1_CTX* context, unsigned char* data, uint32 len)
 {
-unsigned int i, j;
+uint32 i, j;
 
     j = (context->count[0] >> 3) & 63;
     if ((context->count[0] += len << 3) < (len << 3)) context->count[1]++;
@@ -148,7 +148,7 @@ unsigned int i, j;
 
 void SHA1Final(unsigned char digest[20], SHA1_CTX* context)
 {
-unsigned long i, j;
+uint32 i, j;
 unsigned char finalcount[8];
 
     for (i = 0; i < 8; i++) {

@@ -25,7 +25,7 @@
 typedef struct SilcNotifyPayloadStruct *SilcNotifyPayload;
 
 /* Type definition of notify type */
-typedef unsigned short SilcNotifyType;
+typedef uint16 SilcNotifyType;
 
 /* SILC notify types. Server may send these notify types to client to
    notify of some action. */
@@ -48,14 +48,14 @@ typedef unsigned short SilcNotifyType;
 
 /* Prototypes */
 SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer);
-SilcBuffer silc_notify_payload_encode(SilcNotifyType type, unsigned int argc, 
+SilcBuffer silc_notify_payload_encode(SilcNotifyType type, uint32 argc, 
 				      va_list ap);
 SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type, 
-					   unsigned int argc,
+					   uint32 argc,
 					   SilcBuffer args);
 void silc_notify_payload_free(SilcNotifyPayload payload);
 SilcNotifyType silc_notify_get_type(SilcNotifyPayload payload);
-unsigned int silc_notify_get_arg_num(SilcNotifyPayload payload);
+uint32 silc_notify_get_arg_num(SilcNotifyPayload payload);
 SilcArgumentPayload silc_notify_get_args(SilcNotifyPayload payload);
 
 #endif

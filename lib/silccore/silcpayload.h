@@ -28,29 +28,29 @@ typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
 /* Prototypes */
 SilcIDPayload silc_id_payload_parse(SilcBuffer buffer);
 SilcIDPayload silc_id_payload_parse_data(unsigned char *data, 
-					 unsigned int len);
-void *silc_id_payload_parse_id(unsigned char *data, unsigned int len);
+					 uint32 len);
+void *silc_id_payload_parse_id(unsigned char *data, uint32 len);
 SilcBuffer silc_id_payload_encode(void *id, SilcIdType type);
 void silc_id_payload_free(SilcIDPayload payload);
 SilcIdType silc_id_payload_get_type(SilcIDPayload payload);
 void *silc_id_payload_get_id(SilcIDPayload payload);
 unsigned char *silc_id_payload_get_data(SilcIDPayload payload);
-unsigned int silc_id_payload_get_len(SilcIDPayload payload);
+uint32 silc_id_payload_get_len(SilcIDPayload payload);
 SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
-						unsigned int argc);
-SilcBuffer silc_argument_payload_encode(unsigned int argc,
+						uint32 argc);
+SilcBuffer silc_argument_payload_encode(uint32 argc,
 					unsigned char **argv,
-					unsigned int *argv_lens,
-					unsigned int *argv_types);
+					uint32 *argv_lens,
+					uint32 *argv_types);
 SilcBuffer silc_argument_payload_encode_payload(SilcArgumentPayload payload);
 void silc_argument_payload_free(SilcArgumentPayload payload);
-unsigned int silc_argument_get_arg_num(SilcArgumentPayload payload);
+uint32 silc_argument_get_arg_num(SilcArgumentPayload payload);
 unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
-					   unsigned int *ret_len);
+					   uint32 *ret_len);
 unsigned char *silc_argument_get_next_arg(SilcArgumentPayload payload,
-					  unsigned int *ret_len);
+					  uint32 *ret_len);
 unsigned char *silc_argument_get_arg_type(SilcArgumentPayload payload,
-					  unsigned int type,
-					  unsigned int *ret_len);
+					  uint32 type,
+					  uint32 *ret_len);
 
 #endif

@@ -58,7 +58,7 @@ struct SilcClientAwayStruct {
 typedef struct {
   SilcClient client;
   SilcSocketConnection sock;
-  unsigned int failure;
+  uint32 failure;
 } SilcClientFailureContext;
 
 /* Protypes */

@@ -39,10 +39,10 @@ char *log_info_file;
 char *log_warning_file;
 char *log_error_file;
 char *log_fatal_file;
-unsigned int log_info_size;
-unsigned int log_warning_size;
-unsigned int log_error_size;
-unsigned int log_fatal_size;
+uint32 log_info_size;
+uint32 log_warning_size;
+uint32 log_error_size;
+uint32 log_fatal_size;
 
 /* Log callbacks. If these are set by the application these are used
    instead of the default functions in this file. */
@@ -57,7 +57,7 @@ static SilcDebugHexdumpCb debug_hexdump_cb = NULL;
 
 /* Outputs the log message to what ever log file selected. */
 
-void silc_log_output(const char *filename, unsigned int maxsize,
+void silc_log_output(const char *filename, uint32 maxsize,
                      SilcLogType type, char *string)
 {
   FILE *fp;
@@ -156,7 +156,7 @@ void silc_log_output_debug(char *file, char *function,
 
 void silc_log_output_hexdump(char *file, char *function, 
 			     int line, void *data_in,
-			     unsigned int len, char *string)
+			     uint32 len, char *string)
 {
   int i, k;
   int off, pos, count;
@@ -236,10 +236,10 @@ void silc_log_output_hexdump(char *file, char *function,
 
 /* Sets log files */
 
-void silc_log_set_files(char *info, unsigned int info_size, 
-			char *warning, unsigned int warning_size,
-			char *error, unsigned int error_size,
-			char *fatal, unsigned int fatal_size)
+void silc_log_set_files(char *info, uint32 info_size, 
+			char *warning, uint32 warning_size,
+			char *error, uint32 error_size,
+			char *fatal, uint32 fatal_size)
 {
   log_info_file = info;
   log_warning_file = warning;

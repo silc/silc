@@ -22,28 +22,28 @@
 #define SILCUTIL_H
 
 /* Prototypes */
-char *silc_file_read(const char *filename, int *return_len);
-int silc_file_write(const char *filename, const char *buffer, int len);
+char *silc_file_read(const char *filename, uint32 *return_len);
+int silc_file_write(const char *filename, const char *buffer, uint32 len);
 int silc_file_write_mode(const char *filename, const char *buffer, 
-			 int len, int mode);
+			 uint32 len, int mode);
 int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin);
 int silc_check_line(char *buf);
 char *silc_get_time();
 char *silc_to_upper(char *string);
-char *silc_encode_pem(unsigned char *data, unsigned int len);
-char *silc_encode_pem_file(unsigned char *data, unsigned int data_len);
-unsigned char *silc_decode_pem(unsigned char *pem, unsigned int pem_len,
-			       unsigned int *ret_len);
+char *silc_encode_pem(unsigned char *data, uint32 len);
+char *silc_encode_pem_file(unsigned char *data, uint32 data_len);
+unsigned char *silc_decode_pem(unsigned char *pem, uint32 pem_len,
+			       uint32 *ret_len);
 int silc_parse_nickname(char *string, char **nickname, char **server,
-			unsigned int *num);
+			uint32 *num);
 void silc_parse_command_line(unsigned char *buffer, 
 			     unsigned char ***parsed,
-			     unsigned int **parsed_lens,
-			     unsigned int **parsed_types,
-			     unsigned int *parsed_num,
-			     unsigned int max_args);
+			     uint32 **parsed_lens,
+			     uint32 **parsed_types,
+			     uint32 *parsed_num,
+			     uint32 max_args);
 char *silc_format(char *fmt, ...);
-char *silc_id_render(void *id, unsigned short type);
+char *silc_id_render(void *id, uint16 type);
 int silc_string_compare(char *string1, char *string2);
 char *silc_string_regexify(const char *string);
 int silc_string_regex_match(const char *regex, const char *string);

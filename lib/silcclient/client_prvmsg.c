@@ -37,7 +37,7 @@ void silc_client_send_private_message(SilcClient client,
 				      SilcClientEntry client_entry,
 				      SilcMessageFlags flags,
 				      unsigned char *data, 
-				      unsigned int data_len, 
+				      uint32 data_len, 
 				      int force_send)
 {
   SilcSocketConnection sock = conn->sock;
@@ -122,7 +122,7 @@ void silc_client_send_private_message(SilcClient client,
 static void silc_client_private_message_cb(SilcClient client,
 					   SilcClientConnection conn,
 					   SilcClientEntry *clients,
-					   unsigned int clients_count,
+					   uint32 clients_count,
 					   void *context)
 {
   SilcPacketContext *packet = (SilcPacketContext *)context;
@@ -204,12 +204,12 @@ void silc_client_private_message(SilcClient client,
 static void silc_client_private_message_key_cb(SilcClient client,
 					       SilcClientConnection conn,
 					       SilcClientEntry *clients,
-					       unsigned int clients_count,
+					       uint32 clients_count,
 					       void *context)
 {
   SilcPacketContext *packet = (SilcPacketContext *)context;
   unsigned char *key;
-  unsigned short key_len;
+  uint16 key_len;
   unsigned char *cipher;
   int ret;
 
@@ -290,11 +290,11 @@ int silc_client_add_private_message_key(SilcClient client,
 					SilcClientEntry client_entry,
 					char *cipher,
 					unsigned char *key,
-					unsigned int key_len,
+					uint32 key_len,
 					int generate_key)
 {
   unsigned char private_key[32];
-  unsigned int len;
+  uint32 len;
   int i;
   SilcSKEKeyMaterial *keymat;
 
@@ -476,10 +476,10 @@ int silc_client_del_private_message_key(SilcClient client,
 SilcPrivateMessageKeys
 silc_client_list_private_message_keys(SilcClient client,
 				      SilcClientConnection conn,
-				      unsigned int *key_count)
+				      uint32 *key_count)
 {
   SilcPrivateMessageKeys keys;
-  unsigned int count = 0;
+  uint32 count = 0;
   SilcIDCacheEntry id_cache;
   SilcIDCacheList list;
   SilcClientEntry entry;
@@ -521,7 +521,7 @@ silc_client_list_private_message_keys(SilcClient client,
    silc_client_list_private_message_keys. */
 
 void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
-					   unsigned int key_count)
+					   uint32 key_count)
 {
   silc_free(keys);
 }

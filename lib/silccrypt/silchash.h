@@ -24,14 +24,14 @@
 /* The default Silc hash object to represent any hash function in SILC. */
 typedef struct {
   char *name;
-  unsigned int hash_len;
-  unsigned int block_len;
+  uint32 hash_len;
+  uint32 block_len;
 
   void (*init)(void *);
-  void (*update)(void *, unsigned char *, unsigned int);
+  void (*update)(void *, unsigned char *, uint32);
   void (*final)(void *, unsigned char *);
-  void (*transform)(unsigned long *, unsigned char *);
-  unsigned int (*context_len)();
+  void (*transform)(uint32 *, unsigned char *);
+  uint32 (*context_len)();
 } SilcHashObject;
 
 /* The main SILC hash structure. Use SilcHash instead of SilcHashStruct.
@@ -41,7 +41,7 @@ typedef struct SilcHashStruct {
   void *context;
 
   void (*make_hash)(struct SilcHashStruct *, const unsigned char *, 
-		    unsigned int, unsigned char *);
+		    uint32, unsigned char *);
 } *SilcHash;
 
 extern struct SilcHashListStruct *silc_hash_list;
@@ -70,26 +70,26 @@ extern struct SilcHashListStruct *silc_hash_list;
 void silc_##hash##_init(void *context)
 #define SILC_HASH_API_UPDATE(hash)				\
 void silc_##hash##_update(void *context, unsigned char *data,	\
-			                unsigned int len)
+			                uint32 len)
 #define SILC_HASH_API_FINAL(hash)				\
 void silc_##hash##_final(void *context, unsigned char *digest)
 #define SILC_HASH_API_TRANSFORM(hash)					\
-void silc_##hash##_transform(unsigned long *state,			\
+void silc_##hash##_transform(uint32 *state,			\
 			                  unsigned char *buffer)
 #define SILC_HASH_API_CONTEXT_LEN(hash)		\
-unsigned int silc_##hash##_context_len()
+uint32 silc_##hash##_context_len()
 
 /* Prototypes */
 int silc_hash_register(SilcHashObject *hash);
 int silc_hash_unregister(SilcHashObject *hash);
 int silc_hash_alloc(const unsigned char *name, SilcHash *new_hash);
 void silc_hash_free(SilcHash hash);
-unsigned int silc_hash_len(SilcHash hash);
+uint32 silc_hash_len(SilcHash hash);
 int silc_hash_is_supported(const unsigned char *name);
 char *silc_hash_get_supported();
 void silc_hash_make(SilcHash hash, const unsigned char *data,
-		    unsigned int len, unsigned char *return_hash);
+		    uint32 len, unsigned char *return_hash);
 char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
-			    unsigned int data_len);
+			    uint32 data_len);
 
 #endif

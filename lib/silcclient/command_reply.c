@@ -131,7 +131,7 @@ void silc_client_command_reply_process(SilcClient client,
   SilcClientCommandReplyContext ctx;
   SilcCommandPayload payload;
   SilcCommand command;
-  unsigned short ident;
+  uint16 ident;
 
   /* Get command reply payload from packet */
   payload = silc_command_payload_parse(buffer);
@@ -204,11 +204,12 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   SilcClientID *client_id;
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client_entry = NULL;
-  int argc, len;
+  int argc;
+  uint32 len;
   unsigned char *id_data, *tmp;
   char *nickname = NULL, *username = NULL;
   char *realname = NULL;
-  unsigned int idle = 0, mode = 0;
+  uint32 idle = 0, mode = 0;
   SilcBuffer channels = NULL;
   
   argc = silc_argument_get_arg_num(cmd->args);
@@ -359,7 +360,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
   SilcClientID *client_id;
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client_entry = NULL;
-  unsigned int len;
+  uint32 len;
   unsigned char *id_data, *tmp;
   char *nickname, *username;
   char *realname = NULL;
@@ -429,7 +430,8 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
   SilcClientID *client_id;
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client_entry = NULL;
-  int argc, len;
+  int argc;
+  uint32 len;
   unsigned char *id_data;
   char *nickname = NULL, *username = NULL;
   
@@ -552,7 +554,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
   SilcCommandStatus status;
   SilcIDPayload idp;
   unsigned char *tmp;
-  unsigned int argc, len;
+  uint32 argc, len;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -599,7 +601,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(list)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcCommandStatus status;
   unsigned char *tmp, *name, *topic;
-  unsigned int usercount = 0;
+  uint32 usercount = 0;
 
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
@@ -647,7 +649,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
   SilcIDCacheEntry id_cache = NULL;
   unsigned char *tmp;
   char *topic;
-  unsigned int argc, len;
+  uint32 argc, len;
 
   SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK) {
@@ -715,7 +717,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
   SilcChannelID *channel_id;
   SilcIDCacheEntry id_cache;
   unsigned char *tmp;
-  unsigned int len;
+  uint32 len;
 
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
@@ -910,7 +912,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   SilcChannelEntry channel;
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelUser chu;
-  unsigned int argc, mode, len, list_count;
+  uint32 argc, mode, len, list_count;
   char *topic, *tmp, *channel_name = NULL, *hmac;
   SilcBuffer keyp = NULL, client_id_list, client_mode_list;
   int i;
@@ -1021,8 +1023,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 
   /* Add clients we received in the reply to the channel */
   for (i = 0; i < list_count; i++) {
-    unsigned short idp_len;
-    unsigned int mode;
+    uint16 idp_len;
+    uint32 mode;
     SilcClientID *client_id;
     SilcClientEntry client_entry;
 
@@ -1097,7 +1099,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(motd)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcCommandStatus status;
-  unsigned int argc, i;
+  uint32 argc, i;
   unsigned char *tmp;
   char *motd = NULL, *cp, line[256];
 
@@ -1162,7 +1164,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(umode)
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcCommandStatus status;
   unsigned char *tmp;
-  unsigned int mode;
+  uint32 mode;
 
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);
@@ -1238,7 +1240,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   SilcIDCacheEntry id_cache = NULL;
   SilcClientID *client_id;
   unsigned char *tmp, *id;
-  unsigned int len;
+  uint32 len;
   
   SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK) {
@@ -1492,10 +1494,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
   unsigned char *tmp;
-  unsigned int tmp_len, list_count;
+  uint32 tmp_len, list_count;
   int i;
   unsigned char **res_argv = NULL;
-  unsigned int *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
+  uint32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1559,8 +1561,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
      whenever server sends notify message to channel. It means two things;
      some user has joined or leaved the channel. XXX! */
   for (i = 0; i < list_count; i++) {
-    unsigned short idp_len;
-    unsigned int mode;
+    uint16 idp_len;
+    uint32 mode;
     SilcClientID *client_id;
     SilcClientEntry client;
 
@@ -1659,7 +1661,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(ban)
   SilcChannelEntry channel;
   SilcChannelID *channel_id;
   unsigned char *tmp;
-  unsigned int len;
+  uint32 len;
 
   tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
   SILC_GET16_MSB(status, tmp);

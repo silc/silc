@@ -36,7 +36,7 @@
 
        Name of the HMAC.
 
-   unsigned int len
+   uint32 len
 
        Length of the MAC the HMAC is to produce (bytes).
 
@@ -53,7 +53,7 @@
        must not be freed.
 
    unsigned char *key
-   unsigned int len
+   uint32 len
 
        The key and its length used to make the HMAC. This is set
        with silc_hmac_set_key function.
@@ -63,7 +63,7 @@ typedef struct SilcHmacStruct *SilcHmac;
 
 typedef struct {
   char *name;
-  unsigned int len;
+  uint32 len;
 } SilcHmacObject;
 
 struct SilcHmacStruct {
@@ -71,7 +71,7 @@ struct SilcHmacStruct {
   SilcHash hash;
   char allocated_hash;
   unsigned char *key;
-  unsigned int key_len;
+  uint32 key_len;
 };
 
 /* Prototypes */
@@ -81,21 +81,21 @@ int silc_hmac_alloc(char *name, SilcHash hash, SilcHmac *new_hmac);
 void silc_hmac_free(SilcHmac hmac);
 int silc_hmac_is_supported(const char *name);
 char *silc_hmac_get_supported();
-unsigned int silc_hmac_len(SilcHmac hmac);
+uint32 silc_hmac_len(SilcHmac hmac);
 void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
-		       unsigned int key_len);
+		       uint32 key_len);
 void silc_hmac_make(SilcHmac hmac, unsigned char *data,
-		    unsigned int data_len, unsigned char *return_hash,
-		    unsigned int *return_len);
+		    uint32 data_len, unsigned char *return_hash,
+		    uint32 *return_len);
 void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
-			     unsigned int data_len, 
-			     unsigned char *key, unsigned int key_len,
+			     uint32 data_len, 
+			     unsigned char *key, uint32 key_len,
 			     unsigned char *return_hash,
-			     unsigned int *return_len);
+			     uint32 *return_len);
 void silc_hmac_make_truncated(SilcHmac hmac, 
 			      unsigned char *data, 
-			      unsigned int data_len,
-			      unsigned int truncated_len,
+			      uint32 data_len,
+			      uint32 truncated_len,
 			      unsigned char *return_hash);
 
 #endif

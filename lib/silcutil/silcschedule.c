@@ -119,7 +119,7 @@ void silc_schedule_stop()
    call this directly if wanted. This can be called multiple times for
    one file descriptor to set different iomasks. */
 
-void silc_schedule_set_listen_fd(int fd, unsigned int iomask)
+void silc_schedule_set_listen_fd(int fd, uint32 iomask)
 {
   assert(schedule.valid != FALSE);
   assert(fd < schedule.fd_list.max_fd);
