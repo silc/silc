@@ -184,6 +184,7 @@ static void *silc_socket_host_lookup_start(void *context)
 {
   SilcSocketHostLookup lookup = (SilcSocketHostLookup)context;
   SilcSocketConnection sock = lookup->sock;
+  SilcSchedule schedule = lookup->schedule;
 
   if (lookup->port)
     sock->port = silc_net_get_remote_port(sock->sock);
@@ -192,10 +193,10 @@ static void *silc_socket_host_lookup_start(void *context)
   if (!sock->hostname && sock->ip)
     sock->hostname = strdup(sock->ip);
 
-  silc_schedule_task_add(lookup->schedule, sock->sock,
+  silc_schedule_task_add(schedule, sock->sock,
 			 silc_socket_host_lookup_finish, lookup, 0, 1,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-  silc_schedule_wakeup(lookup->schedule);
+  silc_schedule_wakeup(schedule);
 
   return NULL;
 }

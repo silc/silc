@@ -115,14 +115,15 @@ SILC_TASK_CALLBACK(silc_net_resolve_completion)
 static void *silc_net_gethostbyname_thread(void *context)
 {
   SilcNetResolveContext r = (SilcNetResolveContext)context;
+  SilcSchedule schedule = r->schedule;
   char tmp[64];
 
   if (silc_net_gethostbyname(r->input, r->prefer_ipv6, tmp, sizeof(tmp)))
     r->result = strdup(tmp);
 
-  silc_schedule_task_add(r->schedule, 0, silc_net_resolve_completion, r, 0, 1,
+  silc_schedule_task_add(schedule, 0, silc_net_resolve_completion, r, 0, 1,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-  silc_schedule_wakeup(r->schedule);
+  silc_schedule_wakeup(schedule);
   return NULL;
 }
 
@@ -131,14 +132,15 @@ static void *silc_net_gethostbyname_thread(void *context)
 static void *silc_net_gethostbyaddr_thread(void *context)
 {
   SilcNetResolveContext r = (SilcNetResolveContext)context;
+  SilcSchedule schedule = r->schedule;
   char tmp[256];
 
   if (silc_net_gethostbyaddr(r->input, tmp, sizeof(tmp)))
     r->result = strdup(tmp);
 
-  silc_schedule_task_add(r->schedule, 0, silc_net_resolve_completion, r, 0, 1,
+  silc_schedule_task_add(schedule, 0, silc_net_resolve_completion, r, 0, 1,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-  silc_schedule_wakeup(r->schedule);
+  silc_schedule_wakeup(schedule);
   return NULL;
 }
 
