@@ -22,14 +22,8 @@
 #define CLIENTUTIL_H
 
 /* Prototypes */
-void silc_print_to_window(WINDOW *win, char *message);
-void silc_print(SilcClient client, char *msg, ...);
-char *silc_get_mail_path();
-int silc_get_number_of_emails();
-int silc_client_time_til_next_min();
 int silc_client_ask_yes_no(SilcClient client, char *prompt);
 char *silc_client_get_input(const char *prompt);
-char *silc_client_get_passphrase(const char *prompt);
 void silc_client_list_ciphers();
 void silc_client_list_hash_funcs();
 void silc_client_list_pkcs();

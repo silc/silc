@@ -701,7 +701,7 @@ THEME_REC *theme_load(const char *setname)
 	theme = theme_find(name);
 
 	/* check home dir */
-	fname = g_strdup_printf("%s/.irssi/%s.theme", g_get_home_dir(), name);
+	fname = g_strdup_printf("%s/.silc/%s.theme", g_get_home_dir(), name);
 	if (stat(fname, &statbuf) != 0) {
 		/* check global config dir */
 		g_free(fname);
@@ -1004,8 +1004,8 @@ static void theme_save(THEME_REC *theme)
 
 	g_hash_table_foreach(theme->modules, (GHFunc) module_save, config);
 
-        /* always save the theme to ~/.irssi/ */
-	path = g_strdup_printf("%s/.irssi/%s", g_get_home_dir(),
+        /* always save the theme to ~/.silc/ */
+	path = g_strdup_printf("%s/.silc/%s", g_get_home_dir(),
 			       g_basename(theme->path));
 	ok = config_write(config, path, 0660) == 0;
 
@@ -1131,7 +1131,7 @@ static void themes_read(void)
 	/* first there's default theme.. */
 	current_theme = theme_load("default");
 	if (current_theme == NULL) {
-		fname = g_strdup_printf("%s/.irssi/default.theme",
+		fname = g_strdup_printf("%s/.silc/default.theme",
 					g_get_home_dir());
 		current_theme = theme_create(fname, "default");
 		current_theme->default_color = 0;

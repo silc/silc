@@ -21,6 +21,8 @@
 #include "module.h"
 #include "formats.h"
 
+//	{ "line_start_irssi", "{line_start}{hilight Irssi:} ", 0 },
+
 FORMAT_REC fecommon_core_formats[] = {
 	{ MODULE_NAME, "Core", 0 },
 
@@ -28,7 +30,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ NULL, "Windows", 0 },
 
 	{ "line_start", "{line_start}", 0 },
-	{ "line_start_irssi", "{line_start}{hilight Irssi:} ", 0 },
+	{ "line_start_irssi", "{line_start} ", 0 },
         { "timestamp", "{timestamp $Z} ", 6, { 1, 1, 1, 1, 1, 1 } },
 	{ "servertag", "[$0] ", 1, { 0 } },
 	{ "daychange", "Day changed to $[-2.0]{0} $3 $2", 4, { 1, 1, 1, 0 } },
@@ -41,7 +43,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "windowlist_header", "Ref Name                 Active item     Server          Level", 0 },
 	{ "windowlist_line", "$[3]0 %|$[20]1 $[15]2 $[15]3 $4", 5, { 1, 0, 0, 0, 0 } },
 	{ "windowlist_footer", "", 0 },
-	{ "windows_layout_saved", "Layout of windows is now remembered next time you start irssi", 0 },
+	{ "windows_layout_saved", "Layout of windows is now remembered next time you start silc", 0 },
 	{ "windows_layout_reset", "Layout of windows reset to defaults", 0 },
 
 	/* ---- */
@@ -147,7 +149,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "log_opened", "Log file {hilight $0} opened", 1, { 0 } },
 	{ "log_closed", "Log file {hilight $0} closed", 1, { 0 } },
 	{ "log_create_failed", "Couldn't create log file {hilight $0}: $1", 2, { 0, 0 } },
-	{ "log_locked", "Log file {hilight $0} is locked, probably by another running Irssi", 1, { 0 } },
+	{ "log_locked", "Log file {hilight $0} is locked, probably by another running Irssi-SILC", 1, { 0 } },
 	{ "log_not_open", "Log file {hilight $0} not open", 1, { 0 } },
 	{ "log_started", "Started logging to file {hilight $0}", 1, { 0 } },
 	{ "log_stopped", "Stopped logging to file {hilight $0}", 1, { 0 } },
@@ -167,7 +169,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "module_footer", "", 0, },
 	{ "module_already_loaded", "Module {hilight $0} already loaded", 1, { 0 } },
 	{ "module_load_error", "Error loading module {hilight $0}: $1", 2, { 0, 0 } },
-	{ "module_invalid", "{hilight $0} isn't Irssi module", 1, { 0 } },
+	{ "module_invalid", "{hilight $0} isn't Irssi-SILC module", 1, { 0 } },
 	{ "module_loaded", "Loaded module {hilight $0}", 1, { 0 } },
 	{ "module_unloaded", "Unloaded module {hilight $0}", 1, { 0 } },
 
@@ -220,7 +222,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "bind_unknown_id", "Unknown bind action: $0", 1, { 0 } },
 	{ "config_saved", "Saved configuration to file $0", 1, { 0 } },
 	{ "config_reloaded", "Reloaded configuration", 1, { 0 } },
-	{ "config_modified", "Configuration file was modified since irssi was last started - do you want to overwrite the possible changes?", 1, { 0 } },
+	{ "config_modified", "Configuration file was modified since Irssi-SILC was last started - do you want to overwrite the possible changes?", 1, { 0 } },
 	{ "glib_error", "{error GLib $0} $1", 2, { 0, 0 } },
 	{ "overwrite_config", "Overwrite config (y/N)?", 0 },
 

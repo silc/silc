@@ -20,6 +20,7 @@
 
 #include "module.h"
 #include "chat-protocols.h"
+#include "args.h"
 
 #include "chatnets.h"
 #include "servers-setup.h"
@@ -29,6 +30,7 @@
 #include "silc-queries.h"
 #include "silc-nicklist.h"
 #include "version_internal.h"
+#include "version.h"
 
 #include "signals.h"
 #include "levels.h"
@@ -53,8 +55,15 @@ static char *opt_keyfile = NULL;
 static int opt_bits = 0;
 
 static int idletag;
-static SilcClient silc_client;
+
+SilcClient silc_client = NULL;
+SilcClientConfig silc_config = NULL;
 extern SilcClientOperations ops;
+#ifdef SILC_SIM
+/* SIM (SILC Module) table */
+SilcSimContext **sims = NULL;
+uint32 sims_count = 0;
+#endif
 
 static void silc_say(SilcClient client, SilcClientConnection conn,
 		     char *msg, ...)
@@ -471,10 +480,10 @@ static SERVER_CONNECT_REC *create_server_connect(void)
   return g_malloc0(sizeof(SILC_SERVER_CONNECT_REC));
 }
 
+/* Init SILC. Called from src/fe-text/silc.c */
+
 void silc_core_init(void)
 {
-  CHAT_PROTOCOL_REC *rec;
-
   static struct poptOption options[] = {
     { "create-key-pair", 'C', POPT_ARG_NONE, &opt_create_keypair, 0, 
       "Create new public key pair", NULL },
@@ -488,6 +497,13 @@ void silc_core_init(void)
   };
 
   args_register(options);
+}
+
+/* Finalize init. Called from src/fe-text/silc.c */
+
+void silc_core_init_finish(void)
+{
+  CHAT_PROTOCOL_REC *rec;
 
   if (opt_create_keypair == TRUE) {
     /* Create new key pair and exit */
@@ -501,7 +517,7 @@ void silc_core_init(void)
     exit(0);
   }
 
-  if (opt_keyfile == TRUE) {
+  if (opt_keyfile) {
     /* Dump the key */
     silc_cipher_register_default();
     silc_pkcs_register_default();
@@ -512,18 +528,55 @@ void silc_core_init(void)
     exit(0);
   }
 
+  /* Allocate SILC client */
   silc_client = silc_client_alloc(&ops, NULL);
+
+  /* Load local config file */
+  silc_config = silc_client_config_alloc(SILC_CLIENT_HOME_CONFIG_FILE);
+
+  /* Get user information */
   silc_client->username = g_strdup(settings_get_str("user_name"));
   silc_client->hostname = silc_net_localhost();
   silc_client->realname = g_strdup(settings_get_str("real_name"));
 
-  if (!load_keys(silc_client)) {
+  /* Register all configured ciphers, PKCS and hash functions. */
+  if (silc_config) {
+    silc_config->client = silc_client;
+    if (!silc_client_config_register_ciphers(silc_config))
+      silc_cipher_register_default();
+    if (!silc_client_config_register_pkcs(silc_config))
+      silc_pkcs_register_default();
+    if (!silc_client_config_register_hashfuncs(silc_config))
+      silc_hash_register_default();
+    if (!silc_client_config_register_hmacs(silc_config))
+      silc_hmac_register_default();
+  } else {
+    /* Register default ciphers, pkcs, hash funtions and hmacs. */
+    silc_cipher_register_default();
+    silc_pkcs_register_default();
+    silc_hash_register_default();
+    silc_hmac_register_default();
+  }
+
+  /* Check ~/.silc directory and public and private keys */
+  if (silc_client_check_silc_dir() == FALSE) {
     idletag = -1;
     return;
   }
 
-  silc_client_init(silc_client);
+  /* Load public and private key */
+  if (silc_client_load_keys(silc_client) == FALSE) {
+    idletag = -1;
+    return;
+  }
 
+  /* Initialize the SILC client */
+  if (!silc_client_init(silc_client)) {
+    idletag = -1;
+    return;
+  }
+
+  /* Register SILC to the irssi */
   rec = g_new0(CHAT_PROTOCOL_REC, 1);
   rec->name = "SILC";
   rec->fullname = "Secure Internet Live Conferencing";
@@ -548,6 +601,8 @@ void silc_core_init(void)
 
   idletag = g_timeout_add(100, (GSourceFunc) my_silc_scheduler, NULL);
 }
+
+/* Deinit SILC. Called from src/fe-text/silc.c */
 
 void silc_core_deinit(void)
 {

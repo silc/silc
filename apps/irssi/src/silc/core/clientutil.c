@@ -19,130 +19,34 @@
 */
 /* $Id$ */
 
-#include "clientincludes.h"
+#include "module.h"
 
-/* Routine used to print lines to window. This can split the
-   line neatly if a word would overlap the line. */
+#include "net-nonblock.h"
+#include "net-sendbuffer.h"
+#include "signals.h"
+#include "servers.h"
+#include "commands.h"
+#include "levels.h"
+#include "modules.h"
+#include "rawlog.h"
+#include "misc.h"
+#include "settings.h"
 
-void silc_print_to_window(WINDOW *win, char *message)
-{
-  int str_len, len;
+#include "servers-setup.h"
 
-  str_len = strlen(message);
- 
-  if (str_len > COLS - 1) {
-    /* Split overlapping words to next line */
-    /* XXX In principal this is wrong as this modifies the original
-       string as it replaces the last ' ' with '\n'. This could be done
-       with little more work so that it would not replace anything. */
-    len = COLS - 1;
-    while (1) {
+#include "silc-servers.h"
+#include "silc-channels.h"
+#include "silc-queries.h"
+#include "window-item-def.h"
 
-      while (len && message[len] != ' ')
-	len--;
-
-      if (!len)
-	break;
-
-      message[len] = '\n';
-      len += COLS - 1;
-      if (len > str_len)
-	break;
-    }
-  }
-
-  wprintw(win, "%s", message);
-  wrefresh(win);
-}
-
-/* Prints message to the screen. This is used to print the messages
-   user is typed and message that came on channels. */
-
-void silc_print(SilcClient client, char *msg, ...)
-{
-  va_list vp;
-  char message[2048];
-  SilcClientInternal app = client->application;
-  
-  memset(message, 0, sizeof(message));
-  strncat(message, "\n ", 2);
-
-  va_start(vp, msg);
-  vsprintf(message + 1, msg, vp);
-  va_end(vp);
-  
-  /* Print the message */
-  silc_print_to_window(app->screen->output_win[0], message);
-}
-
-/* Returns user's mail path */
-
-char *silc_get_mail_path()
-{
-  char pathbuf[MAXPATHLEN];
-  char *path;
-
-#ifndef _PATH_MAILDIR
-#define _PATH_MAILDIR "/var/mail"
-#endif
-  
-  path = getenv("MAIL");
-  if (path) {
-    strncpy(pathbuf, path, strlen(path));
-  } else {
-    strcpy(pathbuf, _PATH_MAILDIR);
-    strcat(pathbuf, "/");
-    strcat(pathbuf, silc_get_username());
-  }
-
-  return strdup(pathbuf);
-}
-
-/* gets the number of the user's mails, if possible */
-
-int silc_get_number_of_emails()
-{
-  FILE *tl;
-  int num = 0;
-  char *filename;
-  char data[1024];
-  
-  filename = silc_get_mail_path();
-  
-  tl = fopen(filename, "r");
-  if (!tl) {
-    fprintf(stderr, "Couldn't open mail file (%s).\n", filename);
-  } else {
-    while((fscanf(tl, "%s", data)) != EOF) { 
-      if(!strcmp(data, "From:"))
-	num++;
-    }
-    
-    fclose(tl);
-  }
-  
-  return num;
-}
-
-/* Returns time til next minute changes. Used to update the clock when
-   needed. */
-
-int silc_client_time_til_next_min()
-{
-  time_t curtime;
-  struct tm *min;
-  
-  curtime = time(0);
-  min = localtime(&curtime);
-  
-  return 60 - min->tm_sec;
-}
+#include "fe-common/core/printtext.h"
 
 /* Asks yes/no from user on the input line. Returns TRUE on "yes" and
    FALSE on "no". */
 
 int silc_client_ask_yes_no(SilcClient client, char *prompt)
 {
+#if 0
   SilcClientInternal app = (SilcClientInternal)client->application;
   char answer[4];
   int ret;
@@ -173,6 +77,8 @@ int silc_client_ask_yes_no(SilcClient client, char *prompt)
   silc_screen_input_reset(app->screen);
 
   return ret;
+#endif
+  return 0;
 }
 
 /* Lists supported (builtin) ciphers */
@@ -206,6 +112,7 @@ void silc_client_list_pkcs()
 
 char *silc_client_get_input(const char *prompt)
 {
+#if 0
   char input[2048];
   int fd;
 
@@ -230,67 +137,9 @@ char *silc_client_get_input(const char *prompt)
 
   if (strchr(input, '\n'))
     *strchr(input, '\n') = '\0';
-
   return strdup(input);
-}
-
-/* Displays prompt on command line and takes passphrase with echo 
-   off from user. */
-
-char *silc_client_get_passphrase(const char *prompt)
-{
-#if 0
-  char input[2048];
-  char *ret;
-  int fd;
-  struct termios to;
-  struct termios to_old;
-
-  fd = open("/dev/tty", O_RDONLY);
-  if (fd < 0) {
-    fprintf(stderr, "silc: %s\n", strerror(errno));
-    return NULL;
-  }
-
-  signal(SIGINT, SIG_IGN);
-
-  /* Get terminal info */
-  tcgetattr(fd, &to);
-  to_old = to;
-
-  /* Echo OFF */
-  to.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL);
-  tcsetattr(fd, TCSANOW, &to);
-
-  memset(input, 0, sizeof(input));
-
-  printf("%s", prompt);
-  fflush(stdout);
-
-  if ((read(fd, input, sizeof(input))) < 0) {
-    fprintf(stderr, "silc: %s\n", strerror(errno));
-    return NULL;
-  }
-
-  if (strlen(input) <= 1) {
-    tcsetattr(fd, TCSANOW, &to_old);
-    return NULL;
-  }
-
-  if (strchr(input, '\n'))
-    *strchr(input, '\n') = '\0';
-
-  /* Restore old terminfo */
-  tcsetattr(fd, TCSANOW, &to_old);
-  signal(SIGINT, SIG_DFL);
-
-  ret = silc_calloc(strlen(input), sizeof(char));
-  memcpy(ret, input, strlen(input));
-  memset(input, 0, sizeof(input));
-  return ret;
-#else
-  return NULL;
 #endif
+  return NULL;
 }
 
 /* Returns identifier string for public key generation. */

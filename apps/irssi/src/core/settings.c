@@ -532,7 +532,7 @@ static void init_configfile(void)
 	struct stat statbuf;
 	char *str;
 
-	str = g_strdup_printf("%s"G_DIR_SEPARATOR_S".irssi", g_get_home_dir());
+	str = g_strdup_printf("%s"G_DIR_SEPARATOR_S".silc", g_get_home_dir());
 	if (stat(str, &statbuf) != 0) {
 		/* ~/.irssi not found, create it. */
 		if (mkpath(str, 0700) != 0) {
@@ -563,7 +563,7 @@ int settings_reread(const char *fname)
 	CONFIG_REC *tempconfig;
 	char *str;
 
-	if (fname == NULL) fname = "~/.irssi/config";
+	if (fname == NULL) fname = "~/.silc/config";
 
 	str = convert_home(fname);
 	tempconfig = parse_configfile(str);
