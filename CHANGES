@@ -1,3 +1,13 @@
+Sat May 18 11:35:19 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Allow multiple identical pending commands to be registered
+	  in client library.  Affected file is lib/silcclient/command.c.
+
+	* Call the completion for resolving client information only
+	  after all resolvers has finished.  This fixes a crash in
+	  the client.  Added support for checking when the resolvers
+	  are finished.  Affected file is lib/silcclient/idlist.c.
+
 Fri May 17 17:23:45 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Check the watcher list before sending signoff notifys

@@ -423,7 +423,7 @@ static void read_settings(void)
 
 void servers_reconnect_init(void)
 {
-	settings_add_int("server", "server_reconnect_time", 300);
+	settings_add_int("server", "server_reconnect_time", 3000);
 
 	reconnects = NULL;
 	last_reconnect_tag = 0;

@@ -103,16 +103,6 @@ void silc_client_command_pending(SilcClientConnection conn,
 {
   SilcClientCommandPending *reply;
 
-  /* Check whether identical pending already exists for same command,
-     ident, callback and callback context. If it does then it would be
-     error to register it again. */
-  silc_dlist_start(conn->pending_commands);
-  while ((reply = silc_dlist_get(conn->pending_commands)) != SILC_LIST_END) {
-    if (reply->reply_cmd == reply_cmd && reply->ident == ident &&
-	reply->callback == callback && reply->context == context)
-      return;
-  }
-
   reply = silc_calloc(1, sizeof(*reply));
   reply->reply_cmd = reply_cmd;
   reply->ident = ident;

@@ -287,6 +287,7 @@ typedef struct {
   SilcBuffer client_id_list;
   SilcGetClientCallback completion;
   void *context;
+  int res_count;
 } *GetClientsByListInternal;
 
 SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
@@ -300,6 +301,14 @@ SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
   int c;
 
   SILC_LOG_DEBUG(("Start"));
+
+  if (i->res_count) {
+    i->res_count--;
+    if (i->res_count)
+      return;
+  }
+
+  SILC_LOG_DEBUG(("Resolved all clients"));
 
   for (c = 0; c < i->list_count; c++) {
     SilcUInt16 idp_len;
@@ -410,6 +419,7 @@ void silc_client_get_clients_by_list(SilcClient client,
 			    silc_client_command_get_clients_list_callback, 
 			    (void *)in);
 	  wait_res = TRUE;
+	  in->res_count++;
 
 	  silc_free(client_id);
 	  silc_buffer_pull(client_id_list, idp_len);
@@ -421,7 +431,7 @@ void silc_client_get_clients_by_list(SilcClient client,
       }
 
       /* No we don't have it, query it from the server. Assemble argument
-	 table that will be sent fr the IDENTIFY command later. */
+	 table that will be sent for the IDENTIFY command later. */
       res_argv = silc_realloc(res_argv, sizeof(*res_argv) *
 			      (res_argc + 1));
       res_argv_lens = silc_realloc(res_argv_lens, sizeof(*res_argv_lens) *
@@ -463,6 +473,7 @@ void silc_client_get_clients_by_list(SilcClient client,
     silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
 				silc_client_command_get_clients_list_callback, 
 				(void *)in);
+    in->res_count++;
 
     silc_buffer_free(res_cmd);
     silc_free(res_argv);
