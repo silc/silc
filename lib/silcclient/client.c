@@ -386,12 +386,14 @@ static void silc_client_start_key_exchange_cb(SilcSocketConnection sock,
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* XXX We should most likely use the resolved host name instead of the
-     one user provided for us. */
-  silc_free(conn->sock->hostname);
-  conn->sock->hostname = strdup(conn->remote_host);
+  if (conn->sock->hostname) {
+    silc_free(conn->remote_host);
+    conn->remote_host = strdup(conn->sock->hostname);
+  } else {
+    conn->sock->hostname = strdup(conn->remote_host);
+  }
   if (!conn->sock->ip)
-    conn->sock->ip = strdup(conn->remote_host);
+    conn->sock->ip = strdup(conn->sock->hostname);
   conn->sock->port = conn->remote_port;
 
   /* Allocate internal Key Exchange context. This is sent to the

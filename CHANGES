@@ -1,3 +1,9 @@
+Wed Sep 18 10:51:23 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Use the reverse lookupped hostname in client internals
+	  instead of one user provided us as remote server name.
+	  Affected file lib/silcclient/client.c.
+
 Mon Sep 16 12:02:54 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added 'app_context' to silc_schedule_init.  It is an
