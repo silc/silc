@@ -496,9 +496,6 @@ static bool silc_packet_check_mac(SilcHmac hmac,
     /* Compare the MAC's */
     if (memcmp(packet_mac, mac, mac_len)) {
       SILC_LOG_ERROR(("MAC failed"));
-#if 1
-      abort();
-#endif
       return FALSE;
     }
 
