@@ -196,9 +196,20 @@ fi
 
 # lib/contrib conditionals
 #
-AC_CHECK_HEADER(regex.h, have_regex=1, have_regex=0)
+AC_CHECK_HEADER(regex.h,
+  [
+    AC_DEFINE(HAVE_REGEX)
+    have_regex=1
+  ], have_regex=0
+)
 AM_CONDITIONAL(HAVE_REGEX, test x$have_regex = x1)
-AC_CHECK_FUNC(getopt_long, have_getopt_long=1, have_getopt_long=0)
+
+AC_CHECK_FUNC(getopt_long,
+  [
+    AC_DEFINE(HAVE_GETOPT_LONG)
+    have_getopt_long=1
+  ], have_getopt_long=0
+)
 AM_CONDITIONAL(HAVE_GETOPT_LONG, test x$have_getopt_long = x1)
 
 ##

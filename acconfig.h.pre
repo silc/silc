@@ -41,7 +41,10 @@
 #undef SILC_MP_GMP
 #undef SILC_MP_NSS_MPI
 
-/* Redefs for SOCKS5 library */
+/* contrib library functions */
+#undef HAVE_REGEX
+#undef HAVE_GETOPT_LONG
+
 /* macros/curses checks */
 #undef HAS_CURSES
 #undef USE_SUNOS_CURSES
@@ -51,6 +54,7 @@
 #undef NO_COLOR_CURSES
 #undef SCO_FLAVOR
 
+/* Redefs for SOCKS5 library */
 #undef SOCKS
 #undef SOCKS5
 #undef Rconnect
