@@ -1,3 +1,16 @@
+Thu Jan 16 18:47:00 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added better compiler and compiler flags checking in
+	  configure.
+
+	* Check that socket is valid after QoS is applied to data.
+	  Affected file lib/silcutil/unix/silcunixsockconn.c.
+
+	* Make sure the socket connecetion is not closed to early
+	  when closing connection in server.  Also make sure the
+	  connection is always closed after error in a protocol.
+	  Affected file silcd/server.c.
+
 Wed Jan 15 11:03:36 CET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Removed --session and --dummy options from Irssi SILC Client.

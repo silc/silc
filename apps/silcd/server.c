@@ -2289,6 +2289,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     if (SILC_PRIMARY_ROUTE(server) == sock && server->backup_router)
       server->backup_noswitch = TRUE;
 
+    SILC_SET_DISCONNECTING(sock);
     if (sock->user_data)
       silc_server_free_sock_user_data(server, sock, NULL);
     silc_server_close_connection(server, sock);
@@ -2433,6 +2434,7 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
       if (SILC_PRIMARY_ROUTE(server) == sock && server->backup_router)
 	server->backup_noswitch = TRUE;
 
+      SILC_SET_DISCONNECTING(sock);
       if (sock->user_data)
 	silc_server_free_sock_user_data(server, sock, NULL);
       silc_server_close_connection(server, sock);
@@ -2502,6 +2504,7 @@ void silc_server_packet_parse_type(SilcServer server,
       silc_free(message);
 
       /* Handle the disconnection from our end too */
+      SILC_SET_DISCONNECTING(sock);
       if (sock->user_data && SILC_IS_LOCAL(sock->user_data))
 	silc_server_free_sock_user_data(server, sock, NULL);
       silc_server_close_connection(server, sock);
@@ -2931,6 +2934,7 @@ void silc_server_close_connection(SilcServer server,
   if (!server->sockets[sock->sock] && SILC_IS_DISCONNECTED(sock)) {
     silc_schedule_unset_listen_fd(server->schedule, sock->sock);
     silc_schedule_task_del_by_fd(server->schedule, sock->sock);
+    silc_net_close_connection(sock->sock);
     silc_schedule_task_add(server->schedule, sock->sock,
 			   silc_server_close_connection_final,
 			   (void *)sock, 0, 1, SILC_TASK_TIMEOUT,
@@ -2950,8 +2954,6 @@ void silc_server_close_connection(SilcServer server,
   /* Unregister all tasks */
   silc_schedule_task_del_by_fd(server->schedule, sock->sock);
 
-  /* Close the actual connection */
-  silc_net_close_connection(sock->sock);
   server->sockets[sock->sock] = NULL;
 
   /* If sock->user_data is NULL then we'll check for active protocols
@@ -2970,6 +2972,9 @@ void silc_server_close_connection(SilcServer server,
       return;
     }
   }
+
+  /* Close the actual connection */
+  silc_net_close_connection(sock->sock);
 
   /* We won't listen for this connection anymore */
   silc_schedule_unset_listen_fd(server->schedule, sock->sock);
@@ -2993,8 +2998,13 @@ void silc_server_disconnect_remote(SilcServer server,
   char *cp;
   int len;
 
-  if (!sock || SILC_IS_DISCONNECTED(sock))
+  if (!sock)
     return;
+
+  if (SILC_IS_DISCONNECTED(sock)) {
+    silc_server_close_connection(server, sock);
+    return;
+  }
 
   memset(buf, 0, sizeof(buf));
   va_start(ap, status);
@@ -5063,7 +5073,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     SILC_LOG_ERROR(("Error occurred during rekey protocol with "
-		   "%s (%s)", sock->hostname, sock->ip));
+		    "%s (%s)", sock->hostname, sock->ip));
     silc_protocol_cancel(protocol, server->schedule);
     silc_protocol_free(protocol);
     sock->protocol = NULL;
@@ -5072,6 +5082,19 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
     if (ctx->ske)
       silc_ske_free(ctx->ske);
     silc_free(ctx);
+
+    /* Reconnect */
+    SILC_SET_DISCONNECTING(sock);
+    server->backup_noswitch = TRUE;
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
+    silc_server_close_connection(server, sock);
+    silc_schedule_task_add(server->schedule, 0,
+			   silc_server_connect_to_router,
+			   server, 1, 0,
+			   SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_NORMAL);
+
     return;
   }
 
