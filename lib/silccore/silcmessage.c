@@ -712,13 +712,20 @@ int silc_message_signed_verify(SilcMessageSignedPayload sig,
 /* Return the public key from the payload */
 
 SilcPublicKey
-silc_message_signed_get_public_key(SilcMessageSignedPayload sig)
+silc_message_signed_get_public_key(SilcMessageSignedPayload sig,
+				   unsigned char **pk_data,
+				   SilcUInt32 *pk_data_len)
 {
   SilcPublicKey pk;
 
   if (!sig->pk_data || !silc_pkcs_public_key_decode(sig->pk_data,
 						    sig->pk_len, &pk))
     return NULL;
+
+  if (pk_data)
+    *pk_data = sig->pk_data;
+  if (pk_data_len)
+    *pk_data_len = sig->pk_len;
 
   return pk;
 }

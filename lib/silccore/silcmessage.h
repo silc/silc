@@ -459,12 +459,16 @@ int silc_message_signed_verify(SilcMessageSignedPayload sig,
  *
  * DESCRIPTION
  *
- *    Returns the public key from the SilcMessageSignedPayload Payload
- *    or NULL if it does not include public key.  The caller must free
- *    the returned public key.
+ *    Returns the decoded SilcPublicKey from the SilcMessageSignedPayload
+ *    Payload or NULL if it does not include public key.  The caller must
+ *    free the returned public key pointer.  This also returns the raw
+ *    public key (before decoding) into `pk_data' and `pk_data_len' if
+ *    they are provided.  The caller must not free these pointers.
  *
  ***/
 SilcPublicKey
-silc_message_signed_get_public_key(SilcMessageSignedPayload sig);
+silc_message_signed_get_public_key(SilcMessageSignedPayload sig,
+				   unsigned char **pk_data,
+				   SilcUInt32 *pk_data_len);
 
 #endif /* SILCMESSAGE_H */
