@@ -16,6 +16,11 @@ Fri Feb  2 11:42:56 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  that we are now re-sending.  Ignored if NULL.  Affected file
 	  silcd/packet_send.[ch].
 
+	* Added some server statistics support in sil/server_internal.h
+	  SilcServerStatistics structure and around the server code.  Also
+	  send some nice statistics information when client is connecting
+	  to the client.
+
 Thu Feb  1 23:31:21 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed channel ID decoding in server's JOIN command reply in

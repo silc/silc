@@ -23,9 +23,37 @@
 
 /* Server statistics structure. This holds various statistics about
    various things. */
-/* XXX TODO */
 typedef struct {
+  /* Local stats (server and router) */
+  unsigned long my_clients;	  /* Locally connected clients */
+  unsigned long my_servers;	  /* Locally connected servers */
+  unsigned long my_routers;	  /* Locally connected routers */
+  unsigned long my_channels;	  /* Locally created channels */
+  unsigned long my_chanclients;	  /* Local clients on local channels */
+  unsigned long my_aways;	  /* Local clients away (XXX) */
+  unsigned long my_server_ops;	  /* Local server operators */
+  unsigned long my_router_ops;	  /* Local router operators */
 
+  /* Global stats (mainly for router) */
+  unsigned long cell_clients;	  /* All clients in cell */
+  unsigned long cell_servers;	  /* All servers in cell */
+  unsigned long cell_channels;	  /* All channels in cell */
+  unsigned long cell_chanclients; /* All clients on cell's channels */
+  unsigned long clients;	  /* All clients */
+  unsigned long servers;	  /* All servers */
+  unsigned long routers;	  /* All routers */
+  unsigned long channels;	  /* All channels */
+  unsigned long chanclients;	  /* All clients on channels */
+  unsigned long server_ops;	  /* All server operators */
+  unsigned long router_ops;	  /* All router operators */
+
+  /* General */
+  unsigned long conn_attempts;	  /* Connection attempts */
+  unsigned long conn_failures;	  /* Connection failure */
+  unsigned long auth_attempts;	  /* Authentication attempts */
+  unsigned long auth_failures;	  /* Authentication failures */
+  unsigned long packets_sent;	  /* Sent packets */
+  unsigned long packets_received; /* Received packets */
 } SilcServerStatistics;
 
 typedef struct {
@@ -102,7 +130,7 @@ struct SilcServerStruct {
   SilcRng rng;
 
   /* Server statistics */
-  SilcServerStatistics stats;
+  SilcServerStatistics stat;
 
   /* Pending command queue */
   SilcDList pending_commands;

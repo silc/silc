@@ -772,9 +772,12 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
 
   SILC_LOG_DEBUG(("Accepting new connection"));
 
+  server->stat.conn_attempts++;
+
   sock = silc_net_accept_connection(server->sock);
   if (sock < 0) {
     SILC_LOG_ERROR(("Could not accept new connection: %s", strerror(errno)));
+    server->stat.conn_failures++;
     return;
   }
 
@@ -785,6 +788,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
       /*silc_server_send_notify("Server is full, trying to redirect..."); */
     } else {
       SILC_LOG_ERROR(("Refusing connection, server is full"));
+      server->stat.conn_failures++;
     }
     return;
   }
@@ -806,6 +810,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   if ((server->params->require_reverse_mapping && !newsocket->hostname) ||
       !newsocket->ip) {
     SILC_LOG_ERROR(("IP/DNS lookup failed"));
+    server->stat.conn_failures++;
     return;
   }
   if (!newsocket->hostname)
@@ -826,6 +831,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
      protocol but will not start it yet. The connector will be the
      initiator of the protocol thus we will wait for initiation from 
      there before we start the protocol. */
+  server->stat.auth_attempts++;
   silc_protocol_alloc(SILC_PROTOCOL_SERVER_KEY_EXCHANGE, 
 		      &newsocket->protocol, proto_ctx, 
 		      silc_server_accept_new_connection_second);
@@ -881,6 +887,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
       sock->protocol = NULL;
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Key exchange failed");
+    server->stat.auth_failures++;
     return;
   }
 
@@ -949,6 +956,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       sock->protocol = NULL;
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Authentication failed");
+    server->stat.auth_failures++;
     return;
   }
 
@@ -972,6 +980,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	silc_free(sock->user_data);
 	break;
       }
+
+      server->stat.my_clients++;
 
       id_entry = (void *)client;
       break;
@@ -1003,6 +1013,11 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	silc_free(sock->user_data);
 	break;
       }
+
+      if (sock->type == SILC_SOCKET_TYPE_SERVER)
+	server->stat.my_servers++;
+      else
+	server->stat.my_routers++;
 
       id_entry = (void *)new_server;
       
@@ -1066,6 +1081,8 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   /* Packet sending */
 
   if (type == SILC_TASK_WRITE) {
+    server->stat.packets_sent++;
+
     if (sock->outbuf->data - sock->outbuf->head)
       silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
 
@@ -1121,6 +1138,8 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     SILC_LOG_DEBUG(("Ignoring read data from invalid connection"));
     return;
   }
+
+  server->stat.packets_received++;
 
   /* Get keys and stuff from ID entry */
   idata = (SilcIDListData)sock->user_data;
@@ -1570,7 +1589,6 @@ void silc_server_packet_parse_type(SilcServer server,
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock)
 {
-
   SILC_LOG_DEBUG(("Closing connection %d", sock->sock));
 
   /* We won't listen for this connection anymore */
@@ -1645,6 +1663,7 @@ void silc_server_free_sock_user_data(SilcServer server,
       /* Free the client entry and everything in it */
       silc_idlist_del_data(user_data);
       silc_idlist_del_client(server->local_list, user_data);
+      server->stat.my_clients--;
       break;
     }
   case SILC_SOCKET_TYPE_SERVER:
@@ -1662,6 +1681,7 @@ void silc_server_free_sock_user_data(SilcServer server,
       /* Free the server entry */
       silc_idlist_del_data(user_data);
       silc_idlist_del_server(server->local_list, user_data);
+      server->stat.my_servers--;
       break;
     }
   default:
@@ -1752,12 +1772,14 @@ void silc_server_remove_from_channels(SilcServer server,
 					   clidp->data, clidp->len);
       
       silc_idlist_del_channel(server->local_list, channel);
+      server->stat.my_channels--;
       continue;
     }
 
     /* Remove from list */
     silc_list_del(channel->user_list, chl);
     silc_free(chl);
+    server->stat.my_chanclients--;
 
     /* Send notify to channel about client leaving SILC and thus
        the entire channel. */
@@ -1813,12 +1835,14 @@ int silc_server_remove_from_one_channel(SilcServer server,
       
       silc_idlist_del_channel(server->local_list, channel);
       silc_buffer_free(clidp);
+      server->stat.my_channels--;
       return FALSE;
     }
 
     /* Remove from list */
     silc_list_del(channel->user_list, chl);
     silc_free(chl);
+    server->stat.my_chanclients--;
 
     /* If there is no global users on the channel anymore mark the channel
        as local channel. */
@@ -1832,6 +1856,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
 	!silc_server_channel_has_local(channel)) {
       silc_idlist_del_channel(server->local_list, channel);
       silc_buffer_free(clidp);
+      server->stat.my_channels--;
       return FALSE;
     }
 
@@ -1928,6 +1953,8 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
     silc_server_send_new_channel(server, server->router->connection, TRUE, 
 				 channel_name, entry->id, SILC_ID_CHANNEL_LEN);
   }
+
+  server->stat.my_channels++;
 
   return entry;
 }

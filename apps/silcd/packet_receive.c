@@ -70,7 +70,6 @@ void silc_server_private_message(SilcServer server,
 	 we will send the packet to that server. */
       router = (SilcServerEntry)dst_sock->user_data;
       idata = (SilcIDListData)router;
-      //assert(client->router == server->id_entry);
 
       silc_server_send_private_message(server, dst_sock,
 				       idata->send_key,
@@ -456,6 +455,36 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Welcome to the SILC Network %s@%s",
 			   username, sock->hostname));
+  if (server->server_type == SILC_ROUTER) {
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("There are %d clients on %d servers in SILC "
+			     "Network", server->stat.clients,
+			     server->stat.servers));
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("There are %d clients on %d server in our cell",
+			     server->stat.cell_clients,
+			     server->stat.cell_servers));
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("I have %d clients, %d channels, %d servers and "
+			     "%d routers",
+			     server->stat.my_clients, 
+			     server->stat.my_channels,
+			     server->stat.my_servers,
+			     server->stat.my_routers));
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("%d server operators and %d router operators "
+			     "online",
+			     server->stat.my_server_ops,
+			     server->stat.my_router_ops));
+  } else {
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("I have %d clients and %d channels formed",
+			     server->stat.my_clients,
+			     server->stat.my_channels));
+    SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
+			    ("%d operators online",
+			     server->stat.my_server_ops));
+  }
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Your host is %s, running version %s",
 			   server->config->server_info->server_name,
@@ -599,27 +628,6 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 			    buffer->data, buffer->len, FALSE);
   }
 
-#if 0
-  /* If the packet is originated from the one who sent it to us we know
-     that the ID belongs to our cell, unless the sender was router. */
-  tmpid = silc_id_str2id(packet->src_id, SILC_ID_SERVER);
-  tmpserver = (SilcServerEntry)sock->user_data;
-
-  if (!SILC_ID_SERVER_COMPARE(tmpid, tmpserver->id) &&
-      sock->type == SILC_SOCKET_TYPE_SERVER) {
-    id_list = server->local_list;
-    router_sock = sock;
-    router = sock->user_data;
-    /*    router = server->id_entry; */
-  } else {
-    id_list = server->global_list;
-    router_sock = (SilcSocketConnection)server->router->connection;
-    router = server->router;
-  }
-
-  silc_free(tmpid);
-#endif
-
   if (sock->type == SILC_SOCKET_TYPE_SERVER)
     id_list = server->local_list;
   else
@@ -651,6 +659,10 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 				     router, router_sock);
       entry->nickname = NULL;
 
+      if (sock->type == SILC_SOCKET_TYPE_SERVER)
+	server->stat.cell_clients++;
+      server->stat.clients++;
+
 #if 0
       /* XXX Adding two ID's with same IP number replaces the old entry thus
 	 gives wrong route. Thus, now disabled until figured out a better way
@@ -676,6 +688,10 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
     /* As a router we keep information of all global information in our global
        list. Cell wide information however is kept in the local list. */
     silc_idlist_add_server(id_list, NULL, 0, id, router, router_sock);
+
+    if (sock->type == SILC_SOCKET_TYPE_SERVER)
+      server->stat.cell_servers++;
+    server->stat.servers++;
 
 #if 0
     /* Add route cache for this ID */
@@ -825,6 +841,8 @@ void silc_server_new_channel(SilcServer server,
      router hence global channel. */
   silc_idlist_add_channel(server->global_list, channel_name, 0, channel_id, 
 			  server->router->connection, NULL);
+
+  server->stat.channels++;
 }
 
 /* Received notify packet. Server can receive notify packets from router. 
@@ -1106,6 +1124,8 @@ void silc_server_new_channel_user(SilcServer server,
   silc_list_add(channel->user_list, chl);
   silc_list_add(client->channels, chl);
 
+  server->stat.chanclients++;
+
   /* Send JOIN notify to local clients on the channel. As we are router
      it is assured that this is sent only to our local clients and locally
      connected servers if needed. */
@@ -1183,6 +1203,7 @@ void silc_server_remove_id(SilcServer server,
 
       /* Remove the client entry */
       silc_idlist_del_client(id_list, (SilcClientEntry)id_entry);
+      server->stat.clients--;
 
       SILC_LOG_DEBUG(("Removed client id(%s) from [%s] %s",
 		      silc_id_render(id, SILC_ID_CLIENT),
@@ -1196,6 +1217,7 @@ void silc_server_remove_id(SilcServer server,
 					     NULL);
     if (id_entry) {
       silc_idlist_del_server(id_list, (SilcServerEntry)id_entry);
+      server->stat.servers--;
 
       SILC_LOG_DEBUG(("Removed server id(%s) from [%s] %s",
 		      silc_id_render(id, SILC_ID_SERVER),
@@ -1209,6 +1231,7 @@ void silc_server_remove_id(SilcServer server,
 					      NULL);
     if (id_entry) {
       silc_idlist_del_channel(id_list, (SilcChannelEntry)id_entry);
+      server->stat.channels--;
 
       SILC_LOG_DEBUG(("Removed channel id(%s) from [%s] %s",
 		      silc_id_render(id, SILC_ID_CHANNEL),
