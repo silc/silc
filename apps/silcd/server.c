@@ -25,12 +25,15 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/05 06:14:01  priikone
+ * 	Global costemic changes.
+ *
  * Revision 1.3  2000/07/04 08:13:53  priikone
  * 	Changed message route discovery to use silc_server_get_route.
  * 	Added silc_server_client_on_channel function.
  *
  * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Importet from internal CVS/Added Log headers.
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -160,6 +163,8 @@ int silc_server_init(SilcServer server)
     unsigned char *public_key;
     unsigned char *private_key;
     unsigned int pk_len, prv_len;
+    SilcPublicKey pub_key;
+    SilcPrivateKey prv_key;
 
     if (silc_pkcs_alloc("rsa", &server->public_key) == FALSE) {
       SILC_LOG_ERROR(("Could not create RSA key pair"));
@@ -182,14 +187,20 @@ int silc_server_init(SilcServer server)
     SILC_LOG_HEXDUMP(("public key"), public_key, pk_len);
     SILC_LOG_HEXDUMP(("private key"), private_key, prv_len);
 
+    pub_key = silc_pkcs_public_key_alloc("rsa", "UN=root, HN=dummy",
+					 public_key, pk_len);
+    prv_key = silc_pkcs_private_key_alloc("rsa", private_key, prv_len);
+
     /* XXX Save keys */
-    silc_pkcs_save_public_key(server->public_key, "pubkey.pub",
-			      public_key,  pk_len);
+    silc_pkcs_save_public_key("pubkey.pub", pub_key);
+    silc_pkcs_save_private_key("privkey.prv", prv_key, NULL);
 
     memset(public_key, 0, pk_len);
     memset(private_key, 0, prv_len);
     silc_free(public_key);
     silc_free(private_key);
+    silc_pkcs_public_key_free(pub_key);
+    silc_pkcs_private_key_free(prv_key);
   }
 
   /* Create a listening server. Note that our server can listen on

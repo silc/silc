@@ -26,8 +26,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:14:01  priikone
+ * 	Global costemic changes.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */

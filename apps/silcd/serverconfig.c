@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:14:01  priikone
+ * 	Global costemic changes.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -305,7 +308,7 @@ int silc_config_server_parse(SilcConfigServer config, SilcBuffer buffer,
       
       /* Check for matching sections */
       for (cptr = silc_config_server_sections; cptr->section; cptr++)
-	if (!strcmp(cp, cptr->section))
+	if (!strncasecmp(cp, cptr->section, strlen(cptr->section)))
 	  break;
 
       if (!cptr->section) {
