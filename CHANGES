@@ -1,3 +1,11 @@
+Wed Nov 28 23:46:09 EET 2001  Pekka Riikonen <priikone@silcnet.org>'
+
+	* Added silc_net_gethostby[addr/name] into the
+	  lib/silcutil/silcnet.[ch].  Added IPv6 support to Unix network
+	  routines.  Added silc_net_is_ip[4/6].  Affected file is
+	  lib/silcutil/unix/silcunixnet.c.  All routines that take
+	  address as argument now supports both IPv4 and IPv6 addresses.
+
 Mon Nov 26 18:09:48 EET 2001  Pekka Riikonen <priikone@silcnet.org>'
 
 	* Fixed LIST command reply sending in server.  Affected file

@@ -177,6 +177,32 @@ int silc_net_set_socket_opt(int sock, int level, int option, int on);
 int silc_net_get_socket_opt(int sock, int level, int option, 
 			    void *optval, int *opt_len);
 
+/****f* silcutil/SilcNetAPI/silc_net_is_ip4
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_net_is_ip4(const char *addr);
+ *
+ * DESCRIPTION
+ *
+ *    Checks whether IP address sent as argument is valid IPv4 address.
+ *
+ ***/
+bool silc_net_is_ip4(const char *addr);
+
+/****f* silcutil/SilcNetAPI/silc_net_is_ip6
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_net_is_ip6(const char *addr);
+ *
+ * DESCRIPTION
+ *
+ *    Checks whether IP address sent as argument is valid IPv6 address.
+ *
+ ***/
+bool silc_net_is_ip6(const char *addr);
+
 /****f* silcutil/SilcNetAPI/silc_net_is_ip
  *
  * SYNOPSIS
@@ -186,6 +212,7 @@ int silc_net_get_socket_opt(int sock, int level, int option,
  * DESCRIPTION
  *
  *    Checks whether IP address sent as argument is valid IP address.
+ *    This supports both IPv4 and IPv6 addresses.
  *
  ***/
 bool silc_net_is_ip(const char *addr);
@@ -194,16 +221,51 @@ bool silc_net_is_ip(const char *addr);
  *
  * SYNOPSIS
  *
- *    bool silc_net_addr2bin(const char *addr, unsigned char *bin,
- *                           uint32 bin_len);
+ *    bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len);
  *
  * DESCRIPTION
  *
  *    Converts the IP number string from numbers-and-dots notation to
- *    binary form in network byte order.
+ *    binary form in network byte order.  The address can be either
+ *    IPv4 or IPv6 address.
  *
  ***/
 bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len);
+
+/****f* silcutil/SilcNetAPI/silc_net_gethostbyname
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_net_gethostbyname(const char *name, char *address, 
+ *                                uint32 address_len);
+ *
+ * DESCRIPTION
+ *
+ *    Resolves the IP address of the hostname indicated by the `host'
+ *    This returns TRUE and the IP address of the host, or FALSE
+ *    if the address could not be resolved.  This is synchronous
+ *    function and will block the calling process.
+ *
+ ***/
+bool silc_net_gethostbyname(const char *name, char *address, 
+			    uint32 address_len);
+
+/****f* silcutil/SilcNetAPI/silc_net_gethostbyaddr
+ *
+ * SYNOPSIS
+ *
+ *   bool silc_net_gethostbyaddr(const char *addr, char *name, 
+ *                               uint32 name_len);
+ *
+ * DESCRIPTION
+ *
+ *    Resolves the hostname of the IP address indicated by the `addr'
+ *    This returns TRUE and the resolved hostname, or FALSE on error.
+ *    The `addr' may be either IPv4 or IPv6 address.  This is
+ *    synchronous function and will block the calling process.
+ *
+ ***/
+bool silc_net_gethostbyaddr(const char *addr, char *name, uint32 name_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_check_host_by_sock
  *

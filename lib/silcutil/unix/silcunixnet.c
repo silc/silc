@@ -22,6 +22,66 @@
 #include "silcincludes.h"
 #include "silcnet.h"
 
+#ifdef HAVE_IPV6
+#define SIZEOF_SOCKADDR(so) ((so).sa.sa_family == AF_INET6 ?	\
+  sizeof(so.sin6) : sizeof(so.sin))
+#else
+#define SIZEOF_SOCKADDR(so) (sizeof(so.sin))
+#endif
+
+typedef union {
+  struct sockaddr sa;
+  struct sockaddr_in sin;
+#ifdef HAVE_IPV6
+  struct sockaddr_in6 sin6;
+#endif
+} SilcSockaddr;
+
+static bool silc_net_set_sockaddr(SilcSockaddr *addr, const char *ip_addr,
+				  int port)
+{
+  int len;
+
+  memset(addr, 0, sizeof(*addr));
+
+  /* Check for IPv4 and IPv6 addresses */
+  if (ip_addr) {
+    if (!silc_net_is_ip(ip_addr)) {
+      SILC_LOG_ERROR(("%s is not IP address", ip_addr));
+      return FALSE;
+    }
+
+    if (silc_net_is_ip4(ip_addr)) {
+      /* IPv4 address */
+      len = sizeof(addr->sin.sin_addr);
+      silc_net_addr2bin(ip_addr, 
+			(unsigned char *)&addr->sin.sin_addr.s_addr, len);
+      addr->sin.sin_family = AF_INET;
+      addr->sin.sin_port = port ? htons(port) : 0;
+    } else {
+#ifdef HAVE_IPV6
+      /* IPv6 address */
+      len = sizeof(addr->sin6.sin6_addr);
+      silc_net_addr2bin(ip_addr, 
+			(unsigned char *)&addr->sin6.sin6_addr, len);
+      addr->sin6.sin6_family = AF_INET6;
+      addr->sin6.sin6_port = port ? htons(port) : 0;
+#else
+      SILC_LOG_ERROR(("IPv6 support is not compiled in"));
+      return FALSE;
+#endif
+    }
+  } else {
+    /* Any address */
+    addr->sin.sin_family = AF_INET;
+    addr->sin.sin_addr.s_addr = INADDR_ANY;
+    if (port)
+      addr->sin.sin_port = htons(port);
+  }
+
+  return TRUE;
+}
+
 /* This function creates server or daemon or listener or what ever. This
    does not fork a new process, it must be done by the caller if caller
    wants to create a child process. This is used by the SILC server. 
@@ -31,13 +91,16 @@
 int silc_net_create_server(int port, const char *ip_addr)
 {
   int sock, rval;
-  struct sockaddr_in server;
-  int len = sizeof(server.sin_addr);
+  SilcSockaddr server;
 
   SILC_LOG_DEBUG(("Creating a new server listener"));
 
+  /* Set sockaddr for server */
+  if (!silc_net_set_sockaddr(&server, ip_addr, port))
+    return -1;
+
   /* Create the socket */
-  sock = socket(AF_INET, SOCK_STREAM, 0);
+  sock = socket(server.sin.sin_family, SOCK_STREAM, 0);
   if (sock < 0) {
     SILC_LOG_ERROR(("Cannot create socket: %s", strerror(errno)));
     return -1;
@@ -50,21 +113,8 @@ int silc_net_create_server(int port, const char *ip_addr)
     return -1;
   }
 
-  /* Set the socket information for bind() */
-  memset(&server, 0, sizeof(server));
-  server.sin_family = AF_INET;
-  if (port)
-    server.sin_port = htons(port);
-
-  /* Convert IP address to network byte order */
-  if (ip_addr) {
-    silc_net_addr2bin(ip_addr, (unsigned char *)&server.sin_addr.s_addr, len);
-  }
-  else
-    server.sin_addr.s_addr = INADDR_ANY;
-
   /* Bind the server socket */
-  rval = bind(sock, (struct sockaddr *)&server, sizeof(server));
+  rval = bind(sock, &server.sa, SIZEOF_SOCKADDR(server));
   if (rval < 0) {
     SILC_LOG_DEBUG(("Cannot bind socket: %s", strerror(errno)));
     return -1;
@@ -103,27 +153,24 @@ int silc_net_create_connection(const char *local_ip, int port,
 			       const char *host)
 {
   int sock, rval;
-  struct hostent *dest;
-  struct sockaddr_in desthost;
+  char ip_addr[64];
+  SilcSockaddr desthost;
 
   SILC_LOG_DEBUG(("Creating connection to host %s port %d", host, port));
 
   /* Do host lookup */
-  dest = gethostbyname(host);
-  if (!dest) {
+  if (!silc_net_gethostbyname(host, ip_addr, sizeof(ip_addr))) {
     SILC_LOG_ERROR(("Network (%s) unreachable: could not resolve the "
 		    "IP address", host));
     return -1;
   }
 
-  /* Set socket information */
-  memset(&desthost, 0, sizeof(desthost));
-  desthost.sin_port = htons(port);
-  desthost.sin_family = AF_INET;
-  memcpy(&desthost.sin_addr, dest->h_addr_list[0], sizeof(desthost.sin_addr));
+  /* Set sockaddr for this connection */
+  if (!silc_net_set_sockaddr(&desthost, ip_addr, port))
+    return -1;
 
   /* Create the connection socket */
-  sock = socket(AF_INET, SOCK_STREAM, 0);
+  sock = socket(desthost.sin.sin_family, SOCK_STREAM, 0);
   if (sock < 0) {
     SILC_LOG_ERROR(("Cannot create socket: %s", strerror(errno)));
     return -1;
@@ -131,28 +178,15 @@ int silc_net_create_connection(const char *local_ip, int port,
 
   /* Bind to the local address if provided */
   if (local_ip) {
-    struct sockaddr_in local;
-    int local_len = sizeof(local.sin_addr);
+    SilcSockaddr local;
 
-    /* Set the socket information for bind() */
-    memset(&local, 0, sizeof(local));
-    local.sin_family = AF_INET;
-
-    /* Convert IP address to network byte order */
-    silc_net_addr2bin(local_ip, (unsigned char *)&local.sin_addr.s_addr, 
-		      local_len);
-
-    /* Bind the local socket */
-    rval = bind(sock, (struct sockaddr *)&local, sizeof(local));
-    if (rval < 0) {
-      SILC_LOG_ERROR(("Cannot connect to remote host: "
-		      "cannot bind socket: %s", strerror(errno)));
-      return -1;
-    }
+    /* Set sockaddr for local listener, and try to bind it. */
+    if (silc_net_set_sockaddr(&local, local_ip, 0))
+      bind(sock, &local.sa, sizeof(local));
   }
 
   /* Connect to the host */
-  rval = connect(sock, (struct sockaddr *)&desthost, sizeof(desthost));
+  rval = connect(sock, &desthost.sa, sizeof(desthost));
   if (rval < 0) {
     SILC_LOG_ERROR(("Cannot connect to remote host: %s", strerror(errno)));
     shutdown(sock, 2);
@@ -180,28 +214,25 @@ int silc_net_create_connection_async(const char *local_ip, int port,
 				     const char *host)
 {
   int sock, rval;
-  struct hostent *dest;
-  struct sockaddr_in desthost;
+  char ip_addr[64];
+  SilcSockaddr desthost;
 
   SILC_LOG_DEBUG(("Creating connection (async) to host %s port %d", 
 		  host, port));
 
   /* Do host lookup */
-  dest = gethostbyname(host);
-  if (!dest) {
+  if (!silc_net_gethostbyname(host, ip_addr, sizeof(ip_addr))) {
     SILC_LOG_ERROR(("Network (%s) unreachable: could not resolve the "
 		    "IP address", host));
     return -1;
   }
 
-  /* Set socket information */
-  memset(&desthost, 0, sizeof(desthost));
-  desthost.sin_port = htons(port);
-  desthost.sin_family = AF_INET;
-  memcpy(&desthost.sin_addr, dest->h_addr_list[0], sizeof(desthost.sin_addr));
+  /* Set sockaddr for this connection */
+  if (!silc_net_set_sockaddr(&desthost, ip_addr, port))
+    return -1;
 
   /* Create the connection socket */
-  sock = socket(AF_INET, SOCK_STREAM, 0);
+  sock = socket(desthost.sin.sin_family, SOCK_STREAM, 0);
   if (sock < 0) {
     SILC_LOG_ERROR(("Cannot create socket: %s", strerror(errno)));
     return -1;
@@ -209,31 +240,18 @@ int silc_net_create_connection_async(const char *local_ip, int port,
 
   /* Bind to the local address if provided */
   if (local_ip) {
-    struct sockaddr_in local;
-    int local_len = sizeof(local.sin_addr);
+    SilcSockaddr local;
 
-    /* Set the socket information for bind() */
-    memset(&local, 0, sizeof(local));
-    local.sin_family = AF_INET;
-
-    /* Convert IP address to network byte order */
-    silc_net_addr2bin(local_ip, (unsigned char *)&local.sin_addr.s_addr, 
-		      local_len);
-
-    /* Bind the local socket */
-    rval = bind(sock, (struct sockaddr *)&local, sizeof(local));
-    if (rval < 0) {
-      SILC_LOG_ERROR(("Cannot connect to remote host: "
-		      "cannot bind socket: %s", strerror(errno)));
-      return -1;
-    }
+    /* Set sockaddr for local listener, and try to bind it. */
+    if (silc_net_set_sockaddr(&local, local_ip, 0))
+      bind(sock, &local.sa, sizeof(local));
   }
 
   /* Set the socket to non-blocking mode */
   silc_net_set_socket_nonblock(sock);
 
   /* Connect to the host */
-  rval = connect(sock, (struct sockaddr *)&desthost, sizeof(desthost));
+  rval = connect(sock, &desthost.sa, sizeof(desthost));
   if (rval < 0) {
     if (errno !=  EINPROGRESS) {
       SILC_LOG_ERROR(("Cannot connect to remote host: %s", strerror(errno)));
@@ -273,14 +291,25 @@ int silc_net_set_socket_nonblock(int sock)
 
 bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len)
 {
-  struct in_addr tmp;
-  int ret;
+  int ret = 0;
 
-  ret = inet_aton(addr, &tmp);
+  if (silc_net_is_ip4(addr)) {
+    /* IPv4 address */
+    struct in_addr tmp;
+    ret = inet_aton(addr, &tmp);
+    if (bin_len < 4)
+      return FALSE;
+    
+    memcpy(bin, (unsigned char *)&tmp.s_addr, 4);
+#ifdef HAVE_IPV6
+  } else {
+    /* IPv6 address */
+    if (bin_len < 16)
+      return FALSE;
 
-  if (bin_len < 4)
-    return FALSE;
+    ret = inet_pton(AF_INET6, addr, &bin);
+#endif /* HAVE_IPV6 */
+  }
 
-  memcpy(bin, (unsigned char *)&tmp.s_addr, 4);
   return ret != 0;
 }

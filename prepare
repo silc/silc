@@ -39,7 +39,6 @@
 #
 SILC_VERSION=0.6.2			# Base version
 
-
 #############################################################################
 
 echo "Preparing SILC source tree for configuration and compilation..."

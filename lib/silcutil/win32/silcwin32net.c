@@ -19,6 +19,8 @@
 */
 /* $Id$ */
 
+/* XXX IPv6 support missing */
+
 #include "silcincludes.h"
 #include "silcnet.h"
 

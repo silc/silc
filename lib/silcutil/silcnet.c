@@ -44,13 +44,125 @@ int silc_net_get_socket_opt(int sock, int level, int option,
   return getsockopt(sock, level, option, optval, opt_len);
 }
 
+/* Checks whether IP address sent as argument is valid IPv4 address. */
+
+bool silc_net_is_ip4(const char *addr)
+{
+  int count = 0;
+
+  while (*addr) {
+    if (*addr != '.' && !isdigit(*addr))
+      return FALSE;
+    if (*addr == '.')
+      count++;
+    addr++;
+  }
+
+  if (count != 3)
+    return FALSE;
+  
+  return TRUE;
+}
+
+/* Checks whether IP address sent as argument is valid IPv6 address. */
+
+bool silc_net_is_ip6(const char *addr)
+{
+  /* XXX does this work with all kinds of IPv6 addresses? */
+  while (*addr) {
+    if (*addr != ':' && !isxdigit(*addr))
+      return FALSE;
+    addr++;
+  }
+  
+  return TRUE;
+}
+
 /* Checks whether IP address sent as argument is valid IP address. */
 
 bool silc_net_is_ip(const char *addr)
 {
-  struct in_addr tmp;
-  int len = sizeof(tmp);
-  return silc_net_addr2bin(addr, (unsigned char *)&tmp.s_addr, len);
+  if (silc_net_is_ip4(addr))
+    return TRUE;
+  return silc_net_is_ip6(addr);
+}
+
+/* Resolves IP address for hostname. */
+
+bool silc_net_gethostbyname(const char *name, char *address,
+			    uint32 address_len)
+{
+#ifdef HAVE_IPV6
+  struct addrinfo hints, *ai;
+  char hbuf[NI_MAXHOST];
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_socktype = SOCK_STREAM;
+  if (getaddrinfo(name, NULL, &hints, &ai))
+    return FALSE;
+
+  if (getnameinfo(ai->ai_addr, ai->ai_addrlen, hbuf,
+		  sizeof(hbuf), NULL, 0, NI_NUMERICHOST))
+    return FALSE;
+  
+  if (!inet_ntop(ai->ai_family, ai->ai_addr, address, address_len))
+    return FALSE;
+
+  freeaddrinfo(ai);
+#else
+  struct hostent *hp;
+  struct in_addr ip;
+  char *tmp;
+
+  hp = gethostbyname(name);
+  if (!hp)
+    return FALSE;
+
+  memcpy(&ip.s_addr, hp->h_addr_list[0], 4);
+  tmp = inet_ntoa(ip);
+  if (!tmp)
+    return FALSE;
+  if (address_len < strlen(tmp))
+    return FALSE;
+  memset(address, 0, address_len);
+  strncpy(address, tmp, strlen(tmp));
+#endif
+  
+  return TRUE;
+}
+
+/* Resolves hostname by IP address. */
+
+bool silc_net_gethostbyaddr(const char *addr, char *name, uint32 name_len)
+{
+#ifdef HAVE_IPV6
+  struct addrinfo req, *ai;
+  
+  memset(&req, 0, sizeof(req));
+  req.ai_socktype = SOCK_STREAM;
+  req.ai_flags = AI_CANONNAME;
+  
+  if (getaddrinfo(addr, NULL, &req, &ai))
+    return FALSE;
+  if (name_len < strlen(ai->ai_canonname))
+    return FALSE;
+  memset(name, 0, name_len);
+  strncpy(name, ai->ai_canonname, strlen(ai->ai_canonname));
+
+  freeaddrinfo(ai);
+#else
+  struct hostent *hp;
+
+  hp = gethostbyaddr(addr, strlen(addr), AF_INET);
+  if (!hp)
+    return FALSE;
+  if (name_len < strlen(hp->h_name))
+    return FALSE;
+  memset(name, 0, name_len);
+  strncpy(name, hp->h_name, strlen(hp->h_name));
+#endif
+  
+  return TRUE;
 }
 
 /* Performs lookups for remote name and IP address. This peforms reverse
@@ -217,45 +329,29 @@ uint16 silc_net_get_local_port(int sock)
 
 char *silc_net_localhost(void)
 {
-  char hostname[256];
-  struct hostent *dest;
-  char *h;
+  char hostname[256], ip_addr[64];
 
   if (gethostname(hostname, sizeof(hostname)))
     return NULL;
 
-  dest = gethostbyname(hostname);
-  if (!dest)
+  if (!silc_net_gethostbyname(hostname, ip_addr, sizeof(ip_addr)))
     return strdup(hostname);
 
-  h = strdup(dest->h_name);
-  dest = gethostbyaddr((char *)dest->h_addr_list[0],
-		       sizeof(struct in_addr), AF_INET);
-  if (!dest)
-    return h;
-
-  silc_free(h);
-  return strdup(dest->h_name);
+  silc_net_gethostbyaddr(ip_addr, hostname, sizeof(hostname));
+  return strdup(hostname);
 }
 
 /* Returns local IP address */
 
 char *silc_net_localip(void)
 {
-  char hostname[256];
-  struct hostent *dest;
-  struct in_addr ip;
-  char *ips;
+  char hostname[256], ip_addr[64];
 
   if (gethostname(hostname, sizeof(hostname)))
     return NULL;
 
-  dest = gethostbyname(hostname);
-  if (!dest)
+  if (!silc_net_gethostbyname(hostname, ip_addr, sizeof(ip_addr)))
     return NULL;
 
-  memcpy(&ip.s_addr, dest->h_addr_list[0], 4);
-  ips = inet_ntoa(ip);
-
-  return strdup(ips);
+  return strdup(ip_addr);
 }
