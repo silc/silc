@@ -943,10 +943,11 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   entry->mode = mode;
 
   /* Save channel key */
-  if (!(entry->mode & SILC_CHANNEL_MODE_PRIVKEY))
-    silc_server_save_channel_key(server, keyp, entry);
-  if (keyp)
+  if (keyp) {
+    if (!(entry->mode & SILC_CHANNEL_MODE_PRIVKEY))
+      silc_server_save_channel_key(server, keyp, entry);
     silc_buffer_free(keyp);
+  }
 
   /* Save the users to the channel */
   silc_server_save_users_on_channel(server, cmd->sock, entry, 
