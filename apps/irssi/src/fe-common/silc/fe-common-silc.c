@@ -20,6 +20,7 @@
 
 #include "module.h"
 #include "module-formats.h"
+#include "modules.h"
 #include "signals.h"
 #include "themes.h"
 
@@ -29,22 +30,20 @@ void fe_silc_channels_deinit(void);
 void fe_silc_modules_init(void);
 void fe_silc_modules_deinit(void);
 
-void fe_common_silc_init(void)
+void fe_silc_init(void)
 {
   theme_register(fecommon_silc_formats);
 
   fe_silc_channels_init();
   fe_silc_modules_init();
+
+  module_register("silc", "fe");
 }
 
-void fe_common_silc_deinit(void)
+void fe_silc_deinit(void)
 {
   fe_silc_modules_deinit();
   fe_silc_channels_deinit();
 
   theme_unregister();
-}
-
-void fe_common_silc_finish_init(void)
-{
 }

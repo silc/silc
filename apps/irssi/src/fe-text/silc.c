@@ -147,7 +147,7 @@ static void textui_init(void)
 	core_init();
 	silc_init();
 	fe_common_core_init();
-	fe_common_silc_init();
+	fe_silc_init();
 
 	theme_register(gui_text_formats);
 	signal_add_last("gui exit", (SIGNAL_FUNC) sig_exit);
@@ -237,7 +237,7 @@ static void textui_deinit(void)
 
 	theme_unregister();
 
-	fe_common_silc_deinit();
+	fe_silc_deinit();
 	fe_common_core_deinit();
 	silc_deinit();
 	core_deinit();

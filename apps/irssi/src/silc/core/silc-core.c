@@ -425,6 +425,8 @@ void silc_core_init(void)
   silc_queries_init();
 
   idletag = g_timeout_add(5, (GSourceFunc) my_silc_scheduler, NULL);
+
+  module_register("silc", "core");
 }
 
 /* Deinit SILC. Called from src/fe-text/silc.c */
