@@ -578,6 +578,7 @@ AC_CHECK_HEADERS(pthread.h,
             want_threads=true
           fi
 	])
+fi
 
 AM_CONDITIONAL(SILC_THREADS, test x$want_threads = xtrue)
 if test x$want_threads = xtrue; then
@@ -621,7 +622,6 @@ if test x$want_threads = xtrue; then
     esac
 
   LIBS="$TMP_LIBS $LIBS"
-fi
 fi
 
 #
