@@ -86,6 +86,8 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   
   server = conn == NULL ? NULL : conn->context;
   chanrec = silc_channel_find_entry(server, channel);
+  if (!chanrec)
+    return;
   
   nick = silc_nicklist_find(chanrec, sender);
 
