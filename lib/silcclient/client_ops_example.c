@@ -9,13 +9,13 @@
 
 
 /* Message sent to the application by library. `conn' associates the
-   message to a specific connection.  `conn', however, may be NULL. 
+   message to a specific connection.  `conn', however, may be NULL.
    The `type' indicates the type of the message sent by the library.
    The applicationi can for example filter the message according the
    type. */
 
-static void 
-silc_say(SilcClient client, SilcClientConnection conn, 
+static void
+silc_say(SilcClient client, SilcClientConnection conn,
 	 SilcClientMessageType type, char *msg, ...)
 {
 
@@ -23,14 +23,14 @@ silc_say(SilcClient client, SilcClientConnection conn,
 
 
 /* Message for a channel. The `sender' is the sender of the message
-   The `channel' is the channel. The `msg' is the message.  Note that  
+   The `channel' is the channel. The `msg' is the message.  Note that
    `msg' maybe NULL. */
 
-static void 
-silc_channel_message(SilcClient client, SilcClientConnection conn, 
-		     SilcClientEntry sender, SilcChannelEntry channel, 
+static void
+silc_channel_message(SilcClient client, SilcClientConnection conn,
+		     SilcClientEntry sender, SilcChannelEntry channel,
 		     SilcMessageFlags flags, const unsigned char *message,
-		     SilcUInt32 message_len);
+		     SilcUInt32 message_len)
 {
 
 }
@@ -39,11 +39,11 @@ silc_channel_message(SilcClient client, SilcClientConnection conn,
 /* Private message to the client. The `sender' is the sender of the
    message. */
 
-static void 
-silc_private_message(SilcClient client, SilcClientConnection conn, 
-		     SilcClientEntry sender, SilcMessageFlags flags, 
+static void
+silc_private_message(SilcClient client, SilcClientConnection conn,
+		     SilcClientEntry sender, SilcMessageFlags flags,
 		     const unsigned char *message,
-		     SilcUInt32 message_len);
+		     SilcUInt32 message_len)
 {
 
 }
@@ -58,8 +58,8 @@ silc_private_message(SilcClient client, SilcClientConnection conn,
    does not send it because client library gets the channel entry from
    the Channel ID in the packet's header). */
 
-static void 
-silc_notify(SilcClient client, SilcClientConnection conn, 
+static void
+silc_notify(SilcClient client, SilcClientConnection conn,
 	    SilcNotifyType type, ...)
 {
 
@@ -75,9 +75,9 @@ silc_notify(SilcClient client, SilcClientConnection conn,
    after application has called the command. Just to tell application
    that the command really was processed. */
 
-static void 
-silc_command(SilcClient client, SilcClientConnection conn, 
-	     SilcClientCommandContext cmd_context, int success, 
+static void
+silc_command(SilcClient client, SilcClientConnection conn,
+	     SilcClientCommandContext cmd_context, int success,
 	     SilcCommand command)
 {
 
@@ -88,8 +88,8 @@ silc_command(SilcClient client, SilcClientConnection conn,
    function. If error occurs it will be called as well. Normal scenario
    is that it will be called after the received command data has been parsed
    and processed. The function is used to pass the received command data to
-   the application. 
-   
+   the application.
+
    `conn' is the associated client connection. `cmd_payload' is the command
    payload data received from server and it can be ignored. It is provided
    if the application would like to re-parse the received command data,
@@ -101,9 +101,9 @@ silc_command(SilcClient client, SilcClientConnection conn,
    command defines the number and type of arguments it passes to the
    application (on error they are not sent). */
 
-static void 
-silc_command_reply(SilcClient client, SilcClientConnection conn, 
-		   SilcCommandPayload cmd_payload, int success, 
+static void
+silc_command_reply(SilcClient client, SilcClientConnection conn,
+		   SilcCommandPayload cmd_payload, int success,
 		   SilcCommand command, SilcStatus status, ...)
 {
 
@@ -116,9 +116,9 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
    If the `success' is FALSE the application must always call the function
    silc_client_close_connection. */
 
-static void 
+static void
 silc_connect(SilcClient client, SilcClientConnection conn,
-	     SilcClientConnectionStatus status);
+	     SilcClientConnectionStatus status)
 {
 
 }
@@ -126,7 +126,7 @@ silc_connect(SilcClient client, SilcClientConnection conn,
 
 /* Called to indicate that connection was disconnected to the server. */
 
-static void 
+static void
 silc_disconnect(SilcClient client, SilcClientConnection conn)
 {
 
@@ -139,9 +139,9 @@ silc_disconnect(SilcClient client, SilcClientConnection conn)
    authentication method and authentication data is called. The `conn'
    may be NULL. */
 
-static void 
-silc_get_auth_method(SilcClient client, SilcClientConnection conn, 
-		     char *hostname, SilcUInt16 port, SilcGetAuthMeth completion, 
+static void
+silc_get_auth_method(SilcClient client, SilcClientConnection conn,
+		     char *hostname, SilcUInt16 port, SilcGetAuthMeth completion,
 		     void *context)
 {
 
@@ -150,13 +150,13 @@ silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 
 /* Verifies received public key. The `conn_type' indicates which entity
    (server, client etc.) has sent the public key. If user decides to trust
-   the key may be saved as trusted public key for later use. The 
+   the key may be saved as trusted public key for later use. The
    `completion' must be called after the public key has been verified. */
 
-static void 
-silc_verify_public_key(SilcClient client, SilcClientConnection conn, 
-		       SilcSocketType conn_type, unsigned char *pk, 
-		       SilcUInt32 pk_len, SilcSKEPKType pk_type, 
+static void
+silc_verify_public_key(SilcClient client, SilcClientConnection conn,
+		       SilcSocketType conn_type, unsigned char *pk,
+		       SilcUInt32 pk_len, SilcSKEPKType pk_type,
 		       SilcVerifyPublicKey completion, void *context)
 {
 
@@ -168,8 +168,8 @@ silc_verify_public_key(SilcClient client, SilcClientConnection conn,
    the `context'. The returned passphrase SHOULD be in UTF-8 encoded,
    if not then the library will attempt to encode. */
 
-static void 
-silc_ask_passphrase(SilcClient client, SilcClientConnection conn, 
+static void
+silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
 		    SilcAskPassphrase completion, void *context)
 {
 
@@ -184,8 +184,8 @@ silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
    is 32 bit failure type (see protocol specs for all protocol failure
    types). */
 
-static void 
-silc_failure(SilcClient client, SilcClientConnection conn, 
+static void
+silc_failure(SilcClient client, SilcClientConnection conn,
 	     SilcProtocol protocol, void *failure)
 {
 
@@ -200,10 +200,10 @@ silc_failure(SilcClient client, SilcClientConnection conn,
    silc_client_perform_key_agreement). If TRUE is returned also the
    `completion' and `context' arguments must be set by the application. */
 
-static int 
-silc_key_agreement(SilcClient client, SilcClientConnection conn, 
-		   SilcClientEntry client_entry, const char *hostname, 
-		   SilcUInt16 port, SilcKeyAgreementCallback *completion, 
+static int
+silc_key_agreement(SilcClient client, SilcClientConnection conn,
+		   SilcClientEntry client_entry, const char *hostname,
+		   SilcUInt16 port, SilcKeyAgreementCallback *completion,
 		   void **context)
 {
 
@@ -217,29 +217,29 @@ silc_key_agreement(SilcClient client, SilcClientConnection conn,
    transfer request, by calling the silc_client_file_receive or
    silc_client_file_close, respectively. */
 
-static void 
-silc_ftp(SilcClient client, SilcClientConnection conn, 
-	 SilcClientEntry client_entry, SilcUInt32 session_id, 
+static void
+silc_ftp(SilcClient client, SilcClientConnection conn,
+	 SilcClientEntry client_entry, SilcUInt32 session_id,
 	 const char *hostname, SilcUInt16 port)
 {
 
 }
 
 
-/* Delivers SILC session detachment data indicated by `detach_data' to the 
+/* Delivers SILC session detachment data indicated by `detach_data' to the
    application.  If application has issued SILC_COMMAND_DETACH command
    the client session in the SILC network is not quit.  The client remains
    in the network but is detached.  The detachment data may be used later
-   to resume the session in the SILC Network.  The appliation is 
+   to resume the session in the SILC Network.  The appliation is
    responsible of saving the `detach_data', to for example in a file.
 
    The detachment data can be given as argument to the functions
    silc_client_connect_to_server, or silc_client_add_connection when
    creating connection to remote server, inside SilcClientConnectionParams
-   structure.  If it is provided the client library will attempt to resume 
-   the session in the network.  After the connection is created 
-   successfully, the application is responsible of setting the user 
-   interface for user into the same state it was before detaching (showing 
+   structure.  If it is provided the client library will attempt to resume
+   the session in the network.  After the connection is created
+   successfully, the application is responsible of setting the user
+   interface for user into the same state it was before detaching (showing
    same channels, channel modes, etc).  It can do this by fetching the
    information (like joined channels) from the client library. */
 
