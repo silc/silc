@@ -116,7 +116,6 @@ Table of Contents
   3.13 Backup Routers ........................................... 31
       3.13.1 Switching to Backup Router ......................... 32
       3.13.2 Resuming Primary Router ............................ 33
-      3.13.3 Discussion on Backup Router Scheme ................. 36
 4 SILC Procedures ............................................... 36
   4.1 Creating Client Connection ................................ 36
   4.2 Creating Server Connection ................................ 38
@@ -1829,36 +1828,6 @@ packet:
 If any other value is found in the type field the packet must be
 discarded.  The SILC_PACKET_RESUME_ROUTER packet and its payload
 is defined in [SILC2].
-
-
-
-
-.ti 0
-3.13.3 Discussion on Backup Router Scheme
-
-It is clear that this backup router support is not able to handle all
-possible situations arising in unreliable network environment.  This
-scheme for example does not handle situation when the router actually
-does not go offline but the network link goes down temporarily.  It would
-require some intelligence to figure out when it is best time to switch
-to the backup router.  To make it even more complicated it is possible
-that the backup router may have not lost the network link to the primary
-router.
-
-Other possible situation is when the network link is lost temporarily
-between two primary routers in the SILC network.  Unless the routers
-notice the link going down they cannot perhaps find alternative routes.
-Worst situation is when the link goes down only for a short period of
-time, thus causing lag.  Should the routers or servers find alternative
-routes if they cannot get response from the router during the lag?
-When alternative routes are being found it must be careful not to
-mess up existing primary routes between routers in the network.
-
-It is suggested that the current backup router scheme is only temporary
-solution and existing backup router protocols are studied further.  It
-is also suggested that the backup router specification will be separated
-from this SILC specification Internet-Draft and additional specification
-is written on the subject.
 
 
 .ti 0
