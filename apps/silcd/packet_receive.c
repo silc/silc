@@ -1230,6 +1230,12 @@ void silc_server_notify(SilcServer server,
     if (!server_id)
       goto out;
 
+    /* If the ID is mine, this notify is not allowed. */
+    if (SILC_ID_SERVER_COMPARE(server_id, server->id)) {
+      SILC_LOG_DEBUG(("Ignoring my own ID for SERVER_SIGNOFF"));
+      break;
+    }
+
     /* Get server entry */
     server_entry = silc_idlist_find_server_by_id(server->global_list, 
 						 server_id, TRUE, NULL);
@@ -1305,7 +1311,7 @@ void silc_server_notify(SilcServer server,
     silc_free(server_id);
 
     /* Sending SERVER_SIGNOFF is not right way to signoff local connection */
-    if (SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry)
+    if (SILC_IS_LOCAL(server_entry))
       break;
 
     /* Remove all servers that are originated from this server, and
