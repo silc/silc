@@ -9,7 +9,8 @@ TODO/bugs in Irssi SILC client
 	  commands that use current current_channel to the Irssi SILC
 	  client which then calls the actual library command.
 
- o /KICK does not remove the client from Irssi's NAMES list.
+ o KILL notify does not remove the killed client from all channels.  The
+   /NAMES will show it still.
 
  o Add PERL scripting support from Irssi CVS.
 
@@ -27,11 +28,6 @@ TODO/bugs in Irssi SILC client
 
  o Set different kind of settings, like, /set mutual_authentication,
    /set key_exchange_timeout, /set conn_auth_timeout etc etc.
-
- o Add KNOCKOUT local command.  It should kick an client from channel and
-   set a ban for it for number of seconds.
-
- o Add KICKBAN local command.  Kicks and bans the specified client.
 
  o Do some /set show_mail_notification that would show a notification
    on screen when new email is received.
