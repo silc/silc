@@ -165,7 +165,7 @@ bool silc_idcache_add(SilcIDCache cache, unsigned char *data,
     silc_hash_table_add(cache->context_table, context, c);
 
   /* See whether we have time to rehash the tables */
-  if ((silc_hash_table_count(cache->id_table) * 2) >
+  if ((silc_hash_table_count(cache->id_table) / 2) >
       silc_hash_table_size(cache->id_table)) {
     silc_hash_table_rehash(cache->id_table, 0);
     silc_hash_table_rehash(cache->data_table, 0);
