@@ -419,7 +419,7 @@ o Server ID IP address - Indicates the server where this
   client is coming from.  The IP address hence equals the
   server IP address where to the client has connected.
 
-o Random number - Random number to further unify the
+o Random number - Random number to further randomize the
   Client ID.  This makes it possible to have 2^8 same
   nicknames from the same server IP address.
 
@@ -535,7 +535,7 @@ o IP address of the server - This is the real IP address of
 
 o Port - This is the port the server is binded to.
 
-o Random number - This is used to further unify the Server ID.
+o Random number - This is used to further randomize the Server ID.
 
 .in 3
 Collisions are not expected to happen in any conditions.  The Server ID
@@ -736,7 +736,7 @@ o Router's Server ID IP address - Indicates the IP address of
 o Router's Server ID port - Indicates the port of the channel on 
   the server.  This is taken from the router's Server ID.
 
-o Random number - To further unify the Channel ID.  This makes
+o Random number - To further randomize the Channel ID.  This makes
   sure that there are no collisions.  This also means that
   in a cell there can be 2^16 channels.
 .in 3

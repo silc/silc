@@ -145,6 +145,7 @@ Figure 19:  New Channel Payload
 Figure 20:  New Channel User Payload
 Figure 21:  Replace ID Payload
 Figure 22:  Remove ID Payload
+Figure 23:  Remove Channel User Payload
 
 
 .ti 0
@@ -721,7 +722,18 @@ List of SILC Packet types are defined as follows.
           Payload of the packet:  See section 2.3.24 Remove ID Payload
 
 
-     28   SILC_PACKET_REKEY
+     28   SILC_PACKET_REMOVE_CHANNEL_USER
+
+          This packet is used to remove user from a channel.  This is
+          used by router to notify other routers in the network that a
+          client has leaved a channel.  This packet maybe sent to entity
+          that is indirectly connected to the sender.
+
+          Payload of the packet:  See section 2.3.25 Remove Channel User
+                                  Payload
+
+
+     29   SILC_PACKET_REKEY
 
           This packet is used to indicate that re-key must be performed
           for session keys.  See section Session Key Regeneration in
@@ -729,9 +741,7 @@ List of SILC Packet types are defined as follows.
           a payload.
 
 
-
-
-     29   SILC_PACKET_REKEY_DONE
+     30   SILC_PACKET_REKEY_DONE
 
           This packet is used to indicate that re-key is performed and
           new keys must be used hereafter.  This is sent only if re-key
@@ -740,7 +750,7 @@ List of SILC Packet types are defined as follows.
           not have a payload.
 
 
-     30 - 254
+     31 - 254
 
          Currently undefined commands.
 
@@ -1002,7 +1012,7 @@ Receiver of the the channel message packet is able to determine
 the channel the message is destined to by checking the destination
 ID from the SILC Packet header which tells the destination channel.
 The original sender of the packet is also determined by checking
-the source ID from the header which tells the who client sent
+the source ID from the header which tells the client who sent
 the message.
 
 The payload may only be sent with SILC_PACKET_CHANNEL_MESSAGE packet.
@@ -1940,10 +1950,62 @@ o ID Type (2 bytes) - Indicates the type of the ID to be
   removed.  See section 2.4 SILC ID Types for list of defined
   ID types.
 
-o ID Length (2 bytes) - Length of the D Data area not including
+o ID Length (2 bytes) - Length of the ID Data area not including
   the length of any other fields in the payload.
 
 o ID Data (variable length) - The actual ID data to be removed.
+.in 3
+
+
+.ti 0
+2.3.25 Remove Channel User Payload
+
+Remove Channel User payload is used to remove a user from a channel network
+wide.  This is used by routers to notify other routers that a user has
+leaved a channel.  As routers keep information about users on channels a
+user leaving channel must be removed from all routers.  Normal server may
+send this payload as well.  Client must not send this payload.
+
+The payload may only be sent with SILC_PACKET_REMOVE_CHANNEL USER packet.
+It must not be sent in any other packet type.  Following diagram
+represents the Remove Payload Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      Client ID Length         |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                        Client ID Data                         ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      Channel ID Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                        Channel ID Data                        ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 23:  Remove Channel User Payload
+
+
+.in 6
+o Client ID Length (2 bytes) - Length of the Client ID Data area
+  not including the length of any other fields in the payload.
+
+o Client ID Data (variable length) - The Client ID of the user
+  that has left the channel.
+
+o Channel ID Length (2 bytes) - Length of the Channel ID Data area
+  not including the length of any other fields in the payload.
+
+o Channel ID Data (variable length) - The Channel ID of the channel
+  the user has left.
 .in 3
 
 

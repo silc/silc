@@ -1,3 +1,24 @@
+Sun Aug 20 21:27:26 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added SILC_PACKET_REMOVE_CHANNEL_USER to remove a client from
+	  a channel in SILC network.  The packet is used by servers and
+	  routers to notify other routers that user has left a channel.
+	  This little feature was missing until now.  Added the feature
+	  to protocol specification as well.
+
+	  Added functions: silc_server_send_remove_channel_user and
+	  silc_server_remove_channel_user into server.[ch].
+
+	* Added SILC_PACKET_REKEY and SILC_PACKET_REKEY_DONE into
+	  lib/silccore/silcpacket.h.  However, they are not implemented
+	  yet.
+
+Sat Aug 19 23:04:16 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed joining to a channel and sending channel messages
+	  between server and router.  The channel message sending should
+	  now work inside a cell.
+
 Tue Jul 25 20:46:13 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the private message sending between server and router.
