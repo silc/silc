@@ -85,6 +85,7 @@ static void silc_channels_join(SILC_SERVER_REC *server,
     silc_command_exec(server, "JOIN", channel);
     g_free(channel);
   }
+
   g_strfreev(list);
 }
 
@@ -99,7 +100,7 @@ static void sig_connected(SILC_SERVER_REC *server)
 
 static void sig_server_quit(SILC_SERVER_REC *server, const char *msg)
 {
-  if (IS_SILC_SERVER(server))
+  if (IS_SILC_SERVER(server) && server->conn && server->conn->sock)
     silc_command_exec(server, "QUIT", msg);
 }
 

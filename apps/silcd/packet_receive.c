@@ -1338,16 +1338,9 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     hostname = silc_calloc((strlen(username) - tlen) + 1, sizeof(char));
     memcpy(hostname, username + tlen + 1, strlen(username) - tlen - 1);
 
-    pident = silc_pkcs_decode_identifier(client->data.public_key->identifier);
-    if (pident) {
-      phostname = strdup(pident->host);
-      silc_pkcs_free_identifier(pident);
-    }
-
     if (strcmp(sock->hostname, sock->ip) && 
 	strcmp(sock->hostname, hostname)) {
       silc_free(username);
-      silc_free(phostname);
       silc_free(hostname);
       if (realname)
 	silc_free(realname);
@@ -1357,11 +1350,18 @@ SilcClientEntry silc_server_new_client(SilcServer server,
       return NULL;
     }
     
+    pident = silc_pkcs_decode_identifier(client->data.public_key->identifier);
+    if (pident) {
+      phostname = strdup(pident->host);
+      silc_pkcs_free_identifier(pident);
+    }
+
     if (!strcmp(sock->hostname, sock->ip) && 
 	phostname && strcmp(phostname, hostname)) {
       silc_free(username);
-      silc_free(phostname);
       silc_free(hostname);
+      if (phostname)
+	silc_free(phostname);
       if (realname)
 	silc_free(realname);
       silc_server_disconnect_remote(server, sock, 
@@ -1445,8 +1445,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 
   /* Send some nice info to the client */
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
-			  ("Welcome to the SILC Network %s@%s",
-			   username, sock->hostname));
+			  ("Welcome to the SILC Network %s",
+			   username));
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Your host is %s, running version %s",
 			   server->config->server_info->server_name,

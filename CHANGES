@@ -6,6 +6,10 @@ Thu Jun  7 16:29:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  resolved then check it from the public key.  Affected file is
 	  silcd/packet_receive.c.
 
+	* Fixed a fatal bug in Irssi SILC client. Do not send QUIT command
+	  if the server disconnected us and the connection is not valid
+	  anymore.  Affected file irssi/src/silc/core/silc-channels.c.
+
 Thu Jun  7 08:57:16 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Close log file after open.  Affected file 
