@@ -376,6 +376,11 @@ double silc_map_parse_pos(char *pos)
     return 0;
   }
 
+  if (d < 0) {
+    m = (m < 0 ? m : -m);
+    s = (s < 0 ? s : -s);
+  }
+
   return ((d < 0 ? -1 : d > 0 ? 1 : 0) *
 	  abs(d) + (m / 60) + (s / 3600));
 }
