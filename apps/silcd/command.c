@@ -1097,14 +1097,7 @@ SILC_SERVER_CMD_FUNC(nick)
   SilcClientID *new_id;
   char *nick;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Check number of arguments */
-  if (silc_argument_get_arg_num(cmd->args) < 1) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_NICK,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_NICK, cmd, 1, 1);
 
   /* Check nickname */
   nick = silc_argument_get_arg_type(cmd->args, 1, NULL);
@@ -1194,18 +1187,9 @@ SILC_SERVER_CMD_FUNC(topic)
   unsigned char *tmp;
   unsigned int argc, tmp_len;
 
-  /* Check number of arguments */
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_TOPIC, cmd, 1, 2);
+
   argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 1) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  if (argc > 2) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
-					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
-    goto out;
-  }
 
   /* Get Channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
@@ -1305,20 +1289,9 @@ SILC_SERVER_CMD_FUNC(invite)
   SilcChannelID *channel_id;
   SilcBuffer sidp;
   unsigned char *tmp;
-  unsigned int argc, len;
+  unsigned int len;
 
-  /* Check number of arguments */
-  argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 1) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  if (argc > 2) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
-    goto out;
-  }
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_INVITE, cmd, 1, 2);
 
   /* Get destination ID */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
@@ -1457,17 +1430,7 @@ SILC_SERVER_CMD_FUNC(info)
   unsigned int argc;
   char info_string[256], *dest_server;
 
-  argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 1) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  if (argc > 1) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
-					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
-    goto out;
-  }
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_INFO, cmd, 1, 1);
 
   /* Get server name */
   dest_server = silc_argument_get_arg_type(cmd->args, 1, NULL);
@@ -1526,20 +1489,10 @@ SILC_SERVER_CMD_FUNC(ping)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcServerID *id;
-  unsigned int argc, len;
+  unsigned int len;
   unsigned char *tmp;
 
-  argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 1) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PING,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  if (argc > 2) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_PING,
-					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
-    goto out;
-  }
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_INFO, cmd, 1, 2);
 
   /* Get Server ID */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
@@ -1986,23 +1939,10 @@ SILC_SERVER_CMD_FUNC(motd)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
-  unsigned int argc;
   char *motd;
   int motd_len;
   
-  SILC_LOG_DEBUG(("Start"));
-
-  argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 1) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  if (argc > 2) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
-					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
-    goto out;
-  }
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_MOTD, cmd, 1, 2);
 
   /* XXX show currently only our motd */
 
@@ -2465,22 +2405,10 @@ SILC_SERVER_CMD_FUNC(cumode)
   SilcChannelClientEntry chl;
   SilcBuffer packet, idp;
   unsigned char *tmp_id, *tmp_mask;
-  unsigned int argc, target_mask, sender_mask, tmp_len;
+  unsigned int target_mask, sender_mask, tmp_len;
   int notify = FALSE;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 3) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  if (argc > 3) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
-					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
-    goto out;
-  }
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CUMODE, cmd, 3, 3);
 
   /* Get Channel ID */
   tmp_id = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
@@ -2665,22 +2593,10 @@ SILC_SERVER_CMD_FUNC(leave)
   SilcChannelID *id;
   SilcChannelEntry channel;
   SilcBuffer packet;
-  unsigned int i, argc, len;
+  unsigned int i, len;
   unsigned char *tmp;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 1) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  if (argc > 2) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
-					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
-    goto out;
-  }
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_LEAVE, cmd, 1, 2);
 
   /* Get Channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
@@ -2771,25 +2687,13 @@ SILC_SERVER_CMD_FUNC(names)
   SilcChannelClientEntry chl;
   SilcChannelID *id;
   SilcBuffer packet;
-  unsigned int i, len, len2, tmp_len, argc;
+  unsigned int i, len, len2, tmp_len;
   unsigned char *tmp;
   char *name_list = NULL, *n;
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 1) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_NAMES,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  if (argc > 2) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_NAMES,
-					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
-    goto out;
-  }
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_NAMES, cmd, 1, 2);
 
   /* Get Channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
