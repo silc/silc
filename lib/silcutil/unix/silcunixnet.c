@@ -109,7 +109,8 @@ int silc_net_create_connection(int port, char *host)
   /* Do host lookup */
   dest = gethostbyname(host);
   if (!dest) {
-    SILC_LOG_ERROR(("Network (%s) unreachable", host));
+    SILC_LOG_ERROR(("Network (%s) unreachable: could not resolve the "
+		    "IP address", host));
     return -1;
   }
 
@@ -163,7 +164,8 @@ int silc_net_create_connection_async(int port, char *host)
   /* Do host lookup */
   dest = gethostbyname(host);
   if (!dest) {
-    SILC_LOG_ERROR(("Network (%s) unreachable", host));
+    SILC_LOG_ERROR(("Network (%s) unreachable: could not resolve the "
+		    "IP address", host));
     return -1;
   }
 
