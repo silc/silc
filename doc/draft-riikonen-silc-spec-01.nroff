@@ -1444,18 +1444,19 @@ SILC_PACKET_NEW_CHANNEL.
 It is important to note that new channel key is created always when
 new client joins to channel, whether the channel has existed previously
 or not.  This way the new client on the channel is not able to decrypt
-any of the old traffic on the channel.
-
-Client who receives the reply to the join command must start using
-the received Channel ID in the channel message communication thereafter.
-However, client must not start communicating on the channel before
-it has received the packet SILC_PACKET_CHANNEL_KEY.
+any of the old traffic on the channel.  Client who receives the reply to
+the join command must start using the received Channel ID in the channel
+message communication thereafter.  However, client must not start
+communicating on the channel before it has received the packet
+SILC_PACKET_CHANNEL_KEY.
 
 If client wants to know the other clients currently on the channel
 the client must send SILC_COMMAND_NAMES command to receive a list of
 channel users.  Server implementation, however, may send command reply
 packet to SILC_COMMAND_NAMES command after client has joined to the
-channel even if the client has not sent the command.
+channel even if the client has not sent the command.  Server should also
+send SILC_NOTIFY_TYPE_JOIN to all clients on the channel about a new
+client on the channel.
 
 
 .ti 0
@@ -1632,8 +1633,6 @@ used to identify the type of the argument.  This makes is it also
 possible to have multiple optional arguments in commands and in
 command replies.  The number of argument is marked in parentheses
 before the actual argument.
-
-
 
 
 
@@ -2972,7 +2971,6 @@ List of all defined command status messages following.
 
         "No such Client ID".  Client ID provided does not exist.
 
-
    23   SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
 
         "No such Channel ID".  Channel ID provided does not exist.
@@ -3019,8 +3017,6 @@ List of all defined command status messages following.
 
         "You are banned from this server".  The client tried to register
         on server that has explicitly denied this host to connect.
-
-
 
    32   SILC_STATUS_ERR_BAD_PASSWORD
 
