@@ -275,16 +275,16 @@ bool silc_schedule_uninit(SilcSchedule schedule)
     return FALSE;
 
   /* Dispatch all timeouts before going away */
+  SILC_SCHEDULE_LOCK(schedule);
   silc_mutex_lock(schedule->timeout_queue->lock);
   silc_schedule_dispatch_timeout(schedule, TRUE);
   silc_mutex_unlock(schedule->timeout_queue->lock);
+  SILC_SCHEDULE_UNLOCK(schedule);
 
   /* Deliver signals before going away */
   if (schedule->signal_tasks) {
-    SILC_SCHEDULE_UNLOCK(schedule);
     silc_schedule_internal_signals_call(schedule->internal, schedule);
     schedule->signal_tasks = FALSE;
-    SILC_SCHEDULE_LOCK(schedule);
   }
 
   /* Unregister all tasks */
