@@ -1,3 +1,11 @@
+Tue Apr  2 14:55:06 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Some client implementations quit network by doing first LEAVE
+	  and then immediately SIGNOFF (like Bombyx).  We now do check 
+	  after a short time after LEAVE notify and check whether the 
+	  client is still valid after LEAVE, and if not we remove it from 
+	  cache.  Affected file is lib/silcclient/client_notify.c.
+
 Tue Apr  2 13:39:04 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Merged version 1.1.4 of zlib. Even if it not currently in use,
