@@ -153,12 +153,9 @@ typedef enum {
  *      Reference counter. When allocated it is set to one (1) and it won't
  *      be freed until it hits zero (0).
  *
- *    char *hostname
- *    char *ip
- *    SilcUInt16 port
+ *    SilcSocketConnectionHB hb
  *
- *      Resolved hostname, IP address and port of the connection who owns
- *      this object.
+ *      The heartbeat context.  If NULL, heartbeat is not performed.
  *
  *    SilcBuffer inbuf
  *    SilcBuffer outbuf
@@ -168,9 +165,12 @@ typedef enum {
  *      inbuf buffer and outgoing data after encryption is put to the outbuf
  *      buffer.
  *
- *    SilcSocketConnectionHB hb
+ *    char *hostname
+ *    char *ip
+ *    SilcUInt16 port
  *
- *      The heartbeat context.  If NULL, heartbeat is not performed.
+ *      Resolved hostname, IP address and port of the connection who owns
+ *      this object.
  *
  ***/
 struct SilcSocketConnectionStruct {
@@ -179,20 +179,24 @@ struct SilcSocketConnectionStruct {
   void *user_data;
   SilcProtocol protocol;
   SilcUInt32 flags;
-  SilcUInt8 sock_error;
   int users;
 
-  char *hostname;
-  char *ip;
-  SilcUInt16 port;
+  SilcSocketConnectionHB hb;
 
   SilcBuffer inbuf;
   SilcBuffer outbuf;
 
-  SilcSocketConnectionHB hb;
+  char *hostname;
+  char *ip;
+  SilcUInt16 port;
+  SilcUInt8 sock_error;
+  SilcUInt8 version;
 };
 
 /* Macros */
+
+/* Check for specific protocol version */
+#define SILC_PROTOCOL_VERSION(s, maj, min) (s->version == maj##min)
 
 /* Amount of bytes to be read from the socket connection at once. */
 #define SILC_SOCKET_READ_SIZE 16384

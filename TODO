@@ -191,3 +191,8 @@ describe new stuff to be added to protocol versions 1.x.
 
  15. The LEAVE command reply should return the Channel ID of the channel
      that was parted.
+
+ 16. Add STATS command after all to the protocol for providing practically
+     same information client gets when connects to a server.  Normal
+     server would send this to router always when received from client.
+

@@ -924,6 +924,8 @@ bool silc_server_connection_allowed(SilcServer server,
   if (ske && silc_ske_parse_version(ske, &r_protocol_version, NULL,
 				    &r_software_version, NULL,
 				    &r_vendor_version)) {
+    sock->version = r_protocol_version;
+
     /* Match protocol version */
     if (l_protocol_version && r_protocol_version &&
 	r_protocol_version < l_protocol_version) {

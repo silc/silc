@@ -171,53 +171,36 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 {
   SilcClientConnection conn = (SilcClientConnection)ske->sock->user_data;
   SilcClient client = (SilcClient)ske->user_data;
-  SilcSKEStatus status = SILC_SKE_STATUS_OK;
-  char *cp;
-  int maj = 0, min = 0, build = 0, maj2 = 0, min2 = 0, build2 = 0;
+  SilcUInt32 l_protocol_version = 0, r_protocol_version = 0;
 
-  /* Check for initial version string. Allowed "SILC-1.x-". */
-  if (!strstr(version, "SILC-1."))
-    status = SILC_SKE_STATUS_BAD_VERSION;
-
-  /* Check software version */
-
-  cp = version + 9;
-  if (!cp)
-    status = SILC_SKE_STATUS_BAD_VERSION;
-
-  maj = atoi(cp);
-  cp = strchr(cp, '.');
-  if (cp) {
-    min = atoi(cp + 1);
-    cp++;
-  }
-  cp = strchr(cp, '.');
-  if (cp)
-    build = atoi(cp + 1);
-
-  cp = client->internal->silc_client_version + 9;
-  if (!cp)
-    status = SILC_SKE_STATUS_BAD_VERSION;
-
-  maj2 = atoi(cp);
-  cp = strchr(cp, '.');
-  if (cp) {
-    min2 = atoi(cp + 1);
-    cp++;
-  }
-  cp = strchr(cp, '.');
-  if (cp)
-    build2 = atoi(cp + 1);
-
-  if (maj != maj2)
-    status = SILC_SKE_STATUS_BAD_VERSION;
-
-  if (status != SILC_SKE_STATUS_OK)
+  if (!silc_parse_version_string(version, &r_protocol_version, NULL, NULL,
+				 NULL, NULL)) {
     client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
 			       "We don't support server version `%s'", 
 			       version);
+    return SILC_SKE_STATUS_BAD_VERSION;
+  }
 
-  return status;
+  if (!silc_parse_version_string(client->internal->silc_client_version, 
+				 &l_protocol_version, NULL, NULL,
+				 NULL, NULL)) {
+    client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
+			       "We don't support server version `%s'", 
+			       version);
+    return SILC_SKE_STATUS_BAD_VERSION;
+  }
+
+  /* If remote is too new, don't connect */
+  if (l_protocol_version < r_protocol_version) {
+    client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
+			       "We don't support server version `%s'", 
+			       version);
+    return SILC_SKE_STATUS_BAD_VERSION;
+  }
+
+  ske->sock->version = r_protocol_version;
+
+  return SILC_SKE_STATUS_OK;
 }
 
 /* Callback that is called by the SKE to indicate that it is safe to
