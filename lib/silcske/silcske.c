@@ -1100,6 +1100,9 @@ SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status)
 
   SILC_LOG_DEBUG(("Start"));
 
+  if (status > SILC_SKE_STATUS_INVALID_COOKIE)
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
+
   packet = silc_buffer_alloc(4);
   silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
   silc_buffer_format(packet,

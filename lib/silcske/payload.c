@@ -265,7 +265,9 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
     goto err;
   }
 
-  if (payload->pk_type == 0) {
+  if (ske->start_payload && 
+      (payload->pk_type < SILC_SKE_PK_TYPE_SILC || 
+       payload->pk_type > SILC_SKE_PK_TYPE_SPKI)) {
     status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }
@@ -304,7 +306,7 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
   }
 
   if (tot_len != len2) {
-    status = SILC_SKE_STATUS_BAD_PAYLOAD;
+    status = SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH;
     goto err;
   }
   

@@ -4,6 +4,12 @@ Wed Apr  3 09:57:47 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  of a socket connection.  The affected file is 
 	  lib/silcutil/silcsockconn.h.
 
+	* Added better error logging in rekey protocol.  Affected file
+	  silcd/protocol.c.
+
+	* Do not check public key types in SKE during rekey.  Affected
+	  file lib/silcske/payload.c.
+
 Tue Apr  2 14:55:06 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Some client implementations quit network by doing first LEAVE
