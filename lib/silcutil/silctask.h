@@ -216,18 +216,6 @@ struct SilcTaskQueueStruct {
 
 /* Macros */
 
-/* These can be used instead of calling directly the registering function. 
-   XXX: These are not used currently, maybe they should be :) */
-#define SILC_REGISTER_FD_TASK(queue, fd, cb, ctx, pri) \
-  (silc_task_register((queue), (fd), (cb), (ctx), 0, 0, \
-		      SILC_TASK_FD, (pri)))
-#define SILC_REGISTER_TIMEOUT_TASK(queue, fd, cb, ctx, sec, usec, pri) \
-  (silc_task_register((queue), (fd), (cb), (ctx), (sec), (usec), \
-		      SILC_TASK_TIMEOUT, (pri)))
-#define SILC_REGISTER_GENERIC_TASK(queue, fd, cb, ctx, pri) \
-  (silc_task_register((queue), (fd), (cb), (ctx), 0, 0, \
-		      SILC_TASK_GENERIC, (pri)))
-
 /* Generic macro to define task callback functions. This defines a function
    with name 'func' as a task callback function. */
 #define SILC_TASK_CALLBACK(func) \
@@ -240,10 +228,6 @@ void silc_task_queue_alloc(SilcSchedule schedule, SilcTaskQueue *queue,
 			   bool valid);
 void silc_task_queue_free(SilcTaskQueue queue);
 void silc_task_queue_wakeup(SilcTaskQueue queue);
-SilcTask silc_task_add(SilcTaskQueue queue, SilcTask task, 
-		       SilcTaskPriority priority);
-SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask task,
-			       SilcTaskPriority priority);
 SilcTask silc_task_register(SilcTaskQueue queue, int fd, 
 			    SilcTaskCallback cb, void *context, 
 			    long seconds, long useconds, 
@@ -256,7 +240,5 @@ void silc_task_unregister_by_callback(SilcTaskQueue queue,
 void silc_task_unregister_by_context(SilcTaskQueue queue, void *context);
 void silc_task_set_iotype(SilcTask task, int type);
 void silc_task_reset_iotype(SilcTask task, int type);
-int silc_task_timeout_compare(struct timeval *smaller, 
-			      struct timeval *bigger);
 
 #endif

@@ -21,6 +21,10 @@
 
 #include "silcincludes.h"
 
+/* Routine to compare task timeouts. */
+int silc_task_timeout_compare(struct timeval *smaller, 
+			      struct timeval *bigger);
+
 /* Allocates a new task queue into the Silc. If 'valid' is TRUE the
    queue becomes valid task queue. If it is FALSE scheduler will skip
    the queue. */
@@ -62,8 +66,8 @@ void silc_task_queue_wakeup(SilcTaskQueue queue)
    by silc_task_register function. Returns a pointer to the registered 
    task. */
 
-SilcTask silc_task_add(SilcTaskQueue queue, SilcTask new, 
-		       SilcTaskPriority priority)
+static SilcTask silc_task_add(SilcTaskQueue queue, SilcTask new, 
+			      SilcTaskPriority priority)
 {
   SilcTask task, next, prev;
 
@@ -147,8 +151,8 @@ static SilcTask silc_task_get_first(SilcTaskQueue queue, SilcTask first)
    order. The priority matters if there are more than one task with
    same timeout. */
 
-SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask new,
-			       SilcTaskPriority priority)
+static SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask new,
+				      SilcTaskPriority priority)
 {
   SilcTask task, prev, next;
 

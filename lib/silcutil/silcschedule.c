@@ -24,6 +24,10 @@
 /* Routine to remove the task. Implemented in silctask.c. */
 int silc_task_remove(SilcTaskQueue queue, SilcTask task);
 
+/* Routine to compare task timeouts. Implemented in silctask.c. */
+int silc_task_timeout_compare(struct timeval *smaller, 
+			      struct timeval *bigger);
+
 /* System specific routines. Implemented under unix/ and win32/. */
 
 /* System specific select(). */

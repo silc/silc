@@ -20,6 +20,46 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
+ # DESCRIPTION
+ *
+ * The SILC Scheduler is the heart of any application. The scheduler provides
+ * the application's main loop that can handle incoming data, outgoing data,
+ * timeouts and dispatch different kind of tasks.
+ *
+ * The SILC Scheduler supports file descriptor based tasks, timeout tasks
+ * and generic tasks. File descriptor tasks are tasks that perform some 
+ * operation over the specified file descriptor. These include network 
+ * connections, for example. The timeout tasks are timeouts that are executed
+ * after the specified timeout has elapsed. The generic tasks are tasks that
+ * apply to all registered file descriptors thus providing one task that
+ * applies to many independent connections.
+ *
+ * The SILC Scheduler is designed to be the sole main loop of the application
+ * so that the application does not need any other main loop.  However,
+ * SILC Scheduler does support running the scheduler only once, so that the
+ * scheduler does not block, and thus providing a possiblity that some
+ * external main loop is run over the SILC Scheduler. However, these 
+ * applications are considered to be special cases.
+ *
+ * Typical application first initializes the scheduler and then registers
+ * the very first tasks to the scheduler and then run the scheduler.  After
+ * the scheduler's run function returns the application is considered to be 
+ * ended.
+ *
+ * The SILC Scheduler supports multi-threads as well. The actual scheduler
+ * must be run in single-thread but other threads may register new tasks
+ * and unregister old tasks.  However, it is enforced that the actual
+ * task is always run in the main thread.  The scheduler is context based
+ * which makes it possible to allocate several schedulers for one application.
+ * Since the scheduler must be run in single-thread, a multi-threaded
+ * application could be created by allocating own scheduler for each of the
+ * worker threads. However, in this case the schedulers must not share
+ * same task queues. Each of the schedulers must allocate their own
+ * task queues.
+ *
+ * See the SILC Task API for task management interface. It is used to 
+ * register and unregister the actual tasks.
+ *
  */
 
 #ifndef SILCSCHEDULE_H
@@ -54,11 +94,12 @@ typedef struct SilcScheduleStruct *SilcSchedule;
  *
  * DESCRIPTION
  *
- *    Initializes the scheduler. Sets the non-timeout task queue hook and
- *    the timeout task queue hook. This must be called before the scheduler
- *    is able to work. This will allocate the queue pointers if they are
- *    not allocated. Returns the scheduler context that must be freed by
- *    the silc_schedule_uninit function.
+ *    Initializes the scheduler. Sets the non-timeout task queue hook,
+ *    the timeout task queue hook, and the generic task queue hook. This 
+ *    must be called before the scheduler is able to work. This will
+ *    allocate the queue pointers if they are not allocated. Returns the
+ *    scheduler context that must be freed by the silc_schedule_uninit 
+ *    function.
  *
  ***/
 SilcSchedule silc_schedule_init(SilcTaskQueue *fd_queue,
@@ -153,7 +194,7 @@ void silc_schedule(SilcSchedule schedule);
  *    Same as the silc_schedule but runs the scheduler only one round
  *    and then returns.  This function is handy when the SILC scheduler
  *    is used inside some other external scheduler, for example.  If
- *    the `timeout_usecs' is positive a timeout will be added to the
+ *    the `timeout_usecs' is non-negative a timeout will be added to the
  *    scheduler.  The function will not return in this timeout unless
  *    some other event occurs.
  *
