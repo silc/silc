@@ -227,13 +227,16 @@ void silc_server_notify(SilcServer server,
 
     if (server->server_type != SILC_ROUTER ||
 	sock->type == SILC_SOCKET_TYPE_ROUTER) {
-      /* If this is the first one on the channel then it is the founder of
-	 the channel. This is done on normal server and on router if this
-	 notify is coming from router */
-      if (!silc_hash_table_count(channel->user_list)) {
-	SILC_LOG_DEBUG(("Client %s is founder on channel",
-			silc_id_render(chl->client->id, SILC_ID_CLIENT)));
-	chl->mode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
+      /* If founder auth is set, first client is not automatically founder. */
+      if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)) {
+	/* If this is the first one on the channel then it is the founder of
+	   the channel. This is done on normal server and on router if this
+	   notify is coming from router */
+	if (!silc_hash_table_count(channel->user_list)) {
+	  SILC_LOG_DEBUG(("Client %s is founder on channel",
+			  silc_id_render(chl->client->id, SILC_ID_CLIENT)));
+	  chl->mode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
+	}
       }
     }
 
@@ -778,6 +781,7 @@ void silc_server_notify(SilcServer server,
       if (channel->founder_key)
 	silc_pkcs_public_key_free(channel->founder_key);
       channel->founder_key = NULL;
+      SILC_LOG_DEBUG(("Founder public key received"));
       if (!silc_pkcs_public_key_payload_decode(tmp, tmp_len,
 					       &channel->founder_key)) {
 	SILC_LOG_DEBUG(("Enforcing sender to change channel mode"));
@@ -1070,7 +1074,7 @@ void silc_server_notify(SilcServer server,
 
       /* Send the same notify to the channel */
       if (!notify_sent)
-	silc_server_packet_send_to_channel(server, NULL, channel,
+	silc_server_packet_send_to_channel(server, sock, channel,
 					   packet->type,
 					   FALSE, TRUE, packet->buffer->data,
 					   packet->buffer->len, FALSE);
