@@ -78,6 +78,7 @@ if [ "$TYPE" = "PS" ]; then
   cd $path
 
   rm -rf /tmp/silcdoc.tex
+  exit 0
 fi
 
 #
@@ -202,11 +203,12 @@ if [ "$TYPE" = "HTML" ]; then
   sh gen.sh $DST gen_index.php 2 $DST/index.html $DST/index.html
 
   # Generate the index toolkit_index.html file
-  $ROBO /tmp/silcdoc.html/silcdoc_xref $DST/toolkit_index.html INDEX HTML TITLE "SILC Toolkit Index"
+  $ROBO $DST/silcdoc_xref $DST/toolkit_index.html INDEX HTML TITLE "SILC Toolkit Index"
   sh gen.sh $DST gen_index.php 2 $DST/toolkit_index.html $DST/toolkit_index.html
 
   # Cleanup
   rm -rf $DST/index.html.tmp
   rm -rf /tmp/silcdoc.html
   rm -rf /tmp/silcdoc_html.html
+  exit 0
 fi

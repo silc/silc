@@ -42,15 +42,30 @@ dist-hook:
 	touch draft-riikonen-presence-attrs-00.txt
 else
 if SILC_DIST_TOOLKIT
-dist-hook:
-	-@if test -f ../util/robodoc/Source/robodoc ; then \
+toolkit-ref-html:
+	-@if test -f $(SILC_TOP_SRCDIR)/util/robodoc/Source/robodoc ; then \
 	  echo Generating Toolkit Reference Manual ; \
 	  rm -rf toolkit ; mkdir toolkit ; cd ../scripts/silcdoc ; \
-	  ./silcdoc HTML ../../lib/ ../../doc/toolkit \
-	  ../../util/robodoc/Source/robodoc ; \
+	  ./silcdoc HTML ../../lib/ $(SILC_TOP_SRCDIR)/doc/toolkit \
+	  $(SILC_TOP_SRCDIR)/util/robodoc/Source/robodoc ; \
 	else  \
 	  echo ROBODoc is not compiled! Cannot generate documentation! ; \
         fi
+
+toolkit-ref-ps:
+	-@if test -f $(SILC_TOP_SRCDIR)/util/robodoc/Source/robodoc ; then \
+	  echo Generating Toolkit Reference Manual ; \
+	  cd ../scripts/silcdoc ; \
+	  ./silcdoc PS ../../lib/ $(SILC_TOP_SRCDIR)/doc/toolkit.ps \
+	  $(SILC_TOP_SRCDIR)/util/robodoc/Source/robodoc ; \
+	else  \
+	  echo ROBODoc is not compiled! Cannot generate documentation! ; \
+        fi
+
+toolkit-ref-pdf:
+	-ps2pdf $(SILC_TOP_SRCDIR)/doc/toolkit.ps $(SILC_TOP_SRCDIR)/doc/toolkit.pdf
+
+dist-hook: toolkit-ref-html
 	touch draft-riikonen-silc-spec-05.txt
 	touch draft-riikonen-silc-pp-05.txt
 	touch draft-riikonen-silc-ke-auth-05.txt
