@@ -34,7 +34,8 @@ typedef struct SilcDHStruct *SilcDH;
    negotiated key material. */
 struct SilcDHStruct {
   SilcInt *g;             /* Global base (generator) */
-  SilcInt *p;		  /* Global prime (modulus) */
+  SilcInt *p;		  /* Global prime (modulus, prime) */
+  SilcInt *lpf;		  /* Largest prime factor (prime) */
   SilcInt *my_x;       	  /* x, My private value (random) */
   SilcInt *my_y;       	  /* y, My public value (y = g ^ x mod p) */
   SilcInt *your_y;	  /* y', Your public value (y' = g ^ x' mod p) */
@@ -44,16 +45,19 @@ struct SilcDHStruct {
 };
 
 /* Allocate DH context. The `rng' must be initialized random number generator
-   context, the `g' is the public base generator used in the negotiation and
-   the `p' is the public prime used in the negotiation. Returns NULL on error
-   or allocated DH context on success. */
-SilcDH silc_dh_alloc(SilcRng rng, SilcInt *g, SilcInt *p);
+   context, the `g' is the public base generator used in the negotiation,
+   the `p' is the public prime used in the negotiation and the `lpf' is
+   largest prime factor of p defined publicly as well. The `lpf' is optional
+   and if it is not supplied then the private values generated satifies
+   0 < x < p - 1 instead of 0 < x < lpf. Returns NULL on error or allocated
+   DH context on success. */
+SilcDH silc_dh_alloc(SilcRng rng, SilcInt *g, SilcInt *p, SilcInt *lpf);
 
 /* Frees the DH context. Does not free the RNG context given in the 
    allocation. Frees all the allocated data inside the DH context. */
 void silc_dh_free(SilcDH dh);
 
-/* Generates random private value `x' such that 1 < x < n. Returns FALSE
+/* Generates random private value `x' such that 0 < x < lpf. Returns FALSE
    if the random number could not be generated. Returns the generated
    value into `x' pointer sent as argument, unless the `x' is NULL. The
    returned `x' must no be freed by the caller. */
