@@ -1,3 +1,11 @@
+Wed Mar 27 00:07:11 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed a bug in the silc_client_nickname_format function that
+	  handles the multiple same nickname formatting.  Two clients
+	  with same nickname caused problems after the first one left
+	  and rejoined.  It didn't format the nickname correctly.
+	  Affected file is lib/silcclient/idlist.c.
+
 Tue Mar 26 19:33:03 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Don't change the topic if olod topic is same as new one.

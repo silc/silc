@@ -999,6 +999,7 @@ void silc_client_nickname_format(SilcClient client,
   char *cp;
   char *newnick = NULL;
   int i, off = 0, len;
+  bool freebase;
   SilcClientEntry *clients;
   SilcUInt32 clients_count = 0;
   SilcClientEntry unformatted = NULL;
@@ -1021,10 +1022,15 @@ void silc_client_nickname_format(SilcClient client,
     return;
 
   len = 0;
-  for (i = 0; i < clients_count; i++)
+  freebase = TRUE;
+  for (i = 0; i < clients_count; i++) {
     if (clients[i]->valid && clients[i] != client_entry)
       len++;
-  if (!len)
+    if (clients[i]->valid && clients[i] != client_entry &&
+	!strcmp(clients[i]->nickname, client_entry->nickname))
+      freebase = FALSE;
+  }
+  if (!len || freebase)
     return;
 
   cp = client->internal->params->nickname_format;

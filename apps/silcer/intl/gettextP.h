@@ -31,7 +31,7 @@
 
 #include "loadinfo.h"
 
-#include "gettext.h"		/* Get nls_SilcUInt32.  */
+#include "gettext.h"		/* Get nls_uint32.  */
 
 /* @@ end of prolog @@ */
 
@@ -62,9 +62,9 @@
 # include <byteswap.h>
 # define SWAP(i) bswap_32 (i)
 #else
-static inline nls_SilcUInt32
+static inline nls_uint32
 SWAP (i)
-     nls_SilcUInt32 i;
+     nls_uint32 i;
 {
   return (i << 24) | ((i & 0xff00) << 8) | ((i >> 8) & 0xff00) | (i >> 24);
 }
@@ -123,11 +123,11 @@ struct loaded_domain
   int use_mmap;
   size_t mmap_size;
   int must_swap;
-  nls_SilcUInt32 nstrings;
+  nls_uint32 nstrings;
   struct string_desc *orig_tab;
   struct string_desc *trans_tab;
-  nls_SilcUInt32 hash_size;
-  nls_SilcUInt32 *hash_tab;
+  nls_uint32 hash_size;
+  nls_uint32 *hash_tab;
   int codeset_cntr;
 #ifdef _LIBC
   __gconv_t conv;

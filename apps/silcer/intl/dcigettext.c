@@ -698,14 +698,14 @@ _nl_find_msg (domain_file, domainbinding, msgid, lengthp)
   if (domain->hash_size > 2 && domain->hash_tab != NULL)
     {
       /* Use the hashing table.  */
-      nls_SilcUInt32 len = strlen (msgid);
-      nls_SilcUInt32 hash_val = hash_string (msgid);
-      nls_SilcUInt32 idx = hash_val % domain->hash_size;
-      nls_SilcUInt32 incr = 1 + (hash_val % (domain->hash_size - 2));
+      nls_uint32 len = strlen (msgid);
+      nls_uint32 hash_val = hash_string (msgid);
+      nls_uint32 idx = hash_val % domain->hash_size;
+      nls_uint32 incr = 1 + (hash_val % (domain->hash_size - 2));
 
       while (1)
 	{
-	  nls_SilcUInt32 nstr = W (domain->must_swap, domain->hash_tab[idx]);
+	  nls_uint32 nstr = W (domain->must_swap, domain->hash_tab[idx]);
 
 	  if (nstr == 0)
 	    /* Hash table entry is empty.  */

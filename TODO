@@ -8,10 +8,6 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o Three clients, two with same nickname, one nick, other nick@host,
-   the nick quits and rejoins channel it becomes nick@host for the third
-   client.  Both shows nick@host in the third client.  This is a bug.
-
  o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
    though).  This should be added and perhaps new client operation
    should be added to notify application that it was received and

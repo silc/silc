@@ -53,13 +53,13 @@
 #endif
 
 #if UINT_MAX == UINT_MAX_32_BITS
-typedef unsigned nls_SilcUInt32;
+typedef unsigned nls_uint32;
 #else
 # if USHRT_MAX == UINT_MAX_32_BITS
-typedef unsigned short nls_SilcUInt32;
+typedef unsigned short nls_uint32;
 # else
 #  if ULONG_MAX == UINT_MAX_32_BITS
-typedef unsigned long nls_SilcUInt32;
+typedef unsigned long nls_uint32;
 #  else
   /* The following line is intended to throw an error.  Using #error is
      not portable enough.  */
@@ -73,27 +73,27 @@ typedef unsigned long nls_SilcUInt32;
 struct mo_file_header
 {
   /* The magic number.  */
-  nls_SilcUInt32 magic;
+  nls_uint32 magic;
   /* The revision number of the file format.  */
-  nls_SilcUInt32 revision;
+  nls_uint32 revision;
   /* The number of strings pairs.  */
-  nls_SilcUInt32 nstrings;
+  nls_uint32 nstrings;
   /* Offset of table with start offsets of original strings.  */
-  nls_SilcUInt32 orig_tab_offset;
+  nls_uint32 orig_tab_offset;
   /* Offset of table with start offsets of translation strings.  */
-  nls_SilcUInt32 trans_tab_offset;
+  nls_uint32 trans_tab_offset;
   /* Size of hashing table.  */
-  nls_SilcUInt32 hash_tab_size;
+  nls_uint32 hash_tab_size;
   /* Offset of first hashing entry.  */
-  nls_SilcUInt32 hash_tab_offset;
+  nls_uint32 hash_tab_offset;
 };
 
 struct string_desc
 {
   /* Length of addressed string.  */
-  nls_SilcUInt32 length;
+  nls_uint32 length;
   /* Offset of string in file.  */
-  nls_SilcUInt32 offset;
+  nls_uint32 offset;
 };
 
 /* @@ begin of epilog @@ */
