@@ -225,6 +225,31 @@ silc_ftp(SilcClient client, SilcClientConnection conn,
 }
 
 
+/* Delivers SILC session detachment data indicated by `detach_data' to the 
+   application.  If application has issued SILC_COMMAND_DETACH command
+   the client session in the SILC network is not quit.  The client remains
+   in the network but is detached.  The detachment data may be used later
+   to resume the session in the SILC Network.  The appliation is 
+   responsible of saving the `detach_data', to for example in a file.
+
+   The detachment data can be given as argument to the functions
+   silc_client_connect_to_server, or silc_client_add_connection when
+   creating connection to remote server, inside SilcClientConnectionParams
+   structure.  If it is provided the client library will attempt to resume 
+   the session in the network.  After the connection is created 
+   successfully, the application is responsible of setting the user 
+   interface for user into the same state it was before detaching (showing 
+   same channels, channel modes, etc).  It can do this by fetching the
+   information (like joined channels) from the client library. */
+
+static void
+silc_detach(SilcClient client, SilcClientConnection conn,
+	    const unsigned char *detach_data, SilcUInt32 detach_data_len)
+{
+
+}
+
+
 /* The SilcClientOperation structure containing the operation functions.
    You will give this as an argument to silc_client_alloc function. */
 SilcClientOperations ops = {
@@ -241,5 +266,6 @@ SilcClientOperations ops = {
   silc_ask_passphrase,
   silc_failure,
   silc_key_agreement,
-  silc_ftp
+  silc_ftp,
+  silc_detach
 };

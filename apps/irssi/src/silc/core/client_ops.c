@@ -1792,6 +1792,13 @@ int silc_key_agreement(SilcClient client, SilcClientConnection conn,
   return FALSE;
 }
 
+/* Notifies application that file transfer protocol session is being
+   requested by the remote client indicated by the `client_entry' from
+   the `hostname' and `port'. The `session_id' is the file transfer
+   session and it can be used to either accept or reject the file
+   transfer request, by calling the silc_client_file_receive or
+   silc_client_file_close, respectively. */
+
 void silc_ftp(SilcClient client, SilcClientConnection conn,
 	      SilcClientEntry client_entry, SilcUInt32 session_id,
 	      const char *hostname, SilcUInt16 port)
@@ -1823,6 +1830,31 @@ void silc_ftp(SilcClient client, SilcClientConnection conn,
 		       client_entry->nickname, hostname, portstr);
 }
 
+/* Delivers SILC session detachment data indicated by `detach_data' to the
+   application.  If application has issued SILC_COMMAND_DETACH command
+   the client session in the SILC network is not quit.  The client remains
+   in the network but is detached.  The detachment data may be used later
+   to resume the session in the SILC Network.  The appliation is
+   responsible of saving the `detach_data', to for example in a file.
+
+   The detachment data can be given as argument to the functions
+   silc_client_connect_to_server, or silc_client_add_connection when
+   creating connection to remote server, inside SilcClientConnectionParams
+   structure.  If it is provided the client library will attempt to resume
+   the session in the network.  After the connection is created
+   successfully, the application is responsible of setting the user
+   interface for user into the same state it was before detaching (showing
+   same channels, channel modes, etc).  It can do this by fetching the
+   information (like joined channels) from the client library. */
+
+void
+silc_detach(SilcClient client, SilcClientConnection conn,
+            const unsigned char *detach_data, SilcUInt32 detach_data_len)
+{
+
+}
+
+
 /* SILC client operations */
 SilcClientOperations ops = {
   silc_say,
@@ -1839,4 +1871,5 @@ SilcClientOperations ops = {
   silc_failure,
   silc_key_agreement,
   silc_ftp,
+  silc_detach,
 };
