@@ -1,3 +1,11 @@
+Mon Oct 28 21:23:39 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* In IDENTIFY command parsing, send all other IDs except
+	  Client IDs explicitly to router for resolving on normal
+	  server.  Also check that ID received in WHOIS command is
+	  always Client ID, others are not allowed.  Affected file
+	  silcd/server_query.c.
+
 Sun Oct 27 11:44:32 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged c0ffee's /set heartbeat patch to Irssi SILC client.

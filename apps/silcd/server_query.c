@@ -388,8 +388,8 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	if (!tmp)
 	  continue;
 
-	id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
-	if (!id) {
+	id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
+	if (!id || id_type != SILC_ID_CLIENT) {
 	  silc_server_query_add_error(server, query, TRUE, i + 4,
 				      SILC_STATUS_ERR_BAD_CLIENT_ID);
 	  continue;
@@ -514,18 +514,29 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	/* Normal server must check whether this ID exist, and if not then
 	   send the query to router, unless done so already */
 	if (server->server_type == SILC_SERVER && !query->resolved) {
-	  if (!silc_idlist_find_client_by_id(server->local_list,
-					     id, TRUE, NULL)) {
-	    if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT ||
-		!silc_idlist_find_client_by_id(server->global_list,
+	  if (id_type == SILC_ID_CLIENT) {
+	    if (!silc_idlist_find_client_by_id(server->local_list,
 					       id, TRUE, NULL)) {
-	      silc_server_query_send_router(server, query);
-	      for (i = 0; i < query->ids_count; i++)
-		silc_free(query->ids[i].id);
-	      silc_free(query->ids);
-	      silc_free(id);
-	      return;
+	      if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT ||
+		  !silc_idlist_find_client_by_id(server->global_list,
+						 id, TRUE, NULL)) {
+		silc_server_query_send_router(server, query);
+		for (i = 0; i < query->ids_count; i++)
+		  silc_free(query->ids[i].id);
+		silc_free(query->ids);
+		silc_free(id);
+		return;
+	      }
 	    }
+	  } else {
+	    /* For now all other ID's except Client ID's are explicitly
+	       sent to router for resolving. */
+	    silc_server_query_send_router(server, query);
+	    for (i = 0; i < query->ids_count; i++)
+	      silc_free(query->ids[i].id);
+	    silc_free(query->ids);
+	    silc_free(id);
+	    return;
 	  }
 	}
 
