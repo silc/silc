@@ -126,7 +126,7 @@ SilcBuffer silc_private_message_payload_encode(uint16 flags,
   return buffer;
 }
 
-/* Free's Private Message Payload */
+/* Frees Private Message Payload */
 
 void silc_private_message_payload_free(SilcPrivateMessagePayload payload)
 {

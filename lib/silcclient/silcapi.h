@@ -1,57 +1,104 @@
-/*
-
-  silcapi.h
-
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
-
-  Copyright (C) 2000 - 2001 Pekka Riikonen
-
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-*/
+/****h* silcclient/silcapi.h
+ *
+ * NAME
+ *
+ * silcapi.h
+ *
+ * COPYRIGHT
+ *
+ * Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+ *
+ * Copyright (C) 2000 - 2001 Pekka Riikonen
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * DESCRIPTION
+ *
+ * This file defines the SILC Client Library API for the application.  The
+ * client operations are defined first.  These are callback functions that
+ * the application MUST implement since the library may call the functions
+ * at any time.  At the end of file is the API for the application that
+ * it can use from the library.  This is the only file that the application
+ * may include from the SIlC Client Library.
+ *
+ * o SILC Client Operations
+ *
+ *   These functions must be implemented by the application calling the SILC
+ *   client library. The client library can call these functions at any time.
+ *
+ *   To use this structure: define a static SilcClientOperations variable,
+ *   fill it and pass its pointer to silc_client_alloc function.
+ *
+ * o SILC Client Library API
+ *
+ *   This is the API that is published by the SILC Client Library for the
+ *   applications.  These functions are implemented in the SILC Client Library.
+ *   Application may freely call these functions from the library.
+ *
+ * Please, refer to the README file in this directory for the directions
+ * of how to use the SILC Client Library.
+ *
+ ***/
 
 #ifndef SILCAPI_H
 #define SILCAPI_H
 
 #include "clientlibincludes.h"
 
-/*
-   This file defines the SILC Client Library API for the application.  The
-   client operations are defined first.  These are callback functions that
-   the application MUST implement since the library may call the functions
-   at any time.  At the end of file is the API for the application that
-   it can use from the library.  This is the only file that the application
-   may include from the SIlC Client Library.
-
-   Please, refer to the README file in this directory for the directions
-   of how to use the SILC Client Library.
-*/
-
 /* General definitions */
 
-/* Key agreement status types indicating the status of the protocol. */
+/****d* silcclient/SilcClientAPI/SilcKeyAgreementStatus
+ *
+ * NAME
+ *
+ *    SilcKeyAgreementStatus
+ *
+ * DESCRIPTION
+ *
+ *    Key agreement status types indicating the status of the key
+ *    agreement protocol.  These types are returned to the application 
+ *    in the SilcKeyAgreementCallback callback function.
+ *
+ * SOURCE
+ */
 typedef enum {
   SILC_KEY_AGREEMENT_OK,	       /* Everything is Ok */
   SILC_KEY_AGREEMENT_ERROR,	       /* Unknown error occurred */
   SILC_KEY_AGREEMENT_FAILURE,	       /* The protocol failed */
   SILC_KEY_AGREEMENT_TIMEOUT,	       /* The protocol timeout */
 } SilcKeyAgreementStatus;
+/***/
 
-/* Key agreement callback that is called after the key agreement protocol
-   has been performed. This is called also if error occurred during the
-   key agreement protocol. The `key' is the allocated key material and
-   the caller is responsible of freeing it. The `key' is NULL if error
-   has occurred. The application can freely use the `key' to whatever
-   purpose it needs. See lib/silcske/silcske.h for the definition of
-   the SilcSKEKeyMaterial structure. */
+/****f* silcclient/SilcClientAPI/SilcKeyAgreementCallback
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcKeyAgreementCallback)(SilcClient client,
+ *                                             SilcClientConnection conn,
+ *                                             SilcClientEntry client_entry,
+ *                                             SilcKeyAgreementStatus status,
+ *                                             SilcSKEKeyMaterial *key,
+ *                                             void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Key agreement callback that is called after the key agreement protocol
+ *    has been performed. This is called also if error occurred during the
+ *    key agreement protocol. The `key' is the allocated key material and
+ *    the caller is responsible of freeing it. The `key' is NULL if error
+ *    has occurred. The application can freely use the `key' to whatever
+ *    purpose it needs. See lib/silcske/silcske.h for the definition of
+ *    the SilcSKEKeyMaterial structure.
+ *
+ ***/
 typedef void (*SilcKeyAgreementCallback)(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcClientEntry client_entry,
@@ -59,9 +106,20 @@ typedef void (*SilcKeyAgreementCallback)(SilcClient client,
 					 SilcSKEKeyMaterial *key,
 					 void *context);
 
-/* Structure to hold the list of private message keys. The array of this
-   structure is returned by the silc_client_list_private_message_keys
-   function. */
+/****s* silcclient/SilcClientAPI/SilcPrivateMessageKeys
+ *
+ * NAME
+ *
+ *    SilcPrivateMessageKeys
+ *
+ * DESCRIPTION
+ *
+ *    Structure to hold the list of private message keys. The array of this
+ *    structure is returned by the silc_client_list_private_message_keys
+ *    function.
+ *
+ * SOURCE
+ */
 typedef struct {
   SilcClientEntry client_entry;       /* The remote client entry */
   char *cipher;			      /* The cipher name */
@@ -71,32 +129,58 @@ typedef struct {
 					 the SKE key material was used. */
   uint32 key_len;		      /* The key length */
 } *SilcPrivateMessageKeys;
+/***/
 
-/******************************************************************************
 
-                           SILC Client Operations
-
-  These functions must be implemented by the application calling the SILC
-  client library. The client library can call these functions at any time.
-
-  To use this structure: define a static SilcClientOperations variable,
-  fill it and pass its pointer to silc_client_alloc function.
-
-******************************************************************************/
-
-/* Ask passphrase callback. This is called by the application when the
-   library calls `ask_passphrase' client operation.  The callback delivers
-   the passphrase to the library. */
+/****f* silcclient/SilcClientAPI/SilcAskPassphrase
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcAskPassphrase)(unsigned char *passphrase,
+ *			                uint32 passphrase_len,
+ *			                void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Ask passphrase callback. This is called by the application when the
+ *    library calls `ask_passphrase' client operation.  The callback delivers
+ *    the passphrase to the library.
+ *
+ ***/
 typedef void (*SilcAskPassphrase)(unsigned char *passphrase,
 				  uint32 passphrase_len,
 				  void *context);
 
-/* Public key (or certificate) verification callback. This is called
-   by the application to indicate that the public key verification was
-   either success or failure. */
+/****f* silcclient/SilcClientAPI/SilcVerifyPublicKey
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcVerifyPublicKey)(bool success, void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Public key (or certificate) verification callback. This is called
+ *    by the application to indicate that the public key verification was
+ *    either success or failure.
+ *
+ ***/
 typedef void (*SilcVerifyPublicKey)(bool success, void *context);
 
-/* SILC Client Operations. These must be implemented by the application. */
+/****s* silcclient/SilcClientAPI/SilcClientOperations
+ *
+ * NAME
+ *
+ *    SilcClientOperations
+ *
+ * DESCRIPTION
+ *
+ *    SILC Client Operations. These must be implemented by the application.
+ *    The Client library may call any of these routines at any time.  The
+ *    routines are used to deliver certain information to the application
+ *    or from the application to the client library.
+ *
+ * SOURCE
+ */
 typedef struct {
   /* Message sent to the application by library. `conn' associates the
      message to a specific connection.  `conn', however, may be NULL. */
@@ -214,96 +298,225 @@ typedef struct {
 		       SilcKeyAgreementCallback *completion,
 		       void **context);
 } SilcClientOperations;
-
-
-
-/******************************************************************************
-
-                           SILC Client Library API
-
-  This is the API that is published by the SILC Client Library for the
-  applications.  These functions are implemented in the SILC Client Library.
-  Application may freely call these functions from the library.
-
-******************************************************************************/
+/***/
 
 /* Initialization functions (client.c) */
 
-/* Allocates new client object. This has to be done before client may
-   work. After calling this one must call silc_client_init to initialize
-   the client. The `application' is application specific user data pointer
-   and caller must free it. */
+/****f* silcclient/SilcClientAPI/silc_client_alloc
+ *
+ * SYNOPSIS
+ *
+ *    SilcClient silc_client_alloc(SilcClientOperations *ops, 
+ *                                 void *application);
+ *
+ * DESCRIPTION
+ *
+ * Allocates new client object. This has to be done before client may
+ * work. After calling this one must call silc_client_init to initialize
+ * the client. The `application' is application specific user data pointer
+ * and caller must free it.
+ *
+ ***/
 SilcClient silc_client_alloc(SilcClientOperations *ops, void *application);
 
-/* Frees client object and its internals. */
+/****f* silcclient/SilcClientAPI/silc_client_free
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_free(SilcClient client);
+ *
+ * DESCRIPTION
+ *
+ *    Frees client object and its internals.  The execution of the client
+ *    should be stopped with silc_client_stop function before calling
+ *    this function.
+ *
+ ***/
 void silc_client_free(SilcClient client);
 
-/* Initializes the client. This makes all the necessary steps to make
-   the client ready to be run. One must call silc_client_run to run the
-   client. Returns FALSE if error occurred, TRUE otherwise. */
+/****f* silcclient/SilcClientAPI/silc_client_init
+ *
+ * SYNOPSIS
+ *
+ *    int silc_client_init(SilcClient client);
+ *
+ * DESCRIPTION
+ *
+ *    Initializes the client. This makes all the necessary steps to make
+ *    the client ready to be run. One must call silc_client_run to run the
+ *    client. Returns FALSE if error occurred, TRUE otherwise.
+ *
+ ***/
 int silc_client_init(SilcClient client);
 
-/* Runs the client. This starts the scheduler from the utility library.
-   When this functions returns the execution of the appliation is over. */
+/****f* silcclient/SilcClientAPI/silc_client_run
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_run(SilcClient client);
+ *
+ * DESCRIPTION
+ *
+ *    Runs the client. This starts the scheduler from the utility library.
+ *    When this functions returns the execution of the appliation is over.
+ *
+ ***/
 void silc_client_run(SilcClient client);
 
-/* Stops the client. This is called to stop the client and thus to stop
-   the program. */
+/****f* silcclient/SilcClientAPI/silc_client_stop
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_stop(SilcClient client);
+ *
+ * DESCRIPTION
+ *
+ *    Stops the client. This is called to stop the client and thus to stop
+ *    the program.  The client context must be freed with the silc_client_free
+ *    function.
+ *
+ ***/
 void silc_client_stop(SilcClient client);
 
 
 /* Connecting functions (client.c) */
 
-/* Connects to remote server. This is the main routine used to connect
-   to SILC server. Returns -1 on error and the created socket otherwise. 
-   The `context' is user context that is saved into the SilcClientConnection
-   that is created after the connection is created. Note that application
-   may handle the connecting process outside the library. If this is the
-   case then this function is not used at all. When the connecting is
-   done the `connect' client operation is called. */
+/****f* silcclient/SilcClientAPI/silc_client_connect_to_server
+ *
+ * SYNOPSIS
+ *
+ *    int silc_client_connect_to_server(SilcClient client, int port,
+ *                                      char *host, void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Connects to remote server. This is the main routine used to connect
+ *    to SILC server. Returns -1 on error and the created socket otherwise. 
+ *    The `context' is user context that is saved into the SilcClientConnection
+ *    that is created after the connection is created. Note that application
+ *    may handle the connecting process outside the library. If this is the
+ *    case then this function is not used at all. When the connecting is
+ *    done the `connect' client operation is called.
+ *
+ ***/
 int silc_client_connect_to_server(SilcClient client, int port,
 				  char *host, void *context);
 
-/* Allocates and adds new connection to the client. This adds the allocated
-   connection to the connection table and returns a pointer to it. A client
-   can have multiple connections to multiple servers. Every connection must
-   be added to the client using this function. User data `context' may
-   be sent as argument. This function is normally used only if the 
-   application performed the connecting outside the library. The library
-   however may use this internally. */
+/****f* silcclient/SilcClientAPI/silc_client_add_connection
+ *
+ * SYNOPSIS
+ *
+ *    SilcClientConnection silc_client_add_connection(SilcClient client,
+ *                                                    char *hostname,
+ *					              int port,
+ *					              void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Allocates and adds new connection to the client. This adds the allocated
+ *    connection to the connection table and returns a pointer to it. A client
+ *    can have multiple connections to multiple servers. Every connection must
+ *    be added to the client using this function. User data `context' may
+ *    be sent as argument. This function is normally used only if the 
+ *    application performed the connecting outside the library. The library
+ *    however may use this internally.
+ *
+ ***/
 SilcClientConnection silc_client_add_connection(SilcClient client,
 						char *hostname,
 						int port,
 						void *context);
 
-/* Removes connection from client. Frees all memory. */
+/****f* silcclient/SilcClientAPI/silc_client_del_connection
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_del_connection(SilcClient client, 
+ *                                    SilcClientConnection conn);
+ *
+ * DESCRIPTION
+ *
+ *    Removes connection from client. Frees all memory. The library
+ *    call this function automatically for all connection contexts.
+ *    The application however may free the connection contexts it has
+ *    allocated.
+ *
+ ***/
 void silc_client_del_connection(SilcClient client, SilcClientConnection conn);
 
-/* Adds listener socket to the listener sockets table. This function is
-   used to add socket objects that are listeners to the client.  This should
-   not be used to add other connection objects. */
+/****f* silcclient/SilcClientAPI/silc_client_add_socket
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_add_socket(SilcClient client, 
+ *                                SilcSocketConnection sock);
+ *
+ * DESCRIPTION
+ *
+ *    Adds listener socket to the listener sockets table. This function is
+ *    used to add socket objects that are listeners to the client.  This should
+ *    not be used to add other connection objects.
+ *
+ ***/
 void silc_client_add_socket(SilcClient client, SilcSocketConnection sock);
 
-/* Deletes listener socket from the listener sockets table. */
+/****f* silcclient/SilcClientAPI/silc_client_del_socket
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_del_socket(SilcClient client, 
+ *                                SilcSocketConnection sock);
+ *
+ * DESCRIPTION
+ *
+ *    Deletes listener socket from the listener sockets table.  If the
+ *    application has added a socket with silc_client_add_socket it must
+ *    also free it using this function.
+ *
+ ***/
 void silc_client_del_socket(SilcClient client, SilcSocketConnection sock);
 
-/* Start SILC Key Exchange (SKE) protocol to negotiate shared secret
-   key material between client and server.  This function can be called
-   directly if application is performing its own connecting and does not
-   use the connecting provided by this library. This function is normally
-   used only if the application performed the connecting outside the library.
-   The library however may use this internally. */
+/****f* silcclient/SilcClientAPI/silc_client_start_key_exchange
+ *
+ * SYNOPSIS
+ *
+ *    int silc_client_start_key_exchange(SilcClient client,
+ *                                       SilcClientConnection conn,
+ *                                       int fd);
+ *
+ * DESCRIPTION
+ *
+ *    Start SILC Key Exchange (SKE) protocol to negotiate shared secret
+ *    key material between client and server.  This function can be called
+ *    directly if application is performing its own connecting and does not
+ *    use the connecting provided by this library. This function is normally
+ *    used only if the application performed the connecting outside the
+ *    library. The library however may use this internally.
+ *
+ ***/
 int silc_client_start_key_exchange(SilcClient client,
 			           SilcClientConnection conn,
                                    int fd);
 
-/* Closes connection to remote end. Free's all allocated data except
-   for some information such as nickname etc. that are valid at all time. 
-   If the `sock' is NULL then the conn->sock will be used.  If `sock' is
-   provided it will be checked whether the sock and `conn->sock' are the
-   same (they can be different, ie. a socket can use `conn' as its
-   connection but `conn->sock' might be actually a different connection
-   than the `sock'). */
+/****f* silcclient/SilcClientAPI/silc_client_close_connection
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_close_connection(SilcClient client,
+ *                                      SilcSocketConnection sock,
+ *                                      SilcClientConnection conn);
+ *
+ * DESCRIPTION
+ *
+ *    Closes connection to remote end. Free's all allocated data except
+ *    for some information such as nickname etc. that are valid at all time. 
+ *    If the `sock' is NULL then the conn->sock will be used.  If `sock' is
+ *    provided it will be checked whether the sock and `conn->sock' are the
+ *    same (they can be different, ie. a socket can use `conn' as its
+ *    connection but `conn->sock' might be actually a different connection
+ *    than the `sock'). 
+ *
+ ***/
 void silc_client_close_connection(SilcClient client,
 				  SilcSocketConnection sock,
 				  SilcClientConnection conn);
@@ -311,18 +524,35 @@ void silc_client_close_connection(SilcClient client,
 
 /* Message sending functions (client_channel.c and client_prvmsg.c) */
 
-/* Sends packet to the `channel'. Packet to channel is always encrypted
-   differently from "normal" packets. SILC header of the packet is 
-   encrypted with the next receiver's key and the rest of the packet is
-   encrypted with the channel specific key. Padding and HMAC is computed
-   with the next receiver's key. The `data' is the channel message. If
-   the `force_send' is TRUE then the packet is sent immediately. 
-
-   If `key' is provided then that private key is used to encrypt the
-   channel message.  If it is not provided, private keys has not been
-   set at all, the normal channel key is used automatically.  If private
-   keys are set then the first key (the key that was added first as
-   private key) is used. */
+/****f* silcclient/SilcClientAPI/silc_client_send_channel_message
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_send_channel_message(SilcClient client, 
+ *                                          SilcClientConnection conn,
+ *                                          SilcChannelEntry channel,
+ *                                          SilcChannelPrivateKey key,
+ *                                          SilcMessageFlags flags,
+ *                                          unsigned char *data, 
+ *                                          uint32 data_len, 
+ *                                          int force_send);
+ *
+ * DESCRIPTION
+ *
+ *    Sends packet to the `channel'. Packet to channel is always encrypted
+ *    differently from "normal" packets. SILC header of the packet is 
+ *    encrypted with the next receiver's key and the rest of the packet is
+ *    encrypted with the channel specific key. Padding and HMAC is computed
+ *    with the next receiver's key. The `data' is the channel message. If
+ *    the `force_send' is TRUE then the packet is sent immediately. 
+ *
+ *    If `key' is provided then that private key is used to encrypt the
+ *    channel message.  If it is not provided, private keys has not been
+ *    set at all, the normal channel key is used automatically.  If private
+ *    keys are set then the first key (the key that was added first as
+ *    private key) is used. 
+ *
+ ***/
 void silc_client_send_channel_message(SilcClient client, 
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
@@ -332,13 +562,29 @@ void silc_client_send_channel_message(SilcClient client,
 				      uint32 data_len, 
 				      int force_send);
 
-/* Sends private message to remote client. If private message key has
-   not been set with this client then the message will be encrypted using
-   normal session keys. Private messages are special packets in SILC
-   network hence we need this own function for them. This is similar
-   to silc_client_packet_send_to_channel except that we send private
-   message. The `data' is the private message. If the `force_send' is
-   TRUE the packet is sent immediately. */
+/****f* silcclient/SilcClientAPI/silc_client_send_private_message
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_send_private_message(SilcClient client,
+ *                                          SilcClientConnection conn,
+ *                                          SilcClientEntry client_entry,
+ *                                          SilcMessageFlags flags,
+ *                                          unsigned char *data, 
+ *                                          uint32 data_len, 
+ *                                          int force_send);
+ *
+ * DESCRIPTION
+ *
+ *    Sends private message to remote client. If private message key has
+ *    not been set with this client then the message will be encrypted using
+ *    normal session keys. Private messages are special packets in SILC
+ *    network hence we need this own function for them. This is similar
+ *    to silc_client_packet_send_to_channel except that we send private
+ *    message. The `data' is the private message. If the `force_send' is
+ *    TRUE the packet is sent immediately. 
+ *
+ ***/
 void silc_client_send_private_message(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry client_entry,
@@ -350,24 +596,56 @@ void silc_client_send_private_message(SilcClient client,
 
 /* Client and Channel entry retrieval (idlist.c) */
 
-/* Callback function given to the silc_client_get_client function. The
-   found entries are allocated into the `clients' array. The array must
-   not be freed by the caller, the library will free it later. If the
-   `clients' is NULL, no such clients exist in the SILC Network. */
+/****f* silcclient/SilcClientAPI/SilcGetClientCallback
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcGetClientCallback)(SilcClient client,
+ *                                          SilcClientConnection conn,
+ *                                          SilcClientEntry *clients,
+ *                                          uint32 clients_count,
+ *                                          void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Callback function given to the silc_client_get_client function. The
+ *    found entries are allocated into the `clients' array. The array must
+ *    not be freed by the caller, the library will free it later. If the
+ *    `clients' is NULL, no such clients exist in the SILC Network.
+ *
+ ***/
 typedef void (*SilcGetClientCallback)(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry *clients,
 				      uint32 clients_count,
 				      void *context);
 
-/* Finds client entry or entries by the `nickname' and `server'. The 
-   completion callback will be called when the client entries has been found.
-
-   Note: this function is always asynchronous and resolves the client
-   information from the server. Thus, if you already know the client
-   information then use the silc_client_get_client_by_id function to
-   get the client entry since this function may be very slow and should
-   be used only to initially get the client entries. */
+/****f* silcclient/SilcClientAPI/silc_client_get_clients
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_get_clients(SilcClient client,
+ *                                 SilcClientConnection conn,
+ *                                 char *nickname,
+ *                                 char *server,
+ *                                 SilcGetClientCallback completion,
+ *                                 void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Finds client entry or entries by the `nickname' and `server'. The 
+ *    completion callback will be called when the client entries has been
+ *    found.
+ *
+ * NOTES
+ *
+ *    NOTE: This function is always asynchronous and resolves the client
+ *    information from the server. Thus, if you already know the client
+ *    information then use the silc_client_get_client_by_id function to
+ *    get the client entry since this function may be very slow and should
+ *    be used only to initially get the client entries. 
+ *
+ ***/
 void silc_client_get_clients(SilcClient client,
 			     SilcClientConnection conn,
 			     char *nickname,
@@ -375,20 +653,50 @@ void silc_client_get_clients(SilcClient client,
 			     SilcGetClientCallback completion,
 			     void *context);
 
-/* Same as above function but does not resolve anything from the server.
-   This checks local cache and returns all clients from the cache. */
+/****f* silcclient/SilcClientAPI/silc_client_get_clients_local
+ *
+ * SYNOPSIS
+ *
+ *    SilcClientEntry *silc_client_get_clients_local(SilcClient client,
+ *                                                   SilcClientConnection conn,
+ *                                                   char *nickname,
+ *                                                   char *server,
+ *                                                   uint32 *clients_count);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_client_get_clients function but does not resolve anything
+ *    from the server.  This checks local cache and returns all clients from
+ *    the local cache. 
+ *
+ ***/
 SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 					       SilcClientConnection conn,
 					       char *nickname,
 					       char *server,
 					       uint32 *clients_count);
 
-/* Gets client entries by the list of client ID's `client_id_list'. This
-   always resolves those client ID's it does not know yet from the server
-   so this function might take a while. The `client_id_list' is a list
-   of ID Payloads added one after other.  JOIN command reply and USERS
-   command reply for example returns this sort of list. The `completion'
-   will be called after the entries are available. */
+/****f* silcclient/SilcClientAPI/silc_client_get_clients_by_list
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_get_clients_by_list(SilcClient client,
+ *                                         SilcClientConnection conn,
+ *                                         uint32 list_count,
+ *                                         SilcBuffer client_id_list,
+ *                                         SilcGetClientCallback completion,
+ *                                         void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Gets client entries by the list of client ID's `client_id_list'. This
+ *    always resolves those client ID's it does not know yet from the server
+ *    so this function might take a while. The `client_id_list' is a list
+ *    of ID Payloads added one after other.  JOIN command reply and USERS
+ *    command reply for example returns this sort of list. The `completion'
+ *    will be called after the entries are available. 
+ *
+ ***/
 void silc_client_get_clients_by_list(SilcClient client,
 				     SilcClientConnection conn,
 				     uint32 list_count,
@@ -396,24 +704,64 @@ void silc_client_get_clients_by_list(SilcClient client,
 				     SilcGetClientCallback completion,
 				     void *context);
 
-/* Find entry for client by the client's ID. Returns the entry or NULL
-   if the entry was not found. */
+/****f* silcclient/SilcClientAPI/silc_client_get_client_by_id
+ *
+ * SYNOPSIS
+ *
+ *    SilcClientEntry silc_client_get_client_by_id(SilcClient client,
+ *                                                 SilcClientConnection conn,
+ *                                                 SilcClientID *client_id);
+ *
+ * DESCRIPTION
+ *
+ *    Find entry for client by the client's ID. Returns the entry or NULL
+ *    if the entry was not found. 
+ *
+ ***/
 SilcClientEntry silc_client_get_client_by_id(SilcClient client,
 					     SilcClientConnection conn,
 					     SilcClientID *client_id);
 
-/* Same as above but will always resolve the information from the server.
-   Use this only if you know that you don't have the entry and the only
-   thing you know about the client is its ID. */
+/****f* silcclient/SilcClientAPI/silc_client_get_client_by_id_resolve
+ *
+ * SYNOPSIS
+ *
+ *    void 
+ *    silc_client_get_client_by_id_resolve(SilcClient client,
+ *                                         SilcClientConnection conn,
+ *                                         SilcClientID *client_id,
+ *                                         SilcGetClientCallback completion,
+ *                                         void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_client_get_client_by_id but will always resolve the
+ *    information from the server. Use this only if you know that you
+ *    do not have the entry and the only thing you know about the client
+ *    is its ID. 
+ *
+ ***/
 void silc_client_get_client_by_id_resolve(SilcClient client,
 					  SilcClientConnection conn,
 					  SilcClientID *client_id,
 					  SilcGetClientCallback completion,
 					  void *context);
 
-/* Finds entry for channel by the channel name. Returns the entry or NULL
-   if the entry was not found. It is found only if the client is joined
-   to the channel. */
+/****f* silcclient/SilcClientAPI/silc_client_get_channel
+ *
+ * SYNOPSIS
+ *
+ *    SilcChannelEntry silc_client_get_channel(SilcClient client,
+ *                                             SilcClientConnection conn,
+ *                                             char *channel);
+ *
+ * DESCRIPTION
+ *
+ *    Finds entry for channel by the channel name. Returns the entry or NULL
+ *    if the entry was not found. It is found only if the client is joined
+ *    to the channel. 
+ *
+ ***/
 SilcChannelEntry silc_client_get_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 char *channel);
@@ -421,42 +769,124 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
 
 /* Command management (command.c) */
 
-/* Allocate Command Context. The context is defined in `command.h' file.
-   The context is used by the library commands and applications should use
-   it as well. However, application may choose to use some own context
-   for its local commands. All library commands, however, must use this
-   context. */
+/****f* silcclient/SilcClientAPI/silc_client_command_alloc
+ *
+ * SYNOPSIS
+ *
+ *    SilcClientCommandContext silc_client_command_alloc();
+ *
+ * DESCRIPTION
+ *
+ *    Allocate Command Context. The context is defined in `command.h' file.
+ *    The context is used by the library commands and applications should use
+ *    it as well. However, application may choose to use some own context
+ *    for its local commands. All library commands, however, must use this
+ *    context. 
+ *
+ ***/
 SilcClientCommandContext silc_client_command_alloc();
 
-/* Free command context and its internals */
+/****f* silcclient/SilcClientAPI/silc_client_command_free
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_command_free(SilcClientCommandContext ctx);
+ *
+ * DESCRIPTION
+ *
+ *    Free command context and its internals.  If the contex was duplicated
+ *    with silc_client_command_dup this may not actually free the data, 
+ *    instead it will decrease the reference counter of the context.  The
+ *    context will be freed when the reference counter hits zero.
+ *
+ ***/
 void silc_client_command_free(SilcClientCommandContext ctx);
 
-/* Duplicate Command Context by adding reference counter. The context won't
-   be free'd untill it hits zero. */
+/****f* silcclient/SilcClientAPI/silc_client_command_dup
+ *
+ * SYNOPSIS
+ *
+ *    SilcClientCommandContext 
+ *    silc_client_command_dup(SilcClientCommandContext ctx);
+ *
+ * DESCRIPTION
+ *
+ *    Duplicate Command Context by adding reference counter. The context won't
+ *    be free'd untill it hits zero. 
+ *
+ ***/
 SilcClientCommandContext silc_client_command_dup(SilcClientCommandContext ctx);
 
-/* Finds and returns a pointer to the command list. Return NULL if the
-   command is not found. See the `command.[ch]' for the command list. */
+/****f* silcclient/SilcClientAPI/silc_client_command_find
+ *
+ * SYNOPSIS
+ *
+ *    SilcClientCommand *silc_client_command_find(const char *name);
+ *
+ * DESCRIPTION
+ *
+ *    Finds and returns a pointer to the command list. Return NULL if the
+ *    command is not found. See the `command.[ch]' for the command list. 
+ *
+ ***/
 SilcClientCommand *silc_client_command_find(const char *name);
 
-/* Generic function to send any command. The arguments must be sent already
-   encoded into correct form and in correct order. */
+/****f* silcclient/SilcClientAPI/silc_client_send_command
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_send_command(SilcClient client, 
+ *                                  SilcClientConnection conn,
+ *                                  SilcCommand command, uint16 ident,
+ *                                  uint32 argc, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Generic function to send any command. The arguments must be sent already
+ *    encoded into correct form and in correct order. 
+ *
+ ***/
 void silc_client_send_command(SilcClient client, SilcClientConnection conn,
 			      SilcCommand command, uint16 ident,
 			      uint32 argc, ...);
 
-/* Pending Command callback destructor. This is called after calling the
-   pending callback or if error occurs while processing the pending command.
-   If error occurs then the callback won't be called at all, and only this
-   destructor is called. The `context' is the context given for the function
-   silc_client_command_pending. */
+/****f* silcclient/SilcClientAPI/SilcClientPendingDestructor
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcClientPendingDestructor)(void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Pending Command callback destructor. This is called after calling the
+ *    pending callback or if error occurs while processing the pending command.
+ *    If error occurs then the callback won't be called at all, and only this
+ *    destructor is called. The `context' is the context given for the function
+ *    silc_client_command_pending. 
+ *
+ ***/
 typedef void (*SilcClientPendingDestructor)(void *context);
 
-/* Add new pending command to be executed when reply to a command has been
-   received.  The `reply_cmd' is the command that will call the `callback'
-   with `context' when reply has been received.  If `ident is non-zero
-   the `callback' will be executed when received reply with command 
-   identifier `ident'. */
+/****f* silcclient/SilcClientAPI/silc_client_command_pending
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_command_pending(SilcClientConnection conn,
+ *                                     SilcCommand reply_cmd,
+ *                                     uint16 ident,
+ *                                     SilcClientPendingDestructor destructor,
+ *                                     SilcCommandCb callback,
+ *                                     void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Add new pending command to be executed when reply to a command has been
+ *    received.  The `reply_cmd' is the command that will call the `callback'
+ *    with `context' when reply has been received.  If `ident is non-zero
+ *    the `callback' will be executed when received reply with command 
+ *    identifier `ident'. 
+ *
+ ***/
 void silc_client_command_pending(SilcClientConnection conn,
 				 SilcCommand reply_cmd,
 				 uint16 ident,
@@ -467,21 +897,37 @@ void silc_client_command_pending(SilcClientConnection conn,
 
 /* Private Message key management (client_prvmsg.c) */
 
-/* Adds private message key to the client library. The key will be used to
-   encrypt all private message between the client and the remote client
-   indicated by the `client_entry'. If the `key' is NULL and the boolean
-   value `generate_key' is TRUE the library will generate random key.
-   The `key' maybe for example pre-shared-key, passphrase or similar.
-   The `cipher' MAY be provided but SHOULD be NULL to assure that the
-   requirements of the SILC protocol are met. The API, however, allows
-   to allocate any cipher.
-
-   It is not necessary to set key for normal private message usage. If the
-   key is not set then the private messages are encrypted using normal
-   session keys. Setting the private key, however, increases the security. 
-
-   Returns FALSE if the key is already set for the `client_entry', TRUE
-   otherwise. */
+/****f* silcclient/SilcClientAPI/silc_client_add_private_message_key
+ *
+ * SYNOPSIS
+ *
+ *    int silc_client_add_private_message_key(SilcClient client,
+ *                                            SilcClientConnection conn,
+ *                                            SilcClientEntry client_entry,
+ *                                            char *cipher,
+ *                                            unsigned char *key,
+ *                                            uint32 key_len,
+ *                                            int generate_key);
+ *
+ * DESCRIPTION
+ *
+ *    Adds private message key to the client library. The key will be used to
+ *    encrypt all private message between the client and the remote client
+ *    indicated by the `client_entry'. If the `key' is NULL and the boolean
+ *    value `generate_key' is TRUE the library will generate random key.
+ *    The `key' maybe for example pre-shared-key, passphrase or similar.
+ *    The `cipher' MAY be provided but SHOULD be NULL to assure that the
+ *    requirements of the SILC protocol are met. The API, however, allows
+ *    to allocate any cipher.
+ *
+ *    It is not necessary to set key for normal private message usage. If the
+ *    key is not set then the private messages are encrypted using normal
+ *    session keys. Setting the private key, however, increases the security. 
+ *
+ *    Returns FALSE if the key is already set for the `client_entry', TRUE
+ *    otherwise. 
+ *
+ ***/
 int silc_client_add_private_message_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcClientEntry client_entry,
@@ -490,52 +936,115 @@ int silc_client_add_private_message_key(SilcClient client,
 					uint32 key_len,
 					int generate_key);
 
-/* Same as above but takes the key material from the SKE key material
-   structure. This structure is received if the application uses the
-   silc_client_send_key_agreement to negotiate the key material. The
-   `cipher' SHOULD be provided as it is negotiated also in the SKE
-   protocol. */
+/****f* silcclient/SilcClientAPI/silc_client_add_private_message_key_ske
+ *
+ * SYNOPSIS
+ *
+ *    int silc_client_add_private_message_key_ske(SilcClient client,
+ *                                                SilcClientConnection conn,
+ *                                                SilcClientEntry client_entry,
+ *                                                char *cipher,
+ *                                                SilcSKEKeyMaterial *key);
+ *
+ * DESCRIPTION
+ *
+ *    Same as above but takes the key material from the SKE key material
+ *    structure. This structure is received if the application uses the
+ *    silc_client_send_key_agreement to negotiate the key material. The
+ *    `cipher' SHOULD be provided as it is negotiated also in the SKE
+ *    protocol. 
+ *
+ ***/
 int silc_client_add_private_message_key_ske(SilcClient client,
 					    SilcClientConnection conn,
 					    SilcClientEntry client_entry,
 					    char *cipher,
 					    SilcSKEKeyMaterial *key);
 
-/* Sends private message key payload to the remote client indicated by
-   the `client_entry'. If the `force_send' is TRUE the packet is sent
-   immediately. Returns FALSE if error occurs, TRUE otherwise. The
-   application should call this function after setting the key to the
-   client.
-
-   Note that the key sent using this function is sent to the remote client
-   through the SILC network. The packet is protected using normal session
-   keys. */
+/****f* silcclient/SilcClientAPI/silc_client_send_private_message_key
+ *
+ * SYNOPSIS
+ *
+ *    int silc_client_send_private_message_key(SilcClient client,
+ *                                             SilcClientConnection conn,
+ *                                             SilcClientEntry client_entry,
+ *                                             int force_send);
+ *
+ * DESCRIPTION
+ *
+ *    Sends private message key payload to the remote client indicated by
+ *    the `client_entry'. If the `force_send' is TRUE the packet is sent
+ *    immediately. Returns FALSE if error occurs, TRUE otherwise. The
+ *    application should call this function after setting the key to the
+ *    client.
+ *
+ *    Note that the key sent using this function is sent to the remote client
+ *    through the SILC network. The packet is protected using normal session
+ *    keys. 
+ *
+ ***/
 int silc_client_send_private_message_key(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcClientEntry client_entry,
 					 int force_send);
 
-/* Removes the private message from the library. The key won't be used
-   after this to protect the private messages with the remote `client_entry'
-   client. Returns FALSE on error, TRUE otherwise. */
+/****f* silcclient/SilcClientAPI/silc_client_del_private_message_key
+ *
+ * SYNOPSIS
+ *
+ *    int silc_client_del_private_message_key(SilcClient client,
+ *                                            SilcClientConnection conn,
+ *                                            SilcClientEntry client_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Removes the private message from the library. The key won't be used
+ *    after this to protect the private messages with the remote `client_entry'
+ *    client. Returns FALSE on error, TRUE otherwise. 
+ *
+ ***/
 int silc_client_del_private_message_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcClientEntry client_entry);
 
-/* Returns array of set private message keys associated to the connection
-   `conn'. Returns allocated SilcPrivateMessageKeys array and the array
-   count to the `key_count' argument. The array must be freed by the caller
-   by calling the silc_client_free_private_message_keys function. Note: 
-   the keys returned in the array is in raw format. It might not be desired
-   to show the keys as is. The application might choose not to show the keys
-   at all or to show the fingerprints of the keys. */
+/****f* silcclient/SilcClientAPI/silc_client_list_private_message_keys
+ *
+ * SYNOPSIS
+ *
+ *    SilcPrivateMessageKeys
+ *    silc_client_list_private_message_keys(SilcClient client,
+ *                                          SilcClientConnection conn,
+ *                                          uint32 *key_count);
+ * 
+ * DESCRIPTION
+ *
+ *    Returns array of set private message keys associated to the connection
+ *    `conn'. Returns allocated SilcPrivateMessageKeys array and the array
+ *    count to the `key_count' argument. The array must be freed by the caller
+ *    by calling the silc_client_free_private_message_keys function. Note: 
+ *    the keys returned in the array is in raw format. It might not be desired
+ *    to show the keys as is. The application might choose not to show the keys
+ *    at all or to show the fingerprints of the keys. 
+ *
+ ***/
 SilcPrivateMessageKeys
 silc_client_list_private_message_keys(SilcClient client,
 				      SilcClientConnection conn,
 				      uint32 *key_count);
 
-/* Frees the SilcPrivateMessageKeys array returned by the function
-   silc_client_list_private_message_keys. */
+/****f* silcclient/SilcClientAPI/silc_client_list_private_message_keys
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
+ *                                               uint32 key_count);
+ * 
+ * DESCRIPTION
+ *
+ *    Frees the SilcPrivateMessageKeys array returned by the function
+ *    silc_client_list_private_message_keys. 
+ *
+ ***/
 void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
 					   uint32 key_count);
 
@@ -543,31 +1052,49 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
 /* Channel private key management (client_channel.c, 
    SilcChannelPrivateKey is defined in idlist.h) */
 
-/* Adds private key for channel. This may be set only if the channel's mode
-   mask includes the SILC_CHANNEL_MODE_PRIVKEY. This returns FALSE if the
-   mode is not set. When channel has private key then the messages are
-   encrypted using that key. All clients on the channel must also know the
-   key in order to decrypt the messages. However, it is possible to have
-   several private keys per one channel. In this case only some of the
-   clients on the channel may know the one key and only some the other key.
-
-   The private key for channel is optional. If it is not set then the
-   channel messages are encrypted using the channel key generated by the
-   server. However, setting the private key (or keys) for the channel 
-   significantly adds security. If more than one key is set the library
-   will automatically try all keys at the message decryption phase. Note:
-   setting many keys slows down the decryption phase as all keys has to
-   be tried in order to find the correct decryption key. However, setting
-   a few keys does not have big impact to the decryption performace. 
-
-   NOTE: that this is entirely local setting. The key set using this function
-   is not sent to the network at any phase.
-
-   NOTE: If the key material was originated by the SKE protocol (using
-   silc_client_send_key_agreement) then the `key' MUST be the
-   key->send_enc_key as this is dictated by the SILC protocol. However,
-   currently it is not expected that the SKE key material would be used
-   as channel private key. However, this API allows it. */
+/****f* silcclient/SilcClientAPI/silc_client_add_channel_private_key
+ *
+ * SYNOPSIS
+ *
+ *    int silc_client_add_channel_private_key(SilcClient client,
+ *                                            SilcClientConnection conn,
+ *                                            SilcChannelEntry channel,
+ *                                            char *cipher,
+ *                                            char *hmac,
+ *                                            unsigned char *key,
+ *                                            uint32 key_len);
+ * 
+ * DESCRIPTION
+ *
+ *    Adds private key for channel. This may be set only if the channel's mode
+ *    mask includes the SILC_CHANNEL_MODE_PRIVKEY. This returns FALSE if the
+ *    mode is not set. When channel has private key then the messages are
+ *    encrypted using that key. All clients on the channel must also know the
+ *    key in order to decrypt the messages. However, it is possible to have
+ *    several private keys per one channel. In this case only some of the
+ *    clients on the channel may know the one key and only some the other key.
+ *
+ *    The private key for channel is optional. If it is not set then the
+ *    channel messages are encrypted using the channel key generated by the
+ *    server. However, setting the private key (or keys) for the channel 
+ *    significantly adds security. If more than one key is set the library
+ *    will automatically try all keys at the message decryption phase. Note:
+ *    setting many keys slows down the decryption phase as all keys has to
+ *    be tried in order to find the correct decryption key. However, setting
+ *    a few keys does not have big impact to the decryption performace. 
+ *
+ * NOTES
+ *
+ *    NOTE: This is entirely local setting. The key set using this function
+ *    is not sent to the network at any phase.
+ *
+ *    NOTE: If the key material was originated by the SKE protocol (using
+ *    silc_client_send_key_agreement) then the `key' MUST be the
+ *    key->send_enc_key as this is dictated by the SILC protocol. However,
+ *    currently it is not expected that the SKE key material would be used
+ *    as channel private key. However, this API allows it. 
+ *
+ ***/
 int silc_client_add_channel_private_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcChannelEntry channel,
@@ -576,74 +1103,144 @@ int silc_client_add_channel_private_key(SilcClient client,
 					unsigned char *key,
 					uint32 key_len);
 
-/* Removes all private keys from the `channel'. The old channel key is used
-   after calling this to protect the channel messages. Returns FALSE on
-   on error, TRUE otherwise. */
+/****f* silcclient/SilcClientAPI/silc_client_del_channel_private_keys
+ *
+ * SYNOPSIS
+ *
+ *    int silc_client_del_channel_private_keys(SilcClient client,
+ *                                             SilcClientConnection conn,
+ *                                             SilcChannelEntry channel);
+ * 
+ * DESCRIPTION
+ *
+ *    Removes all private keys from the `channel'. The old channel key is used
+ *    after calling this to protect the channel messages. Returns FALSE on
+ *    on error, TRUE otherwise. 
+ *
+ ***/
 int silc_client_del_channel_private_keys(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcChannelEntry channel);
 
-/* Removes and frees private key `key' from the channel `channel'. The `key'
-   is retrieved by calling the function silc_client_list_channel_private_keys.
-   The key is not used after this. If the key was last private key then the
-   old channel key is used hereafter to protect the channel messages. This
-   returns FALSE on error, TRUE otherwise. */
+/****f* silcclient/SilcClientAPI/silc_client_del_channel_private_key
+ *
+ * SYNOPSIS
+ *
+ *    int silc_client_del_channel_private_key(SilcClient client,
+ *                                            SilcClientConnection conn,
+ *                                            SilcChannelEntry channel,
+ *                                            SilcChannelPrivateKey key);
+ * 
+ * DESCRIPTION
+ *
+ *    Removes and frees private key `key' from the channel `channel'. 
+ *    The `key' is retrieved by calling the function 
+ *    silc_client_list_channel_private_keys. The key is not used after
+ *    this. If the key was last private key then the old channel key is
+ *    used hereafter to protect the channel messages. This returns FALSE
+ *    on error, TRUE otherwise. 
+ *
+ ***/
 int silc_client_del_channel_private_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcChannelEntry channel,
 					SilcChannelPrivateKey key);
 
-/* Returns array (pointers) of private keys associated to the `channel'.
-   The caller must free the array by calling the function
-   silc_client_free_channel_private_keys. The pointers in the array may be
-   used to delete the specific key by giving the pointer as argument to the
-   function silc_client_del_channel_private_key. */
+/****f* silcclient/SilcClientAPI/silc_client_list_channel_private_keys
+ *
+ * SYNOPSIS
+ *
+ *    SilcChannelPrivateKey *
+ *    silc_client_list_channel_private_keys(SilcClient client,
+ *                                          SilcClientConnection conn,
+ *                                          SilcChannelEntry channel,
+ *                                          uint32 *key_count);
+ *
+ * DESCRIPTION
+ *
+ *    Returns array (pointers) of private keys associated to the `channel'.
+ *    The caller must free the array by calling the function
+ *    silc_client_free_channel_private_keys. The pointers in the array may be
+ *    used to delete the specific key by giving the pointer as argument to the
+ *    function silc_client_del_channel_private_key. 
+ *
+ ***/
 SilcChannelPrivateKey *
 silc_client_list_channel_private_keys(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
 				      uint32 *key_count);
 
-/* Frees the SilcChannelPrivateKey array. */
+/****f* silcclient/SilcClientAPI/silc_client_free_channel_private_keys
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
+ *                                               uint32 key_count);
+ *
+ * DESCRIPTION
+ *
+ *    Frees the SilcChannelPrivateKey array.
+ *
+ ***/
 void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
 					   uint32 key_count);
 
 
 /* Key Agreement routines (client_keyagr.c) */
 
-/* Sends key agreement request to the remote client indicated by the
-   `client_entry'. If the caller provides the `hostname' and the `port'
-   arguments then the library will bind the client to that hostname and
-   that port for the key agreement protocol. It also sends the `hostname'
-   and the `port' in the key agreement packet to the remote client. This
-   would indicate that the remote client may initiate the key agreement
-   protocol to the `hostname' on the `port'.  If port is zero then the
-   bound port is undefined (the operating system defines it).
-
-   If the `hostname' and `port' is not provided then empty key agreement
-   packet is sent to the remote client. The remote client may reply with
-   the same packet including its hostname and port. If the library receives
-   the reply from the remote client the `key_agreement' client operation
-   callback will be called to verify whether the user wants to perform the
-   key agreement or not. 
-
-   NOTE: If the application provided the `hostname' and the `port' and the 
-   remote side initiates the key agreement protocol it is not verified
-   from the user anymore whether the protocol should be executed or not.
-   By setting the `hostname' and `port' the user gives permission to
-   perform the protocol (we are responder in this case).
-
-   NOTE: If the remote side decides not to initiate the key agreement
-   or decides not to reply with the key agreement packet then we cannot
-   perform the key agreement at all. If the key agreement protocol is
-   performed the `completion' callback with the `context' will be called.
-   If remote side decides to ignore the request the `completion' will be
-   called after the specified timeout, `timeout_secs'. 
-
-   NOTE: There can be only one active key agreement for one client entry.
-   Before setting new one, the old one must be finished (it is finished
-   after calling the completion callback) or the function 
-   silc_client_abort_key_agreement must be called. */
+/****f* silcclient/SilcClientAPI/silc_client_send_key_agreement
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_send_key_agreement(SilcClient client,
+ *                                        SilcClientConnection conn,
+ *                                        SilcClientEntry client_entry,
+ *                                        char *hostname,
+ *                                        int port,
+ *                                        uint32 timeout_secs,
+ *                                        SilcKeyAgreementCallback completion,
+ *                                        void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Sends key agreement request to the remote client indicated by the
+ *    `client_entry'. If the caller provides the `hostname' and the `port'
+ *    arguments then the library will bind the client to that hostname and
+ *    that port for the key agreement protocol. It also sends the `hostname'
+ *    and the `port' in the key agreement packet to the remote client. This
+ *    would indicate that the remote client may initiate the key agreement
+ *    protocol to the `hostname' on the `port'.  If port is zero then the
+ *    bound port is undefined (the operating system defines it).
+ *
+ *    If the `hostname' and `port' is not provided then empty key agreement
+ *    packet is sent to the remote client. The remote client may reply with
+ *    the same packet including its hostname and port. If the library receives
+ *    the reply from the remote client the `key_agreement' client operation
+ *    callback will be called to verify whether the user wants to perform the
+ *    key agreement or not. 
+ *
+ * NOTES
+ *
+ *    NOTE: If the application provided the `hostname' and the `port' and the 
+ *    remote side initiates the key agreement protocol it is not verified
+ *    from the user anymore whether the protocol should be executed or not.
+ *    By setting the `hostname' and `port' the user gives permission to
+ *    perform the protocol (we are responder in this case).
+ *
+ *    NOTE: If the remote side decides not to initiate the key agreement
+ *    or decides not to reply with the key agreement packet then we cannot
+ *    perform the key agreement at all. If the key agreement protocol is
+ *    performed the `completion' callback with the `context' will be called.
+ *    If remote side decides to ignore the request the `completion' will be
+ *    called after the specified timeout, `timeout_secs'. 
+ *
+ *    NOTE: There can be only one active key agreement for one client entry.
+ *    Before setting new one, the old one must be finished (it is finished
+ *    after calling the completion callback) or the function 
+ *    silc_client_abort_key_agreement must be called. 
+ *
+ ***/
 void silc_client_send_key_agreement(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcClientEntry client_entry,
@@ -653,25 +1250,44 @@ void silc_client_send_key_agreement(SilcClient client,
 				    SilcKeyAgreementCallback completion,
 				    void *context);
 
-/* Performs the actual key agreement protocol. Application may use this
-   to initiate the key agreement protocol. This can be called for example
-   after the application has received the `key_agreement' client operation,
-   and did not return TRUE from it.
-
-   The `hostname' is the remote hostname (or IP address) and the `port'
-   is the remote port. The `completion' callback with the `context' will
-   be called after the key agreement protocol.
-   
-   NOTE: If the application returns TRUE in the `key_agreement' client
-   operation the library will automatically start the key agreement. In this
-   case the application must not call this function. However, application
-   may choose to just ignore the `key_agreement' client operation (and
-   merely just print information about it on the screen) and call this
-   function when the user whishes to do so (by, for example, giving some
-   specific command). Thus, the API provides both, automatic and manual
-   initiation of the key agreement. Calling this function is the manual
-   initiation and returning TRUE in the `key_agreement' client operation
-   is the automatic initiation. */
+/****f* silcclient/SilcClientAPI/silc_client_perform_key_agreement
+ *
+ * SYNOPSIS
+ *
+ *    void 
+ *    silc_client_perform_key_agreement(SilcClient client,
+ *                                      SilcClientConnection conn,
+ *                                      SilcClientEntry client_entry,
+ *                                      char *hostname,
+ *                                      int port,
+ *                                      SilcKeyAgreementCallback completion,
+ *                                      void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Performs the actual key agreement protocol. Application may use this
+ *    to initiate the key agreement protocol. This can be called for example
+ *    after the application has received the `key_agreement' client operation,
+ *    and did not return TRUE from it.
+ *
+ *    The `hostname' is the remote hostname (or IP address) and the `port'
+ *    is the remote port. The `completion' callback with the `context' will
+ *    be called after the key agreement protocol.
+ *
+ * NOTES
+ * 
+ *    NOTE: If the application returns TRUE in the `key_agreement' client
+ *    operation the library will automatically start the key agreement. In this
+ *    case the application must not call this function. However, application
+ *    may choose to just ignore the `key_agreement' client operation (and
+ *    merely just print information about it on the screen) and call this
+ *    function when the user whishes to do so (by, for example, giving some
+ *    specific command). Thus, the API provides both, automatic and manual
+ *    initiation of the key agreement. Calling this function is the manual
+ *    initiation and returning TRUE in the `key_agreement' client operation
+ *    is the automatic initiation. 
+ *
+ ***/
 void silc_client_perform_key_agreement(SilcClient client,
 				       SilcClientConnection conn,
 				       SilcClientEntry client_entry,
@@ -680,10 +1296,27 @@ void silc_client_perform_key_agreement(SilcClient client,
 				       SilcKeyAgreementCallback completion,
 				       void *context);
 
-/* Same as above but application has created already the connection to 
-   the remote host. The `sock' is the socket to the remote connection. 
-   Application can use this function if it does not want the client library
-   to create the connection. */
+/****f* silcclient/SilcClientAPI/silc_client_perform_key_agreement_fd
+ *
+ * SYNOPSIS
+ *
+ *    void
+ *    silc_client_perform_key_agreement_fd(SilcClient client,
+ *                                         SilcClientConnection conn,
+ *                                         SilcClientEntry client_entry,
+ *                                         int sock,
+ *                                         char *hostname,
+ *                                         SilcKeyAgreementCallback completion,
+ *                                         void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Same as above but application has created already the connection to 
+ *    the remote host. The `sock' is the socket to the remote connection. 
+ *    Application can use this function if it does not want the client library
+ *    to create the connection. 
+ *
+ ***/
 void silc_client_perform_key_agreement_fd(SilcClient client,
 					  SilcClientConnection conn,
 					  SilcClientEntry client_entry,
@@ -692,12 +1325,24 @@ void silc_client_perform_key_agreement_fd(SilcClient client,
 					  SilcKeyAgreementCallback completion,
 					  void *context);
 
-/* This function can be called to unbind the hostname and the port for
-   the key agreement protocol. However, this function has effect only 
-   before the key agreement protocol has been performed. After it has
-   been performed the library will automatically unbind the port. The 
-   `client_entry' is the client to which we sent the key agreement 
-   request. */
+/****f* silcclient/SilcClientAPI/silc_client_abort_key_agreement
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_abort_key_agreement(SilcClient client,
+ *                                         SilcClientConnection conn,
+ *                                         SilcClientEntry client_entry);
+ *
+ * DESCRIPTION
+ *
+ *    This function can be called to unbind the hostname and the port for
+ *    the key agreement protocol. However, this function has effect only 
+ *    before the key agreement protocol has been performed. After it has
+ *    been performed the library will automatically unbind the port. The 
+ *    `client_entry' is the client to which we sent the key agreement 
+ *    request. 
+ *
+ ***/
 void silc_client_abort_key_agreement(SilcClient client,
 				     SilcClientConnection conn,
 				     SilcClientEntry client_entry);
@@ -705,14 +1350,25 @@ void silc_client_abort_key_agreement(SilcClient client,
 
 /* Misc functions */
 
-/* Sets away `message'.  The away message may be set when the client's
-   mode is changed to SILC_UMODE_GONE and the client whishes to reply
-   to anyone who sends private message.  The `message' will be sent
-   automatically back to the the client who send private message.  If
-   away message is already set this replaces the old message with the
-   new one.  If `message' is NULL the old away message is removed. 
-   The sender may freely free the memory of the `message'. */
-
+/****f* silcclient/SilcClientAPI/silc_client_set_away_message
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_set_away_message(SilcClient client,
+ *                                      SilcClientConnection conn,
+ *                                      char *message);
+ *
+ * DESCRIPTION
+ *
+ *    Sets away `message'.  The away message may be set when the client's
+ *    mode is changed to SILC_UMODE_GONE and the client whishes to reply
+ *    to anyone who sends private message.  The `message' will be sent
+ *    automatically back to the the client who send private message.  If
+ *    away message is already set this replaces the old message with the
+ *    new one.  If `message' is NULL the old away message is removed. 
+ *    The sender may freely free the memory of the `message'. 
+ *
+ ***/
 void silc_client_set_away_message(SilcClient client,
 				  SilcClientConnection conn,
 				  char *message);

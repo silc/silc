@@ -1,6 +1,6 @@
 /*
 
-  idcache.h
+  silcidcache.h
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 

@@ -145,10 +145,14 @@ int silc_server_init(SilcServer server)
   silc_server_config_setlogfiles(server->config);
  
   /* Register all configured ciphers, PKCS and hash functions. */
-  silc_server_config_register_ciphers(server->config);
-  silc_server_config_register_pkcs(server->config);
-  silc_server_config_register_hashfuncs(server->config);
-  silc_server_config_register_hmacs(server->config);
+  if (!silc_server_config_register_ciphers(server->config))
+    silc_cipher_register_default();
+  if (!silc_server_config_register_pkcs(server->config))
+    silc_pkcs_register_default();
+  if (!silc_server_config_register_hashfuncs(server->config))
+    silc_hash_register_default();
+  if (!silc_server_config_register_hmacs(server->config))
+    silc_hmac_register_default();
 
   /* Initialize random number generator for the server. */
   server->rng = silc_rng_alloc();

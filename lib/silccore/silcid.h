@@ -1,6 +1,6 @@
 /*
 
-  id.h
+  silcid.h
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 

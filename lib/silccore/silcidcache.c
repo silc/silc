@@ -1,6 +1,6 @@
 /*
 
-  idcache.c
+  silcidcache.c
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
@@ -20,7 +20,7 @@
 /* $Id$ */
 
 #include "silcincludes.h"
-#include "idcache.h"
+#include "silcidcache.h"
 
 /* Static prototypes */
 static void silc_idcache_destructor(void *key, void *context,

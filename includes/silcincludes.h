@@ -214,8 +214,8 @@ typedef uint32 * void *;
 #include "silcschedule.h"
 
 /* SILC core library includes */
-#include "id.h"
-#include "idcache.h"
+#include "silcid.h"
+#include "silcidcache.h"
 #include "silcprotocol.h"
 #include "silcsockconn.h"
 #include "silcpayload.h"

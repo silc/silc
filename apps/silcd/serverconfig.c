@@ -1220,12 +1220,15 @@ void silc_server_config_setlogfiles(SilcServerConfig config)
 /* Registers configured ciphers. These can then be allocated by the
    server when needed. */
 
-void silc_server_config_register_ciphers(SilcServerConfig config)
+bool silc_server_config_register_ciphers(SilcServerConfig config)
 {
   SilcServerConfigSectionAlg *alg;
   SilcServer server = (SilcServer)config->server;
 
   SILC_LOG_DEBUG(("Registering configured ciphers"));
+
+  if (!config->cipher)
+    return FALSE;
 
   alg = config->cipher;
   while(alg) {
@@ -1303,16 +1306,21 @@ void silc_server_config_register_ciphers(SilcServerConfig config)
 
     alg = alg->next;
   }
+
+  return TRUE;
 }
 
 /* Registers configured PKCS's. */
 
-void silc_server_config_register_pkcs(SilcServerConfig config)
+bool silc_server_config_register_pkcs(SilcServerConfig config)
 {
   SilcServerConfigSectionAlg *alg = config->pkcs;
   SilcServer server = (SilcServer)config->server;
 
   SILC_LOG_DEBUG(("Registering configured PKCS"));
+
+  if (!config->pkcs)
+    return FALSE;
 
   while(alg) {
     int i;
@@ -1331,17 +1339,22 @@ void silc_server_config_register_pkcs(SilcServerConfig config)
 
     alg = alg->next;
   }
+
+  return TRUE;
 }
 
 /* Registers configured hash functions. These can then be allocated by the
    server when needed. */
 
-void silc_server_config_register_hashfuncs(SilcServerConfig config)
+bool silc_server_config_register_hashfuncs(SilcServerConfig config)
 {
   SilcServerConfigSectionAlg *alg;
   SilcServer server = (SilcServer)config->server;
 
   SILC_LOG_DEBUG(("Registering configured hash functions"));
+
+  if (!config->hash_func)
+    return FALSE;
 
   alg = config->hash_func;
   while(alg) {
@@ -1409,24 +1422,22 @@ void silc_server_config_register_hashfuncs(SilcServerConfig config)
 
     alg = alg->next;
   }
+
+  return TRUE;
 }
 
 /* Registers configure HMACs. These can then be allocated by the server
    when needed. */
 
-void silc_server_config_register_hmacs(SilcServerConfig config)
+bool silc_server_config_register_hmacs(SilcServerConfig config)
 {
   SilcServerConfigSectionAlg *alg;
   SilcServer server = (SilcServer)config->server;
 
   SILC_LOG_DEBUG(("Registering configured HMACs"));
 
-  if (!config->hmac) {
-    SILC_LOG_ERROR(("HMACs are not configured. SILC cannot work without "
-		    "HMACs"));
-    silc_server_stop(server);
-    exit(1);
-  }
+  if (!config->hmac)
+    return FALSE;
 
   alg = config->hmac;
   while(alg) {
@@ -1446,6 +1457,8 @@ void silc_server_config_register_hmacs(SilcServerConfig config)
 
     alg = alg->next;
   }
+
+  return TRUE;
 }
 
 /* Returns client authentication information from server configuration

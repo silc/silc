@@ -1,3 +1,26 @@
+Fri Jun  1 22:19:37 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added checking to the server code not to start the server if
+	  ciphers and stuff are not configured properly.  Affected files
+	  silcd/serverconfig.[h] and silcd/server.c.
+
+	* Changed the layout of the header files of the public interfaces
+	  in the SILC libraries.  The new layout supports ROBODoc 
+	  documentation tool (and some others) so that it is easy to create
+	  a library reference manual.  All the other headers and source
+	  code must still follow the CodingStyle document.  Also source
+	  code must not include these ROBODoc stuffs, only the headers.
+	  Furthermore, all public interface headers must now be named
+	  by using `silc' prefix, example: silcapi.h, silccipher.h.
+	  Some files were renamed due to this.  All the other headers
+	  must not be used as public interfaces.  I will update the
+	  CodingStyle document later.  Changed following headers, so far:
+
+		lib/silcclient/silcapi.h
+		lib/silccore/silcauth.h
+		lib/silccore/silcprivate.h
+		lib/silccrypt/silcdh.h
+
 Fri Jun  1 10:28:09 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Updated TODO.

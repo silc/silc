@@ -21,8 +21,8 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 noinst_LIBRARIES = libsilccore.a
 
 libsilccore_a_SOURCES = \
-	id.c \
-	idcache.c \
+	silcid.c \
+	silcidcache.c \
 	silcchannel.c \
 	silccommand.c \
 	silcpacket.c \

@@ -20,7 +20,7 @@
 /* $Id$ */
 
 #include "silcincludes.h"
-#include "id.h"
+#include "silcid.h"
 
 /* ID lengths (in bytes) without the IP address part */
 #define ID_SERVER_LEN_PART      4
