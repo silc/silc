@@ -1,3 +1,26 @@
+Tue Mar 27 12:49:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Cleaned up the CMODE command in the server.  It now works
+	  correctly and supports all the modes defined in the protocol.
+	  Affected file is silcd/command.c.
+
+	* Added `hmac_name' field to the SilcChannelEntry in the server
+	  to hold the default HMAC of the channel.  It can be set when
+	  creating the channel (with JOIN command).  Affected files
+	  silcd/idlist.[ch].
+
+	* Added <cipher> and <hmac> argument to the CMODE_CHANGE notify
+	  type to indicate the change of the current cipher and hmac
+	  on the channel.  Client can safely ignore the <cipher> argument
+	  (if it chooses to do so) since the CHANNEL_KEY packet will 
+	  force the channel key change anyway.  The <hmac> argument is
+	  important since the client is responsible of setting the new
+	  HMAC and the hmac key into use.
+
+	* Fixed the CMODE command in the client library as well.
+
+	* Tested CMODE command in router environment successfully.
+
 Mon Mar 26 14:39:48 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Show the version of the remote client (or server) when connecting

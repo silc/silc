@@ -196,6 +196,10 @@ TODO in the protocol before SILC 0.x
 	  flags and define the flags.  The flags could indicate whether
 	  the message is, for example autoreply or the receiver should not
 	  reply to the private messages.  What other flags?
+	o Define the Channel Message packet to include channel message
+	  flags and define the flags.  Actually the flags should be same
+	  as for the private message flags.  This way we can implement
+	  for example the CTCP style ACTION (/ME command) messages.
 
  o New feature in the KE/auth protocol
    (draft-riikonen-silc-ke-auth-xx.txt):

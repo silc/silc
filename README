@@ -87,6 +87,7 @@ SILC Commands
 		a <passphrase>	Set/unset passphrase for channel that must
 				be provided when joining to the channel.
 		c <cipher>      Set/unset channel's cipher
+		h <hmac>        Set/unset channel's hmac
 
 		Multiple modes can be set/unset at once if the modes does not
 		require any arguments.  If mode requires an argument then only
