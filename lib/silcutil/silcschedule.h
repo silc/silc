@@ -590,12 +590,12 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd);
  *    signal system will not work without calling silc_schedule_signal_call
  *    function.  The specified `signal' value will be also delivered to
  *    the `callback' as the fd-argument.  The event type in the callback
- *    will be SILC_TASK_INTERRUPT.  It is safe to use any SILC routines,
+ *    will be SILC_TASK_INTERRUPT.  It is safe to use any SILC routines
  *    in the `callback' since it is actually called after the signal really
  *    happened.
  *
  *    On platform that does not support signals calling this function has 
- *    not effect.
+ *    no effect.
  *
  * EXAMPLE
  *
