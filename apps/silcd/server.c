@@ -2775,7 +2775,10 @@ void silc_server_free_sock_user_data(SilcServer server,
       silc_idlist_del_data(user_data);
       if (!silc_idlist_del_server(server->local_list, user_data))
 	silc_idlist_del_server(server->global_list, user_data);
-      server->stat.my_servers--;
+      if (sock->type == SILC_SOCKET_TYPE_SERVER)
+	server->stat.my_servers--;
+      else
+	server->stat.my_routers--;
       server->stat.servers--;
       if (server->server_type == SILC_ROUTER)
 	server->stat.cell_servers--;

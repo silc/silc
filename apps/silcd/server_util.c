@@ -1160,7 +1160,7 @@ void silc_server_send_connect_notifys(SilcServer server,
 			     server->stat.my_clients, 
 			     server->stat.my_channels,
 			     server->stat.my_servers,
-			     server->stat.my_routers));
+			     server->stat.my_routers + 1));
   } else {
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			    ("I have %d clients and %d channels formed",
