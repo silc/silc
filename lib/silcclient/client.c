@@ -414,7 +414,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
   /* Free old protocol as it is finished now */
   silc_protocol_free(protocol);
   if (ctx->packet)
-    silc_buffer_free(ctx->packet);
+    silc_packet_context_free(ctx->packet);
   silc_free(ctx);
   /* silc_free(ctx->keymat....); */
   sock->protocol = NULL;
@@ -648,12 +648,8 @@ SILC_TASK_CALLBACK(silc_client_packet_parse_real)
   silc_client_packet_parse_type(client, sock, packet);
 
  out:
-  silc_buffer_clear(buffer);
-  if (packet->src_id)
-    silc_free(packet->src_id);
-  if (packet->dst_id)
-    silc_free(packet->dst_id);
-  silc_free(packet);
+  silc_buffer_clear(sock->inbuf);
+  silc_packet_context_free(packet);
   silc_free(parse_ctx);
 }
 
@@ -780,7 +776,7 @@ void silc_client_packet_parse_type(SilcClient client,
       SilcClientKEInternalContext *proto_ctx = 
 	(SilcClientKEInternalContext *)sock->protocol->context;
 
-      proto_ctx->packet = buffer;
+      proto_ctx->packet = silc_packet_context_dup(packet);
       proto_ctx->dest_id_type = packet->src_id_type;
       proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_type);
 
@@ -809,9 +805,9 @@ void silc_client_packet_parse_type(SilcClient client,
 	(SilcClientKEInternalContext *)sock->protocol->context;
 
       if (proto_ctx->packet)
-	silc_buffer_free(proto_ctx->packet);
+	silc_packet_context_free(proto_ctx->packet);
 
-      proto_ctx->packet = buffer;
+      proto_ctx->packet = silc_packet_context_dup(packet);
       proto_ctx->dest_id_type = packet->src_id_type;
       proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_type);
 
@@ -1267,12 +1263,7 @@ static void silc_client_notify_by_server_pending(void *context)
 {
   SilcPacketContext *p = (SilcPacketContext *)context;
   silc_client_notify_by_server(p->context, p->sock, p);
-  if (p->src_id)
-    silc_free(p->src_id);
-  if (p->dst_id)
-    silc_free(p->dst_id);
-  silc_buffer_free(p->buffer);
-  silc_free(p);
+  silc_packet_context_free(p);
 }
 
 /* Received notify message from server */

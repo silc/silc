@@ -39,7 +39,7 @@ typedef struct {
   void *dest_id;
   SilcIdType dest_id_type;
 
-  SilcBuffer packet;
+  SilcPacketContext *packet;
   SilcSKE ske;
 } SilcClientKEInternalContext;
 

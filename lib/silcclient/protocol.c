@@ -218,7 +218,8 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	   paylaod reply we just got from the responder. The callback
 	   function will receive the processed payload where we will
 	   save it. */
-	status = silc_ske_initiator_phase_1(ctx->ske, ctx->packet, NULL, NULL);
+	status = silc_ske_initiator_phase_1(ctx->ske, ctx->packet->buffer, 
+					    NULL, NULL);
       }
 
       if (status != SILC_SKE_STATUS_OK) {
@@ -293,7 +294,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       } else {
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
 	   sent by responder. */
-	status = silc_ske_initiator_finish(ctx->ske, ctx->packet,
+	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer,
 					   silc_client_protocol_ke_verify_key,
 					   context, NULL, NULL);
       }
