@@ -1,3 +1,9 @@
+Thu Sep 26 13:51:02 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* If packet processing fails (like integrity check fails)
+	  the connection is closed now.  Affected files are
+	  lib/silccore/silcpacket.c and silcd/server.c.
+
 Mon Sep 23 10:59:39 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed double free in RSA public key set function
