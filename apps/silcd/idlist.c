@@ -654,10 +654,6 @@ static void silc_idlist_del_channel_foreach(void *key, void *context,
 int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
 {
   if (entry) {
-    SilcHashTableList htl;
-    SilcBuffer tmp;
-    SilcUInt32 type;
-
     /* Remove from cache */
     if (!silc_idcache_del_by_context(id_list->channels, entry))
       return FALSE;
