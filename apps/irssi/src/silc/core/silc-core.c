@@ -145,6 +145,31 @@ static void silc_init_userinfo(void)
   }
 }
 
+#ifdef SILC_DEBUG
+static bool i_debug;
+static bool silc_irssi_debug_print(char *file, char *function, int line,
+				   char *message, void *context)
+{
+  printtext(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
+	    "DEBUG: %s:%d:%s", function, line, message);
+  return TRUE;
+}
+
+static void sig_debug_setup_changed(void)
+{
+  bool debug = settings_get_bool("debug");
+  if (debug) {
+    const char *debug_string = settings_get_str("debug_string");
+    i_debug = silc_debug = TRUE;
+    silc_log_set_debug_string(debug_string);
+    silc_log_set_debug_callbacks(silc_irssi_debug_print, NULL, NULL, NULL);
+    return;
+  }
+  if (i_debug)
+    silc_debug = FALSE;
+}
+#endif
+
 /* Log callbacks */
 
 static bool silc_log_misc(SilcLogType type, char *message, void *context)
@@ -347,6 +372,12 @@ void silc_core_init(void)
   settings_add_int("server", "key_exchange_rekey_secs", 3600);
   settings_add_int("server", "connauth_request_secs", 2);
 
+#ifdef SILC_DEBUG
+  settings_add_bool("debug", "debug", FALSE);
+  settings_add_str("debug", "debug_string", "");
+  signal_add("setup changed", (SIGNAL_FUNC) sig_debug_setup_changed);
+#endif
+
   silc_init_userinfo();
 
   /* Initialize client parameters */
@@ -431,6 +462,9 @@ void silc_core_deinit(void)
 		chat_protocol_find("SILC"));
     signal_remove("irssi init read settings", 
 		  (SIGNAL_FUNC) sig_init_read_settings);
+#ifdef SILC_DEBUG
+    signal_remove("setup changed", (SIGNAL_FUNC) sig_debug_setup_changed);
+#endif
     
     silc_server_deinit();
     silc_channels_deinit();

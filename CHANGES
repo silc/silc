@@ -9,6 +9,11 @@ Fri Jun 14 22:59:02 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  misbehaviour.  Affected files are lib/silcsftp/sftp_client.c
 	  and lib/silcsftp/sftp_util.c.
 
+	* Added new "debug" and "debug_string" settings to Irssi SILC
+	  client which can be used to print runtime debugging on the
+	  Irssi's screen.  Available when compiled with --enable-debug
+	  option.  Affected file irssi/src/silc/core/silc-core.c.
+
 Tue Jun 11 16:36:02 CEST 2002 Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Fixed a missing variadic parameter in a function call that
