@@ -7,6 +7,17 @@ Sat May 26 17:43:42 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  that SILC specific message hilighting, colors etc is possible.
 	  Affected file irssi/src/fe-common/silc/module-formats.[ch].
 
+	  Added channel mode, channel user mode, actions, notices,
+	  whois and whowas printing to the the module-formats.c.
+
+	* Fixed a bug in channel deletion in the server.  The channel
+	  is not left to the cache even if the channel founder auth mode
+	  is set when there are no users anymore on the channel.  Affected
+	  file silcd/server.c.
+
+	* The silc_net_localhost now resolves the entire hostname including
+	  the domain name.  Affected file lib/silcutil/silcnet.c.
+
 Sat May 26 12:13:37 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed the ask_passphrase client operation to be ascynchronous.

@@ -399,7 +399,14 @@ uint16 silc_net_get_local_port(int sock)
 char *silc_net_localhost()
 {
   char hostname[256];
-  if (!gethostname(hostname, sizeof(hostname)))
+  struct hostent *dest;
+
+  if (gethostname(hostname, sizeof(hostname)))
+    return NULL;
+
+  dest = gethostbyname(hostname);
+  if (!dest)
     return strdup(hostname);
-  return NULL;
+
+  return strdup(dest->h_name);
 }

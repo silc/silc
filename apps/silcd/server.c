@@ -2508,27 +2508,8 @@ void silc_server_remove_from_channels(SilcServer server,
     /* Remove channel if there is no users anymore */
     if (server->server_type == SILC_ROUTER &&
 	silc_hash_table_count(channel->user_list) < 2) {
-
       if (channel->rekey)
 	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
-
-      if (channel->founder_key) {
-	/* The founder auth data exists, do not remove the channel entry */
-	SilcChannelClientEntry chl2;
-	SilcHashTableList htl2;
-
-	channel->id = NULL;
-
-	silc_hash_table_list(channel->user_list, &htl2);
-	while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
-	  silc_hash_table_del(chl2->client->channels, channel);
-	  silc_hash_table_del(channel->user_list, chl2->client);
-	  silc_free(chl2);
-	}
-	continue;
-      }
-
-      /* Remove the channel entry */
       if (!silc_idlist_del_channel(server->local_list, channel))
 	silc_idlist_del_channel(server->global_list, channel);
       server->stat.my_channels--;
@@ -2791,6 +2772,8 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 				  NULL, key, newhmac);
   if (!entry) {
     silc_free(channel_name);
+    silc_cipher_free(key);
+    silc_hmac_free(newhmac);
     return NULL;
   }
 

@@ -41,6 +41,7 @@
 #include "window-item-def.h"
 
 #include "fe-common/core/printtext.h"
+#include "fe-common/silc/module-formats.h"
 
 SILC_CHANNEL_REC *silc_channel_create(SILC_SERVER_REC *server,
 				      const char *name, int automatic)
@@ -284,7 +285,10 @@ static void event_cmode(SILC_SERVER_REC *server, va_list va)
 
   client = va_arg(va, SilcClientEntry);
   modei = va_arg(va, uint32);
+  (void)va_arg(va, char *);
+  (void)va_arg(va, char *);
   channel = va_arg(va, SilcChannelEntry);
+
   mode = silc_client_chmode(modei, channel);
   
   chanrec = silc_channel_find_entry(server, channel);
@@ -294,9 +298,10 @@ static void event_cmode(SILC_SERVER_REC *server, va_list va)
     signal_emit("channel mode changed", 1, chanrec);
   }
   
-  printtext(server, channel->channel_name, MSGLEVEL_MODES,
-	    "cmode/%s [%s] by %s", channel->channel_name, mode,
-	    client->nickname);
+  printformat_module("fe-common/silc", server, channel->channel_name,
+		     MSGLEVEL_MODES, SILCTXT_CHANNEL_CMODE,
+		     channel->channel_name, mode ? mode : "removed all",
+		     client->nickname);
   
   g_free(mode);
 }
@@ -327,7 +332,7 @@ static void event_cumode(SILC_SERVER_REC *server, va_list va)
       chanrec->chanop =
 	(mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
     }
-    
+
     nick = silc_nicklist_find(chanrec, destclient);
     if (nick != NULL) {
       nick->op = (mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
@@ -335,10 +340,18 @@ static void event_cumode(SILC_SERVER_REC *server, va_list va)
     }
   }
   
-  printtext(server, channel->channel_name, MSGLEVEL_MODES,
-	    "cumode/%s/%s [%s] by %s", destclient->nickname, 
-	    channel->channel_name, modestr, client->nickname);
-  
+  printformat_module("fe-common/silc", server, channel->channel_name,
+		     MSGLEVEL_MODES, SILCTXT_CHANNEL_CUMODE,
+		     channel->channel_name, destclient->nickname, 
+		     modestr ? modestr : "removed all",
+		     client->nickname);
+
+  if (mode & SILC_CHANNEL_UMODE_CHANFO)
+    printformat_module("fe-common/silc", 
+		       server, channel->channel_name, MSGLEVEL_CRAP,
+		       SILCTXT_CHANNEL_FOUNDER,
+		       channel->channel_name, destclient->nickname);
+
   g_free(modestr);
 }
 
@@ -465,6 +478,9 @@ static void command_me(const char *data, SILC_SERVER_REC *server,
 				   SILC_MESSAGE_FLAG_ACTION, 
 				   argv[1], argv_lens[1], TRUE);
 
+  printformat_module("fe-common/silc", server, chanrec->entry->channel_name,
+		     MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_OWNACTION, argv[1]);
+
   for (i = 0; i < argc; i++)
     silc_free(argv[i]);
   silc_free(argv_lens);
@@ -508,10 +524,25 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
 				   SILC_MESSAGE_FLAG_NOTICE, 
 				   argv[1], argv_lens[1], TRUE);
 
+  printformat_module("fe-common/silc", server, chanrec->entry->channel_name,
+		     MSGLEVEL_NOTICES, SILCTXT_CHANNEL_OWNNOTICE, argv[1]);
+
   for (i = 0; i < argc; i++)
     silc_free(argv[i]);
   silc_free(argv_lens);
   silc_free(argv_types);
+}
+
+/* AWAY local command.  Sends UMODE command that sets the SILC_UMODE_GONE
+   flag. */
+
+static void command_away(const char *data, SILC_SERVER_REC *server,
+			 WI_ITEM_REC *item)
+{
+  if (!IS_SILC_SERVER(server) || !server->connected)
+    cmd_return_error(CMDERR_NOT_CONNECTED);
+
+  /* XXX TODO */
 }
 
 void silc_channels_init(void)
@@ -538,7 +569,8 @@ void silc_channels_init(void)
   command_bind("part", MODULE_NAME, (SIGNAL_FUNC) command_part);
   command_bind("me", MODULE_NAME, (SIGNAL_FUNC) command_me);
   command_bind("notice", MODULE_NAME, (SIGNAL_FUNC) command_notice);
-  
+  command_bind("away", MODULE_NAME, (SIGNAL_FUNC) command_away);
+
   silc_nicklist_init();
 }
 
@@ -568,6 +600,7 @@ void silc_channels_deinit(void)
   command_unbind("part", (SIGNAL_FUNC) command_part);
   command_unbind("me", (SIGNAL_FUNC) command_me);
   command_unbind("notice", (SIGNAL_FUNC) command_notice);
-  
+  command_unbind("away", (SIGNAL_FUNC) command_away);
+
   silc_nicklist_deinit();
 }
