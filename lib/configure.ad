@@ -127,6 +127,13 @@ lib/silcsftp/Makefile
 lib/silcsftp/tests/Makefile
 )
 
+if test "x$silc_dist" = "xsilc-toolkit"; then
+  AC_CONFIG_FILES(
+lib/silc.pc
+lib/silcclient.pc
+)
+fi
+
 if test "x$silc_dist" = "xsilc-client" ||
    test "x$silc_dist" = "xsilc-toolkit"; then
   AC_CONFIG_FILES(lib/silcclient/Makefile)

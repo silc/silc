@@ -120,7 +120,10 @@ libsilcclient.a:
 	-release $(LIB_BASE_VERSION) -rpath $(DESTDIR)$(libdir) -o libsilcclient.la
 
 if SILC_DIST_TOOLKIT
-SILC_EXTRA_DIST = doc
+pkgconfigdir = $(prefix)/lib/pkgconfig
+pkgconfig_DATA = silc.pc silcclient.pc
+
+SILC_EXTRA_DIST = doc silc.pc.in silcclient.pc.in
 else
 if SILC_DIST_SERVER
 SILC_EXTRA_DIST = 

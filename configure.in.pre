@@ -484,6 +484,9 @@ AC_SUBST(PIDFILE)
 #
 # SILC library checking
 compile_libs=true
+
+if test "x$silc_dist" != "xsilc-toolkit"; then
+
 AC_ARG_WITH(silc-includes, 
   [  --with-silc-includes=DIR SILC Toolkit includes [search in DIR]],
   [ac_silc_includes="$withval"], [ac_silc_includes="no"])
@@ -506,6 +509,8 @@ if test "$ac_silc_libs" != "no"; then
   compile_libs=false
   LIBS="$LIBS -L$ac_silc_libs"
 fi
+
+fi # silc_dist != silc-toolkit
 
 
 # SOCKS4 support checking
