@@ -1020,6 +1020,8 @@ bool silc_server_channel_delete(SilcServer server,
   SilcHashTableList htl;
   bool delchan = !(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH);
 
+  SILC_LOG_DEBUG(("Deleting channel %s", channel->channel_name));
+
   if (delchan) {
     /* Update statistics */
     if (server->server_type == SILC_ROUTER)
@@ -1064,7 +1066,7 @@ bool silc_server_channel_delete(SilcServer server,
   }
   silc_hash_table_list_reset(&htl);
 
-  SILC_LOG_DEBUG(("Channel %s remains", channel->channel_name));
+  SILC_LOG_DEBUG(("Channel %s remains (permanent)", channel->channel_name));
 
   return TRUE;
 }

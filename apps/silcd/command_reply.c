@@ -224,9 +224,11 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 				    cmd->sock->user_data, NULL, 0);
     if (!client) {
       SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
+      silc_free(tmp);
       silc_free(nick);
       return FALSE;
     }
+    silc_free(tmp);
 
     client->data.status |=
       (SILC_IDLIST_STATUS_REGISTERED | SILC_IDLIST_STATUS_RESOLVED);
@@ -238,24 +240,27 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 
     SILC_LOG_DEBUG(("Updating client data"));
 
-    /* Take hostname out of nick string if it includes it. */
-    silc_parse_userfqdn(nickname, &nick, &servername);
-
     /* Check nickname */
+    silc_parse_userfqdn(nickname, &nick, &servername);
     nickname = silc_identifier_check(nick, strlen(nick), SILC_STRING_UTF8,
 				     128, NULL);
     if (!nickname) {
       SILC_LOG_ERROR(("Malformed nickname received in WHOIS reply"));
+      silc_free(nick);
+      silc_free(servername);
       return FALSE;
     }
 
     /* Check username */
-    username = silc_identifier_check(username, strlen(username),
-				     SILC_STRING_UTF8, 128, NULL);
-    if (!username) {
+    silc_parse_userfqdn(username, (char **)&tmp, NULL);
+    if (!silc_identifier_verify(tmp, strlen(tmp), SILC_STRING_UTF8, 128)) {
+      silc_free(tmp);
+      silc_free(nick);
+      silc_free(servername);
       SILC_LOG_ERROR(("Malformed username received in WHOIS reply"));
       return FALSE;
     }
+    silc_free(tmp);
 
     /* Remove the old cache entry  */
     silc_idcache_del_by_context(global ? server->global_list->clients :
@@ -267,7 +272,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     silc_free(client->servername);
 
     client->nickname = nick;
-    client->username = username;
+    client->username = strdup(username);
     client->userinfo = strdup(realname);
     client->servername = servername;
     client->mode = mode;
@@ -452,7 +457,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
   SilcServer server = cmd->server;
   SilcUInt32 len, id_len;
   unsigned char *id_data;
-  char *nickname, *username, *realname, *servername = NULL;
+  char *nickname, *username, *realname, *servername = NULL, *tmp;
   SilcClientID *client_id;
   SilcClientEntry client;
   SilcIDCacheEntry cache = NULL;
@@ -511,31 +516,34 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
   } else {
     /* We have the client already, update the data */
 
-    /* Take hostname out of nick string if it includes it. */
-    silc_parse_userfqdn(nickname, &nick, &servername);
-
     /* Check nickname */
+    silc_parse_userfqdn(nickname, &nick, &servername);
     nickname = silc_identifier_check(nick, strlen(nick), SILC_STRING_UTF8,
 				     128, NULL);
     if (!nickname) {
       SILC_LOG_ERROR(("Malformed nickname received in WHOWAS reply"));
+      silc_free(nick);
+      silc_free(servername);
       return FALSE;
     }
 
     /* Check username */
-    username = silc_identifier_check(username, strlen(username),
-				     SILC_STRING_UTF8, 128, NULL);
-    if (!username) {
+    silc_parse_userfqdn(username, &tmp, NULL);
+    if (!silc_identifier_verify(tmp, strlen(tmp), SILC_STRING_UTF8, 128)) {
+      silc_free(tmp);
+      silc_free(nick);
+      silc_free(servername);
       SILC_LOG_ERROR(("Malformed username received in WHOWAS reply"));
       return FALSE;
     }
+    silc_free(tmp);
 
     silc_free(client->nickname);
     silc_free(client->username);
     silc_free(client->servername);
 
     client->nickname = nick;
-    client->username = username;
+    client->username = strdup(username);
     client->servername = servername;
     client->data.status |= SILC_IDLIST_STATUS_RESOLVED;
     client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;

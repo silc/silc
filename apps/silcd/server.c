@@ -3409,7 +3409,7 @@ void silc_server_free_client_data(SilcServer server,
   if (!server->server_shutdown) {
     silc_schedule_task_add(server->schedule, 0,
 			   silc_server_free_client_data_timeout,
-			   client, 300, 0,
+			   client, 600, 0,
 			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
     client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
     client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
@@ -4462,8 +4462,12 @@ static void silc_server_announce_get_clients(SilcServer server,
 	    break;
 	  continue;
 	}
-	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) &&
-	    !client->connection && !client->router && !SILC_IS_LOCAL(client)) {
+	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  continue;
+	}
+	if (!client->connection && !client->router) {
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  continue;

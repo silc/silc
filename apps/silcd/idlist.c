@@ -348,7 +348,7 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 		       int expire)
 {
   SilcClientEntry client;
-  char *nicknamec = NULL, *usernamec = NULL;
+  char *nicknamec = NULL;
 
   SILC_LOG_DEBUG(("Adding new client entry"));
 
@@ -360,17 +360,27 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
       return NULL;
   }
 
-  /* Normalize username. */
+  /* Check username. */
   if (username) {
-    usernamec = silc_identifier_check(username, strlen(username),
-				      SILC_STRING_UTF8, 128, NULL);
-    if (!usernamec)
+    char *u = NULL, *h = NULL;
+    silc_parse_userfqdn(username, &u, &h);
+    if (!u)
       return NULL;
+    if (!silc_identifier_verify(u, strlen(u), SILC_STRING_UTF8, 128)) {
+      silc_free(u);
+      silc_free(h);
+      return NULL;
+    }
+    if (h && !silc_identifier_verify(h, strlen(h), SILC_STRING_UTF8, 256)) {
+      silc_free(u);
+      silc_free(h);
+      return NULL;
+    }
   }
 
   client = silc_calloc(1, sizeof(*client));
   client->nickname = nickname;
-  client->username = usernamec;
+  client->username = username ? strdup(username) : NULL;
   client->userinfo = userinfo;
   client->id = id;
   client->router = router;
@@ -383,7 +393,6 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
     silc_hash_table_free(client->channels);
     silc_free(client);
     silc_free(nicknamec);
-    silc_free(usernamec);
     return NULL;
   }
 

@@ -379,6 +379,9 @@ void silc_server_notify(SilcServer server,
     silc_server_del_from_watcher_list(server, client);
 
     client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+    client->mode = 0;
+    client->router = NULL;
+    client->connection = NULL;
     cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
     break;
 
@@ -1657,6 +1660,9 @@ void silc_server_notify(SilcServer server,
       }
 
       client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+      client->mode = 0;
+      client->router = NULL;
+      client->connection = NULL;
       cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
       break;
     }
