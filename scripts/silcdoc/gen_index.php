@@ -47,24 +47,28 @@
  </tr>
 </table>
 <table border="0" cellspacing="0" cellpadding="0" width="100%">
- <tr valign="top"><td bgcolor="#cccccc"></td></tr>
+<tr bgcolor="#444444"><td><img src="space.gif" width="1" height="1"border="0" alt="" ></td></tr>
 </table>
 
 <table cellpadding="0" cellspacing="0" border="0">
  <tr valign="top">
 
-  <td width="220" bgcolor="#f0f0f0">
+  <td width="230" bgcolor="#f0f0f0">
    <table width="100%" cellpadding="2" cellspacing="2" border="0">
     <tr valign="top"><td>
 <br />
+<small>
 <?php
 require "$dest/index.tmpl";
 ?>
+</small>
+<br /><br /><br /><br />
     </td></tr>
    </table>
   </td>
 
-  <td bgcolor="#dddddd" background="dot.gif"> </td>
+  <td bgcolor="#cccccc" background="dot.gif">
+    <img src="space.gif" width="1" height="1" border="0" alt=""></td>
 
   <td width="800">
    <table cellpadding="2" cellspacing="6" width="100%">
@@ -78,7 +82,8 @@ require "$page";
    </table>
   </td>
 
-  <td bgcolor="#cccccc" background="dot.gif"> </td>
+  <td bgcolor="#cccccc" background="dot.gif">
+    <img src="space.gif" width="1" height="1" border="0" alt=""></td>
 
   <td width="200" bgcolor="#f0f0f0">
     <table width="100%" cellpadding="4" cellspacing="0">
@@ -101,7 +106,7 @@ require "$fname"."__index.tmpl";
 </table>
 
 <table border="0" cellspacing="0" cellpadding="0" width="100%">
- <tr valign="top"><td bgcolor="#cccccc"></td></tr>
+<tr bgcolor="#444444"><td><img src="space.gif" width="1" height="1"border="0" alt="" ></td></tr>
 </table>
 <table border="0" cellspacing="0" cellpadding="6" width="100%">
  <tr valign="top" bgcolor="#dddddd">
