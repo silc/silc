@@ -751,8 +751,6 @@ bool silc_server_rehash(SilcServer server)
   if (server->config->debug_string) {
     silc_debug = TRUE;
     silc_log_set_debug_string(server->config->debug_string);
-  } else {
-    silc_debug = FALSE;
   }
 #endif /* SILC_DEBUG */
 
