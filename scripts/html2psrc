@@ -8,6 +8,13 @@
    information below.
 */
 
+/* The toc: thingy does not work with every html file, disable it from
+   the option { } when it causes bad PS files.  It causes problems if
+   the HTML file doesn't use any <Hx> tags.  Also Ghostscript must be
+   installed in the system.  -Pekka */
+/* Tested the html2ps with the xhtml and css thingys and it works pretty
+   good, so they should be preferred in html format.  -Pekka */
+
 @html2ps {
   header {               /* Running page header */
     odd-left: $T;          /* Document title */
@@ -19,7 +26,8 @@
     center: "- $N -";      /* Page number */
   }
   option {
-    toc: bh;              /* Generate a table of contents, based on headings */
+    /* Generate a table of contents, based on headings */
+    /*toc: bh; */
     titlepage: 1;         /* Generate a title page */
  /*   original: 1; */
   }
