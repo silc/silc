@@ -157,15 +157,16 @@ typedef enum {
  *    The SILC_TASK_READ and SILC_TASK_WRITE may be set by the caller
  *    of the silc_schedule_set_listen_fd, if the caller needs to control
  *    the events for the task. The SILC_TASK_EXPIRE is set always only
- *    by the scheduler when timeout expires for timeout task.
+ *    by the scheduler when timeout expires for timeout task.  The
+ *    SILC_TASK_INTERRUPT is set for signal callback.
  *
  * SOURCE
  */
 typedef enum {
-  SILC_TASK_READ      = 0x0001,	         /* Reading */
-  SILC_TASK_WRITE     = 0x0002,		 /* Writing */
-  SILC_TASK_EXPIRE    = 0x0004,		 /* Timeout */
-  SILC_TASK_INTERRUPT = 0x0004,		 /* Signal */
+  SILC_TASK_READ         = 0x0001,	         /* Reading */
+  SILC_TASK_WRITE        = 0x0002,		 /* Writing */
+  SILC_TASK_EXPIRE       = 0x0004,		 /* Timeout */
+  SILC_TASK_INTERRUPT    = 0x0008,		 /* Signal */
 } SilcTaskEvent;
 /***/
 
