@@ -874,7 +874,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
   }
 
   for (i = 0; i < conn->ping_count; i++) {
-    if (!SILC_ID_SERVER_COMPARE(conn->ping[i].dest_id, id)) {
+    if (SILC_ID_SERVER_COMPARE(conn->ping[i].dest_id, id)) {
       diff = curtime - conn->ping[i].start_time;
       cmd->client->ops->say(cmd->client, conn, 
 			    "Ping reply from %s: %d second%s", 

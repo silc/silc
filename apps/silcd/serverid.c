@@ -44,7 +44,8 @@ void silc_id_create_server_id(int sock, SilcRng rng, SilcServerID **new_id)
   }
 
   /* Create the ID */
-  (*new_id)->ip = server.sin_addr;
+  SILC_PUT32_MSB(server.sin_addr.s_addr, (*new_id)->ip.data);
+  (*new_id)->ip.data_len = 4;
   (*new_id)->port = server.sin_port;
   (*new_id)->rnd = silc_rng_get_rn16(rng);
 
@@ -67,7 +68,8 @@ void silc_id_create_client_id(SilcServerID *server_id, SilcRng rng,
   silc_hash_make(md5hash, nickname, strlen(nickname), hash);
 
   /* Create the ID */
-  (*new_id)->ip.s_addr = server_id->ip.s_addr;
+  memcpy((*new_id)->ip.data, server_id->ip.data, server_id->ip.data_len);
+  (*new_id)->ip.data_len = server_id->ip.data_len;
   (*new_id)->rnd = silc_rng_get_byte(rng);
   memcpy((*new_id)->hash, hash, CLIENTID_HASH_LEN);
 
@@ -84,7 +86,8 @@ void silc_id_create_channel_id(SilcServerID *router_id, SilcRng rng,
   *new_id = silc_calloc(1, sizeof(**new_id));
 
   /* Create the ID */
-  (*new_id)->ip.s_addr = router_id->ip.s_addr;
+  memcpy((*new_id)->ip.data, router_id->ip.data, router_id->ip.data_len);
+  (*new_id)->ip.data_len = router_id->ip.data_len;
   (*new_id)->port = router_id->port;
   (*new_id)->rnd = silc_rng_get_rn16(rng);
 

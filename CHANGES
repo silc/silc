@@ -1,3 +1,21 @@
+Sun May  6 13:59:48 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new SilcIDIP structure into the lib/silccore/id.h and
+	  replaced the old `ip' fields from all SILC ID's to that type.
+	  This is a step towards IPv6 support.
+
+	  The silc_id_get_len takes now the ID as an extra argument.
+	  Added new function silc_id_compare into lib/silccore/id.[ch].
+	  The silc_id_id2str, silc_id_str2id and silc_id_dup now supports
+	  both IPv4 and IPv6 based ID's.
+
+	  The affected files are lib/silccore/id.[ch] and other files
+	  around the tree using these routines.
+
+	* Removed the ID length arguments in server from various 
+	  silc_server_send_notify_* routines -> they are not needed 
+	  anymore.
+
 Sat May  5 13:56:33 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed memory leak in silc_encode_pem_file in the file

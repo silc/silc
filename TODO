@@ -57,7 +57,13 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
- o IPv6 support for ID's and into the code.
+ o silc_server_get_users_on_channel does not support IPv6 based Client
+   ID's.
+
+ o silc_server_route_get and the route code in general supports only
+   IPv4.
+
+ o silcd/serverid.c and its routines supports only IPv4.
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be

@@ -1761,7 +1761,7 @@ SILC_SERVER_CMD_FUNC(nick)
     silc_server_send_notify_nick_change(server, server->router->connection, 
 					server->server_type == SILC_SERVER ? 
 					FALSE : TRUE, client->id,
-					new_id, SILC_ID_CLIENT_LEN);
+					new_id);
 
   /* Remove old cache entry */
   silc_idcache_del_by_id(server->local_list->clients, SILC_ID_CLIENT, 
@@ -1770,10 +1770,8 @@ SILC_SERVER_CMD_FUNC(nick)
   oidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
   /* Free old ID */
-  if (client->id) {
-    memset(client->id, 0, SILC_ID_CLIENT_LEN);
+  if (client->id)
     silc_free(client->id);
-  }
 
   /* Save the nickname as this client is our local client */
   if (client->nickname)
@@ -2071,7 +2069,7 @@ SILC_SERVER_CMD_FUNC(topic)
       silc_server_send_notify_topic_set(server, server->router->connection,
 					server->server_type == SILC_ROUTER ?
 					TRUE : FALSE, channel, client->id,
-					SILC_ID_CLIENT_LEN, channel->topic);
+					channel->topic);
 
     idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
@@ -2302,8 +2300,7 @@ SILC_SERVER_CMD_FUNC(invite)
     silc_server_send_notify_invite(server, server->router->connection,
 				   server->server_type == SILC_ROUTER ?
 				   TRUE : FALSE, channel,
-				   sender->id, SILC_ID_CLIENT_LEN,
-				   add, del);
+				   sender->id, add, del);
 
   /* Send command reply */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
@@ -2471,15 +2468,13 @@ SILC_SERVER_CMD_FUNC(kill)
   /* Send KILLED notify to primary route */
   if (!server->standalone)
     silc_server_send_notify_killed(server, server->router->connection, TRUE,
-				   remote_client->id, SILC_ID_CLIENT_LEN,
-				   comment);
+				   remote_client->id, comment);
 
   /* Send KILLED notify to the client directly */
   silc_server_send_notify_killed(server, remote_client->connection ? 
 				 remote_client->connection : 
 				 remote_client->router->connection, FALSE,
-				 remote_client->id, SILC_ID_CLIENT_LEN,
-				 comment);
+				 remote_client->id, comment);
 
   /* Remove the client from all channels. This generates new keys to the
      channels as well. */
@@ -2684,7 +2679,7 @@ SILC_SERVER_CMD_FUNC(ping)
   if (!id)
     goto out;
 
-  if (!SILC_ID_SERVER_COMPARE(id, server->id)) {
+  if (SILC_ID_SERVER_COMPARE(id, server->id)) {
     /* Send our reply */
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_PING,
 					  SILC_STATUS_OK);
@@ -2906,8 +2901,7 @@ static void silc_server_command_join_channel(SilcServer server,
     if (!server->standalone)
       silc_server_send_notify_join(server, server->router->connection,
 				   server->server_type == SILC_ROUTER ?
-				   TRUE : FALSE, channel, client->id,
-				   SILC_ID_CLIENT_LEN);
+				   TRUE : FALSE, channel, client->id);
   }
 
   silc_buffer_free(reply);
@@ -2984,7 +2978,7 @@ SILC_SERVER_CMD_FUNC(join)
        be same as the client's ID. */
     if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
       SilcClientEntry entry = (SilcClientEntry)cmd->sock->user_data;
-      if (SILC_ID_CLIENT_COMPARE(entry->id, client_id)) {
+      if (!SILC_ID_CLIENT_COMPARE(entry->id, client_id)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	goto out;
@@ -3317,8 +3311,7 @@ SILC_SERVER_CMD_FUNC(umode)
   /* Send UMODE change to primary router */
   if (!server->standalone)
     silc_server_send_notify_umode(server, server->router->connection, TRUE,
-				  client->id, SILC_ID_CLIENT_LEN,
-				  client->mode);
+				  client->id, client->mode);
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_UMODE,
@@ -3727,7 +3720,6 @@ SILC_SERVER_CMD_FUNC(cmode)
 				  server->server_type == SILC_ROUTER ? 
 				  TRUE : FALSE, channel,
 				  mode_mask, client->id, SILC_ID_CLIENT,
-				  SILC_ID_CLIENT_LEN,
 				  cipher, hmac);
 
   /* Send command reply to sender */
@@ -3975,9 +3967,8 @@ SILC_SERVER_CMD_FUNC(cumode)
 				     server->server_type == SILC_ROUTER ? 
 				     TRUE : FALSE, channel,
 				     target_mask, client->id, 
-				     SILC_ID_CLIENT, SILC_ID_CLIENT_LEN,
-				     target_client->id, 
-				     SILC_ID_CLIENT_LEN);
+				     SILC_ID_CLIENT,
+				     target_client->id);
   }
 
   /* Send command reply to sender */
@@ -4136,8 +4127,7 @@ SILC_SERVER_CMD_FUNC(kick)
     silc_server_send_notify_kicked(server, server->router->connection,
 				   server->server_type == SILC_ROUTER ?
 				   TRUE : FALSE, channel,
-				   target_client->id, SILC_ID_CLIENT_LEN,
-				   comment);
+				   target_client->id, comment);
 
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     /* Re-generate channel key */
@@ -4216,8 +4206,7 @@ SILC_SERVER_CMD_FUNC(oper)
   /* Send UMODE change to primary router */
   if (!server->standalone)
     silc_server_send_notify_umode(server, server->router->connection, TRUE,
-				  client->id, SILC_ID_CLIENT_LEN,
-				  client->mode);
+				  client->id, client->mode);
 
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
@@ -4292,8 +4281,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   /* Send UMODE change to primary router */
   if (!server->standalone)
     silc_server_send_notify_umode(server, server->router->connection, TRUE,
-				  client->id, SILC_ID_CLIENT_LEN,
-				  client->mode);
+				  client->id, client->mode);
 
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
@@ -4639,8 +4627,7 @@ SILC_SERVER_CMD_FUNC(leave)
   if (!server->standalone)
     silc_server_send_notify_leave(server, server->router->connection,
 				  server->server_type == SILC_ROUTER ?
-				  TRUE : FALSE, channel, id_entry->id,
-				  SILC_ID_CLIENT_LEN);
+				  TRUE : FALSE, channel, id_entry->id);
 
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
 					SILC_STATUS_OK);

@@ -365,7 +365,7 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Ignore my ID */
-    if (!SILC_ID_CLIENT_COMPARE(client_id, conn->local_id))
+    if (SILC_ID_CLIENT_COMPARE(client_id, conn->local_id))
       break;
 
     /* Find old Client entry */

@@ -175,7 +175,7 @@ SilcBuffer silc_id_payload_encode(void *id, SilcIdType type)
 		  type == SILC_ID_SERVER ? "Server" : "Channel"));
 
   id_data = silc_id_id2str(id, type);
-  len = silc_id_get_len(type);
+  len = silc_id_get_len(id, type);
 
   buffer = silc_buffer_alloc(4 + len);
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));

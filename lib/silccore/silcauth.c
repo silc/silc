@@ -178,7 +178,7 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
     silc_free(pk);
     return NULL;
   }
-  id_len = silc_id_get_len(type);
+  id_len = silc_id_get_len(id, type);
 
   buf = silc_buffer_alloc(random_len + id_len + pk_len);
   silc_buffer_pull_tail(buf, SILC_BUFFER_END(buf));

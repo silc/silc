@@ -22,20 +22,12 @@
    packet sending and reception. However, client never creates these
    but it receives the correct ID's from server. Clients, servers and
    channels are identified by the these ID's.
-
-   Note that these are currently IPv4 specific, although adding IPv6
-   support is not a bad task and SILC protocol already supports IPv6.
 */
 
 #ifndef ID_H
 #define ID_H
 
-#define SILC_ID_SERVER_LEN 	(64 / 8)
-#define SILC_ID_CLIENT_LEN 	(128 / 8)
-#define SILC_ID_CHANNEL_LEN 	(64 / 8)
-#define CLIENTID_HASH_LEN       (88 / 8) /* Client ID's 88 bit MD5 hash */
-
-/* SILC ID Types */
+/* The SILC ID Types */
 #define SILC_ID_NONE 0
 #define SILC_ID_SERVER 1
 #define SILC_ID_CLIENT 2
@@ -44,69 +36,78 @@
 /* Type definition for the ID types. */
 typedef uint16 SilcIdType;
 
+/* The ID Lenghts. These are IPv4 based and should be noted if used directly
+   that these cannot be used with IPv6. */
+#define SILC_ID_SERVER_LEN 	(64 / 8)
+#define SILC_ID_CLIENT_LEN 	(128 / 8)
+#define SILC_ID_CHANNEL_LEN 	(64 / 8)
+
+#define CLIENTID_HASH_LEN       (88 / 8) /* Client ID's 88 bit MD5 hash */
+
+/*
+   SILC ID IP structure.
+
+   Generic IP address structure to indicate either IPv4 or IPv6 address.
+   This structure is used inside all SILC ID's. The true length of the
+   ID depends of the length of the IP address.
+*/
+typedef struct {
+  unsigned char data[16];	/* IP data */
+  uint8 data_len;		/* Length of the data (4 or 16) */
+} SilcIDIP;
+
 /* 
-   64 bit SilcServerID structure:
+   64 or 160 bit SilcServerID structure:
    
-   32 bit IP address
+    n bit IP address
    16 bit port
    16 bit random number
 */
 typedef struct {
-  struct in_addr ip;				/* 32 bit IP */
-  uint16 port;				/* 16 bit port */
-  uint16 rnd;				/* 16 bit random number */
+  SilcIDIP ip;			/* n bit IP address */
+  uint16 port;			/* 16 bit port */
+  uint16 rnd;			/* 16 bit random number */
 } SilcServerID;
 
 /* 
-   128 bit SilcClientID structure:
+   128 or 224 bit SilcClientID structure:
 
-   32 bit ServerID IP address [bits 1-32]
+    n bit ServerID IP address [bits 1-32 or bits 1-128]
     8 bit random number
    88 bit hash value from nickname
 */
 typedef struct {
-  struct in_addr ip;				/* 32 bit IP */
+  SilcIDIP ip;					/* n bit IP address */
   unsigned char rnd;				/* 8 bit random number */
   unsigned char hash[CLIENTID_HASH_LEN];	/* 88 bit MD5 hash */
 } SilcClientID;
 
 /* 
-   64 bit SilcChannel ID structure:
+   64 or 160 bit SilcChannel ID structure:
 
-   32 bit Router's ServerID IP address [bits 1-32]
-   16 bit Router's ServerID port [bits 33-48]
+    n bit Router's ServerID IP address [bits 1-32 or bits 1-128]
+   16 bit Router's ServerID port [bits 33-48 or bits 129-144]
    16 bit random number
 */
 typedef struct {
-  struct in_addr ip;				/* 32 bit IP */
-  uint16 port;				/* 16 bit port */
-  uint16 rnd;				/* 16 bit random number */
+  SilcIDIP ip;					/* n bit IP address */
+  uint16 port;					/* 16 bit port */
+  uint16 rnd;					/* 16 bit random number */
 } SilcChannelID;
 
 /* Macros */
 
-/* Compares two ID's */
-#define SILC_ID_COMPARE(id1, id2, len) (memcmp(id1, id2, len))
-
-/* Compares Channel ID's */
-#define SILC_ID_CHANNEL_COMPARE(id1, id2) \
-  SILC_ID_COMPARE(id1, id2, SILC_ID_CHANNEL_LEN)
-
 /* Compares Client ID's */
-#define SILC_ID_CLIENT_COMPARE(id1, id2) \
-  SILC_ID_COMPARE(id1, id2, SILC_ID_CLIENT_LEN)
+#define SILC_ID_CLIENT_COMPARE(id1, id2)		\
+  silc_id_compare(id1, id2, SILC_ID_CLIENT)
 
 /* Compares Server ID's */
-#define SILC_ID_SERVER_COMPARE(id1, id2) \
-  SILC_ID_COMPARE(id1, id2, SILC_ID_SERVER_LEN)
+#define SILC_ID_SERVER_COMPARE(id1, id2)		\
+  silc_id_compare(id1, id2, SILC_ID_SERVER)
 
 /* Compares Channel ID's */
-#define SILC_ID_CHANNEL_COMPARE(id1, id2) \
-  SILC_ID_COMPARE(id1, id2, SILC_ID_CHANNEL_LEN)
-
-/* Compares IP addresses from the ID's. */
-#define SILC_ID_COMPARE_IP(id1, id2) \
-  SILC_ID_COMPARE(id1, id2, 4)
+#define SILC_ID_CHANNEL_COMPARE(id1, id2)			\
+  silc_id_compare(id1, id2, SILC_ID_CHANNEL)
 
 /* Compare nickname hash from Client ID */
 #define SILC_ID_COMPARE_HASH(id, _hash) \
@@ -115,7 +116,8 @@ typedef struct {
 /* Prototypes */
 unsigned char *silc_id_id2str(void *id, SilcIdType type);
 void *silc_id_str2id(unsigned char *id, uint32 id_len, SilcIdType type);
-uint32 silc_id_get_len(SilcIdType type);
+uint32 silc_id_get_len(void *id, SilcIdType type);
 void *silc_id_dup(void *id, SilcIdType type);
+bool silc_id_compare(void *id1, void *id2, SilcIdType type);
 
 #endif

@@ -72,9 +72,10 @@ SilcSocketConnection silc_server_route_get(SilcServer server, void *id,
 					   SilcIdType id_type)
 {
   if (server->server_type == SILC_ROUTER) {
-    uint32 dest;
-    uint16 port;
+    uint32 dest = 0;
+    uint16 port = 0;
     SilcServerEntry router = NULL;
+#if 0
 
     switch(id_type) {
     case SILC_ID_CLIENT:
@@ -92,6 +93,8 @@ SilcSocketConnection silc_server_route_get(SilcServer server, void *id,
     default:
       return NULL;
     }
+
+#endif
 
     router = silc_server_route_check(dest, port);
     if (!router)

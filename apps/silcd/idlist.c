@@ -458,7 +458,7 @@ silc_idlist_find_client_by_hash(SilcIDList id_list, char *nickname,
   while (id_cache) {
     client = (SilcClientEntry)id_cache->context;
     
-    if (client && !SILC_ID_COMPARE_HASH(client->id, hash))
+    if (client && SILC_ID_COMPARE_HASH(client->id, hash))
       break;
 
     id_cache = NULL;
@@ -532,7 +532,7 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
 
   /* If the old ID Cache data was the hash value of the old Client ID
      replace it with the hash of new Client ID */
-  if (id_cache->data && !SILC_ID_COMPARE_HASH(old_id, id_cache->data)) {
+  if (id_cache->data && SILC_ID_COMPARE_HASH(old_id, id_cache->data)) {
     silc_free(id_cache->data);
     id_cache->data = silc_calloc(sizeof(new_id->hash), sizeof(unsigned char));
     memcpy(id_cache->data, new_id->hash, sizeof(new_id->hash));

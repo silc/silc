@@ -109,10 +109,10 @@ void silc_client_send_channel_message(SilcClient client,
   packetdata.flags = 0;
   packetdata.type = SILC_PACKET_CHANNEL_MESSAGE;
   packetdata.src_id = conn->local_id_data;
-  packetdata.src_id_len = SILC_ID_CLIENT_LEN;
+  packetdata.src_id_len = silc_id_get_len(conn->local_id, SILC_ID_CLIENT);
   packetdata.src_id_type = SILC_ID_CLIENT;
   packetdata.dst_id = id_string;
-  packetdata.dst_id_len = SILC_ID_CHANNEL_LEN;
+  packetdata.dst_id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
   packetdata.dst_id_type = SILC_ID_CHANNEL;
   packetdata.truelen = payload->len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
@@ -222,7 +222,7 @@ void silc_client_channel_message(SilcClient client,
   /* Find client entry */
   silc_list_start(channel->clients);
   while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-    if (!SILC_ID_CLIENT_COMPARE(chu->client->id, client_id)) {
+    if (SILC_ID_CLIENT_COMPARE(chu->client->id, client_id)) {
       found = TRUE;
       break;
     }

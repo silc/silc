@@ -316,19 +316,17 @@ int silc_idcache_find_by_data_loose(SilcIDCache cache, unsigned char *data,
 int silc_idcache_find_by_id(SilcIDCache cache, void *id, SilcIdType type,
 			    SilcIDCacheList *ret)
 {
-  int i, id_len;
+  int i;
   SilcIDCacheList list;
 
   if (!cache || !cache->cache || !id)
     return FALSE;
 
-  id_len = silc_id_get_len(type);
-
   list = silc_idcache_list_alloc();
 
   if (id != SILC_ID_CACHE_ANY) {
     for (i = 0; i < cache->cache_count; i++)
-      if (cache->cache[i].id && !memcmp(cache->cache[i].id, id, id_len))
+      if (cache->cache[i].id && silc_id_compare(cache->cache[i].id, id, type))
 	silc_idcache_list_add(list, &(cache->cache[i]));
   } else {
     for (i = 0; i < cache->cache_count; i++)
@@ -354,15 +352,13 @@ int silc_idcache_find_by_id(SilcIDCache cache, void *id, SilcIdType type,
 int silc_idcache_find_by_id_one(SilcIDCache cache, void *id, SilcIdType type, 
 				SilcIDCacheEntry *ret)
 {
-  int i, id_len;
+  int i;
 
   if (!cache || !cache->cache || !id)
     return FALSE;
 
-  id_len = silc_id_get_len(type);
-
   for (i = 0; i < cache->cache_count; i++)
-    if (cache->cache[i].id && !memcmp(cache->cache[i].id, id, id_len)) {
+    if (cache->cache[i].id && silc_id_compare(cache->cache[i].id, id, type)) {
       if (ret)
 	*ret = &(cache->cache[i]);
       return TRUE;
@@ -481,15 +477,13 @@ int silc_idcache_del_by_data(SilcIDCache cache, unsigned char *data)
 
 int silc_idcache_del_by_id(SilcIDCache cache, SilcIdType type, void *id)
 {
-  int i, id_len;
+  int i;
 
   if (!cache || !cache->cache || !id)
     return FALSE;
 
-  id_len = silc_id_get_len(type);
-
   for (i = 0; i < cache->cache_count; i++)
-    if (cache->cache[i].id && !memcmp(cache->cache[i].id, id, id_len)) {
+    if (cache->cache[i].id && silc_id_compare(cache->cache[i].id, id, type)) {
       cache->cache[i].id = NULL;
       cache->cache[i].data = NULL;
       cache->cache[i].type = 0;

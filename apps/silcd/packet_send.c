@@ -129,14 +129,14 @@ void silc_server_packet_send_dest(SilcServer server,
 
   if (dst_id) {
     dst_id_data = silc_id_id2str(dst_id, dst_id_type);
-    dst_id_len = silc_id_get_len(dst_id_type);
+    dst_id_len = silc_id_get_len(dst_id, dst_id_type);
   }
 
   /* Set the packet context pointers */
   packetdata.type = type;
   packetdata.flags = flags;
   packetdata.src_id = silc_id_id2str(server->id, server->id_type);
-  packetdata.src_id_len = SILC_ID_SERVER_LEN;
+  packetdata.src_id_len = silc_id_get_len(server->id, server->id_type);
   packetdata.src_id_type = server->id_type;
   packetdata.dst_id = dst_id_data;
   packetdata.dst_id_len = dst_id_len;
@@ -220,12 +220,12 @@ void silc_server_packet_send_srcdest(SilcServer server,
 
   if (dst_id) {
     dst_id_data = silc_id_id2str(dst_id, dst_id_type);
-    dst_id_len = silc_id_get_len(dst_id_type);
+    dst_id_len = silc_id_get_len(dst_id, dst_id_type);
   }
 
   if (src_id) {
     src_id_data = silc_id_id2str(src_id, src_id_type);
-    src_id_len = silc_id_get_len(src_id_type);
+    src_id_len = silc_id_get_len(src_id, src_id_type);
   }
 
   /* Set the packet context pointers */
@@ -298,7 +298,7 @@ void silc_server_packet_broadcast(SilcServer server,
   /* If the packet is originated from our primary route we are
      not allowed to send the packet. */
   id = silc_id_str2id(packet->src_id, packet->src_id_len, packet->src_id_type);
-  if (id && SILC_ID_SERVER_COMPARE(id, server->router->id)) {
+  if (id && !SILC_ID_SERVER_COMPARE(id, server->router->id)) {
     idata = (SilcIDListData)sock->user_data;
 
     silc_buffer_push(buffer, buffer->data - buffer->head);
@@ -431,11 +431,11 @@ void silc_server_packet_send_to_channel(SilcServer server,
   packetdata.flags = 0;
   packetdata.type = type;
   packetdata.src_id = silc_id_id2str(server->id, SILC_ID_SERVER);
-  packetdata.src_id_len = SILC_ID_SERVER_LEN;
+  packetdata.src_id_len = silc_id_get_len(server->id, SILC_ID_SERVER);
   packetdata.src_id_type = SILC_ID_SERVER;
   packetdata.dst_id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
   packetdata.dst_id_len = SILC_ID_CHANNEL_LEN;
-  packetdata.dst_id_type = SILC_ID_CHANNEL;
+  packetdata.dst_id_type = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
@@ -611,11 +611,11 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   packetdata.flags = 0;
   packetdata.type = SILC_PACKET_CHANNEL_MESSAGE;
   packetdata.src_id = silc_id_id2str(sender, sender_type);
-  packetdata.src_id_len = silc_id_get_len(sender_type);
+  packetdata.src_id_len = silc_id_get_len(sender, sender_type);
   packetdata.src_id_type = sender_type;
   packetdata.dst_id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
   packetdata.dst_id_len = SILC_ID_CHANNEL_LEN;
-  packetdata.dst_id_type = SILC_ID_CHANNEL;
+  packetdata.dst_id_type = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
   packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
 					  packetdata.src_id_len +
 					  packetdata.dst_id_len));
@@ -662,7 +662,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 
       /* If sender is one on the channel do not send it the packet. */
       if (!found && sender_type == SILC_ID_CLIENT &&
-	  !SILC_ID_CLIENT_COMPARE(client->id, sender)) {
+	  SILC_ID_CLIENT_COMPARE(client->id, sender)) {
 	found = TRUE;
 	continue;
       }
@@ -674,7 +674,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 
 	/* Sender maybe server as well so we want to make sure that
 	   we won't send the message to the server it came from. */
-	if (!found && !SILC_ID_SERVER_COMPARE(client->router->id, sender)) {
+	if (!found && SILC_ID_SERVER_COMPARE(client->router->id, sender)) {
 	  found = TRUE;
 	  continue;
 	}
@@ -963,8 +963,7 @@ void silc_server_send_notify_channel_change(SilcServer server,
 					    SilcSocketConnection sock,
 					    int broadcast,
 					    SilcChannelID *old_id,
-					    SilcChannelID *new_id,
-					    uint32 id_len)
+					    SilcChannelID *new_id)
 {
   SilcBuffer idp1, idp2;
 
@@ -985,8 +984,7 @@ void silc_server_send_notify_nick_change(SilcServer server,
 					 SilcSocketConnection sock,
 					 int broadcast,
 					 SilcClientID *old_id,
-					 SilcClientID *new_id,
-					 uint32 id_len)
+					 SilcClientID *new_id)
 {
   SilcBuffer idp1, idp2;
 
@@ -1007,8 +1005,7 @@ void silc_server_send_notify_join(SilcServer server,
 				  SilcSocketConnection sock,
 				  int broadcast,
 				  SilcChannelEntry channel,
-				  SilcClientID *client_id,
-				  uint32 client_id_len)
+				  SilcClientID *client_id)
 {
   SilcBuffer idp1, idp2;
 
@@ -1028,8 +1025,7 @@ void silc_server_send_notify_leave(SilcServer server,
 				   SilcSocketConnection sock,
 				   int broadcast,
 				   SilcChannelEntry channel,
-				   SilcClientID *client_id,
-				   uint32 client_id_len)
+				   SilcClientID *client_id)
 {
   SilcBuffer idp;
 
@@ -1050,7 +1046,6 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   SilcChannelEntry channel,
 				   uint32 mode_mask,
 				   void *id, SilcIdType id_type,
-				   uint32 id_len,
 				   char *cipher, char *hmac)
 {
   SilcBuffer idp;
@@ -1078,9 +1073,7 @@ void silc_server_send_notify_cumode(SilcServer server,
 				    SilcChannelEntry channel,
 				    uint32 mode_mask,
 				    void *id, SilcIdType id_type,
-				    uint32 id_len,
-				    SilcClientID *target,
-				    uint32 target_len)
+				    SilcClientID *target)
 {
   SilcBuffer idp1, idp2;
   unsigned char mode[4];
@@ -1108,7 +1101,6 @@ void silc_server_send_notify_signoff(SilcServer server,
 				     SilcSocketConnection sock,
 				     int broadcast,
 				     SilcClientID *client_id,
-				     uint32 client_id_len,
 				     char *message)
 {
   SilcBuffer idp;
@@ -1131,7 +1123,6 @@ void silc_server_send_notify_topic_set(SilcServer server,
 				       int broadcast,
 				       SilcChannelEntry channel,
 				       SilcClientID *client_id,
-				       uint32 client_id_len,
 				       char *topic)
 {
   SilcBuffer idp;
@@ -1155,7 +1146,6 @@ void silc_server_send_notify_kicked(SilcServer server,
 				    int broadcast,
 				    SilcChannelEntry channel,
 				    SilcClientID *client_id,
-				    uint32 client_id_len,
 				    char *comment)
 {
   SilcBuffer idp;
@@ -1176,7 +1166,6 @@ void silc_server_send_notify_killed(SilcServer server,
 				    SilcSocketConnection sock,
 				    int broadcast,
 				    SilcClientID *client_id,
-				    uint32 client_id_len,
 				    char *comment)
 {
   SilcBuffer idp;
@@ -1197,7 +1186,6 @@ void silc_server_send_notify_umode(SilcServer server,
 				   SilcSocketConnection sock,
 				   int broadcast,
 				   SilcClientID *client_id,
-				   uint32 client_id_len,
 				   uint32 mode_mask)
 {
   SilcBuffer idp;
@@ -1244,7 +1232,6 @@ void silc_server_send_notify_invite(SilcServer server,
 				    int broadcast,
 				    SilcChannelEntry channel,
 				    SilcClientID *client_id,
-				    uint32 client_id_len,
 				    char *add, char *del)
 {
   SilcBuffer idp, idp2;
@@ -1354,7 +1341,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
   packetdata.flags = 0;
   packetdata.type = SILC_PACKET_NOTIFY;
   packetdata.src_id = silc_id_id2str(server->id, SILC_ID_SERVER);
-  packetdata.src_id_len = SILC_ID_SERVER_LEN;
+  packetdata.src_id_len = silc_id_get_len(server->id, SILC_ID_SERVER);
   packetdata.src_id_type = SILC_ID_SERVER;
 
   silc_list_start(client->channels);
@@ -1392,7 +1379,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	idata = (SilcIDListData)c->router;
 	
 	packetdata.dst_id = silc_id_id2str(c->router->id, SILC_ID_SERVER);
-	packetdata.dst_id_len = SILC_ID_SERVER_LEN;
+	packetdata.dst_id_len = silc_id_get_len(c->router->id, SILC_ID_SERVER);
 	packetdata.dst_id_type = SILC_ID_SERVER;
 	packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
 	  packetdata.src_id_len + packetdata.dst_id_len;
@@ -1428,7 +1415,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	idata = (SilcIDListData)c;
 	
 	packetdata.dst_id = silc_id_id2str(c->id, SILC_ID_CLIENT);
-	packetdata.dst_id_len = SILC_ID_CLIENT_LEN;
+	packetdata.dst_id_len = silc_id_get_len(c->id, SILC_ID_CLIENT);
 	packetdata.dst_id_type = SILC_ID_CLIENT;
 	packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
 	  packetdata.src_id_len + packetdata.dst_id_len;
@@ -1543,7 +1530,9 @@ void silc_server_send_channel_key(SilcServer server,
  
   /* Encode channel key packet */
   tmp_len = strlen(channel->channel_key->cipher->name);
-  packet = silc_channel_key_payload_encode(SILC_ID_CHANNEL_LEN, chid, tmp_len,
+  packet = silc_channel_key_payload_encode(silc_id_get_len(channel->id,
+							   SILC_ID_CHANNEL),
+					   chid, tmp_len,
                                            channel->channel_key->cipher->name,
                                            channel->key_len / 8, channel->key);
  

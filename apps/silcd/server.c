@@ -216,7 +216,7 @@ int silc_server_init(SilcServer server)
     
     server->id = id;
     server->id_string = silc_id_id2str(id, SILC_ID_SERVER);
-    server->id_string_len = silc_id_get_len(SILC_ID_SERVER);
+    server->id_string_len = silc_id_get_len(id, SILC_ID_SERVER);
     server->id_type = SILC_ID_SERVER;
     server->server_name = server->config->server_info->server_name;
 
@@ -828,6 +828,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   SilcBuffer packet;
   SilcServerHBContext hb_context;
   unsigned char *id_string;
+  uint32 id_len;
   SilcIDListData idata;
 
   SILC_LOG_DEBUG(("Start"));
@@ -856,12 +857,12 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   /* Send NEW_SERVER packet to the router. We will become registered
      to the SILC network after sending this packet. */
   id_string = silc_id_id2str(server->id, SILC_ID_SERVER);
-  packet = silc_buffer_alloc(2 + 2 + SILC_ID_SERVER_LEN + 
-			     strlen(server->server_name));
+  id_len = silc_id_get_len(server->id, SILC_ID_SERVER);
+  packet = silc_buffer_alloc(2 + 2 + id_len + strlen(server->server_name));
   silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
   silc_buffer_format(packet,
-		     SILC_STR_UI_SHORT(SILC_ID_SERVER_LEN),
-		     SILC_STR_UI_XNSTRING(id_string, SILC_ID_SERVER_LEN),
+		     SILC_STR_UI_SHORT(id_len),
+		     SILC_STR_UI_XNSTRING(id_string, id_len),
 		     SILC_STR_UI_SHORT(strlen(server->server_name)),
 		     SILC_STR_UI_XNSTRING(server->server_name,
 					  strlen(server->server_name)),
@@ -1538,7 +1539,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
     if (client && client->id) {
       void *id = silc_id_str2id(packet->src_id, packet->src_id_len,
 				packet->src_id_type);
-      if (!id || SILC_ID_CLIENT_COMPARE(client->id, id)) {
+      if (!id || !SILC_ID_CLIENT_COMPARE(client->id, id)) {
 	silc_free(id);
 	goto out;
       }
@@ -1552,7 +1553,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
     if (!(packet->flags & SILC_PACKET_FLAG_BROADCAST) &&
 	packet->dst_id_type == SILC_ID_SERVER && 
 	sock->type != SILC_SOCKET_TYPE_CLIENT &&
-	SILC_ID_SERVER_COMPARE(packet->dst_id, server->id_string)) {
+	memcmp(packet->dst_id, server->id_string, packet->dst_id_len)) {
       
       /* Route the packet to fastest route for the destination ID */
       void *id = silc_id_str2id(packet->dst_id, packet->dst_id_len, 
@@ -2179,8 +2180,7 @@ void silc_server_free_client_data(SilcServer server,
   if (notify && !server->standalone && server->router)
     silc_server_send_notify_signoff(server, server->router->connection,
 				    server->server_type == SILC_SERVER ?
-				    FALSE : TRUE, client->id, 
-				    SILC_ID_CLIENT_LEN, signoff);
+				    FALSE : TRUE, client->id, signoff);
 
   /* Remove client from all channels */
   if (notify)
@@ -2806,7 +2806,8 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
      to our primary route. */
   if (broadcast && server->standalone == FALSE)
     silc_server_send_new_channel(server, server->router->connection, TRUE, 
-				 channel_name, entry->id, SILC_ID_CHANNEL_LEN,
+				 channel_name, entry->id, 
+				 silc_id_get_len(entry->id, SILC_ID_CHANNEL),
 				 entry->mode);
 
   server->stat.my_channels++;
@@ -2864,7 +2865,8 @@ silc_server_create_new_channel_with_id(SilcServer server,
      to our primary route. */
   if (broadcast && server->standalone == FALSE)
     silc_server_send_new_channel(server, server->router->connection, TRUE, 
-				 channel_name, entry->id, SILC_ID_CHANNEL_LEN,
+				 channel_name, entry->id, 
+				 silc_id_get_len(entry->id, SILC_ID_CHANNEL),
 				 entry->mode);
 
   server->stat.my_channels++;
@@ -3312,6 +3314,7 @@ void silc_server_announce_get_channels(SilcServer server,
   SilcIDCacheEntry id_cache;
   SilcChannelEntry channel;
   unsigned char *cid;
+  uint32 id_len;
   uint16 name_len;
   int len;
 
@@ -3325,9 +3328,10 @@ void silc_server_announce_get_channels(SilcServer server,
 	channel = (SilcChannelEntry)id_cache->context;
 	
 	cid = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+	id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
 	name_len = strlen(channel->channel_name);
 
-	len = 4 + name_len + SILC_ID_CHANNEL_LEN + 4;
+	len = 4 + name_len + id_len + 4;
 	*channels = 
 	  silc_buffer_realloc(*channels, 
 			      (*channels ? (*channels)->truelen + len : len));
@@ -3337,8 +3341,8 @@ void silc_server_announce_get_channels(SilcServer server,
 			   SILC_STR_UI_SHORT(name_len),
 			   SILC_STR_UI_XNSTRING(channel->channel_name, 
 						name_len),
-			   SILC_STR_UI_SHORT(SILC_ID_CHANNEL_LEN),
-			   SILC_STR_UI_XNSTRING(cid, SILC_ID_CHANNEL_LEN),
+			   SILC_STR_UI_SHORT(id_len),
+			   SILC_STR_UI_XNSTRING(cid, id_len),
 			   SILC_STR_UI_INT(channel->mode),
 			   SILC_STR_END);
 	silc_buffer_pull(*channels, len);
@@ -3456,6 +3460,8 @@ void silc_server_get_users_on_channel(SilcServer server,
   SilcBuffer idp;
   uint32 list_count = 0;
 
+  /* XXX rewrite - this does not support IPv6 based Client ID's. */
+
   client_id_list = silc_buffer_alloc((SILC_ID_CLIENT_LEN + 4) * 
 				     silc_list_count(channel->user_list));
   client_mode_list = silc_buffer_alloc(4 * 
@@ -3519,7 +3525,7 @@ void silc_server_save_users_on_channel(SilcServer server,
     SILC_GET32_MSB(mode, mode_list->data);
     silc_buffer_pull(mode_list, 4);
 
-    if (noadd && !SILC_ID_CLIENT_COMPARE(client_id, noadd)) {
+    if (noadd && SILC_ID_CLIENT_COMPARE(client_id, noadd)) {
       silc_free(client_id);
       continue;
     }
@@ -3660,6 +3666,7 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
   unsigned char *cid;
+  uint32 id_len;
   uint16 name_len;
   int len;
 
@@ -3671,9 +3678,10 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
       continue;
 
     cid = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+    id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
     name_len = strlen(channel->channel_name);
     
-    len = 4 + name_len + SILC_ID_CHANNEL_LEN + 4;
+    len = 4 + name_len + id_len + 4;
     buffer = silc_buffer_realloc(buffer, 
 				 (buffer ? (buffer)->truelen + len : len));
     silc_buffer_pull_tail(buffer, ((buffer)->end - (buffer)->data));
@@ -3681,8 +3689,8 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 		       SILC_STR_UI_SHORT(name_len),
 		       SILC_STR_UI_XNSTRING(channel->channel_name, 
 					    name_len),
-		       SILC_STR_UI_SHORT(SILC_ID_CHANNEL_LEN),
-		       SILC_STR_UI_XNSTRING(cid, SILC_ID_CHANNEL_LEN),
+		       SILC_STR_UI_SHORT(id_len),
+		       SILC_STR_UI_XNSTRING(cid, id_len),
 		       SILC_STR_UI_INT(chl->mode), /* Client's mode */
 		       SILC_STR_END);
     silc_buffer_pull(buffer, len);

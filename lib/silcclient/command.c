@@ -862,7 +862,8 @@ SILC_CLIENT_CMD_FUNC(ping)
   /* Send the command */
   buffer = silc_command_payload_encode_va(SILC_COMMAND_PING, 0, 1, 
 					  1, conn->remote_id_data, 
-					  SILC_ID_SERVER_LEN);
+					  silc_id_get_len(conn->remote_id,
+							  SILC_ID_SERVER));
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);

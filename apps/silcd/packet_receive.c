@@ -526,8 +526,7 @@ void silc_server_notify(SilcServer server,
 	silc_server_send_notify_cumode(server, sock, FALSE, channel,
 				       (mode & (~SILC_CHANNEL_UMODE_CHANFO)),
 				       server->id, SILC_ID_SERVER, 
-				       SILC_ID_SERVER_LEN,
-				       client->id, SILC_ID_CLIENT_LEN);
+				       client->id);
 	silc_free(channel_id);
 
 	/* Change the mode back if we changed it */
@@ -1139,7 +1138,7 @@ void silc_server_command_reply(SilcServer server,
 
   if (packet->dst_id_type == SILC_ID_SERVER) {
     /* For now this must be for us */
-    if (SILC_ID_SERVER_COMPARE(packet->dst_id, server->id_string)) {
+    if (memcmp(packet->dst_id, server->id_string, packet->dst_id_len)) {
       SILC_LOG_ERROR(("Cannot process command reply to unknown server"));
       return;
     }
@@ -1216,7 +1215,7 @@ void silc_server_channel_message(SilcServer server,
   if (packet->src_id_type == SILC_ID_CLIENT) {
     silc_list_start(channel->user_list);
     while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-      if (chl->client && !SILC_ID_CLIENT_COMPARE(chl->client->id, sender)) {
+      if (chl->client && SILC_ID_CLIENT_COMPARE(chl->client->id, sender)) {
 	sender_entry = chl->client;
 	break;
       }
@@ -1280,6 +1279,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   SilcBuffer reply;
   SilcIDListData idata;
   char *username = NULL, *realname = NULL, *id_string;
+  uint32 id_len;
   int ret;
 
   SILC_LOG_DEBUG(("Creating new client"));
@@ -1337,6 +1337,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   client->username = username;
   client->userinfo = realname ? realname : strdup(" ");
   client->id = client_id;
+  id_len = silc_id_get_len(client_id, SILC_ID_CLIENT);
 
   /* Update the cache entry */
   cache->id = (void *)client_id;
@@ -1350,16 +1351,16 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     silc_server_send_new_id(server, (SilcSocketConnection) 
 			    server->router->connection, 
 			    server->server_type == SILC_ROUTER ? TRUE : FALSE,
-			    client->id, SILC_ID_CLIENT, SILC_ID_CLIENT_LEN);
+			    client->id, SILC_ID_CLIENT, id_len);
   
   /* Send the new client ID to the client. */
   id_string = silc_id_id2str(client->id, SILC_ID_CLIENT);
-  reply = silc_buffer_alloc(2 + 2 + SILC_ID_CLIENT_LEN);
+  reply = silc_buffer_alloc(2 + 2 + id_len);
   silc_buffer_pull_tail(reply, SILC_BUFFER_END(reply));
   silc_buffer_format(reply,
 		     SILC_STR_UI_SHORT(SILC_ID_CLIENT),
-		     SILC_STR_UI_SHORT(SILC_ID_CLIENT_LEN),
-		     SILC_STR_UI_XNSTRING(id_string, SILC_ID_CLIENT_LEN),
+		     SILC_STR_UI_SHORT(id_len),
+		     SILC_STR_UI_XNSTRING(id_string, id_len),
 		     SILC_STR_END);
   silc_server_packet_send(server, sock, SILC_PACKET_NEW_ID, 0, 
 			  reply->data, reply->len, FALSE);
@@ -1508,7 +1509,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
       server->router->connection != sock)
     silc_server_send_new_id(server, server->router->connection,
 			    TRUE, new_server->id, SILC_ID_SERVER, 
-			    SILC_ID_SERVER_LEN);
+			    silc_id_get_len(server_id, SILC_ID_SERVER));
 
   if (server->server_type == SILC_ROUTER)
     server->stat.cell_servers++;
@@ -1624,7 +1625,7 @@ static void silc_server_new_id_real(SilcServer server,
 
   case SILC_ID_SERVER:
     /* If the ID is mine, ignore it. */
-    if (!SILC_ID_SERVER_COMPARE(id, server->id)) {
+    if (SILC_ID_SERVER_COMPARE(id, server->id)) {
       SILC_LOG_DEBUG(("Ignoring my own ID as new ID"));
       break;
     }
@@ -1834,14 +1835,12 @@ void silc_server_new_channel(SilcServer server,
       if (!channel->id)
 	channel_id = silc_id_dup(channel_id, SILC_ID_CHANNEL);
 
-      if (SILC_ID_CHANNEL_COMPARE(channel_id, channel->id)) {
+      if (!SILC_ID_CHANNEL_COMPARE(channel_id, channel->id)) {
 	/* They don't match, send CHANNEL_CHANGE notify to the server to
 	   force the ID change. */
 	SILC_LOG_DEBUG(("Forcing the server to change Channel ID"));
 	silc_server_send_notify_channel_change(server, sock, FALSE, 
-					       channel_id,
-					       channel->id, 
-					       SILC_ID_CHANNEL_LEN);
+					       channel_id, channel->id);
       }
 
       /* If the mode is different from what we have then enforce the
@@ -1851,7 +1850,7 @@ void silc_server_new_channel(SilcServer server,
 	SILC_LOG_DEBUG(("Forcing the server to change channel mode"));
 	silc_server_send_notify_cmode(server, sock, FALSE, channel,
 				      channel->mode, server->id,
-				      SILC_ID_SERVER, SILC_ID_SERVER_LEN,
+				      SILC_ID_SERVER,
 				      channel->cipher, channel->hmac_name);
       }
 

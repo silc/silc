@@ -74,10 +74,10 @@ void silc_client_send_private_message(SilcClient client,
   packetdata.flags = SILC_PACKET_FLAG_PRIVMSG_KEY;
   packetdata.type = SILC_PACKET_PRIVATE_MESSAGE;
   packetdata.src_id = conn->local_id_data;
-  packetdata.src_id_len = SILC_ID_CLIENT_LEN;
+  packetdata.src_id_len = silc_id_get_len(conn->local_id, SILC_ID_CLIENT);
   packetdata.src_id_type = SILC_ID_CLIENT;
   packetdata.dst_id = silc_id_id2str(client_entry->id, SILC_ID_CLIENT);
-  packetdata.dst_id_len = SILC_ID_CLIENT_LEN;
+  packetdata.dst_id_len = silc_id_get_len(client_entry->id, SILC_ID_CLIENT);
   packetdata.dst_id_type = SILC_ID_CLIENT;
   packetdata.truelen = buffer->len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
@@ -181,7 +181,7 @@ void silc_client_private_message(SilcClient client,
      sender with the set away message. */
   if (conn->away && conn->away->away) {
     /* If it's me, ignore */
-    if (!SILC_ID_CLIENT_COMPARE(remote_id, conn->local_id))
+    if (SILC_ID_CLIENT_COMPARE(remote_id, conn->local_id))
       goto out;
 
     /* Send the away message */

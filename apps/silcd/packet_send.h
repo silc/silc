@@ -108,33 +108,28 @@ void silc_server_send_notify_channel_change(SilcServer server,
 					    SilcSocketConnection sock,
 					    int broadcast,
 					    SilcChannelID *old_id,
-					    SilcChannelID *new_id,
-					    uint32 id_len);
+					    SilcChannelID *new_id);
 void silc_server_send_notify_nick_change(SilcServer server,
 					 SilcSocketConnection sock,
 					 int broadcast,
 					 SilcClientID *old_id,
-					 SilcClientID *new_id,
-					 uint32 id_len);
+					 SilcClientID *new_id);
 void silc_server_send_notify_join(SilcServer server,
 				  SilcSocketConnection sock,
 				  int broadcast,
 				  SilcChannelEntry channel,
-				  SilcClientID *client_id,
-				  uint32 client_id_len);
+				  SilcClientID *client_id);
 void silc_server_send_notify_leave(SilcServer server,
 				   SilcSocketConnection sock,
 				   int broadcast,
 				   SilcChannelEntry channel,
-				   SilcClientID *client_id,
-				   uint32 client_id_len);
+				   SilcClientID *client_id);
 void silc_server_send_notify_cmode(SilcServer server,
 				   SilcSocketConnection sock,
 				   int broadcast,
 				   SilcChannelEntry channel,
 				   uint32 mode_mask,
 				   void *id, SilcIdType id_type,
-				   uint32 id_len,
 				   char *cipher, char *hmac);
 void silc_server_send_notify_cumode(SilcServer server,
 				    SilcSocketConnection sock,
@@ -142,40 +137,33 @@ void silc_server_send_notify_cumode(SilcServer server,
 				    SilcChannelEntry channel,
 				    uint32 mode_mask,
 				    void *id, SilcIdType id_type,
-				    uint32 id_len,
-				    SilcClientID *target,
-				    uint32 target_len);
+				    SilcClientID *target);
 void silc_server_send_notify_signoff(SilcServer server,
 				     SilcSocketConnection sock,
 				     int broadcast,
 				     SilcClientID *client_id,
-				     uint32 client_id_len,
 				     char *message);
 void silc_server_send_notify_topic_set(SilcServer server,
 				       SilcSocketConnection sock,
 				       int broadcast,
 				       SilcChannelEntry channel,
 				       SilcClientID *client_id,
-				       uint32 client_id_len,
 				       char *topic);
 void silc_server_send_notify_kicked(SilcServer server,
 				    SilcSocketConnection sock,
 				    int broadcast,
 				    SilcChannelEntry channel,
 				    SilcClientID *client_id,
-				    uint32 client_id_len,
 				    char *comment);
 void silc_server_send_notify_killed(SilcServer server,
 				    SilcSocketConnection sock,
 				    int broadcast,
 				    SilcClientID *client_id,
-				    uint32 client_id_len,
 				    char *comment);
 void silc_server_send_notify_umode(SilcServer server,
 				   SilcSocketConnection sock,
 				   int broadcast,
 				   SilcClientID *client_id,
-				   uint32 client_id_len,
 				   uint32 mode_mask);
 void silc_server_send_notify_ban(SilcServer server,
 				 SilcSocketConnection sock,
@@ -187,7 +175,6 @@ void silc_server_send_notify_invite(SilcServer server,
 				    int broadcast,
 				    SilcChannelEntry channel,
 				    SilcClientID *client_id,
-				    uint32 client_id_len,
 				    char *add, char *del);
 void silc_server_send_notify_dest(SilcServer server,
 				  SilcSocketConnection sock,

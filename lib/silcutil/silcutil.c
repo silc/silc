@@ -487,7 +487,15 @@ char *silc_id_render(void *id, uint16 type)
   case SILC_ID_SERVER:
     {
       SilcServerID *server_id = (SilcServerID *)id;
-      strcat(rid, inet_ntoa(server_id->ip));
+      struct in_addr ipv4;
+
+      if (server_id->ip.data_len > 4) {
+
+      } else {
+	SILC_GET32_MSB(ipv4.s_addr, server_id->ip.data);
+	strcat(rid, inet_ntoa(ipv4));
+      }
+
       memset(tmp, 0, sizeof(tmp));
       snprintf(tmp, sizeof(tmp), ",%d,", ntohs(server_id->port));
       strcat(rid, tmp);
@@ -500,7 +508,15 @@ char *silc_id_render(void *id, uint16 type)
   case SILC_ID_CLIENT:
     {
       SilcClientID *client_id = (SilcClientID *)id;
-      strcat(rid, inet_ntoa(client_id->ip));
+      struct in_addr ipv4;
+
+      if (client_id->ip.data_len > 4) {
+
+      } else {
+	SILC_GET32_MSB(ipv4.s_addr, client_id->ip.data);
+	strcat(rid, inet_ntoa(ipv4));
+      }
+
       memset(tmp, 0, sizeof(tmp));
       snprintf(tmp, sizeof(tmp), ",%02x,", client_id->rnd);
       strcat(rid, tmp);
@@ -514,7 +530,15 @@ char *silc_id_render(void *id, uint16 type)
   case SILC_ID_CHANNEL:
     {
       SilcChannelID *channel_id = (SilcChannelID *)id;
-      strcat(rid, inet_ntoa(channel_id->ip));
+      struct in_addr ipv4;
+
+      if (channel_id->ip.data_len > 4) {
+
+      } else {
+	SILC_GET32_MSB(ipv4.s_addr, channel_id->ip.data);
+	strcat(rid, inet_ntoa(ipv4));
+      }
+
       memset(tmp, 0, sizeof(tmp));
       snprintf(tmp, sizeof(tmp), ",%d,", ntohs(channel_id->port));
       strcat(rid, tmp);

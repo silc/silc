@@ -553,7 +553,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
   /* Save remote ID. */
   conn->remote_id = ctx->dest_id;
   conn->remote_id_data = silc_id_id2str(ctx->dest_id, SILC_ID_SERVER);
-  conn->remote_id_data_len = SILC_ID_SERVER_LEN;
+  conn->remote_id_data_len = silc_id_get_len(ctx->dest_id, SILC_ID_SERVER);
 
   /* Register re-key timeout */
   conn->rekey->timeout = 3600; /* XXX hardcoded */
@@ -1088,15 +1088,19 @@ void silc_client_packet_send(SilcClient client,
   packetdata.flags = 0;
   packetdata.type = type;
   if (sock->user_data && 
-      ((SilcClientConnection)sock->user_data)->local_id_data)
+      ((SilcClientConnection)sock->user_data)->local_id_data) {
     packetdata.src_id = ((SilcClientConnection)sock->user_data)->local_id_data;
-  else 
+    packetdata.src_id_len = 
+      silc_id_get_len(((SilcClientConnection)sock->user_data)->local_id,
+		      SILC_ID_CLIENT);
+  } else { 
     packetdata.src_id = silc_calloc(SILC_ID_CLIENT_LEN, sizeof(unsigned char));
-  packetdata.src_id_len = SILC_ID_CLIENT_LEN;
+    packetdata.src_id_len = SILC_ID_CLIENT_LEN;
+  }
   packetdata.src_id_type = SILC_ID_CLIENT;
   if (dst_id) {
     packetdata.dst_id = silc_id_id2str(dst_id, dst_id_type);
-    packetdata.dst_id_len = silc_id_get_len(dst_id_type);
+    packetdata.dst_id_len = silc_id_get_len(dst_id, dst_id_type);
     packetdata.dst_id_type = dst_id_type;
   } else {
     packetdata.dst_id = NULL;
@@ -1185,15 +1189,19 @@ void silc_client_packet_send_flush(SilcClient client,
   packetdata.flags = 0;
   packetdata.type = type;
   if (sock->user_data && 
-      ((SilcClientConnection)sock->user_data)->local_id_data)
+      ((SilcClientConnection)sock->user_data)->local_id_data) {
     packetdata.src_id = ((SilcClientConnection)sock->user_data)->local_id_data;
-  else 
+    packetdata.src_id_len = 
+      silc_id_get_len(((SilcClientConnection)sock->user_data)->local_id,
+		      SILC_ID_CLIENT);
+  } else { 
     packetdata.src_id = silc_calloc(SILC_ID_CLIENT_LEN, sizeof(unsigned char));
-  packetdata.src_id_len = SILC_ID_CLIENT_LEN;
+    packetdata.src_id_len = SILC_ID_CLIENT_LEN;
+  }
   packetdata.src_id_type = SILC_ID_CLIENT;
   if (dst_id) {
     packetdata.dst_id = silc_id_id2str(dst_id, dst_id_type);
-    packetdata.dst_id_len = silc_id_get_len(dst_id_type);
+    packetdata.dst_id_len = silc_id_get_len(dst_id, dst_id_type);
     packetdata.dst_id_type = dst_id_type;
   } else {
     packetdata.dst_id = NULL;
