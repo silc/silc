@@ -181,7 +181,7 @@ void silc_send_mime(SILC_SERVER_REC *server, WI_ITEM_REC *to,
   SILC_CHANNEL_REC *channel;
   QUERY_REC *query;
   char *unescaped_data;
-  int unescaped_data_len;
+  SilcUInt32 unescaped_data_len;
   char *mime_data;
   int mime_data_len;
 

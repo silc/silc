@@ -54,7 +54,7 @@
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcDListStruct {
   SilcList list;
 } *SilcDList;
 /***/

@@ -422,7 +422,8 @@ typedef struct {
  * DESCRIPTION
  *
  *    Converts an ID of type `type' to data. This can be used to
- *    convert the ID's to data for inclusion in the packets.
+ *    convert the ID's to data for inclusion in the packets.  Use the
+ *    silc_id_get_len to get the length of the ID.
  *
  ***/
 unsigned char *silc_id_id2str(const void *id, SilcIdType type);

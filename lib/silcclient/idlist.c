@@ -887,11 +887,13 @@ bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
   bool ret = silc_idcache_del_by_context(conn->internal->client_cache,
 					 client_entry);
 
-  /* Remove from channels */
-  silc_client_remove_from_channels(client, conn, client_entry);
+  if (ret) {
+    /* Remove from channels */
+    silc_client_remove_from_channels(client, conn, client_entry);
 
-  /* Free the client entry data */
-  silc_client_del_client_entry(client, conn, client_entry);
+    /* Free the client entry data */
+    silc_client_del_client_entry(client, conn, client_entry);
+  }
 
   return ret;
 }

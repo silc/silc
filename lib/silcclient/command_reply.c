@@ -539,6 +539,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
   SilcIDPayload idp;
   unsigned char *tmp;
   SilcUInt32 argc, len;
+  SilcClientID old_client_id;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -557,6 +558,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
     COMMAND_REPLY_ERROR;
     goto out;
   }
+
+  /* Save old Client ID */
+  old_client_id = *conn->local_id;
 
   /* Take received Client ID */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
@@ -582,7 +586,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
   }
 
   /* Notify application */
-  COMMAND_REPLY((SILC_ARGS, conn->local_entry, conn->local_entry->nickname));
+  COMMAND_REPLY((SILC_ARGS, conn->local_entry, conn->local_entry->nickname,
+		 (const SilcClientID *)&old_client_id));
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_NICK);

@@ -1312,9 +1312,9 @@ static void silc_client_join_get_users(SilcClient client,
 
   if (!clients && r->retry < 1) {
     /* Retry to resolve */
+    r->retry++;
     silc_client_get_clients_by_channel(client, conn, channel,
 				       silc_client_join_get_users, context);
-    r->retry++;
     return;
   }
 

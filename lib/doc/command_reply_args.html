@@ -126,9 +126,12 @@ this command reply.  The 'name' and 'info' may be NULL.
 <tr>
 <td><small>SILC_COMMAND_NICK</td>
 <td><small>
-Returns the new Client ID after user has changed nickname.
+Returns the new Client ID and new nickname inside the SilcClientEntry.
+The `old_client_id' is the odl Client ID used by the client before the
+nickname was changed.
 </td>
-<td width="50%"><small>SilcClientEntry local_entry, char *nickname
+<td width="50%"><small>SilcClientEntry local_entry, char *nickname,
+const SilcClientID *old_client_id
 </td>
 </tr>
 
