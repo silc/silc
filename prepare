@@ -90,16 +90,12 @@ sed -e "/SILC_PACKAGE/s//silc-"$distribution"/" configure.in2 >configure.in
 rm -f configure.in2
 
 #
-# Prepare the Makefile.defines and Makefile.defines_int
+# Prepare the Makefile.defines
 #
 cp Makefile.defines.pre Makefile.defines.in
-cp Makefile.defines.in Makefile.defines
 cp Makefile.defines.in irssi
-cp Makefile.defines.in irssi/Makefile.defines
 cp Makefile.defines_int.pre Makefile.defines_int.in
-cp Makefile.defines_int.in Makefile.defines_int
 cp Makefile.defines_int.in irssi
-cp Makefile.defines_int.in irssi/Makefile.defines_int
 
 aclocal
 autoconf
@@ -121,7 +117,8 @@ echo "#define SILC_PROTOCOL_VERSION_STRING \"SILC-1.0-$version\"" >>$file
 
 # preparing irssi
 cd irssi
-sh autogen.sh 2>/dev/null 1>/dev/null
+#sh autogen.sh 2>/dev/null 1>/dev/null
+sh autogen.sh
 cd ..
 file=irssi/irssi-version.h.in
 version_date=`date +%Y%m%d`
