@@ -133,7 +133,7 @@ EXTRA_DIST = \
 	$(silc_sources)
 
 all-local:
-	for dir in $(perl_dirs); do \
+	for dir in "$(perl_dirs)"; do \
 	  cd $$dir && \
 	  if [ ! -f Makefile ]; then \
             $(perlpath) Makefile.PL $(PERL_MM_PARAMS); \

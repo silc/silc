@@ -4,7 +4,7 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -123,7 +123,7 @@ static void silc_log_checksize(SilcLog log)
   /* It's too big */
   fprintf(log->fp, "[%s] [%s] Cycling log file, over max "
 	  "logsize (%lu kilobytes)\n",
-	  silc_get_time(0), log->typename, log->maxsize / 1024);
+	  silc_get_time(0), log->typename, (unsigned long)log->maxsize / 1024);
   fflush(log->fp);
   fclose(log->fp);
   memset(newname, 0, sizeof(newname));
@@ -302,7 +302,7 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
     if (silc_log_scheduled)
       return TRUE;
 
-    /* Add schedule hook with a short delay to make sure we'll use 
+    /* Add schedule hook with a short delay to make sure we'll use
        right delay */
     silc_schedule_task_add(scheduler, 0, silc_log_fflush_callback,
 			   (void *) scheduler, 10, 0,

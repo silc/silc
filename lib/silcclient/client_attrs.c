@@ -1,10 +1,10 @@
 /*
 
-  client_attrs.c 
+  client_attrs.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ typedef struct {
 static void silc_client_attributes_process_foreach(void *key, void *context,
 						   void *user_context)
 {
-  SilcAttribute attribute = (SilcAttribute)(SilcUInt32)key;
+  SilcAttribute attribute = (SilcAttribute)SILC_PTR_TO_32(key);
   SilcAttributePayload attr = context;
   SilcAttrForeach *f = user_context;
   const unsigned char *data;
@@ -113,7 +113,7 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
       continue;
 
     silc_hash_table_find_foreach(conn->internal->attrs,
-				 (void *)(SilcUInt32)attribute,
+				 SILC_32_TO_PTR(attribute),
 				 silc_client_attributes_process_foreach,
 				 &f);
   }
@@ -163,7 +163,7 @@ SilcAttributePayload silc_client_attribute_add(SilcClient client,
 			    NULL, silc_client_attribute_destruct,
 			    NULL, TRUE);
   silc_hash_table_add(conn->internal->attrs,
-		      (void *)(SilcUInt32)attribute, attr);
+		      SILC_32_TO_PTR(attribute), attr);
   return attr;
 }
 
@@ -177,7 +177,7 @@ static void silc_client_attribute_del_foreach(void *key, void *context,
     return;
   attribute = silc_attribute_get_attribute(attr);
   silc_hash_table_del_by_context(conn->internal->attrs,
-				 (void *)(SilcUInt32)attribute, attr);
+				 SILC_32_TO_PTR(attribute), attr);
 }
 
 /* Delete one attribute */
@@ -195,10 +195,10 @@ bool silc_client_attribute_del(SilcClient client,
   if (attr) {
     attribute = silc_attribute_get_attribute(attr);
     ret = silc_hash_table_del_by_context(conn->internal->attrs,
-					 (void *)(SilcUInt32)attribute, attr);
+					 SILC_32_TO_PTR(attribute), attr);
   } else if (attribute) {
     silc_hash_table_find_foreach(conn->internal->attrs,
-				 (void *)(SilcUInt32)attribute,
+				 SILC_32_TO_PTR(attribute),
 				 silc_client_attribute_del_foreach, conn);
     ret = TRUE;
   } else{

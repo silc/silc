@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -636,7 +636,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
       silc_free(ctx);
 
       /* Notify application of failure */
-      client->internal->ops->connected(client, conn, 
+      client->internal->ops->connected(client, conn,
 				       SILC_CLIENT_CONN_ERROR_TIMEOUT);
     }
     return;
@@ -1863,7 +1863,7 @@ void silc_client_process_failure(SilcClient client,
 
     /* Notify application */
     client->internal->ops->failure(client, sock->user_data, sock->protocol,
-				   (void *)failure);
+				   SILC_32_TO_PTR(failure));
   }
 }
 

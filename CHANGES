@@ -25,6 +25,13 @@ Fri Feb 13 12:04:41 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 	  Fixes problem when the primary router goes down.  Affected files
 	  silcd/server.c, silcd/server_backup.c
 
+Thu Feb 12 20:09:59 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC_[32|64]_TO_PTR and SILC_PTR_TO_[32|64] macros.
+	  Fixed various compilation warnings when type casting ints
+	  to pointers or vice versa, of different size.  Updates around
+	  the source free.
+
 Tue Feb  3 23:25:17 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Surrogates not allowed in UTF-8 strings, updated decoder.

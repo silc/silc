@@ -1,10 +1,10 @@
 /*
 
-  sftp_server.c 
+  sftp_server.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ typedef struct {
 /* General routine to send SFTP packet to the SFTP client. */
 
 static void silc_sftp_send_packet(SilcSFTPServer sftp,
-				  SilcSFTPPacket type, 
+				  SilcSFTPPacket type,
 				  SilcUInt32 len, ...)
 {
   SilcBuffer tmp;
@@ -50,7 +50,7 @@ static void silc_sftp_send_packet(SilcSFTPServer sftp,
     return;
   sftp->packet = tmp;
 
-  SILC_LOG_HEXDUMP(("SFTP packet to client"), sftp->packet->data, 
+  SILC_LOG_HEXDUMP(("SFTP packet to client"), sftp->packet->data,
 		   sftp->packet->len);
 
   /* Send the packet */
@@ -86,12 +86,12 @@ static void silc_sftp_server_status(SilcSFTP sftp,
 				    void *context)
 {
   SilcSFTPServer server = (SilcSFTPServer)sftp;
-  SilcUInt32 id = (SilcUInt32)context;
+  SilcUInt32 id = SILC_PTR_TO_32(context);
   int mlen, llen;
 
   SILC_LOG_DEBUG(("Status callback"));
   SILC_LOG_DEBUG(("Request ID: %d", id));
-  
+
   if (!message)
     message = "";
   if (!language_tag)
@@ -117,7 +117,7 @@ static void silc_sftp_server_handle(SilcSFTP sftp,
 				    void *context)
 {
   SilcSFTPServer server = (SilcSFTPServer)sftp;
-  SilcUInt32 id = (SilcUInt32)context;
+  SilcUInt32 id = SILC_PTR_TO_32(context);
   unsigned char *hdata;
   SilcUInt32 hdata_len;
 
@@ -152,7 +152,7 @@ static void silc_sftp_server_data(SilcSFTP sftp,
 				  void *context)
 {
   SilcSFTPServer server = (SilcSFTPServer)sftp;
-  SilcUInt32 id = (SilcUInt32)context;
+  SilcUInt32 id = SILC_PTR_TO_32(context);
 
   SILC_LOG_DEBUG(("Data callback"));
   SILC_LOG_DEBUG(("Request ID: %d", id));
@@ -177,7 +177,7 @@ static void silc_sftp_server_name(SilcSFTP sftp,
 				  void *context)
 {
   SilcSFTPServer server = (SilcSFTPServer)sftp;
-  SilcUInt32 id = (SilcUInt32)context;
+  SilcUInt32 id = SILC_PTR_TO_32(context);
   SilcBuffer namebuf;
 
   SILC_LOG_DEBUG(("Name callback"));
@@ -208,7 +208,7 @@ static void silc_sftp_server_attr(SilcSFTP sftp,
 				  void *context)
 {
   SilcSFTPServer server = (SilcSFTPServer)sftp;
-  SilcUInt32 id = (SilcUInt32)context;
+  SilcUInt32 id = SILC_PTR_TO_32(context);
   SilcBuffer attr_buf;
 
   SILC_LOG_DEBUG(("Attr callback"));
@@ -242,7 +242,7 @@ static void silc_sftp_server_extended(SilcSFTP sftp,
 				      void *context)
 {
   SilcSFTPServer server = (SilcSFTPServer)sftp;
-  SilcUInt32 id = (SilcUInt32)context;
+  SilcUInt32 id = SILC_PTR_TO_32(context);
 
   SILC_LOG_DEBUG(("Extended callback"));
   SILC_LOG_DEBUG(("Request ID: %d", id));
@@ -300,7 +300,7 @@ void silc_sftp_server_shutdown(SilcSFTP sftp)
 
 void silc_sftp_server_set_monitor(SilcSFTP sftp,
 				  SilcSFTPMonitors monitors,
-				  SilcSFTPMonitor monitor, 
+				  SilcSFTPMonitor monitor,
 				  void *context)
 {
   SilcSFTPServer server = (SilcSFTPServer)sftp;
@@ -332,7 +332,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
   SILC_LOG_DEBUG(("Start"));
 
   /* Parse the packet */
-  type = silc_sftp_packet_decode(packet->buffer, (unsigned char **)&payload, 
+  type = silc_sftp_packet_decode(packet->buffer, (unsigned char **)&payload,
 				 &payload_len);
   if (!type)
     return;
@@ -380,7 +380,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 				 SILC_STR_UI_INT(&id),
 				 SILC_STR_UI32_STRING_ALLOC(&filename),
 				 SILC_STR_UI_INT(&pflags),
-				 SILC_STR_UI32_NSTRING(&attr_buf, 
+				 SILC_STR_UI32_NSTRING(&attr_buf,
 						       &attr_len),
 				 SILC_STR_END);
       if (ret < 0)
@@ -407,7 +407,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Open operation */
       server->fs->fs->sftp_open(server->fs->fs_context, sftp, filename, pflags,
-				attrs, silc_sftp_server_handle, (void *)id);
+				attrs, silc_sftp_server_handle,
+				SILC_32_TO_PTR(id));
 
       silc_free(filename);
       silc_sftp_attr_free(attrs);
@@ -423,7 +424,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       ret = silc_buffer_unformat(&buf,
 				 SILC_STR_UI_INT(&id),
-				 SILC_STR_UI32_NSTRING(&hdata, 
+				 SILC_STR_UI32_NSTRING(&hdata,
 						       &hdata_len),
 				 SILC_STR_END);
       if (ret < 0)
@@ -446,7 +447,8 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Close operation */
       server->fs->fs->sftp_close(server->fs->fs_context, sftp, handle,
-				 silc_sftp_server_status, (void *)id);
+				 silc_sftp_server_status, SILC_32_TO_PTR(id));
+
     }
     break;
 
@@ -461,7 +463,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       ret = silc_buffer_unformat(&buf,
 				 SILC_STR_UI_INT(&id),
-				 SILC_STR_UI32_NSTRING(&hdata, 
+				 SILC_STR_UI32_NSTRING(&hdata,
 						       &hdata_len),
 				 SILC_STR_UI_INT64(&offset),
 				 SILC_STR_UI_INT(&len),
@@ -487,9 +489,9 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       }
 
       /* Read operation */
-      server->fs->fs->sftp_read(server->fs->fs_context, sftp, 
+      server->fs->fs->sftp_read(server->fs->fs_context, sftp,
 				handle, offset, len,
-				silc_sftp_server_data, (void *)id);
+				silc_sftp_server_data, SILC_32_TO_PTR(id));
     }
     break;
 
@@ -505,10 +507,10 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       ret = silc_buffer_unformat(&buf,
 				 SILC_STR_UI_INT(&id),
-				 SILC_STR_UI32_NSTRING(&hdata, 
+				 SILC_STR_UI32_NSTRING(&hdata,
 						       &hdata_len),
 				 SILC_STR_UI_INT64(&offset),
-				 SILC_STR_UI32_NSTRING(&data, 
+				 SILC_STR_UI32_NSTRING(&data,
 						       &data_len),
 				 SILC_STR_END);
       if (ret < 0)
@@ -532,9 +534,9 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       }
 
       /* Write operation */
-      server->fs->fs->sftp_write(server->fs->fs_context, sftp, handle, offset, 
+      server->fs->fs->sftp_write(server->fs->fs_context, sftp, handle, offset,
 				 (const unsigned char *)data, data_len,
-				 silc_sftp_server_status, (void *)id);
+				 silc_sftp_server_status, SILC_32_TO_PTR(id));
     }
     break;
 
@@ -558,7 +560,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Remove operation */
       server->fs->fs->sftp_remove(server->fs->fs_context, sftp, filename,
-				  silc_sftp_server_status, (void *)id);
+				  silc_sftp_server_status, SILC_32_TO_PTR(id));
 
       silc_free(filename);
     }
@@ -587,9 +589,9 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       }
 
       /* Rename operation */
-      server->fs->fs->sftp_rename(server->fs->fs_context, sftp, 
+      server->fs->fs->sftp_rename(server->fs->fs_context, sftp,
 				  filename, newname,
-				  silc_sftp_server_status, (void *)id);
+				  silc_sftp_server_status, SILC_32_TO_PTR(id));
 
       silc_free(filename);
       silc_free(newname);
@@ -633,7 +635,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Mkdir operation */
       server->fs->fs->sftp_mkdir(server->fs->fs_context, sftp, path, attrs,
-				 silc_sftp_server_status, (void *)id);
+				 silc_sftp_server_status, SILC_32_TO_PTR(id));
 
       silc_sftp_attr_free(attrs);
       silc_free(path);
@@ -660,7 +662,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Rmdir operation */
       server->fs->fs->sftp_rmdir(server->fs->fs_context, sftp, path,
-				 silc_sftp_server_status, (void *)id);
+				 silc_sftp_server_status, SILC_32_TO_PTR(id));
 
       silc_free(path);
     }
@@ -686,7 +688,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Opendir operation */
       server->fs->fs->sftp_opendir(server->fs->fs_context, sftp, path,
-				   silc_sftp_server_handle, (void *)id);
+				   silc_sftp_server_handle, SILC_32_TO_PTR(id));
 
       silc_free(path);
     }
@@ -701,7 +703,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       ret = silc_buffer_unformat(&buf,
 				 SILC_STR_UI_INT(&id),
-				 SILC_STR_UI32_NSTRING(&hdata, 
+				 SILC_STR_UI32_NSTRING(&hdata,
 						       &hdata_len),
 				 SILC_STR_END);
       if (ret < 0)
@@ -724,7 +726,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Readdir operation */
       server->fs->fs->sftp_readdir(server->fs->fs_context, sftp, handle,
-				   silc_sftp_server_name, (void *)id);
+				   silc_sftp_server_name, SILC_32_TO_PTR(id));
     }
     break;
 
@@ -748,7 +750,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Stat operation */
       server->fs->fs->sftp_stat(server->fs->fs_context, sftp, path,
-				silc_sftp_server_attr, (void *)id);
+				silc_sftp_server_attr, SILC_32_TO_PTR(id));
 
       silc_free(path);
     }
@@ -774,7 +776,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Lstat operation */
       server->fs->fs->sftp_lstat(server->fs->fs_context, sftp, path,
-				 silc_sftp_server_attr, (void *)id);
+				 silc_sftp_server_attr, SILC_32_TO_PTR(id));
 
       silc_free(path);
     }
@@ -789,7 +791,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       ret = silc_buffer_unformat(&buf,
 				 SILC_STR_UI_INT(&id),
-				 SILC_STR_UI32_NSTRING(&hdata, 
+				 SILC_STR_UI32_NSTRING(&hdata,
 						       &hdata_len),
 				 SILC_STR_END);
       if (ret < 0)
@@ -812,7 +814,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Fstat operation */
       server->fs->fs->sftp_fstat(server->fs->fs_context, sftp, handle,
-				 silc_sftp_server_attr, (void *)id);
+				 silc_sftp_server_attr, SILC_32_TO_PTR(id));
     }
     break;
 
@@ -853,7 +855,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Setstat operation */
       server->fs->fs->sftp_setstat(server->fs->fs_context, sftp, path, attrs,
-				   silc_sftp_server_status, (void *)id);
+				   silc_sftp_server_status, SILC_32_TO_PTR(id));
 
       silc_sftp_attr_free(attrs);
       silc_free(path);
@@ -870,7 +872,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       ret = silc_buffer_unformat(&buf,
 				 SILC_STR_UI_INT(&id),
-				 SILC_STR_UI32_NSTRING(&hdata, 
+				 SILC_STR_UI32_NSTRING(&hdata,
 						       &hdata_len),
 				 SILC_STR_UI32_NSTRING(&attr_buf,
 						       &attr_len),
@@ -905,9 +907,10 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       }
 
       /* Fsetstat operation */
-      server->fs->fs->sftp_fsetstat(server->fs->fs_context, sftp, 
+      server->fs->fs->sftp_fsetstat(server->fs->fs_context, sftp,
 				    handle, attrs,
-				    silc_sftp_server_status, (void *)id);
+				    silc_sftp_server_status,
+				    SILC_32_TO_PTR(id));
 
       silc_sftp_attr_free(attrs);
     }
@@ -933,7 +936,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Readlink operation */
       server->fs->fs->sftp_readlink(server->fs->fs_context, sftp, path,
-				    silc_sftp_server_name, (void *)id);
+				    silc_sftp_server_name, SILC_32_TO_PTR(id));
 
       silc_free(path);
     }
@@ -963,7 +966,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Symlink operation */
       server->fs->fs->sftp_symlink(server->fs->fs_context, sftp, path, target,
-				   silc_sftp_server_status, (void *)id);
+				   silc_sftp_server_status, SILC_32_TO_PTR(id));
 
       silc_free(path);
       silc_free(target);
@@ -990,7 +993,7 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
 
       /* Realpath operation */
       server->fs->fs->sftp_realpath(server->fs->fs_context, sftp, path,
-				    silc_sftp_server_name, (void *)id);
+				    silc_sftp_server_name, SILC_32_TO_PTR(id));
 
       silc_free(path);
     }
@@ -1027,9 +1030,10 @@ void silc_sftp_server_receive_process(SilcSFTP sftp,
       }
 
       /* Extended operation */
-      server->fs->fs->sftp_extended(server->fs->fs_context, sftp, 
+      server->fs->fs->sftp_extended(server->fs->fs_context, sftp,
 				    request, data, data_len,
-				    silc_sftp_server_extended, (void *)id);
+				    silc_sftp_server_extended,
+				    SILC_32_TO_PTR(id));
 
       silc_free(request);
     }

@@ -1607,7 +1607,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 		 sock->ip));
 
   /* Listenning port */
-  if (!server->sockets[(SilcUInt32)proto_ctx->context]) {
+  if (!server->sockets[SILC_PTR_TO_32(proto_ctx->context)]) {
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT,
 				  "Connection refused");
@@ -1615,7 +1615,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
     silc_free(proto_ctx);
     return;
   }
-  port = server->sockets[(SilcUInt32)proto_ctx->context]->port;
+  port = server->sockets[SILC_PTR_TO_32(proto_ctx->context)]->port;
 
   /* Check whether this connection is denied to connect to us. */
   deny = silc_server_config_find_denied(server, sock->ip);
@@ -1741,7 +1741,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
      is accepted further. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
   proto_ctx->server = server;
-  proto_ctx->context = (void *)fd;
+  proto_ctx->context = SILC_32_TO_PTR(fd);
   silc_socket_host_lookup(newsocket, TRUE,
 			  silc_server_accept_new_connection_lookup,
 			  (void *)proto_ctx, server->schedule);
