@@ -131,16 +131,7 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
 				    keymat->enc_key_len);
   conn->receive_key->set_iv(conn->receive_key, keymat->receive_iv);
 
-  /* Allocate PKCS to be used */
-#if 0
-  /* XXX Do we ever need to allocate PKCS for the connection??
-     If yes, we need to change KE protocol to get the initiators
-     public key. */
-  silc_pkcs_alloc(pkcs->pkcs->name, &conn->public_Key);
-  silc_pkcs_set_public_key(conn->public_key, ske->ke2_payload->pk_data, 
-			   ske->ke2_payload->pk_len);
-#endif
-
+  /* Rekey stuff */
   conn->rekey = silc_calloc(1, sizeof(*conn->rekey));
   conn->rekey->send_enc_key = 
     silc_calloc(keymat->enc_key_len / 8,

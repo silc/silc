@@ -1202,6 +1202,8 @@ void silc_client_close_connection(SilcClient client,
       silc_idcache_del_all(conn->client_cache);
     if (conn->channel_cache)
       silc_idcache_del_all(conn->channel_cache);
+    if (conn->server_cache)
+      silc_idcache_del_all(conn->server_cache);
 
     /* Free data */
     if (conn->remote_host)

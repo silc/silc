@@ -351,6 +351,7 @@ int silc_client_check_silc_dir()
       return FALSE;
     }
     
+#if 0
     /* Check the permissions of the dir */
     if ((st.st_mode & 0777) != 0755) {
       if ((chmod(filename, 0755)) == -1) {
@@ -359,6 +360,7 @@ int silc_client_check_silc_dir()
 	return FALSE;
       }
     }
+#endif
   }
 
   /*

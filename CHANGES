@@ -1,3 +1,8 @@
+Thu Jul 12 17:49:31 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not change the ~/.silc directory's permissions automatically.
+	  Affected file irssi/src/silc/core/clientutil.c.
+
 Thu Jul 12 10:18:40 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not cancel the protocol in silc_server_close_connection

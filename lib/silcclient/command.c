@@ -219,16 +219,6 @@ static void silc_client_command_destructor(void *context)
   silc_client_command_free((SilcClientCommandContext)context);
 }
 
-/* silc_client_get_client completion callback */
-void silc_client_command_completion(SilcClient client,
-				    SilcClientConnection conn,
-				    SilcClientEntry clients,
-				    uint32 clients_count,
-				    void *context)
-{
-
-}
-
 /* Command WHOIS. This command is used to query information about 
    specific user. */
 
@@ -397,7 +387,6 @@ SILC_CLIENT_CMD_FUNC(nick)
 			    "Your nickname is %s", conn->nickname);
     }
 
-    /* XXX Notify application */
     COMMAND;
     goto out;
   }
@@ -500,7 +489,8 @@ SILC_CLIENT_CMD_FUNC(topic)
 
   if (cmd->argv[1][0] == '*') {
     if (!conn->current_channel) {
-      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on any channel");
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			    "You are not on any channel");
       COMMAND_ERROR;
       goto out;
     }
@@ -510,14 +500,16 @@ SILC_CLIENT_CMD_FUNC(topic)
   }
 
   if (!conn->current_channel) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on that channel");
+    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			  "You are not on that channel");
     COMMAND_ERROR;
     goto out;
   }
 
   /* Get the Channel ID of the channel */
   if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on that channel");
+    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			  "You are not on that channel");
     COMMAND_ERROR;
     goto out;
   }
@@ -579,7 +571,8 @@ SILC_CLIENT_CMD_FUNC(invite)
 
   if (cmd->argv[1][0] == '*') {
     if (!conn->current_channel) {
-      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on any channel");
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			    "You are not on any channel");
       COMMAND_ERROR;
       goto out;
     }
@@ -590,7 +583,8 @@ SILC_CLIENT_CMD_FUNC(invite)
 
     channel = silc_client_get_channel(cmd->client, conn, name);
     if (!channel) {
-      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are on that channel");
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			    "You are on that channel");
       COMMAND_ERROR;
       goto out;
     }
@@ -600,7 +594,8 @@ SILC_CLIENT_CMD_FUNC(invite)
   if (cmd->argc == 3) {
     if (cmd->argv[2][0] != '+' && cmd->argv[2][0] != '-') {
       if (!silc_parse_nickname(cmd->argv[2], &nickname, &server, &num)) {
-	cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "Bad nickname");
+	cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			      "Bad nickname");
 	COMMAND_ERROR;
 	goto out;
       }
@@ -914,10 +909,6 @@ SILC_CLIENT_CMD_FUNC(ping)
   silc_client_command_free(cmd);
 }
 
-SILC_CLIENT_CMD_FUNC(notice)
-{
-}
-
 /* Command JOIN. Joins to a channel. */
 
 SILC_CLIENT_CMD_FUNC(join)
@@ -933,24 +924,10 @@ SILC_CLIENT_CMD_FUNC(join)
     goto out;
   }
 
-  if (cmd->argc < 2) {
-    /* Show channels currently joined to */
-
-    goto out;
-  }
-
   /* See if we have joined to the requested channel already */
   if (silc_idcache_find_by_name_one(conn->channel_cache, cmd->argv[1],
-				    &id_cache)) {
-#if 0
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-			  "You are talking to channel %s", cmd->argv[1]);
-    conn->current_channel = (SilcChannelEntry)id_cache->context;
-    cmd->client->screen->bottom_line->channel = cmd->argv[1];
-    silc_screen_print_bottom_line(cmd->client->screen, 0);
-#endif
+				    &id_cache))
     goto out;
-  }
 
   idp = silc_id_payload_encode(conn->local_id, SILC_ID_CLIENT);
 
@@ -1150,7 +1127,8 @@ SILC_CLIENT_CMD_FUNC(cmode)
 
   if (cmd->argv[1][0] == '*') {
     if (!conn->current_channel) {
-      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on any channel");
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			    "You are not on any channel");
       COMMAND_ERROR;
       goto out;
     }
@@ -1161,7 +1139,8 @@ SILC_CLIENT_CMD_FUNC(cmode)
 
     channel = silc_client_get_channel(cmd->client, conn, name);
     if (!channel) {
-      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are on that channel");
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			    "You are on that channel");
       COMMAND_ERROR;
       goto out;
     }
@@ -1379,7 +1358,8 @@ SILC_CLIENT_CMD_FUNC(cumode)
 
   if (cmd->argv[1][0] == '*') {
     if (!conn->current_channel) {
-      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on any channel");
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			    "You are not on any channel");
       COMMAND_ERROR;
       goto out;
     }
@@ -1390,7 +1370,8 @@ SILC_CLIENT_CMD_FUNC(cumode)
 
     channel = silc_client_get_channel(cmd->client, conn, name);
     if (!channel) {
-      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are on that channel");
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			    "You are on that channel");
       COMMAND_ERROR;
       goto out;
     }
@@ -1543,7 +1524,8 @@ SILC_CLIENT_CMD_FUNC(kick)
 
   if (cmd->argv[1][0] == '*') {
     if (!conn->current_channel) {
-      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on any channel");
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			    "You are not on any channel");
       COMMAND_ERROR;
       goto out;
     }
@@ -1553,14 +1535,16 @@ SILC_CLIENT_CMD_FUNC(kick)
   }
 
   if (!conn->current_channel) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on that channel");
+    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			  "You are not on that channel");
     COMMAND_ERROR;
     goto out;
   }
 
   /* Get the Channel ID of the channel */
   if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on that channel");
+    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			  "You are not on that channel");
     COMMAND_ERROR;
     goto out;
   }
@@ -1569,7 +1553,8 @@ SILC_CLIENT_CMD_FUNC(kick)
 
   /* Parse the typed nickname. */
   if (!silc_parse_nickname(cmd->argv[2], &nickname, &server, &num)) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "Bad nickname");
+    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			  "Bad nickname");
     COMMAND_ERROR;
     goto out;
   }
@@ -1578,7 +1563,8 @@ SILC_CLIENT_CMD_FUNC(kick)
   target = silc_idlist_get_client(cmd->client, conn, nickname, 
 				  server, num, FALSE);
   if (!target) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "No such client: %s",
+    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			  "No such client: %s",
 			  cmd->argv[2]);
     COMMAND_ERROR;
     goto out;
@@ -1843,7 +1829,8 @@ SILC_CLIENT_CMD_FUNC(ban)
 
   if (cmd->argv[1][0] == '*') {
     if (!conn->current_channel) {
-      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on any channel");
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			    "You are not on any channel");
       COMMAND_ERROR;
       goto out;
     }
@@ -1854,7 +1841,8 @@ SILC_CLIENT_CMD_FUNC(ban)
 
     channel = silc_client_get_channel(cmd->client, conn, name);
     if (!channel) {
-      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are on that channel");
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			    "You are on that channel");
       COMMAND_ERROR;
       goto out;
     }
