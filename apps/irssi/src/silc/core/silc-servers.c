@@ -166,7 +166,7 @@ static int isnickflag_func(char flag)
 
 static int ischannel_func(SERVER_REC *server, const char *data)
 {
-  return *data == '#';
+  return FALSE;
 }
 
 const char *get_nick_flags(void)
@@ -174,13 +174,14 @@ const char *get_nick_flags(void)
   return "@\0\0";
 }
 
-static void send_message(SILC_SERVER_REC *server, char *target, char *msg)
+static void send_message(SILC_SERVER_REC *server, char *target,
+			 char *msg, int target_type)
 {
   g_return_if_fail(server != NULL);
   g_return_if_fail(target != NULL);
   g_return_if_fail(msg != NULL);
 
-  if (*target == '#')
+  if (target_type == SEND_TARGET_CHANNEL)
     silc_send_channel(server, target, msg);
   else
     silc_send_msg(server, target, msg);
@@ -396,23 +397,6 @@ static void command_sconnect(const char *data, SILC_SERVER_REC *server)
 
   silc_command_exec(server, "CONNECT", data);
   signal_stop();
-}
-
-static void event_text(const char *line, SILC_SERVER_REC *server,
-		       WI_ITEM_REC *item)
-{
-  char *str;
-
-  g_return_if_fail(line != NULL);
-
-  if (!IS_SILC_ITEM(item))
-    return;
-
-  str = g_strdup_printf("%s %s", item->name, line);
-  signal_emit("command msg", 3, str, server, item);
-  g_free(str);
-
- signal_stop();
 }
 
 /* FILE command */
@@ -861,7 +845,6 @@ void silc_server_init(void)
 
   signal_add_first("server connected", (SIGNAL_FUNC) sig_connected);
   signal_add("server disconnected", (SIGNAL_FUNC) sig_disconnected);
-  signal_add("send text", (SIGNAL_FUNC) event_text);
   command_bind("whois", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("whowas", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("nick", MODULE_NAME, (SIGNAL_FUNC) command_self);
@@ -895,7 +878,6 @@ void silc_server_deinit(void)
 
   signal_remove("server connected", (SIGNAL_FUNC) sig_connected);
   signal_remove("server disconnected", (SIGNAL_FUNC) sig_disconnected);
-  signal_remove("send text", (SIGNAL_FUNC) event_text);
   command_unbind("whois", (SIGNAL_FUNC) command_self);
   command_unbind("whowas", (SIGNAL_FUNC) command_self);
   command_unbind("nick", (SIGNAL_FUNC) command_self);

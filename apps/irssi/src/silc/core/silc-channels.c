@@ -1250,11 +1250,9 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
     printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT, argv[2]);
     internal->responder = TRUE;
-    silc_client_send_key_agreement(
-			   silc_client, conn, client_entry, hostname, 
-			   bindhost, port, 
-			   settings_get_int("key_exchange_timeout_secs"), 
-			   keyagr_completion, internal);
+    silc_client_send_key_agreement(silc_client, conn, client_entry, hostname, 
+    				   bindhost, port, 120, keyagr_completion, 
+    				   internal);
     if (!hostname)
       silc_free(internal);
     goto out;
