@@ -31,7 +31,7 @@
  * calling the silc_net_win32_uninit function. The initializing must be
  * done in order to assure that the SILC Net API works correctly.
  *
- */
+ ***/
 
 #ifndef SILCNET_H
 #define SILCNET_H

@@ -8,7 +8,6 @@
 @LINK=silcrng.html:SILC RNG API
 -->
 
-<OL>
 <FONT SIZE="+3">SILC Crypto Library</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
 <PRE><FONT FACE="Helvetica,Arial,Sans-serif">
@@ -21,4 +20,3 @@ strong random number generator.
 
 @LINKS@
 
-</OL>

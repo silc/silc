@@ -4,7 +4,6 @@
 @LINK=silcapi.html:SILC Client API
 -->
 
-<OL>
 <FONT SIZE="+3">SILC Client Library</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
 <PRE><FONT FACE="Helvetica,Arial,Sans-serif">
@@ -28,5 +27,3 @@ the library.
 </PRE>
 
 @LINKS@
-
-</OL>

@@ -27,7 +27,7 @@
  * with the application's main thread. The threads created with this 
  * interface executes concurrently with the calling thread.
  *
- */
+ ***/
 
 #ifndef SILCTHREAD_H
 #define SILCTHREAD_H

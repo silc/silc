@@ -5,7 +5,6 @@
 @LINK=silcske_status.html:SILC SKE Status
 -->
 
-<OL>
 <FONT SIZE="+3">SILC Key Exchange Library</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
 <PRE><FONT FACE="Helvetica,Arial,Sans-serif">
@@ -16,4 +15,3 @@ It provides the key exchange protocol for all SILC applications.
 
 @LINKS@
 
-</OL>

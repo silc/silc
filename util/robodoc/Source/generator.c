@@ -268,8 +268,8 @@ RB_Generate_Doc_Start (
 #if 0
 	  fprintf (dest_doc,
 		   "<H3 ALIGN=\"center\">TABLE OF CONTENTS</H3>\n");
-#endif
 	  fprintf (dest_doc, "<OL>\n");
+#endif
 
 	  /* Generate quick index file, for fast referencing */
 	  sprintf(iname, "%s_index.tmpl", doc_base);
@@ -344,7 +344,7 @@ RB_Generate_Doc_Start (
 		  else
 		    {
 		      fprintf (dest_doc, "<LI><A HREF=\"%s\">%s</A>\n",
-			       fname, cur_header->name);
+			       fname, cur_header->function_name);
 		      if (index)
 			fprintf (index, " >> <A HREF=\"%s\">%s</A><BR>\n",
 				 fname, cur_header->function_name);
@@ -352,7 +352,9 @@ RB_Generate_Doc_Start (
 		}
 	    }
 
+#if 0
 	  fprintf (dest_doc, "</OL>\n");
+#endif
 
 	  if (index)
 	    fclose(index);

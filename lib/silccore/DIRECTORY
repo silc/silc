@@ -14,7 +14,6 @@
 @LINK=silcprotocol.html:SILC Protocol API
 -->
 
-<OL>
 <FONT SIZE="+3">SILC Core Library</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#000044"><B>Introduction</B></FONT><BR><BR>
 <PRE><FONT FACE="Helvetica,Arial,Sans-serif">
@@ -26,5 +25,3 @@ routines, and routines for sending private message and channel messages.
 </PRE>
 
 @LINKS@
-
-</OL>

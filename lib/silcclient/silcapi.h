@@ -994,7 +994,7 @@ SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
 					       SilcClientConnection conn,
 					       SilcChannelID *channel_id);
 
-/****f* silcclient/SilcClientAPI/silc_client_get_channel
+/****f* silcclient/SilcClientAPI/silc_client_get_channel_by_id_resolve
  *
  * SYNOPSIS
  *

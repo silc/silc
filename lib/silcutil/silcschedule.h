@@ -199,7 +199,7 @@ typedef enum {
 } SilcTaskPriority;
 /***/
 
-/****f* silcutil/SilcScheduleAPI/silc_schedule_init
+/****f* silcutil/SilcScheduleAPI/SilcTaskCallback
  *
  * SYNOPSIS
  *
@@ -262,7 +262,7 @@ static void func(SilcSchedule schedule, SilcTaskEvent type,	\
 		 uint32 fd, void *context)
 /***/
 
-/****d* silcutil/SilcScheduleAPI/SILC_TASK_CALLBACK
+/****d* silcutil/SilcScheduleAPI/SILC_TASK_CALLBACK_GLOBAL
  *
  * NAME
  * 

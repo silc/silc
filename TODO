@@ -14,7 +14,7 @@ TODO/bugs in Irssi SILC client
    cipher, hash, hmac and pkcs configuration to the Irssi SILC's config
    file.
 
- o The QUIT command should wait for servers disconnection (at least for
+ o The QUIT command should wait for server's disconnection (at least for
    a while) before exiting the application.
 
  o The JOIN command's HELP is generated from Irssi IRCs JOIN help and

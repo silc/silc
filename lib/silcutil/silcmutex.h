@@ -26,7 +26,7 @@
  * independent mutual exclusion interface for applications that need 
  * concurrency control.
  *
- */
+ ***/
 
 #ifndef SILCMUTEX_H
 #define SILCMUTEX_H
