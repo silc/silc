@@ -138,8 +138,15 @@ Following directories currently exist in SILC source tree.
 
   silc/
 
-        Includes SILC client.  There can be some extra files that will
-        never appear in public distribution, such as, configuration files.
+	Includes an example implementation of ncurses based SILC client.
+	It won't compile with current Toolkit since it is not being 
+	updated.  It is still good example for Toolkit programmer to 
+	figure out how to use SILC Toolkit.
+
+  silcer/
+
+	Includes an example implementation of GUI (Gnome) base SILC
+	client.  Please read silcer/README for more information.
 
   silcd/
 
@@ -179,7 +186,8 @@ is a string that is used to match the output debug.  The example "*" will
 match for everything, and all debugs will be printed.  If you want to
 limit the debugs you want to printout you can give for example a string
 like "*server*,*rng*" to match all functions, and filenames that has
-"server" or "rng" string in them.  Others will not be printed out.
+"server" or "rng" string in them.  Others will not be printed out.  You   
+can freely define regural expressions as debug string.
 
 
 Howto Clean SILC Source Tree

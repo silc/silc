@@ -26,7 +26,7 @@ on the screen.  This means that when you give command /nick you won't
 actually see whether your nickname changed or not.  But it did. :)  Same 
 is when you join to a channel by giving command /join you won't get list 
 of users or other familiar things.  This is because those notifications 
-has not been implemented.  They are left as an excerise for Toolkit 
+has not been implemented.  They are left as an exerise for Toolkit 
 programmers.  You can still converse on a channel.  You will see other 
 users' messages on the channel and you can talk to the channel, so you can 
 test the application if you like.
