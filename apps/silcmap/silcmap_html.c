@@ -546,7 +546,7 @@ bool silc_map_writerelhtml(SilcMap map)
 
     /* Count the reliability */
     if (try)
-      rel = ((double)success / (double)try) * (double)200.0;
+      rel = ((double)success / (double)try) * (double)190.0;
 
     fprintf(fp, "<tr>\n");
     if (mapconn->html_url)
@@ -556,15 +556,15 @@ bool silc_map_writerelhtml(SilcMap map)
       fprintf(fp,
 	      "<td align = \"center\" class=\"%s\">&nbsp;<a href=\"%s_%d.html\">%s</a></td>\n", class, hostname, mapconn->port, hostname);
     fprintf(fp,
-	    "<td class=\"%s\" width=\"200\">"
-	    "<table style=\"border: solid 1px black; width: 200px;\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" class=\"%s\"><tr>"
+	    "<td class=\"%s\" width=\"190\">"
+	    "<table style=\"border: solid 1px black; width: 190px;\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" class=\"%s\"><tr>"
 	    "<td style=\"width: %fpx; height: 10px;\" bgcolor=\"gray\"></td>"
 	    "<td style=\"width: %fpx; height: 10px;\" bgcolor=\"white\"></td>"
 	    "</tr></table></td>\n"
-	    "<td class=\"%s\">%.2f%%</td>\n"
+	    "<td class=\"%s\">%.2f%% - score: %d</td>\n"
 	    "</tr>\n",
-	    class, class, rel, 200 - rel, class,
-	    ((double)success / (double)try) * (double)100.0);
+	    class, class, rel, 190 - rel, class,
+	    ((double)success / (double)try) * (double)100.0, success);
   }
 
   fprintf(fp, "</table><br />\n");
