@@ -1,3 +1,9 @@
+Tue May 28 13:56:26 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* If private message key is not set, but the flag is set in
+	  the packet, ignore the packet since it cannot be decrypted.
+	  Affected file lib/silcclient/client_prvmsg.c.
+
 Thu May 23 12:00:14 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* When resuming client, remove the old client entry from

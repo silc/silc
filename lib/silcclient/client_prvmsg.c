@@ -150,6 +150,7 @@ void silc_client_private_message(SilcClient client,
   SilcMessageFlags flags;
   unsigned char *message;
   SilcUInt32 message_len;
+  SilcCipher cipher = NULL;
 
   if (packet->src_id_type != SILC_ID_CLIENT)
     goto out;
@@ -178,10 +179,15 @@ void silc_client_private_message(SilcClient client,
     return;
   }
 
+  cipher = remote_client->receive_key;
+  if (packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY && !cipher) {
+    silc_free(remote_id);
+    return;
+  }
+
   /* Parse the payload and decrypt it also if private message key is set */
   payload = silc_private_message_payload_parse(packet->buffer->data,
-					       packet->buffer->len,
-					       remote_client->receive_key);
+					       packet->buffer->len, cipher);
   if (!payload) {
     silc_free(remote_id);
     return;
