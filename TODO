@@ -102,6 +102,8 @@ TODO In SILC Server
 
  o TODO in commands (command.c and command_reply.c):
 
+	o WHOIS <count> argument is probably ignored
+	o IDENTIFY <count> argument is probably ignored
 	o RESTART is not implemented
 	o CMODE should be rewritten as it uses a lot duplicated code.
 	  Some of the modes may still not be implemented or is implemented
