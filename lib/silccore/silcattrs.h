@@ -1,10 +1,10 @@
 /*
 
-  silcattrs.h 
+  silcattrs.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 /****s* silccore/SilcAttributesAPI/SilcAttributePayload
  *
  * NAME
- * 
+ *
  *    typedef struct SilcAttributePayloadStruct *SilcAttributePayload;
  *
  * DESCRIPTION
@@ -49,7 +49,7 @@ typedef struct SilcAttributePayloadStruct *SilcAttributePayload;
 /****d* silccore/SilcAttributesAPI/SilcAttribute
  *
  * NAME
- * 
+ *
  *    typedef SilcUInt8 SilcAttribute;
  *
  * DESCRIPTION
@@ -90,7 +90,7 @@ typedef SilcUInt8 SilcAttribute;
 /****d* silccore/SilcAttributesAPI/SilcAttributeFlags
  *
  * NAME
- * 
+ *
  *    typedef SilcUInt8 SilcAttributeFlags;
  *
  * DESCRIPTION
@@ -110,7 +110,7 @@ typedef SilcUInt8 SilcAttributeFlags;
 /****d* silccore/SilcAttributesAPI/SilcAttributeMood
  *
  * NAME
- * 
+ *
  *    typedef enum { ... } SilcAttributeMood;
  *
  * DESCRIPTION
@@ -139,7 +139,7 @@ typedef enum {
 /****d* silccore/SilcAttributesAPI/SilcAttributeContact
  *
  * NAME
- * 
+ *
  *    typedef enum { ... } SilcAttributeContact;
  *
  * DESCRIPTION
@@ -157,13 +157,14 @@ typedef enum {
   SILC_ATTRIBUTE_CONTACT_SMS     = 0x00000008,	  /* SMS preferred */
   SILC_ATTRIBUTE_CONTACT_MMS     = 0x00000010,	  /* MMS preferred */
   SILC_ATTRIBUTE_CONTACT_CHAT    = 0x00000020,	  /* chatting preferred */
+  SILC_ATTRIBUTE_CONTACT_VIDEO   = 0x00000040,	  /* video conferencing */
 } SilcAttributeContact;
 /***/
 
 /****d* silccore/SilcAttributesAPI/SilcAttributeDevice
  *
  * NAME
- * 
+ *
  *    typedef enum { ... } SilcAttributeDevice;
  *
  * DESCRIPTION
@@ -379,7 +380,7 @@ unsigned char *silc_attribute_get_verify_data(SilcDList attrs,
 /****s* silccore/SilcAttributesAPI/SilcAttributeObjService
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcAttributeObjService;
  *
  * DESCRIPTION
@@ -388,7 +389,7 @@ unsigned char *silc_attribute_get_verify_data(SilcDList attrs,
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcAttributeObjServiceStruct {
   SilcUInt32 port;		/* IANA specified service port */
   SilcUInt32 idle;		/* Idle time in the service */
   char signon[64];		/* Signon date and time (UTC) */
@@ -400,7 +401,7 @@ typedef struct {
 /****s* silccore/SilcAttributesAPI/SilcAttributeObjMime
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcAttributeObjMime;
  *
  * DESCRIPTION
@@ -410,7 +411,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcAttributeObjMimeStruct {
   const unsigned char *mime;	/* MIME buffer */
   SilcUInt32 mime_len;		/* length of the MIME buffer */
 } SilcAttributeObjMime;
@@ -419,7 +420,7 @@ typedef struct {
 /****s* silccore/SilcAttributesAPI/SilcAttributeObjGeo
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcAttributeObjGeo;
  *
  * DESCRIPTION
@@ -429,7 +430,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcAttributeObjGeoStruct {
   char *longitude;		/* Longitude */
   char *latitude;		/* Latitude */
   char *altitude;		/* Altitude */
@@ -440,7 +441,7 @@ typedef struct {
 /****s* silccore/SilcAttributesAPI/SilcAttributeObjDevice
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcAttributeObjDevice;
  *
  * DESCRIPTION
@@ -450,7 +451,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcAttributeObjDeviceStruct {
   SilcAttributeDevice type;	/* device type */
   char *manufacturer;		/* manufacturer of the device */
   char *version;		/* device version string */
@@ -462,7 +463,7 @@ typedef struct {
 /****s* silccore/SilcAttributesAPI/SilcAttributeObjPk
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcAttributeObjPk;
  *
  * DESCRIPTION
@@ -472,7 +473,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcAttributeObjPkStruct {
   char *type;			/* public key/certificate type, NULL
 				   when contains digital signature. */
   unsigned char *data;		/* public key/cert/signature data. The
@@ -501,6 +502,17 @@ typedef struct {
  *    list of attributes and the required object types for attributes.
  *    You can use silc_attribute_get_attribute to get the SilcAttribute
  *    type from the `payload'.
+ *
+ * EXAMPLE
+ *
+ *    SilcAttributeObjDevice dev;
+ *
+ *    ...
+ *    case SILC_ATTRIBUTE_DEVICE_INFO:
+ *    memset(&dev, 0, sizeof(dev));
+ *    if (!silc_attribute_get_object(payload, (void *)&dev, sizeof(dev)))
+ *      error();
+ *    ...
  *
  ***/
 bool silc_attribute_get_object(SilcAttributePayload payload,

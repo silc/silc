@@ -433,6 +433,8 @@ void silc_query_attributes_default(SilcClient client,
 	mask |= SILC_ATTRIBUTE_CONTACT_MMS;
       if (!strcasecmp(*entry, "CHAT"))
 	mask |= SILC_ATTRIBUTE_CONTACT_CHAT;
+      if (!strcasecmp(*entry, "VIDEO"))
+	mask |= SILC_ATTRIBUTE_CONTACT_VIDEO;
     }
     silc_client_attribute_add(silc_client, conn,
 			      SILC_ATTRIBUTE_PREFERRED_CONTACT, (void *)mask,
@@ -702,6 +704,8 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 	  silc_strncat(tmp, sizeof(tmp), "SMS ", strlen(" SMS"));
 	if (mask & SILC_ATTRIBUTE_CONTACT_MMS)
 	  silc_strncat(tmp, sizeof(tmp), "MMS ", strlen(" MMS"));
+	if (mask & SILC_ATTRIBUTE_CONTACT_VIDEO)
+	  silc_strncat(tmp, sizeof(tmp), "VIDEO ", strlen(" VIDEO"));
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_ATTR_PREFERRED_CONTACT, tmp);
       }

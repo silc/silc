@@ -11,6 +11,10 @@ Sat Oct 18 11:55:33 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 	  Affected files lib/silcutil/silcsockconn.[ch],
 	  unix/silcunixsockconn.c.
 
+	* Implemented latest presence-attrs draft changes.  Affected
+	  files lib/silccore/silcattrs.h and
+	  irssi/src/silc/core/silc-queries.c.
+
 Tue Oct 14 18:24:53 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Save old channel keys in list to allow more rapid change
