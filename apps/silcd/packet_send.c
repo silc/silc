@@ -139,7 +139,6 @@ void silc_server_packet_send_dest(SilcServer server,
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
-  packetdata.rng = server->rng;
 
   /* Prepare outgoing data buffer for packet sending */
   silc_packet_send_prepare(sock, 
@@ -336,7 +335,6 @@ void silc_server_packet_send_to_channel(SilcServer server,
   packetdata.dst_id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
   packetdata.dst_id_len = SILC_ID_CHANNEL_LEN;
   packetdata.dst_id_type = SILC_ID_CHANNEL;
-  packetdata.rng = server->rng;
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
@@ -469,7 +467,6 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   packetdata.dst_id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
   packetdata.dst_id_len = SILC_ID_CHANNEL_LEN;
   packetdata.dst_id_type = SILC_ID_CHANNEL;
-  packetdata.rng = server->rng;
   packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
 					  packetdata.src_id_len +
 					  packetdata.dst_id_len));
@@ -1013,7 +1010,6 @@ void silc_server_send_notify_on_channels(SilcServer server,
   packetdata.src_id = silc_id_id2str(server->id, SILC_ID_SERVER);
   packetdata.src_id_len = SILC_ID_SERVER_LEN;
   packetdata.src_id_type = SILC_ID_SERVER;
-  packetdata.rng = server->rng;
 
   silc_list_start(client->channels);
   while ((chl = silc_list_get(client->channels)) != SILC_LIST_END) {

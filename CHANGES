@@ -1,3 +1,8 @@
+Sat Feb 24 00:00:55 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Removed the rng context from SilcPacketContext structure and
+	  changed that the packet routine uses the Global RNG API.
+
 Fri Feb 23 11:22:57 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added support for quit message that client can "leave" on the

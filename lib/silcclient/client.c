@@ -916,7 +916,6 @@ void silc_client_packet_send(SilcClient client,
     packetdata.dst_id_len = 0;
     packetdata.dst_id_type = SILC_ID_NONE;
   }
-  packetdata.rng = client->rng;
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
@@ -1013,7 +1012,6 @@ void silc_client_packet_send_to_channel(SilcClient client,
   packetdata.dst_id = id_string;
   packetdata.dst_id_len = SILC_ID_CHANNEL_LEN;
   packetdata.dst_id_type = SILC_ID_CHANNEL;
-  packetdata.rng = client->rng;
   packetdata.truelen = payload->len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
@@ -1120,7 +1118,6 @@ void silc_client_packet_send_private_message(SilcClient client,
     packetdata.dst_id = conn->local_id_data;
   packetdata.dst_id_len = SILC_ID_CLIENT_LEN;
   packetdata.dst_id_type = SILC_ID_CLIENT;
-  packetdata.rng = client->rng;
   packetdata.truelen = buffer->len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
