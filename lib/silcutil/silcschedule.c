@@ -18,7 +18,6 @@
 
 */
 /* $Id$ */
-/* XXX on multi-threads the task queue locking is missing here. */
 
 #include "silcincludes.h"
 
@@ -136,6 +135,7 @@ struct SilcScheduleStruct {
   int max_fd;
   void *wakeup;
   SILC_MUTEX_DEFINE(lock);
+  bool is_locked;
 };
 
 /* Initializes the scheduler. Sets the non-timeout task queue hook and
@@ -241,7 +241,9 @@ bool silc_schedule_uninit(SilcSchedule schedule)
 void silc_schedule_stop(SilcSchedule schedule)
 {
   SILC_LOG_DEBUG(("Stopping scheduler"));
+  silc_mutex_lock(schedule->lock);
   schedule->valid = FALSE;
+  silc_mutex_unlock(schedule->lock);
 }
 
 /* Sets a file descriptor to be listened by select() in scheduler. One can
@@ -286,41 +288,51 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, int fd)
    here from the task queue. This macro is used by silc_schedule function. 
    We don't have to care about the tasks priority here because the tasks
    are sorted in their priority order already at the registration phase. */
+/* This must be called holding the schedule->lock and the
+   schedule->fd_queue->lock. */
 
 #define SILC_SCHEDULE_RUN_TASKS						   \
 do {									   \
   queue = schedule->fd_queue;						   \
   if (queue && queue->valid == TRUE && queue->task) {			   \
     task = queue->task;							   \
- 									   \
-    /* Walk thorugh all tasks in the particular task queue and	   	   \
-       execute the callback functions of those tasks matching the  	   \
-       fd set by select(). */					   	   \
-    while(1) {							   	   \
-      /* Validity of the task is checked always before and after   	   \
-	 execution beacuse the task might have been unregistered 	   \
+									   \
+    /* Walk thorugh all tasks in the particular task queue and		   \
+       execute the callback functions of those tasks matching the	   \
+       fd set by select(). */						   \
+    while(1) {								   \
+      /* Validity of the task is checked always before and after	   \
+	 execution beacuse the task might have been unregistered	   \
 	 in the callback function, ie. it is not valid anymore. */	   \
-								           \
-      if (task->valid) {					           \
-	/* Task ready for reading */				      	   \
-	if ((FD_ISSET(task->fd, &schedule->in)) &&		      	   \
-	    (task->iomask & (1L << SILC_TASK_READ))) {     	           \
+									   \
+      if (task->valid) {						   \
+	/* Task ready for reading */					   \
+	if ((FD_ISSET(task->fd, &schedule->in)) &&			   \
+	    (task->iomask & (1L << SILC_TASK_READ))) {			   \
+          silc_mutex_unlock(queue->lock);				   \
+          silc_mutex_unlock(schedule->lock);				   \
 	  task->callback(queue, SILC_TASK_READ, task->context, task->fd);  \
-          is_run = TRUE; 						   \
-	} 								   \
-      }   								   \
+          silc_mutex_lock(schedule->lock);				   \
+          silc_mutex_lock(queue->lock);					   \
+          is_run = TRUE;						   \
+	}								   \
+      }									   \
 									   \
       if (task->valid) {						   \
 	/* Task ready for writing */					   \
-	if ((FD_ISSET(task->fd, &schedule->out)) &&	       	      	   \
-	    (task->iomask & (1L << SILC_TASK_WRITE))) {		      	   \
+	if ((FD_ISSET(task->fd, &schedule->out)) &&			   \
+	    (task->iomask & (1L << SILC_TASK_WRITE))) {			   \
+          silc_mutex_unlock(queue->lock);				   \
+          silc_mutex_unlock(schedule->lock);				   \
 	  task->callback(queue, SILC_TASK_WRITE, task->context, task->fd); \
-          is_run = TRUE; 						   \
-	} 								   \
+          silc_mutex_lock(schedule->lock);				   \
+          silc_mutex_lock(queue->lock);					   \
+          is_run = TRUE;						   \
+	}								   \
       }									   \
 									   \
-      if (!task->valid) {					  	   \
-	/* Invalid (unregistered) tasks are removed from the 	      	   \
+      if (!task->valid) {						   \
+	/* Invalid (unregistered) tasks are removed from the		   \
 	   task queue. */						   \
 	if (queue->task == task->next) {				   \
 	  silc_task_remove(queue, task);				   \
@@ -328,14 +340,14 @@ do {									   \
         }								   \
 									   \
         task = task->next;						   \
-        silc_task_remove(queue, task->prev);			      	   \
-        continue;						      	   \
-      }								      	   \
-								      	   \
-      /* Break if there isn't more tasks in the queue */	      	   \
-      if (queue->task == task->next)       				   \
+        silc_task_remove(queue, task->prev);				   \
+        continue;							   \
+      }									   \
+									   \
+      /* Break if there isn't more tasks in the queue */		   \
+      if (queue->task == task->next)					   \
         break;								   \
-	  								   \
+									   \
       task = task->next;						   \
     }									   \
   }									   \
@@ -344,6 +356,7 @@ do {									   \
 /* Selects tasks to be listened by select(). These are the non-timeout
    tasks. This checks the scheduler's fd list. This macro is used by 
    silc_schedule function. */
+/* This must be called holding schedule->lock. */
 
 #define SILC_SCHEDULE_SELECT_TASKS				\
 do {								\
@@ -371,6 +384,8 @@ do {								\
    macro. This macro is used by silc_schedule function. We don't have to
    care about priorities because tasks are already sorted in their priority
    order at the registration phase. */
+/* This must be called with holding the schedule->lock and the
+   schedule->timeout_queue->lock */
 
 #define SILC_SCHEDULE_RUN_TIMEOUT_TASKS					\
 do {									\
@@ -386,16 +401,26 @@ do {									\
 									\
         /* Task ready for reading */					\
         if (task->valid) {						\
-          if ((task->iomask & (1L << SILC_TASK_READ)))			\
+          if ((task->iomask & (1L << SILC_TASK_READ))) {		\
+            silc_mutex_unlock(queue->lock);				\
+            silc_mutex_unlock(schedule->lock);				\
 	    task->callback(queue, SILC_TASK_READ,			\
 	                   task->context, task->fd);			\
+            silc_mutex_lock(schedule->lock);				\
+            silc_mutex_lock(queue->lock);				\
+          }								\
 	}								\
 									\
         /* Task ready for writing */					\
         if (task->valid) {						\
-          if ((task->iomask & (1L << SILC_TASK_WRITE)))			\
-            task->callback(queue, SILC_TASK_WRITE,			\
-		           task->context, task->fd);			\
+          if ((task->iomask & (1L << SILC_TASK_WRITE))) {		\
+            silc_mutex_unlock(queue->lock);				\
+            silc_mutex_unlock(schedule->lock);				\
+	    task->callback(queue, SILC_TASK_WRITE,			\
+	                   task->context, task->fd);			\
+            silc_mutex_lock(schedule->lock);				\
+            silc_mutex_lock(queue->lock);				\
+          }								\
         }								\
 									\
         /* Break if there isn't more tasks in the queue */		\
@@ -426,6 +451,8 @@ do {									\
    when at earliest some of the timeout tasks expire. If this is in the
    past, they will be run now. This macro is used by the silc_schedule
    function. */
+/* This must be called with holding the schedule->lock and the
+   schedule->timeout_queue->lock */
 
 #define SILC_SCHEDULE_SELECT_TIMEOUT					    \
 do {									    \
@@ -490,12 +517,13 @@ do {									    \
    specific fd there wasn't other non-timeout tasks. This checks the earlier
    set fd list, thus the generic tasks apply to all specified fd's. All the
    generic tasks are executed at once. */
+/* This must be called holding the schedule->lock and the
+   schedule->generic_queue->lock. */
 
 #define SILC_SCHEDULE_RUN_GENERIC_TASKS					     \
 do {									     \
   if (is_run == FALSE) {						     \
     SILC_LOG_DEBUG(("Running generic tasks"));				     \
-    silc_mutex_lock(schedule->lock);					     \
     for (i = 0; i <= schedule->fd_list.last_fd; i++)			     \
       if (schedule->fd_list.fd[i] != -1) {				     \
 									     \
@@ -520,20 +548,24 @@ do {									     \
 	      if (task->valid && schedule->fd_list.fd[i] != -1) {	     \
 		/* Task ready for reading */				     \
 		if ((schedule->fd_list.fd[i] & (1L << SILC_TASK_READ))) {    \
+                  silc_mutex_unlock(queue->lock);			     \
                   silc_mutex_unlock(schedule->lock);			     \
 		  task->callback(queue, SILC_TASK_READ,			     \
 				 task->context, i);			     \
                   silc_mutex_lock(schedule->lock);			     \
+                  silc_mutex_lock(queue->lock);				     \
 	        }							     \
 	      }								     \
 									     \
 	      if (task->valid && schedule->fd_list.fd[i] != -1) {	     \
 		/* Task ready for writing */				     \
 		if ((schedule->fd_list.fd[i] & (1L << SILC_TASK_WRITE))) {   \
+                  silc_mutex_unlock(queue->lock);			     \
                   silc_mutex_unlock(schedule->lock);			     \
 		  task->callback(queue, SILC_TASK_WRITE,		     \
 				 task->context, i);			     \
                   silc_mutex_lock(schedule->lock);			     \
+                  silc_mutex_lock(queue->lock);				     \
 	        }							     \
 	      }								     \
 									     \
@@ -559,7 +591,6 @@ do {									     \
 	  }								     \
 	}								     \
       }									     \
-    silc_mutex_unlock(schedule->lock);					     \
   }									     \
 } while(0)
 
@@ -573,6 +604,9 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   int ret;
 
   SILC_LOG_DEBUG(("In scheduler loop"));
+
+  if (!schedule->is_locked)
+    silc_mutex_lock(schedule->lock);
 
   /* If the task queues aren't initialized or we aren't valid anymore
      we will return */
@@ -588,14 +622,14 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   schedule->max_fd = -1;
   is_run = FALSE;
 
-  /* Calculate next timeout for select(). This is the timeout value
+  /* Calculate next timeout for silc_select(). This is the timeout value
      when at earliest some of the timeout tasks expire. */
+  silc_mutex_lock(schedule->timeout_queue->lock);
   SILC_SCHEDULE_SELECT_TIMEOUT;
-
-  silc_mutex_lock(schedule->lock);
+  silc_mutex_unlock(schedule->timeout_queue->lock);
 
   /* Add the file descriptors to the fd sets. These are the non-timeout
-     tasks. The select() listens to these file descriptors. */
+     tasks. The silc_select() listens to these file descriptors. */
   SILC_SCHEDULE_SELECT_TASKS;
 
   if (schedule->max_fd == -1 && !schedule->timeout)
@@ -621,6 +655,8 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   ret = silc_select(schedule->max_fd + 1, &schedule->in,
 		    &schedule->out, 0, schedule->timeout);
 
+  silc_mutex_lock(schedule->lock);
+
   switch (ret) {
   case -1:
     /* Error */
@@ -631,17 +667,26 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   case 0:
     /* Timeout */
     SILC_LOG_DEBUG(("Running timeout tasks"));
+    silc_mutex_lock(schedule->timeout_queue->lock);
     silc_gettimeofday(&curtime);
     SILC_SCHEDULE_RUN_TIMEOUT_TASKS;
+    silc_mutex_unlock(schedule->timeout_queue->lock);
     break;
   default:
     /* There is some data available now */
     SILC_LOG_DEBUG(("Running non-timeout tasks"));
+    silc_mutex_lock(schedule->fd_queue->lock);
     SILC_SCHEDULE_RUN_TASKS;
+    silc_mutex_unlock(schedule->fd_queue->lock);
 
+    silc_mutex_lock(schedule->generic_queue->lock);
     SILC_SCHEDULE_RUN_GENERIC_TASKS;
+    silc_mutex_unlock(schedule->generic_queue->lock);
     break;
   }
+
+  if (!schedule->is_locked)
+    silc_mutex_unlock(schedule->lock);
 
   return TRUE;
 }
@@ -659,9 +704,14 @@ void silc_schedule(SilcSchedule schedule)
     return;
   }
 
+  silc_mutex_lock(schedule->lock);
+  schedule->is_locked = TRUE;
+
   /* Start the scheduler loop */
   while (silc_schedule_one(schedule, -1)) 
     ;
+
+  silc_mutex_unlock(schedule->lock);
 }
 
 /* Wakes up the scheduler. This is used only in multi-threaded

@@ -931,6 +931,126 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   sock->protocol = NULL;
 }
 
+/* Host lookup callbcak that is called after the incoming connection's
+   IP and FQDN lookup is performed. This will actually check the acceptance
+   of the incoming connection and will register the key exchange protocol
+   for this connection. */
+
+static void 
+silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
+					 void *context)
+{
+  SilcServer server = (SilcServer)context;
+  SilcServerKEInternalContext *proto_ctx;
+  void *cconfig, *sconfig, *rconfig;
+  SilcServerConfigSectionDenyConnection *deny;
+  int port;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Check whether we could resolve both IP and FQDN. */
+  if (!sock->ip || (!strcmp(sock->ip, sock->hostname) &&
+		    server->params->require_reverse_mapping)) {
+    SILC_LOG_ERROR(("IP/DNS lookup failed %s",
+		    sock->hostname ? sock->hostname :
+		    sock->ip ? sock->ip : ""));
+    server->stat.conn_failures++;
+    silc_server_disconnect_remote(server, sock,
+				  "Server closed connection: Unknown host");
+    return;
+  }
+
+  /* Register the connection for network input and output. This sets
+     that scheduler will listen for incoming packets for this connection 
+     and sets that outgoing packets may be sent to this connection as well.
+     However, this doesn't set the scheduler for outgoing traffic, it
+     will be set separately by calling SILC_SET_CONNECTION_FOR_OUTPUT,
+     later when outgoing data is available. */
+  SILC_REGISTER_CONNECTION_FOR_IO(sock->sock);
+
+  SILC_LOG_INFO(("Incoming connection from %s (%s)", sock->hostname,
+		 sock->ip));
+
+  port = server->sockets[server->sock]->port; /* Listenning port */
+
+  /* Check whether this connection is denied to connect to us. */
+  deny = silc_server_config_denied_conn(server->config, sock->ip, port);
+  if (!deny)
+    deny = silc_server_config_denied_conn(server->config, sock->hostname,
+					  port);
+  if (deny) {
+    /* The connection is denied */
+    SILC_LOG_INFO(("Connection %s (%s) is denied", 
+                   sock->hostname, sock->ip));
+    silc_server_disconnect_remote(server, sock, deny->comment ?
+				  deny->comment :
+				  "Server closed connection: "
+				  "Connection refused");
+    server->stat.conn_failures++;
+    return;
+  }
+
+  /* Check whether we have configred this sort of connection at all. We
+     have to check all configurations since we don't know what type of
+     connection this is. */
+  if (!(cconfig = silc_server_config_find_client_conn(server->config,
+						      sock->ip, port)))
+    cconfig = silc_server_config_find_client_conn(server->config,
+						  sock->hostname, 
+						  port);
+  if (!(sconfig = silc_server_config_find_server_conn(server->config,
+						     sock->ip, 
+						     port)))
+    sconfig = silc_server_config_find_server_conn(server->config,
+						  sock->hostname,
+						  port);
+  if (!(rconfig = silc_server_config_find_router_conn(server->config,
+						     sock->ip, port)))
+    rconfig = silc_server_config_find_router_conn(server->config,
+						  sock->hostname, 
+						  port);
+  if (!cconfig && !sconfig && !rconfig) {
+    silc_server_disconnect_remote(server, sock, 
+				  "Server closed connection: "
+				  "Connection refused");
+    server->stat.conn_failures++;
+    return;
+  }
+
+  /* The connection is allowed */
+
+  /* Allocate internal context for key exchange protocol. This is
+     sent as context for the protocol. */
+  proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
+  proto_ctx->server = context;
+  proto_ctx->sock = sock;
+  proto_ctx->rng = server->rng;
+  proto_ctx->responder = TRUE;
+  proto_ctx->cconfig = cconfig;
+  proto_ctx->sconfig = sconfig;
+  proto_ctx->rconfig = rconfig;
+
+  /* Prepare the connection for key exchange protocol. We allocate the
+     protocol but will not start it yet. The connector will be the
+     initiator of the protocol thus we will wait for initiation from 
+     there before we start the protocol. */
+  server->stat.auth_attempts++;
+  silc_protocol_alloc(SILC_PROTOCOL_SERVER_KEY_EXCHANGE, 
+		      &sock->protocol, proto_ctx, 
+		      silc_server_accept_new_connection_second);
+
+  /* Register a timeout task that will be executed if the connector
+     will not start the key exchange protocol within 60 seconds. For
+     now, this is a hard coded limit. After 60 secs the connection will
+     be closed if the key exchange protocol has not been started. */
+  proto_ctx->timeout_task = 
+    silc_task_register(server->timeout_queue, sock->sock, 
+		       silc_server_timeout_remote,
+		       context, 60, 0,
+		       SILC_TASK_TIMEOUT,
+		       SILC_TASK_PRI_LOW);
+}
+
 /* Accepts new connections to the server. Accepting new connections are
    done in three parts to make it async. */
 
@@ -938,10 +1058,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
 {
   SilcServer server = (SilcServer)context;
   SilcSocketConnection newsocket;
-  SilcServerKEInternalContext *proto_ctx;
-  int sock, port;
-  void *cconfig, *sconfig, *rconfig;
-  SilcServerConfigSectionDenyConnection *deny;
+  int sock;
 
   SILC_LOG_DEBUG(("Accepting new connection"));
 
@@ -970,114 +1087,12 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   silc_socket_alloc(sock, SILC_SOCKET_TYPE_UNKNOWN, NULL, &newsocket);
   server->sockets[sock] = newsocket;
 
-  /* XXX This MUST be done async as this will block the entire server
-     process. Either we have to do our own resolver stuff or in the future
-     we can use threads. */
-  /* Perform name and address lookups for the remote host. */
-  if (!silc_net_check_host_by_sock(sock, &newsocket->hostname, 
-				   &newsocket->ip)) {
-    if ((server->params->require_reverse_mapping && !newsocket->hostname) ||
-	!newsocket->ip) {
-      SILC_LOG_ERROR(("IP/DNS lookup failed %s",
-		      newsocket->hostname ? newsocket->hostname :
-		      newsocket->ip ? newsocket->ip : ""));
-      server->stat.conn_failures++;
-      return;
-    }
-    if (!newsocket->hostname)
-      newsocket->hostname = strdup(newsocket->ip);
-  }
-  newsocket->port = silc_net_get_remote_port(sock);
-
-  /* Register the connection for network input and output. This sets
-     that scheduler will listen for incoming packets for this connection 
-     and sets that outgoing packets may be sent to this connection as well.
-     However, this doesn't set the scheduler for outgoing traffic, it
-     will be set separately by calling SILC_SET_CONNECTION_FOR_OUTPUT,
-     later when outgoing data is available. */
-  SILC_REGISTER_CONNECTION_FOR_IO(sock);
-
-  SILC_LOG_INFO(("Incoming connection from %s (%s)", newsocket->hostname,
-		 newsocket->ip));
-
-  port = server->sockets[fd]->port; /* Listenning port */
-
-  /* Check whether this connection is denied to connect to us. */
-  deny = silc_server_config_denied_conn(server->config, newsocket->ip, port);
-  if (!deny)
-    deny = silc_server_config_denied_conn(server->config, newsocket->hostname,
-					  port);
-  if (deny) {
-    /* The connection is denied */
-    SILC_LOG_INFO(("Connection %s (%s) is denied", 
-                   newsocket->hostname, newsocket->ip));
-    silc_server_disconnect_remote(server, newsocket, deny->comment ?
-				  deny->comment :
-				  "Server closed connection: "
-				  "Connection refused");
-    server->stat.conn_failures++;
-    return;
-  }
-
-  /* Check whether we have configred this sort of connection at all. We
-     have to check all configurations since we don't know what type of
-     connection this is. */
-  if (!(cconfig = silc_server_config_find_client_conn(server->config,
-						      newsocket->ip, port)))
-    cconfig = silc_server_config_find_client_conn(server->config,
-						  newsocket->hostname, 
-						  port);
-  if (!(sconfig = silc_server_config_find_server_conn(server->config,
-						     newsocket->ip, 
-						     port)))
-    sconfig = silc_server_config_find_server_conn(server->config,
-						  newsocket->hostname,
-						  port);
-  if (!(rconfig = silc_server_config_find_router_conn(server->config,
-						     newsocket->ip, port)))
-    rconfig = silc_server_config_find_router_conn(server->config,
-						  newsocket->hostname, 
-						  port);
-  if (!cconfig && !sconfig && !rconfig) {
-    silc_server_disconnect_remote(server, newsocket, 
-				  "Server closed connection: "
-				  "Connection refused");
-    server->stat.conn_failures++;
-    return;
-  }
-
-  /* The connection is allowed */
-
-  /* Allocate internal context for key exchange protocol. This is
-     sent as context for the protocol. */
-  proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
-  proto_ctx->server = context;
-  proto_ctx->sock = newsocket;
-  proto_ctx->rng = server->rng;
-  proto_ctx->responder = TRUE;
-  proto_ctx->cconfig = cconfig;
-  proto_ctx->sconfig = sconfig;
-  proto_ctx->rconfig = rconfig;
-
-  /* Prepare the connection for key exchange protocol. We allocate the
-     protocol but will not start it yet. The connector will be the
-     initiator of the protocol thus we will wait for initiation from 
-     there before we start the protocol. */
-  server->stat.auth_attempts++;
-  silc_protocol_alloc(SILC_PROTOCOL_SERVER_KEY_EXCHANGE, 
-		      &newsocket->protocol, proto_ctx, 
-		      silc_server_accept_new_connection_second);
-
-  /* Register a timeout task that will be executed if the connector
-     will not start the key exchange protocol within 60 seconds. For
-     now, this is a hard coded limit. After 60 secs the connection will
-     be closed if the key exchange protocol has not been started. */
-  proto_ctx->timeout_task = 
-    silc_task_register(server->timeout_queue, newsocket->sock, 
-		       silc_server_timeout_remote,
-		       context, 60, 0,
-		       SILC_TASK_TIMEOUT,
-		       SILC_TASK_PRI_LOW);
+  /* Perform asynchronous host lookup. This will lookup the IP and the
+     FQDN of the remote connection. After the lookup is done the connection
+     is accepted further. */
+  silc_socket_host_lookup(newsocket, TRUE, 
+			  silc_server_accept_new_connection_lookup, context, 
+			  server->timeout_queue);
 }
 
 /* Second part of accepting new connection. Key exchange protocol has been

@@ -1,3 +1,9 @@
+Mon Jul  9 18:28:34 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* The server now performs the incoming host IP/DNS lookup
+	  using the silc_socket_host_lookup and thus does not block
+	  the server anymore.  Affected file silcd/server.c.
+
 Mon Jul  9 13:40:03 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added new function silc_schedule_wakeup that is used in

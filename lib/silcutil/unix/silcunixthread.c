@@ -58,9 +58,9 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 
   pthread_attr_destroy(&attr);
 
-  SILC_LOG_DEBUG(("Created thread %p", (SilcThread)ret));
+  SILC_LOG_DEBUG(("Created thread %p", (SilcThread)thread));
 
-  return (SilcThread)ret;
+  return (SilcThread)thread;
 }
 
 void silc_thread_exit(void *exit_value)

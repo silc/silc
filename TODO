@@ -60,11 +60,6 @@ TODO/bugs In SILC Server
 
 	o silcd/serverid.c and its routines supports only IPv4.
 
- o DNS/IP lookup blocks the server.  This must be fixed.  Check the
-   resolver stuff (resolver(3), resolver(5)).  Either we have to do the
-   own resolver stuff (through scheduler, if possible without writing
-   too much own stuff) or use threads.
-
  o The backup router support described in the protocol specification
    should be done at some point.
 
