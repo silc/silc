@@ -120,9 +120,11 @@ rm -f configure.in2 configure.in3 am_cond
 # Prepare the Makefile.defines
 #
 cp Makefile.defines.pre Makefile.defines.in
-cp Makefile.defines.in irssi
 cp Makefile.defines_int.pre Makefile.defines_int.in
+cp Makefile.defines.in irssi
 cp Makefile.defines_int.in irssi
+cp Makefile.defines.in lib/silcmath/mpi
+cp Makefile.defines_int.in lib/silcmath/mpi
 
 aclocal
 autoconf

@@ -35,16 +35,6 @@ SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 
 # SILC Library dirs
-if SILC_DIST_WIN32DLL
-SILCLIB_DIRS = \
-	silccore \
-	silccrypt \
-	silcsim \
-	silcmath \
-	silcske \
-	silcutil \
-	trq
-else
 SILCLIB_DIRS = \
 	contrib \
 	silccore \
@@ -55,7 +45,6 @@ SILCLIB_DIRS = \
 	silcutil \
 	trq \
 	dotconf
-endif
 
 # SILC Client Library dirs
 SILCCLIENTLIB_DIRS = \

@@ -542,7 +542,7 @@ AC_ARG_WITH(win32,
 [ AC_DEFINE(SILC_WIN32)
   AM_CONDITIONAL(SILC_WIN32, test xtrue = xtrue)
   CFLAGS="-mno-cygwin $CFLAGS" 
-  LIBS="-lwsock32 $LIBS" ])
+  LIBS="$LIBS -lwsock32" ])
 
 # Debug checking
 AC_MSG_CHECKING(for enabled debugging)

@@ -114,6 +114,10 @@
 #include <dlfcn.h>
 #endif
 
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
+
 #endif				/* !SILC_WIN32 */
 
 #ifndef HAVE_GETOPT_LONG
