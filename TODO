@@ -1,17 +1,6 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o LEAVE does not work correctly, it doesn't leave the channel for real!
-
-	o Remove the entire current_channel field from the client
-	  library and handle the current channel thingy in the 
-	  Irssi SILC client.  Requires short stub functions of all
-	  commands that use current current_channel to the Irssi SILC
-	  client which then calls the actual library command.
-
- o KILL notify does not remove the killed client from all channels.  The
-   /NAMES will show it still.
-
  o Add PERL scripting support from Irssi CVS.
 
  o Add local commands to list the current server and client public keys
@@ -28,9 +17,6 @@ TODO/bugs in Irssi SILC client
 
  o Set different kind of settings, like, /set mutual_authentication,
    /set key_exchange_timeout, /set conn_auth_timeout etc etc.
-
- o Do some /set show_mail_notification that would show a notification
-   on screen when new email is received.
 
 
 TODO/bugs In SILC Client Library

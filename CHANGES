@@ -16,6 +16,11 @@ Fri Jun 22 10:44:14 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  They really did not replace the cache entry in the ID Cache.
 	  Now they do that.  Affected file silcd/idlist.c.
 
+	* Fixed the KICK notify handling in the Irssi SILC client to
+	  update the channel records so that the kicked client does not
+	  appear to be on the channel.  The affected file is 
+	  irssi/src/silc/core/silc-channels.c.
+
 Thu Jun 21 17:10:08 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the silc_parse_command_line to remove extra spaces

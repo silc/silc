@@ -420,20 +420,33 @@ static void event_kick(SILC_SERVER_REC *server, va_list va)
   SilcClientEntry client_entry;
   SilcChannelEntry channel_entry;
   char *tmp;
+  SILC_CHANNEL_REC *chanrec;
 
   client_entry = va_arg(va, SilcClientEntry);
   tmp = va_arg(va, char *);
   channel_entry = va_arg(va, SilcChannelEntry);
+
+  chanrec = silc_channel_find_entry(server, channel_entry);
   
   if (client_entry == conn->local_entry) {
     printformat_module("fe-common/silc", server, channel_entry->channel_name,
 		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED_YOU, 
 		       channel_entry->channel_name, tmp ? tmp : "");
+    if (chanrec) {
+      chanrec->kicked = TRUE;
+      channel_destroy((CHANNEL_REC *)chanrec);
+    }
   } else {
     printformat_module("fe-common/silc", server, channel_entry->channel_name,
 		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED, 
 		       client_entry->nickname,
 		       channel_entry->channel_name, tmp ? tmp : "");
+
+    if (chanrec) {
+      SILC_NICK_REC *nickrec = silc_nicklist_find(chanrec, client_entry);
+      if (nickrec != NULL)
+	nicklist_remove(CHANNEL(chanrec), NICK(nickrec));
+    }
   }
 }
 
@@ -472,7 +485,7 @@ static void command_part(const char *data, SILC_SERVER_REC *server,
   if (!IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
 
-  if (*data == '\0') {
+  if (!strcmp(data, "*") || *data == '\0') {
     if (!IS_SILC_CHANNEL(item))
       cmd_return_error(CMDERR_NOT_JOINED);
     data = item->name;
