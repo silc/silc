@@ -1,3 +1,9 @@
+Sun Apr 14 19:49:02 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Fixed a bug in library where sending a bogus authentication
+	  payload would lead to a crash.  Affected file is
+	  lib/silccore/silcauth.c.
+
 Sat Apr 13 13:09:24 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added detach_disabled and detach_timeout server config
@@ -6,7 +12,7 @@ Sat Apr 13 13:09:24 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 Fri Apr 12 20:09:08 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
-	  Added resolve_cmd_ident field to the SilcClientEntry structure
+	* Added resolve_cmd_ident field to the SilcClientEntry structure
 	  too so that if the entry is for example being resolved so 
 	  another command may attach to the same pending command reply
 	  without requiring to resolve the same entry again.  Added
