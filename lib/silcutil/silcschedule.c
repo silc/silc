@@ -743,6 +743,8 @@ void silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
 
 void silc_schedule_task_del_by_fd(SilcSchedule schedule, uint32 fd)
 {
+  SILC_LOG_DEBUG(("Unregister task by fd"));
+
   silc_task_del_by_fd(schedule->timeout_queue, fd);
   silc_task_del_by_fd(schedule->fd_queue, fd);
 }
@@ -752,6 +754,8 @@ void silc_schedule_task_del_by_fd(SilcSchedule schedule, uint32 fd)
 void silc_schedule_task_del_by_callback(SilcSchedule schedule,
 					SilcTaskCallback callback)
 {
+  SILC_LOG_DEBUG(("Unregister task by callback"));
+
   silc_task_del_by_callback(schedule->timeout_queue, callback);
   silc_task_del_by_callback(schedule->fd_queue, callback);
   silc_task_del_by_callback(schedule->generic_queue, callback);
@@ -761,6 +765,8 @@ void silc_schedule_task_del_by_callback(SilcSchedule schedule,
 
 void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context)
 {
+  SILC_LOG_DEBUG(("Unregister task by context"));
+
   silc_task_del_by_context(schedule->timeout_queue, context);
   silc_task_del_by_context(schedule->fd_queue, context);
   silc_task_del_by_context(schedule->generic_queue, context);
@@ -1127,8 +1133,6 @@ static void silc_task_del_by_fd(SilcTaskQueue queue, uint32 fd)
 {
   SilcTask next;
 
-  SILC_LOG_DEBUG(("Unregister task by fd"));
-
   silc_mutex_lock(queue->lock);
 
   if (!queue->task) {
@@ -1154,8 +1158,6 @@ static void silc_task_del_by_callback(SilcTaskQueue queue,
 {
   SilcTask next;
 
-  SILC_LOG_DEBUG(("Unregister task by callback"));
-
   silc_mutex_lock(queue->lock);
 
   if (!queue->task) {
@@ -1179,8 +1181,6 @@ static void silc_task_del_by_callback(SilcTaskQueue queue,
 static void silc_task_del_by_context(SilcTaskQueue queue, void *context)
 {
   SilcTask next;
-
-  SILC_LOG_DEBUG(("Unregister task by context"));
 
   silc_mutex_lock(queue->lock);
 

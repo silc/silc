@@ -1,3 +1,10 @@
+Thu Jul 19 14:47:30 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Removed the non-blocking settings in WIN32 code in the
+	  silc_sock_[read/write] and added SleepEx instead.  Affected
+	  file lib/silcutil/win32/silcwin32sockconn.c.  The availability
+	  of input data is now checked with FIONREAD and ioctlsocket.
+
 Wed Jul 18 18:34:01 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Call silc_schedule_task_del_by_context in the 
