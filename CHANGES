@@ -1,3 +1,9 @@
+Thu Dec 04 11:33:46 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Initialize the variable idletag, since it is tested in 
+	  silc_core_deinit for its default value.  Affected file
+	  irssi/src/silc/core/silc-core.c
+
 Sun Nov 30 19:47:02 CET 2003  Patrik Weiskircher <pat@icore.at>
 
 	* Fixed signed channel messages across cells. Affected file

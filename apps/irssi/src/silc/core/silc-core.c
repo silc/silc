@@ -42,7 +42,7 @@
 static char *opt_pkcs = NULL;
 static int opt_bits = 0;
 
-static int idletag;
+static int idletag = -1;
 
 SilcClient silc_client = NULL;
 extern SilcClientOperations ops;
