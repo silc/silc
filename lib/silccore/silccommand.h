@@ -222,7 +222,9 @@ typedef uint16 SilcCommandStatus;
  *
  * SYNOPSIS
  *
- *    SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer);
+ *    SilcCommandPayload 
+ *    silc_command_payload_parse(const unsigned char *payload,
+ *                               uint32 payload_len);
  *
  * DESCRIPTION
  *
@@ -230,7 +232,8 @@ typedef uint16 SilcCommandStatus;
  *    `buffer' is the raw payload.
  *
  ***/
-SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer);
+SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
+					      uint32 payload_len);
 
 /****f* silccore/SilcCommandAPI/silc_command_payload_encode
  *

@@ -249,7 +249,7 @@ typedef uint32 * void *;
 /* SILC core library includes */
 #include "silcid.h"
 #include "silcidcache.h"
-#include "silcpayload.h"
+#include "silcargument.h"
 #include "silccommand.h"
 #include "silcchannel.h"
 #include "silcpacket.h"

@@ -87,7 +87,9 @@ typedef uint16 SilcNotifyType;
  *
  * SYNOPSIS
  *
- *    SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer);
+ *    SilcNotifyPayload 
+ *    silc_notify_payload_parse(const unsigned char *payload,
+ *                              uint32 payload_len);
  *
  * DESCRIPTION
  *
@@ -95,7 +97,8 @@ typedef uint16 SilcNotifyType;
  *    The `buffer' is the raw payload data.
  *
  ***/
-SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer);
+SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
+					    uint32 payload_len);
 
 /****f* silccore/SilcNotifyAPI/silc_notify_payload_encode
  *

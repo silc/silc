@@ -41,20 +41,23 @@ struct SilcCommandPayloadStruct {
 
 /* Parses command payload returning new command payload structure */
 
-SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer)
+SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
+					      uint32 payload_len)
 {
+  SilcBufferStruct buffer;
   SilcCommandPayload new;
   unsigned char args_num;
-  uint16 payload_len;
+  uint16 p_len;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing command payload"));
 
+  silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
   new = silc_calloc(1, sizeof(*new));
 
   /* Parse the Command Payload */
-  ret = silc_buffer_unformat(buffer, 
-			     SILC_STR_UI_SHORT(&payload_len),
+  ret = silc_buffer_unformat(&buffer, 
+			     SILC_STR_UI_SHORT(&p_len),
 			     SILC_STR_UI_CHAR(&new->cmd),
 			     SILC_STR_UI_CHAR(&args_num),
 			     SILC_STR_UI_SHORT(&new->ident),
@@ -64,7 +67,7 @@ SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer)
     return NULL;
   }
 
-  if (payload_len != buffer->len) {
+  if (p_len != buffer.len) {
     SILC_LOG_ERROR(("Incorrect command payload in packet, packet dropped"));
     silc_free(new);
     return NULL;
@@ -75,15 +78,15 @@ SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer)
     return NULL;
   }
 
-  silc_buffer_pull(buffer, SILC_COMMAND_PAYLOAD_LEN);
+  silc_buffer_pull(&buffer, SILC_COMMAND_PAYLOAD_LEN);
   if (args_num) {
-    new->args = silc_argument_payload_parse(buffer, args_num);
+    new->args = silc_argument_payload_parse(buffer.data, buffer.len, args_num);
     if (!new->args) {
       silc_free(new);
       return NULL;
     }
   }
-  silc_buffer_push(buffer, SILC_COMMAND_PAYLOAD_LEN);
+  silc_buffer_push(&buffer, SILC_COMMAND_PAYLOAD_LEN);
 
   return new;
 }

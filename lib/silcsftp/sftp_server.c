@@ -32,6 +32,7 @@ typedef struct {
   SilcSFTPMonitor monitor;
   void *monitor_context;
   SilcSFTPFilesystem fs;
+  SilcBuffer packet;
 } *SilcSFTPServer;
 
 /* General routine to send SFTP packet to the SFTP client. */
@@ -40,22 +41,25 @@ static void silc_sftp_send_packet(SilcSFTPServer sftp,
 				  SilcSFTPPacket type, 
 				  uint32 len, ...)
 {
-  SilcBuffer packet;
+  SilcBuffer tmp;
   va_list vp;
 
   va_start(vp, len);
-  packet = silc_sftp_packet_encode_vp(type, len, vp);
+  tmp = silc_sftp_packet_encode_vp(type, sftp->packet, len, vp);
   va_end(vp);
-
-  if (!packet)
+  if (!tmp)
     return;
+  sftp->packet = tmp;
 
-  SILC_LOG_HEXDUMP(("SFTP packet to client"), packet->data, packet->len);
+  SILC_LOG_HEXDUMP(("SFTP packet to client"), sftp->packet->data, 
+		   sftp->packet->len);
 
   /* Send the packet */
-  (*sftp->send_packet)(sftp->sock, packet, sftp->send_context);
+  (*sftp->send_packet)(sftp->sock, sftp->packet, sftp->send_context);
 
-  silc_buffer_free(packet);
+  /* Clear packet */
+  sftp->packet->data = sftp->packet->tail = sftp->packet->head;
+  sftp->packet->len = 0;
 }
 
 /* Sends error to the client */
@@ -285,6 +289,8 @@ void silc_sftp_server_shutdown(SilcSFTP sftp)
 
   SILC_LOG_DEBUG(("Stopping SFTP server %p", server));
 
+  if (server->packet)
+    silc_buffer_free(server->packet);
   silc_free(server);
 }
 

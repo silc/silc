@@ -1754,7 +1754,8 @@ void silc_server_send_command_reply(SilcServer server,
 
   va_start(ap, argc);
 
-  packet = silc_command_reply_payload_encode_vap(command, ident, argc, ap);
+  packet = silc_command_reply_payload_encode_vap(command, status, ident, 
+						 argc, ap);
   silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0,
 			  packet->data, packet->len, TRUE);
   silc_buffer_free(packet);

@@ -1050,7 +1050,7 @@ void silc_client_packet_parse_type(SilcClient client,
        */
       SilcIDPayload idp;
 
-      idp = silc_id_payload_parse(buffer);
+      idp = silc_id_payload_parse(buffer->data, buffer->len);
       if (!idp)
 	break;
       if (silc_id_payload_get_type(idp) != SILC_ID_CLIENT)

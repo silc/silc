@@ -43,22 +43,27 @@ struct SilcPrivateMessagePayloadStruct {
    structure. This also decrypts the message if the `cipher' is provided. */
 
 SilcPrivateMessagePayload 
-silc_private_message_payload_parse(SilcBuffer buffer, SilcCipher cipher)
+silc_private_message_payload_parse(unsigned char *payload,
+				   uint32 payload_len,
+				   SilcCipher cipher)
 {
+  SilcBufferStruct buffer;
   SilcPrivateMessagePayload new;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing private message payload"));
 
+  silc_buffer_set(&buffer, payload, payload_len);
+
   /* Decrypt the payload */
   if (cipher)
-    silc_cipher_decrypt(cipher, buffer->data, buffer->data, 
-			buffer->len, cipher->iv);
+    silc_cipher_decrypt(cipher, buffer.data, buffer.data, 
+			buffer.len, cipher->iv);
 
   new = silc_calloc(1, sizeof(*new));
 
   /* Parse the Private Message Payload. Ignore the padding. */
-  ret = silc_buffer_unformat(buffer,
+  ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI_SHORT(&new->flags),
 			     SILC_STR_UI16_NSTRING_ALLOC(&new->message, 
 							 &new->message_len),
@@ -68,7 +73,7 @@ silc_private_message_payload_parse(SilcBuffer buffer, SilcCipher cipher)
     goto err;
   }
 
-  if ((new->message_len < 1 || new->message_len > buffer->len)) {
+  if ((new->message_len < 1 || new->message_len > buffer.len)) {
     SILC_LOG_DEBUG(("Incorrect private message payload in packet, "
 		    "packet dropped"));
     goto err;
@@ -87,7 +92,7 @@ silc_private_message_payload_parse(SilcBuffer buffer, SilcCipher cipher)
 
 SilcBuffer silc_private_message_payload_encode(uint16 flags,
 					       uint16 data_len,
-					       unsigned char *data,
+					       const unsigned char *data,
 					       SilcCipher cipher)
 {
   int i;

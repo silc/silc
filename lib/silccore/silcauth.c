@@ -40,7 +40,7 @@ struct SilcAuthPayloadStruct {
 
 /* Parses and returns Authentication Payload */
 
-SilcAuthPayload silc_auth_payload_parse(unsigned char *data,
+SilcAuthPayload silc_auth_payload_parse(const unsigned char *data,
 					uint32 data_len)
 {
   SilcBufferStruct buffer;
@@ -49,8 +49,7 @@ SilcAuthPayload silc_auth_payload_parse(unsigned char *data,
 
   SILC_LOG_DEBUG(("Parsing Authentication Payload"));
 
-  silc_buffer_set(&buffer, data, data_len);
-
+  silc_buffer_set(&buffer, (unsigned char *)data, data_len);
   new = silc_calloc(1, sizeof(*new));
 
   /* Parse the payload */
@@ -84,9 +83,9 @@ SilcAuthPayload silc_auth_payload_parse(unsigned char *data,
 /* Encodes authentication payload into buffer and returns it */
 
 SilcBuffer silc_auth_payload_encode(SilcAuthMethod method,
-				    unsigned char *random_data,
+				    const unsigned char *random_data,
 				    uint16 random_len,
-				    unsigned char *auth_data,
+				    const unsigned char *auth_data,
 				    uint16 auth_len)
 {
   SilcBuffer buffer;
@@ -155,8 +154,8 @@ unsigned char *silc_auth_get_data(SilcAuthPayload payload,
 
 static unsigned char *
 silc_auth_public_key_encode_data(SilcPublicKey public_key, 
-				 unsigned char *random,
-				 uint32 random_len, void *id,
+				 const unsigned char *random,
+				 uint32 random_len, const void *id,
 				 SilcIdType type, uint32 *ret_len)
 {
   SilcBuffer buf;
@@ -202,7 +201,7 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
 SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 					      SilcPrivateKey private_key,
 					      SilcHash hash,
-					      void *id, SilcIdType type)
+					      const void *id, SilcIdType type)
 {
   unsigned char *random;
   unsigned char auth_data[1024];
@@ -262,9 +261,9 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 /* Verifies the authentication data. Returns TRUE if authentication was
    successful. */
 
-int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
-				     SilcPublicKey public_key, SilcHash hash,
-				     void *id, SilcIdType type)
+bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
+				      SilcPublicKey public_key, SilcHash hash,
+				      const void *id, SilcIdType type)
 {
   unsigned char *tmp;
   uint32 tmp_len;
@@ -311,15 +310,16 @@ int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
 
 /* Same as above but the payload is not parsed yet. This will parse it. */
 
-int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
-					  SilcPublicKey public_key, 
-					  SilcHash hash,
-					  void *id, SilcIdType type)
+bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
+					   uint32 payload_len,
+					   SilcPublicKey public_key, 
+					   SilcHash hash,
+					   const void *id, SilcIdType type)
 {
   SilcAuthPayload auth_payload;
   int ret;
 
-  auth_payload = silc_auth_payload_parse(payload->data, payload->len);
+  auth_payload = silc_auth_payload_parse(payload, payload_len);
   if (!auth_payload) {
     SILC_LOG_DEBUG(("Authentication failed"));
     return FALSE;
@@ -340,9 +340,9 @@ int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
    authentication then the `auth_data' is the SilcPublicKey and the
    `auth_data_len' is ignored. */
 
-int silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
-		     void *auth_data, uint32 auth_data_len, 
-		     SilcHash hash, void *id, SilcIdType type)
+bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
+		      const void *auth_data, uint32 auth_data_len, 
+		      SilcHash hash, const void *id, SilcIdType type)
 {
   SILC_LOG_DEBUG(("Verifying authentication"));
 
@@ -381,10 +381,10 @@ int silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
 
 /* Same as above but parses the authentication payload before verify. */
 
-int silc_auth_verify_data(unsigned char *payload, uint32 payload_len,
-			  SilcAuthMethod auth_method, void *auth_data,
-			  uint32 auth_data_len, SilcHash hash, 
-			  void *id, SilcIdType type)
+bool silc_auth_verify_data(const unsigned char *payload, uint32 payload_len,
+			   SilcAuthMethod auth_method, const void *auth_data,
+			   uint32 auth_data_len, SilcHash hash, 
+			   const void *id, SilcIdType type)
 {
   SilcAuthPayload auth_payload;
   int ret;
@@ -416,17 +416,21 @@ struct SilcKeyAgreementPayloadStruct {
 
 /* Parses and returns an allocated Key Agreement payload. */
 
-SilcKeyAgreementPayload silc_key_agreement_payload_parse(SilcBuffer buffer)
+SilcKeyAgreementPayload 
+silc_key_agreement_payload_parse(const unsigned char *payload,
+				 uint32 payload_len)
 {
+  SilcBufferStruct buffer;
   SilcKeyAgreementPayload new;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing Key Agreement Payload"));
 
+  silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
   new = silc_calloc(1, sizeof(*new));
 
   /* Parse the payload */
-  ret = silc_buffer_unformat(buffer, 
+  ret = silc_buffer_unformat(&buffer, 
 			     SILC_STR_UI16_NSTRING_ALLOC(&new->hostname,
 							 &new->hostname_len),
 			     SILC_STR_UI_INT(&new->port),

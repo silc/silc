@@ -25,15 +25,18 @@
 /* Encodes a SFTP packet of type `packet' of length `len'. The variable
    argument list is encoded as data payload to the buffer. Returns the
    encoded packet or NULL on error. The caller must free the returned
-   buffer. */
+   buffer. If `packet_buf' is non-NULL then the new packet data is put
+   to that buffer instead of allocating new one.  If the new data cannot
+   fit to `packet_buf' will be reallocated. */
 
-SilcBuffer silc_sftp_packet_encode(SilcSFTPPacket packet, uint32 len, ...)
+SilcBuffer silc_sftp_packet_encode(SilcSFTPPacket packet, 
+				   SilcBuffer packet_buf, uint32 len, ...)
 {
   SilcBuffer buffer;
   va_list vp;
 
   va_start(vp, len);
-  buffer = silc_sftp_packet_encode_vp(packet, len, vp);
+  buffer = silc_sftp_packet_encode_vp(packet, packet_buf, len, vp);
   va_end(vp);
 
   return buffer;
@@ -42,13 +45,25 @@ SilcBuffer silc_sftp_packet_encode(SilcSFTPPacket packet, uint32 len, ...)
 /* Same as silc_sftp_packet_encode but takes the variable argument list
    pointer as argument. */
 
-SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet, uint32 len, 
+SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet, 
+				      SilcBuffer packet_buf, uint32 len, 
 				      va_list vp)
 {
   SilcBuffer buffer;
+  bool dyn;
   int ret;
 
-  buffer = silc_buffer_alloc(4 + 1 + len);
+  if (packet_buf) {
+    if (packet_buf->truelen < 4 + 1 + len)
+      packet_buf = silc_buffer_realloc(packet_buf, 4 + 1 + len);
+
+    buffer = packet_buf;
+    dyn = FALSE;
+  } else {
+    buffer = silc_buffer_alloc(4 + 1 + len);
+    dyn = TRUE;
+  }
+
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
   silc_buffer_format(buffer, 
 		     SILC_STR_UI_INT(len),
@@ -58,7 +73,8 @@ SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet, uint32 len,
 
   ret = silc_buffer_format_vp(buffer, vp);
   if (ret < 0) {
-    silc_buffer_free(buffer);
+    if (dyn)
+      silc_buffer_free(buffer);
     return NULL;
   }
 

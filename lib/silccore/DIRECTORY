@@ -9,7 +9,7 @@
 @LINK=silcmode.html:SILC Modes
 @LINK=silcnotify.html:SILC Notify API
 @LINK=silcpacket.html:SILC Packet API
-@LINK=silcpayload.html:SILC Payload API
+@LINK=silcargument.html:SILC Argument API
 @LINK=silcprivate.html:SILC Private API
 -->
 

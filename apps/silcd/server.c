@@ -2978,7 +2978,8 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
   SILC_LOG_DEBUG(("Start"));
 
   /* Decode channel key payload */
-  payload = silc_channel_key_payload_parse(key_payload);
+  payload = silc_channel_key_payload_parse(key_payload->data,
+					   key_payload->len);
   if (!payload) {
     SILC_LOG_ERROR(("Bad channel key payload, dropped"));
     channel = NULL;

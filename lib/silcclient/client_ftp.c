@@ -1013,7 +1013,8 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
   }
 
   /* Parse the key agreement payload */
-  payload = silc_key_agreement_payload_parse(packet->buffer);
+  payload = silc_key_agreement_payload_parse(packet->buffer->data,
+					     packet->buffer->len);
   if (!payload)
     goto out;
 

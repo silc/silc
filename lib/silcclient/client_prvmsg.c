@@ -186,7 +186,8 @@ void silc_client_private_message(SilcClient client,
   remote_client = (SilcClientEntry)id_cache->context;
 
   /* Parse the payload and decrypt it also if private message key is set */
-  payload = silc_private_message_payload_parse(packet->buffer,
+  payload = silc_private_message_payload_parse(packet->buffer->data,
+					       packet->buffer->len,
 					       remote_client->receive_key);
   if (!payload) {
     silc_free(remote_id);

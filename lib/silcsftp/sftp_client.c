@@ -24,7 +24,7 @@
 
 /* Request context. Every request will allocate this context and set
    the correct callback function according the `type' field. */
-typedef struct {
+typedef struct SilcSFTPRequestStruct {
   uint32 id;
   SilcSFTPPacket type;
   SilcSFTPStatusCallback status;
@@ -34,6 +34,7 @@ typedef struct {
   SilcSFTPAttrCallback attr;
   SilcSFTPExtendedCallback extended;
   void *context;
+  struct SilcSFTPRequestStruct *next;
 } *SilcSFTPRequest;
 
 /* SFTP client context */
@@ -44,7 +45,8 @@ typedef struct {
   SilcSFTPVersionCallback version;
   void *version_context;
   uint32 id;
-  SilcDList requests;
+  SilcList requests;
+  SilcBuffer packet;
 } *SilcSFTPClient;
 
 /* File handle */
@@ -93,22 +95,25 @@ static void silc_sftp_send_packet(SilcSFTPClient sftp,
 				  SilcSFTPPacket type, 
 				  uint32 len, ...)
 {
-  SilcBuffer packet;
+  SilcBuffer tmp;
   va_list vp;
 
   va_start(vp, len);
-  packet = silc_sftp_packet_encode_vp(type, len, vp);
+  tmp = silc_sftp_packet_encode_vp(type, sftp->packet, len, vp);
   va_end(vp);
-
-  if (!packet)
+  if (!tmp)
     return;
+  sftp->packet = tmp;
 
-  SILC_LOG_HEXDUMP(("SFTP packet to server"), packet->data, packet->len);
+  SILC_LOG_HEXDUMP(("SFTP packet to server"), sftp->packet->data, 
+		   sftp->packet->len);
 
   /* Send the packet */
-  (*sftp->send_packet)(sftp->sock, packet, sftp->send_context);
+  (*sftp->send_packet)(sftp->sock, sftp->packet, sftp->send_context);
 
-  silc_buffer_free(packet);
+  /* Clear packet */
+  sftp->packet->data = sftp->packet->tail = sftp->packet->head;
+  sftp->packet->len = 0;
 }
 
 /* Finds request by request ID. */
@@ -119,8 +124,8 @@ static SilcSFTPRequest silc_sftp_find_request(SilcSFTPClient sftp, uint32 id)
 
   SILC_LOG_DEBUG(("Finding request ID: %d", id));
 
-  silc_dlist_start(sftp->requests);
-  while ((req = silc_dlist_get(sftp->requests)) != SILC_LIST_END) {
+  silc_list_start(sftp->requests);
+  while ((req = silc_list_get(sftp->requests)) != SILC_LIST_END) {
     if (req->id == id)
       return req;
   }
@@ -280,7 +285,7 @@ static void silc_sftp_call_request(SilcSFTPClient sftp,
   }
 
   /* Remove this request */
-  silc_dlist_del(sftp->requests, req);
+  silc_list_del(sftp->requests, req);
   silc_free(req);
 
   va_end(vp);
@@ -310,7 +315,7 @@ SilcSFTP silc_sftp_client_start(SilcSocketConnection sock,
   sftp->send_context = send_context;
   sftp->version = callback;
   sftp->version_context = context;
-  sftp->requests = silc_dlist_init();
+  silc_list_init(sftp->requests, struct SilcSFTPRequestStruct, next);
 
   /* Send the SFTP session initialization to the server */
   silc_sftp_send_packet(sftp, SILC_SFTP_INIT, 4, 
@@ -328,7 +333,9 @@ void silc_sftp_client_shutdown(SilcSFTP context)
 {
   SilcSFTPClient sftp = (SilcSFTPClient)context;
 
-  silc_dlist_uninit(sftp->requests);
+  silc_list_uninit(sftp->requests);
+  if (sftp->packet)
+    silc_buffer_free(sftp->packet);
   silc_free(sftp);
 }
 
@@ -583,7 +590,7 @@ void silc_sftp_open(SilcSFTP sftp,
   req->type = SILC_SFTP_OPEN;
   req->handle = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   attrs_buf = silc_sftp_attr_encode(attrs);
   len = 4 + 4 + strlen(filename) + 4 + attrs_buf->len;
@@ -618,7 +625,7 @@ void silc_sftp_close(SilcSFTP sftp,
   req->type = SILC_SFTP_CLOSE;
   req->status = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   silc_sftp_handle_get(handle, &hdata, &hdata_len);
   len = 4 + 4 + hdata_len;
@@ -650,7 +657,7 @@ void silc_sftp_read(SilcSFTP sftp,
   req->type = SILC_SFTP_READ;
   req->data = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   silc_sftp_handle_get(handle, &hdata, &hdata_len);
   len2 = 4 + 4 + hdata_len + 8 + 4;
@@ -685,7 +692,7 @@ void silc_sftp_write(SilcSFTP sftp,
   req->type = SILC_SFTP_WRITE;
   req->status = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   silc_sftp_handle_get(handle, &hdata, &hdata_len);
   len = 4 + 4 + hdata_len + 8 + 4 + data_len;
@@ -716,7 +723,7 @@ void silc_sftp_remove(SilcSFTP sftp,
   req->type = SILC_SFTP_REMOVE;
   req->status = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   len = 4 + 4 + strlen(filename);
 
@@ -744,7 +751,7 @@ void silc_sftp_rename(SilcSFTP sftp,
   req->type = SILC_SFTP_RENAME;
   req->status = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   len = 4 + 4 + strlen(oldname) + 4 + strlen(newname);
 
@@ -775,7 +782,7 @@ void silc_sftp_mkdir(SilcSFTP sftp,
   req->type = SILC_SFTP_MKDIR;
   req->status = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   attrs_buf = silc_sftp_attr_encode(attrs);
   len = 4 + 4 + strlen(path) + attrs_buf->len;
@@ -807,7 +814,7 @@ void silc_sftp_rmdir(SilcSFTP sftp,
   req->type = SILC_SFTP_RMDIR;
   req->status = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   len = 4 + 4 + strlen(path);
 
@@ -834,7 +841,7 @@ void silc_sftp_opendir(SilcSFTP sftp,
   req->type = SILC_SFTP_OPENDIR;
   req->handle = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   len = 4 + 4 + strlen(path);
 
@@ -863,7 +870,7 @@ void silc_sftp_readdir(SilcSFTP sftp,
   req->type = SILC_SFTP_READDIR;
   req->name = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   silc_sftp_handle_get(handle, &hdata, &hdata_len);
   len = 4 + 4 + hdata_len;
@@ -891,7 +898,7 @@ void silc_sftp_stat(SilcSFTP sftp,
   req->type = SILC_SFTP_STAT;
   req->attr = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   len = 4 + 4 + strlen(path);
 
@@ -918,7 +925,7 @@ void silc_sftp_lstat(SilcSFTP sftp,
   req->type = SILC_SFTP_LSTAT;
   req->attr = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   len = 4 + 4 + strlen(path);
 
@@ -947,7 +954,7 @@ void silc_sftp_fstat(SilcSFTP sftp,
   req->type = SILC_SFTP_FSTAT;
   req->attr = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   silc_sftp_handle_get(handle, &hdata, &hdata_len);
   len = 4 + 4 + hdata_len;
@@ -977,7 +984,7 @@ void silc_sftp_setstat(SilcSFTP sftp,
   req->type = SILC_SFTP_SETSTAT;
   req->status = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   attrs_buf = silc_sftp_attr_encode(attrs);
   len = 4 + 4 + strlen(path) + attrs_buf->len;
@@ -1013,7 +1020,7 @@ void silc_sftp_fsetstat(SilcSFTP sftp,
   req->type = SILC_SFTP_FSETSTAT;
   req->status = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   silc_sftp_handle_get(handle, &hdata, &hdata_len);
   attrs_buf = silc_sftp_attr_encode(attrs);
@@ -1046,7 +1053,7 @@ void silc_sftp_readlink(SilcSFTP sftp,
   req->type = SILC_SFTP_READLINK;
   req->name = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   len = 4 + 4 + strlen(path);
 
@@ -1074,7 +1081,7 @@ void silc_sftp_symlink(SilcSFTP sftp,
   req->type = SILC_SFTP_SYMLINK;
   req->status = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   len = 4 + 4 + strlen(linkpath) + 4 + strlen(targetpath);
 
@@ -1103,7 +1110,7 @@ void silc_sftp_realpath(SilcSFTP sftp,
   req->type = SILC_SFTP_REALPATH;
   req->name = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   len = 4 + 4 + strlen(path);
 
@@ -1132,7 +1139,7 @@ void silc_sftp_extended(SilcSFTP sftp,
   req->type = SILC_SFTP_WRITE;
   req->extended = callback;
   req->context = context;
-  silc_dlist_add(client->requests, req);
+  silc_list_add(client->requests, req);
 
   len = 4 + 4 + strlen(request) + data_len;
 

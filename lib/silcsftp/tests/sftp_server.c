@@ -38,14 +38,14 @@ static void send_packet(SilcSocketConnection sock,
   memset(&packetdata, 0, sizeof(packetdata));
   packetdata.type = SILC_PACKET_FTP;
   packetdata.truelen = packet->len + SILC_PACKET_HEADER_LEN;
-  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
+  packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, 0);
   silc_packet_send_prepare(sock,
 			   SILC_PACKET_HEADER_LEN,
 			   packetdata.padlen,
 			   packet->len);
   packetdata.buffer = sock->outbuf;
   silc_buffer_put(sock->outbuf, packet->data, packet->len);
-  silc_packet_assemble(&packetdata);
+  silc_packet_assemble(&packetdata, NULL);
   ret = silc_packet_send(sock, TRUE);
   if (ret != -2)
     return;
@@ -55,17 +55,19 @@ static void send_packet(SilcSocketConnection sock,
   SILC_SET_OUTBUF_PENDING(sock);
 }
 
-static void packet_parse(SilcPacketParserContext *parser)
+static bool packet_parse(SilcPacketParserContext *parser, void *context)
 {
   Server server = (Server)parser->context;
   SilcSocketConnection sock = parser->sock;
   SilcPacketContext *packet = parser->packet;
   int ret;
   
-  ret = silc_packet_parse(packet);
+  ret = silc_packet_parse(packet, NULL);
   assert(packet->type == SILC_PACKET_FTP);
 
   silc_sftp_server_receive_process(server->sftp[sock->sock], sock, packet);
+
+  return TRUE;
 }
 
 SILC_TASK_CALLBACK(packet_process)
@@ -104,7 +106,8 @@ SILC_TASK_CALLBACK(packet_process)
       return;
     }
 
-    silc_packet_receive_process(sock, NULL, NULL, packet_parse, server);
+    silc_packet_receive_process(sock, FALSE, NULL, NULL, 0, packet_parse, 
+				server);
   }
 }
 

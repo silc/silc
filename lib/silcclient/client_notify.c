@@ -111,7 +111,9 @@ void silc_client_notify_by_server(SilcClient client,
   unsigned char *tmp;
   uint32 tmp_len, mode;
 
-  payload = silc_notify_payload_parse(buffer);
+  SILC_LOG_DEBUG(("Start"));
+
+  payload = silc_notify_payload_parse(buffer->data, buffer->len);
   if (!payload)
     goto out;
 
@@ -133,6 +135,8 @@ void silc_client_notify_by_server(SilcClient client,
      * for the application.
      */
     
+    SILC_LOG_DEBUG(("Notify: INVITE"));
+
     /* Get Channel ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
@@ -178,6 +182,8 @@ void silc_client_notify_by_server(SilcClient client,
      * Someone has joined to a channel. Get their ID and nickname and
      * cache them for later use.
      */
+
+    SILC_LOG_DEBUG(("Notify: JOIN"));
 
     /* Get Client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
@@ -244,6 +250,8 @@ void silc_client_notify_by_server(SilcClient client,
      * we'll keep it in the cache in case we'll need it later.
      */
     
+    SILC_LOG_DEBUG(("Notify: LEAVE"));
+
     /* Get Client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
@@ -291,6 +299,8 @@ void silc_client_notify_by_server(SilcClient client,
      * Someone left SILC. We'll remove it from all channels and from cache.
      */
 
+    SILC_LOG_DEBUG(("Notify: SIGNOFF"));
+
     /* Get Client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
@@ -328,6 +338,8 @@ void silc_client_notify_by_server(SilcClient client,
     /*
      * Someone set the topic on a channel.
      */
+
+    SILC_LOG_DEBUG(("Notify: TOPIC_SET"));
 
     /* Get Client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
@@ -373,6 +385,8 @@ void silc_client_notify_by_server(SilcClient client,
      * returned we fetch the old entry and free it and notify the 
      * application.
      */
+
+    SILC_LOG_DEBUG(("Notify: NICK_CHANGE"));
 
     /* Get old Client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
@@ -433,12 +447,14 @@ void silc_client_notify_by_server(SilcClient client,
      * Someone changed a channel mode
      */
 
+    SILC_LOG_DEBUG(("Notify: CMODE_CHANGE"));
+
     /* Get Client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
 
-    idp = silc_id_payload_parse_data(tmp, tmp_len);
+    idp = silc_id_payload_parse(tmp, tmp_len);
     if (!idp)
       goto out;
 
@@ -533,6 +549,8 @@ void silc_client_notify_by_server(SilcClient client,
      * Someone changed user's mode on a channel
      */
 
+    SILC_LOG_DEBUG(("Notify: CUMODE_CHANGE"));
+
     /* Get Client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
@@ -604,6 +622,8 @@ void silc_client_notify_by_server(SilcClient client,
      * Received Message of the day
      */
 
+    SILC_LOG_DEBUG(("Notify: MOTD"));
+
     /* Get motd */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
@@ -618,6 +638,8 @@ void silc_client_notify_by_server(SilcClient client,
      * Router has enforced a new ID to a channel. Let's change the old
      * ID to the one provided here.
      */
+
+    SILC_LOG_DEBUG(("Notify: CHANNEL_CHANGE"));
 
     /* Get the old ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
@@ -665,6 +687,8 @@ void silc_client_notify_by_server(SilcClient client,
      * A client (maybe me) was kicked from a channel
      */
 
+    SILC_LOG_DEBUG(("Notify: KICKED"));
+
     /* Get Client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
@@ -685,10 +709,29 @@ void silc_client_notify_by_server(SilcClient client,
     if (!channel_id)
       goto out;
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				 &id_cache))
+				     &id_cache))
       break;
 
     channel = (SilcChannelEntry)id_cache->context;
+
+    /* Get the kicker */
+    tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+    if (!tmp)
+      goto out;
+
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
+
+    /* Find kicker's client entry and if not found resolve it */
+    client_entry2 = silc_client_get_client_by_id(client, conn, client_id);
+    if (!client_entry2) {
+      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
+      goto out;
+    } else {
+      if (client_entry2 != conn->local_entry)
+	silc_client_nickname_format(client, conn, client_entry2);
+    }
 
     /* Get comment */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
@@ -696,7 +739,8 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
-    client->ops->notify(client, conn, type, client_entry, tmp, channel);
+    client->ops->notify(client, conn, type, client_entry, tmp, 
+			client_entry2, channel);
 
     /* If I was kicked from channel, remove the channel */
     if (client_entry == conn->local_entry) {
@@ -715,6 +759,8 @@ void silc_client_notify_by_server(SilcClient client,
     /*
      * A client (maybe me) was killed from the network.
      */
+
+    SILC_LOG_DEBUG(("Notify: KILLED"));
 
     /* Get Client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
@@ -753,6 +799,8 @@ void silc_client_notify_by_server(SilcClient client,
       SilcClientEntry *clients = NULL;
       uint32 clients_count = 0;
       int i;
+
+      SILC_LOG_DEBUG(("Notify: SIGNOFF"));
 
       for (i = 1; i < silc_argument_get_arg_num(args); i++) {
 	/* Get Client ID */

@@ -76,7 +76,8 @@ void silc_server_notify(SilcServer server,
   }
 
   /* Parse the Notify Payload */
-  payload = silc_notify_payload_parse(packet->buffer);
+  payload = silc_notify_payload_parse(packet->buffer->data,
+				      packet->buffer->len);
   if (!payload)
     return;
 
@@ -1836,7 +1837,7 @@ static void silc_server_new_id_real(SilcServer server,
       packet->src_id_type != SILC_ID_SERVER)
     return;
 
-  idp = silc_id_payload_parse(buffer);
+  idp = silc_id_payload_parse(buffer->data, buffer->len);
   if (!idp)
     return;
 
@@ -2113,7 +2114,8 @@ void silc_server_new_channel(SilcServer server,
     return;
 
   /* Parse the channel payload */
-  payload = silc_channel_payload_parse(packet->buffer);
+  payload = silc_channel_payload_parse(packet->buffer->data,
+				       packet->buffer->len);
   if (!payload)
     return;
     

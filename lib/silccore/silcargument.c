@@ -1,200 +1,26 @@
 /*
 
-  silcpayload.c
+  silcargument.c 
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 Pekka Riikonen
+  Copyright (C) 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
 
 */
-/* Implementation of generic payloads described in the protocol 
-   specification drafts. */
+/* Implementation of Argument Payload routines */ 
 /* $Id$ */
 
 #include "silcincludes.h"
-#include "silcpayload.h"
-
-/******************************************************************************
-
-                                ID Payload
-
-******************************************************************************/
-
-struct SilcIDPayloadStruct {
-  SilcIdType type;
-  uint16 len;
-  unsigned char *id;
-};
-
-/* Parses buffer and return ID payload into payload structure */
-
-SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
-				    uint32 payload_len)
-{
-  SilcBufferStruct buffer;
-  SilcIDPayload new;
-  int ret;
-
-  SILC_LOG_DEBUG(("Parsing ID payload"));
-
-  silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
-  new = silc_calloc(1, sizeof(*new));
-
-  ret = silc_buffer_unformat(&buffer,
-			     SILC_STR_UI_SHORT(&new->type),
-			     SILC_STR_UI_SHORT(&new->len),
-			     SILC_STR_END);
-  if (ret == -1)
-    goto err;
-
-  silc_buffer_pull(&buffer, 4);
-
-  if (new->len > buffer.len)
-    goto err;
-
-  ret = silc_buffer_unformat(&buffer,
-			     SILC_STR_UI_XNSTRING_ALLOC(&new->id, new->len),
-			     SILC_STR_END);
-  if (ret == -1)
-    goto err;
-
-  silc_buffer_push(&buffer, 4);
-
-  return new;
-
- err:
-  silc_free(new);
-  return NULL;
-}
-
-/* Return the ID directly from the raw payload data. */
-
-void *silc_id_payload_parse_id(const unsigned char *data, uint32 len)
-{
-  SilcBufferStruct buffer;
-  SilcIdType type;
-  uint16 idlen;
-  unsigned char *id_data = NULL;
-  int ret;
-  void *id;
-
-  silc_buffer_set(&buffer, (unsigned char *)data, len);
-  ret = silc_buffer_unformat(&buffer,
-			     SILC_STR_UI_SHORT(&type),
-			     SILC_STR_UI_SHORT(&idlen),
-			     SILC_STR_END);
-  if (ret == -1)
-    goto err;
-
-  silc_buffer_pull(&buffer, 4);
-
-  if (idlen > buffer.len)
-    goto err;
-
-  ret = silc_buffer_unformat(&buffer,
-			     SILC_STR_UI_XNSTRING_ALLOC(&id_data, idlen),
-			     SILC_STR_END);
-  if (ret == -1)
-    goto err;
-
-  id = silc_id_str2id(id_data, idlen, type);
-  silc_free(id_data);
-  return id;
-
- err:
-  return NULL;
-}
-
-/* Encodes ID Payload */
-
-SilcBuffer silc_id_payload_encode(const void *id, SilcIdType type)
-{
-  SilcBuffer buffer;
-  unsigned char *id_data;
-  uint32 len;
-
-  id_data = silc_id_id2str(id, type);
-  len = silc_id_get_len(id, type);
-  buffer = silc_id_payload_encode_data((const unsigned char *)id_data,
-				       len, type);
-  silc_free(id_data);
-  return buffer;
-}
-
-SilcBuffer silc_id_payload_encode_data(const unsigned char *id,
-				       uint32 id_len, SilcIdType type)
-{
-  SilcBuffer buffer;
-
-  SILC_LOG_DEBUG(("Encoding %s ID payload",
-		  type == SILC_ID_CLIENT ? "Client" :
-		  type == SILC_ID_SERVER ? "Server" : "Channel"));
-
-  buffer = silc_buffer_alloc(4 + id_len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
-  silc_buffer_format(buffer,
-		     SILC_STR_UI_SHORT(type),
-		     SILC_STR_UI_SHORT(id_len),
-		     SILC_STR_UI_XNSTRING(id, id_len),
-		     SILC_STR_END);
-  return buffer;
-}
-
-/* Free ID Payload */
-
-void silc_id_payload_free(SilcIDPayload payload)
-{
-  if (payload) {
-    silc_free(payload->id);
-    silc_free(payload);
-  }
-}
-
-/* Get ID type */
-
-SilcIdType silc_id_payload_get_type(SilcIDPayload payload)
-{
-  return payload ? payload->type : 0;
-}
-
-/* Get ID */
-
-void *silc_id_payload_get_id(SilcIDPayload payload)
-{
-  return payload ? silc_id_str2id(payload->id, payload->len,
-                                  payload->type) : NULL;
-}
-
-/* Get raw ID data. Data is duplicated. */
-
-unsigned char *silc_id_payload_get_data(SilcIDPayload payload)
-{
-  unsigned char *ret;
-
-  if (!payload)
-    return NULL;
-
-  ret = silc_calloc(payload->len, sizeof(*ret));
-  memcpy(ret, payload->id, payload->len);
-  return ret;
-}
-
-/* Get length of ID */
-
-uint32 silc_id_payload_get_len(SilcIDPayload payload)
-{
-  return payload ? payload->len : 0;
-}
+#include "silcargument.h"
 
 /******************************************************************************
 

@@ -103,7 +103,7 @@ typedef uint16 SilcAuthMethod;
  *
  * SYNOPSIS
  *
- *    SilcAuthPayload silc_auth_payload_parse(unsigned char *data,
+ *    SilcAuthPayload silc_auth_payload_parse(const unsigned char *data,
  *                                            uint32 data_len);
  *
  * DESCRIPTION
@@ -112,7 +112,7 @@ typedef uint16 SilcAuthMethod;
  *    `data_len' are the raw payload buffer.
  *
  ***/
-SilcAuthPayload silc_auth_payload_parse(unsigned char *data,
+SilcAuthPayload silc_auth_payload_parse(const unsigned char *data,
 					uint32 data_len);
 
 /****f* silccore/SilcAuthAPI/silc_auth_payload_encode
@@ -120,9 +120,9 @@ SilcAuthPayload silc_auth_payload_parse(unsigned char *data,
  * SYNOPSIS
  *
  *    SilcBuffer silc_auth_payload_encode(SilcAuthMethod method,
- *                                        unsigned char *random_data,
+ *                                        const unsigned char *random_data,
  *                                        uint16 random_len,
- *                                        unsigned char *auth_data,
+ *                                        const unsigned char *auth_data,
  *                                        uint16 auth_len);
  *
  * DESCRIPTION
@@ -133,9 +133,9 @@ SilcAuthPayload silc_auth_payload_parse(unsigned char *data,
  *
  ***/
 SilcBuffer silc_auth_payload_encode(SilcAuthMethod method,
-				    unsigned char *random_data,
+				    const unsigned char *random_data,
 				    uint16 random_len,
-				    unsigned char *auth_data,
+				    const unsigned char *auth_data,
 				    uint16 auth_len);
 
 /****f* silccore/SilcAuthAPI/silc_auth_payload_free
@@ -186,7 +186,8 @@ unsigned char *silc_auth_get_data(SilcAuthPayload payload,
  *    SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
  *                                                  SilcPrivateKey private_key,
  *                                                  SilcHash hash,
- *                                                  void *id, SilcIdType type);
+ *                                                  const void *id, 
+ *                                                  SilcIdType type);
  *
  * DESCRIPTION
  *
@@ -199,16 +200,16 @@ unsigned char *silc_auth_get_data(SilcAuthPayload payload,
 SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 					      SilcPrivateKey private_key,
 					      SilcHash hash,
-					      void *id, SilcIdType type);
+					      const void *id, SilcIdType type);
 
 /****f* silccore/SilcAuthAPI/silc_auth_public_key_auth_verify
  *
  * SYNOPSIS
  *
- *    int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
- *                                         SilcPublicKey public_key, 
- *                                         SilcHash hash,
- *                                         void *id, SilcIdType type);
+ *    bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
+ *                                          SilcPublicKey public_key, 
+ *                                          SilcHash hash,
+ *                                          const void *id, SilcIdType type);
  *
  * DESCRIPTION
  *
@@ -216,18 +217,20 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
  *    successful.
  *
  ***/
-int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
-				     SilcPublicKey public_key, SilcHash hash,
-				     void *id, SilcIdType type);
+bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
+				      SilcPublicKey public_key, SilcHash hash,
+				      const void *id, SilcIdType type);
 
 /****f* silccore/SilcAuthAPI/silc_auth_public_key_auth_verify_data
  *
  * SYNOPSIS
  *
- *    int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
- *                                              SilcPublicKey public_key, 
- *                                              SilcHash hash,
- *                                              void *id, SilcIdType type);
+ *    bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
+ *                                               uint32 payload_len,
+ *                                               SilcPublicKey public_key, 
+ *                                               SilcHash hash,
+ *                                               const void *id, 
+ *                                               SilcIdType type);
  *
  * DESCRIPTION
  *
@@ -236,18 +239,20 @@ int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
  *    was successful.
  *
  ***/
-int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
-					  SilcPublicKey public_key, 
-					  SilcHash hash,
-					  void *id, SilcIdType type);
+bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
+					   uint32 payload_len,
+					   SilcPublicKey public_key, 
+					   SilcHash hash,
+					   const void *id, SilcIdType type);
 
 /****f* silccore/SilcAuthAPI/silc_auth_verify
  *
  * SYNOPSIS
  *
- *    int silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
- *                         void *auth_data, uint32 auth_data_len, 
- *                         SilcHash hash, void *id, SilcIdType type);
+ *    bool silc_auth_verify(SilcAuthPayload payload, 
+ *                          SilcAuthMethod auth_method,
+ *                          const void *auth_data, uint32 auth_data_len, 
+ *                          SilcHash hash, const void *id, SilcIdType type);
  *
  * DESCRIPTION
  *
@@ -259,19 +264,21 @@ int silc_auth_public_key_auth_verify_data(SilcBuffer payload,
  *    `auth_data_len' is ignored.
  *
  ***/
-int silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
-		     void *auth_data, uint32 auth_data_len, 
-		     SilcHash hash, void *id, SilcIdType type);
+bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
+		      const void *auth_data, uint32 auth_data_len, 
+		      SilcHash hash, const void *id, SilcIdType type);
 
 /****f* silccore/SilcAuthAPI/silc_auth_verify_data
  *
  * SYNOPSIS
  *
- *    int silc_auth_verify_data(unsigned char *payload, uint32 payload_len,
- *                              SilcAuthMethod auth_method, void *auth_data,
- *                              uint32 auth_data_len, SilcHash hash, 
- *                              void *id, SilcIdType type);
- *
+ *    bool silc_auth_verify_data(const unsigned char *payload, 
+ *                               uint32 payload_len,
+ *                               SilcAuthMethod auth_method, 
+ *                               const void *auth_data,
+ *                               uint32 auth_data_len, SilcHash hash, 
+ *                               const void *id, SilcIdType type);
+ * 
  * DESCRIPTION
  *
  *    Same as silc_auth_verify but the payload has not been parsed yet.
@@ -283,24 +290,27 @@ int silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
  *    `auth_data_len' is ignored.
  *
  ***/
-int silc_auth_verify_data(unsigned char *payload, uint32 payload_len,
-			  SilcAuthMethod auth_method, void *auth_data,
-			  uint32 auth_data_len, SilcHash hash, 
-			  void *id, SilcIdType type);
+bool silc_auth_verify_data(const unsigned char *payload, uint32 payload_len,
+			   SilcAuthMethod auth_method, const void *auth_data,
+			   uint32 auth_data_len, SilcHash hash, 
+			   const void *id, SilcIdType type);
 
 /****f* silccore/SilcAuthAPI/silc_key_agreement_payload_parse
  *
  * SYNOPSIS
  *
  *    SilcKeyAgreementPayload 
- *    silc_key_agreement_payload_parse(SilcBuffer buffer);
+ *    silc_key_agreement_payload_parse(const unsigned char *payload,
+ *                                     uint32 payload_len);
  *
  * DESCRIPTION
  *
  *    Parses and returns an allocated Key Agreement payload.
  *
  ***/
-SilcKeyAgreementPayload silc_key_agreement_payload_parse(SilcBuffer buffer);
+SilcKeyAgreementPayload 
+silc_key_agreement_payload_parse(const unsigned char *payload,
+				 uint32 payload_len);
 
 /****f* silccore/SilcAuthAPI/silc_key_agreement_payload_encode
  *

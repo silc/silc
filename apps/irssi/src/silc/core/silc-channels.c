@@ -475,13 +475,14 @@ static void event_server_signoff(SILC_SERVER_REC *server, va_list va)
 static void event_kick(SILC_SERVER_REC *server, va_list va)
 {
   SilcClientConnection conn = server->conn;
-  SilcClientEntry client_entry;
+  SilcClientEntry client_entry, kicker;
   SilcChannelEntry channel_entry;
   char *tmp;
   SILC_CHANNEL_REC *chanrec;
 
   client_entry = va_arg(va, SilcClientEntry);
   tmp = va_arg(va, char *);
+  kicker = va_arg(va, SilcClientEntry);
   channel_entry = va_arg(va, SilcChannelEntry);
 
   chanrec = silc_channel_find_entry(server, channel_entry);
@@ -489,6 +490,7 @@ static void event_kick(SILC_SERVER_REC *server, va_list va)
   if (client_entry == conn->local_entry) {
     printformat_module("fe-common/silc", server, channel_entry->channel_name,
 		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED_YOU, 
+		       kicker->nickname,
 		       channel_entry->channel_name, tmp ? tmp : "");
     if (chanrec) {
       chanrec->kicked = TRUE;
@@ -498,6 +500,7 @@ static void event_kick(SILC_SERVER_REC *server, va_list va)
     printformat_module("fe-common/silc", server, channel_entry->channel_name,
 		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED, 
 		       client_entry->nickname,
+		       kicker->nickname,
 		       channel_entry->channel_name, tmp ? tmp : "");
 
     if (chanrec) {
@@ -803,6 +806,11 @@ static void keyagr_completion(SilcClient client,
   case SILC_KEY_AGREEMENT_TIMEOUT:
     printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT_TIMEOUT, client_entry->nickname);
+    break;
+    
+  case SILC_KEY_AGREEMENT_ABORTED:
+    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_CRAP,
+		       SILCTXT_KEY_AGREEMENT_ABORTED, client_entry->nickname);
     break;
     
   default:

@@ -162,7 +162,7 @@ void silc_client_command_reply_process(SilcClient client,
   uint16 ident;
 
   /* Get command reply payload from packet */
-  payload = silc_command_payload_parse(buffer);
+  payload = silc_command_payload_parse(buffer->data, buffer->len);
   if (!payload) {
     /* Silently ignore bad reply packet */
     SILC_LOG_DEBUG(("Bad command reply packet"));
@@ -433,7 +433,7 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
     COMMAND_REPLY_ERROR;
     return;
   }
-  idp = silc_id_payload_parse_data(id_data, len);
+  idp = silc_id_payload_parse(id_data, len);
   if (!idp) {
     COMMAND_REPLY_ERROR;
     return;
@@ -590,7 +590,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
 
   /* Take received Client ID */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
-  idp = silc_id_payload_parse_data(tmp, len);
+  idp = silc_id_payload_parse(tmp, len);
   if (!idp) {
     COMMAND_REPLY_ERROR;
     goto out;
@@ -932,8 +932,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 
   SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	     "%s", silc_client_command_status_message(status));
+    if (status != SILC_STATUS_ERR_USER_ON_CHANNEL)
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+			    "%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -965,7 +966,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     silc_free(channel_name);
     goto out;
   }
-  idp = silc_id_payload_parse_data(tmp, len);
+  idp = silc_id_payload_parse(tmp, len);
   if (!idp) {
     COMMAND_REPLY_ERROR;
     silc_free(channel_name);
@@ -1844,7 +1845,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
     COMMAND_REPLY_ERROR;
     goto out;
   }
-  idp = silc_id_payload_parse_data(tmp, len);
+  idp = silc_id_payload_parse(tmp, len);
   if (!idp) {
     COMMAND_REPLY_ERROR;
     goto out;

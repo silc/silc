@@ -36,17 +36,20 @@ struct SilcNotifyPayloadStruct {
 
 /* Parse notify payload buffer and return data into payload structure */
 
-SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer)
+SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
+					    uint32 payload_len)
 {
+  SilcBufferStruct buffer;
   SilcNotifyPayload new;
   uint16 len;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing Notify payload"));
 
+  silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
   new = silc_calloc(1, sizeof(*new));
 
-  ret = silc_buffer_unformat(buffer,
+  ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI_SHORT(&new->type),
 			     SILC_STR_UI_SHORT(&len),
 			     SILC_STR_UI_CHAR(&new->argc),
@@ -54,13 +57,14 @@ SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer)
   if (ret == -1)
     goto err;
 
-  if (len > buffer->len)
+  if (len > buffer.len)
     goto err;
 
   if (new->argc) {
-    silc_buffer_pull(buffer, 5);
-    new->args = silc_argument_payload_parse(buffer, new->argc);
-    silc_buffer_push(buffer, 5);
+    silc_buffer_pull(&buffer, 5);
+    new->args = silc_argument_payload_parse(buffer.data, buffer.len, 
+					    new->argc);
+    silc_buffer_push(&buffer, 5);
   }
 
   return new;

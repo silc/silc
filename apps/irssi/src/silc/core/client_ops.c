@@ -439,7 +439,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       silc_free(nick);
 
       if (channels) {
-	SilcDList list = silc_channel_payload_parse_list(channels);
+	SilcDList list = silc_channel_payload_parse_list(channels->data,
+							 channels->len);
 	if (list) {
 	  SilcChannelPayload entry;
 	  memset(buf, 0, sizeof(buf));

@@ -77,7 +77,7 @@ void silc_server_command_reply_process(SilcServer server,
   SILC_LOG_DEBUG(("Start"));
 
   /* Get command reply payload from packet */
-  payload = silc_command_payload_parse(buffer);
+  payload = silc_command_payload_parse(buffer->data, buffer->len);
   if (!payload) {
     /* Silently ignore bad reply packet */
     SILC_LOG_DEBUG(("Bad command reply packet"));
@@ -404,7 +404,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
   id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
   if (!id_data)
     return FALSE;
-  idp = silc_id_payload_parse_data(id_data, id_len);
+  idp = silc_id_payload_parse(id_data, id_len);
   if (!idp)
     return FALSE;
 
@@ -1019,7 +1019,7 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!tmp)
     goto out;
-  idp = silc_id_payload_parse_data(tmp, len);
+  idp = silc_id_payload_parse(tmp, len);
   if (!idp)
     goto out;
 

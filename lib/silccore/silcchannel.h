@@ -121,7 +121,9 @@ typedef uint16 SilcMessageFlags;
  *
  * SYNOPSIS
  *
- *    SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer);
+ *    SilcChannelPayload 
+ *    silc_channel_payload_parse(const unsigned char *payload,
+ *                               uint32 payload_len);
  *
  * DESCRIPTION
  *
@@ -129,13 +131,16 @@ typedef uint16 SilcMessageFlags;
  *    `buffer' is the raw payload buffer.
  *
  ***/
-SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer);
+SilcChannelPayload silc_channel_payload_parse(const unsigned char *payload,
+					      uint32 payload_len);
 
 /****f* silccore/SilcChannelAPI/silc_channel_payload_parse_list
  *
  * SYNOPSIS
  *
- *    SilcDList silc_channel_payload_parse_list(SilcBuffer buffer);
+ *    SilcDList
+ *    silc_channel_payload_parse_list(const unsigned char *payload,
+ *                                    uint32 payload_len);
  *
  * DESCRIPTION
  *
@@ -144,15 +149,16 @@ SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer);
  *    now includes multiple Channel Payloads one after the other.
  *
  ***/
-SilcDList silc_channel_payload_parse_list(SilcBuffer buffer);
+SilcDList silc_channel_payload_parse_list(const unsigned char *payload,
+					  uint32 payload_len);
 
 /****f* silccore/SilcChannelAPI/silc_channel_payload_encode
  *
  * SYNOPSIS
  *
- *    SilcBuffer silc_channel_payload_encode(unsigned char *channel_name,
+ *    SilcBuffer silc_channel_payload_encode(const unsigned char *channel_name,
  *                                           uint16 channel_name_len,
- *                                           unsigned char *channel_id,
+ *                                           const unsigned char *channel_id,
  *                                           uint32 channel_id_len,
  *                                           uint32 mode);
  *
@@ -161,9 +167,9 @@ SilcDList silc_channel_payload_parse_list(SilcBuffer buffer);
  *    Encode new channel payload and returns it as buffer.
  *
  ***/
-SilcBuffer silc_channel_payload_encode(unsigned char *channel_name,
+SilcBuffer silc_channel_payload_encode(const unsigned char *channel_name,
 				       uint16 channel_name_len,
-				       unsigned char *channel_id,
+				       const unsigned char *channel_id,
 				       uint32 channel_id_len,
 				       uint32 mode);
 
@@ -289,7 +295,8 @@ int silc_channel_message_payload_decrypt(unsigned char *data,
  * SYNOPSIS
  *
  *    SilcChannelMessagePayload 
- *    silc_channel_message_payload_parse(SilcBuffer buffer,
+ *    silc_channel_message_payload_parse(const unsigned char *payload,
+ *                                       uint32 payload_len,
  *                                       SilcCipher cipher,
  *                                       SilcHmac hmac);
  *
@@ -304,7 +311,8 @@ int silc_channel_message_payload_decrypt(unsigned char *data,
  *
  ***/
 SilcChannelMessagePayload 
-silc_channel_message_payload_parse(SilcBuffer buffer,
+silc_channel_message_payload_parse(unsigned char *payload,
+				   uint32 payload_len,
 				   SilcCipher cipher,
 				   SilcHmac hmac);
 
@@ -314,7 +322,7 @@ silc_channel_message_payload_parse(SilcBuffer buffer,
  *
  *    SilcBuffer silc_channel_message_payload_encode(uint16 flags,
  *                                                   uint16 data_len,
- *                                                   unsigned char *data,
+ *                                                   const unsigned char *data,
  *                                                   uint16 iv_len,
  *                                                   unsigned char *iv,
  *                                                   SilcCipher cipher,
@@ -333,7 +341,7 @@ silc_channel_message_payload_parse(SilcBuffer buffer,
  ***/
 SilcBuffer silc_channel_message_payload_encode(uint16 flags,
 					       uint16 data_len,
-					       unsigned char *data,
+					       const unsigned char *data,
 					       uint16 iv_len,
 					       unsigned char *iv,
 					       SilcCipher cipher,
@@ -419,7 +427,9 @@ unsigned char *silc_channel_message_get_iv(SilcChannelMessagePayload payload);
  *
  * SYNOPSIS
  *
- *    SilcChannelKeyPayload silc_channel_key_payload_parse(SilcBuffer buffer);
+ *    SilcChannelKeyPayload 
+ *    silc_channel_key_payload_parse(const unsigned char *payload,
+ *                                   uin32 payload_len);
  *
  * DESCRIPTION
  *
@@ -427,18 +437,20 @@ unsigned char *silc_channel_message_get_iv(SilcChannelMessagePayload payload);
  *     structure.
  *
  ***/
-SilcChannelKeyPayload silc_channel_key_payload_parse(SilcBuffer buffer);
+SilcChannelKeyPayload 
+silc_channel_key_payload_parse(const unsigned char *payload,
+			       uint32 payload_len);
 
 /****f* silccore/SilcChannelAPI/silc_channel_key_payload_encode
  *
  * SYNOPSIS
  *
  *    SilcBuffer silc_channel_key_payload_encode(uint16 id_len,
- *                                               unsigned char *id,
+ *                                               const unsigned char *id,
  *                                               uint16 cipher_len,
- *                                               unsigned char *cipher,
+ *                                               const unsigned char *cipher,
  *                                               uint16 key_len,
- *                                               unsigned char *key);
+ *                                               const unsigned char *key);
  *
  * DESCRIPTION
  *
@@ -447,11 +459,11 @@ SilcChannelKeyPayload silc_channel_key_payload_parse(SilcBuffer buffer);
  *
  ***/
 SilcBuffer silc_channel_key_payload_encode(uint16 id_len,
-					   unsigned char *id,
+					   const unsigned char *id,
 					   uint16 cipher_len,
-					   unsigned char *cipher,
+					   const unsigned char *cipher,
 					   uint16 key_len,
-					   unsigned char *key);
+					   const unsigned char *key);
 
 /****f* silccore/SilcChannelAPI/silc_channel_key_payload_free
  *

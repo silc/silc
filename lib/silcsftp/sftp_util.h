@@ -61,12 +61,16 @@ typedef uint32 SilcSFTPPacket;
 /* Encodes a SFTP packet of type `packet' of length `len'. The variable
    argument list is encoded as data payload to the buffer. Returns the
    encoded packet or NULL on error. The caller must free the returned
-   buffer. */
-SilcBuffer silc_sftp_packet_encode(SilcSFTPPacket packet, uint32 len, ...);
+   buffer. If `packet_buf' is non-NULL then the new packet data is put
+   to that buffer instead of allocating new one.  If the new data cannot
+   fit to `packet_buf' will be reallocated. */
+SilcBuffer silc_sftp_packet_encode(SilcSFTPPacket packet, 
+				   SilcBuffer packet_buf, uint32 len, ...);
 
 /* Same as silc_sftp_packet_encode but takes the variable argument list
    pointer as argument. */
-SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet, uint32 len, 
+SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet, 
+				      SilcBuffer packet_buf, uint32 len, 
 				      va_list vp);
 
 /* Decodes the SFTP packet data `data' and return the SFTP packet type.

@@ -236,7 +236,8 @@ void silc_client_channel_message(SilcClient client,
      all private keys and check what decrypts correctly. */
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     /* Parse the channel message payload. This also decrypts the payload */
-    payload = silc_channel_message_payload_parse(buffer, channel->channel_key,
+    payload = silc_channel_message_payload_parse(buffer->data, buffer->len, 
+						 channel->channel_key,
 						 channel->hmac);
 
     /* If decryption failed and we have just performed channel key rekey
@@ -246,7 +247,7 @@ void silc_client_channel_message(SilcClient client,
       if (!channel->old_channel_key)
 	goto out;
 
-      payload = silc_channel_message_payload_parse(buffer, 
+      payload = silc_channel_message_payload_parse(buffer->data, buffer->len, 
 						   channel->old_channel_key,
 						   channel->old_hmac);
       if (!payload)
@@ -258,7 +259,8 @@ void silc_client_channel_message(SilcClient client,
     silc_dlist_start(channel->private_keys);
     while ((entry = silc_dlist_get(channel->private_keys)) != SILC_LIST_END) {
       /* Parse the channel message payload. This also decrypts the payload */
-      payload = silc_channel_message_payload_parse(buffer, entry->cipher,
+      payload = silc_channel_message_payload_parse(buffer->data, buffer->len, 
+						   entry->cipher,
 						   entry->hmac);
       if (payload)
 	break;
@@ -339,7 +341,8 @@ void silc_client_save_channel_key(SilcClientConnection conn,
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelKeyPayload payload;
 
-  payload = silc_channel_key_payload_parse(key_payload);
+  payload = silc_channel_key_payload_parse(key_payload->data,
+					   key_payload->len);
   if (!payload)
     return;
 

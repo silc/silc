@@ -314,7 +314,7 @@ unsigned char *silc_buffer_push_tail(SilcBuffer sb, uint32 len)
 
 extern inline
 unsigned char *silc_buffer_put_head(SilcBuffer sb, 
-				    unsigned char *data,
+				    const unsigned char *data,
 				    uint32 len)
 {
 #ifdef SILC_DEBUG
@@ -336,7 +336,7 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
 
 extern inline
 unsigned char *silc_buffer_put(SilcBuffer sb, 
-			       unsigned char *data,
+			       const unsigned char *data,
 			       uint32 len)
 {
 #ifdef SILC_DEBUG
@@ -358,7 +358,7 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
 
 extern inline
 unsigned char *silc_buffer_put_tail(SilcBuffer sb, 
-				    unsigned char *data,
+				    const unsigned char *data,
 				    uint32 len)
 {
 #ifdef SILC_DEBUG

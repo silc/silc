@@ -26,7 +26,7 @@ libsilccore_a_SOURCES = \
 	silcchannel.c \
 	silccommand.c \
 	silcpacket.c \
-	silcpayload.c \
+	silcargument.c \
 	silcnotify.c \
 	silcauth.c \
 	silcprivate.c
@@ -41,7 +41,7 @@ include_HEADERS =	\
 	silcmode.h	\
 	silcnotify.h	\
 	silcpacket.h	\
-	silcpayload.h	\
+	silcargument.h	\
 	silcprivate.h
 endif
 
