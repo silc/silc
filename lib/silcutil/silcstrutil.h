@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@
  *
  * DESCRIPTION
  *
- *    String manipulation utility routines.  These routines provides
- *    various helper functions for encoding, decoding and otherwise
- *    managing strings.
+ * String manipulation utility routines.  These routines provides
+ * various helper functions for encoding, decoding and otherwise
+ * managing strings.
  *
  ***/
 
@@ -83,20 +83,22 @@ unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
  * DESCRIPTION
  *
  *    String encoding definitions used with the UTF-8 encoding and
- *    decoding functions.
+ *    decoding functions.  By default, systems should use SILC_STRING_LANGUAGE
+ *    since it encodes and decodes correctly according to local system
+ *    language and character set.
  *
  * SOURCE
  */
 typedef enum {
-  SILC_STRING_ASCII         = 0, /* Any 8 bit ASCII encoding (default) */
-  SILC_STRING_ASCII_ESC     = 1, /* 7 bit ASCII (>0x7f escaped) */
-  SILC_STRING_BMP           = 2, /* 16 bit, UCS-2, BMP, ISO/IEC 10646 */
-  SILC_STRING_BMP_LSB       = 3, /* BMP, least significant byte first */
-  SILC_STRING_UNIVERSAL     = 4, /* 32 bit, UCS-4, Universal, ISO/IEC 10646 */
-  SILC_STRING_UNIVERSAL_LSB = 5, /* Universal, least significant byte first */
-  SILC_STRING_LANGUAGE      = 6, /* Language and charset specific conversion
-				    on those platforms that support iconv().
-				    Fallback is SILC_STRING_ASCII. */
+  SILC_STRING_ASCII         = 0,  /* Any 8 bit ASCII encoding (default) */
+  SILC_STRING_ASCII_ESC     = 1,  /* 7 bit ASCII (>0x7f escaped) */
+  SILC_STRING_BMP           = 2,  /* 16 bit, UCS-2, BMP, ISO/IEC 10646 */
+  SILC_STRING_BMP_LSB       = 3,  /* BMP, least significant byte first */
+  SILC_STRING_UNIVERSAL     = 4,  /* 32 bit, UCS-4, Universal, ISO/IEC 10646 */
+  SILC_STRING_UNIVERSAL_LSB = 5,  /* Universal, least significant byte first */
+  SILC_STRING_LANGUAGE      = 6,  /* Language and charset specific conversion
+				     on those platforms that support iconv().
+				     Fallback is SILC_STRING_ASCII. */
 } SilcStringEncoding;
 /***/
 
@@ -159,6 +161,23 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
  *
  ***/
 SilcUInt32 silc_utf8_encoded_len(const unsigned char *bin, SilcUInt32 bin_len,
+				 SilcStringEncoding bin_encoding);
+
+/****f* silcutil/SilcStrUtilAPI/silc_utf8_decoded_len
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_utf8_decoded_len(const unsigned char *bin, 
+ *                                     SilcUInt32 bin_len,
+ *                                     SilcStringEncoding bin_encoding);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the length of decoded string if the `bin' of encoding of
+ *    `bin_encoding' is decoded with silc_utf8_decode. 
+ *
+ ***/
+SilcUInt32 silc_utf8_decoded_len(const unsigned char *bin, SilcUInt32 bin_len,
 				 SilcStringEncoding bin_encoding);
 
 /****f* silcutil/SilcStrUtilAPI/silc_utf8_valid

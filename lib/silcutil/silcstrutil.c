@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,8 +25,7 @@ static unsigned char pem_enc[64] =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /* Encodes data into PEM encoding. Returns NULL terminated PEM encoded
-   data string. Note: This is originally public domain code and is
-   still PD. */
+   data string. */
 
 char *silc_pem_encode(unsigned char *data, SilcUInt32 len)
 {
@@ -102,8 +101,7 @@ char *silc_pem_encode_file(unsigned char *data, SilcUInt32 data_len)
   return pem2;
 }
 
-/* Decodes PEM into data. Returns the decoded data. Note: This is
-   originally public domain code and is still PD. */
+/* Decodes PEM into data. Returns the decoded data. */
 
 unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
 			       SilcUInt32 *ret_len)
@@ -232,22 +230,31 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
       return 0;
       break;
     case SILC_STRING_BMP:
+      if (i + 1 >= bin_len)
+	return 0;
       SILC_GET16_MSB(charval, bin + i);
       i += 1;
       break;
     case SILC_STRING_BMP_LSB:
+      if (i + 1 >= bin_len)
+	return 0;
       SILC_GET16_LSB(charval, bin + i);
       i += 1;
       break;
     case SILC_STRING_UNIVERSAL:
+      if (i + 3 >= bin_len)
+	return 0;
       SILC_GET32_MSB(charval, bin + i);
       i += 3;
       break;
     case SILC_STRING_UNIVERSAL_LSB:
+      if (i + 3 >= bin_len)
+	return 0;
       SILC_GET32_LSB(charval, bin + i);
       i += 3;
       break;
-    case SILC_STRING_LANGUAGE:
+    default:
+      return 0;
       break;
     }
 
@@ -370,8 +377,8 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
     if ((utf8[i] & 0x80) == 0x00) {
       charval = utf8[i] & 0x7f;
     } else if ((utf8[i] & 0xe0) == 0xc0) {
-      if (utf8_len < 2)
-        return 0;
+      if (i + 1 >= utf8_len)
+	return 0;
 
       if ((utf8[i + 1] & 0xc0) != 0x80)
         return 0;
@@ -381,8 +388,8 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       if (charval < 0x80)
         return 0;
     } else if ((utf8[i] & 0xf0) == 0xe0) {
-      if (utf8_len < 3)
-        return 0;
+      if (i + 2 >= utf8_len)
+	return 0;
 
       if (((utf8[i + 1] & 0xc0) != 0x80) || 
 	  ((utf8[i + 2] & 0xc0) != 0x80))
@@ -394,8 +401,8 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       if (charval < 0x800)
         return 0;
     } else if ((utf8[i] & 0xf8) == 0xf0) {
-      if (utf8_len < 4)
-        return 0;
+      if (i + 3 >= utf8_len)
+	return 0;
 
       if (((utf8[i + 1] & 0xc0) != 0x80) || 
 	  ((utf8[i + 2] & 0xc0) != 0x80) ||
@@ -409,8 +416,8 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       if (charval < 0x10000)
         return 0;
     } else if ((utf8[i] & 0xfc) == 0xf8) {
-      if (utf8_len < 5)
-        return 0;
+      if (i + 4 >= utf8_len)
+	return 0;
 
       if (((utf8[i + 1] & 0xc0) != 0x80) || 
 	  ((utf8[i + 2] & 0xc0) != 0x80) ||
@@ -426,8 +433,8 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       if (charval < 0x200000)
         return 0;
     } else if ((utf8[i] & 0xfe) == 0xfc) {
-      if (utf8_len < 6)
-        return 0;
+      if (i + 5 >= utf8_len)
+	return 0;
 
       if (((utf8[i + 1] & 0xc0) != 0x80) || 
 	  ((utf8[i + 2] & 0xc0) != 0x80) ||
@@ -463,22 +470,27 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       return 0;
       break;
     case SILC_STRING_BMP:
-      SILC_PUT16_MSB(charval, bin + enclen);
+      if (bin)
+	SILC_PUT16_MSB(charval, bin + enclen);
       enclen += 2;
       break;
     case SILC_STRING_BMP_LSB:
-      SILC_PUT16_LSB(charval, bin + enclen);
+      if (bin)
+	SILC_PUT16_LSB(charval, bin + enclen);
       enclen += 2;
       break;
     case SILC_STRING_UNIVERSAL:
-      SILC_PUT32_MSB(charval, bin + enclen);
+      if (bin)
+	SILC_PUT32_MSB(charval, bin + enclen);
       enclen += 4;
       break;
     case SILC_STRING_UNIVERSAL_LSB:
-      SILC_PUT32_LSB(charval, bin + enclen);
+      if (bin)
+	SILC_PUT32_LSB(charval, bin + enclen);
       enclen += 4;
       break;
-    case SILC_STRING_LANGUAGE:
+    default:
+      return 0;
       break;
     }
   }
@@ -493,6 +505,15 @@ SilcUInt32 silc_utf8_encoded_len(const unsigned char *bin, SilcUInt32 bin_len,
 				 SilcStringEncoding bin_encoding)
 {
   return silc_utf8_encode(bin, bin_len, bin_encoding, NULL, 0);
+}
+
+/* Returns the length of decoded string if the `bin' of encoding of
+   `bin_encoding' is decoded with silc_utf8_decode. */
+
+SilcUInt32 silc_utf8_decoded_len(const unsigned char *bin, SilcUInt32 bin_len,
+				 SilcStringEncoding bin_encoding)
+{
+  return silc_utf8_decode(bin, bin_len, bin_encoding, NULL, 0);
 }
 
 /* Returns TRUE if the `utf8' string of length of `utf8_len' is valid
