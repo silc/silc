@@ -2,15 +2,15 @@
 
   silcauth.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -55,7 +55,7 @@ SilcAuthPayload silc_auth_payload_parse(const unsigned char *data,
     return NULL;
 
   /* Parse the payload */
-  ret = silc_buffer_unformat(&buffer, 
+  ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI_SHORT(&newp->len),
 			     SILC_STR_UI_SHORT(&newp->auth_method),
 			     SILC_STR_UI16_NSTRING_ALLOC(&newp->random_data,
@@ -73,8 +73,20 @@ SilcAuthPayload silc_auth_payload_parse(const unsigned char *data,
     return NULL;
   }
 
+  /* Authentication data must be provided */
+  if (newp->auth_len < 1)  {
+    silc_auth_payload_free(newp);
+    return NULL;
+  }
+
   /* If password authentication, random data must not be set */
   if (newp->auth_method == SILC_AUTH_PASSWORD && newp->random_len) {
+    silc_auth_payload_free(newp);
+    return NULL;
+  }
+
+  /* If public key authentication, random data must be at least 128 bytes */
+  if (newp->auth_method == SILC_AUTH_PUBLIC_KEY && newp->random_len < 128) {
     silc_auth_payload_free(newp);
     return NULL;
   }
@@ -156,7 +168,7 @@ unsigned char *silc_auth_get_data(SilcAuthPayload payload,
    dictates. */
 
 static unsigned char *
-silc_auth_public_key_encode_data(SilcPublicKey public_key, 
+silc_auth_public_key_encode_data(SilcPublicKey public_key,
 				 const unsigned char *random,
 				 SilcUInt32 random_len, const void *id,
 				 SilcIdType type, SilcUInt32 *ret_len)
@@ -187,7 +199,7 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
 		     SILC_STR_UI_XNSTRING(id_data, id_len),
 		     SILC_STR_UI_XNSTRING(pk, pk_len),
 		     SILC_STR_END);
-  
+
   ret = silc_memdup(buf->data, buf->len);
   if (!ret)
     return NULL;
@@ -228,9 +240,9 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
     random = silc_rng_global_get_rn_data(256);
   if (!random)
     return NULL;
-  
+
   /* Encode the auth data */
-  tmp = silc_auth_public_key_encode_data(public_key, random, 256, id, type, 
+  tmp = silc_auth_public_key_encode_data(public_key, random, 256, id, type,
 					 &tmp_len);
   if (!tmp)
     return NULL;
@@ -283,8 +295,8 @@ bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
   SILC_LOG_DEBUG(("Verifying authentication data"));
 
   /* Encode auth data */
-  tmp = silc_auth_public_key_encode_data(public_key, payload->random_data, 
-					 payload->random_len, 
+  tmp = silc_auth_public_key_encode_data(public_key, payload->random_data,
+					 payload->random_len,
 					 id, type, &tmp_len);
   if (!tmp) {
     SILC_LOG_DEBUG(("Authentication failed"));
@@ -323,7 +335,7 @@ bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
 
 bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
 					   SilcUInt32 payload_len,
-					   SilcPublicKey public_key, 
+					   SilcPublicKey public_key,
 					   SilcHash hash,
 					   const void *id, SilcIdType type)
 {
@@ -336,7 +348,7 @@ bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
     return FALSE;
   }
 
-  ret = silc_auth_public_key_auth_verify(auth_payload, public_key, hash, 
+  ret = silc_auth_public_key_auth_verify(auth_payload, public_key, hash,
 					 id, type);
 
   silc_auth_payload_free(auth_payload);
@@ -344,7 +356,7 @@ bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
   return ret;
 }
 
-/* Verifies the authentication data directly from the Authentication 
+/* Verifies the authentication data directly from the Authentication
    Payload. Supports all authentication methods. If the authentication
    method is passphrase based then the `auth_data' and `auth_data_len'
    are the passphrase and its length. If the method is public key
@@ -352,12 +364,12 @@ bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
    `auth_data_len' is ignored. */
 
 bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
-		      const void *auth_data, SilcUInt32 auth_data_len, 
+		      const void *auth_data, SilcUInt32 auth_data_len,
 		      SilcHash hash, const void *id, SilcIdType type)
 {
   SILC_LOG_DEBUG(("Verifying authentication"));
 
-  if (auth_method != payload->auth_method)
+  if (!payload || auth_method != payload->auth_method)
     return FALSE;
 
   switch (payload->auth_method) {
@@ -369,15 +381,12 @@ bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
   case SILC_AUTH_PASSWORD:
     /* Passphrase based authentication. The `pkcs', `hash', `id' and `type'
        arguments are not needed. */
-    /* Carefully check that the auth_data field of the payload is not empty
-       (len=0), which seems to be a legal packet but would crash the
-       application. Maybe such packet should be dropped. -Johnny 2002/14/4 */
-    if ((payload->auth_len == 0) || !auth_data)
+
+    /* Sanity checks */
+    if ((payload->auth_len == 0) || !auth_data ||
+	payload->auth_len != auth_data_len)
       break;
 
-    /* if lengths mismatch, avoid comparing unallocated memory locations */
-    if (payload->auth_len != auth_data_len)
-      break;
     if (!memcmp(payload->auth_data, auth_data, auth_data_len)) {
       SILC_LOG_DEBUG(("Passphrase Authentication successful"));
       return TRUE;
@@ -401,19 +410,20 @@ bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
 
 /* Same as above but parses the authentication payload before verify. */
 
-bool silc_auth_verify_data(const unsigned char *payload, SilcUInt32 payload_len,
+bool silc_auth_verify_data(const unsigned char *payload,
+			   SilcUInt32 payload_len,
 			   SilcAuthMethod auth_method, const void *auth_data,
-			   SilcUInt32 auth_data_len, SilcHash hash, 
+			   SilcUInt32 auth_data_len, SilcHash hash,
 			   const void *id, SilcIdType type)
 {
   SilcAuthPayload auth_payload;
-  int ret;
+  bool ret;
 
   auth_payload = silc_auth_payload_parse(payload, payload_len);
-  if (!auth_payload)
+  if (!auth_payload || (auth_payload->auth_len == 0))
     return FALSE;
 
-  ret = silc_auth_verify(auth_payload, auth_method, auth_data, auth_data_len, 
+  ret = silc_auth_verify(auth_payload, auth_method, auth_data, auth_data_len,
 			 hash, id, type);
 
   silc_auth_payload_free(auth_payload);
@@ -436,7 +446,7 @@ struct SilcKeyAgreementPayloadStruct {
 
 /* Parses and returns an allocated Key Agreement payload. */
 
-SilcKeyAgreementPayload 
+SilcKeyAgreementPayload
 silc_key_agreement_payload_parse(const unsigned char *payload,
 				 SilcUInt32 payload_len)
 {
@@ -452,7 +462,7 @@ silc_key_agreement_payload_parse(const unsigned char *payload,
     return NULL;
 
   /* Parse the payload */
-  ret = silc_buffer_unformat(&buffer, 
+  ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI16_NSTRING_ALLOC(&newp->hostname,
 							 &newp->hostname_len),
 			     SILC_STR_UI_INT(&newp->port),
