@@ -6,7 +6,7 @@ Sat Jun 23 16:01:00 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  compilation for native WIN32.
 
 	* Rewrote the SILC Scheduler interface in the file
-	  lib/silcutil/silcschedule.h.  The scheduler is not context
+	  lib/silcutil/silcschedule.h.  The scheduler is now context
 	  based and does not have anymore any global static scheduler.
 	  Moved the Unix scheduler to the lib/silcutil/unix/ directory
 	  and created lib/silcutil/win32 directory for WIN32 based
