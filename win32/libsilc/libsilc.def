@@ -105,8 +105,6 @@ EXPORTS
 	silc_command_reply_payload_encode_va @ 322 ; 
 	silc_command_set_command @ 323 ; 
 	silc_command_set_ident @ 324 ; 
-	silc_config_check_num_token @ 325 ; 
-	silc_config_get_token @ 326 ; 
 	silc_config_open @ 327 ; 
 	silc_debug @ 328 DATA ; 
 	silc_decode_pem @ 329 ; 
@@ -450,7 +448,6 @@ EXPORTS
 	silc_ske_abort @ 671 ; 
 	silc_ske_alloc @ 672 ; 
 	silc_ske_assemble_security_properties @ 673 ; 
-	silc_ske_create_rnd @ 674 ; 
 	silc_ske_end @ 675 ; 
 	silc_ske_free @ 676 ; 
 	silc_ske_free_key_material @ 677 ; 
@@ -463,7 +460,6 @@ EXPORTS
 	silc_ske_initiator_phase_1 @ 684 ; 
 	silc_ske_initiator_phase_2 @ 685 ; 
 	silc_ske_initiator_start @ 686 ; 
-	silc_ske_make_hash @ 687 ; 
 	silc_ske_payload_ke_decode @ 688 ; 
 	silc_ske_payload_ke_encode @ 689 ; 
 	silc_ske_payload_ke_free @ 690 ; 

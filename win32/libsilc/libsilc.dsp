@@ -447,6 +447,10 @@ SOURCE=..\..\lib\silcutil\silcdlist.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcutil\silcfileutil.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcutil\silchashtable.h
 # End Source File
 # Begin Source File
@@ -682,10 +686,6 @@ SOURCE=..\..\lib\silcsftp\silcsftp.h
 SOURCE=..\..\lib\silcsftp\silcsftp_fs.h
 # End Source File
 # End Group
-# Begin Source File
-
-SOURCE=..\silcdefs.h
-# End Source File
 # End Group
 # Begin Group "Resource Files"
 

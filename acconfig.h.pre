@@ -12,10 +12,11 @@
 
 /* Multi-thread support */
 #undef SILC_THREADS
-#undef SILC_HAVE_PTHREAD
 
-/* IPv6 support */
+#ifndef SILC_WIN32
+#undef SILC_HAVE_PTHREAD
 #undef HAVE_IPV6
+#endif
 
 /* Default paths */
 #undef SILC_ETCDIR
