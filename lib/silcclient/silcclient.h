@@ -54,23 +54,128 @@
 extern "C" {
 #endif
 
-/* Forward declarations */
-typedef struct SilcClientStruct *SilcClient;
-typedef struct SilcClientConnectionStruct *SilcClientConnection;
-typedef struct SilcClientPingStruct SilcClientPing;
-typedef struct SilcClientAwayStruct SilcClientAway;
-typedef struct SilcClientKeyAgreementStruct *SilcClientKeyAgreement;
-typedef struct SilcClientFtpSessionStruct *SilcClientFtpSession;
-typedef struct SilcClientEntryStruct *SilcClientEntry;
-typedef struct SilcChannelEntryStruct *SilcChannelEntry;
-typedef struct SilcServerEntryStruct *SilcServerEntry;
-typedef struct SilcClientCommandStruct *SilcClientCommand;
-typedef struct SilcClientCommandContextStruct *SilcClientCommandContext;
-typedef struct SilcClientCommandReplyContextStruct 
-                                           *SilcClientCommandReplyContext;
-typedef struct SilcChannelUserStruct *SilcChannelUser;
+#include "client.h"
 
 /* General definitions */
+
+/****s* silcclient/SilcClientAPI/SilcClient
+ *
+ * NAME
+ *
+ *    typedef struct SilcClientStruct { ... } *SilcClient
+ *
+ * DESCRIPTION
+ *
+ *    This is the actual SILC Client structure which represents one
+ *    SILC Client.  It is allocated with the silc_client_alloc function
+ *    and given as argument to all SILC Client Library functions.  It
+ *    is initialized with silc_client_init function, and freed with
+ *    silc_client_free function.
+ *
+ * SOURCE
+ */
+struct SilcClientStruct {
+  /*
+   * The following fields are set by application
+   */
+  char *nickname;               /* Nickname, MAY be set by application  */
+  char *username;               /* Username, MUST be set by application */
+  char *hostname;               /* hostname, MUST be set by application */
+  char *realname;               /* Real name, MUST be set be application */
+  
+  SilcPublicKey public_key;     /* Public key of user, set by application */
+  SilcPrivateKey private_key;   /* Private key of user, set by application */
+  SilcPKCS pkcs;                /* PKCS allocated by application */
+
+  /*
+   * The following fields are set by the library
+   */
+
+  /* Scheduler, set by library.  Application may use this pointer. */
+  SilcSchedule schedule;
+  
+  /* Random Number Generator. Application should use this as its primary
+     random number generator. */
+  SilcRng rng;
+  
+  /* Application specific user data pointer. Client library does not
+     touch this.  This the context sent as argument to silc_client_alloc.
+     Application can use it freely. */
+  void *application;
+     
+  /* Generic hash context for application usage */
+  SilcHash md5hash;
+  SilcHash sha1hash;
+
+  /* Internal data for client library. Application cannot access this
+     data at all. */
+  SilcClientInternal internal;
+};  
+/***/
+
+/****s* silcclient/SilcClientAPI/SilcClientConnection
+ *
+ * NAME
+ *
+ *    typedef struct SilcClientConnectionStruct { ... }
+ *                      *SilcClientConnection
+ *
+ * DESCRIPTION
+ *
+ *    This structure represents a connection.  When connection is created
+ *    to server this is context is returned to the application in the
+ *    "connected" client operation.  It includes all the important
+ *    data for the session, such as nickname, local and remote IDs, and
+ *    other information.
+ *
+ * SOURCE
+ */
+struct SilcClientConnectionStruct {
+  /*
+   * Local data
+   */
+  char *nickname;		  /* Current nickname */
+  SilcClientEntry local_entry;	  /* Own Client Entry */
+  SilcClientID *local_id;	  /* Current Client ID */
+  unsigned char *local_id_data;	  /* Current Client ID decoded */
+  SilcUInt32 local_id_data_len;
+
+  /*
+   * Remote data
+   */
+  char *remote_host;		  /* Remote host name */
+  int remote_port;		  /* Remote port */
+  SilcServerID *remote_id;	  /* Remote Server ID */
+  unsigned char *remote_id_data;  /* Remote Server ID decoded */
+  SilcUInt32 remote_id_data_len;
+
+  /*
+   * Common data
+   */
+
+  /* User data context. Library does not touch this. Application may
+     freely set and use this pointer for its needs. */
+  void *context;
+
+  /* Pointer back to the SilcClient.  Application may use this. */
+  SilcClient client;
+
+  /* Current channel.  Application may use and set this pointer if needed. */
+  SilcChannelEntry current_channel;
+
+  /* Socket connection object for this connection.  Application may
+     use this if needed.  The sock->user_data is back pointer to this
+     structure. */
+  SilcSocketConnection sock;
+
+  /* Current command identifier, 0 not used */
+  SilcUInt16 cmd_ident;
+
+  /* Internal data for client library. Application cannot access this
+     data at all. */
+  SilcClientConnectionInternal internal;
+};
+/***/
 
 /****d* silcclient/SilcClientAPI/SilcKeyAgreementStatus
  *
@@ -1938,7 +2043,6 @@ void silc_client_set_away_message(SilcClient client,
 				  SilcClientConnection conn,
 				  char *message);
 
-
 /****f* silcclient/SilcClientAPI/SilcConnectionAuthRequest
  *
  * SYNOPSIS
@@ -2329,7 +2433,6 @@ void silc_client_packet_send(SilcClient client,
 			     SilcUInt32 data_len, 
 			     bool force_send);
 
-#include "client.h"
 #include "command.h"
 #include "command_reply.h"
 #include "idlist.h"

@@ -71,8 +71,8 @@ void silc_client_send_private_message(SilcClient client,
   /* We have private message specific key */
 
   /* Get data used in the encryption */
-  cipher = conn->send_key;
-  hmac = conn->hmac_send;
+  cipher = conn->internal->send_key;
+  hmac = conn->internal->hmac_send;
   block_len = silc_cipher_get_block_len(cipher);
 
   /* Set the packet context pointers. */
@@ -103,7 +103,7 @@ void silc_client_send_private_message(SilcClient client,
   }
 
   /* Encrypt the header and padding of the packet. */
-  silc_packet_encrypt(cipher, hmac, conn->psn_send++,
+  silc_packet_encrypt(cipher, hmac, conn->internal->psn_send++,
 		      (SilcBuffer)&packet, SILC_PACKET_HEADER_LEN + 
 		      packetdata.src_id_len + packetdata.dst_id_len +
 		      packetdata.padlen);
@@ -202,7 +202,8 @@ void silc_client_private_message(SilcClient client,
 
   /* See if we are away (gone). If we are away we will reply to the
      sender with the set away message. */
-  if (conn->away && conn->away->away && !(flags & SILC_MESSAGE_FLAG_NOREPLY)) {
+  if (conn->internal->away && conn->internal->away->away &&
+      !(flags & SILC_MESSAGE_FLAG_NOREPLY)) {
     /* If it's me, ignore */
     if (SILC_ID_CLIENT_COMPARE(remote_id, conn->local_id))
       goto out;
@@ -211,8 +212,8 @@ void silc_client_private_message(SilcClient client,
     silc_client_send_private_message(client, conn, remote_client,
 				     SILC_MESSAGE_FLAG_AUTOREPLY |
 				     SILC_MESSAGE_FLAG_NOREPLY,
-				     conn->away->away,
-				     strlen(conn->away->away), TRUE);
+				     conn->internal->away->away,
+				     strlen(conn->internal->away->away), TRUE);
   }
 
  out:
@@ -534,7 +535,7 @@ silc_client_list_private_message_keys(SilcClient client,
   SilcIDCacheList list;
   SilcClientEntry entry;
 
-  if (!silc_idcache_get_all(conn->client_cache, &list))
+  if (!silc_idcache_get_all(conn->internal->client_cache, &list))
     return NULL;
 
   if (!silc_idcache_list_count(list)) {
@@ -587,17 +588,17 @@ void silc_client_set_away_message(SilcClient client,
 				  SilcClientConnection conn,
 				  char *message)
 {
-  if (!message && conn->away) {
-    silc_free(conn->away->away);
-    silc_free(conn->away);
-    conn->away = NULL;
+  if (!message && conn->internal->away) {
+    silc_free(conn->internal->away->away);
+    silc_free(conn->internal->away);
+    conn->internal->away = NULL;
   }
 
   if (message) {
-    if (!conn->away)
-      conn->away = silc_calloc(1, sizeof(*conn->away));
-    if (conn->away->away)
-      silc_free(conn->away->away);
-    conn->away->away = strdup(message);
+    if (!conn->internal->away)
+      conn->internal->away = silc_calloc(1, sizeof(*conn->internal->away));
+    if (conn->internal->away->away)
+      silc_free(conn->internal->away->away);
+    conn->internal->away->away = strdup(message);
   }
 }

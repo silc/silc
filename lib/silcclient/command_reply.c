@@ -570,13 +570,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
   /* Take the new nickname too */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
   if (tmp) {
-    silc_idcache_del_by_context(conn->client_cache, conn->local_entry);
+    silc_idcache_del_by_context(conn->internal->client_cache,
+				conn->local_entry);
     if (conn->nickname)
       silc_free(conn->nickname);
     conn->nickname = strdup(tmp);
     conn->local_entry->nickname = conn->nickname;
     silc_client_nickname_format(cmd->client, conn, conn->local_entry);
-    silc_idcache_add(conn->client_cache, strdup(tmp),
+    silc_idcache_add(conn->internal->client_cache, strdup(tmp),
                      conn->local_entry->id, conn->local_entry, 0, NULL);
   }
     
@@ -891,26 +892,26 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
   curtime = time(NULL);
   id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_len,
 		      cmd->packet->src_id_type);
-  if (!id || !conn->ping) {
+  if (!id || !conn->internal->ping) {
     COMMAND_REPLY_ERROR;
     goto out;
   }
 
-  for (i = 0; i < conn->ping_count; i++) {
-    if (!conn->ping[i].dest_id)
+  for (i = 0; i < conn->internal->ping_count; i++) {
+    if (!conn->internal->ping[i].dest_id)
       continue;
-    if (SILC_ID_SERVER_COMPARE(conn->ping[i].dest_id, id)) {
-      diff = curtime - conn->ping[i].start_time;
+    if (SILC_ID_SERVER_COMPARE(conn->internal->ping[i].dest_id, id)) {
+      diff = curtime - conn->internal->ping[i].start_time;
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	  "Ping reply from %s: %d second%s", 
-	  conn->ping[i].dest_name, diff, 
+	  conn->internal->ping[i].dest_name, diff, 
 	  diff == 1 ? "" : "s");
       
-      conn->ping[i].start_time = 0;
-      silc_free(conn->ping[i].dest_id);
-      conn->ping[i].dest_id = NULL;
-      silc_free(conn->ping[i].dest_name);
-      conn->ping[i].dest_name = NULL;
+      conn->internal->ping[i].start_time = 0;
+      silc_free(conn->internal->ping[i].dest_id);
+      conn->internal->ping[i].dest_id = NULL;
+      silc_free(conn->internal->ping[i].dest_name);
+      conn->internal->ping[i].dest_name = NULL;
       break;
     }
   }

@@ -207,24 +207,26 @@ silc_client_add_connection(SilcClient client,
   SILC_LOG_DEBUG(("Adding new connection to %s:%d", hostname, port));
 
   conn = silc_calloc(1, sizeof(*conn));
+  conn->internal = silc_calloc(1, sizeof(*conn->internal));
 
   /* Initialize ID caches */
-  conn->client_cache = silc_idcache_alloc(0, SILC_ID_CLIENT, 
-					  silc_client_entry_destructor);
-  conn->channel_cache = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
-  conn->server_cache = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
   conn->client = client;
   conn->remote_host = strdup(hostname);
   conn->remote_port = port;
   conn->context = context;
-  conn->pending_commands = silc_dlist_init();
-  conn->ftp_sessions = silc_dlist_init();
+  conn->internal->client_cache =
+    silc_idcache_alloc(0, SILC_ID_CLIENT, silc_client_entry_destructor);
+  conn->internal->channel_cache = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
+  conn->internal->server_cache = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
+  conn->internal->pending_commands = silc_dlist_init();
+  conn->internal->ftp_sessions = silc_dlist_init();
 
   if (params) {
     if (params->detach_data)
-      conn->params.detach_data = silc_memdup(params->detach_data,
-					     params->detach_data_len);
-    conn->params.detach_data_len = params->detach_data_len;
+      conn->internal->params.detach_data =
+	silc_memdup(params->detach_data,
+		    params->detach_data_len);
+    conn->internal->params.detach_data_len = params->detach_data_len;
   }
 
   /* Add the connection to connections table */
@@ -252,14 +254,15 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
   for (i = 0; i < client->internal->conns_count; i++)
     if (client->internal->conns[i] == conn) {
 
-      silc_idcache_free(conn->client_cache);
-      silc_idcache_free(conn->channel_cache);
-      silc_idcache_free(conn->server_cache);
-      if (conn->pending_commands)
-	silc_dlist_uninit(conn->pending_commands);
+      silc_idcache_free(conn->internal->client_cache);
+      silc_idcache_free(conn->internal->channel_cache);
+      silc_idcache_free(conn->internal->server_cache);
+      if (conn->internal->pending_commands)
+	silc_dlist_uninit(conn->internal->pending_commands);
       silc_free(conn->remote_host);
-      if (conn->ftp_sessions)
-        silc_dlist_uninit(conn->ftp_sessions);
+      if (conn->internal->ftp_sessions)
+        silc_dlist_uninit(conn->internal->ftp_sessions);
+      silc_free(conn->internal);
       silc_free(conn);
 
       client->internal->conns[i] = NULL;
@@ -702,7 +705,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     goto err;
   }
 
-  if (conn->params.detach_data) {
+  if (conn->internal->params.detach_data) {
     /* Send RESUME_CLIENT packet to the server, which is used to resume
        old detached session back. */
     SilcBuffer auth;
@@ -722,7 +725,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     /* Generate authentication data that server will verify */
     auth = silc_auth_public_key_auth_generate(client->public_key,
 					      client->private_key,
-					      client->rng, conn->hash,
+					      client->rng,
+					      conn->internal->hash,
 					      old_client_id, SILC_ID_CLIENT);
     if (!auth) {
       silc_free(old_client_id);
@@ -774,11 +778,11 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
   conn->remote_id_data_len = silc_id_get_len(ctx->dest_id, SILC_ID_SERVER);
 
   /* Register re-key timeout */
-  conn->rekey->timeout = client->internal->params->rekey_secs;
-  conn->rekey->context = (void *)client;
+  conn->internal->rekey->timeout = client->internal->params->rekey_secs;
+  conn->internal->rekey->context = (void *)client;
   silc_schedule_task_add(client->schedule, conn->sock->sock, 
 			 silc_client_rekey_callback,
-			 (void *)conn->sock, conn->rekey->timeout, 0,
+			 (void *)conn->sock, conn->internal->rekey->timeout, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   silc_protocol_free(protocol);
@@ -919,8 +923,9 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
     /* Process the packet. This will call the parser that will then
        decrypt and parse the packet. */
     if (sock->type != SILC_SOCKET_TYPE_UNKNOWN)
-      silc_packet_receive_process(sock, FALSE, conn->receive_key, 
-				  conn->hmac_receive, conn->psn_receive,
+      silc_packet_receive_process(sock, FALSE, conn->internal->receive_key, 
+				  conn->internal->hmac_receive,
+				  conn->internal->psn_receive,
 				  silc_client_packet_parse, client);
     else
       silc_packet_receive_process(sock, FALSE, NULL, NULL, 0, 
@@ -940,14 +945,14 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
   SilcPacketContext *packet = parser_context->packet;
   SilcPacketType ret;
 
-  if (conn && conn->hmac_receive && conn->sock == sock)
-    conn->psn_receive = parser_context->packet->sequence + 1;
+  if (conn && conn->internal->hmac_receive && conn->sock == sock)
+    conn->internal->psn_receive = parser_context->packet->sequence + 1;
 
   /* Parse the packet immediately */
   if (parser_context->normal)
-    ret = silc_packet_parse(packet, conn->receive_key);
+    ret = silc_packet_parse(packet, conn->internal->receive_key);
   else
-    ret = silc_packet_parse_special(packet, conn->receive_key);
+    ret = silc_packet_parse_special(packet, conn->internal->receive_key);
 
   if (ret == SILC_PACKET_NONE) {
     silc_packet_context_free(packet);
@@ -970,11 +975,12 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
     silc_free(parser_context);
 
     /* Reprocess the buffer since we'll return FALSE. This is because
-       the `conn->receive_key' might have become valid by processing
+       the `conn->internal->receive_key' might have become valid by processing
        the previous packet */
     if (sock->type != SILC_SOCKET_TYPE_UNKNOWN)
-      silc_packet_receive_process(sock, FALSE, conn->receive_key, 
-				  conn->hmac_receive, conn->psn_receive,
+      silc_packet_receive_process(sock, FALSE, conn->internal->receive_key, 
+				  conn->internal->hmac_receive,
+				  conn->internal->psn_receive,
 				  silc_client_packet_parse, client);
     else
       silc_packet_receive_process(sock, FALSE, NULL, NULL, 0, 
@@ -1306,11 +1312,11 @@ void silc_client_packet_send(SilcClient client,
 
   /* Get data used in the packet sending, keys and stuff */
   if ((!cipher || !hmac || !dst_id) && sock->user_data) {
-    if (!cipher && ((SilcClientConnection)sock->user_data)->send_key)
-      cipher = ((SilcClientConnection)sock->user_data)->send_key;
+    if (!cipher && ((SilcClientConnection)sock->user_data)->internal->send_key)
+      cipher = ((SilcClientConnection)sock->user_data)->internal->send_key;
 
-    if (!hmac && ((SilcClientConnection)sock->user_data)->hmac_send)
-      hmac = ((SilcClientConnection)sock->user_data)->hmac_send;
+    if (!hmac && ((SilcClientConnection)sock->user_data)->internal->hmac_send)
+      hmac = ((SilcClientConnection)sock->user_data)->internal->hmac_send;
 
     if (!dst_id && ((SilcClientConnection)sock->user_data)->remote_id) {
       dst_id = ((SilcClientConnection)sock->user_data)->remote_id;
@@ -1318,7 +1324,7 @@ void silc_client_packet_send(SilcClient client,
     }
 
     if (hmac)
-      sequence = ((SilcClientConnection)sock->user_data)->psn_send++;
+      sequence = ((SilcClientConnection)sock->user_data)->internal->psn_send++;
   }
 
   block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
@@ -1443,7 +1449,7 @@ void silc_client_close_connection_real(SilcClient client,
     SilcClientCommandPending *r;
     bool ret;
 
-    if (silc_idcache_get_all(conn->client_cache, &list)) {
+    if (silc_idcache_get_all(conn->internal->client_cache, &list)) {
       ret = silc_idcache_list_first(list, &entry);
       while (ret) {
 	silc_client_del_client(client, conn, entry->context);
@@ -1452,7 +1458,7 @@ void silc_client_close_connection_real(SilcClient client,
       silc_idcache_list_free(list);
     }
 
-    if (silc_idcache_get_all(conn->channel_cache, &list)) {
+    if (silc_idcache_get_all(conn->internal->channel_cache, &list)) {
       ret = silc_idcache_list_first(list, &entry);
       while (ret) {
 	silc_client_del_channel(client, conn, entry->context);
@@ -1461,7 +1467,7 @@ void silc_client_close_connection_real(SilcClient client,
       silc_idcache_list_free(list);
     }
 
-    if (silc_idcache_get_all(conn->server_cache, &list)) {
+    if (silc_idcache_get_all(conn->internal->server_cache, &list)) {
       ret = silc_idcache_list_first(list, &entry);
       while (ret) {
 	silc_client_del_server(client, conn, entry->context);
@@ -1471,12 +1477,12 @@ void silc_client_close_connection_real(SilcClient client,
     }
 
     /* Clear ID caches */
-    if (conn->client_cache)
-      silc_idcache_free(conn->client_cache);
-    if (conn->channel_cache)
-      silc_idcache_free(conn->channel_cache);
-    if (conn->server_cache)
-      silc_idcache_free(conn->server_cache);
+    if (conn->internal->client_cache)
+      silc_idcache_free(conn->internal->client_cache);
+    if (conn->internal->channel_cache)
+      silc_idcache_free(conn->internal->channel_cache);
+    if (conn->internal->server_cache)
+      silc_idcache_free(conn->internal->server_cache);
 
     /* Free data (my ID is freed in above silc_client_del_client).
        conn->nickname is freed when freeing the local_entry->nickname. */
@@ -1484,30 +1490,31 @@ void silc_client_close_connection_real(SilcClient client,
       silc_free(conn->remote_host);
     if (conn->local_id_data)
       silc_free(conn->local_id_data);
-    if (conn->send_key)
-      silc_cipher_free(conn->send_key);
-    if (conn->receive_key)
-      silc_cipher_free(conn->receive_key);
-    if (conn->hmac_send)
-      silc_hmac_free(conn->hmac_send);
-    if (conn->hmac_receive)
-      silc_hmac_free(conn->hmac_receive);
-    if (conn->rekey)
-      silc_free(conn->rekey);
+    if (conn->internal->send_key)
+      silc_cipher_free(conn->internal->send_key);
+    if (conn->internal->receive_key)
+      silc_cipher_free(conn->internal->receive_key);
+    if (conn->internal->hmac_send)
+      silc_hmac_free(conn->internal->hmac_send);
+    if (conn->internal->hmac_receive)
+      silc_hmac_free(conn->internal->hmac_receive);
+    if (conn->internal->rekey)
+      silc_free(conn->internal->rekey);
 
-    if (conn->active_session) {
+    if (conn->internal->active_session) {
       sock->user_data = NULL;
-      silc_client_ftp_session_free(conn->active_session);
-      conn->active_session = NULL;
+      silc_client_ftp_session_free(conn->internal->active_session);
+      conn->internal->active_session = NULL;
     }
 
     silc_client_ftp_free_sessions(client, conn);
 
-    silc_dlist_start(conn->pending_commands);
-    while ((r = silc_dlist_get(conn->pending_commands)) != SILC_LIST_END)
-      silc_dlist_del(conn->pending_commands, r);
-    if (conn->pending_commands)
-      silc_dlist_uninit(conn->pending_commands);
+    silc_dlist_start(conn->internal->pending_commands);
+    while ((r = silc_dlist_get(conn->internal->pending_commands))
+	   != SILC_LIST_END)
+      silc_dlist_del(conn->internal->pending_commands, r);
+    if (conn->internal->pending_commands)
+      silc_dlist_uninit(conn->internal->pending_commands);
 
     memset(conn, 0, sizeof(*conn));
     silc_client_del_connection(client, conn);
@@ -1657,7 +1664,8 @@ void silc_client_receive_new_id(SilcClient client,
       return;
     }
 
-    silc_idcache_del_by_context(conn->client_cache, conn->local_entry);
+    silc_idcache_del_by_context(conn->internal->client_cache,
+				conn->local_entry);
     silc_free(conn->local_id);
   }
   
@@ -1687,7 +1695,8 @@ void silc_client_receive_new_id(SilcClient client,
 							TRUE);
 
   /* Put it to the ID cache */
-  silc_idcache_add(conn->client_cache, strdup(conn->nickname), conn->local_id, 
+  silc_idcache_add(conn->internal->client_cache,
+		   strdup(conn->nickname), conn->local_id, 
 		   (void *)conn->local_entry, 0, NULL);
 
   if (connecting) {
@@ -1703,7 +1712,7 @@ void silc_client_receive_new_id(SilcClient client,
 			     conn->cmd_ident, 1, 5, sidp->data, sidp->len);
     silc_buffer_free(sidp);
 
-    if (!conn->params.detach_data) {
+    if (!conn->internal->params.detach_data) {
       /* Send NICK command if the nickname was set by the application (and is
 	 not same as the username). Send this with little timeout. */
       if (client->nickname && strcmp(client->nickname, client->username))
@@ -1806,7 +1815,7 @@ SILC_TASK_CALLBACK(silc_client_rekey_callback)
 {
   SilcSocketConnection sock = (SilcSocketConnection)context;
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
-  SilcClient client = (SilcClient)conn->rekey->context;
+  SilcClient client = (SilcClient)conn->internal->rekey->context;
   SilcProtocol protocol;
   SilcClientRekeyInternalContext *proto_ctx;
 
@@ -1818,7 +1827,7 @@ SILC_TASK_CALLBACK(silc_client_rekey_callback)
   proto_ctx->client = (void *)client;
   proto_ctx->sock = silc_socket_dup(sock);
   proto_ctx->responder = FALSE;
-  proto_ctx->pfs = conn->rekey->pfs;
+  proto_ctx->pfs = conn->internal->rekey->pfs;
       
   /* Perform rekey protocol. Will call the final callback after the
      protocol is over. */
@@ -1832,7 +1841,7 @@ SILC_TASK_CALLBACK(silc_client_rekey_callback)
   /* Re-register re-key timeout */
   silc_schedule_task_add(client->schedule, sock->sock, 
 			 silc_client_rekey_callback,
-			 context, conn->rekey->timeout, 0,
+			 context, conn->internal->rekey->timeout, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
@@ -1893,7 +1902,7 @@ void silc_client_connection_auth_request(SilcClient client,
   int ret;
 
   /* If we haven't send our request then ignore this one. */
-  if (!conn->connauth)
+  if (!conn->internal->connauth)
     return;
 
   /* Parse the payload */
@@ -1906,14 +1915,14 @@ void silc_client_connection_auth_request(SilcClient client,
 
   /* Call the request callback to notify application for received 
      authentication method information. */
-  if (conn->connauth->callback)
-    (*conn->connauth->callback)(client, conn, auth_meth,
-				conn->connauth->context);
+  if (conn->internal->connauth->callback)
+    (*conn->internal->connauth->callback)(client, conn, auth_meth,
+					  conn->internal->connauth->context);
 
-  silc_schedule_task_del(client->schedule, conn->connauth->timeout);
+  silc_schedule_task_del(client->schedule, conn->internal->connauth->timeout);
 
-  silc_free(conn->connauth);
-  conn->connauth = NULL;
+  silc_free(conn->internal->connauth);
+  conn->internal->connauth = NULL;
 }
 
 /* Timeout task callback called if the server does not reply to our 
@@ -1924,16 +1933,16 @@ SILC_TASK_CALLBACK(silc_client_request_authentication_method_timeout)
   SilcClientConnection conn = (SilcClientConnection)context;
   SilcClient client = conn->client;
 
-  if (!conn->connauth)
+  if (!conn->internal->connauth)
     return;
 
   /* Call the request callback to notify application */
-  if (conn->connauth->callback)
-    (*conn->connauth->callback)(client, conn, SILC_AUTH_NONE,
-				conn->connauth->context);
+  if (conn->internal->connauth->callback)
+    (*conn->internal->connauth->callback)(client, conn, SILC_AUTH_NONE,
+					  conn->internal->connauth->context);
 
-  silc_free(conn->connauth);
-  conn->connauth = NULL;
+  silc_free(conn->internal->connauth);
+  conn->internal->connauth = NULL;
 }
 
 /* This function can be used to request the current authentication method
@@ -1957,10 +1966,10 @@ silc_client_request_authentication_method(SilcClient client,
   connauth->callback = callback;
   connauth->context = context;
 
-  if (conn->connauth)
-    silc_free(conn->connauth);
+  if (conn->internal->connauth)
+    silc_free(conn->internal->connauth);
 
-  conn->connauth = connauth;
+  conn->internal->connauth = connauth;
 
   /* Assemble the request packet and send it to the server */
   packet = silc_buffer_alloc(4);

@@ -511,7 +511,7 @@ SILC_TASK_CALLBACK(silc_client_ftp_key_agreement_final)
   }
 
   /* Set this as active session */
-  conn->active_session = session;
+  conn->internal->active_session = session;
 
  out:
   silc_ske_free_key_material(ctx->keymat);
@@ -685,15 +685,16 @@ SILC_TASK_CALLBACK(silc_client_ftp_process_key_agreement)
 void silc_client_ftp_free_sessions(SilcClient client,
 				   SilcClientConnection conn)
 {
-  if (conn->ftp_sessions) {
+  if (conn->internal->ftp_sessions) {
     SilcClientFtpSession session;
-    silc_dlist_start(conn->ftp_sessions);
-    while ((session = silc_dlist_get(conn->ftp_sessions)) != SILC_LIST_END) {
+    silc_dlist_start(conn->internal->ftp_sessions);
+    while ((session = silc_dlist_get(conn->internal->ftp_sessions))
+	   != SILC_LIST_END) {
       if (session->sock)
 	session->sock->user_data = NULL;
       silc_client_ftp_session_free(session);
     }
-    silc_dlist_del(conn->ftp_sessions, session);
+    silc_dlist_del(conn->internal->ftp_sessions, session);
   }
 }
 
@@ -704,12 +705,13 @@ void silc_client_ftp_session_free_client(SilcClientConnection conn,
 {
   SilcClientFtpSession session;
 
-  if (!conn->ftp_sessions)
+  if (!conn->internal->ftp_sessions)
     return;
 
   /* Get the session */
-  silc_dlist_start(conn->ftp_sessions);
-  while ((session = silc_dlist_get(conn->ftp_sessions)) != SILC_LIST_END) {
+  silc_dlist_start(conn->internal->ftp_sessions);
+  while ((session = silc_dlist_get(conn->internal->ftp_sessions))
+	 != SILC_LIST_END) {
     if (session->client_entry == client_entry) {
       if (session->sock)
 	session->sock->user_data = NULL;
@@ -726,11 +728,11 @@ void silc_client_ftp_session_free(SilcClientFtpSession session)
 
   SILC_LOG_DEBUG(("Free session"));
 
-  if (session->conn && session->conn->ftp_sessions)
-    silc_dlist_del(session->conn->ftp_sessions, session);
+  if (session->conn && session->conn->internal->ftp_sessions)
+    silc_dlist_del(session->conn->internal->ftp_sessions, session);
 
-  if (session->conn && session->conn->active_session == session)
-    session->conn->active_session = NULL;
+  if (session->conn && session->conn->internal->active_session == session)
+    session->conn->internal->active_session = NULL;
 
   if (session->sftp) {
     if (session->server)
@@ -759,8 +761,8 @@ void silc_client_ftp_session_free(SilcClientFtpSession session)
     if (session->sock->user_data) {
       conn = (SilcClientConnection)session->sock->user_data;
 
-      if (conn->active_session == session)
-	conn->active_session = NULL;
+      if (conn->internal->active_session == session)
+	conn->internal->active_session = NULL;
 
       silc_client_close_connection_real(session->client, session->sock, conn);
     } else {
@@ -803,8 +805,9 @@ silc_client_file_send(SilcClient client,
   SILC_LOG_DEBUG(("Start"));
 
   /* Check for existing session for `filepath'. */
-  silc_dlist_start(conn->ftp_sessions);
-  while ((session = silc_dlist_get(conn->ftp_sessions)) != SILC_LIST_END) {
+  silc_dlist_start(conn->internal->ftp_sessions);
+  while ((session = silc_dlist_get(conn->internal->ftp_sessions))
+	 != SILC_LIST_END) {
     if (session->filepath && !strcmp(session->filepath, filepath) && 
 	session->client_entry == client_entry)
       return SILC_CLIENT_FILE_ALREADY_STARTED;
@@ -818,7 +821,7 @@ silc_client_file_send(SilcClient client,
 
   /* Add new session */
   session = silc_calloc(1, sizeof(*session));
-  session->session_id = ++conn->next_session_id;
+  session->session_id = ++conn->internal->next_session_id;
   session->client = client;
   session->conn = conn;
   session->client_entry = client_entry;
@@ -826,7 +829,7 @@ silc_client_file_send(SilcClient client,
   session->monitor_context = monitor_context;
   session->filepath = strdup(filepath);
   session->server = TRUE;
-  silc_dlist_add(conn->ftp_sessions, session);
+  silc_dlist_add(conn->internal->ftp_sessions, session);
 
   path = silc_calloc(strlen(filepath) + 9, sizeof(*path));
   silc_strncat(path, strlen(filepath) + 9, "file://", 7);
@@ -910,8 +913,9 @@ silc_client_file_receive(SilcClient client,
   SILC_LOG_DEBUG(("Start, Session ID: %d", session_id));
 
   /* Get the session */
-  silc_dlist_start(conn->ftp_sessions);
-  while ((session = silc_dlist_get(conn->ftp_sessions)) != SILC_LIST_END) {
+  silc_dlist_start(conn->internal->ftp_sessions);
+  while ((session = silc_dlist_get(conn->internal->ftp_sessions))
+	 != SILC_LIST_END) {
     if (session->session_id == session_id) {
       break;
     }
@@ -992,8 +996,9 @@ SilcClientFileError silc_client_file_close(SilcClient client,
   SILC_LOG_DEBUG(("Start, Session ID: %d", session_id));
 
   /* Get the session */
-  silc_dlist_start(conn->ftp_sessions);
-  while ((session = silc_dlist_get(conn->ftp_sessions)) != SILC_LIST_END) {
+  silc_dlist_start(conn->internal->ftp_sessions);
+  while ((session = silc_dlist_get(conn->internal->ftp_sessions))
+	 != SILC_LIST_END) {
     if (session->session_id == session_id) {
       break;
     }
@@ -1034,8 +1039,9 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
 
   client_entry = clients[0];
 
-  silc_dlist_start(conn->ftp_sessions);
-  while ((session = silc_dlist_get(conn->ftp_sessions)) != SILC_LIST_END) {
+  silc_dlist_start(conn->internal->ftp_sessions);
+  while ((session = silc_dlist_get(conn->internal->ftp_sessions))
+	 != SILC_LIST_END) {
     if (session->client_entry == client_entry && !session->server)
       break;
   }
@@ -1059,11 +1065,11 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
     
     /* Add new session */
     session = silc_calloc(1, sizeof(*session));
-    session->session_id = ++conn->next_session_id;
+    session->session_id = ++conn->internal->next_session_id;
     session->client = client;
     session->conn = conn;
     session->client_entry = client_entry;
-    silc_dlist_add(conn->ftp_sessions, session);
+    silc_dlist_add(conn->internal->ftp_sessions, session);
 
     /* Let the application know */
     client->internal->ops->ftp(client, conn, client_entry,
@@ -1126,14 +1132,14 @@ void silc_client_ftp(SilcClient client,
 
   /* If we have active FTP session then give the packet directly to the
      protocol processor. */
-  if (conn->active_session) {
+  if (conn->internal->active_session) {
     /* Give it to the SFTP */
-    if (conn->active_session->server)
-      silc_sftp_server_receive_process(conn->active_session->sftp, sock, 
-				       packet);
+    if (conn->internal->active_session->server)
+      silc_sftp_server_receive_process(conn->internal->active_session->sftp,
+				       sock, packet);
     else
-      silc_sftp_client_receive_process(conn->active_session->sftp, sock, 
-				       packet);
+      silc_sftp_client_receive_process(conn->internal->active_session->sftp,
+				       sock, packet);
   } else {
     /* We don't have active session, resolve the remote client information
        and then try to find the correct session. */

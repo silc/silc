@@ -122,47 +122,49 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
   SILC_LOG_DEBUG(("Setting new keys into use"));
 
   /* Allocate cipher to be used in the communication */
-  silc_cipher_alloc((char *)cname, &conn->send_key);
-  silc_cipher_alloc((char *)cname, &conn->receive_key);
-  silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, &conn->hmac_send);
-  silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, &conn->hmac_receive);
+  silc_cipher_alloc((char *)cname, &conn->internal->send_key);
+  silc_cipher_alloc((char *)cname, &conn->internal->receive_key);
+  silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL,
+		  &conn->internal->hmac_send);
+  silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL,
+		  &conn->internal->hmac_receive);
 
   if (is_responder == TRUE) {
-    silc_cipher_set_key(conn->send_key, keymat->receive_enc_key, 
+    silc_cipher_set_key(conn->internal->send_key, keymat->receive_enc_key, 
 			keymat->enc_key_len);
-    silc_cipher_set_iv(conn->send_key, keymat->receive_iv);
-    silc_cipher_set_key(conn->receive_key, keymat->send_enc_key, 
+    silc_cipher_set_iv(conn->internal->send_key, keymat->receive_iv);
+    silc_cipher_set_key(conn->internal->receive_key, keymat->send_enc_key, 
 			keymat->enc_key_len);
-    silc_cipher_set_iv(conn->receive_key, keymat->send_iv);
-    silc_hmac_set_key(conn->hmac_send, keymat->receive_hmac_key, 
+    silc_cipher_set_iv(conn->internal->receive_key, keymat->send_iv);
+    silc_hmac_set_key(conn->internal->hmac_send, keymat->receive_hmac_key, 
 		      keymat->hmac_key_len);
-    silc_hmac_set_key(conn->hmac_receive, keymat->send_hmac_key, 
+    silc_hmac_set_key(conn->internal->hmac_receive, keymat->send_hmac_key, 
 		      keymat->hmac_key_len);
   } else {
-    silc_cipher_set_key(conn->send_key, keymat->send_enc_key, 
+    silc_cipher_set_key(conn->internal->send_key, keymat->send_enc_key, 
 			keymat->enc_key_len);
-    silc_cipher_set_iv(conn->send_key, keymat->send_iv);
-    silc_cipher_set_key(conn->receive_key, keymat->receive_enc_key, 
+    silc_cipher_set_iv(conn->internal->send_key, keymat->send_iv);
+    silc_cipher_set_key(conn->internal->receive_key, keymat->receive_enc_key, 
 			keymat->enc_key_len);
-    silc_cipher_set_iv(conn->receive_key, keymat->receive_iv);
-    silc_hmac_set_key(conn->hmac_send, keymat->send_hmac_key, 
+    silc_cipher_set_iv(conn->internal->receive_key, keymat->receive_iv);
+    silc_hmac_set_key(conn->internal->hmac_send, keymat->send_hmac_key, 
 		      keymat->hmac_key_len);
-    silc_hmac_set_key(conn->hmac_receive, keymat->receive_hmac_key, 
+    silc_hmac_set_key(conn->internal->hmac_receive, keymat->receive_hmac_key, 
 		      keymat->hmac_key_len);
   }
 
   /* Rekey stuff */
-  conn->rekey = silc_calloc(1, sizeof(*conn->rekey));
-  conn->rekey->send_enc_key = silc_memdup(keymat->send_enc_key, 
-					  keymat->enc_key_len / 8);
-  conn->rekey->enc_key_len = keymat->enc_key_len / 8;
+  conn->internal->rekey = silc_calloc(1, sizeof(*conn->internal->rekey));
+  conn->internal->rekey->send_enc_key = silc_memdup(keymat->send_enc_key, 
+						    keymat->enc_key_len / 8);
+  conn->internal->rekey->enc_key_len = keymat->enc_key_len / 8;
 
   if (ske->start_payload->flags & SILC_SKE_SP_FLAG_PFS)
-    conn->rekey->pfs = TRUE;
-  conn->rekey->ske_group = silc_ske_group_get_number(group);
+    conn->internal->rekey->pfs = TRUE;
+  conn->internal->rekey->ske_group = silc_ske_group_get_number(group);
 
   /* Save the HASH function */
-  silc_hash_alloc(silc_hash_get_name(hash), &conn->hash);
+  silc_hash_alloc(silc_hash_get_name(hash), &conn->internal->hash);
 }
 
 /* Checks the version string of the server. */
@@ -744,41 +746,42 @@ silc_client_protocol_rekey_validate(SilcClient client,
 
   if (ctx->responder == TRUE) {
     if (send) {
-      silc_cipher_set_key(conn->send_key, keymat->receive_enc_key, 
+      silc_cipher_set_key(conn->internal->send_key, keymat->receive_enc_key, 
 			  keymat->enc_key_len);
-      silc_cipher_set_iv(conn->send_key, keymat->receive_iv);
-      silc_hmac_set_key(conn->hmac_send, keymat->receive_hmac_key, 
+      silc_cipher_set_iv(conn->internal->send_key, keymat->receive_iv);
+      silc_hmac_set_key(conn->internal->hmac_send, keymat->receive_hmac_key, 
 			keymat->hmac_key_len);
     } else {
-      silc_cipher_set_key(conn->receive_key, keymat->send_enc_key, 
+      silc_cipher_set_key(conn->internal->receive_key, keymat->send_enc_key, 
 			  keymat->enc_key_len);
-      silc_cipher_set_iv(conn->receive_key, keymat->send_iv);
-      silc_hmac_set_key(conn->hmac_receive, keymat->send_hmac_key, 
+      silc_cipher_set_iv(conn->internal->receive_key, keymat->send_iv);
+      silc_hmac_set_key(conn->internal->hmac_receive, keymat->send_hmac_key, 
 			keymat->hmac_key_len);
     }
   } else {
     if (send) {
-      silc_cipher_set_key(conn->send_key, keymat->send_enc_key, 
+      silc_cipher_set_key(conn->internal->send_key, keymat->send_enc_key, 
 			  keymat->enc_key_len);
-      silc_cipher_set_iv(conn->send_key, keymat->send_iv);
-      silc_hmac_set_key(conn->hmac_send, keymat->send_hmac_key, 
+      silc_cipher_set_iv(conn->internal->send_key, keymat->send_iv);
+      silc_hmac_set_key(conn->internal->hmac_send, keymat->send_hmac_key, 
 			keymat->hmac_key_len);
     } else {
-      silc_cipher_set_key(conn->receive_key, keymat->receive_enc_key, 
-			  keymat->enc_key_len);
-      silc_cipher_set_iv(conn->receive_key, keymat->receive_iv);
-      silc_hmac_set_key(conn->hmac_receive, keymat->receive_hmac_key, 
-			keymat->hmac_key_len);
+      silc_cipher_set_key(conn->internal->receive_key,
+			  keymat->receive_enc_key, keymat->enc_key_len);
+      silc_cipher_set_iv(conn->internal->receive_key, keymat->receive_iv);
+      silc_hmac_set_key(conn->internal->hmac_receive,
+			keymat->receive_hmac_key, keymat->hmac_key_len);
     }
   }
 
   /* Save the current sending encryption key */
   if (!send) {
-    memset(conn->rekey->send_enc_key, 0, conn->rekey->enc_key_len);
-    silc_free(conn->rekey->send_enc_key);
-    conn->rekey->send_enc_key = silc_memdup(keymat->send_enc_key,
-					    keymat->enc_key_len / 8);
-    conn->rekey->enc_key_len = keymat->enc_key_len / 8;
+    memset(conn->internal->rekey->send_enc_key, 0,
+	   conn->internal->rekey->enc_key_len);
+    silc_free(conn->internal->rekey->send_enc_key);
+    conn->internal->rekey->send_enc_key = silc_memdup(keymat->send_enc_key,
+						      keymat->enc_key_len / 8);
+    conn->internal->rekey->enc_key_len = keymat->enc_key_len / 8;
   }
 }
 
@@ -792,18 +795,18 @@ silc_client_protocol_rekey_generate(SilcClient client,
 {
   SilcClientConnection conn = (SilcClientConnection)ctx->sock->user_data;
   SilcSKEKeyMaterial *keymat;
-  SilcUInt32 key_len = silc_cipher_get_key_len(conn->send_key);
-  SilcUInt32 hash_len = silc_hash_len(conn->hash);
+  SilcUInt32 key_len = silc_cipher_get_key_len(conn->internal->send_key);
+  SilcUInt32 hash_len = silc_hash_len(conn->internal->hash);
 
   SILC_LOG_DEBUG(("Generating new %s session keys (no PFS)",
 		  send ? "sending" : "receiving"));
 
   /* Generate the new key */
   keymat = silc_calloc(1, sizeof(*keymat));
-  silc_ske_process_key_material_data(conn->rekey->send_enc_key,
-				     conn->rekey->enc_key_len,
+  silc_ske_process_key_material_data(conn->internal->rekey->send_enc_key,
+				     conn->internal->rekey->enc_key_len,
 				     16, key_len, hash_len, 
-				     conn->hash, keymat);
+				     conn->internal->hash, keymat);
 
   /* Set the keys into use */
   silc_client_protocol_rekey_validate(client, ctx, ctx->sock, keymat, send);
@@ -821,8 +824,8 @@ silc_client_protocol_rekey_generate_pfs(SilcClient client,
 {
   SilcClientConnection conn = (SilcClientConnection)ctx->sock->user_data;
   SilcSKEKeyMaterial *keymat;
-  SilcUInt32 key_len = silc_cipher_get_key_len(conn->send_key);
-  SilcUInt32 hash_len = silc_hash_len(conn->hash);
+  SilcUInt32 key_len = silc_cipher_get_key_len(conn->internal->send_key);
+  SilcUInt32 hash_len = silc_hash_len(conn->internal->hash);
   unsigned char *tmpbuf;
   SilcUInt32 klen;
 
@@ -835,7 +838,7 @@ silc_client_protocol_rekey_generate_pfs(SilcClient client,
   /* Generate the new key */
   keymat = silc_calloc(1, sizeof(*keymat));
   silc_ske_process_key_material_data(tmpbuf, klen, 16, key_len, hash_len, 
-				     conn->hash, keymat);
+				     conn->internal->hash, keymat);
 
   /* Set the keys into use */
   silc_client_protocol_rekey_validate(client, ctx, ctx->sock, keymat, send);
@@ -908,7 +911,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 
 	  ctx->ske = silc_ske_alloc(client->rng, client);
 	  ctx->ske->prop = silc_calloc(1, sizeof(*ctx->ske->prop));
-	  silc_ske_group_get_by_number(conn->rekey->ske_group,
+	  silc_ske_group_get_by_number(conn->internal->rekey->ske_group,
 				       &ctx->ske->prop->group);
 
 	  silc_ske_set_callbacks(ctx->ske, 
@@ -964,7 +967,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 	   */
 	  ctx->ske = silc_ske_alloc(client->rng, client);
 	  ctx->ske->prop = silc_calloc(1, sizeof(*ctx->ske->prop));
-	  silc_ske_group_get_by_number(conn->rekey->ske_group,
+	  silc_ske_group_get_by_number(conn->internal->rekey->ske_group,
 				       &ctx->ske->prop->group);
 
 	  silc_ske_set_callbacks(ctx->ske, 

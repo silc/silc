@@ -114,8 +114,8 @@ bool silc_client_process_detach_data(SilcClient client,
   SILC_LOG_DEBUG(("Start"));
 
   silc_free(conn->nickname);
-  silc_buffer_set(&detach, conn->params.detach_data, 
-		  conn->params.detach_data_len);
+  silc_buffer_set(&detach, conn->internal->params.detach_data, 
+		  conn->internal->params.detach_data_len);
 
   SILC_LOG_HEXDUMP(("Detach data"), detach.data, detach.len);
 
@@ -264,7 +264,7 @@ void silc_client_resume_session(SilcClient client,
 
   /* Second, send IDENTIFY command of all channels we know about.  These
      are the channels we've joined to according our detachment data. */
-  if (silc_idcache_get_all(conn->channel_cache, &list)) {
+  if (silc_idcache_get_all(conn->internal->channel_cache, &list)) {
     unsigned char **res_argv = NULL;
     SilcUInt32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
 

@@ -88,7 +88,7 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
 
   /* If nothing is set by application assume that we don't want to use
      attributes, ignore the request. */
-  if (!conn->attrs)
+  if (!conn->internal->attrs)
     return NULL;
 
   /* Always put our public key. */
@@ -112,7 +112,8 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
     if (attribute == SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE)
       continue;
 
-    silc_hash_table_find_foreach(conn->attrs, (void *)(SilcUInt32)attribute,
+    silc_hash_table_find_foreach(conn->internal->attrs,
+				 (void *)(SilcUInt32)attribute,
 				 silc_client_attributes_process_foreach,
 				 &f);
   }
@@ -156,11 +157,13 @@ SilcAttributePayload silc_client_attribute_add(SilcClient client,
   if (!attr)
     return NULL;
 
-  if (!conn->attrs)
-    conn->attrs = silc_hash_table_alloc(0, silc_hash_ptr, NULL, NULL,
-					NULL, silc_client_attribute_destruct,
-					NULL, TRUE);
-  silc_hash_table_add(conn->attrs, (void *)(SilcUInt32)attribute, attr);
+  if (!conn->internal->attrs)
+    conn->internal->attrs =
+      silc_hash_table_alloc(0, silc_hash_ptr, NULL, NULL,
+			    NULL, silc_client_attribute_destruct,
+			    NULL, TRUE);
+  silc_hash_table_add(conn->internal->attrs,
+		      (void *)(SilcUInt32)attribute, attr);
   return attr;
 }
 
@@ -173,7 +176,7 @@ static void silc_client_attribute_del_foreach(void *key, void *context,
   if (!attr)
     return;
   attribute = silc_attribute_get_attribute(attr);
-  silc_hash_table_del_by_context(conn->attrs,
+  silc_hash_table_del_by_context(conn->internal->attrs,
 				 (void *)(SilcUInt32)attribute, attr);
 }
 
@@ -186,15 +189,16 @@ bool silc_client_attribute_del(SilcClient client,
 {
   bool ret;
 
-  if (!conn->attrs)
+  if (!conn->internal->attrs)
     return FALSE;
 
   if (attr) {
     attribute = silc_attribute_get_attribute(attr);
-    ret = silc_hash_table_del_by_context(conn->attrs,
+    ret = silc_hash_table_del_by_context(conn->internal->attrs,
 					 (void *)(SilcUInt32)attribute, attr);
   } else if (attribute) {
-    silc_hash_table_find_foreach(conn->attrs, (void *)(SilcUInt32)attribute,
+    silc_hash_table_find_foreach(conn->internal->attrs,
+				 (void *)(SilcUInt32)attribute,
 				 silc_client_attribute_del_foreach, conn);
     ret = TRUE;
   } else{
@@ -202,9 +206,9 @@ bool silc_client_attribute_del(SilcClient client,
   }
 
   if (ret)
-    if (!silc_hash_table_count(conn->attrs)) {
-      silc_hash_table_free(conn->attrs);
-      conn->attrs = NULL;
+    if (!silc_hash_table_count(conn->internal->attrs)) {
+      silc_hash_table_free(conn->internal->attrs);
+      conn->internal->attrs = NULL;
     }
 
   return ret;
@@ -215,7 +219,7 @@ bool silc_client_attribute_del(SilcClient client,
 const SilcHashTable silc_client_attributes_get(SilcClient client,
 					       SilcClientConnection conn)
 {
-  return (const SilcHashTable)conn->attrs;
+  return (const SilcHashTable)conn->internal->attrs;
 }
 
 /* Construct a Requested Attributes buffer. If the `attribute' is zero (0)

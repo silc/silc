@@ -122,8 +122,8 @@ void silc_client_send_channel_message(SilcClient client,
 						client->rng);
 
   /* Get data used in packet header encryption, keys and stuff. */
-  cipher = conn->send_key;
-  hmac = conn->hmac_send;
+  cipher = conn->internal->send_key;
+  hmac = conn->internal->hmac_send;
   id_string = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
 
   /* Set the packet context pointers. The destination ID is always
@@ -157,7 +157,7 @@ void silc_client_send_channel_message(SilcClient client,
 
   /* Encrypt the header and padding of the packet. This is encrypted 
      with normal session key shared with our server. */
-  silc_packet_encrypt(cipher, hmac, conn->psn_send++,
+  silc_packet_encrypt(cipher, hmac, conn->internal->psn_send++,
 		      (SilcBuffer)&packet, SILC_PACKET_HEADER_LEN + 
 		      packetdata.src_id_len + packetdata.dst_id_len +
 		      packetdata.padlen);

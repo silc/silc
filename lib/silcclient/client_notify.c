@@ -428,7 +428,7 @@ void silc_client_notify_by_server(SilcClient client,
     silc_client_remove_from_channels(client, conn, client_entry);
 
     /* Remove from cache */
-    silc_idcache_del_by_context(conn->client_cache, client_entry);
+    silc_idcache_del_by_context(conn->internal->client_cache, client_entry);
 
     /* Get signoff message */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
@@ -615,10 +615,11 @@ void silc_client_notify_by_server(SilcClient client,
 
       if (tmp_nick && !strcmp(tmp, tmp_nick)) {
 	/* Nickname didn't change. Update only the ID */
-	silc_idcache_del_by_context(conn->client_cache, client_entry);
+	silc_idcache_del_by_context(conn->internal->client_cache,
+				    client_entry);
 	silc_free(client_entry->id);
 	client_entry->id = silc_id_dup(client_id, SILC_ID_CLIENT);
-	silc_idcache_add(conn->client_cache, strdup(tmp),
+	silc_idcache_add(conn->internal->client_cache, strdup(tmp),
 			 client_entry->id, client_entry, 0, NULL);
 
 	/* Notify application */
@@ -673,7 +674,7 @@ void silc_client_notify_by_server(SilcClient client,
     }
 
     /* Remove the old from cache */
-    silc_idcache_del_by_context(conn->client_cache, client_entry);
+    silc_idcache_del_by_context(conn->internal->client_cache, client_entry);
     
     /* Replace old ID entry with new one on all channels. */
     silc_client_replace_from_channels(client, conn, client_entry,

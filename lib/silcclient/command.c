@@ -108,7 +108,7 @@ void silc_client_command_pending(SilcClientConnection conn,
   reply->ident = ident;
   reply->context = context;
   reply->callback = callback;
-  silc_dlist_add(conn->pending_commands, reply);
+  silc_dlist_add(conn->internal->pending_commands, reply);
 }
 
 /* Deletes pending command by reply command type. */
@@ -119,15 +119,16 @@ void silc_client_command_pending_del(SilcClientConnection conn,
 {
   SilcClientCommandPending *r;
 
-  if (!conn->pending_commands)
+  if (!conn->internal->pending_commands)
     return;
 
-  silc_dlist_start(conn->pending_commands);
-  while ((r = silc_dlist_get(conn->pending_commands)) != SILC_LIST_END) {
+  silc_dlist_start(conn->internal->pending_commands);
+  while ((r = silc_dlist_get(conn->internal->pending_commands))
+	 != SILC_LIST_END) {
     if ((r->reply_cmd == reply_cmd || (r->reply_cmd == SILC_COMMAND_NONE &&
 				       r->reply_check))
 	&& r->ident == ident) {
-      silc_dlist_del(conn->pending_commands, r);
+      silc_dlist_del(conn->internal->pending_commands, r);
       silc_free(r);
     }
   }
@@ -147,8 +148,9 @@ silc_client_command_pending_check(SilcClientConnection conn,
   SilcClientCommandPendingCallbacks callbacks = NULL;
   int i = 0;
 
-  silc_dlist_start(conn->pending_commands);
-  while ((r = silc_dlist_get(conn->pending_commands)) != SILC_LIST_END) {
+  silc_dlist_start(conn->internal->pending_commands);
+  while ((r = silc_dlist_get(conn->internal->pending_commands))
+	 != SILC_LIST_END) {
     if ((r->reply_cmd == command || r->reply_cmd == SILC_COMMAND_NONE)
 	&& r->ident == ident) {
       callbacks = silc_realloc(callbacks, sizeof(*callbacks) * (i + 1));
@@ -438,7 +440,8 @@ SILC_CLIENT_CMD_FUNC(list)
     name = cmd->argv[1];
 
     /* Get the Channel ID of the channel */
-    if (silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
+    if (silc_idcache_find_by_name_one(conn->internal->channel_cache,
+				      name, &id_cache)) {
       channel = (SilcChannelEntry)id_cache->context;
       idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
     }
@@ -507,7 +510,8 @@ SILC_CLIENT_CMD_FUNC(topic)
   }
 
   /* Get the Channel ID of the channel */
-  if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
+  if (!silc_idcache_find_by_name_one(conn->internal->channel_cache,
+				     name, &id_cache)) {
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
     goto out;
   }
@@ -949,21 +953,23 @@ SILC_CLIENT_CMD_FUNC(ping)
   }
 
   /* Start counting time */
-  for (i = 0; i < conn->ping_count; i++) {
-    if (conn->ping[i].dest_id == NULL) {
-      conn->ping[i].start_time = time(NULL);
-      conn->ping[i].dest_id = id;
-      conn->ping[i].dest_name = strdup(conn->remote_host);
+  for (i = 0; i < conn->internal->ping_count; i++) {
+    if (conn->internal->ping[i].dest_id == NULL) {
+      conn->internal->ping[i].start_time = time(NULL);
+      conn->internal->ping[i].dest_id = id;
+      conn->internal->ping[i].dest_name = strdup(conn->remote_host);
       break;
     }
   }
-  if (i >= conn->ping_count) {
-    i = conn->ping_count;
-    conn->ping = silc_realloc(conn->ping, sizeof(*conn->ping) * (i + 1));
-    conn->ping[i].start_time = time(NULL);
-    conn->ping[i].dest_id = id;
-    conn->ping[i].dest_name = strdup(conn->remote_host);
-    conn->ping_count++;
+  if (i >= conn->internal->ping_count) {
+    i = conn->internal->ping_count;
+    conn->internal->ping =
+      silc_realloc(conn->internal->ping,
+		   sizeof(*conn->internal->ping) * (i + 1));
+    conn->internal->ping[i].start_time = time(NULL);
+    conn->internal->ping[i].dest_id = id;
+    conn->internal->ping[i].dest_name = strdup(conn->remote_host);
+    conn->internal->ping_count++;
   }
   
   /* Notify application */
@@ -1699,7 +1705,8 @@ SILC_CLIENT_CMD_FUNC(kick)
   }
 
   /* Get the Channel ID of the channel */
-  if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
+  if (!silc_idcache_find_by_name_one(conn->internal->channel_cache,
+				     name, &id_cache)) {
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
     goto out;
   }
@@ -1760,7 +1767,8 @@ static void silc_client_command_oper_send(unsigned char *data,
     /* Encode the public key authentication payload */
     auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 					      cmd->client->private_key,
-					      cmd->client->rng, conn->hash,
+					      cmd->client->rng,
+					      conn->internal->hash,
 					      conn->local_id,
 					      SILC_ID_CLIENT);
   } else {
@@ -1830,7 +1838,8 @@ static void silc_client_command_silcoper_send(unsigned char *data,
     /* Encode the public key authentication payload */
     auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 					      cmd->client->private_key,
-					      cmd->client->rng, conn->hash,
+					      cmd->client->rng,
+					      conn->internal->hash,
 					      conn->local_id,
 					      SILC_ID_CLIENT);
   } else {

@@ -20,6 +20,27 @@
 #ifndef CLIENT_INTERNAL_H
 #define CLIENT_INTERNAL_H
 
+/* Context to hold the connection authentication request callbacks that
+   will be called when the server has replied back to our request about
+   current authentication method in the session. */
+typedef struct {
+  SilcConnectionAuthRequest callback;
+  void *context;
+  SilcTask timeout;
+} *SilcClientConnAuthRequest;
+
+/* Generic rekey context for connections */
+typedef struct {
+  /* Current sending encryption key, provided for re-key. The `pfs'   
+     is TRUE if the Perfect Forward Secrecy is performed in re-key. */
+  unsigned char *send_enc_key;
+  SilcUInt32 enc_key_len;
+  int ske_group;
+  bool pfs;
+  SilcUInt32 timeout;
+  void *context;   
+} *SilcClientRekey;
+
 /* Internal context for connection process. This is needed as we
    doing asynchronous connecting. */
 typedef struct {
@@ -80,6 +101,52 @@ struct SilcClientInternalStruct {
 
   /* Client version. Used to compare to remote host's version strings. */
   char *silc_client_version;
+};
+
+/* Internal context for conn->internal in SilcClientConnection. */
+struct SilcClientConnectionInternalStruct {
+  /* Keys and stuff negotiated in the SKE protocol */
+  SilcCipher send_key;
+  SilcCipher receive_key;
+  SilcHmac hmac_send;
+  SilcHmac hmac_receive;
+  SilcHash hash;
+  SilcUInt32 psn_send;
+  SilcUInt32 psn_receive;
+
+  /* Client ID and Channel ID cache. Messages transmitted in SILC network
+     are done using different unique ID's. These are the cache for
+     thoses ID's used in the communication. */
+  SilcIDCache client_cache;
+  SilcIDCache channel_cache;
+  SilcIDCache server_cache;
+
+  /* Pending command queue for this connection */
+  SilcDList pending_commands;
+
+  /* Requested pings. */
+  SilcClientPing *ping;
+  SilcUInt32 ping_count;
+
+  /* Set away message */
+  SilcClientAway *away;
+
+  /* Re-key context */
+  SilcClientRekey rekey;
+
+  /* Authentication request context. */
+  SilcClientConnAuthRequest connauth;
+
+  /* File transmission sessions */
+  SilcDList ftp_sessions;
+  SilcUInt32 next_session_id;
+  SilcClientFtpSession active_session;
+
+  /* Requested Attributes */
+  SilcHashTable attrs;
+
+  /* Connection parameters */
+  SilcClientConnectionParams params;
 };
 
 /* Session resuming callback */
