@@ -1694,8 +1694,33 @@ SILC_CLIENT_CMD_FUNC(connect)
   silc_client_command_free(cmd);
 }
 
+/* RESTART command. Restarts the server. You must be server operator
+   to be able to use this command. */
+
 SILC_CLIENT_CMD_FUNC(restart)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  buffer = silc_command_payload_encode(SILC_COMMAND_RESTART, 0,
+				       NULL, NULL, NULL, 0);
+  silc_client_packet_send(cmd->client, cmd->conn->sock, SILC_PACKET_COMMAND, 
+			  NULL, 0, NULL, NULL, 
+			  buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
 }
 
 /* CLOSE command. Close server connection to the remote server */
@@ -1768,7 +1793,7 @@ SILC_CLIENT_CMD_FUNC(shutdown)
  out:
   silc_client_command_free(cmd);
 }
- 
+
 /* LEAVE command. Leaves a channel. Client removes itself from a channel. */
 
 SILC_CLIENT_CMD_FUNC(leave)

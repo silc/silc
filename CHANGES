@@ -1,3 +1,30 @@
+Thu Mar 29 15:26:25 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Implemented the RESTART command in the client.
+
+	* Added SILC_MESSAGE_FLAG_NOTICE message flag for informational
+	  notice type messages.  Added notice printing to the user
+	  interface.
+
+	* The channel keys are not re-generated if the channel's mode
+	  is PRIVKEY, ie private key on the channel exists.  Affected
+	  files silcd/server.c and silcd/command.c.
+
+	* Fixed a little bug in channel message delivery when channel
+	  private keys are set in the server.  Affected file is
+	  silcd/packet_send.c.
+
+	* Changed the setting on channel->on_channel = TRUE from the
+	  silc_client_save_channel_key to the JOIN command reply.  The
+	  key payload is not received if the private channel key is set.
+	  Affected file lib/silcclient/command_reply.c and the
+	  lib/silcclient/client_channel.c.
+
+	* When the CMODE_CHANGE notify is sent and the channel private
+	  key mode is removed the channel key must be re-generated in
+	  other cells as well.  Added this support for the router in the
+	  silcd/packet_receive.c.
+
 Wed Mar 28 23:55:54 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new local command ME to the client.  It is used to send

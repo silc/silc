@@ -608,7 +608,7 @@ SILC_CLIENT_LCMD_FUNC(key)
       silc_say(client, conn, "Channel %s private keys", 
 	       channel_entry->channel_name);
       silc_say(client, conn, 
-	       "  Cipher          Hmac            Key");
+	       "  Cipher           Hmac             Key");
       for (k = 0; k < keys_count; k++) {
 	memset(buf, 0, sizeof(buf));
 	strncat(buf, "  ", 2);
