@@ -1,3 +1,25 @@
+Sun Mar 17 10:24:50 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added preliminary support for signals in scheduler.  The
+	  signals we care about are now blocked always when the scheduler
+	  is locked.  This way we can synchronise the use of signal with
+	  scheduler.  It is guaranteed that when signal occurs the scheduler
+	  is not locked, and thus new tasks can be safely added to the
+	  scheduler.
+
+	  Renamed silc_schedule_wakeup_init and silc_schedule_wakeup_uninit
+	  to silc_schedule_internal_init and silc_schedule_internal_uninit.
+	  Added new platform specific routines
+	  silc_schedule_internal_signals_[un]block and 
+	  silc_schedule_internal_signal_[un]register.
+
+	  Added new functions to SILC Schedule API:
+	  silc_schedule_signal_[un]register.  Each signal that application
+	  is going to use should be registered to the scheduler.
+
+	  Affected files are lib/silcutil/silcschedule.[ch],
+	  lib/silcutil/*/silc*schedule.c.
+
 Sat Mar 16 22:39:23 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check for unauthenticated client and server in the

@@ -81,14 +81,12 @@ SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
 
 #endif /* SILC_THREADS */
 
-/* Initializes the wakeup of the scheduler. In multi-threaded environment
+/* Initializes the platform specific scheduler.  This for example initializes
+   the wakeup mechanism of the scheduler.  In multi-threaded environment
    the scheduler needs to be wakenup when tasks are added or removed from
-   the task queues. This will initialize the wakeup for the scheduler.
-   Any tasks that needs to be registered must be registered to the `queue'.
-   It is quaranteed that the scheduler will automatically free any
-   registered tasks in this queue. This is system specific routine. */
+   the task queues.  Returns context to the platform specific scheduler. */
 
-void *silc_schedule_wakeup_init(SilcSchedule schedule)
+void *silc_schedule_internal_init(SilcSchedule schedule)
 {
 #ifdef SILC_THREADS
   return NULL;
@@ -97,9 +95,9 @@ void *silc_schedule_wakeup_init(SilcSchedule schedule)
   return NULL;
 }
 
-/* Uninitializes the system specific wakeup. */
+/* Uninitializes the platform specific scheduler context. */
 
-void silc_schedule_wakeup_uninit(void *context)
+void silc_schedule_internal_uninit(void *context)
 {
 #ifdef SILC_THREADS
 
@@ -108,9 +106,38 @@ void silc_schedule_wakeup_uninit(void *context)
 
 /* Wakes up the scheduler */
 
-void silc_schedule_wakeup_internal(void *context)
+void silc_schedule_internal_wakeup(void *context)
 {
 #ifdef SILC_THREADS
 
 #endif
+}
+
+/* Register signal */
+void silc_schedule_internal_signal_register(void *context,
+					    SilcUInt32 signal)
+{
+
+}
+
+/* Unregister signal */
+
+void silc_schedule_internal_signal_unregister(void *context,
+					      SilcUInt32 signal)
+{
+
+}
+
+/* Block registered signals in scheduler. */
+
+void silc_schedule_internal_signals_block(void *context)
+{
+
+}
+
+/* Unblock registered signals in schedule. */
+
+void silc_schedule_internal_signals_unblock(void *context)
+{
+
 }

@@ -65,86 +65,120 @@ int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count,
   return ret;
 }
 
-#ifdef SILC_THREADS
-
-/* Internal wakeup context. */
+/* Internal context. */
 typedef struct {
   int wakeup_pipe[2];
   SilcTask wakeup_task;
-} *SilcUnixWakeup;
+  sigset_t signals;
+  sigset_t signals_blocked;
+} *SilcUnixScheduler;
+
+#ifdef SILC_THREADS
 
 SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
 {
-  SilcUnixWakeup wakeup = (SilcUnixWakeup)context;
+  SilcUnixScheduler internal = (SilcUnixScheduler)context;
   unsigned char c;
 
-  read(wakeup->wakeup_pipe[0], &c, 1);
+  read(internal->wakeup_pipe[0], &c, 1);
 }
 
 #endif /* SILC_THREADS */
 
-/* Initializes the wakeup of the scheduler. In multi-threaded environment
+/* Initializes the platform specific scheduler.  This for example initializes
+   the wakeup mechanism of the scheduler.  In multi-threaded environment
    the scheduler needs to be wakenup when tasks are added or removed from
-   the task queues. This will initialize the wakeup for the scheduler.
-   Any tasks that needs to be registered must be registered to the `queue'.
-   It is quaranteed that the scheduler will automatically free any
-   registered tasks in this queue. This is system specific routine. */
+   the task queues.  Returns context to the platform specific scheduler. */
 
-void *silc_schedule_wakeup_init(SilcSchedule schedule)
+void *silc_schedule_internal_init(SilcSchedule schedule)
 {
+  SilcUnixScheduler internal;
+
+  internal = silc_calloc(1, sizeof(*internal));
+  if (!internal)
+    return NULL;
+
+  sigemptyset(&internal->signals);
+
 #ifdef SILC_THREADS
-  SilcUnixWakeup wakeup;
-
-  wakeup = silc_calloc(1, sizeof(*wakeup));
-
-  if (pipe(wakeup->wakeup_pipe)) {
-    silc_free(wakeup);
+  if (pipe(internal->wakeup_pipe)) {
+    silc_free(internal);
     return NULL;
   }
 
-  wakeup->wakeup_task = 
-    silc_schedule_task_add(schedule, wakeup->wakeup_pipe[0],
-			   silc_schedule_wakeup_cb, wakeup,
+  internal->wakeup_task = 
+    silc_schedule_task_add(schedule, internal->wakeup_pipe[0],
+			   silc_schedule_wakeup_cb, internal,
 			   0, 0, SILC_TASK_FD, 
 			   SILC_TASK_PRI_NORMAL);
-  if (!wakeup->wakeup_task) {
-    close(wakeup->wakeup_pipe[0]);
-    close(wakeup->wakeup_pipe[1]);
-    silc_free(wakeup);
+  if (!internal->wakeup_task) {
+    close(internal->wakeup_pipe[0]);
+    close(internal->wakeup_pipe[1]);
+    silc_free(internal);
     return NULL;
   }
-
-  return (void *)wakeup;
 #endif
-  return NULL;
+
+  return (void *)internal;
 }
 
-/* Uninitializes the system specific wakeup. */
+/* Uninitializes the platform specific scheduler context. */
 
-void silc_schedule_wakeup_uninit(void *context)
+void silc_schedule_internal_uninit(void *context)
 {
-#ifdef SILC_THREADS
-  SilcUnixWakeup wakeup = (SilcUnixWakeup)context;
+  SilcUnixScheduler internal = (SilcUnixScheduler)context;
 
-  if (!wakeup)
+  if (!internal)
     return;
 
-  close(wakeup->wakeup_pipe[0]);
-  close(wakeup->wakeup_pipe[1]);
-  silc_free(wakeup);
+#ifdef SILC_THREADS
+  close(internal->wakeup_pipe[0]);
+  close(internal->wakeup_pipe[1]);
 #endif
+
+  silc_free(internal);
 }
 
 /* Wakes up the scheduler */
 
-void silc_schedule_wakeup_internal(void *context)
+void silc_schedule_internal_wakeup(void *context)
 {
 #ifdef SILC_THREADS
-  SilcUnixWakeup wakeup = (SilcUnixWakeup)context;
+  SilcUnixScheduler internal = (SilcUnixScheduler)context;
 
-  if (!wakeup)
+  if (!internal)
     return;
 
-  write(wakeup->wakeup_pipe[1], "!", 1);
+  write(internal->wakeup_pipe[1], "!", 1);
 #endif
+}
+
+void silc_schedule_internal_signal_register(void *context,
+					    SilcUInt32 signal)
+{
+  SilcUnixScheduler internal = (SilcUnixScheduler)context;
+  sigaddset(&internal->signals, signal);
+}
+
+void silc_schedule_internal_signal_unregister(void *context,
+					      SilcUInt32 signal)
+{
+  SilcUnixScheduler internal = (SilcUnixScheduler)context;
+  sigdelset(&internal->signals, signal);
+}
+
+/* Block registered signals in scheduler. */
+
+void silc_schedule_internal_signals_block(void *context)
+{
+  SilcUnixScheduler internal = (SilcUnixScheduler)context;
+  sigprocmask(SIG_BLOCK, &internal->signals, &internal->signals_blocked);
+}
+
+/* Unblock registered signals in schedule. */
+
+void silc_schedule_internal_signals_unblock(void *context)
+{
+  SilcUnixScheduler internal = (SilcUnixScheduler)context;
+  sigprocmask(SIG_SETMASK, &internal->signals_blocked, NULL);
 }

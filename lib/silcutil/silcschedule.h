@@ -569,4 +569,38 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
  ***/
 void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd);
 
+/****f* silcutil/SilcScheduleAPI/silc_schedule_signal_register
+ *
+ * SYNOPSIS
+ *
+ *    void silc_schedule_signal_register(SilcSchedule schedule, 
+ *                                       SilcUInt32 signal);
+ *
+ * DESCRIPTION
+ *
+ *    Register signal indicated by `signal' to the scheduler.  Application
+ *    should register all signals it is going to use to the scheduler.
+ *    To unregister a signal call silc_schedule_signal_unregister.  On
+ *    platform that does not support signals calling this function has not
+ *    effect.
+ *
+ ***/
+void silc_schedule_signal_register(SilcSchedule schedule, SilcUInt32 signal);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_signal_unregister
+ *
+ * SYNOPSIS
+ *
+ *    void silc_schedule_signal_unregister(SilcSchedule schedule, 
+ *                                       SilcUInt32 signal);
+ *
+ * DESCRIPTION
+ *
+ *    Unregister a signal indicated by `signal' from the scheduler.  On
+ *    platform that does not support signals calling this function has no
+ *    effect.
+ *
+ ***/
+void silc_schedule_signal_unregister(SilcSchedule schedule, SilcUInt32 signal);
+
 #endif

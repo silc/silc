@@ -25,26 +25,37 @@
 /* Forward declarations */
 typedef struct SilcTaskQueueStruct *SilcTaskQueue;
 
-/* System specific routines. Implemented under unix/ and win32/. */
+/* System specific routines. Implemented under unix/, win32/ and such. */
 
 /* System specific select(). Returns same values as normal select(). */
 int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, 
 		struct timeval *timeout);
 
-/* Initializes the wakeup of the scheduler. In multi-threaded environment
+/* Initializes the platform specific scheduler.  This for example initializes
+   the wakeup mechanism of the scheduler.  In multi-threaded environment
    the scheduler needs to be wakenup when tasks are added or removed from
-   the task queues. This will initialize the wakeup for the scheduler.
-   Any tasks that needs to be registered must be registered to the `queue'.
-   It is guaranteed that the scheduler will automatically free any
-   registered tasks in this queue. This is system specific routine. */
-void *silc_schedule_wakeup_init(SilcSchedule schedule);
+   the task queues.  Returns context to the platform specific scheduler. */
+void *silc_schedule_internal_init(SilcSchedule schedule);
 
-/* Uninitializes the system specific wakeup. */
-void silc_schedule_wakeup_uninit(void *context);
+/* Uninitializes the platform specific scheduler context. */
+void silc_schedule_internal_uninit(void *context);
 
 /* Wakes up the scheduler. This is platform specific routine */
-void silc_schedule_wakeup_internal(void *context);
+void silc_schedule_internal_wakeup(void *context);
 
+/* Register signal */
+void silc_schedule_internal_signal_register(void *context,
+					    SilcUInt32 signal);
+
+/* Unregister signal */
+void silc_schedule_internal_signal_unregister(void *context,
+					      SilcUInt32 signal);
+
+/* Block registered signals in scheduler. */
+void silc_schedule_internal_signals_block(void *context);
+
+/* Unblock registered signals in schedule. */
+void silc_schedule_internal_signals_unblock(void *context);
 
 /* Internal task management routines. */
 
@@ -65,14 +76,24 @@ static void silc_task_del_by_callback(SilcTaskQueue queue,
 static void silc_task_del_by_fd(SilcTaskQueue queue, SilcUInt32 fd);
 
 /* Returns the task queue by task type */
-#define SILC_SCHEDULE_GET_QUEUE(type)					\
-  (type == SILC_TASK_FD ? schedule->fd_queue :				\
-   type == SILC_TASK_TIMEOUT ? schedule->timeout_queue :		\
+#define SILC_SCHEDULE_GET_QUEUE(type)				\
+  (type == SILC_TASK_FD ? schedule->fd_queue :			\
+   type == SILC_TASK_TIMEOUT ? schedule->timeout_queue :	\
    schedule->generic_queue)
 
-/* Locks */
-#define SILC_SCHEDULE_LOCK(schedule) silc_mutex_lock(schedule->lock)
-#define SILC_SCHEDULE_UNLOCK(schedule) silc_mutex_unlock(schedule->lock)
+/* Locks. These also blocks signals that we care about and thus guarantee
+   that while we are in scheduler no signals can happen.  This way we can
+   synchronise signals with SILC Scheduler. */
+#define SILC_SCHEDULE_LOCK(schedule)				\
+do {								\
+  silc_schedule_internal_signals_block(schedule->internal);	\
+  silc_mutex_lock(schedule->lock);				\
+} while (0)
+#define SILC_SCHEDULE_UNLOCK(schedule)				\
+do {								\
+  silc_mutex_unlock(schedule->lock);				\
+  silc_schedule_internal_signals_unblock(schedule->internal);	\
+} while (0)
 
 /* SILC Task object. Represents one task in the scheduler. */
 struct SilcTaskStruct {
@@ -161,11 +182,9 @@ struct SilcTaskQueueStruct {
        File descriptor sets for select(). These are automatically managed
        by the scheduler and should not be touched otherwise.
 
-   void *wakeup
+   void *internal
 
-       System specific wakeup context. On multi-threaded environments the
-       scheduler needs to be wakenup (in the thread) when tasks are added
-       or removed. This is initialized by silc_schedule_wakeup_init.
+       System specific scheduler context.
 
    SILC_MUTEX_DEFINE(lock)
   
@@ -181,7 +200,7 @@ struct SilcScheduleStruct {
   SilcUInt32 last_fd;
   struct timeval *timeout;
   bool valid;
-  void *wakeup;
+  void *internal;
   SILC_MUTEX_DEFINE(lock);
   bool is_locked;
 };
@@ -217,8 +236,9 @@ SilcSchedule silc_schedule_init(int max_tasks)
   /* Allocate scheduler lock */
   silc_mutex_alloc(&schedule->lock);
 
-  /* Initialize the wakeup, for multi-threads support */
-  schedule->wakeup = silc_schedule_wakeup_init(schedule);
+  /* Initialize the platform specific scheduler. */
+  schedule->internal = silc_schedule_internal_init(schedule);
+  silc_schedule_signal_register(schedule, SIGALRM);
 
   return schedule;
 }
@@ -247,8 +267,8 @@ bool silc_schedule_uninit(SilcSchedule schedule)
 
   silc_free(schedule->fd_list);
 
-  /* Uninit the wakeup */
-  silc_schedule_wakeup_uninit(schedule->wakeup);
+  /* Uninit the platform specific scheduler. */
+  silc_schedule_internal_uninit(schedule->internal);
 
   silc_mutex_free(schedule->lock);
 
@@ -276,7 +296,9 @@ bool silc_schedule_reinit(SilcSchedule schedule, int max_tasks)
 void silc_schedule_stop(SilcSchedule schedule)
 {
   SILC_LOG_DEBUG(("Stopping scheduler"));
+  SILC_SCHEDULE_LOCK(schedule);
   schedule->valid = FALSE;
+  SILC_SCHEDULE_UNLOCK(schedule);
 }
 
 /* Executes nontimeout tasks. It then checks whether any of ther fd tasks
@@ -619,7 +641,7 @@ void silc_schedule_wakeup(SilcSchedule schedule)
 #ifdef SILC_THREADS
   SILC_LOG_DEBUG(("Wakeup scheduler"));
   SILC_SCHEDULE_LOCK(schedule);
-  silc_schedule_wakeup_internal(schedule->wakeup);
+  silc_schedule_internal_wakeup(schedule->internal);
   SILC_SCHEDULE_UNLOCK(schedule);
 #endif
 }
@@ -848,6 +870,20 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd)
     }
 
   SILC_SCHEDULE_UNLOCK(schedule);
+}
+
+/* Register a new signal */
+
+void silc_schedule_signal_register(SilcSchedule schedule, SilcUInt32 signal)
+{
+  silc_schedule_internal_signal_register(schedule->internal, signal);
+}
+
+/* Unregister a new signal */
+
+void silc_schedule_signal_unregister(SilcSchedule schedule, SilcUInt32 signal)
+{
+  silc_schedule_internal_signal_unregister(schedule->internal, signal);
 }
 
 /* Allocates a newtask task queue into the scheduler */

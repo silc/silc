@@ -145,6 +145,10 @@ least could be done.
  o SILC RNG does not implement random seed files, and they should be
    implemented.
 
+ o Add SILC scheduler's internal routines into a table of implementation
+   function pointers, that the generic code then takes as extern from
+   implementation.  These are the silc_schedule_internal_* routines.
+
  o Cipher optimizations (asm, that this) at least for i386 would be nice.
 
  o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.

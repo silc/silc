@@ -257,6 +257,9 @@ int main(int argc, char **argv)
   sigaction(SIGTERM, &sa, NULL);
   sa.sa_handler = stop_server;
   sigaction(SIGINT, &sa, NULL);
+  silc_schedule_signal_register(silcd->schedule, SIGHUP);
+  silc_schedule_signal_register(silcd->schedule, SIGTERM);
+  silc_schedule_signal_register(silcd->schedule, SIGINT);
 
   /* Before running the server, fork to background. */
   if (!foreground)
