@@ -1,3 +1,7 @@
+Mon May 21 09:51:11 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed silc_xxx_get_supported to not crash at some circumstances.
+
 Sun May 20 13:45:58 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* silc_idcache_purge_by_context deletes the entry now by context

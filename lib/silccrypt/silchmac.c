@@ -203,9 +203,8 @@ char *silc_hmac_get_supported()
       memcpy(list + len, ",", 1);
       len++;
     }
+    list[len - 1] = 0;
   }
-
-  list[len - 1] = 0;
 
   return list;
 }

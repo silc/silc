@@ -194,9 +194,8 @@ char *silc_pkcs_get_supported(void)
       memcpy(list + len, ",", 1);
       len++;
     }
+    list[len - 1] = 0;
   }
-
-  list[len - 1] = 0;
 
   return list;
 }
