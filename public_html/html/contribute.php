@@ -19,3 +19,19 @@ described in that document.
 <br />&nbsp;<br />
 There is anonymous CVS acccess for those who want to participate the
 development process. See the <a href="?page=cvs" class="normal">CVS page.</a>
+
+<br />&nbsp;<br />
+<b><big>Support</big></b>
+<br />&nbsp;<br />
+If you want to have a SILC Project's banner on your web site and support us
+this way, you can use the following banner or find some more at:  
+<a href="http://silcnet.org/salo/img/silc-banners.html" class="normal">
+http://silcnet.org/salo/img/silc-banners.html</a>.
+<br />&nbsp;<br />
+<table width="100%">
+ <tr>
+  <td width="100%" align="center">
+   <img src="/img/silc-banner.gif" alt="SILC Secure Internet Live Conferencing" width="468" height="60">
+  </td>
+ </tr>
+</table>

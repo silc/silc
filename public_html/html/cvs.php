@@ -35,7 +35,7 @@ The repository can be checked out by using anonymous pserver with CVS.
 <br />&nbsp;<br />
 For those who are using sh/ksh/bash/zsh the check out is done as follows:
 <br />&nbsp;<br />
-<tt class="blue">
+<tt class="highlight">
 export CVSROOT=:pserver:<?php printf("%s@%s:%s", $CVS_User, $CVS_Site, $CVS_Root); ?>
 <br />&nbsp;<br />
 cvs login<br />
@@ -46,7 +46,7 @@ cvs logout<br />
 <br />&nbsp;<br />
 For those who are using csh/tcsh the check out is done as follows:
 <br />&nbsp;<br />
-<tt class="blue">
+<tt class="highlight">
 setenv CVSROOT :pserver:<?php printf("%s@%s:%s", $CVS_User, $CVS_Site, $CVS_Root); ?>
 <br />&nbsp;<br />
 cvs login<br />
@@ -57,7 +57,7 @@ cvs logout<br />
 If you don't want to set $CVSROOT environment variable you can set the
 path to the cvs as command line option:
 <br />&nbsp;<br />
-<tt class="blue">
+<tt class="highlight">
 cvs -d:pserver:<?php printf("%s@%s:%s", $CVS_User, $CVS_Site, $CVS_Root); ?> login
 <br />
 cvs -d:pserver:<?php printf("%s@%s:%s", $CVS_User, $CVS_Site, $CVS_Root); ?> co silc
@@ -89,7 +89,7 @@ distribution.
 <br />&nbsp;<br />
 Following directories currently exist in SILC source tree.
 <br />&nbsp;<br />
-<tt class="blue">
+<tt class="highlight">
 doc/
 <br />&nbsp;<br />
 &nbsp; Includes all the SILC documentation. Few parts of the documentation<br />
@@ -128,7 +128,7 @@ silcd/
 After checkout from CVS the SILC source tree needs to be prepared for
 configuration and compilation. To compile the source tree, type:
 <br />&nbsp;<br />
-<tt class="blue">
+<tt class="highlight">
 ./prepare<br />
 ./configure --enable-debug<br />
 make<br />&nbsp;<br />
@@ -150,10 +150,19 @@ scripts. Warning is due here:  The debugging produced by both cilent
 and server is very huge, thus it is common to test the programs as
 follows:
 <br />&nbsp;<br />
-<tt class="blue">
-./silc -d -f configfile 2&gt;log<br />
-./silcd -d -f configfile 2&gt;log
+<tt class="highlight">
+./silc -d "*" -f configfile 2&gt;log<br />
+./silcd -d "*" -f configfile 2&gt;log
 </tt>
+
+<br />&nbsp;<br />
+The -d option enables the debug printing.  The argument for the -d option
+is a string that is used to match the output debug.  The example "*" will
+match for everything, and all debugs will be printed.  If you want to
+limit the debugs you want to printout you can give for example a string
+like "*server*,*rng*" to match all functions, and filenames that has
+"server" or "rng" string in them.  Others will not be printed out.  You 
+can freely define regural expressions as debug string.
 
 <br />&nbsp;<br />
 
@@ -162,7 +171,7 @@ follows:
 To entirely clear the source tree to the state after it was checked out
 from CVS, type:
 <br />&nbsp;<br />
-<tt class="blue">
+<tt class="highlight">
 ./prepare-clean
 </tt>
 <br />&nbsp;<br />

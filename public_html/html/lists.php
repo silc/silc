@@ -51,3 +51,41 @@ You can also use the following link to do the unsubscribing if you want:
 <br />
 <a href="http://lists.sourceforge.net/lists/listinfo/silc-devel" class="normal">
 unsubscribe from silc-devel</a>
+<br />&nbsp;<br />
+
+<b>Basic instructions for submitting patches</b>
+<br />&nbsp;<br />
+
+<table>
+<tr><td valign="top"> - </td><td>
+use the unified output format for the diff (diff -u)
+</td></tr>
+<tr><td valign="top"> - </td><td>
+use diff, not cvs diff
+</td></tr>
+<tr><td valign="top"> - </td><td>
+send the patch to the mailing list, and add those people that should know
+about it on CC:
+</td></tr>
+<tr><td valign="top"> - </td><td>
+submit ready patches. if they are not ready then sending them to
+people who are involved in the development is preferred. the patch might face
+several round trips so sending patches which are ready is preffered
+</td></tr>
+<tr><td valign="top"> - </td><td>
+include the patch in the body of the email or attach it
+</td></tr>
+<tr><td valign="top"> - </td><td>
+send separate patches for every bugfix or feature
+</td></tr>
+<tr><td valign="top"> - </td><td>
+if you think that your work is benefical to the development of the
+SILC and would like to be listed in the CREDITS file in SILC packages, you
+can submit patches for the CREDITS file too. Nobody will be added there
+without a patch, this way those who don't want to see their name there won't
+get there
+</td></tr>
+<tr><td valign="top"> - </td><td>
+do not submit bugs ;)
+</td></tr>
+</table>

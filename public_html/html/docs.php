@@ -58,10 +58,6 @@ SILC Protocol is documented and four Internet Drafts exist. These
 Internet Drafts are also available from
 <a href="http://www.ietf.org/" class="normal">IETF</a>.
 <br />&nbsp;<br />
-<b>NOTE Mon Nov  5 18:53:56 EET 2001:</b> New versions of the protocol 
-specifications are almost ready  for submission to the IETF. You can 
-preview the upcoming versions <a href="docs/drafts/">here</a>.
-<br />&nbsp;<br />
 
 <b>Secure Internet Live Conferencing (SILC), Protocol Specification</b>
 <br />&nbsp;<br />
@@ -76,8 +72,8 @@ Abstract
    SILC Packet Protocol [SILC2], SILC Key Exchange and Authentication
    Protocols [SILC3] and SILC Commands [SILC4].
 <br />&nbsp;<br />
-<a href="docs/draft-riikonen-silc-spec-03.txt" class="normal">
-draft-riikonen-silc-spec-03.txt</a>
+<a href="docs/draft-riikonen-silc-spec-04.txt" class="normal">
+draft-riikonen-silc-spec-04.txt</a>
 <br />&nbsp;<br />&nbsp;<br />
 
 <b>SILC Packet Protocol</b>
@@ -91,8 +87,8 @@ Abstract
    the contents of the packets. It provides secure binary packet protocol
    that assures that the content of the packets is secured and authenticated.
 <br />&nbsp;<br />
-<a href="docs/draft-riikonen-silc-pp-03.txt" class="normal">
-draft-riikonen-silc-pp-03.txt</a>
+<a href="docs/draft-riikonen-silc-pp-04.txt" class="normal">
+draft-riikonen-silc-pp-04.txt</a>
 <br />&nbsp;<br />&nbsp;<br />
 
 <b>SILC Key Exchange and Authentication Protocols</b>
@@ -115,8 +111,8 @@ Abstract
    can be used to authenticate the user with, for example, passphrase  
    (pre-shared-secret) or public key (and certificate).
 <br />&nbsp;<br />
-<a href="docs/draft-riikonen-silc-ke-auth-03.txt" class="normal">
-draft-riikonen-silc-ke-auth-03.txt</a>
+<a href="docs/draft-riikonen-silc-ke-auth-04.txt" class="normal">
+draft-riikonen-silc-ke-auth-04.txt</a>
 <br />&nbsp;<br />&nbsp;<br />
 
 <b>SILC Commands</b>
@@ -131,5 +127,5 @@ Abstract
    also SILC servers may use the commands.  This memo specifies detailed
    command messages and command reply messages.
 <br />&nbsp;<br />
-<a href="docs/draft-riikonen-silc-commands-01.txt" class="normal">
-draft-riikonen-silc-commands-01.txt</a>
+<a href="docs/draft-riikonen-silc-commands-02.txt" class="normal">
+draft-riikonen-silc-commands-02.txt</a>

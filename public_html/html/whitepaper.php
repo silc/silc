@@ -720,16 +720,16 @@ Drafts are available from the following sources but also from the
 <a href="http://www.ietf.org/" class="normal">IETF website</a>.
 <br />&nbsp;<br />
 
-- <a href="docs/draft-riikonen-silc-spec-03.txt" class="normal">
+- <a href="docs/draft-riikonen-silc-spec-04.txt" class="normal">
 Secure Internet Live Conferencing (SILC), Protocol Specification</a>
 <br />
-- <a href="docs/draft-riikonen-silc-pp-03.txt" class="normal">
+- <a href="docs/draft-riikonen-silc-pp-04.txt" class="normal">
 SILC Packet Protocol</a>
 <br />
-- <a href="docs/draft-riikonen-silc-ke-auth-03.txt" class="normal">
+- <a href="docs/draft-riikonen-silc-ke-auth-04.txt" class="normal">
 SILC Key Exchange and Authentication Protocols</a>
 <br />
-- <a href="docs/draft-riikonen-silc-commands-01.txt" class="normal">
+- <a href="docs/draft-riikonen-silc-commands-02.txt" class="normal">
 SILC Commands</a>
 <br />&nbsp;<br />
 

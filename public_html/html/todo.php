@@ -1,5 +1,5 @@
 &nbsp;<br />
-<tt class="black">
+<tt class="normal">
 <?php
 
 if (Is_Readable("txt/todo.txt")) {
