@@ -1066,7 +1066,7 @@ void silc_server_send_error(SilcServer server,
 
   memset(buf, 0, sizeof(buf));
   va_start(ap, fmt);
-  vsprintf(buf, fmt, ap);
+  vsnprintf(buf, sizeof(buf) - 1, fmt, ap);
   va_end(ap);
 
   silc_server_packet_send(server, sock, SILC_PACKET_ERROR, 0, 

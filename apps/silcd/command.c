@@ -1124,12 +1124,15 @@ SILC_SERVER_CMD_FUNC(invite)
     }
 
     memset(invite, 0, sizeof(invite));
-    strncat(invite, dest->nickname, strlen(dest->nickname));
-    strncat(invite, "!", 1);
-    strncat(invite, dest->username, strlen(dest->username));
+    silc_strncat(invite, sizeof(invite),
+		 dest->nickname, strlen(dest->nickname));
+    silc_strncat(invite, sizeof(invite), "!", 1);
+    silc_strncat(invite, sizeof(invite),
+		 dest->username, strlen(dest->username));
     if (!strchr(dest->username, '@')) {
-      strncat(invite, "@", 1);
-      strncat(invite, cmd->sock->hostname, strlen(cmd->sock->hostname));
+      silc_strncat(invite, sizeof(invite), "@", 1);
+      silc_strncat(invite, sizeof(invite), cmd->sock->hostname,
+		   strlen(cmd->sock->hostname));
     }
 
     len = strlen(invite);
@@ -1785,24 +1788,31 @@ static void silc_server_command_join_channel(SilcServer server,
   if (!umode) {
     memset(check, 0, sizeof(check));
     memset(check2, 0, sizeof(check2));
-    strncat(check, client->nickname, strlen(client->nickname));
-    strncat(check, "!", 1);
-    strncat(check, client->username, strlen(client->username));
+    silc_strncat(check, sizeof(check),
+		 client->nickname, strlen(client->nickname));
+    silc_strncat(check, sizeof(check), "!", 1);
+    silc_strncat(check, sizeof(check),
+		 client->username, strlen(client->username));
     if (!strchr(client->username, '@')) {
-      strncat(check, "@", 1);
-      strncat(check, cmd->sock->hostname, strlen(cmd->sock->hostname));
+      silc_strncat(check, sizeof(check), "@", 1);
+      silc_strncat(check, sizeof(check),
+		   cmd->sock->hostname, strlen(cmd->sock->hostname));
     }
 
-    strncat(check2, client->nickname, strlen(client->nickname));
+    silc_strncat(check2, sizeof(check2),
+		 client->nickname, strlen(client->nickname));
     if (!strchr(client->nickname, '@')) {
-      strncat(check2, "@", 1);
-      strncat(check2, server->server_name, strlen(server->server_name));
+      silc_strncat(check2, sizeof(check2), "@", 1);
+      silc_strncat(check2, sizeof(check2),
+		   server->server_name, strlen(server->server_name));
     }
-    strncat(check2, "!", 1);
-    strncat(check2, client->username, strlen(client->username));
+    silc_strncat(check2, sizeof(check2), "!", 1);
+    silc_strncat(check2, sizeof(check2),
+		 client->username, strlen(client->username));
     if (!strchr(client->username, '@')) {
-      strncat(check2, "@", 1);
-      strncat(check2, cmd->sock->hostname, strlen(cmd->sock->hostname));
+      silc_strncat(check2, sizeof(check2), "@", 1);
+      silc_strncat(check2, sizeof(check2),
+		   cmd->sock->hostname, strlen(cmd->sock->hostname));
     }
     
     /* Check invite list if channel is invite-only channel */

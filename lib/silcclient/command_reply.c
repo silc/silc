@@ -1143,7 +1143,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(motd)
     while(cp[i] != 0) {
       if (cp[i++] == '\n') {
 	memset(line, 0, sizeof(line));
-	strncat(line, cp, i - 1);
+	silc_strncat(line, sizeof(line), cp, i - 1);
 	cp += i;
 	
 	if (i == 2)

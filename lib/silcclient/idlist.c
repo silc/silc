@@ -158,6 +158,7 @@ void silc_client_get_clients(SilcClient client,
 			     void *context)
 {
   GetClientInternal i;
+  int len;
   char *userhost;
 
   if (!nickname)
@@ -172,13 +173,13 @@ void silc_client_get_clients(SilcClient client,
   i->context = context;
 
   if (nickname && server) {
-    userhost = silc_calloc(strlen(nickname) + strlen(server) + 2,
-			   sizeof(*userhost));
-    strncat(userhost, nickname, strlen(nickname));
-    strncat(userhost, "@", 1);
-    strncat(userhost, server, strlen(server));
+    len = strlen(nickname) + strlen(server) + 3;
+    userhost = silc_calloc(len, sizeof(*userhost));
+    silc_strncat(userhost, len, nickname, strlen(nickname));
+    silc_strncat(userhost, len, "@", 1);
+    silc_strncat(userhost, len, server, strlen(server));
   } else {
-    userhost = strdup(nickname);
+    userhost = silc_memdup(nickname, strlen(nickname));
   }
 
   /* Register our own command reply for this command */

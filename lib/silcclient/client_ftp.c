@@ -827,9 +827,9 @@ silc_client_file_send(SilcClient client,
   session->server = TRUE;
   silc_dlist_add(conn->ftp_sessions, session);
 
-  path = silc_calloc(strlen(filepath) + 8, sizeof(*path));
-  strcat(path, "file://");
-  strncat(path, filepath, strlen(filepath));
+  path = silc_calloc(strlen(filepath) + 9, sizeof(*path));
+  silc_strncat(path, strlen(filepath) + 9, "file://", 7);
+  silc_strncat(path, strlen(filepath) + 9, filepath, strlen(filepath));
 
   /* Allocate memory filesystem and put the file to it */
   if (strrchr(path, '/'))
