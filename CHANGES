@@ -1,3 +1,9 @@
+Thu Mar 31 08:52:06 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for UTF-8 nicknames, channel names and
+	  server names in client library.  Affected files in
+	  lib/silcclient/.
+
 Wed Mar 30 22:16:35 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_utf8_str[n]casecmp into lib/silcutil/silcutf8.[ch].

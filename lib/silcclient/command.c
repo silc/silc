@@ -547,10 +547,8 @@ SILC_CLIENT_CMD_FUNC(list)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
-  SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
   SilcBuffer buffer, idp = NULL;
-  char *name;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -559,14 +557,10 @@ SILC_CLIENT_CMD_FUNC(list)
   }
 
   if (cmd->argc == 2) {
-    name = cmd->argv[1];
-
     /* Get the Channel ID of the channel */
-    if (silc_idcache_find_by_name_one(conn->internal->channel_cache,
-				      name, &id_cache)) {
-      channel = (SilcChannelEntry)id_cache->context;
-      idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
-    }
+    channel = silc_client_get_channel(cmd->client, cmd->conn, cmd->argv[1]);
+    if (channel)
+      idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
   }
 
   if (!idp)
@@ -597,7 +591,6 @@ SILC_CLIENT_CMD_FUNC(topic)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
-  SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
   SilcBuffer buffer, idp;
   char *name;
@@ -632,16 +625,14 @@ SILC_CLIENT_CMD_FUNC(topic)
   }
 
   /* Get the Channel ID of the channel */
-  if (!silc_idcache_find_by_name_one(conn->internal->channel_cache,
-				     name, &id_cache)) {
+  channel = silc_client_get_channel(cmd->client, conn, name);
+  if (!channel) {
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
     goto out;
   }
 
-  channel = (SilcChannelEntry)id_cache->context;
-
   /* Send TOPIC command to the server */
-  idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
+  idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
   if (cmd->argc > 2)
     buffer = silc_command_payload_encode_va(SILC_COMMAND_TOPIC,
 					    ++conn->cmd_ident, 2,
@@ -1971,7 +1962,6 @@ SILC_CLIENT_CMD_FUNC(kick)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClient client = cmd->client;
   SilcClientConnection conn = cmd->conn;
-  SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
   SilcBuffer buffer, idp, idp2;
   SilcClientEntry target;
@@ -2007,13 +1997,11 @@ SILC_CLIENT_CMD_FUNC(kick)
   }
 
   /* Get the Channel ID of the channel */
-  if (!silc_idcache_find_by_name_one(conn->internal->channel_cache,
-				     name, &id_cache)) {
+  channel = silc_client_get_channel(cmd->client, conn, name);
+  if (!channel) {
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
     goto out;
   }
-
-  channel = (SilcChannelEntry)id_cache->context;
 
   /* Parse the typed nickname. */
   if (client->internal->params->nickname_parse)
@@ -2032,7 +2020,7 @@ SILC_CLIENT_CMD_FUNC(kick)
   }
 
   /* Send KICK command to the server */
-  idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
+  idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
   idp2 = silc_id_payload_encode(target->id, SILC_ID_CLIENT);
   if (cmd->argc == 3)
     buffer = silc_command_payload_encode_va(SILC_COMMAND_KICK,

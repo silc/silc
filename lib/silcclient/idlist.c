@@ -48,18 +48,28 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
   SilcClientEntry entry, *clients;
   int i = 0;
   bool found = FALSE;
+  char *nicknamec;
 
   assert(client && conn);
   if (!nickname)
     return NULL;
 
-  /* Find ID from cache */
-  if (!silc_idcache_find_by_name(conn->internal->client_cache,
-				 (char *)nickname, &list))
+  /* Normalize nickname for search */
+  nicknamec = silc_identifier_check(nickname, strlen(nickname),
+				    SILC_STRING_UTF8, 128, NULL);
+  if (!nicknamec)
     return NULL;
+
+  /* Find ID from cache */
+  if (!silc_idcache_find_by_name(conn->internal->client_cache, nicknamec,
+				 &list)) {
+    silc_free(nicknamec);
+    return NULL;
+  }
 
   if (!silc_idcache_list_count(list)) {
     silc_idcache_list_free(list);
+    silc_free(nicknamec);
     return NULL;
   }
 
@@ -94,6 +104,8 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 	break;
     }
   }
+
+  silc_free(nicknamec);
 
   if (list)
     silc_idcache_list_free(list);
@@ -381,12 +393,19 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
   SilcIDCacheEntry id_cache;
   SilcIDCacheList list = NULL;
   SilcClientEntry entry = NULL;
+  char *nicknamec;
 
   SILC_LOG_DEBUG(("Start"));
 
+  /* Normalize nickname for search */
+  nicknamec = silc_identifier_check(nickname, strlen(nickname),
+				    SILC_STRING_UTF8, 128, NULL);
+  if (!nicknamec)
+    return NULL;
+
   /* Find ID from cache */
   if (!silc_idcache_find_by_name(conn->internal->client_cache,
-				 (char *)nickname, &list)) {
+				 nicknamec, &list)) {
   identify:
 
     if (query) {
@@ -405,8 +424,11 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
       if (list)
 	silc_idcache_list_free(list);
 
+      silc_free(nicknamec);
       return NULL;
     }
+
+    silc_free(nicknamec);
     return NULL;
   }
 
@@ -439,6 +461,8 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
     if (!entry)
       goto identify;
   }
+
+  silc_free(nicknamec);
 
   if (list)
     silc_idcache_list_free(list);
@@ -954,12 +978,30 @@ silc_client_add_client(SilcClient client, SilcClientConnection conn,
   client_entry->channels = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
 						 NULL, NULL, NULL, TRUE);
 
+  /* Normalize nickname */
+  if (client_entry->nickname) {
+    silc_free(nick);
+    nick = silc_identifier_check(client_entry->nickname,
+				 strlen(client_entry->nickname),
+				 SILC_STRING_UTF8, 128, NULL);
+    if (!nick) {
+      silc_free(client_entry->nickname);
+      silc_free(client_entry->username);
+      silc_free(client_entry->hostname);
+      silc_free(client_entry->server);
+      silc_hash_table_free(client_entry->channels);
+      silc_free(client_entry);
+      return NULL;
+    }
+  }
+
   /* Format the nickname */
   silc_client_nickname_format(client, conn, client_entry);
 
   /* Add client to cache, the non-formatted nickname is saved to cache */
   if (!silc_idcache_add(conn->internal->client_cache, nick, client_entry->id,
 			(void *)client_entry, 0, NULL)) {
+    silc_free(nick);
     silc_free(client_entry->nickname);
     silc_free(client_entry->username);
     silc_free(client_entry->hostname);
@@ -999,6 +1041,16 @@ void silc_client_update_client(SilcClient client,
   if (!client_entry->nickname && nickname) {
     silc_parse_userfqdn(nickname, &nick, &client_entry->server);
     client_entry->nickname = strdup(nick);
+
+    /* Normalize nickname */
+    silc_free(nick);
+    nick = silc_identifier_check(client_entry->nickname,
+				 strlen(client_entry->nickname),
+				 SILC_STRING_UTF8, 128, NULL);
+    if (!nick)
+      return;
+
+    /* Format nickname */
     silc_client_nickname_format(client, conn, client_entry);
   }
   client_entry->mode = mode;
@@ -1068,6 +1120,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
 					 SilcChannelID *channel_id)
 {
   SilcChannelEntry channel;
+  char *channel_namec;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1078,9 +1131,20 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   channel->user_list = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
 					     NULL, NULL, NULL, TRUE);
 
+  /* Normalize channel name */
+  channel_namec = silc_identifier_check(channel_name, strlen(channel_name),
+					SILC_STRING_UTF8, 256, NULL);
+  if (!channel_namec) {
+    silc_free(channel->channel_name);
+    silc_hash_table_free(channel->user_list);
+    silc_free(channel);
+    return NULL;
+  }
+
   /* Put it to the ID cache */
-  if (!silc_idcache_add(conn->internal->channel_cache, channel->channel_name,
+  if (!silc_idcache_add(conn->internal->channel_cache, channel_namec,
 			(void *)channel->id, (void *)channel, 0, NULL)) {
+    silc_free(channel_namec);
     silc_free(channel->channel_name);
     silc_hash_table_free(channel->user_list);
     silc_free(channel);
@@ -1161,6 +1225,8 @@ bool silc_client_replace_channel_id(SilcClient client,
 				    SilcChannelEntry channel,
 				    SilcChannelID *new_id)
 {
+  char *channel_namec;
+
   if (!new_id)
     return FALSE;
 
@@ -1172,8 +1238,15 @@ bool silc_client_replace_channel_id(SilcClient client,
   silc_idcache_del_by_id(conn->internal->channel_cache, channel->id);
   silc_free(channel->id);
   channel->id = new_id;
-  return silc_idcache_add(conn->internal->channel_cache,
-			  channel->channel_name,
+
+  /* Normalize channel name */
+  channel_namec = silc_identifier_check(channel->channel_name,
+					strlen(channel->channel_name),
+					SILC_STRING_UTF8, 256, NULL);
+  if (!channel_namec)
+    return FALSE;
+
+  return silc_idcache_add(conn->internal->channel_cache, channel_namec,
 			  (void *)channel->id, (void *)channel, 0, NULL);
 
 }
@@ -1195,13 +1268,23 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!silc_idcache_find_by_name_one(conn->internal->channel_cache, channel,
-				     &id_cache))
+  /* Normalize name for search */
+  channel = silc_identifier_check(channel, strlen(channel), SILC_STRING_UTF8,
+				  256, NULL);
+  if (!channel)
     return NULL;
+
+  if (!silc_idcache_find_by_name_one(conn->internal->channel_cache, channel,
+				     &id_cache)) {
+    silc_free(channel);
+    return NULL;
+  }
 
   entry = (SilcChannelEntry)id_cache->context;
 
   SILC_LOG_DEBUG(("Found"));
+
+  silc_free(channel);
 
   return entry;
 }
@@ -1373,11 +1456,21 @@ SilcServerEntry silc_client_get_server(SilcClient client,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!silc_idcache_find_by_name_one(conn->internal->server_cache,
-				     server_name, &id_cache))
+  /* Normalize server name for search */
+  server_name = silc_identifier_check(server_name, strlen(server_name),
+				      SILC_STRING_UTF8, 256, NULL);
+  if (!server_name)
     return NULL;
 
+  if (!silc_idcache_find_by_name_one(conn->internal->server_cache,
+				     server_name, &id_cache)) {
+    silc_free(server_name);
+    return NULL;
+  }
+
   entry = (SilcServerEntry)id_cache->context;
+
+  silc_free(server_name);
 
   return entry;
 }
@@ -1415,6 +1508,7 @@ SilcServerEntry silc_client_add_server(SilcClient client,
 				       SilcServerID *server_id)
 {
   SilcServerEntry server_entry;
+  char *server_namec = NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1428,10 +1522,23 @@ SilcServerEntry silc_client_add_server(SilcClient client,
   if (server_info)
     server_entry->server_info = strdup(server_info);
 
+  /* Normalize server name */
+  if (server_name) {
+    server_namec = silc_identifier_check(server_name, strlen(server_name),
+					 SILC_STRING_UTF8, 256, NULL);
+    if (!server_namec) {
+      silc_free(server_entry->server_id);
+      silc_free(server_entry->server_name);
+      silc_free(server_entry->server_info);
+      silc_free(server_entry);
+      return NULL;
+    }
+  }
+
   /* Add server to cache */
-  if (!silc_idcache_add(conn->internal->server_cache,
-			server_entry->server_name,
+  if (!silc_idcache_add(conn->internal->server_cache, server_namec,
 			server_entry->server_id, server_entry, 0, NULL)) {
+    silc_free(server_namec);
     silc_free(server_entry->server_id);
     silc_free(server_entry->server_name);
     silc_free(server_entry->server_info);
@@ -1463,6 +1570,8 @@ void silc_client_update_server(SilcClient client,
 			       const char *server_name,
 			       const char *server_info)
 {
+  char *server_namec = NULL;
+
   SILC_LOG_DEBUG(("Start"));
 
   if (server_name &&
@@ -1472,9 +1581,18 @@ void silc_client_update_server(SilcClient client,
     silc_idcache_del_by_context(conn->internal->server_cache, server_entry);
     silc_free(server_entry->server_name);
     server_entry->server_name = strdup(server_name);
-    silc_idcache_add(conn->internal->server_cache, server_entry->server_name,
-		     server_entry->server_id,
-		     server_entry, 0, NULL);
+
+    /* Normalize server name */
+    if (server_name) {
+      server_namec = silc_identifier_check(server_name, strlen(server_name),
+					   SILC_STRING_UTF8, 256, NULL);
+      if (!server_namec)
+	return;
+
+      silc_idcache_add(conn->internal->server_cache, server_namec,
+		       server_entry->server_id,
+		       server_entry, 0, NULL);
+    }
   }
 
   if (server_info &&

@@ -227,12 +227,6 @@ void silc_client_run_one(SilcClient client)
   silc_schedule_one(client->schedule, 0);
 }
 
-static void silc_client_entry_destructor(SilcIDCache cache,
-					 SilcIDCacheEntry entry)
-{
-  silc_free(entry->name);
-}
-
 /* Allocates and adds new connection to the client. This adds the allocated
    connection to the connection table and returns a pointer to it. A client
    can have multiple connections to multiple servers. Every connection must
@@ -260,12 +254,11 @@ silc_client_add_connection(SilcClient client,
   conn->remote_port = port;
   conn->context = context;
   conn->internal->client_cache =
-    silc_idcache_alloc(0, SILC_ID_CLIENT, silc_client_entry_destructor,
-		       FALSE, FALSE);
+    silc_idcache_alloc(0, SILC_ID_CLIENT, NULL, FALSE, TRUE);
   conn->internal->channel_cache = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL,
-						     FALSE, FALSE);
+						     FALSE, TRUE);
   conn->internal->server_cache = silc_idcache_alloc(0, SILC_ID_SERVER, NULL,
-						    FALSE, FALSE);
+						    FALSE, TRUE);
   conn->internal->pending_commands = silc_dlist_init();
   conn->internal->ftp_sessions = silc_dlist_init();
 
@@ -1745,6 +1738,7 @@ void silc_client_receive_new_id(SilcClient client,
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   int connecting = FALSE;
   SilcClientID *client_id = silc_id_payload_get_id(idp);
+  char *nickname;
 
   if (!conn->local_entry)
     connecting = TRUE;
@@ -1787,9 +1781,14 @@ void silc_client_receive_new_id(SilcClient client,
 							NULL, NULL, NULL,
 							TRUE);
 
-  /* Put it to the ID cache */
-  silc_idcache_add(conn->internal->client_cache,
-		   strdup(conn->nickname), conn->local_id,
+  /* Normalize nickname */
+  nickname = silc_identifier_check(conn->nickname, strlen(conn->nickname),
+				   SILC_STRING_UTF8, 128, NULL);
+  if (!nickname)
+    return;
+
+    /* Put it to the ID cache */
+  silc_idcache_add(conn->internal->client_cache, nickname, conn->local_id,
 		   (void *)conn->local_entry, 0, NULL);
 
   if (connecting) {

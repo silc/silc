@@ -634,11 +634,18 @@ void silc_client_notify_by_server(SilcClient client,
     if (SILC_ID_COMPARE_HASH(client_entry->id, client_id) &&
 	silc_utf8_strcasecmp(tmp, client_entry->nickname)) {
       /* Nickname didn't change.  Update only Client ID. */
+
+      /* Normalize nickname */
+      tmp = silc_identifier_check(tmp, strlen(tmp),
+				  SILC_STRING_UTF8, 128, NULL);
+      if (!tmp)
+	goto out;
+
       silc_idcache_del_by_context(conn->internal->client_cache,
 				  client_entry);
       silc_free(client_entry->id);
       client_entry->id = silc_id_dup(client_id, SILC_ID_CLIENT);
-      silc_idcache_add(conn->internal->client_cache, strdup(tmp),
+      silc_idcache_add(conn->internal->client_cache, tmp,
 		       client_entry->id, client_entry, 0, NULL);
 
       /* Notify application */

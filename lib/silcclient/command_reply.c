@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -580,9 +580,19 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
       silc_free(conn->nickname);
     conn->nickname = strdup(tmp);
     conn->local_entry->nickname = conn->nickname;
+
+    /* Normalize nickname */
+    tmp = silc_identifier_check(conn->nickname, strlen(conn->nickname),
+				SILC_STRING_UTF8, 128, NULL);
+    if (!tmp) {
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_BAD_NICKNAME);
+      goto out;
+    }
+
     silc_client_nickname_format(cmd->client, conn, conn->local_entry);
-    silc_idcache_add(conn->internal->client_cache, strdup(tmp),
-                     conn->local_entry->id, conn->local_entry, 0, NULL);
+
+    silc_idcache_add(conn->internal->client_cache, tmp,
+		     conn->local_entry->id, conn->local_entry, 0, NULL);
   }
 
   /* Notify application */
