@@ -84,15 +84,17 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
     curtime = GetTickCount();
     while (timer) {
       WaitMessage();
-      KillTimer(NULL, timer);
 
       while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-	if (msg.message == WM_TIMER)
+	if (msg.message == WM_TIMER) {
+	  KillTimer(NULL, timer);
 	  return 0;
+	}
 	TranslateMessage(&msg); 
 	DispatchMessage(&msg); 
       }
 
+      KillTimer(NULL, timer);
       if (timeo != INFINITE) {
 	timeo -= GetTickCount() - curtime;
 	if (timeo < 0)

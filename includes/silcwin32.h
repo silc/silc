@@ -24,6 +24,7 @@
 
 #include <windows.h>
 #include <io.h>
+#include <process.h>
 
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
@@ -32,4 +33,3 @@
 #define inline __inline
 
 #endif
-
