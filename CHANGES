@@ -13,6 +13,8 @@ Sun Mar 27 19:02:48 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 	  GNU Libidn's stringprep, for now, so it is required now to
 	  compile SILC sources.  Added lib/silcutil/silcstringprep.[ch].
 
+	* Added checking for GNU Libidn and --with-libidn to configure.
+
 Wed Mar 23 11:20:33 CET 2005  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* If the passphrases entered do not match while generating a new key,
