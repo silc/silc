@@ -721,6 +721,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
   SilcChannelID *channel_id;
   unsigned char *tmp;
   SilcUInt32 len;
+  SilcBufferStruct buf;
 
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
@@ -748,9 +749,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
 
   /* Get the invite list */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
-
+  if (tmp)
+    silc_buffer_set(&buf, tmp, len);
+  
   /* Notify application */
-  COMMAND_REPLY((SILC_ARGS, channel, tmp));
+  COMMAND_REPLY((SILC_ARGS, channel, tmp ? &buf : NULL));
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_INVITE);
@@ -1461,6 +1464,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(ban)
   SilcChannelID *channel_id;
   unsigned char *tmp;
   SilcUInt32 len;
+  SilcBufferStruct buf;
 
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
@@ -1488,9 +1492,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(ban)
   
   /* Get the ban list */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
-
+  if (tmp)
+    silc_buffer_set(&buf, tmp, len);
+  
   /* Notify application */
-  COMMAND_REPLY((SILC_ARGS, channel, tmp));
+  COMMAND_REPLY((SILC_ARGS, channel, tmp ? &buf : NULL));
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_BAN);
