@@ -843,7 +843,7 @@ an operator with highest privileges is not able to enter invite-only
 channels, to gain access to the contents of encrypted and authenticated
 packets traveling in the SILC network or to gain channel operator
 privileges on public channels without being promoted.  They have the
-same privileges as any normal else except they are able to administrate
+same privileges as any normal user except they are able to administrate
 their server or router.
 
 
