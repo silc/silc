@@ -370,14 +370,9 @@ void silc_client_command_pending(SilcClientConnection conn,
 
 /* Adds private message key to the client library. The key will be used to
    encrypt all private message between the client and the remote client
-   indicated by the `client_entry'. If the key and the IV arguments are NULL
-   and the boolean value `generate_key' is TRUE the library will generate
-   random key. Otherwise, the key material provided by the application
-   will be used. It maybe random key or pre-shared-key. If the send
-   and receive keys should be same they may be set to same. Same applies
-   for send IV and receive IV, they maybe same. If the IV arguments
-   are NULL, the library will use NULL as IV (may not be desired from
-   the security persperctive).
+   indicated by the `client_entry'. If the `key' is NULL and the boolean
+   value `generate_key' is TRUE the library will generate random key.
+   The `key' maybe for example pre-shared-key, passphrase or similar.
 
    It is not necessary to set key for normal private message usage. If the
    key is not set then the private messages are encrypted using normal
@@ -392,15 +387,17 @@ void silc_client_command_pending(SilcClientConnection conn,
 int silc_client_add_private_message_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcClientConnection client_entry,
-					unsigned char *send_key,
-					unsigned int send_key_len,
-					unsigned char *receive_key,
-					unsigned int receive_key_len,
-					unsigned char *send_iv,
-					unsigned int send_iv_len,
-					unsigned char *receive_iv;
-					unsigned int receive_iv_len,
+					unsigned char *key,
+					unsigned int key_len,
 					int generate_key);
+
+/* Same as above but takes the key material from the SKE key material
+   structure. This structure is received if the application uses the
+   silc_client_send_key_agreement to negotiate the key material. */
+int silc_client_add_private_message_key_ske(SilcClient client,
+					    SilcClientConnection conn,
+					    SilcClientConnection client_entry,
+					    SilcSKEKeyMaterial *key);
 
 /* Removes the private message from the library. The key won't be used
    after this to protect the private messages with the remote `client_entry'
