@@ -1,3 +1,8 @@
+Thu Aug  9 18:28:37 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not delete the channel rekey task when adding it
+	  for in silc_server_create_channel_key.
+
 Thu Jul 26 11:32:31 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed MSVC++ project files and added missing files to

@@ -2897,7 +2897,8 @@ static void silc_server_command_join_channel(SilcServer server,
   /* Generate new channel key as protocol dictates */
   if ((!created && silc_hash_table_count(channel->user_list) > 0) || 
       !channel->channel_key)
-    silc_server_create_channel_key(server, channel, 0);
+    if (!silc_server_create_channel_key(server, channel, 0))
+      goto out;
 
   /* Send the channel key. This is broadcasted to the channel but is not
      sent to the client who is joining to the channel. */
@@ -3563,7 +3564,8 @@ SILC_SERVER_CMD_FUNC(cmode)
 	 anymore after this. */
 
       /* Re-generate channel key */
-      silc_server_create_channel_key(server, channel, 0);
+      if (!silc_server_create_channel_key(server, channel, 0))
+	goto out;
       
       /* Send the channel key. This sends it to our local clients and if
 	 we are normal server to our router as well. */
@@ -3644,7 +3646,8 @@ SILC_SERVER_CMD_FUNC(cmode)
       }
 
       /* Re-generate channel key */
-      silc_server_create_channel_key(server, channel, 0);
+      if (!silc_server_create_channel_key(server, channel, 0))
+	goto out;
     
       /* Send the channel key. This sends it to our local clients and if
 	 we are normal server to our router as well. */
@@ -3668,7 +3671,8 @@ SILC_SERVER_CMD_FUNC(cmode)
       }
 
       /* Re-generate channel key */
-      silc_server_create_channel_key(server, channel, 0);
+      if (!silc_server_create_channel_key(server, channel, 0))
+	goto out;
       
       /* Send the channel key. This sends it to our local clients and if
 	 we are normal server to our router as well. */
@@ -4207,7 +4211,8 @@ SILC_SERVER_CMD_FUNC(kick)
 
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     /* Re-generate channel key */
-    silc_server_create_channel_key(server, channel, 0);
+    if (!silc_server_create_channel_key(server, channel, 0))
+      goto out;
     
     /* Send the channel key to the channel. The key of course is not sent
        to the client who was kicked off the channel. */
@@ -4716,7 +4721,8 @@ SILC_SERVER_CMD_FUNC(leave)
 
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     /* Re-generate channel key */
-    silc_server_create_channel_key(server, channel, 0);
+    if (!silc_server_create_channel_key(server, channel, 0))
+      goto out;
 
     /* Send the channel key */
     silc_server_send_channel_key(server, NULL, channel, 

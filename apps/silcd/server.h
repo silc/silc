@@ -140,7 +140,7 @@ silc_server_create_new_channel_with_id(SilcServer server,
 				       char *channel_name,
 				       SilcChannelID *channel_id,
 				       int broadcast);
-void silc_server_create_channel_key(SilcServer server, 
+bool silc_server_create_channel_key(SilcServer server, 
 				    SilcChannelEntry channel,
 				    uint32 key_len);
 SilcChannelEntry silc_server_save_channel_key(SilcServer server,

@@ -2592,7 +2592,8 @@ int silc_server_remove_clients_by_server(SilcServer server,
      must re-generate the channel key. */
   silc_hash_table_list(channels, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&channel)) {
-    silc_server_create_channel_key(server, channel, 0);
+    if (!silc_server_create_channel_key(server, channel, 0))
+      return FALSE;
     silc_server_send_channel_key(server, NULL, channel, 
 				 server->server_type == SILC_ROUTER ? 
 				 FALSE : !server->standalone);
@@ -2741,7 +2742,8 @@ void silc_server_remove_from_channels(SilcServer server,
 
     if (keygen && !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
       /* Re-generate channel key */
-      silc_server_create_channel_key(server, channel, 0);
+      if (!silc_server_create_channel_key(server, channel, 0))
+	return;
       
       /* Send the channel key to the channel. The key of course is not sent
 	 to the client who was removed from the channel. */
@@ -2953,8 +2955,15 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   entry->hmac_name = strdup(hmac);
 
   /* Now create the actual key material */
-  silc_server_create_channel_key(server, entry, 
-				 silc_cipher_get_key_len(key) / 8);
+  if (!silc_server_create_channel_key(server, entry, 
+				      silc_cipher_get_key_len(key) / 8)) {
+    silc_free(channel_name);
+    silc_cipher_free(key);
+    silc_hmac_free(newhmac);
+    silc_free(entry->cipher);
+    silc_free(entry->hmac_name);
+    return NULL;
+  }
 
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
@@ -3012,8 +3021,11 @@ silc_server_create_new_channel_with_id(SilcServer server,
   }
 
   /* Now create the actual key material */
-  silc_server_create_channel_key(server, entry, 
-				 silc_cipher_get_key_len(key) / 8);
+  if (!silc_server_create_channel_key(server, entry, 
+				      silc_cipher_get_key_len(key) / 8)) {
+    silc_free(channel_name);
+    return NULL;
+  }
 
   /* Notify other routers about the new channel. We send the packet
      to our primary route. */
@@ -3035,7 +3047,8 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
   SilcServerChannelRekey rekey = (SilcServerChannelRekey)context;
   SilcServer server = (SilcServer)rekey->context;
 
-  silc_server_create_channel_key(server, rekey->channel, rekey->key_len);
+  if (!silc_server_create_channel_key(server, rekey->channel, rekey->key_len))
+    return;
   silc_server_send_channel_key(server, NULL, rekey->channel, FALSE);
 
   silc_schedule_task_add(server->schedule, 0, 
@@ -3049,9 +3062,9 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
    but also to re-generate new key for channel. If `key_len' is provided
    it is the bytes of the key length. */
 
-void silc_server_create_channel_key(SilcServer server, 
-				    SilcChannelEntry channel,
-				    uint32 key_len)
+int silc_server_create_channel_key(SilcServer server, 
+				   SilcChannelEntry channel,
+				   uint32 key_len)
 {
   int i;
   unsigned char channel_key[32], hash[32];
@@ -3061,12 +3074,12 @@ void silc_server_create_channel_key(SilcServer server,
 
   if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
     SILC_LOG_DEBUG(("Channel has private keys, will not generate new key"));
-    return;
+    return TRUE;
   }
 
   if (!channel->channel_key)
     if (!silc_cipher_alloc("aes-256-cbc", &channel->channel_key))
-      return;
+      return FALSE;
 
   if (key_len)
     len = key_len;
@@ -3118,6 +3131,8 @@ void silc_server_create_channel_key(SilcServer server,
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_NORMAL);
   }
+
+  return TRUE;
 }
 
 /* Saves the channel key found in the encoded `key_payload' buffer. This 

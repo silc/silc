@@ -431,7 +431,8 @@ void silc_server_notify(SilcServer server,
     if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY &&
 	!(mode & SILC_CHANNEL_MODE_PRIVKEY)) {
       /* Re-generate channel key */
-      silc_server_create_channel_key(server, channel, 0);
+      if (!silc_server_create_channel_key(server, channel, 0))
+	goto out;
       
       /* Send the channel key. This sends it to our local clients and if
 	 we are normal server to our router as well. */
@@ -1951,7 +1952,8 @@ void silc_server_new_channel(SilcServer server,
 	 everybody else possibly on the channel. */
 
       if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
-	silc_server_create_channel_key(server, channel, 0);
+	if (!silc_server_create_channel_key(server, channel, 0))
+	  return;
 	
 	/* Send to the channel */
 	silc_server_send_channel_key(server, sock, channel, FALSE);
