@@ -323,11 +323,19 @@ void silc_command_exec(SILC_SERVER_REC *server,
 
 /* Generic command function to call any SILC command directly. */
 
-static void command_self(const char *data, SILC_SERVER_REC *server)
+static void command_self(const char *data, SILC_SERVER_REC *server,
+			 WI_ITEM_REC *item)
 {
   if (!IS_SILC_SERVER(server) || !server->connected) {
     printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Not connected to server");
     return;
+  }
+
+  if (IS_SILC_CHANNEL(item)) {
+    SILC_CHANNEL_REC *chanrec;
+    chanrec = silc_channel_find(server, item->name);
+    if (chanrec)
+      server->conn->current_channel = chanrec->entry;
   }
 
   silc_command_exec(server, current_command, data);

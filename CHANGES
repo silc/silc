@@ -21,6 +21,12 @@ Fri Jun 22 10:44:14 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  appear to be on the channel.  The affected file is 
 	  irssi/src/silc/core/silc-channels.c.
 
+	* Always update the conn->current_channel when executing command
+	  on a channel.  Affected file irssi/src/silc/core/silc-servers.c.
+
+	* Fixed the KILL notify handling in Irssi SILC client to remove
+	  the killed client on all channels.
+
 Thu Jun 21 17:10:08 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the silc_parse_command_line to remove extra spaces

@@ -1,6 +1,10 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o The CMODE notify handling in client library may return NULL
+   client entry pointer to the application (when server was the CMODE's
+   executor).  Fix this somehow.
+
  o Add PERL scripting support from Irssi CVS.
 
  o Add local commands to list the current server and client public keys

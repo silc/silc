@@ -468,6 +468,14 @@ static void event_kill(SILC_SERVER_REC *server, va_list va)
 		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU, 
 		       tmp ? tmp : "");
   } else {
+    GSList *nicks, *tmpn;
+    nicks = nicklist_get_same_unique(SERVER(server), client_entry);
+    for (tmpn = nicks; tmpn != NULL; tmpn = tmpn->next->next) {
+      CHANNEL_REC *channel = tmpn->data;
+      NICK_REC *nickrec = tmpn->next->data;
+      nicklist_remove(channel, nickrec);
+    }
+
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED, 
 		       client_entry->nickname,
