@@ -1,3 +1,8 @@
+Fri Feb 16 14:14:00 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Call silc_server_command_identify_check always when processing
+	  the IDENTIFY command in silcd/command.c
+
 Thu Feb 15 20:07:37 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new packet type SILC_PACKET_HEARTBEAT that is used to

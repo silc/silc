@@ -1044,8 +1044,7 @@ silc_server_command_identify_from_client(SilcServerCommandContext cmd)
 
   /* Check that all mandatory fields are present and request those data
      from the server who owns the client if necessary. */
-  if (!cmd->pending && 
-      !silc_server_command_identify_check(cmd, clients, clients_count)) {
+  if (!silc_server_command_identify_check(cmd, clients, clients_count)) {
     ret = -1;
     goto out;
   }
@@ -1152,8 +1151,7 @@ silc_server_command_identify_from_server(SilcServerCommandContext cmd)
 
   /* Check that all mandatory fields are present and request those data
      from the server who owns the client if necessary. */
-  if (!cmd->pending && 
-      !silc_server_command_identify_check(cmd, clients, clients_count)) {
+  if (!silc_server_command_identify_check(cmd, clients, clients_count)) {
     ret = -1;
     goto out;
   }
