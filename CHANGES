@@ -1,3 +1,8 @@
+Tue Jan 04 12:16:04 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Added DIST_SUBDIRS symbols to include all subdirs in distributions.
+	  Affected files lib/silcutil/Makefile.am, lib/silcmath/Makefile.am
+
 Tue Jan 04 02:43:44 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Changed the way NOTICE flagged messages are treated. Added support

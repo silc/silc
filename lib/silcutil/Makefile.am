@@ -35,6 +35,8 @@ endif
 endif
 endif
 
+DIST_SUBDIRS=win32 epoc beos os2 unix
+
 if SILC_DIST_TOOLKIT
 SILC_DIST_SOURCE = stacktrace.c
 SILC_DIST_HEADER = stacktrace.h

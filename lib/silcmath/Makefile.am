@@ -24,6 +24,8 @@ else
 SUBDIRS =
 endif
 
+DIST_SUBDIRS = mpi
+
 noinst_LTLIBRARIES = libsilcmath.la
 
 if SILC_MP_NSS_MPI
