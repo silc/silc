@@ -111,9 +111,9 @@ typedef struct SilcRngStateContext {
        random pool. This is allocated when RNG object is allocated and
        free'd when RNG object is free'd.
 
-   uint8 threshhold
+   uint8 threshold
 
-       Threshhold to indicate when it is required to acquire more
+       Threshold to indicate when it is required to acquire more
        noise from the environment.  More soft noise is acquired after
        64 bits of output and hard noise every 160 bits of output.
 
@@ -123,7 +123,7 @@ struct SilcRngStruct {
   unsigned char key[64];
   SilcRngState state;
   SilcHash sha1;
-  uint8 threshhold;
+  uint8 threshold;
   char *devrandom;
   int fd_devurandom;
 };
@@ -451,15 +451,15 @@ static uint32 silc_rng_get_position(SilcRng rng)
 
 uint8 silc_rng_get_byte(SilcRng rng)
 {
-  rng->threshhold++;
+  rng->threshold++;
 
-  /* Get more soft noise after 64 bits threshhold */
-  if (rng->threshhold >= 8)
+  /* Get more soft noise after 64 bits threshold */
+  if (rng->threshold >= 8)
     silc_rng_get_soft_noise(rng);
 
-  /* Get hard noise after 160 bits threshhold, zero the threshhold. */
-  if (rng->threshhold >= 20) {
-    rng->threshhold = 0;
+  /* Get hard noise after 160 bits threshold, zero the threshold. */
+  if (rng->threshold >= 20) {
+    rng->threshold = 0;
     silc_rng_get_hard_noise(rng);
   }
 

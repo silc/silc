@@ -63,28 +63,28 @@ the pool and then stirs the entire pool.
 
 
 <br />&nbsp;<br />&nbsp;<br />
-<b>Stirring Threshholds</b>
+<b>Stirring Thresholds</b>
 
 <br />&nbsp;<br />
-The random pool has two threshholds that controls when the random pool
+The random pool has two thresholds that controls when the random pool
 needs more new noise and requires restirring. As previously mentioned, the
 application may do this by calling the silc_rng_add_noise. However, the
 RNG performs this also automatically.
 
 <br />&nbsp;<br />
-The first threshhold gets soft noise from system and stirs the random pool.
-The threshhold is reached after 64 bits of random data has been fetched
+The first threshold gets soft noise from system and stirs the random pool.
+The threshold is reached after 64 bits of random data has been fetched
 from the RNG. After the 64 bits, the soft noise acquiring and restirring
 process is performed every 8 bits of random output data until the second
-threshhold is reached.
+threshold is reached.
 
 <br />&nbsp;<br />
-The second threshhold gets hard noise from system and stirs the random
-pool. The threshhold is reached after 160 bits of random output. After the
+The second threshold gets hard noise from system and stirs the random
+pool. The threshold is reached after 160 bits of random output. After the
 noise is acquired (from /dev/urandom) the random pool is stirred and the
-threshholds are set to zero. The process is repeated again after 64 bits of
-output for first threshhold and after 160 bits of output for the second
-threshhold.
+thresholds are set to zero. The process is repeated again after 64 bits of
+output for first threshold and after 160 bits of output for the second
+threshold.
 
 
 <br />&nbsp;<br />&nbsp;<br />
@@ -150,10 +150,10 @@ compromised if an adversary would learn the initial input data (or any
 input data for that matter). The SILC's RNG provides good protection for
 this even if the some of the input bits would be compromised for old or
 future random numbers. The RNG reinitalizes (reseeds) itself using the
-threshholds after every 64 and 160 bits of output. This is considered to be
+thresholds after every 64 and 160 bits of output. This is considered to be
 adequate even if some of the bits would get compromised. Also, the
 applications that use the RNG usually fetches at least 256 bits from the
-RNG. This means that everytime RNG is accessed both of the threshholds are
+RNG. This means that everytime RNG is accessed both of the thresholds are
 reached. This should mean that the RNG is never too long in an compromised
 state and recovers as fast as possible.
 
