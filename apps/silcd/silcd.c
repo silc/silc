@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -317,7 +317,7 @@ SILC_TASK_CALLBACK(dump_stats)
   fprintf(fdd, "  backup_noswitch        : %d\n", silcd->backup_noswitch);
   fprintf(fdd, "  wait_backup            : %d\n", silcd->wait_backup);
   if (silcd->router)
-    fprintf(fdd, "  primary router         : %s\n", 
+    fprintf(fdd, "  primary router         : %s\n",
       silcd->router->server_name ? silcd->router->server_name : "");
 
   /* Dump socket connections */
@@ -347,7 +347,7 @@ SILC_TASK_CALLBACK(dump_stats)
     int c;
 
     fprintf(fdd, "\nDumping databases\n");
-    
+
     if (silc_idcache_get_all(silcd->local_list->servers, &list)) {
       if (silc_idcache_list_first(list, &id_cache)) {
 	fprintf(fdd, "\nServers in local-list:\n");
@@ -692,7 +692,7 @@ int main(int argc, char **argv)
   if (ret == FALSE)
     goto fail;
 
-  /* Register default crypto stuff since we are going to need them 
+  /* Register default crypto stuff since we are going to need them
      in the configuration file parsing phase */
   silc_cipher_register_default();
   silc_pkcs_register_default();
@@ -718,11 +718,21 @@ int main(int argc, char **argv)
   if (silc_server_init(silcd) == FALSE)
     goto fail;
 
-  /* Ignore SIGPIPE */
+  /* Ignore some signals */
   sa.sa_handler = SIG_IGN;
   sa.sa_flags = 0;
   sigemptyset(&sa.sa_mask);
-  sigaction(SIGPIPE, &sa, NULL);
+#if defined(SIGPIPE)
+  sigaction(SIGPIPE, &sa, NULL);      /* Ignore broken pipes */
+#endif /* SIGPIPE*/
+#if defined(SIGXFSZ)
+  sigaction(SIGXFSZ, &sa, NULL);      /* Ignore file limit exceeds */
+#endif /* SIGXFSZ */
+#if defined(SIGXCPU)
+  sigaction(SIGXCPU, &sa, NULL);      /* Ignore CPU time limit exceeds */
+#endif /* SIGXCPU */
+
+  /* Handle specificly some other signals. */
   sa.sa_handler = signal_handler;
   sigaction(SIGHUP, &sa, NULL);
   sigaction(SIGTERM, &sa, NULL);
