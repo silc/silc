@@ -1,4 +1,4 @@
-TODO/bugs in Irssi SILC Client
+TODO for Irssi SILC Client 1.0
 ==============================
 
  o bugs parsing nicknames with @ in NICK_CHANGE.
@@ -16,7 +16,7 @@ TODO/bugs in Irssi SILC Client
      http://silcnet.org/docs/silc-client-1.0-test.ps
 
 
-TODO/bugs In SILC Server
+TODO for SILC Server 1.0
 ========================
 
  o WHOIS search by public key in attrs.

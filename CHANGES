@@ -1,3 +1,10 @@
+Sat Nov  2 12:53:09 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed connection closing in client library to not crash.
+	  Moved the connection freeing totally to function
+	  silc_clinet_del_connection.  Affected file 
+	  lib/silcclinet/client.c.
+
 Fri Nov  1 18:57:02 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed includes/silcincludes.h to silcincludes.h.in to

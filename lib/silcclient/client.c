@@ -261,16 +261,79 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
 
   for (i = 0; i < client->internal->conns_count; i++)
     if (client->internal->conns[i] == conn) {
+      /* Free all cache entries */
+      SilcIDCacheList list;
+      SilcIDCacheEntry entry;
+      SilcClientCommandPending *r;
+      bool ret;
 
-      silc_idcache_free(conn->internal->client_cache);
-      silc_idcache_free(conn->internal->channel_cache);
-      silc_idcache_free(conn->internal->server_cache);
-      if (conn->internal->pending_commands)
-	silc_dlist_uninit(conn->internal->pending_commands);
+      if (silc_idcache_get_all(conn->internal->client_cache, &list)) {
+	ret = silc_idcache_list_first(list, &entry);
+	while (ret) {
+	  silc_client_del_client(client, conn, entry->context);
+	  ret = silc_idcache_list_next(list, &entry);
+	}
+	silc_idcache_list_free(list);
+      }
+
+      if (silc_idcache_get_all(conn->internal->channel_cache, &list)) {
+	ret = silc_idcache_list_first(list, &entry);
+	while (ret) {
+	  silc_client_del_channel(client, conn, entry->context);
+	  ret = silc_idcache_list_next(list, &entry);
+	}
+	silc_idcache_list_free(list);
+      }
+
+      if (silc_idcache_get_all(conn->internal->server_cache, &list)) {
+	ret = silc_idcache_list_first(list, &entry);
+	while (ret) {
+	  silc_client_del_server(client, conn, entry->context);
+	  ret = silc_idcache_list_next(list, &entry);
+	}
+	silc_idcache_list_free(list);
+      }
+
+      /* Clear ID caches */
+      if (conn->internal->client_cache)
+	silc_idcache_free(conn->internal->client_cache);
+      if (conn->internal->channel_cache)
+	silc_idcache_free(conn->internal->channel_cache);
+      if (conn->internal->server_cache)
+	silc_idcache_free(conn->internal->server_cache);
+
+      /* Free data (my ID is freed in above silc_client_del_client).
+	 conn->nickname is freed when freeing the local_entry->nickname. */
       silc_free(conn->remote_host);
-      if (conn->internal->ftp_sessions)
-        silc_dlist_uninit(conn->internal->ftp_sessions);
+      silc_free(conn->local_id_data);
+      if (conn->internal->send_key)
+	silc_cipher_free(conn->internal->send_key);
+      if (conn->internal->receive_key)
+	silc_cipher_free(conn->internal->receive_key);
+      if (conn->internal->hmac_send)
+	silc_hmac_free(conn->internal->hmac_send);
+      if (conn->internal->hmac_receive)
+	silc_hmac_free(conn->internal->hmac_receive);
+      silc_free(conn->internal->rekey);
+
+      if (conn->internal->active_session) {
+	conn->sock->user_data = NULL;
+	silc_client_ftp_session_free(conn->internal->active_session);
+	conn->internal->active_session = NULL;
+      }
+
+      silc_client_ftp_free_sessions(client, conn);
+
+      if (conn->internal->pending_commands) {
+	silc_dlist_start(conn->internal->pending_commands);
+	while ((r = silc_dlist_get(conn->internal->pending_commands))
+	       != SILC_LIST_END)
+	  silc_dlist_del(conn->internal->pending_commands, r);
+	silc_dlist_uninit(conn->internal->pending_commands);
+      }
+
       silc_free(conn->internal);
+      memset(conn, 0, sizeof(*conn));
       silc_free(conn);
 
       client->internal->conns[i] = NULL;
@@ -1454,83 +1517,8 @@ void silc_client_close_connection_real(SilcClient client,
   }
 
   /* Free everything */
-  if (del && sock->user_data) {
-    /* Free all cache entries */
-    SilcIDCacheList list;
-    SilcIDCacheEntry entry;
-    SilcClientCommandPending *r;
-    bool ret;
-
-    if (silc_idcache_get_all(conn->internal->client_cache, &list)) {
-      ret = silc_idcache_list_first(list, &entry);
-      while (ret) {
-	silc_client_del_client(client, conn, entry->context);
-	ret = silc_idcache_list_next(list, &entry);
-      }
-      silc_idcache_list_free(list);
-    }
-
-    if (silc_idcache_get_all(conn->internal->channel_cache, &list)) {
-      ret = silc_idcache_list_first(list, &entry);
-      while (ret) {
-	silc_client_del_channel(client, conn, entry->context);
-	ret = silc_idcache_list_next(list, &entry);
-      }
-      silc_idcache_list_free(list);
-    }
-
-    if (silc_idcache_get_all(conn->internal->server_cache, &list)) {
-      ret = silc_idcache_list_first(list, &entry);
-      while (ret) {
-	silc_client_del_server(client, conn, entry->context);
-	ret = silc_idcache_list_next(list, &entry);
-      }
-      silc_idcache_list_free(list);
-    }
-
-    /* Clear ID caches */
-    if (conn->internal->client_cache)
-      silc_idcache_free(conn->internal->client_cache);
-    if (conn->internal->channel_cache)
-      silc_idcache_free(conn->internal->channel_cache);
-    if (conn->internal->server_cache)
-      silc_idcache_free(conn->internal->server_cache);
-
-    /* Free data (my ID is freed in above silc_client_del_client).
-       conn->nickname is freed when freeing the local_entry->nickname. */
-    if (conn->remote_host)
-      silc_free(conn->remote_host);
-    if (conn->local_id_data)
-      silc_free(conn->local_id_data);
-    if (conn->internal->send_key)
-      silc_cipher_free(conn->internal->send_key);
-    if (conn->internal->receive_key)
-      silc_cipher_free(conn->internal->receive_key);
-    if (conn->internal->hmac_send)
-      silc_hmac_free(conn->internal->hmac_send);
-    if (conn->internal->hmac_receive)
-      silc_hmac_free(conn->internal->hmac_receive);
-    if (conn->internal->rekey)
-      silc_free(conn->internal->rekey);
-
-    if (conn->internal->active_session) {
-      sock->user_data = NULL;
-      silc_client_ftp_session_free(conn->internal->active_session);
-      conn->internal->active_session = NULL;
-    }
-
-    silc_client_ftp_free_sessions(client, conn);
-
-    silc_dlist_start(conn->internal->pending_commands);
-    while ((r = silc_dlist_get(conn->internal->pending_commands))
-	   != SILC_LIST_END)
-      silc_dlist_del(conn->internal->pending_commands, r);
-    if (conn->internal->pending_commands)
-      silc_dlist_uninit(conn->internal->pending_commands);
-
-    memset(conn, 0, sizeof(*conn));
+  if (del && sock->user_data)
     silc_client_del_connection(client, conn);
-  }
 
   silc_socket_free(sock);
 }
