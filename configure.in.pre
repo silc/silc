@@ -604,7 +604,7 @@ AC_SUBST(PIDFILE)
 AC_ARG_WITH(win32,
 [  --with-win32            Compile native WIN32 code (-mno-cygwin)],
 [ AC_DEFINE(SILC_WIN32)
-  win32-support = true
+  win32-support=true
   CFLAGS="-mno-cygwin $CFLAGS" 
   LIBS="$LIBS -lwsock32" ])
 
@@ -613,8 +613,7 @@ AM_CONDITIONAL(SILC_WIN32, test x$win32-support = xtrue)
 #
 # Native EPOC support (disabled by default)
 #
-epoc-support = false
-AM_CONDITIONAL(SILC_EPOC, test x$epoc-support = xtrue)
+AM_CONDITIONAL(SILC_EPOC, test xfalse = xtrue)
 
 #
 # IPv6 support

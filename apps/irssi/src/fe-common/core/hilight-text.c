@@ -37,8 +37,6 @@
 #include "formats.h"
 
 static NICKMATCH_REC *nickmatch;
-static HILIGHT_REC *next_nick_hilight, *next_line_hilight;
-static int next_hilight_start, next_hilight_end;
 static int never_hilight_level, default_hilight_level;
 GSList *hilights;
 
@@ -264,7 +262,7 @@ static char *hilight_get_color(HILIGHT_REC *rec)
 	color = rec->color != NULL ? rec->color :
 		settings_get_str("hilight_color");
 
-	return format_string_expand(color);
+	return format_string_expand(color, NULL);
 }
 
 static void hilight_update_text_dest(TEXT_DEST_REC *dest, HILIGHT_REC *rec)
@@ -274,64 +272,51 @@ static void hilight_update_text_dest(TEXT_DEST_REC *dest, HILIGHT_REC *rec)
 	if (rec->priority > 0)
 		dest->hilight_priority = rec->priority;
 
+        g_free_not_null(dest->hilight_color);
         dest->hilight_color = hilight_get_act_color(rec);
 }
 
-static void sig_print_text_stripped(TEXT_DEST_REC *dest, const char *str)
+static void sig_print_text(TEXT_DEST_REC *dest, const char *text,
+			   const char *stripped)
 {
-        HILIGHT_REC *hilight;
+	HILIGHT_REC *hilight;
+	char *color, *newstr;
+	int old_level, hilight_start, hilight_end, hilight_len;
+	int nick_match;
 
-	g_return_if_fail(str != NULL);
+	if (dest->level & MSGLEVEL_NOHILIGHT)
+		return;
 
-	if (next_nick_hilight != NULL) {
-		if (!next_nick_hilight->nick) {
-                        /* non-nick hilight wanted */
-			hilight = next_nick_hilight;
-			next_nick_hilight = NULL;
-			if (!hilight_match_text(hilight, str,
-						&next_hilight_start,
-						&next_hilight_end)) {
-                                next_hilight_start = 0;
-                                next_hilight_end = strlen(str);
-			}
-		} else {
-			/* nick is highlighted, just set priority */
-			hilight_update_text_dest(dest, next_nick_hilight);
-			next_nick_hilight = NULL;
-			return;
-		}
-	} else {
-		if (dest->level & (MSGLEVEL_NOHILIGHT|MSGLEVEL_HILIGHT))
-			return;
+        hilight_start = hilight_end = 0;
+	hilight = hilight_match(dest->server, dest->target,
+				NULL, NULL, dest->level, stripped,
+				&hilight_start,
+				&hilight_end);
+	if (hilight == NULL)
+		return;
 
-		hilight = hilight_match(dest->server, dest->target,
-					NULL, NULL, dest->level, str,
-					&next_hilight_start,
-					&next_hilight_end);
-	}
+	nick_match = hilight->nick && (dest->level & (MSGLEVEL_PUBLIC|MSGLEVEL_ACTIONS)) == MSGLEVEL_PUBLIC;
 
-	if (hilight != NULL) {
+	old_level = dest->level;
+	if (!nick_match || (dest->level & MSGLEVEL_HILIGHT)) {
 		/* update the level / hilight info */
 		hilight_update_text_dest(dest, hilight);
-
-		next_line_hilight = hilight;
 	}
-}
 
-static void sig_print_text(TEXT_DEST_REC *dest, const char *str)
-{
-	char *color, *newstr;
-        int next_hilight_len;
+	if (nick_match)
+		return; /* fe-messages.c should have taken care of this */
 
-	if (next_line_hilight == NULL)
-                return;
+	if (old_level & MSGLEVEL_HILIGHT) {
+		/* nick is highlighted, just set priority */
+		return;
+	}
 
-	color = hilight_get_color(next_line_hilight);
-	next_hilight_len = next_hilight_end-next_hilight_start;
+	color = hilight_get_color(hilight);
+	hilight_len = hilight_end-hilight_start;
 
-	if (!next_line_hilight->word) {
+	if (!hilight->word) {
 		/* hilight whole line */
-		char *tmp = strip_codes(str);
+		char *tmp = strip_codes(text);
 		newstr = g_strconcat(color, tmp, NULL);
                 g_free(tmp);
 	} else {
@@ -343,25 +328,25 @@ static void sig_print_text(TEXT_DEST_REC *dest, const char *str)
                 tmp = g_string_new(NULL);
 
                 /* start of the line */
-		pos = strip_real_length(str, next_hilight_start, NULL, NULL);
-		g_string_append(tmp, str);
+		pos = strip_real_length(text, hilight_start, NULL, NULL);
+		g_string_append(tmp, text);
                 g_string_truncate(tmp, pos);
 
 		/* color */
                 g_string_append(tmp, color);
 
 		/* middle of the line, stripped */
-		middle = strip_codes(str+pos);
+		middle = strip_codes(text+pos);
                 pos = tmp->len;
 		g_string_append(tmp, middle);
-                g_string_truncate(tmp, pos+next_hilight_len);
+                g_string_truncate(tmp, pos+hilight_len);
                 g_free(middle);
 
 		/* end of the line */
-		pos = strip_real_length(str, next_hilight_end,
+		pos = strip_real_length(text, hilight_end,
 					&color_pos, &color_len);
 		if (color_pos > 0)
-			lastcolor = g_strndup(str+color_pos, color_len);
+			lastcolor = g_strndup(text+color_pos, color_len);
                 else {
                         /* no colors in line, change back to default */
 			lastcolor = g_malloc0(3);
@@ -369,15 +354,14 @@ static void sig_print_text(TEXT_DEST_REC *dest, const char *str)
                         lastcolor[1] = FORMAT_STYLE_DEFAULTS;
 		}
 		g_string_append(tmp, lastcolor);
-		g_string_append(tmp, str+pos);
+		g_string_append(tmp, text+pos);
 		g_free(lastcolor);
 
                 newstr = tmp->str;
                 g_string_free(tmp, FALSE);
 	}
 
-	next_line_hilight = NULL;
-	signal_emit("print text", 2, dest, newstr);
+	signal_emit("print text", 3, dest, newstr, stripped);
 
 	g_free(color);
 	g_free(newstr);
@@ -397,7 +381,6 @@ char *hilight_match_nick(SERVER_REC *server, const char *channel,
 	color = rec == NULL || !rec->nick ? NULL :
 		hilight_get_color(rec);
 
-        next_nick_hilight = rec;
 	return color;
 }
 
@@ -416,7 +399,8 @@ static void read_hilight_config(void)
 		return;
 	}
 
-	for (tmp = node->value; tmp != NULL; tmp = tmp->next) {
+	tmp = config_node_first(node->value);
+	for (; tmp != NULL; tmp = config_node_next(tmp)) {
 		node = tmp->data;
 
 		if (node->type != NODE_TYPE_BLOCK)
@@ -567,16 +551,14 @@ static void cmd_hilight(const char *data)
 	rec->regexp = g_hash_table_lookup(optlist, "regexp") != NULL;
 
 	if (colorarg != NULL) {
+		g_free_and_null(rec->color);
 		if (*colorarg != '\0')
 			rec->color = g_strdup(colorarg);
-		else
-			g_free_and_null(rec->color);
 	}
 	if (actcolorarg != NULL) {
+		g_free_and_null(rec->act_color);
 		if (*actcolorarg != '\0')
 			rec->act_color = g_strdup(actcolorarg);
-		else
-			g_free_and_null(rec->act_color);
 	}
 
 #ifdef HAVE_REGEX_H
@@ -664,15 +646,11 @@ void hilight_text_init(void)
 	settings_add_str("lookandfeel", "hilight_act_color", "%M");
 	settings_add_str("lookandfeel", "hilight_level", "PUBLIC DCCMSGS");
 
-	next_nick_hilight = NULL;
-	next_line_hilight = NULL;
-
         read_settings();
 
 	nickmatch = nickmatch_init(hilight_nick_cache);
 	read_hilight_config();
 
-	signal_add_first("print text stripped", (SIGNAL_FUNC) sig_print_text_stripped);
 	signal_add_first("print text", (SIGNAL_FUNC) sig_print_text);
         signal_add("setup reread", (SIGNAL_FUNC) read_hilight_config);
         signal_add("setup changed", (SIGNAL_FUNC) read_settings);
@@ -687,7 +665,6 @@ void hilight_text_deinit(void)
 	hilights_destroy_all();
         nickmatch_deinit(nickmatch);
 
-	signal_remove("print text stripped", (SIGNAL_FUNC) sig_print_text_stripped);
 	signal_remove("print text", (SIGNAL_FUNC) sig_print_text);
         signal_remove("setup reread", (SIGNAL_FUNC) read_hilight_config);
         signal_remove("setup changed", (SIGNAL_FUNC) read_settings);

@@ -22,12 +22,14 @@
 #include "module-formats.h"
 #include "signals.h"
 #include "commands.h"
+#include "chat-protocols.h"
 #include "servers.h"
 #include "levels.h"
 #include "misc.h"
 #include "log.h"
 #include "special-vars.h"
 #include "settings.h"
+#include "lib-config/iconfig.h"
 
 #include "fe-windows.h"
 #include "window-items.h"
@@ -38,8 +40,6 @@
 /* close autologs after 5 minutes of inactivity */
 #define AUTOLOG_INACTIVITY_CLOSE (60*5)
 
-#define LOG_DIR_CREATE_MODE 0770
-
 static int autolog_level;
 static int autoremove_tag;
 static const char *autolog_path;
@@ -47,6 +47,11 @@ static const char *autolog_path;
 static THEME_REC *log_theme;
 static int skip_next_printtext;
 static const char *log_theme_name;
+
+static char *log_colorizer_strip(const char *str)
+{
+        return strip_codes(str);
+}
 
 static void log_add_targets(LOG_REC *log, const char *targets, const char *tag)
 {
@@ -64,7 +69,8 @@ static void log_add_targets(LOG_REC *log, const char *targets, const char *tag)
 }
 
 /* SYNTAX: LOG OPEN [-noopen] [-autoopen] [-window] [-<server tag>]
-                    [-targets <targets>] <fname> [<levels>] */
+                    [-targets <targets>] [-colors]
+		    <fname> [<levels>] */
 static void cmd_log_open(const char *data)
 {
         SERVER_REC *server;
@@ -90,8 +96,12 @@ static void cmd_log_open(const char *data)
 
 	if (g_hash_table_lookup(optlist, "window")) {
 		/* log by window ref# */
-		ltoa(window, active_win->refnum);
-		log_item_add(log, LOG_ITEM_WINDOW_REFNUM, window,
+		targetarg = g_hash_table_lookup(optlist, "targets");
+		if (targetarg == NULL || !is_numeric(targetarg, '\0')) {
+			ltoa(window, active_win->refnum);
+			targetarg = window;
+		}
+		log_item_add(log, LOG_ITEM_WINDOW_REFNUM, targetarg,
 			     servertag);
 	} else {
 		targetarg = g_hash_table_lookup(optlist, "targets");
@@ -101,6 +111,9 @@ static void cmd_log_open(const char *data)
 
 	if (g_hash_table_lookup(optlist, "autoopen"))
 		log->autoopen = TRUE;
+
+	if (g_hash_table_lookup(optlist, "colors") == NULL)
+		log->colorizer = log_colorizer_strip;
 
 	log_update(log);
 
@@ -277,6 +290,7 @@ static void cmd_window_log(const char *data)
 					active_win->name != NULL ? active_win->name : "Window",
 					active_win->name != NULL ? "" : window);
 		log = log_create_rec(fname, MSGLEVEL_ALL);
+		log->colorizer = log_colorizer_strip;
                 log_item_add(log, LOG_ITEM_WINDOW_REFNUM, window, NULL);
 		log_update(log);
 		g_free(fname);
@@ -309,6 +323,7 @@ static void cmd_window_logfile(const char *data)
 	}
 
 	log = log_create_rec(data, MSGLEVEL_ALL);
+	log->colorizer = log_colorizer_strip;
 	log_item_add(log, LOG_ITEM_WINDOW_REFNUM, window, NULL);
 	log_update(log);
 
@@ -347,7 +362,9 @@ static void sig_server_disconnected(SERVER_REC *server)
 
 		logitem = log->items->data;
 		if (logitem->type == LOG_ITEM_TARGET &&
-		    g_strcasecmp(logitem->servertag, server->tag) == 0)
+		    logitem->servertag != NULL &&
+		    g_strcasecmp(logitem->servertag, server->tag) == 0 &&
+		    server_ischannel(server, logitem->name)) /* kludge again.. so we won't close dcc chats */
 			log_close(log);
 	}
 }
@@ -364,29 +381,57 @@ static void autologs_close_all(void)
 	}
 }
 
-static void autolog_open(SERVER_REC *server, const char *target)
+/* '%' -> '%%', '/' -> '_' */
+static char *escape_target(const char *target)
+{
+	char *str, *p;
+
+	p = str = g_malloc(strlen(target)*2+1);
+	while (*target != '\0') {
+		if (*target == '/')
+			*p++ = '_';
+		else {
+			if (*target == '%')
+				*p++ = '%';
+			*p++ = *target;
+		}
+
+                target++;
+	}
+	*p = '\0';
+
+        return str;
+}
+
+static void autolog_open(SERVER_REC *server, const char *server_tag,
+			 const char *target)
 {
 	LOG_REC *log;
-	char *fname, *dir, *fixed_target, *tag;
+	char *fname, *dir, *fixed_target;
 
-        tag = server == NULL ? NULL : server->tag;
-	log = logs_find_item(LOG_ITEM_TARGET, target, tag, NULL);
+	log = logs_find_item(LOG_ITEM_TARGET, target, server_tag, NULL);
 	if (log != NULL && !log->failed) {
 		log_start_logging(log);
 		return;
 	}
 
 	/* '/' -> '_' - don't even accidentally try to log to
-	   #../../../file if you happen to join to such channel.. */
-	fixed_target = g_strdup(target);
-        replace_chars(fixed_target, '/', '_');
+	   #../../../file if you happen to join to such channel..
+
+	   '%' -> '%%' - so strftime() won't mess with them */
+	fixed_target = escape_target(target);
+	if (CHAT_PROTOCOL(server)->case_insensitive)
+		g_strdown(fixed_target);
+
 	fname = parse_special_string(autolog_path, server, NULL,
 				     fixed_target, NULL, 0);
 	g_free(fixed_target);
 
 	if (log_find(fname) == NULL) {
 		log = log_create_rec(fname, autolog_level);
-		log_item_add(log, LOG_ITEM_TARGET, target, tag);
+                if (!settings_get_bool("autolog_colors"))
+			log->colorizer = log_colorizer_strip;
+		log_item_add(log, LOG_ITEM_TARGET, target, server_tag);
 
 		dir = g_dirname(log->real_fname);
 		mkpath(dir, LOG_DIR_CREATE_MODE);
@@ -399,23 +444,27 @@ static void autolog_open(SERVER_REC *server, const char *target)
 	g_free(fname);
 }
 
-static void autolog_open_check(SERVER_REC *server, const char *target,
-			       int level)
+static void autolog_open_check(SERVER_REC *server, const char *server_tag,
+			       const char *target, int level)
 {
 	char **targets, **tmp;
 
-	if (level == MSGLEVEL_PARTS || /* FIXME: kind of a kludge, but we don't want to reopen logs when we're parting the channel with /WINDOW CLOSE.. */
+	/* FIXME: kind of a kludge, but we don't want to reopen logs when
+	   we're parting the channel with /WINDOW CLOSE.. Maybe a small
+	   timeout would be nice instead of immediately closing the log file
+	   after "window item destroyed" */
+	if (level == MSGLEVEL_PARTS ||
 	    (autolog_level & level) == 0 || target == NULL || *target == '\0')
 		return;
 
 	/* there can be multiple targets separated with comma */
 	targets = g_strsplit(target, ",", -1);
 	for (tmp = targets; *tmp != NULL; tmp++)
-		autolog_open(server, *tmp);
+		autolog_open(server, server_tag, *tmp);
 	g_strfreev(targets);
 }
 
-static void log_single_line(WINDOW_REC *window, void *server,
+static void log_single_line(WINDOW_REC *window, const char *server_tag,
 			    const char *target, int level, const char *text)
 {
 	char windownum[MAX_INT_STRLEN];
@@ -426,29 +475,31 @@ static void log_single_line(WINDOW_REC *window, void *server,
 	ltoa(windownum, window->refnum);
 	log = logs_find_item(LOG_ITEM_WINDOW_REFNUM,
 			     windownum, NULL, NULL);
-	if (log != NULL) log_write_rec(log, text, level);
+	if (log != NULL) {
+		log_write_rec(log, text, level);
+	}
 
 	if (target == NULL)
-		log_file_write(server, NULL, level, text, FALSE);
+		log_file_write(server_tag, NULL, level, text, FALSE);
 	else {
 		/* there can be multiple items separated with comma */
 		targets = g_strsplit(target, ",", -1);
 		for (tmp = targets; *tmp != NULL; tmp++)
-			log_file_write(server, *tmp, level, text, FALSE);
+			log_file_write(server_tag, *tmp, level, text, FALSE);
 		g_strfreev(targets);
 	}
 }
 
-static void log_line(WINDOW_REC *window, SERVER_REC *server,
-		     const char *target, int level, const char *text)
+static void log_line(TEXT_DEST_REC *dest, const char *text)
 {
 	char **lines, **tmp;
 
-	if (level == MSGLEVEL_NEVER)
+	if (dest->level == MSGLEVEL_NEVER)
 		return;
 
 	/* let autolog open the log records */
-	autolog_open_check(server, target, level);
+	autolog_open_check(dest->server, dest->server_tag,
+			   dest->target, dest->level);
 
 	if (logs == NULL)
 		return;
@@ -457,25 +508,26 @@ static void log_line(WINDOW_REC *window, SERVER_REC *server,
 	   line at a time */
 	lines = g_strsplit(text, "\n", -1);
 	for (tmp = lines; *tmp != NULL; tmp++)
-		log_single_line(window, server, target, level, *tmp);
+		log_single_line(dest->window, dest->server_tag,
+				dest->target, dest->level, *tmp);
 	g_strfreev(lines);
 }
 
-static void sig_printtext_stripped(TEXT_DEST_REC *dest, const char *text)
+static void sig_printtext(TEXT_DEST_REC *dest, const char *text,
+			  const char *stripped)
 {
 	if (skip_next_printtext) {
 		skip_next_printtext = FALSE;
 		return;
 	}
 
-	log_line(dest->window, dest->server, dest->target,
-		 dest->level, text);
+	log_line(dest, text);
 }
 
 static void sig_print_format(THEME_REC *theme, const char *module,
 			     TEXT_DEST_REC *dest, void *formatnum, char **args)
 {
-	char *str, *stripped, *linestart, *tmp;
+	char *str, *linestart, *tmp;
 
 	if (log_theme == NULL) {
 		/* theme isn't loaded for some reason (/reload destroys it),
@@ -500,10 +552,7 @@ static void sig_print_format(THEME_REC *theme, const char *module,
 		g_free(tmp);
 
 		/* strip colors from text, log it. */
-		stripped = strip_codes(str);
-		log_line(dest->window, dest->server, dest->target,
-			 dest->level, stripped);
-		g_free(stripped);
+		log_line(dest, str);
 	}
 	g_free(str);
 
@@ -532,7 +581,7 @@ static int sig_autoremove(void)
 
 		server = server_find_tag(logitem->servertag);
 		if (logitem->type == LOG_ITEM_TARGET &&
-		    server != NULL && !server->ischannel(logitem->name))
+		    server != NULL && !server_ischannel(server, logitem->name))
 			log_close(log);
 	}
 	return 1;
@@ -558,7 +607,29 @@ static void sig_log_locked(LOG_REC *log)
 static void sig_log_create_failed(LOG_REC *log)
 {
 	printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
-		    TXT_LOG_CREATE_FAILED, log->fname, g_strerror(errno));
+		    TXT_LOG_CREATE_FAILED,
+		    log->real_fname, g_strerror(errno));
+}
+
+static void sig_log_new(LOG_REC *log)
+{
+	if (!settings_get_bool("awaylog_colors") &&
+	    strcmp(log->fname, settings_get_str("awaylog_file")) == 0)
+                log->colorizer = log_colorizer_strip;
+}
+
+static void sig_log_config_read(LOG_REC *log, CONFIG_NODE *node)
+{
+        if (!config_node_get_bool(node, "colors", FALSE))
+		log->colorizer = log_colorizer_strip;
+}
+
+static void sig_log_config_save(LOG_REC *log, CONFIG_NODE *node)
+{
+        if (log->colorizer == NULL)
+		iconfig_node_set_bool(node, "colors", TRUE);
+        else
+		iconfig_node_set_str(node, "colors", NULL);
 }
 
 static void sig_awaylog_show(LOG_REC *log, gpointer pmsgs, gpointer pfilepos)
@@ -615,9 +686,11 @@ void fe_log_init(void)
 	autoremove_tag = g_timeout_add(60000, (GSourceFunc) sig_autoremove, NULL);
 	skip_next_printtext = FALSE;
 
+	settings_add_bool("log", "awaylog_colors", TRUE);
+        settings_add_bool("log", "autolog", FALSE);
+	settings_add_bool("log", "autolog_colors", FALSE);
         settings_add_str("log", "autolog_path", "~/irclogs/$tag/$0.log");
 	settings_add_str("log", "autolog_level", "all -crap -clientcrap -ctcps");
-        settings_add_bool("log", "autolog", FALSE);
         settings_add_str("log", "log_theme", "");
 
 	autolog_level = 0;
@@ -631,17 +704,20 @@ void fe_log_init(void)
 	command_bind("log stop", NULL, (SIGNAL_FUNC) cmd_log_stop);
 	command_bind("window log", NULL, (SIGNAL_FUNC) cmd_window_log);
 	command_bind("window logfile", NULL, (SIGNAL_FUNC) cmd_window_logfile);
-	signal_add_first("print text stripped", (SIGNAL_FUNC) sig_printtext_stripped);
+	signal_add_first("print text", (SIGNAL_FUNC) sig_printtext);
 	signal_add("window item destroy", (SIGNAL_FUNC) sig_window_item_destroy);
 	signal_add("window refnum changed", (SIGNAL_FUNC) sig_window_refnum_changed);
 	signal_add("server disconnected", (SIGNAL_FUNC) sig_server_disconnected);
 	signal_add("log locked", (SIGNAL_FUNC) sig_log_locked);
 	signal_add("log create failed", (SIGNAL_FUNC) sig_log_create_failed);
+	signal_add("log new", (SIGNAL_FUNC) sig_log_new);
+	signal_add("log config read", (SIGNAL_FUNC) sig_log_config_read);
+	signal_add("log config save", (SIGNAL_FUNC) sig_log_config_save);
 	signal_add("awaylog show", (SIGNAL_FUNC) sig_awaylog_show);
 	signal_add("theme destroyed", (SIGNAL_FUNC) sig_theme_destroyed);
 	signal_add("setup changed", (SIGNAL_FUNC) read_settings);
 
-	command_set_options("log open", "noopen autoopen -targets window");
+	command_set_options("log open", "noopen autoopen -targets window colors");
 }
 
 void fe_log_deinit(void)
@@ -657,12 +733,15 @@ void fe_log_deinit(void)
 	command_unbind("log stop", (SIGNAL_FUNC) cmd_log_stop);
 	command_unbind("window log", (SIGNAL_FUNC) cmd_window_log);
 	command_unbind("window logfile", (SIGNAL_FUNC) cmd_window_logfile);
-	signal_remove("print text stripped", (SIGNAL_FUNC) sig_printtext_stripped);
+	signal_remove("print text", (SIGNAL_FUNC) sig_printtext);
 	signal_remove("window item destroy", (SIGNAL_FUNC) sig_window_item_destroy);
 	signal_remove("window refnum changed", (SIGNAL_FUNC) sig_window_refnum_changed);
 	signal_remove("server disconnected", (SIGNAL_FUNC) sig_server_disconnected);
 	signal_remove("log locked", (SIGNAL_FUNC) sig_log_locked);
 	signal_remove("log create failed", (SIGNAL_FUNC) sig_log_create_failed);
+	signal_remove("log new", (SIGNAL_FUNC) sig_log_new);
+	signal_remove("log config read", (SIGNAL_FUNC) sig_log_config_read);
+	signal_remove("log config save", (SIGNAL_FUNC) sig_log_config_save);
 	signal_remove("awaylog show", (SIGNAL_FUNC) sig_awaylog_show);
 	signal_remove("theme destroyed", (SIGNAL_FUNC) sig_theme_destroyed);
 	signal_remove("setup changed", (SIGNAL_FUNC) read_settings);

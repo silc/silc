@@ -146,6 +146,8 @@ static void cmd_server_add(const char *data)
 
 	if (g_hash_table_lookup(optlist, "auto")) rec->autoconnect = TRUE;
 	if (g_hash_table_lookup(optlist, "noauto")) rec->autoconnect = FALSE;
+	if (g_hash_table_lookup(optlist, "proxy")) rec->no_proxy = FALSE;
+	if (g_hash_table_lookup(optlist, "noproxy")) rec->no_proxy = TRUE;
 
 	if (*password != '\0' && strcmp(password, "-") != 0) rec->password = g_strdup(password);
 	value = g_hash_table_lookup(optlist, "host");
@@ -175,7 +177,7 @@ static void cmd_server_remove(const char *data)
 	if (*addr == '\0') cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 
         if (*port == '\0')
-		rec = server_setup_find(addr, -1);
+		rec = server_setup_find(addr, -1, NULL);
 	else
 		rec = server_setup_find_port(addr, atoi(port));
 
@@ -189,35 +191,29 @@ static void cmd_server_remove(const char *data)
 	cmd_params_free(free_arg);
 }
 
-static void cmd_server(const char *data, SERVER_REC *server, void *item)
+static void cmd_server(const char *data)
+{
+	if (*data != '\0')
+		return;
+
+	if (servers == NULL && lookup_servers == NULL &&
+	    reconnects == NULL) {
+		printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
+			    TXT_NO_CONNECTED_SERVERS);
+	} else {
+		print_servers();
+		print_lookup_servers();
+		print_reconnects();
+	}
+
+        signal_stop();
+}
+
+static void cmd_server_connect(const char *data)
 {
 	GHashTable *optlist;
 	char *addr;
 	void *free_arg;
-
-	if (*data == '\0') {
-		if (servers == NULL && lookup_servers == NULL &&
-		    reconnects == NULL) {
-			printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
-                                    TXT_NO_CONNECTED_SERVERS);
-		} else {
-			print_servers();
-			print_lookup_servers();
-			print_reconnects();
-		}
-
-		signal_stop();
-		return;
-	}
-
-	if (g_strncasecmp(data, "add ", 4) == 0 ||
-	    g_strncasecmp(data, "remove ", 7) == 0 ||
-	    g_strcasecmp(data, "list") == 0 ||
-	    g_strncasecmp(data, "list ", 5) == 0) {
-		command_runsub("server", data, server, item);
-		signal_stop();
-		return;
-	}
 
 	if (!cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS,
 			    "connect", &optlist, &addr))
@@ -264,10 +260,10 @@ static void sig_connect_failed(SERVER_REC *server, gchar *msg)
 	if (msg == NULL) {
 		/* no message so this wasn't unexpected fail - send
 		   connection_lost message instead */
-		printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
+		printformat(server, NULL, MSGLEVEL_CLIENTNOTICE,
 			    TXT_CONNECTION_LOST, server->connrec->address);
 	} else {
-		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR,
+		printformat(server, NULL, MSGLEVEL_CLIENTERROR,
 			    TXT_CANT_CONNECT, server->connrec->address, server->connrec->port, msg);
 	}
 }
@@ -276,7 +272,7 @@ static void sig_server_disconnected(SERVER_REC *server)
 {
 	g_return_if_fail(server != NULL);
 
-	printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
+	printformat(server, NULL, MSGLEVEL_CLIENTNOTICE,
 		    TXT_CONNECTION_LOST, server->connrec->address);
 }
 
@@ -284,7 +280,7 @@ static void sig_server_quit(SERVER_REC *server, const char *msg)
 {
 	g_return_if_fail(server != NULL);
 
-	printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
+	printformat(server, NULL, MSGLEVEL_CLIENTNOTICE,
 		    TXT_SERVER_QUIT, server->connrec->address, msg);
 }
 
@@ -292,8 +288,9 @@ static void sig_server_lag_disconnected(SERVER_REC *server)
 {
 	g_return_if_fail(server != NULL);
 
-	printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
-		    TXT_LAG_DISCONNECTED, server->connrec->address, time(NULL)-server->lag_sent);
+	printformat(server, NULL, MSGLEVEL_CLIENTNOTICE,
+		    TXT_LAG_DISCONNECTED, server->connrec->address,
+		    time(NULL)-server->lag_sent.tv_sec);
 }
 
 static void sig_server_reconnect_removed(RECONNECT_REC *reconnect)
@@ -324,9 +321,10 @@ static void sig_chat_protocol_unknown(const char *protocol)
 void fe_server_init(void)
 {
 	command_bind("server", NULL, (SIGNAL_FUNC) cmd_server);
+	command_bind("server connect", NULL, (SIGNAL_FUNC) cmd_server_connect);
 	command_bind("server add", NULL, (SIGNAL_FUNC) cmd_server_add);
 	command_bind("server remove", NULL, (SIGNAL_FUNC) cmd_server_remove);
-	command_set_options("server add", "4 6 auto noauto -host -port");
+	command_set_options("server add", "4 6 auto noauto proxy noproxy -host -port");
 
 	signal_add("server looking", (SIGNAL_FUNC) sig_server_looking);
 	signal_add("server connecting", (SIGNAL_FUNC) sig_server_connecting);
@@ -345,6 +343,7 @@ void fe_server_init(void)
 void fe_server_deinit(void)
 {
 	command_unbind("server", (SIGNAL_FUNC) cmd_server);
+	command_unbind("server connect", (SIGNAL_FUNC) cmd_server_connect);
 	command_unbind("server add", (SIGNAL_FUNC) cmd_server_add);
 	command_unbind("server remove", (SIGNAL_FUNC) cmd_server_remove);
 

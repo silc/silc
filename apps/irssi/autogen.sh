@@ -15,10 +15,6 @@ fi
 # get versions
 version_date=`date +%Y%m%d`
 
-echo "/* automatically created by autogen.sh */" > irssi-version.h.in
-echo "#define IRSSI_VERSION \"@VERSION@\"" >> irssi-version.h.in
-echo "#define IRSSI_VERSION_DATE \"$version_date\"" >> irssi-version.h.in
-
 # create help files
 echo "Creating help files..."
 perl syntax.pl
@@ -80,6 +76,13 @@ if test "$DIE" -eq 1; then
   exit 1
 fi
 
+#if test -z "$*"; then
+#  echo "**Warning**: I am going to run \`configure' with no arguments."
+#  echo "If you wish to pass any to it, please specify them on the"
+#  echo \`$0\'" command line."
+#  echo
+#fi
+
 case $CC in
 xlc )
   am_opt=--include-deps;;
@@ -88,9 +91,9 @@ esac
 rm -f aclocal.m4
 if grep "^AM_PROG_LIBTOOL" configure.in >/dev/null; then
   echo "Running libtoolize..."
-  libtoolize --copy --force
+  libtoolize --force --copy
 fi
-aclocalinclude="$ACLOCAL_FLAGS"
+aclocalinclude="$ACLOCAL_FLAGS -I ."
 echo "Running aclocal $aclocalinclude ..."
 aclocal $aclocalinclude
 if grep "^AM_CONFIG_HEADER" configure.in >/dev/null; then
@@ -99,5 +102,15 @@ if grep "^AM_CONFIG_HEADER" configure.in >/dev/null; then
 fi
 echo "Running autoconf ..."
 autoconf
-echo "Running automake $am_opt ..."
-automake --add-missing --foreign $am_opt
+echo "Running automake --gnu $am_opt ..."
+automake --add-missing --gnu $am_opt
+
+#conf_flags="--enable-maintainer-mode --enable-compile-warnings" #--enable-iso-c
+
+#if test x$NOCONFIGURE = x; then
+#  echo Running $srcdir/configure $conf_flags "$@" ...
+#  $srcdir/configure $conf_flags "$@" \
+#  && echo Now type \`make\' to compile $PKG_NAME || exit 1
+#else
+#  echo Skipping configure process.
+#fi

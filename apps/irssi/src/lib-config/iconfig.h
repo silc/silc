@@ -100,6 +100,11 @@ CONFIG_NODE *config_list_find_node(CONFIG_REC *rec, const char *section, const c
 /* Returns n'th node from list. */
 CONFIG_NODE *config_node_index(CONFIG_NODE *node, int index);
 
+/* Returns the first non-comment node in list */
+GSList *config_node_first(GSList *list);
+/* Returns the next non-comment node in list */
+GSList *config_node_next(GSList *list);
+
 /* Setting values */
 int config_set_str(CONFIG_REC *rec, const char *section, const char *key, const char *value);
 int config_set_int(CONFIG_REC *rec, const char *section, const char *key, int value);

@@ -154,6 +154,7 @@ file=irssi/irssi-version.h.in
 version_date=`date +%Y%m%d`
 echo "/* automatically created by autogen.sh */" > $file
 echo "#define IRSSI_VERSION \"$dist_version (Irssi base: @VERSION@ - SILC base: SILC Toolkit $version)\"" >>$file
-echo "#define IRSSI_VERSION_DATE \"$version_date\"" >> $file
+echo "#define IRSSI_VERSION_DATE $version_date" >> $file
+echo "#define IRSSI_VERSION_TIME $version_date" >> $file
 
 echo "Done, now run ./configure and make."

@@ -32,7 +32,6 @@
 CONFIG_REC *mainconfig;
 
 static GString *last_errors;
-static char *last_config_error_msg;
 static GSList *last_invalid_modules;
 static int fe_initialized;
 static int config_changed; /* FIXME: remove after .98 (unless needed again) */
@@ -274,30 +273,11 @@ static void sig_init_finished(void)
 		g_string_free(last_errors, TRUE);
 	}
 
-	if (last_config_error_msg != NULL) {
-		signal_emit("gui dialog", 2, "error", last_config_error_msg);
-		g_free_and_null(last_config_error_msg);
-	}
-
 	if (config_changed) {
 		/* some backwards compatibility changes were made to
 		   config file, reload it */
 		signal_emit("setup changed", 0);
 	}
-}
-
-/* FIXME: remove after 0.7.98 - only for backward compatibility */
-static void settings_move(SETTINGS_REC *rec, char *value)
-{
-	CONFIG_NODE *setnode, *node;
-
-	setnode = iconfig_node_traverse("settings", TRUE);
-	node = config_node_section(setnode, rec->module, NODE_TYPE_BLOCK);
-
-	iconfig_node_set_str(node, rec->key, value);
-	iconfig_node_set_str(setnode, rec->key, NULL);
-
-        config_changed = TRUE;
 }
 
 static void settings_clean_invalid_module(const char *module)
@@ -312,9 +292,9 @@ static void settings_clean_invalid_module(const char *module)
 	node = config_node_section(node, module, -1);
 	if (node == NULL) return;
 
-	for (tmp = node->value; tmp != NULL; tmp = next) {
+	for (tmp = config_node_first(node->value); tmp != NULL; tmp = next) {
 		CONFIG_NODE *subnode = tmp->data;
-                next = tmp->next;
+                next = config_node_next(tmp);
 
 		set = g_hash_table_lookup(settings, subnode->key);
 		if (set == NULL || strcmp(set->module, module) != 0)
@@ -344,25 +324,12 @@ void settings_check_module(const char *module)
         SETTINGS_REC *set;
 	CONFIG_NODE *node;
         GString *errors;
-	GSList *tmp, *next;
+	GSList *tmp;
         int count;
 
         g_return_if_fail(module != NULL);
 
 	node = iconfig_node_traverse("settings", FALSE);
-	if (node != NULL) {
-		/* FIXME: remove after 0.7.98 */
-		for (tmp = node->value; tmp != NULL; tmp = next) {
-			CONFIG_NODE *node = tmp->data;
-
-                        next = tmp->next;
-			if (node->type != NODE_TYPE_KEY)
-				continue;
-			set = g_hash_table_lookup(settings, node->key);
-                        if (set != NULL)
-				settings_move(set, node->value);
-		}
-	}
 	node = node == NULL ? NULL : config_node_section(node, module, -1);
 	if (node == NULL) return;
 
@@ -371,7 +338,8 @@ void settings_check_module(const char *module)
 			 "file for module %s:", module);
 
         count = 0;
-	for (tmp = node->value; tmp != NULL; tmp = tmp->next) {
+	tmp = config_node_first(node->value);
+	for (; tmp != NULL; tmp = config_node_next(tmp)) {
 		node = tmp->data;
 
 		set = g_hash_table_lookup(settings, node->key);
@@ -489,18 +457,17 @@ static CONFIG_REC *parse_configfile(const char *fname)
 	CONFIG_REC *config;
 	struct stat statbuf;
         const char *path;
-	char *real_fname;
+	char *str;
 
-	real_fname = fname != NULL ? g_strdup(fname) :
-		g_strdup_printf("%s"G_DIR_SEPARATOR_S".silc"
-				G_DIR_SEPARATOR_S"config", g_get_home_dir());
+	if (fname == NULL)
+		fname = get_irssi_config();
 
-	if (stat(real_fname, &statbuf) == 0)
-		path = real_fname;
+	if (stat(fname, &statbuf) == 0)
+		path = fname;
 	else {
 		/* user configuration file not found, use the default one
 		   from sysconfdir */
-                path = SYSCONFDIR"/irssi/config";
+                path = SYSCONFDIR"/irssi.conf";
 		if (stat(path, &statbuf) != 0) {
 			/* no configuration file in sysconfdir ..
 			   use the build-in configuration */
@@ -510,9 +477,11 @@ static CONFIG_REC *parse_configfile(const char *fname)
 
 	config = config_open(path, -1);
 	if (config == NULL) {
-		last_config_error_msg =
-			g_strdup_printf("Error opening configuration file %s: %s",
-					path, g_strerror(errno));
+		str = g_strdup_printf("Error opening configuration file %s: %s",
+				      path, g_strerror(errno));
+		signal_emit("gui dialog", 2, "error", str);
+                g_free(str);
+
 		config = config_open(NULL, -1);
 	}
 
@@ -521,9 +490,8 @@ static CONFIG_REC *parse_configfile(const char *fname)
         else
 		config_parse_data(config, default_config, "internal");
 
-	config_change_file_name(config, real_fname, 0660);
-        irssi_config_save_state(real_fname);
-	g_free(real_fname);
+	config_change_file_name(config, fname, 0660);
+        irssi_config_save_state(fname);
 	return config;
 }
 
@@ -532,27 +500,26 @@ static void init_configfile(void)
 	struct stat statbuf;
 	char *str;
 
-	str = g_strdup_printf("%s"G_DIR_SEPARATOR_S".silc", g_get_home_dir());
-	if (stat(str, &statbuf) != 0) {
+	if (stat(get_irssi_dir(), &statbuf) != 0) {
 		/* ~/.irssi not found, create it. */
-		if (mkpath(str, 0700) != 0) {
-			g_error("Couldn't create %s directory", str);
+		if (mkpath(get_irssi_dir(), 0700) != 0) {
+			g_error("Couldn't create %s directory", get_irssi_dir());
 		}
 	} else if (!S_ISDIR(statbuf.st_mode)) {
 		g_error("%s is not a directory.\n"
-			"You should remove it with command: rm ~/.irssi", str);
+			"You should remove it with command: rm %s",
+			get_irssi_dir(), get_irssi_dir());
 	}
-	g_free(str);
 
 	mainconfig = parse_configfile(NULL);
 	config_last_modifycounter = mainconfig->modifycounter;
 
 	/* any errors? */
 	if (config_last_error(mainconfig) != NULL) {
-		last_config_error_msg =
-			g_strdup_printf("Ignored errors in configuration "
-					"file:\n%s",
-					config_last_error(mainconfig));
+		str = g_strdup_printf("Ignored errors in configuration file:\n%s",
+				      config_last_error(mainconfig));
+		signal_emit("gui dialog", 2, "error", str);
+                g_free(str);
 	}
 
 	signal(SIGTERM, sig_term);
@@ -563,11 +530,9 @@ int settings_reread(const char *fname)
 	CONFIG_REC *tempconfig;
 	char *str;
 
-	if (fname == NULL) fname = "~/.silc/config";
-
-	str = convert_home(fname);
+	str = fname == NULL ? NULL : convert_home(fname);
 	tempconfig = parse_configfile(str);
-	g_free(str);
+        g_free_not_null(str);
 
 	if (tempconfig == NULL) {
 		signal_emit("gui dialog", 2, "error", g_strerror(errno));
@@ -589,11 +554,11 @@ int settings_reread(const char *fname)
 	config_last_modifycounter = mainconfig->modifycounter;
 
 	signal_emit("setup changed", 0);
-	signal_emit("setup reread", 0);
+	signal_emit("setup reread", 1, mainconfig->fname);
         return TRUE;
 }
 
-int settings_save(const char *fname)
+int settings_save(const char *fname, int autosave)
 {
 	char *str;
 	int error;
@@ -610,19 +575,20 @@ int settings_save(const char *fname)
 		signal_emit("gui dialog", 2, "error", str);
 		g_free(str);
 	}
+	signal_emit("setup saved", 2, fname, GINT_TO_POINTER(autosave));
         return !error;
 }
 
-static void sig_autosave(void)
+static int sig_autosave(void)
 {
 	char *fname, *str;
 
 	if (!settings_get_bool("settings_autosave") ||
 	    config_last_modifycounter == mainconfig->modifycounter)
-		return;
+		return 1;
 
 	if (!irssi_config_is_changed(NULL))
-		settings_save(NULL);
+		settings_save(NULL, TRUE);
 	else {
 		fname = g_strconcat(mainconfig->fname, ".autosave", NULL);
 		str = g_strdup_printf("Configuration file was modified "
@@ -633,18 +599,19 @@ static void sig_autosave(void)
 		signal_emit("gui dialog", 2, "warning", str);
 		g_free(str);
 
-                settings_save(fname);
+                settings_save(fname, TRUE);
 		g_free(fname);
 	}
+
+        return 1;
 }
 
 void settings_init(void)
 {
-	settings = g_hash_table_new((GHashFunc) g_str_hash,
-				    (GCompareFunc) g_str_equal);
+	settings = g_hash_table_new((GHashFunc) g_istr_hash,
+				    (GCompareFunc) g_istr_equal);
 
 	last_errors = NULL;
-	last_config_error_msg = NULL;
         last_invalid_modules = NULL;
 	fe_initialized = FALSE;
         config_changed = FALSE;

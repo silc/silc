@@ -30,7 +30,7 @@
 #include "lib-config/iconfig.h"
 #include "settings.h"
 
-#define DEFAULT_LOG_FILE_CREATE_MODE 644
+#define DEFAULT_LOG_FILE_CREATE_MODE 600
 
 #ifdef HAVE_FCNTL
 static struct flock lock;
@@ -165,7 +165,7 @@ void log_stop_logging(LOG_REC *log)
 
 static void log_rotate_check(LOG_REC *log)
 {
-	char *new_fname;
+	char *new_fname, *dir;
 
 	g_return_if_fail(log != NULL);
 
@@ -176,6 +176,12 @@ static void log_rotate_check(LOG_REC *log)
 	if (strcmp(new_fname, log->real_fname) != 0) {
 		/* rotate log */
 		log_stop_logging(log);
+		signal_emit("log rotated", 1, log);
+
+		dir = g_dirname(new_fname);
+		mkpath(dir, LOG_DIR_CREATE_MODE);
+		g_free(dir);
+
 		log_start_logging(log);
 	}
 	g_free(new_fname);
@@ -183,6 +189,7 @@ static void log_rotate_check(LOG_REC *log)
 
 void log_write_rec(LOG_REC *log, const char *str, int level)
 {
+        char *colorstr;
 	struct tm *tm;
 	time_t now;
 	int hour, day;
@@ -214,6 +221,11 @@ void log_write_rec(LOG_REC *log, const char *str, int level)
 
 	log->last = now;
 
+	if (log->colorizer == NULL)
+		colorstr = NULL;
+        else
+                str = colorstr = log->colorizer(str);
+
         if ((level & MSGLEVEL_LASTLOG) == 0)
 		log_write_timestamp(log->handle, log_timestamp, str, now);
 	else
@@ -221,6 +233,8 @@ void log_write_rec(LOG_REC *log, const char *str, int level)
 	write_buffer(log->handle, "\n", 1);
 
 	signal_emit("log written", 2, log, str);
+
+        g_free_not_null(colorstr);
 }
 
 LOG_ITEM_REC *log_item_find(LOG_REC *log, int type, const char *item,
@@ -243,11 +257,11 @@ LOG_ITEM_REC *log_item_find(LOG_REC *log, int type, const char *item,
 	return NULL;
 }
 
-void log_file_write(SERVER_REC *server, const char *item, int level,
+void log_file_write(const char *server_tag, const char *item, int level,
 		    const char *str, int no_fallbacks)
 {
 	GSList *tmp, *fallbacks;
-	char *tmpstr, *servertag;
+	char *tmpstr;
 	int found;
 
 	g_return_if_fail(str != NULL);
@@ -255,7 +269,6 @@ void log_file_write(SERVER_REC *server, const char *item, int level,
 	if (logs == NULL)
 		return;
 
-	servertag = server == NULL ? NULL : server->tag;
 	fallbacks = NULL; found = FALSE;
 
 	for (tmp = logs; tmp != NULL; tmp = tmp->next) {
@@ -271,7 +284,7 @@ void log_file_write(SERVER_REC *server, const char *item, int level,
 			fallbacks = g_slist_append(fallbacks, rec);
 		else if (item != NULL &&
 			 log_item_find(rec, LOG_ITEM_TARGET, item,
-				       servertag) != NULL)
+				       server_tag) != NULL)
 			log_write_rec(rec, str, level);
 	}
 
@@ -343,6 +356,8 @@ static void log_update_config(LOG_REC *log)
 
 	if (log->items != NULL)
 		log_items_update_config(log, node);
+
+	signal_emit("log config save", 2, log, node);
 }
 
 static void log_remove_config(LOG_REC *log)
@@ -457,7 +472,8 @@ static void log_items_read_config(CONFIG_NODE *node, LOG_REC *log)
 	char *item;
 	int type;
 
-	for (tmp = node->value; tmp != NULL; tmp = tmp->next) {
+	tmp = config_node_first(node->value);
+	for (; tmp != NULL; tmp = config_node_next(tmp)) {
 		node = tmp->data;
 
 		if (node->type != NODE_TYPE_BLOCK)
@@ -500,7 +516,8 @@ static void log_read_config(void)
 	node = iconfig_node_traverse("logs", FALSE);
 	if (node == NULL) return;
 
-	for (tmp = node->value; tmp != NULL; tmp = tmp->next) {
+	tmp = config_node_first(node->value);
+	for (; tmp != NULL; tmp = config_node_next(tmp)) {
 		node = tmp->data;
 
 		if (node->type != NODE_TYPE_BLOCK)
@@ -513,6 +530,8 @@ static void log_read_config(void)
 		log->fname = g_strdup(node->key);
 		log->autoopen = config_node_get_bool(node, "auto_open", FALSE);
 		log->level = level2bits(config_node_get_str(node, "level", 0));
+
+		signal_emit("log config read", 2, log, node);
 
 		node = config_node_section(node, "items", -1);
 		if (node != NULL)
@@ -548,9 +567,9 @@ void log_init(void)
 			 "--- Day changed %a %b %d %Y");
 
 	read_settings();
-	log_read_config();
         signal_add("setup changed", (SIGNAL_FUNC) read_settings);
         signal_add("setup reread", (SIGNAL_FUNC) log_read_config);
+        signal_add("irssi init finished", (SIGNAL_FUNC) log_read_config);
 }
 
 void log_deinit(void)
@@ -562,4 +581,5 @@ void log_deinit(void)
 
 	signal_remove("setup changed", (SIGNAL_FUNC) read_settings);
         signal_remove("setup reread", (SIGNAL_FUNC) log_read_config);
+        signal_remove("irssi init finished", (SIGNAL_FUNC) log_read_config);
 }

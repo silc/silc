@@ -31,7 +31,6 @@
 #include "chat-protocols.h"
 #include "servers.h"
 #include "servers-reconnect.h"
-#include "servers-redirect.h"
 #include "servers-setup.h"
 #include "channels.h"
 #include "queries.h"
@@ -46,23 +45,26 @@ void server_connect_failed(SERVER_REC *server, const char *msg)
 	lookup_servers = g_slist_remove(lookup_servers, server);
 
 	signal_emit("server connect failed", 2, server, msg);
-	if (server->connect_tag != -1)
+
+	if (server->connect_tag != -1) {
 		g_source_remove(server->connect_tag);
-	if (server->handle != NULL)
+		server->connect_tag = -1;
+	}
+	if (server->handle != NULL) {
 		net_sendbuffer_destroy(server->handle, TRUE);
+		server->handle = NULL;
+	}
 
 	if (server->connect_pipe[0] != NULL) {
 		g_io_channel_close(server->connect_pipe[0]);
 		g_io_channel_unref(server->connect_pipe[0]);
 		g_io_channel_close(server->connect_pipe[1]);
 		g_io_channel_unref(server->connect_pipe[1]);
+		server->connect_pipe[0] = NULL;
+		server->connect_pipe[1] = NULL;
 	}
 
-	MODULE_DATA_DEINIT(server);
-	server_connect_free(server->connrec);
-	g_free_not_null(server->nick);
-	g_free(server->tag);
-	g_free(server);
+	server_unref(server);
 }
 
 /* generate tag from server's address */
@@ -101,11 +103,23 @@ static char *server_create_tag(SERVER_CONNECT_REC *conn)
 	char *tag;
 	int num;
 
-        g_return_val_if_fail(IS_SERVER_CONNECT(conn), NULL);
+	g_return_val_if_fail(IS_SERVER_CONNECT(conn), NULL);
 
 	tag = conn->chatnet != NULL && *conn->chatnet != '\0' ?
 		g_strdup(conn->chatnet) :
 		server_create_address_tag(conn->address);
+
+	if (conn->tag != NULL && server_find_tag(conn->tag) == NULL &&
+	    strncmp(conn->tag, tag, strlen(tag)) == 0) {
+		/* use the existing tag if it begins with the same ID -
+		   this is useful when you have several connections to
+		   same server and you want to keep the same tags with
+		   the servers (or it would cause problems when rejoining
+		   /LAYOUT SAVEd channels). */
+		g_free(tag);
+		return g_strdup(conn->tag);
+	}
+
 
 	/* then just append numbers after tag until unused is found.. */
 	str = g_string_new(tag);
@@ -122,11 +136,6 @@ static char *server_create_tag(SERVER_CONNECT_REC *conn)
 void server_connect_finished(SERVER_REC *server)
 {
 	server->connect_time = time(NULL);
-	server->rawlog = rawlog_create();
-
-	server->eventtable = g_hash_table_new((GHashFunc) g_istr_hash, (GCompareFunc) g_istr_equal);
-	server->eventgrouptable = g_hash_table_new((GHashFunc) g_direct_hash, (GCompareFunc) g_direct_equal);
-	server->cmdtable = g_hash_table_new((GHashFunc) g_istr_hash, (GCompareFunc) g_istr_equal);
 
 	servers = g_slist_append(servers, server);
 	signal_emit("server connected", 1, server);
@@ -189,10 +198,15 @@ static void server_connect_callback_readpipe(SERVER_REC *server)
 	own_ip = ip == NULL ? NULL :
 		(IPADDR_IS_V6(ip) ? conn->own_ip6 : conn->own_ip4);
 
-	if (ip != NULL)
+	handle = NULL;
+	if (ip != NULL) {
 		signal_emit("server connecting", 2, server, ip);
+                if (server->handle == NULL)
+			handle = net_connect_ip(ip, port, own_ip);
+		else
+                        handle = net_sendbuffer_handle(server->handle);
+	}
 
-	handle = ip == NULL ? NULL : net_connect_ip(ip, port, own_ip);
 	if (handle == NULL) {
 		/* failed */
 		if (iprec.error != 0 && net_hosterror_notfound(iprec.error)) {
@@ -215,7 +229,8 @@ static void server_connect_callback_readpipe(SERVER_REC *server)
 		return;
 	}
 
-	server->handle = net_sendbuffer_create(handle, 0);
+        if (server->handle == NULL)
+		server->handle = net_sendbuffer_create(handle, 0);
 	server->connect_tag =
 		g_input_add(handle, G_INPUT_WRITE | G_INPUT_READ,
 			    (GInputFunction) server_connect_callback_init,
@@ -229,6 +244,7 @@ void server_connect_init(SERVER_REC *server)
 
 	MODULE_DATA_INIT(server);
 	server->type = module_get_uniq_id("SERVER", 0);
+	server_ref(server);
 
 	server->nick = g_strdup(server->connrec->nick);
 	if (server->connrec->username == NULL || *server->connrec->username == '\0') {
@@ -279,6 +295,7 @@ int server_start_connect(SERVER_REC *server)
 		g_input_add(server->connect_pipe[0], G_INPUT_READ,
 			    (GInputFunction) server_connect_callback_readpipe,
 			    server);
+	server->rawlog = rawlog_create();
 
 	lookup_servers = g_slist_append(lookup_servers, server);
 
@@ -317,6 +334,9 @@ void server_disconnect(SERVER_REC *server)
 
 	g_return_if_fail(IS_SERVER(server));
 
+	if (server->disconnected)
+		return;
+
 	if (server->connect_tag != -1) {
 		/* still connecting to server.. */
 		if (server->connect_pid != -1)
@@ -327,6 +347,7 @@ void server_disconnect(SERVER_REC *server)
 
 	servers = g_slist_remove(servers, server);
 
+	server->disconnected = TRUE;
 	signal_emit("server disconnected", 1, server);
 
 	/* close all channels */
@@ -345,18 +366,46 @@ void server_disconnect(SERVER_REC *server)
 		server->handle = NULL;
 	}
 
-	if (server->readtag > 0)
+	if (server->readtag > 0) {
 		g_source_remove(server->readtag);
+		server->readtag = -1;
+	}
+
+	server_unref(server);
+}
+
+void server_ref(SERVER_REC *server)
+{
+	g_return_if_fail(IS_SERVER(server));
+
+	server->refcount++;
+}
+
+int server_unref(SERVER_REC *server)
+{
+	g_return_val_if_fail(IS_SERVER(server), FALSE);
+
+	if (--server->refcount > 0)
+		return TRUE;
+
+	if (g_slist_find(servers, server) != NULL) {
+		g_warning("Non-referenced server wasn't disconnected");
+		server_disconnect(server);
+		return TRUE;
+	}
 
         MODULE_DATA_DEINIT(server);
-	server_connect_free(server->connrec);
-	rawlog_destroy(server->rawlog);
-	line_split_free(server->buffer);
-	g_free_not_null(server->version);
-	g_free_not_null(server->away_reason);
+	server_connect_unref(server->connrec);
+	if (server->rawlog != NULL) rawlog_destroy(server->rawlog);
+	if (server->buffer != NULL) line_split_free(server->buffer);
+	g_free(server->version);
+	g_free(server->away_reason);
 	g_free(server->nick);
 	g_free(server->tag);
+
+	server->type = 0;
 	g_free(server);
+        return FALSE;
 }
 
 SERVER_REC *server_find_tag(const char *tag)
@@ -401,15 +450,30 @@ SERVER_REC *server_find_chatnet(const char *chatnet)
 	return NULL;
 }
 
-void server_connect_free(SERVER_CONNECT_REC *conn)
+void server_connect_ref(SERVER_CONNECT_REC *conn)
+{
+        conn->refcount++;
+}
+
+void server_connect_unref(SERVER_CONNECT_REC *conn)
 {
 	g_return_if_fail(IS_SERVER_CONNECT(conn));
 
-	signal_emit("server connect free", 1, conn);
-        g_free_not_null(conn->proxy);
+	if (--conn->refcount > 0)
+		return;
+	if (conn->refcount < 0) {
+		g_warning("Connection '%s' refcount = %d",
+			  conn->tag, conn->refcount);
+	}
+
+        CHAT_PROTOCOL(conn)->destroy_server_connect(conn);
+
+	g_free_not_null(conn->proxy);
 	g_free_not_null(conn->proxy_string);
+	g_free_not_null(conn->proxy_string_after);
 	g_free_not_null(conn->proxy_password);
 
+	g_free_not_null(conn->tag);
 	g_free_not_null(conn->address);
 	g_free_not_null(conn->chatnet);
 
@@ -423,14 +487,14 @@ void server_connect_free(SERVER_CONNECT_REC *conn)
 
 	g_free_not_null(conn->channels);
         g_free_not_null(conn->away_reason);
-        g_free(conn);
+
+        conn->type = 0;
+	g_free(conn);
 }
 
 void server_change_nick(SERVER_REC *server, const char *nick)
 {
-	g_free(server->connrec->nick);
 	g_free(server->nick);
-	server->connrec->nick = g_strdup(nick);
 	server->nick = g_strdup(nick);
 
 	signal_emit("server nick changed", 1, server);
@@ -527,7 +591,6 @@ void servers_init(void)
 	signal_add("chat protocol deinit", (SIGNAL_FUNC) sig_chat_protocol_deinit);
 
 	servers_reconnect_init();
-	servers_redirect_init();
 	servers_setup_init();
 }
 
@@ -536,7 +599,6 @@ void servers_deinit(void)
 	signal_remove("chat protocol deinit", (SIGNAL_FUNC) sig_chat_protocol_deinit);
 
 	servers_setup_deinit();
-	servers_redirect_deinit();
 	servers_reconnect_deinit();
 
 	module_uniq_destroy("SERVER");

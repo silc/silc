@@ -41,7 +41,7 @@ static int last_want_space, last_line_pos;
         ((c) == ',')
 
 #define isseparator(c) \
-	(isspace((int) (c)) || isseparator_notspace(c))
+	(i_isspace(c) || isseparator_notspace(c))
 
 void chat_completion_init(void);
 void chat_completion_deinit(void);
@@ -113,27 +113,28 @@ static void free_completions(void)
 }
 
 /* manual word completion - called when TAB is pressed */
-char *word_complete(WINDOW_REC *window, const char *line, int *pos)
+char *word_complete(WINDOW_REC *window, const char *line, int *pos, int erase)
 {
 	static int startpos = 0, wordlen = 0;
+        int old_startpos, old_wordlen;
 
 	GString *result;
 	char *word, *wordstart, *linestart, *ret;
-	int want_space;
+	int continue_complete, want_space;
 
 	g_return_val_if_fail(line != NULL, NULL);
 	g_return_val_if_fail(pos != NULL, NULL);
 
-	if (complist != NULL && *pos == last_line_pos &&
-	    strcmp(line, last_line) == 0) {
-		/* complete from old list */
-		complist = complist->next != NULL ? complist->next :
-			g_list_first(complist);
-		want_space = last_want_space;
-	} else {
-		/* get new completion list */
-		free_completions();
+	continue_complete = complist != NULL && *pos == last_line_pos &&
+		strcmp(line, last_line) == 0;
 
+	old_startpos = startpos;
+	old_wordlen = wordlen;
+
+	if (!erase && continue_complete) {
+		word = NULL;
+                linestart = NULL;
+	} else {
 		/* get the word we want to complete */
 		word = get_word_at(line, *pos, &wordstart);
 		startpos = (int) (wordstart-line);
@@ -156,7 +157,8 @@ char *word_complete(WINDOW_REC *window, const char *line, int *pos)
 		   BUT if we start completion with "/msg "<tab>, we don't
 		   want to complete the /msg word, but instead complete empty
 		   word with /msg being in linestart. */
-		if (*pos > 0 && line[*pos-1] == ' ') {
+		if (!erase && *pos > 0 && line[*pos-1] == ' ' &&
+		    (*linestart == '\0' || wordstart[-1] != ' ')) {
 			char *old;
 
                         old = linestart;
@@ -171,13 +173,37 @@ char *word_complete(WINDOW_REC *window, const char *line, int *pos)
 			wordlen = 0;
 		}
 
+	}
+
+	if (erase) {
+		signal_emit("complete erase", 3, window, word, linestart);
+
+		if (!continue_complete)
+                        return NULL;
+
+                /* jump to next completion */
+		word = NULL;
+		linestart = NULL;
+                startpos = old_startpos;
+		wordlen = old_wordlen;
+	}
+
+	if (continue_complete) {
+		/* complete from old list */
+		complist = complist->next != NULL ? complist->next :
+			g_list_first(complist);
+		want_space = last_want_space;
+	} else {
+		/* get new completion list */
+		free_completions();
+
 		want_space = TRUE;
 		signal_emit("complete word", 5, &complist, window, word, linestart, &want_space);
 		last_want_space = want_space;
-
-		g_free(linestart);
-		g_free(word);
 	}
+
+	g_free(linestart);
+	g_free(word);
 
 	if (complist == NULL)
 		return NULL;
@@ -207,7 +233,14 @@ char *word_complete(WINDOW_REC *window, const char *line, int *pos)
 	return ret;
 }
 
-GList *list_add_file(GList *list, const char *name)
+#define IS_CURRENT_DIR(dir) \
+        ((dir)[0] == '.' && ((dir)[1] == '\0' || (dir)[1] == G_DIR_SEPARATOR))
+
+#define USE_DEFAULT_PATH(path, default_path) \
+	((!g_path_is_absolute(path) || IS_CURRENT_DIR(path)) && \
+	 default_path != NULL)
+
+GList *list_add_file(GList *list, const char *name, const char *default_path)
 {
 	struct stat statbuf;
 	char *fname;
@@ -215,6 +248,11 @@ GList *list_add_file(GList *list, const char *name)
 	g_return_val_if_fail(name != NULL, NULL);
 
 	fname = convert_home(name);
+	if (USE_DEFAULT_PATH(fname, default_path)) {
+                g_free(fname);
+		fname = g_strconcat(default_path, G_DIR_SEPARATOR_S,
+				    name, NULL);
+	}
 	if (stat(fname, &statbuf) == 0) {
 		list = g_list_append(list, !S_ISDIR(statbuf.st_mode) ? g_strdup(name) :
 				     g_strconcat(name, G_DIR_SEPARATOR_S, NULL));
@@ -224,7 +262,7 @@ GList *list_add_file(GList *list, const char *name)
 	return list;
 }
 
-GList *filename_complete(const char *path)
+GList *filename_complete(const char *path, const char *default_path)
 {
         GList *list;
 	DIR *dirp;
@@ -238,17 +276,31 @@ GList *filename_complete(const char *path)
 
 	/* get directory part of the path - expand ~/ */
 	realpath = convert_home(path);
-	dir = g_dirname(realpath);
-	g_free(realpath);
+	if (USE_DEFAULT_PATH(realpath, default_path)) {
+                g_free(realpath);
+		realpath = g_strconcat(default_path, G_DIR_SEPARATOR_S,
+				       path, NULL);
+	}
 
 	/* open directory for reading */
+	dir = g_dirname(realpath);
 	dirp = opendir(dir);
 	g_free(dir);
-	if (dirp == NULL) return NULL;
+        g_free(realpath);
+
+	if (dirp == NULL)
+		return NULL;
 
 	dir = g_dirname(path);
-	if (*dir == G_DIR_SEPARATOR && dir[1] == '\0')
-		*dir = '\0'; /* completing file in root directory */
+	if (*dir == G_DIR_SEPARATOR && dir[1] == '\0') {
+                /* completing file in root directory */
+		*dir = '\0';
+	} else if (IS_CURRENT_DIR(dir) && !IS_CURRENT_DIR(path)) {
+		/* completing file in default_path
+		   (path not set, and leave it that way) */
+		g_free_and_null(dir);
+	}
+
 	basename = g_basename(path);
 	len = strlen(basename);
 
@@ -264,14 +316,15 @@ GList *filename_complete(const char *path)
 		}
 
 		if (len == 0 || strncmp(dp->d_name, basename, len) == 0) {
-			name = g_strdup_printf("%s"G_DIR_SEPARATOR_S"%s", dir, dp->d_name);
-			list = list_add_file(list, name);
+			name = dir == NULL ? g_strdup(dp->d_name) :
+				g_strdup_printf("%s"G_DIR_SEPARATOR_S"%s", dir, dp->d_name);
+			list = list_add_file(list, name, default_path);
 			g_free(name);
 		}
 	}
 	closedir(dirp);
 
-	g_free(dir);
+	g_free_not_null(dir);
         return list;
 }
 
@@ -332,11 +385,11 @@ static GList *completion_get_aliases(const char *alias, char cmdchar)
 
 	/* get list of aliases from mainconfig */
 	node = iconfig_node_traverse("aliases", FALSE);
-	tmp = node == NULL ? NULL : node->value;
+	tmp = node == NULL ? NULL : config_node_first(node->value);
 
 	len = strlen(alias);
 	complist = NULL;
-	for (; tmp != NULL; tmp = tmp->next) {
+	for (; tmp != NULL; tmp = config_node_next(tmp)) {
 		CONFIG_NODE *node = tmp->data;
 
 		if (node->type != NODE_TYPE_KEY)
@@ -461,7 +514,7 @@ static char *line_get_command(const char *line, char **args, int aliases)
 		} else {
 			checkcmd = g_strndup(line, (int) (ptr-line));
 
-			while (isspace(*ptr)) ptr++;
+			while (i_isspace(*ptr)) ptr++;
 			cmdargs = ptr;
 		}
 
@@ -483,6 +536,8 @@ static char *line_get_command(const char *line, char **args, int aliases)
 		*args = (char *) cmdargs;
 	} while (ptr != NULL);
 
+        if (cmd != NULL)
+		g_strdown(cmd);
 	return cmd;
 }
 
@@ -502,7 +557,8 @@ static char *expand_aliases(const char *line)
 }
 
 static void sig_complete_word(GList **list, WINDOW_REC *window,
-			      const char *word, const char *linestart, int *want_space)
+			      const char *word, const char *linestart,
+			      int *want_space)
 {
 	const char *newword, *cmdchars;
 	char *signal, *cmd, *args, *line;
@@ -522,7 +578,7 @@ static void sig_complete_word(GList **list, WINDOW_REC *window,
 
 	/* command completion? */
 	cmdchars = settings_get_str("cmdchars");
-	if (strchr(cmdchars, *word) && *linestart == '\0') {
+	if (*word != '\0' && *linestart == '\0' && strchr(cmdchars, *word)) {
 		/* complete /command */
 		*list = completion_get_commands(word+1, *word);
 
@@ -578,6 +634,39 @@ static void sig_complete_word(GList **list, WINDOW_REC *window,
 	g_free(line);
 }
 
+static void sig_complete_erase(WINDOW_REC *window, const char *word,
+			       const char *linestart)
+{
+	const char *cmdchars;
+        char *line, *cmd, *args, *signal;
+
+	if (*linestart == '\0')
+		return;
+
+        /* we only want to check for commands */
+	cmdchars = settings_get_str("cmdchars");
+        cmdchars = strchr(cmdchars, *linestart);
+	if (cmdchars == NULL)
+		return;
+
+        /* check if there's aliases */
+	line = linestart[1] == *cmdchars ? g_strdup(linestart+2) :
+		expand_aliases(linestart+1);
+
+	cmd = line_get_command(line, &args, FALSE);
+	if (cmd == NULL) {
+		g_free(line);
+		return;
+	}
+
+	signal = g_strconcat("complete erase command ", cmd, NULL);
+	signal_emit(signal, 3, window, word, args);
+
+        g_free(signal);
+	g_free(cmd);
+	g_free(line);
+}
+
 static void sig_complete_set(GList **list, WINDOW_REC *window,
 			     const char *word, const char *line, int *want_space)
 {
@@ -614,7 +703,7 @@ static void sig_complete_filename(GList **list, WINDOW_REC *window,
 
 	if (*line != '\0') return;
 
-	*list = filename_complete(word);
+	*list = filename_complete(word, NULL);
 	if (*list != NULL) {
 		*want_space = FALSE;
 		signal_stop();
@@ -652,10 +741,10 @@ void completion_init(void)
 	chat_completion_init();
 
 	signal_add_first("complete word", (SIGNAL_FUNC) sig_complete_word);
+	signal_add_first("complete erase", (SIGNAL_FUNC) sig_complete_erase);
 	signal_add("complete command set", (SIGNAL_FUNC) sig_complete_set);
 	signal_add("complete command toggle", (SIGNAL_FUNC) sig_complete_toggle);
 	signal_add("complete command cat", (SIGNAL_FUNC) sig_complete_filename);
-	signal_add("complete command run", (SIGNAL_FUNC) sig_complete_filename);
 	signal_add("complete command save", (SIGNAL_FUNC) sig_complete_filename);
 	signal_add("complete command reload", (SIGNAL_FUNC) sig_complete_filename);
 	signal_add("complete command rawlog open", (SIGNAL_FUNC) sig_complete_filename);
@@ -670,10 +759,10 @@ void completion_deinit(void)
 	chat_completion_deinit();
 
 	signal_remove("complete word", (SIGNAL_FUNC) sig_complete_word);
+	signal_remove("complete erase", (SIGNAL_FUNC) sig_complete_erase);
 	signal_remove("complete command set", (SIGNAL_FUNC) sig_complete_set);
 	signal_remove("complete command toggle", (SIGNAL_FUNC) sig_complete_toggle);
 	signal_remove("complete command cat", (SIGNAL_FUNC) sig_complete_filename);
-	signal_remove("complete command run", (SIGNAL_FUNC) sig_complete_filename);
 	signal_remove("complete command save", (SIGNAL_FUNC) sig_complete_filename);
 	signal_remove("complete command reload", (SIGNAL_FUNC) sig_complete_filename);
 	signal_remove("complete command rawlog open", (SIGNAL_FUNC) sig_complete_filename);

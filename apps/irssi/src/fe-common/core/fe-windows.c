@@ -134,7 +134,8 @@ void window_destroy(WINDOW_REC *window)
 void window_auto_destroy(WINDOW_REC *window)
 {
 	if (settings_get_bool("autoclose_windows") && windows->next != NULL &&
-	    window->items == NULL && window->level == 0)
+	    window->items == NULL && window->bound_items == NULL &&
+	    window->level == 0)
                 window_destroy(window);
 }
 
@@ -192,6 +193,21 @@ void window_set_name(WINDOW_REC *window, const char *name)
 	window->name = g_strdup(name);
 
 	signal_emit("window name changed", 1, window);
+}
+
+void window_set_history(WINDOW_REC *window, const char *name)
+{
+	char *oldname;
+	oldname = window->history_name;
+
+	if (name == NULL || *name == '\0')
+		window->history_name = NULL;
+	else
+		window->history_name = g_strdup(name);
+
+	signal_emit("window history changed", 1, window, oldname);
+
+	g_free_not_null(oldname);
 }
 
 void window_set_level(WINDOW_REC *window, int level)
@@ -375,7 +391,7 @@ int windows_refnum_last(void)
 	return max;
 }
 
-static int window_refnum_cmp(WINDOW_REC *w1, WINDOW_REC *w2)
+int window_refnum_cmp(WINDOW_REC *w1, WINDOW_REC *w2)
 {
 	return w1->refnum < w2->refnum ? -1 : 1;
 }
@@ -395,6 +411,7 @@ GSList *windows_get_sorted(void)
         return sorted;
 }
 
+/* Add a new bind to window - if duplicate is found it's returned */
 WINDOW_BIND_REC *window_bind_add(WINDOW_REC *window, const char *servertag,
 				 const char *name)
 {
@@ -402,7 +419,11 @@ WINDOW_BIND_REC *window_bind_add(WINDOW_REC *window, const char *servertag,
 
         g_return_val_if_fail(window != NULL, NULL);
         g_return_val_if_fail(servertag != NULL, NULL);
-        g_return_val_if_fail(name != NULL, NULL);
+	g_return_val_if_fail(name != NULL, NULL);
+
+	rec = window_bind_find(window, servertag, name);
+	if (rec != NULL)
+		return rec;
 
 	rec = g_new0(WINDOW_BIND_REC, 1);
         rec->name = g_strdup(name);
@@ -494,18 +515,31 @@ static void sig_server_disconnected(SERVER_REC *server)
 	}
 }
 
+static void window_print_daychange(WINDOW_REC *window, struct tm *tm)
+{
+        THEME_REC *theme;
+        TEXT_DEST_REC dest;
+	char *format, str[256];
+
+	theme = active_win->theme != NULL ? active_win->theme : current_theme;
+	format_create_dest(&dest, NULL, NULL, MSGLEVEL_NEVER, window);
+	format = format_get_text_theme(theme, MODULE_NAME, &dest,
+				       TXT_DAYCHANGE);
+	if (strftime(str, sizeof(str), format, tm) <= 0)
+                str[0] = '\0';
+	g_free(format);
+
+	printtext_string_window(window, MSGLEVEL_NEVER, str);
+}
+
 static void sig_print_text(void)
 {
 	GSList *tmp;
-	char month[100];
 	time_t t;
 	struct tm *tm;
 
 	t = time(NULL);
 	tm = localtime(&t);
-	if (strftime(month, sizeof(month), "%b", tm) <= 0)
-		month[0] = '\0';
-
 	if (tm->tm_hour != 0 || tm->tm_min != 0)
 		return;
 
@@ -513,11 +547,8 @@ static void sig_print_text(void)
 	signal_remove("print text", (SIGNAL_FUNC) sig_print_text);
 
 	/* day changed, print notice about it to every window */
-	for (tmp = windows; tmp != NULL; tmp = tmp->next) {
-		printformat_window(tmp->data, MSGLEVEL_NEVER, TXT_DAYCHANGE,
-				   tm->tm_mday, tm->tm_mon+1,
-				   1900+tm->tm_year, month);
-	}
+	for (tmp = windows; tmp != NULL; tmp = tmp->next)
+		window_print_daychange(tmp->data, tm);
 }
 
 static int sig_check_daychange(void)

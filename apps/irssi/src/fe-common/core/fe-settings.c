@@ -50,7 +50,8 @@ static void set_print(SETTINGS_REC *rec)
 	default:
 		value = "";
 	}
-	printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP, "%s = %s", rec->key, value);
+	printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_SET_ITEM,
+		    rec->key, value);
 }
 
 static void set_boolean(const char *key, const char *value)
@@ -92,7 +93,8 @@ static void cmd_set(char *data)
 
 		if (strcmp(last_section, rec->section) != 0) {
 			/* print section */
-			printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP, "%_[ %s ]", rec->section);
+			printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP,
+				    TXT_SET_TITLE, rec->section);
 			last_section = rec->section;
 		}
 
@@ -123,8 +125,10 @@ static void cmd_set(char *data)
 	}
 	g_slist_free(sets);
 
-        if (!found)
-		printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Unknown setting %s", key);
+        if (!found) {
+		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR,
+			    TXT_SET_UNKNOWN, key);
+	 }
 
         cmd_params_free(free_arg);
 }
@@ -143,12 +147,13 @@ static void cmd_toggle(const char *data)
 
 	type = settings_get_type(key);
         if (type == -1)
-		printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Unknown setting %_%s", key);
+		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR, TXT_SET_UNKNOWN, key);
 	else if (type != SETTING_TYPE_BOOLEAN)
-		printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Setting %_%s%_ isn't boolean, use /SET", key);
+		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR, TXT_SET_NOT_BOOLEAN, key);
 	else {
 		set_boolean(key, *value != '\0' ? value : "TOGGLE");
                 set_print(settings_get_record(key));
+		signal_emit("setup changed", 0);
 	}
 
         cmd_params_free(free_arg);
@@ -168,12 +173,12 @@ static void show_aliases(const char *alias)
 	printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_ALIASLIST_HEADER);
 
 	node = iconfig_node_traverse("aliases", FALSE);
-	tmp = node == NULL ? NULL : node->value;
+	tmp = node == NULL ? NULL : config_node_first(node->value);
 
 	/* first get the list of aliases sorted */
 	list = NULL;
 	aliaslen = strlen(alias);
-	for (; tmp != NULL; tmp = tmp->next) {
+	for (; tmp != NULL; tmp = config_node_next(tmp)) {
 		CONFIG_NODE *node = tmp->data;
 
 		if (node->type != NODE_TYPE_KEY)
@@ -241,20 +246,19 @@ static void cmd_unalias(const char *data)
 /* SYNTAX: RELOAD [<file>] */
 static void cmd_reload(const char *data)
 {
-	char *fname;
+	const char *fname;
 
-	fname = *data != '\0' ? g_strdup(data) :
-		g_strdup_printf("%s/.silc/config", g_get_home_dir());
+	fname = *data == '\0' ? get_irssi_config() : data;
+
 	if (settings_reread(fname)) {
 		printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
 			    TXT_CONFIG_RELOADED, fname);
 	}
-	g_free(fname);
 }
 
 static void settings_save_fe(const char *fname)
 {
-	if (settings_save(fname)) {
+	if (settings_save(fname, FALSE /* not autosaved */)) {
 		printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
 			    TXT_CONFIG_SAVED, fname);
 	}
@@ -262,7 +266,7 @@ static void settings_save_fe(const char *fname)
 
 static void settings_save_confirm(const char *line, char *fname)
 {
-	if (line[0] == 'Y')
+	if (i_toupper(line[0]) == 'Y')
 		settings_save_fe(fname);
 	g_free(fname);
 }
@@ -270,29 +274,37 @@ static void settings_save_confirm(const char *line, char *fname)
 /* SYNTAX: SAVE [<file>] */
 static void cmd_save(const char *data)
 {
-	char *format;
+        GHashTable *optlist;
+	char *format, *fname;
+        void *free_arg;
 
-	if (*data == '\0')
-		data = mainconfig->fname;
-
-	if (!irssi_config_is_changed(data)) {
-		settings_save_fe(data);
+	if (!cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS,
+			    "save", &optlist, &fname))
 		return;
+
+	if (*fname == '\0')
+		fname = mainconfig->fname;
+
+	if (!irssi_config_is_changed(fname))
+		settings_save_fe(fname);
+	else {
+                /* config file modified outside irssi */
+		printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
+			    TXT_CONFIG_MODIFIED, fname);
+
+		format = format_get_text(MODULE_NAME, NULL, NULL, NULL,
+					 TXT_OVERWRITE_CONFIG);
+		keyboard_entry_redirect((SIGNAL_FUNC) settings_save_confirm,
+					format, 0, g_strdup(fname));
+		g_free(format);
 	}
 
-	printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
-		    TXT_CONFIG_MODIFIED, data);
-
-	format = format_get_text(MODULE_NAME, NULL, NULL, NULL,
-				 TXT_OVERWRITE_CONFIG);
-	keyboard_entry_redirect((SIGNAL_FUNC) settings_save_confirm,
-				format, 0, g_strdup(data));
-        g_free(format);
+	cmd_params_free(free_arg);
 }
 
 static void settings_clean_confirm(const char *line)
 {
-	if (line[0] == 'Y')
+	if (i_toupper(line[0]) == 'Y')
                 settings_clean_invalid();
 }
 

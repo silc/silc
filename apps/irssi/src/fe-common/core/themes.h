@@ -16,11 +16,8 @@ typedef struct {
         time_t last_modify;
 
 	int default_color; /* default color to use with text with default
-			      background. default is 0 which means the default
-			      color set by terminal */
-	int default_real_color; /* default color to use with background set.
-				   this shouldn't be 0, unless black is really
-				   wanted. default is 7 (white). */
+			      background. default is -1 which means the
+			      default color set by terminal */
 	GHashTable *modules;
 
         int replace_keys[256]; /* index to replace_values for each char */
@@ -47,7 +44,7 @@ void theme_register_module(const char *module, FORMAT_REC *formats);
 void theme_unregister_module(const char *module);
 
 #define EXPAND_FLAG_IGNORE_REPLACES     0x01 /* don't use the character replaces when expanding */
-#define EXPAND_FLAG_IGNORE_EMPTY        0x02 /* if abstract's argument is empty, don't try to expand it (ie. {xx }, but not {xx}) */
+#define EXPAND_FLAG_IGNORE_EMPTY        0x02 /* if abstract's argument is empty, or the argument is a $variable that is empty, don't try to expand it (ie. {xx }, but not {xx}) */
 #define EXPAND_FLAG_RECURSIVE_MASK      0x0f
 /* private */
 #define EXPAND_FLAG_ROOT		0x10

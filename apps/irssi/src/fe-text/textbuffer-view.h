@@ -2,11 +2,18 @@
 #define __TEXTBUFFER_VIEW_H
 
 #include "textbuffer.h"
-#include "screen.h"
+#include "term.h"
+
+typedef struct _TEXT_BUFFER_VIEW_REC TEXT_BUFFER_VIEW_REC;
+
+/* if ypos == -1, don't print anything, just return the indent size */
+typedef int (*INDENT_FUNC) (TEXT_BUFFER_VIEW_REC *view,
+			    LINE_REC *line, int ypos);
 
 typedef struct {
-	unsigned char *start;
+	const unsigned char *start;
 	int indent;
+        INDENT_FUNC indent_func;
 	int color;
 
 	/* first word in line belong to the end of the last word in
@@ -37,24 +44,27 @@ typedef struct {
 	int last_linecount;
 } TEXT_BUFFER_CACHE_REC;
 
-typedef struct {
+struct _TEXT_BUFFER_VIEW_REC {
 	TEXT_BUFFER_REC *buffer;
 	GSList *siblings; /* other views that use the same buffer */
 
-        WINDOW *window;
+        TERM_WINDOW *window;
 	int width, height;
 
 	int default_indent;
-	int longword_noindent:1;
+        INDENT_FUNC default_indent_func;
+	unsigned int longword_noindent:1;
+	unsigned int scroll:1; /* scroll down automatically when at bottom */
+	unsigned int utf8:1; /* use UTF8 in this view */
 
 	TEXT_BUFFER_CACHE_REC *cache;
 	int ypos; /* cursor position - visible area is 0..height-1 */
 
-	GList *startline; /* line at the top of the screen */
+	LINE_REC *startline; /* line at the top of the screen */
 	int subline; /* number of "real lines" to skip from `startline' */
 
         /* marks the bottom of the text buffer */
-	GList *bottom_startline;
+	LINE_REC *bottom_startline;
 	int bottom_subline;
 
 	/* how many empty lines are in screen. a screenful when started
@@ -62,23 +72,31 @@ typedef struct {
 	int empty_linecount; 
         /* window is at the bottom of the text buffer */
 	unsigned int bottom:1;
+        /* if !bottom - new text has been printed since we were at bottom */
+	unsigned int more_text:1;
+        /* Window needs a redraw */
+	unsigned int dirty:1;
 
 	/* Bookmarks to the lines in the buffer - removed automatically
 	   when the line gets removed from buffer */
         GHashTable *bookmarks;
-} TEXT_BUFFER_VIEW_REC;
+};
 
 /* Create new view. */
 TEXT_BUFFER_VIEW_REC *textbuffer_view_create(TEXT_BUFFER_REC *buffer,
 					     int width, int height,
-					     int default_indent,
-					     int longword_noindent);
+					     int scroll, int utf8);
 /* Destroy the view. */
 void textbuffer_view_destroy(TEXT_BUFFER_VIEW_REC *view);
 /* Change the default indent position */
 void textbuffer_view_set_default_indent(TEXT_BUFFER_VIEW_REC *view,
 					int default_indent,
-					int longword_noindent);
+					int longword_noindent,
+					INDENT_FUNC indent_func);
+void textbuffer_views_unregister_indent_func(INDENT_FUNC indent_func);
+
+void textbuffer_view_set_scroll(TEXT_BUFFER_VIEW_REC *view, int scroll);
+void textbuffer_view_set_utf8(TEXT_BUFFER_VIEW_REC *view, int utf8);
 
 /* Resize the view. */
 void textbuffer_view_resize(TEXT_BUFFER_VIEW_REC *view, int width, int height);
@@ -86,7 +104,7 @@ void textbuffer_view_resize(TEXT_BUFFER_VIEW_REC *view, int width, int height);
 void textbuffer_view_clear(TEXT_BUFFER_VIEW_REC *view);
 
 #define textbuffer_view_get_lines(view) \
-        ((view)->buffer->lines)
+        ((view)->buffer->first_line)
 
 /* Scroll the view up/down */
 void textbuffer_view_scroll(TEXT_BUFFER_VIEW_REC *view, int lines);
@@ -121,7 +139,8 @@ LINE_REC *textbuffer_view_get_bookmark(TEXT_BUFFER_VIEW_REC *view,
 
 /* Specify window where the changes in view should be drawn,
    NULL disables it. */
-void textbuffer_view_set_window(TEXT_BUFFER_VIEW_REC *view, WINDOW *window);
+void textbuffer_view_set_window(TEXT_BUFFER_VIEW_REC *view,
+				TERM_WINDOW *window);
 /* Redraw the view */
 void textbuffer_view_redraw(TEXT_BUFFER_VIEW_REC *view);
 

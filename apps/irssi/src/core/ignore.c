@@ -161,9 +161,8 @@ int ignore_check(SERVER_REC *server, const char *nick, const char *host,
 	g_return_val_if_fail(server != NULL, 0);
         if (nick == NULL) nick = "";
 
-	chanrec = (channel != NULL && server != NULL &&
-		   server->ischannel(channel)) ?
-		channel_find(server, channel) : NULL;
+	chanrec = server == NULL || channel == NULL ? NULL :
+		channel_find(server, channel);
 	if (chanrec != NULL && nick != NULL &&
 	    (nickrec = nicklist_find(chanrec, nick)) != NULL) {
                 /* nick found - check only ignores in nickmatch cache */
@@ -317,18 +316,24 @@ static void ignore_remove_config(IGNORE_REC *rec)
 	if (node != NULL) iconfig_node_list_remove(node, ignore_index(rec));
 }
 
-void ignore_add_rec(IGNORE_REC *rec)
+static void ignore_init_rec(IGNORE_REC *rec)
 {
 #ifdef HAVE_REGEX_H
 	rec->regexp_compiled = !rec->regexp || rec->pattern == NULL ? FALSE :
 		regcomp(&rec->preg, rec->pattern,
 			REG_EXTENDED|REG_ICASE|REG_NOSUB) == 0;
 #endif
+}
+
+void ignore_add_rec(IGNORE_REC *rec)
+{
+	ignore_init_rec(rec);
 
 	ignores = g_slist_append(ignores, rec);
 	ignore_set_config(rec);
 
 	signal_emit("ignore created", 1, rec);
+	nickmatch_rebuild(nickmatch);
 }
 
 static void ignore_destroy(IGNORE_REC *rec, int send_signal)
@@ -402,7 +407,8 @@ static void read_ignores(void)
 		return;
 	}
 
-	for (tmp = node->value; tmp != NULL; tmp = tmp->next) {
+	tmp = config_node_first(node->value);
+	for (; tmp != NULL; tmp = config_node_next(tmp)) {
 		node = tmp->data;
 
 		if (node->type != NODE_TYPE_BLOCK)
@@ -412,25 +418,17 @@ static void read_ignores(void)
 		ignores = g_slist_append(ignores, rec);
 
 		rec->mask = g_strdup(config_node_get_str(node, "mask", NULL));
-		if (rec->mask != NULL && strcmp(rec->mask, "*") == 0) {
-			/* FIXME: remove after .98 */
-                        g_free(rec->mask);
-			rec->mask = NULL;
-		}
 		rec->pattern = g_strdup(config_node_get_str(node, "pattern", NULL));
 		rec->level = level2bits(config_node_get_str(node, "level", ""));
                 rec->exception = config_node_get_bool(node, "exception", FALSE);
-		if (*config_node_get_str(node, "except_level", "") != '\0') {
-			/* FIXME: remove after .98 */
-			rec->level = level2bits(config_node_get_str(node, "except_level", ""));
-                        rec->exception = TRUE;
-		}
 		rec->regexp = config_node_get_bool(node, "regexp", FALSE);
 		rec->fullword = config_node_get_bool(node, "fullword", FALSE);
 		rec->replies = config_node_get_bool(node, "replies", FALSE);
 
 		node = config_node_section(node, "channels", -1);
 		if (node != NULL) rec->channels = config_node_get_list(node);
+
+		ignore_init_rec(rec);
 	}
 
 	nickmatch_rebuild(nickmatch);

@@ -35,6 +35,7 @@ void window_item_add(WINDOW_REC *window, WI_ITEM_REC *item, int automatic)
 {
 	g_return_if_fail(window != NULL);
 	g_return_if_fail(item != NULL);
+	g_return_if_fail(item->window == NULL);
 
         item->window = window;
 
@@ -52,7 +53,8 @@ void window_item_add(WINDOW_REC *window, WI_ITEM_REC *item, int automatic)
 	window->items = g_slist_append(window->items, item);
 	signal_emit("window item new", 2, window, item);
 
-	if (!automatic || g_slist_length(window->items) == 1) {
+	if (g_slist_length(window->items) == 1 ||
+	    (!automatic && settings_get_bool("autofocus_new_items"))) {
                 window->active = NULL;
 		window_item_set_active(window, item);
 	}
@@ -66,7 +68,7 @@ void window_item_remove(WI_ITEM_REC *item)
 
 	window = window_item_window(item);
 
-	if (g_slist_find(window->items, item) == NULL)
+	if (window == NULL)
 		return;
 
         item->window = NULL;
@@ -86,8 +88,7 @@ void window_item_destroy(WI_ITEM_REC *item)
 
 	window = window_item_window(item);
         window_item_remove(item);
-
-	signal_emit("window item destroy", 2, window, item);
+        item->destroy(item);
 }
 
 void window_item_change_server(WI_ITEM_REC *item, void *server)
@@ -241,14 +242,13 @@ static int window_bind_has_sticky(WINDOW_REC *window)
 void window_item_create(WI_ITEM_REC *item, int automatic)
 {
 	WINDOW_REC *window;
+        WINDOW_BIND_REC *bind;
 	GSList *tmp, *sorted;
 	int clear_waiting, reuse_unused_windows;
 
 	g_return_if_fail(item != NULL);
 
-	reuse_unused_windows =
-		!settings_get_bool("autoclose_windows") ||
-		settings_get_bool("reuse_unused_windows");
+	reuse_unused_windows = settings_get_bool("reuse_unused_windows");
 
 	clear_waiting = TRUE;
 	window = NULL;
@@ -257,11 +257,16 @@ void window_item_create(WI_ITEM_REC *item, int automatic)
 		WINDOW_REC *rec = tmp->data;
 
                 /* is item bound to this window? */
-		if (item->server != NULL &&
-		    window_bind_find(rec, item->server->tag, item->name)) {
-			window = rec;
-			clear_waiting = FALSE;
-			break;
+		if (item->server != NULL) {
+			bind = window_bind_find(rec, item->server->tag,
+						item->name);
+			if (bind != NULL) {
+                                if (!bind->sticky)
+					window_bind_destroy(rec, bind);
+				window = rec;
+				clear_waiting = FALSE;
+				break;
+			}
 		}
 
 		/* use this window IF:
@@ -290,6 +295,10 @@ void window_item_create(WI_ITEM_REC *item, int automatic)
 
 	if (window == NULL) {
 		/* create new window to use */
+		if (settings_get_bool("autocreate_split_windows")) {
+			signal_emit("gui window create override", 1,
+				    GINT_TO_POINTER(0));
+		}
 		window = window_create(item, automatic);
 	} else {
 		/* use existing window */
@@ -316,6 +325,8 @@ void window_items_init(void)
 {
 	settings_add_bool("lookandfeel", "reuse_unused_windows", FALSE);
 	settings_add_bool("lookandfeel", "autocreate_windows", TRUE);
+	settings_add_bool("lookandfeel", "autocreate_split_windows", FALSE);
+	settings_add_bool("lookandfeel", "autofocus_new_items", TRUE);
 
 	signal_add_last("window item changed", (SIGNAL_FUNC) signal_window_item_changed);
 }

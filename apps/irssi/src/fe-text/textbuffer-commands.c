@@ -19,13 +19,17 @@
 */
 
 #include "module.h"
+#include "module-formats.h"
 #include "signals.h"
 #include "commands.h"
 #include "misc.h"
 #include "levels.h"
+#include "settings.h"
+#include "servers.h"
 
 #include "printtext.h"
 #include "gui-windows.h"
+#include "textbuffer-reformat.h"
 
 /* SYNTAX: CLEAR */
 static void cmd_clear(const char *data)
@@ -54,6 +58,32 @@ static void cmd_clear(const char *data)
 	cmd_params_free(free_arg);
 }
 
+static void cmd_window_scroll(const char *data)
+{
+	GUI_WINDOW_REC *gui;
+
+	gui = WINDOW_GUI(active_win);
+	if (g_strcasecmp(data, "default") == 0) {
+                gui->use_scroll = FALSE;
+	} else if (g_strcasecmp(data, "on") == 0) {
+		gui->use_scroll = TRUE;
+		gui->scroll = TRUE;
+	} else if (g_strcasecmp(data, "off") == 0) {
+		gui->use_scroll = TRUE;
+		gui->scroll = FALSE;
+	} else if (*data != '\0') {
+		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR,
+			    TXT_WINDOW_SCROLL_UNKNOWN, data);
+                return;
+	}
+
+	printformat_window(active_win, MSGLEVEL_CLIENTNOTICE,
+			   TXT_WINDOW_SCROLL, !gui->use_scroll ? "DEFAULT" :
+			   gui->scroll ? "ON" : "OFF");
+	textbuffer_view_set_scroll(gui->view, gui->use_scroll ?
+				   gui->scroll : settings_get_bool("scroll"));
+}
+
 static void cmd_scrollback(const char *data, SERVER_REC *server,
 			   WI_ITEM_REC *item)
 {
@@ -74,13 +104,13 @@ static void scrollback_goto_line(int linenum)
 	if (view->buffer->lines_count == 0)
 		return;
 
-	textbuffer_view_scroll_line(view, view->buffer->lines->data);
+	textbuffer_view_scroll_line(view, view->buffer->first_line);
 	gui_window_scroll(active_win, linenum);
 }
 
 static void scrollback_goto_time(const char *datearg, const char *timearg)
 {
-        GList *tmp;
+        LINE_REC *line;
 	struct tm tm;
 	time_t now, stamp;
 	int day, month;
@@ -145,12 +175,10 @@ static void scrollback_goto_time(const char *datearg, const char *timearg)
 	}
 
 	/* scroll to first line after timestamp */
-        tmp = textbuffer_view_get_lines(WINDOW_GUI(active_win)->view);
-	for (; tmp != NULL; tmp = tmp->next) {
-		LINE_REC *rec = tmp->data;
-
-		if (rec->info.time >= stamp) {
-			gui_window_scroll_line(active_win, rec);
+	line = textbuffer_view_get_lines(WINDOW_GUI(active_win)->view);
+	for (; line != NULL; line = line->next) {
+		if (line->info.time >= stamp) {
+			gui_window_scroll_line(active_win, line);
 			break;
 		}
 	}
@@ -188,7 +216,7 @@ static void cmd_scrollback_home(const char *data)
 
 	buffer = WINDOW_GUI(active_win)->view->buffer;
 	if (buffer->lines_count > 0)
-		gui_window_scroll_line(active_win, buffer->lines->data);
+		gui_window_scroll_line(active_win, buffer->first_line);
 }
 
 /* SYNTAX: SCROLLBACK END */
@@ -200,28 +228,28 @@ static void cmd_scrollback_end(const char *data)
 	if (view->bottom_startline == NULL)
 		return;
 
-	textbuffer_view_scroll_line(view, view->bottom_startline->data);
+	textbuffer_view_scroll_line(view, view->bottom_startline);
 	gui_window_scroll(active_win, view->bottom_subline);
 }
 
 /* SYNTAX: SCROLLBACK REDRAW */
 static void cmd_scrollback_redraw(void)
 {
-#if 0
 	GUI_WINDOW_REC *gui;
-	GList *tmp, *next;
+	LINE_REC *line, *next;
 
 	gui = WINDOW_GUI(active_win);
 
-	screen_refresh_freeze();
-	for (tmp = gui->lines; tmp != NULL; tmp = next) {
-		next = tmp->next;
-		gui_window_reformat_line(active_win, tmp->data);
+	term_refresh_freeze();
+	line = textbuffer_view_get_lines(gui->view);
+	while (line != NULL) {
+		next = line->next;
+		textbuffer_reformat_line(active_win, line);
+                line = next;
 	}
 
 	gui_window_redraw(active_win);
-	screen_refresh_thaw();
-#endif
+	term_refresh_thaw();
 }
 
 static void cmd_scrollback_status(void)
@@ -269,6 +297,7 @@ static void sig_away_changed(SERVER_REC *server)
 void textbuffer_commands_init(void)
 {
 	command_bind("clear", NULL, (SIGNAL_FUNC) cmd_clear);
+	command_bind("window scroll", NULL, (SIGNAL_FUNC) cmd_window_scroll);
 	command_bind("scrollback", NULL, (SIGNAL_FUNC) cmd_scrollback);
 	command_bind("scrollback clear", NULL, (SIGNAL_FUNC) cmd_scrollback_clear);
 	command_bind("scrollback goto", NULL, (SIGNAL_FUNC) cmd_scrollback_goto);
@@ -285,6 +314,7 @@ void textbuffer_commands_init(void)
 void textbuffer_commands_deinit(void)
 {
 	command_unbind("clear", (SIGNAL_FUNC) cmd_clear);
+	command_unbind("window scroll", (SIGNAL_FUNC) cmd_window_scroll);
 	command_unbind("scrollback", (SIGNAL_FUNC) cmd_scrollback);
 	command_unbind("scrollback clear", (SIGNAL_FUNC) cmd_scrollback_clear);
 	command_unbind("scrollback goto", (SIGNAL_FUNC) cmd_scrollback_goto);

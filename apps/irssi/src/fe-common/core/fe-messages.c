@@ -27,15 +27,17 @@
 #include "special-vars.h"
 #include "settings.h"
 
-#include "window-items.h"
-#include "fe-queries.h"
+#include "servers.h"
 #include "channels.h"
 #include "nicklist.h"
-#include "hilight-text.h"
 #include "ignore.h"
+
+#include "window-items.h"
+#include "fe-queries.h"
+#include "hilight-text.h"
 #include "printtext.h"
 
-#define ishighalnum(c) ((unsigned char) (c) >= 128 || isalnum(c))
+#define ishighalnum(c) ((unsigned char) (c) >= 128 || i_isalnum(c))
 
 static GHashTable *printnicks;
 
@@ -65,7 +67,7 @@ char *expand_emphasis(WI_ITEM_REC *item, const char *text)
 
 		/* check that the beginning marker starts a word, and
 		   that the matching end marker ends a word */
-		if ((pos > 0 && !isspace(bgn[-1])) || !ishighalnum(bgn[1]))
+		if ((pos > 0 && !i_isspace(bgn[-1])) || !ishighalnum(bgn[1]))
 			continue;
 		if ((end = strchr(bgn+1, *bgn)) == NULL)
 			continue;
@@ -111,24 +113,6 @@ char *expand_emphasis(WI_ITEM_REC *item, const char *text)
 	return ret;
 }
 
-char *channel_get_nickmode(CHANNEL_REC *channel, const char *nick)
-{
-        NICK_REC *nickrec;
-        char *emptystr;
-
-	g_return_val_if_fail(nick != NULL, NULL);
-
-	if (!settings_get_bool("show_nickmode"))
-                return "";
-
-        emptystr = settings_get_bool("show_nickmode_empty") ? " " : "";
-
-	nickrec = channel == NULL ? NULL :
-		nicklist_find(channel, nick);
-	return nickrec == NULL ? emptystr :
-		(nickrec->op ? "@" : (nickrec->voice ? "+" : emptystr));
-}
-
 static char *channel_get_nickmode_rec(NICK_REC *nickrec)
 {
         char *emptystr;
@@ -139,7 +123,18 @@ static char *channel_get_nickmode_rec(NICK_REC *nickrec)
         emptystr = settings_get_bool("show_nickmode_empty") ? " " : "";
 
 	return nickrec == NULL ? emptystr :
-		(nickrec->op ? "@" : (nickrec->voice ? "+" : emptystr));
+		nickrec->op ? "@" :
+		nickrec->halfop ? "%" :
+		nickrec->voice ? "+" :
+		emptystr;
+}
+
+char *channel_get_nickmode(CHANNEL_REC *channel, const char *nick)
+{
+	g_return_val_if_fail(nick != NULL, NULL);
+
+        return channel_get_nickmode_rec(channel == NULL ? NULL :
+					nicklist_find(channel, nick));
 }
 
 static void sig_message_public(SERVER_REC *server, const char *msg,
@@ -167,8 +162,9 @@ static void sig_message_public(SERVER_REC *server, const char *msg,
 	    window_item_window((WI_ITEM_REC *) chanrec)->items->next != NULL)
 		print_channel = TRUE;
 
-	level = MSGLEVEL_PUBLIC | (for_me || color != NULL ?
-				   MSGLEVEL_HILIGHT : MSGLEVEL_NOHILIGHT);
+	level = MSGLEVEL_PUBLIC;
+	if (for_me || color != NULL)
+		level |= MSGLEVEL_HILIGHT;
 
 	if (settings_get_bool("emphasis"))
 		msg = freemsg = expand_emphasis((WI_ITEM_REC *) chanrec, msg);
@@ -408,11 +404,16 @@ static void print_nick_change_channel(SERVER_REC *server, const char *channel,
 				      const char *address,
 				      int ownnick)
 {
+	int level;
+
 	if (ignore_check(server, oldnick, address,
 			 channel, newnick, MSGLEVEL_NICKS))
 		return;
 
-	printformat(server, channel, MSGLEVEL_NICKS,
+	level = MSGLEVEL_NICKS;
+        if (ownnick) level |= MSGLEVEL_NO_ACT;
+
+	printformat(server, channel, level,
 		    ownnick ? TXT_YOUR_NICK_CHANGED : TXT_NICK_CHANGED,
 		    oldnick, newnick, channel);
 }
@@ -444,20 +445,6 @@ static void print_nick_change(SERVER_REC *server, const char *newnick,
 		msgprint = TRUE;
 	}
 
-	for (tmp = server->queries; tmp != NULL; tmp = tmp->next) {
-		QUERY_REC *query = tmp->data;
-		WINDOW_REC *window =
-			window_item_window((WI_ITEM_REC *) query);
-
-		if (g_strcasecmp(query->name, oldnick) != 0 ||
-		    g_slist_find(windows, window) != NULL)
-			continue;
-
-		windows = g_slist_append(windows, window);
-		print_nick_change_channel(server, query->name, newnick,
-					  oldnick, address, ownnick);
-		msgprint = TRUE;
-	}
 	g_slist_free(windows);
 
 	if (!msgprint && ownnick) {
@@ -475,7 +462,12 @@ static void sig_message_nick(SERVER_REC *server, const char *newnick,
 static void sig_message_own_nick(SERVER_REC *server, const char *newnick,
 				 const char *oldnick, const char *address)
 {
-	print_nick_change(server, newnick, oldnick, address, TRUE);
+        if (!settings_get_bool("show_own_nickchange_once"))
+		print_nick_change(server, newnick, oldnick, address, TRUE);
+	else {
+		printformat(server, NULL, MSGLEVEL_NICKS,
+			    TXT_YOUR_NICK_CHANGED, oldnick, newnick, "");
+	}
 }
 
 static void sig_message_invite(SERVER_REC *server, const char *channel,
@@ -637,19 +629,20 @@ void fe_messages_init(void)
 	settings_add_bool("lookandfeel", "show_nickmode_empty", TRUE);
 	settings_add_bool("lookandfeel", "print_active_channel", FALSE);
 	settings_add_bool("lookandfeel", "show_quit_once", FALSE);
+	settings_add_bool("lookandfeel", "show_own_nickchange_once", FALSE);
 
-	signal_add("message public", (SIGNAL_FUNC) sig_message_public);
-	signal_add("message private", (SIGNAL_FUNC) sig_message_private);
-	signal_add("message own_public", (SIGNAL_FUNC) sig_message_own_public);
-	signal_add("message own_private", (SIGNAL_FUNC) sig_message_own_private);
-	signal_add("message join", (SIGNAL_FUNC) sig_message_join);
-	signal_add("message part", (SIGNAL_FUNC) sig_message_part);
-	signal_add("message quit", (SIGNAL_FUNC) sig_message_quit);
-	signal_add("message kick", (SIGNAL_FUNC) sig_message_kick);
-	signal_add("message nick", (SIGNAL_FUNC) sig_message_nick);
-	signal_add("message own_nick", (SIGNAL_FUNC) sig_message_own_nick);
-	signal_add("message invite", (SIGNAL_FUNC) sig_message_invite);
-	signal_add("message topic", (SIGNAL_FUNC) sig_message_topic);
+	signal_add_last("message public", (SIGNAL_FUNC) sig_message_public);
+	signal_add_last("message private", (SIGNAL_FUNC) sig_message_private);
+	signal_add_last("message own_public", (SIGNAL_FUNC) sig_message_own_public);
+	signal_add_last("message own_private", (SIGNAL_FUNC) sig_message_own_private);
+	signal_add_last("message join", (SIGNAL_FUNC) sig_message_join);
+	signal_add_last("message part", (SIGNAL_FUNC) sig_message_part);
+	signal_add_last("message quit", (SIGNAL_FUNC) sig_message_quit);
+	signal_add_last("message kick", (SIGNAL_FUNC) sig_message_kick);
+	signal_add_last("message nick", (SIGNAL_FUNC) sig_message_nick);
+	signal_add_last("message own_nick", (SIGNAL_FUNC) sig_message_own_nick);
+	signal_add_last("message invite", (SIGNAL_FUNC) sig_message_invite);
+	signal_add_last("message topic", (SIGNAL_FUNC) sig_message_topic);
 
 	signal_add("nicklist new", (SIGNAL_FUNC) sig_nicklist_new);
 	signal_add("nicklist remove", (SIGNAL_FUNC) sig_nicklist_remove);

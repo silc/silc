@@ -162,39 +162,30 @@ static void chatnet_read(CONFIG_NODE *node)
 static void read_chatnets(void)
 {
 	CONFIG_NODE *node;
+        GSList *tmp;
 
 	while (chatnets != NULL)
                 chatnet_destroy(chatnets->data);
 
 	node = iconfig_node_traverse("chatnets", FALSE);
-	if (node == NULL) {
-		/* FIXME: remove after .98 */
-		node = iconfig_node_traverse("ircnets", FALSE);
-		if (node != NULL) {
-			/* very dirty method - doesn't update hashtables
-			   but this will do temporarily.. */
-			g_free(node->key);
-                        node->key = g_strdup("chatnets");
-		}
+	if (node != NULL) {
+		tmp = config_node_first(node->value);
+		for (; tmp != NULL; tmp = config_node_next(tmp))
+                        chatnet_read(tmp->data);
 	}
-
-	if (node != NULL)
-                g_slist_foreach(node->value, (GFunc) chatnet_read, NULL);
 }
 
 void chatnets_init(void)
 {
 	chatnets = NULL;
 
-	signal_add("event connected", (SIGNAL_FUNC) sig_connected);
+	signal_add_first("event connected", (SIGNAL_FUNC) sig_connected);
 	signal_add("setup reread", (SIGNAL_FUNC) read_chatnets);
         signal_add_first("irssi init read settings", (SIGNAL_FUNC) read_chatnets);
 }
 
 void chatnets_deinit(void)
 {
-	while (chatnets != NULL)
-		chatnet_destroy(chatnets->data);
 	module_uniq_destroy("CHATNET");
 
 	signal_remove("event connected", (SIGNAL_FUNC) sig_connected);

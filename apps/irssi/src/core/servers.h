@@ -17,6 +17,9 @@
 #define IS_SERVER_CONNECT(conn) \
 	(SERVER_CONNECT(conn) ? TRUE : FALSE)
 
+#define server_ischannel(server, channel) \
+        (server)->ischannel(server, channel)
+
 /* all strings should be either NULL or dynamically allocated */
 /* address and nick are mandatory, rest are optional */
 struct _SERVER_CONNECT_REC {
@@ -28,6 +31,9 @@ struct _SERVER_REC {
 #include "server-rec.h"
 };
 
+#define SEND_TARGET_CHANNEL	0
+#define SEND_TARGET_NICK	1
+
 extern GSList *servers, *lookup_servers;
 
 void servers_init(void);
@@ -36,12 +42,16 @@ void servers_deinit(void);
 /* Disconnect from server */
 void server_disconnect(SERVER_REC *server);
 
+void server_ref(SERVER_REC *server);
+int server_unref(SERVER_REC *server);
+
 SERVER_REC *server_find_tag(const char *tag);
 SERVER_REC *server_find_chatnet(const char *chatnet);
 
 /* starts connecting to server */
 int server_start_connect(SERVER_REC *server);
-void server_connect_free(SERVER_CONNECT_REC *conn);
+void server_connect_ref(SERVER_CONNECT_REC *conn);
+void server_connect_unref(SERVER_CONNECT_REC *conn);
 
 /* initializes server record but doesn't start connecting */
 void server_connect_init(SERVER_REC *server);

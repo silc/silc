@@ -164,7 +164,7 @@ static int isnickflag_func(char flag)
   return flag == '@' || flag == '+';
 }
 
-static int ischannel_func(const char *data)
+static int ischannel_func(SERVER_REC *server, const char *data)
 {
   return *data == '#';
 }
@@ -246,8 +246,10 @@ SILC_SERVER_REC *silc_server_connect(SILC_SERVER_CONNECT_REC *conn)
   if (server->connrec->port <= 0) 
     server->connrec->port = 706;
 
+  server_connect_ref(SERVER_CONNECT(conn));
+
   if (!server_start_connect((SERVER_REC *) server)) {
-    server_connect_free(SERVER_CONNECT(conn));
+    server_connect_unref(SERVER_CONNECT(conn));
     g_free(server);
     return NULL;
   }

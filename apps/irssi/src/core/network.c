@@ -196,10 +196,14 @@ GIOChannel *net_connect_ip(IPADDR *ip, int port, IPADDR *my_ip)
 	setsockopt(handle, SOL_SOCKET, SO_KEEPALIVE,
 		   (char *) &opt, sizeof(opt));
 
-	/* set our own address, ignore if bind() fails */
+	/* set our own address */
 	if (my_ip != NULL) {
 		sin_set_ip(&so, my_ip);
-		bind(handle, &so.sa, SIZEOF_SOCKADDR(so));
+		if (bind(handle, &so.sa, SIZEOF_SOCKADDR(so)) == -1) {
+			/* failed, set it back to INADDR_ANY */
+			sin_set_ip(&so, NULL);
+			bind(handle, &so.sa, SIZEOF_SOCKADDR(so));
+		}
 	}
 
 	/* connect */
@@ -208,10 +212,11 @@ GIOChannel *net_connect_ip(IPADDR *ip, int port, IPADDR *my_ip)
 	ret = connect(handle, &so.sa, SIZEOF_SOCKADDR(so));
 
 #ifndef WIN32
-	if (ret < 0 && errno != EINPROGRESS) {
+	if (ret < 0 && errno != EINPROGRESS)
 #else
-	if (ret < 0 && WSAGetLastError() != WSAEWOULDBLOCK) {
+	if (ret < 0 && WSAGetLastError() != WSAEWOULDBLOCK)
 #endif
+	{
 		close(handle);
 		return NULL;
 	}
@@ -245,7 +250,7 @@ GIOChannel *net_listen(IPADDR *my_ip, int *port)
 	/* create the socket */
 	handle = socket(so.sin.sin_family, SOCK_STREAM, 0);
 #ifdef HAVE_IPV6
-	if (handle == -1 && errno == EINVAL) {
+	if (handle == -1 && (errno == EINVAL || errno == EAFNOSUPPORT)) {
 		/* IPv6 is not supported by OS */
 		so.sin.sin_family = AF_INET;
 		so.sin.sin_addr.s_addr = INADDR_ANY;
@@ -373,9 +378,8 @@ int net_gethostbyname(const char *addr, IPADDR *ip4, IPADDR *ip6)
 {
 #ifdef HAVE_IPV6
 	union sockaddr_union *so;
-	struct addrinfo hints, *ai, *origai;
-	char hbuf[NI_MAXHOST];
-	int host_error, count;
+	struct addrinfo hints, *ai, *ailist;
+	int ret, count;
 #else
 	struct hostent *hp;
 #endif
@@ -390,16 +394,12 @@ int net_gethostbyname(const char *addr, IPADDR *ip4, IPADDR *ip6)
 	hints.ai_socktype = SOCK_STREAM;
 
 	/* save error to host_error for later use */
-	host_error = getaddrinfo(addr, NULL, &hints, &ai);
-	if (host_error != 0)
-		return host_error;
+	ret = getaddrinfo(addr, NULL, &hints, &ailist);
+	if (ret != 0)
+		return ret;
 
-	if (getnameinfo(ai->ai_addr, ai->ai_addrlen, hbuf,
-			sizeof(hbuf), NULL, 0, NI_NUMERICHOST))
-		return 1;
-
-        origai = ai; count = 0;
-	while (ai != NULL && count < 2) {
+        count = 0;
+	for (ai = ailist; ai != NULL && count < 2; ai = ai->ai_next) {
 		so = (union sockaddr_union *) ai->ai_addr;
 
 		if (ai->ai_family == AF_INET6 && ip6->family == 0) {
@@ -409,18 +409,20 @@ int net_gethostbyname(const char *addr, IPADDR *ip4, IPADDR *ip6)
 			sin_get_ip(so, ip4);
                         count++;
 		}
-                ai = ai->ai_next;
 	}
-	freeaddrinfo(origai);
+	freeaddrinfo(ailist);
+	return count > 0 ? 0 : 1;
 #else
 	hp = gethostbyname(addr);
-	if (hp == NULL) return h_errno;
+	if (hp == NULL)
+                return -1;
+		//return h_errno;
 
 	ip4->family = AF_INET;
 	memcpy(&ip4->ip, hp->h_addr, 4);
-#endif
 
 	return 0;
+#endif
 }
 
 /* Get name for host, *name should be g_free()'d unless it's NULL.
@@ -577,7 +579,7 @@ char *net_getservbyport(int port)
 int is_ipv4_address(const char *host)
 {
 	while (*host != '\0') {
-		if (*host != '.' && !isdigit(*host))
+		if (*host != '.' && !i_isdigit(*host))
 			return 0;
                 host++;
 	}

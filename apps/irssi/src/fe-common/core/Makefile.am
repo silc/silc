@@ -3,10 +3,10 @@ noinst_LIBRARIES = libfe_common_core.a
 include $(top_srcdir)/Makefile.defines.in
 
 INCLUDES = \
-	$(GLIB_CFLAGS) \
 	-I$(top_srcdir)/src -I$(top_srcdir)/src/core/ \
+	$(GLIB_CFLAGS) \
 	-DHELPDIR=\""$(silc_helpdir)"\" \
-	-DSYSCONFDIR=\""$(silc_etcdir)"\"
+	-DTHEMESDIR=\""$(silc_etcdir)"\"
 
 libfe_common_core_a_SOURCES = \
 	autorun.c \
@@ -41,6 +41,7 @@ libfe_common_core_a_SOURCES = \
 	fe-windows.c
 
 noinst_HEADERS = \
+	autorun.h \
 	command-history.h \
 	chat-completion.h \
 	completion.h \

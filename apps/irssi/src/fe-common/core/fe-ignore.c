@@ -54,9 +54,18 @@ static void ignore_print(int index, IGNORE_REC *rec)
 
 	options = g_string_new(NULL);
 	if (rec->exception) g_string_sprintfa(options, "-except ");
-	if (rec->regexp) g_string_sprintfa(options, "-regexp ");
+	if (rec->regexp) {
+		g_string_sprintfa(options, "-regexp ");
+#ifdef HAVE_REGEX_H
+		if (!rec->regexp_compiled)
+			g_string_sprintfa(options, "[INVALID!] ");
+#endif
+	}
 	if (rec->fullword) g_string_sprintfa(options, "-full ");
 	if (rec->replies) g_string_sprintfa(options, "-replies ");
+	if (rec->pattern != NULL)
+		g_string_sprintfa(options, "-pattern %s ", rec->pattern);
+
 	if (options->len > 1) g_string_truncate(options, options->len-1);
 
 	printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP,
@@ -72,6 +81,12 @@ static void cmd_ignore_show(void)
 {
 	GSList *tmp;
 	int index;
+
+	if (ignores == NULL) {
+		printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP,
+			    TXT_IGNORE_NO_IGNORES);
+                return;
+	}
 
 	printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_IGNORE_HEADER);
 	index = 1;
@@ -112,7 +127,7 @@ static void cmd_ignore(const char *data)
         if (*levels == '\0') levels = "ALL";
 
 	if (active_win->active_server != NULL &&
-	    active_win->active_server->ischannel(mask)) {
+	    server_ischannel(active_win->active_server, mask)) {
 		chanarg = mask;
 		mask = NULL;
 	}
@@ -134,6 +149,18 @@ static void cmd_ignore(const char *data)
 	}
 
 	rec->level = combine_level(rec->level, levels);
+
+	if (new_ignore && rec->level == 0) {
+		/* tried to unignore levels from nonexisting ignore */
+		printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
+			    TXT_IGNORE_NOT_FOUND, rec->mask);
+		g_free(rec->mask);
+		g_strfreev(rec->channels);
+		g_free(rec);
+		cmd_params_free(free_arg);
+                return;
+	}
+
 	rec->pattern = (patternarg == NULL || *patternarg == '\0') ?
 		NULL : g_strdup(patternarg);
 	rec->exception = g_hash_table_lookup(optlist, "except") != NULL;
@@ -143,11 +170,6 @@ static void cmd_ignore(const char *data)
 	timestr = g_hash_table_lookup(optlist, "time");
         if (timestr != NULL)
 		rec->unignore_time = time(NULL)+atoi(timestr);
-
-	if (rec->level == 0) {
-		printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE, TXT_UNIGNORED,
-			    rec->mask == NULL ? "*" : rec->mask);
-	}
 
 	if (new_ignore)
 		ignore_add_rec(rec);
@@ -162,24 +184,29 @@ static void cmd_unignore(const char *data)
 {
 	IGNORE_REC *rec;
 	GSList *tmp;
+        char *mask;
+	void *free_arg;
 
-	if (*data == '\0')
+	if (!cmd_get_params(data, &free_arg, 1, &mask))
+		return;
+
+	if (*mask == '\0')
                 cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
-	if (is_numeric(data, ' ')) {
+	if (is_numeric(mask, ' ')) {
 		/* with index number */
-		tmp = g_slist_nth(ignores, atoi(data)-1);
+		tmp = g_slist_nth(ignores, atoi(mask)-1);
 		rec = tmp == NULL ? NULL : tmp->data;
 	} else {
 		/* with mask */
 		const char *chans[2] = { "*", NULL };
 
 		if (active_win->active_server != NULL &&
-		    active_win->active_server->ischannel(data)) {
-			chans[0] = data;
-			data = NULL;
+		    server_ischannel(active_win->active_server, mask)) {
+			chans[0] = mask;
+			mask = NULL;
 		}
-		rec = ignore_find("*", data, (char **) chans);
+		rec = ignore_find("*", mask, (char **) chans);
 	}
 
 	if (rec != NULL) {
@@ -187,8 +214,9 @@ static void cmd_unignore(const char *data)
 		ignore_update_rec(rec);
 	} else {
 		printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
-			    TXT_IGNORE_NOT_FOUND, data);
+			    TXT_IGNORE_NOT_FOUND, mask);
 	}
+	cmd_params_free(free_arg);
 }
 
 static void sig_ignore_created(IGNORE_REC *rec)
@@ -196,7 +224,7 @@ static void sig_ignore_created(IGNORE_REC *rec)
 	char *key, *levels;
 
 	key = ignore_get_key(rec);
-        levels = bits2level(rec->level);
+	levels = bits2level(rec->level);
 	printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
 		    TXT_IGNORED, key, levels);
 	g_free(key);

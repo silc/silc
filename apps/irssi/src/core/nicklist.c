@@ -28,7 +28,7 @@
 #include "masks.h"
 
 #define isalnumhigh(a) \
-        (isalnum(a) || (unsigned char) (a) >= 128)
+        (i_isalnum(a) || (unsigned char) (a) >= 128)
 
 static void nick_hash_add(CHANNEL_REC *channel, NICK_REC *nick)
 {
@@ -76,6 +76,8 @@ static void nick_hash_remove(CHANNEL_REC *channel, NICK_REC *nick)
 /* Add new nick to list */
 void nicklist_insert(CHANNEL_REC *channel, NICK_REC *nick)
 {
+	/*MODULE_DATA_INIT(nick);*/
+
 	nick->type = module_get_uniq_id("NICK", 0);
         nick->chat_type = channel->chat_type;
 
@@ -100,6 +102,7 @@ static void nicklist_destroy(CHANNEL_REC *channel, NICK_REC *nick)
 {
 	signal_emit("nicklist remove", 2, channel, nick);
 
+        /*MODULE_DATA_DEINIT(nick);*/
 	g_free(nick->nick);
 	g_free_not_null(nick->realname);
 	g_free_not_null(nick->host);
@@ -353,17 +356,39 @@ GSList *nicklist_get_same_unique(SERVER_REC *server, void *id)
 /* nick record comparision for sort functions */
 int nicklist_compare(NICK_REC *p1, NICK_REC *p2)
 {
+	int status1, status2;
+	
 	if (p1 == NULL) return -1;
 	if (p2 == NULL) return 1;
 
-	if (p1->op && !p2->op) return -1;
-	if (!p1->op && p2->op) return 1;
+	/* we assign each status (op, halfop, voice, normal) a number
+	 * and compare them. this is easier than 100,000 if's and
+	 * returns :-)
+	 * -- yath */
 
-	if (!p1->op) {
-		if (p1->voice && !p2->voice) return -1;
-		if (!p1->voice && p2->voice) return 1;
-	}
+	if (p1->op)
+		status1 = 4;
+	else if (p1->halfop)
+		status1 = 3;
+	else if (p1->voice)
+		status1 = 2;
+	else
+		status1 = 1;
 
+	if (p2->op)
+		status2 = 4;
+	else if (p2->halfop)
+		status2 = 3;
+	else if (p2->voice)
+		status2 = 2;
+	else
+		status2 = 1;
+	
+	if (status1 < status2)
+		return 1;
+	else if (status1 > status2)
+		return -1;
+	
 	return g_strcasecmp(p1->nick, p2->nick);
 }
 
@@ -507,10 +532,10 @@ int nick_match_msg(CHANNEL_REC *channel, const char *msg, const char *nick)
 
 		/* check if it matches for alphanumeric parts of nick */
 		while (*nick != '\0' && *msg != '\0') {
-			if (toupper(*nick) == toupper(*msg)) {
+			if (i_toupper(*nick) == i_toupper(*msg)) {
 				/* total match */
 				msg++;
-			} else if (isalnum(*msg) && !isalnum(*nick)) {
+			} else if (i_isalnum(*msg) && !i_isalnum(*nick)) {
 				/* some strange char in your nick, pass it */
                                 fullmatch = FALSE;
 			} else
@@ -527,7 +552,7 @@ int nick_match_msg(CHANNEL_REC *channel, const char *msg, const char *nick)
 				/* remove the rest of the non-alphanum chars
 				   from nick and check if it then matches. */
                                 fullmatch = FALSE;
-				while (*nick != '\0' && !isalnum(*nick))
+				while (*nick != '\0' && !i_isalnum(*nick))
 					nick++;
 			}
 

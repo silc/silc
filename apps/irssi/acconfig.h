@@ -4,7 +4,6 @@
 #undef PLUGINSDIR
 
 /* misc.. */
-#undef MEM_DEBUG
 #undef HAVE_IPV6
 #undef HAVE_POPT_H
 #undef HAVE_SOCKS_H
@@ -23,12 +22,13 @@
 #undef SCO_FLAVOR
 
 /* our own curses checks */
-#undef USE_CURSES_WINDOWS
 #undef HAVE_NCURSES_USE_DEFAULT_COLORS
 #undef HAVE_CURSES_IDCOK
 #undef HAVE_CURSES_RESIZETERM
 #undef HAVE_CURSES_WRESIZE
-#undef USE_CURSES_WINDOWS
+
+/* terminfo/termcap */
+#undef HAVE_TERMINFO
 
 /* nls */
 #undef ENABLE_NLS

@@ -30,6 +30,7 @@ struct PROCESS_REC {
         LINEBUF_REC *databuf;
 	int read_tag;
 
+        int level; /* what level to use when printing the text */
         char *target; /* send text with /msg <target> ... */
 	WINDOW_REC *target_win; /* print text to this window */
         EXEC_WI_REC *target_item; /* print text to this exec window item */
@@ -38,6 +39,8 @@ struct PROCESS_REC {
 	unsigned int notice:1; /* send text with /notice, not /msg if target is set */
 	unsigned int silent:1; /* don't print "process exited with level xx" */
 };
+
+extern GSList *processes;
 
 void fe_exec_init(void);
 void fe_exec_deinit(void);

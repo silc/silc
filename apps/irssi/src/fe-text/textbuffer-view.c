@@ -20,7 +20,7 @@
 
 #include "module.h"
 #include "textbuffer-view.h"
-#include "screen.h"
+#include "utf8.h"
 
 typedef struct {
 	char *name;
@@ -102,21 +102,64 @@ static void textbuffer_cache_unref(TEXT_BUFFER_CACHE_REC *cache)
                 textbuffer_cache_destroy(cache);
 }
 
+#define FGATTR (ATTR_NOCOLORS | ATTR_RESETFG | ATTR_BOLD | 0x0f)
+#define BGATTR (ATTR_NOCOLORS | ATTR_RESETBG | ATTR_BLINK | 0xf0)
+
+static void update_cmd_color(unsigned char cmd, int *color)
+{
+	if ((cmd & 0x80) == 0) {
+		if (cmd & LINE_COLOR_BG) {
+			/* set background color */
+			*color &= FGATTR;
+			if ((cmd & LINE_COLOR_DEFAULT) == 0)
+				*color |= (cmd & 0x0f) << 4;
+			else {
+				*color |= ATTR_RESETBG;
+                                if (cmd & LINE_COLOR_BLINK)
+					*color |= ATTR_BLINK;
+			}
+		} else {
+			/* set foreground color */
+			*color &= BGATTR;
+			if ((cmd & LINE_COLOR_DEFAULT) == 0)
+				*color |= cmd & 0x0f;
+			else {
+				*color |= ATTR_RESETFG;
+                                if (cmd & LINE_COLOR_BOLD)
+					*color |= ATTR_BOLD;
+			}
+		}
+	} else switch (cmd) {
+	case LINE_CMD_UNDERLINE:
+		*color ^= ATTR_UNDERLINE;
+		break;
+	case LINE_CMD_REVERSE:
+		*color ^= ATTR_REVERSE;
+		break;
+	case LINE_CMD_COLOR0:
+		*color &= BGATTR;
+		break;
+	}
+}
+
 static LINE_CACHE_REC *
 view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 {
+        INDENT_FUNC indent_func;
 	LINE_CACHE_REC *rec;
 	LINE_CACHE_SUB_REC *sub;
 	GSList *lines;
         unsigned char cmd;
-	char *ptr, *last_space_ptr;
+	const unsigned char *ptr, *last_space_ptr;
 	int xpos, pos, indent_pos, last_space, last_color, color, linecount;
 
 	g_return_val_if_fail(line->text != NULL, NULL);
 
-	xpos = 0; color = 0; indent_pos = view->default_indent;
+	color = ATTR_RESETFG | ATTR_RESETBG;
+	xpos = 0; indent_pos = view->default_indent;
 	last_space = last_color = 0; last_space_ptr = NULL; sub = NULL;
 
+        indent_func = view->default_indent_func;
         linecount = 1;
 	lines = NULL;
 	for (ptr = line->text;;) {
@@ -130,49 +173,38 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 				break;
 
 			if (cmd == LINE_CMD_CONTINUE) {
-				char *tmp;
+				unsigned char *tmp;
 
 				memcpy(&tmp, ptr, sizeof(char *));
 				ptr = tmp;
 				continue;
 			}
 
-			if ((cmd & 0x80) == 0) {
-				/* set color */
-				color = (color & ATTR_UNDERLINE) | cmd;
-			} else switch (cmd) {
-			case LINE_CMD_UNDERLINE:
-				color ^= ATTR_UNDERLINE;
-				break;
-			case LINE_CMD_COLOR0:
-				color = color & ATTR_UNDERLINE;
-				break;
-			case LINE_CMD_COLOR8:
-				color &= 0xfff0;
-				color |= 8|ATTR_COLOR8;
-				break;
-			case LINE_CMD_BLINK:
-				color |= 0x80;
-				break;
-			case LINE_CMD_INDENT:
+			if (cmd == LINE_CMD_INDENT) {
 				/* set indentation position here - don't do
 				   it if we're too close to right border */
 				if (xpos < view->width-5) indent_pos = xpos;
-				break;
-			}
+			} else if (cmd == LINE_CMD_INDENT_FUNC) {
+				memcpy(&indent_func, ptr, sizeof(INDENT_FUNC));
+				ptr += sizeof(INDENT_FUNC);
+				if (indent_func == NULL)
+                                        indent_func = view->default_indent_func;
+			} else
+				update_cmd_color(cmd, &color);
 			continue;
 		}
 
 		if (xpos == view->width && sub != NULL &&
 		    (last_space <= indent_pos || last_space <= 10) &&
-		    !view->longword_noindent) {
+		    view->longword_noindent) {
                         /* long word, remove the indentation from this line */
 			xpos -= sub->indent;
                         sub->indent = 0;
 		}
 
 		if (xpos == view->width) {
-			xpos = indent_pos;
+			xpos = indent_func == NULL ? indent_pos :
+				indent_func(view, line, -1);
 
 			sub = g_new0(LINE_CACHE_SUB_REC, 1);
 			if (last_space > indent_pos && last_space > 10) {
@@ -180,7 +212,7 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
                                 color = last_color;
 				ptr = last_space_ptr;
 				while (*ptr == ' ') ptr++;
-			} else if (!view->longword_noindent) {
+			} else if (view->longword_noindent) {
 				/* long word, no indentation in next line */
 				xpos = 0;
 				sub->continues = TRUE;
@@ -188,6 +220,7 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 
 			sub->start = ptr;
 			sub->indent = xpos;
+                        sub->indent_func = indent_func;
 			sub->color = color;
 
 			lines = g_slist_append(lines, sub);
@@ -196,6 +229,9 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 			last_space = 0;
 			continue;
 		}
+
+		if (view->utf8)
+			get_utf8_char(&ptr);
 
 		xpos++;
 		if (*ptr++ == ' ') {
@@ -224,23 +260,76 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 	return rec;
 }
 
+static void view_remove_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
+			      unsigned char update_counter)
+{
+	LINE_CACHE_REC *cache;
+
+	if (view->cache->update_counter == update_counter)
+		return;
+	view->cache->update_counter = update_counter;
+
+	cache = g_hash_table_lookup(view->cache->line_cache, line);
+	if (cache != NULL) {
+                g_free(cache);
+		g_hash_table_remove(view->cache->line_cache, line);
+	}
+}
+
+static void view_update_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
+			      unsigned char update_counter)
+{
+	view_remove_cache(view, line, update_counter);
+
+	if (view->buffer->cur_line == line)
+		view->cache->last_linecount = view_get_linecount(view, line);
+}
+
+static void view_reset_cache(TEXT_BUFFER_VIEW_REC *view)
+{
+	GSList *tmp;
+
+	/* destroy line caches - note that you can't do simultaneously
+	   unrefs + cache_get()s or it will keep using the old caches */
+	textbuffer_cache_unref(view->cache);
+        g_slist_foreach(view->siblings, (GFunc) textbuffer_cache_unref, NULL);
+
+	view->cache = textbuffer_cache_get(view->siblings, view->width);
+	for (tmp = view->siblings; tmp != NULL; tmp = tmp->next) {
+		TEXT_BUFFER_VIEW_REC *rec = tmp->data;
+
+		rec->cache = textbuffer_cache_get(rec->siblings, rec->width);
+	}
+}
+
 static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 			  int subline, int ypos, int max)
 {
+        INDENT_FUNC indent_func;
 	LINE_CACHE_REC *cache;
         const unsigned char *text, *text_newline;
-	char *tmp;
-	int xpos, color, drawcount, first;
+	unsigned char *tmp;
+	int xpos, color, drawcount, first, need_move, need_clrtoeol;
+
+	if (view->dirty) /* don't bother drawing anything - redraw is coming */
+                return 0;
 
 	cache = textbuffer_view_get_line_cache(view, line);
 	if (subline >= cache->count)
                 return 0;
 
-	xpos = color = drawcount = 0; first = TRUE;
+        color = ATTR_RESET;
+        need_move = TRUE; need_clrtoeol = FALSE;
+	xpos = drawcount = 0; first = TRUE;
 	text_newline = text =
 		subline == 0 ? line->text : cache->lines[subline-1].start;
 	for (;;) {
 		if (text == text_newline) {
+			if (need_clrtoeol && xpos < term_width) {
+				term_set_color(view->window, ATTR_RESET);
+				term_clrtoeol(view->window);
+			}
+
 			if (first)
 				first = FALSE;
 			else {
@@ -250,21 +339,37 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 			}
 
 			if (subline > 0) {
-				xpos = cache->lines[subline-1].indent;
+                                /* continuing previous line - indent it */
+				indent_func = cache->lines[subline-1].indent_func;
+				xpos = indent_func != NULL ?
+					indent_func(view, line, ypos) :
+					cache->lines[subline-1].indent;
                                 color = cache->lines[subline-1].color;
 			}
 
-			set_color(view->window, 0);
-			wmove(view->window, ypos, 0);
-			wclrtoeol(view->window);
+			if (xpos == 0)
+                                need_clrtoeol = TRUE;
+			else {
+				/* line was indented - need to clear the
+                                   indented area first */
+				term_set_color(view->window, ATTR_RESET);
+				term_move(view->window, 0, ypos);
+				term_clrtoeol(view->window);
+			}
 
-			wmove(view->window, ypos, xpos);
-			set_color(view->window, color);
+			if (need_move || xpos > 0)
+				term_move(view->window, xpos, ypos);
 
-			/* get the beginning of the next subline */
-			text_newline = subline == cache->count-1 ? NULL :
-                                cache->lines[subline].start;
+			term_set_color(view->window, color);
 
+			if (subline == cache->count-1) {
+				text_newline = NULL;
+				need_move = FALSE;
+			} else {
+				/* get the beginning of the next subline */
+				text_newline = cache->lines[subline].start;
+				need_move = !cache->lines[subline].continues;
+			}
                         drawcount++;
 			subline++;
 		}
@@ -275,43 +380,45 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 			if (*text == LINE_CMD_EOL || *text == LINE_CMD_FORMAT)
                                 break;
 
-			if ((*text & 0x80) == 0) {
-				/* set color */
-				color = (color & ATTR_UNDERLINE) | *text;
-			} else if (*text == LINE_CMD_CONTINUE) {
+			if (*text == LINE_CMD_CONTINUE) {
                                 /* jump to next block */
 				memcpy(&tmp, text+1, sizeof(unsigned char *));
 				text = tmp;
 				continue;
-			} else switch (*text) {
-			case LINE_CMD_UNDERLINE:
-				color ^= ATTR_UNDERLINE;
-				break;
-			case LINE_CMD_COLOR0:
-				color = color & ATTR_UNDERLINE;
-				break;
-			case LINE_CMD_COLOR8:
-				color &= 0xfff0;
-				color |= 8|ATTR_COLOR8;
-				break;
-			case LINE_CMD_BLINK:
-				color |= 0x80;
-                                break;
+			} else if (*text == LINE_CMD_INDENT_FUNC) {
+				text += sizeof(INDENT_FUNC);
+			} else {
+				update_cmd_color(*text, &color);
+				term_set_color(view->window, color);
 			}
-			set_color(view->window, color);
 			text++;
 			continue;
 		}
 
-		if ((*text & 127) >= 32)
-			waddch(view->window, *text);
-		else {
-			/* low-ascii */
-			set_color(view->window, ATTR_REVERSE);
-			waddch(view->window, (*text & 127)+'A'-1);
-			set_color(view->window, color);
+		if (xpos < term_width) {
+			const unsigned char *end = text;
+			if (view->utf8)
+				get_utf8_char(&end);
+
+			if (*text >= 32 &&
+			    (end != text || (*text & 127) >= 32)) {
+				for (; text < end; text++)
+					term_addch(view->window, *text);
+				term_addch(view->window, *text);
+			} else {
+				/* low-ascii */
+				term_set_color(view->window, ATTR_RESET|ATTR_REVERSE);
+				term_addch(view->window, (*text & 127)+'A'-1);
+				term_set_color(view->window, color);
+			}
 		}
 		text++;
+		xpos++;
+	}
+
+	if (need_clrtoeol && xpos < term_width) {
+		term_set_color(view->window, ATTR_RESET);
+		term_clrtoeol(view->window);
 	}
 
         return drawcount;
@@ -321,7 +428,7 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
    original if possible */
 static void textbuffer_view_init_bottom(TEXT_BUFFER_VIEW_REC *view)
 {
-	GList *tmp;
+        LINE_REC *line;
         int linecount, total;
 
 	if (view->empty_linecount == 0) {
@@ -331,12 +438,10 @@ static void textbuffer_view_init_bottom(TEXT_BUFFER_VIEW_REC *view)
 	}
 
 	total = 0;
-	tmp = g_list_last(view->buffer->lines);
-	for (; tmp != NULL; tmp = tmp->prev) {
-		LINE_REC *line = tmp->data;
-
+        line = textbuffer_line_last(view->buffer);
+	for (; line != NULL; line = line->prev) {
 		linecount = view_get_linecount(view, line);
-		if (tmp == view->bottom_startline) {
+		if (line == view->bottom_startline) {
 			/* keep the old one, make sure that subline is ok */
 			if (view->bottom_subline > linecount)
 				view->bottom_subline = linecount;
@@ -347,7 +452,7 @@ static void textbuffer_view_init_bottom(TEXT_BUFFER_VIEW_REC *view)
 
                 total += linecount;
 		if (total >= view->height) {
-			view->bottom_startline = tmp;
+			view->bottom_startline = line;
 			view->bottom_subline = total - view->height;
                         view->empty_linecount = 0;
                         return;
@@ -355,27 +460,26 @@ static void textbuffer_view_init_bottom(TEXT_BUFFER_VIEW_REC *view)
 	}
 
         /* not enough lines so we must be at the beginning of the buffer */
-	view->bottom_startline = view->buffer->lines;
+	view->bottom_startline = view->buffer->first_line;
 	view->bottom_subline = 0;
 	view->empty_linecount = view->height - total;
 }
 
 static void textbuffer_view_init_ypos(TEXT_BUFFER_VIEW_REC *view)
 {
-	GList *tmp;
+        LINE_REC *line;
 
 	g_return_if_fail(view != NULL);
 
 	view->ypos = -view->subline-1;
-	for (tmp = view->startline; tmp != NULL; tmp = tmp->next)
-		view->ypos += view_get_linecount(view, tmp->data);
+	for (line = view->startline; line != NULL; line = line->next)
+		view->ypos += view_get_linecount(view, line);
 }
 
 /* Create new view. */
 TEXT_BUFFER_VIEW_REC *textbuffer_view_create(TEXT_BUFFER_REC *buffer,
 					     int width, int height,
-					     int default_indent,
-					     int longword_noindent)
+					     int scroll, int utf8)
 {
 	TEXT_BUFFER_VIEW_REC *view;
 
@@ -388,8 +492,8 @@ TEXT_BUFFER_VIEW_REC *textbuffer_view_create(TEXT_BUFFER_REC *buffer,
 
 	view->width = width;
         view->height = height;
-	view->default_indent = default_indent;
-        view->longword_noindent = longword_noindent;
+	view->scroll = scroll;
+        view->utf8 = utf8;
 
 	view->cache = textbuffer_cache_get(view->siblings, width);
 	textbuffer_view_init_bottom(view);
@@ -439,60 +543,130 @@ void textbuffer_view_destroy(TEXT_BUFFER_VIEW_REC *view)
 /* Change the default indent position */
 void textbuffer_view_set_default_indent(TEXT_BUFFER_VIEW_REC *view,
 					int default_indent,
-					int longword_noindent)
+					int longword_noindent,
+					INDENT_FUNC indent_func)
 {
-	view->default_indent = default_indent;
-        view->longword_noindent = longword_noindent;
+        if (default_indent != -1)
+		view->default_indent = default_indent;
+        if (longword_noindent != -1)
+		view->longword_noindent = longword_noindent;
+
+	view->default_indent_func = indent_func;
 }
 
-static int view_get_linecount_all(TEXT_BUFFER_VIEW_REC *view, GList *lines)
+static void view_unregister_indent_func(TEXT_BUFFER_VIEW_REC *view,
+					INDENT_FUNC indent_func)
+{
+        INDENT_FUNC func;
+	LINE_REC *line;
+        const unsigned char *text, *tmp;
+
+	if (view->default_indent_func == indent_func)
+		view->default_indent_func = NULL;
+
+	/* recreate cache so it won't contain references
+	   to the indent function */
+	view_reset_cache(view);
+	view->cache = textbuffer_cache_get(view->siblings, view->width);
+
+        /* remove all references to the indent function from buffer */
+	line = view->buffer->first_line;
+	while (line != NULL) {
+		text = line->text;
+
+		for (text = line->text;; text++) {
+			if (*text != '\0')
+				continue;
+
+                        text++;
+			if (*text == LINE_CMD_EOL)
+				break;
+
+			if (*text == LINE_CMD_INDENT_FUNC) {
+				text++;
+				memcpy(&func, text, sizeof(INDENT_FUNC));
+				if (func == indent_func)
+                                        memset(&func, 0, sizeof(INDENT_FUNC));
+				text += sizeof(INDENT_FUNC);
+			} else if (*text == LINE_CMD_CONTINUE) {
+				memcpy(&tmp, text+1, sizeof(char *));
+				text = tmp-1;
+			}
+		}
+
+		line = line->next;
+	}
+}
+
+void textbuffer_views_unregister_indent_func(INDENT_FUNC indent_func)
+{
+	g_slist_foreach(views, (GFunc) view_unregister_indent_func,
+			(void *) indent_func);
+}
+
+void textbuffer_view_set_scroll(TEXT_BUFFER_VIEW_REC *view, int scroll)
+{
+        view->scroll = scroll;
+}
+
+void textbuffer_view_set_utf8(TEXT_BUFFER_VIEW_REC *view, int utf8)
+{
+        view->utf8 = utf8;
+}
+
+static int view_get_linecount_all(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 {
 	int linecount;
 
         linecount = 0;
-	while (lines != NULL) {
-		linecount += view_get_linecount(view, lines->data);
-                lines = lines->next;
+	while (line != NULL) {
+		linecount += view_get_linecount(view, line);
+                line = line->next;
 	}
 
         return linecount;
 }
 
-static void view_draw(TEXT_BUFFER_VIEW_REC *view, GList *line,
-		      int subline, int ypos, int lines)
+static void view_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
+		      int subline, int ypos, int lines, int fill_bottom)
 {
 	int linecount;
 
-	while (line != NULL && lines > 0) {
-		LINE_REC *rec = line->data;
+	if (view->dirty) /* don't bother drawing anything - redraw is coming */
+                return;
 
-                linecount = view_line_draw(view, rec, subline, ypos, lines);
+	while (line != NULL && lines > 0) {
+                linecount = view_line_draw(view, line, subline, ypos, lines);
 		ypos += linecount; lines -= linecount;
 
 		subline = 0;
                 line = line->next;
 	}
 
-        /* clear the rest of the view */
-	while (lines > 0) {
-		wmove(view->window, ypos, 0);
-		wclrtoeol(view->window);
-		ypos++; lines--;
+	if (fill_bottom) {
+		/* clear the rest of the view */
+		term_set_color(view->window, ATTR_RESET);
+		while (lines > 0) {
+			term_move(view->window, 0, ypos);
+			term_clrtoeol(view->window);
+			ypos++; lines--;
+		}
 	}
 }
 
-#define view_draw_top(view, lines) \
-	view_draw(view, (view)->startline, (view)->subline, 0, lines)
+#define view_draw_top(view, lines, fill_bottom) \
+	view_draw(view, (view)->startline, (view)->subline, \
+		  0, lines, fill_bottom)
 
 static void view_draw_bottom(TEXT_BUFFER_VIEW_REC *view, int lines)
 {
-	GList *line;
+	LINE_REC *line;
 	int ypos, maxline, subline, linecount;
 
 	maxline = view->height-lines;
 	line = view->startline; ypos = -view->subline; subline = 0;
 	while (line != NULL && ypos < maxline) {
-                linecount = view_get_linecount(view, line->data);
+                linecount = view_get_linecount(view, line);
 		ypos += linecount;
 		if (ypos > maxline) {
 			subline = maxline-(ypos-linecount);
@@ -501,12 +675,12 @@ static void view_draw_bottom(TEXT_BUFFER_VIEW_REC *view, int lines)
                 line = line->next;
 	}
 
-        view_draw(view, line, subline, maxline, lines);
+        view_draw(view, line, subline, maxline, lines, TRUE);
 }
 
 /* Returns number of lines actually scrolled */
-static int view_scroll(TEXT_BUFFER_VIEW_REC *view, GList **lines, int *subline,
-		       int scrollcount, int draw_nonclean)
+static int view_scroll(TEXT_BUFFER_VIEW_REC *view, LINE_REC **lines,
+		       int *subline, int scrollcount, int draw_nonclean)
 {
 	int linecount, realcount, scroll_visible;
 
@@ -520,7 +694,7 @@ static int view_scroll(TEXT_BUFFER_VIEW_REC *view, GList **lines, int *subline,
 	scrollcount += *subline;
         *subline = 0;
 	while (scrollcount > 0) {
-		linecount = view_get_linecount(view, (*lines)->data);
+		linecount = view_get_linecount(view, *lines);
 
 		if ((scroll_visible && *lines == view->bottom_startline) &&
 		    (scrollcount >= view->bottom_subline)) {
@@ -545,7 +719,7 @@ static int view_scroll(TEXT_BUFFER_VIEW_REC *view, GList **lines, int *subline,
         /* scroll up */
 	while (scrollcount < 0 && (*lines)->prev != NULL) {
 		*lines = (*lines)->prev;
-		linecount = view_get_linecount(view, (*lines)->data);
+		linecount = view_get_linecount(view, *lines);
 
                 realcount -= linecount;
 		scrollcount += linecount;
@@ -562,18 +736,17 @@ static int view_scroll(TEXT_BUFFER_VIEW_REC *view, GList **lines, int *subline,
 			   whole view */
                         textbuffer_view_redraw(view);
 		} else {
-			scrollok(view->window, TRUE);
-			wscrl(view->window, realcount);
-			scrollok(view->window, FALSE);
+			term_set_color(view->window, ATTR_RESET);
+			term_window_scroll(view->window, realcount);
 
 			if (draw_nonclean) {
 				if (realcount < 0)
-                                        view_draw_top(view, -realcount);
+                                        view_draw_top(view, -realcount, TRUE);
 				else
 					view_draw_bottom(view, realcount);
 			}
 
-			screen_refresh(view->window);
+			term_refresh(view->window);
 		}
 	}
 
@@ -594,20 +767,19 @@ void textbuffer_view_resize(TEXT_BUFFER_VIEW_REC *view, int width, int height)
 		view->cache = textbuffer_cache_get(view->siblings, width);
 	}
 
-	view->width = width;
-	view->height = height;
+	view->width = width > 10 ? width : 10;
+	view->height = height > 1 ? height : 1;
 
-
-        if (view->buffer->lines == NULL) {
-                 view->empty_linecount = height;
-                 return;
-        }
+	if (view->buffer->first_line == NULL) {
+                view->empty_linecount = height;
+		return;
+	}
 
 	textbuffer_view_init_bottom(view);
 
 	/* check that we didn't scroll lower than bottom startline.. */
-	if (g_list_find(view->bottom_startline->next,
-			view->startline->data) != NULL) {
+	if (textbuffer_line_exists_after(view->bottom_startline->next,
+					 view->startline)) {
 		view->startline = view->bottom_startline;
                 view->subline = view->bottom_subline;
 	} else if (view->startline == view->bottom_startline &&
@@ -615,7 +787,7 @@ void textbuffer_view_resize(TEXT_BUFFER_VIEW_REC *view, int width, int height)
                 view->subline = view->bottom_subline;
 	} else {
 		/* make sure the subline is still in allowed range */
-		linecount = view_get_linecount(view, view->startline->data);
+		linecount = view_get_linecount(view, view->startline);
 		if (view->subline > linecount)
                         view->subline = linecount;
 	}
@@ -640,9 +812,10 @@ void textbuffer_view_resize(TEXT_BUFFER_VIEW_REC *view, int width, int height)
 			view->subline;
                 if (view->empty_linecount < view->height-linecount)
 			view->empty_linecount = view->height-linecount;
+                view->more_text = FALSE;
 	}
 
-        textbuffer_view_redraw(view);
+	view->dirty = TRUE;
 }
 
 /* Clear the view, don't actually remove any lines from buffer. */
@@ -652,12 +825,13 @@ void textbuffer_view_clear(TEXT_BUFFER_VIEW_REC *view)
 
 	view->ypos = -1;
 	view->bottom_startline = view->startline =
-		g_list_last(view->buffer->lines);
+		textbuffer_line_last(view->buffer);
 	view->bottom_subline = view->subline =
 		view->buffer->cur_line == NULL ? 0 :
 		view_get_linecount(view, view->buffer->cur_line);
 	view->empty_linecount = view->height;
 	view->bottom = TRUE;
+	view->more_text = FALSE;
 
         textbuffer_view_redraw(view);
 }
@@ -673,35 +847,28 @@ void textbuffer_view_scroll(TEXT_BUFFER_VIEW_REC *view, int lines)
 			    lines, TRUE);
 	view->ypos += lines < 0 ? count : -count;
 	view->bottom = view_is_bottom(view);
+        if (view->bottom) view->more_text = FALSE;
 
         if (view->window != NULL)
-		screen_refresh(view->window);
+		term_refresh(view->window);
 }
 
 /* Scroll to specified line */
 void textbuffer_view_scroll_line(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 {
-	GList *tmp;
-
         g_return_if_fail(view != NULL);
 
-	if (g_list_find(view->bottom_startline->next, line) != NULL) {
+	if (textbuffer_line_exists_after(view->bottom_startline->next, line)) {
 		view->startline = view->bottom_startline;
 		view->subline = view->bottom_subline;
 	} else {
-		for (tmp = view->buffer->lines; tmp != NULL; tmp = tmp->next) {
-			LINE_REC *rec = tmp->data;
-
-			if (rec == line) {
-				view->startline = tmp;
-				view->subline = 0;
-				break;
-			}
-		}
+		view->startline = line;
+                view->subline = 0;
 	}
 
 	textbuffer_view_init_ypos(view);
 	view->bottom = view_is_bottom(view);
+        if (view->bottom) view->more_text = FALSE;
 
 	textbuffer_view_redraw(view);
 }
@@ -724,42 +891,20 @@ LINE_CACHE_REC *textbuffer_view_get_line_cache(TEXT_BUFFER_VIEW_REC *view,
         return cache;
 }
 
-static void view_remove_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
-			      unsigned char update_counter)
-{
-	LINE_CACHE_REC *cache;
-
-	if (view->cache->update_counter == update_counter)
-		return;
-	view->cache->update_counter = update_counter;
-
-	cache = g_hash_table_lookup(view->cache->line_cache, line);
-	if (cache != NULL) {
-                g_free(cache);
-		g_hash_table_remove(view->cache->line_cache, line);
-	}
-}
-
-static void view_update_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
-			      unsigned char update_counter)
-{
-	view_remove_cache(view, line, update_counter);
-
-	if (view->buffer->cur_line == line)
-		view->cache->last_linecount = view_get_linecount(view, line);
-}
-
 static void view_insert_line(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 {
 	int linecount, ypos, subline;
 
+        if (!view->bottom)
+		view->more_text = TRUE;
+
 	if (view->bottom_startline == NULL) {
 		view->startline = view->bottom_startline =
-			view->buffer->lines;
+			view->buffer->first_line;
 	}
 
 	if (view->buffer->cur_line != line &&
-	    g_list_find(view->bottom_startline, line) == NULL)
+	    !textbuffer_line_exists_after(view->bottom_startline, line))
 		return;
 
 	linecount = view->cache->last_linecount;
@@ -780,11 +925,13 @@ static void view_insert_line(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 	}
 
 	if (view->bottom) {
-		if (view->ypos >= view->height) {
+		if (view->scroll && view->ypos >= view->height) {
 			linecount = view->ypos-view->height+1;
 			view_scroll(view, &view->startline,
 				    &view->subline, linecount, FALSE);
 			view->ypos -= linecount;
+		} else {
+			view->bottom = view_is_bottom(view);
 		}
 
 		if (view->window != NULL) {
@@ -795,13 +942,15 @@ static void view_insert_line(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 				subline = -ypos;
 				ypos = 0;
 			}
-			view_line_draw(view, line, subline, ypos,
-				       view->height - ypos);
+			if (ypos < view->height) {
+				view_line_draw(view, line, subline, ypos,
+					       view->height - ypos);
+			}
 		}
 	}
 
         if (view->window != NULL)
-		screen_refresh(view->window);
+		term_refresh(view->window);
 }
 
 /* Update some line in the buffer which has been modified using
@@ -853,11 +1002,8 @@ static void view_bookmarks_check(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 			     (GHFunc) bookmark_check_remove, &rec);
 
 	if (rec.remove_list != NULL) {
-		GList *pos = g_list_find(view->buffer->lines, line);
-
-		new_line = pos == NULL || pos->prev == NULL ? NULL :
-			(pos->next == NULL ? pos->prev->data :
-			 pos->next->data);
+		new_line = line->prev == NULL ? NULL :
+			(line->next == NULL ? line->prev : line->next);
 		for (tmp = rec.remove_list; tmp != NULL; tmp = tmp->next) {
 			g_hash_table_remove(view->bookmarks, tmp->data);
 			if (new_line != NULL) {
@@ -872,29 +1018,53 @@ static void view_bookmarks_check(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 /* Return number of real lines `lines' list takes -
    stops counting when the height reaches the view height */
 static int view_get_lines_height(TEXT_BUFFER_VIEW_REC *view,
-				 GList *lines, int subline,
+				 LINE_REC *line, int subline,
 				 LINE_REC *skip_line)
 {
 	int height, linecount;
 
         height = -subline;
-	while (lines != NULL && height < view->height) {
-		LINE_REC *line = lines->data;
-
+	while (line != NULL && height < view->height) {
 		if (line != skip_line) {
                         linecount = view_get_linecount(view, line);
 			height += linecount;
 		}
-                lines = lines->next;
+                line = line->next;
 	}
 
 	return height < view->height ? height : view->height;
 }
 
+static void view_remove_line_update_startline(TEXT_BUFFER_VIEW_REC *view,
+					      LINE_REC *line, int linecount)
+{
+	int scroll;
+
+	if (view->startline == line) {
+		view->startline = view->startline->prev != NULL ?
+			view->startline->prev : view->startline->next;
+		view->subline = 0;
+	} else {
+		scroll = view->height -
+			view_get_lines_height(view, view->startline,
+					      view->subline, line);
+		if (scroll > 0) {
+			view_scroll(view, &view->startline,
+				    &view->subline, -scroll, FALSE);
+		}
+	}
+
+	/* FIXME: this is slow and unnecessary, but it's easy and
+	   really works :) */
+	textbuffer_view_init_ypos(view);
+	if (textbuffer_line_exists_after(view->startline, line))
+		view->ypos -= linecount;
+}
+
 static void view_remove_line(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 			     int linecount)
 {
-	int realcount, scroll;
+	int realcount;
 
 	view_bookmarks_check(view, line);
 
@@ -902,62 +1072,49 @@ static void view_remove_line(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
                 /* the last line is being removed */
 		LINE_REC *prevline;
 
-		prevline = view->buffer->lines->data == line ? NULL :
-			g_list_last(view->bottom_startline)->data;
+		prevline = view->buffer->first_line == line ? NULL :
+			textbuffer_line_last(view->buffer);
 		view->cache->last_linecount = prevline == NULL ? 0 :
 			view_get_linecount(view, prevline);
 	}
 
-	if (line == view->buffer->lines->data) {
+	if (view->buffer->first_line == line) {
 		/* first line in the buffer - this is the most commonly
 		   removed line.. */
-		if (view->bottom_startline->data == line) {
+		if (view->bottom_startline == line) {
 			/* very small scrollback.. */
                         view->bottom_startline = view->bottom_startline->next;
 			view->bottom_subline = 0;
 		}
 
-		if (view->startline->data == line) {
+		if (view->startline == line) {
                         /* removing the first line in screen */
 			realcount = view_scroll(view, &view->startline,
 						&view->subline,
-						linecount, TRUE);
+						linecount, FALSE);
 			view->ypos -= realcount;
 			view->empty_linecount += linecount-realcount;
 		}
-	} else if (g_list_find(view->bottom_startline, line) != NULL) {
-		realcount = view_scroll(view, &view->bottom_startline,
-					&view->bottom_subline,
-					-linecount, FALSE);
-		if (view->bottom) {
-			/* we're at the bottom, remove the same amount as
-			   from bottom_startline */
-			view_scroll(view, &view->startline,
-				    &view->subline, -linecount, TRUE);
-			view->ypos -= linecount-realcount;
-		} else {
-			if (view->startline->data == line) {
-				view->startline =
-					view->startline->next != NULL ?
-					view->startline->next :
-					view->startline->prev;
-                                view->subline = 0;
-			}
-			scroll = view->height -
-				view_get_lines_height(view, view->startline,
-                                                      view->subline, line);
-			if (scroll > 0) {
-				view_scroll(view, &view->startline,
-					    &view->subline, -scroll, TRUE);
-                                view->ypos -= scroll;
-			}
+	} else {
+		if (textbuffer_line_exists_after(view->bottom_startline,
+						 line)) {
+			realcount = view_scroll(view, &view->bottom_startline,
+						&view->bottom_subline,
+						-linecount, FALSE);
+			view->empty_linecount += linecount-realcount;
 		}
-		view->empty_linecount += linecount-realcount;
+
+		if (textbuffer_line_exists_after(view->startline,
+						 line)) {
+			view_remove_line_update_startline(view, line,
+							  linecount);
+		}
 	}
 
 	view->bottom = view_is_bottom(view);
+        if (view->bottom) view->more_text = FALSE;
         if (view->window != NULL)
-		screen_refresh(view->window);
+		term_refresh(view->window);
 }
 
 /* Remove one line from buffer. */
@@ -986,30 +1143,25 @@ void textbuffer_view_remove_line(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 	textbuffer_remove(view->buffer, line);
 }
 
+static int g_free_true(void *data)
+{
+	g_free(data);
+        return TRUE;
+}
+
 /* Remove all lines from buffer. */
 void textbuffer_view_remove_all_lines(TEXT_BUFFER_VIEW_REC *view)
 {
-	GSList *tmp;
-
 	g_return_if_fail(view != NULL);
 
 	textbuffer_remove_all_lines(view->buffer);
 
-	/* destroy line caches - note that you can't do simultaneously
-	   unrefs + cache_get()s or it will keep using the old caches */
-	textbuffer_cache_unref(view->cache);
-        g_slist_foreach(view->siblings, (GFunc) textbuffer_cache_unref, NULL);
+	g_hash_table_foreach_remove(view->bookmarks,
+				    (GHRFunc) g_free_true, NULL);
 
-        /* recreate caches, clear screens */
-	view->cache = textbuffer_cache_get(view->siblings, view->width);
+	view_reset_cache(view);
 	textbuffer_view_clear(view);
-
-	for (tmp = view->siblings; tmp != NULL; tmp = tmp->next) {
-		TEXT_BUFFER_VIEW_REC *rec = tmp->data;
-
-		rec->cache = textbuffer_cache_get(rec->siblings, rec->width);
-		textbuffer_view_clear(rec);
-	}
+	g_slist_foreach(view->siblings, (GFunc) textbuffer_view_clear, NULL);
 }
 
 /* Set a bookmark in view */
@@ -1040,7 +1192,7 @@ void textbuffer_view_set_bookmark_bottom(TEXT_BUFFER_VIEW_REC *view,
 	g_return_if_fail(name != NULL);
 
 	if (view->bottom_startline != NULL) {
-                line = g_list_last(view->bottom_startline)->data;
+                line = textbuffer_line_last(view->buffer);
 		textbuffer_view_set_bookmark(view, name, line);
 	}
 }
@@ -1057,14 +1209,15 @@ LINE_REC *textbuffer_view_get_bookmark(TEXT_BUFFER_VIEW_REC *view,
 
 /* Specify window where the changes in view should be drawn,
    NULL disables it. */
-void textbuffer_view_set_window(TEXT_BUFFER_VIEW_REC *view, WINDOW *window)
+void textbuffer_view_set_window(TEXT_BUFFER_VIEW_REC *view,
+				TERM_WINDOW *window)
 {
 	g_return_if_fail(view != NULL);
 
 	if (view->window != window) {
 		view->window = window;
-		if (window != NULL)
-			textbuffer_view_redraw(view);
+                if (window != NULL)
+			view->dirty = TRUE;
 	}
 }
 
@@ -1074,9 +1227,9 @@ void textbuffer_view_redraw(TEXT_BUFFER_VIEW_REC *view)
 	g_return_if_fail(view != NULL);
 
 	if (view->window != NULL) {
-                werase(view->window);
-		view_draw_top(view, view->height);
-		screen_refresh(view->window);
+		view->dirty = FALSE;
+		view_draw_top(view, view->height, TRUE);
+		term_refresh(view->window);
 	}
 }
 
@@ -1107,6 +1260,8 @@ static int sig_check_linecache(void)
 					    (GHRFunc) line_cache_check_remove,
 					    &now);
 	}
+
+        g_slist_free(caches);
 	return 1;
 }
 

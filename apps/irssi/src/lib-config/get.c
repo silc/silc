@@ -153,7 +153,7 @@ int config_get_bool(CONFIG_REC *rec, const char *section, const char *key, int d
 	str = config_get_str(rec, section, key, NULL);
 	if (str == NULL) return def;
 
-        return toupper(*str) == 'T' || toupper(*str) == 'Y';
+        return i_toupper(*str) == 'T' || i_toupper(*str) == 'Y';
 }
 
 /* Return value of key `value_key' from list item where `key' is `value' */
@@ -224,8 +224,8 @@ int config_node_get_bool(CONFIG_NODE *parent, const char *key, int def)
 	str = config_node_get_str(parent, key, NULL);
 	if (str == NULL) return def;
 
-	return toupper(*str) == 'T' || toupper(*str) == 'Y' ||
-		(toupper(*str) == 'O' && toupper(str[1]) == 'N');
+	return i_toupper(*str) == 'T' || i_toupper(*str) == 'Y' ||
+		(i_toupper(*str) == 'O' && i_toupper(str[1]) == 'N');
 }
 
 /* Get the value of keys `key' and `key_value' and put them to
@@ -307,4 +307,24 @@ CONFIG_NODE *config_node_index(CONFIG_NODE *node, int index)
 	}
 
 	return NULL;
+}
+
+/* Returns the first non-comment node in list */
+GSList *config_node_first(GSList *list)
+{
+	while (list != NULL) {
+		CONFIG_NODE *node = list->data;
+
+		if (node->type != NODE_TYPE_COMMENT)
+                        break;
+		list = list->next;
+	}
+	return list;
+}
+
+/* Returns the next non-comment node in list */
+GSList *config_node_next(GSList *list)
+{
+	list = list->next;
+        return config_node_first(list);
 }

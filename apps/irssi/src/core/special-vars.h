@@ -6,6 +6,8 @@
 #define PARSE_FLAG_GETNAME	0x01 /* return argument name instead of it's value */
 #define PARSE_FLAG_ISSET_ANY	0x02 /* arg_used field specifies that at least one of the $variables was non-empty */
 #define PARSE_FLAG_ESCAPE_VARS  0x04 /* if any arguments/variables contain % chars, escape them with another % */
+#define PARSE_FLAG_ESCAPE_THEME 0x08 /* if any arguments/variables contain { or } chars, escape them with % */
+#define PARSE_FLAG_ONLY_ARGS	0x10 /* expand only arguments ($0 $1 etc.) but no other $variables */
 
 typedef char* (*SPECIAL_HISTORY_FUNC)
 	(const char *text, void *item, int *free_ret);
@@ -29,5 +31,7 @@ void special_vars_add_signals(const char *text,
 			      int funccount, SIGNAL_FUNC *funcs);
 void special_vars_remove_signals(const char *text,
 				 int funccount, SIGNAL_FUNC *funcs);
+/* Returns [<signal id>, EXPANDO_ARG_xxx, <signal id>, ..., -1] */
+int *special_vars_get_signals(const char *text);
 
 #endif

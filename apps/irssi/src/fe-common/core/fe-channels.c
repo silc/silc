@@ -29,6 +29,7 @@
 
 #include "chat-protocols.h"
 #include "chatnets.h"
+#include "servers.h"
 #include "channels.h"
 #include "channels-setup.h"
 #include "nicklist.h"
@@ -72,16 +73,6 @@ static void signal_channel_destroyed(CHANNEL_REC *channel)
 				channel->name);
 	} else if (!channel->joined || channel->left)
 		window_auto_destroy(window);
-}
-
-static void signal_window_item_destroy(WINDOW_REC *window, WI_ITEM_REC *item)
-{
-	CHANNEL_REC *channel;
-
-	g_return_if_fail(window != NULL);
-
-	channel = CHANNEL(item);
-        if (channel != NULL) channel_destroy(channel);
 }
 
 static void sig_disconnected(SERVER_REC *server)
@@ -246,8 +237,11 @@ static void cmd_channel(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
 	if (*data == '\0')
 		cmd_channel_list_joined();
-	else
+	else if (server != NULL && server_ischannel(server, data)) {
+		signal_emit("command join", 3, data, server, item);
+	} else {
 		command_runsub("channel", data, server, item);
+	}
 }
 
 /* SYNTAX: CHANNEL ADD [-auto | -noauto] [-bots <masks>] [-botcmd <command>]
@@ -336,10 +330,10 @@ static void display_sorted_nicks(CHANNEL_REC *channel, GSList *nicklist)
 	TEXT_DEST_REC dest;
 	GString *str;
 	GSList *tmp;
-        char *format, *stripped;
+        char *format, *stripped, *prefix_format;
 	char *linebuf, nickmode[2] = { 0, 0 };
 	int *columns, cols, rows, last_col_rows, col, row, max_width;
-        int item_extra, linebuf_size;
+        int item_extra, linebuf_size, formatnum;
 
 	window = window_find_closest(channel->server, channel->name,
 				     MSGLEVEL_CLIENTCRAP);
@@ -355,10 +349,10 @@ static void display_sorted_nicks(CHANNEL_REC *channel, GSList *nicklist)
 	g_free(format);
 
 	if (settings_get_int("names_max_width") > 0 &&
-	    max_width > settings_get_int("names_max_width"))
+	    settings_get_int("names_max_width") < max_width)
 		max_width = settings_get_int("names_max_width");
 
-        /* remove width of timestamp from max_width */
+        /* remove width of the timestamp from max_width */
 	format_create_dest(&dest, channel->server, channel->name,
 			   MSGLEVEL_CLIENTCRAP, NULL);
 	format = format_get_line_start(current_theme, &dest, time(NULL));
@@ -367,6 +361,22 @@ static void display_sorted_nicks(CHANNEL_REC *channel, GSList *nicklist)
 		max_width -= strlen(stripped);
 		g_free(stripped);
 		g_free(format);
+	}
+
+        /* remove width of the prefix from max_width */
+	prefix_format = format_get_text(MODULE_NAME, NULL,
+					channel->server, channel->name,
+					TXT_NAMES_PREFIX, channel->name);
+	if (prefix_format != NULL) {
+		stripped = strip_codes(prefix_format);
+		max_width -= strlen(stripped);
+		g_free(stripped);
+	}
+
+	if (max_width <= 0) {
+		/* we should always have at least some space .. if we
+		   really don't, it won't show properly anyway. */
+		max_width = 10;
 	}
 
 	/* calculate columns */
@@ -380,15 +390,22 @@ static void display_sorted_nicks(CHANNEL_REC *channel, GSList *nicklist)
 	if (last_col_rows == 0)
                 last_col_rows = rows;
 
-	str = g_string_new(NULL);
+	str = g_string_new(prefix_format);
 	linebuf_size = max_width+1; linebuf = g_malloc(linebuf_size);
 
         col = 0; row = 0;
 	for (tmp = nicklist; tmp != NULL; tmp = tmp->next) {
 		NICK_REC *rec = tmp->data;
 
-		nickmode[0] = rec->op ? '@' : rec->voice ? '+' : ' ';
-
+		if (rec->op)
+			nickmode[0] = '@';
+		else if (rec->halfop)
+			nickmode[0] = '%';
+		else if (rec->voice)
+			nickmode[0] = '+';
+		else
+			nickmode[0] = ' ';
+		
 		if (linebuf_size < columns[col]-item_extra+1) {
 			linebuf_size = (columns[col]-item_extra+1)*2;
                         linebuf = g_realloc(linebuf, linebuf_size);
@@ -397,9 +414,13 @@ static void display_sorted_nicks(CHANNEL_REC *channel, GSList *nicklist)
 		linebuf[columns[col]-item_extra] = '\0';
 		memcpy(linebuf, rec->nick, strlen(rec->nick));
 
+		formatnum = rec->op ? TXT_NAMES_NICK_OP :
+			rec->halfop ? TXT_NAMES_NICK_HALFOP :
+			rec->voice ? TXT_NAMES_NICK_VOICE :
+                        TXT_NAMES_NICK;
 		format = format_get_text(MODULE_NAME, NULL,
 					 channel->server, channel->name,
-					 TXT_NAMES_NICK, nickmode, linebuf);
+					 formatnum, nickmode, linebuf);
 		g_string_append(str, format);
 		g_free(format);
 
@@ -407,6 +428,8 @@ static void display_sorted_nicks(CHANNEL_REC *channel, GSList *nicklist)
 			printtext(channel->server, channel->name,
 				  MSGLEVEL_CLIENTCRAP, "%s", str->str);
 			g_string_truncate(str, 0);
+			if (prefix_format != NULL)
+                                g_string_assign(str, prefix_format);
 			col = 0; row++;
 
 			if (row == last_col_rows)
@@ -422,6 +445,7 @@ static void display_sorted_nicks(CHANNEL_REC *channel, GSList *nicklist)
 	g_slist_free(nicklist);
 	g_string_free(str, TRUE);
 	g_free_not_null(columns);
+	g_free_not_null(prefix_format);
 	g_free(linebuf);
 }
 
@@ -429,9 +453,9 @@ void fe_channels_nicklist(CHANNEL_REC *channel, int flags)
 {
 	NICK_REC *nick;
 	GSList *tmp, *nicklist, *sorted;
-	int nicks, normal, voices, ops;
+	int nicks, normal, voices, halfops, ops;
 
-	nicks = normal = voices = ops = 0;
+	nicks = normal = voices = halfops = ops = 0;
 	nicklist = nicklist_getnicks(channel);
 	sorted = NULL;
 
@@ -445,6 +469,7 @@ void fe_channels_nicklist(CHANNEL_REC *channel, int flags)
 			if ((flags & CHANNEL_NICKLIST_FLAG_OPS) == 0)
                                 continue;
 		} else if (nick->halfop) {
+			halfops++;
 			if ((flags & CHANNEL_NICKLIST_FLAG_HALFOPS) == 0)
 				continue;
 		} else if (nick->voice) {
@@ -463,17 +488,19 @@ void fe_channels_nicklist(CHANNEL_REC *channel, int flags)
 	g_slist_free(nicklist);
 
 	/* display the nicks */
-	printformat(channel->server, channel->name,
-		    MSGLEVEL_CRAP, TXT_NAMES, channel->name, "");
-	display_sorted_nicks(channel, sorted);
+        if ((flags & CHANNEL_NICKLIST_FLAG_COUNT) == 0) {
+		printformat(channel->server, channel->name,
+			    MSGLEVEL_CRAP, TXT_NAMES, channel->name, "");
+		display_sorted_nicks(channel, sorted);
+	}
 	g_slist_free(sorted);
 
 	printformat(channel->server, channel->name,
 		    MSGLEVEL_CRAP, TXT_ENDOFNAMES,
-		    channel->name, nicks, ops, voices, normal);
+		    channel->name, nicks, ops, halfops, voices, normal);
 }
 
-/* SYNTAX: NAMES [-ops -halfops -voices -normal] [<channels> | **] */
+/* SYNTAX: NAMES [-count | -ops -halfops -voices -normal] [<channels> | **] */
 static void cmd_names(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
 	CHANNEL_REC *chanrec;
@@ -507,6 +534,8 @@ static void cmd_names(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 		flags |= CHANNEL_NICKLIST_FLAG_VOICES;
 	if (g_hash_table_lookup(optlist, "normal") != NULL)
 		flags |= CHANNEL_NICKLIST_FLAG_NORMAL;
+	if (g_hash_table_lookup(optlist, "count") != NULL)
+		flags |= CHANNEL_NICKLIST_FLAG_COUNT;
 
         if (flags == 0) flags = CHANNEL_NICKLIST_FLAG_ALL;
 
@@ -572,7 +601,6 @@ void fe_channels_init(void)
 
 	signal_add("channel created", (SIGNAL_FUNC) signal_channel_created);
 	signal_add("channel destroyed", (SIGNAL_FUNC) signal_channel_destroyed);
-	signal_add_last("window item destroy", (SIGNAL_FUNC) signal_window_item_destroy);
 	signal_add_last("window item changed", (SIGNAL_FUNC) signal_window_item_changed);
 	signal_add_last("server disconnected", (SIGNAL_FUNC) sig_disconnected);
 
@@ -587,7 +615,7 @@ void fe_channels_init(void)
 	command_bind("cycle", NULL, (SIGNAL_FUNC) cmd_cycle);
 
 	command_set_options("channel add", "auto noauto -bots -botcmd");
-	command_set_options("names", "ops halfops voices normal");
+	command_set_options("names", "count ops halfops voices normal");
 	command_set_options("join", "window");
 }
 
@@ -595,7 +623,6 @@ void fe_channels_deinit(void)
 {
 	signal_remove("channel created", (SIGNAL_FUNC) signal_channel_created);
 	signal_remove("channel destroyed", (SIGNAL_FUNC) signal_channel_destroyed);
-	signal_remove("window item destroy", (SIGNAL_FUNC) signal_window_item_destroy);
 	signal_remove("window item changed", (SIGNAL_FUNC) signal_window_item_changed);
 	signal_remove("server disconnected", (SIGNAL_FUNC) sig_disconnected);
 

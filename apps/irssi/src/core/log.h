@@ -1,10 +1,14 @@
 #ifndef __LOG_H
 #define __LOG_H
 
+#define LOG_DIR_CREATE_MODE 0700
+
 enum {
 	LOG_ITEM_TARGET, /* channel, query, .. */
 	LOG_ITEM_WINDOW_REFNUM
 };
+
+typedef char *(*COLORIZE_FUNC)(const char *str);
 
 typedef struct {
 	int type;
@@ -22,6 +26,7 @@ typedef struct {
 	GSList *items; /* log only on these items */
 
 	time_t last; /* when last message was written */
+        COLORIZE_FUNC colorizer;
 
 	unsigned int autoopen:1; /* automatically start logging at startup */
 	unsigned int failed:1; /* opening log failed last time */
@@ -43,7 +48,7 @@ void log_item_destroy(LOG_REC *log, LOG_ITEM_REC *item);
 LOG_ITEM_REC *log_item_find(LOG_REC *log, int type, const char *item,
 			    const char *servertag);
 
-void log_file_write(SERVER_REC *server, const char *item, int level,
+void log_file_write(const char *server_tag, const char *item, int level,
 		    const char *str, int no_fallbacks);
 void log_write_rec(LOG_REC *log, const char *str, int level);
 

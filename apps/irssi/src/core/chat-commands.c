@@ -32,8 +32,10 @@
 #include "channels.h"
 #include "queries.h"
 #include "window-item-def.h"
+#include "rawlog.h"
 
-static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr)
+static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr,
+					      char **rawlog_file)
 {
         CHAT_PROTOCOL_REC *proto;
 	SERVER_CONNECT_REC *conn;
@@ -73,7 +75,7 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr)
 	if (proto->not_initialized) {
 		/* trying to use protocol that isn't yet initialized */
 		signal_emit("chat protocol unknown", 1, proto->name);
-		server_connect_free(conn);
+		server_connect_unref(conn);
                 cmd_params_free(free_arg);
 		return NULL;
 	}
@@ -82,6 +84,14 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr)
 		conn->family = AF_INET6;
 	else if (g_hash_table_lookup(optlist, "4") != NULL)
 		conn->family = AF_INET;
+
+	if (g_hash_table_lookup(optlist, "!") != NULL)
+		conn->no_autojoin_channels = TRUE;
+
+	if (g_hash_table_lookup(optlist, "noproxy") != NULL)
+                g_free_and_null(conn->proxy);
+
+	*rawlog_file = g_strdup(g_hash_table_lookup(optlist, "rawlog"));
 
         host = g_hash_table_lookup(optlist, "host");
 	if (host != NULL && *host != '\0') {
@@ -100,10 +110,19 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr)
 static void cmd_connect(const char *data)
 {
 	SERVER_CONNECT_REC *conn;
+	SERVER_REC *server;
+        char *rawlog_file;
 
-	conn = get_server_connect(data, NULL);
-        if (conn != NULL)
-		CHAT_PROTOCOL(conn)->server_connect(conn);
+	conn = get_server_connect(data, NULL, &rawlog_file);
+	if (conn != NULL) {
+		server = CHAT_PROTOCOL(conn)->server_connect(conn);
+                server_connect_unref(conn);
+
+		if (server != NULL && rawlog_file != NULL)
+			rawlog_open(server->rawlog, rawlog_file);
+
+		g_free(rawlog_file);
+	}
 }
 
 static RECONNECT_REC *find_reconnect_server(int chat_type,
@@ -147,6 +166,7 @@ static void update_reconnection(SERVER_CONNECT_REC *conn, SERVER_REC *server)
 
 	if (server != NULL) {
 		oldconn = server->connrec;
+                server_connect_ref(oldconn);
                 reconnect_save_status(conn, server);
 	} else {
 		/* maybe we can reconnect some server from
@@ -156,7 +176,8 @@ static void update_reconnection(SERVER_CONNECT_REC *conn, SERVER_REC *server)
 		if (recon == NULL) return;
 
 		oldconn = recon->conn;
-		server_reconnect_destroy(recon, FALSE);
+                server_connect_ref(oldconn);
+		server_reconnect_destroy(recon);
 
 		conn->away_reason = g_strdup(oldconn->away_reason);
 		conn->channels = g_strdup(oldconn->channels);
@@ -167,29 +188,46 @@ static void update_reconnection(SERVER_CONNECT_REC *conn, SERVER_REC *server)
 	if (conn->chatnet == NULL && oldconn->chatnet != NULL)
 		conn->chatnet = g_strdup(oldconn->chatnet);
 
+	server_connect_unref(oldconn);
 	if (server != NULL) {
 		signal_emit("command disconnect", 2,
 			    "* Changing server", server);
-	} else {
-		server_connect_free(oldconn);
 	}
+}
+
+static void cmd_server(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
+{
+	command_runsub("server", data, server, item);
+}
+
+static void sig_default_command_server(const char *data, SERVER_REC *server,
+				       WI_ITEM_REC *item)
+{
+        signal_emit("command server connect", 3, data, server, item);
 }
 
 /* SYNTAX: SERVER [-4 | -6] [-ircnet <ircnet>] [-host <hostname>]
                   [+]<address>|<chatnet> [<port> [<password> [<nick>]]] */
-static void cmd_server(const char *data, SERVER_REC *server)
+static void cmd_server_connect(const char *data, SERVER_REC *server)
 {
 	SERVER_CONNECT_REC *conn;
+        char *rawlog_file;
 	int plus_addr;
 
 	g_return_if_fail(data != NULL);
 
         /* create connection record */
-	conn = get_server_connect(data, &plus_addr);
+	conn = get_server_connect(data, &plus_addr, &rawlog_file);
 	if (conn != NULL) {
 		if (!plus_addr)
 			update_reconnection(conn, server);
-		CHAT_PROTOCOL(conn)->server_connect(conn);
+		server = CHAT_PROTOCOL(conn)->server_connect(conn);
+		server_connect_unref(conn);
+
+		if (server != NULL && rawlog_file != NULL)
+			rawlog_open(server->rawlog, rawlog_file);
+
+		g_free(rawlog_file);
 	}
 }
 
@@ -247,36 +285,36 @@ static void cmd_join(const char *data, SERVER_REC *server)
 	void *free_arg;
 
 	g_return_if_fail(data != NULL);
-	if (!IS_SERVER(server) || !server->connected)
-		cmd_return_error(CMDERR_NOT_CONNECTED);
 
 	if (!cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS |
 			    PARAM_FLAG_UNKNOWN_OPTIONS | PARAM_FLAG_GETREST,
 			    "join", &optlist, &channels))
 		return;
 
+	/* -<server tag> */
+	server = cmd_options_get_server("join", optlist, server);
+	if (server == NULL || !server->connected)
+                cmd_param_error(CMDERR_NOT_CONNECTED);
+
 	if (g_hash_table_lookup(optlist, "invite"))
 		channels = server->last_invite;
 	else {
 		if (*channels == '\0')
 			cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
-
-		/* -<server tag> */
-		server = cmd_options_get_server("join", optlist, server);
 	}
 
-	if (server != NULL && channels != NULL)
+	if (channels != NULL)
 		server->channels_join(server, channels, FALSE);
 	cmd_params_free(free_arg);
 }
 
-/* SYNTAX: MSG [-<server tag>] <targets> <message> */
+/* SYNTAX: MSG [-<server tag>] [-channel | -nick] <targets> <message> */
 static void cmd_msg(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
 	GHashTable *optlist;
 	char *target, *origtarget, *msg;
 	void *free_arg;
-	int free_ret;
+	int free_ret, target_type;
 
 	g_return_if_fail(data != NULL);
 
@@ -297,13 +335,34 @@ static void cmd_msg(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 				       NULL, &free_ret, NULL, 0);
 		if (target != NULL && *target == '\0')
 			target = NULL;
-	} else if (strcmp(target, "*") == 0 && item != NULL)
+	}
+
+	if (strcmp(target, "*") == 0) {
+                /* send to active channel/query */
+		if (item == NULL)
+			cmd_param_error(CMDERR_NOT_JOINED);
+
+		target_type = IS_CHANNEL(item) ?
+			SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
 		target = item->name;
+	}
+	else if (g_hash_table_lookup(optlist, "channel") != NULL)
+                target_type = SEND_TARGET_CHANNEL;
+	else if (g_hash_table_lookup(optlist, "nick") != NULL)
+		target_type = SEND_TARGET_NICK;
+	else {
+		/* Need to rely on server_ischannel(). If the protocol
+		   doesn't really know if it's channel or nick based on the
+		   name, it should just assume it's nick, because when typing
+		   text to channels it's always sent with /MSG -channel. */
+		target_type = server_ischannel(server, target) ?
+			SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
+	}
 
 	if (target != NULL)
-		server->send_message(server, target, msg);
+		server->send_message(server, target, msg, target_type);
 
-	signal_emit(target != NULL && server->ischannel(target) ?
+	signal_emit(target != NULL && target_type == SEND_TARGET_CHANNEL ?
 		    "message own_public" : "message own_private", 4,
 		    server, msg, target, origtarget);
 
@@ -320,33 +379,40 @@ static void cmd_foreach(const char *data, SERVER_REC *server,
 /* SYNTAX: FOREACH SERVER <command> */
 static void cmd_foreach_server(const char *data, SERVER_REC *server)
 {
-	GSList *tmp;
+        GSList *list;
 
-	for (tmp = servers; tmp != NULL; tmp = tmp->next)
-		signal_emit("send command", 3, data, tmp->data, NULL);
+	list = g_slist_copy(servers);
+	while (list != NULL) {
+		signal_emit("send command", 3, data, list->data, NULL);
+                list = g_slist_remove(list, list->data);
+	}
 }
 
 /* SYNTAX: FOREACH CHANNEL <command> */
 static void cmd_foreach_channel(const char *data)
 {
-	GSList *tmp;
+        GSList *list;
 
-	for (tmp = channels; tmp != NULL; tmp = tmp->next) {
-		CHANNEL_REC *rec = tmp->data;
+	list = g_slist_copy(channels);
+	while (list != NULL) {
+		CHANNEL_REC *rec = list->data;
 
 		signal_emit("send command", 3, data, rec->server, rec);
+                list = g_slist_remove(list, list->data);
 	}
 }
 
 /* SYNTAX: FOREACH QUERY <command> */
 static void cmd_foreach_query(const char *data)
 {
-	GSList *tmp;
+        GSList *list;
 
-	for (tmp = queries; tmp != NULL; tmp = tmp->next) {
-		QUERY_REC *rec = tmp->data;
+	list = g_slist_copy(queries);
+	while (list != NULL) {
+		QUERY_REC *rec = list->data;
 
 		signal_emit("send command", 3, data, rec->server, rec);
+                list = g_slist_remove(list, list->data);
 	}
 }
 
@@ -355,6 +421,7 @@ void chat_commands_init(void)
 	settings_add_str("misc", "quit_message", "leaving");
 
 	command_bind("server", NULL, (SIGNAL_FUNC) cmd_server);
+	command_bind("server connect", NULL, (SIGNAL_FUNC) cmd_server_connect);
 	command_bind("connect", NULL, (SIGNAL_FUNC) cmd_connect);
 	command_bind("disconnect", NULL, (SIGNAL_FUNC) cmd_disconnect);
 	command_bind("quit", NULL, (SIGNAL_FUNC) cmd_quit);
@@ -365,13 +432,17 @@ void chat_commands_init(void)
 	command_bind("foreach channel", NULL, (SIGNAL_FUNC) cmd_foreach_channel);
 	command_bind("foreach query", NULL, (SIGNAL_FUNC) cmd_foreach_query);
 
-	command_set_options("connect", "4 6 +host");
+        signal_add("default command server", (SIGNAL_FUNC) sig_default_command_server);
+
+	command_set_options("connect", "4 6 !! +host noproxy -rawlog");
 	command_set_options("join", "invite");
+	command_set_options("msg", "channel nick");
 }
 
 void chat_commands_deinit(void)
 {
 	command_unbind("server", (SIGNAL_FUNC) cmd_server);
+	command_unbind("server connect", (SIGNAL_FUNC) cmd_server_connect);
 	command_unbind("connect", (SIGNAL_FUNC) cmd_connect);
 	command_unbind("disconnect", (SIGNAL_FUNC) cmd_disconnect);
 	command_unbind("quit", (SIGNAL_FUNC) cmd_quit);
@@ -381,4 +452,6 @@ void chat_commands_deinit(void)
 	command_unbind("foreach server", (SIGNAL_FUNC) cmd_foreach_server);
 	command_unbind("foreach channel", (SIGNAL_FUNC) cmd_foreach_channel);
 	command_unbind("foreach query", (SIGNAL_FUNC) cmd_foreach_query);
+
+        signal_remove("default command server", (SIGNAL_FUNC) sig_default_command_server);
 }

@@ -131,6 +131,7 @@ static void server_setup_fill(SERVER_CONNECT_REC *conn,
 		conn->proxy = g_strdup(settings_get_str("proxy_address"));
 		conn->proxy_port = settings_get_int("proxy_port");
 		conn->proxy_string = g_strdup(settings_get_str("proxy_string"));
+		conn->proxy_string_after = g_strdup(settings_get_str("proxy_string_after"));
 		conn->proxy_password = g_strdup(settings_get_str("proxy_password"));
 	}
 
@@ -143,6 +144,8 @@ static void server_setup_fill(SERVER_CONNECT_REC *conn,
 		conn->own_ip6 = g_new(IPADDR, 1);
 		memcpy(conn->own_ip6, source_host_ip6, sizeof(IPADDR));
 	}
+
+	signal_emit("server setup fill connect", 1, conn);
 }
 
 static void server_setup_fill_server(SERVER_CONNECT_REC *conn,
@@ -152,6 +155,9 @@ static void server_setup_fill_server(SERVER_CONNECT_REC *conn,
 	g_return_if_fail(IS_SERVER_SETUP(sserver));
 
 	sserver->last_connect = time(NULL);
+
+        if (sserver->no_proxy)
+		g_free_and_null(conn->proxy);
 
 	if (sserver->family != 0 && conn->family == 0)
                 conn->family = sserver->family;
@@ -168,15 +174,15 @@ static void server_setup_fill_chatnet(SERVER_CONNECT_REC *conn,
 	g_return_if_fail(IS_SERVER_CONNECT(conn));
 	g_return_if_fail(IS_CHATNET(chatnet));
 
-	if (chatnet->nick) {
+	if (chatnet->nick != NULL) {
 		g_free(conn->nick);
 		conn->nick = g_strdup(chatnet->nick);;
 	}
-	if (chatnet->username) {
+	if (chatnet->username != NULL) {
                 g_free(conn->username);
 		conn->username = g_strdup(chatnet->username);;
 	}
-	if (chatnet->realname) {
+	if (chatnet->realname != NULL) {
                 g_free(conn->realname);
 		conn->realname = g_strdup(chatnet->realname);;
 	}
@@ -200,7 +206,7 @@ create_addr_conn(int chat_type, const char *address, int port,
 
 	g_return_val_if_fail(address != NULL, NULL);
 
-	sserver = server_setup_find(address, port);
+	sserver = server_setup_find(address, port, chatnet);
 	if (sserver != NULL) {
 		if (chat_type < 0)
 			chat_type = sserver->chat_type;
@@ -212,6 +218,8 @@ create_addr_conn(int chat_type, const char *address, int port,
                 chat_protocol_get_default();
 
 	conn = proto->create_server_connect();
+	server_connect_ref(conn);
+
 	conn->chat_type = proto->id;
         if (chatnet != NULL && *chatnet != '\0')
 		conn->chatnet = g_strdup(chatnet);
@@ -240,7 +248,6 @@ create_addr_conn(int chat_type, const char *address, int port,
 		conn->nick = g_strdup(nick);
 	}
 
-	signal_emit("server setup fill connect", 1, conn);
 	return conn;
 }
 
@@ -288,14 +295,20 @@ server_create_conn(int chat_type, const char *dest, int port,
 		   const char *nick)
 {
 	SERVER_CONNECT_REC *rec;
+        CHATNET_REC *chatrec;
 
 	g_return_val_if_fail(dest != NULL, NULL);
 
-	if (chatnet_find(dest) != NULL) {
-		rec = create_chatnet_conn(dest, port, password, nick);
+        chatrec = chatnet_find(dest);
+	if (chatrec != NULL) {
+		rec = create_chatnet_conn(chatrec->name, port, password, nick);
 		if (rec != NULL)
 			return rec;
 	}
+
+	chatrec = chatnet == NULL ? NULL : chatnet_find(chatnet);
+	if (chatrec != NULL)
+		chatnet = chatrec->name;
 
 	return create_addr_conn(chat_type, dest, port,
 				chatnet, password, nick);
@@ -303,7 +316,8 @@ server_create_conn(int chat_type, const char *dest, int port,
 
 /* Find matching server from setup. Try to find record with a same port,
    but fallback to any server with the same address. */
-SERVER_SETUP_REC *server_setup_find(const char *address, int port)
+SERVER_SETUP_REC *server_setup_find(const char *address, int port,
+				    const char *chatnet)
 {
 	SERVER_SETUP_REC *server;
 	GSList *tmp;
@@ -314,7 +328,9 @@ SERVER_SETUP_REC *server_setup_find(const char *address, int port)
 	for (tmp = setupservers; tmp != NULL; tmp = tmp->next) {
 		SERVER_SETUP_REC *rec = tmp->data;
 
-		if (g_strcasecmp(rec->address, address) == 0) {
+		if (g_strcasecmp(rec->address, address) == 0 &&
+		    (chatnet == NULL || rec->chatnet == NULL ||
+		     g_strcasecmp(rec->chatnet, chatnet) == 0)) {
 			server = rec;
 			if (rec->port == port)
 				break;
@@ -329,7 +345,7 @@ SERVER_SETUP_REC *server_setup_find_port(const char *address, int port)
 {
 	SERVER_SETUP_REC *rec;
 
-	rec = server_setup_find(address, port);
+	rec = server_setup_find(address, port, NULL);
 	return rec == NULL || rec->port != port ? NULL : rec;
 }
 
@@ -355,14 +371,6 @@ static SERVER_SETUP_REC *server_setup_read(CONFIG_NODE *node)
 
 	rec = NULL;
 	chatnet = config_node_get_str(node, "chatnet", NULL);
-	if (chatnet == NULL) /* FIXME: remove this after .98... */ {
-		chatnet = config_node_get_str(node, "ircnet", NULL);
-		if (chatnet != NULL) {
-                        iconfig_node_set_str(node, "chatnet", chatnet);
-                        iconfig_node_set_str(node, "ircnet", NULL);
-			chatnet = config_node_get_str(node, "chatnet", NULL);
-		}
-	}
 
 	chatnetrec = chatnet == NULL ? NULL : chatnet_find(chatnet);
 	if (chatnetrec == NULL && chatnet != NULL) {
@@ -385,6 +393,7 @@ static SERVER_SETUP_REC *server_setup_read(CONFIG_NODE *node)
 	rec->password = g_strdup(config_node_get_str(node, "password", NULL));
 	rec->port = port;
 	rec->autoconnect = config_node_get_bool(node, "autoconnect", FALSE);
+	rec->no_proxy = config_node_get_bool(node, "no_proxy", FALSE);
 	rec->own_host = g_strdup(config_node_get_str(node, "own_host", NULL));
 
 	signal_emit("server setup read", 2, rec, node);
@@ -419,6 +428,8 @@ static void server_setup_save(SERVER_SETUP_REC *rec)
 
 	if (rec->autoconnect)
 		iconfig_node_set_bool(node, "autoconnect", TRUE);
+	if (rec->no_proxy)
+		iconfig_node_set_bool(node, "no_proxy", TRUE);
 
 	signal_emit("server setup saved", 2, rec, node);
 }
@@ -474,7 +485,8 @@ static void read_servers(void)
 	/* Read servers */
 	node = iconfig_node_traverse("servers", FALSE);
 	if (node != NULL) {
-		for (tmp = node->value; tmp != NULL; tmp = tmp->next)
+		tmp = config_node_first(node->value);
+		for (; tmp != NULL; tmp = config_node_next(tmp))
 			server_setup_read(tmp->data);
 	}
 }
@@ -503,6 +515,7 @@ void servers_setup_init(void)
 	settings_add_str("proxy", "proxy_address", "");
 	settings_add_int("proxy", "proxy_port", 6667);
 	settings_add_str("proxy", "proxy_string", "CONNECT %s %d");
+	settings_add_str("proxy", "proxy_string_after", "");
 	settings_add_str("proxy", "proxy_password", "");
 
         setupservers = NULL;

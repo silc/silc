@@ -35,7 +35,16 @@
 #include "fe-windows.h"
 #include "window-items.h"
 
-static void sig_window_restore_item(WINDOW_REC *window, const char *type,
+static WINDOW_REC *restore_win;
+
+static void signal_query_created_curwin(QUERY_REC *query)
+{
+	g_return_if_fail(IS_QUERY(query));
+
+	window_item_add(restore_win, (WI_ITEM_REC *) query, TRUE);
+}
+
+static void sig_layout_restore_item(WINDOW_REC *window, const char *type,
 				    CONFIG_NODE *node)
 {
 	char *name, *tag, *chat_type;
@@ -53,7 +62,14 @@ static void sig_window_restore_item(WINDOW_REC *window, const char *type,
                 rec->sticky = TRUE;
 	} else if (g_strcasecmp(type, "QUERY") == 0 && chat_type != NULL) {
 		/* create query immediately */
+		signal_add("query created",
+			   (SIGNAL_FUNC) signal_query_created_curwin);
+
+                restore_win = window;
 		chat_protocol_find(chat_type)->query_create(tag, name, TRUE);
+
+		signal_remove("query created",
+			      (SIGNAL_FUNC) signal_query_created_curwin);
 	}
 }
 
@@ -65,18 +81,24 @@ static void window_add_items(WINDOW_REC *window, CONFIG_NODE *node)
 	if (node == NULL)
 		return;
 
-	for (tmp = node->value; tmp != NULL; tmp = tmp->next) {
+	tmp = config_node_first(node->value);
+	for (; tmp != NULL; tmp = config_node_next(tmp)) {
 		CONFIG_NODE *node = tmp->data;
 
 		type = config_node_get_str(node, "type", NULL);
 		if (type != NULL) {
-			signal_emit("window restore item", 3,
+			signal_emit("layout restore item", 3,
 				    window, type, node);
 		}
 	}
 }
 
 void windows_layout_restore(void)
+{
+	signal_emit("layout restore", 0);
+}
+
+static void sig_layout_restore(void)
 {
 	WINDOW_REC *window;
 	CONFIG_NODE *node;
@@ -85,13 +107,18 @@ void windows_layout_restore(void)
 	node = iconfig_node_traverse("windows", FALSE);
 	if (node == NULL) return;
 
-	for (tmp = node->value; tmp != NULL; tmp = tmp->next) {
+	tmp = config_node_first(node->value);
+	for (; tmp != NULL; tmp = config_node_next(tmp)) {
 		CONFIG_NODE *node = tmp->data;
 
-		window = window_create(NULL, TRUE);
+		window = window_find_refnum(atoi(node->key));
+		if (window == NULL)
+			window = window_create(NULL, TRUE);
+
 		window_set_refnum(window, atoi(node->key));
                 window->sticky_refnum = config_node_get_bool(node, "sticky_refnum", FALSE);
 		window_set_name(window, config_node_get_str(node, "name", NULL));
+		window_set_history(window, config_node_get_str(node, "history_name", NULL));
 		window_set_level(window, level2bits(config_node_get_str(node, "level", "")));
 
 		window->servertag = g_strdup(config_node_get_str(node, "servertag", NULL));
@@ -100,10 +127,8 @@ void windows_layout_restore(void)
 			window->theme = theme_load(window->theme_name);
 
 		window_add_items(window, config_node_section(node, "items", -1));
-		signal_emit("window restore", 2, window, node);
+		signal_emit("layout restore window", 2, window, node);
 	}
-
-	signal_emit("windows restored", 0);
 }
 
 static void window_save_items(WINDOW_REC *window, CONFIG_NODE *node)
@@ -148,6 +173,10 @@ static void window_save(WINDOW_REC *window, CONFIG_NODE *node)
 
 	if (window->name != NULL)
 		iconfig_node_set_str(node, "name", window->name);
+
+	if (window->history_name != NULL)
+		iconfig_node_set_str(node, "history_name", window->history_name);
+
 	if (window->servertag != NULL)
 		iconfig_node_set_str(node, "servertag", window->servertag);
 	if (window->level != 0) {
@@ -161,7 +190,7 @@ static void window_save(WINDOW_REC *window, CONFIG_NODE *node)
 	if (window->items != NULL)
 		window_save_items(window, node);
 
-	signal_emit("window save", 2, window, node);
+	signal_emit("layout save window", 2, window, node);
 }
 
 void windows_layout_save(void)
@@ -172,7 +201,7 @@ void windows_layout_save(void)
 	node = iconfig_node_traverse("windows", TRUE);
 
 	g_slist_foreach(windows, (GFunc) window_save, node);
-	signal_emit("windows saved", 0);
+	signal_emit("layout save", 0);
 
 	printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
 		    TXT_WINDOWS_LAYOUT_SAVED);
@@ -181,16 +210,20 @@ void windows_layout_save(void)
 void windows_layout_reset(void)
 {
 	iconfig_set_str(NULL, "windows", NULL);
+	signal_emit("layout reset", 0);
+
 	printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
 		    TXT_WINDOWS_LAYOUT_RESET);
 }
 
 void windows_layout_init(void)
 {
-	signal_add("window restore item", (SIGNAL_FUNC) sig_window_restore_item);
+	signal_add("layout restore item", (SIGNAL_FUNC) sig_layout_restore_item);
+	signal_add("layout restore", (SIGNAL_FUNC) sig_layout_restore);
 }
 
 void windows_layout_deinit(void)
 {
-	signal_remove("window restore item", (SIGNAL_FUNC) sig_window_restore_item);
+	signal_remove("layout restore item", (SIGNAL_FUNC) sig_layout_restore_item);
+	signal_remove("layout restore", (SIGNAL_FUNC) sig_layout_restore);
 }

@@ -27,6 +27,7 @@
 #include "line-split.h"
 #include "settings.h"
 #include "irssi-version.h"
+#include "servers.h"
 
 #include "fe-windows.h"
 #include "printtext.h"
@@ -45,6 +46,7 @@ static int ret_texts[] = {
 	TXT_NOT_JOINED,
 	TXT_CHAN_NOT_FOUND,
 	TXT_CHAN_NOT_SYNCED,
+        TXT_ILLEGAL_PROTO,
 	TXT_NOT_GOOD_IDEA
 };
 
@@ -91,11 +93,15 @@ static void cmd_echo(const char *data, void *server, WI_ITEM_REC *item)
 /* SYNTAX: VERSION */
 static void cmd_version(char *data)
 {
+	char time[10];
+
 	g_return_if_fail(data != NULL);
 
 	if (*data == '\0') {
+                g_snprintf(time, sizeof(time), "%04d", IRSSI_VERSION_TIME);
 		printtext(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
-			  "Client: "PACKAGE" " IRSSI_VERSION);
+			  "Client: "PACKAGE" " IRSSI_VERSION" (%d %s)",
+			  IRSSI_VERSION_DATE, time);
 	}
 }
 
@@ -144,6 +150,43 @@ static void cmd_beep(void)
         signal_emit("beep", 0);
 }
 
+static void cmd_nick(const char *data, SERVER_REC *server)
+{
+	g_return_if_fail(data != NULL);
+
+	if (*data != '\0') return;
+	if (server == NULL || !server->connected)
+		cmd_return_error(CMDERR_NOT_CONNECTED);
+
+	/* display current nick */
+	printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE, TXT_YOUR_NICK, server->nick);
+	signal_stop();
+}
+
+static void cmd_join(const char *data, SERVER_REC *server)
+{
+	GHashTable *optlist;
+	char *channels;
+	void *free_arg;
+
+	g_return_if_fail(data != NULL);
+
+	if (!cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS |
+			    PARAM_FLAG_UNKNOWN_OPTIONS | PARAM_FLAG_GETREST,
+			    "join", &optlist, &channels))
+		return;
+
+	server = cmd_options_get_server("join", optlist, server);
+	if (g_hash_table_lookup(optlist, "invite") &&
+	    server != NULL && server->last_invite == NULL) {
+                /* ..all this trouble just to print this error message */
+		printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE, TXT_NOT_INVITED);
+		signal_stop();
+	}
+
+	cmd_params_free(free_arg);
+}
+
 static void sig_stop(void)
 {
 	signal_stop();
@@ -152,6 +195,12 @@ static void sig_stop(void)
 static void event_command(const char *data)
 {
 	const char *cmdchar;
+
+	if (*data == '\0') {
+		/* empty line, forget it. */
+                signal_stop();
+		return;
+	}
 
 	/* save current command line */
 	current_cmdline = data;
@@ -170,7 +219,6 @@ static void event_command(const char *data)
                 hide_output = TRUE;
 		signal_add_first("print starting", (SIGNAL_FUNC) sig_stop);
 		signal_add_first("print format", (SIGNAL_FUNC) sig_stop);
-		signal_add_first("print text stripped", (SIGNAL_FUNC) sig_stop);
 		signal_add_first("print text", (SIGNAL_FUNC) sig_stop);
 	}
 }
@@ -181,7 +229,6 @@ static void event_command_last(const char *data)
 		hide_output = FALSE;
 		signal_remove("print starting", (SIGNAL_FUNC) sig_stop);
 		signal_remove("print format", (SIGNAL_FUNC) sig_stop);
-		signal_remove("print text stripped", (SIGNAL_FUNC) sig_stop);
 		signal_remove("print text", (SIGNAL_FUNC) sig_stop);
 	}
 }
@@ -278,6 +325,8 @@ void fe_core_commands_init(void)
 	command_bind("version", NULL, (SIGNAL_FUNC) cmd_version);
 	command_bind("cat", NULL, (SIGNAL_FUNC) cmd_cat);
 	command_bind("beep", NULL, (SIGNAL_FUNC) cmd_beep);
+	command_bind_first("nick", NULL, (SIGNAL_FUNC) cmd_nick);
+	command_bind_first("join", NULL, (SIGNAL_FUNC) cmd_join);
 
 	signal_add("send command", (SIGNAL_FUNC) event_command);
 	signal_add_last("send command", (SIGNAL_FUNC) event_command_last);
@@ -294,6 +343,8 @@ void fe_core_commands_deinit(void)
 	command_unbind("version", (SIGNAL_FUNC) cmd_version);
 	command_unbind("cat", (SIGNAL_FUNC) cmd_cat);
 	command_unbind("beep", (SIGNAL_FUNC) cmd_beep);
+	command_unbind("nick", (SIGNAL_FUNC) cmd_nick);
+	command_unbind("join", (SIGNAL_FUNC) cmd_join);
 
 	signal_remove("send command", (SIGNAL_FUNC) event_command);
 	signal_remove("send command", (SIGNAL_FUNC) event_command_last);

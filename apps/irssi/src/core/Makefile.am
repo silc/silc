@@ -3,17 +3,11 @@ noinst_LIBRARIES = libcore.a
 include $(top_srcdir)/Makefile.defines.in
 
 INCLUDES = \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/core \
 	$(GLIB_CFLAGS) \
 	-DSYSCONFDIR=\""$(silc_etcdir)"\" \
-	-DMODULEDIR=\""$(silc_modulesdir)"\" \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/core
-
-if BUILD_MEMDEBUG
-memdebug_src=memdebug.c
-else
-memdebug_src=
-endif
+	-DMODULEDIR=\""$(silc_modulesdir)"\"
 
 libcore_a_SOURCES = \
 	args.c \
@@ -29,10 +23,11 @@ libcore_a_SOURCES = \
         levels.c \
 	line-split.c \
 	log.c \
+	log-away.c \
 	masks.c \
-        $(memdebug_src) \
 	misc.c \
 	modules.c \
+	modules-load.c \
 	net-disconnect.c \
 	net-nonblock.c \
 	net-sendbuffer.c \
@@ -44,8 +39,8 @@ libcore_a_SOURCES = \
 	rawlog.c \
 	servers.c \
 	servers-reconnect.c \
-	servers-redirect.c \
 	servers-setup.c \
+	session.c \
 	settings.c \
 	signals.c \
 	special-vars.c \
@@ -75,10 +70,10 @@ noinst_HEADERS = \
 	line-split.h \
 	log.h \
 	masks.h \
-        memdebug.h \
 	misc.h \
 	module.h \
 	modules.h \
+	modules-load.h \
 	net-disconnect.h \
 	net-nonblock.h \
 	net-sendbuffer.h \
@@ -91,14 +86,11 @@ noinst_HEADERS = \
 	rawlog.h \
 	servers.h \
 	servers-reconnect.h \
-	servers-redirect.h \
 	servers-setup.h \
+	session.h \
 	settings.h \
 	signals.h \
 	special-vars.h \
 	window-item-def.h \
 	write-buffer.h \
 	$(structure_headers)
-
-EXTRA_DIST = \
-	memdebug.c

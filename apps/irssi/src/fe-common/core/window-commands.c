@@ -33,14 +33,131 @@
 #include "windows-layout.h"
 #include "printtext.h"
 
-static void cmd_window(const char *data, void *server, WI_ITEM_REC *item)
+static void window_print_binds(WINDOW_REC *win)
 {
-	if (is_numeric(data, 0)) {
-                signal_emit("command window refnum", 3, data, server, item);
-		return;
+	GSList *tmp;
+
+	printformat_window(win, MSGLEVEL_CLIENTCRAP,
+			   TXT_WINDOW_INFO_BOUND_ITEMS_HEADER);
+	for (tmp = win->bound_items; tmp != NULL; tmp = tmp->next) {
+		WINDOW_BIND_REC *bind = tmp->data;
+
+		printformat_window(win, MSGLEVEL_CLIENTCRAP,
+				   TXT_WINDOW_INFO_BOUND_ITEM,
+				   bind->name, bind->servertag,
+				   bind->sticky ? "sticky" : "");
+	}
+	printformat_window(win, MSGLEVEL_CLIENTCRAP,
+			   TXT_WINDOW_INFO_BOUND_ITEMS_FOOTER);
+}
+
+static void window_print_items(WINDOW_REC *win)
+{
+	GSList *tmp;
+        const char *type;
+
+	printformat_window(win, MSGLEVEL_CLIENTCRAP,
+			   TXT_WINDOW_INFO_ITEMS_HEADER);
+	for (tmp = win->items; tmp != NULL; tmp = tmp->next) {
+		WI_ITEM_REC *item = tmp->data;
+
+		type = module_find_id_str("WINDOW ITEM TYPE", item->type);
+		printformat_window(win, MSGLEVEL_CLIENTCRAP,
+				   TXT_WINDOW_INFO_ITEM,
+				   type == NULL ? "??" : type, item->name,
+				   item->server == NULL ? "" :
+				   item->server->tag);
+	}
+	printformat_window(win, MSGLEVEL_CLIENTCRAP,
+			   TXT_WINDOW_INFO_ITEMS_FOOTER);
+}
+
+static void cmd_window_info(WINDOW_REC *win)
+{
+        char *levelstr;
+
+	printformat_window(win, MSGLEVEL_CLIENTCRAP,
+			   TXT_WINDOW_INFO_HEADER);
+
+        /* Window reference number + sticky status */
+	if (!win->sticky_refnum) {
+		printformat_window(win, MSGLEVEL_CLIENTCRAP,
+				   TXT_WINDOW_INFO_REFNUM, win->refnum);
+	} else {
+		printformat_window(win, MSGLEVEL_CLIENTCRAP,
+				   TXT_WINDOW_INFO_REFNUM_STICKY, win->refnum);
 	}
 
-	command_runsub("window", data, server, item);
+        /* Window name */
+	if (win->name != NULL) {
+		printformat_window(win, MSGLEVEL_CLIENTCRAP,
+				   TXT_WINDOW_INFO_NAME, win->name);
+	}
+
+	/* Window history name */
+	if (win->history_name != NULL) {
+		printformat_window(win, MSGLEVEL_CLIENTCRAP,
+				   TXT_WINDOW_INFO_HISTORY, win->history_name);
+	}
+
+        /* Window width / height */
+	printformat_window(win, MSGLEVEL_CLIENTCRAP, TXT_WINDOW_INFO_SIZE,
+			   win->width, win->height);
+
+        /* Window level */
+	levelstr = win->level == 0 ?
+		g_strdup("NONE") : bits2level(win->level);
+	printformat_window(win, MSGLEVEL_CLIENTCRAP, TXT_WINDOW_INFO_LEVEL,
+			   levelstr);
+	g_free(levelstr);
+
+        /* Active window server + sticky status */
+	if (win->servertag == NULL) {
+		printformat_window(win, MSGLEVEL_CLIENTCRAP,
+				   TXT_WINDOW_INFO_SERVER,
+				   win->active_server != NULL ?
+				   win->active_server->tag : "NONE");
+	} else {
+		if (win->active_server != NULL &&
+		    strcmp(win->active_server->tag, win->servertag) != 0)
+                        g_warning("Active server isn't the sticky server!");
+
+		printformat_window(win, MSGLEVEL_CLIENTCRAP,
+				   TXT_WINDOW_INFO_SERVER_STICKY,
+				   win->servertag);
+	}
+
+        /* Window theme + error status */
+	if (win->theme_name != NULL) {
+		printformat_window(win, MSGLEVEL_CLIENTCRAP,
+				   TXT_WINDOW_INFO_THEME, win->theme_name,
+				   win->theme != NULL ? "" : "(not loaded)");
+	}
+
+        /* Bound items in window */
+	if (win->bound_items != NULL)
+                window_print_binds(win);
+
+        /* Item */
+	if (win->items != NULL)
+                window_print_items(win);
+
+        signal_emit("window print info", 1, win);
+
+	printformat_window(win, MSGLEVEL_CLIENTCRAP,
+			   TXT_WINDOW_INFO_FOOTER);
+}
+
+static void cmd_window(const char *data, void *server, WI_ITEM_REC *item)
+{
+        while (*data == ' ') data++;
+
+	if (*data == '\0')
+                cmd_window_info(active_win);
+	else if (is_numeric(data, 0))
+                signal_emit("command window refnum", 3, data, server, item);
+        else
+		command_runsub("window", data, server, item);
 }
 
 /* SYNTAX: WINDOW NEW [hide] */
@@ -77,7 +194,7 @@ static void cmd_window_close(const char *data)
 	}
 
 	first_num = *first == '\0' ? active_win->refnum : atoi(first);
-	last_num = *last == '\0' ? active_win->refnum : atoi(last);
+	last_num = *last == '\0' ? first_num : atoi(last);
 
         /* get list of windows to destroy */
         destroys = NULL;
@@ -224,7 +341,7 @@ static void cmd_window_server(const char *data)
 			    "window server", &optlist, &tag))
 		return;
 
-	if (*tag == '\0' &&
+	if (*tag == '\0' && active_win->active_server != NULL &&
 	    (g_hash_table_lookup(optlist, "sticky") != NULL ||
 	     g_hash_table_lookup(optlist, "unsticky") != NULL)) {
 		tag = active_win->active_server->tag;
@@ -238,7 +355,7 @@ static void cmd_window_server(const char *data)
 	    active_win->servertag != NULL) {
 		g_free_and_null(active_win->servertag);
 		printformat_window(active_win, MSGLEVEL_CLIENTNOTICE,
-				   TXT_UNSET_SERVER_STICKY, server->tag);
+				   TXT_UNSET_SERVER_STICKY);
 	}
 
 	if (active_win->servertag != NULL &&
@@ -297,18 +414,25 @@ static void cmd_window_item_goto(const char *data, SERVER_REC *server)
 static void cmd_window_item_move(const char *data, SERVER_REC *server,
                                  WI_ITEM_REC *item)
 {
-        WINDOW_REC *window;
+	WINDOW_REC *window;
+	void *free_arg;
+	char *target;
 
-        if (is_numeric(data, '\0')) {
+	if (!cmd_get_params(data, &free_arg, 1, &target))
+		return;
+
+        if (is_numeric(target, '\0')) {
                 /* move current window item to specified window */
-                window = window_find_refnum(atoi(data));
+                window = window_find_refnum(atoi(target));
         } else {
                 /* move specified window item to current window */
-                item = window_item_find(server, data);
+                item = window_item_find(server, target);
                 window = active_win;
         }
         if (window != NULL && item != NULL)
-                window_item_set_active(window, item);
+		window_item_set_active(window, item);
+
+	cmd_params_free(free_arg);
 }
 
 /* SYNTAX: WINDOW NUMBER [-sticky] <number> */
@@ -342,75 +466,101 @@ static void cmd_window_number(const char *data)
 /* SYNTAX: WINDOW NAME <name> */
 static void cmd_window_name(const char *data)
 {
-        window_set_name(active_win, data);
+	if (window_find_name(data) == NULL)
+		window_set_name(active_win, data);
+	else {
+		printformat_window(active_win, MSGLEVEL_CLIENTERROR,
+				   TXT_WINDOW_NAME_NOT_UNIQUE, data);
+	}
+}
+
+/* SYNTAX: WINDOW HISTORY <name> */
+void cmd_window_history(const char *data)
+{
+	window_set_history(active_win, data);
 }
 
 /* we're moving the first window to last - move the first contiguous block
    of refnums to left. Like if there's windows 1..5 and 7..10, move 1 to
-   11, 2..5 to 1..4 and leave 7..10 alone  */
-static void windows_move_left(WINDOW_REC *move_window)
+   11, 2..5 to 1..4 and leave 7..10 alone */
+static void window_refnums_move_left(WINDOW_REC *move_window)
 {
 	WINDOW_REC *window;
-	int refnum;
+	int refnum, new_refnum;
 
-	window_set_refnum(move_window, windows_refnum_last()+1);
-	for (refnum = 2;; refnum++) {
+        new_refnum = windows_refnum_last();
+	for (refnum = move_window->refnum+1; refnum <= new_refnum; refnum++) {
 		window = window_find_refnum(refnum);
-		if (window == NULL) break;
+		if (window == NULL) {
+                        new_refnum++;
+			break;
+		}
 
 		window_set_refnum(window, refnum-1);
 	}
+
+	window_set_refnum(move_window, new_refnum);
 }
 
 /* we're moving the last window to first - make some space so we can use the
    refnum 1 */
-static void windows_move_right(WINDOW_REC *move_window)
+static void window_refnums_move_right(WINDOW_REC *move_window)
 {
 	WINDOW_REC *window;
-	int refnum;
+	int refnum, new_refnum;
+
+        new_refnum = 1;
+	if (window_find_refnum(new_refnum) == NULL) {
+		window_set_refnum(move_window, new_refnum);
+                return;
+	}
 
 	/* find the first unused refnum, like if there's windows
 	   1..5 and 7..10, we only need to move 1..5 to 2..6 */
-	refnum = 1;
-	while (window_find_refnum(refnum) != NULL) refnum++;
-
+	refnum = new_refnum;
+	while (move_window->refnum == refnum ||
+	       window_find_refnum(refnum) != NULL) refnum++;
 	refnum--;
-	while (refnum > 0) {
+
+	while (refnum >= new_refnum) {
 		window = window_find_refnum(refnum);
-		g_return_if_fail(window != NULL);
-		window_set_refnum(window, window == move_window ? 1 : refnum+1);
+		window_set_refnum(window, refnum+1);
 
 		refnum--;
 	}
+
+	window_set_refnum(move_window, new_refnum);
 }
 
-static void cmd_window_move_left(void)
+/* SYNTAX: WINDOW MOVE PREV */
+static void cmd_window_move_prev(void)
 {
 	int refnum;
 
-	refnum = window_refnum_prev(active_win->refnum, TRUE);
+	refnum = window_refnum_prev(active_win->refnum, FALSE);
 	if (refnum != -1) {
 		window_set_refnum(active_win, refnum);
 		return;
 	}
 
-	windows_move_left(active_win);
+	window_refnums_move_left(active_win);
 }
 
-static void cmd_window_move_right(void)
+/* SYNTAX: WINDOW MOVE NEXT */
+static void cmd_window_move_next(void)
 {
 	int refnum;
 
-	refnum = window_refnum_next(active_win->refnum, TRUE);
+	refnum = window_refnum_next(active_win->refnum, FALSE);
 	if (refnum != -1) {
 		window_set_refnum(active_win, refnum);
 		return;
 	}
 
-        windows_move_right(active_win);
+        window_refnums_move_right(active_win);
 }
 
-/* SYNTAX: WINDOW MOVE <number>|left|right */
+/* SYNTAX: WINDOW MOVE <number>|<direction> */
 static void cmd_window_move(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
 	int new_refnum, refnum;
@@ -463,23 +613,49 @@ static void cmd_window_list(void)
         printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_WINDOWLIST_FOOTER);
 }
 
-/* SYNTAX: WINDOW THEME <name> */
+/* SYNTAX: WINDOW THEME [-delete] [<name>] */
 static void cmd_window_theme(const char *data)
 {
 	THEME_REC *theme;
+	GHashTable *optlist;
+        char *name;
+	void *free_arg;
 
-	g_free_not_null(active_win->theme_name);
-	active_win->theme_name = g_strdup(data);
+	if (!cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS,
+			    "window theme", &optlist, &name))
+		return;
 
-	active_win->theme = theme = theme_load(data);
-	if (theme != NULL) {
+	if (g_hash_table_lookup(optlist, "delete") != NULL) {
+		g_free_and_null(active_win->theme_name);
+
 		printformat_window(active_win, MSGLEVEL_CLIENTNOTICE,
-				   TXT_WINDOW_THEME_CHANGED,
-				   theme->name, theme->path);
+				   TXT_WINDOW_THEME_REMOVED);
+	} else if (*name == '\0') {
+		if (active_win->theme == NULL) {
+			printformat_window(active_win, MSGLEVEL_CLIENTNOTICE,
+					   TXT_WINDOW_THEME_DEFAULT);
+		} else {
+                        theme = active_win->theme;
+			printformat_window(active_win, MSGLEVEL_CLIENTNOTICE,
+					   TXT_WINDOW_THEME,
+					   theme->name, theme->path);
+		}
 	} else {
-		printformat_window(active_win, MSGLEVEL_CLIENTNOTICE,
-				   TXT_THEME_NOT_FOUND, data);
+		g_free_not_null(active_win->theme_name);
+		active_win->theme_name = g_strdup(data);
+
+		active_win->theme = theme = theme_load(data);
+		if (theme != NULL) {
+			printformat_window(active_win, MSGLEVEL_CLIENTNOTICE,
+					   TXT_WINDOW_THEME_CHANGED,
+					   theme->name, theme->path);
+		} else {
+			printformat_window(active_win, MSGLEVEL_CLIENTNOTICE,
+					   TXT_THEME_NOT_FOUND, data);
+		}
 	}
+
+	cmd_params_free(free_arg);
 }
 
 static void cmd_layout(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
@@ -491,16 +667,20 @@ static void cmd_layout(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 static void cmd_foreach_window(const char *data)
 {
         WINDOW_REC *old;
-	GSList *tmp;
+        GSList *list;
 
         old = active_win;
-	for (tmp = windows; tmp != NULL; tmp = tmp->next) {
-		WINDOW_REC *rec = tmp->data;
 
-                active_win = rec;
+	list = g_slist_copy(windows);
+	while (list != NULL) {
+		WINDOW_REC *rec = list->data;
+
+		active_win = rec;
 		signal_emit("send command", 3, data, rec->active_server,
 			    rec->active);
+                list = g_slist_remove(list, list->data);
 	}
+
         active_win = old;
 }
 
@@ -524,9 +704,10 @@ void window_commands_init(void)
 	command_bind("window item move", NULL, (SIGNAL_FUNC) cmd_window_item_move);
 	command_bind("window number", NULL, (SIGNAL_FUNC) cmd_window_number);
 	command_bind("window name", NULL, (SIGNAL_FUNC) cmd_window_name);
+	command_bind("window history", NULL, (SIGNAL_FUNC) cmd_window_history);
 	command_bind("window move", NULL, (SIGNAL_FUNC) cmd_window_move);
-	command_bind("window move left", NULL, (SIGNAL_FUNC) cmd_window_move_left);
-	command_bind("window move right", NULL, (SIGNAL_FUNC) cmd_window_move_right);
+	command_bind("window move prev", NULL, (SIGNAL_FUNC) cmd_window_move_prev);
+	command_bind("window move next", NULL, (SIGNAL_FUNC) cmd_window_move_next);
 	command_bind("window list", NULL, (SIGNAL_FUNC) cmd_window_list);
 	command_bind("window theme", NULL, (SIGNAL_FUNC) cmd_window_theme);
 	command_bind("layout", NULL, (SIGNAL_FUNC) cmd_layout);
@@ -538,6 +719,7 @@ void window_commands_init(void)
 
 	command_set_options("window number", "sticky");
 	command_set_options("window server", "sticky unsticky");
+	command_set_options("window theme", "delete");
 }
 
 void window_commands_deinit(void)
@@ -560,9 +742,10 @@ void window_commands_deinit(void)
 	command_unbind("window item move", (SIGNAL_FUNC) cmd_window_item_move);
 	command_unbind("window number", (SIGNAL_FUNC) cmd_window_number);
 	command_unbind("window name", (SIGNAL_FUNC) cmd_window_name);
+	command_unbind("window history", (SIGNAL_FUNC) cmd_window_history);
 	command_unbind("window move", (SIGNAL_FUNC) cmd_window_move);
-	command_unbind("window move left", (SIGNAL_FUNC) cmd_window_move_left);
-	command_unbind("window move right", (SIGNAL_FUNC) cmd_window_move_right);
+	command_unbind("window move prev", (SIGNAL_FUNC) cmd_window_move_prev);
+	command_unbind("window move next", (SIGNAL_FUNC) cmd_window_move_next);
 	command_unbind("window list", (SIGNAL_FUNC) cmd_window_list);
 	command_unbind("window theme", (SIGNAL_FUNC) cmd_window_theme);
 	command_unbind("layout", (SIGNAL_FUNC) cmd_layout);

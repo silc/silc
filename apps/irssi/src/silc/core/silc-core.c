@@ -164,46 +164,15 @@ static bool silc_log_misc(SilcLogType type, char *message, void *context)
   return TRUE;
 }
 
-/* Init SILC. Called from src/fe-text/silc.c */
-
-void silc_core_init(void)
-{
-  static struct poptOption options[] = {
-    { "create-key-pair", 'C', POPT_ARG_NONE, &opt_create_keypair, 0, 
-      "Create new public key pair", NULL },
-    { "pkcs", 0, POPT_ARG_STRING, &opt_pkcs, 0, 
-      "Set the PKCS of the public key pair", "PKCS" },
-    { "bits", 0, POPT_ARG_INT, &opt_bits, 0, 
-      "Set the length of the public key pair", "VALUE" },
-    { "show-key", 'S', POPT_ARG_STRING, &opt_keyfile, 0, 
-      "Show the contents of the public key", "FILE" },
-    { "list-ciphers", 'C', POPT_ARG_NONE, &opt_list_ciphers, 0,
-      "List supported ciphers", NULL },
-    { "list-hash-funcs", 'H', POPT_ARG_NONE, &opt_list_hash, 0,
-      "List supported hash functions", NULL },
-    { "list-hmacs", 'H', POPT_ARG_NONE, &opt_list_hmac, 0,
-      "List supported HMACs", NULL },
-    { "list-pkcs", 'P', POPT_ARG_NONE, &opt_list_pkcs, 0,
-      "List supported PKCSs", NULL },
-    { "debug", 'd', POPT_ARG_STRING, &opt_debug, 0,
-      "Enable debugging", "STRING" },
-    { "version", 'V', POPT_ARG_NONE, &opt_version, 0,
-      "Show version", NULL },
-    { NULL, '\0', 0, NULL }
-  };
-
-  args_register(options);
-}
-
 static void silc_nickname_format_parse(const char *nickname,
 				       char **ret_nickname)
 {
   silc_parse_userfqdn(nickname, ret_nickname, NULL);
 }
 
-/* Finalize init. Called from src/fe-text/silc.c */
+/* Finalize init. Init finish signal calls this. */
 
-void silc_core_init_finish(void)
+void silc_core_init_finish(SERVER_REC *server)
 {
   CHAT_PROTOCOL_REC *rec;
   SilcClientParams params;
@@ -367,6 +336,39 @@ void silc_core_init_finish(void)
   silc_queries_init();
 
   idletag = g_timeout_add(5, (GSourceFunc) my_silc_scheduler, NULL);
+}
+
+/* Init SILC. Called from src/fe-text/silc.c */
+
+void silc_core_init(void)
+{
+  static struct poptOption options[] = {
+    { "create-key-pair", 'C', POPT_ARG_NONE, &opt_create_keypair, 0, 
+      "Create new public key pair", NULL },
+    { "pkcs", 0, POPT_ARG_STRING, &opt_pkcs, 0, 
+      "Set the PKCS of the public key pair", "PKCS" },
+    { "bits", 0, POPT_ARG_INT, &opt_bits, 0, 
+      "Set the length of the public key pair", "VALUE" },
+    { "show-key", 'S', POPT_ARG_STRING, &opt_keyfile, 0, 
+      "Show the contents of the public key", "FILE" },
+    { "list-ciphers", 'C', POPT_ARG_NONE, &opt_list_ciphers, 0,
+      "List supported ciphers", NULL },
+    { "list-hash-funcs", 'H', POPT_ARG_NONE, &opt_list_hash, 0,
+      "List supported hash functions", NULL },
+    { "list-hmacs", 'H', POPT_ARG_NONE, &opt_list_hmac, 0,
+      "List supported HMACs", NULL },
+    { "list-pkcs", 'P', POPT_ARG_NONE, &opt_list_pkcs, 0,
+      "List supported PKCSs", NULL },
+    { "debug", 'd', POPT_ARG_STRING, &opt_debug, 0,
+      "Enable debugging", "STRING" },
+    { "version", 'V', POPT_ARG_NONE, &opt_version, 0,
+      "Show version", NULL },
+    { NULL, '\0', 0, NULL }
+  };
+
+  signal_add("irssi init finished", (SIGNAL_FUNC) silc_core_init_finish);
+
+  args_register(options);
 }
 
 /* Deinit SILC. Called from src/fe-text/silc.c */

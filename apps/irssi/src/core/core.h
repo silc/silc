@@ -10,6 +10,9 @@
 #define IRSSI_GUI_KDE  	5
 
 extern int irssi_gui;
+extern int irssi_init_finished; /* TRUE after "irssi init finished" signal is sent */
+
+void core_init_paths(int argc, char *argv[]);
 
 void core_init(void);
 void core_deinit(void);

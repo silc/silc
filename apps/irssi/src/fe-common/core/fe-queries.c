@@ -27,6 +27,7 @@
 #include "settings.h"
 
 #include "chat-protocols.h"
+#include "servers.h"
 #include "queries.h"
 
 #include "fe-windows.h"
@@ -56,14 +57,19 @@ QUERY_REC *privmsg_get_query(SERVER_REC *server, const char *nick,
 
 static void signal_query_created(QUERY_REC *query, gpointer automatic)
 {
+        TEXT_DEST_REC dest;
+
 	g_return_if_fail(IS_QUERY(query));
 
 	if (window_item_window(query) == NULL) {
 		window_item_create((WI_ITEM_REC *) query,
 				   GPOINTER_TO_INT(automatic));
-		printformat(query->server, query->name, MSGLEVEL_CLIENTNOTICE,
-			    TXT_QUERY_STARTED, query->name);
 	}
+
+	format_create_dest_tag(&dest, query->server, query->server_tag,
+			       query->name, MSGLEVEL_CLIENTNOTICE, NULL);
+	printformat_dest(&dest, TXT_QUERY_START,
+			 query->name, query->server_tag);
 }
 
 static void signal_query_created_curwin(QUERY_REC *query)
@@ -76,16 +82,22 @@ static void signal_query_created_curwin(QUERY_REC *query)
 static void signal_query_destroyed(QUERY_REC *query)
 {
 	WINDOW_REC *window;
+        TEXT_DEST_REC dest;
 
 	g_return_if_fail(IS_QUERY(query));
 
 	window = window_item_window((WI_ITEM_REC *) query);
-	if (window != NULL) {
-		window_item_destroy((WI_ITEM_REC *) query);
+	if (window == NULL)
+		return;
 
-		if (!query->unwanted)
-			window_auto_destroy(window);
-	}
+	format_create_dest_tag(&dest, query->server, query->server_tag,
+			       query->name, MSGLEVEL_CLIENTNOTICE, NULL);
+	printformat_dest(&dest, TXT_QUERY_STOP, query->name);
+
+	window_item_destroy((WI_ITEM_REC *) query);
+
+	if (!query->unwanted)
+		window_auto_destroy(window);
 }
 
 static void signal_query_server_changed(QUERY_REC *query)
@@ -101,7 +113,14 @@ static void signal_query_server_changed(QUERY_REC *query)
 
 static void signal_query_nick_changed(QUERY_REC *query, const char *oldnick)
 {
+        TEXT_DEST_REC dest;
+
 	g_return_if_fail(query != NULL);
+
+	format_create_dest_tag(&dest, query->server, query->server_tag,
+			       query->name, MSGLEVEL_CLIENTNOTICE, NULL);
+	printformat_dest(&dest,  TXT_NICK_CHANGED, oldnick,
+			 query->name, query->name);
 
 	signal_emit("window item changed", 2,
 		    window_item_window((WI_ITEM_REC *) query), query);
@@ -115,16 +134,6 @@ static void signal_window_item_server_changed(WINDOW_REC *window,
                 if (query->server != NULL)
 			query->server_tag = g_strdup(query->server->tag);
 	}
-}
-
-static void signal_window_item_destroy(WINDOW_REC *window, WI_ITEM_REC *item)
-{
-	QUERY_REC *query;
-
-	g_return_if_fail(window != NULL);
-
-	query = QUERY(item);
-	if (query != NULL) query_destroy(query);
 }
 
 static void sig_server_connected(SERVER_REC *server)
@@ -151,6 +160,7 @@ static void cmd_window_server(const char *data)
 {
 	SERVER_REC *server;
         QUERY_REC *query;
+        TEXT_DEST_REC dest;
 
 	g_return_if_fail(data != NULL);
 
@@ -160,10 +170,12 @@ static void cmd_window_server(const char *data)
 		return;
 
 	/* /WINDOW SERVER used in a query window */
+	format_create_dest_tag(&dest, query->server, query->server_tag,
+			       query->name, MSGLEVEL_CLIENTNOTICE, NULL);
+	printformat_dest(&dest, TXT_QUERY_SERVER_CHANGED,
+			 query->name, server->tag);
+
 	query_change_server(query, server);
-	printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
-		    TXT_QUERY_SERVER_CHANGED,
-		    query->name, server->tag);
 	signal_stop();
 }
 
@@ -200,17 +212,17 @@ static void cmd_query(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 
 	g_return_if_fail(data != NULL);
 
-	if (*data == '\0') {
-		/* remove current query */
-		cmd_unquery("", server, item);
-		return;
-	}
-
 	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_GETREST |
 			    PARAM_FLAG_OPTIONS | PARAM_FLAG_UNKNOWN_OPTIONS,
 			    "query", &optlist, &nick, &msg))
 		return;
-	if (*nick == '\0') cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
+
+	if (*nick == '\0') {
+		/* remove current query */
+		cmd_unquery("", server, item);
+		cmd_params_free(free_arg);
+                return;
+	}
 
 	server = cmd_options_get_server("query", optlist, server);
 	if (server == NULL) {
@@ -228,7 +240,8 @@ static void cmd_query(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 
 	query = query_find(server, nick);
 	if (query == NULL)
-		CHAT_PROTOCOL(server)->query_create(server->tag, nick, FALSE);
+		query = CHAT_PROTOCOL(server)->
+			query_create(server->tag, nick, FALSE);
 	else {
 		/* query already exists */
 		WINDOW_REC *window = window_item_window(query);
@@ -254,13 +267,9 @@ static void cmd_query(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	}
 
 	if (*msg != '\0') {
-		/* FIXME: we'll need some function that does both
-		   of these. and separate the , and . target handling
-		   from own_private messagge.. */
-		server->send_message(server, nick, msg);
-
-		signal_emit("message own_private", 4,
-			    server, msg, nick, nick);
+                msg = g_strdup_printf("-nick %s %s", nick, msg);
+		signal_emit("command msg", 3, msg, server, query);
+                g_free(msg);
 	}
 
 	cmd_params_free(free_arg);
@@ -346,7 +355,6 @@ void fe_queries_init(void)
 	signal_add("query server changed", (SIGNAL_FUNC) signal_query_server_changed);
 	signal_add("query nick changed", (SIGNAL_FUNC) signal_query_nick_changed);
         signal_add("window item server changed", (SIGNAL_FUNC) signal_window_item_server_changed);
-	signal_add_last("window item destroy", (SIGNAL_FUNC) signal_window_item_destroy);
 	signal_add("server connected", (SIGNAL_FUNC) sig_server_connected);
 	signal_add("window changed", (SIGNAL_FUNC) sig_window_changed);
 	signal_add_first("message private", (SIGNAL_FUNC) sig_message_private);
@@ -368,7 +376,6 @@ void fe_queries_deinit(void)
 	signal_remove("query server changed", (SIGNAL_FUNC) signal_query_server_changed);
 	signal_remove("query nick changed", (SIGNAL_FUNC) signal_query_nick_changed);
         signal_remove("window item server changed", (SIGNAL_FUNC) signal_window_item_server_changed);
-	signal_remove("window item destroy", (SIGNAL_FUNC) signal_window_item_destroy);
 	signal_remove("server connected", (SIGNAL_FUNC) sig_server_connected);
 	signal_remove("window changed", (SIGNAL_FUNC) sig_window_changed);
 	signal_remove("message private", (SIGNAL_FUNC) sig_message_private);

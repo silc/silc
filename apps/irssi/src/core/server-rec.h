@@ -3,6 +3,8 @@
 int type; /* module_get_uniq_id("SERVER", 0) */
 int chat_type; /* chat_protocol_lookup(xx) */
 
+int refcount;
+
 STRUCT_SERVER_CONNECT_REC *connrec;
 time_t connect_time; /* connection time */
 time_t real_connect_time; /* time when server replied that we really are connected */
@@ -10,8 +12,11 @@ time_t real_connect_time; /* time when server replied that we really are connect
 char *tag; /* tag name for addressing server */
 char *nick; /* current nick */
 
-unsigned int connected:1; /* connected to server */
+unsigned int connected:1; /* Connected to server */
+unsigned int disconnected:1; /* Disconnected, waiting for refcount to drop zero */
 unsigned int connection_lost:1; /* Connection lost unintentionally */
+unsigned int session_reconnect:1; /* Connected to this server with /UPGRADE */
+unsigned int no_reconnect:1; /* Don't reconnect to server */
 
 NET_SENDBUF_REC *handle;
 int readtag; /* input tag */
@@ -20,11 +25,6 @@ int readtag; /* input tag */
 GIOChannel *connect_pipe[2];
 int connect_tag;
 int connect_pid;
-
-/* For deciding if event should be handled internally */
-GHashTable *eventtable; /* "event xxx" : GSList* of REDIRECT_RECs */
-GHashTable *eventgrouptable; /* event group : GSList* of REDIRECT_RECs */
-GHashTable *cmdtable; /* "command xxx" : REDIRECT_CMD_REC* */
 
 RAWLOG_REC *rawlog;
 LINEBUF_REC *buffer; /* receive buffer */
@@ -38,7 +38,7 @@ unsigned int usermode_away:1;
 unsigned int banned:1; /* not allowed to connect to this server */
 unsigned int dns_error:1; /* DNS said the host doesn't exist */
 
-time_t lag_sent; /* 0 or time when last lag query was sent to server */
+GTimeVal lag_sent; /* 0 or time when last lag query was sent to server */
 time_t lag_last_check; /* last time we checked lag */
 int lag; /* server lag in milliseconds */
 
@@ -55,12 +55,13 @@ void (*channels_join)(SERVER_REC *server, const char *data, int automatic);
 /* returns true if `flag' indicates a nick flag (op/voice/halfop) */
 int (*isnickflag)(char flag);
 /* returns true if `data' indicates a channel */
-int (*ischannel)(const char *data);
+int (*ischannel)(SERVER_REC *server, const char *data);
 /* returns all nick flag characters in order op, voice, halfop. If some
    of them aren't supported '\0' can be used. */
 const char *(*get_nick_flags)(void);
 /* send public or private message to server */
-void (*send_message)(SERVER_REC *server, const char *target, const char *msg);
+void (*send_message)(SERVER_REC *server, const char *target,
+		     const char *msg, int target_type);
 
 /* -- Default implementations are used if NULL -- */
 CHANNEL_REC *(*channel_find_func)(SERVER_REC *server, const char *name);

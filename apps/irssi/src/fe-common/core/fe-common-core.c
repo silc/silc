@@ -24,10 +24,13 @@
 #include "misc.h"
 #include "levels.h"
 #include "settings.h"
+#include "irssi-version.h"
 
+#include "servers.h"
 #include "channels.h"
 #include "servers-setup.h"
 
+#include "autorun.h"
 #include "fe-queries.h"
 #include "hilight-text.h"
 #include "command-history.h"
@@ -50,9 +53,6 @@ static int autocon_port;
 static int no_autoconnect;
 static char *cmdline_nick;
 static char *cmdline_hostname;
-
-void autorun_init(void);
-void autorun_deinit(void);
 
 void fe_core_log_init(void);
 void fe_core_log_deinit(void);
@@ -96,6 +96,13 @@ void window_commands_deinit(void);
 void fe_core_commands_init(void);
 void fe_core_commands_deinit(void);
 
+static void print_version(void)
+{
+	printf(PACKAGE" " IRSSI_VERSION" (%d %04d)\n",
+	       IRSSI_VERSION_DATE, IRSSI_VERSION_TIME);
+        exit(0);
+}
+
 static void sig_connected(SERVER_REC *server)
 {
 	MODULE_DATA_SET(server, g_new0(MODULE_SERVER_REC, 1));
@@ -104,6 +111,7 @@ static void sig_connected(SERVER_REC *server)
 static void sig_disconnected(SERVER_REC *server)
 {
 	g_free(MODULE_DATA(server));
+	MODULE_DATA_UNSET(server);
 }
 
 static void sig_channel_created(CHANNEL_REC *channel)
@@ -114,19 +122,26 @@ static void sig_channel_created(CHANNEL_REC *channel)
 static void sig_channel_destroyed(CHANNEL_REC *channel)
 {
 	g_free(MODULE_DATA(channel));
+	MODULE_DATA_UNSET(channel);
 }
 
 void fe_common_core_init(void)
 {
+	static struct poptOption version_options[] = {
+		{ NULL, '\0', POPT_ARG_CALLBACK, (void *)&print_version, '\0', NULL },
+		{ "version", 'v', POPT_ARG_NONE, NULL, 0, "Display irssi version" },
+		{ NULL, '\0', 0, NULL }
+	};
+
 	static struct poptOption options[] = {
+		{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, version_options, 0, NULL, NULL },
+		POPT_AUTOHELP
 		{ "connect", 'c', POPT_ARG_STRING, &autocon_server, 0, "Automatically connect to server/ircnet", "SERVER" },
-		{ "password", 'w', POPT_ARG_STRING, &autocon_password, 0, "Autoconnect password", "SERVER" },
+		{ "password", 'w', POPT_ARG_STRING, &autocon_password, 0, "Autoconnect password", "PASSWORD" },
 		{ "port", 'p', POPT_ARG_INT, &autocon_port, 0, "Autoconnect port", "PORT" },
 		{ "noconnect", '!', POPT_ARG_NONE, &no_autoconnect, 0, "Disable autoconnecting", NULL },
-		/*
 		{ "nick", 'n', POPT_ARG_STRING, &cmdline_nick, 0, "Specify nick to use", NULL },
 		{ "hostname", 'h', POPT_ARG_STRING, &cmdline_hostname, 0, "Specify host name to use", NULL },
-		*/
 		{ NULL, '\0', 0, NULL }
 	};
 
@@ -139,7 +154,7 @@ void fe_common_core_init(void)
 	args_register(options);
 
 	settings_add_bool("lookandfeel", "timestamps", TRUE);
-	settings_add_bool("lookandfeel", "msgs_timestamps", FALSE);
+	settings_add_str("lookandfeel", "timestamp_level", "ALL");
 	settings_add_int("lookandfeel", "timestamp_timeout", 0);
 
 	settings_add_bool("lookandfeel", "bell_beeps", FALSE);
@@ -148,6 +163,7 @@ void fe_common_core_init(void)
 	settings_add_bool("lookandfeel", "beep_when_away", TRUE);
 
 	settings_add_bool("lookandfeel", "hide_text_style", FALSE);
+	settings_add_bool("lookandfeel", "hide_mirc_colors", FALSE);
 	settings_add_bool("lookandfeel", "hide_server_tags", FALSE);
 
 	settings_add_bool("lookandfeel", "use_status_window", TRUE);
@@ -156,7 +172,6 @@ void fe_common_core_init(void)
 	themes_init();
         theme_register(fecommon_core_formats);
 
-	autorun_init();
 	command_history_init();
 	completion_init();
 	keyboard_init();
@@ -193,11 +208,12 @@ void fe_common_core_init(void)
         signal_add_last("server disconnected", (SIGNAL_FUNC) sig_disconnected);
         signal_add_first("channel created", (SIGNAL_FUNC) sig_channel_created);
         signal_add_last("channel destroyed", (SIGNAL_FUNC) sig_channel_destroyed);
+
+	module_register("core", "fe");
 }
 
 void fe_common_core_deinit(void)
 {
-	autorun_deinit();
 	hilight_text_deinit();
 	command_history_deinit();
 	completion_deinit();
@@ -331,20 +347,25 @@ static void autoconnect_servers(void)
 
 void fe_common_core_finish_init(void)
 {
+	int setup_changed;
+
 	signal_emit("irssi init read settings", 0);
 
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 #endif
 
+        setup_changed = FALSE;
 	if (cmdline_nick != NULL) {
 		/* override nick found from setup */
 		settings_set_str("nick", cmdline_nick);
+		setup_changed = TRUE;
 	}
 
 	if (cmdline_hostname != NULL) {
 		/* override host name found from setup */
 		settings_set_str("hostname", cmdline_hostname);
+		setup_changed = TRUE;
 	}
 
 	create_windows();
@@ -355,5 +376,9 @@ void fe_common_core_finish_init(void)
 					    G_LOG_LEVEL_WARNING),
 			  (GLogFunc) glog_func, NULL);
 
+	if (setup_changed)
+                signal_emit("setup changed", 0);
+
+        autorun_startup();
 	autoconnect_servers();
 }

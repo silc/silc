@@ -4,6 +4,9 @@
 #define IRSSI_AUTHOR "Timo Sirainen <tss@iki.fi>"
 #define IRSSI_WEBSITE "http://irssi.org/"
 
+#define IRSSI_DIR_SHORT "~/.silc"
+#define IRSSI_DIR_FULL "%s/.silc" /* %s == g_get_home_dir() */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -43,18 +46,7 @@
 #  include <gmodule.h>
 #endif
 
-#include "core/memdebug.h"
-
-#define g_free_not_null(a) \
-	G_STMT_START { \
-	  if (a) g_free(a); \
-	} G_STMT_END
-
-#define g_free_and_null(a) \
-	G_STMT_START { \
-	  if (a) { g_free(a); (a) = NULL; } \
-	} G_STMT_END
-
+/* input functions */
 #define G_INPUT_READ	(1 << 0)
 #define G_INPUT_WRITE	(1 << 1)
 
@@ -65,7 +57,37 @@ int g_input_add(GIOChannel *source, int condition,
 int g_input_add_full(GIOChannel *source, int priority, int condition,
 		     GInputFunction function, void *data);
 
+/* return full path for ~/.irssi */
+const char *get_irssi_dir(void);
+/* return full path for ~/.irssi/config */
+const char *get_irssi_config(void);
+
+/* max. size for %d */
 #define MAX_INT_STRLEN ((sizeof(int) * CHAR_BIT + 2) / 3 + 1)
+
+#define g_free_not_null(a) g_free(a)
+
+#define g_free_and_null(a) \
+	G_STMT_START { \
+	  if (a) { g_free(a); (a) = NULL; } \
+	} G_STMT_END
+
+/* ctype.h isn't safe with chars, use our own instead */
+#define i_toupper(x) toupper((int) (unsigned char) (x))
+#define i_tolower(x) tolower((int) (unsigned char) (x))
+#define i_isalnum(x) isalnum((int) (unsigned char) (x))
+#define i_isalpha(x) isalpha((int) (unsigned char) (x))
+#define i_isascii(x) isascii((int) (unsigned char) (x))
+#define i_isblank(x) isblank((int) (unsigned char) (x))
+#define i_iscntrl(x) iscntrl((int) (unsigned char) (x))
+#define i_isdigit(x) isdigit((int) (unsigned char) (x))
+#define i_isgraph(x) isgraph((int) (unsigned char) (x))
+#define i_islower(x) islower((int) (unsigned char) (x))
+#define i_isprint(x) isprint((int) (unsigned char) (x))
+#define i_ispunct(x) ispunct((int) (unsigned char) (x))
+#define i_isspace(x) isspace((int) (unsigned char) (x))
+#define i_isupper(x) isupper((int) (unsigned char) (x))
+#define i_isxdigit(x) isxdigit((int) (unsigned char) (x))
 
 typedef struct _IPADDR IPADDR;
 typedef struct _CONFIG_REC CONFIG_REC;
@@ -85,5 +107,7 @@ typedef struct _NICK_REC NICK_REC;
 typedef struct _SERVER_CONNECT_REC SERVER_CONNECT_REC;
 typedef struct _SERVER_SETUP_REC SERVER_SETUP_REC;
 typedef struct _CHANNEL_SETUP_REC CHANNEL_SETUP_REC;
+
+typedef struct _WINDOW_REC WINDOW_REC;
 
 #endif

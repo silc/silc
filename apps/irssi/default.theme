@@ -231,24 +231,45 @@ abstracts = {
   ## statusbar
   ##
 
-  # background of statusbar
-  sb_background = "%4";
+  # default background for all statusbars. You can also give
+  # the default foreground color for statusbar items.
+  sb_background = "%4%w";
 
-  # default statusbar item style
-  sb = "%c[%n$0-%c]%n";
+  # default backround for "default" statusbar group
+  #sb_default_bg = "%4";
+  # background for prompt / input line
+  sb_prompt_bg = "%0";
+  # background for info statusbar
+  sb_info_bg = "%8";
+  # background for topicbar (same default)
+  #sb_topic_bg = "%4";
 
-  sbmode = "(%c+%n$0-)";
+  # text at the beginning of statusbars. sb-item already puts
+  # space there,so we don't use anything by default.
+  sbstart = "";
+  # text at the end of statusbars. Use space so that it's never
+  # used for anything.
+  sbend = " ";
+
+  prompt = "[$*] ";
+
+  sb = " %c[%n$*%c]%n";
+  sbmode = "(%c+%n$*)";
   sbaway = " (%GzZzZ%n)";
-  sbservertag = "%c:%n$0 (change with ^X)";
-  sbmore = "%_-- more --%_";
-  sblag = "{sb Lag: $0-}";
-  sbmail = "{sb Mail: $0-}";
+  sbservertag = ":$0 (change with ^X)";
 
-  # activity. Det is used for hilights when display doesn't support colors
-  sbact = "{sb {sbact_act $0}{sbact_det $1}}";
-  sbact_act = "Act: $0-";
-  sbact_det = " Det: $0-";
+  # activity in statusbar
 
+  # ',' separator
+  sb_act_sep = "%c$*";
+  # normal text
+  sb_act_text = "%c$*";
+  # public message
+  sb_act_msg = "%W$*";
+  # hilight
+  sb_act_hilight = "%M$*";
+  # hilight with specified color, $0 = color, $1 = text
+  sb_act_hilight_color = "$0$1-%n";
 };
 
 #

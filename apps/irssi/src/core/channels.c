@@ -48,6 +48,7 @@ void channel_init(CHANNEL_REC *channel, int automatic)
 
         MODULE_DATA_INIT(channel);
 	channel->type = module_get_uniq_id_str("WINDOW ITEM TYPE", "CHANNEL");
+        channel->destroy = (void (*) (WI_ITEM_REC *)) channel_destroy;
         channel->mode = g_strdup("");
 	channel->createtime = time(NULL);
         channel->get_join_data = get_join_data;
@@ -74,6 +75,8 @@ void channel_destroy(CHANNEL_REC *channel)
 	g_free_not_null(channel->key);
 	g_free(channel->mode);
 	g_free(channel->name);
+
+        channel->type = 0;
 	g_free(channel);
 }
 
@@ -113,16 +116,47 @@ CHANNEL_REC *channel_find(SERVER_REC *server, const char *name)
 				   (void *) name);
 }
 
+static CHANNEL_REC *channel_find_servers(GSList *servers, const char *name)
+{
+	return gslist_foreach_find(servers,
+				   (FOREACH_FIND_FUNC) channel_find_server,
+				   (void *) name);
+}
+
+static GSList *servers_find_chatnet_except(SERVER_REC *server)
+{
+	GSList *tmp, *list;
+
+        list = NULL;
+	for (tmp = servers; tmp != NULL; tmp = tmp->next) {
+		SERVER_REC *rec = tmp->data;
+
+		if (server != rec && rec->connrec->chatnet != NULL &&
+		    strcmp(server->connrec->chatnet,
+			   rec->connrec->chatnet) == 0) {
+			/* chatnets match */
+			list = g_slist_append(list, rec);
+		}
+	}
+
+        return list;
+}
+
 /* connected to server, autojoin to channels. */
 static void event_connected(SERVER_REC *server)
 {
 	GString *chans;
-	GSList *tmp;
+	GSList *tmp, *chatnet_servers;
 
 	g_return_if_fail(SERVER(server));
 
-	if (server->connrec->reconnection)
+	if (server->connrec->reconnection ||
+	    server->connrec->no_autojoin_channels)
 		return;
+
+	/* get list of servers in same chat network */
+	chatnet_servers = server->connrec->chatnet == NULL ? NULL:
+		servers_find_chatnet_except(server);
 
 	/* join to the channels marked with autojoin in setup */
 	chans = g_string_new(NULL);
@@ -134,8 +168,12 @@ static void event_connected(SERVER_REC *server)
 					   server->connrec->chatnet))
 			continue;
 
-		g_string_sprintfa(chans, "%s,", rec->name);
+		/* check that we haven't already joined this channel in
+		   same chat network connection.. */
+                if (channel_find_servers(chatnet_servers, rec->name) == NULL)
+			g_string_sprintfa(chans, "%s,", rec->name);
 	}
+        g_slist_free(chatnet_servers);
 
 	if (chans->len > 0) {
 		g_string_truncate(chans, chans->len-1);
@@ -165,6 +203,9 @@ void channel_send_autocommands(CHANNEL_REC *channel)
 
 	g_return_if_fail(IS_CHANNEL(channel));
 
+	if (channel->session_rejoin)
+                return;
+
 	rec = channel_setup_find(channel->name, channel->server->connrec->chatnet);
 	if (rec == NULL || rec->autosendcmd == NULL || !*rec->autosendcmd)
 		return;
@@ -179,6 +220,9 @@ void channel_send_autocommands(CHANNEL_REC *channel)
 	bots = g_strsplit(rec->botmasks, " ", -1);
 	for (bot = bots; *bot != NULL; bot++) {
 		const char *botnick = *bot;
+
+		if (*botnick == '\0')
+                        continue;
 
 		nick = nicklist_find_mask(channel,
 					  channel->server->isnickflag(*botnick) ?

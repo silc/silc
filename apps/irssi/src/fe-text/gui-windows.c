@@ -24,14 +24,12 @@
 #include "settings.h"
 #include "special-vars.h"
 
-#include "screen.h"
+#include "term.h"
 #include "gui-entry.h"
 #include "gui-windows.h"
 #include "gui-printtext.h"
 
 static int window_create_override;
-
-static char *prompt, *prompt_window;
 
 static GUI_WINDOW_REC *gui_window_init(WINDOW_REC *window,
 				       MAIN_WINDOW_REC *parent)
@@ -39,14 +37,20 @@ static GUI_WINDOW_REC *gui_window_init(WINDOW_REC *window,
 	GUI_WINDOW_REC *gui;
 
 	window->width = parent->width;
-        window->height = parent->height;
+        window->height = MAIN_WINDOW_TEXT_HEIGHT(parent);
 
 	gui = g_new0(GUI_WINDOW_REC, 1);
 	gui->parent = parent;
 	gui->view = textbuffer_view_create(textbuffer_create(),
 					   window->width, window->height,
+					   settings_get_bool("scroll"),
+					   settings_get_bool("term_utf8"));
+	textbuffer_view_set_default_indent(gui->view,
 					   settings_get_int("indent"),
-					   settings_get_bool("indent_always"));
+					   !settings_get_bool("indent_always"),
+					   get_default_indent_func());
+	if (parent->active == window)
+		textbuffer_view_set_window(gui->view, parent->screen_win);
 	return gui;
 }
 
@@ -61,33 +65,37 @@ static void sig_window_create_override(gpointer tab)
 	window_create_override = GPOINTER_TO_INT(tab);
 }
 
-static void gui_window_created(WINDOW_REC *window)
+static void gui_window_created(WINDOW_REC *window, void *automatic)
 {
 	MAIN_WINDOW_REC *parent;
+        int empty_window, new_parent;
 
 	g_return_if_fail(window != NULL);
 
-	parent = window_create_override != 0 &&
-		active_win != NULL && WINDOW_GUI(active_win) != NULL ?
-		WINDOW_GUI(active_win)->parent : mainwindow_create();
+	new_parent = window_create_override == 0 ||
+		window_create_override == 2 ||
+		active_win == NULL || WINDOW_GUI(active_win) == NULL;
+	parent = !new_parent ? WINDOW_MAIN(active_win) : mainwindow_create();
 	if (parent == NULL) {
 		/* not enough space for new window, but we really can't
 		   abort creation of the window anymore, so create hidden
 		   window instead. */
-		parent = WINDOW_GUI(active_win)->parent;
+		parent = WINDOW_MAIN(active_win);
 	}
 	window_create_override = -1;
 
-	if (settings_get_bool("autostick_split_windows") &&
-	    (parent->sticky_windows != NULL ||
-	     (mainwindows->next != NULL && parent->active == NULL))) {
-                /* set the window sticky */
-		parent->sticky_windows =
-			g_slist_append(parent->sticky_windows, window);
-	}
+        empty_window = parent->active == NULL;
 
 	if (parent->active == NULL) parent->active = window;
 	window->gui_data = gui_window_init(window, parent);
+
+	/* set only non-automatic windows sticky so that the windows
+	   irssi creates at startup wont get sticky. */
+	if (automatic == NULL &&
+	    (parent->sticky_windows ||
+	     (new_parent && settings_get_bool("autostick_split_windows"))))
+		gui_window_set_sticky(window);
+
 	signal_emit("gui window created", 1, window);
 }
 
@@ -101,20 +109,28 @@ static void gui_window_destroyed(WINDOW_REC *window)
 	gui = WINDOW_GUI(window);
 	parent = gui->parent;
 
+	gui_window_set_unsticky(window);
+
 	signal_emit("gui window destroyed", 1, window);
 
 	gui_window_deinit(gui);
 	window->gui_data = NULL;
 
-	if (parent->active == window && mainwindows->next != NULL)
-		mainwindow_destroy(parent);
+	if (parent->active == window)
+		mainwindow_change_active(parent, window);
 }
 
 void gui_window_resize(WINDOW_REC *window, int width, int height)
 {
 	GUI_WINDOW_REC *gui;
 
+	if (window->width == width && window->height == height)
+                return;
+
 	gui = WINDOW_GUI(window);
+
+	irssi_set_dirty();
+        WINDOW_MAIN(window)->dirty = TRUE;
 
         window->width = width;
 	window->height = height;
@@ -138,68 +154,66 @@ void gui_window_scroll_line(WINDOW_REC *window, LINE_REC *line)
 	signal_emit("gui page scrolled", 1, window);
 }
 
-void window_update_prompt(void)
+void gui_window_set_sticky(WINDOW_REC *window)
 {
-        const char *special;
-	char *prompt, *text;
-        int var_used;
+	GUI_WINDOW_REC *gui = WINDOW_GUI(window);
 
-	special = settings_get_str(active_win->active != NULL ?
-				   "prompt" : "prompt_window");
-	if (*special == '\0') {
-		gui_entry_set_prompt("");
-		return;
+	if (!gui->sticky) {
+		gui->sticky = TRUE;
+		gui->parent->sticky_windows++;
 	}
+}
 
-	prompt = parse_special_string(special, active_win->active_server,
-				      active_win->active, "", &var_used,
-				      PARSE_FLAG_ISSET_ANY |
-				      PARSE_FLAG_ESCAPE_VARS);
-	if (!var_used && strchr(special, '$') != NULL) {
-                /* none of the $vars had non-empty values, use empty prompt */
-		*prompt = '\0';
+void gui_window_set_unsticky(WINDOW_REC *window)
+{
+	GUI_WINDOW_REC *gui = WINDOW_GUI(window);
+
+	if (gui->sticky) {
+		gui->sticky = FALSE;
+		gui->parent->sticky_windows--;
 	}
-
-	/* set prompt */
-	text = show_lowascii(prompt);
-	gui_entry_set_prompt(text);
-	g_free(text);
-
-	g_free(prompt);
-}
-
-static void window_update_prompt_server(SERVER_REC *server)
-{
-	if (server == active_win->active_server)
-                window_update_prompt();
-}
-
-static void window_update_prompt_window(WINDOW_REC *window)
-{
-	if (window == active_win)
-                window_update_prompt();
-}
-
-static void window_update_prompt_window_item(WI_ITEM_REC *item)
-{
-	if (item == active_win->active)
-                window_update_prompt();
 }
 
 void gui_window_reparent(WINDOW_REC *window, MAIN_WINDOW_REC *parent)
 {
 	MAIN_WINDOW_REC *oldparent;
 
-	oldparent = WINDOW_GUI(window)->parent;
+	oldparent = WINDOW_MAIN(window);
 	if (oldparent == parent)
 		return;
 
+        gui_window_set_unsticky(window);
 	textbuffer_view_set_window(WINDOW_GUI(window)->view, NULL);
 
-	WINDOW_GUI(window)->parent = parent;
-	if (parent->height != oldparent->height ||
-	    parent->width != oldparent->width)
-		gui_window_resize(window, parent->width, parent->height);
+	WINDOW_MAIN(window) = parent;
+        if (parent->sticky_windows)
+		gui_window_set_sticky(window);
+
+	if (MAIN_WINDOW_TEXT_HEIGHT(parent) !=
+	    MAIN_WINDOW_TEXT_HEIGHT(oldparent) ||
+	    parent->width != oldparent->width) {
+		gui_window_resize(window, parent->width,
+				  MAIN_WINDOW_TEXT_HEIGHT(parent));
+	}
+}
+
+void gui_windows_reset_settings(void)
+{
+	GSList *tmp;
+
+	for (tmp = windows; tmp != NULL; tmp = tmp->next) {
+		WINDOW_REC *rec = tmp->data;
+                GUI_WINDOW_REC *gui = WINDOW_GUI(rec);
+
+                textbuffer_view_set_default_indent(gui->view,
+						   settings_get_int("indent"),
+						   !settings_get_bool("indent_always"),
+                                                   get_default_indent_func());
+
+		textbuffer_view_set_scroll(gui->view,
+					   gui->use_scroll ? gui->scroll :
+					   settings_get_bool("scroll"));
+	}
 }
 
 static MAIN_WINDOW_REC *mainwindow_find_unsticky(void)
@@ -209,7 +223,7 @@ static MAIN_WINDOW_REC *mainwindow_find_unsticky(void)
 	for (tmp = mainwindows; tmp != NULL; tmp = tmp->next) {
 		MAIN_WINDOW_REC *rec = tmp->data;
 
-		if (rec->sticky_windows == NULL)
+		if (!rec->sticky_windows)
                         return rec;
 	}
 
@@ -220,26 +234,26 @@ static MAIN_WINDOW_REC *mainwindow_find_unsticky(void)
 static void signal_window_changed(WINDOW_REC *window)
 {
 	MAIN_WINDOW_REC *parent;
-	WINDOW_REC *old_window;
+        WINDOW_REC *old_window;
 
 	g_return_if_fail(window != NULL);
 
         if (quitting) return;
 
-        parent = WINDOW_GUI(window)->parent;
+        parent = WINDOW_MAIN(window);
 	if (is_window_visible(window)) {
 		/* already visible */
 		active_mainwin = parent;
 	} else if (active_mainwin == NULL) {
                 /* no main window set yet */
 		active_mainwin = parent;
-	} else if (g_slist_find(parent->sticky_windows, window) != NULL) {
+	} else if (WINDOW_GUI(window)->sticky) {
                 /* window is sticky, switch to correct main window */
 		if (parent != active_mainwin)
                         active_mainwin = parent;
 	} else {
 		/* move window to active main window */
-                if (active_mainwin->sticky_windows != NULL) {
+                if (active_mainwin->sticky_windows) {
 			/* active mainwindow is sticky, we'll need to
 			   set the window active somewhere else */
                         active_mainwin = mainwindow_find_unsticky();
@@ -248,54 +262,20 @@ static void signal_window_changed(WINDOW_REC *window)
 	}
 
 	old_window = active_mainwin->active;
-	if (old_window != NULL)
-                textbuffer_view_set_window(WINDOW_GUI(old_window)->view, NULL);
-        active_mainwin->active = window;
+	if (old_window != NULL && old_window != window)
+		textbuffer_view_set_window(WINDOW_GUI(old_window)->view, NULL);
+
+	active_mainwin->active = window;
 
 	textbuffer_view_set_window(WINDOW_GUI(window)->view,
-				   parent->curses_win);
-
-	window_update_prompt();
-}
-
-static void sig_check_window_update(WINDOW_REC *window)
-{
-	if (window == active_win)
-                window_update_prompt();
+				   active_mainwin->screen_win);
+	if (WINDOW_GUI(window)->view->dirty)
+		active_mainwin->dirty = TRUE;
 }
 
 static void read_settings(void)
 {
-	GSList *tmp;
-
-	SIGNAL_FUNC funcs[] = {
-                (SIGNAL_FUNC) window_update_prompt,
-                (SIGNAL_FUNC) window_update_prompt_server,
-                (SIGNAL_FUNC) window_update_prompt_window,
-                (SIGNAL_FUNC) window_update_prompt_window_item
-	};
-
-	if (prompt != NULL) {
-		special_vars_remove_signals(prompt, 4, funcs);
-		special_vars_remove_signals(prompt_window, 4, funcs);
-		g_free(prompt);
-                g_free(prompt_window);
-	}
-	prompt = g_strdup(settings_get_str("prompt"));
-	prompt_window = g_strdup(settings_get_str("prompt_window"));
-
-	for (tmp = windows; tmp != NULL; tmp = tmp->next) {
-		WINDOW_REC *rec = tmp->data;
-
-                textbuffer_view_set_default_indent(WINDOW_GUI(rec)->view,
-						   settings_get_int("indent"),
-						   settings_get_bool("indent_always"));
-	}
-
-	special_vars_add_signals(prompt, 4, funcs);
-	special_vars_add_signals(prompt_window, 4, funcs);
-
-	if (active_win != NULL) window_update_prompt();
+        gui_windows_reset_settings();
 }
 
 void gui_windows_init(void)
@@ -303,10 +283,8 @@ void gui_windows_init(void)
         settings_add_bool("lookandfeel", "autostick_split_windows", TRUE);
 	settings_add_int("lookandfeel", "indent", 10);
 	settings_add_bool("lookandfeel", "indent_always", FALSE);
-	settings_add_str("lookandfeel", "prompt", "[$[.15]T] ");
-	settings_add_str("lookandfeel", "prompt_window", "[$winname] ");
+	settings_add_bool("lookandfeel", "scroll", TRUE);
 
-        prompt = NULL; prompt_window = NULL;
 	window_create_override = -1;
 
 	read_settings();
@@ -314,15 +292,11 @@ void gui_windows_init(void)
 	signal_add("window created", (SIGNAL_FUNC) gui_window_created);
 	signal_add("window destroyed", (SIGNAL_FUNC) gui_window_destroyed);
 	signal_add_first("window changed", (SIGNAL_FUNC) signal_window_changed);
-	signal_add("window item remove", (SIGNAL_FUNC) sig_check_window_update);
 	signal_add("setup changed", (SIGNAL_FUNC) read_settings);
 }
 
 void gui_windows_deinit(void)
 {
-        g_free_not_null(prompt);
-        g_free_not_null(prompt_window);
-
 	while (windows != NULL)
 		window_destroy(windows->data);
 
@@ -330,6 +304,5 @@ void gui_windows_deinit(void)
 	signal_remove("window created", (SIGNAL_FUNC) gui_window_created);
 	signal_remove("window destroyed", (SIGNAL_FUNC) gui_window_destroyed);
 	signal_remove("window changed", (SIGNAL_FUNC) signal_window_changed);
-	signal_remove("window item remove", (SIGNAL_FUNC) sig_check_window_update);
 	signal_remove("setup changed", (SIGNAL_FUNC) read_settings);
 }

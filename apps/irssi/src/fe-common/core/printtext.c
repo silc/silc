@@ -34,19 +34,17 @@
 
 static int beep_msg_level, beep_when_away, beep_when_window_active;
 
-static int signal_gui_print_text;
-static int signal_print_text_stripped;
-static int signal_print_text;
-static int signal_print_text_finished;
-static int signal_print_format;
+static int signal_gui_print_text_finished;
 static int signal_print_starting;
+static int signal_print_text;
+static int signal_print_format;
 
 static int sending_print_starting;
 
 static void print_line(TEXT_DEST_REC *dest, const char *text);
 
-static void printformat_module_dest(const char *module, TEXT_DEST_REC *dest,
-				    int formatnum, va_list va)
+void printformat_module_dest_args(const char *module, TEXT_DEST_REC *dest,
+				  int formatnum, va_list va)
 {
 	char *arglist[MAX_FORMAT_PARAMS];
 	char buffer[DEFAULT_FORMAT_ARGLIST_SIZE];
@@ -54,8 +52,7 @@ static void printformat_module_dest(const char *module, TEXT_DEST_REC *dest,
 	THEME_REC *theme;
 	char *str;
 
-	theme = dest->window->theme == NULL ? current_theme :
-		dest->window->theme;
+	theme = window_get_theme(dest->window);
 
 	formats = g_hash_table_lookup(default_formats, module);
 	format_read_arglist(va, &formats[formatnum],
@@ -77,6 +74,16 @@ static void printformat_module_dest(const char *module, TEXT_DEST_REC *dest,
 	g_free(str);
 }
 
+void printformat_module_dest(const char *module, TEXT_DEST_REC *dest,
+			     int formatnum, ...)
+{
+	va_list va;
+
+	va_start(va, formatnum);
+	printformat_module_dest_args(module, dest, formatnum, va);
+	va_end(va);
+}
+
 void printformat_module_args(const char *module, void *server,
 			     const char *target, int level,
 			     int formatnum, va_list va)
@@ -84,7 +91,7 @@ void printformat_module_args(const char *module, void *server,
 	TEXT_DEST_REC dest;
 
 	format_create_dest(&dest, server, target, level, NULL);
-	printformat_module_dest(module, &dest, formatnum, va);
+	printformat_module_dest_args(module, &dest, formatnum, va);
 }
 
 void printformat_module(const char *module, void *server, const char *target,
@@ -103,7 +110,7 @@ void printformat_module_window_args(const char *module, WINDOW_REC *window,
 	TEXT_DEST_REC dest;
 
 	format_create_dest(&dest, NULL, NULL, level, window);
-	printformat_module_dest(module, &dest, formatnum, va);
+	printformat_module_dest_args(module, &dest, formatnum, va);
 }
 
 void printformat_module_window(const char *module, WINDOW_REC *window,
@@ -133,7 +140,8 @@ void printformat_module_gui_args(const char *module, int formatnum, va_list va)
 			    arglist, sizeof(arglist)/sizeof(char *),
 			    buffer, sizeof(buffer));
 
-	str = format_get_text_theme_charargs(current_theme, module, &dest,
+	str = format_get_text_theme_charargs(window_get_theme(dest.window),
+					     module, &dest,
 					     formatnum, arglist);
 	if (*str != '\0') format_send_to_gui(&dest, str);
 	g_free(str);
@@ -150,22 +158,22 @@ void printformat_module_gui(const char *module, int formatnum, ...)
 
 static void print_line(TEXT_DEST_REC *dest, const char *text)
 {
-	char *str, *tmp;
+	char *str, *tmp, *stripped;
 
 	g_return_if_fail(dest != NULL);
 	g_return_if_fail(text != NULL);
 
-	tmp = format_get_level_tag(current_theme, dest);
+	tmp = format_get_level_tag(window_get_theme(dest->window), dest);
 	str = format_add_linestart(text, tmp);
 	g_free_not_null(tmp);
 
-	/* send the plain text version for logging etc.. */
-	tmp = strip_codes(str);
-	signal_emit_id(signal_print_text_stripped, 2, dest, tmp);
-	g_free(tmp);
+	/* send both the formatted + stripped (for logging etc.) */
+	stripped = strip_codes(str);
+	signal_emit_id(signal_print_text, 3, dest, str, stripped);
+        g_free_and_null(dest->hilight_color);
 
-	signal_emit_id(signal_print_text, 2, dest, str);
 	g_free(str);
+        g_free(stripped);
 }
 
 /* append string to `out', expand newlines. */
@@ -237,7 +245,7 @@ static char *printtext_get_args(TEXT_DEST_REC *dest, const char *str,
 			break;
 		}
 		default:
-			if (!format_expand_styles(out, *str)) {
+			if (!format_expand_styles(out, &str, &dest->flags)) {
 				g_string_append_c(out, '%');
 				g_string_append_c(out, *str);
 			}
@@ -250,7 +258,7 @@ static char *printtext_get_args(TEXT_DEST_REC *dest, const char *str,
 	return ret;
 }
 
-static char *printtext_expand_formats(const char *str)
+static char *printtext_expand_formats(const char *str, int *flags)
 {
 	GString *out;
 	char *ret;
@@ -265,7 +273,7 @@ static char *printtext_expand_formats(const char *str)
 		if (*++str == '\0')
 			break;
 
-		if (!format_expand_styles(out, *str)) {
+		if (!format_expand_styles(out, &str, flags)) {
 			g_string_append_c(out, '%');
 			g_string_append_c(out, *str);
 		}
@@ -276,7 +284,7 @@ static char *printtext_expand_formats(const char *str)
 	return ret;
 }
 
-void printtext_dest(TEXT_DEST_REC *dest, const char *text, va_list va)
+static void printtext_dest_args(TEXT_DEST_REC *dest, const char *text, va_list va)
 {
 	char *str;
 
@@ -291,6 +299,15 @@ void printtext_dest(TEXT_DEST_REC *dest, const char *text, va_list va)
 	g_free(str);
 }
 
+void printtext_dest(TEXT_DEST_REC *dest, const char *text, ...)
+{
+	va_list va;
+
+	va_start(va, text);
+	printtext_dest_args(dest, text, va);
+	va_end(va);
+}
+
 /* Write text to target - convert color codes */
 void printtext(void *server, const char *target, int level, const char *text, ...)
 {
@@ -302,7 +319,7 @@ void printtext(void *server, const char *target, int level, const char *text, ..
         format_create_dest(&dest, server, target, level, NULL);
 
 	va_start(va, text);
-	printtext_dest(&dest, text, va);
+	printtext_dest_args(&dest, text, va);
 	va_end(va);
 }
 
@@ -322,7 +339,29 @@ void printtext_string(void *server, const char *target, int level, const char *t
                 sending_print_starting = FALSE;
 	}
 
-        str = printtext_expand_formats(text);
+        str = printtext_expand_formats(text, &dest.flags);
+	print_line(&dest, str);
+        g_free(str);
+}
+
+/* Like printtext_window(), but don't handle %s etc. */
+void printtext_string_window(WINDOW_REC *window, int level, const char *text)
+{
+	TEXT_DEST_REC dest;
+        char *str;
+
+	g_return_if_fail(text != NULL);
+
+	format_create_dest(&dest, NULL, NULL, level,
+			   window != NULL ? window : active_win);
+
+	if (!sending_print_starting) {
+		sending_print_starting = TRUE;
+		signal_emit_id(signal_print_starting, 1, dest);
+                sending_print_starting = FALSE;
+	}
+
+        str = printtext_expand_formats(text, &dest.flags);
 	print_line(&dest, str);
         g_free(str);
 }
@@ -338,7 +377,7 @@ void printtext_window(WINDOW_REC *window, int level, const char *text, ...)
 			   window != NULL ? window : active_win);
 
 	va_start(va, text);
-	printtext_dest(&dest, text, va);
+	printtext_dest_args(&dest, text, va);
 	va_end(va);
 }
 
@@ -351,14 +390,14 @@ void printtext_gui(const char *text)
 
         memset(&dest, 0, sizeof(dest));
 
-	str = printtext_expand_formats(text);
+	str = printtext_expand_formats(text, &dest.flags);
 	format_send_to_gui(&dest, str);
 	g_free(str);
 }
 
 static void msg_beep_check(TEXT_DEST_REC *dest)
 {
-	if (dest->level != 0 && (dest->level & MSGLEVEL_NOHILIGHT) == 0 &&
+	if (dest->level != 0 && (dest->level & MSGLEVEL_NO_ACT) == 0 &&
 	    (beep_msg_level & dest->level) &&
 	    (beep_when_away || (dest->server != NULL &&
 				!dest->server->usermode_away)) &&
@@ -372,6 +411,7 @@ static void sig_print_text(TEXT_DEST_REC *dest, const char *text)
 	char *str, *tmp;
 
 	g_return_if_fail(dest != NULL);
+	g_return_if_fail(dest->window != NULL);
 	g_return_if_fail(text != NULL);
 
 	msg_beep_check(dest);
@@ -380,19 +420,15 @@ static void sig_print_text(TEXT_DEST_REC *dest, const char *text)
 
 	/* add timestamp/server tag here - if it's done in print_line()
 	   it would be written to log files too */
-	tmp = format_get_line_start(current_theme, dest, time(NULL));
+	tmp = format_get_line_start(window_get_theme(dest->window),
+				    dest, time(NULL));
 	str = format_add_linestart(text, tmp);
 	g_free_not_null(tmp);
 
 	format_send_to_gui(dest, str);
 	g_free(str);
 
-	signal_emit_id(signal_print_text_finished, 1, dest->window);
-}
-
-static void sig_print_text_free(TEXT_DEST_REC *dest, const char *text)
-{
-        g_free_and_null(dest->hilight_color);
+	signal_emit_id(signal_gui_print_text_finished, 1, dest->window);
 }
 
 void printtext_multiline(void *server, const char *target, int level,
@@ -433,16 +469,13 @@ static void read_settings(void)
 void printtext_init(void)
 {
 	sending_print_starting = FALSE;
-	signal_gui_print_text = signal_get_uniq_id("gui print text");
-	signal_print_text_stripped = signal_get_uniq_id("print text stripped");
-	signal_print_text = signal_get_uniq_id("print text");
-	signal_print_text_finished = signal_get_uniq_id("print text finished");
-	signal_print_format = signal_get_uniq_id("print format");
+	signal_gui_print_text_finished = signal_get_uniq_id("gui print text finished");
 	signal_print_starting = signal_get_uniq_id("print starting");
+	signal_print_text = signal_get_uniq_id("print text");
+	signal_print_format = signal_get_uniq_id("print format");
 
 	read_settings();
 	signal_add("print text", (SIGNAL_FUNC) sig_print_text);
-	signal_add_last("print text", (SIGNAL_FUNC) sig_print_text_free);
 	signal_add("gui dialog", (SIGNAL_FUNC) sig_gui_dialog);
 	signal_add("setup changed", (SIGNAL_FUNC) read_settings);
 }
@@ -450,7 +483,6 @@ void printtext_init(void)
 void printtext_deinit(void)
 {
 	signal_remove("print text", (SIGNAL_FUNC) sig_print_text);
-	signal_remove("print text", (SIGNAL_FUNC) sig_print_text_free);
 	signal_remove("gui dialog", (SIGNAL_FUNC) sig_gui_dialog);
 	signal_remove("setup changed", (SIGNAL_FUNC) read_settings);
 }

@@ -37,6 +37,9 @@ static int reconnect_time;
 
 void reconnect_save_status(SERVER_CONNECT_REC *conn, SERVER_REC *server)
 {
+        g_free_not_null(conn->tag);
+	conn->tag = g_strdup(server->tag);
+
 	g_free_not_null(conn->away_reason);
 	conn->away_reason = !server->usermode_away ? NULL :
 		g_strdup(server->away_reason);
@@ -53,20 +56,22 @@ static void server_reconnect_add(SERVER_CONNECT_REC *conn,
 
 	rec = g_new(RECONNECT_REC, 1);
 	rec->tag = ++last_reconnect_tag;
-	rec->conn = conn;
 	rec->next_connect = next_connect;
+
+	rec->conn = conn;
+	server_connect_ref(conn);
 
 	reconnects = g_slist_append(reconnects, rec);
 }
 
-void server_reconnect_destroy(RECONNECT_REC *rec, int free_conn)
+void server_reconnect_destroy(RECONNECT_REC *rec)
 {
 	g_return_if_fail(rec != NULL);
 
 	reconnects = g_slist_remove(reconnects, rec);
 
 	signal_emit("server reconnect remove", 1, rec);
-	if (free_conn) server_connect_free(rec->conn);
+	server_connect_unref(rec->conn);
 	g_free(rec);
 
 	if (reconnects == NULL)
@@ -92,8 +97,10 @@ static int server_reconnect_timeout(void)
 
 		if (rec->next_connect <= now) {
 			conn = rec->conn;
-			server_reconnect_destroy(rec, FALSE);
+			server_connect_ref(conn);
+			server_reconnect_destroy(rec);
 			CHAT_PROTOCOL(conn)->server_connect(conn);
+			server_connect_unref(conn);
 		}
 	}
 
@@ -108,13 +115,8 @@ static void sserver_connect(SERVER_SETUP_REC *rec, SERVER_CONNECT_REC *conn)
 	if (conn->port == 0) conn->port = rec->port;
 
 	server_setup_fill_reconn(conn, rec);
-	if (rec->last_connect > time(NULL)-reconnect_time) {
-		/* can't reconnect this fast, wait.. */
-		server_reconnect_add(conn, rec->last_connect+reconnect_time);
-	} else {
-		/* connect to server.. */
-		CHAT_PROTOCOL(conn)->server_connect(conn);
-	}
+	server_reconnect_add(conn, rec->last_connect+reconnect_time);
+	server_connect_unref(conn);
 }
 
 static SERVER_CONNECT_REC *
@@ -126,12 +128,16 @@ server_connect_copy_skeleton(SERVER_CONNECT_REC *src, int connect_info)
 	signal_emit("server connect copy", 2, &dest, src);
 	g_return_val_if_fail(dest != NULL, NULL);
 
+        server_connect_ref(dest);
 	dest->type = module_get_uniq_id("SERVER CONNECT", 0);
 	dest->reconnection = src->reconnection;
 	dest->proxy = g_strdup(src->proxy);
         dest->proxy_port = src->proxy_port;
 	dest->proxy_string = g_strdup(src->proxy_string);
+	dest->proxy_string_after = g_strdup(src->proxy_string_after);
 	dest->proxy_password = g_strdup(src->proxy_password);
+
+	dest->tag = g_strdup(src->tag);
 
 	if (connect_info) {
                 dest->family = src->family;
@@ -161,8 +167,9 @@ server_connect_copy_skeleton(SERVER_CONNECT_REC *src, int connect_info)
 }
 
 #define server_should_reconnect(server) \
-	((server)->connection_lost && ((server)->connrec->chatnet != NULL || \
-				(!(server)->banned && !(server)->dns_error)))
+	((server)->connection_lost && !(server)->no_reconnect && \
+	((server)->connrec->chatnet != NULL || \
+		(!(server)->banned && !(server)->dns_error)))
 
 #define sserver_connect_ok(rec, net) \
 	(!(rec)->banned && !(rec)->dns_error && (rec)->chatnet != NULL && \
@@ -192,7 +199,8 @@ static void sig_reconnect(SERVER_REC *server)
 	}
 
 	sserver = server_setup_find(server->connrec->address,
-				    server->connrec->port);
+				    server->connrec->port,
+				    server->connrec->chatnet);
 
 	if (sserver != NULL) {
 		/* save the last connection time/status */
@@ -210,21 +218,14 @@ static void sig_reconnect(SERVER_REC *server)
 		conn->port = server->connrec->port;
 		conn->password = g_strdup(server->connrec->password);
 
-		if (server->connect_time != 0 &&
-		    time(NULL)-server->connect_time > reconnect_time) {
-			/* there's been enough time since last connection,
-			   reconnect back immediately */
-			CHAT_PROTOCOL(conn)->server_connect(conn);
-		} else {
-			/* reconnect later.. */
-			server_reconnect_add(conn, (server->connect_time == 0 ? time(NULL) :
-						    server->connect_time) + reconnect_time);
-		}
+		server_reconnect_add(conn, (server->connect_time == 0 ? time(NULL) :
+					    server->connect_time) + reconnect_time);
+		server_connect_unref(conn);
 		return;
 	}
 
 	/* always try to first connect to the first on the list where we
-	   haven't got unsuccessful connection attempts for the last half
+	   haven't got unsuccessful connection attempts for the past half
 	   an hour. */
 
 	now = time(NULL);
@@ -264,7 +265,7 @@ static void sig_reconnect(SERVER_REC *server)
 		if (through) {
 			/* shouldn't happen unless there's no servers in
 			   this chatnet in setup.. */
-                        server_connect_free(conn);
+			server_connect_unref(conn);
 			break;
 		}
 
@@ -288,7 +289,7 @@ static void sig_connected(SERVER_REC *server)
 static void cmd_rmreconns(void)
 {
 	while (reconnects != NULL)
-		server_reconnect_destroy(reconnects->data, TRUE);
+		server_reconnect_destroy(reconnects->data);
 }
 
 static RECONNECT_REC *reconnect_find_tag(int tag)
@@ -319,7 +320,8 @@ static void reconnect_all(void)
 		rec = reconnects->data;
 
 		list = g_slist_append(list, rec->conn);
-		server_reconnect_destroy(rec, FALSE);
+                server_connect_ref(rec->conn);
+		server_reconnect_destroy(rec);
 	}
 
 
@@ -327,6 +329,7 @@ static void reconnect_all(void)
 		conn = list->data;
 
 		CHAT_PROTOCOL(conn)->server_connect(conn);
+                server_connect_unref(conn);
                 list = g_slist_remove(list, conn);
 	}
 }
@@ -342,14 +345,13 @@ static void cmd_reconnect(const char *data, SERVER_REC *server)
 		/* reconnect back to same server */
 		conn = server_connect_copy_skeleton(server->connrec, TRUE);
 
-		if (server->connected) {
+		if (server->connected)
 			reconnect_save_status(conn, server);
-			signal_emit("command disconnect", 2,
-				    "* Reconnecting", server);
-		}
+		signal_emit("command disconnect", 2, "* Reconnecting", server);
 
 		conn->reconnection = TRUE;
 		CHAT_PROTOCOL(conn)->server_connect(conn);
+		server_connect_unref(conn);
                 return;
 	}
 
@@ -378,25 +380,25 @@ static void cmd_reconnect(const char *data, SERVER_REC *server)
 	}
 
 	conn = rec->conn;
-	server_reconnect_destroy(rec, FALSE);
+	server_connect_ref(conn);
+	server_reconnect_destroy(rec);
 	CHAT_PROTOCOL(conn)->server_connect(conn);
+	server_connect_unref(conn);
 }
 
 static void cmd_disconnect(const char *data, SERVER_REC *server)
 {
 	RECONNECT_REC *rec;
-	int tag;
 
 	if (g_strncasecmp(data, "RECON-", 6) != 0)
 		return; /* handle only reconnection removing */
 
-	rec = sscanf(data+6, "%d", &tag) == 1 && tag > 0 ?
-		reconnect_find_tag(tag) : NULL;
+	rec = reconnect_find_tag(atoi(data+6));
 
 	if (rec == NULL)
 		signal_emit("server reconnect not found", 1, data);
 	else
-		server_reconnect_destroy(rec, TRUE);
+		server_reconnect_destroy(rec);
 	signal_stop();
 }
 
@@ -409,7 +411,7 @@ static void sig_chat_protocol_deinit(CHAT_PROTOCOL_REC *proto)
 
                 next = tmp->next;
                 if (rec->conn->chat_type == proto->id)
-			server_reconnect_destroy(rec, TRUE);
+			server_reconnect_destroy(rec);
 	}
 }
 

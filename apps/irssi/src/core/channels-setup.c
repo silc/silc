@@ -118,13 +118,6 @@ static CHANNEL_SETUP_REC *channel_setup_read(CONFIG_NODE *node)
 
 	channel = config_node_get_str(node, "name", NULL);
         chatnet = config_node_get_str(node, "chatnet", NULL);
-	if (chatnet == NULL) /* FIXME: remove this after .98... */ {
-		chatnet = g_strdup(config_node_get_str(node, "ircnet", NULL));
-		if (chatnet != NULL) {
-                        iconfig_node_set_str(node, "chatnet", chatnet);
-                        iconfig_node_set_str(node, "ircnet", NULL);
-		}
-	}
 
 	chatnetrec = chatnet == NULL ? NULL : chatnet_find(chatnet);
 	if (channel == NULL || chatnetrec == NULL) {
@@ -158,7 +151,8 @@ static void channels_read_config(void)
 	/* Read channels */
 	node = iconfig_node_traverse("channels", FALSE);
 	if (node != NULL) {
-		for (tmp = node->value; tmp != NULL; tmp = tmp->next)
+		tmp = config_node_first(node->value);
+		for (; tmp != NULL; tmp = config_node_next(tmp))
 			channel_setup_read(tmp->data);
 	}
 }

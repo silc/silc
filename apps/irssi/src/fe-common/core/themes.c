@@ -119,7 +119,8 @@ static char *theme_replace_expand(THEME_REC *theme, int index,
 	abstract = theme_format_expand_data(theme, (const char **) &abstract,
 					    default_fg, default_bg,
 					    last_fg, last_bg, flags);
-	ret = parse_special_string(abstract, NULL, NULL, data, NULL, 0);
+	ret = parse_special_string(abstract, NULL, NULL, data, NULL,
+				   PARSE_FLAG_ONLY_ARGS);
 	g_free(abstract);
 	return ret;
 }
@@ -128,9 +129,9 @@ static const char *fgcolorformats = "nkrgybmpcwKRGYBMPCW";
 static const char *bgcolorformats = "n01234567";
 
 #define IS_FGCOLOR_FORMAT(c) \
-        ((c) != '\0' && strchr(fgcolorformats, (c)) != NULL)
+        ((c) != '\0' && strchr(fgcolorformats, c) != NULL)
 #define IS_BGCOLOR_FORMAT(c) \
-        ((c) != '\0' && strchr(bgcolorformats, (c)) != NULL)
+        ((c) != '\0' && strchr(bgcolorformats, c) != NULL)
 
 /* append "variable" part in $variable, ie. not the contents of the variable */
 static void theme_format_append_variable(GString *str, const char **format)
@@ -143,7 +144,7 @@ static void theme_format_append_variable(GString *str, const char **format)
 	(*format)++;
 
 	value = parse_special((char **) format, NULL, NULL,
-			      args, &free_ret, NULL, 0);
+			      args, &free_ret, NULL, PARSE_FLAG_ONLY_ARGS);
 	if (free_ret) g_free(value);
 	(*format)++;
 
@@ -211,7 +212,9 @@ static void theme_format_append_next(THEME_REC *theme, GString *str,
 			return;
 		}
 
-		/* %{ or %} gives us { or } char */
+		/* %{ or %} gives us { or } char - keep the % char
+		   though to make sure {} isn't treated as abstract */
+		g_string_append_c(str, '%');
 		chr = **format;
 	}
 
@@ -230,6 +233,54 @@ static void theme_format_append_next(THEME_REC *theme, GString *str,
 	}
 
         (*format)++;
+}
+
+/* returns TRUE if data is empty, or the data is a $variable which is empty */
+static int data_is_empty(const char **data)
+{
+	/* since we don't know the real argument list, assume there's always
+	   an argument in them */
+	char *arglist[] = {
+		"x", "x", "x", "x", "x", "x","x", "x", "x", "x",
+		NULL
+	};
+	const char *p;
+	char *ret;
+        int free_ret, empty;
+
+        p = *data;
+	while (*p == ' ') p++;
+
+	if (*p == '}') {
+                /* empty */
+                *data = p+1;
+                return TRUE;
+	}
+
+	if (*p != '$') {
+                /* not empty */
+		return FALSE;
+	}
+
+	/* variable - check if it's empty */
+        p++;
+	ret = parse_special((char **) &p,
+			    active_win == NULL ? NULL : active_win->active_server,
+			    active_win == NULL ? NULL : active_win->active,
+			    arglist, &free_ret, NULL, 0);
+        p++;
+
+	while (*p == ' ') p++;
+	empty = *p == '}' && (ret == NULL || *ret == '\0');
+        if (free_ret) g_free(ret);
+
+	if (empty) {
+		/* empty */
+		*data = p+1;
+                return TRUE;
+	}
+
+        return FALSE;
 }
 
 /* expand a single {abstract ...data... } */
@@ -258,17 +309,11 @@ static char *theme_format_expand_abstract(THEME_REC *theme,
 	   treated as arguments */
 	if (*p == ' ') {
 		len++;
-		if ((flags & EXPAND_FLAG_IGNORE_EMPTY)) {
-                        /* if the data is empty, ignore the abstract */
-			p = format+len;
-			while (*p == ' ') p++;
-			if (*p == '}') {
-                                *formatp = p+1;
-				g_free(abstract);
-				return NULL;
-			}
+		if ((flags & EXPAND_FLAG_IGNORE_EMPTY) && data_is_empty(&p)) {
+			*formatp = p;
+			g_free(abstract);
+			return NULL;
 		}
-
 	}
 	*formatp = format+len;
 
@@ -287,7 +332,7 @@ static char *theme_format_expand_abstract(THEME_REC *theme,
 					NULL, NULL, flags);
 	len = strlen(data);
 
-	if (len > 1 && isdigit(data[len-1]) && data[len-2] == '$') {
+	if (len > 1 && i_isdigit(data[len-1]) && data[len-2] == '$') {
 		/* ends with $<digit> .. this breaks things if next
 		   character is digit or '-' */
                 char digit, *tmp;
@@ -300,7 +345,8 @@ static char *theme_format_expand_abstract(THEME_REC *theme,
 		g_free(tmp);
 	}
 
-	ret = parse_special_string(abstract, NULL, NULL, data, NULL, 0);
+	ret = parse_special_string(abstract, NULL, NULL, data, NULL,
+				   PARSE_FLAG_ONLY_ARGS);
 	g_free(abstract);
         g_free(data);
 	abstract = ret;
@@ -701,11 +747,11 @@ THEME_REC *theme_load(const char *setname)
 	theme = theme_find(name);
 
 	/* check home dir */
-	fname = g_strdup_printf("%s/.silc/%s.theme", g_get_home_dir(), name);
+	fname = g_strdup_printf("%s/%s.theme", get_irssi_dir(), name);
 	if (stat(fname, &statbuf) != 0) {
 		/* check global config dir */
 		g_free(fname);
-		fname = g_strdup_printf(SYSCONFDIR"/irssi/%s.theme", name);
+		fname = g_strdup_printf(THEMESDIR"/%s.theme", name);
 		if (stat(fname, &statbuf) != 0) {
 			/* theme not found */
 			g_free(fname);
@@ -795,9 +841,11 @@ static int theme_read(THEME_REC *theme, const char *path, const char *data)
 	}
 
 	theme->default_color =
-		config_get_int(config, NULL, "default_color", 0);
-	theme->default_real_color =
-		config_get_int(config, NULL, "default_real_color", 7);
+		config_get_int(config, NULL, "default_color", -1);
+	/* FIXME: remove after 0.7.99 */
+	if (theme->default_color == 0 &&
+	    config_get_int(config, NULL, "default_real_color", -1) != -1)
+                theme->default_color = -1;
 	theme_read_replaces(config, theme);
 
 	if (data == NULL) {
@@ -952,8 +1000,13 @@ static void cmd_format(const char *data)
         cmd_params_free(free_arg);
 }
 
+typedef struct {
+	CONFIG_REC *config;
+        int save_all;
+} THEME_SAVE_REC;
+
 static void module_save(const char *module, MODULE_THEME_REC *rec,
-                        CONFIG_REC *config)
+                        THEME_SAVE_REC *data)
 {
 	CONFIG_NODE *fnode, *node;
 	FORMAT_REC *formats;
@@ -962,27 +1015,33 @@ static void module_save(const char *module, MODULE_THEME_REC *rec,
         formats = g_hash_table_lookup(default_formats, rec->name);
 	if (formats == NULL) return;
 
-	fnode = config_node_traverse(config, "formats", TRUE);
+	fnode = config_node_traverse(data->config, "formats", TRUE);
 
 	node = config_node_section(fnode, rec->name, NODE_TYPE_BLOCK);
-	for (n = 0; formats[n].def != NULL; n++) {
+	for (n = 1; formats[n].def != NULL; n++) {
                 if (rec->formats[n] != NULL) {
-                        config_node_set_str(config, node, formats[n].tag,
+                        config_node_set_str(data->config, node, formats[n].tag,
                                             rec->formats[n]);
-                }
+		} else if (data->save_all && formats[n].tag != NULL) {
+                        config_node_set_str(data->config, node, formats[n].tag,
+                                            formats[n].def);
+		}
         }
 
         if (node->value == NULL) {
                 /* not modified, don't keep the empty section */
-                config_node_remove(config, fnode, node);
-                if (fnode->value == NULL)
-                        config_node_remove(config, config->mainnode, fnode);
+                config_node_remove(data->config, fnode, node);
+		if (fnode->value == NULL) {
+			config_node_remove(data->config,
+					   data->config->mainnode, fnode);
+		}
         }
 }
 
-static void theme_save(THEME_REC *theme)
+static void theme_save(THEME_REC *theme, int save_all)
 {
 	CONFIG_REC *config;
+	THEME_SAVE_REC data;
 	char *path;
 	int ok;
 
@@ -1002,10 +1061,12 @@ static void theme_save(THEME_REC *theme)
                 }
         }
 
-	g_hash_table_foreach(theme->modules, (GHFunc) module_save, config);
+	data.config = config;
+        data.save_all = save_all;
+	g_hash_table_foreach(theme->modules, (GHFunc) module_save, &data);
 
-        /* always save the theme to ~/.silc/ */
-	path = g_strdup_printf("%s/.silc/%s", g_get_home_dir(),
+        /* always save the theme to ~/.irssi/ */
+	path = g_strdup_printf("%s/%s", get_irssi_dir(),
 			       g_basename(theme->path));
 	ok = config_write(config, path, 0660) == 0;
 
@@ -1017,16 +1078,27 @@ static void theme_save(THEME_REC *theme)
 	config_close(config);
 }
 
-/* save changed formats */
-static void cmd_save(void)
+/* save changed formats, -format saves all */
+static void cmd_save(const char *data)
 {
 	GSList *tmp;
+        GHashTable *optlist;
+        void *free_arg;
+	char *fname;
+	int saveall;
 
+	if (!cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS,
+			    "save", &optlist, &fname))
+		return;
+
+        saveall = g_hash_table_lookup(optlist, "formats") != NULL;
 	for (tmp = themes; tmp != NULL; tmp = tmp->next) {
 		THEME_REC *theme = tmp->data;
 
-		theme_save(theme);
+		theme_save(theme, saveall);
 	}
+
+	cmd_params_free(free_arg);
 }
 
 static void complete_format_list(THEME_SEARCH_REC *rec, const char *key, GList **list)
@@ -1102,9 +1174,9 @@ static void change_theme(const char *name, int verbose)
 	if (rec != NULL) {
 		current_theme = rec;
 		if (verbose) {
-			printformat_window(active_win, MSGLEVEL_CLIENTNOTICE,
-					   TXT_THEME_CHANGED,
-					   rec->name, rec->path);
+			printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
+				    TXT_THEME_CHANGED,
+				    rec->name, rec->path);
 		}
 	} else if (verbose) {
 		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR,
@@ -1115,9 +1187,13 @@ static void change_theme(const char *name, int verbose)
 static void read_settings(void)
 {
 	const char *theme;
+        int len;
 
 	theme = settings_get_str("theme");
-	if (strcmp(current_theme->name, theme) != 0)
+	len = strlen(current_theme->name);
+	if (strcmp(current_theme->name, theme) != 0 &&
+	    (strncmp(current_theme->name, theme, len) != 0 ||
+	     strcmp(theme+len, ".theme") != 0))
 		change_theme(theme, TRUE);
 }
 
@@ -1131,11 +1207,9 @@ static void themes_read(void)
 	/* first there's default theme.. */
 	current_theme = theme_load("default");
 	if (current_theme == NULL) {
-		fname = g_strdup_printf("%s/.silc/default.theme",
-					g_get_home_dir());
+		fname = g_strdup_printf("%s/default.theme", get_irssi_dir());
 		current_theme = theme_create(fname, "default");
-		current_theme->default_color = 0;
-		current_theme->default_real_color = 7;
+		current_theme->default_color = -1;
                 theme_read(current_theme, NULL, default_theme);
 		g_free(fname);
 	}
@@ -1165,6 +1239,7 @@ void themes_init(void)
 	signal_add("setup reread", (SIGNAL_FUNC) themes_read);
 
 	command_set_options("format", "delete reset");
+	command_set_options("save", "formats");
 }
 
 void themes_deinit(void)

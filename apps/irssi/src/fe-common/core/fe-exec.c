@@ -1,7 +1,7 @@
 /*
  fe-exec.c : irssi
 
-    Copyright (C) 2000 Timo Sirainen
+    Copyright (C) 2000-2001 Timo Sirainen
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 */
 
 #include "module.h"
+#include "modules.h"
 #include "signals.h"
 #include "commands.h"
 #include "pidwait.h"
@@ -35,30 +36,8 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-static GSList *processes;
+GSList *processes;
 static int signal_exec_input;
-
-static EXEC_WI_REC *exec_wi_create(WINDOW_REC *window, PROCESS_REC *rec)
-{
-	EXEC_WI_REC *item;
-
-        g_return_val_if_fail(window != NULL, NULL);
-        g_return_val_if_fail(rec != NULL, NULL);
-
-	item = g_new0(EXEC_WI_REC, 1);
-	item->type = module_get_uniq_id_str("WINDOW ITEM TYPE", "EXEC");
-	item->name = rec->name != NULL ?
-		g_strdup_printf("%%%s", rec->name) :
-		g_strdup_printf("%%%d", rec->id);
-
-	item->window = window;
-	item->createtime = time(NULL);
-        item->process = rec;
-
-	MODULE_DATA_INIT(item);
-	window_item_add(window, (WI_ITEM_REC *) item, FALSE);
-        return item;
-}
 
 static void exec_wi_destroy(EXEC_WI_REC *rec)
 {
@@ -73,6 +52,28 @@ static void exec_wi_destroy(EXEC_WI_REC *rec)
 	MODULE_DATA_DEINIT(rec);
 	g_free(rec->name);
         g_free(rec);
+}
+
+static EXEC_WI_REC *exec_wi_create(WINDOW_REC *window, PROCESS_REC *rec)
+{
+	EXEC_WI_REC *item;
+
+        g_return_val_if_fail(window != NULL, NULL);
+        g_return_val_if_fail(rec != NULL, NULL);
+
+	item = g_new0(EXEC_WI_REC, 1);
+	item->type = module_get_uniq_id_str("WINDOW ITEM TYPE", "EXEC");
+        item->destroy = (void (*) (WI_ITEM_REC *)) exec_wi_destroy;
+	item->name = rec->name != NULL ?
+		g_strdup_printf("%%%s", rec->name) :
+		g_strdup_printf("%%%d", rec->id);
+
+	item->createtime = time(NULL);
+        item->process = rec;
+
+	MODULE_DATA_INIT(item);
+	window_item_add(window, (WI_ITEM_REC *) item, FALSE);
+        return item;
 }
 
 static int process_get_new_id(void)
@@ -368,7 +369,7 @@ static void handle_exec(const char *args, GHashTable *optlist,
 			WI_ITEM_REC *item)
 {
 	PROCESS_REC *rec;
-        char *target;
+        char *target, *level;
 	int notice, signum, interactive;
 
 	/* check that there's no unknown options. we allowed them
@@ -491,6 +492,9 @@ static void handle_exec(const char *args, GHashTable *optlist,
         rec->silent = g_hash_table_lookup(optlist, "-") != NULL;
 	rec->name = g_strdup(g_hash_table_lookup(optlist, "name"));
 
+	level = g_hash_table_lookup(optlist, "level");
+	rec->level = level == NULL ? MSGLEVEL_CLIENTCRAP : level2bits(level);
+
 	rec->read_tag = g_input_add(rec->in, G_INPUT_READ,
 				    (GInputFunction) sig_exec_input_reader,
 				    rec);
@@ -526,12 +530,17 @@ static void cmd_exec(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 static void sig_pidwait(void *pid, void *statusp)
 {
 	PROCESS_REC *rec;
+        char *str;
 	int status = GPOINTER_TO_INT(statusp);
 
         rec = process_find_pid(GPOINTER_TO_INT(pid));
 	if (rec == NULL) return;
 
-	/* process exited */
+	/* process exited - print the last line if
+	   there wasn't a newline at end. */
+	if (line_split("\n", 1, &str, &rec->databuf) > 0 && *str != '\0')
+		signal_emit_id(signal_exec_input, 2, rec, str);
+
 	if (!rec->silent) {
 		if (WIFSIGNALED(status)) {
 			status = WTERMSIG(status);
@@ -568,11 +577,10 @@ static void sig_exec_input(PROCESS_REC *rec, const char *text)
 			    3, str, server, item);
                 g_free(str);
 	} else if (rec->target_item != NULL) {
-		printtext(NULL, rec->target_item->name, MSGLEVEL_CLIENTCRAP,
-			  "%s", text);
+		printtext(NULL, rec->target_item->name,
+			  rec->level, "%s", text);
 	} else {
-		printtext_window(rec->target_win, MSGLEVEL_CLIENTCRAP,
-				 "%s", text);
+		printtext_window(rec->target_win, rec->level, "%s", text);
 	}
 }
 
@@ -590,14 +598,6 @@ static void sig_window_destroyed(WINDOW_REC *window)
 	}
 }
 
-static void sig_window_item_destroyed(WINDOW_REC *window, EXEC_WI_REC *item)
-{
-	if (IS_EXEC_WI(item)) {
-                item->process->target_item = NULL;
-		exec_wi_destroy(item);
-	}
-}
-
 static void event_text(const char *data, SERVER_REC *server, EXEC_WI_REC *item)
 {
 	if (!IS_EXEC_WI(item)) return;
@@ -610,13 +610,12 @@ static void event_text(const char *data, SERVER_REC *server, EXEC_WI_REC *item)
 void fe_exec_init(void)
 {
 	command_bind("exec", NULL, (SIGNAL_FUNC) cmd_exec);
-	command_set_options("exec", "!- interactive nosh +name out +msg +notice +in window close");
+	command_set_options("exec", "!- interactive nosh +name out +msg +notice +in window close +level");
 
         signal_exec_input = signal_get_uniq_id("exec input");
         signal_add("pidwait", (SIGNAL_FUNC) sig_pidwait);
         signal_add("exec input", (SIGNAL_FUNC) sig_exec_input);
         signal_add("window destroyed", (SIGNAL_FUNC) sig_window_destroyed);
-	signal_add("window item destroy", (SIGNAL_FUNC) sig_window_item_destroyed);
 	signal_add_first("send text", (SIGNAL_FUNC) event_text);
 }
 
@@ -636,6 +635,5 @@ void fe_exec_deinit(void)
         signal_remove("pidwait", (SIGNAL_FUNC) sig_pidwait);
         signal_remove("exec input", (SIGNAL_FUNC) sig_exec_input);
         signal_remove("window destroyed", (SIGNAL_FUNC) sig_window_destroyed);
-	signal_remove("window item destroy", (SIGNAL_FUNC) sig_window_item_destroyed);
 	signal_remove("send text", (SIGNAL_FUNC) event_text);
 }

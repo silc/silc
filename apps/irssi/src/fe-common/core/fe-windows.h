@@ -1,10 +1,8 @@
 #ifndef __WINDOWS_H
 #define __WINDOWS_H
 
-#include "servers.h"
-
-#define STRUCT_SERVER_REC SERVER_REC
 #include "window-item-def.h"
+#include "command-history.h"
 
 enum {
         DATA_LEVEL_NONE = 0,
@@ -19,7 +17,7 @@ typedef struct {
 	unsigned int sticky:1;
 } WINDOW_BIND_REC;
 
-typedef struct {
+struct _WINDOW_REC {
 	int refnum;
 	char *name;
 
@@ -37,8 +35,8 @@ typedef struct {
 	unsigned int destroying:1;
 
 	/* window-specific command line history */
-	GList *history, *history_pos;
-	int history_lines, history_over_counter;
+	HISTORY_REC *history;
+	char *history_name;
 
 	int data_level; /* current data level */
 	char *hilight_color; /* current hilight color in %format */
@@ -50,7 +48,7 @@ typedef struct {
 	void *theme; /* THEME_REC */
 
 	void *gui_data;
-} WINDOW_REC;
+};
 
 extern GSList *windows;
 extern WINDOW_REC *active_win;
@@ -65,6 +63,7 @@ void window_change_server(WINDOW_REC *window, void *server);
 
 void window_set_refnum(WINDOW_REC *window, int refnum);
 void window_set_name(WINDOW_REC *window, const char *name);
+void window_set_history(WINDOW_REC *window, const char *name);
 void window_set_level(WINDOW_REC *window, int level);
 
 /* return active item's name, or if none is active, window's name */
@@ -80,8 +79,10 @@ int window_refnum_prev(int refnum, int wrap);
 int window_refnum_next(int refnum, int wrap);
 int windows_refnum_last(void);
 
+int window_refnum_cmp(WINDOW_REC *w1, WINDOW_REC *w2);
 GSList *windows_get_sorted(void);
 
+/* Add a new bind to window - if duplicate is found it's returned */
 WINDOW_BIND_REC *window_bind_add(WINDOW_REC *window, const char *servertag,
 				 const char *name);
 void window_bind_destroy(WINDOW_REC *window, WINDOW_BIND_REC *rec);

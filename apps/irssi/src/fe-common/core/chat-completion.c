@@ -25,6 +25,7 @@
 #include "settings.h"
 
 #include "chatnets.h"
+#include "servers.h"
 #include "servers-setup.h"
 #include "channels.h"
 #include "channels-setup.h"
@@ -154,6 +155,16 @@ static void sig_message_public(SERVER_REC *server, const char *msg,
                 own = nick_match_msg(channel, msg, server->nick);
 		CHANNEL_LAST_MSG_ADD(channel, nick, own);
 	}
+}
+
+static void sig_message_join(SERVER_REC *server, const char *channel,
+			     const char *nick, const char *address)
+{
+	CHANNEL_REC *chanrec;
+
+	chanrec = channel_find(server, channel);
+	if (chanrec != NULL)
+		CHANNEL_LAST_MSG_ADD(chanrec, nick, FALSE);
 }
 
 static void sig_message_private(SERVER_REC *server, const char *msg,
@@ -382,7 +393,7 @@ static GList *completion_nicks_nonstrict(CHANNEL_REC *channel,
 		/* remove non alnum chars from nick */
 		in = rec->nick; out = str;
 		while (*in != '\0') {
-			if (isalnum(*in))
+			if (i_isalnum(*in))
 				*out++ = *in;
                         in++;
 		}
@@ -543,7 +554,8 @@ static void complete_window_nicks(GList **list, WINDOW_REC *window,
 }
 
 static void sig_complete_word(GList **list, WINDOW_REC *window,
-			      const char *word, const char *linestart)
+			      const char *word, const char *linestart,
+			      int *want_space)
 {
 	SERVER_REC *server;
 	CHANNEL_REC *channel;
@@ -559,7 +571,7 @@ static void sig_complete_word(GList **list, WINDOW_REC *window,
 	if (server == NULL && servers != NULL)
 		server = servers->data;
 
-	if (server != NULL && server->ischannel(word)) {
+	if (server != NULL && server_ischannel(server, word)) {
 		/* probably completing a channel name */
 		*list = completion_get_channels(window->active_server, word);
                 return;
@@ -590,7 +602,7 @@ static void sig_complete_word(GList **list, WINDOW_REC *window,
 	} else if (channel != NULL) {
 		/* nick completion .. we could also be completing a nick
 		   after /MSG from nicks in channel */
-                complete_window_nicks(list, window, word, linestart);
+		complete_window_nicks(list, window, word, linestart);
 	}
 
 	if (*list != NULL) signal_stop();
@@ -632,6 +644,41 @@ static void sig_complete_msg(GList **list, WINDOW_REC *window,
 	msgserver = line_get_server(line);
 	*list = completion_msg(server, msgserver, word, NULL);
 	if (*list != NULL) signal_stop();
+}
+
+static void sig_erase_complete_msg(WINDOW_REC *window, const char *word,
+				   const char *line)
+{
+	SERVER_REC *server;
+	MODULE_SERVER_REC *mserver;
+        GSList *tmp;
+
+	server = line_get_server(line);
+	if (server == NULL){
+		server = window->active_server;
+		if (server == NULL)
+                        return;
+	}
+
+	if (*word == '\0')
+		return;
+
+        /* check from global list */
+	completion_last_message_remove(word);
+
+	/* check from server specific list */
+	if (server != NULL) {
+		mserver = MODULE_DATA(server);
+		for (tmp = mserver->lastmsgs; tmp != NULL; tmp = tmp->next) {
+			LAST_MSG_REC *rec = tmp->data;
+
+			if (g_strcasecmp(rec->nick, word) == 0) {
+				last_msg_destroy(&mserver->lastmsgs, rec);
+                                break;
+			}
+		}
+
+	}
 }
 
 GList *completion_get_chatnets(const char *word)
@@ -688,11 +735,30 @@ static void sig_complete_connect(GList **list, WINDOW_REC *window,
 	if (*list != NULL) signal_stop();
 }
 
+static void sig_complete_topic(GList **list, WINDOW_REC *window,
+			       const char *word, const char *line,
+			       int *want_space)
+{
+	const char *topic;
+
+	g_return_if_fail(list != NULL);
+	g_return_if_fail(word != NULL);
+
+	if (*word == '\0' && IS_CHANNEL(window->active)) {
+		topic = CHANNEL(window->active)->topic;
+		if (topic != NULL) {
+			*list = g_list_append(NULL, g_strdup(topic));
+                        signal_stop();
+		}
+	}
+}
+
 /* expand \n, \t and \\ */
 static char *expand_escapes(const char *line, SERVER_REC *server,
 			    WI_ITEM_REC *item)
 {
 	char *ptr, *ret;
+        int chr;
 
 	ret = ptr = g_malloc(strlen(line)+1);
 	for (; *line != '\0'; line++) {
@@ -707,25 +773,23 @@ static char *expand_escapes(const char *line, SERVER_REC *server,
 			break;
 		}
 
-		switch (*line) {
-		case 'n':
+		chr = expand_escape(&line);
+		if (chr == '\r' || chr == '\n') {
 			/* newline .. we need to send another "send text"
 			   event to handle it (or actually the text before
 			   the newline..) */
-			*ptr = '\0';
-			signal_emit("send text", 3, ret, server, item);
-			ptr = ret;
-			break;
-		case 't':
-			*ptr++ = '\t';
-			break;
-		case '\\':
-			*ptr++ = '\\';
-			break;
-		default:
+			if (ret != ptr) {
+				*ptr = '\0';
+				signal_emit("send text", 3, ret, server, item);
+				ptr = ret;
+			}
+		} else if (chr != -1) {
+                        /* escaping went ok */
+			*ptr++ = chr;
+		} else {
+                        /* unknown escape, add it as-is */
 			*ptr++ = '\\';
 			*ptr++ = *line;
-			break;
 		}
 	}
 
@@ -733,47 +797,61 @@ static char *expand_escapes(const char *line, SERVER_REC *server,
 	return ret;
 }
 
+static char *auto_complete(CHANNEL_REC *channel, const char *line)
+{
+	GList *comp;
+	const char *p;
+        char *nick, *ret;
+
+	p = strstr(line, completion_char);
+	if (p == NULL)
+		return NULL;
+
+        nick = g_strndup(line, (int) (p-line));
+
+        ret = NULL;
+	if (nicklist_find(channel, nick) == NULL) {
+                /* not an exact match, use the first possible completion */
+		comp = completion_channel_nicks(channel, nick, NULL);
+		if (comp != NULL) {
+			ret = g_strconcat(comp->data, p, NULL);
+			g_list_foreach(comp, (GFunc) g_free, NULL);
+			g_list_free(comp);
+		}
+	}
+
+	g_free(nick);
+
+        return ret;
+}
+
 static void event_text(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
-	CHANNEL_REC *channel;
-	GList *comp;
-	char *line, *str, *ptr, comp_char;
+	char *line, *str;
 
 	g_return_if_fail(data != NULL);
 	if (item == NULL) return;
 
 	line = settings_get_bool("expand_escapes") ?
 		expand_escapes(data, server, item) : g_strdup(data);
-	comp_char = *completion_char;
 
 	/* check for automatic nick completion */
-        ptr = NULL;
-	comp = NULL;
-	channel = CHANNEL(item);
-
-	if (completion_auto && channel != NULL && comp_char != '\0') {
-		ptr = strchr(line, comp_char);
-		if (ptr != NULL) {
-			*ptr++ = '\0';
-			if (nicklist_find(channel, line) == NULL) {
-				comp = completion_channel_nicks(channel,
-								line, NULL);
-			}
+	if (completion_auto && IS_CHANNEL(item)) {
+		str = auto_complete(CHANNEL(item), line);
+		if (str != NULL) {
+			g_free(line);
+                        line = str;
 		}
 	}
 
-	str = g_strdup_printf(ptr == NULL ? "%s %s" : "%s %s%c%s", item->name,
-			      comp != NULL ? (char *) comp->data : line,
-			      comp_char, ptr);
+	str = g_strdup_printf(IS_CHANNEL(item) ? "-channel %s %s" :
+			      IS_QUERY(item) ? "-nick %s %s" : "%s %s",
+			      item->name, line);
+
 	signal_emit("command msg", 3, str, server, item);
 
 	g_free(str);
 	g_free(line);
-
-	if (comp != NULL) {
-		g_list_foreach(comp, (GFunc) g_free, NULL);
-		g_list_free(comp);
-	}
 
 	signal_stop();
 }
@@ -811,6 +889,11 @@ static void read_settings(void)
 	cmdchars = settings_get_str("cmdchars");
 	completion_auto = settings_get_bool("completion_auto");
 	completion_strict = settings_get_bool("completion_strict");
+
+	if (*completion_char == '\0') {
+                /* this would break.. */
+		completion_auto = FALSE;
+	}
 }
 
 void chat_completion_init(void)
@@ -826,9 +909,14 @@ void chat_completion_init(void)
 	read_settings();
 	signal_add("complete word", (SIGNAL_FUNC) sig_complete_word);
 	signal_add("complete command msg", (SIGNAL_FUNC) sig_complete_msg);
+	signal_add("complete command query", (SIGNAL_FUNC) sig_complete_msg);
+	signal_add("complete erase command msg", (SIGNAL_FUNC) sig_erase_complete_msg);
+	signal_add("complete erase command query", (SIGNAL_FUNC) sig_erase_complete_msg);
 	signal_add("complete command connect", (SIGNAL_FUNC) sig_complete_connect);
 	signal_add("complete command server", (SIGNAL_FUNC) sig_complete_connect);
+	signal_add("complete command topic", (SIGNAL_FUNC) sig_complete_topic);
 	signal_add("message public", (SIGNAL_FUNC) sig_message_public);
+	signal_add("message join", (SIGNAL_FUNC) sig_message_join);
 	signal_add("message private", (SIGNAL_FUNC) sig_message_private);
 	signal_add("message own_public", (SIGNAL_FUNC) sig_message_own_public);
 	signal_add("message own_private", (SIGNAL_FUNC) sig_message_own_private);
@@ -847,9 +935,14 @@ void chat_completion_deinit(void)
 
 	signal_remove("complete word", (SIGNAL_FUNC) sig_complete_word);
 	signal_remove("complete command msg", (SIGNAL_FUNC) sig_complete_msg);
+	signal_remove("complete command query", (SIGNAL_FUNC) sig_complete_msg);
+	signal_remove("complete erase command msg", (SIGNAL_FUNC) sig_erase_complete_msg);
+	signal_remove("complete erase command query", (SIGNAL_FUNC) sig_erase_complete_msg);
 	signal_remove("complete command connect", (SIGNAL_FUNC) sig_complete_connect);
 	signal_remove("complete command server", (SIGNAL_FUNC) sig_complete_connect);
+	signal_remove("complete command topic", (SIGNAL_FUNC) sig_complete_topic);
 	signal_remove("message public", (SIGNAL_FUNC) sig_message_public);
+	signal_remove("message join", (SIGNAL_FUNC) sig_message_join);
 	signal_remove("message private", (SIGNAL_FUNC) sig_message_private);
 	signal_remove("message own_public", (SIGNAL_FUNC) sig_message_own_public);
 	signal_remove("message own_private", (SIGNAL_FUNC) sig_message_own_private);
