@@ -22,27 +22,7 @@
  * routes. If route entry doesn't exist for a specific destination, server
  * uses primary route (default route).
  */
-/*
- * $Id$
- * $Log$
- * Revision 1.4  2000/07/12 05:59:41  priikone
- * 	Major rewrite of ID Cache system. Support added for the new
- * 	ID cache system. Major rewrite of ID List stuff on server.  All
- * 	SilcXXXList's are now called SilcXXXEntry's and they are pointers
- * 	by default. A lot rewritten ID list functions.
- *
- * Revision 1.3  2000/07/05 06:14:01  priikone
- * 	Global costemic changes.
- *
- * Revision 1.2  2000/07/04 08:30:24  priikone
- * 	Added silc_server_get_route to return communication object
- * 	for fastest route.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "serverincludes.h"
 #include "server_internal.h"
@@ -85,33 +65,34 @@ SilcServerEntry silc_server_route_check(unsigned int dest,
 SilcSocketConnection silc_server_get_route(SilcServer server, void *id,
 					   SilcIdType id_type)
 {
-  unsigned int dest = 0;
-  unsigned short port = 0;
-  SilcServerEntry router = NULL;
+  if (server->server_type == SILC_ROUTER) {
+    unsigned int dest;
+    unsigned short port;
+    SilcServerEntry router = NULL;
 
-  if (server->server_type == SILC_SERVER)
-    return (SilcSocketConnection)server->id_entry->router->connection;
-  
-  switch(id_type) {
-  case SILC_ID_CLIENT:
-    dest = ((SilcClientID *)id)->ip.s_addr;
-    port = server->id->port;
-    break;
-  case SILC_ID_SERVER:
-    dest = ((SilcServerID *)id)->ip.s_addr;
-    port = ((SilcServerID *)id)->port;
-    break;
-  case SILC_ID_CHANNEL:
-    dest = ((SilcChannelID *)id)->ip.s_addr;
-    port = ((SilcChannelID *)id)->port;
-    break;
-  default:
-    return NULL;
+    switch(id_type) {
+    case SILC_ID_CLIENT:
+      dest = ((SilcClientID *)id)->ip.s_addr;
+      port = server->id->port;
+      break;
+    case SILC_ID_SERVER:
+      dest = ((SilcServerID *)id)->ip.s_addr;
+      port = ((SilcServerID *)id)->port;
+      break;
+    case SILC_ID_CHANNEL:
+      dest = ((SilcChannelID *)id)->ip.s_addr;
+      port = ((SilcChannelID *)id)->port;
+      break;
+    default:
+      return NULL;
+    }
+
+    router = silc_server_route_check(dest, port);
+    if (!router)
+      return (SilcSocketConnection)server->id_entry->router->connection;
+
+    return (SilcSocketConnection)router->connection;
   }
 
-  router = silc_server_route_check(dest, port);
-  if (!router)
-    return (SilcSocketConnection)server->id_entry->router->connection;
-
-  return (SilcSocketConnection)router->connection;
+  return (SilcSocketConnection)server->id_entry->router->connection;
 }
