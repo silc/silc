@@ -671,6 +671,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       }
     }
     break;
+
   }
 
   va_end(vp);

@@ -702,4 +702,19 @@ void silc_client_abort_key_agreement(SilcClient client,
 				     SilcClientConnection conn,
 				     SilcClientEntry client_entry);
 
+
+/* Misc functions */
+
+/* Sets away `message'.  The away message may be set when the client's
+   mode is changed to SILC_UMODE_GONE and the client whishes to reply
+   to anyone who sends private message.  The `message' will be sent
+   automatically back to the the client who send private message.  If
+   away message is already set this replaces the old message with the
+   new one.  If `message' is NULL the old away message is removed. 
+   The sender may freely free the memory of the `message'. */
+
+void silc_client_set_away_message(SilcClient client,
+				  SilcClientConnection conn,
+				  char *message);
+
 #endif

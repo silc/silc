@@ -539,10 +539,22 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
 static void command_away(const char *data, SILC_SERVER_REC *server,
 			 WI_ITEM_REC *item)
 {
+  bool set;
+
   if (!IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
 
-  /* XXX TODO */
+  if (*data == '\0') {
+    /* Remove any possible away message */
+    silc_client_set_away_message(silc_client, server->conn, NULL);
+    set = FALSE;
+  } else {
+    /* Set the away message */
+    silc_client_set_away_message(silc_client, server->conn, (char *)data);
+    set = TRUE;
+  }
+
+  silc_command_exec(server, "UMODE", set ? "+g" : "-g");
 }
 
 typedef struct {

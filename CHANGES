@@ -3,6 +3,11 @@ Sun May 27 15:57:17 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Added invite list, ban list, some key management and connection
 	  error message printing to module formats in the Irssi SILC client.
 
+	* Added new silc_client_set_away_message to set the away message
+	  that is back to the person who sent private message.  The 
+	  affected file lib/silcclient/silcapi.h and the
+	  lib/silcclient/client_prvmsg.c.
+
 Sun May 27 12:39:48 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the private message sending in the Irssi SILC client,
