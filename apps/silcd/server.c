@@ -1744,7 +1744,7 @@ void silc_server_remove_from_channels(SilcServer server,
 	 channel globally from SILC network, in this case we will
 	 notify that this client has left the channel. */
       if (channel->global_users)
-	silc_server_send_notify_to_channel(server, channel, FALSE,
+	silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
 					   SILC_NOTIFY_TYPE_SIGNOFF, 1,
 					   clidp->data, clidp->len);
       
@@ -1758,7 +1758,7 @@ void silc_server_remove_from_channels(SilcServer server,
 
     /* Send notify to channel about client leaving SILC and thus
        the entire channel. */
-    silc_server_send_notify_to_channel(server, channel, FALSE,
+    silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
 				       SILC_NOTIFY_TYPE_SIGNOFF, 1,
 				       clidp->data, clidp->len);
     silc_buffer_free(chidp);
@@ -1804,7 +1804,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
     if (silc_list_count(channel->user_list) < 2) {
       /* Notify about leaving client if this channel has global users. */
       if (notify && channel->global_users)
-	silc_server_send_notify_to_channel(server, channel, FALSE,
+	silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
 					   SILC_NOTIFY_TYPE_LEAVE, 1,
 					   clidp->data, clidp->len);
       
@@ -1834,7 +1834,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
 
     /* Send notify to channel about client leaving the channel */
     if (notify)
-      silc_server_send_notify_to_channel(server, channel, FALSE,
+      silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
 					 SILC_NOTIFY_TYPE_LEAVE, 1,
 					 clidp->data, clidp->len);
     break;

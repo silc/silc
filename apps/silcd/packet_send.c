@@ -300,9 +300,12 @@ silc_server_packet_send_to_channel_real(SilcServer server,
    the channel. Usually this is used to send notify messages to the
    channel, things like notify about new user joining to the channel. 
    If `route' is FALSE then the packet is sent only locally and will not
-   be routed anywhere (for router locally means cell wide). */
+   be routed anywhere (for router locally means cell wide). If `sender'
+   is provided then the packet is not sent to that connection since it
+   originally came from it. */
 
 void silc_server_packet_send_to_channel(SilcServer server,
+					SilcSocketConnection sender,
 					SilcChannelEntry channel,
 					SilcPacketType type,
 					unsigned char route,
@@ -349,11 +352,14 @@ void silc_server_packet_send_to_channel(SilcServer server,
     sock = (SilcSocketConnection)router->connection;
     idata = (SilcIDListData)router;
     
-    SILC_LOG_DEBUG(("Sending channel message to router for routing"));
-
-    silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-					    idata->send_key, idata->hmac, 
-					    data, data_len, FALSE, force_send);
+    if (sock != sender) {
+      SILC_LOG_DEBUG(("Sending channel message to router for routing"));
+      
+      silc_server_packet_send_to_channel_real(server, sock, &packetdata,
+					      idata->send_key, idata->hmac, 
+					      data, data_len, FALSE, 
+					      force_send);
+    }
   }
 
   /* Send the message to clients on the channel's client list. */
@@ -378,6 +384,9 @@ void silc_server_packet_send_to_channel(SilcServer server,
       /* Get data used in packet header encryption, keys and stuff. */
       sock = (SilcSocketConnection)client->router->connection;
       idata = (SilcIDListData)client->router;
+
+      if (sender && sock == sender)
+	continue;
 
       /* Send the packet */
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
@@ -404,6 +413,9 @@ void silc_server_packet_send_to_channel(SilcServer server,
       /* Get data used in packet header encryption, keys and stuff. */
       sock = (SilcSocketConnection)client->connection;
       idata = (SilcIDListData)client;
+
+      if (sender && sock == sender)
+	continue;
 
       /* Send the packet */
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
@@ -522,6 +534,13 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	sock = (SilcSocketConnection)client->router->connection;
 	idata = (SilcIDListData)client->router;
 
+	if (sender_sock && sock == sender_sock)
+	  continue;
+
+	SILC_LOG_DEBUG(("Relaying packet to client ID(%s) %s (%s)", 
+			silc_id_render(client->id, SILC_ID_CLIENT),
+			sock->hostname, sock->ip));
+
 	/* Send the packet */
 	silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 						idata->send_key, idata->hmac, 
@@ -545,7 +564,11 @@ void silc_server_packet_relay_to_channel(SilcServer server,
       sock = (SilcSocketConnection)client->connection;
       idata = (SilcIDListData)client;
 
-      SILC_LOG_DEBUG(("Sending packet to client %s (%s)", 
+      if (sender_sock && sock == sender_sock)
+	continue;
+
+      SILC_LOG_DEBUG(("Sending packet to client ID(%s) %s (%s)", 
+		      silc_id_render(client->id, SILC_ID_CLIENT),
 		      sock->hostname, sock->ip));
 
       /* Send the packet */
@@ -717,9 +740,12 @@ void silc_server_send_notify_dest(SilcServer server,
 /* Sends notify message to a channel. The notify message sent is 
    distributed to all clients on the channel. If `router_notify' is TRUE
    then the notify may be routed to primary route or to some other routers.
-   If FALSE it is assured that the notify is sent only locally. */
+   If FALSE it is assured that the notify is sent only locally. If `sender'
+   is provided then the packet is not sent to that connection since it
+   originally came from it. */
 
 void silc_server_send_notify_to_channel(SilcServer server,
+					SilcSocketConnection sender,
 					SilcChannelEntry channel,
 					unsigned char route_notify,
 					SilcNotifyType type,
@@ -731,7 +757,7 @@ void silc_server_send_notify_to_channel(SilcServer server,
   va_start(ap, argc);
 
   packet = silc_notify_payload_encode(type, argc, ap);
-  silc_server_packet_send_to_channel(server, channel, 
+  silc_server_packet_send_to_channel(server, sender, channel, 
 				     SILC_PACKET_NOTIFY, route_notify,
 				     packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
@@ -1079,9 +1105,12 @@ void silc_server_send_new_channel_user(SilcServer server,
    sends this to the local server who sent the join command in case where
    the channel did not exist yet. Both normal and router servers uses this
    also to send this to locally connected clients on the channel. This
-   must not be broadcasted packet. Routers do not send this to each other. */
+   must not be broadcasted packet. Routers do not send this to each other. 
+   If `sender is provided then the packet is not sent to that connection since
+   it originally came from it. */
 
 void silc_server_send_channel_key(SilcServer server,
+				  SilcSocketConnection sender,
 				  SilcChannelEntry channel,
 				  unsigned char route)
 {
@@ -1101,7 +1130,8 @@ void silc_server_send_channel_key(SilcServer server,
                                            channel->channel_key->cipher->name,
                                            channel->key_len / 8, channel->key);
  
-  silc_server_packet_send_to_channel(server, channel, SILC_PACKET_CHANNEL_KEY,
+  silc_server_packet_send_to_channel(server, sender, channel, 
+				     SILC_PACKET_CHANNEL_KEY,
                                      route, packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
   silc_free(chid);

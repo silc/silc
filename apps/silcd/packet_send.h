@@ -49,6 +49,7 @@ void silc_server_packet_route(SilcServer server,
 			      SilcSocketConnection sock,
 			      SilcPacketContext *packet);
 void silc_server_packet_send_to_channel(SilcServer server,
+					SilcSocketConnection sender,
 					SilcChannelEntry channel,
 					SilcPacketType type,
 					unsigned char route,
@@ -91,6 +92,7 @@ void silc_server_send_notify_dest(SilcServer server,
 				  SilcNotifyType type,
 				  unsigned int argc, ...);
 void silc_server_send_notify_to_channel(SilcServer server,
+					SilcSocketConnection sender,
 					SilcChannelEntry channel,
 					unsigned char route_notify,
 					SilcNotifyType type,
@@ -129,6 +131,7 @@ void silc_server_send_new_channel_user(SilcServer server,
 				       void *client_id,
 				       unsigned int client_id_len);
 void silc_server_send_channel_key(SilcServer server,
+				  SilcSocketConnection sender,
 				  SilcChannelEntry channel,
 				  unsigned char route);
 void silc_server_send_command(SilcServer server, 

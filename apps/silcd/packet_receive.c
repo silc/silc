@@ -277,7 +277,7 @@ void silc_server_channel_key(SilcServer server,
 
   /* Distribute the key to everybody who is on the channel. If we are router
      we will also send it to locally connected servers. */
-  silc_server_send_channel_key(server, channel, FALSE);
+  silc_server_send_channel_key(server, sock, channel, FALSE);
 }
 
 /* Received packet to replace a ID. This checks that the requested ID
@@ -894,8 +894,8 @@ void silc_server_notify(SilcServer server,
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
 
     /* Send to channel */
-    silc_server_packet_send_to_channel(server, channel, packet->type, FALSE,
-				       packet->buffer->data, 
+    silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
 				       packet->buffer->len, FALSE);
 
     /* If the the client is not in local list we check global list (ie. the
@@ -953,8 +953,8 @@ void silc_server_notify(SilcServer server,
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
 
     /* Send to channel */
-    silc_server_packet_send_to_channel(server, channel, packet->type, FALSE,
-				       packet->buffer->data, 
+    silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
 				       packet->buffer->len, FALSE);
 
     /* Get client entry */
@@ -1037,11 +1037,7 @@ void silc_server_new_channel_user(SilcServer server,
   SilcClientEntry client;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
-  SilcIDList id_list;
-  SilcServerEntry tmpserver, router;
-  SilcSocketConnection router_sock;
   SilcBuffer clidp;
-  void *tmpid;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1071,28 +1067,6 @@ void silc_server_new_channel_user(SilcServer server,
   client_id = silc_id_str2id(tmpid2, SILC_ID_CLIENT);
   if (!client_id)
     goto out;
-
-#if 0
-  /* If the packet is originated from the one who sent it to us we know
-     that the ID belongs to our cell, unless the sender was router. */
-  tmpid = silc_id_str2id(packet->src_id, SILC_ID_SERVER);
-  tmpserver = (SilcServerEntry)sock->user_data;
-
-  if (!SILC_ID_SERVER_COMPARE(tmpid, tmpserver->id) &&
-      sock->type == SILC_SOCKET_TYPE_SERVER) {
-    id_list = server->local_list;
-    router_sock = sock;
-    router = sock->user_data;
-  } else {
-    id_list = server->global_list;
-    router_sock = (SilcSocketConnection)server->router->connection;
-    router = server->router;
-  }
-  silc_free(tmpid);
-#endif
-
-  router_sock = sock;
-  router = sock->user_data;
 
   /* Find the channel */
   channel = silc_idlist_find_channel_by_id(server->local_list, 
@@ -1136,7 +1110,7 @@ void silc_server_new_channel_user(SilcServer server,
      it is assured that this is sent only to our local clients and locally
      connected servers if needed. */
   clidp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
-  silc_server_send_notify_to_channel(server, channel, FALSE,
+  silc_server_send_notify_to_channel(server, sock, channel, FALSE,
 				     SILC_NOTIFY_TYPE_JOIN, 
 				     1, clidp->data, clidp->len);
   silc_buffer_free(clidp);

@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2001/02/02 13:34:45  priikone
+ * 	updates.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -58,6 +61,8 @@ void silc_id_create_server_id(int sock, SilcRng rng, SilcServerID **new_id)
   (*new_id)->ip = server.sin_addr;
   (*new_id)->port = server.sin_port;
   (*new_id)->rnd = silc_rng_get_rn16(rng);
+
+  SILC_LOG_DEBUG(("New ID (%s)", silc_id_render(*new_id, SILC_ID_SERVER)));
 }
 
 /* Creates Client ID */
@@ -83,6 +88,8 @@ void silc_id_create_client_id(SilcServerID *server_id, SilcRng rng,
   (*new_id)->ip.s_addr = server_id->ip.s_addr;
   (*new_id)->rnd = silc_rng_get_byte(rng);
   memcpy((*new_id)->hash, hash, CLIENTID_HASH_LEN);
+
+  SILC_LOG_DEBUG(("New ID (%s)", silc_id_render(*new_id, SILC_ID_CLIENT)));
 }
 
 /* Creates Channel ID */
@@ -102,4 +109,6 @@ void silc_id_create_channel_id(SilcServerID *router_id, SilcRng rng,
   (*new_id)->ip.s_addr = router_id->ip.s_addr;
   (*new_id)->port = router_id->port;
   (*new_id)->rnd = silc_rng_get_rn16(rng);
+
+  SILC_LOG_DEBUG(("New ID (%s)", silc_id_render(*new_id, SILC_ID_CHANNEL)));
 }

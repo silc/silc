@@ -1356,7 +1356,7 @@ SILC_SERVER_CMD_FUNC(topic)
     idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
     /* Send notify about topic change to all clients on the channel */
-    silc_server_send_notify_to_channel(server, channel, TRUE,
+    silc_server_send_notify_to_channel(server, NULL, channel, TRUE,
 				       SILC_NOTIFY_TYPE_TOPIC_SET, 2,
 				       idp->data, idp->len,
 				       channel->topic, strlen(channel->topic));
@@ -1790,7 +1790,7 @@ static void silc_server_command_join_channel(SilcServer server,
 
   /* Send the channel key. This is broadcasted to the channel but is not
      sent to the client who is joining to the channel. */
-  silc_server_send_channel_key(server, channel, 
+  silc_server_send_channel_key(server, NULL, channel, 
 			       server->server_type == SILC_ROUTER ? 
 			       FALSE : server->standalone);
 
@@ -1847,7 +1847,7 @@ static void silc_server_command_join_channel(SilcServer server,
 
   if (!cmd->pending) {
     /* Send JOIN notify to locally connected clients on the channel */
-    silc_server_send_notify_to_channel(server, channel, FALSE,
+    silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
 				       SILC_NOTIFY_TYPE_JOIN, 1,
 				       clidp->data, clidp->len);
 
@@ -2470,7 +2470,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   /* Send CMODE_CHANGE notify */
   cidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-  silc_server_send_notify_to_channel(server, channel, TRUE,
+  silc_server_send_notify_to_channel(server, NULL, channel, TRUE,
 				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 2,
 				     cidp->data, cidp->len, 
 				     tmp_mask, tmp_len);
@@ -2636,7 +2636,7 @@ SILC_SERVER_CMD_FUNC(cumode)
   /* Send notify to channel, notify only if mode was actually changed. */
   if (notify) {
     idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-    silc_server_send_notify_to_channel(server, channel, TRUE,
+    silc_server_send_notify_to_channel(server, NULL, channel, TRUE,
 				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3,
 				       idp->data, idp->len,
 				       tmp_mask, 4, tmp_id, tmp_len);
