@@ -327,7 +327,13 @@ typedef struct {
      the command reply status server returned. The `command' is the command
      reply being processed. The function has variable argument list and each
      command defines the number and type of arguments it passes to the
-     application (on error they are not sent). */
+     application (on error they are not sent).
+
+     The arguments are sent in the same order as servers sends them.  The 
+     arguments are same as received from the server except for ID's.  If 
+     ID is received application receives the corresponding entry to the 
+     ID. For example, if Client ID is receives application receives 
+     SilcClientEntry. */
   void (*command_reply)(SilcClient client, SilcClientConnection conn,
 			SilcCommandPayload cmd_payload, int success,
 			SilcCommand command, SilcCommandStatus status, ...);
