@@ -1,7 +1,7 @@
 
                       SILC Client Library Manual
 
-                             Version 0.7
+                             Version 0.7.4
 
 1.0 Introduction
 
@@ -24,6 +24,23 @@ the library.  The `silcapi.h' also defines the client libary interface
 the application can call.  The interface includes for example functions
 for sending channel and private messages, client and channel retrieval
 and other utility functions.
+
+
+1.0.1 Including Library Headers
+
+Your application must include the following includes in your sources to 
+get access all SILC Client Library routines:
+
+#include "silcincludes.h"
+#include "clientlibincludes.h"
+
+If you are compiling with C++ compiler then you need to include the 
+headers as follows:
+
+extern "C" {
+#include "silcincludes.h"
+#include "clientlibincludes.h"
+}
 
 
 1.1 Creating Client
@@ -111,6 +128,60 @@ to run the client, call:
 Usually application may do some other initializations before calling
 this function.  For example before calling this function application
 should initialize the user interface.
+
+
+1.3.1 Running the Client in GUI application
+
+Many GUI applications has their own main loop or event loop, which they 
+would like to use or are forced to use by the underlaying system.  If you 
+are developing for example GUI application on Unix system, and you are 
+using GTK+ or QT as GUI library you would probably like to use their own 
+main loop.  SILC Client can be run under external main loop as well.  The 
+interface provides a function silc_client_run_one which will run the 
+client library once, and returns immediately.  During that running it can 
+process incoming data and send outgoing data, but it is guaranteed that it 
+will not block the calling process.
+
+It is suggested that you would call this function as many times in a 
+second as possible to provide smooth action for the client library.  You 
+can use an timeout task, or an idle task provided by your GUI library to 
+accomplish this.  After you have initialized the client library with 
+silc_client_init, you should register the timeout task or idle task that 
+will call the silc_client_run_one periodically.  In the Toolkit package 
+there is GTK-- GUI example in silcer/ directory.  That example calls the 
+silc_client_run_one every 50 milliseconds, and it should be sufficient for 
+smooth working.
+
+For Win32 the silc_client_run can be used instead of using the Windows's 
+own event loop.  However, if you would like to use the silc_client_run_one 
+also on Win32 systems it is possible.
+
+
+1.3.1.1 Running Client in GTK--
+
+Here is a short example how to run the SILC Client libary under the 
+Gnome/GTK--'s main loop:
+
+gint YourClass::silc_scheduler()
+{
+  // Run the SILC client once, and return immediately.  This function
+  // is called every 50 milliseconds by the Gnome main loop, to process
+  // SILC stuff.  This function will read data, and write data to network,
+  // etc.  Makes the client library tick! :)
+  silc_client_run_one(silc_client);
+  return 1;
+}
+
+then, during initialization of the SILC Client call:
+
+  // Setup SILC scheduler as timeout task. This will handle the SILC
+  // client library every 50 milliseconds.  It will actually make the
+  // SILC client work on background.
+  Gnome::Main::timeout.connect(slot(this, &YourClass::silc_scheduler), 50);
+
+This will call the function silc_scheduler every 50 millisecconds, which 
+on the otherhand will call silc_client_run_one, which will make the SILC 
+Client library work on the background of the GUI application.
 
 
 1.4 Creating Connection to Server

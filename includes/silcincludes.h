@@ -223,8 +223,8 @@ typedef int32 int64;
 typedef uint32 * void *;
 #endif
 
+#ifndef __cplusplus
 #ifndef bool
-#ifndef CXX
 #define bool unsigned char
 #endif
 #endif

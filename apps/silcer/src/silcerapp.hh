@@ -24,7 +24,6 @@
 #include "silcer_gladehelper.hh"
 
 extern "C" {
-#define CXX
 #include "silcincludes.h"
 #include "clientlibincludes.h"
 }
