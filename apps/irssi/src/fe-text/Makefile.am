@@ -24,6 +24,7 @@ silc_LDADD = \
 	@PERL_LINK_FLAGS@ \
 	@PROG_LIBS@	\
 	-L../../../lib -lsilcclient
+silc_LDFLAGS = -export-dynamic
 
 tparm_sources = \
 	tparm.c

@@ -372,13 +372,16 @@ static void term_printed_text(int count)
 	   However, next term_move() really shouldn't try to cache
 	   the move, otherwise terminals would try to combine the
 	   last word in upper line with first word in lower line. */
-        cforcemove = TRUE;
 	vcx += count;
 	while (vcx >= term_width) {
 		vcx -= term_width;
 		if (vcy < term_height-1) vcy++;
 		if (vcx > 0) term_lines_empty[vcy] = FALSE;
 	}
+
+	crealx += count;
+	if (crealx >= term_width)
+		cforcemove = TRUE;
 }
 
 void term_addch(TERM_WINDOW *window, int chr)
@@ -387,15 +390,17 @@ void term_addch(TERM_WINDOW *window, int chr)
 
 	if (vcmove) term_move_real();
 
-	/* With UTF-8, move cursor only if this char is either single-byte
-	   (8. bit on) or beginning of multibyte (7+8 bits on) */
-	if (term_type != TERM_TYPE_UTF8 ||
-	    (chr & 0x80) == 0 || (chr & 0x40) == 0) {
-		term_printed_text(1);
-	}
+	if (vcy < term_height-1 || vcx < term_width-1) {
+		/* With UTF-8, move cursor only if this char is either
+		   single-byte (8. bit off) or beginning of multibyte
+		   (7. bit off) */
+		if (term_type != TERM_TYPE_UTF8 ||
+		    (chr & 0x80) == 0 || (chr & 0x40) == 0) {
+			term_printed_text(1);
+		}
 
-	if (vcy != term_height || vcx != 0)
 		putc(chr, window->term->out);
+	}
 }
 
 static void term_addch_utf8(TERM_WINDOW *window, unichar chr)
@@ -413,10 +418,10 @@ void term_add_unichar(TERM_WINDOW *window, unichar chr)
 	if (term_detached) return;
 
 	if (vcmove) term_move_real();
-        term_printed_text(1);
-	if (vcy == term_height && vcx == 0)
+	if (vcy == term_height-1 && vcx == term_width-1)
 		return; /* last char in screen */
 
+        term_printed_text(1);
 	switch (term_type) {
 	case TERM_TYPE_UTF8:
                 term_addch_utf8(window, chr);
@@ -486,6 +491,7 @@ void term_refresh(TERM_WINDOW *window)
 		terminfo_set_cursor_visible(TRUE);
                 curs_visible = TRUE;
 	}
+
 	term_set_color(window, ATTR_RESET);
 	fflush(window != NULL ? window->term->out : current_term->out);
 }
@@ -493,11 +499,6 @@ void term_refresh(TERM_WINDOW *window)
 void term_refresh_freeze(void)
 {
         freeze_counter++;
-
-	if (!term_detached && curs_visible) {
-		terminfo_set_cursor_visible(FALSE);
-                curs_visible = FALSE;
-	}
 }
 
 void term_refresh_thaw(void)

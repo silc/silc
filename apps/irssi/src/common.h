@@ -1,8 +1,9 @@
 #ifndef __COMMON_H
 #define __COMMON_H
 
-#define IRSSI_AUTHOR "Timo Sirainen <cras@irssi.org>"
 #define IRSSI_WEBSITE "http://irssi.org/"
+#define IRSSI_AUTHOR_EMAIL "cras@irssi.org"
+#define IRSSI_AUTHOR "Timo Sirainen <"IRSSI_AUTHOR_EMAIL">"
 
 #define IRSSI_DIR_SHORT "~/.silc"
 #define IRSSI_DIR_FULL "%s/.silc" /* %s == g_get_home_dir() */
@@ -100,6 +101,7 @@ typedef struct _LINEBUF_REC LINEBUF_REC;
 typedef struct _NET_SENDBUF_REC NET_SENDBUF_REC;
 typedef struct _RAWLOG_REC RAWLOG_REC;
 
+typedef struct _CHAT_PROTOCOL_REC CHAT_PROTOCOL_REC;
 typedef struct _CHATNET_REC CHATNET_REC;
 typedef struct _SERVER_REC SERVER_REC;
 typedef struct _WI_ITEM_REC WI_ITEM_REC;

@@ -28,7 +28,8 @@
 typedef struct {
         PERL_SCRIPT_REC *script;
 	int tag;
-        int refcount;
+	int refcount;
+	int once; /* run only once */
 
 	SV *func;
 	SV *data;
@@ -41,14 +42,15 @@ static void perl_source_ref(PERL_SOURCE_REC *rec)
         rec->refcount++;
 }
 
-static void perl_source_unref(PERL_SOURCE_REC *rec)
+static int perl_source_unref(PERL_SOURCE_REC *rec)
 {
 	if (--rec->refcount != 0)
-		return;
+		return TRUE;
 
         SvREFCNT_dec(rec->data);
         SvREFCNT_dec(rec->func);
 	g_free(rec);
+	return FALSE;
 }
 
 static void perl_source_destroy(PERL_SOURCE_REC *rec)
@@ -64,6 +66,7 @@ static void perl_source_destroy(PERL_SOURCE_REC *rec)
 static int perl_source_event(PERL_SOURCE_REC *rec)
 {
 	dSP;
+	int retcount;
 
 	ENTER;
 	SAVETMPS;
@@ -73,7 +76,7 @@ static int perl_source_event(PERL_SOURCE_REC *rec)
 	PUTBACK;
 
         perl_source_ref(rec);
-	perl_call_sv(rec->func, G_EVAL|G_DISCARD);
+	retcount = perl_call_sv(rec->func, G_EVAL|G_SCALAR);
 	SPAGAIN;
 
 	if (SvTRUE(ERRSV)) {
@@ -81,7 +84,9 @@ static int perl_source_event(PERL_SOURCE_REC *rec)
 		signal_emit("script error", 2, rec->script, error);
                 g_free(error);
 	}
-        perl_source_unref(rec);
+
+	if (perl_source_unref(rec) && rec->once)
+		perl_source_destroy(rec);
 
 	PUTBACK;
 	FREETMPS;
@@ -90,7 +95,7 @@ static int perl_source_event(PERL_SOURCE_REC *rec)
 	return 1;
 }
 
-int perl_timeout_add(int msecs, SV *func, SV *data)
+int perl_timeout_add(int msecs, SV *func, SV *data, int once)
 {
         PERL_SCRIPT_REC *script;
 	PERL_SOURCE_REC *rec;
@@ -103,7 +108,8 @@ int perl_timeout_add(int msecs, SV *func, SV *data)
 	rec = g_new0(PERL_SOURCE_REC, 1);
 	perl_source_ref(rec);
 
-        rec->script = script;
+	rec->once = once;
+	rec->script = script;
 	rec->func = perl_func_sv_inc(func, pkg);
 	rec->data = SvREFCNT_inc(data);
 	rec->tag = g_timeout_add(msecs, (GSourceFunc) perl_source_event, rec);
@@ -112,7 +118,7 @@ int perl_timeout_add(int msecs, SV *func, SV *data)
 	return rec->tag;
 }
 
-int perl_input_add(int source, int condition, SV *func, SV *data)
+int perl_input_add(int source, int condition, SV *func, SV *data, int once)
 {
         PERL_SCRIPT_REC *script;
 	PERL_SOURCE_REC *rec;
@@ -126,6 +132,7 @@ int perl_input_add(int source, int condition, SV *func, SV *data)
 	rec = g_new0(PERL_SOURCE_REC, 1);
 	perl_source_ref(rec);
 
+	rec->once = once;
         rec->script =script;
 	rec->func = perl_func_sv_inc(func, pkg);
 	rec->data = SvREFCNT_inc(data);

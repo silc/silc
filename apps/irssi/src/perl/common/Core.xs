@@ -193,7 +193,22 @@ CODE:
 		croak("Irssi::timeout() : msecs must be >= 10");
 		RETVAL = -1;
 	} else {
-		RETVAL = perl_timeout_add(msecs, func, data);
+		RETVAL = perl_timeout_add(msecs, func, data, FALSE);
+	}
+OUTPUT:
+	RETVAL
+
+int
+timeout_add_once(msecs, func, data)
+	int msecs
+	SV *func
+	SV *data
+CODE:
+	if (msecs < 10) {
+		croak("Irssi::timeout_once() : msecs must be >= 10");
+		RETVAL = -1;
+	} else {
+		RETVAL = perl_timeout_add(msecs, func, data, TRUE);
 	}
 OUTPUT:
 	RETVAL
@@ -430,9 +445,15 @@ int
 level2bits(str)
 	char *str
 
-char *
+void
 bits2level(bits)
 	int bits
+PREINIT:
+	char *ret;
+PPCODE:
+	ret = bits2level(bits);
+	XPUSHs(sv_2mortal(new_pv(ret)));
+	g_free(ret);
 
 int
 combine_level(level, str)
@@ -498,7 +519,7 @@ void
 pidwait_remove(pid)
 	int pid
 
-char *
+void
 parse_special(cmd, data="", flags=0)
 	char *cmd
 	char *data
