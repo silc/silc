@@ -1,4 +1,11 @@
-Tue Jan 14 12:25:09 CET 2003 Pekka Riikonen <priikone@silcnet.org>
+Wed Jan 15 11:03:36 CET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Removed --session and --dummy options from Irssi SILC Client.
+	  -d option is available only if --enable-debug was given.
+	  Affected files are irssi/src/silc/core/silc-core,
+	  irssi/src/core/session.c and irssi/src/fe-text/silc.c.
+
+Tue Jan 14 12:25:09 CET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_buffer_steal to steal the data from the buffer.
 	  Affected file lib/silcutil/silcbuffer.h.
