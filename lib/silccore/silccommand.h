@@ -89,7 +89,8 @@ typedef unsigned short SilcCommandStatus;
 /* Command Status messages */
 #define SILC_STATUS_OK                      0
 #define SILC_STATUS_LIST_START              1
-#define SILC_STATUS_LIST_END                2
+#define SILC_STATUS_LIST_ITEM               2
+#define SILC_STATUS_LIST_END                3
 #define SILC_STATUS_ERR_NO_SUCH_NICK        10
 #define SILC_STATUS_ERR_NO_SUCH_CHANNEL     11
 #define SILC_STATUS_ERR_NO_SUCH_SERVER      12
