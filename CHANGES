@@ -4,6 +4,10 @@ Tue Dec 17 10:05:00 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  file is lib/silcutil/silcfileutil.c.  A patch by Matthew
 	  Aldous <Matthew@Aldous.com>.
 
+	* Added better implementation using CriticalSection of
+	  SilcMutex on WIN32.  A patch by Mikko Lähteenmäki
+	  <mikko.lahteenmaki@pikabaana.net>.
+
 Mon Dec 16 19:33:05 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed double free in async host lookup code.  Affected file
