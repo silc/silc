@@ -1,6 +1,9 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o Waiting the answer for accepting new key after the protocol has
+   timeout and then ansering Y will crash the client.
+
  o Add PERL scripting support from Irssi CVS.
 
  o Add local commands to list the current server and client public keys
