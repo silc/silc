@@ -782,11 +782,17 @@ void silc_server_send_private_message(SilcServer server,
     silc_server_packet_send_real(server, dst_sock, FALSE);
 
   } else {
-    /* Key exist so just send it */
+    /* Key exist so encrypt just header and send it */
     silc_buffer_push(buffer, SILC_PACKET_HEADER_LEN + packet->src_id_len 
 		     + packet->dst_id_len + packet->padlen);
     silc_packet_send_prepare(dst_sock, 0, 0, buffer->len);
     silc_buffer_put(dst_sock->outbuf, buffer->data, buffer->len);
+
+    /* Encrypt header */
+    silc_packet_encrypt(cipher, hmac, dst_sock->outbuf, 
+			SILC_PACKET_HEADER_LEN + packet->src_id_len + 
+			packet->dst_id_len + packet->padlen);
+
     silc_server_packet_send_real(server, dst_sock, FALSE);
   }
 }

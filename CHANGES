@@ -1,3 +1,16 @@
+Wed Mar 28 20:50:47 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Redefined the Private Message Payload to support private message
+	  keys and to support the new private message flags.  Updated
+	  the protocol specs.
+
+	* Added new type SilcPrivateMessagePayload and defined an API
+	  for it in the lib/silcclient/silcprivate.[ch].
+
+	* Tested private message private keys successfully.  Tested the
+	  private message key set, unset and list commands with the new
+	  KEY command.
+
 Wed Mar 28 15:52:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added SilcKeyAgreementStatus type to the key agreement routines

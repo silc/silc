@@ -168,6 +168,7 @@
 #include "silcnotify.h"
 #include "silcmode.h"
 #include "silcauth.h"
+#include "silcprivate.h"
 
 /* TRQ (SilcList API and SilcDList API) */
 #include "silclist.h"

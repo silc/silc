@@ -42,22 +42,16 @@ void silc_client_send_private_message(SilcClient client,
   SilcSocketConnection sock = conn->sock;
   SilcBuffer buffer;
   SilcPacketContext packetdata;
-  unsigned int nick_len;
   SilcCipher cipher;
   SilcHmac hmac;
 
   SILC_LOG_DEBUG(("Sending private message"));
 
-  /* Create private message payload */
-  nick_len = strlen(conn->nickname);
-  buffer = silc_buffer_alloc(2 + nick_len + data_len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
-  silc_buffer_format(buffer,
-		     SILC_STR_UI_SHORT(nick_len),
-		     SILC_STR_UI_XNSTRING(conn->nickname,
-					  nick_len),
-		     SILC_STR_UI_XNSTRING(data, data_len),
-		     SILC_STR_END);
+  /* Encode private message payload */
+  buffer = silc_private_message_payload_encode(strlen(conn->nickname),
+					       conn->nickname, 0,
+					       data_len, data,
+					       client_entry->send_key);
 
   /* If we don't have private message specific key then private messages
      are just as any normal packet thus call normal packet sending.  If
@@ -101,12 +95,7 @@ void silc_client_send_private_message(SilcClient client,
   
   packetdata.buffer = sock->outbuf;
 
-  /* Encrypt payload of the packet. Encrypt with private message specific
-     key */
-  cipher->cipher->encrypt(cipher->context, buffer->data, buffer->data,
-			  buffer->len, cipher->iv);
-      
-  /* Put the actual encrypted payload data into the buffer. */
+  /* Put the actual encrypted message payload data into the buffer. */
   silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
 
   /* Create the outgoing packet */
@@ -126,8 +115,20 @@ void silc_client_send_private_message(SilcClient client,
   silc_free(packetdata.dst_id);
 
  out:
-  silc_free(buffer);
+  silc_buffer_free(buffer);
 }     
+
+static void silc_client_private_message_cb(SilcClient client,
+					   SilcClientConnection conn,
+					   SilcClientEntry *clients,
+					   unsigned int clients_count,
+					   void *context)
+{
+  SilcPacketContext *packet = (SilcPacketContext *)context;
+
+  silc_client_private_message(client, conn->sock, packet);
+  silc_packet_context_free(packet);
+}
 
 /* Private message received. This processes the private message and
    finally displays it on the screen. */
@@ -137,28 +138,13 @@ void silc_client_private_message(SilcClient client,
 				 SilcPacketContext *packet)
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
-  SilcBuffer buffer = packet->buffer;
+  SilcPrivateMessagePayload payload = NULL;
   SilcIDCacheEntry id_cache;
   SilcClientID *remote_id = NULL;
   SilcClientEntry remote_client;
-  unsigned short nick_len;
-  unsigned char *nickname, *message = NULL;
-  int ret;
 
   if (packet->src_id_type != SILC_ID_CLIENT)
     goto out;
-
-  /* Get nickname */
-  ret = silc_buffer_unformat(buffer, 
-			     SILC_STR_UI16_NSTRING_ALLOC(&nickname, &nick_len),
-			     SILC_STR_END);
-  if (ret == -1)
-    return;
-
-  silc_buffer_pull(buffer, 2 + nick_len);
-
-  message = silc_calloc(buffer->len + 1, sizeof(char));
-  memcpy(message, buffer->data, buffer->len);
 
   remote_id = silc_id_str2id(packet->src_id, packet->src_id_len, 
 			     SILC_ID_CLIENT);
@@ -167,24 +153,28 @@ void silc_client_private_message(SilcClient client,
 
   /* Check whether we know this client already */
   if (!silc_idcache_find_by_id_one(conn->client_cache, remote_id,
-				   SILC_ID_CLIENT, &id_cache))
-    {
-      /* Allocate client entry */
-      remote_client = silc_calloc(1, sizeof(*remote_client));
-      remote_client->id = silc_id_dup(remote_id, SILC_ID_CLIENT);
-      silc_parse_nickname(nickname, &remote_client->nickname, 
-			  &remote_client->server, &remote_client->num);
-      
-      /* Save the client to cache */
-      silc_idcache_add(conn->client_cache, remote_client->nickname,
-		       strlen(remote_client->nickname), SILC_ID_CLIENT, 
-		       remote_client->id, remote_client, TRUE, TRUE);
-    } else {
-      remote_client = (SilcClientEntry)id_cache->context;
-    }
+				   SILC_ID_CLIENT, &id_cache)) {
+    /* Resolve the client info */
+    silc_client_get_client_by_id_resolve(client, conn, remote_id,
+					 silc_client_private_message_cb,
+					 silc_packet_context_dup(packet));
+    return;
+  }
+
+  remote_client = (SilcClientEntry)id_cache->context;
+
+  /* Parse the payload and decrypt it also if private message key is set */
+  payload = silc_private_message_payload_parse(packet->buffer,
+					       remote_client->send_key);
+  if (!payload) {
+    silc_free(remote_id);
+    return;
+  }
 
   /* Pass the private message to application */
-  client->ops->private_message(client, conn, remote_client, message);
+  client->ops->private_message(client, conn, remote_client, 
+			       silc_private_message_get_message(payload, 
+								NULL));
 
   /* See if we are away (gone). If we are away we will reply to the
      sender with the set away message. */
@@ -200,14 +190,10 @@ void silc_client_private_message(SilcClient client,
   }
 
  out:
+  if (payload)
+    silc_private_message_payload_free(payload);
   if (remote_id)
     silc_free(remote_id);
-
-  if (message) {
-    memset(message, 0, buffer->len);
-    silc_free(message);
-  }
-  silc_free(nickname);
 }
 
 /* Function that actually employes the received private message key */

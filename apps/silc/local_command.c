@@ -417,7 +417,7 @@ SILC_CLIENT_LCMD_FUNC(key)
   if (!strcasecmp(cmd->argv[3], "set")) {
     command = 1;
 
-    if (cmd->argc == 3) {
+    if (cmd->argc == 4) {
       if (curr_key && type == 1 && client_entry) {
 	silc_client_del_private_message_key(client, conn, client_entry);
 	silc_client_add_private_message_key_ske(client, conn, client_entry,
@@ -426,13 +426,13 @@ SILC_CLIENT_LCMD_FUNC(key)
       }
     }
 
-    if (cmd->argc >= 4) {
+    if (cmd->argc >= 5) {
       if (type == 1 && client_entry) {
 	/* Set private message key */
 	
 	silc_client_del_private_message_key(client, conn, client_entry);
 
-	if (cmd->argc >= 5)
+	if (cmd->argc >= 6)
 	  silc_client_add_private_message_key(client, conn, client_entry,
 					      cmd->argv[5], cmd->argv[4],
 					      cmd->argv_lens[4],
@@ -458,9 +458,9 @@ SILC_CLIENT_LCMD_FUNC(key)
 	  goto out;
 	}
 
-	if (cmd->argc >= 5)
-	  cipher = cmd->argv[5];
 	if (cmd->argc >= 6)
+	  cipher = cmd->argv[5];
+	if (cmd->argc >= 7)
 	  hmac = cmd->argv[6];
 
 	if (!silc_client_add_channel_private_key(client, conn, channel_entry,
@@ -489,10 +489,10 @@ SILC_CLIENT_LCMD_FUNC(key)
       unsigned int keys_count;
       int number;
 
-      if (cmd->argc == 3)
+      if (cmd->argc == 4)
 	silc_client_del_channel_private_keys(client, conn, channel_entry);
 
-      if (cmd->argc > 3) {
+      if (cmd->argc > 4) {
 	number = atoi(cmd->argv[4]);
 	keys = silc_client_list_channel_private_keys(client, conn, 
 						     channel_entry,
@@ -533,7 +533,7 @@ SILC_CLIENT_LCMD_FUNC(key)
       if (nickname[0] == '*') {
 	silc_say(client, conn, "Private message keys");
 	silc_say(client, conn, 
-		 "  Client                        Cipher        Key");
+		 "  Client                         Cipher         Key");
 	for (k = 0; k < keys_count; k++) {
 	  memset(buf, 0, sizeof(buf));
 	  strncat(buf, "  ", 2);
@@ -562,7 +562,7 @@ SILC_CLIENT_LCMD_FUNC(key)
 	silc_say(client, conn, "Private message key", 
 		 client_entry->nickname);
 	silc_say(client, conn, 
-		 "  Client                        Cipher        Key");
+		 "  Client                         Cipher         Key");
 	for (k = 0; k < keys_count; k++) {
 	  if (keys[k].client_entry != client_entry)
 	    continue;

@@ -1423,9 +1423,12 @@ static int silc_server_packet_decrypt_check(SilcPacketType packet_type,
 
      all other packets are special packets 
   */
-  if ((packet_type == SILC_PACKET_PRIVATE_MESSAGE &&
-       !(buffer->data[2] & SILC_PACKET_FLAG_PRIVMSG_KEY)) ||
-      packet_type != SILC_PACKET_CHANNEL_MESSAGE || 
+
+  if (packet_type == SILC_PACKET_PRIVATE_MESSAGE &&
+      (buffer->data[2] & SILC_PACKET_FLAG_PRIVMSG_KEY))
+    return FALSE;
+
+  if (packet_type != SILC_PACKET_CHANNEL_MESSAGE || 
       (packet_type == SILC_PACKET_CHANNEL_MESSAGE &&
        parse_ctx->sock->type == SILC_SOCKET_TYPE_ROUTER &&
        server->server_type == SILC_ROUTER))

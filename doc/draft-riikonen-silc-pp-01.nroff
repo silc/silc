@@ -1640,8 +1640,14 @@ diagram represents the Private Message Payload.
 ~                            Nickname                           ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|            Flags              |      Message Data Length      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
 ~                          Message Data                         ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                             Padding                           ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
@@ -1662,9 +1668,24 @@ o Nickname (variable length) - Nickname of the sender of the
   to the Client ID in the SILC Packet Header.  This nickname 
   is merely provided to be displayed by the client.
 
+o Flags (2 bytes) - This field includes the flags of the
+  private message.  They can indicate a different reason or
+  purpose for the private message.  See section XXX for the
+  defined flags.
+
+o Message Data Length (2 bytes) - Indicates the length of the
+  Message Data field, not includes any other field.
+
 o Message Data (variable length) - The actual message to
   the client.  Rest of the packet is reserved for the message
   data.
+
+o Padding (variable length) - This field is present only
+  when the private message payload is encrypted with private
+  message key.  In this case the padding is applied to make
+  the packet multiple by eight (8), or by the block size of
+  the cipher, which ever is larger.  When encrypted with
+  normal session keys, this field must not be included.
 .in 3
 
 
