@@ -147,7 +147,6 @@ void silc_client_private_message(SilcClient client,
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   SilcPrivateMessagePayload payload = NULL;
-  SilcIDCacheEntry id_cache = NULL;
   SilcClientID *remote_id = NULL;
   SilcClientEntry remote_client;
   SilcMessageFlags flags;
@@ -162,11 +161,8 @@ void silc_client_private_message(SilcClient client,
 
   /* Check whether we know this client already */
   remote_client = silc_client_get_client_by_id(client, conn, remote_id);
-  if (!remote_client ||
-      ((SilcClientEntry)id_cache->context)->nickname == NULL) {
-
+  if (!remote_client || !remote_client->nickname) {
     if (remote_client) {
-      remote_client = (SilcClientEntry)id_cache->context;
       if (remote_client->status & SILC_CLIENT_STATUS_RESOLVING) {
 	remote_client->status &= ~SILC_CLIENT_STATUS_RESOLVING;
 	goto out;

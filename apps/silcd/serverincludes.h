@@ -26,8 +26,8 @@
 
 /* SILC Server includes */
 #include "idlist.h"
-#include "serverconfig.h"
 #include "server.h"
+#include "serverconfig.h"
 #include "serverid.h"
 #include "server_util.h"
 #include "packet_send.h"

@@ -1,3 +1,9 @@
+Thu Jan 31 23:34:33 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed private message handling.  It used some old code that
+	  caused the client to crash.  Affecte file is
+	  lib/silcclient/client_prvmsg.c.
+
 Thu Jan 31 19:06:22 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added function silc_client_add_channel, 
