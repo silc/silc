@@ -1,3 +1,9 @@
+Sun Mar  9 16:29:20 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Remove the mark for output (mark it only for input) after
+	  purging outgoing queue.  Prevents the "Error in select()"
+	  floods.  Affected file silcd/packet_send.c.
+
 Tue Feb  4 22:53:26 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* NULL terminate allocated string in silc_buffer_strformat.

@@ -2009,6 +2009,7 @@ void silc_server_packet_queue_purge(SilcServer server,
     server->stat.packets_sent++;
     silc_packet_send(sock, TRUE);
     SILC_UNSET_OUTBUF_PENDING(sock);
+    SILC_SET_CONNECTION_FOR_INPUT(server->schedule, sock->sock);
     silc_buffer_clear(sock->outbuf);
   }
 }
