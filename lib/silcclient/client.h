@@ -135,6 +135,9 @@ struct SilcClientConnectionStruct {
      and the actual client object is accesible through this pointer. */
   SilcClient client;
 
+  /* Connection parameters */
+  SilcClientConnectionParams params;
+
   /* User data context. Library does not touch this. */
   void *context;
 };

@@ -186,10 +186,10 @@ static void silc_client_entry_destructor(SilcIDCache cache,
    application performed the connecting outside the library. The library
    however may use this internally. */
 
-SilcClientConnection silc_client_add_connection(SilcClient client,
-						char *hostname,
-						int port,
-						void *context)
+SilcClientConnection
+silc_client_add_connection(SilcClient client,
+                           SilcClientConnectionParams *params,
+                           char *hostname, int port, void *context)
 {
   SilcClientConnection conn;
   int i;
@@ -207,6 +207,13 @@ SilcClientConnection silc_client_add_connection(SilcClient client,
   conn->context = context;
   conn->pending_commands = silc_dlist_init();
   conn->ftp_sessions = silc_dlist_init();
+
+  if (params) {
+    if (params->detach_data)
+      conn->params.detach_data = silc_memdup(params->detach_data,
+					     params->detach_data_len);
+    conn->params.detach_data_len = params->detach_data_len;
+  }
 
   /* Add the connection to connections table */
   for (i = 0; i < client->internal->conns_count; i++)
@@ -330,8 +337,9 @@ silc_client_connect_to_server_internal(SilcClientInternalConnectContext *ctx)
    case then this function is not used at all. When the connecting is
    done the `connect' client operation is called. */
 
-int silc_client_connect_to_server(SilcClient client, int port,
-				  char *host, void *context)
+int silc_client_connect_to_server(SilcClient client,
+                                  SilcClientConnectionParams *params,
+                                  int port, char *host, void *context)
 {
   SilcClientInternalConnectContext *ctx;
   SilcClientConnection conn;
@@ -340,7 +348,7 @@ int silc_client_connect_to_server(SilcClient client, int port,
   SILC_LOG_DEBUG(("Connecting to port %d of server %s",
 		  port, host));
 
-  conn = silc_client_add_connection(client, host, port, context);
+  conn = silc_client_add_connection(client, params, host, port, context);
 
   client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
 			     "Connecting to port %d of server %s", port, host);

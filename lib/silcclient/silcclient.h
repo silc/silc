@@ -622,12 +622,38 @@ void silc_client_stop(SilcClient client);
 
 /* Connecting functions (client.c) */
 
+/****s* silcclient/SilcClientAPI/SilcClientConnectionParams
+ *
+ * NAME
+ *
+ *    typedef struct { ... } SilcClientConnectionParams;
+ *
+ * DESCRIPTION
+ *
+ *    Client connection parameters.  This can be filled by the application
+ *    and given as argument to silc_client_connect_to_server or to
+ *    silc_client_add_connection.
+ *
+ * SOURCE
+ */
+typedef struct {
+  /* The SILC session detachment data that was returned by `detach' client
+     operation when the application detached from the network.  Application
+     is responsible of saving the data and giving it as argument here
+     for resuming the session in the SILC network. */
+  unsigned char *detach_data;
+  SilcUInt32 detach_data_len;
+
+} SilcClientConnectionParams;
+/***/
+
 /****f* silcclient/SilcClientAPI/silc_client_connect_to_server
  *
  * SYNOPSIS
  *
- *    int silc_client_connect_to_server(SilcClient client, int port,
- *                                      char *host, void *context);
+ *    int silc_client_connect_to_server(SilcClient client, 
+ *                                      SilcClientConnectionParams *params,
+ *                                      int port, char *host, void *context);
  *
  * DESCRIPTION
  *
@@ -637,20 +663,24 @@ void silc_client_stop(SilcClient client);
  *    that is created after the connection is created. Note that application
  *    may handle the connecting process outside the library. If this is the
  *    case then this function is not used at all. When the connecting is
- *    done the `connect' client operation is called.
+ *    done the `connect' client operation is called, and the `context' is
+ *    accessible with conn->context, conn being SilcClientConnection.
+ *    If the `params' is provided they are used by the routine.
  *
  ***/
-int silc_client_connect_to_server(SilcClient client, int port,
-				  char *host, void *context);
+int silc_client_connect_to_server(SilcClient client, 
+				  SilcClientConnectionParams *params,
+				  int port, char *host, void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_add_connection
  *
  * SYNOPSIS
  *
- *    SilcClientConnection silc_client_add_connection(SilcClient client,
- *                                                    char *hostname,
- *					              int port,
- *					              void *context);
+ *
+ *    SilcClientConnection
+ *    silc_client_add_connection(SilcClient client,
+ *                               SilcClientConnectionParams *params,
+ *                               char *hostname, int port, void *context);
  *
  * DESCRIPTION
  *
@@ -658,15 +688,21 @@ int silc_client_connect_to_server(SilcClient client, int port,
  *    connection to the connection table and returns a pointer to it. A client
  *    can have multiple connections to multiple servers. Every connection must
  *    be added to the client using this function. User data `context' may
- *    be sent as argument. This function is normally used only if the 
- *    application performed the connecting outside the library. The library
+ *    be sent as argument.  If the `params' is provided they are used by 
+ *    the routine.
+ *
+ * NOTES
+ *
+ *    This function is normally used only if the application performed 
+ *    the connecting outside the library, and did not called the
+ *    silc_client_connect_to_server function at all. The library
  *    however may use this internally.
  *
  ***/
-SilcClientConnection silc_client_add_connection(SilcClient client,
-						char *hostname,
-						int port,
-						void *context);
+SilcClientConnection
+silc_client_add_connection(SilcClient client,
+			   SilcClientConnectionParams *params,
+			   char *hostname, int port, void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_del_connection
  *

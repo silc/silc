@@ -542,7 +542,7 @@ static void silc_client_ftp_start_key_agreement(SilcClientFtpSession session,
 			NULL, session->monitor_context);
 
   /* Add new connection for this session */
-  conn = silc_client_add_connection(client, session->hostname,
+  conn = silc_client_add_connection(client, NULL, session->hostname,
 				    session->port, session);
 
   /* Allocate new socket connection object */
@@ -640,7 +640,7 @@ SILC_TASK_CALLBACK(silc_client_ftp_process_key_agreement)
 			NULL, session->monitor_context);
 
   /* Add new connection for this session */
-  conn = silc_client_add_connection(client, newsocket->hostname,
+  conn = silc_client_add_connection(client, NULL, newsocket->hostname,
 				    newsocket->port, session);
   conn->sock = newsocket;
   conn->sock->user_data = conn;

@@ -197,7 +197,7 @@ static void sig_connected(SILC_SERVER_REC *server)
   if (!IS_SILC_SERVER(server))
     return;
 
-  conn = silc_client_add_connection(silc_client,
+  conn = silc_client_add_connection(silc_client, NULL,
 				    server->connrec->address,
 				    server->connrec->port,
 				    server);
