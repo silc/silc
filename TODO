@@ -47,6 +47,8 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o Add perhaps /var/run/silcd.pid for PID information for the server.
+
  o Incomplete IPv6 support:
 
 	o silcd/serverid.c and its routines supports only IPv4.
