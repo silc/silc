@@ -1,29 +1,29 @@
-/****h* silcclient/silcapi.h
- *
- * NAME
- *
- * silcapi.h
- *
- * COPYRIGHT
- *
- * Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
- *
- * Copyright (C) 2000 - 2001 Pekka Riikonen
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+/*
+
+  silcapi.h
+  
+  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  
+  Copyright (C) 2000 - 2001 Pekka Riikonen
+  
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+ 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+*/
+
+/****h* silcclient/SilcClientAPI
  *
  * DESCRIPTION
  *
- * This file defines the SILC Client Library API for the application.  The
- * client operations are defined first.  These are callback functions that
+ * This interface defines the SILC Client Library API for the application.
+ * The client operations are defined first.  These are callback functions that
  * the application MUST implement since the library may call the functions
  * at any time.  At the end of file is the API for the application that
  * it can use from the library.  This is the only file that the application

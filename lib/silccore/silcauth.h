@@ -42,7 +42,8 @@
  *
  * NAME
  * 
- *    typedef struct SilcAuthPayloadStruct *SilcAuthPayload;
+ *    typedef struct SilcAuthPayloadStruct *SilcAuthPayload; 
+ *
  *
  * DESCRIPTION
  *
