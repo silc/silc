@@ -2,7 +2,7 @@
 
   serverconfig.h
 
-  Author: Johnny Mnemonic <johnny@themnemonic.org>
+  Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
   Copyright (C) 1997 - 2002 Pekka Riikonen
 

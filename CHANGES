@@ -1,3 +1,15 @@
+Sat Jan 11 18:16:29 CET 2003  Giovanni Giacobbi <giovanni@giacobbi.net>
+
+	* Fixed server crash with double Primary block in config file.
+
+	  Fixed also various memory leaks around the config file
+	  parser.  Affected files lib/silcutil/silcconfig.c,
+	  silcd/serverconfig.c.
+
+	* Changed my nickname (Johnny Mnemonic) to my real name, this
+	  means that bugs introduced by him were actually introduced
+	  by me!
+
 Tue Jan  7 21:58:53 CET 2003  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Don't display "foo appears as foo\nYou're now known as foo"
