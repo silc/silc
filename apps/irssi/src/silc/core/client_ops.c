@@ -148,54 +148,411 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
    for channel the channel entry is sent to application (even if server
    does not send it). */
 
-typedef struct {
-  int type;
-  const char *name;
-} NOTIFY_REC;
-
-#define MAX_NOTIFY (sizeof(notifies)/sizeof(notifies[0]))
-static NOTIFY_REC notifies[] = {
-  { SILC_NOTIFY_TYPE_NONE,		NULL },
-  { SILC_NOTIFY_TYPE_INVITE,		"invite" },
-  { SILC_NOTIFY_TYPE_JOIN,		"join" },
-  { SILC_NOTIFY_TYPE_LEAVE,		"leave" },
-  { SILC_NOTIFY_TYPE_SIGNOFF,		"signoff" },
-  { SILC_NOTIFY_TYPE_TOPIC_SET,		"topic" },
-  { SILC_NOTIFY_TYPE_NICK_CHANGE,	"nick" },
-  { SILC_NOTIFY_TYPE_CMODE_CHANGE,	"cmode" },
-  { SILC_NOTIFY_TYPE_CUMODE_CHANGE,	"cumode" },
-  { SILC_NOTIFY_TYPE_MOTD,		"motd" },
-  { SILC_NOTIFY_TYPE_CHANNEL_CHANGE,	"channel_change" },
-  { SILC_NOTIFY_TYPE_SERVER_SIGNOFF,	"server_signoff" },
-  { SILC_NOTIFY_TYPE_KICKED,	        "kick" },
-  { SILC_NOTIFY_TYPE_KILLED,	        "kill" },
-  { SILC_NOTIFY_TYPE_UMODE_CHANGE,      "umode" },
-  { SILC_NOTIFY_TYPE_BAN,               "ban" },
-};
-
 void silc_notify(SilcClient client, SilcClientConnection conn,
 		 SilcNotifyType type, ...)
 {
-  SILC_SERVER_REC *server;
   va_list va;
-  
+  SILC_SERVER_REC *server;
+  SILC_CHANNEL_REC *chanrec;
+  SILC_NICK_REC *nickrec;
+  SilcClientEntry client_entry, client_entry2;
+  SilcChannelEntry channel;
+  SilcServerEntry server_entry;
+  SilcIdType idtype;
+  void *entry;
+  uint32 mode;
+  char userhost[512];
+  char *name, *tmp;
+  GSList *list1, *list_tmp;
+
   SILC_LOG_DEBUG(("Start"));
 
-  server = conn == NULL ? NULL : conn->context;
   va_start(va, type);
+
+  server = conn == NULL ? NULL : conn->context;
   
-  if (type == SILC_NOTIFY_TYPE_NONE) {
+  switch(type) {
+  case SILC_NOTIFY_TYPE_NONE:
     /* Some generic notice from server */
     printtext(server, NULL, MSGLEVEL_CRAP, "%s", (char *)va_arg(va, char *));
-  } else if (type < MAX_NOTIFY) {
-    /* Send signal about the notify event */
-    char signal[50];
-    g_snprintf(signal, sizeof(signal), "silc event %s", notifies[type].name);
-    signal_emit(signal, 2, server, va);
-  } else {
+    break;
+
+  case SILC_NOTIFY_TYPE_INVITE:
+    /*
+     * Invited or modified invite list.
+     */
+
+    SILC_LOG_DEBUG(("Notify: INVITE"));
+
+    channel = va_arg(va, SilcChannelEntry);
+    name = va_arg(va, char *);
+    client_entry = va_arg(va, SilcClientEntry);
+
+    memset(userhost, 0, sizeof(userhost));
+    snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	     client_entry->username, client_entry->hostname);
+    signal_emit("message invite", 4, server, channel ? channel->channel_name :
+		name, client_entry->nickname, userhost);
+    break;
+
+  case SILC_NOTIFY_TYPE_JOIN:
+    /*
+     * Joined channel.
+     */
+ 
+    SILC_LOG_DEBUG(("Notify: JOIN"));
+
+    client_entry = va_arg(va, SilcClientEntry);
+    channel = va_arg(va, SilcChannelEntry);
+
+    if (client_entry == server->conn->local_entry) {
+      /* You joined to channel */
+      chanrec = silc_channel_find(server, channel->channel_name);
+      if (chanrec != NULL && !chanrec->joined)
+	chanrec->entry = channel;
+    } else {
+      chanrec = silc_channel_find_entry(server, channel);
+      if (chanrec != NULL) {
+	SilcChannelUser chu = silc_client_on_channel(channel, client_entry);
+	if (chu)
+	  nickrec = silc_nicklist_insert(chanrec, chu, TRUE);
+      }
+    }
+    
+    memset(userhost, 0, sizeof(userhost));
+    if (client_entry->username)
+    snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	     client_entry->username, client_entry->hostname);
+    signal_emit("message join", 4, server, channel->channel_name,
+		client_entry->nickname,
+		client_entry->username == NULL ? "" : userhost);
+    break;
+
+  case SILC_NOTIFY_TYPE_LEAVE:
+    /*
+     * Left a channel.
+     */
+
+    SILC_LOG_DEBUG(("Notify: LEAVE"));
+
+    client_entry = va_arg(va, SilcClientEntry);
+    channel = va_arg(va, SilcChannelEntry);
+    
+    memset(userhost, 0, sizeof(userhost));
+    if (client_entry->username)
+      snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	       client_entry->username, client_entry->hostname);
+    signal_emit("message part", 5, server, channel->channel_name,
+		client_entry->nickname,  client_entry->username ? 
+		userhost : "", client_entry->nickname);
+    
+    chanrec = silc_channel_find_entry(server, channel);
+    if (chanrec != NULL) {
+      nickrec = silc_nicklist_find(chanrec, client_entry);
+      if (nickrec != NULL)
+	nicklist_remove(CHANNEL(chanrec), NICK(nickrec));
+    }
+    break;
+
+  case SILC_NOTIFY_TYPE_SIGNOFF:
+    /*
+     * Left the network.
+     */
+
+    SILC_LOG_DEBUG(("Notify: SIGNOFF"));
+
+    client_entry = va_arg(va, SilcClientEntry);
+    tmp = va_arg(va, char *);
+    
+    silc_server_free_ftp(server, client_entry);
+    
+    memset(userhost, 0, sizeof(userhost));
+    if (client_entry->username)
+      snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	       client_entry->username, client_entry->hostname);
+    signal_emit("message quit", 4, server, client_entry->nickname,
+		client_entry->username ? userhost : "", 
+		tmp ? tmp : "");
+    
+    list1 = nicklist_get_same_unique(SERVER(server), client_entry);
+    for (list_tmp = list1; list_tmp != NULL; list_tmp = 
+	   list_tmp->next->next) {
+      CHANNEL_REC *channel = list_tmp->data;
+      NICK_REC *nickrec = list_tmp->next->data;
+      
+      nicklist_remove(channel, nickrec);
+    }
+    break;
+
+  case SILC_NOTIFY_TYPE_TOPIC_SET:
+    /*
+     * Changed topic.
+     */
+
+    SILC_LOG_DEBUG(("Notify: TOPIC_SET"));
+
+    idtype = va_arg(va, int);
+    entry = va_arg(va, void *);
+    tmp = va_arg(va, char *);
+    channel = va_arg(va, SilcChannelEntry);
+    
+    chanrec = silc_channel_find_entry(server, channel);
+    if (chanrec != NULL) {
+      g_free_not_null(chanrec->topic);
+      chanrec->topic = *tmp == '\0' ? NULL : g_strdup(tmp);
+      signal_emit("channel topic changed", 1, chanrec);
+    }
+    
+    if (idtype == SILC_ID_CLIENT) {
+      client_entry = (SilcClientEntry)entry;
+      memset(userhost, 0, sizeof(userhost));
+      snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	       client_entry->username, client_entry->hostname);
+      signal_emit("message topic", 5, server, channel->channel_name,
+		  tmp, client_entry->nickname, userhost);
+    } else if (idtype == SILC_ID_SERVER) {
+      server_entry = (SilcServerEntry)entry;
+      signal_emit("message topic", 5, server, channel->channel_name,
+		  tmp, server_entry->server_name, 
+		  server_entry->server_name);
+    } else {
+      channel = (SilcChannelEntry)entry;
+      signal_emit("message topic", 5, server, channel->channel_name,
+		  tmp, channel->channel_name, channel->channel_name);
+    }
+    break;
+
+  case SILC_NOTIFY_TYPE_NICK_CHANGE:
+    /*
+     * Changed nickname.
+     */
+
+    SILC_LOG_DEBUG(("Notify: NICK_CHANGE"));
+
+    client_entry = va_arg(va, SilcClientEntry);
+    client_entry2 = va_arg(va, SilcClientEntry);
+    
+    nicklist_rename_unique(SERVER(server),
+			   client_entry, client_entry->nickname,
+			   client_entry2, client_entry2->nickname);
+    
+    memset(userhost, 0, sizeof(userhost));
+    snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+	     client_entry2->username, client_entry2->hostname);
+    signal_emit("message nick", 4, server, client_entry2->nickname, 
+		client_entry2->nickname, userhost);
+    break;
+
+  case SILC_NOTIFY_TYPE_CMODE_CHANGE:
+    /*
+     * Changed channel mode.
+     */
+
+    SILC_LOG_DEBUG(("Notify: CMODE_CHANGE"));
+
+    idtype = va_arg(va, int);
+    entry = va_arg(va, void *);
+    mode = va_arg(va, uint32);
+    (void)va_arg(va, char *);
+    (void)va_arg(va, char *);
+    channel = va_arg(va, SilcChannelEntry);
+
+    tmp = silc_client_chmode(mode,
+			     channel->channel_key ? 
+			     channel->channel_key->cipher->name : "",
+			     channel->hmac ? 
+			     silc_hmac_get_name(channel->hmac) : "");
+    
+    chanrec = silc_channel_find_entry(server, channel);
+    if (chanrec != NULL) {
+      g_free_not_null(chanrec->mode);
+      chanrec->mode = g_strdup(tmp == NULL ? "" : tmp);
+      signal_emit("channel mode changed", 1, chanrec);
+    }
+    
+    if (idtype == SILC_ID_CLIENT) {
+      client_entry = (SilcClientEntry)entry;
+      printformat_module("fe-common/silc", server, channel->channel_name,
+			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CMODE,
+			 channel->channel_name, tmp ? tmp : "removed all",
+			 client_entry->nickname);
+    } else if (idtype == SILC_ID_SERVER) {
+      server_entry = (SilcServerEntry)entry;
+      printformat_module("fe-common/silc", server, channel->channel_name,
+			 MSGLEVEL_MODES, SILCTXT_CHANNEL_CMODE,
+			 channel->channel_name, tmp ? tmp : "removed all",
+			 server_entry->server_name);
+    }
+
+    silc_free(tmp);
+    break;
+
+  case SILC_NOTIFY_TYPE_CUMODE_CHANGE:
+    /*
+     * Changed user's mode on channel.
+     */
+
+    SILC_LOG_DEBUG(("Notify: CUMODE_CHANGE"));
+
+    client_entry = va_arg(va, SilcClientEntry);
+    mode = va_arg(va, uint32);
+    client_entry2 = va_arg(va, SilcClientEntry);
+    channel = va_arg(va, SilcChannelEntry);
+    
+    tmp = silc_client_chumode(mode);
+    chanrec = silc_channel_find_entry(server, channel);
+    if (chanrec != NULL) {
+      SILC_NICK_REC *nick;
+      
+      if (client_entry2 == server->conn->local_entry)
+	chanrec->chanop = (mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
+      
+      nick = silc_nicklist_find(chanrec, client_entry2);
+      if (nick != NULL) {
+	nick->op = (mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
+	nick->founder = (mode & SILC_CHANNEL_UMODE_CHANFO) != 0;
+	signal_emit("nick mode changed", 2, chanrec, nick);
+      }
+    }
+  
+    printformat_module("fe-common/silc", server, channel->channel_name,
+		       MSGLEVEL_MODES, SILCTXT_CHANNEL_CUMODE,
+		       channel->channel_name, client_entry2->nickname, 
+		       tmp ? tmp : "removed all",
+		       client_entry->nickname);
+
+    if (mode & SILC_CHANNEL_UMODE_CHANFO)
+      printformat_module("fe-common/silc", 
+			 server, channel->channel_name, MSGLEVEL_CRAP,
+			 SILCTXT_CHANNEL_FOUNDER,
+			 channel->channel_name, client_entry2->nickname);
+    
+    silc_free(tmp);
+    break;
+
+  case SILC_NOTIFY_TYPE_MOTD:
+    /*
+     * Received MOTD.
+     */
+
+    SILC_LOG_DEBUG(("Notify: MOTD"));
+
+    tmp = va_arg(va, char *);
+
+    if (!settings_get_bool("skip_motd"))
+      printtext_multiline(server, NULL, MSGLEVEL_CRAP, "%s", tmp);
+    break;
+
+  case SILC_NOTIFY_TYPE_KICKED:
+    /*
+     * Someone was kicked from channel.
+     */
+
+    SILC_LOG_DEBUG(("Notify: KICKED"));
+
+    client_entry = va_arg(va, SilcClientEntry);
+    tmp = va_arg(va, char *);
+    client_entry2 = va_arg(va, SilcClientEntry);
+    channel = va_arg(va, SilcChannelEntry);
+
+    chanrec = silc_channel_find_entry(server, channel);
+  
+    if (client_entry == conn->local_entry) {
+      printformat_module("fe-common/silc", server, channel->channel_name,
+			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED_YOU, 
+			 client_entry2->nickname,
+			 channel->channel_name, tmp ? tmp : "");
+      if (chanrec) {
+	chanrec->kicked = TRUE;
+	channel_destroy((CHANNEL_REC *)chanrec);
+      }
+    } else {
+      printformat_module("fe-common/silc", server, channel->channel_name,
+			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KICKED, 
+			 client_entry->nickname,
+			 client_entry2->nickname,
+			 channel->channel_name, tmp ? tmp : "");
+
+      if (chanrec) {
+	SILC_NICK_REC *nickrec = silc_nicklist_find(chanrec, client_entry);
+	if (nickrec != NULL)
+	  nicklist_remove(CHANNEL(chanrec), NICK(nickrec));
+      }
+    }
+    break;
+
+  case SILC_NOTIFY_TYPE_KILLED:
+    /*
+     * Someone was killed from the network.
+     */
+
+    SILC_LOG_DEBUG(("Notify: KILLED"));
+
+    client_entry = va_arg(va, SilcClientEntry);
+    tmp = va_arg(va, char *);
+  
+    if (client_entry == conn->local_entry) {
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED_YOU, 
+			 tmp ? tmp : "");
+    } else {
+      list1 = nicklist_get_same_unique(SERVER(server), client_entry);
+      for (list_tmp = list1; list_tmp != NULL; list_tmp = 
+	     list_tmp->next->next) {
+	CHANNEL_REC *channel = list_tmp->data;
+	NICK_REC *nickrec = list_tmp->next->data;
+	nicklist_remove(channel, nickrec);
+      }
+
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED, 
+			 client_entry->nickname,
+			 tmp ? tmp : "");
+    }
+    break;
+
+  case SILC_NOTIFY_TYPE_SERVER_SIGNOFF:
+    {
+      /*
+       * Server has quit the network.
+       */
+      int i;
+      SilcClientEntry *clients;
+      uint32 clients_count;
+
+      SILC_LOG_DEBUG(("Notify: SIGNOFF"));
+      
+      (void)va_arg(va, void *);
+      clients = va_arg(va, SilcClientEntry *);
+      clients_count = va_arg(va, uint32);
+  
+      for (i = 0; i < clients_count; i++) {
+	memset(userhost, 0, sizeof(userhost));
+	if (clients[i]->username)
+	  snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
+		   clients[i]->username, clients[i]->hostname);
+	signal_emit("message quit", 4, server, clients[i]->nickname,
+		    clients[i]->username ? userhost : "", 
+		    "server signoff");
+
+	silc_server_free_ftp(server, clients[i]);
+	
+	list1 = nicklist_get_same_unique(SERVER(server), clients[i]);
+	for (list_tmp = list1; list_tmp != NULL; list_tmp = 
+	       list_tmp->next->next) {
+	  CHANNEL_REC *channel = list_tmp->data;
+	  NICK_REC *nickrec = list_tmp->next->data;
+	  nicklist_remove(channel, nickrec);
+	}
+      }
+    }
+    break;
+
+  default:
     /* Unknown notify */
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_UNKNOWN_NOTIFY, type);
+    break;
   }
 
   va_end(va);

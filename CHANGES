@@ -1,3 +1,13 @@
+Sat Feb 16 13:44:24 EET 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Rewrote the notify handling in Irssi SILC client to not call
+	  the events as signals.  Fixes problems with Perl support.
+	  Affected files irssi/src/silc/core/client_ops.c, silc-channels.c.
+
+	* Send the auto-nicking NICK command in client library with
+	  little timeout after connecting.  The affected file is
+	  lib/silcclient/client.c.
+
 Sat Feb 16 02:46:43 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Cleaned up the listening sockets code, preparing for the rehash

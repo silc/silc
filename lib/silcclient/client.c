@@ -1469,6 +1469,18 @@ void silc_client_error_by_server(SilcClient client,
   silc_free(msg);
 }
 
+/* Auto-nicking callback to send NICK command to server. */
+
+SILC_TASK_CALLBACK(silc_client_send_auto_nick)
+{
+  SilcClientConnection conn = (SilcClientConnection)context;
+  SilcClient client = conn->client;
+
+  silc_client_command_send(client, conn, SILC_COMMAND_NICK, 
+			   ++conn->cmd_ident, 1, 1, 
+			   client->nickname, strlen(client->nickname));
+}
+
 /* Processes the received new Client ID from server. Old Client ID is
    deleted from cache and new one is added. */
 
@@ -1526,11 +1538,11 @@ void silc_client_receive_new_id(SilcClient client,
 
   if (connecting) {
     /* Send NICK command if the nickname was set by the application (and is
-       not same as the username). */
+       not same as the username). Send this with little timeout. */
     if (client->nickname && strcmp(client->nickname, client->username))
-      silc_client_command_send(client, conn, SILC_COMMAND_NICK, 
-			       ++conn->cmd_ident, 1, 1, 
-			       client->nickname, strlen(client->nickname));
+      silc_schedule_task_add(client->schedule, 0,
+			     silc_client_send_auto_nick, conn,
+			     1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
     /* Issue INFO command to fetch the real server name and server information
        and other stuff. */
