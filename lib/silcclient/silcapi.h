@@ -458,8 +458,14 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
    be tried in order to find the correct decryption key. However, setting
    a few keys does not have big impact to the decryption performace. 
 
-   Note that this is entirely local setting. The key set using this function
-   is not sent to the network at any phase. */
+   NOTE: that this is entirely local setting. The key set using this function
+   is not sent to the network at any phase.
+
+   NOTE: If the key material was originated by the SKE protocol (using
+   silc_client_send_key_agreement) then the `key' MUST be the
+   key->send_enc_key as this is dictated by the SILC protocol. However,
+   currently it is not expected that the SKE key material would be used
+   as channel private key. */
 int silc_client_add_channel_private_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcChannelEntry channel,
