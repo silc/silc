@@ -80,11 +80,10 @@ void silc_thread_exit(void *exit_value)
   if (thread) {
     /* If the thread is waitable the memory is freed only in silc_thread_wait
        by another thread. If not waitable, free it now. */
-    if (!thread->waitable)
-      {
-	CloseHandle(thread->thread);
-	silc_free(thread);
-      }
+    if (!thread->waitable) {
+      CloseHandle(thread->thread);
+      silc_free(thread);
+    }
 
     TlsSetValue(silc_thread_tls, NULL);
   }
