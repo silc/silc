@@ -1,0 +1,575 @@
+Coding Style in SILC source tree
+================================
+
+This documents describes the coding style and coding conventions used
+in the SILC source tree.  The purpose of the document is to describe the
+common way to program for SILC and thus should be learned when programming
+new code.  The document describes various conventions regarding variable
+naming, function naming, indentation, overall appearance of a piece of
+code and how some of the technical issues has been done in the SILC and
+should be done in the future.
+
+
+Naming
+======
+
+Generic naming
+
+All identifiers, whether they defines, functions or something else, with
+execption of variables, has a common naming convention.  Usually all 
+identifiers use `silc' prefix to indicate that the identifier is part of
+SILC distribution.  For example, silc_server_init(), SILC_PACKET_TYPE_ERROR, 
+etc.  As mentioned however, variables, local or global, does not use this
+naming convention.
+
+Lower lever routines, usually some library routines, may use their
+own naming convention if generic API is defined over them.  The API uses
+the common naming convention while the lower level routines uses what
+ever they want.  For example, ciphers are implemented currently in this
+way.  They define common SILC Cipher API but the actual implementation
+of algorithms uses their own naming convention.  Another example is
+the GMP math library that uses its own function naming but we have our
+own SILC MP API over it that has been defined using common SILC naming
+convention.
+
+
+Variables
+
+Variable names are always in lowercase and any mixed-case or totally
+uppercase variable names should be avoided.  Variable names may include
+underscore if it is necessary.  For example, `unsigned char *id_string;'.
+
+The same name convention is used in structure field names.  All fields
+in structures should be in lowercase.  Global variables should have some
+sort of prefix to indicate that the variable is global.  Although, global
+variables should be avoided if possible.
+
+Local variable names should be as short as possible without losing
+meaning of the name.  For example there is no reason to call loop
+counter as `loop_counter' when `i' is commonly used instead.  Using
+variable name `tmp' is also ok and should be used when some temporary
+value is used.
+
+
+#define's and Macros
+
+All #define's should always be in uppercase to indicate that it is
+a define, for example, `#define SILC_PACKET_TYPE_NONE 0'.  As mentioned
+previously #define's and macros always use the `SILC' prefix.  The
+names also uses always underscores.
+
+Names of #define's and macros should be self explanatory.  This may
+lead to long names but it is better than having some `#define SILC_KE1_SX'
+which does not tell you anything.
+
+
+Type definitions
+
+Type definitions (typedefs) uses some what different naming convention
+from variables and macros.  Typedefs has mixed-case names and they
+never use underscores.  For example, `SilcSomeStruct', `SilcServerObject'.
+Like in any other case the names should be self explanatory which may
+lead to long names but that is not a problem.
+
+The names should tell what the typedef is about.  If it is a typedef
+of a structure it should tell what the structure is for in the first
+place.  For example `SilcClientStruct', `SilcCipherObject', 
+`SilcConfigSection´, etc.
+
+
+Structures
+
+Same naming convention used in typedefs applies to names of structures as
+well.  Same as with typedef, structure names should be self explanatory
+and should tell what the structure is made for.
+
+Structures are used a lot in SILC.  They are used as simple structures
+and as objects as well.  When normal structures are needed they are
+defined as follows,
+
+	struct SilcDummyStruct {
+	  unsigned char *dummy;
+	};
+
+And used as `struct SilcDummyStruct *dummy'.  However, this is quite
+rarely used in the SILC, instead structures are typedef'd as following
+later.  When structure is used as object they are defined as follows,
+
+	typedef struct SilcDummyStruct {
+	  unsigned char *dummy;
+	  unsigned int flags;
+	  void (*callback)(void *, unsigned int);
+	} SilcDummyObject;
+
+If the SilcDummyStruct is not needed it may be omitted (which is very
+common in SILC code), leaving,
+
+	typedef struct {
+	  unsigned char *dummy;
+	  unsigned int flags;
+	  void (*callback)(void *, unsigned int);
+	} SilcDummyObject;
+
+Finally, it is common that structures are typedef'd pointers as they
+are very flexible to use,
+
+	typedef SilcDummyObject *SilcDummy;
+
+It is common in SILC to typedef structures instead of defining name
+for the structure.  In this case the structure may be used without
+defining `struct' to the code, For example,
+
+	SilcDummyObject dummy_obj;
+	SilcDummyObject *dummy;
+
+If the structure has a pointer typedef then they are defined as normal
+variables but for real they are pointers, For example,
+
+	SilcDummy dummy;
+	dummy = silc_calloc(1, sizeof(*dummy));
+	dummy->flags = 0;
+
+This convention is very common in SILC code and has been used consistently
+throughout the code.  The pattern here is that all structures are named
+as `SilcXxxStruct', all objects are named as `SilcXxxObject' and when
+they are typedef'd pointers they are named as `SilcXxx'.
+
+
+Functions
+
+Function naming uses the common naming convention used in the SILC.  All
+functions are always lowercase and they use underscores.  The name of
+the function always starts with prefix `silc_'.  The name of the function
+should be self explanatory which may lead to long names.  The name of
+a function is constructed from following parts,
+
+	silc_<application>_<module>_<function>
+
+The <application> is for example <client> or <server>, however, it is
+always omitted (and must be omitted) when programming library code.
+
+The <module> is the module you are programming currently.  You should
+have a pretty good idea what you are programming and what the module
+does.  For example, <cipher>, <config>, <command>, <packet>, etc.
+
+The <function> is the describtion of the functionality of the function
+you are writing.  Naturally it should be self explanatory and weird
+short names should be avoided.  It is better to have long function
+names than some odd name that does not tell what it is about.  Function
+naming could be for example, <read>, <new_id>, <register>, <find_by_name>,
+etc.
+
+So, it is common in SILC to have function names, such as,
+
+	silc_server_packet_send
+	silc_server_packet_send_to_channel
+	silc_client_packet_process
+	silc_idcache_del_by_id
+	silc_task_unregister_by_fd
+	silc_protocol_excute_final
+	silc_buffer_alloc
+
+When function registers something the name of the function should
+generally be `silc_function_register' and unregistering should happen
+with `silc_function_unregister'.  When function allocates something it
+should be called `silc_function_alloc' and when freeing it should be
+called `silc_function_free'.  Respectively, with init/uninit functions.
+
+When this naming convention is used consistently it is easy to remember
+what the name of the function is.  For example, if you need buffer it
+is easy to figure out that the routines are most likely called 
+`silc_buffer_*',  and if you need to allocate buffer it is most likely 
+called `silc_buffer_alloc'.  This sort of naming makes the programming,
+in the long run, much cleaner, simpler and faster.
+
+
+Inline functions
+
+SILC uses quite a bit inline functions to optimize the code.  The
+naming of inline functions must follow same convention as any normal
+function.  All inline functions in SILC are defined and written into
+header files.  Inline functions must be defined in following manner
+in the header file,
+
+extern inline void silc_dummy_inline(unsigned int flags)
+{
+  doing_little_dummy_things;
+}
+
+Because the function is defined as extern they can be included into
+public header files.  Do not forget to define inline function as extern.
+There are no any explicit prototype definitions for inline functions.
+
+
+Indentation
+===========
+
+SILC has been coded with Emacs so standard indentation of Emacs is used
+in the SILC code.  The indentation is always 2 characters, not a 
+tabulator.  If you use Emacs then this should not be a problem.  So,
+if you code for SILC be sure to format the code to the standard way
+used in the SILC before submitting the code.
+
+A tip for those who think that these long function names etc are just
+too long to type, consider using dynamic abbreviation found in Emacs.
+With this cool feature you only have type some part of the string and
+then use the dabbrev to find the rest of the string.  I guess, by 
+default it is M-/ in Emacs but I have binded it into Shift-TAB so it
+is fast to use when typing.
+
+
+Placing Braces
+==============
+
+The common fight about how the braces should be placed in the C code
+is probably going on in the SILC code as well.  However, SILC code
+is consistent about this.  The placing uses K&R style thus the opening
+of the brace is put to the last on the line and the closing brace is
+on first on its own line,
+
+	if (condition) {
+	  silc_something();
+	  silc_something_more();
+	}
+
+The function's braces are as follows,
+
+	int silc_client_function()
+	{
+	  return 0;
+	}
+
+More examples,
+
+	if (condition) {
+	  something;
+	  silc_something_more();
+	} else {
+	  something_else;
+	}
+
+	if (condition) {
+	  something;
+	  silc_something_more();
+	} else if (other_condition) {
+	  something;
+	  silc_something_more();
+	} else {
+	  something_else;
+	}
+
+
+Commenting
+==========
+
+SILC code is usually pretty well commented and this should be the way
+in the future as well.  However, the comments should not tell how the
+code works, it should be apparent by looking at the code.  Instead the
+commenting should tell what the function does.  All functions should
+be commented.  If nothing more a line of comment telling what the function
+is about helps a lot when you go back to it after six months.  Static
+functions should be commented as well.
+
+The commenting of functions in SILC has been made into the source files,
+and not in the header files where the function prototypes reside.  Header
+files usually includes structure comments, macro comments and perhaps
+some other relevant commenting but usually not function comments.
+It is also Ok to comment the code inside function when it is needed.
+
+Comments should use normal C-language comments /* */ and not C++ comments.
+
+
+General Appearance
+==================
+
+The code should be clean and good to eye, although the function of it
+must always superseed the appearance.  However, it is nice to read code
+that looks good.  Here are some issues on general appearance.
+
+	o Use empty lines when appropriate but not too much.  There
+	  should not be excess empty lines at the end of file.  However,
+          using some empty lines in the code makes the code better 
+          looking.
+
+	o The line is 79 characters long and not one character longer.
+	  Longer lines must be cut in two, or three, or ...
+
+	o Use spaces very much.  Do not write things like `if(!k)',
+	  instead write `if (!k)'.  Same with `for', `while', etc.
+	  Spaces should be put around all binary operators like `*', 
+	  `==', `+', etc.  Also, when setting a value to variable be
+	  sure to set spaces around `='.  When writing argument list 
+	  to a function, space should follow each of the comma in the
+	  list.  However, do not use spaces with parenthesis, for 
+	  example, `if ( !k )' is not accepted.
+
+	o If you are not sure about how something should be done or
+	  the code you've done is not finished, it should be commented
+	  with XXX plus explanation what is going on.
+
+
+Source Files
+
+All source files starts with header that includes the name of the author,
+copyright notice and the copyright policy, usually part of GNU GPL licence.
+Now, if this really isn't that important but some sort of header should
+be in all source files.
+
+In the start of the source files should include the #include's that are
+needed.  All library source files must include `silcincludes.h', this is
+a must.  Client source file must include at least `clientincludes.h' and
+server source file must include `serverincludes.h'.  Additional include's
+may be added as well, however, system specific includes should not be
+added directly (unless it is really a special case).  Go see any source
+file as an example.
+
+
+Header Files
+
+As with source files, header files should include same file header at
+the start of the file.
+
+Header files are usually divided in three parts in SILC.  At the start
+of header files should include all definitions, typedefs, structure
+definitions etc.  After definitions should include macros and inline
+functions if any of those exist.  After macros should include the
+public prototypes of the functions.  Go see any header file as an example.
+
+
+Debug Messages
+==============
+
+When writing new code it is recommended that the code produces some sort
+of debug messages.  SILC has own debug logging system that must be used
+in the generic SILC code.  Few macros exist,
+
+	SILC_LOG_DEBUG
+	SILC_LOG_HEXDUMP
+	SILC_LOG_INFO
+	SILC_LOG_WARNING
+	SILC_LOG_ERROR
+	SILC_LOG_FATAL
+
+When doing debugging the most used macros are SILC_LOG_DEBUG and 
+SILC_LOG_HEXDUMP.  With first macro you can print out any sort of debug
+messages with variable argument list, for example,
+
+	SILC_LOG_DEBUG(("Start"));
+	SILC_LOG_DEBUG(("Packet length %d", packet_len));
+
+Note the extra parenthesis that are required for the macro so that the
+variable argument list formatting would work correctly.
+
+When you need to dump some data into screen you should use SILC_LOG_HEXDUMP
+macro.  For example,
+
+	SILC_LOG_HEXDUMP(("Packet"), packet->data, packet->len);
+	SILC_LOG_HEXDUMP(("Packet, size %d", size), packet->data, packet->len);
+
+In SILC_LOG_HEXDUMP the data to be dumped are set between the second last
+and last parenthesis in order that the data is first and the length of the
+data is next.  If arguments are used they are used the same way as in
+SILC_LOG_DEBUG and the data to be dumped are set after the argument list
+is closed with the parenthesis.
+
+
+Memory Allocation
+=================
+
+Naturally, memory allocation is a big part of SILC.  However, there are
+few things that must be noted on the issue.  SILC has defined its own
+memory allocation functions that must be used.  System specific functions
+must not be used directly.  There are functions like,
+
+	silc_malloc
+	silc_calloc
+	silc_realloc
+	silc_free
+
+You should always use silc_calloc instead of silc_malloc because
+silc_calloc automatically zeroes the allocated memory area.  This is
+imporant especially with structures because generally we want that all
+fields, by default, are zero.
+
+So, instead of doing
+
+	SilcStruct *ptr;
+
+	ptr = silc_malloc(sizeof(*ptr));
+
+You should do
+
+	SilcStruct *ptr
+
+	ptr = silc_calloc(1, sizeof(*ptr));
+
+
+When freeing memory it should be zero'ed when appropriate.  All memory
+allocations that handle sensitive data such as keys should be zero'ed
+by memset() before freeing the memory.  Common way to do is,
+
+	memset(ptr, 'F', sizeof(*ptr));
+	silc_free(ptr);
+
+Where 'F' indicates free'd memory if you ever check it with debugger.
+Other choice is to use 0 instead of 'F'.  The pointer after freeing 
+should be set to NULL if appropriate, ptr = NULL.
+
+Note that some functions in the SILC library handles the zeroing of
+the memory area automatically, like for example, silc_buffer_free.
+
+
+Callback Programming
+====================
+
+SILC uses pretty much programming convention called callback programming.
+This is a programming style that extensively uses function pointers
+which are usually called inside some other function.
+
+Typical scenario is this;  You are performing some task that most likely
+is asynchronous.  You need to be able get some structure context when
+the operation finishes.  Most common way in this case is to pass the
+structure context to the operation function with a callback function
+that is called when the operation has finished.  Following code explains
+probaly better.
+
+
+/* Prototypes */
+static silc_callback(void *context);
+void silc_start();
+void silc_async_operation_register(int fd, SilcAsyncCb callback, 
+                                   void *context);
+void silc_async_operation(int fd, SilcAsyncCb callback, void *context);
+
+/* Type definition of the callback function */
+typedef (*SilcAsyncCb)(void *context);
+
+/* Registers async operation and passes callback function and context
+   to it as arguments. */
+
+void silc_start()
+{
+  SilcDummyStruct *ctx;
+
+  ctx = silc_calloc(1, sizeof(*ctx));
+  ctx->fd = 30;
+
+  silc_async_operation_register(30, silc_callback, (void *)ctx);
+}
+
+/* The callblack function that is called from the operation function */
+
+static void silc_callback(void *context)
+{
+  SilcDummyStruct *ctx = (SilcDummyStruct *)context;
+
+  ctx->fd = 10;
+}
+
+/* Register async operation */
+
+void silc_async_operation_register(int fd, SilcAsyncCb callback, 
+                                   void *context)
+{
+  /* Register and return immediately */
+  silc_register_async_operation_internal(fd, callback, context);
+}
+
+/* Operation function that will call the callback function after it
+   has finished. */
+
+void silc_async_operation(int fd, SilcAsyncCb callback, void *context)
+{
+  here_this_function_does_what_ever_it_wants;
+
+  here_something_more;
+
+  /* We are finished, call the callback */
+  if (callback)
+    (*callback)(context);
+}
+	
+
+Now, after the registeration of the async operation in this dumb example
+the silc_start returns immediately.  Lets say, 10 seconds later the
+async operation is executed (it would have been better to call it just
+timeout) by calling silc_async_operation which on the other hand will
+call the callback function after it has finished.  The context that
+was passed to the registeration function is now passed back to the
+callback function.  Thus, you will get the context you wanted.  This is
+the typical scenario where callback functions come in very handy.  This 
+is also the best way to pass context's that are needed later without
+making them global context's.  And as long as the context's are defined
+as void * they can be what ever contexts making the functions, that
+takes in the context, generic.  Like in above example, you could pass
+what ever context to the registeration function if you'd want to.
+
+Callback programming is also used when making generic API's of some
+operation.  For example, if you want generic hooks to the API so that
+something could be done while doing the operation (maybe to collect
+statistics or something else) just get the functions accept a callback
+function and context and call them when appropriate, then continue
+as normally.
+
+Callback functions has been used a lot in SILC code.  The scheduler
+and task system implemented in core library uses extensively callback
+functions.  Timeout's uses callbacks as well.  SILC Key Exchange protocol
+uses callback functions too.  The callback function in SKE provides
+packet sending without defining into the SKE code how the packets
+should be sent thus making it generic for both client and server 
+(and actually to any application for that matter).
+
+There are some technical issues on callback programming that are
+common in SILC code.
+
+	o Callback functions are usually defined as void functions
+	  as the routine that calls them usually don't care about
+	  what the callback function does.  Many times it doesn't
+	  actually know what it does nor would it be interested to
+	  know that.  It doesn't care about return values.
+
+	o Many times the callback functions are static functions
+	  because they are not wanted to be called in anyway else
+	  than as callback functions.
+
+	o Callback function names usually have the `_cb' or `_callback'
+	  at the end of function name, eg. silc_client_cb.
+
+	o Type of callback functions should be typedef'd instead of
+	  defining them directly to the function.  See above example.
+	  This makes the code much cleaner.
+
+	o Callback function types has usually the suffix `Cb' or
+	  ´Callback' in the type name, eg. SilcAsyncCallback.
+
+	o You must explicitly cast the void * context's to correct
+	  type in the callback function.  Of course you must be careful
+	  to cast them to the correct type as they are void * they 
+	  could be anything.  Many times this causes problems when you
+	  forget what was the type you passed to it.  Callback 
+	  programming may get very complex.
+
+	o You cannot use inline functions as callback functions,
+	  naturally.
+
+Callback programming may be hard to understand from first standing if
+you haven't done these before, and debugging them may be pain in the
+ass sometimes.  But after the grand idea behind callback functions 
+becomes clear they are a wonderful tool.
+
+
+Copyrights of the Code
+======================
+
+The original code in SILC is GPL licensed.  GMP is GPL licensed as well
+and zlib is with free license as well.  New code will be accepted to
+the official SILC source tree if it is coded in GPL or similiar free
+license as GPL is, and of course if it is public domain.  Code with
+restricting licenses will not be accepted to the SILC source tree.
+SILC is free software, open source, what ever, project and will remain
+as such.
+
+Also, about authoring; If you write code to SILC don't forget to add
+yourself as author at the start of the file.  The reason for this is
+of course that everybody should get the credits they deserve but also 
+if problems occur we know who to blame. :)

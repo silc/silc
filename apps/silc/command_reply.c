@@ -1,0 +1,551 @@
+/*
+
+  command_reply.c
+
+  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+  Copyright (C) 1997 - 2000 Pekka Riikonen
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+*/
+/*
+ * Command reply functions are "the otherside" of the command functions.
+ * Reply to a command sent by server is handled by these functions.
+ */
+/*
+ * $Id$
+ * $Log$
+ * Revision 1.1  2000/06/27 11:36:56  priikone
+ * Initial revision
+ *
+ *
+ */
+
+#include "clientincludes.h"
+
+/* Client command reply list. */
+SilcClientCommandReply silc_command_reply_list[] =
+{
+  SILC_CLIENT_CMD_REPLY(whois, WHOIS),
+  SILC_CLIENT_CMD_REPLY(whowas, WHOWAS),
+  SILC_CLIENT_CMD_REPLY(identify, IDENTIFY),
+  SILC_CLIENT_CMD_REPLY(nick, NICK),
+  SILC_CLIENT_CMD_REPLY(list, LIST),
+  SILC_CLIENT_CMD_REPLY(topic, TOPIC),
+  SILC_CLIENT_CMD_REPLY(invite, INVITE),
+  SILC_CLIENT_CMD_REPLY(quit, QUIT),
+  SILC_CLIENT_CMD_REPLY(kill, KILL),
+  SILC_CLIENT_CMD_REPLY(info, INFO),
+  SILC_CLIENT_CMD_REPLY(away, AWAY),
+  SILC_CLIENT_CMD_REPLY(connect, CONNECT),
+  SILC_CLIENT_CMD_REPLY(ping, PING),
+  SILC_CLIENT_CMD_REPLY(oper, OPER),
+  SILC_CLIENT_CMD_REPLY(join, JOIN),
+  SILC_CLIENT_CMD_REPLY(motd, MOTD),
+  SILC_CLIENT_CMD_REPLY(umode, UMODE),
+  SILC_CLIENT_CMD_REPLY(cmode, CMODE),
+  SILC_CLIENT_CMD_REPLY(kick, KICK),
+  SILC_CLIENT_CMD_REPLY(restart, RESTART),
+  SILC_CLIENT_CMD_REPLY(close, CLOSE),
+  SILC_CLIENT_CMD_REPLY(die, DIE),
+  SILC_CLIENT_CMD_REPLY(silcoper, SILCOPER),
+  SILC_CLIENT_CMD_REPLY(leave, LEAVE),
+  SILC_CLIENT_CMD_REPLY(names, LEAVE),
+
+  { NULL, 0 },
+};
+
+/* Status message structure. Messages are defined below. */
+typedef struct {
+  SilcCommandStatus status;
+  char *message;
+} SilcCommandStatusMessage;
+
+/* Status messages returned by the server */
+#define STAT(x) SILC_STATUS_ERR_##x
+const SilcCommandStatusMessage silc_command_status_messages[] = {
+
+  { STAT(NO_SUCH_NICK),      "No such nickname" },
+  { STAT(NO_SUCH_CHANNEL),   "No such channel" },
+  { STAT(NO_SUCH_SERVER),    "No such server" },
+  { STAT(TOO_MANY_TARGETS),  "Duplicate recipients. No message delivered" },
+  { STAT(NO_RECIPIENT),      "No recipient given" },
+  { STAT(UNKNOWN_COMMAND),   "Unknown command" },
+  { STAT(WILDCARDS),         "Unknown command" },
+  { STAT(NO_CLIENT_ID),      "No Client ID given" },
+  { STAT(NO_CHANNEL_ID),     "No Channel ID given" },
+  { STAT(BAD_CLIENT_ID),     "Bad Client ID" },
+  { STAT(BAD_CHANNEL_ID),    "Bad Channel ID" },
+  { STAT(NO_SUCH_CLIENT_ID), "No such Client ID" },
+  { STAT(NO_SUCH_CHANNEL_ID),"No such Channel ID" },
+  { STAT(NICKNAME_IN_USE),   "Nickname already exists" },
+  { STAT(NOT_ON_CHANNEL),    "You are not on that channel" },
+  { STAT(USER_ON_CHANNEL),   "User already on channel" },
+  { STAT(NOT_REGISTERED),    "You have not registered" },
+  { STAT(NOT_ENOUGH_PARAMS), "Not enough parameters" },
+  { STAT(TOO_MANY_PARAMS),   "Too many parameters" },
+  { STAT(PERM_DENIED),       "Your host is not among the privileged" },
+  { STAT(BANNED_FROM_SERVER),"You are banned from this server" },
+  { STAT(BAD_PASSWORD),      "Cannot join channel. Incorrect password" },
+  { STAT(CHANNEL_IS_FULL),   "Cannot join channel. Channel is full" },
+  { STAT(NOT_INVITED),     "Cannot join channel. You have not been invited" },
+  { STAT(BANNED_FROM_CHANNEL), "Cannot join channel. You have been banned" },
+  { STAT(UNKNOWN_MODE),    "Unknown mode" },
+  { STAT(NOT_YOU),         "Cannot change mode for other users" },
+  { STAT(NO_CHANNEL_PRIV), "Permission denied. You are not channel operator" },
+  { STAT(NO_SERVER_PRIV),  "Permission denied. You are not server operator" },
+  { STAT(NO_ROUTER_PRIV),  "Permission denied. You are not SILC operator" },
+  { STAT(BAD_NICKNAME),    "Bad nickname" },
+  { STAT(BAD_CHANNEL),     "Bad channel name" },
+  { STAT(AUTH_FAILED),     "Authentication failed" },
+
+  { 0, NULL }
+};
+
+/* Process received command reply. */
+
+void silc_client_command_reply_process(SilcClient client,
+				       SilcSocketConnection sock,
+				       SilcBuffer buffer)
+{
+  SilcClientCommandReplyContext ctx;
+  SilcCommandPayload payload;
+
+  /* Get command reply payload from packet */
+  payload = silc_command_parse_payload(buffer);
+  if (!payload) {
+    /* Silently ignore bad reply packet */
+    SILC_LOG_DEBUG(("Bad command reply packet"));
+    return;
+  }
+  
+  /* Allocate command reply context. This must be free'd by the
+     command reply routine receiving it. */
+  ctx = silc_calloc(1, sizeof(*ctx));
+  ctx->client = client;
+  ctx->sock = sock;
+  ctx->payload = payload;
+      
+  /* Check for pending commands and mark to be exeucted */
+  SILC_CLIENT_COMMAND_CHECK_PENDING(ctx);
+  
+  /* Execute command reply */
+  SILC_CLIENT_COMMAND_REPLY_EXEC(ctx);
+}
+
+/* Returns status message string */
+
+static char *
+silc_client_command_status_message(SilcCommandStatus status)
+{
+  int i;
+
+  for (i = 0; silc_command_status_messages[i].message; i++) {
+    if (silc_command_status_messages[i].status == status)
+      break;
+  }
+
+  if (silc_command_status_messages[i].message == NULL)
+    return NULL;
+
+  return silc_command_status_messages[i].message;
+}
+
+/* Free command reply context and its internals. */
+
+void silc_client_command_reply_free(SilcClientCommandReplyContext cmd)
+{
+  if (cmd) {
+    silc_command_free_payload(cmd->payload);
+    silc_free(cmd);
+  }
+}
+
+/* Received reply for WHOIS command. This maybe called several times
+   for one WHOIS command as server may reply with list of results. */
+
+SILC_CLIENT_CMD_REPLY_FUNC(whois)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClient client = cmd->client;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
+      tmp += 2;
+      silc_say(cmd->client, "%s: %s", tmp,
+	       silc_client_command_status_message(status));
+      goto out;
+    } else {
+      silc_say(cmd->client, "%s", silc_client_command_status_message(status));
+      goto out;
+    }
+  }
+
+  /* Display one whois reply */
+  if (status == SILC_STATUS_OK) {
+    char buf[256];
+    int argc, len;
+    unsigned char *id_data;
+    char *nickname = NULL, *username = NULL;
+    char *realname = NULL;
+    void *id;
+
+    memset(buf, 0, sizeof(buf));
+
+    argc = silc_command_get_arg_num(cmd->payload);
+    id_data = silc_command_get_arg_type(cmd->payload, 2, NULL);
+
+    nickname = silc_command_get_arg_type(cmd->payload, 3, &len);
+    if (nickname) {
+      strncat(buf, nickname, len);
+      strncat(buf, " is ", 4);
+    }
+
+    username = silc_command_get_arg_type(cmd->payload, 4, &len);
+    if (username) {
+      strncat(buf, username, len);
+    }
+
+    realname = silc_command_get_arg_type(cmd->payload, 5, &len);
+    if (realname) {
+      strncat(buf, " (", 2);
+      strncat(buf, realname, len);
+      strncat(buf, ")", 1);
+    }
+
+#if 0
+    /* Save received Client ID to ID cache */
+    /* XXX Maybe should not be saved as /MSG will get confused */
+    id = silc_id_str2id(id_data, SILC_ID_CLIENT);
+    client->current_win->client_id_cache_count[(int)nickname[0] - 32] =
+    silc_idcache_add(&client->current_win->
+		     client_id_cache[(int)nickname[0] - 32],
+		     client->current_win->
+		     client_id_cache_count[(int)nickname[0] - 32],
+		     strdup(nickname), SILC_ID_CLIENT, id, NULL);
+#endif
+
+    silc_say(cmd->client, "%s", buf);
+   }
+
+  if (status == SILC_STATUS_LIST_START) {
+
+  }
+
+  if (status == SILC_STATUS_LIST_END) {
+
+  }
+
+  SILC_CLIENT_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_WHOIS);
+
+ out:
+  silc_client_command_reply_free(cmd);
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(whowas)
+{
+}
+
+/* Received reply for IDENTIFY command. This maybe called several times
+   for one IDENTIFY command as server may reply with list of results. 
+   This is totally silent and does not print anything on screen. */
+
+SILC_CLIENT_CMD_REPLY_FUNC(identify)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientWindow win = (SilcClientWindow)cmd->sock->user_data;
+  SilcClientEntry client_entry;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+
+  SILC_LOG_DEBUG(("Start"));
+
+#define CIDC(x) win->client_id_cache[(x) - 32]
+#define CIDCC(x) win->client_id_cache_count[(x) - 32]
+
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
+      tmp += 2;
+      silc_say(cmd->client, "%s: %s", tmp,
+	       silc_client_command_status_message(status));
+      goto out;
+    } else {
+      silc_say(cmd->client, "%s", silc_client_command_status_message(status));
+      goto out;
+    }
+  }
+
+  /* Display one whois reply */
+  if (status == SILC_STATUS_OK) {
+    unsigned char *id_data;
+    char *nickname;
+
+    id_data = silc_command_get_arg_type(cmd->payload, 2, NULL);
+    nickname = silc_command_get_arg_type(cmd->payload, 3, NULL);
+
+    /* Allocate client entry */
+    client_entry = silc_calloc(1, sizeof(*client_entry));
+    client_entry->id = silc_id_str2id(id_data, SILC_ID_CLIENT);
+    client_entry->nickname = strdup(nickname);
+
+    /* Save received Client ID to ID cache */
+    CIDCC(nickname[0]) =
+      silc_idcache_add(&CIDC(nickname[0]), CIDCC(nickname[0]),
+		       client_entry->nickname, SILC_ID_CLIENT, 
+		       client_entry->id, client_entry);
+  }
+
+  if (status == SILC_STATUS_LIST_START) {
+
+  }
+
+  if (status == SILC_STATUS_LIST_END) {
+
+  }
+
+  SILC_CLIENT_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_IDENTIFY);
+
+ out:
+  silc_client_command_reply_free(cmd);
+#undef CIDC
+#undef CIDCC
+}
+
+/* Received reply for command NICK. If everything went without errors
+   we just received our new Client ID. */
+
+SILC_CLIENT_CMD_REPLY_FUNC(nick)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientWindow win = (SilcClientWindow)cmd->sock->user_data;
+  SilcCommandStatus status;
+  unsigned char *tmp, *id_string;
+  int argc;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    silc_say(cmd->client, "Cannot set nickname: %s", 
+	     silc_client_command_status_message(status));
+    goto out;
+  }
+
+  argc = silc_command_get_arg_num(cmd->payload);
+  if (argc < 2 || argc > 2) {
+    silc_say(cmd->client, "Cannot set nickname: bad reply to command");
+    goto out;
+  }
+
+  /* Take received Client ID */
+  id_string = silc_command_get_arg_type(cmd->payload, 2, NULL);
+  silc_client_receive_new_id(cmd->client, cmd->sock, id_string);
+
+  /* Update nickname on screen */
+  cmd->client->screen->bottom_line->nickname = win->nickname;
+  silc_screen_print_bottom_line(cmd->client->screen, 0);
+
+ out:
+  silc_client_command_reply_free(cmd);
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(list)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(topic)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(invite)
+{
+}
+ 
+SILC_CLIENT_CMD_REPLY_FUNC(quit)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(kill)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(info)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(away)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(connect)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(ping)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(oper)
+{
+}
+
+/* Received reply for JOIN command. */
+
+SILC_CLIENT_CMD_REPLY_FUNC(join)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClient client = cmd->client;
+  SilcCommandStatus status;
+  unsigned int argc;
+  unsigned char *id_string;
+  char *topic, *tmp, *channel_name;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    silc_say(cmd->client, "%s", silc_client_command_status_message(status));
+    goto out;
+  }
+
+  argc = silc_command_get_arg_num(cmd->payload);
+  if (argc < 3 || argc > 4) {
+    silc_say(cmd->client, "Cannot join channel: Bad reply packet");
+    goto out;
+  }
+
+  /* Get channel name */
+  tmp = silc_command_get_arg_type(cmd->payload, 2, NULL);
+  channel_name = strdup(tmp);
+
+  /* Get channel ID */
+  id_string = silc_command_get_arg_type(cmd->payload, 3, NULL);
+
+  /* Get topic */
+  topic = silc_command_get_arg_type(cmd->payload, 4, NULL);
+
+  /* Save received Channel ID */
+  silc_client_new_channel_id(cmd->client, cmd->sock, channel_name, id_string);
+
+  /* Print channel name on screen */
+  client->screen->bottom_line->channel = channel_name;
+  silc_screen_print_bottom_line(client->screen, 0);
+
+  if (topic)
+    silc_say(client, "Topic for %s: %s", channel_name, topic);
+
+ out:
+  silc_client_command_reply_free(cmd);
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(motd)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(umode)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(cmode)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(kick)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(restart)
+{
+}
+ 
+SILC_CLIENT_CMD_REPLY_FUNC(close)
+{
+}
+ 
+SILC_CLIENT_CMD_REPLY_FUNC(die)
+{
+}
+ 
+SILC_CLIENT_CMD_REPLY_FUNC(silcoper)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(leave)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(names)
+{
+}
+
+/* Private message received. This processes the private message and
+   finally displays it on the screen. */
+
+SILC_CLIENT_CMD_REPLY_FUNC(msg)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClient client = cmd->client;
+  SilcBuffer buffer = (SilcBuffer)cmd->context;
+  unsigned short nick_len;
+  unsigned char *nickname, *message;
+  SilcIDCache *id_cache;
+  unsigned char *id_string;
+  void *id;
+
+  /* Get nickname */
+  silc_buffer_unformat(buffer, 
+		       SILC_STR_UI16_NSTRING_ALLOC(&nickname, &nick_len),
+		       SILC_STR_END);
+  silc_buffer_pull(buffer, 2 + nick_len);
+
+#if 0
+  /* Get ID of the sender */
+  id_string = silc_calloc(SILC_ID_CLIENT_LEN, sizeof(unsigned char *));
+  silc_buffer_push(buffer, SILC_ID_CLIENT_LEN + SILC_ID_CLIENT_LEN);
+  memcpy(id_string, buffer->data, SILC_ID_CLIENT_LEN);
+  silc_buffer_pull(buffer, SILC_ID_CLIENT_LEN + SILC_ID_CLIENT_LEN);
+  id = silc_id_str2id(id_string, SILC_ID_CLIENT);
+  silc_free(id_string);
+
+  /* Nickname should be verified if we don't have it in the cache */
+  if (silc_idcache_find_by_data(client->current_win->
+				client_id_cache[nickname[0] - 32],
+				client->current_win->
+				client_id_cache_count[nickname[0] - 32],
+				nickname, &id_cache) == FALSE) {
+
+    SilcClientCommandContext ctx;
+    char whois[255];
+
+    /* Private message from unknown source, try to resolve it. */
+
+
+    return;
+  }
+#endif
+     
+  message = silc_calloc(buffer->len + 1, sizeof(char));
+  memcpy(message, buffer->data, buffer->len);
+  silc_print(client, "*%s* %s", nickname, message);
+  memset(message, 0, buffer->len);
+  silc_free(message);
+}

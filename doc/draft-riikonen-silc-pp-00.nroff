@@ -1,0 +1,2317 @@
+.pl 10.0i
+.po 0
+.ll 7.2i
+.lt 7.2i
+.nr LL 7.2i
+.nr LT 7.2i
+.ds LF Riikonen
+.ds RF FORMFEED[Page %]
+.ds CF
+.ds LH Internet Draft
+.ds RH 27 June 2000
+.ds CH SILC Packet Protocol
+.na
+.hy 0
+.in 0
+.nf
+Network Working Group                                      P. Riikonen
+Internet-Draft
+draft-riikonen-silc-pp-00.txt                             27 June 2000
+Expires: 27 Jan 2001
+
+.in 3
+
+.ce
+SILC Packet Protocol
+
+.ti 0
+Status of this Memo
+
+This document is an Internet-Draft.  Internet-Drafts are working
+documents of the Internet Engineering Task Force (IETF), its areas,
+and its working groups.  Note that other groups may also distribute
+working documents as Internet-Drafts.
+
+Internet-Drafts are draft documents valid for a maximum of six
+months and may be updated, replaced, or obsoleted by other 
+documents at any time. It is inappropriate to use Internet-Drafts  
+as reference material or to cite them other than as 
+``work in progress.''
+
+To learn the current status of any Internet-Draft, please check the
+``1id-abstracts.txt'' listing contained in the Internet-Drafts
+Shadow Directories on ftp.is.co.za (Africa), nic.nordu.net (Europe),
+munnari.oz.au (Pacific Rim), ds.internic.net (US East Coast), or
+ftp.isi.edu (US West Coast).
+
+The distribution of this memo is unlimited.
+
+
+.ti 0
+Abstract
+
+This memo describes a Packet Protocol used in the Secure Internet Live
+Conferencing (SILC) protocol specified in the Secure Internet Live
+Conferencing, Protocol Specification Internet Draft [SILC1].  This
+protocol describes the packet types and packet payloads which defines
+the contents of the packets.  The protocol provides secure binary packet
+protocol that assures that the contents of the packets are secured and
+authenticated.
+
+
+
+
+
+
+
+
+
+.ti 0
+Table of Contents
+
+.nf
+1 Introduction ..................................................  3
+2 SILC Packet Protocol ..........................................  4
+  2.1 SILC Packet ...............................................  4
+  2.2 SILC Packet Header ........................................  5
+  2.3 SILC Packet Types .........................................  7
+      2.3.1 SILC Packet Payloads ................................ 15
+      2.3.2 Disconnect Payload .................................. 15
+      2.3.3 Success Payload ..................................... 16
+      2.3.4 Failure Payload ..................................... 16
+      2.3.5 Reject Payload ...................................... 17
+      2.3.6 Notify Payload ...................................... 17
+      2.3.7 Error Payload ....................................... 18
+      2.3.8 Channel Message Payload ............................. 19
+      2.3.9 Channel Key Payload ................................. 20
+      2.3.10 Private Message Payload ............................ 23
+      2.3.11 Private Message Key Payload ........................ 24
+      2.3.12 Command Payload .................................... 25
+             2.3.12.1 Command Argument Payload .................. 25
+      2.3.13 Command Reply Payload .............................. 26
+      2.3.14 Connection Auth Request Payload .................... 27
+      2.3.15 New ID Payload ..................................... 28
+      2.3.16 New ID List Payload ................................ 29
+      2.3.17 New Client Payload ................................. 29
+      2.3.18 New Server Payload ................................. 31
+      2.3.19 New Channel Payload ................................ 31
+      2.3.20 New Channel User Payload ........................... 32
+      2.3.21 New Channel List Payload ........................... 33
+      2.3.22 New Channel User List Payload ...................... 34
+      2.3.23 Replace ID Payload ................................. 34
+      2.3.24 Remove ID Payload .................................. 35
+  2.4 SILC ID Types ............................................. 36
+  2.5 Packet Encryption And Decryption .......................... 37
+      2.5.1 Normal Packet Encryption And Decryption ............. 37
+      2.5.2 Channel Message Encryption And Decryption ........... 37
+      2.5.3 Private Message Encryption And Decryption ........... 38
+  2.6 Packet MAC Generation ..................................... 39
+  2.7 Packet Padding Generation ................................. 39
+  2.8 Packet Compression ........................................ 40
+  2.9 Packet Sending ............................................ 40
+  2.10 Packet Reception ......................................... 41
+  2.11 Packet Broadcasting ...................................... 41
+  2.12 Packet Routing ........................................... 42
+  2.13 Packet Tunneling ......................................... 42
+3 Security Considerations ....................................... 43
+4 References .................................................... 43
+5 Author's Address .............................................. 44
+
+.ti 0
+List of Figures
+
+.nf
+Figure 1:   Typical SILC Packet
+Figure 2:   SILC Packet Header
+Figure 3:   Disconnect Payload
+Figure 4:   Success Payload
+Figure 5:   Failure Payload
+Figure 6:   Reject Payload
+Figure 7:   Notify Payload
+Figure 8:   Error Payload
+Figure 9:   Channel Message Payload
+Figure 10:  Channel Key Payload
+Figure 11:  Private Message Payload
+Figure 12:  Private Message Key Payload
+Figure 13:  Command Payload
+Figure 14:  Command Argument Payload
+Figure 15:  Connection Auth Request Payload
+Figure 16:  New ID Payload
+Figure 17:  New Client Payload
+Figure 18:  New Server Payload
+Figure 19:  New Channel Payload
+Figure 20:  New Channel User Payload
+Figure 21:  Replace ID Payload
+Figure 22:  Remove ID Payload
+
+
+.ti 0
+1. Introduction
+
+This document describes a Packet Protocol used in the Secure Internet
+Live Conferencing (SILC) protocol specified in the Secure Internet Live
+Conferencing, Protocol Specification Internet Draft [SILC1].  This
+protocol describes the packet types and packet payloads which defines
+the contents of the packets.  The protocol provides secure binary packet
+protocol that assures that the contents of the packets are secured and
+authenticated.
+
+The basis of SILC protocol relies in the SILC packets and it is with
+out a doubt the most important part of the protocol.  It is also probably
+the most complicated part of the protocol.  Packets are used all the
+time in the SILC network to send messages, commands and other information.
+All packets in SILC network are always encrypted and their integrity
+is assured by computed MACs.  The protocol defines several packet types
+and packet payloads.  Each packet type usually has a specific packet
+payload that actually defines the contents of the packet.  Each packet
+also includes a default SILC Packet Header that provides sufficient
+information about the origin of the packet and destination of the
+packet.
+
+
+.ti 0
+2 SILC Packet Protocol
+
+.ti 0
+2.1 SILC Packet
+
+SILC packets deliver messages from sender to receiver securely by
+encrypting important fields of the packet.  The packet consists of
+default SILC Packet Header, Padding, Packet Payload data, and, packet 
+MAC.
+
+The following diagram illustrates typical SILC packet.
+
+
+.in 5
+.nf
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+|   n bytes   | 1 - n bytes |      n bytes       |  n bytes       
+| SILC Header |   Padding   |    Data Payload    |    MAC    
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.in 3
+
+.ce
+Figure 1:  Typical SILC Packet
+
+
+SILC Header is always the first part of the packet and its purpose
+is to provide information about the packet.  It provides for example
+the packet type, origin of the packet and the destination of the packet.
+The header is variable in length and first two (2) bytes of the
+header (thus first two bytes of the packet) are not encrypted.  The
+first two (2) bytes are the length of the packet which is not encrypted.
+See following section for description of SILC Packet header.  Packets
+without SILC header or with malformed SILC header must be dropped.
+
+Padding follows the packet header.  The purpose of the padding is to
+make the packet multiple by eight (8) or by the block size of the
+cipher used in the encryption, which ever is larger.  The maximum
+length of padding is currently 16 bytes.  The padding is always
+encrypted.
+
+Data payload area follows padding and it is the actual data of the
+packet.  The packet data is the packet payloads defined in this
+protocol.  The data payload area is always encrypted.
+
+The last part of SILC packet is the packet MAC that assures the
+integrity of the packet.  The MAC is always computed from the packet
+before the encryption is applied to the packet.  If compression is used
+in the packet the MAC is computed after the compression has been
+applied.  The compression, on the other hand, is always applied before
+encryption.
+
+All fields in all packet payloads are always in MSB (most significant
+byte first) order.
+
+
+.ti 0
+2.2 SILC Packet Header
+
+The default SILC packet header is applied to all SILC packets and it is
+variable in length.  The purpose of SILC Packet header is to provide
+detailed information about the packet.  The receiver of the packet uses
+the packet header to parse the packet and gain other relevant parameters
+of the packet.
+
+Following diagram represents the default SILC header format.
+(*) indicates that this field is never encrypted.  Other fields are
+always encrypted.
+
+
+.in 5
+.nf
+                      1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Payload Length *       |     Flags     |  Packet Type  |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Source ID Length       |     Destination ID Length     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Src ID Type  |                                               |
++-+-+-+-+-+-+-+-+                                               +
+|                                                               |
+~                           Source ID                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Dst ID Type  |                                               |
++-+-+-+-+-+-+-+-+                                               +
+|                                                               |
+~                         Destination ID                        ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 2:  SILC Packet Header
+
+
+.in 6
+o Payload Length (2 bytes) - Is the length of the packet
+  not including the padding of the packet.  This field must
+  not be encrypted but must always be authenticated.
+
+o Flags (1 byte) - Indicates flags to be used in packet
+  processing.  Several flags may be set by ORing the flags
+  together.
+
+  Following flags are reserved for this field:
+
+
+
+
+     No flags                  0x00
+
+       In this case the field is ignored.
+
+
+     Private Message Key       0x01
+
+       Indicates that the packet must include private
+       message that is encrypted using private key set by
+       client.  Servers does not know anything about this
+       key and this causes that the private message is
+       not handled by the server at all, it is just
+       passed along.  See section 2.5.3 Private Message
+       Encryption And Decryption for more information.
+
+
+     Broadcast                 0x02
+
+       Marks the packet to be broadcasted.  Client cannot
+       send broadcast packet and normal server cannot send
+       broadcast packet.  Only router server may send broadcast
+       packet.  The router receiving of packet with this flag 
+       set must send (broadcast) the packet to its primary
+       route.  If router has several router connections the
+       packet may be sent only to the primary route.  See
+       section 2.11 Packet Broadcasting for description of 
+       packet broadcasting.
+
+
+     Tunneled                  0x04
+
+       Marks that the packet is tunneled.  Tunneling means
+       that extra SILC Packet Header has been applied to the
+       original packet.  The outer header has this flag
+       set.  See section 2.13 Packet Tunneling for more
+       information.
+.in 3
+
+
+
+o Packet Type (1 byte) - Is the type of the packet. Receiver 
+  uses this field to parse the packet.  See section 2.3
+  SILC Packets for list of defined packet types.
+
+o Source ID Length (2 bytes) - Indicates the length of the
+  Source ID field in the header, not including this or any
+  other fields.
+
+
+
+o Destination ID Length (2 bytes) - Indicates the length of the
+  Destination ID field in the header, not including this or
+  any other fields.
+
+o Src ID Type (1 byte) - Indicates the type of ID in the
+  Source ID field.  See section 2.4 SILC ID Types for
+  defined ID types.
+
+o Source ID (variable length) - The actual source ID that
+  indicates who is the original sender of the packet.
+
+o Dst ID Type (1 byte) - Indicates the type of ID in the
+  Destination ID field.  See section 2.4 SILC ID Types for
+  defined ID types.
+
+o Destination ID (variable length) - The actual source ID that
+  indicates who is the end receiver of the packet.
+
+
+.ti 0
+2.3 SILC Packet Types
+
+SILC packet types defines the contents of the packet and it is used by
+the receiver to parse the packet.  The packet type is 8 bits, as a one
+byte, in length.  The range for the packet types are from 0 - 255,
+where 0 is never sent and 255 is currently reserved for future
+extensions and must not be defined to any other purpose.  Every SILC
+specification compliant implementation should support all of these packet
+types.
+
+The below list of the SILC Packet types includes reference to the packet
+payload as well.  Packet payloads are the actual packet, that is, the data
+that the packet consists of.  Each packet type defines packet payload 
+which usually may only be sent with the specific packet type.
+
+Most of the packets are packets that must be destined directly to entity
+that is connected to the sender.  It is not allowed, for example, for
+router to send disconnect packet to client that is not directly connected
+to the router.  However, there are some special packet types that may
+be destined to some entity that the sender has not direct connection
+with.  These packets are for example private message packets, channel
+message packets, command packets and some other packets that may be
+broadcasted in the SILC network.  If the packet is allowed to be sent to
+indirectly connected entity it is mentioned separately in the packet
+description (unless it is obvious as in private and channel message
+packets).  Other packets must not be sent or accepted, if sent, to
+indirectly connected entities.
+
+List of SILC Packet types are defined as follows.
+
+.in 1
+     0    SILC_PACKET_NONE
+
+          This type is reserved and it is never sent.         
+
+
+     1    SILC_PACKET_DISCONNECT
+
+          This packet is sent to disconnect the remote end.  Reason of
+          the disconnection is sent inside the packet payload.  Client
+          usually does not send this packet.
+
+          Payload of the packet:  See section 2.3.2 Disconnect Payload
+
+
+     2    SILC_PACKET_SUCCESS
+
+          This packet is sent upon successful execution of some protocol.
+          The status of the success is sent in the packet.
+
+          Payload of the packet:  See section 2.3.3 Success Payload
+
+
+     3    SILC_PACKET_FAILURE
+
+          This packet is sent upon failure of some protocol.  The status
+          of the failure is sent in the packet.
+
+          Payload of the packet:  See section 2.3.4 Failure Payload
+
+
+     4    SILC_PACKET_REJECT
+
+          This packet may be sent upon rejection of some protocol.
+          The status of the rejection is sent in the packet.
+
+          Payload of the packet:  See section 2.3.5 Reject Payload
+
+
+     5    SILC_PACKET_NOTIFY
+
+          This packet is used to send notify message, usually from
+          server to client, although it may be sent from server to another
+          server as well.  Client never sends this packet.  Server may
+          send this packet to channel as well when the packet is 
+          distributed to all clients on the channel.  Receiver of this 
+          packet may ignore the packet if it chooses so.  However, it 
+          should not be ignored.
+
+          Payload of the packet:  See section 2.3.6 Notify Payload.
+
+
+     6    SILC_PACKET_ERROR
+
+          This packet is sent when an error occurs.  Server may
+          send this packet.  Client never sends this packet.  The
+          client may entirely ignore the packet, however, server is
+          most likely to take action anyway.
+
+          Payload of the packet:  See section 2.3.7 Error Payload.
+
+
+     7    SILC_PACKET_CHANNEL_MESSAGE
+
+          This packet is used to send messages to channels.  The packet
+          includes Channel ID of the channel and the actual message to
+          the channel.  Messages sent to the channel are always protected
+          by channel specific keys.  Channel Keys are distributed by
+          SILC_PACKET_CHANNEL_KEY packet.
+
+          When client sends this packet the destination ID in the SILC 
+          header must be the Channel ID of the channel the message is 
+          destined to.  If server sends this packet to a client the 
+          destination ID in the SILC header must be the Client ID of 
+          the client receiving the packet.
+
+          If server sends this packet to router or if router sends this
+          packet to server or another router the destination ID in the
+          SILC header must be the Channel ID of the channel.  Server
+          (including router) distributes this packet only to its local
+          clients who are joined to the channel.  Servers and routers
+          also determines who are on the channel and when this packet
+          needs to be sent, as described in section Client To Client
+          in [SILC1].
+
+          Payload of the packet:  See section 2.3.8 Channel Message 
+                                  Payload
+
+
+     8    SILC_PACKET_CHANNEL_KEY
+
+          This packet is used to distribute new key for particular
+          channel.  Each channel has their own independent keys that
+          is used to protect the traffic on the channel.  Only server
+          may send this packet.  This packet may be sent to entity
+          that is indirectly connected to the sender.
+
+          Payload of the packet:  See section 2.3.9 Channel Key Payload
+
+
+     9    SILC_PACKET_PRIVATE_MESSAGE
+
+          This packet is used to send private messages from client
+          to another client.  By default, private messages are protected
+          by session keys established by normal key exchange protocol.
+          However, it is possible to use specific key to protect private
+          messages.  SILC_PACKET_PRIVATE_MESSAGE_KEY packet is used to 
+          agree the key with the remote client.  Pre-shared key may be 
+          used as well if both of the client knows it, however, it needs 
+          to be agreed outside SILC.  See more of this in [SILC1].
+
+          Payload of the packet:  See section 2.3.10 Private Message
+                                  Payload
+
+
+     10   SILC_PACKET_PRIVATE_MESSAGE_KEY
+
+          This packet is used to agree about a key to be used to protect
+          the private messages between two clients.  If this is not sent
+          the normal session key is used to protect the private messages
+          inside SILC network.  Agreeing to use specific key to protect
+          private messages adds security, as no server between the two
+          clients will be able to decrypt the private message.  However,
+          servers inside SILC network are considered to be trusted, thus
+          using normal session key to protect private messages does not
+          degree security.  Whether to agree to use specific keys by
+          default or to use normal session keys by default, is 
+          implementation specific issue.  See more of this in [SILC1].
+
+          Payload of the packet:  See section 2.3.11 Private Message
+                                  Key Payload
+
+
+     11   SILC_PACKET_COMMAND
+
+          This packet is used to send commands from client to server.
+          Server may send this packet to other servers as well.  All
+          commands are listed in their own section SILC Command Types
+          in [SILC1].  The contents of this packet is command specific.
+          This packet may be sent to entity that is indirectly connected
+          to the sender.
+
+          Payload of the packet:  See section 2.3.12 Command Payload
+
+
+     12   SILC_PACKET_COMMAND_REPLY
+
+          This packet is send as reply to the SILC_PACKET_COMMAND packet.
+          The contents of this packet is command specific.  This packet
+          maybe sent to entity that is indirectly connected to the sender.
+
+          Payload of the packet:  See section 2.3.13 Command Reply 
+                                  Payload and section 2.3.12 Command
+                                  Payload
+
+
+     13   SILC_PACKET_KEY_EXCHANGE
+
+          This packet is used to start SILC Key Exchange Protocol, 
+          described in detail in [SILC3].
+
+          Payload of the packet:  Payload of this packet is described
+                                  in the section SILC Key Exchange
+                                  Protocol and its sub sections in
+                                  [SILC3].
+
+
+     14   SILC_PACKET_KEY_EXCHANGE_1
+
+          This packet is used as part of the SILC Key Exchange Protocol.
+
+          Payload of the packet:  Payload of this packet is described
+                                  in the section SILC Key Exchange
+                                  Protocol and its sub sections in
+                                  [SILC3].
+
+
+     15   SILC_PACKET_KEY_EXCHANGE_2
+
+          This packet is used as part of the SILC Key Exchange Protocol.
+
+          Payload of the packet:  Payload of this packet is described
+                                  in the section SILC Key Exchange
+                                  Protocol and its sub sections in
+                                  [SILC3].
+
+
+     16   SILC_PACKET_CONNECTION_AUTH_REQUEST
+
+          This packet is used to request the authentication method to
+          be used in the SILC Connection Authentication Protocol.  If 
+          initiator of the protocol does not know the mandatory 
+          authentication method this packet is used to determine it.
+
+          The party receiving this payload must respond with the same
+          packet including the mandatory authentication method.
+
+          Payload of the packet:  See section 2.3.14 Connection Auth
+                                  Request Payload
+
+
+     17   SILC_PACKET_CONNECTION_AUTH
+
+          This packet is used to start and perform the SILC Connection
+          Authentication Protocol.  This protocol is used to authenticate
+          the connecting party.  The protocol is described in detail in
+          [SILC3].
+
+          Payload of the packet:  Payload of this packet is described
+                                  in the section SILC Authentication
+                                  Protocol and it sub sections in [SILC].
+
+
+     18   SILC_PACKET_NEW_ID
+
+          This packet is used to distribute new ID's from server to
+          router and from router to all routers in the SILC network.
+          This is used when for example new client is registered to
+          SILC network.  The newly created ID's of these operations are
+          distributed by this packet.  Only server may send this packet,
+          however, client must be able to receive this packet.
+
+          Payload of the packet:  See section 2.3.15 New ID Payload
+
+
+     19   SILC_PACKET_NEW_ID_LIST
+
+          This packet is used to distribute list of new ID's from
+          server to routers.  This is equivalent to previous packet
+          type except that it may include several ID's.  Client must
+          not send this packet.
+
+          Payload of the packet:  See section 2.3.16 New ID List 
+                                  Payload
+
+
+     20   SILC_PACKET_NEW_CLIENT
+
+          This packet is used by client to register itself to the
+          SILC network.  This is sent after key exchange and 
+          authentication protocols has been completed.  Client sends
+          various information about itself in this packet.
+
+          Payload of the packet:  See section 2.3.17 New Client Payload
+
+
+     21   SILC_PACKET_NEW_SERVER
+
+          This packet is used by server to register itself to the
+          SILC network.  This is sent after key exchange and 
+          authentication protocols has been completed.  Server sends
+          this to the router it connected to, or, if router was
+          connecting, to the connected router.  Server sends
+          its Server ID and other information in this packet.
+          Client must not send or receive this packet.
+
+          Payload of the packet:  See section 2.3.18 New Server Payload
+
+
+     22   SILC_PACKET_NEW_CHANNEL
+
+          This packet is used to notify routers about newly created
+          channel.  Channels are always created by the router and it must
+          notify other routers about the created channel.  Router sends
+          this packet to its primary route.  Client must not send this
+          packet.  This packet maybe sent to entity that is indirectly
+          connected to the sender.
+
+          Payload of the packet:  See section 2.3.19 New Channel Payload
+
+
+     23   SILC_PACKET_NEW_CHANNEL_USER
+
+          This packet is used to notify routers about new user on channel.
+          The packet is sent after user has joined to the channel.  Server
+          may send this packet to its router and router may send this to
+          its primary router.  Client must not send this packet.  This
+          packet maybe sent to entity that is indirectly connected to the
+          sender.
+
+          Payload of the packet:  See section 2.3.20 New Channel User
+                                  Payload
+
+
+     24   SILC_PACKET_NEW_CHANNEL_LIST
+
+          This packet is used to distribute list of created channels
+          from server to routers.  This is equivalent to the packet
+          SILC_PACKET_NEW_CHANNEL except that it may include several
+          payloads. Client must not send this packet.
+
+          Payload of the packet:  See section 2.3.21 New Channel List
+                                  Payload
+
+
+     25   SILC_PACKET_NEW_CHANNEL_USER_LIST
+
+          This packet is used to distribute list of users on specific
+          channel from server to routers.  This is equivalent to the
+          packet SILC_PACKET_NEW_CHANNEL_USER except that it may
+          include several payloads.  Client must not send this packet.
+
+          Payload of the packet:  See section 2.3.22 New Channel User
+                                  List Payload
+
+
+     26   SILC_PACKET_REPLACE_ID
+
+          This packet is used to replace old ID with new ID sent in
+          the packet payload.  For example, when client changes its
+          nickname new ID is created and this packet can be used to
+          distribute the new ID and the old ID is removed when it is
+          send in the packet.  Client cannot send or receive this
+          packet.  This packet maybe sent to entity that is indirectly
+          connected to the sender.
+
+          Payload of the packet:  See section 2.3.23 Replace ID Payload
+
+
+     27   SILC_PACKET_REMOVE_ID
+
+          This packet is used to removed ID.  For example, when client
+          exits SILC network its ID is removed.  Client must not send
+          this packet.  This packet maybe sent to entity that is
+          indirectly connected to the sender.
+
+          Payload of the packet:  See section 2.3.24 Remove ID Payload
+
+
+     28   SILC_PACKET_REKEY
+
+          This packet is used to indicate that re-key must be performed
+          for session keys.  See section Session Key Regeneration in
+          [SILC1] for more information.  This packet does not have
+          a payload.
+
+
+
+
+     29   SILC_PACKET_REKEY_DONE
+
+          This packet is used to indicate that re-key is performed and
+          new keys must be used hereafter.  This is sent only if re-key
+          was done without PFS option.  If PFS is set, this is not sent
+          as SILC Key Exchange protocol is executed.  This packet does
+          not have a payload.
+
+
+     30 - 254
+
+         Currently undefined commands.
+
+
+     255 SILC_PACKET_MAX
+
+         This type is reserved for future extensions and currently it 
+         is not sent.
+.in 3
+
+
+.ti 0
+2.3.1 SILC Packet Payloads
+
+All payloads resides in the main data area of the SILC packet.  However
+all payloads must be at the start of the data area after the default
+SILC packet header and padding.  All fields in the packet payload are
+always encrypted, as, they reside in the data area of the packet which
+is always encrypted.
+
+Payloads described in this section are common payloads that must be
+accepted anytime during SILC session.  Most of the payloads may only
+be sent with specific packet type which is defined in the description
+of the payload.
+
+There are a lot of other payloads in the SILC as well.  However, they
+are not common in the sense that they could be sent at any time. 
+These payloads are not described in this section.  These are payloads
+such as SILC Key Exchange payloads and so on.  These are described
+in [SILC1] and [SILC3].
+
+
+.ti 0
+2.3.2 Disconnect Payload
+
+Disconnect payload is sent upon disconnection.  The payload is simple;
+reason of disconnection is sent to the disconnected party.
+
+The payload may only be sent with SILC_PACKET_DISCONNECT packet.  It
+must not be sent in any other packet type.  Following diagram represents
+the Disconnect Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                      Disconnect Message                       ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 3:  Disconnect Payload
+
+
+
+
+.in 6
+o Disconnect Message (variable length) - Human readable
+  reason of the disconnection.
+.in 3
+
+
+.ti 0
+2.3.3 Success Payload
+
+Success payload is sent when some protocol execution is successfully
+completed.  The payload is simple; indication of the success is sent.
+This maybe any data, including binary or human readable data.
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                      Success Indication                       ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 4:  Success Payload
+
+
+.in 6
+o Success Indication (variable length) - Indication of
+  the success.  This maybe for example some flag that
+  indicates the protocol and the success status or human
+  readable success message.  The true length of this
+  payload is available by calculating it from the SILC
+  Packet Header.
+.in 3
+
+
+.ti 0
+2.3.4 Failure Payload
+
+This is opposite of Success Payload.  Indication of failure of
+some protocol is sent in the payload.
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                      Failure Indication                       ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 5:  Failure Payload
+
+
+.in 6
+o Failure Indication (variable length) - Indication of
+  the failure.  This maybe for example some flag that
+  indicates the protocol and the failure status or human
+  readable failure message.  The true length of this
+  payload is available by calculating it from the SILC
+  Packet Header.
+.in 3
+
+
+.ti 0
+2.3.5 Reject Payload
+
+This payload is sent when some protocol is rejected to be executed.
+Other operations may send this as well that was rejected.  The
+indication of the rejection is sent in the payload.  The indication
+may be binary or human readable data.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                       Reject Indication                       ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 6:  Reject Payload
+
+
+.in 6
+o Reject Indication (variable length) - Indication of
+  the rejection.  This maybe for example some flag that
+  indicates the protocol and the rejection status or human
+  readable rejection message.  The true length of this
+  payload is available by calculating it from the SILC
+  Packet Header.
+.in 3
+
+
+.ti 0
+2.3.6 Notify Payload
+
+Notify payload is used to send notify messages.  The payload is usually
+sent from server to client, however, server may send it to another
+server as well.  Client must not send this payload.  The receiver of
+this payload may totally ignore the contents of the payload, however,
+notify message should be noted and possibly logged.
+
+The payload may only be sent with SILC_PACKET_NOTIFY packet.  It must
+not be sent in any other packet type.  Following diagram represents the
+Notify Payload.
+
+
+
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                        Notify Message                         ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 7:  Notify Payload
+
+
+.in 6
+o Notify Message (variable length) - Human readable notify
+  message.
+.in 3
+
+
+.ti 0
+2.3.7 Error Payload
+
+Error payload is sent upon error.  Error may occur in various
+conditions when server sends this packet.  Client may not send this
+payload but must be able to accept it.  However, client may
+totally ignore the contents of the packet as server is going to
+take action on the error anyway.  However, it is recommended
+that the client takes error packet seriously.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                         Error Message                         ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 8:  Error Payload
+
+
+.in 6
+o Error Message (variable length) - Human readable error
+  message.
+.in 3
+
+
+.ti 0
+2.3.8 Channel Message Payload
+
+Channel messages are the most common messages sent in the SILC.
+Channel Message Payload is used to send message to channels.  These
+messages can only be sent if client has joined to some channel.
+Even though this packet is the most common in SILC it is still
+special packet.  Some special handling on sending and reception
+of channel message is required.
+
+Padding must be applied into this payload since the payload is
+encrypted separately from other parts of the packet with the
+channel specific key.  Hence the requirement of the padding.  
+The padding should be random data.  The packet must be made
+multiple by eight (8) or by the block size of the cipher, which
+ever is larger.
+
+The SILC header in this packet is encrypted with the session key
+of the next receiver of the packet.  Nothing else is encrypted
+with that key.  Hence, the actual packet and padding to be
+encrypted with the session key is SILC Header plus padding to it
+to make it multiple by eight (8) or multiple by the block size
+of the cipher, which ever is larger.
+
+Receiver of the the channel message packet is able to determine
+the channel the message is destined to by checking the destination
+ID from the SILC Packet header which tells the destination channel.
+The original sender of the packet is also determined by checking
+the source ID from the header which tells the who client sent
+the message.
+
+The payload may only be sent with SILC_PACKET_CHANNEL_MESSAGE packet.
+It  must not be sent in any other packet type.  Following diagram 
+represents the Notify Payload.
+
+(*) indicates that the field is not encrypted.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Nickname Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                           Nickname                            ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         Message Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                         Message Data                          ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Padding Length         |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                            Padding                            ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                       Initial Vector *                        ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 9:  Channel Message Payload
+
+
+.in 6
+o Nickname Length (2 bytes) - Indicates the length of the
+  Nickname field, not including any other field.
+
+o Nickname (variable length) - Nickname of the sender of the 
+  channel message.  This should not be trusted as a definite 
+  sender of the channel message.  The SILC Packet Header in 
+  the packet indicates the true sender of the packet and 
+  client should verify that the nickname sent here belongs 
+  to the Client ID in the SILC Packet Header.  This nickname 
+  is merely provided to be displayed by the client.
+
+  If server is sending this packet this field is not included
+  and zero (0) length must be set to the Nickname Length field.
+
+o Message Length (2 bytes) - Indicates the length of the
+  the Message Data field in the payload, not including any 
+  other field.
+
+
+o Message Data (variable length) - The actual message to
+  the channel.
+
+o Padding Length (2 bytes) - Indicates the length of the
+  Padding field in the payload, not including any other
+  field.
+
+o Padding (variable length) - The padding that must be
+  applied because this payload is encrypted separately from
+  other parts of the packet.
+
+o Initial Vector (variable length) - The initial vector
+  that has been used in packet encryption.  It needs to be
+  used in the packet decryption as well.  What this field
+  includes is implementation issue.  However, it is 
+  recommended that it would be random data or, perhaps,
+  a timestamp.  It is not recommended to use zero (0) as
+  initial vector.  This field is not encrypted.  This field
+  is not included into the padding calculation.  Length
+  of this field equals the cipher's block size.  This field
+  is, however, authenticated.
+.in 3
+
+
+.ti 0
+2.3.9 Channel Key Payload
+
+All traffic in channels are protected by channel specific keys.
+Channel Key Payload is used to distribute channel keys to all
+clients on the particular channel.  Channel keys are sent when
+the channel is created, when new user joins to the channel and
+whenever a user leaves a channel.  Server creates the new
+channel key and distributes it to the clients by encrypting this
+payload with the session key shared between the server and
+the client.  After that, client starts using the key received
+in this payload to protect the traffic on the channel.
+
+Channel keys are cell specific thus every router in cell have
+to create a channel key and distribute it if any client in the
+cell has joined to a channel.  Channel traffic between cell's
+are not encrypted using channel keys, they are encrypted using
+normal session keys between two routers.  Inside a cell, all
+channel traffic is encrypted with the specified channel key.
+Channel key should expire peridiocally, say, in one hour, in
+which case new channel key is created and distributed.
+
+The payload may only be sent with SILC_PACKET_CHANNEL_KEY packet.
+It must not be sent in any other packet type.  Following diagram 
+represents the Channel Key Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       Channel ID Length       |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                          Channel ID                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      Cipher Name Length       |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                         Cipher Name                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      Channel Key Length       |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                         Channel Key                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 10:  Channel Key Payload
+
+
+
+.in 6
+o Channel ID Length (2 bytes) - Indicates the length of the
+  Channel ID field in the payload, not including any other
+  field.
+
+o Channel ID (variable length) - The Channel ID of the
+  channel this key is meant for.
+
+o Cipher Name Length (2 bytes) - Indicates the length of the
+  Cipher name field in the payload, not including any other
+  field.
+
+o Cipher Name (variable length) - Name of the cipher used
+  in the protection of channel traffic.  This name is
+  initially decided by the creator of the channel but it
+  may change during the life time of the channel as well.
+
+o Channel Key Length (2 bytes) - Indicates the length of the
+  Channel Key field in the payload, not including any other
+  field.
+
+o Channel Key (variable length) - The actual channel key
+  material.  This key is used as such as key material for
+  encryption function.
+.in 3
+
+
+.ti 0
+2.3.10 Private Message Payload
+
+Private Message Payload is used to send private message between
+two clients (or users for that matter).  The messages are sent only
+to the specified user and no other user inside SILC network is
+able to see the message.  The message is protected by the session 
+key established by the SILC Key Exchange Protocol.  However,
+it is also possible to agree to use specific keys to protect
+just the private messages.  See section 2.3.11 Private Message
+Key Payload for detailed description of how to agree to use
+specific key.
+
+If normal session key is used to protect the message, every
+server between the sender client and the receiving client needs
+to decrypt the packet and always re-encrypt it with the session
+key of the next receiver of the packet.  See section Client
+To Client in [SILC1].
+
+When specific key is used to protect the message, servers between 
+the sender and the receiver needs not to decrypt/re-encrypt the 
+packet.  Section 4.8.2 Client To Client in [SILC1] gives example of
+this scheme as well.
+
+The payload may only be sent with SILC_PACKET_PRIVATE_MESSAGE 
+packet.  It must not be sent in any other packet type.  Following 
+diagram represents the Private Message Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Nickname Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                            Nickname                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                          Message Data                         ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 11:  Private Message Payload
+
+
+.in 6
+o Nickname Length (2 bytes) - Indicates the length of the
+  Nickname field, not including any other field.
+
+o Nickname (variable length) - Nickname of the sender of the 
+  private message.  This should not be trusted as a definite 
+  sender of the private message.  The SILC Packet Header in 
+  the packet indicates the true sender of the packet and 
+  client should verify that the nickname sent here belongs 
+  to the Client ID in the SILC Packet Header.  This nickname 
+  is merely provided to be displayed by the client.
+
+o Message Data (variable length) - The actual message to
+  the client.  Rest of the packet is reserved for the message
+  data.
+.in 3
+
+
+.ti 0
+2.3.11 Private Message Key Payload
+
+This payload is used to send key from client to another client that
+is going to be used to protect the private messages between these
+two clients.  If this payload is not sent normal session key 
+established by the SILC Key Exchange Protocol is used to protect
+the private messages.
+
+This payload may only be sent by client to another client.  Server
+must not send this payload at any time.  After sending this payload
+the sender of private messages must set the Private Message Key
+flag into SILC Packet Header.
+
+The payload may only be sent with SILC_PACKET_PRIVATE_MESSAGE_KEY 
+packet.  It must not be sent in any other packet type.  Following 
+diagram represents the Private Message Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Private Message Key Length   |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                      Private Message Key                      ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 12:  Private Message Key Payload
+
+
+
+
+.in 6
+o Private Message Key Length (2 bytes) - Indicates the length 
+  of the Private Message Key field in the payload, not including 
+  any other field.
+
+o Private Message Key (variable length) - The actual private
+  message key material.  This key is used as such as key material 
+  for encryption function.
+.in 3
+
+
+.ti 0
+2.3.12 Command Payload
+
+Command Payload is used to send SILC commands from client to server.  
+Following diagram represents the Command Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| SILC Command  | Arguments Num |         Payload Length        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 13:  Command Payload
+
+
+.in 6
+o SILC Command (1 byte) - SILC Command identifier.  This must 
+  be set to non-zero value.  If zero (0) value is found in this 
+  field the packet must be discarded.
+
+o Arguments Num (1 byte) - Indicates the number of arguments
+  associated with the command.  If there are no arguments this
+  field is set to zero (0).  The arguments must follow the 
+  command payload.
+
+o Payload Length (2 bytes) - Length of the entire command 
+  payload including any command argument payloads associated 
+  with this payload.
+.in 3
+
+See [SILC1] for detailed description of different SILC commands,
+their arguments and their reply messages.
+
+
+.ti 0
+2.3.12.1 Command Argument Payload
+
+Command Argument Payload is used to set arguments for SILC commands.
+Number of arguments associated with a command are indicated by the
+Command Payload in the Arguments Num field.  Command argument 
+payloads may only be used with a command payload and they must 
+always reside right after the command payload.  Incorrect amount of
+argument payloads must cause rejection of the packet.  Following 
+diagram represents the Command Argument Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Argument Num | Argument Type |         Payload Length        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                        Argument Data                          ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 14:  Command Argument Payload
+
+
+.in 6
+o Argument Num (1 byte) - Indicates the number of this argument.
+  For first argument this is set to 1, for second argument this
+  is set to 2, and so forth.  If incorrect value is found 
+  in this field the packet must be discarded.  Value is 
+  incorrect if it is zero (0) or, for example, a third argument
+  does not include value 3.
+
+o Argument Type (1 byte) - Indicates the type of the argument.  
+  Every command specify a number for each argument that maybe 
+  associated with the command.  By using this number the receiver 
+  of the packet knows what type of argument this is.  The numbers 
+  are command specific and has been defined in section SILC
+  Commands in [SILC1].  This field makes it possible to send
+  arguments in free order as this field is used to identify
+  the specific type of the argument.
+
+o Payload Length (2 bytes) - Length of the argument payload data 
+  area not including the length of any other fields in the 
+  payload.
+
+o Argument Data (variable length) - Argument data.
+.in 3
+
+
+.ti 0
+2.3.13 Command Reply Payload
+
+Command Reply Payload is used to send replies to the commands sent
+by the client.  The Command Reply Payload is identical to the
+Command Payload hence see the upper sections for Command Payload
+and for Command Argument Payload specifications.  Command Reply
+message uses the Command Argument Payload as well.
+
+See SILC Commands in [SILC1] for detailed description of different
+SILC commands, their arguments and their reply messages.
+
+
+.ti 0
+2.3.14 Connection Auth Request Payload
+
+Client may send this payload to server to request the authentication
+method that must be used in authentication protocol.  If client knows 
+this information beforehand this payload is not necessary to be sent.
+Server performing authentication with another server may also send
+this payload to request the authentication method.  If the connecting
+server already knows this information this payload is not necessary
+to be sent.
+
+Server receiving this request must reply with same payload sending
+the mandatory authentication method.  Algorithms that may be required
+to be used by the authentication method are the ones already 
+established by the SILC Key Exchange protocol.  See section Key
+Exchange Start Payload in [SILC3] for detailed information.
+
+The payload may only be sent with SILC_PACKET_CONNECTION_AUTH_REQUEST
+packet.  It must not be sent in any other packet type.  Following 
+diagram represents the Connection Auth Request Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Connection Type        |     Authentication Method     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 15:  Connection Auth Request Payload
+
+
+.in 6
+o Connection Type (2 bytes) - Indicates the type of the ID.
+  Following connection types are defined:
+
+     1    Client connection
+     2    Server connection
+     3    Router connection
+
+  If any other type is found in this field the packet must be
+  discarded and the authentication must be failed.
+
+o Authentication Method (2 bytes) - Indicates the authentication
+  method to be used in the authentication protocol.  Following
+  authentication methods are defined:
+
+
+
+     0    NONE        (mandatory)
+     1    password    (mandatory)
+     2    public key  (mandatory)
+
+  If any other type is found in this field the packet must be
+  discarded and the authentication must be failed.  If this
+  payload is sent as request to receive the mandatory 
+  authentication method this field must be set to zero (0),
+  indicating that receiver should send the mandatory 
+  authentication method.  The receiver sending this payload
+  to the requesting party, may also set this field to zero (0) 
+  to indicate that authentication is not required.  In this
+  case authentication protocol still must be started but
+  server is most likely to respond with SILC_PACKET_SUCCESS
+  immediately.
+.in 3
+
+
+.ti 0
+2.3.15 New ID Payload
+
+New ID Payload is a multipurpose payload.  It is used to send newly 
+created ID's from clients and servers.  When client connects to server
+and registers itself to the server by sending SILC_PACKET_NEW_CLIENT
+packet, server replies with this packet by sending the created ID for
+the client.  Server always creates the ID for the client.
+
+This payload is also used when server tells its router that new client
+has registered to the SILC network.  In this case the server sends
+the Client ID of the client to the router.  Similiary when router
+distributes information to other routers about the client in the SILC
+network this payload is used.  
+
+Also, when server connects to router, router uses this payload to inform
+other routers about new server in the SILC network.  However, every 
+server (or router) creates their own ID's thus the ID distributed by 
+this payload is not created by the distributor in this case.  Servers
+create their own ID's.  Server registers itself to the network by sending
+SILC_PACKET_NEW_SERVER to the router it connected to.  The case is same
+when router connects to another router.
+
+Hence, this payload is very important and used every time when some
+new entity is registered to the SILC network.  Client never sends this
+payload.  Both client and server (and router) may receive this payload.
+
+The payload may only be sent with SILC_PACKET_NEW_ID packet.  It must
+not be sent in any other packet type.  Following diagram represents the
+New ID Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|             ID Type           |           ID Length           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                           ID Data                             ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 16:  New ID Payload
+
+
+.in 6
+o ID Type (2 bytes) - Indicates the type of the ID.  See 
+  section 2.4 SILC ID Types for list of defined ID types.
+
+o ID Length (2 bytes) - Length of the ID Data area not 
+  including the length of any other fields in the payload.
+
+o ID Data (variable length) - The actual ID data.
+.in 3
+
+
+
+.ti 0
+2.3.16 New ID List Payload
+
+New ID List Payload is used to distribute list of ID's usually from 
+server to router but also from router to other routers in the network.
+This payload is used, for example, when server is connected to router
+and the server wants to distribute all of its locally connected clients
+and locally created channels to the router.  It is convenient in this
+case to use this payload instead of sending all the information one
+by one using New ID Payload.
+
+There is no specific payload for this packet type.  The packet type
+uses same payload as described in previous section.  To form a list
+several payloads is put in the packet each after each.  The payload
+is variable in length but can be calculated by calculating the ID
+Type field, Length field and the ID Data fields together.  This forms
+one New ID Payload in the list.
+
+The list of payloads may only be sent with SILC_PACKET_NEW_ID_LIST
+packet.  They must not be sent in any other packet type.
+
+
+.ti 0
+2.3.17 New Client Payload
+
+When client is connected to the server, keys has been exchanged and
+connection has been authenticated client must register itself to the 
+server.  Clients first packet after key exchange and authentication 
+protocols must be SILC_PACKET_NEW_CLIENT.  This payload tells server all
+the relevant information about the connected user.  Server creates a new
+client ID for the client when received this payload and sends it to the
+client in New ID Payload.
+
+This payload sends username and real name of the user on the remote host
+which is connected to the SILC server with SILC client.  The server 
+creates the client ID according the information sent in this payload.
+The nickname of the user becomes the username sent in this payload.
+However, client should call NICK command after sending this payload to
+set the real nickname of the user which is then used to create new 
+client ID.
+
+The payload may only be sent with SILC_PACKET_NEW_CLIENT packet.  It
+must not be sent in any other packet type.  Following diagram represents
+the New Client Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|        Username Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                           Username                            ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       Real Name Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                           Real Name                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 17:  New Client Payload
+
+
+.in 6
+o Username Length (2 bytes) - Length of the username.
+
+o Username (variable length) - The username of the user on
+  the host where connecting to the SILC server.
+
+o Real Name Length (2 bytes) - Length of the Real Name.
+
+o Real Name (variable length) - The real name of the user
+  on the host where connecting to the SILC server.
+.in 3
+
+
+.ti 0
+2.3.18 New Server Payload
+
+This payload is sent by server when it has completed successfully both
+key exchange and connection authentication protocols.  The server
+uses this payload to register itself to the SILC network.  The
+first packet after these key exchange and authentication protocols
+is SILC_PACKET_NEW_SERVER packet.  The payload includes the Server ID
+of the server that it has created by itself.  It also includes a
+name of the server that is associated to the Server ID.
+
+The payload may only be sent with SILC_PACKET_NEW_SERVER packet.  It
+must not be sent in any other packet type.  Following diagram represents
+the New Server Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       Server ID Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                        Server ID Data                         ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     Server Name Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                          Server Name                          ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 18:  New Server Payload
+
+
+.in 6
+o Server ID Length (2 bytes) - Length of the ID Data area not 
+  including the length of any other fields in the payload.
+
+o Server ID Data (variable length) - The actual Server ID
+   data.
+
+o Server Name Length (2 bytes) - Length of the server name.
+
+o Server Name (variable length) - The server name.
+.in 3
+
+
+.ti 0
+2.3.19 New Channel Payload
+
+Information about newly created channel is broadcasted to all routers
+in the SILC network by sending this packet payload.  Channels are
+created by router of the cell.  Server never creates channels unless
+it is a standalone server and it does not have router connection,
+in this case server acts as router.  Normal server sends JOIN command
+to the router (after it has received JOIN command from client) which
+then processes the command and creates the channel.  Client never sends
+this packet.
+
+The payload may only be sent with SILC_PACKET_NEW_CHANNEL packet.
+It must not be sent in any other packet type.  Following diagram
+represents the New Channel Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      Channel Name Length      |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                         Channel Name                          ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       Channel ID Length       |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                          Channel ID                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 19:  New Channel Payload
+
+
+
+.in 6
+o Channel Name Length (2 bytes) - Length of the channel name.
+
+o Channel Name (variable length) - The name of the created
+  channel.
+
+o Channel ID Length (2 bytes) - Length of the Channel ID.
+
+o Channel ID (variable length) - The created Channel ID.
+.in 3
+
+
+.ti 0
+2.3.20 New Channel User Payload
+
+When client (user) joins to a channel, server must notify routers
+about the new user on the channel.  Normal server sends this packet
+payload to its router which then broadcasts the packet further.
+Router sends this packet always to its primary router.  Client must
+not send this packet payload.  The mode of the user is NONE after 
+user has joined to the channel.
+
+The payload may only be sent with SILC_PACKET_NEW_CHANNEL_USER 
+packet.  It must not be sent in any other packet type.  Following 
+diagram represents the New Channel User Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       Channel ID Length       |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                          Channel ID                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       Client ID Length        |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                           Client ID                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 20:  New Channel User Payload
+
+
+.in 6
+o Channel ID Length (2 bytes) - Length of the Channel ID.
+
+o Channel ID (variable length) - The Channel ID of the channel
+  to which the client has joined.
+
+o Client ID Length (2 bytes) - Length of the Client ID.
+
+o Client ID (variable length) - The Client ID of the client
+  who has joined the channel.
+.in 3
+
+
+.ti 0
+2.3.21 New Channel List Payload
+
+This payload is used to distribute list of new channels from server
+to routers.  It might convenient to send list of new channels when
+existing server connects to router, instead of sending them one
+by one.
+
+There is no specific payload for this packet type.  The packet type
+uses same payload as described in 2.3.19 New Channel Payload.  To form
+a list several payloads is put in the packet each after each.  The
+payload is variable in length but can be calculated by calculating
+the length of the fields together.  This forms one New Channel Payload
+in the list.
+
+The list of payloads may only be sent with SILC_PACKET_NEW_CHANNEL_LIST
+packet.  They must not be sent in any other packet type.
+
+
+.ti 0
+2.3.22 New Channel User List Payload
+
+This payload is used to distribute list of channel users on specific
+channel from server to routers.  It might convenient to send list of
+channel users when existing server connects to router, instead of
+sending them one by one.
+
+There is no specific payload for this packet type.  The packet type
+uses same payload as described in 2.3.20 New Channel User Payload.
+To form a list several payloads is put in the packet each after each.
+The payload is variable in length but can be calculated by calculating
+the length of the fields together.  This forms one New Channel User
+Payload in the list.
+
+The list of payloads may only be sent with packet
+SILC_PACKET_NEW_CHANNEL_USER_LIST. They must not be sent in any other
+packet type.
+
+
+.ti 0
+2.3.23 Replace ID Payload
+
+This payload is used to replace old ID with new ID sent in the payload.
+When ID changes for some entity and the new ID is wanted to replace the
+old one this payload must be used.  Client cannot send or receive this
+payload.  Normal server and router server may send and receive this
+payload.  After this packet has been sent the old ID must not be used
+anymore.
+
+The payload may only be sent with SILC_PACKET_REPLACE_ID packet.  It must
+not be sent in any other packet type.  Following diagram represents the 
+Replace Payload Payload.
+
+
+
+
+
+
+
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|          Old ID Type          |         Old ID Length         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                         Old ID Data                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|          New ID Type          |         New ID Length         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                         New ID Data                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 21:  Replace ID Payload
+
+
+.in 6
+o Old ID Type (2 bytes) - Indicates the type of the old ID.  See 
+  section 2.4 SILC ID Types for list of defined ID types.
+
+o Old ID Length (2 bytes) - Length of the old ID Data area not 
+  including the length of any other fields in the payload.
+
+o Old ID Data (variable length) - The actual old ID data.
+
+o New ID Type (2 bytes) - Indicates the type of the new ID.  See 
+  section 2.4 SILC ID Types for list of defined ID types.
+
+o New ID Length (2 bytes) - Length of the new ID Data area not 
+  including the length of any other fields in the payload.
+
+o New ID Data (variable length) - The actual new ID data.
+.in 3
+
+
+.ti 0
+2.3.24 Remove ID Payload
+
+Remove ID payload is used to remove ID from SILC network.  This is used
+for example when client exits SILC network.  The server must in this
+case send this payload to notify that this ID is not valid anymore.
+After this has been send the old ID must not be used anymore.  Client
+must not send this payload.
+
+The payload may only be sent with SILC_PACKET_REMOVE_ID packet.  It must
+not be sent in any other packet type.  Following diagram represents the 
+Remove Payload Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|            ID Type            |           ID Length           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+~                            ID Data                            ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 22:  Remove ID Payload
+
+
+.in 6
+o ID Type (2 bytes) - Indicates the type of the ID to be
+  removed.  See section 2.4 SILC ID Types for list of defined
+  ID types.
+
+o ID Length (2 bytes) - Length of the D Data area not including
+  the length of any other fields in the payload.
+
+o ID Data (variable length) - The actual ID data to be removed.
+.in 3
+
+
+.ti 0
+2.4 SILC ID Types
+
+ID's are extensively used in the SILC network to associate different
+entities.  Following ID's has been defined to be used in the SILC
+network.
+
+.in 6
+0    No ID
+
+   When ever specific ID cannot be used this is used.
+
+1    Server ID
+
+   Server ID to associate servers.  See the format of
+   this ID in [SILC1].
+
+2    Client ID
+
+   Client ID to associate clients.  See the format of
+   this ID in [SILC1].
+
+3    Channel ID
+
+   Channel ID to associate channels.  See the format of
+   this ID in [SILC1].
+.in 3
+
+
+.ti 0
+2.5 Packet Encryption And Decryption
+
+SILC packets are encrypted almost entirely.  Only small part of SILC
+header is not encrypted as described in section 5.2 SILC Packet Header.
+The SILC Packet header is the first part of a packet to be encrypted
+and it is always encrypted with the key of the next receiver of the
+packet.  The data payload area of the packet is always entirely 
+encrypted and it is usually encrypted with the next receiver's key.
+However, there are some special packet types and packet payloads
+that require special encryption process.  These special cases are
+described in the next sections.  First is described the normal packet
+encryption process.
+
+
+.ti 0
+2.5.1 Normal Packet Encryption And Decryption
+
+Normal SILC packets are encrypted with the session key of the next
+receiver of the packet.  The entire SILC Packet header and the packet
+data payload is is also encrypted with the same key.  Padding of the
+packet is also encrypted always with the session key, also in special
+cases.  Computed MAC of the packet must not be encrypted.
+
+Decryption process in these cases are straightforward.  The receiver
+of the packet must first decrypt the SILC Packet header, or some parts
+of it, usually first 16 bytes of it.  Then the receiver checks the
+packet type from the decrypted part of the header and can determine
+how the rest of the packet must be decrypted.  If the packet type is
+any of the special cases described in following sections the packet
+decryption is special.  If the packet type is not among those special
+packet types rest of the packet may be decrypted with the same key.
+
+Also, note that two bytes of the SILC Packet header are not encrypted
+thus it must be noticed in the decryption process by starting the
+decryption from the second byte of the header.  This sets some rules
+to padding generation as well, see the section 2.7 Packet Padding
+Generation.
+
+With out a doubt, this sort of decryption processing causes some
+overhead to packet decryption, but never the less, is required.
+
+
+.ti 0
+2.5.2 Channel Message Encryption And Decryption
+
+Channel Messages (Channel Message Payload) are always encrypted with
+the channel specific key.  However, the SILC Packet header is not 
+encrypted with that key.  As in normal case, the header is encrypted
+with the key of the next receiver of the packet, who ever that might
+be.  Note that in this case the encrypted data area is not touched
+at all; it must not be re-encrypted with the session key.
+
+Receiver of a channel message, who ever that is, is required to decrypt
+the SILC Packet header to be able to even recognize the packet to be as
+channel message.  This is same procedure as for normal SILC packets.
+As the receiver founds the packet to be channel message, rest of the
+packet processing is special.  Rest of the SILC Packet header is
+decrypted with the same session key along with the padding of the
+packet.  After that the packet is protected with the channel specific
+key and hence can be decrypted only if the receiver is the client on
+the channel.  See section 2.7 Packet Padding Generation for more
+information about padding on special packets.
+
+If the receiver of the channel message is router who is routing the
+message to another router then it must decrypt the Channel Message
+payload.  Between routers (that is, between cells) channel messages
+are protected with session keys shared between the routers.  This
+causes another special packet processing for channel messages.  If
+the channel message is received from another router then the entire
+packet, including Channel Message payload, is encrypted with the
+session key shared between the routers.  In this case the packet
+decryption process is as with normal SILC packets.  Hence, if the
+router is sending channel message to another router the Channel
+Message payload must have been decrypted and must be re-encrypted
+with the session key shared between the another router.  In this
+case the packet encryption is as with any normal SILC packet.
+
+It must be noted that this is only when the channel messages are sent
+from router to another router.  In all other cases the channel
+message encryption and decryption is as described above.  This
+different processing of channel messages with router to router
+connection is because channel keys are cell specific.  All cells has
+their own channel keys thus the channel message traveling from one
+cell to another must be protected as it would be any normal SILC
+packet.
+
+
+.ti 0
+2.5.3 Private Message Encryption And Decryption
+
+By default, private message in SILC are protected by session keys.
+In this case the private message encryption and decryption process is
+equivalent to normal packet encryption and decryption.
+
+However, private messages can be protected with private message key
+which causes the packet to be special packet.  The procedure in this
+case is very much alike to channel packets.  The actual private message
+is encrypted with the private message key and other parts of the
+packet is encrypted with the session key.  See 2.7 Packet Padding
+Generation for more information about padding on special packets.
+
+The difference from channel message processing is that server or router
+en route never decrypts the actual private message, as it does not
+have the key to do that.  Thus, when sending packets between router
+the processing is same as in any other case as well; the packet's header
+and padding is protected by the session key and the data area is not
+touched.
+
+The true receiver of the private message, client, that is, is able
+to decrypt the private message as it shares the key with the sender
+of the message.
+
+
+.ti 0
+2.6 Packet MAC Generation
+
+Data integrity of a packet is protected by including a message
+authentication code (MAC) at the end of the packet.  The MAC is computed
+from shared secret MAC key, that is established by the SILC Key Exchange
+protocol, and from the original contents of the packet.  The MAC is
+always computed before the packet is encrypted, although after it is
+compressed if compression is used.
+
+The MAC is computed from entire packet.  Every bit of data in the packet,
+including SILC Packet Header is used in the MAC computing.  This way
+the entire packet becomes authenticated.
+
+If the packet is special packet MAC is computed from the entire packet
+but part of the packet may be encrypted before the MAC is computed.
+This is case, for example, with channel messages where the message data
+is encrypted with key that server may not now.  In this case the MAC
+has been computed from the encrypted data.
+
+See [SILC1] for defined and allowed MAC algorithms.
+
+
+.ti 0
+2.7 Packet Padding Generation
+
+Padding is needed in the packet because the packet is encrypted.  It
+must always be multiple by eight (8) or multiple by the size of the
+cipher's block size, which ever is larger.  The padding is always
+encrypted.
+
+For normal packets the padding is added after the SILC Packet Header
+and between the Data Payload area.  The padding for normal packets
+are calculated as follows:
+
+.in 6
+padding length = 16 - ((packet length - 2) % 16)
+.in 3
+
+The 16 is the maximum padding allowed in SILC packet.  Two (2) is 
+subtracted from the true length of the packet because two (2) bytes
+is not encrypted in SILC Packet Header, see section 2.2 SILC Packet
+Header.  Those two bytes that are not encrypted must not be calculated
+to the padding length.
+
+For special packets the padding calculation may be different as special
+packets may be encrypted differently.  In these cases the encrypted
+data area must already be multiple by the block size thus in this case
+the padding is calculated only for SILC Packet Header, not for any
+other area of the packet.  The same algorithm works in this case as
+well, except that the `packet length' is now the SILC Packet Header
+length.  In this case, as well, two (2) is subtracted from the
+length.
+
+The padding must be random data, preferably, generated by 
+cryptographically strong random number generator.
+
+
+.ti 0
+2.8 Packet Compression
+
+SILC Packets may be compressed.  In this case the data payload area
+is compressed and all other areas of the packet must remain as they
+are.  After compression is performed for the data area, the length
+field of Packet Header must be set to the compressed length of the
+data.
+
+The compression must always be applied before encryption.  When
+the packet is received and decrypted the data area must be decompressed.
+Note that the true sender of the packet must apply the compression and
+the true receiver of the packet must apply the decompression.  Any
+server or router en route must not decompress the packet.
+
+
+.ti 0
+2.9 Packet Sending
+
+The sender of the packet must assemble the SILC Packet Header with
+correct values.  It must set the Source ID of the header as its own
+ID.  It must also set the Destination ID of the header to the true
+destination.  If the destination is client it will be Client ID, if
+it is server it will be Server ID and if it is channel it will be
+Channel ID.
+
+If the sender wants to compress the packet it must apply the
+compression now.  Sender must also compute the padding as described
+in above sections.  Then sender must compute the MAC of the packet.
+
+Then sender encrypts the packet as has been described in above
+sections according whether the packet is normal packet or special
+packet.  The computed MAC must not be encrypted.
+
+
+.ti 0
+2.10 Packet Reception
+
+On packet reception the receiver must check that all fields in the
+SILC Packet Header are valid sain.  It must check the flags of the
+header and act accordingly.  It must also check the MAC of the packet
+and if it is to be failed the packet must be discarded.  Also if the
+header of the packet includes any bad fields the packet must be
+discarded.
+
+See above sections on the decryption process of the received packet.
+ 
+The receiver must also check that the ID's in the header are valid
+ID's.  Unsupported ID types or malformed ID's must cause packet
+rejection.  The padding on the reception is always ignored.
+
+The receiver must also check the packet type and start parsing the
+packet according to the type.  However, note the above sections on
+special packet types and their parsing.
+
+
+.ti 0
+2.11 Packet Broadcasting
+
+SILC packets may be broadcasted in SILC network.  However, only router
+server may send or receive broadcast packets.  Client and normal server
+must not send broadcast packets and they must ignore broadcast packets
+if they receive them.  Broadcast packets are sent by setting Broadcast
+flag to the SILC packet header.
+
+Broadcasting packets means that the packet is sent to all routers in
+the SILC network, except to the router that sent the packet.  The router
+receiving broadcast packet must send the packet to its primary route.
+The fact that SILC routers may have several router connections may
+cause problems, such as race conditions inside the SILC network, if
+care is not taken when broadcasting packets.  Router must not send
+the broadcast packet to any other route except to its primary route.
+
+If the primary route of the router is the original sender of the packet
+the packet must not be sent to the primary route.  This may happen
+if router has several router connections and some other router uses
+the router as its primary route.
+
+Routers use broadcast packets to broadcast for example information
+about newly registered clients, servers, channels etc. so that all the
+routers may keep these informations up to date.
+
+
+.ti 0
+2.12 Packet Routing
+
+Routers are the primary entities in the SILC network that takes care
+of packet routing.  However, normal servers routes packets as well, for
+example, when they are routing channel message to the local clients.
+Routing is quite simple as every packet tells the true origin and the
+true destination of the packet.
+
+It is still recommended for routers that has several routing connections
+to create route cache for those destinations that has faster route than
+the router's primary route.  This information is available for the router
+when other router connects to the router.  The connecting party then
+sends all of its locally connected clients, server and channels.  These
+informations helps to create the route cache.  Also, when new channels
+are created to a cell its information is broadcasted to all routers
+in the network.  Channel ID's are based on router's ID thus it is easy
+to create route cache based on these informations.  If faster route for
+destination does not exist in router's route cache the packet must be
+routed to the primary route (default route).
+
+For server who receives a packet to be routed to its locally connected
+client the server must check whether the particular packet type is
+allowed to be routed to the client.  Not all packets may be sent by
+some odd entity to client that is indirectly connected to the sender.
+See section 2.3 SILC Packet Types and paragraph about indirectly connected
+entities and sending packets to them.  The section mentions the packets
+that may be sent to indirectly connected entities.  It is clear that some
+server cannot send, for example, disconnect packet to client that is not
+directly connected to the server.
+
+
+.ti 0
+2.13 Packet Tunneling
+
+Tunneling is a feature that is available in SILC protocol.  Tunneling
+means that extra SILC Packet Header is applied to the original packet
+and thus hiding the original packet entirely.  There can be some
+interesting applications using tunneling, such as, using ID's based on
+private network IP addresses inside in the tunneled packet.  This can
+open many interesting features relating to connecting to private network
+from the Internet with SILC and many more.  However, this feature is
+optional currently in SILC as there does not exist thorough analysis of
+this feature.  It is with out a doubt that there will be many more
+applications that has not yet been discovered.  Thus, it is left
+to Internet Community to investigate the use of tunneling in SILC
+protocol.  This document is updated according those investigations
+and additional documents on the issue may be written.
+
+
+.ti 0
+3 Security Considerations
+
+Security is central to the design of this protocol, and these security
+considerations permeate the specification.
+
+
+.ti 0
+4 References
+
+[SILC1]      Riikonen, P., "Secure Internet Live Conferencing (SILC),
+             Protocol Specification", Internet Draft, June 2000.
+
+[SILC3]      Riikonen, P., "SILC Key Exchange and Authentication 
+             Protocols", Internet Draft, June 2000.
+
+[IRC]        Oikarinen, J., and Reed D., "Internet Relay Chat Protocol",
+             RFC 1459, May 1993.
+
+[SSH-TRANS]  Ylonen, T., et al, "SSH Transport Layer Protocol", 
+             Internet Draft.
+
+[PGP]        Callas, J., et al, "OpenPGP Message Format", RFC 2440,
+             November 1998.
+
+[SPKI]       Ellison C., et al, "SPKI Certificate Theory", RFC 2693,
+             September 1999.
+
+[PKIX-Part1] Housley, R., et al, "Internet X.509 Public Key 
+             Infrastructure, Certificate and CRL Profile", RFC 2459,
+             January 1999.
+
+[Schneier]   Schneier, B., "Applied Cryptography Second Edition",
+             John Wiley & Sons, New York, NY, 1996.
+
+[Menezes]    Menezes, A., et al, "Handbook of Applied Cryptography",
+             CRC Press 1997.
+
+[OAKLEY]     Orman, H., "The OAKLEY Key Determination Protocol",
+             RFC 2412, November 1998.
+
+[ISAKMP]     Maughan D., et al, "Internet Security Association and
+             Key Management Protocol (ISAKMP)", RFC 2408, November
+             1998.
+
+[IKE]        Harkins D., and Carrel D., "The Internet Key Exhange
+             (IKE)", RFC 2409, November 1998.
+
+[HMAC]       Krawczyk, H., "HMAC: Keyed-Hashing for Message
+             Authentication", RFC 2104, February 1997.
+
+
+.ti 0
+5 Author's Address
+
+.nf
+Pekka Riikonen
+Kasarmikatu 11 A4
+70110 Kuopio
+Finland
+
+EMail: priikone@poseidon.pspt.fi

@@ -1,0 +1,250 @@
+/*
+
+  silcutil.c
+
+  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+  Copyright (C) 1997 - 2000 Pekka Riikonen
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+*/
+/*
+ * These are general utility functions that doesn't belong to any specific
+ * group of routines.
+ */
+/*
+ * $Id$
+ * $Log$
+ * Revision 1.1  2000/06/27 11:36:55  priikone
+ * Initial revision
+ *
+ *
+ */
+
+#include "silcincludes.h"
+
+/* Reads a file to a buffer. The allocated buffer is returned. Length of
+   the file read is returned to the return_len argument. */
+
+char *silc_file_read(const char *filename, int *return_len)
+{
+  int fd;
+  char *buffer;
+  int filelen;
+
+  fd = open(filename, O_RDONLY);
+  if (fd < 0) {
+    SILC_LOG_ERROR(("Cannot open file %s: %s", filename, strerror(errno)));
+    return NULL;
+  }
+
+  filelen = lseek(fd, (off_t)0L, SEEK_END);
+  lseek(fd, (off_t)0L, SEEK_SET);  
+
+  if (filelen < 0) {
+    SILC_LOG_ERROR(("Cannot open file %s: %s", filename, strerror(errno)));
+    return NULL;
+  }
+  
+  buffer = silc_calloc(filelen + 1, sizeof(char));
+  
+  if ((read(fd, buffer, filelen)) == -1) {
+    memset(buffer, 0, sizeof(buffer));
+    close(fd);
+    SILC_LOG_ERROR(("Cannot read from file %s: %s", filename,
+                    strerror(errno)));
+    return NULL;
+  }
+
+  close(fd);
+  buffer[filelen] = EOF;
+  
+  *return_len = filelen;
+  return buffer;
+}
+
+/* Writes a buffer to the file. */
+
+int silc_file_write(const char *filename, const char *buffer, int len)
+{
+  int fd;
+        
+  if ((fd = creat(filename, 0644)) == -1) {
+    SILC_LOG_ERROR(("Cannot open file %s for writing: %s", strerror(errno)));
+    return -1;
+  }
+  
+  if ((write(fd, buffer, len)) == -1) {
+    SILC_LOG_ERROR(("Cannot write to file %s: %s", strerror(errno)));
+    return -1;
+  }
+
+  close(fd);
+  
+  return 0;
+}
+
+/* Gets line from a buffer. Stops reading when a newline or EOF occurs.
+   This doesn't remove the newline sign from the destination buffer. The
+   argument begin is returned and should be passed again for the function. */
+
+int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin)
+{
+  static int start = 0;
+  int i;
+  
+  memset(dest, 0, destlen);
+  
+  if (begin != start)
+    start = 0;
+  
+  i = 0;
+  for ( ; start <= srclen; i++, start++) {
+    if (i > destlen)
+      return -1;
+    
+    dest[i] = src[start];
+    
+    if (dest[i] == EOF) 
+      return EOF;
+    
+    if (dest[i] == '\n') 
+      break;
+  }
+  start++;
+  
+  return start;
+}
+
+/* Checks line for illegal characters. Return -1 when illegal character
+   were found. This is used to check for bad lines when reading data from
+   for example a configuration file. */
+
+int silc_check_line(char *buf) 
+{
+  /* Illegal characters in line */
+  if (strchr(buf, '#')) return -1;
+  if (strchr(buf, '\'')) return -1;
+  if (strchr(buf, '\\')) return -1;
+  if (strchr(buf, '\r')) return -1;
+  if (strchr(buf, '\a')) return -1;
+  if (strchr(buf, '\b')) return -1;
+  if (strchr(buf, '\f')) return -1;
+  
+  /* Empty line */
+  if (buf[0] == '\n')
+    return -1;
+  
+  return 0;
+}
+
+/* Returns current time as string. */
+
+char *silc_get_time()
+{
+  time_t curtime;
+  char *return_time;
+
+  curtime = time(NULL);
+  return_time = ctime(&curtime);
+  return_time[strlen(return_time) - 1] = '\0';
+
+  return return_time;
+}
+
+/* Converts string to capital characters */
+
+char *silc_to_upper(char *string)
+{
+  int i;
+  char *ret = silc_calloc(strlen(string) + 1, sizeof(char));
+
+  for (i = 0; i < strlen(string); i++)
+    ret[i] = toupper(string[i]);
+
+  return ret;
+}
+
+/* Compares two strings. Strings may include wildcards * and ?.
+   Returns TRUE if strings match. */
+
+int silc_string_compare(char *string1, char *string2)
+{
+  int i;
+  int slen1 = strlen(string1);
+  int slen2 = strlen(string2);
+  char *tmpstr1, *tmpstr2;
+
+  if (!string1 || !string2)
+    return FALSE;
+
+  /* See if they are same already */
+  if (!strncmp(string1, string2, strlen(string2)))
+    return TRUE;
+
+  if (slen2 < slen1)
+    if (!strchr(string1, '*'))
+      return FALSE;
+  
+  /* Take copies of the original strings as we will change them */
+  tmpstr1 = silc_calloc(slen1 + 1, sizeof(char));
+  memcpy(tmpstr1, string1, slen1);
+  tmpstr2 = silc_calloc(slen2 + 1, sizeof(char));
+  memcpy(tmpstr2, string2, slen2);
+  
+  for (i = 0; i < slen2; i++) {
+    
+    /* * wildcard. Only one * wildcard is possible. */
+    if (tmpstr1[i] == '*')
+      if (!strncmp(tmpstr1, tmpstr2, i)) {
+	memset(tmpstr2, 0, slen2);
+	strncpy(tmpstr2, tmpstr1, i);
+	break;
+      }
+    
+    /* ? wildcard */
+    if (tmpstr1[i] == '?') {
+      if (!strncmp(tmpstr1, tmpstr2, i)) {
+	if (!(slen1 < i + 1))
+	  if (tmpstr1[i + 1] != '?' &&
+	      tmpstr1[i + 1] != tmpstr2[i + 1])
+	    continue;
+	
+	if (!(slen1 < slen2))
+	  tmpstr2[i] = '?';
+      }
+#if 0
+    } else {
+      if (strncmp(tmpstr1, tmpstr2, i))
+	strncpy(tmpstr2, string2, slen2);
+#endif
+    }
+  }
+  
+  /* if using *, remove it */
+  if (strchr(tmpstr1, '*'))
+    *strchr(tmpstr1, '*') = 0;
+  
+  if (!strcmp(tmpstr1, tmpstr2)) {
+    memset(tmpstr1, 0, slen1);
+    memset(tmpstr2, 0, slen2);
+    silc_free(tmpstr1);
+    silc_free(tmpstr2);
+    return TRUE;
+  }
+  
+  memset(tmpstr1, 0, slen1);
+  memset(tmpstr2, 0, slen2);
+  silc_free(tmpstr1);
+  silc_free(tmpstr2);
+  return FALSE;
+}

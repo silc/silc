@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+#
+# Creates RFC
+#
+# Usage: makerfc <input_file> <output_file>
+#
+nroff -ms $1 | ./fix.pl > $2

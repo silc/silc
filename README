@@ -1,0 +1,131 @@
+SILC - Secure Internet Live Conferencing
+========================================
+
+[NOTE: SILC is still in middle of development and this package is known
+as Developer's Version which means that the package is in no means stable
+or ready to be in production use.  This package is for those who wants
+to test SILC, find bugs and maybe contribute some time and code for the
+SILC project.  There is no guarantees that this package even compiles and
+even if it compiles there is no guarantees that it would work, and even
+if it works there is no guarantees that it would work correctly, and even
+if it seems to work correctly it may be just plain luck.]
+
+
+Description
+===========
+
+SILC (Secure Internet Live Conferencing) is a protocol which provides
+secure conferencing services in the Internet over insecure channel.
+SILC is IRC like softwarre although internally they are very different.
+Biggest similiarity between SILC and IRC is that they both provide
+conferencing services and that SILC has almost same commands as IRC.  Other
+than that they are nothing alike.  Biggest differences are that SILC is 
+secure what IRC is not in any way.  The network model is also entirely
+different compared to IRC.
+
+
+Features
+========
+
+Features to be included into the final release of SILC.  [Note that the
+current Developer's Version does not include all of these features, read
+TODO file for more information.]
+
+ o Normal conferencing services such as private messages, channels,
+   channel messages, etc.  All traffic is secured and authenticated.
+
+ o No unique nicknames.  There can same nicknames in SILC without
+   collisions.  SILC has unique Client ID's, Server ID's and Channel ID's
+   to assure that there are no collisions.
+
+ o Secure key exchange and authentication protocol.  SILC Key Exchange
+   protocol provides key material used in the SILC sessions in secure
+   manner.  The protocol is immune for example to man-in-the-middle 
+   attacks.  The SILC Authentication protocol provides strong 
+   authentication.  Authentication may be based on passphrase or public
+   key (RSA) authentication.  For clients there is an option not to
+   use authentication when connecting to servers.
+
+ o All traffic is encrypted and authenticated using the best cryptographic
+   algorithms out there.  Command messages, private messages and channel
+   messages are all protected by encryption.  User can set private keys
+   for both private message and for channels so that even SILC servers do
+   not know the keys.  Cipher keys are, by default, 128 bits in length and
+   public keys, by default, 1024 bits in length.
+
+ o Supports data compression with GZIP to improve performance.
+
+ o SIM (SILC Module) support.  Support for loading of shared objects at 
+   run-time that provides new and extended features to both SILC client
+   and server.  These can provide extra ciphers and extra features to
+   the software.
+
+ o SILC client can be installed and used without root privileges.
+
+ o SILC client can be configured by system wide configuration files but
+   with user specific configuration files as well.
+
+
+History
+=======
+
+Even though SILC were just released to the public the idea and the protocol
+itself is quite old.  I got the idea about SILC in its current form in
+the year 1996 and first lines of codes were written in early 1997.  This
+release is now third rewrite of the SILC.  The very first version were
+written in 1997 and it included SILC client and very very preliminary
+SILC server.  The server actually weren't usable but the client looked
+pretty much the same as it does now.  At that time the SILC also included
+RSA implementation and 3DES implementation.  The random number generator
+that exists in this current release is actually based on the RNG written
+in 1997.  The RNG written in 1997, on the other hand, were based on
+the SSH's random number generator.  The RNG has been rewritten twice
+since the first version.
+
+I stopped writing the SILC later in 1997 when I got busy at school and
+in work.  The pause lasted several months.  The development resumed in
+1998 when my friend (Juha Räsänen) and I implemented ElGamal algorithm.
+I rewrote some other parts as well.  However, for the same reasons as
+previously the development stopped again.  I resumed the development
+later in 1998 by doing rewrite of the SILC in C++.  This was obviously 
+a mistake but at that time it seemed like a good idea.  Again, in the 
+winter 1999 I got very busy writing my thesis and was forced to stop the 
+development again.  I also, started a new job in the spring.
+
+Later, in 1999, I decided that this time I'm going to make it the right
+way.  C++ was obviously a bad choice so I decided to fall back to plain
+C language.  I also decided to do complete rewrite and started doing
+more thorough planning of what the SILC actually should include.  I also
+decided that this time it is going to kill me before I stop the 
+development.  I started writing SILC in the weekends and actually 
+everytime I had some spare time.  I also started a new job but I didn't
+let that get to my way.  The result of this development effort is the
+release now in public.
+
+I've learned a lot by doing the SILC.  I guess, when I started it I wasn't
+that good of a C programmer.  That alone was a reason why SILC hasn't
+seen the day of light before now.  My programming style has also changed 
+dramatically during these years.  Actually, it has changed couple times 
+since this last rewrite as well.  However, the code style of current SILC 
+release is quite consistent (actually the coding style SILC has been 
+written now I've learned in my current job).
+
+There is probably over 85% of new code in this third rewrite.  Rest has 
+just been copied from the old versions and only minor changes has been
+made (like changed function names and overall coding style).  I've 
+preserved the dates of the old files (dating back to 1997) that has 
+existed in some forms in the old versions.  There is a lot of new code but
+already I see a lot that needs rewriting.  The development continues.
+
+
+Contact
+=======
+
+Feedback and comments are welcome.  You can reach me in the following
+Address. 
+
+[Note that generally bug reports should not be sent just yet as the 
+Developer's Version is full of them and the bug hunt has not even started 
+yet.]
+
+				Pekka Riikonen <priikone@poseidon.pspt.fi>

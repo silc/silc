@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+#  prepare-clean
+#
+#  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+#
+#  Copyright (C) 2000 Pekka Riikonen
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+
+#
+# Removes *all* automatically generated files so that after calling this
+# the tree is completely clean and can be prepared for configuration
+# and compilation by calling ./prepare.
+#
+
+echo "Cleaning entire SILC source tree..."
+echo "All errors and warnings may be safely ignored."
+make distclean
+rm -f includes/stamp-*
+rm -f includes/silcconfig.*
+rm -f Makefile.in
+rm -f doc/draft-riikonen*.txt
+rm -f lib/Makefile.in
+rm -f lib/silccore/Makefile.in
+rm -f lib/silccrypt/Makefile.in
+rm -f lib/silcmath/Makefile.in
+rm -f lib/silcsim/Makefile.in
+rm -f lib/silcske/Makefile.in
+rm -f silcd/Makefile.in silcd/log* silcd/*.log
+rm -f silc/Makefile.in silc/log* silc/*.log
+rm -f aclocal.m4
+rm -f configure
+echo "Done."

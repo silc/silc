@@ -1,0 +1,147 @@
+#
+#  configure.in
+#
+#  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+#
+#  Copyright (C) 2000 Pekka Riikonen
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+
+AC_INIT(includes/version.h)
+
+# Compiler settings
+CFLAGS="-Wall $CFLAGS"
+
+#
+# Put here any platform specific stuff
+#
+AC_CANONICAL_SYSTEM
+case "$target" in
+  *-*-linux*|*-*-mklinux*)
+    CFLAGS="-D_GNU_SOURCE $CFLAGS"
+    ;;
+  *)
+    ;;
+esac
+
+AM_INIT_AUTOMAKE(silc, 28062000)
+AC_PREREQ(2.3)
+AM_CONFIG_HEADER(includes/silcdefs.h)
+
+AC_PROG_CC
+AC_C_INLINE
+AC_C_CONST
+AC_ARG_PROGRAM
+
+AC_PROG_LN_S
+AC_SUBST(LN_S)
+
+# XXX
+# Compiler flags
+if test "$GCC"; then
+  CFLAGS="-finline-functions $CFLAGS"
+else
+  # Currently GCC is only supported compiler
+  AC_MSG_ERROR(GCC is only supported compiler currently)
+fi
+
+# Program checking
+AC_PROG_INSTALL
+AC_PROG_RANLIB
+AC_PROG_MAKE_SET
+
+# Header checking
+AC_HEADER_STDC
+AC_HEADER_TIME
+AC_HEADER_STAT
+
+# More header checking
+AC_CHECK_HEADERS(unistd.h string.h getopt.h errno.h fcntl.h assert.h)
+AC_CHECK_HEADERS(sys/types.h sys/stat.h sys/time.h)
+AC_CHECK_HEADERS(netinet/in.h netinet/tcp.h netdb.h)
+AC_CHECK_HEADERS(pwd.h grp.h termcap.h)
+AC_CHECK_HEADERS(ncurses.h signal.h ctype.h)
+AC_CHECK_HEADERS(arpa/inet.h sys/mman.h)
+
+# Data type checking
+AC_TYPE_SIGNAL
+AC_TYPE_SIZE_T
+AC_TYPE_MODE_T
+AC_TYPE_UID_T
+AC_TYPE_PID_T
+
+# Function checking
+AC_CHECK_FUNCS(chmod stat fstat getenv putenv strerror ctime gettimeofday)
+AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid)
+AC_CHECK_FUNCS(strchr strstr strcpy strncpy memcpy memset memmove)
+AC_CHECK_FUNCS(gethostname gethostbyname gethostbyaddr)
+AC_CHECK_FUNCS(select socket listen bind shutdown close connect)
+AC_CHECK_FUNCS(fcntl setsockopt)
+AC_CHECK_FUNCS(getservbyname getservbyport)
+AC_CHECK_FUNCS(getopt_long time)
+AC_CHECK_FUNCS(mlock munlock)
+
+# SIM support checking
+# XXX These needs to be changed as more supported platforms appear.
+# XXX This probably needs to be made platform dependant check.
+AC_CHECKING(for SIM support)
+AC_CHECK_HEADERS(dlfcn.h, 
+  AC_CHECK_LIB(dl, dlopen, 
+    AC_DEFINE(SILC_SIM) 
+    AC_MSG_RESULT(enabled SIM support)
+    LIBS="$LIBS -ldl",
+    AC_MSG_RESULT(no SIM support found)),
+  AC_MSG_RESULT(no SIM support found))
+
+# Debug checking
+AC_MSG_CHECKING(for enabled debugging)
+AC_ARG_ENABLE(debug,
+[  --enable-debug          Enable debugging (warning: it is heavy!)],
+[ case "${enableval}" in
+  yes) 
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(SILC_DEBUG)
+    CFLAGS="-O -g $CFLAGS"
+    ;;
+  *)
+    AC_MSG_RESULT(no)
+    CFLAGS="-O2 $CFLAGS"
+    ;;
+esac ], CFLAGS="-O2 $CFLAGS"
+        AC_MSG_RESULT(no))
+
+# XXX
+#LIBS="$LIBS -lefence"
+
+AC_ARG_WITH(silcd-config-file,
+[  --with-silcd-config-file[=PATH]
+                          Use PATH as default configuration file in SILC
+                          server.],
+[ AC_DEFINE_UNQUOTED(SILC_SERVER_CONFIG_FILE, "$withval") ])
+
+# Other configure scripts
+#AC_CONFIG_SUBDIRS(lib/zlib)
+AC_CONFIG_SUBDIRS(lib/silcmath/gmp-3.0.1)
+
+AC_OUTPUT( \
+Makefile
+doc/Makefile
+includes/Makefile
+lib/Makefile
+lib/silccore/Makefile
+lib/silccrypt/Makefile
+lib/silcmath/Makefile
+lib/silcsim/Makefile
+lib/silcsim/modules/Makefile
+lib/silcske/Makefile
+silc/Makefile
+silcd/Makefile)

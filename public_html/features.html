@@ -1,0 +1,57 @@
+<html>
+<body bgcolor="#ffffff">
+<p><br>
+<a href="index.html"><img src="silc2.jpg" border=0></a>
+<table width="70%" border="0" cellspacing="0" cellpadding="1"
+align=center>
+<tr>
+<td>
+<font size=4>
+<p>
+<h1>Features</h1>
+<p>
+
+Features to be included into the final release of SILC.  [Note that the
+current Developer's Version does not include all of these features, read
+TODO file for more information.]
+<p>
+
+<li>Normal conferencing services such as private messages, channels,
+   channel messages, etc.  All traffic is secured and authenticated.
+<p>
+<li>No unique nicknames.  There can same nicknames in SILC without
+   collisions.  SILC has unique Client ID's, Server ID's and Channel ID's
+   to assure that there are no collisions.
+<p>
+<li>Secure key exchange and authentication protocol.  SILC Key Exchange
+   protocol provides key material used in the SILC sessions in secure
+   manner.  The protocol is immune for example to man-in-the-middle 
+   attacks.  The SILC Authentication protocol provides strong 
+   authentication.  Authentication may be based on passphrase or public
+   key (RSA) authentication.  For clients there is an option not to
+   use authentication when connecting to servers.
+<p>
+<li>All traffic is encrypted and authenticated using the best cryptographic
+   algorithms out there.  Command messages, private messages and channel
+   messages are all protected by encryption.  User can set private keys
+   for both private message and for channels so that even SILC servers do
+   not know the keys.  Cipher keys are, by default, 128 bits in length and
+   public keys, by default, 1024 bits in length.
+<p>
+<li>Supports data compression with GZIP to improve performance.
+<p>
+<li>SIM (SILC Module) support.  Support for loading of shared objects at 
+   run-time that provides new and extended features to both SILC client
+   and server.  These can provide extra ciphers and extra features to
+   the software.
+<p>
+<li>SILC client can be installed and used without root privileges.
+<p>
+<li>SILC client can be configured by system wide configuration files but
+   with user specific configuration files as well.
+<p>
+</td>
+</tr>
+</table>
+</body>
+</html>

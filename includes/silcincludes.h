@@ -1,0 +1,158 @@
+/*
+
+  silcincludes.h
+
+  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+  Copyright (C) 1997 - 2000 Pekka Riikonen
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+*/
+/*
+  This file includes common definitions for SILC. This file MUST be included
+  by all files in SILC (directly or through other global include file).
+*/
+
+#ifndef SILCINCLUDES_H
+#define SILCINCLUDES_H
+
+/* Automatically generated configuration header */
+#include "silcdefs.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdarg.h>
+
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/times.h>
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#else
+#error getopt.h not found in the system
+#endif
+
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#else
+#error signal.h not found in the system
+#endif
+
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#else
+#error fcntl.h not found in the system
+#endif
+
+#ifdef HAVE_ASSERT_H
+#include <errno.h>
+#else
+#error errno.h not found in the system
+#endif
+
+#ifdef HAVE_ASSERT_H
+#include <assert.h>
+#else
+#error assert.h not found in the system
+#endif
+
+#include <sys/socket.h>
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#else
+#error netinet/in.h not found in the system
+#endif
+
+#ifdef HAVE_NETINET_TCP_H
+#include <netinet/tcp.h>
+#else
+#error netinet/tcp.h not found in the system
+#endif
+
+#ifdef HAVE_NETDB_H
+#include <netdb.h>
+#else
+#error netdb.h not found in the system
+#endif
+
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#else
+#error arpa/inet.h not found in the system
+#endif
+
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+
+#ifdef HAVE_DLFCN_H
+#include <dlfcn.h>
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+/* Generic global SILC includes */
+#include "bitmove.h"
+
+/* Math library includes */
+#include "silcmp.h"
+#include "modinv.h"
+#include "silcprimegen.h"
+
+/* Crypto library includes */
+#include "silccipher.h"
+#include "silchash.h"
+#include "silchmac.h"
+#include "silcrng.h"
+#include "silcpkcs.h"
+
+/* SILC core library includes */
+#include "silclog.h"
+#include "silcmemory.h"
+#include "silcbuffer.h"
+#include "silcbufutil.h"
+#include "silcbuffmt.h"
+#include "silcnet.h"
+#include "silcutil.h"
+#include "silcconfig.h"
+#include "id.h"
+#include "idcache.h"
+#include "silcpacket.h"
+#include "silctask.h"
+#include "silcschedule.h"
+#include "silcprotocol.h"
+#include "silccommand.h"
+#include "silcchannel.h"
+#include "silcsockconn.h"
+
+#ifdef SILC_SIM
+/* SILC Module library includes */
+#include "silcsim.h"
+#include "silcsimutil.h"
+#endif
+
+/* SILC Key Exchange library includes */
+#include "silcske.h"
+#include "payload.h"
+#include "groups.h"
+
+#endif

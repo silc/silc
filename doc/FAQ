@@ -1,0 +1,90 @@
+Frequently Asked Questions
+
+
+Q: What is SILC?
+A: SILC (Secure Internet Live Conferencing) is a protocol which provides
+   secure conferencing services in the Internet over insecure channel.
+   SILC is IRC like although internally they are very different.  Biggest
+   similiarity between SILC and IRC is that they both provide conferencing
+   services and that SILC has almost same commands as IRC.  Other than
+   that they are nothing alike.
+
+   Biggest differences are that SILC is secure what IRC is not in any
+   way.  The network model is also entirely different compared to IRC.
+
+
+Q: Can I use SILC with IRC client?  What about can I use IRC with SILC
+   client?
+A: Answer for both question is no.  IRC client is in no way compatible
+   with SILC server.  SILC client cannot currenly use IRC but this may
+   change in the future if IRC support is added to the SILC client.  
+   After that one could use both SILC and IRC with the same client.
+   Although, even then one cannot talk from SILC network to IRC network.
+   That just is not possible.
+
+
+Q: How secure SILC really is?
+A: A good question which I don't have a answer.  SILC has been tried to
+   make as secure as possible.  However, there is no security protocol
+   or security software that has not been vulnerable to some sort of
+   attacks.  SILC is in no means different from this.  So, it is suspected 
+   that there are security holes in the SILC.  These holes just needs to 
+   be found so that they can be fixed.
+
+   But to give you some parameters of security SILC uses the most secure
+   crytographic algorithms such as Blowfish, RC5, Twofish, etc.  SILC
+   does not have DES or 3DES as DES is insecure and 3DES is just too
+   slow.  SILC also uses cryptographically strong random number generator
+   when it needs random numbers.  Public key cryptography uses RSA
+   and Diffie Hellman algorithms.  Key lengths for ciphers are initially
+   set to 128 bits but many algorithm supports longer keys.  For public
+   key algorithms the starting key length is 1024 bits.
+
+   But the best answer for this question is that SILC is as secure as
+   its weakest link.  SILC is open and the protocol is open and in public
+   thus open for security analyzes.
+
+   To give a list of attacks that are ineffective against SILC:
+
+      o Man-in-the-middle attacks are ineffective if proper public key
+        infrastructure is used.  SILC is vulnerable to this attack if
+        the public keys used in the SILC are not verified to be trusted.
+
+      o IP spoofing is ineffective (because of encryption and trusted 
+        server keys).
+
+      o Attacks that change the contents of the data or add extra
+        data to the packets are ineffective (because of encryption and
+        integrity checks).
+
+      o Passive attacks (listenning network traffic) are ineffective
+        (because of encryption).  Everything is encrypted including
+        authentication data such as passwords when they are needed.
+
+      o Any sort of cryptanalytic attacks are tried to make ineffective
+        by using the best cryptographic algorithms out there.
+
+
+Q: Why SILC? Why not IRC3?
+A: Question that is justified no doubt of that.  I didn't start doing SILC
+   to be replacement for IRC.  SILC was something that didn't exist in
+   1996 or even today except that SILC is now released.  However, I did
+   check out the IRC3 project in 1997 when I started coding and planning
+   the SILC protocol.
+
+   But, IRC3 is problematic. Why? Because it still doesn't exist.  The
+   project is at the same spot where it was in 1997 when I checked it out.
+   And it was old project back then as well.  Couple of months ago I 
+   checked it again and nothing were happening.  That's the problem of IRC3
+   project.  The same almost to happened to SILC as well as I wasn't making
+   real progress over the years.  I talked to the original author of IRC,
+   Jarkko Oikarinen, in 1997 and he directed me to the IRC3 project, 
+   although he said that IRC3 is a lot of talking and not that much of 
+   anything else.  I am not trying to put down the IRC3 project but its
+   problem is that no one in the project is able to make a decision what
+   is the best way to go about making the IRC3 and I wasn't going to be
+   part of that.  The fact is that if I would've gone to IRC3 project,
+   nor IRC3 or SILC would exist today.  I think IRC3 could be something
+   really great if they just would get their act together and start
+   coding the thing.  I hope that the release of SILC gives a boost to
+   the IRC3 project as well.

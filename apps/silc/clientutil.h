@@ -1,0 +1,40 @@
+/*
+
+  client.h
+
+  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+  Copyright (C) 1997 - 2000 Pekka Riikonen
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+*/
+
+#ifndef CLIENTUTIL_H
+#define CLIENTUTIL_H
+
+/* Prototypes */
+void silc_say(SilcClient client, char *msg, ...);
+void silc_print(SilcClient client, char *msg, ...);
+char *silc_get_mail_path();
+int silc_get_number_of_emails();
+char *silc_get_username();
+char *silc_get_real_name();
+int silc_client_time_til_next_min();
+char *silc_client_ask_passphrase(SilcClient client);
+char *silc_client_get_input(const char *prompt);
+char *silc_client_get_passphrase(const char *prompt);
+void silc_client_list_ciphers();
+void silc_client_list_hash_funcs();
+void silc_client_list_pkcs();
+void silc_client_create_key_pair(char *pkcs_name, int bits);
+
+#endif

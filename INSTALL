@@ -1,0 +1,23 @@
+Installing SILC Developer's Version
+===================================
+
+./configure
+./make
+
+You should not install the SILC into your system, instead, you should
+run it from the current directory.
+
+To see different compilation options, give,
+
+./configure --help
+
+
+Generally, developers wants to compile with debugging, in this case,
+give,
+
+./configure --enable-debug
+
+WARNING: The debugging is very very heavy and you currently cannot turn
+it off if you have compiled it with this option.  However, if you're
+going to develop or debug SILC you whould compile with this option.
+

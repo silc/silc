@@ -1,0 +1,44 @@
+/*
+
+  md5.h
+
+  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+  Copyright (C) 1997 - 2000 Pekka Riikonen
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+*/
+/*
+ * $Id$
+ * $Log$
+ * Revision 1.1  2000/06/27 11:36:55  priikone
+ * Initial revision
+ *
+ *
+ */
+
+#ifndef MD5_H
+#define MD5_H
+
+#include "md5_internal.h"
+
+/* 
+ * SILC Hash API for MD5
+ */
+
+SILC_HASH_API_INIT(md5);
+SILC_HASH_API_UPDATE(md5);
+SILC_HASH_API_FINAL(md5);
+SILC_HASH_API_TRANSFORM(md5);
+SILC_HASH_API_CONTEXT_LEN(md5);
+
+#endif
