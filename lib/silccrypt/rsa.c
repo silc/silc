@@ -227,7 +227,7 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
 
   if (key->pub_set) {
     silc_mp_uninit(&key->e);
-    silc_mp_uninit(&key->e);
+    silc_mp_uninit(&key->n);
     key->pub_set = FALSE;
   }
 
