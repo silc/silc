@@ -175,11 +175,20 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   }
 
   if (!pass) {
-    memset(line, 0, sizeof(line));
-    snprintf(line, sizeof(line), "Private key passphrase: ");
-    pass = silc_get_input(line, TRUE);
-    if (!pass)
+    char *pass2 = NULL;
+    pass = silc_get_input("Private key passphrase: ", TRUE);
+    if (!pass) {
       pass = strdup("");
+    } else {
+      while (TRUE) {
+	printf("\n");
+	pass2 = silc_get_input("Retype private key passphrase: ", TRUE);
+	if (!strcmp(pass, pass2))
+	  break;
+	fprintf(stderr, "\nPassphrases do not match");
+      }
+      silc_free(pass2);
+    }
   }
 
   /* Generate keys */
@@ -383,10 +392,21 @@ bool silc_change_private_key_passphrase(const char *prv_filename,
 
   pass = new_passphrase ? strdup(new_passphrase) : NULL;
   if (!pass) {
+    char *pass2 = NULL;
     fprintf(stdout, "\n");
     pass = silc_get_input("New passphrase: ", TRUE);
-    if (!pass)
+    if (!pass) {
       pass = strdup("");
+    } else {
+      while (TRUE) {
+	printf("\n");
+	pass2 = silc_get_input("Retype new passphrase: ", TRUE);
+	if (!strcmp(pass, pass2))
+	  break;
+	fprintf(stderr, "\nPassphrases do not match");
+      }
+      silc_free(pass2);
+    }
   }
 
   silc_pkcs_save_private_key((char *)prv_filename, private_key,

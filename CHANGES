@@ -10,6 +10,10 @@ Thu Nov  7 19:21:10 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  client.  Affected file irssi/src/silc/core/silc-servers.c.
 	  Renamed FILE RECEIVE to FILE ACCEPT.
 
+	* Confirm passphrase for private key encryption in
+	  silc_create_key_pair and silc_change_private_key_passphrase.
+	  Affected files are lib/silcutil/silcapputil.c.
+
 Thu Nov  7 10:05:28 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Move silc_client_packet_send back to internal, added
