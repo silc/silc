@@ -72,7 +72,7 @@ extern "C" {
 #define SILC_SIZEOF_CHAR @SILC_SIZEOF_CHAR@
 #define SILC_SIZEOF_VOID_P @SILC_SIZEOF_VOID_P@
 
-#if defined(HAVE_SILCDEFS_H)
+#if defined(HAVE_SILCDEFS_H) || defined(SILC_WIN32)
 /* Automatically generated configuration header */
 #include "silcdefs.h"
 #endif /* HAVE_SILCDEFS_H */
