@@ -148,6 +148,10 @@ bool silc_server_init(SilcServer server)
 
   SILC_LOG_DEBUG(("Initializing server"));
 
+  /* Take config object for us */
+  silc_server_config_ref(&server->config_ref, server->config, 
+			 server->config);
+
   /* Steal public and private key from the config object */
   server->public_key = server->config->server_info->public_key;
   server->private_key = server->config->server_info->private_key;
@@ -366,19 +370,18 @@ bool silc_server_rehash(SilcServer server)
     return FALSE;
   }
 
-  /* Config file parsing went fine, so our old config is gone now. We
-     unreference the basic pointer and it should be destroyed as soon
-     as all other references are released. */
+  /* Our old config is gone now. We'll unreference our reference made in
+     silc_server_init and then destroy it since we are destroying it
+     underneath the application (layer which called silc_server_init). */
   silc_server_config_unref(&server->config_ref);
+  silc_server_config_destroy(server->config);
+
+  /* Take new config context */
   server->config = newconfig;
   silc_server_config_ref(&server->config_ref, server->config, server->config);
 
   /* Fix the server_name field */
-  if (!strcmp(server->server_name, newconfig->server_info->server_name)) {
-    /* We don't need any update */
-    silc_free(newconfig->server_info->server_name);
-    newconfig->server_info->server_name = NULL;
-  } else {
+  if (strcmp(server->server_name, newconfig->server_info->server_name)) {
     silc_free(server->server_name);
     server->server_name = newconfig->server_info->server_name;
     newconfig->server_info->server_name = NULL;
