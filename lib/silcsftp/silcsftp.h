@@ -842,7 +842,7 @@ void silc_sftp_extended(SilcSFTP sftp,
  *
  *    SilcSFTP silc_sftp_server_start(SilcSocketConnection sock,
  *                                    SilcSFTPSendPacketCallback send_packet,
- *                                    void *send_context, SilcSFTP sftp,
+ *                                    void *send_context, 
  *                                    SilcSFTPFilesystem fs);
  *
  * DESCRIPTION
@@ -944,6 +944,7 @@ typedef struct {
  *
  *    typedef void (*SilcSFTPMonitor)(SilcSFTP sftp
  *                                    SilcSFTPMonitors type,
+ *                                    const SilcSFTPMonitorData data,
  *                                    void *context);
  *
  * DESCRIPTION

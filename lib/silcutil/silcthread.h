@@ -72,8 +72,8 @@ typedef void *(*SilcThreadStart)(void *context);
  *
  * SYNOPSIS
  *
- *    SilcThread silc_thread_create(SilcThreadStart start_func, void *context);
- *
+ *    SilcThread silc_thread_create(SilcThreadStart start_func, 
+ *                                  void *context, bool waitable);
  * DESCRIPTION
  *
  *    Creates a new thread. The `start_func' with `context' will be
