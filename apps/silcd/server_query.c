@@ -237,7 +237,7 @@ bool silc_server_query_command(SilcServer server, SilcCommand querycmd,
     /* If we are normal server and query contains nickname OR query
        doesn't contain nickname or ids BUT attributes, send it to the
        router */
-    if (server->server_type == SILC_SERVER && !server->standalone &&
+    if (server->server_type != SILC_ROUTER && !server->standalone &&
 	cmd->sock != SILC_PRIMARY_ROUTE(server) &&
 	 (silc_argument_get_arg_type(cmd->args, 1, NULL) ||
 	 (!silc_argument_get_arg_type(cmd->args, 1, NULL) &&
@@ -586,7 +586,7 @@ void silc_server_public_key_hash_foreach(void *key, void *context,
 
   (*uc->clients) = silc_realloc((*uc->clients),
                                 sizeof((**uc->clients)) *
-                                ((*uc->clients_count) + 1));
+				((*uc->clients_count) + 1));
   (*uc->clients)[(*uc->clients_count)++] = entry;
 }
 
@@ -622,12 +622,17 @@ void silc_server_query_check_attributes(SilcServer server,
       case SILC_ATTRIBUTE_USER_PUBLIC_KEY:
 	found = TRUE;
 
+	SILC_LOG_DEBUG(("Finding clients by public key attribute"));
+
 	if (!silc_attribute_get_object(attr, &pk, sizeof(pk)))
 	  continue;
 
 	if (!silc_pkcs_public_key_decode(pk.data, pk.data_len,
-	                                 &publickey))
+	                                 &publickey)) {
+	  silc_free(pk.type);
+	  silc_free(pk.data);
 	  continue;
+	}
 
 	/* If no clients were set on calling this function, we
 	   just search for clients, otherwise we try to limit
@@ -653,6 +658,8 @@ void silc_server_query_check_attributes(SilcServer server,
 	      (*clients)[i] = NULL;
 	  }
 	}
+	silc_free(pk.type);
+	silc_free(pk.data);
 	silc_pkcs_public_key_free(publickey);
 	break;
     }
@@ -893,6 +900,11 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
       if (query->attrs && SILC_IS_LOCAL(client_entry) &&
 	  (client_entry->mode & SILC_UMODE_DETACHED ||
 	   client_entry->data.status & SILC_IDLIST_STATUS_NOATTR))
+	continue;
+
+      /* If attributes are present in query, and in the entry and we have
+	 done resolvings already we don't need to resolve anymore */
+      if (query->resolved && query->attrs && client_entry->attrs)
 	continue;
 
       /* Resolve the detailed client information. If client is local we

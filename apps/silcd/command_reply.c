@@ -300,6 +300,70 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     silc_free(client->attrs);
     client->attrs = silc_memdup(tmp, len);
     client->attrs_len = len;
+
+    /* Try to take public key from attributes if present and we don't have
+       the key already.  Do this only on normal server.  Routers do GETKEY
+       for all clients anyway. */
+    if (server->server_type != SILC_ROUTER && !client->data.public_key) {
+      SilcAttributePayload attr;
+      SilcAttributeObjPk pk;
+      unsigned char f[20];
+      SilcDList attrs = silc_attribute_payload_parse(tmp, len);
+
+      SILC_LOG_DEBUG(("Take client public key from attributes"));
+
+      if (attrs) {
+	silc_dlist_start(attrs);
+	while ((attr = silc_dlist_get(attrs)) != SILC_LIST_END) {
+	  switch (silc_attribute_get_attribute(attr)) {
+	  case SILC_ATTRIBUTE_USER_PUBLIC_KEY:
+	    if (!silc_attribute_get_object(attr, &pk, sizeof(pk)))
+	      continue;
+
+	    /* Take only SILC public keys */
+	    if (strcmp(pk.type, "silc-rsa")) {
+	      silc_free(pk.type);
+	      silc_free(pk.data);
+	      continue;
+	    }
+
+	    /* Verify that the server provided fingerprint matches the key */
+	    silc_hash_make(server->sha1hash, pk.data, pk.data_len, f);
+	    if (memcmp(f, client->data.fingerprint, sizeof(f))) {
+	      silc_free(pk.type);
+	      silc_free(pk.data);
+	      continue;
+	    }
+
+	    /* Save the public key. */
+	    if (!silc_pkcs_public_key_decode(pk.data, pk.data_len,
+					     &client->data.public_key)) {
+	      silc_free(pk.type);
+	      silc_free(pk.data);
+	      continue;
+	    }
+
+	    SILC_LOG_DEBUG(("Saved client public key from attributes"));
+
+	    /* Add to public key hash table */
+	    if (!silc_hash_table_find_by_context(server->pk_hash,
+						 client->data.public_key,
+						 client, NULL))
+	      silc_hash_table_add(server->pk_hash,
+				  client->data.public_key, client);
+
+	    silc_free(pk.type);
+	    silc_free(pk.data);
+	    break;
+
+	  default:
+	    break;
+	  }
+	}
+
+	silc_attribute_payload_list_free(attrs);
+      }
+    }
   }
 
   return TRUE;
@@ -1283,10 +1347,9 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
 	goto out;
     }
 
-    if (server->server_type != SILC_SERVER)
-      if (!silc_hash_table_find_by_context(server->pk_hash, public_key,
-					   client, NULL))
-	silc_hash_table_add(server->pk_hash, public_key, client);
+    if (!silc_hash_table_find_by_context(server->pk_hash, public_key,
+					 client, NULL))
+      silc_hash_table_add(server->pk_hash, public_key, client);
 
     client->data.public_key = public_key;
     public_key = NULL;
