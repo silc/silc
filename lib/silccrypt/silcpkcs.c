@@ -153,18 +153,20 @@ unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, uint32 *len)
 
 /* Sets public key from SilcPublicKey. */
 
-int silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key)
+uint32 silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key)
 {
-  return pkcs->pkcs->set_public_key(pkcs->context, public_key->pk, 
-				    public_key->pk_len);
+  pkcs->key_len = pkcs->pkcs->set_public_key(pkcs->context, public_key->pk, 
+					     public_key->pk_len);
+  return pkcs->key_len;
 }
 
 /* Sets public key from data. */
 
-int silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
-				  uint32 pk_len)
+uint32 silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
+				     uint32 pk_len)
 {
-  return pkcs->pkcs->set_public_key(pkcs->context, pk, pk_len);
+  pkcs->key_len = pkcs->pkcs->set_public_key(pkcs->context, pk, pk_len);
+  return pkcs->key_len;
 }
 
 /* Sets private key from SilcPrivateKey. */
@@ -358,6 +360,63 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
   return identifier;
 }
 
+/* Decodes the provided `identifier' and returns allocated context for
+   the identifier. */
+
+SilcPublicKeyIdentifier silc_pkcs_decode_identifier(char *identifier)
+{
+  SilcPublicKeyIdentifier ident;
+  char *cp, *item;
+  int len;
+
+  ident = silc_calloc(1, sizeof(*ident));
+
+  cp = identifier;
+  while (cp) {
+    len = strcspn(cp, ",");
+    item = silc_calloc(len + 1, sizeof(char));
+    memcpy(item, cp, len);
+
+    if (strstr(item, "UN="))
+      ident->username = strdup(item + 3);
+    else if (strstr(item, "HN="))
+      ident->host = strdup(item + 3);
+    else if (strstr(item, "RN="))
+      ident->realname = strdup(item + 3);
+    else if (strstr(item, "E="))
+      ident->email = strdup(item + 2);
+    else if (strstr(item, "O="))
+      ident->org = strdup(item + 2);
+    else if (strstr(item, "C="))
+      ident->country = strdup(item + 2);
+    
+    cp += len;
+    if (strlen(cp) == 0)
+      cp = NULL;
+    else
+      cp += 2;
+    
+    if (item)
+      silc_free(item);
+  }
+
+  return ident;
+}
+
+/* Free's decoded public key identifier context. Call this to free the
+   context returned by the silc_pkcs_decode_identifier. */
+
+void silc_pkcs_free_identifier(SilcPublicKeyIdentifier identifier)
+{
+  silc_free(identifier->username);
+  silc_free(identifier->host);
+  silc_free(identifier->realname);
+  silc_free(identifier->email);
+  silc_free(identifier->org);
+  silc_free(identifier->country);
+  silc_free(identifier);
+}
+
 /* Allocates SILC style public key formed from sent arguments. All data
    is duplicated. */
 
@@ -528,13 +587,18 @@ int silc_pkcs_public_key_decode(unsigned char *data, uint32 data_len,
     goto err;
 
   /* See if we support this algorithm */
-  if (!silc_pkcs_is_supported(pkcs_name))
+  if (!silc_pkcs_is_supported(pkcs_name)) {
+    SILC_LOG_DEBUG(("Unsupported PKCS %s", pkcs_name));
     goto err;
+  }
 
   /* Protocol says that at least UN and HN must be provided as identifier,
      check for these. */
-  if (!strstr(ident, "UN=") && !strstr(ident, "HN="))
+  if (!strstr(ident, "UN=") && !strstr(ident, "HN=")) {
+    SILC_LOG_DEBUG(("The public does not have the required UN= and HN= "
+		    "identifiers"));
     goto err;
+  }
 
   /* Get key data. We assume that rest of the buffer is key data. */
   silc_buffer_pull(buf, 2 + pkcs_len + 2 + identifier_len);

@@ -711,3 +711,59 @@ int silc_client_load_keys(SilcClient client)
 
   return TRUE;
 }
+
+/* Dumps the public key on screen. Used from the command line option. */
+
+int silc_client_show_key(char *keyfile)
+{
+  SilcPublicKey public_key;
+  SilcPublicKeyIdentifier ident;
+  char *fingerprint;
+  unsigned char *pk;
+  uint32 pk_len;
+  SilcPKCS pkcs;
+  int key_len = 0;
+
+  if (silc_pkcs_load_public_key(keyfile, &public_key,
+				SILC_PKCS_FILE_PEM) == FALSE)
+    if (silc_pkcs_load_public_key(keyfile, &public_key,
+				  SILC_PKCS_FILE_BIN) == FALSE)
+      return FALSE;
+
+  ident = silc_pkcs_decode_identifier(public_key->identifier);
+
+  pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+  fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
+
+  if (silc_pkcs_alloc(public_key->name, &pkcs)) {
+    key_len = silc_pkcs_public_key_set(pkcs, public_key);
+    silc_pkcs_free(pkcs);
+  }
+
+  printf("Public key file    : %s\n", keyfile);
+  printf("Algorithm          : %s\n", public_key->name);
+  if (key_len)
+    printf("Key length (bits)  : %d\n", key_len);
+  if (ident->realname)
+    printf("Real name          : %s\n", ident->realname);
+  if (ident->username)
+    printf("Username           : %s\n", ident->username);
+  if (ident->host)
+    printf("Hostname           : %s\n", ident->host);
+  if (ident->email)
+    printf("Email              : %s\n", ident->email);
+  if (ident->org)
+    printf("Organization       : %s\n", ident->org);
+  if (ident->country)
+    printf("Country            : %s\n", ident->country);
+  printf("Fingerprint (SHA1) : %s\n", fingerprint); 
+
+  fflush(stdout);
+
+  silc_free(fingerprint);
+  silc_free(pk);
+  silc_pkcs_public_key_free(public_key);
+  silc_pkcs_free_identifier(ident);
+
+  return TRUE;
+}
