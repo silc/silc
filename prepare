@@ -38,7 +38,7 @@
 # SILC Distribution versions. Set here or give the version on the command
 # line as argument.
 #
-SILC_VERSION=0.2.6			# Base version
+SILC_VERSION=0.3			# Base version
 
 
 #############################################################################
@@ -78,7 +78,7 @@ do
     continue;
   fi
   if [ -f Makefile.am.pre ]; then
-    sed -e "/SILC_DISTRIBUTION_SUBDIRS/s//$sub/" Makefile.am.pre >Makefile.am 2>/dev/null
+    sed -e "/SILC_DISTRIBUTION_SUBDIRS/s//$sub/" -e "/SILC_DISTRIBUTION_SUBDIRS/s//$sub/" Makefile.am.pre >Makefile.am 2>/dev/null
   fi
   cd $path
 done

@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 #
-#  Copyright (C) 2000 Pekka Riikonen
+#  Copyright (C) 2000 - 2001 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,6 +18,10 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
+COMMONDIRS = 
+SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
+DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
+
 all:
 	touch draft-riikonen-silc-spec-02.txt
 	touch draft-riikonen-silc-pp-02.txt
@@ -25,6 +29,9 @@ all:
 	touch draft-riikonen-silc-commands-00.txt
 	-cd ..
 
+if SILC_DIST_CLIENT
+dist-hook:
+else
 dist-hook:
 	touch draft-riikonen-silc-spec-02.txt
 	touch draft-riikonen-silc-pp-02.txt
@@ -38,6 +45,7 @@ dist-hook:
 		draft-riikonen-silc-ke-auth-02.txt
 	./makerfc draft-riikonen-silc-commands-00.nroff \
 		draft-riikonen-silc-commands-00.txt
+endif
 
 EXTRA_DIST = \
 	CodingStyle \

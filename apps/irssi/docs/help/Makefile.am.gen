@@ -12,3 +12,4 @@ EXTRA_DIST = \
 	$(help_DATA)
 
 SUBDIRS = in
+DIST_SUBDIRS =

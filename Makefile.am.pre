@@ -18,7 +18,8 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-SUBDIRS = lib irssi silc silcd doc includes
+COMMONDIRS = lib irssi silc silcd doc includes
+SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 
 include $(top_srcdir)/Makefile.defines.in
