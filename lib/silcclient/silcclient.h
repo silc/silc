@@ -1467,6 +1467,8 @@ bool silc_client_command_call(SilcClient client,
  *    to perform the commands by itself, it can do so and send the data
  *    directly to the server using this function.  If application is using
  *    the silc_client_command_call, this function is usually not used.
+ *    Note that this overriders the Client Librarys commands and sends
+ *    the command packet directly to server.
  *
  *    The variable arguments are a pair of { type, data, data_length },
  *    and the `argc' is the number of these pairs.
