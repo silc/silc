@@ -7,6 +7,11 @@ Sat Jun 15 18:23:39 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  server statistics into /tmp directory.  Affected file is
 	  silcd/silcd.c.
 
+	* ROBODoc documented the lib/silccrypt/silchash.h.  Improved
+	  the SILC Hash Interface also.  Added new functions
+	  silc_hash_get_name, silc_hash_init, silc_hash_update and
+	  silc_hash_final.  Affected file lib/silccrypt/silchash.c.
+
 Sat Jun 15 12:09:14 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added some better info printing for client during connecting.

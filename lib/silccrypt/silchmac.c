@@ -24,14 +24,13 @@
 struct SilcHmacStruct {
   SilcHmacObject *hmac;
   SilcHash hash;
-  bool allocated_hash;		/* TRUE if the hash was allocated */
 
   unsigned char *key;
   SilcUInt32 key_len;
 
   unsigned char inner_pad[64];
   unsigned char outer_pad[64];
-  void *hash_context;
+  bool allocated_hash;		/* TRUE if the hash was allocated */
 };
 
 #ifndef SILC_EPOC
@@ -54,18 +53,21 @@ static void silc_hmac_init_internal(SilcHmac hmac, unsigned char *key,
 				    SilcUInt32 key_len)
 {
   SilcHash hash = hmac->hash;
+  SilcUInt32 block_len;
   unsigned char hvalue[20];
   int i;
 
   memset(hmac->inner_pad, 0, sizeof(hmac->inner_pad));
   memset(hmac->outer_pad, 0, sizeof(hmac->outer_pad));
 
+  block_len = silc_hash_block_len(hash);
+
   /* If the key length is more than block size of the hash function, the
      key is hashed. */
-  if (key_len > hash->hash->block_len) {
+  if (key_len > block_len) {
     silc_hash_make(hash, key, key_len, hvalue);
     key = hvalue;
-    key_len = hash->hash->hash_len;
+    key_len = silc_hash_len(hash);
   }
 
   /* Copy the key into the pads */
@@ -73,7 +75,7 @@ static void silc_hmac_init_internal(SilcHmac hmac, unsigned char *key,
   memcpy(hmac->outer_pad, key, key_len);
 
   /* XOR the key with pads */
-  for (i = 0; i < hash->hash->block_len; i++) {
+  for (i = 0; i < block_len; i++) {
     hmac->inner_pad[i] ^= 0x36;
     hmac->outer_pad[i] ^= 0x5c;
   }
@@ -234,7 +236,6 @@ void silc_hmac_free(SilcHmac hmac)
       silc_free(hmac->key);
     }
 
-    silc_free(hmac->hash_context);
     silc_free(hmac);
   }
 }
@@ -408,15 +409,9 @@ void silc_hmac_init_with_key(SilcHmac hmac, const unsigned char *key,
 			     SilcUInt32 key_len)
 {
   SilcHash hash = hmac->hash;
-
   silc_hmac_init_internal(hmac, hmac->key, hmac->key_len);
-
-  if (!hmac->hash_context)
-    hmac->hash_context = silc_calloc(1, hash->hash->context_len());
-
-  hash->hash->init(hmac->hash_context);
-  hash->hash->update(hmac->hash_context, hmac->inner_pad, 
-		     hash->hash->block_len);
+  silc_hash_init(hash);
+  silc_hash_update(hash, hmac->inner_pad, silc_hash_block_len(hash));
 }
 
 /* Add data to be used in the MAC computation. */
@@ -425,7 +420,7 @@ void silc_hmac_update(SilcHmac hmac, const unsigned char *data,
 		      SilcUInt32 data_len)
 {
   SilcHash hash = hmac->hash;
-  hash->hash->update(hmac->hash_context, (unsigned char *)data, data_len);
+  silc_hash_update(hash, data, data_len);
 }
 
 /* Compute the final MAC. */
@@ -436,12 +431,11 @@ void silc_hmac_final(SilcHmac hmac, unsigned char *return_hash,
   SilcHash hash = hmac->hash;
   unsigned char mac[20];
 
-  hash->hash->final(hmac->hash_context, mac);
-  hash->hash->init(hmac->hash_context);
-  hash->hash->update(hmac->hash_context, hmac->outer_pad, 
-		     hash->hash->block_len);
-  hash->hash->update(hmac->hash_context, mac, hash->hash->hash_len);
-  hash->hash->final(hmac->hash_context, mac);
+  silc_hash_final(hash, mac);
+  silc_hash_init(hash);
+  silc_hash_update(hash, hmac->outer_pad, silc_hash_block_len(hash));
+  silc_hash_update(hash, mac, silc_hash_len(hash));
+  silc_hash_final(hash, mac);
   memcpy(return_hash, mac, hmac->hmac->len);
   memset(mac, 0, sizeof(mac));
 

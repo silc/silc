@@ -1695,7 +1695,7 @@ static SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
 
   /* Make the hash */
   silc_hash_make(ske->prop->hash, buf->data, buf->len, return_hash);
-  *return_hash_len = ske->prop->hash->hash->hash_len;
+  *return_hash_len = silc_hash_len(ske->prop->hash);
 
   if (initiator == FALSE) {
     SILC_LOG_HEXDUMP(("HASH"), return_hash, *return_hash_len);

@@ -161,7 +161,7 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
   conn->rekey->ske_group = silc_ske_group_get_number(group);
 
   /* Save the HASH function */
-  silc_hash_alloc(hash->hash->name, &conn->hash);
+  silc_hash_alloc(silc_hash_get_name(hash), &conn->hash);
 }
 
 /* Checks the version string of the server. */
@@ -450,7 +450,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
        */
       SilcSKEKeyMaterial *keymat;
       int key_len = silc_cipher_get_key_len(ctx->ske->prop->cipher);
-      int hash_len = ctx->ske->prop->hash->hash->hash_len;
+      int hash_len = silc_hash_len(ctx->ske->prop->hash);
 
       /* Process the key material */
       keymat = silc_calloc(1, sizeof(*keymat));
@@ -792,7 +792,7 @@ silc_client_protocol_rekey_generate(SilcClient client,
   SilcClientConnection conn = (SilcClientConnection)ctx->sock->user_data;
   SilcSKEKeyMaterial *keymat;
   SilcUInt32 key_len = silc_cipher_get_key_len(conn->send_key);
-  SilcUInt32 hash_len = conn->hash->hash->hash_len;
+  SilcUInt32 hash_len = silc_hash_len(conn->hash);
 
   SILC_LOG_DEBUG(("Generating new %s session keys (no PFS)",
 		  send ? "sending" : "receiving"));
@@ -821,7 +821,7 @@ silc_client_protocol_rekey_generate_pfs(SilcClient client,
   SilcClientConnection conn = (SilcClientConnection)ctx->sock->user_data;
   SilcSKEKeyMaterial *keymat;
   SilcUInt32 key_len = silc_cipher_get_key_len(conn->send_key);
-  SilcUInt32 hash_len = conn->hash->hash->hash_len;
+  SilcUInt32 hash_len = silc_hash_len(conn->hash);
   unsigned char *tmpbuf;
   SilcUInt32 klen;
 

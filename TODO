@@ -55,8 +55,6 @@ Manual (Do these to 0.9.x).
 
  o ROBOdoc documenting missing from lib/silcutil/silcfileutil.h.
 
- o ROBOdoc documenting missing from lib/silccrypt/silchash.h.
-
  o ROBOdoc documenting missing from lib/silccrypt/silccipher.h.
 
  o ROBOdoc documenting missing from lib/silccrypt/silcpkcs.h.

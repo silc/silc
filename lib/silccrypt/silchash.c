@@ -24,6 +24,12 @@
 #include "md5.h"
 #include "sha1.h"
 
+/* The main SILC hash structure. */
+struct SilcHashStruct {
+  SilcHashObject *hash;
+  void *context;
+};
+
 #ifndef SILC_EPOC
 /* List of dynamically registered hash functions. */
 SilcDList silc_hash_list = NULL;
@@ -159,7 +165,6 @@ bool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
     *new_hash = silc_calloc(1, sizeof(**new_hash));
     (*new_hash)->hash = entry;
     (*new_hash)->context = silc_calloc(1, entry->context_len());
-    (*new_hash)->make_hash = silc_hash_make;
     return TRUE;
   }
 
@@ -181,6 +186,20 @@ void silc_hash_free(SilcHash hash)
 SilcUInt32 silc_hash_len(SilcHash hash)
 {
   return hash->hash->hash_len;
+}
+
+/* Returns the block lenght of the hash. */
+
+SilcUInt32 silc_hash_block_len(SilcHash hash)
+{
+  return hash->hash->block_len;
+}
+
+/* Returns the name of the hash function */
+
+const char *silc_hash_get_name(SilcHash hash)
+{
+  return hash->hash->name;
 }
 
 /* Returns TRUE if hash algorithm `name' is supported. */
@@ -255,13 +274,35 @@ char *silc_hash_get_supported(void)
 void silc_hash_make(SilcHash hash, const unsigned char *data, 
 		    SilcUInt32 len, unsigned char *return_hash)
 {
+  silc_hash_init(hash);
+  silc_hash_update(hash, data, len);
+  silc_hash_final(hash, return_hash);
+}
+
+void silc_hash_init(SilcHash hash)
+{
   hash->hash->init(hash->context);
-  hash->hash->update(hash->context, (unsigned char *)data, len);
+}
+
+void silc_hash_update(SilcHash hash, const unsigned char *data,
+		      SilcUInt32 data_len)
+{
+  hash->hash->update(hash->context, (unsigned char *)data, data_len);
+}
+
+void silc_hash_final(SilcHash hash, unsigned char *return_hash)
+{
   hash->hash->final(hash->context, return_hash);
 }
 
+void silc_hash_transform(SilcHash hash, SilcUInt32 *state,
+			 const unsigned char *data)
+{
+  hash->hash->transform(state, data);
+}
+
 /* Creates fingerprint of the data. If `hash' is NULL SHA1 is used as
-   default hash function. The returned fingerprint must be free's by the
+   default hash function. The returned fingerprint must be freed by the
    caller. */
 
 char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,

@@ -20,7 +20,7 @@ SILC_HASH_API_INIT(sha1)
 
 SILC_HASH_API_UPDATE(sha1)
 {
-  SHA1Update((SHA1_CTX *)context, data, len);
+  SHA1Update((SHA1_CTX *)context, (unsigned char *)data, len);
 }
 
 SILC_HASH_API_FINAL(sha1)

@@ -399,7 +399,7 @@ static void silc_rng_stir_pool(SilcRng rng)
 
   /* First CFB pass */
   for (i = 0; i < SILC_RNG_POOLSIZE; i += 5) {
-    rng->sha1->hash->transform(iv, rng->key);
+    silc_hash_transform(rng->sha1, iv, rng->key);
     iv[0] = rng->pool[i] ^= iv[0];
     iv[1] = rng->pool[i + 1] ^= iv[1];
     iv[2] = rng->pool[i + 2] ^= iv[2];
@@ -412,7 +412,7 @@ static void silc_rng_stir_pool(SilcRng rng)
 
   /* Second CFB pass */
   for (i = 0; i < SILC_RNG_POOLSIZE; i += 5) {
-    rng->sha1->hash->transform(iv, rng->key);
+    silc_hash_transform(rng->sha1, iv, rng->key);
     iv[0] = rng->pool[i] ^= iv[0];
     iv[1] = rng->pool[i + 1] ^= iv[1];
     iv[2] = rng->pool[i + 2] ^= iv[2];
