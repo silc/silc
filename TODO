@@ -161,6 +161,12 @@ describe new stuff to be added to protocol versions 1.x.
     administrative commands and cannot define all that one could imagine.
     To be included in protocol version 1.1.
 
+ 9. Add SILC_MESAGE_FLAG_REPLY for being other side to the
+    SILC_MESSAGE_FLAG_REQUEST.  Add generic SILC_MESSAGE_FLAG_DATA, which
+    can include generic payload, which can include generic data.  The
+    payload definition is left out for now.  To be included in protocol
+    version 1.1.
+
 
 TODO After 1.0
 ==============
