@@ -2306,7 +2306,7 @@ int silc_server_remove_clients_by_server(SilcServer server,
   uint32 clients_c = 0;
   unsigned char **argv = NULL;
   uint32 *argv_lens = NULL, *argv_types = NULL, argc = 0;
-  SilcHashTable servers;
+  SilcHashTable channels;
   SilcChannelClientEntry chl;
   SilcChannelEntry channel;
   SilcHashTableList htl;
@@ -2315,10 +2315,10 @@ int silc_server_remove_clients_by_server(SilcServer server,
   SILC_LOG_DEBUG(("Start"));
 
   /* Allocate the hash table that holds the channels that require
-     channel key re-generation after we've removed this servers clients
+     channel key re-generation after we've removed this server's clients
      from the channels. */
-  servers = silc_hash_table_alloc(0, silc_hash_ptr, NULL, NULL, NULL,
-				  NULL, NULL, TRUE);
+  channels = silc_hash_table_alloc(0, silc_hash_ptr, NULL, NULL, NULL,
+				   NULL, NULL, TRUE);
 
   if (server_signoff) {
     idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
@@ -2375,8 +2375,11 @@ int silc_server_remove_clients_by_server(SilcServer server,
 	}
 
 	silc_hash_table_list(client->channels, &htl);
-	while (silc_hash_table_get(&htl, NULL, (void *)&chl))
-	  silc_hash_table_replace(servers, chl->channel, chl->channel);
+	while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
+	  if (silc_hash_table_find(channels, chl->channel, NULL, NULL))
+	    continue;
+	  silc_hash_table_add(channels, chl->channel, chl->channel);
+	}
 
 	/* Remove the client entry */
 	silc_server_remove_from_channels(server, NULL, client, FALSE, 
@@ -2432,8 +2435,11 @@ int silc_server_remove_clients_by_server(SilcServer server,
 	}
 
 	silc_hash_table_list(client->channels, &htl);
-	while (silc_hash_table_get(&htl, NULL, (void *)&chl))
-	  silc_hash_table_replace(servers, chl->channel, chl->channel);
+	while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
+	  if (silc_hash_table_find(channels, chl->channel, NULL, NULL))
+	    continue;
+	  silc_hash_table_add(channels, chl->channel, chl->channel);
+	}
 
 	/* Remove the client entry */
 	silc_server_remove_from_channels(server, NULL, client, FALSE,
@@ -2486,14 +2492,14 @@ int silc_server_remove_clients_by_server(SilcServer server,
   /* We must now re-generate the channel key for all channels that had
      this server's client(s) on the channel. As they left the channel we
      must re-generate the channel key. */
-  silc_hash_table_list(servers, &htl);
+  silc_hash_table_list(channels, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&channel)) {
     silc_server_create_channel_key(server, channel, 0);
     silc_server_send_channel_key(server, NULL, channel, 
 				 server->server_type == SILC_ROUTER ? 
 				 FALSE : !server->standalone);
   }
-  silc_hash_table_free(servers);
+  silc_hash_table_free(channels);
 
   return TRUE;
 }
@@ -3281,9 +3287,13 @@ static SilcBuffer
 silc_server_announce_encode_notify(SilcNotifyType notify, uint32 argc, ...)
 {
   va_list ap;
+  SilcBuffer p;
 
   va_start(ap, argc);
-  return silc_notify_payload_encode(notify, argc, ap);
+  p = silc_notify_payload_encode(notify, argc, ap);
+  va_end(ap);
+ 
+  return p;
 }
 
 /* Returns assembled packets for channel users of the `channel'. */
@@ -3678,15 +3688,15 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
   if (client) {
     silc_free(id);
 
-    if (client && client->data.registered == FALSE)
+    if (client->data.registered == FALSE)
       return NULL;
 
     /* If we are router and the client has router then the client is in
        our cell but not directly connected to us. */
     if (server->server_type == SILC_ROUTER && client->router) {
-      /* We are of course in this case the client's router thus the real
-	 "router" of the client is the server who owns the client. Thus
-	 we will send the packet to that server. */
+      /* We are of course in this case the client's router thus the route
+	 to the client is the server who owns the client. So, we will send
+	 the packet to that server. */
       if (idata)
 	*idata = (SilcIDListData)client->router;
       return client->router->connection;

@@ -1,3 +1,10 @@
+Sat Jul  7 14:40:31 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the silc_server_remove_clients_by_server's channel
+	  key re-generation.  The hash table handling was incorrect
+	  and would not work with many channels.  Affected file is
+	  silcd/server.c.
+
 Fri Jul  6 18:26:31 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the dynamic tables to static size tables in the
