@@ -482,7 +482,7 @@ SilcUInt8 silc_rng_get_byte_fast(SilcRng rng)
   }
 
   if (read(rng->fd_devurandom, buf, sizeof(buf)) < 0)
-    return silc_rng_get_byte(rnf);
+    return silc_rng_get_byte(rng);
 
   return buf[0];
 #else
