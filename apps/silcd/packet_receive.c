@@ -948,6 +948,11 @@ void silc_server_notify(SilcServer server,
 	break;
       }
 
+      /* Check whether to give founder rights to this user or not.  The
+	 problem here is that we get only the public key of the client, 
+	 but no authentication data.  We must assume that server has 
+	 already authenticated the user (and thus we must trust the
+	 server). */
       if (mode & SILC_CHANNEL_UMODE_CHANFO &&
 	  !(chl->mode & SILC_CHANNEL_UMODE_CHANFO) &&
 	  server->server_type == SILC_ROUTER &&
@@ -957,7 +962,8 @@ void silc_server_notify(SilcServer server,
 	/* If channel doesn't have founder auth mode then it's impossible
 	   that someone would be getting founder rights with CUMODE command.
 	   In that case there already either is founder or there isn't
-	   founder at all on the channel. */
+	   founder at all on the channel (valid only when 'client' is 
+	   valid). */
 	if (client && !(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)) {
 	  /* Force the mode to not have founder mode */
 	  chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
@@ -969,24 +975,12 @@ void silc_server_notify(SilcServer server,
 	/* Get the founder of the channel and if found then this client
 	   cannot be the founder since there already is one. */
 	silc_hash_table_list(channel->user_list, &htl);
-	while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
+	while (silc_hash_table_get(&htl, NULL, (void **)&chl2))
 	  if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {
-	    /* XXX this is not correct anymore in 1.2 -Pekka */
-
-	    /* If the founder on the channel is not the one whom has set
-	       the founder mode, then it's possible that this CUMODE_CHANGE
-	       is correct.  Due to netsplits it's possible that this
-	       situation happens. */
-	    if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) ||
-		(channel->founder_key && chl2->client->data.public_key &&
-		 silc_pkcs_public_key_compare(
-					channel->founder_key,
-					chl2->client->data.public_key))) {
-	      chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
-	      silc_server_force_cumode_change(server, sock, channel,
-					      chl, mode);
-	      notify_sent = TRUE;
-	    }
+	    chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	    silc_server_force_cumode_change(server, sock, channel,
+					    chl, mode);
+	    notify_sent = TRUE;
 	    break;
 	  }
 	silc_hash_table_list_reset(&htl);
@@ -1010,16 +1004,6 @@ void silc_server_notify(SilcServer server,
 
 	  /* Now match the public key we have cached and public key sent.
 	     They must match. */
-#if 0 /* The key may be other than the client's in 1.2 */
-	  if (client && client->data.public_key &&
-	      !silc_pkcs_public_key_compare(channel->founder_key,
-					    client->data.public_key)) {
-	    chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
-	    silc_server_force_cumode_change(server, sock, channel, chl, mode);
-	    notify_sent = TRUE;
-	    break;
-	  }
-#endif
 	  if (!silc_pkcs_public_key_compare(channel->founder_key,
 					    founder_key)) {
 	    chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
@@ -1030,7 +1014,8 @@ void silc_server_notify(SilcServer server,
 	}
 
 	/* There cannot be anyone else as founder on the channel now.  This
-	   client is definitely the founder due to this authentication */
+	   client is definitely the founder due to this 'authentication'.
+	   We trust the server did the actual authentication earlier. */
 	silc_hash_table_list(channel->user_list, &htl);
 	while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
 	  if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {

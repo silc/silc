@@ -1,3 +1,9 @@
+Thu Oct  9 12:06:40 CEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the CUMODE_CHANGE for founder mode changes to comply
+	  with 1.2 version of the protocol.  Affected file is
+	  silcd/packet_receive.c.
+
 Wed Oct  8 19:41:15 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* ERR_BAD_PASSWORD now returns the Channel ID of the channel

@@ -9,8 +9,6 @@ TODO for Irssi SILC Client 1.0
 TODO for SILC Server 1.0
 ========================
 
- o Fix CUMODE_CHANGE founder key things.
-
  o Backup router testing
 
    - test all resume error cases for backup router
