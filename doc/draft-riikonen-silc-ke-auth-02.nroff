@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet-Draft
-.ds RH XX April 2001
+.ds RH 25 April 2001
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                      P. Riikonen
 Internet-Draft
-draft-riikonen-silc-ke-auth-02.txt                       XX April 2001
-Expires: XX October 2001
+draft-riikonen-silc-ke-auth-02.txt                       25 April 2001
+Expires: 25 October 2001
 
 .in 3
 
@@ -184,7 +184,7 @@ During the key exchange procedure public data is sent between initiator
 and responder.  This data is later used in the key exchange procedure.
 There are several payloads used in the key exchange.  As for all SILC
 packets, SILC Packet Header, described in [SILC2], is at the start of
-all packets, the same is done with these payloads as well.  All the
+all packets. The same is done with these payloads as well.  All the
 fields in the payloads are always in MSB (most significant byte first)
 order.  Following descriptions of these payloads.
 
@@ -290,7 +290,7 @@ Figure 1:  Key Exchange Start Payload
 
 .in 6
 o RESERVED (1 byte) - Reserved field.  Sender fills this with
-  zeroes (0).
+  zero (0) value.
 
 o Flags (1 byte) - Indicates flags to be used in the key
   exchange.  Several flags can be set at once by ORing the
@@ -337,7 +337,7 @@ o Flags (1 byte) - Indicates flags to be used in the key
 o Payload Length (2 bytes) - Length of the entire Key Exchange
   Start payload, not including any other field.
 
-o Cookie (16 bytes) - Cookie that uniforms this payload so
+o Cookie (16 bytes) - Cookie that randomize this payload so
   that each of the party cannot determine the payload before
   hand.
 
@@ -354,7 +354,7 @@ o Key Exchange Grp Length (2 bytes) - The length of the
   key exchange group list, not including any other field.
 
 o Key Exchange Group (variable length) - The list of
-  key exchange groups.  See the section 2.1.2 SILC Key Exchange
+  key exchange groups.  See the section 2.4 SILC Key Exchange
   Groups for definitions of these groups.
 
 o PKCS Alg Length (2 bytes) - The length of the PKCS algorithms
@@ -651,7 +651,7 @@ is used only for encrypting data to be sent.  The receiving key is used
 only to decrypt received data.  For receiving party, the receive key is
 actually sender's sending key, and, the sending key is actually sender's
 receiving key.  Initiator uses generated keys as they are (sending key
-for sending and receiving key for sending).
+for sending and receiving key for receiving).
 
 The HMAC key is used to create MAC values to packets in the communication
 channel.  As many bytes as needed are taken from the start of the hash
@@ -661,7 +661,7 @@ These procedures are performed by all parties of the key exchange
 protocol.  This MUST be done before the protocol has been ended by
 sending the SILC_PACKET_SUCCESS packet.
 
-This same procedure is used in the SILC is some other circumstances
+This same procedure is used in the SILC in some other circumstances
 as well.  Any changes to this procedure is mentioned separately when
 this procedure is needed.  See the [SILC1] and the [SILC2] for these
 circumstances.
@@ -670,8 +670,8 @@ circumstances.
 .ti 0
 2.4 SILC Key Exchange Groups
 
-Following groups may be used in the SILC Key Exchange protocol.  The 
-first group diffie-hellman-group1 is REQUIRED, other groups MAY be 
+The Following groups may be used in the SILC Key Exchange protocol.
+The first group diffie-hellman-group1 is REQUIRED, other groups MAY be 
 negotiated to be used in the connection with Key Exchange Start Payload
 and SILC_PACKET_KEY_EXCHANGE packet.  However, the first group MUST be
 proposed in the Key Exchange Start Payload regardless of any other
@@ -865,14 +865,14 @@ authentication is required.
 
 If authentication method is passphrase the authentication data is
 plaintext passphrase.  As the payload is entirely encrypted it is safe
-to have plaintext passphrase.  3.2.1 Passphrase Authentication for
-more information.
+to have plaintext passphrase.  See the section 3.2.1 Passphrase
+Authentication for more information.
 
 If authentication method is public key authentication the authentication
 data is signature of the hash value HASH plus Key Exchange Start Payload,
 established by the SILC Key Exchange protocol.  This signature MUST then
-be verified by the server.  See section 3.2.2 Public Key Authentication
-for more information.
+be verified by the server.  See the section 3.2.2 Public Key
+Authentication for more information.
 
 The connecting client of this protocol MUST wait after successful execution
 of this protocol for the SILC_PACKET_NEW_ID packet where it will receive
@@ -891,7 +891,7 @@ this payload MUST verify all the data in it and if something is to fail
 the authentication MUST be failed by sending SILC_PACKET_FAILURE packet.
 
 The payload may only be sent with SILC_PACKET_CONNECTION_AUTH packet.
-It MUST NOT be sent in any other packet type.  Following diagram 
+It MUST NOT be sent in any other packet type.  The following diagram 
 represent the Connection Auth Payload.
 
 
@@ -934,14 +934,14 @@ o Authentication Data (variable length) - The actual
 
 SILC supports two authentication types to be used in the connection
 authentication protocol; passphrase or public key based authentication.
-Following sections defines the authentication methods.  See [SILC2]
+The following sections defines the authentication methods.  See [SILC2]
 for defined numerical authentication method types.
 
 
 .ti 0
 3.2.1 Passphrase Authentication
 
-Passphrase authentication or pre-shared-key base authentication is 
+Passphrase authentication or pre-shared-key based authentication is 
 simply an authentication where the party that wants to authenticate 
 itself to the other end sends the passphrase that is required by
 the other end, for example server.
@@ -1084,4 +1084,4 @@ Finland
 
 EMail: priikone@poseidon.pspt.fi
 
-This Internet-Draft expires XX October 2001
+This Internet-Draft expires 25 October 2001

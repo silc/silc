@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XX April 2001
+.ds RH 25 April 2001
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                      P. Riikonen
 Internet-Draft
-draft-riikonen-silc-pp-02.txt                            XX April 2001
-Expires: XX October 2001
+draft-riikonen-silc-pp-02.txt                            25 April 2001
+Expires: 25 October 2001
 
 .in 3
 
@@ -321,7 +321,7 @@ o Flags (1 byte) - Indicates flags to be used in packet
        set MUST send (broadcast) the packet to its primary
        route.  If router has several router connections the
        packet may be sent only to the primary route.  See
-       section 2.13 Packet Broadcasting for description of 
+       section 2.12 Packet Broadcasting for description of 
        packet broadcasting.
 
 .in 3
@@ -352,8 +352,8 @@ o Dst ID Type (1 byte) - Indicates the type of ID in the
   Destination ID field.  See section 2.4 SILC ID Types for
   defined ID types.
 
-o Destination ID (variable length) - The actual source ID that
-  indicates which is the end receiver of the packet.
+o Destination ID (variable length) - The actual destination
+  ID that indicates which is the end receiver of the packet.
 
 
 .ti 0
@@ -520,7 +520,7 @@ List of SILC Packet types are defined as follows.
           clients will be able to decrypt the private message.  However,
           servers inside SILC network are considered to be trusted, thus
           using normal session key to protect private messages does not
-          degree security.  Whether to agree to use specific keys by
+          degrade security.  Whether to agree to use specific keys by
           default or to use normal session keys by default, is 
           implementation specific issue.  See more of this in [SILC1].
 
@@ -548,7 +548,7 @@ List of SILC Packet types are defined as follows.
 
      12   SILC_PACKET_COMMAND_REPLY
 
-          This packet is send as reply to the SILC_PACKET_COMMAND packet.
+          This packet is sent as reply to the SILC_PACKET_COMMAND packet.
           The contents of this packet is command specific.  This packet
           MAY be sent to entity that is indirectly connected to the
           sender.
@@ -642,7 +642,9 @@ List of SILC Packet types are defined as follows.
           This is used when for example new client is registered to
           SILC network.  The newly created ID's of these operations are
           distributed by this packet.  Only server may send this packet,
-          however, client MUST be able to receive this packet.
+          however, client MUST be able to receive this packet.  This
+          packet MAY be sent to entity that is indirectly connected
+          to the sender.
 
           Payload of the packet:  See section 2.3.16 New ID Payload
 
@@ -679,7 +681,7 @@ List of SILC Packet types are defined as follows.
      21   SILC_PACKET_NEW_CHANNEL
 
           This packet is used to notify routers about newly created
-          channel.  Channels are always created by the router and it must
+          channel.  Channels are always created by the router and it MUST
           notify other routers about the created channel.  Router sends
           this packet to its primary route.  Client MUST NOT send this
           packet.  This packet MAY be sent to entity that is indirectly
@@ -702,8 +704,7 @@ List of SILC Packet types are defined as follows.
      23   SILC_PACKET_REKEY_DONE
 
           This packet is used to indicate that re-key is performed and
-          new keys must be used hereafter.  This is sent only if re-key
-          was done without PFS option.
+          new keys must be used hereafter.
 
           This packet MUST NOT be sent as list and the List flag MUST
           NOT be set.
@@ -777,7 +778,7 @@ List of SILC Packet types are defined as follows.
 All payloads resides in the main data area of the SILC packet.  However
 all payloads MUST be at the start of the data area after the SILC
 packet header and padding.  All fields in the packet payload are always
-encrypted, as, they reside in the data area of the packet which is
+encrypted, as they reside in the data area of the packet which is
 always encrypted.
 
 Payloads described in this section are common payloads that MUST be
@@ -803,8 +804,8 @@ packet payloads.
 .ti 0
 2.3.2.1 ID Payload
 
-This payload can be used to send an ID.  ID's are variable length thus
-this payload provides a way to send variable length ID's.
+This payload can be used to send an ID.  ID's are variable in length
+thus this payload provides a way to send variable length ID's.
 
 
 
@@ -853,7 +854,7 @@ o ID Data (variable length) - The actual ID data.
 Argument Payload is used to set arguments for any packet payload that
 needs and supports arguments, such as commands.  Number of arguments
 associated with a packet MUST be indicated by the packet payload which
-needs the arguments. Argument Payloads MUST always reside right after
+needs the arguments.  Argument Payloads MUST always reside right after
 the packet payload needing the arguments.  Incorrect amount of argument
 payloads MUST cause rejection of the packet.  The following diagram
 represents the Argument Payload.
@@ -900,7 +901,7 @@ o Argument Data (variable length) - Argument data.
 Generic Channel Payload may be used to send information about channel,
 its name, the Channel ID and a mode.
 
-The following diagram represents the Channel Payload Payload.
+The following diagram represents the Channel Payload.
 
 
 .in 5
@@ -952,7 +953,7 @@ o Mode Mask (4 bytes) - A mode.  This can be the mode of the
 Generic Public Key Payload may be used to send different types of
 public keys and certificates.
 
-The following diagram represents the Channel Payload Payload.
+The following diagram represents the Public Key Payload.
 
 
 .in 5
@@ -1125,7 +1126,7 @@ Notify payload is used to send notify messages.  The payload is usually
 sent from server to client, however, server MAY send it to another
 server as well.  This payload MAY also be sent to a channel.  Client
 MUST NOT send this payload.  The receiver of this payload MAY ignore
-the contents of the payload, however, notify message should be audited.
+the contents of the payload, however, notify message SHOULD be audited.
 
 The payload may only be sent with SILC_PACKET_NOTIFY packet.  It MUST
 not be sent in any other packet type.  The following diagram represents
@@ -1261,7 +1262,7 @@ Also, all ID's sent in arguments are sent inside ID Payload.
 
       Sent when client changes nick on a channel.  The server MUST
       distribute this type only to the local clients on the channel
-      and then send it to its primary router. The router or server
+      and then send it to its primary router.  The router or server
       receiving the packet distributes this type to the local clients
       on the channel and broadcast it to the network.
 
@@ -1281,7 +1282,7 @@ Also, all ID's sent in arguments are sent inside ID Payload.
 
       Max Arguments:  4
           Arguments:  (1) <ID Payload>  (2) <mode mask>
-                      (3) [<cipher>]   (4) <[hmac>]     
+                      (3) [<cipher>]    (4) <[hmac>]     
 
       The <ID Payload> is the ID (usually Client ID but it can be
       Server ID as well when the router is enforcing channel mode
@@ -1409,7 +1410,7 @@ Also, all ID's sent in arguments are sent inside ID Payload.
                       (3) [<removing client>]
 
       The <Channel ID> is the channel which ban list was changed.  The
-      <adding client> is used to indicate the a ban was added and the
+      <adding client> is used to indicate that a ban was added and the
       <removing client> is used to indicate that a ban was removed from
       the ban list.  The format of the <adding client> and the 
       <removing client> is defined in the [SILC4] with SILC_COMMAND_BAN
@@ -1535,7 +1536,7 @@ o Flags (2 bytes) - Includes the flags of the channel
 
   0x0001  SILC_MESSAGE_FLAG_AUTREPLY
 
-          This message is an automatic reply to a earlier
+          This message is an automatic reply to an earlier
           received message.
 
   0x0002  SILC_MESSAGE_FLAG_NOREPLY
@@ -1550,7 +1551,7 @@ o Flags (2 bytes) - Includes the flags of the channel
 
   0x0008  SILC_MESSAGE_FLAG_NOTICE
 
-          The message is for example and informational notice
+          The message is for example an informational notice
           type message.
 
   0x0010  SILC_MESSAGE_FLAG_REQUEST
@@ -1564,7 +1565,7 @@ o Flags (2 bytes) - Includes the flags of the channel
 
   0x0400 - 0x8000 PRIVATE RANGE
 
-	  Private range for free use.
+          Private range for free use.
 
 o Message Length (2 bytes) - Indicates the length of the
   the Message Data field in the payload, not including any 
@@ -1596,7 +1597,7 @@ o Initial Vector (variable length) - The initial vector
   used in the packet decryption as well.  What this field
   includes is implementation issue.  However, it is 
   RECOMMENDED that it would be random data or, perhaps,
-  a timestamp.  It is NOT RECOMMENDED to use zero (0) as
+  a timestamp.  It is NOT RECOMMENDED to use zero (0) as an
   initial vector.  This field is not encrypted.  This field
   is not included into the padding calculation.  Length
   of this field equals the cipher's block size.  This field
@@ -1688,8 +1689,7 @@ o Channel Key Length (2 bytes) - Indicates the length of the
   field.
 
 o Channel Key (variable length) - The actual channel key
-  material.  This key is used as such as key material for
-  encryption function.
+  material.
 .in 3
 
 
@@ -1713,12 +1713,13 @@ receiver of the packet.  See section Client To Client in [SILC1].
 
 When private key is used to protect the message, servers between 
 the sender and the receiver needs not to decrypt/re-encrypt the 
-packet.  Section 4.8.2 Client To Client in [SILC1] gives example of
-this scheme as well.
+packet.  Section Client To Client in [SILC1] gives example of this
+scheme as well.
 
 The payload may only be sent with SILC_PACKET_PRIVATE_MESSAGE 
 packet.  It MUST NOT be sent in any other packet type.  The following 
 diagram represents the Private Message Payload.
+
 
 
 
@@ -1767,7 +1768,7 @@ o Message Data (variable length) - The actual message to
 o Padding (variable length) - This field is present only
   when the private message payload is encrypted with private
   message key.  In this case the padding is applied to make
-  the packet multiple by eight (8), or by the block size of
+  the payload multiple by eight (8), or by the block size of
   the cipher, which ever is larger.  When encrypted with
   normal session keys, this field MUST NOT be included.
 .in 3
@@ -1897,9 +1898,7 @@ their arguments and their reply messages.
 
 Command Reply Payload is used to send replies to the commands.  The
 Command Reply Payload is identical to the Command Payload thus see
-the upper sections for Command Payload and for Command Argument
-Payload specifications.  Command Reply message uses the Command
-Argument Payload as well.
+the upper section for the Command Payload specification.
 
 The entity which sends the reply packet MUST set the Command Identifier
 field in the reply packet's Command Payload to the value it received
@@ -1945,15 +1944,16 @@ Figure 18:  Connection Auth Request Payload
 
 
 .in 6
-o Connection Type (2 bytes) - Indicates the type of the ID.
-  The following connection types are defined:
+o Connection Type (2 bytes) - Indicates the type of the
+  connection.  The following connection types are defined:
+
 
      1    Client connection
      2    Server connection
      3    Router connection
 
-  If any other type is found in this field the packet must be
-  discarded and the authentication must be failed.
+  If any other type is found in this field the packet MUST be
+  discarded and the authentication MUST be failed.
 
 o Authentication Method (2 bytes) - Indicates the authentication
   method to be used in the authentication protocol.  The following
@@ -2017,7 +2017,7 @@ The packet uses generic ID Payload as New ID Payload.  See section
 
 When client is connected to the server, keys has been exchanged and
 connection has been authenticated client MUST register itself to the 
-server.  Clients first packet after key exchange and authentication 
+server.  Client's first packet after key exchange and authentication 
 protocols must be SILC_PACKET_NEW_CLIENT.  This payload tells server all
 the relevant information about the connected user.  Server creates a new
 client ID for the client when received this payload and sends it to the
@@ -2071,12 +2071,12 @@ Figure 19:  New Client Payload
 
 
 .in 6
-o Username Length (2 bytes) - Length of the username.
+o Username Length (2 bytes) - Length of the Username field.
 
 o Username (variable length) - The username of the user on
   the host where connecting to the SILC server.
 
-o Real Name Length (2 bytes) - Length of the Real Name.
+o Real Name Length (2 bytes) - Length of the Real Name field.
 
 o Real Name (variable length) - The real name of the user
   on the host where connecting to the SILC server.
@@ -2126,13 +2126,14 @@ Figure 20:  New Server Payload
 
 
 .in 6
-o Server ID Length (2 bytes) - Length of the ID Data area not 
-  including the length of any other fields in the payload.
+o Server ID Length (2 bytes) - Length of the Server ID Data
+  field.
 
 o Server ID Data (variable length) - The actual Server ID
    data.
 
-o Server Name Length (2 bytes) - Length of the server name.
+o Server Name Length (2 bytes) - Length of the server name
+  field.
 
 o Server Name (variable length) - The server name.
 .in 3
@@ -2208,7 +2209,7 @@ o Hostname Length (2 bytes) - Indicates the length of the
 o Hostname (variable length) - The hostname or IP address where
   the SKE protocol is running.  The sender MAY fill this field
   when sending the payload.  If the receiver sends this payload
-  as reply to the request it must fill this field.
+  as reply to the request it MUST fill this field.
 
 o Port (4 bytes) - The port where the SKE protocol is bound.
   The sender MAY fill this field when sending the payload.  If
@@ -2295,22 +2296,22 @@ network.
 .in 6
 0    No ID
 
-   When ever specific ID cannot be used this is used.
+     When ever specific ID cannot be used this is used.
 
 1    Server ID
 
-   Server ID to associate servers.  See the format of
-   this ID in [SILC1].
+     Server ID to associate servers.  See the format of
+     this ID in [SILC1].
 
 2    Client ID
 
-   Client ID to associate clients.  See the format of
-   this ID in [SILC1].
+     Client ID to associate clients.  See the format of
+     this ID in [SILC1].
 
 3    Channel ID
 
-   Channel ID to associate channels.  See the format of
-   this ID in [SILC1].
+     Channel ID to associate channels.  See the format of
+     this ID in [SILC1].
 .in 3
 
 
@@ -2461,9 +2462,8 @@ See [SILC1] for defined and allowed MAC algorithms.
 2.7 Packet Padding Generation
 
 Padding is needed in the packet because the packet is encrypted.  It
-MUST always be multiple by eight (8) or multiple by the size of the
-cipher's block size, which ever is larger.  The padding is always
-encrypted.
+MUST always be multiple by eight (8) or multiple by the block size
+of the cipher, which ever is larger.  The padding is always encrypted.
 
 For normal packets the padding is added after the SILC Packet Header
 and between the Data Payload area.  The padding for normal packets
@@ -2561,7 +2561,7 @@ It is still RECOMMENDED for routers that has several routing connections
 to create route cache for those destinations that has faster route than
 the router's primary route.  This information is available for the router
 when other router connects to the router.  The connecting party then
-sends all of its locally connected clients, server and channels.  These
+sends all of its locally connected clients, servers and channels.  These
 informations helps to create the route cache.  Also, when new channels
 are created to a cell its information is broadcasted to all routers
 in the network.  Channel ID's are based on router's ID thus it is easy
@@ -2693,4 +2693,4 @@ Finland
 
 EMail: priikone@poseidon.pspt.fi
 
-This Internet-Draft expires XX October 2001
+This Internet-Draft expires 25 October 2001

@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XX April 2001
+.ds RH 25 April 2001
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                      P. Riikonen
 Internet-Draft
-draft-riikonen-silc-commands-00.txt                      XX April 2001
-Expires: XX October 2001
+draft-riikonen-silc-commands-00.txt                      25 April 2001
+Expires: 25 October 2001
 
 .in 3
 
@@ -1904,4 +1904,4 @@ Finland
 
 EMail: priikone@poseidon.pspt.fi
 
-This Internet-Draft expires XX October 2001 
+This Internet-Draft expires 25 October 2001 
