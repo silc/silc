@@ -137,8 +137,8 @@ unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
    type also without TYPE= as it is possible */
 #define VCARD_TYPETOKEN(x)					\
   if (!(x)) {							\
-    int tmpi = 0;      						\
-    if (!strcasecmp(val + off, "TYPE="))			\
+    int tmpi = 0;						\
+    if (!strncasecmp(val + off, "TYPE=", 5))			\
       tmpi = 5;							\
     (x) = silc_memdup(val + off + tmpi, i - off - tmpi - 1);	\
     tmpi = off + tmpi + strlen((x)) + 1;			\
@@ -152,6 +152,19 @@ unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
     if (off < len)				\
       (x) = silc_memdup(val + off, len - off);	\
   }						\
+
+/* Get one (single) field */
+#define VCARD_FIELD(val, c, x)				\
+do {							\
+  if (!strncasecmp(val, (c), strlen((c)))) {		\
+    int tmpl = strlen((c));				\
+    if ((x))						\
+      break;						\
+    if (len - tmpl > 0)					\
+      (x) = silc_memdup(val + tmpl, len - tmpl);	\
+    goto next;						\
+  }							\
+} while(0)
 
 /* Decode VCard */
 
@@ -174,14 +187,32 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
     if (!len || len > data_len - (val - data))
       break;
 
+    /* Check for mandatory header and footer */
     if (!strncasecmp(val, VCARD_HEADER, strlen(VCARD_HEADER))) {
       has_begin = TRUE;
-    } else if (!strncasecmp(val, "FN:", 3)) {
-      if (vcard->full_name)
-	break;
-      if (len - 3)
-	vcard->full_name = silc_memdup(val + 3, len - 3);
-    } else if (!strncasecmp(val, "N:", 2)) {
+      goto next;
+    }
+    if (!strncasecmp(val, VCARD_FOOTER, strlen(VCARD_FOOTER))) {
+      has_end = TRUE;
+      goto next;
+    }
+
+    /* Get single fields */
+    VCARD_FIELD(val, "FN:", vcard->full_name);
+    VCARD_FIELD(val, "NICKNAME:", vcard->nickname);
+    VCARD_FIELD(val, "BDAY:", vcard->bday);
+    VCARD_FIELD(val, "TITLE:", vcard->title);
+    VCARD_FIELD(val, "ROLE:", vcard->role);
+    VCARD_FIELD(val, "CATEGORIES:", vcard->categories);
+    VCARD_FIELD(val, "CLASS:", vcard->class);
+    VCARD_FIELD(val, "URL:", vcard->url);
+    VCARD_FIELD(val, "LABEL;", vcard->label);
+    VCARD_FIELD(val, "NOTE:", vcard->note);
+    VCARD_FIELD(val, "REV:", vcard->rev);
+
+    /* Get multi-column fields */
+
+    if (!strncasecmp(val, "N:", 2)) {
       if (vcard->family_name)
 	break;
       if (len - 2) {
@@ -203,27 +234,10 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
 	  VCARD_LASTTOKEN(vcard->suffix);
 	}
       }
-    } else if (!strncasecmp(val, "NICKNAME:", 9)) {
-      if (vcard->nickname)
-	continue;
-      if (len - 9)
-	vcard->nickname = silc_memdup(val + 9, len - 9);
-    } else if (!strncasecmp(val, "BDAY:", 5)) {
-      if (vcard->bday)
-	continue;
-      if (len - 5)
-	vcard->bday = silc_memdup(val + 5, len - 5);
-    } else if (!strncasecmp(val, "TITLE:", 6)) {
-      if (vcard->title)
-	continue;
-      if (len - 6)
-	vcard->title = silc_memdup(val + 6, len - 6);
-    } else if (!strncasecmp(val, "ROLE:", 5)) {
-      if (vcard->role)
-	continue;
-      if (len - 5)
-	vcard->role = silc_memdup(val + 5, len - 5);
-    } else if (!strncasecmp(val, "ORG:", 4)) {
+      goto next;
+    }
+
+    if (!strncasecmp(val, "ORG:", 4)) {
       if (vcard->org_name)
 	continue;
       if (len - 4) {
@@ -241,27 +255,10 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
 	  VCARD_LASTTOKEN(vcard->org_unit);
 	}
       }
-    } else if (!strncasecmp(val, "CATEGORIES:", 11)) {
-      if (vcard->categories)
-	continue;
-      if (len - 11)
-	vcard->categories = silc_memdup(val + 11, len - 11);
-    } else if (!strncasecmp(val, "CLASS:", 6)) {
-      if (vcard->class)
-	continue;
-      if (len - 6)
-	vcard->class = silc_memdup(val + 6, len - 6);
-    } else if (!strncasecmp(val, "URL:", 4)) {
-      if (vcard->url)
-	continue;
-      if (len - 4)
-	vcard->url = silc_memdup(val + 4, len - 4);
-    } else if (!strncasecmp(val, "LABEL;", 6)) {
-      if (vcard->label)
-	continue;
-      if (len - 6)
-	vcard->label = silc_memdup(val + 6, len - 6);
-    } else if (!strncasecmp(val, "ADR;", 4)) {
+      goto next;
+    }
+
+    if (!strncasecmp(val, "ADR;", 4)) {
       vcard->addrs = silc_realloc(vcard->addrs, sizeof(*vcard->addrs) *
 				  (vcard->num_addrs + 1));
       memset(&vcard->addrs[vcard->num_addrs], 0, sizeof(*vcard->addrs));
@@ -280,7 +277,10 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
 	VCARD_LASTTOKEN(vcard->addrs[vcard->num_addrs].country);
       }
       vcard->num_addrs++;
-    } else if (!strncasecmp(val, "TEL;", 4)) {
+      goto next;
+    }
+
+    if (!strncasecmp(val, "TEL;", 4)) {
       vcard->tels = silc_realloc(vcard->tels, sizeof(*vcard->tels) *
 				 (vcard->num_tels + 1));
       memset(&vcard->tels[vcard->num_tels], 0, sizeof(*vcard->tels));
@@ -295,7 +295,10 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
 	VCARD_LASTTOKEN(vcard->tels[vcard->num_tels].tel);
       }
       vcard->num_tels++;
-    } else if (!strncasecmp(val, "EMAIL;", 6)) {
+      goto next;
+    }
+
+    if (!strncasecmp(val, "EMAIL;", 6)) {
       vcard->emails = silc_realloc(vcard->emails, sizeof(*vcard->emails) *
 				   (vcard->num_emails + 1));
       memset(&vcard->emails[vcard->num_emails], 0, sizeof(*vcard->emails));
@@ -310,30 +313,19 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
 	VCARD_LASTTOKEN(vcard->emails[vcard->num_emails].address);
       }
       vcard->num_emails++;
-    } else if (!strncasecmp(val, "NOTE:", 5)) {
-      if (vcard->note)
-	continue;
-      if (len - 5)
-	vcard->note = silc_memdup(val + 5, len - 5);
-    } else if (!strncasecmp(val, "REV:", 4)) {
-      if (vcard->rev)
-	continue;
-      if (len - 4)
-	vcard->rev = silc_memdup(val + 4, len - 4);
-    } else if (!strncasecmp(val, VCARD_FOOTER, strlen(VCARD_FOOTER))) {
-      has_end = TRUE;
-      break;
+      goto next;
     }
 
+  next:
     val = strchr(val, '\n');
-    if (!val || !(*val))
+    if (!val)
       break;
     val++;
     if (!val || !(*val))
       break;
   }
 
-  if (!has_begin || !has_end) {
+  if (!has_begin || !has_end || !vcard->full_name) {
     silc_vcard_free(vcard);
     return FALSE;
   }
