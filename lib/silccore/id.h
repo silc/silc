@@ -42,7 +42,7 @@
 #define SILC_ID_CHANNEL 3
 
 /* Type definition for the ID types. */
-typedef unsigned char SilcIdType;
+typedef unsigned short SilcIdType;
 
 /* 
    64 bit SilcServerID structure:

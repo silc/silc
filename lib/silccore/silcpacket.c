@@ -764,5 +764,3 @@ SilcPacketContext *silc_packet_context_dup(SilcPacketContext *ctx)
 
   return new;
 }
-
-
