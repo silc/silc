@@ -1,10 +1,10 @@
 /*
 
-  command.c 
+  command.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
   x->internal->ops->say((x), (c), SILC_CLIENT_MESSAGE_ERROR, \
 	   "You are not connected to a server, use /SERVER to connect");
 
-/* Command operation that is called at the end of all commands. 
+/* Command operation that is called at the end of all commands.
    Usage: COMMAND(status); */
 #define COMMAND(status) cmd->client->internal->ops->command(cmd->client, \
   cmd->conn, cmd, TRUE, cmd->command->cmd, (status))
@@ -53,8 +53,8 @@ void silc_client_command_send(SilcClient client, SilcClientConnection conn,
   va_start(ap, argc);
 
   packet = silc_command_payload_encode_vap(command, ident, argc, ap);
-  silc_client_packet_send(client, conn->sock, SILC_PACKET_COMMAND, 
-			  NULL, 0, NULL, NULL, packet->data, 
+  silc_client_packet_send(client, conn->sock, SILC_PACKET_COMMAND,
+			  NULL, 0, NULL, NULL, packet->data,
 			  packet->len, TRUE);
   silc_buffer_free(packet);
 }
@@ -147,7 +147,7 @@ bool silc_client_command_call(SilcClient client,
   ctx->argv = argv;
   ctx->argv_lens = argv_lens;
   ctx->argv_types = argv_types;
-  
+
   /* Call the command */
   cmd->command(ctx, NULL);
 
@@ -211,7 +211,7 @@ void silc_client_command_pending_del(SilcClientConnection conn,
 SilcClientCommandPendingCallbacks
 silc_client_command_pending_check(SilcClientConnection conn,
 				  SilcClientCommandReplyContext ctx,
-				  SilcCommand command, 
+				  SilcCommand command,
 				  SilcUInt16 ident,
 				  SilcUInt32 *callbacks_count)
 {
@@ -276,7 +276,7 @@ SilcClientCommandContext silc_client_command_dup(SilcClientCommandContext ctx)
   return ctx;
 }
 
-/* Command WHOIS. This command is used to query information about 
+/* Command WHOIS. This command is used to query information about
    specific user. */
 
 SILC_CLIENT_CMD_FUNC(whois)
@@ -295,7 +295,7 @@ SILC_CLIENT_CMD_FUNC(whois)
   /* Given without arguments fetches client's own information */
   if (cmd->argc < 2) {
     buffer = silc_id_payload_encode(cmd->conn->local_id, SILC_ID_CLIENT);
-    silc_client_command_send(cmd->client, cmd->conn, SILC_COMMAND_WHOIS, 
+    silc_client_command_send(cmd->client, cmd->conn, SILC_COMMAND_WHOIS,
 			     ++conn->cmd_ident,
 			     1, 4, buffer->data, buffer->len);
     silc_buffer_free(buffer);
@@ -305,7 +305,7 @@ SILC_CLIENT_CMD_FUNC(whois)
   if (cmd->argc == 2) {
     buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,
 					    ++conn->cmd_ident, 1,
-					    1, cmd->argv[1], 
+					    1, cmd->argv[1],
 					    cmd->argv_lens[1]);
   } else {
     if (!strcasecmp(cmd->argv[2], "-details"))
@@ -353,7 +353,7 @@ SILC_CLIENT_CMD_FUNC(whowas)
   }
 
   if (cmd->argc < 2 || cmd->argc > 3) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /WHOWAS <nickname>[@<server>] [<count>]");
     COMMAND_ERROR((cmd->argc < 2 ? SILC_STATUS_ERR_NOT_ENOUGH_PARAMS :
 		   SILC_STATUS_ERR_TOO_MANY_PARAMS));
@@ -363,7 +363,7 @@ SILC_CLIENT_CMD_FUNC(whowas)
   if (cmd->argc == 2) {
     buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOWAS,
 					    ++conn->cmd_ident, 1,
-					    1, cmd->argv[1], 
+					    1, cmd->argv[1],
 					    cmd->argv_lens[1]);
   } else {
     int c = atoi(cmd->argv[2]);
@@ -386,8 +386,8 @@ SILC_CLIENT_CMD_FUNC(whowas)
   silc_client_command_free(cmd);
 }
 
-/* Command IDENTIFY. This command is used to query information about 
-   specific user, especially ID's. 
+/* Command IDENTIFY. This command is used to query information about
+   specific user, especially ID's.
 
    NOTE: This command is used only internally by the client library
    and application MUST NOT call this command directly. */
@@ -409,7 +409,7 @@ SILC_CLIENT_CMD_FUNC(identify)
     goto out;
 
   if (cmd->argc == 2) {
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_IDENTIFY, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_IDENTIFY,
 					    ++conn->cmd_ident, 1,
 					    1, cmd->argv[1],
 					    cmd->argv_lens[1]);
@@ -417,7 +417,7 @@ SILC_CLIENT_CMD_FUNC(identify)
     int c = atoi(cmd->argv[2]);
     memset(count, 0, sizeof(count));
     SILC_PUT32_MSB(c, count);
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_IDENTIFY, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_IDENTIFY,
 					    ++conn->cmd_ident, 2,
 					    1, cmd->argv[1],
 					    cmd->argv_lens[1],
@@ -449,7 +449,7 @@ SILC_CLIENT_CMD_FUNC(nick)
   }
 
   if (cmd->argc < 2) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /NICK <nickname>");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -461,11 +461,11 @@ SILC_CLIENT_CMD_FUNC(nick)
   /* Show current nickname */
   if (cmd->argc < 2) {
     if (cmd->conn) {
-      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-	  "Your nickname is %s on server %s", 
+      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
+	  "Your nickname is %s on server %s",
 	  conn->nickname, conn->remote_host);
     } else {
-      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	  "Your nickname is %s", conn->nickname);
     }
 
@@ -479,7 +479,7 @@ SILC_CLIENT_CMD_FUNC(nick)
   /* Send the NICK command */
   buffer = silc_command_payload_encode(SILC_COMMAND_NICK, 1,
 				       &cmd->argv[1],
-				       &cmd->argv_lens[1], 
+				       &cmd->argv_lens[1],
 				       &cmd->argv_types[1],
 				       ++cmd->conn->cmd_ident);
   silc_client_packet_send(cmd->client, cmd->conn->sock,
@@ -520,10 +520,10 @@ SILC_CLIENT_CMD_FUNC(list)
   }
 
   if (!idp)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_LIST, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_LIST,
 					    ++conn->cmd_ident, 0);
   else
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_LIST, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_LIST,
 					    ++conn->cmd_ident, 1,
 					    1, idp->data, idp->len);
 
@@ -593,16 +593,16 @@ SILC_CLIENT_CMD_FUNC(topic)
   /* Send TOPIC command to the server */
   idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
   if (cmd->argc > 2)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_TOPIC, 
-					    ++conn->cmd_ident, 2, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_TOPIC,
+					    ++conn->cmd_ident, 2,
 					    1, idp->data, idp->len,
-					    2, cmd->argv[2], 
+					    2, cmd->argv[2],
 					    strlen(cmd->argv[2]));
   else
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_TOPIC, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_TOPIC,
 					    ++conn->cmd_ident, 1,
 					    1, idp->data, idp->len);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(idp);
@@ -670,19 +670,19 @@ SILC_CLIENT_CMD_FUNC(invite)
 	nickname = strdup(cmd->argv[2]);
 
       /* Find client entry */
-      client_entry = silc_idlist_get_client(client, conn, nickname, 
+      client_entry = silc_idlist_get_client(client, conn, nickname,
 					    cmd->argv[2], TRUE);
       if (!client_entry) {
 	if (cmd->pending) {
 	  COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_NICK);
 	  goto out;
 	}
-      
+
 	/* Client entry not found, it was requested thus mark this to be
 	   pending command. */
-	silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+	silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY,
 				    conn->cmd_ident,
-				    silc_client_command_invite, 
+				    silc_client_command_invite,
 				    silc_client_command_dup(cmd));
 	cmd->pending = 1;
 	goto out;
@@ -724,7 +724,7 @@ SILC_CLIENT_CMD_FUNC(invite)
   chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
   if (client_entry) {
     clidp = silc_id_payload_encode(client_entry->id, SILC_ID_CLIENT);
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_INVITE, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_INVITE,
 					    ++conn->cmd_ident, 4,
 					    1, chidp->data, chidp->len,
 					    2, clidp->data, clidp->len,
@@ -734,7 +734,7 @@ SILC_CLIENT_CMD_FUNC(invite)
 					    args ? args->len : 0);
     silc_buffer_free(clidp);
   } else {
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_INVITE, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_INVITE,
 					    ++conn->cmd_ident, 3,
 					    1, chidp->data, chidp->len,
 					    3, args ? action : NULL,
@@ -743,7 +743,7 @@ SILC_CLIENT_CMD_FUNC(invite)
 					    args ? args->len : 0);
   }
 
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
@@ -774,7 +774,7 @@ SILC_TASK_CALLBACK(silc_client_command_quit_cb)
 }
 
 /* Command QUIT. Closes connection with current server. */
- 
+
 SILC_CLIENT_CMD_FUNC(quit)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
@@ -788,14 +788,14 @@ SILC_CLIENT_CMD_FUNC(quit)
   }
 
   if (cmd->argc > 1)
-    buffer = silc_command_payload_encode(SILC_COMMAND_QUIT, cmd->argc - 1, 
+    buffer = silc_command_payload_encode(SILC_COMMAND_QUIT, cmd->argc - 1,
 					 &cmd->argv[1], &cmd->argv_lens[1],
 					 &cmd->argv_types[1], 0);
   else
     buffer = silc_command_payload_encode(SILC_COMMAND_QUIT, 0,
 					 NULL, NULL, NULL, 0);
-  silc_client_packet_send(cmd->client, cmd->conn->sock, SILC_PACKET_COMMAND, 
-			  NULL, 0, NULL, NULL, 
+  silc_client_packet_send(cmd->client, cmd->conn->sock, SILC_PACKET_COMMAND,
+			  NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
 
@@ -827,7 +827,7 @@ SILC_TASK_CALLBACK(silc_client_command_kill_remove_later)
   SilcClientConnection conn = cmd->conn;
   SilcClientEntry target;
   char *nickname = NULL;
-  
+
   /* Parse the typed nickname. */
   if (client->internal->params->nickname_parse)
     client->internal->params->nickname_parse(cmd->argv[1], &nickname);
@@ -835,7 +835,7 @@ SILC_TASK_CALLBACK(silc_client_command_kill_remove_later)
     nickname = strdup(cmd->argv[1]);
 
   /* Get the target client */
-  target = silc_idlist_get_client(cmd->client, conn, nickname, 
+  target = silc_idlist_get_client(cmd->client, conn, nickname,
 				  cmd->argv[1], FALSE);
   if (target)
     /* Remove the client from all channels and free it */
@@ -851,7 +851,7 @@ SILC_TASK_CALLBACK(silc_client_command_kill_remove_later)
 SILC_CLIENT_CMD_FUNC(kill_remove)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
-  SilcClientCommandReplyContext reply = 
+  SilcClientCommandReplyContext reply =
     (SilcClientCommandReplyContext)context2;
   SilcStatus status;
 
@@ -886,7 +886,7 @@ SILC_CLIENT_CMD_FUNC(kill)
   }
 
   if (cmd->argc < 2) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /KILL <nickname> [<comment>] [-pubkey]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -899,7 +899,7 @@ SILC_CLIENT_CMD_FUNC(kill)
     nickname = strdup(cmd->argv[1]);
 
   /* Get the target client */
-  target = silc_idlist_get_client(cmd->client, conn, nickname, 
+  target = silc_idlist_get_client(cmd->client, conn, nickname,
 				  cmd->argv[1], TRUE);
   if (!target) {
     if (cmd->pending) {
@@ -909,9 +909,9 @@ SILC_CLIENT_CMD_FUNC(kill)
 
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
-    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				conn->cmd_ident,  
-				silc_client_command_kill, 
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY,
+				conn->cmd_ident,
+				silc_client_command_kill,
 				silc_client_command_dup(cmd));
     cmd->pending = 1;
     goto out;
@@ -935,8 +935,8 @@ SILC_CLIENT_CMD_FUNC(kill)
   /* Send the KILL command to the server */
   idp = silc_id_payload_encode(target->id, SILC_ID_CLIENT);
   buffer =
-    silc_command_payload_encode_va(SILC_COMMAND_KILL, 
-				   ++conn->cmd_ident, 3, 
+    silc_command_payload_encode_va(SILC_COMMAND_KILL,
+				   ++conn->cmd_ident, 3,
 				   1, idp->data, idp->len,
 				   2, comment, comment ? strlen(comment) : 0,
 				   3, auth ? auth->data : NULL,
@@ -982,12 +982,12 @@ SILC_CLIENT_CMD_FUNC(info)
 
   /* Send the command */
   if (name)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_INFO, 0, 1, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_INFO, 0, 1,
 					    1, name, strlen(name));
   else
     buffer = silc_command_payload_encode(SILC_COMMAND_INFO, 0,
 					 NULL, NULL, NULL, 0);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   if (name)
@@ -1014,13 +1014,13 @@ SILC_CLIENT_CMD_FUNC(stats)
     goto out;
   }
 
-  idp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER); 
-  
+  idp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
+
   /* Send the command */
   buffer = silc_command_payload_encode_va(SILC_COMMAND_STATS,
 					  ++conn->cmd_ident, 1,
 					  SILC_ID_SERVER, idp->data, idp->len);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(idp);
@@ -1032,7 +1032,7 @@ SILC_CLIENT_CMD_FUNC(stats)
   silc_client_command_free(cmd);
 }
 
-/* Command PING. Sends ping to server. This is used to test the 
+/* Command PING. Sends ping to server. This is used to test the
    communication channel. */
 
 SILC_CLIENT_CMD_FUNC(ping)
@@ -1049,12 +1049,12 @@ SILC_CLIENT_CMD_FUNC(ping)
     goto out;
   }
 
-  idp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER); 
+  idp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
 
   /* Send the command */
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_PING, 0, 1, 
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_PING, 0, 1,
 					  1, idp->data, idp->len);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(idp);
@@ -1086,7 +1086,7 @@ SILC_CLIENT_CMD_FUNC(ping)
     conn->internal->ping[i].dest_name = strdup(conn->remote_host);
     conn->internal->ping_count++;
   }
-  
+
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
 
@@ -1101,7 +1101,7 @@ SILC_CLIENT_CMD_FUNC(join)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcChannelEntry channel;
-  SilcBuffer buffer, idp, auth = NULL;
+  SilcBuffer buffer, idp, auth = NULL, cauth = NULL;
   char *name, *passphrase = NULL, *pu8, *cipher = NULL, *hmac = NULL;
   int i, passphrase_len = 0;
 
@@ -1115,7 +1115,7 @@ SILC_CLIENT_CMD_FUNC(join)
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
-  
+
   /* See if we have joined to the requested channel already */
   channel = silc_client_get_channel(cmd->client, conn, cmd->argv[1]);
   if (channel && silc_client_on_channel(channel, conn->local_entry))
@@ -1138,15 +1138,50 @@ SILC_CLIENT_CMD_FUNC(join)
     } else if (!strcasecmp(cmd->argv[i], "-founder")) {
       auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
 						cmd->client->private_key,
-						cmd->client->rng, 
+						cmd->client->rng,
 						cmd->client->sha1hash,
 						conn->local_id,
 						SILC_ID_CLIENT);
       i++;
+    } else if (!strcasecmp(cmd->argv[i], "-auth")) {
+      SilcPublicKey pubkey = cmd->client->public_key;
+      SilcPrivateKey privkey = cmd->client->private_key;
+      unsigned char *pk, pkhash[20], *pubdata;
+      SilcUInt32 pk_len;
+
+      if (cmd->argc >= i + 3) {
+	char *pass = "";
+	if (cmd->argc >= i + 4) {
+	  pass = cmd->argv[i + 3];
+	  i++;
+	}
+	if (!silc_load_key_pair(cmd->argv[i + 1], cmd->argv[i + 2], pass,
+				NULL, &pubkey, &privkey)) {
+	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	      "Could not load key pair, check your arguments");
+	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	  goto out;
+	}
+	i += 2;
+      }
+
+      pk = silc_pkcs_public_key_encode(pubkey, &pk_len);
+      silc_hash_make(cmd->client->sha1hash, pk, pk_len, pkhash);
+      silc_free(pk);
+      pubdata = silc_rng_get_rn_data(cmd->client->rng, 128);
+      memcpy(pubdata, pkhash, 20);
+      cauth = silc_auth_public_key_auth_generate_wpub(pubkey, privkey,
+						      pubdata, 128,
+						      cmd->client->sha1hash,
+						      conn->local_id,
+						      SILC_ID_CLIENT);
+      memset(pubdata, 0, 128);
+      silc_free(pubdata);
+      i++;
     } else {
       /* Passphrases must be UTF-8 encoded, so encode if it is not */
       if (!silc_utf8_valid(cmd->argv[i], cmd->argv_lens[i])) {
-	passphrase_len = silc_utf8_encoded_len(cmd->argv[i], 
+	passphrase_len = silc_utf8_encoded_len(cmd->argv[i],
 					       cmd->argv_lens[i], 0);
 	pu8 = silc_calloc(passphrase_len, sizeof(*pu8));
 	passphrase_len = silc_utf8_encode(cmd->argv[i], cmd->argv_lens[i],
@@ -1161,20 +1196,22 @@ SILC_CLIENT_CMD_FUNC(join)
 
   /* Send JOIN command to the server */
   buffer =
-    silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 6,
+    silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 7,
 				   1, name, strlen(name),
 				   2, idp->data, idp->len,
 				   3, passphrase, passphrase_len,
 				   4, cipher, cipher ? strlen(cipher) : 0,
 				   5, hmac, hmac ? strlen(hmac) : 0,
 				   6, auth ? auth->data : NULL,
-				   auth ? auth->len : 0);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+				   auth ? auth->len : 0,
+				   7, cauth ? cauth->data : NULL,
+				   cauth ? cauth->len : 0);
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(idp);
-  if (auth)
-    silc_buffer_free(auth);
+  silc_buffer_free(auth);
+  silc_buffer_free(cauth);
   if (passphrase)
     memset(passphrase, 0, strlen(passphrase));
   silc_free(passphrase);
@@ -1210,14 +1247,14 @@ SILC_CLIENT_CMD_FUNC(motd)
 
   /* Send TOPIC command to the server */
   if (cmd->argc == 1)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_MOTD, 0, 1, 
-					    1, conn->remote_host, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_MOTD, 0, 1,
+					    1, conn->remote_host,
 					    strlen(conn->remote_host));
   else
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_MOTD, 0, 1, 
-					    1, cmd->argv[1], 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_MOTD, 0, 1,
+					    1, cmd->argv[1],
 					    cmd->argv_lens[1]);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
 
@@ -1247,7 +1284,7 @@ SILC_CLIENT_CMD_FUNC(umode)
   }
 
   if (cmd->argc < 2) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /UMODE +|-<modes>");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -1361,11 +1398,11 @@ SILC_CLIENT_CMD_FUNC(umode)
 
   /* Send the command packet. We support sending only one mode at once
      that requires an argument. */
-  buffer = 
-    silc_command_payload_encode_va(SILC_COMMAND_UMODE, ++conn->cmd_ident, 2, 
-				   1, idp->data, idp->len, 
+  buffer =
+    silc_command_payload_encode_va(SILC_COMMAND_UMODE, ++conn->cmd_ident, 2,
+				   1, idp->data, idp->len,
 				   2, modebuf, sizeof(modebuf));
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(idp);
@@ -1398,7 +1435,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
   }
 
   if (cmd->argc < 3) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -1485,7 +1522,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	mode |= SILC_CHANNEL_MODE_ULIMIT;
 	type = 3;
 	if (cmd->argc < 4) {
-	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	      "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
 	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	  goto out;
@@ -1503,7 +1540,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	mode |= SILC_CHANNEL_MODE_PASSPHRASE;
 	type = 4;
 	if (cmd->argc < 4) {
-	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	      "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
 	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	  goto out;
@@ -1519,7 +1556,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	mode |= SILC_CHANNEL_MODE_CIPHER;
 	type = 5;
 	if (cmd->argc < 4) {
-	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	      "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
 	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	  goto out;
@@ -1535,7 +1572,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	mode |= SILC_CHANNEL_MODE_HMAC;
 	type = 6;
 	if (cmd->argc < 4) {
-	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	      "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
 	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	  goto out;
@@ -1569,7 +1606,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
 
 	pk = silc_pkcs_public_key_payload_encode(pubkey);
 	auth = silc_auth_public_key_auth_generate(pubkey, privkey,
-						  cmd->client->rng, 
+						  cmd->client->rng,
 						  cmd->client->sha1hash,
 						  conn->local_id,
 						  SILC_ID_CLIENT);
@@ -1577,6 +1614,65 @@ SILC_CLIENT_CMD_FUNC(cmode)
 	arg_len = auth->len;
       } else {
 	mode &= ~SILC_CHANNEL_MODE_FOUNDER_AUTH;
+      }
+      break;
+    case 'C':
+      if (add) {
+	int k;
+	bool chadd = FALSE;
+	SilcPublicKey chpk = NULL;
+
+	mode |= SILC_CHANNEL_MODE_CHANNEL_AUTH;
+	type = 9;
+
+	if (cmd->argc == 3) {
+	  /* Send empty command to receive the public key list. */
+	  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+	  silc_client_command_send(cmd->client, conn, SILC_COMMAND_CMODE,
+				   0, 1, 1, chidp->data, chidp->len);
+	  silc_buffer_free(chidp);
+
+	  /* Notify application */
+	  COMMAND(SILC_STATUS_OK);
+	  goto out;
+	}
+
+	if (cmd->argc >= 4) {
+	  auth = silc_buffer_alloc_size(2);
+	  silc_buffer_format(auth,
+			     SILC_STR_UI_SHORT(cmd->argc - 3),
+			     SILC_STR_END);
+	}
+
+	for (k = 3; k < cmd->argc; k++) {
+	  if (cmd->argv[k][0] == '+')
+	    chadd = TRUE;
+	  if (!silc_pkcs_load_public_key(cmd->argv[k] + 1, &chpk,
+					 SILC_PKCS_FILE_PEM))
+	    if (!silc_pkcs_load_public_key(cmd->argv[k] + 1, &chpk,
+					   SILC_PKCS_FILE_BIN)) {
+	      SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+		  "Could not load public key %s, check the filename",
+		  cmd->argv[k]);
+	      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	      silc_buffer_free(auth);
+	      goto out;
+	    }
+
+	  if (chpk) {
+	    pk = silc_pkcs_public_key_payload_encode(chpk);
+	    auth = silc_argument_payload_encode_one(auth, pk->data, pk->len,
+						    chadd ? 0x00 : 0x01);
+	    silc_pkcs_public_key_free(chpk);
+	    silc_buffer_free(pk);
+	    pk = NULL;
+	  }
+	}
+
+	arg = auth->data;
+	arg_len = auth->len;
+      } else {
+	mode &= ~SILC_CHANNEL_MODE_CHANNEL_AUTH;
       }
       break;
     default:
@@ -1592,21 +1688,21 @@ SILC_CLIENT_CMD_FUNC(cmode)
   /* Send the command packet. We support sending only one mode at once
      that requires an argument. */
   if (type && arg) {
-    buffer = 
+    buffer =
       silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 4,
-				     1, chidp->data, chidp->len, 
+				     1, chidp->data, chidp->len,
 				     2, modebuf, sizeof(modebuf),
 				     type, arg, arg_len,
 				     8, pk ? pk->data : NULL,
 				     pk ? pk->len : 0);
   } else {
-    buffer = 
+    buffer =
       silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 2,
-				     1, chidp->data, chidp->len, 
+				     1, chidp->data, chidp->len,
 				     2, modebuf, sizeof(modebuf));
   }
 
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
@@ -1643,7 +1739,7 @@ SILC_CLIENT_CMD_FUNC(cumode)
   }
 
   if (cmd->argc < 4) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /CUMODE <channel> +|-<modes> <nickname>[@<server>]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -1683,14 +1779,14 @@ SILC_CLIENT_CMD_FUNC(cumode)
 
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
-    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				conn->cmd_ident,  
-				silc_client_command_cumode, 
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY,
+				conn->cmd_ident,
+				silc_client_command_cumode,
 				silc_client_command_dup(cmd));
     cmd->pending = 1;
     goto out;
   }
-  
+
   /* Get the current mode */
   chu = silc_client_on_channel(channel, client_entry);
   if (chu)
@@ -1789,22 +1885,22 @@ SILC_CLIENT_CMD_FUNC(cumode)
 
   /* Send the command packet. We support sending only one mode at once
      that requires an argument. */
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_CUMODE, 0, 
-					  auth ? 4 : 3, 
-					  1, chidp->data, chidp->len, 
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_CUMODE, 0,
+					  auth ? 4 : 3,
+					  1, chidp->data, chidp->len,
 					  2, modebuf, 4,
 					  3, clidp->data, clidp->len,
-					  4, auth ? auth->data : NULL, 
+					  4, auth ? auth->data : NULL,
 					  auth ? auth->len : 0);
-  
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
   silc_buffer_free(clidp);
   if (auth)
     silc_buffer_free(auth);
-  
+
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
 
@@ -1834,7 +1930,7 @@ SILC_CLIENT_CMD_FUNC(kick)
   }
 
   if (cmd->argc < 3) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /KICK <channel> <nickname> [<comment>]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -1871,10 +1967,10 @@ SILC_CLIENT_CMD_FUNC(kick)
     nickname = strdup(cmd->argv[2]);
 
   /* Get the target client */
-  target = silc_idlist_get_client(cmd->client, conn, nickname, 
+  target = silc_idlist_get_client(cmd->client, conn, nickname,
 				  cmd->argv[2], FALSE);
   if (!target) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"No such client: %s", cmd->argv[2]);
     COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_NICK);
     goto out;
@@ -1884,14 +1980,14 @@ SILC_CLIENT_CMD_FUNC(kick)
   idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
   idp2 = silc_id_payload_encode(target->id, SILC_ID_CLIENT);
   if (cmd->argc == 3)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_KICK, 0, 2, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_KICK, 0, 2,
 					    1, idp->data, idp->len,
 					    2, idp2->data, idp2->len);
   else
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_KICK, 0, 3, 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_KICK, 0, 3,
 					    1, idp->data, idp->len,
 					    2, idp2->data, idp2->len,
-					    3, cmd->argv[3], 
+					    3, cmd->argv[3],
 					    strlen(cmd->argv[3]));
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
@@ -1928,8 +2024,8 @@ static void silc_client_command_oper_send(unsigned char *data,
 				    data, data_len);
   }
 
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_OPER, 0, 2, 
-					  1, cmd->argv[1], 
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_OPER, 0, 2,
+					  1, cmd->argv[1],
 					  strlen(cmd->argv[1]),
 					  2, auth ? auth->data : NULL,
 					  auth ? auth->len : 0);
@@ -1958,7 +2054,7 @@ SILC_CLIENT_CMD_FUNC(oper)
   }
 
   if (cmd->argc < 2) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /OPER <username> [-pubkey]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -1979,7 +2075,7 @@ SILC_CLIENT_CMD_FUNC(oper)
 }
 
 static void silc_client_command_silcoper_send(unsigned char *data,
-					      SilcUInt32 data_len, 
+					      SilcUInt32 data_len,
 					      void *context)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
@@ -2000,8 +2096,8 @@ static void silc_client_command_silcoper_send(unsigned char *data,
 				    data, data_len);
   }
 
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_SILCOPER, 0, 2, 
-					  1, cmd->argv[1], 
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_SILCOPER, 0, 2,
+					  1, cmd->argv[1],
 					  strlen(cmd->argv[1]),
 					  2, auth ? auth->data : NULL,
 					  auth ? auth->len : 0);
@@ -2030,7 +2126,7 @@ SILC_CLIENT_CMD_FUNC(silcoper)
   }
 
   if (cmd->argc < 2) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /SILCOPER <username> [-pubkey]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -2061,7 +2157,7 @@ SILC_CLIENT_CMD_FUNC(ban)
   char *name, *ban = NULL;
   unsigned char action[1];
   SilcPublicKey pubkey = NULL;
-  
+
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
@@ -2069,7 +2165,7 @@ SILC_CLIENT_CMD_FUNC(ban)
   }
 
   if (cmd->argc < 2) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /BAN <channel> "
 	"[+|-[<nickname>[@<server>[!<username>[@hostname>]]]]]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
@@ -2128,14 +2224,14 @@ SILC_CLIENT_CMD_FUNC(ban)
   chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
 
   /* Send the command */
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_BAN, 
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_BAN,
 					  ++conn->cmd_ident, 3,
 					  1, chidp->data, chidp->len,
 					  2, args ? action : NULL,
 					  args ? 1 : 0,
 					  3, args ? args->data : NULL,
 					  args ? args->len : 0);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(chidp);
@@ -2164,7 +2260,7 @@ SILC_CLIENT_CMD_FUNC(detach)
 
   buffer = silc_command_payload_encode_va(SILC_COMMAND_DETACH,
 					  ++conn->cmd_ident, 0);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
 
@@ -2206,12 +2302,12 @@ SILC_CLIENT_CMD_FUNC(watch)
     goto out;
   }
 
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_WATCH, 
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_WATCH,
 					  ++conn->cmd_ident, 2,
 					  1, idp->data, idp->len,
 					  type, cmd->argv[2],
 					  cmd->argv_lens[2]);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
 
@@ -2242,7 +2338,7 @@ SILC_CLIENT_CMD_FUNC(leave)
   }
 
   if (cmd->argc != 2) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /LEAVE <channel>");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -2275,9 +2371,9 @@ SILC_CLIENT_CMD_FUNC(leave)
 
   /* Send LEAVE command to the server */
   idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_LEAVE, 0, 1, 
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_LEAVE, 0, 1,
 					  1, idp->data, idp->len);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(idp);
@@ -2311,7 +2407,7 @@ SILC_CLIENT_CMD_FUNC(users)
   }
 
   if (cmd->argc != 2) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /USERS <channel>");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -2328,11 +2424,11 @@ SILC_CLIENT_CMD_FUNC(users)
   }
 
   /* Send USERS command to the server */
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_USERS, 
-					  ++conn->cmd_ident, 1, 
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_USERS,
+					  ++conn->cmd_ident, 1,
 					  2, name, strlen(name));
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, 
-			  NULL, 0, NULL, NULL, buffer->data, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND,
+			  NULL, 0, NULL, NULL, buffer->data,
 			  buffer->len, TRUE);
   silc_buffer_free(buffer);
 
@@ -2364,7 +2460,7 @@ SILC_CLIENT_CMD_FUNC(getkey)
   }
 
   if (cmd->argc < 2) {
-    client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_INFO,
 		     "Usage: /GETKEY <nickname or server name>");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -2391,14 +2487,14 @@ SILC_CLIENT_CMD_FUNC(getkey)
       if (!cmd->pending) {
 	/* This will send the IDENTIFY command for nickname */
 	silc_idlist_get_client(client, conn, nickname, cmd->argv[1], TRUE);
-	silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				    conn->cmd_ident,  
-				    silc_client_command_getkey, 
+	silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY,
+				    conn->cmd_ident,
+				    silc_client_command_getkey,
 				    silc_client_command_dup(cmd));
 	cmd->pending = 1;
 	goto out;
       } else {
-	SilcClientCommandReplyContext reply = 
+	SilcClientCommandReplyContext reply =
 	  (SilcClientCommandReplyContext)context2;
 	SilcStatus error;
 
@@ -2406,16 +2502,16 @@ SILC_CLIENT_CMD_FUNC(getkey)
 	silc_command_get_status(reply->payload, NULL, &error);
 	if (error == SILC_STATUS_ERR_NO_SUCH_NICK) {
 	  /* This sends the IDENTIFY command to resolve the server. */
-	  silc_client_command_register(client, SILC_COMMAND_IDENTIFY, 
+	  silc_client_command_register(client, SILC_COMMAND_IDENTIFY,
 				       NULL, NULL,
 				       silc_client_command_reply_identify_i, 0,
 				       ++conn->cmd_ident);
 	  silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
-				   conn->cmd_ident, 1, 
+				   conn->cmd_ident, 1,
 				   2, cmd->argv[1], cmd->argv_lens[1]);
-	  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				      conn->cmd_ident, 
-				      silc_client_command_getkey, 
+	  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY,
+				      conn->cmd_ident,
+				      silc_client_command_getkey,
 				      silc_client_command_dup(cmd));
 	  goto out;
 	}
@@ -2423,9 +2519,9 @@ SILC_CLIENT_CMD_FUNC(getkey)
 	/* If server was not found, then we've resolved both nickname and
 	   server and did not find anybody. */
 	if (error == SILC_STATUS_ERR_NO_SUCH_SERVER) {
-	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
+	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s",
 	     silc_get_status_message(SILC_STATUS_ERR_NO_SUCH_NICK));
-	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s", 
+	  SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, "%s",
            silc_get_status_message(error));
 	  COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_NICK);
 	  goto out;
@@ -2441,9 +2537,9 @@ SILC_CLIENT_CMD_FUNC(getkey)
     idp = silc_id_payload_encode(client_entry->id, SILC_ID_CLIENT);
   }
 
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_GETKEY, 0, 1, 
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_GETKEY, 0, 1,
 					  1, idp->data, idp->len);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
   silc_buffer_free(idp);
@@ -2461,11 +2557,11 @@ SILC_CLIENT_CMD_FUNC(getkey)
    searched using the silc_client_command_find by that name.  The
    `command_function' is the function to be called when the command is
    executed, and the `command_reply_function' is the function to be
-   called after the server has sent reply back to the command. 
+   called after the server has sent reply back to the command.
 
    The `ident' is optional identifier for the command.  If non-zero
    the `command_reply_function' for the command type `command' will be
-   called only if the command reply sent by server includes the 
+   called only if the command reply sent by server includes the
    command identifier `ident'. Application usually does not need it
    and set it to zero value. */
 
@@ -2538,7 +2634,7 @@ SILC_CLIENT_CMD_FUNC(connect)
   }
 
   if (cmd->argc < 2) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /CONNECT <server> [<port>]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -2550,13 +2646,13 @@ SILC_CLIENT_CMD_FUNC(connect)
   }
 
   if (cmd->argc == 3)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_PRIV_CONNECT, 0, 2, 
-					    1, cmd->argv[1], 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_PRIV_CONNECT, 0, 2,
+					    1, cmd->argv[1],
 					    strlen(cmd->argv[1]),
 					    2, port, 4);
   else
     buffer = silc_command_payload_encode_va(SILC_COMMAND_PRIV_CONNECT, 0, 1,
-					    1, cmd->argv[1], 
+					    1, cmd->argv[1],
 					    strlen(cmd->argv[1]));
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
@@ -2571,7 +2667,7 @@ SILC_CLIENT_CMD_FUNC(connect)
 
 
 /* CLOSE command. Close server connection to the remote server */
- 
+
 SILC_CLIENT_CMD_FUNC(close)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
@@ -2587,7 +2683,7 @@ SILC_CLIENT_CMD_FUNC(close)
   }
 
   if (cmd->argc < 2) {
-    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /CLOSE <server> [<port>]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
@@ -2599,13 +2695,13 @@ SILC_CLIENT_CMD_FUNC(close)
   }
 
   if (cmd->argc == 3)
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_PRIV_CLOSE, 0, 2, 
-					    1, cmd->argv[1], 
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_PRIV_CLOSE, 0, 2,
+					    1, cmd->argv[1],
 					    strlen(cmd->argv[1]),
 					    2, port, 4);
   else
     buffer = silc_command_payload_encode_va(SILC_COMMAND_PRIV_CLOSE, 0, 1,
-					    1, cmd->argv[1], 
+					    1, cmd->argv[1],
 					    strlen(cmd->argv[1]));
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
@@ -2617,7 +2713,7 @@ SILC_CLIENT_CMD_FUNC(close)
  out:
   silc_client_command_free(cmd);
 }
- 
+
 /* SHUTDOWN command. Shutdowns the server. */
 
 SILC_CLIENT_CMD_FUNC(shutdown)
@@ -2631,7 +2727,7 @@ SILC_CLIENT_CMD_FUNC(shutdown)
   }
 
   /* Send the command */
-  silc_client_command_send(cmd->client, cmd->conn, 
+  silc_client_command_send(cmd->client, cmd->conn,
 			   SILC_COMMAND_PRIV_SHUTDOWN, 0, 0);
 
   /* Notify application */
@@ -2646,7 +2742,7 @@ SILC_CLIENT_CMD_FUNC(shutdown)
 
 void silc_client_commands_register(SilcClient client)
 {
-  silc_list_init(client->internal->commands, struct SilcClientCommandStruct, 
+  silc_list_init(client->internal->commands, struct SilcClientCommandStruct,
 		 next);
 
   SILC_CLIENT_CMD(whois, WHOIS, "WHOIS", 3);
@@ -2750,7 +2846,7 @@ void silc_client_command_process(SilcClient client,
 
   /* Get arguments */
   args = silc_command_get_args(payload);
-  
+
   /* Get the command */
   command = silc_command_get(payload);
   switch (command) {
@@ -2805,7 +2901,7 @@ void silc_client_command_process_whois(SilcClient client,
 					 silc_command_get_ident(payload),
 					 1, 11, buffer->data, buffer->len);
   silc_client_packet_send(client, sock, SILC_PACKET_COMMAND_REPLY,
-			  NULL, 0, NULL, NULL, packet->data, 
+			  NULL, 0, NULL, NULL, packet->data,
 			  packet->len, TRUE);
   silc_buffer_free(packet);
   silc_buffer_free(buffer);

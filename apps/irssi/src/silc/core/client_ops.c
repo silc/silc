@@ -124,6 +124,53 @@ silc_print_nick_change(SILC_SERVER_REC *server, const char *newnick,
   g_slist_free(windows);
 }
 
+static void silc_parse_channel_public_keys(SILC_SERVER_REC *server,
+					   SilcChannelEntry channel_entry,
+					   SilcBuffer channel_pubkeys)
+{
+  SilcUInt16 argc;
+  SilcArgumentPayload chpks;
+  unsigned char *pk;
+  SilcUInt32 pk_len, type;
+  int c = 1;
+  char *fingerprint, *babbleprint;
+  SilcPublicKey pubkey;
+  SilcPublicKeyIdentifier ident;
+
+  printformat_module("fe-common/silc", server, NULL,
+		     MSGLEVEL_CRAP, SILCTXT_CHANNEL_PK_LIST,
+		     channel_entry->channel_name);
+
+  SILC_GET16_MSB(argc, channel_pubkeys->data);
+  chpks = silc_argument_payload_parse(channel_pubkeys->data + 2,
+				      channel_pubkeys->len - 2, argc);
+  if (!chpks)
+    return;
+
+  pk = silc_argument_get_first_arg(chpks, &type, &pk_len);
+  while (pk) {
+    fingerprint = silc_hash_fingerprint(NULL, pk + 4, pk_len - 4);
+    babbleprint = silc_hash_babbleprint(NULL, pk + 4, pk_len - 4);
+    silc_pkcs_public_key_payload_decode(pk, pk_len, &pubkey);
+    ident = silc_pkcs_decode_identifier(pubkey->identifier);
+
+    printformat_module("fe-common/silc", server, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_PK_LIST_ENTRY,
+		       c++, channel_entry->channel_name,
+		       type == 0x00 ? "Added" : "Removed",
+		       ident->realname ? ident->realname : "",
+		       fingerprint, babbleprint);
+
+    silc_free(fingerprint);
+    silc_free(babbleprint);
+    silc_pkcs_public_key_free(pubkey);
+    silc_pkcs_free_identifier(ident);
+    pk = silc_argument_get_next_arg(chpks, &type, &pk_len);
+  }
+
+  silc_argument_payload_free(chpks);
+}
+
 void silc_say(SilcClient client, SilcClientConnection conn,
 	      SilcClientMessageType type, char *msg, ...)
 {
@@ -479,6 +526,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
   char buf[512];
   char *name, *tmp;
   GSList *list1, *list_tmp;
+  SilcBuffer buffer;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -692,8 +740,11 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     idtype = va_arg(va, int);
     entry = va_arg(va, void *);
     mode = va_arg(va, SilcUInt32);
-    (void)va_arg(va, char *);
-    (void)va_arg(va, char *);
+    (void)va_arg(va, char *);	               /* cipher */
+    (void)va_arg(va, char *);		       /* hmac */
+    (void)va_arg(va, char *);		       /* passphrase */
+    (void)va_arg(va, SilcPublicKey);	       /* founder key */
+    buffer = va_arg(va, SilcBuffer);	       /* channel public keys */
     channel = va_arg(va, SilcChannelEntry);
 
     tmp = silc_client_chmode(mode,
@@ -728,6 +779,10 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 			 channel->channel_name, tmp ? tmp : "removed all",
 			 channel2->channel_name);
     }
+
+    /* Print the channel public key list */
+    if (buffer)
+      silc_parse_channel_public_keys(server, channel, buffer);
 
     silc_free(tmp);
     break;
@@ -1126,6 +1181,8 @@ void silc_disconnect(SilcClient client, SilcClientConnection conn,
    after application has called the command. Just to tell application
    that the command really was processed. */
 
+static bool cmode_list_chpks = FALSE;
+
 void silc_command(SilcClient client, SilcClientConnection conn,
 		  SilcClientCommandContext cmd_context, bool success,
 		  SilcCommand command, SilcStatus status)
@@ -1153,6 +1210,14 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 
   case SILC_COMMAND_DETACH:
     server->no_reconnect = TRUE;
+    break;
+
+  case SILC_COMMAND_CMODE:
+    if (cmd_context->argc == 3 &&
+	!strcmp(cmd_context->argv[2], "+C"))
+      cmode_list_chpks = TRUE;
+    else
+      cmode_list_chpks = FALSE;
     break;
 
   default:
@@ -1263,12 +1328,12 @@ void silc_getkey_cb(bool success, void *context)
 }
 
 /* Parse an invite or ban list */
-void  silc_parse_inviteban_list(SilcClient client,
-				SilcClientConnection conn,
-				SILC_SERVER_REC *server,
-				SilcChannelEntry channel,
-				const char *list_type,
-				SilcArgumentPayload list)
+void silc_parse_inviteban_list(SilcClient client,
+			       SilcClientConnection conn,
+			       SILC_SERVER_REC *server,
+			       SilcChannelEntry channel,
+			       const char *list_type,
+			       SilcArgumentPayload list)
 {
   unsigned char *tmp;
   SilcUInt32 type, len;
@@ -1601,7 +1666,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcChannelEntry channel;
       SilcBuffer payload;
       SilcArgumentPayload invite_list;
-      SilcUInt32 argc;
+      SilcUInt16 argc;
 
       if (!success)
 	return;
@@ -1902,7 +1967,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcChannelEntry channel;
       SilcBuffer payload;
       SilcArgumentPayload ban_list;
-      SilcUInt32 argc;
+      SilcUInt16 argc;
 
       if (!success)
 	return;
@@ -2162,6 +2227,30 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Total router operators", tmp);
+    }
+    break;
+
+  case SILC_COMMAND_CMODE:
+    {
+      SilcChannelEntry channel_entry;
+      SilcBuffer channel_pubkeys;
+
+      channel_entry = va_arg(vp, SilcChannelEntry);
+      (void)va_arg(vp, SilcUInt32);
+      (void)va_arg(vp, SilcPublicKey);
+      channel_pubkeys = va_arg(vp, SilcBuffer);
+
+      if (!success || !cmode_list_chpks ||
+	  !channel_entry || !channel_entry->channel_name)
+	return;
+
+      /* Print the channel public key list */
+      if (channel_pubkeys)
+	silc_parse_channel_public_keys(server, channel_entry, channel_pubkeys);
+      else
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_PK_NO_LIST,
+			   channel_entry->channel_name);
     }
     break;
 

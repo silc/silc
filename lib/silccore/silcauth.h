@@ -1,10 +1,10 @@
 /*
 
-  silcauth.h 
+  silcauth.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2002 Pekka Riikonen
+  Copyright (C) 2001 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@
  * DESCRIPTION
  *
  * Implementations of the SILC Authentication Payload and authentication
- * routines.  The SILC Authentication Payload is used to deliver 
- * authentication data usually from client to server in purpose of 
+ * routines.  The SILC Authentication Payload is used to deliver
+ * authentication data usually from client to server in purpose of
  * gaining access to some service.  The Payload and the authentication
  * routines supports both passphrase and public key (signature) based
  * authentication.
@@ -40,7 +40,7 @@
 /****d* silccore/SilcAuthAPI/SilcAuthMethod
  *
  * NAME
- * 
+ *
  *    typedef SilcUInt16 SilcAuthMethod;
  *
  * DESCRIPTION
@@ -66,8 +66,8 @@ typedef SilcUInt16 SilcAuthMethod;
 /****s* silccore/SilcAuthAPI/SilcAuthPayload
  *
  * NAME
- * 
- *    typedef struct SilcAuthPayloadStruct *SilcAuthPayload; 
+ *
+ *    typedef struct SilcAuthPayloadStruct *SilcAuthPayload;
  *
  *
  * DESCRIPTION
@@ -148,6 +148,22 @@ void silc_auth_payload_free(SilcAuthPayload payload);
  ***/
 SilcAuthMethod silc_auth_get_method(SilcAuthPayload payload);
 
+/****f* silccore/SilcAuthAPI/silc_auth_get_public_data
+ *
+ * SYNOPSIS
+ *
+ *    unsigned char *silc_auth_get_public_data(SilcAuthPayload payload,
+ *                                             SilcUInt32 *pubdata_len);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the public data (usually random data) from the payload.
+ *    Caller must not free the returned data.
+ *
+ ***/
+unsigned char *silc_auth_get_public_data(SilcAuthPayload payload,
+					 SilcUInt32 *pubdata_len);
+
 /****f* silccore/SilcAuthAPI/silc_auth_get_data
  *
  * SYNOPSIS
@@ -173,7 +189,7 @@ unsigned char *silc_auth_get_data(SilcAuthPayload payload,
  *                                                  SilcPrivateKey private_key,
  *                                                  SilcRng rng,
  *                                                  SilcHash hash,
- *                                                  const void *id, 
+ *                                                  const void *id,
  *                                                  SilcIdType type);
  *
  * DESCRIPTION
@@ -195,12 +211,41 @@ SilcBuffer silc_auth_public_key_auth_generate(SilcPublicKey public_key,
 					      SilcRng rng, SilcHash hash,
 					      const void *id, SilcIdType type);
 
+/****f* silccore/SilcAuthAPI/silc_auth_public_key_auth_generate_wpub
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer
+ *    silc_auth_public_key_auth_generate_wpub(SilcPublicKey public_key,
+ *                                            SilcPrivateKey private_key,
+ *                                            const unsigned char *pubdata,
+ *                                            SilcUInt32 pubdata_len,
+ *                                            SilcHash hash,
+ *                                            const void *id,
+ *                                            SilcIdType type);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_auth_public_key_auth_generate but takes the public data
+ *    (usually random data) as argument.  This function can be used when
+ *    the public data must be something else than purely random or its
+ *    structure mut be set before signing.
+ *
+ ***/
+SilcBuffer
+silc_auth_public_key_auth_generate_wpub(SilcPublicKey public_key,
+					SilcPrivateKey private_key,
+					const unsigned char *pubdata,
+					SilcUInt32 pubdata_len,
+					SilcHash hash,
+					const void *id, SilcIdType type);
+
 /****f* silccore/SilcAuthAPI/silc_auth_public_key_auth_verify
  *
  * SYNOPSIS
  *
  *    bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
- *                                          SilcPublicKey public_key, 
+ *                                          SilcPublicKey public_key,
  *                                          SilcHash hash,
  *                                          const void *id, SilcIdType type);
  *
@@ -220,9 +265,9 @@ bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
  *
  *    bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
  *                                               SilcUInt32 payload_len,
- *                                               SilcPublicKey public_key, 
+ *                                               SilcPublicKey public_key,
  *                                               SilcHash hash,
- *                                               const void *id, 
+ *                                               const void *id,
  *                                               SilcIdType type);
  *
  * DESCRIPTION
@@ -234,7 +279,7 @@ bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
  ***/
 bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
 					   SilcUInt32 payload_len,
-					   SilcPublicKey public_key, 
+					   SilcPublicKey public_key,
 					   SilcHash hash,
 					   const void *id, SilcIdType type);
 
@@ -242,14 +287,14 @@ bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
  *
  * SYNOPSIS
  *
- *    bool silc_auth_verify(SilcAuthPayload payload, 
+ *    bool silc_auth_verify(SilcAuthPayload payload,
  *                          SilcAuthMethod auth_method,
- *                          const void *auth_data, SilcUInt32 auth_data_len, 
+ *                          const void *auth_data, SilcUInt32 auth_data_len,
  *                          SilcHash hash, const void *id, SilcIdType type);
  *
  * DESCRIPTION
  *
- *    Verifies the authentication data directly from the Authentication 
+ *    Verifies the authentication data directly from the Authentication
  *    Payload. Supports all authentication methods. If the authentication
  *    method is passphrase based then the `auth_data' and `auth_data_len'
  *    are the passphrase and its length.  The passphrase MUST be UTF-8
@@ -258,24 +303,24 @@ bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
  *
  ***/
 bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
-		      const void *auth_data, SilcUInt32 auth_data_len, 
+		      const void *auth_data, SilcUInt32 auth_data_len,
 		      SilcHash hash, const void *id, SilcIdType type);
 
 /****f* silccore/SilcAuthAPI/silc_auth_verify_data
  *
  * SYNOPSIS
  *
- *    bool silc_auth_verify_data(const unsigned char *payload, 
+ *    bool silc_auth_verify_data(const unsigned char *payload,
  *                               SilcUInt32 payload_len,
- *                               SilcAuthMethod auth_method, 
+ *                               SilcAuthMethod auth_method,
  *                               const void *auth_data,
- *                               SilcUInt32 auth_data_len, SilcHash hash, 
+ *                               SilcUInt32 auth_data_len, SilcHash hash,
  *                               const void *id, SilcIdType type);
- * 
+ *
  * DESCRIPTION
  *
  *    Same as silc_auth_verify but the payload has not been parsed yet.
- *    Verifies the authentication data directly from the Authentication 
+ *    Verifies the authentication data directly from the Authentication
  *    Payload. Supports all authentication methods. If the authentication
  *    method is passphrase based then the `auth_data' and `auth_data_len'
  *    are the passphrase and its length.  The passphrase MUST be UTF-8
@@ -283,16 +328,16 @@ bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
  *    `auth_data' is the SilcPublicKey and the `auth_data_len' is ignored.
  *
  ***/
-bool silc_auth_verify_data(const unsigned char *payload, 
+bool silc_auth_verify_data(const unsigned char *payload,
 			   SilcUInt32 payload_len,
 			   SilcAuthMethod auth_method, const void *auth_data,
-			   SilcUInt32 auth_data_len, SilcHash hash, 
+			   SilcUInt32 auth_data_len, SilcHash hash,
 			   const void *id, SilcIdType type);
 
 /****s* silccore/SilcAuthAPI/SilcKeyAgreementPayload
  *
  * NAME
- * 
+ *
  *    typedef struct SilcKeyAgreementPayloadStruct *SilcKeyAgreementPayload;
  *
  * DESCRIPTION
@@ -309,7 +354,7 @@ typedef struct SilcKeyAgreementPayloadStruct *SilcKeyAgreementPayload;
  *
  * SYNOPSIS
  *
- *    SilcKeyAgreementPayload 
+ *    SilcKeyAgreementPayload
  *    silc_key_agreement_payload_parse(const unsigned char *payload,
  *                                     SilcUInt32 payload_len);
  *
@@ -318,7 +363,7 @@ typedef struct SilcKeyAgreementPayloadStruct *SilcKeyAgreementPayload;
  *    Parses and returns an allocated Key Agreement payload.
  *
  ***/
-SilcKeyAgreementPayload 
+SilcKeyAgreementPayload
 silc_key_agreement_payload_parse(const unsigned char *payload,
 				 SilcUInt32 payload_len);
 

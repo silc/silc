@@ -397,9 +397,11 @@ char *silc_config_read_current_line(SilcConfigFile *file);
  *    Register option `name' in the entity `ent'. If `cb' is not NULL, it
  *    will be called with the *val pointer pointing to an internally
  *    allocated storage of type described by `type'.
+ *
  *    If `type' is SILC_CONFIG_ARG_BLOCK, then `subtable' must be a valid
  *    pointer to a SilcConfigTable array specifying the options in the
  *    sub-block.
+ *
  *    If the option `name' was already registered in this sub-block or it
  *    matches the reserved word "Include", then this function returns FALSE,
  *    otherwise it returns TRUE.
@@ -425,8 +427,10 @@ bool silc_config_register(SilcConfigEntity ent, const char *name,
  *    Register the tableset of options `table' automatically in the entity
  *    `ent'.  If defined in the table, the callback functions will be called
  *    all with the same context `context'.
+ *
  *    The `table' array must be terminated with an entry with the name field
  *    set to NULL.
+ *
  *    If the table contains invalid data this function returns FALSE, otherwise
  *    it returns TRUE.  If a calling to this function failed, you must destroy
  *    and recreate the entity before retrying, as it's impossible to detect
@@ -449,6 +453,7 @@ bool silc_config_register_table(SilcConfigEntity ent,
  *
  *    Enter the main parsing loop. When this function returns the parsing
  *    is finished in the current block (and sub-blocks).
+ *
  *    When this function exits, the entity is already destroyed, because
  *    of this you should set it to NULL right after the function call.
  *

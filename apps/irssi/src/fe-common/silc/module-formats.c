@@ -1,16 +1,15 @@
 /*
 
-  modules-formats.c
+  module-formats.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -80,6 +79,9 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "no_msgs_sent", "You have not sent a message to anyone yet", 0 },
 	{ "own_msg_private_signed", "{ownprivmsg_signed msg $0}$1", 2, { 0, 0 } },
 	{ "own_msg_private_query_signed", "{ownprivmsgnick_signed {ownprivnick $2}}$1", 3, { 0, 0, 0 } },
+	{ "channel_pk_list", "Channel {channel $0} Public Key List:", 1, { 0 } },
+	{ "channel_pk_list_entry", "$0 - {channel $1}: $2 $3: Fingerprint (SHA1) {ban $4} (Babbleprint (SHA1) {ban $5})", 6, { 1, 0, 0, 0, 0, 0 } },
+	{ "channel_pk_no_list", "No Channel Public Key List for {channel $0}", 1, { 0 } },
 
 	/* WHOIS, WHOWAS and USERS (alias WHO) messages */
 	{ NULL, "Who Queries", 0 },

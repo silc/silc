@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -652,15 +652,18 @@ char *silc_client_chmode(SilcUInt32 mode, const char *cipher, const char *hmac)
   if (mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)
     strncat(string, "f", 1);
 
+  if (mode & SILC_CHANNEL_MODE_CHANNEL_AUTH)
+    strncat(string, "C", 1);
+
   if (mode & SILC_CHANNEL_MODE_SILENCE_USERS)
     strncat(string, "m", 1);
 
   if (mode & SILC_CHANNEL_MODE_SILENCE_OPERS)
     strncat(string, "M", 1);
-  
+
   if (mode & SILC_CHANNEL_MODE_CIPHER)
     strncat(string, "c", 1);
-  
+
   if (mode & SILC_CHANNEL_MODE_HMAC)
     strncat(string, "h", 1);
 
@@ -1155,7 +1158,7 @@ const char *silc_get_command_name(unsigned char command)
 
 /* Return TRUE if `smaller' is smaller than `bigger'. */
 
-bool silc_compare_timeval(struct timeval *smaller, 
+bool silc_compare_timeval(struct timeval *smaller,
 			  struct timeval *bigger)
 {
   if ((smaller->tv_sec < bigger->tv_sec) ||

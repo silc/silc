@@ -28,7 +28,7 @@ SilcStatus status, ...);
 </tt>
 
 <br />&nbsp;<br />
-The first argument 'client' is the SILC Client Library context, the 'conn' 
+The first argument 'client' is the SILC Client Library context, the 'conn'
 is the context for the connection to the remote server, the 'cmd_payload'
 is the raw SilcCommandPayload and application usually ignores it, the
 'success' boolean value indicates whether the earlier command was a success
@@ -39,7 +39,7 @@ indicates the status of the command reply.  If 'success' is FALSE then
 <br />&nbsp;<br />
 Rest of the arguments are 'command' specific and implementation should
 handle them by the SilcCommand for example in a <tt>switch</tt> statement.
-The commands are defined in lib/silccore/silccomand.h header file.  A short 
+The commands are defined in lib/silccore/silccomand.h header file.  A short
 example:
 
 <br />&nbsp;<br />
@@ -64,10 +64,10 @@ example:
 
 <br />&nbsp;<br />
 The following table describes all commands and arguments that the client
-library sends in the 'command_reply' client operation to the application.  
-By default all arguments that the library sends to application are valid 
-pointers.  However, it is possible that some pointers may be NULL.  If 
-this is the case it is separately mentioned that the argument may be NULL.  
+library sends in the 'command_reply' client operation to the application.
+By default all arguments that the library sends to application are valid
+pointers.  However, it is possible that some pointers may be NULL.  If
+this is the case it is separately mentioned that the argument may be NULL.
 In this case application must ignore that argument.  The 'command_reply'
 arguments per SilcCommand is as follows:
 
@@ -265,9 +265,15 @@ Returns the user mode after changing it.
 <tr>
 <td><small>SILC_COMMAND_CMODE</td>
 <td><small>
-Returns channel's mode after changing it.
+Returns channel's mode after changing it.  Optionally may also return
+founder's public key when it was set.  It may also return the channel
+public key list when the list was altered.  The 'founder_key' and
+'channel_pubkeys' arguments may be NULL.  The 'channel_pubkeys' is an
+Argument List Payload where each argument includes one Public Key
+Payload.
 </td>
-<td width="50%"><small>SilcChannelEntry channel, SilcUInt32 mode
+<td width="50%"><small>SilcChannelEntry channel, SilcUInt32 mode,
+SilcPublicKey founder_key, SilcBuffer channel_pubkeys
 </td>
 </tr>
 
@@ -357,7 +363,7 @@ SilcBuffer client_id_list, SilcBuffer client_mode_list
 <td><small>SILC_COMMAND_GETKEY</td>
 <td><small>
 Returns public key of client or server.  The 'public_key' may be NULL.
-The 'entry_type' is used to check what type of pointer the entry' is.  For 
+The 'entry_type' is used to check what type of pointer the entry' is.  For
 SILC_ID_CLIENT SilcClientEntry and for SILC_ID_SERVER SilcServerEntry.
 </td>
 <td width="50%"><small>SilcIdType entry_type, void *entry,
@@ -368,6 +374,6 @@ SilcPublicKey public_key
 </table>
 
 <br />&nbsp;<br />
-SILC protocol defines some additional commands but command replies to 
+SILC protocol defines some additional commands but command replies to
 those commands are not delivered to the application.  Only the command
 replies listed above are delivered to application.

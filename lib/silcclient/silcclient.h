@@ -253,7 +253,8 @@ struct SilcChannelEntryStruct {
   SilcChannelID *id;			     /* Channel ID */
   SilcUInt32 mode;			     /* Channel mode */
 
-  /* All clients that has joined this channel */
+  /* All clients that has joined this channel.  The key to the table is the
+     SilcClientEntry and the context is SilcChannelUser context. */
   SilcHashTable user_list;
 
   /* Channel keys */

@@ -1,16 +1,15 @@
 /*
 
-  modules-formats.h
+  module-formats.h
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -22,9 +21,9 @@
 
 enum {
   SILCTXT_MODULE_NAME,
-  
+
   SILCTXT_FILL_1,
-  
+
   SILCTXT_CHANNEL_FOUNDER_YOU,
   SILCTXT_CHANNEL_FOUNDER,
   SILCTXT_CHANNEL_TOPIC,
@@ -77,6 +76,9 @@ enum {
   SILCTXT_NO_MSGS_SENT,
   SILCTXT_OWN_MSG_PRIVATE_SIGNED,
   SILCTXT_OWN_MSG_PRIVATE_QUERY_SIGNED,
+  SILCTXT_CHANNEL_PK_LIST,
+  SILCTXT_CHANNEL_PK_LIST_ENTRY,
+  SILCTXT_CHANNEL_PK_NO_LIST,
 
   SILCTXT_FILL_2,
 

@@ -14,7 +14,7 @@ The following modes are available:
     s               Set/unset channel as secret channel
     k               Enable/disable channel private key usage (*)
     i               Set/unset channel as invite only channel
-    t               Set/unset that only channel operator or 
+    t               Set/unset that only channel operator or
                     founder may set channel topic
     m               Set/unset user silencing.  Normal users
                     are not able to talk on channel. (*)
@@ -41,6 +41,29 @@ The following modes are available:
                     server.  If these are omitted then the default
                     SILC keypair is used.  Normally you do not need
                     to provide these arguments.
+    C [{[+|-]<pubkeyfile> }]                                (*)
+                    Set/unset channel public key mode, and add/remove
+                    channel publics key from the channel public key
+                    list.  When this mode is set only those users
+                    whose public keys has been added to the list are
+                    able to join the channel.  Channel founder may set
+                    this mode and operate on the channel public key
+                    list.
+
+                    To add public key to the list give command:
+                    CMODE +C +/path/to/the/public_key_file.pub
+
+                    To remove one public key from the list give
+                    command:
+                    CMODE +C -/path/to/the/public_key_file.pub
+
+                    To add or remove more than one public keys add as
+                    many public key file paths as necessary.
+
+                    When this mode is unset (-C), all public keys are
+                    removed from the list.  If +C is given without
+                    arguments the current channel public key list is
+                    displayed.
 
 Multiple modes can be set/unset at once if the modes does not
 require any arguments.  If mode requires an argument then only

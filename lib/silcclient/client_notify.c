@@ -1,10 +1,10 @@
 /*
 
-  client_notify.c 
+  client_notify.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ typedef struct {
 } *SilcClientNotifyResolve;
 
 SILC_TASK_CALLBACK(silc_client_notify_check_client)
-{ 
+{
   SilcClientNotifyResolve res = (SilcClientNotifyResolve)context;
   SilcClient client = res->context;
   SilcClientConnection conn = res->sock->user_data;
@@ -67,7 +67,7 @@ SILC_TASK_CALLBACK(silc_client_notify_del_client_cb)
 static void silc_client_notify_by_server_pending(void *context, void *context2)
 {
   SilcClientNotifyResolve res = (SilcClientNotifyResolve)context;
-  SilcClientCommandReplyContext reply = 
+  SilcClientCommandReplyContext reply =
     (SilcClientCommandReplyContext)context2;
 
   SILC_LOG_DEBUG(("Start"));
@@ -122,7 +122,7 @@ static void silc_client_channel_set_wait(SilcClient client,
   }
 }
 
-/* Attaches to the channel's resolving cmd ident and calls the 
+/* Attaches to the channel's resolving cmd ident and calls the
    notify handling with `packet' after it's received. */
 
 static void silc_client_channel_wait(SilcClient client,
@@ -173,7 +173,7 @@ static void silc_client_notify_by_server_resolve(SilcClient client,
     silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
 				 silc_client_command_reply_identify_i, 0,
 				 ++conn->cmd_ident);
-    silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY, 
+    silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
 			     conn->cmd_ident, 1, 5, idp->data, idp->len);
     silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
 				silc_client_notify_by_server_pending, res);
@@ -220,16 +220,16 @@ void silc_client_notify_by_server(SilcClient client,
   switch(type) {
   case SILC_NOTIFY_TYPE_NONE:
     /* Notify application */
-    client->internal->ops->notify(client, conn, type, 
+    client->internal->ops->notify(client, conn, type,
 				  silc_argument_get_arg_type(args, 1, NULL));
     break;
 
   case SILC_NOTIFY_TYPE_INVITE:
-    /* 
+    /*
      * Someone invited me to a channel. Find Client and Channel entries
      * for the application.
      */
-    
+
     SILC_LOG_DEBUG(("Notify: INVITE"));
 
     /* Get Channel ID */
@@ -256,7 +256,7 @@ void silc_client_notify_by_server(SilcClient client,
     /* Find Client entry and if not found query it */
     client_entry = silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry) {
-      silc_client_notify_by_server_resolve(client, conn, packet, 
+      silc_client_notify_by_server_resolve(client, conn, packet,
 					   SILC_ID_CLIENT, client_id);
       goto out;
     }
@@ -267,7 +267,7 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Notify application */
-    client->internal->ops->notify(client, conn, type, channel, tmp, 
+    client->internal->ops->notify(client, conn, type, channel, tmp,
 				  client_entry);
     break;
 
@@ -307,7 +307,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!client_entry) {
       silc_client_channel_set_wait(client, conn, channel,
 				   conn->cmd_ident + 1);
-      silc_client_notify_by_server_resolve(client, conn, packet, 
+      silc_client_notify_by_server_resolve(client, conn, packet,
 					   SILC_ID_CLIENT, client_id);
       goto out;
     }
@@ -320,7 +320,7 @@ void silc_client_notify_by_server(SilcClient client,
 	res->packet = silc_packet_context_dup(packet);
 	res->context = client;
 	res->sock = silc_socket_dup(conn->sock);
-	silc_client_command_pending(conn, SILC_COMMAND_NONE, 
+	silc_client_command_pending(conn, SILC_COMMAND_NONE,
 				    client_entry->resolve_cmd_ident,
 				    silc_client_notify_by_server_pending,
 				    res);
@@ -330,7 +330,7 @@ void silc_client_notify_by_server(SilcClient client,
       /* Do new resolving */
       silc_client_channel_set_wait(client, conn, channel,
 				   conn->cmd_ident + 1);
-      silc_client_notify_by_server_resolve(client, conn, packet, 
+      silc_client_notify_by_server_resolve(client, conn, packet,
 					   SILC_ID_CLIENT, client_id);
       client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
       client_entry->resolve_cmd_ident = conn->cmd_ident;
@@ -366,7 +366,7 @@ void silc_client_notify_by_server(SilcClient client,
      * Someone has left a channel. We will remove it from the channel but
      * we'll keep it in the cache in case we'll need it later.
      */
-    
+
     SILC_LOG_DEBUG(("Notify: LEAVE"));
 
     /* Get Client ID */
@@ -379,7 +379,7 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Find Client entry */
-    client_entry = 
+    client_entry =
       silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
@@ -402,7 +402,7 @@ void silc_client_notify_by_server(SilcClient client,
     }
 
     /* Some client implementations actually quit network by first doing
-       LEAVE and then immediately SIGNOFF.  We'll check for this by doing 
+       LEAVE and then immediately SIGNOFF.  We'll check for this by doing
        check for the client after 5 - 34 seconds.  If it is not valid after
        that we'll remove the client from cache. */
     if (!silc_hash_table_count(client_entry->channels)) {
@@ -439,7 +439,7 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Find Client entry */
-    client_entry = 
+    client_entry =
       silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
@@ -494,7 +494,7 @@ void silc_client_notify_by_server(SilcClient client,
       if (!client_entry) {
 	silc_client_channel_set_wait(client, conn, channel,
 				     conn->cmd_ident + 1);
-	silc_client_notify_by_server_resolve(client, conn, packet, 
+	silc_client_notify_by_server_resolve(client, conn, packet,
 					     SILC_ID_CLIENT, client_id);
 	goto out;
       }
@@ -505,7 +505,7 @@ void silc_client_notify_by_server(SilcClient client,
       if (!server) {
 	silc_client_channel_set_wait(client, conn, channel,
 				     conn->cmd_ident + 1);
-	silc_client_notify_by_server_resolve(client, conn, packet, 
+	silc_client_notify_by_server_resolve(client, conn, packet,
 					     SILC_ID_SERVER, server_id);
 	server = silc_client_add_server(client, conn, NULL, NULL, server_id);
 	if (!server)
@@ -522,12 +522,12 @@ void silc_client_notify_by_server(SilcClient client,
 	res->packet = silc_packet_context_dup(packet);
 	res->context = client;
 	res->sock = silc_socket_dup(conn->sock);
-	silc_client_command_pending(conn, SILC_COMMAND_NONE, 
+	silc_client_command_pending(conn, SILC_COMMAND_NONE,
 				    server->resolve_cmd_ident,
 				    silc_client_notify_by_server_pending, res);
 	goto out;
       }
-      
+
       /* Save the pointer to the client_entry pointer */
       client_entry = (SilcClientEntry)server;
     } else {
@@ -539,7 +539,7 @@ void silc_client_notify_by_server(SilcClient client,
       if (!client_entry) {
 	silc_client_channel_set_wait(client, conn, channel,
 				     conn->cmd_ident + 1);
-	silc_client_notify_by_server_resolve(client, conn, packet, 
+	silc_client_notify_by_server_resolve(client, conn, packet,
 					     SILC_ID_CHANNEL, channel_id);
 	goto out;
       }
@@ -568,7 +568,7 @@ void silc_client_notify_by_server(SilcClient client,
     /*
      * Someone changed their nickname. If we don't have entry for the new
      * ID we will query it and return here after it's done. After we've
-     * returned we fetch the old entry and free it and notify the 
+     * returned we fetch the old entry and free it and notify the
      * application.
      */
 
@@ -600,7 +600,7 @@ void silc_client_notify_by_server(SilcClient client,
       res->packet = silc_packet_context_dup(packet);
       res->context = client;
       res->sock = silc_socket_dup(conn->sock);
-      silc_client_command_pending(conn, SILC_COMMAND_NONE, 
+      silc_client_command_pending(conn, SILC_COMMAND_NONE,
 				  client_entry->resolve_cmd_ident,
 				  silc_client_notify_by_server_pending, res);
       goto out;
@@ -636,16 +636,16 @@ void silc_client_notify_by_server(SilcClient client,
 		       client_entry->id, client_entry, 0, NULL);
 
       /* Notify application */
-      client->internal->ops->notify(client, conn, type, 
+      client->internal->ops->notify(client, conn, type,
 				    client_entry, client_entry);
       break;
     }
 
     /* Create new client entry, and save all old information with the
        new nickname and client ID */
-    client_entry2 = silc_client_add_client(client, conn, NULL, NULL, 
+    client_entry2 = silc_client_add_client(client, conn, NULL, NULL,
 					   client_entry->realname,
-					   silc_id_dup(client_id, 
+					   silc_id_dup(client_id,
 						       SILC_ID_CLIENT), 0);
     if (!client_entry2)
       goto out;
@@ -665,166 +665,195 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Remove the old from cache */
     silc_idcache_del_by_context(conn->internal->client_cache, client_entry);
-    
+
     /* Replace old ID entry with new one on all channels. */
     silc_client_replace_from_channels(client, conn, client_entry,
 				      client_entry2);
 
     /* Notify application */
-    client->internal->ops->notify(client, conn, type, 
+    client->internal->ops->notify(client, conn, type,
 				  client_entry, client_entry2);
-    
+
     /* Free old client entry */
     silc_client_del_client_entry(client, conn, client_entry);
 
     break;
 
   case SILC_NOTIFY_TYPE_CMODE_CHANGE:
-    /*
-     * Someone changed a channel mode
-     */
+    {
+      /*
+       * Someone changed a channel mode
+       */
+      char *passphrase, *cipher, *hmac;
+      SilcPublicKey founder_key = NULL;
+      SilcBufferStruct chpks;
 
-    SILC_LOG_DEBUG(("Notify: CMODE_CHANGE"));
+      SILC_LOG_DEBUG(("Notify: CMODE_CHANGE"));
 
-    /* Get channel entry */
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				SILC_ID_CHANNEL);
-    if (!channel_id)
-      goto out;
-    channel = silc_client_get_channel_by_id(client, conn, channel_id);
-    if (!channel)
-      goto out;
-
-    /* Get ID */
-    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
-    if (!tmp)
-      goto out;
-    id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
-    if (!id)
-      goto out;
-
-    /* Find Client entry */
-    if (id_type == SILC_ID_CLIENT) {
-      /* Find Client entry */
-      client_id = id;
-      client_entry = silc_client_get_client_by_id(client, conn, client_id);
-      if (!client_entry) {
-	silc_client_channel_set_wait(client, conn, channel,
-				     conn->cmd_ident + 1);
-	silc_client_notify_by_server_resolve(client, conn, packet, 
-					     SILC_ID_CLIENT, client_id);
+      /* Get channel entry */
+      channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				  SILC_ID_CHANNEL);
+      if (!channel_id)
 	goto out;
-      }
+      channel = silc_client_get_channel_by_id(client, conn, channel_id);
+      if (!channel)
+	goto out;
 
-      if (!client_entry->nickname) {
-	if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
-	  /* Attach to existing resolving */
+      /* Get ID */
+      tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+      if (!tmp)
+	goto out;
+      id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
+      if (!id)
+	goto out;
+
+      /* Find Client entry */
+      if (id_type == SILC_ID_CLIENT) {
+	/* Find Client entry */
+	client_id = id;
+	client_entry = silc_client_get_client_by_id(client, conn, client_id);
+	if (!client_entry) {
+	  silc_client_channel_set_wait(client, conn, channel,
+				       conn->cmd_ident + 1);
+	  silc_client_notify_by_server_resolve(client, conn, packet,
+					       SILC_ID_CLIENT, client_id);
+	  goto out;
+	}
+
+	if (!client_entry->nickname) {
+	  if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
+	    /* Attach to existing resolving */
+	    SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
+	    res->packet = silc_packet_context_dup(packet);
+	    res->context = client;
+	    res->sock = silc_socket_dup(conn->sock);
+	    silc_client_command_pending(conn, SILC_COMMAND_NONE,
+					client_entry->resolve_cmd_ident,
+					silc_client_notify_by_server_pending,
+					res);
+	    goto out;
+	  }
+
+	  /* Do new resolving */
+	  silc_client_channel_set_wait(client, conn, channel,
+				       conn->cmd_ident + 1);
+	  silc_client_notify_by_server_resolve(client, conn, packet,
+					       SILC_ID_CLIENT, client_id);
+	  client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
+	  client_entry->resolve_cmd_ident = conn->cmd_ident;
+	  goto out;
+	}
+      } else if (id_type == SILC_ID_SERVER) {
+	/* Find Server entry */
+	server_id = id;
+	server = silc_client_get_server_by_id(client, conn, server_id);
+	if (!server) {
+	  silc_client_channel_set_wait(client, conn, channel,
+				       conn->cmd_ident + 1);
+	  silc_client_notify_by_server_resolve(client, conn, packet,
+					       SILC_ID_SERVER, server_id);
+	  server = silc_client_add_server(client, conn, NULL, NULL, server_id);
+	  if (!server)
+	    goto out;
+
+	  server->resolve_cmd_ident = conn->cmd_ident;
+	  server_id = NULL;
+	  goto out;
+	}
+
+	/* If entry being resoled, wait for it before processing this notify */
+	if (server->resolve_cmd_ident) {
 	  SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
 	  res->packet = silc_packet_context_dup(packet);
 	  res->context = client;
 	  res->sock = silc_socket_dup(conn->sock);
-	  silc_client_command_pending(conn, SILC_COMMAND_NONE, 
-				      client_entry->resolve_cmd_ident,
+	  silc_client_command_pending(conn, SILC_COMMAND_NONE,
+				      server->resolve_cmd_ident,
 				      silc_client_notify_by_server_pending,
 				      res);
 	  goto out;
 	}
 
-	/* Do new resolving */
-	silc_client_channel_set_wait(client, conn, channel,
-				     conn->cmd_ident + 1);
-	silc_client_notify_by_server_resolve(client, conn, packet, 
-					     SILC_ID_CLIENT, client_id);
-        client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
-        client_entry->resolve_cmd_ident = conn->cmd_ident;
+	/* Save the pointer to the client_entry pointer */
+	client_entry = (SilcClientEntry)server;
+      } else {
+	/* Find Channel entry */
+	silc_free(channel_id);
+	channel_id = id;
+	client_entry = (SilcClientEntry)
+	  silc_client_get_channel_by_id(client, conn, channel_id);
+	if (!client_entry) {
+	  silc_client_channel_set_wait(client, conn, channel,
+				       conn->cmd_ident + 1);
+	  silc_client_notify_by_server_resolve(client, conn, packet,
+					       SILC_ID_CHANNEL, channel_id);
+	  goto out;
+	}
+      }
+
+      /* Get the mode */
+      tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+      if (!tmp)
+	goto out;
+
+      SILC_GET32_MSB(mode, tmp);
+
+      /* If information is being resolved for this channel, wait for it */
+      if (channel->resolve_cmd_ident) {
+	silc_client_channel_wait(client, conn, channel, packet);
 	goto out;
       }
-    } else if (id_type == SILC_ID_SERVER) {
-      /* Find Server entry */
-      server_id = id;
-      server = silc_client_get_server_by_id(client, conn, server_id);
-      if (!server) {
-	silc_client_channel_set_wait(client, conn, channel,
-				     conn->cmd_ident + 1);
-	silc_client_notify_by_server_resolve(client, conn, packet, 
-					     SILC_ID_SERVER, server_id);
-	server = silc_client_add_server(client, conn, NULL, NULL, server_id);
-	if (!server)
+
+      /* Save the new mode */
+      channel->mode = mode;
+
+      /* Get the cipher */
+      cipher = silc_argument_get_arg_type(args, 3, &tmp_len);
+
+      /* Get the hmac */
+      hmac = silc_argument_get_arg_type(args, 4, &tmp_len);
+      if (hmac) {
+	unsigned char hash[32];
+
+	if (channel->hmac)
+	  silc_hmac_free(channel->hmac);
+	if (!silc_hmac_alloc(hmac, NULL, &channel->hmac))
 	  goto out;
 
-	server->resolve_cmd_ident = conn->cmd_ident;
-	server_id = NULL;
-	goto out;
+	silc_hash_make(silc_hmac_get_hash(channel->hmac),
+		       channel->key, channel->key_len / 8,
+		       hash);
+	silc_hmac_set_key(channel->hmac, hash,
+			  silc_hash_len(silc_hmac_get_hash(channel->hmac)));
+	memset(hash, 0, sizeof(hash));
       }
 
-      /* If entry being resoled, wait for it before processing this notify */
-      if (server->resolve_cmd_ident) {
-	SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
-	res->packet = silc_packet_context_dup(packet);
-	res->context = client;
-	res->sock = silc_socket_dup(conn->sock);
-	silc_client_command_pending(conn, SILC_COMMAND_NONE, 
-				    server->resolve_cmd_ident,
-				    silc_client_notify_by_server_pending, res);
-	goto out;
+      /* Get the passphrase if it was set */
+      passphrase = silc_argument_get_arg_type(args, 5, &tmp_len);
+
+      /* Get the channel founder key if it was set */
+      tmp = silc_argument_get_arg_type(args, 6, &tmp_len);
+      if (tmp) {
+	if (!silc_pkcs_public_key_payload_decode(tmp, tmp_len, &founder_key))
+	  founder_key = NULL;
       }
-      
-      /* Save the pointer to the client_entry pointer */
-      client_entry = (SilcClientEntry)server;
-    } else {
-      /* Find Channel entry */
-      silc_free(channel_id);
-      channel_id = id;
-      client_entry = (SilcClientEntry)
-	silc_client_get_channel_by_id(client, conn, channel_id);
-      if (!client_entry) {
-	silc_client_channel_set_wait(client, conn, channel,
-				     conn->cmd_ident + 1);
-	silc_client_notify_by_server_resolve(client, conn, packet, 
-					     SILC_ID_CHANNEL, channel_id);
-	goto out;
-      }
+
+      /* Get the channel public key that was added or removed */
+      tmp = silc_argument_get_arg_type(args, 7, &tmp_len);
+      if (tmp)
+	silc_buffer_set(&chpks, tmp, tmp_len);
+
+      /* Notify application. The channel entry is sent last as this notify
+	 is for channel but application don't know it from the arguments
+	 sent by server. */
+      client->internal->ops->notify(client, conn, type, id_type,
+				    client_entry, mode, cipher, hmac,
+				    passphrase, founder_key,
+				    tmp ? &chpks : NULL, channel);
+
+      if (founder_key)
+	silc_pkcs_public_key_free(founder_key);
     }
-
-    /* Get the mode */
-    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-    if (!tmp)
-      goto out;
-
-    SILC_GET32_MSB(mode, tmp);
-
-    /* If information is being resolved for this channel, wait for it */
-    if (channel->resolve_cmd_ident) {
-      silc_client_channel_wait(client, conn, channel, packet);
-      goto out;
-    }
-
-    /* Save the new mode */
-    channel->mode = mode;
-
-    /* Get the hmac */
-    tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
-    if (tmp) {
-      unsigned char hash[32];
-
-      if (channel->hmac)
-	silc_hmac_free(channel->hmac);
-      if (!silc_hmac_alloc(tmp, NULL, &channel->hmac))
-	goto out;
-
-      silc_hash_make(silc_hmac_get_hash(channel->hmac), 
-		     channel->key, channel->key_len / 8,
-		     hash);
-      silc_hmac_set_key(channel->hmac, hash, 
-			silc_hash_len(silc_hmac_get_hash(channel->hmac)));
-      memset(hash, 0, sizeof(hash));
-    }
-
-    /* Notify application. The channel entry is sent last as this notify
-       is for channel but application don't know it from the arguments
-       sent by server. */
-    client->internal->ops->notify(client, conn, type, id_type,
-				  client_entry, mode, NULL, tmp, channel);
     break;
 
   case SILC_NOTIFY_TYPE_CUMODE_CHANGE:
@@ -859,7 +888,7 @@ void silc_client_notify_by_server(SilcClient client,
       if (!client_entry) {
 	silc_client_channel_set_wait(client, conn, channel,
 				     conn->cmd_ident + 1);
-	silc_client_notify_by_server_resolve(client, conn, packet, 
+	silc_client_notify_by_server_resolve(client, conn, packet,
 					     SILC_ID_CLIENT, client_id);
 	goto out;
       }
@@ -871,7 +900,7 @@ void silc_client_notify_by_server(SilcClient client,
 	  res->packet = silc_packet_context_dup(packet);
 	  res->context = client;
 	  res->sock = silc_socket_dup(conn->sock);
-	  silc_client_command_pending(conn, SILC_COMMAND_NONE, 
+	  silc_client_command_pending(conn, SILC_COMMAND_NONE,
 				      client_entry->resolve_cmd_ident,
 				      silc_client_notify_by_server_pending,
 				      res);
@@ -881,7 +910,7 @@ void silc_client_notify_by_server(SilcClient client,
 	/* Do new resolving */
 	silc_client_channel_set_wait(client, conn, channel,
 				     conn->cmd_ident + 1);
-	silc_client_notify_by_server_resolve(client, conn, packet, 
+	silc_client_notify_by_server_resolve(client, conn, packet,
 					     SILC_ID_CLIENT, client_id);
         client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
         client_entry->resolve_cmd_ident = conn->cmd_ident;
@@ -894,7 +923,7 @@ void silc_client_notify_by_server(SilcClient client,
       if (!server) {
 	silc_client_channel_set_wait(client, conn, channel,
 				     conn->cmd_ident + 1);
-	silc_client_notify_by_server_resolve(client, conn, packet, 
+	silc_client_notify_by_server_resolve(client, conn, packet,
 					     SILC_ID_SERVER, server_id);
 	server = silc_client_add_server(client, conn, NULL, NULL, server_id);
 	if (!server)
@@ -911,7 +940,7 @@ void silc_client_notify_by_server(SilcClient client,
 	res->packet = silc_packet_context_dup(packet);
 	res->context = client;
 	res->sock = silc_socket_dup(conn->sock);
-	silc_client_command_pending(conn, SILC_COMMAND_NONE, 
+	silc_client_command_pending(conn, SILC_COMMAND_NONE,
 				    server->resolve_cmd_ident,
 				    silc_client_notify_by_server_pending, res);
 	goto out;
@@ -928,7 +957,7 @@ void silc_client_notify_by_server(SilcClient client,
       if (!client_entry) {
 	silc_client_channel_set_wait(client, conn, channel,
 				     conn->cmd_ident + 1);
-	silc_client_notify_by_server_resolve(client, conn, packet, 
+	silc_client_notify_by_server_resolve(client, conn, packet,
 					     SILC_ID_CHANNEL, channel_id);
 	goto out;
       }
@@ -958,10 +987,10 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Find target Client entry */
-    client_entry2 = 
+    client_entry2 =
       silc_client_get_client_by_id(client, conn, client_id);
     if (!client_entry2) {
-      silc_client_notify_by_server_resolve(client, conn, packet, 
+      silc_client_notify_by_server_resolve(client, conn, packet,
 					   SILC_ID_CLIENT, client_id);
       goto out;
     }
@@ -975,7 +1004,7 @@ void silc_client_notify_by_server(SilcClient client,
        is for channel but application don't know it from the arguments
        sent by server. */
     client->internal->ops->notify(client, conn, type,
-				  id_type, client_entry, mode, 
+				  id_type, client_entry, mode,
 				  client_entry2, channel);
     break;
 
@@ -990,7 +1019,7 @@ void silc_client_notify_by_server(SilcClient client,
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
-    
+
     /* Notify application */
     client->internal->ops->notify(client, conn, type, tmp);
     break;
@@ -1076,7 +1105,7 @@ void silc_client_notify_by_server(SilcClient client,
       /* Find kicker's client entry and if not found resolve it */
       client_entry2 = silc_client_get_client_by_id(client, conn, client_id);
       if (!client_entry2) {
-	silc_client_notify_by_server_resolve(client, conn, packet, 
+	silc_client_notify_by_server_resolve(client, conn, packet,
 					     SILC_ID_CLIENT, client_id);
 	goto out;
       } else {
@@ -1091,7 +1120,7 @@ void silc_client_notify_by_server(SilcClient client,
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
-    client->internal->ops->notify(client, conn, type, client_entry, tmp, 
+    client->internal->ops->notify(client, conn, type, client_entry, tmp,
 				  client_entry2, channel);
 
     /* Remove kicked client from channel */
@@ -1161,10 +1190,10 @@ void silc_client_notify_by_server(SilcClient client,
 	if (id_type == SILC_ID_CLIENT) {
 	  /* Find Client entry */
 	  client_id = id;
-	  client_entry2 = silc_client_get_client_by_id(client, conn, 
+	  client_entry2 = silc_client_get_client_by_id(client, conn,
 						       client_id);
 	  if (!client_entry) {
-	    silc_client_notify_by_server_resolve(client, conn, packet, 
+	    silc_client_notify_by_server_resolve(client, conn, packet,
 						 SILC_ID_CLIENT, client_id);
 	    goto out;
 	  }
@@ -1173,7 +1202,7 @@ void silc_client_notify_by_server(SilcClient client,
 	  server_id = id;
 	  server = silc_client_get_server_by_id(client, conn, server_id);
 	  if (!server) {
-	    silc_client_notify_by_server_resolve(client, conn, packet, 
+	    silc_client_notify_by_server_resolve(client, conn, packet,
 						 SILC_ID_SERVER, server_id);
 	    server = silc_client_add_server(client, conn, NULL, NULL,
 					    server_id);
@@ -1190,13 +1219,13 @@ void silc_client_notify_by_server(SilcClient client,
 	    res->packet = silc_packet_context_dup(packet);
 	    res->context = client;
 	    res->sock = silc_socket_dup(conn->sock);
-	    silc_client_command_pending(conn, SILC_COMMAND_NONE, 
+	    silc_client_command_pending(conn, SILC_COMMAND_NONE,
 					server->resolve_cmd_ident,
 					silc_client_notify_by_server_pending,
 					res);
 	    goto out;
 	  }
-      
+
 	  /* Save the pointer to the client_entry pointer */
 	  client_entry2 = (SilcClientEntry)server;
 	} else {
@@ -1204,11 +1233,11 @@ void silc_client_notify_by_server(SilcClient client,
 	  channel_id = id;
 	  channel = silc_client_get_channel_by_id(client, conn, channel_id);
 	  if (!channel) {
-	    silc_client_notify_by_server_resolve(client, conn, packet, 
+	    silc_client_notify_by_server_resolve(client, conn, packet,
 						 SILC_ID_CHANNEL, channel_id);
 	    goto out;
 	  }
-	  
+
 	  /* Save the pointer to the client_entry pointer */
 	  client_entry2 = (SilcClientEntry)channel;
 	  silc_free(channel_id);
@@ -1217,7 +1246,7 @@ void silc_client_notify_by_server(SilcClient client,
       }
 
       /* Notify application. */
-      client->internal->ops->notify(client, conn, type, client_entry, 
+      client->internal->ops->notify(client, conn, type, client_entry,
 				    comment, id_type, client_entry2);
 
       if (client_entry != conn->local_entry)
@@ -1225,7 +1254,7 @@ void silc_client_notify_by_server(SilcClient client,
 	silc_client_del_client(client, conn, client_entry);
     }
     break;
-    
+
   case SILC_NOTIFY_TYPE_SERVER_SIGNOFF:
     {
       /*
@@ -1245,11 +1274,11 @@ void silc_client_notify_by_server(SilcClient client,
 	  client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
 	  if (!client_id)
 	    goto out;
-	  
+
 	  /* Get the client entry */
 	  client_entry = silc_client_get_client_by_id(client, conn, client_id);
 	  if (client_entry) {
-	    clients = silc_realloc(clients, sizeof(*clients) * 
+	    clients = silc_realloc(clients, sizeof(*clients) *
 				   (clients_count + 1));
 	    clients[clients_count] = client_entry;
 	    clients_count++;
@@ -1262,7 +1291,7 @@ void silc_client_notify_by_server(SilcClient client,
       /* Notify application. We don't keep server entries so the server
 	 entry is returned as NULL. The client's are returned as array
 	 of SilcClientEntry pointers. */
-      client->internal->ops->notify(client, conn, type, NULL, 
+      client->internal->ops->notify(client, conn, type, NULL,
 				    clients, clients_count);
 
       for (i = 0; i < clients_count; i++) {
@@ -1332,7 +1361,7 @@ void silc_client_notify_by_server(SilcClient client,
       /* Find Client entry and if not found query it */
       client_entry = silc_client_get_client_by_id(client, conn, client_id);
       if (!client_entry) {
-	silc_client_notify_by_server_resolve(client, conn, packet, 
+	silc_client_notify_by_server_resolve(client, conn, packet,
 					     SILC_ID_CLIENT, client_id);
 	goto out;
       }

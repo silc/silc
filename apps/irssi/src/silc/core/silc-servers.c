@@ -1,14 +1,14 @@
 /*
   silc-server.c : irssi
 
-  Copyright (C) 2000 - 2001 Timo Sirainen
-                            Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Copyright (C) 2000 - 2003 Timo Sirainen
+                            Pekka Riikonen <priikone@silcnet.org>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -55,13 +55,13 @@ static int silc_send_channel(SILC_SERVER_REC *server,
 			      SilcMessageFlags flags)
 {
   SILC_CHANNEL_REC *rec;
-  
+
   rec = silc_channel_find(server, channel);
   if (rec == NULL || rec->entry == NULL) {
     cmd_return_error_value(CMDERR_NOT_JOINED, FALSE);
   }
 
-  silc_client_send_channel_message(silc_client, server->conn, rec->entry, 
+  silc_client_send_channel_message(silc_client, server->conn, rec->entry,
 				   NULL, flags, msg, strlen(msg), TRUE);
   return TRUE;
 }
@@ -89,7 +89,7 @@ static void silc_send_msg_clients(SilcClient client,
   char *nickname = NULL;
 
   if (!clients_count) {
-    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, 
+    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
 	      "%s: There is no such client", rec->nick);
   } else {
     if (clients_count > 1) {
@@ -97,11 +97,11 @@ static void silc_send_msg_clients(SilcClient client,
 
       /* Find the correct one. The rec->nick might be a formatted nick
 	 so this will find the correct one. */
-      clients = silc_client_get_clients_local(silc_client, server->conn, 
-					      nickname, rec->nick, 
+      clients = silc_client_get_clients_local(silc_client, server->conn,
+					      nickname, rec->nick,
 					      &clients_count);
       if (!clients) {
-	printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, 
+	printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
 		  "%s: There is no such client", rec->nick);
 	silc_free(nickname);
 	goto out;
@@ -113,21 +113,21 @@ static void silc_send_msg_clients(SilcClient client,
 
     /* Still check for exact math for nickname, this compares the
        real (formatted) nickname and the nick (maybe formatted) that
-       use gave. This is to assure that `nick' does not match 
+       use gave. This is to assure that `nick' does not match
        `nick@host'. */
     if (strcasecmp(rec->nick, clients[0]->nickname)) {
-      printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, 
+      printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
 		"%s: There is no such client", rec->nick);
       goto out;
     }
 
     /* Send the private message */
-    silc_client_send_private_message(client, conn, target, 
+    silc_client_send_private_message(client, conn, target,
 				     rec->flags,
 				     rec->msg, rec->len,
 				     TRUE);
   }
-  
+
  out:
   g_free(rec->nick);
   g_free(rec->msg);
@@ -149,7 +149,7 @@ static int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
   }
 
   /* Find client entry */
-  clients = silc_client_get_clients_local(silc_client, server->conn, 
+  clients = silc_client_get_clients_local(silc_client, server->conn,
 					  nickname, nick, &clients_count);
   if (!clients) {
     rec = g_new0(PRIVMSG_REC, 1);
@@ -168,7 +168,7 @@ static int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
 
   /* Send the private message directly */
   silc_free(nickname);
-  silc_client_send_private_message(silc_client, server->conn, 
+  silc_client_send_private_message(silc_client, server->conn,
 				   clients[0], flags,
 				   msg, msg_len, TRUE);
   return TRUE;
@@ -182,11 +182,11 @@ void silc_send_mime(SILC_SERVER_REC *server, WI_ITEM_REC *to,
   QUERY_REC *query;
   char *mime_data;
   int mime_data_len;
-  
-  if (!(IS_SILC_SERVER(server)) || (data == NULL) || (to == NULL) || 
+
+  if (!(IS_SILC_SERVER(server)) || (data == NULL) || (to == NULL) ||
       (enc == NULL) || (type == NULL))
     return;
-	    
+
 #define SILC_MIME_HEADER "MIME-Version: 1.0\r\nContent-Type: %s\r\nContent-Transfer-Encoding: %s\r\n\r\n"
 
   mime_data_len = data_len + strlen(SILC_MIME_HEADER) - 4
@@ -204,14 +204,14 @@ void silc_send_mime(SILC_SERVER_REC *server, WI_ITEM_REC *to,
 
   if (IS_SILC_CHANNEL(to)) {
     channel = SILC_CHANNEL(to);
-    silc_client_send_channel_message(silc_client, server->conn, channel->entry, 
+    silc_client_send_channel_message(silc_client, server->conn, channel->entry,
 				     NULL, SILC_MESSAGE_FLAG_DATA,
 				     mime_data, mime_data_len, TRUE);
   } else if (IS_SILC_QUERY(to)) {
     query = SILC_QUERY(to);
     silc_send_msg(server, query->name, mime_data, mime_data_len,
 		  SILC_MESSAGE_FLAG_DATA);
-    
+
   }
 
   silc_free(mime_data);
@@ -260,7 +260,7 @@ static void send_message(SILC_SERVER_REC *server, char *target,
   silc_free(message);
 }
 
-void silc_send_heartbeat(SilcSocketConnection sock, 
+void silc_send_heartbeat(SilcSocketConnection sock,
 		         void *hb_context)
 {
   SILC_SERVER_REC *server = SILC_SERVER(hb_context);
@@ -349,7 +349,7 @@ SERVER_REC *silc_server_init_connect(SERVER_CONNECT_REC *conn)
   SILC_SERVER_REC *server;
 
   g_return_val_if_fail(IS_SILC_SERVER_CONNECT(conn), NULL);
-  if (conn->address == NULL || *conn->address == '\0') 
+  if (conn->address == NULL || *conn->address == '\0')
     return NULL;
   if (conn->nick == NULL || *conn->nick == '\0') {
     silc_say_error("Cannot connect: nickname is not set");
@@ -361,7 +361,7 @@ SERVER_REC *silc_server_init_connect(SERVER_CONNECT_REC *conn)
   server->connrec = (SILC_SERVER_CONNECT_REC *)conn;
   server_connect_ref(conn);
 
-  if (server->connrec->port <= 0) 
+  if (server->connrec->port <= 0)
     server->connrec->port = 706;
 
   server_connect_init((SERVER_REC *)server);
@@ -377,7 +377,7 @@ void silc_server_connect(SERVER_REC *server)
   }
 }
 
-/* Return a string of all channels in server in server->channels_join() 
+/* Return a string of all channels in server in server->channels_join()
    format */
 
 char *silc_server_get_channels(SILC_SERVER_REC *server)
@@ -391,7 +391,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
   chans = g_string_new(NULL);
   for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
     CHANNEL_REC *channel = tmp->data;
-    
+
     g_string_sprintfa(chans, "%s,", channel->name);
   }
 
@@ -400,7 +400,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 
   ret = chans->str;
   g_string_free(chans, FALSE);
-  
+
   return ret;
 }
 
@@ -441,7 +441,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: FILE ACCEPT [<nickname>] */
 /* SYNTAX: FILE CLOSE [<nickname>] */
 /* SYNTAX: FILE */
-/* SYNTAX: JOIN <channel> [<passphrase>] [-cipher <cipher>] [-hmac <hmac>] [-founder] */
+/* SYNTAX: JOIN <channel> [<passphrase>] [-cipher <cipher>] [-hmac <hmac>] [-founder] [-auth [<pubkeyfile> <privkeyfile> [<privkey passphrase>]]]*/
 /* SYNTAX: DETACH */
 /* SYNTAX: WATCH [<-add | -del> <nickname>] */
 /* SYNTAX: STATS */
@@ -507,7 +507,7 @@ static void command_smsg(const char *data, SILC_SERVER_REC *server,
   char *target, *origtarget, *msg;
   void *free_arg;
   int free_ret, target_type;
-  
+
   g_return_if_fail(data != NULL);
   if (server == NULL || !server->connected)
     cmd_param_error(CMDERR_NOT_CONNECTED);
@@ -614,12 +614,12 @@ static void silc_client_file_monitor(SilcClient client,
   if (status == SILC_CLIENT_FILE_MONITOR_ERROR) {
     if (error == SILC_CLIENT_FILE_NO_SUCH_FILE)
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
-			 SILCTXT_FILE_ERROR_NO_SUCH_FILE, 
-			 client_entry->nickname, 
+			 SILCTXT_FILE_ERROR_NO_SUCH_FILE,
+			 client_entry->nickname,
 			 filepath ? filepath : "[N/A]");
     else if (error == SILC_CLIENT_FILE_PERMISSION_DENIED)
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
-			 SILCTXT_FILE_ERROR_PERMISSION_DENIED, 
+			 SILCTXT_FILE_ERROR_PERMISSION_DENIED,
 			 client_entry->nickname);
     else
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
@@ -708,7 +708,7 @@ static void silc_client_command_file_get_clients(SilcClient client,
   FileGetClients internal = (FileGetClients)context;
 
   if (!clients) {
-    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Unknown nick: %s", 
+    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Unknown nick: %s",
 	      internal->nick);
     silc_free(internal->data);
     silc_free(internal->nick);
@@ -764,7 +764,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
     if (!strcasecmp(argv[1], "close"))
       type = 3;
   }
-  
+
   if (type == 0)
     cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
@@ -779,7 +779,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 			 MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[3]);
       goto out;
     }
-    
+
     /* Find client entry */
     entrys = silc_client_get_clients_local(silc_client, conn, nickname,
 					   argv[3], &entry_count);
@@ -813,8 +813,8 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 	do_not_bind = TRUE;
     }
 
-    ret = 
-      silc_client_file_send(silc_client, conn, silc_client_file_monitor, 
+    ret =
+      silc_client_file_send(silc_client, conn, silc_client_file_monitor,
 			    server, local_ip, local_port, do_not_bind,
 			    client_entry, argv[2], &session_id);
     if (ret == SILC_CLIENT_FILE_OK) {
@@ -838,7 +838,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 			   client_entry->nickname);
       if (ret == SILC_CLIENT_FILE_NO_SUCH_FILE)
 	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
-			   SILCTXT_FILE_ERROR_NO_SUCH_FILE, 
+			   SILCTXT_FILE_ERROR_NO_SUCH_FILE,
 			   client_entry->nickname, argv[2]);
     }
 
@@ -852,7 +852,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 			   MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[2]);
 	goto out;
       }
-    
+
       /* Find client entry */
       entrys = silc_client_get_clients_local(silc_client, conn, nickname,
 					     argv[2], &entry_count);
@@ -875,7 +875,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 	goto out;
       }
 
-      ret = silc_client_file_receive(silc_client, conn, 
+      ret = silc_client_file_receive(silc_client, conn,
 				     silc_client_file_monitor, server, NULL,
 				     server->current_session->session_id);
       if (ret != SILC_CLIENT_FILE_OK) {
@@ -895,7 +895,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
     silc_dlist_start(server->ftp_sessions);
     while ((ftp = silc_dlist_get(server->ftp_sessions)) != SILC_LIST_END) {
       if (ftp->client_entry == client_entry && !ftp->filepath) {
-	ret = silc_client_file_receive(silc_client, conn, 
+	ret = silc_client_file_receive(silc_client, conn,
 				       silc_client_file_monitor, server,
 				       NULL, ftp->session_id);
 	if (ret != SILC_CLIENT_FILE_OK) {
@@ -928,7 +928,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 			   MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[2]);
 	goto out;
       }
-    
+
       /* Find client entry */
       entrys = silc_client_get_clients_local(silc_client, conn, nickname,
 					     argv[2], &entry_count);
@@ -950,8 +950,8 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 			   MSGLEVEL_CRAP, SILCTXT_FILE_NA);
 	goto out;
       }
- 
-      silc_client_file_close(silc_client, conn, 
+
+      silc_client_file_close(silc_client, conn,
 			     server->current_session->session_id);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_FILE_CLOSED,
@@ -1005,7 +1005,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
     while ((ftp = silc_dlist_get(server->ftp_sessions)) != SILC_LIST_END) {
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_FILE_SHOW_LINE,
-			 ftp->client_entry->nickname, 
+			 ftp->client_entry->nickname,
 			 ftp->send ? "send" : "receive",
 			 (SilcUInt32)(ftp->offset + 1023) / 1024,
 			 (SilcUInt32)(ftp->filesize + 1023) / 1024,

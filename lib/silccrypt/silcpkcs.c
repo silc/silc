@@ -1,10 +1,10 @@
 /*
 
-  silcpkcs.c 
+  silcpkcs.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ SilcDList silc_pkcs_list = NULL;
 const SilcPKCSObject silc_default_pkcs[] =
 {
   /* RSA with PKCS #1 (Uses directly routines from Raw RSA operations) */
-  { "rsa", 
+  { "rsa",
     silc_rsa_init, silc_rsa_clear_keys, silc_rsa_get_public_key,
     silc_rsa_get_private_key, silc_rsa_set_public_key,
     silc_rsa_set_private_key, silc_rsa_context_len,
@@ -50,7 +50,7 @@ const SilcPKCSObject silc_default_pkcs[] =
     silc_pkcs1_sign, silc_pkcs1_verify },
 
   /* Raw RSA operations */
-  { "rsa-raw", 
+  { "rsa-raw",
     silc_rsa_init, silc_rsa_clear_keys, silc_rsa_get_public_key,
     silc_rsa_get_private_key, silc_rsa_set_public_key,
     silc_rsa_set_private_key, silc_rsa_context_len,
@@ -136,7 +136,7 @@ bool silc_pkcs_unregister(SilcPKCSObject *pkcs)
   return FALSE;
 }
 
-/* Function that registers all the default PKCS (all builtin PKCS). 
+/* Function that registers all the default PKCS (all builtin PKCS).
    The application may use this to register the default PKCS if specific
    PKCS in any specific order is not wanted. */
 
@@ -260,8 +260,8 @@ char *silc_pkcs_get_supported(void)
     while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
       len += strlen(entry->name);
       list = silc_realloc(list, len + 1);
-      
-      memcpy(list + (len - strlen(entry->name)), 
+
+      memcpy(list + (len - strlen(entry->name)),
 	     entry->name, strlen(entry->name));
       memcpy(list + len, ",", 1);
       len++;
@@ -274,8 +274,8 @@ char *silc_pkcs_get_supported(void)
       entry = (SilcPKCSObject *)&(silc_default_pkcs[i]);
       len += strlen(entry->name);
       list = silc_realloc(list, len + 1);
-      
-      memcpy(list + (len - strlen(entry->name)), 
+
+      memcpy(list + (len - strlen(entry->name)),
 	     entry->name, strlen(entry->name));
       memcpy(list + len, ",", 1);
       len++;
@@ -326,7 +326,7 @@ unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, SilcUInt32 *len)
 
 SilcUInt32 silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key)
 {
-  pkcs->key_len = pkcs->pkcs->set_public_key(pkcs->context, public_key->pk, 
+  pkcs->key_len = pkcs->pkcs->set_public_key(pkcs->context, public_key->pk,
 					     public_key->pk_len);
   return pkcs->key_len;
 }
@@ -345,7 +345,7 @@ SilcUInt32 silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
 SilcUInt32 silc_pkcs_private_key_set(SilcPKCS pkcs, SilcPrivateKey private_key)
 {
   SilcUInt32 key_len;
-  key_len = pkcs->pkcs->set_private_key(pkcs->context, private_key->prv, 
+  key_len = pkcs->pkcs->set_private_key(pkcs->context, private_key->prv,
 					private_key->prv_len);
   if (!pkcs->key_len)
     pkcs->key_len = key_len;
@@ -390,11 +390,11 @@ bool silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
 
 /* Verifies signature */
 
-bool silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature, 
-		      SilcUInt32 signature_len, unsigned char *data, 
+bool silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature,
+		      SilcUInt32 signature_len, unsigned char *data,
 		      SilcUInt32 data_len)
 {
-  return pkcs->pkcs->verify(pkcs->context, signature, signature_len, 
+  return pkcs->pkcs->verify(pkcs->context, signature, signature_len,
 			    data, data_len);
 }
 
@@ -422,10 +422,10 @@ bool silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
 /* Verifies signature with hash. The `data' is hashed and verified against
    the `signature'. */
 
-bool silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash, 
-				unsigned char *signature, 
-				SilcUInt32 signature_len, 
-				unsigned char *data, 
+bool silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash,
+				unsigned char *signature,
+				SilcUInt32 signature_len,
+				unsigned char *data,
 				SilcUInt32 data_len)
 {
   unsigned char hashr[32];
@@ -437,14 +437,14 @@ bool silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash,
 
   SILC_LOG_HEXDUMP(("Hash"), hashr, hash_len);
 
-  ret = pkcs->pkcs->verify(pkcs->context, signature, signature_len, 
+  ret = pkcs->pkcs->verify(pkcs->context, signature, signature_len,
 			   hashr, hash_len);
   memset(hashr, 0, sizeof(hashr));
 
   return ret;
 }
 
-/* Encodes and returns SILC public key identifier. If some of the 
+/* Encodes and returns SILC public key identifier. If some of the
    arguments is NULL those are not encoded into the identifier string.
    Protocol says that at least username and host must be provided. */
 
@@ -464,7 +464,7 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 	(email    ? strlen(email)    : 0) +
 	(org      ? strlen(org)      : 0) +
 	(country  ? strlen(country)  : 0);
-  
+
   if (len < 3)
     return NULL;
 
@@ -478,9 +478,9 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 		       SILC_STR_UI32_STRING(username),
 		       SILC_STR_END);
     silc_buffer_pull(buf, 3 + strlen(username));
-    tlen = 3 + strlen(username); 
+    tlen = 3 + strlen(username);
   }
-    
+
   if (host) {
     silc_buffer_format(buf,
 		       SILC_STR_UI32_STRING(", "),
@@ -488,7 +488,7 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 		       SILC_STR_UI32_STRING(host),
 		       SILC_STR_END);
     silc_buffer_pull(buf, 5 + strlen(host));
-    tlen += 5 + strlen(host); 
+    tlen += 5 + strlen(host);
   }
 
   if (realname) {
@@ -498,7 +498,7 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 		       SILC_STR_UI32_STRING(realname),
 		       SILC_STR_END);
     silc_buffer_pull(buf, 5 + strlen(realname));
-    tlen += 5 + strlen(realname); 
+    tlen += 5 + strlen(realname);
   }
 
   if (email) {
@@ -508,7 +508,7 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 		       SILC_STR_UI32_STRING(email),
 		       SILC_STR_END);
     silc_buffer_pull(buf, 4 + strlen(email));
-    tlen += 4 + strlen(email); 
+    tlen += 4 + strlen(email);
   }
 
   if (org) {
@@ -518,7 +518,7 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 		       SILC_STR_UI32_STRING(org),
 		       SILC_STR_END);
     silc_buffer_pull(buf, 4 + strlen(org));
-    tlen += 4 + strlen(org); 
+    tlen += 4 + strlen(org);
   }
 
   if (country) {
@@ -528,7 +528,7 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
 		       SILC_STR_UI32_STRING(country),
 		       SILC_STR_END);
     silc_buffer_pull(buf, 4 + strlen(country));
-    tlen += 4 + strlen(country); 
+    tlen += 4 + strlen(country);
   }
 
   silc_buffer_push(buf, buf->data - buf->head);
@@ -577,13 +577,13 @@ SilcPublicKeyIdentifier silc_pkcs_decode_identifier(char *identifier)
       ident->org = strdup(item + strcspn(cp, "=") + 1);
     else if (strstr(item, "C="))
       ident->country = strdup(item + strcspn(cp, "=") + 1);
-    
+
     cp += len;
     if (strlen(cp) == 0)
       cp = NULL;
     else
       cp += 1;
-    
+
     if (item)
       silc_free(item);
   }
@@ -608,9 +608,9 @@ void silc_pkcs_free_identifier(SilcPublicKeyIdentifier identifier)
 /* Allocates SILC style public key formed from sent arguments. All data
    is duplicated. */
 
-SilcPublicKey silc_pkcs_public_key_alloc(const char *name, 
+SilcPublicKey silc_pkcs_public_key_alloc(const char *name,
 					 const char *identifier,
-					 const unsigned char *pk, 
+					 const unsigned char *pk,
 					 SilcUInt32 pk_len)
 {
   SilcPublicKey public_key;
@@ -697,7 +697,7 @@ silc_pkcs_public_key_encode(SilcPublicKey public_key, SilcUInt32 *len)
 		     SILC_STR_UI32_STRING(public_key->name),
 		     SILC_STR_UI_SHORT(strlen(public_key->identifier)),
 		     SILC_STR_UI32_STRING(public_key->identifier),
-		     SILC_STR_UI_XNSTRING(public_key->pk, 
+		     SILC_STR_UI_XNSTRING(public_key->pk,
 					  public_key->pk_len),
 		     SILC_STR_END);
 
@@ -710,7 +710,7 @@ silc_pkcs_public_key_encode(SilcPublicKey public_key, SilcUInt32 *len)
 
 unsigned char *
 silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
-				 char *pkcs, char *identifier, 
+				 char *pkcs, char *identifier,
 				 SilcUInt32 *len)
 {
   SilcBuffer buf;
@@ -776,7 +776,7 @@ bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
   if (ret == -1)
     goto err;
 
-  if (pkcs_len < 1 || identifier_len < 3 || 
+  if (pkcs_len < 1 || identifier_len < 3 ||
       pkcs_len + identifier_len > totlen)
     goto err;
 
@@ -804,7 +804,7 @@ bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
     goto err;
 
   /* Try to set the key. If this fails the key must be malformed. This
-     code assumes that the PKCS routine checks the format of the key. 
+     code assumes that the PKCS routine checks the format of the key.
      (check only if PKCS are registered) */
   if (SILC_PKCS_LIST) {
     silc_pkcs_alloc(pkcs_name, &alg);
@@ -812,7 +812,7 @@ bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
       goto err;
     silc_pkcs_free(alg);
   }
-  
+
   if (public_key) {
     *public_key = silc_calloc(1, sizeof(**public_key));
     (*public_key)->len = totlen;
@@ -961,7 +961,7 @@ silc_pkcs_private_key_encode(SilcPrivateKey private_key, SilcUInt32 *len)
   silc_buffer_format(buf,
 		     SILC_STR_UI_SHORT(strlen(private_key->name)),
 		     SILC_STR_UI32_STRING(private_key->name),
-		     SILC_STR_UI_XNSTRING(private_key->prv, 
+		     SILC_STR_UI_XNSTRING(private_key->prv,
 					  private_key->prv_len),
 		     SILC_STR_END);
 
@@ -1012,7 +1012,7 @@ bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
   silc_buffer_set(&buf, data, data_len);
 
   /* Get algorithm name and identifier */
-  ret = 
+  ret =
     silc_buffer_unformat(&buf,
 			 SILC_STR_UI16_NSTRING_ALLOC(&pkcs_name, &pkcs_len),
 			 SILC_STR_END);
@@ -1042,7 +1042,7 @@ bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
     goto err;
 
   /* Try to set the key. If this fails the key must be malformed. This
-     code assumes that the PKCS routine checks the format of the key. 
+     code assumes that the PKCS routine checks the format of the key.
      (check only if PKCS are registered) */
   if (SILC_PKCS_LIST) {
     silc_pkcs_alloc(pkcs_name, &alg);
@@ -1052,7 +1052,7 @@ bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
     }
     silc_pkcs_free(alg);
   }
-  
+
   if (private_key) {
     *private_key = silc_calloc(1, sizeof(**private_key));
     (*private_key)->name = pkcs_name;
@@ -1186,7 +1186,7 @@ static bool silc_pkcs_save_private_key_internal(const char *filename,
   }
 
   /* Derive the encryption key from the provided key material.  The key
-     is 256 bits length, and derived by taking hash of the data, then 
+     is 256 bits length, and derived by taking hash of the data, then
      re-hashing the data and the previous digest, and using the first and
      second digest as the key. */
   silc_hash_init(sha1);
@@ -1322,7 +1322,7 @@ bool silc_pkcs_load_public_key(const char *filename, SilcPublicKey *public_key,
   SILC_LOG_DEBUG(("Loading public key `%s' with %s encoding", filename,
 		  encoding == SILC_PKCS_FILE_PEM ? "Base64" :
 		  encoding == SILC_PKCS_FILE_BIN ? "Binary" : "Unkonwn"));
-  
+
   old = data = silc_file_readfile(filename, &data_len);
   if (!data)
     return FALSE;
@@ -1353,7 +1353,7 @@ bool silc_pkcs_load_public_key(const char *filename, SilcPublicKey *public_key,
       data = silc_pem_decode(data, len, &len);
       memset(old, 0, data_len);
       silc_free(old);
-      old = data; 
+      old = data;
       data_len = len;
       break;
     }
@@ -1390,7 +1390,7 @@ bool silc_pkcs_load_private_key(const char *filename,
   SILC_LOG_DEBUG(("Loading private key `%s' with %s encoding", filename,
 		  encoding == SILC_PKCS_FILE_PEM ? "Base64" :
 		  encoding == SILC_PKCS_FILE_BIN ? "Binary" : "Unkonwn"));
-  
+
   old = data = silc_file_readfile(filename, &data_len);
   if (!data)
     return FALSE;
@@ -1481,7 +1481,7 @@ bool silc_pkcs_load_private_key(const char *filename,
   }
 
   /* Derive the decryption key from the provided key material.  The key
-     is 256 bits length, and derived by taking hash of the data, then 
+     is 256 bits length, and derived by taking hash of the data, then
      re-hashing the data and the previous digest, and using the first and
      second digest as the key. */
   silc_hash_init(sha1);

@@ -1217,6 +1217,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
   SilcChannelID *channel_id;
   SilcChannelEntry channel;
   SilcUInt32 len;
+  SilcPublicKey public_key = NULL;
+  SilcBufferStruct channel_pubkeys;
 
   if (cmd->error != SILC_STATUS_OK) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
@@ -1253,12 +1255,27 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
   SILC_GET32_MSB(mode, tmp);
   channel->mode = mode;
 
+  /* Get founder public key */
+  tmp = silc_argument_get_arg_type(cmd->args, 4, &len);
+  if (tmp) {
+    if (!silc_pkcs_public_key_payload_decode(tmp, len, &public_key))
+      public_key = NULL;
+  }
+
+  /* Get channel public key(s) */
+  tmp = silc_argument_get_arg_type(cmd->args, 5, &len);
+  if (tmp)
+    silc_buffer_set(&channel_pubkeys, tmp, len);
+
   /* Notify application */
-  COMMAND_REPLY((SILC_ARGS, channel, mode));
+  COMMAND_REPLY((SILC_ARGS, channel, mode, public_key,
+		 tmp ? &channel_pubkeys : NULL));
 
   silc_free(channel_id);
 
  out:
+  if (public_key)
+    silc_pkcs_public_key_free(public_key);
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CMODE);
   silc_client_command_reply_free(cmd);
 }
