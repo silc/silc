@@ -2,15 +2,15 @@
 
   serverconfig.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Johnny Mnemonic <johnny@themnemonic.org>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -22,1314 +22,1136 @@
 #include "serverincludes.h"
 #include "server_internal.h"
 
-SilcServerConfigSection silc_server_config_sections[] = {
-  { "[Cipher]",
-    SILC_CONFIG_SERVER_SECTION_TYPE_CIPHER, 4 },
-  { "[PKCS]",
-    SILC_CONFIG_SERVER_SECTION_TYPE_PKCS, 1 },
-  { "[Hash]",
-    SILC_CONFIG_SERVER_SECTION_TYPE_HASH_FUNCTION, 4 },
-  { "[hmac]",
-    SILC_CONFIG_SERVER_SECTION_TYPE_HMAC, 3 },
-  { "[ServerKeys]",
-    SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_KEYS, 2 },
-  { "[ServerInfo]",
-    SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_INFO, 4 },
-  { "[AdminInfo]",
-    SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_INFO, 4 },
-  { "[ListenPort]",
-    SILC_CONFIG_SERVER_SECTION_TYPE_LISTEN_PORT, 3 },
-  { "[Identity]",
-    SILC_CONFIG_SERVER_SECTION_TYPE_IDENTITY, 2 },
-  { "[Logging]",
-    SILC_CONFIG_SERVER_SECTION_TYPE_LOGGING, 3 },
-  { "[ConnectionClass]", 
-    SILC_CONFIG_SERVER_SECTION_TYPE_CONNECTION_CLASS, 4 },
-  { "[ClientConnection]", 
-    SILC_CONFIG_SERVER_SECTION_TYPE_CLIENT_CONNECTION, 5 },
-  { "[ServerConnection]", 
-    SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_CONNECTION, 6 },
-  { "[RouterConnection]", 
-    SILC_CONFIG_SERVER_SECTION_TYPE_ROUTER_CONNECTION, 7 },
-  { "[AdminConnection]", 
-    SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_CONNECTION, 5 },
-  { "[DenyConnection]", 
-    SILC_CONFIG_SERVER_SECTION_TYPE_DENY_CONNECTION, 3 },
-  { "[motd]", 
-    SILC_CONFIG_SERVER_SECTION_TYPE_MOTD, 1 },
-  { "[pid]",
-    SILC_CONFIG_SERVER_SECTION_TYPE_PID, 1},
-  
-  { NULL, SILC_CONFIG_SERVER_SECTION_TYPE_NONE, 0 }
+#define SILC_CONFIG_SERVER_AUTH_METH_PASSWD "passwd"
+#define SILC_CONFIG_SERVER_AUTH_METH_PUBKEY "pubkey"
+
+#if 0
+#define SERVER_CONFIG_DEBUG(fmt) SILC_LOG_DEBUG(fmt)
+#else
+#define SERVER_CONFIG_DEBUG(fmt)
+#endif
+
+/* auto-declare needed variables for the common list parsing */
+#define SILC_SERVER_CONFIG_SECTION_INIT(__type__)			\
+  SilcServerConfig config = (SilcServerConfig) context;			\
+  __type__ *findtmp, *tmp = (__type__ *) config->tmp;			\
+  int got_errno = 0
+
+/* append the tmp field to the specified list */
+#define SILC_SERVER_CONFIG_LIST_APPENDTMP(__list__)			\
+  if (!__list__)							\
+    __list__ = tmp;							\
+  else {								\
+    for (findtmp = __list__; findtmp->next; findtmp = findtmp->next);	\
+    findtmp->next = tmp;						\
+  }
+
+/* loops all elements in a list and provides a di struct pointer of the
+ * specified type containing the current element */
+#define SILC_SERVER_CONFIG_LIST_DESTROY(__type__, __list__)		\
+  for (tmp = (void *) __list__; tmp;) {					\
+    __type__ *di = (__type__ *) tmp;					\
+    tmp = (void *) di->next;
+
+/* free an authdata according to its auth method */
+static void my_free_authdata(SilcAuthMethod auth_meth, void *auth_data)
+{
+  if (auth_meth == SILC_AUTH_PASSWORD) {
+    silc_free(auth_data);
+  } else if (auth_meth == SILC_AUTH_PUBLIC_KEY) {
+    silc_pkcs_public_key_free((SilcPublicKey) auth_data);
+  }
+}
+
+/* parse an authdata according to its auth method */
+static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p, uint32 line,
+			      void **auth_data, uint32 *auth_data_len)
+{
+  if (auth_meth == SILC_AUTH_PASSWORD) {
+    /* p is a plain text password */
+    *auth_data = (void *) strdup(p);
+    *auth_data_len = (uint32) strlen(p);
+  } else if (auth_meth == SILC_AUTH_PUBLIC_KEY) {
+    /* p is a public key */
+    SilcPublicKey public_key;
+
+    if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_PEM))
+      if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_BIN)) {
+	fprintf(stderr, "\nError while parsing config file at line %lu: "
+		"Could not load public key file!\n", line);
+	return FALSE;
+      }
+    *auth_data = (void *) public_key;
+    *auth_data_len = 0;
+  } else {
+    fprintf(stderr, "\nError while parsing config file at line %lu: Specify "
+		"the AuthMethod before specifying the AuthData.\n", line);
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/* Callbacks */
+
+SILC_CONFIG_CALLBACK(fetch_generic)
+{
+  SilcServerConfig config = (SilcServerConfig) context;
+
+  if (!strcmp(name, "modulepath")) {
+    if (config->module_path) return SILC_CONFIG_EDOUBLE;
+    /* dup it only if non-empty, otherwise point it to NULL */
+    config->module_path = (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  else
+    return SILC_CONFIG_EINTERNAL;
+  return SILC_CONFIG_OK;
+}
+
+SILC_CONFIG_CALLBACK(fetch_cipher)
+{
+  SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionCipher);
+
+  SERVER_CONFIG_DEBUG(("Received CIPHER type=%d name=\"%s\" (val=%x)", type, name, context));
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    /* check the temporary struct's fields */
+    if (!tmp) /* empty sub-block? */
+      return SILC_CONFIG_OK;
+    if (!tmp->name) {
+      got_errno = SILC_CONFIG_EMISSFIELDS;
+      goto got_err;
+    }
+    /* the temporary struct is ok, append it to the list */
+    SILC_SERVER_CONFIG_LIST_APPENDTMP(config->cipher);
+    config->tmp = NULL;
+    return SILC_CONFIG_OK;
+  }
+  /* if there isn't a temporary struct alloc one */
+  if (!tmp) {
+    config->tmp = silc_calloc(1, sizeof(*findtmp));
+    tmp = (SilcServerConfigSectionCipher *) config->tmp;
+  }
+
+  /* Identify and save this value */
+  if (!strcmp(name, "name")) {
+    if (tmp->name) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->name = strdup((char *) val);
+  }
+  else if (!strcmp(name, "module")) { /* can be empty */
+    if (tmp->module) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    /* dup it only if non-empty, otherwise point it to NULL */
+    tmp->module = (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  else if (!strcmp(name, "key_length"))
+    tmp->key_length = *(uint32 *)val;
+  else if (!strcmp(name, "block_length"))
+    tmp->block_length = *(uint32 *)val;
+  else
+    return SILC_CONFIG_EINTERNAL;
+  return SILC_CONFIG_OK;
+
+ got_err:
+  silc_free(tmp->name);
+  silc_free(tmp->module);
+  silc_free(tmp);
+  config->tmp = NULL;
+  return got_errno;
+}
+
+SILC_CONFIG_CALLBACK(fetch_hash)
+{
+  SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionHash);
+
+  SERVER_CONFIG_DEBUG(("Received HASH type=%d name=%s (val=%x)", type, name, context));
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    /* check the temporary struct's fields */
+    if (!tmp) /* empty sub-block? */
+      return SILC_CONFIG_OK;
+    if (!tmp->name || (tmp->block_length == 0) || (tmp->digest_length == 0)) {
+      got_errno = SILC_CONFIG_EMISSFIELDS;
+      goto got_err;
+    }
+    /* the temporary struct in tmp is ok */
+    SILC_SERVER_CONFIG_LIST_APPENDTMP(config->hash);
+    config->tmp = NULL;
+    return SILC_CONFIG_OK;
+  }
+  /* if there isn't a temporary struct alloc one */
+  if (!tmp) {
+    config->tmp = silc_calloc(1, sizeof(*findtmp));
+    tmp = (SilcServerConfigSectionHash *) config->tmp;
+  }
+
+  /* Identify and save this value */
+  if (!strcmp(name, "name")) {
+    if (tmp->name) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->name = strdup((char *) val);
+  }
+  else if (!strcmp(name, "module")) { /* can be empty */
+    if (tmp->module) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    /* dup it only if non-empty, otherwise point it to NULL */
+    tmp->module = (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  else if (!strcmp(name, "block_length"))
+    tmp->block_length = *(int *)val;
+  else if (!strcmp(name, "digest_length"))
+    tmp->digest_length = *(int *)val;
+  else
+    return SILC_CONFIG_EINTERNAL;
+  return SILC_CONFIG_OK;
+
+ got_err:
+  silc_free(tmp->name);
+  silc_free(tmp->module);
+  silc_free(tmp);
+  config->tmp = NULL;
+  return got_errno;
+}
+
+SILC_CONFIG_CALLBACK(fetch_hmac)
+{
+  SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionHmac);
+
+  SERVER_CONFIG_DEBUG(("Received HMAC type=%d name=\"%s\" (val=%x)", type, name, context));
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    /* check the temporary struct's fields */
+    if (!tmp) /* empty sub-block? */
+      return SILC_CONFIG_OK;
+    if (!tmp->name || !tmp->hash || (tmp->mac_length == 0)) {
+      got_errno = SILC_CONFIG_EMISSFIELDS;
+      goto got_err;
+    }
+    /* the temporary struct is ok, append it to the list */
+    SILC_SERVER_CONFIG_LIST_APPENDTMP(config->hmac);
+    config->tmp = NULL;
+    return SILC_CONFIG_OK;
+  }
+  /* if there isn't a temporary struct alloc one */
+  if (!tmp) {
+    config->tmp = silc_calloc(1, sizeof(*findtmp));
+    tmp = (SilcServerConfigSectionHmac *) config->tmp;
+  }
+
+  /* Identify and save this value */
+  if (!strcmp(name, "name")) {
+    if (tmp->name) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->name = strdup((char *) val);
+  }
+  else if (!strcmp(name, "hash")) {
+    if (tmp->hash) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->hash = strdup((char *) val);
+  }
+  else if (!strcmp(name, "mac_length"))
+    tmp->mac_length = *(int *)val;
+  else
+    return SILC_CONFIG_EINTERNAL;
+  return SILC_CONFIG_OK;
+
+ got_err:
+  silc_free(tmp->name);
+  silc_free(tmp->hash);
+  silc_free(tmp);
+  config->tmp = NULL;
+  return got_errno;
+}
+
+SILC_CONFIG_CALLBACK(fetch_pkcs)
+{
+  SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionPkcs);
+
+  SERVER_CONFIG_DEBUG(("Received PKCS type=%d name=\"%s\" (val=%x)", type, name, context));
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    /* check the temporary struct's fields */
+    if (!tmp) /* empty sub-block? */
+      return SILC_CONFIG_OK;
+    if (!tmp->name) {
+      got_errno = SILC_CONFIG_EMISSFIELDS;
+      goto got_err;
+    }
+    /* the temporary struct is ok, append it to the list */
+    SILC_SERVER_CONFIG_LIST_APPENDTMP(config->pkcs);
+    config->tmp = NULL;
+    return SILC_CONFIG_OK;
+  }
+  /* if there isn't a temporary struct alloc one */
+  if (!tmp) {
+    config->tmp = silc_calloc(1, sizeof(*findtmp));
+    tmp = (SilcServerConfigSectionPkcs *) config->tmp;
+  }
+
+  /* Identify and save this value */
+  if (!strcmp(name, "name")) {
+    if (tmp->name) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->name = strdup((char *) val);
+  }
+  else
+    return SILC_CONFIG_EINTERNAL;
+  return SILC_CONFIG_OK;
+
+ got_err:
+  silc_free(tmp->name);
+  silc_free(tmp);
+  config->tmp = NULL;
+  return got_errno;
+}
+
+SILC_CONFIG_CALLBACK(fetch_serverinfo)
+{
+  SilcServerConfig config = (SilcServerConfig) context;
+  SilcServerConfigSectionServerInfo *server_info = config->server_info;
+
+  /* if there isn't the struct alloc it */
+  if (!server_info) {
+    config->server_info = server_info = (SilcServerConfigSectionServerInfo *)
+		silc_calloc(1, sizeof(*server_info));
+  }
+
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    /* check for mandatory inputs */
+    return SILC_CONFIG_OK;
+  }
+  if (!strcmp(name, "hostname")) {
+    if (server_info->server_name) return SILC_CONFIG_EDOUBLE;
+    server_info->server_name = strdup((char *) val);
+  }
+  else if (!strcmp(name, "ip")) {
+    if (server_info->server_ip) return SILC_CONFIG_EDOUBLE;
+    server_info->server_ip = strdup((char *) val);
+  }
+  else if (!strcmp(name, "port")) {
+    int port = *(int *)val;
+    if ((port <= 0) || (port > 65535)) {
+      fprintf(stderr, "Invalid port number!\n");
+      return SILC_CONFIG_ESILENT;
+    }
+    server_info->port = (uint16) port;
+  }
+  else if (!strcmp(name, "servertype")) {
+    if (server_info->server_type) return SILC_CONFIG_EDOUBLE;
+    server_info->server_type = strdup((char *) val);
+  }
+  else if (!strcmp(name, "admin")) {
+    if (server_info->admin) return SILC_CONFIG_EDOUBLE;
+    server_info->admin = strdup((char *) val);
+  }
+  else if (!strcmp(name, "email")) {
+    if (server_info->email) return SILC_CONFIG_EDOUBLE;
+    server_info->email = strdup((char *) val);
+  }
+  else if (!strcmp(name, "location")) {
+    if (server_info->location) return SILC_CONFIG_EDOUBLE;
+    server_info->location = strdup((char *) val);
+  }
+  else if (!strcmp(name, "user")) {
+    if (server_info->user) return SILC_CONFIG_EDOUBLE;
+    server_info->user = strdup((char *) val);
+  }
+  else if (!strcmp(name, "group")) {
+    if (server_info->group) return SILC_CONFIG_EDOUBLE;
+    server_info->group = strdup((char *) val);
+  }
+  else if (!strcmp(name, "motdfile")) {
+    if (server_info->motd_file) return SILC_CONFIG_EDOUBLE;
+    server_info->motd_file = strdup((char *) val);
+  }
+  else if (!strcmp(name, "pidfile")) {
+    if (server_info->pid_file) return SILC_CONFIG_EDOUBLE;
+    server_info->pid_file = strdup((char *) val);
+  }
+  else if (!strcmp(name, "publickey")) {
+    char *tmp = (char *) val;
+
+    /* try to load specified file, if fail stop config parsing */
+    if (!silc_pkcs_load_public_key(tmp, &server_info->public_key,
+				   SILC_PKCS_FILE_PEM))
+      if (!silc_pkcs_load_public_key(tmp, &server_info->public_key,
+				     SILC_PKCS_FILE_BIN)) {
+	fprintf(stderr, "\nError: Could not load public key file.");
+	fprintf(stderr, "\n  line %lu: file \"%s\"\n", line, tmp);
+	return SILC_CONFIG_ESILENT;
+      }
+  }
+  else if (!strcmp(name, "privatekey")) {
+    char *tmp = (char *) val;
+
+    /* try to load specified file, if fail stop config parsing */
+    if (!silc_pkcs_load_private_key(tmp, &server_info->private_key,
+				    SILC_PKCS_FILE_BIN))
+      if (!silc_pkcs_load_private_key(tmp, &server_info->private_key,
+				      SILC_PKCS_FILE_PEM)) {
+	fprintf(stderr, "\nError: Could not load private key file.");
+	fprintf(stderr, "\n  line %lu: file \"%s\"\n", line, tmp);
+	return SILC_CONFIG_ESILENT;
+      }
+  }
+  else
+    return SILC_CONFIG_EINTERNAL;
+  return SILC_CONFIG_OK;
+}
+
+SILC_CONFIG_CALLBACK(fetch_logging)
+{
+  SilcServerConfig config = (SilcServerConfig) context;
+  SilcServerConfigSectionLogging *tmp =
+	(SilcServerConfigSectionLogging *) config->tmp;
+  int got_errno;
+
+  if (!strcmp(name, "quicklogs")) {
+    silc_log_quick = *(bool *)val;
+  }
+  else if (!strcmp(name, "flushdelay")) {
+    int flushdelay = *(int *)val;
+    if (flushdelay < 2) { /* this value was taken from silclog.h (min delay) */
+      fprintf(stderr, "Error: line %lu: invalid flushdelay value, use "
+		"quicklogs if you want real-time logging.\n", line);
+      return SILC_CONFIG_ESILENT;
+    }
+    silc_log_flushdelay = (long) flushdelay;
+  }
+#define FETCH_LOGGING_CHAN(__chan__, __member__)		\
+  else if (!strcmp(name, __chan__)) {				\
+    if (!tmp) return SILC_CONFIG_OK;				\
+    if (!tmp->file) {						\
+      got_errno = SILC_CONFIG_EMISSFIELDS; goto got_err;	\
+    }								\
+    config->__member__ = tmp;					\
+    config->tmp = NULL;						\
+  }
+  FETCH_LOGGING_CHAN("info", logging_info)
+  FETCH_LOGGING_CHAN("warnings", logging_warnings)
+  FETCH_LOGGING_CHAN("errors", logging_errors)
+  FETCH_LOGGING_CHAN("fatals", logging_fatals)
+#undef FETCH_LOGGING_CHAN
+  else if (!strcmp(name, "file")) {
+    if (!tmp) { /* FIXME: what the fuck is this? */
+      config->tmp = silc_calloc(1, sizeof(*tmp));
+      tmp = (SilcServerConfigSectionLogging *) config->tmp;
+    }
+    if (tmp->file) {
+      got_errno = SILC_CONFIG_EMISSFIELDS; goto got_err;
+    }
+    tmp->file = strdup((char *) val);
+  }
+  else if (!strcmp(name, "size")) {
+    if (!tmp) {
+      config->tmp = silc_calloc(1, sizeof(*tmp));
+      tmp = (SilcServerConfigSectionLogging *) config->tmp;
+    }
+    tmp->maxsize = *(uint32 *) val;
+  }
+  else
+    return SILC_CONFIG_EINTERNAL;
+  return SILC_CONFIG_OK;
+
+ got_err:
+  silc_free(tmp->file);
+  silc_free(tmp);
+  config->tmp = NULL;
+  return got_errno;
+}
+
+SILC_CONFIG_CALLBACK(fetch_client)
+{
+  SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionClient);
+
+  SERVER_CONFIG_DEBUG(("Received CLIENT type=%d name=\"%s\" (val=%x)", type, name, context));
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    if (!tmp) /* empty sub-block? */
+      return SILC_CONFIG_OK;
+    if (tmp->auth_meth && !tmp->auth_data) {
+      fprintf(stderr, "\nError: line %lu: If you specify \"AuthMethod\" field "
+		"then you must also specify the \"AuthData\" field.\n", line);
+      got_errno = SILC_CONFIG_ESILENT;
+      goto got_err;
+    }
+    SILC_SERVER_CONFIG_LIST_APPENDTMP(config->clients);
+    config->tmp = NULL;
+    return SILC_CONFIG_OK;
+  }
+  /* if there isn't a temporary struct alloc one */
+  if (!tmp) {
+    config->tmp = silc_calloc(1, sizeof(*findtmp));
+    tmp = (SilcServerConfigSectionClient *) config->tmp;
+  }
+
+  /* Identify and save this value */
+  if (!strcmp(name, "host")) { /* any host (*) accepted */
+    if (tmp->host) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->host = (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  /* get authentication method */
+  else if (!strcmp(name, "authmethod")) {
+    if (!strcmp((char *) val, SILC_CONFIG_SERVER_AUTH_METH_PASSWD))
+      tmp->auth_meth = SILC_AUTH_PASSWORD;
+    else if (!strcmp((char *) val, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY))
+      tmp->auth_meth = SILC_AUTH_PUBLIC_KEY;
+    else {
+      got_errno = SILC_CONFIG_EINVALIDTEXT; goto got_err;
+    }
+  }
+  else if (!strcmp(name, "authdata")) {
+    if (!my_parse_authdata(tmp->auth_meth, (char *) val, line,
+			   &tmp->auth_data, &tmp->auth_data_len)) {
+      got_errno = SILC_CONFIG_ESILENT;
+      goto got_err; /* error outputted in my_parse_authdata */
+    }
+  }
+  else if (!strcmp(name, "port")) {
+    int port = *(int *)val;
+    if ((port <= 0) || (port > 65535)) {
+      fprintf(stderr, "Invalid port number!\n");
+      got_errno = SILC_CONFIG_ESILENT; goto got_err;
+    }
+    tmp->port = (uint16) port;
+  }
+  /* FIXME: Improvement: use a direct class struct pointer instead of num */
+  else if (!strcmp(name, "class")) {
+    /* XXX do nothing */
+  }
+  else
+    return SILC_CONFIG_EINTERNAL;
+  return SILC_CONFIG_OK;
+
+ got_err:
+  silc_free(tmp->host);
+  my_free_authdata(tmp->auth_meth, tmp->auth_data);
+  silc_free(tmp);
+  return got_errno;
+}
+
+SILC_CONFIG_CALLBACK(fetch_admin)
+{
+  SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionAdmin);
+
+  SERVER_CONFIG_DEBUG(("Received CLIENT type=%d name=\"%s\" (val=%x)", type, name, context));
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    /* check the temporary struct's fields */
+    if (!tmp) /* empty sub-block? */
+      return SILC_CONFIG_OK;
+    if (!tmp->auth_meth) {
+      got_errno = SILC_CONFIG_EMISSFIELDS; goto got_err;
+    }
+    SILC_SERVER_CONFIG_LIST_APPENDTMP(config->admins);
+    config->tmp = NULL;
+    return SILC_CONFIG_OK;
+  }
+  /* if there isn't a temporary struct alloc one */
+  if (!tmp) {
+    config->tmp = silc_calloc(1, sizeof(*findtmp));
+    tmp = (SilcServerConfigSectionAdmin *) config->tmp;
+  }
+
+  /* Identify and save this value */
+  if (!strcmp(name, "host")) { /* any host (*) accepted */
+    if (tmp->host) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->host = (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  else if (!strcmp(name, "user")) {
+    if (tmp->user) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->user = (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  else if (!strcmp(name, "nick")) {
+    if (tmp->nick) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->nick = (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  /* get authentication method */
+  else if (!strcmp(name, "authmethod")) {
+    if (!strcmp((char *) val, SILC_CONFIG_SERVER_AUTH_METH_PASSWD))
+      tmp->auth_meth = SILC_AUTH_PASSWORD;
+    else if (!strcmp((char *) val, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY))
+      tmp->auth_meth = SILC_AUTH_PUBLIC_KEY;
+    else {
+      got_errno = SILC_CONFIG_EINVALIDTEXT; goto got_err;
+    }
+  }
+  else if (!strcmp(name, "authdata")) {
+    if (!my_parse_authdata(tmp->auth_meth, (char *) val, line,
+			   &tmp->auth_data, &tmp->auth_data_len)) {
+      got_errno = SILC_CONFIG_ESILENT;
+      goto got_err; /* error outputted in my_parse_authdata */
+    }
+  }
+  else
+    return SILC_CONFIG_EINTERNAL;
+  return SILC_CONFIG_OK;
+
+ got_err:
+  silc_free(tmp->host);
+  silc_free(tmp->user);
+  silc_free(tmp->nick);
+  my_free_authdata(tmp->auth_meth, tmp->auth_data);
+  silc_free(tmp);
+  return got_errno;
+}
+
+SILC_CONFIG_CALLBACK(fetch_deny)
+{
+  SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionDeny);
+
+  SERVER_CONFIG_DEBUG(("Received DENY type=%d name=\"%s\" (val=%x)", type, name, context));
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    /* check the temporary struct's fields */
+    if (!tmp) /* empty sub-block? */
+      return SILC_CONFIG_OK;
+    if (!tmp->reason) {
+      got_errno = SILC_CONFIG_EMISSFIELDS;
+      goto got_err;
+    }
+    SILC_SERVER_CONFIG_LIST_APPENDTMP(config->denied);
+    config->tmp = NULL;
+    return SILC_CONFIG_OK;
+  }
+  /* if there isn't a temporary struct alloc one */
+  if (!tmp) {
+    config->tmp = silc_calloc(1, sizeof(*findtmp));
+    tmp = (SilcServerConfigSectionDeny *) config->tmp;
+  }
+
+  /* Identify and save this value */
+  if (!strcmp(name, "host")) { /* any host (*) accepted */
+    if (tmp->host) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->host = (*(char *)val ? strdup((char *) val) : strdup("*"));
+  }
+  else if (!strcmp(name, "port")) {
+    int port = *(int *)val;
+    if ((port <= 0) || (port > 65535)) {
+      fprintf(stderr, "Invalid port number!\n");
+      got_errno = SILC_CONFIG_ESILENT; goto got_err;
+    }
+    tmp->port = (uint16) port;
+  }
+  else if (!strcmp(name, "reason")) {
+    if (tmp->reason) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->reason = strdup((char *) val);
+  }
+  else
+    return SILC_CONFIG_EINTERNAL;
+  return SILC_CONFIG_OK;
+
+ got_err:
+  silc_free(tmp->host);
+  silc_free(tmp->reason);
+  silc_free(tmp);
+  return got_errno;
+}
+
+SILC_CONFIG_CALLBACK(fetch_server)
+{
+  SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionServer);
+
+  SERVER_CONFIG_DEBUG(("Received SERVER type=%d name=\"%s\" (val=%x)", type, name, context));
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    /* check the temporary struct's fields */
+    if (!tmp) /* empty sub-block? */
+      return SILC_CONFIG_OK;
+    if (!tmp->auth_meth || !tmp->version) {
+      got_errno = SILC_CONFIG_EMISSFIELDS;
+      goto got_err;
+    }
+    /* the temporary struct is ok, append it to the list */
+    SILC_SERVER_CONFIG_LIST_APPENDTMP(config->servers);
+    config->tmp = NULL;
+    return SILC_CONFIG_OK;
+  }
+  /* if there isn't a temporary struct alloc one */
+  if (!tmp) {
+    config->tmp = silc_calloc(1, sizeof(*findtmp));
+    tmp = (SilcServerConfigSectionServer *) config->tmp;
+  }
+
+  /* Identify and save this value */
+  if (!strcmp(name, "host")) { /* any host (*) accepted */
+    if (tmp->host) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->host = (*(char *)val ? strdup((char *) val) : strdup("*"));
+  }
+  /* get authentication method */
+  else if (!strcmp(name, "authmethod")) {
+    if (!strcmp((char *) val, SILC_CONFIG_SERVER_AUTH_METH_PASSWD))
+      tmp->auth_meth = SILC_AUTH_PASSWORD;
+    else if (!strcmp((char *) val, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY))
+      tmp->auth_meth = SILC_AUTH_PUBLIC_KEY;
+    else {
+      got_errno = SILC_CONFIG_EINVALIDTEXT; goto got_err;
+    }
+  }
+  else if (!strcmp(name, "authdata")) {
+    if (!my_parse_authdata(tmp->auth_meth, (char *) val, line,
+			   &tmp->auth_data, &tmp->auth_data_len)) {
+      got_errno = SILC_CONFIG_ESILENT;
+      goto got_err; /* error outputted in my_parse_authdata */
+    }
+  }
+  else if (!strcmp(name, "port")) {
+    int port = *(int *)val;
+    if ((port <= 0) || (port > 65535)) {
+      fprintf(stderr, "Invalid port number!\n");
+      got_errno = SILC_CONFIG_ESILENT; goto got_err;
+    }
+    tmp->port = (uint16) port;
+  }
+  else if (!strcmp(name, "versionid")) {
+    if (tmp->version) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->version = strdup((char *) val);
+  }
+  /* FIXME: Improvement: use a direct class struct pointer instead of num */
+  else if (!strcmp(name, "class")) {
+    /* XXX do nothing */
+  }
+  else if (!strcmp(name, "backup")) {
+    tmp->backup_router = *(bool *)val;
+  }
+  else
+    return SILC_CONFIG_EINTERNAL;
+  return SILC_CONFIG_OK;
+
+ got_err:
+  silc_free(tmp->host);
+  silc_free(tmp->version);
+  my_free_authdata(tmp->auth_meth, tmp->auth_data);
+  silc_free(tmp);
+  return got_errno;
+}
+
+SILC_CONFIG_CALLBACK(fetch_router)
+{
+  SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionRouter);
+
+  SERVER_CONFIG_DEBUG(("Received ROUTER type=%d name=\"%s\" (val=%x)", type, name, context));
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    if (!tmp) /* empty sub-block? */
+      return SILC_CONFIG_OK;
+    if (!tmp->auth_meth || !tmp->version) {
+      got_errno = SILC_CONFIG_EMISSFIELDS;
+      goto got_err;
+    }
+    /* the temporary struct is ok, append it to the list */
+    SILC_SERVER_CONFIG_LIST_APPENDTMP(config->routers);
+    config->tmp = NULL;
+    return SILC_CONFIG_OK;
+  }
+  /* if there isn't a temporary struct alloc one */
+  if (!tmp) {
+    config->tmp = silc_calloc(1, sizeof(*findtmp));
+    tmp = (SilcServerConfigSectionRouter *) config->tmp;
+  }
+
+  /* Identify and save this value */
+  if (!strcmp(name, "host")) {
+    if (tmp->host) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->host = strdup((char *) val);
+  }
+  else if (!strcmp(name, "authmethod")) {
+    if (!strcmp((char *) val, SILC_CONFIG_SERVER_AUTH_METH_PASSWD))
+      tmp->auth_meth = SILC_AUTH_PASSWORD;
+    else if (!strcmp((char *) val, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY))
+      tmp->auth_meth = SILC_AUTH_PUBLIC_KEY;
+    else {
+      got_errno = SILC_CONFIG_EINVALIDTEXT; goto got_err;
+    }
+  }
+  else if (!strcmp(name, "authdata")) {
+    if (!my_parse_authdata(tmp->auth_meth, (char *) val, line,
+			   &tmp->auth_data, &tmp->auth_data_len)) {
+      got_errno = SILC_CONFIG_ESILENT;
+      goto got_err; /* error outputted in my_parse_authdata */
+    }
+  }
+  else if (!strcmp(name, "port")) {
+    int port = *(int *)val;
+    if ((port <= 0) || (port > 65535)) {
+      fprintf(stderr, "Invalid port number!\n");
+      got_errno = SILC_CONFIG_ESILENT; goto got_err;
+    }
+    tmp->port = (uint16) port;
+  }
+  else if (!strcmp(name, "versionid")) {
+    if (tmp->version) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->version = strdup((char *) val);
+  }
+  /* FIXME: Improvement: use a direct class struct pointer instead of num */
+  else if (!strcmp(name, "class")) {
+    /* XXX do nothing */
+  }
+  else if (!strcmp(name, "initiator"))
+    tmp->initiator = *(bool *)val;
+  else if (!strcmp(name, "backuphost")) {
+    if (tmp->backup_replace_ip) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    tmp->backup_replace_ip = (*(char *)val ? strdup((char *) val) : strdup("*"));
+  }
+  else
+    return SILC_CONFIG_EINTERNAL;
+  return SILC_CONFIG_OK;
+
+ got_err:
+  silc_free(tmp->host);
+  silc_free(tmp->version);
+  silc_free(tmp->backup_replace_ip);
+  my_free_authdata(tmp->auth_meth, tmp->auth_data);
+  silc_free(tmp);
+  return got_errno;
+}
+
+/* known config options tables */
+static const SilcConfigTable table_general[] = {
+  { "modulepath",	SILC_CONFIG_ARG_STRE,	fetch_generic,	NULL },
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_cipher[] = {
+  { "name",		SILC_CONFIG_ARG_STR,	fetch_cipher,	NULL },
+  { "module",		SILC_CONFIG_ARG_STRE,	fetch_cipher,	NULL },
+  { "key_length",	SILC_CONFIG_ARG_INT,	fetch_cipher,	NULL },
+  { "block_length",	SILC_CONFIG_ARG_INT,	fetch_cipher,	NULL },
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_hash[] = {
+  { "name",		SILC_CONFIG_ARG_STR,	fetch_hash,	NULL },
+  { "module",		SILC_CONFIG_ARG_STRE,	fetch_hash,	NULL },
+  { "block_length",	SILC_CONFIG_ARG_INT,	fetch_hash,	NULL },
+  { "digest_length",	SILC_CONFIG_ARG_INT,	fetch_hash,	NULL },
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_hmac[] = {
+  { "name",		SILC_CONFIG_ARG_STR,	fetch_hmac,	NULL },
+  { "hash",		SILC_CONFIG_ARG_STR,	fetch_hmac,	NULL },
+  { "mac_length",	SILC_CONFIG_ARG_INT,	fetch_hmac,	NULL },
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_pkcs[] = {
+  { "name",		SILC_CONFIG_ARG_STR,	fetch_pkcs,	NULL },
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_serverinfo[] = {
+  { "hostname",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "ip",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "port",		SILC_CONFIG_ARG_INT,	fetch_serverinfo, NULL},
+  { "servertype",	SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "location",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "admin",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "email",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "user",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "group",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "publickey",	SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "privatekey",	SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "motdfile",		SILC_CONFIG_ARG_STRE,	fetch_serverinfo, NULL},
+  { "pidfile",		SILC_CONFIG_ARG_STRE,	fetch_serverinfo, NULL},
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_logging_c[] = {
+  { "file",		SILC_CONFIG_ARG_STR,	fetch_logging,	NULL },
+  { "size",		SILC_CONFIG_ARG_SIZE,	fetch_logging,	NULL },
+/*{ "quicklog",		SILC_CONFIG_ARG_NONE,	fetch_logging,	NULL }, */
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_logging[] = {
+  { "quicklogs",	SILC_CONFIG_ARG_TOGGLE,	fetch_logging,	NULL },
+  { "flushdelay",	SILC_CONFIG_ARG_INT,	fetch_logging,	NULL },
+  { "info",		SILC_CONFIG_ARG_BLOCK,	fetch_logging,	table_logging_c },
+  { "warnings",		SILC_CONFIG_ARG_BLOCK,	fetch_logging,	table_logging_c },
+  { "errors",		SILC_CONFIG_ARG_BLOCK,	fetch_logging,	table_logging_c },
+  { "fatals",		SILC_CONFIG_ARG_BLOCK,	fetch_logging,	table_logging_c },
+  { 0, 0, 0, 0 }
+};
+
+/* still unsupported
+static const SilcConfigTable table_class[] = {
+  { "name",		SILC_CONFIG_ARG_STR,	fetch_class,	NULL },
+  { "ping",		SILC_CONFIG_ARG_INT,	fetch_class,	NULL },
+  { "connect",		SILC_CONFIG_ARG_INT,	fetch_class,	NULL },
+  { "links",		SILC_CONFIG_ARG_INT,	fetch_class,	NULL },
+  { 0, 0, 0, 0 }
+}; */
+
+static const SilcConfigTable table_client[] = {
+  { "host",		SILC_CONFIG_ARG_STRE,	fetch_client,	NULL },
+  { "authmethod",	SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
+  { "authdata",		SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
+  { "port",		SILC_CONFIG_ARG_INT,	fetch_client,	NULL },
+  { "class",		SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_admin[] = {
+  { "host",		SILC_CONFIG_ARG_STRE,	fetch_admin,	NULL },
+  { "user",		SILC_CONFIG_ARG_STRE,	fetch_admin,	NULL },
+  { "nick",		SILC_CONFIG_ARG_STRE,	fetch_admin,	NULL },
+  { "authmethod",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
+  { "authdata",		SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
+  { "port",		SILC_CONFIG_ARG_INT,	fetch_admin,	NULL },
+  { "class",		SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_deny[] = {
+  { "host",		SILC_CONFIG_ARG_STRE,	fetch_deny,	NULL },
+  { "port",		SILC_CONFIG_ARG_INT,	fetch_deny,	NULL },
+  { "reason",		SILC_CONFIG_ARG_STR,	fetch_deny,	NULL },
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_serverconn[] = {
+  { "host",		SILC_CONFIG_ARG_STRE,	fetch_server,	NULL },
+  { "authmethod",	SILC_CONFIG_ARG_STR,	fetch_server,	NULL },
+  { "authdata",		SILC_CONFIG_ARG_STR,	fetch_server,	NULL },
+  { "port",		SILC_CONFIG_ARG_INT,	fetch_server,	NULL },
+  { "versionid",	SILC_CONFIG_ARG_STR,	fetch_server,	NULL },
+  { "class",		SILC_CONFIG_ARG_STR,	fetch_server,	NULL },
+  { "backup",		SILC_CONFIG_ARG_TOGGLE,	fetch_server,	NULL },
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_routerconn[] = {
+  { "host",		SILC_CONFIG_ARG_STRE,	fetch_router,	NULL },
+  { "authmethod",	SILC_CONFIG_ARG_STR,	fetch_router,	NULL },
+  { "authdata",		SILC_CONFIG_ARG_STR,	fetch_router,	NULL },
+  { "port",		SILC_CONFIG_ARG_INT,	fetch_router,	NULL },
+  { "versionid",	SILC_CONFIG_ARG_STR,	fetch_router,	NULL },
+  { "class",		SILC_CONFIG_ARG_STR,	fetch_router,	NULL },
+  { "initiator",	SILC_CONFIG_ARG_TOGGLE,	fetch_router,	NULL },
+  { "backuphost",	SILC_CONFIG_ARG_STRE,	fetch_router,	NULL },
+  { "backupport",	SILC_CONFIG_ARG_INT,	fetch_router,	NULL },
+  { "localbackup",	SILC_CONFIG_ARG_TOGGLE,	fetch_router,	NULL },
+  { 0, 0, 0, 0 }
+};
+
+static const SilcConfigTable table_main[] = {
+  { "general",		SILC_CONFIG_ARG_BLOCK,	NULL,		table_general },
+  { "cipher",		SILC_CONFIG_ARG_BLOCK,	fetch_cipher,	table_cipher },
+  { "hash",		SILC_CONFIG_ARG_BLOCK,	fetch_hash,	table_hash },
+  { "hmac",		SILC_CONFIG_ARG_BLOCK,	fetch_hmac,	table_hmac },
+  { "pkcs",		SILC_CONFIG_ARG_BLOCK,	fetch_pkcs,	table_pkcs },
+  { "serverinfo",	SILC_CONFIG_ARG_BLOCK,	fetch_serverinfo, table_serverinfo },
+  { "logging",		SILC_CONFIG_ARG_BLOCK,	NULL,		table_logging },
+/*{ "class",		SILC_CONFIG_ARG_BLOCK,	fetch_class,	table_class }, */
+  { "client",		SILC_CONFIG_ARG_BLOCK,	fetch_client,	table_client },
+  { "admin",		SILC_CONFIG_ARG_BLOCK,	fetch_admin,	table_admin },
+  { "deny",		SILC_CONFIG_ARG_BLOCK,	fetch_deny,	table_deny },
+  { "serverconnection",	SILC_CONFIG_ARG_BLOCK,	fetch_server,	table_serverconn },
+  { "routerconnection",	SILC_CONFIG_ARG_BLOCK,	fetch_router,	table_routerconn },
+  { 0, 0, 0, 0 }
 };
 
 /* Allocates a new configuration object, opens configuration file and
-   parses the file. The parsed data is returned to the newly allocated
-   configuration object. */
+ * parses it. The parsed data is returned to the newly allocated
+ * configuration object. */
 
 SilcServerConfig silc_server_config_alloc(char *filename)
 {
-  SilcServerConfig new;
-  SilcBuffer buffer;
-  SilcServerConfigParse config_parse;
-
-  SILC_LOG_DEBUG(("Allocating new configuration object"));
-
-  new = silc_calloc(1, sizeof(*new));
-  if (!new) {
-    fprintf(stderr, "Could not allocate new configuration object");
-    return NULL;
-  }
-
-  new->filename = filename;
-
+  SilcServerConfig config;
+  SilcConfigEntity ent;
+  SilcConfigFile *file;
+  int ret;
   SILC_LOG_DEBUG(("Loading config data from `%s'", filename));
 
-  /* Open configuration file and parse it */
-  config_parse = NULL;
-  buffer = NULL;
-  silc_config_open(filename, &buffer);
-  if (!buffer)
-    goto fail;
-  if ((silc_server_config_parse(new, buffer, &config_parse)) == FALSE)
-    goto fail;
-  if ((silc_server_config_parse_lines(new, config_parse)) == FALSE)
-    goto fail;
+  /* alloc a config object */
+  config = (SilcServerConfig) silc_calloc(1, sizeof(*config));
+  /* obtain a config file object */
+  file = silc_config_open(filename);
+  if (!file) {
+    fprintf(stderr, "\nError: can't open config file `%s'\n", filename);
+    return NULL;
+  }
+  /* obtain a SilcConfig entity, we can use it to start the parsing */
+  ent = silc_config_init(file);
+  /* load the known configuration options, give our empty object as context */
+  silc_config_register_table(ent, table_main, (void *) config);
+  /* enter the main parsing loop.  When this returns, we have the parsing
+   * result and the object filled (or partially, in case of errors). */
+  ret = silc_config_main(ent);
+  SILC_LOG_DEBUG(("Parser returned [ret=%d]: %s", ret, silc_config_strerror(ret)));
 
-  silc_buffer_free(buffer);
+  /* Check if the parser returned errors */
+  if (ret) {
+    /* handle this special error return which asks to quietly return */
+    if (ret != SILC_CONFIG_ESILENT) {
+      char *linebuf, *filename = silc_config_get_filename(file);
+      uint32 line = silc_config_get_line(file);
+      fprintf(stderr, "\nError while parsing config file: %s.\n",
+		silc_config_strerror(ret));
+      linebuf = silc_config_read_line(file, line);
+      fprintf(stderr, "  file %s line %lu:  %s\n\n", filename, line, linebuf);
+      silc_free(linebuf);
+    }
+    return NULL;
+  }
+  /* close (destroy) the file object */
+  silc_config_close(file);
 
-  return new;
-
- fail:
-  silc_buffer_free(buffer);
-  silc_free(new);
-  return NULL;
+  /* XXX FIXME: check for missing mandatory fields */
+  if (!config->server_info) {
+    fprintf(stderr, "\nError: Missing mandatory block `server_info'\n");
+    return NULL;
+  }
+  return config;
 }
 
-/* Free's a configuration object. */
+/* ... */
 
-void silc_server_config_free(SilcServerConfig config)
+void silc_server_config_destroy(SilcServerConfig config)
 {
-  if (config) {
-    silc_free(config->filename);
-    silc_free(config->server_keys);
-    silc_free(config->server_info);
-    silc_free(config->admin_info);
-    silc_free(config->listen_port);
-    silc_free(config->identity);
-    silc_free(config->conn_class);
-    silc_free(config->clients);
-    silc_free(config->admins);
-    silc_free(config->servers);
-    silc_free(config->routers);
-    silc_free(config->denied);
-    silc_free(config->motd);
-    silc_free(config->pidfile);
-    silc_free(config);
-  }
-}
-
-/* Parses the the buffer and returns the parsed lines into return_config
-   argument. The return_config argument doesn't have to be initialized 
-   before calling this. It will be initialized during the parsing. The
-   buffer sent as argument can be safely free'd after this function has
-   succesfully returned. */
-
-int silc_server_config_parse(SilcServerConfig config, SilcBuffer buffer, 
-			     SilcServerConfigParse *return_config)
-{
-  int i, begin, linenum;
-  char line[1024], *cp;
-  SilcServerConfigSection *cptr = NULL;
-  SilcServerConfigParse parse = *return_config, first = NULL;
-
-  SILC_LOG_DEBUG(("Parsing configuration file"));
-
-  begin = 0;
-  linenum = 0;
-  while((begin = silc_gets(line, sizeof(line),
-			   buffer->data, buffer->len, begin)) != EOF) {
-    cp = line;
-    linenum++;
-
-    /* Check for bad line */
-    if (silc_check_line(cp))
-      continue;
-
-    /* Remove tabs and whitespaces from the line */
-    if (strchr(cp, '\t')) {
-      i = 0;
-      while(strchr(cp + i, '\t')) {
-	*strchr(cp + i, '\t') = ' ';
-	i++;
-      }
-    }
-    for (i = 0; i < strlen(cp); i++) {
-      if (cp[i] != ' ') {
-	if (i)
-	  cp++;
-	break;
-      }
-      cp++;
-    }
-
-    /* Parse line */
-    switch(cp[0]) {
-    case '[':
-      /*
-       * Start of a section
-       */
-
-      /* Remove new line sign */
-      if (strchr(cp, '\n'))
-	*strchr(cp, '\n') = '\0';
-      
-      /* Check for matching sections */
-      for (cptr = silc_server_config_sections; cptr->section; cptr++)
-	if (!strncasecmp(cp, cptr->section, strlen(cptr->section)))
-	  break;
-
-      if (!cptr->section) {
-	fprintf(stderr, "%s:%d: Unknown section `%s'\n", 
-			config->filename, linenum, cp);
-	return FALSE;
-      }
-
-      break;
-    default:
-      /*
-       * Start of a configuration line
-       */
-
-      if (cptr->type != SILC_CONFIG_SERVER_SECTION_TYPE_NONE) {
-	
-	if (strchr(cp, '\n'))
-	    *strchr(cp, '\n') = ':';
-
-	if (parse == NULL) {
-	  parse = silc_calloc(1, sizeof(*parse));
-	  parse->line = NULL;
-	  parse->section = NULL;
-	  parse->next = NULL;
-	  parse->prev = NULL;
-	} else {
-	  if (parse->next == NULL) {
-	    parse->next = silc_calloc(1, sizeof(*parse->next));
-	    parse->next->line = NULL;
-	    parse->next->section = NULL;
-	    parse->next->next = NULL;
-	    parse->next->prev = parse;
-	    parse = parse->next;
-	  }
-	}
-	
-	if (first == NULL)
-	  first = parse;
-
-	/* Add the line to parsing structure for further parsing. */
-	if (parse) {
-	  parse->section = cptr;
-	  parse->line = silc_buffer_alloc(strlen(cp) + 1);
-	  parse->linenum = linenum;
-	  silc_buffer_pull_tail(parse->line, strlen(cp));
-	  silc_buffer_put(parse->line, cp, strlen(cp));
-	}
-      }
-      break;
-    }
-  }
-  
-  /* Set the return_config argument to its first value so that further
-     parsing can be started from the first line. */
-  *return_config = first;
-
-  return TRUE;
-}
-
-/* Parses the lines earlier read from configuration file. The config object
-   must not be initialized, it will be initialized in this function. The
-   parse_config argument is uninitialized automatically during this
-   function. */
-
-int silc_server_config_parse_lines(SilcServerConfig config, 
-				   SilcServerConfigParse parse_config)
-{
-  int ret, check = FALSE;
-  uint32 checkmask;
-  char *tmp;
-  SilcServerConfigParse pc = parse_config;
-  SilcBuffer line;
-
-  SILC_LOG_DEBUG(("Parsing configuration lines"));
-  
-  if (!config)
-    return FALSE;
-  
-  checkmask = 0;
-  while(pc) {
-    check = FALSE;
-    line = pc->line;
-
-    /* Get number of tokens in line */
-    ret = silc_config_check_num_token(line);
-    if (ret < pc->section->maxfields) {
-      /* Bad line */
-      fprintf(stderr, "%s:%d: Missing tokens, %d tokens (should be %d)\n",
-	      config->filename, pc->linenum, ret, 
-	      pc->section->maxfields);
-      break;
-    }
-
-    /* Parse the line */
-    switch(pc->section->type) {
-    case SILC_CONFIG_SERVER_SECTION_TYPE_CIPHER:
-
-      SILC_SERVER_CONFIG_LIST_ALLOC(config->cipher);
-
-      /* Get cipher name */
-      ret = silc_config_get_token(line, &config->cipher->alg_name);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: Cipher name not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-
-      /* Get module name */
-      config->cipher->sim_name = NULL;
-      ret = silc_config_get_token(line, &config->cipher->sim_name);
-      if (ret < 0)
-	break;
-
-      /* Get key length */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: Cipher key length not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      config->cipher->key_len = atoi(tmp);
-      silc_free(tmp);
-
-      /* Get block length */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: Cipher block length not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      config->cipher->block_len = atoi(tmp);
-      silc_free(tmp);
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_PKCS:
-
-      SILC_SERVER_CONFIG_LIST_ALLOC(config->pkcs);
-
-      /* Get PKCS name */
-      ret = silc_config_get_token(line, &config->pkcs->alg_name);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: PKCS name not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_HASH_FUNCTION:
-
-      SILC_SERVER_CONFIG_LIST_ALLOC(config->hash_func);
-
-      /* Get Hash function name */
-      ret = silc_config_get_token(line, &config->hash_func->alg_name);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: Hash function name not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      
-      /* Get Hash function module name */
-      config->hash_func->sim_name = NULL;
-      ret = silc_config_get_token(line, &config->hash_func->sim_name);
-      if (ret < 0)
-	break;
-
-      /* Get block length */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: Hash function block length not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      config->hash_func->block_len = atoi(tmp);
-      silc_free(tmp);
-
-      /* Get hash length */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: Hash function hash length not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      config->hash_func->key_len = atoi(tmp);
-      silc_free(tmp);
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_HMAC:
-
-      SILC_SERVER_CONFIG_LIST_ALLOC(config->hmac);
-
-      /* Get HMAC name */
-      ret = silc_config_get_token(line, &config->hmac->alg_name);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: HMAC name not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-
-      /* Get hash name */
-      ret = silc_config_get_token(line, &config->hmac->sim_name);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: Hash function name not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      
-      /* Get MAC length */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: HMAC's MAC length not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      config->hmac->key_len = atoi(tmp);
-      silc_free(tmp);
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_KEYS:
-
-      if (!config->server_keys)
-	config->server_keys = silc_calloc(1, sizeof(*config->server_keys));
-
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: Public key name not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      
-      if (!silc_pkcs_load_public_key(tmp, &config->server_keys->public_key, 
-				     SILC_PKCS_FILE_PEM))
-	if (!silc_pkcs_load_public_key(tmp, &config->server_keys->public_key, 
-				       SILC_PKCS_FILE_BIN)) {
-	  fprintf(stderr, "%s:%d: Could not load public key file `%s'\n",
-		  config->filename, pc->linenum, tmp);
-	  break;
-	}
-      silc_free(tmp);
-
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: Private key name not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      
-      if (!silc_pkcs_load_private_key(tmp, &config->server_keys->private_key, 
-				     SILC_PKCS_FILE_BIN))
-	if (!silc_pkcs_load_private_key(tmp, 
-					&config->server_keys->private_key, 
-					SILC_PKCS_FILE_PEM)) {
-	  fprintf(stderr, "%s:%d: Could not load private key file `%s'\n",
-		  config->filename, pc->linenum, tmp);
-	  break;
-	}
-      silc_free(tmp);
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_INFO:
-
-      if (!config->server_info)
-	config->server_info = silc_calloc(1, sizeof(*config->server_info));
-
-      /* Get server name */
-      ret = silc_config_get_token(line, &config->server_info->server_name);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	/* Server name not defined */
-
-      }
-      
-      /* Get server IP */
-      ret = silc_config_get_token(line, &config->server_info->server_ip);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	/* Server IP not defined */
-
-      }
-
-      /* Get server location */
-      ret = silc_config_get_token(line, &config->server_info->location);
-      if (ret < 0)
-	break;
-
-      /* Get server port */
-      /* XXX: Need port here??? */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	/* Port not defined */
-
-      }
-      config->server_info->port = atoi(tmp);
-      silc_free(tmp);
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_INFO:
-
-      if (!config->admin_info)
-	config->admin_info = silc_calloc(1, sizeof(*config->admin_info));
-
-      /* Get location */
-      ret = silc_config_get_token(line, &config->admin_info->location);
-      if (ret < 0)
-	break;
-
-      /* Get server type */
-      ret = silc_config_get_token(line, &config->admin_info->server_type);
-      if (ret < 0)
-	break;
-
-      /* Get admins name */
-      ret = silc_config_get_token(line, &config->admin_info->admin_name);
-      if (ret < 0)
-	break;
-
-      /* Get admins email address */
-      ret = silc_config_get_token(line, &config->admin_info->admin_email);
-      if (ret < 0)
-	break;
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_LISTEN_PORT:
-
-      SILC_SERVER_CONFIG_LIST_ALLOC(config->listen_port);
-
-      /* Get local IP */
-      ret = silc_config_get_token(line, &config->listen_port->local_ip);
-      if (ret < 0)
-	break;
-
-      /* Get listener IP */
-      ret = silc_config_get_token(line, &config->listen_port->listener_ip);
-      if (ret < 0)
-	break;
-
-      /* Get port */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	/* Any port */
-	config->listen_port->port = 0;
-      } else {
-	config->listen_port->port = atoi(tmp);
-	silc_free(tmp);
-      }
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_IDENTITY:
-
-      if (!config->identity)
-        config->identity = silc_calloc(1, sizeof(*config->identity));
-
-      /* Get user */
-      ret = silc_config_get_token(line, &config->identity->user);
-      if (ret < 0)
-        break;
-      /* Get group */
-      ret = silc_config_get_token(line, &config->identity->group);
-      if (ret < 0)
-        break;
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_CONNECTION_CLASS:
-
-      SILC_SERVER_CONFIG_LIST_ALLOC(config->conn_class);
-
-      /* Get class number */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	/* Class number not defined */
-
-      }
-      config->conn_class->class = atoi(tmp);
-      silc_free(tmp);
-
-      /* Get ping frequency */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      config->conn_class->ping_freq = atoi(tmp);
-      silc_free(tmp);
-
-      /* Get connect frequency */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      config->conn_class->connect_freq = atoi(tmp);
-      silc_free(tmp);
-
-      /* Get max links */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      config->conn_class->max_links = atoi(tmp);
-      silc_free(tmp);
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_LOGGING:
-
-      SILC_SERVER_CONFIG_LIST_ALLOC(config->logging);
-
-      /* Get log section type and check it */
-      ret = silc_config_get_token(line, &config->logging->logtype);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: Log file section not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-      if (strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LF_INFO)
-	  && strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LF_WARNING)
-	  && strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LF_ERROR)
-	  && strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LF_FATAL)
-	  && strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LO_QUICK)
-	  && strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LO_FDELAY)) {
-	fprintf(stderr, "%s:%d: Unknown log file section '%s'\n",
-		config->filename, pc->linenum, config->logging->logtype);
-	break;
-      }
-
-      /* Get log filename */
-      ret = silc_config_get_token(line, &config->logging->filename);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	fprintf(stderr, "%s:%d: Log file name not defined\n",
-		config->filename, pc->linenum);
-	break;
-      }
-
-      /* Get max byte size */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	config->logging->maxsize = atoi(tmp);
-	silc_free(tmp);
-      }
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_CLIENT_CONNECTION:
-
-      SILC_SERVER_CONFIG_LIST_ALLOC(config->clients);
-
-      /* Get host */
-      ret = silc_config_get_token(line, &config->clients->host);
-      if (ret < 0)
-	break;
-      if (ret == 0)
-	/* Any host */
-	config->clients->host = strdup("*");
-
-      /* Get authentication method */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	if (strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PASSWD) &&
-	    strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY)) {
-	  fprintf(stderr, "%s:%d: Unknown authentication method '%s'\n",
-		  config->filename, pc->linenum, tmp);
-	  break;
-	}
-
-	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PASSWD))
-	  config->clients->auth_meth = SILC_AUTH_PASSWORD;
-
-	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY))
-	  config->clients->auth_meth = SILC_AUTH_PUBLIC_KEY;
-
-	silc_free(tmp);
-      }
-
-      /* Get authentication data */
-      ret = silc_config_get_token(line, (char **)&config->clients->auth_data);
-      if (ret < 0)
-	break;
-
-      if (config->clients->auth_meth == SILC_AUTH_PASSWORD) {
-	config->clients->auth_data_len = strlen(config->clients->auth_data);
-      } else if (config->clients->auth_meth == SILC_AUTH_PUBLIC_KEY) {
-	/* Get the public key */
-	SilcPublicKey public_key;
-
-	if (!silc_pkcs_load_public_key(config->clients->auth_data,
-				       &public_key, SILC_PKCS_FILE_PEM))
-	  if (!silc_pkcs_load_public_key(config->clients->auth_data,
-					 &public_key, SILC_PKCS_FILE_BIN)) {
-	    fprintf(stderr, "%s:%d: Could not load public key file `%s'\n",
-		    config->filename, pc->linenum, 
-		    (char *)config->clients->auth_data);
-	    break;
-	  }
-
-	silc_free(config->clients->auth_data);
-	config->clients->auth_data = (void *)public_key;
-	config->clients->auth_data_len = 0;
-      }
-
-      /* Get port */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	config->clients->port = atoi(tmp);
-	silc_free(tmp);
-      }
-
-      /* Get class number */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	config->clients->class = atoi(tmp);
-	silc_free(tmp);
-      }
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_CONNECTION:
-
-      SILC_SERVER_CONFIG_LIST_ALLOC(config->servers);
-
-      /* Get host */
-      ret = silc_config_get_token(line, &config->servers->host);
-      if (ret < 0)
-	break;
-      if (ret == 0)
-	/* Any host */
-	config->servers->host = strdup("*");
-
-      /* Get authentication method */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	if (strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PASSWD) &&
-	    strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY)) {
-	  fprintf(stderr, "%s:%d: Unknown authentication method '%s'\n",
-		  config->filename, pc->linenum, tmp);
-	  break;
-	}
-
-	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PASSWD))
-	  config->servers->auth_meth = SILC_AUTH_PASSWORD;
-
-	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY))
-	  config->servers->auth_meth = SILC_AUTH_PUBLIC_KEY;
-
-	silc_free(tmp);
-      }
-
-      /* Get authentication data */
-      ret = silc_config_get_token(line, (char **)&config->servers->auth_data);
-      if (ret < 0)
-	break;
-
-      if (config->servers->auth_meth == SILC_AUTH_PASSWORD) {
-	config->servers->auth_data_len = strlen(config->servers->auth_data);
-      } else if (config->servers->auth_meth == SILC_AUTH_PUBLIC_KEY) {
-	/* Get the public key */
-	SilcPublicKey public_key;
-
-	if (!silc_pkcs_load_public_key(config->servers->auth_data,
-				       &public_key, SILC_PKCS_FILE_PEM))
-	  if (!silc_pkcs_load_public_key(config->servers->auth_data,
-					 &public_key, SILC_PKCS_FILE_BIN)) {
-	    fprintf(stderr, "%s:%d: Could not load public key file `%s'\n",
-		    config->filename, pc->linenum, 
-		    (char *)config->servers->auth_data);
-	    break;
-	  }
-
-	silc_free(config->servers->auth_data);
-	config->servers->auth_data = (void *)public_key;
-	config->servers->auth_data_len = 0;
-      }
-
-      /* Get port */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	config->servers->port = atoi(tmp);
-	silc_free(tmp);
-      }
-
-      /* Get version */
-      ret = silc_config_get_token(line, &config->servers->version);
-      if (ret < 0)
-	break;
-
-      /* Get class number */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	config->servers->class = atoi(tmp);
-	silc_free(tmp);
-      }
-
-      /* Check whether this connection is backup router connection */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret != -1) {
-	config->servers->backup_router = atoi(tmp);
-	if (config->servers->backup_router != 0)
-	  config->servers->backup_router = TRUE;
-	silc_free(tmp);
-      }
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_ROUTER_CONNECTION:
-
-      SILC_SERVER_CONFIG_LIST_ALLOC(config->routers);
-
-      /* Get host */
-      ret = silc_config_get_token(line, &config->routers->host);
-      if (ret < 0)
-	break;
-
-      /* Get authentication method */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	if (strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PASSWD) &&
-	    strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY)) {
-	  fprintf(stderr, "%s:%d: Unknown authentication method '%s'\n",
-		  config->filename, pc->linenum, tmp);
-	  break;
-	}
-
-	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PASSWD))
-	  config->routers->auth_meth = SILC_AUTH_PASSWORD;
-
-	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY))
-	  config->routers->auth_meth = SILC_AUTH_PUBLIC_KEY;
-
-	silc_free(tmp);
-      }
-
-      /* Get authentication data */
-      ret = silc_config_get_token(line, (char **)&config->routers->auth_data);
-      if (ret < 0)
-	break;
-
-      if (config->routers->auth_meth == SILC_AUTH_PASSWORD) {
-	config->routers->auth_data_len = strlen(config->routers->auth_data);
-      } else if (config->routers->auth_meth == SILC_AUTH_PUBLIC_KEY) {
-	/* Get the public key */
-	SilcPublicKey public_key;
-
-	if (!silc_pkcs_load_public_key(config->routers->auth_data,
-				       &public_key, SILC_PKCS_FILE_PEM))
-	  if (!silc_pkcs_load_public_key(config->routers->auth_data,
-					 &public_key, SILC_PKCS_FILE_BIN)) {
-	    fprintf(stderr, "%s:%d: Could not load public key file `%s'\n",
-		    config->filename, pc->linenum, 
-		    (char *)config->routers->auth_data);
-	    break;
-	  }
-
-	silc_free(config->routers->auth_data);
-	config->routers->auth_data = (void *)public_key;
-	config->routers->auth_data_len = 0;
-      }
-
-      /* Get port */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	config->routers->port = atoi(tmp);
-	silc_free(tmp);
-      }
-
-      /* Get version */
-      ret = silc_config_get_token(line, &config->routers->version);
-      if (ret < 0)
-	break;
-
-      /* Get class number */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	config->routers->class = atoi(tmp);
-	silc_free(tmp);
-      }
-
-      /* Get whether we are initiator or not */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	config->routers->initiator = atoi(tmp);
-	if (config->routers->initiator != 0)
-	  config->routers->initiator = TRUE;
-	silc_free(tmp);
-      }
-
-      /* Get backup replace IP */
-      ret = silc_config_get_token(line, &config->routers->backup_replace_ip);
-      if (ret != -1)
-	config->routers->backup_router = TRUE;
-
-      if (config->routers->backup_router) {
-	/* Get backup replace port */
-	ret = silc_config_get_token(line, &tmp);
-	if (ret != -1) {
-	  config->routers->backup_replace_port = atoi(tmp);
-	  silc_free(tmp);
-	}
-	
-	/* Check whether the backup connection is local */
-	ret = silc_config_get_token(line, &tmp);
-	if (ret != -1) {
-	  config->routers->backup_local = atoi(tmp);
-	  if (config->routers->backup_local != 0)
-	    config->routers->backup_local = TRUE;
-	  silc_free(tmp);
-	}
-      }
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_CONNECTION:
-
-      SILC_SERVER_CONFIG_LIST_ALLOC(config->admins);
-
-      /* Get host */
-      ret = silc_config_get_token(line, &config->admins->host);
-      if (ret < 0)
-	break;
-      if (ret == 0)
-	/* Any host */
-	config->admins->host = strdup("*");
-
-      /* Get username */
-      ret = silc_config_get_token(line, &config->admins->username);
-      if (ret < 0)
-	break;
-      if (ret == 0)
-	/* Any username */
-	config->admins->username = strdup("*");
-
-      /* Get nickname */
-      ret = silc_config_get_token(line, &config->admins->nickname);
-      if (ret < 0)
-	break;
-      if (ret == 0)
-	/* Any nickname */
-	config->admins->nickname = strdup("*");
-
-      /* Get authentication method */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret) {
-	if (strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PASSWD) &&
-	    strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY)) {
-	  fprintf(stderr, "%s:%d: Unknown authentication method '%s'\n",
-		  config->filename, pc->linenum, tmp);
-	  break;
-	}
-
-	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PASSWD))
-	  config->admins->auth_meth = SILC_AUTH_PASSWORD;
-
-	if (!strcmp(tmp, SILC_CONFIG_SERVER_AUTH_METH_PUBKEY))
-	  config->admins->auth_meth = SILC_AUTH_PUBLIC_KEY;
-
-	silc_free(tmp);
-      }
-
-      /* Get authentication data */
-      ret = silc_config_get_token(line, (char **)&config->admins->auth_data);
-      if (ret < 0)
-	break;
-
-      if (config->admins->auth_meth == SILC_AUTH_PASSWORD) {
-	config->admins->auth_data_len = strlen(config->admins->auth_data);
-      } else if (config->admins->auth_meth == SILC_AUTH_PUBLIC_KEY) {
-	/* Get the public key */
-	SilcPublicKey public_key;
-
-	if (!silc_pkcs_load_public_key(config->admins->auth_data,
-				       &public_key, SILC_PKCS_FILE_PEM))
-	  if (!silc_pkcs_load_public_key(config->admins->auth_data,
-					 &public_key, SILC_PKCS_FILE_BIN)) {
-	    fprintf(stderr, "%s:%d: Could not load public key file `%s'\n",
-		    config->filename, pc->linenum, 
-		    (char *)config->admins->auth_data);
-	    break;
-	  }
-
-	silc_free(config->admins->auth_data);
-	config->admins->auth_data = (void *)public_key;
-	config->admins->auth_data_len = 0;
-      }
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_DENY_CONNECTION:
-
-      SILC_SERVER_CONFIG_LIST_ALLOC(config->denied);
-
-      /* Get host */
-      ret = silc_config_get_token(line, &config->denied->host);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	/* Any host */
-	config->denied->host = strdup("*");
-	fprintf(stderr, "warning: %s:%d: Denying all connections",
-		config->filename, pc->linenum);
-      }
-
-      /* Get port */
-      ret = silc_config_get_token(line, &tmp);
-      if (ret < 0)
-	break;
-      if (ret == 0) {
-	/* Any port */
-	config->denied->port = 0;
-      } else {
-	config->denied->port = atoi(tmp);
-	silc_free(tmp);
-      }
-
-      /* Get comment */
-      ret = silc_config_get_token(line, &config->denied->comment);
-      if (ret < 0)
-	break;
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_MOTD:
-
-      if (!config->motd)
-	config->motd = silc_calloc(1, sizeof(*config->motd));
-
-      /* Get motd file */
-      ret = silc_config_get_token(line, &config->motd->motd_file);
-      if (ret < 0)
-	break;
-
-      check = TRUE;
-      checkmask |= (1L << pc->section->type);
-      break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_PID:
-
-       if (!config->pidfile)
-          config->pidfile = silc_calloc(1, sizeof(*config->pidfile));
-          
-       ret = silc_config_get_token(line, &config->pidfile->pid_file);
-       if (ret < 0)
-          break;
-          
-       check = TRUE;
-       checkmask |= (1L << pc->section->type);
-       break;
-
-    case SILC_CONFIG_SERVER_SECTION_TYPE_NONE:
-    default:
-      /* Error */
-      break;
-    }
-
-    /* Check for error */
-    if (check == FALSE) {
-      /* Line could not be parsed */
-      fprintf(stderr, "%s:%d: Parse error\n", config->filename, pc->linenum);
-      break;
-    }
-
-    pc = pc->next;
+  void *tmp;
+  silc_free(config->module_path);
+
+  /* Destroy Logging channels */
+  if (config->logging_info)
+    silc_free(config->logging_info->file);
+  if (config->logging_warnings)
+    silc_free(config->logging_warnings->file);
+  if (config->logging_errors)
+    silc_free(config->logging_errors->file);
+  if (config->logging_fatals)
+    silc_free(config->logging_fatals->file);
+
+  /* Destroy the ServerInfo struct */
+  if (config->server_info) {
+    register SilcServerConfigSectionServerInfo *si = config->server_info;
+    silc_free(si->server_name);
+    silc_free(si->server_ip);
+    silc_free(si->server_type);
+    silc_free(si->location);
+    silc_free(si->admin);
+    silc_free(si->email);
+    silc_free(si->user);
+    silc_free(si->group);
+    silc_free(si->motd_file);
+    silc_free(si->pid_file);
   }
 
-  if (check == FALSE)
-    return FALSE;
+  /* Now let's destroy the lists */
 
-  /* Check that all mandatory sections really were found. If not, the server
-     cannot function and we return error. */
-  ret = silc_server_config_check_sections(checkmask);
-  if (ret == FALSE) {
-    /* XXX */
-
+  SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionCipher,
+				  config->cipher)
+    silc_free(di->name);
+    silc_free(di->module);
+    silc_free(di);
   }
-  
-  /* Before returning all the lists in the config object must be set
-     to their first values (the last value is first here). */
-  while (config->cipher && config->cipher->prev)
-    config->cipher = config->cipher->prev;
-  while (config->pkcs && config->pkcs->prev)
-    config->pkcs = config->pkcs->prev;
-  while (config->hash_func && config->hash_func->prev)
-    config->hash_func = config->hash_func->prev;
-  while (config->hmac && config->hmac->prev)
-    config->hmac = config->hmac->prev;
-  while (config->listen_port && config->listen_port->prev)
-    config->listen_port = config->listen_port->prev;
-  while (config->logging && config->logging->prev)
-    config->logging = config->logging->prev;
-  while (config->conn_class && config->conn_class->prev)
-    config->conn_class = config->conn_class->prev;
-  while (config->clients && config->clients->prev)
-    config->clients = config->clients->prev;
-  while (config->servers && config->servers->prev)
-    config->servers = config->servers->prev;
-  while (config->admins && config->admins->prev)
-    config->admins = config->admins->prev;
-  while (config->routers && config->routers->prev)
-    config->routers = config->routers->prev;
-  
-  SILC_LOG_DEBUG(("Done"));
-  
-  return TRUE;
-}
-
-/* This function checks that the mask sent as argument includes all the 
-   sections that are mandatory in SILC server. */
-
-int silc_server_config_check_sections(uint32 checkmask)
-{
-  if (!(checkmask & (1L << SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_INFO))) {
-    
-    return FALSE;
+  SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionHash, config->hash)
+    silc_free(di->name);
+    silc_free(di->module);
+    silc_free(di);
   }
-  if (!(checkmask & (1L << SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_INFO))) {
-    
-    return FALSE;
+  SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionHmac, config->hmac)
+    silc_free(di->name);
+    silc_free(di->hash);
+    silc_free(di);
   }
-  if (!(checkmask & (1L << SILC_CONFIG_SERVER_SECTION_TYPE_LISTEN_PORT))) {
-    
-    return FALSE;
+  SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionPkcs, config->pkcs)
+    silc_free(di->name);
+    silc_free(di);
   }
-  if (!(checkmask & 
-	(1L << SILC_CONFIG_SERVER_SECTION_TYPE_CLIENT_CONNECTION))) {
-    
-    return FALSE;
+  SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionClient,
+				  config->clients)
+    silc_free(di->host);
+    my_free_authdata(di->auth_meth, di->auth_data);
+    silc_free(di);
   }
-  if (!(checkmask 
-	& (1L << SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_CONNECTION))) {
-    
-    return FALSE;
+  SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionAdmin, config->admins)
+    silc_free(di->host);
+    silc_free(di->user);
+    silc_free(di->nick);
+    my_free_authdata(di->auth_meth, di->auth_data);
+    silc_free(di);
   }
-  if (!(checkmask
-	& (1L << SILC_CONFIG_SERVER_SECTION_TYPE_ROUTER_CONNECTION))) {
-
-    return FALSE;
+  SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionDeny, config->denied)
+    silc_free(di->host);
+    silc_free(di->reason);
+    silc_free(di);
   }
-
-  return TRUE;
-}
-
-/* Sets log files where log messages is saved by the server. */
-
-void silc_server_config_setlogfiles(SilcServerConfig config, SilcSchedule sked)
-{
-  long tmp;
-  SilcServerConfigSectionLogging *log;
-
-  SILC_LOG_DEBUG(("Setting configured log file names"));
-  log = config->logging;
-  while (log) {
-    /* Logging Files */
-    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_INFO))
-      silc_log_set_file(SILC_LOG_INFO, log->filename, log->maxsize, sked);
-    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_WARNING))
-      silc_log_set_file(SILC_LOG_WARNING, log->filename, log->maxsize, sked);
-    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_ERROR))
-      silc_log_set_file(SILC_LOG_ERROR, log->filename, log->maxsize, sked);
-    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_FATAL))
-      silc_log_set_file(SILC_LOG_FATAL, log->filename, log->maxsize, sked);
-    /* Logging Options */
-    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LO_QUICK)) {
-      if (!strcasecmp(log->filename, "yes") ||
-	  !strcasecmp(log->filename, "on"))
-	   silc_log_quick = TRUE;
-    }
-    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LO_FDELAY)) {
-      tmp = atol(log->filename);
-      if (tmp > 0)
-        silc_log_flushdelay = tmp;
-      else {
-        fprintf(stderr, "config: invalid flushdelay value, use quicklogs if "
-		"you want real-time logging.\n");
-	exit(1);
-      }
-    }
-
-    log = log->next;
+  SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionServer,
+				  config->servers)
+    silc_free(di->host);
+    silc_free(di->version);
+    my_free_authdata(di->auth_meth, di->auth_data);
+    silc_free(di);
+  }
+  SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigSectionRouter,
+				  config->routers)
+    silc_free(di->host);
+    silc_free(di->version);
+    silc_free(di->backup_replace_ip);
+    my_free_authdata(di->auth_meth, di->auth_data);
+    silc_free(di);
   }
 }
 
 /* Registers configured ciphers. These can then be allocated by the
    server when needed. */
 
-bool silc_server_config_register_ciphers(SilcServerConfig config)
+bool silc_server_config_register_ciphers(SilcServer server)
 {
-  SilcServerConfigSectionAlg *alg;
-  SilcServer server = (SilcServer)config->server;
+  SilcServerConfig config = server->config;
+  SilcServerConfigSectionCipher *cipher = config->cipher;
+  char *module_path = config->module_path;
 
   SILC_LOG_DEBUG(("Registering configured ciphers"));
 
-  if (!config->cipher)
+  if (!cipher) /* any cipher in the config file? */
     return FALSE;
 
-  alg = config->cipher;
-  while(alg) {
-
-    if (!alg->sim_name) {
+  while (cipher) {
+    /* if there isn't a module_path OR there isn't a module sim name try to
+     * use buil-in functions */
+    if (!module_path || !cipher->module) {
       int i;
-      
       for (i = 0; silc_default_ciphers[i].name; i++)
-	if (!strcmp(silc_default_ciphers[i].name, alg->alg_name)) {
+	if (!strcmp(silc_default_ciphers[i].name, cipher->name)) {
 	  silc_cipher_register(&silc_default_ciphers[i]);
 	  break;
 	}
-      
-      if (!silc_cipher_is_supported(alg->alg_name)) {
-	SILC_LOG_ERROR(("Unknown cipher `%s'", alg->alg_name));
+      if (!silc_cipher_is_supported(cipher->name)) {
+	SILC_LOG_ERROR(("Unknown cipher `%s'", cipher->name));
 	silc_server_stop(server);
 	exit(1);
       }
-#ifdef SILC_SIM
     } else {
+#ifdef SILC_SIM
       /* Load (try at least) the crypto SIM module */
-      SilcCipherObject cipher;
+      char buf[1023], *alg_name;
+      SilcCipherObject cipher_obj;
       SilcSimContext *sim;
-      char *alg_name;
 
-      memset(&cipher, 0, sizeof(cipher));
-      cipher.name = alg->alg_name;
-      cipher.block_len = alg->block_len;
-      cipher.key_len = alg->key_len * 8;
+      memset(&cipher_obj, 0, sizeof(cipher_obj));
+      cipher_obj.name = cipher->name;
+      cipher_obj.block_len = cipher->block_length;
+      cipher_obj.key_len = cipher->key_length * 8;
 
+      /* build the libname */
+      snprintf(buf, sizeof(buf), "%s/%s", config->module_path,
+		cipher->module);
       sim = silc_sim_alloc();
       sim->type = SILC_SIM_CIPHER;
-      sim->libname = alg->sim_name;
+      sim->libname = buf;
 
-      alg_name = strdup(alg->alg_name);
+      alg_name = strdup(cipher->name);
       if (strchr(alg_name, '-'))
 	*strchr(alg_name, '-') = '\0';
 
-      if ((silc_sim_load(sim))) {
-	cipher.set_key = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg_name, 
+      if (silc_sim_load(sim)) {
+	cipher_obj.set_key =
+	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
 						SILC_CIPHER_SIM_SET_KEY));
-	SILC_LOG_DEBUG(("set_key=%p", cipher.set_key));
-	cipher.set_key_with_string = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg_name, 
+	SILC_LOG_DEBUG(("set_key=%p", cipher_obj.set_key));
+	cipher_obj.set_key_with_string =
+	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
 						SILC_CIPHER_SIM_SET_KEY_WITH_STRING));
-	SILC_LOG_DEBUG(("set_key_with_string=%p", cipher.set_key_with_string));
-	cipher.encrypt = 
+	SILC_LOG_DEBUG(("set_key_with_string=%p", cipher_obj.set_key_with_string));
+	cipher_obj.encrypt =
 	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
 						SILC_CIPHER_SIM_ENCRYPT_CBC));
-	SILC_LOG_DEBUG(("encrypt_cbc=%p", cipher.encrypt));
-        cipher.decrypt = 
+	SILC_LOG_DEBUG(("encrypt_cbc=%p", cipher_obj.encrypt));
+        cipher_obj.decrypt =
 	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
 						SILC_CIPHER_SIM_DECRYPT_CBC));
-	SILC_LOG_DEBUG(("decrypt_cbc=%p", cipher.decrypt));
-        cipher.context_len = 
+	SILC_LOG_DEBUG(("decrypt_cbc=%p", cipher_obj.decrypt));
+        cipher_obj.context_len =
 	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
 						SILC_CIPHER_SIM_CONTEXT_LEN));
-	SILC_LOG_DEBUG(("context_len=%p", cipher.context_len));
+	SILC_LOG_DEBUG(("context_len=%p", cipher_obj.context_len));
 
 	/* Put the SIM to the list of all SIM's in server */
 	silc_dlist_add(server->sim, sim);
@@ -1342,45 +1164,16 @@ bool silc_server_config_register_ciphers(SilcServerConfig config)
       }
 
       /* Register the cipher */
-      silc_cipher_register(&cipher);
-#endif
-    }
-
-    alg = alg->next;
-  }
-
-  return TRUE;
-}
-
-/* Registers configured PKCS's. */
-
-bool silc_server_config_register_pkcs(SilcServerConfig config)
-{
-  SilcServerConfigSectionAlg *alg = config->pkcs;
-  SilcServer server = (SilcServer)config->server;
-
-  SILC_LOG_DEBUG(("Registering configured PKCS"));
-
-  if (!config->pkcs)
-    return FALSE;
-
-  while(alg) {
-    int i;
-    
-    for (i = 0; silc_default_pkcs[i].name; i++)
-      if (!strcmp(silc_default_pkcs[i].name, alg->alg_name)) {
-	silc_pkcs_register(&silc_default_pkcs[i]);
-	break;
-      }
-      
-    if (!silc_pkcs_is_supported(alg->alg_name)) {
-      SILC_LOG_ERROR(("Unknown PKCS `%s'", alg->alg_name));
+      silc_cipher_register(&cipher_obj);
+#else
+      SILC_LOG_ERROR(("Dynamic module support not compiled, "
+			"can't load modules!"));
       silc_server_stop(server);
       exit(1);
+#endif
     }
-
-    alg = alg->next;
-  }
+    cipher = cipher->next;
+  } /* while */
 
   return TRUE;
 }
@@ -1388,66 +1181,64 @@ bool silc_server_config_register_pkcs(SilcServerConfig config)
 /* Registers configured hash functions. These can then be allocated by the
    server when needed. */
 
-bool silc_server_config_register_hashfuncs(SilcServerConfig config)
+bool silc_server_config_register_hashfuncs(SilcServer server)
 {
-  SilcServerConfigSectionAlg *alg;
-  SilcServer server = (SilcServer)config->server;
+  SilcServerConfig config = server->config;
+  SilcServerConfigSectionHash *hash = config->hash;
+  char *module_path = config->module_path;
 
   SILC_LOG_DEBUG(("Registering configured hash functions"));
 
-  if (!config->hash_func)
+  if (!hash) /* any hash func in the config file? */
     return FALSE;
 
-  alg = config->hash_func;
-  while(alg) {
-
-    if (!alg->sim_name) {
+  while (hash) {
+    /* if there isn't a module_path OR there isn't a module sim name try to
+     * use buil-in functions */
+    if (!module_path || !hash->module) {
       int i;
-      
       for (i = 0; silc_default_hash[i].name; i++)
-	if (!strcmp(silc_default_hash[i].name, alg->alg_name)) {
+	if (!strcmp(silc_default_hash[i].name, hash->name)) {
 	  silc_hash_register(&silc_default_hash[i]);
 	  break;
 	}
-      
-      if (!silc_hash_is_supported(alg->alg_name)) {
-	SILC_LOG_ERROR(("Unknown hash funtion `%s'", alg->alg_name));
+      if (!silc_hash_is_supported(hash->name)) {
+	SILC_LOG_ERROR(("Unknown hash funtion `%s'", hash->name));
 	silc_server_stop(server);
 	exit(1);
       }
-
-#ifdef SILC_SIM
     } else {
+#ifdef SILC_SIM
       /* Load (try at least) the hash SIM module */
-      SilcHashObject hash;
+      SilcHashObject hash_obj;
       SilcSimContext *sim;
 
-      memset(&hash, 0, sizeof(hash));
-      hash.name = alg->alg_name;
-      hash.block_len = alg->block_len;
-      hash.hash_len = alg->key_len;
+      memset(&hash_obj, 0, sizeof(hash_obj));
+      hash_obj.name = hash->name;
+      hash_obj.block_len = hash->block_length;
+      hash_obj.hash_len = hash->digest_length;
 
       sim = silc_sim_alloc();
       sim->type = SILC_SIM_HASH;
-      sim->libname = alg->sim_name;
+      sim->libname = hash->module;
 
       if ((silc_sim_load(sim))) {
-	hash.init = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name, 
+	hash_obj.init =
+	  silc_sim_getsym(sim, silc_sim_symname(hash->name,
 						SILC_HASH_SIM_INIT));
-	SILC_LOG_DEBUG(("init=%p", hash.init));
-	hash.update = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name,
+	SILC_LOG_DEBUG(("init=%p", hash_obj.init));
+	hash_obj.update =
+	  silc_sim_getsym(sim, silc_sim_symname(hash->name,
 						SILC_HASH_SIM_UPDATE));
-	SILC_LOG_DEBUG(("update=%p", hash.update));
-        hash.final = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name,
+	SILC_LOG_DEBUG(("update=%p", hash_obj.update));
+        hash_obj.final =
+	  silc_sim_getsym(sim, silc_sim_symname(hash->name,
 						SILC_HASH_SIM_FINAL));
-	SILC_LOG_DEBUG(("final=%p", hash.final));
-        hash.context_len = 
-	  silc_sim_getsym(sim, silc_sim_symname(alg->alg_name,
+	SILC_LOG_DEBUG(("final=%p", hash_obj.final));
+        hash_obj.context_len =
+	  silc_sim_getsym(sim, silc_sim_symname(hash->name,
 						SILC_HASH_SIM_CONTEXT_LEN));
-	SILC_LOG_DEBUG(("context_len=%p", hash.context_len));
+	SILC_LOG_DEBUG(("context_len=%p", hash_obj.context_len));
 
 	/* Put the SIM to the table of all SIM's in server */
 	silc_dlist_add(server->sim, sim);
@@ -1458,12 +1249,16 @@ bool silc_server_config_register_hashfuncs(SilcServerConfig config)
       }
 
       /* Register the hash function */
-      silc_hash_register(&hash);
+      silc_hash_register(&hash_obj);
+#else
+      SILC_LOG_ERROR(("Dynamic module support not compiled, "
+			"can't load modules!"));
+      silc_server_stop(server);
+      exit(1);
 #endif
     }
-
-    alg = alg->next;
-  }
+    hash = hash->next;
+  } /* while */
 
   return TRUE;
 }
@@ -1471,87 +1266,180 @@ bool silc_server_config_register_hashfuncs(SilcServerConfig config)
 /* Registers configure HMACs. These can then be allocated by the server
    when needed. */
 
-bool silc_server_config_register_hmacs(SilcServerConfig config)
+bool silc_server_config_register_hmacs(SilcServer server)
 {
-  SilcServerConfigSectionAlg *alg;
-  SilcServer server = (SilcServer)config->server;
+  SilcServerConfig config = server->config;
+  SilcServerConfigSectionHmac *hmac = config->hmac;
 
   SILC_LOG_DEBUG(("Registering configured HMACs"));
 
-  if (!config->hmac)
+  if (!hmac)
     return FALSE;
 
-  alg = config->hmac;
-  while(alg) {
-    SilcHmacObject hmac;
-    
-    if (!silc_hash_is_supported(alg->sim_name)) {
-      SILC_LOG_ERROR(("Unknown hash function `%s'", alg->sim_name));
+  while (hmac) {
+    SilcHmacObject hmac_obj;
+    if (!silc_hash_is_supported(hmac->hash)) {
+      SILC_LOG_ERROR(("Unknown hash function `%s'", hmac->hash));
       silc_server_stop(server);
       exit(1);
     }
-    
     /* Register the HMAC */
-    memset(&hmac, 0, sizeof(hmac));
-    hmac.name = alg->alg_name;
-    hmac.len = alg->key_len;
-    silc_hmac_register(&hmac);
+    memset(&hmac_obj, 0, sizeof(hmac_obj));
+    hmac_obj.name = hmac->name;
+    hmac_obj.len = hmac->mac_length;
+    silc_hmac_register(&hmac_obj);
 
-    alg = alg->next;
-  }
+    hmac = hmac->next;
+  } /* while */
 
   return TRUE;
 }
 
-/* Returns client authentication information from server configuration
-   by host (name or ip). If `port' is non-null then both name or IP and 
-   the port must match. */
+/* Registers configured PKCS's. */
 
-SilcServerConfigSectionClientConnection *
-silc_server_config_find_client_conn(SilcServerConfig config, 
-				    char *host, int port)
+bool silc_server_config_register_pkcs(SilcServer server)
 {
-  int i;
-  SilcServerConfigSectionClientConnection *client = NULL;
-  bool match = FALSE;
+  SilcServerConfig config = server->config;
+  SilcServerConfigSectionPkcs *pkcs = config->pkcs;
 
+  SILC_LOG_DEBUG(("Registering configured PKCS"));
+
+  if (!pkcs)
+    return FALSE;
+
+  while (pkcs) {
+    int i;
+    for (i = 0; silc_default_pkcs[i].name; i++)
+      if (!strcmp(silc_default_pkcs[i].name, pkcs->name)) {
+	silc_pkcs_register(&silc_default_pkcs[i]);
+	break;
+      }
+    if (!silc_pkcs_is_supported(pkcs->name)) {
+      SILC_LOG_ERROR(("Unknown PKCS `%s'", pkcs->name));
+      silc_server_stop(server);
+      exit(1);
+    }
+    pkcs = pkcs->next;
+  } /* while */
+
+  return TRUE;
+}
+
+/* Sets log files where log messages are saved by the server logger. */
+
+void silc_server_config_setlogfiles(SilcServerConfig config,
+				SilcSchedule sked)
+{
+  SilcServerConfigSectionLogging *this;
+
+  SILC_LOG_DEBUG(("Setting configured log file names"));
+
+  if ((this = config->logging_info))
+    silc_log_set_file(SILC_LOG_INFO, this->file, this->maxsize, sked);
+  if ((this = config->logging_warnings))
+    silc_log_set_file(SILC_LOG_WARNING, this->file, this->maxsize, sked);
+  if ((this = config->logging_errors))
+    silc_log_set_file(SILC_LOG_ERROR, this->file, this->maxsize, sked);
+  if ((this = config->logging_fatals))
+    silc_log_set_file(SILC_LOG_FATAL, this->file, this->maxsize, sked);
+}
+
+/* Returns client authentication information from configuration file by host
+   (name or ip) */
+
+SilcServerConfigSectionClient *
+silc_server_config_find_client(SilcServerConfig config, char *host, int port)
+{
+  SilcServerConfigSectionClient *client;
+
+  if (!config || !port) {
+    SILC_LOG_WARNING(("Bogus: config_find_client(config=0x%08x, "
+		      "host=0x%08x \"%s\", port=%hu)",
+		      (uint32) config, (uint32) host, host, port));
+    return NULL;
+  }
   if (!host)
     return NULL;
 
-  if (!config->clients)
-    return NULL;
-
-  client = config->clients;
-
-  for (i = 0; client; i++) {
-    if (silc_string_compare(client->host, host))
-      match = TRUE;
-
-    if (port && client->port && client->port != port)
-      match = FALSE;
-
-    if (match)
-      break;
-
-    client = client->next;
+  for (client = config->clients; client; client = client->next) {
+    if (client->host && !silc_string_compare(client->host, host))
+      continue;
+    if (client->port && (client->port != port))
+      continue;
+    break;
   }
-
-  if (!client)
-    return NULL;
-
+  /* if none matched, then client is already NULL */
   return client;
 }
 
-/* Returns server connection info from server configuartion by host 
+/* Returns admin connection configuration by host, username and/or
+   nickname. */
+
+SilcServerConfigSectionAdmin *
+silc_server_config_find_admin(SilcServerConfig config,
+			      char *host, char *user, char *nick)
+{
+  SilcServerConfigSectionAdmin *admin;
+
+  /* make sure we have a value for the matching parameters */
+  if (!host)
+    host = "*";
+  if (!user)
+    user = "*";
+  if (!nick)
+    nick = "*";
+
+  for (admin = config->admins; admin; admin = admin->next) {
+    if (admin->host && !silc_string_compare(admin->host, host))
+      continue;
+    if (admin->user && !silc_string_compare(admin->user, user))
+      continue;
+    if (admin->nick && !silc_string_compare(admin->nick, nick))
+      continue;
+    /* no checks failed -> this entry matches */
+    break;
+  }
+  /* if none matched, then admin is already NULL */
+  return admin;
+}
+
+/* Returns the denied connection configuration entry by host and port. */
+
+SilcServerConfigSectionDeny *
+silc_server_config_find_denied(SilcServerConfig config,
+			       char *host, uint16 port)
+{
+  SilcServerConfigSectionDeny *deny;
+
+  /* make sure we have a value for the matching parameters */
+  if (!config || !port) {
+    SILC_LOG_WARNING(("Bogus: config_find_denied(config=0x%08x, "
+		      "host=0x%08x \"%s\", port=%hu)",
+		      (uint32) config, (uint32) host, host, port));
+    return NULL;
+  }
+  if (!host)
+    return NULL;
+
+  for (deny = config->denied; deny; deny = deny->next) {
+    if (deny->host && !silc_string_compare(deny->host, host))
+      continue;
+    break;
+  }
+  /* if none matched, then deny is already NULL */
+  return deny;
+}
+
+/* Returns server connection info from server configuartion by host
    (name or ip). If `port' is non-null then both name or IP and the port
    must match. */
 
-SilcServerConfigSectionServerConnection *
-silc_server_config_find_server_conn(SilcServerConfig config, 
+SilcServerConfigSectionServer *
+silc_server_config_find_server_conn(SilcServerConfig config,
 				    char *host, int port)
 {
   int i;
-  SilcServerConfigSectionServerConnection *serv = NULL;
+  SilcServerConfigSectionServer *serv = NULL;
   bool match = FALSE;
 
   if (!host)
@@ -1580,15 +1468,15 @@ silc_server_config_find_server_conn(SilcServerConfig config,
   return serv;
 }
 
-/* Returns router connection info from server configuartion by
+/* Returns router connection info from server configuration by
    host (name or ip). */
 
-SilcServerConfigSectionServerConnection *
-silc_server_config_find_router_conn(SilcServerConfig config, 
+SilcServerConfigSectionRouter *
+silc_server_config_find_router_conn(SilcServerConfig config,
 				    char *host, int port)
 {
   int i;
-  SilcServerConfigSectionServerConnection *serv = NULL;
+  SilcServerConfigSectionRouter *serv = NULL;
   bool match = FALSE;
 
   if (!host)
@@ -1617,13 +1505,13 @@ silc_server_config_find_router_conn(SilcServerConfig config,
   return serv;
 }
 
-/* Returns TRUE if configuartion for a router connection that we are 
+/* Returns TRUE if configuration for a router connection that we are
    initiating exists. */
 
 bool silc_server_config_is_primary_route(SilcServerConfig config)
 {
   int i;
-  SilcServerConfigSectionServerConnection *serv = NULL;
+  SilcServerConfigSectionRouter *serv = NULL;
   bool found = FALSE;
 
   serv = config->routers;
@@ -1642,11 +1530,11 @@ bool silc_server_config_is_primary_route(SilcServerConfig config)
 /* Returns our primary connection configuration or NULL if we do not
    have primary router configured. */
 
-SilcServerConfigSectionServerConnection *
+SilcServerConfigSectionRouter *
 silc_server_config_get_primary_router(SilcServerConfig config)
 {
   int i;
-  SilcServerConfigSectionServerConnection *serv = NULL;
+  SilcServerConfigSectionRouter *serv = NULL;
 
   serv = config->routers;
   for (i = 0; serv; i++) {
@@ -1656,76 +1544,4 @@ silc_server_config_get_primary_router(SilcServerConfig config)
   }
 
   return NULL;
-}
-
-/* Returns Admin connection configuration by host, username and/or 
-   nickname. */
-
-SilcServerConfigSectionAdminConnection *
-silc_server_config_find_admin(SilcServerConfig config,
-			      char *host, char *username, char *nickname)
-{
-  SilcServerConfigSectionAdminConnection *admin = NULL;
-  int i;
-
-  if (!config->admins)
-    return NULL;
-
-  if (!host)
-    host = "*";
-  if (!username)
-    username = "*";
-  if (!nickname)
-    nickname = "*";
-
-  admin = config->admins;
-  for (i = 0; admin; i++) {
-    if (silc_string_compare(admin->host, host) &&
-	silc_string_compare(admin->username, username) &&
-	silc_string_compare(admin->nickname, nickname))
-      break;
-
-    admin = admin->next;
-  }
-
-  if (!admin)
-    return NULL;
-
-  return admin;
-}
-
-/* Returns the Denied connection configuration by host and port. */
-
-SilcServerConfigSectionDenyConnection *
-silc_server_config_denied_conn(SilcServerConfig config, char *host,
-			       int port)
-{
-  int i;
-  SilcServerConfigSectionDenyConnection *deny = NULL;
-  bool match = FALSE;
-
-  if (!host)
-    return NULL;
-
-  if (!config->denied)
-    return NULL;
-
-  deny = config->denied;
-  for (i = 0; deny; i++) {
-    if (silc_string_compare(deny->host, host))
-      match = TRUE;
-
-    if (port && deny->port && deny->port != port)
-      match = FALSE;
-
-    if (match)
-      break;
-
-    deny = deny->next;
-  }
-
-  if (!deny)
-    return NULL;
-
-  return deny;
 }

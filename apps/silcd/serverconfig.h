@@ -2,15 +2,15 @@
 
   serverconfig.h
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Johnny Mnemonic <johnny@themnemonic.org>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -21,111 +21,109 @@
 #ifndef SERVERCONFIG_H
 #define SERVERCONFIG_H
 
-/* Holds information of configured algorithms */
-typedef struct SilcServerConfigSectionAlgStruct {
-  char *alg_name;
-  char *sim_name;
-  uint32 block_len;
-  uint32 key_len;
-  struct SilcServerConfigSectionAlgStruct *next;
-  struct SilcServerConfigSectionAlgStruct *prev;
-#define SILC_CONFIG_SERVER_MODNAME "builtin"
-} SilcServerConfigSectionAlg;
+typedef struct SilcServerConfigSectionCipherStruct {
+  char *name;
+  char *module;
+  uint32 key_length;
+  uint32 block_length;
+  struct SilcServerConfigSectionCipherStruct *next;
+} SilcServerConfigSectionCipher;
 
-/* Holds server keys from config file */
-typedef struct {
-  SilcPublicKey public_key;
-  SilcPrivateKey private_key;
-} SilcServerConfigSectionServerKeys;
+typedef struct SilcServerConfigSectionHashStruct {
+  char *name;
+  char *module;
+  uint32 block_length;
+  uint32 digest_length;
+  struct SilcServerConfigSectionHashStruct *next;
+} SilcServerConfigSectionHash;
 
-/* Holds server information from config file */
-typedef struct {
+typedef struct SilcServerConfigSectionHmacStruct {
+  char *name;
+  char *hash;
+  uint32 mac_length;
+  struct SilcServerConfigSectionHmacStruct *next;
+} SilcServerConfigSectionHmac;
+
+typedef struct SilcServerConfigSectionPkcsStruct {
+  char *name;
+  struct SilcServerConfigSectionPkcsStruct *next;
+} SilcServerConfigSectionPkcs;
+
+typedef struct SilcServerConfigSectionServerInfoStruct {
   char *server_name;
   char *server_ip;
-  char *location;
   uint16 port;
+  char *server_type;	/* E.g. "Test Server" */
+  char *location;	/* geographic location */
+  char *admin;		/* admin full name */
+  char *email;		/* admin's email address */
+  char *user;		/* userid the server should be runned at */
+  char *group;		/* ditto, but about groupid */
+  SilcPublicKey public_key;
+  SilcPrivateKey private_key;
+  char *motd_file;	/* path to text motd file (reading only) */
+  char *pid_file;	/* path to the pid file (for reading and writing) */
 } SilcServerConfigSectionServerInfo;
 
-/* Holds server's administrative information from config file */
-typedef struct {
-  char *location;
-  char *server_type;
-  char *admin_name;
-  char *admin_email;
-} SilcServerConfigSectionAdminInfo;
-
-/* Holds all the ports the server is listenning on */
-typedef struct SilcServerConfigSectionListenPortStruct {
-  char *local_ip;
-  char *listener_ip;
-  uint16 port;
-  struct SilcServerConfigSectionListenPortStruct *next;
-  struct SilcServerConfigSectionListenPortStruct *prev;
-} SilcServerConfigSectionListenPort;
-
-/* Holds server's execution identity, or the user and group which
-   to change from root when server starts */
-typedef struct {
-  char *user;
-  char *group;
-} SilcServerConfigSectionIdentity;
-
-/* Holds all the configured log files. */
 typedef struct SilcServerConfigSectionLoggingStruct {
-  char *logtype;
-  char *filename;
+  char *file;
   uint32 maxsize;
-  struct SilcServerConfigSectionLoggingStruct *next;
-  struct SilcServerConfigSectionLoggingStruct *prev;
-
-/* Allowed <Logging> section types */
-#define SILC_CONFIG_SERVER_LF_INFO "infologfile"
-#define SILC_CONFIG_SERVER_LF_WARNING "warninglogfile"
-#define SILC_CONFIG_SERVER_LF_ERROR "errorlogfile"
-#define SILC_CONFIG_SERVER_LF_FATAL "fatallogfile"
-#define SILC_CONFIG_SERVER_LO_QUICK "quicklogs"
-#define SILC_CONFIG_SERVER_LO_FDELAY "flushdelay"
 } SilcServerConfigSectionLogging;
 
 /* Holds all configured connection classes */
-typedef struct SilcServerConfigSectionConnectionClassStruct {
+/* typedef struct SilcServerConfigSectionClassStruct {
   uint32 class;
   uint32 ping_freq;
   uint32 connect_freq;
   uint32 max_links;
-  struct SilcServerConfigSectionConnectionClassStruct *next;
-  struct SilcServerConfigSectionConnectionClassStruct *prev;
-} SilcServerConfigSectionConnectionClass;
-
-#define SILC_CONFIG_SERVER_AUTH_METH_PASSWD "passwd"
-#define SILC_CONFIG_SERVER_AUTH_METH_PUBKEY "pubkey"
+  struct SilcServerConfigSectionClassStruct *next;
+} SilcServerConfigSectionClass; */
 
 /* Holds all client authentication data from config file */
-typedef struct SilcServerConfigSectionClientConnectionStruct {
+typedef struct SilcServerConfigSectionClientStruct {
   char *host;
   SilcAuthMethod auth_meth;
   void *auth_data;
   uint32 auth_data_len;
   uint16 port;
   uint32 class;
-  struct SilcServerConfigSectionClientConnectionStruct *next;
-  struct SilcServerConfigSectionClientConnectionStruct *prev;
-} SilcServerConfigSectionClientConnection;
+  struct SilcServerConfigSectionClientStruct *next;
+} SilcServerConfigSectionClient;
 
-/* Hols all server's administrators authentication data from config file */
-typedef struct SilcServerConfigSectionAdminConnectionStruct {
+/* Holds all server's administrators authentication data from config file */
+typedef struct SilcServerConfigSectionAdminStruct {
   char *host;
-  char *username;
-  char *nickname;
+  char *user;
+  char *nick;
   SilcAuthMethod auth_meth;
   void *auth_data;
   uint32 auth_data_len;
-  struct SilcServerConfigSectionAdminConnectionStruct *next;
-  struct SilcServerConfigSectionAdminConnectionStruct *prev;
-} SilcServerConfigSectionAdminConnection;
+  struct SilcServerConfigSectionAdminStruct *next;
+} SilcServerConfigSectionAdmin;
 
-/* Holds all configured server/router connections from config file */
-typedef struct SilcServerConfigSectionServerConnectionStruct {
+/* Holds all configured denied connections from config file */
+typedef struct SilcServerConfigSectionDenyStruct {
+  char *host;
+  uint16 port;
+  char *reason;
+  struct SilcServerConfigSectionDenyStruct *next;
+} SilcServerConfigSectionDeny;
+
+/* Holds all configured server connections from config file */
+typedef struct SilcServerConfigSectionServerStruct {
+  char *host;
+  SilcAuthMethod auth_meth;
+  void *auth_data;
+  uint32 auth_data_len;
+  uint16 port;
+  char *version;
+  uint32 class;
+  bool backup_router;
+  struct SilcServerConfigSectionServerStruct *next;
+} SilcServerConfigSectionServer;
+
+/* Holds all configured router connections from config file */
+typedef struct SilcServerConfigSectionRouterStruct {
   char *host;
   SilcAuthMethod auth_meth;
   void *auth_data;
@@ -138,159 +136,65 @@ typedef struct SilcServerConfigSectionServerConnectionStruct {
   char *backup_replace_ip;
   uint16 backup_replace_port;
   bool backup_local;
-  struct SilcServerConfigSectionServerConnectionStruct *next;
-  struct SilcServerConfigSectionServerConnectionStruct *prev;
-} SilcServerConfigSectionServerConnection;
+  struct SilcServerConfigSectionRouterStruct *next;
+} SilcServerConfigSectionRouter;
 
-/* Holds all configured denied connections from config file */
-typedef struct SilcServerConfigSectionDenyConnectionStruct {
-  char *host;
-  char *comment;
-  uint16 port;
-  struct SilcServerConfigSectionDenyConnectionStruct *next;
-  struct SilcServerConfigSectionDenyConnectionStruct *prev;
-} SilcServerConfigSectionDenyConnection;
-
-/* Holds motd file */
+/* define the SilcServerConfig object */
 typedef struct {
-  char *motd_file;
-} SilcServerConfigSectionMotd;
+  void *tmp;
+  char *module_path;
 
-/* holds pid file */
-typedef struct {
-   char *pid_file;
-} SilcServerConfigSectionPid;
-
-/* 
-   SILC Server Config object. 
-
-   This object holds all the data parsed from the SILC server configuration
-   file. This is mainly used at the initialization of the server.
-
-*/
-typedef struct {
-  /* Pointer back to the server */
-  void *server;
-
-  /* Filename of the configuration file */
-  char *filename;
-
-  /* Configuration sections */
-  SilcServerConfigSectionAlg *cipher;
-  SilcServerConfigSectionAlg *pkcs;
-  SilcServerConfigSectionAlg *hash_func;
-  SilcServerConfigSectionAlg *hmac;
-  SilcServerConfigSectionServerKeys *server_keys;
+  SilcServerConfigSectionCipher *cipher;
+  SilcServerConfigSectionHash *hash;
+  SilcServerConfigSectionHmac *hmac;
+  SilcServerConfigSectionPkcs *pkcs;
+  SilcServerConfigSectionLogging *logging_info;
+  SilcServerConfigSectionLogging *logging_warnings;
+  SilcServerConfigSectionLogging *logging_errors;
+  SilcServerConfigSectionLogging *logging_fatals;
   SilcServerConfigSectionServerInfo *server_info;
-  SilcServerConfigSectionAdminInfo *admin_info;
-  SilcServerConfigSectionListenPort *listen_port;
-  SilcServerConfigSectionIdentity *identity;
-  SilcServerConfigSectionLogging *logging;
-  SilcServerConfigSectionConnectionClass *conn_class;
-  SilcServerConfigSectionClientConnection *clients;
-  SilcServerConfigSectionServerConnection *servers;
-  SilcServerConfigSectionServerConnection *routers;
-  SilcServerConfigSectionAdminConnection *admins;
-  SilcServerConfigSectionDenyConnection *denied;
-  SilcServerConfigSectionMotd *motd;
-  SilcServerConfigSectionPid *pidfile;
-} SilcServerConfigObject;
-
-typedef SilcServerConfigObject *SilcServerConfig;
-
-/* Configuration section type enumerations. */
-typedef enum {
-  SILC_CONFIG_SERVER_SECTION_TYPE_NONE = 0,
-  SILC_CONFIG_SERVER_SECTION_TYPE_CIPHER,
-  SILC_CONFIG_SERVER_SECTION_TYPE_PKCS,
-  SILC_CONFIG_SERVER_SECTION_TYPE_HASH_FUNCTION,
-  SILC_CONFIG_SERVER_SECTION_TYPE_HMAC,
-  SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_KEYS,
-  SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_INFO,
-  SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_INFO,
-  SILC_CONFIG_SERVER_SECTION_TYPE_LISTEN_PORT,
-  SILC_CONFIG_SERVER_SECTION_TYPE_IDENTITY,
-  SILC_CONFIG_SERVER_SECTION_TYPE_LOGGING,
-  SILC_CONFIG_SERVER_SECTION_TYPE_CONNECTION_CLASS,
-  SILC_CONFIG_SERVER_SECTION_TYPE_CLIENT_CONNECTION,
-  SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_CONNECTION,
-  SILC_CONFIG_SERVER_SECTION_TYPE_ROUTER_CONNECTION,
-  SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_CONNECTION,
-  SILC_CONFIG_SERVER_SECTION_TYPE_DENY_CONNECTION,
-  SILC_CONFIG_SERVER_SECTION_TYPE_MOTD,
-  SILC_CONFIG_SERVER_SECTION_TYPE_PID,
-} SilcServerConfigSectionType;
-
-/* SILC Configuration Section structure. */
-typedef struct {
-  const char *section;
-  SilcServerConfigSectionType type;
-  int maxfields;
-} SilcServerConfigSection;
-
-/* LIst of all possible config sections in SILC server. */
-extern SilcServerConfigSection silc_server_config_sections[];
-
-/* Structure used in parsing the configuration lines. The line is read
-   from a file to this structure before parsing it further. */
-typedef struct SilcServerConfigParseStruct {
-  SilcBuffer line;
-  int linenum;
-  SilcServerConfigSection *section;
-  struct SilcServerConfigParseStruct *next;
-  struct SilcServerConfigParseStruct *prev;
-} *SilcServerConfigParse;
-
-/* Macros */
-
-/* Allocates list entries for configuration sections. Used by all
-   config sections as this is common. */
-#define SILC_SERVER_CONFIG_LIST_ALLOC(x)		\
-do {							\
-  if (!(x)) {						\
-    (x) = silc_calloc(1, sizeof(*(x)));			\
-    (x)->next = NULL;					\
-    (x)->prev = NULL;					\
-  } else {						\
-    if (!(x)->next) {					\
-      (x)->next = silc_calloc(1, sizeof(*(x)->next));	\
-      (x)->next->next = NULL;				\
-      (x)->next->prev = (x);				\
-      (x) = (x)->next;					\
-    }							\
-  }							\
-} while(0)
+/*SilcServerConfigSectionClass *conn_class; */
+  SilcServerConfigSectionClient *clients;
+  SilcServerConfigSectionAdmin *admins;
+  SilcServerConfigSectionDeny *denied;
+  SilcServerConfigSectionServer *servers;
+  SilcServerConfigSectionRouter *routers;
+} *SilcServerConfig;
 
 /* Prototypes */
+
+/* basic config operations */
 SilcServerConfig silc_server_config_alloc(char *filename);
-void silc_server_config_free(SilcServerConfig config);
-int silc_server_config_parse(SilcServerConfig config, SilcBuffer buffer,
-			     SilcServerConfigParse *return_config);
-int silc_server_config_parse_lines(SilcServerConfig config, 
-				   SilcServerConfigParse parse_config);
-int silc_server_config_check_sections(uint32 checkmask);
+void silc_server_config_destroy(SilcServerConfig config);
+
+/* algorithm registering and reset functions */
+bool silc_server_config_register_ciphers(SilcServer server);
+bool silc_server_config_register_hashfuncs(SilcServer server);
+bool silc_server_config_register_hmacs(SilcServer server);
+bool silc_server_config_register_pkcs(SilcServer server);
 void silc_server_config_setlogfiles(SilcServerConfig config, SilcSchedule sked);
-bool silc_server_config_register_ciphers(SilcServerConfig config);
-bool silc_server_config_register_pkcs(SilcServerConfig config);
-bool silc_server_config_register_hashfuncs(SilcServerConfig config);
-bool silc_server_config_register_hmacs(SilcServerConfig config);
-SilcServerConfigSectionClientConnection *
-silc_server_config_find_client_conn(SilcServerConfig config, 
+
+/* run-time config access functions */
+SilcServerConfigSectionClient *
+silc_server_config_find_client(SilcServerConfig config, char *host, int port);
+
+SilcServerConfigSectionAdmin *
+silc_server_config_find_admin(SilcServerConfig config,
+			      char *host, char *user, char *nick);
+
+SilcServerConfigSectionDeny *
+silc_server_config_find_denied(SilcServerConfig config,
+			       char *host, uint16 port);
+
+/* Prototypes - OLD */
+SilcServerConfigSectionServer *
+silc_server_config_find_server_conn(SilcServerConfig config,
 				    char *host, int port);
-SilcServerConfigSectionServerConnection *
-silc_server_config_find_server_conn(SilcServerConfig config, 
-				    char *host, int port);
-SilcServerConfigSectionServerConnection *
-silc_server_config_find_router_conn(SilcServerConfig config, 
+SilcServerConfigSectionRouter *
+silc_server_config_find_router_conn(SilcServerConfig config,
 				    char *host, int port);
 bool silc_server_config_is_primary_route(SilcServerConfig config);
-SilcServerConfigSectionServerConnection *
+SilcServerConfigSectionRouter *
 silc_server_config_get_primary_router(SilcServerConfig config);
-SilcServerConfigSectionAdminConnection *
-silc_server_config_find_admin(SilcServerConfig config,
-			      char *host, char *username, char *nickname);
-SilcServerConfigSectionDenyConnection *
-silc_server_config_denied_conn(SilcServerConfig config, char *host,
-			       int port);
 
-#endif
+#endif	/* !SERVERCONFIG_H */

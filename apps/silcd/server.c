@@ -115,21 +115,20 @@ int silc_server_init(SilcServer server)
   SilcServerID *id;
   SilcServerEntry id_entry;
   SilcIDListPurge purge;
-  SilcServerConfigSectionListenPort *listen;
 
   SILC_LOG_DEBUG(("Initializing server"));
   assert(server);
   assert(server->config);
 
   /* Set public and private keys */
-  if (!server->config->server_keys ||
-      !server->config->server_keys->public_key || 
-      !server->config->server_keys->private_key) {
+  if (!server->config->server_info ||
+      !server->config->server_info->public_key || 
+      !server->config->server_info->private_key) {
     SILC_LOG_ERROR(("Server public key and/or private key does not exist"));
     return FALSE;
   }
-  server->public_key = server->config->server_keys->public_key;
-  server->private_key = server->config->server_keys->private_key;
+  server->public_key = server->config->server_info->public_key;
+  server->private_key = server->config->server_info->private_key;
 
   /* XXX After server is made as Silc Server Library this can be given
      as argument, for now this is hard coded */
@@ -141,17 +140,14 @@ int silc_server_init(SilcServer server)
   server->params->protocol_timeout = 60;
   server->params->require_reverse_mapping = FALSE;
 
-  /* Set log files where log message should be saved. */
-  server->config->server = server;
- 
   /* Register all configured ciphers, PKCS and hash functions. */
-  if (!silc_server_config_register_ciphers(server->config))
+  if (!silc_server_config_register_ciphers(server))
     silc_cipher_register_default();
-  if (!silc_server_config_register_pkcs(server->config))
+  if (!silc_server_config_register_pkcs(server))
     silc_pkcs_register_default();
-  if (!silc_server_config_register_hashfuncs(server->config))
+  if (!silc_server_config_register_hashfuncs(server))
     silc_hash_register_default();
-  if (!silc_server_config_register_hmacs(server->config))
+  if (!silc_server_config_register_hmacs(server))
     silc_hmac_register_default();
 
   /* Initialize random number generator for the server. */
@@ -171,24 +167,23 @@ int silc_server_init(SilcServer server)
   /* Create a listening server. Note that our server can listen on multiple
      ports. All listeners are created here and now. */
   sock_count = 0;
-  listen = server->config->listen_port;
-  while(listen) {
+  while (1) {
     int tmp;
 
-    tmp = silc_net_create_server(server->config->listen_port->port,
-				 server->config->listen_port->listener_ip);
+    tmp = silc_net_create_server(server->config->server_info->port,
+				 server->config->server_info->server_ip);
 
     if (tmp < 0) {
-      SILC_LOG_ERROR(("Could not create server listener: %s on %d",
-		      server->config->listen_port->listener_ip,
-		      server->config->listen_port->port));
+      SILC_LOG_ERROR(("Could not create server listener: %s on %hd",
+		      server->config->server_info->server_ip,
+		      server->config->server_info->port));
       goto err0;
     }
 
     sock = silc_realloc(sock, sizeof(*sock) * (sock_count + 1));
     sock[sock_count] = tmp;
     sock_count++;
-    listen = listen->next;
+    break;
   }
 
   /* Initialize ID caches */
@@ -307,7 +302,7 @@ int silc_server_init(SilcServer server)
   /* If server connections has been configured then we must be router as
      normal server cannot have server connections, only router connections. */
   if (server->config->servers) {
-    SilcServerConfigSectionServerConnection *ptr = server->config->servers;
+    SilcServerConfigSectionServer *ptr = server->config->servers;
 
     server->server_type = SILC_ROUTER;
     while (ptr) {
@@ -390,8 +385,7 @@ void silc_server_drop(SilcServer server)
     struct group *gr;
     char *user, *group;
 
-    if (!server->config->identity || !server->config->identity->user || 
-	!server->config->identity->group) {
+    if (!server->config->server_info->user || !server->config->server_info->group) {
       fprintf(stderr, "Error:"
        "\tSILC server must not be run as root.  For the security of your\n"
        "\tsystem it is strongly suggested that you run SILC under dedicated\n"
@@ -401,8 +395,8 @@ void silc_server_drop(SilcServer server)
     }
 
     /* Get the values given for user and group in configuration file */
-    user=server->config->identity->user;
-    group=server->config->identity->group;
+    user=server->config->server_info->user;
+    group=server->config->server_info->group;
 
     /* Check whether the user/group information is text */ 
     if (atoi(user)!=0 || atoi(group)!=0) {
@@ -635,7 +629,7 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   server->router_connect = time(0);
 
   /* Connect to remote host */
-  sock = silc_net_create_connection(server->config->listen_port->local_ip,
+  sock = silc_net_create_connection(server->config->server_info->server_ip,
 				    sconn->remote_port, 
 				    sconn->remote_host);
   if (sock < 0) {
@@ -662,7 +656,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 {
   SilcServer server = (SilcServer)context;
   SilcServerConnection sconn;
-  SilcServerConfigSectionServerConnection *ptr;
+  SilcServerConfigSectionRouter *ptr;
 
   SILC_LOG_DEBUG(("Connecting to router(s)"));
 
@@ -729,7 +723,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
   SilcServerConnection sconn = (SilcServerConnection)ctx->context;
   SilcSocketConnection sock = ctx->sock;
   SilcServerConnAuthInternalContext *proto_ctx;
-  SilcServerConfigSectionServerConnection *conn = NULL;
+  SilcServerConfigSectionRouter *conn = NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1024,7 +1018,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
   SilcServer server = (SilcServer)context;
   SilcServerKEInternalContext *proto_ctx;
   void *cconfig, *sconfig, *rconfig;
-  SilcServerConfigSectionDenyConnection *deny;
+  SilcServerConfigSectionDeny *deny;
   int port;
 
   SILC_LOG_DEBUG(("Start"));
@@ -1055,16 +1049,16 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
   port = server->sockets[server->sock]->port; /* Listenning port */
 
   /* Check whether this connection is denied to connect to us. */
-  deny = silc_server_config_denied_conn(server->config, sock->ip, port);
+  deny = silc_server_config_find_denied(server->config, sock->ip, port);
   if (!deny)
-    deny = silc_server_config_denied_conn(server->config, sock->hostname,
+    deny = silc_server_config_find_denied(server->config, sock->hostname,
 					  port);
   if (deny) {
     /* The connection is denied */
     SILC_LOG_INFO(("Connection %s (%s) is denied", 
                    sock->hostname, sock->ip));
-    silc_server_disconnect_remote(server, sock, deny->comment ?
-				  deny->comment :
+    silc_server_disconnect_remote(server, sock, deny->reason ?
+				  deny->reason :
 				  "Server closed connection: "
 				  "Connection refused");
     server->stat.conn_failures++;
@@ -1074,9 +1068,9 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
   /* Check whether we have configred this sort of connection at all. We
      have to check all configurations since we don't know what type of
      connection this is. */
-  if (!(cconfig = silc_server_config_find_client_conn(server->config,
+  if (!(cconfig = silc_server_config_find_client(server->config,
 						      sock->ip, port)))
-    cconfig = silc_server_config_find_client_conn(server->config,
+    cconfig = silc_server_config_find_client(server->config,
 						  sock->hostname, 
 						  port);
   if (!(sconfig = silc_server_config_find_server_conn(server->config,
@@ -1358,7 +1352,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   case SILC_SOCKET_TYPE_ROUTER:
     {
       SilcServerEntry new_server;
-      SilcServerConfigSectionServerConnection *conn = 
+      /* XXX FIXME: Now server and router has different table, so this is probably broken. */
+      SilcServerConfigSectionRouter *conn =
 	ctx->conn_type == SILC_SOCKET_TYPE_SERVER ? 
 	ctx->sconfig : ctx->rconfig;
 

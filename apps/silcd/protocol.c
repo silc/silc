@@ -906,7 +906,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 	/* Remote end is client */
 	if (conn_type == SILC_SOCKET_TYPE_CLIENT) {
-	  SilcServerConfigSectionClientConnection *client = ctx->cconfig;
+	  SilcServerConfigSectionClient *client = ctx->cconfig;
 	  
 	  if (client) {
 	    switch(client->auth_meth) {
@@ -968,7 +968,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	
 	/* Remote end is server */
 	if (conn_type == SILC_SOCKET_TYPE_SERVER) {
-	  SilcServerConfigSectionServerConnection *serv = ctx->sconfig;
+	  SilcServerConfigSectionServer *serv = ctx->sconfig;
 	  
 	  if (serv) {
 	    switch(serv->auth_meth) {
@@ -1030,7 +1030,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	
 	/* Remote end is router */
 	if (conn_type == SILC_SOCKET_TYPE_ROUTER) {
-	  SilcServerConfigSectionServerConnection *serv = ctx->rconfig;
+	  SilcServerConfigSectionRouter *serv = ctx->rconfig;
 
 	  if (serv) {
 	    switch(serv->auth_meth) {

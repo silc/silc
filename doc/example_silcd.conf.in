@@ -1,241 +1,348 @@
 #
 # Example configuration file.  Note that this attempts to present various
-# configuration possibilities and may not actually give any sensible 
+# configuration possibilities and may not actually give any sensible
 # configuration.  For real life example see the examples/ directory.
 #
 
 #
-# Configured ciphers.
+# General configuration options
 #
-# Format: <name>:<module path>:<key length>:<block length>
-#
-# If the cipher is builtin the <module path> maybe omitted.
-#
-[Cipher]
-aes-256-cbc:@MODULESDIR@/aes.sim.so:32:16
-aes-192-cbc:@MODULESDIR@/aes.sim.so:24:16
-aes-128-cbc:@MODULESDIR@/aes.sim.so:16:16
-twofish-256-cbc:@MODULESDIR@/twofish.sim.so:32:16
-twofish-192-cbc:@MODULESDIR@/twofish.sim.so:24:16
-twofish-128-cbc:@MODULESDIR@/twofish.sim.so:16:16
-mars-256-cbc:@MODULESDIR@/mars.sim.so:32:16
-mars-192-cbc:@MODULESDIR@/mars.sim.so:24:16
-mars-128-cbc:@MODULESDIR@/mars.sim.so:16:16
-none:@MODULESDIR@/none.sim.so:0:0
+General {
+	# This is the default path where to search modules
+	# You can comment it out to use builtin modules globally.
+	ModulePath = "@MODULESDIR@";
+};
 
 #
-# Configured hash functions.
+# Configured ciphers
 #
-# Format: <name>:<module path>:<block length>:<digest length>
+# The "Module" option can be either absolute or relative to the "ModulePath"
+# option.
+# If commented out forces using of built-in modules.
 #
-# If the hash function is builtin the <module path> maybe omitted.
+cipher {
+	name = "aes-256-cbc";
+	module = "aes.sim.so";
+	key_length = 32;
+	block_length = 16;
+};
+cipher {
+	name = "aes-192-cbc";
+	module = "aes.sim.so";
+	key_length = 24;
+	block_length = 16;
+};
+cipher {
+	name = "aes-128-cbc";
+	module = "aes.sim.so";
+	key_length = 16;
+	block_length = 16;
+};
+cipher {
+	name = "twofish-256-cbc";
+	module = "twofish.sim.so";
+	key_length = 32;
+	block_length = 16;
+};
+cipher {
+	name = "twofish-192-cbc";
+	module = "twofish.sim.so";
+	key_length = 24;
+	block_length = 16;
+};
+cipher {
+	name = "twofish-128-cbc";
+	module = "twofish.sim.so";
+	key_length = 16;
+	block_length = 16;
+};
+cipher {
+	name = "mars-256-cbc";
+	module = "mars.sim.so";
+	key_length = 32;
+	block_length = 16;
+};
+cipher {
+	name = "mars-192-cbc";
+	module = "mars.sim.so";
+	key_length = 24;
+	block_length = 16;
+};
+cipher {
+	name = "mars-128-cbc";
+	module = "mars.sim.so";
+	key_length = 16;
+	block_length = 16;
+};
+cipher {
+	name = "none";
+	module = "none.sim.so";
+};
+
 #
-[Hash]
-sha1::64:20
-md5::64:16
+# Configured hash functions
+#
+hash {
+	name = "sha1";
+	block_length = 64;
+	digest_length = 20;
+};
+hash {
+	name = "md5";
+	block_length = 64;
+	digest_length = 16;
+};
 
 #
 # Configured HMAC functions. The hash function used in the HMAC must
-# configured to the [hash] section.
+# be configured in the hash section.
 #
-# Format: <name>:<hash name>:<mac length>
-#
-[hmac]
-hmac-sha1-96:sha1:12
-hmac-md5-96:md5:12
-hmac-sha1:sha1:20
-hmac-md5:md5:16
+hmac {
+	name = "hmac-sha1-96";
+	hash = "sha1";
+	mac_length = 12;
+};
+hmac {
+	name = "hmac-md5-96";
+	hash = "md5";
+	mac_length = 12;
+};
+hmac {
+	name = "hmac-sha1";
+	hash = "sha1";
+	mac_length = 20;
+};
+hmac {
+	name = "hmac-md5";
+	hash = "md5";
+	mac_length = 16;
+};
 
 #
-# Configured PKCS.
+# Configured PKCS
 #
-# Format: <name>
-#
-[PKCS]
-rsa
+PKCS { name = "rsa"; };
 
 #
-# Run SILC server as specific user and group. The server must be initially
-# run as root.
+# Server information
 #
-# Format: <user>:<group>
-#
-[Identity]
-nobody:nobody
+ServerInfo {
+	#
+	# Server FQDN and IP address
+	#
+	hostname = "lassi.kuo.fi.ssh.com";
+	ip = "10.2.1.6";
+	port = 706;
 
-#
-# Server's administrative information.
-#
-# Format: <location>:<server type>:<admin's name>:<admin's email address>
-#
-[AdminInfo]
-Kuopio, Finland:Test Server:Pekka Riikonen:priikone@poseidon.pspt.fi
+	#
+	# ServerType field specifies the purpose of this server
+	# This is only a descriptive field.
+	#
+	ServerType = "Test Server";
 
-#
-# Server information.
-#
-# Format: +<server FQDN>:<server IP>:<geographic location>:<port>
-#
-[ServerInfo]
-lassi.kuo.fi.ssh.com:10.2.1.6:Kuopio, Finland:706
+	#
+	# Geographic location
+	#
+	Location = "Kuopio, Finland";
 
-#
-# Server keys
-#
-# Format: +<public key>:<private key>
-#
-[ServerKeys]
-@ETCDIR@/silcd.pub:@ETCDIR@/silcd.prv
+	#
+	# Full admin name
+	#
+	Admin = "Pekka Riikonen";
 
-#
-# Listenning ports.
-#
-# Format: <local IP>:<Listener IP>:<port>
-#
-[ListenPort]
-10.2.1.6:10.2.1.6:706
+	#
+	# Admin's email address
+	#
+	EMail = "priikone@poseidon.pspt.fi";
+
+	#
+	# Run SILC server as specific user and group. The server must be initially
+	# run as root.
+	#
+	User = "nobody";
+	Group = "nobody";
+
+	#
+	# Public and private keys
+	#
+	PublicKey = "@ETCDIR@/silcd.pub";
+	PrivateKey = "@ETCDIR@/silcd.prv";
+
+	#
+	# Motd file
+	#
+	# Specifies the text file displayed on client connection
+	#
+	#MotdFile = "@ETCDIR@/motd.txt";
+
+	#
+	# Pid file
+	#
+	PidFile = "@PIDFILE@";
+};
 
 #
 # Log files.
 #
-# This section is used to set various logging files, their paths
-# and maximum sizes. There are only four defined channels allowed for
-# defining (see list below).
+# This section is used to set various logging files, their paths, maximum
+# sizes and logging options.
+# There are only four defined channels allowed for defining (see below).
 # The log channels have an importance value, and most important channels
-# are printed on the less important ones, thus setting the logging file
-# for "infologfile" will ensure logging for all channels, while setting
-# logging file for "errorlogfile" will ensure logging for channels
-# "error" and "fatal" only.
-# If a message can't find a valid output file it will be discarded, thus,
-# if you unset all files you will completely disable server logging (and
-# this is NOT recommended).
-# If maximum size is given, the logfile will be rotated to a logfile with
-# the ".old" extension added. Older logfiles are flushed.
-# There are also two options, quicklogs and flushdelay. Their values
-# must be enclosed in colons (:), see the format below.
+# are redirected on the less important ones, thus setting a valid logging
+# file for "infologfile" will ensure logging for all channels, while setting
+# logging file for "errorlogfile" will ensure logging for channels "error"
+# and "fatal"
 #
-# Format: quicklogs:<yes/no>:
-#         flushdelay:<seconds>:
-#         infologfile:<path>:<max byte size>
-#         warninglogile:<path>:<max byte size>
-#         errorlogile:<path>:<max byte size>
-#         fatallogile:<path>:<max byte size>
-#
-[Logging]
-quicklogs:no:
-flushdelay:300:
-infologfile:@LOGSDIR@/silcd.log:50000
-warninglogfile:@LOGSDIR@/silcd_warnings.log:50000
-#errorlogfile:@LOGSDIR@/silcd_errors.log:50000
-#fatallogfile:@LOGSDIR@/silcd_fatals.log:
+Logging {
+	#
+	# If QuickLogs is true, then the logging files will be updated
+	# real-time. This causes a bit more CPU and HDD activity, but
+	# reduces memory usage. (if unsure say true).
+	#
+	QuickLogs = false;
+
+	#
+	# (Only if QuickLogs is false)
+	# FlushDelay tells log files update delay in case you have chosen
+	# buffering output.
+	#
+	FlushDelay = 180;
+
+	Info {
+		File = "@LOGSDIR@/silcd.log";
+		Size = "50k";
+	};
+	Warnings {
+		File = "@LOGSDIR@/silcd_warnings.log";
+		Size = "50k";
+	};
+	Errors {
+		File = "@LOGSDIR@/silcd_errors.log";
+		Size = "50k";
+	};
+	Fatals {
+		File = "@LOGSDIR@/silcd_fatals.log";
+		Size = "50k";
+	};
+};
 
 #
-# Connection classes.
+# Connection classes (UNSUPPORTED)
 #
 # This section is used to define connection classes. These can be
-# used to optimize the server and the connections.#
+# used to optimize the server and the connections.
 #
-# Format: <class number>:<ping freq>:<connect freq>:<max links>
-#
-[ConnectionClass]
-1:100:100:100
-2:200:300:400
+#Class {
+#	Name = "norm";
+#	Ping = 100;
+#	Connect = 100;
+#	Links = 100;
+#};
 
 #
 # Configured client connections.
 #
-# Format: <remote host>:<auth method>:<auth data>:<port>:<class>
+# All fields except Class are optional.  Omitted fields are assumed
+# to be generic (e.g. if the "Host" field is omitted all hosts will match
+# this client class).
 #
-# The <auth data> is either passphrase or file path to the public key
-# file.
-#
-[ClientConnection]
-:::706:1
+#Client {
+#	Host = "127.0.0.1";
+#	Port = 706;
+#	Class = "local";
+#};
+Client {
+	Port = 706;
+	Class = "norm";
+};
 
 #
 # Configured server administrator connections
 #
-# Format: <host>:<username>:<nickname>:<auth method>:<auth data>
+# The fields "Host", "User", and "Nick", are optional but you are encouraged
+# in using them to better identify your admins.
+# "AuthMethod" and "AuthData" fields are mandatory.  The "AuthMethod" field
+# can be either the special string "passwd" or "pubkey" to identify the type
+# of data specified by "AuthData".
 #
-# The <auth data> is either passphrase or file path to the public key
-# file.
+Admin {
+	Host = "10.2.1.199";
+	User = "priikone";
+	Nick = "pekka";
+	AuthMethod = "passwd";
+	AuthData = "verysecret";
+};
+
 #
-[AdminConnection]
-10.2.1.199:priikone:pekka:passwd:veryscret
+# Denied connections
+#
+# These connections are denied to connect to our server.
+#
+# The "Reason" field is mandatory, while the "Host" and "Port" fields can be
+# omitted to match everything.
+#
+#Deny {
+#	Host = "10.2.1.99";
+#	Port = 706;
+#	Reason = "Go away spammer";
+#};
+#Deny {
+#	Host = "10.3.*";
+#	Reason = "You are not welcome.";
+#};
 
 #
 # Configured server connections.
 #
-# If server connections are configured it means that our server is
-# router server.  Normal server must not configure server connections.
-# Thus, if your server is not router do not configure this section.  If
+# If server connections are configured it means that this server is
+# router server.  Normal servers must not configure server connections.
+# Thus, if this server is not router do not configure this section.  If
 # your server is router, this must be configured.
 #
-# Format: <remote host>:<auth method>:<auth data>:<port>:
-#         <version ID>:<class>:<backup connection>
+# The "AuthData" option is either passphrase or file path to the public key
+# file. If the connection is backup connection then set the "Backup" option
+# to true. For normal connections set it false. If it is
+# set to true then this server will be backup router.
 #
-# The <auth data> is either passphrase or file path to the public key
-# file. If the connection is backup connection then set the <backup 
-# connection> to value 1. For normal connections set it 0. If it is
-# set to value 1 then this server will be backup router.
-#
-[ServerConnection]
-10.2.1.7:passwd:veryscret:706:1:1:0
-10.2.1.17:passwd:veryscret13:706:1:1:1   # backup connection, that host
-                                         # will use this server as backup
-                                         # router.
+ServerConnection {
+	Host = "10.2.1.7";
+	AuthMethod = passwd;
+	AuthData = "verysecret";
+	Port = 706;
+	VersionID = 1;
+	Class = "norm";
+	Backup = false;
+};
 
 #
-# Configured router connections.
+# Configured router connections
 #
-# For normal server only one entry maybe configured to this section.  It
-# must be the router this server will be connected to.  For router server,
-# this sections includes all configured router connections.  The first
+# For normal servers only one entry maybe configured to this section.  It
+# must be the router this server will be connected to.  For router servers,
+# this section includes all configured router connections.  The first
 # configured connection is the primary route.
 #
-# Format: <remote host>:<auth method>:<auth data>:<port>:<version ID>:
-#         <class>:<initiator>:<backup replace IP>:<backup replace port>:
-#         <local backup>
+# The "AuthData" option is either passphrase or file path to the public key
+# file. If you are the initiator of the connection then set the "Initiator"
+# option to true.  If you are the responder of the connection (waiting for
+# incoming connection) then set it to false.
 #
-# The <auth data> is either passphrase or file path to the public key
-# file. If you are the initiator of the connection then set the <initiator>
-# to value 1.  If you are the responder of the connection (waiting for 
-# incoming connection) then set it to 0.
-#
-# If the connection is backup router connection then set the <backup
-# replace IP> to the IP address of the router that the backup router will
+# If the connection is backup router connection then set the "BackupHost"
+# option to the IP address of the router that the backup router will
 # replace if it becomes unavailable.  Set also the router's port to the
-# <backup replace port>.  For normal connection leave both empty. If this
-# backup router is in our cell then set the <local backup> to value 1.
-# If the backup router is in other cell then set it to value 0.
+# "BackupPort" option.  For normal connection leave both commented. If this
+# backup router is in our cell then set the "LocalBackup" option to true.
+# If the backup router is in other cell then set it to false.
 #
-[RouterConnection]
-#10.2.1.100:passwd:veryverysecret:706:1:1:1
-#10.2.100.131:pubkey:/path/to/the/publickey:706:1:1:1
-#10.2.100.100:pubkey:/path/to/the/publickey:706:1:1:0:10.2.1.6:706:1
-
-#
-# Denied connections.
-#
-# These connections are denied to connect our server.
-#
-# Format: <remote host>:<port>:<comment>
-#
-[DenyConnection]
-#10.2.1.99:0:Your connection has been denied
-
-#
-# Message Of The Day
-#
-# specify the text file containing the motd:
-#
-#[motd]
-#@ETCDIR@/motd.txt
-
-#
-# Pid File
-#
-# specify the pidfile where it will be written:
-#
-[pid]
-@PIDFILE@
+RouterConnection {
+	Host = "10.2.1.100";
+	AuthMethod = passwd;
+	AuthData = "verysecret";
+	Port = 706;
+	VersionID = 1;
+	Class = "norm";
+	Initiator = true;
+	#BackupHost = "10.2.1.6";
+	#BackupPort = 706;
+	#LocalBackup = true;
+};

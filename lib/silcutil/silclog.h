@@ -41,7 +41,7 @@
  *    This is the main logging channel id. There are currently four known
  *    logging channels (plus the debugging output channel), and they are
  *    ordered by importance.
- *    See the source code for SILC coding conventions about how choosing
+ *    See the source code for SILC coding conventions about how to choose
  *    the right output channel.
  *
  * SOURCE
@@ -59,7 +59,7 @@ typedef enum {
   /* Fatal messages (usually situations that will lead to a program crash */
   SILC_LOG_FATAL,
 
-  /* Total logging channels */
+  /* Total number logging channels */
   SILC_LOG_MAX
 } SilcLogType;
 /***/
@@ -122,8 +122,8 @@ typedef bool (*SilcLogDebugCb)(char *file, char *function, int line,
  * DESCRIPTION
  *
  *    The hexdump logging callback function.  The default behaviour is to
- *    print a formatted hexdump to stderr, and is commonly what you would it
- *    like to be.  `file', `function', and `line' are the corresponding
+ *    print a formatted hexdump to stderr, and is commonly what you would
+ *    like it to be.  `file', `function', and `line' are the corresponding
  *    offsets in the source files.  `data' is the begin of the buffer that
  *    should be hexdumped, which is `data_len' bytes long.
  *    The `message' parameter points to a null-terminated buffer containing
@@ -316,14 +316,12 @@ extern DLLAPI bool silc_debug_hexdump;
  * DESCRIPTION
  *
  *    This is a special wrapper to the debugging output (usually stderr).
- *    The standard behaviour is the same as SILC_LOG_INFO, but this macro
- *    also depends on the global debugging macro SILC_DEBUG.
- *    Undefining the global SILC_DEBUG define causes these functions to be
- *    defined to an empty value, thus removing all logging calls from the
- *    compiled program.
- *
- * SEE ALSO
- *    SILC_LOG_INFO
+ *    The standard behaviour is the same as SILC_LOG_INFO, with the difference
+ *    that this macro also depends on the global define SILC_DEBUG.
+ *    Undefining SILC_DEBUG causes these functions to be defined to an empty
+ *    value, thus removing all debug logging calls from the compiled
+ *    application.
+ *    This macro is also affected by the global variable silc_debug.
  *
  * SOURCE
  */
@@ -349,13 +347,13 @@ extern DLLAPI bool silc_debug_hexdump;
  *    behaves slightly differently from other logging wrappers.
  *    The first parameter, is composed by a group of parameters delimited by
  *    parenthesis.
- *    The second parameter is a (char *) pointer to the beginning of the
- *    memory section that should be hexdumped, and the third parameter is
- *    the length of this memory section.
- *    This macro is also affected by the global variable silc_debug_hexdump.
+ *    The second parameter is a `char *' pointer pointing to the beginning
+ *    of the memory section that should be hexdumped, and the third parameter
+ *    is the length of this memory section.
  *    Undefining the global SILC_DEBUG define causes these functions to be
- *    defined to an empty value, thus removing all logging calls from the
- *    compiled program.
+ *    defined to an empty value, thus removing all debug logging calls from
+ *    the compiled application.
+ *    This macro is also affected by the global variable silc_debug_hexdump.
  *
  * EXAMPLE
  *
@@ -414,7 +412,7 @@ void silc_log_output(SilcLogType type, char *string);
  *    is returned, even if the file has been previously set with
  *    silc_log_set_file().
  *    The returned pointer points to internally allocated storage and must
- *    must not be freed, modified or stored.
+ *    not be freed, modified or stored.
  *
  ***/
 char *silc_log_get_file(SilcLogType type);
@@ -461,7 +459,7 @@ bool silc_log_set_file(SilcLogType type, char *filename, uint32 maxsize,
  *    SilcLogCb.
  *
  * SEE ALSO
- *    SilcLogCb, silc_log_reset_callbacks
+ *    silc_log_reset_callbacks
  *
  ***/
 void silc_log_set_callback(SilcLogType type, SilcLogCb cb, void *context);

@@ -1036,13 +1036,14 @@ void silc_server_send_private_message(SilcServer server,
 void silc_server_send_motd(SilcServer server,
 			   SilcSocketConnection sock)
 {
-  char *motd;
+  char *motd, *motd_file = NULL;
   uint32 motd_len;
 
-  if (server->config && server->config->motd && 
-      server->config->motd->motd_file) {
+  if (server->config)
+    motd_file = server->config->server_info->motd_file;
 
-    motd = silc_file_readfile(server->config->motd->motd_file, &motd_len);
+  if (motd_file) {
+    motd = silc_file_readfile(motd_file, &motd_len);
     if (!motd)
       return;
 

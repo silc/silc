@@ -2499,7 +2499,7 @@ void silc_server_connection_auth_request(SilcServer server,
 					 SilcSocketConnection sock,
 					 SilcPacketContext *packet)
 {
-  SilcServerConfigSectionClientConnection *client = NULL;
+  SilcServerConfigSectionClient *client = NULL;
   uint16 conn_type;
   int ret, port;
   SilcAuthMethod auth_meth;
@@ -2523,11 +2523,11 @@ void silc_server_connection_auth_request(SilcServer server,
   /* Get the authentication method for the client */
   auth_meth = SILC_AUTH_NONE;
   port = server->sockets[server->sock]->port; /* Listenning port */
-  client = silc_server_config_find_client_conn(server->config,
+  client = silc_server_config_find_client(server->config,
 					       sock->ip,
 					       port);
   if (!client)
-    client = silc_server_config_find_client_conn(server->config,
+    client = silc_server_config_find_client(server->config,
 						 sock->hostname,
 						 port);
   if (client)

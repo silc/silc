@@ -2849,10 +2849,10 @@ SILC_SERVER_CMD_FUNC(info)
     memset(info_string, 0, sizeof(info_string));
     snprintf(info_string, sizeof(info_string), 
 	     "location: %s server: %s admin: %s <%s>",
-	     server->config->admin_info->location,
-	     server->config->admin_info->server_type,
-	     server->config->admin_info->admin_name,
-	     server->config->admin_info->admin_email);
+	     server->config->server_info->location,
+	     server->config->server_info->server_type,
+	     server->config->server_info->admin,
+	     server->config->server_info->email);
 
     server_info = info_string;
     entry = server->id_entry;
@@ -3526,10 +3526,10 @@ SILC_SERVER_CMD_FUNC(motd)
 
     idp = silc_id_payload_encode(server->id_entry->id, SILC_ID_SERVER);
 
-    if (server->config && server->config->motd && 
-	server->config->motd->motd_file) {
+    if (server->config && server->config->server_info &&
+	server->config->server_info->motd_file) {
       /* Send motd */
-      motd = silc_file_readfile(server->config->motd->motd_file, &motd_len);
+      motd = silc_file_readfile(server->config->server_info->motd_file, &motd_len);
       if (!motd)
 	goto out;
       
@@ -4583,7 +4583,7 @@ SILC_SERVER_CMD_FUNC(oper)
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   unsigned char *username, *auth;
   uint32 tmp_len;
-  SilcServerConfigSectionAdminConnection *admin;
+  SilcServerConfigSectionAdmin *admin;
   SilcIDListData idata = (SilcIDListData)client;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_OPER, cmd, 1, 2);
@@ -4661,7 +4661,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   unsigned char *username, *auth;
   uint32 tmp_len;
-  SilcServerConfigSectionAdminConnection *admin;
+  SilcServerConfigSectionAdmin *admin;
   SilcIDListData idata = (SilcIDListData)client;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_SILCOPER, cmd, 1, 2);

@@ -524,7 +524,7 @@ SILC_TASK_CALLBACK(silc_server_backup_connect_to_router)
 		  sconn->remote_port));
 
   /* Connect to remote host */
-  sock = silc_net_create_connection(server->config->listen_port->local_ip,
+  sock = silc_net_create_connection(server->config->server_info->server_ip,
 				    sconn->remote_port,
 				    sconn->remote_host);
   if (sock < 0) {
@@ -867,7 +867,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
       protocol->state++;
     } else {
       /* Responder of the protocol. */
-      SilcServerConfigSectionServerConnection *primary;
+      SilcServerConfigSectionRouter *primary;
 
       /* We should have received START or START_GLOBAL packet */
       if (ctx->type != SILC_SERVER_BACKUP_START &&

@@ -102,15 +102,15 @@ Usage: silcd [options]\n\
 
 /* Dies if a *valid* pid file exists already */
 
-static void silc_checkpid(SilcServer silcd)
+static void silc_server_checkpid(SilcServer silcd)
 {
-  if (silcd->config->pidfile && silcd->config->pidfile->pid_file) {
+  if (silcd->config->server_info->pid_file) {
     int oldpid;
     char *buf;
     uint32 buf_len;
 
     SILC_LOG_DEBUG(("Checking for another silcd running"));
-    buf = silc_file_readfile(silcd->config->pidfile->pid_file, &buf_len);
+    buf = silc_file_readfile(silcd->config->server_info->pid_file, &buf_len);
     if (!buf)
       return;
     oldpid = atoi(buf);
@@ -121,7 +121,7 @@ static void silc_checkpid(SilcServer silcd)
     if (errno != ESRCH) {
       fprintf(stderr, "\nI detected another daemon running with the same pid file.\n");
       fprintf(stderr, "Please change the config file, or erase the %s\n",
-	silcd->config->pidfile->pid_file);
+	silcd->config->server_info->pid_file);
       exit(1);
     }
   }
@@ -239,7 +239,7 @@ int main(int argc, char **argv)
     goto fail;
 
   /* Check for another silcd running */
-  silc_checkpid(silcd);
+  silc_server_checkpid(silcd);
 
   /* Initialize the server */
   ret = silc_server_init(silcd);
@@ -263,11 +263,11 @@ int main(int argc, char **argv)
     silc_server_daemonise(silcd);
 
   /* If set, write pid to file */
-  if (silcd->config->pidfile && silcd->config->pidfile->pid_file) {
-    char buf[10];
-    unlink(silcd->config->pidfile->pid_file);
+  if (silcd->config->server_info->pid_file) {
+    char buf[10], *pidfile = silcd->config->server_info->pid_file;
+    unlink(pidfile);
     snprintf(buf, sizeof(buf) - 1, "%d\n", getpid());
-    silc_file_writefile(silcd->config->pidfile->pid_file, buf, strlen(buf));
+    silc_file_writefile(pidfile, buf, strlen(buf));
   }
 
   /* Drop root. */
