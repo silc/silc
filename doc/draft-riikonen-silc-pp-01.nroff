@@ -1547,7 +1547,7 @@ represents the Command Payload.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |         Payload Length        | SILC Command  | Arguments Num |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Command Unifier        |
+|       Command Identifier      |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
 
@@ -1560,7 +1560,7 @@ o Payload Length (2 bytes) - Length of the entire command
   payload including any command argument payloads associated 
   with this payload.
 
-o SILC Command (1 byte) - SILC Command identifier.  This must 
+o SILC Command (1 byte) - Indicates the SILC command.  This must 
   be set to non-zero value.  If zero (0) value is found in this 
   field the packet must be discarded.
 
@@ -1570,7 +1570,7 @@ o Arguments Num (1 byte) - Indicates the number of arguments
   command payload.  See section 2.3.2.2 for definition of the
   Argument Payload.
 
-o Command Unifier (2 bytes) - Unifies this command at the
+o Command Identifier (2 bytes) - Identifies this command at the
   sender's end.  The entity who replies to this command must
   set the value found from this field into the Command Payload
   used to send the reply to the sender.  This way the sender
