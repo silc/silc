@@ -26,6 +26,4 @@ libsilcunixutil_a_SOURCES = 	\
 	silcunixutil.c		\
 	silcunixsockconn.c
 
-EXTRA_DIST = *.h
-
 include $(top_srcdir)/Makefile.defines.in

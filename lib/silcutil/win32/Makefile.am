@@ -25,6 +25,4 @@ libsilcwin32util_a_SOURCES = 	\
 	silcwin32schedule.c	\
 	silcwin32sockconn.c
 
-EXTRA_DIST = *.h
-
 include $(top_srcdir)/Makefile.defines.in
