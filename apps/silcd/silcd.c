@@ -87,6 +87,7 @@ int main(int argc, char **argv)
 	  break;
 	case 'd':
 	  silc_debug = TRUE;
+	  break;
 	case 'f':
 	  config_file = strdup(optarg);
 	  break;
