@@ -2829,20 +2829,15 @@ static void silc_server_new_id_real(SilcServer server,
       if (server->server_type == SILC_ROUTER && id_list == server->local_list)
 	silc_server_check_watcher_list(server, entry, NULL, 0);
 
-      if (entry->data.public_key) {
-	silc_hash_table_add(server->pk_hash, entry->data.public_key, entry);
-      } else {
-	/* We need to get the public key using GETKEY */
-	SilcBuffer idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
-	SilcSocketConnection dest_sock;
-
-	dest_sock = silc_server_get_client_route(server, NULL, 0, entry->id,
-	                                         NULL, NULL);
-	silc_server_send_command(server, dest_sock ? dest_sock
-	                         : SILC_PRIMARY_ROUTE(server),
-				 SILC_COMMAND_GETKEY, ++server->cmd_ident,
-				 1, 1, idp->data, idp->len);
-	silc_buffer_free(idp);
+      if (server->server_type == SILC_ROUTER) {
+	/* Add the client's public key to hash table or get the key with
+	   GETKEY command. */
+        if (entry->data.public_key)
+	  silc_hash_table_add(server->pk_hash, entry->data.public_key, entry);
+	else
+	  silc_server_send_command(server, router_sock,
+				   SILC_COMMAND_GETKEY, ++server->cmd_ident,
+				   1, 1, buffer->data, buffer->len);
       }
     }
     break;
