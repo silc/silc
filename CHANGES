@@ -1,3 +1,10 @@
+Wed Sep 18 18:28:04 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Resumed client packet handling from server put the resumed
+	  client on wrong list on router and caused the client not
+	  be present on the network anymore.  Now fixed to put the
+	  client to correct list.  Affected file silcd/packet_receive.c.
+
 Wed Sep 18 15:13:48 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Various cleanup in error message output in config parsing code
