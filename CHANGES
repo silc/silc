@@ -1,3 +1,18 @@
+Sun Oct 14 18:28:22 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Assure that router cannot reroute the same channel message
+	  to the sender.  Affected file silcd/packet_receive.c.
+
+Sat Oct 13 12:46:18 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Made better checks that the channel message is not sent
+	  to the router it came from.  Affected file is
+	  silcd/packet_send.c.  Fixed memory leak too.
+
+	* Announce informations for incoming router connection, but
+	  only after checking if it is replaced by backup router.
+	  Affected file silcd/packet_receive.c.
+
 Fri Oct 12 18:37:24 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the backup resuming protocol to work in multiple

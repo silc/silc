@@ -891,8 +891,9 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   SILC_LOG_DEBUG(("New server id(%s)",
 		  silc_id_render(ctx->dest_id, SILC_ID_SERVER)));
 
-  /* Add the connected router to local server list */
-  id_entry = silc_idlist_add_server(server->local_list, strdup(sock->hostname),
+  /* Add the connected router to global server list */
+  id_entry = silc_idlist_add_server(server->global_list, 
+				    strdup(sock->hostname),
 				    SILC_ROUTER, ctx->dest_id, NULL, sock);
   if (!id_entry) {
     silc_free(ctx->dest_id);
@@ -1336,13 +1337,18 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	 server. We mark ourselves as router for this server if we really
 	 are router. */
       new_server = 
-	silc_idlist_add_server(server->local_list, NULL,
-			       ctx->conn_type == SILC_SOCKET_TYPE_SERVER ?
-			       SILC_SERVER : SILC_ROUTER, NULL, 
-			       ctx->conn_type == SILC_SOCKET_TYPE_SERVER ?
-			       server->id_entry : 
-			       (conn->backup_router ? server->id_entry : 
-				NULL), sock);
+	silc_idlist_add_server((ctx->conn_type == SILC_SOCKET_TYPE_SERVER ?
+				server->local_list : (conn->backup_router ?
+						      server->local_list :
+						      server->global_list)),
+			       NULL,
+			       (ctx->conn_type == SILC_SOCKET_TYPE_SERVER ?
+				SILC_SERVER : SILC_ROUTER), 
+			       NULL, 
+			       (ctx->conn_type == SILC_SOCKET_TYPE_SERVER ?
+				server->id_entry : (conn->backup_router ? 
+						    server->id_entry : NULL)),
+			       sock);
       if (!new_server) {
 	SILC_LOG_ERROR(("Could not add new server to cache"));
 	silc_free(sock->user_data);
@@ -1369,10 +1375,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 			       conn->backup_replace_port, conn->backup_local);
 
 	/* Change it back to SERVER type since that's what it really is. */
-	if (conn->backup_local) {
+	if (conn->backup_local)
 	  ctx->conn_type = SILC_SOCKET_TYPE_SERVER;
-	  new_server->server_type = SILC_BACKUP_ROUTER;
-	}
+
+	new_server->server_type = SILC_BACKUP_ROUTER;
       }
 
       /* Check whether this connection is to be our primary router connection
@@ -2399,7 +2405,8 @@ void silc_server_free_sock_user_data(SilcServer server,
       silc_server_backup_del(server, user_data);
       silc_server_backup_replaced_del(server, user_data);
       silc_idlist_del_data(user_data);
-      silc_idlist_del_server(server->local_list, user_data);
+      if (!silc_idlist_del_server(server->local_list, user_data))
+	silc_idlist_del_server(server->global_list, user_data);
       server->stat.my_servers--;
       server->stat.servers--;
       if (server->server_type == SILC_ROUTER)

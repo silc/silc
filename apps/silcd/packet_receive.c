@@ -1277,6 +1277,7 @@ void silc_server_channel_message(SilcServer server,
   SilcChannelID *id = NULL;
   void *sender = NULL;
   void *sender_entry = NULL;
+  bool local = TRUE;
 
   SILC_LOG_DEBUG(("Processing channel message"));
 
@@ -1308,12 +1309,23 @@ void silc_server_channel_message(SilcServer server,
   if (packet->src_id_type == SILC_ID_CLIENT) {
     sender_entry = silc_idlist_find_client_by_id(server->local_list, 
 						 sender, TRUE, NULL);
-    if (!sender_entry)
+    if (!sender_entry) {
+      local = FALSE;
       sender_entry = silc_idlist_find_client_by_id(server->global_list, 
 						   sender, TRUE, NULL);
+    }
     if (!sender_entry || !silc_server_client_on_channel(sender_entry, 
 							channel)) {
       SILC_LOG_DEBUG(("Client not on channel"));
+      goto out;
+    }
+
+    /* If the packet is coming from router, but the client entry is
+       local entry to us then some router is rerouting this to us and it is
+       not allowed. */
+    if (server->server_type == SILC_ROUTER &&
+	sock->type == SILC_SOCKET_TYPE_ROUTER && local) {
+      SILC_LOG_DEBUG(("Channel message rerouted to the sender, drop it"));
       goto out;
     }
   }
@@ -1624,6 +1636,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   unsigned char *server_name, *id_string;
   uint16 id_len, name_len;
   int ret;
+  bool local = TRUE;
 
   SILC_LOG_DEBUG(("Creating new server"));
 
@@ -1636,7 +1649,10 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   idata = (SilcIDListData)new_server;
 
   /* Remove the old cache entry */
-  silc_idcache_del_by_context(server->local_list->servers, new_server);
+  if (!silc_idcache_del_by_context(server->local_list->servers, new_server)) {
+    silc_idcache_del_by_context(server->global_list->servers, new_server);
+    local = FALSE;
+  }
 
   /* Parse the incoming packet */
   ret = silc_buffer_unformat(buffer,
@@ -1691,7 +1707,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 		  silc_id_render(server_id, SILC_ID_SERVER)));
 
   /* Add again the entry to the ID cache. */
-  silc_idcache_add(server->local_list->servers, server_name, server_id, 
+  silc_idcache_add(local ? server->local_list->servers : 
+		   server->global_list->servers, server_name, server_id, 
 		   new_server, FALSE);
 
   /* Distribute the information about new server in the SILC network
@@ -1728,6 +1745,14 @@ SilcServerEntry silc_server_new_server(SilcServer server,
     /* Mark the router disabled. The data sent earlier will go but nothing
        after this does not go to this connection. */
     idata->status |= SILC_IDLIST_STATUS_DISABLED;
+  } else {
+    /* If it is router announce our stuff to it. */
+    if (sock->type == SILC_SOCKET_TYPE_ROUTER && 
+	server->server_type == SILC_ROUTER) {
+      silc_server_announce_servers(server, FALSE, 0, sock);
+      silc_server_announce_clients(server, 0, sock);
+      silc_server_announce_channels(server, 0, sock);
+    }
   }
 
   return new_server;
@@ -1743,7 +1768,7 @@ static void silc_server_new_id_real(SilcServer server,
 {
   SilcBuffer buffer = packet->buffer;
   SilcIDList id_list;
-  SilcServerEntry router;
+  SilcServerEntry router, server_entry;
   SilcSocketConnection router_sock;
   SilcIDPayload idp;
   SilcIdType id_type;
@@ -1763,24 +1788,26 @@ static void silc_server_new_id_real(SilcServer server,
   id_type = silc_id_payload_get_type(idp);
 
   /* Normal server cannot have other normal server connections */
-  if (id_type == SILC_ID_SERVER && sock->type == SILC_SOCKET_TYPE_SERVER)
+  server_entry = (SilcServerEntry)sock->user_data;
+  if (id_type == SILC_ID_SERVER && sock->type == SILC_SOCKET_TYPE_SERVER &&
+      server_entry->server_type == SILC_SERVER)
     goto out;
 
   id = silc_id_payload_get_id(idp);
   if (!id)
     goto out;
 
-  if (sock->type == SILC_SOCKET_TYPE_SERVER)
-    id_list = server->local_list;
-  else
-    id_list = server->global_list;
-
   /* If the packet is coming from server then use the sender as the
      origin of the the packet. If it came from router then check the real
      sender of the packet and use that as the origin. */
   if (sock->type == SILC_SOCKET_TYPE_SERVER) {
+    id_list = server->local_list;
     router_sock = sock;
     router = sock->user_data;
+
+    if (server_entry->server_type == SILC_BACKUP_ROUTER && 
+	id_type == SILC_ID_SERVER)
+      id_list = server->global_list;
   } else {
     void *sender_id = silc_id_str2id(packet->src_id, packet->src_id_len,
 				     packet->src_id_type);
@@ -1793,6 +1820,7 @@ static void silc_server_new_id_real(SilcServer server,
     if (!router)
       goto out;
     router_sock = sock;
+    id_list = server->global_list;
   }
 
   switch(id_type) {

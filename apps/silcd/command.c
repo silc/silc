@@ -1341,7 +1341,7 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
       entry = silc_idlist_find_server_by_name(server->local_list,
 					      tmp, TRUE, NULL);
       if (!entry && check_global)
-	entry = silc_idlist_find_server_by_name(server->local_list,
+	entry = silc_idlist_find_server_by_name(server->global_list,
 						tmp, TRUE, NULL);
       if (entry) {
 	*servers = silc_realloc(*servers, sizeof(**servers) * 
@@ -1363,7 +1363,7 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
       entry = silc_idlist_find_channel_by_name(server->local_list,
 					       tmp, NULL);
       if (!entry && check_global)
-	entry = silc_idlist_find_channel_by_name(server->local_list,
+	entry = silc_idlist_find_channel_by_name(server->global_list,
 						 tmp, NULL);
       if (entry) {
 	*channels = silc_realloc(*channels, sizeof(**channels) * 
@@ -4811,6 +4811,9 @@ SILC_SERVER_CMD_FUNC(close)
 
   server_entry = silc_idlist_find_server_by_conn(server->local_list,
 						 name, port, FALSE, NULL);
+  if (!server_entry)
+    server_entry = silc_idlist_find_server_by_conn(server->global_list,
+						   name, port, FALSE, NULL);
   if (!server_entry) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
 					  SILC_STATUS_ERR_NO_SERVER_ID);

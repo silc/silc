@@ -741,8 +741,9 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	if (silc_idcache_list_first(list, &id_cache)) {
 	  while (id_cache) {
 	    server_entry = (SilcServerEntry)id_cache->context;
-	    if ((server_entry == server->id_entry) || 
-		!server_entry->connection) {
+	    if (!server_entry || (server_entry == server->id_entry) || 
+		!server_entry->connection || !server_entry->data.send_key ||
+		(server_entry->data.status & SILC_IDLIST_STATUS_DISABLED)) {
 	      if (!silc_idcache_list_next(list, &id_cache))
 		break;
 	      else
@@ -757,7 +758,54 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	    ctx->sessions[ctx->sessions_count].server_entry = server_entry;
 
 	    SILC_LOG_DEBUG(("********************************"));
-	    SILC_LOG_DEBUG(("START for session %d", ctx->sessions_count));
+	    SILC_LOG_DEBUG(("START (local) for session %d", 
+			    ctx->sessions_count));
+
+	    /* This connection is performing this protocol too now */
+	    ((SilcSocketConnection)server_entry->connection)->protocol =
+	      protocol;
+
+	    if (server_entry->server_type == SILC_ROUTER)
+	      packet->data[0] = SILC_SERVER_BACKUP_START;
+	    else
+	      packet->data[0] = SILC_SERVER_BACKUP_START_GLOBAL;
+	    packet->data[1] = ctx->sessions_count;
+	    silc_server_packet_send(server, server_entry->connection,
+				    SILC_PACKET_RESUME_ROUTER, 0, 
+				    packet->data, packet->len, FALSE);
+	    ctx->sessions_count++;
+
+	    if (!silc_idcache_list_next(list, &id_cache))
+	      break;
+	  }
+	}
+
+	silc_idcache_list_free(list);
+      }
+
+      if (silc_idcache_get_all(server->global_list->servers, &list)) {
+	if (silc_idcache_list_first(list, &id_cache)) {
+	  while (id_cache) {
+	    server_entry = (SilcServerEntry)id_cache->context;
+	    if (!server_entry || (server_entry == server->id_entry) || 
+		!server_entry->connection || !server_entry->data.send_key ||
+		(server_entry->data.status & SILC_IDLIST_STATUS_DISABLED)) {
+	      if (!silc_idcache_list_next(list, &id_cache))
+		break;
+	      else
+		continue;
+	    }
+
+	    ctx->sessions = silc_realloc(ctx->sessions,
+					 sizeof(*ctx->sessions) *
+					 (ctx->sessions_count + 1));
+	    ctx->sessions[ctx->sessions_count].session = ctx->sessions_count;
+	    ctx->sessions[ctx->sessions_count].connected = FALSE;
+	    ctx->sessions[ctx->sessions_count].server_entry = server_entry;
+
+	    SILC_LOG_DEBUG(("********************************"));
+	    SILC_LOG_DEBUG(("START (global) for session %d", 
+			    ctx->sessions_count));
 
 	    /* This connection is performing this protocol too now */
 	    ((SilcSocketConnection)server_entry->connection)->protocol =
@@ -783,9 +831,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 
       silc_buffer_free(packet);
 
-      /* If we are router then announce our possible servers. */
-      if (server->server_type == SILC_ROUTER)
-	silc_server_announce_servers(server, FALSE, 0, ctx->sock);
+      /* Announce all of our information */
+      silc_server_announce_servers(server, TRUE, 0, ctx->sock);
       silc_server_announce_clients(server, 0, ctx->sock);
       silc_server_announce_channels(server, 0, ctx->sock);
 
@@ -918,10 +965,10 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	break;
       }
 
-      /* Switch announced informations to our entry instead of using the
+      /* Switch announced informations to our primary router of using the
 	 backup router. */
       silc_server_update_clients_by_server(server, ctx->sock->user_data,
-					   server->id_entry, TRUE, FALSE);
+					   server->router, TRUE, FALSE);
 
       packet = silc_buffer_alloc(2);
       silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
@@ -931,8 +978,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	if (silc_idcache_list_first(list, &id_cache)) {
 	  while (id_cache) {
 	    server_entry = (SilcServerEntry)id_cache->context;
-	    if ((server_entry == server->id_entry) || 
-		!server_entry->connection) {
+	    if (!server_entry || (server_entry == server->id_entry) || 
+		!server_entry->connection || !server_entry->data.send_key) {
 	      if (!silc_idcache_list_next(list, &id_cache))
 		break;
 	      else
@@ -940,7 +987,44 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	    }
 
 	    SILC_LOG_DEBUG(("********************************"));
-	    SILC_LOG_DEBUG(("RESUMED packet"));
+	    SILC_LOG_DEBUG(("RESUMED packet (local)"));
+
+	    server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
+
+	    /* This connection is performing this protocol too now */
+	    ((SilcSocketConnection)server_entry->connection)->protocol =
+	      protocol;
+
+	    if (server_entry->server_type == SILC_ROUTER)
+	      packet->data[0] = SILC_SERVER_BACKUP_RESUMED;
+	    else
+	      packet->data[0] = SILC_SERVER_BACKUP_RESUMED_GLOBAL;
+	    silc_server_packet_send(server, server_entry->connection,
+				    SILC_PACKET_RESUME_ROUTER, 0, 
+				    packet->data, packet->len, FALSE);
+
+	    if (!silc_idcache_list_next(list, &id_cache))
+	      break;
+	  }
+	}
+
+	silc_idcache_list_free(list);
+      }
+
+      if (silc_idcache_get_all(server->global_list->servers, &list)) {
+	if (silc_idcache_list_first(list, &id_cache)) {
+	  while (id_cache) {
+	    server_entry = (SilcServerEntry)id_cache->context;
+	    if (!server_entry || (server_entry == server->id_entry) || 
+		!server_entry->connection || !server_entry->data.send_key) {
+	      if (!silc_idcache_list_next(list, &id_cache))
+		break;
+	      else
+		continue;
+	    }
+
+	    SILC_LOG_DEBUG(("********************************"));
+	    SILC_LOG_DEBUG(("RESUMED packet (global)"));
 
 	    server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
 
@@ -1001,12 +1085,12 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 					  &backup_router)) {
 
 	if (backup_router == server->router) {
+	  server->id_entry->router = router;
+	  server->router = router;
 	  SILC_LOG_INFO(("Switching back to primary router %s",
 			 server->router->server_name));
 	  SILC_LOG_DEBUG(("Switching back to primary router %s",
 			  server->router->server_name));
-	  server->id_entry->router = router;
-	  server->router = router;
 	} else {
 	  SILC_LOG_INFO(("Resuming the use of router %s",
 			 router->server_name));
@@ -1017,9 +1101,10 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	idata = (SilcIDListData)server->router;
 	idata->status &= ~SILC_IDLIST_STATUS_DISABLED;
 
-	/* Update the client entries of the backup router to the new router */
+	/* Update the client entries of the backup router to the new 
+	   router */
 	silc_server_update_clients_by_server(server, backup_router,
-					     router, FALSE, FALSE);
+					     router, TRUE, FALSE);
 	silc_server_backup_replaced_del(server, backup_router);
 	silc_server_backup_add(server, backup_router, 
 			       ctx->sock->ip, ctx->sock->port,
@@ -1029,7 +1114,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	/* Announce all of our information to the router. */
 	if (server->server_type == SILC_ROUTER)
 	  silc_server_announce_servers(server, FALSE, 0, router->connection);
-	
+
 	/* Announce our clients and channels to the router */
 	silc_server_announce_clients(server, 0, router->connection);
 	silc_server_announce_channels(server, 0, router->connection);
@@ -1083,6 +1168,26 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 
   /* Remove this protocol from all server entries that has it */
   if (silc_idcache_get_all(server->local_list->servers, &list)) {
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	server_entry = (SilcServerEntry)id_cache->context;
+	sock = (SilcSocketConnection)server_entry->connection;
+
+	if (sock->protocol == protocol) {
+	  sock->protocol = NULL;
+
+	  if (server_entry->data.status & SILC_IDLIST_STATUS_DISABLED)
+	    server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
+	}
+	
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+    silc_idcache_list_free(list);
+  }
+
+  if (silc_idcache_get_all(server->global_list->servers, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	server_entry = (SilcServerEntry)id_cache->context;
