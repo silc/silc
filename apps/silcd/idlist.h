@@ -84,6 +84,9 @@ struct SilcServerListStruct {
   int server_type;
   SilcServerID *id;
 
+  /* TRUE when server is registered to server */
+  int registered;
+
   /* Pointer to the router */
   struct SilcServerListStruct *router;
 
@@ -200,6 +203,9 @@ struct SilcClientListStruct {
   char *userinfo;
   SilcClientID *id;
   int mode;
+
+  /* TRUE when client is registered to server */
+  int registered;
 
   /* Pointer to the router */
   SilcServerList *router;

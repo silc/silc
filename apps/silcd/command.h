@@ -82,24 +82,6 @@ extern SilcServerCommandPending *silc_command_pending;
 #define SILC_SERVER_CMD_FUNC(func) \
 void silc_server_command_##func(void *context)
 
-/* Macro used to execute commands */
-#define SILC_SERVER_COMMAND_EXEC(ctx)				\
-do {								\
-  SilcServerCommand *cmd;					\
-								\
-  for (cmd = silc_command_list; cmd->cb; cmd++)			\
-    if (cmd->cmd == silc_command_get(ctx->payload)) {		\
-      cmd->cb(ctx);						\
-      break;							\
-    }								\
-								\
-  if (cmd == NULL) {						\
-    SILC_LOG_ERROR(("Unknown command, packet dropped"));	\
-    silc_free(ctx);						\
-    return;							\
-  }								\
-} while(0)
-
 /* Checks for pending commands */
 #define SILC_SERVER_COMMAND_CHECK_PENDING(ctx)		\
 do {							\
@@ -128,6 +110,9 @@ do {							\
 } while(0)
 
 /* Prototypes */
+void silc_server_command_process(SilcServer server,
+				 SilcSocketConnection sock,
+				 SilcPacketContext *packet);
 void silc_server_command_pending(SilcCommand reply_cmd,
 				 SilcCommandCb callback,
 				 void *context);

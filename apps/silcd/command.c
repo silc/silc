@@ -20,6 +20,12 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.8  2000/07/10 05:42:59  priikone
+ * 	Removed command packet processing from server.c and added it to
+ * 	command.c.
+ * 	Implemented INFO command. Added support for testing that
+ * 	connections are registered before executing commands.
+ *
  * Revision 1.7  2000/07/07 06:55:24  priikone
  * 	Do not allow client to join twice on same channel.
  *
@@ -47,6 +53,23 @@
 
 #include "serverincludes.h"
 #include "server_internal.h"
+
+static int silc_server_is_registered(SilcServer server,
+				     SilcSocketConnection sock,
+				     SilcServerCommandContext cmd,
+				     SilcCommand command);
+static void 
+silc_server_command_send_status_reply(SilcServerCommandContext cmd,
+				      SilcCommand command,
+				      SilcCommandStatus status);
+static void 
+silc_server_command_send_status_data(SilcServerCommandContext cmd,
+				     SilcCommand command,
+				     SilcCommandStatus status,
+				     unsigned int arg_type,
+				     unsigned char *arg,
+				     unsigned int arg_len);
+static void silc_server_command_free(SilcServerCommandContext cmd);
 
 /* Server command list. */
 SilcServerCommand silc_command_list[] =
@@ -85,6 +108,89 @@ SilcServerCommand silc_command_list[] =
 
 /* List of pending commands. */
 SilcServerCommandPending *silc_command_pending = NULL;
+
+/* Returns TRUE if the connection is registered. Unregistered connections
+   usually cannot send commands hence the check. */
+
+static int silc_server_is_registered(SilcServer server,
+				     SilcSocketConnection sock,
+				     SilcServerCommandContext cmd,
+				     SilcCommand command)
+{
+  switch(sock->type) {
+  case SILC_SOCKET_TYPE_CLIENT:
+    {
+      SilcClientList *client = (SilcClientList *)sock->user_data;
+      if (client->registered)
+	return TRUE;
+      break;
+    }
+  case SILC_SOCKET_TYPE_SERVER:
+  case SILC_SOCKET_TYPE_ROUTER:
+    {
+      SilcServerList *serv = (SilcServerList *)sock->user_data;
+      if (serv->registered)
+	return TRUE;
+      break;
+    }
+  default:
+    break;
+  }
+
+  silc_server_command_send_status_reply(cmd, command,
+					SILC_STATUS_ERR_NOT_REGISTERED);
+  silc_server_command_free(cmd);
+  return FALSE;
+}
+
+/* Processes received command packet. */
+
+void silc_server_command_process(SilcServer server,
+				 SilcSocketConnection sock,
+				 SilcPacketContext *packet)
+{
+  SilcServerCommandContext ctx;
+  SilcServerCommand *cmd;
+  
+  /* Allocate command context. This must be free'd by the
+     command routine receiving it. */
+  ctx = silc_calloc(1, sizeof(*ctx));
+  ctx->server = server;
+  ctx->sock = sock;
+  ctx->packet = packet;	/* Save original packet */
+  
+  /* Parse the command payload in the packet */
+  ctx->payload = silc_command_parse_payload(packet->buffer);
+  if (!ctx->payload) {
+    SILC_LOG_ERROR(("Bad command payload, packet dropped"));
+    silc_buffer_free(packet->buffer);
+    silc_free(ctx);
+    return;
+  }
+  
+  /* Execute command. If this fails the packet is dropped. */
+  for (cmd = silc_command_list; cmd->cb; cmd++)
+    if (cmd->cmd == silc_command_get(ctx->payload)) {
+
+      if (!(cmd->flags & SILC_CF_REG)) {
+	cmd->cb(ctx);
+	break;
+      }
+      
+      if (silc_server_is_registered(server, sock, ctx, cmd->cmd)) {
+	cmd->cb(ctx);
+	break;
+      }
+    }
+
+  if (cmd == NULL) {
+    SILC_LOG_ERROR(("Unknown command, packet dropped"));
+    silc_free(ctx);
+    return;
+  }
+
+  silc_buffer_free(packet->buffer);
+}
 
 /* Add new pending command to the list of pending commands. Currently
    pending commands are executed from command replies, thus we can
@@ -665,11 +771,6 @@ SILC_SERVER_CMD_FUNC(invite)
      sender of this command must be at least channel operator. */
   /* XXX */
 
-  /* Check whether the requested client is already on the channel. */
-  /* XXX if we are normal server we don't know about global clients on
-     the channel thus we must request it (NAMES command), check from
-     local cache as well. */
-
   /* Find the connection data for the destination. If it is local we will
      send it directly otherwise we will send it to router for routing. */
   dest = silc_idlist_find_client_by_id(server->local_list->clients, dest_id);
@@ -677,6 +778,16 @@ SILC_SERVER_CMD_FUNC(invite)
     dest_sock = (SilcSocketConnection)dest->connection;
   else
     dest_sock = silc_server_get_route(server, dest_id, SILC_ID_CLIENT);
+
+  /* Check whether the requested client is already on the channel. */
+  /* XXX if we are normal server we don't know about global clients on
+     the channel thus we must request it (NAMES command), check from
+     local cache as well. */
+  if (silc_server_client_on_channel(dest, channel)) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					  SILC_STATUS_ERR_USER_ON_CHANNEL);
+    goto out;
+  }
 
   /* Send notify to the client that is invited to the channel */
   silc_server_send_notify_dest(server, dest_sock, dest_id, SILC_ID_CLIENT,
@@ -729,8 +840,75 @@ SILC_SERVER_CMD_FUNC(kill)
 {
 }
 
+/* Server side of command INFO. This sends information about us to 
+   the client. If client requested specific server we will send the 
+   command to that server. */
+
 SILC_SERVER_CMD_FUNC(info)
 {
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcBuffer packet;
+  unsigned int argc;
+  unsigned char *id_string;
+  char info_string[256], *dest_server;
+
+  argc = silc_command_get_arg_num(cmd->payload);
+  if (argc < 1) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
+					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+  if (argc > 1) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
+					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
+    goto out;
+  }
+
+  /* Get server name */
+  dest_server = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  if (!dest_server) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_INFO,
+					  SILC_STATUS_ERR_NO_SUCH_SERVER);
+    goto out;
+  }
+
+  if (!strncasecmp(dest_server, server->server_name, strlen(dest_server))) {
+    /* Send our reply */
+    memset(info_string, 0, sizeof(info_string));
+    snprintf(info_string, sizeof(info_string), "%s %s %s <%s>",
+	     server->config->admin_info->location,
+	     server->config->admin_info->server_type,
+	     server->config->admin_info->admin_name,
+	     server->config->admin_info->admin_email);
+
+    id_string = silc_id_id2str(server->id, SILC_ID_SERVER);
+
+    packet = 
+      silc_command_encode_reply_payload_va(SILC_COMMAND_INFO,
+					   SILC_STATUS_OK, 2,
+					   2, id_string, SILC_ID_SERVER_LEN,
+					   3, info_string, 
+					   strlen(info_string));
+    silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
+			    packet->data, packet->len, FALSE);
+    
+    silc_free(id_string);
+    silc_buffer_free(packet);
+  } else {
+    /* Send this command to the requested server */
+
+    if (server->server_type == SILC_SERVER && !server->standalone) {
+
+    }
+
+    if (server->server_type == SILC_ROUTER) {
+
+    }
+  }
+  
+ out:
+  silc_server_command_free(cmd);
 }
 
 SILC_SERVER_CMD_FUNC(connect)

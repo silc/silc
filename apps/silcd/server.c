@@ -25,6 +25,12 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.7  2000/07/10 05:43:00  priikone
+ * 	Removed command packet processing from server.c and added it to
+ * 	command.c.
+ * 	Implemented INFO command. Added support for testing that
+ * 	connections are registered before executing commands.
+ *
  * Revision 1.6  2000/07/07 06:55:59  priikone
  * 	Added SILC style public key support and made server to use
  * 	it at all time.
@@ -135,10 +141,9 @@ void silc_server_free(SilcServer server)
 
 int silc_server_init(SilcServer server)
 {
-  int *sock = NULL, sock_count, i;
+  int *sock = NULL, sock_count = 0, i;
   SilcServerID *id;
   SilcServerList *id_entry;
-  SilcHashObject hash;
 
   SILC_LOG_DEBUG(("Initializing server"));
   assert(server);
@@ -200,16 +205,20 @@ int silc_server_init(SilcServer server)
 	silc_pkcs_private_key_alloc("rsa", private_key, prv_len);
       
       /* XXX Save keys */
-      silc_pkcs_save_public_key("pubkey.pub", server->public_key);
-      silc_pkcs_save_private_key("privkey.prv", server->private_key, NULL);
+      silc_pkcs_save_public_key("pubkey.pub", server->public_key,
+				SILC_PKCS_FILE_PEM);
+      silc_pkcs_save_private_key("privkey.prv", server->private_key, NULL,
+				 SILC_PKCS_FILE_BIN);
 
       memset(public_key, 0, pk_len);
       memset(private_key, 0, prv_len);
       silc_free(public_key);
       silc_free(private_key);
     } else {
-      silc_pkcs_load_public_key("pubkey.pub", &server->public_key);
-      silc_pkcs_load_private_key("privkey.prv", &server->private_key);
+      silc_pkcs_load_public_key("pubkey.pub", &server->public_key,
+				SILC_PKCS_FILE_PEM);
+      silc_pkcs_load_private_key("privkey.prv", &server->private_key,
+				 SILC_PKCS_FILE_BIN);
     }
   }
 
@@ -1663,37 +1672,11 @@ void silc_server_packet_parse_type(SilcServer server,
      * Command packets
      */
   case SILC_PACKET_COMMAND:
-    {
-      /*
-       * Recived command. Allocate command context and execute the command.
-       */
-      SilcServerCommandContext ctx;
-
-      SILC_LOG_DEBUG(("Command packet"));
-
-      /* Router cannot send command packet */
-      if (sock->type == SILC_SOCKET_TYPE_ROUTER)
-	break;
-
-      /* Allocate command context. This must be free'd by the
-	 command routine receiving it. */
-      ctx = silc_calloc(1, sizeof(*ctx));
-      ctx->server = server;
-      ctx->sock = sock;
-      ctx->packet = packet;	/* Save original packet */
-
-      /* Parse the command payload in the packet */
-      ctx->payload = silc_command_parse_payload(buffer);
-      if (!ctx->payload) {
-	SILC_LOG_ERROR(("Bad command payload, packet dropped"));
-	silc_free(ctx);
-	return;
-      }
-
-      /* Execute command. If this fails the packet is dropped. */
-      SILC_SERVER_COMMAND_EXEC(ctx);
-      silc_buffer_free(buffer);
-    }
+    /*
+     * Recived command. Allocate command context and execute the command.
+     */
+    SILC_LOG_DEBUG(("Command packet"));
+    silc_server_command_process(server, sock, packet);
     break;
 
   case SILC_PACKET_COMMAND_REPLY:
@@ -3705,6 +3688,7 @@ SilcClientList *silc_server_new_client(SilcServer server,
 
   /* Set the pointers to the client list and create new client ID */
   id_entry = (SilcClientList *)sock->user_data;
+  id_entry->registered = TRUE;
   id_entry->nickname = strdup(username);
   id_entry->username = username;
   id_entry->userinfo = realname;
@@ -3795,6 +3779,7 @@ SilcServerList *silc_server_new_server(SilcServer server,
 
   /* Save ID and name */
   id_entry = (SilcServerList *)sock->user_data;
+  id_entry->registered = TRUE;
   id_entry->id = silc_id_str2id(id_string, SILC_ID_SERVER);
   id_entry->server_name = server_name;
   
