@@ -2874,7 +2874,7 @@ void silc_server_new_channel(SilcServer server,
 				0, channel_id, sock->user_data, NULL, NULL, 0);
       if (!channel)
 	return;
-      channel->disabled = TRUE;
+      channel->disabled = TRUE;    /* Disabled until someone JOINs */
 
       server->stat.channels++;
       if (server->server_type == SILC_ROUTER)
@@ -2929,9 +2929,16 @@ void silc_server_new_channel(SilcServer server,
 	silc_free(channel_id);
 	return;
       }
-      channel->disabled = TRUE;
+      channel->disabled = TRUE;    /* Disabled until someone JOINs */
+
+#if 0 /* We assume that CMODE_CHANGE notify is sent to us after this. */
+
+      /* XXX Dunno if this is supposed to be set in any server type.  If set
+	 here the CMODE_CHANGE that may follow sets mode that we already
+	 have, and we may loose data from the CMODE_CHANGE notify. */
       if (server_entry->server_type != SILC_BACKUP_ROUTER)
 	channel->mode = silc_channel_get_mode(payload);
+#endif
 
       /* Send the new channel key to the server */
       id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);

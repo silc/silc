@@ -3692,7 +3692,7 @@ SILC_SERVER_CMD_FUNC(join)
 	/* Save channel passphrase, if user provided it successfully */
 	unsigned char *pa;
 	SilcUInt32 pa_len;
-	pa = silc_argument_get_arg_type(reply->args, 3, &pa_len);
+	pa = silc_argument_get_arg_type(cmd->args, 3, &pa_len);
 	if (pa) {
 	  silc_free(channel->passphrase);
 	  channel->passphrase = silc_memdup(pa, pa_len);
@@ -3958,7 +3958,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   SilcBuffer packet, cidp;
   unsigned char *tmp, *tmp_id, *tmp_mask;
   char *cipher = NULL, *hmac = NULL, *passphrase = NULL;
-  SilcUInt32 mode_mask = 0, tmp_len, tmp_len2;
+  SilcUInt32 mode_mask = 0, old_mask = 0, tmp_len, tmp_len2;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   bool set_mask = FALSE;
   SilcPublicKey founder_key = NULL;
@@ -3972,20 +3972,15 @@ SILC_SERVER_CMD_FUNC(cmode)
   if (!tmp_id) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 					  SILC_STATUS_ERR_NO_CHANNEL_ID, 0);
-    goto out;
+    silc_server_command_free(cmd);
+    return;
   }
   channel_id = silc_id_payload_parse_id(tmp_id, tmp_len2, NULL);
   if (!channel_id) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 					  SILC_STATUS_ERR_NO_CHANNEL_ID, 0);
-    goto out;
-  }
-
-  /* Get the channel mode mask */
-  tmp_mask = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (tmp_mask) {
-    SILC_GET32_MSB(mode_mask, tmp_mask);
-    set_mask = TRUE;
+    silc_server_command_free(cmd);
+    return;
   }
 
   /* Get channel entry */
@@ -3998,8 +3993,18 @@ SILC_SERVER_CMD_FUNC(cmode)
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 					    SILC_STATUS_ERR_NO_SUCH_CHANNEL,
 					    0);
-      goto out;
+      silc_free(channel_id);
+      silc_server_command_free(cmd);
+      return;
     }
+  }
+  old_mask = channel->mode;
+
+  /* Get the channel mode mask */
+  tmp_mask = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (tmp_mask) {
+    SILC_GET32_MSB(mode_mask, tmp_mask);
+    set_mask = TRUE;
   }
 
   /* Check whether this client is on the channel */
@@ -4299,7 +4304,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   }
 
   /* Finally, set the mode */
-  channel->mode = mode_mask;
+  old_mask = channel->mode = mode_mask;
 
   /* Send CMODE_CHANGE notify. */
   cidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
@@ -4331,6 +4336,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   silc_buffer_free(cidp);
 
  out:
+  channel->mode = old_mask;
   silc_free(fkey);
   silc_free(channel_id);
   silc_server_command_free(cmd);
@@ -5636,7 +5642,8 @@ SILC_SERVER_CMD_FUNC(users)
 	&& !silc_server_client_on_channel(cmd->sock->user_data, channel, 
 					  NULL)) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
-					    SILC_STATUS_ERR_NOT_ON_CHANNEL, 0);
+					    SILC_STATUS_ERR_NO_SUCH_CHANNEL,
+					    0);
       goto out;
     }
   }

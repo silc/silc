@@ -1,3 +1,17 @@
+Sat Jun 29 17:40:12 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Return NO_SUCH_CHANNEL error in USERS for channel that is
+	  secret or private, otherwise it's possible to find out
+	  whether a secret channel exists or not.  Affected file
+	  silcd/command.c.
+
+	* If CMODE change fails during the mode setting, assure that
+	  the old mode mask is set for the channel back.  Affected
+	  file silcd/command.c.
+
+	* Fixed passphrase saving on +a channel on normal server
+	  after successful JOIN command.  Affected file silcd/command.c.
+
 Fri Jun 28 11:53:25 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Remove server/router operator privileges in DETACH command,

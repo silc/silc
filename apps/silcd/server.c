@@ -2762,6 +2762,8 @@ SILC_TASK_CALLBACK(silc_server_close_connection_final)
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock)
 {
+  char tmp[128];
+
   if (!server->sockets[sock->sock] && SILC_IS_DISCONNECTED(sock)) {
     silc_schedule_task_add(server->schedule, 0,
 			   silc_server_close_connection_final,
@@ -2770,12 +2772,14 @@ void silc_server_close_connection(SilcServer server,
     return;
   }
 
-  SILC_LOG_INFO(("Closing connection %s:%d [%s]", sock->hostname,
+  memset(tmp, 0, sizeof(tmp));
+  silc_socket_get_error(sock, tmp, sizeof(tmp));
+  SILC_LOG_INFO(("Closing connection %s:%d [%s] %s", sock->hostname,
                   sock->port,
                   (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
                    sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
                    sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
-                   "Router")));
+                   "Router"), tmp[0] ? tmp : ""));
 
   /* We won't listen for this connection anymore */
   silc_schedule_unset_listen_fd(server->schedule, sock->sock);
@@ -3802,7 +3806,8 @@ void silc_server_perform_heartbeat(SilcSocketConnection sock,
 {
   SilcServerHBContext hb = (SilcServerHBContext)hb_context;
 
-  SILC_LOG_DEBUG(("Sending heartbeat to %s (%s)", sock->hostname, sock->ip));
+  SILC_LOG_DEBUG(("Sending heartbeat to %s:%d (%s)", sock->hostname, 
+		 sock->port, sock->ip));
 
   /* Send the heartbeat */
   silc_server_send_heartbeat(hb->server, sock);
