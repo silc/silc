@@ -5,6 +5,10 @@ Sat Sep  7 16:02:09 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  server (asserts client->channels).  Affected file is
 	  silcd/packet_receive.c.
 
+	* From now on distribution versions are used as protocol versions
+	  instead of by default using the Toolkit base version as protocol 
+	  version.  Affected file prepare.
+
 Sat Sep  7 14:22:43 CEST 2002 Lubomir Sedlacik <salo@silcnet.org>
 
 	* Rewritten check for POSIX threads.  Use --with-pthreads[=DIR]
