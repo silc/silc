@@ -389,18 +389,19 @@ SILC_CLIENT_CMD_FUNC(nick)
     goto out;
   }
 
+  if (cmd->argv_lens[1] > 128)
+    cmd->argv_lens[1] = 128;
+
   /* Set new nickname */
-  buffer = silc_command_payload_encode(SILC_COMMAND_NICK,
-				       cmd->argc - 1, ++cmd->argv,
-				       ++cmd->argv_lens, ++cmd->argv_types,
+  buffer = silc_command_payload_encode(SILC_COMMAND_NICK, 1,
+				       &cmd->argv[1],
+				       &cmd->argv_lens[1], 
+				       &cmd->argv_types[1],
 				       ++cmd->conn->cmd_ident);
   silc_client_packet_send(cmd->client, cmd->conn->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
-  cmd->argv--;
-  cmd->argv_lens--;
-  cmd->argv_types--;
   if (conn->nickname)
     silc_free(conn->nickname);
   conn->nickname = strdup(cmd->argv[1]);
@@ -976,6 +977,9 @@ SILC_CLIENT_CMD_FUNC(join)
   }
 
   idp = silc_id_payload_encode(conn->local_id, SILC_ID_CLIENT);
+
+  if (cmd->argv_lens[1] > 256)
+    cmd->argv_lens[1] = 256;
 
   /* Send JOIN command to the server */
   if (cmd->argc == 2)

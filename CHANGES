@@ -1,3 +1,11 @@
+Thu Nov  1 18:06:12 EST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not send over 128 chars long nickname to the server
+	  in NICK command.  Affected file lib/silcclient/command.c.
+
+	* Do not send over 256 chars long channel names to the server
+	  in JOIN command.  Affected file lib/silcclient/command.c.
+
 Tue Oct 30 22:48:59 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Assure that silc_server_close_connection cannot be called
