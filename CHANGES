@@ -1,3 +1,13 @@
+Mon Dec  2 20:50:20 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Remove 1.0 protocol backwards compat code from client
+	  library.
+
+	* Added more reliable check for whether nickname did change
+	  or not, or whether only Client ID changed in NICK_CHANGE
+	  notify.  Affected file lib/silcclient/client_notify.c.
+	  Fixes bug in '@' character handling in a nickname.
+
 Mon Dec  2 16:28:29 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed wrong invite and ban list handling in server command
