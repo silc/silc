@@ -25,9 +25,6 @@
 #ifndef SILCINCLUDES_H
 #define SILCINCLUDES_H
 
-/* Automatically generated configuration header */
-#include "silcdefs.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -59,6 +56,9 @@ extern "C" {
 #define SILC_OS2
 #endif
 #endif
+
+/* Automatically generated configuration header */
+#include "silcdefs.h"
 
 /* Platform specific includes */
 

@@ -13,6 +13,7 @@
 /* Multi-thread support */
 #undef SILC_THREADS
 
+/* These can be defined only on other than Win32 systems */
 #ifndef SILC_WIN32
 #undef SILC_HAVE_PTHREAD
 #undef HAVE_IPV6
