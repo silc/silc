@@ -469,18 +469,18 @@ int net_gethostbyaddr(IPADDR *ip, char **name)
 	struct addrinfo req, *ai;
 	int host_error;
 	char hostname[NI_MAXHOST];
+	char ipname[MAX_IP_LEN];
 #else
 	struct hostent *hp;
 #endif
-	char ipname[MAX_IP_LEN];
 
 	g_return_val_if_fail(ip != NULL, -1);
 	g_return_val_if_fail(name != NULL, -1);
 
-	net_ip2host(ip, ipname);
-
 	*name = NULL;
 #ifdef HAVE_IPV6
+	net_ip2host(ip, ipname);
+
 	memset(&req, 0, sizeof(struct addrinfo));
 	req.ai_socktype = SOCK_STREAM;
 	req.ai_flags = AI_CANONNAME;
@@ -500,7 +500,8 @@ int net_gethostbyaddr(IPADDR *ip, char **name)
 
 	freeaddrinfo(ai);
 #else
-	hp = gethostbyaddr(ipname, strlen(ipname), AF_INET);
+	if (ip->family != AF_NET) return -1;
+	hp = gethostbyaddr(&ip->ip, 4, AF_INET);
 	if (hp == NULL) return -1;
 
 	*name = g_strdup(hp->h_name);
