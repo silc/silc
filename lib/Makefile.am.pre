@@ -18,7 +18,7 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-SUBDIRS = \
+COMMONDIRS = \
 	contrib \
 	silccore \
 	silccrypt \
@@ -26,10 +26,16 @@ SUBDIRS = \
 	silcmath \
 	silcske \
 	silcutil \
-	silcclient \
-	trq \
-	dotconf
+	dotconf \
+	trq
 #        zlib
+
+if SILC_DIST_CLIENT
+SUBDIRS = $(COMMONDIRS) silcclient
+else
+SUBDIRS = $(COMMONDIRS)
+endif
+
 DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 
 # SILC Library dirs
