@@ -386,6 +386,8 @@ silc_server_update_clients_by_real_server(SilcServer server,
   SilcIDCacheList list;
   bool tolocal = (to == server->id_entry);
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (!silc_idcache_get_all(server->local_list->servers, &list))
     return NULL;
 
@@ -412,6 +414,7 @@ silc_server_update_clients_by_real_server(SilcServer server,
 	  }
 	  server_entry = server_entry->router;
 	} else {
+	  SILC_LOG_DEBUG(("Server locally connected"));
 	  /* If the client is not marked as local then move it to local list
 	     since the server is local. */
 	  if (server_entry->server_type != SILC_BACKUP_ROUTER && !local) {
@@ -420,6 +423,16 @@ silc_server_update_clients_by_real_server(SilcServer server,
 			     client_cache->id, client_cache->context,
 			     client_cache->expire, NULL);
 	    silc_idcache_del_by_context(server->global_list->clients, client);
+
+	  } else if (server->server_type == SILC_BACKUP_ROUTER && local) {
+	    /* If we are backup router and this client is on local list, we
+	       must move it to global list, as it is not currently local to
+	       us (we are not primary). */
+	    SILC_LOG_DEBUG(("Moving client to global list"));
+	    silc_idcache_add(server->global_list->clients, client_cache->name,
+			     client_cache->id, client_cache->context,
+			     client_cache->expire, NULL);
+	    silc_idcache_del_by_context(server->local_list->clients, client);
 	  }
 	}
 
@@ -459,6 +472,7 @@ silc_server_update_clients_by_real_server(SilcServer server,
 	  }
 	  server_entry = server_entry->router;
 	} else {
+	  SILC_LOG_DEBUG(("Server locally connected"));
 	  /* If the client is marked as local then move it to global list
 	     since the server is global. */
 	  if (server_entry->server_type != SILC_BACKUP_ROUTER && local) {
@@ -500,6 +514,16 @@ void silc_server_update_clients_by_server(SilcServer server,
   SilcClientEntry client = NULL;
   bool local;
 
+  if (from && from->id) {
+    SILC_LOG_DEBUG(("Changing from server %s",
+		    silc_id_render(from->id, SILC_ID_SERVER)));
+  }
+  if (to && to->id) {
+    SILC_LOG_DEBUG(("Changing to server %s",
+		    silc_id_render(to->id, SILC_ID_SERVER)));
+  }
+
+  SILC_LOG_DEBUG(("global list"));
   local = FALSE;
   if (silc_idcache_get_all(server->global_list->clients, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {
@@ -541,6 +565,13 @@ void silc_server_update_clients_by_server(SilcServer server,
 	  }
 	} else {
 	  /* All are changed */
+	  if (resolve_real_server)
+	    /* Call this so that the entry is moved to correct list if
+	       needed.  No resolving by real server is actually done. */
+	    silc_server_update_clients_by_real_server(server, NULL, to,
+						      client, local,
+						      id_cache);
+
 	  client->router = to;
 	}
 
@@ -555,6 +586,7 @@ void silc_server_update_clients_by_server(SilcServer server,
     silc_idcache_list_free(list);
   }
 
+  SILC_LOG_DEBUG(("local list"));
   local = TRUE;
   if (silc_idcache_get_all(server->local_list->clients, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {
@@ -592,6 +624,13 @@ void silc_server_update_clients_by_server(SilcServer server,
 	  }
 	} else {
 	  /* All are changed */
+	  if (resolve_real_server)
+	    /* Call this so that the entry is moved to correct list if
+	       needed.  No resolving by real server is actually done. */
+	    silc_server_update_clients_by_real_server(server, NULL, to,
+						      client, local,
+						      id_cache);
+
 	  client->router = to;
 	}
 

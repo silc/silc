@@ -1081,15 +1081,10 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	ctx->sessions_count++;
       }
 
-      /* If we are not standalone and our primary is not the one we're
-	 talking to now, then announce our information to it since we
-	 haven't done that yet.  Standalone backup router announces
-	 these during connecting to the primary. */
-      if (!server->standalone && SILC_PRIMARY_ROUTE(server) != ctx->sock) {
-	silc_server_announce_servers(server, TRUE, 0, ctx->sock);
-	silc_server_announce_clients(server, 0, ctx->sock);
-	silc_server_announce_channels(server, 0, ctx->sock);
-      }
+      /* Announce data to the new primary to be. */
+      silc_server_announce_servers(server, TRUE, 0, ctx->sock);
+      silc_server_announce_clients(server, 0, ctx->sock);
+      silc_server_announce_channels(server, 0, ctx->sock);
 
       protocol->state++;
 
@@ -1313,7 +1308,9 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	silc_server_local_servers_toggle_enabled(server, FALSE);
 	router->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
 	silc_server_update_servers_by_server(server, backup_router, router);
-	silc_server_update_clients_by_server(server, NULL, router, FALSE);
+	silc_server_update_clients_by_server(
+				   server, NULL, router,
+				   server->server_type == SILC_BACKUP_ROUTER);
 	if (server->server_type == SILC_SERVER)
 	  silc_server_update_channels_by_server(server, backup_router, router);
  	silc_server_backup_replaced_del(server, backup_router);
@@ -1436,14 +1433,15 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 	       to perfom resuming protocol. */
 	    server->server_type = SILC_BACKUP_ROUTER;
 	    silc_server_local_servers_toggle_enabled(server, FALSE);
+	    server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
 	    silc_server_update_servers_by_server(server, server->id_entry,
 						 sock->user_data);
 	    silc_server_update_clients_by_server(server, NULL,
-						 sock->user_data, FALSE);
+						 sock->user_data, TRUE);
 
 	    /* Announce our clients and channels to the router */
-	    silc_server_announce_clients(server, ctx->start, sock);
-	    silc_server_announce_channels(server, ctx->start, sock);
+	    silc_server_announce_clients(server, 0, sock);
+	    silc_server_announce_channels(server, 0, sock);
 	  }
 
 	  continue;
@@ -1460,14 +1458,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
     if (ctx->type == SILC_SERVER_BACKUP_RESUMED && server->router) {
       /* Announce all of our information to the router. */
       if (server->server_type == SILC_ROUTER)
-	silc_server_announce_servers(server, FALSE, ctx->start,
+	silc_server_announce_servers(server, FALSE, 0,
 				     server->router->connection);
 
       /* Announce our clients and channels to the router */
-      silc_server_announce_clients(server, ctx->start,
-				   server->router->connection);
-      silc_server_announce_channels(server, ctx->start,
-				    server->router->connection);
+      silc_server_announce_clients(server, 0, server->router->connection);
+      silc_server_announce_channels(server, 0, server->router->connection);
     }
   } else {
     /* Error */

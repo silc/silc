@@ -1,3 +1,8 @@
+Mon Oct 13 21:37:47 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Continued backup router tests and fixes.  Affected files
+	  silcd/server_backup, server_util.c, server.c.  See TODO.
+
 Sun Oct 12 19:58:18 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed SERVER_SIGNOFF handling in servers.  The client

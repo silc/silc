@@ -1443,16 +1443,23 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
       server->standalone = FALSE;
       server->backup_primary = FALSE;
 
-      /* If we are router then announce our possible servers.  Backup
-	 router announces also global servers. */
-      if (server->server_type == SILC_ROUTER)
-	silc_server_announce_servers(server,
-				     server->backup_router ? TRUE : FALSE,
-				     0, SILC_PRIMARY_ROUTE(server));
+      /* Announce data if we are not backup router (unless not as primary
+	 currently).  Backup router announces later at the end of
+	 resuming protocol. */
+      if (server->backup_router && server->server_type == SILC_ROUTER) {
+	SILC_LOG_DEBUG(("Announce data after resume protocol"));
+      } else {
+	/* If we are router then announce our possible servers.  Backup
+	   router announces also global servers. */
+	if (server->server_type == SILC_ROUTER)
+	  silc_server_announce_servers(server,
+				       server->backup_router ? TRUE : FALSE,
+				       0, SILC_PRIMARY_ROUTE(server));
 
-      /* Announce our clients and channels to the router */
-      silc_server_announce_clients(server, 0, SILC_PRIMARY_ROUTE(server));
-      silc_server_announce_channels(server, 0, SILC_PRIMARY_ROUTE(server));
+	/* Announce our clients and channels to the router */
+	silc_server_announce_clients(server, 0, SILC_PRIMARY_ROUTE(server));
+	silc_server_announce_channels(server, 0, SILC_PRIMARY_ROUTE(server));
+      }
 
       /* If we are backup router then this primary router is whom we are
 	 backing up. */
@@ -2633,6 +2640,18 @@ void silc_server_packet_parse_type(SilcServer server,
       if (type == SILC_SERVER_BACKUP_START_USE) {
 	/* Attempt to reconnect to primary */
 	SILC_LOG_DEBUG(("Received failed START_USE from backup %s", sock->ip));
+
+	/* Default action is to disconnect from backup and reconnect to
+	   primary.  Since this failure can happen during switching to
+	   backup (backup might have not noticed the primary going down yet),
+	   we will wait a while and keep sending START_USE to backup.
+	   Only after that we'll give up. */
+	if (server->router == sock->user_data &&
+	    (time(0) - server->router_connect) < 30) {
+	  SILC_LOG_DEBUG(("Resending START_USE to backup router"));
+	  silc_server_backup_send_start_use(server, sock, FALSE);
+	  break;
+	}
 
 	/* If backup is our primary, disconnect now. */
 	if (server->router == sock->user_data) {
@@ -5349,6 +5368,9 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_callback)
   SilcIDListData idata = (SilcIDListData)sock->user_data;
   SilcProtocol protocol;
   SilcServerRekeyInternalContext *proto_ctx;
+
+  if (!idata)
+    return;
 
   /* Do not execute rekey with disabled connections, as it would not
      go through anyway. */
