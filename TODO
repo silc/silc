@@ -15,6 +15,16 @@ TODO for SILC Client 1.0 branch
 TODO for SILC Server 1.0
 ========================
 
+ o The log files should be opened with silc_file* routines to make
+   sure they are 0600.
+
+ o assert() happened in silc_server_free_client_data_timeout, 
+   server.c:3322.
+
+ o The server number stats is wrong on router when backup is connected.
+
+ o Check for valid ban strings.  Check ban string notifying.
+
  o stringprep (RFC3454) for UTF-8 strings + all other UTF-8 string things.
 
  o Check that founder key is distributed ok during backup resuming.
