@@ -1,16 +1,15 @@
 /*
- 
+
   silcsockconn.h
- 
+
   Author: Pekka Riikonen <priikone@silnet.org>
- 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
- 
+
+  Copyright (C) 1997 - 2001, 2003 Pekka Riikonen
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
- 
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -36,7 +35,7 @@
 /****s* silcutil/SilcSocketConnectionAPI/SilcSocketConnection
  *
  * NAME
- * 
+ *
  *    typedef struct SilcSocketConnectionStruct *SilcSocketConnection;
  *
  * DESCRIPTION
@@ -54,14 +53,14 @@ typedef struct SilcSocketConnectionStruct *SilcSocketConnection;
 /****s* silcutil/SilcSocketConnectionAPI/SilcSocketConnectionHB
  *
  * NAME
- * 
+ *
  *    typedef struct SilcSocketConnectionHB *SilcSocketConnectionHB;
  *
  * DESCRIPTION
  *
  *    This context is the heartbeat context for the SilcSockeConnection.
  *    It is meant to hold the keepalive information for the connection.
- *    This is allocated internally and freed internally by the 
+ *    This is allocated internally and freed internally by the
  *    interface routines.
  *
  ***/
@@ -70,7 +69,7 @@ typedef struct SilcSocketConnectionHBStruct *SilcSocketConnectionHB;
 /****s* silcutil/SilcSocketConnectionAPI/SilcSocketConnectionQos
  *
  * NAME
- * 
+ *
  *    typedef struct SilcSocketConnectionQosStruct *SilcSocketConnectionQos;
  *
  * DESCRIPTION
@@ -90,12 +89,13 @@ typedef struct SilcSocketConnectionQosStruct {
   unsigned int cur_rate : 31;
   unsigned int applied  : 1;
   SilcUInt32 data_len;
+  SilcSocketConnection sock;
 } *SilcSocketConnectionQos;
 
 /****d* silcutil/SilcSocketConnectionAPI/SilcSocketType
  *
  * NAME
- * 
+ *
  *    typedef enum { ... } SilcSocketType;
  *
  * DESCRIPTION
@@ -104,7 +104,7 @@ typedef struct SilcSocketConnectionQosStruct {
  *    are four different types; unknown, client, server and router.
  *    Unknown connections are connections that hasn't advanced long
  *    enough so that we might know which type of connection it is.
- *    It is the applications responsibility to update the type 
+ *    It is the applications responsibility to update the type
  *    information when it becomes available.
  *
  * SOURCE
@@ -131,7 +131,7 @@ typedef enum {
 /****s* silcutil/SilcSocketConnectionAPI/SilcSocketConnectionStruct
  *
  * NAME
- * 
+ *
  *    struct SilcSocketConnectionStruct { ... };
  *
  * DESCRIPTION
@@ -158,7 +158,7 @@ typedef enum {
  *    void *user_data
  *
  *      This is a pointer to a data that is is saved here at the same
- *      time a new connection object is allocated. Usually this is a 
+ *      time a new connection object is allocated. Usually this is a
  *      back-pointer to some important data for fast referencing. For
  *      SILC server this is a pointer to the ID list and for SILC client
  *      to object holding active connections (windows).
@@ -272,7 +272,7 @@ struct SilcSocketConnectionStruct {
  *
  * DESCRIPTION
  *
- *    Allocates a new socket connection object. The allocated object is 
+ *    Allocates a new socket connection object. The allocated object is
  *    returned to the new_socket argument. The `sock' is the socket
  *    for the connection, the `type' the initial type of the connection and
  *    the `user_data' a application specific pointer.
@@ -339,7 +339,7 @@ int silc_socket_read(SilcSocketConnection sock);
  * DESCRIPTION
  *
  *    Writes data from the outgoing buffer to the socket connection. If the
- *    data cannot be written at once, it must be written at later time. 
+ *    data cannot be written at once, it must be written at later time.
  *    The data is written from the data section of the buffer, not from head
  *    or tail section. This automatically pulls the data section towards end
  *    after writing the data. Implementation of this function may be
@@ -386,7 +386,7 @@ typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
  *
  * SYNOPSIS
  *
- *    void silc_socket_set_heartbeat(SilcSocketConnection sock, 
+ *    void silc_socket_set_heartbeat(SilcSocketConnection sock,
  *                                   SilcUInt32 heartbeat,
  *                                   void *hb_context,
  *                                   SilcSocketConnectionHBCb hb_callback,
@@ -403,7 +403,7 @@ typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
  *    application's scheduler.
  *
  ***/
-void silc_socket_set_heartbeat(SilcSocketConnection sock, 
+void silc_socket_set_heartbeat(SilcSocketConnection sock,
 			       SilcUInt32 heartbeat,
 			       void *hb_context,
 			       SilcSocketConnectionHBCb hb_callback,
@@ -413,7 +413,7 @@ void silc_socket_set_heartbeat(SilcSocketConnection sock,
  *
  * SYNOPSIS
  *
- *    void silc_socket_set_qos(SilcSocketConnection sock, 
+ *    void silc_socket_set_qos(SilcSocketConnection sock,
  *                             SilcUInt32 read_rate,
  *                             SilcUInt32 read_limit_bytes,
  *                             SilcUInt32 limit_sec,
@@ -429,12 +429,12 @@ void silc_socket_set_heartbeat(SilcSocketConnection sock,
  *    that is read.  It is guaranteed that silc_socket_read never returns
  *    more that `read_limit_bytes' of data.  If more is read the limit
  *    will be applied for the reading.  The `limit_sec' and `limit_usec'
- *    specifies the limit that is applied if `read_rate' and/or 
+ *    specifies the limit that is applied if `read_rate' and/or
  *    `read_limit_bytes' is reached.  The `schedule' is the application's
  *    scheduler.
  *
  ***/
-void silc_socket_set_qos(SilcSocketConnection sock, 
+void silc_socket_set_qos(SilcSocketConnection sock,
 			 SilcUInt32 read_rate,
 			 SilcUInt32 read_limit_bytes,
 			 SilcUInt32 limit_sec,
@@ -474,16 +474,16 @@ typedef void (*SilcSocketHostLookupCb)(SilcSocketConnection sock,
  *    connection is created and the full IP address and fully qualified
  *    domain name information is desired. The `callback' with `context'
  *    will be called after the lookup is performed. The `schedule'
- *    is the application's scheduler which the lookup routine needs. 
+ *    is the application's scheduler which the lookup routine needs.
  *    If the socket connection is freed during the lookup the library
  *    will automatically cancel the lookup and the `callback' will not be
  *    called.
  *
- *    If `port_lookup' is TRUE then the remote port of the socket 
+ *    If `port_lookup' is TRUE then the remote port of the socket
  *    connection is resolved. After the information is resolved they
  *    are accessible using sock->ip and sock->hostname pointers. Note
  *    that if the both IP and FQDN could not be resolved the sock->hostname
- *    includes the IP address of the remote host. The resolved port is 
+ *    includes the IP address of the remote host. The resolved port is
  *    available in sock->port.
  *
  ***/
