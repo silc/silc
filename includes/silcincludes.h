@@ -35,7 +35,9 @@
 #endif
 
 #if defined(__EPOC32__)
+#ifndef SILC_EPOC
 #define SILC_EPOC
+#endif
 #endif
 
 #ifdef SILC_WIN32
