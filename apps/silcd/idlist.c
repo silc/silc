@@ -570,6 +570,7 @@ void silc_idlist_client_destructor(SilcIDCache cache,
 
   client = (SilcClientEntry)entry->context;
   if (client) {
+    assert(!silc_hash_table_count(client->channels));
     silc_free(client->nickname);
     silc_free(client->username);
     silc_free(client->userinfo);
