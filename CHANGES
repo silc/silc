@@ -1,3 +1,42 @@
+Tue Mar 20 15:45:14 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new notify type SILC_NOTIFY_TYPE_UMODE_CHANGE that is
+	  used by routers as broadcast packet to inform other routers
+	  about the changed user mode.
+
+	  Implemented the notify handling in the server.  Affected file is
+	  silcd/packet_receive.c.  Added the function 
+	  silc_server_send_notify_umode to the silcd/packet_send.[ch].
+
+	* Added new generic Channel Payload and deprecated the New Channel
+	  Payload.  The New Channel Payload is now the generic Channel
+	  Payload.
+
+	* Added new argument `mode' to the silc_server_send_new_channel
+	  as it is required in the Channel Payload now.
+
+	* Renamed the SilcChannelPayload to SilcChannelMessagePayload
+	  and created a new and real SilChannelPayload to represent the
+	  new generic Channel Payload.  Implemented the encode/decode
+	  for Channel Payload.  Affected file lib/silccore/silcchannel.[ch].
+
+	* Added silc_server_get_client_channel_list to return the list
+	  of channels the client has joined for WHOIS command reply.
+	  Affected file silcd/server.[ch].
+
+	* Implemented the channel list sending in the WHOIS command reply
+	  in server and in the client.
+
+	  Implemented the channel list displaying on the user interface
+	  as well.  Affected file silc/client_ops.c.
+
+	* Added silc_channel_payload_parse_list to parse list of Channel
+	  Payloads.  It returns SilcDList list of SilcChannelPayloads.
+	  Client for example can use this function to parse the list of
+	  channels it receives in the WHOIS command reply.  The caller
+	  must free the list by calling silc_channel_payload_list_free.
+	  Affected files lib/silccore/silcchannel.[ch].
+
 Mon Mar 19 21:39:15 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added one new argument <user mode> to the WHOIS command reply

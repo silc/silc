@@ -168,6 +168,12 @@ void silc_server_send_notify_killed(SilcServer server,
 				    SilcClientID *client_id,
 				    unsigned int client_id_len,
 				    char *comment);
+void silc_server_send_notify_umode(SilcServer server,
+				   SilcSocketConnection sock,
+				   int broadcast,
+				   SilcClientID *client_id,
+				   unsigned int client_id_len,
+				   unsigned int mode_mask);
 void silc_server_send_notify_dest(SilcServer server,
 				  SilcSocketConnection sock,
 				  int broadcast,
@@ -196,7 +202,8 @@ void silc_server_send_new_channel(SilcServer server,
 				  int broadcast,
 				  char *channel_name,
 				  void *channel_id, 
-				  unsigned int channel_id_len);
+				  unsigned int channel_id_len,
+				  unsigned int mode);
 void silc_server_send_channel_key(SilcServer server,
 				  SilcSocketConnection sender,
 				  SilcChannelEntry channel,

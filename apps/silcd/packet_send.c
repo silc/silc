@@ -655,9 +655,9 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	    memcpy(tmp, data, data_len);
 
 	    /* Decrypt the channel message (we don't check the MAC) */
-	    if (!silc_channel_payload_decrypt(tmp, data_len, 
-					      channel->channel_key,
-					      NULL)) {
+	    if (!silc_channel_message_payload_decrypt(tmp, data_len, 
+						      channel->channel_key,
+						      NULL)) {
 	      memset(tmp, 0, data_len);
 	      silc_free(tmp);
 	      continue;
@@ -1101,6 +1101,30 @@ void silc_server_send_notify_killed(SilcServer server,
   silc_buffer_free(idp);
 }
 
+/* Sends UMODE_CHANGE notify type. This tells that `client_id' client's
+   user mode in the SILC Network was changed. This function is used to
+   send the packet between routers as broadcast packet. */
+
+void silc_server_send_notify_umode(SilcServer server,
+				   SilcSocketConnection sock,
+				   int broadcast,
+				   SilcClientID *client_id,
+				   unsigned int client_id_len,
+				   unsigned int mode_mask)
+{
+  SilcBuffer idp;
+  unsigned char mode[4];
+
+  idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  SILC_PUT32_MSB(mode_mask, mode);
+
+  silc_server_send_notify(server, sock, broadcast,
+			  SILC_NOTIFY_TYPE_UMODE_CHANGE, 2,
+			  idp->data, idp->len, 
+			  mode, 4);
+  silc_buffer_free(idp);
+}
+
 /* Sends notify message destined to specific entity. */
 
 void silc_server_send_notify_dest(SilcServer server,
@@ -1329,7 +1353,8 @@ void silc_server_send_new_channel(SilcServer server,
 				  int broadcast,
 				  char *channel_name,
 				  void *channel_id, 
-				  unsigned int channel_id_len)
+				  unsigned int channel_id_len,
+				  unsigned int mode)
 {
   SilcBuffer packet;
   unsigned char *cid;
@@ -1341,15 +1366,9 @@ void silc_server_send_new_channel(SilcServer server,
   if (!cid)
     return;
 
-  packet = silc_buffer_alloc(2 + 2 + name_len + channel_id_len);
-  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-  silc_buffer_format(packet,
-		     SILC_STR_UI_SHORT(name_len),
-		     SILC_STR_UI_XNSTRING(channel_name, name_len),
-		     SILC_STR_UI_SHORT(channel_id_len),
-		     SILC_STR_UI_XNSTRING(cid, channel_id_len),
-		     SILC_STR_END);
-
+  /* Encode the channel payload */
+  packet = silc_channel_payload_encode(channel_name, name_len,
+				       cid, channel_id_len, mode);
 
   silc_server_packet_send(server, sock, SILC_PACKET_NEW_CHANNEL, 
 			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 

@@ -208,7 +208,7 @@ keep global information up to date at all time.
 This, on the other hand, leads to cellular like network, where routers 
 are in the center of the cell and servers are connected to the router.
 
-Following diagram represents SILC network topology.
+The following diagram represents SILC network topology.
 
 
 
@@ -280,7 +280,7 @@ to other server in the same cell, will have its messages delivered from
 its local server first to the router of the cell, and from the router 
 to the other server in the cell.
 
-Following diagram represents this scenario:
+The following diagram represents this scenario:
 
 
 .in 25
@@ -318,7 +318,7 @@ If the message is destined to server that does not belong to local cell
 the message is routed to the router server to which the destination 
 server belongs, if the local router is connected to destination router.
 If there is no direct connection to the destination router, the local
-router routes the message to its primary route.  Following diagram
+router routes the message to its primary route.  The following diagram
 represents message sending between cells.
 
 
@@ -683,7 +683,7 @@ distributing it to the router.
 .ti 0
 3.2.3 SILC Server Ports
 
-Following ports has been assigned by IANA for the SILC protocol:
+The following ports has been assigned by IANA for the SILC protocol:
 
 .in 10
 silc            706/tcp    SILC
@@ -816,7 +816,7 @@ not contain any spaces (`  '), any non-printable ASCII characters,
 commas (`,') and wildcard characters.
 
 Channels can have operators that can administrate the channel and
-operate all of its modes.  Following operators on channel exist on SILC
+operate all of its modes.  The following operators on channel exist on SILC
 network.
 
 .in 6
@@ -1230,7 +1230,7 @@ in the SILC packets.  See [SILC2] of the actual encryption process and
 definition of how it must be done.  SILC has a mandatory algorithm that
 must be supported in order to be compliant with this protocol.
 
-Following ciphers are defined in SILC protocol:
+The following ciphers are defined in SILC protocol:
 
 .in 6
 aes-256-cbc         AES in CBC mode, 256 bit key       (mandatory)
@@ -1269,7 +1269,7 @@ Public keys are used in SILC to authenticate entities in SILC network
 and to perform other tasks related to public key cryptography.  The 
 public keys are also used in the SILC Key Exchange protocol [SILC3].
 
-Following public key algorithms are defined in SILC protocol:
+The following public key algorithms are defined in SILC protocol:
 
 .in 6
 rsa        RSA  (mandatory)
@@ -1278,7 +1278,7 @@ dss        DSS  (optional)
 
 DSS is described in [Menezes].  The RSA must be implemented according
 PKCS #1 [PKCS1].  The mandatory PKCS #1 implementation in SILC must be
-compliant to either PKCS #1 version 1.5 or newer with the following
+compliant to either PKCS #1 version 1.5 or newer with the the following
 notes: The signature encoding is always in same format as the encryption
 encoding regardles of the PKCS #1 version.  The signature with appendix
 (with hash algorithm OID in the data) must not be used in the SILC.  The
@@ -1296,7 +1296,7 @@ Hash functions are used as part of MAC algorithms defined in the next
 section.  They are also used in the SILC Key Exchange protocol defined
 in the [SILC3].
 
-Following Hash algorithm are defined in SILC protocol:
+The following Hash algorithm are defined in SILC protocol:
 
 sha1             SHA-1, length = 20      (mandatory)
 md5              MD5, length = 16        (optional)
@@ -1309,7 +1309,7 @@ Data integrity is protected by computing a message authentication code
 (MAC) of the packet data.  See [SILC2] for details how to compute the
 MAC.
 
-Following MAC algorithms are defined in SILC protocol:
+The following MAC algorithms are defined in SILC protocol:
 
 .in 6
 hmac-sha1-96     HMAC-SHA1, length = 12  (mandatory)
@@ -1340,7 +1340,7 @@ significantly speed up the data transmission.  By default, SILC does not
 use compression which is the mode that must be supported by all SILC
 implementations.
 
-Following compression algorithms are defined:
+The following compression algorithms are defined:
 
 .in 6
 none        No compression               (mandatory)
@@ -1407,7 +1407,7 @@ o Identifier Length (2 bytes) - Indicates the length of
 
 o Identifier (variable length) - Indicates the identifier
   of the public key.  This data can be used to identify
-  the owner of the key.  The identifier is of following
+  the owner of the key.  The identifier is of the following
   format:
 
      UN   User name
@@ -1470,13 +1470,13 @@ order.
 The version detection of both client and server is performed at the
 connection phase while executing the SILC Key Exchange protocol.  The
 version identifier is exchanged between initiator and responder.  The
-version identifier is of following format:
+version identifier is of the following format:
 
 .in 6
 SILC-<protocol version>-<software version>
 .in 3
 
-The version strings are of following format:
+The version strings are of the following format:
 
 .in 6
 protocol version = <major>.<minor>
@@ -1793,7 +1793,7 @@ protocol.  If the digest length of the hash function is too short for the
 key, then the key is distributed as described in section Processing the
 Key Material in [SILC3].  After both parties has regenerated the session
 key, both send SILC_PACKET_REKEY_DONE packet to each other.  These packets
-are still secured with the old key.  After these packets, following
+are still secured with the old key.  After these packets, the following
 packets must be protected with the new key.
 
 
@@ -1975,7 +1975,7 @@ List of all defined commands in SILC follows.
         so that all users are searched.  However, the server still must
         search its locally connected clients.  The router must send
         this command to the server who owns the requested client.  That
-        server must reply to the command.  Server should not send whois
+        server must reply to the command.  Server must not send whois
 	replies to the client until it has received the reply from its
 	router.
 
@@ -1984,7 +1984,8 @@ List of all defined commands in SILC follows.
         Max Arguments:  8
             Arguments:  (1) <Status Payload>       (2) <Client ID> 
                         (3) <nickname>[@<server>]  (4) <username@host> 
-                        (5) <real name>            (6) [<channel list>] 
+                        (5) <real name>            (6) [<Channel Payload 
+                                                         list>] 
                         (7) [<user mode>]          (8) [<idle time>]
 
 
@@ -2002,6 +2003,12 @@ List of all defined commands in SILC follows.
         <count> option were defined in the query there will be only
         <count> many replies from the server.
 
+        The server may return the list of channel the client has joined.
+        In this case the list is list of Channel Payloads.  The Mode Mask
+        in the Channel Payload (see [SILC2] and section 2.3.2.3 for the
+        Channel Payload) is the client's mode on the channel.  The list
+        is encoded by adding the Channel Payloads one after the other.
+
         Status messages:
 
             SILC_STATUS_OK
@@ -2012,8 +2019,6 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_WILDCARDS
             SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
             SILC_STATUS_ERR_TOO_MANY_PARAMS
-
-
 
 
    2    SILC_COMMAND_WHOWAS
@@ -2316,6 +2321,13 @@ List of all defined commands in SILC follows.
         give to the removed client some information why it was removed
         from the network.
 
+        When killing a client the router must first send notify type
+        SILC_NOTIFY_TYPE_KILLED to all channels the client has joined.
+        The packet must not be sent to the killed client on the channel.
+        Then, the router must send the same notify type to its primary
+        router.  Finally, the router must send the same notify type to
+        the client who was killed.
+
         Reply messages to the command:
 
         Max Arguments:  1
@@ -2439,6 +2451,9 @@ List of all defined commands in SILC follows.
         client is authenticated against.  It may be passphrase prompted
         for user on client's screen or it may be public key or certificate
         authentication data (data signed with private key).
+
+        After changing the mode server must send the notify type
+        SILC_NOTIFY_TYPE_UMODE_CHANGE to its primary router.
 
         Reply messages to the command:
 
@@ -2578,7 +2593,10 @@ List of all defined commands in SILC follows.
         locally so that the mode setting/unsetting would work without
         problems.  Client may change only its own modes.
 
-        Following client modes are defined:
+        After changing the mode server must send the notify type
+        SILC_NOTIFY_TYPE_UMODE_CHANGE to its primary router.
+
+        The following client modes are defined:
 
            0x0000    SILC_UMODE_NONE
 
@@ -2646,7 +2664,7 @@ List of all defined commands in SILC follows.
         When the mode is changed SILC_NOTIFY_TYPE_CMODE_CHANGE notify
         type is distributed to the channel.
 
-        Following channel modes are defined:
+        The following channel modes are defined:
 
            0x0000    SILC_CMODE_NONE
 
@@ -2872,7 +2890,7 @@ List of all defined commands in SILC follows.
         When the mode is changed SILC_NOTIFY_TYPE_CUMODE_CHANGE notify
         type is distributed to the channel.
 
-        Following channel modes are defined:
+        The following channel modes are defined:
 
            0x0000    SILC_CUMODE_NONE
 
@@ -3049,6 +3067,9 @@ List of all defined commands in SILC follows.
         local properties, such as, local connections and normal server
         administration.
 
+        After changing the mode server must send the notify type
+        SILC_NOTIFY_TYPE_UMODE_CHANGE to its primary router.
+
         Reply messages to the command:
 
         Max Arguments:  1
@@ -3165,7 +3186,7 @@ List of all defined commands in SILC follows.
 Command Status Payload is sent in command reply messages to indicate
 the status of the command.  The payload is one of argument in the
 command thus this is the data area in Command Argument Payload described
-in [SILC2].  The payload is only 2 bytes of length.  Following diagram
+in [SILC2].  The payload is only 2 bytes of length.  The following diagram
 represents the Command Status Payload (field is always in MSB order).
 
 

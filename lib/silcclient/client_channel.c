@@ -98,9 +98,9 @@ void silc_client_send_channel_message(SilcClient client,
     silc_hash_make(client->md5hash, channel->iv, iv_len, channel->iv);
 
   /* Encode the channel payload. This also encrypts the message payload. */
-  payload = silc_channel_payload_encode(data_len, data, iv_len, 
-					channel->iv, cipher, hmac,
-					client->rng);
+  payload = silc_channel_message_payload_encode(data_len, data, iv_len, 
+						channel->iv, cipher, hmac,
+						client->rng);
 
   /* Get data used in packet header encryption, keys and stuff. */
   cipher = conn->send_key;
@@ -165,7 +165,7 @@ void silc_client_channel_message(SilcClient client,
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   SilcBuffer buffer = packet->buffer;
-  SilcChannelPayload payload = NULL;
+  SilcChannelMessagePayload payload = NULL;
   SilcChannelID *id = NULL;
   SilcChannelEntry channel;
   SilcChannelUser chu;
@@ -200,8 +200,8 @@ void silc_client_channel_message(SilcClient client,
      all private keys and check what decrypts correctly. */
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     /* Parse the channel message payload. This also decrypts the payload */
-    payload = silc_channel_payload_parse(buffer, channel->channel_key,
-					 channel->hmac);
+    payload = silc_channel_message_payload_parse(buffer, channel->channel_key,
+						 channel->hmac);
     if (!payload)
       goto out;
   } else if (channel->private_keys) {
@@ -210,8 +210,8 @@ void silc_client_channel_message(SilcClient client,
     silc_dlist_start(channel->private_keys);
     while ((entry = silc_dlist_get(channel->private_keys)) != SILC_LIST_END) {
       /* Parse the channel message payload. This also decrypts the payload */
-      payload = silc_channel_payload_parse(buffer, entry->cipher,
-					   entry->hmac);
+      payload = silc_channel_message_payload_parse(buffer, entry->cipher,
+						   entry->hmac);
       if (payload)
 	break;
     }
@@ -221,7 +221,7 @@ void silc_client_channel_message(SilcClient client,
     goto out;
   }
 
-  message = silc_channel_get_data(payload, NULL);
+  message = silc_channel_message_get_data(payload, NULL);
 
   /* Find client entry */
   silc_list_start(channel->clients);
@@ -242,7 +242,7 @@ void silc_client_channel_message(SilcClient client,
   if (client_id)
     silc_free(client_id);
   if (payload)
-    silc_channel_payload_free(payload);
+    silc_channel_message_payload_free(payload);
 }
 
 /* Saves channel key from encoded `key_payload'. This is used when we

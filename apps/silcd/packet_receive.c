@@ -108,10 +108,10 @@ void silc_server_notify(SilcServer server,
       goto out;
 
     /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
 					     channel_id, NULL);
     if (!channel) {
-      channel = silc_idlist_find_channel_by_id(server->global_list, 
+      channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
 	silc_free(channel_id);
@@ -136,10 +136,10 @@ void silc_server_notify(SilcServer server,
     /* If the the client is not in local list we check global list (ie. the
        channel will be global channel) and if it does not exist then create
        entry for the client. */
-    client = silc_idlist_find_client_by_id(server->local_list, 
+    client = silc_idlist_find_client_by_id(server->global_list, 
 					   client_id, NULL);
     if (!client) {
-      client = silc_idlist_find_client_by_id(server->global_list, 
+      client = silc_idlist_find_client_by_id(server->local_list, 
 					     client_id, NULL);
       if (!client) {
 	/* If router did not find the client the it is bogus */
@@ -189,10 +189,10 @@ void silc_server_notify(SilcServer server,
       goto out;
 
     /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
 					     channel_id, NULL);
     if (!channel) { 
-      channel = silc_idlist_find_channel_by_id(server->global_list, 
+      channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
 	silc_free(channel_id);
@@ -288,10 +288,10 @@ void silc_server_notify(SilcServer server,
       goto out;
 
     /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
 					     channel_id, NULL);
     if (!channel) {
-      channel = silc_idlist_find_channel_by_id(server->global_list, 
+      channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
 	silc_free(channel_id);
@@ -389,10 +389,10 @@ void silc_server_notify(SilcServer server,
       goto out;
 
     /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
 					     channel_id, NULL);
     if (!channel) {
-      channel = silc_idlist_find_channel_by_id(server->global_list, 
+      channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
 	silc_free(channel_id);
@@ -432,10 +432,10 @@ void silc_server_notify(SilcServer server,
       goto out;
 
     /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
 					     channel_id, NULL);
     if (!channel) {
-      channel = silc_idlist_find_channel_by_id(server->global_list, 
+      channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
 	silc_free(channel_id);
@@ -514,10 +514,10 @@ void silc_server_notify(SilcServer server,
       goto out;
 
     /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
 					     channel_id, NULL);
     if (!channel) {
-      channel = silc_idlist_find_channel_by_id(server->global_list, 
+      channel = silc_idlist_find_channel_by_id(server->local_list, 
 					       channel_id, NULL);
       if (!channel) {
 	silc_free(channel_id);
@@ -540,10 +540,10 @@ void silc_server_notify(SilcServer server,
 				       packet->buffer->len, FALSE);
 
     /* If the the client is not in local list we check global list */
-    client = silc_idlist_find_client_by_id(server->local_list, 
+    client = silc_idlist_find_client_by_id(server->global_list, 
 					   client_id, NULL);
     if (!client) {
-      client = silc_idlist_find_client_by_id(server->global_list, 
+      client = silc_idlist_find_client_by_id(server->local_list, 
 					     client_id, NULL);
       if (!client) {
 	silc_free(client_id);
@@ -575,10 +575,10 @@ void silc_server_notify(SilcServer server,
 	goto out;
 
       /* If the the client is not in local list we check global list */
-      client = silc_idlist_find_client_by_id(server->local_list, 
+      client = silc_idlist_find_client_by_id(server->global_list, 
 					     client_id, NULL);
       if (!client) {
-	client = silc_idlist_find_client_by_id(server->global_list, 
+	client = silc_idlist_find_client_by_id(server->local_list, 
 					       client_id, NULL);
 	if (!client) {
 	  silc_free(client_id);
@@ -616,6 +616,44 @@ void silc_server_notify(SilcServer server,
 
       break;
     }
+
+  case SILC_NOTIFY_TYPE_UMODE_CHANGE:
+    /*
+     * Save the mode of the client.
+     */
+
+    SILC_LOG_DEBUG(("UMODE_CHANGE notify"));
+      
+    /* Get client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
+
+    /* Get client entry */
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, NULL);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->local_list, 
+					     client_id, NULL);
+      if (!client) {
+	silc_free(client_id);
+	goto out;
+      }
+    }
+    silc_free(client_id);
+
+    /* Get the mode */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp)
+      goto out;
+
+    /* Save the mode */
+    SILC_GET32_MSB(client->mode, tmp);
+
+    break;
 
     /* Ignore rest of the notify types for now */
   case SILC_NOTIFY_TYPE_NONE:
@@ -892,10 +930,11 @@ void silc_server_channel_message(SilcServer server,
     
     /* Encode new payload. This encrypts it also. */
     SILC_GET16_MSB(data_len, packet->buffer->data);
-    chp = silc_channel_payload_encode(data_len, packet->buffer->data + 2,
-				      iv_len, channel->iv,
-				      channel->channel_key,
-				      channel->hmac, server->rng);
+    chp = silc_channel_message_payload_encode(data_len, 
+					      packet->buffer->data + 2,
+					      iv_len, channel->iv,
+					      channel->channel_key,
+					      channel->hmac, server->rng);
     silc_buffer_put(packet->buffer, chp->data, chp->len);
     silc_buffer_free(chp);
   }
@@ -1397,11 +1436,12 @@ void silc_server_new_channel(SilcServer server,
 			     SilcSocketConnection sock,
 			     SilcPacketContext *packet)
 {
-  unsigned char *id;
+  SilcChannelPayload payload;
   SilcChannelID *channel_id;
-  unsigned short channel_id_len;
   char *channel_name;
-  int ret;
+  unsigned int name_len;
+  unsigned char *id;
+  unsigned int id_len;
 
   SILC_LOG_DEBUG(("Processing New Channel"));
 
@@ -1410,23 +1450,23 @@ void silc_server_new_channel(SilcServer server,
       server->server_type == SILC_SERVER)
     return;
 
-  /* Parse payload */
-  ret = silc_buffer_unformat(packet->buffer, 
-			     SILC_STR_UI16_STRING_ALLOC(&channel_name),
-			     SILC_STR_UI16_NSTRING_ALLOC(&id, &channel_id_len),
-			     SILC_STR_END);
-  if (ret == -1) {
-    if (channel_name)
-      silc_free(channel_name);
-    if (id)
-      silc_free(id);
+  /* Parse the channel payload */
+  payload = silc_channel_payload_parse(packet->buffer);
+  if (!payload)
+    return;
+    
+  /* Get the channel ID */
+  channel_id = silc_channel_get_id_parse(payload);
+  if (!channel_id) {
+    silc_channel_payload_free(payload);
     return;
   }
-    
-  /* Decode the channel ID */
-  channel_id = silc_id_str2id(id, channel_id_len, SILC_ID_CHANNEL);
-  if (!channel_id)
-    return;
+
+  channel_name = silc_channel_get_name(payload, &name_len);
+  if (name_len > 256)
+    channel_name[255] = '\0';
+
+  id = silc_channel_get_id(payload, &id_len);
 
   if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
     /* Add the server to global list as it is coming from router. It 
@@ -1436,8 +1476,9 @@ void silc_server_new_channel(SilcServer server,
 		    silc_id_render(channel_id, SILC_ID_CHANNEL), 
 		    sock->hostname));
     
-    silc_idlist_add_channel(server->global_list, channel_name, 0, channel_id, 
-			    server->router->connection, NULL, NULL);
+    silc_idlist_add_channel(server->global_list, strdup(channel_name), 
+			    0, channel_id, server->router->connection, 
+			    NULL, NULL);
 
     server->stat.channels++;
   } else {
@@ -1464,11 +1505,14 @@ void silc_server_new_channel(SilcServer server,
       channel = silc_server_create_new_channel_with_id(server, NULL, NULL,
 						       channel_name,
 						       channel_id, FALSE);
-      if (!channel)
+      if (!channel) {
+	silc_channel_payload_free(payload);
+	silc_free(channel_id);
 	return;
+      }
 
       /* Send the new channel key to the server */
-      chk = silc_channel_key_payload_encode(channel_id_len, id,
+      chk = silc_channel_key_payload_encode(id_len, id,
 					    strlen(channel->channel_key->
 						   cipher->name),
 					    channel->channel_key->cipher->name,
@@ -1502,7 +1546,7 @@ void silc_server_new_channel(SilcServer server,
       silc_server_send_channel_key(server, sock, channel, FALSE);
 
       /* Send to the server */
-      chk = silc_channel_key_payload_encode(channel_id_len, id,
+      chk = silc_channel_key_payload_encode(id_len, id,
 					    strlen(channel->channel_key->
 						   cipher->name),
 					    channel->channel_key->cipher->name,
@@ -1511,6 +1555,7 @@ void silc_server_new_channel(SilcServer server,
       silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
 			      chk->data, chk->len, FALSE);
       silc_buffer_free(chk);
+      silc_free(channel_id);
 
       /* Since the channel is coming from server and we also know about it
 	 then send the JOIN notify to the server so that it see's our
@@ -1518,8 +1563,6 @@ void silc_server_new_channel(SilcServer server,
       /* XXX TODO **/
     }
   }
-
-  silc_free(id);
 }
 
 /* Received New Channel List packet, list of New Channel List payloads inside
@@ -1579,14 +1622,14 @@ void silc_server_new_channel_list(SilcServer server,
 	(len2 > buffer->truelen))
       break;
 
-    silc_buffer_pull_tail(buffer, 4 + len1 + len2);
-    silc_buffer_put(buffer, packet->buffer->data, 4 + len1 + len2);
+    silc_buffer_pull_tail(buffer, 8 + len1 + len2);
+    silc_buffer_put(buffer, packet->buffer->data, 8 + len1 + len2);
 
     /* Process the New Channel */
     silc_server_new_channel(server, sock, new);
 
-    silc_buffer_push_tail(buffer, 4 + len1 + len2);
-    silc_buffer_pull(packet->buffer, 4 + len1 + len2);
+    silc_buffer_push_tail(buffer, 8 + len1 + len2);
+    silc_buffer_pull(packet->buffer, 8 + len1 + len2);
   }
 
   silc_buffer_free(buffer);

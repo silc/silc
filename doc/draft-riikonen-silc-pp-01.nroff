@@ -80,6 +80,7 @@ Table of Contents
       2.3.2 Generic payloads .................................... 16
             2.3.2.1 ID Payload .................................. 16
             2.3.2.2 Argument Payload ............................ 16
+            2.3.2.3 Channel Payload ............................. XXX
       2.3.3 Disconnect Payload .................................. 17
       2.3.4 Success Payload ..................................... 18
       2.3.5 Failure Payload ..................................... 18
@@ -123,21 +124,23 @@ Figure 1:   Typical SILC Packet
 Figure 2:   SILC Packet Header
 Figure 3:   ID Payload
 Figure 4:   Argument Payload
-Figure 5:   Disconnect Payload
-Figure 6:   Success Payload
-Figure 7:   Failure Payload
-Figure 8:   Reject Payload
-Figure 9:   Notify Payload
-Figure 10:  Error Payload
-Figure 11:  Channel Message Payload
-Figure 12:  Channel Key Payload
-Figure 13:  Private Message Payload
-Figure 14:  Private Message Key Payload
-Figure 15:  Command Payload
-Figure 16:  Connection Auth Request Payload
-Figure 17:  New Client Payload
-Figure 18:  New Server Payload
-Figure 19:  New Channel Payload
+Figure 5:   Channel Payload
+Figure 6:   Disconnect Payload
+Figure 7:   Success Payload
+Figure 8:   Failure Payload
+Figure 9:   Reject Payload
+Figure 10:  Notify Payload
+Figure 11:  Error Payload
+Figure 12:  Channel Message Payload
+Figure 13:  Channel Key Payload
+Figure 14:  Private Message Payload
+Figure 15:  Private Message Key Payload
+Figure 16:  Command Payload
+Figure 17:  Connection Auth Request Payload
+Figure 18:  New Client Payload
+Figure 19:  New Server Payload
+Figure 20:  Key Agreement Payload
+Figure 21:  Cell Routers Payload
 
 
 .ti 0
@@ -833,6 +836,7 @@ the packet payload needing the arguments.  Incorrect amount of argument
 payloads must cause rejection of the packet.  The following diagram represents
 the Argument Payload.
 
+The following diagram represents the Argument Payload.
 
 .in 5
 .nf
@@ -869,6 +873,58 @@ o Argument Data (variable length) - Argument data.
 
 
 .ti 0
+2.3.2.3 Channel Payload
+
+Generic Channel Payload may be used information about channel, its name,
+the Channel ID and a mode.
+
+The following diagram represents the Channel Payload Payload.
+
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      Channel Name Length      |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                         Channel Name                          ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       Channel ID Length       |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+|                                                               |
+~                          Channel ID                           ~
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                           Mode Mask                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 5:  New Channel Payload
+
+
+.in 6
+o Channel Name Length (2 bytes) - Length of the channel name
+  field.
+
+o Channel Name (variable length) - The name of the channel.
+
+o Channel ID Length (2 bytes) - Length of the Channel ID field.
+
+o Channel ID (variable length) - The Channel ID.
+
+o Mode Mask (4 bytes) - A mode.  This can be the mode of the
+  channel but it can also be the mode of the client on the
+  channel.  The contents of this field is dependent of the
+  usage of this payload.  The usage is defined separately
+  when this payload is used.  This is a 32 bit MSB first value.
+.in 3
+
+
+.ti 0
 2.3.3 Disconnect Payload
 
 Disconnect payload is sent upon disconnection.  The payload is simple;
@@ -896,7 +952,7 @@ the Disconnect Payload.
 .in 3
 
 .ce
-Figure 5:  Disconnect Payload
+Figure 6:  Disconnect Payload
 
 
 
@@ -926,7 +982,7 @@ This maybe any data, including binary or human readable data.
 .in 3
 
 .ce
-Figure 6:  Success Payload
+Figure 7:  Success Payload
 
 
 .in 6
@@ -958,7 +1014,7 @@ some protocol is sent in the payload.
 .in 3
 
 .ce
-Figure 7:  Failure Payload
+Figure 8:  Failure Payload
 
 
 .in 6
@@ -992,7 +1048,7 @@ may be binary or human readable data.
 .in 3
 
 .ce
-Figure 8:  Reject Payload
+Figure 9:  Reject Payload
 
 
 .in 6
@@ -1033,7 +1089,7 @@ Notify Payload.
 .in 3
 
 .ce
-Figure 9:  Notify Payload
+Figure 10:  Notify Payload
 
 
 .in 6
@@ -1245,6 +1301,18 @@ ID's sent in arguments are sent inside ID Payload.
       The killer may have set the <comment> to indicate the reason for
       the killing.
 
+
+14    SILC_NOTIFY_TYPE_UMODE_CHANGE
+
+      Sent when user's mode in the SILC changes.  This type is sent only
+      between routers as broadcast packet.
+
+      Max Arguments:  2
+          Arguments:  (1) <Client ID>  (2) <mode mask>
+
+      The <Client ID> is the client which mode was changed.  The <mode mask>
+      is the new mode mask.
+
 .in 3
 
 Notify types starting from 16384 are reserved for private notify
@@ -1274,7 +1342,7 @@ that the client takes error packet seriously.
 .in 3
 
 .ce
-Figure 10:  Error Payload
+Figure 11:  Error Payload
 
 
 .in 6
@@ -1349,7 +1417,7 @@ represents the Channel Message Payload.
 .in 3
 
 .ce
-Figure 11:  Channel Message Payload
+Figure 12:  Channel Message Payload
 
 
 .in 6
@@ -1459,7 +1527,7 @@ represents the Channel Key Payload.
 .in 3
 
 .ce
-Figure 12:  Channel Key Payload
+Figure 13:  Channel Key Payload
 
 
 
@@ -1537,7 +1605,7 @@ diagram represents the Private Message Payload.
 .in 3
 
 .ce
-Figure 13:  Private Message Payload
+Figure 14:  Private Message Payload
 
 
 .in 6
@@ -1597,7 +1665,7 @@ diagram represents the Private Message Key Payload.
 .in 3
 
 .ce
-Figure 14:  Private Message Key Payload
+Figure 15:  Private Message Key Payload
 
 
 
@@ -1642,7 +1710,7 @@ represents the Command Payload.
 .in 3
 
 .ce
-Figure 15:  Command Payload
+Figure 16:  Command Payload
 
 
 .in 6
@@ -1724,7 +1792,7 @@ diagram represents the Connection Auth Request Payload.
 .in 3
 
 .ce
-Figure 16:  Connection Auth Request Payload
+Figure 17:  Connection Auth Request Payload
 
 
 .in 6
@@ -1842,7 +1910,7 @@ represents the New Client Payload.
 .in 3
 
 .ce
-Figure 17:  New Client Payload
+Figure 18:  New Client Payload
 
 
 .in 6
@@ -1897,7 +1965,7 @@ the New Server Payload.
 .in 3
 
 .ce
-Figure 18:  New Server Payload
+Figure 19:  New Server Payload
 
 
 .in 6
@@ -1925,45 +1993,9 @@ to the router (after it has received JOIN command from client) which
 then processes the command and creates the channel.  Client never sends
 this packet.
 
-The payload may only be sent with SILC_PACKET_NEW_CHANNEL packet.
-It must not be sent in any other packet type.  The following diagram
-represents the New Channel Payload.
-
-
-.in 5
-.nf
-                     1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|      Channel Name Length      |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-|                                                               |
-~                         Channel Name                          ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|       Channel ID Length       |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-|                                                               |
-~                          Channel ID                           ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-.in 3
-
-.ce
-Figure 19:  New Channel Payload
-
-
-
-.in 6
-o Channel Name Length (2 bytes) - Length of the channel name.
-
-o Channel Name (variable length) - The name of the created
-  channel.
-
-o Channel ID Length (2 bytes) - Length of the Channel ID.
-
-o Channel ID (variable length) - The created Channel ID.
-.in 3
+The packet uses generic Channel Payload as New Channel Payload.  See
+section 2.3.2.3 for generic Channel Payload.  The Mode Mask field in the
+Channel Payload is the mode of the channel.
 
 
 .ti 0

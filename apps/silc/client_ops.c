@@ -411,6 +411,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	char buf[1024], *nickname, *username, *realname;
 	int len;
 	unsigned int idle, mode;
+	SilcBuffer channels;
 
 	if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
 	  char *tmp;
@@ -432,7 +433,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	nickname = va_arg(vp, char *);
 	username = va_arg(vp, char *);
 	realname = va_arg(vp, char *);
-	(void)va_arg(vp, void *);
+	channels = va_arg(vp, SilcBuffer);
 	mode = va_arg(vp, unsigned int);
 	idle = va_arg(vp, unsigned int);
 
@@ -455,6 +456,32 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	}
 
 	client->ops->say(client, conn, "%s", buf);
+
+	if (channels) {
+	  SilcDList list = silc_channel_payload_parse_list(channels);
+	  if (list) {
+	    SilcChannelPayload entry;
+
+	    memset(buf, 0, sizeof(buf));
+	    strcat(buf, "on channels: ");
+
+	    silc_dlist_start(list);
+	    while ((entry = silc_dlist_get(list)) != SILC_LIST_END) {
+	      char *m = silc_client_chumode_char(silc_channel_get_mode(entry));
+	      unsigned int name_len;
+	      char *name = silc_channel_get_name(entry, &name_len);
+
+	      if (m)
+		strncat(buf, m, strlen(m));
+	      strncat(buf, name, name_len);
+	      strncat(buf, " ", 1);
+	      silc_free(m);
+	    }
+
+	    client->ops->say(client, conn, "%s", buf);
+	    silc_channel_payload_list_free(list);
+	  }
+	}
 
 	if (mode)
 	  client->ops->say(client, conn, "%s is %s", nickname,

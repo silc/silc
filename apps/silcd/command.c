@@ -529,7 +529,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
   SilcServer server = cmd->server;
   char *tmp;
   int i, count = 0, len;
-  SilcBuffer packet, idp;
+  SilcBuffer packet, idp, channels;
   SilcClientEntry entry;
   SilcCommandStatus status;
   unsigned short ident = silc_command_get_ident(cmd->payload);
@@ -591,28 +591,45 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
       len = strlen(hsock->hostname);
       strncat(uh, hsock->hostname, len);
     }
+
+    channels = silc_server_get_client_channel_list(server, entry);
       
+    SILC_PUT32_MSB(entry->mode, mode);
+
     if (entry->connection) {
       SILC_PUT32_MSB((time(NULL) - entry->data.last_receive), idle);
     }
 
-    SILC_PUT32_MSB(entry->mode, mode);
-
-    packet = silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
-						  status, ident, 6, 
-						  2, idp->data, idp->len,
-						  3, nh, strlen(nh),
-						  4, uh, strlen(uh),
-						  5, entry->userinfo, 
-						  strlen(entry->userinfo),
-						  7, mode, 4,
-						  8, idle, 4);
+    if (channels)
+      packet = silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
+						    status, ident, 7, 
+						    2, idp->data, idp->len,
+						    3, nh, strlen(nh),
+						    4, uh, strlen(uh),
+						    5, entry->userinfo, 
+						    strlen(entry->userinfo),
+						    6, channels->data,
+						    channels->len,
+						    7, mode, 4,
+						    8, idle, 4);
+    else
+      packet = silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
+						    status, ident, 6, 
+						    2, idp->data, idp->len,
+						    3, nh, strlen(nh),
+						    4, uh, strlen(uh),
+						    5, entry->userinfo, 
+						    strlen(entry->userinfo),
+						    7, mode, 4,
+						    8, idle, 4);
     
     silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
 			    0, packet->data, packet->len, FALSE);
     
     silc_buffer_free(packet);
     silc_buffer_free(idp);
+    if (channels)
+      silc_buffer_free(channels);
   }
 }
 
@@ -2697,6 +2714,12 @@ SILC_SERVER_CMD_FUNC(umode)
       client->mode &= ~SILC_UMODE_ROUTER_OPERATOR;
   }
 
+  /* Send UMODE change to primary router */
+  if (!server->standalone)
+    silc_server_send_notify_umode(server, server->router->connection, TRUE,
+				  client->id, SILC_ID_CLIENT_LEN,
+				  client->mode);
+
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_UMODE,
 						SILC_STATUS_OK, ident, 1,
@@ -3554,6 +3577,12 @@ SILC_SERVER_CMD_FUNC(oper)
   /* Client is now server operator */
   client->mode |= SILC_UMODE_SERVER_OPERATOR;
 
+  /* Send UMODE change to primary router */
+  if (!server->standalone)
+    silc_server_send_notify_umode(server, server->router->connection, TRUE,
+				  client->id, SILC_ID_CLIENT_LEN,
+				  client->mode);
+
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
 					SILC_STATUS_OK);
@@ -3621,6 +3650,12 @@ SILC_SERVER_CMD_FUNC(silcoper)
   /* Client is now router operator */
   client->mode |= SILC_UMODE_ROUTER_OPERATOR;
 
+  /* Send UMODE change to primary router */
+  if (!server->standalone)
+    silc_server_send_notify_umode(server, server->router->connection, TRUE,
+				  client->id, SILC_ID_CLIENT_LEN,
+				  client->mode);
+
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
 					SILC_STATUS_OK);
@@ -3670,9 +3705,8 @@ SILC_SERVER_CMD_FUNC(connect)
 
   /* Get port */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (tmp) {
+  if (tmp)
     SILC_GET32_MSB(port, tmp);
-  }
 
   /* Create the connection. It is done with timeout and is async. */
   silc_server_create_connection(server, host, port);
@@ -3725,9 +3759,8 @@ SILC_SERVER_CMD_FUNC(close)
 
   /* Get port */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (tmp) {
+  if (tmp)
     SILC_GET32_MSB(port, tmp);
-  }
 
   server_entry = silc_idlist_find_server_by_conn(server->local_list,
 						 name, port, NULL);

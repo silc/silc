@@ -17,11 +17,200 @@
   GNU General Public License for more details.
 
 */
-/* Channel Payload and Channel Key Payload implementations. */
+/* Channel Payload, Channel Message Payload and Channel Key Payload 
+   implementations. */
 /* $Id$ */
 
 #include "silcincludes.h"
 #include "silcchannel.h"
+
+/******************************************************************************
+
+                              Channel Payload
+
+******************************************************************************/
+
+/* Channel Message Payload structure. Contents of this structure is parsed
+   from SILC packets. */
+struct SilcChannelPayloadStruct {
+  unsigned short name_len;
+  unsigned char *channel_name;
+  unsigned short id_len;
+  unsigned char *channel_id;
+  unsigned int mode;
+};
+
+/* Parses channel payload returning new channel payload structure. */
+
+SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer)
+{
+  SilcChannelPayload new;
+  int ret;
+
+  SILC_LOG_DEBUG(("Parsing channel payload"));
+
+  new = silc_calloc(1, sizeof(*new));
+
+  /* Parse the Channel Payload. Ignore the padding. */
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_UI16_NSTRING_ALLOC(&new->channel_name, 
+							 &new->name_len),
+			     SILC_STR_UI16_NSTRING_ALLOC(&new->channel_id, 
+							 &new->id_len),
+			     SILC_STR_UI_INT(&new->mode),
+			     SILC_STR_END);
+  if (ret == -1)
+    goto err;
+
+  if ((new->name_len < 1 || new->name_len > buffer->len) ||
+      (new->id_len < 1 || new->id_len > buffer->len)) {
+    SILC_LOG_ERROR(("Incorrect channel payload in packet, packet dropped"));
+    goto err;
+  }
+
+  return new;
+
+ err:
+  silc_channel_payload_free(new);
+  return NULL;
+}
+
+/* Parses list of channel payloads returning list of payloads. */
+
+SilcDList silc_channel_payload_parse_list(SilcBuffer buffer)
+{
+  SilcDList list;
+  SilcChannelPayload new;
+  int len, ret;
+
+  SILC_LOG_DEBUG(("Parsing channel payload list"));
+
+  list = silc_dlist_init();
+
+  while (buffer->len) {
+    new = silc_calloc(1, sizeof(*new));
+    ret = silc_buffer_unformat(buffer,
+			       SILC_STR_UI16_NSTRING_ALLOC(&new->channel_name, 
+							   &new->name_len),
+			       SILC_STR_UI16_NSTRING_ALLOC(&new->channel_id, 
+							   &new->id_len),
+			       SILC_STR_UI_INT(&new->mode),
+			       SILC_STR_END);
+    if (ret == -1)
+      goto err;
+
+    if ((new->name_len < 1 || new->name_len > buffer->len) ||
+	(new->id_len < 1 || new->id_len > buffer->len)) {
+      SILC_LOG_ERROR(("Incorrect channel payload in packet, packet dropped"));
+      goto err;
+    }
+
+    len = 2 + new->name_len + 2 + new->id_len + 4;
+    if (buffer->len < len)
+      break;
+    silc_buffer_pull(buffer, len);
+
+    silc_dlist_add(list, new);
+  }
+  
+  return list;
+
+ err:
+  silc_channel_payload_list_free(list);
+  return NULL;
+}
+
+/* Encode new channel payload and returns it as buffer. */
+
+SilcBuffer silc_channel_payload_encode(unsigned char *channel_name,
+				       unsigned short channel_name_len,
+				       unsigned char *channel_id,
+				       unsigned int channel_id_len,
+				       unsigned int mode)
+{
+  SilcBuffer buffer;
+
+  SILC_LOG_DEBUG(("Encoding message payload"));
+
+  buffer = silc_buffer_alloc(2 + channel_name_len + 2 + channel_id_len + 4);
+  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+
+  /* Encode the Channel Payload */
+  silc_buffer_format(buffer, 
+		     SILC_STR_UI_SHORT(channel_name_len),
+		     SILC_STR_UI_XNSTRING(channel_name, channel_name_len),
+		     SILC_STR_UI_SHORT(channel_id_len),
+		     SILC_STR_UI_XNSTRING(channel_id, channel_id_len),
+		     SILC_STR_UI_INT(mode),
+		     SILC_STR_END);
+
+  return buffer;
+}
+
+/* Free's Channel Payload */
+
+void silc_channel_payload_free(SilcChannelPayload payload)
+{
+  silc_free(payload->channel_name);
+  silc_free(payload->channel_id);
+  silc_free(payload);
+}
+
+/* Free's list of Channel Payloads */
+
+void silc_channel_payload_list_free(SilcDList list)
+{
+  SilcChannelPayload entry;
+
+  silc_dlist_start(list);
+  while ((entry = silc_dlist_get(list)) != SILC_LIST_END) {
+    silc_free(entry->channel_name);
+    silc_free(entry->channel_id);
+    silc_free(entry);
+    silc_dlist_del(list, entry);
+  }
+
+  silc_dlist_uninit(list);
+}
+
+/* Return the channel name */
+
+unsigned char *silc_channel_get_name(SilcChannelPayload payload,
+				     unsigned int *channel_name_len)
+{
+  if (channel_name_len)
+    *channel_name_len = payload->name_len;
+
+  return payload->channel_name;
+}
+
+/* Return the channel ID */
+
+unsigned char *silc_channel_get_id(SilcChannelPayload payload,
+				   unsigned int *channel_id_len)
+{
+  if (channel_id_len)
+    *channel_id_len = payload->id_len;
+
+  return payload->channel_id;
+}
+
+/* Return the channel ID as parsed ID. */
+
+SilcChannelID *silc_channel_get_id_parse(SilcChannelPayload payload)
+{
+  return silc_id_str2id(payload->channel_id, payload->id_len,
+			SILC_ID_CHANNEL);
+}
+
+/* Return the mode. The mode is arbitrary. It can be the mode of the
+   channel or perhaps the mode of the client on the channel.  The protocol
+   dictates what the usage of the mode is in different circumstances. */
+
+unsigned int silc_channel_get_mode(SilcChannelPayload payload)
+{
+  return payload->mode;
+}
 
 /******************************************************************************
 
@@ -31,7 +220,7 @@
 
 /* Channel Message Payload structure. Contents of this structure is parsed
    from SILC packets. */
-struct SilcChannelPayloadStruct {
+struct SilcChannelMessagePayloadStruct {
   unsigned short data_len;
   unsigned char *data;
   unsigned char *mac;
@@ -40,10 +229,10 @@ struct SilcChannelPayloadStruct {
 
 /* Decrypts the channel message payload. */
 
-int silc_channel_payload_decrypt(unsigned char *data,
-				 size_t data_len,
-				 SilcCipher cipher,
-				 SilcHmac hmac)
+int silc_channel_message_payload_decrypt(unsigned char *data,
+					 size_t data_len,
+					 SilcCipher cipher,
+					 SilcHmac hmac)
 {
   unsigned int iv_len, mac_len;
   unsigned char *end, *mac, mac2[32];
@@ -79,21 +268,22 @@ int silc_channel_payload_decrypt(unsigned char *data,
   return TRUE;
 }
 
-/* Parses channel payload returning new channel payload structure. This
-   also decrypts it and checks the MAC. */
+/* Parses channel message payload returning new channel payload structure.
+   This also decrypts it and checks the MAC. */
 
-SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer,
-					      SilcCipher cipher,
-					      SilcHmac hmac)
+SilcChannelMessagePayload 
+silc_channel_message_payload_parse(SilcBuffer buffer,
+				   SilcCipher cipher,
+				   SilcHmac hmac)
 {
-  SilcChannelPayload new;
+  SilcChannelMessagePayload new;
   int ret;
   unsigned int iv_len, mac_len;
 
-  SILC_LOG_DEBUG(("Parsing channel payload"));
+  SILC_LOG_DEBUG(("Parsing channel message payload"));
 
   /* Decrypt the payload */
-  ret = silc_channel_payload_decrypt(buffer->data, buffer->len,
+  ret = silc_channel_message_payload_decrypt(buffer->data, buffer->len,
 				     cipher, hmac);
   if (ret == FALSE)
     return NULL;
@@ -103,7 +293,7 @@ SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer,
 
   new = silc_calloc(1, sizeof(*new));
 
-  /* Parse the Channel Payload. Ignore the padding. */
+  /* Parse the Channel Message Payload. Ignore the padding. */
   ret = silc_buffer_unformat(buffer,
 			     SILC_STR_UI16_NSTRING_ALLOC(&new->data, 
 							 &new->data_len),
@@ -115,29 +305,30 @@ SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer,
     goto err;
 
   if (new->data_len < 1 || new->data_len > buffer->len) {
-    SILC_LOG_ERROR(("Incorrect channel payload in packet, packet dropped"));
+    SILC_LOG_ERROR(("Incorrect channel messaeg payload in packet, "
+		    "packet dropped"));
     goto err;
   }
 
   return new;
 
  err:
-  silc_channel_payload_free(new);
+  silc_channel_message_payload_free(new);
   return NULL;
 }
 
-/* Encodes channel payload into a buffer and returns it. This is used 
-   to add channel payload into a packet. As the channel payload is
+/* Encodes channel message payload into a buffer and returns it. This is used 
+   to add channel message payload into a packet. As the channel payload is
    encrypted separately from other parts of the packet padding must
    be applied to the payload. */
 
-SilcBuffer silc_channel_payload_encode(unsigned short data_len,
-				       unsigned char *data,
-				       unsigned short iv_len,
-				       unsigned char *iv,
-				       SilcCipher cipher,
-				       SilcHmac hmac,
-				       SilcRng rng)
+SilcBuffer silc_channel_message_payload_encode(unsigned short data_len,
+					       unsigned char *data,
+					       unsigned short iv_len,
+					       unsigned char *iv,
+					       SilcCipher cipher,
+					       SilcHmac hmac,
+					       SilcRng rng)
 {
   int i;
   SilcBuffer buffer;
@@ -145,7 +336,7 @@ SilcBuffer silc_channel_payload_encode(unsigned short data_len,
   unsigned char pad[SILC_PACKET_MAX_PADLEN];
   unsigned char mac[32];
 
-  SILC_LOG_DEBUG(("Encoding channel payload"));
+  SILC_LOG_DEBUG(("Encoding channel message payload"));
 
   /* Calculate length of padding. IV is not included into the calculation
      since it is not encrypted. */
@@ -160,7 +351,7 @@ SilcBuffer silc_channel_payload_encode(unsigned short data_len,
   /* Generate padding */
   for (i = 0; i < pad_len; i++) pad[i] = silc_rng_get_byte(rng);
 
-  /* Encode the Channel Payload */
+  /* Encode the Channel Message Payload */
   silc_buffer_pull_tail(buffer, 4 + data_len + pad_len);
   silc_buffer_format(buffer, 
 		     SILC_STR_UI_SHORT(data_len),
@@ -191,23 +382,21 @@ SilcBuffer silc_channel_payload_encode(unsigned short data_len,
   return buffer;
 }
 
-/* Free's Channel Payload */
+/* Free's Channel Message Payload */
 
-void silc_channel_payload_free(SilcChannelPayload payload)
+void silc_channel_message_payload_free(SilcChannelMessagePayload payload)
 {
-  if (payload) {
-    if (payload->data) {
-      memset(payload->data, 0, payload->data_len);
-      silc_free(payload->data);
-    }
-    silc_free(payload);
+  if (payload->data) {
+    memset(payload->data, 0, payload->data_len);
+    silc_free(payload->data);
   }
+  silc_free(payload);
 }
 
 /* Return data */
 
-unsigned char *silc_channel_get_data(SilcChannelPayload payload,
-				     unsigned int *data_len)
+unsigned char *silc_channel_message_get_data(SilcChannelMessagePayload payload,
+					     unsigned int *data_len)
 {
   if (data_len)
     *data_len = payload->data_len;
@@ -217,14 +406,14 @@ unsigned char *silc_channel_get_data(SilcChannelPayload payload,
 
 /* Return MAC. The caller knows the length of the MAC */
 
-unsigned char *silc_channel_get_mac(SilcChannelPayload payload)
+unsigned char *silc_channel_mesage_get_mac(SilcChannelMessagePayload payload)
 {
   return payload->mac;
 }
 
 /* Return IV. The caller knows the length of the IV */
 
-unsigned char *silc_channel_get_iv(SilcChannelPayload payload)
+unsigned char *silc_channel_message_get_iv(SilcChannelMessagePayload payload)
 {
   return payload->iv;
 }

@@ -209,6 +209,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   char *nickname = NULL, *username = NULL;
   char *realname = NULL;
   unsigned int idle = 0, mode = 0;
+  SilcBuffer channels = NULL;
   
   argc = silc_argument_get_arg_num(cmd->args);
 
@@ -232,15 +233,20 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
     return;
   }
 
-  tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
+  tmp = silc_argument_get_arg_type(cmd->args, 6, &len);
   if (tmp) {
-    SILC_GET32_MSB(mode, tmp);
+    channels = silc_buffer_alloc(len);
+    silc_buffer_pull_tail(channels, SILC_BUFFER_END(channels));
+    silc_buffer_put(channels, tmp, len);
   }
 
+  tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
+  if (tmp)
+    SILC_GET32_MSB(mode, tmp);
+
   tmp = silc_argument_get_arg_type(cmd->args, 8, &len);
-  if (tmp) {
+  if (tmp)
     SILC_GET32_MSB(idle, tmp);
-  }
 
   /* Check if we have this client cached already. */
   if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
@@ -289,7 +295,10 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   /* Notify application */
   if (!cmd->callback)
     COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
-		   NULL, mode, idle));
+		   channels, mode, idle));
+
+  if (channels)
+    silc_buffer_free(channels);
 }
 
 /* Received reply for WHOIS command. This maybe called several times
@@ -877,11 +886,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 
   /* Get channel mode */
   tmp = silc_argument_get_arg_type(cmd->args, 5, NULL);
-  if (tmp) {
+  if (tmp)
     SILC_GET32_MSB(mode, tmp);
-  } else {
+  else
     mode = 0;
-  }
 
   /* Get channel key */
   tmp = silc_argument_get_arg_type(cmd->args, 7, &len);

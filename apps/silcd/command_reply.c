@@ -150,10 +150,8 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   }
 
   tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
-  if (tmp) {
+  if (tmp)
     SILC_GET32_MSB(mode, tmp);
-  }
-
 
   client_id = silc_id_payload_parse_id(id_data, id_len);
   if (!client_id)
