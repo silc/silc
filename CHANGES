@@ -1,3 +1,9 @@
+Sat Aug 11 12:36:02 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* The client's Client ID was created initally from the wrong
+	  nickname (it could have been in format nick@host) in the
+	  silc_server_new_client.  Affected file silcd/packet_receive.c
+
 Sat Aug 11 00:29:57 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added some SILC_LOG_ERROR's to various error conditions

@@ -1443,7 +1443,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 
   /* Create Client ID */
   silc_id_create_client_id(server->id, server->rng, server->md5hash,
-			   username, &client_id);
+			   nickname, &client_id);
 
   /* Update client entry */
   idata->registered = TRUE;
