@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 #
-#  Copyright (C) 2000 Pekka Riikonen
+#  Copyright (C) 2000 - 2001 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -27,3 +27,36 @@ dist-bzip: distdir
 	-rm -rf $(distdir)
 
 EXTRA_DIST = CHANGES CREDITS
+
+#
+# Installing of SILC into the system
+#
+
+modulesdir = $(prefix)/@MODULESDIR@
+helpdir = $(prefix)/@HELPDIR@
+docdir = $(prefix)/@DOCDIR@
+etcdir = @ETCDIR@
+
+install-dirs:
+	-mkdir -p $(etcdir)
+	-mkdir -p $(modulesdir)
+	-mkdir -p $(helpdir)
+	-mkdir -p $(docdir)
+
+generate-server-key:
+	-umask 022;
+	-echo Generating SILC Server key into $(etcdir)
+	-$(sbindir)/silcd -k $(etcdir)
+
+sim-install:
+	-echo Installing SIM modules into $(modulesdir)
+	-cp -fR $(srcdir)/lib/silcsim/modules/*.so $(modulesdir)/
+
+doc-install:
+	-cp -fR $(srcdir)/doc/* $(docdir)/
+
+etc-install:
+	-cp -fR $(srcdir)/doc/example_silcd.conf $(etcdir)/silcd.conf
+	-cp -fR $(srcdir)/doc/example_silc.conf $(etcdir)/silc.conf
+
+install-data-hook: install-dirs generate-server-key sim-install doc-install

@@ -116,6 +116,77 @@ AC_CHECK_HEADERS(dlfcn.h,
     AC_MSG_RESULT(no SIM support found)),
   AC_MSG_RESULT(no SIM support found))
 
+#
+# Installation
+#
+
+# Default installation destination
+AC_PREFIX_DEFAULT(/usr/local/silc/)
+
+# etc directory
+ETCDIR="/etc/silc"
+AC_ARG_WITH(etcdir,
+[  --with-etcdir[=PATH]    Directory for system files [/etc/silc]],
+[ case "$withval" in
+  no)
+    ;;
+  yes)
+    ;;
+  *)
+    ETCDIR="$withwal"
+    ;;
+  esac ],
+)
+AC_SUBST(ETCDIR)
+
+# help directory
+HELPDIR="help"
+AC_ARG_WITH(helpdir,
+[  --with-helpdir[=PATH]   Directory for SILC help files [PREFIX/help]],
+[ case "$withval" in
+  no)
+    ;;
+  yes)
+    ;;
+  *)
+    HELPDIR="$withwal"
+    ;;
+  esac ],
+)
+AC_SUBST(HELPDIR)
+
+# doc directory
+DOCDIR="doc"
+AC_ARG_WITH(docdir,
+[  --with-docdir[=PATH]    Directory for SILC documentation [PREFIX/doc]],
+[ case "$withval" in
+  no)
+    ;;
+  yes)
+    ;;
+  *)
+    DOCDIR="$withwal"
+    ;;
+  esac ],
+)
+AC_SUBST(DOCDIR)
+
+# SIM modules directory
+MODULESDIR="modules"
+AC_ARG_WITH(simdir,
+[  --with-simdir[=PATH]    Directory for SIM modules [PREFIX/modules]],
+[ case "$withval" in
+  no)
+    ;;
+  yes)
+    ;;
+  *)
+    MODULESDIR="$withwal"
+    ;;
+  esac ],
+)
+AC_SUBST(MODULESDIR)
+
 # Debug checking
 AC_MSG_CHECKING(for enabled debugging)
 AC_ARG_ENABLE(debug,

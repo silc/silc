@@ -18,7 +18,7 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-bin_PROGRAMS = silcd
+sbin_PROGRAMS = silcd
 
 silcd_SOURCES = \
 	protocol.c \

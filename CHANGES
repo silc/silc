@@ -1,3 +1,7 @@
+Sun Apr  8 01:37:21 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Made preliminary `make install' work.
+
 Thu Apr  5 17:42:30 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added SilcServerRekey context into silcd/idlist.h.
