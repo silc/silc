@@ -258,6 +258,7 @@ struct SilcChannelEntryStruct {
   SilcUInt32 mode;			     /* Channel mode, ChannelModes. */
   char *topic;				     /* Current topic, may be NULL */
   SilcPublicKey founder_key;		     /* Founder key, may be NULL */
+  SilcUInt32 user_limit;		     /* User limit on channel */
 
   /* All clients that has joined this channel.  The key to the table is the
      SilcClientEntry and the context is SilcChannelUser context. */

@@ -14,6 +14,14 @@ Sat Feb 28 16:25:09 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 	  operation.  Affected files are lib/silcclient/silcclient.h
 	  and client_channel.c.
 
+	* Fixed wrong arg type for user limit in CMODE command reply.
+	  Affected file silcd/command.c.
+
+	* The user limit is now taken and saved to SilcClientEntry in
+	  JOIN and CMODE command replies and in CMODE_CHANGE notify.
+	  Affected files lib/silcclient/silcclient.h, command_reply.c
+	  and client_notify.c.
+
 Fri Feb 27 11:25:26 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the JOIN command calling when called with both

@@ -1136,6 +1136,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     silc_pkcs_public_key_payload_decode(tmp, len, &channel->founder_key);
   }
 
+  /* Get user limit */
+  tmp = silc_argument_get_arg_type(cmd->args, 17, &len);
+  if (tmp && len == 4)
+    SILC_GET32_MSB(channel->user_limit, tmp);
+
   /* Get channel public key list */
   tmp = silc_argument_get_arg_type(cmd->args, 16, &len);
   if (tmp)
@@ -1151,7 +1156,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 		 keyp ? keyp->head : NULL, NULL,
 		 NULL, topic, hmac, list_count, client_id_list,
 		 client_mode_list, channel->founder_key,
-		 tmp ? &chpklist : NULL));
+		 tmp ? &chpklist : NULL, channel->user_limit));
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
@@ -1307,6 +1312,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
       public_key = NULL;
   }
 
+  /* Get user limit */
+  tmp = silc_argument_get_arg_type(cmd->args, 6, &len);
+  if (tmp && len == 4)
+    SILC_GET32_MSB(channel->user_limit, tmp);
+
   /* Get channel public key(s) */
   tmp = silc_argument_get_arg_type(cmd->args, 5, &len);
   if (tmp)
@@ -1314,7 +1324,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
 
   /* Notify application */
   COMMAND_REPLY((SILC_ARGS, channel, mode, public_key,
-		 tmp ? &channel_pubkeys : NULL));
+		 tmp ? &channel_pubkeys : NULL, channel->user_limit));
 
   silc_free(channel_id);
 

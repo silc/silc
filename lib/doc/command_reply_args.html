@@ -261,7 +261,7 @@ keys, it may be NULL.
 SilcUInt32 channel_mode, int ignored, SilcBuffer key_payload, NULL, NULL,
 char *topic, char *hmac_name, SilcUInt32 list_count, SilcBuffer client_id_list,
 SilcBuffer client_mode_list, SilcPublicKey founder_key,
-SilcBuffer channel_pubkeys
+SilcBuffer channel_pubkeys, SilcUint32 user_limit
 </td>
 </tr>
 
@@ -294,7 +294,8 @@ Argument List Payload where each argument includes one Public Key
 Payload.
 </td>
 <td width="50%"><small>SilcChannelEntry channel, SilcUInt32 mode,
-SilcPublicKey founder_key, SilcBuffer channel_pubkeys
+SilcPublicKey founder_key, SilcBuffer channel_pubkeys,
+SilcUint32 user_limit
 </td>
 </tr>
 
