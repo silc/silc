@@ -84,7 +84,7 @@ typedef struct {
     char *type;		    /* telephone number type, string
 			       (msg, voice, home, work, pref, bbs, modem, car,
 			       cell, video, pager, isdn, fax) */
-    char *tel;		    /* single telephone number, string */
+    char *telnum;	    /* single telephone number, string */
   } *tels;
   SilcUInt8 num_tels;
 

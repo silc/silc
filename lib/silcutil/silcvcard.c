@@ -98,7 +98,7 @@ unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
     silc_buffer_strformat(&buffer,
 			  "TEL;TYPE=",
 			  vcard->tels[i].type, ":",
-			  vcard->tels[i].tel, "\n",
+			  vcard->tels[i].telnum, "\n",
 			  SILC_STR_END);
   }
   for (i = 0; i < vcard->num_emails; i++) {
@@ -292,7 +292,7 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
 	    VCARD_TYPETOKEN(vcard->tels[vcard->num_tels].type);
 	    break;
 	  }
-	VCARD_LASTTOKEN(vcard->tels[vcard->num_tels].tel);
+	VCARD_LASTTOKEN(vcard->tels[vcard->num_tels].telnum);
       }
       vcard->num_tels++;
       goto next;
@@ -379,7 +379,7 @@ void silc_vcard_free(SilcVCard vcard)
   silc_free(vcard->addrs);
   for (i = 0; i < vcard->num_tels; i++) {
     silc_free(vcard->tels[i].type);
-    silc_free(vcard->tels[i].tel);
+    silc_free(vcard->tels[i].telnum);
   }
   silc_free(vcard->tels);
   for (i = 0; i < vcard->num_emails; i++) {
@@ -447,7 +447,7 @@ void silc_vcard_fprintf(SilcVCard vcard, FILE *stream)
   for (i = 0; i < vcard->num_tels; i++) {
     fprintf(stream, "TEL;TYPE=%s:%s\n",
 	    vcard->tels[i].type,
-	    vcard->tels[i].tel ? vcard->tels[i].tel : "");
+	    vcard->tels[i].telnum ? vcard->tels[i].telnum : "");
   }
   for (i = 0; i < vcard->num_emails; i++) {
     fprintf(stream, "EMAIL;TYPE=%s:%s\n",
