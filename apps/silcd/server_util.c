@@ -374,6 +374,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 static SilcServerEntry
 silc_server_update_clients_by_real_server(SilcServer server,
 					  SilcServerEntry from,
+					  SilcServerEntry to,
 					  SilcClientEntry client,
 					  bool local,
 					  SilcIDCacheEntry client_cache)
@@ -381,6 +382,7 @@ silc_server_update_clients_by_real_server(SilcServer server,
   SilcServerEntry server_entry;
   SilcIDCacheEntry id_cache = NULL;
   SilcIDCacheList list;
+  bool tolocal = (to == server->id_entry);
 
   if (!silc_idcache_get_all(server->local_list->servers, &list))
     return NULL;
@@ -389,6 +391,7 @@ silc_server_update_clients_by_real_server(SilcServer server,
     while (id_cache) {
       server_entry = (SilcServerEntry)id_cache->context;
       if (server_entry != from &&
+	  (tolocal || server_entry != server->id_entry) &&
 	  SILC_ID_COMPARE(server_entry->id, client->id, 
 			  client->id->ip.data_len)) {
 	SILC_LOG_DEBUG(("Found (local) %s",
@@ -435,7 +438,8 @@ silc_server_update_clients_by_real_server(SilcServer server,
   if (silc_idcache_list_first(list, &id_cache)) {
     while (id_cache) {
       server_entry = (SilcServerEntry)id_cache->context;
-      if (server_entry != from &&
+      if (server_entry != from && server_entry != server->id_entry &&
+	  (tolocal || server_entry != server->id_entry) &&
 	  SILC_ID_COMPARE(server_entry->id, client->id, 
 			  client->id->ip.data_len)) {
 	SILC_LOG_DEBUG(("Found (global) %s",
@@ -520,8 +524,9 @@ void silc_server_update_clients_by_server(SilcServer server,
 	  if (client->router == from) {
 	    if (resolve_real_server) {
 	      client->router = 
-		silc_server_update_clients_by_real_server(server, from, client,
-							  local, id_cache);
+		silc_server_update_clients_by_real_server(server, from, to,
+							  client, local,
+							  id_cache);
 	      if (!client->router) {
 		if (server->server_type == SILC_ROUTER)
 		  client->router = from;
@@ -539,7 +544,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 
 	if (client->router)
 	  SILC_LOG_DEBUG(("Client changed to %s", 
-			  silc_id_render(client->router->id, SILC_ID_CLIENT)));
+			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 
 	if (!silc_idcache_list_next(list, &id_cache))
 	  break;
@@ -574,8 +579,9 @@ void silc_server_update_clients_by_server(SilcServer server,
 	  if (client->router == from) {
 	    if (resolve_real_server) {
 	      client->router = 
-		silc_server_update_clients_by_real_server(server, from, client,
-							  local, id_cache);
+		silc_server_update_clients_by_real_server(server, from, to,
+							  client, local,
+							  id_cache);
 	      if (!client->router)
 		client->router = from;
 	    } else {
@@ -589,7 +595,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 
 	if (client->router)
 	  SILC_LOG_DEBUG(("Client changed to %s", 
-			  silc_id_render(client->router->id, SILC_ID_CLIENT)));
+			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 
 	if (!silc_idcache_list_next(list, &id_cache))
 	  break;
