@@ -52,6 +52,9 @@ extern bool silc_debug_hexdump;
 void silc_expandos_init(void);
 void silc_expandos_deinit(void);
 
+void silc_lag_init(void);
+void silc_lag_deinit(void);
+
 static int my_silc_scheduler(void)
 {
   silc_client_run_one(silc_client);
@@ -478,6 +481,7 @@ void silc_core_init(void)
   silc_channels_init();
   silc_queries_init();
   silc_expandos_init();
+  silc_lag_init();
 
   idletag = g_timeout_add(5, (GSourceFunc) my_silc_scheduler, NULL);
 
@@ -498,6 +502,7 @@ void silc_core_deinit(void)
     silc_channels_deinit();
     silc_queries_deinit();
     silc_expandos_deinit();
+    silc_lag_deinit();
     
     chat_protocol_unregister("SILC");
     

@@ -1,3 +1,11 @@
+Sun Aug 24 12:58:30 CEST 2003  Jochen Eisinger <c0ffee@penguin-breeder.org>
+
+	* Use SILC_COMMAND_PING to estimate the round-trip time to the
+	  server. Use this time to display a lag and disconnect when it
+	  exceeds a specified limit.
+
+	  Affected files are irssi/src/silc/core/silc-{lag,core}.c.
+
 Thu Apr 24 19:50:25 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Deny '@' and '!' from nicknames since they are reserved
