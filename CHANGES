@@ -1,3 +1,11 @@
+Sat Feb 16 02:46:43 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Cleaned up the listening sockets code, preparing for the rehash
+	  support.  Affected file is silcd/server.c.
+
+	* Fixed some output messages.  Affected files are silcd/silcd.c,
+	  and silcd/server.c.
+
 Fri Feb 15 19:10:20 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Create lib/doc/silcrng_intro.html document as introduction

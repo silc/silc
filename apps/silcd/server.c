@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 */
 /*
  * This is the actual SILC server than handles everything relating to
- * servicing the SILC connections. This is also a SILC router as a router 
+ * servicing the SILC connections. This is also a SILC router as a router
  * is also normal server.
  */
 /* $Id$ */
@@ -102,14 +102,14 @@ void silc_server_free(SilcServer server)
 
 /* Initializes the entire SILC server. This is called always before running
    the server. This is called only once at the initialization of the program.
-   This binds the server to its listenning port. After this function returns 
-   one should call silc_server_run to start the server. This returns TRUE 
+   This binds the server to its listenning port. After this function returns
+   one should call silc_server_run to start the server. This returns TRUE
    when everything is ok to run the server. Configuration file must be
    read and parsed before calling this. */
 
 int silc_server_init(SilcServer server)
 {
-  int *sock = NULL, sock_count, i;
+  int sock;
   SilcServerID *id;
   SilcServerEntry id_entry;
   SilcIDListPurge purge;
@@ -120,7 +120,7 @@ int silc_server_init(SilcServer server)
 
   /* Set public and private keys */
   if (!server->config->server_info ||
-      !server->config->server_info->public_key || 
+      !server->config->server_info->public_key ||
       !server->config->server_info->private_key) {
     SILC_LOG_ERROR(("Server public key and/or private key does not exist"));
     return FALSE;
@@ -155,64 +155,53 @@ int silc_server_init(SilcServer server)
   silc_pkcs_public_key_set(server->pkcs, server->public_key);
   silc_pkcs_private_key_set(server->pkcs, server->private_key);
 
-  /* Create a listening server. Note that our server can listen on multiple
-     ports. All listeners are created here and now. */
-  sock_count = 0;
-  while (1) {
-    int tmp;
-
-    tmp = silc_net_create_server(server->config->server_info->port,
-				 server->config->server_info->server_ip);
-
-    if (tmp < 0) {
-      SILC_LOG_ERROR(("Could not create server listener: %s on %hd",
-		      server->config->server_info->server_ip,
-		      server->config->server_info->port));
-      goto err;
-    }
-
-    sock = silc_realloc(sock, sizeof(*sock) * (sock_count + 1));
-    sock[sock_count] = tmp;
-    sock_count++;
-    break;
+  /* Create a listening server */
+  sock = silc_net_create_server(server->config->server_info->port,
+			       server->config->server_info->server_ip);
+  /* XXX What if I want my errno? Where is my errno?!?  -Johnny */
+  if (sock < 0) {
+    SILC_LOG_ERROR(("Could not create server listener: %s on %hu",
+		    server->config->server_info->server_ip,
+		    server->config->server_info->port));
+    goto err;
   }
 
   /* Initialize ID caches */
-  server->local_list->clients = 
+  server->local_list->clients =
     silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor);
   server->local_list->servers = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
   server->local_list->channels = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
 
-  /* These are allocated for normal server as well as these hold some 
-     global information that the server has fetched from its router. For 
+  /* These are allocated for normal server as well as these hold some
+     global information that the server has fetched from its router. For
      router these are used as they are supposed to be used on router. */
-  server->global_list->clients = 
+  server->global_list->clients =
     silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor);
   server->global_list->servers = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
   server->global_list->channels = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
 
-  /* Allocate the entire socket list that is used in server. Eventually 
-     all connections will have entry in this table (it is a table of 
-     pointers to the actual object that is allocated individually 
+  /* Allocate the entire socket list that is used in server. Eventually
+     all connections will have entry in this table (it is a table of
+     pointers to the actual object that is allocated individually
      later). */
   server->sockets = silc_calloc(SILC_SERVER_MAX_CONNECTIONS,
 				sizeof(*server->sockets));
 
-  for (i = 0; i < sock_count; i++) {
+  do {
     SilcSocketConnection newsocket = NULL;
 
     /* Set socket to non-blocking mode */
-    silc_net_set_socket_nonblock(sock[i]);
-    server->sock = sock[i];
-    
+    silc_net_set_socket_nonblock(sock);
+    server->sock = sock;
+
     /* Add ourselves also to the socket table. The entry allocated above
        is sent as argument for fast referencing in the future. */
-    silc_socket_alloc(sock[i], SILC_SOCKET_TYPE_SERVER, NULL, &newsocket);
-    server->sockets[sock[i]] = newsocket;
-    
+    silc_socket_alloc(sock, SILC_SOCKET_TYPE_SERVER, NULL, &newsocket);
+    server->sockets[sock] = newsocket;
+
     /* Perform name and address lookups to resolve the listenning address
        and port. */
-    if (!silc_net_check_local_by_sock(sock[i], &newsocket->hostname, 
+    if (!silc_net_check_local_by_sock(sock, &newsocket->hostname,
 				      &newsocket->ip)) {
       if ((server->config->require_reverse_lookup && !newsocket->hostname) ||
 	  !newsocket->ip) {
@@ -225,24 +214,24 @@ int silc_server_init(SilcServer server)
       if (!newsocket->hostname)
 	newsocket->hostname = strdup(newsocket->ip);
     }
-    newsocket->port = silc_net_get_local_port(sock[i]);
+    newsocket->port = silc_net_get_local_port(sock);
 
     /* Create a Server ID for the server. */
     silc_id_create_server_id(newsocket->ip, newsocket->port, server->rng, &id);
     if (!id)
       goto err;
-    
+
     server->id = id;
     server->id_string = silc_id_id2str(id, SILC_ID_SERVER);
     server->id_string_len = silc_id_get_len(id, SILC_ID_SERVER);
     server->id_type = SILC_ID_SERVER;
     server->server_name = server->config->server_info->server_name;
 
-    /* Add ourselves to the server list. We don't have a router yet 
-       beacuse we haven't established a route yet. It will be done later. 
+    /* Add ourselves to the server list. We don't have a router yet
+       beacuse we haven't established a route yet. It will be done later.
        For now, NULL is sent as router. This allocates new entry to
        the ID list. */
-    id_entry = 
+    id_entry =
       silc_idlist_add_server(server->local_list,
 			     server->config->server_info->server_name,
 			     server->server_type, server->id, NULL, NULL);
@@ -251,13 +240,13 @@ int silc_server_init(SilcServer server)
       goto err;
     }
     id_entry->data.status |= SILC_IDLIST_STATUS_REGISTERED;
-    
-    /* Put the allocated socket pointer also to the entry allocated above 
+
+    /* Put the allocated socket pointer also to the entry allocated above
        for fast back-referencing to the socket list. */
     newsocket->user_data = (void *)id_entry;
     id_entry->connection = (void *)newsocket;
     server->id_entry = id_entry;
-  }
+  } while (0);
 
   /* Register protocols */
   silc_server_protocols_register();
@@ -271,18 +260,18 @@ int silc_server_init(SilcServer server)
      timeout. It expires as soon as the caller calls silc_server_run. This
      task performs authentication protocol and key exchange with our
      primary router. */
-  silc_schedule_task_add(server->schedule, sock[0], 
+  silc_schedule_task_add(server->schedule, sock,
 			 silc_server_connect_to_router,
 			 (void *)server, 0, 1,
 			 SILC_TASK_TIMEOUT,
 			 SILC_TASK_PRI_NORMAL);
 
   /* Add listener task to the scheduler. This task receives new connections
-     to the server. This task remains on the queue until the end of the 
+     to the server. This task remains on the queue until the end of the
      program. */
-  silc_schedule_task_add(server->schedule, sock[0],
+  silc_schedule_task_add(server->schedule, sock,
 			 silc_server_accept_new_connection,
-			 (void *)server, 0, 0, 
+			 (void *)server, 0, 0,
 			 SILC_TASK_FD,
 			 SILC_TASK_PRI_NORMAL);
   server->listenning = TRUE;
@@ -315,7 +304,7 @@ int silc_server_init(SilcServer server)
   purge->cache = server->local_list->clients;
   purge->schedule = server->schedule;
   purge->timeout = 600;
-  silc_schedule_task_add(purge->schedule, 0, 
+  silc_schedule_task_add(purge->schedule, 0,
 			 silc_idlist_purge,
 			 (void *)purge, purge->timeout, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
@@ -325,7 +314,7 @@ int silc_server_init(SilcServer server)
   purge->cache = server->global_list->clients;
   purge->schedule = server->schedule;
   purge->timeout = 300;
-  silc_schedule_task_add(purge->schedule, 0, 
+  silc_schedule_task_add(purge->schedule, 0,
 			 silc_idlist_purge,
 			 (void *)purge, purge->timeout, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
@@ -336,9 +325,7 @@ int silc_server_init(SilcServer server)
   return TRUE;
 
  err:
-  for (i = 0; i < sock_count; i++)
-    silc_net_close_server(sock[i]);
-
+  silc_net_close_server(sock);
   return FALSE;
 }
 
@@ -376,8 +363,12 @@ void silc_server_drop(SilcServer server)
     struct group *gr;
     char *user, *group;
 
-    if (!server->config->server_info->user || !server->config->server_info->group) {
-      fprintf(stderr, "Error:"
+    /* Get the values given for user and group in configuration file */
+    user = server->config->server_info->user;
+    group = server->config->server_info->group;
+
+    if (!user || !group) {
+      fprintf(stderr, "Error:" /* XXX update this error message */
        "\tSILC server must not be run as root.  For the security of your\n"
        "\tsystem it is strongly suggested that you run SILC under dedicated\n"
        "\tuser account.  Modify the [Identity] configuration section to run\n"
@@ -385,82 +376,63 @@ void silc_server_drop(SilcServer server)
       exit(1);
     }
 
-    /* Get the values given for user and group in configuration file */
-    user=server->config->server_info->user;
-    group=server->config->server_info->group;
-
-    /* Check whether the user/group information is text */ 
-    if (atoi(user)!=0 || atoi(group)!=0) {
-      SILC_LOG_DEBUG(("Invalid user and/or group information"));
-      SILC_LOG_DEBUG(("User and/or group given as number"));
+    /* Check whether the user/group does not begin with a number */
+    if (isdigit(user[0]) || isdigit(group[0])) {
+      SILC_LOG_DEBUG(("User and/or group starts with a number"));
       fprintf(stderr, "Invalid user and/or group information\n");
       fprintf(stderr, "Please assign them as names, not numbers\n");
       exit(1);
     }
 
-    /* Catch the nasty incident of string "0" returning 0 from atoi */
-    if (strcmp("0", user)==0 || strcmp("0", group)==0) {
-      SILC_LOG_DEBUG(("User and/or group configured to 0. Unacceptable"));
-      fprintf(stderr, "User and/or group configured to 0. Exiting\n");
+    if (!(pw = getpwnam(user))) {
+      fprintf(stderr, "Error: No such user %s found.\n", user);
       exit(1);
     }
-
-    if (!(pw=getpwnam(user))) {
-      fprintf(stderr, "No such user %s found\n", user);
-      exit(1);
-    }
-
-    if (!(gr=getgrnam(group))) {
-      fprintf(stderr, "No such group %s found\n", group);
+    if (!(gr = getgrnam(group))) {
+      fprintf(stderr, "Error: No such group %s found.\n", group);
       exit(1);
     }
 
     /* Check whether user and/or group is set to root. If yes, exit
        immediately. Otherwise, setgid and setuid server to user.group */
-    if (gr->gr_gid==0 || pw->pw_uid==0) {
+    if ((gr->gr_gid == 0) || (pw->pw_uid == 0)) {
       fprintf(stderr, "Error:"
        "\tSILC server must not be run as root.  For the security of your\n"
        "\tsystem it is strongly suggested that you run SILC under dedicated\n"
        "\tuser account.  Modify the [Identity] configuration section to run\n"
        "\tthe server as non-root user.\n");
       exit(1);
-    } else {
-      SILC_LOG_DEBUG(("Changing to group %s", group));
-      if (setgid(gr->gr_gid)==0) {
-        SILC_LOG_DEBUG(("Setgid to %s", group));
-      } else {
-        SILC_LOG_DEBUG(("Setgid to %s failed", group));
-        fprintf(stderr, "Tried to setgid %s but no such group. Exiting\n",
-                group);
-        exit(1);
-      }
+    }
+
+    SILC_LOG_DEBUG(("Changing to group %s (gid=%u)", group, gr->gr_gid));
+    if (setgid(gr->gr_gid) != 0) {
+      fprintf(stderr, "Error: Failed setgid() to %s (gid=%u). Exiting.\n",
+	      group, gr->gr_gid);
+      exit(1);
+    }
 #if defined HAVE_SETGROUPS && defined HAVE_INITGROUPS
-      if (setgroups(0, NULL)!=0) {
-        SILC_LOG_DEBUG(("Setgroups to NULL failed"));
-        fprintf(stderr, "Tried to setgroups NULL but failed. Exiting\n");
-        exit(1);
-      }
-      if (initgroups(user, gr->gr_gid)!=0) {
-        SILC_LOG_DEBUG(("Initgroups to user %s (gid=%d) failed", user, gr->gr_gid));
-        fprintf(stderr, "Tried to initgroups %s (gid=%d) but no such user. Exiting\n",
-                user, gr->gr_gid);
-        exit(1);
-      }
+    SILC_LOG_DEBUG(("Removing supplementary groups"));
+    if (setgroups(0, NULL) != 0) {
+      fprintf(stderr, "Error: Failed setgroups() to NULL. Exiting.\n");
+      exit(1);
+    }
+    SILC_LOG_DEBUG(("Setting supplementary groups for user %s", user));
+    if (initgroups(user, gr->gr_gid) != 0) {
+      fprintf(stderr, "Error: Failed initgroups() for user %s (gid=%u). "
+	      "Exiting.\n", user, gr->gr_gid);
+      exit(1);
+    }
 #endif
-      SILC_LOG_DEBUG(("Changing to user %s", user));
-      if (setuid(pw->pw_uid)==0) {
-        SILC_LOG_DEBUG(("Setuid to %s", user));
-      } else {
-        SILC_LOG_DEBUG(("Setuid to %s failed", user));
-        fprintf(stderr, "Tried to setuid %s but no such user. Exiting\n",
-                user);
-        exit(1);
-      }
+    SILC_LOG_DEBUG(("Changing to user %s (uid=%u)", user, pw->pw_uid));
+    if (setuid(pw->pw_uid) != 0) {
+      fprintf(stderr, "Error: Failed to setuid() to %s (gid=%u). Exiting.\n",
+              user, pw->pw_uid);
+      exit(1);
     }
   }
 }
 
-/* The heart of the server. This runs the scheduler thus runs the server. 
+/* The heart of the server. This runs the scheduler thus runs the server.
    When this returns the server has been stopped and the program will
    be terminated. */
 
@@ -475,8 +447,8 @@ void silc_server_run(SilcServer server)
   silc_schedule(server->schedule);
 }
 
-/* Stops the SILC server. This function is used to shutdown the server. 
-   This is usually called after the scheduler has returned. After stopping 
+/* Stops the SILC server. This function is used to shutdown the server.
+   This is usually called after the scheduler has returned. After stopping
    the server one should call silc_server_free. */
 
 void silc_server_stop(SilcServer server)
@@ -534,7 +506,7 @@ void silc_server_start_key_exchange(SilcServer server,
   proto_ctx->sock = newsocket;
   proto_ctx->rng = server->rng;
   proto_ctx->responder = FALSE;
-      
+
   /* Perform key exchange protocol. silc_server_connect_to_router_second
      will be called after the protocol is finished. */
   silc_protocol_alloc(SILC_PROTOCOL_SERVER_KEY_EXCHANGE, 
@@ -553,13 +525,13 @@ void silc_server_start_key_exchange(SilcServer server,
 
   /* Register the connection for network input and output. This sets
      that scheduler will listen for incoming packets for this connection 
-     and sets that outgoing packets may be sent to this connection as 
+     and sets that outgoing packets may be sent to this connection as
      well. However, this doesn't set the scheduler for outgoing traffic,
      it will be set separately by calling SILC_SET_CONNECTION_FOR_OUTPUT,
      later when outgoing data is available. */
   context = (void *)server;
   SILC_REGISTER_CONNECTION_FOR_IO(sock);
-  
+
   /* Run the protocol */
   silc_protocol_execute(protocol, server->schedule, 0, 0);
 }
@@ -609,7 +581,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
 /* Generic routine to use connect to a router. */
 
 SILC_TASK_CALLBACK(silc_server_connect_router)
-{    
+{
   SilcServerConnection sconn = (SilcServerConnection)context;
   SilcServer server = sconn->server;
   int sock;
@@ -628,9 +600,9 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
     SILC_LOG_ERROR(("Could not connect to router %s:%d",
 		    sconn->remote_host, sconn->remote_port));
     if (!sconn->no_reconnect)
-      silc_schedule_task_add(server->schedule, fd, 
+      silc_schedule_task_add(server->schedule, fd,
 			     silc_server_connect_to_router_retry,
-			     context, 0, 1, SILC_TASK_TIMEOUT, 
+			     context, 0, 1, SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
     return;
   }
@@ -841,8 +813,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
 
   /* Register timeout task. If the protocol is not executed inside
      this timelimit the connection will be terminated. */
-  proto_ctx->timeout_task = 
-    silc_schedule_task_add(server->schedule, sock->sock, 
+  proto_ctx->timeout_task =
+    silc_schedule_task_add(server->schedule, sock->sock,
 			   silc_server_timeout_remote,
 			   (void *)server, 15, 0, /* XXX hardcoded */
 			   SILC_TASK_TIMEOUT,
@@ -858,7 +830,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
 SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
 {
   SilcProtocol protocol = (SilcProtocol)context;
-  SilcServerConnAuthInternalContext *ctx = 
+  SilcServerConnAuthInternalContext *ctx =
     (SilcServerConnAuthInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
   SilcServerConnection sconn = (SilcServerConnection)ctx->context;
@@ -882,12 +854,12 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
     goto out;
   }
 
-  /* Add a task to the queue. This task receives new connections to the 
+  /* Add a task to the queue. This task receives new connections to the
      server. This task remains on the queue until the end of the program. */
   if (!server->listenning && !sconn->backup) {
-    silc_schedule_task_add(server->schedule, server->sock, 
+    silc_schedule_task_add(server->schedule, server->sock,
 			   silc_server_accept_new_connection,
-			   (void *)server, 0, 0, 
+			   (void *)server, 0, 0,
 			   SILC_TASK_FD,
 			   SILC_TASK_PRI_NORMAL);
     server->listenning = TRUE;
