@@ -1792,7 +1792,7 @@ void silc_server_disconnect_remote(SilcServer server,
 
   SILC_LOG_DEBUG(("Disconnecting remote host"));
 
-  SILC_LOG_INFO(("Disconnecting %s:%d (%s) [%s]", sock->hostname,
+  SILC_LOG_INFO(("Disconnecting %s:%d [%s]", sock->hostname,
                   sock->port,
                   (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
                    sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
