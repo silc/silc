@@ -1106,6 +1106,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	   router */
 	silc_server_update_clients_by_server(server, backup_router,
 					     router, TRUE, FALSE);
+	silc_server_update_servers_by_server(server, backup_router, router);
 	silc_server_backup_replaced_del(server, backup_router);
 	silc_server_backup_add(server, backup_router, 
 			       ctx->sock->ip, ctx->sock->port,

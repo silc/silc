@@ -1805,8 +1805,11 @@ static void silc_server_new_id_real(SilcServer server,
     router_sock = sock;
     router = sock->user_data;
 
+    /* If the sender is backup router and ID is server (and we are not
+       backup router) then switch the entry to global list. */
     if (server_entry->server_type == SILC_BACKUP_ROUTER && 
-	id_type == SILC_ID_SERVER) {
+	id_type == SILC_ID_SERVER && 
+	server->id_entry->server_type != SILC_BACKUP_ROUTER) {
       id_list = server->global_list;
       router_sock = server->router ? server->router->connection : sock;
     }

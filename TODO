@@ -48,11 +48,15 @@ TODO/bugs In SILC Server
 
  o Server signoff notifys does not go to normal servers from routers.
 
- o On normal server the channel count can go negative (like -3 channels).
+ o Channel user mode changes are notified unnecessarely when switching
+   to backup router on router crash.
 
  o Change the sever to connect to another server from low ports (706)
    and not from high ports.  Currently we cannot do incoming connection
    checking by remote port because the port is not fixed.
+
+ o Announcements are incomplete: channel topics are not announced,
+   user modes (UMODE) are not announced.
 
  o Add a timeout to handling incoming JOIN commands.  It should be 
    enforced that JOIN command is executed only once in a second or two
@@ -83,9 +87,6 @@ TODO/bugs In SILC Server
    server to receive all the created channels.  Currently the command
    returns only the channels the server knows about.  The protocol spec
    does not prohibit of sending the LIST to the router.
-
- o Announcements are incomplete: channel topics are not announced,
-   user modes (UMODE) are not announced.
 
  o Incomplete IPv6 support:
 

@@ -44,6 +44,12 @@ void silc_server_update_clients_by_server(SilcServer server,
 					  bool resolve_real_server,
 					  bool remove_from);
 
+/* Updates servers that are from `from' to be originated from `to'.  This
+   will also update the server's connection to `to's connection. */
+void silc_server_update_servers_by_server(SilcServer server, 
+					  SilcServerEntry from,
+					  SilcServerEntry to);
+
 /* Checks whether given channel has global users.  If it does this returns
    TRUE and FALSE if there is only locally connected clients on the channel. */
 bool silc_server_channel_has_global(SilcChannelEntry channel);

@@ -62,9 +62,10 @@ static void silc_server_remove_clients_channels(SilcServer server,
       if (channel->rekey)
 	silc_schedule_task_del_by_context(server->schedule, channel->rekey);
 
-      if (!silc_idlist_del_channel(server->local_list, channel))
-	silc_idlist_del_channel(server->global_list, channel);
-      server->stat.my_channels--;
+      if (silc_idlist_del_channel(server->local_list, channel))
+	server->stat.my_channels--;
+      else if (silc_idlist_del_channel(server->global_list, channel))
+	server->stat.my_channels--;
       continue;
     }
 
@@ -108,9 +109,10 @@ static void silc_server_remove_clients_channels(SilcServer server,
       }
 
       /* Remove the channel entry */
-      if (!silc_idlist_del_channel(server->local_list, channel))
-	silc_idlist_del_channel(server->global_list, channel);
-      server->stat.my_channels--;
+      if (silc_idlist_del_channel(server->local_list, channel))
+	server->stat.my_channels--;
+      else if (silc_idlist_del_channel(server->global_list, channel))
+	server->stat.my_channels--;
       continue;
     }
 
@@ -437,51 +439,6 @@ void silc_server_update_clients_by_server(SilcServer server,
 					  SILC_ID_SERVER)));
 
 
-  local = TRUE;
-  if (silc_idcache_get_all(server->local_list->clients, &list)) {
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	client = (SilcClientEntry)id_cache->context;
-
-	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
-
-	SILC_LOG_DEBUG(("Client (local) %s", 
-			silc_id_render(client->id, SILC_ID_CLIENT)));
-
-	if (client->router == from) {
-	  /* Skip clients that are *really* owned by the `from' */
-	  if (remove_from && SILC_ID_COMPARE(from->id, client->id, 
-					     client->id->ip.data_len)) {
-	    SILC_LOG_DEBUG(("Found really owned client, skip it"));
-	    if (!silc_idcache_list_next(list, &id_cache))
-	      break;
-	    else
-	      continue;
-	  }
-
-	  if (resolve_real_server) {
-	    client->router = 
-	      silc_server_update_clients_by_real_server(server, from, client,
-							local, id_cache);
-	    if (!client->router)
-	      client->router = from; /* on local list put old from */
-	  } else {
-	    client->router = to;
-	  }
-	}
-
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
-      }
-    }
-    silc_idcache_list_free(list);
-  }
-
   local = FALSE;
   if (silc_idcache_get_all(server->global_list->clients, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {
@@ -498,6 +455,9 @@ void silc_server_update_clients_by_server(SilcServer server,
 
 	SILC_LOG_DEBUG(("Client (global) %s", 
 			silc_id_render(client->id, SILC_ID_CLIENT)));
+	if (client->router)
+	  SILC_LOG_DEBUG(("Client->router (global) %s", 
+			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 
 	if (client->router == from) {
 	  /* Skip clients that are *really* owned by the `from' */
@@ -528,11 +488,103 @@ void silc_server_update_clients_by_server(SilcServer server,
     silc_idcache_list_free(list);
   }
 
+  local = TRUE;
+  if (silc_idcache_get_all(server->local_list->clients, &list)) {
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	client = (SilcClientEntry)id_cache->context;
+
+	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
+	  if (!silc_idcache_list_next(list, &id_cache))
+	    break;
+	  else
+	    continue;
+	}
+
+	SILC_LOG_DEBUG(("Client (local) %s", 
+			silc_id_render(client->id, SILC_ID_CLIENT)));
+	if (client->router)
+	  SILC_LOG_DEBUG(("Client->router (local) %s", 
+			  silc_id_render(client->router->id, SILC_ID_SERVER)));
+
+	if (client->router == from) {
+	  /* Skip clients that are *really* owned by the `from' */
+	  if (remove_from && SILC_ID_COMPARE(from->id, client->id, 
+					     client->id->ip.data_len)) {
+	    SILC_LOG_DEBUG(("Found really owned client, skip it"));
+	    if (!silc_idcache_list_next(list, &id_cache))
+	      break;
+	    else
+	      continue;
+	  }
+
+	  if (resolve_real_server) {
+	    client->router = 
+	      silc_server_update_clients_by_real_server(server, from, client,
+							local, id_cache);
+	    if (!client->router)
+	      client->router = from; /* on local list put old from */
+	  } else {
+	    client->router = to;
+	  }
+	}
+
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+    silc_idcache_list_free(list);
+  }
+
   if (remove_from)
     /* Now remove the clients that are still marked as orignated from the
        `from'. These are the clients that really was owned by the `from' and
        not just exist behind the `from'. */
     silc_server_remove_clients_by_server(server, from, TRUE);
+}
+
+/* Updates servers that are from `from' to be originated from `to'.  This
+   will also update the server's connection to `to's connection. */
+
+void silc_server_update_servers_by_server(SilcServer server, 
+					  SilcServerEntry from,
+					  SilcServerEntry to)
+{
+  SilcIDCacheList list = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcServerEntry server_entry = NULL;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (silc_idcache_get_all(server->local_list->servers, &list)) {
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	server_entry = (SilcServerEntry)id_cache->context;
+	if (server_entry->router == from) {
+	  server_entry->router = to;
+	  server_entry->connection = to->connection;
+	}
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+    silc_idcache_list_free(list);
+  }
+
+  if (silc_idcache_get_all(server->global_list->servers, &list)) {
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	server_entry = (SilcServerEntry)id_cache->context;
+	if (server_entry->router == from) {
+	  server_entry->router = to;
+	  server_entry->connection = to->connection;
+	}
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+    silc_idcache_list_free(list);
+  }
 }
 
 /* Checks whether given channel has global users.  If it does this returns

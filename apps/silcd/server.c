@@ -312,6 +312,7 @@ int silc_server_init(SilcServer server)
       if (ptr->backup_router) {
 	server->server_type = SILC_BACKUP_ROUTER;
 	server->backup_router = TRUE;
+	server->id_entry->server_type = SILC_BACKUP_ROUTER;
 	break;
       }
       ptr = ptr->next;
@@ -2401,6 +2402,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 	   by the primary router and went down with the router.  */
 	silc_server_update_clients_by_server(server, user_data, backup_router,
 					     TRUE, TRUE);
+	silc_server_update_servers_by_server(server, user_data, backup_router);
       }
 
       /* Free the server entry */
@@ -2488,8 +2490,9 @@ void silc_server_remove_from_channels(SilcServer server,
       if (channel->rekey)
 	silc_schedule_task_del_by_context(server->schedule, channel->rekey);
       if (silc_idlist_del_channel(server->local_list, channel))
-      server->stat.my_channels--;
-	silc_idlist_del_channel(server->global_list, channel);
+	server->stat.my_channels--;
+      else if (silc_idlist_del_channel(server->global_list, channel))
+	server->stat.my_channels--;
       continue;
     }
 
@@ -2538,9 +2541,10 @@ void silc_server_remove_from_channels(SilcServer server,
       }
 
       /* Remove the channel entry */
-      if (!silc_idlist_del_channel(server->local_list, channel))
-	silc_idlist_del_channel(server->global_list, channel);
-      server->stat.my_channels--;
+      if (silc_idlist_del_channel(server->local_list, channel))
+	server->stat.my_channels--;
+      else if (silc_idlist_del_channel(server->global_list, channel))
+	server->stat.my_channels--;
       continue;
     }
 
@@ -2605,10 +2609,11 @@ int silc_server_remove_from_one_channel(SilcServer server,
       silc_hash_table_count(channel->user_list) < 2) {
     if (channel->rekey)
       silc_schedule_task_del_by_context(server->schedule, channel->rekey);
-    if (!silc_idlist_del_channel(server->local_list, channel))
-      silc_idlist_del_channel(server->global_list, channel);
+    if (silc_idlist_del_channel(server->local_list, channel))
+      server->stat.my_channels--;
+    else if (silc_idlist_del_channel(server->global_list, channel))
+      server->stat.my_channels--;
     silc_buffer_free(clidp);
-    server->stat.my_channels--;
     return FALSE;
   }
 
@@ -2656,9 +2661,10 @@ int silc_server_remove_from_one_channel(SilcServer server,
     }
 
     /* Remove the channel entry */
-    if (!silc_idlist_del_channel(server->local_list, channel))
-      silc_idlist_del_channel(server->global_list, channel);
-    server->stat.my_channels--;
+    if (silc_idlist_del_channel(server->local_list, channel))
+      server->stat.my_channels--;
+    else if (silc_idlist_del_channel(server->global_list, channel))
+      server->stat.my_channels--;
     return FALSE;
   }
 
