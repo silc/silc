@@ -610,6 +610,9 @@ when adding new features to the protocol.  It also means, that SILC was
 designed from attacker's point of view.  Instead of just adding security
 measures to the protocol we first analyzed attacks against the protocol
 (and other protocols) and then designed the SILC to resist the attacks.
+The protocol of course easily gets very complex and then analyzing gets 
+harder and harder, new attacks are discovered that we didn't know about,
+and for this reason the analyzing is constant and ongoing process.
 <br />&nbsp;<br />
 
 <a name="f1_390"></a>
