@@ -23,6 +23,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/10 05:42:14  priikone
+ * 	Support for public key encoding functions added.
+ *
  * Revision 1.4  2000/07/07 06:55:59  priikone
  * 	Added SILC style public key support and made server to use
  * 	it at all time.
@@ -421,8 +424,9 @@ int silc_server_public_key_authentication(SilcServer server,
     return FALSE;
 
   /* Load public key from file */
-  if (!silc_pkcs_load_public_key(pkfile, &pub_key))
-    return FALSE;
+  if (!silc_pkcs_load_public_key(pkfile, &pub_key, SILC_PKCS_FILE_PEM))
+    if (!silc_pkcs_load_public_key(pkfile, &pub_key, SILC_PKCS_FILE_BIN))
+      return FALSE;
 
   silc_pkcs_alloc(pub_key->name, &pkcs);
   if (!silc_pkcs_public_key_set(pkcs, pub_key)) {
