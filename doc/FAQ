@@ -25,9 +25,11 @@
         2.11 Why SILC does not have STATS command like in IRC?
         2.12 Is anyone outside a channel able to see the channel
    messages?
-        2.13 Is it true that all messages are encrypted in SILC?
-        2.14 Can server or SILC operator gain operator mode on a channel?
-        2.15 I have suggestions to SILC Protocol, what can I do?
+        2.13 How can I register my channel in SILC?
+        2.14 Is it true that all messages are encrypted in SILC?
+        2.15 Can server or SILC operator gain operator mode on a channel?
+        2.16 Channel name doesn't have #-character or does it?
+        2.17 I have suggestions to SILC Protocol, what can I do?
 
    3. Client Questions
         3.1 Where can I find SILC clients?
@@ -52,6 +54,10 @@
         3.16 Is there a command to see all linked servers?
         3.17 How do I list the users of a channel?
         3.18 What is the difference between OPER and SILCOPER commands?
+        3.19 My Cygwin client crashes with message "Couldn't create
+   //.silc directory"
+        3.20 Why /join #silc and /join silc doesn't join the same
+   channel?
 
    4. Server Questions
         4.1 Where can I find SILC servers?
@@ -62,6 +68,7 @@
    support one of your proposed cipher", what is wrong?
         4.6 Why SILC server runs on privileged port 706?
         4.7 I see [Unknown] in the log file, what does it mean?
+        4.8 How can I generate a new server key pair?
 
    5. Toolkit Questions
         5.1 What is SILC Toolkit?
@@ -198,8 +205,8 @@
    client. You can also negotiate secret key material with another client
    directly to use it in private message encryption. The private messages
    are not, however sent directly between clients. The protocol, on the
-   hand does not prohibit sending messages directly between clients if
-   the implementation would support it. The current SILC Client
+   other hand does not prohibit sending messages directly between clients
+   if the implementation would support it. The current SILC Client
    implementation does not support it. This means that private messages
    travel through the SILC Network. SILC protocol also has a capability
    to support DCC and CTCP like protocols with SILC. None of them,
@@ -284,6 +291,18 @@
    therefore cannot see the messages even if they would be compromised.
    So, longer answer results into same as the short one; No.
 
+   Q: How can I register my channel in SILC?
+   A: There is no channel registration in SILC. When you join a
+   non-existing channel, it is created and it will exist until the last
+   person leaves it. When you join a new channel you became the founder
+   (see also Q: What does the founder mode on channel mean, and how do I
+   set it? and Q: I am founder of invite only channel, how can I join the
+   channel after I have left it?) and you can preserve your founder
+   status while the channel exists. Cell or network wide founder status
+   or persistent founder status (preserving even empty channels for
+   limited time) is a debated TODO item and it may or may not happen. If
+   it does, its effect could be similar to channel registration.
+
    Q: Is it true that all messages are encrypted in SILC?
    A: Most definitely yes. The SILC protocol makes it impossible to send
    unencrypted messages or packets to the SILC network. All messages are
@@ -298,6 +317,14 @@
    network are normal users with the extra privileges of being able to
    adminstrate their server. They cannot do anything more than a normal
    user.
+
+   Q: Channel name doesn't have #-character or does it?
+   A: The #-character is not mandatory part of channel name, like it is
+   in IRC. This means that giving the command /JOIN #silc and /JOIN silc
+   will join to different channels. This is intentional since the
+   #-character clearly is IRC feature and has nothing to do with SILC. If
+   you want it to have the character then just join to the channel with
+   #-character in the name.
 
    Q: I have suggestions to SILC Protocol, what can I do?
    A: All suggestions and improvements are of course welcome. You should
@@ -533,6 +560,20 @@
    use SILCOPER command on normal SILC server, it works only on router
    server.
 
+   Q: My Cygwin client crashes with message "Couldn't create //.silc
+   directory"
+   A: A solutions should be setting HOME enviroment variable to the
+   directory where you have unpacked your SILC Client. Type to your
+   command prompt something like:
+   c:\>set HOME=c:\silc
+
+   Q: Why /join #silc and /join silc doesn't join the same channel?
+   A: The #-character is not mandatory part of channel name in SILC. So
+   #silc and silc are two different channels. The #-character in channel
+   name is IRC feature and has nothing to do with SILC. If you have
+   #-character in the channel name, then it is part of the channel name,
+   just like %-character, or &-character could be part of channel name.
+
    4. Server Questions
 
    Q: Where can I find SILC servers?
@@ -592,6 +633,21 @@
    was a client, server or router. There will appear [Client], [Server]
    or [Router] if the connection is authenticated at that point.
 
+   Q: How can I generate a new server key pair?
+   A: You can generate a new key pair using the silcd command with the -C
+   option. When SILC Server is installed a key pair is generated
+   automatically for you. However, it is suggested that you check the
+   information found in that key and generate a new key pair if the
+   information is incorrect. You can check the information of your public
+   key by giving command: silc -S file.pub.
+
+   If you want to generate a new key pair then you can give for example
+   command: silcd -C . --identifier="UN=silc-oper, HN=silc.silcnet.org,
+   RN=SILC Router Admin, E=silc-oper@silcnet.org, O=SILC Project, C=SK".
+   This will create the key pair to current directory, with the specified
+   identifier. Please, give the --help option to the silcd to see usage
+   help for the -C and --identifier options.
+
    5. Toolkit Questions
 
    Q: What is SILC Toolkit?
@@ -626,4 +682,3 @@
    Client implementations, and SILC Server. The silcer/ directory
    includes a simple GUI client based on GTK--, and Win32 samples are
    included in the win32/ directory, for simple client.
-
