@@ -53,6 +53,6 @@ include_HEADERS = 	\
 	$(MP_HEADER)
 endif
 
-EXTRA_DIST = *.h
+EXTRA_DIST = mp_gmp.c mp_mpi.c *.h
 
 include $(top_srcdir)/Makefile.defines.in
