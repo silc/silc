@@ -29,8 +29,8 @@ extern "C" {
 /* Version type definition */
 typedef unsigned char SilcVersion;
 
-/* SILC Protocol version number used in SILC packets */
-#define SILC_VERSION_1 '\1'
+/* SILC Protocol version number */
+#define SILC_PROTOCOL_VERSION_CURRENT 11
 
 /* SILC version string */
 const char *silc_version = SILC_VERSION_STRING;
