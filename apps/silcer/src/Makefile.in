@@ -16,9 +16,9 @@
 #
 #  Makefile.am
 #
-#  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+#  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2001 Pekka Riikonen
+#  Copyright (C) 2001 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -141,6 +141,8 @@ cflags_set = @cflags_set@
 cxxflags_set = @cxxflags_set@
 install_sh = @install_sh@
 
+silc_top_srcdir = ../../
+
 bin_PROGRAMS = silcer
 silcer_SOURCES = silcer.cc		\
 		silcerapp.cc		\
@@ -153,11 +155,9 @@ silcer_SOURCES = silcer.cc		\
 
 
 silcer_LDADD = @EXTRA_GNOME_LIBS@ -lxml \
-	-L/home/priikone/silc/lib -lsilcclient -lsilc
+	-L$(silc_top_srcdir)/lib -lsilcclient -lsilc
 
 silcer_LDFLAGS = 
-
-silc_top_srcdir = /home/priikone/silc
 
 INCLUDES = @EXTRA_GNOME_CFLAGS@ -DENABLE_NLS \
 	-DGNOMELOCALEDIR=\""$(datadir)/locale"\" \

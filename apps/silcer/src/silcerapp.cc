@@ -211,21 +211,34 @@ SilcerApp::SilcerApp(int argc, char **argv)
 
   // Initialize SILC Client Library */
   silc_client = silc_client_alloc(&ops, NULL, NULL, "SILC-1.0-0.6.2");
-  silc_client->realname = "pekka riikonen";
-  silc_client->username = "priikone";
-  silc_client->hostname = "mun.oma.kone";
+  silc_client->realname = "Foo T. Bar";
+  silc_client->username = "foobar";
+  silc_client->hostname = "foo.bar.foobar.com";
   silc_cipher_register_default();
   silc_pkcs_register_default();
   silc_hash_register_default();
   silc_hmac_register_default();
-  silc_create_key_pair("rsa", 1024, "kk", "UN=priikone, "
-		       "HN=pelle.kuo.fi.ssh.com", 
+
+  // XXXXX
+  // In real application at this point it would be of course checked 
+  // whether ~/.silc direectory or something exists and key pair exists.
+  // If not then some firstsetup-wizard would be lauched that creates
+  // the keypair.  In our example we'll always create a key pair. :(
+  silc_create_key_pair("rsa", 1024, "kk", "UN=foobar, "
+		       "HN=foo.bar.foobar.com", 
 		       &silc_client->public_key, &silc_client->private_key);
+
+  // We are ready to initialize the SILC Client library.
   silc_client_init(silc_client);
 
-  // Setup SILC scheduler as timeout task
+  // Setup SILC scheduler as timeout task. This will handle the SILC
+  // client library every 50 milliseconds.  It will actually make the
+  // SILC client work on background.
   Gnome::Main::timeout.connect(slot(this, &SilcerApp::silc_scheduler), 50);
 
+  // XXXXX
+  // This is now used to directly connect to silc.silcnet.org router
+  // XXXXX
   silc_schedule_task_add(silc_client->schedule, 0, connect_client, 
 			 silc_client, 0, 1, SILC_TASK_TIMEOUT, 
 			 SILC_TASK_PRI_NORMAL); 
@@ -278,6 +291,10 @@ GladeXML *SilcerApp::load_resource(const char *name, const char *filename)
 
 gint SilcerApp::silc_scheduler()
 {
+  // Run the SILC client once, and return immediately.  This function
+  // is called every 50 milliseconds by the Gnome main loop, to process
+  // SILC stuff.  This function will read data, and write data to network,
+  // etc.  Makes the client library tick! :)
   silc_client_run_one(silc_client);
   return 1;
 }

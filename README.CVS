@@ -153,6 +153,13 @@ Following directories currently exist in SILC source tree.
         Includes SILC server.  There can be some extra files that will
         never appear in public distribution, such as, configuration files.
 
+  win32/
+
+	Includes win32 Toolkit specific files.  It includes MSVC++
+	Workspace files.  The win32/tests includes example code for
+	use of SILC Toolkit and SILC Client Library on Win32 GUI 
+	application.
+
 
 Howto Compile SILC Source Tree
 ==============================

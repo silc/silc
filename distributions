@@ -53,7 +53,7 @@ toolkit_SUBDIRS=lib irssi silc silcd doc includes win32
 toolkit_SUBDIRS_lib=$(COMMONDIRS)
 toolkit_SUBDIRS_doc=$(COMMONDIRS)
 toolkit_DISTLABEL=SILC_DIST_TOOLKIT
-toolkit_EXTRA_DIST=README.CVS README.WIN32
+toolkit_EXTRA_DIST=README.CVS README.WIN32 silcer
 
 # Irssi SILC Client distribution
 client_SUBDIRS=lib irssi doc includes
