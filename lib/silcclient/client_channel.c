@@ -43,7 +43,7 @@ void silc_client_send_channel_message(SilcClient client,
 				      int force_send)
 {
   int i;
-  SilcSocketConnection sock = conn->sock;
+  SilcSocketConnection sock;
   SilcBuffer payload;
   SilcPacketContext packetdata;
   const SilcBufferStruct packet;
@@ -54,6 +54,8 @@ void silc_client_send_channel_message(SilcClient client,
   int block_len;
   SilcChannelUser chu;
 
+  assert(client && conn && channel);
+  sock = conn->sock;
   SILC_LOG_DEBUG(("Sending packet to channel"));
 
   chu = silc_client_on_channel(channel, conn->local_entry);
@@ -495,6 +497,8 @@ int silc_client_add_channel_private_key(SilcClient client,
   unsigned char hash[32];
   SilcSKEKeyMaterial *keymat;
 
+  assert(client && channel);
+
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
     return FALSE;
 
@@ -573,6 +577,8 @@ int silc_client_del_channel_private_keys(SilcClient client,
 {
   SilcChannelPrivateKey entry;
 
+  assert(client && channel);
+
   if (!channel->private_keys)
     return FALSE;
 
@@ -607,6 +613,8 @@ int silc_client_del_channel_private_key(SilcClient client,
 					SilcChannelPrivateKey key)
 {
   SilcChannelPrivateKey entry;
+
+  assert(client && channel);
 
   if (!channel->private_keys)
     return FALSE;
@@ -652,6 +660,8 @@ silc_client_list_channel_private_keys(SilcClient client,
   SilcChannelPrivateKey *keys = NULL, entry;
   SilcUInt32 count = 0;
 
+  assert(client && channel);
+
   if (!channel->private_keys)
     return NULL;
 
@@ -685,6 +695,7 @@ void silc_client_current_channel_private_key(SilcClient client,
 					     SilcChannelEntry channel,
 					     SilcChannelPrivateKey key)
 {
+  assert(client && channel);
   channel->curr_key = key;
 }
 

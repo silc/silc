@@ -48,6 +48,8 @@ void silc_client_command_send(SilcClient client, SilcClientConnection conn,
   SilcBuffer packet;
   va_list ap;
 
+  assert(client && conn);
+
   va_start(ap, argc);
 
   packet = silc_command_payload_encode_vap(command, ident, argc, ap);
@@ -64,6 +66,8 @@ SilcClientCommand silc_client_command_find(SilcClient client,
 					   const char *name)
 {
   SilcClientCommand cmd;
+
+  assert(client);
 
   silc_list_start(client->internal->commands);
   while ((cmd = silc_list_get(client->internal->commands)) != SILC_LIST_END) {
@@ -83,6 +87,7 @@ SilcClientCommand silc_client_command_find(SilcClient client,
 void silc_client_command_call(SilcClientCommand command, 
 			      SilcClientCommandContext cmd)
 {
+  assert(command);
   (*command->command)((void *)cmd, NULL);
 }
 
@@ -103,6 +108,7 @@ void silc_client_command_pending(SilcClientConnection conn,
 {
   SilcClientCommandPending *reply;
 
+  assert(conn);
   reply = silc_calloc(1, sizeof(*reply));
   reply->reply_cmd = reply_cmd;
   reply->ident = ident;

@@ -104,6 +104,7 @@ int silc_client_init(SilcClient client)
 {
   SILC_LOG_DEBUG(("Initializing client"));
 
+  assert(client);
   assert(client->username);
   assert(client->hostname);
   assert(client->realname);
@@ -167,6 +168,7 @@ void silc_client_run(SilcClient client)
 {
   SILC_LOG_DEBUG(("Running client"));
 
+  assert(client);
   assert(client->pkcs);
   assert(client->public_key);
   assert(client->private_key);
@@ -1962,6 +1964,7 @@ silc_client_request_authentication_method(SilcClient client,
   SilcClientConnAuthRequest connauth;
   SilcBuffer packet;
 
+  assert(client && conn);
   connauth = silc_calloc(1, sizeof(*connauth));
   connauth->callback = callback;
   connauth->context = context;

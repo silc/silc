@@ -41,7 +41,7 @@ void silc_client_send_private_message(SilcClient client,
 				      SilcUInt32 data_len, 
 				      int force_send)
 {
-  SilcSocketConnection sock = conn->sock;
+  SilcSocketConnection sock;
   SilcBuffer buffer;
   SilcPacketContext packetdata;
   const SilcBufferStruct packet;
@@ -49,6 +49,8 @@ void silc_client_send_private_message(SilcClient client,
   SilcHmac hmac;
   int block_len;
 
+  assert(client && conn && client_entry);
+  sock = conn->sock;
   SILC_LOG_DEBUG(("Sending private message"));
 
   /* Encode private message payload */
@@ -329,7 +331,7 @@ int silc_client_add_private_message_key(SilcClient client,
   int i;
   SilcSKEKeyMaterial *keymat;
 
-  assert(client_entry);
+  assert(client && client_entry);
 
   /* Return FALSE if key already set */
   if (client_entry->send_key && client_entry->receive_key)
@@ -402,7 +404,7 @@ int silc_client_add_private_message_key_ske(SilcClient client,
 					    SilcSKEKeyMaterial *key,
 					    bool responder)
 {
-  assert(client_entry);
+  assert(client && client_entry);
 
   /* Return FALSE if key already set */
   if (client_entry->send_key && client_entry->receive_key)
@@ -454,11 +456,14 @@ int silc_client_send_private_message_key(SilcClient client,
 					 SilcClientEntry client_entry,
 					 int force_send)
 {
-  SilcSocketConnection sock = conn->sock;
+  SilcSocketConnection sock;
   SilcBuffer buffer;
   int cipher_len;
   const char *cipher;
 
+  assert(client && conn && client_entry);
+
+  sock = conn->sock;
   if (!client_entry->send_key || !client_entry->key)
     return FALSE;
 
@@ -496,7 +501,7 @@ int silc_client_del_private_message_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcClientEntry client_entry)
 {
-  assert(client_entry);
+  assert(client && client_entry);
 
   if (!client_entry->send_key && !client_entry->receive_key)
     return FALSE;
@@ -534,6 +539,8 @@ silc_client_list_private_message_keys(SilcClient client,
   SilcIDCacheEntry id_cache;
   SilcIDCacheList list;
   SilcClientEntry entry;
+
+  assert(client && conn);
 
   if (!silc_idcache_get_all(conn->internal->client_cache, &list))
     return NULL;
@@ -588,6 +595,8 @@ void silc_client_set_away_message(SilcClient client,
 				  SilcClientConnection conn,
 				  char *message)
 {
+  assert(client && conn);
+
   if (!message && conn->internal->away) {
     silc_free(conn->internal->away->away);
     silc_free(conn->internal->away);

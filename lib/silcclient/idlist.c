@@ -49,6 +49,10 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
   int i = 0;
   bool found = FALSE;
 
+  assert(client && conn);
+  if (!nickname)
+    return NULL;
+
   /* Find ID from cache */
   if (!silc_idcache_find_by_name(conn->internal->client_cache,
 				 (char *)nickname, &list))
@@ -161,6 +165,8 @@ void silc_client_get_clients(SilcClient client,
   GetClientInternal i;
   int len;
   char *userhost;
+
+  assert(client && conn);
 
   if (!nickname)
     return;
@@ -375,6 +381,8 @@ void silc_client_get_clients_by_list(SilcClient client,
   GetClientsByListInternal in;
   bool wait_res = FALSE;
 
+  assert(client && conn && client_id_list);
+
   SILC_LOG_DEBUG(("Start"));
 
   in = silc_calloc(1, sizeof(*in));
@@ -500,6 +508,10 @@ SilcClientEntry silc_client_get_client_by_id(SilcClient client,
 {
   SilcIDCacheEntry id_cache;
 
+  assert(client && conn);
+  if (!client_id)
+    return NULL;
+
   SILC_LOG_DEBUG(("Finding client by ID (%s)", 
 		  silc_id_render(client_id, SILC_ID_CLIENT)));
 
@@ -555,6 +567,8 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 {
   SilcBuffer idp;
   GetClientByIDInternal i = silc_calloc(1, sizeof(*i));
+
+  assert(client && conn && client_id);
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -838,6 +852,10 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
   SilcIDCacheEntry id_cache;
   SilcChannelEntry entry;
 
+  assert(client && conn);
+  if (!channel)
+    return NULL;
+
   SILC_LOG_DEBUG(("Start"));
 
   if (!silc_idcache_find_by_name_one(conn->internal->channel_cache, channel, 
@@ -861,6 +879,10 @@ SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
 {
   SilcIDCacheEntry id_cache;
   SilcChannelEntry entry;
+
+  assert(client && conn);
+  if (!channel_id)
+    return NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -913,6 +935,8 @@ void silc_client_get_channel_by_id_resolve(SilcClient client,
   SilcBuffer idp;
   GetChannelByIDInternal i = silc_calloc(1, sizeof(*i));
 
+  assert(client && conn && channel_id);
+
   SILC_LOG_DEBUG(("Start"));
 
   i->client = client;
@@ -948,6 +972,10 @@ SilcServerEntry silc_client_get_server(SilcClient client,
   SilcIDCacheEntry id_cache;
   SilcServerEntry entry;
 
+  assert(client && conn);
+  if (!server_name)
+    return NULL;
+
   SILC_LOG_DEBUG(("Start"));
 
   if (!silc_idcache_find_by_name_one(conn->internal->server_cache,
@@ -967,6 +995,10 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
 {
   SilcIDCacheEntry id_cache;
   SilcServerEntry entry;
+
+  assert(client && conn);
+  if (!server_id)
+    return NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
