@@ -307,6 +307,34 @@ static void silc_client_join_get_users(SilcClient client,
   }
 }
 
+typedef struct {
+  SilcClient client;
+  SilcClientConnection conn;
+  void *entry;
+  SilcIdType id_type;
+  char *fingerprint;
+} *GetkeyContext;
+
+void silc_getkey_cb(bool success, void *context)
+{
+  GetkeyContext getkey = (GetkeyContext)context;
+  char *entity = (getkey->id_type == SILC_ID_CLIENT ? "user" : "server");
+  char *name = (getkey->id_type == SILC_ID_CLIENT ? 
+		((SilcClientEntry)getkey->entry)->nickname :
+		((SilcServerEntry)getkey->entry)->server_name);
+
+  if (success) {
+    printformat_module("fe-common/silc", NULL, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_GETKEY_VERIFIED, entity, name);
+  } else {
+    printformat_module("fe-common/silc", NULL, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_GETKEY_DISCARD, entity, name);
+  }
+
+  silc_free(getkey->fingerprint);
+  silc_free(getkey);
+}
+
 /* Command reply handler. This function is called always in the command reply
    function. If error occurs it will be called as well. Normal scenario
    is that it will be called after the received command data has been parsed
@@ -684,6 +712,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcPublicKey public_key;
       unsigned char *pk;
       uint32 pk_len;
+      GetkeyContext getkey;
       
       if (!success)
 	return;
@@ -694,13 +723,20 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
       if (public_key) {
 	pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+
+	getkey = silc_calloc(1, sizeof(*getkey));
+	getkey->entry = entry;
+	getkey->id_type = id_type;
+	getkey->client = client;
+	getkey->conn = conn;
+	getkey->fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
 	
 	silc_verify_public_key_internal(client, conn, 
 					(id_type == SILC_ID_CLIENT ?
 					 SILC_SOCKET_TYPE_CLIENT :
 					 SILC_SOCKET_TYPE_SERVER),
 					pk, pk_len, SILC_SKE_PK_TYPE_SILC,
-					NULL, NULL);
+					silc_getkey_cb, getkey);
 	silc_free(pk);
       } else {
 	printformat_module("fe-common/silc", server, NULL,

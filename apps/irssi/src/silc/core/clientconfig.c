@@ -180,6 +180,12 @@ int silc_client_config_parse(SilcClientConfig config, SilcBuffer buffer,
        * Start of a configuration line
        */
 
+      if (!cptr) {
+	fprintf(stderr, "%s:%d: Unknown start of a section `%s'\n", 
+			config->filename, linenum, cp);
+	return FALSE;
+      }	
+
       /* Handle config section */
       if (cptr->type != SILC_CLIENT_CONFIG_SECTION_TYPE_NONE) {
 	

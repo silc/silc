@@ -2053,6 +2053,23 @@ SILC_CLIENT_CMD_FUNC(getkey)
     goto out;
   }
 
+  if (cmd->pending) {
+    SilcClientCommandReplyContext reply = 
+      (SilcClientCommandReplyContext)context2;
+    SilcCommandStatus status;
+    unsigned char *tmp = silc_argument_get_arg_type(reply->args, 1, NULL);
+    SILC_GET16_MSB(status, tmp);
+    
+    if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
+	status == SILC_STATUS_ERR_NO_SUCH_SERVER) {
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+			    "%s", 
+			    silc_client_command_status_message(status));
+      COMMAND_ERROR;
+      goto out;
+    }
+  }
+
   /* Parse the typed nickname. */
   if (client->params->nickname_parse)
     client->params->nickname_parse(cmd->argv[1], &nickname);
@@ -2066,7 +2083,7 @@ SILC_CLIENT_CMD_FUNC(getkey)
     /* Check whether user requested server actually */
     server_entry = silc_client_get_server(client, conn, cmd->argv[1]);
 
-    if (!server_entry) {
+    if (!server_entry && !cmd->pending) {
       /* No. what ever user wants we don't have it, so resolve it. We
 	 will try to resolve both client and server, one of them is
 	 bound to be wrong. */
@@ -2079,13 +2096,12 @@ SILC_CLIENT_CMD_FUNC(getkey)
 				  silc_client_command_getkey, 
 				  silc_client_command_dup(cmd));
 
-      /* This sends the INFO command to resolve the server. */
-      silc_client_send_command(client, conn, SILC_COMMAND_INFO,
+      /* This sends the IDENTIFY command to resolve the server. */
+      silc_client_send_command(client, conn, SILC_COMMAND_IDENTIFY,
 			       ++conn->cmd_ident, 1, 
-			       1, cmd->argv[1], cmd->argv_lens[1]);
+			       2, cmd->argv[1], cmd->argv_lens[1]);
       silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				  conn->cmd_ident,  
-				  silc_client_command_destructor,
+				  conn->cmd_ident, NULL,
 				  silc_client_command_getkey, 
 				  silc_client_command_dup(cmd));
 

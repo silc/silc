@@ -122,6 +122,32 @@ const SilcCommandStatusMessage silc_command_status_messages[] = {
   cmd->sock->user_data, cmd->payload, FALSE, \
   silc_command_get(cmd->payload), status)
 
+/* All functions that call the COMMAND_CHECK_STATUS or the
+   COMMAND_CHECK_STATUS_LIST macros must have out: goto label. */
+
+#define COMMAND_CHECK_STATUS						  \
+do {									  \
+  SILC_LOG_DEBUG(("Start"));						  \
+  SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL)); \
+  if (status != SILC_STATUS_OK)  {					  \
+    COMMAND_REPLY_ERROR;						  \
+    goto out;								  \
+  }									  \
+} while(0)
+
+#define COMMAND_CHECK_STATUS_LIST					  \
+do {									  \
+  SILC_LOG_DEBUG(("Start"));						  \
+  SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL)); \
+  if (status != SILC_STATUS_OK &&					  \
+      status != SILC_STATUS_LIST_START &&				  \
+      status != SILC_STATUS_LIST_ITEM &&				  \
+      status != SILC_STATUS_LIST_END) {					  \
+    COMMAND_REPLY_ERROR;						  \
+    goto out;								  \
+  }									  \
+} while(0)
+
 /* Process received command reply. */
 
 void silc_client_command_reply_process(SilcClient client,
@@ -283,29 +309,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(whois)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcCommandStatus status;
-  unsigned char *tmp;
 
-  SILC_LOG_DEBUG(("Start"));
+  COMMAND_CHECK_STATUS_LIST;
 
-  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
-  SILC_GET16_MSB(status, tmp);
-  if (status != SILC_STATUS_OK && 
-      status != SILC_STATUS_LIST_START &&
-      status != SILC_STATUS_LIST_ITEM &&
-      status != SILC_STATUS_LIST_END) {
-    COMMAND_REPLY_ERROR;
-    goto out;
-  }
-
-  /* Display one whois reply */
-  if (status == SILC_STATUS_OK)
-    silc_client_command_reply_whois_save(cmd, status);
-
-  /* List */
-  if (status == SILC_STATUS_LIST_START ||
-      status == SILC_STATUS_LIST_ITEM ||
-      status == SILC_STATUS_LIST_END)
-    silc_client_command_reply_whois_save(cmd, status);
+  /* Save WHOIS info */
+  silc_client_command_reply_whois_save(cmd, status);
 
   /* Pending callbacks are not executed if this was an list entry */
   if (status != SILC_STATUS_OK &&
@@ -314,10 +322,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(whois)
     return;
   }
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_WHOIS);
   silc_client_command_reply_free(cmd);
 }
@@ -333,32 +339,22 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client_entry = NULL;
   uint32 len;
-  unsigned char *id_data, *tmp;
+  unsigned char *id_data;
   char *nickname, *username;
   char *realname = NULL;
 
-  SILC_LOG_DEBUG(("Start"));
+  COMMAND_CHECK_STATUS_LIST;
 
-  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
-  SILC_GET16_MSB(status, tmp);
-  if (status != SILC_STATUS_OK && 
-      status != SILC_STATUS_LIST_START &&
-      status != SILC_STATUS_LIST_ITEM &&
-      status != SILC_STATUS_LIST_END) {
-    COMMAND_REPLY_ERROR;
-    goto out;
-  }
-  
   id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!id_data) {
     COMMAND_REPLY_ERROR;
-    return;
+    goto out;
   }
   
   client_id = silc_id_payload_parse_id(id_data, len);
   if (!client_id) {
     COMMAND_REPLY_ERROR;
-    return;
+    goto out;
   }
 
   /* Get the client entry, if exists */
@@ -374,8 +370,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
   realname = silc_argument_get_arg_type(cmd->args, 5, &len);
   if (!nickname || !username) {
     COMMAND_REPLY_ERROR;
-    return;
+    goto out;
   }
+
   /* Notify application. We don't save any history information to any
      cache. Just pass the data to the application for displaying on 
      the screen. */
@@ -388,10 +385,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
     return;
   }
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_WHOIS);
   silc_client_command_reply_free(cmd);
 }
@@ -525,29 +520,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcCommandStatus status;
-  unsigned char *tmp;
 
-  SILC_LOG_DEBUG(("Start"));
+  COMMAND_CHECK_STATUS_LIST;
 
-  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
-  SILC_GET16_MSB(status, tmp);
-  if (status != SILC_STATUS_OK && 
-      status != SILC_STATUS_LIST_START &&
-      status != SILC_STATUS_LIST_ITEM &&
-      status != SILC_STATUS_LIST_END) {
-    COMMAND_REPLY_ERROR;
-    goto out;
-  }
-
-  /* Save one IDENTIFY entry */
-  if (status == SILC_STATUS_OK)
-    silc_client_command_reply_identify_save(cmd, status);
-
-  /* List */
-  if (status == SILC_STATUS_LIST_START ||
-      status == SILC_STATUS_LIST_ITEM ||
-      status == SILC_STATUS_LIST_END)
-    silc_client_command_reply_identify_save(cmd, status);
+  /* Save IDENTIFY info */
+  silc_client_command_reply_identify_save(cmd, status);
 
   /* Pending callbacks are not executed if this was an list entry */
   if (status != SILC_STATUS_OK &&
@@ -556,10 +533,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
     return;
   }
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_IDENTIFY);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_IDENTIFY);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_IDENTIFY);
   silc_client_command_reply_free(cmd);
 }
@@ -582,7 +557,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
   if (status != SILC_STATUS_OK) {
     cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 			  "Cannot set nickname: %s", 
-	     silc_client_command_status_message(status));
+			  silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
@@ -607,10 +582,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
   /* Notify application */
   COMMAND_REPLY((ARGS, conn->local_entry));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_NICK);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_NICK);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_NICK);
   silc_client_command_reply_free(cmd);
 }
@@ -624,15 +597,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(list)
   unsigned char *tmp, *name, *topic;
   uint32 usercount = 0;
 
-  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
-  SILC_GET16_MSB(status, tmp);
-  if (status != SILC_STATUS_OK && 
-      status != SILC_STATUS_LIST_START &&
-      status != SILC_STATUS_LIST_ITEM &&
-      status != SILC_STATUS_LIST_END) {
-    COMMAND_REPLY_ERROR;
-    goto out;
-  }
+  COMMAND_CHECK_STATUS_LIST;
 
   name = silc_argument_get_arg_type(cmd->args, 3, NULL);
   topic = silc_argument_get_arg_type(cmd->args, 4, NULL);
@@ -650,10 +615,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(list)
     return;
   }
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_LIST);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_LIST);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_LIST);
   silc_client_command_reply_free(cmd);
 }
@@ -677,9 +640,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
     cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	     "%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
-    SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_TOPIC);
-    silc_client_command_reply_free(cmd);
-    return;
+    goto out;
   }
 
   argc = silc_argument_get_arg_num(cmd->args);
@@ -715,10 +676,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
   /* Notify application */
   COMMAND_REPLY((ARGS, channel, topic));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_TOPIC);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_TOPIC);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_TOPIC);
   silc_client_command_reply_free(cmd);
 }
@@ -742,9 +701,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
     cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	     "%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
-    SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_INVITE);
-    silc_client_command_reply_free(cmd);
-    return;
+    goto out;
   }
 
   /* Take Channel ID */
@@ -772,10 +729,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
   /* Notify application */
   COMMAND_REPLY((ARGS, channel, tmp));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_INVITE);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_INVITE);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_INVITE);
   silc_client_command_reply_free(cmd);
 }
@@ -801,10 +756,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(kill)
   /* Notify application */
   COMMAND_REPLY((ARGS));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_KILL);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_KILL);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_KILL);
   silc_client_command_reply_free(cmd);
 }
@@ -830,9 +783,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(info)
     cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	     "%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
-    SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_INFO);
-    silc_client_command_reply_free(cmd);
-    return;
+    goto out;
   }
 
   /* Get server ID */
@@ -874,13 +825,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(info)
   /* Notify application */
   COMMAND_REPLY((ARGS, server, server->server_name, server->server_info));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_INFO);
-
  out:
-  if (server_id)
-    silc_free(server_id);
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_INFO);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_INFO);
+  silc_free(server_id);
   silc_client_command_reply_free(cmd);
 }
 
@@ -933,10 +881,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
   /* Notify application */
   COMMAND_REPLY((ARGS));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_PING);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_PING);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_PING);
   silc_client_command_reply_free(cmd);
 }
@@ -954,7 +900,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   SilcChannelUser chu;
   uint32 argc, mode, len, list_count;
   char *topic, *tmp, *channel_name = NULL, *hmac;
-  SilcBuffer keyp = NULL, client_id_list, client_mode_list;
+  SilcBuffer keyp = NULL, client_id_list = NULL, client_mode_list = NULL;
   int i;
 
   SILC_LOG_DEBUG(("Start"));
@@ -1123,17 +1069,17 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 		 NULL, topic, hmac, list_count, client_id_list, 
 		 client_mode_list));
 
-  /* Execute any pending command callbacks */
+ out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
+  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_JOIN);
+  silc_client_command_reply_free(cmd);
 
   if (keyp)
     silc_buffer_free(keyp);
-  silc_buffer_free(client_id_list);
-  silc_buffer_free(client_mode_list);
-
- out:
-  SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_JOIN);
-  silc_client_command_reply_free(cmd);
+  if (client_id_list)
+    silc_buffer_free(client_id_list);
+  if (client_mode_list)
+    silc_buffer_free(client_mode_list);
 }
 
 /* Received reply for MOTD command */
@@ -1193,10 +1139,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(motd)
   /* Notify application */
   COMMAND_REPLY((ARGS, motd));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_MOTD);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_MOTD);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_MOTD);
   silc_client_command_reply_free(cmd);
 }
@@ -1232,10 +1176,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(umode)
   /* Notify application */
   COMMAND_REPLY((ARGS, mode));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_UMODE);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_UMODE);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_UMODE);
   silc_client_command_reply_free(cmd);
 }
@@ -1294,12 +1236,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
 
   /* Notify application */
   COMMAND_REPLY((ARGS, channel, mode));
+
   silc_free(channel_id);
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CMODE);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CMODE);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_CMODE);
   silc_client_command_reply_free(cmd);
 }
@@ -1394,10 +1335,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   silc_free(client_id);
   silc_free(channel_id);
   
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CUMODE);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CUMODE);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_CUMODE);
   silc_client_command_reply_free(cmd);
 }
@@ -1421,10 +1360,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(kick)
   /* Notify application */
   COMMAND_REPLY((ARGS));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_KICK);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_KICK);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_KICK);
   silc_client_command_reply_free(cmd);
 }
@@ -1448,10 +1385,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(silcoper)
   /* Notify application */
   COMMAND_REPLY((ARGS));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_SILCOPER);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_SILCOPER);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_SILCOPER);
   silc_client_command_reply_free(cmd);
 }
@@ -1475,10 +1410,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(oper)
   /* Notify application */
   COMMAND_REPLY((ARGS));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_OPER);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_OPER);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_OPER);
   silc_client_command_reply_free(cmd);
 }
@@ -1502,10 +1435,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(connect)
   /* Notify application */
   COMMAND_REPLY((ARGS));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CONNECT);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CONNECT);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_CONNECT);
   silc_client_command_reply_free(cmd);
 }
@@ -1555,10 +1486,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(ban)
   /* Notify application */
   COMMAND_REPLY((ARGS, channel, tmp));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_BAN);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_BAN);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_BAN);
   silc_client_command_reply_free(cmd);
 }
@@ -1582,10 +1511,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(close)
   /* Notify application */
   COMMAND_REPLY((ARGS));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CLOSE);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_CLOSE);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_CLOSE);
   silc_client_command_reply_free(cmd);
 }
@@ -1609,10 +1536,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(shutdown)
   /* Notify application */
   COMMAND_REPLY((ARGS));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_SHUTDOWN);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_SHUTDOWN);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_SHUTDOWN);
   silc_client_command_reply_free(cmd);
 }
@@ -1638,10 +1563,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(leave)
   /* Notify application */
   COMMAND_REPLY((ARGS));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_LEAVE);
-
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_LEAVE);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_LEAVE);
   silc_client_command_reply_free(cmd);
 }
@@ -1658,8 +1581,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   SilcChannelEntry channel;
   SilcChannelUser chu;
   SilcChannelID *channel_id = NULL;
-  SilcBuffer client_id_list;
-  SilcBuffer client_mode_list;
+  SilcBuffer client_id_list = NULL;
+  SilcBuffer client_mode_list = NULL;
   unsigned char *tmp;
   uint32 tmp_len, list_count;
   int i;
@@ -1830,17 +1753,15 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   /* Notify application */
   COMMAND_REPLY((ARGS, channel, list_count, client_id_list, client_mode_list));
 
-  /* Execute any pending command callbacks */
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
-
-  silc_buffer_free(client_id_list);
-  silc_buffer_free(client_mode_list);
-
  out:
-  if (channel_id)
-    silc_free(channel_id);
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_USERS);
   silc_client_command_reply_free(cmd);
+  silc_free(channel_id);
+  if (client_id_list)
+    silc_buffer_free(client_id_list);
+  if (client_mode_list)
+    silc_buffer_free(client_mode_list);
 }
 
 /* Received command reply to GETKEY command. WE've received the remote
@@ -1870,17 +1791,21 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
   SILC_GET16_MSB(status, tmp);
   if (status != SILC_STATUS_OK) {
     cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	     "%s", silc_client_command_status_message(status));
+			  "%s", silc_client_command_status_message(status));
     COMMAND_REPLY_ERROR;
     goto out;
   }
 
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
-  if (!tmp)
+  if (!tmp) {
+    COMMAND_REPLY_ERROR;
     goto out;
+  }
   idp = silc_id_payload_parse_data(tmp, len);
-  if (!idp)
+  if (!idp) {
+    COMMAND_REPLY_ERROR;
     goto out;
+  }
 
   /* Get the public key payload */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
@@ -1890,11 +1815,15 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
     SILC_GET16_MSB(type, tmp + 2);
     pk = tmp + 4;
     
-    if (type != SILC_SKE_PK_TYPE_SILC)
+    if (type != SILC_SKE_PK_TYPE_SILC) {
+      COMMAND_REPLY_ERROR;
       goto out;
+    }
     
-    if (!silc_pkcs_public_key_decode(pk, pk_len, &public_key))
+    if (!silc_pkcs_public_key_decode(pk, pk_len, &public_key)) {
+      COMMAND_REPLY_ERROR;
       goto out;
+    }
   } 
    
   id_type = silc_id_payload_get_type(idp);
@@ -1905,8 +1834,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
 					 (void *)client_id, 
 					 NULL, NULL, 
 					 silc_hash_client_id_compare, NULL,
-					 &id_cache))
+					 &id_cache)) {
+      COMMAND_REPLY_ERROR;
       goto out;
+    }
 
     client_entry = (SilcClientEntry)id_cache->context;
 
@@ -1916,8 +1847,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
     /* Received server's public key */
     server_id = silc_id_payload_get_id(idp);
     if (!silc_idcache_find_by_id_one(conn->server_cache, (void *)server_id,
-				     &id_cache))
+				     &id_cache)) {
+      COMMAND_REPLY_ERROR;
       goto out;
+    }
 
     server_entry = (SilcServerEntry)id_cache->context;
 
@@ -1926,6 +1859,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
   }
 
  out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_GETKEY);
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_GETKEY);
   if (idp)
     silc_id_payload_free(idp);

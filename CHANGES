@@ -1,3 +1,32 @@
+Sat Sep 15 13:29:17 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check that the public key exists in the GETKEY command before
+	  trying to encode it.  Affected file silcd/command.c.
+
+	* Print some notifications on received public keys with GETKEY
+	  command in the Irssi SILC Client.  Affected files are
+	  irssi/src/fe-common/silc/module-formats.[ch],
+	  irssi/src/silc/core/client_ops.c.
+
+	* Use IDENTIFY command to resolve the server information in the
+	  GETKEY command instead of INFO command.  Affected file
+	  lib/silcclient/command.c.
+
+	* All command reply functions in the client library now calls
+	  the pending command reply callbacks even if an error has
+	  occurred.  The server has done this a long time and now it was
+	  time to move the client library to this as well.  Now all
+	  errors can be delivered back to the pending command reply
+	  callbacks if necessary.  Affected files are
+	  lib/silcclient/command[_reply].[ch].
+
+	* Change the nickname on disconnection back to the username
+	  because in reconnect the server will enforce it to it anyway.
+	  Affected file irssi/src/silc/core/silc-servers.c.
+
+	* Fixed a config file parsing bug in the Irssi SILC client.
+	  Affected file irssi/src/silc/core/clientconfig.c.
+
 Thu Sep 13 23:11:18 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* When printing the channel mode on JOIN, verify that the

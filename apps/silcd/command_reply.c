@@ -883,8 +883,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
   SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_JOIN);
-  if (client_id)
-    silc_free(client_id);
+  silc_free(client_id);
   silc_server_command_reply_free(cmd);
 
   if (client_id_list)

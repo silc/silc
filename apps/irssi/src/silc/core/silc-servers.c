@@ -37,6 +37,7 @@
 #include "silc-servers.h"
 #include "silc-channels.h"
 #include "silc-queries.h"
+#include "silc-nicklist.h"
 #include "window-item-def.h"
 
 #include "fe-common/core/printtext.h"
@@ -208,6 +209,12 @@ static void sig_disconnected(SILC_SERVER_REC *server)
     return;
   
   if (server->conn->sock != NULL) {
+    nicklist_rename_unique(SERVER(server),
+			   server->conn->local_entry, server->nick,
+			   server->conn->local_entry, 
+			   silc_client->username);
+    signal_emit("message own_nick", 4, server, server->nick, server->nick, "");
+
     silc_client_close_connection(silc_client, NULL, server->conn);
     
     /* SILC closes the handle */
