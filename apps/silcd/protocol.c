@@ -310,11 +310,12 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
 
   sock->user_data = (void *)conn_data;
 
-  SILC_LOG_INFO(("%s (%s) security properties: %s %s %s", 
+  SILC_LOG_INFO(("%s (%s) security properties: %s %s %s %s", 
 		 sock->hostname, sock->ip,
 		 idata->send_key->cipher->name,
 		 (char *)silc_hmac_get_name(idata->hmac_send),
-		 idata->hash->hash->name));
+		 idata->hash->hash->name, 
+		 ske->prop->flags & SILC_SKE_SP_FLAG_PFS ? "PFS" : ""));
 
   return TRUE;
 }
