@@ -20,8 +20,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/03 05:52:22  priikone
+ * 	Implemented LEAVE command.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Importet from internal CVS/Added Log headers.
  *
  *
  */
@@ -31,8 +34,7 @@
 #include "command_reply.h"
 
 /* Server command reply list. Not all commands have reply function as
-   they are never sent as forwarded command packets by server. More
-   maybe added later if need appears. */
+   they are never sent by server. More maybe added later if need appears. */
 SilcServerCommandReply silc_command_reply_list[] =
 {
   SILC_SERVER_CMD_REPLY(join, JOIN),
@@ -92,7 +94,6 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   SilcCommandStatus status;
   SilcChannelID *id;
   SilcChannelList *entry;
-  unsigned int argc;
   unsigned char *id_string;
   char *channel_name, *tmp;
 
