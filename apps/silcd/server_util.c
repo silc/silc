@@ -358,7 +358,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
     }
 
     /* Do not send the channel key if private channel key mode is set */
-    if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY)
+    if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY || !channel->channel_key)
       continue;
 
     silc_server_send_channel_key(server, NULL, channel, 
