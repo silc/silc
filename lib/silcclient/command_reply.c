@@ -241,12 +241,29 @@ silc_client_command_reply_whois_print(SilcClientCommandReplyContext cmd,
     silc_parse_nickname(nickname, &client_entry->nickname, 
 			&client_entry->server, &client_entry->num);
     client_entry->username = strdup(username);
+    if (realname)
+      client_entry->realname = strdup(realname);
     
     /* Add client to cache */
     silc_idcache_add(conn->client_cache, client_entry->nickname,
 		     SILC_ID_CLIENT, client_id, (void *)client_entry, TRUE);
   } else {
     client_entry = (SilcClientEntry)id_cache->context;
+    if (client_entry->nickname)
+      silc_free(client_entry->nickname);
+    if (client_entry->server)
+      silc_free(client_entry->server);
+    if (client_entry->username)
+      silc_free(client_entry->username);
+    if (client_entry->realname)
+      silc_free(client_entry->realname);
+
+    silc_parse_nickname(nickname, &client_entry->nickname, 
+			&client_entry->server, &client_entry->num);
+    client_entry->username = strdup(username);
+    if (realname)
+      client_entry->realname = strdup(realname);
+
     silc_free(client_id);
   }
 
@@ -335,6 +352,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcClientEntry client_entry;
+  SilcIDCacheEntry id_cache = NULL;
   SilcCommandStatus status;
   unsigned char *tmp;
 
@@ -368,23 +386,44 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
     unsigned char *id_data;
     char *nickname;
     char *username;
+    SilcClientID *client_id;
 
     id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
+    if (!id_data)
+      goto out;
+    client_id = silc_id_payload_parse_id(id_data, len);
+
     nickname = silc_argument_get_arg_type(cmd->args, 3, NULL);
     username = silc_argument_get_arg_type(cmd->args, 4, NULL);
 
-    /* Allocate client entry */
-    client_entry = silc_calloc(1, sizeof(*client_entry));
-    client_entry->id = silc_id_payload_parse_id(id_data, len);
-    if (nickname)
+    if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
+				     SILC_ID_CLIENT, &id_cache)) {
+      client_entry = silc_calloc(1, sizeof(*client_entry));
+      client_entry->id = client_id;
       silc_parse_nickname(nickname, &client_entry->nickname, 
 			  &client_entry->server, &client_entry->num);
-    if (username)
-      client_entry->username = strdup(username);
+      if (username)
+	client_entry->username = strdup(username);
+    
+      /* Add client to cache */
+      silc_idcache_add(conn->client_cache, client_entry->nickname,
+		       SILC_ID_CLIENT, client_id, (void *)client_entry, TRUE);
+    } else {
+      client_entry = (SilcClientEntry)id_cache->context;
+      if (client_entry->nickname)
+	silc_free(client_entry->nickname);
+      if (client_entry->server)
+	silc_free(client_entry->server);
+      if (username && client_entry->username)
+	silc_free(client_entry->username);
 
-    /* Save received Client ID to ID cache */
-    silc_idcache_add(conn->client_cache, client_entry->nickname,
-		     SILC_ID_CLIENT, client_entry->id, client_entry, TRUE);
+      silc_parse_nickname(nickname, &client_entry->nickname, 
+			  &client_entry->server, &client_entry->num);
+
+      if (username)
+	client_entry->username = strdup(username);
+      silc_free(client_id);
+    }
   }
 
   if (status == SILC_STATUS_LIST_START) {
@@ -988,30 +1027,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
   
   channel = (SilcChannelEntry)id_cache->context;
 
-  /* If there is pending command we know that user has called this command
-     and we will handle the name list differently. */
-  if (cmd->callback) {
-    /* We will resolve all the necessary information about the people
-       on the channel. Only after that will we display the user list. */
-    for (i = 0; i < len1; i++) {
-      /* XXX */
-
+  /* Remove commas from list */
+  for (i = 0; i < len1; i++)
+    if (name_list[i] == ',') {
+      name_list[i] = ' ';
+      list_count++;
     }
-    silc_client_command_pending_del(SILC_COMMAND_NAMES);
-  } else {
-    /* there is no pending callback it means that this command reply
-       has been received without calling the command, ie. server has sent
-       the reply without getting the command from us first. This happens
-       with SILC servers that sends NAMES reply after joining to a channel. */
-
-    /* Remove commas from list */
-    for (i = 0; i < len1; i++)
-      if (name_list[i] == ',') {
-	name_list[i] = ' ';
-	list_count++;
-      }
-    list_count++;
-  }
+  list_count++;
 
   /* Remove old client list from channel, if exists */
   if (channel->clients) {
@@ -1102,39 +1124,91 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
     silc_free(nickname);
   }
 
-  name_list = NULL;
-  len1 = 0;
-  for (k = 0; k < channel->clients_count; k++) {
-    char *m, *n = channel->clients[k].client->nickname;
-    len2 = strlen(n);
-    len1 += len2;
+  /* XXX hmm... actually it is applications business to display this
+     information. We should just pass (as we do) the data to application and
+     let it to parse it and display it the way it wants. */
+  if (cmd->callback) {
+    cmd->client->ops->say(cmd->client, conn, "Users on %s", 
+			  channel->channel_name);
+    
+    for (k = 0; k < channel->clients_count; k++) {
+      SilcClientEntry e = channel->clients[k].client;
+      char *m, tmp[80], line[80];
 
-    name_list = silc_realloc(name_list, sizeof(*name_list) * (len1 + 3));
+      memset(line, 0, sizeof(line));
+      memset(tmp, 0, sizeof(tmp));
+      m = silc_client_chumode_char(channel->clients[k].mode);
 
-    m = silc_client_chumode_char(channel->clients[k].mode);
-    if (m) {
-      memcpy(name_list + (len1 - len2), m, strlen(m));
-      len1 += strlen(m);
-      silc_free(m);
+      strcat(line, " ");
+      strcat(line, e->nickname);
+      strcat(line, e->server ? "@" : "");
+
+      len1 = 0;
+      if (e->server)
+	len1 = strlen(e->server);
+      strncat(line, e->server ? e->server : "", len1 > 30 ? 30 : len1);
+
+      len1 = strlen(line);
+      if (len1 >= 30) {
+	memset(&line[29], 0, len1 - 29);
+      } else {
+	for (i = 0; i < 30 - len1 - 1; i++)
+	  strcat(line, " ");
+      }
+
+      strcat(line, "  H");
+      strcat(tmp, m ? m : "");
+      strcat(line, tmp);
+
+      if (strlen(tmp) < 5)
+	for (i = 0; i < 5 - strlen(tmp); i++)
+	  strcat(line, " ");
+
+      strcat(line, e->username ? e->username : "");
+
+      cmd->client->ops->say(cmd->client, conn, "%s", line);
+
+      if (m)
+	silc_free(m);
     }
 
-    memcpy(name_list + (len1 - len2), n, len2);
-    name_list[len1] = 0;
+  } else {
+    name_list = NULL;
+    len1 = 0;
+    for (k = 0; k < channel->clients_count; k++) {
+      char *m, *n = channel->clients[k].client->nickname;
+      len2 = strlen(n);
+      len1 += len2;
+
+      name_list = silc_realloc(name_list, sizeof(*name_list) * (len1 + 3));
+
+      m = silc_client_chumode_char(channel->clients[k].mode);
+      if (m) {
+	memcpy(name_list + (len1 - len2), m, strlen(m));
+	len1 += strlen(m);
+	silc_free(m);
+      }
+
+      memcpy(name_list + (len1 - len2), n, len2);
+      name_list[len1] = 0;
     
-    if (k == channel->clients_count - 1)
-      break;
-    memcpy(name_list + len1, " ", 1);
-    len1++;
+      if (k == channel->clients_count - 1)
+	break;
+      memcpy(name_list + len1, " ", 1);
+      len1++;
+    }
+
+    cmd->client->ops->say(cmd->client, conn,
+			  "Users on %s: %s", channel->channel_name, name_list);
+    silc_free(name_list);
   }
 
-  cmd->client->ops->say(cmd->client, conn,
-			"Users on %s: %s", channel->channel_name, name_list);
+  name_list = silc_argument_get_arg_type(cmd->args, 3, &len1);
 
   /* Notify application */
   COMMAND_REPLY((ARGS, channel, name_list, client_id_list->head,
 		 client_mode_list->head));
 
-  silc_free(name_list);
   silc_buffer_free(client_id_list);
   silc_buffer_free(client_mode_list);
 

@@ -283,7 +283,7 @@ SILC_CLIENT_CMD_FUNC(nick)
     goto out;
   }
 
-  if (!strncmp(conn->nickname, cmd->argv[1], cmd->argv_lens[1]))
+  if (!strcmp(conn->nickname, cmd->argv[1]))
     goto out;
 
   /* Show current nickname */

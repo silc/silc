@@ -26,9 +26,10 @@
    client entry. This entry also includes the private message keys if
    they are used. */
 typedef struct SilcClientEntryStruct {
-  char *nickname;             /* nickname[@server] */
+  char *nickname;             /* nickname */
   char *username;	      /* username[@host] */
   char *server;		      /* SILC server name */
+  char *realname;
   unsigned int num;
   SilcClientID *id;
 
