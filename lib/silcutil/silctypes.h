@@ -370,8 +370,8 @@ do {							\
  */
 #define SILC_PUT16_MSB(l, cp)			\
 do {						\
-	(cp)[0] = (unsigned char)(l) >> 8;	\
-	(cp)[1] = (unsigned char)(l);		\
+	(cp)[0] = (SilcUInt8)((l) >> 8);	\
+	(cp)[1] = (SilcUInt8)(l);		\
 } while(0)
 /***/
 
@@ -389,10 +389,10 @@ do {						\
  */
 #define SILC_PUT32_MSB(l, cp)			\
 do {						\
-	(cp)[0] = (unsigned char)(l) >> 24;	\
-	(cp)[1] = (unsigned char)(l) >> 16;	\
-	(cp)[2] = (unsigned char)(l) >> 8;	\
-	(cp)[3] = (unsigned char)(l);		\
+	(cp)[0] = (SilcUInt8)((l) >> 24);	\
+	(cp)[1] = (SilcUInt8)((l) >> 16);	\
+	(cp)[2] = (SilcUInt8)((l) >> 8);	\
+	(cp)[3] = (SilcUInt8)(l);		\
 } while(0)
 /***/
 
@@ -429,8 +429,8 @@ do {								\
  */
 #define SILC_PUT16_LSB(l, cp)			\
 do  {						\
-	(cp)[0] = (unsigned char)(l);		\
-	(cp)[1] = (unsigned char)(l) >> 8;	\
+	(cp)[0] = (SilcUInt8)(l);		\
+	(cp)[1] = (SilcUInt8)((l) >> 8);	\
 } while(0)
 /***/
 
@@ -448,10 +448,10 @@ do  {						\
  */
 #define SILC_PUT32_LSB(l, cp)			\
 do {						\
-	(cp)[0] = (unsigned char)(l);		\
-	(cp)[1] = (unsigned char)(l) >> 8;	\
-	(cp)[2] = (unsigned char)(l) >> 16;	\
-	(cp)[3] = (unsigned char)(l) >> 24;	\
+	(cp)[0] = (SilcUInt8)(l);		\
+	(cp)[1] = (SilcUInt8)((l) >> 8);	\
+	(cp)[2] = (SilcUInt8)((l) >> 16);	\
+	(cp)[3] = (SilcUInt8)((l) >> 24);	\
 } while(0)
 /***/
 
