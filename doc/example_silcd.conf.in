@@ -1,134 +1,68 @@
 #
+# silcd.conf
+#
 # Example configuration file.  Note that this attempts to present various
 # configuration possibilities and may not actually give any sensible
 # configuration.  For real life example see the examples/ directory.
 #
 
 #
+# Include global algorithms from the "silcalgs.conf" file. This file
+# defines ciphers, hash functions, HMACs and PKCS algorithms that can
+# be used.
+#
+Include "@ETCDIR@/silcalgs.conf";
+
+#
 # General configuration options
 #
+# These defines the default behaviour of the server.  Most of these values
+# can be overridden with ConnectionParam, which can be defined independently
+# for different connections.
+#
 General {
-	# This is the default path where to search modules
-	# You can comment it out to use builtin modules globally.
+	# This is the default path where to search modules.  If omitted
+	# built-in modules will be used.  Built-in modules will also be
+	# used if a module file cannot be located.
 	module_path = "@MODULESDIR@";
 
 	# If both passphrase and public key authentication is set for a
 	# connection the public key authentication is the preferred one
 	# to use.  Set this to `true' to prefer passphrase authentication
 	# over public key authentication in these cases.
+	#prefer_passphrase_auth = true;
+
+	# Set this to true if you the server to require fully qualified
+	# domain names (FQDN) for incoming connections.
+	#require_reverse_lookup = false;	
+
+	# Default keepalive frequency (seconds). This can be overridden
+	# with ConnectionParam.
+	keepalive_secs = 300;
+
+	# Default reconnection parameters defines how the server reconnect
+	# to the remote if the connection was lost.  The reconnection phase
+	# use so called exponential backoff algorithm;  The reconnect
+	# interval grows when reconnect count grows.  Next example will
+	# attempt to reconnect after 10 seconds of disconnect, and the
+	# interval grows up to 600 seconds or until 7 times was attempted
+	# to reconnect.
 	#
-	# prefer_passphrase_auth = true;
+	# reconnect_count        - how many times reconnect is attempted
+	# reconnect_interval	 - how often reconnect it performed (seconds)
+	# reconnect_interval_max - maximum interval for reconnect, the
+	#                          server never waits longer than this to
+	#                          reconnect (seconds).
+	# reconnect_keep_trying  - whether to keep trying even after 
+	#                          reconnect_count is reached (the interval
+	#                          will be reconnect_interval_max).
+	#
+	# These can be overridden with ConnectionParam.
+	reconnect_count = 7;
+	reconnect_interval = 10;
+	reconnect_interval_max = 600;
+	reconnect_keep_trying = true;
 };
-
-#
-# Configured ciphers
-#
-# The "Module" option can be either absolute or relative to the "ModulePath"
-# option.
-# If commented out forces using of built-in modules.
-#
-cipher {
-	name = "aes-256-cbc";
-	module = "aes.sim.so";
-	keylength = 32;
-	blocklength = 16;
-};
-cipher {
-	name = "aes-192-cbc";
-	module = "aes.sim.so";
-	keylength = 24;
-	blocklength = 16;
-};
-cipher {
-	name = "aes-128-cbc";
-	module = "aes.sim.so";
-	keylength = 16;
-	blocklength = 16;
-};
-cipher {
-	name = "twofish-256-cbc";
-	module = "twofish.sim.so";
-	keylength = 32;
-	blocklength = 16;
-};
-cipher {
-	name = "twofish-192-cbc";
-	module = "twofish.sim.so";
-	keylength = 24;
-	blocklength = 16;
-};
-cipher {
-	name = "twofish-128-cbc";
-	module = "twofish.sim.so";
-	keylength = 16;
-	blocklength = 16;
-};
-cipher {
-	name = "mars-256-cbc";
-	module = "mars.sim.so";
-	keylength = 32;
-	blocklength = 16;
-};
-cipher {
-	name = "mars-192-cbc";
-	module = "mars.sim.so";
-	keylength = 24;
-	blocklength = 16;
-};
-cipher {
-	name = "mars-128-cbc";
-	module = "mars.sim.so";
-	keylength = 16;
-	blocklength = 16;
-};
-cipher {
-	name = "none";
-	module = "none.sim.so";
-};
-
-#
-# Configured hash functions
-#
-hash {
-	name = "sha1";
-	blocklength = 64;
-	digestlength = 20;
-};
-hash {
-	name = "md5";
-	blocklength = 64;
-	digestlength = 16;
-};
-
-#
-# Configured HMAC functions. The hash function used in the HMAC must
-# be configured in the hash section.
-#
-hmac {
-	name = "hmac-sha1-96";
-	hash = "sha1";
-	maclength = 12;
-};
-hmac {
-	name = "hmac-md5-96";
-	hash = "md5";
-	maclength = 12;
-};
-hmac {
-	name = "hmac-sha1";
-	hash = "sha1";
-	maclength = 20;
-};
-hmac {
-	name = "hmac-md5";
-	hash = "md5";
-	maclength = 16;
-};
-
-#
-# Configured PKCS
-#
-PKCS { name = "rsa"; };
 
 #
 # Server information
@@ -234,33 +168,76 @@ Logging {
 };
 
 #
-# Connection classes (UNSUPPORTED)
+# Connection Parameters
 #
-# This section is used to define connection classes. These can be
-# used to optimize the server and the connections.
+# This section defined connection parameters.  It is possible to use
+# specific parameters in different connections, and to define different
+# parameters to different connections.  The parameters can define how the
+# connection is handled and how the session is managed.  If connection
+# parameters are not used in connections the default values will apply
+# (or values defined in General section).  You can have multiple
+# ConnectionParams blocks defined.
 #
-#Class {
-#	Name = "norm";
-#	Ping = 100;
-#	Connect = 100;
-#	Links = 100;
-#};
+ConnectionParam {
+	# unique name. The name is used to reference to this parameter 
+	# block from the connections.
+	name = "normal";
+
+	# Keepalive frequency (seconds).
+	keepalive_secs = 300;
+
+	# Reconnection parameters defines how the server reconnects to
+	# the remote if the connection was lost.  The reconnection phase
+	# use so called exponential backoff algorithm;  The reconnect
+	# interval grows when reconnect count grows.  Next example will
+	# attempt to reconnect after 10 seconds of disconnect, and the
+	# interval grows up to 600 seconds or until 7 times was attempted
+	# to reconnect.
+	#
+	# reconnect_count        - how many times reconnect is attempted
+	# reconnect_interval	 - how often reconnect it performed (seconds)
+	# reconnect_interval_max - maximum interval for reconnect, the
+	#                          server never waits longer than this to
+	#                          reconnect (seconds).
+	# reconnect_keep_trying  - whether to keep trying even after 
+	#                          reconnect_count is reached (the interval
+	#                          will be reconnect_interval_max).
+	reconnect_count = 7;
+	reconnect_interval = 10;
+	reconnect_interval_max = 600;
+	reconnect_keep_trying = true;
+
+	#TODO:
+	#key_exchange_rekey - rekey timeout
+	#key_exchange_pfs - rekey PFS
+	#key_exchange_mutual_auth - SKE mutual auth
+
+	#connections_max - max incoming connection
+	#connections_interval - incoming connection interval limit ?
+};
 
 #
 # Configured client connections.
 #
-# All fields except Class are optional.  Omitted fields are assumed
-# to be generic (e.g. if the "Host" field is omitted all hosts will match
-# this client class).
+# The "host" defines the incoming IP address or hostname of the client.
+# If it is omitted all hosts will match this client connection.  The
+# "param" is optional and can be used to set specific connection parameters
+# for this connection.
 #
-#Client {
-#	Host = "127.0.0.1";
-#	Port = 706;
-#	Class = "local";
-#};
-Client {
-	Port = 706;
-	Class = "norm";
+# The authentication data is specified by Passphrase and/or Publickey.
+# If both are provided then both password and public key based authentication
+# is allowed.  If the Publickey is used it includes the file path to the
+# public key file.  If none of them is provided then authentication is not
+# required.
+#
+# Next example connection will match to all incoming client connections,
+# and no authentication is required
+#
+Client { 
+	#host = "";
+	#passphrase = "secret";
+	#publickey = "/path/to/the/public.key";
+	param = "normal";
 };
 
 #
@@ -282,24 +259,6 @@ Admin {
 	Passphrase = "verysecret";
 	# Publickey = "/path/to/the/public.key";
 };
-
-#
-# Denied connections
-#
-# These connections are denied to connect to our server.
-#
-# The "Reason" field is mandatory, while the "Host" and "Port" fields can be
-# omitted to match everything.
-#
-#Deny {
-#	Host = "10.2.1.99";
-#	Port = 706;
-#	Reason = "Go away spammer";
-#};
-#Deny {
-#	Host = "10.3.*";
-#	Reason = "You are not welcome.";
-#};
 
 #
 # Configured server connections.
@@ -324,7 +283,7 @@ ServerConnection {
 	Passphrase = "verysecret";
 	# Publickey = "/path/to/the/public.key";
 	VersionID = 1;
-	Class = "norm";
+	Param = "normal";
 	Backup = false;
 };
 
@@ -359,9 +318,27 @@ RouterConnection {
 	Passphrase = "verysecret";
 	# Publickey = "/path/to/the/public.key";
 	VersionID = 1;
-	Class = "norm";
+	Param = "normal";
 	Initiator = true;
 	#BackupHost = "10.2.1.6";
 	#BackupPort = 706;
 	#LocalBackup = true;
 };
+
+#
+# Denied connections
+#
+# These connections are denied to connect to our server.
+#
+# The "Reason" field is mandatory, while the "Host" and "Port" fields can be
+# omitted to match everything.
+#
+#Deny {
+#	Host = "10.2.1.99";
+#	Port = 706;
+#	Reason = "Go away spammer";
+#};
+#Deny {
+#	Host = "10.3.*";
+#	Reason = "You are not welcome.";
+#};

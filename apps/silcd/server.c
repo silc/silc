@@ -93,8 +93,6 @@ void silc_server_free(SilcServer server)
     silc_dlist_uninit(server->sim);
 #endif
 
-    silc_free(server->params);
-
     if (server->pending_commands)
       silc_dlist_uninit(server->pending_commands);
 
@@ -130,15 +128,8 @@ int silc_server_init(SilcServer server)
   server->public_key = server->config->server_info->public_key;
   server->private_key = server->config->server_info->private_key;
 
-  /* XXX After server is made as Silc Server Library this can be given
-     as argument, for now this is hard coded */
-  server->params = silc_calloc(1, sizeof(*server->params));
-  server->params->retry_count = SILC_SERVER_RETRY_COUNT;
-  server->params->retry_interval_min = SILC_SERVER_RETRY_INTERVAL_MIN;
-  server->params->retry_interval_max = SILC_SERVER_RETRY_INTERVAL_MAX;
-  server->params->retry_keep_trying = FALSE;
-  server->params->protocol_timeout = 60;
-  server->params->require_reverse_mapping = FALSE;
+  /* Set default to configuration parameters */
+  silc_server_config_set_defaults(server);
 
   /* Register all configured ciphers, PKCS and hash functions. */
   if (!silc_server_config_register_ciphers(server))
@@ -223,7 +214,7 @@ int silc_server_init(SilcServer server)
        and port. */
     if (!silc_net_check_local_by_sock(sock[i], &newsocket->hostname, 
 				      &newsocket->ip)) {
-      if ((server->params->require_reverse_mapping && !newsocket->hostname) ||
+      if ((server->config->require_reverse_lookup && !newsocket->hostname) ||
 	  !newsocket->ip) {
 	SILC_LOG_ERROR(("IP/DNS lookup failed for local host %s",
 			newsocket->hostname ? newsocket->hostname :
@@ -555,11 +546,10 @@ void silc_server_start_key_exchange(SilcServer server,
      is not executed within set limit. */
   proto_ctx->timeout_task = 
     silc_schedule_task_add(server->schedule, sock, 
-		       silc_server_timeout_remote,
-		       server, server->params->protocol_timeout,
-		       server->params->protocol_timeout_usec,
-		       SILC_TASK_TIMEOUT,
-		       SILC_TASK_PRI_LOW);
+			   silc_server_timeout_remote,
+			   server, 60, 0, /* XXX hardcoded */
+			   SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_LOW);
 
   /* Register the connection for network input and output. This sets
      that scheduler will listen for incoming packets for this connection 
@@ -583,24 +573,27 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
 {
   SilcServerConnection sconn = (SilcServerConnection)context;
   SilcServer server = sconn->server;
+  SilcServerConfigSectionConnectionParam *param;
+
+  param = (sconn->param ? sconn->param : &server->config->param);
 
   SILC_LOG_INFO(("Retrying connecting to a router"));
 
   /* Calculate next timeout */
   if (sconn->retry_count >= 1) {
     sconn->retry_timeout = sconn->retry_timeout * SILC_SERVER_RETRY_MULTIPLIER;
-    if (sconn->retry_timeout > SILC_SERVER_RETRY_INTERVAL_MAX)
-      sconn->retry_timeout = SILC_SERVER_RETRY_INTERVAL_MAX;
+    if (sconn->retry_timeout > param->reconnect_interval_max)
+      sconn->retry_timeout = param->reconnect_interval_max;
   } else {
-    sconn->retry_timeout = server->params->retry_interval_min;
+    sconn->retry_timeout = param->reconnect_interval;
   }
   sconn->retry_count++;
   sconn->retry_timeout = sconn->retry_timeout +
     silc_rng_get_rn32(server->rng) % SILC_SERVER_RETRY_RANDOMIZER;
 
   /* If we've reached max retry count, give up. */
-  if (sconn->retry_count > server->params->retry_count && 
-      server->params->retry_keep_trying == FALSE) {
+  if (sconn->retry_count > param->reconnect_count && 
+      param->reconnect_keep_trying == FALSE) {
     SILC_LOG_ERROR(("Could not connect to router, giving up"));
     silc_free(sconn->remote_host);
     silc_free(sconn);
@@ -609,8 +602,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
 
   /* Wait one before retrying */
   silc_schedule_task_add(server->schedule, fd, silc_server_connect_router,
-			 context, sconn->retry_timeout, 
-			 server->params->retry_interval_min_usec,
+			 context, sconn->retry_timeout, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
@@ -626,7 +618,7 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
 		 (sconn->backup ? "backup router" : "router"), 
 		 sconn->remote_host, sconn->remote_port));
 
-  server->router_connect = time(0);
+  server->router_connect = time(NULL);
 
   /* Connect to remote host */
   sock = silc_net_create_connection(server->config->server_info->server_ip,
@@ -691,6 +683,9 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 
       if (!server->router_conn && !sconn->backup)
 	server->router_conn = sconn;
+
+      sconn->conn = ptr;
+      sconn->param = ptr->param;
 
       silc_schedule_task_add(server->schedule, fd, 
 			     silc_server_connect_router,
@@ -786,8 +781,12 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
 
   /* Resolve the authentication method used in this connection. Check if 
      we find a match from user configured connections */
-  conn = silc_server_config_find_router_conn(server, sock->hostname,
-					     sock->port);
+  if (!sconn->conn)
+    conn = silc_server_config_find_router_conn(server, sock->hostname,
+					       sock->port);
+  else
+    conn = sconn->conn;
+
   if (conn) {
     /* Match found. Use the configured authentication method */
     if (conn->passphrase) {
@@ -841,14 +840,13 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
 		      silc_server_connect_to_router_final);
 
   /* Register timeout task. If the protocol is not executed inside
-     this timelimit the connection will be terminated. Currently
-     this is 15 seconds and is hard coded limit (XXX). */
+     this timelimit the connection will be terminated. */
   proto_ctx->timeout_task = 
     silc_schedule_task_add(server->schedule, sock->sock, 
-		       silc_server_timeout_remote,
-		       (void *)server, 15, 0,
-		       SILC_TASK_TIMEOUT,
-		       SILC_TASK_PRI_LOW);
+			   silc_server_timeout_remote,
+			   (void *)server, 15, 0, /* XXX hardcoded */
+			   SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_LOW);
 
   /* Run the protocol */
   silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
@@ -871,6 +869,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   unsigned char *id_string;
   uint32 id_len;
   SilcIDListData idata;
+  SilcServerConfigSectionConnectionParam *param;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -949,12 +948,14 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   idata = (SilcIDListData)sock->user_data;
   idata->status |= SILC_IDLIST_STATUS_REGISTERED;
 
+  param = (sconn->param ? sconn->param : &server->config->param);
+
   /* Perform keepalive. The `hb_context' will be freed automatically
      when finally calling the silc_socket_free function. XXX hardcoded 
      timeout!! */
   hb_context = silc_calloc(1, sizeof(*hb_context));
   hb_context->server = server;
-  silc_socket_set_heartbeat(sock, 300, hb_context,
+  silc_socket_set_heartbeat(sock, param->keepalive_secs, hb_context,
 			    silc_server_perform_heartbeat,
 			    server->schedule);
 
@@ -1037,7 +1038,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 
   /* Check whether we could resolve both IP and FQDN. */
   if (!sock->ip || (!strcmp(sock->ip, sock->hostname) &&
-		    server->params->require_reverse_mapping)) {
+		    server->config->require_reverse_lookup)) {
     SILC_LOG_ERROR(("IP/DNS lookup failed %s",
 		    sock->hostname ? sock->hostname :
 		    sock->ip ? sock->ip : ""));
@@ -1120,12 +1121,12 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 
   /* Register a timeout task that will be executed if the connector
      will not start the key exchange protocol within 60 seconds. For
-     now, this is a hard coded limit. After 60 secs the connection will
+     now, this is a hard coded limit. After the timeout the connection will
      be closed if the key exchange protocol has not been started. */
   proto_ctx->timeout_task = 
     silc_schedule_task_add(server->schedule, sock->sock, 
 			   silc_server_timeout_remote,
-			   context, 60, 0,
+			   context, 60, 0, /* XXX hardcoded */
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);
 }
@@ -1269,12 +1270,11 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
 		      silc_server_accept_new_connection_final);
 
   /* Register timeout task. If the protocol is not executed inside
-     this timelimit the connection will be terminated. Currently
-     this is 60 seconds and is hard coded limit (XXX). */
+     this timelimit the connection will be terminated. */
   proto_ctx->timeout_task = 
     silc_schedule_task_add(server->schedule, sock->sock, 
 			   silc_server_timeout_remote,
-			   (void *)server, 60, 0,
+			   (void *)server, 60, 0, /* XXX hardcoded */
 			   SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_LOW);
 }
@@ -1293,6 +1293,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   SilcServerHBContext hb_context;
   SilcUnknownEntry entry = (SilcUnknownEntry)sock->user_data;
   void *id_entry;
+  uint32 hearbeat_timeout = SILC_SERVER_KEEPALIVE;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1321,6 +1322,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   case SILC_SOCKET_TYPE_CLIENT:
     {
       SilcClientEntry client;
+      SilcServerConfigSectionClient *conn = ctx->cconfig;
 
       SILC_LOG_DEBUG(("Remote host is client"));
       SILC_LOG_INFO(("Connection from %s (%s) is client", sock->hostname,
@@ -1347,6 +1349,12 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       if (server->server_type == SILC_ROUTER)
 	server->stat.cell_clients++;
 
+      /* Get connection parameters */
+      if (conn->param) {
+	if (conn->param->keepalive_secs)
+	  hearbeat_timeout = conn->param->keepalive_secs;
+      }
+
       id_entry = (void *)client;
       break;
     }
@@ -1354,18 +1362,43 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   case SILC_SOCKET_TYPE_ROUTER:
     {
       SilcServerEntry new_server;
-      /* XXX FIXME: Now server and router has different table, so this is probably broken. */
-      SilcServerConfigSectionRouter *conn =
-	ctx->conn_type == SILC_SOCKET_TYPE_SERVER ? 
-	ctx->sconfig : ctx->rconfig;
+      bool initiator = FALSE;
+      bool backup_local = FALSE;
+      bool backup_router = FALSE;
+      char *backup_replace_ip = NULL;
+      uint16 backup_replace_port = 0;
+      SilcServerConfigSectionServer *sconn = ctx->sconfig;
+      SilcServerConfigSectionRouter *rconn = ctx->rconfig;
+
+      if (ctx->conn_type == SILC_SOCKET_TYPE_ROUTER && rconn) {
+	initiator = rconn->initiator;
+	backup_local = rconn->backup_local;
+	backup_router = rconn->backup_router;
+	backup_replace_ip = rconn->backup_replace_ip;
+	backup_replace_port = rconn->backup_replace_port;
+
+	if (rconn->param) {
+	  if (rconn->param->keepalive_secs)
+	    hearbeat_timeout = rconn->param->keepalive_secs;
+	}
+      }
+
+      if (ctx->conn_type == SILC_SOCKET_TYPE_SERVER && sconn) {
+	backup_router = sconn->backup_router;
+
+	if (sconn->param) {
+	  if (sconn->param->keepalive_secs)
+	    hearbeat_timeout = sconn->param->keepalive_secs;
+	}
+      }
 
       SILC_LOG_DEBUG(("Remote host is %s", 
 		      ctx->conn_type == SILC_SOCKET_TYPE_SERVER ? 
-		      "server" : (conn->backup_router ? 
+		      "server" : (backup_router ? 
 				  "backup router" : "router")));
       SILC_LOG_INFO(("Connection from %s (%s) is %s", sock->hostname,
 		     sock->ip, ctx->conn_type == SILC_SOCKET_TYPE_SERVER ? 
-		     "server" : (conn->backup_router ? 
+		     "server" : (backup_router ? 
 				 "backup router" : "router")));
 
       /* Add the server into server cache. The server name and Server ID
@@ -1374,7 +1407,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	 are router. */
       new_server = 
 	silc_idlist_add_server((ctx->conn_type == SILC_SOCKET_TYPE_SERVER ?
-				server->local_list : (conn->backup_router ?
+				server->local_list : (backup_router ?
 						      server->local_list :
 						      server->global_list)),
 			       NULL,
@@ -1382,7 +1415,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 				SILC_SERVER : SILC_ROUTER), 
 			       NULL, 
 			       (ctx->conn_type == SILC_SOCKET_TYPE_SERVER ?
-				server->id_entry : (conn->backup_router ? 
+				server->id_entry : (backup_router ? 
 						    server->id_entry : NULL)),
 			       sock);
       if (!new_server) {
@@ -1406,12 +1439,12 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
       /* If the incoming connection is router and marked as backup router
 	 then add it to be one of our backups */
-      if (ctx->conn_type == SILC_SOCKET_TYPE_ROUTER && conn->backup_router) {
-	silc_server_backup_add(server, new_server, conn->backup_replace_ip,
-			       conn->backup_replace_port, conn->backup_local);
+      if (ctx->conn_type == SILC_SOCKET_TYPE_ROUTER && backup_router) {
+	silc_server_backup_add(server, new_server, backup_replace_ip,
+			       backup_replace_port, backup_local);
 
 	/* Change it back to SERVER type since that's what it really is. */
-	if (conn->backup_local)
+	if (backup_local)
 	  ctx->conn_type = SILC_SOCKET_TYPE_SERVER;
 
 	new_server->server_type = SILC_BACKUP_ROUTER;
@@ -1420,8 +1453,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       /* Check whether this connection is to be our primary router connection
 	 if we do not already have the primary route. */
       if (server->standalone && ctx->conn_type == SILC_SOCKET_TYPE_ROUTER) {
-	if (silc_server_config_is_primary_route(server) &&
-	    !conn->initiator)
+	if (silc_server_config_is_primary_route(server) && !initiator)
 	  break;
 
 	SILC_LOG_DEBUG(("We are not standalone server anymore"));
@@ -1452,11 +1484,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   SILC_LOG_DEBUG(("New connection authenticated"));
 
   /* Perform keepalive. The `hb_context' will be freed automatically
-     when finally calling the silc_socket_free function. XXX hardcoded 
-     timeout!! */
+     when finally calling the silc_socket_free function. */
   hb_context = silc_calloc(1, sizeof(*hb_context));
   hb_context->server = server;
-  silc_socket_set_heartbeat(sock, 400, hb_context,
+  silc_socket_set_heartbeat(sock, hearbeat_timeout, hb_context,
 			    silc_server_perform_heartbeat,
 			    server->schedule);
 
@@ -2219,6 +2250,7 @@ void silc_server_create_connection(SilcServer server,
   sconn->remote_host = strdup(remote_host);
   sconn->remote_port = port;
   sconn->no_reconnect = TRUE;
+  sconn->param = &server->config->param;
 
   silc_schedule_task_add(server->schedule, 0, 
 			 silc_server_connect_router,

@@ -121,9 +121,6 @@ struct SilcServerStruct {
   /* Pending command queue */
   SilcDList pending_commands;
 
-  /* Default parameteres for server */
-  SilcServerParams params;
-
 #ifdef SILC_SIM
   /* SIM (SILC Module) list */
   SilcDList sim;

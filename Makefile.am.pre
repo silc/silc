@@ -83,7 +83,9 @@ examples-install:
 etc-install:
 	-@if test '!' -f $(etcdir)/silcd.conf ; then \
 	  $(INSTALL_DATA) $(srcdir)/doc/example_silcd.conf \
-	  $(etcdir)/silcd.conf; \
+		$(etcdir)/silcd.conf; \
+	  $(INSTALL_DATA) $(srcdir)/doc/silcalgs.conf \
+		$(etcdir)/silcalgs.conf; \
           chmod go= $(etcdir)/silcd.conf; \
 	fi
 	-@if test '!' -f $(etcdir)/silc.conf ; then \

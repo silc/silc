@@ -1,6 +1,9 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o When autoconnect="yes" is set in silc.conf the irssi complains about
+   unknown chat protocol.
+
  o Rewrite the notify handling in the new Irssi SILC client.
 
  o /cumode for unknown nick does not give any error message.

@@ -29,6 +29,40 @@ typedef struct SilcServerStruct *SilcServer;
 /* Forward declaration of backup server context */
 typedef struct SilcServerBackupStruct *SilcServerBackup;
 
+/* Callback function that is called after the key exchange and connection
+   authentication protocols has been completed with a remote router. The
+   `server_entry' is the remote router entry. */
+typedef void (*SilcServerConnectRouterCallback)(SilcServer server,
+						SilcServerEntry server_entry,
+						void *context);
+
+/* Connection structure used when connection to remote */
+typedef struct {
+  SilcSocketConnection sock;
+
+  /* Remote host name and port */
+  char *remote_host;
+  int remote_port;
+  bool backup;
+  char *backup_replace_ip;
+  int backup_replace_port;
+  bool no_reconnect;
+
+  /* Connection configuration (maybe NULL), and connection params */
+  void *conn;
+  void *param;
+
+  /* Current connection retry info */
+  uint32 retry_count;
+  uint32 retry_timeout;
+
+  /* Back pointer to server */
+  SilcServer server;
+
+  SilcServerConnectRouterCallback callback;
+  void *callback_context;
+} *SilcServerConnection;
+
 #define SILC_SERVER_MAX_CONNECTIONS 1000
 
 /* General definitions */
@@ -41,6 +75,8 @@ typedef struct SilcServerBackupStruct *SilcServerBackup;
 #define SILC_ROUTER 1
 #define SILC_BACKUP_ROUTER 2
 
+/* Default parameter values */
+
 /* Connection retry timeout. We implement exponential backoff algorithm
    in connection retry. The interval of timeout grows when retry count
    grows. */
@@ -50,54 +86,7 @@ typedef struct SilcServerBackupStruct *SilcServerBackup;
 #define SILC_SERVER_RETRY_INTERVAL_MIN 10	 /* Min retry timeout */
 #define SILC_SERVER_RETRY_INTERVAL_MAX 600	 /* Max generated timeout */
 
-/* 
-   Silc Server Params.
-
-   Structure to hold various default parameters for server that can be
-   given before running the server. 
-
-*/
-typedef struct {
-  uint32 retry_count;
-  uint32 retry_interval_min;
-  uint32 retry_interval_min_usec;
-  uint32 retry_interval_max;
-  char retry_keep_trying;
-
-  uint32 protocol_timeout;
-  uint32 protocol_timeout_usec;
-
-  char require_reverse_mapping;
-} *SilcServerParams;
-
-/* Callback function that is called after the key exchange and connection
-   authentication protocols has been completed with a remote router. The
-   `server_entry' is the remote router entry. */
-typedef void (*SilcServerConnectRouterCallback)(SilcServer server,
-						SilcServerEntry server_entry,
-						void *context);
-
-typedef struct {
-  SilcSocketConnection sock;
-
-  /* Remote host name and port */
-  char *remote_host;
-  int remote_port;
-  bool backup;
-  char *backup_replace_ip;
-  int backup_replace_port;
-  bool no_reconnect;
-  
-  /* Current connection retry info */
-  uint32 retry_count;
-  uint32 retry_timeout;
-
-  /* Back pointer to server */
-  SilcServer server;
-
-  SilcServerConnectRouterCallback callback;
-  void *callback_context;
-} *SilcServerConnection;
+#define SILC_SERVER_KEEPALIVE          300       /* Heartbeat interval */
 
 /* Macros */
 

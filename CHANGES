@@ -1,3 +1,27 @@
+Thu Feb 14 22:03:58 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added new configuration options and blocks:
+	  keepalive_secs, reconnect_count, reconnect_interval,
+	  reconnect_interval_max, reconnect_keep_trying and
+	  require_reverser_lookup.  Added ConnectionParam block, and
+	  implemented the connection parameters when connecting as
+	  initiator and when accepting connections as responder. 
+
+	  Added CONFIG_IS_DOUBLE macro in config file parsing, to check
+	  whether given configuration value has been given already.
+
+	  Affected files silcd/serverconfig.[c], server.[c].
+
+	* Splitted the doc/example_silcd.conf.in.  Separated the crypto
+	  algorithm parts and created new file silcalgs.conf, that
+	  is now included from the example_silcd.conf.in.
+
+	* Optimized the silc_server_connect_to_router_second to take
+	  the connection configuration object from the SilcServerConnection
+	  object instead of finding it during the connecting phase.
+	  Added the configuration object to SilcServerConnection struct.
+	  Affected files silcd/server_internal.h, server.c.
+
 Thu Feb 14 16:02:26 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Add the client on channel after it was resolved at the

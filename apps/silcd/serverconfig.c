@@ -50,6 +50,30 @@
     __type__ *di = (__type__ *) tmp;					\
     tmp = (void *) di->next;
 
+/* Set EDOUBLE error value and bail out if necessary */
+#define CONFIG_IS_DOUBLE(x)			\
+ if ((x)) { 					\
+   got_errno = SILC_CONFIG_EDOUBLE; 		\
+   goto got_err; 				\
+ }
+
+/* Find connection parameters by the parameter block name. */
+static SilcServerConfigSectionConnectionParam *
+my_find_param(SilcServerConfig config, const char *name)
+{
+  SilcServerConfigSectionConnectionParam *param;
+
+  if (!name)
+    return NULL;
+
+  for (param = config->conn_params; param; param = param->next) {
+    if (!strcasecmp(param->name, name))
+      return param;
+  }
+
+  return NULL;
+}
+
 /* free an authdata according to its auth method */
 static void my_free_authdata(char *passphrase, void *public_key)
 {
@@ -95,21 +119,40 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p, uint32 line,
 SILC_CONFIG_CALLBACK(fetch_generic)
 {
   SilcServerConfig config = (SilcServerConfig) context;
+  int got_errno = 0;
 
   if (!strcmp(name, "module_path")) {
-    if (config->module_path) 
-      return SILC_CONFIG_EDOUBLE;
-
-    /* dup it only if non-empty, otherwise point it to NULL */
+    CONFIG_IS_DOUBLE(config->module_path);
     config->module_path = (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "prefer_passphrase_auth")) {
     config->prefer_passphrase_auth = *(bool *)val;
   }
+  else if (!strcmp(name, "require_reverse_lookup")) {
+    config->require_reverse_lookup = *(bool *)val;
+  }
+  else if (!strcmp(name, "keepalive_secs")) {
+    config->param.keepalive_secs = *(uint32 *)val;
+  }
+  else if (!strcmp(name, "reconnect_count")) {
+    config->param.reconnect_count = *(uint32 *)val;
+  }
+  else if (!strcmp(name, "reconnect_interval")) {
+    config->param.reconnect_interval = *(uint32 *)val;
+  }
+  else if (!strcmp(name, "reconnect_interval_max")) {
+    config->param.reconnect_interval_max = *(uint32 *)val;
+  }
+  else if (!strcmp(name, "reconnect_keep_trying")) {
+    config->param.reconnect_keep_trying = *(bool *)val;
+  }
   else
     return SILC_CONFIG_EINTERNAL;
 
   return SILC_CONFIG_OK;
+
+ got_err:
+  return got_errno;
 }
 
 SILC_CONFIG_CALLBACK(fetch_cipher)
@@ -139,18 +182,19 @@ SILC_CONFIG_CALLBACK(fetch_cipher)
 
   /* Identify and save this value */
   if (!strcmp(name, "name")) {
-    if (tmp->name) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    CONFIG_IS_DOUBLE(tmp->name);
     tmp->name = strdup((char *) val);
   }
-  else if (!strcmp(name, "module")) { /* can be empty */
-    if (tmp->module) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
-    /* dup it only if non-empty, otherwise point it to NULL */
+  else if (!strcmp(name, "module")) {
+    CONFIG_IS_DOUBLE(tmp->module);
     tmp->module = (*(char *)val ? strdup((char *) val) : NULL);
   }
-  else if (!strcmp(name, "keylength"))
+  else if (!strcmp(name, "keylength")) {
     tmp->key_length = *(uint32 *)val;
-  else if (!strcmp(name, "blocklength"))
+  }
+  else if (!strcmp(name, "blocklength")) {
     tmp->block_length = *(uint32 *)val;
+  }
   else
     return SILC_CONFIG_EINTERNAL;
   return SILC_CONFIG_OK;
@@ -182,6 +226,7 @@ SILC_CONFIG_CALLBACK(fetch_hash)
     config->tmp = NULL;
     return SILC_CONFIG_OK;
   }
+
   /* if there isn't a temporary struct alloc one */
   if (!tmp) {
     config->tmp = silc_calloc(1, sizeof(*findtmp));
@@ -190,18 +235,19 @@ SILC_CONFIG_CALLBACK(fetch_hash)
 
   /* Identify and save this value */
   if (!strcmp(name, "name")) {
-    if (tmp->name) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    CONFIG_IS_DOUBLE(tmp->name);
     tmp->name = strdup((char *) val);
   }
-  else if (!strcmp(name, "module")) { /* can be empty */
-    if (tmp->module) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
-    /* dup it only if non-empty, otherwise point it to NULL */
+  else if (!strcmp(name, "module")) {
+    CONFIG_IS_DOUBLE(tmp->module);
     tmp->module = (*(char *)val ? strdup((char *) val) : NULL);
   }
-  else if (!strcmp(name, "blocklength"))
+  else if (!strcmp(name, "blocklength")) {
     tmp->block_length = *(int *)val;
-  else if (!strcmp(name, "digestlength"))
+  }
+  else if (!strcmp(name, "digestlength")) {
     tmp->digest_length = *(int *)val;
+  }
   else
     return SILC_CONFIG_EINTERNAL;
   return SILC_CONFIG_OK;
@@ -241,15 +287,16 @@ SILC_CONFIG_CALLBACK(fetch_hmac)
 
   /* Identify and save this value */
   if (!strcmp(name, "name")) {
-    if (tmp->name) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    CONFIG_IS_DOUBLE(tmp->name);
     tmp->name = strdup((char *) val);
   }
   else if (!strcmp(name, "hash")) {
-    if (tmp->hash) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    CONFIG_IS_DOUBLE(tmp->hash);
     tmp->hash = strdup((char *) val);
   }
-  else if (!strcmp(name, "maclength"))
+  else if (!strcmp(name, "maclength")) {
     tmp->mac_length = *(int *)val;
+  }
   else
     return SILC_CONFIG_EINTERNAL;
   return SILC_CONFIG_OK;
@@ -289,7 +336,7 @@ SILC_CONFIG_CALLBACK(fetch_pkcs)
 
   /* Identify and save this value */
   if (!strcmp(name, "name")) {
-    if (tmp->name) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    CONFIG_IS_DOUBLE(tmp->name);
     tmp->name = strdup((char *) val);
   }
   else
@@ -307,23 +354,23 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
 {
   SilcServerConfig config = (SilcServerConfig) context;
   SilcServerConfigSectionServerInfo *server_info = config->server_info;
+  int got_errno = 0;
 
   /* if there isn't the struct alloc it */
-  if (!server_info) {
+  if (!server_info)
     config->server_info = server_info = (SilcServerConfigSectionServerInfo *)
 		silc_calloc(1, sizeof(*server_info));
-  }
 
   if (type == SILC_CONFIG_ARG_BLOCK) {
     /* check for mandatory inputs */
     return SILC_CONFIG_OK;
   }
   if (!strcmp(name, "hostname")) {
-    if (server_info->server_name) return SILC_CONFIG_EDOUBLE;
+    CONFIG_IS_DOUBLE(server_info->server_name);
     server_info->server_name = strdup((char *) val);
   }
   else if (!strcmp(name, "ip")) {
-    if (server_info->server_ip) return SILC_CONFIG_EDOUBLE;
+    CONFIG_IS_DOUBLE(server_info->server_ip);
     server_info->server_ip = strdup((char *) val);
   }
   else if (!strcmp(name, "port")) {
@@ -335,35 +382,35 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
     server_info->port = (uint16) port;
   }
   else if (!strcmp(name, "servertype")) {
-    if (server_info->server_type) return SILC_CONFIG_EDOUBLE;
+    CONFIG_IS_DOUBLE(server_info->server_type);
     server_info->server_type = strdup((char *) val);
   }
   else if (!strcmp(name, "admin")) {
-    if (server_info->admin) return SILC_CONFIG_EDOUBLE;
+    CONFIG_IS_DOUBLE(server_info->admin);
     server_info->admin = strdup((char *) val);
   }
   else if (!strcmp(name, "adminemail")) {
-    if (server_info->email) return SILC_CONFIG_EDOUBLE;
+    CONFIG_IS_DOUBLE(server_info->email);
     server_info->email = strdup((char *) val);
   }
   else if (!strcmp(name, "location")) {
-    if (server_info->location) return SILC_CONFIG_EDOUBLE;
+    CONFIG_IS_DOUBLE(server_info->location);
     server_info->location = strdup((char *) val);
   }
   else if (!strcmp(name, "user")) {
-    if (server_info->user) return SILC_CONFIG_EDOUBLE;
+    CONFIG_IS_DOUBLE(server_info->user);
     server_info->user = strdup((char *) val);
   }
   else if (!strcmp(name, "group")) {
-    if (server_info->group) return SILC_CONFIG_EDOUBLE;
+    CONFIG_IS_DOUBLE(server_info->group);
     server_info->group = strdup((char *) val);
   }
   else if (!strcmp(name, "motdfile")) {
-    if (server_info->motd_file) return SILC_CONFIG_EDOUBLE;
+    CONFIG_IS_DOUBLE(server_info->motd_file);
     server_info->motd_file = strdup((char *) val);
   }
   else if (!strcmp(name, "pidfile")) {
-    if (server_info->pid_file) return SILC_CONFIG_EDOUBLE;
+    CONFIG_IS_DOUBLE(server_info->pid_file);
     server_info->pid_file = strdup((char *) val);
   }
   else if (!strcmp(name, "publickey")) {
@@ -395,6 +442,9 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
   else
     return SILC_CONFIG_EINTERNAL;
   return SILC_CONFIG_OK;
+
+ got_err:
+  return got_errno;
 }
 
 SILC_CONFIG_CALLBACK(fetch_logging)
@@ -458,6 +508,59 @@ SILC_CONFIG_CALLBACK(fetch_logging)
   return got_errno;
 }
 
+SILC_CONFIG_CALLBACK(fetch_connparam)
+{
+  SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionConnectionParam);
+
+  SERVER_CONFIG_DEBUG(("Received CONNPARAM type=%d name=\"%s\" (val=%x)", 
+		       type, name, context));
+
+  if (type == SILC_CONFIG_ARG_BLOCK) {
+    if (!tmp)
+      return SILC_CONFIG_OK;
+
+    SILC_SERVER_CONFIG_LIST_APPENDTMP(config->conn_params);
+    config->tmp = NULL;
+    return SILC_CONFIG_OK;
+  }
+
+  /* if there isn't a temporary struct alloc one */
+  if (!tmp) {
+    config->tmp = silc_calloc(1, sizeof(*findtmp));
+    tmp = (SilcServerConfigSectionConnectionParam *) config->tmp;
+  }
+
+  if (!strcmp(name, "name")) {
+    CONFIG_IS_DOUBLE(tmp->name);
+    tmp->name = (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  else if (!strcmp(name, "keepalive_secs")) {
+    tmp->keepalive_secs = *(uint32 *)val;
+  }
+  else if (!strcmp(name, "reconnect_count")) {
+    tmp->reconnect_count = *(uint32 *)val;
+  }
+  else if (!strcmp(name, "reconnect_interval")) {
+    tmp->reconnect_interval = *(uint32 *)val;
+  }
+  else if (!strcmp(name, "reconnect_interval_max")) {
+    tmp->reconnect_interval_max = *(uint32 *)val;
+  }
+  else if (!strcmp(name, "reconnect_keep_trying")) {
+    tmp->reconnect_keep_trying = *(bool *)val;
+  }
+  else
+    return SILC_CONFIG_EINTERNAL;
+
+  return SILC_CONFIG_OK;
+
+ got_err:
+  silc_free(tmp->name);
+  silc_free(tmp);
+  config->tmp = NULL;
+  return got_errno;
+}
+
 SILC_CONFIG_CALLBACK(fetch_client)
 {
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigSectionClient);
@@ -468,6 +571,18 @@ SILC_CONFIG_CALLBACK(fetch_client)
   if (type == SILC_CONFIG_ARG_BLOCK) {
     if (!tmp) /* empty sub-block? */
       return SILC_CONFIG_OK;
+
+    /* Find connection parameter block */
+    if (tmp->param_name) {
+      tmp->param = my_find_param(config, tmp->param_name);
+      if (!tmp->param) {
+	fprintf(stderr, "Unknown ConnectionParam: %s\n", tmp->param_name);
+	silc_free(tmp->param_name);
+	got_errno = SILC_CONFIG_ESILENT;
+	goto got_err;
+      }
+      silc_free(tmp->param_name);
+    }
 
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->clients);
     config->tmp = NULL;
@@ -481,8 +596,8 @@ SILC_CONFIG_CALLBACK(fetch_client)
   }
 
   /* Identify and save this value */
-  if (!strcmp(name, "host")) { /* any host (*) accepted */
-    if (tmp->host) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+  if (!strcmp(name, "host")) {
+    CONFIG_IS_DOUBLE(tmp->host);
     tmp->host = (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "passphrase")) {
@@ -504,13 +619,14 @@ SILC_CONFIG_CALLBACK(fetch_client)
     int port = *(int *)val;
     if ((port <= 0) || (port > 65535)) {
       fprintf(stderr, "Invalid port number!\n");
-      got_errno = SILC_CONFIG_ESILENT; goto got_err;
+      got_errno = SILC_CONFIG_ESILENT; 
+      goto got_err;
     }
     tmp->port = (uint16) port;
   }
-  /* FIXME: Improvement: use a direct class struct pointer instead of num */
-  else if (!strcmp(name, "class")) {
-    /* XXX do nothing */
+  else if (!strcmp(name, "param")) {
+    CONFIG_IS_DOUBLE(tmp->param_name);
+    tmp->param_name = (*(char *)val ? strdup((char *) val) : NULL);
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -548,16 +664,16 @@ SILC_CONFIG_CALLBACK(fetch_admin)
   }
 
   /* Identify and save this value */
-  if (!strcmp(name, "host")) { /* any host (*) accepted */
-    if (tmp->host) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+  if (!strcmp(name, "host")) {
+    CONFIG_IS_DOUBLE(tmp->host);
     tmp->host = (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "user")) {
-    if (tmp->user) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    CONFIG_IS_DOUBLE(tmp->user);
     tmp->user = (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "nick")) {
-    if (tmp->nick) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    CONFIG_IS_DOUBLE(tmp->nick);
     tmp->nick = (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "passphrase")) {
@@ -614,8 +730,8 @@ SILC_CONFIG_CALLBACK(fetch_deny)
   }
 
   /* Identify and save this value */
-  if (!strcmp(name, "host")) { /* any host (*) accepted */
-    if (tmp->host) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+  if (!strcmp(name, "host")) {
+    CONFIG_IS_DOUBLE(tmp->host);
     tmp->host = (*(char *)val ? strdup((char *) val) : strdup("*"));
   }
   else if (!strcmp(name, "port")) {
@@ -627,7 +743,7 @@ SILC_CONFIG_CALLBACK(fetch_deny)
     tmp->port = (uint16) port;
   }
   else if (!strcmp(name, "reason")) {
-    if (tmp->reason) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    CONFIG_IS_DOUBLE(tmp->reason);
     tmp->reason = strdup((char *) val);
   }
   else
@@ -654,6 +770,18 @@ SILC_CONFIG_CALLBACK(fetch_server)
     if (!tmp) /* empty sub-block? */
       return SILC_CONFIG_OK;
 
+    /* Find connection parameter block */
+    if (tmp->param_name) {
+      tmp->param = my_find_param(config, tmp->param_name);
+      if (!tmp->param) {
+	fprintf(stderr, "Unknown ConnectionParam: %s\n", tmp->param_name);
+	silc_free(tmp->param_name);
+	got_errno = SILC_CONFIG_ESILENT;
+	goto got_err;
+      }
+      silc_free(tmp->param_name);
+    }
+
     /* the temporary struct is ok, append it to the list */
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->servers);
     config->tmp = NULL;
@@ -667,8 +795,8 @@ SILC_CONFIG_CALLBACK(fetch_server)
   }
 
   /* Identify and save this value */
-  if (!strcmp(name, "host")) { /* any host (*) accepted */
-    if (tmp->host) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+  if (!strcmp(name, "host")) {
+    CONFIG_IS_DOUBLE(tmp->host);
     tmp->host = (*(char *)val ? strdup((char *) val) : strdup("*"));
   }
   else if (!strcmp(name, "passphrase")) {
@@ -687,12 +815,12 @@ SILC_CONFIG_CALLBACK(fetch_server)
     }
   }
   else if (!strcmp(name, "versionid")) {
-    if (tmp->version) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    CONFIG_IS_DOUBLE(tmp->version);
     tmp->version = strdup((char *) val);
   }
-  /* FIXME: Improvement: use a direct class struct pointer instead of num */
-  else if (!strcmp(name, "class")) {
-    /* XXX do nothing */
+  else if (!strcmp(name, "param")) {
+    CONFIG_IS_DOUBLE(tmp->param_name);
+    tmp->param_name = (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "backup")) {
     tmp->backup_router = *(bool *)val;
@@ -722,6 +850,18 @@ SILC_CONFIG_CALLBACK(fetch_router)
     if (!tmp) /* empty sub-block? */
       return SILC_CONFIG_OK;
 
+    /* Find connection parameter block */
+    if (tmp->param_name) {
+      tmp->param = my_find_param(config, tmp->param_name);
+      if (!tmp->param) {
+	fprintf(stderr, "Unknown ConnectionParam: %s\n", tmp->param_name);
+	silc_free(tmp->param_name);
+	got_errno = SILC_CONFIG_ESILENT;
+	goto got_err;
+      }
+      silc_free(tmp->param_name);
+    }
+
     /* the temporary struct is ok, append it to the list */
     SILC_SERVER_CONFIG_LIST_APPENDTMP(config->routers);
     config->tmp = NULL;
@@ -736,7 +876,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
 
   /* Identify and save this value */
   if (!strcmp(name, "host")) {
-    if (tmp->host) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    CONFIG_IS_DOUBLE(tmp->host);
     tmp->host = strdup((char *) val);
   }
   else if (!strcmp(name, "port")) {
@@ -763,18 +903,20 @@ SILC_CONFIG_CALLBACK(fetch_router)
     }
   }
   else if (!strcmp(name, "versionid")) {
-    if (tmp->version) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
+    CONFIG_IS_DOUBLE(tmp->version);
     tmp->version = strdup((char *) val);
   }
-  /* FIXME: Improvement: use a direct class struct pointer instead of num */
-  else if (!strcmp(name, "class")) {
-    /* XXX do nothing */
+  else if (!strcmp(name, "param")) {
+    CONFIG_IS_DOUBLE(tmp->param_name);
+    tmp->param_name = (*(char *)val ? strdup((char *) val) : NULL);
   }
-  else if (!strcmp(name, "initiator"))
+  else if (!strcmp(name, "initiator")) {
     tmp->initiator = *(bool *)val;
+  }
   else if (!strcmp(name, "backuphost")) {
-    if (tmp->backup_replace_ip) { got_errno = SILC_CONFIG_EDOUBLE; goto got_err; }
-    tmp->backup_replace_ip = (*(char *)val ? strdup((char *) val) : strdup("*"));
+    CONFIG_IS_DOUBLE(tmp->backup_replace_ip);
+    tmp->backup_replace_ip = (*(char *)val ? strdup((char *) val) : 
+			      strdup("*"));
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -793,8 +935,14 @@ SILC_CONFIG_CALLBACK(fetch_router)
 
 /* known config options tables */
 static const SilcConfigTable table_general[] = {
-  { "module_path",	SILC_CONFIG_ARG_STRE,	fetch_generic,	NULL },
-  { "prefer_passphrase_auth",	SILC_CONFIG_ARG_STRE,	fetch_generic,	NULL },
+  { "module_path",		SILC_CONFIG_ARG_STRE,	fetch_generic,	NULL },
+  { "prefer_passphrase_auth",	SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
+  { "require_reverse_lookup",	SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
+  { "keepalive_secs",		SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "reconnect_count",		SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "reconnect_interval",      	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "reconnect_interval_max",   SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "reconnect_keep_trying",	SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -860,21 +1008,23 @@ static const SilcConfigTable table_logging[] = {
   { 0, 0, 0, 0 }
 };
 
-/* still unsupported
-static const SilcConfigTable table_class[] = {
-  { "name",		SILC_CONFIG_ARG_STR,	fetch_class,	NULL },
-  { "ping",		SILC_CONFIG_ARG_INT,	fetch_class,	NULL },
-  { "connect",		SILC_CONFIG_ARG_INT,	fetch_class,	NULL },
-  { "links",		SILC_CONFIG_ARG_INT,	fetch_class,	NULL },
+static const SilcConfigTable table_connparam[] = {
+  { "name",		       SILC_CONFIG_ARG_STR,    fetch_connparam, NULL },
+  { "require_reverse_lookup",  SILC_CONFIG_ARG_TOGGLE, fetch_connparam,	NULL },
+  { "keepalive_secs",	       SILC_CONFIG_ARG_INT,    fetch_connparam, NULL },
+  { "reconnect_count",	       SILC_CONFIG_ARG_INT,    fetch_connparam, NULL },
+  { "reconnect_interval",      SILC_CONFIG_ARG_INT,    fetch_connparam,	NULL },
+  { "reconnect_interval_max",  SILC_CONFIG_ARG_INT,    fetch_connparam,	NULL },
+  { "reconnect_keep_trying",   SILC_CONFIG_ARG_TOGGLE, fetch_connparam,	NULL },
   { 0, 0, 0, 0 }
-}; */
+};
 
 static const SilcConfigTable table_client[] = {
   { "host",		SILC_CONFIG_ARG_STRE,	fetch_client,	NULL },
   { "passphrase",	SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
   { "publickey",	SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
   { "port",		SILC_CONFIG_ARG_INT,	fetch_client,	NULL },
-  { "class",		SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
+  { "param",		SILC_CONFIG_ARG_STR,	fetch_client,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -885,7 +1035,7 @@ static const SilcConfigTable table_admin[] = {
   { "passphrase",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { "publickey",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { "port",		SILC_CONFIG_ARG_INT,	fetch_admin,	NULL },
-  { "class",		SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
+  { "param",		SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -901,7 +1051,7 @@ static const SilcConfigTable table_serverconn[] = {
   { "passphrase",	SILC_CONFIG_ARG_STR,	fetch_server,	NULL },
   { "publickey",	SILC_CONFIG_ARG_STR,	fetch_server,	NULL },
   { "versionid",	SILC_CONFIG_ARG_STR,	fetch_server,	NULL },
-  { "class",		SILC_CONFIG_ARG_STR,	fetch_server,	NULL },
+  { "param",		SILC_CONFIG_ARG_STR,	fetch_server,	NULL },
   { "backup",		SILC_CONFIG_ARG_TOGGLE,	fetch_server,	NULL },
   { 0, 0, 0, 0 }
 };
@@ -912,7 +1062,7 @@ static const SilcConfigTable table_routerconn[] = {
   { "passphrase",	SILC_CONFIG_ARG_STR,	fetch_router,	NULL },
   { "publickey",	SILC_CONFIG_ARG_STR,	fetch_router,	NULL },
   { "versionid",	SILC_CONFIG_ARG_STR,	fetch_router,	NULL },
-  { "class",		SILC_CONFIG_ARG_STR,	fetch_router,	NULL },
+  { "param",		SILC_CONFIG_ARG_STR,	fetch_router,	NULL },
   { "initiator",	SILC_CONFIG_ARG_TOGGLE,	fetch_router,	NULL },
   { "backuphost",	SILC_CONFIG_ARG_STRE,	fetch_router,	NULL },
   { "backupport",	SILC_CONFIG_ARG_INT,	fetch_router,	NULL },
@@ -921,19 +1071,19 @@ static const SilcConfigTable table_routerconn[] = {
 };
 
 static const SilcConfigTable table_main[] = {
-  { "general",		SILC_CONFIG_ARG_BLOCK,	NULL,		table_general },
-  { "cipher",		SILC_CONFIG_ARG_BLOCK,	fetch_cipher,	table_cipher },
-  { "hash",		SILC_CONFIG_ARG_BLOCK,	fetch_hash,	table_hash },
-  { "hmac",		SILC_CONFIG_ARG_BLOCK,	fetch_hmac,	table_hmac },
-  { "pkcs",		SILC_CONFIG_ARG_BLOCK,	fetch_pkcs,	table_pkcs },
+  { "general",		SILC_CONFIG_ARG_BLOCK,	NULL,	       table_general },
+  { "cipher",		SILC_CONFIG_ARG_BLOCK,	fetch_cipher,  table_cipher },
+  { "hash",		SILC_CONFIG_ARG_BLOCK,	fetch_hash,    table_hash },
+  { "hmac",		SILC_CONFIG_ARG_BLOCK,	fetch_hmac,    table_hmac },
+  { "pkcs",		SILC_CONFIG_ARG_BLOCK,	fetch_pkcs,    table_pkcs },
   { "serverinfo",	SILC_CONFIG_ARG_BLOCK,	fetch_serverinfo, table_serverinfo },
-  { "logging",		SILC_CONFIG_ARG_BLOCK,	NULL,		table_logging },
-/*{ "class",		SILC_CONFIG_ARG_BLOCK,	fetch_class,	table_class }, */
-  { "client",		SILC_CONFIG_ARG_BLOCK,	fetch_client,	table_client },
-  { "admin",		SILC_CONFIG_ARG_BLOCK,	fetch_admin,	table_admin },
-  { "deny",		SILC_CONFIG_ARG_BLOCK,	fetch_deny,	table_deny },
-  { "serverconnection",	SILC_CONFIG_ARG_BLOCK,	fetch_server,	table_serverconn },
-  { "routerconnection",	SILC_CONFIG_ARG_BLOCK,	fetch_router,	table_routerconn },
+  { "logging",		SILC_CONFIG_ARG_BLOCK,	NULL,	       table_logging },
+  { "connectionparam",	SILC_CONFIG_ARG_BLOCK,	fetch_connparam, table_connparam },
+  { "client",		SILC_CONFIG_ARG_BLOCK,	fetch_client,  table_client },
+  { "admin",		SILC_CONFIG_ARG_BLOCK,	fetch_admin,   table_admin },
+  { "deny",		SILC_CONFIG_ARG_BLOCK,	fetch_deny,    table_deny },
+  { "serverconnection",	SILC_CONFIG_ARG_BLOCK,	fetch_server,  table_serverconn },
+  { "routerconnection",	SILC_CONFIG_ARG_BLOCK,	fetch_router,  table_routerconn },
   { 0, 0, 0, 0 }
 };
 
@@ -1531,4 +1681,27 @@ silc_server_config_get_primary_router(SilcServer server)
   }
 
   return NULL;
+}
+
+/* Set default values to stuff that was not configured. */
+
+bool silc_server_config_set_defaults(SilcServer server)
+{
+  SilcServerConfig config = server->config;
+
+  config->param.keepalive_secs = (config->param.keepalive_secs ? 
+				  config->param.keepalive_secs :
+				  SILC_SERVER_KEEPALIVE);
+  config->param.reconnect_count = (config->param.reconnect_count ? 
+				   config->param.reconnect_count :
+				   SILC_SERVER_RETRY_COUNT);
+  config->param.reconnect_interval = (config->param.reconnect_interval ? 
+				      config->param.reconnect_interval :
+				      SILC_SERVER_RETRY_INTERVAL_MIN);
+  config->param.reconnect_interval_max = 
+    (config->param.reconnect_interval_max ? 
+     config->param.reconnect_interval_max :
+     SILC_SERVER_RETRY_INTERVAL_MAX);
+
+  return TRUE;
 }

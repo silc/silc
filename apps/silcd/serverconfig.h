@@ -70,14 +70,20 @@ typedef struct SilcServerConfigSectionLoggingStruct {
   uint32 maxsize;
 } SilcServerConfigSectionLogging;
 
-/* Holds all configured connection classes */
-/* typedef struct SilcServerConfigSectionClassStruct {
-  uint32 class;
-  uint32 ping_freq;
+/* Connection parameters */
+typedef struct SilcServerConfigSectionConnectionParam {
+  char *name;
+  uint32 keepalive_secs;
+  uint32 reconnect_count;
+  uint32 reconnect_interval;
+  uint32 reconnect_interval_max;
+  bool reconnect_keep_trying;
+  /* 
   uint32 connect_freq;
   uint32 max_links;
-  struct SilcServerConfigSectionClassStruct *next;
-} SilcServerConfigSectionClass; */
+  */
+  struct SilcServerConfigSectionConnectionParam *next;
+} SilcServerConfigSectionConnectionParam;
 
 /* Holds all client authentication data from config file */
 typedef struct SilcServerConfigSectionClientStruct {
@@ -86,7 +92,8 @@ typedef struct SilcServerConfigSectionClientStruct {
   uint32 passphrase_len;
   void *publickey;
   uint16 port;
-  uint32 class;
+  char *param_name;
+  SilcServerConfigSectionConnectionParam *param;
   struct SilcServerConfigSectionClientStruct *next;
 } SilcServerConfigSectionClient;
 
@@ -116,7 +123,8 @@ typedef struct SilcServerConfigSectionServerStruct {
   uint32 passphrase_len;
   void *publickey;
   char *version;
-  uint32 class;
+  char *param_name;
+  SilcServerConfigSectionConnectionParam *param;
   bool backup_router;
   struct SilcServerConfigSectionServerStruct *next;
 } SilcServerConfigSectionServer;
@@ -129,7 +137,8 @@ typedef struct SilcServerConfigSectionRouterStruct {
   void *publickey;
   uint16 port;
   char *version;
-  uint32 class;
+  char *param_name;
+  SilcServerConfigSectionConnectionParam *param;
   bool initiator;
   bool backup_router;
   char *backup_replace_ip;
@@ -141,9 +150,15 @@ typedef struct SilcServerConfigSectionRouterStruct {
 /* define the SilcServerConfig object */
 typedef struct {
   void *tmp;
+
+  /* The General section */
   char *module_path;
   bool prefer_passphrase_auth;
+  bool require_reverse_lookup;
+  /* XXX Still think whether to actually have params in general... -Pekka */
+  SilcServerConfigSectionConnectionParam param;
 
+  /* Other configuration sections */
   SilcServerConfigSectionCipher *cipher;
   SilcServerConfigSectionHash *hash;
   SilcServerConfigSectionHmac *hmac;
@@ -153,7 +168,7 @@ typedef struct {
   SilcServerConfigSectionLogging *logging_errors;
   SilcServerConfigSectionLogging *logging_fatals;
   SilcServerConfigSectionServerInfo *server_info;
-/*SilcServerConfigSectionClass *conn_class; */
+  SilcServerConfigSectionConnectionParam *conn_params;
   SilcServerConfigSectionClient *clients;
   SilcServerConfigSectionAdmin *admins;
   SilcServerConfigSectionDeny *denied;
@@ -189,5 +204,6 @@ silc_server_config_find_router_conn(SilcServer server, char *host, int port);
 bool silc_server_config_is_primary_route(SilcServer server);
 SilcServerConfigSectionRouter *
 silc_server_config_get_primary_router(SilcServer server);
+bool silc_server_config_set_defaults(SilcServer server);
 
 #endif	/* !SERVERCONFIG_H */
