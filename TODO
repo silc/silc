@@ -8,6 +8,10 @@ TODO/bugs In SILC Client Library
    the SilcSocketConnection reference counter at all.  This must be
    fixed.
 
+ o When receiving client's public key with GETKEY or in key agreement
+   protoocl it probably should be saved using the nickname and the real
+   name of the client instead of the host name of the client.
+
  o Add client library parameters or options that handle what kind of
    messages the library should print out (using `say' client operation,
    for example) and what is left for the application to print.  The
