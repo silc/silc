@@ -1036,7 +1036,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
      later when outgoing data is available. */
   SILC_REGISTER_CONNECTION_FOR_IO(sock->sock);
 
-  SILC_LOG_INFO(("Incoming connection s (%s)", sock->hostname,
+  SILC_LOG_INFO(("Incoming connection %s (%s)", sock->hostname,
 		 sock->ip));
 
   port = server->sockets[server->sock]->port; /* Listenning port */
@@ -1347,7 +1347,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       }
 
       SILC_LOG_DEBUG(("Remote host is client"));
-      SILC_LOG_INFO(("Connection s (%s) is client", sock->hostname,
+      SILC_LOG_INFO(("Connection %s (%s) is client", sock->hostname,
 		     sock->ip));
 
       /* Add the client to the client ID cache. The nickname and Client ID

@@ -120,7 +120,7 @@ typedef enum {
   /* File descriptor task that performs some event over file descriptors.
      These tasks are for example network connections. */
   SILC_TASK_FD,
-  
+
   /* Timeout tasks are tasks that are executed after the specified 
      time has elapsed. After the task is executed the task is removed
      automatically from the scheduler. It is safe to re-register the

@@ -1540,7 +1540,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 
   /* Remove the old cache entry. */
   if (!silc_idcache_del_by_context(server->local_list->clients, client)) {
-    SILC_LOG_ERROR(("Lost client's cache entry - bad thing"));
+    SILC_LOG_ERROR(("Lost client's cache entry - report a bug"));
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
                                   "Unknown client");
     return NULL;
@@ -1555,6 +1555,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   if (ret == -1) {
     silc_free(username);
     silc_free(realname);
+    SILC_LOG_ERROR(("Client %s (%s) sent incomplete information, closing "
+		    "connection", sock->hostname, sock->ip));
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
                                   "Incomplete client information");
     return NULL;
@@ -1563,6 +1565,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   if (!username) {
     silc_free(username);
     silc_free(realname);
+    SILC_LOG_ERROR(("Client %s (%s) did not send its username, closing "
+		    "connection", sock->hostname, sock->ip));
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
                                   "Incomplete client information");
     return NULL;
@@ -1596,6 +1600,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
       silc_free(username);
       silc_free(hostname);
       silc_free(realname);
+      SILC_LOG_ERROR(("Client %s (%s) sent incomplete information, closing "
+		      "connection", sock->hostname, sock->ip));
       silc_server_disconnect_remote(server, sock, 
 				    "Server closed connection: "
 				    "Incomplete client information");
@@ -1614,6 +1620,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
       silc_free(hostname);
       silc_free(phostname);
       silc_free(realname);
+      SILC_LOG_ERROR(("Client %s (%s) sent incomplete information, closing "
+		      "connection", sock->hostname, sock->ip));
       silc_server_disconnect_remote(server, sock, 
 				    "Server closed connection: "
 				    "Incomplete client information");

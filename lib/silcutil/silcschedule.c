@@ -28,7 +28,8 @@ typedef struct SilcTaskQueueStruct *SilcTaskQueue;
 /* System specific routines. Implemented under unix/ and win32/. */
 
 /* System specific select(). Returns same values as normal select(). */
-int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeout);
+int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, 
+		struct timeval *timeout);
 
 /* Initializes the wakeup of the scheduler. In multi-threaded environment
    the scheduler needs to be wakenup when tasks are added or removed from
@@ -68,6 +69,10 @@ static void silc_task_del_by_fd(SilcTaskQueue queue, SilcUInt32 fd);
   (type == SILC_TASK_FD ? schedule->fd_queue :				\
    type == SILC_TASK_TIMEOUT ? schedule->timeout_queue :		\
    schedule->generic_queue)
+
+/* Locks */
+#define SILC_SCHEDULE_LOCK(schedule) silc_mutex_lock(schedule->lock)
+#define SILC_SCHEDULE_UNLOCK(schedule) silc_mutex_unlock(schedule->lock)
 
 /* SILC Task object. Represents one task in the scheduler. */
 struct SilcTaskStruct {
@@ -254,13 +259,13 @@ bool silc_schedule_uninit(SilcSchedule schedule)
 
 bool silc_schedule_reinit(SilcSchedule schedule, int max_tasks)
 {
-  silc_mutex_lock(schedule->lock);
+  SILC_SCHEDULE_LOCK(schedule);
   if (schedule->max_fd <= max_tasks)
     return FALSE;
   schedule->fd_list = silc_realloc(schedule->fd_list, 
 				   (sizeof(*schedule->fd_list) * max_tasks));
   schedule->max_fd = max_tasks;
-  silc_mutex_unlock(schedule->lock);
+  SILC_SCHEDULE_UNLOCK(schedule);
   return TRUE;
 }
 
@@ -306,18 +311,18 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
       /* Is the task ready for reading */
       if (task->valid && schedule->fd_list[i].revents & SILC_TASK_READ) {
 	silc_mutex_unlock(schedule->fd_queue->lock);
-	silc_mutex_unlock(schedule->lock);
+	SILC_SCHEDULE_UNLOCK(schedule);
 	task->callback(schedule, SILC_TASK_READ, task->fd, task->context);
-	silc_mutex_lock(schedule->lock);
+	SILC_SCHEDULE_LOCK(schedule);
 	silc_mutex_lock(schedule->fd_queue->lock);
       }
 
       /* Is the task ready for writing */
       if (task->valid && schedule->fd_list[i].revents & SILC_TASK_WRITE) {
 	silc_mutex_unlock(schedule->fd_queue->lock);
-	silc_mutex_unlock(schedule->lock);
+	SILC_SCHEDULE_UNLOCK(schedule);
 	task->callback(schedule, SILC_TASK_WRITE, task->fd, task->context);
-	silc_mutex_lock(schedule->lock);
+	SILC_SCHEDULE_LOCK(schedule);
 	silc_mutex_lock(schedule->fd_queue->lock);
       }
 
@@ -345,18 +350,18 @@ static void silc_schedule_dispatch_nontimeout(SilcSchedule schedule)
 	/* Is the task ready for reading */				
 	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_READ) {
 	  silc_mutex_unlock(schedule->generic_queue->lock);
-	  silc_mutex_unlock(schedule->lock);
+	  SILC_SCHEDULE_UNLOCK(schedule);
 	  task->callback(schedule, SILC_TASK_READ, fd, task->context);
-	  silc_mutex_lock(schedule->lock);
+	  SILC_SCHEDULE_LOCK(schedule);
 	  silc_mutex_lock(schedule->generic_queue->lock);
 	}
 
 	/* Is the task ready for writing */				
 	if (task->valid && schedule->fd_list[i].revents & SILC_TASK_WRITE) {
 	  silc_mutex_unlock(schedule->generic_queue->lock);
-	  silc_mutex_unlock(schedule->lock);
+	  SILC_SCHEDULE_UNLOCK(schedule);
 	  task->callback(schedule, SILC_TASK_WRITE, fd, task->context);
-	  silc_mutex_lock(schedule->lock);
+	  SILC_SCHEDULE_LOCK(schedule);
 	  silc_mutex_lock(schedule->generic_queue->lock);
 	}
 
@@ -414,9 +419,9 @@ static void silc_schedule_dispatch_timeout(SilcSchedule schedule)
       if (silc_schedule_task_timeout_compare(&task->timeout, &curtime)) {
         if (task->valid) {
 	  silc_mutex_unlock(queue->lock);
-	  silc_mutex_unlock(schedule->lock);
+	  SILC_SCHEDULE_UNLOCK(schedule);
 	  task->callback(schedule, SILC_TASK_EXPIRE, task->fd, task->context);
-	  silc_mutex_lock(schedule->lock);
+	  SILC_SCHEDULE_LOCK(schedule);
 	  silc_mutex_lock(queue->lock);
 	}
 
@@ -518,7 +523,7 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   SILC_LOG_DEBUG(("In scheduler loop"));
 
   if (!schedule->is_locked)
-    silc_mutex_lock(schedule->lock);
+    SILC_SCHEDULE_LOCK(schedule);
 
   /* If the task queues aren't initialized or we aren't valid anymore
      we will return */
@@ -526,7 +531,7 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
        && !schedule->generic_queue) || schedule->valid == FALSE) {
     SILC_LOG_DEBUG(("Scheduler not valid anymore, exiting"));
     if (!schedule->is_locked)
-      silc_mutex_unlock(schedule->lock);
+      SILC_SCHEDULE_UNLOCK(schedule);
     return FALSE;
   }
 
@@ -542,7 +547,7 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
     schedule->timeout = &timeout;
   }
 
-  silc_mutex_unlock(schedule->lock);
+  SILC_SCHEDULE_UNLOCK(schedule);
 
   /* This is the main select(). The program blocks here until some
      of the selected file descriptors change status or the selected
@@ -551,7 +556,7 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   ret = silc_select(schedule->fd_list, schedule->last_fd + 1, 
 		    schedule->timeout);
 
-  silc_mutex_lock(schedule->lock);
+  SILC_SCHEDULE_LOCK(schedule);
 
   switch (ret) {
   case -1:
@@ -574,7 +579,7 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   }
 
   if (!schedule->is_locked)
-    silc_mutex_unlock(schedule->lock);
+    SILC_SCHEDULE_UNLOCK(schedule);
 
   return TRUE;
 }
@@ -592,14 +597,14 @@ void silc_schedule(SilcSchedule schedule)
     return;
   }
 
-  silc_mutex_lock(schedule->lock);
+  SILC_SCHEDULE_LOCK(schedule);
   schedule->is_locked = TRUE;
 
   /* Start the scheduler loop */
   while (silc_schedule_one(schedule, -1)) 
     ;
 
-  silc_mutex_unlock(schedule->lock);
+  SILC_SCHEDULE_UNLOCK(schedule);
 }
 
 /* Wakes up the scheduler. This is used only in multi-threaded
@@ -613,9 +618,9 @@ void silc_schedule_wakeup(SilcSchedule schedule)
 {
 #ifdef SILC_THREADS
   SILC_LOG_DEBUG(("Wakeup scheduler"));
-  silc_mutex_lock(schedule->lock);
+  SILC_SCHEDULE_LOCK(schedule);
   silc_schedule_wakeup_internal(schedule->wakeup);
-  silc_mutex_unlock(schedule->lock);
+  SILC_SCHEDULE_UNLOCK(schedule);
 #endif
 }
 
@@ -798,7 +803,7 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule,
   int i;
   bool found = FALSE;
 
-  silc_mutex_lock(schedule->lock);
+  SILC_SCHEDULE_LOCK(schedule);
 
   for (i = 0; i < schedule->max_fd; i++)
     if (schedule->fd_list[i].fd == fd) {
@@ -820,7 +825,7 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule,
 	break;
       }
 
-  silc_mutex_unlock(schedule->lock);
+  SILC_SCHEDULE_UNLOCK(schedule);
 }
 
 /* Removes a file descriptor from listen list. */
@@ -829,7 +834,7 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd)
 {
   int i;
 
-  silc_mutex_lock(schedule->lock);
+  SILC_SCHEDULE_LOCK(schedule);
 
   SILC_LOG_DEBUG(("Unset listen fd %d", fd));
 
@@ -842,7 +847,7 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd)
       break;
     }
 
-  silc_mutex_unlock(schedule->lock);
+  SILC_SCHEDULE_UNLOCK(schedule);
 }
 
 /* Allocates a newtask task queue into the scheduler */

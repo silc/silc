@@ -1,3 +1,11 @@
+Thu Mar  7 19:21:22 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed silc_mutex_[un]lock calls in lib/silcutil/silcschedule.c
+	  to SILC_SCHEDULE_[UN]LOCK macros.
+
+	* Added more error printing to logs in server code.  Affected
+	  files silcd/server.c and silcd/protocol.c.
+
 Tue Mar  5 14:37:27 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed all silc_[hash|hmac|cipher|pkcs]_default tables to

@@ -227,10 +227,12 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
   /* Allocate cipher to be used in the communication */
   if (!silc_cipher_alloc(cipher->cipher->name, &idata->send_key)) {
     silc_free(conn_data);
+    SILC_LOG_ERROR(("Cannot allocate algorithm: %s", cipher->cipher->name));
     return FALSE;
   }
   if (!silc_cipher_alloc(cipher->cipher->name, &idata->receive_key)) {
     silc_free(conn_data);
+    SILC_LOG_ERROR(("Cannot allocate algorithm: %s", cipher->cipher->name));
     return FALSE;
   }
   
@@ -239,6 +241,8 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
     silc_cipher_free(idata->send_key);
     silc_cipher_free(idata->receive_key);
     silc_free(conn_data);
+    SILC_LOG_ERROR(("Cannot allocate algorithm: %s", 
+		    silc_hmac_get_name(hmac)));
     return FALSE;
   }
 
@@ -248,6 +252,8 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
     silc_cipher_free(idata->receive_key);
     silc_hmac_free(idata->hmac_send);
     silc_free(conn_data);
+    SILC_LOG_ERROR(("Cannot allocate algorithm: %s", 
+		    silc_hmac_get_name(hmac)));
     return FALSE;
   }
 
@@ -291,6 +297,7 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
     silc_hmac_free(idata->hmac_send);
     silc_hmac_free(idata->hmac_receive);
     silc_free(conn_data);
+    SILC_LOG_ERROR(("Cannot allocate algorithm: %s", hash->hash->name));
     return FALSE;
   }
 
@@ -373,6 +380,10 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   if (maj == 0 && min < 5)
     status = SILC_SKE_STATUS_BAD_VERSION;
 
+  if (status == SILC_SKE_STATUS_BAD_VERSION)
+    SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version", 
+		    ske->sock->hostname, ske->sock->ip, version));
+
   return status;
 }
 
@@ -394,8 +405,8 @@ static void silc_server_protocol_ke_continue(SilcSKE ske, void *context)
   SILC_LOG_DEBUG(("Start"));
 
   if (ske->status != SILC_SKE_STATUS_OK) {
-    SILC_LOG_WARNING(("Error (%s) during Key Exchange protocol",
-		      silc_ske_map_status(ske->status)));
+    SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
+		    silc_ske_map_status(ske->status)));
     SILC_LOG_DEBUG(("Error (%s) during Key Exchange protocol",
 		    silc_ske_map_status(ske->status)));
     
@@ -482,8 +493,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	return;
 
       if (status != SILC_SKE_STATUS_OK) {
-	SILC_LOG_WARNING(("Error (%s) during Key Exchange protocol",
-			  silc_ske_map_status(status)));
+	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
+			silc_ske_map_status(status)));
 	SILC_LOG_DEBUG(("Error (%s) during Key Exchange protocol",
 			silc_ske_map_status(status)));
 
@@ -519,8 +530,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	return;
 
       if (status != SILC_SKE_STATUS_OK) {
-	SILC_LOG_WARNING(("Error (%s) during Key Exchange protocol",
-			  silc_ske_map_status(status)));
+	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
+			silc_ske_map_status(status)));
 	SILC_LOG_DEBUG(("Error (%s) during Key Exchange protocol",
 			silc_ske_map_status(status)));
 
@@ -562,8 +573,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	return;
 
       if (status != SILC_SKE_STATUS_OK) {
-	SILC_LOG_WARNING(("Error (%s) during Key Exchange protocol",
-			  silc_ske_map_status(status)));
+	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
+			silc_ske_map_status(status)));
 	SILC_LOG_DEBUG(("Error (%s) during Key Exchange protocol",
 			silc_ske_map_status(status)));
 
@@ -600,8 +611,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	return;
 
       if (status != SILC_SKE_STATUS_OK) {
-	SILC_LOG_WARNING(("Error (%s) during Key Exchange protocol",
-			  silc_ske_map_status(status)));
+	SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol",
+			silc_ske_map_status(status)));
 	SILC_LOG_DEBUG(("Error (%s) during Key Exchange protocol",
 			silc_ske_map_status(status)));
 
@@ -626,6 +637,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       status = silc_ske_process_key_material(ctx->ske, 16, key_len, hash_len,
 					     keymat);
       if (status != SILC_SKE_STATUS_OK) {
+	SILC_LOG_ERROR(("Error during Key Exchange protocol: "
+			"could not process key material"));
+
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	silc_ske_free_key_material(keymat);
@@ -896,14 +910,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 				   SILC_STR_UI_SHORT(&conn_type),
 				   SILC_STR_END);
 	if (ret == -1) {
-	  SILC_LOG_DEBUG(("Bad payload in authentication packet"));
+	  SILC_LOG_ERROR(("Bad payload in authentication packet"));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
 	}
 	
 	if (payload_len != ctx->packet->buffer->len) {
-	  SILC_LOG_DEBUG(("Bad payload in authentication packet"));
+	  SILC_LOG_ERROR(("Bad payload length in authentication packet"));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
@@ -913,7 +927,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	
 	if (conn_type < SILC_SOCKET_TYPE_CLIENT || 
 	    conn_type > SILC_SOCKET_TYPE_ROUTER) {
-	  SILC_LOG_ERROR(("Bad connection type %d", conn_type));
+	  SILC_LOG_ERROR(("Bad connection type (%d) in authentication packet",
+			  conn_type));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
@@ -927,7 +942,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 								payload_len),
 				     SILC_STR_END);
 	  if (ret == -1) {
-	    SILC_LOG_DEBUG(("Bad payload in authentication packet"));
+	    SILC_LOG_DEBUG(("Bad payload in authentication payload"));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	    return;
@@ -1140,9 +1155,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
        */
       unsigned char error[4];
 
-      SILC_PUT32_MSB(SILC_AUTH_FAILED, error);
-
       /* Authentication failed */
+      SILC_PUT32_MSB(SILC_AUTH_FAILED, error);
       silc_server_packet_send(server, ctx->sock, SILC_PACKET_FAILURE,
 			      0, error, 4, TRUE);
 
@@ -1169,6 +1183,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
     /*
      * We have received failure from remote
      */
+
+    SILC_LOG_ERROR(("Received Authentication Failure"));
 
     /* Unregister the timeout task since the protocol has ended. 
        This was the timeout task to be executed if the protocol is
@@ -1364,7 +1380,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	   */
 
 	  if (ctx->packet->type != SILC_PACKET_KEY_EXCHANGE_1) {
-	    /* Error in protocol */
+	    SILC_LOG_ERROR(("Error during Re-key (PFS): re-key state is "
+			    "incorrect (received %d, expected %d packet)",
+			    ctx->packet->type, SILC_PACKET_KEY_EXCHANGE_1));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	    return;
@@ -1382,9 +1400,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
       
 	  status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer);
 	  if (status != SILC_SKE_STATUS_OK) {
-	    SILC_LOG_WARNING(("Error (%s) during Re-key (PFS)",
-			      silc_ske_map_status(status)));
-	    
+	    SILC_LOG_ERROR(("Error (%s) during Re-key (PFS)",
+			    silc_ske_map_status(status)));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	    return;
@@ -1437,9 +1454,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
       
 	  status = silc_ske_initiator_phase_2(ctx->ske, NULL, NULL, 0);
 	  if (status != SILC_SKE_STATUS_OK) {
-	    SILC_LOG_WARNING(("Error (%s) during Re-key (PFS)",
-			      silc_ske_map_status(status)));
-	    
+	    SILC_LOG_ERROR(("Error (%s) during Re-key (PFS)",
+			    silc_ske_map_status(status)));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	    return;
@@ -1482,9 +1498,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	status = silc_ske_responder_finish(ctx->ske, NULL, NULL, 
 					   SILC_SKE_PK_TYPE_SILC);
 	if (status != SILC_SKE_STATUS_OK) {
-	  SILC_LOG_WARNING(("Error (%s) during Re-key (PFS)",
-			    silc_ske_map_status(status)));
-	  
+	  SILC_LOG_ERROR(("Error (%s) during Re-key (PFS)",
+			  silc_ske_map_status(status)));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
@@ -1497,7 +1512,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	 * The packet type must be KE packet
 	 */
 	if (ctx->packet->type != SILC_PACKET_KEY_EXCHANGE_2) {
-	  /* Error in protocol */
+	  SILC_LOG_ERROR(("Error during Re-key (PFS): re-key state is "
+			  "incorrect (received %d, expected %d packet)",
+			  ctx->packet->type, SILC_PACKET_KEY_EXCHANGE_2));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
@@ -1505,9 +1522,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	
 	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer);
 	if (status != SILC_SKE_STATUS_OK) {
-	  SILC_LOG_WARNING(("Error (%s) during Re-key (PFS)",
-			    silc_ske_map_status(status)));
-	  
+	  SILC_LOG_ERROR(("Error (%s) during Re-key (PFS)",
+			  silc_ske_map_status(status)));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
@@ -1535,7 +1551,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
      */
 
     if (ctx->packet->type != SILC_PACKET_REKEY_DONE) {
-      /* Error in protocol */
+      SILC_LOG_ERROR(("Error during Re-key (PFS): re-key state is "
+		      "incorrect (received %d, expected %d packet)",
+		      ctx->packet->type, SILC_PACKET_REKEY_DONE));
       protocol->state = SILC_PROTOCOL_STATE_ERROR;
       silc_protocol_execute(protocol, server->schedule, 0, 300000);
       return;
@@ -1562,10 +1580,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
      * Error occured
      */
 
-    if (ctx->pfs == TRUE) {
+    if (ctx->pfs == TRUE)
       /* Send abort notification */
       silc_ske_abort(ctx->ske, ctx->ske->status);
-    }
 
     /* Assure that after calling final callback there cannot be pending
        executions for this protocol anymore. This just unregisters any 
@@ -1583,6 +1600,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
     /*
      * We have received failure from remote
      */
+
+    SILC_LOG_ERROR(("Error during Re-Key: received Failure"));
 
     /* Assure that after calling final callback there cannot be pending
        executions for this protocol anymore. This just unregisters any 
