@@ -1,3 +1,8 @@
+Wed Feb 25 23:12:11 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check watcher list for resumed clients as well.  Affected
+	  file is silcd/packet_receive.c.
+
 Tue Feb 24 16:49:10 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Implemented the user limit to the CMODE_CHANGE notify,
