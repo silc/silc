@@ -21,8 +21,8 @@
 
 # Arguments checking
 if [ $# -lt "4" ]; then
-  echo "Usage: ./silcdoc <type> <source directory> <destination directory> <robodoc>"
-  echo "Supported types: HTML"
+  echo "Usage: ./silcdoc <type> <source directory> <destination directory/file> <robodoc>"
+  echo "Supported types: HTML PS"
 #  echo "Supported types: HTML, ASCII, LATEX or RTF"
   exit 1
 fi
@@ -34,6 +34,51 @@ ROBO=$4
 
 # Get all headers in the source directory
 headers=`find $SRC -name "silc*.h"`
+
+#
+# PS documentation (from LATEX)
+#
+if [ "$TYPE" = "PS" ]; then
+  TYPE="LATEX"
+  rm -rf /tmp/silcdoc.tex
+  mkdir /tmp/silcdoc.tex
+  cp $headers /tmp/silcdoc.tex
+
+  path=`pwd`
+  cd /tmp/silcdoc.tex
+
+  # Generate cross reference files
+  headers=`find . -name "silc*.h" |cut -d/  -f2 |cut -d.  -f1`
+  touch silcdoc_xref
+  for i in $headers
+  do
+    $ROBO $i.h $i.h.tex $TYPE INTERNAL GENXREF $i.h.xref
+    echo $i.h.xref >>silcdoc_xref
+  done
+
+  # Generate the detailed documentation
+  headers=`find . -name "silc*.h" |cut -d/  -f2 |cut -d.  -f1`
+  for i in $headers
+  do
+    # remove internals
+    rm -rf $i_i.h
+    $ROBO $i.h $i.h.tex XREF silcdoc_xref $TYPE C SORT NOSOURCE SINGLEDOC
+  done
+
+  # Generate the index
+  $ROBO silcdoc_xref toolkit_mi INDEX $TYPE TITLE "SILC Toolkit Reference Manual"
+
+  # Generate the postscript
+  latex toolkit_mi
+  makeindex toolkit_mi
+  latex toolkit_mi
+  latex toolkit_mi
+  dvips toolkit_mi.dvi -o $DST
+
+  cd $path
+
+#  rm -rf /tmp/silcdoc.tex
+fi
 
 #
 # ASCII documentation

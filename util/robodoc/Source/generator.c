@@ -167,7 +167,7 @@ RB_Generate_Doc_Start (
       else
 	fprintf (dest_doc, "@database %s\n", name);
       fprintf (dest_doc, "@rem Source: %s\n", src_name);
-      fprintf (dest_doc, "@rem " COMMENT_ROBODOC);
+/*      fprintf (dest_doc, "@rem " COMMENT_ROBODOC); */
       fprintf (dest_doc, "@rem " COMMENT_COPYRIGHT);
       fprintf (dest_doc, "@node Main %s\n", name);
       fprintf (dest_doc, "@{jcenter}\n");
@@ -364,11 +364,22 @@ RB_Generate_Doc_Start (
 
     case LATEX:
       fprintf (dest_doc, "%% Document: %s\n", name);
-      fprintf (dest_doc, "%% Source: %s\n", src_name);
-      fprintf (dest_doc, "%% " COMMENT_ROBODOC);
+    	fprintf (dest_doc, "%% Source: %s\n", src_name);
+/*      fprintf (dest_doc, "%% " COMMENT_ROBODOC);*/
       fprintf (dest_doc, "%% " COMMENT_COPYRIGHT);
       if (course_of_action & DO_SINGLEDOC) {
-	fprintf (dest_doc, "\\section{%s}\n", src_name);
+        if (!strchr(src_name, '_')) {
+	  fprintf (dest_doc, "\\section{%s}\n", src_name);
+      	} else {
+	  char *tmp = calloc(strlen(src_name) + 2, sizeof(*tmp));
+	  *strchr(src_name, '_') = '\\';
+	  strncat(tmp, src_name, strcspn(src_name, "\\") + 1);
+	  strncat(tmp, "_", 1); 
+	  strncat(tmp, src_name + strcspn(src_name, "\\") + 1,
+		  strlen(src_name) - strcspn(src_name, "\\") - 1);
+	  fprintf (dest_doc, "\\section{%s}\n", tmp);
+	  free(tmp);
+        }
       } else {
 	fprintf (dest_doc, "\\documentclass{article}\n");
         fprintf (dest_doc, "\\usepackage{makeidx}\n");
@@ -392,7 +403,7 @@ RB_Generate_Doc_Start (
 	} else {
 	  fprintf (dest_doc, "\\title{API Reference}\n");
 	}
-	fprintf (dest_doc, "\\author{%s}\n", COMMENT_ROBODOC);
+/*	fprintf (dest_doc, "\\author{%s}\n", COMMENT_ROBODOC); */
 	fprintf (dest_doc, "\\makeindex\n");
 	fprintf (dest_doc, "\\begin{document}\n");
 	fprintf (dest_doc, "\\maketitle\n");
@@ -427,7 +438,6 @@ RB_Generate_Doc_Start (
 		 "{\\title %s}"
 		 "{\\comment\n"
 		 " Source: %s\n"
-		 " " COMMENT_ROBODOC
 		 " " COMMENT_COPYRIGHT
 		 "}"
 		 "}", name, src_name);
