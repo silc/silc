@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,22 +28,20 @@
    This doesn't remove the newline sign from the destination buffer. The
    argument begin is returned and should be passed again for the function. */
 
-int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin)
+int silc_gets(char *dest, int destlen, const char *src, int srclen,
+	      int *begin)
 {
-  static int start = 0;
+  int off = *begin;
   int i;
 
   memset(dest, 0, destlen);
 
-  if (begin != start)
-    start = 0;
-
   i = 0;
-  for ( ; start <= srclen; i++, start++) {
+  for ( ; off <= srclen; i++) {
     if (i > destlen)
       return -1;
 
-    dest[i] = src[start];
+    dest[i] = src[off++];
 
     if (dest[i] == EOF)
       return EOF;
@@ -51,9 +49,11 @@ int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin)
     if (dest[i] == '\n')
       break;
   }
-  start++;
+  *begin = off;
+  if (off + 1 >= srclen)
+    return EOF;
 
-  return start;
+  return off;
 }
 
 /* Checks line for illegal characters. Return -1 when illegal character
@@ -657,10 +657,10 @@ char *silc_client_chmode(SilcUInt32 mode, const char *cipher, const char *hmac)
 
   if (mode & SILC_CHANNEL_MODE_SILENCE_OPERS)
     strncat(string, "M", 1);
-  
+
   if (mode & SILC_CHANNEL_MODE_CIPHER)
     strncat(string, "c", 1);
-  
+
   if (mode & SILC_CHANNEL_MODE_HMAC)
     strncat(string, "h", 1);
 
@@ -1155,7 +1155,7 @@ const char *silc_get_command_name(unsigned char command)
 
 /* Return TRUE if `smaller' is smaller than `bigger'. */
 
-bool silc_compare_timeval(struct timeval *smaller, 
+bool silc_compare_timeval(struct timeval *smaller,
 			  struct timeval *bigger)
 {
   if ((smaller->tv_sec < bigger->tv_sec) ||
