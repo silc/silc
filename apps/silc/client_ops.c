@@ -358,6 +358,7 @@ void silc_disconnect(SilcClient client, SilcClientConnection conn)
 
   app->screen->bottom_line->connection = NULL;
   silc_screen_print_bottom_line(app->screen, 0);
+  app->conn = NULL;
 }
 
 /* Asks passphrase from user on the input line. */
