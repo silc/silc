@@ -57,14 +57,14 @@ toolkit_EXTRA_DIST=README.CVS README.WIN32
 
 # Irssi SILC Client distribution
 client_SUBDIRS=lib irssi doc includes
-client_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq silcclient
+client_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq silcclient silcsftp
 client_SUBDIRS_doc=$(COMMONDIRS)
 client_DISTLABEL=SILC_DIST_CLIENT
 client_EXTRA_DIST=#
 
 # SILC Server distribution
 server_SUBDIRS=lib silcd doc includes
-server_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq dotconf
+server_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq dotconf silcsftp
 server_SUBDIRS_doc=$(COMMONDIRS)
 server_DISTLABEL=SILC_DIST_SERVER
 server_EXTRA_DIST=#

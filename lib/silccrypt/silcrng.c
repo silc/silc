@@ -146,7 +146,7 @@ void silc_rng_free(SilcRng rng)
     memset(rng->pool, 0, sizeof(rng->pool));
     memset(rng->key, 0, sizeof(rng->key));
     silc_hash_free(rng->sha1);
-    silc_free(new->devrandom);
+    silc_free(rng->devrandom);
     silc_free(rng);
   }
 }
@@ -282,7 +282,7 @@ static void silc_rng_get_hard_noise(SilcRng rng)
   int fd, len, i;
   
   /* Get noise from /dev/[u]random if available */
-  fd = open(rnd->devrandom, O_RDONLY);
+  fd = open(rng->devrandom, O_RDONLY);
   if (fd < 0)
     return;
 

@@ -403,20 +403,17 @@ silc_server_packet_send_to_channel_real(SilcServer server,
 					bool channel_message,
 					bool force_send)
 {
-  int block_len = 0;
+  int block_len;
   packet->truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packet->src_id_len + packet->dst_id_len;
 
-  if (cipher) {
-    block_len = silc_cipher_get_block_len(cipher);
-
-    if (channel_message)
-      packet->padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
-					   packet->src_id_len +
-					   packet->dst_id_len), block_len);
-    else
-      packet->padlen = SILC_PACKET_PADLEN(packet->truelen, block_len);
-  }
+  block_len = cipher ? silc_cipher_get_block_len(cipher) : 0;
+  if (channel_message)
+    packet->padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
+					 packet->src_id_len +
+					 packet->dst_id_len), block_len);
+  else
+    packet->padlen = SILC_PACKET_PADLEN(packet->truelen, block_len);
 
   /* Prepare outgoing data buffer for packet sending */
   silc_packet_send_prepare(sock, 
@@ -578,7 +575,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
     if (sender && sock == sender)
       continue;
 
-      /* Send the packet */
+    /* Send the packet */
     silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					    idata->send_key, 
 					    idata->hmac_send, 
@@ -1419,7 +1416,6 @@ void silc_server_send_notify_on_channels(SilcServer server,
   uint32 data_len;
   bool force_send = FALSE;
   va_list ap;
-  int block_len;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1471,15 +1467,18 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	/* Get data used in packet header encryption, keys and stuff. */
 	sock = (SilcSocketConnection)c->router->connection;
 	idata = (SilcIDListData)c->router;
-	block_len = idata->send_key ? 
-	  silc_cipher_get_block_len(idata->send_key) : 0;
+
+	{
+	  SILC_LOG_DEBUG(("*****************"));
+	  SILC_LOG_DEBUG(("client->router->id %s",
+			  silc_id_render(c->router->id, SILC_ID_SERVER)));
+	  SILC_LOG_DEBUG(("client->router->connection->user_data->id %s",
+			  silc_id_render(((SilcServerEntry)sock->user_data)->id, SILC_ID_SERVER)));
+	}
 
 	packetdata.dst_id = silc_id_id2str(c->router->id, SILC_ID_SERVER);
 	packetdata.dst_id_len = silc_id_get_len(c->router->id, SILC_ID_SERVER);
 	packetdata.dst_id_type = SILC_ID_SERVER;
-	packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
-	  packetdata.src_id_len + packetdata.dst_id_len;
-	packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
 
 	/* Send the packet */
 	silc_server_packet_send_to_channel_real(server, sock, &packetdata,
@@ -1507,15 +1506,10 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	/* Get data used in packet header encryption, keys and stuff. */
 	sock = (SilcSocketConnection)c->connection;
 	idata = (SilcIDListData)c;
-	block_len = idata->send_key ? 
-	  silc_cipher_get_block_len(idata->send_key) : 0;
 	
 	packetdata.dst_id = silc_id_id2str(c->id, SILC_ID_CLIENT);
 	packetdata.dst_id_len = silc_id_get_len(c->id, SILC_ID_CLIENT);
 	packetdata.dst_id_type = SILC_ID_CLIENT;
-	packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
-	  packetdata.src_id_len + packetdata.dst_id_len;
-	packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen, block_len);
 
 	/* Send the packet */
 	silc_server_packet_send_to_channel_real(server, sock, &packetdata,

@@ -442,7 +442,6 @@ static int silc_packet_check_mac(SilcHmac hmac, SilcBuffer buffer,
     /* Compare the HMAC's (buffer->tail has the packet's HMAC) */
     if (memcmp(mac, buffer->tail, mac_len)) {
       SILC_LOG_ERROR(("MAC failed"));
-      assert(FALSE);
       return FALSE;
     }
     

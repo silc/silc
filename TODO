@@ -46,6 +46,12 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o After backup resuming protocol some of the server's SilcIDListData
+   on primary that came back online are NULL. Seems actually that the
+   udpate_client_by_server does not work since the client->router, and
+   the client->router->connection->user_data are not same, and they
+   should be.
+
  o Server signoff notifys does not go to normal servers from routers.
 
  o Channel user mode changes are notified unnecessarely when switching

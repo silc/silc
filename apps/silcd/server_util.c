@@ -353,15 +353,33 @@ silc_server_update_clients_by_real_server(SilcServer server,
 	SILC_LOG_DEBUG(("Found (local) %s",
 			silc_id_render(server_entry->id, SILC_ID_SERVER)));
 
-	/* If the client is not marked as local then move it to local list
-	   since the server is local. */
-	if (server_entry->server_type != SILC_BACKUP_ROUTER && !local) {
-	  SILC_LOG_DEBUG(("Moving client to local list"));
-	  silc_idcache_add(server->local_list->clients, client_cache->name,
-			   client_cache->id, client_cache->context,
-			   client_cache->expire);
-	  silc_idcache_del_by_context(server->global_list->clients, client);
+#if 0
+	if (!server_entry->data.send_key && server_entry->router) {
+	  SILC_LOG_DEBUG(("Server not locally connected, use its router"));
+	  /* If the client is not marked as local then move it to local list
+	     since the server is local. */
+	  if (!local) {
+	    SILC_LOG_DEBUG(("Moving client to local list"));
+	    silc_idcache_add(server->local_list->clients, client_cache->name,
+			     client_cache->id, client_cache->context,
+			     client_cache->expire);
+	    silc_idcache_del_by_context(server->global_list->clients, client);
+	  }
+	  server_entry = server_entry->router;
+	} else {
+#endif
+	  /* If the client is not marked as local then move it to local list
+	     since the server is local. */
+	  if (server_entry->server_type != SILC_BACKUP_ROUTER && !local) {
+	    SILC_LOG_DEBUG(("Moving client to local list"));
+	    silc_idcache_add(server->local_list->clients, client_cache->name,
+			     client_cache->id, client_cache->context,
+			     client_cache->expire);
+	    silc_idcache_del_by_context(server->global_list->clients, client);
+	  }
+#if 0
 	}
+#endif
 
 	silc_idcache_list_free(list);
 	return server_entry;
@@ -386,15 +404,33 @@ silc_server_update_clients_by_real_server(SilcServer server,
 	SILC_LOG_DEBUG(("Found (global) %s",
 			silc_id_render(server_entry->id, SILC_ID_SERVER)));
 
-	/* If the client is marked as local then move it to global list
-	   since the server is global. */
-	if (server_entry->server_type != SILC_BACKUP_ROUTER && local) {
-	  SILC_LOG_DEBUG(("Moving client to global list"));
-	  silc_idcache_add(server->global_list->clients, client_cache->name,
-			   client_cache->id, client_cache->context,
-			   client_cache->expire);
-	  silc_idcache_del_by_context(server->local_list->clients, client);
+#if 0
+	if (!server_entry->data.send_key && server_entry->router) {
+	  SILC_LOG_DEBUG(("Server not locally connected, use its router"));
+	  /* If the client is marked as local then move it to global list
+	     since the server is global. */
+	  if (local) {
+	    SILC_LOG_DEBUG(("Moving client to global list"));
+	    silc_idcache_add(server->global_list->clients, client_cache->name,
+			     client_cache->id, client_cache->context,
+			     client_cache->expire);
+	    silc_idcache_del_by_context(server->local_list->clients, client);
+	  }
+	  server_entry = server_entry->router;
+	} else {
+#endif
+	  /* If the client is marked as local then move it to global list
+	     since the server is global. */
+	  if (server_entry->server_type != SILC_BACKUP_ROUTER && local) {
+	    SILC_LOG_DEBUG(("Moving client to global list"));
+	    silc_idcache_add(server->global_list->clients, client_cache->name,
+			     client_cache->id, client_cache->context,
+			     client_cache->expire);
+	    silc_idcache_del_by_context(server->local_list->clients, client);
+	  }
+#if 0
 	}
+#endif
 
 	silc_idcache_list_free(list);
 	return server_entry;
