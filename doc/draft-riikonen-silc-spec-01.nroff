@@ -1700,11 +1700,11 @@ Every command reply also defines set of status message that it
 may return inside the <Status Payload>.  All status messages
 are defined in the section 5.3 SILC Command Status Types.
 
+.in 3
 Every command that has some kind of ID as argument (for example
 <Client ID>) are actually ID Payloads, defined in [SILC2] that includes
 the type of the ID, length of the ID and the actual ID data.  This
 way variable length ID's can be sent as arguments.
-.in 3
 
 
 .ti 0

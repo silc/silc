@@ -1,4 +1,42 @@
-Fri Oct  5 21:16:28 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+Sun Oct  8 19:33:08 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added flags parameter into silc_ske_assemble_security_properties
+	  function in lib/silcske/silcske.[ch].
+
+	* Changed notify client operation to fit better for notify messages
+	  sent by server.  The notify payload received from server is now
+	  passed to the application (after parsing it to SilcNotifyPayload).
+	  It is application's responsibility to retrieve the arguments
+	  from the payload and show the message the way it wants.  The message
+	  sent by server is implementation specific.
+
+	* Changed public keys to comply with the protocol specification.
+	  Old public keys are not supported anymore and are not compatible.
+
+	* Removed nickname from Channel Payload as the latest draft removed
+	  it.  The client must resolve the nickname from the NAMES command
+	  reply received when it joined the channel.
+
+	  Also, changed all channel_xxxx_payload to channel_payload_xxxx.
+
+Sat Oct  7 21:55:01 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed some errors in protocol specification drafts.
+
+	* Created lib/silccore/silcnotify.c to implement Notify Payload
+	  encoding and decoding, lib/silccore/silcpayload.[ch] to implement
+	  generic payloads described by protocol specifications.  The file
+	  includes implementations for ID Payload and Argument Payload.
+
+	* Changed Command Payload implementation to use the new Argument
+	  Payload.  Changed command_xxxx_payload to command_payload_xxxx
+	  to comply with SILC coding conventions.
+
+	* Added suppport for Argument Payload handling in Notify Payload
+	  implementation as protocol requires it.  Added the new support
+	  into server and client lib as well.
+
+Thu Oct  5 21:16:28 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added support for multiple nicknames on same channel.  [n] is
 	  added locally to the nickname if there are more than one same
@@ -15,7 +53,7 @@ Fri Oct  5 21:16:28 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed version strings to comply ISO 8601.
 
-Thu Oct  4 23:29:06 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+Wed Oct  4 23:29:06 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed protocol error handling in client library.  It should now
 	  cope even if the SKE fails for some reason.

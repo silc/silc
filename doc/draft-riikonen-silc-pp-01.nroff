@@ -1020,8 +1020,10 @@ Notify Payload.
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|          Notify Type          | Argument Nums |               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+               +
+|          Notify Type          |        Message Length         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| Argument Nums |                                               |
++-+-+-+-+-+-+-+-+                                               +
 |                                                               |
 ~                        Notify Message                         ~
 |                                                               |
@@ -1035,6 +1037,9 @@ Figure 9:  Notify Payload
 .in 6
 o Notify Type (2 bytes) - Indicates the type of the notify
   message.
+
+o Message Length (2 bytes) - Length of the Notify Message area 
+  not ncluding the length of any other fields in the payload.
 
 o Argument Nums (2 bytes) - Indicates the number of Argument
   Payloads associated to this payload.  Notify types may define
@@ -1059,7 +1064,7 @@ Following notify types has been defined:
 
       Sent when receiver has been invited to a channel.
 
-      This type includes three arguments: nickname and channel name.
+      This type includes two arguments: nickname and channel name.
 
 2     SILC_NOTIFY_TYPE_JOIN
 
@@ -1073,7 +1078,7 @@ Following notify types has been defined:
 
       Sent when client has left a channel.
 
-      This type includes three arguments: nickname, server name,
+      This type includes four arguments: nickname, server name,
       Channel ID and channel name.  The Channel ID is sent inside ID
       Payload.
 
@@ -1088,14 +1093,14 @@ Following notify types has been defined:
 
       Sent when topic is set/changed on a channel.
 
-      This type includes three arguments: Channel ID, topic, nickname and
+      This type includes four arguments: Channel ID, topic, nickname and
       hostname.  The Channel ID is sent inside ID Payload.
 
 6     SILC_NOTIFY_TYPE_NICK_CHANGE
 
       Sent when client changes nick on a channel.
 
-      This type includes three arguments: nickname and Channel ID.
+      This type includes two arguments: nickname and Channel ID.
       The Channel ID is sent inside ID Payload.
 .in 3
 

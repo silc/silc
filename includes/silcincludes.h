@@ -107,6 +107,10 @@
 #include <dlfcn.h>
 #endif
 
+#ifndef HAVE_GETOPT_LONG
+#include "../lib/contrib/getopt.h"
+#endif
+
 #ifndef TRUE
 #define TRUE 1
 #endif
