@@ -509,6 +509,9 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     }
     break;
 
+  case SILC_NOTIFY_TYPE_CHANNEL_CHANGE:
+    break;
+
   case SILC_NOTIFY_TYPE_SERVER_SIGNOFF:
     {
       /*

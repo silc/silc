@@ -1,3 +1,8 @@
+Sat Mar 16 09:07:27 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Handled CHANNEL_CHANGE notify (ignore it) in Irssi SILC
+	  client.  Affected file irssi/src/silc/core/client_ops.c.
+
 Thu Mar 14 12:53:57 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check for valid socket connection in client entries before

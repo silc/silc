@@ -104,7 +104,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "list_header", "  Channel                              Users   Topic", 0 },
 	{ "list", "  %|{channelhilight $[36]0} {hilight $[7]1} $2", 3, { 0, 0, 0 } },
 	{ "bad_nick", "Bad nickname {hilight $0}", 1, { 0 } },
-	{ "unknown_notify", "Unknown notify type {hilight $0}", 1, { 0 } },
+	{ "unknown_notify", "Unknown notify type {hilight $0}", 1, { 1 } },
 	{ "ke_bad_version", "You are running an incompatible client version (it may be too old or too new) ", 0 },
 	{ "ke_unsupported_public_key", "Remote does not trust/support your public key", 0 },
 	{ "ke_unknown_group", "Remote does not support one of your proposed KE group", 0 },
