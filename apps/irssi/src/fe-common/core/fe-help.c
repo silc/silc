@@ -166,7 +166,7 @@ static void show_help(const char *data)
 			/* category changed */
 			if (items > 0) {
 				if (!header) {
-					printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP, "Commands:");
+					printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP, "Irssi commands:");
 					header = TRUE;
 				}
 				if (last->category != NULL) {
@@ -217,7 +217,7 @@ static void show_help(const char *data)
 		/* display the last category */
 		if (!header) {
 			printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP,
-				  "Commands:");
+				  "Irssi commands:");
 			header = TRUE;
 		}
 

@@ -1,3 +1,21 @@
+Fri May 25 14:38:38 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Do not say "You have left channel %s" in client library.
+	  Moved it to the application.  Affected files are
+	  lib/silcclient/command.c and silc/client_ops.c.
+
+	* Fixed silc_client_get_clients.  Command context was not
+	  duplicated and was freed memory in the callback.  Affected
+	  file lib/silcclient/idlist.c.
+
+	* Do not say "you are now talking..." on JOIN command in the
+	  client library.  The appliation must handle it.
+
+	* Do not say ".. changed topic to" in command reply in the
+	  client libary.  The application must handle it.
+
+	* Fixed TOPIC command sending in the client library.
+
 Thu May 24 19:08:55 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Imported a modified version of Irssi client to the source tree.

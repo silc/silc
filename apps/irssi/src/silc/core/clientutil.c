@@ -31,6 +31,7 @@
 #include "rawlog.h"
 #include "misc.h"
 #include "settings.h"
+#include "curses.h"
 
 #include "servers-setup.h"
 
@@ -46,22 +47,18 @@
 
 int silc_client_ask_yes_no(SilcClient client, char *prompt)
 {
-#if 0
-  SilcClientInternal app = (SilcClientInternal)client->application;
   char answer[4];
   int ret;
 
  again:
-  silc_screen_input_reset(app->screen);
-
   /* Print prompt */
-  wattroff(app->screen->input_win, A_INVIS);
-  silc_screen_input_print_prompt(app->screen, prompt);
+  attroff(A_INVIS);
+  //  silc_screen_input_print_prompt(app->screen, prompt);
 
   /* Get string */
   memset(answer, 0, sizeof(answer));
   echo();
-  wgetnstr(app->screen->input_win, answer, sizeof(answer));
+  getnstr(answer, sizeof(answer));
   if (!strncasecmp(answer, "yes", strlen(answer)) ||
       !strncasecmp(answer, "y", strlen(answer))) {
     ret = TRUE;
@@ -69,16 +66,14 @@ int silc_client_ask_yes_no(SilcClient client, char *prompt)
 	     !strncasecmp(answer, "n", strlen(answer))) {
     ret = FALSE;
   } else {
-    silc_say(client, app->conn, "Type yes or no");
+    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Type yes or no");
     goto again;
   }
   noecho();
 
-  silc_screen_input_reset(app->screen);
+  //  silc_screen_input_reset(app->screen);
 
   return ret;
-#endif
-  return 0;
 }
 
 /* Lists supported (builtin) ciphers */

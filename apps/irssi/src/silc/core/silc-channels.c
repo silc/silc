@@ -93,6 +93,10 @@ static void sig_connected(SILC_SERVER_REC *server)
     server->channels_join = (void *) silc_channels_join;
 }
 
+/*
+ * "event join". Joined to a channel.
+ */
+
 SILC_CHANNEL_REC *silc_channel_find_entry(SILC_SERVER_REC *server,
 					  SilcChannelEntry entry)
 {
@@ -121,7 +125,7 @@ static void event_join(SILC_SERVER_REC *server, va_list va)
   channel = va_arg(va, SilcChannelEntry);
 
   if (client == server->conn->local_entry) {
-    /* you joined to channel */
+    /* You joined to channel */
     chanrec = silc_channel_find(server, channel->channel_name);
     if (chanrec != NULL && !chanrec->joined)
       chanrec->entry = channel;
@@ -144,6 +148,10 @@ static void event_join(SILC_SERVER_REC *server, va_list va)
 	      client->username == NULL ? "" : client->username);
 }
 
+/*
+ * "event leave". Left a channel.
+ */
+
 static void event_leave(SILC_SERVER_REC *server, va_list va)
 {
   SILC_CHANNEL_REC *chanrec;
@@ -155,8 +163,8 @@ static void event_leave(SILC_SERVER_REC *server, va_list va)
   channel = va_arg(va, SilcChannelEntry);
 
   signal_emit("message part", 5, server, channel->channel_name,
-	      client->nickname, 
-	      client->username == NULL ? "" : client->username, "");
+	      client->nickname,  client->username ?  client->username : "", 
+	      client->nickname);
 
   chanrec = silc_channel_find_entry(server, channel);
   if (chanrec != NULL) {
@@ -166,15 +174,22 @@ static void event_leave(SILC_SERVER_REC *server, va_list va)
   }
 }
 
+/*
+ * "event signoff". Left the network.
+ */
+
 static void event_signoff(SILC_SERVER_REC *server, va_list va)
 {
   SilcClientEntry client;
   GSList *nicks, *tmp;
+  char *message;
 
   client = va_arg(va, SilcClientEntry);
+  message = va_arg(va, char *);
 
   signal_emit("message quit", 4, server, client->nickname,
-	      client->username == NULL ? "" : client->username, "");
+	      client->username ? client->username : "", 
+	      message ? message : "");
 
   nicks = nicklist_get_same_unique(SERVER(server), client);
   for (tmp = nicks; tmp != NULL; tmp = tmp->next->next) {
@@ -184,6 +199,10 @@ static void event_signoff(SILC_SERVER_REC *server, va_list va)
     nicklist_remove(channel, nickrec);
   }
 }
+
+/*
+ * "event topic". Changed topic.
+ */
 
 static void event_topic(SILC_SERVER_REC *server, va_list va)
 {
@@ -207,6 +226,10 @@ static void event_topic(SILC_SERVER_REC *server, va_list va)
 	      topic, client->nickname, client->username);
 }
 
+/*
+ * "event invite". Invited or modified invite list.
+ */
+
 static void event_invite(SILC_SERVER_REC *server, va_list va)
 {
   SilcClientEntry client;
@@ -219,6 +242,10 @@ static void event_invite(SILC_SERVER_REC *server, va_list va)
 	      client->nickname, client->username);
 }
 
+/*
+ * "event nick". Changed nickname.
+ */
+
 static void event_nick(SILC_SERVER_REC *server, va_list va)
 {
   SilcClientEntry oldclient, newclient;
@@ -230,9 +257,13 @@ static void event_nick(SILC_SERVER_REC *server, va_list va)
 			 oldclient, oldclient->nickname,
 			 newclient, newclient->nickname);
 
-  signal_emit("message nick", 4, server, newclient->nickname,
+  signal_emit("message nick", 4, server, newclient->nickname, 
 	      oldclient->nickname, newclient->username);
 }
+
+/*
+ * "event cmode". Changed channel mode.
+ */
 
 static void event_cmode(SILC_SERVER_REC *server, va_list va)
 {
@@ -262,6 +293,10 @@ static void event_cmode(SILC_SERVER_REC *server, va_list va)
   
   g_free(mode);
 }
+
+/*
+ * "event cumode". Changed user's mode on channel.
+ */
 
 static void event_cumode(SILC_SERVER_REC *server, va_list va)
 {
@@ -302,6 +337,10 @@ static void event_cumode(SILC_SERVER_REC *server, va_list va)
   g_free(modestr);
 }
 
+/*
+ * "event motd". Received MOTD.
+ */
+
 static void event_motd(SILC_SERVER_REC *server, va_list va)
 {
   char *text = va_arg(va, char *);
@@ -310,25 +349,45 @@ static void event_motd(SILC_SERVER_REC *server, va_list va)
     printtext_multiline(server, NULL, MSGLEVEL_CRAP, "%s", text);
 }
 
+/*
+ * "event channel_change". Channel ID has changed.
+ */
+
 static void event_channel_change(SILC_SERVER_REC *server, va_list va)
 {
 
 }
+
+/*
+ * "event server_signoff". Server has quit the network.
+ */
 
 static void event_server_signoff(SILC_SERVER_REC *server, va_list va)
 {
 
 }
 
+/*
+ * "event kick". Someone was kicked from channel.
+ */
+
 static void event_kick(SILC_SERVER_REC *server, va_list va)
 {
 
 }
 
+/*
+ * "event kill". Someone was killed from the network.
+ */
+
 static void event_kill(SILC_SERVER_REC *server, va_list va)
 {
 
 }
+
+/*
+ * "event ban". Someone was banned or ban list was modified.
+ */
 
 static void event_ban(SILC_SERVER_REC *server, va_list va)
 {
@@ -354,7 +413,7 @@ static void command_part(const char *data, SILC_SERVER_REC *server,
     cmd_return_error(CMDERR_CHAN_NOT_FOUND);
 
   signal_emit("message part", 5, server, chanrec->name,
-	      server->nick, "", "");
+	      server->nick, server->conn->local_entry->username, "");
   
   silc_command_exec(server, "LEAVE", chanrec->name);
   signal_stop();

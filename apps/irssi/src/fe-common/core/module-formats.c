@@ -28,8 +28,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ NULL, "Windows", 0 },
 
 	{ "line_start", "{line_start}", 0 },
-/*	{ "line_start_irssi", "{line_start}{hilight Irssi:} ", 0 }, */
-	{ "line_start_irssi", "{line_start}", 0 },
+	{ "line_start_irssi", "{line_start}{hilight Irssi:} ", 0 }, 
         { "timestamp", "{timestamp $Z} ", 6, { 1, 1, 1, 1, 1, 1 } },
 	{ "servertag", "[$0] ", 1, { 0 } },
 	{ "daychange", "Day changed to $[-2.0]{0} $3 $2", 4, { 1, 1, 1, 0 } },
@@ -86,7 +85,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "current_channel", "Current channel {channel $0}", 1, { 0 } },
 	{ "names", "{names_users Users {names_channel $0}} $1", 2, { 0, 0 } },
         { "names_nick", "{names_nick $0 $1}", 2, { 0, 0 } },
-        { "endofnames", "{channel $0}: Total of {hilight $1} nicks {comment {hilight $2} ops, {hilight $3} voices, {hilight $4} normal}", 5, { 0, 1, 1, 1, 1 } },
+	{ "endofnames", "{channel $0}: Total of {hilight $1} nicks {comment {hilight $2} ops, {hilight $3} voices, {hilight $4} normal}", 5, { 0, 1, 1, 1, 1 } },
 	{ "chanlist_header", "You are on the following channels:", 0 },
 	{ "chanlist_line", "{channel $[-10]0} %|+$1 ($2): $3", 4, { 0, 0, 0, 0 } },
 	{ "chansetup_not_found", "Channel {channel $0} not found", 2, { 0, 0 } },
