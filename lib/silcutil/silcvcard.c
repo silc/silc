@@ -133,14 +133,17 @@ unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
     continue;					\
   }
 
-/* Take on TYPE= token and prepare for next token */
-#define VCARD_TYPETOKEN(x)				\
-  if (!(x)) {						\
-    int tmpi;						\
-    (x) = silc_memdup(val + off + 5, i - off - 5 - 1);	\
-    tmpi = off + 5 + strlen((x)) + 1;			\
-    off = i;						\
-    i = tmpi;						\
+/* Take on TYPE= token and prepare for next token, accept the
+   type also without TYPE= as it is possible */
+#define VCARD_TYPETOKEN(x)					\
+  if (!(x)) {							\
+    int tmpi = 0;      						\
+    if (!strcasecmp(val + off, "TYPE="))			\
+      tmpi = 5;							\
+    (x) = silc_memdup(val + off + tmpi, i - off - tmpi - 1);	\
+    tmpi = off + tmpi + strlen((x)) + 1;			\
+    off = i;							\
+    i = tmpi;							\
   }
 
 /* Take last token */

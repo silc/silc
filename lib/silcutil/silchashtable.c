@@ -72,7 +72,7 @@ struct SilcHashTableStruct {
   void *hash_user_context;
   void *compare_user_context;
   void *destructor_user_context;
-  bool auto_rehash;
+  unsigned int auto_rehash : 1;
 };
 
 /* Prime sizes for the hash table. The size of the table will always
@@ -214,7 +214,7 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
 				  SilcHashForeach foreach,
 				  void *foreach_user_context)
 {
-  SilcHashTableEntry *entry, *tmp;
+  SilcHashTableEntry e, tmp;
   bool auto_rehash, found = FALSE;
   SilcUInt32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
@@ -225,28 +225,24 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
   auto_rehash = ht->auto_rehash;
   ht->auto_rehash = FALSE;
 
-  entry = &ht->table[i];
+  e = ht->table[i];
   if (compare) {
-    while (*entry) {
-      if (compare((*entry)->key, key, compare_user_context)) {
-	tmp = &(*entry)->next;
-	foreach((*entry)->key, (*entry)->context, foreach_user_context);
+    while (e) {
+      tmp = e->next;
+      if (compare(e->key, key, compare_user_context)) {
 	found = TRUE;
-	entry = tmp;
-	continue;
+	foreach(e->key, e->context, foreach_user_context);
       }
-      entry = &(*entry)->next;
+      e = tmp;
     }
   } else {
-    while (*entry) {
-      if ((*entry)->key == key) {
-	tmp = &(*entry)->next;
-	foreach((*entry)->key, (*entry)->context, foreach_user_context);
+    while (e) {
+      tmp = e->next;
+      if (e->key == key) {
 	found = TRUE;
-	entry = tmp;
-	continue;
+	foreach(e->key, e->context, foreach_user_context);
       }
-      entry = &(*entry)->next;
+      e = tmp;
     }
   }
 

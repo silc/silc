@@ -1,3 +1,12 @@
+Wed Oct 16 17:40:56 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for parsing VCard fields that do not have
+	  the TYPE= for types.  Affected file lib/silcutil/silcvcard.c.
+
+	* Fixed a double free bug in hash table foreach function
+	  if the entry was deleted in the foreach callback.  Affected
+	  file lib/silcutil/silchashtable.c.
+
 Tue Oct 15 18:05:24 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_attribute_get_verify_data to return the signature
