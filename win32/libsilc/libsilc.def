@@ -340,7 +340,7 @@ EXPORTS
 	silc_packet_send @ 549 ; 
 	silc_packet_send_prepare @ 550 ; 
 	silc_parse_command_line @ 551 ; 
-	silc_parse_nickname @ 552 ; 
+	silc_parse_userfqdn @ 552 ; 
 	silc_pkcs1_decrypt @ 553 ; 
 	silc_pkcs1_encrypt @ 554 ; 
 	silc_pkcs1_sign @ 555 ; 
