@@ -24,7 +24,7 @@
 static void *st_blocks = NULL;
 static unsigned long st_blocks_count = 0;
 static bool dump = FALSE;
-static bool libc_malloc_check = FALSE;
+static bool malloc_check = FALSE;
 
 #define SILC_ST_DEPTH 10
 
@@ -63,9 +63,14 @@ void silc_st_stacktrace(SilcStBlock stack)
     dump = TRUE;
   }
 
-  if (!libc_malloc_check) {
+  if (!malloc_check) {
+    /* Linux libc malloc check */
     setenv("MALLOC_CHECK_", "2", 1);
-    libc_malloc_check = TRUE;
+
+    /* NetBSD malloc check */
+    setenv("MALLOC_OPTIONS", "AJ", 1);
+
+    malloc_check = TRUE;
   }
 
   /* Save the stack */
