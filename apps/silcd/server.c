@@ -2976,6 +2976,11 @@ void silc_server_free_sock_user_data(SilcServer server,
       if (user_data->id)
 	backup_router = silc_server_backup_get(server, user_data->id);
 
+      if (!server->backup_router && server->server_type == SILC_ROUTER &&
+	  backup_router == server->id_entry &&
+	  sock->type != SILC_SOCKET_TYPE_ROUTER)
+	backup_router = NULL;
+
       /* If this was our primary router connection then we're lost to
 	 the outside world. */
       if (server->router == user_data) {
