@@ -1,3 +1,10 @@
+Wed Jan 30 11:11:47 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* When sending JOIN command to router for processing the
+	  sender's old command identifier was not saved back to the
+	  sender's command context, fixed now.  The affected file is
+	  silcd/command.c.
+
 Tue Jan 29 19:49:31 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Applied patches from cras:

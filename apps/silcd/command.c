@@ -1061,7 +1061,6 @@ silc_server_command_whowas_check(SilcServerCommandContext cmd,
 				  silc_server_command_whowas, 
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
-      
       silc_command_set_ident(cmd->payload, old_ident);
 
       silc_buffer_free(tmpbuf);
@@ -1195,7 +1194,6 @@ silc_server_command_whowas_process(SilcServerCommandContext cmd)
 				silc_server_command_whowas,
 				silc_server_command_dup(cmd));
     cmd->pending = TRUE;
-
     silc_command_set_ident(cmd->payload, old_ident);
 
     silc_buffer_free(tmpbuf);
@@ -3393,6 +3391,7 @@ SILC_SERVER_CMD_FUNC(join)
 				      silc_server_command_join,
 				      silc_server_command_dup(cmd));
 	  cmd->pending = TRUE;
+          silc_command_set_ident(cmd->payload, old_ident);
 	  goto out;
 	}
 	
@@ -3456,7 +3455,8 @@ SILC_SERVER_CMD_FUNC(join)
     if (silc_command_get(reply->payload) == SILC_COMMAND_JOIN) {
       tmp = silc_argument_get_arg_type(reply->args, 6, NULL);
       SILC_GET32_MSB(created, tmp);
-      create_key = FALSE;	/* Router returned the key already */
+      if (silc_argument_get_arg_type(reply->args, 7, NULL)
+        create_key = FALSE;	/* Router returned the key already */
     }
 
     if (silc_command_get(reply->payload) == SILC_COMMAND_WHOIS &&
@@ -5362,7 +5362,6 @@ SILC_SERVER_CMD_FUNC(getkey)
 				  silc_server_command_getkey,
 				  silc_server_command_dup(cmd));
       cmd->pending = TRUE;
-      
       silc_command_set_ident(cmd->payload, old_ident);
       silc_buffer_free(tmpbuf);
       goto out;

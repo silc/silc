@@ -161,3 +161,4 @@ EXPORTS
 	silc_client_commands_unregister @ 147 ;
 	silc_client_command_call @ 148 ;
 	silc_client_command_reply_quit @ 149 ;
+	silc_client_run_one @ 150 ;
