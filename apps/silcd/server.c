@@ -1880,7 +1880,7 @@ void silc_server_create_channel_key(SilcServer server,
 
   /* Remove old key if exists */
   if (channel->key) {
-    memset(channel->key, 0, channel->key_len);
+    memset(channel->key, 0, channel->key_len / 8);
     silc_free(channel->key);
   }
 
