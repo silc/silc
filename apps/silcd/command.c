@@ -1934,10 +1934,10 @@ static void silc_server_command_join_channel(SilcServer server,
 				      3, client->id) ||
 	  silc_server_inviteban_match(server, channel->ban_list,
 				      2, client->data.public_key) ||
-	  !silc_server_inviteban_match(server, channel->ban_list,
-				       1, check) ||
-	  !silc_server_inviteban_match(server, channel->ban_list,
-				       1, check2)) {
+	  silc_server_inviteban_match(server, channel->ban_list,
+				      1, check) ||
+	  silc_server_inviteban_match(server, channel->ban_list,
+				      1, check2)) {
 	silc_server_command_send_status_reply(
 				      cmd, SILC_COMMAND_JOIN,
 				      SILC_STATUS_ERR_BANNED_FROM_CHANNEL, 0);
