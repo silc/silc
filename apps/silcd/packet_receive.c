@@ -1378,8 +1378,12 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   } else {
     /* The hostname is not present, add it. */
     char *newusername;
-    
+    /* XXX For now we cannot take the host name from the public key since
+       they are not trusted or we cannot verify them as trusted. Just take
+       what the resolved name or address is. */
+#if 0
     if (strcmp(sock->hostname, sock->ip)) {
+#endif
       newusername = silc_calloc(strlen(username) + 
 				strlen(sock->hostname) + 2,
 				sizeof(*newusername));
@@ -1388,6 +1392,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
       strncat(newusername, sock->hostname, strlen(sock->hostname));
       silc_free(username);
       username = newusername;
+#if 0
     } else {
       SilcPublicKeyIdentifier pident = 
 	silc_pkcs_decode_identifier(client->data.public_key->identifier);
@@ -1404,6 +1409,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 	silc_pkcs_free_identifier(pident);
       }
     }
+#endif
   }
 
   /* Create Client ID */
