@@ -1,3 +1,18 @@
+Tue Jun 12 21:36:18 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Redefined the SILC MP API in lib/silcmath/silcmp.h. The API
+	  is now real and not just an macro interface to GMP.
+
+	  Removed the entire GMP from the source tree and imported new
+	  NSS MPI library instead.  Reason for removing GMP is that it is
+	  extremely large and compiles extremely slow.  The NSS MPI
+	  is only a few files and compiles in less than 10 seconds.
+	  The speed is also about the same as GMP.  The MPI is imported
+	  to lib/silcmath/mpi.
+
+	  If the system has GMP installed we will still use the GMP.
+	  If it is not then the NSS MPI will be compiled.
+
 Mon Jun 11 18:07:24 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Merged a long nickname (127 characters long) crash bugfix from
