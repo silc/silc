@@ -84,7 +84,7 @@ toolkit-install:
 	-mkdir -p $(docdir)/toolkit/
 	-$(INSTALL_DATA) $(srcdir)/doc/toolkit/* $(docdir)/toolkit
 	-$(INSTALL_DATA) $(srcdir)/lib/doc/*.gif $(docdir)/toolkit
-        -cp -R $(srcdir)/tutorial $(prefix)
+	-cp -R $(srcdir)/tutorial $(prefix)
 
 examples-install:
 	-mkdir -p $(docdir)/examples/
