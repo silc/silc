@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXX
+.ds RH 25 November 2002
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-commands-04.txt                          XXX
-Expires: XXX
+draft-riikonen-silc-commands-04.txt                     25 November 2002
+Expires: 25 April 2003
 
 .in 3
 
@@ -73,15 +73,15 @@ Table of Contents
 1 Introduction ..................................................  2
   1.1 Requirements Terminology ..................................  2
 2 SILC Commands .................................................  2
-  2.1 SILC Commands Syntax ......................................  2
-  2.2 SILC Command Argument Idioms ..............................  2
+  2.1 SILC Commands Syntax ......................................  4
+  2.2 SILC Command Argument Idioms ..............................  4
   2.3 SILC Commands List ........................................  4
-  2.4 SILC Command Status Payload ............................... 40
-3 SILC Status Types ............................................. 41
-4 Security Considerations ....................................... 47
-5 References .................................................... 47
-6 Author's Address .............................................. 49
-Appendix A ...................................................... 49
+  2.4 SILC Command Status Payload ............................... 42
+3 SILC Status Types ............................................. 43
+4 Security Considerations ....................................... 49
+5 References .................................................... 49
+6 Author's Address .............................................. 51
+Appendix A ...................................................... 51
 
 
 .ti 0
@@ -198,7 +198,7 @@ Every command reply also defines set of status message that it
 may return inside the <Status Payload>.  All status messages
 are defined in the section 2.3 SILC Command Status Payload
 The status messages defined with the command are recommendations.
-It is possible to return other status messages not listes with
+It is possible to return other status messages not listed with
 the command reply definition.
 .in 3
 
@@ -2486,7 +2486,7 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 25 April 2003
 
 
 .ti 0

@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXX
+.ds RH 25 November 2002
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-spec-06.txt                              XXX
-Expires: XXX
+draft-riikonen-silc-spec-06.txt                         25 November 2002
+Expires: 25 April 2003
 
 .in 3
 
@@ -1307,9 +1307,10 @@ not stateful and receiver cannot precompute the key stream.
 3.10.1.3 Randomized CBC Mode
 
 The "rcbc" encryption mode is CBC mode with randomized IV.  This means
-that each IV for each packet MUST be chosen randomly.  In this mode the
-IV is appended at the end of the last ciphertext block and thus delivered
-to the recipient.  This mode increases the ciphertext size by one
+that each IV for each packet MUST be chosen randomly (same IV is used
+to encrypt all blocks in the given packet).  In this mode the IV is
+appended at the end of the last ciphertext block and thus delivered to
+the recipient.  This mode increases the ciphertext size by one
 ciphertext block.  Note also that some data payloads in SILC are capable
 of delivering the IV to the recipient.  When explicitly encrypting these
 payloads with randomized CBC the IV MUST NOT be appended at the end
@@ -1938,7 +1939,8 @@ to the server thus it is not repeated here.
 
 One difference is that server MUST perform connection authentication
 protocol with proper authentication.  A proper authentication is based
-on passphrase or public key authentication.
+on passphrase authentication or public key authentication based on
+digital signatures.
 
 After server and router has successfully performed the key exchange
 and connection authentication protocol, the server register itself
@@ -1982,24 +1984,21 @@ The router MUST also announce the local servers by compiling list of
 ID Payloads into the SILC_PACKET_NEW_ID packet.
 
 Also, clients' modes (user modes in SILC) MUST be announced.  This is
-done by compiling a list of Notify Payloads with the 
-SILC_NOTIFY_UMODE_CHANGE nofity type into the SILC_PACKET_NOTIFY packet.
-
-Also, channel's topics MUST be announced by compiling a list of Notify
-Payloads with the SILC_NOTIFY_TOPIC_SET notify type into the
-SILC_PACKET_NOTIFY packet.
+done by compiling a list of Notify Payloads with SILC_NOTIFY_UMODE_CHANGE
+nofity type into the SILC_PACKET_NOTIFY packet.  Also, channel's topics
+MUST be announced by compiling a list of Notify Payloads with the
+SILC_NOTIFY_TOPIC_SET notify type into the SILC_PACKET_NOTIFY packet.
 
 The router which receives these lists MUST process them and broadcast
-the packets to its primary route.
-
-When processing the announced channels and channel users the router MUST
-check whether a channel exists already with the same name.  If channel
-exists with the same name it MUST check whether the Channel ID is
-different.  If the Channel ID is different the router MUST send the notify
-type SILC_NOTIFY_TYPE_CHANNEL_CHANGE to the server to force the channel ID
-change to the ID the router has.  If the mode of the channel is different
-the router MUST send the notify type SILC_NOTIFY_TYPE_CMODE_CHANGE to the
-server to force the mode change to the mode that the router has.
+the packets to its primary route.  When processing the announced channels
+and channel users the router MUST check whether a channel exists already
+with the same name.  If channel exists with the same name it MUST check
+whether the Channel ID is different.  If the Channel ID is different the
+router MUST send the notify type SILC_NOTIFY_TYPE_CHANNEL_CHANGE to the
+server to force the channel ID change to the ID the router has.  If the
+mode of the channel is different the router MUST send the notify type
+SILC_NOTIFY_TYPE_CMODE_CHANGE to the server to force the mode change
+to the mode that the router has.
 
 The router MUST also generate new channel key and distribute it to the
 channel.  The key MUST NOT be generated if the SILC_CMODE_PRIVKEY mode
@@ -2515,4 +2514,4 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 25 April 2003
