@@ -288,9 +288,8 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   }
 
   /* Notify application */
-  if (!cmd->callback)
-    COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
-		   NULL, idle));
+  COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
+		 NULL, idle));
 }
 
 /* Received reply for WHOIS command. This maybe called several times
