@@ -1420,11 +1420,12 @@ UTF-8 [RFC2279] encoded.
 
       Max Arguments:  3
           Arguments:  (1) <Client ID>           (2) [<comment>]
-                      (3) <Killer's Client ID>
+                      (3) <Killer's ID>
 
       The <Client ID> is the client which was killed from the network.
       The killer may have set the <comment> to indicate the reason for
-      the killing.  The <Killer's Client ID> is the killer.
+      the killing.  The <Killer's ID> is the killer, which may be
+      client but also router server.
 
 
 14    SILC_NOTIFY_TYPE_UMODE_CHANGE
