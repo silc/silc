@@ -456,7 +456,9 @@ int silc_message_signed_verify(SilcMessageSignedPayload sig,
  * SYNOPSIS
  *
  *    SilcPublicKey
- *    silc_message_signed_get_public_key(SilcMessageSignedPayload sig);
+ *    silc_message_signed_get_public_key(SilcMessageSignedPayload sig,
+ *                                       unsigned char **pk_data,
+ *                                       SilcUInt32 *pk_data_len);
  *
  * DESCRIPTION
  *
