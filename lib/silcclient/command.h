@@ -127,6 +127,7 @@ int silc_client_command_pending_check(SilcClientConnection conn,
 				      SilcClientCommandReplyContext ctx,
 				      SilcCommand command, 
 				      unsigned short ident);
+
 SILC_CLIENT_CMD_FUNC(whois);
 SILC_CLIENT_CMD_FUNC(whowas);
 SILC_CLIENT_CMD_FUNC(identify);

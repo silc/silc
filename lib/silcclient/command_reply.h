@@ -55,10 +55,21 @@ typedef struct {
 #define SILC_CLIENT_CMD_REPLY_FUNC(func) \
 void silc_client_command_reply_##func(void *context)
 
+/* Status message structure. Messages are defined below. */
+typedef struct {
+  SilcCommandStatus status;
+  char *message;
+} SilcCommandStatusMessage;
+
+/* Status messages returned by the server */
+#define STAT(x) SILC_STATUS_ERR_##x
+extern const SilcCommandStatusMessage silc_command_status_messages[];
+
 /* Prototypes */
 void silc_client_command_reply_process(SilcClient client,
 				       SilcSocketConnection sock,
 				       SilcPacketContext *packet);
+char *silc_client_command_status_message(SilcCommandStatus status);
 SILC_CLIENT_CMD_REPLY_FUNC(whois);
 SILC_CLIENT_CMD_REPLY_FUNC(whowas);
 SILC_CLIENT_CMD_REPLY_FUNC(identify);

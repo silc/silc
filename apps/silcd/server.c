@@ -1436,6 +1436,20 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   if (ret == SILC_PACKET_NONE)
     goto out;
 
+  /* Check that the the current client ID is same as in the client's packet. */
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT) {
+    SilcClientEntry client = (SilcClientEntry)sock->user_data;
+    if (client && client->id) {
+      void *id = silc_id_str2id(packet->src_id, packet->src_id_len,
+				packet->src_id_type);
+      if (SILC_ID_CLIENT_COMPARE(client->id, id)) {
+	silc_free(id);
+	goto out;
+      }
+      silc_free(id);
+    }
+  }
+
   if (server->server_type == SILC_ROUTER) {
     /* Route the packet if it is not destined to us. Other ID types but
        server are handled separately after processing them. */

@@ -353,8 +353,8 @@ void silc_client_notify_by_server(SilcClient client,
      * application.
      */
 
-    /* Get new Client ID */
-    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    /* Get old Client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
     if (!tmp)
       goto out;
 
@@ -366,17 +366,14 @@ void silc_client_notify_by_server(SilcClient client,
     if (!SILC_ID_CLIENT_COMPARE(client_id, conn->local_id))
       break;
 
-    /* Find Client entry and if not found query it */
-    client_entry2 = 
-      silc_client_get_client_by_id(client, conn, client_id);
-    if (!client_entry2) {
-      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
+    /* Find old Client entry */
+    client_entry = silc_client_get_client_by_id(client, conn, client_id);
+    if (!client_entry)
       goto out;
-    }
     silc_free(client_id);
 
-    /* Get old Client ID */
-    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    /* Get new Client ID */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
     if (!tmp)
       goto out;
 
@@ -384,11 +381,12 @@ void silc_client_notify_by_server(SilcClient client,
     if (!client_id)
       goto out;
 
-    /* Find old Client entry */
-    client_entry = 
-      silc_client_get_client_by_id(client, conn, client_id);
-    if (!client_entry)
+    /* Find Client entry and if not found resolve it */
+    client_entry2 = silc_client_get_client_by_id(client, conn, client_id);
+    if (!client_entry2) {
+      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;
+    }
 
     /* Remove the old from cache */
     silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, 

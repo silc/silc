@@ -1,3 +1,31 @@
+Tue Mar 13 13:26:18 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added support to the server to enforce that commands are not
+	  executed more than once in 2 seconds.  If server receives 
+	  commands from client more frequently, timeout is registered
+	  to process the commands.  Affected file silcd/command.c.
+	  Added new function silc_server_command_process_timeout.
+
+	* Changed NICK_NOTIFY handling in client library to check that
+	  if the client's nickname was changed, so there is no need to
+	  resolve anything from the server.
+
+	* Removed error printing from the WHOIS and IDENTIFY commands.
+	  If error occurs then it is ignored silently in the client library.
+	  The application, however, may map the received error to 
+	  human readable error string.  The application currently maps
+	  the NO_SUCH_NICKNAME error to string.
+
+	* Made the command status message public to the application.  Moved
+	  them from lib/silcclient/command_reply.c to 
+	  lib/silcclient/command_reply.h.  The application can map the
+	  received command status to the string with the
+	  silc_client_command_status_message function.
+
+	* Added check to the server to check that client's ID is same
+	  as the Source ID in the packet the client sent.  They must
+	  match.
+
 Tue Mar 13 12:49:21 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added dist-bzip hook to the Makefile.am to make bzip2

@@ -67,14 +67,6 @@ SilcClientCommandReply silc_command_reply_list[] =
   { NULL, 0 },
 };
 
-/* Status message structure. Messages are defined below. */
-typedef struct {
-  SilcCommandStatus status;
-  char *message;
-} SilcCommandStatusMessage;
-
-/* Status messages returned by the server */
-#define STAT(x) SILC_STATUS_ERR_##x
 const SilcCommandStatusMessage silc_command_status_messages[] = {
 
   { STAT(NO_SUCH_NICK),      "No such nickname" },
@@ -117,7 +109,6 @@ const SilcCommandStatusMessage silc_command_status_messages[] = {
 
   { 0, NULL }
 };
-
 /* Command reply operation that is called at the end of all command replys. 
    Usage: COMMAND_REPLY((ARGS, argument1, argument2, etc...)), */
 #define COMMAND_REPLY(args) cmd->client->ops->command_reply args
@@ -180,8 +171,7 @@ void silc_client_command_reply_process(SilcClient client,
 
 /* Returns status message string */
 
-static char *
-silc_client_command_status_message(SilcCommandStatus status)
+char *silc_client_command_status_message(SilcCommandStatus status)
 {
   int i;
 
@@ -288,8 +278,9 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   }
 
   /* Notify application */
-  COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
-		 NULL, idle));
+  if (!cmd->callback)
+    COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
+		   NULL, idle));
 }
 
 /* Received reply for WHOIS command. This maybe called several times
@@ -298,7 +289,6 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
 SILC_CLIENT_CMD_REPLY_FUNC(whois)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
-  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcCommandStatus status;
   unsigned char *tmp;
 
@@ -310,23 +300,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(whois)
       status != SILC_STATUS_LIST_START &&
       status != SILC_STATUS_LIST_ITEM &&
       status != SILC_STATUS_LIST_END) {
-    if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
-      /* Take nickname which may be provided */
-      tmp = silc_argument_get_arg_type(cmd->args, 3, NULL);
-      if (tmp)
-	cmd->client->ops->say(cmd->client, conn, "%s: %s", tmp,
-		 silc_client_command_status_message(status));
-      else
-	cmd->client->ops->say(cmd->client, conn, "%s",
-		 silc_client_command_status_message(status));
-      COMMAND_REPLY_ERROR;
-      goto out;
-    } else {
-      cmd->client->ops->say(cmd->client, conn,
-	       "%s", silc_client_command_status_message(status));
-      COMMAND_REPLY_ERROR;
-      goto out;
-    }
+    COMMAND_REPLY_ERROR;
+    goto out;
   }
 
   /* Display one whois reply */
@@ -439,7 +414,6 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
 SILC_CLIENT_CMD_REPLY_FUNC(identify)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
-  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcCommandStatus status;
   unsigned char *tmp;
 
@@ -451,23 +425,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
       status != SILC_STATUS_LIST_START &&
       status != SILC_STATUS_LIST_ITEM &&
       status != SILC_STATUS_LIST_END) {
-    if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
-      /* Take nickname which may be provided */
-      tmp = silc_argument_get_arg_type(cmd->args, 3, NULL);
-      if (tmp)
-	cmd->client->ops->say(cmd->client, conn, "%s: %s", tmp,
-		 silc_client_command_status_message(status));
-      else
-	cmd->client->ops->say(cmd->client, conn, "%s",
-		 silc_client_command_status_message(status));
-      COMMAND_REPLY_ERROR;
-      goto out;
-    } else {
-      cmd->client->ops->say(cmd->client, conn,
-	       "%s", silc_client_command_status_message(status));
-      COMMAND_REPLY_ERROR;
-      goto out;
-    }
+    COMMAND_REPLY_ERROR;
+    goto out;
   }
 
   /* Save one IDENTIFY entry */

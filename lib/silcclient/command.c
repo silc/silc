@@ -351,7 +351,7 @@ SILC_CLIENT_CMD_FUNC(nick)
   buffer = silc_command_payload_encode(SILC_COMMAND_NICK,
 				       cmd->argc - 1, ++cmd->argv,
 				       ++cmd->argv_lens, ++cmd->argv_types,
-				       0);
+				       ++cmd->conn->cmd_ident);
   silc_client_packet_send(cmd->client, cmd->conn->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);

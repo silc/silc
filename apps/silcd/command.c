@@ -37,6 +37,7 @@ silc_server_command_send_status_data(SilcServerCommandContext cmd,
 				     unsigned int arg_type,
 				     unsigned char *arg,
 				     unsigned int arg_len);
+SILC_TASK_CALLBACK(silc_server_command_process_timeout);
 
 /* Server command list. */
 SilcServerCommand silc_command_list[] =
@@ -113,6 +114,71 @@ static int silc_server_is_registered(SilcServer server,
   return FALSE;
 }
 
+/* Internal context to hold data when executed command with timeout. */
+typedef struct {
+  SilcServer server;
+  SilcSocketConnection sock;
+  SilcPacketContext *packet;
+} *SilcServerCommandTimeout;
+
+/* Timeout callback to process commands with timeout for client. Client's
+   commands are always executed with timeout. */
+
+SILC_TASK_CALLBACK(silc_server_command_process_timeout)
+{
+  SilcServerCommandTimeout timeout = (SilcServerCommandTimeout)context;
+  SilcServerCommandContext ctx;
+  SilcServerCommand *cmd;
+  SilcClientEntry client = (SilcClientEntry)timeout->sock->user_data;
+
+  /* Update access time */
+  client->last_command = time(NULL);
+
+  /* Allocate command context. This must be free'd by the
+     command routine receiving it. */
+  ctx = silc_server_command_alloc();
+  ctx->server = timeout->server;
+  ctx->sock = timeout->sock;
+  ctx->packet = timeout->packet;
+
+  /* Parse the command payload in the packet */
+  ctx->payload = silc_command_payload_parse(ctx->packet->buffer);
+  if (!ctx->payload) {
+    SILC_LOG_ERROR(("Bad command payload, packet dropped"));
+    silc_buffer_free(ctx->packet->buffer);
+    silc_socket_free(ctx->sock);
+    silc_packet_context_free(ctx->packet);
+    silc_free(ctx);
+    silc_free(timeout);
+    return;
+  }
+  ctx->args = silc_command_get_args(ctx->payload);
+  
+  /* Execute command. If this fails the packet is dropped. */
+  for (cmd = silc_command_list; cmd->cb; cmd++)
+    if (cmd->cmd == silc_command_get(ctx->payload)) {
+
+      if (!(cmd->flags & SILC_CF_REG)) {
+	cmd->cb(ctx);
+	break;
+      }
+      
+      if (silc_server_is_registered(ctx->server, ctx->sock, ctx, cmd->cmd)) {
+	cmd->cb(ctx);
+	break;
+      }
+    }
+
+  if (cmd == NULL) {
+    SILC_LOG_ERROR(("Unknown command, packet dropped"));
+    silc_server_command_free(ctx);
+    silc_free(timeout);
+    return;
+  }
+
+  silc_free(timeout);
+}
+
 /* Processes received command packet. */
 
 void silc_server_command_process(SilcServer server,
@@ -122,29 +188,35 @@ void silc_server_command_process(SilcServer server,
   SilcServerCommandContext ctx;
   SilcServerCommand *cmd;
 
-#if 0
-  /* XXX allow commands in but do not execute them more than once per
-     two seconds. */
-
-  /* Check whether it is allowed for this connection to execute any
-     command. */
+  /* Execute client's commands always with timeout.  Normally they are
+     executed with zero (0) timeout but if client is sending command more
+     frequently than once in 2 seconds, then the timeout may be 0 to 2
+     seconds. */
   if (sock->type == SILC_SOCKET_TYPE_CLIENT) {
-    time_t curtime;
     SilcClientEntry client = (SilcClientEntry)sock->user_data;
+    SilcServerCommandTimeout timeout = silc_calloc(1, sizeof(*timeout));
 
-    if (!client)
-      return;
+    timeout->server = server;
+    timeout->sock = silc_socket_dup(sock);
+    timeout->packet = silc_packet_context_dup(packet);
 
-    /* Allow only one command executed in 2 seconds. */
-    curtime = time(NULL);
-    if (client->last_command && (curtime - client->last_command) < 2)
-      return;
-
-    /* Update access time */
-    client->last_command = curtime;
+    if (client->last_command && (time(NULL) - client->last_command) < 2)
+      silc_task_register(server->timeout_queue, sock->sock, 
+			 silc_server_command_process_timeout,
+			 (void *)timeout, 
+			 2 - (time(NULL) - client->last_command), 0,
+			 SILC_TASK_TIMEOUT,
+			 SILC_TASK_PRI_NORMAL);
+    else
+      silc_task_register(server->timeout_queue, sock->sock, 
+			 silc_server_command_process_timeout,
+			 (void *)timeout, 
+			 0, 1,
+			 SILC_TASK_TIMEOUT,
+			 SILC_TASK_PRI_NORMAL);
+    return;
   }
-#endif
-  
+
   /* Allocate command context. This must be free'd by the
      command routine receiving it. */
   ctx = silc_server_command_alloc();
@@ -1270,6 +1342,9 @@ SILC_SERVER_CMD_FUNC(nick)
   SilcBuffer packet, nidp, oidp;
   SilcClientID *new_id;
   char *nick;
+
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_NICK, cmd, 1, 1);
 

@@ -369,9 +369,6 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
   SilcChannelUser chu;
   va_list vp;
 
-  if (!success)
-    return;
-
   va_start(vp, status);
 
   switch(command)
@@ -381,6 +378,22 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	char buf[1024], *nickname, *username, *realname;
 	int len;
 	unsigned int idle;
+
+	if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
+	  char *tmp;
+	  tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
+					   3, NULL);
+	  if (tmp)
+	    client->ops->say(client, conn, "%s: %s", tmp,
+			     silc_client_command_status_message(status));
+	  else
+	    client->ops->say(client, conn, "%s",
+			     silc_client_command_status_message(status));
+	  break;
+	}
+
+	if (!success)
+	  return;
 
 	(void)va_arg(vp, SilcClientEntry);
 	nickname = va_arg(vp, char *);
@@ -424,6 +437,9 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	unsigned int list_count;
 	SilcChannelEntry channel;
 
+	if (!success)
+	  return;
+
 	app->screen->bottom_line->channel = va_arg(vp, char *);
 	channel = va_arg(vp, SilcChannelEntry);
 	mode = va_arg(vp, unsigned int);
@@ -454,6 +470,9 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       {
 	SilcClientEntry entry;
 
+	if (!success)
+	  return;
+
 	entry = va_arg(vp, SilcClientEntry);
 	silc_say(client, conn, "Your current nickname is %s", entry->nickname);
 	app->screen->bottom_line->nickname = entry->nickname;
@@ -462,6 +481,9 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       break;
 
     case SILC_COMMAND_USERS:
+      if (!success)
+	return;
+
       silc_list_start(conn->current_channel->clients);
       while ((chu = silc_list_get(conn->current_channel->clients)) 
 	     != SILC_LIST_END) {
