@@ -23,6 +23,8 @@ TODO for SILC Server 1.0
 TODO/bugs In SILC Libraries
 ===========================
 
+ o libtool hack to compile SIM even when disable-shared
+
  o Test cases for all cryptographic primitive in lib/silccrypt/
 
  o Test cases for all payload encoding and decoding routins in lib/silccore/
