@@ -229,6 +229,9 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   struct tms ptime;
 #endif
   SilcUInt32 pos;
+#ifdef HAVE_GETRUSAGE
+  struct rusage r;
+#endif
 
   pos = silc_rng_get_position(rng);
 
@@ -277,7 +280,30 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   silc_rng_xor(rng, getpgrp(), pos++);
 #endif
 #endif
-
+#ifdef HAVE_GETRUSAGE
+  getrusage(RUSAGE_SELF, &r);
+  silc_rng_xor(rng, (r.ru_utime.tv_sec + r.ru_utime.tv_usec), pos++);
+  silc_rng_xor(rng, (r.ru_utime.tv_sec ^ r.ru_utime.tv_usec), pos++);
+  silc_rng_xor(rng, (r.ru_stime.tv_sec + r.ru_stime.tv_usec), pos++);
+  silc_rng_xor(rng, (r.ru_stime.tv_sec ^ r.ru_stime.tv_usec), pos++);
+  silc_rng_xor(rng, (r.ru_maxrss + r.ru_ixrss), pos++);
+  silc_rng_xor(rng, (r.ru_maxrss ^ r.ru_ixrss), pos++);
+  silc_rng_xor(rng, (r.ru_idrss + r.ru_idrss), pos++);
+  silc_rng_xor(rng, (r.ru_idrss ^ r.ru_idrss), pos++);
+  silc_rng_xor(rng, (r.ru_idrss << 16), pos++);
+  silc_rng_xor(rng, (r.ru_minflt + r.ru_majflt), pos++);
+  silc_rng_xor(rng, (r.ru_minflt ^ r.ru_majflt), pos++);
+  silc_rng_xor(rng, (r.ru_nswap + r.ru_oublock + r.ru_inblock), pos++);
+  silc_rng_xor(rng, (r.ru_nswap << 8), pos++);
+  silc_rng_xor(rng, (r.ru_inblock + r.ru_oublock), pos++);
+  silc_rng_xor(rng, (r.ru_inblock ^ r.ru_oublock), pos++);
+  silc_rng_xor(rng, (r.ru_msgsnd ^ r.ru_msgrcv), pos++);
+  silc_rng_xor(rng, (r.ru_nsignals + r.ru_msgsnd + r.ru_msgrcv), pos++);
+  silc_rng_xor(rng, (r.ru_nsignals << 16), pos++);
+  silc_rng_xor(rng, (r.ru_nvcsw + r.ru_nivcsw), pos++);
+  silc_rng_xor(rng, (r.ru_nvcsw ^ r.ru_nivcsw), pos++);
+#endif
+  
 #ifdef SILC_RNG_DEBUG
   SILC_LOG_HEXDUMP(("pool"), rng->pool, sizeof(rng->pool));
 #endif
@@ -290,6 +316,10 @@ static void silc_rng_get_soft_noise(SilcRng rng)
 
 static void silc_rng_get_medium_noise(SilcRng rng)
 {
+  /* If getrusage is available, there is no need for shell commands */
+#ifdef HAVE_GETRUSAGE
+  return;
+#endif
   silc_rng_exec_command(rng, "ps -leaww 2> /dev/null");
   silc_rng_exec_command(rng, "ls -afiln ~ 2> /dev/null");
   silc_rng_exec_command(rng, "ls -afiln /proc 2> /dev/null");

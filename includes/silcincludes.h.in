@@ -218,6 +218,10 @@ extern "C" {
 #include <langinfo.h>
 #endif
 
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#endif
+
 #endif				/* !SILC_WIN32 */
 
 #ifndef HAVE_GETOPT_LONG

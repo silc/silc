@@ -23,8 +23,6 @@ TODO for SILC Server 1.0
  o Basic UTF-8 stringprep profile that makes sure UTF-8 strings are
    as defined in spec-08 section 3.13.
 
- o Check that founder key is distributed ok during backup resuming.
-
  o Testing
 
 
