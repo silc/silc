@@ -172,7 +172,9 @@ used to protect the network against netsplits.
 
 <p><br>
 <object data="silc_network.jpg" type="application/postscript">
-<img src="silc_network.png" alt="SILC Network" align="center" border"0">
+<a href="silc_network.png">
+<img src="s_silc_network.png" alt="SILC Network" align="center" 
+border="0"></a>
 </object>
 <p><br>
 
@@ -299,7 +301,9 @@ network as its primary route.
 
 <p><br>
 <object data="silc_routers.jpg" type="application/postscript">
-<img src="silc_routers.png" alt="SILC Routers" align="center" border"0">
+<a href="silc_routers.png">
+<img src="s_silc_routers.png" alt="SILC Routers" align="center" 
+border="0"></a>
 </object>
 <p><br>
 
@@ -336,7 +340,9 @@ defined in the protocol.
 
 <p><br>
 <object data="silc_packet.jpg" type="application/postscript">
-<img src="silc_packet.png" alt="Typical SILC Packet" align="center" border"0">
+<a href="silc_packet_png">
+<img src="s_silc_packet.png" alt="Typical SILC Packet" align="center" 
+border="0"></a>
 </object>
 <p><br>
 
@@ -523,7 +529,9 @@ have clients on the channel and all clients that have joined the channel.
 
 <p><br>
 <object data="silc_channel.jpg" type="application/postscript">
-<img src="silc_channel.png" alt="Channel Message Delivery" align="center" border"0">
+<a href="silc_channel.png">
+<img src="s_silc_channel.png" alt="Channel Message Delivery" 
+align="center" border="0"></a>
 </object>
 <p><br>
 
@@ -647,7 +655,9 @@ re-encrypted everytime it is sent further to the receiving client.
 
 <p><br>
 <object data="silc_priv1.jpg" type="application/postscript">
-<img src="silc_priv1.png" alt="Basic Private Message Delivery" align="center" border"0">
+<a href="silc_priv1.png">
+<img src="s_silc_priv1.png" alt="Basic Private Message Delivery" 
+align="center" border="0"></a>
 </object>
 <p><br>
 
@@ -690,7 +700,9 @@ routers in the SILC network.
 
 <p><br>
 <object data="silc_priv2.jpg" type="application/postscript">
-<img src="silc_priv2.png" alt="Private Messages with Private Message Key" align="center" border"0">
+<a href="silc_priv2.png">
+<img src="s_silc_priv2.png" alt="Private Messages with Private Message 
+Key" align="center" border="0"></a>
 </object>
 <p><br>
 
@@ -771,6 +783,24 @@ public keys from SILC servers.  If both of the clients trust that the
 public keys are authentic using this method of private message delivery
 is very simple and recommended.
 -->
+
+
+<p><br>
+<h1>MIME Messages</h1>
+
+SILC Protocol supports MIME messages as normal channel and private 
+messages.  By using MIME messages it is possible to send for example
+images, music and video and audio stream in SILC.  Any MIME type that is
+supported by the application can be sent via SILC network.
+<p>
+
+The MIME messages are utilized by using so called Message Flags in the
+message payload that is used in SILC protocol.  The Message Flags
+indicates the recipient that the message is a MIME message and it then
+knows how to interpret the message.  Using Message Flags it possible also
+to send other kind of messages and to augment features of normal channel
+and private messages.
+
 
 
 <p><br>
