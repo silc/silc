@@ -73,7 +73,7 @@ void SHA1Init(SHA1_CTX* context)
 
 void SHA1Transform(uint32 *state, const unsigned char *data)
 {
-  uint32 W[80];
+  uint32 W[16];
   
   /* Copy context->state[] to working vars */
   uint32 a = state[0];
