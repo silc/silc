@@ -74,28 +74,195 @@ silc_attribute_payload_parse(const unsigned char *payload,
   return NULL;
 }
 
-/* Encode one attribute payload */
+/* Encode one attribute payload to buffer */
 
-SilcBuffer silc_attribute_payload_encode(SilcAttribute attribute,
+SilcBuffer silc_attribute_payload_encode(SilcBuffer attrs,
+					 SilcAttribute attribute,
 					 SilcAttributeFlags flags,
-					 const unsigned char *data,
-					 SilcUInt32 data_len)
+					 void *object,
+					 SilcUInt32 object_size)
 {
-  SilcBuffer buffer;
+  SilcBuffer buffer, tmpbuf = NULL;
+  unsigned char tmp[4], *str = NULL;
+  int len;
 
   SILC_LOG_DEBUG(("Encoding Attribute Payload"));
 
-  buffer = silc_buffer_alloc_size(4 + data_len);
-  if (!buffer)
-    return NULL;
+  /* Encode according to attribute type */
+  if (flags & SILC_ATTRIBUTE_FLAG_VALID) {
+    if (!object || !object_size)
+      return NULL;
 
-  /* Encode the Attribute Payload */
+    switch (attribute) {
+
+    case SILC_ATTRIBUTE_NONE:
+      break;
+
+    case SILC_ATTRIBUTE_USER_INFO:
+      SILC_NOT_IMPLEMENTED("SILC_ATTRIBUTE_USER_INFO");
+      break;
+
+    case SILC_ATTRIBUTE_SERVICE:
+      {
+	SilcAttributeObjService *service = object;
+	if (object_size != sizeof(*service))
+	  return NULL;
+	len = strlen(service->address);
+	str = silc_malloc(7 + len);
+	if (!str)
+	  return NULL;
+	SILC_PUT32_MSB(service->port, str);
+	SILC_PUT16_MSB(len, str + 4);
+	memcpy(str + 6, service->address, len);
+	str[6 + len] = service->status;
+      }
+      break;
+
+    case SILC_ATTRIBUTE_STATUS_MOOD:
+    case SILC_ATTRIBUTE_PREFERRED_CONTACT:
+      {
+	SilcUInt32 mask = (SilcUInt32)object;
+	if (object_size != sizeof(SilcUInt32))
+	  return NULL;
+	SILC_PUT32_MSB(mask, tmp);
+	object = tmp;
+	object_size = sizeof(SilcUInt32);
+      }
+      break;
+
+    case SILC_ATTRIBUTE_STATUS_FREETEXT:
+    case SILC_ATTRIBUTE_PREFERRED_LANGUAGE:
+    case SILC_ATTRIBUTE_TIMEZONE:
+      {
+	unsigned char *string = object;
+	str = silc_malloc(2 + object_size);
+	if (!str)
+	  return NULL;
+	SILC_PUT16_MSB(object_size, str);
+	memcpy(str + 2, string, object_size);
+	object = str;
+	object_size += 2;
+      }
+      break;
+
+    case SILC_ATTRIBUTE_STATUS_MESSAGE:
+    case SILC_ATTRIBUTE_EXTENSION:
+      {
+	SilcAttributeObjMime *mime = object;
+	if (object_size != sizeof(*mime))
+	  return NULL;
+	object = (void *)mime->mime;
+	object_size = mime->mime_len;
+      }
+      break;
+
+    case SILC_ATTRIBUTE_GEOLOCATION:
+      {
+	SilcAttributeObjGeo *geo = object;
+	if (object_size != sizeof(*geo))
+	  return NULL;
+	len =
+	  (geo->longitude ? strlen(geo->longitude) : 0) +
+	  (geo->latitude  ? strlen(geo->latitude)  : 0) +
+	  (geo->altitude  ? strlen(geo->altitude)  : 0) +
+	  (geo->accuracy  ? strlen(geo->accuracy)  : 0);
+	if (!len)
+	  return NULL;
+	tmpbuf = silc_buffer_alloc_size(8 + len);
+	if (!tmpbuf)
+	  return NULL;
+	silc_buffer_format(tmpbuf,
+			   SILC_STR_UI16_STRING(geo->longitude),
+			   SILC_STR_UI16_STRING(geo->latitude),
+			   SILC_STR_UI16_STRING(geo->altitude),
+			   SILC_STR_UI16_STRING(geo->accuracy),
+			   SILC_STR_END);
+      }
+      break;
+
+    case SILC_ATTRIBUTE_DEVICE_INFO:
+      {
+	SilcAttributeObjDevice *dev = object;
+	if (object_size != sizeof(*dev))
+	  return NULL;
+	len =
+	  (dev->manufacturer ? strlen(dev->manufacturer) : 0) +
+	  (dev->version      ? strlen(dev->version)      : 0) +
+	  (dev->model        ? strlen(dev->model)        : 0) +
+	  (dev->language     ? strlen(dev->language)     : 0);
+	tmpbuf = silc_buffer_alloc_size(4 + 8 + len);
+	if (!tmpbuf)
+	  return NULL;
+	silc_buffer_format(tmpbuf,
+			   SILC_STR_UI_INT(dev->type),
+			   SILC_STR_UI16_STRING(dev->manufacturer),
+			   SILC_STR_UI16_STRING(dev->version),
+			   SILC_STR_UI16_STRING(dev->model),
+			   SILC_STR_UI16_STRING(dev->language),
+			   SILC_STR_END);
+      }
+      break;
+
+    case SILC_ATTRIBUTE_USER_PUBLIC_KEY:
+    case SILC_ATTRIBUTE_SERVER_PUBLIC_KEY:
+      {
+	SilcAttributeObjPk *pk = object;
+	if (object_size != sizeof(*pk))
+	  return NULL;
+	len = (pk->type ? strlen(pk->type) : 0);
+	tmpbuf = silc_buffer_alloc_size(2 + len + pk->data_len);
+	if (!tmpbuf)
+	  return NULL;
+	silc_buffer_format(tmpbuf,
+			   SILC_STR_UI_SHORT(len),
+			   SILC_STR_UI16_STRING(pk->type),
+			   SILC_STR_UI_XNSTRING(pk->data, pk->data_len),
+			   SILC_STR_END);
+      }
+      break;
+
+    case SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE:
+    case SILC_ATTRIBUTE_SERVER_DIGITAL_SIGNATURE:
+      {
+	SilcAttributeObjPk *pk = object;
+	if (object_size != sizeof(*pk))
+	  return NULL;
+	object = pk->data;
+	object_size = pk->data_len;
+      }
+      break;
+
+    default:
+      /* Other attributes must be in correct format already */
+      break;
+    }
+  }
+
+  buffer = attrs;
+  len = 4 + object_size;
+
+  if (!buffer) {
+    buffer = silc_buffer_alloc_size(len);
+  } else {
+    buffer = silc_buffer_realloc(buffer,
+				 (buffer ? buffer->truelen + len : len));
+    silc_buffer_pull_tail(buffer, (buffer->end - buffer->data));
+  }
+
   silc_buffer_format(buffer, 
 		     SILC_STR_UI_CHAR(attribute),
 		     SILC_STR_UI_CHAR(flags),
-		     SILC_STR_UI_SHORT((SilcUInt16)data_len),
-		     SILC_STR_UI_XNSTRING(data, data_len),
+		     SILC_STR_UI_SHORT((SilcUInt16)object_size),
+		     SILC_STR_UI_XNSTRING(object, object_size),
 		     SILC_STR_END);
+
+  silc_buffer_pull(buffer, len);
+  if (buffer)
+    silc_buffer_push(buffer, buffer->data - buffer->head);
+
+  if (tmpbuf)
+    silc_buffer_free(tmpbuf);
+  silc_free(str);
 
   return buffer;
 }
@@ -146,51 +313,6 @@ SilcDList silc_attribute_payload_parse_list(const unsigned char *payload,
  err:
   silc_attribute_payload_list_free(list);
   return NULL;
-}
-
-/* Encode list of payloads */
-
-SilcBuffer silc_attribute_payload_encode_list(SilcUInt32 num_attrs, ...)
-{
-  SilcBuffer buffer = NULL;
-  va_list ap;
-  int i, len = 0;
-  SilcAttribute attribute;
-  SilcAttributeFlags flags;
-  unsigned char *data;
-  SilcUInt32 data_len;
-
-  if (!num_attrs)
-    return NULL;
-
-  va_start(ap, num_attrs);
-  for (i = 0; i < num_attrs; i++) {
-    attribute = va_arg(ap, SilcUInt32);
-    flags = va_arg(ap, SilcUInt32);
-    data = va_arg(ap, unsigned char *);
-    data_len = va_arg(ap, SilcUInt32);
-
-    if (data || !data_len)
-      continue;
-
-    len = 4 + data_len;
-    buffer = silc_buffer_realloc(buffer,
-				 (buffer ? buffer->truelen + len : len));
-    silc_buffer_pull_tail(buffer, (buffer->end - buffer->data));
-    silc_buffer_format(buffer, 
-		       SILC_STR_UI_CHAR(attribute),
-		       SILC_STR_UI_CHAR(flags),
-		       SILC_STR_UI_SHORT((SilcUInt16)data_len),
-		       SILC_STR_UI_XNSTRING(data, data_len),
-		       SILC_STR_END);
-    silc_buffer_pull(buffer, len);
-  }
-  va_end(ap);
-
-  if (buffer)
-    silc_buffer_push(buffer, buffer->data - buffer->head);
-
-  return buffer;
 }
 
 /* Free Attribute Payload */
@@ -249,7 +371,8 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
   SilcUInt16 len;
   bool ret = FALSE;
 
-  if (!attribute || !object || !(*object))
+  if (!attribute || payload->attribute != attribute || !object || !(*object) ||
+      payload->flags & SILC_ATTRIBUTE_FLAG_INVALID)
     return FALSE;
 
   switch (attribute) {
