@@ -118,7 +118,7 @@ static const SilcConfigTable silc_map_table_server[] =
   { "city", SILC_CONFIG_ARG_STR, silc_map_cmd_server, NULL },
   { "admin", SILC_CONFIG_ARG_STR, silc_map_cmd_server, NULL },
   { "description", SILC_CONFIG_ARG_STRE, silc_map_cmd_server, NULL },
-  { "writemaphtml_url", SILC_CONFIG_ARG_STRE, silc_map_cmd_server, NULL },
+  { "html_url", SILC_CONFIG_ARG_STRE, silc_map_cmd_server, NULL },
 
   /* Connect params */
   { "connect", SILC_CONFIG_ARG_TOGGLE, silc_map_cmd_server, NULL },
@@ -280,8 +280,8 @@ SILC_CONFIG_CALLBACK(silc_map_cmd_server)
     curr_conn->admin = strdup((char *)val);
   } else if (!strcmp(name, "description")) {
     curr_conn->description = strdup((char *)val);
-  } else if (!strcmp(name, "writemaphtml_url")) {
-    curr_conn->writemaphtml_url = strdup((char *)val);
+  } else if (!strcmp(name, "html_url")) {
+    curr_conn->html_url = strdup((char *)val);
   } else if (!strcmp(name, "connect")) {
     curr_conn->connect = (bool)*(int *)val;
   } else if (!strcmp(name, "connect_timeout")) {

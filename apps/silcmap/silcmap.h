@@ -99,7 +99,7 @@ typedef struct {
   char *admin;
   char *description;
   int connect_timeout;
-  char *writemaphtml_url;
+  char *html_url;
 
   /* Flags */
   unsigned int connect        : 1;

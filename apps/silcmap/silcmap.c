@@ -116,7 +116,7 @@ void silc_map_free(SilcMap map)
       silc_free(mapconn->city);
       silc_free(mapconn->admin);
       silc_free(mapconn->description);
-      silc_free(mapconn->writemaphtml_url);
+      silc_free(mapconn->html_url);
       silc_free(mapconn->up_color);
       silc_free(mapconn->up_text_color);
       silc_free(mapconn->down_color);

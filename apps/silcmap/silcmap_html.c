@@ -335,7 +335,8 @@ bool silc_map_writehtml_index(SilcMap map)
 	    "<td align = \"center\" class=\"%s\">&nbsp;%d</td>\n"
 	    "<td align = \"center\" class=\"%s\">&nbsp;%s</td>\n"
 	    "<td align = \"center\" class=\"%s\">&nbsp;%s</td>\n"
-	    "</tr>\n", class, hostname, mapconn->port,
+	    "</tr>\n", class,
+	    mapconn->html_url ? mapconn->html_url : hostname, mapconn->port,
 	    hostname, class, ip, class, mapconn->port, class,
 	    mapconn->country, class, mapconn->admin);
   }
@@ -380,9 +381,9 @@ bool silc_map_writemaphtml(SilcMap map)
 
   silc_dlist_start(map->conns);
   while ((mapconn = silc_dlist_get(map->conns)) != SILC_LIST_END) {
-    if (mapconn->writemaphtml_url && mapconn->writemaphtml_url[0]) {
-      silc_strncat(url, sizeof(url), mapconn->writemaphtml_url,
-		   strlen(mapconn->writemaphtml_url));
+    if (mapconn->html_url && mapconn->html_url[0]) {
+      silc_strncat(url, sizeof(url), mapconn->html_url,
+		   strlen(mapconn->html_url));
     } else {
       silc_dlist_start(mapconn->hostnames);
       hostname = silc_dlist_get(mapconn->hostnames);
