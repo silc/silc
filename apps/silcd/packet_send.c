@@ -50,8 +50,10 @@ int silc_server_packet_send_real(SilcServer server,
 
   /* Send the packet */
   ret = silc_packet_send(sock, force_send);
-  if (ret != -2)
+  if (ret != -2) {
+    server->stat.packets_sent++;
     return ret;
+  }
 
   /* Mark that there is some outgoing data available for this connection. 
      This call sets the connection both for input and output (the input

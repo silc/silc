@@ -245,9 +245,8 @@ static void signal_handler(int sig)
 SILC_TASK_CALLBACK(got_hup)
 {
   /* First, reset all log files (they might have been deleted) */
-  /* XXX this may be redundant with the silc_server_config_setlogfiles() call.
-   * merge these two with the appropriate checking. */
   silc_log_reset_all();
+
   /* Rehash the configuration file */
   silc_server_rehash(silcd);
 }
@@ -257,6 +256,58 @@ SILC_TASK_CALLBACK(stop_server)
   /* Stop scheduler, the program will stop eventually after noticing
      that the scheduler is down. */
   silc_schedule_stop(silcd->schedule);
+}
+
+/* Dump server statistics into a file into /tmp directory */
+
+SILC_TASK_CALLBACK(dump_stats)
+{
+  FILE *fdd;
+  char filename[256];
+
+  memset(filename, 0, sizeof(filename));
+  snprintf(filename, sizeof(filename) - 1, "/tmp/silcd.%d.stats", getpid());
+  fdd = fopen(filename, "w+");
+  if (!fdd)
+    return;
+
+#define STAT_OUTPUT(fmt, stat) fprintf(fdd, fmt "\n", (int)stat);
+
+  fprintf(fdd, "SILC Server %s Statistics\n\n", silcd->server_name);
+  fprintf(fdd, "Local Stats:\n");
+  STAT_OUTPUT("  My clients              : %d", silcd->stat.my_clients);
+  STAT_OUTPUT("  My servers              : %d", silcd->stat.my_servers);
+  STAT_OUTPUT("  My routers              : %d", silcd->stat.my_routers);
+  STAT_OUTPUT("  My channels             : %d", silcd->stat.my_channels);
+  STAT_OUTPUT("  My joined users         : %d", silcd->stat.my_chanclients);
+  STAT_OUTPUT("  My aways                : %d", silcd->stat.my_aways);
+  STAT_OUTPUT("  My detached clients     : %d", silcd->stat.my_detached);
+  STAT_OUTPUT("  My server operators     : %d", silcd->stat.my_server_ops);
+  STAT_OUTPUT("  My router operators     : %d", silcd->stat.my_router_ops);
+  fprintf(fdd, "\nGlobal Stats:\n");
+  STAT_OUTPUT("  Cell clients            : %d", silcd->stat.cell_clients);
+  STAT_OUTPUT("  Cell servers            : %d", silcd->stat.cell_servers);
+  STAT_OUTPUT("  Cell channels           : %d", silcd->stat.cell_channels);
+  STAT_OUTPUT("  Cell joined users       : %d", silcd->stat.cell_chanclients);
+  STAT_OUTPUT("  All clients             : %d", silcd->stat.clients);
+  STAT_OUTPUT("  All servers             : %d", silcd->stat.servers);
+  STAT_OUTPUT("  All routers             : %d", silcd->stat.routers);
+  STAT_OUTPUT("  All channels            : %d", silcd->stat.channels);
+  STAT_OUTPUT("  All joined users        : %d", silcd->stat.chanclients);
+  STAT_OUTPUT("  All aways               : %d", silcd->stat.aways);
+  STAT_OUTPUT("  All detached clients    : %d", silcd->stat.detached);
+  STAT_OUTPUT("  All server operators    : %d", silcd->stat.server_ops);
+  STAT_OUTPUT("  All router operators    : %d", silcd->stat.router_ops);
+  fprintf(fdd, "\nGeneral Stats:\n");
+  STAT_OUTPUT("  Connection attempts     : %d", silcd->stat.conn_attempts);
+  STAT_OUTPUT("  Connection failures     : %d", silcd->stat.conn_failures);
+  STAT_OUTPUT("  Authentication attempts : %d", silcd->stat.auth_attempts);
+  STAT_OUTPUT("  Authentication failures : %d", silcd->stat.auth_failures);
+  STAT_OUTPUT("  Packets sent            : %d", silcd->stat.packets_sent);
+  STAT_OUTPUT("  Packets received        : %d", silcd->stat.packets_received);
+
+  fflush(fdd);
+  fclose(fdd);
 }
 
 /* This function should not be called directly but throught the wrapper
@@ -398,9 +449,11 @@ int main(int argc, char **argv)
   sigaction(SIGHUP, &sa, NULL);
   sigaction(SIGTERM, &sa, NULL);
   sigaction(SIGINT, &sa, NULL);
+  sigaction(SIGUSR1, &sa, NULL);
   silc_schedule_signal_register(silcd->schedule, SIGHUP, got_hup, NULL);
   silc_schedule_signal_register(silcd->schedule, SIGTERM, stop_server, NULL);
   silc_schedule_signal_register(silcd->schedule, SIGINT, stop_server, NULL);
+  silc_schedule_signal_register(silcd->schedule, SIGUSR1, dump_stats, NULL);
 
   if (!foreground) {
     /* Before running the server, fork to background. */

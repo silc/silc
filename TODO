@@ -30,8 +30,6 @@ TODO/bugs In SILC Server
    each JOIN command will create and distribute the new channel key
    to everybody on the channel (Fix this to 0.9.x).
 
- o Lots of statistics updating is missing around the server.
-
  o If client's public key is saved in the server (and doing public key
    authentication) then the hostname and the username information could
    be taken from the public key.  Should be a configuration option!

@@ -233,6 +233,13 @@ void silc_server_notify(SilcServer server,
     channel->user_count++;
     channel->disabled = FALSE;
 
+    /* Update statistics */
+    if (server->server_type == SILC_ROUTER) {
+      if (sock->type != SILC_SOCKET_TYPE_ROUTER)
+	server->stat.cell_chanclients++;
+      server->stat.chanclients++;
+    }
+
     break;
 
   case SILC_NOTIFY_TYPE_LEAVE:
@@ -1195,7 +1202,9 @@ void silc_server_notify(SilcServer server,
     silc_idlist_del_server(local ? server->local_list :
 			   server->global_list, server_entry);
 
-    /* XXX update statistics */
+    /* Update statistics */
+    if (server->server_type == SILC_ROUTER)
+      server->stat.servers--;
 
     break;
 
@@ -1429,6 +1438,24 @@ void silc_server_notify(SilcServer server,
     /* Remove internal resumed flag if client is marked detached now */
     if (mode & SILC_UMODE_DETACHED)
       client->data.status &= ~SILC_IDLIST_STATUS_RESUMED;
+
+    /* Update statistics */
+    if (server->server_type == SILC_ROUTER) {
+      if (mode & SILC_UMODE_GONE) {
+	if (!client->mode & SILC_UMODE_GONE)
+	  server->stat.aways++;
+      } else {
+	if (client->mode & SILC_UMODE_GONE)
+	  server->stat.aways--;
+      }
+      if (mode & SILC_UMODE_DETACHED) {
+	if (!client->mode & SILC_UMODE_DETACHED)
+	  server->stat.detached++;
+      } else {
+	if (client->mode & SILC_UMODE_DETACHED)
+	  server->stat.detached--;
+      }
+    }
 
     /* Change the mode */
     client->mode = mode;
@@ -2754,12 +2781,6 @@ void silc_server_new_channel(SilcServer server,
       }
       channel->disabled = TRUE;
 
-#if 0
-      /* CMODE change notify is expected */
-      /* Get the mode and set it to the channel */
-      channel->mode = silc_channel_get_mode(payload);
-#endif
-
       /* Send the new channel key to the server */
       id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
       id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
@@ -2772,7 +2793,6 @@ void silc_server_new_channel(SilcServer server,
       silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
 			      chk->data, chk->len, FALSE);
       silc_buffer_free(chk);
-
     } else {
       /* The channel exist by that name, check whether the ID's match.
 	 If they don't then we'll force the server to use the ID we have.
@@ -2826,6 +2846,10 @@ void silc_server_new_channel(SilcServer server,
       }
 
       silc_free(channel_id);
+
+      /* Update statistics */
+      server->stat.channels++;
+      server->stat.cell_channels++;
 
       /* Since the channel is coming from server and we also know about it
 	 then send the JOIN notify to the server so that it see's our

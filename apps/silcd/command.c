@@ -3420,6 +3420,13 @@ static void silc_server_command_join_channel(SilcServer server,
 				     clidp->data, clidp->len,
 				     chidp->data, chidp->len);
 
+  /* Update statistics */
+  server->stat.my_chanclients++;
+  if (server->server_type == SILC_ROUTER) {
+    server->stat.cell_chanclients++;
+    server->stat.chanclients++;
+  }
+
   if (!cmd->pending) {
     /* Send JOIN notify packet to our primary router */
     if (!server->standalone)
@@ -3857,6 +3864,22 @@ SILC_SERVER_CMD_FUNC(umode)
 					      SILC_STATUS_ERR_PERM_DENIED, 0);
 	goto out;
       }
+    }
+
+    /* Update statistics */
+    if (mask & SILC_UMODE_GONE) {
+      if (!client->mode & SILC_UMODE_GONE)
+	server->stat.my_aways++;
+    } else {
+      if (client->mode & SILC_UMODE_GONE)
+	server->stat.my_aways--;
+    }
+    if (mask & SILC_UMODE_DETACHED) {
+      if (!client->mode & SILC_UMODE_DETACHED)
+	server->stat.my_detached++;
+    } else {
+      if (client->mode & SILC_UMODE_DETACHED)
+	server->stat.my_detached--;
     }
 
     /* Change the mode */

@@ -73,7 +73,14 @@ static void silc_server_remove_clients_channels(SilcServer server,
       channel->global_users = FALSE;
 
     silc_free(chl);
-    server->stat.my_chanclients--;
+
+    /* Update statistics */
+    if (client->connection)
+      server->stat.my_chanclients--;
+    if (server->server_type == SILC_ROUTER) {
+      server->stat.cell_chanclients--;
+      server->stat.chanclients--;
+    }
 
     /* If there is not at least one local user on the channel then we don't
        need the channel entry anymore, we can remove it safely, unless the
@@ -721,13 +728,25 @@ bool silc_server_channel_delete(SilcServer server,
   if (delchan) {
     SILC_LOG_DEBUG(("Deleting %s channel", channel->channel_name));
 
+    /* Update statistics */
+    if (server->server_type == SILC_ROUTER)
+      server->stat.chanclients -= channel->user_count;
+
     /* Totally delete the channel and all users on the channel. The
        users are deleted automatically in silc_idlist_del_channel. */
     silc_schedule_task_del_by_context(server->schedule, channel->rekey);
-    if (silc_idlist_del_channel(server->local_list, channel))
+    if (silc_idlist_del_channel(server->local_list, channel)) {
       server->stat.my_channels--;
-    else
-      silc_idlist_del_channel(server->global_list, channel);
+      if (server->server_type == SILC_ROUTER) {
+	server->stat.channels--;
+	server->stat.cell_channels--;
+      }
+    } else {
+      if (silc_idlist_del_channel(server->global_list, channel))
+	if (server->server_type == SILC_ROUTER)
+	  server->stat.channels--;
+    }
+
     return FALSE;
   }
 
@@ -738,6 +757,15 @@ bool silc_server_channel_delete(SilcServer server,
     silc_hash_table_del(chl->client->channels, channel);
     silc_hash_table_del(channel->user_list, chl->client);
     channel->user_count--;
+
+    /* Update statistics */
+    if (chl->client->connection)
+      server->stat.my_chanclients--;
+    if (server->server_type == SILC_ROUTER) {
+      server->stat.cell_chanclients--;
+      server->stat.chanclients--;
+    }
+
     silc_free(chl);
   }
   silc_hash_table_list_reset(&htl);

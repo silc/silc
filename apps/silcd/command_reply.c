@@ -892,6 +892,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
       goto out;
     }
     server->stat.my_channels++;
+    server->stat.channels++;
   } else {
     /* The entry exists. */
 

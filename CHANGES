@@ -1,3 +1,12 @@
+Sat Jun 15 18:23:39 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Added lots of new statistics updating that was missing from
+	  the server and router code.  Affected files in silcd/.
+
+	* Sending SIGUSR1 signal to server now dumps the current
+	  server statistics into /tmp directory.  Affected file is
+	  silcd/silcd.c.
+
 Sat Jun 15 12:09:14 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added some better info printing for client during connecting.

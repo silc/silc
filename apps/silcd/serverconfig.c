@@ -1256,8 +1256,6 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
     return NULL;
   }
 
-  /* XXX are there any other mandatory sections in the config file? */
-
   /* Set default to configuration parameters */
   silc_server_config_set_defaults(config_new);
 

@@ -115,12 +115,10 @@ void silc_server_free(SilcServer server)
   }
 }
 
-/* Opens a listening port.
-   XXX This function will become more general and will support multiple
-   listening ports */
+/* Creates a new server listener. */
 
 static bool silc_server_listen(SilcServer server, const char *server_ip,
-				SilcUInt16 port, int *sock)
+			       SilcUInt16 port, int *sock)
 {
   *sock = silc_net_create_server(port, server_ip);
   if (*sock < 0) {
@@ -2876,7 +2874,14 @@ void silc_server_remove_from_channels(SilcServer server,
       channel->global_users = FALSE;
 
     silc_free(chl);
-    server->stat.my_chanclients--;
+
+    /* Update statistics */
+    if (client->connection)
+      server->stat.my_chanclients--;
+    if (server->server_type == SILC_ROUTER) {
+      server->stat.cell_chanclients--;
+      server->stat.chanclients--;
+    }
 
     /* If there is not at least one local user on the channel then we don't
        need the channel entry anymore, we can remove it safely, unless the
@@ -2966,7 +2971,14 @@ bool silc_server_remove_from_one_channel(SilcServer server,
     channel->global_users = FALSE;
 
   silc_free(chl);
-  server->stat.my_chanclients--;
+
+  /* Update statistics */
+  if (client->connection)
+    server->stat.my_chanclients--;
+  if (server->server_type == SILC_ROUTER) {
+    server->stat.cell_chanclients--;
+    server->stat.chanclients--;
+  }
 
   clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
   if (!clidp)
@@ -3131,9 +3143,11 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   }
 
   server->stat.my_channels++;
-
-  if (server->server_type == SILC_ROUTER)
+  if (server->server_type == SILC_ROUTER) {
+    server->stat.channels++;
+    server->stat.cell_channels++;
     entry->users_resolved = TRUE;
+  }
 
   return entry;
 }
@@ -3214,9 +3228,11 @@ silc_server_create_new_channel_with_id(SilcServer server,
   }
 
   server->stat.my_channels++;
-
-  if (server->server_type == SILC_ROUTER)
+  if (server->server_type == SILC_ROUTER) {
+    server->stat.channels++;
+    server->stat.cell_channels++;
     entry->users_resolved = TRUE;
+  }
 
   return entry;
 }
