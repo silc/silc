@@ -30,9 +30,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o Normal server doesn't reconnect to backup router if connection was
-   lost.
-
  o Add support for the <Requested Attributes> in WHOIS.  Sending and
    reception, with clients and servers should be added.
 

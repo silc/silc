@@ -3159,6 +3159,14 @@ void silc_server_free_sock_user_data(SilcServer server,
 	/* Mark this connection as replaced */
 	silc_server_backup_replaced_add(server, user_data->id,
 					backup_router);
+      } else if (server->server_type == SILC_SERVER &&
+		 sock->type == SILC_SOCKET_TYPE_ROUTER) {
+	/* Reconnect to the router (backup) */
+	silc_schedule_task_add(server->schedule, 0,
+			       silc_server_connect_to_router,
+			       server, 1, 0,
+			       SILC_TASK_TIMEOUT,
+			       SILC_TASK_PRI_NORMAL);
       }
 
       if (!backup_router) {
