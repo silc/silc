@@ -392,11 +392,7 @@ SILC_TASK_CALLBACK(dump_stats)
 	c = 1;
 	while (id_cache) {
 	  client_entry = (SilcClientEntry)id_cache->context;
-	  if (client_entry->connection)
-	    server_entry =
-	      ((SilcSocketConnection)client_entry->connection)->user_data;
-	  else
-	    server_entry = NULL;
+	  server_entry = client_entry->router;
 	  fprintf(fdd, "  %d: name %s id %s status 0x%x from %s\n", c,
 		  client_entry->nickname ? client_entry->nickname :
 		  (unsigned char *)"N/A", client_entry->id ?
@@ -417,11 +413,7 @@ SILC_TASK_CALLBACK(dump_stats)
 	c = 1;
 	while (id_cache) {
 	  client_entry = (SilcClientEntry)id_cache->context;
-	  if (client_entry->connection)
-	    server_entry =
-	      ((SilcSocketConnection)client_entry->connection)->user_data;
-	  else
-	    server_entry = NULL;
+	  server_entry = client_entry->router;
 	  fprintf(fdd, "  %d: name %s id %s status 0x%x from %s\n", c,
 		  client_entry->nickname ? client_entry->nickname :
 		  (unsigned char *)"N/A", client_entry->id ?
