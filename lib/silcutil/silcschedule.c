@@ -903,6 +903,7 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
     if (schedule->fd_list[i].fd == fd) {
       schedule->fd_list[i].fd = fd;
       schedule->fd_list[i].events = mask;
+      schedule->fd_list[i].revents = 0;
       if (i > schedule->last_fd)
 	schedule->last_fd = i;
       found = TRUE;
@@ -918,6 +919,7 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
       if (schedule->fd_list[i].events == 0) {
 	schedule->fd_list[i].fd = fd;
 	schedule->fd_list[i].events = mask;
+	schedule->fd_list[i].revents = 0;
 	if (i > schedule->last_fd)
 	  schedule->last_fd = i;
 	if (send_events) {
@@ -944,6 +946,7 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd)
     if (schedule->fd_list[i].fd == fd) {
       schedule->fd_list[i].fd = 0;
       schedule->fd_list[i].events = 0;
+      schedule->fd_list[i].revents = 0;
       if (schedule->last_fd == i)
 	schedule->last_fd = schedule->max_fd - 1;
       break;
