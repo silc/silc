@@ -17,34 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.5  2000/11/02 22:15:23  priikone
- * 	Some bugfixes.
- * 	Changed server->sim to SilcDList and code accordingly.
- * 	Changes SilcClientEntry->channel to SilcList and added
- * 	back-pointer to SilcChannelClientEntry which is now used by both
- * 	client entry and channel entry
- *
- * Revision 1.4  2000/10/06 08:10:23  priikone
- * 	Added WHOIS to send multiple replies if multiple nicknames are
- * 	found.
- * 	Added MOTD command and [motd] config section and server also sends
- * 	motd to client on connection now.
- * 	Fixed TOPIC command some more.
- *
- * Revision 1.3  2000/07/10 05:41:20  priikone
- * 	Added missing token to administrative information.
- *
- * Revision 1.2  2000/07/05 06:14:01  priikone
- * 	Global costemic changes.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "serverincludes.h"
 #include "server_internal.h"

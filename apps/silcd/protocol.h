@@ -30,6 +30,7 @@
 /* Internal context for Key Exchange protocol. */
 typedef struct {
   void *server;
+  void *context;
   SilcSocketConnection sock;
   SilcRng rng;
 
@@ -49,6 +50,7 @@ typedef struct {
 /* Internal context for connection authentication protocol */
 typedef struct {
   void *server;
+  void *context;
   SilcSocketConnection sock;
 
   /* TRUE if we are receiving part of the protocol */

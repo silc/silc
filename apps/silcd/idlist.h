@@ -430,7 +430,7 @@ typedef struct SilcIDListStruct {
 } *SilcIDList;
 
 /*
-   Temporary ID Entry object.
+   ID Entry for Unknown connections.
 
    This is used during authentication phases where we still don't know 
    what kind of connection remote connection is, hence, we will use this

@@ -28,11 +28,27 @@ typedef struct {
 
 } SilcServerStatistics;
 
+typedef struct {
+  void *id_entry;
+  SilcSocketConnection sock;
+
+  /* Remote host name and port */
+  char *remote_host;
+  int remote_port;
+  
+  /* Current connection retry info */
+  unsigned int retry_count;
+  unsigned int retry_timeout;
+
+  /* Back pointer to server */
+  SilcServer server;
+} *SilcServerConnection;
+
 /* 
    SILC Server Object.
 
 */
-typedef struct SilcServerObjectStruct {
+struct SilcServerStruct {
   char *server_name;
   int server_type;
   int sock;
@@ -81,11 +97,14 @@ typedef struct SilcServerObjectStruct {
   /* Server statistics */
   SilcServerStatistics stats;
 
+  /* Default parameteres for server */
+  SilcServerParams params;
+
 #ifdef SILC_SIM
   /* SIM (SILC Module) list */
   SilcDList sim;
 #endif
-} SilcServerObject;
+};
 
 /* Macros */
 

@@ -24,14 +24,42 @@
 /* Forward declaration for SILC Server object. The actual object is
    defined in internal header file for server routines. I want to keep
    the object private hence this declaration. */
-typedef struct SilcServerObjectStruct *SilcServer;
+typedef struct SilcServerStruct *SilcServer;
 
 #define SILC_SERVER_MAX_CONNECTIONS 10000
 
 /* General definitions */
 
+/* Server and router. Used internally by the code. */
 #define SILC_SERVER 0
 #define SILC_ROUTER 1
+
+/* Connection retry timeout. We implement exponential backoff algorithm
+   in connection retry. The interval of timeuot grows when retry count
+   grows. */
+#define SILC_SERVER_RETRY_COUNT        3	 /* Max retry count */
+#define SILC_SERVER_RETRY_MULTIPLIER   7 / 4	 /* Interval growth */
+#define SILC_SERVER_RETRY_RANDOMIZER   2	 /* timeout += rnd % 2 */
+#define SILC_SERVER_RETRY_INTERVAL_MIN 2	 /* Min retry timeout */
+#define SILC_SERVER_RETRY_INTERVAL_MAX 30	 /* Max generated timeout */
+
+/* 
+   Silc Server Params.
+
+   Structure to hold various default parameters for server that can be
+   given before running the server. 
+
+*/
+typedef struct {
+  unsigned int retry_count;
+  unsigned long retry_interval_min;
+  unsigned long retry_interval_min_usec;
+  unsigned long retry_interval_max;
+  unsigned int retry_keep_trying;
+
+  unsigned long protocol_timeout;
+  unsigned long protocol_timeout_usec;
+} *SilcServerParams;
 
 /* Macros */
 
