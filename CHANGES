@@ -19,6 +19,11 @@ Mon Jul  9 13:40:03 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  after adding the timeout task.  Affected file is
 	  lib/silcutil/silcsockconn.c.
 
+	* The silc_socket_host_lookup is synchronous now if the threads
+	  support is not compiled in.  However, the callback is still
+	  called asyncronously through the scheduler, anyway.  Affected
+	  file lib/silcutil/silcsockconn.c.
+
 Mon Jul  9 00:24:45 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added new function silc_socket_host_lookup to perform
