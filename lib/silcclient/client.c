@@ -1254,9 +1254,9 @@ void silc_client_replace_from_channels(SilcClient client,
 
 /* Parses mode mask and returns the mode as string. */
 
-char *silc_client_chmode(unsigned int mode)
+char *silc_client_chmode(unsigned int mode, SilcChannelEntry channel)
 {
-  char string[20];
+  char string[100];
 
   if (!mode)
     return NULL;
@@ -1283,6 +1283,22 @@ char *silc_client_chmode(unsigned int mode)
 
   if (mode & SILC_CHANNEL_MODE_PASSPHRASE)
     strncat(string, "a", 1);
+
+  if (mode & SILC_CHANNEL_MODE_CIPHER) {
+    char cipher[50];
+    memset(cipher, 0, sizeof(cipher));
+    snprintf(cipher, sizeof(cipher), "c (%s)", 
+	     channel->channel_key->cipher->name);
+    strncat(string, cipher, strlen(cipher));
+  }
+
+  if (mode & SILC_CHANNEL_MODE_HMAC) {
+    char hmac[50];
+    memset(hmac, 0, sizeof(hmac));
+    snprintf(hmac, sizeof(hmac), "h (%s)", 
+	     channel->hmac->hmac->name);
+    strncat(string, hmac, strlen(hmac));
+  }
 
   /* Rest of mode is ignored */
 
