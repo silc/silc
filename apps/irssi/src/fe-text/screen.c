@@ -53,7 +53,7 @@ static void sig_winch(int p)
 }
 #endif
 
-void screen_check_resizes(void)
+static void screen_resize(void)
 {
 #if defined (TIOCGWINSZ) && defined (HAVE_CURSES_RESIZETERM)
 	struct winsize ws;
@@ -79,6 +79,13 @@ void screen_check_resizes(void)
 #endif
 
 	mainwindows_resize(COLS, LINES);
+}
+
+void screen_check_resizes(void)
+{
+	if (!resized)
+		return;
+	screen_resize();
 	resized = FALSE;
 }
 

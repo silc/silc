@@ -1,3 +1,8 @@
+Sun Feb  3 11:46:12 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not constantly resize the window.  A fix patch by cras.
+	  Affected file irssi/src/fe-text/screen.c.
+
 Sat Feb  2 16:54:18 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Applied IPv6 fix patch from Jun-ichiro itojun Hagino.
