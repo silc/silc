@@ -1,3 +1,8 @@
+Wed May 29 18:08:15 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Cleanup keys properly.  Affected file is
+	  irssi/src/silc/core/clientutil.c.
+
 Tue May 28 20:11:41 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Display the user mode on the status bar.  Affected file

@@ -223,7 +223,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   if (ret_pub_key)
     *ret_pub_key = pub_key;
 
-  memset(key, 0, sizeof(key_len));
+  memset(key, 0, key_len);
   silc_free(key);
 
   /* Save private key into file */
@@ -239,7 +239,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   printf("Press <Enter> to continue...\n");
   getchar();
 
-  memset(key, 0, sizeof(key_len));
+  memset(key, 0, key_len);
   silc_free(key);
 
   silc_rng_free(rng);

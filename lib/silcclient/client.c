@@ -1340,6 +1340,9 @@ void silc_client_close_connection_real(SilcClient client,
 
   SILC_LOG_DEBUG(("Start"));
 
+  if (!sock && !conn)
+    return;
+
   if (!sock || (sock && conn->sock == sock))
     del = TRUE;
   if (!sock)
