@@ -108,7 +108,7 @@ bool silc_queue_command_call(SilcClient client,
       if (need_free)
         g_free(cmd);
 
-      g_critical("file %s: line %d: assertion `message != NULL' failed.",
+      g_error("file %s: line %d: assertion `message != NULL' failed.",
           	 __FILE__, __LINE__);
 
       return FALSE;
