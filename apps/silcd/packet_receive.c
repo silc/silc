@@ -437,7 +437,7 @@ void silc_server_notify(SilcServer server,
     channel->topic = strdup(tmp);
 
     /* Send the same notify to the channel */
-    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
+    silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
 				       FALSE, packet->buffer->data, 
 				       packet->buffer->len, FALSE);
     silc_free(channel_id);
@@ -563,6 +563,38 @@ void silc_server_notify(SilcServer server,
     /* Check if mode changed */
     if (channel->mode == mode) {
       SILC_LOG_DEBUG(("Mode is changed already"));
+
+      /* If this mode change has founder mode then we'll enforce the
+	 change so that the server gets the real founder public key */
+      if (server->server_type != SILC_SERVER &&
+	  sock != SILC_PRIMARY_ROUTE(server) &&
+	  mode & SILC_CHANNEL_MODE_FOUNDER_AUTH && channel->founder_key) {
+	SILC_LOG_DEBUG(("Sending founder public key to server"));
+	silc_server_send_notify_cmode(server, sock, FALSE, channel,
+				      channel->mode, server->id,
+				      SILC_ID_SERVER, channel->cipher,
+				      channel->hmac_name,
+				      channel->passphrase,
+				      channel->founder_key);
+      }
+
+      /* If we received same mode from our primary check whether founder
+	 mode and key in the notify is set.  We update the founder key
+	 here since we may have wrong one */
+      if (server->server_type == SILC_SERVER &&
+	  sock == SILC_PRIMARY_ROUTE(server) &&
+	  mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
+	SILC_LOG_DEBUG(("Founder public key received from primary router"));
+	tmp = silc_argument_get_arg_type(args, 6, &tmp_len);
+	if (!tmp)
+	  break;
+
+	if (channel->founder_key)
+	  silc_pkcs_public_key_free(channel->founder_key);
+	channel->founder_key = NULL;
+	silc_pkcs_public_key_decode(tmp, tmp_len, &channel->founder_key);
+      }
+
       break;
     }
 
@@ -848,7 +880,7 @@ void silc_server_notify(SilcServer server,
 	   founder at all on the channel. */
 	if (client && !(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)) {
 	  /* Force the mode to not have founder mode */
-	  mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	  chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
 	  silc_server_force_cumode_change(server, sock, channel, chl, mode);
 	  notify_sent = TRUE;
 	  break;
@@ -868,7 +900,7 @@ void silc_server_notify(SilcServer server,
 		 silc_pkcs_public_key_compare(
 					channel->founder_key,
 					chl2->client->data.public_key))) {
-	      mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	      chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
 	      silc_server_force_cumode_change(server, sock, channel,
 					      chl, mode);
 	      notify_sent = TRUE;
@@ -887,7 +919,7 @@ void silc_server_notify(SilcServer server,
 	tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
 	if (!tmp || !silc_pkcs_public_key_decode(tmp, tmp_len,
 						 &founder_key)) {
-	  mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	  chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
 	  silc_server_force_cumode_change(server, sock, channel, chl, mode);
 	  notify_sent = TRUE;
 	  break;
@@ -899,14 +931,14 @@ void silc_server_notify(SilcServer server,
 	  if (client && client->data.public_key && 
 	      !silc_pkcs_public_key_compare(channel->founder_key,
 					    client->data.public_key)) {
-	    mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	    chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
 	    silc_server_force_cumode_change(server, sock, channel, chl, mode);
 	    notify_sent = TRUE;
 	    break;
 	  }
 	  if (!silc_pkcs_public_key_compare(channel->founder_key,
 					    founder_key)) {
-	    mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	    chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;
 	    silc_server_force_cumode_change(server, sock, channel, chl, mode);
 	    notify_sent = TRUE;
 	    break;
@@ -934,7 +966,9 @@ void silc_server_notify(SilcServer server,
 	break;
       }
 
-      SILC_LOG_DEBUG(("Changing the channel user mode"));
+      SILC_LOG_DEBUG(("Changing %s channel user mode",
+		      chl->client->nickname ? chl->client->nickname :
+		      (unsigned char *)""));
 
       /* Change the mode */
       chl->mode = mode;
