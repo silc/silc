@@ -1423,7 +1423,7 @@ void silc_server_send_notify_watch(SilcServer server,
   silc_server_send_notify_dest(server, sock, FALSE, watcher->id,
 			       SILC_ID_CLIENT, SILC_NOTIFY_TYPE_WATCH,
 			       4, idp->data, idp->len,
-			       nickname, strlen(nickname),
+			       nickname, nickname ? strlen(nickname) : 0,
 			       mode, sizeof(mode), 
 			       type != SILC_NOTIFY_TYPE_NONE ?
 			       n : NULL, sizeof(n));

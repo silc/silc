@@ -1144,6 +1144,10 @@ void silc_client_notify_by_server(SilcClient client,
       if (tmp && notify == SILC_NOTIFY_TYPE_NICK_CHANGE &&
 	  !silc_hash_table_count(client_entry->channels))
 	silc_client_del_client(client, conn, client_entry);
+      else if (notify == SILC_NOTIFY_TYPE_SIGNOFF ||
+	       notify == SILC_NOTIFY_TYPE_SERVER_SIGNOFF ||
+	       notify == SILC_NOTIFY_TYPE_KILLED)
+	silc_client_del_client(client, conn, client_entry);
     }
     break;
 

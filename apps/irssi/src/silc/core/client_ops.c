@@ -1807,6 +1807,8 @@ typedef struct {
 void ask_passphrase_completion(const char *passphrase, void *context)
 {
   AskPassphrase p = (AskPassphrase)context;
+  if (passphrase && passphrase[0] == '\0')
+    passphrase = NULL;
   p->completion((unsigned char *)passphrase, 
 		passphrase ? strlen(passphrase) : 0, p->context);
   silc_free(p);

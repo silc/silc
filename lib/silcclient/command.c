@@ -1760,7 +1760,8 @@ static void silc_client_command_oper_send(unsigned char *data,
   buffer = silc_command_payload_encode_va(SILC_COMMAND_OPER, 0, 2, 
 					  1, cmd->argv[1], 
 					  strlen(cmd->argv[1]),
-					  2, auth->data, auth->len);
+					  2, auth ? auth->data : NULL,
+					  auth ? auth->len : 0);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
 
@@ -1829,7 +1830,8 @@ static void silc_client_command_silcoper_send(unsigned char *data,
   buffer = silc_command_payload_encode_va(SILC_COMMAND_SILCOPER, 0, 2, 
 					  1, cmd->argv[1], 
 					  strlen(cmd->argv[1]),
-					  2, auth->data, auth->len);
+					  2, auth ? auth->data : NULL,
+					  auth ? auth->len : 0);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
 
