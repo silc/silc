@@ -69,10 +69,8 @@ void silc_client_send_channel_message(SilcClient client,
       chu->mode & SILC_CHANNEL_UMODE_CHANOP &&
       !(chu->mode & SILC_CHANNEL_UMODE_CHANFO))
     return;
-#if 0
   if (chu->mode & SILC_CHANNEL_UMODE_QUIET)
     return;
-#endif
 
   /* Take the key to be used */
   if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {

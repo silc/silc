@@ -331,7 +331,6 @@ static void command_away(const char *data, SILC_SERVER_REC *server,
 
     printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP, 
 		       SILCTXT_UNSET_AWAY);
-    server->usermode_away = FALSE;
   } else {
     /* Set the away message */
     silc_client_set_away_message(silc_client, server->conn, (char *)data);
@@ -339,9 +338,11 @@ static void command_away(const char *data, SILC_SERVER_REC *server,
 
     printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP, 
 		       SILCTXT_SET_AWAY, data);
-    server->usermode_away = TRUE;
   }
 
+  server->usermode_away = set;
+  if (set)
+    server->away_reason = g_strdup((char *)data);
   signal_emit("away mode changed", 1, server);
 
   silc_command_exec(server, "UMODE", set ? "+g" : "-g");

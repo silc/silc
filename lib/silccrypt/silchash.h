@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1999 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -101,16 +101,16 @@ extern DLLAPI const SilcHashObject silc_default_hash[];
 #define SILC_HASH_SIM_CONTEXT_LEN "context_len"
 
 /* Macros that can be used to declare SILC Hash API functions. */
-#define SILC_HASH_API_INIT(hash)		\
+#define SILC_HASH_API_INIT(hash)					\
 void silc_##hash##_init(void *context)
 #define SILC_HASH_API_UPDATE(hash)					\
 void silc_##hash##_update(void *context, const unsigned char *data,	\
                           SilcUInt32 len)
-#define SILC_HASH_API_FINAL(hash)				\
+#define SILC_HASH_API_FINAL(hash)					\
 void silc_##hash##_final(void *context, unsigned char *digest)
 #define SILC_HASH_API_TRANSFORM(hash)					\
 void silc_##hash##_transform(SilcUInt32 *state,	const unsigned char *buffer)
-#define SILC_HASH_API_CONTEXT_LEN(hash)		\
+#define SILC_HASH_API_CONTEXT_LEN(hash)					\
 SilcUInt32 silc_##hash##_context_len()
 
 /* Prototypes */
@@ -396,7 +396,7 @@ char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
  *
  * DESCRIPTION
  *
- *    Utility function which can be used to create a textual bableprint
+ *    Utility function which can be used to create a textual babbleprint
  *    out of the data indicated by `data' of length of `data_len' bytes.
  *    If `hash' is NULL then SHA1 hash function is used automatically.
  *    The caller must free the returned string.
