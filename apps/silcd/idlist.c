@@ -376,6 +376,7 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
     silc_free(entry->username);
     silc_free(entry->userinfo);
     silc_free(entry->id);
+    silc_free(entry->attrs);
     silc_hash_table_free(entry->channels);
 
     memset(entry, 'F', sizeof(*entry));
@@ -575,6 +576,7 @@ void silc_idlist_client_destructor(SilcIDCache cache,
     silc_free(client->username);
     silc_free(client->userinfo);
     silc_free(client->id);
+    silc_free(client->attrs);
     silc_hash_table_free(client->channels);
 
     memset(client, 'A', sizeof(*client));
