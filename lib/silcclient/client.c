@@ -1833,6 +1833,10 @@ void silc_client_receive_new_id(SilcClient client,
 				SilcIDPayload idp)
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
+  int connecting = FALSE;
+
+  if (!conn->local_entry)
+    connecting = TRUE;
 
   /* Delete old ID from ID cache */
   silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, conn->local_id);
@@ -1867,7 +1871,8 @@ void silc_client_receive_new_id(SilcClient client,
 
   /* Notify application of successful connection. We do it here now that
      we've received the Client ID and are allowed to send traffic. */
-  client->ops->connect(client, conn, TRUE);
+  if (connecting)
+    client->ops->connect(client, conn, TRUE);
 }
 
 /* Processed received Channel ID for a channel. This is called when client
