@@ -11,6 +11,8 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
+ o Still crash with NICK_CHANGE notify.
+
  o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
    though).  This should be added and perhaps new client operation
    should be added to notify application that it was received and
@@ -27,25 +29,10 @@ TODO/bugs In SILC Server
    the core library, client and server.  Maybe implementations of
    RFC 2425 and RFC 2426 to make it complete.
 
- o Add special handling in router and server for "connection timed out"
-   error.  Be optimistic.
+ o Backup router related issues:
 
- o Backup router related issues (Fix this to 0.9.x):
-
-	o Complete backup router support with standalone router
-
-	o Make the backup router work even if not all servers in the
-	  cell use it.  When primary goes down, also those that are
-	  not using it (are not connected locally) are signoffed.
-
-	  o When primary goes down and removing clients of non-backup
-	    aware server the SERVER_SIGNOFF includes the router's ID
-	    not the server's ID, which it should include.  The notify
-	    is sent by backup.
-
-	o When removing clients by server in signoff, EOF etc, find also
-	  the client's real server (based on the Client ID's IP), and
-	  remove the server too.
+ 	o Add special handling in router and server for "connection
+	  timed out" error.  Be optimistic.
 
 	o Testing
 

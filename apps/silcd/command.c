@@ -4326,7 +4326,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 						3, tmp_mask, 4);
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
 			  packet->data, packet->len, FALSE);
-    
+
   silc_buffer_free(packet);
   silc_buffer_free(cidp);
 

@@ -1232,7 +1232,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   SILC_LOG_DEBUG(("New server id(%s)",
 		  silc_id_render(ctx->dest_id, SILC_ID_SERVER)));
 
-  /* Add the connected router to global server list */
+  /* Add the connected router to global server list.  Router is sent
+     as NULL since it's local to us. */
   id_entry = silc_idlist_add_server(server->global_list,
 				    strdup(sock->hostname),
 				    SILC_ROUTER, ctx->dest_id, NULL, sock);
@@ -1280,10 +1281,12 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
       server->router = id_entry;
       server->standalone = FALSE;
 
-      /* If we are router then announce our possible servers. */
+      /* If we are router then announce our possible servers.  Backup
+	 router announces also global servers. */
       if (server->server_type == SILC_ROUTER)
-	silc_server_announce_servers(server, FALSE, 0,
-				     SILC_PRIMARY_ROUTE(server));
+	silc_server_announce_servers(server,
+				     server->backup_router ? TRUE : FALSE,
+				     0, SILC_PRIMARY_ROUTE(server));
 
       /* Announce our clients and channels to the router */
       silc_server_announce_clients(server, 0, SILC_PRIMARY_ROUTE(server));
@@ -3038,6 +3041,13 @@ void silc_server_free_sock_user_data(SilcServer server,
 	/* Enable local server connections that may be disabled */
 	silc_server_local_servers_toggle_enabled(server, TRUE);
 
+	/* Update the client entries of this server to the new backup
+	   router.  If we are the backup router we also resolve the real
+	   servers for the clients.  After updating is over this also
+	   removes the clients that this server explicitly owns. */
+	silc_server_update_clients_by_server(server, user_data,
+					     backup_router, TRUE);
+
 	/* If we are router and just lost our primary router (now standlaone)
 	   we remove everything that was behind it, since we don't know
 	   any better. */
@@ -3046,12 +3056,10 @@ void silc_server_free_sock_user_data(SilcServer server,
 	     remove the clients of those servers too. */
 	  silc_server_remove_servers_by_server(server, user_data, TRUE);
 
-	/* Update the client entries of this server to the new backup
-	   router.  If we are the backup router we also resolve the real
-	   servers for the clients.  After updating is over this also
-	   removes the clients that this server explicitly owns. */
-	silc_server_update_clients_by_server(server, user_data,
-					     backup_router, TRUE, TRUE);
+	/* Finally remove the clients that are explicitly owned by this
+	   server.  They go down with the server. */
+	silc_server_remove_clients_by_server(server, user_data,
+					     user_data, TRUE);
 
 	/* Update our server cache to use the new backup router too. */
 	silc_server_update_servers_by_server(server, user_data, backup_router);
@@ -3575,12 +3583,12 @@ bool silc_server_create_channel_key(SilcServer server,
   unsigned char channel_key[32], hash[32];
   SilcUInt32 len;
 
-  SILC_LOG_DEBUG(("Generating channel key"));
-
   if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
     SILC_LOG_DEBUG(("Channel has private keys, will not generate new key"));
     return TRUE;
   }
+
+  SILC_LOG_DEBUG(("Generating channel %s key", channel->channel_name));
 
   if (!channel->channel_key)
     if (!silc_cipher_alloc(SILC_DEFAULT_CIPHER, &channel->channel_key)) {
@@ -3655,8 +3663,6 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
   SilcUInt32 tmp_len;
   char *cipher;
 
-  SILC_LOG_DEBUG(("Saving new channel key"));
-
   /* Decode channel key payload */
   payload = silc_channel_key_payload_parse(key_payload->data,
 					   key_payload->len);
@@ -3687,6 +3693,8 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
       }
     }
   }
+
+  SILC_LOG_DEBUG(("Saving new channel %s key", channel->channel_name));
 
   tmp = silc_channel_key_get_key(payload, &tmp_len);
   if (!tmp) {
@@ -4168,31 +4176,38 @@ void silc_server_announce_get_channels(SilcServer server,
 	  silc_buffer_pull(*channels, len);
 	}
 
-	/* Channel user modes */
-	*channel_users_modes = silc_realloc(*channel_users_modes,
-					    sizeof(**channel_users_modes) *
-					    (i + 1));
-	(*channel_users_modes)[i] = NULL;
-	*channel_modes = silc_realloc(*channel_modes,
-				      sizeof(**channel_modes) * (i + 1));
-	(*channel_modes)[i] = NULL;
-	*channel_ids = silc_realloc(*channel_ids,
-				    sizeof(**channel_ids) * (i + 1));
-	(*channel_ids)[i] = NULL;
-	silc_server_announce_get_channel_users(server, channel,
-					       &(*channel_modes)[i], 
-					       channel_users,
-					       &(*channel_users_modes)[i]);
-	(*channel_ids)[i] = channel->id;
+	if (creation_time && channel->updated < creation_time)
+	  announce = FALSE;
+	else
+	  announce = TRUE;
 
-	/* Channel's topic */
-	*channel_topics = silc_realloc(*channel_topics,
-				       sizeof(**channel_topics) * (i + 1));
-	(*channel_topics)[i] = NULL;
-	silc_server_announce_get_channel_topic(server, channel,
-					       &(*channel_topics)[i]);
-	(*channel_users_modes_c)++;
-	i++;
+	if (announce) {
+	  /* Channel user modes */
+	  *channel_users_modes = silc_realloc(*channel_users_modes,
+					      sizeof(**channel_users_modes) *
+					      (i + 1));
+	  (*channel_users_modes)[i] = NULL;
+	  *channel_modes = silc_realloc(*channel_modes,
+					sizeof(**channel_modes) * (i + 1));
+	  (*channel_modes)[i] = NULL;
+	  *channel_ids = silc_realloc(*channel_ids,
+				      sizeof(**channel_ids) * (i + 1));
+	  (*channel_ids)[i] = NULL;
+	  silc_server_announce_get_channel_users(server, channel,
+						 &(*channel_modes)[i], 
+						 channel_users,
+						 &(*channel_users_modes)[i]);
+	  (*channel_ids)[i] = channel->id;
+
+	  /* Channel's topic */
+	  *channel_topics = silc_realloc(*channel_topics,
+					 sizeof(**channel_topics) * (i + 1));
+	  (*channel_topics)[i] = NULL;
+	  silc_server_announce_get_channel_topic(server, channel,
+						 &(*channel_topics)[i]);
+	  (*channel_users_modes_c)++;
+	  i++;
+	}
 
 	if (!silc_idcache_list_next(list, &id_cache))
 	  break;

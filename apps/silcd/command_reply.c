@@ -566,7 +566,8 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
       /* We don't have that server anywhere, add it. */
       server_entry = silc_idlist_add_server(server->global_list, 
 					    strdup(name), 0,
-					    server_id, NULL, NULL);
+					    server_id, server->router,
+					    SILC_PRIMARY_ROUTE(server));
       if (!server_entry) {
 	silc_free(server_id);
 	goto error;
@@ -693,7 +694,8 @@ SILC_SERVER_CMD_REPLY_FUNC(info)
       /* Add the server to global list */
       server_id = silc_id_dup(server_id, SILC_ID_SERVER);
       entry = silc_idlist_add_server(server->global_list, name, 0,
-				     server_id, NULL, NULL);
+				     server_id, cmd->sock->user_data,
+				     cmd->sock);
       if (!entry) {
 	silc_free(server_id);
 	goto out;

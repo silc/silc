@@ -100,7 +100,7 @@ void silc_server_notify(SilcServer server,
 				   channel_id, SILC_ID_CHANNEL,
 				   packet->buffer->data, 
 				   packet->buffer->len, FALSE);
-      silc_server_backup_send_dest(server, (SilcServerEntry)sock->user_data, 
+      silc_server_backup_send_dest(server, sock->user_data, 
 				   packet->type, packet->flags,
 				   channel_id, SILC_ID_CHANNEL,
 				   packet->buffer->data, packet->buffer->len, 
@@ -112,7 +112,7 @@ void silc_server_notify(SilcServer server,
 			      packet->flags | SILC_PACKET_FLAG_BROADCAST, 
 			      packet->buffer->data, packet->buffer->len, 
 			      FALSE);
-      silc_server_backup_send(server, (SilcServerEntry)sock->user_data,
+      silc_server_backup_send(server, sock->user_data,
 			      packet->type, packet->flags,
 			      packet->buffer->data, packet->buffer->len, 
 			      FALSE, TRUE);
@@ -196,7 +196,8 @@ void silc_server_notify(SilcServer server,
 
     /* Do not add client to channel if it is there already */
     if (silc_server_client_on_channel(client, channel, NULL)) {
-      SILC_LOG_DEBUG(("Client already on channel"));
+      SILC_LOG_DEBUG(("Client already on channel %s",
+		      channel->channel_name));
       break;
     }
 
@@ -591,7 +592,7 @@ void silc_server_notify(SilcServer server,
       if (server->server_type == SILC_SERVER &&
 	  sock == SILC_PRIMARY_ROUTE(server) &&
 	  mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
-	SILC_LOG_DEBUG(("Founder public key received from primary router"));
+	SILC_LOG_DEBUG(("Founder public key received from router"));
 	tmp = silc_argument_get_arg_type(args, 6, &tmp_len);
 	if (!tmp)
 	  break;
@@ -982,9 +983,9 @@ void silc_server_notify(SilcServer server,
 
       /* Send the same notify to the channel */
       if (!notify_sent)
-	silc_server_packet_send_to_channel(server, NULL, channel, 
-					   packet->type, 
-					   FALSE, packet->buffer->data, 
+	silc_server_packet_send_to_channel(server, NULL, channel,
+					   packet->type,
+					   FALSE, packet->buffer->data,
 					   packet->buffer->len, FALSE);
       
       silc_free(channel_id);
@@ -1304,7 +1305,7 @@ void silc_server_notify(SilcServer server,
 
     /* Remove the clients that this server owns as they will become
        invalid now too. */
-    silc_server_remove_clients_by_server(server, server_entry,
+    silc_server_remove_clients_by_server(server, server_entry->router,
 					 server_entry, TRUE);
     silc_server_backup_del(server, server_entry);
 
@@ -2090,7 +2091,7 @@ void silc_server_channel_key(SilcServer server,
   
   if (server->server_type != SILC_BACKUP_ROUTER) {
     /* Distribute to local cell backup routers. */
-    silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
+    silc_server_backup_send(server, sock->user_data, 
 			    SILC_PACKET_CHANNEL_KEY, 0,
 			    buffer->data, buffer->len, FALSE, TRUE);
   }
@@ -2297,7 +2298,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   /* Distribute to backup routers */
   if (server->server_type == SILC_ROUTER) {
     SilcBuffer idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-    silc_server_backup_send(server, NULL, SILC_PACKET_NEW_ID, 0,
+    silc_server_backup_send(server, sock->user_data, SILC_PACKET_NEW_ID, 0,
 			    idp->data, idp->len, FALSE, TRUE);
     silc_buffer_free(idp);
   }
@@ -2457,7 +2458,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   if (server->server_type == SILC_ROUTER) {
     /* Distribute to backup routers */
     SilcBuffer idp = silc_id_payload_encode(new_server->id, SILC_ID_SERVER);
-    silc_server_backup_send(server, NULL, SILC_PACKET_NEW_ID, 0,
+    silc_server_backup_send(server, sock->user_data, SILC_PACKET_NEW_ID, 0,
 			    idp->data, idp->len, FALSE, TRUE);
     silc_buffer_free(idp);
 
@@ -2696,7 +2697,7 @@ static void silc_server_new_id_real(SilcServer server,
 			    packet->type, 
 			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
 			    buffer->data, buffer->len, FALSE);
-    silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
+    silc_server_backup_send(server, sock->user_data, 
 			    packet->type, packet->flags,
 			    packet->buffer->data, packet->buffer->len, 
 			    FALSE, TRUE);
@@ -2744,7 +2745,7 @@ void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
 			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
 			    packet->buffer->data, 
 			    packet->buffer->len, FALSE);
-    silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
+    silc_server_backup_send(server, sock->user_data, 
 			    packet->type, packet->flags,
 			    packet->buffer->data, packet->buffer->len, 
 			    FALSE, TRUE);
@@ -2903,7 +2904,8 @@ void silc_server_new_channel(SilcServer server,
 	return;
       }
       channel->disabled = TRUE;
-      channel->mode = silc_channel_get_mode(payload);
+      if (server_entry->server_type != SILC_BACKUP_ROUTER)
+	channel->mode = silc_channel_get_mode(payload);
 
       /* Send the new channel key to the server */
       id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
@@ -2956,15 +2958,18 @@ void silc_server_new_channel(SilcServer server,
       /* Create new key for the channel and send it to the server and
 	 everybody else possibly on the channel. */
       if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
-	if (!silc_server_create_channel_key(server, channel, 0))
-	  return;
-	
-	/* Send to the channel */
-	silc_server_send_channel_key(server, sock, channel, FALSE);
-	id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
-	id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
+
+	if (silc_hash_table_count(channel->user_list)) {
+	  if (!silc_server_create_channel_key(server, channel, 0))
+	    return;
+
+	  /* Send to the channel */
+	  silc_server_send_channel_key(server, sock, channel, FALSE);
+	}
 
 	/* Send to the server */
+	id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+	id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
 	chk = silc_channel_key_payload_encode(id_len, id,
 					      strlen(channel->channel_key->
 						     cipher->name),
@@ -3056,7 +3061,7 @@ void silc_server_new_channel_list(SilcServer server,
 			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
 			    packet->buffer->data, 
 			    packet->buffer->len, FALSE);
-    silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
+    silc_server_backup_send(server, sock->user_data, 
 			    packet->type, packet->flags,
 			    packet->buffer->data, packet->buffer->len, 
 			    FALSE, TRUE);
@@ -3813,7 +3818,7 @@ void silc_server_resume_client(SilcServer server,
 			      packet->type, 
 			      packet->flags | SILC_PACKET_FLAG_BROADCAST,
 			      buffer->data, buffer->len, FALSE);
-      silc_server_backup_send(server, (SilcServerEntry)sock->user_data, 
+      silc_server_backup_send(server, sock->user_data, 
 			      packet->type, packet->flags,
 			      packet->buffer->data, packet->buffer->len, 
 			      FALSE, TRUE);

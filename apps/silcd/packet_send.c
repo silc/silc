@@ -426,7 +426,11 @@ void silc_server_packet_send_clients(SilcServer server,
   bool gone = FALSE;
   int k;
 
-  SILC_LOG_DEBUG(("Sending packet to list of clients"));
+  if (!silc_hash_table_count(clients))
+    return;
+
+  SILC_LOG_DEBUG(("Sending packet to %d clients",
+		  silc_hash_table_count(clients)));
 
   /* Send to all clients in table */
   silc_hash_table_list(clients, &htl);
@@ -609,7 +613,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
     goto out;
   }
 
-  SILC_LOG_DEBUG(("Sending %s packet to channel %s",
+  SILC_LOG_DEBUG(("Sending %s to channel %s",
 		  silc_get_packet_name(type), channel->channel_name));
 
   routed = silc_calloc(silc_hash_table_count(channel->user_list), 
@@ -804,7 +808,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
       sock = (SilcSocketConnection)router->connection;
       idata = (SilcIDListData)router;
 
-      SILC_LOG_DEBUG(("Sending channel message to router for routing"));
+      SILC_LOG_DEBUG(("Sending message to router for routing"));
 
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
 					      idata->send_key, 

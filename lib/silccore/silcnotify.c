@@ -65,7 +65,7 @@ SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
   if (newp->argc) {
     silc_buffer_pull(&buffer, 5);
     newp->args = silc_argument_payload_parse(buffer.data, buffer.len, 
-					    newp->argc);
+					     newp->argc);
     silc_buffer_push(&buffer, 5);
   }
 

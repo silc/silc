@@ -339,12 +339,8 @@ void silc_server_backup_send(SilcServer server,
 
   for (i = 0; i < server->backup->servers_count; i++) {
     backup = server->backup->servers[i].server;
-    if (!backup)
+    if (!backup || sender == backup)
       continue;
-
-    if (sender == backup)
-      continue;
-
     if (local && server->backup->servers[i].local == FALSE)
       continue;
     if (server->backup->servers[i].server == server->id_entry)
@@ -385,12 +381,8 @@ void silc_server_backup_send_dest(SilcServer server,
 
   for (i = 0; i < server->backup->servers_count; i++) {
     backup = server->backup->servers[i].server;
-    if (!backup)
+    if (!backup || sender == backup)
       continue;
-
-    if (sender == backup)
-      continue;
-
     if (local && server->backup->servers[i].local == FALSE)
       continue;
     if (server->backup->servers[i].server == server->id_entry)
@@ -838,10 +830,15 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 
       silc_buffer_free(packet);
 
-      /* Announce all of our information */
-      silc_server_announce_servers(server, TRUE, 0, ctx->sock);
-      silc_server_announce_clients(server, 0, ctx->sock);
-      silc_server_announce_channels(server, 0, ctx->sock);
+      /* If we are not standalone and our primary is not the one we've
+	 talking to now, then announce our information to it since we
+	 haven't done that yet.  Standalone backup router announces
+	 these during connecting to the primary. */
+      if (!server->standalone && SILC_PRIMARY_ROUTE(server) != ctx->sock) {
+	silc_server_announce_servers(server, TRUE, 0, ctx->sock);
+	silc_server_announce_clients(server, 0, ctx->sock);
+	silc_server_announce_channels(server, 0, ctx->sock);
+      }
 
       protocol->state++;
     } else {
@@ -962,7 +959,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
       silc_server_update_servers_by_server(server, ctx->sock->user_data, 
 					   server->router);
       silc_server_update_clients_by_server(server, ctx->sock->user_data,
-					   server->router, TRUE, FALSE);
+					   server->router, TRUE);
       if (server->server_type == SILC_SERVER)
 	silc_server_update_channels_by_server(server, ctx->sock->user_data, 
 					      server->router);
@@ -1083,13 +1080,10 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	  /* We have new primary router now */
 	  server->id_entry->router = router;
 	  server->router = router;
-	  server->router->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
-
 	  SILC_LOG_INFO(("Switching back to primary router %s",
 			 server->router->server_name));
 	} else {
 	  /* We are connected to new primary and now continue using it */
-	  router->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
 	  SILC_LOG_INFO(("Resuming the use of primary router %s",
 			 router->server_name));
 	}
@@ -1097,20 +1091,23 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	/* Update the client entries of the backup router to the new 
 	   router */
 	silc_server_local_servers_toggle_enabled(server, FALSE);
+	router->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
 	silc_server_update_servers_by_server(server, backup_router, router);
-	silc_server_update_clients_by_server(server, NULL, router, 
-					     FALSE, FALSE);
+	silc_server_update_clients_by_server(server, NULL, router, FALSE);
 	if (server->server_type == SILC_SERVER)
 	  silc_server_update_channels_by_server(server, backup_router, router);
  	silc_server_backup_replaced_del(server, backup_router);
 
 	/* Announce all of our information to the router. */
 	if (server->server_type == SILC_ROUTER)
-	  silc_server_announce_servers(server, FALSE, 0, router->connection);
+	  silc_server_announce_servers(server, FALSE, ctx->start,
+				       router->connection);
 
 	/* Announce our clients and channels to the router */
-	silc_server_announce_clients(server, 0, router->connection);
-	silc_server_announce_channels(server, 0, router->connection);
+	silc_server_announce_clients(server, ctx->start,
+				     router->connection);
+	silc_server_announce_channels(server, ctx->start,
+				      router->connection);
       }
 
       /* Send notify about primary router going down to local operators */
@@ -1171,14 +1168,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 	server_entry = (SilcServerEntry)id_cache->context;
 	sock = (SilcSocketConnection)server_entry->connection;
 
-	/* XXXX */
-	if (!sock) {
-	  SILC_LOG_DEBUG(("******** REMOVE THIS TEST, IT ALLOWS A BUG"));
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  continue;
-	}
-
 	if (sock->protocol == protocol) {
 	  sock->protocol = NULL;
 
@@ -1198,14 +1187,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
       while (id_cache) {
 	server_entry = (SilcServerEntry)id_cache->context;
 	sock = (SilcSocketConnection)server_entry->connection;
-
-	/* XXXX */
-	if (!sock) {
-	  SILC_LOG_DEBUG(("******** REMOVE THIS TEST, IT ALLOWS A BUG"));
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  continue;
-	}
 
 	if (sock->protocol == protocol) {
 	  sock->protocol = NULL;

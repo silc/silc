@@ -8,6 +8,26 @@ Wed Jun 26 15:14:12 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  clients of those servers can be removed too.  Affected file
 	  silcd/server_util.[ch].
 
+	* When removing clients after a server has signed of remove
+	  also all servers behind that server (unless they are known
+	  to be available locally), and send SERVER_SIGNOFF for each
+	  of the server separately.  Also the signed off clients are
+	  sent now separately per signed off server.  The affected files
+	  are silcd/server.c and silcd/server_util.[ch].
+
+	* All servers added with silc_idlist_add_server must always
+	  have both "router" and "connection" pointers set.  Otherwise,
+	  bad server entries may be left around in the cache.
+	  Affected file silcd/command_reply.c.
+
+	* Do not create the channel key in NEW_CHANNEL packet
+	  processing if the channel is empty.  Affected file
+	  silcd/packet_receive.c.
+
+	* Completed backup router support for standalone routers.
+	  Supports also servers in the cell that do not use the backup
+	  at all.
+
 Wed Jun 26 10:38:11 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a bug in silc_string_regexify which did not add '^'
@@ -4046,6 +4066,12 @@ Sat Aug 11 00:29:57 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed a bug in silc_server_new_server.  The SilcServer was
 	  set as the new server's context instead of SilcServerEntry.
 	  This naturally caused some weird bugs.
+
+	* Added "updated" field the SilcChannelEntry which indicates
+	  the time since the channel entry was last accessed.  This
+	  can be used to determine whether it is necessary to
+	  announce the channel after backup resuming protocol.
+	  Affected files silcd/idlist.[ch].
 
 Thu Aug  9 18:28:37 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 

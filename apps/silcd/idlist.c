@@ -92,7 +92,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_idlist_purge)
 {
   SilcIDListPurge i = (SilcIDListPurge)context;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Purging cache"));
 
   silc_idcache_purge(i->cache);
   silc_schedule_task_add(i->schedule, 0, 
@@ -605,7 +605,7 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
   channel->router = router;
   channel->channel_key = channel_key;
   channel->hmac = hmac;
-  channel->created = time(0);
+  channel->created = channel->updated = time(0);
   if (!channel->hmac)
     if (!silc_hmac_alloc(SILC_DEFAULT_HMAC, NULL, &channel->hmac)) {
       silc_free(channel);
@@ -635,7 +635,8 @@ static void silc_idlist_del_channel_foreach(void *key, void *context,
   SilcChannelClientEntry chl = (SilcChannelClientEntry)context;
 
   SILC_LOG_DEBUG(("Removing client %s from channel %s",
-		  chl->client->nickname, chl->channel->channel_name));
+		  chl->client->nickname ? chl->client->nickname :
+		  (unsigned char *)"", chl->channel->channel_name));
 
   /* Remove the context from the client's channel hash table as that
      table and channel's user_list hash table share this same context. */
@@ -648,11 +649,11 @@ static void silc_idlist_del_channel_foreach(void *key, void *context,
 int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
 {
   if (entry) {
-    SILC_LOG_DEBUG(("Deleting channel %s", entry->channel_name));
-
     /* Remove from cache */
     if (!silc_idcache_del_by_context(id_list->channels, entry))
       return FALSE;
+
+    SILC_LOG_DEBUG(("Deleting channel %s", entry->channel_name));
 
     /* Free all client entrys from the users list. The silc_hash_table_free
        will free all the entries so they are not freed at the foreach 
@@ -706,6 +707,9 @@ silc_idlist_find_channel_by_name(SilcIDList id_list, char *name,
 
   SILC_LOG_DEBUG(("Found"));
 
+  /* Touch channel */
+  ((SilcChannelEntry)id_cache->context)->updated = time(NULL);
+
   return id_cache->context;
 }
 
@@ -733,6 +737,9 @@ silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id,
     *ret_entry = id_cache;
 
   SILC_LOG_DEBUG(("Found"));
+
+  /* Touch channel */
+  channel->updated = time(NULL);
 
   return channel;
 }
@@ -769,6 +776,9 @@ silc_idlist_replace_channel_id(SilcIDList id_list, SilcChannelID *old_id,
 		   channel, 0, NULL);
 
   SILC_LOG_DEBUG(("Replaced"));
+
+  /* Touch channel */
+  channel->updated = time(NULL);
 
   return channel;
 }

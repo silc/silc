@@ -34,16 +34,11 @@ bool silc_server_remove_clients_by_server(SilcServer server,
    attempt to figure out which clients really are originated from the
    `from' and which are originated from a server that we have connection
    to, when we've acting as backup router. If it is FALSE the `to' will
-   be the new source. This function also removes the clients that are
-   *really* originated from `from' if `remove_from' is TRUE. These are
-   clients that the `from' owns, and not just clients that are behind
-   the `from'. If `from' is NULL then all non-local clients are switched
-   to `to'. */
+   be the new source. */
 void silc_server_update_clients_by_server(SilcServer server, 
 					  SilcServerEntry from,
 					  SilcServerEntry to,
-					  bool resolve_real_server,
-					  bool remove_from);
+					  bool resolve_real_server);
 
 /* Updates servers that are from `from' to be originated from `to'.  This
    will also update the server's connection to `to's connection. */
