@@ -178,7 +178,8 @@ bool silc_cipher_unregister_all(void);
  *
  * SYNOPSIS
  *
- *    bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher);
+ *    bool silc_cipher_alloc(const unsigned char *name,
+ *                           SilcCipher *new_cipher);
  *
  * DESCRIPTION
  *
