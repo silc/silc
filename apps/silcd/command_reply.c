@@ -816,10 +816,10 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     server->stat.my_channels++;
   } else {
     /* The entry exists. */
-    if (cache->id)
-      silc_free(cache->id);
+    silc_free(cache->id);
     entry->id = id;
     cache->id = entry->id;
+    entry->disabled = FALSE;
 
     /* Remove the founder auth data if the mode is not set but we have
        them in the entry */

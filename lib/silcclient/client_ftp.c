@@ -185,7 +185,9 @@ static void silc_client_ftp_send_packet(SilcSocketConnection sock,
   silc_client_packet_send(client, sock, SILC_PACKET_FTP, NULL, 0, NULL, NULL,
 			  session->packet->data, session->packet->len, TRUE);
 
-  silc_buffer_clear(session->packet);
+  /* Clear buffer */
+  session->packet->data = session->packet->tail = session->packet->head;
+  session->packet->len = 0;
 }
 
 /* SFTP monitor callback for SFTP server. This reports the application 
@@ -635,7 +637,8 @@ void silc_client_ftp_free_sessions(SilcClient client,
     SilcClientFtpSession session;
     silc_dlist_start(conn->ftp_sessions);
     while ((session = silc_dlist_get(conn->ftp_sessions)) != SILC_LIST_END) {
-      session->sock->user_data = NULL;
+      if (session->sock)
+	session->sock->user_data = NULL;
       silc_client_ftp_session_free(session);
     }
     silc_dlist_del(conn->ftp_sessions, session);
@@ -657,7 +660,8 @@ void silc_client_ftp_session_free_client(SilcClientConnection conn,
   silc_dlist_start(conn->ftp_sessions);
   while ((session = silc_dlist_get(conn->ftp_sessions)) != SILC_LIST_END) {
     if (session->client_entry == client_entry) {
-      session->sock->user_data = NULL;
+      if (session->sock)
+	session->sock->user_data = NULL;
       silc_client_ftp_session_free(session);
       break;
     }

@@ -147,7 +147,7 @@ void silc_client_private_message(SilcClient client,
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   SilcPrivateMessagePayload payload = NULL;
-  SilcIDCacheEntry id_cache;
+  SilcIDCacheEntry id_cache = NULL;
   SilcClientID *remote_id = NULL;
   SilcClientEntry remote_client;
   SilcMessageFlags flags;

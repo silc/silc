@@ -212,7 +212,11 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 
 	/* Remove the client entry */
 	silc_server_remove_clients_channels(server, NULL, client, channels);
-	silc_idlist_del_client(server->local_list, client);
+	client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+	id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+	server->stat.clients--;
+	if (server->server_type == SILC_ROUTER)
+	  server->stat.cell_clients--;
 
 	if (!silc_idcache_list_next(list, &id_cache))
 	  break;
@@ -264,7 +268,11 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 
 	/* Remove the client entry */
 	silc_server_remove_clients_channels(server, NULL, client, channels);
-	silc_idlist_del_client(server->global_list, client);
+	client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+	id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+	server->stat.clients--;
+	if (server->server_type == SILC_ROUTER)
+	  server->stat.cell_clients--;
 
 	if (!silc_idcache_list_next(list, &id_cache))
 	  break;
@@ -291,7 +299,8 @@ bool silc_server_remove_clients_by_server(SilcServer server,
       silc_buffer_free(args);
     }
 
-    /* Send to local clients */
+    /* Send to local clients. We also send the list of client ID's that
+       is to be removed for those servers that would like to use that list. */
     args = silc_argument_payload_encode(argc, argv, argv_lens,
 					argv_types);
     not = silc_notify_payload_encode_args(SILC_NOTIFY_TYPE_SERVER_SIGNOFF, 
@@ -473,8 +482,6 @@ void silc_server_update_clients_by_server(SilcServer server,
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	client = (SilcClientEntry)id_cache->context;
-	
-
 	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
@@ -522,7 +529,6 @@ void silc_server_update_clients_by_server(SilcServer server,
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	client = (SilcClientEntry)id_cache->context;
-
 	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;

@@ -3262,7 +3262,7 @@ SILC_SERVER_CMD_FUNC(join)
       }
     }
 
-    if (!channel || !channel->id) {
+    if (!channel || channel->disabled) {
       /* Channel not found */
 
       /* If we are standalone server we don't have a router, we just create 
@@ -5014,7 +5014,7 @@ SILC_SERVER_CMD_FUNC(users)
     channel = silc_idlist_find_channel_by_name(server->local_list, 
 					       channel_name, NULL);
 
-  if (!channel) {
+  if (!channel || channel->disabled) {
     if (server->server_type != SILC_ROUTER && !server->standalone &&
 	!cmd->pending) {
       SilcBuffer tmpbuf;

@@ -47,8 +47,6 @@ TODO/bugs In SILC Server
  o After backup resume protocol the TOPIC_SET was not handled correctly
    by all (unknown Channel ID).
 
- o Server signoff notifys does not go to normal servers from routers.
-
  o Channel user mode changes are notified unnecessarely when switching
    to backup router on router crash.
 

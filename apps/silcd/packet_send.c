@@ -386,6 +386,78 @@ void silc_server_packet_route(SilcServer server,
   silc_server_packet_send_real(server, sock, TRUE);
 }
 
+/* This routine can be used to send a packet to table of clients provided
+   in `clients'. If `route' is FALSE the packet is routed only to local
+   clients (for server locally connected, and for router local cell). */
+
+void silc_server_packet_send_clients(SilcServer server,
+				     SilcClientEntry *clients,
+				     uint32 clients_count,
+				     SilcPacketType type, 
+				     SilcPacketFlags flags,
+				     bool route,
+				     unsigned char *data, 
+				     uint32 data_len,
+				     bool force_send)
+{
+  SilcSocketConnection sock = NULL;
+  SilcClientEntry client = NULL;
+  SilcServerEntry *routed = NULL;
+  uint32 routed_count = 0;
+  bool gone = FALSE;
+  int i, k;
+
+  SILC_LOG_DEBUG(("Sending packet to list of clients"));
+
+  /* Send to all clients in table */
+  for (i = 0; i < clients_count; i++) {
+    client = clients[i];
+
+    /* If client has router set it is not locally connected client and
+       we will route the message to the router set in the client. Though,
+       send locally connected server in all cases. */
+    if (server->server_type == SILC_ROUTER && client->router && 
+	((!route && client->router->router == server->id_entry) || route)) {
+
+      /* Check if we have sent the packet to this route already */
+      for (k = 0; k < routed_count; k++)
+	if (routed[k] == client->router)
+	  break;
+      if (k < routed_count)
+	continue;
+
+      /* Route only once to router */
+      sock = (SilcSocketConnection)client->router->connection;
+      if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
+	if (gone)
+	  continue;
+	gone = TRUE;
+      }
+
+      /* Send the packet */
+      silc_server_packet_send_dest(server, sock, type, flags,
+				   client->router->id, SILC_ID_SERVER,
+				   data, data_len, force_send);
+
+      /* Mark this route routed already */
+      routed = silc_realloc(routed, sizeof(*routed) * (routed_count + 1));
+      routed[routed_count++] = client->router;
+      continue;
+    }
+
+    if (client->router)
+      continue;
+
+    /* Send to locally connected client */
+    sock = (SilcSocketConnection)client->connection;
+    silc_server_packet_send_dest(server, sock, type, flags,
+				 client->id, SILC_ID_CLIENT,
+				 data, data_len, force_send);
+  }
+
+  silc_free(routed);
+}
+
 /* Internal routine to actually create the channel packet and send it
    to network. This is common function in channel message sending. If
    `channel_message' is TRUE this encrypts the message as it is strictly

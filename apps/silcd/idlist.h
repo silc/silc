@@ -491,6 +491,7 @@ struct SilcChannelEntryStruct {
   SilcServerChannelRekey rekey;
 
   unsigned long created;
+  bool disabled;
 };
 
 /* 

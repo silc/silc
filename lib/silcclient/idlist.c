@@ -216,8 +216,10 @@ SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
     SILC_GET16_MSB(idp_len, client_id_list->data + 2);
     idp_len += 4;
     client_id = silc_id_payload_parse_id(client_id_list->data, idp_len);
-    if (!client_id)
+    if (!client_id) {
+      silc_buffer_pull(client_id_list, idp_len);
       continue;
+    }
 
     /* Get the client entry */
     if (silc_idcache_find_by_id_one_ext(i->conn->client_cache, 
@@ -295,8 +297,10 @@ void silc_client_get_clients_by_list(SilcClient client,
     SILC_GET16_MSB(idp_len, client_id_list->data + 2);
     idp_len += 4;
     client_id = silc_id_payload_parse_id(client_id_list->data, idp_len);
-    if (!client_id)
+    if (!client_id) {
+      silc_buffer_pull(client_id_list, idp_len);
       continue;
+    }
 
     /* Check if we have this client cached already. */
     id_cache = NULL;

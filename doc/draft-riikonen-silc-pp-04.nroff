@@ -1367,7 +1367,8 @@ Also, all ID's sent in arguments are sent inside ID Payload.
       maximum number of arguments are reached another 
       SILC_NOTIFY_TYPE_SERVER_SIGNOFF notify packet MUST be sent.
       When this notify packet is sent between routers the Client ID's
-      MAY be omitted.
+      MAY be omitted.  Server receiving the Client ID's in the payload
+      may use them directly to remove the client.
 
 
 12    SILC_NOTIFY_TYPE_KICKED

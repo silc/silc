@@ -827,6 +827,48 @@ void silc_server_notify(SilcServer server,
       server_entry = silc_idlist_find_server_by_id(server->local_list, 
 						   server_id, TRUE, NULL);
       if (!server_entry) {
+	/* If we are normal server then we might not have the server. Check
+	   whether router was kind enough to send the list of all clients
+	   that actually was to be removed. Remove them if the list is
+	   available. */
+	if (server->server_type != SILC_ROUTER &&
+	    silc_argument_get_arg_num(args) > 1) {
+	  int i;
+
+	  for (i = 1; i < silc_argument_get_arg_num(args); i++) {
+	    /* Get Client ID */
+	    tmp = silc_argument_get_arg_type(args, i + 1, &tmp_len);
+	    if (!tmp)
+	      continue;
+	    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+	    if (!client_id)
+	      continue;
+
+	    /* Get client entry */
+	    client = silc_idlist_find_client_by_id(server->global_list, 
+						   client_id, TRUE, &cache);
+	    if (!client) {
+	      client = silc_idlist_find_client_by_id(server->local_list, 
+						     client_id, TRUE, &cache);
+	      if (!client) {
+		silc_free(client_id);
+		continue;
+	      }
+	    }
+	    silc_free(client_id);
+
+	    /* Remove the client from all channels. */
+	    silc_server_remove_from_channels(server, NULL, client, 
+					     TRUE, NULL, FALSE);
+	    
+	    client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+	    cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
+	    server->stat.clients--;
+	    if (server->server_type == SILC_ROUTER)
+	      server->stat.cell_clients--;
+	  }
+	}
+
 	silc_free(server_id);
 	goto out;
       }

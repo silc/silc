@@ -102,6 +102,7 @@ int main(int argc, char **argv)
   char *config_file = NULL;
   SilcServer silcd;
   struct sigaction sa;
+  char pid[10];
 
   silc_debug = FALSE;
 
@@ -197,6 +198,12 @@ int main(int argc, char **argv)
     /* Before running the server, fork to background and set
        both user and group no non-root */    
     silc_server_daemonise(silcd);
+
+  /* Set /var/run/silcd.pid */
+  unlink("/var/run/silcd/pid");
+  memset(pid, 0, sizeof(pid));
+  snprintf(pid, sizeof(pid) - 1, "%d\n", getpid());
+  silc_file_writefile("/var/run/silcd.pid", pid, strlen(pid));
   
   /* Run the server. When this returns the server has been stopped
      and we will exit. */

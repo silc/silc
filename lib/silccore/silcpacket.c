@@ -344,6 +344,11 @@ void silc_packet_receive_process(SilcSocketConnection sock,
   /* Parse the packets from the data */
   while (sock->inbuf->len > 0 && cont) {
 
+    if (sock->inbuf->len < SILC_PACKET_MIN_HEADER_LEN) {
+      SILC_LOG_DEBUG(("Partial packet in queue, waiting for the rest"));
+      return;
+    }
+
     /* Decrypt first 16 bytes of the packet */
     if (!SILC_IS_INBUF_PENDING(sock) && cipher)
       silc_cipher_decrypt(cipher, sock->inbuf->data, sock->inbuf->data, 

@@ -2516,7 +2516,7 @@ void silc_server_remove_from_channels(SilcServer server,
 	SilcChannelClientEntry chl2;
 	SilcHashTableList htl2;
 
-	channel->id = NULL;
+	channel->disabled = TRUE;
 
 	silc_hash_table_list(channel->user_list, &htl2);
 	while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
@@ -2636,7 +2636,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
       SilcChannelClientEntry chl2;
       SilcHashTableList htl2;
       
-      channel->id = NULL;
+      channel->disabled = TRUE;
       
       silc_hash_table_list(channel->user_list, &htl2);
       while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
