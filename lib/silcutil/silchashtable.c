@@ -369,8 +369,10 @@ SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size,
 								 &size_index) :
 			  primesize[SILC_HASH_TABLE_SIZE],
 			  sizeof(*ht->table));
-  if (!ht->table)
+  if (!ht->table) {
+    silc_free(ht);
     return NULL;
+  }
   ht->table_size = size_index;
   ht->hash = hash;
   ht->compare = compare;
