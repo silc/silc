@@ -1,3 +1,11 @@
+Sun Nov  9 17:45:11 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added CRT (Chinese Remainder Theorem) supported RSA
+	  private keys and private key operations.  This significantly
+	  increases private key operation efficiency.  No compatibility
+	  issues with new or old private keys.  Affected files are
+	  lib/silccrypt/rsa.[ch], rsa_internal.h and pkcs1.c.
+
 Sat Nov  8 13:08:53 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed GCC-3.3.2 related compilation warnings from the

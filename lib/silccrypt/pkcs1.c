@@ -1,5 +1,5 @@
 /* $Id$ */
-/* 
+/*
    PKCS #1 RSA wrapper.
 
    Heavily modified to work under SILC, rewrote all interfaces, code that
@@ -7,7 +7,7 @@
    and changed.
 
    For example, RSA_DecodeOneBlock was not used at all by Mozilla, however,
-   I took this code in to use after doing some fixing (it had some bugs).  
+   I took this code in to use after doing some fixing (it had some bugs).
    Also, OAEP is removed totally for now.  I'm not sure whether OAEP could
    be used in the future with SILC but not for now.
 
@@ -46,25 +46,25 @@
  * License Version 1.1 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
  * the License at http://www.mozilla.org/MPL/
- * 
+ *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- * 
+ *
  * The Original Code is the Netscape security libraries.
- * 
+ *
  * The Initial Developer of the Original Code is Netscape
- * Communications Corporation.  Portions created by Netscape are 
+ * Communications Corporation.  Portions created by Netscape are
  * Copyright (C) 1994-2000 Netscape Communications Corporation.  All
  * Rights Reserved.
- * 
+ *
  * Contributor(s):
- * 
+ *
  * Alternatively, the contents of this file may be used under the
  * terms of the GNU General Public License Version 2 or later (the
- * "GPL"), in which case the provisions of the GPL are applicable 
- * instead of those above.  If you wish to allow use of your 
+ * "GPL"), in which case the provisions of the GPL are applicable
+ * instead of those above.  If you wish to allow use of your
  * version of this file only under the terms of the GPL and not to
  * allow others to use your version of this file under the MPL,
  * indicate your decision by deleting the provisions above and
@@ -334,8 +334,8 @@ SILC_PKCS_API_ENCRYPT(pkcs1)
   silc_mp_bin2mp(padded, padded_len, &mp_tmp);
 
   /* Encrypt */
-  rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->e, &key->n);
-  
+  rsa_public_operation(key, &mp_tmp, &mp_dst);
+
   /* MP to data */
   silc_mp_mp2bin_noalloc(&mp_dst, dst, len);
   *dst_len = len;
@@ -363,13 +363,13 @@ SILC_PKCS_API_DECRYPT(pkcs1)
   silc_mp_bin2mp(src, src_len, &mp_tmp);
 
   /* Decrypt */
-  rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->d, &key->n);
+  rsa_private_operation(key, &mp_tmp, &mp_dst);
 
   /* MP to data */
   padded = silc_mp_mp2bin(&mp_dst, (key->bits + 7) / 8, &padded_len);
 
   /* Unpad data */
-  unpadded = RSA_DecodeOneBlock(padded, padded_len, 0, 
+  unpadded = RSA_DecodeOneBlock(padded, padded_len, 0,
 				RSA_BlockPublic, &padded_len);
   if (!unpadded) {
     memset(padded, 0, padded_len);
@@ -403,7 +403,7 @@ SILC_PKCS_API_SIGN(pkcs1)
   SilcUInt32 len = (key->bits + 7) / 8;
 
   /* Pad data */
-  if (!RSA_FormatBlock(&padded, &padded_len, len, RSA_BlockPrivate, 
+  if (!RSA_FormatBlock(&padded, &padded_len, len, RSA_BlockPrivate,
 		       src, src_len))
     return FALSE;
 
@@ -414,8 +414,8 @@ SILC_PKCS_API_SIGN(pkcs1)
   silc_mp_bin2mp(padded, len, &mp_tmp);
 
   /* Sign */
-  rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->d, &key->n);
-  
+  rsa_private_operation(key, &mp_tmp, &mp_dst);
+
   /* MP to data */
   silc_mp_mp2bin_noalloc(&mp_dst, dst, len);
   *dst_len = len;
@@ -444,13 +444,13 @@ SILC_PKCS_API_VERIFY(pkcs1)
   silc_mp_bin2mp(signature, signature_len, &mp_tmp2);
 
   /* Verify */
-  rsa_en_de_crypt(&mp_dst, &mp_tmp2, &key->e, &key->n);
+  rsa_public_operation(key, &mp_tmp2, &mp_dst);
 
   /* MP to data */
   verify = silc_mp_mp2bin(&mp_dst, len, &verify_len);
 
   /* Unpad data */
-  unpadded = RSA_DecodeOneBlock(verify, len, 0, 
+  unpadded = RSA_DecodeOneBlock(verify, len, 0,
 				RSA_BlockPrivate, &verify_len);
   if (!unpadded) {
     memset(verify, 0, verify_len);

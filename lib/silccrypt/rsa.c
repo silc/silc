@@ -1,10 +1,10 @@
-/* 
+/*
  * rsa.c 	RSA Public and Private key generation functions,
  *	   	RSA encrypt and decrypt functions.
  *
- * Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+ * Author: Pekka Riikonen <priikone@silcnet.org>
  *
- * Copyright (C) 1997 - 2001 Pekka Riikonen
+ * Copyright (C) 1997 - 2003 Pekka Riikonen
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,12 +35,14 @@
  *	Decryption:
  *	m = c ^ d mod n
  *
- * The SSH's (Secure Shell), PGP's (Pretty Good Privacy) and RSAREF 
- * Toolkit were used as reference when coding this implementation. They 
+ * Supports CRT (Chinese Remainder Theorem) for private key operations.
+ *
+ * The SSH's (Secure Shell), PGP's (Pretty Good Privacy) and RSAREF
+ * Toolkit were used as reference when coding this implementation. They
  * all were a big help for me.
  *
- * I also suggest reading Bruce Schneier's; Applied Cryptography, Second 
- * Edition, John Wiley & Sons, Inc. 1996. This book deals about RSA and 
+ * I also suggest reading Bruce Schneier's; Applied Cryptography, Second
+ * Edition, John Wiley & Sons, Inc. 1996. This book deals about RSA and
  * everything else too about cryptography.
  *
  */
@@ -63,7 +65,7 @@
 
    o Sat Mar 16 18:27:19 EET 2002  Pekka
 
-     Use the SilcRng sent as argument to SILC_PKCS_API_INIT in prime 
+     Use the SilcRng sent as argument to SILC_PKCS_API_INIT in prime
      generation.
 
    o Sat Sep 26 19:59:48 EEST 2002  Pekka
@@ -89,6 +91,9 @@ SILC_PKCS_API_INIT(rsa)
   SilcMPInt p, q;
   bool found = FALSE;
 
+  if (keylen < 768 || keylen > 16384)
+    return FALSE;
+
   printf("Generating RSA Public and Private keys, might take a while...\n");
 
   silc_mp_init(&p);
@@ -98,7 +103,7 @@ SILC_PKCS_API_INIT(rsa)
   while (!found) {
     printf("Finding p: ");
     silc_math_gen_prime(&p, prime_bits, TRUE, rng);
-    
+
     printf("\nFinding q: ");
     silc_math_gen_prime(&q, prime_bits, TRUE, rng);
 
@@ -125,7 +130,7 @@ SILC_PKCS_API_INIT(rsa)
 
   silc_mp_uninit(&p);
   silc_mp_uninit(&q);
-  
+
   printf("\nKeys generated successfully.\n");
 
   return TRUE;
@@ -180,45 +185,75 @@ SILC_PKCS_API_GET_PUBLIC_KEY(rsa)
 SILC_PKCS_API_GET_PRIVATE_KEY(rsa)
 {
   RsaKey *key = (RsaKey *)context;
-  unsigned char *e, *n, *d, *ret;
-  SilcUInt32 e_len, n_len, d_len;
-  unsigned char tmp[4];
+  SilcBuffer buf;
+  unsigned char *e, *n, *d, *ret, *dp = NULL, *dq = NULL;
+  unsigned char *pq = NULL, *qp = NULL, *p = NULL, *q = NULL;
+  SilcUInt32 e_len, n_len, d_len, dp_len, dq_len, pq_len, qp_len, p_len, q_len;
+  SilcUInt32 len = 0;
 
   e = silc_mp_mp2bin(&key->e, 0, &e_len);
   n = silc_mp_mp2bin(&key->n, (key->bits + 7) / 8, &n_len);
   d = silc_mp_mp2bin(&key->d, 0, &d_len);
+  if (key->crt) {
+    dp = silc_mp_mp2bin(&key->dP, 0, &dp_len);
+    dq = silc_mp_mp2bin(&key->dQ, 0, &dq_len);
+    pq = silc_mp_mp2bin(&key->pQ, 0, &pq_len);
+    qp = silc_mp_mp2bin(&key->qP, 0, &qp_len);
+    p = silc_mp_mp2bin(&key->p, 0, &p_len);
+    q = silc_mp_mp2bin(&key->q, 0, &q_len);
+    len = dp_len + 4 + dq_len + 4 + pq_len + 4 + qp_len + 4 + p_len + 4 +
+      q_len + 4;
+  }
 
-  *ret_len = e_len + 4 + n_len + 4 + d_len + 4;
-  ret = silc_calloc(*ret_len, sizeof(unsigned char));
+  buf = silc_buffer_alloc_size(e_len + 4 + n_len + 4 + d_len + 4 + len);
+  len = silc_buffer_format(buf,
+			   SILC_STR_UI_INT(e_len),
+			   SILC_STR_UI_XNSTRING(e, e_len),
+			   SILC_STR_UI_INT(n_len),
+			   SILC_STR_UI_XNSTRING(n, n_len),
+			   SILC_STR_UI_INT(d_len),
+			   SILC_STR_UI_XNSTRING(d, d_len),
+			   SILC_STR_END);
 
-  /* Put the length of the e. */
-  SILC_PUT32_MSB(e_len, tmp);
-  memcpy(ret, tmp, 4);
+  if (key->crt) {
+    silc_buffer_pull(buf, len);
+    silc_buffer_format(buf,
+		       SILC_STR_UI_INT(dp_len),
+		       SILC_STR_UI_XNSTRING(dp, dp_len),
+		       SILC_STR_UI_INT(dq_len),
+		       SILC_STR_UI_XNSTRING(dq, dq_len),
+		       SILC_STR_UI_INT(pq_len),
+		       SILC_STR_UI_XNSTRING(pq, pq_len),
+		       SILC_STR_UI_INT(qp_len),
+		       SILC_STR_UI_XNSTRING(qp, qp_len),
+		       SILC_STR_UI_INT(p_len),
+		       SILC_STR_UI_XNSTRING(p, p_len),
+		       SILC_STR_UI_INT(q_len),
+		       SILC_STR_UI_XNSTRING(q, q_len),
+		       SILC_STR_END);
+    silc_buffer_push(buf, len);
 
-  /* Put the e. */
-  memcpy(ret + 4, e, e_len);
+    memset(dp, 0, dp_len);
+    memset(dq, 0, dq_len);
+    memset(pq, 0, pq_len);
+    memset(qp, 0, qp_len);
+    memset(p, 0, p_len);
+    memset(q, 0, q_len);
+    silc_free(dp);
+    silc_free(dq);
+    silc_free(pq);
+    silc_free(qp);
+    silc_free(p);
+    silc_free(q);
+  }
 
-  /* Put the length of the n. */
-  SILC_PUT32_MSB(n_len, tmp);
-  memcpy(ret + 4 + e_len, tmp, 4);
-
-  /* Put the n. */
-  memcpy(ret + 4 + e_len + 4, n, n_len);
-
-  /* Put the length of the d. */
-  SILC_PUT32_MSB(d_len, tmp);
-  memcpy(ret + 4 + e_len + 4 + n_len, tmp, 4);
-
-  /* Put the n. */
-  memcpy(ret + 4 + e_len + 4 + n_len + 4, d, d_len);
-
-  memset(e, 0, e_len);
-  memset(n, 0, n_len);
   memset(d, 0, d_len);
   silc_free(e);
   silc_free(n);
   silc_free(d);
 
+  ret = silc_buffer_steal(buf, ret_len);
+  silc_buffer_free(buf);
   return ret;
 }
 
@@ -281,8 +316,9 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
 SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
 {
   RsaKey *key = (RsaKey *)context;
-  unsigned char tmp[4];
-  SilcUInt32 e_len, n_len, d_len;
+  SilcBufferStruct k;
+  unsigned char *tmp;
+  SilcUInt32 len;
 
   if (key->prv_set) {
     silc_mp_uninit(&key->d);
@@ -298,62 +334,148 @@ SILC_PKCS_API_SET_PRIVATE_KEY(rsa)
   if (key_len < 4)
     return FALSE;
 
+  silc_buffer_set(&k, key_data, key_len);
+
   silc_mp_init(&key->e);
   silc_mp_init(&key->n);
   silc_mp_init(&key->d);
-
-  memcpy(tmp, key_data, 4);
-  SILC_GET32_MSB(e_len, tmp);
-  if (e_len + 4 > key_len) {
-    silc_mp_uninit(&key->e);
-    silc_mp_uninit(&key->n);
-    silc_mp_uninit(&key->d);
-    return FALSE;
-  }
-
-  silc_mp_bin2mp(key_data + 4, e_len, &key->e);
-  
-  if (key_len < e_len + 4 + 4) {
-    silc_mp_uninit(&key->e);
-    silc_mp_uninit(&key->n);
-    silc_mp_uninit(&key->d);
-    return FALSE;
-  }
-
-  memcpy(tmp, key_data + 4 + e_len, 4);
-  SILC_GET32_MSB(n_len, tmp);
-  if (e_len + 4 + n_len + 4 > key_len) {
-    silc_mp_uninit(&key->e);
-    silc_mp_uninit(&key->n);
-    silc_mp_uninit(&key->d);
-    return FALSE;
-  }
-
-  silc_mp_bin2mp(key_data + 4 + e_len + 4, n_len, &key->n);
-
-  if (key_len < e_len + 4 + n_len + 4 + 4) {
-    silc_mp_uninit(&key->e);
-    silc_mp_uninit(&key->n);
-    silc_mp_uninit(&key->d);
-    return FALSE;
-  }
-
-  memcpy(tmp, key_data + 4 + e_len + 4 + n_len, 4);
-  SILC_GET32_MSB(d_len, tmp);
-  if (e_len + 4 + n_len + 4 + d_len + 4 > key_len) {
-    silc_mp_uninit(&key->e);
-    silc_mp_uninit(&key->n);
-    silc_mp_uninit(&key->d);
-    return FALSE;
-  }
-
-  silc_mp_bin2mp(key_data + 4 + e_len + 4 + n_len + 4, d_len, &key->d);
-
-  key->bits = silc_mp_sizeinbase(&key->n, 2);
   key->prv_set = TRUE;
   key->pub_set = TRUE;
 
+  /* Get e */
+  if (silc_buffer_unformat(&k,
+			   SILC_STR_UI_INT(&len),
+			   SILC_STR_END) < 0)
+    goto err;
+  silc_buffer_pull(&k, 4);
+  if (silc_buffer_unformat(&k,
+			   SILC_STR_UI_XNSTRING(&tmp, len),
+			   SILC_STR_END) < 0)
+    goto err;
+  silc_mp_bin2mp(tmp, len, &key->e);
+  silc_buffer_pull(&k, len);
+
+  /* Get n */
+  if (silc_buffer_unformat(&k,
+			   SILC_STR_UI_INT(&len),
+			   SILC_STR_END) < 0)
+    goto err;
+  silc_buffer_pull(&k, 4);
+  if (silc_buffer_unformat(&k,
+			   SILC_STR_UI_XNSTRING(&tmp, len),
+			   SILC_STR_END) < 0)
+    goto err;
+  silc_mp_bin2mp(tmp, len, &key->n);
+  silc_buffer_pull(&k, len);
+
+  /* Get d */
+  if (silc_buffer_unformat(&k,
+			   SILC_STR_UI_INT(&len),
+			   SILC_STR_END) < 0)
+    goto err;
+  silc_buffer_pull(&k, 4);
+  if (silc_buffer_unformat(&k,
+			   SILC_STR_UI_XNSTRING(&tmp, len),
+			   SILC_STR_END) < 0)
+    goto err;
+  silc_mp_bin2mp(tmp, len, &key->d);
+  silc_buffer_pull(&k, len);
+
+  /* Get optimized d for CRT, if present. */
+  if (k.len > 4) {
+    key->crt = TRUE;
+    silc_mp_init(&key->dP);
+    silc_mp_init(&key->dQ);
+    silc_mp_init(&key->pQ);
+    silc_mp_init(&key->qP);
+    silc_mp_init(&key->p);
+    silc_mp_init(&key->q);
+
+    /* Get dP */
+    if (silc_buffer_unformat(&k,
+			     SILC_STR_UI_INT(&len),
+			     SILC_STR_END) < 0)
+      goto err;
+    silc_buffer_pull(&k, 4);
+    if (silc_buffer_unformat(&k,
+			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_END) < 0)
+      goto err;
+    silc_mp_bin2mp(tmp, len, &key->dP);
+    silc_buffer_pull(&k, len);
+
+    /* Get dQ */
+    if (silc_buffer_unformat(&k,
+			     SILC_STR_UI_INT(&len),
+			     SILC_STR_END) < 0)
+      goto err;
+    silc_buffer_pull(&k, 4);
+    if (silc_buffer_unformat(&k,
+			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_END) < 0)
+      goto err;
+    silc_mp_bin2mp(tmp, len, &key->dQ);
+    silc_buffer_pull(&k, len);
+
+    /* Get pQ */
+    if (silc_buffer_unformat(&k,
+			     SILC_STR_UI_INT(&len),
+			     SILC_STR_END) < 0)
+      goto err;
+    silc_buffer_pull(&k, 4);
+    if (silc_buffer_unformat(&k,
+			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_END) < 0)
+      goto err;
+    silc_mp_bin2mp(tmp, len, &key->pQ);
+    silc_buffer_pull(&k, len);
+
+    /* Get qP */
+    if (silc_buffer_unformat(&k,
+			     SILC_STR_UI_INT(&len),
+			     SILC_STR_END) < 0)
+      goto err;
+    silc_buffer_pull(&k, 4);
+    if (silc_buffer_unformat(&k,
+			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_END) < 0)
+      goto err;
+    silc_mp_bin2mp(tmp, len, &key->qP);
+    silc_buffer_pull(&k, len);
+
+    /* Get p */
+    if (silc_buffer_unformat(&k,
+			     SILC_STR_UI_INT(&len),
+			     SILC_STR_END) < 0)
+      goto err;
+    silc_buffer_pull(&k, 4);
+    if (silc_buffer_unformat(&k,
+			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_END) < 0)
+      goto err;
+    silc_mp_bin2mp(tmp, len, &key->p);
+    silc_buffer_pull(&k, len);
+
+    /* Get q */
+    if (silc_buffer_unformat(&k,
+			     SILC_STR_UI_INT(&len),
+			     SILC_STR_END) < 0)
+      goto err;
+    silc_buffer_pull(&k, 4);
+    if (silc_buffer_unformat(&k,
+			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_END) < 0)
+      goto err;
+    silc_mp_bin2mp(tmp, len, &key->q);
+    silc_buffer_pull(&k, len);
+  }
+
+  key->bits = silc_mp_sizeinbase(&key->n, 2);
   return key->bits;
+
+ err:
+  rsa_clear_keys(key);
+  return FALSE;
 }
 
 SILC_PKCS_API_CONTEXT_LEN(rsa)
@@ -375,8 +497,8 @@ SILC_PKCS_API_ENCRYPT(rsa)
   silc_mp_bin2mp(src, src_len, &mp_tmp);
 
   /* Encrypt */
-  rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->e, &key->n);
-  
+  rsa_public_operation(key, &mp_tmp, &mp_dst);
+
   tmplen = (key->bits + 7) / 8;
 
   /* Format the MP int back into data */
@@ -403,7 +525,7 @@ SILC_PKCS_API_DECRYPT(rsa)
   silc_mp_bin2mp(src, src_len, &mp_tmp);
 
   /* Decrypt */
-  rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->d, &key->n);
+  rsa_private_operation(key, &mp_tmp, &mp_dst);
 
   tmplen = (key->bits + 7) / 8;
 
@@ -431,7 +553,7 @@ SILC_PKCS_API_SIGN(rsa)
   silc_mp_bin2mp(src, src_len, &mp_tmp);
 
   /* Sign */
-  rsa_en_de_crypt(&mp_dst, &mp_tmp, &key->d, &key->n);
+  rsa_private_operation(key, &mp_tmp, &mp_dst);
 
   tmplen = (key->bits + 7) / 8;
 
@@ -460,7 +582,7 @@ SILC_PKCS_API_VERIFY(rsa)
   silc_mp_bin2mp(signature, signature_len, &mp_tmp2);
 
   /* Verify */
-  rsa_en_de_crypt(&mp_dst, &mp_tmp2, &key->e, &key->n);
+  rsa_public_operation(key, &mp_tmp2, &mp_dst);
 
   /* Format the data into MP int */
   silc_mp_bin2mp(data, data_len, &mp_tmp);
@@ -482,17 +604,21 @@ SILC_PKCS_API_VERIFY(rsa)
    to compute the modulus n has to be generated before calling this. They
    are then sent as argument for the function. */
 
-void rsa_generate_keys(RsaKey *key, SilcUInt32 bits, 
+bool rsa_generate_keys(RsaKey *key, SilcUInt32 bits,
 		       SilcMPInt *p, SilcMPInt *q)
 {
   SilcMPInt phi, hlp;
   SilcMPInt div, lcm;
   SilcMPInt pm1, qm1;
-  
+
   /* Initialize variables */
   silc_mp_init(&key->n);
   silc_mp_init(&key->e);
   silc_mp_init(&key->d);
+  silc_mp_init(&key->dP);
+  silc_mp_init(&key->dQ);
+  silc_mp_init(&key->pQ);
+  silc_mp_init(&key->qP);
   silc_mp_init(&phi);
   silc_mp_init(&hlp);
   silc_mp_init(&div);
@@ -505,41 +631,56 @@ void rsa_generate_keys(RsaKey *key, SilcUInt32 bits,
 
   /* Compute modulus, n = p * q */
   silc_mp_mul(&key->n, p, q);
-  
+
   /* phi = (p - 1) * (q - 1) */
   silc_mp_sub_ui(&pm1, p, 1);
   silc_mp_sub_ui(&qm1, q, 1);
   silc_mp_mul(&phi, &pm1, &qm1);
-  
+
   /* Set e, the public exponent. We try to use same public exponent
-     for all keys. Also, to make encryption faster we use small 
+     for all keys. Also, to make encryption faster we use small
      number. */
   silc_mp_set_ui(&key->e, 65533);
  retry_e:
   /* See if e is relatively prime to phi. gcd == greates common divisor,
      if gcd equals 1 they are relatively prime. */
   silc_mp_gcd(&hlp, &key->e, &phi);
-  if((silc_mp_cmp_ui(&hlp, 1)) > 0) {
+  if ((silc_mp_cmp_ui(&hlp, 1)) > 0) {
     silc_mp_add_ui(&key->e, &key->e, 2);
     goto retry_e;
   }
-  
+
   /* Find d, the private exponent, e ^ -1 mod lcm(phi). */
   silc_mp_gcd(&div, &pm1, &qm1);
   silc_mp_div(&lcm, &phi, &div);
   silc_mp_modinv(&key->d, &key->e, &lcm);
-  
+
+  /* Optimize d with CRT.  We precompute as much as possible. */
+  silc_mp_mod(&key->dP, &key->d, &pm1);
+  silc_mp_mod(&key->dQ, &key->d, &qm1);
+  silc_mp_modinv(&key->pQ, p, q);
+  silc_mp_mul(&key->pQ, p, &key->pQ);
+  silc_mp_mod(&key->pQ, &key->pQ, &key->n);
+  silc_mp_modinv(&key->qP, q, p);
+  silc_mp_mul(&key->qP, q, &key->qP);
+  silc_mp_mod(&key->qP, &key->qP, &key->n);
+  silc_mp_set(&key->p, p);
+  silc_mp_set(&key->q, q);
+  key->crt = TRUE;
+
   silc_mp_uninit(&phi);
   silc_mp_uninit(&hlp);
   silc_mp_uninit(&div);
   silc_mp_uninit(&lcm);
   silc_mp_uninit(&pm1);
   silc_mp_uninit(&qm1);
+
+  return TRUE;
 }
 
 /* Clears whole key structure. */
 
-void rsa_clear_keys(RsaKey *key)
+bool rsa_clear_keys(RsaKey *key)
 {
   key->bits = 0;
   if (key->pub_set) {
@@ -548,18 +689,49 @@ void rsa_clear_keys(RsaKey *key)
   }
   if (key->prv_set)
     silc_mp_uninit(&key->d);
+  if (key->prv_set && key->crt) {
+    silc_mp_uninit(&key->dP);
+    silc_mp_uninit(&key->dQ);
+    silc_mp_uninit(&key->pQ);
+    silc_mp_uninit(&key->qP);
+    silc_mp_uninit(&key->p);
+    silc_mp_uninit(&key->q);
+  }
+  return TRUE;
 }
 
-/* RSA encrypt/decrypt function. cm = ciphertext or plaintext,
-   mc = plaintext or ciphertext, expo = public or private exponent,
-   and modu = modulus. 
+/* RSA public key operation */
 
-   Encrypt: c = m ^ e mod n,
-   Decrypt: m = c ^ d mod n 
-*/
-
-void rsa_en_de_crypt(SilcMPInt *cm, SilcMPInt *mc, 
-		     SilcMPInt *expo, SilcMPInt *modu)
+bool rsa_public_operation(RsaKey *key, SilcMPInt *src, SilcMPInt *dst)
 {
-  silc_mp_pow_mod(cm, mc, expo, modu);
+  /* dst = src ^ e mod n */
+  silc_mp_pow_mod(dst, src, &key->e, &key->n);
+  return TRUE;
+}
+
+/* RSA private key operation */
+
+bool rsa_private_operation(RsaKey *key, SilcMPInt *src, SilcMPInt *dst)
+{
+  if (!key->crt) {
+    /* dst = src ^ d mod n */
+    silc_mp_pow_mod(dst, src, &key->d, &key->n);
+  } else {
+    /* CRT */
+    SilcMPInt tmp;
+
+    silc_mp_init(&tmp);
+
+    /* dst = ((src ^ dP mod p) * qP) + ((src ^ dQ mod q) * pQ) mod n */
+    silc_mp_pow_mod(dst, src, &key->dP, &key->p);
+    silc_mp_mul(dst, dst, &key->qP);
+    silc_mp_pow_mod(&tmp, src, &key->dQ, &key->q);
+    silc_mp_mul(&tmp, &tmp, &key->pQ);
+    silc_mp_add(dst, dst, &tmp);
+    silc_mp_mod(dst, dst, &key->n);
+
+    silc_mp_uninit(&tmp);
+  }
+
+  return TRUE;
 }
