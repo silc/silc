@@ -54,6 +54,7 @@ static void silc_client_attributes_process_foreach(void *key, void *context,
   SILC_LOG_DEBUG(("Attribute %d found", attribute));
   data = silc_attribute_get_data(attr, &data_len);
 
+#if 0
   /* We replace the TIMEZONE with valid value here */
   if (attribute == SILC_ATTRIBUTE_TIMEZONE) {
     data = (const unsigned char *)silc_get_time(0);
@@ -63,6 +64,7 @@ static void silc_client_attributes_process_foreach(void *key, void *context,
 					      (void *)data, data_len);
     return;
   }
+#endif
 
   f->buffer = silc_attribute_payload_encode_data(f->buffer, attribute,
 						 SILC_ATTRIBUTE_FLAG_VALID,
