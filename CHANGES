@@ -1,3 +1,10 @@
+Mon Mar 18 14:54:42 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_server_packet_queue_purge call to the
+	  silc_server_disconnect_remote to assure that all data in the
+	  queue before disconnecting is sent to the network.  Affected
+	  file silcd/server.c.
+
 Sun Mar 17 19:26:16 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added the deleting of server's own ID cache entry to the

@@ -2361,6 +2361,7 @@ void silc_server_disconnect_remote(SilcServer server,
      is tried to be sent immediately. */
   silc_server_packet_send(server, sock, SILC_PACKET_DISCONNECT, 0,  
 			  buf, strlen(buf), TRUE);
+  silc_server_packet_queue_purge(server, sock);
 
   /* Mark the connection to be disconnected */
   SILC_SET_DISCONNECTED(sock);
