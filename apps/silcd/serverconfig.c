@@ -4,7 +4,7 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -1373,6 +1373,7 @@ static bool silc_server_config_check(SilcServerConfig config)
 	 "connection. You have marked it incorrectly as backup router."));
     ret = FALSE;
   }
+#if 0
   if (config->routers && config->routers->initiator == FALSE &&
       config->routers->backup_router == FALSE) {
     SILC_SERVER_LOG_ERROR((
@@ -1380,6 +1381,7 @@ static bool silc_server_config_check(SilcServerConfig config)
 	 "connection and it must be marked as Initiator."));
     ret = FALSE;
   }
+#endif
   if (config->routers && config->routers->backup_router == TRUE &&
       !config->servers && !config->routers->next) {
     SILC_SERVER_LOG_ERROR((
@@ -1400,9 +1402,9 @@ static bool silc_server_config_check(SilcServerConfig config)
       ret = FALSE;
     }
   }
-  
+
   /* ServerConnection sanity checks */
-  
+
   for (s = config->servers; s; s = s->next) {
     if (s->backup_router) {
       b = TRUE;
