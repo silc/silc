@@ -3287,13 +3287,9 @@ static SilcBuffer
 silc_server_announce_encode_notify(SilcNotifyType notify, uint32 argc, ...)
 {
   va_list ap;
-  SilcBuffer p;
 
   va_start(ap, argc);
-  p = silc_notify_payload_encode(notify, argc, ap);
-  va_end(ap);
- 
-  return p;
+  return silc_notify_payload_encode(notify, argc, ap);
 }
 
 /* Returns assembled packets for channel users of the `channel'. */
@@ -3688,15 +3684,15 @@ SilcSocketConnection silc_server_get_client_route(SilcServer server,
   if (client) {
     silc_free(id);
 
-    if (client->data.registered == FALSE)
+    if (client && client->data.registered == FALSE)
       return NULL;
 
     /* If we are router and the client has router then the client is in
        our cell but not directly connected to us. */
     if (server->server_type == SILC_ROUTER && client->router) {
-      /* We are of course in this case the client's router thus the route
-	 to the client is the server who owns the client. So, we will send
-	 the packet to that server. */
+      /* We are of course in this case the client's router thus the real
+	 "router" of the client is the server who owns the client. Thus
+	 we will send the packet to that server. */
       if (idata)
 	*idata = (SilcIDListData)client->router;
       return client->router->connection;
