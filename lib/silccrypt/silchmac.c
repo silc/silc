@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/14 09:12:24  priikone
+ * 	Fixed bug in silc_hmac_make.
+ *
  * Revision 1.2  2000/07/05 06:08:43  priikone
  * 	Global cosmetic change.
  *
@@ -152,5 +155,6 @@ void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
 		       unsigned int key_len)
 {
   hmac->key = silc_calloc(key_len, sizeof(unsigned char));
+  hmac->key_len = key_len;
   memcpy(hmac->key, key, key_len);
 }
