@@ -2550,13 +2550,13 @@ List of all defined commands in SILC follows.
         Reply messages to the command:
 
         Max Arguments:  14
-            Arguments:  (1) <Status Payload>      (2) <channel> 
-                        (3) <Channel ID>          (4) <Client ID>
-                        (5) <channel mode mask>   (6) <created>
-                        (7) <Channel Key Payload> (8) [<ban list>]
-                        (9) [<invite list>]       (10) [<topic>]
-                        (11) [<hmac>]             (12) <list count>
-                        (13) <Client ID list>     (14) <client mode list>
+            Arguments:  (1) <Status Payload>        (2) <channel> 
+                        (3) <Channel ID>            (4) <Client ID>
+                        (5) <channel mode mask>     (6) <created>
+                        (7) [<Channel Key Payload>] (8) [<ban list>]
+                        (9) [<invite list>]         (10) [<topic>]
+                        (11) [<hmac>]               (12) <list count>
+                        (13) <Client ID list>       (14) <client mode list>
 
         This command replies with the channel name requested by the
         client, channel ID of the channel and topic of the channel
@@ -2986,9 +2986,6 @@ List of all defined commands in SILC follows.
             SILC_STATUS_OK
             SILC_STATUS_ERR_NOT_REGISTERED
             SILC_STATUS_ERR_NO_SERVER_PRIV
-
-
-
 
 
    21   SILC_COMMAND_CLOSE

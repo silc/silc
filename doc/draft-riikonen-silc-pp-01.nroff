@@ -1488,7 +1488,12 @@ o Flags (2 bytes) - Includes the flags of the channel
           The sender is performing an action and the message
           is the indication of the action.
 
-  0x0008 - 0x0200 RESERVED
+  0x0008  SILC_MESSAGE_FLAG_NOTICE
+
+          The message is for example and informational notice
+          type message.
+
+  0x0010 - 0x0200 RESERVED
 
           Reserved for future flags
 

@@ -56,7 +56,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
       silc_print(client, "* %s %s", sender ? sender->nickname : "[<unknown>]", 
 		 msg);
     else if (flags & SILC_MESSAGE_FLAG_NOTICE)
-      silc_print(client, "-%s- %s", sender ? sender->nickname : "[<unknown>]", 
+      silc_print(client, "- %s %s", sender ? sender->nickname : "[<unknown>]", 
 		 msg);
     else
       silc_print(client, "<%s> %s", sender ? sender->nickname : "[<unknown>]", 
@@ -67,7 +67,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 		 "[<unknown>]",
 		 channel->channel_name, msg);
     else if (flags & SILC_MESSAGE_FLAG_NOTICE)
-      silc_print(client, "-%s:%s- %s", sender ? sender->nickname : 
+      silc_print(client, "- %s:%s %s", sender ? sender->nickname : 
 		 "[<unknown>]",
 		 channel->channel_name, msg);
     else

@@ -622,7 +622,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   unsigned char *id_string;
   char *channel_name, *tmp;
   unsigned int mode, created;
-  SilcBuffer keyp, client_id_list, client_mode_list;
+  SilcBuffer keyp = NULL, client_id_list, client_mode_list;
 
   COMMAND_CHECK_STATUS;
 
@@ -660,11 +660,11 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 
   /* Get channel key */
   tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
-  if (!tmp)
-    goto out;
-  keyp = silc_buffer_alloc(len);
-  silc_buffer_pull_tail(keyp, SILC_BUFFER_END(keyp));
-  silc_buffer_put(keyp, tmp, len);
+  if (tmp) {
+    keyp = silc_buffer_alloc(len);
+    silc_buffer_pull_tail(keyp, SILC_BUFFER_END(keyp));
+    silc_buffer_put(keyp, tmp, len);
+  }
 
   id = silc_id_payload_parse_id(id_string, id_len);
   if (!id)
@@ -768,8 +768,11 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   entry->mode = mode;
 
   /* Save channel key */
-  silc_server_save_channel_key(server, keyp, entry);
-  silc_buffer_free(keyp);
+  if (!(entry->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
+    silc_server_save_channel_key(server, keyp, entry);
+  }
+  if (keyp)
+    silc_buffer_free(keyp);
 
   /* Save the users to the channel */
   silc_server_save_users_on_channel(server, cmd->sock, entry, 

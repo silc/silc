@@ -2300,7 +2300,7 @@ void silc_server_remove_from_channels(SilcServer server,
 					 signoff_message, signoff_message ?
 					 strlen(signoff_message) : 0);
 
-    if (keygen) {
+    if (keygen && !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
       /* Re-generate channel key */
       silc_server_create_channel_key(server, channel, 0);
       
@@ -2574,6 +2574,11 @@ void silc_server_create_channel_key(SilcServer server,
   unsigned int len;
 
   SILC_LOG_DEBUG(("Generating channel key"));
+
+  if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
+    SILC_LOG_DEBUG(("Channel has private keys, will not generate new key"));
+    return;
+  }
 
   if (!channel->channel_key)
     if (!silc_cipher_alloc("aes-256-cbc", &channel->channel_key))

@@ -1700,7 +1700,6 @@ SILC_CLIENT_CMD_FUNC(connect)
 SILC_CLIENT_CMD_FUNC(restart)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
-  SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer;
 
   if (!cmd->conn) {

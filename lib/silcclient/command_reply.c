@@ -913,7 +913,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   SilcChannelUser chu;
   unsigned int argc, mode, len, list_count;
   char *topic, *tmp, *channel_name = NULL, *hmac;
-  SilcBuffer keyp, client_id_list, client_mode_list;
+  SilcBuffer keyp = NULL, client_id_list, client_mode_list;
   int i;
 
   SILC_LOG_DEBUG(("Start"));
@@ -969,14 +969,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 
   /* Get channel key */
   tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
-  if (!tmp) {
-    silc_id_payload_free(idp);
-    silc_free(channel_name);
-    goto out;
+  if (tmp) {
+    keyp = silc_buffer_alloc(len);
+    silc_buffer_pull_tail(keyp, SILC_BUFFER_END(keyp));
+    silc_buffer_put(keyp, tmp, len);
   }
-  keyp = silc_buffer_alloc(len);
-  silc_buffer_pull_tail(keyp, SILC_BUFFER_END(keyp));
-  silc_buffer_put(keyp, tmp, len);
 
   /* Get topic */
   topic = silc_argument_get_arg_type(cmd->args, 10, NULL);
@@ -1069,17 +1066,23 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 		   client_mode_list->head);
 
   /* Save channel key */
-  silc_client_save_channel_key(conn, keyp, channel);
+  if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
+    silc_client_save_channel_key(conn, keyp, channel);
+
+  /* Client is now joined to the channel */
+  channel->on_channel = TRUE;
 
   /* Notify application */
-  COMMAND_REPLY((ARGS, channel_name, channel, mode, 0, keyp->head, NULL,
+  COMMAND_REPLY((ARGS, channel_name, channel, mode, 0, 
+		 keyp ? keyp->head : NULL, NULL,
 		 NULL, topic, hmac, list_count, client_id_list, 
 		 client_mode_list));
 
   /* Execute any pending command callbacks */
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
 
-  silc_buffer_free(keyp);
+  if (keyp)
+    silc_buffer_free(keyp);
   silc_buffer_free(client_id_list);
   silc_buffer_free(client_mode_list);
 

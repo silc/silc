@@ -33,6 +33,7 @@ SilcClientCommand silc_local_command_list[] =
   SILC_CLIENT_LCMD(away, AWAY, "AWAY", 0, 2),
   SILC_CLIENT_LCMD(key, KEY, "KEY", 0, 7),
   SILC_CLIENT_LCMD(me, ME, "ME", 0, 3),
+  SILC_CLIENT_LCMD(notice, NOTICE, "NOTICE", 0, 3),
 
   { NULL, 0, NULL, 0, 0 },
 };
@@ -737,6 +738,54 @@ SILC_CLIENT_LCMD_FUNC(me)
 				   cmd->argv[2], cmd->argv_lens[2], TRUE);
 
   silc_print(client, "* %s %s", conn->nickname, cmd->argv[2]);
+
+ out:
+  silc_client_command_free(cmd);
+}
+
+/* Sends an notice to the channel.  */
+
+SILC_CLIENT_LCMD_FUNC(notice)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcClient client = cmd->client;
+  SilcChannelEntry channel_entry;
+  char *name;
+
+  if (!cmd->conn) {
+    silc_say(client, conn,
+	     "You are not connected to a server, use /SERVER to connect");
+    goto out;
+  }
+
+  if (cmd->argc < 3) {
+    silc_say(client, conn, "Usage: /ME <channel> <action message>");
+    goto out;
+  }
+
+  if (cmd->argv[1][0] == '*') {
+    if (!conn->current_channel) {
+      cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
+      goto out;
+    }
+    name = conn->current_channel->channel_name;
+  } else {
+    name = cmd->argv[1];
+  }
+
+  channel_entry = silc_client_get_channel(client, conn, name);
+  if (!channel_entry) {
+    silc_say(client, conn, "You are not on that channel");
+    goto out;
+  }
+
+  /* Send the action message */
+  silc_client_send_channel_message(client, conn, channel_entry, NULL,
+				   SILC_MESSAGE_FLAG_NOTICE, 
+				   cmd->argv[2], cmd->argv_lens[2], TRUE);
+
+  silc_print(client, "- %s %s", conn->nickname, cmd->argv[2]);
 
  out:
   silc_client_command_free(cmd);

@@ -676,10 +676,11 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	  } else {
 	    /* Private key mode is set, we don't have the channel key, so
 	       just re-encrypt the entire packet and send it to the router. */
-	    silc_server_packet_send_dest(server, sock, 
-					 SILC_PACKET_CHANNEL_MESSAGE, 0,
-					 channel->id, SILC_ID_CHANNEL,
-					 data, data_len, force_send);
+	    silc_server_packet_send_srcdest(server, sock, 
+					    SILC_PACKET_CHANNEL_MESSAGE, 0,
+					    sender, sender_type,
+					    channel->id, SILC_ID_CHANNEL,
+					    data, data_len, force_send);
 	  }
 	  continue;
 	}

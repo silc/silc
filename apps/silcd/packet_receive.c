@@ -422,6 +422,20 @@ void silc_server_notify(SilcServer server,
 
     SILC_GET32_MSB(mode, tmp);
 
+    /* If the channel had private keys set and the mode was removed then
+       we must re-generate and re-distribute a new channel key */
+    if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY &&
+	!(mode & SILC_CHANNEL_MODE_PRIVKEY)) {
+      /* Re-generate channel key */
+      silc_server_create_channel_key(server, channel, 0);
+      
+      /* Send the channel key. This sends it to our local clients and if
+	 we are normal server to our router as well. */
+      silc_server_send_channel_key(server, NULL, channel, 
+				   server->server_type == SILC_ROUTER ? 
+				   FALSE : !server->standalone);
+    }
+
     /* Change mode */
     channel->mode = mode;
     silc_free(channel_id);
@@ -1176,7 +1190,9 @@ void silc_server_channel_key(SilcServer server,
   SilcBuffer buffer = packet->buffer;
   SilcChannelEntry channel;
 
-  if (packet->src_id_type != SILC_ID_SERVER)
+  if (packet->src_id_type != SILC_ID_SERVER ||
+      (server->server_type == SILC_ROUTER &&
+       sock->type == SILC_SOCKET_TYPE_ROUTER))
     return;
 
   /* Save the channel key */
@@ -1736,21 +1752,25 @@ void silc_server_new_channel(SilcServer server,
       /* Create new key for the channel and send it to the server and
 	 everybody else possibly on the channel. */
 
-      silc_server_create_channel_key(server, channel, 0);
+      if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
+	silc_server_create_channel_key(server, channel, 0);
+	
+	/* Send to the channel */
+	silc_server_send_channel_key(server, sock, channel, FALSE);
+	
+	/* Send to the server */
+	chk = silc_channel_key_payload_encode(id_len, id,
+					      strlen(channel->channel_key->
+						     cipher->name),
+					      channel->channel_key->
+					      cipher->name,
+					      channel->key_len / 8, 
+					      channel->key);
+	silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
+				chk->data, chk->len, FALSE);
+	silc_buffer_free(chk);
+      }
 
-      /* Send to the channel */
-      silc_server_send_channel_key(server, sock, channel, FALSE);
-
-      /* Send to the server */
-      chk = silc_channel_key_payload_encode(id_len, id,
-					    strlen(channel->channel_key->
-						   cipher->name),
-					    channel->channel_key->cipher->name,
-					    channel->key_len / 8, 
-					    channel->key);
-      silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
-			      chk->data, chk->len, FALSE);
-      silc_buffer_free(chk);
       silc_free(channel_id);
 
       /* Since the channel is coming from server and we also know about it

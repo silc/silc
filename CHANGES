@@ -25,6 +25,9 @@ Thu Mar 29 15:26:25 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  other cells as well.  Added this support for the router in the
 	  silcd/packet_receive.c.
 
+	* Added new local command NOTICE to send notice message on
+	  channel.  Affected file silc/local_command.[ch].
+
 Wed Mar 28 23:55:54 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new local command ME to the client.  It is used to send

@@ -52,13 +52,6 @@ void silc_client_send_channel_message(SilcClient client,
 
   SILC_LOG_DEBUG(("Sending packet to channel"));
 
-  if (!channel || !channel->hmac || 
-      (!channel->channel_key && !key && !channel->private_keys)) {
-    client->ops->say(client, conn, 
-		     "Cannot talk to channel: key does not exist");
-    return;
-  }
-
   /* Take the key to be used */
   if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
     if (key) {
@@ -89,6 +82,9 @@ void silc_client_send_channel_message(SilcClient client,
     cipher = channel->channel_key;
     hmac = channel->hmac;
   }
+
+  if (!cipher || !hmac)
+    return;
 
   /* Generate IV */
   iv_len = silc_cipher_get_block_len(cipher);
@@ -310,9 +306,6 @@ void silc_client_save_channel_key(SilcClientConnection conn,
   silc_hmac_set_key(channel->hmac, hash, silc_hash_len(channel->hmac->hash));
   memset(hash, 0, sizeof(hash));
 
-  /* Client is now joined to the channel */
-  channel->on_channel = TRUE;
-
  out:
   silc_free(id);
   silc_channel_key_payload_free(payload);
@@ -342,7 +335,7 @@ void silc_client_receive_channel_key(SilcClient client,
    several private keys per one channel. In this case only some of the
    clients on the channel may know the one key and only some the other key.
 
-   if `cipher' and/or `hmac' is NULL then default values will be used 
+   If `cipher' and/or `hmac' is NULL then default values will be used 
    (aes-256-cbc for cipher and hmac-sha1-96 for hmac).
 
    The private key for channel is optional. If it is not set then the
@@ -373,6 +366,7 @@ int silc_client_add_channel_private_key(SilcClient client,
 {
   SilcChannelPrivateKey entry;
   unsigned char hash[32];
+  SilcSKEKeyMaterial *keymat;
 
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
     return FALSE;
@@ -388,6 +382,13 @@ int silc_client_add_channel_private_key(SilcClient client,
   if (!silc_hmac_is_supported(hmac))
     return FALSE;
 
+  /* Produce the key material */
+  keymat = silc_calloc(1, sizeof(*keymat));
+  if (silc_ske_process_key_material_data(key, key_len, 16, 256, 16, 
+					 client->md5hash, keymat) 
+      != SILC_SKE_STATUS_OK)
+    return FALSE;
+
   /* Remove the current key, if it exists. */
   if (channel->channel_key) {
     silc_cipher_free(channel->channel_key);
@@ -397,25 +398,27 @@ int silc_client_add_channel_private_key(SilcClient client,
     channel->key = NULL;
     channel->key_len = 0;
   }
-  if (channel->hmac)
+  if (channel->hmac) {
     silc_hmac_free(channel->hmac);
+    channel->hmac = NULL;
+  }
 
   if (!channel->private_keys)
     channel->private_keys = silc_dlist_init();
 
   /* Save the key */
   entry = silc_calloc(1, sizeof(*entry));
-  entry->key = silc_calloc(key_len, sizeof(*entry->key));
-  memcpy(entry->key, key, key_len);
-  entry->key_len = key_len;
+  entry->key = silc_calloc(keymat->enc_key_len / 8, sizeof(*entry->key));
+  memcpy(entry->key, keymat->send_enc_key, keymat->enc_key_len / 8);
+  entry->key_len = keymat->enc_key_len / 8;
 
   /* Allocate the cipher and set the key*/
   silc_cipher_alloc(cipher, &entry->cipher);
-  silc_cipher_set_key(entry->cipher, key, key_len * 8);
+  silc_cipher_set_key(entry->cipher, entry->key, keymat->enc_key_len);
 
   /* Generate HMAC key from the channel key data and set it */
   silc_hmac_alloc(hmac, NULL, &entry->hmac);
-  silc_hash_make(entry->hmac->hash, key, key_len, hash);
+  silc_hash_make(entry->hmac->hash, entry->key, entry->key_len, hash);
   silc_hmac_set_key(entry->hmac, hash, silc_hash_len(entry->hmac->hash));
   memset(hash, 0, sizeof(hash));
 
@@ -424,6 +427,9 @@ int silc_client_add_channel_private_key(SilcClient client,
 
   if (!channel->curr_key)
     channel->curr_key = entry;
+
+  /* Free the key material */
+  silc_ske_free_key_material(keymat);
 
   return TRUE;
 }

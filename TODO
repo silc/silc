@@ -25,11 +25,6 @@ TODO General
 TODO In SILC Client Library
 ===========================
 
- o TODO in commands (lib/silcclient/command.c and
-		     silc/silclient/command_reply.c):
-
-	o RESTART command is not implemented
-
  o Client library crashes if for example server timeouts protocol
    execution and disconnects the client.  The client, on the other hand
    may still assume that the connection is active, even after receiving
@@ -82,6 +77,8 @@ TODO In SILC Server
 	  clients before setting the status.  Good fix for this would be
 	  to make sure that the clients table does not include any
 	  unregistered clients in the first place.
+	o Cleanup LEAVE command's channel key sending, it can be done
+	  simpler by one function: silc_server_send_channel_key.
 
  o TODO in notify types (packet_receive.c):
 

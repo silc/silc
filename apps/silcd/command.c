@@ -2665,7 +2665,7 @@ static void silc_server_command_join_channel(SilcServer server,
   unsigned char *passphrase = NULL, mode[4], tmp2[4], tmp3[4];
   SilcClientEntry client;
   SilcChannelClientEntry chl;
-  SilcBuffer reply, chidp, clidp, keyp, user_list, mode_list;
+  SilcBuffer reply, chidp, clidp, keyp = NULL, user_list, mode_list;
   unsigned short ident = silc_command_get_ident(cmd->payload);
   char check[512];
 
@@ -2774,9 +2774,10 @@ static void silc_server_command_join_channel(SilcServer server,
 
   /* Send the channel key. This is broadcasted to the channel but is not
      sent to the client who is joining to the channel. */
-  silc_server_send_channel_key(server, NULL, channel, 
-			       server->server_type == SILC_ROUTER ? 
-			       FALSE : !server->standalone);
+  if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
+    silc_server_send_channel_key(server, NULL, channel, 
+				 server->server_type == SILC_ROUTER ? 
+				 FALSE : !server->standalone);
 
   /* Join the client to the channel by adding it to channel's user list.
      Add also the channel to client entry's channels list for fast cross-
@@ -2800,13 +2801,17 @@ static void silc_server_command_join_channel(SilcServer server,
   SILC_PUT32_MSB(channel->mode, mode);
   SILC_PUT32_MSB(created, tmp2);
   SILC_PUT32_MSB(user_count, tmp3);
-  tmp = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
-  keyp = silc_channel_key_payload_encode(SILC_ID_CHANNEL_LEN, tmp, 
-					 strlen(channel->channel_key->
-						cipher->name),
-					 channel->channel_key->cipher->name,
-					 channel->key_len / 8, channel->key);
-  silc_free(tmp);
+
+  if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
+    tmp = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+    keyp = silc_channel_key_payload_encode(SILC_ID_CHANNEL_LEN, tmp, 
+					   strlen(channel->channel_key->
+						  cipher->name),
+					   channel->channel_key->cipher->name,
+					   channel->key_len / 8, channel->key);
+    silc_free(tmp);
+  }
+
   reply = 
     silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
 					 SILC_STATUS_OK, ident, 13,
@@ -2816,7 +2821,8 @@ static void silc_server_command_join_channel(SilcServer server,
 					 4, clidp->data, clidp->len,
 					 5, mode, 4,
 					 6, tmp2, 4,
-					 7, keyp->data, keyp->len,
+					 7, keyp ? keyp->data : NULL, 
+					 keyp ? keyp->len : 0,
 					 8, channel->ban_list, 
 					 channel->ban_list ?
 					 strlen(channel->ban_list) : 0,
@@ -3945,14 +3951,16 @@ SILC_SERVER_CMD_FUNC(kick)
 				   target_client->id, SILC_ID_CLIENT_LEN,
 				   comment);
 
-  /* Re-generate channel key */
-  silc_server_create_channel_key(server, channel, 0);
-
-  /* Send the channel key to the channel. The key of course is not sent
-     to the client who was kicked off the channel. */
-  silc_server_send_channel_key(server, target_client->connection, channel, 
-			       server->server_type == SILC_ROUTER ? 
-			       FALSE : !server->standalone);
+  if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
+    /* Re-generate channel key */
+    silc_server_create_channel_key(server, channel, 0);
+    
+    /* Send the channel key to the channel. The key of course is not sent
+       to the client who was kicked off the channel. */
+    silc_server_send_channel_key(server, target_client->connection, channel, 
+				 server->server_type == SILC_ROUTER ? 
+				 FALSE : !server->standalone);
+  }
 
  out:
   silc_server_command_free(cmd);
@@ -4322,35 +4330,39 @@ SILC_SERVER_CMD_FUNC(leave)
   if (!i)
     goto out;
 
-  /* Re-generate channel key */
-  silc_server_create_channel_key(server, channel, 0);
+  if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
+    /* Re-generate channel key */
+    silc_server_create_channel_key(server, channel, 0);
 
-  /* Encode channel key payload to be distributed on the channel */
-  packet = 
-    silc_channel_key_payload_encode(len, tmp,
-				    strlen(channel->channel_key->cipher->name),
-				    channel->channel_key->cipher->name,
-				    channel->key_len / 8, channel->key);
+    /* Encode channel key payload to be distributed on the channel */
+    packet = 
+      silc_channel_key_payload_encode(len, tmp,
+				      strlen(channel->channel_key->
+					     cipher->name),
+				      channel->channel_key->cipher->name,
+				      channel->key_len / 8, channel->key);
 
-  /* If we are normal server then we will send it to our router.  If we
-     are router we will send it to all local servers that has clients on
-     the channel */
-  if (server->server_type == SILC_SERVER) {
-    if (!server->standalone)
-      silc_server_packet_send(server, 
-			      cmd->server->router->connection,
-			      SILC_PACKET_CHANNEL_KEY, 0, packet->data,
-			      packet->len, FALSE);
-  } else {
+    /* If we are normal server then we will send it to our router.  If we
+       are router we will send it to all local servers that has clients on
+       the channel */
+    if (server->server_type == SILC_SERVER) {
+      if (!server->standalone)
+	silc_server_packet_send(server, 
+				cmd->server->router->connection,
+				SILC_PACKET_CHANNEL_KEY, 0, packet->data,
+				packet->len, FALSE);
+    } else {
+      
+    }
 
+    /* Send to locally connected clients on the channel */
+    silc_server_packet_send_local_channel(server, channel, 
+					  SILC_PACKET_CHANNEL_KEY, 0,
+					  packet->data, packet->len, FALSE);
+
+    silc_buffer_free(packet);
   }
 
-  /* Send to locally connected clients on the channel */
-  silc_server_packet_send_local_channel(server, channel, 
-					SILC_PACKET_CHANNEL_KEY, 0,
-					packet->data, packet->len, FALSE);
-
-  silc_buffer_free(packet);
   silc_free(id);
 
  out:
