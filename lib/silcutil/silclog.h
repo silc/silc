@@ -41,6 +41,7 @@
  *    This is the main logging channel id. There are currently four known
  *    logging channels (plus the debugging output channel), and they are
  *    ordered by importance.
+ *
  *    See the source code for SILC coding conventions about how to choose
  *    the right output channel.
  *
@@ -433,6 +434,7 @@ extern DLLAPI bool silc_debug_hexdump;
  *
  *    This is the main function for logging output. Please note that you
  *    should rather use one of the logging wrapper macros.
+ *
  *    If you really want to use this function, its usage is quite simple.
  *    The `type' parameter identifies the channel to use, while the `string'
  *    parameter must be a dynamic allocated (null-terminated) buffer, because
@@ -459,6 +461,7 @@ void silc_log_output(SilcLogType type, char *string);
  *    If there has been an error during the opening of this channel, NULL
  *    is returned, even if the file has been previously set with
  *    silc_log_set_file().
+ *
  *    The returned pointer points to internally allocated storage and must
  *    not be freed, modified or stored.
  *
@@ -479,10 +482,11 @@ char *silc_log_get_file(SilcLogType type);
  *    logging file for the channel `type'.  If you specify an illegal filename
  *    a warning message is printed and FALSE is returned.  In this case
  *    logging settings are not changed.
+ *
  *    You can disable logging for a channel by specifying NULL filename, the
- *    maxsize in this case is not important.
- *    The `scheduler' parameter is needed by the internal logging to allow
- *    buffered output and thus to save HD activity.
+ *    maxsize in this case is not important.  The `scheduler' parameter is 
+ *    needed by the internal logging to allow buffered output and thus to 
+ *    save HD activity.
  *
  ***/
 bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
@@ -502,10 +506,10 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
  *    trigger the callback function.  If the callback function returns TRUE
  *    SilcLog will assume the input as handled and won't run its default
  *    handler.
+ *
  *    You can disable/remove a callback by setting it to NULL or calling the
- *    function silc_log_reset_callbacks.
- *    If set, the callback function must be in the form described by
- *    SilcLogCb.
+ *    function silc_log_reset_callbacks.  If set, the callback function 
+ *    must be in the form described by SilcLogCb.
  *
  * SEE ALSO
  *    silc_log_reset_callbacks
