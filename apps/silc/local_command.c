@@ -760,7 +760,7 @@ SILC_CLIENT_LCMD_FUNC(notice)
   }
 
   if (cmd->argc < 3) {
-    silc_say(client, conn, "Usage: /ME <channel> <action message>");
+    silc_say(client, conn, "Usage: /NOTICE <channel> <message>");
     goto out;
   }
 

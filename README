@@ -320,6 +320,11 @@ SILC Commands
 		This command is used to send an action to the channel.
 		This equals to CTCP's ACTION (IRC's /ME) command.
 
+	/NOTICE	<channel> <message>
+
+		This command is used to send for example informational
+		notice messages to the channel.
+
 Features
 ========
 
