@@ -40,7 +40,6 @@ void silc_idlist_add_data(void *entry, SilcIDListData idata)
   data->hmac = idata->hmac;
   data->hmac_key = idata->hmac_key;
   data->hmac_key_len = idata->hmac_key_len;
-  data->pkcs = idata->pkcs;
   data->public_key = idata->public_key;
   data->last_receive = idata->last_receive;
   data->last_sent = idata->last_sent;
@@ -62,8 +61,6 @@ void silc_idlist_del_data(void *entry)
     memset(idata->hmac_key, 0, idata->hmac_key_len);
     silc_free(idata->hmac_key);
   }
-  if (idata->pkcs)
-    silc_pkcs_free(idata->pkcs);
   if (idata->public_key)
     silc_pkcs_public_key_free(idata->public_key);
 }

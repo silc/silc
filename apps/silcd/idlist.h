@@ -59,8 +59,7 @@ typedef struct {
   unsigned char *hmac_key;
   unsigned int hmac_key_len;
 
-  /* PKCS and public key */
-  SilcPKCS pkcs;
+  /* public key */
   SilcPublicKey public_key;
 
   long last_receive;         /* Time last received data */

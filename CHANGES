@@ -78,6 +78,9 @@ Sun Apr  1 19:49:34 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  the old auth data.  Affected files silcd/command_reply.c and
 	  silcd/server.c.
 
+	* Removed the `pkcs' field from the SilcIDListData structure
+	  in the server; it is not used.  Affected file silcd/idlist.h.
+
 Sat Mar 31 15:38:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed packet processing on slow links.  Partial packets were
