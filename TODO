@@ -90,7 +90,7 @@ TODO In SILC Server
 	o Public key authentication is missing in initiator side.  It must
 	  be implemented by creating the authentication data.
 
- o TODO in general server (server.c)
+ o TODO in general server (server.c):
 
 	o SILC_PACKET_CONNECTION_AUTH_REQUEST packet type is not
 	  implemented.
