@@ -60,5 +60,6 @@ void silc_server_command_reply_process(SilcServer server,
 SILC_SERVER_CMD_REPLY_FUNC(join);
 SILC_SERVER_CMD_REPLY_FUNC(whois);
 SILC_SERVER_CMD_REPLY_FUNC(identify);
+SILC_SERVER_CMD_REPLY_FUNC(names);
 
 #endif

@@ -701,7 +701,7 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 
 /* Received Remove Channel User packet to remove a user from a channel. 
    Routers notify other routers that user has left a channel. Client must
-   not send this packet.. Normal server may send this packet but must not
+   not send this packet. Normal server may send this packet but must not
    receive it. */
 
 void silc_server_remove_channel_user(SilcServer server,
@@ -766,8 +766,8 @@ void silc_server_remove_channel_user(SilcServer server,
       goto out;
   }
 
-  /* Remove from channel */
-  silc_server_remove_from_one_channel(server, sock, channel, client, FALSE);
+  /* Remove user from channel */
+  silc_server_remove_from_one_channel(server, sock, channel, client, TRUE);
 
  out:
   if (tmp1)
@@ -838,7 +838,11 @@ void silc_server_notify(SilcServer server,
   SilcNotifyType type;
   SilcArgumentPayload args;
   SilcChannelID *channel_id;
+  SilcClientID *client_id;
   SilcChannelEntry channel;
+  SilcClientEntry client;
+  unsigned char *tmp;
+  unsigned int tmp_len;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -867,6 +871,7 @@ void silc_server_notify(SilcServer server,
     /* 
      * Distribute the notify to local clients on the channel
      */
+    SILC_LOG_DEBUG(("JOIN notify"));
 
     channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_type);
     if (!channel_id)
@@ -880,7 +885,40 @@ void silc_server_notify(SilcServer server,
       goto out;
     }
 
-    channel->global_users = TRUE;
+    /* Get client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp) {
+      silc_free(channel_id);
+      goto out;
+    }
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+
+    /* If the the client is not in local list we check global list (ie. the
+       channel will be global channel) and if it does not exist then create
+       entry for the client. */
+    client = silc_idlist_find_client_by_id(server->local_list, 
+					   client_id, NULL);
+    if (!client) {
+      SilcChannelClientEntry chl;
+
+      client = silc_idlist_find_client_by_id(server->global_list, 
+					     client_id, NULL);
+      if (!client)
+	client = silc_idlist_add_client(server->global_list, NULL, NULL, NULL,
+					client_id, sock->user_data, sock);
+
+      /* The channel is global now */
+      channel->global_users = TRUE;
+
+      /* Now actually JOIN the global client to the channel */
+      chl = silc_calloc(1, sizeof(*chl));
+      chl->client = client;
+      chl->channel = channel;
+      silc_list_add(channel->user_list, chl);
+      silc_list_add(client->channels, chl);
+    } else {
+      silc_free(client_id);
+    }
 
     /* Send to channel */
     silc_server_packet_send_to_channel(server, channel, packet->type, FALSE,
@@ -889,9 +927,81 @@ void silc_server_notify(SilcServer server,
     break;
 
   case SILC_NOTIFY_TYPE_LEAVE:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+    SILC_LOG_DEBUG(("LEAVE notify"));
+
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_type);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) { 
+      silc_free(channel_id);
+      goto out;
+    }
+
+    /* Get client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp) {
+      silc_free(channel_id);
+      goto out;
+    }
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+
+    /* Send to channel */
+    silc_server_packet_send_to_channel(server, channel, packet->type, FALSE,
+				       packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+
+    /* Get client entry */
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, NULL);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->local_list, 
+					     client_id, NULL);
+      if (!client) {
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+    silc_free(client_id);
+
+    /* Remove the user from channel */
+    silc_server_remove_from_one_channel(server, sock, channel, client, FALSE);
     break;
 
   case SILC_NOTIFY_TYPE_SIGNOFF:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+    SILC_LOG_DEBUG(("SIGNOFF notify"));
+
+    /* Get client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+
+    /* Get client entry */
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, NULL);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->local_list, 
+					     client_id, NULL);
+      if (!client)
+	goto out;
+    }
+    silc_free(client_id);
+
+    /* Remove the client from all channels */
+    silc_server_remove_from_channels(server, NULL, client);
+
+    /* Remove the client entry */
+    silc_idlist_del_client(server->global_list, client);
     break;
 
     /* Ignore rest notify types for now */
@@ -1056,6 +1166,8 @@ void silc_server_remove_id(SilcServer server,
   SilcIdType id_type;
   void *id, *id_entry;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
       server->server_type == SILC_SERVER ||
       packet->src_id_type != SILC_ID_SERVER)
@@ -1089,11 +1201,15 @@ void silc_server_remove_id(SilcServer server,
     id_list = server->global_list;
 
   /* Remove the ID */
-  switch(id_type) {
+  switch (id_type) {
   case SILC_ID_CLIENT:
     id_entry = silc_idlist_find_client_by_id(id_list, (SilcClientID *)id, 
 					     NULL);
     if (id_entry) {
+      /* Remove from channels */
+      silc_server_remove_from_channels(server, NULL, id_entry);
+
+      /* Remove the client entry */
       silc_idlist_del_client(id_list, (SilcClientEntry)id_entry);
 
       SILC_LOG_DEBUG(("Removed client id(%s) from [%s] %s",

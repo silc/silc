@@ -1,3 +1,52 @@
+Sun Jan 28 16:19:49 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed JOIN command on client library.  Wrong number of arguments
+	  used to crash the client.
+
+	* Added silc_server_channel_has_global function to check whether
+	  channel has global users or not.
+
+	* Added silc_server_channel_has_local function to check whether channel
+	  has locally connected clients on the channel.
+
+	* The silc_server_remove_from_one_channel now checks whether the
+	  channel has global users or not after given client was removed from
+	  the channel.  It also checks whether the channel has local clients
+	  on the channel anymore.  If it does not have then the channel entry
+	  is removed as it is not needed anymore.
+
+	* The silc_server_notify now checks on JOIN notify whether the joining
+	  client is one of locally connected or global.  If it is global then
+	  the channel has now global users on the channel and that is marked
+	  to the channel entry.  Also, it now saves the global client to
+	  global list who is joining and JOINs it to the channel.  This is
+	  for normal server, that is.
+
+	  Changed silc_server_send_notify_on_channel, 
+	  silc_server_packet_relay_to_channel and 
+	  silc_server_packet_send_to_channel check if we are normal server
+	  and client has router set (ie. global client) do not send the
+	  message to that client, as it is already routed to our router.
+
+	* Implemented LEAVE notify type handling in silc_server_notify 
+	  function.
+
+	* Tested LEAVE command in router environment successfully.  Tested
+	  with two routers, two servers and two clients.
+
+	* Updated TODO.
+
+	* idlist_find_xxx_by_id routines now dumps the ID on the debug mode.
+
+	* Implemented SIGNOFF notify type handling in silc_server_notify
+	  function.
+
+	* silc_server_remove_id now removes the client entry from all channels
+	  it has joined and thusly sends SIGNOFF notify type.
+
+	* Rewrote the NAMES list generation in server by removing two excess
+	  loops.  The lists are created now inside one loop.
+
 Sat Jan 27 22:34:56 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* silc_server_remove_channel_user checks now also global list

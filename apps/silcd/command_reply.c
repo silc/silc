@@ -51,6 +51,7 @@ SilcServerCommandReply silc_command_reply_list[] =
   SILC_SERVER_CMD_REPLY(join, JOIN),
   SILC_SERVER_CMD_REPLY(whois, WHOIS),
   SILC_SERVER_CMD_REPLY(identify, IDENTIFY),
+  SILC_SERVER_CMD_REPLY(names, NAMES),
 
   { NULL, 0 },
 };
@@ -447,7 +448,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     /* Add new channel */
 
     SILC_LOG_DEBUG(("Adding new [%s] channel %s id(%s)", 
-		    (created == 0 ? "created" : "existing"), channel_name,
+		    (created == 0 ? "existing" : "created"), channel_name,
 		    silc_id_render(id, SILC_ID_CHANNEL)));
 
     /* Add the channel to our local list. */
@@ -485,4 +486,16 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 
  out:
   silc_server_command_reply_free(cmd);
+}
+
+SILC_SERVER_CMD_REPLY_FUNC(names)
+{
+  SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
+  SilcServer server = cmd->server;
+  SilcCommandStatus status;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  COMMAND_CHECK_STATUS;
+
 }

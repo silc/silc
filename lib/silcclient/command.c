@@ -670,7 +670,7 @@ SILC_CLIENT_CMD_FUNC(join)
       silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 2,
 				     1, cmd->argv[1], cmd->argv_lens[1],
 				     2, idp->data, idp->len);
-  else if (cmd->argc == 4)
+  else if (cmd->argc == 3)
     /* XXX Buggy */
     buffer = 
       silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 3,

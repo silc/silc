@@ -112,6 +112,9 @@ SilcClientEntry silc_idlist_get_client_by_id(SilcClient client,
 {
   SilcIDCacheEntry id_cache;
 
+  SILC_LOG_DEBUG(("Finding client by ID (%s)", 
+		  silc_id_render(client_id, SILC_ID_CLIENT)));
+
   /* Find ID from cache */
   if (!silc_idcache_find_by_id_one(conn->client_cache, client_id, 
 				   SILC_ID_CLIENT, &id_cache)) {

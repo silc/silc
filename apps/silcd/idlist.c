@@ -116,7 +116,8 @@ silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
   if (!id)
     return NULL;
 
-  SILC_LOG_DEBUG(("Finding server by ID"));
+  SILC_LOG_DEBUG(("Server ID (%s)",
+		  silc_id_render(id, SILC_ID_SERVER)));
 
   if (!silc_idcache_find_by_id_one(id_list->servers, (void *)id, 
 				   SILC_ID_SERVER, &id_cache))
@@ -313,7 +314,7 @@ silc_idlist_find_client_by_nickname(SilcIDList id_list, char *nickname,
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client = NULL;
 
-  SILC_LOG_DEBUG(("Finding client by nickname"));
+  SILC_LOG_DEBUG(("Client by nickname"));
 
   if (server) {
     if (!silc_idcache_find_by_data(id_list->clients, nickname, &list))
@@ -360,7 +361,7 @@ silc_idlist_find_client_by_hash(SilcIDList id_list, char *nickname,
   SilcClientEntry client = NULL;
   unsigned char hash[32];
 
-  SILC_LOG_DEBUG(("Finding client by hash"));
+  SILC_LOG_DEBUG(("Client by hash"));
 
   silc_hash_make(md5hash, nickname, strlen(nickname), hash);
 
@@ -408,7 +409,8 @@ silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
   if (!id)
     return NULL;
 
-  SILC_LOG_DEBUG(("Finding client by ID"));
+  SILC_LOG_DEBUG(("Client ID (%s)", 
+		  silc_id_render(id, SILC_ID_CLIENT)));
 
   if (!silc_idcache_find_by_id_one(id_list->clients, (void *)id, 
 				   SILC_ID_CLIENT, &id_cache))
@@ -541,7 +543,7 @@ silc_idlist_find_channel_by_name(SilcIDList id_list, char *name,
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
 
-  SILC_LOG_DEBUG(("Finding channel by name"));
+  SILC_LOG_DEBUG(("Channel by name"));
 
   if (!silc_idcache_find_by_data_loose(id_list->channels, name, &list))
     return NULL;
@@ -575,7 +577,8 @@ silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id,
   if (!id)
     return NULL;
 
-  SILC_LOG_DEBUG(("Finding channel by ID"));
+  SILC_LOG_DEBUG(("Channel ID (%s)",
+		  silc_id_render(id, SILC_ID_CHANNEL)));
 
   if (!silc_idcache_find_by_id_one(id_list->channels, (void *)id, 
 				   SILC_ID_CHANNEL, &id_cache))

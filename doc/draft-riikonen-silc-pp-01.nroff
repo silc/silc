@@ -712,10 +712,10 @@ List of SILC Packet types are defined as follows.
           this packet.  This packet maybe sent to entity that is
           indirectly connected to the sender.
 
-          When received and the replaced ID is Client ID the server or
+          When received and the removed ID is Client ID the server or
           router must distribute SILC_NOTIFY_TYPE_SIGNOFF to the
           local clients on the channels (if any) of the client whose
-          ID was changed.  However, the notify type must be sent only
+          ID was removed.  However, the notify type must be sent only
           once per client.
 
           Payload of the packet:  See section 2.3.25 Remove ID Payload

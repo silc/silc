@@ -2829,6 +2829,7 @@ SILC_SERVER_CMD_FUNC(names)
   char *name_list = NULL, *n;
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
+  SilcBuffer idp;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_NAMES, cmd, 1, 2);
 
@@ -2860,12 +2861,20 @@ SILC_SERVER_CMD_FUNC(names)
     goto out;
   }
 
-  /* Assemble the name list now */
+  /* Assemble the lists now */
+
   name_list = NULL;
-  len = 0;
+  len = i = 0;
+  client_id_list = silc_buffer_alloc((SILC_ID_CLIENT_LEN + 4) * 
+				     silc_list_count(channel->user_list));
+  silc_buffer_pull_tail(client_id_list, SILC_BUFFER_END(client_id_list));
+  client_mode_list = 
+    silc_buffer_alloc(4 * silc_list_count(channel->user_list));
+  silc_buffer_pull_tail(client_mode_list, SILC_BUFFER_END(client_mode_list));
+
   silc_list_start(channel->user_list);
-  i = 0;
   while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+    /* Nickname */
     n = chl->client->nickname;
     if (n) {
       len2 = strlen(n);
@@ -2880,39 +2889,23 @@ SILC_SERVER_CMD_FUNC(names)
       len++;
       i++;
     }
-  }
-  if (!name_list)
-    name_list = "";
 
-  /* Assemble the Client ID list now */
-  client_id_list = silc_buffer_alloc((SILC_ID_CLIENT_LEN + 4) * 
-				     silc_list_count(channel->user_list));
-  silc_buffer_pull_tail(client_id_list, SILC_BUFFER_END(client_id_list));
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-    SilcBuffer idp;
-
+    /* Client ID */
     idp = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);
-    silc_buffer_format(client_id_list,
-		       SILC_STR_UI_XNSTRING(idp->data, idp->len),
-		       SILC_STR_END);
+    silc_buffer_put(client_id_list, idp->data, idp->len);
     silc_buffer_pull(client_id_list, idp->len);
     silc_buffer_free(idp);
-  }
-  silc_buffer_push(client_id_list, 
-		   client_id_list->data - client_id_list->head);
 
-  /* Assemble mode list */
-  client_mode_list = silc_buffer_alloc(4 * 
-				       silc_list_count(channel->user_list));
-  silc_buffer_pull_tail(client_mode_list, SILC_BUFFER_END(client_mode_list));
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+    /* Client's mode on channel */
     SILC_PUT32_MSB(chl->mode, client_mode_list->data);
     silc_buffer_pull(client_mode_list, 4);
   }
+  silc_buffer_push(client_id_list, 
+		   client_id_list->data - client_id_list->head);
   silc_buffer_push(client_mode_list, 
 		   client_mode_list->data - client_mode_list->head);
+  if (!name_list)
+    name_list = "";
 
   /* Send reply */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_NAMES,

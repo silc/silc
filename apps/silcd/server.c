@@ -1665,9 +1665,41 @@ void silc_server_free_sock_user_data(SilcServer server,
   sock->user_data = NULL;
 }
 
-/* Removes client from all channels it has joined. This is used when
-   client connection is disconnected. If the client on a channel
-   is last, the channel is removed as well. */
+/* Checks whether given channel has global users.  If it does this returns
+   TRUE and FALSE if there is only locally connected clients on the channel. */
+
+int silc_server_channel_has_global(SilcChannelEntry channel)
+{
+  SilcChannelClientEntry chl;
+
+  silc_list_start(channel->user_list);
+  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+    if (chl->client->router)
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
+/* Checks whether given channel has locally connected users.  If it does this
+   returns TRUE and FALSE if there is not one locally connected client. */
+
+int silc_server_channel_has_local(SilcChannelEntry channel)
+{
+  SilcChannelClientEntry chl;
+
+  silc_list_start(channel->user_list);
+  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+    if (!chl->client->router)
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
+/* Removes client from all channels it has joined. This is used when client
+   connection is disconnected. If the client on a channel is last, the
+   channel is removed as well. This sends the SIGNOFF notify types. */
 
 void silc_server_remove_from_channels(SilcServer server, 
 				      SilcSocketConnection sock,
@@ -1703,7 +1735,7 @@ void silc_server_remove_from_channels(SilcServer server,
 	 channel globally from SILC network, in this case we will
 	 notify that this client has left the channel. */
       if (channel->global_users)
-	silc_server_send_notify_to_channel(server, channel, TRUE,
+	silc_server_send_notify_to_channel(server, channel, FALSE,
 					   SILC_NOTIFY_TYPE_SIGNOFF, 1,
 					   clidp->data, clidp->len);
       
@@ -1717,7 +1749,7 @@ void silc_server_remove_from_channels(SilcServer server,
 
     /* Send notify to channel about client leaving SILC and thus
        the entire channel. */
-    silc_server_send_notify_to_channel(server, channel, TRUE,
+    silc_server_send_notify_to_channel(server, channel, FALSE,
 				       SILC_NOTIFY_TYPE_SIGNOFF, 1,
 				       clidp->data, clidp->len);
     silc_buffer_free(chidp);
@@ -1761,10 +1793,9 @@ int silc_server_remove_from_one_channel(SilcServer server,
     /* If this client is last one on the channel the channel
        is removed all together. */
     if (silc_list_count(channel->user_list) < 2) {
-      /* Notify about leaving client if this channel has global users,
-	 ie. the channel is not created locally. */
+      /* Notify about leaving client if this channel has global users. */
       if (notify && channel->global_users)
-	silc_server_send_notify_to_channel(server, channel, TRUE,
+	silc_server_send_notify_to_channel(server, channel, FALSE,
 					   SILC_NOTIFY_TYPE_LEAVE, 1,
 					   clidp->data, clidp->len);
       
@@ -1777,9 +1808,24 @@ int silc_server_remove_from_one_channel(SilcServer server,
     silc_list_del(channel->user_list, chl);
     silc_free(chl);
 
+    /* If there is no global users on the channel anymore mark the channel
+       as local channel. */
+    if (server->server_type == SILC_SERVER &&
+	!silc_server_channel_has_global(channel))
+      channel->global_users = FALSE;
+
+    /* If tehre is not at least one local user on the channel then we don't
+       need the channel entry anymore, we can remove it safely. */
+    if (server->server_type == SILC_SERVER &&
+	!silc_server_channel_has_local(channel)) {
+      silc_idlist_del_channel(server->local_list, channel);
+      silc_buffer_free(clidp);
+      return FALSE;
+    }
+
     /* Send notify to channel about client leaving the channel */
     if (notify)
-      silc_server_send_notify_to_channel(server, channel, TRUE,
+      silc_server_send_notify_to_channel(server, channel, FALSE,
 					 SILC_NOTIFY_TYPE_LEAVE, 1,
 					 clidp->data, clidp->len);
     break;

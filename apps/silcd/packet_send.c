@@ -444,6 +444,9 @@ void silc_server_packet_send_to_channel(SilcServer server,
     if (server->server_type == SILC_ROUTER && !route)
       continue;
 
+    if (server->server_type == SILC_SERVER && client->router)
+      continue;
+
     /* Send to locally connected client */
     if (client) {
 
@@ -584,7 +587,8 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	continue;
       }
 
-      /* XXX Check client's mode on the channel. */
+      if (server->server_type == SILC_SERVER && client->router)
+	continue;
 
       /* Get data used in packet header encryption, keys and stuff. */
       sock = (SilcSocketConnection)client->connection;
@@ -883,6 +887,9 @@ void silc_server_send_notify_on_channels(SilcServer server,
 
 	continue;
       }
+
+      if (server->server_type == SILC_SERVER && client->router)
+	continue;
 
       /* Send to locally connected client */
       if (c) {

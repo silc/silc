@@ -15,6 +15,13 @@ help is really appreciated - and needed.
 New features TODO
 =================
 
+ o Optimization in general.  I have not focused to program optimized code
+   in many circumstances.  It has been more important to get this up and
+   working.  A lot must be optimized especially the ID cache.  Instead of
+   using lists some hash tables should be used.  The searching by ID and
+   such must be made a lot faster.  If someone would like dedicate their
+   efforts purely to generate optimized code I'd be appreaciated.
+
  o We should replace all short, int, long, unsigned short, unsigned int,
    unsigned long with some pre-defined datatypes that really are what
    we want on all platforms.  int16, uint16, int32, uint32 etc. are
