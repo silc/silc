@@ -185,8 +185,7 @@ void silc_client_channel_message(SilcClient client,
     goto out;
 
   /* Find the channel entry from channels on this connection */
-  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)id,
-				   SILC_ID_CHANNEL, &id_cache))
+  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)id, &id_cache))
     goto out;
 
   channel = (SilcChannelEntry)id_cache->context;
@@ -275,8 +274,8 @@ void silc_client_save_channel_key(SilcClientConnection conn,
 
   /* Find channel. */
   if (!channel) {
-    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)id,
-				     SILC_ID_CHANNEL, &id_cache))
+    if (!silc_idcache_find_by_id_one(conn->channel_cache, 
+				     (void *)id, &id_cache))
       goto out;
     
     /* Get channel entry */

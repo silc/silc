@@ -101,5 +101,8 @@ void silc_hash_table_find_foreach_ext(SilcHashTable ht, void *key,
 				      void *compare_user_context,
 				      SilcHashForeach foreach, 
 				      void *foreach_user_context);
+void silc_hash_table_rehash_ext(SilcHashTable ht, uint32 new_size,
+				SilcHashFunction hash, 
+				void *hash_user_context);
 
 #endif

@@ -152,8 +152,10 @@ void silc_client_private_message(SilcClient client,
     goto out;
 
   /* Check whether we know this client already */
-  if (!silc_idcache_find_by_id_one(conn->client_cache, remote_id,
-				   SILC_ID_CLIENT, &id_cache)) {
+  if (!silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)remote_id, 
+				       NULL, NULL, 
+				       silc_hash_client_id_compare, NULL,
+				       &id_cache)) {
     /* Resolve the client info */
     silc_client_get_client_by_id_resolve(client, conn, remote_id,
 					 silc_client_private_message_cb,
@@ -483,8 +485,7 @@ silc_client_list_private_message_keys(SilcClient client,
   SilcIDCacheList list;
   SilcClientEntry entry;
 
-  if (!silc_idcache_find_by_id(conn->client_cache, SILC_ID_CACHE_ANY, 
-			       SILC_ID_CLIENT, &list))
+  if (!silc_idcache_get_all(conn->client_cache, &list))
     return NULL;
 
   if (!silc_idcache_list_count(list)) {

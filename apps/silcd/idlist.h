@@ -545,8 +545,7 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 			      SilcServerID *new_id);
 int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry);
 SilcClientEntry
-silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname, 
-		       uint32 nickname_len, char *username, 
+silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username, 
 		       char *userinfo, SilcClientID *id, 
 		       SilcServerEntry router, void *connection);
 int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);

@@ -27,20 +27,15 @@
    This is one entry in the SILC ID Cache system. Contents of this is
    allocated outside the ID cache system, however, all the fields are 
    filled with ID cache utility functions. The ID cache system does not
-   allocate any of these fields nor free them. The system assumes that
-   the type of the ID in a specific ID Cache context are of the same
-   type.  One should not mix different types of ID's (eg. Client ID and
-   Server ID) to the same ID Cache context.
-
-   unsigned char *data
-   uint32 data_len;
-
-      The data that is usually used to find the data from the cache.
-      For example for Client ID's this is nickname.
+   allocate any of these fields nor free them.
 
    void *id
 
       The actual ID.
+
+   char name
+
+      A name associated with the ID.
 
    uint32 expire
 
@@ -55,9 +50,8 @@
 
 */
 typedef struct {
-  unsigned char *data;
-  uint32 data_len;
   void *id;
+  char *name;
   uint32 expire;
   void *context;
 } *SilcIDCacheEntry;
@@ -84,23 +78,35 @@ typedef void (*SilcIDCacheDestructor)(SilcIDCache cache,
 SilcIDCache silc_idcache_alloc(uint32 count, SilcIdType id_type,
 			       SilcIDCacheDestructor destructor);
 void silc_idcache_free(SilcIDCache cache);
-bool silc_idcache_add(SilcIDCache cache, unsigned char *data, 
-		      uint32 data_len, void *id, void *context, int expire);
+bool silc_idcache_add(SilcIDCache cache, char *name, void *id, 
+		      void *context, int expire);
 bool silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry old);
 bool silc_idcache_del_by_id(SilcIDCache cache, void *id);
+bool silc_idcache_del_by_id_ext(SilcIDCache cache, void *id,
+				SilcHashFunction hash, 
+				void *hash_context,
+				SilcHashCompare compare, 
+				void *compare_context);
 bool silc_idcache_del_by_context(SilcIDCache cache, void *context);
 bool silc_idcache_del_all(SilcIDCache cache);
 bool silc_idcache_purge(SilcIDCache cache);
 bool silc_idcache_purge_by_context(SilcIDCache cache, void *context);
 bool silc_idcache_get_all(SilcIDCache cache, SilcIDCacheList *ret);
 bool silc_idcache_find_by_id(SilcIDCache cache, void *id, 
-			     SilcIDCacheEntry *ret);
+			     SilcIDCacheList *ret);
+bool silc_idcache_find_by_id_one(SilcIDCache cache, void *id, 
+				 SilcIDCacheEntry *ret);
+bool silc_idcache_find_by_id_one_ext(SilcIDCache cache, void *id, 
+				     SilcHashFunction hash, 
+				     void *hash_context,
+				     SilcHashCompare compare, 
+				     void *compare_context,
+				     SilcIDCacheEntry *ret);
 bool silc_idcache_find_by_context(SilcIDCache cache, void *context, 
 				  SilcIDCacheEntry *ret);
-bool silc_idcache_find_by_data(SilcIDCache cache, unsigned char *data, 
-			       unsigned int data_len, SilcIDCacheList *ret);
-bool silc_idcache_find_by_data_one(SilcIDCache cache, unsigned char *data,
-				   unsigned int data_len, 
+bool silc_idcache_find_by_name(SilcIDCache cache, char *name, 
+			       SilcIDCacheList *ret);
+bool silc_idcache_find_by_name_one(SilcIDCache cache, char *name,
 				   SilcIDCacheEntry *ret);
 int silc_idcache_list_count(SilcIDCacheList list);
 bool silc_idcache_list_first(SilcIDCacheList list, SilcIDCacheEntry *ret);

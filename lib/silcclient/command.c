@@ -428,7 +428,7 @@ SILC_CLIENT_CMD_FUNC(list)
     name = cmd->argv[1];
 
     /* Get the Channel ID of the channel */
-    if (silc_idcache_find_by_data_one(conn->channel_cache, name, &id_cache)) {
+    if (silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
       channel = (SilcChannelEntry)id_cache->context;
       idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
     }
@@ -498,7 +498,7 @@ SILC_CLIENT_CMD_FUNC(topic)
   }
 
   /* Get the Channel ID of the channel */
-  if (!silc_idcache_find_by_data_one(conn->channel_cache, name, &id_cache)) {
+  if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
     cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
     COMMAND_ERROR;
     goto out;
@@ -928,7 +928,7 @@ SILC_CLIENT_CMD_FUNC(join)
   }
 
   /* See if we have joined to the requested channel already */
-  if (silc_idcache_find_by_data_one(conn->channel_cache, cmd->argv[1],
+  if (silc_idcache_find_by_name_one(conn->channel_cache, cmd->argv[1],
 				    &id_cache)) {
     cmd->client->ops->say(cmd->client, conn, 
 			  "You are talking to channel %s", cmd->argv[1]);
@@ -1520,7 +1520,7 @@ SILC_CLIENT_CMD_FUNC(kick)
   }
 
   /* Get the Channel ID of the channel */
-  if (!silc_idcache_find_by_data_one(conn->channel_cache, name, &id_cache)) {
+  if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
     cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
     COMMAND_ERROR;
     goto out;
@@ -1934,7 +1934,7 @@ SILC_CLIENT_CMD_FUNC(leave)
   }
 
   /* Get the Channel ID of the channel */
-  if (!silc_idcache_find_by_data_one(conn->channel_cache, name, &id_cache)) {
+  if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
     cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
     COMMAND_ERROR;
     goto out;
@@ -1956,7 +1956,7 @@ SILC_CLIENT_CMD_FUNC(leave)
 
   conn->current_channel = NULL;
 
-  silc_idcache_del_by_id(conn->channel_cache, SILC_ID_CHANNEL, channel->id);
+  silc_idcache_del_by_id(conn->channel_cache, channel->id);
   silc_free(channel->channel_name);
   silc_free(channel->id);
   silc_free(channel->key);
@@ -2012,7 +2012,7 @@ SILC_CLIENT_CMD_FUNC(users)
   }
 
   /* Get the Channel ID of the channel */
-  if (!silc_idcache_find_by_data_one(conn->channel_cache, name, &id_cache)) {
+  if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
     /* XXX should resolve the channel ID; LIST command */
     cmd->client->ops->say(cmd->client, conn, 
 			  "You are not on that channel", name);

@@ -112,7 +112,6 @@ silc_idlist_add_server(SilcIDList id_list,
   server->connection = connection;
 
   if (!silc_idcache_add(id_list->servers, server->server_name, 
-			server->server_name ? strlen(server->server_name) : 0,
 			(void *)server->id, (void *)server, FALSE)) {
     silc_free(server);
     return NULL;
@@ -136,8 +135,8 @@ silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
   SILC_LOG_DEBUG(("Server ID (%s)",
 		  silc_id_render(id, SILC_ID_SERVER)));
 
-  if (!silc_idcache_find_by_id(id_list->servers, (void *)id, 
-			       &id_cache))
+  if (!silc_idcache_find_by_id_one(id_list->servers, (void *)id, 
+				   &id_cache))
     return NULL;
 
   server = (SilcServerEntry)id_cache->context;
@@ -159,8 +158,7 @@ silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
 
   SILC_LOG_DEBUG(("Server by name `%s'", name));
 
-  if (!silc_idcache_find_by_data_one(id_list->servers, name, strlen(name),
-				     &id_cache))
+  if (!silc_idcache_find_by_name_one(id_list->servers, name, &id_cache))
     return NULL;
 
   server = (SilcServerEntry)id_cache->context;
@@ -198,8 +196,8 @@ silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
     server = (SilcServerEntry)id_cache->context;
     sock = (SilcSocketConnection)server->connection;
     
-    if (sock && ((sock->hostname && !strcmp(sock->hostname, hostname)) ||
-		 (sock->ip && !strcmp(sock->ip, hostname)))
+    if (sock && ((sock->hostname && !strcasecmp(sock->hostname, hostname)) ||
+		 (sock->ip && !strcasecmp(sock->ip, hostname)))
 	&& sock->port == port)
       break;
 
@@ -234,13 +232,18 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 
   SILC_LOG_DEBUG(("Replacing Server ID"));
 
-  if (!silc_idcache_find_by_id(id_list->servers, (void *)old_id, &id_cache))
+  if (!silc_idcache_find_by_id_one(id_list->servers, (void *)old_id, 
+				   &id_cache))
     return NULL;
 
   server = (SilcServerEntry)id_cache->context;
   silc_free(server->id);
   server->id = new_id;
-  id_cache->id = (void *)new_id;
+
+  /* Remove the old entry and add a new one */
+  silc_idcache_del_by_context(id_list->servers, server);
+  silc_idcache_add(id_list->servers, server->server_name, server->id, 
+		   server, FALSE);
 
   SILC_LOG_DEBUG(("Found"));
 
@@ -289,8 +292,7 @@ int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
    to be directly connected local client and `router' must be NULL. */
 
 SilcClientEntry
-silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname, 
-		       uint32 nickname_len, char *username, 
+silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username, 
 		       char *userinfo, SilcClientID *id, 
 		       SilcServerEntry router, void *connection)
 {
@@ -308,8 +310,8 @@ silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname,
   silc_list_init(client->channels, struct SilcChannelClientEntryStruct, 
 		 client_list);
 
-  if (!silc_idcache_add(id_list->clients, nickname,  nickname_len,
-			(void *)client->id, (void *)client, FALSE)) {
+  if (!silc_idcache_add(id_list->clients, nickname, (void *)client->id, 
+			(void *)client, FALSE)) {
     silc_free(client);
     return NULL;
   }
@@ -327,7 +329,7 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
   if (entry) {
     /* Remove from cache */
     if (entry->id)
-      if (!silc_idcache_del_by_id(id_list->clients, (void *)entry->id))
+      if (!silc_idcache_del_by_context(id_list->clients, entry))
 	return FALSE;
 
     /* Free data */
@@ -363,8 +365,7 @@ int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!silc_idcache_find_by_data(id_list->clients, nickname, strlen(nickname),
-				 &list))
+  if (!silc_idcache_find_by_name(id_list->clients, nickname, &list))
     return FALSE;
 
   *clients = silc_realloc(*clients, 
@@ -385,12 +386,8 @@ int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
   return TRUE;
 }
 
-/* Returns all clients matching requested nickname. Number of clients is
-   returned to `clients_count'. Caller must free the returned table. */
-/* XXX This actually checks the data, which can be hash of the nickname
-   but is not if the client is local client. Global client on global
-   list may have hash.  Thus, this is not fully reliable function.
-   Instead this should probably check the hash from the list of client ID's. */
+/* Returns all clients matching requested nickname hash. Number of clients
+   is returned to `clients_count'. Caller must free the returned table. */
 
 int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 				    SilcHash md5hash,
@@ -401,13 +398,15 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
   SilcIDCacheEntry id_cache = NULL;
   unsigned char hash[32];
   int i;
+  SilcClientID client_id;
 
   SILC_LOG_DEBUG(("Start"));
 
   silc_hash_make(md5hash, nickname, strlen(nickname), hash);
 
-  if (!silc_idcache_find_by_data(id_list->clients, hash, 
-				 md5hash->hash->hash_len, &list))
+  memset(&client_id, 0, sizeof(client_id));
+  memcpy(&client_id.hash, hash, sizeof(client_id.hash));
+  if (!silc_idcache_find_by_id(id_list->clients, &client_id, &list))
     return FALSE;
 
   *clients = silc_realloc(*clients, 
@@ -443,7 +442,14 @@ silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
   SILC_LOG_DEBUG(("Client ID (%s)", 
 		  silc_id_render(id, SILC_ID_CLIENT)));
 
-  if (!silc_idcache_find_by_id(id_list->clients, (void *)id, &id_cache))
+  /* Do extended search since the normal ID comparison function for
+     Client ID's compares only the hash from the Client ID and not the
+     entire ID. The silc_hash_client_id_compare compares the entire
+     Client ID as we want to find one specific Client ID. */
+  if (!silc_idcache_find_by_id_one_ext(id_list->clients, (void *)id, 
+				       NULL, NULL, 
+				       silc_hash_client_id_compare, NULL,
+				       &id_cache))
     return NULL;
 
   client = (SilcClientEntry)id_cache->context;
@@ -470,23 +476,24 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
 
   SILC_LOG_DEBUG(("Replacing Client ID"));
 
-  if (!silc_idcache_find_by_id(id_list->clients, (void *)old_id, &id_cache))
+  /* Do extended search since the normal ID comparison function for
+     Client ID's compares only the hash from the Client ID and not the
+     entire ID. The silc_hash_client_id_compare compares the entire
+     Client ID as we want to find one specific Client ID. */
+  if (!silc_idcache_find_by_id_one_ext(id_list->clients, (void *)old_id, 
+				       NULL, NULL, 
+				       silc_hash_client_id_compare, NULL,
+				       &id_cache))
     return NULL;
 
   client = (SilcClientEntry)id_cache->context;
   silc_free(client->id);
   client->id = new_id;
-  id_cache->id = (void *)new_id;
 
-  /* XXX does not work correctly with the new ID Cache */
-
-  /* If the old ID Cache data was the hash value of the old Client ID
-     replace it with the hash of new Client ID */
-  if (id_cache->data && SILC_ID_COMPARE_HASH(old_id, id_cache->data)) {
-    silc_free(id_cache->data);
-    id_cache->data = silc_calloc(sizeof(new_id->hash), sizeof(unsigned char));
-    memcpy(id_cache->data, new_id->hash, sizeof(new_id->hash));
-  }
+  /* Remove the old entry and add a new one */
+  silc_idcache_del_by_context(id_list->clients, client);
+  silc_idcache_add(id_list->clients, client->nickname, client->id, 
+		   client, FALSE);
 
   SILC_LOG_DEBUG(("Replaced"));
 
@@ -551,7 +558,6 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 		 channel_list);
 
   if (!silc_idcache_add(id_list->channels, channel->channel_name, 
-			strlen(channel->channel_name),
 			(void *)channel->id, (void *)channel, FALSE)) {
     silc_free(channel);
     return NULL;
@@ -618,30 +624,19 @@ SilcChannelEntry
 silc_idlist_find_channel_by_name(SilcIDList id_list, char *name,
 				 SilcIDCacheEntry *ret_entry)
 {
-  SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
-  SilcChannelEntry channel;
 
   SILC_LOG_DEBUG(("Channel by name"));
 
-  if (!silc_idcache_find_by_data(id_list->channels, name, strlen(name), &list))
+  if (!silc_idcache_find_by_name_one(id_list->channels, name, &id_cache))
     return NULL;
-  
-  if (!silc_idcache_list_first(list, &id_cache)) {
-    silc_idcache_list_free(list);
-    return NULL;
-  }
-
-  channel = (SilcChannelEntry)id_cache->context;
 
   if (ret_entry)
     *ret_entry = id_cache;
 
-  silc_idcache_list_free(list);
-
   SILC_LOG_DEBUG(("Found"));
 
-  return channel;
+  return id_cache->context;
 }
 
 /* Finds channel by Channel ID. */
@@ -659,7 +654,7 @@ silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id,
   SILC_LOG_DEBUG(("Channel ID (%s)",
 		  silc_id_render(id, SILC_ID_CHANNEL)));
 
-  if (!silc_idcache_find_by_id(id_list->channels, (void *)id, &id_cache))
+  if (!silc_idcache_find_by_id_one(id_list->channels, (void *)id, &id_cache))
     return NULL;
 
   channel = (SilcChannelEntry)id_cache->context;
@@ -687,13 +682,18 @@ silc_idlist_replace_channel_id(SilcIDList id_list, SilcChannelID *old_id,
 
   SILC_LOG_DEBUG(("Replacing Channel ID"));
 
-  if (!silc_idcache_find_by_id(id_list->channels, (void *)old_id, &id_cache))
+  if (!silc_idcache_find_by_id_one(id_list->channels, (void *)old_id, 
+				   &id_cache))
     return NULL;
 
   channel = (SilcChannelEntry)id_cache->context;
   silc_free(channel->id);
   channel->id = new_id;
-  id_cache->id = (void *)new_id;
+
+  /* Remove the old entry and add a new one */
+  silc_idcache_del_by_context(id_list->channels, channel);
+  silc_idcache_add(id_list->channels, channel->channel_name, channel->id, 
+		   channel, FALSE);
 
   SILC_LOG_DEBUG(("Replaced"));
 
@@ -729,7 +729,7 @@ silc_idlist_get_channels(SilcIDList id_list, SilcChannelID *channel_id,
     
     silc_idcache_list_free(list);
   } else {
-    if (!silc_idcache_find_by_id(id_list->channels, channel_id, &id_cache))
+    if (!silc_idcache_find_by_id_one(id_list->channels, channel_id, &id_cache))
       return NULL;
 
     i = 1;

@@ -185,7 +185,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     /* We don't have that client anywhere, add it. The client is added
        to global list since server didn't have it in the lists so it must be 
        global. */
-    client = silc_idlist_add_client(server->global_list, nick, strlen(nick),
+    client = silc_idlist_add_client(server->global_list, nick, 
 				    strdup(username), 
 				    strdup(realname), client_id, 
 				    cmd->sock->user_data, NULL);
@@ -228,8 +228,8 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     silc_idcache_del_by_context(global ? server->global_list->clients :
 				server->local_list->clients, client);
     silc_idcache_add(global ? server->global_list->clients :
-		     server->local_list->clients, nick, strlen(nick),
-		     client->id, client, FALSE);
+		     server->local_list->clients, nick, client->id, 
+		     client, FALSE);
     silc_free(client_id);
   }
 
@@ -322,7 +322,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     /* We don't have that client anywhere, add it. The client is added
        to global list since server didn't have it in the lists so it must be 
        global. */
-    client = silc_idlist_add_client(server->global_list, nick, strlen(nick),
+    client = silc_idlist_add_client(server->global_list, nick,
 				    strdup(username), strdup(realname), 
 				    silc_id_dup(client_id, SILC_ID_CLIENT), 
 				    cmd->sock->user_data, NULL);
@@ -361,8 +361,8 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     silc_idcache_del_by_context(global ? server->global_list->clients :
 				server->local_list->clients, client);
     silc_idcache_add(global ? server->global_list->clients :
-		     server->local_list->clients, nick, strlen(nick),
-		     client->id, client, FALSE);
+		     server->local_list->clients, nick, client->id, 
+		     client, FALSE);
   }
 
   silc_free(client_id);
@@ -449,7 +449,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
     /* We don't have that client anywhere, add it. The client is added
        to global list since server didn't have it in the lists so it must be 
        global. */
-    client = silc_idlist_add_client(server->global_list, nick, strlen(nick),
+    client = silc_idlist_add_client(server->global_list, nick, 
 				    username ? strdup(username) : NULL, NULL,
 				    client_id, cmd->sock->user_data, NULL);
     client->data.registered = TRUE;
@@ -485,8 +485,8 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
       silc_idcache_del_by_context(global ? server->global_list->clients :
 				  server->local_list->clients, client);
       silc_idcache_add(global ? server->global_list->clients :
-		       server->local_list->clients, nick, strlen(nick),
-		       client->id, client, FALSE);
+		       server->local_list->clients, nick, client->id, 
+		       client, FALSE);
     }
     silc_free(client_id);
   }

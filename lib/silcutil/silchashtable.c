@@ -29,6 +29,15 @@
 #include "silcincludes.h"
 #include "silchashtable.h"
 
+/* Define to 1 if you want hash table debug enabled */
+#define SILC_HASH_TABLE_DEBUG 0
+
+#if SILC_HASH_TABLE_DEBUG == 1
+#define SILC_HT_DEBUG(fmt) SILC_LOG_DEBUG(fmt)
+#else
+#define SILC_HT_DEBUG(fmt)
+#endif
+
 /* Default size of the hash table (index to prime table) */
 #define SILC_HASH_TABLE_SIZE 3
 
@@ -80,10 +89,12 @@ static uint32 silc_hash_table_primesize(uint32 size, uint32 *index)
   for (i = 0; i < sizeof(primesize); i++)
     if (primesize[i] >= size) {
       *index = i;
+      SILC_HT_DEBUG(("sizeof of the hash table is %d", primesize[*index]));
       return primesize[i];
     }
 
   *index = i - 1;
+  SILC_HT_DEBUG(("sizeof of the hash table is %d", primesize[*index]));
   return primesize[i - 1];
 }
 
@@ -98,8 +109,11 @@ silc_hash_table_find_internal(SilcHashTable ht, void *key,
 			      void *compare_user_context)
 {
   SilcHashTableEntry *entry, prev = NULL;
+  uint32 i = SILC_HASH_TABLE_HASH_F(hash, hash_user_context);
 
-  entry = &ht->table[SILC_HASH_TABLE_HASH_F(hash, hash_user_context)];
+  SILC_HT_DEBUG(("index %d key %p", i, key));
+
+  entry = &ht->table[i];
   if (compare) {
     while (*entry && !compare((*entry)->key, key, compare_user_context)) {
       prev = *entry;
@@ -129,16 +143,23 @@ silc_hash_table_find_internal_context(SilcHashTable ht, void *key,
 				      void *compare_user_context)
 {
   SilcHashTableEntry *entry, prev = NULL;
+  uint32 i = SILC_HASH_TABLE_HASH_F(hash, hash_user_context);
 
-  entry = &ht->table[SILC_HASH_TABLE_HASH_F(hash, hash_user_context)];
+  SILC_HT_DEBUG(("index %d key %p context %p", i, key, context));
+
+  entry = &ht->table[i];
   if (ht->compare) {
-    while (*entry && !compare((*entry)->key, key, compare_user_context) &&
-	   (*entry)->context != context) {
+    while (*entry) {
+      if (compare((*entry)->key, key, compare_user_context) &&
+	  (*entry)->context == context)
+	break;
       prev = *entry;
       entry = &(*entry)->next;
     }
   } else {
-    while (*entry && (*entry)->key != key && (*entry)->context != context) {
+    while (*entry) {
+      if ((*entry)->key == key && (*entry)->context == context)
+	break;
       prev = *entry;
       entry = &(*entry)->next;
     }
@@ -158,8 +179,11 @@ silc_hash_table_find_internal_simple(SilcHashTable ht, void *key,
 				     void *compare_user_context)
 {
   SilcHashTableEntry *entry;
+  uint32 i = SILC_HASH_TABLE_HASH_F(hash, hash_user_context);
 
-  entry = &ht->table[SILC_HASH_TABLE_HASH_F(hash, hash_user_context)];
+  SILC_HT_DEBUG(("index %d key %p", i, key));
+
+  entry = &ht->table[i];
   if (compare) {
     while (*entry && !compare((*entry)->key, key, compare_user_context))
       entry = &(*entry)->next;
@@ -185,8 +209,11 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
 				  void *foreach_user_context)
 {
   SilcHashTableEntry *entry;
+  uint32 i = SILC_HASH_TABLE_HASH_F(hash, hash_user_context);
 
-  entry = &ht->table[SILC_HASH_TABLE_HASH_F(hash, hash_user_context)];
+  SILC_HT_DEBUG(("index %d key %p", i, key));
+
+  entry = &ht->table[i];
   if (compare) {
     while (*entry) {
       if (compare((*entry)->key, key, compare_user_context))
@@ -210,10 +237,11 @@ silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
 			     void *hash_user_context)
 {
   SilcHashTableEntry *entry;
-  uint32 index = (hash ? SILC_HASH_TABLE_HASH : 
-		  SILC_HASH_TABLE_HASH_F(hash, hash_user_context));
+  uint32 i = SILC_HASH_TABLE_HASH_F(hash, hash_user_context);
 
-  entry = &ht->table[index];
+  SILC_HT_DEBUG(("index %d key %p", i, key));
+
+  entry = &ht->table[i];
   if (*entry) {
     /* The entry exists already. We have a collision, add it to the
        list to avoid collision. */
@@ -226,12 +254,15 @@ silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
       tmp = tmp->next;
     }
 
+    SILC_HT_DEBUG(("Collision; adding new key to list"));
+
     e->next = silc_calloc(1, sizeof(*e->next));
     e->next->key = key;
     e->next->context = context;
     ht->entry_count++;
   } else {
     /* New key */
+    SILC_HT_DEBUG(("New key"));
     *entry = silc_calloc(1, sizeof(**entry));
     (*entry)->key = key;
     (*entry)->context = context;
@@ -247,10 +278,11 @@ silc_hash_table_replace_internal(SilcHashTable ht, void *key, void *context,
 				 void *hash_user_context)
 {
   SilcHashTableEntry *entry;
-  uint32 index = (hash ? SILC_HASH_TABLE_HASH : 
-		  SILC_HASH_TABLE_HASH_F(hash, hash_user_context));
+  uint32 i = SILC_HASH_TABLE_HASH_F(hash, hash_user_context);
 
-  entry = &ht->table[index];
+  SILC_HT_DEBUG(("index %d key %p", i, key));
+
+  entry = &ht->table[i];
   if (*entry) {
     /* The entry exists already. We have a collision, replace the old
        key and context. */
@@ -351,7 +383,8 @@ uint32 silc_hash_table_count(SilcHashTable ht)
 
 void silc_hash_table_add(SilcHashTable ht, void *key, void *context)
 {
-  silc_hash_table_add_internal(ht, key, context, NULL, NULL);
+  silc_hash_table_add_internal(ht, key, context, ht->hash, 
+			       ht->hash_user_context);
 }
 
 /* Same as above but with specific hash function and user context. */
@@ -369,7 +402,8 @@ void silc_hash_table_add_ext(SilcHashTable ht, void *key, void *context,
 
 void silc_hash_table_replace(SilcHashTable ht, void *key, void *context)
 {
-  silc_hash_table_replace_internal(ht, key, context, NULL, NULL);
+  silc_hash_table_replace_internal(ht, key, context, ht->hash, 
+				   ht->hash_user_context);
 }
 
 /* Same as above but with specific hash function. */
@@ -683,6 +717,48 @@ void silc_hash_table_rehash(SilcHashTable ht, uint32 new_size)
     e = table[i];
     while (e) {
       silc_hash_table_add(ht, e->key, e->context);
+      tmp = e;
+      e = e->next;
+
+      /* Remove old entry */
+      silc_free(tmp);
+    }
+  }
+
+  /* Remove old table */
+  silc_free(table);
+}
+
+/* Same as above but with specific hash function. */
+
+void silc_hash_table_rehash_ext(SilcHashTable ht, uint32 new_size,
+				SilcHashFunction hash, 
+				void *hash_user_context)
+{
+  int i;
+  SilcHashTableEntry *table, e, tmp;
+  uint32 table_size, size_index;
+
+  SILC_HT_DEBUG(("Rehashing"));
+
+  /* Take old hash table */
+  table = ht->table;
+  table_size = ht->table_size;
+
+  /* Allocate new table */
+  ht->table = silc_calloc(new_size ? silc_hash_table_primesize(new_size,
+							       &size_index) :
+			  silc_hash_table_primesize(ht->entry_count,
+						    &size_index),
+			  sizeof(*ht->table));
+  ht->table_size = size_index;
+
+  /* Rehash */
+  for (i = 0; i < primesize[table_size]; i++) {
+    e = table[i];
+    while (e) {
+      silc_hash_table_add_ext(ht, e->key, e->context, hash, 
+			      hash_user_context);
       tmp = e;
       e = e->next;
 

@@ -121,7 +121,7 @@ void silc_client_notify_by_server(SilcClient client,
     /* Get the channel entry */
     channel = NULL;
     if (silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     SILC_ID_CHANNEL, &id_cache))
+				&id_cache))
       channel = (SilcChannelEntry)id_cache->context;
 
     /* Get sender Client ID */
@@ -188,7 +188,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Get channel entry */
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     SILC_ID_CHANNEL, &id_cache))
+				 &id_cache))
       break;
 
     channel = (SilcChannelEntry)id_cache->context;
@@ -236,7 +236,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!channel_id)
       goto out;
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     SILC_ID_CHANNEL, &id_cache))
+				 &id_cache))
       break;
 
     channel = (SilcChannelEntry)id_cache->context;
@@ -281,8 +281,7 @@ void silc_client_notify_by_server(SilcClient client,
     silc_client_remove_from_channels(client, conn, client_entry);
 
     /* Remove from cache */
-    silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, 
-			   client_entry->id);
+    silc_idcache_del_by_context(conn->client_cache, client_entry);
 
     /* Get signoff message */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
@@ -336,7 +335,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!channel_id)
       goto out;
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     SILC_ID_CHANNEL, &id_cache))
+				 &id_cache))
       break;
 
     channel = (SilcChannelEntry)id_cache->context;
@@ -391,8 +390,7 @@ void silc_client_notify_by_server(SilcClient client,
     }
 
     /* Remove the old from cache */
-    silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, 
-			   client_entry->id);
+    silc_idcache_del_by_context(conn->client_cache, client_entry);
 
     /* Replace old ID entry with new one on all channels. */
     silc_client_replace_from_channels(client, conn, client_entry,
@@ -461,7 +459,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!channel_id)
       goto out;
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     SILC_ID_CHANNEL, &id_cache))
+				 &id_cache))
       break;
 
     channel = (SilcChannelEntry)id_cache->context;
@@ -542,7 +540,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!channel_id)
       goto out;
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     SILC_ID_CHANNEL, &id_cache))
+				 &id_cache))
       break;
 
     channel = (SilcChannelEntry)id_cache->context;
@@ -593,7 +591,7 @@ void silc_client_notify_by_server(SilcClient client,
     
     /* Get the channel entry */
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     SILC_ID_CHANNEL, &id_cache))
+				 &id_cache))
       break;
 
     channel = (SilcChannelEntry)id_cache->context;
@@ -640,7 +638,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (!channel_id)
       goto out;
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     SILC_ID_CHANNEL, &id_cache))
+				 &id_cache))
       break;
 
     channel = (SilcChannelEntry)id_cache->context;
@@ -657,8 +655,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (client_entry == conn->local_entry) {
       if (conn->current_channel == channel)
 	conn->current_channel = NULL;
-      silc_idcache_del_by_id(conn->channel_cache, 
-			     SILC_ID_CHANNEL, channel->id);
+      silc_idcache_del_by_id(conn->channel_cache, channel->id);
       silc_free(channel->channel_name);
       silc_free(channel->id);
       silc_free(channel->key);
@@ -695,8 +692,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (client_entry != conn->local_entry) {
       /* Remove client from all channels */
       silc_client_remove_from_channels(client, conn, client_entry);
-      silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, 
-			     client_entry->id);
+      silc_idcache_del_by_context(conn->client_cache, client_entry);
       if (client_entry->nickname)
 	silc_free(client_entry->nickname);
       if (client_entry->server)
@@ -755,8 +751,7 @@ void silc_client_notify_by_server(SilcClient client,
 	  continue;
 
 	silc_client_remove_from_channels(client, conn, client_entry);
-	silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, 
-			       client_entry->id);
+	silc_idcache_del_by_context(conn->client_cache, client_entry);
 	if (client_entry->nickname)
 	  silc_free(client_entry->nickname);
 	if (client_entry->server)

@@ -1764,7 +1764,7 @@ SILC_SERVER_CMD_FUNC(nick)
 					new_id);
 
   /* Remove old cache entry */
-  silc_idcache_del_by_id(server->local_list->clients, client->id);
+  silc_idcache_del_by_context(server->local_list->clients, client);
 
   oidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
@@ -1781,8 +1781,7 @@ SILC_SERVER_CMD_FUNC(nick)
 
   /* Update client cache */
   silc_idcache_add(server->local_list->clients, client->nickname, 
-		   strlen(client->nickname), client->id, 
-		   (void *)client, FALSE);
+		   client->id, (void *)client, FALSE);
 
   nidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 

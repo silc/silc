@@ -119,8 +119,8 @@ typedef struct {
    SILC_ID_CHANNEL_COMPARE(id1, id2))
 
 /* Compare nickname hash from Client ID */
-#define SILC_ID_COMPARE_HASH(id, _hash) \
-  memcmp(id->hash, _hash, CLIENTID_HASH_LEN)
+#define SILC_ID_COMPARE_HASH(id1, id2) \
+  (!memcmp((id1)->hash, (id2)->hash, CLIENTID_HASH_LEN))
 
 /* Prototypes */
 unsigned char *silc_id_id2str(void *id, SilcIdType type);

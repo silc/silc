@@ -1,3 +1,43 @@
+Sat May 19 16:30:03 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Removed the `data' and `data_len' arguments from the ID Cache
+	  interfaces and added `name' argument.  ID Cache does not handle
+	  anymore the binary data only a names associated with given ID.
+
+	* When hashing a Client ID with silc_hash_id the entire ID is
+	  not hashed anymore, instead only the hash of the Client ID is
+	  hashed.  This way we can access the Client ID from the cache
+	  with Client ID but with the hash of the ID (which is a hash of
+	  the nickname) as well without any difference in performance.
+
+	  Added also silc_idcache_find_by_id_one_ext to do one on one 
+	  searching when we have the actual ID.  Added also function
+	  silc_hash_client_id_compare.  The affected files are
+	  lib/silccore/idcache.[ch] and lib/silcutil/silcutil.[ch].
+
+	* When hashing the name associated with a ID it is always done
+	  in lowercase.  This way we can access the cache without worrying
+	  about case-sensitivity, even though, for example nicknames are
+	  case sensitive.
+
+	* Fixed a bug in server with channel message sending.  It put
+	  wrong ID type as destination ID.  The affected file 
+	  silcd/packet_send.c.
+
+	* silc_idcache_del_by_context now deletes from all hash tables
+	  by context.  Affected file lib/silccore/idcache.c.
+
+Fri May 18 17:42:00 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed the client library to use the new ID Cache interface.
+	  Changes around the source tree.
+
+	* Added silc_hash_table_rehash_ext to rehash with specific
+	  hash function.  Affected file lib/silcutil/silchashtable.[ch].
+
+	* Added silc_hash_string_compare to compare two strings in the
+	  hash table.  Affected file lib/silcutil/silcutil.[ch].
+
 Fri May 18 11:18:45 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added new function silc_idcache_del_by_context into the

@@ -124,7 +124,8 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
   int i = 0;
 
   /* Find ID from cache */
-  if (!silc_idcache_find_by_data_loose(conn->client_cache, nickname, &list))
+  if (!silc_idcache_find_by_name(conn->client_cache, nickname, 
+				 &list))
     return NULL;
 
   if (!silc_idcache_list_count(list)) {
@@ -201,8 +202,11 @@ SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
       continue;
 
     /* Get the client entry */
-    if (silc_idcache_find_by_id_one(i->conn->client_cache, (void *)client_id,
-				    SILC_ID_CLIENT, &id_cache)) {
+    if (silc_idcache_find_by_id_one_ext(i->conn->client_cache, 
+					(void *)client_id, 
+					NULL, NULL, 
+					silc_hash_client_id_compare, NULL,
+					&id_cache)) {
       clients = silc_realloc(clients, sizeof(*clients) * 
 			     (clients_count + 1));
       clients[clients_count] = (SilcClientEntry)id_cache->context;
@@ -274,8 +278,10 @@ void silc_client_get_clients_by_list(SilcClient client,
 
     /* Check if we have this client cached already. */
     id_cache = NULL;
-    silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
-				SILC_ID_CLIENT, &id_cache);
+    silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)client_id, 
+				    NULL, NULL, 
+				    silc_hash_client_id_compare, NULL,
+				    &id_cache);
 
     /* If we don't have the entry or it has incomplete info, then resolve
        it from the server. */
@@ -351,7 +357,8 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
   SilcClientEntry entry = NULL;
 
   /* Find ID from cache */
-  if (!silc_idcache_find_by_data_loose(conn->client_cache, nickname, &list)) {
+  if (!silc_idcache_find_by_name(conn->client_cache, nickname, 
+				 &list)) {
   identify:
 
     if (query) {
@@ -431,8 +438,10 @@ SilcClientEntry silc_client_get_client_by_id(SilcClient client,
 		  silc_id_render(client_id, SILC_ID_CLIENT)));
 
   /* Find ID from cache */
-  if (!silc_idcache_find_by_id_one(conn->client_cache, client_id, 
-				   SILC_ID_CLIENT, &id_cache))
+  if (!silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)client_id, 
+				       NULL, NULL, 
+				       silc_hash_client_id_compare, NULL,
+				       &id_cache))
     return NULL;
 
   SILC_LOG_DEBUG(("Found"));
@@ -519,7 +528,8 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
   SilcIDCacheEntry id_cache;
   SilcChannelEntry entry;
 
-  if (!silc_idcache_find_by_data_one(conn->channel_cache, channel, &id_cache))
+  if (!silc_idcache_find_by_name_one(conn->channel_cache, channel, 
+				     &id_cache))
     return NULL;
 
   entry = (SilcChannelEntry)id_cache->context;

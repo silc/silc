@@ -769,7 +769,10 @@ char *silc_get_real_name()
   return realname;
 }
 
-/* Basic has function to hash strings. May be used with the SilcHashTable. */
+/* Basic has function to hash strings. May be used with the SilcHashTable. 
+   Note that this lowers the characters of the string (with tolower()) so
+   this is used usually with nicknames, channel and server names to provide
+   case insensitive keys. */
 
 uint32 silc_hash_string(void *key, void *user_context)
 {
@@ -777,7 +780,7 @@ uint32 silc_hash_string(void *key, void *user_context)
   uint32 h = 0, g;
   
   while (*s != '\0') {
-    h = (h << 4) + toupper(*s);
+    h = (h << 4) + tolower(*s);
     if ((g = h & 0xf0000000)) {
       h = h ^ (g >> 24);
       h = h ^ g;
@@ -808,28 +811,33 @@ uint32 silc_hash_id(void *key, void *user_context)
 {
   SilcIdType id_type = (SilcIdType)(uint32)user_context;
   uint32 h = 0;
+  int i;
 
   switch (id_type) {
   case SILC_ID_CLIENT:
     {
       SilcClientID *id = (SilcClientID *)key;
-      int i;
-      uint32 h;
-      
-      h = id->rnd;
-      for (i = 0; i < sizeof(id->hash); i++)
-	h ^= id->hash[i];
-      for (i = 0; i < id->ip.data_len; i++)
-	h ^= id->ip.data[i];
-      
+      uint32 g;
+  
+      /* The client ID is hashed by hashing the hash of the ID 
+	 (which is a truncated MD5 hash of the nickname) so that we
+	 can access the entry from the cache with both Client ID but
+	 with just a hash from the ID as well. */
+
+      for (i = 0; i < sizeof(id->hash); i++) {
+	h = (h << 4) + id->hash[i];
+	if ((g = h & 0xf0000000)) {
+	  h = h ^ (g >> 24);
+	  h = h ^ g;
+	}
+      }
+
       return h;
     }
     break;
   case SILC_ID_SERVER:
     {
       SilcServerID *id = (SilcServerID *)key;
-      int i;
-      uint32 h;
       
       h = id->port * id->rnd;
       for (i = 0; i < id->ip.data_len; i++)
@@ -841,8 +849,6 @@ uint32 silc_hash_id(void *key, void *user_context)
   case SILC_ID_CHANNEL:
     {
       SilcChannelID *id = (SilcChannelID *)key;
-      int i;
-      uint32 h;
       
       h = id->port * id->rnd;
       for (i = 0; i < id->ip.data_len; i++)
@@ -873,12 +879,30 @@ uint32 silc_hash_data(void *key, void *user_context)
   return h;
 }
 
-/* Compares two ID's. May be used as SilcHashTable comparison function. */
+/* Compares two strings. May be used as SilcHashTable comparison function. */
+
+bool silc_hash_string_compare(void *key1, void *key2, void *user_context)
+{
+  return !strcasecmp((char *)key1, (char *)key2);
+}
+
+/* Compares two ID's. May be used as SilcHashTable comparison function. 
+   The Client ID's compares only the hash of the Client ID not any other
+   part of the Client ID. Other ID's are fully compared. */
 
 bool silc_hash_id_compare(void *key1, void *key2, void *user_context)
 {
   SilcIdType id_type = (SilcIdType)(uint32)user_context;
-  return SILC_ID_COMPARE_TYPE(key1, key2, id_type);
+  return (id_type == SILC_ID_CLIENT ? 
+	  SILC_ID_COMPARE_HASH((SilcClientID *)key1, (SilcClientID *)key2) :
+	  SILC_ID_COMPARE_TYPE(key1, key2, id_type));
+}
+
+/* Compare two Client ID's entirely and not just the hash from the ID. */
+
+bool silc_hash_client_id_compare(void *key1, void *key2, void *user_context)
+{
+  return SILC_ID_COMPARE_TYPE(key1, key2, SILC_ID_CLIENT);
 }
 
 /* Compares binary data. May be used as SilcHashTable comparison function. */

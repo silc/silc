@@ -1244,7 +1244,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	 and other information is created after we have received NEW_CLIENT
 	 packet from client. */
       client = silc_idlist_add_client(server->local_list, 
-				      NULL, 0, NULL, NULL, NULL, NULL, sock);
+				      NULL, NULL, NULL, NULL, NULL, sock);
       if (!client) {
 	SILC_LOG_ERROR(("Could not add new client to cache"));
 	silc_free(sock->user_data);
@@ -3542,8 +3542,7 @@ void silc_server_save_users_on_channel(SilcServer server,
       /* We don't have that client anywhere, add it. The client is added
 	 to global list since server didn't have it in the lists so it must be 
 	 global. */
-      client = silc_idlist_add_client(server->global_list, NULL, 0, NULL, 
-				      NULL, 
+      client = silc_idlist_add_client(server->global_list, NULL, NULL, NULL,
 				      silc_id_dup(client_id, SILC_ID_CLIENT), 
 				      sock->user_data, NULL);
       if (!client) {

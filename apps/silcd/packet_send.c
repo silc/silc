@@ -434,8 +434,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
   packetdata.src_id_len = silc_id_get_len(server->id, SILC_ID_SERVER);
   packetdata.src_id_type = SILC_ID_SERVER;
   packetdata.dst_id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
-  packetdata.dst_id_len = SILC_ID_CHANNEL_LEN;
-  packetdata.dst_id_type = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
+  packetdata.dst_id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
+  packetdata.dst_id_type = SILC_ID_CHANNEL;
   packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packetdata.src_id_len + packetdata.dst_id_len;
   packetdata.padlen = SILC_PACKET_PADLEN(packetdata.truelen);
@@ -614,8 +614,8 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   packetdata.src_id_len = silc_id_get_len(sender, sender_type);
   packetdata.src_id_type = sender_type;
   packetdata.dst_id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
-  packetdata.dst_id_len = SILC_ID_CHANNEL_LEN;
-  packetdata.dst_id_type = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
+  packetdata.dst_id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
+  packetdata.dst_id_type = SILC_ID_CHANNEL;
   packetdata.padlen = SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
 					  packetdata.src_id_len +
 					  packetdata.dst_id_len));

@@ -150,7 +150,7 @@ void silc_server_notify(SilcServer server,
 	  goto out;
 
 	client = 
-	  silc_idlist_add_client(server->global_list, NULL, 0, NULL, NULL,
+	  silc_idlist_add_client(server->global_list, NULL, NULL, NULL,
 				 silc_id_dup(client_id, SILC_ID_CLIENT), 
 				 sock->user_data, NULL);
 	if (!client) {
@@ -1291,7 +1291,12 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   idata = (SilcIDListData)client;
 
   /* Remove the old cache entry */
-  silc_idcache_del_by_context(server->local_list->clients, client);
+  if (!silc_idcache_del_by_context(server->local_list->clients, client)) {
+    SILC_LOG_ERROR(("Lost client's cache entry - bad thing"));
+    silc_server_disconnect_remote(server, sock, "Server closed connection: "
+                                  "Unknown client");
+    return NULL;
+  }
 
   /* Parse incoming packet */
   ret = silc_buffer_unformat(buffer,
@@ -1334,7 +1339,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 
   /* Add the client again to the ID cache */
   silc_idcache_add(server->local_list->clients, client->nickname,
-		   strlen(client->nickname), client_id, client, FALSE);
+		   client_id, client, FALSE);
 
   /* Notify our router about new client on the SILC network */
   if (!server->standalone)
@@ -1481,8 +1486,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   new_server->id = server_id;
 
   /* Add again the entry to the ID cache. */
-  silc_idcache_add(server->local_list->servers, server_name, 
-		   strlen(server_name), server_id, server, FALSE);
+  silc_idcache_add(server->local_list->servers, server_name, server_id, 
+		   server, FALSE);
 
   /* Distribute the information about new server in the SILC network
      to our router. If we are normal server we won't send anything
@@ -1513,7 +1518,6 @@ static void silc_server_new_id_real(SilcServer server,
   SilcSocketConnection router_sock;
   SilcIDPayload idp;
   SilcIdType id_type;
-  unsigned char *hash = NULL;
   void *id;
 
   SILC_LOG_DEBUG(("Processing new ID"));
@@ -1586,16 +1590,9 @@ static void silc_server_new_id_real(SilcServer server,
     
       /* As a router we keep information of all global information in our
 	 global list. Cell wide information however is kept in the local
-	 list. The client is put to global list and we will take the hash
-	 value of the Client ID and save it to the ID Cache system for fast
-	 searching in the future. */
-      hash = silc_calloc(sizeof(((SilcClientID *)id)->hash),
-			 sizeof(unsigned char));
-      memcpy(hash, ((SilcClientID *)id)->hash, 
-	     sizeof(((SilcClientID *)id)->hash));
-      entry = silc_idlist_add_client(id_list, hash, 
-				     sizeof(((SilcClientID *)id)->hash),
-				     NULL, NULL, id, router, NULL);
+	 list. */
+      entry = silc_idlist_add_client(id_list, NULL, NULL, NULL, 
+				     id, router, NULL);
       entry->nickname = NULL;
       entry->data.registered = TRUE;
 
