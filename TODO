@@ -17,10 +17,6 @@ TODO/bugs in Irssi SILC client
    that the user has.  And a local command to dump the contents of the
    public key to the screen.  Something like LISTKEYS, SHOWKEY...
 
- o Extend the /HELP command to support sub commands or something.  So
-   that user can say /help set mutual_authentication they would get
-   help of the mutual_authentication setting.
-
 
 TODO/bugs In SILC Client Library
 ================================
