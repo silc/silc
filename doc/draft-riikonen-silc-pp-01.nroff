@@ -1264,9 +1264,10 @@ ID's sent in arguments are sent inside ID Payload.
 10    SILC_NOTIFY_TYPE_CHANNEL_CHANGE
 
       Sent when channel's ID has changed for a reason or another.  This 
-      is sent by normal server to the client.  Client must change the 
-      old Channel ID to the new one.  This type must be sent only to the
-      clients who is joined on the channel.
+      is sent by normal server to the client.  This can also be sent by
+      router to other server to force the Channel ID change.  The Channel
+      ID must be changed to use the new one.  When sent to clients, this
+      type must be sent only to the clients who is joined on the channel.
 
       Max Arguments:  2
           Arguments:  (1) <Old Channel ID>  (2) <New Channel ID>

@@ -422,52 +422,6 @@ silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
   return clients;
 }
 
-/* Finds client entry by nickname. */
-
-SilcClientEntry
-silc_idlist_find_client_by_nickname(SilcIDList id_list, char *nickname,
-				    char *server, SilcIDCacheEntry *ret_entry)
-{
-  SilcIDCacheList list = NULL;
-  SilcIDCacheEntry id_cache = NULL;
-  SilcClientEntry client = NULL;
-
-  SILC_LOG_DEBUG(("Client by nickname"));
-
-  if (server) {
-    if (!silc_idcache_find_by_data(id_list->clients, nickname, &list))
-      return NULL;
-
-#if 0
-    while (silc_idcache_list_next(list, &id_cache)) {
-      client = (SilcClientEntry)id_cache->context;
-
-      if (!strcmp(server, XXX, strlen(server)))
-	break;
-
-      client = NULL;
-    }
-#endif
-
-   silc_idcache_list_free(list);
-
-   if (!client)
-     return NULL;
-  } else {
-    if (!silc_idcache_find_by_data_one(id_list->clients, nickname, &id_cache))
-      return NULL;
-
-    client = (SilcClientEntry)id_cache->context;
-
-    if (ret_entry)
-      *ret_entry = id_cache;
-  }
-
-  SILC_LOG_DEBUG(("Found"));
-
-  return client;
-}
-
 /* Finds client by nickname hash. */
 
 SilcClientEntry

@@ -22,6 +22,12 @@
  * routes. If route entry doesn't exist for a specific destination, server
  * uses primary route (default route).
  */
+/* XXX Adding two ID's with same IP number replaces the old entry thus
+   gives wrong route. Thus, now disabled until figured out a better way
+   to do this or when removed the whole thing. This could be removed
+   because entry->router->connection gives always the most optimal route
+   for the ID anyway (unless new routes (faster perhaps) are established
+   after receiving this ID, this we don't know however). */
 /* $Id$ */
 
 #include "serverincludes.h"

@@ -11,6 +11,14 @@ Mon Mar 26 14:39:48 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  Also, do not remove the client entry when giving the KILL 
 	  command but when the KILLED notify is received.
 
+	* Removed silc_idlist_find_client_by_nickname from the server.
+	  Not needed anymore.  Affected files silcd/idlist.[ch].
+
+	* Implemented the CHANNEL_CHANGE notify type handling to the
+	  server.  Affected file silcd/server.c.
+
+	* Updated TODO.
+
 Mon Mar 26 12:11:14 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added silc_server_send_notify_invite to send the INVITE

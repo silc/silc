@@ -102,17 +102,6 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
     idata->receive_key->set_iv(idata->receive_key, keymat->receive_iv);
   }
 
-  /* Allocate PKCS to be used */
-#if 0
-  /* XXX Do we ever need to allocate PKCS for the connection??
-     If yes, we need to change KE protocol to get the initiators
-     public key. */
-  silc_pkcs_alloc(pkcs->pkcs->name, &idata->pkcs);
-  idata->public_key = silc_pkcs_public_key_alloc(XXX);
-  silc_pkcs_set_public_key(idata->pkcs, ske->ke2_payload->pk_data, 
-			   ske->ke2_payload->pk_len);
-#endif
-
   /* Save the hash */
   if (!silc_hash_alloc(hash->hash->name, &idata->hash)) {
     silc_cipher_free(idata->send_key);
@@ -441,8 +430,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
  * Connection Authentication protocol functions
  */
 
-/* XXX move these to somehwere else */
-
 int silc_server_password_authentication(SilcServer server, char *auth1, 
 					char *auth2)
 {
@@ -650,7 +637,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 							  auth_data,
 							  payload_len, 
 							  ctx->ske);
-							  
+
 	      if (ret) {
 		memset(auth_data, 0, payload_len);
 		silc_free(auth_data);
@@ -873,10 +860,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    auth_data_len = ctx->auth_data_len;
 	    break;
 	  }
-
-	  /* No authentication data exits. Ask interactively from user. */
-	  /* XXX */
-
 	  break;
 	  
 	case SILC_AUTH_PUBLIC_KEY:

@@ -1342,6 +1342,8 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
   SilcClientEntry entry;
   SilcCommandStatus status;
   unsigned short ident = silc_command_get_ident(cmd->payload);
+  char nh[256], uh[256];
+  SilcSocketConnection hsock;
 
   status = SILC_STATUS_OK;
   if (clients_count > 1)
@@ -1374,50 +1376,44 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
     idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
     tmp = silc_argument_get_first_arg(cmd->args, NULL);
     
-    /* XXX */
-    {
-      char nh[256], uh[256];
-      SilcSocketConnection hsock;
-
-      memset(uh, 0, sizeof(uh));
-      memset(nh, 0, sizeof(nh));
+    memset(uh, 0, sizeof(uh));
+    memset(nh, 0, sizeof(nh));
       
-      strncat(nh, entry->nickname, strlen(entry->nickname));
-      if (!strchr(entry->nickname, '@')) {
-	strncat(nh, "@", 1);
-	len = entry->router ? strlen(entry->router->server_name) :
-	  strlen(server->server_name);
-	strncat(nh, entry->router ? entry->router->server_name :
-		server->server_name, len);
-      }
-      
-      if (!entry->username) {
-	packet = silc_command_reply_payload_encode_va(SILC_COMMAND_IDENTIFY,
-						      status, ident, 2,
-						      2, idp->data, idp->len, 
-						      3, nh, strlen(nh));
-      } else {
-	strncat(uh, entry->username, strlen(entry->username));
-	if (!strchr(entry->username, '@')) {
-	  strncat(uh, "@", 1);
-	  hsock = (SilcSocketConnection)entry->connection;
-	  len = strlen(hsock->hostname);
-	  strncat(uh, hsock->hostname, len);
-	}
-      
-	packet = silc_command_reply_payload_encode_va(SILC_COMMAND_IDENTIFY,
-						      status, ident, 3,
-						      2, idp->data, idp->len, 
-						      3, nh, strlen(nh),
-						      4, uh, strlen(uh));
-      }
-      
-      silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
-			      0, packet->data, packet->len, FALSE);
-      
-      silc_buffer_free(packet);
-      silc_buffer_free(idp);
+    strncat(nh, entry->nickname, strlen(entry->nickname));
+    if (!strchr(entry->nickname, '@')) {
+      strncat(nh, "@", 1);
+      len = entry->router ? strlen(entry->router->server_name) :
+	strlen(server->server_name);
+      strncat(nh, entry->router ? entry->router->server_name :
+	      server->server_name, len);
     }
+      
+    if (!entry->username) {
+      packet = silc_command_reply_payload_encode_va(SILC_COMMAND_IDENTIFY,
+						    status, ident, 2,
+						    2, idp->data, idp->len, 
+						    3, nh, strlen(nh));
+    } else {
+      strncat(uh, entry->username, strlen(entry->username));
+      if (!strchr(entry->username, '@')) {
+	strncat(uh, "@", 1);
+	hsock = (SilcSocketConnection)entry->connection;
+	len = strlen(hsock->hostname);
+	strncat(uh, hsock->hostname, len);
+      }
+      
+      packet = silc_command_reply_payload_encode_va(SILC_COMMAND_IDENTIFY,
+						    status, ident, 3,
+						    2, idp->data, idp->len, 
+						    3, nh, strlen(nh),
+						    4, uh, strlen(uh));
+    }
+      
+    silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
+			    0, packet->data, packet->len, FALSE);
+    
+    silc_buffer_free(packet);
+    silc_buffer_free(idp);
   }
 }
 

@@ -122,9 +122,7 @@ void silc_server_command_reply_free(SilcServerCommandReplyContext cmd)
   }
 }
 
-/* Caches the received WHOIS information. If we are normal server currently
-   we cache global information only for short period of time.  */
-/* XXX cache expirying not implemented yet! */
+/* Caches the received WHOIS information. */
 
 static char
 silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)

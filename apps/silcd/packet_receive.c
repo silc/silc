@@ -37,7 +37,7 @@ void silc_server_notify(SilcServer server,
   SilcNotifyPayload payload;
   SilcNotifyType type;
   SilcArgumentPayload args;
-  SilcChannelID *channel_id;
+  SilcChannelID *channel_id, *channel_id2;
   SilcClientID *client_id, *client_id2;
   SilcChannelEntry channel;
   SilcClientEntry client;
@@ -570,7 +570,55 @@ void silc_server_notify(SilcServer server,
     break;
 
   case SILC_NOTIFY_TYPE_CHANNEL_CHANGE:
-    SILC_LOG_DEBUG(("CHANNEL CHANGE notify (not-impl XXX)"));
+    /*
+     * Distribute to the local clients on the channel and change the
+     * channel ID.
+     */
+
+    SILC_LOG_DEBUG(("CHANNEL CHANGE"));
+
+    /* Get the old Channel ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!channel_id)
+      goto out;
+
+    /* Get the channel entry */
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->local_list, 
+					       channel_id, NULL);
+      if (!channel) {
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+
+    /* Send the notify to the channel */
+    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+
+    /* Get the new Channel ID */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp)
+      goto out;
+    channel_id2 = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!channel_id2)
+      goto out;
+
+    /* Replace the Channel ID */
+    if (!silc_idlist_replace_channel_id(server->global_list, channel_id,
+					channel_id2))
+      silc_idlist_replace_channel_id(server->local_list, channel_id,
+				     channel_id2);
+
+    silc_free(channel_id);
+    silc_free(channel_id2);
+
     break;
 
   case SILC_NOTIFY_TYPE_SERVER_SIGNOFF:
@@ -1449,20 +1497,6 @@ static void silc_server_new_id_real(SilcServer server,
       if (sock->type == SILC_SOCKET_TYPE_SERVER)
 	server->stat.cell_clients++;
       server->stat.clients++;
-
-#if 0
-      /* XXX Adding two ID's with same IP number replaces the old entry thus
-	 gives wrong route. Thus, now disabled until figured out a better way
-	 to do this or when removed the whole thing. This could be removed
-	 because entry->router->connection gives always the most optimal route
-	 for the ID anyway (unless new routes (faster perhaps) are established
-	 after receiving this ID, this we don't know however). */
-      /* Add route cache for this ID */
-      silc_server_route_add(silc_server_route_hash(
-			    ((SilcClientID *)id)->ip.s_addr,
-			    server->id->port), ((SilcClientID *)id)->ip.s_addr,
-			    router);
-#endif
     }
     break;
 
@@ -1479,15 +1513,6 @@ static void silc_server_new_id_real(SilcServer server,
     if (sock->type == SILC_SOCKET_TYPE_SERVER)
       server->stat.cell_servers++;
     server->stat.servers++;
-
-#if 0
-    /* Add route cache for this ID */
-    silc_server_route_add(silc_server_route_hash(
-			  ((SilcServerID *)id)->ip.s_addr,
-			  ((SilcServerID *)id)->port), 
-			  ((SilcServerID *)id)->ip.s_addr,
-			  router);
-#endif
     break;
 
   case SILC_ID_CHANNEL:

@@ -1029,9 +1029,6 @@ int silc_server_config_parse_lines(SilcServerConfig config,
     }
 
     pc = pc->next;
-    /* XXXX */
-    //    silc_free(pc->prev);
-    //    pc->prev = NULL;
   }
 
   if (check == FALSE)
@@ -1090,7 +1087,8 @@ int silc_server_config_check_sections(unsigned int checkmask)
     
     return FALSE;
   }
-  if (!(checkmask & (1L << SILC_CONFIG_SERVER_SECTION_TYPE_CLIENT_CONNECTION))) {
+  if (!(checkmask & 
+	(1L << SILC_CONFIG_SERVER_SECTION_TYPE_CLIENT_CONNECTION))) {
     
     return FALSE;
   }
