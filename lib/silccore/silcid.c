@@ -215,8 +215,8 @@ unsigned char *silc_id_id2str(const void *id, SilcIdType type)
     if (!ret_id)
       return NULL;
     memcpy(ret_id, server_id->ip.data, server_id->ip.data_len);
-    SILC_PUT16_MSB(server_id->port, &ret_id[4]);
-    SILC_PUT16_MSB(server_id->rnd, &ret_id[6]);
+    SILC_PUT16_MSB(server_id->port, &ret_id[server_id->ip.data_len]);
+    SILC_PUT16_MSB(server_id->rnd, &ret_id[server_id->ip.data_len + 2]);
     return ret_id;
     break;
   case SILC_ID_CLIENT:
@@ -225,8 +225,9 @@ unsigned char *silc_id_id2str(const void *id, SilcIdType type)
     if (!ret_id)
       return NULL;
     memcpy(ret_id, client_id->ip.data, client_id->ip.data_len);
-    ret_id[4] = client_id->rnd;
-    memcpy(&ret_id[5], client_id->hash, CLIENTID_HASH_LEN);
+    ret_id[client_id->ip.data_len] = client_id->rnd;
+    memcpy(&ret_id[client_id->ip.data_len + 1], client_id->hash, 
+	   CLIENTID_HASH_LEN);
     return ret_id;
     break;
   case SILC_ID_CHANNEL:
@@ -235,8 +236,8 @@ unsigned char *silc_id_id2str(const void *id, SilcIdType type)
     if (!ret_id)
       return NULL;
     memcpy(ret_id, channel_id->ip.data, channel_id->ip.data_len);
-    SILC_PUT16_MSB(channel_id->port, &ret_id[4]);
-    SILC_PUT16_MSB(channel_id->rnd, &ret_id[6]);
+    SILC_PUT16_MSB(channel_id->port, &ret_id[channel_id->ip.data_len]);
+    SILC_PUT16_MSB(channel_id->rnd, &ret_id[channel_id->ip.data_len + 2]);
     return ret_id;
     break;
   }
@@ -264,8 +265,8 @@ void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len, SilcIdType type
       memcpy(server_id->ip.data, id, (id_len > ID_SERVER_LEN_PART + 4 ?
 				      16 : 4));
       server_id->ip.data_len = (id_len > ID_SERVER_LEN_PART + 4 ? 16 : 4);
-      SILC_GET16_MSB(server_id->port, &id[4]);
-      SILC_GET16_MSB(server_id->rnd, &id[6]);
+      SILC_GET16_MSB(server_id->port, &id[server_id->ip.data_len]);
+      SILC_GET16_MSB(server_id->rnd, &id[server_id->ip.data_len + 2]);
       return server_id;
     }
     break;
@@ -283,8 +284,9 @@ void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len, SilcIdType type
       memcpy(client_id->ip.data, id, (id_len > ID_CLIENT_LEN_PART + 4 ?
 				      16 : 4));
       client_id->ip.data_len = (id_len > ID_CLIENT_LEN_PART + 4 ? 16 : 4);
-      client_id->rnd = id[4];
-      memcpy(client_id->hash, &id[5], CLIENTID_HASH_LEN);
+      client_id->rnd = id[client_id->ip.data_len];
+      memcpy(client_id->hash, &id[client_id->ip.data_len + 1], 
+	     CLIENTID_HASH_LEN);
       return client_id;
     }
     break;
@@ -302,8 +304,8 @@ void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len, SilcIdType type
       memcpy(channel_id->ip.data, id, (id_len > ID_CHANNEL_LEN_PART + 4 ?
 				       16 : 4));
       channel_id->ip.data_len = (id_len > ID_CHANNEL_LEN_PART + 4 ? 16 : 4);
-      SILC_GET16_MSB(channel_id->port, &id[4]);
-      SILC_GET16_MSB(channel_id->rnd, &id[6]);
+      SILC_GET16_MSB(channel_id->port, &id[channel_id->ip.data_len]);
+      SILC_GET16_MSB(channel_id->rnd, &id[channel_id->ip.data_len + 2]);
       return channel_id;
     }
     break;

@@ -1,3 +1,13 @@
+Fri Mar 22 12:25:58 CET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the SILC_PACKET_MAX_ID_LEN to actually be the max
+	  ID length.  It ignored that ID can be IPv6 based as well.
+	  Affected file lib/silccore/silcpacket.h.
+
+	* Fixed the silc_id_id2str and silc_id_str2id to take the
+	  IPv6 address offset's into consideration.  Affecte file is
+	  lib/silccore/silcid.c.
+
 Thu Mar 21 20:44:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the internal Unix scheduler functions to check for

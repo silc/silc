@@ -55,7 +55,7 @@
 #define SILC_PACKET_MAX_LEN 0xffff
 
 /* Maximum length of ID */
-#define SILC_PACKET_MAX_ID_LEN 16
+#define SILC_PACKET_MAX_ID_LEN 28
 
 /****d* silccore/SilcPacketAPI/SilcPacketType
  *
