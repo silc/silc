@@ -3239,7 +3239,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 						5, chpklist ? chpklist->data :
 						NULL, chpklist ? chpklist->len
 						: 0,
-						7, (mode_mask &
+						6, (mode_mask &
 						    SILC_CHANNEL_MODE_ULIMIT ?
 						    ulimit : NULL),
 						(mode_mask &
