@@ -85,13 +85,13 @@ do {									      \
   SILC_LOG_DEBUG(("Start"));						      \
 									      \
   if (_argc < min) {							      \
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_WHOIS,	      \
+    silc_server_command_send_status_reply(cmd, command,			      \
 					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS); \
     silc_server_command_free(cmd);					      \
     return;								      \
   }									      \
   if (_argc > max) {							      \
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_WHOIS,	      \
+    silc_server_command_send_status_reply(cmd, command,			      \
 					  SILC_STATUS_ERR_TOO_MANY_PARAMS);   \
     silc_server_command_free(cmd);					      \
     return;								      \
@@ -1890,26 +1890,13 @@ SILC_SERVER_CMD_FUNC(join)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
-  int argc, tmp_len;
+  int tmp_len;
   char *tmp, *channel_name = NULL, *cipher = NULL;
   SilcChannelEntry channel;
   unsigned int umode = 0;
   int created = FALSE;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Check number of parameters */
-  argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 1) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    goto out;
-  }
-  if (argc > 3) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					  SILC_STATUS_ERR_TOO_MANY_PARAMS);
-    goto out;
-  }
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_JOIN, cmd, 1, 3);
 
   /* Get channel name */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
