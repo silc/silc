@@ -6,6 +6,31 @@ Fri Nov  2 18:52:08 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 	* Process the DISCONNECT packet through scheduler in the
 	  client library.  Affected file lib/silcclient/client.c.
 
+	* Fixed the silc_client_packet_parse to not to increase
+	  the packet sequence number if the conn->sock and the 
+	  current socket connection is not same.  This can happen
+	  for example during key agreement when the conn includes
+	  multiple socket connections (listeners).  Affected file
+	  lib/silcclient/client.c.
+
+	* The sender of the file transfer request now provides also
+	  the pointer (listener) for the key exchange protocol.  If
+	  the listener cannot be created then it sends empty key
+	  agreement and lets the receiver provide the listener.
+
+	  Added `local_ip' and `local_port' arguments to the
+	  silc_client_file_send.  If they are provided they are used,
+	  if not then it will attempt to find local IP address, if
+	  not found or bind fails then the remote client will provide
+	  the listener.
+
+	  Affected files are lib/silcclient/client_ftp.c and
+	  lib/silcclient/silcapi.h.
+
+	* Extended the FILE SEND command to support defining the
+	  local IP and port for key exchange listener.  They are
+	  optional.  Affected file irssi/src/silc/core/silc-servers.c.
+
 Thu Nov  1 22:10:07 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Defined to WHOIS command reply the sending of fingerprint
