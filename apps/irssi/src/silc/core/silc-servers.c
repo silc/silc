@@ -34,6 +34,7 @@
 
 #include "servers-setup.h"
 
+#include "client_ops.h"
 #include "silc-servers.h"
 #include "silc-channels.h"
 #include "silc-queries.h"
@@ -276,7 +277,7 @@ static void sig_connected(SILC_SERVER_REC *server)
 {
   SilcClientConnection conn;
   SilcClientConnectionParams params;
-  char file[256];
+  char *file;
   int fd;
 
   if (!IS_SILC_SERVER(server))
@@ -284,8 +285,7 @@ static void sig_connected(SILC_SERVER_REC *server)
 
   /* Try to read detached session data and use it if found. */
   memset(&params, 0, sizeof(params));
-  memset(file, 0, sizeof(file));
-  snprintf(file, sizeof(file) - 1, "%s/session", get_irssi_dir());
+  file = silc_get_session_filename(server);
   params.detach_data = silc_file_readfile(file, &params.detach_data_len);
   if (params.detach_data)
     params.detach_data[params.detach_data_len] = 0;
@@ -298,12 +298,10 @@ static void sig_connected(SILC_SERVER_REC *server)
   server->conn = conn;
 
   if (params.detach_data)
-    keyboard_entry_redirect(NULL,
-			    "-- Resuming old session, may take a while ...",
-			    ENTRY_REDIRECT_FLAG_HIDDEN, server);
+    printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+    			SILCTXT_REATTACH, server->tag);
 
   silc_free(params.detach_data);
-  unlink(file);
 
   fd = g_io_channel_unix_get_fd(net_sendbuffer_handle(server->handle));
 

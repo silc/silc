@@ -163,6 +163,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "watch_nick_change", "Watch: {nick $0} changed nickname to {nick $1}", 2, { 0, 0 } },
 	{ "message_data", "{nick $0} sent \"{hilight $1}\" data message: cannot display", 2, { 0, 0 } },
 	{ "stats", "$[25]0: {hilight $1}", 2, { 0, 0 } },
+	{ "reattach", "Resuming old session on {hilight $0}, may take a while ...", 1, { 0 } },
 
 	/* File transfer messages */
 	{ NULL, "FileTransfer", 0 },

@@ -1,3 +1,15 @@
+Wed Dec 31 17:06:55 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Don't use silc_get_input, it's obviously not reliable.  Fixes
+	  issue when the current key expires.  Affect file
+	  irssi/src/silc/core/clientutils.c
+
+	* Make the session data filename configurable.  This makes it
+	  possible to have different session files for different
+	  SILC networks.  Affected files irssi/src/silc/core/silc-core.c,
+	  client_ops.[ch], silc-servers.c, 
+	  irssi/src/silc/fe-common/silc/module-formats.[ch]
+
 Sun Dec 28 21:57:39 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed server statistics decrementing error to not go to

@@ -34,6 +34,7 @@
 #include "levels.h"
 #include "settings.h"
 #include "ignore.h"
+#include "special-vars.h"
 #include "fe-common/core/printtext.h"
 #include "fe-common/core/fe-channels.h"
 #include "fe-common/core/keyboard.h"
@@ -48,6 +49,20 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 				unsigned char *pk, SilcUInt32 pk_len,
 				SilcSKEPKType pk_type,
 				SilcVerifyPublicKey completion, void *context);
+
+char *silc_get_session_filename(SILC_SERVER_REC *server)
+{
+  char *file, *expanded;
+
+  expanded = parse_special_string(settings_get_str("session_filename"),
+  				SERVER(server), NULL, "", NULL, 0);
+
+  file = silc_calloc(1, strlen(expanded) + 255);
+  snprintf(file, strlen(expanded) + 255, "%s/%s", get_irssi_dir(), expanded);
+  free(expanded);
+
+  return file;
+}
 
 static void silc_get_umode_string(SilcUInt32 mode, char *buf,
 				  SilcUInt32 buf_size)
@@ -1199,6 +1214,16 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
 			     conn->local_entry, conn->local_entry->nickname);
       signal_emit("message own_nick", 4, server, server->nick, old, "");
       g_free(old);
+    }
+
+    /* remove the detach data now */
+    {
+      char *file;
+
+      file = silc_get_session_filename(server);
+
+      unlink(file);
+      silc_free(file);
     }
     break;
 
@@ -2866,13 +2891,14 @@ void
 silc_detach(SilcClient client, SilcClientConnection conn,
             const unsigned char *detach_data, SilcUInt32 detach_data_len)
 {
-  char file[256];
+  SILC_SERVER_REC *server = conn->context;
+  char *file;
 
   /* Save the detachment data to file. */
 
-  memset(file, 0, sizeof(file));
-  snprintf(file, sizeof(file) - 1, "%s/session", get_irssi_dir());
+  file = silc_get_session_filename(server);
   silc_file_writefile(file, detach_data, detach_data_len);
+  silc_free(file);
 }
 
 

@@ -21,6 +21,8 @@
 #ifndef CLIENT_OPS_H
 #define CLIENT_OPS_H
 
+#include "silc-servers.h"
+
 void silc_say(SilcClient client, SilcClientConnection conn, 
 	      SilcClientMessageType type, char *msg, ...);
 void silc_say_error(char *msg, ...);
@@ -74,5 +76,8 @@ char *
 silc_unescape_data(const char *escaped_data, SilcUInt32 *length);
 char * 
 silc_escape_data(const char *data, SilcUInt32 len);
+
+char *
+silc_get_session_filename(SILC_SERVER_REC *server);
 
 #endif
