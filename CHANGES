@@ -1,3 +1,23 @@
+Fri Dec 28 12:43:22 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Cancel protocol and NULL sock->protocol if timeout
+	  occurred during protocol.  Affected file silcd/server.c.
+
+	* Cancel protocol timeouts always before calling the final
+	  callback, to assure that after final callback is called
+	  no other state will be called for the protocol anymore.
+	  Affected file silcd/protocol.c.
+
+	* Print error log if incoming connection configuration could
+	  not be found.  Affected file silcd/server.c.
+
+	* Fixed JOIN command to correctly save the founder mode
+	  to the client on normal SILC server, when the channel
+	  was created by the router.  Affected file silcd/command.c.
+
+	* Fixed LIST command (hopefully) to send correct reply
+	  packets.  Affected file silcd/command.c.
+
 Thu Dec 20 16:14:52 CET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* The silc_packet_receive_process now returns FALSE if the
@@ -14,6 +34,23 @@ Wed Dec 19 21:31:25 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 	* Make sure the warning about error opening a log file is
 	  printed only once and not everytime it fails (produces
 	  too much useless log).  Affected file lib/silcutil/silclog.c.
+
+Wed Dec 19 18:21:51 CET 2001  Johnny Mnemonic <johnny@themnemonic.org>
+ 
+ 	* Made the silc_server_daemonise() function more readable.
+ 	  Affected file silcd/server.c.
+ 
+ 	* Pid file is now optional, the user may comment it out from
+ 	  the config file. Removed define SILC_SERVER_PID_FILE, we
+ 	  don't need a default any longer.  Affected file
+ 	  configure.in.pre, lib/Makefile.am.pre.
+ 
+ 	* Make some use of the pid file. The server now dies at startup
+ 	  if it detects a valid pid file on his path. The server would
+ 	  die anyway in this circumstance, because of the bind() failure.
+ 	  Affected file silcd/silcd.c.
+ 
+ 	* No longer compiling lib/dotconf.
 
 Mon Dec 17 18:24:27 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 

@@ -357,27 +357,26 @@ int silc_server_init(SilcServer server)
   return FALSE;
 }
 
-/* Fork server to background and set gid+uid to non-root */
+/* Fork server to background */
 
 void silc_server_daemonise(SilcServer server)
 {
   int i;
 
-  i = fork ();
+  SILC_LOG_DEBUG(("Forking SILC server to background"));
 
-  if (i) {
-    if (i > 0) {
-      if (geteuid())
-        SILC_LOG_DEBUG(("Server started as user"));
-      else
-        SILC_LOG_DEBUG(("Server started as root. Dropping privileges."));
+  i = fork();
 
-      SILC_LOG_DEBUG(("Forking SILC server to background"));
-      exit(0);
-    } else {
-      SILC_LOG_DEBUG(("fork() failed, cannot proceed"));
-      exit(1);
-    }
+  if (i < 0) {
+    SILC_LOG_DEBUG(("fork() failed, cannot proceed"));
+    exit(1);
+  }
+  else if (i) {
+    if (geteuid())
+      SILC_LOG_DEBUG(("Server started as user"));
+    else
+      SILC_LOG_DEBUG(("Server started as root. Dropping privileges."));
+    exit(0);
   }
   setsid();
 }
@@ -388,7 +387,6 @@ void silc_server_drop(SilcServer server)
 {
   /* Are we executing silcd as root or a regular user? */
   if (!geteuid()) {
-
     struct passwd *pw;
     struct group *gr;
     char *user, *group;
@@ -1085,6 +1083,8 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 						  sock->hostname, 
 						  port);
   if (!cconfig && !sconfig && !rconfig) {
+    SILC_LOG_INFO(("Connection %s (%s) is not allowed", 
+                   sock->hostname, sock->ip));
     silc_server_disconnect_remote(server, sock, 
 				  "Server closed connection: "
 				  "Connection refused");

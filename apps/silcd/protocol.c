@@ -653,6 +653,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       if (ctx->timeout_task)
 	silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
+      /* Assure that after calling final callback there cannot be pending
+	 executions for this protocol anymore. This just unregisters any 
+	 timeout callbacks for this protocol. */
+      silc_protocol_cancel(protocol, server->schedule);
+
       /* Call the final callback */
       if (protocol->final_callback)
 	silc_protocol_execute_final(protocol, server->schedule);
@@ -675,6 +680,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
     if (ctx->timeout_task)
       silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
+    /* Assure that after calling final callback there cannot be pending
+       executions for this protocol anymore. This just unregisters any 
+       timeout callbacks for this protocol. */
+    silc_protocol_cancel(protocol, server->schedule);
+
     /* On error the final callback is always called. */
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);
@@ -693,6 +703,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
     if (ctx->timeout_task)
       silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
+    /* Assure that after calling final callback there cannot be pending
+       executions for this protocol anymore. This just unregisters any 
+       timeout callbacks for this protocol. */
+    silc_protocol_cancel(protocol, server->schedule);
+    
     /* On error the final callback is always called. */
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);
@@ -1171,6 +1186,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
       if (ctx->timeout_task)
 	silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
+      /* Assure that after calling final callback there cannot be pending
+	 executions for this protocol anymore. This just unregisters any 
+	 timeout callbacks for this protocol. */
+      silc_protocol_cancel(protocol, server->schedule);
+    
       /* Protocol has ended, call the final callback */
       if (protocol->final_callback)
 	silc_protocol_execute_final(protocol, server->schedule);
@@ -1197,6 +1217,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
       if (ctx->timeout_task)
 	silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
+      /* Assure that after calling final callback there cannot be pending
+	 executions for this protocol anymore. This just unregisters any 
+	 timeout callbacks for this protocol. */
+      silc_protocol_cancel(protocol, server->schedule);
+    
       /* On error the final callback is always called. */
       if (protocol->final_callback)
 	silc_protocol_execute_final(protocol, server->schedule);
@@ -1216,6 +1241,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
     if (ctx->timeout_task)
       silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
+    /* Assure that after calling final callback there cannot be pending
+       executions for this protocol anymore. This just unregisters any 
+       timeout callbacks for this protocol. */
+    silc_protocol_cancel(protocol, server->schedule);
+    
     /* On error the final callback is always called. */
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);
@@ -1585,6 +1615,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
        encrypted with the new key so set the decryption key to the new key */
     silc_server_protocol_rekey_generate(server, ctx, FALSE);
 
+    /* Assure that after calling final callback there cannot be pending
+       executions for this protocol anymore. This just unregisters any 
+       timeout callbacks for this protocol. */
+    silc_protocol_cancel(protocol, server->schedule);
+    
     /* Protocol has ended, call the final callback */
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);
@@ -1602,6 +1637,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
       silc_ske_abort(ctx->ske, ctx->ske->status);
     }
 
+    /* Assure that after calling final callback there cannot be pending
+       executions for this protocol anymore. This just unregisters any 
+       timeout callbacks for this protocol. */
+    silc_protocol_cancel(protocol, server->schedule);
+    
     /* On error the final callback is always called. */
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);
@@ -1614,6 +1654,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
      * We have received failure from remote
      */
 
+    /* Assure that after calling final callback there cannot be pending
+       executions for this protocol anymore. This just unregisters any 
+       timeout callbacks for this protocol. */
+    silc_protocol_cancel(protocol, server->schedule);
+    
     /* On error the final callback is always called. */
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);

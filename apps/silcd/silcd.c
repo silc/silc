@@ -97,6 +97,33 @@ Usage: silcd [options]\n\
   exit(0);
 }
 
+/* Dies if a *valid* pid file exists already */
+
+static void silc_checkpid(SilcServer silcd)
+{
+  if (silcd->config->pidfile && silcd->config->pidfile->pid_file) {
+    int oldpid;
+    char *buf;
+    uint32 buf_len;
+
+    SILC_LOG_DEBUG(("Checking for another silcd running"));
+    buf = silc_file_readfile(silcd->config->pidfile->pid_file, &buf_len);
+    if (!buf)
+      return;
+    oldpid = atoi(buf);
+    silc_free(buf);
+    if (oldpid <= 0)
+      return;
+    kill(oldpid, SIGCHLD); /* this signal does nothing, check if alive */
+    if (errno != ESRCH) {
+      fprintf(stderr, "\nI detected another daemon running with the same pid file.\n");
+      fprintf(stderr, "Please change the config file, or erase the %s\n",
+	silcd->config->pidfile->pid_file);
+      exit(1);
+    }
+  }
+}
+
 int main(int argc, char **argv)
 {
   int ret;
@@ -105,7 +132,6 @@ int main(int argc, char **argv)
   char *config_file = NULL;
   SilcServer silcd;
   struct sigaction sa;
-  char pid[10];
 
   silc_debug = FALSE;
 
@@ -130,6 +156,7 @@ int main(int argc, char **argv)
 	  silc_debug = TRUE;
 	  silc_debug_hexdump = TRUE;
 	  silc_log_set_debug_string(optarg);
+	  foreground = TRUE;
 #ifndef SILC_DEBUG
 	  fprintf(stdout, 
 		  "Run-time debugging is not enabled. To enable it recompile\n"
@@ -196,6 +223,9 @@ int main(int argc, char **argv)
   if (silcd->config == NULL)
     goto fail;
 
+  /* Check for another silcd running */
+  silc_checkpid(silcd);
+
   /* Initialize the server */
   ret = silc_server_init(silcd);
   if (ret == FALSE)
@@ -207,20 +237,18 @@ int main(int argc, char **argv)
   sigemptyset(&sa.sa_mask);
   sigaction(SIGPIPE, &sa, NULL);
 
-  if ((silc_debug == FALSE) && (foreground == FALSE))
-    /* Before running the server, fork to background. */    
+  /* Before running the server, fork to background. */
+  if (!foreground)
     silc_server_daemonise(silcd);
 
-  /* Set /var/run/silcd.pid */
-  unlink(SILC_SERVER_PID_FILE);
-  memset(pid, 0, sizeof(pid));
-  snprintf(pid, sizeof(pid) - 1, "%d\n", getpid());
+  /* If set, write pid to file */
   if (silcd->config->pidfile && silcd->config->pidfile->pid_file) {
-    silc_file_writefile(silcd->config->pidfile->pid_file, pid, strlen(pid));
-  } else {
-    silc_file_writefile(SILC_SERVER_PID_FILE, pid, strlen(pid));
+    char buf[10];
+    unlink(silcd->config->pidfile->pid_file);
+    snprintf(buf, sizeof(buf) - 1, "%d\n", getpid());
+    silc_file_writefile(silcd->config->pidfile->pid_file, buf, strlen(buf));
   }
-  
+
   /* Drop root. */
   silc_server_drop(silcd);
 

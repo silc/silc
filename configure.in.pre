@@ -597,7 +597,6 @@ AC_ARG_WITH(silcd-pid-file,
 	esac ],
 )
 AC_SUBST(PIDFILE)
-AC_DEFINE_UNQUOTED(SILC_SERVER_PID_FILE, "$PIDFILE")
 
 #
 # Native WIN32 compilation under cygwin
@@ -756,7 +755,7 @@ fi
 #
 # Other configure scripts
 #
-AC_CONFIG_SUBDIRS(lib/dotconf)
+#AC_CONFIG_SUBDIRS(lib/dotconf)
 AC_CONFIG_SUBDIRS(lib/trq)
 AC_CONFIG_SUBDIRS(irssi)
 AC_CONFIG_SUBDIRS(lib/silcmath/mpi)

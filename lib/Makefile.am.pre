@@ -28,9 +28,9 @@ COMMONDIRS = \
 	silcutil \
 	silcclient \
 	silcsftp \
-	dotconf \
 	trq
-#        zlib
+#	dotconf
+#	zlib
 
 SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
@@ -45,8 +45,8 @@ SILCLIB_DIRS = \
 	silcske \
 	silcutil \
 	silcsftp \
-	trq \
-	dotconf
+	trq
+#	dotconf
 
 # SILC Client Library dirs
 SILCCLIENTLIB_DIRS = \

@@ -64,7 +64,7 @@ client_EXTRA_DIST=#
 
 # SILC Server distribution
 server_SUBDIRS=lib silcd doc includes
-server_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq dotconf silcsftp
+server_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq silcsftp
 server_SUBDIRS_doc=$(COMMONDIRS)
 server_DISTLABEL=SILC_DIST_SERVER
 server_EXTRA_DIST=#

@@ -10,9 +10,6 @@
 /* Default configuration file */
 #undef SILC_SERVER_CONFIG_FILE
 
-/* Default pid file */
-#undef SILC_SERVER_PID_FILE
-
 /* Multi-thread support */
 #undef SILC_THREADS
 #undef SILC_HAVE_PTHREAD

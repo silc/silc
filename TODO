@@ -47,8 +47,6 @@ TODO/bugs In SILC Client Library
    behaviour and maybe should be removed.  The changer should always
    get the one it wants and not have the formatted nickname.
 
- o strerror messages from premature EOF's to signoff messages.
-
  o Additions to do after protocol version 1.1:
 
 	o Fix the NICK_CHANGE notify handling not to create new entry
@@ -62,14 +60,7 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o User modes did not show correctly on normal server but looked ok
-   on router.  Join channel from normal server, join same from router
-   and see the user modes.  The founder of the channel (on normal server)
-   appears correctly on router but incorrectly (no modes) on normal 
-   server.
-
- o LIST command reply sending is broken.  It is possible it does not
-   end the list with LIST_END, but sends LIST_ENTRY as last entry.
+ o strerror messages from premature EOF's to signoff messages.
 
  o Backup router related issues
 

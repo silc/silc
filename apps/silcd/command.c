@@ -2103,7 +2103,7 @@ silc_server_command_list_send_reply(SilcServerCommandContext cmd,
 				    SilcChannelEntry *gch,
 				    uint32 gch_count)
 {
-  int i;
+  int i, k;
   SilcBuffer packet, idp;
   SilcChannelEntry entry;
   SilcCommandStatus status;
@@ -2111,27 +2111,34 @@ silc_server_command_list_send_reply(SilcServerCommandContext cmd,
   char *topic;
   unsigned char usercount[4];
   uint32 users;
+  int valid_lcount = 0, valid_rcount = 0;
 
-  for (i = 0; i < lch_count; i++)
+  for (i = 0; i < lch_count; i++) {
     if (lch[i]->mode & SILC_CHANNEL_MODE_SECRET)
       lch[i] = NULL;
-  for (i = 0; i < gch_count; i++)
+    else
+      valid_lcount++;
+  }
+  for (i = 0; i < gch_count; i++) {
     if (gch[i]->mode & SILC_CHANNEL_MODE_SECRET)
       gch[i] = NULL;
+    else
+      valid_rcount++;
+  }
 
   status = SILC_STATUS_OK;
   if ((lch_count + gch_count) > 1)
     status = SILC_STATUS_LIST_START;
 
   /* Local list */
-  for (i = 0; i < lch_count; i++) {
+  for (i = 0, k = 0; i < lch_count; i++) {
     entry = lch[i];
     if (!entry)
       continue;
 
-    if (i >= 1)
+    if (k >= 1)
       status = SILC_STATUS_LIST_ITEM;
-    if (i >= 1 && i == lch_count - 1 && !gch_count)
+    if (valid_lcount > 1 && k == valid_lcount - 1 && !valid_rcount)
       status = SILC_STATUS_LIST_END;
 
     idp = silc_id_payload_encode(entry->id, SILC_ID_CHANNEL);
@@ -2159,17 +2166,18 @@ silc_server_command_list_send_reply(SilcServerCommandContext cmd,
 			    packet->len, FALSE);
     silc_buffer_free(packet);
     silc_buffer_free(idp);
+    k++;
   }
 
   /* Global list */
-  for (i = 0; i < gch_count; i++) {
+  for (i = 0, k = 0; i < gch_count; i++) {
     entry = gch[i];
     if (!entry)
       continue;
 
-    if (i >= 1)
+    if (k >= 1)
       status = SILC_STATUS_LIST_ITEM;
-    if (i >= 1 && i == gch_count - 1)
+    if (valid_rcount > 1 && k == valid_rcount - 1)
       status = SILC_STATUS_LIST_END;
 
     idp = silc_id_payload_encode(entry->id, SILC_ID_CHANNEL);
@@ -2197,6 +2205,7 @@ silc_server_command_list_send_reply(SilcServerCommandContext cmd,
 			    packet->len, FALSE);
     silc_buffer_free(packet);
     silc_buffer_free(idp);
+    k++;
   }
 }
 
@@ -3473,11 +3482,15 @@ SILC_SERVER_CMD_FUNC(join)
   if (cmd->pending && context2) {
     SilcServerCommandReplyContext reply = 
       (SilcServerCommandReplyContext)context2;
+
     if (silc_command_get(reply->payload) == SILC_COMMAND_JOIN) {
       tmp = silc_argument_get_arg_type(reply->args, 6, NULL);
       SILC_GET32_MSB(created, tmp);
       create_key = FALSE;	/* Router returned the key already */
     }
+
+    if (silc_command_get(reply->payload) == SILC_COMMAND_WHOIS)
+      created = TRUE;
   }
 
   /* If the channel does not have global users and is also empty the client
