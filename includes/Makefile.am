@@ -18,9 +18,6 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-all:
-	-cd ..
-
 if SILC_DIST_TOOLKIT
 include_HEADERS = \
 	silcincludes.h \
