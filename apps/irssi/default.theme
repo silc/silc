@@ -304,10 +304,10 @@ abstracts = {
   # ownmsgnick_signed = "{msgnick {flag_signed} $1-}";
   # ownprivmsgnick_signed = "{msgnick {flag_signed} $*}";
   #
-  flag_signed = "%GS%n";
-  flag_unknown = "%Y?%n";
-  flag_failed = "%RF%n";
-  
+  flag_signed = "[%GS%n]";
+  flag_unknown = "[%Y?%n]";
+  flag_failed = "[%RF%n]";
+
   pubmsghinick_signed = "{msgnick {flag_signed} $0$2-%n}";
   pubmsghinick_unknown = "{msgnick {flag_unknown} $0$2-%n}";
   pubmsghinick_failed = "{msgnick {flag_failed} $0$2-%n}";
@@ -316,9 +316,9 @@ abstracts = {
   pubmsgmenick_unknown = "%g<{flag_unknown}$1->%n %|";
   pubmsgmenick_failed = "%g<{flag_failed}$1->%n %|";
   
-  pubmsgnick_signed = "{msgnick {flag_signed} $1-}";
-  pubmsgnick_unknown = "{msgnick {flag_unknown} $1-}";
-  pubmsgnick_failed = "{msgnick {flag_failed} $1-}";
+  pubmsgnick_signed = "{msgnick {flag_signed}$0 $1-}";
+  pubmsgnick_unknown = "{msgnick {flag_unknown}$0 $1-}";
+  pubmsgnick_failed = "{msgnick {flag_failed}$0 $1-}";
   
   privmsg_signed = "{privmsg {flag_signed}$0 $1}";
   privmsg_unknown = "{privmsg {flag_unknown}$0 $1}";

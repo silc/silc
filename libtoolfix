@@ -40,8 +40,7 @@ EOF
 # Do a trick with the ltmain.sh to make these settings valid
 ltmain=`pwd`/ltmain.sh
 echo ". $ltmain" >> ./libtool.tmp
-mv ./libtool ./libtool.orig
-mv ./libtool.tmp ./libtool
+mv -f ./libtool.tmp ./libtool
 chmod +x ./libtool
 
 exit 1
