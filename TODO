@@ -39,11 +39,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o The LIST command reply should empty the global list because
-   it is possible there stay channels that does not exist anymore.
-   Empty it and put channels that server does not know about to 
-   global list.
-
  o Make the silc_server_command_pending_error_check function to
    take all arguments it received and put them to the reply it is 
    sending.  Otherwise for example WHOIS on normal server for bogus

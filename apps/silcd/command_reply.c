@@ -1096,6 +1096,7 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
   SilcCommandStatus status;
   SilcChannelID *channel_id = NULL;
   SilcChannelEntry channel;
+  SilcIDCacheEntry cache;
   uint32 len;
   unsigned char *tmp, *name, *topic;
   uint32 usercount = 0;
@@ -1115,12 +1116,12 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
 
   /* Add the channel entry if we do not have it already */
   channel = silc_idlist_find_channel_by_name(server->local_list, 
-					     name, NULL);
+					     name, &cache);
   if (!channel)
     channel = silc_idlist_find_channel_by_name(server->global_list, 
-					       name, NULL);
+					       name, &cache);
   if (!channel) {
-    /* If router did not find such Channel ID in its lists then this must
+    /* If router did not find such channel in its lists then this must
        be bogus channel or some router in the net is buggy. */
     if (server->server_type != SILC_SERVER)
       goto out;
@@ -1130,7 +1131,16 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
 				      server->router, NULL, NULL);
     if (!channel)
       goto out;
+
+    /* Update cache entry expiry */
+    if (silc_idlist_find_channel_by_id(server->global_list, channel_id, 
+				       &cache))
+      cache->expire = time(NULL) + 60;
+
     channel_id = NULL;
+  } else {
+    /* Found, update expiry */
+    cache->expire = time(NULL) + 60;
   }
 
   if (topic) {
@@ -1144,6 +1154,10 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
     silc_server_command_reply_free(cmd);
     return;
   }
+
+  /* Now purge all old entries from the global list, otherwise we'll might
+     have non-existent entries for long periods of time in the cache. */
+  silc_idcache_purge(server->global_list->channels);
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_LIST);

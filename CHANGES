@@ -1,3 +1,11 @@
+Mon Dec  3 11:56:59 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Use cache entry expire time in the LIST command reply to
+	  purge old entries from the cache after the LIST command
+	  reply has been received.  This way we don't have non-existent
+	  entries in the cache for too long.  Affected file is
+	  silcd/command_reply.c.
+
 Sun Dec  2 23:29:07 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* If we are normal server, and we've not resolved client info
