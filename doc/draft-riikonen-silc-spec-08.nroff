@@ -1677,7 +1677,7 @@ defines the stringprep profile for SILC identifier strings and conforming
 implementation MUST use the profile to prepare any identifier string.
 
 The stringprep profile describes how identifier strings are prepared,
-what characters they may includes, and which characters are prohibited.
+what characters they may include, and which characters are prohibited.
 Identifier strings with prohibited characters MUST be treated as
 malformed strings.
 
