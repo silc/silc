@@ -1411,7 +1411,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
       /* If we are backup router then this primary router is whom we are
 	 backing up. */
       if (server->server_type == SILC_BACKUP_ROUTER)
-	silc_server_backup_add(server, server->id_entry, sock->ip, 0, TRUE);
+	silc_server_backup_add(server, server->id_entry, sock->ip,
+			       sconn->remote_port, TRUE);
     }
   } else {
     /* Add this server to be our backup router */

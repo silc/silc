@@ -96,6 +96,7 @@ void silc_server_backup_add(SilcServer server, SilcServerEntry backup_server,
     if (!server->backup->servers[i].server) {
       server->backup->servers[i].server = backup_server;
       server->backup->servers[i].local = local;
+      server->backup->servers[i].port = htons(port);
       memset(server->backup->servers[i].ip.data, 0,
 	     sizeof(server->backup->servers[i].ip.data));
       silc_net_addr2bin(ip, server->backup->servers[i].ip.data,
@@ -110,6 +111,7 @@ void silc_server_backup_add(SilcServer server, SilcServerEntry backup_server,
 					 (i + 1));
   server->backup->servers[i].server = backup_server;
   server->backup->servers[i].local = local;
+  server->backup->servers[i].port = htons(port);
   memset(server->backup->servers[i].ip.data, 0,
 	 sizeof(server->backup->servers[i].ip.data));
   silc_net_addr2bin(ip, server->backup->servers[i].ip.data,
@@ -130,7 +132,8 @@ SilcServerEntry silc_server_backup_get(SilcServer server,
 
   for (i = 0; i < server->backup->servers_count; i++) {
     if (server->backup->servers[i].server &&
-	!memcmp(&server->backup->servers[i].ip, &server_id->ip.data,
+	server->backup->servers[i].port == server_id->port &&
+	!memcmp(server->backup->servers[i].ip.data, server_id->ip.data,
 		sizeof(server_id->ip.data))) {
       SILC_LOG_DEBUG(("Found backup router %s for %s",
 		      server->backup->servers[i].server->server_name,
@@ -244,7 +247,7 @@ bool silc_server_backup_replaced_get(SilcServer server,
   for (i = 0; i < server->backup->replaced_count; i++) {
     if (!server->backup->replaced[i])
       continue;
-    if (!memcmp(&server->backup->replaced[i]->ip, &server_id->ip.data,
+    if (!memcmp(server->backup->replaced[i]->ip.data, server_id->ip.data,
 		sizeof(server_id->ip.data))) {
       if (server_entry)
 	*server_entry = server->backup->replaced[i]->server;

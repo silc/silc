@@ -257,8 +257,8 @@ typedef struct {
  */
 typedef struct {
   SilcIDIP ip;			/* n bit IP address */
-  SilcUInt16 port;			/* 16 bit port */
-  SilcUInt16 rnd;			/* 16 bit random number */
+  SilcUInt16 port;		/* 16 bit port */
+  SilcUInt16 rnd;		/* 16 bit random number */
 } SilcServerID;
 /***/
 
@@ -302,9 +302,9 @@ typedef struct {
  * SOURCE
  */
 typedef struct {
-  SilcIDIP ip;					/* n bit IP address */
-  SilcUInt16 port;					/* 16 bit port */
-  SilcUInt16 rnd;					/* 16 bit random number */
+  SilcIDIP ip;			/* n bit IP address */
+  SilcUInt16 port;		/* 16 bit port */
+  SilcUInt16 rnd;		/* 16 bit random number */
 } SilcChannelID;
 /***/
 

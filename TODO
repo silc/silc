@@ -30,9 +30,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o Still ghost clients in server signoff from server having secondary
-   interface.
-
  o Normal server doesn't reconnect to backup router if connection was
    lost.
 
