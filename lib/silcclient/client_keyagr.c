@@ -616,16 +616,21 @@ void silc_client_abort_key_agreement(SilcClient client,
   assert(client_entry);
 
   if (client_entry->ke) {
+    SilcClientKeyAgreement ke;
+
     if (client_entry->ke->sock) {
       silc_client_del_socket(client_entry->ke->client, client_entry->ke->sock);
       silc_socket_free(client_entry->ke->sock);
     }
-    client_entry->ke = NULL;
     silc_schedule_task_del_by_fd(client->schedule, client_entry->ke->fd);
     if (client_entry->ke->timeout)
       silc_schedule_task_del(client->schedule, 
-			   client_entry->ke->timeout);
-    silc_free(client_entry->ke);
+			     client_entry->ke->timeout);
+    ke = client_entry->ke;
+    client_entry->ke = NULL;
+    ke->completion(client, conn, client_entry, 
+		   SILC_KEY_AGREEMENT_ABORTED, NULL, ke->context);
+    silc_free(ke);
   }
 }
 

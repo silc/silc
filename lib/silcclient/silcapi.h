@@ -74,6 +74,7 @@ typedef enum {
   SILC_KEY_AGREEMENT_ERROR,	       /* Unknown error occurred */
   SILC_KEY_AGREEMENT_FAILURE,	       /* The protocol failed */
   SILC_KEY_AGREEMENT_TIMEOUT,	       /* The protocol timeout */
+  SILC_KEY_AGREEMENT_ABORTED,	       /* The protocol aborted */
 } SilcKeyAgreementStatus;
 /***/
 
@@ -1702,7 +1703,8 @@ void silc_client_perform_key_agreement_fd(SilcClient client,
  *    before the key agreement protocol has been performed. After it has
  *    been performed the library will automatically unbind the port. The 
  *    `client_entry' is the client to which we sent the key agreement 
- *    request. 
+ *    request.  The key agreement completion callback will be called
+ *    with SILC_KEY_AGREEMENT_ABORTED status.
  *
  ***/
 void silc_client_abort_key_agreement(SilcClient client,

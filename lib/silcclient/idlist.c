@@ -653,6 +653,8 @@ void silc_client_del_client_entry(SilcClient client,
     silc_cipher_free(client_entry->receive_key);
   silc_free(client_entry->key);
   silc_client_ftp_session_free_client(conn, client_entry);
+  if (client_entry->ke)
+    silc_client_abort_key_agreement(client, conn, client_entry);
   silc_free(client_entry);
 }
 
