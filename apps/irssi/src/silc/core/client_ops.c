@@ -529,7 +529,8 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   if (flags & SILC_MESSAGE_FLAG_DATA) {
     silc_emit_mime_sig(server,
 		sender->nickname ? 
-		(WI_ITEM_REC *)query_find(server, sender->nickname) : NULL,
+		(WI_ITEM_REC *)query_find(SERVER(server), sender->nickname) : 
+		NULL,
 		message, message_len,
       		sender->nickname ? sender->nickname : "[<unknown>]",
 		flags & SILC_MESSAGE_FLAG_SIGNED ? verified : -1);
