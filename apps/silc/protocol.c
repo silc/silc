@@ -23,6 +23,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/06 07:14:16  priikone
+ * 	Deprecated old `channel_auth' protocol.
+ *
  * Revision 1.2  2000/07/05 06:12:05  priikone
  * 	Global cosmetic changes.
  *
@@ -35,7 +38,6 @@
 #include "clientincludes.h"
 
 SILC_TASK_CALLBACK(silc_client_protocol_connection_auth);
-SILC_TASK_CALLBACK(silc_client_protocol_channel_auth);
 SILC_TASK_CALLBACK(silc_client_protocol_key_exchange);
 
 /* SILC client protocol list */
@@ -43,8 +45,6 @@ const SilcProtocolObject silc_protocol_list[] =
 {
   { SILC_PROTOCOL_CLIENT_CONNECTION_AUTH, 
     silc_client_protocol_connection_auth },
-  { SILC_PROTOCOL_CLIENT_CHANNEL_AUTH, 
-    silc_client_protocol_channel_auth },
   { SILC_PROTOCOL_CLIENT_KEY_EXCHANGE, 
     silc_client_protocol_key_exchange },
 
@@ -393,9 +393,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
 	break;
 
       case SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY:
-#if 0
-
-#endif
+	/* XXX */
 	break;
       }
 
@@ -462,6 +460,3 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
   }
 }
 
-SILC_TASK_CALLBACK(silc_client_protocol_channel_auth)
-{
-}

@@ -24,8 +24,7 @@
 /* SILC client protocol types */
 #define SILC_PROTOCOL_CLIENT_NONE 0
 #define SILC_PROTOCOL_CLIENT_CONNECTION_AUTH 1
-#define SILC_PROTOCOL_CLIENT_CHANNEL_AUTH 2
-#define SILC_PROTOCOL_CLIENT_KEY_EXCHANGE 3
+#define SILC_PROTOCOL_CLIENT_KEY_EXCHANGE 2
 /* #define SILC_PROTOCOL_CLIENT_MAX 255 */
 
 /* Internal context for key exchange protocol */
