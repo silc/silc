@@ -33,6 +33,8 @@ int silc_socket_write(SilcSocketConnection sock)
   int fd = sock->sock;
   SilcBuffer src = sock->outbuf;
 
+  if (!src)
+    return -2;
   if (SILC_IS_DISABLED(sock))
     return -1;
 

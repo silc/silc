@@ -3,6 +3,10 @@ Wed Dec 11 20:20:07 EET 2002 Pekka Riikonen <priikone@silcnet.org>
 	* Fixed close command to use the port correctly when closing
 	  server connections.  Affected file silcd/idlist.c.
 
+	* Check for NULL outbuf in silc_socket_write.  It is possible
+	  that it is NULL is some odd case.  Affected files are
+	  lib/silcutil/[unix/win32]/silc[unix/win32]sockconn.c.
+
 Wed Dec 11 10:01:26 CET 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed double free in SKE library error hadling when signature
