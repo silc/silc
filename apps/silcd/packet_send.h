@@ -213,6 +213,7 @@ void silc_server_send_channel_key(SilcServer server,
 void silc_server_send_command(SilcServer server, 
 			      SilcSocketConnection sock,
 			      SilcCommand command, 
+			      uint16 ident,
 			      uint32 argc, ...);
 void silc_server_send_heartbeat(SilcServer server,
 				SilcSocketConnection sock);

@@ -336,17 +336,23 @@ SILC_CLIENT_CMD_FUNC(identify)
     goto out;
   }
 
-  buffer = silc_command_payload_encode(SILC_COMMAND_IDENTIFY,
-				       cmd->argc - 1, ++cmd->argv,
-				       ++cmd->argv_lens, ++cmd->argv_types,
-				       ++conn->cmd_ident);
+  if (cmd->argc == 2)
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_IDENTIFY, 
+					    ++conn->cmd_ident, 1,
+					    1, cmd->argv[1],
+					    cmd->argv_lens[1]);
+  else
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_IDENTIFY, 
+					    ++conn->cmd_ident, 2,
+					    1, cmd->argv[1],
+					    cmd->argv_lens[1],
+					    4, cmd->argv[2],
+					    cmd->argv_lens[2]);
+
   silc_client_packet_send(cmd->client, cmd->conn->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
-  cmd->argv--;
-  cmd->argv_lens--;
-  cmd->argv_types--;
 
   /* Notify application */
   COMMAND;
@@ -371,7 +377,8 @@ SILC_CLIENT_CMD_FUNC(nick)
   }
 
   if (cmd->argc < 2) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "Usage: /NICK <nickname>");
+    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			  "Usage: /NICK <nickname>");
     COMMAND_ERROR;
     goto out;
   }
@@ -1975,14 +1982,16 @@ SILC_CLIENT_CMD_FUNC(leave)
   }
 
   if (cmd->argc != 2) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "Usage: /LEAVE <channel>");
+    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			  "Usage: /LEAVE <channel>");
     COMMAND_ERROR;
     goto out;
   }
 
   if (cmd->argv[1][0] == '*') {
     if (!conn->current_channel) {
-      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on any channel");
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			    "You are not on any channel");
       COMMAND_ERROR;
       goto out;
     }
@@ -1993,7 +2002,8 @@ SILC_CLIENT_CMD_FUNC(leave)
 
   /* Get the Channel ID of the channel */
   if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on that channel");
+    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			  "You are not on that channel");
     COMMAND_ERROR;
     goto out;
   }
@@ -2033,9 +2043,7 @@ SILC_CLIENT_CMD_FUNC(users)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
-  SilcIDCacheEntry id_cache = NULL;
-  SilcChannelEntry channel;
-  SilcBuffer buffer, idp;
+  SilcBuffer buffer;
   char *name;
 
   if (!cmd->conn) {
@@ -2045,14 +2053,16 @@ SILC_CLIENT_CMD_FUNC(users)
   }
 
   if (cmd->argc != 2) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "Usage: /USERS <channel>");
+    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			  "Usage: /USERS <channel>");
     COMMAND_ERROR;
     goto out;
   }
 
   if (cmd->argv[1][0] == '*') {
     if (!conn->current_channel) {
-      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on any channel");
+      cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
+			    "You are not on any channel");
       COMMAND_ERROR;
       goto out;
     }
@@ -2061,45 +2071,14 @@ SILC_CLIENT_CMD_FUNC(users)
     name = cmd->argv[1];
   }
 
-  if (!conn->current_channel) {
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, "You are not on that channel");
-    COMMAND_ERROR;
-    goto out;
-  }
-
-  /* Get the Channel ID of the channel */
-  if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
-    /* XXX should resolve the channel ID; LIST command */
-    cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-			  "You are not on that channel", name);
-    COMMAND_ERROR;
-    goto out;
-  }
-
-  channel = (SilcChannelEntry)id_cache->context;
-
-  if (!cmd->pending) {
-    /* Send USERS command to the server */
-    idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_USERS, 
-					    ++conn->cmd_ident, 1, 
-					    1, idp->data, idp->len);
-    silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, 
-			    NULL, 0, NULL, NULL, buffer->data, 
-			    buffer->len, TRUE);
-    silc_buffer_free(buffer);
-    silc_buffer_free(idp);
-
-    /* Register pending callback which will recall this command callback with
-       same context and reprocesses the command. When reprocessing we actually
-       display the information on the screen. */
-    silc_client_command_pending(conn, SILC_COMMAND_USERS, conn->cmd_ident, 
-				silc_client_command_destructor,
-				silc_client_command_users, 
-				silc_client_command_dup(cmd));
-    cmd->pending = TRUE;
-    return;
-  }
+  /* Send USERS command to the server */
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_USERS, 
+					  ++conn->cmd_ident, 1, 
+					  2, name, strlen(name));
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, 
+			  NULL, 0, NULL, NULL, buffer->data, 
+			  buffer->len, TRUE);
+  silc_buffer_free(buffer);
 
   /* Notify application */
   COMMAND;
@@ -2116,6 +2095,7 @@ SILC_CLIENT_CMD_FUNC(getkey)
   SilcClientConnection conn = cmd->conn;
   SilcClient client = cmd->client;
   SilcClientEntry client_entry = NULL;
+  SilcServerEntry server_entry = NULL;
   uint32 num = 0;
   char *nickname = NULL, *server = NULL;
   SilcBuffer idp, buffer;
@@ -2127,7 +2107,8 @@ SILC_CLIENT_CMD_FUNC(getkey)
   }
 
   if (cmd->argc < 2) {
-    client->ops->say(client, conn, SILC_CLIENT_MESSAGE_INFO, "Usage: /GETKEY <nickname>");
+    client->ops->say(client, conn, SILC_CLIENT_MESSAGE_INFO, 
+		     "Usage: /GETKEY <nickname or server name>");
     COMMAND_ERROR;
     goto out;
   }
@@ -2141,20 +2122,43 @@ SILC_CLIENT_CMD_FUNC(getkey)
 
   /* Find client entry */
   client_entry = silc_idlist_get_client(client, conn, nickname, server, num,
-					TRUE);
+					FALSE);
   if (!client_entry) {
-    /* Client entry not found, it was requested thus mark this to be
-       pending command. */
-    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
-				conn->cmd_ident,  
-				silc_client_command_destructor,
-				silc_client_command_getkey, 
-				silc_client_command_dup(cmd));
-    cmd->pending = 1;
-    return;
+    /* Check whether user requested server actually */
+    server_entry = silc_client_get_server(client, conn, nickname);
+
+    if (!server_entry) {
+      /* No. what ever user wants we don't have it, so resolve it. We
+	 will try to resolve both client and server, one of them is
+	 bound to be wrong. */
+
+      /* This will send the IDENTIFY command */
+      silc_idlist_get_client(client, conn, nickname, server, num, TRUE);
+      silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+				  conn->cmd_ident,  
+				  silc_client_command_destructor,
+				  silc_client_command_getkey, 
+				  silc_client_command_dup(cmd));
+
+      /* This sends the INFO command to resolve the server. */
+      silc_client_send_command(client, conn, SILC_COMMAND_INFO,
+			       ++conn->cmd_ident, 1, 
+			       1, nickname, strlen(nickname));
+      silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+				  conn->cmd_ident,  
+				  silc_client_command_destructor,
+				  silc_client_command_getkey, 
+				  silc_client_command_dup(cmd));
+
+      cmd->pending = 1;
+      return;
+    }
+
+    idp = silc_id_payload_encode(server_entry->server_id, SILC_ID_SERVER);
+  } else {
+    idp = silc_id_payload_encode(client_entry->id, SILC_ID_CLIENT);
   }
 
-  idp = silc_id_payload_encode(client_entry->id, SILC_ID_CLIENT);
   buffer = silc_command_payload_encode_va(SILC_COMMAND_GETKEY, 0, 1, 
 					  1, idp->data, idp->len);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 

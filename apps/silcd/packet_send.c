@@ -1573,6 +1573,7 @@ void silc_server_send_channel_key(SilcServer server,
 void silc_server_send_command(SilcServer server, 
 			      SilcSocketConnection sock,
 			      SilcCommand command, 
+			      uint16 ident,
 			      uint32 argc, ...)
 {
   SilcBuffer packet;
@@ -1580,7 +1581,7 @@ void silc_server_send_command(SilcServer server,
 
   va_start(ap, argc);
 
-  packet = silc_command_payload_encode_vap(command, 0, argc, ap);
+  packet = silc_command_payload_encode_vap(command, ident, argc, ap);
   silc_server_packet_send(server, sock, SILC_PACKET_COMMAND, 0,
 			  packet->data, packet->len, TRUE);
   silc_buffer_free(packet);

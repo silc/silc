@@ -42,10 +42,8 @@
        Flags for the command. These set how command behaves on different
        situations. Server sets these flags as well, but to be sure
        that our client never sends wrong commands we preserve the
-       flags on client side as well.
-
-       XXX: We preserve these so that we define them but currently we
-       don't check the flags at all.
+       flags on client side as well (actually we preserve them but
+       ignore them :)).
 
 */
 typedef struct {

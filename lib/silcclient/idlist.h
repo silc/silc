@@ -88,7 +88,8 @@ typedef struct {
   SilcServerID *server_id;
 } *SilcServerEntry;
 
-/* Prototypes (some functions are defined in the silcapi.h) */
+/* Prototypes. These are used only by the library. Application should not
+   call these directly. */
 
 SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
@@ -96,5 +97,9 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       char *server,
 				       uint32 num,
 				       int query);
+SilcChannelEntry silc_idlist_get_channel_by_id(SilcClient client,
+					       SilcClientConnection conn,
+					       SilcChannelID *channel_id,
+					       int query);
 
 #endif

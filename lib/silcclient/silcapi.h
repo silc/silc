@@ -325,6 +325,28 @@ typedef struct {
 } SilcClientOperations;
 /***/
 
+/****s* silcclient/SilcClientAPI/SilcClientParams
+ *
+ * NAME
+ *
+ *    typedef struct { ... } SilcClientParams;
+ *
+ * DESCRIPTION
+ *
+ *    Client parameters. This can be filled with proper values and
+ *    given as argument to the silc_client_alloc function. The structure
+ *    hold various parameters which affects the function of the client.
+ *
+ * SOURCE
+ */
+typedef struct {
+  /* Rekey timeout in seconds. The client will perform rekey in this
+     time interval. If set to zero, default value will be used. */
+  unsigned int rekey_secs;
+} SilcClientParams;
+/***/
+
+
 /* Initialization functions (client.c) */
 
 /****f* silcclient/SilcClientAPI/silc_client_alloc
@@ -332,6 +354,7 @@ typedef struct {
  * SYNOPSIS
  *
  *    SilcClient silc_client_alloc(SilcClientOperations *ops, 
+ *                                 SilcClientParams *params,
  *                                 void *application,
  *                                 const char *silc_version);
  *
@@ -345,7 +368,9 @@ typedef struct {
  *    version string.
  *
  ***/
-SilcClient silc_client_alloc(SilcClientOperations *ops, void *application,
+SilcClient silc_client_alloc(SilcClientOperations *ops, 
+			     SilcClientParams *params,
+			     void *application,
 			     const char *silc_version);
 
 /****f* silcclient/SilcClientAPI/silc_client_free
@@ -639,7 +664,7 @@ void silc_client_send_private_message(SilcClient client,
  *
  *    Callback function given to the silc_client_get_client function. The
  *    found entries are allocated into the `clients' array. The array must
- *    not be freed by the caller, the library will free it later. If the
+ *    not be freed by the receiver, the library will free it later. If the
  *    `clients' is NULL, no such clients exist in the SILC Network.
  *
  ***/
@@ -810,6 +835,30 @@ bool silc_client_del_client_by_id(SilcClient client,
 				  SilcClientConnection conn,
 				  SilcClientID *client_id);
 
+/****f* silcclient/SilcClientAPI/SilcGetChannelCallback
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcGetClientCallback)(SilcClient client,
+ *                                          SilcClientConnection conn,
+ *                                          SilcClientEntry *clients,
+ *                                          uint32 clients_count,
+ *                                          void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Callback function given to the silc_client_get_channel_* functions.
+ *    The found entries are allocated into the `channels' array. The array
+ *    must not be freed by the receiver, the library will free it later.
+ *    If the `channel' is NULL, no such channel exist in the SILC Network.
+ *
+ ***/
+typedef void (*SilcGetChannelCallback)(SilcClient client,
+				       SilcClientConnection conn,
+				       SilcChannelEntry *channels,
+				       uint32 channels_count,
+				       void *context);
+
 /****f* silcclient/SilcClientAPI/silc_client_get_channel
  *
  * SYNOPSIS
@@ -828,6 +877,69 @@ bool silc_client_del_client_by_id(SilcClient client,
 SilcChannelEntry silc_client_get_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 char *channel);
+
+/****f* silcclient/SilcClientAPI/silc_client_get_channel
+ *
+ * SYNOPSIS
+ *
+ *    void 
+ *    silc_client_get_channel_by_id_resolve(SilcClient client,
+ *                                          SilcClientConnection conn,
+ *                                          SilcChannelID *channel_id,
+ *                                          SilcGetClientCallback completion,
+ *                                          void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Finds channel entry by the channel name. Returns the entry or NULL
+ *    if it was not found.
+ *
+ ***/
+SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
+					       SilcClientConnection conn,
+					       SilcChannelID *channel_id);
+
+/****f* silcclient/SilcClientAPI/silc_client_get_channel
+ *
+ * SYNOPSIS
+ *
+ *    void 
+ *    silc_client_get_channel_by_id_resolve(SilcClient client,
+ *                                          SilcClientConnection conn,
+ *                                          SilcChannelID *channel_id,
+ *                                          SilcGetClientCallback completion,
+ *                                          void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Resolves the channel information (its name mainly) from the server
+ *    by the `channel_id'. Use this only if you know that you do not have
+ *    the entry cached locally.
+ *
+ ***/
+void silc_client_get_channel_by_id_resolve(SilcClient client,
+					   SilcClientConnection conn,
+					   SilcChannelID *channel_id,
+					   SilcGetChannelCallback completion,
+					   void *context);
+
+/****f* silcclient/SilcClientAPI/silc_client_get_server
+ *
+ * SYNOPSIS
+ *
+ *    SilcServerEntry silc_client_get_server(SilcClient client,
+ *                                           SilcClientConnection conn,
+ *                                           char *server_name)
+ *
+ * DESCRIPTION
+ *
+ *    Finds entry for server by the server name. Returns the entry or NULL
+ *    if the entry was not found.
+ *
+ ***/
+SilcServerEntry silc_client_get_server(SilcClient client,
+				       SilcClientConnection conn,
+				       char *server_name);
 
 /****f* silcclient/SilcClientAPI/silc_client_get_server_by_id
  *

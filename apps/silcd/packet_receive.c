@@ -1864,7 +1864,7 @@ void silc_server_new_channel(SilcServer server,
   id = silc_channel_get_id(payload, &id_len);
 
   if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
-    /* Add the server to global list as it is coming from router. It 
+    /* Add the channel to global list as it is coming from router. It 
        cannot be our own channel as it is coming from router. */
 
     SILC_LOG_DEBUG(("New channel id(%s) from [Router] %s",

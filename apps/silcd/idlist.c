@@ -558,6 +558,8 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 {
   SilcChannelEntry channel;
 
+  SILC_LOG_DEBUG(("Adding new channel entry"));
+
   channel = silc_calloc(1, sizeof(*channel));
   channel->channel_name = channel_name;
   channel->mode = mode;

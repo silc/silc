@@ -158,6 +158,9 @@ struct SilcClientStruct {
   /* All client operations that are implemented in the application. */
   SilcClientOperations *ops;
 
+  /* Client Parameters */
+  SilcClientParams *params;
+
   /* SILC client scheduler and task queues */
   SilcSchedule schedule;
   SilcTaskQueue io_queue;

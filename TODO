@@ -22,10 +22,8 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o All protocol execution timeouts are hard coded. They should be 
-   configurable and the Irssi SILC client should be able to set them
-   with for example /set key_exchange_timeout etc.  The silc_client_alloc
-   should take a Params structure or something as argument.
+ o The public key authentication is missing for example in OPER and SILCOPER
+   commands.  See the XXX's in the lib/silcclient/command.c.
 
  o The client library must manage somehow when receiving client that has
    same nickname, same server, same username but different Client ID than

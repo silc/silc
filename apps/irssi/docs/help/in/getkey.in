@@ -1,10 +1,9 @@
 
 @SYNTAX:getkey@
 
-This command is used to fetch remote client's public key.
-The public key is fetched from the server the client is
-connected to.  This way the public key might have been
-verified already.  However, you will be prompted to verify
+This command is used to fetch remote client's or server's public
+key.  When fetching client's public key it is fetched from the
+server the client is connected to.  This way the public key might
+have been verified already.  However, you will be prompted to verify
 the fetched public key.  The public key is saved into your
 local key directory (~/.silc/clientkeys/).
-

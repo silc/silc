@@ -1,3 +1,44 @@
+Wed Jul 11 18:31:57 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SilcClientParams structure to the lib/silcclient/silcapi.h
+	  which is given as argument to the silc_client_alloc now.
+	  It can be used to configure the client and set various parameters
+	  that affect the function of the client.
+
+	* The USERS command in server did not check whether the channel
+	  is private or secret.  Affected file silcd/command.c.
+
+	* Added new argument to the USERS command in protocol specification.
+	  The USERS command now can take the channel name as argument
+	  as well.  Added support for this in client and server and
+	  updated the protocol specs.
+
+	* Completed the GETKEY command in client. It can be now used
+	  to fetch also servers public key not only some clients. 
+	  Affected files lib/silcclient/command[_reply].c.
+
+	* Added silc_client_get_server to return server entry by the
+	  server name.  Affected files lib/silcclient/silcapi.h and
+	  idlist.c.
+
+	* Redefined the IDENTIFY command in protocol specification to be
+	  more generic.  It now can be used to query information about
+	  any entity in the SILC Network, including clients, servers and
+	  channels.  The query may be based either the entity's name
+	  or the ID.  Added support for this in both client and server.
+
+	  Affected files silcd/command.c and lib/silcclient/command.c
+	  and command_reply.c.
+
+	* Optimized the WHOIS and WHOWAS commands in the server. Removed
+	  the _from_client and _from_server functions.  Affected file
+	  silcd/command.c.
+
+	* Added silc_client_get_channel_by_id_resolve to the file
+	  lib/silcclient/silcapi.h to resolve channel information by
+	  its ID.  Added also silc_client_get_channel_by_id that
+	  does not resolve it from the server.
+
 Tue Jul 10 18:05:38 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SilcServerEntry context into the client library

@@ -18,17 +18,15 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-bin_PROGRAMS = silc
-
-silc_SOURCES = \
-	silc.c \
-	clientconfig.c \
-	clientutil.c \
-	local_command.c \
-	screen.c \
-	client_ops.c
-
-silc_DEPENDENCIES = ../lib/libsilcclient.a ../lib/libsilc.a
+#bin_PROGRAMS = silc
+#silc_SOURCES = \
+#	silc.c \
+#	clientconfig.c \
+#	clientutil.c \
+#	local_command.c \
+#	screen.c \
+#	client_ops.c
+#silc_DEPENDENCIES = ../lib/libsilcclient.a ../lib/libsilc.a
 
 LIBS = $(SILC_COMMON_LIBS)
 LDADD = -L. -L.. -L../lib -lsilcclient

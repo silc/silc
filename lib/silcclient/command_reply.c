@@ -431,13 +431,20 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
 					SilcCommandStatus status)
 {
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
-  SilcClientID *client_id;
+  SilcClient client = cmd->client;
+  SilcClientID *client_id = NULL;
+  SilcServerID *server_id = NULL;
+  SilcChannelID *channel_id = NULL;
   SilcIDCacheEntry id_cache = NULL;
-  SilcClientEntry client_entry = NULL;
+  SilcClientEntry client_entry;
+  SilcServerEntry server_entry;
+  SilcChannelEntry channel_entry;
   int argc;
   uint32 len;
   unsigned char *id_data;
-  char *nickname = NULL, *username = NULL;
+  char *name = NULL, *info = NULL;
+  SilcIDPayload idp = NULL;
+  SilcIdType id_type;
   
   argc = silc_argument_get_arg_num(cmd->args);
 
@@ -446,59 +453,119 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
     COMMAND_REPLY_ERROR;
     return;
   }
-  
-  client_id = silc_id_payload_parse_id(id_data, len);
-  if (!client_id) {
+  idp = silc_id_payload_parse_data(id_data, len);
+  if (!idp) {
     COMMAND_REPLY_ERROR;
     return;
   }
-  
-  nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
-  username = silc_argument_get_arg_type(cmd->args, 4, &len);
 
-  /* Check if we have this client cached already. */
-  if (!silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)client_id, 
-				       NULL, NULL, 
-				       silc_hash_client_id_compare, NULL,
-				       &id_cache)) {
-    SILC_LOG_DEBUG(("Adding new client entry"));
+  name = silc_argument_get_arg_type(cmd->args, 3, &len);
+  info = silc_argument_get_arg_type(cmd->args, 4, &len);
 
-    client_entry = silc_calloc(1, sizeof(*client_entry));
-    client_entry->id = client_id;
-    silc_parse_nickname(nickname, &client_entry->nickname, 
-			&client_entry->server, &client_entry->num);
-    if (username)
-      client_entry->username = strdup(username);
-    
-    /* Add client to cache */
-    silc_idcache_add(conn->client_cache, client_entry->nickname,
-		     client_id, (void *)client_entry, FALSE);
-  } else {
-    client_entry = (SilcClientEntry)id_cache->context;
-    if (client_entry->nickname)
-      silc_free(client_entry->nickname);
-    if (client_entry->server)
-      silc_free(client_entry->server);
-    if (username && client_entry->username)
-      silc_free(client_entry->username);
-    
-    SILC_LOG_DEBUG(("Updating client entry"));
+  id_type = silc_id_payload_get_type(idp);
 
-    silc_parse_nickname(nickname, &client_entry->nickname, 
-			&client_entry->server, &client_entry->num);
-    
-    if (username)
-      client_entry->username = strdup(username);
-    
-    /* Remove the old cache entry and create a new one */
-    silc_idcache_del_by_context(conn->client_cache, client_entry);
-    silc_idcache_add(conn->client_cache, client_entry->nickname, 
-		     client_entry->id, client_entry, FALSE);
-    silc_free(client_id);
+  switch (id_type) {
+  case SILC_ID_CLIENT:
+    client_id = silc_id_payload_get_id(idp);
+
+    SILC_LOG_DEBUG(("Received client information"));
+
+    /* Check if we have this client cached already. */
+    if (!silc_idcache_find_by_id_one_ext(conn->client_cache, 
+					 (void *)client_id, 
+					 NULL, NULL, 
+					 silc_hash_client_id_compare, NULL,
+					 &id_cache)) {
+      SILC_LOG_DEBUG(("Adding new client entry"));
+      
+      client_entry = silc_calloc(1, sizeof(*client_entry));
+      client_entry->id = silc_id_dup(client_id, id_type);
+      silc_parse_nickname(name, &client_entry->nickname, 
+			  &client_entry->server, &client_entry->num);
+      if (info)
+	client_entry->username = strdup(info);
+      
+      /* Add client to cache */
+      silc_idcache_add(conn->client_cache, client_entry->nickname,
+		       client_entry->id, (void *)client_entry, FALSE);
+    } else {
+      client_entry = (SilcClientEntry)id_cache->context;
+      if (client_entry->nickname)
+	silc_free(client_entry->nickname);
+      if (client_entry->server)
+	silc_free(client_entry->server);
+      if (info && client_entry->username)
+	silc_free(client_entry->username);
+      
+      SILC_LOG_DEBUG(("Updating client entry"));
+      
+      silc_parse_nickname(name, &client_entry->nickname, 
+			  &client_entry->server, &client_entry->num);
+      
+      if (info)
+	client_entry->username = strdup(info);
+      
+      /* Remove the old cache entry and create a new one */
+      silc_idcache_del_by_context(conn->client_cache, client_entry);
+      silc_idcache_add(conn->client_cache, client_entry->nickname, 
+		       client_entry->id, client_entry, FALSE);
+    }
+
+    /* Notify application */
+    COMMAND_REPLY((ARGS, client_entry, name, info));
+    break;
+
+  case SILC_ID_SERVER:
+    server_id = silc_id_payload_get_id(idp);
+
+    SILC_LOG_DEBUG(("Received server information"));
+
+    /* Check if we have this server cached already. */
+    if (!silc_idcache_find_by_id_one(conn->server_cache, 
+				     (void *)server_id, &id_cache)) {
+      SILC_LOG_DEBUG(("Adding new server entry"));
+      
+      server_entry = silc_calloc(1, sizeof(*server_entry));
+      server_entry->server_id = silc_id_dup(server_id, id_type);
+      server_entry->server_name = strdup(name);
+      if (info)
+	server_entry->server_info = strdup(info);
+      
+      /* Add server to cache */
+      silc_idcache_add(conn->server_cache, server_entry->server_name,
+		       server_entry->server_id, (void *)server_entry, FALSE);
+    } else {
+      server_entry = (SilcServerEntry)id_cache->context;
+    }
+
+    /* Notify application */
+    COMMAND_REPLY((ARGS, server_entry, name, info));
+    break;
+
+  case SILC_ID_CHANNEL:
+    channel_id = silc_id_payload_get_id(idp);
+
+    SILC_LOG_DEBUG(("Received channel information"));
+
+    /* Check if we have this channel cached already. */
+    if (!silc_idcache_find_by_id_one(conn->channel_cache, 
+				     (void *)channel_id, &id_cache)) {
+      SILC_LOG_DEBUG(("Adding new channel entry"));
+      channel_entry = silc_client_new_channel_id(client, conn->sock, 
+						 name, 0, idp);
+    } else {
+      channel_entry = (SilcChannelEntry)id_cache->context;
+    }
+
+    /* Notify application */
+    COMMAND_REPLY((ARGS, channel_entry, name, info));
+    break;
   }
 
-  /* Notify application */
-  COMMAND_REPLY((ARGS, client_entry, nickname, username));
+  silc_id_payload_free(idp);
+  silc_free(client_id);
+  silc_free(server_id);
+  silc_free(channel_id);
 }
 
 /* Received reply for IDENTIFY command. This maybe called several times
@@ -1007,6 +1074,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   channel = silc_client_new_channel_id(cmd->client, cmd->sock, channel_name, 
 				       mode, idp);
   silc_id_payload_free(idp);
+
+  conn->current_channel = channel;
 
   /* Get hmac */
   hmac = silc_argument_get_arg_type(cmd->args, 11, NULL);
@@ -1662,22 +1731,30 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
 
   /* Get channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (!tmp)
+  if (!tmp) {
+    COMMAND_REPLY_ERROR;
     goto out;
+  }
   channel_id = silc_id_payload_parse_id(tmp, tmp_len);
-  if (!channel_id)
+  if (!channel_id) {
+    COMMAND_REPLY_ERROR;
     goto out;
-
+  }
+  
   /* Get the list count */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-  if (!tmp)
+  if (!tmp) {
+    COMMAND_REPLY_ERROR;
     goto out;
+  }
   SILC_GET32_MSB(list_count, tmp);
 
   /* Get Client ID list */
   tmp = silc_argument_get_arg_type(cmd->args, 4, &tmp_len);
-  if (!tmp)
+  if (!tmp) {
+    COMMAND_REPLY_ERROR;
     goto out;
+  }
 
   client_id_list = silc_buffer_alloc(tmp_len);
   silc_buffer_pull_tail(client_id_list, tmp_len);
@@ -1685,8 +1762,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
 
   /* Get client mode list */
   tmp = silc_argument_get_arg_type(cmd->args, 5, &tmp_len);
-  if (!tmp)
+  if (!tmp) {
+    COMMAND_REPLY_ERROR;
     goto out;
+  }
 
   client_mode_list = silc_buffer_alloc(tmp_len);
   silc_buffer_pull_tail(client_mode_list, tmp_len);
@@ -1695,10 +1774,18 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   /* Get channel entry */
   if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
 				   &id_cache)) {
-    COMMAND_REPLY_ERROR;
-    goto out;
+    /* Resolve the channel from server */
+    silc_idlist_get_channel_by_id(cmd->client, conn, channel_id, TRUE);
+    
+    /* Register pending command callback. After we've received the channel
+       information we will reprocess this command reply by re-calling this
+       USERS command reply callback. */
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
+				NULL, silc_client_command_reply_users, cmd);
+    return;
+  } else {
+    channel = (SilcChannelEntry)id_cache->context;
   }
-  channel = (SilcChannelEntry)id_cache->context;
 
   /* Remove old client list from channel. */
   silc_list_start(channel->clients);
@@ -1707,9 +1794,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     silc_free(chu);
   }
 
-  /* Cache the received Client ID's and modes. This cache expires
-     whenever server sends notify message to channel. It means two things;
-     some user has joined or leaved the channel. XXX! */
+  /* Cache the received Client ID's and modes. */
   for (i = 0; i < list_count; i++) {
     uint16 idp_len;
     uint32 mode;
@@ -1821,6 +1906,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
   SilcIDPayload idp = NULL;
   SilcClientID *client_id = NULL;
   SilcClientEntry client_entry;
+  SilcServerID *server_id = NULL;
+  SilcServerEntry server_entry;
   SilcSKEPKType type;
   unsigned char *tmp, *pk;
   uint32 len;
@@ -1865,8 +1952,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
 
   id_type = silc_id_payload_get_type(idp);
   if (id_type == SILC_ID_CLIENT) {
+    /* Received client's public key */
     client_id = silc_id_payload_get_id(idp);
-
     if (!silc_idcache_find_by_id_one_ext(conn->client_cache, 
 					 (void *)client_id, 
 					 NULL, NULL, 
@@ -1879,10 +1966,16 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
     /* Notify application */
     COMMAND_REPLY((ARGS, id_type, client_entry, public_key));
   } else if (id_type == SILC_ID_SERVER) {
-    /* XXX we don't have server entries at all */
-    goto out;
-  } else {
-    goto out;
+    /* Received server's public key */
+    server_id = silc_id_payload_get_id(idp);
+    if (!silc_idcache_find_by_id_one(conn->server_cache, (void *)server_id,
+				     &id_cache))
+      goto out;
+
+    server_entry = (SilcServerEntry)id_cache->context;
+
+    /* Notify application */
+    COMMAND_REPLY((ARGS, id_type, server_entry, public_key));
   }
 
  out:
@@ -1892,5 +1985,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
   if (public_key)
     silc_pkcs_public_key_free(public_key);
   silc_free(client_id);
+  silc_free(server_id);
   silc_client_command_reply_free(cmd);
 }

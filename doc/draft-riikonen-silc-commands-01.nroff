@@ -234,15 +234,15 @@ List of all defined commands in SILC follows.
         nicknames in the SILC.  The <count> option may be given to narrow
         down the number of accepted results.  If this is not defined there
         are no limit of accepted results.  The query may also be narrowed
-        down by defining the server name of the nickname.
+        down by defining the server name of the nickname.  The <count> is
+        int string format.
 
         It is also possible to search the user by Client ID.  If the 
         <Client ID> is provided server MUST use it as the search value
         instead of the <nickname>.  One of the arguments MUST be given.
         It is also possible to define multiple Client ID's to search
         multiple users sending only one WHOIS command.  In this case the
-        Client ID's are appended as normal arguments.  The server replies
-        in this case with only one reply message for all requested users.
+        Client ID's are appended as normal arguments.
 
         To prevent miss-use of this command wildcards in the nickname
         or in the server name are not permitted.  It is not allowed
@@ -311,7 +311,7 @@ List of all defined commands in SILC follows.
         given to narrow down the number of accepted results.  If this
         is not defined there are no limit of accepted results.  The query
         may also be narrowed down by defining the server name of the 
-        nickname.
+        nickname.  The <count> is in string format.
 
         To prevent miss-use of this command wildcards in the nickname
         or in the server name are not permitted.  The WHOWAS requests MUST 
@@ -352,49 +352,45 @@ List of all defined commands in SILC follows.
    3    SILC_COMMAND_IDENTIFY
 
         Max Arguments:  3328
-            Arguments:  (1) [<nickname>[@<server>]]  (2) [<count>]
-                        (3) [<Client ID>]            (n) [...]
+            Arguments:  (1) [<nickname>[@<server>]]  (2) [<server name>]
+                        (3) [<channel name>]         (4) [<count>]
+                        (5) [<ID Payload>]           (n) [...]
 
-        Identify.  Identify command is almost analogous to WHOIS command,
-        except that it does not return as much information.  Only relevant
-        information such as Client ID is returned.  This is usually used
-        to get the Client ID of a client used in the communication with
-        the client.
+        Identify command is used to query information about an entity by
+        the entity's name or ID.  This command can be used to query
+        information about clients, server and channels.
 
-        The query may find multiple matching users as there are no unique 
-        nicknames in the SILC.  The <count> option may be given to narrow 
-        down the number of accepted results.  If this is not defined there 
-        are no limit of accepted results.  The query may also be narrowed 
-        down by defining the server name of the nickname.
+        The query may find multiple matching entities.  The <count> option
+        may be given to narrow down the number of accepted results.  If
+        this is not defined there are no limit of accepted results.  The
+        <count> is in string format.
 
-        It is also possible to search the user by Client ID.  If the
-        <Client ID> is provided server must use it as the search value
-        instead of the <nickname>.  One of the arguments must be given.
-        It is also possible to define multiple Client ID's to search
-        multiple users sending only one IDENTIFY command.  In this case
-        the Client ID's are appended as normal arguments.  The server
-        replies in this case with only one reply message for all requested
-        users.
+        It is also possible to search the entity by its ID.  If the
+        <ID Payload> is provided server must use it as the search value
+        instead of the entity's name.  One of the arguments must be given.
+        It is also possible to define multiple ID Payloads to search
+        multiple entities sending only one IDENTIFY command.  In this case
+        the ID Payloads are appended as normal arguments.  The type of the
+        entity is defined by the type of the ID Payload.
 
-        To prevent miss-use of this command wildcards in the nickname
-        or in the server name are not permitted.  It is not allowed
-        to request all users on some server.  The IDENTIFY requests MUST
-        be based on specific nickname request.
+        To prevent miss-use of this command wildcards in the names are
+        not permitted.  It is not allowed to request for example all users
+        on server.
 
         Implementations may not want to give interface access to this
-        command as it is hardly a command that would be used by an end user.
-        However, it must be implemented as it is used with private message
-        sending.
+        command as it is hardly a command that would be used by an end
+        user.  However, it must be implemented as it is used with private
+        message sending.
 
-        The IDENTIFY MUST be always sent to the router by server so that
-        all users are searched.  However, server MUST still search its
-        locally connected clients.
+        The IDENTIFY command MUST be always sent to the router by server
+        so that all users are searched.  However, server MUST still search
+        its locally connected clients.
 
         Reply messages to the command:
 
         Max Arguments:  4
-            Arguments:  (1) <Status Payload>         (2) <Client ID>
-                        (3) [<nickname>[@<server>]]  (4) [<username@host>]
+            Arguments:  (1) <Status Payload>   (2) <Client ID>
+                        (3) [<entity's name>]  (4) [<info>]
 
         This command may reply with several command reply messages to form
         a list of results.  In this case the status payload will include
@@ -402,10 +398,19 @@ List of all defined commands in SILC follows.
         the last reply to indicate the end of the list.  If there are only 
         one reply the status is set to normal STATUS_OK.
 
-        The command replies with Client ID of the nickname and if more
-        information is available it MAY reply with nickname and user name
-        and host name.  If the <count> option were defined in the query
-        there will be only <count> many replies from the server.
+        When querying clients the <entity's name> must include the client's
+        nickname in the following format: nickname>[@server].  The
+        <info> must include the client's username and host in the following
+        format: username@host.
+
+        When querying servers the <entity's name> must include the server's
+        full name.  The <info> may be omitted.
+
+        When querying channels the <entity's name> must include the
+        channel's name.  The <info> may be omitted.
+
+        If the <count> option were defined in the query there will be only
+        <count> many replies from the server.
 
         Status messages:
 
@@ -413,7 +418,11 @@ List of all defined commands in SILC follows.
             SILC_STATUS_LIST_START
             SILC_STATUS_LIST_END
             SILC_STATUS_ERR_NO_SUCH_NICK
+            SILC_STATUS_ERR_NO_SUCH_SERVER
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL
             SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+            SILC_STATUS_ERR_NO_SUCH_SERVER_ID
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
             SILC_STATUS_ERR_WILDCARDS
             SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
             SILC_STATUS_ERR_TOO_MANY_PARAMS
@@ -667,7 +676,8 @@ List of all defined commands in SILC follows.
         the requested server.
 
         If the <Server ID> is specified the server information if fetched
-        by the provided Server ID.
+        by the provided Server ID.  One of the arguments must always be
+        present.
 
         Reply messages to the command:
 
@@ -1464,12 +1474,13 @@ List of all defined commands in SILC follows.
 
    25   SILC_COMMAND_USERS
 
-        Max Arguments:  1
-            Arguments:  (1) <Channel ID>
+        Max Arguments:  2
+            Arguments:  (1) [<Channel ID>]  (2) [<channel name>]
 
         This command is used to list user names currently on the requested
-        channel; argument <Channel ID>.  The server MUST resolve the
-        user names and send a comma (`,') separated list of user names
+        channel; either the argument <Channel ID> or the <channel name>. 
+        One of these arguments must be present.  The server MUST resolve
+        the user names and send a comma (`,') separated list of user names
         on the channel.  Server or router MAY resolve the names by sending
         SILC_COMMAND_WHOIS or SILC_COMMAND_IDENTIFY commands.
 

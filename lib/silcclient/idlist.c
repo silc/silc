@@ -298,7 +298,7 @@ void silc_client_get_clients_by_list(SilcClient client,
 				    (res_argc + 1));
       res_argv[res_argc] = client_id_list->data;
       res_argv_lens[res_argc] = idp_len;
-      res_argv_types[res_argc] = res_argc + 3;
+      res_argv_types[res_argc] = res_argc + 5;
       res_argc++;
     }
 
@@ -552,6 +552,134 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
     return NULL;
 
   entry = (SilcChannelEntry)id_cache->context;
+
+  return entry;
+}
+
+/* Finds entry for channel by the channel ID. Returns the entry or NULL
+   if the entry was not found. It is found only if the client is joined
+   to the channel. */
+
+SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
+					       SilcClientConnection conn,
+					       SilcChannelID *channel_id)
+{
+  SilcIDCacheEntry id_cache;
+  SilcChannelEntry entry;
+
+  if (!silc_idcache_find_by_id_one(conn->channel_cache, channel_id, 
+				   &id_cache))
+    return NULL;
+
+  entry = (SilcChannelEntry)id_cache->context;
+
+  return entry;
+}
+
+typedef struct {
+  SilcClient client;
+  SilcClientConnection conn;
+  SilcChannelID *channel_id;
+  SilcGetChannelCallback completion;
+  void *context;
+  int found;
+} *GetChannelByIDInternal;
+
+SILC_CLIENT_CMD_FUNC(get_channel_by_id_callback)
+{
+  GetChannelByIDInternal i = (GetChannelByIDInternal)context;
+  SilcChannelEntry entry;
+
+  /* Get the channel */
+  entry = silc_client_get_channel_by_id(i->client, i->conn,
+					i->channel_id);
+  if (entry) {
+    i->completion(i->client, i->conn, &entry, 1, i->context);
+    i->found = TRUE;
+  }
+}
+
+static void silc_client_get_channel_by_id_destructor(void *context)
+{
+  GetChannelByIDInternal i = (GetChannelByIDInternal)context;
+
+  if (i->found == FALSE)
+    i->completion(i->client, i->conn, NULL, 0, i->context);
+
+  silc_free(i->channel_id);
+  silc_free(i);
+}
+
+/* Resolves channel information from the server by the channel ID. */
+
+void silc_client_get_channel_by_id_resolve(SilcClient client,
+					   SilcClientConnection conn,
+					   SilcChannelID *channel_id,
+					   SilcGetChannelCallback completion,
+					   void *context)
+{
+  SilcBuffer idp;
+  GetChannelByIDInternal i = silc_calloc(1, sizeof(*i));
+
+  idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
+  silc_client_send_command(client, conn, SILC_COMMAND_IDENTIFY, 
+			   ++conn->cmd_ident,
+			   1, 5, idp->data, idp->len);
+  silc_buffer_free(idp);
+
+  i->client = client;
+  i->conn = conn;
+  i->channel_id = silc_id_dup(channel_id, SILC_ID_CHANNEL);
+  i->completion = completion;
+  i->context = context;
+      
+  /* Add pending callback */
+  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+			      conn->cmd_ident, 
+			      silc_client_get_channel_by_id_destructor,
+			      silc_client_command_get_channel_by_id_callback, 
+			      (void *)i);
+}
+
+/* Find channel entry by ID. This routine is used internally by the library. */
+
+SilcChannelEntry silc_idlist_get_channel_by_id(SilcClient client,
+					       SilcClientConnection conn,
+					       SilcChannelID *channel_id,
+					       int query)
+{
+  SilcBuffer idp;
+  SilcChannelEntry channel;
+
+  channel = silc_client_get_channel_by_id(client, conn, channel_id);
+  if (channel)
+    return channel;
+
+  if (query) {
+    idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
+    silc_client_send_command(client, conn, SILC_COMMAND_IDENTIFY, 
+			     ++conn->cmd_ident,
+			     1, 5, idp->data, idp->len);
+    silc_buffer_free(idp);
+  }
+
+  return NULL;
+}
+
+/* Finds entry for server by the server name. */
+
+SilcServerEntry silc_client_get_server(SilcClient client,
+				       SilcClientConnection conn,
+				       char *server_name)
+{
+  SilcIDCacheEntry id_cache;
+  SilcServerEntry entry;
+
+  if (!silc_idcache_find_by_name_one(conn->server_cache, server_name, 
+				     &id_cache))
+    return NULL;
+
+  entry = (SilcServerEntry)id_cache->context;
 
   return entry;
 }

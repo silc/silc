@@ -40,7 +40,9 @@ static void silc_client_packet_parse_type(SilcClient client,
    the client. The `application' is application specific user data pointer
    and caller must free it. */
 
-SilcClient silc_client_alloc(SilcClientOperations *ops, void *application,
+SilcClient silc_client_alloc(SilcClientOperations *ops, 
+			     SilcClientParams *params,
+			     void *application,
 			     const char *silc_version)
 {
   SilcClient new_client;
@@ -49,6 +51,13 @@ SilcClient silc_client_alloc(SilcClientOperations *ops, void *application,
   new_client->application = application;
   new_client->ops = ops;
   new_client->silc_client_version = strdup(silc_version);
+  new_client->params = silc_calloc(1, sizeof(*new_client->params));
+
+  if (params)
+    memcpy(new_client->params, params, sizeof(*params));
+
+  if (!new_client->params->rekey_secs)
+    new_client->params->rekey_secs = 3600;
 
   return new_client;
 }
@@ -61,6 +70,8 @@ void silc_client_free(SilcClient client)
     if (client->rng)
       silc_rng_free(client->rng);
 
+    silc_free(client->silc_client_version);
+    silc_free(client->params);
     silc_free(client);
   }
 }
@@ -556,7 +567,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
   conn->remote_id_data_len = silc_id_get_len(ctx->dest_id, SILC_ID_SERVER);
 
   /* Register re-key timeout */
-  conn->rekey->timeout = 3600; /* XXX hardcoded */
+  conn->rekey->timeout = client->params->rekey_secs;
   conn->rekey->context = (void *)client;
   silc_task_register(client->timeout_queue, conn->sock->sock, 
 		     silc_client_rekey_callback,
@@ -1315,7 +1326,8 @@ void silc_client_receive_new_id(SilcClient client,
 
 /* Processed received Channel ID for a channel. This is called when client
    joins to channel and server replies with channel ID. The ID is cached. 
-   Returns the created channel entry. */
+   Returns the created channel entry. This is also called when received
+   channel ID in for example USERS command reply that we do not have. */
 
 SilcChannelEntry silc_client_new_channel_id(SilcClient client,
 					    SilcSocketConnection sock,
@@ -1333,8 +1345,6 @@ SilcChannelEntry silc_client_new_channel_id(SilcClient client,
   channel->id = silc_id_payload_get_id(idp);
   channel->mode = mode;
   silc_list_init(channel->clients, struct SilcChannelUserStruct, next);
-
-  conn->current_channel = channel;
 
   /* Put it to the ID cache */
   silc_idcache_add(conn->channel_cache, channel_name, (void *)channel->id, 

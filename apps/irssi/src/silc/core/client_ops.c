@@ -676,10 +676,12 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       
       pk = silc_pkcs_public_key_encode(public_key, &pk_len);
       
-      if (id_type == SILC_ID_CLIENT)
-	silc_verify_public_key_internal(client, conn, SILC_SOCKET_TYPE_CLIENT,
-					pk, pk_len, SILC_SKE_PK_TYPE_SILC,
-					NULL, NULL);
+      silc_verify_public_key_internal(client, conn, 
+				      (id_type == SILC_ID_CLIENT ?
+				       SILC_SOCKET_TYPE_CLIENT :
+				       SILC_SOCKET_TYPE_SERVER),
+				      pk, pk_len, SILC_SKE_PK_TYPE_SILC,
+				      NULL, NULL);
       silc_free(pk);
     }
     break;
