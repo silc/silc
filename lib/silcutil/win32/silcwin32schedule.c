@@ -60,8 +60,8 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
   if (nhandles == 0)
     return -1;
   else
-    ready = MsgWaitForMultipleObjects(nhandles, handles, FALSE, timeo,
-				      QS_ALLINPUT);
+    ready = WaitForMultipleObjects(nhandles, handles, FALSE, timeo,
+				   QS_ALLINPUT);
 
   if (ready == WAIT_FAILED) {
     SILC_LOG_WARNING(("WaitForMultipleObjects() failed"));
