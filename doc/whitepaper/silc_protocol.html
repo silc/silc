@@ -163,9 +163,9 @@ passphrase or public key encryption.
 The router servers are servers that actually handles the message routing
 in the network.  They are, however also normal servers and they do accept
 client connections.  Each of the router in the network is called a cell.
-The cell can have only one active router and it may have several servers
+A cell can have only one active router and it may have several servers
 and several clients.  The cell, however may have backup routers that can
-take over the tasks of the primary router if it becomes unreachable.
+take over the tasks of the primary router if it becomes unresponsive.
 The switch to the backup router should be transparent and only local
 connections to the primary router are lost.  Other connections in the
 cell are intact, and clients and servers merely experience some lag in
