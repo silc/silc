@@ -466,7 +466,7 @@ const char *get_home_dir(void)
 char *convert_home(const char *path)
 {
 	return *path == '~' && (*(path+1) == '/' || *(path+1) == '\0') ?
-		g_strconcat((char *)get_home_dir, path+1, NULL) :
+		g_strconcat((char *)get_home_dir(), path+1, NULL) :
 		g_strdup(path);
 }
 
