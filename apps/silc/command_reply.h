@@ -35,6 +35,7 @@ typedef struct {
   SilcClient client;
   SilcSocketConnection sock;
   SilcCommandPayload payload;
+  SilcPacketContext *packet;
 
   /* If defined this executes the pending command. */
   void *context;
@@ -71,7 +72,7 @@ do {							\
 /* Prototypes */
 void silc_client_command_reply_process(SilcClient client,
 				       SilcSocketConnection sock,
-				       SilcBuffer buffer);
+				       SilcPacketContext *packet);
 SILC_CLIENT_CMD_REPLY_FUNC(whois);
 SILC_CLIENT_CMD_REPLY_FUNC(whowas);
 SILC_CLIENT_CMD_REPLY_FUNC(identify);

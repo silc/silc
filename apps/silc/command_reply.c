@@ -24,6 +24,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/04 08:27:14  priikone
+ * 	Changes to LEAVE command -- more consistent now and does error
+ * 	handling better. Added INVITE, PING and part of NAMES commands.
+ * 	SilcPacketContext is included into command structure.
+ *
  * Revision 1.2  2000/07/03 05:49:49  priikone
  * 	Implemented LEAVE command.  Minor bug fixes.
  *
@@ -86,6 +91,7 @@ const SilcCommandStatusMessage silc_command_status_messages[] = {
   { STAT(WILDCARDS),         "Unknown command" },
   { STAT(NO_CLIENT_ID),      "No Client ID given" },
   { STAT(NO_CHANNEL_ID),     "No Channel ID given" },
+  { STAT(NO_SERVER_ID),      "No Server ID given" },
   { STAT(BAD_CLIENT_ID),     "Bad Client ID" },
   { STAT(BAD_CHANNEL_ID),    "Bad Channel ID" },
   { STAT(NO_SUCH_CLIENT_ID), "No such Client ID" },
@@ -118,8 +124,9 @@ const SilcCommandStatusMessage silc_command_status_messages[] = {
 
 void silc_client_command_reply_process(SilcClient client,
 				       SilcSocketConnection sock,
-				       SilcBuffer buffer)
+				       SilcPacketContext *packet)
 {
+  SilcBuffer buffer = packet->buffer;
   SilcClientCommandReplyContext ctx;
   SilcCommandPayload payload;
 
@@ -137,6 +144,7 @@ void silc_client_command_reply_process(SilcClient client,
   ctx->client = client;
   ctx->sock = sock;
   ctx->payload = payload;
+  ctx->packet = packet;
       
   /* Check for pending commands and mark to be exeucted */
   SILC_CLIENT_COMMAND_CHECK_PENDING(ctx);
@@ -378,8 +386,23 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
 {
 }
 
+/* Received reply to invite command. */
+
 SILC_CLIENT_CMD_REPLY_FUNC(invite)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    silc_say(cmd->client, "%s", silc_client_command_status_message(status));
+    silc_client_command_reply_free(cmd);
+    return;
+  }
+
+  silc_client_command_reply_free(cmd);
 }
  
 SILC_CLIENT_CMD_REPLY_FUNC(quit)
@@ -402,8 +425,45 @@ SILC_CLIENT_CMD_REPLY_FUNC(connect)
 {
 }
 
+/* Received reply to PING command. The reply time is shown to user. */
+
 SILC_CLIENT_CMD_REPLY_FUNC(ping)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientWindow win = (SilcClientWindow)cmd->sock->user_data;
+  SilcCommandStatus status;
+  void *id;
+  char *tmp;
+  int i;
+  time_t diff, curtime;
+
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    silc_say(cmd->client, "%s", silc_client_command_status_message(status));
+    goto out;
+  }
+
+  curtime = time(NULL);
+  id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
+
+  for (i = 0; i < win->ping_count; i++) {
+    if (!SILC_ID_SERVER_COMPARE(win->ping[i].dest_id, id)) {
+      diff = curtime - win->ping[i].start_time;
+      silc_say(cmd->client, "Ping reply from %s: %d second%s", 
+	       win->ping[i].dest_name, diff, diff == 1 ? "" : "s");
+
+      win->ping[i].start_time = 0;
+      silc_free(win->ping[i].dest_id);
+      win->ping[i].dest_id = NULL;
+      silc_free(win->ping[i].dest_name);
+      win->ping[i].dest_name = NULL;
+      goto out;
+    }
+  }
+
+ out:
+  silc_client_command_reply_free(cmd);
 }
 
 SILC_CLIENT_CMD_REPLY_FUNC(oper)
@@ -497,12 +557,90 @@ SILC_CLIENT_CMD_REPLY_FUNC(silcoper)
 {
 }
 
+/* Reply to LEAVE command. */
+
 SILC_CLIENT_CMD_REPLY_FUNC(leave)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClient client = cmd->client;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK)
+    silc_say(cmd->client, "%s", silc_client_command_status_message(status));
+
+  silc_client_command_reply_free(cmd);
 }
+
+/* Reply to NAMES command. Received list of client names on the channel 
+   we requested. */
 
 SILC_CLIENT_CMD_REPLY_FUNC(names)
 {
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClient client = cmd->client;
+  SilcClientWindow win = (SilcClientWindow)cmd->sock->user_data;
+  SilcCommandStatus status;
+  SilcIDCache *id_cache = NULL;
+  SilcChannelEntry *channel;
+  SilcChannelID *channel_id = NULL;
+  unsigned char *tmp;
+  char *name_list, channel_name;
+  int i, len;
+
+#define CIDC(x) win->channel_id_cache[(x)]
+#define CIDCC(x) win->channel_id_cache_count[(x)]
+
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK) {
+    silc_say(cmd->client, "%s", silc_client_command_status_message(status));
+    goto out;
+  }
+
+  /* Get channel ID */
+  tmp = silc_command_get_arg_type(cmd->payload, 2, NULL);
+  if (!tmp)
+    goto out;
+  channel_id = silc_id_str2id(tmp, SILC_ID_CHANNEL);
+
+  /* Get the name list of the channel */
+  name_list = silc_command_get_arg_type(cmd->payload, 3, &len);
+  if (!name_list)
+    goto out;
+
+  /* Get the channel name */
+  for (i = 0; i < 96; i++) {
+    if (CIDC(i) == NULL)
+      continue;
+    if (silc_idcache_find_by_id(CIDC(i), CIDCC(i), (void *)channel_id, 
+				SILC_ID_CHANNEL, &id_cache))
+      break;
+  }
+  if (!id_cache)
+    goto out;
+  
+  channel = (SilcChannelEntry)id_cache->context;
+
+  /* If there are pending commands set for this command reply we will
+     execute them and let them handle the received name list. They can
+     If there is no pending callback it means that this command reply
+     has been received without calling the command, ie. server has sent
+     the reply without getting the command from us first. This happens
+     with SILC servers that sends NAMES reply after joining to a channel. */
+  if (cmd->callback)
+    SILC_CLIENT_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_WHOIS);
+  else
+    silc_say(cmd->client, "xxx");
+
+ out:
+  if (channel_id)
+    silc_free(channel_id);
+  silc_client_command_reply_free(cmd);
+#undef CIDC
+#undef CIDCC
 }
 
 /* Private message received. This processes the private message and
