@@ -1108,7 +1108,7 @@ List of all defined commands in SILC follows.
               This flag MUST NOT be used to determine whether a packet
               can be sent to the client or not.  Only the server that
               had the original client connection can make the decision
-              by noticising that the network connection is not active.
+              by knowing that the network connection is not active.
               In this case the default case is to discard the packet.
 
         If the <client mode mask> was not provided this command merely
