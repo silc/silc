@@ -2203,7 +2203,7 @@ SILC_SERVER_CMD_FUNC(join)
   if (tmp_len > 256)
     channel_name[255] = '\0';
 
-  if (silc_server_name_bad_chars(channel_name, tmp_len) == TRUE) {
+  if (silc_server_name_bad_chchars(channel_name, tmp_len) == TRUE) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					  SILC_STATUS_ERR_BAD_CHANNEL, 0);
     goto out;

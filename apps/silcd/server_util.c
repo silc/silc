@@ -1025,6 +1025,27 @@ bool silc_server_name_bad_chars(const char *name, SilcUInt32 name_len)
     if (name[i] == '*') return TRUE;
     if (name[i] == '?') return TRUE;
     if (name[i] == ',') return TRUE;
+    if (name[i] == '@') return TRUE;
+    if (name[i] == '!') return TRUE;
+  }
+
+  return FALSE;
+}
+
+/* Same as silc_server_name_bad_chars but check for channel names. */
+
+bool silc_server_name_bad_chchars(const char *name, SilcUInt32 name_len)
+{
+  int i;
+
+  for (i = 0; i < name_len; i++) {
+    if (!isascii(name[i]))
+      return TRUE;
+    if (name[i] <= 32) return TRUE;
+    if (name[i] == ' ') return TRUE;
+    if (name[i] == '*') return TRUE;
+    if (name[i] == '?') return TRUE;
+    if (name[i] == ',') return TRUE;
   }
 
   return FALSE;

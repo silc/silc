@@ -1,3 +1,11 @@
+Thu Apr 24 19:50:25 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Deny '@' and '!' from nicknames since they are reserved
+	  by the SILC_COMMAND_INVITE and SILC_COMMAND_BAN commands.
+	  Updated protocol specs and the code.
+
+	  Affected files are silcd/server_util.[ch].
+
 Wed Apr  9 18:51:59 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed stack overflow in Irssi SILC client.  Affected
