@@ -780,7 +780,7 @@ o Channel founder - When channel is created the joining client becomes
 
 o Channel operator - When client joins to channel that has not existed
   previously it will become automatically channel operator (and channel
-  founder discussed above).  Channel operator is able administrate the
+  founder discussed above).  Channel operator is able to administrate the
   channel, set some modes on channel, remove a badly behaving client
   from the channel and promote other clients to become channel
   operator.  The privileges are limited only to the particular channel.
