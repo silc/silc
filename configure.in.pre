@@ -1000,11 +1000,11 @@ silc/Makefile
 win32/Makefile
 win32/libsilc/Makefile
 win32/libsilcclient/Makefile
+tutorial/Makefile
+tutorial/Makefile.defines
+tutorial/Makefile.defines_int
 )
 fi
-
-# Use our configuration in compilation
-CFLAGS="-DHAVE_SILCDEFS_H $CFLAGS"
 
 AC_OUTPUT
 

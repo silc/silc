@@ -41,7 +41,7 @@
 #
 # INCLUDE defines
 #
-INCLUDES = $(ADD_INCLUDES) $(SILC_CFLAGS) \
+INCLUDES = $(ADD_INCLUDES) $(SILC_CFLAGS) -DHAVE_SILCDEFS_H \
 	-I$(srcdir) -I$(top_srcdir) \
 	-I$(silc_top_srcdir) \
 	-I$(silc_top_srcdir)/lib/silccore \

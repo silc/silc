@@ -31,17 +31,6 @@ all:
 	touch draft-riikonen-silc-flags-payloads-00.txt
 	touch draft-riikonen-presence-attrs-00.txt
 
-if SILC_DIST_CLIENT
-dist-hook:
-	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
-	rm draft-riikonen*.txt
-	touch draft-riikonen-silc-spec-05.txt
-	touch draft-riikonen-silc-pp-05.txt
-	touch draft-riikonen-silc-ke-auth-05.txt
-	touch draft-riikonen-silc-commands-03.txt
-	touch draft-riikonen-silc-flags-payloads-00.txt
-	touch draft-riikonen-presence-attrs-00.txt
-else
 if SILC_DIST_TOOLKIT
 toolkit-ref-html:
 	-@if test -f $(SILC_TOP_SRCDIR)/util/robodoc/Source/robodoc ; then \
@@ -65,7 +54,6 @@ toolkit-ref-ps:
 
 toolkit-ref-pdf:
 	-ps2pdf $(SILC_TOP_SRCDIR)/doc/toolkit.ps $(SILC_TOP_SRCDIR)/doc/toolkit.pdf
-endif
 
 dist-hook:
 	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
@@ -88,6 +76,16 @@ dist-hook:
 	$(makerfc) draft-riikonen-presence-attrs-00.nroff \
 		draft-riikonen-presence-attrs-00.txt
 
+else
+dist-hook:
+	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
+	rm draft-riikonen*.txt
+	touch draft-riikonen-silc-spec-05.txt
+	touch draft-riikonen-silc-pp-05.txt
+	touch draft-riikonen-silc-ke-auth-05.txt
+	touch draft-riikonen-silc-commands-03.txt
+	touch draft-riikonen-silc-flags-payloads-00.txt
+	touch draft-riikonen-presence-attrs-00.txt
 endif
 
 if SILC_DIST_TOOLKIT

@@ -1,0 +1,6 @@
+This directory holds short tutorials and examples for the SILC Toolkit.  
+These tutorials are not compiled automatically when compiling the Toolkit.
+
+To compile all tutorials give 'make' in this directory.  You may also 
+compile only a specific tutorial in its subdirectory by giving 'make' 
+command.
