@@ -147,6 +147,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       /* Allocate Key Exchange object */
       ske = silc_ske_alloc();
       ctx->ske = ske;
+      ske->rng = client->rng;
       
       if (ctx->responder == TRUE) {
 #if 0
@@ -164,7 +165,8 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	SilcSKEStartPayload *start_payload;
 
 	/* Assemble security properties. */
-	silc_ske_assemble_security_properties(ske, silc_version_string,
+	silc_ske_assemble_security_properties(ske, SILC_SKE_SP_FLAG_NONE, 
+					      silc_version_string,
 					      &start_payload);
 
 	/* Start the key exchange by sending our security properties

@@ -963,8 +963,7 @@ void silc_client_packet_send_to_channel(SilcClient client,
     silc_hash_make(client->md5hash, channel->iv, 16, channel->iv);
 
   /* Encode the channel payload */
-  payload = silc_channel_encode_payload(strlen(conn->nickname), conn->nickname,
-					data_len, data, 16, channel->iv, 
+  payload = silc_channel_payload_encode(data_len, data, 16, channel->iv, 
 					client->rng);
   if (!payload) {
     client->ops->say(client, conn, 
@@ -1256,16 +1255,105 @@ void silc_client_notify_by_server(SilcClient client,
 				  SilcSocketConnection sock,
 				  SilcBuffer message)
 {
-  char *msg;
+  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
+  SilcNotifyPayload payload;
   SilcNotifyType type;
+  SilcArgumentPayload args;
 
-  SILC_GET16_MSB(type, message->data);
-  silc_buffer_pull(message, 2);
+  payload = silc_notify_payload_parse(message);
+  type = silc_notify_get_type(payload);
+  args = silc_notify_get_args(payload);
 
-  msg = silc_calloc(message->len + 1, sizeof(char));
-  memcpy(msg, message->data, message->len);
-  client->ops->notify(client, sock->user_data, type, msg);
-  silc_free(msg);
+  switch(type) {
+  case SILC_NOTIFY_TYPE_NONE:
+    break;
+  case SILC_NOTIFY_TYPE_INVITE:
+    break;
+  case SILC_NOTIFY_TYPE_JOIN:
+    {
+      SilcClientID *client_id;
+      SilcChannelID *channel_id;
+      SilcClientEntry new_client;
+      SilcChannelEntry channel;
+      SilcIDPayload idp;
+      SilcBuffer idp_buf;
+      SilcIDCacheEntry id_cache = NULL;
+      unsigned char *tmp;
+      unsigned int tmp_len;
+
+      /* Get client ID (it's in ID payload) */
+      tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+      idp_buf = silc_buffer_alloc(tmp_len);
+      silc_buffer_pull_tail(idp_buf, SILC_BUFFER_END(idp_buf));
+      silc_buffer_put(idp_buf, tmp, tmp_len);
+
+      /* Parse ID payload and get the ID */
+      idp = silc_id_payload_parse(idp_buf);
+      client_id = silc_id_payload_get_id(idp);
+
+      silc_id_payload_free(idp);
+      silc_buffer_free(idp_buf);
+      
+      /* If it's my ID, ignore */
+      if (!SILC_ID_CLIENT_COMPARE(client_id, conn->local_id))
+	break;
+
+      /* Check if we have that ID already */
+      if (silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
+				      SILC_ID_CLIENT, NULL))
+	break;
+
+      /* Add client to cache */
+      new_client = silc_calloc(1, sizeof(*new_client));
+      new_client->id = client_id;
+      new_client->nickname = 
+	strdup(silc_argument_get_arg_type(args, 2, NULL));
+      silc_idcache_add(conn->client_cache, new_client->nickname, 
+		       SILC_ID_CLIENT, client_id, (void *)new_client, TRUE);
+
+      /* Get Channel ID (it's in ID payload) */
+      tmp = silc_argument_get_arg_type(args, 5, &tmp_len);
+      idp_buf = silc_buffer_alloc(tmp_len);
+      silc_buffer_pull_tail(idp_buf, SILC_BUFFER_END(idp_buf));
+      silc_buffer_put(idp_buf, tmp, tmp_len);
+
+      /* Parse ID payload and get the ID */
+      idp = silc_id_payload_parse(idp_buf);
+      channel_id = silc_id_payload_get_id(idp);
+
+      silc_id_payload_free(idp);
+      silc_buffer_free(idp_buf);
+
+      /* Find channel entry */
+      if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				       SILC_ID_CHANNEL, &id_cache))
+	break;
+
+      channel = (SilcChannelEntry)id_cache->context;
+
+      /* Add client to channel */
+      channel->clients = silc_realloc(channel->clients, 
+				      sizeof(*channel->clients) * 
+				      (channel->clients_count + 1));
+      channel->clients[channel->clients_count] = new_client;
+      channel->clients_count++;
+
+      /* XXX add support for multiple same nicks on same channel. Check
+	 for them here */
+    }
+    break;
+  case SILC_NOTIFY_TYPE_LEAVE:
+    break;
+  case SILC_NOTIFY_TYPE_SIGNOFF:
+    break;
+  case SILC_NOTIFY_TYPE_TOPIC_SET:
+    break;
+  default:
+    break;
+  }
+
+  client->ops->notify(client, conn, payload);
+  silc_notify_payload_free(payload);
 }
 
 /* Processes the received new Client ID from server. Old Client ID is
@@ -1347,13 +1435,13 @@ void silc_client_receive_channel_key(SilcClient client,
 
   SILC_LOG_DEBUG(("Received key for channel"));
   
-  payload = silc_channel_key_parse_payload(packet);
+  payload = silc_channel_key_payload_parse(packet);
   if (!payload)
     return;
 
   id_string = silc_channel_key_get_id(payload, NULL);
   if (!id_string) {
-    silc_channel_key_free_payload(payload);
+    silc_channel_key_payload_free(payload);
     return;
   }
   id = silc_id_str2id(id_string, SILC_ID_CHANNEL);
@@ -1386,7 +1474,7 @@ void silc_client_receive_channel_key(SilcClient client,
 
  out:
   silc_free(id);
-  silc_channel_key_free_payload(payload);
+  silc_channel_key_payload_free(payload);
 }
 
 /* Process received message to a channel (or from a channel, really). This
@@ -1430,14 +1518,12 @@ void silc_client_channel_message(SilcClient client,
   silc_buffer_pull_tail(buffer, 16);
 
   /* Parse the channel message payload */
-  payload = silc_channel_parse_payload(buffer);
+  payload = silc_channel_payload_parse(buffer);
   if (!payload)
     goto out;
 
-  nickname = silc_channel_get_nickname(payload, NULL);
-  if (!nickname)
-    goto out;
-  
+  /* Find nickname */
+  nickname = "[unknown]";
   for (i = 0; i < channel->clients_count; i++) {
     if (channel->clients[i] && 
 	!SILC_ID_CLIENT_COMPARE(channel->clients[i]->id, client_id))
@@ -1461,7 +1547,7 @@ void silc_client_channel_message(SilcClient client,
   if (client_id)
     silc_free(client_id);
   if (payload)
-    silc_channel_free_payload(payload);
+    silc_channel_payload_free(payload);
 }
 
 /* Private message received. This processes the private message and

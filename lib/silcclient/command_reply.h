@@ -35,6 +35,7 @@ typedef struct {
   SilcClient client;
   SilcSocketConnection sock;
   SilcCommandPayload payload;
+  SilcArgumentPayload args;
   SilcPacketContext *packet;
 
   /* If defined this executes the pending command. */

@@ -38,7 +38,7 @@ typedef struct {
   void (*private_message)(SilcClient client, SilcClientConnection conn,
 			  char *sender, char *msg);
   void (*notify)(SilcClient client, SilcClientConnection conn, 
-		 SilcNotifyType type, char *msg);
+		 SilcNotifyPayload notify_payload);
   void (*command)(SilcClient client, SilcClientConnection conn, 
 		  SilcClientCommandContext cmd_context, int success,
 		  SilcCommand command);
@@ -83,10 +83,14 @@ typedef struct {
 
 
    void (*notify)(SilcClient client, SilcClientConnection conn, 
-		  SilcNotifyType type, char *msg);
+		  SilcNotifyPayload notify_payload);
 
-   Notify message to the client.  The `type' is the notify type received
-   from server.  The `msg' is a human readable message sent by the server.
+   Notify message to the client.  The `notify_payload' is the Notify
+   Payload received from server.  Client library may parse it to cache
+   some data received from the payload but it is the application's 
+   responsiblity to retrieve the message and arguments from the payload.
+   The message in the payload sent by server is implementation specific
+   thus it is recommended that application will generate its own message.
 
 
    void (*command)(SilcClient client, SilcClientConnection conn, 
