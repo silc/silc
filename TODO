@@ -14,6 +14,8 @@ TODO/bugs In SILC Client Library
    set the key only if application wishes to set (accept the key) it
    (Do this to 1.0).
 
+ o Remove conn->current_channel.
+
  o Additions to do after protocol version 1.1:
 
 	o Add support for list of errors in command replies.  Protocol
