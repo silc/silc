@@ -357,7 +357,7 @@ void session_init(void)
         session_file = NULL;
 	args_register(options);
 
-	command_bind("upgrade", NULL, (SIGNAL_FUNC) cmd_upgrade);
+	/*command_bind("upgrade", NULL, (SIGNAL_FUNC) cmd_upgrade);*/
 
 	signal_add("session save", (SIGNAL_FUNC) sig_session_save);
 	signal_add("session restore", (SIGNAL_FUNC) sig_session_restore);
@@ -372,7 +372,7 @@ void session_deinit(void)
 {
 	g_free_not_null(irssi_binary);
 
-        command_unbind("upgrade", (SIGNAL_FUNC) cmd_upgrade);
+        /*command_unbind("upgrade", (SIGNAL_FUNC) cmd_upgrade);*/
 
 	signal_remove("session save", (SIGNAL_FUNC) sig_session_save);
 	signal_remove("session restore", (SIGNAL_FUNC) sig_session_restore);

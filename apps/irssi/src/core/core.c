@@ -155,8 +155,8 @@ static void sig_init_finished(void)
 void core_init_paths(int argc, char *argv[])
 {
 	static struct poptOption options[] = {
-		{ "config", 0, POPT_ARG_STRING, NULL, 0, "Configuration file location (~/.irssi/config)", "PATH" },
-		{ "home", 0, POPT_ARG_STRING, NULL, 0, "Irssi home dir location (~/.irssi)", "PATH" },
+		{ "config", 0, POPT_ARG_STRING, NULL, 0, "Configuration file location (~/.silc/config)", "PATH" },
+		{ "home", 0, POPT_ARG_STRING, NULL, 0, "Irssi home dir location (~/.silc)", "PATH" },
 		{ NULL, '\0', 0, NULL }
 	};
 	const char *home;
