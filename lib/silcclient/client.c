@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -970,6 +970,7 @@ void silc_client_packet_send_to_channel(SilcClient client,
   SilcCipher cipher;
   SilcHmac hmac;
   unsigned char *id_string;
+  unsigned int block_len;
 
   SILC_LOG_DEBUG(("Sending packet to channel"));
 
@@ -980,14 +981,15 @@ void silc_client_packet_send_to_channel(SilcClient client,
   }
 
   /* Generate IV */
+  block_len = silc_cipher_get_block_len(channel->channel_key);
   if (channel->iv[0] == '\0')
-    for (i = 0; i < 16; i++) channel->iv[i] = silc_rng_get_byte(client->rng);
+    for (i = 0; i < block_len; i++) channel->iv[i] = silc_rng_get_byte(client->rng);
   else
-    silc_hash_make(client->md5hash, channel->iv, 16, channel->iv);
+    silc_hash_make(client->md5hash, channel->iv, block_len, channel->iv);
 
   /* Encode the channel payload */
-  payload = silc_channel_payload_encode(data_len, data, 16, channel->iv, 
-					client->rng);
+  payload = silc_channel_payload_encode(data_len, data, block_len, 
+					channel->iv, client->rng);
   if (!payload) {
     client->ops->say(client, conn, 
 		     "Error: Could not create packet to be sent to channel");
@@ -1028,13 +1030,10 @@ void silc_client_packet_send_to_channel(SilcClient client,
 
   packetdata.buffer = sock->outbuf;
 
-  SILC_LOG_HEXDUMP(("IV"), channel->iv, 16);
-  SILC_LOG_HEXDUMP(("channel key"), channel->key, channel->key_len/8);
-
   /* Encrypt payload of the packet. This is encrypted with the channel key. */
   channel->channel_key->cipher->encrypt(channel->channel_key->context,
 					payload->data, payload->data,
-					payload->len - 16, /* -IV_LEN */
+					payload->len - block_len, /* -IV_LEN */
 					channel->iv);
 
   /* Put the actual encrypted payload data into the buffer. */
@@ -2069,6 +2068,7 @@ void silc_client_channel_message(SilcClient client,
   SilcIDCacheEntry id_cache = NULL;
   SilcClientID *client_id = NULL;
   int found = FALSE;
+  unsigned int block_len;
 
   /* Sanity checks */
   if (packet->dst_id_type != SILC_ID_CHANNEL)
@@ -2089,20 +2089,14 @@ void silc_client_channel_message(SilcClient client,
 
   channel = (SilcChannelEntry)id_cache->context;
 
-  SILC_LOG_HEXDUMP(("channel key"), channel->key, channel->key_len);
-
   /* Decrypt the channel message payload. Push the IV out of the way,
      since it is not encrypted (after pushing buffer->tail has the IV). */
-  SILC_LOG_HEXDUMP(("Packet"), buffer->data, buffer->len);
-  silc_buffer_push_tail(buffer, channel->channel_key->cipher->block_len);
-  SILC_LOG_HEXDUMP(("Packet"), buffer->data, buffer->len);
-  SILC_LOG_HEXDUMP(("IV"), buffer->tail, 16);
+  block_len = silc_cipher_get_block_len(channel->channel_key);
+  silc_buffer_push_tail(buffer, block_len);
   channel->channel_key->cipher->decrypt(channel->channel_key->context,
 					buffer->data, buffer->data,
 					buffer->len, buffer->tail);
-  SILC_LOG_HEXDUMP(("Packet"), buffer->data, buffer->len);
-  silc_buffer_pull_tail(buffer, channel->channel_key->cipher->block_len);
-  SILC_LOG_HEXDUMP(("Packet"), buffer->data, buffer->len);
+  silc_buffer_pull_tail(buffer, block_len);
 
   /* Parse the channel message payload */
   payload = silc_channel_payload_parse(buffer);

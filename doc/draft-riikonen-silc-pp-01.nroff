@@ -195,7 +195,7 @@ the packet type, origin of the packet and the destination of the packet.
 The header is variable in length and first two (2) bytes of the
 header (thus first two bytes of the packet) are not encrypted.  The
 first two (2) bytes are the length of the packet which is not encrypted.
-See following section for description of SILC Packet header.  Packets
+See The following section for description of SILC Packet header.  Packets
 without SILC header or with malformed SILC header must be dropped.
 
 Padding follows the packet header.  The purpose of the padding is to
@@ -228,7 +228,7 @@ detailed information about the packet.  The receiver of the packet uses
 the packet header to parse the packet and gain other relevant parameters
 of the packet.
 
-Following diagram represents the default SILC header format.
+The following diagram represents the default SILC header format.
 (*) indicates that this field is never encrypted.  Other fields are
 always encrypted.
 
@@ -269,7 +269,7 @@ o Flags (1 byte) - Indicates flags to be used in packet
   processing.  Several flags may be set by ORing the flags
   together.
 
-  Following flags are reserved for this field:
+  The following flags are reserved for this field:
 
 
      No flags                  0x00
@@ -766,7 +766,7 @@ packet payloads.
 This payload can be used to send an ID.  ID's are variable length thus
 this payload provides a way to send variable length ID's.
 
-Following diagram represents the ID Payload.
+The following diagram represents the ID Payload.
 
 .in 5
 .nf
@@ -804,7 +804,7 @@ needs and supports arguments, such as commands.  Number of arguments
 associated with a packet must be indicated by the packet payload who
 needs the arguments. Argument Payloads must always reside right after
 the packet payload needing the arguments.  Incorrect amount of argument
-payloads must cause rejection of the packet.  Following diagram represents
+payloads must cause rejection of the packet.  The following diagram represents
 the Argument Payload.
 
 
@@ -849,7 +849,7 @@ Disconnect payload is sent upon disconnection.  The payload is simple;
 reason of disconnection is sent to the disconnected party.
 
 The payload may only be sent with SILC_PACKET_DISCONNECT packet.  It
-must not be sent in any other packet type.  Following diagram represents
+must not be sent in any other packet type.  The following diagram represents
 the Disconnect Payload.
 
 
@@ -992,7 +992,7 @@ not send this payload.  The receiver of this payload may totally ignore the
 contents of the payload, however, notify message should be audited.
 
 The payload may only be sent with SILC_PACKET_NOTIFY packet.  It must
-not be sent in any other packet type.  Following diagram represents the
+not be sent in any other packet type.  The following diagram represents the
 Notify Payload.
 
 .in 5
@@ -1022,7 +1022,7 @@ o Argument Nums (2 bytes) - Indicates the number of Argument
   arguments to be send along the notify message.
 .in 3
 
-Following list of currently defined notify types.  The format for notify
+The following list of currently defined notify types.  The format for notify
 arguments is same as in SILC commands described in [SILC1].  Also, all
 ID's sent in arguments are sent inside ID Payload.
 
@@ -1271,7 +1271,7 @@ the source ID from the header which tells the client who sent
 the message.
 
 The payload may only be sent with SILC_PACKET_CHANNEL_MESSAGE packet.
-It  must not be sent in any other packet type.  Following diagram 
+It  must not be sent in any other packet type.  The following diagram 
 represents the Channel Message Payload.
 
 (*) indicates that the field is not encrypted.
@@ -1360,7 +1360,7 @@ Channel key should expire periodically, say, in one hour, in
 which case new channel key is created and distributed.
 
 The payload may only be sent with SILC_PACKET_CHANNEL_KEY packet.
-It must not be sent in any other packet type.  Following diagram 
+It must not be sent in any other packet type.  The following diagram 
 represents the Channel Key Payload.
 
 
@@ -1457,7 +1457,7 @@ packet.  Section 4.8.2 Client To Client in [SILC1] gives example of
 this scheme as well.
 
 The payload may only be sent with SILC_PACKET_PRIVATE_MESSAGE 
-packet.  It must not be sent in any other packet type.  Following 
+packet.  It must not be sent in any other packet type.  The following 
 diagram represents the Private Message Payload.
 
 
@@ -1515,7 +1515,7 @@ the sender of private messages must set the Private Message Key
 flag into SILC Packet Header.
 
 The payload may only be sent with SILC_PACKET_PRIVATE_MESSAGE_KEY 
-packet.  It must not be sent in any other packet type.  Following 
+packet.  It must not be sent in any other packet type.  The following 
 diagram represents the Private Message Key Payload.
 
 
@@ -1553,7 +1553,7 @@ o Private Message Key (variable length) - The actual private
 2.3.13 Command Payload
 
 Command Payload is used to send SILC commands from client to server.
-Also server may send commands to other servers.  Following diagram
+Also server may send commands to other servers.  The following diagram
 represents the Command Payload.
 
 
@@ -1637,7 +1637,7 @@ established by the SILC Key Exchange protocol.  See section Key
 Exchange Start Payload in [SILC3] for detailed information.
 
 The payload may only be sent with SILC_PACKET_CONNECTION_AUTH_REQUEST
-packet.  It must not be sent in any other packet type.  Following 
+packet.  It must not be sent in any other packet type.  The following 
 diagram represents the Connection Auth Request Payload.
 
 
@@ -1656,7 +1656,7 @@ Figure 16:  Connection Auth Request Payload
 
 .in 6
 o Connection Type (2 bytes) - Indicates the type of the ID.
-  Following connection types are defined:
+  The following connection types are defined:
 
      1    Client connection
      2    Server connection
@@ -1666,7 +1666,7 @@ o Connection Type (2 bytes) - Indicates the type of the ID.
   discarded and the authentication must be failed.
 
 o Authentication Method (2 bytes) - Indicates the authentication
-  method to be used in the authentication protocol.  Following
+  method to be used in the authentication protocol.  The following
   authentication methods are defined:
 
 
@@ -1744,7 +1744,7 @@ set the real nickname of the user which is then used to create new
 client ID.
 
 The payload may only be sent with SILC_PACKET_NEW_CLIENT packet.  It
-must not be sent in any other packet type.  Following diagram represents
+must not be sent in any other packet type.  The following diagram represents
 the New Client Payload.
 
 
@@ -1797,7 +1797,7 @@ of the server that it has created by itself.  It also includes a
 name of the server that is associated to the Server ID.
 
 The payload may only be sent with SILC_PACKET_NEW_SERVER packet.  It
-must not be sent in any other packet type.  Following diagram represents
+must not be sent in any other packet type.  The following diagram represents
 the New Server Payload.
 
 
@@ -1853,7 +1853,7 @@ then processes the command and creates the channel.  Client never sends
 this packet.
 
 The payload may only be sent with SILC_PACKET_NEW_CHANNEL packet.
-It must not be sent in any other packet type.  Following diagram
+It must not be sent in any other packet type.  The following diagram
 represents the New Channel Payload.
 
 
@@ -1899,7 +1899,7 @@ o Channel ID (variable length) - The created Channel ID.
 2.4 SILC ID Types
 
 ID's are extensively used in the SILC network to associate different
-entities.  Following ID's has been defined to be used in the SILC
+entities.  The following ID's has been defined to be used in the SILC
 network.
 
 .in 6
@@ -1953,7 +1953,7 @@ of the packet must first decrypt the SILC Packet header, or some parts
 of it, usually first 16 bytes of it.  Then the receiver checks the
 packet type from the decrypted part of the header and can determine
 how the rest of the packet must be decrypted.  If the packet type is
-any of the special cases described in following sections the packet
+any of the special cases described in The following sections the packet
 decryption is special.  If the packet type is not among those special
 packet types rest of the packet may be decrypted with the same key.
 
