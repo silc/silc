@@ -155,7 +155,7 @@ SilcVCard silc_vcard_alloc(void);
  *
  * SYNOPSIS
  *
- *    void silc_vcard_free(SilcVcard vcard);
+ *    void silc_vcard_free(SilcVCard vcard);
  *
  * DESCRIPTION
  *
