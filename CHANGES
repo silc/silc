@@ -1,3 +1,8 @@
+Tue Jan  7 21:58:53 CET 2003  Jochen Eisinger <c0ffee@penguin-breeder.org>
+
+	* Don't display "foo appears as foo\nYou're now known as foo"
+	  messages.  Affected file irssi/src/silc/core/client_ops.c
+
 Tue Jan  7 20:08:15 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed error handling of invalid client entry when calling
