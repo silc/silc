@@ -2578,7 +2578,7 @@ List of all defined commands in SILC follows.
               the key before hand (it is considered to be pre-shared-
               key).  This specification does not define how the private
               channel key is set as it is entirely local setting on
-              client end.
+              the client end.
 
               As it is local setting it is possible to have several
               private channel keys on one channel.  In this case several
@@ -2653,10 +2653,10 @@ List of all defined commands in SILC follows.
               unsetting a ban mask the mask must be provided as
               argument.  Channel founder and channel operator may
               set/unset this mode.  Channel founder may not be
-              added to the ban list.  <ban mask> is comma (`,') separated
-              list of banned clients in following format:
+              added to the ban list.  <ban mask> is an comma (`,')
+              separated list of banned clients in the following format:
 
-                [<nickname>!][<username>]@[<hostname>]
+                [<nickname>[@<server>]!][<username>]@[<hostname>]
 
               Wildcards maybe used when banning clients.
 
@@ -2673,10 +2673,10 @@ List of all defined commands in SILC follows.
               set invite mask.  When unsetting entry from the invite list
               the entry must be provided as argument.  Channel founder and
               channel operator may set/unset this mode.  The <invite list>
-              is command (`,') separated list of invited clients in following
-              format:
+              is command (`,') separated list of invited clients in the
+              following format:
 
-                [<nickname>!][<username>]@[<hostname>]
+                [<nickname>[@<server>]!][<username>]@[<hostname>]
 
               Wildcards maybe used when setting the invite list.
 
@@ -2703,9 +2703,9 @@ List of all defined commands in SILC follows.
         mask locally so that the mode setting and unsetting would work
         without problems.  The client receives the initial channel mode
         mask when it joins to the channel.  When the mode changes on
-        channel the server distributes the changed channel mode mask to
-        all clients on the channel by sending SILC_COMMAND_CMODE command
-        reply packet.
+        channel the servers distributes the changed channel mode mask to
+        all clients on the channel by sending SILC_NOTIFY_TYPE_CMODE_CHANGE
+        notify type.
 
 
         Reply messages to the command:
