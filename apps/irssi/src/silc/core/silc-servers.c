@@ -315,7 +315,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 
 /* SYNTAX: BAN <channel> [+|-[<nickname>[@<server>[!<username>[@hostname>]]]]] */
 /* SYNTAX: CMODE <channel> +|-<modes> [{ <arguments>}] */
-/* SYNTAX: CUMODE <channel> +|-<modes> <nickname>[@<hostname>] [-pubkey|<passwd>] */
+/* SYNTAX: CUMODE <channel> +|-<modes> <nickname>[@<hostname>] */
 /* SYNTAX: GETKEY <nickname or server name> */
 /* SYNTAX: INVITE <channel> [<nickname>[@hostname>] */
 /* SYNTAX: INVITE <channel> [+|-[<nickname>[@<server>[!<username>[@hostname>]]]]] */
