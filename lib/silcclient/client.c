@@ -194,6 +194,8 @@ silc_client_add_connection(SilcClient client,
   SilcClientConnection conn;
   int i;
 
+  SILC_LOG_DEBUG(("Adding new connection to %s:%d", hostname, port));
+
   conn = silc_calloc(1, sizeof(*conn));
 
   /* Initialize ID caches */
@@ -236,6 +238,9 @@ silc_client_add_connection(SilcClient client,
 void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
 {
   int i;
+
+  SILC_LOG_DEBUG(("Deleting connection %s%d", conn->remote_host,
+		  conn->remote_port));
 
   for (i = 0; i < client->internal->conns_count; i++)
     if (client->internal->conns[i] == conn) {

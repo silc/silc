@@ -833,7 +833,7 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
 {
   SILC_SERVER_REC *server = conn->context;
 
-  if (!server) {
+  if (!server || server->disconnected) {
     silc_client_close_connection(client, conn);
     return;
   }

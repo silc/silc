@@ -1,3 +1,9 @@
+Wed Jun 19 16:01:51 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed a bug in Irssi SILC client to close the connection
+	  properly when disconnecting from server.  Affected file
+	  irssi/src/silc/core/client_ops.c.
+
 Tue Jun 18 17:14:52 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* When authenticating as founder during JOIN command, check

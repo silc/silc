@@ -150,7 +150,7 @@ static bool i_debug;
 static bool silc_irssi_debug_print(char *file, char *function, int line,
 				   char *message, void *context)
 {
-  printtext(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
+  printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP,
 	    "DEBUG: %s:%d: %s", function, line, message);
   return TRUE;
 }
@@ -175,7 +175,9 @@ static void sig_debug_setup_changed(void)
 
 static bool silc_log_misc(SilcLogType type, char *message, void *context)
 {
-  printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP, "%s", message);
+  printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP, "%s: %s", 
+	    (type == SILC_LOG_INFO ? "[Info]" :
+	     type == SILC_LOG_WARNING ? "[Warning]" : "[Error]"), message);
   return TRUE;
 }
 
@@ -293,10 +295,6 @@ void silc_opt_callback(poptContext con,
     silc_debug = TRUE;
     silc_debug_hexdump = TRUE;
     silc_log_set_debug_string(arg);
-    silc_log_set_callback(SILC_LOG_INFO, silc_log_misc, NULL);
-    silc_log_set_callback(SILC_LOG_WARNING, silc_log_misc, NULL);
-    silc_log_set_callback(SILC_LOG_ERROR, silc_log_misc, NULL);
-    silc_log_set_callback(SILC_LOG_FATAL, silc_log_misc, NULL);
 #ifndef SILC_DEBUG
     fprintf(stdout, 
 	    "Run-time debugging is not enabled. To enable it recompile\n"
@@ -423,6 +421,11 @@ void silc_core_init(void)
     idletag = -1;
     return;
   }
+
+  silc_log_set_callback(SILC_LOG_INFO, silc_log_misc, NULL);
+  silc_log_set_callback(SILC_LOG_WARNING, silc_log_misc, NULL);
+  silc_log_set_callback(SILC_LOG_ERROR, silc_log_misc, NULL);
+  silc_log_set_callback(SILC_LOG_FATAL, silc_log_misc, NULL);
 
   /* Register SILC to the irssi */
   rec = g_new0(CHAT_PROTOCOL_REC, 1);
