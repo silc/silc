@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2000/07/17 11:47:30  priikone
+ * 	Added command lagging support. Added idle counting support.
+ *
  * Revision 1.5  2000/07/12 05:59:41  priikone
  * 	Major rewrite of ID Cache system. Support added for the new
  * 	ID cache system. Major rewrite of ID List stuff on server.  All
@@ -162,10 +165,6 @@ void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
       silc_pkcs_public_key_free(entry->public_key);
     if (entry->hmac)
       silc_hmac_free(entry->hmac);
-    if (entry->hmac_key) {
-      memset(entry->hmac_key, 0, entry->hmac_key_len);
-      silc_free(entry->hmac_key);
-    }
   }
 }
 

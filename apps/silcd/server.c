@@ -25,6 +25,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.10  2000/07/17 11:47:30  priikone
+ * 	Added command lagging support. Added idle counting support.
+ *
  * Revision 1.9  2000/07/14 06:15:47  priikone
  * 	Moved all the generic packet sending, encryption, reception,
  * 	decryption and processing functions to library as they were
@@ -961,9 +964,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	break;
       }
 
-      client->hmac_key = conn_data->hmac_key;
-      client->hmac_key_len = conn_data->hmac_key_len;
-      
       /* Free the temporary connection data context from key exchange */
       silc_free(conn_data);
 
@@ -1157,6 +1157,8 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 	if (!clnt)
 	  break;
 
+	clnt->last_receive = time(NULL);
+
 	cipher = clnt->receive_key;
 	hmac = clnt->hmac;
 	break;
@@ -1167,6 +1169,8 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 	SilcServerEntry srvr = (SilcServerEntry)sock->user_data;
 	if (!srvr)
 	  break;
+
+	srvr->last_receive = time(NULL);
 
 	cipher = srvr->receive_key;
 	hmac = srvr->hmac;

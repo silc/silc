@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.10  2000/07/17 11:47:30  priikone
+ * 	Added command lagging support. Added idle counting support.
+ *
  * Revision 1.9  2000/07/12 05:59:41  priikone
  * 	Major rewrite of ID Cache system. Support added for the new
  * 	ID cache system. Major rewrite of ID List stuff on server.  All
@@ -157,6 +160,24 @@ void silc_server_command_process(SilcServer server,
 {
   SilcServerCommandContext ctx;
   SilcServerCommand *cmd;
+
+  /* Check whether it is allowed for this connection to execute any
+     command. */
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT) {
+    time_t curtime;
+    SilcClientEntry client = (SilcClientEntry)sock->user_data;
+
+    if (!client)
+      goto out;
+
+    /* Allow only one command executed in 2 seconds. */
+    curtime = time(NULL);
+    if (client->last_command && (curtime - client->last_command) < 2)
+      goto out;
+
+    /* Update access time */
+    client->last_command = curtime;
+  }
   
   /* Allocate command context. This must be free'd by the
      command routine receiving it. */
@@ -195,6 +216,7 @@ void silc_server_command_process(SilcServer server,
     return;
   }
 
+ out:
   silc_buffer_free(packet->buffer);
 }
 
@@ -409,6 +431,7 @@ SILC_SERVER_CMD_FUNC(whois)
   /* XXX */
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
     char nh[256], uh[256];
+    unsigned char idle[4];
     SilcSocketConnection hsock;
 
     memset(uh, 0, sizeof(uh));
@@ -427,23 +450,27 @@ SILC_SERVER_CMD_FUNC(whois)
     len = hsock->hostname ? strlen(hsock->hostname) : strlen(hsock->ip);
     strncat(uh, hsock->hostname ? hsock->hostname : hsock->ip, len);
 
+    SILC_PUT32_MSB((time(NULL) - entry->last_receive), idle);
+
     /* XXX */
     if (entry->userinfo)
+      packet = 
+        silc_command_encode_reply_payload_va(SILC_COMMAND_WHOIS,
+					     SILC_STATUS_OK, 5, 
+					     2, id_string, SILC_ID_CLIENT_LEN,
+					     3, nh, strlen(nh),
+					     4, uh, strlen(uh),
+					     5, entry->userinfo, 
+					     strlen(entry->userinfo),
+					     7, idle, 4);
+    else
       packet = 
         silc_command_encode_reply_payload_va(SILC_COMMAND_WHOIS,
 					     SILC_STATUS_OK, 4, 
 					     2, id_string, SILC_ID_CLIENT_LEN,
 					     3, nh, strlen(nh),
 					     4, uh, strlen(uh),
-					     5, entry->userinfo, 
-					     strlen(entry->userinfo));
-    else
-      packet = 
-        silc_command_encode_reply_payload_va(SILC_COMMAND_WHOIS,
-					     SILC_STATUS_OK, 3, 
-					     2, id_string, SILC_ID_CLIENT_LEN,
-					     3, nh, strlen(nh),
-					     4, uh, strlen(uh));
+					     7, idle, 4);
 
   } else {
     /* XXX */

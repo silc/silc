@@ -61,6 +61,10 @@ typedef struct SilcChannelEntryStruct *SilcChannelEntry;
        the server SILC will ever need. These are also the informations
        that is broadcasted between servers and routers in the SILC network.
 
+   long last_receive
+
+       Time when data was received from the server last time.
+
    SilcServerEntry router
 
        This is a pointer back to the server list. This is the router server 
@@ -68,8 +72,9 @@ typedef struct SilcChannelEntryStruct *SilcChannelEntry;
        it doesn't have a route this is NULL.
 
    SilcCipher send_key
-   
    SilcCipher receive_key
+
+       Data sending and receiving keys.
 
    void *connection
 
@@ -83,6 +88,7 @@ struct SilcServerEntryStruct {
   char *server_name;
   int server_type;
   SilcServerID *id;
+  long last_receive;
 
   /* TRUE when server is registered to server */
   int registered;
@@ -165,6 +171,23 @@ struct SilcServerEntryStruct {
        Client's mode.  Client maybe for example server operator or
        router operator (SILC operator).
 
+   long last_receive
+
+       Time of last time data was received from the client. This is
+       result of normal time().
+
+   long last_command
+
+       Time of last time client executed command. We are strict and will
+       not allow any command to be exeucted more than once in about
+       2 seconds. This is result of normal time().
+
+   int registered
+
+       Boolean value to indicate whether this client has registered itself
+       to the server. After KE and authentication protocols has been
+       successfully completed will client become registered.
+
    SilcServerEntry router
 
        This is a pointer to the server list. This is the router server whose 
@@ -181,8 +204,6 @@ struct SilcServerEntryStruct {
        PKCS of the client. This maybe NULL.
 
    SilcHmac hmac
-   unsigned char *hmac_key
-   unsigned int hmac_key_len
 
        MAC key used to compute MAC's for packets. 
 
@@ -201,6 +222,10 @@ struct SilcClientEntryStruct {
   SilcClientID *id;
   int mode;
 
+  /* Time of last accesses of the client */
+  long last_receive;
+  long last_command;
+
   /* TRUE when client is registered to server */
   int registered;
 
@@ -217,8 +242,6 @@ struct SilcClientEntryStruct {
   SilcPKCS pkcs;
   SilcHmac hmac;
   SilcPublicKey public_key;
-  unsigned char *hmac_key;
-  unsigned int hmac_key_len;
 
   /* Connection data */
   void *connection;
