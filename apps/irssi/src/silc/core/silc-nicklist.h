@@ -5,9 +5,8 @@
 
 typedef struct {
 #include "nick-rec.h"
-	SilcChannelUser silc_user;
-
-	unsigned int founder:1;
+  SilcChannelUser silc_user;
+  unsigned int founder:1;
 } SILC_NICK_REC;
 
 SILC_NICK_REC *silc_nicklist_insert(SILC_CHANNEL_REC *channel,
