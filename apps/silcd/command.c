@@ -2570,7 +2570,7 @@ SILC_SERVER_CMD_FUNC(cmode)
     return;
   }
 
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_CMODE, cmd, 1, 7);
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_CMODE, cmd, 1, 8);
 
   /* Get Channel ID */
   tmp_id = silc_argument_get_arg_type(cmd->args, 1, &tmp_len2);
@@ -2859,45 +2859,59 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   if (mode_mask & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
     if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
-      if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)) {
-	/* Set the founder authentication */
-	tmp = silc_argument_get_arg_type(cmd->args, 7, &tmp_len);
-	if (!tmp) {
-	  silc_server_command_send_status_reply(
+      /* Check if the founder public key was received */
+      founder_key = idata->public_key;
+      tmp = silc_argument_get_arg_type(cmd->args, 8, &tmp_len);
+      if (tmp) {
+	if (!silc_pkcs_public_key_payload_decode(tmp, tmp_len, &founder_key)) {
+	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+						SILC_STATUS_ERR_AUTH_FAILED,
+						0);
+	  goto out;
+	}
+      }
+
+      /* Set the founder authentication */
+      tmp = silc_argument_get_arg_type(cmd->args, 7, &tmp_len);
+      if (!tmp) {
+	silc_server_command_send_status_reply(
 				     cmd, SILC_COMMAND_CMODE,
 				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
-	  goto out;
-	}
+	goto out;
+      }
 
-	/* Verify the payload before setting the mode */
-	if (!silc_auth_verify_data(tmp, tmp_len, SILC_AUTH_PUBLIC_KEY, 
-				   idata->public_key, 0, server->sha1hash,
-				   client->id, SILC_ID_CLIENT)) {
-	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-						SILC_STATUS_ERR_AUTH_FAILED,
-						0);
-	  goto out;
-	}
+      /* Verify the payload before setting the mode */
+      if (!silc_auth_verify_data(tmp, tmp_len, SILC_AUTH_PUBLIC_KEY, 
+				 founder_key, 0, server->sha1hash,
+				 client->id, SILC_ID_CLIENT)) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+					      SILC_STATUS_ERR_AUTH_FAILED,
+					      0);
+	goto out;
+      }
 
-	/* Save the public key */
-	channel->founder_key = silc_pkcs_public_key_copy(idata->public_key);
-        if (!channel->founder_key) {
-	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-						SILC_STATUS_ERR_AUTH_FAILED,
-						0);
-	  goto out;
-        }
+      /* Save the public key */
+      if (channel->founder_key)
+	silc_pkcs_public_key_free(channel->founder_key);
+      if (silc_argument_get_arg_type(cmd->args, 8, NULL))
+	channel->founder_key = founder_key;
+      else
+	channel->founder_key = silc_pkcs_public_key_copy(founder_key);
+      if (!channel->founder_key) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+					      SILC_STATUS_ERR_AUTH_FAILED,
+					      0);
+	goto out;
+      }
 
-	founder_key = channel->founder_key;
-	fkey = silc_pkcs_public_key_payload_encode(founder_key);
-        if (!fkey) {
-	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
-						SILC_STATUS_ERR_AUTH_FAILED,
-						0);
-	  silc_pkcs_public_key_free(channel->founder_key);
-	  channel->founder_key = NULL;
-	  goto out;
-        }
+      fkey = silc_pkcs_public_key_payload_encode(channel->founder_key);
+      if (!fkey) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
+					      SILC_STATUS_ERR_AUTH_FAILED,
+					      0);
+	silc_pkcs_public_key_free(channel->founder_key);
+	channel->founder_key = NULL;
+	goto out;
       }
     }
   } else {
@@ -2934,9 +2948,11 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CMODE,
-						SILC_STATUS_OK, 0, ident, 2,
+						SILC_STATUS_OK, 0, ident, 3,
 						2, tmp_id, tmp_len2,
-						3, tmp_mask, 4);
+						3, tmp_mask, 4,
+						4, fkey ? fkey->data : NULL,
+						fkey ? fkey->len : 0);
   silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0, 
 			  packet->data, packet->len, FALSE);
 

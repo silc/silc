@@ -109,6 +109,11 @@ static void sig_server_quit(SILC_SERVER_REC *server, const char *msg)
     silc_command_exec(server, "QUIT", msg);
 }
 
+static void sig_gui_quit(SILC_SERVER_REC *server, const char *msg)
+{
+  silc_client_stop(silc_client);
+}
+
 /* Find Irssi channel entry by SILC channel entry */
 
 SILC_CHANNEL_REC *silc_channel_find_entry(SILC_SERVER_REC *server,
@@ -1001,6 +1006,7 @@ void silc_channels_init(void)
   signal_add("channel destroyed", (SIGNAL_FUNC) sig_channel_destroyed);
   signal_add("server connected", (SIGNAL_FUNC) sig_connected);
   signal_add("server quit", (SIGNAL_FUNC) sig_server_quit);
+  signal_add("gui exit", (SIGNAL_FUNC) sig_gui_quit);
 
   command_bind_silc("part", MODULE_NAME, (SIGNAL_FUNC) command_part);
   command_bind_silc("me", MODULE_NAME, (SIGNAL_FUNC) command_me);
@@ -1018,6 +1024,7 @@ void silc_channels_deinit(void)
   signal_remove("channel destroyed", (SIGNAL_FUNC) sig_channel_destroyed);
   signal_remove("server connected", (SIGNAL_FUNC) sig_connected);
   signal_remove("server quit", (SIGNAL_FUNC) sig_server_quit);
+  signal_remove("gui exit", (SIGNAL_FUNC) sig_gui_quit);
 
   command_unbind("part", (SIGNAL_FUNC) command_part);
   command_unbind("me", (SIGNAL_FUNC) command_me);

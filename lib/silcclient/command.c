@@ -258,6 +258,7 @@ void silc_client_command_free(SilcClientCommandContext ctx)
 
     for (i = 0; i < ctx->argc; i++)
       silc_free(ctx->argv[i]);
+    silc_free(ctx->argv);
     silc_free(ctx->argv_lens);
     silc_free(ctx->argv_types);
     silc_free(ctx);
@@ -1544,13 +1545,13 @@ SILC_CLIENT_CMD_FUNC(cmode)
      that requires an argument. */
   if (type && arg) {
     buffer = 
-      silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 3, 
+      silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 3,
 				     1, chidp->data, chidp->len, 
 				     2, modebuf, sizeof(modebuf),
 				     type, arg, arg_len);
   } else {
     buffer = 
-      silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 2, 
+      silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 2,
 				     1, chidp->data, chidp->len, 
 				     2, modebuf, sizeof(modebuf));
   }

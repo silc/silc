@@ -1237,7 +1237,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
     COMMAND_REPLY_ERROR;
     goto out;
   }
-  
+
   /* Get channel mode */
   tmp = silc_argument_get_arg_type(cmd->args, 3, NULL);
   if (!tmp) {

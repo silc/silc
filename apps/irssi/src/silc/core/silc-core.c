@@ -503,5 +503,9 @@ void silc_core_deinit(void)
   
   g_free(silc_client->username);
   g_free(silc_client->realname);
+  silc_free(silc_client->hostname);
+  silc_pkcs_free(silc_client->pkcs);
+  silc_pkcs_private_key_free(silc_client->private_key);
+  silc_pkcs_public_key_free(silc_client->public_key);
   silc_client_free(silc_client);
 }

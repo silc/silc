@@ -949,6 +949,7 @@ void silc_server_notify(SilcServer server,
 
 	  /* Now match the public key we have cached and public key sent.
 	     They must match. */
+#if 0 /* The key may be other than the client's in 1.2 */
 	  if (client && client->data.public_key && 
 	      !silc_pkcs_public_key_compare(channel->founder_key,
 					    client->data.public_key)) {
@@ -957,6 +958,7 @@ void silc_server_notify(SilcServer server,
 	    notify_sent = TRUE;
 	    break;
 	  }
+#endif
 	  if (!silc_pkcs_public_key_compare(channel->founder_key,
 					    founder_key)) {
 	    chl->mode = mode &= ~SILC_CHANNEL_UMODE_CHANFO;

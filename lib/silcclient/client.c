@@ -88,6 +88,16 @@ void silc_client_free(SilcClient client)
     if (client->rng)
       silc_rng_free(client->rng);
 
+    silc_cipher_unregister_all();
+    silc_pkcs_unregister_all();
+    silc_hash_unregister_all();
+    silc_hmac_unregister_all();
+
+    silc_hash_free(client->md5hash);
+    silc_hash_free(client->sha1hash);
+    silc_hmac_free(client->internal->md5hmac);
+    silc_hmac_free(client->internal->sha1hmac);
+    silc_cipher_free(client->internal->none_cipher);
     silc_free(client->internal->params);
     silc_free(client->internal->silc_client_version);
     silc_free(client->internal);

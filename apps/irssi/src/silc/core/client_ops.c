@@ -1991,8 +1991,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   verify->entity_name = (conn_type != SILC_SOCKET_TYPE_CLIENT ?
 			 (name ? strdup(name) : strdup(conn->sock->hostname))
 			 : NULL);
-  verify->pk = silc_calloc(pk_len, sizeof(*verify->pk));
-  memcpy(verify->pk, pk, pk_len);
+  verify->pk = silc_memdup(pk, pk_len);
   verify->pk_len = pk_len;
   verify->pk_type = pk_type;
   verify->completion = completion;
@@ -2100,6 +2099,11 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     if (completion)
       completion(TRUE, context);
     silc_free(fingerprint);
+    silc_free(verify->filename);
+    silc_free(verify->entity);
+    silc_free(verify->entity_name);
+    silc_free(verify->pk);
+    silc_free(verify);
   }
 }
 
