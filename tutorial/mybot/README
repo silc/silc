@@ -1,0 +1,5 @@
+MyBot
+
+MyBot is little example robot which introduces the basic usage of the SILC 
+Client Library.  It connects to the SILC server silc.silcnet.org and joins 
+channel "mybot" and says "hello" on the channel.
