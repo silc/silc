@@ -33,19 +33,19 @@ typedef struct {
   bool waitable;
 } *SilcWin32Thread;
 
-static DWROD silc_thread_tls;
+static DWORD silc_thread_tls;
 
 /* Actual routine that is called by WIN32 when the thread is created.
    We will call the start_func from here. When this returns the thread
    is destroyed. */
 
-int __stdcall silc_thread_win32_start(void *context)
+unsigned __stdcall silc_thread_win32_start(void *context)
 {
   SilcWin32Thread thread = (SilcWin32Thread)context;
 
   TlsSetValue(silc_thread_tls, context);
   thread->start_func(thread->context);
-  silc_thread_exit();
+  silc_thread_exit(NULL);
 
   return 0;
 }
@@ -54,7 +54,7 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 			      bool waitable)
 {
   SilcWin32Thread thread;
-  DWROD id;
+  unsigned id;
 
   SILC_LOG_DEBUG(("Creating new thread"));
 
@@ -62,8 +62,8 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
   thread->start_func = start_func;
   thread->context = context;
   thread->waitable = waitable;
-  thread->thread = _beginthreadex(NULL, 0, silc_thread_win32_start,
-				  thread, 0, &id);
+  thread->thread = (HANDLE)_beginthreadex(NULL, 0, silc_thread_win32_start,
+					  (void *)thread, 0, &id);
   if (!thread->thread) {
     SILC_LOG_ERROR(("Could not create new thread"));
     silc_free(thread);
@@ -111,16 +111,18 @@ SilcThread silc_thread_self(void)
 
 bool silc_thread_wait(SilcThread thread, void **exit_value)
 {
-  SILC_LOG_DEBUG(("Waiting for thread %p", thread));
+  SilcWin32Thread self = (SilcWin32Thread)thread;
 
-  if (!thread->waitable)
+  SILC_LOG_DEBUG(("Waiting for thread %p", self));
+
+  if (!self->waitable)
     return FALSE;
 
   /* The thread is waitable thus we will free all memory after the
      WaitForSingleObject returns, the thread is destroyed after that. */
-  WaitForSingleObject(thread->thread, INFINITE);
-  CloseHandle(thread->thread);
-  silc_free(thread);
+  WaitForSingleObject(self->thread, INFINITE);
+  CloseHandle(self->thread);
+  silc_free(self);
   if (exit_value)
     *exit_value = NULL;
 

@@ -166,6 +166,8 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
   return -1;
 }
 
+#ifdef SILC_THREADS
+
 /* Internal wakeup context. */
 typedef struct {
   HANDLE wakeup_sema;
@@ -188,7 +190,6 @@ SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
 
 void *silc_schedule_wakeup_init(void *queue)
 {
-#ifdef SILC_THREADS
   SilcWin32Wakeup wakeup;
 
   wakeup = silc_calloc(1, sizeof(*wakeup));
