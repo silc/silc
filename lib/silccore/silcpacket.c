@@ -173,8 +173,8 @@ void silc_packet_assemble(SilcPacketContext *ctx, SilcCipher cipher)
     ctx->truelen = ctx->buffer->len + SILC_PACKET_HEADER_LEN + 
       ctx->src_id_len + ctx->dst_id_len;
     if (ctx->truelen > SILC_PACKET_MAX_LEN) {
-      ctx->truelen -= (SILC_PACKET_MAX_LEN - ctx->truelen);
-      silc_buffer_push_tail(ctx->buffer, (SILC_PACKET_MAX_LEN - ctx->truelen));
+      ctx->truelen -= (ctx->truelen - SILC_PACKET_MAX_LEN);
+      silc_buffer_push_tail(ctx->buffer, (ctx->truelen - SILC_PACKET_MAX_LEN));
     }
   }
 
