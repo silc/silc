@@ -293,6 +293,9 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
     silc_free(client_id);
   }
 
+  if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING)
+    client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
+
   /* Notify application */
   if (!cmd->callback)
     COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
@@ -450,6 +453,9 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
       silc_client_update_client(cmd->client, conn, client_entry, 
 				name, info, NULL, 0);
     }
+
+    if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING)
+      client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
 
     /* Notify application */
     COMMAND_REPLY((ARGS, client_entry, name, info));
@@ -1696,6 +1702,17 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
 
     if (!id_cache || !((SilcClientEntry)id_cache->context)->username ||
 	!((SilcClientEntry)id_cache->context)->realname) {
+
+      if (id_cache && id_cache->context) {
+	SilcClientEntry client_entry = (SilcClientEntry)id_cache->context;
+	if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
+	  silc_buffer_pull(client_id_list, idp_len);
+	  silc_buffer_pull(client_mode_list, 4);
+	  continue;
+	}
+	client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
+      }
+
       /* No we don't have it (or it is incomplete in information), query
 	 it from the server. Assemble argument table that will be sent
 	 for the WHOIS command later. */

@@ -205,6 +205,8 @@ SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
   uint32 clients_count = 0;
   int c;
 
+  SILC_LOG_DEBUG(("Start"));
+
   for (c = 0; c < i->list_count; c++) {
     uint16 idp_len;
     SilcClientID *client_id;
@@ -243,6 +245,8 @@ static void silc_client_get_clients_list_destructor(void *context)
 {
   GetClientsByListInternal i = (GetClientsByListInternal)context;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (i->found == FALSE)
     i->completion(i->client, i->conn, NULL, 0, i->context);
 
@@ -270,6 +274,8 @@ void silc_client_get_clients_by_list(SilcClient client,
   unsigned char **res_argv = NULL;
   uint32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
   GetClientsByListInternal in;
+
+  SILC_LOG_DEBUG(("Start"));
 
   in = silc_calloc(1, sizeof(*in));
   in->client = client;
@@ -302,6 +308,17 @@ void silc_client_get_clients_by_list(SilcClient client,
        it from the server. */
     entry = id_cache ? (SilcClientEntry)id_cache->context : NULL;
     if (!id_cache || !entry->nickname) {
+
+      if (entry) {
+	if (entry->status & SILC_CLIENT_STATUS_RESOLVING) {
+	  silc_free(client_id);
+	  silc_buffer_pull(client_id_list, idp_len);
+	  continue;
+	}
+
+	entry->status |= SILC_CLIENT_STATUS_RESOLVING;
+      }
+
       /* No we don't have it, query it from the server. Assemble argument
 	 table that will be sent fr the IDENTIFY command later. */
       res_argv = silc_realloc(res_argv, sizeof(*res_argv) *
@@ -369,6 +386,8 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
   SilcIDCacheEntry id_cache;
   SilcIDCacheList list = NULL;
   SilcClientEntry entry = NULL;
+
+  SILC_LOG_DEBUG(("Start"));
 
   /* Find ID from cache */
   if (!silc_idcache_find_by_name(conn->client_cache, (char *)nickname, 
@@ -509,6 +528,8 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
   SilcBuffer idp;
   GetClientByIDInternal i = silc_calloc(1, sizeof(*i));
 
+  SILC_LOG_DEBUG(("Start"));
+
   idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
   silc_client_send_command(client, conn, SILC_COMMAND_WHOIS, 
 			   ++conn->cmd_ident,
@@ -539,6 +560,8 @@ silc_client_add_client(SilcClient client, SilcClientConnection conn,
 {
   SilcClientEntry client_entry;
   char *nick = NULL;
+
+  SILC_LOG_DEBUG(("Start"));
 
   /* Save the client infos */
   client_entry = silc_calloc(1, sizeof(*client_entry));
@@ -582,6 +605,8 @@ void silc_client_update_client(SilcClient client,
 {
   char *nick = NULL;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (!client_entry->username && username)
     silc_parse_userfqdn(username, &client_entry->username, 
 			&client_entry->hostname);
@@ -607,6 +632,8 @@ void silc_client_update_client(SilcClient client,
 void silc_client_del_client_entry(SilcClient client, 
 				  SilcClientEntry client_entry)
 {
+  SILC_LOG_DEBUG(("Start"));
+
   silc_free(client_entry->nickname);
   silc_free(client_entry->username);
   silc_free(client_entry->realname);
@@ -665,6 +692,8 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
   SilcIDCacheEntry id_cache;
   SilcChannelEntry entry;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (!silc_idcache_find_by_name_one(conn->channel_cache, channel, 
 				     &id_cache))
     return NULL;
@@ -684,6 +713,8 @@ SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
 {
   SilcIDCacheEntry id_cache;
   SilcChannelEntry entry;
+
+  SILC_LOG_DEBUG(("Start"));
 
   if (!silc_idcache_find_by_id_one(conn->channel_cache, channel_id, 
 				   &id_cache))
@@ -707,6 +738,8 @@ SILC_CLIENT_CMD_FUNC(get_channel_by_id_callback)
 {
   GetChannelByIDInternal i = (GetChannelByIDInternal)context;
   SilcChannelEntry entry;
+
+  SILC_LOG_DEBUG(("Start"));
 
   /* Get the channel */
   entry = silc_client_get_channel_by_id(i->client, i->conn,
@@ -739,6 +772,8 @@ void silc_client_get_channel_by_id_resolve(SilcClient client,
   SilcBuffer idp;
   GetChannelByIDInternal i = silc_calloc(1, sizeof(*i));
 
+  SILC_LOG_DEBUG(("Start"));
+
   idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
   silc_client_send_command(client, conn, SILC_COMMAND_IDENTIFY, 
 			   ++conn->cmd_ident,
@@ -769,6 +804,8 @@ SilcChannelEntry silc_idlist_get_channel_by_id(SilcClient client,
   SilcBuffer idp;
   SilcChannelEntry channel;
 
+  SILC_LOG_DEBUG(("Start"));
+
   channel = silc_client_get_channel_by_id(client, conn, channel_id);
   if (channel)
     return channel;
@@ -793,6 +830,8 @@ SilcServerEntry silc_client_get_server(SilcClient client,
   SilcIDCacheEntry id_cache;
   SilcServerEntry entry;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (!silc_idcache_find_by_name_one(conn->server_cache, server_name, 
 				     &id_cache))
     return NULL;
@@ -810,6 +849,8 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
 {
   SilcIDCacheEntry id_cache;
   SilcServerEntry entry;
+
+  SILC_LOG_DEBUG(("Start"));
 
   if (!silc_idcache_find_by_id_one(conn->server_cache, (void *)server_id, 
 				   &id_cache))
@@ -847,6 +888,8 @@ void silc_client_nickname_format(SilcClient client,
   int i, off = 0, len;
   SilcClientEntry *clients;
   uint32 clients_count = 0;
+
+  SILC_LOG_DEBUG(("Start"));
 
   if (!client->params->nickname_format[0])
     return;

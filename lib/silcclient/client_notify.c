@@ -25,22 +25,30 @@
 #include "clientlibincludes.h"
 #include "client_internal.h"
 
+typedef struct {
+  SilcPacketContext *packet;
+  void *context;
+  SilcSocketConnection sock;
+} *SilcClientNotifyResolve;
+
 /* Called when notify is received and some async operation (such as command)
    is required before processing the notify message. This calls again the
    silc_client_notify_by_server and reprocesses the original notify packet. */
 
 static void silc_client_notify_by_server_pending(void *context, void *context2)
 {
-  SilcPacketContext *p = (SilcPacketContext *)context;
-  silc_client_notify_by_server(p->context, p->sock, p);
-  silc_socket_free(p->sock);
+  SilcClientNotifyResolve res = (SilcClientNotifyResolve)context;
+  silc_client_notify_by_server(res->context, res->sock, res->packet);
+  silc_socket_free(res->sock);
 }
 
 /* Destructor for the pending command callback */
 
 static void silc_client_notify_by_server_destructor(void *context)
 {
-  silc_packet_context_free((SilcPacketContext *)context);
+  SilcClientNotifyResolve res = (SilcClientNotifyResolve)context;
+  silc_packet_context_free(res->packet);
+  silc_free(res);
 }
 
 /* Resolve client information from server by Client ID. */
@@ -50,17 +58,18 @@ static void silc_client_notify_by_server_resolve(SilcClient client,
 						 SilcPacketContext *packet,
 						 SilcClientID *client_id)
 {
-  SilcPacketContext *p = silc_packet_context_dup(packet);
+  SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
   SilcBuffer idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
 
-  p->context = (void *)client;
-  p->sock = silc_socket_dup(conn->sock);
+  res->packet = silc_packet_context_dup(packet);
+  res->context = client;
+  res->sock = silc_socket_dup(conn->sock);
 
   silc_client_send_command(client, conn, SILC_COMMAND_WHOIS, ++conn->cmd_ident,
 			   1, 3, idp->data, idp->len);
   silc_client_command_pending(conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
 			      silc_client_notify_by_server_destructor,
-			      silc_client_notify_by_server_pending, p);
+			      silc_client_notify_by_server_pending, res);
   silc_buffer_free(idp);
 }
 
@@ -175,6 +184,9 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* If nickname or username hasn't been resolved, do so */
     if (!client_entry->nickname || !client_entry->username) {
+      if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING)
+	goto out;
+      client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
       silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;
     }
