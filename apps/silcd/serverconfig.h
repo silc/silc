@@ -150,7 +150,7 @@ typedef struct {
   void *tmp;
 
   /* Reference count (when this reaches zero, config object is destroyed) */
-  SilcInt16 refcount;
+  SilcInt32 refcount;
 
   /* The General section */
   char *module_path;

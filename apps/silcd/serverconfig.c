@@ -1269,6 +1269,7 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
   /* Set default to configuration parameters */
   silc_server_config_set_defaults(config_new);
 
+  config_new->refcount = 1;
   return config_new;
 }
 
@@ -1291,16 +1292,8 @@ void silc_server_config_ref(SilcServerConfigRef *ref, SilcServerConfig config,
 
 void silc_server_config_unref(SilcServerConfigRef *ref)
 {
-  SilcServerConfig config = ref->config;
-
-  if (ref->ref_ptr) {
-    config->refcount--;
-    SILC_LOG_DEBUG(("Unreferencing config [%p] refcnt %hu->%hu", config,
-		    config->refcount + 1, config->refcount));
-    if (!config->refcount)
-      silc_server_config_destroy(config);
-    ref->ref_ptr = NULL;
-  }
+  if (ref->ref_ptr)
+    silc_server_config_destroy(ref->config);
 }
 
 /* Destroy a config object with all his children lists */
@@ -1308,6 +1301,12 @@ void silc_server_config_unref(SilcServerConfigRef *ref)
 void silc_server_config_destroy(SilcServerConfig config)
 {
   void *tmp;
+
+  config->refcount--;
+  SILC_LOG_DEBUG(("Unreferencing config [%p] refcnt %hu->%hu", config,
+		  config->refcount + 1, config->refcount));
+  if (config->refcount > 0)
+    return;
 
   SILC_LOG_DEBUG(("Freeing config context"));
 
