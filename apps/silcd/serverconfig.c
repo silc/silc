@@ -1201,6 +1201,7 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
 
   /* alloc a config object */
   config_new = silc_calloc(1, sizeof(*config_new));
+  config_new->refcount = 1;
   if (!config_new)
     return NULL;
 
@@ -1257,7 +1258,6 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
   /* Set default to configuration parameters */
   silc_server_config_set_defaults(config_new);
 
-  config_new->refcount = 1;
   return config_new;
 }
 
@@ -1270,7 +1270,7 @@ void silc_server_config_ref(SilcServerConfigRef *ref, SilcServerConfig config,
     config->refcount++;
     ref->config = config;
     ref->ref_ptr = ref_ptr;
-    SILC_LOG_DEBUG(("Referencing config [%p] refcnt %hu->%hu", config,
+    SILC_LOG_DEBUG(("Referencing config [%p] refcnt %d->%d", config,
 		    config->refcount - 1, config->refcount));
   }
 }
@@ -1291,7 +1291,7 @@ void silc_server_config_destroy(SilcServerConfig config)
   void *tmp;
 
   config->refcount--;
-  SILC_LOG_DEBUG(("Unreferencing config [%p] refcnt %hu->%hu", config,
+  SILC_LOG_DEBUG(("Unreferencing config [%p] refcnt %d->%d", config,
 		  config->refcount + 1, config->refcount));
   if (config->refcount > 0)
     return;
