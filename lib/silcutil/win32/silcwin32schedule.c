@@ -20,6 +20,7 @@
 /* $Id$ */
 
 #include "silcincludes.h"
+#includd "silcschedule_i.h"
 
 /* Our "select()" for WIN32. This mimics the behaviour of select() system
    call. It does not call the Winsock's select() though. Its functions
@@ -28,8 +29,7 @@
    This makes following assumptions, which I don't know whether they
    are correct or not:
 
-   o writefds are ignored, if set this will return immediately.
-   o exceptfds are ignored totally
+   o SILC_TASK_WRITE is ignored, if set this will return immediately.
    o If all arguments except timeout are NULL then this will register
      a timeout with SetTimer and will wait just for Windows messages
      with WaitMessage.
@@ -50,28 +50,24 @@
 
 */
 
-int silc_select(int n, fd_set *readfds, fd_set *writefds,
-		fd_set *exceptfds, struct timeval *timeout)
+int silc_select(SilcScheduleFd fds, uint32 fds_count, struct timeval *timeout)
 {
   HANDLE handles[MAXIMUM_WAIT_OBJECTS];
   DWORD ready, curtime, timeo;
   int nhandles = 0, i;
   MSG msg;
 
-  /* Check fd sets (ignoring the exceptfds) */
-  if (readfds) {
-    for (i = 0; i < n; i++)
-      if (FD_ISSET(i, readfds))
-	handles[nhandles++] = (HANDLE)i;
+  for (i = 0; i < fds_count; i++) {
+    if (!fds[i].events)
+      continue;
 
-    FD_ZERO(readfds);
-  }
+    if (fds[i].events & SILC_TASK_READ)
+      handles[nhandles++] = (HANDLE)i;
 
-  /* If writefds is set then return immediately */
-  if (writefds) {
-    for (i = 0; i < n; i++)
-      if (FD_ISSET(i, writefds))
-	return 1;
+    if (fds[i].events & SILC_TASK_WRITE)
+      return 1;
+
+    fds[i].revents = 0;
   }
 
   timeo = (timeout ? (timeout->tv_sec * 1000) + (timeout->tv_usec / 1000) :
@@ -113,7 +109,6 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
     /* Wait failed with error */
     SILC_LOG_WARNING(("WaitForMultipleObjects() failed"));
     return -1;
-
   } else if (ready >= WAIT_ABANDONED_0 &&
 	     ready < WAIT_ABANDONED_0 + nhandles) {
     /* Signal abandoned */
@@ -149,20 +144,25 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
     /* Go through all fds even though only one was set. This is to avoid
        starvation of high numbered fds. */
     ready -= WAIT_OBJECT_0;
-    i = 0;
     do {
-      /* Set the handle to fd set */
-      FD_SET((int)handles[ready], readfds);
-      i++;
+      for (i = 0; i < fds_count; i++) {
+	if (!fds[i].events)
+	  continue;
+	
+	if (fds[i].fd == (int)handles[ready]) {
+	  fds[i].revents |= SILC_TASK_READ;
+	  break;
+	}
+      }
 
-      /* Check the status of the next handle and set it's fd to the fd
+      /* Check the status of the next handle and set its fd to the fd
 	 set if data is available. */
-      while (++ready < n)
+      while (++ready < fds_count)
 	if (WaitForSingleObject(handles[ready], 0) == WAIT_OBJECT_0)
 	  break;
-    } while (ready < n);
+    } while (ready < fds_count);
 
-    return i;
+    return i + 1;
   }
 
   return -1;
