@@ -525,6 +525,10 @@ void silc_server_start_key_exchange(SilcServer server,
   SilcServerKEInternalContext *proto_ctx;
   void *context;
 
+  /* Cancel any possible retry timeouts */
+  silc_schedule_task_del_by_callback(server->schedule,
+				     silc_server_connect_router);
+
   /* Set socket options */
   silc_net_set_socket_nonblock(sock);
   silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
@@ -638,11 +642,13 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
 				    sconn->remote_port, 
 				    sconn->remote_host);
   if (sock < 0) {
-    SILC_LOG_ERROR(("Could not connect to router"));
-    silc_schedule_task_add(server->schedule, fd, 
-			   silc_server_connect_to_router_retry,
-			   context, 0, 1, SILC_TASK_TIMEOUT, 
-			   SILC_TASK_PRI_NORMAL);
+    SILC_LOG_ERROR(("Could not connect to router %s:%d",
+		    sconn->remote_host, sconn->remote_port));
+    if (!sconn->no_reconnect)
+      silc_schedule_task_add(server->schedule, fd, 
+			     silc_server_connect_to_router_retry,
+			     context, 0, 1, SILC_TASK_TIMEOUT, 
+			     SILC_TASK_PRI_NORMAL);
     return;
   }
 
@@ -2209,7 +2215,7 @@ void silc_server_packet_parse_type(SilcServer server,
 /* Creates connection to a remote router. */
 
 void silc_server_create_connection(SilcServer server,
-				   char *remote_host, uint32 port)
+				   const char *remote_host, uint32 port)
 {
   SilcServerConnection sconn;
 
@@ -2218,6 +2224,7 @@ void silc_server_create_connection(SilcServer server,
   sconn->server = server;
   sconn->remote_host = strdup(remote_host);
   sconn->remote_port = port;
+  sconn->no_reconnect = TRUE;
 
   silc_schedule_task_add(server->schedule, 0, 
 			 silc_server_connect_router,

@@ -86,6 +86,7 @@ typedef struct {
   bool backup;
   char *backup_replace_ip;
   int backup_replace_port;
+  bool no_reconnect;
   
   /* Current connection retry info */
   uint32 retry_count;
@@ -133,7 +134,7 @@ void silc_server_packet_parse_type(SilcServer server,
 				   SilcSocketConnection sock,
 				   SilcPacketContext *packet);
 void silc_server_create_connection(SilcServer server,
-				   char *remote_host, uint32 port);
+				   const char *remote_host, uint32 port);
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock);
 void silc_server_free_client_data(SilcServer server, 

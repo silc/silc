@@ -11,6 +11,12 @@ Fri Jan 25 19:12:36 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Raised the default connection-retry count from 4 to 7 in
 	  server.  Affected file silcd/server.h.
 
+	* Cancel any possible reconnect timeouts when we start the
+	  key exchange.  Affected file silcd/server.c.
+
+	* Do not reconnect on connection failure when SCONNECT was
+	  given.  Affected files silcd/server.[ch].
+
 Tue Jan 22 18:19:36 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Removed assert()'s from the lib/silcclient/client_keyagr.c.
