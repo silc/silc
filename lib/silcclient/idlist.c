@@ -517,23 +517,50 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 			      (void *)i);
 }
 
+/* Deletes the client entry and frees all memory. */
+
+void silc_client_del_client_entry(SilcClient client, 
+				  SilcClientEntry client_entry)
+{
+  silc_free(client_entry->nickname);
+  silc_free(client_entry->username);
+  silc_free(client_entry->realname);
+  silc_free(client_entry->server);
+  silc_free(client_entry->id);
+  if (client_entry->send_key)
+    silc_cipher_free(client_entry->send_key);
+  if (client_entry->receive_key)
+    silc_cipher_free(client_entry->receive_key);
+  silc_free(client_entry->key);
+  silc_free(client_entry);
+}
+
 /* Removes client from the cache by the client entry. */
 
 bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
 			    SilcClientEntry client_entry)
 {
-  return silc_idcache_del_by_context(conn->client_cache, client_entry);
+  bool ret = silc_idcache_del_by_context(conn->client_cache, client_entry);
+  silc_client_del_client_entry(client, client_entry);
+  return ret;
 }
 
-/* Removes client from the cache by the client ID. */
+/* Removes channel from the cache by the channel entry. */
 
-bool silc_client_del_client_by_id(SilcClient client, 
-				  SilcClientConnection conn,
-				  SilcClientID *client_id)
+bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
+			     SilcChannelEntry channel)
 {
-  return silc_idcache_del_by_id_ext(conn->client_cache, (void *)client_id, 
-				    NULL, NULL, 
-				    silc_hash_client_id_compare, NULL);
+  bool ret = silc_idcache_del_by_context(conn->channel_cache, channel);
+  silc_free(channel->channel_name);
+  silc_free(channel->id);
+  silc_free(channel->key);
+  if (channel->channel_key)
+    silc_cipher_free(channel->channel_key);
+  if (channel->hmac)
+    silc_hmac_free(channel->hmac);
+  silc_client_del_channel_private_keys(client, conn, channel);
+  silc_free(channel);
+  return ret;
 }
 
 /* Finds entry for channel by the channel name. Returns the entry or NULL
@@ -700,4 +727,17 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
   entry = (SilcServerEntry)id_cache->context;
 
   return entry;
+}
+
+/* Removes server from the cache by the server entry. */
+
+bool silc_client_del_server(SilcClient client, SilcClientConnection conn,
+			    SilcServerEntry server)
+{
+  bool ret = silc_idcache_del_by_context(conn->server_cache, server);
+  silc_free(server->server_name);
+  silc_free(server->server_info);
+  silc_free(server->server_id);
+  silc_free(server);
+  return ret;
 }

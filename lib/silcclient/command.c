@@ -2013,12 +2013,7 @@ SILC_CLIENT_CMD_FUNC(leave)
   if (conn->current_channel == channel)
     conn->current_channel = NULL;
 
-  silc_idcache_del_by_id(conn->channel_cache, channel->id);
-  silc_free(channel->channel_name);
-  silc_free(channel->id);
-  silc_free(channel->key);
-  silc_cipher_free(channel->channel_key);
-  silc_free(channel);
+  silc_client_del_channel(cmd->client, cmd->conn, channel);
 
  out:
   silc_client_command_free(cmd);

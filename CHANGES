@@ -1,3 +1,26 @@
+Thu Jul 19 21:44:31 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added `task_max' field to the SilcClientParams to indicate
+	  the maximum tasks the scheduler can handle.  If set to zero,
+	  default values are used.  Affected file lib/silcclient/silcapi.h.
+
+	* Fixed memory leaks in silc_client_close_connection.  Affected
+	  file lib/silcclient/client.c.
+
+	* Added silc_client_del_client_entry to client library to free
+	  all memory of given client entry.  Affected file is
+	  lib/silcclient/idlist.[ch].
+
+	* Added new functions silc_client_del_channel and
+	  silc_client_del_server to delete channel and server entries.
+	  Affected file lib/silcclient/[silcapi.h/idlist.c].
+
+	* Removed silc_client_del_client_by_id from silcapi.h.
+
+	* Fixed the INFO command to return the server's own info
+	  correctly when querying by Server ID.  Affected file is
+	  silcd/command.c.
+
 Thu Jul 19 14:47:30 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Removed the non-blocking settings in WIN32 code in the

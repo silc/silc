@@ -41,8 +41,6 @@ TODO/bugs In SILC Client Library
    interface separately or it could just remove the old client unless
    it is on some channels.
 
- o silc_client_close_connection leaks memory.  Read the XXX from code.
-
 
 TODO/bugs In SILC Server
 ========================

@@ -91,6 +91,8 @@ typedef struct {
 /* Prototypes. These are used only by the library. Application should not
    call these directly. */
 
+void silc_client_del_client_entry(SilcClient client, 
+				  SilcClientEntry client_entry);
 SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
 				       char *nickname,

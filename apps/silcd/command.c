@@ -2603,7 +2603,8 @@ SILC_SERVER_CMD_FUNC(info)
     }
   }
 
-  if ((!dest_server && !server_id) || 
+  if ((!dest_server && !server_id && !entry) || (entry && 
+						 entry == server->id_entry) ||
       (dest_server && !cmd->pending && 
        !strncasecmp(dest_server, server->server_name, strlen(dest_server)))) {
     /* Send our reply */

@@ -340,8 +340,14 @@ typedef struct {
  * SOURCE
  */
 typedef struct {
+  /* Number of maximum tasks the client library's scheduler can handle.
+     If set to zero, the default value will be used (200). For WIN32
+     systems this should be set to 64 as it is the hard limit dictated
+     by the WIN32. */
+  int task_max;
+
   /* Rekey timeout in seconds. The client will perform rekey in this
-     time interval. If set to zero, default value will be used. */
+     time interval. If set to zero, the default value will be used. */
   unsigned int rekey_secs;
 } SilcClientParams;
 /***/
@@ -817,24 +823,6 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
 			    SilcClientEntry client_entry);
 
-/****f* silcclient/SilcClientAPI/silc_client_del_client_by_id
- *
- * SYNOPSIS
- *
- *    bool silc_client_del_client_by_id(SilcClient client, 
- *                                      SilcClientConnection conn,
- *                                      SilcClientID *client_id);
- *
- * DESCRIPTION
- *
- *    Removes client from local cache by the Client ID indicated by
- *    the `Client ID'.  Returns TRUE if the deletion were successful.
- *
- ***/
-bool silc_client_del_client_by_id(SilcClient client, 
-				  SilcClientConnection conn,
-				  SilcClientID *client_id);
-
 /****f* silcclient/SilcClientAPI/SilcGetChannelCallback
  *
  * SYNOPSIS
@@ -923,6 +911,23 @@ void silc_client_get_channel_by_id_resolve(SilcClient client,
 					   SilcGetChannelCallback completion,
 					   void *context);
 
+/****f* silcclient/SilcClientAPI/silc_client_del_channel
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_client_del_channel(SilcClient client, 
+ *                                 SilcClientConnection conn,
+ *                                 SilcChannelEntry channel)
+ *
+ * DESCRIPTION
+ *
+ *    Removes channel from local cache by the channel entry indicated by
+ *    the `channel'.  Returns TRUE if the deletion were successful.
+ *
+ ***/
+bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
+			     SilcChannelEntry channel);
+
 /****f* silcclient/SilcClientAPI/silc_client_get_server
  *
  * SYNOPSIS
@@ -959,6 +964,21 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
 					     SilcClientConnection conn,
 					     SilcServerID *server_id);
 
+/****f* silcclient/SilcClientAPI/silc_client_get_server_by_id
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_client_del_server(SilcClient client, SilcClientConnection conn,
+ *                                SilcServerEntry server);
+ *
+ * DESCRIPTION
+ *
+ *    Removes server from local cache by the server entry indicated by
+ *    the `server'.  Returns TRUE if the deletion were successful.
+ *
+ ***/
+bool silc_client_del_server(SilcClient client, SilcClientConnection conn,
+			    SilcServerEntry server);
 
 /* Command management (command.c) */
 

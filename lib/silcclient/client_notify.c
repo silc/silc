@@ -294,16 +294,7 @@ void silc_client_notify_by_server(SilcClient client,
     client->ops->notify(client, conn, type, client_entry, tmp);
 
     /* Free data */
-    if (client_entry->nickname)
-      silc_free(client_entry->nickname);
-    if (client_entry->server)
-      silc_free(client_entry->server);
-    if (client_entry->id)
-      silc_free(client_entry->id);
-    if (client_entry->send_key)
-      silc_cipher_free(client_entry->send_key);
-    if (client_entry->receive_key)
-      silc_cipher_free(client_entry->receive_key);
+    silc_client_del_client_entry(client, client_entry);
     break;
 
   case SILC_NOTIFY_TYPE_TOPIC_SET:
@@ -402,17 +393,7 @@ void silc_client_notify_by_server(SilcClient client,
     client->ops->notify(client, conn, type, client_entry, client_entry2);
 
     /* Free data */
-    if (client_entry->nickname)
-      silc_free(client_entry->nickname);
-    if (client_entry->server)
-      silc_free(client_entry->server);
-    if (client_entry->id)
-      silc_free(client_entry->id);
-    if (client_entry->send_key)
-      silc_cipher_free(client_entry->send_key);
-    if (client_entry->receive_key)
-      silc_cipher_free(client_entry->receive_key);
-    silc_free(client_entry);
+    silc_client_del_client_entry(client, client_entry);
     break;
 
   case SILC_NOTIFY_TYPE_CMODE_CHANGE:
@@ -725,18 +706,7 @@ void silc_client_notify_by_server(SilcClient client,
     if (client_entry != conn->local_entry) {
       /* Remove client from all channels */
       silc_client_remove_from_channels(client, conn, client_entry);
-      silc_idcache_del_by_context(conn->client_cache, client_entry);
-      if (client_entry->nickname)
-	silc_free(client_entry->nickname);
-      if (client_entry->server)
-	silc_free(client_entry->server);
-      if (client_entry->id)
-	silc_free(client_entry->id);
-      if (client_entry->send_key)
-	silc_cipher_free(client_entry->send_key);
-      if (client_entry->receive_key)
-	silc_cipher_free(client_entry->receive_key);
-      silc_free(client_entry);
+      silc_client_del_client(client, conn, client_entry);
     }
 
     break;
@@ -784,18 +754,7 @@ void silc_client_notify_by_server(SilcClient client,
 	  continue;
 
 	silc_client_remove_from_channels(client, conn, client_entry);
-	silc_idcache_del_by_context(conn->client_cache, client_entry);
-	if (client_entry->nickname)
-	  silc_free(client_entry->nickname);
-	if (client_entry->server)
-	  silc_free(client_entry->server);
-	if (client_entry->id)
-	  silc_free(client_entry->id);
-	if (client_entry->send_key)
-	  silc_cipher_free(client_entry->send_key);
-	if (client_entry->receive_key)
-	  silc_cipher_free(client_entry->receive_key);
-	silc_free(client_entry);
+	silc_client_del_client(client, conn, client_entry);
       }
       silc_free(clients);
 

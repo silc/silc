@@ -100,7 +100,8 @@ int silc_client_init(SilcClient client)
   silc_client_protocols_register();
 
   /* Initialize the scheduler */
-  client->schedule = silc_schedule_init(200);
+  client->schedule = silc_schedule_init(client->params->task_max ?
+					client->params->task_max : 200);
   if (!client->schedule)
     return FALSE;
 
@@ -1189,7 +1190,37 @@ void silc_client_close_connection(SilcClient client,
 
   /* Free everything */
   if (del && sock->user_data) {
-    /* XXX Free all client entries and channel entries. */
+    /* Free all cache entries */
+    SilcIDCacheList list;
+    SilcIDCacheEntry entry;
+    bool ret;
+
+    if (silc_idcache_get_all(conn->client_cache, &list)) {
+      ret = silc_idcache_list_first(list, &entry);
+      while (ret) {
+	silc_client_del_client(client, conn, entry->context);
+	ret = silc_idcache_list_next(list, &entry);
+      }
+      silc_idcache_list_free(list);
+    }
+
+    if (silc_idcache_get_all(conn->channel_cache, &list)) {
+      ret = silc_idcache_list_first(list, &entry);
+      while (ret) {
+	silc_client_del_channel(client, conn, entry->context);
+	ret = silc_idcache_list_next(list, &entry);
+      }
+      silc_idcache_list_free(list);
+    }
+
+    if (silc_idcache_get_all(conn->server_cache, &list)) {
+      ret = silc_idcache_list_first(list, &entry);
+      while (ret) {
+	silc_client_del_server(client, conn, entry->context);
+	ret = silc_idcache_list_next(list, &entry);
+      }
+      silc_idcache_list_free(list);
+    }
 
     /* Clear ID caches */
     if (conn->client_cache)
