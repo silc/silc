@@ -117,7 +117,7 @@ SilcUInt32 silc_##cipher##_context_len()
 
 /* Prototypes */
 
-/****f* silccrypt/SilcCipherAPI/
+/****f* silccrypt/SilcCipherAPI/silc_cipher_register
  *
  * SYNOPSIS
  *
@@ -146,7 +146,7 @@ bool silc_cipher_register(const SilcCipherObject *cipher);
  ***/
 bool silc_cipher_unregister(SilcCipherObject *cipher);
 
-/****f* silccrypt/SilcCipherAPI/
+/****f* silccrypt/SilcCipherAPI/silc_cipher_register_default
  *
  * SYNOPSIS
  *
@@ -203,7 +203,7 @@ bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher);
  ***/
 void silc_cipher_free(SilcCipher cipher);
 
-/****f* silccrypt/SilcCipherAPI/silc_cipher_is_supported(
+/****f* silccrypt/SilcCipherAPI/silc_cipher_is_supported
  *
  * SYNOPSIS
  *
@@ -265,7 +265,7 @@ bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 			 unsigned char *dst, SilcUInt32 len, 
 			 unsigned char *iv);
 
-/****f* silccrypt/SilcCipherAPI/
+/****f* silccrypt/SilcCipherAPI/silc_cipher_set_key
  *
  * SYNOPSIS
  *
