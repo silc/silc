@@ -206,7 +206,7 @@ void silc_send_mime(SILC_SERVER_REC *server, int channel, const char *to,
 				     (sign ? SILC_MESSAGE_FLAG_SIGNED : 0),
 				     unescaped_data, unescaped_data_len, TRUE);
   } else {
-    silc_send_msg(server, to, unescaped_data, unescaped_data_len,
+    silc_send_msg(server, (char *)to, unescaped_data, unescaped_data_len,
 		  SILC_MESSAGE_FLAG_DATA | 
 		  (sign ? SILC_MESSAGE_FLAG_SIGNED : 0));
 
