@@ -25,6 +25,9 @@ file for more generic installation instructions.
 library instead of using the MPI library included in the package, you can
 give the --with-gmp[=DIR] option to the `configure'.  The DIR is the upper
 path in your system which contains lib/ and include/ for GMP library.
+   Note that MPI is the prefered arbitrary precision arithmetic library and
+GMP can be used as a fall-back if you have problems with the MPI library
+included within this package (GMP was used as a default library in the past).
 
 '--with-iconv[=DIR]'
 
