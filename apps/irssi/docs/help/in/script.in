@@ -15,5 +15,5 @@ Without any parameters, /SCRIPT acts in same way as if you would call /SCRIPT LI
 
 /SCRIPT RESET unloads all loaded scripts and resets the perl interpreter.
 
-See also: LOAD, UNLOAD
+See also: LOAD, UNLOAD, RUN
 

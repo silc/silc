@@ -1,7 +1,6 @@
 
 @SYNTAX:motd@
 
-Shows the motd of the current server. This contains
-usually some useful info on the server, administrator and
-the rules.
+Shows the motd of the current or given server. This contains usually some useful info on the server, administrator and the rules.
 
+See also: INFO, ADMIN, STATS

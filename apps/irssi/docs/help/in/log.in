@@ -22,19 +22,19 @@ All of these are parsed with strftime():
 /SET log_close_string <text> - Text written to log when it's closed
 /SET log_day_changed <text> - Text written to log when day changes
 
-NOTE: Log files are locked after opened, so two Irssis can't
+NOTE: Log files are locked after opened, so two clients can't
 accidentally try to write to the same log file.
 
 Examples:
         
-/LOG OPEN -targets cras ~/irclogs/cras.log MSGS
-     - Logs all messages from/to nick `cras'
+/LOG OPEN -targets Toni ~/silclogs/Toni.log MSGS
+     - Logs all messages from/to nick `Toni'
 
-/LOG OPEN -targets #linux ~/irclogs/linux/linux-%%Y-%%m-%%d
-     - Logs all messages in channel #linux. Log is rotated daily, so
-       logs in 1. May 2000 goes to file "linux-2000-05-01", when the
-       day is changed, Irssi closes the log and starts logging to
-       "linux-2000-05-02" etc.
+/LOG OPEN -targets silc ~/silclogs/silc/silc-%%Y-%%m-%%d
+     - Logs all messages in channel silc. Log is rotated daily, so
+       logs in 1. May 2000 goes to file "silc-2000-05-01", when the
+       day is changed the log is closed and new log is opened as
+       "silc-2000-05-02".
 
-See also: SET LOG, WINDOW LOG
+See also: LASTLOG, SET LOG, WINDOW LOG
 

@@ -1,13 +1,9 @@
 
 @SYNTAX:query@
 
-Starts a private conversation with the nick.  All text you
-type that would normally be sent to your channel now goes to
-the specified nick in the form of MSGs. 
+Starts a private conversation with given person.
 
-Usually this command opens up a new window, too.
-
-The query is ended by giving command UNQUERY
+The query session is ended by giving command UNQUERY
 
 See also: UNQUERY, WINDOW, MSG, SET QUERY
 

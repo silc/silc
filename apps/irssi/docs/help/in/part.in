@@ -1,8 +1,7 @@
 
 @SYNTAX:part@
 
-Parts from the current or specified channel. Depending
-on your settings, closes the corresponding window, too.
+Parts from the current or specified channel. Depending on your settings it closes the corresponding window also.
 
-See also: LEAVE, JOIN
+See also: JOIN
 

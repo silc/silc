@@ -6,17 +6,15 @@
      -voices: show voiced people in list
      -normal: show rest of the people in list
 
-Shows the names (nicks) in the specified channels. /NAMES **
-shows all nicks in all channels, you probably don't want
-to do this.
+Shows users of specified channels. /NAMES ** shows all nicks in all channels, you probably don't want to do this.
 
 Examples:
 
 /NAMES
      - shows nicks in the current channel.
 
-/NAMES -ops #c1,#c2
-     - shows operators in channels #c1 and #c2
+/NAMES -ops silc,beginners
+     - shows operators in channels silc and beginners
 
-See also: WHO, CHANNEL
+See also: USERS, WHO, WHOIS, WHOWAS, CHANNEL
 

@@ -1,9 +1,10 @@
 
 @SYNTAX:msg@
 
-Sends a message to a remote client. Usually this
-is used for sending private messages to other persons.
+Sends a private message to someone.
 
-Examples:
+Example:
 
-/MSG friend Hi, what's up?
+/MSG Toni Hi, what's up?
+
+See also: QUERY

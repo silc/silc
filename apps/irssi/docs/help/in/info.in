@@ -5,3 +5,4 @@ Displays the administrative details about the given server. If
 no server is specified, the server you are connected to is
 used.
 
+See also: STATS

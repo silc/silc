@@ -4,5 +4,10 @@
 Operator command.  Makes the server to close connection to another server
 or router.
 
-See also: OPER, SILCOPER
+You need to use same name of the server as configured in silcd.conf.
+
+Example: /CLOSE sauna.silcnet.org
+
+See also: SCONNECT, OPER, SILCOPER
+
 

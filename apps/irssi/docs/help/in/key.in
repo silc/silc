@@ -103,3 +103,5 @@ Examples:
     /KEY MSG nick set secretkey -responder
     /KEY MSG foo agreement 10.2.1.7 5000
     /KEY MSG bar negotiate 10.2.1.7 5000
+
+See also: WHOIS, CHANNEL, GETKEY

@@ -4,5 +4,5 @@
 Changes the current working directory. Equivalent to UNIX
 'cd' command.
 
-See also: DCC GET
+See also: EXEC
 

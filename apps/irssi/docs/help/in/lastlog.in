@@ -18,5 +18,5 @@
 
 Shows the given number of lines of log from the current window.
 
-See also:
+See also: LOG, SET LOG, WINDOW LOG
 
