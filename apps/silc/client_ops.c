@@ -186,10 +186,10 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     client_entry2 = va_arg(vp, SilcClientEntry);
     channel_entry = va_arg(vp, SilcChannelEntry);
     if (tmp)
-      snprintf(message, sizeof(message), "%s changed %s mode to +%s", 
+      snprintf(message, sizeof(message), "%s changed %s's mode to +%s", 
 	       client_entry->nickname, client_entry2->nickname, tmp);
     else
-      snprintf(message, sizeof(message), "%s removed %s modes", 
+      snprintf(message, sizeof(message), "%s removed %s's modes", 
 	       client_entry->nickname, client_entry2->nickname);
     if (client_entry2 == conn->local_entry) {
       if (app->screen->bottom_line->mode)

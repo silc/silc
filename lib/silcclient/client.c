@@ -1426,11 +1426,16 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
     }
 
-    /* Get channel entry */
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				SILC_ID_CHANNEL);
+    /* Get Channel ID */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp)
+      goto out;
+
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
     if (!channel_id)
       goto out;
+
+    /* Get channel entry */
     if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
 				     SILC_ID_CHANNEL, &id_cache))
       break;

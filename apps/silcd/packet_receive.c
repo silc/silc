@@ -27,6 +27,518 @@
 
 extern char *server_version;
 
+/* Received notify packet. Server can receive notify packets from router. 
+   Server then relays the notify messages to clients if needed. */
+
+void silc_server_notify(SilcServer server,
+			SilcSocketConnection sock,
+			SilcPacketContext *packet)
+{
+  SilcNotifyPayload payload;
+  SilcNotifyType type;
+  SilcArgumentPayload args;
+  SilcChannelID *channel_id;
+  SilcClientID *client_id, *client_id2;
+  SilcChannelEntry channel;
+  SilcClientEntry client;
+  SilcChannelClientEntry chl;
+  unsigned int mode;
+  unsigned char *tmp;
+  unsigned int tmp_len;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      packet->src_id_type != SILC_ID_SERVER)
+    return;
+
+  /* If we are router and this packet is not already broadcast packet
+     we will broadcast it. The sending socket really cannot be router or
+     the router is buggy. If this packet is coming from router then it must
+     have the broadcast flag set already and we won't do anything. */
+  if (!server->standalone && server->server_type == SILC_ROUTER &&
+      sock->type == SILC_SOCKET_TYPE_SERVER &&
+      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
+    SILC_LOG_DEBUG(("Broadcasting received Notify packet"));
+    silc_server_packet_send(server, server->router->connection, packet->type,
+			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
+			    packet->buffer->data, packet->buffer->len, FALSE);
+  }
+
+  payload = silc_notify_payload_parse(packet->buffer);
+  if (!payload)
+    return;
+
+  type = silc_notify_get_type(payload);
+  args = silc_notify_get_args(payload);
+  if (!args)
+    goto out;
+
+  switch(type) {
+  case SILC_NOTIFY_TYPE_JOIN:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+    SILC_LOG_DEBUG(("JOIN notify"));
+
+    /* Get Channel ID */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp)
+      goto out;
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
+					       channel_id, NULL);
+      if (!channel) {
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+    silc_free(channel_id);
+
+    /* Get client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
+
+    /* Send to channel */
+    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+
+    /* If the the client is not in local list we check global list (ie. the
+       channel will be global channel) and if it does not exist then create
+       entry for the client. */
+    client = silc_idlist_find_client_by_id(server->local_list, 
+					   client_id, NULL);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->global_list, 
+					     client_id, NULL);
+      if (!client) {
+	/* If router did not find the client the it is bogus */
+	if (server->server_type == SILC_ROUTER)
+	  goto out;
+
+	client = 
+	  silc_idlist_add_client(server->global_list, NULL, NULL, NULL,
+				 silc_id_dup(client_id, SILC_ID_CLIENT), 
+				 sock->user_data, NULL);
+	if (!client) {
+	  silc_free(client_id);
+	  goto out;
+	}
+      }
+    }
+
+    /* Do not add client to channel if it is there already */
+    if (silc_server_client_on_channel(client, channel))
+      break;
+
+    if (server->server_type == SILC_SERVER && 
+	sock->type == SILC_SOCKET_TYPE_ROUTER)
+      /* The channel is global now */
+      channel->global_users = TRUE;
+
+    /* JOIN the global client to the channel (local clients (if router 
+       created the channel) is joined in the pending JOIN command). */
+    chl = silc_calloc(1, sizeof(*chl));
+    chl->client = client;
+    chl->channel = channel;
+    silc_list_add(channel->user_list, chl);
+    silc_list_add(client->channels, chl);
+    silc_free(client_id);
+
+    break;
+
+  case SILC_NOTIFY_TYPE_LEAVE:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+    SILC_LOG_DEBUG(("LEAVE notify"));
+
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				packet->dst_id_type);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) { 
+      silc_free(channel_id);
+      goto out;
+    }
+
+    /* Get client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp) {
+      silc_free(channel_id);
+      goto out;
+    }
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id) {
+      silc_free(channel_id);
+      goto out;
+    }
+
+    /* Send to channel */
+    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+
+    /* Get client entry */
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, NULL);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->local_list, 
+					     client_id, NULL);
+      if (!client) {
+	silc_free(client_id);
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+    silc_free(client_id);
+
+    /* Remove the user from channel */
+    silc_server_remove_from_one_channel(server, sock, channel, client, FALSE);
+    break;
+
+  case SILC_NOTIFY_TYPE_SIGNOFF:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+    SILC_LOG_DEBUG(("SIGNOFF notify"));
+
+    /* Get client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
+
+    /* Get client entry */
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, NULL);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->local_list, 
+					     client_id, NULL);
+      if (!client) {
+	silc_free(client_id);
+	goto out;
+      }
+    }
+    silc_free(client_id);
+
+    /* Remove the client from all channels */
+    silc_server_remove_from_channels(server, NULL, client);
+
+    /* Remove the client entry */
+    if (!silc_idlist_del_client(server->global_list, client))
+      silc_idlist_del_client(server->local_list, client);
+    break;
+
+  case SILC_NOTIFY_TYPE_TOPIC_SET:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+
+    SILC_LOG_DEBUG(("TOPIC SET notify"));
+
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				packet->dst_id_type);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
+					       channel_id, NULL);
+      if (!channel) {
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+
+    /* Get the topic */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp) {
+      silc_free(channel_id);
+      goto out;
+    }
+
+    if (channel->topic)
+      silc_free(channel->topic);
+    channel->topic = silc_calloc(tmp_len, sizeof(*channel->topic));
+    memcpy(channel->topic, tmp, tmp_len);
+
+    /* Send the same notify to the channel */
+    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+    silc_free(channel_id);
+    break;
+
+  case SILC_NOTIFY_TYPE_NICK_CHANGE:
+    {
+      /* 
+       * Distribute the notify to local clients on the channel
+       */
+      unsigned char *id, *id2;
+
+      SILC_LOG_DEBUG(("NICK CHANGE notify"));
+      
+      /* Get old client ID */
+      id = silc_argument_get_arg_type(args, 1, &tmp_len);
+      if (!id)
+	goto out;
+      client_id = silc_id_payload_parse_id(id, tmp_len);
+      if (!client_id)
+	goto out;
+      
+      /* Get new client ID */
+      id2 = silc_argument_get_arg_type(args, 2, &tmp_len);
+      if (!id2)
+	goto out;
+      client_id2 = silc_id_payload_parse_id(id2, tmp_len);
+      if (!client_id2)
+	goto out;
+      
+      SILC_LOG_DEBUG(("Old Client ID id(%s)", 
+		      silc_id_render(client_id, SILC_ID_CLIENT)));
+      SILC_LOG_DEBUG(("New Client ID id(%s)", 
+		      silc_id_render(client_id2, SILC_ID_CLIENT)));
+
+      /* Replace the Client ID */
+      client = silc_idlist_replace_client_id(server->global_list, client_id,
+					     client_id2);
+      if (!client)
+	client = silc_idlist_replace_client_id(server->local_list, client_id, 
+					       client_id2);
+
+      if (client) {
+	/* The nickname is not valid anymore, set it NULL. This causes that
+	   the nickname will be queried if someone wants to know it. */
+	if (client->nickname)
+	  silc_free(client->nickname);
+	client->nickname = NULL;
+
+	/* Send the NICK_CHANGE notify type to local clients on the channels
+	   this client is joined to. */
+	silc_server_send_notify_on_channels(server, client, 
+					    SILC_NOTIFY_TYPE_NICK_CHANGE, 2,
+					    id, tmp_len, 
+					    id2, tmp_len);
+      }
+
+      silc_free(client_id);
+      if (!client)
+	silc_free(client_id2);
+      break;
+    }
+
+  case SILC_NOTIFY_TYPE_CMODE_CHANGE:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+    
+    SILC_LOG_DEBUG(("CMODE CHANGE notify"));
+      
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				packet->dst_id_type);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
+					       channel_id, NULL);
+      if (!channel) {
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+
+    /* Send the same notify to the channel */
+    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+
+    /* Get the mode */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp) {
+      silc_free(channel_id);
+      goto out;
+    }
+
+    SILC_GET32_MSB(mode, tmp);
+
+    /* Change mode */
+    channel->mode = mode;
+    silc_free(channel_id);
+    break;
+
+  case SILC_NOTIFY_TYPE_CUMODE_CHANGE:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+
+    SILC_LOG_DEBUG(("CUMODE CHANGE notify"));
+
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				packet->dst_id_type);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
+					       channel_id, NULL);
+      if (!channel) {
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+
+    /* Get the mode */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp) {
+      silc_free(channel_id);
+      goto out;
+    }
+      
+    SILC_GET32_MSB(mode, tmp);
+
+    /* Get target client */
+    tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+    if (!tmp)
+      goto out;
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
+    
+    /* Get client entry */
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, NULL);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->local_list, 
+					     client_id, NULL);
+      if (!client) {
+	silc_free(client_id);
+	goto out;
+      }
+    }
+    silc_free(client_id);
+
+    /* Get entry to the channel user list */
+    silc_list_start(channel->user_list);
+    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
+      if (chl->client == client) {
+	/* Change the mode */
+	chl->mode = mode;
+	break;
+      }
+
+    /* Send the same notify to the channel */
+    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+    silc_free(channel_id);
+    break;
+
+  case SILC_NOTIFY_TYPE_INVITE:
+    SILC_LOG_DEBUG(("INVITE notify (not-impl XXX)"));
+    break;
+
+  case SILC_NOTIFY_TYPE_CHANNEL_CHANGE:
+    SILC_LOG_DEBUG(("CHANNEL CHANGE notify (not-impl XXX)"));
+    break;
+
+  case SILC_NOTIFY_TYPE_SERVER_SIGNOFF:
+    SILC_LOG_DEBUG(("SERVER SIGNOFF notify (not-impl XXX)"));
+    break;
+
+    /* Ignore rest of the notify types for now */
+  case SILC_NOTIFY_TYPE_NONE:
+  case SILC_NOTIFY_TYPE_MOTD:
+    break;
+  default:
+    break;
+  }
+
+ out:
+  silc_notify_payload_free(payload);
+}
+
+void silc_server_notify_list(SilcServer server,
+			     SilcSocketConnection sock,
+			     SilcPacketContext *packet)
+{
+  SilcPacketContext *new;
+  SilcBuffer buffer;
+  unsigned short len;
+
+  SILC_LOG_DEBUG(("Processing New Notify List"));
+
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      packet->src_id_type != SILC_ID_SERVER)
+    return;
+
+  /* Make copy of the original packet context, except for the actual
+     data buffer, which we will here now fetch from the original buffer. */
+  new = silc_packet_context_alloc();
+  new->type = SILC_PACKET_NOTIFY;
+  new->flags = packet->flags;
+  new->src_id = packet->src_id;
+  new->src_id_len = packet->src_id_len;
+  new->src_id_type = packet->src_id_type;
+  new->dst_id = packet->dst_id;
+  new->dst_id_len = packet->dst_id_len;
+  new->dst_id_type = packet->dst_id_type;
+
+  buffer = silc_buffer_alloc(1024);
+  new->buffer = buffer;
+
+  while (packet->buffer->len) {
+    SILC_GET16_MSB(len, packet->buffer->data + 2);
+    if (len > packet->buffer->len)
+      break;
+
+    if (len > buffer->truelen) {
+      silc_buffer_free(buffer);
+      buffer = silc_buffer_alloc(1024 + len);
+    }
+
+    silc_buffer_pull_tail(buffer, len);
+    silc_buffer_put(buffer, packet->buffer->data, len);
+
+    /* Process the Notify */
+    silc_server_notify(server, sock, new);
+
+    silc_buffer_push_tail(buffer, len);
+    silc_buffer_pull(packet->buffer, len);
+  }
+
+  silc_buffer_free(buffer);
+  silc_free(new);
+}
+
 /* Received private message. This resolves the destination of the message 
    and sends the packet. This is used by both server and router.  If the
    destination is our locally connected client this sends the packet to
@@ -245,8 +757,10 @@ void silc_server_channel_message(SilcServer server,
       if (chl->client && !SILC_ID_CLIENT_COMPARE(chl->client->id, sender))
 	break;
     }
-    if (chl == SILC_LIST_END)
+    if (chl == SILC_LIST_END) {
+      SILC_LOG_DEBUG(("Client not on channel"));
       goto out;
+    }
   }
 
   /* Distribute the packet to our local clients. This will send the
@@ -285,137 +799,6 @@ void silc_server_channel_key(SilcServer server,
      we will also send it to locally connected servers. */
   silc_server_send_channel_key(server, sock, channel, FALSE);
 }
-
-/* Received packet to replace a ID. This checks that the requested ID
-   exists and replaces it with the new one. */
-
-void silc_server_replace_id(SilcServer server,
-			    SilcSocketConnection sock,
-			    SilcPacketContext *packet)
-{
-  SilcBuffer buffer = packet->buffer;
-  unsigned char *old_id = NULL, *new_id = NULL;
-  SilcIdType old_id_type, new_id_type;
-  unsigned short old_id_len, new_id_len;
-  void *id = NULL, *id2 = NULL;
-  int ret;
-
-  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
-      packet->src_id_type == SILC_ID_CLIENT)
-    return;
-
-  SILC_LOG_DEBUG(("Replacing ID"));
-
-  ret = silc_buffer_unformat(buffer,
-			     SILC_STR_UI_SHORT(&old_id_type),
-			     SILC_STR_UI16_NSTRING_ALLOC(&old_id, &old_id_len),
-			     SILC_STR_UI_SHORT(&new_id_type),
-			     SILC_STR_UI16_NSTRING_ALLOC(&new_id, &new_id_len),
-			     SILC_STR_END);
-  if (ret == -1)
-    goto out;
-
-  if (old_id_type != new_id_type)
-    goto out;
-
-  if (old_id_len != silc_id_get_len(old_id_type) ||
-      new_id_len != silc_id_get_len(new_id_type))
-    goto out;
-
-  id = silc_id_str2id(old_id, old_id_len, old_id_type);
-  if (!id)
-    goto out;
-
-  id2 = silc_id_str2id(new_id, new_id_len, new_id_type);
-  if (!id2)
-    goto out;
-
-  /* If we are router and this packet is not already broadcast packet
-     we will broadcast it. The sending socket really cannot be router or
-     the router is buggy. If this packet is coming from router then it must
-     have the broadcast flag set already and we won't do anything. */
-  if (!server->standalone && server->server_type == SILC_ROUTER &&
-      sock->type == SILC_SOCKET_TYPE_SERVER &&
-      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
-    SILC_LOG_DEBUG(("Broadcasting received Replace ID packet"));
-    silc_server_packet_send(server, server->router->connection, packet->type,
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
-			    buffer->data, buffer->len, FALSE);
-  }
-
-  /* Replace the old ID */
-  switch(old_id_type) {
-  case SILC_ID_CLIENT:
-    {
-      SilcBuffer nidp, oidp;
-      SilcClientEntry client = NULL;
-
-      SILC_LOG_DEBUG(("Old Client ID id(%s)", 
-		      silc_id_render(id, SILC_ID_CLIENT)));
-      SILC_LOG_DEBUG(("New Client ID id(%s)", 
-		      silc_id_render(id2, SILC_ID_CLIENT)));
-
-      if ((client = silc_idlist_replace_client_id(server->local_list, 
-						  id, id2)) == NULL)
-	if (server->server_type == SILC_ROUTER)
-	  client = silc_idlist_replace_client_id(server->global_list, id, id2);
-      
-      if (client) {
-	oidp = silc_id_payload_encode(id, SILC_ID_CLIENT);
-	nidp = silc_id_payload_encode(id2, SILC_ID_CLIENT);
-
-	/* The nickname is not valid anymore, set it NULL. This causes that
-	   the nickname will be queried if someone wants to know it. */
-	if (client->nickname)
-	  silc_free(client->nickname);
-	client->nickname = NULL;
-
-	/* Send the NICK_CHANGE notify type to local clients on the channels
-	   this client is joined to. */
-	silc_server_send_notify_on_channels(server, client, 
-					    SILC_NOTIFY_TYPE_NICK_CHANGE, 2,
-					    oidp->data, oidp->len, 
-					    nidp->data, nidp->len);
-	
-	silc_buffer_free(nidp);
-	silc_buffer_free(oidp);
-      }
-      break;
-    }
-
-  case SILC_ID_SERVER:
-    SILC_LOG_DEBUG(("Old Server ID id(%s)", 
-		    silc_id_render(id, SILC_ID_SERVER)));
-    SILC_LOG_DEBUG(("New Server ID id(%s)", 
-		    silc_id_render(id2, SILC_ID_SERVER)));
-    if (silc_idlist_replace_server_id(server->local_list, id, id2) == NULL)
-      if (server->server_type == SILC_ROUTER)
-	silc_idlist_replace_server_id(server->global_list, id, id2);
-    break;
-
-  case SILC_ID_CHANNEL:
-    SILC_LOG_DEBUG(("Old Channel ID id(%s)", 
-		    silc_id_render(id, SILC_ID_CHANNEL)));
-    SILC_LOG_DEBUG(("New Channel ID id(%s)", 
-		    silc_id_render(id2, SILC_ID_CHANNEL)));
-    if (silc_idlist_replace_channel_id(server->local_list, id, id2) == NULL)
-      silc_idlist_replace_channel_id(server->global_list, id, id2);
-    break;
-
-  default:
-    silc_free(id2);
-    break;
-  }
-
- out:
-  if (id)
-    silc_free(id);
-  if (old_id)
-    silc_free(old_id);
-  if (new_id)
-    silc_free(new_id);
-}
-
 
 /* Received New Client packet and processes it.  Creates Client ID for the
    client. Client becomes registered after calling this functions. */
@@ -961,14 +1344,13 @@ void silc_server_new_channel(SilcServer server,
 	 We also create a new key for the channel. */
 
       if (SILC_ID_CHANNEL_COMPARE(channel_id, channel->id)) {
-	/* They don't match, send Replace ID packet to the server to
+	/* They don't match, send CHANNEL_CHANGE notify to the server to
 	   force the ID change. */
 	SILC_LOG_DEBUG(("Forcing the server to change Channel ID"));
-	silc_server_send_replace_id(server, sock, FALSE, 
-				    channel_id, SILC_ID_CHANNEL,
-				    SILC_ID_CHANNEL_LEN,
-				    channel->id, SILC_ID_CHANNEL,
-				    SILC_ID_CHANNEL_LEN);
+	silc_server_send_notify_channel_change(server, sock, FALSE, 
+					       channel_id,
+					       channel->id, 
+					       SILC_ID_CHANNEL_LEN);
       }
 
       /* Create new key for the channel and send it to the server and
@@ -1069,978 +1451,4 @@ void silc_server_new_channel_list(SilcServer server,
 
   silc_buffer_free(buffer);
   silc_free(new);
-}
-
-/* Received new channel user packet. Information about new users on a
-   channel are distributed between routers using this packet.  The
-   router receiving this will redistribute it and also sent JOIN notify
-   to local clients on the same channel. Normal server sends JOIN notify
-   to its local clients on the channel. */
-
-static void silc_server_new_channel_user_real(SilcServer server,
-					      SilcSocketConnection sock,
-					      SilcPacketContext *packet,
-					      int broadcast)
-{
-  unsigned char *tmpid1, *tmpid2;
-  SilcClientID *client_id = NULL;
-  SilcChannelID *channel_id = NULL;
-  unsigned short channel_id_len;
-  unsigned short client_id_len;
-  SilcClientEntry client;
-  SilcChannelEntry channel;
-  SilcChannelClientEntry chl;
-  SilcBuffer clidp;
-  int ret;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
-      server->server_type != SILC_ROUTER ||
-      packet->src_id_type != SILC_ID_SERVER)
-    return;
-
-  /* Parse payload */
-  ret = silc_buffer_unformat(packet->buffer, 
-			     SILC_STR_UI16_NSTRING_ALLOC(&tmpid1, 
-							 &channel_id_len),
-			     SILC_STR_UI16_NSTRING_ALLOC(&tmpid2, 
-							 &client_id_len),
-			     SILC_STR_END);
-  if (ret == -1) {
-    if (tmpid1)
-      silc_free(tmpid1);
-    if (tmpid2)
-      silc_free(tmpid2);
-    return;
-  }
-
-  /* Decode the channel ID */
-  channel_id = silc_id_str2id(tmpid1, channel_id_len, SILC_ID_CHANNEL);
-  if (!channel_id)
-    goto out;
-
-  /* Decode the client ID */
-  client_id = silc_id_str2id(tmpid2, client_id_len, SILC_ID_CLIENT);
-  if (!client_id)
-    goto out;
-
-  /* If we are router and this packet is not already broadcast packet
-     we will broadcast it. */
-  if (broadcast && !server->standalone && server->server_type == SILC_ROUTER &&
-      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
-    SILC_LOG_DEBUG(("Broadcasting received New Channel User packet"));
-    silc_server_packet_send(server, server->router->connection, packet->type,
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
-			    packet->buffer->data, packet->buffer->len, FALSE);
-  }
-
-  /* Find the channel */
-  channel = silc_idlist_find_channel_by_id(server->local_list, 
-					   channel_id, NULL);
-  if (!channel) {
-    channel = silc_idlist_find_channel_by_id(server->global_list, 
-					     channel_id, NULL);
-    if (!channel)
-      goto out;
-  }
-
-  /* Get client entry */
-  client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
-  if (!client) {
-    client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
-    if (!client)
-      goto out;
-  }
-
-  /* Join the client to the channel by adding it to channel's user list.
-     Add also the channel to client entry's channels list for fast cross-
-     referencing. */
-  chl = silc_calloc(1, sizeof(*chl));
-  chl->client = client;
-  chl->channel = channel;
-  silc_list_add(channel->user_list, chl);
-  silc_list_add(client->channels, chl);
-
-  server->stat.chanclients++;
-
-  /* Send JOIN notify to local clients on the channel. As we are router
-     it is assured that this is sent only to our local clients and locally
-     connected servers if needed. */
-  clidp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
-  silc_server_send_notify_to_channel(server, sock, channel, FALSE,
-				     SILC_NOTIFY_TYPE_JOIN, 
-				     1, clidp->data, clidp->len);
-  silc_buffer_free(clidp);
-
-  client_id = NULL;
-
- out:
-  if (client_id)
-    silc_free(client_id);
-  if (channel_id)
-    silc_free(channel_id);
-  silc_free(tmpid1);
-  silc_free(tmpid2);
-}
-
-/* Received new channel user packet. Information about new users on a
-   channel are distributed between routers using this packet.  The
-   router receiving this will redistribute it and also sent JOIN notify
-   to local clients on the same channel. Normal server sends JOIN notify
-   to its local clients on the channel. */
-
-void silc_server_new_channel_user(SilcServer server,
-				  SilcSocketConnection sock,
-				  SilcPacketContext *packet)
-{
-  silc_server_new_channel_user_real(server, sock, packet, TRUE);
-}
-
-/* Received New Channel User List packet, list of New Channel User payloads
-   inside one packet.  Process the payloads one by one. */
-
-void silc_server_new_channel_user_list(SilcServer server,
-				       SilcSocketConnection sock,
-				       SilcPacketContext *packet)
-{
-  SilcPacketContext *new;
-  SilcBuffer buffer;
-  unsigned short len1, len2;
-
-  SILC_LOG_DEBUG(("Processing New Channel User List"));
-
-  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
-      packet->src_id_type != SILC_ID_SERVER ||
-      server->server_type == SILC_SERVER)
-    return;
-
-  /* If we are router and this packet is not already broadcast packet
-     we will broadcast it. Brodcast this list packet instead of multiple
-     New Channel User packets. */
-  if (!server->standalone && server->server_type == SILC_ROUTER &&
-      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
-    SILC_LOG_DEBUG(("Broadcasting received New Channel User List packet"));
-    silc_server_packet_send(server, server->router->connection, packet->type,
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
-			    packet->buffer->data, packet->buffer->len, FALSE);
-  }
-
-  /* Make copy of the original packet context, except for the actual
-     data buffer, which we will here now fetch from the original buffer. */
-  new = silc_packet_context_alloc();
-  new->type = SILC_PACKET_NEW_CHANNEL_USER;
-  new->flags = packet->flags;
-  new->src_id = packet->src_id;
-  new->src_id_len = packet->src_id_len;
-  new->src_id_type = packet->src_id_type;
-  new->dst_id = packet->dst_id;
-  new->dst_id_len = packet->dst_id_len;
-  new->dst_id_type = packet->dst_id_type;
-
-  buffer = silc_buffer_alloc(256);
-  new->buffer = buffer;
-
-  while (packet->buffer->len) {
-    SILC_GET16_MSB(len1, packet->buffer->data);
-    if ((len1 > packet->buffer->len) ||
-	(len1 > buffer->truelen))
-      break;
-
-    SILC_GET16_MSB(len2, packet->buffer->data + 2 + len1);
-    if ((len2 > packet->buffer->len) ||
-	(len2 > buffer->truelen))
-      break;
-
-    silc_buffer_pull_tail(buffer, 4 + len1 + len2);
-    silc_buffer_put(buffer, packet->buffer->data, 4 + len1 + len2);
-
-    /* Process the New Channel User */
-    silc_server_new_channel_user_real(server, sock, new, FALSE);
-
-    silc_buffer_push_tail(buffer, 4 + len1 + len2);
-    silc_buffer_pull(packet->buffer, 4 + len1 + len2);
-  }
-
-  silc_buffer_free(buffer);
-  silc_free(new);
-}
-
-/* Received Remove Channel User packet to remove a user from a channel. 
-   Routers notify other routers that user has left a channel. Client must
-   not send this packet. Normal server may send this packet but must not
-   receive it. */
-
-void silc_server_remove_channel_user(SilcServer server,
-				     SilcSocketConnection sock,
-				     SilcPacketContext *packet)
-{
-  SilcBuffer buffer = packet->buffer;
-  unsigned char *tmp1 = NULL, *tmp2 = NULL;
-  unsigned short tmp1_len, tmp2_len;
-  SilcClientID *client_id = NULL;
-  SilcChannelID *channel_id = NULL;
-  SilcChannelEntry channel;
-  SilcClientEntry client;
-  int ret;
-
-  SILC_LOG_DEBUG(("Removing user from channel"));
-
-  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
-      packet->src_id_type != SILC_ID_SERVER ||
-      server->server_type == SILC_SERVER)
-    return;
-
-  ret = silc_buffer_unformat(buffer,
-			     SILC_STR_UI16_NSTRING_ALLOC(&tmp1, &tmp1_len),
-			     SILC_STR_UI16_NSTRING_ALLOC(&tmp2, &tmp2_len),
-			     SILC_STR_END);
-  if (ret == -1)
-    goto out;
-
-  client_id = silc_id_str2id(tmp1, tmp1_len, SILC_ID_CLIENT);
-  channel_id = silc_id_str2id(tmp2, tmp2_len, SILC_ID_CHANNEL);
-  if (!client_id || !channel_id)
-    goto out;
-
-  /* If we are router and this packet is not already broadcast packet
-     we will broadcast it. The sending socket really cannot be router or
-     the router is buggy. If this packet is coming from router then it must
-     have the broadcast flag set already and we won't do anything. */
-  if (!server->standalone && server->server_type == SILC_ROUTER &&
-      sock->type == SILC_SOCKET_TYPE_SERVER &&
-      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
-    SILC_LOG_DEBUG(("Broadcasting received Remove Channel User packet"));
-    silc_server_packet_send(server, server->router->connection, packet->type,
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
-			    buffer->data, buffer->len, FALSE);
-  }
-
-  /* Get channel entry */
-  channel = silc_idlist_find_channel_by_id(server->local_list, 
-					   channel_id, NULL);
-  if (!channel) {
-    channel = silc_idlist_find_channel_by_id(server->global_list, 
-					     channel_id, NULL);
-    if (!channel)
-      goto out;
-  }
-
-  /* Get client entry */
-  client = silc_idlist_find_client_by_id(server->local_list, client_id, NULL);
-  if (!client) {
-    client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
-    if (!client)
-      goto out;
-  }
-
-  /* Remove user from channel */
-  silc_server_remove_from_one_channel(server, sock, channel, client, TRUE);
-
- out:
-  if (tmp1)
-    silc_free(tmp1);
-  if (tmp2)
-    silc_free(tmp2);
-  if (client_id)
-    silc_free(client_id);
-  if (channel_id)
-    silc_free(channel_id);
-}
-
-/* Received notify packet. Server can receive notify packets from router. 
-   Server then relays the notify messages to clients if needed. */
-
-void silc_server_notify(SilcServer server,
-			SilcSocketConnection sock,
-			SilcPacketContext *packet)
-{
-  SilcNotifyPayload payload;
-  SilcNotifyType type;
-  SilcArgumentPayload args;
-  SilcChannelID *channel_id;
-  SilcClientID *client_id, *client_id2;
-  SilcChannelEntry channel;
-  SilcClientEntry client;
-  SilcChannelClientEntry chl;
-  unsigned int mode;
-  unsigned char *tmp;
-  unsigned int tmp_len;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
-      packet->src_id_type != SILC_ID_SERVER)
-    return;
-
-  /* XXX: For now we expect that the we are normal server and that the
-     sender is router. Server could send (protocol allows it) notify to
-     router but we don't support it yet. */
-  if (server->server_type != SILC_SERVER &&
-      sock->type != SILC_SOCKET_TYPE_ROUTER)
-    return;
-
-  payload = silc_notify_payload_parse(packet->buffer);
-  if (!payload)
-    return;
-
-  type = silc_notify_get_type(payload);
-  args = silc_notify_get_args(payload);
-  if (!args)
-    goto out;
-
-  switch(type) {
-  case SILC_NOTIFY_TYPE_JOIN:
-    /* 
-     * Distribute the notify to local clients on the channel
-     */
-    SILC_LOG_DEBUG(("JOIN notify"));
-
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				packet->dst_id_type);
-    if (!channel_id)
-      goto out;
-
-    /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
-					     channel_id, NULL);
-    if (!channel) {
-      silc_free(channel_id);
-      goto out;
-    }
-
-    /* Get client ID */
-    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
-    if (!tmp) {
-      silc_free(channel_id);
-      goto out;
-    }
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
-    if (!client_id) {
-      silc_free(channel_id);
-      goto out;
-    }
-
-    /* Send to channel */
-    silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
-				       FALSE, packet->buffer->data, 
-				       packet->buffer->len, FALSE);
-
-    /* If the the client is not in local list we check global list (ie. the
-       channel will be global channel) and if it does not exist then create
-       entry for the client. */
-    client = silc_idlist_find_client_by_id(server->local_list, 
-					   client_id, NULL);
-    if (!client) {
-      SilcChannelClientEntry chl;
-
-      client = silc_idlist_find_client_by_id(server->global_list, 
-					     client_id, NULL);
-      if (!client) {
-	client = silc_idlist_add_client(server->global_list, NULL, NULL, NULL,
-					client_id, sock->user_data, NULL);
-	if (!client) {
-	  silc_free(channel_id);
-	  silc_free(client_id);
-	  goto out;
-	}
-      }
-
-      /* The channel is global now */
-      channel->global_users = TRUE;
-
-      /* Now actually JOIN the global client to the channel */
-      chl = silc_calloc(1, sizeof(*chl));
-      chl->client = client;
-      chl->channel = channel;
-      silc_list_add(channel->user_list, chl);
-      silc_list_add(client->channels, chl);
-    } else {
-      silc_free(client_id);
-    }
-    break;
-
-  case SILC_NOTIFY_TYPE_LEAVE:
-    /* 
-     * Distribute the notify to local clients on the channel
-     */
-    SILC_LOG_DEBUG(("LEAVE notify"));
-
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				packet->dst_id_type);
-    if (!channel_id)
-      goto out;
-
-    /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
-					     channel_id, NULL);
-    if (!channel) { 
-      silc_free(channel_id);
-      goto out;
-    }
-
-    /* Get client ID */
-    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
-    if (!tmp) {
-      silc_free(channel_id);
-      goto out;
-    }
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
-    if (!client_id) {
-      silc_free(channel_id);
-      goto out;
-    }
-
-    /* Send to channel */
-    silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
-				       FALSE, packet->buffer->data, 
-				       packet->buffer->len, FALSE);
-
-    /* Get client entry */
-    client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
-    if (!client) {
-      client = silc_idlist_find_client_by_id(server->local_list, 
-					     client_id, NULL);
-      if (!client) {
-	silc_free(client_id);
-	silc_free(channel_id);
-	goto out;
-      }
-    }
-    silc_free(client_id);
-
-    /* Remove the user from channel */
-    silc_server_remove_from_one_channel(server, sock, channel, client, FALSE);
-    break;
-
-  case SILC_NOTIFY_TYPE_SIGNOFF:
-    /* 
-     * Distribute the notify to local clients on the channel
-     */
-    SILC_LOG_DEBUG(("SIGNOFF notify"));
-
-    /* Get client ID */
-    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
-    if (!tmp)
-      goto out;
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
-    if (!client_id)
-      goto out;
-
-    /* Get client entry */
-    client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
-    if (!client) {
-      client = silc_idlist_find_client_by_id(server->local_list, 
-					     client_id, NULL);
-      if (!client) {
-	silc_free(client_id);
-	goto out;
-      }
-    }
-    silc_free(client_id);
-
-    /* Remove the client from all channels */
-    silc_server_remove_from_channels(server, NULL, client);
-
-    /* Remove the client entry */
-    silc_idlist_del_client(server->global_list, client);
-    break;
-
-  case SILC_NOTIFY_TYPE_TOPIC_SET:
-    /* 
-     * Distribute the notify to local clients on the channel
-     */
-
-    SILC_LOG_DEBUG(("TOPIC SET notify"));
-
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				packet->dst_id_type);
-    if (!channel_id)
-      goto out;
-
-    /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
-					     channel_id, NULL);
-    if (!channel) {
-      channel = silc_idlist_find_channel_by_id(server->global_list, 
-					       channel_id, NULL);
-      if (!channel) {
-	silc_free(channel_id);
-	goto out;
-      }
-    }
-
-    /* Get the topic */
-    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-    if (!tmp) {
-      silc_free(channel_id);
-      goto out;
-    }
-
-    if (channel->topic)
-      silc_free(channel->topic);
-    channel->topic = silc_calloc(tmp_len, sizeof(*channel->topic));
-    memcpy(channel->topic, tmp, tmp_len);
-
-    /* Send the same notify to the channel */
-    silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
-				       FALSE, packet->buffer->data, 
-				       packet->buffer->len, FALSE);
-    silc_free(channel_id);
-    break;
-
-  case SILC_NOTIFY_TYPE_NICK_CHANGE:
-    {
-      /* 
-       * Distribute the notify to local clients on the channel
-       */
-      unsigned char *id, *id2;
-
-      SILC_LOG_DEBUG(("NICK CHANGE notify"));
-      
-      /* Get old client ID */
-      id = silc_argument_get_arg_type(args, 1, &tmp_len);
-      if (!id)
-	goto out;
-      client_id = silc_id_payload_parse_id(id, tmp_len);
-      if (!client_id)
-	goto out;
-      
-      /* Get new client ID */
-      id2 = silc_argument_get_arg_type(args, 2, &tmp_len);
-      if (!id2)
-	goto out;
-      client_id2 = silc_id_payload_parse_id(id2, tmp_len);
-      if (!client_id2)
-	goto out;
-      
-      SILC_LOG_DEBUG(("Old Client ID id(%s)", 
-		      silc_id_render(client_id, SILC_ID_CLIENT)));
-      SILC_LOG_DEBUG(("New Client ID id(%s)", 
-		      silc_id_render(client_id2, SILC_ID_CLIENT)));
-
-      /* Replace the Client ID */
-      client = silc_idlist_replace_client_id(server->global_list, client_id,
-					     client_id2);
-      if (!client)
-	client = silc_idlist_replace_client_id(server->local_list, client_id, 
-					       client_id2);
-
-      if (client)
-	/* Send the NICK_CHANGE notify type to local clients on the channels
-	   this client is joined to. */
-	silc_server_send_notify_on_channels(server, client, 
-					    SILC_NOTIFY_TYPE_NICK_CHANGE, 2,
-					    id, tmp_len, 
-					    id2, tmp_len);
-
-      silc_free(client_id);
-      if (!client)
-	silc_free(client_id2);
-      break;
-    }
-
-  case SILC_NOTIFY_TYPE_CMODE_CHANGE:
-    /* 
-     * Distribute the notify to local clients on the channel
-     */
-    
-    SILC_LOG_DEBUG(("CMODE CHANGE notify"));
-      
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				packet->dst_id_type);
-    if (!channel_id)
-      goto out;
-
-    /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
-					     channel_id, NULL);
-    if (!channel) {
-      channel = silc_idlist_find_channel_by_id(server->global_list, 
-					       channel_id, NULL);
-      if (!channel) {
-	silc_free(channel_id);
-	goto out;
-      }
-    }
-
-    /* Send the same notify to the channel */
-    silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
-				       FALSE, packet->buffer->data, 
-				       packet->buffer->len, FALSE);
-
-    /* Get the mode */
-    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-    if (!tmp) {
-      silc_free(channel_id);
-      goto out;
-    }
-
-    SILC_GET32_MSB(mode, tmp);
-
-    /* Change mode */
-    channel->mode = mode;
-    silc_free(channel_id);
-    break;
-
-  case SILC_NOTIFY_TYPE_CUMODE_CHANGE:
-    /* 
-     * Distribute the notify to local clients on the channel
-     */
-
-    SILC_LOG_DEBUG(("CUMODE CHANGE notify"));
-
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				packet->dst_id_type);
-    if (!channel_id)
-      goto out;
-
-    /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
-					     channel_id, NULL);
-    if (!channel) {
-      channel = silc_idlist_find_channel_by_id(server->global_list, 
-					       channel_id, NULL);
-      if (!channel) {
-	silc_free(channel_id);
-	goto out;
-      }
-    }
-
-    /* Get the mode */
-    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-    if (!tmp) {
-      silc_free(channel_id);
-      goto out;
-    }
-      
-    SILC_GET32_MSB(mode, tmp);
-
-    /* Get target client */
-    tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
-    if (!tmp)
-      goto out;
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
-    if (!client_id)
-      goto out;
-    
-    /* Get client entry */
-    client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
-    if (!client) {
-      client = silc_idlist_find_client_by_id(server->local_list, 
-					     client_id, NULL);
-      if (!client) {
-	silc_free(client_id);
-	goto out;
-      }
-    }
-    silc_free(client_id);
-
-    /* Get entry to the channel user list */
-    silc_list_start(channel->user_list);
-    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
-      if (chl->client == client) {
-	/* Change the mode */
-	chl->mode = mode;
-	break;
-      }
-
-    /* Send the same notify to the channel */
-    silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
-				       FALSE, packet->buffer->data, 
-				       packet->buffer->len, FALSE);
-    silc_free(channel_id);
-    break;
-
-  case SILC_NOTIFY_TYPE_INVITE:
-    SILC_LOG_DEBUG(("INVITE notify (not-impl XXX)"));
-    break;
-
-    /* Ignore rest notify types for now */
-  case SILC_NOTIFY_TYPE_NONE:
-  case SILC_NOTIFY_TYPE_MOTD:
-    break;
-  default:
-    break;
-  }
-
- out:
-  silc_notify_payload_free(payload);
-}
-
-/* Processes incoming REMOVE_ID packet. The packet is used to notify routers
-   that certain ID should be removed. After that the ID will become invalid. */
-
-void silc_server_remove_id(SilcServer server,
-			   SilcSocketConnection sock,
-			   SilcPacketContext *packet)
-{
-  SilcIDList id_list;
-  SilcIDPayload idp;
-  SilcIdType id_type;
-  void *id, *id_entry;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
-      server->server_type == SILC_SERVER ||
-      packet->src_id_type != SILC_ID_SERVER)
-    return;
-
-  idp = silc_id_payload_parse(packet->buffer);
-  if (!idp)
-    return;
-
-  id_type = silc_id_payload_get_type(idp);
-
-  id = silc_id_payload_get_id(idp);
-  if (!id)
-    goto out;
-
-  /* If the sender of this packet is server and we are router we need to
-     broadcast this packet to other routers in the network. */
-  if (!server->standalone && server->server_type == SILC_ROUTER &&
-      sock->type == SILC_SOCKET_TYPE_SERVER &&
-      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
-    SILC_LOG_DEBUG(("Broadcasting received Remove ID packet"));
-    silc_server_packet_send(server, server->router->connection,
-			    packet->type, 
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST,
-			    packet->buffer->data, packet->buffer->len, FALSE);
-  }
-
-  if (sock->type == SILC_SOCKET_TYPE_SERVER)
-    id_list = server->local_list;
-  else
-    id_list = server->global_list;
-
-  /* Remove the ID */
-  switch (id_type) {
-  case SILC_ID_CLIENT:
-    id_entry = silc_idlist_find_client_by_id(id_list, (SilcClientID *)id, 
-					     NULL);
-    if (id_entry) {
-      /* Remove from channels */
-      silc_server_remove_from_channels(server, NULL, id_entry);
-
-      /* Remove the client entry */
-      silc_idlist_del_client(id_list, (SilcClientEntry)id_entry);
-      server->stat.clients--;
-      if (sock->type == SILC_SOCKET_TYPE_SERVER &&
-          server->server_type == SILC_ROUTER)
-        server->stat.cell_clients--;
-
-      SILC_LOG_DEBUG(("Removed client id(%s) from [%s] %s",
-		      silc_id_render(id, SILC_ID_CLIENT),
-		      sock->type == SILC_SOCKET_TYPE_SERVER ?
-		      "Server" : "Router", sock->hostname));
-    }
-    break;
-
-  case SILC_ID_SERVER:
-    id_entry = silc_idlist_find_server_by_id(id_list, (SilcServerID *)id,
-					     NULL);
-    if (id_entry) {
-      silc_idlist_del_server(id_list, (SilcServerEntry)id_entry);
-      server->stat.servers--;
-      if (sock->type == SILC_SOCKET_TYPE_SERVER &&
-          server->server_type == SILC_ROUTER)
-        server->stat.cell_servers--;
-
-      SILC_LOG_DEBUG(("Removed server id(%s) from [%s] %s",
-		      silc_id_render(id, SILC_ID_SERVER),
-		      sock->type == SILC_SOCKET_TYPE_SERVER ?
-		      "Server" : "Router", sock->hostname));
-    }
-    break;
-
-  case SILC_ID_CHANNEL:
-    id_entry = silc_idlist_find_channel_by_id(id_list, (SilcChannelID *)id,
-					      NULL);
-    if (id_entry) {
-      silc_idlist_del_channel(id_list, (SilcChannelEntry)id_entry);
-      server->stat.channels--;
-      if (sock->type == SILC_SOCKET_TYPE_SERVER &&
-          server->server_type == SILC_ROUTER)
-        server->stat.cell_channels--;
-
-      SILC_LOG_DEBUG(("Removed channel id(%s) from [%s] %s",
-		      silc_id_render(id, SILC_ID_CHANNEL),
-		      sock->type == SILC_SOCKET_TYPE_SERVER ?
-		      "Server" : "Router", sock->hostname));
-    }
-    break;
-
-  default:
-    break;
-  }
-
- out:
-  silc_id_payload_free(idp);
-}
-
-/* Processes received SET_MODE packet. The packet is used to distribute
-   the information about changed channel's or client's channel modes. */
-
-void silc_server_set_mode(SilcServer server,
-			  SilcSocketConnection sock,
-			  SilcPacketContext *packet)
-{
-  SilcSetModePayload payload = NULL;
-  SilcArgumentPayload args = NULL;
-  unsigned short mode_type;
-  unsigned int mode_mask;
-  unsigned char *tmp, *tmp2;
-  unsigned int tmp_len, tmp_len2;
-  unsigned char mode[4];
-  SilcClientID *client_id;
-  SilcChannelID *channel_id = NULL;
-  SilcClientEntry client;
-  SilcChannelEntry channel;
-  SilcChannelClientEntry chl;
-
-  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
-      packet->src_id_type == SILC_ID_CLIENT)
-    return;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* If we are router and this packet is not already broadcast packet
-     we will broadcast it. The sending socket really cannot be router or
-     the router is buggy. If this packet is coming from router then it must
-     have the broadcast flag set already and we won't do anything. */
-  if (!server->standalone && server->server_type == SILC_ROUTER &&
-      sock->type == SILC_SOCKET_TYPE_SERVER &&
-      !(packet->flags & SILC_PACKET_FLAG_BROADCAST)) {
-    SILC_LOG_DEBUG(("Broadcasting received Set Mode packet"));
-    silc_server_packet_send(server, server->router->connection, packet->type,
-			    packet->flags | SILC_PACKET_FLAG_BROADCAST, 
-			    packet->buffer->data, packet->buffer->len, FALSE);
-  }
-
-  /* Parse Set Mode payload */
-  payload = silc_set_mode_payload_parse(packet->buffer);
-  if (!payload)
-    return;
-
-  mode_type = silc_set_mode_get_type(payload);
-  args = silc_set_mode_get_args(payload);
-  if (!args)
-    goto out;
-
-  mode_mask = silc_set_mode_get_mode(payload);
-  SILC_PUT32_MSB(mode_mask, mode);
-
-  switch (mode_type) {
-  case SILC_MODE_TYPE_CHANNEL:
-    /* Get Channel ID */
-    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
-    if (!tmp)
-      goto out;
-    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
-    if (!channel_id)
-      goto out;
-
-    /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
-					     channel_id, NULL);
-    if (!channel) {
-      channel = silc_idlist_find_channel_by_id(server->global_list, 
-					       channel_id, NULL);
-      if (!channel)
-	goto out;
-    }
-
-    /* Get Client ID payload */
-    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-    if (!tmp)
-      goto out;
-
-    /* Send CMODE_CHANGE notify to local channel */
-    silc_server_send_notify_to_channel(server, sock, channel, FALSE,
-				       SILC_NOTIFY_TYPE_CMODE_CHANGE, 
-				       2, tmp, tmp_len,
-				       mode, sizeof(mode));
-
-    /* Change the mode */
-    channel->mode = mode_mask;
-    break;
-
-  case SILC_MODE_TYPE_UCHANNEL:
-    /* Get Channel ID */
-    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
-    if (!tmp)
-      goto out;
-    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
-    if (!channel_id)
-      goto out;
-
-    /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->local_list, 
-					     channel_id, NULL);
-    if (!channel) {
-      channel = silc_idlist_find_channel_by_id(server->global_list, 
-					       channel_id, NULL);
-      if (!channel)
-	goto out;
-    }
-
-    /* Get Client ID payload */
-    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-    if (!tmp)
-      goto out;
-
-    /* Get target Client ID */
-    tmp2 = silc_argument_get_arg_type(args, 3, &tmp_len2);
-    if (!tmp2)
-      goto out;
-    client_id = silc_id_payload_parse_id(tmp2, tmp_len2);
-    if (!client_id)
-      goto out;
-
-    /* Get target client entry */
-    client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
-    if (!client) {
-      client = silc_idlist_find_client_by_id(server->local_list, 
-					     client_id, NULL);
-      if (!client) {
-	silc_free(client_id);
-	goto out;
-      }
-    }
-    silc_free(client_id);
-
-    /* Send CUMODE_CHANGE notify to local channel */
-    silc_server_send_notify_to_channel(server, sock, channel, FALSE,
-				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3, 
-				       tmp, tmp_len,
-				       mode, sizeof(mode),
-				       tmp2, tmp_len2);
-
-    /* Get entry to the channel user list */
-    silc_list_start(channel->user_list);
-    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
-      if (chl->client == client) {
-	/* Change the mode */
-	chl->mode = mode_mask;
-	break;
-      }
-
-    break;
-
-  default:
-    break;
-  }
-
- out:
-  if (channel_id)
-    silc_free(channel_id);
-  if (payload)
-    silc_set_mode_payload_free(payload);
 }

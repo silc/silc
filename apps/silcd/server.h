@@ -68,11 +68,12 @@ typedef struct {
 /* This macro is used to send notify messages with formatted string. The
    string is formatted with arguments and the formatted string is sent as
    argument. */
-#define SILC_SERVER_SEND_NOTIFY(server, sock, type, fmt)		    \
-do {									    \
-  char *__fmt__ = silc_format fmt;					    \
-  silc_server_send_notify(server, sock, type, 1, __fmt__, strlen(__fmt__)); \
-  silc_free(__fmt__);							    \
+#define SILC_SERVER_SEND_NOTIFY(server, sock, type, fmt)	\
+do {								\
+  char *__fmt__ = silc_format fmt;				\
+  silc_server_send_notify(server, sock, FALSE, 			\
+			  type, 1, __fmt__, strlen(__fmt__));	\
+  silc_free(__fmt__);						\
 } while(0);
 
 /* Prototypes */

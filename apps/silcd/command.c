@@ -1285,13 +1285,12 @@ SILC_SERVER_CMD_FUNC(nick)
 
   /* Send notify about nickname change to our router. We send the new
      ID and ask to replace it with the old one. If we are router the
-     packet is broadcasted. */
+     packet is broadcasted. Send NICK_CHANGE notify. */
   if (!server->standalone)
-    silc_server_send_replace_id(server, server->router->connection, 
-				server->server_type == SILC_SERVER ? 
-				FALSE : TRUE, client->id,
-				SILC_ID_CLIENT, SILC_ID_CLIENT_LEN,
-				new_id, SILC_ID_CLIENT, SILC_ID_CLIENT_LEN);
+    silc_server_send_notify_nick_change(server, server->router->connection, 
+					server->server_type == SILC_SERVER ? 
+					FALSE : TRUE, client->id,
+					new_id, SILC_ID_CLIENT_LEN);
 
   /* Remove old cache entry */
   silc_idcache_del_by_id(server->local_list->clients, SILC_ID_CLIENT, 
@@ -1318,7 +1317,7 @@ SILC_SERVER_CMD_FUNC(nick)
 
   nidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
-  /* Send NICK_CHANGE notify */
+  /* Send NICK_CHANGE notify to the client's channels */
   silc_server_send_notify_on_channels(server, client, 
 				      SILC_NOTIFY_TYPE_NICK_CHANGE, 2,
 				      oidp->data, oidp->len, 
@@ -1418,6 +1417,13 @@ SILC_SERVER_CMD_FUNC(topic)
     if (channel->topic)
       silc_free(channel->topic);
     channel->topic = strdup(tmp);
+
+    /* Send TOPIC_SET notify type to the network */
+    if (!server->standalone)
+      silc_server_send_notify_topic_set(server, server->router->connection,
+					server->server_type == SILC_ROUTER ?
+					TRUE : FALSE, channel, client->id,
+					SILC_ID_CLIENT_LEN, channel->topic);
 
     idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
@@ -1552,7 +1558,8 @@ SILC_SERVER_CMD_FUNC(invite)
   sidp = silc_id_payload_encode(sender->id, SILC_ID_CLIENT);
 
   /* Send notify to the client that is invited to the channel */
-  silc_server_send_notify_dest(server, dest_sock, dest_id, SILC_ID_CLIENT,
+  silc_server_send_notify_dest(server, dest_sock, FALSE, dest_id, 
+			       SILC_ID_CLIENT,
 			       SILC_NOTIFY_TYPE_INVITE, 2, 
 			       sidp->data, sidp->len, tmp, len);
 
@@ -1933,16 +1940,16 @@ static void silc_server_command_join_channel(SilcServer server,
   if (!cmd->pending) {
     /* Send JOIN notify to locally connected clients on the channel */
     silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
-				       SILC_NOTIFY_TYPE_JOIN, 1,
-				       clidp->data, clidp->len);
+				       SILC_NOTIFY_TYPE_JOIN, 2,
+				       clidp->data, clidp->len,
+				       chidp->data, chidp->len);
 
-    /* Send NEW_CHANNEL_USER packet to our primary router */
+    /* Send JOIN notify packet to our primary router */
     if (!server->standalone)
-      silc_server_send_new_channel_user(server, server->router->connection,
-					server->server_type == SILC_SERVER ?
-					FALSE : TRUE,
-					channel->id, SILC_ID_CHANNEL_LEN,
-					client->id, SILC_ID_CLIENT_LEN);
+      silc_server_send_notify_join(server, server->router->connection,
+				   server->server_type == SILC_ROUTER ?
+				   TRUE : FALSE, channel, client->id,
+				   SILC_ID_CLIENT_LEN);
   }
 
   /* Send USERS command reply to the joined channel so the user sees who
@@ -2565,19 +2572,17 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   /* Send CMODE_CHANGE notify */
   cidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-  silc_server_send_notify_to_channel(server, NULL, channel, TRUE,
+  silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
 				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 2,
 				     cidp->data, cidp->len, 
 				     tmp_mask, tmp_len);
 
-  /* Set SET_MODE packet to network */
+  /* Set CMODE notify type to network */
   if (!server->standalone)
-    silc_server_send_set_mode(server, server->router->connection,
-			      server->server_type == SILC_ROUTER ? 
-			      TRUE : FALSE, SILC_MODE_TYPE_CHANNEL,
-			      mode_mask, 2,
-			      tmp_id, tmp_len2,
-			      cidp->data, cidp->len);
+    silc_server_send_notify_cmode(server, server->router->connection,
+				  server->server_type == SILC_ROUTER ? 
+				  TRUE : FALSE, channel,
+				  mode_mask, client->id, SILC_ID_CLIENT_LEN);
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CMODE,
@@ -2752,22 +2757,22 @@ SILC_SERVER_CMD_FUNC(cumode)
 
   /* Send notify to channel, notify only if mode was actually changed. */
   if (notify) {
-    silc_server_send_notify_to_channel(server, NULL, channel, TRUE,
+    silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
 				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3,
 				       idp->data, idp->len,
 				       tmp_mask, 4, 
 				       tmp_id, tmp_len);
-  }
 
-  /* Set SET_MODE packet to network */
-  if (!server->standalone)
-    silc_server_send_set_mode(server, server->router->connection,
-			      server->server_type == SILC_ROUTER ? 
-			      TRUE : FALSE, SILC_MODE_TYPE_UCHANNEL,
-			      target_mask, 3,
-			      tmp_ch_id, tmp_ch_len,
-			      idp->data, idp->len,
-			      tmp_id, tmp_len);
+    /* Set CUMODE notify type to network */
+    if (!server->standalone)
+      silc_server_send_notify_cumode(server, server->router->connection,
+				     server->server_type == SILC_ROUTER ? 
+				     TRUE : FALSE, channel,
+				     target_mask, client->id, 
+				     SILC_ID_CLIENT_LEN,
+				     target_client->id, 
+				     SILC_ID_CLIENT_LEN);
+  }
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CUMODE,
@@ -2854,12 +2859,12 @@ SILC_SERVER_CMD_FUNC(leave)
   }
 
   /* Notify routers that they should remove this client from their list
-     of clients on the channel. */
+     of clients on the channel. Send LEAVE notify type. */
   if (!server->standalone)
-    silc_server_send_remove_channel_user(server, 
-					 server->router->connection,
-					 server->server_type == SILC_ROUTER ?
-					 TRUE : FALSE, id_entry->id, id);
+    silc_server_send_notify_leave(server, server->router->connection,
+				  server->server_type == SILC_ROUTER ?
+				  TRUE : FALSE, channel, id_entry->id,
+				  SILC_ID_CLIENT_LEN);
 
   /* Remove client from channel */
   i = silc_server_remove_from_one_channel(server, sock, channel, id_entry,

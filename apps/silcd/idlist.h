@@ -470,7 +470,7 @@ SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname, 
 		       char *username, char *userinfo, SilcClientID *id, 
 		       SilcServerEntry router, void *connection);
-void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);
+int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);
 SilcClientEntry *
 silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 				    char *server, unsigned int *clients_count);

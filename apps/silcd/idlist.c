@@ -224,13 +224,14 @@ silc_idlist_add_client(SilcIDList id_list, unsigned char *nickname,
 /* Free client entry. This free's everything and removes the entry
    from ID cache. Call silc_idlist_del_data before calling this one. */
 
-void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
+int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 {
   if (entry) {
     /* Remove from cache */
     if (entry->id)
-      silc_idcache_del_by_id(id_list->clients, SILC_ID_CLIENT, 
-			     (void *)entry->id);
+      if (!silc_idcache_del_by_id(id_list->clients, SILC_ID_CLIENT, 
+				  (void *)entry->id))
+	return FALSE;
 
     /* Free data */
     if (entry->nickname)
@@ -244,7 +245,11 @@ void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 
     memset(entry, 'F', sizeof(*entry));
     silc_free(entry);
+
+    return TRUE;
   }
+
+  return FALSE;
 }
 
 /* Returns all clients matching requested nickname. Number of clients is
@@ -468,6 +473,8 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
     memcpy(id_cache->data, new_id->hash, sizeof(new_id->hash));
     silc_idcache_sort_by_data(id_list->clients);
   }
+
+  SILC_LOG_DEBUG(("Replaced"));
 
   return client;
 }

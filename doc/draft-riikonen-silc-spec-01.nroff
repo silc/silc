@@ -1175,7 +1175,15 @@ rsa        RSA  (mandatory)
 dss        DSS  (optional)
 .in 3
 
-Both of the algorithms are described in [Scheneir] and [Menezes].
+DSS is described in [Menezes].  The RSA must be implemented according
+PKCS #1 [PKCS1].  The mandatory PKCS #1 implementation in SILC must be
+compliant to either PKCS #1 version 1.5 or newer with the following
+notes: The signature encoding is always in same format as the encryption
+encoding regardles of the PKCS #1 version.  The signature with appendix
+(with hash algorithm OID in the data) must not be used in the SILC.  The
+rationale for this is that there is no binding between the PKCS #1 OIDs
+and the hash algorithms used in the SILC protocol.  Hence, the encoding
+is always in PKCS #1 version 1.5 format.
 
 Additional public key algorithms may be defined to be used in SILC.
 

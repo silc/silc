@@ -167,7 +167,9 @@ SilcBuffer silc_id_payload_encode(void *id, SilcIdType type)
   unsigned char *id_data;
   unsigned int len;
 
-  SILC_LOG_DEBUG(("Parsing ID payload"));
+  SILC_LOG_DEBUG(("Encoding %s ID payload",
+		  type == SILC_ID_CLIENT ? "Client" :
+		  type == SILC_ID_SERVER ? "Server" : "Channel"));
 
   id_data = silc_id_id2str(id, type);
   len = silc_id_get_len(type);

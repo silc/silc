@@ -59,10 +59,10 @@ typedef unsigned char SilcPacketFlags;
 /* All defined packet flags */
 #define SILC_PACKET_FLAG_NONE             0x00
 #define SILC_PACKET_FLAG_PRIVMSG_KEY      0x01
-#define SILC_PACKET_FLAG_BROADCAST        0x02
-#define SILC_PACKET_FLAG_TUNNELED         0x04
+#define SILC_PACKET_FLAG_LIST             0x04
+#define SILC_PACKET_FLAG_BROADCAST        0x04
+#define SILC_PACKET_FLAG_TUNNELED         0x08
 /* Rest of flags still available
-#define SILC_PACKET_FLAG_XXX              0x08
 #define SILC_PACKET_FLAG_XXX              0x10
 #define SILC_PACKET_FLAG_XXX              0x20
 #define SILC_PACKET_FLAG_XXX              0x40
@@ -210,22 +210,15 @@ typedef void (*SilcPacketParserCallback)(SilcPacketParserContext
 #define SILC_PACKET_CONNECTION_AUTH_REQUEST 16   /* Request of auth meth */
 #define SILC_PACKET_CONNECTION_AUTH      17      /* Connectinon auth */
 #define SILC_PACKET_NEW_ID               18      /* Sending new ID */
-#define SILC_PACKET_NEW_ID_LIST          19      /* Sending list of them */
-#define SILC_PACKET_NEW_CLIENT           20      /* Registering client */
-#define SILC_PACKET_NEW_SERVER           21      /* Registering server */
-#define SILC_PACKET_NEW_CHANNEL          22      /* Registering channel */
-#define SILC_PACKET_NEW_CHANNEL_USER     23      /*   "" user on channel */
-#define SILC_PACKET_NEW_CHANNEL_LIST     24      /* List of new channels */
-#define SILC_PACKET_NEW_CHANNEL_USER_LIST 25     /* List of users on "" */
-#define SILC_PACKET_REPLACE_ID           26      /* To replace old ID */
-#define SILC_PACKET_REMOVE_ID            27      /* To remove ID */
-#define SILC_PACKET_REMOVE_CHANNEL_USER  28      /* Remove user from channel */
-#define SILC_PACKET_REKEY                29
-#define SILC_PACKET_REKEY_DONE           30
-#define SILC_PACKET_SET_MODE             31      /* Set mode */
-#define SILC_PACKET_SET_MODE_LIST        32      /* List of Set Mode's */
-#define SILC_PACKET_HEARTBEAT            33      /* Heartbeat */
-/* #define SILC_PACKET_MAX               255 */
+#define SILC_PACKET_NEW_CLIENT           19      /* Client registering */
+#define SILC_PACKET_NEW_SERVER           20      /* Server registering */
+#define SILC_PACKET_NEW_CHANNEL          21      /* Channel registering */
+#define SILC_PACKET_REKEY                22      /* Re-key start */
+#define SILC_PACKET_REKEY_DONE           23      /* Re-key done */
+#define SILC_PACKET_HEARTBEAT            24      /* Heartbeat */
+
+#define SILC_PACKET_PRIVATE              200     /* Private range start  */
+#define SILC_PACKET_MAX                  255     /* RESERVED */
 
 /* Macros */
 

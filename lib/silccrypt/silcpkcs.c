@@ -30,7 +30,6 @@
 SilcPKCSObject silc_pkcs_list[] =
 {
   /* RSA with PKCS #1 (Uses directly routines from Raw RSA operations) */
-  /*
   { "rsa", &silc_rsa_data_context, 
     silc_rsa_init, silc_rsa_clear_keys, silc_rsa_get_public_key,
     silc_rsa_get_private_key, silc_rsa_set_public_key,
@@ -38,10 +37,9 @@ SilcPKCSObject silc_pkcs_list[] =
     silc_rsa_data_context_len, silc_rsa_set_arg,
     silc_pkcs1_encrypt, silc_pkcs1_decrypt,
     silc_pkcs1_sign, silc_pkcs1_verify },
-  */
 
   /* Raw RSA operations */
-  { "rsa", &silc_rsa_data_context, 
+  { "rsa-raw", &silc_rsa_data_context, 
     silc_rsa_init, silc_rsa_clear_keys, silc_rsa_get_public_key,
     silc_rsa_get_private_key, silc_rsa_set_public_key,
     silc_rsa_set_private_key, silc_rsa_context_len,

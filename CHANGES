@@ -1,3 +1,69 @@
+Thu Feb 22 15:08:20 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added List flag (SILC_PACKET_FLAG_LIST) to indicate list of
+	  payloads in one packet.
+
+	* Deprecated following packet types: NEW_ID_LIST, NEW_CHANNEL_LIST,
+	  NEW_CHANNEL_USER_LIST, SET_MODE and SET_MODE_LIST.  List packets
+	  use now the new List flag.
+
+	* Also deprecated the following packet types: REPLACE_ID,
+	  NEW_CHANNEL_USER and REMOVE_CHANNEL_USER packet types.
+	 
+	* Added list support for Notify packet in server.
+
+	* Added silc_server_send_notify_channel_change to send the
+	  CHANNEL_CHANGE notify type to replace channel ID's.  Deprecates
+	  the silc_server_send_replace_id.
+
+	* Added silc_server_send_notify_nick_change to send the
+	  NICK_CHANGE notify type.  Deprecates the function
+	  silc_server_send_replace_id.
+
+	* Added silc_server_send_notify_join to send the JOIN notify type.
+	  Deprecates the function silc_server_send_new_channel_user.
+
+	* Added silc_server_send_notify_leave to send LEAVE notify type.
+	  Deprecates the function silc_server_send_remove_channel_user.
+
+	* Added silc_server_send_notify_cmode and 
+	  silc_server_send_notify_cumode to send CMODE and CUMODE notify
+	  types.  Deprecates the silc_server_send_set_mode function.
+
+	* Added SERVER_SIGNOFF notify type to indicate that server has
+	  quit.  This means that all clients on the channel from that 
+	  server will drop.  This can be also used when netsplit happens.
+
+	  Deprecated REMOVE_ID packet type since it is not needed anymore
+	  even from server.
+
+	  Added silc_server_send_notify_server_signoff to send the
+	  SERVER_SIGNOFF notify type.  Deprecates the function
+	  silc_server_send_remove_id.
+
+	  Added also silc_server_send_notify_signoff to send the
+	  SIGNOFF notify type.
+
+	* Employed the PKCS #1. It is the mandatory way to do RSA in the
+	  SILC protocol from this day on.  Changed the protocol 
+	  specification as well.
+
+	* Added silc_server_send_notify_topic_set to send TOPIC_SET
+	  notify type.  It is used between routers to notify about
+	  topic changes on a channel.
+
+	* Added silc_id_dup into lib/silccore/id.[ch] to duplicate
+	  ID data.
+
+	* Partly updated the protocol specification to comply with the
+	  changes now made.  It is still though a bit outdated.
+
+	* The JOIN notify type now takes one extra argument <Channel ID>.
+	  The packet used to be destined to the channel but now the
+	  JOIN type may be sent as list thus it is impossible to 
+	  destine it to any specific channel.  By adding this argument
+	  it is again possible.
+
 Wed Feb 21 22:39:30 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added CREDITS file.  The CHANGES and CREDITS file will appear

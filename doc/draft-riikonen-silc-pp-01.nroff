@@ -94,18 +94,9 @@ Table of Contents
       2.3.14 Command Reply Payload .............................. 29
       2.3.15 Connection Auth Request Payload .................... 29
       2.3.16 New ID Payload ..................................... 30
-      2.3.17 New ID List Payload ................................ 31
-      2.3.18 New Client Payload ................................. 31
-      2.3.19 New Server Payload ................................. 32
-      2.3.20 New Channel Payload ................................ 33
-      2.3.21 New Channel User Payload ........................... 34
-      2.3.22 New Channel List Payload ........................... 35
-      2.3.23 New Channel User List Payload ...................... 36
-      2.3.24 Replace ID Payload ................................. 36
-      2.3.25 Remove ID Payload .................................. 37
-      2.3.26 Remove Channel User Payload ........................ 38
-      2.3.27 Set Mode Payload ................................... XXX
-      2.3.28 Set Mode List Payload .............................. XXX
+      2.3.17 New Client Payload ................................. 31
+      2.3.18 New Server Payload ................................. 32
+      2.3.19 New Channel Payload ................................ 33
   2.4 SILC ID Types ............................................. 39
   2.5 Packet Encryption And Decryption .......................... 39
       2.5.1 Normal Packet Encryption And Decryption ............. 39
@@ -117,9 +108,8 @@ Table of Contents
   2.9 Packet Sending ............................................ 43
   2.10 Packet Reception ......................................... 43
   2.11 Packet Routing ........................................... 44
-  2.12 Packet Forwarding ........................................ 44
-  2.13 Packet Broadcasting ...................................... 45
-  2.14 Packet Tunneling ......................................... 45
+  2.12 Packet Broadcasting ...................................... 45
+  2.13 Packet Tunneling ......................................... 45
 3 Security Considerations ....................................... 46
 4 References .................................................... 46
 5 Author's Address .............................................. 47
@@ -147,10 +137,6 @@ Figure 16:  Connection Auth Request Payload
 Figure 17:  New Client Payload
 Figure 18:  New Server Payload
 Figure 19:  New Channel Payload
-Figure 20:  New Channel User Payload
-Figure 21:  Replace ID Payload
-Figure 22:  Remove Channel User Payload
-Figure 23:  Set Mode Payload
 
 
 .ti 0
@@ -302,13 +288,15 @@ o Flags (1 byte) - Indicates flags to be used in packet
        Encryption And Decryption for more information.
 
 
-     Forwarded                 0x02
+     List                      0x02
   
-       Marks the packet to be forwarded.  Some specific
-       packet types may be forwarded.  Receiver of packet
-       with this flag set must not forward the packet any
-       further.  See section 2.12 Packet Forwarding for
-       description of packet forwarding.
+       Indicates that the packet consists of list of
+       packet payloads indicated by the Packet Type field.
+       The payloads are added one after the other.  Note that
+       there are packet types that must not be used as
+       list.  Parsing of list packet is done by calculating
+       the length of each payload and parsing them one by
+       one.
 
 
      Broadcast                 0x04
@@ -405,6 +393,9 @@ List of SILC Packet types are defined as follows.
           the disconnection is sent inside the packet payload.  Client
           usually does not send this packet.
 
+          This packet must not be sent as list and the List flag must
+	  not be set.
+
           Payload of the packet:  See section 2.3.3 Disconnect Payload
 
 
@@ -412,6 +403,9 @@ List of SILC Packet types are defined as follows.
 
           This packet is sent upon successful execution of some protocol.
           The status of the success is sent in the packet.
+
+          This packet must not be sent as list and the List flag must
+	  not be set.
 
           Payload of the packet:  See section 2.3.4 Success Payload
 
@@ -421,6 +415,9 @@ List of SILC Packet types are defined as follows.
           This packet is sent upon failure of some protocol.  The status
           of the failure is sent in the packet.
 
+          This packet must not be sent as list and the List flag must
+	  not be set.
+
           Payload of the packet:  See section 2.3.5 Failure Payload
 
 
@@ -428,6 +425,9 @@ List of SILC Packet types are defined as follows.
 
           This packet may be sent upon rejection of some protocol.
           The status of the rejection is sent in the packet.
+
+          This packet must not be sent as list and the List flag must
+	  not be set.
 
           Payload of the packet:  See section 2.3.6 Reject Payload
 
@@ -451,6 +451,9 @@ List of SILC Packet types are defined as follows.
           most likely to take action anyway.  This packet may be sent
           to entity that is indirectly connected to the sender.
 
+          This packet must not be sent as list and the List flag must
+	  not be set.
+
           Payload of the packet:  See section 2.3.8 Error Payload.
 
 
@@ -461,6 +464,9 @@ List of SILC Packet types are defined as follows.
           the channel.  Messages sent to the channel are always protected
           by channel specific keys.  Channel Keys are distributed by
           SILC_PACKET_CHANNEL_KEY packet.
+
+          This packet must not be sent as list and the List flag must
+	  not be set.
 
           Payload of the packet:  See section 2.3.9 Channel Message 
                                   Payload
@@ -473,6 +479,9 @@ List of SILC Packet types are defined as follows.
           is used to protect the traffic on the channel.  Only server
           may send this packet.  This packet may be sent to entity
           that is indirectly connected to the sender.
+
+          This packet must not be sent as list and the List flag must
+	  not be set.
 
           Payload of the packet:  See section 2.3.10 Channel Key Payload
 
@@ -487,6 +496,9 @@ List of SILC Packet types are defined as follows.
           agree the key with the remote client.  Pre-shared key may be 
           used as well if both of the client knows it, however, it needs 
           to be agreed outside SILC.  See more of this in [SILC1].
+
+          This packet must not be sent as list and the List flag must
+	  not be set.
 
           Payload of the packet:  See section 2.3.11 Private Message
                                   Payload
@@ -506,6 +518,9 @@ List of SILC Packet types are defined as follows.
           default or to use normal session keys by default, is 
           implementation specific issue.  See more of this in [SILC1].
 
+          This packet must not be sent as list and the List flag must
+	  not be set.
+
           Payload of the packet:  See section 2.3.12 Private Message
                                   Key Payload
 
@@ -519,6 +534,9 @@ List of SILC Packet types are defined as follows.
           This packet may be sent to entity that is indirectly connected
           to the sender.
 
+          This packet must not be sent as list and the List flag must
+	  not be set.
+
           Payload of the packet:  See section 2.3.13 Command Payload
 
 
@@ -527,6 +545,9 @@ List of SILC Packet types are defined as follows.
           This packet is send as reply to the SILC_PACKET_COMMAND packet.
           The contents of this packet is command specific.  This packet
           maybe sent to entity that is indirectly connected to the sender.
+
+          This packet must not be sent as list and the List flag must
+	  not be set.
 
           Payload of the packet:  See section 2.3.14 Command Reply 
                                   Payload and section 2.3.13 Command
@@ -538,6 +559,9 @@ List of SILC Packet types are defined as follows.
           This packet is used to start SILC Key Exchange Protocol, 
           described in detail in [SILC3].
 
+          This packet must not be sent as list and the List flag must
+	  not be set.
+
           Payload of the packet:  Payload of this packet is described
                                   in the section SILC Key Exchange
                                   Protocol and its sub sections in
@@ -548,6 +572,9 @@ List of SILC Packet types are defined as follows.
 
           This packet is used as part of the SILC Key Exchange Protocol.
 
+          This packet must not be sent as list and the List flag must
+	  not be set.
+
           Payload of the packet:  Payload of this packet is described
                                   in the section SILC Key Exchange
                                   Protocol and its sub sections in
@@ -557,6 +584,9 @@ List of SILC Packet types are defined as follows.
      15   SILC_PACKET_KEY_EXCHANGE_2
 
           This packet is used as part of the SILC Key Exchange Protocol.
+
+          This packet must not be sent as list and the List flag must
+	  not be set.
 
           Payload of the packet:  Payload of this packet is described
                                   in the section SILC Key Exchange
@@ -574,6 +604,9 @@ List of SILC Packet types are defined as follows.
           The party receiving this payload must respond with the same
           packet including the mandatory authentication method.
 
+          This packet must not be sent as list and the List flag must
+	  not be set.
+
           Payload of the packet:  See section 2.3.15 Connection Auth
                                   Request Payload
 
@@ -584,6 +617,9 @@ List of SILC Packet types are defined as follows.
           Authentication Protocol.  This protocol is used to authenticate
           the connecting party.  The protocol is described in detail in
           [SILC3].
+
+          This packet must not be sent as list and the List flag must
+	  not be set.
 
           Payload of the packet:  Payload of this packet is described
                                   in the section SILC Authentication
@@ -602,28 +638,20 @@ List of SILC Packet types are defined as follows.
           Payload of the packet:  See section 2.3.16 New ID Payload
 
 
-     19   SILC_PACKET_NEW_ID_LIST
+     19   SILC_PACKET_NEW_CLIENT
 
-          This packet is used to distribute list of new ID's from
-          server to routers.  This is equivalent to previous packet
-          type except that it may include several ID's.  Client must
-          not send this packet.
-
-          Payload of the packet:  See section 2.3.17 New ID List 
-                                  Payload
-
-
-     20   SILC_PACKET_NEW_CLIENT
-
-          This packet is used by client to register itself to the
-          SILC network.  This is sent after key exchange and 
+          This packet is used by client to register itself to the   
+          SILC network.  This is sent after key exchange and  
           authentication protocols has been completed.  Client sends
           various information about itself in this packet.
 
-          Payload of the packet:  See section 2.3.18 New Client Payload
+          This packet must not be sent as list and the List flag must
+	  not be set.
+
+          Payload of the packet:  See section 2.3.19 New Client Payload
 
 
-     21   SILC_PACKET_NEW_SERVER
+     20   SILC_PACKET_NEW_SERVER
 
           This packet is used by server to register itself to the
           SILC network.  This is sent after key exchange and 
@@ -633,10 +661,13 @@ List of SILC Packet types are defined as follows.
           its Server ID and other information in this packet.
           Client must not send or receive this packet.
 
-          Payload of the packet:  See section 2.3.19 New Server Payload
+          This packet must not be sent as list and the List flag must
+	  not be set.
+
+          Payload of the packet:  See section 2.3.20 New Server Payload
 
 
-     22   SILC_PACKET_NEW_CHANNEL
+     21   SILC_PACKET_NEW_CHANNEL
 
           This packet is used to notify routers about newly created
           channel.  Channels are always created by the router and it must
@@ -645,108 +676,21 @@ List of SILC Packet types are defined as follows.
           packet.  This packet maybe sent to entity that is indirectly
           connected to the sender.
 
-          Payload of the packet:  See section 2.3.20 New Channel Payload
+          Payload of the packet:  See section 2.3.21 New Channel Payload
 
 
-     23   SILC_PACKET_NEW_CHANNEL_USER
-
-          This packet is used to notify routers about new user on channel.
-          The packet is sent after user has joined to the channel.  Server
-          may send this packet to its router and router may send this to
-          its primary router.  Client must not send this packet.  This
-          packet maybe sent to entity that is indirectly connected to
-          the sender.
-
-          When received, the server or router must distribute
-          SILC_NOTIFY_TYPE_JOIN to local clients on the channel.
-
-          Payload of the packet:  See section 2.3.21 New Channel User
-                                  Payload
-
-
-     24   SILC_PACKET_NEW_CHANNEL_LIST
-
-          This packet is used to distribute list of created channels
-          from server to routers.  This is equivalent to the packet
-          SILC_PACKET_NEW_CHANNEL except that it may include several
-          payloads. Client must not send this packet.
-
-          Payload of the packet:  See section 2.3.22 New Channel List
-                                  Payload
-
-
-     25   SILC_PACKET_NEW_CHANNEL_USER_LIST
-
-          This packet is used to distribute list of users on specific
-          channel from server to routers.  This is equivalent to the
-          packet SILC_PACKET_NEW_CHANNEL_USER except that it may
-          include several payloads.  Client must not send this packet.
-
-          When received, the server or router must distribute
-          SILC_NOTIFY_TYPE_JOIN to local clients on the channel.
-
-          Payload of the packet:  See section 2.3.23 New Channel User
-                                  List Payload
-
-
-     26   SILC_PACKET_REPLACE_ID
-
-          This packet is used to replace old ID with new ID sent in
-          the packet payload.  For example, when client changes its
-          nickname new ID is created and this packet can be used to
-          distribute the new ID and the old ID is removed when it is
-          send in the packet.  Client cannot send or receive this
-          packet.  This packet maybe sent to entity that is indirectly
-          connected to the sender.
-
-          When received and the replaced ID is Client ID the server or
-          router must distribute SILC_NOTIFY_TYPE_NICK_CHANGE to the
-          local clients on the channels (if any) of the client whose
-          ID was changed.  However, the notify type must be sent only
-          once per client.
-
-          Payload of the packet:  See section 2.3.24 Replace ID Payload
-
-
-     27   SILC_PACKET_REMOVE_ID
-
-          This packet is used to removed ID.  For example, when client
-          exits SILC network its ID is removed.  Client must not send
-          this packet.  This packet maybe sent to entity that is
-          indirectly connected to the sender.
-
-          When received and the removed ID is Client ID the server or
-          router must distribute SILC_NOTIFY_TYPE_SIGNOFF to the
-          local clients on the channels (if any) of the client whose
-          ID was removed.  However, the notify type must be sent only
-          once per client.
-
-          Payload of the packet:  See section 2.3.25 Remove ID Payload
-
-
-     28   SILC_PACKET_REMOVE_CHANNEL_USER
-
-          This packet is used to remove user from a channel.  This is
-          used by router to notify other routers in the network that a
-          client has left a channel.  This packet maybe sent to entity
-          that is indirectly connected to the sender.
-
-          When received, the server or router must distribute
-          SILC_NOTIFY_TYPE_LEAVE to local clients on the channel.
-
-          Payload of the packet:  See section 2.3.26 Remove Channel User
-                                  Payload
-
-
-     29   SILC_PACKET_REKEY
+     22   SILC_PACKET_REKEY
 
           This packet is used to indicate that re-key must be performed
           for session keys.  See section Session Key Regeneration in
           [SILC1] for more information.  This packet does not have
           a payload.
 
+          This packet must not be sent as list and the List flag must
+	  not be set.
 
-     30   SILC_PACKET_REKEY_DONE
+
+     23   SILC_PACKET_REKEY_DONE
 
           This packet is used to indicate that re-key is performed and
           new keys must be used hereafter.  This is sent only if re-key
@@ -754,38 +698,22 @@ List of SILC Packet types are defined as follows.
           as SILC Key Exchange protocol is executed.  This packet does
           not have a payload.
 
+          This packet must not be sent as list and the List flag must
+	  not be set.
+
      
-     31   SILC_PACKET_SET_MODE
-
-          This packet is used by servers and routers to inform each 
-          other about changed modes.  When channel's and client'c channel
-          mode is changed this packet is used to distribute the information
-          to all routers in the network.  Server can send this packet but
-          must not receive it.  Router can send and receive this packet.
-          Client must not send or receive this packet.
-
-          Payload of the packet:  See section 2.3.27 Set Mode Payload
-
-
-     32   SILC_PACKET_SET_MODE_LIST
-
-          This packet is used to distribute list of Set Mode payloads
-          from server to routers.  This is equivalent to the packet
-          SILC_PACKET_SET_MODE except that it may include several
-          payloads.  Client must not send this packet.
-
-          Payload of the packet:  See section 2.3.28 Set Mode List
-                                  Payload
-
-     33   SILC_PACKET_HEARTBEAT
+     24   SILC_PACKET_HEARTBEAT
 
           This packet is used by clients, servers and routers to keep the
           connection alive.  It is recommended that all servers implement
           keepalive actions and perform it to both direction in a link.
           This packet does not have a payload.
 
+          This packet must not be sent as list and the List flag must
+	  not be set.
 
-     34 - 199
+
+     25 - 199
 
          Currently undefined commands.
 
@@ -1127,25 +1055,24 @@ ID's sent in arguments are sent inside ID Payload.
 
       Sent when client has joined to a channel.  The server must distribute
       this type only to the local clients on the channel and then send
-      SILC_PACKET_NEW_CHANNEL_USER packet to its primary route.  The router
-      or server receiving the packet distributes this type to the local
-      clients on the channel.  See description of SILC_PACKET_NEW_CHANNEL_USER
-      packet for more information.
+      it to its primary router. The router or server receiving the packet
+      distributes this type to the local clients on the channel and
+      broadcast it to the network.
 
-      Max Arguments:  1
-          Arguments:  (1) <Client ID>
+      Max Arguments:  2
+          Arguments:  (1) <Client ID>  (2) <Channel ID>
 
-      The <Client ID> is the client that joined to the channel.
+      The <Client ID> is the client that joined to the channel indicated
+      by the <Channel ID>.
 
 
 3     SILC_NOTIFY_TYPE_LEAVE
 
       Sent when client has left a channel.  The server must distribute
       this type only to the local clients on the channel and then send
-      SILC_PACKET_REMOVE_CHANNEL_USER packet to its primary route.  The
-      router or server receiving the packet distributes this type to the
-      local clients on the channel.  See description of 
-      SILC_PACKET_REMOVE_CHANNEL_USER packet for more information.
+      it to its primary router. The router or server receiving the packet
+      distributes this type to the local clients on the channel and
+      broadcast it to the network.
 
       Max Arguments:  1
           Arguments:  (1) <Client ID>
@@ -1155,15 +1082,17 @@ ID's sent in arguments are sent inside ID Payload.
 
 4     SILC_NOTIFY_TYPE_SIGNOFF
 
-      Sent when client signoffs from SILC network.  This type is sent only
-      if the client was joined to any channel.  This type is sent by server
-      or router when SILC_PACKET_REMOVE_ID packet has been received.  See
-      detailed information from description of SILC_PACKET_REMOVE_ID packet.
+      Sent when client signoffs from SILC network.  The server must
+      distribute this type only to the local clients on the channel and
+      then send it to its primary router. The router or server receiving
+      the packet distributes this type to the local clients on the channel
+      and broadcast it to the network.
 
-      Max Arguments:  1
-          Arguments:  (1) <Client ID>
+      Max Arguments:  2
+          Arguments:  (1) <Client ID>  (2)  <message>
 
-      The <Client ID> is the client who left SILC network.
+      The <Client ID> is the client who left SILC network.  The <message>
+      is free text string indicating the reason of signoff.
 
 
 5     SILC_NOTIFY_TYPE_TOPIC_SET
@@ -1180,10 +1109,11 @@ ID's sent in arguments are sent inside ID Payload.
 
 6     SILC_NOTIFY_TYPE_NICK_CHANGE
 
-      Sent when client changes nick on a channel.  This type is sent only if
-      the client has joined to any channel.  This type is sent by server or
-      router when SILC_PACKET_REPLACE_ID packet has been received.  See 
-      detailed information from description of SILC_PACKET_REPLACE_ID packet.
+      Sent when client changes nick on a channel.  The server must
+      distribute this type only to the local clients on the channel and
+      then send it to its primary router. The router or server receiving
+      the packet distributes this type to the local clients on the channel
+      and broadcast it to the network.
 
       Max Arguments:  2
           Arguments:  (1) <Old Client ID>  (2) <New Client ID>
@@ -1242,6 +1172,17 @@ ID's sent in arguments are sent inside ID Payload.
 
       The <Old Channel ID> is the channel's old ID and the <New Channel ID>
       is the new one that must replace the old one.
+
+
+11    SILC_NOTIFY_TYPE_SERVER_SIGNOFF
+
+      Sent when server quits SILC network.  Those clients from this server
+      that are on channels must be removed from the channel.
+
+      Max Arguments:  1
+          Arguments:  (1) <Server ID>
+
+      The <Server ID> is the server's ID.
 
 .in 3
 
@@ -1767,29 +1708,6 @@ The packet uses generic ID Payload as New ID Payload.  See section
 
 
 .ti 0
-2.3.17 New ID List Payload
-
-New ID List Payload is used to distribute list of ID's usually from 
-server to router but also from router to other routers in the network.
-This payload is used, for example, when server is connected to router
-and the server wants to distribute all of its locally connected clients
-and locally created channels to the router.  It is convenient in this
-case to use this payload instead of sending all the information one
-by one using New ID Payload.  Also, when router redistributes the
-packet by broadcasting it, it is convenient to send only one packet.
-
-There is no specific payload for this packet type.  The packet type
-uses same payload as described in previous section.  To form a list
-several payloads is put in the packet each after each.  The payload
-is variable in length but can be calculated by calculating the ID
-Type field, Length field and the ID Data fields together.  This forms
-one New ID Payload in the list.
-
-The list of payloads may only be sent with SILC_PACKET_NEW_ID_LIST
-packet.  They must not be sent in any other packet type.
-
-
-.ti 0
 2.3.18 New Client Payload
 
 When client is connected to the server, keys has been exchanged and
@@ -1958,334 +1876,6 @@ o Channel ID Length (2 bytes) - Length of the Channel ID.
 
 o Channel ID (variable length) - The created Channel ID.
 .in 3
-
-
-.ti 0
-2.3.21 New Channel User Payload
-
-When client (user) joins to a channel, server must notify routers
-about the new user on the channel.  Normal server sends this packet
-payload to its router which then broadcasts the packet further.
-Router sends this packet always to its primary router.  Client must
-not send this packet payload.  The mode of the user is NONE after 
-user has joined to the channel.
-
-The payload may only be sent with SILC_PACKET_NEW_CHANNEL_USER 
-packet.  It must not be sent in any other packet type.  Following 
-diagram represents the New Channel User Payload.
-
-
-
-
-
-
-.in 5
-.nf
-                     1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|       Channel ID Length       |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-|                                                               |
-~                          Channel ID                           ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|       Client ID Length        |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-|                                                               |
-~                           Client ID                           ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-.in 3
-
-.ce
-Figure 20:  New Channel User Payload
-
-
-.in 6
-o Channel ID Length (2 bytes) - Length of the Channel ID.
-
-o Channel ID (variable length) - The Channel ID of the channel
-  to which the client has joined.
-
-o Client ID Length (2 bytes) - Length of the Client ID.
-
-o Client ID (variable length) - The Client ID of the client
-  who has joined the channel.
-.in 3
-
-
-.ti 0
-2.3.22 New Channel List Payload
-
-This payload is used to distribute list of new channels from server
-to routers.  It might be convenient to send list of new channels when
-existing server connects to router, instead of sending them one
-by one.  Also, when router redistributes the packet by broadcasting it,
-it is convenient to send only one packet.
-
-
-There is no specific payload for this packet type.  The packet type
-uses same payload as described in 2.3.19 New Channel Payload.  To form
-a list several payloads is put in the packet each after each.  The
-payload is variable in length but can be calculated by calculating
-the length of the fields together.  This forms one New Channel Payload
-in the list.
-
-The list of payloads may only be sent with SILC_PACKET_NEW_CHANNEL_LIST
-packet.  They must not be sent in any other packet type.
-
-
-.ti 0
-2.3.23 New Channel User List Payload
-
-This payload is used to distribute list of channel users on a channel
-from server to routers.  It might convenient to send list of channel
-users when existing server connects to router, instead of sending them
-one by one.  One list may include users for several different channels.
-Also, when router redistributes the packet by broadcasting it, it is
-convenient to send only one packet.
-
-There is no specific payload for this packet type.  The packet type
-uses same payload as described in 2.3.20 New Channel User Payload.
-To form a list several payloads is put in the packet one after another.
-The payload is variable in length but can be calculated by calculating
-the length of the fields together.  This forms one New Channel User
-Payload in the list.
-
-The list of payloads may only be sent with packet
-SILC_PACKET_NEW_CHANNEL_USER_LIST. They must not be sent in any other
-packet type.
-
-
-.ti 0
-2.3.24 Replace ID Payload
-
-This payload is used to replace old ID with new ID sent in the payload.
-When ID changes for some entity and the new ID is wanted to replace the
-old one this payload must be used.  Client cannot send or receive this
-payload.  Normal server and router server may send and receive this
-payload.  After this packet has been sent the old ID must not be used
-anymore.
-
-The payload may only be sent with SILC_PACKET_REPLACE_ID packet.  It must
-not be sent in any other packet type.  Following diagram represents the 
-Replace Payload Payload.
-
-
-
-.in 5
-.nf
-                     1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|          Old ID Type          |         Old ID Length         |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-~                         Old ID Data                           ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|          New ID Type          |         New ID Length         |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                                               |
-~                         New ID Data                           ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-.in 3
-
-.ce
-Figure 21:  Replace ID Payload
-
-
-.in 6
-o Old ID Type (2 bytes) - Indicates the type of the old ID.  See 
-  section 2.4 SILC ID Types for list of defined ID types.
-
-o Old ID Length (2 bytes) - Length of the old ID Data area not 
-  including the length of any other fields in the payload.
-
-o Old ID Data (variable length) - The actual old ID data.
-
-o New ID Type (2 bytes) - Indicates the type of the new ID.  See 
-  section 2.4 SILC ID Types for list of defined ID types.
-
-o New ID Length (2 bytes) - Length of the new ID Data area not 
-  including the length of any other fields in the payload.
-
-o New ID Data (variable length) - The actual new ID data.
-.in 3
-
-
-.ti 0
-2.3.25 Remove ID Payload
-
-Remove ID payload is used to remove ID from SILC network.  This is used
-when client, server, router or channel is removed from the SILC network.
-After this payload has been send the old ID must not be used anymore.
-Client must not send or receive this payload.
-
-The packet uses generic ID Payload as New ID Payload.  See section
-2.3.2.1 for generic ID Payload.
-
-
-.ti 0
-2.3.26 Remove Channel User Payload
-
-Remove Channel User payload is used to remove a user from a channel network
-wide.  This is used by routers to notify other routers that a user has
-left a channel.  As routers keep information about users on channels a
-user leaving channel must be removed from all routers.  Normal server may
-send this payload as well.  Client must not send this payload.
-
-The payload may only be sent with SILC_PACKET_REMOVE_CHANNEL USER packet.
-It must not be sent in any other packet type.  Following diagram
-represents the Remove Payload Payload.
-
-
-
-
-
-.in 5
-.nf
-                     1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|      Client ID Length         |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-|                                                               |
-~                        Client ID Data                         ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|      Channel ID Length        |                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-|                                                               |
-~                        Channel ID Data                        ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-.in 3
-
-.ce
-Figure 22:  Remove Channel User Payload
-
-
-.in 6
-o Client ID Length (2 bytes) - Length of the Client ID Data area
-  not including the length of any other fields in the payload.
-
-o Client ID Data (variable length) - The Client ID of the user
-  that has left the channel.
-
-o Channel ID Length (2 bytes) - Length of the Channel ID Data area
-  not including the length of any other fields in the payload.
-
-o Channel ID Data (variable length) - The Channel ID of the channel
-  the user has left.
-.in 3
-
-
-.ti 0
-2.3.27 Set Mode Payload
-
-Set Mode Payload is used by servers and routers to distribute to each 
-other the information about changed modes in the SILC network.  The 
-payload is sent when channel's or client's channel mode is changed.  
-Server can send this to router which will broadcast it further to other
-routers.  However, normal server must not reiceve this payload.  Client
-must not send or receive this payload.
-
-The payload may only be sent with SILC_PACKET_SET_MODE packet.
-It must not be sent in any other packet type.  Following diagram
-represents the Set Mode Payload.
-
-
-
-.in 5
-.nf
-.in 5
-.nf
-                     1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|           Mode Type           |        Payload Length         |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                           Mode Mask                           |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-| Argument Nums |
-+-+-+-+-+-+-+-+-+
-.in 3
-
-.ce
-Figure 23:  Set Mode Payload
-
-
-.in 6
-o Mode type (2 bytes) - Indicates the type of the mode that was
-  changed.  Every type has arguments associated to the type which
-  are defined below.  The following types are defined:
-
-  0        SILC_MODE_TYPE_CHANNEL
-
-           Max Arguments:  2
-               Arguments:  (1) <Channel ID>  (2) <Client ID>
-
-           The <Channel ID> is the channel which mode was set and the
-           <Client ID> is the client who set it.
-
-
-  1        SILC_MODE_TYPE_UCHANNEL
-
-           Max Arguments:  3
-               Arguments:  (1) <Channel ID>        (2) <Client ID>  
-                           (3) <Target Client ID>
-
-           The <Channel ID> is the channel where the <Client ID> and
-           the <Target Client ID> is on.  The <Client ID> is the client
-           who set the <Target Client ID> mode.
-
-
-  2 -      RESERVED
-
-           Reserved types.
-
-
-  32768 -  Private range
-
-           Rest of the types are reserved for private use.
-
-o Payload Length (2 bytes) - Length of the entire Set Mode Payload
-  including any associated Argument Payloads.
-
-o Mode Mask (4 bytes) - Indicates the set mode mask.  This is
-  specified by the mode type.  See definitions of SILC_COMMAND_UMODE
-  for client modes, SILC_COMMAND_CMODE for channel modes and
-  SILC_COMMAND_CUMODE for client's channel modes in [SILC1].
-
-o Argument Nums (2 bytes) - Indicates the number of Argument
-  Payloads associated to this payload.  Mode types may define
-  arguments to be send along this payload.
-.in 3
-
-
-.ti 0
-2.3.28 Set Mode List Payload
-
-This paylaod is used to distribute list of Set Mode payloads inside
-one packet.  When server announces channels and client's on those 
-channels to its primary router when it connects to it, it is convenient
-to send list of Set Mode payloads to set the modes for the channel
-and clients on those channel.  One list may include several mode
-types.  Also, when router redistributes the packet by broadcasting it,
-it is convenient to send only one packet.
-
-There is no specific payload for this packet type.  The packet type
-uses same payload as described in 2.3.27 Set Mode Payload.  To form a
-list several payloads are put in the packet one after another.  The
-payload is variable in length but can be calculated by calculating the
-length of the fields together.  This forms one Set Mode payload in the
-list.
-
-The list of payloads may only be sent with packet SILC_PACKET_SET_MODE_LIST.
-They must not be sent in any other packet type.
 
 
 .ti 0
@@ -2579,35 +2169,7 @@ directly connected to the server.
 
 
 .ti 0
-2.12 Packet Forwarding
-
-Currently SILC command packets may be forwarded from one entity to another.
-Any other packet currently cannot be forwarded but support for more packet
-types may be added if needed.  Forwarding is usually used by server to
-forward some command request coming from client to the router as the server
-may be incapable to handle the request.  Forwarding may be only one hop
-long; the receiver of the packet with Forwarded flag set in the SILC   
-Packet header must not forward the packet any further.
-
-The normal scenario is that client sends JOIN command to the server which
-is not able to create the channel as there are no local clients on the
-channel.  Channels are created always by the router of the cell thus the
-packet must be forwarded to the router.  The server forwards the original
-packet coming from client to the router after it has set the Forwarded
-flag to the SILC Packet header.
-
-Router receiving the packet knows that the packet has to be processed
-specially by checking the flags and the Forwarded flag in the SILC Packet
-header.  After router has joined the client to the channel (and perhaps
-created a new channel) it sends normal command reply packet to the
-client.  However, as the router doesn't have direct connection to the
-client the packet is sent through the server.  Server detects that 
-the command reply packet is destined to the client and sends it to
-the client.
-
-
-.ti 0
-2.13 Packet Broadcasting
+2.12 Packet Broadcasting
 
 SILC packets may be broadcasted in SILC network.  However, only router
 server may send or receive broadcast packets.  Client and normal server
@@ -2634,7 +2196,7 @@ routers may keep these informations up to date.
 
 
 .ti 0
-2.14 Packet Tunneling
+2.13 Packet Tunneling
 
 Tunneling is a feature that is available in SILC protocol.  Tunneling
 means that extra SILC Packet Header is applied to the original packet

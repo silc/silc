@@ -670,7 +670,7 @@ void silc_server_send_motd(SilcServer server,
     if (!motd)
       return;
 
-    silc_server_send_notify(server, sock, SILC_NOTIFY_TYPE_MOTD, 1,
+    silc_server_send_notify(server, sock, FALSE, SILC_NOTIFY_TYPE_MOTD, 1,
 			    motd, motd_len);
     silc_free(motd);
   }
@@ -702,6 +702,7 @@ void silc_server_send_error(SilcServer server,
 
 void silc_server_send_notify(SilcServer server,
 			     SilcSocketConnection sock,
+			     int broadcast,
 			     SilcNotifyType type,
 			     unsigned int argc, ...)
 {
@@ -716,10 +717,215 @@ void silc_server_send_notify(SilcServer server,
   silc_buffer_free(packet);
 }
 
+/* Send CHANNEL_CHANGE notify type. This tells the receiver to replace the
+   `old_id' with the `new_id'. */
+
+void silc_server_send_notify_channel_change(SilcServer server,
+					    SilcSocketConnection sock,
+					    int broadcast,
+					    SilcChannelID *old_id,
+					    SilcChannelID *new_id,
+					    unsigned int id_len)
+{
+  SilcBuffer idp1, idp2;
+
+  idp1 = silc_id_payload_encode((void *)old_id, SILC_ID_CHANNEL);
+  idp2 = silc_id_payload_encode((void *)new_id, SILC_ID_CHANNEL);
+
+  silc_server_send_notify(server, sock, broadcast,
+			  SILC_NOTIFY_TYPE_CHANNEL_CHANGE,
+			  2, idp1->data, idp1->len, idp2->data, idp2->len);
+  silc_buffer_free(idp1);
+  silc_buffer_free(idp2);
+}
+
+/* Send NICK_CHANGE notify type. This tells the receiver to replace the
+   `old_id' with the `new_id'. */
+
+void silc_server_send_notify_nick_change(SilcServer server,
+					 SilcSocketConnection sock,
+					 int broadcast,
+					 SilcClientID *old_id,
+					 SilcClientID *new_id,
+					 unsigned int id_len)
+{
+  SilcBuffer idp1, idp2;
+
+  idp1 = silc_id_payload_encode((void *)old_id, SILC_ID_CLIENT);
+  idp2 = silc_id_payload_encode((void *)new_id, SILC_ID_CLIENT);
+
+  silc_server_send_notify(server, sock, broadcast, 
+			  SILC_NOTIFY_TYPE_NICK_CHANGE,
+			  2, idp1->data, idp1->len, idp2->data, idp2->len);
+  silc_buffer_free(idp1);
+  silc_buffer_free(idp2);
+}
+
+/* Sends JOIN notify type. This tells that new client by `client_id' ID
+   has joined to the `channel'. */
+
+void silc_server_send_notify_join(SilcServer server,
+				  SilcSocketConnection sock,
+				  int broadcast,
+				  SilcChannelEntry channel,
+				  SilcClientID *client_id,
+				  unsigned int client_id_len)
+{
+  SilcBuffer idp1, idp2;
+
+  idp1 = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  idp2 = silc_id_payload_encode((void *)channel->id, SILC_ID_CHANNEL);
+  silc_server_send_notify(server, sock, broadcast, SILC_NOTIFY_TYPE_JOIN,
+			  2, idp1->data, idp1->len,
+			  idp2->data, idp2->len);
+  silc_buffer_free(idp1);
+  silc_buffer_free(idp2);
+}
+
+/* Sends LEAVE notify type. This tells that `client_id' has left the
+   `channel'. The Notify packet is always destined to the channel. */
+
+void silc_server_send_notify_leave(SilcServer server,
+				   SilcSocketConnection sock,
+				   int broadcast,
+				   SilcChannelEntry channel,
+				   SilcClientID *client_id,
+				   unsigned int client_id_len)
+{
+  SilcBuffer idp;
+
+  idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
+			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_LEAVE,
+			       1, idp->data, idp->len);
+  silc_buffer_free(idp);
+}
+
+/* Sends CMODE_CHANGE notify type. This tells that `client_id' changed the
+   `channel' mode to `mode. The Notify packet is always destined to
+   the channel. */
+
+void silc_server_send_notify_cmode(SilcServer server,
+				   SilcSocketConnection sock,
+				   int broadcast,
+				   SilcChannelEntry channel,
+				   unsigned int mode_mask,
+				   SilcClientID *client_id,
+				   unsigned int client_id_len)
+{
+  SilcBuffer idp;
+  unsigned char mode[4];
+
+  idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  SILC_PUT32_MSB(mode_mask, mode);
+
+  silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
+			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_CMODE_CHANGE,
+			       2, idp->data, idp->len,
+			       mode, 4);
+  silc_buffer_free(idp);
+}
+
+/* Sends CUMODE_CHANGE notify type. This tells that `client_id' changed the
+   `target' client's mode on `channel'. The Notify packet is always
+   destined to the channel. */
+
+void silc_server_send_notify_cumode(SilcServer server,
+				    SilcSocketConnection sock,
+				    int broadcast,
+				    SilcChannelEntry channel,
+				    unsigned int mode_mask,
+				    SilcClientID *client_id,
+				    unsigned int client_id_len,
+				    SilcClientID *target,
+				    unsigned int target_len)
+{
+  SilcBuffer idp1, idp2;
+  unsigned char mode[4];
+
+  idp1 = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  idp2 = silc_id_payload_encode((void *)target, SILC_ID_CLIENT);
+  SILC_PUT32_MSB(mode_mask, mode);
+
+  silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
+			       SILC_ID_CHANNEL, 
+			       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3, 
+			       idp1->data, idp1->len,
+			       mode, 4,
+			       idp2->data, idp2->len);
+  silc_buffer_free(idp1);
+  silc_buffer_free(idp2);
+}
+
+/* Sends SIGNOFF notify type. This tells that `client_id' client has
+   left SILC network. This function is used only between server and router
+   traffic. This is not used to send the notify to the channel for
+   client. The `message may be NULL. */
+
+void silc_server_send_notify_signoff(SilcServer server,
+				     SilcSocketConnection sock,
+				     int broadcast,
+				     SilcClientID *client_id,
+				     unsigned int client_id_len,
+				     char *message)
+{
+  SilcBuffer idp;
+
+  idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  silc_server_send_notify(server, sock, broadcast,
+			  SILC_NOTIFY_TYPE_SIGNOFF,
+			  message ? 2 : 1, idp->data, idp->len,
+			  message, message ? strlen(message): 0);
+  silc_buffer_free(idp);
+}
+
+/* Sends SERVER_SIGNOFF notify type. This tells that `server_id' server
+   has quit SILC network. */
+
+void silc_server_send_notify_server_signoff(SilcServer server,
+					    SilcSocketConnection sock,
+					    int broadcast,
+					    SilcServerID *server_id,
+					    unsigned int server_id_len)
+{
+  SilcBuffer idp;
+
+  idp = silc_id_payload_encode((void *)server_id, SILC_ID_SERVER);
+  silc_server_send_notify(server, sock, broadcast,
+			  SILC_NOTIFY_TYPE_SERVER_SIGNOFF,
+			  1, idp->data, idp->len);
+  silc_buffer_free(idp);
+}
+
+/* Sends TOPIC_SET notify type. This tells that `client_id' changed
+   the `channel's topic to `topic'. The Notify packet is always destined
+   to the channel. This function is used to send the topic set notifies
+   between routers. */
+
+void silc_server_send_notify_topic_set(SilcServer server,
+				       SilcSocketConnection sock,
+				       int broadcast,
+				       SilcChannelEntry channel,
+				       SilcClientID *client_id,
+				       unsigned int client_id_len,
+				       char *topic)
+{
+  SilcBuffer idp;
+
+  idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
+  silc_server_send_notify(server, sock, broadcast,
+			  SILC_NOTIFY_TYPE_SERVER_SIGNOFF,
+			  topic ? 2 : 1, 
+			  idp->data, idp->len, 
+			  topic, topic ? strlen(topic) : 0);
+  silc_buffer_free(idp);
+}
+
 /* Sends notify message destined to specific entity. */
 
 void silc_server_send_notify_dest(SilcServer server,
 				  SilcSocketConnection sock,
+				  int broadcast,
 				  void *dest_id,
 				  SilcIdType dest_id_type,
 				  SilcNotifyType type,
@@ -929,96 +1135,6 @@ void silc_server_send_new_id(SilcServer server,
   silc_buffer_free(idp);
 }
 
-/* Sends Replace ID payload to remote end. This is used to replace old
-   ID with new ID sent in the packet.  This is called for example when
-   user changes nickname and we create new ID for the user.  If the 
-   argument `broadcast' is TRUE then the packet is sent as
-   broadcast packet. */
-/* XXX It would be expected that the new id is same type as the old
-   ID. :) */
-
-void silc_server_send_replace_id(SilcServer server,
-				 SilcSocketConnection sock,
-				 int broadcast,
-				 void *old_id, SilcIdType old_id_type,
-				 unsigned int old_id_len,
-				 void *new_id, SilcIdType new_id_type,
-				 unsigned int new_id_len)
-{
-  SilcBuffer packet;
-  unsigned char *oid;
-  unsigned char *nid;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  oid = silc_id_id2str(old_id, old_id_type);
-  if (!oid)
-    return;
-
-  nid = silc_id_id2str(new_id, new_id_type);
-  if (!nid)
-    return;
-
-  packet = silc_buffer_alloc(2 + 2 + 2 + 2 + old_id_len + new_id_len);
-  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-  silc_buffer_format(packet,
-		     SILC_STR_UI_SHORT(old_id_type),
-		     SILC_STR_UI_SHORT(old_id_len),
-		     SILC_STR_UI_XNSTRING(oid, old_id_len),
-		     SILC_STR_UI_SHORT(new_id_type),
-		     SILC_STR_UI_SHORT(new_id_len),
-		     SILC_STR_UI_XNSTRING(nid, new_id_len),
-		     SILC_STR_END);
-
-  silc_server_packet_send(server, sock, SILC_PACKET_REPLACE_ID, 
-			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
-			  packet->data, packet->len, FALSE);
-  silc_free(oid);
-  silc_free(nid);
-  silc_buffer_free(packet);
-}
-
-/* This function is used to send Remove Channel User payload. This may sent
-   by server but is usually used only by router to notify other routers that
-   user has left a channel. Normal server sends this packet to its router
-   to notify that the router should not hold a record about this client
-   on a channel anymore. Router distributes it further to other routers. */
-
-void silc_server_send_remove_channel_user(SilcServer server,
-					  SilcSocketConnection sock,
-					  int broadcast,
-					  void *client_id, void *channel_id)
-{
-  SilcBuffer packet;
-  unsigned char *clid, *chid;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  clid = silc_id_id2str(client_id, SILC_ID_CLIENT);
-  if (!clid)
-    return;
-
-  chid = silc_id_id2str(channel_id, SILC_ID_CHANNEL);
-  if (!chid)
-    return;
-
-  packet = silc_buffer_alloc(2 + 2 + SILC_ID_CLIENT_LEN + SILC_ID_CHANNEL_LEN);
-  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-  silc_buffer_format(packet,
-		     SILC_STR_UI_SHORT(SILC_ID_CLIENT_LEN),
-		     SILC_STR_UI_XNSTRING(clid, SILC_ID_CLIENT_LEN),
-		     SILC_STR_UI_SHORT(SILC_ID_CHANNEL_LEN),
-		     SILC_STR_UI_XNSTRING(chid, SILC_ID_CHANNEL_LEN),
-		     SILC_STR_END);
-
-  silc_server_packet_send(server, sock, SILC_PACKET_REMOVE_CHANNEL_USER, 
-			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
-			  packet->data, packet->len, FALSE);
-  silc_free(clid);
-  silc_free(chid);
-  silc_buffer_free(packet);
-}
-
 /* Send New Channel Payload to notify about newly created channel in the
    SILC network. Normal server nevers sends this packet. Router uses this
    to notify other routers in the network about new channel. This packet
@@ -1056,48 +1172,6 @@ void silc_server_send_new_channel(SilcServer server,
 			  packet->data, packet->len, FALSE);
 
   silc_free(cid);
-  silc_buffer_free(packet);
-}
-
-/* Send New Channel User payload to notify routers in the network about new
-   user on the channel. The packet is may be broadcasted. Normal server
-   can send this but must not receive. Router can send and receive it. */
-
-void silc_server_send_new_channel_user(SilcServer server,
-				       SilcSocketConnection sock,
-				       int broadcast,
-				       void *channel_id, 
-				       unsigned int channel_id_len,
-				       void *client_id,
-				       unsigned int client_id_len)
-{
-  SilcBuffer packet;
-  unsigned char *clid, *chid;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  chid = silc_id_id2str(channel_id, SILC_ID_CHANNEL);
-  if (!chid)
-    return;
-
-  clid = silc_id_id2str(client_id, SILC_ID_CLIENT);
-  if (!clid)
-    return;
-
-  packet = silc_buffer_alloc(2 + 2 + channel_id_len + client_id_len);
-  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-  silc_buffer_format(packet,
-		     SILC_STR_UI_SHORT(channel_id_len),
-		     SILC_STR_UI_XNSTRING(chid, channel_id_len),
-		     SILC_STR_UI_SHORT(client_id_len),
-		     SILC_STR_UI_XNSTRING(clid, client_id_len),
-		     SILC_STR_END);
-
-  silc_server_packet_send(server, sock, SILC_PACKET_NEW_CHANNEL_USER, 
-			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
-			  packet->data, packet->len, FALSE);
-  silc_free(clid);
-  silc_free(chid);
   silc_buffer_free(packet);
 }
 
@@ -1154,58 +1228,6 @@ void silc_server_send_command(SilcServer server,
   packet = silc_command_payload_encode_vap(command, 0, argc, ap);
   silc_server_packet_send(server, sock, SILC_PACKET_COMMAND, 0,
 			  packet->data, packet->len, TRUE);
-  silc_buffer_free(packet);
-}
-
-/* Function used to send REMOVE_ID packet. The packet is used to notify
-   routers that certain ID should be removed. After that the ID will become
-   invalid.  If the argument `broadcast' is TRUE then the packet is sent as
-   broadcast packet. */
-
-void silc_server_send_remove_id(SilcServer server,
-				SilcSocketConnection sock,
-				int broadcast,
-				void *id, unsigned int id_len,
-				SilcIdType id_type)
-{
-  SilcBuffer idp;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  idp = silc_id_payload_encode(id, id_type);
-  silc_server_packet_send(server, sock, SILC_PACKET_REMOVE_ID, 
-			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
-			  idp->data, idp->len, FALSE);
-  silc_buffer_free(idp);
-}
-
-/* Function used to send SET_MODE packet. The packet is used to notify routers
-   that channel's or client's channel mode was changed. If the argument
-   `broadcast' is TRUE then the packet is sent as broadcast packet. */
-
-void silc_server_send_set_mode(SilcServer server,
-			       SilcSocketConnection sock,
-			       int broadcast,
-			       int mode_type, unsigned int mode_mask,
-			       unsigned int argc, ...)
-{
-  SilcBuffer packet;
-  va_list ap;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  va_start(ap, argc);
-
-  /* Encode Set Mode payload */
-  packet = silc_set_mode_payload_encode(mode_type, mode_mask, argc, ap);
-  if (!packet)
-    return;
-
-  /* Send the packet */
-  silc_server_packet_send(server, sock, SILC_PACKET_SET_MODE, 
-			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
-			  packet->data, packet->len, FALSE);
-
   silc_buffer_free(packet);
 }
 

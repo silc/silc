@@ -23,6 +23,12 @@
 
 /* Prototypes */
 
+void silc_server_notify(SilcServer server,
+			SilcSocketConnection sock,
+			SilcPacketContext *packet);
+void silc_server_notify_list(SilcServer server,
+			     SilcSocketConnection sock,
+			     SilcPacketContext *packet);
 void silc_server_private_message(SilcServer server,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);
@@ -35,42 +41,27 @@ void silc_server_channel_message(SilcServer server,
 void silc_server_channel_key(SilcServer server,
 			     SilcSocketConnection sock,
 			     SilcPacketContext *packet);
-void silc_server_replace_id(SilcServer server,
-			    SilcSocketConnection sock,
-			    SilcPacketContext *packet);
 SilcClientEntry silc_server_new_client(SilcServer server,
 				       SilcSocketConnection sock,
 				       SilcPacketContext *packet);
 SilcServerEntry silc_server_new_server(SilcServer server,
 				       SilcSocketConnection sock,
 				       SilcPacketContext *packet);
-void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
-			SilcPacketContext *packet);
-void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
-			     SilcPacketContext *packet);
-void silc_server_remove_channel_user(SilcServer server,
-				     SilcSocketConnection sock,
-				     SilcPacketContext *packet);
 void silc_server_new_channel(SilcServer server,
 			     SilcSocketConnection sock,
 			     SilcPacketContext *packet);
 void silc_server_new_channel_list(SilcServer server,
 				  SilcSocketConnection sock,
 				  SilcPacketContext *packet);
-void silc_server_new_channel_user(SilcServer server,
-				  SilcSocketConnection sock,
-				  SilcPacketContext *packet);
-void silc_server_new_channel_user_list(SilcServer server,
-				       SilcSocketConnection sock,
-				       SilcPacketContext *packet);
-void silc_server_notify(SilcServer server,
-			SilcSocketConnection sock,
+void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 			SilcPacketContext *packet);
+void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
+			     SilcPacketContext *packet);
 void silc_server_remove_id(SilcServer server,
 			   SilcSocketConnection sock,
 			   SilcPacketContext *packet);
-void silc_server_set_mode(SilcServer server,
-			  SilcSocketConnection sock,
-			  SilcPacketContext *packet);
+void silc_server_remove_id_list(SilcServer server,
+				SilcSocketConnection sock,
+				SilcPacketContext *packet);
 
 #endif
