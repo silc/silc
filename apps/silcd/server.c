@@ -395,12 +395,13 @@ void silc_server_daemonise(SilcServer server)
     pw=getpwnam(user);
     gr=getgrnam(group);
 
-    if (!pw || !gr) {
-      fprintf(stderr, "Error:"
-       "\tSILC server must not be run as root.  For the security of your\n"
-       "\tsystem it is strongly suggested that you run SILC under dedicated\n"
-       "\tuser account.  Modify the [Identity] configuration section to run\n"
-       "\tthe server as non-root user.\n");
+    if (!pw) {
+      fprintf(stderr, "No such user %s found\n", user);
+      exit(1);
+    }
+
+    if (!gr) {
+      fprintf(stderr, "No such group %s found\n", group);
       exit(1);
     }
     
