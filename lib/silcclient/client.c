@@ -992,7 +992,8 @@ void silc_client_send_channel_message(SilcClient client,
   /* Generate IV */
   block_len = silc_cipher_get_block_len(channel->channel_key);
   if (channel->iv[0] == '\0')
-    for (i = 0; i < block_len; i++) channel->iv[i] = silc_rng_get_byte(client->rng);
+    for (i = 0; i < block_len; i++) channel->iv[i] = 
+				      silc_rng_get_byte(client->rng);
   else
     silc_hash_make(client->md5hash, channel->iv, block_len, channel->iv);
 
@@ -2075,6 +2076,8 @@ void silc_client_channel_message(SilcClient client,
   SilcClientID *client_id = NULL;
   int found = FALSE;
   unsigned int block_len;
+
+  SILC_LOG_DEBUG(("Start"));
 
   /* Sanity checks */
   if (packet->dst_id_type != SILC_ID_CHANNEL)

@@ -1,3 +1,13 @@
+Wed Feb 28 20:56:29 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed a minor bug in the login when the channel key is
+	  re-generated in the server.  It used to generate the key in
+	  wrong order and thus caused problems in the channel traffic.
+
+	* Fixed a minor bug in channel key distsribution after
+	  KICK command.  The key was not sent to the router even though
+	  it should've been.
+
 Tue Feb 27 20:24:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added silc_ske_process_key_material_data as generic routine

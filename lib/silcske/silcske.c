@@ -1422,15 +1422,16 @@ void silc_ske_free_key_material(SilcSKEKeyMaterial *key)
   if (key->receive_iv)
     silc_free(key->receive_iv);
   if (key->send_enc_key) {
-    memset(key->send_enc_key, 0, key->enc_key_len);
+    memset(key->send_enc_key, 0, key->enc_key_len / 8);
     silc_free(key->send_enc_key);
   }
   if (key->receive_enc_key) {
-    memset(key->receive_enc_key, 0, key->enc_key_len);
+    memset(key->receive_enc_key, 0, key->enc_key_len / 8);
     silc_free(key->receive_enc_key);
   }
   if (key->hmac_key) {
     memset(key->hmac_key, 0, key->hmac_key_len);
     silc_free(key->hmac_key);
   }
+  silc_free(key);
 }
