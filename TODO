@@ -310,7 +310,8 @@ least could be done.
 	  SIGNOFF of notify at all (using SIGNOFF takes the idea about
 	  SERVER_SIGNOFF away entirely).
 
- o Add SilcAsyncOperation to utility library.
+ o Add SilcAsyncOperation to utility library.  Any function that takes
+   callback as an argument must return SilcAsyncOperation.
 
  o Cipher optimizations (asm, that this) at least for i386 would be nice.
 

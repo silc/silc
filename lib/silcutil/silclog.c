@@ -59,7 +59,7 @@ bool silc_debug_hexdump = FALSE;
 long silc_log_flushdelay = 300;
 
 /* Regular pattern matching expression for the debug output */
-static char *silc_log_debug_string = NULL;
+char *silc_log_debug_string = NULL;
 
 /* Debug callbacks. If set these are used instead of default ones. */
 static SilcLogDebugCb silc_log_debug_cb = NULL;

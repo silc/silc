@@ -131,7 +131,6 @@ static int silc_server_is_registered(SilcServer server,
 
   silc_server_command_send_status_reply(cmd, command,
 					SILC_STATUS_ERR_NOT_REGISTERED);
-  silc_server_command_free(cmd);
   return FALSE;
 }
 
@@ -159,6 +158,8 @@ SILC_TASK_CALLBACK(silc_server_command_process_timeout)
 				     timeout->ctx, 
 				     timeout->cmd->cmd))
     timeout->cmd->cb(timeout->ctx, NULL);
+  else
+    silc_server_command_free(timeout->ctx);
 
   silc_free(timeout);
 }
@@ -233,15 +234,12 @@ void silc_server_command_process(SilcServer server,
 			 silc_server_command_process_timeout,
 			 (void *)timeout, 
 			 2 - (time(NULL) - client->last_command), 0,
-			 SILC_TASK_TIMEOUT,
-			 SILC_TASK_PRI_NORMAL);
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
     else
       silc_schedule_task_add(server->schedule, sock->sock, 
 			 silc_server_command_process_timeout,
-			 (void *)timeout, 
-			 0, 1,
-			 SILC_TASK_TIMEOUT,
-			 SILC_TASK_PRI_NORMAL);
+			 (void *)timeout, 0, 1,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
     return;
   }
 
@@ -251,6 +249,8 @@ void silc_server_command_process(SilcServer server,
     cmd->cb(ctx, NULL);
   else if (silc_server_is_registered(server, sock, ctx, cmd->cmd))
     cmd->cb(ctx, NULL);
+  else
+    silc_server_command_free(ctx);
 }
 
 /* Allocate Command Context */
@@ -3455,7 +3455,8 @@ SILC_SERVER_CMD_FUNC(join)
     if (silc_command_get(reply->payload) == SILC_COMMAND_JOIN) {
       tmp = silc_argument_get_arg_type(reply->args, 6, NULL);
       SILC_GET32_MSB(created, tmp);
-      create_key = FALSE;	/* Router returned the key already */
+      if (silc_argument_get_arg_type(reply->args, 7, NULL)
+        create_key = FALSE;	/* Router returned the key already */
     }
 
     if (silc_command_get(reply->payload) == SILC_COMMAND_WHOIS &&
