@@ -1,16 +1,15 @@
 /*
 
-  silchashtable.c
+  silchashtable.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -214,26 +213,36 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
 				  SilcHashForeach foreach,
 				  void *foreach_user_context)
 {
-  SilcHashTableEntry *entry;
+  SilcHashTableEntry *entry, *tmp;
   bool auto_rehash;
   uint32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
 
+  /* Disallow auto rehashing while going through the table since we call
+     the `foreach' function which could alter the table. */
   auto_rehash = ht->auto_rehash;
   ht->auto_rehash = FALSE;
 
   entry = &ht->table[i];
   if (compare) {
     while (*entry) {
-      if (compare((*entry)->key, key, compare_user_context))
+      if (compare((*entry)->key, key, compare_user_context)) {
+	tmp = &(*entry)->next;
 	foreach((*entry)->key, (*entry)->context, foreach_user_context);
+	entry = tmp;
+	continue;
+      }
       entry = &(*entry)->next;
     }
   } else {
     while (*entry) {
-      if ((*entry)->key == key)
+      if ((*entry)->key == key) {
+	tmp = &(*entry)->next;
 	foreach((*entry)->key, (*entry)->context, foreach_user_context);
+	entry = tmp;
+	continue;
+      }
       entry = &(*entry)->next;
     }
   }

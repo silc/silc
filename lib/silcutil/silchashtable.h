@@ -1,16 +1,15 @@
 /*
 
-  silchashtable.h
- 
+  silchashtable.h 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
-  Copyright (C) 2001 Pekka Riikonen
- 
+
+  Copyright (C) 2001 - 2002 Pekka Riikonen
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
- 
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -340,6 +339,12 @@ bool silc_hash_table_find(SilcHashTable ht, void *key,
  *    and contexts from the hash table that are found using the `key'. The
  *    `foreach' is called for every found key.
  *
+ * NOTES
+ *
+ *    The hash table will not be rehashed during the traversing of the list,
+ *    even if the table was marked as auto rehashable.  The caller also must
+ *    not call silc_hash_table_rehash while traversing the table.
+ *
  ***/
 void silc_hash_table_find_foreach(SilcHashTable ht, void *key,
 				  SilcHashForeach foreach, void *user_context);
@@ -355,6 +360,12 @@ void silc_hash_table_find_foreach(SilcHashTable ht, void *key,
  *
  *    Traverse all entrys in the hash table and call the `foreach' for
  *    every entry with the `user_context' context.
+ *
+ * NOTES
+ *
+ *    The hash table will not be rehashed during the traversing of the list,
+ *    even if the table was marked as auto rehashable.  The caller also must
+ *    not call silc_hash_table_rehash while traversing the table.
  *
  ***/
 void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
@@ -604,6 +615,12 @@ bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
  *    function. If not provided the hash table's default is used.
  *    The `compare' and `compare_user_context' are application specified
  *    comparing function. If not provided the hash table's default is used.
+ *
+ * NOTES
+ *
+ *    The hash table will not be rehashed during the traversing of the list,
+ *    even if the table was marked as auto rehashable.  The caller also must
+ *    not call silc_hash_table_rehash while traversing the table.
  *
  ***/
 void silc_hash_table_find_foreach_ext(SilcHashTable ht, void *key,
