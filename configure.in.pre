@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2002 Pekka Riikonen
+#  Copyright (C) 2000 - 2003 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ AC_DEFINE(SILC_DIST_DEFINE)
 # where [LIB] is LIBSILC and LIBSILCCLIENT, and where "functions" means
 # functions public interfaces.
 #
-# The LIB_BASE_VERSION defines the SILC software major.minor version and 
+# The LIB_BASE_VERSION defines the SILC software major.minor version and
 # it is increment only when these version numbers actually change.
 #
 
@@ -79,9 +79,9 @@ AC_DEFINE(SILC_DIST_DEFINE)
 LIB_BASE_VERSION=1.0
 
 # libsilc versions
-LIBSILC_CURRENT=2
+LIBSILC_CURRENT=3
 LIBSILC_REVISION=0
-LIBSILC_AGE=0
+LIBSILC_AGE=1
 
 # libsilcclient versions
 LIBSILCCLIENT_CURRENT=2
@@ -541,14 +541,14 @@ AC_ARG_WITH(socks4,
       *)
         AC_MSG_RESULT(yes)
         socks=4
-    
+
         if test -d "$withval/include"; then
           CFLAGS="$CFLAGS -I$withval/include"
         fi
         if test -d "$withval/lib"; then
           LDFLAGS="$LDFLAGS -L$withval/lib"
         fi
-    
+
         LIBS="-lsocks $LIBS"
         ;;
     esac
@@ -658,14 +658,14 @@ AC_ARG_WITH(gmp,
         ;;
       *)
         AC_MSG_RESULT(yes)
-    
+
         if test -d "$withval/include"; then
           CFLAGS="$CFLAGS -I$withval/include"
         fi
         if test -d "$withval/lib"; then
           LDFLAGS="$LDFLAGS -L$withval/lib"
         fi
-    
+
         LIBS="-lgmp $LIBS"
         ;;
     esac
@@ -779,11 +779,11 @@ if test x$check_iconv = xtrue; then
   SAVE_CFLAGS="$CFLAGS"
   SAVE_LDFLAGS="$LDFLAGS"
   SAVE_CPPFLAGS="$CPPFLAGS"
-    
+
   for dir in `echo "/usr/local /usr/pkg /usr/contrib"`; do
     if test x$has_iconv = xfalse; then
       AC_MSG_RESULT(searching in $dir...)
-     
+
       if test -d $dir/include; then
         CPPFLAGS="$CPPFLAGS -I$dir/include"
         CFLAGS="$CFLAGS -I$dir/include"
@@ -791,10 +791,10 @@ if test x$check_iconv = xtrue; then
       if test -d $dir/lib; then
         LDFLAGS="$LDFLAGS -L$dir/lib"
       fi
-    
+
       # XXX
       unset ac_cv_header__iconv_h_ ac_cv_header_iconv_h || true
-      
+
       AC_CHECK_HEADERS(iconv.h,
         [
           LIBS="$LIBS -liconv"
@@ -811,14 +811,14 @@ if test x$check_iconv = xtrue; then
             ],
             [
               echo "yes"
-              has_iconv=true 
+              has_iconv=true
               AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv() function.])
             ],
             [
               echo "no"
               has_iconv=false
- 
-              LIBS="$SAVE_LIBS"    
+
+              LIBS="$SAVE_LIBS"
               CFLAGS="$SAVE_CFLAGS"
               LDFLAGS="$SAVE_LDFLAGS"
               CPPFLAGS="$SAVE_CPPFLAGS"
@@ -878,7 +878,7 @@ has_threads=false
 AC_MSG_CHECKING(whether to search for POSIX threads)
 AC_ARG_WITH(pthreads,
   [[  --with-pthreads[=DIR]   use POSIX threads [search in DIR/include and DIR/lib]]],
-  [ 
+  [
     case "${withval}" in
       no)
         check_threads=false
@@ -902,7 +902,7 @@ if test x$check_threads = xtrue; then
   SAVE_CFLAGS="$CFLAGS"
   SAVE_LDFLAGS="$LDFLAGS"
   SAVE_CPPFLAGS="$CPPFLAGS"
-  
+
   AC_MSG_RESULT(yes)
   AC_CHECK_HEADERS(pthread.h,
     [
@@ -926,7 +926,7 @@ if test x$check_threads = xtrue; then
       for dir in `echo "/usr/local /usr/pkg /usr/contrib /usr/pkg/pthreads /usr/local/pthreads"`; do
         if test x$has_threads = xfalse; then
           AC_MSG_RESULT(searching in $dir...)
-  
+
           if test -d $dir/include; then
             CPPFLAGS="$CPPFLAGS -I$dir/include"
             CFLAGS="$CFLAGS -I$dir/include"
@@ -939,7 +939,7 @@ if test x$check_threads = xtrue; then
           unset ac_cv_header__pthread_h_ ac_cv_header_pthread_h || true
 
           AC_CHECK_HEADERS(pthread.h,
-            [ 
+            [
               LIBS="$LIBS -lpthread"
               AC_CHECK_LIB(pthread, pthread_attr_init, has_threads=true,
                 [
