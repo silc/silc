@@ -39,6 +39,10 @@ void silc_server_free(SilcServer server);
 int silc_server_init(SilcServer server);
 void silc_server_run(SilcServer server);
 void silc_server_stop(SilcServer server);
+void silc_server_packet_parse(SilcPacketParserContext *parser_context);
+void silc_server_packet_parse_type(SilcServer server, 
+				   SilcSocketConnection sock,
+				   SilcPacketContext *packet);
 void silc_server_packet_send(SilcServer server,
 			     SilcSocketConnection sock, 
 			     SilcPacketType type, 
