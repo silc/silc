@@ -500,7 +500,7 @@ void silc_packet_send_prepare(SilcSocketConnection sock,
  *
  * SYNOPSIS
  *
- *    int silc_packet_read(int sock, SilcBuffer dest);
+ *    int silc_packet_read(int fd, SilcSocketConnection sock);
  *
  * DESCRIPTION
  *
@@ -519,7 +519,7 @@ void silc_packet_send_prepare(SilcSocketConnection sock,
  *    all of the data could not be read at once.
  *
  ***/
-int silc_packet_read(int sock, SilcBuffer dest);
+int silc_packet_read(int fd, SilcSocketConnection sock);
 
 /****f* silccore/SilcPacketAPI/silc_packet_receive
  *

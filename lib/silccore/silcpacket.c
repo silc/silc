@@ -264,10 +264,12 @@ void silc_packet_send_prepare(SilcSocketConnection sock,
       /* There is some pending data in the buffer. */
 
       /* Allocate more space if needed */
-      if ((sock->outbuf->end - sock->outbuf->tail) < data_len) {
+      if ((sock->outbuf->end - sock->outbuf->tail) < 
+	  (totlen + 20)) {
 	SILC_LOG_DEBUG(("Reallocating outgoing data buffer"));
 	sock->outbuf = silc_buffer_realloc(sock->outbuf, 
-					   sock->outbuf->truelen + totlen);
+					   sock->outbuf->truelen +
+					   (totlen * 2));
       }
 
       oldlen = sock->outbuf->len;
@@ -276,6 +278,15 @@ void silc_packet_send_prepare(SilcSocketConnection sock,
     } else {
       /* Buffer is free for use */
       silc_buffer_clear(sock->outbuf);
+
+      /* Allocate more space if needed */
+      if ((sock->outbuf->end - sock->outbuf->tail) < (totlen + 20)) {
+	SILC_LOG_DEBUG(("Reallocating outgoing data buffer"));
+	sock->outbuf = silc_buffer_realloc(sock->outbuf, 
+					   sock->outbuf->truelen + 
+					   (totlen * 2));
+      }
+
       silc_buffer_pull_tail(sock->outbuf, totlen);
       silc_buffer_pull(sock->outbuf, header_len + padlen);
     }
@@ -302,56 +313,38 @@ void silc_packet_send_prepare(SilcSocketConnection sock,
    This returns amount of bytes read or -1 on error or -2 on case where
    all of the data could not be read at once. */
 
-int silc_packet_read(int sock, SilcBuffer dest)
+int silc_packet_read(int fd, SilcSocketConnection sock)
 {
   int len = 0;
   unsigned char buf[SILC_PACKET_READ_SIZE];
 
-  SILC_LOG_DEBUG(("Reading data from socket %d", sock));
+  SILC_LOG_DEBUG(("Reading data from socket %d", fd));
 
   /* Read the data from the socket. */
-  len = read(sock, buf, sizeof(buf));
+  len = read(fd, buf, sizeof(buf));
   if (len < 0) {
     if (errno == EAGAIN || errno == EINTR) {
       SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
       return -2;
     }
-    SILC_LOG_ERROR(("Cannot read from socket: %d:%s", sock, strerror(errno)));
+    SILC_LOG_ERROR(("Cannot read from socket: %d:%s", fd, strerror(errno)));
     return -1;
   }
 
   if (!len)
     return 0;
 
-  /* Insert the data to the buffer. If the data doesn't fit to the 
-     buffer space is allocated for the buffer. */
-  /* XXX: This may actually be bad thing as if there is pending data in
-     the buffer they will be lost! */
-  if (dest) {
+  /* Insert the data to the buffer. */
 
-    /* If the data doesn't fit we just have to allocate a whole new 
-       data area */
-    if (dest->truelen <= len) {
-
-      /* Free the old buffer */
-      memset(dest->head, 'F', dest->truelen);
-      silc_free(dest->head);
-
-      /* Allocate new data area */
-      len += SILC_PACKET_DEFAULT_SIZE;
-      dest->data = silc_calloc(len, sizeof(char));
-      dest->truelen = len;
-      dest->len = 0;
-      dest->head = dest->data;
-      dest->data = dest->data;
-      dest->tail = dest->data;
-      dest->end = dest->data + dest->truelen;
-      len -= SILC_PACKET_DEFAULT_SIZE;
-    }
-
-    silc_buffer_put_tail(dest, buf, len);
-    silc_buffer_pull_tail(dest, len);
-  }
+  if (!sock->inbuf)
+    sock->inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE);
+  
+  /* If the data does not fit to the buffer reallocate it */
+  if ((sock->inbuf->end - sock->inbuf->tail) < len)
+    sock->inbuf = silc_buffer_realloc(sock->inbuf, sock->inbuf->truelen + 
+				      (len * 2));
+  silc_buffer_put_tail(sock->inbuf, buf, len);
+  silc_buffer_pull_tail(sock->inbuf, len);
 
   SILC_LOG_DEBUG(("Read %d bytes", len));
 
@@ -448,12 +441,8 @@ int silc_packet_receive(SilcSocketConnection sock)
 		   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		   "Router")));
 
-  /* Allocate the incoming data buffer if not done already. */
-  if (!sock->inbuf)
-    sock->inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE);
-
   /* Read some data from connection */
-  ret = silc_packet_read(sock->sock, sock->inbuf);
+  ret = silc_packet_read(sock->sock, sock);
 
   return ret;
 }

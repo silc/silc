@@ -64,6 +64,9 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o Seems that router does not announce its client to the connecting
+   server when server announces its clients on the channel.
+
  o When server quits and all clients of that server are removed from all
    channels the channel keys are re-generated for all clients.  This is
    a bug and should be done only once per channel after all clients of
