@@ -42,18 +42,17 @@ toolkit-ref-html:
 	  echo ROBODoc is not compiled! Cannot generate documentation! ; \
         fi
 
-toolkit-ref-ps:
+toolkit-ref-pdf:
 	-@if test -f $(SILC_TOP_SRCDIR)/util/robodoc/Source/robodoc ; then \
 	  echo Generating Toolkit Reference Manual ; \
 	  cd ../scripts/silcdoc ; \
 	  ./silcdoc PS ../../lib/ $(SILC_TOP_SRCDIR)/doc/toolkit.ps \
 	  $(SILC_TOP_SRCDIR)/util/robodoc/Source/robodoc ; \
+	  ps2pdf $(SILC_TOP_SRCDIR)/doc/toolkit.ps $(SILC_TOP_SRCDIR)/doc/toolkit.pdf; \
+          rm -rf $(SILC_TOP_SRCDIR)/doc/toolkit.ps; \
 	else  \
 	  echo ROBODoc is not compiled! Cannot generate documentation! ; \
         fi
-
-toolkit-ref-pdf:
-	-ps2pdf $(SILC_TOP_SRCDIR)/doc/toolkit.ps $(SILC_TOP_SRCDIR)/doc/toolkit.pdf
 
 dist-hook:
 	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
