@@ -10,7 +10,7 @@ Tue Mar 20 21:05:57 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  silc_server_command_reply_whowas_save.
 
 	* Added silc_idlist_purge function to the silcd/idlist.c
-	  to peridiocally purge the ID Cache.
+	  to periodically purge the ID Cache.
 
 	* Fixed INFO command in the server.  It works now in router
 	  environment.  Added <server name> argument to the INFO command
