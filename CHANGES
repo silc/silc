@@ -3,6 +3,9 @@ Thu Feb  7 10:12:25 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed CUMODE_CHANGE notify handling to change the mode of
 	  correct client.  Affected file lib/silcclient/client_notify.c.
 
+	* Make silc_rng_alloc fail if it cannot allocate the sha1
+	  hash algorithm.  Affected file lib/silccrypt/silcrng.c.
+
 Sun Feb  3 17:20:52 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the file transfer's key agreement payload to include
