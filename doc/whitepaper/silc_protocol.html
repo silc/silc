@@ -128,9 +128,9 @@ deciding what way of sending private message suites for them.
 <p>
 Sending private messages are by default secured with session keys established
 in the SKE protocol.  This means that the private message is always encrypted
-with the next receiver of the message enroute to the receiving client.
-This also means that the message is decrypted and re-encrypted everytime
-it is sent further to the receiving client.
+with the session key of the next receiver of the message enroute to the 
+receiving client.  This also means that the message is decrypted and
+re-encrypted everytime it is sent further to the receiving client.
 <p>
 
 <img src="silc_priv1.JPG" alt="Basic Private Message Delivery" align="center" border"0">
@@ -147,8 +147,8 @@ This way of securing private messages is not perfect and cannot be used
 in all circumstances.  If the clients having the conversation cannot trust
 the servers and routers in the SILC Network they should not send private
 messages that are secured in this manner.  Messages secured in this manner
-can be decrypted by the servers and routers that the clients consider to be
-untrusted.
+can be decrypted by the servers and routers that the clients may consider
+to be untrusted.
 <p>
 
 If the clients on the other hand trust the servers and routers in their 
@@ -159,12 +159,13 @@ to decrypt and re-encrypt each private message.  Since this way of securing
 private message cannot be used at all times the SILC protocol provides
 other ways of securing private messages.
 
+
 <p><br>
 <h2>Private Message Delivery With Private Message Key</h2>
 <p>
 Private messages can be secured with private message key as well.  This
 key is known only by the sender of the message and the receiver of the
-message. This way no one else except the sender and the receiver can encrypt
+message.  This way no one else except the sender and the receiver can encrypt
 and decrypt the private messages.  The message is encrypted by the sender
 with the private message key and all the servers and routers pass the message
 through enroute to the receiver.  They cannot decrypt the message since
@@ -198,7 +199,7 @@ The problem however is fundamental.  How to agree to use some key when
 you cannot reach the other person over secure channel?  The SILC protocol
 solves this problem by providing a possiblity to negotiate the key
 between two clients using the SKE protocol.  One or both of the clients
-may set up the SKE server running in their host and ask the other client
+can set up the SKE server running in their host and ask the other client
 to connect to it.  As a result of the SKE protocol the clients have
 now shared secret that they can use as private message key.  The key
 is known only by the two clients that exexcuted the SKE protocol.  They
@@ -211,6 +212,7 @@ drawback is the extra phase of setting the private message key before
 starting the conversation.  However, using the SKE protocol is the
 recommended way to negotiate the private message key since it can be
 automized and does not cause any extra tasks for end user.
+
 
 <p><br>
 <h2>Private Message Delivery With Public Key Encryption</h2>
