@@ -241,7 +241,7 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
 
   memcpy(tmp, key_data, 4);
   SILC_GET32_MSB(e_len, tmp);
-  if (e_len > key_len) {
+  if (!e_len || e_len > key_len) {
     silc_mp_uninit(&key->e);
     silc_mp_uninit(&key->n);
     return 0;
@@ -251,7 +251,7 @@ SILC_PKCS_API_SET_PUBLIC_KEY(rsa)
   
   memcpy(tmp, key_data + 4 + e_len, 4);
   SILC_GET32_MSB(n_len, tmp);
-  if (e_len + n_len > key_len) {
+  if (!n_len || e_len + n_len > key_len) {
     silc_mp_uninit(&key->e);
     silc_mp_uninit(&key->n);
     return 0;

@@ -144,7 +144,8 @@ typedef enum {
  * SYNOPSIS
  *
  *    typedef int (*SilcConfigCallback)(SilcConfigType type, const char *name,
- *                                      SilcUInt32 line, void *val, void *context);
+ *                                      SilcUInt32 line, void *val,
+ *                                      void *context);
  * DESCRIPTION
  *
  *    This is the callback prototype for the options handler.  The pointer
@@ -207,7 +208,7 @@ typedef struct SilcConfigTableStruct {
  *
  * SYNOPSIS
  *
- *    typedef struct { ... } SilcConfigFile;
+ *    typedef struct SilcConfigFileObject SilcConfigFile;
  *
  * DESCRIPTION
  *
@@ -223,7 +224,7 @@ typedef struct SilcConfigFileObject SilcConfigFile;
  *
  * SYNOPSIS
  *
- *    typedef struct { ... } SilcConfigEntity;
+ *    typedef struct SilcConfigEntityObject *SilcConfigEntity;
  *
  * DESCRIPTION
  *

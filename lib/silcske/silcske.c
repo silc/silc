@@ -1597,18 +1597,17 @@ static SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n,
   SILC_LOG_DEBUG(("Creating random number"));
 
   /* Get the random number as string */
-  string = silc_rng_get_rn_data(ske->rng, (len / 8));
+  string = silc_rng_get_rn_data(ske->rng, ((len - 1) / 8));
   if (!string)
     return SILC_SKE_STATUS_OUT_OF_MEMORY;
 
   /* Decode the string into a MP integer */
-  silc_mp_bin2mp(string, (len / 8), rnd);
+  silc_mp_bin2mp(string, ((len - 1) / 8), rnd);
   silc_mp_mod_2exp(rnd, rnd, len);
 
   /* Checks */
   if (silc_mp_cmp_ui(rnd, 1) < 0)
     status = SILC_SKE_STATUS_ERROR;
-
   if (silc_mp_cmp(rnd, n) >= 0)
     status = SILC_SKE_STATUS_ERROR;
 

@@ -39,13 +39,11 @@ size_t silc_mp_size(SilcMPInt *mp)
 
 size_t silc_mp_sizeinbase(SilcMPInt *mp, int base)
 {
-  size_t sib = mp_radix_size(mp, base);
+  size_t sib = mp_unsigned_octet_size(mp);
+  sib = s_mp_outlen(sib * CHAR_BIT, base);
   if (sib > 2)
-    sib -= 2;			/* XXX This is actually wrong since
-				   this might produce wrong balue.
-				   But, it looks like MPI always returns
-				   correct value plus one, whereas
-				   GMP returns always the right value. */
+    sib -= 2;			/* Looks like MPI returns extra zero
+				   bytes for C-strings. */
   return sib;
 }
 
