@@ -211,7 +211,7 @@ The header is variable in length and first two (2) bytes of the
 header (thus first two bytes of the packet) are not encrypted.  The
 first two (2) bytes are the length of the packet which is not encrypted.
 See the following section for description of SILC Packet header.  Packets
-without SILC header or with malformed SILC header must be dropped.
+without SILC header or with malformed SILC header MUST be dropped.
 
 Padding follows the packet header.  The purpose of the padding is to
 make the packet multiple by eight (8) or by the block size of the

@@ -421,7 +421,7 @@ This payload is sent inside SILC_PACKET_KEY_EXCHANGE_1 and inside
 SILC_PACKET_KEY_EXCHANGE_2 packet types.  The initiator uses the 
 SILC_PACKET_KEY_EXCHANGE_1 and the responder the latter.
 
-The following diagram represent the Key Exchange 1 Payload.
+The following diagram represent the Key Exchange Payload.
 
 
 .in 5
