@@ -43,7 +43,7 @@ size_t silc_mp_sizeinbase(SilcMPInt *mp, int base)
   return mp_radix_size(mp, base) - 2; /* XXX This is actually wrong since
 					 this might produce wrong balue.
 					 But, it looks like MPI always returns
-					 correct value plus one, whereas
+					 correct value + plus, whereas
 					 GMP returns always the right value. */
 }
 
