@@ -20,4 +20,10 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 SUBDIRS = lib silcd silc doc includes
 
+dist-bzip: distdir
+	-chmod -R a+r $(distdir)
+	-$(TAR) chof $(distdir).tar $(distdir)
+	-bzip2 $(distdir).tar
+	-rm -rf $(distdir)
+
 EXTRA_DIST = CHANGES CREDITS
