@@ -60,9 +60,9 @@ SilcSetModePayload silc_set_mode_payload_parse(SilcBuffer buffer)
     goto err;
 
   if (new->argc) {
-    silc_buffer_pull(buffer, 5);
+    silc_buffer_pull(buffer, 9);
     new->args = silc_argument_payload_parse(buffer, new->argc);
-    silc_buffer_push(buffer, 5);
+    silc_buffer_push(buffer, 9);
   }
 
   return new;
@@ -114,22 +114,22 @@ SilcBuffer silc_set_mode_payload_encode(unsigned short mode_type,
     silc_free(argv_types);
   }
 
-  len += 5;
+  len += 9;
   buffer = silc_buffer_alloc(len);
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
   silc_buffer_format(buffer,
 		     SILC_STR_UI_SHORT(mode_type),
 		     SILC_STR_UI_SHORT(len),
 		     SILC_STR_UI_INT(mode_mask),
-		     SILC_STR_UI_CHAR(argc),
+		     SILC_STR_UI_CHAR((unsigned char)argc),
 		     SILC_STR_END);
 
   if (argc) {
-    silc_buffer_pull(buffer, 5);
+    silc_buffer_pull(buffer, 9);
     silc_buffer_format(buffer,
 		       SILC_STR_UI_XNSTRING(args->data, args->len),
 		       SILC_STR_END);
-    silc_buffer_push(buffer, 5);
+    silc_buffer_push(buffer, 9);
     silc_buffer_free(args);
   }
 

@@ -244,7 +244,7 @@ int silc_auth_public_key_auth_verify(SilcAuthPayload payload,
     return FALSE;
   }
 
-  /* Verify the authencation data */
+  /* Verify the authentication data */
   if (!silc_pkcs_verify_with_hash(pkcs, hash, payload->auth_data,
 				  payload->auth_len, tmp, tmp_len)) {
 

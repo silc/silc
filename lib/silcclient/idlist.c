@@ -118,6 +118,8 @@ SilcClientEntry silc_idlist_get_client_by_id(SilcClient client,
 				   SILC_ID_CLIENT, &id_cache))
     return NULL;
 
+  SILC_LOG_DEBUG(("Found"));
+
   return (SilcClientEntry)id_cache->context;
 }
 

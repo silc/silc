@@ -1,3 +1,13 @@
+Wed Feb 21 14:17:04 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Implemented CMODE_CHANGE, CUMODE_CHANGE and TOPIC_SET notify
+	  types in the server's silcd/packet_receive.c.
+
+	* Implemented CMODE and CUMODE to work in router environment.
+
+	* Fixed minor encoding and decoding buglet from the
+	  lib/silccore/silcmode.c.
+
 Wed Feb 21 12:44:00 EET 2001  Mika Boström <bostik@lut.fi>
 
  	* Changed all SilcConfigServer* and silc_config_server* to

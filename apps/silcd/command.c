@@ -1402,15 +1402,15 @@ SILC_SERVER_CMD_FUNC(topic)
 
     /* See whether has rights to change topic */
     silc_list_start(channel->user_list);
-    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-      if (chl->client == client) {
-	if (chl->mode == SILC_CHANNEL_UMODE_NONE) {
-	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
-						SILC_STATUS_ERR_NO_CHANNEL_PRIV);
-	  goto out;
-	} else {
-	  break;
-	}
+    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
+      if (chl->client == client)
+	break;
+
+    if (chl->mode == SILC_CHANNEL_UMODE_NONE) {
+      if (channel->mode & SILC_CHANNEL_MODE_TOPIC) {
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
+					      SILC_STATUS_ERR_NO_CHANNEL_PRIV);
+	goto out;
       }
     }
 
@@ -2569,7 +2569,15 @@ SILC_SERVER_CMD_FUNC(cmode)
 				     SILC_NOTIFY_TYPE_CMODE_CHANGE, 2,
 				     cidp->data, cidp->len, 
 				     tmp_mask, tmp_len);
-  silc_free(cidp);
+
+  /* Set SET_MODE packet to network */
+  if (!server->standalone)
+    silc_server_send_set_mode(server, server->router->connection,
+			      server->server_type == SILC_ROUTER ? 
+			      TRUE : FALSE, SILC_MODE_TYPE_CHANNEL,
+			      mode_mask, 2,
+			      tmp_id, tmp_len2,
+			      cidp->data, cidp->len);
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CMODE,
@@ -2580,6 +2588,7 @@ SILC_SERVER_CMD_FUNC(cmode)
     
   silc_buffer_free(packet);
   silc_free(channel_id);
+  silc_free(cidp);
 
  out:
   silc_server_command_free(cmd);
@@ -2598,20 +2607,20 @@ SILC_SERVER_CMD_FUNC(cumode)
   SilcClientEntry target_client;
   SilcChannelClientEntry chl;
   SilcBuffer packet, idp;
-  unsigned char *tmp_id, *tmp_mask;
-  unsigned int target_mask, sender_mask, tmp_len;
+  unsigned char *tmp_id, *tmp_ch_id, *tmp_mask;
+  unsigned int target_mask, sender_mask, tmp_len, tmp_ch_len;
   int notify = FALSE;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CUMODE, cmd, 3, 3);
 
   /* Get Channel ID */
-  tmp_id = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
-  if (!tmp_id) {
+  tmp_ch_id = silc_argument_get_arg_type(cmd->args, 1, &tmp_ch_len);
+  if (!tmp_ch_id) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
 					  SILC_STATUS_ERR_NO_CHANNEL_ID);
     goto out;
   }
-  channel_id = silc_id_payload_parse_id(tmp_id, tmp_len);
+  channel_id = silc_id_payload_parse_id(tmp_ch_id, tmp_ch_len);
   if (!channel_id) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
 					  SILC_STATUS_ERR_NO_CHANNEL_ID);
@@ -2677,7 +2686,8 @@ SILC_SERVER_CMD_FUNC(cumode)
   target_client = silc_idlist_find_client_by_id(server->local_list, 
 						client_id, NULL);
   if (!target_client) {
-    /* XXX If target client is not one of mine send to primary route */
+    target_client = silc_idlist_find_client_by_id(server->global_list, 
+						  client_id, NULL);
   }
 
   /* Check whether target client is on the channel */
@@ -2738,15 +2748,26 @@ SILC_SERVER_CMD_FUNC(cumode)
     }
   }
 
+  idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+
   /* Send notify to channel, notify only if mode was actually changed. */
   if (notify) {
-    idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
     silc_server_send_notify_to_channel(server, NULL, channel, TRUE,
 				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3,
 				       idp->data, idp->len,
-				       tmp_mask, 4, tmp_id, tmp_len);
-    silc_buffer_free(idp);
+				       tmp_mask, 4, 
+				       tmp_id, tmp_len);
   }
+
+  /* Set SET_MODE packet to network */
+  if (!server->standalone)
+    silc_server_send_set_mode(server, server->router->connection,
+			      server->server_type == SILC_ROUTER ? 
+			      TRUE : FALSE, SILC_MODE_TYPE_UCHANNEL,
+			      target_mask, 3,
+			      tmp_ch_id, tmp_ch_len,
+			      idp->data, idp->len,
+			      tmp_id, tmp_len);
 
   /* Send command reply to sender */
   packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CUMODE,
@@ -2759,6 +2780,7 @@ SILC_SERVER_CMD_FUNC(cumode)
   silc_buffer_free(packet);
   silc_free(channel_id);
   silc_free(client_id);
+  silc_buffer_free(idp);
 
  out:
   silc_server_command_free(cmd);

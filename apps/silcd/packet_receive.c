@@ -1364,6 +1364,8 @@ void silc_server_notify(SilcServer server,
   SilcClientID *client_id, *client_id2;
   SilcChannelEntry channel;
   SilcClientEntry client;
+  SilcChannelClientEntry chl;
+  unsigned int mode;
   unsigned char *tmp;
   unsigned int tmp_len;
 
@@ -1548,6 +1550,49 @@ void silc_server_notify(SilcServer server,
     silc_idlist_del_client(server->global_list, client);
     break;
 
+  case SILC_NOTIFY_TYPE_TOPIC_SET:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+
+    SILC_LOG_DEBUG(("TOPIC SET notify"));
+
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				packet->dst_id_type);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
+					       channel_id, NULL);
+      if (!channel) {
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+
+    /* Get the topic */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp) {
+      silc_free(channel_id);
+      goto out;
+    }
+
+    if (channel->topic)
+      silc_free(channel->topic);
+    channel->topic = silc_calloc(tmp_len, sizeof(*channel->topic));
+    memcpy(channel->topic, tmp, tmp_len);
+
+    /* Send the same notify to the channel */
+    silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+    silc_free(channel_id);
+    break;
+
   case SILC_NOTIFY_TYPE_NICK_CHANGE:
     {
       /* 
@@ -1598,31 +1643,128 @@ void silc_server_notify(SilcServer server,
 	silc_free(client_id2);
       break;
     }
-  case SILC_NOTIFY_TYPE_TOPIC_SET:
-    /* 
-     * Distribute the notify to local clients on the channel
-     */
-    SILC_LOG_DEBUG(("TOPIC SET notify (not-impl XXX)"));
-    break;
 
   case SILC_NOTIFY_TYPE_CMODE_CHANGE:
     /* 
      * Distribute the notify to local clients on the channel
      */
-    SILC_LOG_DEBUG(("CMODE CHANGE notify (not-impl XXX)"));
+    
+    SILC_LOG_DEBUG(("CMODE CHANGE notify"));
+      
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				packet->dst_id_type);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
+					       channel_id, NULL);
+      if (!channel) {
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+
+    /* Send the same notify to the channel */
+    silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+
+    /* Get the mode */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp) {
+      silc_free(channel_id);
+      goto out;
+    }
+
+    SILC_GET32_MSB(mode, tmp);
+
+    /* Change mode */
+    channel->mode = mode;
+    silc_free(channel_id);
     break;
 
   case SILC_NOTIFY_TYPE_CUMODE_CHANGE:
     /* 
      * Distribute the notify to local clients on the channel
      */
-    SILC_LOG_DEBUG(("CUMODE CHANGE notify (not-impl XXX)"));
+
+    SILC_LOG_DEBUG(("CUMODE CHANGE notify"));
+
+    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				packet->dst_id_type);
+    if (!channel_id)
+      goto out;
+
+    /* Get channel entry */
+    channel = silc_idlist_find_channel_by_id(server->local_list, 
+					     channel_id, NULL);
+    if (!channel) {
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
+					       channel_id, NULL);
+      if (!channel) {
+	silc_free(channel_id);
+	goto out;
+      }
+    }
+
+    /* Get the mode */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp) {
+      silc_free(channel_id);
+      goto out;
+    }
+      
+    SILC_GET32_MSB(mode, tmp);
+
+    /* Get target client */
+    tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+    if (!tmp)
+      goto out;
+    client_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!client_id)
+      goto out;
+    
+    /* Get client entry */
+    client = silc_idlist_find_client_by_id(server->global_list, 
+					   client_id, NULL);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->local_list, 
+					     client_id, NULL);
+      if (!client) {
+	silc_free(client_id);
+	goto out;
+      }
+    }
+    silc_free(client_id);
+
+    /* Get entry to the channel user list */
+    silc_list_start(channel->user_list);
+    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
+      if (chl->client == client) {
+	/* Change the mode */
+	chl->mode = mode;
+	break;
+      }
+
+    /* Send the same notify to the channel */
+    silc_server_packet_send_to_channel(server, NULL, channel, packet->type, 
+				       FALSE, packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+    silc_free(channel_id);
+    break;
+
+  case SILC_NOTIFY_TYPE_INVITE:
+    SILC_LOG_DEBUG(("INVITE notify (not-impl XXX)"));
     break;
 
     /* Ignore rest notify types for now */
   case SILC_NOTIFY_TYPE_NONE:
-  case SILC_NOTIFY_TYPE_INVITE:
   case SILC_NOTIFY_TYPE_MOTD:
+    break;
   default:
     break;
   }
@@ -1876,7 +2018,7 @@ void silc_server_set_mode(SilcServer server,
 
     /* Send CUMODE_CHANGE notify to local channel */
     silc_server_send_notify_to_channel(server, sock, channel, FALSE,
-				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 2, 
+				       SILC_NOTIFY_TYPE_CUMODE_CHANGE, 3, 
 				       tmp, tmp_len,
 				       mode, sizeof(mode),
 				       tmp2, tmp_len2);
@@ -1899,8 +2041,6 @@ void silc_server_set_mode(SilcServer server,
  out:
   if (channel_id)
     silc_free(channel_id);
-  if (args)
-    silc_argument_payload_free(args);
   if (payload)
     silc_set_mode_payload_free(payload);
 }
