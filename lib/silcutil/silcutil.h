@@ -433,13 +433,100 @@ SilcUInt32 silc_version_to_num(const char *version);
  ***/
 char *silc_get_input(const char *prompt, bool echo_off);
 
-/* XXX - System dependant prototypes */
+/* System dependant prototypes */
 
+/****f* silcutil/SilcUtilAPI/silc_gettimeofday
+ *
+ * SYNOPSIS
+ *
+ *    int silc_gettimeofday(struct timeval *p);
+ *
+ * DESCRIPTION
+ *
+ *    Return current time to struct timeval.
+ *
+ *    This function is system dependant.
+ *
+ ***/
 int silc_gettimeofday(struct timeval *p);
+
+/****f* silcutil/SilcUtilAPI/silc_string_regexify
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_string_regexify(const char *string);
+ *
+ * DESCRIPTION
+ *
+ *    Inspects the `string' for wildcards and returns regex string that can
+ *    be used by the GNU regex library. A comma (`,') in the `string' means
+ *    that the string is list.
+ *
+ *    This function is system dependant.
+ *
+ ***/
 char *silc_string_regexify(const char *string);
+
+/****f* silcutil/SilcUtilAPI/silc_string_regex_match
+ *
+ * SYNOPSIS
+ *
+ *    int silc_string_regex_match(const char *regex, const char *string);
+ *
+ * DESCRIPTION
+ *
+ *    Matches the two strings and returns TRUE if the strings match.
+ *
+ *    This function is system dependant.
+ *
+ ***/
 int silc_string_regex_match(const char *regex, const char *string);
+
+/****f* silcutil/SilcUtilAPI/silc_string_match
+ *
+ * SYNOPSIS
+ *
+ *    int silc_string_match(const char *string1, const char *string2);
+ *
+ * DESCRIPTION
+ *
+ *    Do regex match to the two strings `string1' and `string2'. If the
+ *    `string2' matches the `string1' this returns TRUE.
+ *
+ *    This function is system dependant.
+ *
+ ***/
 int silc_string_match(const char *string1, const char *string2);
+
+/****f* silcutil/SilcUtilAPI/silc_get_username
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_get_username();
+ *
+ * DESCRIPTION
+ *
+ *    Returns the username of the user. If the global variable LOGNAME
+ *    does not exists we will get the name from the passwd file.
+ *
+ *    This function is system dependant.
+ *
+ ***/
 char *silc_get_username();
+
+/****f* silcutil/SilcUtilAPI/silc_get_real_name
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_get_real_name();
+ *
+ * DESCRIPTION
+ *
+ *    Returns the real name of ther user from the passwd file.
+ *
+ *    This function is system dependant.
+ *
+ ***/
 char *silc_get_real_name();
 
 #endif	/* !SILCUTIL_H */
