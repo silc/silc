@@ -101,7 +101,7 @@
     Currently valid data area is considered to be the main data area in
     the buffer. However, the entire buffer is of course valid data and can
     be used as such. Usually head section of the buffer includes different
-    kind of headers or similiar. Data section includes the main data of
+    kind of headers or similar. Data section includes the main data of
     the buffer. Tail section can be seen as a reserve space of the data
     section. Tail section can be pulled towards end thus the data section
     becomes larger.

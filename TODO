@@ -264,6 +264,22 @@ least could be done.
 	  and thus not require any memory allocation.  Same will happen
 	  with silc_id_payload_* functions.
 
+	o Remove the `truelen' field from SilcBuffer as it is entirely
+	  redundant since we can get the true length of the buffer by
+	  doing buffer->end - buffer->header.  Add SILC_BUFFER_TRUELEN
+	  macro instead.  Consider also removing `len' field too since
+	  it effectively is buffer->tail - buffer->data, and adding
+	  SILC_BUFFER_LEN macro can do the same.  These would save
+	  totally 8 bytes of memory per buffer.
+
+	  Add also perhaps function silc_buffer_alloc_size that would
+	  effectively do: 
+
+		return silc_buffer_pull_tail(silc_buffer_alloc(size),
+					     size);
+
+	  to not require the user to give the pull_tail anymore.
+
  o Optimizations in Server
 
 	o Remove the big switch statement from the function 
@@ -282,6 +298,13 @@ least could be done.
 	  instead of adding it to the scheduler with 0 timeout.  It
 	  should be analyzed too how slow the task registering process
 	  actually is, and find out ways to optimize it.
+
+	o The SERVER_SIGNOFF notify handing is not optimal, because it'll
+	  cause sending of multiple SIGNOFF notify's instead of the one
+	  SERVER_SIGNOFF notify that the server received.  This should be
+	  optimized so that the only SERVER_SIGNOFF is sent and not
+	  SIGNOFF of notify at all (using SIGNOFF takes the idea about
+	  SERVER_SIGNOFF away entirely).
 
  o Add SilcAsyncOperation to utility library.
 

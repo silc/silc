@@ -49,6 +49,7 @@ void silc_server_notify(SilcServer server,
   uint32 mode;
   unsigned char *tmp;
   uint32 tmp_len;
+  bool local;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -842,9 +843,11 @@ void silc_server_notify(SilcServer server,
     /* Get server entry */
     server_entry = silc_idlist_find_server_by_id(server->global_list, 
 						 server_id, TRUE, NULL);
+    local = TRUE;
     if (!server_entry) {
       server_entry = silc_idlist_find_server_by_id(server->local_list, 
 						   server_id, TRUE, NULL);
+      global = TRUE;
       if (!server_entry) {
 	/* If we are normal server then we might not have the server. Check
 	   whether router was kind enough to send the list of all clients
@@ -853,7 +856,6 @@ void silc_server_notify(SilcServer server,
 	if (server->server_type != SILC_ROUTER &&
 	    silc_argument_get_arg_num(args) > 1) {
 	  int i;
-	  bool local;
 
 	  for (i = 1; i < silc_argument_get_arg_num(args); i++) {
 	    /* Get Client ID */
@@ -907,8 +909,8 @@ void silc_server_notify(SilcServer server,
     silc_server_remove_clients_by_server(server, server_entry, TRUE);
 
     /* Remove the server entry */
-    if (!silc_idlist_del_server(server->global_list, server_entry))
-      silc_idlist_del_server(server->local_list, server_entry);
+    silc_idlist_del_server(local ? server->local_list :
+			   server->global_list, server_entry);
 
     /* XXX update statistics */
 
