@@ -20,6 +20,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.7  2000/07/07 06:54:44  priikone
+ * 	Fixed channel joining bug, do not allow joining twice on the
+ * 	same channel.
+ *
  * Revision 1.6  2000/07/06 07:14:36  priikone
  * 	Fixes to NAMES command handling.
  * 	Fixes when leaving from channel.
@@ -621,6 +625,7 @@ SILC_CLIENT_CMD_FUNC(leave)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientWindow win = NULL;
   SilcIDCache *id_cache = NULL;
+  SilcChannelEntry channel;
   SilcBuffer buffer;
   unsigned char *id_string;
   char *name;
@@ -662,6 +667,8 @@ SILC_CLIENT_CMD_FUNC(leave)
     goto out;
   }
 
+  channel = (SilcChannelEntry)id_cache->context;
+
   /* Send LEAVE command to the server */
   id_string = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
   buffer = silc_command_encode_payload_va(SILC_COMMAND_LEAVE, 1, 
@@ -673,17 +680,20 @@ SILC_CLIENT_CMD_FUNC(leave)
 
   /* We won't talk anymore on this channel */
   silc_say(cmd->client, "You have left channel %s", name);
-  cmd->client->screen->bottom_line->channel = NULL;
-  silc_screen_print_bottom_line(cmd->client->screen, 0);
+
+  if (!strncmp(win->current_channel->channel_name, name, strlen(name))) {
+    cmd->client->screen->bottom_line->channel = NULL;
+    silc_screen_print_bottom_line(cmd->client->screen, 0);
+    win->current_channel = NULL;
+  }
 
   silc_idcache_del_by_id(CIDC(name[0]), CIDCC(name[0]),
-			 SILC_ID_CHANNEL, win->current_channel->id);
-  silc_free(win->current_channel->channel_name);
-  silc_free(win->current_channel->id);
-  silc_free(win->current_channel->key);
-  silc_cipher_free(win->current_channel->channel_key);
-  silc_free(win->current_channel);
-  win->current_channel = NULL;
+			 SILC_ID_CHANNEL, channel->id);
+  silc_free(channel->channel_name);
+  silc_free(channel->id);
+  silc_free(channel->key);
+  silc_cipher_free(channel->channel_key);
+  silc_free(channel);
   silc_free(id_string);
 
  out:
