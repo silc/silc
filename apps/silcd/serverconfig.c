@@ -231,6 +231,21 @@ SILC_CONFIG_CALLBACK(fetch_generic)
   else if (!strcmp(name, "detach_timeout")) {
     config->detach_timeout = (SilcUInt32) *(int *)val;
   }
+  else if (!strcmp(name, "qos")) {
+    config->param.qos = *(bool *)val;
+  }
+  else if (!strcmp(name, "qos_rate_limit")) {
+    config->param.qos_rate_limit = *(SilcUInt32 *)val;
+  }
+  else if (!strcmp(name, "qos_bytes_limit")) {
+    config->param.qos_bytes_limit = *(SilcUInt32 *)val;
+  }
+  else if (!strcmp(name, "qos_limit_sec")) {
+    config->param.qos_limit_sec = *(SilcUInt32 *)val;
+  }
+  else if (!strcmp(name, "qos_limit_usec")) {
+    config->param.qos_limit_usec = *(SilcUInt32 *)val;
+  }
   else
     return SILC_CONFIG_EINTERNAL;
 
@@ -668,6 +683,21 @@ SILC_CONFIG_CALLBACK(fetch_connparam)
   else if (!strcmp(name, "anonymous")) {
     tmp->anonymous = *(bool *)val;
   }
+  else if (!strcmp(name, "qos")) {
+    tmp->qos = *(bool *)val;
+  }
+  else if (!strcmp(name, "qos_rate_limit")) {
+    tmp->qos_rate_limit = *(SilcUInt32 *)val;
+  }
+  else if (!strcmp(name, "qos_bytes_limit")) {
+    tmp->qos_bytes_limit = *(SilcUInt32 *)val;
+  }
+  else if (!strcmp(name, "qos_limit_sec")) {
+    tmp->qos_limit_sec = *(SilcUInt32 *)val;
+  }
+  else if (!strcmp(name, "qos_limit_usec")) {
+    tmp->qos_limit_usec = *(SilcUInt32 *)val;
+  }
   else
     return SILC_CONFIG_EINTERNAL;
 
@@ -1019,6 +1049,11 @@ static const SilcConfigTable table_general[] = {
   { "version_software_vendor",	SILC_CONFIG_ARG_STR,	fetch_generic,	NULL },
   { "detach_disabled",    	SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { "detach_timeout",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "qos",    	                SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
+  { "qos_rate_limit",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "qos_bytes_limit",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "qos_limit_sec",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "qos_limit_usec",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -1107,6 +1142,11 @@ static const SilcConfigTable table_connparam[] = {
   { "version_software",	       SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
   { "version_software_vendor", SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
   { "anonymous",               SILC_CONFIG_ARG_TOGGLE, fetch_connparam,	NULL },
+  { "qos",    	               SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
+  { "qos_rate_limit",          SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "qos_bytes_limit",         SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "qos_limit_sec",           SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "qos_limit_usec",          SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
 

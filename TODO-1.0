@@ -144,6 +144,13 @@ least could be done.
    SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
    in separately.
 
+ o Add a timeout to handling incoming JOIN commands.  It should be 
+   enforced that JOIN command is executed only once in a second or two
+   seconds.  Now it is possible to accept n incoming JOIN commands
+   and process them without any timeouts.  THis must be employed because
+   each JOIN command will create and distribute the new channel key
+   to everybody on the channel (Fix this to 0.9.x).
+
  o EPOC specific additions/changes required:
 
 	o lib/silcutil/epoc routines missing or not completed.

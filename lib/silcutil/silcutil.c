@@ -1140,3 +1140,16 @@ const char *silc_get_command_name(unsigned char command)
     return "UNKNOWN";
   return command_name[command];
 }
+
+/* Return TRUE if `smaller' is smaller than `bigger'. */
+
+bool silc_compare_timeval(struct timeval *smaller, 
+			  struct timeval *bigger)
+{
+  if ((smaller->tv_sec < bigger->tv_sec) ||
+      ((smaller->tv_sec == bigger->tv_sec) &&
+       (smaller->tv_usec < bigger->tv_usec)))
+    return TRUE;
+
+  return FALSE;
+}

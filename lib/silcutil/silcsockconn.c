@@ -75,7 +75,7 @@ void silc_socket_free(SilcSocketConnection sock)
       silc_schedule_task_del(sock->hb->schedule, sock->hb->hb_task);
       silc_free(sock->hb);
     }
-
+    silc_free(sock->qos);
     silc_free(sock->ip);
     silc_free(sock->hostname);
 
@@ -143,6 +143,38 @@ void silc_socket_set_heartbeat(SilcSocketConnection sock,
 					     (void *)sock->hb, heartbeat, 0,
 					     SILC_TASK_TIMEOUT,
 					     SILC_TASK_PRI_LOW);
+}
+
+/* Sets a "Quality of Service" settings for socket connection `sock'.
+   The `read_rate' specifies the maximum read operations per second.
+   If more read operations are executed the limit will be applied for
+   the reading.  The `read_limit_bytes' specifies the maximum data
+   that is read.  It is guaranteed that silc_socket_read never returns
+   more that `read_limit_bytes' of data.  If more is read the limit
+   will be applied for the reading.  The `limit_sec' and `limit_usec'
+   specifies the limit that is applied if `read_rate' and/or 
+   `read_limit_bytes' is reached.  The `schedule' is the application's
+   scheduler. */
+
+void silc_socket_set_qos(SilcSocketConnection sock, 
+			 SilcUInt32 read_rate,
+			 SilcUInt32 read_limit_bytes,
+			 SilcUInt32 limit_sec,
+			 SilcUInt32 limit_usec,
+			 SilcSchedule schedule)
+{
+  if (!sock->qos) {
+    sock->qos = silc_calloc(1, sizeof(*sock->qos));
+    if (!sock->qos)
+      return;
+  }
+  sock->qos->read_rate = read_rate;
+  sock->qos->read_limit_bytes = read_limit_bytes;
+  sock->qos->limit_sec = limit_sec;
+  sock->qos->limit_usec = limit_usec;
+  sock->qos->schedule = schedule;
+  memset(&sock->qos->next_limit, 0, sizeof(sock->qos->next_limit));
+  sock->qos->cur_rate = 0;
 }
 
 /* Finishing timeout callback that will actually call the user specified

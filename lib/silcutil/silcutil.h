@@ -471,12 +471,27 @@ char *silc_get_input(const char *prompt, bool echo_off);
  *
  * DESCRIPTION
  *
- *    Return current time to struct timeval.
- *
- *    This function is system dependant.
+ *    Return current time to struct timeval.  This function is system
+ *    dependant.  Returns 0 on success and -1 on error.
  *
  ***/
 int silc_gettimeofday(struct timeval *p);
+
+/****f* silcutil/SilcUtilAPI/silc_compare_timeval
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_compare_timeval(struct timeval *smaller, 
+ *                              struct timeval *bigger)
+ *
+ * DESCRIPTION
+ *
+ *    Compare two timeval structures and return TRUE if the first
+ *    time value is smaller than the second time value.
+ *
+ ***/
+bool silc_compare_timeval(struct timeval *smaller, 
+			  struct timeval *bigger);
 
 /****f* silcutil/SilcUtilAPI/silc_string_regexify
  *

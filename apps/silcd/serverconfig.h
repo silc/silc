@@ -78,6 +78,7 @@ typedef struct SilcServerConfigLoggingStruct {
 
 /* Connection parameters */
 typedef struct SilcServerConfigConnParams {
+  struct SilcServerConfigConnParams *next;
   char *name;
   char *version_protocol;
   char *version_software;
@@ -89,10 +90,14 @@ typedef struct SilcServerConfigConnParams {
   SilcUInt32 reconnect_interval;
   SilcUInt32 reconnect_interval_max;
   SilcUInt32 key_exchange_rekey;
-  bool key_exchange_pfs;
-  bool reconnect_keep_trying;
-  bool anonymous;
-  struct SilcServerConfigConnParams *next;
+  SilcUInt32 qos_rate_limit;
+  SilcUInt32 qos_bytes_limit;
+  SilcUInt32 qos_limit_sec;
+  SilcUInt32 qos_limit_usec;
+  unsigned int key_exchange_pfs      : 1;
+  unsigned int reconnect_keep_trying : 1;
+  unsigned int anonymous             : 1;
+  unsigned int qos                   : 1;
 } SilcServerConfigConnParams;
 
 /* Holds all client authentication data from config file */

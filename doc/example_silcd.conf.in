@@ -138,6 +138,23 @@ General {
 	# sessions are persistent as long as server is running.
 	#detach_disabled = true;
 	#detach_timeout = 1440;
+
+	# Quality of Service (QoS) settings.  The QoS can be used to handle
+	# the incoming data and limit its handling rate to avoid flooding.
+	# By default QoS is disabled and can be enabled by setting "qos" to
+	# true value.  The "qos_rate_limit" is the incmoing data reading
+	# per second, and if more frequently than the set limit is read the
+	# QoS is applied to the data.  The "qos_bytes_limit" is maximum bytes
+	# allowed for incoming data.  If more is received at once the QoS
+	# is applied to the data.  The "qos_limit_sec" and "qos_limit_usec"
+	# is the timeout used to delay the data handling, seconds and
+	# microseconds, respectively.  This can be overridden with
+	# ConnectionParams.
+	#qos = true;
+	#qos_rate_limit = 5;
+	#qos_bytes_limit = 1024;
+	#qos_limit_sec = 0;
+	#qos_limit_usec = 500000;
 };
 
 #
@@ -358,8 +375,22 @@ ConnectionParams {
 	# is scrambled and anonymous mode is set for the user.
 	#anonymous = true;
 
-	#TODO:
-	#connections_interval - incoming connection interval limit ?
+	# Quality of Service (QoS) settings.  The QoS can be used to handle
+	# the incoming data and limit its handling rate to avoid flooding.
+	# By default QoS is disabled and can be enabled by setting "qos" to
+	# true value.  The "qos_rate_limit" is the incmoing data reading
+	# per second, and if more frequently than the set limit is read the
+	# QoS is applied to the data.  The "qos_bytes_limit" is maximum bytes
+	# allowed for incoming data.  If more is received at once the QoS
+	# is applied to the data.  The "qos_limit_sec" and "qos_limit_usec"
+	# is the timeout used to delay the data handling, seconds and
+	# microseconds, respectively.  For server connections QoS SHOULD NOT
+	# be set.
+	#qos = true;
+	#qos_rate_limit = 5;
+	#qos_bytes_limit = 1024;
+	#qos_limit_sec = 0;
+	#qos_limit_usec = 500000;
 };
 
 #

@@ -1376,8 +1376,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   if (conn && conn->param)
     param = conn->param;
 
-  /* Perform keepalive. The `hb_context' will be freed automatically
-     when finally calling the silc_socket_free function. */
+  /* Perform keepalive. */
   silc_socket_set_heartbeat(sock, param->keepalive_secs, server,
 			    silc_server_perform_heartbeat,
 			    server->schedule);
@@ -1775,7 +1774,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   SilcSocketConnection sock = ctx->sock;
   SilcUnknownEntry entry = (SilcUnknownEntry)sock->user_data;
   void *id_entry;
-  SilcUInt32 hearbeat_timeout = server->config->param.keepalive_secs;
+  SilcServerConfigConnParams *param = &server->config->param;
 
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
@@ -1872,11 +1871,21 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
       /* Get connection parameters */
       if (conn->param) {
-	if (conn->param->keepalive_secs)
-	  hearbeat_timeout = conn->param->keepalive_secs;
+	param = conn->param;
+
+	if (!param->keepalive_secs)
+	  param->keepalive_secs = server->config->param.keepalive_secs;
+
+	if (!param->qos && server->config->param.qos) {
+	  param->qos = server->config->param.qos;
+	  param->qos_rate_limit = server->config->param.qos_rate_limit;
+	  param->qos_bytes_limit = server->config->param.qos_bytes_limit;
+	  param->qos_limit_sec = server->config->param.qos_limit_sec;
+	  param->qos_limit_usec = server->config->param.qos_limit_usec;
+	}
 
 	/* Check if to be anonymous connection */
-	if (conn->param->anonymous)
+	if (param->anonymous)
 	  client->mode |= SILC_UMODE_ANONYMOUS;
       }
 
@@ -1925,8 +1934,18 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
 	if (rconn) {
 	  if (rconn->param) {
-	    if (rconn->param->keepalive_secs)
-	      hearbeat_timeout = rconn->param->keepalive_secs;
+	    param = rconn->param;
+
+	    if (!param->keepalive_secs)
+	      param->keepalive_secs = server->config->param.keepalive_secs;
+
+	    if (!param->qos && server->config->param.qos) {
+	      param->qos = server->config->param.qos;
+	      param->qos_rate_limit = server->config->param.qos_rate_limit;
+	      param->qos_bytes_limit = server->config->param.qos_bytes_limit;
+	      param->qos_limit_sec = server->config->param.qos_limit_sec;
+	      param->qos_limit_usec = server->config->param.qos_limit_usec;
+	    }
 	  }
 
 	  initiator = rconn->initiator;
@@ -1949,8 +1968,18 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	}
 	if (sconn) {
 	  if (sconn->param) {
-	    if (sconn->param->keepalive_secs)
-	      hearbeat_timeout = sconn->param->keepalive_secs;
+	    param = rconn->param;
+
+	    if (!param->keepalive_secs)
+	      param->keepalive_secs = server->config->param.keepalive_secs;
+
+	    if (!param->qos && server->config->param.qos) {
+	      param->qos = server->config->param.qos;
+	      param->qos_rate_limit = server->config->param.qos_rate_limit;
+	      param->qos_bytes_limit = server->config->param.qos_bytes_limit;
+	      param->qos_limit_sec = server->config->param.qos_limit_sec;
+	      param->qos_limit_usec = server->config->param.qos_limit_usec;
+	    }
 	  }
 
 	  backup_router = sconn->backup_router;
@@ -2083,11 +2112,17 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   /* Connection has been fully established now. Everything is ok. */
   SILC_LOG_DEBUG(("New connection authenticated"));
 
-  /* Perform keepalive. The `hb_context' will be freed automatically
-     when finally calling the silc_socket_free function. */
-  silc_socket_set_heartbeat(sock, hearbeat_timeout, server,
-			    silc_server_perform_heartbeat,
-			    server->schedule);
+  /* Perform keepalive. */
+  if (param->keepalive_secs)
+    silc_socket_set_heartbeat(sock, param->keepalive_secs, server,
+			      silc_server_perform_heartbeat,
+			      server->schedule);
+
+  /* Perform Quality of Service */
+  if (param->qos)
+    silc_socket_set_qos(sock, param->qos_rate_limit, param->qos_bytes_limit,
+			param->qos_limit_sec, param->qos_limit_usec,
+			server->schedule);
 
  out:
   silc_schedule_task_del_by_callback(server->schedule,

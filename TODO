@@ -26,15 +26,6 @@ TODO/bugs In SILC Server
  	o Add special handling in router and server for "connection
 	  timed out" error.  Be optimistic.
 
-	o Testing
-
- o Add a timeout to handling incoming JOIN commands.  It should be 
-   enforced that JOIN command is executed only once in a second or two
-   seconds.  Now it is possible to accept n incoming JOIN commands
-   and process them without any timeouts.  THis must be employed because
-   each JOIN command will create and distribute the new channel key
-   to everybody on the channel (Fix this to 0.9.x).
-
  o Manual file for silcd(8) and silcd.conf.
 
  o Testing

@@ -67,6 +67,31 @@ typedef struct SilcSocketConnectionStruct *SilcSocketConnection;
  ***/
 typedef struct SilcSocketConnectionHBStruct *SilcSocketConnectionHB;
 
+/****s* silcutil/SilcSocketConnectionAPI/SilcSocketConnectionQos
+ *
+ * NAME
+ * 
+ *    typedef struct SilcSocketConnectionQosStruct *SilcSocketConnectionQos;
+ *
+ * DESCRIPTION
+ *
+ *    This structure is "Quality of Service" structure for the socket
+ *    connection and is set with silc_socket_set_qos function for a
+ *    socket context.
+ *
+ ***/
+typedef struct SilcSocketConnectionQosStruct {
+  SilcUInt16 read_limit_bytes;	    /* Max read bytes */
+  SilcUInt16 read_rate;		    /* Max read rate/second */
+  SilcUInt16 limit_sec;		    /* Limit seconds */
+  SilcUInt32 limit_usec;	    /* Limit microseconds */
+  SilcSchedule schedule;
+  struct timeval next_limit;
+  unsigned int cur_rate : 31;
+  unsigned int applied  : 1;
+  SilcUInt32 data_len;
+} *SilcSocketConnectionQos;
+
 /****d* silcutil/SilcSocketConnectionAPI/SilcSocketType
  *
  * NAME
@@ -183,6 +208,7 @@ struct SilcSocketConnectionStruct {
   int users;
 
   SilcSocketConnectionHB hb;
+  SilcSocketConnectionQos qos;
 
   SilcBuffer inbuf;
   SilcBuffer outbuf;
@@ -382,6 +408,38 @@ void silc_socket_set_heartbeat(SilcSocketConnection sock,
 			       void *hb_context,
 			       SilcSocketConnectionHBCb hb_callback,
 			       SilcSchedule schedule);
+
+/****f* silcutil/SilcSocketConnectionAPI/silc_socket_set_qos
+ *
+ * SYNOPSIS
+ *
+ *    void silc_socket_set_qos(SilcSocketConnection sock, 
+ *                             SilcUInt32 read_rate,
+ *                             SilcUInt32 read_limit_bytes,
+ *                             SilcUInt32 limit_sec,
+ *                             SilcUInt32 limit_usec,
+ *                             SilcSchedule schedule)
+ *
+ * DESCRIPTION
+ *
+ *    Sets a "Quality of Service" settings for socket connection `sock'.
+ *    The `read_rate' specifies the maximum read operations per second.
+ *    If more read operations are executed the limit will be applied for
+ *    the reading.  The `read_limit_bytes' specifies the maximum data
+ *    that is read.  It is guaranteed that silc_socket_read never returns
+ *    more that `read_limit_bytes' of data.  If more is read the limit
+ *    will be applied for the reading.  The `limit_sec' and `limit_usec'
+ *    specifies the limit that is applied if `read_rate' and/or 
+ *    `read_limit_bytes' is reached.  The `schedule' is the application's
+ *    scheduler.
+ *
+ ***/
+void silc_socket_set_qos(SilcSocketConnection sock, 
+			 SilcUInt32 read_rate,
+			 SilcUInt32 read_limit_bytes,
+			 SilcUInt32 limit_sec,
+			 SilcUInt32 limit_usec,
+			 SilcSchedule schedule);
 
 /****f* silcutil/SilcSocketConnectionAPI/SilcSocketHostLookupCb
  *

@@ -81,8 +81,6 @@ static SilcTask silc_task_get_first(SilcTaskQueue queue, SilcTask first);
 static SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask newtask,
 				      SilcTaskPriority priority);
 static int silc_schedule_task_remove(SilcTaskQueue queue, SilcTask task);
-static int silc_schedule_task_timeout_compare(struct timeval *smaller, 
-					      struct timeval *bigger);
 static void silc_task_del_by_context(SilcTaskQueue queue, void *context);
 static void silc_task_del_by_callback(SilcTaskQueue queue,
 				      SilcTaskCallback callback);
@@ -479,7 +477,7 @@ static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
     while(1) {
       /* Execute the task if the timeout has expired */
       if (dispatch_all ||
-	  silc_schedule_task_timeout_compare(&task->timeout, &curtime)) {
+	  silc_compare_timeval(&task->timeout, &curtime)) {
         if (task->valid) {
 	  silc_mutex_unlock(queue->lock);
 	  SILC_SCHEDULE_UNLOCK(schedule);
@@ -533,7 +531,7 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
     if (task && task->valid == TRUE) {
       /* If the timeout is in past, we will run the task and all other
 	 timeout tasks from the past. */
-      if (silc_schedule_task_timeout_compare(&task->timeout, &curtime)) {
+      if (silc_compare_timeval(&task->timeout, &curtime)) {
 	silc_schedule_dispatch_timeout(schedule, FALSE);
 
 	/* The task(s) has expired and doesn't exist on the task queue
@@ -1086,7 +1084,7 @@ static SilcTask silc_task_get_first(SilcTaskQueue queue, SilcTask first)
     if (first == prev)
       break;
 
-    if (silc_schedule_task_timeout_compare(&prev->timeout, &task->timeout))
+    if (silc_compare_timeval(&prev->timeout, &task->timeout))
       task = prev;
 
     prev = prev->prev;
@@ -1119,13 +1117,11 @@ static SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask newtask,
 
       /* If we have longer timeout than with the task head of us
 	 we have found our spot. */
-      if (silc_schedule_task_timeout_compare(&prev->timeout, 
-					     &newtask->timeout))
+      if (silc_compare_timeval(&prev->timeout, &newtask->timeout))
 	break;
 
       /* If we are equal size of timeout we will be after it. */
-      if (!silc_schedule_task_timeout_compare(&newtask->timeout, 
-					      &prev->timeout))
+      if (!silc_compare_timeval(&newtask->timeout, &prev->timeout))
 	break;
 
       /* We have shorter timeout, compare to next one. */
@@ -1140,11 +1136,9 @@ static SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask newtask,
     
     if (prev == task) {
       /* Check if we are going to be the first task in the queue */
-      if (silc_schedule_task_timeout_compare(&prev->timeout, 
-					     &newtask->timeout))
+      if (silc_compare_timeval(&prev->timeout, &newtask->timeout))
 	break;
-      if (!silc_schedule_task_timeout_compare(&newtask->timeout, 
-					      &prev->timeout))
+      if (!silc_compare_timeval(&newtask->timeout, &prev->timeout))
 	break;
 
       /* We are now the first task in queue */
@@ -1158,13 +1152,11 @@ static SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask newtask,
 
       /* If we have longer timeout than with the task head of us
 	 we have found our spot. */
-      if (silc_schedule_task_timeout_compare(&prev->timeout, 
-					     &newtask->timeout))
+      if (silc_compare_timeval(&prev->timeout, &newtask->timeout))
 	break;
 
       /* If we are equal size of timeout, priority kicks in place. */
-      if (!silc_schedule_task_timeout_compare(&newtask->timeout, 
-					      &prev->timeout))
+      if (!silc_compare_timeval(&newtask->timeout, &prev->timeout))
 	if (prev->priority >= SILC_TASK_PRI_NORMAL)
 	  break;
 
@@ -1180,11 +1172,9 @@ static SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask newtask,
     
     if (prev == task) {
       /* Check if we are going to be the first task in the queue */
-      if (silc_schedule_task_timeout_compare(&prev->timeout, 
-					     &newtask->timeout))
+      if (silc_compare_timeval(&prev->timeout, &newtask->timeout))
 	break;
-      if (!silc_schedule_task_timeout_compare(&newtask->timeout, 
-					      &prev->timeout))
+      if (!silc_compare_timeval(&newtask->timeout, &prev->timeout))
 	if (prev->priority >= SILC_TASK_PRI_NORMAL)
 	  break;
 
@@ -1261,20 +1251,6 @@ static int silc_schedule_task_remove(SilcTaskQueue queue, SilcTask task)
       return FALSE;
     }
   }
-}
-
-/* Compare two time values. If the first argument is smaller than the
-   second this function returns TRUE. */
-
-static int silc_schedule_task_timeout_compare(struct timeval *smaller, 
-					      struct timeval *bigger)
-{
-  if ((smaller->tv_sec < bigger->tv_sec) ||
-      ((smaller->tv_sec == bigger->tv_sec) &&
-       (smaller->tv_usec < bigger->tv_usec)))
-    return TRUE;
-
-  return FALSE;
 }
 
 static void silc_task_del_by_fd(SilcTaskQueue queue, SilcUInt32 fd)

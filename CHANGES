@@ -6,6 +6,19 @@ Sun Oct 20 19:54:55 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  should be FALSE.  Affected file lib/silcutil/silcschedule.[ch],
 	  lib/silcclient/client_internal.h and silcd/server_internal.h.
 
+	* Added silc_compare_timeval to determine which time values
+	  is smaller.  Affected file lib/silcutil/silcutil.[ch].
+
+	* Added sort-of "Quality of Service" (QoS) support to
+	  SilcSocketConnection.  Data reception can be controlled with
+	  rate limit per second and/or read data length limit.
+	  Added silc_socket_set_qos.  Affected files are
+	  lib/silcutil/silcsockconn.[ch] and unix/silcunixsockconn.c.
+
+	* Added the QoS configuration to SILC Server configuration
+	  file.  Affected files are silcd/serverconfig.[ch] and
+	  server.c.
+
 Sun Oct 20 14:12:24 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged with irssi.org CVS.

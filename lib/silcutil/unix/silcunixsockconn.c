@@ -65,6 +65,19 @@ int silc_socket_write(SilcSocketConnection sock)
   return ret;
 }
 
+/* QoS read handler, this will call the read and write events to indicate
+   that data is available again after a timeout */
+
+SILC_TASK_CALLBACK(silc_socket_read_qos)
+{
+  SilcSocketConnection sock = context;
+  sock->qos->applied = TRUE;
+  silc_schedule_set_listen_fd(sock->qos->schedule, sock->sock,
+			      (SILC_TASK_READ | SILC_TASK_WRITE), TRUE);
+  sock->qos->applied = FALSE;
+  silc_socket_free(sock);
+}
+
 /* Reads data from the socket connection into the incoming data buffer.
    It reads as much as possible from the socket connection. This returns
    amount of bytes read or -1 on error or -2 on case where all of the
@@ -78,6 +91,43 @@ int silc_socket_read(SilcSocketConnection sock)
 
   if (SILC_IS_DISABLED(sock))
     return -1;
+
+  /* If QoS was applied to socket then return earlier read data but apply
+     QoS to it too, if necessary. */
+  if (sock->qos) {
+    if (sock->qos->applied) {
+      if (sock->qos->data_len) {
+	/* Pull hidden data since we have it from earlier QoS apply */
+	silc_buffer_pull_tail(sock->inbuf, sock->qos->data_len);
+	len = sock->qos->data_len;
+	sock->qos->data_len = 0;
+      }
+
+      if (sock->inbuf->len - len > sock->qos->read_limit_bytes) {
+	/* Seems we need to apply QoS for the remaining data as well */
+	silc_schedule_task_add(sock->qos->schedule, sock->sock,
+			       silc_socket_read_qos, silc_socket_dup(sock),
+			       sock->qos->limit_sec, sock->qos->limit_usec,
+			       SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+	silc_schedule_unset_listen_fd(sock->qos->schedule, sock->sock);
+      
+	/* Hide the rest of the data from the buffer. */
+	sock->qos->data_len = (sock->inbuf->len - len - 
+			       sock->qos->read_limit_bytes);
+	silc_buffer_push_tail(sock->inbuf, sock->qos->data_len);
+      }
+
+      if (sock->inbuf->len)
+	return sock->inbuf->len;
+    }
+
+    /* If we were called and we have active QoS data pending, return
+       with no data */
+    if (sock->qos->data_len) {
+      silc_schedule_unset_listen_fd(sock->qos->schedule, sock->sock);
+      return -2;
+    }
+  }
 
   SILC_LOG_DEBUG(("Reading data from socket %d", fd));
 
@@ -109,6 +159,55 @@ int silc_socket_read(SilcSocketConnection sock)
   silc_buffer_pull_tail(sock->inbuf, len);
 
   SILC_LOG_DEBUG(("Read %d bytes", len));
+
+  /* Apply QoS to the read data if necessary */
+  if (sock->qos) {
+    struct timeval curtime;
+    silc_gettimeofday(&curtime);
+
+    /* If we have passed the rate time limit, set our new time limit,
+       and zero the rate limit. */
+    if (!silc_compare_timeval(&curtime, &sock->qos->next_limit)) {
+      curtime.tv_sec++;
+      sock->qos->next_limit = curtime;
+      sock->qos->cur_rate = 0;
+    }
+    sock->qos->cur_rate++;
+
+    /* If we are not withing rate limit apply QoS for the read data */
+    if (sock->qos->cur_rate > sock->qos->read_rate) {
+      silc_schedule_task_add(sock->qos->schedule, sock->sock,
+			     silc_socket_read_qos, silc_socket_dup(sock),
+			     sock->qos->limit_sec, sock->qos->limit_usec,
+			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+      silc_schedule_unset_listen_fd(sock->qos->schedule, sock->sock);
+
+      /* Check the byte limit as well, and do not return more than allowed */
+      if (sock->inbuf->len > sock->qos->read_limit_bytes) {
+	/* Hide the rest of the data from the buffer. */
+	sock->qos->data_len = sock->inbuf->len - sock->qos->read_limit_bytes;
+	silc_buffer_push_tail(sock->inbuf, sock->qos->data_len);
+	len = sock->inbuf->len;
+      } else {
+	/* Rate limit kicked in, do not return data yet */
+	return -2;
+      }
+    } else {
+      /* Check the byte limit, and do not return more than allowed */
+      if (sock->inbuf->len > sock->qos->read_limit_bytes) {
+	silc_schedule_task_add(sock->qos->schedule, sock->sock,
+			       silc_socket_read_qos, silc_socket_dup(sock),
+			       sock->qos->limit_sec, sock->qos->limit_usec,
+			       SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+	silc_schedule_unset_listen_fd(sock->qos->schedule, sock->sock);
+
+	/* Hide the rest of the data from the buffer. */
+	sock->qos->data_len = sock->inbuf->len - sock->qos->read_limit_bytes;
+	silc_buffer_push_tail(sock->inbuf, sock->qos->data_len);
+	len = sock->inbuf->len;
+      }
+    }
+  }
 
   return len;
 }
