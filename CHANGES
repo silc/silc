@@ -1,3 +1,9 @@
+Wed Jan 14 18:42:44 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC_CLIENT_CONN_ERROR_KE, ERROR_AUTH, ERROR_RESUME and
+	  ERROR_TIMEOUT SilcClientConnectionStatus errors.  Affected
+	  files are lib/silcclient/silcclient.h, client.c.
+
 Mon Jan 12 13:01:10 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* When resuming a session fails, notify the user that the session

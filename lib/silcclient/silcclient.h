@@ -494,7 +494,7 @@ typedef enum {
  * DESCRIPTION
  *
  *    This type is returned to the `connect' client operation to indicate
- *    the status of the created connection.  It can indicated if it was
+ *    the status of the created connection.  It can indicate if it was
  *    successful or whether an error occurred.
  *
  * SOURCE
@@ -503,7 +503,12 @@ typedef enum {
   SILC_CLIENT_CONN_SUCCESS,	       /* Successfully connected */
   SILC_CLIENT_CONN_SUCCESS_RESUME,     /* Successfully connected and
 					  resumed old detached session */
-  SILC_CLIENT_CONN_ERROR,	       /* Error occurred during connecting */
+  SILC_CLIENT_CONN_ERROR,	       /* Unknown error occurred during
+					  connecting */
+  SILC_CLIENT_CONN_ERROR_KE,	       /* Key Exchange failed */
+  SILC_CLIENT_CONN_ERROR_AUTH,	       /* Authentication failed */
+  SILC_CLIENT_CONN_ERROR_RESUME,       /* Resuming failed */
+  SILC_CLIENT_CONN_ERROR_TIMEOUT,      /* Timeout during connecting */
 } SilcClientConnectionStatus;
 /***/
 

@@ -572,7 +572,7 @@ SILC_TASK_CALLBACK(silc_client_connect_failure)
   SilcClient client = (SilcClient)ctx->client;
 
   client->internal->ops->connected(client, ctx->sock->user_data,
-				   SILC_CLIENT_CONN_ERROR);
+				   SILC_CLIENT_CONN_ERROR_KE);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
   silc_free(ctx);
@@ -588,7 +588,7 @@ SILC_TASK_CALLBACK(silc_client_connect_failure_auth)
   SilcClient client = (SilcClient)ctx->client;
 
   client->internal->ops->connected(client, ctx->sock->user_data,
-				   SILC_CLIENT_CONN_ERROR);
+				   SILC_CLIENT_CONN_ERROR_AUTH);
   silc_free(ctx);
 }
 
@@ -636,7 +636,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
       silc_free(ctx);
 
       /* Notify application of failure */
-      client->internal->ops->connected(client, conn, SILC_CLIENT_CONN_ERROR);
+      client->internal->ops->connected(client, conn, 
+				       SILC_CLIENT_CONN_ERROR_TIMEOUT);
     }
     return;
   }
@@ -1685,7 +1686,7 @@ static void silc_client_resume_session_cb(SilcClient client,
   /* Notify application that connection is created to server */
   client->internal->ops->connected(client, conn, success ?
 				   SILC_CLIENT_CONN_SUCCESS_RESUME :
-				   SILC_CLIENT_CONN_ERROR);
+				   SILC_CLIENT_CONN_ERROR_RESUME);
 
   if (success) {
     /* Issue INFO command to fetch the real server name and server
