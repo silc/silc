@@ -246,6 +246,10 @@ SILC Secure Internet Live Conferencing, version %s\n",
 
   if (opt_create_keypair == TRUE) {
     /* Create new key pair and exit */
+    silc_cipher_register_default();
+    silc_pkcs_register_default();
+    silc_hash_register_default();
+    silc_hmac_register_default();
     silc_client_create_key_pair(opt_pkcs, opt_bits, 
 				NULL, NULL, NULL, NULL, NULL);
     silc_free(opt_pkcs);

@@ -1,7 +1,8 @@
 Wed May  2 13:31:26 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Register default ciphers and stuff when using the -S option
-	  in the client.  Affected file silc/silc.c.
+	  in the client.  Affected file silc/silc.c.  Same also when
+	  creating new key pair with -C option.
 
 Tue May  1 14:18:13 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
