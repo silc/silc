@@ -1864,7 +1864,7 @@ silc_server_command_list_send_reply(SilcServerCommandContext cmd,
       memset(usercount, 0, sizeof(usercount));
     } else {
       topic = entry->topic;
-      users = silc_list_count(entry->user_list);
+      users = silc_hash_table_count(entry->user_list);
       SILC_PUT32_MSB(users, usercount);
     }
 
@@ -1915,7 +1915,7 @@ silc_server_command_list_send_reply(SilcServerCommandContext cmd,
       memset(usercount, 0, sizeof(usercount));
     } else {
       topic = entry->topic;
-      users = silc_list_count(entry->user_list);
+      users = silc_hash_table_count(entry->user_list);
       SILC_PUT32_MSB(users, usercount);
     }
 
@@ -2050,11 +2050,13 @@ SILC_SERVER_CMD_FUNC(topic)
       goto out;
     }
 
-    /* See whether has rights to change topic */
-    silc_list_start(channel->user_list);
-    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
-      if (chl->client == client)
-	break;
+    /* See whether the client is on channel and has rights to change topic */
+    if (!silc_hash_table_find(channel->user_list, client, NULL, 
+			      (void *)&chl)) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_TOPIC,
+					    SILC_STATUS_ERR_NOT_ON_CHANNEL);
+      goto out;
+    }
 
     if (chl->mode == SILC_CHANNEL_UMODE_NONE) {
       if (channel->mode & SILC_CHANNEL_MODE_TOPIC) {
@@ -2168,16 +2170,12 @@ SILC_SERVER_CMD_FUNC(invite)
   /* Check whether the channel is invite-only channel. If yes then the
      sender of this command must be at least channel operator. */
   if (channel->mode & SILC_CHANNEL_MODE_INVITE) {
-    silc_list_start(channel->user_list);
-    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
-      if (chl->client == sender) {
-	if (chl->mode == SILC_CHANNEL_UMODE_NONE) {
-	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
-					SILC_STATUS_ERR_NO_CHANNEL_PRIV);
-	  goto out;
-	}
-	break;
-      }
+    silc_hash_table_find(channel->user_list, sender, NULL, (void *)&chl);
+    if (chl->mode == SILC_CHANNEL_UMODE_NONE) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
+					    SILC_STATUS_ERR_NO_CHANNEL_PRIV);
+      goto out;
+    }
   }
 
   /* Get destination client ID */
@@ -2800,7 +2798,7 @@ static void silc_server_command_join_channel(SilcServer server,
 
   /* Check user count limit if set. */
   if (channel->mode & SILC_CHANNEL_MODE_ULIMIT) {
-    if (silc_list_count(channel->user_list) + 1 > 
+    if (silc_hash_table_count(channel->user_list) + 1 > 
 	channel->user_limit) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					    SILC_STATUS_ERR_CHANNEL_IS_FULL);
@@ -2820,7 +2818,7 @@ static void silc_server_command_join_channel(SilcServer server,
   }
 
   /* Generate new channel key as protocol dictates */
-  if ((!created && silc_list_count(channel->user_list) > 0) || 
+  if ((!created && silc_hash_table_count(channel->user_list) > 0) || 
       !channel->channel_key)
     silc_server_create_channel_key(server, channel, 0);
 
@@ -2838,8 +2836,8 @@ static void silc_server_command_join_channel(SilcServer server,
   chl->mode = umode;
   chl->client = client;
   chl->channel = channel;
-  silc_list_add(channel->user_list, chl);
-  silc_list_add(client->channels, chl);
+  silc_hash_table_add(channel->user_list, client, chl);
+  silc_hash_table_add(client->channels, channel, chl);
 
   /* Get users on the channel */
   silc_server_get_users_on_channel(server, channel, &user_list, &mode_list,
@@ -3090,7 +3088,7 @@ SILC_SERVER_CMD_FUNC(join)
   /* If the channel does not have global users and is also empty it means the
      channel was created globally (by our router) and the client will be the
      channel founder and operator. */
-  if (!channel->global_users && silc_list_count(channel->user_list) == 0) {
+  if (!channel->global_users && !silc_hash_table_count(channel->user_list)) {
     umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
     created = TRUE;		/* Created globally by our router */
   }
@@ -3458,10 +3456,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   }
 
   /* Get entry to the channel user list */
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
-    if (chl->client == client)
-      break;
+  silc_hash_table_find(channel->user_list, client, NULL, (void *)&chl);
 
   /* Check that client has rights to change any requested channel modes */
   if (!silc_server_check_cmode_rights(channel, chl, mode_mask)) {
@@ -3798,13 +3793,8 @@ SILC_SERVER_CMD_FUNC(cumode)
   }
 
   /* Check that client has rights to change other's rights */
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-    if (chl->client == client) {
-      sender_mask = chl->mode;
-      break;
-    }
-  }
+  silc_hash_table_find(channel->user_list, client, NULL, (void *)&chl);
+  sender_mask = chl->mode;
   
   /* Get the target client's channel mode mask */
   tmp_mask = silc_argument_get_arg_type(cmd->args, 2, NULL);
@@ -3854,10 +3844,8 @@ SILC_SERVER_CMD_FUNC(cumode)
     }
 
     /* Get entry to the channel user list */
-    silc_list_start(channel->user_list);
-    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
-      if (chl->client == target_client)
-	break;
+    silc_hash_table_find(channel->user_list, target_client, NULL, 
+			 (void *)&chl);
   }
 
   /* 
@@ -4046,16 +4034,11 @@ SILC_SERVER_CMD_FUNC(kick)
   }
 
   /* Check that the kicker is channel operator or channel founder */
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-    if (chl->client == client) {
-      if (chl->mode == SILC_CHANNEL_UMODE_NONE) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
-					      SILC_STATUS_ERR_NO_CHANNEL_PRIV);
-	goto out;
-      }
-      break;
-    }
+  silc_hash_table_find(channel->user_list, client, NULL, (void *)&chl);
+  if (chl->mode == SILC_CHANNEL_UMODE_NONE) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+					  SILC_STATUS_ERR_NO_CHANNEL_PRIV);
+    goto out;
   }
   
   /* Get target Client ID */
@@ -4082,16 +4065,11 @@ SILC_SERVER_CMD_FUNC(kick)
 
   /* Check that the target client is not channel founder. Channel founder
      cannot be kicked from the channel. */
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-    if (chl->client == target_client) {
-      if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
-	silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
-				  SILC_STATUS_ERR_NO_CHANNEL_FOPRIV);
-	goto out;
-      }
-      break;
-    }
+  silc_hash_table_find(channel->user_list, target_client, NULL, (void *)&chl);
+  if (chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_KICK,
+					  SILC_STATUS_ERR_NO_CHANNEL_FOPRIV);
+    goto out;
   }
   
   /* Check whether target client is on the channel */
@@ -4405,10 +4383,7 @@ SILC_SERVER_CMD_FUNC(ban)
   }
 
   /* Get entry to the channel user list */
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END)
-    if (chl->client == client)
-      break;
+  silc_hash_table_find(channel->user_list, client, NULL, (void *)&chl);
 
   /* The client must be at least channel operator. */
   if (!(chl->mode & SILC_CHANNEL_UMODE_CHANOP)) {

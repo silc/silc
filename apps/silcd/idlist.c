@@ -307,11 +307,12 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
   client->id = id;
   client->router = router;
   client->connection = connection;
-  silc_list_init(client->channels, struct SilcChannelClientEntryStruct, 
-		 client_list);
+  client->channels = silc_hash_table_alloc(3, silc_hash_ptr, NULL,
+					   NULL, NULL, NULL, NULL, TRUE);
 
   if (!silc_idcache_add(id_list->clients, nickname, (void *)client->id, 
 			(void *)client, FALSE)) {
+    silc_hash_table_free(client->channels);
     silc_free(client);
     return NULL;
   }
@@ -562,16 +563,32 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
       return NULL;
     }
 
-  silc_list_init(channel->user_list, struct SilcChannelClientEntryStruct, 
-		 channel_list);
+  channel->user_list = silc_hash_table_alloc(3, silc_hash_ptr, NULL, NULL,
+					     NULL, NULL, NULL, TRUE);
 
   if (!silc_idcache_add(id_list->channels, channel->channel_name, 
 			(void *)channel->id, (void *)channel, FALSE)) {
+    silc_hmac_free(channel->hmac);
+    silc_hash_table_free(channel->user_list);
     silc_free(channel);
     return NULL;
   }
 
   return channel;
+}
+
+/* Foreach callbcak to free all users from the channel when deleting a
+   channel entry. */
+
+static void silc_idlist_del_channel_foreach(void *key, void *context,
+					    void *user_context)
+{
+  SilcChannelClientEntry chl = (SilcChannelClientEntry)context;
+
+  /* Remove the context from the client's channel hash table as that
+     table and channel's user_list hash table share this same context. */
+  silc_hash_table_del_by_context(chl->client->channels, chl->channel, chl);
+  silc_free(chl);
 }
 
 /* Free channel entry.  This free's everything. */
@@ -581,8 +598,6 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
   SILC_LOG_DEBUG(("Start"));
 
   if (entry) {
-    SilcChannelClientEntry chl;
-
     /* Remove from cache */
     if (entry->id)
       if (!silc_idcache_del_by_id(id_list->channels, (void *)entry->id))
@@ -608,14 +623,12 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
     if (entry->rekey)
       silc_free(entry->rekey);
 
-    /* Free all data, free also any reference from the client's channel
-       list since they share the same memory. */
-    silc_list_start(entry->user_list);
-    while ((chl = silc_list_get(entry->user_list)) != SILC_LIST_END) {
-      silc_list_del(chl->client->channels, chl);
-      silc_list_del(entry->user_list, chl);
-      silc_free(chl);
-    }
+    /* Free all client entrys from the users list. The silc_hash_table_free
+       will free all the entries so they are not freed at the foreach 
+       callback. */
+    silc_hash_table_foreach(entry->user_list, silc_idlist_del_channel_foreach,
+			    NULL);
+    silc_hash_table_free(entry->user_list);
 
     memset(entry, 'F', sizeof(*entry));
     silc_free(entry);

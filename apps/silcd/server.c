@@ -2445,9 +2445,10 @@ int silc_server_remove_clients_by_server(SilcServer server,
 int silc_server_channel_has_global(SilcChannelEntry channel)
 {
   SilcChannelClientEntry chl;
+  SilcHashTableList htl;
 
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+  silc_hash_table_list(channel->user_list, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     if (chl->client->router)
       return TRUE;
   }
@@ -2461,9 +2462,10 @@ int silc_server_channel_has_global(SilcChannelEntry channel)
 int silc_server_channel_has_local(SilcChannelEntry channel)
 {
   SilcChannelClientEntry chl;
+  SilcHashTableList htl;
 
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+  silc_hash_table_list(channel->user_list, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     if (!chl->client->router)
       return TRUE;
   }
@@ -2484,6 +2486,7 @@ void silc_server_remove_from_channels(SilcServer server,
 {
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
+  SilcHashTableList htl;
   SilcBuffer clidp;
 
   SILC_LOG_DEBUG(("Start"));
@@ -2495,16 +2498,16 @@ void silc_server_remove_from_channels(SilcServer server,
 
   /* Remove the client from all channels. The client is removed from
      the channels' user list. */
-  silc_list_start(client->channels);
-  while ((chl = silc_list_get(client->channels)) != SILC_LIST_END) {
+  silc_hash_table_list(client->channels, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     channel = chl->channel;
 
     /* Remove channel from client's channel list */
-    silc_list_del(client->channels, chl);
+    silc_hash_table_del_by_context(client->channels, channel, chl);
 
     /* Remove channel if there is no users anymore */
     if (server->server_type == SILC_ROUTER &&
-	silc_list_count(channel->user_list) < 2) {
+	silc_hash_table_count(channel->user_list) < 2) {
       server->stat.my_channels--;
 
       if (channel->rekey)
@@ -2513,13 +2516,15 @@ void silc_server_remove_from_channels(SilcServer server,
       if (channel->founder_key) {
 	/* The founder auth data exists, do not remove the channel entry */
 	SilcChannelClientEntry chl2;
+	SilcHashTableList htl2;
 
 	channel->id = NULL;
 
-	silc_list_start(channel->user_list);
-	while ((chl2 = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-	  silc_list_del(chl2->client->channels, chl2);
-	  silc_list_del(channel->user_list, chl2);
+	silc_hash_table_list(channel->user_list, &htl2);
+	while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
+	  silc_hash_table_del_by_context(chl2->client->channels, channel, chl);
+	  silc_hash_table_del_by_context(channel->user_list, 
+					 chl2->client, chl);
 	  silc_free(chl2);
 	}
 	continue;
@@ -2531,7 +2536,7 @@ void silc_server_remove_from_channels(SilcServer server,
     }
 
     /* Remove client from channel's client list */
-    silc_list_del(channel->user_list, chl);
+    silc_hash_table_del_by_context(channel->user_list, chl->client, chl);
     silc_free(chl);
     server->stat.my_chanclients--;
 
@@ -2560,13 +2565,15 @@ void silc_server_remove_from_channels(SilcServer server,
       if (channel->founder_key) {
 	/* The founder auth data exists, do not remove the channel entry */
 	SilcChannelClientEntry chl2;
+	SilcHashTableList htl2;
 
 	channel->id = NULL;
 
-	silc_list_start(channel->user_list);
-	while ((chl2 = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-	  silc_list_del(chl2->client->channels, chl2);
-	  silc_list_del(channel->user_list, chl2);
+	silc_hash_table_list(channel->user_list, &htl2);
+	while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
+	  silc_hash_table_del_by_context(chl2->client->channels, channel, chl);
+	  silc_hash_table_del_by_context(channel->user_list, 
+					 chl2->client, chl);
 	  silc_free(chl2);
 	}
 	continue;
@@ -2621,86 +2628,86 @@ int silc_server_remove_from_one_channel(SilcServer server,
 
   SILC_LOG_DEBUG(("Start"));
 
-  clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+  /* Get the entry to the channel, if this client is not on the channel
+     then return Ok. */
+  if (!silc_hash_table_find(client->channels, channel, NULL, (void *)&chl))
+    return TRUE;
 
   /* Remove the client from the channel. The client is removed from
      the channel's user list. */
-  silc_list_start(client->channels);
-  while ((chl = silc_list_get(client->channels)) != SILC_LIST_END) {
-    if (chl->channel != channel)
-      continue;
 
-    ch = chl->channel;
+  clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+  ch = chl->channel;
 
-    /* Remove channel from client's channel list */
-    silc_list_del(client->channels, chl);
+  /* Remove channel from client's channel list */
+  silc_hash_table_del_by_context(client->channels, chl->channel, chl);
 
-    /* Remove channel if there is no users anymore */
-    if (server->server_type == SILC_ROUTER &&
-	silc_list_count(channel->user_list) < 2) {
-      if (channel->rekey)
-	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
-      if (!silc_idlist_del_channel(server->local_list, channel))
-	silc_idlist_del_channel(server->global_list, channel);
-      silc_buffer_free(clidp);
-      server->stat.my_channels--;
-      return FALSE;
-    }
+  /* Remove channel if there is no users anymore */
+  if (server->server_type == SILC_ROUTER &&
+      silc_hash_table_count(channel->user_list) < 2) {
+    if (channel->rekey)
+      silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
+    if (!silc_idlist_del_channel(server->local_list, channel))
+      silc_idlist_del_channel(server->global_list, channel);
+    silc_buffer_free(clidp);
+    server->stat.my_channels--;
+    return FALSE;
+  }
 
-    /* Remove client from channel's client list */
-    silc_list_del(channel->user_list, chl);
-    silc_free(chl);
-    server->stat.my_chanclients--;
+  /* Remove client from channel's client list */
+  silc_hash_table_del_by_context(channel->user_list, chl->client, chl);
+  silc_free(chl);
+  server->stat.my_chanclients--;
+  
+  /* If there is no global users on the channel anymore mark the channel
+     as local channel. */
+  if (server->server_type == SILC_SERVER &&
+      !silc_server_channel_has_global(channel))
+    channel->global_users = FALSE;
 
-    /* If there is no global users on the channel anymore mark the channel
-       as local channel. */
-    if (server->server_type == SILC_SERVER &&
-	!silc_server_channel_has_global(channel))
-      channel->global_users = FALSE;
-
-    /* If there is not at least one local user on the channel then we don't
-       need the channel entry anymore, we can remove it safely. */
-    if (server->server_type == SILC_SERVER &&
-	!silc_server_channel_has_local(channel)) {
-      /* Notify about leaving client if this channel has global users. */
-      if (notify && channel->global_users)
-	silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
-					   SILC_NOTIFY_TYPE_LEAVE, 1,
-					   clidp->data, clidp->len);
-
-      silc_buffer_free(clidp);
-
-      if (channel->rekey)
-	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
-
-      if (channel->founder_key) {
-	/* The founder auth data exists, do not remove the channel entry */
-	SilcChannelClientEntry chl2;
-
-	channel->id = NULL;
-
-	silc_list_start(channel->user_list);
-	while ((chl2 = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-	  silc_list_del(chl2->client->channels, chl2);
-	  silc_list_del(channel->user_list, chl2);
-	  silc_free(chl2);
-	}
-	return FALSE;
-      }
-
-      if (!silc_idlist_del_channel(server->local_list, channel))
-	silc_idlist_del_channel(server->global_list, channel);
-      server->stat.my_channels--;
-      return FALSE;
-    }
-
-    /* Send notify to channel about client leaving the channel */
-    if (notify)
+  /* If there is not at least one local user on the channel then we don't
+     need the channel entry anymore, we can remove it safely. */
+  if (server->server_type == SILC_SERVER &&
+      !silc_server_channel_has_local(channel)) {
+    /* Notify about leaving client if this channel has global users. */
+    if (notify && channel->global_users)
       silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
 					 SILC_NOTIFY_TYPE_LEAVE, 1,
 					 clidp->data, clidp->len);
-    break;
+    
+    silc_buffer_free(clidp);
+    
+    if (channel->rekey)
+      silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
+
+    if (channel->founder_key) {
+      /* The founder auth data exists, do not remove the channel entry */
+      SilcChannelClientEntry chl2;
+      SilcHashTableList htl2;
+      
+      channel->id = NULL;
+      
+      silc_hash_table_list(channel->user_list, &htl2);
+      while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
+	silc_hash_table_del_by_context(chl2->client->channels, channel, chl);
+	silc_hash_table_del_by_context(channel->user_list, 
+				       chl2->client, chl);
+	silc_free(chl2);
+      }
+      return FALSE;
+    }
+
+    if (!silc_idlist_del_channel(server->local_list, channel))
+      silc_idlist_del_channel(server->global_list, channel);
+    server->stat.my_channels--;
+    return FALSE;
   }
+
+  /* Send notify to channel about client leaving the channel */
+  if (notify)
+    silc_server_send_notify_to_channel(server, NULL, channel, FALSE,
+				       SILC_NOTIFY_TYPE_LEAVE, 1,
+				       clidp->data, clidp->len);
 
   silc_buffer_free(clidp);
   return TRUE;
@@ -2714,15 +2721,11 @@ int silc_server_remove_from_one_channel(SilcServer server,
 int silc_server_client_on_channel(SilcClientEntry client,
 				  SilcChannelEntry channel)
 {
-  SilcChannelClientEntry chl;
-
   if (!client || !channel)
     return FALSE;
 
-  silc_list_start(client->channels);
-  while ((chl = silc_list_get(client->channels)) != SILC_LIST_END)
-    if (chl->channel == channel)
-      return TRUE;
+  if (silc_hash_table_find(client->channels, channel, NULL, NULL))
+    return TRUE;
 
   return FALSE;
 }
@@ -3242,6 +3245,7 @@ void silc_server_announce_get_channel_users(SilcServer server,
 					    SilcBuffer *channel_users_modes)
 {
   SilcChannelClientEntry chl;
+  SilcHashTableList htl;
   SilcBuffer chidp, clidp;
   SilcBuffer tmp;
   int len;
@@ -3251,8 +3255,8 @@ void silc_server_announce_get_channel_users(SilcServer server,
 
   /* Now find all users on the channel */
   chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+  silc_hash_table_list(channel->user_list, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     clidp = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);
 
     /* JOIN Notify */
@@ -3450,6 +3454,7 @@ void silc_server_get_users_on_channel(SilcServer server,
 				      uint32 *user_count)
 {
   SilcChannelClientEntry chl;
+  SilcHashTableList htl;
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
   SilcBuffer idp;
@@ -3457,14 +3462,15 @@ void silc_server_get_users_on_channel(SilcServer server,
 
   /* XXX rewrite - this does not support IPv6 based Client ID's. */
 
-  client_id_list = silc_buffer_alloc((SILC_ID_CLIENT_LEN + 4) * 
-				     silc_list_count(channel->user_list));
-  client_mode_list = silc_buffer_alloc(4 * 
-				       silc_list_count(channel->user_list));
+  client_id_list = 
+    silc_buffer_alloc((SILC_ID_CLIENT_LEN + 4) * 
+		      silc_hash_table_count(channel->user_list));
+  client_mode_list = 
+    silc_buffer_alloc(4 * silc_hash_table_count(channel->user_list));
   silc_buffer_pull_tail(client_id_list, SILC_BUFFER_END(client_id_list));
   silc_buffer_pull_tail(client_mode_list, SILC_BUFFER_END(client_mode_list));
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+  silc_hash_table_list(channel->user_list, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     /* Client ID */
     idp = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);
     silc_buffer_put(client_id_list, idp->data, idp->len);
@@ -3561,8 +3567,8 @@ void silc_server_save_users_on_channel(SilcServer server,
       chl->client = client;
       chl->mode = mode;
       chl->channel = channel;
-      silc_list_add(channel->user_list, chl);
-      silc_list_add(client->channels, chl);
+      silc_hash_table_add(channel->user_list, chl->client, chl);
+      silc_hash_table_add(client->channels, chl->channel, chl);
     }
   }
 }
@@ -3659,13 +3665,14 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
   SilcBuffer buffer = NULL;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
+  SilcHashTableList htl;
   unsigned char *cid;
   uint32 id_len;
   uint16 name_len;
   int len;
 
-  silc_list_start(client->channels);
-  while ((chl = silc_list_get(client->channels)) != SILC_LIST_END) {
+  silc_hash_table_list(client->channels, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     channel = chl->channel;
 
     if (channel->mode & SILC_CHANNEL_MODE_SECRET)

@@ -45,6 +45,7 @@ void silc_server_notify(SilcServer server,
   SilcServerEntry server_entry;
   SilcChannelClientEntry chl;
   SilcIDCacheEntry cache;
+  SilcHashTableList htl;
   uint32 mode;
   unsigned char *tmp;
   uint32 tmp_len;
@@ -176,8 +177,8 @@ void silc_server_notify(SilcServer server,
     chl = silc_calloc(1, sizeof(*chl));
     chl->client = client;
     chl->channel = channel;
-    silc_list_add(channel->user_list, chl);
-    silc_list_add(client->channels, chl);
+    silc_hash_table_add(channel->user_list, client, chl);
+    silc_hash_table_add(client->channels, channel, chl);
     silc_free(client_id);
 
     break;
@@ -512,8 +513,8 @@ void silc_server_notify(SilcServer server,
     silc_free(client_id);
 
     /* Get entry to the channel user list */
-    silc_list_start(channel->user_list);
-    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+    silc_hash_table_list(channel->user_list, &htl);
+    while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
       SilcChannelClientEntry chl2 = NULL;
 
       /* If the mode is channel founder and we already find a client 
@@ -1178,7 +1179,6 @@ void silc_server_channel_message(SilcServer server,
 				 SilcPacketContext *packet)
 {
   SilcChannelEntry channel = NULL;
-  SilcChannelClientEntry chl;
   SilcChannelID *id = NULL;
   void *sender = NULL;
   void *sender_entry = NULL;
@@ -1204,23 +1204,20 @@ void silc_server_channel_message(SilcServer server,
     }
   }
 
-  /* See that this client is on the channel. If the message is coming
-     from router we won't do the check as the message is from client that
-     we don't know about. Also, if the original sender is not client
-     (as it can be server as well) we don't do the check. */
+  /* See that this client is on the channel. If the original sender is
+     not client (as it can be server as well) we don't do the check. */
   sender = silc_id_str2id(packet->src_id, packet->src_id_len, 
 			  packet->src_id_type);
   if (!sender)
     goto out;
   if (packet->src_id_type == SILC_ID_CLIENT) {
-    silc_list_start(channel->user_list);
-    while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-      if (chl->client && SILC_ID_CLIENT_COMPARE(chl->client->id, sender)) {
-	sender_entry = chl->client;
-	break;
-      }
-    }
-    if (chl == SILC_LIST_END) {
+    sender_entry = silc_idlist_find_client_by_id(server->local_list, 
+						 sender, NULL);
+    if (!sender_entry)
+      sender_entry = silc_idlist_find_client_by_id(server->global_list, 
+						   sender, NULL);
+    if (!sender_entry || !silc_server_client_on_channel(sender_entry, 
+							channel)) {
       SILC_LOG_DEBUG(("Client not on channel"));
       goto out;
     }

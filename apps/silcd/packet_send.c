@@ -418,6 +418,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
   SilcClientEntry client = NULL;
   SilcServerEntry *routed = NULL;
   SilcChannelClientEntry chl;
+  SilcHashTableList htl;
   SilcIDListData idata;
   uint32 routed_count = 0;
 
@@ -463,8 +464,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
   }
 
   /* Send the message to clients on the channel's client list. */
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+  silc_hash_table_list(channel->user_list, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     client = chl->client;
 
     /* If client has router set it is not locally connected client and
@@ -604,6 +605,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   SilcChannelClientEntry chl;
   uint32 routed_count = 0;
   SilcIDListData idata;
+  SilcHashTableList htl;
 
   SILC_LOG_DEBUG(("Relaying packet to channel"));
 
@@ -654,8 +656,8 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   }
 
   /* Send the message to clients on the channel's client list. */
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+  silc_hash_table_list(channel->user_list, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     client = chl->client;
 
     if (client) {
@@ -812,13 +814,14 @@ void silc_server_packet_send_local_channel(SilcServer server,
 					   int force_send)
 {
   SilcChannelClientEntry chl;
+  SilcHashTableList htl;
   SilcSocketConnection sock = NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
   /* Send the message to clients on the channel's client list. */
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+  silc_hash_table_list(channel->user_list, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     if (chl->client && !chl->client->router) {
       sock = (SilcSocketConnection)chl->client->connection;
 
@@ -1318,6 +1321,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
   uint32 sent_clients_count = 0;
   SilcServerEntry *routed = NULL;
   uint32 routed_count = 0;
+  SilcHashTableList htl, htl2;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl, chl2;
   SilcIDListData idata;
@@ -1329,7 +1333,7 @@ void silc_server_send_notify_on_channels(SilcServer server,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!silc_list_count(client->channels))
+  if (!silc_hash_table_count(client->channels))
     return;
 
   va_start(ap, argc);
@@ -1344,13 +1348,13 @@ void silc_server_send_notify_on_channels(SilcServer server,
   packetdata.src_id_len = silc_id_get_len(server->id, SILC_ID_SERVER);
   packetdata.src_id_type = SILC_ID_SERVER;
 
-  silc_list_start(client->channels);
-  while ((chl = silc_list_get(client->channels)) != SILC_LIST_END) {
+  silc_hash_table_list(client->channels, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     channel = chl->channel;
 
     /* Send the message to all clients on the channel's client list. */
-    silc_list_start(channel->user_list);
-    while ((chl2 = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+    silc_hash_table_list(channel->user_list, &htl2);
+    while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
       c = chl2->client;
       
       if (sender && c == sender)

@@ -23,6 +23,14 @@
 
 /* Forward declarations */
 typedef struct SilcHashTableStruct *SilcHashTable;
+typedef struct SilcHashTableListStruct SilcHashTableList;
+
+/* List structure to traverse the hash table. */
+struct SilcHashTableListStruct {
+  SilcHashTable ht;
+  void *entry;
+  uint32 index;
+};
 
 /* A type for the hash function. This function is used to hash the
    provided key value `key' and return the index for the hash table. */
@@ -51,7 +59,8 @@ SilcHashTable silc_hash_table_alloc(uint32 table_size,
 				    SilcHashCompare compare,
 				    void *compare_user_context,
 				    SilcHashDestructor destructor,
-				    void *destructor_user_context);
+				    void *destructor_user_context,
+				    bool auto_rehash);
 void silc_hash_table_free(SilcHashTable ht);
 uint32 silc_hash_table_size(SilcHashTable ht);
 uint32 silc_hash_table_count(SilcHashTable ht);
@@ -67,6 +76,8 @@ void silc_hash_table_find_foreach(SilcHashTable ht, void *key,
 void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
 			     void *user_context);
 void silc_hash_table_rehash(SilcHashTable ht, uint32 new_size);
+void silc_hash_table_list(SilcHashTable ht, SilcHashTableList *htl);
+bool silc_hash_table_get(SilcHashTableList *htl, void **key, void **context);
 
 
 /* Extended hash table interface (same as above but with specific

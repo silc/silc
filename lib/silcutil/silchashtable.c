@@ -42,10 +42,15 @@
 #define SILC_HASH_TABLE_SIZE 3
 
 /* Produce the index by hashing the key */
-#define SILC_HASH_TABLE_HASH \
-  (ht->hash(key, ht->hash_user_context) % primesize[ht->table_size])
 #define SILC_HASH_TABLE_HASH_F(f, c) \
   ((f)(key, (c)) % primesize[ht->table_size])
+
+/* Check whether need to rehash */
+#define SILC_HASH_REHASH_INC \
+  (ht->auto_rehash && (ht->entry_count / 2) > primesize[ht->table_size])
+#define SILC_HASH_REHASH_DEC \
+  (ht->auto_rehash && (ht->entry_count * 2) < primesize[ht->table_size] && \
+   ht->entry_count > primesize[SILC_HASH_TABLE_SIZE])
 
 /* One entry in the hash table. Includes the key and the associated
    context. The `next' pointer is non-NULL if two (or more) different
@@ -68,6 +73,7 @@ struct SilcHashTableStruct {
   void *hash_user_context;
   void *compare_user_context;
   void *destructor_user_context;
+  bool auto_rehash;
 };
 
 /* Prime sizes for the hash table. The size of the table will always
@@ -268,6 +274,9 @@ silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
     (*entry)->context = context;
     ht->entry_count++;
   }
+
+  if (SILC_HASH_REHASH_INC)
+    silc_hash_table_rehash(ht, 0);
 }
 
 /* Internal routine to replace old key with new one (if it exists) */
@@ -313,7 +322,8 @@ SilcHashTable silc_hash_table_alloc(uint32 table_size,
 				    SilcHashCompare compare,
 				    void *compare_user_context,
 				    SilcHashDestructor destructor,
-				    void *destructor_user_context)
+				    void *destructor_user_context,
+				    bool auto_rehash)
 {
   SilcHashTable ht;
   uint32 size_index = SILC_HASH_TABLE_SIZE;
@@ -333,6 +343,7 @@ SilcHashTable silc_hash_table_alloc(uint32 table_size,
   ht->hash_user_context = hash_user_context;
   ht->compare_user_context = compare_user_context;
   ht->destructor_user_context = destructor_user_context;
+  ht->auto_rehash = auto_rehash;
 
   return ht;
 }
@@ -446,6 +457,9 @@ bool silc_hash_table_del(SilcHashTable ht, void *key)
 
   ht->entry_count--;
 
+  if (SILC_HASH_REHASH_DEC)
+    silc_hash_table_rehash(ht, 0);
+
   return TRUE;
 }
 
@@ -487,6 +501,9 @@ bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
 
   ht->entry_count--;
 
+  if (SILC_HASH_REHASH_DEC)
+    silc_hash_table_rehash(ht, 0);
+
   return TRUE;
 }
 
@@ -524,6 +541,9 @@ bool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
   silc_free(e);
 
   ht->entry_count--;
+
+  if (SILC_HASH_REHASH_DEC)
+    silc_hash_table_rehash(ht, 0);
 
   return TRUE;
 }
@@ -568,6 +588,9 @@ bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
   silc_free(e);
 
   ht->entry_count--;
+
+  if (SILC_HASH_REHASH_DEC)
+    silc_hash_table_rehash(ht, 0);
 
   return TRUE;
 }
@@ -752,6 +775,7 @@ void silc_hash_table_rehash_ext(SilcHashTable ht, uint32 new_size,
 						    &size_index),
 			  sizeof(*ht->table));
   ht->table_size = size_index;
+  ht->entry_count = 0;
 
   /* Rehash */
   for (i = 0; i < primesize[table_size]; i++) {
@@ -769,4 +793,44 @@ void silc_hash_table_rehash_ext(SilcHashTable ht, uint32 new_size,
 
   /* Remove old table */
   silc_free(table);
+}
+
+/* Prepares the `htl' list structure sent as argument to be used in the
+   hash table traversing with the silc_hash_table_get. Usage:
+   SilcHashTableList htl; silc_hash_table_list(ht, &htl); */
+
+void silc_hash_table_list(SilcHashTable ht, SilcHashTableList *htl)
+{
+  htl->ht = ht;
+  htl->entry = NULL;
+  htl->index = 0;
+}
+
+/* Returns always the next entry in the hash table into the `key' and
+   `context' and TRUE.  If this returns FALSE then there are no anymore
+   any entrys. Usage: while (silc_hash_table_get(&htl, &key, &context)) */
+
+bool silc_hash_table_get(SilcHashTableList *htl, void **key, void **context)
+{
+  SilcHashTableEntry entry = (SilcHashTableEntry)htl->entry;
+
+  if (!htl->ht->entry_count)
+    return FALSE;
+
+  while (!entry && htl->index < primesize[htl->ht->table_size]) {
+    entry = htl->ht->table[htl->index];
+    htl->index++;
+  }
+
+  if (!entry)
+    return FALSE;
+
+  htl->entry = entry->next;
+
+  if (key)
+    *key = entry->key;
+  if (context)
+    *context = entry->context;
+
+  return TRUE;
 }

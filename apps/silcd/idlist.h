@@ -174,7 +174,7 @@ struct SilcServerEntryStruct {
 
    This entry used only by the SilcChannelEntry object and it holds
    information about current clients (ie. users) on channel. Following
-   short description  of the fields:
+   short description of the fields:
 
    SilcClientEntry client
 
@@ -190,21 +190,11 @@ struct SilcServerEntryStruct {
        SilcClientEntry we have this here for fast access to the channel when
        used by SilcClientEntry.
 
-  struct SilcChannelClientEntryStruct *client_list
-  struct SilcChannelClientEntryStruct *channel_list
-
-       List member pointers. This structure is used by channel entry and
-       client entry thus we must have separate list member pointers for
-       them since we are using same entry for both lists (the entry is not
-       duplicated). SilcList requires this.
-
 */
 typedef struct SilcChannelClientEntryStruct {
   SilcClientEntry client;
   uint32 mode;
   SilcChannelEntry channel;
-  struct SilcChannelClientEntryStruct *client_list;
-  struct SilcChannelClientEntryStruct *channel_list;
 } *SilcChannelClientEntry;
 
 /* 
@@ -298,9 +288,11 @@ typedef struct SilcChannelClientEntryStruct {
        cell this client is coming from. This is used to route messages to 
        this client.
 
-   SilcList channels
+   SilcHashTable channels;
 
-       List of channels this client has joined.
+       All the channels this client has joined.  The context saved in the
+       hash table shares memory with the channel entrys `user_list' hash
+       table.
 
    void *connection
 
@@ -327,8 +319,8 @@ struct SilcClientEntryStruct {
   /* Pointer to the router */
   SilcServerEntry router;
 
-  /* List of channels client has joined to */
-  SilcList channels;
+  /* All channels this client has joined */
+  SilcHashTable channels;
 
   /* Connection data */
   void *connection;
@@ -400,6 +392,12 @@ struct SilcClientEntryStruct {
        if the method is SILC_AUTH_PASSWORD.  If it is SILC_AUTH_PUBLIC_KEY
        then the `founder_passwd' is NULL.
 
+   SilcHashTable user_list
+
+       All users joined on this channel.  Note that the context saved to
+       this entry shares memory with the client entrys `channels' hash
+       table.
+
    SilcServerEntry router
 
        This is a pointer to the server list. This is the router server 
@@ -448,8 +446,8 @@ struct SilcChannelEntryStruct {
   char *invite_list;
   char *ban_list;
 
-  /* List of users on channel */
-  SilcList user_list;
+  /* All users on this channel */
+  SilcHashTable user_list;
 
   /* Pointer to the router */
   SilcServerEntry router;

@@ -109,12 +109,13 @@ SilcIDCache silc_idcache_alloc(uint32 count, SilcIdType id_type,
 					  (void *)(uint32)id_type,
 					  silc_hash_id_compare, 
 					  (void *)(uint32)id_type, 
-					  silc_idcache_destructor, NULL);
+					  silc_idcache_destructor, NULL, 
+					  FALSE);
   cache->name_table = silc_hash_table_alloc(count, silc_hash_string, NULL,
 					    silc_hash_string_compare, NULL, 
-					    NULL, NULL);
+					    NULL, NULL, FALSE);
   cache->context_table = silc_hash_table_alloc(count, silc_hash_ptr, NULL,
-					       NULL, NULL, NULL, NULL);
+					       NULL, NULL, NULL, NULL, FALSE);
   cache->destructor = destructor;
   cache->type = id_type;
 

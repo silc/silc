@@ -1,3 +1,28 @@
+Tue May 22 17:27:16 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added silc_hash_table_list, silc_hash_table_get and the
+	  SilcHashTableList structure to provide an alternative way to
+	  traverse the hash table.  The affected files are
+	  lib/silcutil/silchashtable.[ch].
+
+	* Changed the server's idlist routines to use the hash table
+	  routines to optimize the code.
+
+Mon May 21 21:46:20 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Replaced the client entry's `channel' list and channel entry's
+	  `user_list' list to hash tables for optimized lookup.  Changed
+	  the code to use the hash table interface around the code. 
+	  Affected file lib/silcd/idlist.[ch].
+
+	* Added `auto_rehash' boolean argument to the function
+	  silc_hash_table_alloc to indicate whether the hash table should
+	  auto-rehash when it thinks is appropriate time.  It will
+	  increase the hash table size if the there is twice as much
+	  entries in the table than the size of the table, and will
+	  decrease the size if there are twice as less entries than
+	  the size of the table.
+
 Mon May 21 09:51:11 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed silc_xxx_get_supported to not crash at some circumstances.
