@@ -79,6 +79,11 @@ do {								\
   silc_free(__fmt__);						\
 } while(0);
 
+/* Check whether rekey protocol is active */
+#define SILC_SERVER_IS_REKEY(sock)					\
+  (sock->protocol && sock->protocol->protocol && 			\
+   sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY)
+
 /* Prototypes */
 int silc_server_alloc(SilcServer *new_server);
 void silc_server_free(SilcServer server);

@@ -1,3 +1,18 @@
+Wed Apr 11 22:10:15 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Disable force sending of packets when REKEY protocol is active.
+	  We must assure that no packet is sent directly when rekey is
+	  performed.  All packets must be sent through packet queue.
+	  Added macro SILC_SERVER_IS_REKEY to silcd/server.h and
+	  SILC_CLIENT_IS_REKEY to lib/silcclient/client.h.  Affected
+	  function is silc_[server/client]_packet_send_real to check
+	  the situation.
+
+	* Replaced the SIM paths from example config files to 
+	  /usr/local/modules.  Also, make install creates now
+	  /usr/local/silc/logs directory to hold all the SILC server
+	  logs.
+
 Wed Apr 11 16:59:59 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Made the configure.in.pre work on Solaris.  Patch by salo.

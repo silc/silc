@@ -585,6 +585,11 @@ int silc_client_packet_send_real(SilcClient client,
 {
   int ret;
 
+  /* If rekey protocol is active we must assure that all packets are
+     sent through packet queue. */
+  if (SILC_CLIENT_IS_REKEY(sock))
+    force_send = FALSE;
+
   /* Send the packet */
   ret = silc_packet_send(sock, force_send);
   if (ret != -2)

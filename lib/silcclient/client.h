@@ -232,6 +232,11 @@ do {							\
     (__sock) = (__x)->conns[__i]->sock;			\
 } while(0)
 
+/* Check whether rekey protocol is active */
+#define SILC_CLIENT_IS_REKEY(sock)					\
+  (sock->protocol && sock->protocol->protocol && 			\
+   sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_REKEY)
+
 /* Prototypes (some of the prototypes are defined in the silcapi.h) */
 
 void silc_client_packet_send(SilcClient client, 

@@ -126,7 +126,7 @@ AC_CHECK_HEADERS(dlfcn.h,
 #
 
 # Default installation destination
-AC_PREFIX_DEFAULT(/usr/local/silc/)
+AC_PREFIX_DEFAULT(/usr/local/silc)
 
 # etc directory
 ETCDIR="/etc/silc"
@@ -192,6 +192,22 @@ AC_ARG_WITH(simdir,
 )
 AC_SUBST(MODULESDIR)
 
+# Logs directory
+LOGSDIR="logs"
+AC_ARG_WITH(logsdir,
+[  --with-logsdir[=PATH]   Directory for Server logs [PREFIX/logs]],
+[ case "$withval" in
+  no)
+    ;;
+  yes)
+    ;;
+  *)
+    LOGSDIR="$withwal"
+    ;;
+  esac ],
+)
+AC_SUBST(LOGSDIR)
+
 # Debug checking
 AC_MSG_CHECKING(for enabled debugging)
 AC_ARG_ENABLE(debug,
@@ -212,7 +228,7 @@ esac ], CFLAGS="-O2 -g $CFLAGS"
 # SOCKS4 support checking
 AC_MSG_CHECKING(whether to support SOCKS4)
 AC_ARG_WITH(socks4,
-[  --with-socks4[=PATH]    Compile with SOCKS4 support.],
+[  --with-socks4[=PATH]    Compile with SOCKS4 support],
 [ case "$withval" in
   no)
     AC_MSG_RESULT(no)
@@ -246,7 +262,7 @@ AC_ARG_WITH(socks4,
 # SOCKS5 support checking
 AC_MSG_CHECKING(whether to support SOCKS5)
 AC_ARG_WITH(socks5,
-[  --with-socks5[=PATH]    Compile with SOCKS5 support.],
+[  --with-socks5[=PATH]    Compile with SOCKS5 support],
 [ case "$withval" in
   no)
     AC_MSG_RESULT(no)
@@ -348,7 +364,7 @@ esac ], [
 AC_ARG_WITH(silcd-config-file,
 [  --with-silcd-config-file[=PATH]
                           Use PATH as default configuration file in SILC
-                          server.],
+                          server [/etc/silc/silcd.conf]],
 [ AC_DEFINE_UNQUOTED(SILC_SERVER_CONFIG_FILE, "$withval") ])
 
 # XXX
