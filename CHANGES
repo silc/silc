@@ -1,3 +1,14 @@
+Thu Mar 28 19:02:05 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Created new branch silc_protocol_1_0_branch.
+
+	* Reverted the silc_log_quick change in lib/silcutil/silclog.c.
+
+	* Changed the silc_server_config_* routines to be SilcServer
+	  independent.  They are now officially application specific code
+	  and not part of generic server implementation.  Affected files
+	  are silcd/serverconfig.[ch], silcd/silcd.c, silcd/server.c.
+
 Thu Mar 28 17:01:43 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added automatic referencing of config context in the

@@ -268,7 +268,7 @@ int main(int argc, char **argv)
     goto fail;
 
   /* Read configuration files */
-  silcd->config = silc_server_config_alloc(silcd, silcd_config_file);
+  silcd->config = silc_server_config_alloc(silcd_config_file);
   if (silcd->config == NULL)
     goto fail;
   silcd->config_file = silcd_config_file;

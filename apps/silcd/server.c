@@ -87,6 +87,7 @@ void silc_server_free(SilcServer server)
     silc_dlist_uninit(server->sim);
 #endif
 
+    silc_server_config_unref(&server->config_ref);
     if (server->rng)
       silc_rng_free(server->rng);
     if (server->pkcs)
@@ -148,6 +149,9 @@ bool silc_server_init(SilcServer server)
   SILC_LOG_DEBUG(("Initializing server"));
   assert(server);
   assert(server->config);
+
+  silc_server_config_ref(&server->config_ref, server->config, 
+			 server->config);
 
   /* Set public and private keys */
   if (!server->config->server_info ||
@@ -362,22 +366,27 @@ bool silc_server_rehash(SilcServer server)
 {
   SilcServerConfig newconfig;
 
+  /* Our old config is gone now. We'll unreference our reference made in
+     silc_server_init and then destroy it since we are destroying it 
+     underneath the application (layer which called silc_server_init). */
+  silc_server_config_unref(&server->config_ref);
+  silc_server_config_destroy(server->config);
+
   /* Reset the logging system */
   silc_log_quick = TRUE;
   silc_log_flush_all();
 
   /* Start the main rehash phase (read again the config file) */
   SILC_LOG_INFO(("Rehashing server"));
-  newconfig = silc_server_config_alloc(server, server->config_file);
+  newconfig = silc_server_config_alloc(server->config_file);
   if (!newconfig) {
     SILC_LOG_ERROR(("Rehash FAILED."));
     return FALSE;
   }
 
-  /* Destroy old config context. This is destroyed if no one is referencing
-     it at the moment. */
-  silc_server_config_destroy(server->config);
+  /* Take new config context */
   server->config = newconfig;
+  silc_server_config_ref(&server->config_ref, server->config, server->config);
 
   /* Set public and private keys */
   if (!server->config->server_info ||
