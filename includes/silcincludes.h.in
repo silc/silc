@@ -63,6 +63,12 @@ extern "C" {
 #endif
 #endif
 
+#if defined(__MACH__) && defined(__APPLE__)
+#ifndef SILC_MACOSX
+#define SILC_MACOSX
+#endif
+#endif
+
 /* Types */
 #define SILC_SIZEOF_LONG_LONG @SILC_SIZEOF_LONG_LONG@
 #define SILC_SIZEOF_LONG @SILC_SIZEOF_LONG@

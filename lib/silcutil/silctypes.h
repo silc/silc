@@ -79,6 +79,10 @@
  *
  * SOURCE
  */
+#ifdef SILC_MACOSX
+#define bool _Bool
+#endif
+
 #ifndef __cplusplus
 #ifndef bool
 #define bool unsigned char
