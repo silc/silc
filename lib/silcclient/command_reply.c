@@ -741,13 +741,15 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
-  SilcClient client = cmd->client;
   SilcCommandStatus status;
   SilcIDPayload idp = NULL;
   SilcChannelEntry channel;
-  unsigned int argc, mode, len;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelUser chu;
+  unsigned int argc, mode, len, list_count;
   char *topic, *tmp, *channel_name = NULL, *hmac;
-  SilcBuffer keyp;
+  SilcBuffer keyp, client_id_list, client_mode_list;
+  int i;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -760,7 +762,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   }
 
   argc = silc_argument_get_arg_num(cmd->args);
-  if (argc < 3 || argc > 9) {
+  if (argc < 7 || argc > 14) {
     cmd->client->ops->say(cmd->client, conn,
 	     "Cannot join channel: Bad reply packet");
     COMMAND_REPLY_ERROR;
@@ -794,14 +796,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   }
 
   /* Get channel mode */
-  tmp = silc_argument_get_arg_type(cmd->args, 4, NULL);
+  tmp = silc_argument_get_arg_type(cmd->args, 5, NULL);
   if (tmp)
     SILC_GET32_MSB(mode, tmp);
   else
     mode = 0;
 
   /* Get channel key */
-  tmp = silc_argument_get_arg_type(cmd->args, 6, &len);
+  tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
   if (!tmp) {
     silc_id_payload_free(idp);
     silc_free(channel_name);
@@ -812,7 +814,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   silc_buffer_put(keyp, tmp, len);
 
   /* Get topic */
-  topic = silc_argument_get_arg_type(cmd->args, 9, NULL);
+  topic = silc_argument_get_arg_type(cmd->args, 10, NULL);
 
   /* Save received Channel ID. This actually creates the channel */
   channel = silc_client_new_channel_id(cmd->client, cmd->sock, channel_name, 
@@ -820,7 +822,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   silc_id_payload_free(idp);
 
   /* Get hmac */
-  hmac = silc_argument_get_arg_type(cmd->args, 10, NULL);
+  hmac = silc_argument_get_arg_type(cmd->args, 11, NULL);
   if (hmac) {
     if (!silc_hmac_alloc(hmac, NULL, &channel->hmac)) {
       cmd->client->ops->say(cmd->client, conn, 
@@ -832,19 +834,91 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     }
   }
 
+  /* Get the list count */
+  tmp = silc_argument_get_arg_type(cmd->args, 12, &len);
+  if (!tmp)
+    goto out;
+  SILC_GET32_MSB(list_count, tmp);
+
+  /* Get Client ID list */
+  tmp = silc_argument_get_arg_type(cmd->args, 13, &len);
+  if (!tmp)
+    goto out;
+
+  client_id_list = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(client_id_list, len);
+  silc_buffer_put(client_id_list, tmp, len);
+
+  /* Get client mode list */
+  tmp = silc_argument_get_arg_type(cmd->args, 14, &len);
+  if (!tmp)
+    goto out;
+
+  client_mode_list = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(client_mode_list, len);
+  silc_buffer_put(client_mode_list, tmp, len);
+
+  /* Add clients we received in the reply to the channel */
+  for (i = 0; i < list_count; i++) {
+    unsigned short idp_len;
+    unsigned int mode;
+    SilcClientID *client_id;
+    SilcClientEntry client_entry;
+
+    /* Client ID */
+    SILC_GET16_MSB(idp_len, client_id_list->data + 2);
+    idp_len += 4;
+    client_id = silc_id_payload_parse_id(client_id_list->data, idp_len);
+    if (!client_id)
+      continue;
+
+    /* Mode */
+    SILC_GET32_MSB(mode, client_mode_list->data);
+
+    /* Check if we have this client cached already. */
+    if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
+				     SILC_ID_CLIENT, &id_cache)) {
+      /* No, we don't have it, add entry for it. */
+      client_entry = silc_calloc(1, sizeof(*client_entry));
+      client_entry->id = silc_id_dup(client_id, SILC_ID_CLIENT);
+      silc_idcache_add(conn->client_cache, NULL, SILC_ID_CLIENT, 
+		       client_entry->id, (void *)client_entry, FALSE);
+    } else {
+      /* Yes, we have it already */
+      client_entry = (SilcClientEntry)id_cache->context;
+      if (client_entry == conn->local_entry)
+	continue;
+    }
+
+    /* Join the client to the channel */
+    chu = silc_calloc(1, sizeof(*chu));
+    chu->client = client_entry;
+    chu->mode = mode;
+    silc_list_add(channel->clients, chu);
+    silc_free(client_id);
+
+    silc_buffer_pull(client_id_list, idp_len);
+    silc_buffer_pull(client_mode_list, 4);
+  }
+  silc_buffer_push(client_id_list, client_id_list->data - 
+		   client_id_list->head);
+  silc_buffer_push(client_mode_list, client_mode_list->data - 
+		   client_mode_list->head);
+
   /* Save channel key */
   silc_client_save_channel_key(conn, keyp, channel);
-  silc_buffer_free(keyp);
-
-  if (topic)
-    client->ops->say(cmd->client, conn, 
-		     "Topic for %s: %s", channel_name, topic);
 
   /* Notify application */
-  COMMAND_REPLY((ARGS, channel_name, channel, mode, NULL, NULL, topic, hmac));
+  COMMAND_REPLY((ARGS, channel_name, channel, mode, 0, keyp->head, NULL,
+		 NULL, topic, hmac, list_count, client_id_list, 
+		 client_mode_list));
 
   /* Execute any pending command callbacks */
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
+
+  silc_buffer_free(keyp);
+  silc_buffer_free(client_id_list);
+  silc_buffer_free(client_mode_list);
 
  out:
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_JOIN);
@@ -1341,49 +1415,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     return;
   }
 
-  /* We have all the clients on the channel cached now. Create a nice
-     output for user interface and notify application. */
-
-  if (!cmd->callback) {
-    /* Server has sent us USERS reply even when we haven't actually sent
-       USERS command. This is normal behaviour when joining to a channel.
-       Display some nice information on the user interface. */
-    int k = 0, len1 = 0, len2 = 0;
-    char *name_list = NULL;
-
-    silc_list_start(channel->clients);
-    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-      char *m, *n = chu->client->nickname;
-      len2 = strlen(n);
-      len1 += len2;
-
-      name_list = silc_realloc(name_list, sizeof(*name_list) * (len1 + 3));
-
-      m = silc_client_chumode_char(chu->mode);
-      if (m) {
-	memcpy(name_list + (len1 - len2), m, strlen(m));
-	len1 += strlen(m);
-	silc_free(m);
-      }
-
-      memcpy(name_list + (len1 - len2), n, len2);
-      name_list[len1] = 0;
-      
-      if (k == silc_list_count(channel->clients) - 1)
-	break;
-      memcpy(name_list + len1, " ", 1);
-      len1++;
-      k++;
-    }
-
-    cmd->client->ops->say(cmd->client, conn, "Users on %s: %s",
-			  channel->channel_name, name_list);
-    silc_free(name_list);
-  }
-
   /* Notify application */
-  COMMAND_REPLY((ARGS, channel, client_id_list->head,
-		 client_mode_list->head));
+  COMMAND_REPLY((ARGS, channel, list_count, client_id_list, client_mode_list));
 
   /* Execute any pending command callbacks */
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_USERS);

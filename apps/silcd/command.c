@@ -37,10 +37,6 @@ silc_server_command_send_status_data(SilcServerCommandContext cmd,
 				     unsigned int arg_type,
 				     unsigned char *arg,
 				     unsigned int arg_len);
-void silc_server_command_send_users(SilcServer server,
-				    SilcSocketConnection sock,
-				    SilcChannelEntry channel,
-				    int pending);
 
 /* Server command list. */
 SilcServerCommand silc_command_list[] =
@@ -1627,6 +1623,9 @@ SILC_SERVER_CMD_FUNC(quit)
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_QUIT, cmd, 0, 1);
 
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
+
   /* Get destination ID */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
   if (len > 128)
@@ -1642,6 +1641,7 @@ SILC_SERVER_CMD_FUNC(quit)
 		     silc_server_command_quit_cb, (void *)q,
 		     0, 200000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 
+ out:
   silc_server_command_free(cmd);
 }
 
@@ -1747,66 +1747,6 @@ SILC_SERVER_CMD_FUNC(ping)
   silc_server_command_free(cmd);
 }
 
-/* Assembles USERS command and executes it. This is called when client
-   joins to a channel and we wan't to send USERS command reply to the 
-   client. */
-
-void silc_server_command_send_users(SilcServer server,
-				    SilcSocketConnection sock,
-				    SilcChannelEntry channel,
-				    int pending)
-{
-  SilcServerCommandContext cmd;
-  SilcBuffer buffer, idp;
-  SilcPacketContext *packet = silc_packet_context_alloc();
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Create USERS command packet and process it. */
-  idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_USERS, 0, 1,
-					  1, idp->data, idp->len);
-
-  packet->buffer = silc_buffer_copy(buffer);
-  packet->sock = sock;
-  packet->type = SILC_PACKET_COMMAND;
-
-  cmd = silc_server_command_alloc();
-  cmd->payload = silc_command_payload_parse(buffer);
-  if (!cmd->payload) {
-    silc_free(cmd);
-    silc_buffer_free(buffer);
-    silc_buffer_free(idp);
-    silc_packet_context_free(packet);
-    return;
-  }
-  cmd->args = silc_command_get_args(cmd->payload);
-  cmd->server = server;
-  cmd->sock = silc_socket_dup(sock);
-  cmd->packet = silc_packet_context_dup(packet);
-  cmd->pending = FALSE;
-
-  if (pending) {
-    /* If this function was called from pending command then instead of
-       processing the command now, register a pending command callback which
-       will process it after we've received the automatic USERS command 
-       reply which server will send in JOIN. */
-    silc_server_command_pending(server, SILC_COMMAND_USERS, 0, NULL,
-				silc_server_command_users, cmd);
-    cmd->pending = TRUE;
-    silc_buffer_free(buffer);
-    silc_buffer_free(idp);
-    return;
-  }
-
-  /* Process USERS command. */
-  silc_server_command_users((void *)cmd);
-
-  silc_buffer_free(buffer);
-  silc_buffer_free(idp);
-  silc_packet_context_free(packet);
-}
-
 /* Internal routine to join channel. The channel sent to this function
    has been either created or resolved from ID lists. This joins the sent
    client to the channel. */
@@ -1820,11 +1760,11 @@ static void silc_server_command_join_channel(SilcServer server,
 {
   SilcSocketConnection sock = cmd->sock;
   unsigned char *tmp;
-  unsigned int tmp_len;
-  unsigned char *passphrase = NULL, mode[4], tmp2[4];
+  unsigned int tmp_len, user_count;
+  unsigned char *passphrase = NULL, mode[4], tmp2[4], tmp3[4];
   SilcClientEntry client;
   SilcChannelClientEntry chl;
-  SilcBuffer reply, chidp, clidp, keyp;
+  SilcBuffer reply, chidp, clidp, keyp, user_list, mode_list;
   unsigned short ident = silc_command_get_ident(cmd->payload);
 
   SILC_LOG_DEBUG(("Start"));
@@ -1927,6 +1867,10 @@ static void silc_server_command_join_channel(SilcServer server,
   silc_list_add(channel->user_list, chl);
   silc_list_add(client->channels, chl);
 
+  /* Get users on the channel */
+  silc_server_get_users_on_channel(server, channel, &user_list, &mode_list,
+				   &user_count);
+
   /* Encode Client ID Payload of the original client who wants to join */
   clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
@@ -1934,6 +1878,7 @@ static void silc_server_command_join_channel(SilcServer server,
   chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
   SILC_PUT32_MSB(channel->mode, mode);
   SILC_PUT32_MSB(created, tmp2);
+  SILC_PUT32_MSB(user_count, tmp3);
   tmp = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
   keyp = silc_channel_key_payload_encode(SILC_ID_CHANNEL_LEN, tmp, 
 					 strlen(channel->channel_key->
@@ -1944,25 +1889,35 @@ static void silc_server_command_join_channel(SilcServer server,
   if (!channel->topic) {
     reply = 
       silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
-					   SILC_STATUS_OK, ident, 5,
+					   SILC_STATUS_OK, ident, 9,
 					   2, channel->channel_name,
 					   strlen(channel->channel_name),
 					   3, chidp->data, chidp->len,
-					   4, mode, 4,
-					   5, tmp2, 4,
-					   6, keyp->data, keyp->len);
+					   4, clidp->data, clidp->len,
+					   5, mode, 4,
+					   6, tmp2, 4,
+					   7, keyp->data, keyp->len,
+					   12, tmp3, 4,
+					   13, user_list->data, user_list->len,
+					   14, mode_list->data, 
+					   mode_list->len);
   } else {
     reply = 
       silc_command_reply_payload_encode_va(SILC_COMMAND_JOIN,
-					   SILC_STATUS_OK, ident, 6, 
+					   SILC_STATUS_OK, ident, 10, 
 					   2, channel->channel_name, 
 					   strlen(channel->channel_name),
 					   3, chidp->data, chidp->len,
-					   4, mode, 4,
-					   5, tmp2, 4,
-					   6, keyp->data, keyp->len,
-					   9, channel->topic, 
-					   strlen(channel->topic));
+					   4, clidp->data, clidp->len,
+					   5, mode, 4,
+					   6, tmp2, 4,
+					   7, keyp->data, keyp->len,
+					   10, channel->topic, 
+					   strlen(channel->topic),
+					   12, tmp3, 4,
+					   13, user_list->data, user_list->len,
+					   14, mode_list->data, 
+					   mode_list->len);
   }
 
   /* Send command reply */
@@ -1984,14 +1939,12 @@ static void silc_server_command_join_channel(SilcServer server,
 				   SILC_ID_CLIENT_LEN);
   }
 
-  /* Send USERS command reply to the joined channel so the user sees who
-     is currently on the channel. */
-  silc_server_command_send_users(server, sock, channel, cmd->pending);
-
   silc_buffer_free(reply);
   silc_buffer_free(clidp);
   silc_buffer_free(chidp);
   silc_buffer_free(keyp);
+  silc_buffer_free(user_list);
+  silc_buffer_free(mode_list);
 
  out:
   if (passphrase)
@@ -3255,14 +3208,12 @@ SILC_SERVER_CMD_FUNC(users)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcChannelEntry channel;
-  SilcChannelClientEntry chl;
   SilcChannelID *id;
   SilcBuffer packet;
   unsigned char *channel_id;
   unsigned int channel_id_len;
   SilcBuffer client_id_list;
   SilcBuffer client_mode_list;
-  SilcBuffer idp;
   unsigned char lc[4];
   unsigned int list_count = 0;
   unsigned short ident = silc_command_get_ident(cmd->payload);
@@ -3324,33 +3275,9 @@ SILC_SERVER_CMD_FUNC(users)
     }
   }
 
-  /* Assemble the lists now */
-
-  client_id_list = silc_buffer_alloc((SILC_ID_CLIENT_LEN + 4) * 
-				     silc_list_count(channel->user_list));
-  silc_buffer_pull_tail(client_id_list, SILC_BUFFER_END(client_id_list));
-  client_mode_list = 
-    silc_buffer_alloc(4 * silc_list_count(channel->user_list));
-  silc_buffer_pull_tail(client_mode_list, SILC_BUFFER_END(client_mode_list));
-
-  silc_list_start(channel->user_list);
-  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-    /* Client ID */
-    idp = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);
-    silc_buffer_put(client_id_list, idp->data, idp->len);
-    silc_buffer_pull(client_id_list, idp->len);
-    silc_buffer_free(idp);
-
-    /* Client's mode on channel */
-    SILC_PUT32_MSB(chl->mode, client_mode_list->data);
-    silc_buffer_pull(client_mode_list, 4);
-
-    list_count++;
-  }
-  silc_buffer_push(client_id_list, 
-		   client_id_list->data - client_id_list->head);
-  silc_buffer_push(client_mode_list, 
-		   client_mode_list->data - client_mode_list->head);
+  /* Get the users list */
+  silc_server_get_users_on_channel(server, channel, &client_id_list,
+				   &client_mode_list, &list_count);
 
   /* List count */
   SILC_PUT32_MSB(list_count, lc);

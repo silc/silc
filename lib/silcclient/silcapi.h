@@ -35,6 +35,8 @@
    of how to use the SILC Client Library.
 */
 
+/* General definitions */
+
 /* Key agreement callback that is called after the key agreement protocol
    has been performed. This is called also if error occured during the
    key agreement protocol. The `key' is the allocated key material and
@@ -47,6 +49,19 @@ typedef void (*SilcKeyAgreementCallback)(SilcClient client,
 					 SilcClientEntry client_entry,
 					 SilcSKEKeyMaterial *key,
 					 void *context);
+
+/* Structure to hold the list of private message keys. The array of this
+   structure is returned by the silc_client_list_private_message_keys
+   function. */
+typedef struct {
+  SilcClientEntry client_entry;       /* The remote client entry */
+  char *cipher;			      /* The cipher name */
+  unsigned char *key;		      /* The original key, If the appliation
+					 provided it. This is NULL if the
+					 library generated the key or if
+					 the SKE key material was used. */
+  unsigned int key_len;		      /* The key length */
+} *SilcPrivateMessageKeys;
 
 /******************************************************************************
 
@@ -263,10 +278,17 @@ void silc_client_close_connection(SilcClient client,
    encrypted with the next receiver's key and the rest of the packet is
    encrypted with the channel specific key. Padding and HMAC is computed
    with the next receiver's key. The `data' is the channel message. If
-   the `force_send' is TRUE then the packet is sent immediately. */
+   the `force_send' is TRUE then the packet is sent immediately. 
+
+   If `key' is provided then that private key is used to encrypt the
+   channel message.  If it is not provided, private keys has not been
+   set at all, the normal channel key is used automatically.  If private
+   keys are set then the first key (the key that was added first as
+   private key) is used. */
 void silc_client_send_channel_message(SilcClient client, 
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
+				      SilcChannelPrivateKey key,
 				      unsigned char *data, 
 				      unsigned int data_len, 
 				      int force_send);
@@ -320,6 +342,19 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 					       char *nickname,
 					       char *server,
 					       unsigned int *clients_count);
+
+/* Gets client entries by the list of client ID's `client_id_list'. This
+   always resolves those client ID's it does not know yet from the server
+   so this function might take a while. The `client_id_list' is a list
+   of ID Payloads added one after other.  JOIN command reply and USERS
+   command reply for example returns this sort of list. The `completion'
+   will be called after the entries are available. */
+void silc_client_get_clients_by_list(SilcClient client,
+				     SilcClientConnection conn,
+				     unsigned int list_count,
+				     SilcBuffer client_id_list,
+				     SilcGetClientCallback completion,
+				     void *context);
 
 /* Find entry for client by the client's ID. Returns the entry or NULL
    if the entry was not found. */
@@ -447,19 +482,6 @@ int silc_client_del_private_message_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcClientEntry client_entry);
 
-/* Structure to hold the list of private message keys. The array of this
-   structure is returned by the silc_client_list_private_message_keys
-   function. */
-typedef struct {
-  SilcClientEntry client_entry;       /* The remote client entry */
-  char *cipher;			      /* The cipher name */
-  unsigned char *key;		      /* The original key, If the appliation
-					 provided it. This is NULL if the
-					 library generated the key or if
-					 the SKE key material was used. */
-  unsigned int key_len;		      /* The key length */
-} *SilcPrivateMessageKeys;
-
 /* Returns array of set private message keys associated to the connection
    `conn'. Returns allocated SilcPrivateMessageKeys array and the array
    count to the `key_count' argument. The array must be freed by the caller
@@ -478,7 +500,8 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
 					   unsigned int key_count);
 
 
-/* Channel private key management (client_channel.c) */
+/* Channel private key management (client_channel.c, 
+   SilcChannelPrivateKey is defined in idlist.h) */
 
 /* Adds private key for channel. This may be set only if the channel's mode
    mask includes the SILC_CHANNEL_MODE_PRIVKEY. This returns FALSE if the
@@ -486,7 +509,7 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
    encrypted using that key. All clients on the channel must also know the
    key in order to decrypt the messages. However, it is possible to have
    several private keys per one channel. In this case only some of the
-   clients on the channel may now the one key and only some the other key.
+   clients on the channel may know the one key and only some the other key.
 
    The private key for channel is optional. If it is not set then the
    channel messages are encrypted using the channel key generated by the
@@ -509,6 +532,7 @@ int silc_client_add_channel_private_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcChannelEntry channel,
 					char *cipher,
+					char *hmac,
 					unsigned char *key,
 					unsigned int key_len);
 
@@ -518,13 +542,6 @@ int silc_client_add_channel_private_key(SilcClient client,
 int silc_client_del_channel_private_keys(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcChannelEntry channel);
-
-/* Structure to hold one channel private key. */
-typedef struct {
-  char *cipher;			      /* The cipher name */
-  unsigned char *key;		      /* The key */
-  unsigned int key_len;		      /* The key length */
-} *SilcChannelPrivateKey;
 
 /* Removes and frees private key `key' from the channel `channel'. The `key'
    is retrieved by calling the function silc_client_list_channel_private_keys.

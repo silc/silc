@@ -170,6 +170,167 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
   return clients;
 }
 
+typedef struct {
+  SilcClient client;
+  SilcClientConnection conn;
+  unsigned int list_count;
+  SilcBuffer client_id_list;
+  SilcGetClientCallback completion;
+  void *context;
+  int found;
+} *GetClientsByListInternal;
+
+SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
+{
+  GetClientsByListInternal i = (GetClientsByListInternal)context;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcBuffer client_id_list = i->client_id_list;
+  SilcClientEntry *clients = NULL;
+  unsigned int clients_count = 0;
+  int c;
+
+  for (c = 0; c < i->list_count; c++) {
+    unsigned short idp_len;
+    SilcClientID *client_id;
+
+    /* Get Client ID */
+    SILC_GET16_MSB(idp_len, client_id_list->data + 2);
+    idp_len += 4;
+    client_id = silc_id_payload_parse_id(client_id_list->data, idp_len);
+    if (!client_id)
+      continue;
+
+    /* Get the client entry */
+    if (silc_idcache_find_by_id_one(i->conn->client_cache, (void *)client_id,
+				    SILC_ID_CLIENT, &id_cache)) {
+      clients = silc_realloc(clients, sizeof(*clients) * 
+			     (clients_count + 1));
+      clients[clients_count] = (SilcClientEntry)id_cache->context;
+      clients_count++;
+      i->found = TRUE;
+    }
+
+    silc_free(client_id);
+    silc_buffer_pull(client_id_list, idp_len);
+  }
+
+  if (i->found) {
+    i->completion(i->client, i->conn, clients, clients_count, i->context);
+    silc_free(clients);
+  }
+}
+
+static void silc_client_get_clients_list_destructor(void *context)
+{
+  GetClientsByListInternal i = (GetClientsByListInternal)context;
+
+  if (i->found == FALSE)
+    i->completion(i->client, i->conn, NULL, 0, i->context);
+
+  if (i->client_id_list)
+    silc_buffer_free(i->client_id_list);
+  silc_free(i);
+}
+
+/* Gets client entries by the list of client ID's `client_id_list'. This
+   always resolves those client ID's it does not know yet from the server
+   so this function might take a while. The `client_id_list' is a list
+   of ID Payloads added one after other.  JOIN command reply and USERS
+   command reply for example returns this sort of list. The `completion'
+   will be called after the entries are available. */
+
+void silc_client_get_clients_by_list(SilcClient client,
+				     SilcClientConnection conn,
+				     unsigned int list_count,
+				     SilcBuffer client_id_list,
+				     SilcGetClientCallback completion,
+				     void *context)
+{
+  SilcIDCacheEntry id_cache = NULL;
+  int i;
+  unsigned char **res_argv = NULL;
+  unsigned int *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
+  GetClientsByListInternal in;
+
+  in = silc_calloc(1, sizeof(*in));
+  in->client = client;
+  in->conn = conn;
+  in->list_count = list_count;
+  in->client_id_list = silc_buffer_copy(client_id_list);
+  in->completion = completion;
+  in->context = context;
+
+  for (i = 0; i < list_count; i++) {
+    unsigned short idp_len;
+    SilcClientID *client_id;
+    SilcClientEntry entry;
+
+    /* Get Client ID */
+    SILC_GET16_MSB(idp_len, client_id_list->data + 2);
+    idp_len += 4;
+    client_id = silc_id_payload_parse_id(client_id_list->data, idp_len);
+    if (!client_id)
+      continue;
+
+    /* Check if we have this client cached already. */
+    id_cache = NULL;
+    silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
+				SILC_ID_CLIENT, &id_cache);
+
+    /* If we don't have the entry or it has incomplete info, then resolve
+       it from the server. */
+    entry = id_cache ? (SilcClientEntry)id_cache->context : NULL;
+    if (!id_cache || !entry->nickname) {
+      /* No we don't have it, query it from the server. Assemble argument
+	 table that will be sent fr the IDENTIFY command later. */
+      res_argv = silc_realloc(res_argv, sizeof(*res_argv) *
+			      (res_argc + 1));
+      res_argv_lens = silc_realloc(res_argv_lens, sizeof(*res_argv_lens) *
+				   (res_argc + 1));
+      res_argv_types = silc_realloc(res_argv_types, sizeof(*res_argv_types) *
+				    (res_argc + 1));
+      res_argv[res_argc] = client_id_list->data;
+      res_argv_lens[res_argc] = idp_len;
+      res_argv_types[res_argc] = res_argc + 3;
+      res_argc++;
+    }
+
+    silc_free(client_id);
+    silc_buffer_pull(client_id_list, idp_len);
+  }
+  silc_buffer_push(client_id_list, client_id_list->data - 
+		   client_id_list->head);
+
+  /* Query the client information from server if the list included clients
+     that we don't know about. */
+  if (res_argc) {
+    SilcBuffer res_cmd;
+
+    /* Send the IDENTIFY command to server */
+    res_cmd = silc_command_payload_encode(SILC_COMMAND_IDENTIFY,
+					  res_argc, res_argv, res_argv_lens,
+					  res_argv_types, ++conn->cmd_ident);
+    silc_client_packet_send(client, conn->sock, SILC_PACKET_COMMAND, 
+			    NULL, 0, NULL, NULL, res_cmd->data, res_cmd->len,
+			    TRUE);
+
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+				conn->cmd_ident, 
+				silc_client_get_clients_list_destructor,
+				silc_client_command_get_clients_list_callback, 
+				(void *)in);
+
+    silc_buffer_free(res_cmd);
+    silc_free(res_argv);
+    silc_free(res_argv_lens);
+    silc_free(res_argv_types);
+    return;
+  }
+
+  /* We have the clients in cache, get them and call the completion */
+  silc_client_command_get_clients_list_callback((void *)in);
+}
+
 /* The old style function to find client entry. This is used by the
    library internally. If `query' is TRUE then the client information is
    requested by the server. The pending command callback must be set

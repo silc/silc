@@ -276,6 +276,7 @@ int silc_client_start_key_exchange(SilcClient client,
   proto_ctx->rng = client->rng;
   proto_ctx->responder = FALSE;
   proto_ctx->send_packet = silc_client_protocol_ke_send_packet;
+  proto_ctx->verify = silc_client_protocol_ke_verify_key;
 
   /* Perform key exchange protocol. silc_client_connect_to_server_final
      will be called after the protocol is finished. */

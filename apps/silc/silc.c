@@ -566,7 +566,7 @@ static void silc_client_process_message(SilcClientInternal app)
       silc_print(app->client, "> %s", data);
       silc_client_send_channel_message(app->client, 
 				       app->conn,
-				       app->conn->current_channel,
+				       app->conn->current_channel, NULL,
 				       data, strlen(data), TRUE);
     }
   }

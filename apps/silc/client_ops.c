@@ -294,6 +294,53 @@ void silc_command(SilcClient client, SilcClientConnection conn,
     }
 }
 
+/* We've resolved all clients we don't know about, now just print the
+   users from the channel on the screen. */
+
+void silc_client_show_users(SilcClient client,
+			    SilcClientConnection conn,
+			    SilcClientEntry *clients,
+			    unsigned int clients_count,
+			    void *context)
+{
+  SilcChannelEntry channel = (SilcChannelEntry)context;
+  SilcChannelUser chu;
+  int k = 0, len1 = 0, len2 = 0;
+  char *name_list = NULL;
+
+  if (!clients)
+    return;
+
+  silc_list_start(channel->clients);
+  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+    char *m, *n = chu->client->nickname;
+    len2 = strlen(n);
+    len1 += len2;
+    
+    name_list = silc_realloc(name_list, sizeof(*name_list) * (len1 + 3));
+    
+    m = silc_client_chumode_char(chu->mode);
+    if (m) {
+      memcpy(name_list + (len1 - len2), m, strlen(m));
+      len1 += strlen(m);
+      silc_free(m);
+    }
+    
+    memcpy(name_list + (len1 - len2), n, len2);
+    name_list[len1] = 0;
+    
+    if (k == silc_list_count(channel->clients) - 1)
+      break;
+    memcpy(name_list + len1, " ", 1);
+    len1++;
+    k++;
+  }
+  
+  client->ops->say(client, conn, "Users on %s: %s", channel->channel_name, 
+		   name_list);
+  silc_free(name_list);
+}
+
 /* Command reply handler. This function is called always in the command reply
    function. If error occurs it will be called as well. Normal scenario
    is that it will be called after the received command data has been parsed
@@ -329,12 +376,34 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
     case SILC_COMMAND_JOIN:
       {
 	unsigned int mode;
+	char *topic;
+	SilcBuffer client_id_list;
+	unsigned int list_count;
+	SilcChannelEntry channel;
 
 	app->screen->bottom_line->channel = va_arg(vp, char *);
-	(void)va_arg(vp, void *);
+	channel = va_arg(vp, SilcChannelEntry);
 	mode = va_arg(vp, unsigned int);
+	(void)va_arg(vp, unsigned int);
+	(void)va_arg(vp, unsigned char *);
+	(void)va_arg(vp, unsigned char *);
+	(void)va_arg(vp, unsigned char *);
+	topic = va_arg(vp, char *);
+	(void)va_arg(vp, unsigned char *);
+	list_count = va_arg(vp, unsigned int);
+	client_id_list = va_arg(vp, SilcBuffer);
+
+	if (topic)
+	  client->ops->say(client, conn, "Topic for %s: %s", 
+			   app->screen->bottom_line->channel, topic);
+	
 	app->screen->bottom_line->channel_mode = silc_client_chmode(mode);
 	silc_screen_print_bottom_line(app->screen, 0);
+
+	/* Resolve the client information */
+	silc_client_get_clients_by_list(client, conn, list_count,
+					client_id_list,
+					silc_client_show_users, channel);
       }
       break;
 
@@ -628,7 +697,6 @@ int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 void silc_failure(SilcClient client, SilcClientConnection conn, 
 		  SilcProtocol protocol, void *failure)
 {
-  SilcClientInternal app = (SilcClientInternal)client->application;
 
 }
 

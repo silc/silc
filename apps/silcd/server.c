@@ -2000,7 +2000,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 
       /* If this was our primary router connection then we're lost to
 	 the outside world. */
-      if (server->server_type == SILC_SERVER && server->router == user_data) {
+      if (server->router == user_data) {
 	server->id_entry->router = NULL;
 	server->router = NULL;
 	server->standalone = TRUE;
@@ -2898,4 +2898,126 @@ SILC_TASK_CALLBACK(silc_server_failure_callback)
   }
 
   silc_free(f);
+}
+
+/* Assembles user list and users mode list from the `channel'. */
+
+void silc_server_get_users_on_channel(SilcServer server,
+				      SilcChannelEntry channel,
+				      SilcBuffer *user_list,
+				      SilcBuffer *mode_list,
+				      unsigned int *user_count)
+{
+  SilcChannelClientEntry chl;
+  SilcBuffer client_id_list;
+  SilcBuffer client_mode_list;
+  SilcBuffer idp;
+  unsigned int list_count = 0;
+
+  client_id_list = silc_buffer_alloc((SILC_ID_CLIENT_LEN + 4) * 
+				     silc_list_count(channel->user_list));
+  client_mode_list = silc_buffer_alloc(4 * 
+				       silc_list_count(channel->user_list));
+  silc_buffer_pull_tail(client_id_list, SILC_BUFFER_END(client_id_list));
+  silc_buffer_pull_tail(client_mode_list, SILC_BUFFER_END(client_mode_list));
+  silc_list_start(channel->user_list);
+  while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+    /* Client ID */
+    idp = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);
+    silc_buffer_put(client_id_list, idp->data, idp->len);
+    silc_buffer_pull(client_id_list, idp->len);
+    silc_buffer_free(idp);
+
+    /* Client's mode on channel */
+    SILC_PUT32_MSB(chl->mode, client_mode_list->data);
+    silc_buffer_pull(client_mode_list, 4);
+
+    list_count++;
+  }
+  silc_buffer_push(client_id_list, 
+		   client_id_list->data - client_id_list->head);
+  silc_buffer_push(client_mode_list, 
+		   client_mode_list->data - client_mode_list->head);
+
+  *user_list = client_id_list;
+  *mode_list = client_mode_list;
+  *user_count = list_count;
+}
+
+/* Saves users and their modes to the `channel'. */
+
+void silc_server_save_users_on_channel(SilcServer server,
+				       SilcSocketConnection sock,
+				       SilcChannelEntry channel,
+				       SilcClientID *noadd,
+				       SilcBuffer user_list,
+				       SilcBuffer mode_list,
+				       unsigned int user_count)
+{
+  int i;
+
+  /* Cache the received Client ID's and modes. This cache expires
+     whenever server sends notify message to channel. It means two things;
+     some user has joined or leaved the channel. XXX TODO! */
+  for (i = 0; i < user_count; i++) {
+    unsigned short idp_len;
+    unsigned int mode;
+    SilcClientID *client_id;
+    SilcClientEntry client;
+
+    /* Client ID */
+    SILC_GET16_MSB(idp_len, user_list->data + 2);
+    idp_len += 4;
+    client_id = silc_id_payload_parse_id(user_list->data, idp_len);
+    silc_buffer_pull(user_list, idp_len);
+    if (!client_id)
+      continue;
+
+    /* Mode */
+    SILC_GET32_MSB(mode, mode_list->data);
+    silc_buffer_pull(mode_list, 4);
+
+    if (noadd && !SILC_ID_CLIENT_COMPARE(client_id, noadd)) {
+      silc_free(client_id);
+      continue;
+    }
+    
+    /* Check if we have this client cached already. */
+    client = silc_idlist_find_client_by_id(server->local_list, client_id,
+					   NULL);
+    if (!client)
+      client = silc_idlist_find_client_by_id(server->global_list, 
+					     client_id, NULL);
+    if (!client) {
+      /* If router did not find such Client ID in its lists then this must
+	 be bogus client or some router in the net is buggy. */
+      if (server->server_type == SILC_ROUTER) {
+	silc_free(client_id);
+	continue;
+      }
+
+      /* We don't have that client anywhere, add it. The client is added
+	 to global list since server didn't have it in the lists so it must be 
+	 global. */
+      client = silc_idlist_add_client(server->global_list, NULL, NULL, NULL, 
+				      silc_id_dup(client_id, SILC_ID_CLIENT), 
+				      sock->user_data, NULL);
+      if (!client) {
+	silc_free(client_id);
+	continue;
+      }
+    }
+
+    silc_free(client_id);
+
+    if (!silc_server_client_on_channel(client, channel)) {
+      /* Client was not on the channel, add it. */
+      SilcChannelClientEntry chl = silc_calloc(1, sizeof(*chl));
+      chl->client = client;
+      chl->mode = mode;
+      chl->channel = channel;
+      silc_list_add(channel->user_list, chl);
+      silc_list_add(client->channels, chl);
+    }
+  }
 }

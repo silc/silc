@@ -41,6 +41,7 @@ typedef struct {
   SilcPacketContext *packet;
 
   SilcSKESendPacketCb send_packet;  /* SKE's packet sending callback */
+  SilcSKEVerifyCb verify;	    /* SKE's key verify callback */
   SilcSKE ske;			    /* The SKE object */
   SilcSKEKeyMaterial *keymat;	    /* The negotiated key material */
   void *context;		    /* Internal context */
@@ -78,6 +79,11 @@ void silc_client_protocol_ke_send_packet(SilcSKE ske,
 					 SilcBuffer packet,
 					 SilcPacketType type,
 					 void *context);
+SilcSKEStatus silc_client_protocol_ke_verify_key(SilcSKE ske,
+						 unsigned char *pk_data,
+						 unsigned int pk_len,
+						 SilcSKEPKType pk_type,
+						 void *context);
 void silc_client_protocol_ke_set_keys(SilcSKE ske,
 				      SilcSocketConnection sock,
 				      SilcSKEKeyMaterial *keymat,

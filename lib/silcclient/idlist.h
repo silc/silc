@@ -49,10 +49,16 @@ typedef struct SilcChannelUserStruct {
   struct SilcChannelUserStruct *next;
 } *SilcChannelUser;
 
+/* Structure to hold one channel private key. */
+typedef struct {
+  SilcCipher cipher;		      /* The cipher and key */
+  SilcHmac hmac;		      /* The HMAC and hmac key */
+  unsigned char *key;		      /* The key data */
+  unsigned int key_len;		      /* The key length */
+} *SilcChannelPrivateKey;
+
 /* Channel entry context. This is allocate for every channel client has
    joined to. This includes for example the channel specific keys */
-/* XXX channel_key is the server generated key. Later this context must 
-   include the channel private key. */
 typedef struct SilcChannelEntryStruct {
   char *channel_name;
   SilcChannelID *id;
@@ -63,11 +69,13 @@ typedef struct SilcChannelEntryStruct {
   SilcList clients;
 
   /* Channel keys */
-  SilcCipher channel_key;
-  unsigned char *key;
+  SilcCipher channel_key;                    /* The channel key */
+  unsigned char *key;			     /* Raw key data */
   unsigned int key_len;
-  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
-  SilcHmac hmac;
+  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE]; /* Current IV */
+  SilcHmac hmac;			     /* Current HMAC */
+  SilcDList private_keys;		     /* List of private keys or NULL */
+  SilcChannelPrivateKey curr_key;	     /* Current private key */
 } *SilcChannelEntry;
 
 /* Prototypes (some functions are defined in the silcapi.h) */

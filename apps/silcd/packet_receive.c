@@ -174,8 +174,12 @@ void silc_server_notify(SilcServer server,
     channel = silc_idlist_find_channel_by_id(server->local_list, 
 					     channel_id, NULL);
     if (!channel) { 
-      silc_free(channel_id);
-      goto out;
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
+					       channel_id, NULL);
+      if (!channel) {
+	silc_free(channel_id);
+	goto out;
+      }
     }
 
     /* Get client ID */

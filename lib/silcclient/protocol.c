@@ -55,12 +55,11 @@ void silc_client_protocol_ke_send_packet(SilcSKE ske,
 /* Callback that is called when we have received KE2 payload from
    responder. We try to verify the public key now. */
 
-static SilcSKEStatus 
-silc_client_protocol_ke_verify_key(SilcSKE ske,
-				   unsigned char *pk_data,
-				   unsigned int pk_len,
-				   SilcSKEPKType pk_type,
-				   void *context)
+SilcSKEStatus silc_client_protocol_ke_verify_key(SilcSKE ske,
+						 unsigned char *pk_data,
+						 unsigned int pk_len,
+						 SilcSKEPKType pk_type,
+						 void *context)
 {
   SilcProtocol protocol = (SilcProtocol)context;
   SilcClientKEInternalContext *ctx = 
@@ -313,8 +312,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
 	   sent by responder. */
 	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer,
-					   silc_client_protocol_ke_verify_key,
-					   context, NULL, NULL);
+					   ctx->verify, context, NULL, NULL);
       }
 
       if (status != SILC_SKE_STATUS_OK) {

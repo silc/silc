@@ -62,6 +62,12 @@ New features TODO
 TODO In SILC Client Library
 ===========================
 
+ o Add client library parameters or options that handle what kind of
+   messages the library should print out (using `say' client operation,
+   for example) and what is left for the application to print.  The
+   appliation could for example set that it handles all command printing
+   but all error printing should be handled by the library, etc...
+
  o Non-blocking connection on the background must be stopped if some
    other connection on same window has established.  Now it is possible
    that some non-blocking connection timeouts on the background when

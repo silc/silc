@@ -178,6 +178,7 @@ SILC_TASK_CALLBACK(silc_client_process_key_agreement)
   proto_ctx->responder = TRUE;
   proto_ctx->context = context;
   proto_ctx->send_packet = silc_client_key_agreement_send_packet;
+  proto_ctx->verify = silc_client_protocol_ke_verify_key;
 
   /* Prepare the connection for key exchange protocol. We allocate the
      protocol but will not start it yet. The connector will be the
@@ -514,6 +515,7 @@ void silc_client_perform_key_agreement_fd(SilcClient client,
   proto_ctx->responder = FALSE;
   proto_ctx->context = ke;
   proto_ctx->send_packet = silc_client_key_agreement_send_packet;
+  proto_ctx->verify = silc_client_protocol_ke_verify_key;
 
   /* Perform key exchange protocol. */
   silc_protocol_alloc(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE, 

@@ -1580,12 +1580,6 @@ send information about newly joined client to all routers in the SILC
 network.  This is done by broadcasting the SILC_NOTIFY_TYPE_JOIN notify
 type to the router's primary route. 
 
-After joining the client to the channel server or router must send
-command reply packet for SILC_COMMAND_USERS command.  This way the
-client gets the list of users on the channel.  If the router joined
-the client to the channel then the router sends this command reply
-to the server which must send it further to the original client.
-
 It is important to note that new channel key is created always when
 new client joins to channel, whether the channel has existed previously
 or not.  This way the new client on the channel is not able to decrypt
@@ -2433,19 +2427,26 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  10
-            Arguments:  (1) <Status Payload>  (2) <channel> 
-                        (3) <Channel ID>      (4) <channel mode mask>
-                        (5) <created>         (6) <Channel Key Payload>
-                        (7) [<ban mask>]      (8) [<invite list>]
-                        (9) [<topic>]        (10) [<hmac>]
+        Max Arguments:  14
+            Arguments:  (1) <Status Payload>      (2) <channel> 
+                        (3) <Channel ID>          (4) <Client ID>
+                        (5) <channel mode mask>   (6) <created>
+                        (7) <Channel Key Payload> (8) [<ban mask>]
+                        (9) [<invite list>]       (10) [<topic>]
+                       (11) [<hmac>]              (12) <list count>
+                       (13) <Client ID list>      (14) <client mode list>
 
         This command replies with the channel name requested by the
         client, channel ID of the channel and topic of the channel
-        if it exists.  It also replies with the channel mode mask
+        if it exists.  The <Client ID> is the Client ID which was joined
+        to the channel.  It also replies with the channel mode mask
         which tells all the modes set on the channel.  If the
         channel is created the mode mask is zero (0).  If ban mask
         and/or invite list is set they are sent as well.
+
+        The <list count>, <Client ID list> and <client mode list> are
+        the clients curerntly on the channel and their modes on the
+        channel.
 
         Client receives the channel key in the reply message as well
         inside <Channel Key Payload>.

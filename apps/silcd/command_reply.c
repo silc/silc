@@ -375,13 +375,14 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   SilcServer server = cmd->server;
   SilcCommandStatus status;
   SilcChannelID *id;
+  SilcClientID *client_id = NULL;
   SilcChannelEntry entry;
   SilcHmac hmac = NULL;
-  unsigned int id_len, len;
+  unsigned int id_len, len, list_count;
   unsigned char *id_string;
   char *channel_name, *tmp;
   unsigned int mode, created;
-  SilcBuffer keyp;
+  SilcBuffer keyp, client_id_list, client_mode_list;
 
   COMMAND_CHECK_STATUS;
 
@@ -395,14 +396,22 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   if (!id_string)
     goto out;
 
+  /* Get client ID */
+  tmp = silc_argument_get_arg_type(cmd->args, 4, &len);
+  if (!tmp)
+    goto out;
+  client_id = silc_id_payload_parse_id(tmp, len);
+  if (!client_id)
+    goto out;
+
   /* Get mode mask */
-  tmp = silc_argument_get_arg_type(cmd->args, 4, NULL);
+  tmp = silc_argument_get_arg_type(cmd->args, 5, NULL);
   if (!tmp)
     goto out;
   SILC_GET32_MSB(mode, tmp);
 
   /* Get created boolean value */
-  tmp = silc_argument_get_arg_type(cmd->args, 5, NULL);
+  tmp = silc_argument_get_arg_type(cmd->args, 6, NULL);
   if (!tmp)
     goto out;
   SILC_GET32_MSB(created, tmp);
@@ -410,7 +419,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     goto out;
 
   /* Get channel key */
-  tmp = silc_argument_get_arg_type(cmd->args, 6, &len);
+  tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
   if (!tmp)
     goto out;
   keyp = silc_buffer_alloc(len);
@@ -422,11 +431,35 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     goto out;
 
   /* Get hmac */
-  tmp = silc_argument_get_arg_type(cmd->args, 10, NULL);
+  tmp = silc_argument_get_arg_type(cmd->args, 11, NULL);
   if (tmp) {
     if (!silc_hmac_alloc(tmp, NULL, &hmac))
       goto out;
   }
+
+  /* Get the list count */
+  tmp = silc_argument_get_arg_type(cmd->args, 12, &len);
+  if (!tmp)
+    goto out;
+  SILC_GET32_MSB(list_count, tmp);
+
+  /* Get Client ID list */
+  tmp = silc_argument_get_arg_type(cmd->args, 13, &len);
+  if (!tmp)
+    goto out;
+
+  client_id_list = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(client_id_list, len);
+  silc_buffer_put(client_id_list, tmp, len);
+
+  /* Get client mode list */
+  tmp = silc_argument_get_arg_type(cmd->args, 14, &len);
+  if (!tmp)
+    goto out;
+
+  client_mode_list = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(client_mode_list, len);
+  silc_buffer_put(client_mode_list, tmp, len);
 
   /* See whether we already have the channel. */
   entry = silc_idlist_find_channel_by_id(server->local_list, id, NULL);
@@ -467,11 +500,21 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   silc_server_save_channel_key(server, keyp, entry);
   silc_buffer_free(keyp);
 
+  /* Save the users to the channel */
+  silc_server_save_users_on_channel(server, cmd->sock, entry, 
+				    client_id, client_id_list,
+				    client_mode_list, list_count);
+
+  silc_buffer_free(client_id_list);
+  silc_buffer_free(client_mode_list);
+
   /* Execute any pending commands */
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
 
  out:
   SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_JOIN);
+  if (client_id)
+    silc_free(client_id);
   silc_server_command_reply_free(cmd);
 }
 
@@ -486,7 +529,7 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
   SilcBuffer client_mode_list;
   unsigned char *tmp;
   unsigned int tmp_len;
-  unsigned int list_count, i;
+  unsigned int list_count;
 
   COMMAND_CHECK_STATUS;
 
@@ -497,6 +540,16 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
   channel_id = silc_id_payload_parse_id(tmp, tmp_len);
   if (!channel_id)
     goto out;
+
+  /* Get channel entry */
+  channel = silc_idlist_find_channel_by_id(server->local_list, 
+					   channel_id, NULL);
+  if (!channel) {
+    channel = silc_idlist_find_channel_by_id(server->global_list, 
+					     channel_id, NULL);
+    if (!channel)
+      goto out;
+  }
 
   /* Get the list count */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
@@ -522,74 +575,10 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
   silc_buffer_pull_tail(client_mode_list, tmp_len);
   silc_buffer_put(client_mode_list, tmp, tmp_len);
 
-  /* Get channel entry */
-  channel = silc_idlist_find_channel_by_id(server->local_list, 
-					   channel_id, NULL);
-  if (!channel) {
-    channel = silc_idlist_find_channel_by_id(server->global_list, 
-					     channel_id, NULL);
-    if (!channel)
-      goto out;
-  }
-
-  /* Cache the received Client ID's and modes. This cache expires
-     whenever server sends notify message to channel. It means two things;
-     some user has joined or leaved the channel. XXX! */
-  for (i = 0; i < list_count; i++) {
-    unsigned short idp_len;
-    unsigned int mode;
-    SilcClientID *client_id;
-    SilcClientEntry client;
-
-    /* Client ID */
-    SILC_GET16_MSB(idp_len, client_id_list->data + 2);
-    idp_len += 4;
-    client_id = silc_id_payload_parse_id(client_id_list->data, idp_len);
-    if (!client_id)
-      continue;
-    silc_buffer_pull(client_id_list, idp_len);
-    
-    /* Mode */
-    SILC_GET32_MSB(mode, client_mode_list->data);
-    silc_buffer_pull(client_mode_list, 4);
-
-    /* Check if we have this client cached already. */
-    client = silc_idlist_find_client_by_id(server->local_list, client_id,
-					   NULL);
-    if (!client)
-      client = silc_idlist_find_client_by_id(server->global_list, 
-					     client_id, NULL);
-    if (!client) {
-      /* If router did not find such Client ID in its lists then this must
-	 be bogus client or some router in the net is buggy. */
-      if (server->server_type == SILC_ROUTER)
-	goto out;
-
-      /* We don't have that client anywhere, add it. The client is added
-	 to global list since server didn't have it in the lists so it must be 
-	 global. */
-      client = silc_idlist_add_client(server->global_list, NULL, NULL, 
-				      NULL, client_id, cmd->sock->user_data, 
-				      NULL);
-      if (!client) {
-	silc_free(client_id);
-	continue;
-      }
-    } else {
-      /* We have the client already. */
-      silc_free(client_id);
-    }
-
-    if (!silc_server_client_on_channel(client, channel)) {
-      /* Client was not on the channel, add it. */
-      SilcChannelClientEntry chl = silc_calloc(1, sizeof(*chl));
-      chl->client = client;
-      chl->mode = mode;
-      chl->channel = channel;
-      silc_list_add(channel->user_list, chl);
-      silc_list_add(client->channels, chl);
-    }
-  }
+  /* Save the users to the channel */
+  silc_server_save_users_on_channel(server, cmd->sock, channel, NULL,
+				    client_id_list, client_mode_list, 
+				    list_count);
 
   silc_buffer_free(client_id_list);
   silc_buffer_free(client_mode_list);

@@ -1,3 +1,70 @@
+Sun Mar 11 14:59:05 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added silc_client_get_clients_by_list to get client entries
+	  from Client ID list, that is returned for example by JOIN
+	  and USERS command replies.  The application should use this
+	  function for example when JOIN command reply is received to
+	  resolve the clients already on the channel (library does not
+	  do that anymore as USERS command reply is not used in the JOIN
+	  procedure anymore).  Affected files lib/silcclient/silcapi.h and
+	  lib/silcclient/idlist.c.
+
+	* JOIN command reply and USERS command reply returns now SilcBuffer
+	  pointers instead of unsigned char pointers when returning
+	  the client list and mode list.
+
+	* Added <Client ID> argument to the JOIN command reply, mainly
+	  for the server to identify for which client the command was
+	  originally sent.  Updated protocol specs accordingly.
+
+	* Added SilcDlist private_key pointer to the SilcChannelEntry
+	  in the client to support the channel private keys.  Affected
+	  file is lib/silcclient/idlist.h.
+
+	* Added SilcChannelPrivateKey argument to the function
+	  silc_client_send_channel_message so that application can choose
+	  to use specific private ke if it wants to.  If it is not provided,
+	  the normal channel key is used, unless private keys are set. 
+	  In this case the first (key that was added first) is used 
+	  as the encryption key.
+
+	* Implemented the support for channel private key handling.
+	  Implemented the following functions:
+
+	  silc_client_add_channel_private_key,
+	  silc_client_del_channel_private_keys,
+	  silc_client_del_channel_private_key,
+	  silc_client_list_channel_private_keys and
+	  silc_client_free_channel_private_keys
+
+	  Affected file lib/silcclient/client_channel.c.
+
+	* Added the support for the private keys in the channel message
+	  sending and encryption and in the message reception and
+	  decryption.  Affected funtions are
+	  silc_client_send_channel_message and silc_client_channel_message.
+
+Sat Mar 10 21:36:22 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added SKE's key verify callback to the client library's
+	  KE protocol context. Affected files lib/silcclient/protocol.[ch].
+
+	* Removed the statement that server (or router) must send USERS
+	  command reply when joining to the channel so that the client
+	  knows who are on the channel.  Instead, the client list and 
+	  client's mode list is now sent in the JOIN command reply to the
+	  client who joined channel.  This is better solution.
+
+	* Added function silc_server_get_users_on_channel and function
+	  silc_server_save_users_on_channel to the silcd/server.[ch].
+
+	* Removed function silc_server_command_send_users from the
+	  silcd/command.c.
+
+	* Do not show topic on the client library anymore.  The topic is
+	  sent in the command reply notify to the application and the
+	  application must show the topic now.
+
 Sat Mar 10 00:07:37 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added client searching by nickname hash into the IDENTIFY and

@@ -141,5 +141,17 @@ void silc_server_perform_heartbeat(SilcSocketConnection sock,
 void silc_server_announce_servers(SilcServer server);
 void silc_server_announce_clients(SilcServer server);
 void silc_server_announce_channels(SilcServer server);
+void silc_server_get_users_on_channel(SilcServer server,
+				      SilcChannelEntry channel,
+				      SilcBuffer *user_list,
+				      SilcBuffer *mode_list,
+				      unsigned int *user_count);
+void silc_server_save_users_on_channel(SilcServer server,
+				       SilcSocketConnection sock,
+				       SilcChannelEntry channel,
+				       SilcClientID *noadd,
+				       SilcBuffer user_list,
+				       SilcBuffer mode_list,
+				       unsigned int user_count);
 
 #endif
