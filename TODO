@@ -19,9 +19,9 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o Save channel names in the ID Cache always as lowered characters,
-   though allow mixed case characters in the channel entry but the ID
-   cache does not handle loose data searching anymore.
+ o The SKE protocol in the server does not verify the remote hosts 
+   (the router's) public key at all.  All public keys are accepted without
+   verification - this obviously is not secure.
 
  o When server quits and all clients of that server are removed from all
    channels the channel keys are re-generated for all clients.  This is

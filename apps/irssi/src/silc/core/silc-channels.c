@@ -337,7 +337,7 @@ static void event_cumode(SILC_SERVER_REC *server, va_list va)
   
   printtext(server, channel->channel_name, MSGLEVEL_MODES,
 	    "cumode/%s/%s [%s] by %s", destclient->nickname, 
-	    channel->channel_name, mode, client->nickname);
+	    channel->channel_name, modestr, client->nickname);
   
   g_free(modestr);
 }

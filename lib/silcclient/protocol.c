@@ -52,29 +52,57 @@ void silc_client_protocol_ke_send_packet(SilcSKE ske,
 			  packet->data, packet->len, TRUE);
 }
 
+/* Public key verification callback. Called by the application. */
+
+typedef struct {
+  SilcSKE ske;
+  SilcSKEVerifyCbCompletion completion;
+  void *completion_context;
+} *VerifyKeyContext;
+
+static void silc_client_verify_key_cb(bool success, void *context)
+{
+  VerifyKeyContext verify = (VerifyKeyContext)context;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Call the completion callback back to the SKE */
+  verify->completion(verify->ske, success ? SILC_SKE_STATUS_OK : 
+		     SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY, 
+		     verify->completion_context);
+
+  silc_free(verify);
+}
+
 /* Callback that is called when we have received KE2 payload from
    responder. We try to verify the public key now. */
 
-SilcSKEStatus silc_client_protocol_ke_verify_key(SilcSKE ske,
-						 unsigned char *pk_data,
-						 uint32 pk_len,
-						 SilcSKEPKType pk_type,
-						 void *context)
+void silc_client_protocol_ke_verify_key(SilcSKE ske,
+					unsigned char *pk_data,
+					uint32 pk_len,
+					SilcSKEPKType pk_type,
+					void *context,
+					SilcSKEVerifyCbCompletion completion,
+					void *completion_context)
 {
   SilcProtocol protocol = (SilcProtocol)context;
   SilcClientKEInternalContext *ctx = 
     (SilcClientKEInternalContext *)protocol->context;
   SilcClient client = (SilcClient)ctx->client;
+  VerifyKeyContext verify;
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* Verify public key from user. */
-  if (!client->ops->verify_public_key(client, ctx->sock->user_data, 
-				      ctx->sock->type,
-				      pk_data, pk_len, pk_type))
-    return SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
+  verify = silc_calloc(1, sizeof(*verify));
+  verify->ske = ske;
+  verify->completion = completion;
+  verify->completion_context = completion_context;
 
-  return SILC_SKE_STATUS_OK;
+  /* Verify public key from user. */
+  client->ops->verify_public_key(client, ctx->sock->user_data, 
+				 ctx->sock->type,
+				 pk_data, pk_len, pk_type,
+				 silc_client_verify_key_cb, verify);
 }
 
 /* Sets the negotiated key material into use for particular connection. */
@@ -193,6 +221,64 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   return status;
 }
 
+/* Callback that is called by the SKE to indicate that it is safe to
+   continue the execution of the protocol. Is given as argument to the 
+   silc_ske_initiator_finish or silc_ske_responder_phase_2 functions. 
+   This is called due to the fact that the public key verification
+   process is asynchronous and we must not continue the protocl until
+   the public key has been verified and this callback is called. */
+
+static void silc_client_protocol_ke_continue(SilcSKE ske,
+					     void *context)
+{
+  SilcProtocol protocol = (SilcProtocol)context;
+  SilcClientKEInternalContext *ctx = 
+    (SilcClientKEInternalContext *)protocol->context;
+  SilcClient client = (SilcClient)ctx->client;
+  SilcClientConnection conn = ctx->sock->user_data;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (ske->status != SILC_SKE_STATUS_OK) {
+    if (ske->status == SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY) {
+      client->ops->say(client, conn, 
+		       "Received unsupported server %s public key",
+		       ctx->sock->hostname);
+    } else if (ske->status == SILC_SKE_STATUS_PUBLIC_KEY_NOT_PROVIDED) {
+      client->ops->say(client, conn, 
+		       "Remote host did not send its public key, even though "
+		       "it must send it");
+    } else {
+      client->ops->say(client, conn,
+		       "Error during key exchange protocol with server %s",
+		       ctx->sock->hostname);
+    }
+    
+    protocol->state = SILC_PROTOCOL_STATE_ERROR;
+    protocol->execute(client->timeout_queue, 0, protocol, 0, 0, 0);
+    return;
+  }
+
+  /* Send Ok to the other end. We will end the protocol as server
+     sends Ok to us when we will take the new keys into use. Do this
+     if we are initiator. This is happens when this callback was sent
+     to silc_ske_initiator_finish function. */
+  if (ctx->responder == FALSE) {
+    silc_ske_end(ctx->ske, ctx->send_packet, context);
+
+    /* End the protocol on the next round */
+    protocol->state = SILC_PROTOCOL_STATE_END;
+  }
+
+  /* Advance protocol state and call the next state if we are responder. 
+     This happens when this callback was sent to silc_ske_responder_phase_2
+     function. */
+  if (ctx->responder == TRUE) {
+    protocol->state++;
+    protocol->execute(client->timeout_queue, 0, protocol, 0, 0, 100000);
+  }
+}
+
 /* Performs key exchange protocol. This is used for both initiator
    and responder key exchange. This may be called recursively. */
 
@@ -203,7 +289,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
     (SilcClientKEInternalContext *)protocol->context;
   SilcClient client = (SilcClient)ctx->client;
   SilcClientConnection conn = ctx->sock->user_data;
-  SilcSKEStatus status = 0;
+  SilcSKEStatus status = SILC_SKE_STATUS_OK;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -246,6 +332,10 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 					  ctx->send_packet,
 					  context);
       }
+
+      /* Return now if the procedure is pending */
+      if (status == SILC_SKE_STATUS_PENDING)
+	return;
 
       if (status != SILC_SKE_STATUS_OK) {
 	SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
@@ -310,9 +400,12 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       if (ctx->responder == TRUE) {
 	/* Process the received Key Exchange 1 Payload packet from
 	   the initiator. This also creates our parts of the Diffie
-	   Hellman algorithm. */
+	   Hellman algorithm. The silc_client_protocol_ke_continue will
+	   be called after the public key has been verified. */
 	status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer, 
-					    ctx->verify, context, NULL, NULL);
+					    ctx->verify, context, 
+					    silc_client_protocol_ke_continue,
+					    context);
       } else {
 	/* Call the Phase-2 function. This creates Diffie Hellman
 	   key exchange parameters and sends our public part inside
@@ -322,7 +415,12 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 					    client->private_key,
 					    ctx->send_packet,
 					    context);
+	protocol->state++;
       }
+
+      /* Return now if the procedure is pending */
+      if (status == SILC_SKE_STATUS_PENDING)
+	return;
 
       if (status != SILC_SKE_STATUS_OK) {
 	SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
@@ -334,11 +432,6 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 0);
 	return;
       }
-
-      /* Advance protocol state and call the next state if we are responder */
-      protocol->state++;
-      if (ctx->responder == TRUE)
-	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 100000);
     }
     break;
   case 4:
@@ -355,16 +448,24 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 				    SILC_SKE_PK_TYPE_SILC,
 				    ctx->send_packet,
 				    context);
-	status = 0;
+
+	/* End the protocol on the next round */
+	protocol->state = SILC_PROTOCOL_STATE_END;
       } else {
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
-	   sent by responder. */
+	   sent by responder. The silc_client_protocol_ke_continue will
+	   be called after the public key has been verified. */
 	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer,
-					   ctx->verify, context, NULL, NULL);
+					   ctx->verify, context, 
+					   silc_client_protocol_ke_continue,
+					   context);
       }
 
-      if (status != SILC_SKE_STATUS_OK) {
+      /* Return now if the procedure is pending */
+      if (status == SILC_SKE_STATUS_PENDING)
+	return;
 
+      if (status != SILC_SKE_STATUS_OK) {
         if (status == SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY) {
           client->ops->say(client, conn, 
 			   "Received unsupported server %s public key",
@@ -378,14 +479,6 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	protocol->execute(client->timeout_queue, 0, protocol, fd, 0, 0);
 	return;
       }
-      
-      /* Send Ok to the other end. We will end the protocol as server
-	 sends Ok to us when we will take the new keys into use. */
-      if (ctx->responder == FALSE)
-	silc_ske_end(ctx->ske, ctx->send_packet, context);
-      
-      /* End the protocol on the next round */
-      protocol->state = SILC_PROTOCOL_STATE_END;
     }
     break;
 
@@ -518,6 +611,47 @@ silc_client_get_public_key_auth(SilcClient client,
   return FALSE;
 }
 
+/* Continues the connection authentication protocol. This funtion may
+   be called directly or used as SilcAskPassphrase callback. */
+
+static void 
+silc_client_conn_auth_continue(unsigned char *auth_data,
+			       uint32 auth_data_len, void *context)
+{
+  SilcProtocol protocol = (SilcProtocol)context;
+  SilcClientConnAuthInternalContext *ctx = 
+    (SilcClientConnAuthInternalContext *)protocol->context;
+  SilcClient client = (SilcClient)ctx->client;
+  SilcBuffer packet;
+  int payload_len = 0;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  payload_len = 4 + auth_data_len;
+  packet = silc_buffer_alloc(payload_len);
+  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+  silc_buffer_format(packet,
+		     SILC_STR_UI_SHORT(payload_len),
+		     SILC_STR_UI_SHORT(SILC_SOCKET_TYPE_CLIENT),
+		     SILC_STR_UI_XNSTRING(auth_data, auth_data_len),
+		     SILC_STR_END);
+
+  /* Send the packet to server */
+  silc_client_packet_send(client, ctx->sock,
+			  SILC_PACKET_CONNECTION_AUTH,
+			  NULL, 0, NULL, NULL,
+			  packet->data, packet->len, TRUE);
+
+  if (auth_data) {
+    memset(auth_data, 0, auth_data_len);
+    silc_free(auth_data);
+  }
+  silc_buffer_free(packet);
+      
+  /* Next state is end of protocol */
+  protocol->state = SILC_PROTOCOL_STATE_END;
+}
+						    
 SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
 {
   SilcProtocol protocol = (SilcProtocol)context;
@@ -538,8 +672,6 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
        * Start protocol. We send authentication data to the server
        * to be authenticated.
        */
-      SilcBuffer packet;
-      int payload_len = 0;
       unsigned char *auth_data = NULL;
       uint32 auth_data_len = 0;
 
@@ -559,8 +691,10 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
 	client->ops->say(client, conn, 
 			 "Password authentication required by server %s",
 			 ctx->sock->hostname);
-	auth_data = client->ops->ask_passphrase(client, conn);
-	auth_data_len = strlen(auth_data);
+	client->ops->ask_passphrase(client, conn,
+				    silc_client_conn_auth_continue,
+				    protocol);
+	return;
 	break;
 
       case SILC_AUTH_PUBLIC_KEY:
@@ -577,29 +711,8 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
 	}
       }
 
-      payload_len = 4 + auth_data_len;
-      packet = silc_buffer_alloc(payload_len);
-      silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-      silc_buffer_format(packet,
-			 SILC_STR_UI_SHORT(payload_len),
-			 SILC_STR_UI_SHORT(SILC_SOCKET_TYPE_CLIENT),
-			 SILC_STR_UI_XNSTRING(auth_data, auth_data_len),
-			 SILC_STR_END);
-
-      /* Send the packet to server */
-      silc_client_packet_send(client, ctx->sock,
-			      SILC_PACKET_CONNECTION_AUTH,
-			      NULL, 0, NULL, NULL,
-			      packet->data, packet->len, TRUE);
-
-      if (auth_data) {
-	memset(auth_data, 0, auth_data_len);
-	silc_free(auth_data);
-      }
-      silc_buffer_free(packet);
-      
-      /* Next state is end of protocol */
-      protocol->state = SILC_PROTOCOL_STATE_END;
+      silc_client_conn_auth_continue(auth_data,
+				     auth_data_len, protocol);
     }
     break;
 

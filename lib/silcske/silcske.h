@@ -46,15 +46,35 @@ typedef void (*SilcSKESendPacketCb)(SilcSKE ske, SilcBuffer packet,
 
 /* Generic SKE callback function. This is called in various SKE
    routines. The SilcSKE object sent as argument provides all the data
-   callers routine might need (payloads etc). */
+   callers routine might need (payloads etc). This is usually called
+   to indicate that the application may continue the execution of the
+   SKE protocol. The application should check the ske->status in this
+   callback function. */
 typedef void (*SilcSKECb)(SilcSKE ske, void *context);
 
-/* Callback function used to verify the received public key. */
-typedef SilcSKEStatus (*SilcSKEVerifyCb)(SilcSKE ske, 
-					 unsigned char *pk_data,
-					 uint32 pk_len,
-					 SilcSKEPKType pk_type,
-					 void *context);
+/* Completion callback that will be called when the public key
+   has been verified.  The `status' will indicate whether the public
+   key were trusted or not. If the `status' is PENDING then the status
+   is not considered to be available at this moment. In this case the
+   SKE libary will assume that the caller will call this callback again
+   when the status is available. */
+typedef void (*SilcSKEVerifyCbCompletion)(SilcSKE ske,
+					  SilcSKEStatus status,
+					  void *context);
+
+/* Callback function used to verify the received public key or certificate. 
+   The verification process is most likely asynchronous. That's why the
+   application must call the `completion' callback when the verification
+   process has been completed. The library then calls the user callback
+   (SilcSKECb), if it was provided for the function that takes this callback
+   function as argument, to indicate that the SKE protocol may continue. */
+typedef void (*SilcSKEVerifyCb)(SilcSKE ske, 
+				unsigned char *pk_data,
+				uint32 pk_len,
+				SilcSKEPKType pk_type,
+				void *context,
+				SilcSKEVerifyCbCompletion completion,
+				void *completion_context);
 
 /* Context passed to key material processing function. The function
    returns the processed key material into this structure. */

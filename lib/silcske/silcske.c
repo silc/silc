@@ -323,60 +323,51 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
   return status;
 }
 
-/* Receives Key Exchange Payload from responder consisting responders
-   public key, f, and signature. This function verifies the public key,
-   computes the secret shared key and verifies the signature. */
+/* An initiator finish final callback that is called to indicate that
+   the SKE protocol may continue. */
 
-SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
-					SilcBuffer ke_payload,
-					SilcSKEVerifyCb verify_key,
-					void *verify_context,
-					SilcSKECb callback,
-					void *context)
+typedef struct {
+  SilcSKECb callback;
+  void *context;
+} *SKEInitiatorFinish;
+
+static void silc_ske_initiator_finish_final(SilcSKE ske,
+					    SilcSKEStatus status,
+					    void *context)
 {
-  SilcSKEStatus status = SILC_SKE_STATUS_OK;
-  SilcSKEKEPayload *payload;
-  SilcPublicKey public_key = NULL;
-  SilcInt *KEY;
+  SKEInitiatorFinish finish = (SKEInitiatorFinish)context;
+  SilcSKEKEPayload *payload = ske->ke2_payload;
   unsigned char hash[32];
   uint32 hash_len;
+  SilcPublicKey public_key = NULL;
 
-  SILC_LOG_DEBUG(("Start"));
+  /* If the caller returns PENDING status SKE library will assume that
+     the caller will re-call this callback when it is not anymore in
+     PENDING status. */
+  if (status == SILC_SKE_STATUS_PENDING)
+    return;
 
-  /* Decode the payload */
-  status = silc_ske_payload_ke_decode(ske, ke_payload, &payload);
+  /* If the status is an error then the public key that was verified
+     by the caller is not authentic. */
   if (status != SILC_SKE_STATUS_OK) {
     ske->status = status;
-    return status;
-  }
-  ske->ke2_payload = payload;
-
-  SILC_LOG_DEBUG(("Computing KEY = f ^ x mod p"));
-
-  /* Compute the shared secret key */
-  KEY = silc_calloc(1, sizeof(*KEY));
-  silc_mp_init(KEY);
-  silc_mp_powm(KEY, &payload->x, ske->x, &ske->prop->group->group);
-  ske->KEY = KEY;
-
-  if (payload->pk_data) {
-    SILC_LOG_DEBUG(("Verifying public key"));
-    
-    if (!silc_pkcs_public_key_decode(payload->pk_data, payload->pk_len, 
-				     &public_key)) {
-      status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
-      goto err;
-    }
+    if (finish->callback)
+      finish->callback(ske, finish->context);
+    silc_free(finish);
+    return;
   }
 
-  if (verify_key) {
-    status = (*verify_key)(ske, payload->pk_data, payload->pk_len,
-			   payload->pk_type, verify_context);
-    if (status != SILC_SKE_STATUS_OK)
-      goto err;
-
-    SILC_LOG_DEBUG(("Public key is authentic"));
+  /* Decode the public key */
+  if (!silc_pkcs_public_key_decode(payload->pk_data, payload->pk_len, 
+				   &public_key)) {
+    status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
+    if (finish->callback)
+      finish->callback(ske, finish->context);
+    silc_free(finish);
+    return;
   }
+
+  SILC_LOG_DEBUG(("Public key is authentic"));
 
   if (payload->pk_data) {
     /* Compute the hash value */
@@ -408,11 +399,14 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
     memset(hash, 'F', hash_len);
   }
 
-  /* Call the callback. */
-  if (callback)
-    (*callback)(ske, context);
+  ske->status = SILC_SKE_STATUS_OK;
 
-  return status;
+  /* Call the callback. The caller may now continue the SKE protocol. */
+  if (finish->callback)
+    finish->callback(ske, finish->context);
+
+  silc_free(finish);
+  return;
 
  err:
   memset(hash, 'F', sizeof(hash));
@@ -431,6 +425,102 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
     silc_free(ske->hash);
     ske->hash = NULL;
   }
+
+  if (status == SILC_SKE_STATUS_OK)
+    ske->status = SILC_SKE_STATUS_ERROR;
+
+  ske->status = status;
+
+  /* Call the callback. */
+  if (finish->callback)
+    finish->callback(ske, finish->context);
+  silc_free(finish);
+}
+
+/* Receives Key Exchange Payload from responder consisting responders
+   public key, f, and signature. This function verifies the public key,
+   computes the secret shared key and verifies the signature. 
+
+   The `callback' will be called to indicate that the caller may
+   continue with the SKE protocol.  The caller must not continue
+   before the SKE libary has called that callback.  If this function
+   returns an error the callback will not be called.  It is called
+   if this function return SILC_SKE_STATUS_OK or SILC_SKE_STATUS_PENDING.
+   However, note that when the library calls the callback the ske->status
+   may be error.
+
+   This calls the `verify_key' callback to verify the received public
+   key or certificate. If the `verify_key' is provided then the remote
+   must send public key and it is considered to be an error if remote 
+   does not send its public key. If caller is performing a re-key with
+   SKE then the `verify_key' is usually not provided when it is not also
+   required for the remote to send its public key. */
+
+SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
+					SilcBuffer ke_payload,
+					SilcSKEVerifyCb verify_key,
+					void *verify_context,
+					SilcSKECb callback,
+					void *context)
+{
+  SilcSKEStatus status = SILC_SKE_STATUS_OK;
+  SilcSKEKEPayload *payload;
+  SilcInt *KEY;
+  SKEInitiatorFinish finish;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Decode the payload */
+  status = silc_ske_payload_ke_decode(ske, ke_payload, &payload);
+  if (status != SILC_SKE_STATUS_OK) {
+    ske->status = status;
+    return status;
+  }
+  ske->ke2_payload = payload;
+
+  if (!payload->pk_data && verify_key) {
+    SILC_LOG_DEBUG(("Remote end did not send its public key (or certificate), "
+		    "even though we require it"));
+    ske->status = SILC_SKE_STATUS_PUBLIC_KEY_NOT_PROVIDED;
+    goto err;
+  }
+
+  SILC_LOG_DEBUG(("Computing KEY = f ^ x mod p"));
+
+  /* Compute the shared secret key */
+  KEY = silc_calloc(1, sizeof(*KEY));
+  silc_mp_init(KEY);
+  silc_mp_powm(KEY, &payload->x, ske->x, &ske->prop->group->group);
+  ske->KEY = KEY;
+
+  finish = silc_calloc(1, sizeof(*finish));
+  finish->callback = callback;
+  finish->context = context;
+
+  if (verify_key) {
+    SILC_LOG_DEBUG(("Verifying public key"));
+    
+    (*verify_key)(ske, payload->pk_data, payload->pk_len,
+		  payload->pk_type, verify_context,
+		  silc_ske_initiator_finish_final, finish);
+
+    /* We will continue to the final state after the public key has
+       been verified by the caller. */
+    return SILC_SKE_STATUS_PENDING;
+  }
+
+  /* Continue to final state */
+  silc_ske_initiator_finish_final(ske, SILC_SKE_STATUS_OK, finish);
+
+  return SILC_SKE_STATUS_OK;
+
+ err:
+  silc_ske_payload_ke_free(payload);
+  ske->ke2_payload = NULL;
+
+  silc_mp_clear(ske->KEY);
+  silc_free(ske->KEY);
+  ske->KEY = NULL;
 
   if (status == SILC_SKE_STATUS_OK)
     return SILC_SKE_STATUS_ERROR;
@@ -590,65 +680,70 @@ SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske,
   return status;
 }
 
-/* This function receives the Key Exchange Payload from the initiator.
-   This also performs the mutual authentication if required. Then, this 
-   function first generated a random number x, such that 1 < x < q
-   and computes f = g ^ x mod p. This then puts the result f to a Key
-   Exchange Payload. */
+/* An responder phase 2 final callback that is called to indicate that
+   the SKE protocol may continue. */
 
-SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
-					 SilcBuffer ke_payload,
-					 SilcSKEVerifyCb verify_key,
-					 void *verify_context,
-					 SilcSKECb callback,
-					 void *context)
+typedef struct {
+  SilcSKECb callback;
+  void *context;
+} *SKEResponderPhaseII;
+
+static void silc_ske_responder_phase2_final(SilcSKE ske,
+					    SilcSKEStatus status,
+					    void *context)
 {
-  SilcSKEStatus status = SILC_SKE_STATUS_OK;
+  SKEResponderPhaseII finish = (SKEResponderPhaseII)context;
   SilcSKEKEPayload *recv_payload, *send_payload;
   SilcInt *x, f;
 
-  SILC_LOG_DEBUG(("Start"));
+  recv_payload = ske->ke1_payload;
 
-  /* Decode Key Exchange Payload */
-  status = silc_ske_payload_ke_decode(ske, ke_payload, &recv_payload);
+  /* If the caller returns PENDING status SKE library will assume that
+     the caller will re-call this callback when it is not anymore in
+     PENDING status. */
+  if (status == SILC_SKE_STATUS_PENDING)
+    return;
+
+  /* If the status is an error then the public key that was verified
+     by the caller is not authentic. */
   if (status != SILC_SKE_STATUS_OK) {
     ske->status = status;
-    return status;
+    if (finish->callback)
+      finish->callback(ske, finish->context);
+    silc_free(finish);
+    return;
   }
 
-  ske->ke1_payload = recv_payload;
-
-  /* Verify the received public key and verify the signature if we are
-     doing mutual authentication. */
+  /* The public key verification was performed only if the Mutual
+     Authentication flag is set. */
   if (ske->start_payload && 
       ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
     SilcPublicKey public_key = NULL;
     unsigned char hash[32];
     uint32 hash_len;
 
-    SILC_LOG_DEBUG(("We are doing mutual authentication"));
-    SILC_LOG_DEBUG(("Verifying public key"));
-    
+    /* Decode the public key */
     if (!silc_pkcs_public_key_decode(recv_payload->pk_data, 
 				     recv_payload->pk_len, 
 				     &public_key)) {
-      status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
-      return status;
-    }
-
-    if (verify_key) {
-      status = (*verify_key)(ske, recv_payload->pk_data, recv_payload->pk_len,
-			     recv_payload->pk_type, verify_context);
-      if (status != SILC_SKE_STATUS_OK)
-	return status;
+      ske->status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
+      if (finish->callback)
+	finish->callback(ske, finish->context);
+      silc_free(finish);
+      return;
     }
 
     SILC_LOG_DEBUG(("Public key is authentic"));
 
     /* Compute the hash value */
     status = silc_ske_make_hash(ske, hash, &hash_len, TRUE);
-    if (status != SILC_SKE_STATUS_OK)
-      return status;
+    if (status != SILC_SKE_STATUS_OK) {
+      ske->status = status;
+      if (finish->callback)
+	finish->callback(ske, finish->context);
+      silc_free(finish);
+      return;
+    }
 
     SILC_LOG_DEBUG(("Verifying signature (HASH_i)"));
     
@@ -660,8 +755,11 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
       
       SILC_LOG_DEBUG(("Signature don't match"));
       
-      status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
-      return status;
+      ske->status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
+      if (finish->callback)
+	finish->callback(ske, finish->context);
+      silc_free(finish);
+      return;
     }
     
     SILC_LOG_DEBUG(("Signature is Ok"));
@@ -680,7 +778,11 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
   if (status != SILC_SKE_STATUS_OK) {
     silc_mp_clear(x);
     silc_free(x);
-    return status;
+    ske->status = status;
+    if (finish->callback)
+      finish->callback(ske, finish->context);
+    silc_free(finish);
+    return;
   }
 
   SILC_LOG_DEBUG(("Computing f = g ^ x mod p"));
@@ -696,11 +798,89 @@ SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
   ske->x = x;
   ske->ke2_payload = send_payload;
 
-  /* Call the callback. */
-  if (callback)
-    (*callback)(ske, context);
+  /* Call the callback. The caller may now continue with the SKE protocol. */
+  ske->status = SILC_SKE_STATUS_OK;
+  if (finish->callback)
+    finish->callback(ske, finish->context);
+  silc_free(finish);
+}
 
-  return status;
+/* This function receives the Key Exchange Payload from the initiator.
+   This also performs the mutual authentication if required. Then, this 
+   function first generated a random number x, such that 1 < x < q
+   and computes f = g ^ x mod p. This then puts the result f to a Key
+   Exchange Payload. 
+
+   The `callback' will be called to indicate that the caller may
+   continue with the SKE protocol.  The caller must not continue
+   before the SKE libary has called that callback.  If this function
+   returns an error the callback will not be called.  It is called
+   if this function return SILC_SKE_STATUS_OK or SILC_SKE_STATUS_PENDING.
+   However, note that when the library calls the callback the ske->status
+   may be error.
+
+   This calls the `verify_key' callback to verify the received public
+   key or certificate if the Mutual Authentication flag is set. If the
+   `verify_key' is provided then the remote must send public key and it
+   is considered to be an error if remote does not send its public key. */
+
+SilcSKEStatus silc_ske_responder_phase_2(SilcSKE ske,
+					 SilcBuffer ke_payload,
+					 SilcSKEVerifyCb verify_key,
+					 void *verify_context,
+					 SilcSKECb callback,
+					 void *context)
+{
+  SilcSKEStatus status = SILC_SKE_STATUS_OK;
+  SilcSKEKEPayload *recv_payload;
+  SKEResponderPhaseII finish;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Decode Key Exchange Payload */
+  status = silc_ske_payload_ke_decode(ske, ke_payload, &recv_payload);
+  if (status != SILC_SKE_STATUS_OK) {
+    ske->status = status;
+    return status;
+  }
+
+  ske->ke1_payload = recv_payload;
+
+  finish = silc_calloc(1, sizeof(*finish));
+  finish->callback = callback;
+  finish->context = context;
+
+  /* Verify the received public key and verify the signature if we are
+     doing mutual authentication. */
+  if (ske->start_payload && 
+      ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
+
+    SILC_LOG_DEBUG(("We are doing mutual authentication"));
+    
+    if (!recv_payload->pk_data && verify_key) {
+      SILC_LOG_DEBUG(("Remote end did not send its public key (or "
+		      "certificate), even though we require it"));
+      ske->status = SILC_SKE_STATUS_PUBLIC_KEY_NOT_PROVIDED;
+      return status;
+    }
+
+    if (verify_key) {
+      SILC_LOG_DEBUG(("Verifying public key"));
+
+      (*verify_key)(ske, recv_payload->pk_data, recv_payload->pk_len,
+		    recv_payload->pk_type, verify_context,
+		    silc_ske_responder_phase2_final, finish);
+
+      /* We will continue to the final state after the public key has
+	 been verified by the caller. */
+      return SILC_SKE_STATUS_PENDING;
+    }
+  }
+
+  /* Continue to final state */
+  silc_ske_responder_phase2_final(ske, SILC_SKE_STATUS_OK, finish);
+
+  return SILC_SKE_STATUS_OK;
 }
 
 /* This functions generates the secret key KEY = e ^ x mod p, and, a hash

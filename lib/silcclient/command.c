@@ -1578,15 +1578,44 @@ SILC_CLIENT_CMD_FUNC(kick)
   silc_client_command_free(cmd);
 }
 
+static void silc_client_command_oper_send(unsigned char *data,
+					  uint32 data_len, void *context)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer, auth;
+
+  if (cmd->argc == 3) {
+    /* Pulic key auth XXX TODO */
+    auth = NULL;
+  } else {
+    /* Encode the authentication payload */
+    auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
+				    data, data_len);
+  }
+
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_OPER, 0, 2, 
+					  1, cmd->argv[1], 
+					  strlen(cmd->argv[1]),
+					  2, auth->data, auth->len);
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+
+  silc_buffer_free(buffer);
+  silc_buffer_free(auth);
+
+  /* Notify application */
+  COMMAND;
+}
+
 /* OPER command. Used to obtain server operator privileges. */
 
 SILC_CLIENT_CMD_FUNC(oper)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
-  SilcBuffer buffer;
   unsigned char *auth_data;
-  SilcBuffer auth;
+  uint32 auth_data_len = 0;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -1608,28 +1637,15 @@ SILC_CLIENT_CMD_FUNC(oper)
     goto out;
   } else {
     /* Get passphrase */
-
-    auth_data = cmd->client->ops->ask_passphrase(cmd->client, conn);
-    if (!auth_data) {
-      COMMAND_ERROR;
-      goto out;
-    }
-
-    /* Encode the authentication payload */
-    auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
-				    auth_data, strlen(auth_data));
+    cmd->client->ops->ask_passphrase(cmd->client, conn,
+				     silc_client_command_oper_send,
+				     context);
+    return;
   }
 
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_OPER, 0, 2, 
-					  1, cmd->argv[1], 
-					  strlen(cmd->argv[1]),
-					  2, auth->data, auth->len);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
-			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_client_command_oper_send(auth_data, auth_data_len, context);
 
-  silc_buffer_free(buffer);
-  silc_buffer_free(auth);
-  memset(auth_data, 0, strlen(auth_data));
+  memset(auth_data, 0, auth_data_len);
   silc_free(auth_data);
 
   /* Notify application */
@@ -1639,15 +1655,44 @@ SILC_CLIENT_CMD_FUNC(oper)
   silc_client_command_free(cmd);
 }
 
+static void silc_client_command_silcoper_send(unsigned char *data,
+					      uint32 data_len, void *context)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer, auth;
+
+  if (cmd->argc == 3) {
+    /* Pulic key auth XXX TODO */
+    auth = NULL;
+  } else {
+    /* Encode the authentication payload */
+    auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
+				    data, data_len);
+  }
+
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_SILCOPER, 0, 2, 
+					  1, cmd->argv[1], 
+					  strlen(cmd->argv[1]),
+					  2, auth->data, auth->len);
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+
+  silc_buffer_free(buffer);
+  silc_buffer_free(auth);
+
+  /* Notify application */
+  COMMAND;
+}
+
 /* SILCOPER command. Used to obtain router operator privileges. */
 
 SILC_CLIENT_CMD_FUNC(silcoper)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
-  SilcBuffer buffer;
   unsigned char *auth_data;
-  SilcBuffer auth;
+  uint32 auth_data_len = 0;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -1669,28 +1714,15 @@ SILC_CLIENT_CMD_FUNC(silcoper)
     goto out;
   } else {
     /* Get passphrase */
-
-    auth_data = cmd->client->ops->ask_passphrase(cmd->client, conn);
-    if (!auth_data) {
-      COMMAND_ERROR;
-      goto out;
-    }
-
-    /* Encode the authentication payload */
-    auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
-				    auth_data, strlen(auth_data));
+    cmd->client->ops->ask_passphrase(cmd->client, conn,
+				     silc_client_command_silcoper_send,
+				     context);
+    return;
   }
 
-  buffer = silc_command_payload_encode_va(SILC_COMMAND_SILCOPER, 0, 2, 
-					  1, cmd->argv[1], 
-					  strlen(cmd->argv[1]),
-					  2, auth->data, auth->len);
-  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
-			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_client_command_silcoper_send(auth_data, auth_data_len, context);
 
-  silc_buffer_free(buffer);
-  silc_buffer_free(auth);
-  memset(auth_data, 0, strlen(auth_data));
+  memset(auth_data, 0, auth_data_len);
   silc_free(auth_data);
 
   /* Notify application */

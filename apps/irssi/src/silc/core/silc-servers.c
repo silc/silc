@@ -327,6 +327,8 @@ void silc_server_init(void)
   command_bind("getkey", MODULE_NAME, (SIGNAL_FUNC) command_self);
 
   command_set_options("connect", "+silcnet");
+
+  settings_add_bool("server", "skip_motd", FALSE);
 }
 
 void silc_server_deinit(void)

@@ -39,13 +39,12 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 			SilcCommand command, SilcCommandStatus status, ...);
 void silc_connect(SilcClient client, SilcClientConnection conn, int success);
 void silc_disconnect(SilcClient client, SilcClientConnection conn);
-unsigned char *silc_ask_passphrase(SilcClient client, 
-				   SilcClientConnection conn);
-int silc_verify_public_key(SilcClient client,
-			   SilcClientConnection conn, 
-			   SilcSocketType conn_type,
-			   unsigned char *pk, uint32 pk_len,
-			   SilcSKEPKType pk_type);
+void silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
+			 SilcAskPassphrase completion, void *context);
+void silc_verify_public_key(SilcClient client, SilcClientConnection conn,
+			    SilcSocketType conn_type, unsigned char *pk, 
+			    uint32 pk_len, SilcSKEPKType pk_type,
+			    SilcVerifyPublicKey completion, void *context);
 int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 			 char *hostname, uint16 port,
 			 SilcProtocolAuthMeth *auth_meth,

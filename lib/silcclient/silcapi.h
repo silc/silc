@@ -84,6 +84,18 @@ typedef struct {
 
 ******************************************************************************/
 
+/* Ask passphrase callback. This is called by the application when the
+   library calls `ask_passphrase' client operation.  The callback delivers
+   the passphrase to the library. */
+typedef void (*SilcAskPassphrase)(unsigned char *passphrase,
+				  uint32 passphrase_len,
+				  void *context);
+
+/* Public key (or certificate) verification callback. This is called
+   by the application to indicate that the public key verification was
+   either success or failure. */
+typedef void (*SilcVerifyPublicKey)(bool success, void *context);
+
 /* SILC Client Operations. These must be implemented by the application. */
 typedef struct {
   /* Message sent to the application by library. `conn' associates the
@@ -166,17 +178,18 @@ typedef struct {
 
   /* Verifies received public key. The `conn_type' indicates which entity
      (server, client etc.) has sent the public key. If user decides to trust
-     the key may be saved as trusted public key for later use. If user does
-     not trust the key this returns FALSE. If everything is Ok this returns
-     TRUE. */ 
-  int (*verify_public_key)(SilcClient client, SilcClientConnection conn,
-			   SilcSocketType conn_type, unsigned char *pk, 
-			   uint32 pk_len, SilcSKEPKType pk_type);
+     the key may be saved as trusted public key for later use. The 
+     `completion' must be called after the public key has been verified. */
+  void (*verify_public_key)(SilcClient client, SilcClientConnection conn,
+			    SilcSocketType conn_type, unsigned char *pk, 
+			    uint32 pk_len, SilcSKEPKType pk_type,
+			    SilcVerifyPublicKey completion, void *context);
 
-  /* Ask (interact, that is) a passphrase from user. Returns the passphrase
-     or NULL on error. */
-  unsigned char *(*ask_passphrase)(SilcClient client, 
-				   SilcClientConnection conn);
+  /* Ask (interact, that is) a passphrase from user. The passphrase is
+     returned to the library by calling the `completion' callback with
+     the `context'. */
+  void (*ask_passphrase)(SilcClient client, SilcClientConnection conn,
+			 SilcAskPassphrase completion, void *context);
 
   /* Notifies application that failure packet was received.  This is called
      if there is some protocol active in the client.  The `protocol' is the

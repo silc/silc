@@ -91,11 +91,13 @@ void silc_client_protocol_ke_send_packet(SilcSKE ske,
 					 SilcBuffer packet,
 					 SilcPacketType type,
 					 void *context);
-SilcSKEStatus silc_client_protocol_ke_verify_key(SilcSKE ske,
-						 unsigned char *pk_data,
-						 uint32 pk_len,
-						 SilcSKEPKType pk_type,
-						 void *context);
+void silc_client_protocol_ke_verify_key(SilcSKE ske,
+					unsigned char *pk_data,
+					uint32 pk_len,
+					SilcSKEPKType pk_type,
+					void *context,
+					SilcSKEVerifyCbCompletion completion,
+					void *completion_context);
 void silc_client_protocol_ke_set_keys(SilcSKE ske,
 				      SilcSocketConnection sock,
 				      SilcSKEKeyMaterial *keymat,

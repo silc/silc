@@ -1,3 +1,50 @@
+Sat May 26 12:13:37 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed the ask_passphrase client operation to be ascynchronous.
+	  It has now a completion callback and a context that the 
+	  application must call after it has got the passphrase from
+	  the user.  Affected files lib/silcclient/silcapi.h,
+	  lib/silcclient/protocol.c, lib/silcclient/command.c and
+	  silc/client_ops.c.
+
+	  Added SilcAskPassphrase callback that the application calls
+	  to deliver the passphrase to the library.
+
+	* Changed the SKE protocol's SilcSKEVerifyCb to be asynchronous.
+	  The public key verification and especially a certificate
+	  verification is asynchronous procedure.
+
+	  Added new SILC_SKE_STATUS_PENDING status to indicate the
+	  request is pending and a callback will be called to finalize
+	  the request.
+
+	  Added also SILC_SKE_STATUS_PUBLIC_KEY_NOT_PROVIDED status to
+	  indicate that remote end did not send its public key (or
+	  certificate), even though we require it.  Added check for this
+	  condition in the SKE.  This was a security bug, now fixed.
+
+	  Defined new SilcSKEVerifyCbCompletion callback that is called
+	  when the verification process is completed.
+
+	  The affected files lib/silcske/silcske_status.h and
+	  lib/silcske/silcske.[ch].
+
+	* Changed the verify_public_key client operation to be async
+	  as well.  Defined SilcVerifyPublicKey callback that is used to
+	  indicate the success of the public key verification process.
+
+	  Changed the server and client to use the new async client 
+	  operations.
+
+	* Changed the Irssi SILC client's internal scheduler to be called
+	  twice as many times as it used to be.  As a result the client
+	  should be a bit faster now.  Affected file is
+	  irssi/src/silc/core/silc-core.c.
+
+	* Added support to Irssi SILC client of asynchronous public key
+	  verification and passphrase inquiry.  Affected file is
+	  irssi/src/silc/core/silc-core.c.
+
 Fri May 25 14:38:38 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Do not say "You have left channel %s" in client library.

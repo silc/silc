@@ -197,6 +197,42 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   return status;
 }
 
+/* Callback that is called by the SKE to indicate that it is safe to
+   continue the execution of the protocol. This is used only if we are
+   initiator.  Is given as argument to the silc_ske_initiator_finish
+   function. This is called due to the fact that the public key verification
+   process is asynchronous and we must not continue the protocl until
+   the public key has been verified and this callback is called. */
+
+static void silc_server_protocol_ke_finish(SilcSKE ske, void *context)
+{
+  SilcProtocol protocol = (SilcProtocol)context;
+  SilcServerKEInternalContext *ctx = 
+    (SilcServerKEInternalContext *)protocol->context;
+  SilcServer server = (SilcServer)ctx->server;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (ske->status != SILC_SKE_STATUS_OK) {
+    SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
+		      ske->status));
+    SILC_LOG_DEBUG(("Error (type %d) during Key Exchange protocol",
+		    ske->status));
+    
+    protocol->state = SILC_PROTOCOL_STATE_ERROR;
+    protocol->execute(server->timeout_queue, 0, protocol, 0, 0, 300000);
+    return;
+  }
+
+  /* Send Ok to the other end. We will end the protocol as responder
+     sends Ok to us when we will take the new keys into use. */
+  if (ctx->responder == FALSE)
+    silc_ske_end(ctx->ske, silc_server_protocol_ke_send_packet, context);
+
+  /* End the protocol on the next round */
+  protocol->state = SILC_PROTOCOL_STATE_END;
+}
+
 /* Performs key exchange protocol. This is used for both initiator
    and responder key exchange. This is performed always when accepting
    new connection to the server. This may be called recursively. */
@@ -207,7 +243,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
   SilcServerKEInternalContext *ctx = 
     (SilcServerKEInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
-  SilcSKEStatus status = 0;
+  SilcSKEStatus status = SILC_SKE_STATUS_OK;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -252,6 +288,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 					  context);
       }
 
+      /* Return now if the procedure is pending. */
+      if (status == SILC_SKE_STATUS_PENDING)
+	return;
+
       if (status != SILC_SKE_STATUS_OK) {
 	SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
 			  status));
@@ -290,6 +330,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 					    NULL, NULL);
       }
 
+      /* Return now if the procedure is pending. */
+      if (status == SILC_SKE_STATUS_PENDING)
+	return;
+
       if (status != SILC_SKE_STATUS_OK) {
 	SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
 			  status));
@@ -316,6 +360,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	/* Process the received Key Exchange 1 Payload packet from
 	   the initiator. This also creates our parts of the Diffie
 	   Hellman algorithm. */
+	/* XXX TODO: If mutual authentication flag is set then the
+	   verify_key callback should be set to verify the remote ends
+	   public key!! */
+	/* XXX TODO: when the verify_key is set then the `callback'
+	   must be set as well as the verify_key is asynchronous
+	   (take a look to silc_ske_initiator_finish for example. */
 	status = silc_ske_responder_phase_2(ctx->ske, ctx->packet->buffer, 
 					    NULL, NULL, NULL, NULL);
       } else {
@@ -329,6 +379,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 				     silc_server_protocol_ke_send_packet,
 				     context);
       }
+
+      /* Return now if the procedure is pending. */
+      if (status == SILC_SKE_STATUS_PENDING)
+	return;
 
       if (status != SILC_SKE_STATUS_OK) {
 	SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
@@ -361,12 +415,22 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 				    SILC_SKE_PK_TYPE_SILC,
 				    silc_server_protocol_ke_send_packet,
 				    context);
+
+	/* End the protocol on the next round */
+	protocol->state = SILC_PROTOCOL_STATE_END;
       } else {
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
 	   sent by responder. */
+	/* XXX TODO: the verify_key callback is not set!!! */
 	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer, 
-					   NULL, NULL, NULL, NULL);
+					   NULL, NULL, 
+					   silc_server_protocol_ke_finish, 
+					   context);
       }
+
+      /* Return now if the procedure is pending. */
+      if (status == SILC_SKE_STATUS_PENDING)
+	return;
 
       if (status != SILC_SKE_STATUS_OK) {
 	SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
@@ -378,14 +442,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	protocol->execute(server->timeout_queue, 0, protocol, fd, 0, 300000);
 	return;
       }
-
-      /* Send Ok to the other end. We will end the protocol as responder
-	 sends Ok to us when we will take the new keys into use. */
-      if (ctx->responder == FALSE)
-	silc_ske_end(ctx->ske, silc_server_protocol_ke_send_packet, context);
-
-      /* End the protocol on the next round */
-      protocol->state = SILC_PROTOCOL_STATE_END;
     }
     break;
 

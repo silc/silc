@@ -37,6 +37,7 @@
 #include "settings.h"
 #include "fe-common/core/printtext.h"
 #include "fe-common/core/fe-channels.h"
+#include "fe-common/core/keyboard.h"
 
 /* Command line option variables */
 static bool opt_create_keypair = FALSE;
@@ -81,14 +82,18 @@ static void
 silc_command_reply(SilcClient client, SilcClientConnection conn,
 		   SilcCommandPayload cmd_payload, int success,
 		   SilcCommand command, SilcCommandStatus status, ...);
-
-static int silc_verify_public_key(SilcClient client,
-				  SilcClientConnection conn, 
-				  SilcSocketType conn_type,
-				  unsigned char *pk, uint32 pk_len,
-				  SilcSKEPKType pk_type);
-static unsigned char *silc_ask_passphrase(SilcClient client,
-					  SilcClientConnection conn);
+static void 
+silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
+				SilcSocketType conn_type, unsigned char *pk, 
+				uint32 pk_len, SilcSKEPKType pk_type,
+				SilcVerifyPublicKey completion, void *context);
+static void 
+silc_verify_public_key(SilcClient client, SilcClientConnection conn,
+		       SilcSocketType conn_type, unsigned char *pk, 
+		       uint32 pk_len, SilcSKEPKType pk_type,
+		       SilcVerifyPublicKey completion, void *context);
+static void silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
+				SilcAskPassphrase completion, void *context);
 static int 
 silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 		     char *hostname, uint16 port,
@@ -788,8 +793,9 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       pk = silc_pkcs_public_key_encode(public_key, &pk_len);
       
       if (id_type == SILC_ID_CLIENT) {
-	silc_verify_public_key(client, conn, SILC_SOCKET_TYPE_CLIENT,
-			       pk, pk_len, SILC_SKE_PK_TYPE_SILC);
+	silc_verify_public_key_internal(client, conn, SILC_SOCKET_TYPE_CLIENT,
+					pk, pk_len, SILC_SKE_PK_TYPE_SILC,
+					NULL, NULL);
       }
       
       silc_free(pk);
@@ -819,25 +825,234 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   va_end(vp);
 }
 
-/* Verifies received public key. If user decides to trust the key it is
-   saved as public server key for later use. If user does not trust the
-   key this returns FALSE. */
+/* Internal routine to verify public key. If the `completion' is provided
+   it will be called to indicate whether public was verified or not. */
 
-static int silc_verify_public_key(SilcClient client,
-				  SilcClientConnection conn, 
-				  SilcSocketType conn_type,
-				  unsigned char *pk, uint32 pk_len,
-				  SilcSKEPKType pk_type)
+typedef struct {
+  SilcClient client;
+  SilcClientConnection conn;
+  char *filename;
+  char *entity;
+  unsigned char *pk;
+  uint32 pk_len;
+  SilcSKEPKType pk_type;
+  SilcVerifyPublicKey completion;
+  void *context;
+} *PublicKeyVerify;
+
+static void verify_public_key_completion(const char *line, void *context)
 {
-  return TRUE;
+  PublicKeyVerify verify = (PublicKeyVerify)context;
+
+  if (line[0] == 'Y' || line[0] == 'y') {
+    /* Call the completion */
+    if (verify->completion)
+      verify->completion(TRUE, verify->context);
+
+    /* Save the key for future checking */
+    silc_pkcs_save_public_key_data(verify->filename, verify->pk, 
+				   verify->pk_len, SILC_PKCS_FILE_PEM);
+  } else {
+    /* Call the completion */
+    if (verify->completion)
+      verify->completion(FALSE, verify->context);
+
+    silc_say(verify->client, 
+	     verify->conn, "Will not accept the %s key", verify->entity);
+  }
+
+  silc_free(verify->filename);
+  silc_free(verify->entity);
+  silc_free(verify);
+}
+
+static void 
+silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
+				SilcSocketType conn_type, unsigned char *pk, 
+				uint32 pk_len, SilcSKEPKType pk_type,
+				SilcVerifyPublicKey completion, void *context)
+{
+  int i;
+  char file[256], filename[256], *fingerprint;
+  struct passwd *pw;
+  struct stat st;
+  char *entity = ((conn_type == SILC_SOCKET_TYPE_SERVER ||
+		   conn_type == SILC_SOCKET_TYPE_ROUTER) ? 
+		  "server" : "client");
+  PublicKeyVerify verify;
+
+  if (pk_type != SILC_SKE_PK_TYPE_SILC) {
+    silc_say(client, conn, "We don't support %s public key type %d", 
+	     entity, pk_type);
+    if (completion)
+      completion(FALSE, context);
+    return;
+  }
+
+  pw = getpwuid(getuid());
+  if (!pw) {
+    if (completion)
+      completion(FALSE, context);
+    return;
+  }
+
+  memset(filename, 0, sizeof(filename));
+  memset(file, 0, sizeof(file));
+
+  if (conn_type == SILC_SOCKET_TYPE_SERVER ||
+      conn_type == SILC_SOCKET_TYPE_ROUTER) {
+    snprintf(file, sizeof(file) - 1, "%skey_%s_%d.pub", entity, 
+	     conn->sock->hostname, conn->sock->port);
+    snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
+	     pw->pw_dir, entity, file);
+  } else {
+    /* Replace all whitespaces with `_'. */
+    fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
+    for (i = 0; i < strlen(fingerprint); i++)
+      if (fingerprint[i] == ' ')
+	fingerprint[i] = '_';
+    
+    snprintf(file, sizeof(file) - 1, "%skey_%s.pub", entity, fingerprint);
+    snprintf(filename, sizeof(filename) - 1, "%s/.silc/%skeys/%s", 
+	     pw->pw_dir, entity, file);
+    silc_free(fingerprint);
+  }
+
+  /* Take fingerprint of the public key */
+  fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
+
+  verify = silc_calloc(1, sizeof(*verify));
+  verify->client = client;
+  verify->conn = conn;
+  verify->filename = strdup(filename);
+  verify->entity = strdup(entity);
+  verify->pk = pk;
+  verify->pk_len = pk_len;
+  verify->pk_type = pk_type;
+  verify->completion = completion;
+  verify->context = context;
+
+  /* Check whether this key already exists */
+  if (stat(filename, &st) < 0) {
+    /* Key does not exist, ask user to verify the key and save it */
+
+    silc_say(client, conn, "Received %s public key", entity);
+    silc_say(client, conn, "Fingerprint for the %s key is", entity);
+    silc_say(client, conn, "%s", fingerprint);
+
+    keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
+			    "Would you like to accept the key (y/n)? ", 0,
+			    verify);
+    silc_free(fingerprint);
+    return;
+  } else {
+    /* The key already exists, verify it. */
+    SilcPublicKey public_key;
+    unsigned char *encpk;
+    uint32 encpk_len;
+
+    /* Load the key file */
+    if (!silc_pkcs_load_public_key(filename, &public_key, 
+				   SILC_PKCS_FILE_PEM))
+      if (!silc_pkcs_load_public_key(filename, &public_key, 
+				     SILC_PKCS_FILE_BIN)) {
+	silc_say(client, conn, "Received %s public key", entity);
+	silc_say(client, conn, "Fingerprint for the %s key is", entity);
+	silc_say(client, conn, "%s", fingerprint);
+	silc_say(client, conn, "Could not load your local copy of the %s key",
+		 entity);
+	keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
+				"Would you like to accept the key "
+				"anyway (y/n)? ", 0,
+				verify);
+	silc_free(fingerprint);
+	return;
+      }
+  
+    /* Encode the key data */
+    encpk = silc_pkcs_public_key_encode(public_key, &encpk_len);
+    if (!encpk) {
+      silc_say(client, conn, "Received %s public key", entity);
+      silc_say(client, conn, "Fingerprint for the %s key is", entity);
+      silc_say(client, conn, "%s", fingerprint);
+      silc_say(client, conn, "Your local copy of the %s key is malformed",
+	       entity);
+      keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
+			      "Would you like to accept the key "
+			      "anyway (y/n)? ", 0,
+			      verify);
+      silc_free(fingerprint);
+      return;
+    }
+
+    /* Compare the keys */
+    if (memcmp(encpk, pk, encpk_len)) {
+      silc_say(client, conn, "Received %s public key", entity);
+      silc_say(client, conn, "Fingerprint for the %s key is", entity);
+      silc_say(client, conn, "%s", fingerprint);
+      silc_say(client, conn, "%s key does not match with your local copy",
+	       entity);
+      silc_say(client, conn, 
+	       "It is possible that the key has expired or changed");
+      silc_say(client, conn, "It is also possible that some one is performing "
+	               "man-in-the-middle attack");
+
+      /* Ask user to verify the key and save it */
+      keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
+			      "Would you like to accept the key "
+			      "anyway (y/n)? ", 0,
+			      verify);
+      silc_free(fingerprint);
+      return;
+    }
+
+    /* Local copy matched */
+    if (completion)
+      completion(TRUE, context);
+    silc_free(fingerprint);
+  }
+}
+
+/* Verifies received public key. The `conn_type' indicates which entity
+   (server, client etc.) has sent the public key. If user decides to trust
+   the key may be saved as trusted public key for later use. The 
+   `completion' must be called after the public key has been verified. */
+
+static void 
+silc_verify_public_key(SilcClient client, SilcClientConnection conn,
+		       SilcSocketType conn_type, unsigned char *pk, 
+		       uint32 pk_len, SilcSKEPKType pk_type,
+		       SilcVerifyPublicKey completion, void *context)
+{
+  silc_verify_public_key_internal(client, conn, conn_type, pk,
+				  pk_len, pk_type,
+				  completion, context);
 }
 
 /* Asks passphrase from user on the input line. */
 
-static unsigned char *silc_ask_passphrase(SilcClient client,
-					  SilcClientConnection conn)
+typedef struct {
+  SilcAskPassphrase completion;
+  void *context;
+} *AskPassphrase;
+
+static void ask_passphrase_completion(const char *passphrase, void *context)
 {
-  return NULL;
+  AskPassphrase p = (AskPassphrase)context;
+  p->completion((unsigned char *)passphrase, 
+		passphrase ? strlen(passphrase) : 0, p->context);
+  silc_free(p);
+}
+
+static void silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
+				SilcAskPassphrase completion, void *context)
+{
+  AskPassphrase p = silc_calloc(1, sizeof(*p));
+  p->completion = completion;
+  p->context = context;
+
+  keyboard_entry_redirect((SIGNAL_FUNC)ask_passphrase_completion,
+			  "Passphrase: ", ENTRY_REDIRECT_FLAG_HIDDEN, p);
 }
 
 /* Find authentication method and authentication data by hostname and
