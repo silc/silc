@@ -163,6 +163,10 @@ void silc_server_notify(SilcServer server,
       }
     }
 
+    /* Do not process the notify if the client is not registered */
+    if (client->data.registered == FALSE)
+      break;
+
     /* Do not add client to channel if it is there already */
     if (silc_server_client_on_channel(client, channel))
       break;
@@ -462,99 +466,118 @@ void silc_server_notify(SilcServer server,
     break;
 
   case SILC_NOTIFY_TYPE_CUMODE_CHANGE:
-    /* 
-     * Distribute the notify to local clients on the channel
-     */
+    {
+      /* 
+       * Distribute the notify to local clients on the channel
+       */
+      SilcChannelClientEntry chl2 = NULL;
+      bool notify_sent = FALSE;
+      
+      SILC_LOG_DEBUG(("CUMODE CHANGE notify"));
+      
+      channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				  packet->dst_id_type);
+      if (!channel_id)
+	goto out;
 
-    SILC_LOG_DEBUG(("CUMODE CHANGE notify"));
-
-    channel_id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				packet->dst_id_type);
-    if (!channel_id)
-      goto out;
-
-    /* Get channel entry */
-    channel = silc_idlist_find_channel_by_id(server->global_list, 
-					     channel_id, NULL);
-    if (!channel) {
-      channel = silc_idlist_find_channel_by_id(server->local_list, 
+      /* Get channel entry */
+      channel = silc_idlist_find_channel_by_id(server->global_list, 
 					       channel_id, NULL);
       if (!channel) {
+	channel = silc_idlist_find_channel_by_id(server->local_list, 
+						 channel_id, NULL);
+	if (!channel) {
+	  silc_free(channel_id);
+	  goto out;
+	}
+      }
+
+      /* Get the mode */
+      tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+      if (!tmp) {
 	silc_free(channel_id);
 	goto out;
       }
-    }
-
-    /* Get the mode */
-    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-    if (!tmp) {
-      silc_free(channel_id);
-      goto out;
-    }
       
-    SILC_GET32_MSB(mode, tmp);
-
-    /* Get target client */
-    tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
-    if (!tmp)
-      goto out;
-    client_id = silc_id_payload_parse_id(tmp, tmp_len);
-    if (!client_id)
-      goto out;
-    
-    /* Get client entry */
-    client = silc_idlist_find_client_by_id(server->global_list, 
-					   client_id, NULL);
-    if (!client) {
-      client = silc_idlist_find_client_by_id(server->local_list, 
+      SILC_GET32_MSB(mode, tmp);
+      
+      /* Get target client */
+      tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+      if (!tmp)
+	goto out;
+      client_id = silc_id_payload_parse_id(tmp, tmp_len);
+      if (!client_id)
+	goto out;
+      
+      /* Get client entry */
+      client = silc_idlist_find_client_by_id(server->global_list, 
 					     client_id, NULL);
       if (!client) {
-	silc_free(client_id);
-	goto out;
+	client = silc_idlist_find_client_by_id(server->local_list, 
+					       client_id, NULL);
+	if (!client) {
+	  silc_free(client_id);
+	  goto out;
+	}
       }
+      silc_free(client_id);
+
+      /* Get entry to the channel user list */
+      silc_hash_table_list(channel->user_list, &htl);
+      while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
+	/* If the mode is channel founder and we already find a client 
+	   to have that mode on the channel we will enforce the sender
+	   to change the channel founder mode away. There can be only one
+	   channel founder on the channel. */
+	if (server->server_type == SILC_ROUTER &&
+	    mode & SILC_CHANNEL_UMODE_CHANFO &&
+	    chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
+	  SilcBuffer idp;
+	  unsigned char cumode[4];
+
+	  mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	  silc_server_send_notify_cumode(server, sock, FALSE, channel, mode,
+					 client->id, SILC_ID_CLIENT,
+					 client->id);
+	  
+	  idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+	  SILC_PUT32_MSB(mode, cumode);
+	  silc_server_send_notify_to_channel(server, sock, channel, FALSE, 
+					     SILC_NOTIFY_TYPE_CUMODE_CHANGE,
+					     3, idp->data, idp->len,
+					     cumode, 4,
+					     idp->data, idp->len);
+	  silc_buffer_free(idp);
+	  notify_sent = TRUE;
+
+	  /* Force the mode change if we alredy set the mode */
+	  if (chl2) {
+	    chl2->mode = mode;
+	    silc_free(channel_id);
+	    goto out;
+	  }
+	}
+	
+	if (chl->client == client) {
+	  /* Change the mode */
+	  chl->mode = mode;
+	  if (!(mode & SILC_CHANNEL_UMODE_CHANFO))
+	    break;
+	  
+	  chl2 = chl;
+	}
+      }
+      
+      /* Send the same notify to the channel */
+      if (!notify_sent)
+	silc_server_packet_send_to_channel(server, sock, channel, 
+					   packet->type, 
+					   FALSE, packet->buffer->data, 
+					   packet->buffer->len, FALSE);
+      
+      silc_free(channel_id);
+      break;
     }
-    silc_free(client_id);
-
-    /* Get entry to the channel user list */
-    silc_hash_table_list(channel->user_list, &htl);
-    while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
-      SilcChannelClientEntry chl2 = NULL;
-
-      /* If the mode is channel founder and we already find a client 
-	 to have that mode on the channel we will enforce the sender
-	 to change the channel founder mode away. There can be only one
-	 channel founder on the channel. */
-      if (server->server_type == SILC_ROUTER &&
-	  mode & SILC_CHANNEL_UMODE_CHANFO &&
-	  chl->mode & SILC_CHANNEL_UMODE_CHANFO) {
-	silc_server_send_notify_cumode(server, sock, FALSE, channel,
-				       (mode & (~SILC_CHANNEL_UMODE_CHANFO)),
-				       server->id, SILC_ID_SERVER, 
-				       client->id);
-	silc_free(channel_id);
-
-	/* Change the mode back if we changed it */
-	if (chl2)
-	  chl2->mode &= ~SILC_CHANNEL_UMODE_CHANFO;
-	goto out;
-      }
-
-      if (chl->client == client) {
-	/* Change the mode */
-	chl->mode = mode;
-	if (!(mode & SILC_CHANNEL_UMODE_CHANFO))
-	  break;
-
-	chl2 = chl;
-      }
-    }
-
-    /* Send the same notify to the channel */
-    silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
-				       FALSE, packet->buffer->data, 
-				       packet->buffer->len, FALSE);
-    silc_free(channel_id);
-    break;
 
   case SILC_NOTIFY_TYPE_INVITE:
 

@@ -237,11 +237,14 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
     return NULL;
 
   server = (SilcServerEntry)id_cache->context;
+
+  /* Remove the old entry and add a new one */
+
+  silc_idcache_del_by_id(id_list->servers, (void *)server->id);
+
   silc_free(server->id);
   server->id = new_id;
 
-  /* Remove the old entry and add a new one */
-  silc_idcache_del_by_context(id_list->servers, server);
   silc_idcache_add(id_list->servers, server->server_name, server->id, 
 		   server, FALSE);
 
@@ -496,11 +499,14 @@ silc_idlist_replace_client_id(SilcIDList id_list, SilcClientID *old_id,
     return NULL;
 
   client = (SilcClientEntry)id_cache->context;
+
+  /* Remove the old entry and add a new one */
+
+  silc_idcache_del_by_id(id_list->clients, (void *)client->id);
+
   silc_free(client->id);
   client->id = new_id;
 
-  /* Remove the old entry and add a new one */
-  silc_idcache_del_by_context(id_list->clients, client);
   silc_idcache_add(id_list->clients, client->nickname, client->id, 
 		   client, FALSE);
 
@@ -708,11 +714,14 @@ silc_idlist_replace_channel_id(SilcIDList id_list, SilcChannelID *old_id,
     return NULL;
 
   channel = (SilcChannelEntry)id_cache->context;
+
+  /* Remove the old entry and add a new one */
+
+  silc_idcache_del_by_id(id_list->channels, (void *)channel->id);
+
   silc_free(channel->id);
   channel->id = new_id;
 
-  /* Remove the old entry and add a new one */
-  silc_idcache_del_by_context(id_list->channels, channel);
   silc_idcache_add(id_list->channels, channel->channel_name, channel->id, 
 		   channel, FALSE);
 

@@ -3,6 +3,12 @@ TODO/bugs in Irssi SILC client
 
  o LEAVE does not work correctly, it doesn't leave the channel for real!
 
+	o Remove the entire current_channel field from the client
+	  library and handle the current channel thingy in the 
+	  Irssi SILC client.  Requires short stub functions of all
+	  commands that use current current_channel to the Irssi SILC
+	  client which then calls the actual library command.
+
  o /KICK does not remove the client from Irssi's NAMES list.
 
  o Add PERL scripting support from Irssi CVS.
@@ -65,9 +71,6 @@ TODO/bugs In SILC Client Library
 
 TODO/bugs In SILC Server
 ========================
-
- o Seems that router does not announce its client to the connecting
-   server when server announces its clients on the channel.
 
  o When server quits and all clients of that server are removed from all
    channels the channel keys are re-generated for all clients.  This is

@@ -1,3 +1,21 @@
+Fri Jun 22 10:44:14 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Do not handle JOIN notify in the server if the target client
+	  is not registered (idata->registered == FALSE).  The affected
+	  file is silcd/packet_receive.c.
+
+	* Update the nickrec->founder in event_cumode in the Irssi SILC
+	  client.  Affected file irssi/src/silc/core/silc-channels.c.
+
+	* Fixed the CUMODE_CHANGE notify handling in the server when
+	  server and router are announcing their clients on channels.
+	  Now the mode changes are saved and notified correctly.  The
+	  affected file is /silcd/packet_receive.c.
+
+	* Fixed silc_idlit_replace_[server/client/channel]_id functions.
+	  They really did not replace the cache entry in the ID Cache.
+	  Now they do that.  Affected file silcd/idlist.c.
+
 Thu Jun 21 17:10:08 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the silc_parse_command_line to remove extra spaces

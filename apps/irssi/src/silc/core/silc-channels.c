@@ -349,6 +349,7 @@ static void event_cumode(SILC_SERVER_REC *server, va_list va)
     nick = silc_nicklist_find(chanrec, destclient);
     if (nick != NULL) {
       nick->op = (mode & SILC_CHANNEL_UMODE_CHANOP) != 0;
+      nick->founder = (mode & SILC_CHANNEL_UMODE_CHANFO) != 0;
       signal_emit("nick mode changed", 2, chanrec, nick);
     }
   }

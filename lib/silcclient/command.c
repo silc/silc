@@ -2004,12 +2004,6 @@ SILC_CLIENT_CMD_FUNC(leave)
     name = cmd->argv[1];
   }
 
-  if (!conn->current_channel) {
-    cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
-    COMMAND_ERROR;
-    goto out;
-  }
-
   /* Get the Channel ID of the channel */
   if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
     cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
@@ -2031,7 +2025,8 @@ SILC_CLIENT_CMD_FUNC(leave)
   /* Notify application */
   COMMAND;
 
-  conn->current_channel = NULL;
+  if (conn->current_channel == channel)
+    conn->current_channel = NULL;
 
   silc_idcache_del_by_id(conn->channel_cache, channel->id);
   silc_free(channel->channel_name);
