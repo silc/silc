@@ -144,7 +144,6 @@ SilcBuffer silc_buffer_alloc(unsigned int len)
 
   /* Allocate the actual data area */
   data = silc_calloc(len, sizeof(*data));
-  memset(data, 0, len);
 
   /* Set pointers to the new buffer */
   sb->truelen = len;
