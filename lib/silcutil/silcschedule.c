@@ -452,10 +452,8 @@ int silc_schedule_one(int timeout_usecs)
      tasks. The select() listens to these file descriptors. */
   SILC_SCHEDULE_SELECT_TASKS;
 
-  if (schedule.max_fd == -1) {
-    /*SILC_LOG_ERROR(("Nothing to listen, exiting"));*/
+  if (schedule.max_fd == -1 && !schedule.timeout)
     return FALSE;
-  }
 
   if (schedule.timeout) {
     SILC_LOG_DEBUG(("timeout: sec=%d, usec=%d", schedule.timeout->tv_sec,
@@ -511,5 +509,6 @@ void silc_schedule()
   }
 
   /* Start the scheduler loop */
-  while (silc_schedule_one(-1)) ;
+  while (silc_schedule_one(-1)) 
+    ;
 }

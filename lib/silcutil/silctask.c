@@ -17,22 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.1  2000/09/13 17:45:16  priikone
- * 	Splitted SILC core library. Core library includes now only
- * 	SILC protocol specific stuff. New utility library includes the
- * 	old stuff from core library that is more generic purpose stuff.
- *
- * Revision 1.2  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 
@@ -344,7 +329,7 @@ SilcTask silc_task_register(SilcTaskQueue queue, int fd,
 			    SilcTaskType type, SilcTaskPriority priority)
 {
   SilcTask new;
-  int timeout = 0;
+  int timeout = FALSE;
 
   SILC_LOG_DEBUG(("Registering new task, fd=%d type=%d priority=%d", 
 		  fd, type, priority));
@@ -397,7 +382,7 @@ SilcTask silc_task_register(SilcTaskQueue queue, int fd,
       new->timeout.tv_sec += 1;
       new->timeout.tv_usec -= 1000000L;
     }
-    timeout = 1;
+    timeout = TRUE;
   }
 
   /* Is this first task of the queue? */
