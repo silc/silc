@@ -3214,9 +3214,7 @@ SILC_SERVER_CMD_FUNC(cumode)
       SilcHashTableList htl;
 
       if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) ||
-	  !channel->founder_key || !idata->public_key ||
-	  !silc_pkcs_public_key_compare(channel->founder_key, 
-					idata->public_key)) {
+	  !channel->founder_key) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CUMODE,
 					      SILC_STATUS_ERR_AUTH_FAILED, 0);
 	goto out;
