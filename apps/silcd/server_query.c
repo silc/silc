@@ -1278,8 +1278,8 @@ void silc_server_query_send_reply(SilcServer server,
 	  if (query->attrs) {
 	    if (!entry->attrs && SILC_IS_LOCAL(entry)) {
 	      tmpattrs = silc_server_query_reply_attrs(server, query, entry);
-	      entry->attrs = silc_memdup(tmpattrs->data, tmpattrs->len);
-	      entry->attrs_len = tmpattrs->len;
+	      entry->attrs = silc_buffer_steal(tmpattrs, &len);
+	      entry->attrs_len = len;
 	      silc_buffer_free(tmpattrs);
 	    }
 	    attrs = entry->attrs;
