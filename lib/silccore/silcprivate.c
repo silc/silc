@@ -86,7 +86,7 @@ silc_private_message_payload_parse(unsigned char *payload,
     goto err;
   }
 
-  if ((newp->message_len < 1 || newp->message_len > buffer.len)) {
+  if ((newp->message_len < 1 || newp->message_len > buffer.len - 4)) {
     SILC_LOG_DEBUG(("Incorrect private message payload in packet, "
 		    "packet dropped"));
     goto err;

@@ -1707,7 +1707,7 @@ o Message Flags (2 bytes) - Includes the Message Flags of
           Private range for free use.
 
 o Message Length (2 bytes) - Indicates the length of the
-  the Message Data field in the payload, not including any 
+  Message Data field in the payload, not including any 
   other field.
 
 o Message Data (variable length) - The actual message to

@@ -68,7 +68,14 @@ SilcAuthPayload silc_auth_payload_parse(const unsigned char *data,
     return NULL;
   }
 
-  if (newp->len != buffer.len) {
+  if (newp->len != buffer.len || 
+      newp->random_len + newp->auth_len > buffer.len - 8) {
+    silc_auth_payload_free(newp);
+    return NULL;
+  }
+
+  /* Authentication data must be provided */
+  if (newp->auth_len < 1)  {
     silc_auth_payload_free(newp);
     return NULL;
   }
@@ -379,7 +386,7 @@ bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
 {
   SILC_LOG_DEBUG(("Verifying authentication"));
 
-  if (auth_method != payload->auth_method)
+  if (!payload || auth_method != payload->auth_method)
     return FALSE;
 
   switch (payload->auth_method) {
@@ -391,15 +398,12 @@ bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
   case SILC_AUTH_PASSWORD:
     /* Passphrase based authentication. The `pkcs', `hash', `id' and `type'
        arguments are not needed. */
-    /* Carefully check that the auth_data field of the payload is not empty
-       (len=0), which seems to be a legal packet but would crash the
-       application. Maybe such packet should be dropped. -Johnny 2002/14/4 */
-    if ((payload->auth_len == 0) || !auth_data)
+
+    /* Sanity checks */
+    if ((payload->auth_len == 0) || !auth_data ||
+	payload->auth_len != auth_data_len)
       break;
 
-    /* if lengths mismatch, avoid comparing unallocated memory locations */
-    if (payload->auth_len != auth_data_len)
-      break;
     if (!memcmp(payload->auth_data, auth_data, auth_data_len)) {
       SILC_LOG_DEBUG(("Passphrase Authentication successful"));
       return TRUE;

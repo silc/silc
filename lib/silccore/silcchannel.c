@@ -67,8 +67,9 @@ SilcChannelPayload silc_channel_payload_parse(const unsigned char *payload,
   if (ret == -1)
     goto err;
 
-  if ((newp->name_len < 1 || newp->name_len > buffer.len) ||
-      (newp->id_len < 1 || newp->id_len > buffer.len)) {
+  if ((newp->name_len < 1 || newp->name_len > buffer.len - 8) ||
+      (newp->id_len < 1 || newp->id_len > buffer.len - 8) ||
+      (newp->id_len + newp->name_len > buffer.len - 8)) {
     SILC_LOG_ERROR(("Incorrect channel payload in packet, packet dropped"));
     goto err;
   }
@@ -373,7 +374,8 @@ silc_channel_message_payload_parse(unsigned char *payload,
   if (ret == -1)
     goto err;
 
-  if (newp->data_len > buffer.len) {
+  if ((newp->data_len > buffer.len - 6 - mac_len - iv_len) ||
+      (newp->pad_len + newp->data_len > buffer.len - 6 - mac_len - iv_len)) {
     SILC_LOG_ERROR(("Incorrect channel message payload in packet, "
 		    "packet dropped"));
     goto err;
@@ -582,7 +584,8 @@ silc_channel_key_payload_parse(const unsigned char *payload,
   if (ret == -1)
     goto err;
 
-  if (newp->id_len < 1 || newp->key_len < 1 || newp->cipher_len < 1) {
+  if (newp->id_len < 1 || newp->key_len < 1 || newp->cipher_len < 1 ||
+      newp->id_len + newp->cipher_len + newp->key_len > buffer.len - 6) {
     SILC_LOG_ERROR(("Incorrect channel key payload in packet"));
     goto err;
   }
