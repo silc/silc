@@ -1136,6 +1136,10 @@ void silc_server_query_send_reply(SilcServer server,
   bool sent_reply = FALSE;
 
   SILC_LOG_DEBUG(("Sending reply to query"));
+  SILC_LOG_DEBUG(("Sending %d clients", clients_count));
+  SILC_LOG_DEBUG(("Sending %d servers", servers_count));
+  SILC_LOG_DEBUG(("Sending %d channels", channels_count));
+  SILC_LOG_DEBUG(("Sending %d errors", query->errors_count));
 
   status = SILC_STATUS_OK;
 
@@ -1143,8 +1147,6 @@ void silc_server_query_send_reply(SilcServer server,
   if (clients_count) {
     SilcClientEntry entry;
     SilcSocketConnection hsock;
-
-    SILC_LOG_DEBUG(("Sending %d clients", clients_count));
 
     /* Mark all invalid entries */
     for (i = 0, valid_count = 0; i < clients_count; i++) {
@@ -1387,8 +1389,6 @@ void silc_server_query_send_reply(SilcServer server,
   if (query->querycmd == SILC_COMMAND_IDENTIFY && servers_count) {
     SilcServerEntry entry;
 
-    SILC_LOG_DEBUG(("Sending %d servers", servers_count));
-
     if (status == SILC_STATUS_OK && servers_count > 1)
       status = SILC_STATUS_LIST_START;
 
@@ -1398,6 +1398,9 @@ void silc_server_query_send_reply(SilcServer server,
 
       if (k >= 1)
 	status = SILC_STATUS_LIST_ITEM;
+      if (servers_count == 1 && status != SILC_STATUS_OK && !channels_count &&
+	  !query->errors_count)
+	status = SILC_STATUS_LIST_END;
       if (servers_count > 1 && k == servers_count - 1 && !channels_count &&
 	  !query->errors_count)
 	status = SILC_STATUS_LIST_END;
@@ -1433,8 +1436,6 @@ void silc_server_query_send_reply(SilcServer server,
   if (query->querycmd == SILC_COMMAND_IDENTIFY && channels_count) {
     SilcChannelEntry entry;
 
-    SILC_LOG_DEBUG(("Sending %d channels", channels_count));
-
     if (status == SILC_STATUS_OK && channels_count > 1)
       status = SILC_STATUS_LIST_START;
 
@@ -1444,6 +1445,9 @@ void silc_server_query_send_reply(SilcServer server,
 
       if (k >= 1)
 	status = SILC_STATUS_LIST_ITEM;
+      if (channels_count == 1 && status != SILC_STATUS_OK &&
+	  !query->errors_count)
+	status = SILC_STATUS_LIST_END;
       if (channels_count > 1 && k == channels_count - 1 &&
 	  !query->errors_count)
 	status = SILC_STATUS_LIST_END;
@@ -1478,8 +1482,6 @@ void silc_server_query_send_reply(SilcServer server,
   /* Send errors */
   if (query->errors_count) {
     int type;
-
-    SILC_LOG_DEBUG(("Sending %d errors", query->errors_count));
 
     if (status == SILC_STATUS_OK && query->errors_count > 1)
       status = SILC_STATUS_LIST_START;
