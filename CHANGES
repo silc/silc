@@ -30,6 +30,10 @@ Wed Feb 14 16:03:25 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  bet set and the `connection' argument must be NULL to the
 	  silc_idlist_add_client function.
 
+	* The funtion silc_server_packet_send_local_channel actually did
+	  not check whether the client was locally connected or not.  It
+	  does that now.  Fixed a bug related to LEAVE command.
+
 Tue Feb 13 19:55:59 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added --with-gmp configuration option.  If set the GMP

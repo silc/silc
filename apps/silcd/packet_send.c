@@ -606,7 +606,7 @@ void silc_server_packet_send_local_channel(SilcServer server,
   /* Send the message to clients on the channel's client list. */
   silc_list_start(channel->user_list);
   while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
-    if (chl->client) {
+    if (chl->client && !chl->client->router) {
       sock = (SilcSocketConnection)chl->client->connection;
 
       /* Send the packet to the client */
