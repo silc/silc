@@ -30,6 +30,7 @@ libsilccrypt_a_SOURCES = \
 	rsa.c \
 	sha1.c \
 	twofish.c \
+	blowfish.c \
 	silccipher.c \
 	silchash.c \
 	silchmac.c \
