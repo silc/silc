@@ -1,3 +1,7 @@
+Tue Nov 25 15:20:59 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Help file updates.  Affected files in irssi/src/docs/help/in/.
+
 Wed Nov 23 20:51:21 CET 2003  Patrik Weiskircher <pat@icore.at>
 
 	* Fixed channel messages across cells. Affected file 
