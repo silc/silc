@@ -1377,8 +1377,8 @@ SilcChannelEntry silc_client_new_channel_id(SilcClient client,
   silc_list_init(channel->clients, struct SilcChannelUserStruct, next);
 
   /* Put it to the ID cache */
-  silc_idcache_add(conn->channel_cache, channel_name, (void *)channel->id, 
-		   (void *)channel, FALSE);
+  silc_idcache_add(conn->channel_cache, channel->channel_name, 
+		   (void *)channel->id, (void *)channel, FALSE);
 
   return channel;
 }

@@ -527,7 +527,8 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
       
       server_entry = silc_calloc(1, sizeof(*server_entry));
       server_entry->server_id = silc_id_dup(server_id, id_type);
-      server_entry->server_name = strdup(name);
+      if (name)
+	server_entry->server_name = strdup(name);
       if (info)
 	server_entry->server_info = strdup(info);
       
@@ -550,9 +551,12 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
     /* Check if we have this channel cached already. */
     if (!silc_idcache_find_by_id_one(conn->channel_cache, 
 				     (void *)channel_id, &id_cache)) {
+      if (!name)
+	break;
+
       SILC_LOG_DEBUG(("Adding new channel entry"));
       channel_entry = silc_client_new_channel_id(client, conn->sock, 
-						 name, 0, idp);
+						 strdup(name), 0, idp);
     } else {
       channel_entry = (SilcChannelEntry)id_cache->context;
     }
