@@ -171,7 +171,11 @@ silc_channel_message(SilcClient client, SilcClientConnection conn,
 		     SilcUInt32 message_len)
 {
   /* Yay! We got a message from channel. */
-  fprintf(stdout, "<%s> %s\n", sender->nickname, message);
+
+  if (flags & SILC_MESSAGE_FLAG_SIGNED)
+    fprintf(stdout, "[SIGNED] <%s> %s\n", sender->nickname, message);
+  else
+    fprintf(stdout, "<%s> %s\n", sender->nickname, message);
 }
 
 
@@ -303,6 +307,13 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     silc_client_send_channel_message(client, conn, channel, NULL, 0,
 				     "hello", strlen("hello"), FALSE);
     fprintf(stdout, "MyBot: Sent 'hello' to channel\n");
+
+    /* Now send digitally signed "hello" to the channel */
+    silc_client_send_channel_message(client, conn, channel, NULL,
+				     SILC_MESSAGE_FLAG_SIGNED,
+				     "hello, with signature", 
+				     strlen("hello, with signature"), FALSE);
+    fprintf(stdout, "MyBot: Sent 'hello, with signature' to channel\n");
   }
 
   va_end(va);
