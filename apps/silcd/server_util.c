@@ -650,7 +650,16 @@ void silc_server_update_servers_by_server(SilcServer server,
 	     whether this server is in our cell, but not connected to
 	     us (in which case we must remove it). */
 
-	  if (server_entry->router == from) {
+	  if (from) {
+	    if (server_entry->router == from) {
+	      SILC_LOG_DEBUG(("Updating server (local) %s",
+			      server_entry->server_name ?
+			      server_entry->server_name : ""));
+	      server_entry->router = to;
+	      server_entry->connection = to->connection;
+	    }
+	  } else {
+	    /* Update all */
 	    SILC_LOG_DEBUG(("Updating server (local) %s",
 			    server_entry->server_name ?
 			    server_entry->server_name : ""));
@@ -696,7 +705,16 @@ void silc_server_update_servers_by_server(SilcServer server,
 	     whether this server is in our cell, but not connected to
 	     us (in which case we must remove it). */
 
-	  if (server_entry->router == from) {
+	  if (from) {
+	    if (server_entry->router == from) {
+	      SILC_LOG_DEBUG(("Updating server (global) %s",
+			      server_entry->server_name ?
+			      server_entry->server_name : ""));
+	      server_entry->router = to;
+	      server_entry->connection = to->connection;
+	    }
+	  } else {
+	    /* Update all */
 	    SILC_LOG_DEBUG(("Updating server (global) %s",
 			    server_entry->server_name ?
 			    server_entry->server_name : ""));
@@ -885,8 +903,13 @@ void silc_server_update_channels_by_server(SilcServer server,
     if (silc_idcache_list_first(list, &id_cache)) {
       while (id_cache) {
 	channel = (SilcChannelEntry)id_cache->context;
-	if (channel->router == from)
+	if (from) {
+	  if (channel->router == from)
+	    channel->router = to;
+	} else {
+	  /* Update all */
 	  channel->router = to;
+	}
 	if (!silc_idcache_list_next(list, &id_cache))
 	  break;
       }
@@ -1837,7 +1860,7 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
       if (type == 1) {
 	/* Invite string.  Get the old invite string from hash table
 	   and append this at the end of the existing one. */
-	if (!silc_hash_table_find(list, (void *)1, NULL, (void **)&tmp2)) {
+	if (!silc_hash_table_find(list, (void *)1, NULL, (void *)&tmp2)) {
 	  tmp2 = silc_calloc(1, sizeof(*tmp2));
 	  silc_hash_table_add(list, (void *)1, tmp2);
 	}

@@ -292,8 +292,10 @@ int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
 {
   if (entry) {
     /* Remove from cache */
-    if (!silc_idcache_del_by_context(id_list->servers, entry))
+    if (!silc_idcache_del_by_context(id_list->servers, entry)) {
+      SILC_LOG_DEBUG(("Unknown server, did not delete"));
       return FALSE;
+    }
 
     SILC_LOG_DEBUG(("Deleting server %s id %s", entry->server_name ?
 		    entry->server_name : "",
@@ -367,8 +369,10 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 
   if (entry) {
     /* Remove from cache */
-    if (!silc_idcache_del_by_context(id_list->clients, entry))
+    if (!silc_idcache_del_by_context(id_list->clients, entry)) {
+      SILC_LOG_DEBUG(("Unknown client, did not delete"));
       return FALSE;
+    }
 
     assert(!silc_hash_table_count(entry->channels));
 
@@ -657,8 +661,10 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
 {
   if (entry) {
     /* Remove from cache */
-    if (!silc_idcache_del_by_context(id_list->channels, entry))
+    if (!silc_idcache_del_by_context(id_list->channels, entry)) {
+      SILC_LOG_DEBUG(("Unknown channel, did not delete"));
       return FALSE;
+    }
 
     SILC_LOG_DEBUG(("Deleting channel %s", entry->channel_name));
 

@@ -1441,6 +1441,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
       server->router = id_entry;
       server->router->server_type = SILC_ROUTER;
       server->standalone = FALSE;
+      server->backup_primary = FALSE;
 
       /* If we are router then announce our possible servers.  Backup
 	 router announces also global servers. */
@@ -3316,7 +3317,8 @@ void silc_server_free_sock_user_data(SilcServer server,
       if (server->router == user_data) {
 	/* Check whether we have a backup router connection */
 	if (!backup_router || backup_router == user_data) {
-	  silc_server_create_connections(server);
+	  if (!server->no_reconnect)
+	    silc_server_create_connections(server);
 	  server->id_entry->router = NULL;
 	  server->router = NULL;
 	  server->standalone = TRUE;
@@ -3370,7 +3372,8 @@ void silc_server_free_sock_user_data(SilcServer server,
       } else if (server->server_type == SILC_SERVER &&
 		 sock->type == SILC_SOCKET_TYPE_ROUTER) {
 	/* Reconnect to the router (backup) */
-	silc_server_create_connections(server);
+	if (!server->no_reconnect)
+	  silc_server_create_connections(server);
       }
 
       if (user_data->server_name)
@@ -3511,10 +3514,11 @@ void silc_server_remove_from_channels(SilcServer server,
   if (!client)
     return;
 
-  SILC_LOG_DEBUG(("Removing client from joined channels"));
-
   if (notify && !client->id)
     notify = FALSE;
+
+  SILC_LOG_DEBUG(("Removing client %s from joined channels",
+		  notify ? silc_id_render(client->id, SILC_ID_CLIENT) : ""));
 
   if (notify) {
     clidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
@@ -5299,6 +5303,42 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
   return buffer;
 }
 
+/* Timeout callback for unsuccessful rekey.  The rekey did not go through
+   for some reason. */
+
+SILC_TASK_CALLBACK(silc_server_rekey_timeout)
+{
+  SilcServerRekeyInternalContext *ctx = context;
+  SilcServer server = app_context;
+  SilcSocketConnection sock = ctx->sock;
+
+  SILC_LOG_DEBUG(("Timeout occurred in rekey protocol with %s:%d [%s]",
+		  sock->hostname, sock->port,
+		  (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		   "Router")));
+
+  SILC_LOG_WARNING(("Timeout occurred in rekey protocol with %s:%d [%s]",
+		    sock->hostname, sock->port,
+		    (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		     sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		     sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		     "Router")));
+
+  if (sock->protocol) {
+    silc_protocol_cancel(sock->protocol, server->schedule);
+    silc_protocol_free(sock->protocol);
+    sock->protocol = NULL;
+  }
+  if (ctx->packet)
+    silc_packet_context_free(ctx->packet);
+  if (ctx->ske)
+    silc_ske_free(ctx->ske);
+  silc_socket_free(sock);
+  silc_free(ctx);
+}
+
 /* A timeout callback for the re-key. We will be the initiator of the
    re-key protocol. */
 
@@ -5309,6 +5349,11 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_callback)
   SilcIDListData idata = (SilcIDListData)sock->user_data;
   SilcProtocol protocol;
   SilcServerRekeyInternalContext *proto_ctx;
+
+  /* Do not execute rekey with disabled connections, as it would not
+     go through anyway. */
+  if (idata->status & SILC_IDLIST_STATUS_DISABLED)
+    return;
 
   /* If rekey protocol is active already wait for it to finish */
   if (sock->protocol && sock->protocol->protocol &&
@@ -5325,13 +5370,18 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_callback)
     return;
   }
 
-  SILC_LOG_DEBUG(("Executing rekey protocol"));
+  SILC_LOG_DEBUG(("Executing rekey protocol with %s:%d [%s]",
+		  sock->hostname, sock->port,
+		  (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		   "Router")));
 
   /* Allocate internal protocol context. This is sent as context
      to the protocol. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
   proto_ctx->server = (void *)server;
-  proto_ctx->sock = sock;
+  proto_ctx->sock = silc_socket_dup(sock);
   proto_ctx->responder = FALSE;
   proto_ctx->pfs = idata->rekey->pfs;
 
@@ -5340,6 +5390,15 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_callback)
   silc_protocol_alloc(SILC_PROTOCOL_SERVER_REKEY,
 		      &protocol, proto_ctx, silc_server_rekey_final);
   sock->protocol = protocol;
+
+  /* Register timeout callback in case the rekey does not go through. */
+  proto_ctx->timeout_task =
+    silc_schedule_task_add(server->schedule, sock->sock,
+			   silc_server_rekey_timeout,
+			   proto_ctx,
+			   server->config->key_exchange_timeout, 0,
+			   SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_LOW);
 
   /* Run the protocol */
   silc_protocol_execute(protocol, server->schedule, 0, 0);
@@ -5357,6 +5416,9 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
   SilcSocketConnection sock = ctx->sock;
   SilcIDListData idata = (SilcIDListData)sock->user_data;
 
+  if (ctx->timeout_task)
+    silc_schedule_task_del(server->schedule, ctx->timeout_task);
+
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
@@ -5369,6 +5431,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
       silc_packet_context_free(ctx->packet);
     if (ctx->ske)
       silc_ske_free(ctx->ske);
+    silc_socket_free(sock);
     silc_free(ctx);
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
@@ -5379,7 +5442,12 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
     return;
   }
 
-  SILC_LOG_DEBUG(("Rekey protocol completed"));
+  SILC_LOG_DEBUG(("Rekey protocol completed with %s:%d [%s]",
+		  sock->hostname, sock->port,
+		  (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		   "Router")));
 
   /* Purge the outgoing data queue to assure that all rekey packets really
      go to the network before we quit the protocol. */
@@ -5399,6 +5467,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
     silc_packet_context_free(ctx->packet);
   if (ctx->ske)
     silc_ske_free(ctx->ske);
+  silc_socket_free(sock);
   silc_free(ctx);
 }
 

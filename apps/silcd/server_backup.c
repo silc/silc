@@ -63,12 +63,14 @@ typedef struct {
 typedef struct {
   SilcServer server;
   SilcSocketConnection sock;
-  bool responder;
   SilcUInt8 type;
   SilcUInt8 session;
   SilcServerBackupProtocolSession *sessions;
   SilcUInt32 sessions_count;
   long start;
+  unsigned int responder        : 1;
+  unsigned int received_failure : 1;
+  unsigned int timeout          : 1;
 } *SilcServerBackupProtocolContext;
 
 
@@ -494,9 +496,11 @@ void silc_server_backup_send_replaced(SilcServer server,
 SILC_TASK_CALLBACK(silc_server_backup_timeout)
 {
   SilcProtocol protocol = context;
+  SilcServerBackupProtocolContext ctx = protocol->context;
   SilcServer server = app_context;
 
   SILC_LOG_INFO(("Timeout occurred during backup resuming protocol"));
+  ctx->timeout = TRUE;
   silc_protocol_cancel(protocol, server->schedule);
   protocol->state = SILC_PROTOCOL_STATE_ERROR;
   silc_protocol_execute_final(protocol, server->schedule);
@@ -512,6 +516,7 @@ SILC_TASK_CALLBACK(silc_server_backup_responder_start)
 
   /* If other protocol is executing at the same time, start with timeout. */
   if (sock->protocol) {
+    SILC_LOG_DEBUG(("Other protocol is executing, wait for it to finish"));
     silc_schedule_task_add(server->schedule, sock->sock,
 			   silc_server_backup_responder_start,
 			   proto_ctx, 2, 0,
@@ -528,6 +533,22 @@ SILC_TASK_CALLBACK(silc_server_backup_responder_start)
 			 silc_server_backup_timeout,
 			 sock->protocol, 30, 0, SILC_TASK_TIMEOUT,
 			 SILC_TASK_PRI_NORMAL);
+}
+
+/* Callback to send START_USE to backup to check whether using backup
+   is ok. */
+
+SILC_TASK_CALLBACK(silc_server_backup_check_status)
+{
+  SilcSocketConnection sock = context;
+  SilcServer server = app_context;
+
+  /* Check whether we are still using backup */
+  if (!server->backup_primary)
+    return;
+
+  silc_server_backup_send_start_use(server, sock, FALSE);
+  silc_socket_free(sock);	/* unref */
 }
 
 typedef struct {
@@ -832,6 +853,7 @@ SILC_TASK_CALLBACK(silc_server_backup_connected_later)
 
   /* If running other protocol already run this one a bit later. */
   if (sock->protocol) {
+    SILC_LOG_DEBUG(("Other protocol is running, wait for it to finish"));
     silc_schedule_task_add(server->schedule, 0,
 			   silc_server_backup_connected_later,
 			   proto_ctx, 10, 0,
@@ -1295,14 +1317,6 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 	if (server->server_type == SILC_SERVER)
 	  silc_server_update_channels_by_server(server, backup_router, router);
  	silc_server_backup_replaced_del(server, backup_router);
-
-	/* Announce all of our information to the router. */
-	if (server->server_type == SILC_ROUTER)
-	  silc_server_announce_servers(server, FALSE, ctx->start, sock);
-
-	/* Announce our clients and channels to the router */
-	silc_server_announce_clients(server, ctx->start, sock);
-	silc_server_announce_channels(server, ctx->start, sock);
       }
 
       /* Send notify about primary router going down to local operators */
@@ -1331,6 +1345,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
   case SILC_PROTOCOL_STATE_FAILURE:
     /* Protocol has ended, call the final callback */
     SILC_LOG_ERROR(("Error during backup resume: received Failure"));
+    ctx->received_failure = TRUE;
     if (protocol->final_callback)
       silc_protocol_execute_final(protocol, server->schedule);
     else
@@ -1385,42 +1400,52 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
       sock->protocol = NULL;
 
       if (error) {
-	/* If we are server close all router connections except backup,
-	   send confirmation to backup that using it is still ok and continue
-	   sending traffic there.  The backup will reply with error if
-	   it's not ok. */
+
 	if (server->server_type == SILC_SERVER &&
-	    server_entry->server_type == SILC_ROUTER) {
-	  server->backup_noswitch = TRUE;
-	  if (sock->user_data)
-	    silc_server_free_sock_user_data(server, sock, NULL);
-	  silc_server_disconnect_remote(server, sock, 0, NULL);
-	  server->backup_noswitch = FALSE;
-
-	  /* Send START_USE just in case using backup wouldn't be ok. */
-	  silc_server_backup_send_start_use(server, server->router->connection,
-					    FALSE);
-
-	  silc_server_create_connections(server);
+	    server_entry->server_type == SILC_ROUTER)
 	  continue;
-	}
 
-	/* If error occurred and we are backup router, we close connections. */
+	/* Backup router */
 	if (SILC_PRIMARY_ROUTE(server) == sock && server->backup_router) {
-	  server->backup_noswitch = TRUE;
-	  server->server_type = SILC_BACKUP_ROUTER;
 	  if (ctx->sock == sock) {
 	    silc_socket_free(sock); /* unref */
 	    ctx->sock = NULL;
 	  }
 
-	  server->backup_noswitch = TRUE;
-	  if (sock->user_data)
-	    silc_server_free_sock_user_data(server, sock, NULL);
-	  silc_server_disconnect_remote(server, sock, 0, NULL);
-	  server->backup_noswitch = FALSE;
+	  if (!ctx->received_failure) {
+	    /* Protocol error, probably timeout. Just restart the protocol. */
+	    SilcServerBackupProtocolContext proto_ctx;
 
-	  silc_server_create_connections(server);
+	    /* Restart the protocol. */
+	    proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
+	    proto_ctx->server = server;
+	    proto_ctx->sock = silc_socket_dup(sock);
+	    proto_ctx->responder = FALSE;
+	    proto_ctx->type = SILC_SERVER_BACKUP_START;
+	    proto_ctx->start = time(0);
+
+	    /* Start through scheduler */
+	    silc_schedule_task_add(server->schedule, 0,
+				   silc_server_backup_connected_later,
+				   proto_ctx, 2, 0,
+				   SILC_TASK_TIMEOUT,
+				   SILC_TASK_PRI_NORMAL);
+	  } else {
+	    /* If failure was received, switch back to normal backup router.
+	       For some reason primary wouldn't accept that we were supposed
+	       to perfom resuming protocol. */
+	    server->server_type = SILC_BACKUP_ROUTER;
+	    silc_server_local_servers_toggle_enabled(server, FALSE);
+	    silc_server_update_servers_by_server(server, server->id_entry,
+						 sock->user_data);
+	    silc_server_update_clients_by_server(server, NULL,
+						 sock->user_data, FALSE);
+
+	    /* Announce our clients and channels to the router */
+	    silc_server_announce_clients(server, ctx->start, sock);
+	    silc_server_announce_channels(server, ctx->start, sock);
+	  }
+
 	  continue;
 	}
       }
@@ -1429,8 +1454,52 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
     }
   }
 
-  if (!error)
+  if (!error) {
     SILC_LOG_INFO(("Backup resuming protocol ended successfully"));
+
+    if (ctx->type == SILC_SERVER_BACKUP_RESUMED && server->router) {
+      /* Announce all of our information to the router. */
+      if (server->server_type == SILC_ROUTER)
+	silc_server_announce_servers(server, FALSE, ctx->start,
+				     server->router->connection);
+
+      /* Announce our clients and channels to the router */
+      silc_server_announce_clients(server, ctx->start,
+				   server->router->connection);
+      silc_server_announce_channels(server, ctx->start,
+				    server->router->connection);
+    }
+  } else {
+    /* Error */
+
+    if (server->server_type == SILC_SERVER) {
+      /* If we are still using backup router Send confirmation to backup
+	 that using it is still ok and continue sending traffic there.
+	 The backup will reply with error if it's not ok. */
+      if (server->router && server->backup_primary) {
+	/* Send START_USE just in case using backup wouldn't be ok. */
+	silc_server_backup_send_start_use(server, server->router->connection,
+					  FALSE);
+
+	/* Check couple of times same START_USE just in case. */
+	silc_schedule_task_add(server->schedule, 0,
+			       silc_server_backup_check_status,
+			       silc_socket_dup(server->router->connection),
+			       5, 1, SILC_TASK_TIMEOUT,
+			       SILC_TASK_PRI_NORMAL);
+	silc_schedule_task_add(server->schedule, 0,
+			       silc_server_backup_check_status,
+			       silc_socket_dup(server->router->connection),
+			       20, 1, SILC_TASK_TIMEOUT,
+			       SILC_TASK_PRI_NORMAL);
+	silc_schedule_task_add(server->schedule, 0,
+			       silc_server_backup_check_status,
+			       silc_socket_dup(server->router->connection),
+			       60, 1, SILC_TASK_TIMEOUT,
+			       SILC_TASK_PRI_NORMAL);
+      }
+    }
+  }
 
   if (ctx->sock && ctx->sock->protocol)
     ctx->sock->protocol = NULL;

@@ -1322,11 +1322,11 @@ void silc_server_notify(SilcServer server,
 	    /* Get client entry */
 	    client = silc_idlist_find_client_by_id(server->global_list,
 						   client_id, TRUE, &cache);
-	    local = TRUE;
+	    local = FALSE;
 	    if (!client) {
 	      client = silc_idlist_find_client_by_id(server->local_list,
 						     client_id, TRUE, &cache);
-	      local = FALSE;
+	      local = TRUE;
 	      if (!client) {
 		silc_free(client_id);
 		continue;
@@ -2565,11 +2565,12 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 					       server_id, TRUE, NULL);
   if (server_entry) {
     if (SILC_IS_LOCAL(server_entry)) {
-      silc_server_disconnect_remote(server, server_entry->connection,
+      silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_OPERATION_ALLOWED,
 				    "Too many registrations");
-      if (((SilcSocketConnection)server_entry->connection)->user_data)
+      if (sock->user_data)
 	silc_server_free_sock_user_data(server, sock, NULL);
+      return NULL;
     } else {
       silc_idcache_del_by_context(server->local_list->servers, server_entry);
     }
@@ -2578,12 +2579,12 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 						 server_id, TRUE, NULL);
     if (server_entry) {
       if (SILC_IS_LOCAL(server_entry)) {
-	silc_server_disconnect_remote(server, server_entry->connection,
+	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_OPERATION_ALLOWED,
 				      "Too many registrations");
-	if (((SilcSocketConnection)server_entry->connection)->user_data)
-	  silc_server_free_sock_user_data(server, server_entry->connection,
-					  NULL);
+	if (sock->user_data)
+	  silc_server_free_sock_user_data(server, sock, NULL);
+	return NULL;
       } else {
 	silc_idcache_del_by_context(server->global_list->servers,
 				    server_entry);
@@ -3415,7 +3416,7 @@ void silc_server_rekey(SilcServer server,
      to the protocol. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
   proto_ctx->server = (void *)server;
-  proto_ctx->sock = sock;
+  proto_ctx->sock = silc_socket_dup(sock);
   proto_ctx->responder = TRUE;
   proto_ctx->pfs = idata->rekey->pfs;
 
