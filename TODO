@@ -1,6 +1,10 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o When showing fingerprint of server key, decode the HN form the key
+   and show that with the IP address(!) (maybe do sanity dns lookup) 
+   instead of showing the hostname user gave to /server.
+
  o UTF-8 encode/decode WHOIS userinfos, topic, etc.
 
  o Testing
