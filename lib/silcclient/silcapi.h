@@ -560,7 +560,8 @@ void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
    that port for the key agreement protocol. It also sends the `hostname'
    and the `port' in the key agreement packet to the remote client. This
    would indicate that the remote client may initiate the key agreement
-   protocol to the `hostname' on the `port'.
+   protocol to the `hostname' on the `port'.  If port is zero then the
+   bound port is undefined (the operating system defines it).
 
    If the `hostname' and `port' is not provided then empty key agreement
    packet is sent to the remote client. The remote client may reply with

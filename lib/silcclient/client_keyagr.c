@@ -222,7 +222,8 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_timeout)
    that port for the key agreement protocol. It also sends the `hostname'
    and the `port' in the key agreement packet to the remote client. This
    would indicate that the remote client may initiate the key agreement
-   protocol to the `hostname' on the `port'.
+   protocol to the `hostname' on the `port'.  If port is zero then the
+   bound port is undefined (the operating system defines it).
 
    If the `hostname' and `port' is not provided then empty key agreement
    packet is sent to the remote client. The remote client may reply with
@@ -268,7 +269,7 @@ void silc_client_send_key_agreement(SilcClient client,
     return;
 
   /* Create the listener if hostname and port was provided */
-  if (hostname && port) {
+  if (hostname) {
     ke = silc_calloc(1, sizeof(*ke));
     ke->fd = silc_net_create_server(port, hostname);
 

@@ -166,6 +166,9 @@ servers.  In client connections usually all the packets are protected
 with this key except channel messages; channels has their own keys and 
 they are not exchanged with this protocol.
 
+The Diffie-Hellman implementation used in the SILC should be compliant
+to the PKCS #3.
+
 
 .ti 0
 2.1 Key Exchange Payloads

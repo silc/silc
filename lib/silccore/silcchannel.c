@@ -85,8 +85,8 @@ SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer,
 
   /* Parse the Channel Payload. Ignore the padding. */
   ret = silc_buffer_unformat(buffer,
-			     SILC_STR_UI16_NSTRING(&new->data, 
-						   &new->data_len),
+			     SILC_STR_UI16_NSTRING_ALLOC(&new->data, 
+							 &new->data_len),
 			     SILC_STR_UI16_NSTRING(NULL, NULL),
 			     SILC_STR_UI_XNSTRING(&new->mac, mac_len),
 			     SILC_STR_UI_XNSTRING(&new->iv, iv_len),
@@ -102,7 +102,7 @@ SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer,
   return new;
 
  err:
-  silc_free(new);
+  silc_channel_payload_free(new);
   return NULL;
 }
 
@@ -175,8 +175,11 @@ SilcBuffer silc_channel_payload_encode(unsigned short data_len,
 
 void silc_channel_payload_free(SilcChannelPayload payload)
 {
-  if (payload)
+  if (payload) {
+    if (payload->data)
+      silc_free(payload->data);
     silc_free(payload);
+  }
 }
 
 /* Return data */

@@ -52,7 +52,8 @@ int silc_net_create_server(int port, char *ip_addr)
   /* Set the socket information for bind() */
   memset(&server, 0, sizeof(server));
   server.sin_family = PF_INET;
-  server.sin_port = htons(port);
+  if (port)
+    server.sin_port = htons(port);
 
   /* Convert IP address to network byte order */
   if (ip_addr)

@@ -66,8 +66,7 @@ typedef struct SilcCipherStruct {
 
   void (*set_iv)(struct SilcCipherStruct *, const unsigned char *);
   void (*get_iv)(struct SilcCipherStruct *, unsigned char *);
-  unsigned int (*get_key_len)(struct SilcCipherStruct *, 
-			      const unsigned char *);
+  unsigned int (*get_key_len)(struct SilcCipherStruct *);
   unsigned int (*get_block_len)(struct SilcCipherStruct *);
 } *SilcCipher;
 

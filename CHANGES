@@ -1,3 +1,12 @@
+Fri Mar  9 12:40:42 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Minor fix t the channel payload; allocate the data area, as it
+	  needs to be of specific length.
+
+	* If the key agreement port is zero then the operating
+	  system will define the bound port.  Affected files are
+	  lib/silcclient/silcapi.h and lib/silcclient/client_keyagr.c.
+
 Thu Mar  8 21:39:03 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added assert()s to buffer formatting and unformatting routines
