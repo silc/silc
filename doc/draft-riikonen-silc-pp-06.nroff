@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 25 November 2002
+.ds RH 26 November 2002
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-pp-06.txt                           25 November 2002
-Expires: 25 April 2003
+draft-riikonen-silc-pp-06.txt                           26 November 2002
+Expires: 26 April 2003
 
 .in 3
 
@@ -2914,4 +2914,4 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires 25 April 2003
+This Internet-Draft expires 26 April 2003

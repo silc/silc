@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 25 November 2002
+.ds RH 26 November 2002
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-spec-06.txt                         25 November 2002
-Expires: 25 April 2003
+draft-riikonen-silc-spec-06.txt                         26 November 2002
+Expires: 26 April 2003
 
 .in 3
 
@@ -134,7 +134,6 @@ Table of Contents
 7 Author's Address .............................................. 49
 
 
-
 .ti 0
 List of Figures
 
@@ -233,7 +232,6 @@ This, on the other hand, leads to kind of a cellular like network, where
 routers are in the center of the cell and servers are connected to the
 router.
 
-
 The following diagram represents SILC network topology.
 
 .in 8
@@ -330,8 +328,6 @@ server belongs, if the local router is connected to destination router.
 If there is no direct connection to the destination router, the local
 router routes the message to its primary route.  The following diagram
 represents message sending between cells.
-
-
 
 
 
@@ -476,8 +472,6 @@ and ID's based on IPv6 addresses extends this to 2^224 different Client
 ID's.  Collisions are not expected to happen.  The Client ID is defined
 as follows.
 
-
-
 .in 6
 128 bit Client ID based on IPv4 addresses:
 
@@ -552,7 +546,6 @@ of creating the Client ID's for their clients.
 
 Normal server also keeps information about locally created channels and
 their Channel ID's.
-
 
 Hence, local list for normal server includes:
 
@@ -666,7 +659,6 @@ to keep information about user's nickname, username and host name and real
 name since these are not needed by the router.  The router keeps only
 information that it needs.
 
-
 Hence, local list for router includes:
 
 .in 6
@@ -679,7 +671,6 @@ server list        - All servers in the cell
 
 client list        - All clients in the cell
    o Client ID
-
 
 channel list       - All channels in the cell
    o Channel ID
@@ -1003,7 +994,6 @@ o Server determines the client to which the packet is destined
   to and sends the packet to the client.
 
 o Client 2. decrypts the packet with the secret shared key.
-
 
 If clients share secret key with each other the private message
 delivery is much simpler since servers and routers between the
@@ -2524,4 +2514,4 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires 25 April 2003
+This Internet-Draft expires 26 April 2003
