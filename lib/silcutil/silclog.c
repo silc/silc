@@ -21,8 +21,8 @@
 
 #include "silcincludes.h"
 
-/* default flush time (5 minutes) */
-#define SILC_LOG_TIMEOUT 300
+/* Minimum time delay for log flushing calls (in seconds) */
+#define SILC_LOG_FLUSH_MIN_DELAY 2
 
 /* nice macro for looping through all logs -- makes the code more readable */
 #define SILC_FOREACH_LOG(__x__) for (__x__ = 0; __x__ < SILC_LOG_MAX; __x__++)
@@ -55,6 +55,9 @@ bool silc_log_quick = FALSE;
 bool silc_debug = FALSE;
 bool silc_debug_hexdump = FALSE;
 
+/* Flush delay */
+long silc_log_flushdelay = 300;
+
 /* Regular pattern matching expression for the debug output */
 static char *silc_log_debug_string = NULL;
 
@@ -67,6 +70,9 @@ static void *silc_log_hexdump_context = NULL;
 /* Did we register already our functions to the scheduler? */
 static bool silc_log_scheduled = FALSE;
 static bool silc_log_no_init = FALSE;
+
+/* This is only needed during starting up -- don't lose any logging */
+static bool silc_log_starting = TRUE;
 
 /* The type wrapper utility. Translates a SilcLogType id to the corresponding
  * logfile, or NULL if not found. */
@@ -135,6 +141,7 @@ static bool silc_log_reset(SilcLog log)
     fflush(log->fp);
     fclose(log->fp);
   }
+  if (!log->filename) return FALSE;
   if (!(log->fp = fopen(log->filename, "a+"))) {
     SILC_LOG_WARNING(("Couldn't reset logfile %s for type \"%s\": %s",
 	log->filename, log->typename, strerror(errno)));
@@ -153,8 +160,11 @@ SILC_TASK_CALLBACK(silc_log_fflush_callback)
     SILC_FOREACH_LOG(u)
       silc_log_checksize(&silclogs[u]);
   }
+  silc_log_starting = FALSE;
+  if (silc_log_flushdelay < SILC_LOG_FLUSH_MIN_DELAY)
+    silc_log_flushdelay = SILC_LOG_FLUSH_MIN_DELAY;
   silc_schedule_task_add((SilcSchedule) context, 0, silc_log_fflush_callback,
-			 context, SILC_LOG_TIMEOUT, 0, SILC_TASK_TIMEOUT,
+			 context, silc_log_flushdelay, 0, SILC_TASK_TIMEOUT,
 			 SILC_TASK_PRI_NORMAL);
 }
 
@@ -166,6 +176,7 @@ SILC_TASK_CALLBACK(silc_log_fflush_callback)
 void silc_log_output(SilcLogType type, char *string)
 {
   char *typename;
+  FILE *fp;
   SilcLog log;
 
   if ((type > SILC_LOG_MAX) || !(log = silc_log_find_by_type(type)))
@@ -177,25 +188,26 @@ void silc_log_output(SilcLogType type, char *string)
       goto end;
   }
 
-  if (!silc_log_scheduled) {
-    if (silc_log_no_init == FALSE) {
-      fprintf(stderr, 
-	      "Warning, trying to output without log files initialization, "
-	      "log output is going to stderr\n");
-      silc_log_no_init = TRUE;
-    }
-
-    fprintf(stderr, "%s\n", string);
-    goto end;
-  }
-
   /* save the original typename, because if we redirect the channel we
    * keep however the original destination channel name */
   typename = log->typename;
 
+  if (!silc_log_scheduled) {
+    if (silc_log_no_init == FALSE) {
+      fprintf(stderr,
+	      "Warning, trying to output without log files initialization, "
+	      "log output is going to stderr\n");
+      silc_log_no_init = TRUE;
+    }
+    /* redirect output */
+    fp = stderr;
+    log = NULL;
+    goto found;
+  }
+
   /* ok, now we have to find an open stream */
   while (TRUE) {
-    if (log && log->fp) goto found;
+    if (log && (fp = log->fp)) goto found;
     if (type == 0) break;
     log = silc_log_find_by_type(--type);
   }
@@ -205,10 +217,11 @@ void silc_log_output(SilcLogType type, char *string)
   goto end;
 
  found:
-  fprintf(log->fp, "[%s] [%s] %s\n", silc_get_time(), typename, string);
-  if (silc_log_quick) {
-    fflush(log->fp);
-    silc_log_checksize(log);
+  fprintf(fp, "[%s] [%s] %s\n", silc_get_time(), typename, string);
+  if (silc_log_quick || silc_log_starting) {
+    fflush(fp);
+    if (log)
+      silc_log_checksize(log);
   }
 
  end:
@@ -270,9 +283,9 @@ bool silc_log_set_file(SilcLogType type, char *filename, uint32 maxsize,
   if (silc_log_scheduled)
     return TRUE;
 
-  /* make sure we write to the disk sometimes */
+  /* add schedule hook with a short delay to make sure we'll use right delay */
   silc_schedule_task_add(scheduler, 0, silc_log_fflush_callback,
-			 (void *) scheduler, SILC_LOG_TIMEOUT, 0,
+			 (void *) scheduler, 10, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   silc_log_scheduled = TRUE;

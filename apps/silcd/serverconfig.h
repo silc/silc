@@ -83,6 +83,8 @@ typedef struct SilcServerConfigSectionLoggingStruct {
 #define SILC_CONFIG_SERVER_LF_WARNING "warninglogfile"
 #define SILC_CONFIG_SERVER_LF_ERROR "errorlogfile"
 #define SILC_CONFIG_SERVER_LF_FATAL "fatallogfile"
+#define SILC_CONFIG_SERVER_LO_QUICK "quicklogs"
+#define SILC_CONFIG_SERVER_LO_FDELAY "flushdelay"
 } SilcServerConfigSectionLogging;
 
 /* Holds all configured connection classes */

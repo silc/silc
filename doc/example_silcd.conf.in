@@ -111,13 +111,19 @@ lassi.kuo.fi.ssh.com:10.2.1.6:Kuopio, Finland:706
 # this is NOT recommended).
 # If maximum size is given, the logfile will be rotated to a logfile with
 # the ".old" extension added. Older logfiles are flushed.
+# There are also two options, quicklogs and flushdelay. Their values
+# must be enclosed in colons (:), see the format below.
 #
-# Format: infologfile:<path>:<max byte size>
+# Format: quicklogs:<yes/no>:
+#         flushdelay:<seconds>:
+#         infologfile:<path>:<max byte size>
 #         warninglogile:<path>:<max byte size>
 #         errorlogile:<path>:<max byte size>
 #         fatallogile:<path>:<max byte size>
 #
 [Logging]
+quicklogs:no:
+flushdelay:300:
 infologfile:@LOGSDIR@/silcd.log:50000
 warninglogfile:@LOGSDIR@/silcd_warnings.log:50000
 #errorlogfile:@LOGSDIR@/silcd_errors.log:50000

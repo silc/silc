@@ -1,23 +1,23 @@
 /*
 
   silcd.c
-  
+
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
 
 */
-/* 
+/*
  * Created: Wed Mar 19 00:17:12 1997
  *
  * This is the main program for the SILC daemon. This parses command
@@ -29,16 +29,19 @@
 #include "server_internal.h"
 #include "version.h"
 
+/* For now, we'll have this one server context global for this module. */
+static SilcServer silcd;
+
 static void silc_usage();
 static char *silc_server_create_identifier();
-static int 
+static int
 silc_server_create_key_pair(char *pkcs_name, int bits, char *path,
-			    char *identifier, 
+			    char *identifier,
 			    SilcPublicKey *ret_pub_key,
 			    SilcPrivateKey *ret_prv_key);
 
 /* Long command line options */
-static struct option long_opts[] = 
+static struct option long_opts[] =
 {
   { "config-file", 1, NULL, 'f' },
   { "debug", 1, NULL, 'd' },
@@ -124,19 +127,39 @@ static void silc_checkpid(SilcServer silcd)
   }
 }
 
+static void got_hup(int z)
+{
+  /* First, reset all log files (they might have been deleted) */
+  silc_log_reset_all();
+  silc_log_flush_all();
+}
+
+static void stop_server(int z)
+{
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Flush log files */
+  silc_log_flush_all();
+
+  /* Gracefully stop the server */
+  /*  silc_server_stop(silcd); */
+  /* XXX do this for now since doing graceful exit now can remove
+     the scheduler underneath the server too early and crash it. */
+  exit(0);
+}
+
 int main(int argc, char **argv)
 {
   int ret, opt, option_index;
   char *config_file = NULL;
   bool foreground = FALSE;
-  SilcServer silcd;
   struct sigaction sa;
 
   /* Parse command line arguments */
   if (argc > 1) {
     while ((opt = getopt_long(argc, argv, "cf:d:hFVC:",
 			      long_opts, &option_index)) != EOF) {
-      switch(opt) 
+      switch(opt)
 	{
 	case 'h':
 	  silc_usage();
@@ -157,7 +180,7 @@ int main(int argc, char **argv)
 	  foreground = TRUE;
 	  silc_log_quick = TRUE;
 #else
-	  fprintf(stdout, 
+	  fprintf(stdout,
 		  "Run-time debugging is not enabled. To enable it recompile\n"
 		  "the server with --enable-debug configuration option.\n");
 #endif
@@ -235,6 +258,12 @@ int main(int argc, char **argv)
   sa.sa_flags = 0;
   sigemptyset(&sa.sa_mask);
   sigaction(SIGPIPE, &sa, NULL);
+  sa.sa_handler = got_hup;
+  sigaction(SIGHUP, &sa, NULL);
+  sa.sa_handler = stop_server;
+  sigaction(SIGTERM, &sa, NULL);
+  sa.sa_handler = stop_server;
+  sigaction(SIGINT, &sa, NULL);
 
   /* Before running the server, fork to background. */
   if (!foreground)
@@ -255,11 +284,12 @@ int main(int argc, char **argv)
      and we will exit. */
   silc_server_run(silcd);
   
-  /* Stop the server. This probably has been done already but it
-     doesn't hurt to do it here again. */
-  silc_server_stop(silcd);
+  /* The server was stopped, free it now */
   silc_server_free(silcd);
-  
+
+  /* Flush the logging system */
+  silc_log_flush_all();
+
   exit(0);
  fail:
   exit(1);

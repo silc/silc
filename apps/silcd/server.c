@@ -504,6 +504,7 @@ void silc_server_stop(SilcServer server)
   if (server->schedule) {
     silc_schedule_stop(server->schedule);
     silc_schedule_uninit(server->schedule);
+    server->schedule = NULL;
   }
 
   silc_server_protocols_unregister();

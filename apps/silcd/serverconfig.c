@@ -23,25 +23,25 @@
 #include "server_internal.h"
 
 SilcServerConfigSection silc_server_config_sections[] = {
-  { "[Cipher]", 
+  { "[Cipher]",
     SILC_CONFIG_SERVER_SECTION_TYPE_CIPHER, 4 },
-  { "[PKCS]", 
+  { "[PKCS]",
     SILC_CONFIG_SERVER_SECTION_TYPE_PKCS, 1 },
-  { "[Hash]", 
+  { "[Hash]",
     SILC_CONFIG_SERVER_SECTION_TYPE_HASH_FUNCTION, 4 },
-  { "[hmac]", 
+  { "[hmac]",
     SILC_CONFIG_SERVER_SECTION_TYPE_HMAC, 3 },
-  { "[ServerKeys]", 
+  { "[ServerKeys]",
     SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_KEYS, 2 },
-  { "[ServerInfo]", 
+  { "[ServerInfo]",
     SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_INFO, 4 },
-  { "[AdminInfo]", 
+  { "[AdminInfo]",
     SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_INFO, 4 },
-  { "[ListenPort]", 
+  { "[ListenPort]",
     SILC_CONFIG_SERVER_SECTION_TYPE_LISTEN_PORT, 3 },
-  { "[Identity]", 
+  { "[Identity]",
     SILC_CONFIG_SERVER_SECTION_TYPE_IDENTITY, 2 },
-  { "[Logging]", 
+  { "[Logging]",
     SILC_CONFIG_SERVER_SECTION_TYPE_LOGGING, 3 },
   { "[ConnectionClass]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_CONNECTION_CLASS, 4 },
@@ -147,7 +147,7 @@ int silc_server_config_parse(SilcServerConfig config, SilcBuffer buffer,
 
   begin = 0;
   linenum = 0;
-  while((begin = silc_gets(line, sizeof(line), 
+  while((begin = silc_gets(line, sizeof(line),
 			   buffer->data, buffer->len, begin)) != EOF) {
     cp = line;
     linenum++;
@@ -653,14 +653,16 @@ int silc_server_config_parse_lines(SilcServerConfig config,
       if (ret < 0)
 	break;
       if (ret == 0) {
-	fprintf(stderr, "%s:%d: Log file section not defined\n", 
+	fprintf(stderr, "%s:%d: Log file section not defined\n",
 		config->filename, pc->linenum);
 	break;
       }
       if (strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LF_INFO)
 	  && strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LF_WARNING)
 	  && strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LF_ERROR)
-	  && strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LF_FATAL)) {
+	  && strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LF_FATAL)
+	  && strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LO_QUICK)
+	  && strcmp(config->logging->logtype, SILC_CONFIG_SERVER_LO_FDELAY)) {
 	fprintf(stderr, "%s:%d: Unknown log file section '%s'\n",
 		config->filename, pc->linenum, config->logging->logtype);
 	break;
@@ -1208,9 +1210,9 @@ int silc_server_config_check_sections(uint32 checkmask)
     
     return FALSE;
   }
-  if (!(checkmask 
+  if (!(checkmask
 	& (1L << SILC_CONFIG_SERVER_SECTION_TYPE_ROUTER_CONNECTION))) {
-    
+
     return FALSE;
   }
 
@@ -1221,11 +1223,13 @@ int silc_server_config_check_sections(uint32 checkmask)
 
 void silc_server_config_setlogfiles(SilcServerConfig config, SilcSchedule sked)
 {
+  long tmp;
   SilcServerConfigSectionLogging *log;
 
   SILC_LOG_DEBUG(("Setting configured log file names"));
   log = config->logging;
   while (log) {
+    /* Logging Files */
     if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_INFO))
       silc_log_set_file(SILC_LOG_INFO, log->filename, log->maxsize, sked);
     if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_WARNING))
@@ -1234,6 +1238,22 @@ void silc_server_config_setlogfiles(SilcServerConfig config, SilcSchedule sked)
       silc_log_set_file(SILC_LOG_ERROR, log->filename, log->maxsize, sked);
     if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_FATAL))
       silc_log_set_file(SILC_LOG_FATAL, log->filename, log->maxsize, sked);
+    /* Logging Options */
+    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LO_QUICK)) {
+      if (!strcasecmp(log->filename, "yes") ||
+	  !strcasecmp(log->filename, "on"))
+	   silc_log_quick = TRUE;
+    }
+    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LO_FDELAY)) {
+      tmp = atol(log->filename);
+      if (tmp > 0)
+        silc_log_flushdelay = tmp;
+      else {
+        fprintf(stderr, "config: invalid flushdelay value, use quicklogs if "
+		"you want real-time logging.\n");
+	exit(1);
+      }
+    }
 
     log = log->next;
   }

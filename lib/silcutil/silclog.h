@@ -162,6 +162,23 @@ typedef bool (*SilcLogHexdumpCb)(char *file, char *function, int line,
  ***/
 extern bool silc_log_quick;
 
+/****v* silcutil/SilcLogAPI/silc_log_flushdelay
+ *
+ * NAME
+ *
+ *    long silc_log_flushdelay -- flushing time delay
+ *
+ * DESCRIPTION
+ *
+ *    Sets the logfiles flushing delay in seconds.  As for now, changing this
+ *    value AFTER logfiles initialization won't take effect until previous
+ *    delay time will expire; for example if you change from 300 seconds to
+ *    60 seconds you will have to wait up to 300 seconds for this change to
+ *    take effect.
+ *
+ ***/
+extern long silc_log_flushdelay;
+
 /****v* silcutil/SilcLogAPI/silc_debug
  *
  * NAME

@@ -1,3 +1,19 @@
+Mon Jan  7 23:38:19 CET 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Simple handling of TERM and HUP signals. Also added some log
+	  flushing call around.  Affected file is
+	  silcd/silcd.c.
+
+	* Fixed small bugs in silclog.c. Now buffering output will take
+	  effect after 10 seconds since startup: This will ensure that
+	  no important startup messages are lost. Also output redirection
+	  will preserve original format ([Date] [Type] message).
+	  Affected file is lib/silcutil/silclog.c.
+
+	* Added two options to the config file, in the logging section:
+	  quicklogs:<yes/no>: and flushdelay:<seconds>:.  Affected files
+	  lib/silcutil/silclog.[ch], silcd/serverconfig.[ch].
+
 Sun Jan  6 12:49:40 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not print the warning about log files not being initialized
