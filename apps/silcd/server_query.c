@@ -427,7 +427,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
     /* Get requested attributes if set */
     tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
     if (tmp)
-      query->attrs = silc_attribute_payload_parse_list(tmp, tmp_len);
+      query->attrs = silc_attribute_payload_parse(tmp, tmp_len);
     break;
 
   case SILC_COMMAND_WHOWAS:

@@ -1564,6 +1564,9 @@ silc_server_check_watcher_list_foreach(void *key, void *context,
   SilcClientEntry entry = context;
   SilcSocketConnection sock;
 
+  if (!context)
+    return;
+
   if (entry == notify->client)
     return;
 
