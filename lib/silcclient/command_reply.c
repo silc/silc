@@ -870,12 +870,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
   curtime = time(NULL);
   id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_len,
 		      cmd->packet->src_id_type);
-  if (!id) {
+  if (!id || !conn->ping) {
     COMMAND_REPLY_ERROR;
     goto out;
   }
 
   for (i = 0; i < conn->ping_count; i++) {
+    if (!conn->ping[i].dest_id)
+      continue;
     if (SILC_ID_SERVER_COMPARE(conn->ping[i].dest_id, id)) {
       diff = curtime - conn->ping[i].start_time;
       cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
