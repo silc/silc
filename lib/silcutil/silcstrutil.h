@@ -214,4 +214,21 @@ silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
                 char *transfer_encoding, SilcUInt32 transfer_encoding_size,
                 unsigned char **mime_data_ptr, SilcUInt32 *mime_data_len);
 
+/****f* silcutil/SilcStrUtilAPI/silc_strncat
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_strncat(char *dest, SilcUInt32 dest_size,
+ *                       const char *src, SilcUInt32 src_len);
+ *
+ * DESCRIPTION
+ *
+ *    Concatenates the `src' into `dest'.  If `src_len' is more than the
+ *    size of the `dest' (minus NULL at the end) the `src' will be
+ *    truncated to fit.
+ *
+ ***/
+char *silc_strncat(char *dest, SilcUInt32 dest_size,
+		   const char *src, SilcUInt32 src_len);
+
 #endif /* SILCSTRUTIL_H */

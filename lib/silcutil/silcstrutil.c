@@ -574,3 +574,25 @@ silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
 
   return TRUE;
 }
+
+/* Concatenates the `src' into `dest'.  If `src_len' is more than the
+   size of the `dest' (minus NULL at the end) the `src' will be
+   truncated to fit. */
+
+char *silc_strncat(char *dest, SilcUInt32 dest_size,
+		   const char *src, SilcUInt32 src_len)
+{
+  int len;
+
+  dest[dest_size - 1] = '\0';
+
+  len = dest_size - 1 - strlen(dest);
+  if (len < src_len) {
+    if (len > 0)
+      strncat(dest, src, len);
+  } else {
+    strncat(dest, src, src_len);
+  }
+
+  return dest;
+}
