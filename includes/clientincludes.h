@@ -25,7 +25,6 @@
 
 #include <curses.h>
 #include <sys/param.h>
-#include <pwd.h>
 
 #ifdef HAVE_PATHS_H
 #include <paths.h>

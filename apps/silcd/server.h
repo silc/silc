@@ -79,6 +79,7 @@ do {									    \
 int silc_server_alloc(SilcServer *new_server);
 void silc_server_free(SilcServer server);
 int silc_server_init(SilcServer server);
+void silc_server_daemonise(SilcServer server);
 void silc_server_run(SilcServer server);
 void silc_server_stop(SilcServer server);
 void silc_server_packet_parse(SilcPacketParserContext *parser_context);

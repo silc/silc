@@ -34,6 +34,7 @@ static struct option long_opts[] =
 {
   { "config-file", 1, NULL, 'f' },
   { "generate-config-file", 0, NULL, 'c' },
+  { "debug", 0, NULL, 'd' },
   { "help", 0, NULL, 'h' },
   { "version", 0, NULL,'V' },
   { NULL, 0, NULL, 0 }
@@ -48,6 +49,7 @@ void silc_usage()
   printf("  -f  --config-file=FILE        Alternate configuration file\n");
   printf("  -c  --generate-config-file    Generate example configuration "
 	 "file\n");
+  printf("  -d  --debug                   Enable debugging (no daemon)\n");
   printf("  -h  --help                    Display this message\n");
   printf("  -V  --version                 Display version\n");
   exit(0);
@@ -60,11 +62,11 @@ int main(int argc, char **argv)
   char *config_file = NULL;
   SilcServer silcd;
 
-  silc_debug = TRUE;
+  silc_debug = FALSE;
 
   /* Parse command line arguments */
   if (argc > 1) {
-    while ((opt = getopt_long(argc, argv, "cf:hV",
+    while ((opt = getopt_long(argc, argv, "cf:dhV",
 			      long_opts, &option_index)) != EOF) {
       switch(opt) 
 	{
@@ -83,6 +85,8 @@ int main(int argc, char **argv)
 	  silc_config_server_print();
 	  exit(0);
 	  break;
+	case 'd':
+	  silc_debug = TRUE;
 	case 'f':
 	  config_file = strdup(optarg);
 	  break;
@@ -111,6 +115,11 @@ int main(int argc, char **argv)
   ret = silc_server_init(silcd);
   if (ret == FALSE)
     goto fail;
+
+  if (silc_debug == FALSE)
+    /* Before running the server, fork to background and set
+       both user and group no non-root */    
+    silc_server_daemonise(silcd);
   
   /* Run the server. When this returns the server has been stopped
      and we will exit. */

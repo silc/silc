@@ -67,6 +67,15 @@
 
        +<Local IP/UNIX socket path>:<Remote IP>:<Port>
 
+   <Identity>
+
+       This section is used to set both the user and group which silcd
+       sets itself upon starting.
+
+       Format:
+
+       <user>:<group>
+
    <Logging>
 
        This section is used to set various logging files, their paths
@@ -161,6 +170,8 @@ SilcConfigServerSection silc_config_server_sections[] = {
     SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_INFO, 4 },
   { "[ListenPort]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_LISTEN_PORT, 3 },
+  { "[Identity]", 
+    SILC_CONFIG_SERVER_SECTION_TYPE_IDENTITY, 2 },
   { "[Logging]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_LOGGING, 3 },
   { "[ConnectionClass]", 
@@ -232,6 +243,7 @@ void silc_config_server_free(SilcConfigServer config)
     silc_free(config->server_info);
     silc_free(config->admin_info);
     silc_free(config->listen_port);
+    silc_free(config->identity);
     silc_free(config->conn_class);
     silc_free(config->clients);
     silc_free(config->admins);
@@ -626,6 +638,23 @@ int silc_config_server_parse_lines(SilcConfigServer config,
       check = TRUE;
       checkmask |= (1L << pc->section->type);
       break;
+
+    case SILC_CONFIG_SERVER_SECTION_TYPE_IDENTITY:
+
+      if (!config->identity)
+        config->identity = silc_calloc(1, sizeof(*config->identity));
+
+      /* Get user */
+      ret = silc_config_get_token(line, &config->identity->user);
+      if (ret < 0)
+        break;
+      /* Get group */
+      ret = silc_config_get_token(line, &config->identity->group);
+      if (ret < 0)
+        break;
+
+      check = TRUE;
+      checkmask |= (1L << pc->section->type);
 
     case SILC_CONFIG_SERVER_SECTION_TYPE_CONNECTION_CLASS:
 

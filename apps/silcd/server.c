@@ -349,6 +349,95 @@ int silc_server_init(SilcServer server)
   return FALSE;
 }
 
+/* Fork server to background and set gid+uid to non-root.
+   Silcd will not run as root, so trying to set either user or group to
+   root will cause silcd to exit. */
+
+void silc_server_daemonise(SilcServer server)
+{
+  /* Are we executing silcd as root or a regular user? */
+  if (geteuid()==0) {
+
+     struct passwd *pw;
+     struct group *gr;
+     char *user, *group;
+
+     if (!server->config->identity->user || 
+         !server->config->identity->group) {
+       SILC_LOG_DEBUG(("User and/or group not set"));
+       fprintf(stderr, "User and/or group not set, exiting\n");
+       exit(1);
+     }
+
+     /* Get the values given for user and group in configuration file */
+     user=server->config->identity->user;
+     group=server->config->identity->group;
+
+     /* Check whether the user/group information is text */ 
+     if (atoi(user)!=0 || atoi(group)!=0) {
+       SILC_LOG_DEBUG(("Invalid user and/or group information"));
+       SILC_LOG_DEBUG(("User and/or group given as number"));
+       fprintf(stderr, "Invalid user and/or group information\n");
+       fprintf(stderr, "Please assign them as names, not numbers\n");
+       exit(1);
+     }
+
+     /* Catch the nasty incident of string "0" returning 0 from atoi */
+     if (strcmp("0", user)==0 || strcmp("0", group)==0) {
+       SILC_LOG_DEBUG(("User and/or group configured to 0. Unacceptable"));
+       fprintf(stderr, "User and/or group configured to 0. Exiting\n");
+       exit(1);
+     }
+
+     pw=getpwnam(user);
+     gr=getgrnam(group);
+
+    /* Check whether user and/or group is set to root. If yes, exit
+       immediately. Otherwise, setgid and setuid server to user.group */
+    if (gr->gr_gid==0 || pw->pw_uid==0) {
+      SILC_LOG_DEBUG(("FATAL: silcd will not run at root privileges"));
+      fprintf(stderr, "User and/or group not set. Please set them\n");
+      exit(1);
+    } else {
+      /* Fork server to background, making it a daemon */
+      if (fork()) {
+        SILC_LOG_DEBUG(("Server started as root. Dropping privileges."));
+        SILC_LOG_DEBUG(("Forking SILC server to background"));
+        exit(0);
+      } 
+      setsid();
+   
+       SILC_LOG_DEBUG(("Changing to group %s", group));
+      if(setgid(gr->gr_gid)==0) {
+        SILC_LOG_DEBUG(("Setgid to %s", group));
+      } else {
+        SILC_LOG_DEBUG(("Setgid to %s failed", group));
+        fprintf(stderr, "Tried to setgid %s but no such group. Exiting\n",
+                group);
+        exit(1);
+      }
+      SILC_LOG_DEBUG(("Changing to user nobody"));
+      if(setuid(pw->pw_uid)==0) {
+        SILC_LOG_DEBUG(("Setuid to %s", user));
+      } else {
+        SILC_LOG_DEBUG(("Setuid to %s failed", user));
+        fprintf(stderr, "Tried to setuid %s but no such user. Exiting\n",
+                user);
+        exit(1);
+      }
+    }
+  } else {
+    /* Fork server to background, making it a daemon */
+    if (fork()) {
+      SILC_LOG_DEBUG(("Server started as user")); 
+      SILC_LOG_DEBUG(("Forking SILC server to background"));
+      exit(0);
+    }
+    setsid();
+  }
+}
+
+
 /* Stops the SILC server. This function is used to shutdown the server. 
    This is usually called after the scheduler has returned. After stopping 
    the server one should call silc_server_free. */

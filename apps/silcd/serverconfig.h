@@ -57,6 +57,13 @@ typedef struct SilcConfigServerSectionListenPortStruct {
   struct SilcConfigServerSectionListenPortStruct *prev;
 } SilcConfigServerSectionListenPort;
 
+/* Holds server's execution identity, or the user and group which
+   to change from root when server starts */
+typedef struct {
+ char *user;
+ char *group;
+} SilcConfigServerSectionIdentity;
+
 /* Holds all the configured log files. */
 typedef struct SilcConfigServerSectionLoggingStruct {
   char *logtype;
@@ -160,6 +167,7 @@ typedef struct {
   SilcConfigServerSectionServerInfo *server_info;
   SilcConfigServerSectionAdminInfo *admin_info;
   SilcConfigServerSectionListenPort *listen_port;
+  SilcConfigServerSectionIdentity *identity;
   SilcConfigServerSectionLogging *logging;
   SilcConfigServerSectionConnectionClass *conn_class;
   SilcConfigServerSectionClientConnection *clients;
@@ -182,6 +190,7 @@ typedef enum {
   SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_INFO,
   SILC_CONFIG_SERVER_SECTION_TYPE_ADMIN_INFO,
   SILC_CONFIG_SERVER_SECTION_TYPE_LISTEN_PORT,
+  SILC_CONFIG_SERVER_SECTION_TYPE_IDENTITY,
   SILC_CONFIG_SERVER_SECTION_TYPE_LOGGING,
   SILC_CONFIG_SERVER_SECTION_TYPE_CONNECTION_CLASS,
   SILC_CONFIG_SERVER_SECTION_TYPE_CLIENT_CONNECTION,

@@ -34,6 +34,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdarg.h>
+#include <pwd.h>
+#include <grp.h>
 
 #include <ctype.h>
 #include <sys/types.h>
