@@ -369,8 +369,17 @@ bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
   case SILC_AUTH_PASSWORD:
     /* Passphrase based authentication. The `pkcs', `hash', `id' and `type'
        arguments are not needed. */
+    /* Carefully check that the auth_data field of the payload is not empty
+       (len=0), which seems to be a legal packet but would crash the
+       application. Maybe such packet should be dropped. -Johnny 2002/14/4 */
+    if ((payload->auth_len == 0) || !auth_data)
+      break;
+
+    /* if lengths mismatch, avoid comparing unallocated memory locations */
+    if (payload->auth_len != auth_data_len)
+      break;
     if (!memcmp(payload->auth_data, auth_data, auth_data_len)) {
-      SILC_LOG_DEBUG(("Authentication successful"));
+      SILC_LOG_DEBUG(("Passphrase Authentication successful"));
       return TRUE;
     }
     break;

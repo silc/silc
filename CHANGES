@@ -1,3 +1,9 @@
+Sun Apr 14 20:41:28 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Fixed a bug in library where sending a bogus authentication
+	  payload would lead to a crash.  Affected file is
+	  lib/silccore/silcauth.c.
+
 Mon Apr  8 19:57:40 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
 
 	* Added config parse status SILC_CONFIG_EPRINTLINE, this status
