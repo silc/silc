@@ -284,10 +284,6 @@ SILC Secure Internet Live Conferencing, version %s\n",
 
   /* XXX Read local configuration file */
 
-  /* Check ~/.silc directory and public and private keys */
-  if (silc_client_check_silc_dir() == FALSE)
-    goto fail;
-
   /* Get user information */
   silc->username = silc_get_username();
   silc->hostname = silc_net_localhost();
@@ -311,6 +307,10 @@ SILC Secure Internet Live Conferencing, version %s\n",
     silc_hash_register_default();
     silc_hmac_register_default();
   }
+
+  /* Check ~/.silc directory and public and private keys */
+  if (silc_client_check_silc_dir() == FALSE)
+    goto fail;
 
   /* Load public and private key */
   if (silc_client_load_keys(silc) == FALSE)
