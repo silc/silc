@@ -1,8 +1,8 @@
 <!--
 @LIBRARY=SILC Math Library
 @FILENAME=silcmathlib.html
-@LINK=silcmath.html:SILC Math API
-@LINK=silcmp.html:SILC MP API
+@LINK=silcmp.html:SILC MP Interface
+@LINK=silcmath.html:SILC Math Interface
 -->
 
 <BIG><B>SILC Math Library</B></BIG>

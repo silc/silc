@@ -2,18 +2,21 @@
 
  <h3>To new Irssi users (not to new IRC users ..)</h3>
 
- <p>Copyright (c) 2000-2001 by Timo Sirainen</p>
+ <p>Copyright (c) 2000-2002 by Timo Sirainen</p>
 
 
 <p>Index with some FAQ questions that are answered in the chapter:</p>
 
 <ol>
 <li><a href="#c1">For all the lazy people</a></li>
-<li><a href="#c2">Basic user interface usage</a></li>
+<li><a href="#c2">Basic user interface usage</a>
+    <ul>
+    <li>Split windows work in weird way</li>
+    </ul></li>
 <li><a href="#c3">Server and channel automation</a>
     <ul>
-    <li>how do I automatically connect to servers at startup?</li>
-    <li>how do I automatically join to channels at startup?</li>
+    <li>How do I automatically connect to servers at startup?</li>
+    <li>How do I automatically join to channels at startup?</li>
     </ul></li>
 <li><a href="#c4">Setting up windows and automatically restoring them
     at startup</a></li>
@@ -34,8 +37,12 @@
     <li>How can I save all texts in a window to file?</li>
     </ul></li>
 <li><a href="#c8">Logging</a></li>
-<li><a href="#c9">Proxies and IRC bouncers</a></li>
-<li><a href="#c10">Irssi's settings</a></li>
+<li><a href="#c9">Changing keyboard bindings</a>
+    <ul>
+    <li>How do I make F1 key do something?</li>
+    </ul></li>
+<li><a href="#c10">Proxies and IRC bouncers</a></li>
+<li><a href="#c11">Irssi's settings</a></li>
 </ol>
 
 <h3><a id="c1">1. For all the lazy people</a></h3>
@@ -342,7 +349,7 @@ see list of all active connections, use /SERVER without any parameters.
 You should see a list of something like:</p>
 
 <pre>
-     -!- IRCNet: irc.telia.fi:6667 (IRCNet)
+     -!- IRCNet: irc.song.fi:6667 (IRCNet)
      -!- OPN: tolkien.openprojects.net:6667 (OPN)
      -!- RECON-1: 192.168.0.1:6667 () (02:59 left before reconnecting)
 </pre>
@@ -436,9 +443,9 @@ buffer. Simplest usages are</p>
      /LASTLOG -topics  - print all topic changes
 </pre>
 
-<p>If there's more lines to be printed than 1000, irssi doesn't thinks
-that you probably made some mistake and won't print them without -force
-option. If you want to save the full lastlog to file, use</p>
+<p>If there's more than 1000 lines to be printed, irssi thinks that you
+probably made some mistake and won't print them without -force option.
+If you want to save the full lastlog to file, use</p>
 
 <pre>
      /LASTLOG -file ~/irc.log
@@ -501,7 +508,36 @@ logs by adding date/time formats to the file name. The formats are in
 <p>For logging only some specific channels or nicks, see /HELP log</p>
 
 
-<h3><a id="c9">9. Proxies and IRC bouncers</a></h3>
+<h3><a id="c9">9. Changing keyboard bindings</a></h3>
+
+<p>You can change any keyboard binding that terminal lets irssi know
+about. It doesn't let irssi know everything, so for example
+shift-backspace can't be bound unless you modify xterm resources
+somehow.</p>
+
+<p>/HELP bind tells pretty much everything there is to know about
+keyboard bindings. However, there's the problem of how to bind some
+non-standard keys. They might differ a bit with each terminal, so
+you'll need to find out what exactly the keypress produces. Easiest
+way to check that would be to see what it prints in "cat". Here's
+an example for pressing F1 key:</p>
+
+<pre>
+[cras@hurina] ~% cat
+^[OP
+</pre>
+
+<p>So in irssi you would use /BIND ^[OP /ECHO F1 pressed. If you use
+multiple terminals which have different bindings for the key, it would
+be better to use eg.:</p>
+
+<pre>
+/BIND ^[OP key F1
+/BIND ^[11~ key F1
+/BIND F1 /ECHO F1 pressed.
+</pre>
+
+<h3><a id="c10">10. Proxies and IRC bouncers</a></h3>
 
 <p>Irssi supports connecting to IRC servers via a proxy. All proxies have
 these settings in common:</p>
@@ -521,6 +557,32 @@ these settings in common:</p>
      /EVAL SET proxy_string CONNECT %s:%d\n\n
 </pre>
 
+<p><strong>BNC</strong></p>
+
+<pre>
+     /SET proxy_password your_pass
+     /SET -clear proxy_string
+     /SET proxy_string conn %s %d
+</pre>
+
+<p><strong>dircproxy</strong></p>
+
+<p>dircproxy separates the server connections by passwords. So, if you
+for example have ircnet connection with password ircpass and
+openprojects connection with opnpass, you would do something like
+this:</p>
+
+<pre>
+     /SET -clear proxy_password
+     /SET -clear proxy_string
+
+     /SERVER ADD -auto -ircnet ircnet fake.ircnet 6667 ircpass
+     /SERVER ADD -auto -ircnet opn fake.opn 6667 opnpass
+</pre>
+
+<p>The server name and port you give isn't used anywhere, so you can
+put anything you want in there.</p>
+
 <p><strong>Irssi proxy</strong></p>
 
 <p>Irssi contains it's own proxy which you can build giving
@@ -538,7 +600,7 @@ ports, like you can share ircnet in port 2777 and efnet in port 2778.</p>
 <p>Usage in proxy side:</p>
 
 <pre>
-     /LOAD irc_proxy (/LOAD proxy in irssi 0.7.98.3 and older)
+     /LOAD proxy
      /SET irssiproxy_password &lt;password&gt;
      /SET irssiproxy_ports &lt;ircnet&gt;=&lt;port&gt; ... (eg. ircnet=2777 efnet=2778)
 </pre>
@@ -549,7 +611,7 @@ are using to server and ircnet lists with /SERVER ADD and /IRCNET ADD.
 one server connection, you may simply set:</p>
 
 <pre>
-     /SET irssiproxy_ports *=2777 (irssi 0.7.99 and later only)
+     /SET irssiproxy_ports *=2777
 </pre>
 
 <p>Usage in client side:</p>
@@ -579,15 +641,18 @@ give it with:</p>
      /SET proxy_password &lt;password&gt;
 </pre>
 
-<p>Irssi's default for connect string is</p>
+<p>Irssi's defaults for connect strings are</p>
 
 <pre>
      /SET proxy_string CONNECT %s %d
+     /SET proxy_string_after
 </pre>
 
-<p>which you can modify according to your bouncer's needs.</p>
+<p>The proxy_string is sent before NICK/USER commands, the
+proxy_string_after is sent after them. %s and %d can be used with both
+of them.</p>
 
-<h3><a id="c10">10. Irssi's settings</a></h3>
+<h3><a id="c11">11. Irssi's settings</a></h3>
 
 <p>You probably don't like Irssi's default settings. I don't like them.
 But I'm still convinced that they're pretty good defaults. Here's some
@@ -716,9 +781,6 @@ of them you might want to change (the default value is shown):</p>
   <dd>Show quit message only once in some of the channel windows the
   nick was in instead of in all windows.</dd>
 
-<dt>/SET topicbar ON</dt>
-  <dd>Show the channel's topic in top of screen.</dd>
-
 <dt>/SET lag_min_show 100</dt>
   <dd>Show the server lag in status bar if it's bigger than this, the
   unit is 1/100 of seconds (ie. the default value of 100 = 1 second).</dd>
@@ -734,12 +796,6 @@ of them you might want to change (the default value is shown):</p>
   or queries, list them here. For example "#boringchannel =bot1 =bot2".
   If any highlighted text or message for you appears in that window, this
   setting is ignored and the activity is shown.</dd>
-
-<dt>/SET mail_counter ON</dt>
-  <dd>Show the number of mails in your mbox in status
-  bar. The mbox file is taken from $MAIL environment setting. Only mbox
-  format works for now.</dd>
-</dl>
 
 <p><strong>Nick completion</strong></p>
 

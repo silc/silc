@@ -231,8 +231,7 @@ static void statusbar_resize_items(STATUSBAR_REC *bar, int max_width)
 }
 
 #define SBAR_ITEM_REDRAW_NEEDED(_bar, _item, _xpos) \
-	(((_bar)->dirty_xpos != -1 && \
-	  (_xpos) >= (_bar)->dirty_xpos) || \
+	(((_bar)->dirty_xpos != -1 && (_xpos) >= (_bar)->dirty_xpos) || \
 	 (_item)->xpos != (_xpos) || (_item)->current_size != (_item)->size)
 
 static void statusbar_calc_item_positions(STATUSBAR_REC *bar)
@@ -279,7 +278,9 @@ static void statusbar_calc_item_positions(STATUSBAR_REC *bar)
 		if (rec->config->right_alignment) {
                         if (rec->size > 0)
 				right_items = g_slist_prepend(right_items, rec);
-			else if (rec->current_size > 0) {
+			else if (rec->current_size > 0 &&
+				 (bar->dirty_xpos == -1 ||
+				  rec->xpos < bar->dirty_xpos)) {
 				/* item was hidden - set the dirty position
 				   to begin from the item's old xpos */
 				irssi_set_dirty();
@@ -1069,10 +1070,8 @@ static void statusbar_item_signal_destroy(void *key, GSList *value)
         g_slist_free(value);
 }
 
-static void sig_setup_reload(void)
+void statusbars_create_window_bars(void)
 {
-	/* statusbar-config.c recreates root statusbars,
-	   we need to create window-statusbars */
         g_slist_foreach(mainwindows, (GFunc) statusbars_add_visible, NULL);
 }
 
@@ -1098,7 +1097,6 @@ void statusbar_init(void)
 	signal_add("gui window created", (SIGNAL_FUNC) sig_gui_window_created);
 	signal_add("window changed", (SIGNAL_FUNC) sig_window_changed);
 	signal_add("mainwindow destroyed", (SIGNAL_FUNC) sig_mainwindow_destroyed);
-	signal_add_last("setup reread", (SIGNAL_FUNC) sig_setup_reload);
 
 	statusbar_items_init();
 	statusbar_config_init(); /* signals need to be before this call */
@@ -1130,7 +1128,6 @@ void statusbar_deinit(void)
 	signal_remove("gui window created", (SIGNAL_FUNC) sig_gui_window_created);
 	signal_remove("window changed", (SIGNAL_FUNC) sig_window_changed);
 	signal_remove("mainwindow destroyed", (SIGNAL_FUNC) sig_mainwindow_destroyed);
-	signal_remove("setup reread", (SIGNAL_FUNC) sig_setup_reload);
 
 	statusbar_items_deinit();
 	statusbar_config_deinit();

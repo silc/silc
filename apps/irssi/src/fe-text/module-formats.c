@@ -25,11 +25,17 @@ FORMAT_REC gui_text_formats[] =
 {
 	{ MODULE_NAME, "Text user interface", 0 },
 
+	/* ---- */
+	{ NULL, "Lastlog", 0 },
+
 	{ "lastlog_too_long", "/LASTLOG would print $0 lines. If you really want to print all these lines use -force option.", 1, { 1 } },
 	{ "lastlog_count", "{hilight Lastlog}: $0 lines", 1, { 1 } },
 	{ "lastlog_start", "{hilight Lastlog}:", 0 },
 	{ "lastlog_end", "{hilight End of Lastlog}", 0 },
 	{ "lastlog_separator", "--", 0 },
+
+	/* ---- */
+	{ NULL, "Windows", 0 },
 
 	{ "refnum_not_found", "Window number $0 not found", 1, { 0 } },
 	{ "window_too_small", "Not enough room to resize this window", 0 },
@@ -42,6 +48,28 @@ FORMAT_REC gui_text_formats[] =
 	{ "window_info_sticky", "Sticky  : $0", 1, { 0 } },
 	{ "window_scroll", "Window scroll mode is now $0", 1, { 0 } },
 	{ "window_scroll_unknown", "Unknown scroll mode $0, must be ON, OFF or DEFAULT", 1, { 0 } },
+
+	/* ---- */
+	{ NULL, "Statusbars", 0 },
+
+	{ "statusbar_list_header", "Name                           Type   Placement Position Visible", 0 },
+	{ "statusbar_list_footer", "", 0 },
+	{ "statusbar_list", "$[30]0 $[6]1 $[9]2 $[8]3 $4", 5, { 0, 0, 0, 1, 0 } },
+	{ "statusbar_info_name", "Statusbar: {hilight $0}", 1, { 0 } },
+	{ "statusbar_info_type", "Type     : $0", 1, { 0 } },
+	{ "statusbar_info_placement", "Placement: $0", 1, { 0 } },
+	{ "statusbar_info_position", "Position : $0", 1, { 1 } },
+	{ "statusbar_info_visible", "Visible  : $0", 1, { 0 } },
+	{ "statusbar_info_item_header", "Items    : Name                                Priority  Alignment", 0 },
+	{ "statusbar_info_item_footer", "", 0 },
+	{ "statusbar_info_item_name",  "         : $[35]0 $[9]1 $2", 3, { 0, 1, 0 } },
+	{ "statusbar_not_found", "Statusbar doesn't exist: $0", 1, { 0 } },
+	{ "statusbar_not_found", "Statusbar doesn't exist: $0", 1, { 0 } },
+	{ "statusbar_item_not_found", "Statusbar item doesn't exist: $0", 1, { 0 } },
+	{ "statusbar_unknown_command", "Unknown statusbar command: $0", 1, { 0 } },
+	{ "statusbar_unknown_type", "Statusbar type must be 'window' or 'root'", 1, { 0 } },
+	{ "statusbar_unknown_placement", "Statusbar placement must be 'top' or 'bottom'", 1, { 0 } },
+	{ "statusbar_unknown_visibility", "Statusbar visibility must be 'always', 'active' or 'inactive'", 1, { 0 } },
 
 	{ NULL, NULL, 0 }
 };

@@ -21,7 +21,7 @@
  *
  * DESCRIPTION
  *
- * Implementation of the Arugment Payload, that is used to include 
+ * Implementation of the Argument Payload, that is used to include 
  * argument to other payload that needs arguments.
  *
  ***/

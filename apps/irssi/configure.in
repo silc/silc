@@ -7,7 +7,7 @@ if test -n "`grep '^#undef VERSION' config.h.in`"; then
 fi
 
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(Irssi-SILC, 0.7.99)
+AM_INIT_AUTOMAKE(Irssi-SILC, 0.8.1)
 
 AM_MAINTAINER_MODE
 
@@ -29,19 +29,6 @@ AC_CHECK_HEADERS(string.h stdlib.h unistd.h dirent.h sys/ioctl.h sys/resource.h)
 
 # check posix headers..
 AC_CHECK_HEADERS(sys/time.h sys/utsname.h regex.h)
-
-AC_ARG_WITH(big5,
-[  --with-big5             Build with tr-Chinese Big5 support],
-	if test x$withval = xyes; then
-		want_big5=yes
-	else
-		if test "x$withval" = xno; then
-			want_big5=no
-		else
-			want_big5=yes
-		fi
-	fi,
-	want_big5=no)
 
 AC_ARG_WITH(socks,
 [  --with-socks            Build with socks support],
@@ -217,7 +204,7 @@ case "$host_os" in
 esac
 
 
-AC_CHECK_FUNCS(mkfifo fcntl)
+AC_CHECK_FUNCS(mkfifo fcntl nl_langinfo)
 
 AC_CHECK_FUNC(socket, [], [
 	AC_CHECK_LIB(socket, socket, [
@@ -304,12 +291,14 @@ AC_DEFUN(AC_CHECK_GLIBDIR,[
       if test -f $full_glib_dir/gmodule/.libs/libgmodule.a; then
 	GLIB_LIBS="$GLIB_LIBS $full_glib_dir/gmodule/.libs/libgmodule.a"
         AC_DEFINE(HAVE_GMODULE)
+	have_gmodule=yes
       fi
     else
       GLIB_LIBS="$full_glib_dir/libglib.a $GLIB_LDEXTRA"
       if test -f $full_glib_dir/gmodule/libgmodule.a; then
 	GLIB_LIBS="$GLIB_LIBS $full_glib_dir/gmodule/libgmodule.a"
         AC_DEFINE(HAVE_GMODULE)
+	have_gmodule=yes
       fi
     fi
     AC_SUBST(GLIB_CFLAGS)
@@ -329,6 +318,7 @@ if test -z "$GLIB_DIR"; then
     AM_PATH_GLIB(1.2.0)
   else
     AC_DEFINE(HAVE_GMODULE)
+    have_gmodule=yes
   fi
 
   if test -z "$GLIB_LIBS"; then
@@ -444,11 +434,9 @@ if test "x$want_textui" = "xyes"; then
        		AC_CHECK_FUNC(idcok, AC_DEFINE(HAVE_CURSES_IDCOK))
        		AC_CHECK_FUNC(resizeterm, AC_DEFINE(HAVE_CURSES_RESIZETERM))
        		AC_CHECK_FUNC(wresize, AC_DEFINE(HAVE_CURSES_WRESIZE))
-		if test "x$want_terminfo" = "xyes"; then
-			AC_CHECK_LIB(curses, setupterm,, [
-				want_termcap=yes
-			])
-		fi
+		AC_CHECK_FUNC(setupterm,, [
+		       	want_termcap=yes
+		])
 	else
 		AC_CHECK_LIB(tinfo, setupterm, [
 		  LIBS="$LIBS -ltinfo"
@@ -729,14 +717,6 @@ AC_SUBST(COMMON_NOUI_LIBS)
 AC_SUBST(COMMON_LIBS)
 
 dnl **
-dnl ** tr-Chinese Big5 support
-dnl **
-
-if test "x$want_big5" = "xyes"; then
-	AC_DEFINE(WANT_BIG5)
-fi
-
-dnl **
 dnl ** IPv6 support
 dnl **
 
@@ -838,6 +818,13 @@ fi
 echo "Building irssi bot ......... : $want_irssibot"
 echo "Building irssi proxy ....... : $want_irssiproxy"
 echo "Building with IPv6 support . : $want_ipv6"
+if test "x$have_gmodule" = "xyes"; then
+	echo "Building with module support : yes"
+else
+	echo "Building with module support : NO!! /LOAD will not work!"
+	echo " - You're missing gmodule (comes with glib) for some reason,"
+	echo "   or it doesn't work in your system."
+fi
 
 if test "x$want_perl" = "xstatic"; then
 	echo "Building with Perl support . : static (in irssi binary)"
@@ -873,5 +860,6 @@ if test "x$want_perl" != "xno"; then
 		echo "  Anyway, installing perl to this directory should work just as well."
 	fi
 fi
+
 echo "Install prefix ............. : $prefix"
 

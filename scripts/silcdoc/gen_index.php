@@ -102,9 +102,9 @@ require "$page";
 <?php
 if ($type == 0) {
   /* Get the index for this page */
-  $len = strcspn($page, "__");
+  $len = strcspn($page, "-");
   $fname = substr($page, 0, $len);
-  require "$fname"."__index.tmpl";
+  require "$fname"."-index.tmpl";
 }
 ?>
 </font>

@@ -344,13 +344,12 @@ static void item_input(SBAR_ITEM_REC *item, int get_size_only)
 {
 	GUI_ENTRY_REC *rec;
 
-	rec = g_hash_table_lookup(input_entries, item);
+	rec = g_hash_table_lookup(input_entries, item->bar);
 	if (rec == NULL) {
 		rec = gui_entry_create(item->xpos, item->bar->real_ypos,
-				       item->size,
-				       settings_get_bool("term_utf8"));
+				       item->size, term_type == TERM_TYPE_UTF8);
 		gui_entry_set_active(rec);
-		g_hash_table_insert(input_entries, item, rec);
+		g_hash_table_insert(input_entries, item->bar, rec);
 	}
 
 	if (get_size_only) {
@@ -364,23 +363,21 @@ static void item_input(SBAR_ITEM_REC *item, int get_size_only)
 	gui_entry_redraw(rec); /* FIXME: this is only necessary with ^L.. */
 }
 
-static void sig_statusbar_item_destroyed(SBAR_ITEM_REC *item)
+static void sig_statusbar_destroyed(STATUSBAR_REC *bar)
 {
 	GUI_ENTRY_REC *rec;
 
-	rec = g_hash_table_lookup(input_entries, item);
+	rec = g_hash_table_lookup(input_entries, bar);
 	if (rec != NULL) {
 		gui_entry_destroy(rec);
-		g_hash_table_remove(input_entries, item);
+		g_hash_table_remove(input_entries, bar);
 	}
 }
 
 static void read_settings(void)
 {
-	if (active_entry != NULL) {
-		gui_entry_set_utf8(active_entry,
-				   settings_get_bool("term_utf8"));
-	}
+	if (active_entry != NULL)
+		gui_entry_set_utf8(active_entry, term_type == TERM_TYPE_UTF8);
 }
 
 void statusbar_items_init(void)
@@ -421,10 +418,10 @@ void statusbar_items_init(void)
         /* input */
 	input_entries = g_hash_table_new((GHashFunc) g_direct_hash,
 					 (GCompareFunc) g_direct_equal);
-	signal_add("statusbar item destroyed", (SIGNAL_FUNC) sig_statusbar_item_destroyed);
+	signal_add("statusbar destroyed", (SIGNAL_FUNC) sig_statusbar_destroyed);
 
 	read_settings();
-        signal_add("setup changed", (SIGNAL_FUNC) read_settings);
+        signal_add_last("setup changed", (SIGNAL_FUNC) read_settings);
 }
 
 void statusbar_items_deinit(void)
@@ -451,7 +448,7 @@ void statusbar_items_deinit(void)
         g_source_remove(lag_timeout_tag);
 
         /* input */
-	signal_remove("statusbar item destroyed", (SIGNAL_FUNC) sig_statusbar_item_destroyed);
+	signal_remove("statusbar destroyed", (SIGNAL_FUNC) sig_statusbar_destroyed);
         g_hash_table_destroy(input_entries);
 
         signal_remove("setup changed", (SIGNAL_FUNC) read_settings);

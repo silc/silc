@@ -22,6 +22,7 @@
 #include "signals.h"
 #include "commands.h"
 #include "misc.h"
+#include "levels.h"
 #include "settings.h"
 
 #include "chatnets.h"
@@ -603,6 +604,9 @@ static void sig_complete_word(GList **list, WINDOW_REC *window,
 		/* nick completion .. we could also be completing a nick
 		   after /MSG from nicks in channel */
 		complete_window_nicks(list, window, word, linestart);
+	} else if (window->level & MSGLEVEL_MSGS) {
+		/* msgs window, complete /MSG nicks */
+                *list = g_list_concat(completion_msg(server, NULL, word, NULL), *list);
 	}
 
 	if (*list != NULL) signal_stop();
@@ -910,8 +914,10 @@ void chat_completion_init(void)
 	signal_add("complete word", (SIGNAL_FUNC) sig_complete_word);
 	signal_add("complete command msg", (SIGNAL_FUNC) sig_complete_msg);
 	signal_add("complete command query", (SIGNAL_FUNC) sig_complete_msg);
+	signal_add("complete command action", (SIGNAL_FUNC) sig_complete_msg);
 	signal_add("complete erase command msg", (SIGNAL_FUNC) sig_erase_complete_msg);
 	signal_add("complete erase command query", (SIGNAL_FUNC) sig_erase_complete_msg);
+	signal_add("complete erase command action", (SIGNAL_FUNC) sig_erase_complete_msg);
 	signal_add("complete command connect", (SIGNAL_FUNC) sig_complete_connect);
 	signal_add("complete command server", (SIGNAL_FUNC) sig_complete_connect);
 	signal_add("complete command topic", (SIGNAL_FUNC) sig_complete_topic);
@@ -936,8 +942,10 @@ void chat_completion_deinit(void)
 	signal_remove("complete word", (SIGNAL_FUNC) sig_complete_word);
 	signal_remove("complete command msg", (SIGNAL_FUNC) sig_complete_msg);
 	signal_remove("complete command query", (SIGNAL_FUNC) sig_complete_msg);
+	signal_remove("complete command action", (SIGNAL_FUNC) sig_complete_msg);
 	signal_remove("complete erase command msg", (SIGNAL_FUNC) sig_erase_complete_msg);
 	signal_remove("complete erase command query", (SIGNAL_FUNC) sig_erase_complete_msg);
+	signal_remove("complete erase command action", (SIGNAL_FUNC) sig_erase_complete_msg);
 	signal_remove("complete command connect", (SIGNAL_FUNC) sig_complete_connect);
 	signal_remove("complete command server", (SIGNAL_FUNC) sig_complete_connect);
 	signal_remove("complete command topic", (SIGNAL_FUNC) sig_complete_topic);

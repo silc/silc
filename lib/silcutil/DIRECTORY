@@ -1,23 +1,24 @@
 <!--
 @LIBRARY=SILC Utility Library
 @FILENAME=silcutillib.html
-@LINK=silcbuffer.html:SILC Buffer API
-@LINK=silcbuffmt.html:SILC Buffer Format API
-@LINK=silcbufutil.html:SILC Buffer Utility API
-@LINK=silchashtable.html:SILC Hash Table API
-@LINK=silclog.html:SILC Log and Debug API
-@LINK=silcmemory.html:SILC Memory API
-@LINK=silcmutex.html:SILC Mutex API
-@LINK=silcthread.html:SILC Thread API
-@LINK=silcnet.html:SILC Net API
-@LINK=silcschedule.html:SILC Schedule API
-@LINK=silcsockconn.html:SILC Socket Connection API
-@LINK=silcprotocol.html:SILC Protocol API
-@LINK=silcfileutil.html:SILC File Util API
-@LINK=silcutil.html:SILC Util API
+@LINK=silcbuffer.html:SILC Buffer Interface
+@LINK=silcbuffmt.html:SILC Buffer Format Interface
+@LINK=silcbufutil.html:SILC Buffer Utility Interface
+@LINK=silchashtable.html:SILC Hash Table Interface
+@LINK=silclog.html:SILC Logging Interface
+@LINK=silcmemory.html:SILC Memory Interface
+@LINK=silcmutex.html:SILC Mutex Interface
+@LINK=silcthread.html:SILC Thread Interface
+@LINK=silcnet.html:SILC Network Interface
+@LINK=silcschedule.html:SILC Schedule Interface
+@LINK=silcsockconn.html:SILC Socket Interface
+@LINK=silcprotocol.html:SILC Protocol Interface
+@LINK=silcconfig.html:SILC Config Interface
+@LINK=silcfileutil.html:SILC File Util Interface
+@LINK=silcutil.html:SILC Util Interface
+@LINK=silclist.html:SILC List Interface
+@LINK=silcdlist.html:SILC Dynamic List Interface
 @LINK=silczip.html:SILC Zip API
-@LINK=silclist.html:SILC List API
-@LINK=silcdlist.html:SILC Dynamic List API
 -->
 
 <BIG><B>SILC Utility Library</B></BIG>

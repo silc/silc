@@ -64,7 +64,7 @@ RB_Generate_Documentation (
 
       if (output_mode == HTML)
         {
-          sprintf(fname, "%s__%s.html", doc_base, cur_header->function_name);
+          sprintf(fname, "%s-%s.html", doc_base, cur_header->function_name);
           dest_doc = fopen(fname, "w");
           if (!dest_doc)
             {
@@ -272,7 +272,7 @@ RB_Generate_Doc_Start (
 #endif
 
 	  /* Generate quick index file, for fast referencing */
-	  sprintf(iname, "%s__index.tmpl", doc_base);
+	  sprintf(iname, "%s-index.tmpl", doc_base);
           index = fopen(iname, "w");
           if (!index)
 	    {
@@ -286,7 +286,7 @@ RB_Generate_Doc_Start (
 	    {
 	      char fname[256];
 
-	      sprintf(fname, "%s__%s.html", RB_FilePart(doc_base), 
+	      sprintf(fname, "%s-%s.html", RB_FilePart(doc_base), 
 		      cur_header->function_name);
 
 	      if (cur_header->name && cur_header->function_name)
@@ -1284,7 +1284,7 @@ RB_Generate_Item_Body (FILE * dest_doc, char *dest_name,
 			  fprintf (dest_doc, "<A HREF=\"#%s\">%s</A>",
 				   label_name, label_name);
 #endif
-			  fprintf (dest_doc, "<A HREF=\"%s__%s.html\">%s</A>",
+			  fprintf (dest_doc, "<A HREF=\"%s-%s.html\">%s</A>",
 				   RB_FilePart(doc_base), label_name, 
 					       label_name);
 			}

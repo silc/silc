@@ -166,7 +166,7 @@ static PERL_SIGNAL_ARGS_REC perl_signal_args[] =
     { "message irc own_notice", { "iobject", "string", "string", NULL } },
     { "message irc notice", { "iobject", "string", "string", "string", "string", NULL } },
     { "message irc own_ctcp", { "iobject", "string", "string", "string", NULL } },
-    { "message irc ctcp", { "iobject", "string", "string", "string", "string", NULL } },
+    { "message irc ctcp", { "iobject", "string", "string", "string", "string", "string", NULL } },
     { "message dcc own", { "siobject", "string", NULL } },
     { "message dcc own_action", { "siobject", "string", NULL } },
     { "message dcc own_ctcp", { "siobject", "string", "string", NULL } },

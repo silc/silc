@@ -1,23 +1,22 @@
- Running Perl scripts
- --------------------
+ Installation problems
+ ---------------------
 
-First you'll need to have Perl support on. By default irssi compiles
-Perl as a module, so /LOAD perl probably helps. If you want to do this
-automatically at startup put the "/LOAD perl" to ~/.irssi/startup file.
-After that you can run scripts with /RUN script (you don't need to give
-the .pl extension). If /RUN complains about "unknown command", you
-don't have Perl module loaded, or maybe Perl support wasn't compiled at
-all.
+You'll need to have perl support compiled with irssi. If "/LOAD"
+doesn't show perl in list of loaded modules, you have a problem. See
+INSTALL file for information about perl problems.
 
-Place new scripts to ~/.irssi/scripts/ or /usr/local/lib/irssi/scripts/
-directory. Scripts in ~/.irssi/scripts/autorun/ directory are
-automatically run at startup.
 
-Using /PERLFLUSH closes and reopens the perl interpreter removing all
-Perl scripts from memory. There's currently no way to unload a single
-Perl script (/SCRIPT REMOVE will probably work soon). You can however
-run same script multiple times, and irssi will remove the old version
-from memory before running the new version.
+ Running scripts
+ ---------------
+
+Scripts are run with /SCRIPT LOAD command, or the default /RUN alias.
+"/SCRIPT" shows list of running script, and /SCRIPT UNLOAD can unload
+scripts.
+
+Scripts should be placed to ~/.irssi/scripts/ or
+/usr/local/lib/irssi/scripts/ (or depending on where irssi was
+installed) directories. After that /RUN script_name should work, you
+don't need to add the .pl prefix.
 
 
  Irssi's signals
@@ -522,8 +521,8 @@ Server::ischannel(data)
 Server::get_nick_flags()
   Returns nick flag characters in order: op, voice, halfop ("@+%" in IRC).
 
-Server::send_message(target, msg)
-  Sends a message to nick/channel.
+Server::send_message(target, msg, target_type)
+  Sends a message to nick/channel. target_type 0 = channel, 1 = nick
 
 
  *** Server reconnections

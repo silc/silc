@@ -110,13 +110,13 @@ echo $f
     sh gen.sh $DST gen_index.php 1 $DST/$i.html $DST/$i.html
 
     # Generate the details and the layout
-    files=`find $DST -name ""$i"__*.html"`
+    files=`find $DST -name ""$i"-*.html"`
     for k in $files
     do
       sh gen.sh $DST gen_index.php 0 $k $k
     done
 
-    rm -f $DST/$i__index.tmpl
+    rm -f $DST/$i-index.tmpl
   done
 
   # Generate the index and TOC files from the DIRECTORY files

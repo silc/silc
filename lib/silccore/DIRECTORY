@@ -1,16 +1,16 @@
 <!--
 @LIBRARY=SILC Core Library
 @FILENAME=silccorelib.html
-@LINK=silcauth.html:SILC Auth API
-@LINK=silcchannel.html:SILC Channel API
-@LINK=silccommand.html:SILC Command API
-@LINK=silcid.html:SILC ID API
-@LINK=silcidcache.html:SILC ID Cache API
+@LINK=silcauth.html:SILC Authentication Interface
+@LINK=silcchannel.html:SILC Channel Interface
+@LINK=silccommand.html:SILC Command Interface
+@LINK=silcid.html:SILC ID Interface
+@LINK=silcidcache.html:SILC ID Cache Interface
 @LINK=silcmode.html:SILC Modes
-@LINK=silcnotify.html:SILC Notify API
-@LINK=silcpacket.html:SILC Packet API
-@LINK=silcargument.html:SILC Argument API
-@LINK=silcprivate.html:SILC Private API
+@LINK=silcnotify.html:SILC Notify Interface
+@LINK=silcargument.html:SILC Argument Interface
+@LINK=silcprivate.html:SILC Private Message Interface
+@LINK=silcpacket.html:Packet Protocol Interface
 -->
 
 <BIG><B>SILC Core Library</B></BIG>

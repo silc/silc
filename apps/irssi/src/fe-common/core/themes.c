@@ -146,7 +146,9 @@ static void theme_format_append_variable(GString *str, const char **format)
 	value = parse_special((char **) format, NULL, NULL,
 			      args, &free_ret, NULL, PARSE_FLAG_ONLY_ARGS);
 	if (free_ret) g_free(value);
-	(*format)++;
+
+	if (**format != '\0')
+		(*format)++;
 
 	/* append the variable name */
 	value = g_strndup(orig, (int) (*format-orig));
@@ -1173,6 +1175,8 @@ static void change_theme(const char *name, int verbose)
 	rec = theme_load(name);
 	if (rec != NULL) {
 		current_theme = rec;
+                signal_emit("theme changed", 1, rec);
+
 		if (verbose) {
 			printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
 				    TXT_THEME_CHANGED,

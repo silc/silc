@@ -1,8 +1,8 @@
 <!--
 @LIBRARY=SILC SFTP Library
 @FILENAME=silcsftplib.html
-@LINK=silcsftp.html:SILC SFTP API
-@LINK=silcsftp_fs.html:SILC SFTP Filesystems
+@LINK=silcsftp.html:SILC SFTP Interface
+@LINK=silcsftp_fs.html:SFTP Filesystems Interface
 -->
 
 <BIG><B>SILC SFTP Library</B></BIG>

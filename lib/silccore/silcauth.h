@@ -22,7 +22,7 @@
  *
  * DESCRIPTION
  *
- * Implementations of the Silc Authentication Payload and authentication
+ * Implementations of the SILC Authentication Payload and authentication
  * routines.  The SILC Authentication Payload is used to deliver 
  * authentication data usually from client to server in purpose of 
  * gaining access to some service.  The Payload and the authentication
