@@ -730,7 +730,10 @@ SILC_CONFIG_CALLBACK(fetch_connparam)
     config->tmp = NULL;
     return SILC_CONFIG_OK;
   }
-  SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigConnParams);
+  if (!tmp) {
+    SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigConnParams);
+    tmp->reconnect_keep_trying = TRUE;
+  }
 
   if (!strcmp(name, "name")) {
     CONFIG_IS_DOUBLE(tmp->name);
@@ -1448,6 +1451,7 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
   /* general config defaults */
   config_new->refcount = 1;
   config_new->logging_timestamp = TRUE;
+  config_new->param.reconnect_keep_trying = TRUE;
 
   /* obtain a config file object */
   file = silc_config_open(filename);

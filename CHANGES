@@ -8,6 +8,10 @@ Tue Mar  9 17:11:58 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 	* Clarified the connections_max meaning in General section
 	  in doc/example_silcd.conf.in.
 
+	* The reconnect_keep_trying default value set to TRUE
+	  if it is not defined in the config file.  Affected file
+	  silcd/serverconfig.c.
+
 Wed Mar  3 15:13:49 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed crashbug in connection closing, after a protocol
