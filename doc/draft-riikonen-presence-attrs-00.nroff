@@ -539,7 +539,7 @@ multiple same attributes in the packet.
      provided references.
 
 
-16   ATTRIBUTE_SERVER_DIGITAL_SIGNATURE
+15   ATTRIBUTE_SERVER_DIGITAL_SIGNATURE
 
      This attribute value includes digital signature of all Attribute
      Payloads except this attribute, but including the attribute

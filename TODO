@@ -11,6 +11,9 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
+ o Add support for the <Requested Attributes> in WHOIS.  Sending and
+   reception should be added.
+
  o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
    though).  This should be added and perhaps new client operation
    should be added to notify application that it was received and
@@ -27,9 +30,8 @@ TODO/bugs In SILC Server
    when some server is connecting and connecting fails (like too many
    connections, etc).  Some weird crashes relating to this occurred.
 
- o Implement the <Requested Attributes> and the Attribute Payload to
-   the core library, client and server.  Maybe implementations of
-   RFC 2425 and RFC 2426 to make it complete.
+ o Add support for the <Requested Attributes> in WHOIS.  Sending and
+   reception, with clients and servers should be added.
 
  o Backup router related issues:
 

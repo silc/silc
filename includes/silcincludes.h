@@ -264,6 +264,7 @@ extern "C" {
 #include "silcmode.h"
 #include "silcauth.h"
 #include "silcprivate.h"
+#include "silcattrs.h"
 
 #ifdef SILC_SIM
 /* SILC Module library includes */

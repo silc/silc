@@ -1,3 +1,8 @@
+Sun Sep  8 18:39:25 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Implemented the draft-riikonen-precense-attrs draft and
+	  the Attribute Payload into the lib/silccore/silcattrs.[ch].
+
 Sun Sep  8 13:13:44 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Distribute the SERVER_SIGNOFF notify also to local backup

@@ -29,6 +29,22 @@
 #ifndef SILCPAYLOAD_H
 #define SILCPAYLOAD_H
 
+/****s* silccore/SilcArgumentAPI/SilcArgumentPayload
+ *
+ * NAME
+ * 
+ *    typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
+ *
+ * DESCRIPTION
+ *
+ *    This context is the actual Argument Payload and is allocated
+ *    by silc_argument_payload_parse and given as argument usually to
+ *    all silc_argument_payload_* functions.  It is freed by the
+ *    silc_argument_payload_free function.
+ *
+ ***/
+typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
+
 /****f* silccore/SilcArgumentAPI/silc_argument_payload_parse
  *
  * SYNOPSIS

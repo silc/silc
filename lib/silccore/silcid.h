@@ -85,22 +85,6 @@ typedef SilcUInt16 SilcIdType;
  ***/
 typedef struct SilcIDPayloadStruct *SilcIDPayload;
 
-/****s* silccore/SilcIDAPI/SilcArgumentPayload
- *
- * NAME
- * 
- *    typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
- *
- * DESCRIPTION
- *
- *    This context is the actual Argument Payload and is allocated
- *    by silc_argument_payload_parse and given as argument usually to
- *    all silc_argument_payload_* functions.  It is freed by the
- *    silc_argument_payload_free function.
- *
- ***/
-typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
-
 /* Prototypes */
 
 /****f* silccore/SilcIDAPI/silc_id_payload_parse
