@@ -31,12 +31,60 @@
 #ifndef SILCTYPES_H
 #define SILCTYPES_H
 
+/****d* silcutil/SILCTypes/TRUE
+ *
+ * NAME
+ *
+ *    #define TRUE ...
+ *
+ * DESCRIPTION
+ *
+ *    Boolean true value indicator.
+ *
+ * SOURCE
+ */
 #ifndef TRUE
 #define TRUE 1
 #endif
+/***/
+
+/****d* silcutil/SILCTypes/FALSE
+ *
+ * NAME
+ *
+ *    #define FALSE ...
+ *
+ * DESCRIPTION
+ *
+ *    Boolean false value indicator.
+ *
+ * SOURCE
+ */
 #ifndef FALSE
 #define FALSE 0
 #endif
+/***/
+
+/****d* silcutil/SILCTypes/bool
+ *
+ * NAME
+ *
+ *    #define bool ...
+ *
+ * DESCRIPTION
+ *
+ *    Boolean value, and is 8-bits.  Represents value 0 or 1.  In
+ *    C++ code this type is defined by the C++, and this definition is
+ *    not used.
+ *
+ * SOURCE
+ */
+#ifndef __cplusplus
+#ifndef bool
+#define bool unsigned char
+#endif
+#endif
+/***/
 
 /* Define offsetof */
 #ifndef offsetof
@@ -198,11 +246,7 @@ typedef SilcInt32 SilcInt64;
 typedef SilcUInt32 * void *;
 #endif
 
-#ifndef __cplusplus
-#ifndef bool
-#define bool unsigned char
-#endif
-#endif
+/* Macros */
 
 #define GET_WORD(cp) ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24	\
 		    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)	\
