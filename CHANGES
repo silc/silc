@@ -1,3 +1,8 @@
+Wed May  2 13:31:26 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Register default ciphers and stuff when using the -S option
+	  in the client.  Affected file silc/silc.c.
+
 Tue May  1 14:18:13 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the silc_verify_public_key client operation function to

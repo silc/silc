@@ -254,6 +254,10 @@ SILC Secure Internet Live Conferencing, version %s\n",
 
   if (opt_show_key == TRUE) {
     /* Dump the key */
+    silc_cipher_register_default();
+    silc_pkcs_register_default();
+    silc_hash_register_default();
+    silc_hmac_register_default();
     silc_client_show_key(opt_keyfile);
     silc_free(opt_keyfile);
     exit(0);
