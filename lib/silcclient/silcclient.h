@@ -1423,8 +1423,9 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
  *    is non-NULL then all variable arguments are ignored by default.
  *
  *    If `command_line' is NULL, then the variable arguments define the
- *    command's nameand its arguments.  The variable argument list must
- *    be terminated with NULL.
+ *    command's name and its arguments.  The first variable argument must
+ *    be the command name.  The variable argument list must be terminated
+ *    with NULL.
  *
  *    Returns FALSE if the command is not known and TRUE after command.
  *    execution.  The "command" client operation is called when the
