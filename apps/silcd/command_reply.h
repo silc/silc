@@ -73,5 +73,6 @@ void silc_server_command_reply_process(SilcServer server,
 				       SilcSocketConnection sock,
 				       SilcBuffer buffer);
 SILC_SERVER_CMD_REPLY_FUNC(join);
+SILC_SERVER_CMD_REPLY_FUNC(identify);
 
 #endif

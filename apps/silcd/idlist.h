@@ -22,19 +22,19 @@
 #define IDLIST_H
 
 /* Forward declarations */
-typedef struct SilcServerListStruct SilcServerList;
-typedef struct SilcClientListStruct SilcClientList;
-typedef struct SilcChannelListStruct SilcChannelList;
+typedef struct SilcServerEntryStruct *SilcServerEntry;
+typedef struct SilcClientEntryStruct *SilcClientEntry;
+typedef struct SilcChannelEntryStruct *SilcChannelEntry;
 
 /* 
-   SILC Server list object.
+   SILC Server entry object.
 
-   This list holds information about servers in SILC network. However, 
-   contents of this list is highly dependent of what kind of server we are 
-   (normal server or router server) and whether the list is used as a local 
-   list or a global list. These factors dictates the contents of this list.
+   This entry holds information about servers in SILC network. However, 
+   contents of this entry is highly dependent of what kind of server we are 
+   (normal server or router server) and whether the entry is used as a local 
+   list or a global list. These factors dictates the contents of this entry.
 
-   This list is defined as follows:
+   This entry is defined as follows:
 
    Server type   List type      Contents
    =======================================================================
@@ -61,7 +61,7 @@ typedef struct SilcChannelListStruct SilcChannelList;
        the server SILC will ever need. These are also the informations
        that is broadcasted between servers and routers in the SILC network.
 
-   struct SilcServerListStruct *router
+   SilcServerEntry router
 
        This is a pointer back to the server list. This is the router server 
        where this server is connected to. If this is the router itself and 
@@ -79,7 +79,7 @@ typedef struct SilcChannelListStruct SilcChannelList;
        list.
    
 */
-struct SilcServerListStruct {
+struct SilcServerEntryStruct {
   char *server_name;
   int server_type;
   SilcServerID *id;
@@ -88,7 +88,7 @@ struct SilcServerListStruct {
   int registered;
 
   /* Pointer to the router */
-  struct SilcServerListStruct *router;
+  SilcServerEntry router;
 
   /* Keys */
   SilcCipher send_key;
@@ -101,19 +101,16 @@ struct SilcServerListStruct {
 
   /* Connection data */
   void *connection;
-
-  struct SilcServerListStruct *next;
-  struct SilcServerListStruct *prev;
 };
 
 /* 
-   SILC Client list object.
+   SILC Client entry object.
 
-   This list holds information about connected clients ie. users in the SILC
-   network. The contents of this list is depended on whether we are normal 
+   This entry holds information about connected clients ie. users in the SILC
+   network. The contents of this entrt is depended on whether we are normal 
    server or router server and whether the list is a local or global list.
 
-   This list is defined as follows:
+   This entry is defined as follows:
 
    Server type   List type      Contents
    =======================================================================
@@ -168,7 +165,7 @@ struct SilcServerListStruct {
        Client's mode.  Client maybe for example server operator or
        router operator (SILC operator).
 
-   SilcServerList *router
+   SilcServerEntry router
 
        This is a pointer to the server list. This is the router server whose 
        cell this client is coming from. This is used to route messages to 
@@ -197,7 +194,7 @@ struct SilcServerListStruct {
        list.
 
 */
-struct SilcClientListStruct {
+struct SilcClientEntryStruct {
   char *nickname;
   char *username;
   char *userinfo;
@@ -208,10 +205,10 @@ struct SilcClientListStruct {
   int registered;
 
   /* Pointer to the router */
-  SilcServerList *router;
+  SilcServerEntry router;
 
   /* Pointers to channels this client has joined */
-  SilcChannelList **channel;
+  SilcChannelEntry *channel;
   unsigned int channel_count;
 
   /* Keys */
@@ -219,24 +216,22 @@ struct SilcClientListStruct {
   SilcCipher receive_key;
   SilcPKCS pkcs;
   SilcHmac hmac;
+  SilcPublicKey public_key;
   unsigned char *hmac_key;
   unsigned int hmac_key_len;
 
   /* Connection data */
   void *connection;
-
-  struct SilcClientListStruct *next;
-  struct SilcClientListStruct *prev;
 };
 
 /* 
-   SILC Channel Client list structure.
+   SILC Channel Client entry structure.
 
-   This list used only by the SilcChannelList object and it holds information 
-   about current clients (ie. users) on channel. Following short description 
-   of the fields:
+   This entry used only by the SilcChannelEntry object and it holds
+   information about current clients (ie. users) on channel. Following
+   short description  of the fields:
 
-   SilcClientList client
+   SilcClientEntry client
 
        Pointer to the client list. This is the client currently on channel.
 
@@ -245,19 +240,19 @@ struct SilcClientListStruct {
        Client's current mode on the channel.
 
 */
-typedef struct SilcChannelClientListStruct {
-  SilcClientList *client;
+typedef struct SilcChannelClientEntryStruct {
+  SilcClientEntry client;
   int mode;
-} SilcChannelClientList;
+} *SilcChannelClientEntry;
 
 /* 
-   SILC Channel list object.
+   SILC Channel entry object.
 
-   This list holds information about channels in SILC network. The contents 
-   of this list is depended on whether we are normal server or router server 
+   This entry holds information about channels in SILC network. The contents 
+   of this entry is depended on whether we are normal server or router server 
    and whether the list is a local or global list.
 
-   This list is defined as follows:
+   This entry is defined as follows:
 
    Server type   List type      Contents
    =======================================================================
@@ -295,19 +290,28 @@ typedef struct SilcChannelClientListStruct {
 
        Current topic of the channel.
 
-   SilcServerList *router
+   SilcServerEntry router
 
        This is a pointer to the server list. This is the router server 
        whose cell this channel belongs to. This is used to route messages 
        to this channel.
 
-   SilcCipher send_key
+   SilcCipher channel_key
 
+       The key of the channel (the cipher actually).
 
-   SilcCipher receive_key
+   unsigned char *key
+   unsigned int key_len
+
+       Raw key data of the channel key.
+
+   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE]
+
+       Current initial vector. Initial vector is received always along
+       with the channel packet. By default this is filled with NULL.
 
 */
-struct SilcChannelListStruct {
+struct SilcChannelEntryStruct {
   char *channel_name;
   int mode;
   SilcChannelID *id;
@@ -315,20 +319,17 @@ struct SilcChannelListStruct {
   char *topic;
 
   /* List of users on channel */
-  SilcChannelClientList *user_list;
+  SilcChannelClientEntry user_list;
   unsigned int user_list_count;
 
   /* Pointer to the router */
-  SilcServerList *router;
+  SilcServerEntry router;
 
   /* Channel keys */
   SilcCipher channel_key;
   unsigned char *key;
   unsigned int key_len;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
-
-  struct SilcChannelListStruct *next;
-  struct SilcChannelListStruct *prev;
 };
 
 /* 
@@ -336,22 +337,22 @@ struct SilcChannelListStruct {
 
    As for remainder these lists are defined as follows:
 
-   List        Server type   List type      Contents
+   Entry list (cache)  Server type   List type      Contents
    =======================================================================
-   servers     server        local list     Server itself
-   servers     server        global list    NULL
-   servers     router        local list     All servers in cell
-   servers     router        global list    All servers in SILC
+   servers             server        local list     Server itself
+   servers             server        global list    NULL
+   servers             router        local list     All servers in cell
+   servers             router        global list    All servers in SILC
 
-   clients     server        local list     All clients in server
-   clients     server        global list    NULL
-   clients     router        local list     All clients in cell
-   clients     router        global list    All clients in SILC
+   clients             server        local list     All clients in server
+   clients             server        global list    NULL
+   clients             router        local list     All clients in cell
+   clients             router        global list    All clients in SILC
 
-   channels    server        local list     All channels in server
-   channels    server        global list    NULL
-   channels    router        local list     All channels in cell
-   channels    router        global list    All channels in SILC
+   channels            server        local list     All channels in server
+   channels            server        global list    NULL
+   channels            router        local list     All channels in cell
+   channels            router        global list    All channels in SILC
 
    As seen on the list normal server never defines a global list. This is
    because of normal server don't know anything about anything global data,
@@ -359,33 +360,29 @@ struct SilcChannelListStruct {
    other hand, always define local and global lists because routers really
    know all the relevant data in the SILC network.
 
+   This object is used as local and global list by the server/router.
+   Above table shows how this is defined on different conditions.
+
+   This object holds pointers to the ID cache system. Every ID cache entry
+   has a specific context pointer to allocated entry (server, client or
+   channel entry).
+
 */
 typedef struct SilcIDListStruct {
-  SilcServerList *servers;
-  SilcClientList *clients;
-  SilcChannelList *channels;
-
-  /* ID Caches. Caches are used to perform fast search on the ID's. */
-  SilcIDCache *server_cache[96];
-  unsigned int server_cache_count[96];
-  SilcIDCache *client_cache[96];
-  unsigned int client_cache_count[96];
-  SilcIDCache *channel_cache[96];
-  unsigned int channel_cache_count[96];
-} SilcIDListObject;
-
-typedef SilcIDListObject *SilcIDList;
+  SilcIDCache servers;
+  SilcIDCache clients;
+  SilcIDCache channels;
+} *SilcIDList;
 
 /*
-   Temporary ID List object.
+   Temporary ID Entry object.
 
-   This is used during authentication phases where we still don't
-   know what kind of connection remote connection is, hence, we
-   will use this structure instead until we know what type of
-   connection remote end is.
+   This is used during authentication phases where we still don't know 
+   what kind of connection remote connection is, hence, we will use this
+   structure instead until we know what type of connection remote end is.
 
-   This is not in any list. This is always individually allocated
-   and used as such.
+   This is not in any list. This is always individually allocated and
+   used as such.
 
 */
 typedef struct {
@@ -399,38 +396,40 @@ typedef struct {
   unsigned int hmac_key_len;
 
   /* SilcComp comp */
-} SilcIDListUnknown;
+} *SilcUnknownEntry;
 
 /* Prototypes */
-void silc_idlist_add_server(SilcServerList **list, 
-			    char *server_name, int server_type,
-			    SilcServerID *id, SilcServerList *router,
-			    SilcCipher send_key, SilcCipher receive_key,
-			    SilcPKCS public_key, SilcHmac hmac, 
-			    SilcServerList **new_idlist);
-void silc_idlist_add_client(SilcClientList **list, char *nickname,
-			    char *username, char *userinfo,
-			    SilcClientID *id, SilcServerList *router,
-			    SilcCipher send_key, SilcCipher receive_key,
-			    SilcPKCS public_key, SilcHmac hmac, 
-			    SilcClientList **new_idlist);
-void silc_idlist_del_client(SilcClientList **list, SilcClientList *entry);
-SilcClientList *
-silc_idlist_find_client_by_nickname(SilcClientList *list,
-				    char *nickname,
+SilcServerEntry 
+silc_idlist_add_server(SilcIDList id_list, 
+		       char *server_name, int server_type,
+		       SilcServerID *id, SilcServerEntry router,
+		       SilcCipher send_key, SilcCipher receive_key,
+		       SilcPKCS pkcs, SilcHmac hmac, 
+		       SilcPublicKey public_key, void *connection);
+SilcClientEntry
+silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
+		       char *userinfo, SilcClientID *id, 
+		       SilcServerEntry router,
+		       SilcCipher send_key, SilcCipher receive_key,
+		       SilcPKCS pkcs, SilcHmac hmac, 
+		       SilcPublicKey public_key, void *connection);
+void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);
+SilcClientEntry
+silc_idlist_find_client_by_nickname(SilcIDList id_list, char *nickname,
 				    char *server);
-SilcClientList *
-silc_idlist_find_client_by_hash(SilcClientList *list,
-				char *nickname, SilcHash hash);
-SilcClientList *
-silc_idlist_find_client_by_id(SilcClientList *list, SilcClientID *id);
-void silc_idlist_add_channel(SilcChannelList **list, 
-			     char *channel_name, int mode,
-			     SilcChannelID *id, SilcServerList *router,
-			     SilcCipher channel_key,
-			     SilcChannelList **new_idlist);
-SilcChannelList *
-silc_idlist_find_channel_by_id(SilcChannelList *list, SilcChannelID *id);
-void silc_idlist_del_channel(SilcChannelList **list, SilcChannelList *entry);
+SilcClientEntry
+silc_idlist_find_client_by_hash(SilcIDList id_list, unsigned char *hash,
+				SilcHash md5hash);
+SilcClientEntry
+silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id);
+SilcChannelEntry
+silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
+			SilcChannelID *id, SilcServerEntry router,
+			SilcCipher channel_key);
+void silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry);
+SilcChannelEntry
+silc_idlist_find_channel_by_name(SilcIDList id_list, char *name);
+SilcChannelEntry
+silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id);
 
 #endif

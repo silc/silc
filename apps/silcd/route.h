@@ -36,14 +36,14 @@
        Destination IPv4 address.  Can be used to quickly check whether
        the found route entry is what the caller wanted.
 
-   SilcServerList *router
+   SilcServerEntry router
 
        Pointer to the router specific data.
 
 */
 typedef struct {
   unsigned int dest;
-  SilcServerList *router;
+  SilcServerEntry router;
 } SilcServerRouteTable;
 
 /* Route cache hash table */
@@ -70,8 +70,8 @@ unsigned int silc_server_route_hash(unsigned int addr,
 
 /* Prototypes */
 void silc_server_route_add(unsigned int index, unsigned int dest,
-			   SilcServerList *router);
-SilcServerList *silc_server_route_check(unsigned int dest, 
+			   SilcServerEntry router);
+SilcServerEntry silc_server_route_check(unsigned int dest, 
 					unsigned short port);
 SilcSocketConnection silc_server_get_route(SilcServer server, void *id,
 					   SilcIdType id_type);

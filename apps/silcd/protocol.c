@@ -23,6 +23,12 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2000/07/12 05:59:41  priikone
+ * 	Major rewrite of ID Cache system. Support added for the new
+ * 	ID cache system. Major rewrite of ID List stuff on server.  All
+ * 	SilcXXXList's are now called SilcXXXEntry's and they are pointers
+ * 	by default. A lot rewritten ID list functions.
+ *
  * Revision 1.5  2000/07/10 05:42:14  priikone
  * 	Support for public key encoding functions added.
  *
@@ -92,7 +98,7 @@ static void silc_server_protocol_ke_set_keys(SilcSKE ske,
 					     SilcHash hash,
 					     int is_responder)
 {
-  SilcIDListUnknown *conn_data;
+  SilcUnknownEntry conn_data;
   SilcHash nhash;
 
   SILC_LOG_DEBUG(("Setting new key into use"));

@@ -60,20 +60,20 @@ void silc_server_packet_forward(SilcServer server,
 				unsigned char *data, unsigned int data_len,
 				int force_send);
 void silc_server_packet_send_to_channel(SilcServer server,
-					SilcChannelList *channel,
+					SilcChannelEntry channel,
 					unsigned char *data,
 					unsigned int data_len,
 					int force_send);
 void silc_server_packet_relay_to_channel(SilcServer server,
 					 SilcSocketConnection sender_sock,
-					 SilcChannelList *channel,
+					 SilcChannelEntry channel,
 					 void *sender, 
 					 SilcIdType sender_type,
 					 unsigned char *data,
 					 unsigned int data_len,
 					 int force_send);
 void silc_server_packet_send_local_channel(SilcServer server,
-					   SilcChannelList *channel,
+					   SilcChannelEntry channel,
 					   SilcPacketType type,
 					   SilcPacketFlags flags,
 					   unsigned char *data,
@@ -88,13 +88,13 @@ void silc_server_free_sock_user_data(SilcServer server,
 				     SilcSocketConnection sock);
 void silc_server_remove_from_channels(SilcServer server, 
 				      SilcSocketConnection sock,
-				      SilcClientList *client);
+				      SilcClientEntry client);
 int silc_server_remove_from_one_channel(SilcServer server, 
 					SilcSocketConnection sock,
-					SilcChannelList *channel,
-					SilcClientList *client);
-int silc_server_client_on_channel(SilcClientList *client,
-				  SilcChannelList *channel);
+					SilcChannelEntry channel,
+					SilcClientEntry client);
+int silc_server_client_on_channel(SilcClientEntry client,
+				  SilcChannelEntry channel);
 void silc_server_disconnect_remote(SilcServer server,
 				   SilcSocketConnection sock,
 				   const char *fmt, ...);
@@ -119,7 +119,7 @@ void silc_server_send_notify_dest(SilcServer server,
 				  SilcIdType dest_id_type,
 				  const char *fmt, ...);
 void silc_server_send_notify_to_channel(SilcServer server,
-					SilcChannelList *channel,
+					SilcChannelEntry channel,
 					const char *fmt, ...);
 void silc_server_send_new_id(SilcServer server,
 			     SilcSocketConnection sock,
@@ -133,13 +133,13 @@ void silc_server_send_replace_id(SilcServer server,
 				 unsigned int old_id_len,
 				 void *new_id, SilcIdType new_id_type,
 				 unsigned int new_id_len);
-SilcChannelList *silc_server_new_channel(SilcServer server, 
+SilcChannelEntry silc_server_new_channel(SilcServer server, 
 					 SilcServerID *router_id,
 					 char *cipher, char *channel_name);
-SilcClientList *silc_server_new_client(SilcServer server,
+SilcClientEntry silc_server_new_client(SilcServer server,
 				       SilcSocketConnection sock,
 				       SilcPacketContext *packet);
-SilcServerList *silc_server_new_server(SilcServer server,
+SilcServerEntry silc_server_new_server(SilcServer server,
 				       SilcSocketConnection sock,
 				       SilcPacketContext *packet);
 void silc_server_new_id(SilcServer server, SilcSocketConnection sock,

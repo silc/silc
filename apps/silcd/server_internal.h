@@ -40,7 +40,7 @@ typedef struct SilcServerObjectStruct {
   int listenning;
   SilcServerID *id;
   SilcIdType id_type;
-  SilcServerList *id_entry;
+  SilcServerEntry id_entry;
 
   /* SILC server task queues */
   SilcTaskQueue io_queue;

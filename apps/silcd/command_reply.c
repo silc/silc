@@ -20,6 +20,12 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2000/07/12 05:59:41  priikone
+ * 	Major rewrite of ID Cache system. Support added for the new
+ * 	ID cache system. Major rewrite of ID List stuff on server.  All
+ * 	SilcXXXList's are now called SilcXXXEntry's and they are pointers
+ * 	by default. A lot rewritten ID list functions.
+ *
  * Revision 1.3  2000/07/05 06:14:01  priikone
  * 	Global costemic changes.
  *
@@ -41,6 +47,7 @@
 SilcServerCommandReply silc_command_reply_list[] =
 {
   SILC_SERVER_CMD_REPLY(join, JOIN),
+  SILC_SERVER_CMD_REPLY(identify, IDENTIFY),
 
   { NULL, 0 },
 };
@@ -96,12 +103,9 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   SilcServer server = cmd->server;
   SilcCommandStatus status;
   SilcChannelID *id;
-  SilcChannelList *entry;
+  SilcChannelEntry entry;
   unsigned char *id_string;
   char *channel_name, *tmp;
-
-#define LCC(x) server->local_list->channel_cache[(x) - 32]
-#define LCCC(x) server->local_list->channel_cache_count[(x) - 32]
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -124,13 +128,12 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 
   /* Add the channel to our local list. */
   id = silc_id_str2id(id_string, SILC_ID_CHANNEL);
-  silc_idlist_add_channel(&server->local_list->channels, channel_name, 
-			  SILC_CHANNEL_MODE_NONE, id, 
-			  server->id_entry->router, NULL, &entry);
-  LCCC(channel_name[0]) = silc_idcache_add(&LCC(channel_name[0]), 
-					   LCCC(channel_name[0]),
-					   channel_name, SILC_ID_CHANNEL, 
-					   (void *)id, (void *)entry);
+  entry = silc_idlist_add_channel(server->local_list, channel_name, 
+				  SILC_CHANNEL_MODE_NONE, id, 
+				  server->id_entry->router, NULL);
+  if (!entry)
+    goto out;
+
   entry->global_users = TRUE;
 
   /* Execute pending JOIN command so that the client who originally
@@ -139,6 +142,61 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 
  out:
   silc_server_command_reply_free(cmd);
-#undef LCC
-#undef LCCC
+}
+
+/* Received reply for forwarded IDENTIFY command. We have received the
+   requested identify information now and we will cache it. After this we
+   will call the pending command so that the requestee gets the information
+   after all. */
+
+SILC_SERVER_CMD_REPLY_FUNC(identify)
+{
+  SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
+  SilcServer server = cmd->server;
+  SilcCommandStatus status;
+  unsigned char *tmp;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  tmp = silc_command_get_arg_type(cmd->payload, 1, NULL);
+  SILC_GET16_MSB(status, tmp);
+  if (status != SILC_STATUS_OK)
+    goto out;
+
+  /* Process one identify reply */
+  if (status == SILC_STATUS_OK) {
+    unsigned char *id_data;
+    char *nickname;
+
+    id_data = silc_command_get_arg_type(cmd->payload, 2, NULL);
+    nickname = silc_command_get_arg_type(cmd->payload, 3, NULL);
+    if (!id_data || !nickname)
+      goto out;
+
+#if 0
+    /* Allocate client entry */
+    client_entry = silc_calloc(1, sizeof(*client_entry));
+    client_entry->id = silc_id_str2id(id_data, SILC_ID_CLIENT);
+    client_entry->nickname = strdup(nickname);
+
+    /* Save received Client ID to ID cache */
+    silc_idcache_add(win->client_cache, client_entry->nickname,
+		     SILC_ID_CLIENT, client_entry->id, client_entry, TRUE);
+#endif
+  }
+
+  if (status == SILC_STATUS_LIST_START) {
+
+  }
+
+  if (status == SILC_STATUS_LIST_END) {
+
+  }
+
+  /* Execute pending IDENTIFY command so that the client who originally
+     requested the identify information will get it after all. */
+  SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_IDENTIFY);
+
+ out:
+  silc_server_command_reply_free(cmd);
 }

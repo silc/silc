@@ -20,6 +20,12 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.9  2000/07/12 05:59:41  priikone
+ * 	Major rewrite of ID Cache system. Support added for the new
+ * 	ID cache system. Major rewrite of ID List stuff on server.  All
+ * 	SilcXXXList's are now called SilcXXXEntry's and they are pointers
+ * 	by default. A lot rewritten ID list functions.
+ *
  * Revision 1.8  2000/07/10 05:42:59  priikone
  * 	Removed command packet processing from server.c and added it to
  * 	command.c.
@@ -120,7 +126,7 @@ static int silc_server_is_registered(SilcServer server,
   switch(sock->type) {
   case SILC_SOCKET_TYPE_CLIENT:
     {
-      SilcClientList *client = (SilcClientList *)sock->user_data;
+      SilcClientEntry client = (SilcClientEntry)sock->user_data;
       if (client->registered)
 	return TRUE;
       break;
@@ -128,7 +134,7 @@ static int silc_server_is_registered(SilcServer server,
   case SILC_SOCKET_TYPE_SERVER:
   case SILC_SOCKET_TYPE_ROUTER:
     {
-      SilcServerList *serv = (SilcServerList *)sock->user_data;
+      SilcServerEntry serv = (SilcServerEntry)sock->user_data;
       if (serv->registered)
 	return TRUE;
       break;
@@ -307,9 +313,10 @@ silc_server_command_send_status_data(SilcServerCommandContext cmd,
 SILC_SERVER_CMD_FUNC(whois)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
-  char *tmp, *nick = NULL, *server = NULL;
+  SilcServer server = cmd->server;
+  char *tmp, *nick = NULL, *server_name = NULL;
   unsigned int argc, count = 0, len;
-  SilcClientList *entry;
+  SilcClientEntry entry;
   SilcBuffer packet;
   unsigned char *id_string;
 
@@ -334,8 +341,8 @@ SILC_SERVER_CMD_FUNC(whois)
       len = strcspn(tmp, "@");
       nick = silc_calloc(len + 1, sizeof(char));
       memcpy(nick, tmp, len);
-      server = silc_calloc(strlen(tmp) - len, sizeof(char));
-      memcpy(server, tmp + len + 1, strlen(tmp) - len - 1);
+      server_name = silc_calloc(strlen(tmp) - len, sizeof(char));
+      memcpy(server_name, tmp + len + 1, strlen(tmp) - len - 1);
     } else {
       nick = strdup(tmp);
     }
@@ -353,30 +360,30 @@ SILC_SERVER_CMD_FUNC(whois)
 					    SILC_STATUS_ERR_TOO_MANY_PARAMS);
       if (nick)
 	silc_free(nick);
-      if (server)
-	silc_free(server);
+      if (server_name)
+	silc_free(server_name);
       goto out;
     }
     count = atoi(tmp);
   }
 
   /* Then, make the query from our local client list */
-  entry = silc_idlist_find_client_by_nickname(cmd->server->local_list->clients,
-					      nick, server);
+  entry = silc_idlist_find_client_by_nickname(server->local_list, 
+					      nick, server_name);
   if (!entry) {
 
     /* If we are normal server and are connected to a router we will
        make global query from the router. */
-    if (cmd->server->server_type == SILC_SERVER && !cmd->server->standalone) {
+    if (server->server_type == SILC_SERVER && !server->standalone) {
 
       goto ok;
     }
     
     /* If we are router then we will check our global list as well. */
-    if (cmd->server->server_type == SILC_ROUTER) {
+    if (server->server_type == SILC_ROUTER) {
       entry =
-	silc_idlist_find_client_by_nickname(cmd->server->global_list->clients,
-					    nick, server);
+	silc_idlist_find_client_by_nickname(server->global_list,
+					    nick, server_name);
       if (!entry) {
 	silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
 					     SILC_STATUS_ERR_NO_SUCH_NICK,
@@ -410,9 +417,9 @@ SILC_SERVER_CMD_FUNC(whois)
     strncat(nh, entry->nickname, strlen(entry->nickname));
     strncat(nh, "@", 1);
     len = entry->router ? strlen(entry->router->server_name) :
-      strlen(cmd->server->server_name);
+      strlen(server->server_name);
     strncat(nh, entry->router ? entry->router->server_name :
-	    cmd->server->server_name, len);
+	    server->server_name, len);
 
     strncat(uh, entry->username, strlen(entry->username));
     strncat(uh, "@", 1);
@@ -448,7 +455,7 @@ SILC_SERVER_CMD_FUNC(whois)
 					   strlen(entry->nickname),
 					   4, tmp, strlen(tmp)); /* XXX */
   }
-  silc_server_packet_send(cmd->server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
+  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
 			  0, packet->data, packet->len, FALSE);
 
   silc_free(id_string);
@@ -465,9 +472,11 @@ SILC_SERVER_CMD_FUNC(whowas)
 SILC_SERVER_CMD_FUNC(identify)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
-  char *tmp, *nick = NULL, *server = NULL;
+  SilcServer server = cmd->server;
+  char *tmp, *nick = NULL, *server_name = NULL;
   unsigned int argc, count = 0, len;
-  SilcClientList *entry;  SilcBuffer packet;
+  SilcClientEntry entry;
+  SilcBuffer packet;
   unsigned char *id_string;
 
   SILC_LOG_DEBUG(("Start"));
@@ -491,8 +500,8 @@ SILC_SERVER_CMD_FUNC(identify)
       len = strcspn(tmp, "@");
       nick = silc_calloc(len + 1, sizeof(char));
       memcpy(nick, tmp, len);
-      server = silc_calloc(strlen(tmp) - len, sizeof(char));
-      memcpy(server, tmp + len + 1, strlen(tmp) - len - 1);
+      server_name = silc_calloc(strlen(tmp) - len, sizeof(char));
+      memcpy(server_name, tmp + len + 1, strlen(tmp) - len - 1);
     } else {
       nick = strdup(tmp);
     }
@@ -514,28 +523,30 @@ SILC_SERVER_CMD_FUNC(identify)
   }
 
   /* Then, make the query from our local client list */
-  entry = silc_idlist_find_client_by_hash(cmd->server->local_list->clients,
-					  nick, cmd->server->md5hash);
+  entry = silc_idlist_find_client_by_nickname(server->local_list,
+					      nick, NULL);
   if (!entry) {
 
     /* If we are normal server and are connected to a router we will
        make global query from the router. */
-    if (cmd->server->server_type == SILC_SERVER && !cmd->server->standalone) {
+    if (server->server_type == SILC_SERVER && !server->standalone) {
       SilcBuffer buffer = cmd->packet->buffer;
+
+      SILC_LOG_DEBUG(("Requesting identify from router"));
 
       /* Send IDENTIFY command to our router */
       silc_buffer_push(buffer, buffer->data - buffer->head);
-      silc_server_packet_forward(cmd->server, (SilcSocketConnection)
-				 cmd->server->id_entry->router->connection,
+      silc_server_packet_forward(server, (SilcSocketConnection)
+				 server->id_entry->router->connection,
 				 buffer->data, buffer->len, TRUE);
       goto out;
     }
     
     /* If we are router then we will check our global list as well. */
-    if (cmd->server->server_type == SILC_ROUTER) {
+    if (server->server_type == SILC_ROUTER) {
       entry = 
-	silc_idlist_find_client_by_hash(cmd->server->global_list->clients,
-					nick, cmd->server->md5hash);
+	silc_idlist_find_client_by_nickname(server->global_list,
+					    nick, NULL);
       if (!entry) {
 	silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
 					     SILC_STATUS_ERR_NO_SUCH_NICK,
@@ -563,14 +574,14 @@ SILC_SERVER_CMD_FUNC(identify)
 #if 0
   if (cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED) {
     void *id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
-    silc_server_packet_send_dest(cmd->server, cmd->sock, 
+    silc_server_packet_send_dest(server, cmd->sock, 
 				 SILC_PACKET_COMMAND_REPLY, 0,
 				 id, cmd->packet->src_id_type,
 				 packet->data, packet->len, FALSE);
     silc_free(id);
   } else
 #endif
-    silc_server_packet_send(cmd->server, cmd->sock, 
+    silc_server_packet_send(server, cmd->sock, 
 			    SILC_PACKET_COMMAND_REPLY, 0, 
 			    packet->data, packet->len, FALSE);
 
@@ -580,8 +591,8 @@ SILC_SERVER_CMD_FUNC(identify)
  out:
   if (nick)
     silc_free(nick);
-  if (server)
-    silc_free(server);
+  if (server_name)
+    silc_free(server_name);
   silc_server_command_free(cmd);
 }
 
@@ -608,7 +619,7 @@ static int silc_server_command_bad_chars(char *nick)
 SILC_SERVER_CMD_FUNC(nick)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
-  SilcClientList *id_entry = (SilcClientList *)cmd->sock->user_data;
+  SilcClientEntry id_entry = (SilcClientEntry)cmd->sock->user_data;
   SilcServer server = cmd->server;
   SilcBuffer packet;
   SilcClientID *new_id;
@@ -616,9 +627,6 @@ SILC_SERVER_CMD_FUNC(nick)
   char *nick;
 
   SILC_LOG_DEBUG(("Start"));
-
-#define LCC(x) server->local_list->client_cache[(x) - 32]
-#define LCCC(x) server->local_list->client_cache_count[(x) - 32]
 
   /* Check number of arguments */
   if (silc_command_get_arg_num(cmd->payload) < 1) {
@@ -657,9 +665,8 @@ SILC_SERVER_CMD_FUNC(nick)
 				new_id, SILC_ID_CLIENT, SILC_ID_CLIENT_LEN);
 
   /* Remove old cache entry */
-  silc_idcache_del_by_id(LCC(id_entry->nickname[0]),
-			 LCCC(id_entry->nickname[0]), 
-			 SILC_ID_CLIENT, id_entry->id); 
+  silc_idcache_del_by_id(server->local_list->clients, SILC_ID_CLIENT, 
+			 id_entry->id); 
   
   /* Free old ID */
   if (id_entry->id) {
@@ -675,9 +682,8 @@ SILC_SERVER_CMD_FUNC(nick)
   id_entry->id = new_id;
 
   /* Update client cache */
-  LCCC(nick[0]) = silc_idcache_add(&LCC(nick[0]), LCCC(nick[0]),
-				   id_entry->nickname, SILC_ID_CLIENT, 
-				   id_entry->id, (void *)id_entry);
+  silc_idcache_add(server->local_list->clients, id_entry->nickname, 
+		   SILC_ID_CLIENT, id_entry->id, (void *)id_entry, TRUE);
 
   /* Send the new Client ID as reply command back to client */
   id_string = silc_id_id2str(id_entry->id, SILC_ID_CLIENT);
@@ -693,8 +699,6 @@ SILC_SERVER_CMD_FUNC(nick)
 
  out:
   silc_server_command_free(cmd);
-#undef LCC
-#undef LCCC
 }
 
 SILC_SERVER_CMD_FUNC(list)
@@ -712,9 +716,9 @@ SILC_SERVER_CMD_FUNC(invite)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcSocketConnection sock = cmd->sock, dest_sock;
-  SilcClientList *sender, *dest;
+  SilcClientEntry sender, dest;
   SilcClientID *dest_id;
-  SilcChannelList *channel;
+  SilcChannelEntry channel;
   SilcChannelID *channel_id;
   unsigned int argc, len;
   unsigned char *id_string;
@@ -751,8 +755,7 @@ SILC_SERVER_CMD_FUNC(invite)
   channel_id = silc_id_str2id(id_string, SILC_ID_CHANNEL);
 
   /* Check whether the channel exists */
-  channel = silc_idlist_find_channel_by_id(server->local_list->channels, 
-					   channel_id);
+  channel = silc_idlist_find_channel_by_id(server->local_list, channel_id);
   if (!channel) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
 					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
@@ -760,7 +763,7 @@ SILC_SERVER_CMD_FUNC(invite)
   }
 
   /* Check whether the sender of this command is on the channel. */
-  sender = (SilcClientList *)sock->user_data;
+  sender = (SilcClientEntry )sock->user_data;
   if (!silc_server_client_on_channel(sender, channel)) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
 					  SILC_STATUS_ERR_NOT_ON_CHANNEL);
@@ -773,7 +776,7 @@ SILC_SERVER_CMD_FUNC(invite)
 
   /* Find the connection data for the destination. If it is local we will
      send it directly otherwise we will send it to router for routing. */
-  dest = silc_idlist_find_client_by_id(server->local_list->clients, dest_id);
+  dest = silc_idlist_find_client_by_id(server->local_list, dest_id);
   if (dest)
     dest_sock = (SilcSocketConnection)dest->connection;
   else
@@ -876,7 +879,8 @@ SILC_SERVER_CMD_FUNC(info)
   if (!strncasecmp(dest_server, server->server_name, strlen(dest_server))) {
     /* Send our reply */
     memset(info_string, 0, sizeof(info_string));
-    snprintf(info_string, sizeof(info_string), "%s %s %s <%s>",
+    snprintf(info_string, sizeof(info_string), 
+	     "location: %s server: %s admin: %s <%s>",
 	     server->config->admin_info->location,
 	     server->config->admin_info->server_type,
 	     server->config->admin_info->admin_name,
@@ -971,7 +975,7 @@ typedef struct {
   char *nickname;
   char *username;
   char *hostname;
-  SilcChannelList *channel;
+  SilcChannelEntry channel;
   SilcServer server;
 } JoinInternalContext;
 
@@ -998,7 +1002,7 @@ SILC_TASK_CALLBACK(silc_server_command_join_notify)
 
 void silc_server_command_send_names(SilcServer server,
 				    SilcSocketConnection sock,
-				    SilcChannelList *channel)
+				    SilcChannelEntry channel)
 {
   SilcServerCommandContext cmd;
   SilcBuffer buffer;
@@ -1031,16 +1035,12 @@ SILC_SERVER_CMD_FUNC(join)
   int argc, i, tmp_len;
   char *tmp, *channel_name = NULL, *cipher = NULL, *id_string = NULL;
   unsigned char *passphrase, mode[4];
-  SilcChannelList *channel;
+  SilcChannelEntry channel;
   SilcServerID *router_id;
-  SilcIDCache *id_cache;
   SilcBuffer packet;
-  SilcClientList *client;
+  SilcClientEntry client;
 
   SILC_LOG_DEBUG(("Start"));
-
-#define LCC(x) server->local_list->channel_cache[(x) - 32]
-#define LCCC(x) server->local_list->channel_cache_count[(x) - 32]
 
   /* Check number of parameters */
   argc = silc_command_get_arg_num(cmd->payload);
@@ -1077,10 +1077,10 @@ SILC_SERVER_CMD_FUNC(join)
   cipher = silc_command_get_arg_type(cmd->payload, 3, NULL);
 
   /* See if the channel exists */
-  if (silc_idcache_find_by_data(LCC(channel_name[0]), LCCC(channel_name[0]), 
-				channel_name, &id_cache) == FALSE) {
+  channel = 
+    silc_idlist_find_channel_by_name(server->local_list, channel_name);
+  if (!channel) {
     /* Channel not found */
-    id_cache = NULL;
 
     /* If we are standalone server we don't have a router, we just create 
        the channel by  ourselves. */
@@ -1088,6 +1088,9 @@ SILC_SERVER_CMD_FUNC(join)
       router_id = server->id;
       channel = silc_server_new_channel(server, router_id, 
 					cipher, channel_name);
+      if (!channel)
+	goto out;
+
       goto join_channel;
     }
 
@@ -1114,7 +1117,7 @@ SILC_SERVER_CMD_FUNC(join)
 
   /* If we are router and the channel does not exist we will check our
      global list for the channel. */
-  if (!id_cache && server->server_type == SILC_ROUTER) {
+  if (!channel && server->server_type == SILC_ROUTER) {
 
     /* Notify all routers about the new channel in SILC network. */
     if (!server->standalone) {
@@ -1127,18 +1130,16 @@ SILC_SERVER_CMD_FUNC(join)
 
   }
 
-  channel = (SilcChannelList *)id_cache->context;
-
  join_channel:
 
   /* If the JOIN request was forwarded to us we will make a bit slower
      query to get the client pointer. Otherwise, we get the client pointer
      real easy. */
   if (!(cmd->packet->flags & SILC_PACKET_FLAG_FORWARDED)) {
-    client = (SilcClientList *)sock->user_data;
+    client = (SilcClientEntry)sock->user_data;
   } else {
     void *id = silc_id_str2id(cmd->packet->src_id, cmd->packet->src_id_type);
-    client = silc_idlist_find_client_by_id(server->local_list->clients, id);
+    client = silc_idlist_find_client_by_id(server->local_list, id);
     if (!client) {
       /* XXX */
       goto out;
@@ -1264,8 +1265,6 @@ SILC_SERVER_CMD_FUNC(join)
 
  out:
   silc_server_command_free(cmd);
-#undef LCC
-#undef LCCC
 }
 
 /* Server side of command MOTD. Sends servers current "message of the
@@ -1313,9 +1312,9 @@ SILC_SERVER_CMD_FUNC(leave)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcSocketConnection sock = cmd->sock;
-  SilcClientList *id_entry = (SilcClientList *)cmd->sock->user_data;
+  SilcClientEntry id_entry = (SilcClientEntry)cmd->sock->user_data;
   SilcChannelID *id;
-  SilcChannelList *channel;
+  SilcChannelEntry channel;
   SilcBuffer packet;
   unsigned int i, argc, key_len;
   unsigned char *tmp, channel_key[32];
@@ -1344,7 +1343,7 @@ SILC_SERVER_CMD_FUNC(leave)
   id = silc_id_str2id(tmp, SILC_ID_CHANNEL);
 
   /* Get channel entry */
-  channel = silc_idlist_find_channel_by_id(server->local_list->channels, id);
+  channel = silc_idlist_find_channel_by_id(server->local_list, id);
   if (!channel) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
 					  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
@@ -1419,7 +1418,7 @@ SILC_SERVER_CMD_FUNC(names)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
-  SilcChannelList *channel;
+  SilcChannelEntry channel;
   SilcChannelID *id;
   SilcBuffer packet;
   unsigned int i, len, len2, argc;
@@ -1453,7 +1452,7 @@ SILC_SERVER_CMD_FUNC(names)
   /* Check whether the channel exists. If we are normal server and the
      channel does not exist we will send this same command to our router
      which will know if the channel exists. */
-  channel = silc_idlist_find_channel_by_id(server->local_list->channels, id);
+  channel = silc_idlist_find_channel_by_id(server->local_list, id);
   if (!channel) {
     if (server->server_type == SILC_SERVER && !server->standalone) {
       /* XXX Send names command */

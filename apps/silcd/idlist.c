@@ -20,6 +20,12 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2000/07/12 05:59:41  priikone
+ * 	Major rewrite of ID Cache system. Support added for the new
+ * 	ID cache system. Major rewrite of ID List stuff on server.  All
+ * 	SilcXXXList's are now called SilcXXXEntry's and they are pointers
+ * 	by default. A lot rewritten ID list functions.
+ *
  * Revision 1.4  2000/07/06 07:16:13  priikone
  * 	Added SilcPublicKey's
  *
@@ -38,116 +44,106 @@
 #include "serverincludes.h"
 #include "idlist.h"
 
-/* Adds a new server to the list. The pointer sent as argument is allocated
-   and returned. */
+/******************************************************************************
 
-void silc_idlist_add_server(SilcServerList **list, 
-			    char *server_name, int server_type,
-			    SilcServerID *id, SilcServerList *router,
-			    SilcCipher send_key, SilcCipher receive_key,
-			    SilcPKCS public_key, SilcHmac hmac, 
-			    SilcServerList **new_idlist)
+                          Server entry functions
+
+******************************************************************************/
+
+/* Add new server entry. This adds the new server entry to ID cache and
+   returns the allocated entry object or NULL on error. This is called
+   when new server connects to us. We also add ourselves to cache with
+   this function. */
+
+SilcServerEntry 
+silc_idlist_add_server(SilcIDList id_list, 
+		       char *server_name, int server_type,
+		       SilcServerID *id, SilcServerEntry router,
+		       SilcCipher send_key, SilcCipher receive_key,
+		       SilcPKCS pkcs, SilcHmac hmac, 
+		       SilcPublicKey public_key, void *connection)
 {
-  SilcServerList *last, *idlist;
+  SilcServerEntry server;
 
-  SILC_LOG_DEBUG(("Adding new server to id list"));
+  SILC_LOG_DEBUG(("Adding new server entry"));
 
-  idlist = silc_calloc(1, sizeof(*idlist));
-  if (idlist == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new server list object"));
-    *new_idlist = NULL;
-    return;
+  server = silc_calloc(1, sizeof(*server));
+  server->server_name = server_name;
+  server->server_type = server_type;
+  server->id = id;
+  server->router = router;
+  server->send_key = send_key;
+  server->receive_key = receive_key;
+  server->pkcs = pkcs;
+  server->hmac = hmac;
+  server->public_key = public_key;
+  server->connection = connection;
+
+  if (!silc_idcache_add(id_list->servers, server->server_name, SILC_ID_SERVER,
+			(void *)server->id, (void *)server, TRUE)) {
+    silc_free(server);
+    return NULL;
   }
 
-  /* Set the pointers */
-  idlist->server_name = server_name;
-  idlist->server_type = server_type;
-  idlist->id = id;
-  idlist->router = router;
-  idlist->send_key = send_key;
-  idlist->receive_key = receive_key;
-  idlist->pkcs = public_key;
-  idlist->hmac = hmac;
-  idlist->next = idlist;
-  idlist->prev = idlist;
-
-  /* First on the list? */
-  if (!*list) {
-    *list = idlist;
-    *new_idlist = idlist;
-    return;
-  }
-
-  /* Add it to the list */
-  last = (*list)->prev;
-  last->next = idlist;
-  (*list)->prev = idlist;
-  idlist->next = (*list);
-  idlist->prev = last;
-
-  if (new_idlist)
-    *new_idlist = idlist;
+  return server;
 }
 
-/* Adds a new client to the client list. This is called when new client 
-   connection is accepted to the server. This adds all the relevant data 
-   about the client and session with it to the list. This list is 
-   referenced for example when sending message to the client. */
+/******************************************************************************
 
-void silc_idlist_add_client(SilcClientList **list, char *nickname,
-			    char *username, char *userinfo,
-			    SilcClientID *id, SilcServerList *router,
-			    SilcCipher send_key, SilcCipher receive_key,
-			    SilcPKCS public_key, SilcHmac hmac, 
-			    SilcClientList **new_idlist)
+                          Client entry functions
+
+******************************************************************************/
+
+/* Add new client entry. This adds the client entry to ID cache system
+   and returns the allocated client entry or NULL on error.  This is
+   called when new client connection is accepted to the server. */
+
+SilcClientEntry
+silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
+		       char *userinfo, SilcClientID *id, 
+		       SilcServerEntry router,
+		       SilcCipher send_key, SilcCipher receive_key,
+		       SilcPKCS pkcs, SilcHmac hmac, 
+		       SilcPublicKey public_key, void *connection)
 {
-  SilcClientList *last, *idlist;
+  SilcClientEntry client;
 
-  SILC_LOG_DEBUG(("Adding new client to id list"));
+  SILC_LOG_DEBUG(("Adding new client entry"));
 
-  idlist = silc_calloc(1, sizeof(*idlist));
-  if (idlist == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new client list object"));
-    return;
+  client = silc_calloc(1, sizeof(*client));
+  client->nickname = nickname;
+  client->username = username;
+  client->userinfo = userinfo;
+  client->id = id;
+  client->router = router;
+  client->send_key = send_key;
+  client->receive_key = receive_key;
+  client->pkcs = pkcs;
+  client->hmac = hmac;
+  client->public_key = public_key;
+  client->connection = connection;
+
+  if (!silc_idcache_add(id_list->clients, client->nickname, SILC_ID_CLIENT,
+			(void *)client->id, (void *)client, TRUE)) {
+    silc_free(client);
+    return NULL;
   }
 
-  /* Set the pointers */
-  idlist->nickname = nickname;
-  idlist->username = username;
-  idlist->userinfo = userinfo;
-  idlist->id = id;
-  idlist->router = router;
-  idlist->send_key = send_key;
-  idlist->receive_key = receive_key;
-  idlist->pkcs = public_key;
-  idlist->hmac = hmac;
-  idlist->next = idlist;
-  idlist->prev = idlist;
-
-  /* First on the list? */
-  if (!(*list)) {
-    *list = idlist;
-    if (new_idlist)
-      *new_idlist = idlist;
-    return;
-  }
-
-  /* Add it to the list */
-  last = (*list)->prev;
-  last->next = idlist;
-  (*list)->prev = idlist;
-  idlist->next = *list;
-  idlist->prev = last;
-
-  if (new_idlist)
-    *new_idlist = idlist;
+  return client;
 }
 
-/* Free client entry.  This free's everything. */
+/* Free client entry. This free's everything and removes the entry
+   from ID cache. */
 
-void silc_idlist_del_client(SilcClientList **list, SilcClientList *entry)
+void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 {
   if (entry) {
+    /* Remove from cache */
+    if (entry->id)
+      silc_idcache_del_by_id(id_list->clients, SILC_ID_CLIENT, 
+			     (void *)entry->id);
+
+    /* Free data */
     if (entry->nickname)
       silc_free(entry->nickname);
     if (entry->username)
@@ -162,211 +158,134 @@ void silc_idlist_del_client(SilcClientList **list, SilcClientList *entry)
       silc_cipher_free(entry->receive_key);
     if (entry->pkcs)
       silc_pkcs_free(entry->pkcs);
+    if (entry->public_key)
+      silc_pkcs_public_key_free(entry->public_key);
     if (entry->hmac)
       silc_hmac_free(entry->hmac);
     if (entry->hmac_key) {
       memset(entry->hmac_key, 0, entry->hmac_key_len);
       silc_free(entry->hmac_key);
     }
-
-    /* Last one in list? */
-    if (*list == entry && entry->next == entry) {
-      *list = NULL;
-      silc_free(entry);
-      return;
-    }
-
-    /* At the start of list? */
-    if (*list == entry && entry->next != entry) {
-      *list = entry->next;
-      entry->next->prev = entry->prev;
-      entry->prev->next = *list;
-      silc_free(entry);
-      return;
-    }
-
-    /* Remove from list */
-    entry->prev->next = entry->next;
-    entry->next->prev = entry->prev;
-    silc_free(entry);
-    return;
   }
 }
 
-SilcClientList *
-silc_idlist_find_client_by_nickname(SilcClientList *list,
-				    char *nickname,
+/* Finds client entry by nickname. */
+
+SilcClientEntry
+silc_idlist_find_client_by_nickname(SilcIDList id_list, char *nickname,
 				    char *server)
 {
-  SilcClientList *first, *entry;
+  SilcIDCacheList list = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcClientEntry client = NULL;
 
   SILC_LOG_DEBUG(("Finding client by nickname"));
 
-  if (!list)
-    return NULL;
+  if (server) {
+    if (!silc_idcache_find_by_data(id_list->clients, nickname, &list))
+      return NULL;
 
-  first = entry = list;
-  if (!strcmp(entry->nickname, nickname)) {
-    SILC_LOG_DEBUG(("Found"));
-    return entry;
-  }
-  entry = entry->next;
+#if 0
+    while (silc_idcache_list_next(list, &id_cache)) {
+      client = (SilcClientEntry)id_cache->context;
 
-  while(entry != first) {
-    if (!strcmp(entry->nickname, nickname)) {
-      SILC_LOG_DEBUG(("Found"));
-      return entry;
+      if (!strcmp(server, XXX, strlen(server)))
+	break;
+
+      client = NULL;
     }
+#endif
 
-    entry = entry->next;
+   if (!client)
+     return NULL;
+
+   silc_idcache_list_free(list);
+  } else {
+    if (!silc_idcache_find_by_data_one(id_list->clients, nickname, &id_cache))
+      return NULL;
+
+    client = (SilcClientEntry)id_cache->context;
   }
+
+  return client;
+}
+
+/* Finds client by nickname hash. */
+
+SilcClientEntry
+silc_idlist_find_client_by_hash(SilcIDList id_list, unsigned char *hash,
+				SilcHash md5hash)
+{
 
   return NULL;
 }
 
-SilcClientList *
-silc_idlist_find_client_by_hash(SilcClientList *list,
-				char *nickname, SilcHash md5hash)
+/* Finds client by Client ID */
+
+SilcClientEntry
+silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id)
 {
-  SilcClientList *first, *entry;
-  unsigned char hash[16];
+  SilcIDCacheEntry id_cache = NULL;
+  SilcClientEntry client;
 
-  SILC_LOG_DEBUG(("Finding client by nickname hash"));
-
-  if (!list)
+  if (!id)
     return NULL;
 
-  /* Make hash of the nickname */
-  silc_hash_make(md5hash, nickname, strlen(nickname), hash);
+  SILC_LOG_DEBUG(("Finding client by ID"));
 
-  first = entry = list;
-  if (entry && !SILC_ID_COMPARE_HASH(entry->id, hash)) {
-    SILC_LOG_DEBUG(("Found"));
-    return entry;
-  }
-  entry = entry->next;
-
-  while(entry != first) {
-    if (entry && !SILC_ID_COMPARE_HASH(entry->id, hash)) {
-      SILC_LOG_DEBUG(("Found"));
-      return entry;
-    }
-
-    entry = entry->next;
-  }
-
-  return NULL;
-}
-
-SilcClientList *
-silc_idlist_find_client_by_id(SilcClientList *list, SilcClientID *id)
-{
-  SilcClientList *first, *entry;
-
-  SILC_LOG_DEBUG(("Finding client by Client ID"));
-
-  if (!list)
+  if (!silc_idcache_find_by_id_one(id_list->clients, (void *)id, 
+				   SILC_ID_CLIENT, &id_cache))
     return NULL;
 
-  first = entry = list;
-  if (entry && !SILC_ID_CLIENT_COMPARE(entry->id, id)) {
-    SILC_LOG_DEBUG(("Found"));
-    return entry;
-  }
-  entry = entry->next;
+  client = (SilcClientEntry)id_cache->context;
 
-  while(entry != first) {
-    if (entry && !SILC_ID_CLIENT_COMPARE(entry->id, id)) {
-      SILC_LOG_DEBUG(("Found"));
-      return entry;
-    }
-
-    entry = entry->next;
-  }
-
-  return NULL;
+  return client;
 }
 
-/* Adds new channel to the list. */
+/******************************************************************************
 
-void silc_idlist_add_channel(SilcChannelList **list, 
-			     char *channel_name, int mode,
-			     SilcChannelID *id, SilcServerList *router,
-			     SilcCipher channel_key,
-			     SilcChannelList **new_idlist)
+                          Channel entry functions
+
+******************************************************************************/
+
+/* Add new channel entry. This add the new channel entry to the ID cache
+   system and returns the allocated entry or NULL on error. */
+
+SilcChannelEntry
+silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
+			SilcChannelID *id, SilcServerEntry router,
+			SilcCipher channel_key)
 {
-  SilcChannelList *last, *idlist;
+  SilcChannelEntry channel;
 
-  SILC_LOG_DEBUG(("Adding new channel to id list"));
+  channel = silc_calloc(1, sizeof(*channel));
+  channel->channel_name = channel_name;
+  channel->mode = mode;
+  channel->id = id;
+  channel->router = router;
+  channel->channel_key = channel_key;
 
-  idlist = silc_calloc(1, sizeof(*idlist));
-  if (idlist == NULL) {
-    SILC_LOG_ERROR(("Could not allocate new channel list object"));
-    return;
-  }
-
-  /* Set the pointers */
-  idlist->channel_name = channel_name;
-  idlist->mode = mode;
-  idlist->id = id;
-  idlist->router = router;
-  idlist->channel_key = channel_key;
-  idlist->next = idlist;
-  idlist->prev = idlist;
-
-  /* First on the list? */
-  if (!*list) {
-    *list = idlist;
-    if (new_idlist)
-      *new_idlist = idlist;
-    return;
-  }
-
-  /* Add it to the list */
-  last = (*list)->prev;
-  last->next = idlist;
-  (*list)->prev = idlist;
-  idlist->next = (*list);
-  idlist->prev = last;
-
-  if (new_idlist)
-    *new_idlist = idlist;
-}
-
-SilcChannelList *
-silc_idlist_find_channel_by_id(SilcChannelList *list, SilcChannelID *id)
-{
-  SilcChannelList *first, *entry;
-
-  SILC_LOG_DEBUG(("Finding channel by Channel ID"));
-
-  if (!list)
+  if (!silc_idcache_add(id_list->channels, channel->channel_name, 
+			SILC_ID_CHANNEL, (void *)channel->id, 
+			(void *)channel, TRUE)) {
+    silc_free(channel);
     return NULL;
-
-  first = entry = list;
-  if (entry && !SILC_ID_CHANNEL_COMPARE(entry->id, id)) {
-    SILC_LOG_DEBUG(("Found"));
-    return entry;
-  }
-  entry = entry->next;
-
-  while(entry != first) {
-    if (entry && !SILC_ID_CHANNEL_COMPARE(entry->id, id)) {
-      SILC_LOG_DEBUG(("Found"));
-      return entry;
-    }
-
-    entry = entry->next;
   }
 
-  return NULL;
+  return channel;
 }
 
 /* Free channel entry.  This free's everything. */
 
-void silc_idlist_del_channel(SilcChannelList **list, SilcChannelList *entry)
+void silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
 {
   if (entry) {
+    /* Remove from cache */
+    if (entry->id)
+      silc_idcache_del_by_id(id_list->channels, SILC_ID_CHANNEL, 
+			     (void *)entry->id);
+
+    /* Free data */
     if (entry->channel_name)
       silc_free(entry->channel_name);
     if (entry->id)
@@ -383,27 +302,52 @@ void silc_idlist_del_channel(SilcChannelList **list, SilcChannelList *entry)
 
     if (entry->user_list_count)
       silc_free(entry->user_list);
-
-    /* Last one in list? */
-    if (*list == entry && entry->next == entry) {
-      *list = NULL;
-      silc_free(entry);
-      return;
-    }
-
-    /* At the start of list? */
-    if (*list == entry && entry->next != entry) {
-      *list = entry->next;
-      entry->next->prev = entry->prev;
-      entry->prev->next = *list;
-      silc_free(entry);
-      return;
-    }
-
-    /* Remove from list */
-    entry->prev->next = entry->next;
-    entry->next->prev = entry->prev;
-    silc_free(entry);
-    return;
   }
+}
+
+/* Finds channel by channel name. Channel names are unique and they
+   are not case-sensitive. */
+
+SilcChannelEntry
+silc_idlist_find_channel_by_name(SilcIDList id_list, char *name)
+{
+  SilcIDCacheList list = NULL;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelEntry channel;
+
+  SILC_LOG_DEBUG(("Finding channel by name"));
+
+  if (!silc_idcache_find_by_data_loose(id_list->channels, name, &list))
+    return NULL;
+  
+  if (!silc_idcache_list_first(list, &id_cache))
+    return NULL;
+
+  channel = (SilcChannelEntry)id_cache->context;
+
+  silc_idcache_list_free(list);
+
+  return channel;
+}
+
+/* Finds channel by Channel ID. */
+
+SilcChannelEntry
+silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id)
+{
+  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelEntry channel;
+
+  if (!id)
+    return NULL;
+
+  SILC_LOG_DEBUG(("Finding channel by ID"));
+
+  if (!silc_idcache_find_by_id_one(id_list->channels, (void *)id, 
+				   SILC_ID_CHANNEL, &id_cache))
+    return NULL;
+
+  channel = (SilcChannelEntry)id_cache->context;
+
+  return channel;
 }
