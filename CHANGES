@@ -13,6 +13,9 @@ Wed Nov 27 16:01:11 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged with Irssi 0.8.6.
 
+	* Fixed UTF-8 in Irssi SILC Client, setlocale was missing.
+	  Affected file irssi/src/fe-text/silc.c.
+
 Mon Nov 25 18:21:43 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* The silc_argument_get_[first/next] now return the argument
