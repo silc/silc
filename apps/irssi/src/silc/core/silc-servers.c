@@ -39,6 +39,7 @@
 #include "silc-channels.h"
 #include "silc-queries.h"
 #include "silc-nicklist.h"
+#include "silc-cmdqueue.h"
 #include "window-item-def.h"
 
 #include "fe-common/core/printtext.h"
@@ -455,7 +456,7 @@ void silc_command_exec(SILC_SERVER_REC *server,
 
   /* Call the command */
   data = g_strconcat(command, " ", args, NULL);
-  silc_client_command_call(silc_client, server->conn, data);
+  silc_queue_command_call(silc_client, server->conn, data);
   g_free(data);
 }
 

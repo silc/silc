@@ -38,6 +38,7 @@
 #include "silc-channels.h"
 #include "silc-queries.h"
 #include "silc-nicklist.h"
+#include "silc-cmdqueue.h"
 #include "window-item-def.h"
 
 #include "fe-common/core/printtext.h"
@@ -103,6 +104,8 @@ static void sig_channel_destroyed(SILC_CHANNEL_REC *channel)
     /* destroying channel record without actually
        having left the channel yet */
     silc_command_exec(channel->server, "LEAVE", channel->name);
+    /* enable queueing because we destroy the channel immedially */
+    silc_queue_enable(channel->server->conn);
   }
 }
 
@@ -195,6 +198,8 @@ static void command_part(const char *data, SILC_SERVER_REC *server,
   
   chanrec->left = TRUE;
   silc_command_exec(server, "LEAVE", chanrec->name);
+  /* enable queueing because we destroy the channel immedially */
+  silc_queue_enable(server->conn);
   signal_stop();
 
   channel_destroy(CHANNEL(chanrec));

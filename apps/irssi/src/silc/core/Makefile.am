@@ -24,7 +24,8 @@ libsilc_core_a_SOURCES = \
 	silc-expandos.c \
 	silc-servers-reconnect.c \
 	silc-lag.c \
-	silc-chatnets.c
+	silc-chatnets.c \
+	silc-cmdqueue.c
 
 noinst_HEADERS = \
 	module.h \
@@ -36,5 +37,6 @@ noinst_HEADERS = \
 	silc-commands.h \
 	silc-queries.h \
 	silc-servers.h \
-	silc-chatnets.h
+	silc-chatnets.h \
+	silc-cmdqueue.h
 

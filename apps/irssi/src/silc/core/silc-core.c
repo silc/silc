@@ -30,6 +30,7 @@
 #include "silc-queries.h"
 #include "silc-nicklist.h"
 #include "silc-chatnets.h"
+#include "silc-cmdqueue.h"
 
 #include "signals.h"
 #include "levels.h"
@@ -476,6 +477,7 @@ void silc_core_init(void)
   chat_protocol_register(rec);
   g_free(rec);
 
+  silc_queue_init();
   silc_server_init();
   silc_channels_init();
   silc_queries_init();
@@ -498,6 +500,7 @@ void silc_core_deinit(void)
   signal_remove("setup changed", (SIGNAL_FUNC) sig_setup_changed);
   signal_remove("irssi init finished", (SIGNAL_FUNC) sig_init_finished);
 
+  silc_queue_deinit();
   silc_server_deinit();
   silc_channels_deinit();
   silc_queries_deinit();

@@ -1,3 +1,12 @@
+Fri Feb 13 13:13:07 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* redirect all silc_client_command_calls through a queueing framework.
+	  This fixes /CYCLE and the annoying "nick change after auto-joining
+	  a channel".  Furthermore it defines one central point where
+	  command parameters can be UTF-8-ified.  Affected files
+	  irssi/src/silc/core/Makefile, client_ops.c, silc-channels.c,
+	  silc-servers.[ch], silc-core.c, silc-cmdqueue.[ch], silc-lag.c
+
 Fri Feb 13 12:04:41 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* use asynchronous connect() to establish router connections.

@@ -29,6 +29,7 @@
 #include "silc-channels.h"
 #include "silc-queries.h"
 #include "silc-nicklist.h"
+#include "silc-cmdqueue.h"
 
 #include "signals.h"
 #include "levels.h"
@@ -761,7 +762,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     client_entry = va_arg(va, SilcClientEntry);
     channel = va_arg(va, SilcChannelEntry);
-
+    
     memset(buf, 0, sizeof(buf));
     if (client_entry->username)
       snprintf(buf, sizeof(buf) - 1, "%s@%s",
@@ -1268,6 +1269,9 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
   switch (status) {
   case SILC_CLIENT_CONN_SUCCESS:
     /* We have successfully connected to server */
+    if ((client->nickname != NULL) && 
+        (strcmp(client->nickname, client->username)))
+      silc_queue_enable(conn); /* enable queueing until we have our nick */
     server->connected = TRUE;
     signal_emit("event connected", 1, server);
     break;
@@ -1984,6 +1988,11 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 			     client_entry, client_entry->nickname);
       signal_emit("message own_nick", 4, server, server->nick, old, "");
       g_free(old);
+
+      /* when connecting to a server, the last thing we receive
+         is a SILC_COMMAND_LIST reply. Since we enable queueing
+	 during the connection, we can now safely disable it again */
+      silc_queue_disable(conn);
       break;
     }
 
@@ -2439,6 +2448,13 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_PK_NO_LIST,
 			   channel_entry->channel_name);
+    }
+    break;
+
+  case SILC_COMMAND_LEAVE:
+    {
+      /* we might be cycling, so disable queueing again */
+      silc_queue_disable(conn);
     }
     break;
 
