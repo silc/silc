@@ -361,6 +361,29 @@ else
   fi
 fi
 
+#
+# Workaround a bug in GCC 2.x which causes memory exhaustion
+# when compiling sha1 with optimizations on UltraSPARC.
+#
+FIX_SHA1='#'
+if test "$GCC" -a "$host_cpu" = "sparc64"; then
+  AC_MSG_CHECKING(whether to enable GCC 2.x workaround for SHA1)
+  AC_TRY_COMPILE(
+    [
+      #if defined(__sparc64__) && (__GNUC__ == 2)
+      #else
+      choke me
+      #endif
+    ],
+    [],
+    [
+      FIX_SHA1=''
+      AC_MSG_RESULT(yes)
+    ],
+      AC_MSG_RESULT(no)
+    )
+fi
+AC_SUBST(FIX_SHA1)
 
 ##
 ##  Installation
