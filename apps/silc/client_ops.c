@@ -129,7 +129,7 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 
 void silc_command_reply(SilcClient client, SilcClientConnection conn,
 			SilcCommandPayload cmd_payload, int success,
-			SilcCommand command, ...)
+			SilcCommandStatus status, SilcCommand command, ...)
 {
   SilcClientInternal app = (SilcClientInternal)client->application;
   va_list vp;

@@ -31,7 +31,7 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 		  SilcCommand command);
 void silc_command_reply(SilcClient client, SilcClientConnection conn,
 			SilcCommandPayload cmd_payload, int success,
-			SilcCommand command, ...);
+			SilcCommandStatus status, SilcCommand command, ...);
 void silc_connect(SilcClient client, SilcClientConnection conn, int success);
 void silc_disconnect(SilcClient client, SilcClientConnection conn);
 unsigned char *silc_ask_passphrase(SilcClient client, 
