@@ -59,7 +59,7 @@ typedef unsigned long uoff_t;
 #elif defined (UOFF_T_LONGLONG)
 typedef unsigned long long uoff_t;
 #else
-#  error uoff_t size not set
+typedef unsigned int uoff_t;
 #endif
 
 /* input functions */
