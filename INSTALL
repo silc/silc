@@ -1,13 +1,13 @@
 Quick Installation
 ==================
 
-To configure and compile SILC package give the comands:
+   To configure and compile SILC package give the comands:
 
 	./configure
 	make (or gmake)
 	make install
 
-This will install the SILC binaries and configuration files into the
+   This will install the SILC binaries and configuration files into the
 /usr/local/silc/ directory.  System wide configuration files are installed
 into the /etc/silc/ directory.
 
@@ -43,6 +43,12 @@ you can give this option to the `configure'.
    If you do not want to compile the programs with multi threads support
 you can give --disable-threads option.  In this case all compiled programs
 will work in single thread only.
+
+--enable-ipv6
+
+   The `configure' will attempt to check for IPv6 support in your system.
+   However, if it fails, but you still want to compile in the IPv6 support
+   you can give --enable-ipv6 option to force the IPv6 support.
 
 Basic Installation
 ==================

@@ -210,17 +210,17 @@ infologfile:@LOGSDIR@/silcd.log:10000
 #10.2.1.99:0:Your connection has been denied
 
 #
-#Message Of The Day
+# Message Of The Day
 #
-#specify the text file containing the motd:
+# specify the text file containing the motd:
 #
 #[motd]
 #@ETCDIR@/motd.txt
 
 #
-#pidfile
+# Pid File
 #
-#speficy the pidfile where it will be written:
+# specify the pidfile where it will be written:
 #
 [pid]
 @PIDFILE@

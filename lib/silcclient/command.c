@@ -368,6 +368,9 @@ SILC_CLIENT_CMD_FUNC(nick_change)
       silc_free(conn->nickname);
     conn->nickname = strdup(cmd->argv[1]);
     conn->local_entry->nickname = conn->nickname;
+    silc_idcache_del_by_context(conn->client_cache, conn->local_entry);
+    silc_idcache_add(conn->client_cache, strdup(cmd->argv[1]), 
+		     conn->local_entry->id, conn->local_entry, FALSE);
     COMMAND;
   } else {
     COMMAND_ERROR;

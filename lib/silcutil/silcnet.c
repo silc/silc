@@ -158,9 +158,18 @@ bool silc_net_gethostbyname(const char *name, char *address,
   if (getnameinfo(ai->ai_addr, ai->ai_addrlen, hbuf,
 		  sizeof(hbuf), NULL, 0, NI_NUMERICHOST))
     return FALSE;
-  
-  if (!inet_ntop(ai->ai_family, ai->ai_addr, address, address_len))
-    return FALSE;
+
+  if (ai->ai_family == AF_INET) {
+    if (!inet_ntop(ai->ai_family, 
+		   &((struct sockaddr_in *)ai->ai_addr)->sin_addr,
+		   address, address_len))
+      return FALSE;
+  } else {
+    if (!inet_ntop(ai->ai_family, 
+		   &((struct sockaddr_in6 *)ai->ai_addr)->sin6_addr,
+		   address, address_len))
+      return FALSE;
+  }
 
   freeaddrinfo(ai);
 #else

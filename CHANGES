@@ -5,6 +5,9 @@ Thu Nov 29 22:12:50 EET 2001  Pekka Riikonen <priikone@silcnet.org>'
 	  Fixes the CUMODE command when regaining founder privileges,
 	  and a little WHOIS problem.
 
+	* Fixed silc_net_gethostbyname to correctly call the
+	  inet_ntop.  Affected file lib/silcutil/silcnet.c.
+
 Thu Nov 29 19:31:23 EET 2001  Pekka Riikonen <priikone@silcnet.org>'
 
 	* Added IPv6 support checking to the configure.in.pre, added
