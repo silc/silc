@@ -38,7 +38,7 @@
 # SILC Distribution versions. Set here or give the version on the command
 # line as argument.
 #
-SILC_VERSION=0.5			# Base version
+SILC_VERSION=0.5.1			# Base version
 
 
 #############################################################################
