@@ -1,19 +1,6 @@
 SILC - Secure Internet Live Conferencing
 ========================================
 
-[NOTE: SILC is still in middle of development and this package is known
-as Developer's Version which means that the package is in no means stable
-or ready to be in production use.  This package is for those who wants
-to test SILC, find bugs and maybe contribute some time and code for the
-SILC project.  There is no guarantees that this package even compiles and
-even if it compiles there is no guarantees that it would work, and even
-if it works there is no guarantees that it would work correctly, and even
-if it seems to work correctly it may be just plain luck.]
-
-
-Description
-===========
-
 SILC (Secure Internet Live Conferencing) is a protocol which provides
 secure conferencing services in the Internet over insecure channel.
 SILC is IRC like softwarre although internally they are very different.
