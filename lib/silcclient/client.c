@@ -1263,11 +1263,7 @@ void silc_client_packet_queue_purge(SilcClient client,
 {
   if (sock && SILC_IS_OUTBUF_PENDING(sock) && 
       (SILC_IS_DISCONNECTED(sock) == FALSE)) {
-    if (sock->outbuf->data - sock->outbuf->head)
-      silc_buffer_push(sock->outbuf, sock->outbuf->data - sock->outbuf->head);
-
     silc_packet_send(sock, TRUE);
-
     SILC_CLIENT_SET_CONNECTION_FOR_INPUT(client->schedule, sock->sock);
     SILC_UNSET_OUTBUF_PENDING(sock);
     silc_buffer_clear(sock->outbuf);
