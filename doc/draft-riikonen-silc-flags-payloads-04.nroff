@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 17 June 2003
+.ds RH 2 December 2003
 .ds CH
 .na
 .hy 0
@@ -16,14 +16,14 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-flags-payloads-03.txt                        17 June 2003
-Expires: 17 December 2003
+draft-riikonen-flags-payloads-04.txt                     2 December 2003
+Expires: 2 June 2004
 
 .in 3
 
 .ce 2
 SILC Message Flag Payloads
-<draft-riikonen-flags-payloads-03.txt>
+<draft-riikonen-flags-payloads-04.txt>
 
 .ti 0
 Status of this Memo
@@ -73,17 +73,17 @@ Table of Contents
 .nf
 1 Introduction ..................................................  2
   1.1 Requirements Terminology ..................................  2
-2 SILC Message Flags ............................................  2
+2 SILC Message Flags ............................................  3
 3 SILC Message Flag Payloads ....................................  3
   3.1 SILC_MESSAGE_FLAG_REQUEST .................................  3
-  3.2 SILC_MESSAGE_FLAG_REPLY ...................................  3
+  3.2 SILC_MESSAGE_FLAG_REPLY ...................................  4
   3.3 SILC_MESSAGE_FLAG_SIGNED ..................................  4
-  3.4 SILC_MESSAGE_FLAG_DATA ....................................  6
-  3.5 SILC_MESSAGE_FLAG_ACK .....................................  7
-4 Security Considerations .......................................  7
-5 References ....................................................  8
-6 Author's Address ..............................................  8
-7 Full Copyright Statement ......................................  9
+  3.4 SILC_MESSAGE_FLAG_DATA ....................................  7
+  3.5 SILC_MESSAGE_FLAG_ACK .....................................  8
+4 Security Considerations .......................................  9
+5 References ....................................................  9
+6 Author's Address .............................................. 10
+7 Full Copyright Statement ...................................... 10
 
 
 .ti 0
@@ -117,18 +117,20 @@ MAY, and OPTIONAL, when they appear in this document, are to be
 interpreted as described in [RFC2119].
 
 
+
+
 .ti 0
 2 SILC Message Flags
 
 The Message Flags was added to the SILC protocol for the reason that SILC
 provides sending binary data as messages between users, and entities in
 the network, and interpreting pure binary data is almost impossible.
-With the flags the purpose, the reason, and the way the message is
-supposed to be interpreted can be told to the recipient.  Other
+With the Message Flags the purpose, the reason, and the method for how
+the message must be interpreted can be told to the recipient.  Other
 conferencing protocols which are usually ASCII based protocols do not have
 such problems since they do not generally support sending of binary data
-at all, or require encoding of the data before it can be sent over the
-network.
+at all, or require specific encoding of the data before it can be sent
+over the network.
 
 The Message Payload in SILC can have flags that can augment the function
 of the payload.  The flags can tell for example that the message is a
@@ -166,6 +168,8 @@ the message payload, including with some other flag that defines
 additional payload.
 
 
+
+
 .ti 0
 3.2 SILC_MESSAGE_FLAG_REPLY
 
@@ -194,6 +198,27 @@ sender's public key and the digital signature.  The payload for
 SILC_MESSAGE_FLAG_SIGNED is as follows:
 
 (*) indicates that the field is not encrypted.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 .in 5
 .nf
@@ -373,10 +398,10 @@ define data specific payload.
 This flag is used to send acknowledgement messages.  When sender of a
 message requires the recipient to acknowledge the received message, the
 sender MUST set the SILC_MESSAGE_FLAG_ACK and MUST NOT set the
-SILC_MESSAGE_FLAG_NOREPLY.  When a message with this flag set is received 
-an acknowledgement message MUST be sent back.  In the acknowledgement 
-message the sender MUST set the SILC_MESSAGE_FLAG_ACK, 
-SILC_MESSAGE_FLAG_AUTOREPLY and SILC_MESSAGE_FLAG_NOREPLY flags.  The 
+SILC_MESSAGE_FLAG_NOREPLY.  When a message with this flag set is received
+an acknowledgement message MUST be sent back.  In the acknowledgement
+message the sender MUST set the SILC_MESSAGE_FLAG_ACK,
+SILC_MESSAGE_FLAG_AUTOREPLY and SILC_MESSAGE_FLAG_NOREPLY flags.  The
 receiver MUST NOT acknowledge the acknowledgement message.  This flag
 MUST NOT be used with channel messages, and MUST be ignored if received
 in a channel message.
@@ -416,8 +441,6 @@ MIME which can be used to transfer files and documents which are stored in
 the receiver's local environment, securing separately the MIME object may
 be desired.  For example, augmenting the MIME support in SILC messages to
 support S/MIME may be desired in some implementations.
-
-
 
 
 .ti 0
@@ -466,7 +489,6 @@ Snellmaninkatu 34 A 15
 Finland
 
 EMail: priikone@iki.fi
-
 
 
 
