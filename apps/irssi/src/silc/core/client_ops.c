@@ -75,6 +75,10 @@ static void silc_get_umode_string(SilcUInt32 mode, char *buf,
     strcat(buf, " [blocks private messages]");
   if (mode & SILC_UMODE_DETACHED)
     strcat(buf, " [detached]");
+  if (mode & SILC_UMODE_REJECT_WATCHING)
+    strcat(buf, " [rejects watching]");
+  if (mode & SILC_UMODE_BLOCK_INVITE)
+    strcat(buf, " [blocks invites]");
 }
 
 void silc_say(SilcClient client, SilcClientConnection conn,

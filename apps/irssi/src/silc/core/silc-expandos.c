@@ -35,12 +35,43 @@
 static char *expando_usermode(SERVER_REC *server, void *item, int *free_ret)
 {
   SILC_SERVER_REC *s = SILC_SERVER(server);
+  static char modes[128], stat[128];
+  bool se;
 
   if (!s)
     return "";
 
-  return (s->umode & SILC_UMODE_SERVER_OPERATOR) ? "Server Operator" :
-    (s->umode & SILC_UMODE_ROUTER_OPERATOR) ? "Router Operator" : "";
+  memset(modes, 0, sizeof(modes));
+  memset(stat, 0, sizeof(stat));
+
+  if (s->umode & SILC_UMODE_GONE)
+    strcat(stat, "g");
+  if (s->umode & SILC_UMODE_INDISPOSED)
+    strcat(stat, "i");
+  if (s->umode & SILC_UMODE_BUSY)
+    strcat(stat, "b");
+  if (s->umode & SILC_UMODE_PAGE)
+    strcat(stat, "p");
+  if (s->umode & SILC_UMODE_HYPER)
+    strcat(stat, "h");
+  if (s->umode & SILC_UMODE_ROBOT)
+    strcat(stat, "t");
+  if (s->umode & SILC_UMODE_ANONYMOUS)
+    strcat(stat, "?");
+  if (s->umode & SILC_UMODE_BLOCK_PRIVMSG)
+    strcat(stat, "P");
+  if (s->umode & SILC_UMODE_REJECT_WATCHING)
+    strcat(stat, "w");
+  if (s->umode & SILC_UMODE_BLOCK_INVITE)
+    strcat(stat, "I");
+
+  se = strlen(stat) > 0;
+  snprintf(modes, sizeof(modes) - 1, "%s%s%s%s",
+	   ((s->umode & SILC_UMODE_SERVER_OPERATOR) ? "Server Operator" :
+	    (s->umode & SILC_UMODE_ROUTER_OPERATOR) ? "Router Operator" : ""),
+	   se ? "[" : "", se ? stat : "", se ? "]" : "");
+
+  return modes;
 }
 
 /* Expands to your usermode on channel */

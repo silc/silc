@@ -1,3 +1,8 @@
+Tue May 28 20:11:41 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Display the user mode on the status bar.  Affected file
+	  irssi/src/silc/core/silc-expandos.c.
+
 Tue May 28 13:56:26 CEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* If private message key is not set, but the flag is set in
