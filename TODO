@@ -19,10 +19,6 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
- o Make the "one founder per channel" check during join -founder as well.
-
- o Make the "one founder per channel" during CUMODE notify as well.
-
  o Implement the <Requested Attributes> and the Attribute Payload to
    the core library, client and server.  Maybe implementations of
    RFC 2425 and RFC 2426 to make it complete.

@@ -1,3 +1,20 @@
+Tue Jun 18 17:14:52 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* When authenticating as founder during JOIN command, check
+	  that the one authenticating becomes the only founder on the
+	  channel.  Affected file silcd/command.c.
+
+	* Better checking for founder mode setting when CUMODE_CHANGE
+	  notify is received.  Affected file silcd/packet_receive.c.
+
+	* Close all connections when shutting down the server by sending
+	  DISCONNECT packet.  Close all listeners too when shutting
+	  down the server.  Affected file silcd/server.c.
+
+	* Handle DISCONNECT packet correctly in client library by
+	  calling the "disconnect" client operation.  Affected file
+	  lib/silcclient/client.c.
+
 Tue Jun 18 10:26:27 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* The log file is not dupped internally anymore in

@@ -65,28 +65,28 @@ typedef struct {
 */
 struct SilcServerStruct {
   char *server_name;
-  int server_type;
   int sock;
+  SilcServerEntry id_entry;
   SilcServerID *id;
   unsigned char *id_string;
   SilcUInt32 id_string_len;
-  SilcIdType id_type;
-
   SilcUInt32 starttime;
-  bool standalone;		     /* TRUE if server is standalone, and
+
+  unsigned int server_type    : 2;   /* Server type (server.h) */
+  unsigned int standalone     : 1;   /* Set if server is standalone, and
 					does not have connection to network. */
-  bool listenning;		     /* TRUE if server is listenning for
+  unsigned int listenning     : 1;   /* Set if server is listenning for
 					incoming connections. */
-  bool background;
-  SilcServerEntry id_entry;	     /* Server's own ID entry */
+  unsigned int background     : 1;   /* Set when server is on background */
+  unsigned int backup_router  : 1;   /* Set if this is backup router */
+  unsigned int backup_primary : 1;   /* Set if we've switched our primary
+				        router to a backup router. */
+
   SilcServerEntry router;	     /* Pointer to the primary router */
   unsigned long router_connect;	     /* Time when router was connected */
-  SilcServerBackup backup;	     /* Backup routers */
-  bool backup_router;		     /* TRUE if this is backup router */
-  bool backup_primary;		     /* TRUE if we've switched our primary
-				        router to a backup router. */
   SilcServerConnection router_conn;  /* non-NULL when connecting to the
 					primary router, and NULL otherwise. */
+  SilcServerBackup backup;	     /* Backup routers */
 
   /* Current command identifier, 0 not used */
   SilcUInt16 cmd_ident;

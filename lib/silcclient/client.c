@@ -1471,11 +1471,16 @@ void silc_client_close_connection(SilcClient client,
 SILC_TASK_CALLBACK(silc_client_disconnected_by_server_later)
 {
   SilcClient client = (SilcClient)context;
+  SilcClientConnection conn;
   SilcSocketConnection sock;
 
   SILC_CLIENT_GET_SOCK(client, fd, sock);
   if (sock == NULL)
     return;
+
+  conn = (SilcClientConnection)sock->user_data;
+  if (sock == conn->sock && sock->type != SILC_SOCKET_TYPE_CLIENT)
+    client->internal->ops->disconnect(client, conn);
 
   silc_client_close_connection_real(client, sock, sock->user_data);
 }

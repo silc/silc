@@ -3220,6 +3220,8 @@ static void silc_server_command_join_channel(SilcServer server,
    */
   if (auth && auth_len && channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
     SilcIDListData idata = (SilcIDListData)client;
+    SilcChannelClientEntry chl2;
+    SilcHashTableList htl;
 
     if (channel->founder_key && idata->public_key &&
 	silc_pkcs_public_key_compare(channel->founder_key, 
@@ -3228,6 +3230,19 @@ static void silc_server_command_join_channel(SilcServer server,
       if (silc_auth_verify_data(auth, auth_len, SILC_AUTH_PUBLIC_KEY,
 				channel->founder_key, 0, server->sha1hash,
 				client->id, SILC_ID_CLIENT)) {
+
+	/* There cannot be anyone else as founder on the channel now.  This
+	   client is definitely the founder due to this authentication */
+	silc_hash_table_list(channel->user_list, &htl);
+	while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
+	  if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {
+	    chl2->mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+	    silc_server_force_cumode_change(server, NULL, channel, chl2,
+					    chl2->mode);
+	    break;
+	  }
+	silc_hash_table_list_reset(&htl);
+
 	umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	founder = TRUE;
       }
@@ -3415,6 +3430,7 @@ static void silc_server_command_join_channel(SilcServer server,
      we'll ignore it (in packet_receive.c) so we must send it here. If
      we are router then this will send it to local clients and local
      servers. */
+  SILC_LOG_DEBUG(("Send JOIN notify to channel"));
   silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
 				     SILC_NOTIFY_TYPE_JOIN, 2,
 				     clidp->data, clidp->len,
@@ -3443,21 +3459,22 @@ static void silc_server_command_join_channel(SilcServer server,
        notify the mode change to the channel. */
     if (founder) {
       SILC_PUT32_MSB(chl->mode, mode);
+      SILC_LOG_DEBUG(("Send CUMODE_CHANGE notify to channel"));
       silc_server_send_notify_to_channel(server, NULL, channel, FALSE, 
 					 SILC_NOTIFY_TYPE_CUMODE_CHANGE, 4,
 					 clidp->data, clidp->len,
 					 mode, 4, clidp->data, clidp->len,
 					 fkey, fkey_len);
-      
-      /* Set CUMODE notify type to network */
-      if (!server->standalone)
-	silc_server_send_notify_cumode(server, server->router->connection,
-				       server->server_type == SILC_ROUTER ? 
-				       TRUE : FALSE, channel,
-				       chl->mode, client->id, SILC_ID_CLIENT,
-				       client->id, channel->founder_key);
     }
   }
+
+  /* Set CUMODE notify type to network */
+  if (founder && !server->standalone)
+    silc_server_send_notify_cumode(server, server->router->connection,
+				   server->server_type == SILC_ROUTER ?
+				   TRUE : FALSE, channel,
+				   chl->mode, client->id, SILC_ID_CLIENT,
+				   client->id, channel->founder_key);
 
   silc_buffer_free(reply);
   silc_buffer_free(clidp);

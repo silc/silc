@@ -167,6 +167,7 @@ bool silc_server_init_secondary(SilcServer server)
     silc_socket_alloc(sock_list[sock],
 		      SILC_SOCKET_TYPE_SERVER, NULL, &newsocket);
     server->sockets[sock_list[sock]] = newsocket;
+    SILC_SET_LISTENER(newsocket);
 
     /* Perform name and address lookups to resolve the listenning address
        and port. */
@@ -310,6 +311,7 @@ bool silc_server_init(SilcServer server)
      is sent as argument for fast referencing in the future. */
   silc_socket_alloc(sock, SILC_SOCKET_TYPE_SERVER, NULL, &newsocket);
   server->sockets[sock] = newsocket;
+  SILC_SET_LISTENER(newsocket);
 
   /* Perform name and address lookups to resolve the listenning address
      and port. */
@@ -336,7 +338,6 @@ bool silc_server_init(SilcServer server)
   server->id = id;
   server->id_string = silc_id_id2str(id, SILC_ID_SERVER);
   server->id_string_len = silc_id_get_len(id, SILC_ID_SERVER);
-  server->id_type = SILC_ID_SERVER;
   server->server_name = server->config->server_info->server_name;
   server->config->server_info->server_name = NULL;
 
@@ -577,17 +578,31 @@ void silc_server_stop(SilcServer server)
   if (server->schedule) {
     int i;
 
+    /* Close all connections */
     for (i = 0; i < server->config->param.connections_max; i++) {
       if (!server->sockets[i])
 	continue;
-      silc_socket_free(server->sockets[i]);
+      if (!SILC_IS_LISTENER(server->sockets[i])) {
+	silc_schedule_task_del_by_context(server->schedule,
+					  server->sockets[i]);
+	silc_server_disconnect_remote(server, server->sockets[i], 
+				      SILC_STATUS_OK, 
+				      "Server is shutting down");
+      } else {
+	silc_socket_free(server->sockets[i]);
+	server->sockets[i] = NULL;
+      }
     }
-    silc_free(server->sockets);
-    server->sockets = NULL;
+
+    /* We are not connected to network anymore */
+    server->standalone = TRUE;
 
     silc_schedule_stop(server->schedule);
     silc_schedule_uninit(server->schedule);
     server->schedule = NULL;
+
+    silc_free(server->sockets);
+    server->sockets = NULL;
   }
 
   silc_server_protocols_unregister();
@@ -1230,6 +1245,14 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
 		 sock->ip));
 
   /* Listenning port */
+  if (!server->sockets[(SilcUInt32)proto_ctx->context]) {
+    silc_server_disconnect_remote(server, sock,
+				  SILC_STATUS_ERR_RESOURCE_LIMIT,
+				  "Connection refused");
+    server->stat.conn_failures++;
+    silc_free(proto_ctx);
+    return;
+  }
   port = server->sockets[(SilcUInt32)proto_ctx->context]->port;
 
   /* Check whether this connection is denied to connect to us. */
@@ -2057,7 +2080,8 @@ void silc_server_packet_parse_type(SilcServer server,
       status = (SilcStatus)packet->buffer->data[0];
       if (packet->buffer->len > 1 &&
 	  silc_utf8_valid(packet->buffer->data + 1, packet->buffer->len - 1))
-	message = silc_memdup(packet->buffer->data, packet->buffer->len);
+	message = silc_memdup(packet->buffer->data + 1,
+			      packet->buffer->len - 1);
 
       SILC_LOG_ERROR(("Disconnected by %s (%s): %s (%d) %s", 
 		      sock->ip, sock->hostname,

@@ -101,6 +101,7 @@ typedef enum {
 #define SILC_SF_HOST_LOOKUP      5 /* performing host lookup for socket */
 #define SILC_SF_DISABLED         6 /* socket connection is disabled,
 				      no data is sent or received. */
+#define SILC_SF_LISTENER         7
 
 /****s* silcutil/SilcSocketConnectionAPI/SilcSocketConnectionStruct
  *
@@ -215,13 +216,15 @@ struct SilcSocketConnectionStruct {
 #define SILC_SET_DISCONNECTING(x) SF_SET((x), SILC_SF_DISCONNECTING)
 #define SILC_SET_DISCONNECTED(x) SF_SET((x), SILC_SF_DISCONNECTED)
 #define SILC_SET_HOST_LOOKUP(x) SF_SET((x), SILC_SF_HOST_LOOKUP)
-#define SILC_SET_DISABLED(x) SF_SET((x), SILC_SF_HOST_LOOKUP)
+#define SILC_SET_DISABLED(x) SF_SET((x), SILC_SF_DISABLED)
+#define SILC_SET_LISTENER(x) SF_SET((x), SILC_SF_LISTENER)
 #define SILC_UNSET_OUTBUF_PENDING(x) SF_UNSET((x), SILC_SF_OUTBUF_PENDING)
 #define SILC_UNSET_INBUF_PENDING(x) SF_UNSET((x), SILC_SF_INBUF_PENDING)
 #define SILC_UNSET_DISCONNECTING(x) SF_UNSET((x), SILC_SF_DISCONNECTING)
 #define SILC_UNSET_DISCONNECTED(x) SF_UNSET((x), SILC_SF_DISCONNECTED)
 #define SILC_UNSET_HOST_LOOKUP(x) SF_UNSET((x), SILC_SF_HOST_LOOKUP)
 #define SILC_UNSET_DISABLED(x) SF_UNSET((x), SILC_SF_DISABLED)
+#define SILC_UNSET_LISTENER(x) SF_UNSET((x), SILC_SF_LISTENER)
 
 /* Checking for flags */
 #define SILC_IS_OUTBUF_PENDING(x) SF_IS((x), SILC_SF_OUTBUF_PENDING)
@@ -230,6 +233,7 @@ struct SilcSocketConnectionStruct {
 #define SILC_IS_DISCONNECTED(x) SF_IS((x), SILC_SF_DISCONNECTED)
 #define SILC_IS_HOST_LOOKUP(x) SF_IS((x), SILC_SF_HOST_LOOKUP)
 #define SILC_IS_DISABLED(x) SF_IS((x), SILC_SF_DISABLED)
+#define SILC_IS_LISTENER(x) SF_IS((x), SILC_SF_LISTENER)
 
 /* Prototypes */
 

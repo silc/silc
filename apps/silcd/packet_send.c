@@ -173,9 +173,9 @@ void silc_server_packet_send_dest(SilcServer server,
   /* Set the packet context pointers */
   packetdata.type = type;
   packetdata.flags = flags;
-  packetdata.src_id = silc_id_id2str(server->id, server->id_type);
-  packetdata.src_id_len = silc_id_get_len(server->id, server->id_type);
-  packetdata.src_id_type = server->id_type;
+  packetdata.src_id = silc_id_id2str(server->id, SILC_ID_SERVER);
+  packetdata.src_id_len = silc_id_get_len(server->id, SILC_ID_SERVER);
+  packetdata.src_id_type = SILC_ID_SERVER;
   packetdata.dst_id = dst_id_data;
   packetdata.dst_id_len = dst_id_len;
   packetdata.dst_id_type = dst_id_type;
