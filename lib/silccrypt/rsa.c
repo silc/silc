@@ -126,7 +126,7 @@ SILC_PKCS_API_INIT(rsa)
   silc_mp_uninit(&p);
   silc_mp_uninit(&q);
   
-  printf("\nKeys generated succesfully.\n");
+  printf("\nKeys generated successfully.\n");
 
   return TRUE;
 }
