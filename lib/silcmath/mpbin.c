@@ -42,7 +42,7 @@ unsigned char *silc_mp_mp2bin(SilcInt *val, unsigned int *ret_len)
 
   silc_mp_clear(&tmp);
 
-  if (*ret_len)
+  if (ret_len)
     *ret_len = size;
 
   return ret;
