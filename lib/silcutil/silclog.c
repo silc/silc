@@ -315,9 +315,5 @@ void silc_log_reset_debug_callbacks()
 void silc_log_set_debug_string(const char *debug_string)
 {
   silc_free(silc_debug_string);
-  if (strchr(debug_string, '(') &&
-      strchr(debug_string, ')'))
-    silc_debug_string = strdup(debug_string);
-  else
-    silc_debug_string = silc_string_regexify(debug_string);
+  silc_debug_string = silc_string_regexify(debug_string);
 }
