@@ -1635,6 +1635,7 @@ List of all defined commands in SILC follows.
 
         After kicking the client the server MUST send the notify type
         SILC_NOTIFY_TYPE_KICKED to the channel and to its primary router.
+        The client is removed from the channel after sending this notify.
         The kicked client MUST be removed from the invite list of the
         channel if it is explicitly added in the list.  The channel key
         MUST also be re-generated after kicking, unless the
