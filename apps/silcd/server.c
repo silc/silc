@@ -872,6 +872,21 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
 
   SILC_LOG_INFO(("Connected to router %s", sock->hostname));
 
+  /* Check that we do not have this ID already */
+  id_entry = silc_idlist_find_server_by_id(server->local_list, 
+					   ctx->dest_id, TRUE, NULL);
+  if (id_entry) {
+    silc_idcache_del_by_context(server->local_list->servers, id_entry);
+  } else {
+    id_entry = silc_idlist_find_server_by_id(server->global_list, 
+					     ctx->dest_id, TRUE, NULL);
+    if (id_entry) 
+      silc_idcache_del_by_context(server->global_list->servers, id_entry);
+  }
+
+  SILC_LOG_DEBUG(("New server id(%s)",
+		  silc_id_render(ctx->dest_id, SILC_ID_SERVER)));
+
   /* Add the connected router to local server list */
   id_entry = silc_idlist_add_server(server->local_list, strdup(sock->hostname),
 				    SILC_ROUTER, ctx->dest_id, NULL, sock);

@@ -376,7 +376,7 @@ be connected in a specific way.
 Every router has their primary route which is a connection to another
 router in the network.  Unless there is only two routers in the network
 must not routers use each other as their primary routes.  The router
-connections in the network must form a circular.
+connections in the network must form a ring.
 
 
 
@@ -2011,6 +2011,9 @@ Channel messages are destined to channel by specifying the Channel ID
 as Destination ID in the SILC Packet Header.  The server MUST then
 distribute the message to all clients on the channel by sending the
 channel message destined explicitly to a client on the channel.
+
+See the [SILC2] for description of channel messege routing for router
+servers.
 
 See [SILC2] for description of channel message encryption and decryption
 process.

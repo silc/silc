@@ -639,6 +639,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   uint32 routed_count = 0;
   SilcIDListData idata;
   SilcHashTableList htl;
+  bool gone = FALSE;
 
   SILC_LOG_DEBUG(("Relaying packet to channel"));
 
@@ -753,7 +754,12 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 	   channel keys are cell specific and we have different channel
 	   key than the remote router has. */
 	if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
+
+	  if (gone)
+	    continue;
+
 	  SILC_LOG_DEBUG(("Remote is router, encrypt with session key"));
+	  gone = TRUE;
 
 	  /* If private key mode is not set then decrypt the packet
 	     and re-encrypt it */

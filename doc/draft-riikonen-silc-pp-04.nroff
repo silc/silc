@@ -2628,6 +2628,19 @@ to create route cache based on these informations.  If faster route for
 destination does not exist in router's route cache the packet MUST be
 routed to the primary route (default route).
 
+However, there are some issues when routing channel messages to group
+of users.  Routers are responsible of routing the channel message to
+other routers, local servers and local clients as well.  Routers MUST
+send the channel message to only one router in the network, preferrably
+to the shortest route to reach the channel users.  The message can be
+routed into either upstream or downstream.  After the message is sent
+to a router in the network it MUST NOT be sent to any other router in
+either same route or other route.  The message MUST NOT be routed to
+the router it came from.
+
+When routing for example private messages they should be routed to the
+shortest route always to reach the destination client as fast as possible.
+
 For server which receives a packet to be routed to its locally connected
 client the server MUST check whether the particular packet type is
 allowed to be routed to the client.  Not all packets may be sent by
@@ -2637,6 +2650,20 @@ entities and sending packets to them.  The section mentions the packets
 that may be sent to indirectly connected entities.  It is clear that
 server cannot send, for example, disconnect packet to client that is not
 directly connected to the server.
+
+Routers form a ring in the SILC network.  However, routers may have other
+direct connections to other routers in the network too.  This can cause
+interesting routing problems in the network.  Since the network is ring,
+the packets usually should be routed into counter clock-wise direction,
+or if it cannot be used then always clock-wise (primary route) direction.
+Problems may arise when a faster direct route exists and router is routing
+a channel messages.  Currently channel messages must be routed either
+in upstream or downstream, they cannot be routed to other direct routes.
+The SILC protocol should have a shortest path discovery protocol, and some
+existing routing protocol, that can handle a ring network with other direct
+routes inside the ring (hybrid ring-mesh network), MAY be defined to be
+used with the SILC protocol.  Additional specifications MAY be written
+on the subject.
 
 
 .ti 0

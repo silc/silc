@@ -1618,7 +1618,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 				       SilcPacketContext *packet)
 {
   SilcBuffer buffer = packet->buffer;
-  SilcServerEntry new_server;
+  SilcServerEntry new_server, server_entry;
   SilcServerID *server_id;
   SilcIDListData idata;
   unsigned char *server_name, *id_string;
@@ -1670,10 +1670,25 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   }
   silc_free(id_string);
 
+  /* Check that we do not have this ID already */
+  server_entry = silc_idlist_find_server_by_id(server->local_list, 
+					       server_id, TRUE, NULL);
+  if (server_entry) {
+    silc_idcache_del_by_context(server->local_list->servers, server_entry);
+  } else {
+    server_entry = silc_idlist_find_server_by_id(server->global_list, 
+						 server_id, TRUE, NULL);
+    if (server_entry) 
+      silc_idcache_del_by_context(server->global_list->servers, server_entry);
+  }
+
   /* Update server entry */
   idata->status |= SILC_IDLIST_STATUS_REGISTERED;
   new_server->server_name = server_name;
   new_server->id = server_id;
+  
+  SILC_LOG_DEBUG(("New server id(%s)",
+		  silc_id_render(server_id, SILC_ID_SERVER)));
 
   /* Add again the entry to the ID cache. */
   silc_idcache_add(server->local_list->servers, server_name, server_id, 
