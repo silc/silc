@@ -1058,6 +1058,9 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   SilcHmac hmac = NULL;
   int ret;
 
+  if (!sock)
+    return;
+
   SILC_LOG_DEBUG(("Processing packet"));
 
   /* Packet sending */
@@ -1652,9 +1655,12 @@ void silc_server_free_sock_user_data(SilcServer server,
 				   server->server_type == SILC_SERVER ?
 				   FALSE : TRUE, user_data->id, 
 				   SILC_ID_CLIENT_LEN, SILC_ID_CLIENT);
+
+      /* Free the server entry */
+      silc_idlist_del_data(user_data);
+      silc_idlist_del_server(server->local_list, user_data);
       break;
     }
-    break;
   default:
     {
       SilcUnknownEntry user_data = (SilcUnknownEntry)sock->user_data;
