@@ -778,7 +778,7 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
   SilcPacketContext *packet = parser_context->packet;
   SilcPacketType ret;
 
-  if (conn && conn->hmac_receive)
+  if (conn && conn->hmac_receive && conn->sock == sock)
     conn->psn_receive = parser_context->packet->sequence + 1;
 
   /* Parse the packet immediately */
@@ -797,9 +797,10 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
      process all packets synchronously, since there might be packets in
      queue that we are not able to decrypt without first processing the
      packets before them. */
-  if (sock->protocol && sock->protocol->protocol && 
-      (sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE ||
-       sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_REKEY)) {
+  if ((ret == SILC_PACKET_REKEY || ret == SILC_PACKET_REKEY_DONE) ||
+      (sock->protocol && sock->protocol->protocol && 
+       (sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_KEY_EXCHANGE ||
+	sock->protocol->protocol->type == SILC_PROTOCOL_CLIENT_REKEY))) {
 
     /* Parse the incoming packet type */
     silc_client_packet_parse_type(client, sock, packet);

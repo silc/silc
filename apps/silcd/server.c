@@ -1666,9 +1666,11 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
      process all packets synchronously, since there might be packets in
      queue that we are not able to decrypt without first processing the
      packets before them. */
-  if (sock->protocol && sock->protocol->protocol && 
-      (sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_KEY_EXCHANGE ||
-       sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY)) {
+  if ((parser_context->packet->type == SILC_PACKET_REKEY ||
+       parser_context->packet->type == SILC_PACKET_REKEY_DONE) ||
+      (sock->protocol && sock->protocol->protocol && 
+       (sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_KEY_EXCHANGE ||
+	sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY))) {
     silc_server_packet_parse_real(server->schedule, 0, sock->sock,
 				  parser_context);
 
@@ -3377,7 +3379,7 @@ void silc_server_announce_get_channels(SilcServer server,
 	(*channel_ids)[i] = NULL;
 	silc_server_announce_get_channel_users(server, channel,
 					       channel_users,
-					       channel_users_modes[i]);
+					       &(*channel_users_modes)[i]);
 	(*channel_ids)[i] = channel->id;
 	i++;
 

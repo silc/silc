@@ -174,21 +174,21 @@ typedef unsigned char SilcPacketFlags;
  *      Packet flags. Flags are defined above.
  *
  *    unsigned char *src_id
- *    uint16 src_id_len
+ *    uint8 src_id_len
  *    unsigned char src_id_type
  *
  *      Source ID, its length and type. On packet reception retuned ID's
  *      are always the hash values of the ID's from the packet.
  *
  *    unsigned char *dst_id;
- *    uint16 dst_id_len;
+ *    uint8 dst_id_len;
  *    unsigned char src_id_type;
  *
  *      Destination ID, its length and type. On packet reception retuned
  *      ID's are always the hash values of the ID's from the packet.
  *
  *    uint16 truelen
- *    uint16 padlen
+ *    uint8 padlen
  *
  *      The true lenght of the packet and the padded length of the packet.
  *      These may be set by the caller before calling any of the 

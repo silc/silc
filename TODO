@@ -42,6 +42,10 @@ TODO/bugs In SILC Client Library
 
  o WHOIS shows the formatted nickname wrong in some circumstances.
 
+ o Set incrorrect key and /MSG him, screen gets screwed.
+
+ o Crashes if lots of concurrent /PING's.
+
  o JOIN command's argument handling is buggy.  See the XXX in the code.
 
 

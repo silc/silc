@@ -1,3 +1,10 @@
+Sat Nov 10 21:39:22 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* If the incoming packet type is REKEY or REKEY_DONE process
+	  that packet always synchronously.  Fixes yet another MAC
+	  failed error on slow (dialup) connections.  Affected file
+	  lib/silcclient/client.c and silcd/server.c.
+
 Thu Nov  8 22:21:09 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Call check_version SKE callback for initiator too.  Affected
