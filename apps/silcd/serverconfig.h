@@ -175,6 +175,7 @@ typedef struct {
   bool logging_timestamp;
   bool logging_quick;
   long logging_flushdelay;
+  char *debug_string;
 
   /* Other configuration sections */
   SilcServerConfigCipher *cipher;

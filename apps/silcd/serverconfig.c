@@ -303,6 +303,10 @@ SILC_CONFIG_CALLBACK(fetch_generic)
   else if (!strcmp(name, "qos_limit_usec")) {
     config->param.qos_limit_usec = *(SilcUInt32 *)val;
   }
+  else if (!strcmp(name, "debug_string")) {
+    CONFIG_IS_DOUBLE(config->debug_string);
+    config->debug_string = (*(char *)val ? strdup((char *) val) : NULL);
+  }
   else
     return SILC_CONFIG_EINTERNAL;
 
@@ -1165,6 +1169,7 @@ static const SilcConfigTable table_general[] = {
   { "qos_bytes_limit",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "qos_limit_sec",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "qos_limit_usec",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "debug_string",    		SILC_CONFIG_ARG_STR,	fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -1537,6 +1542,7 @@ void silc_server_config_destroy(SilcServerConfig config)
 
   /* Destroy general config stuff */
   silc_free(config->module_path);
+  silc_free(config->debug_string);
   silc_free(config->param.version_protocol);
   silc_free(config->param.version_software);
   silc_free(config->param.version_software_vendor);

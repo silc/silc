@@ -286,6 +286,16 @@ bool silc_server_init(SilcServer server)
   silc_server_config_ref(&server->config_ref, server->config,
 			 server->config);
 
+#ifdef SILC_DEBUG
+  /* Set debugging on if configured */
+  if (server->config->debug_string) {
+    silc_debug = TRUE;
+    silc_log_set_debug_string(server->config->debug_string);
+  } else {
+    silc_debug = FALSE;
+  }
+#endif /* SILC_DEBUG */
+
   /* Steal public and private key from the config object */
   server->public_key = server->config->server_info->public_key;
   server->private_key = server->config->server_info->private_key;
