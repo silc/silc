@@ -1,3 +1,19 @@
+Wed Apr  9 18:51:59 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed stack overflow in Irssi SILC client.  Affected
+	  file irssi/src/silc/core/client_ops.c.
+
+	* Check that Host is set in ServerConnection and RouterConnection
+	  in silcd.conf.  Affected file silcd/serverconfig.c.
+
+	* Fixed crash in server with protocol completion callbacks,
+	  namely rekey and backup resuming protocols.  Affected files
+	  are silcd/server_backup.c and silcd/server.c.
+
+	* Fixed rekey protocol to not restart if it is started already.
+	  Affected files are lib/silcclient/client.c and
+	  silcd/server.c.c
+
 Mon Mar 17 18:35:24 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Rewrote SilcList, affected file lib/silcutil/silc*list.h.
@@ -30,7 +46,7 @@ Sun Mar  9 16:29:20 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed incorrect connection deletion from client library
 	  after calling "connect" client operation.  Could cause
 	  crashes for example during reconnect timeouts.  Affected
-	  files are lib/silcclient/client.c and 
+	  files are lib/silcclient/client.c and
 	  irssi/src/silc/core/client_ops.c.
 
 	* Check server private key file permissions before starting

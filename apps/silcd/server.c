@@ -2287,11 +2287,6 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     if (SILC_PRIMARY_ROUTE(server) == sock && server->backup_router)
       server->backup_noswitch = TRUE;
 
-    if (sock->protocol && sock->protocol->protocol) {
-      SILC_LOG_INFO(("Error during %d protocol",
-		    sock->protocol->protocol->type));
-    }
-
     SILC_SET_DISCONNECTING(sock);
     if (sock->user_data)
       silc_server_free_sock_user_data(server, sock, NULL);
@@ -2407,11 +2402,9 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
      process all packets synchronously, since there might be packets in
      queue that we are not able to decrypt without first processing the
      packets before them. */
-  if ((parser_context->packet->type == SILC_PACKET_REKEY ||
-       parser_context->packet->type == SILC_PACKET_REKEY_DONE) ||
-      (sock->protocol && sock->protocol->protocol &&
-       (sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_KEY_EXCHANGE ||
-	sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY))) {
+  if (sock->protocol && sock->protocol->protocol &&
+      (sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_KEY_EXCHANGE ||
+       sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY)) {
     silc_server_packet_parse_real(server->schedule, server, 0, sock->sock,
 				  parser_context);
 
@@ -5039,6 +5032,11 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_callback)
   SilcProtocol protocol;
   SilcServerRekeyInternalContext *proto_ctx;
 
+  /* If rekey protocol is active already wait for it to finish */
+  if (sock->protocol && sock->protocol->protocol &&
+      sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY)
+    return;
+
   /* Allocate internal protocol context. This is sent as context
      to the protocol. */
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
@@ -5055,14 +5053,6 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_callback)
 
   /* Run the protocol */
   silc_protocol_execute(protocol, server->schedule, 0, 0);
-
-  SILC_LOG_DEBUG(("Rekey protocol completed"));
-
-  /* Re-register re-key timeout */
-  silc_schedule_task_add(server->schedule, sock->sock,
-			 silc_server_rekey_callback,
-			 context, idata->rekey->timeout, 0,
-			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
 /* The final callback for the REKEY protocol. This will actually take the
@@ -5075,8 +5065,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
     (SilcServerRekeyInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
   SilcSocketConnection sock = ctx->sock;
-
-  SILC_LOG_DEBUG(("Start"));
+  SilcIDListData idata = (SilcIDListData)sock->user_data;
 
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
@@ -5093,18 +5082,24 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
     silc_free(ctx);
 
     /* Reconnect */
-    SILC_SET_DISCONNECTING(sock);
-    server->backup_noswitch = TRUE;
-    if (sock->user_data)
-      silc_server_free_sock_user_data(server, sock, NULL);
-    silc_server_close_connection(server, sock);
+    silc_server_disconnect_remote(server, sock,
+				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     silc_server_create_connections(server);
     return;
   }
 
+  SILC_LOG_DEBUG(("Rekey protocol completed"));
+
   /* Purge the outgoing data queue to assure that all rekey packets really
      go to the network before we quit the protocol. */
   silc_server_packet_queue_purge(server, sock);
+
+  /* Re-register re-key timeout */
+  if (ctx->responder == FALSE)
+    silc_schedule_task_add(server->schedule, sock->sock,
+			   silc_server_rekey_callback,
+			   sock, idata->rekey->timeout, 0,
+			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   /* Cleanup */
   silc_protocol_free(protocol);
@@ -5124,9 +5119,8 @@ SILC_TASK_CALLBACK(silc_server_get_stats)
   SilcServer server = (SilcServer)context;
   SilcBuffer idp, packet;
 
-  SILC_LOG_DEBUG(("Retrieving stats from router"));
-
   if (!server->standalone) {
+    SILC_LOG_DEBUG(("Retrieving stats from router"));
     idp = silc_id_payload_encode(server->router->id, SILC_ID_SERVER);
     packet = silc_command_payload_encode_va(SILC_COMMAND_STATS,
 					    ++server->cmd_ident, 1,

@@ -1407,6 +1407,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	     key to the new key since all packets after this packet must
 	     encrypted with the new key. */
 	  silc_server_protocol_rekey_generate(server, ctx, TRUE);
+	  silc_server_packet_queue_purge(server, ctx->sock);
 
 	  /* The protocol ends in next stage. */
 	  protocol->state = SILC_PROTOCOL_STATE_END;
@@ -1462,6 +1463,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	     key to the new key since all packets after this packet must
 	     encrypted with the new key. */
 	  silc_server_protocol_rekey_generate(server, ctx, TRUE);
+	  silc_server_packet_queue_purge(server, ctx->sock);
 
 	  /* The protocol ends in next stage. */
 	  protocol->state = SILC_PROTOCOL_STATE_END;
@@ -1472,12 +1474,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 
   case 2:
     /*
-     * Second state, used only when oding re-key with PFS.
+     * Second state, used only when doing re-key with PFS.
      */
     if (ctx->responder == TRUE) {
       if (ctx->pfs == TRUE) {
 	/*
-	 * Send our KE packe to the initiator now that we've processed
+	 * Send our KE packet to the initiator now that we've processed
 	 * the initiator's KE packet.
 	 */
 	status = silc_ske_responder_finish(ctx->ske, NULL, NULL,
