@@ -1,3 +1,12 @@
+Wed Nov 14 16:22:25 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* __pid_t -> pid_t in lib/silccrypt/silcrng.c.  A patch by
+	  johnny.
+
+	* Write PID file after dropping privileges.  Added -F option
+	  to run server on foreground.  A patch by debolaz.
+	  Affected files silcd/server.c, silcd/silcd.c.
+
 Wed Nov 14 00:18:08 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the silc_idcache_list_* routines to really support
@@ -11,6 +20,12 @@ Tue Nov 13 00:49:17 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Update conn->local_entry->nickname after giving NICK
 	  command.  Affected file lib/silcclient/command.c.
+
+Sun Nov 11 23:43:02 PST 2001  Brian Costello <bc@wpfr.org>
+
+	* Added the [pid] option to the silcd configuration file
+
+	  Affected files: serverconfig.[ch] and silcd.c
 
 Sun Nov 11 23:56:39 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
