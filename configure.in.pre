@@ -1033,6 +1033,7 @@ lib/Makefile
 lib/contrib/Makefile
 lib/silccore/Makefile
 lib/silccrypt/Makefile
+lib/silccrypt/tests/Makefile
 lib/silcmath/Makefile
 lib/silcmath/mpi/Makefile.defines
 lib/silcmath/mpi/Makefile.defines_int

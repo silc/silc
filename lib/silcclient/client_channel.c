@@ -511,7 +511,7 @@ bool silc_client_add_channel_private_key(SilcClient client,
   /* Produce the key material */
   keymat = silc_calloc(1, sizeof(*keymat));
   if (silc_ske_process_key_material_data(key, key_len, 16, 256, 16, 
-					 client->md5hash, keymat) 
+					 client->sha1hash, keymat) 
       != SILC_SKE_STATUS_OK)
     return FALSE;
 

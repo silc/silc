@@ -4,9 +4,9 @@
 #define MD5_INTERNAL_H
 
 struct MD5Context {
-	SilcUInt32 buf[4];
-	SilcUInt32 bits[2];
-	unsigned char in[64];
+  SilcUInt32 buf[4];
+  SilcUInt32 bits[2];
+  unsigned char in[64];
 };
 
 void MD5Init(struct MD5Context *context);
