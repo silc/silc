@@ -1714,7 +1714,7 @@ silc_ske_process_key_material_data(unsigned char *data,
 		       SILC_STR_END);
     memset(k2, 0, sizeof(k2));
     silc_hash_make(hash, dist->data, dist->len, k2);
-    
+
     /* Take third round */
     dist = silc_buffer_realloc(dist, data_len + hash_len + hash_len);
     silc_buffer_pull_tail(dist, hash_len);
@@ -1730,7 +1730,7 @@ silc_ske_process_key_material_data(unsigned char *data,
     dtmp = silc_calloc((3 * hash_len), sizeof(unsigned char));
     memcpy(dtmp, k1, hash_len);
     memcpy(dtmp + hash_len, k2, hash_len);
-    memcpy(dtmp + hash_len, k3, hash_len);
+    memcpy(dtmp + hash_len + hash_len, k3, hash_len);
 
     key->send_enc_key = silc_calloc(enc_key_len, sizeof(unsigned char));
     memcpy(key->send_enc_key, dtmp, enc_key_len);
@@ -1790,7 +1790,7 @@ silc_ske_process_key_material_data(unsigned char *data,
     dtmp = silc_calloc((3 * hash_len), sizeof(unsigned char));
     memcpy(dtmp, k1, hash_len);
     memcpy(dtmp + hash_len, k2, hash_len);
-    memcpy(dtmp + hash_len, k3, hash_len);
+    memcpy(dtmp + hash_len + hash_len, k3, hash_len);
 
     key->receive_enc_key = silc_calloc(enc_key_len, sizeof(unsigned char));
     memcpy(key->receive_enc_key, dtmp, enc_key_len);

@@ -630,15 +630,15 @@ be produced in the following manner:
 
 .in 6
 K1 = hash(2 | KEY | HASH)
-K2 = hash(KEY | K1)
-K3 = hash(KEY | K1 | K2)  ...
+K2 = hash(KEY | HASH | K1)
+K3 = hash(KEY | HASH | K1 | K2)  ...
 
 Sending Encryption Key = K1 | K2 | K3 ...
 
 
 K1 = hash(3 | KEY | HASH)
-K2 = hash(KEY | K1)
-K3 = hash(KEY | K1 | K2)  ...
+K2 = hash(KEY | HASH | K1)
+K3 = hash(KEY | HASH | K1 | K2)  ...
 
 Receiving Encryption Key = K1 | K2 | K3 ...
 .in 3
