@@ -62,6 +62,13 @@ New features TODO
 TODO In SILC Client Library
 ===========================
 
+ o Client library crashes if for example server timeouts protocol
+   execution and disconnects the client.  The client, on the other hand
+   may still assume that the connection is active, even after receiving
+   the EOF.  Reason for this is that the clien library does not handle
+   the SilcSocketConnection reference counter at all.  This must be
+   fixed.
+
  o Add client library parameters or options that handle what kind of
    messages the library should print out (using `say' client operation,
    for example) and what is left for the application to print.  The

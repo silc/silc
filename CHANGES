@@ -1,7 +1,9 @@
 Thu Mar 15 12:46:58 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed fatal bug in failure packet handling.  Server ignored
-	  the failiure and thus crashed when it came.
+	  the failure and thus crashed when it came.
+
+	* Updated TODO.
 
 Wed Mar 14 20:37:35 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
