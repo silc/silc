@@ -10,6 +10,9 @@ Thu Jun  7 16:29:56 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  if the server disconnected us and the connection is not valid
 	  anymore.  Affected file irssi/src/silc/core/silc-channels.c.
 
+ 	* Moved the silc_client_[chmode|chumode|chumode_char] away from
+	  the library to the lib/silcutil/silcutil.[ch].
+
 Thu Jun  7 08:57:16 CEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Close log file after open.  Affected file 

@@ -280,9 +280,6 @@ void silc_client_replace_from_channels(SilcClient client,
 				       SilcClientConnection conn,
 				       SilcClientEntry old,
 				       SilcClientEntry new);
-char *silc_client_chmode(uint32 mode, SilcChannelEntry channel);
-char *silc_client_chumode(uint32 mode);
-char *silc_client_chumode_char(uint32 mode);
 void silc_client_process_failure(SilcClient client,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);

@@ -59,5 +59,8 @@ bool silc_hash_string_compare(void *key1, void *key2, void *user_context);
 bool silc_hash_id_compare(void *key1, void *key2, void *user_context);
 bool silc_hash_client_id_compare(void *key1, void *key2, void *user_context);
 bool silc_hash_data_compare(void *key1, void *key2, void *user_context);
+char *silc_client_chmode(uint32 mode, const char *cipher, const char *hmac);
+char *silc_client_chumode(uint32 mode);
+char *silc_client_chumode_char(uint32 mode);
 
 #endif

@@ -363,7 +363,9 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     (void)va_arg(vp, char *);
     channel_entry = va_arg(vp, SilcChannelEntry);
     
-    tmp = silc_client_chmode(tmp_int, channel_entry);
+    tmp = silc_client_chmode(tmp_int, 
+			     channel_entry->channel_key->cipher->name,
+			     channel_entry->hmac->hmac->name);
     
     if (tmp) {
       if (client_entry) {
@@ -819,7 +821,9 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 			   app->screen->bottom_line->channel, topic);
 	
 	app->screen->bottom_line->channel_mode = 
-	  silc_client_chmode(mode, channel);
+	  silc_client_chmode(mode,
+			     channel->channel_key->cipher->name,
+			     channel->hmac->hmac->name);
 	silc_screen_print_bottom_line(app->screen, 0);
 
 	/* Resolve the client information */

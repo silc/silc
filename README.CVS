@@ -19,21 +19,21 @@ There are no password restrictions in the SILC anonymous CVS repository.
 
 For those who are using sh/ksh/bash the check out is done as follows:
 
-export CVSROOT=:pserver:silc@silc.pspt.fi:/storage/silc/CVS
+export CVSROOT=:pserver:cvs@cvs.silcnet.org:/cvs/silc
 cvs login
 cvs co silc
 
 For those who are using csh/tcsh the check out is done as follows:
 
-setenv CVSROOT :pserver:silc@silc.pspt.fi:/storage/silc/CVS
+setenv CVSROOT :pserver:cvs@cvs.silcnet.org:/cvs/silc
 cvs login
 cvs co silc
 
 If you don't want to set $CVSROOT environment variable you can set the
 path to the cvs as command line options:
 
-cvs -d:pserver:silc@silc.pspt.fi:/storage/silc/CVS login
-cvs -d:pserver:silc@silc.pspt.fi:/storage/silc/CVS co silc
+cvs -d:pserver:cvs@cvs.silcnet.org:/cvs/silc login
+cvs -d:pserver:cvs@cvs.silcnet.org:/cvs/silc co silc
 
 What ever method you decide to use, after you have done cvs login you will
 be prompted for password:
@@ -69,10 +69,57 @@ Following directories currently exist in SILC source tree.
 
         Includes SILC include files.
 
+  irssi/
+
+	Includes the Irssi SILC Client.
+
   lib/
 
         Includes SILC libraries.  There maybe libraries on the CVS that
         does not appear on public distribution.
+
+  lib/contrib/
+
+        Contrib directory for routines that some of the platforms might
+        not have.  In that case these routines are provided by the SILC.
+
+  lib/silcclient/
+
+        The SILC Client library. Implementation of the SILC Client without
+        the user interface.  The library provides an interface for user
+        interface designers.
+
+  lib/silccore/
+
+        The SILC Protocol Core library.  Implementation of all the core
+        components of the SILC Protocol.  This is used by all the SILC
+        applications.
+
+  lib/silccrypt/
+
+        The SILC Crypto library. Provides all cryptographic algorithms
+        used in the SILC.  Provides also the Cryptographically strong
+        random number generator.
+
+  lib/silcmath/
+
+        The SILC Math library. Provides the Math and MP routines for
+        SILC applications.  The MP library is actually the GMP.
+
+  lib/silsim/
+
+        The SILC Modules library.  Provides the dynamically loadable
+        modules.
+
+  lib/silcske/
+
+        The SILC Key Exchange (SKE) library.  Implementation of the
+        SKE protocol.  This is used by all SILC applications.
+
+  lib/silcutil/
+
+        The SILC Utility library.  Provides various utility functions
+        for the appliations.
 
   public_html/
 

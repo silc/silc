@@ -290,7 +290,9 @@ static void event_cmode(SILC_SERVER_REC *server, va_list va)
   (void)va_arg(va, char *);
   channel = va_arg(va, SilcChannelEntry);
 
-  mode = silc_client_chmode(modei, channel);
+  mode = silc_client_chmode(modei, 
+			    channel->channel_key->cipher->name,
+			    channel->hmac->hmac->name);
   
   chanrec = silc_channel_find_entry(server, channel);
   if (chanrec != NULL) {

@@ -484,7 +484,9 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	signal_emit("channel topic changed", 1, chanrec);
       }
 
-      mode = silc_client_chmode(modei, channel_entry);
+      mode = silc_client_chmode(modei, 
+				channel_entry->channel_key->cipher->name,
+				channel_entry->hmac->hmac->name);
       g_free_not_null(chanrec->mode);
       chanrec->mode = g_strdup(mode == NULL ? "" : mode);
       signal_emit("channel mode changed", 1, chanrec);

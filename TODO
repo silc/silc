@@ -35,9 +35,6 @@ TODO/bugs In SILC Client Library
 
  o silc_client_close_connection leaks memory.  Read the XXX from code.
 
- o Move the silc_client_[chmode|chumode|chumode_char] away from the library,
-   may be to util library.
-
  o Some of the ops->say's should be removed and moved to the application
    from the library.  Go through these.
 

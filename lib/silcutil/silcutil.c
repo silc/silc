@@ -919,3 +919,89 @@ bool silc_hash_data_compare(void *key1, void *key2, void *user_context)
   uint32 len = (uint32)user_context;
   return !memcmp(key1, key2, len);
 }
+
+/* Parses mode mask and returns the mode as string. */
+
+char *silc_client_chmode(uint32 mode, const char *cipher, const char *hmac)
+{
+  char string[100];
+
+  if (!mode)
+    return NULL;
+
+  memset(string, 0, sizeof(string));
+
+  if (mode & SILC_CHANNEL_MODE_PRIVATE)
+    strncat(string, "p", 1);
+
+  if (mode & SILC_CHANNEL_MODE_SECRET)
+    strncat(string, "s", 1);
+
+  if (mode & SILC_CHANNEL_MODE_PRIVKEY)
+    strncat(string, "k", 1);
+
+  if (mode & SILC_CHANNEL_MODE_INVITE)
+    strncat(string, "i", 1);
+
+  if (mode & SILC_CHANNEL_MODE_TOPIC)
+    strncat(string, "t", 1);
+
+  if (mode & SILC_CHANNEL_MODE_ULIMIT)
+    strncat(string, "l", 1);
+
+  if (mode & SILC_CHANNEL_MODE_PASSPHRASE)
+    strncat(string, "a", 1);
+
+  if (mode & SILC_CHANNEL_MODE_FOUNDER_AUTH)
+    strncat(string, "f", 1);
+
+  if (mode & SILC_CHANNEL_MODE_CIPHER)
+    strncat(string, cipher, strlen(cipher));
+
+  if (mode & SILC_CHANNEL_MODE_HMAC)
+    strncat(string, hmac, strlen(hmac));
+
+  /* Rest of mode is ignored */
+
+  return strdup(string);
+}
+
+/* Parses channel user mode mask and returns te mode as string */
+
+char *silc_client_chumode(uint32 mode)
+{
+  char string[4];
+
+  if (!mode)
+    return NULL;
+
+  memset(string, 0, sizeof(string));
+
+  if (mode & SILC_CHANNEL_UMODE_CHANFO)
+    strncat(string, "f", 1);
+
+  if (mode & SILC_CHANNEL_UMODE_CHANOP)
+    strncat(string, "o", 1);
+
+  return strdup(string);
+}
+
+/* Parses channel user mode and returns it as special mode character. */
+
+char *silc_client_chumode_char(uint32 mode)
+{
+  char string[4];
+
+  if (!mode)
+    return NULL;
+
+  memset(string, 0, sizeof(string));
+
+  if (mode & SILC_CHANNEL_UMODE_CHANFO)
+    strncat(string, "*", 1);
+
+  if (mode & SILC_CHANNEL_UMODE_CHANOP)
+    strncat(string, "@", 1);
+
+  return strdup(string);
+}
