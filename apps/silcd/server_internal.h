@@ -61,6 +61,7 @@ typedef struct {
   SilcUInt32 auth_failures;		  /* Authentication failures */
   SilcUInt32 packets_sent;		  /* Sent SILC packets */
   SilcUInt32 packets_received;		  /* Received SILC packets */
+  SilcUInt32 conn_num;			  /* Number of connections */
 } SilcServerStatistics;
 
 /*

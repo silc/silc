@@ -1537,7 +1537,7 @@ void silc_server_send_connect_notifys(SilcServer server,
 
   if (server->stat.cell_clients && server->stat.cell_servers + 1)
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
-			    ("There are %d clients on %d server in our cell",
+			    ("There are %d clients on %d servers in our cell",
 			     server->stat.cell_clients,
 			     server->stat.cell_servers));
   if (server->server_type == SILC_ROUTER) {

@@ -302,6 +302,7 @@ SILC_TASK_CALLBACK(dump_stats)
   STAT_OUTPUT("  Authentication failures : %d", silcd->stat.auth_failures);
   STAT_OUTPUT("  Packets sent            : %d", silcd->stat.packets_sent);
   STAT_OUTPUT("  Packets received        : %d", silcd->stat.packets_received);
+  STAT_OUTPUT("  Connections             : %d", silcd->stat.conn_num);
 
 #undef STAT_OUTPUT
 

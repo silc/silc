@@ -812,6 +812,7 @@ void silc_server_stop(SilcServer server)
       } else {
 	silc_socket_free(server->sockets[i]);
 	server->sockets[i] = NULL;
+        server->stat.conn_num--;
       }
     }
 
@@ -1725,12 +1726,13 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   }
 
   /* Check for maximum allowed connections */
-  if (sock > server->config->param.connections_max) {
+  if (server->stat.conn_num > server->config->param.connections_max) {
     SILC_LOG_ERROR(("Refusing connection, server is full"));
     server->stat.conn_failures++;
     silc_net_close_connection(sock);
     return;
   }
+  server->stat.conn_num++;
 
   /* Set socket options */
   silc_net_set_socket_nonblock(sock);
@@ -3197,6 +3199,7 @@ SILC_TASK_CALLBACK(silc_server_close_connection_final)
   /* Close the actual connection */
   silc_net_close_connection(sock->sock);
   server->sockets[sock->sock] = NULL;
+  server->stat.conn_num--;
 
   /* We won't listen for this connection anymore */
   silc_schedule_task_del_by_fd(server->schedule, sock->sock);
