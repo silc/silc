@@ -1299,7 +1299,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   SilcSocketConnection sock = ctx->sock;
   SilcServerHBContext hb_context;
   SilcUnknownEntry entry = (SilcUnknownEntry)sock->user_data;
-  void *id_entry = NULL;
+  void *id_entry;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1441,15 +1441,15 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       break;
     }
   default:
+    goto out;
     break;
   }
 
   sock->type = ctx->conn_type;
 
   /* Add the common data structure to the ID entry. */
-  if (id_entry)
-    silc_idlist_add_data(id_entry, (SilcIDListData)sock->user_data);
-      
+  silc_idlist_add_data(id_entry, (SilcIDListData)sock->user_data);
+
   /* Add to sockets internal pointer for fast referencing */
   silc_free(sock->user_data);
   sock->user_data = id_entry;

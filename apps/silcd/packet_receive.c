@@ -847,7 +847,7 @@ void silc_server_notify(SilcServer server,
     if (!server_entry) {
       server_entry = silc_idlist_find_server_by_id(server->local_list, 
 						   server_id, TRUE, NULL);
-      global = TRUE;
+      local = TRUE;
       if (!server_entry) {
 	/* If we are normal server then we might not have the server. Check
 	   whether router was kind enough to send the list of all clients
@@ -1947,11 +1947,12 @@ static void silc_server_new_id_real(SilcServer server,
       router = silc_idlist_find_server_by_id(server->local_list,
 					     sender_id, TRUE, NULL);
     silc_free(sender_id);
-    if (!router)
-      goto out;
     router_sock = sock;
     id_list = server->global_list;
   }
+
+  if (!router)
+    goto out;
 
   switch(id_type) {
   case SILC_ID_CLIENT:

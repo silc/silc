@@ -476,6 +476,10 @@ silc_server_packet_send_to_channel_real(SilcServer server,
 					bool force_send)
 {
   int block_len;
+
+  if (!sock)
+    return;
+
   packet->truelen = data_len + SILC_PACKET_HEADER_LEN + 
     packet->src_id_len + packet->dst_id_len;
 
