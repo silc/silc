@@ -1,3 +1,11 @@
+Tue Oct 23 13:51:19 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Win32 Toolkit changes.  Affected files
+	  win32/silc.dsw, win32/libsilc/libsilc.def,
+	  win32/libsilcclient/libsilc.def,
+	  lib/silcutil/silcutil.c, and
+	  lib/sftp/sftp_fs_memory.c.
+
 Mon Oct 22 16:35:05 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_net_localip to return local host's IP address.

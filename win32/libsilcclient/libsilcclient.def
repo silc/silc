@@ -144,7 +144,6 @@ EXPORTS
 	silc_client_send_key_agreement @ 127 ; 
 	silc_client_send_private_message @ 128 ; 
 	silc_client_send_private_message_key @ 129 ; 
-	silc_client_set_away_message @ 130 ; 
 	silc_client_start_key_exchange @ 131 ; 
 	silc_client_stop @ 132 ; 
 	silc_command_list @ 133 ; 
@@ -155,4 +154,7 @@ EXPORTS
 	silc_client_abort_key_agreement @ 138 ; 
 	silc_client_set_away_message @ 139 ; 
 	silc_client_request_authentication_method @ 140 ; 
-
+	silc_client_file_send @ 141 ;
+	silc_client_file_receive @ 142 ;
+	silc_client_file_close @ 143 ;
+	

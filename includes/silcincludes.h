@@ -196,6 +196,9 @@ typedef signed long int64;
 #ifndef WIN32
 typedef unsigned long long uint64;
 typedef signed long long int64;
+#else
+typedef uint32 uint64; /* XXX Use Windows's own 64 bit types */
+typedef int32 int64;
 #endif
 #else
 typedef uint32 uint64;

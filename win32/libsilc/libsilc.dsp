@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /FD /c
+# ADD CPP /nologo /MT /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /FD /c
 # SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -71,7 +71,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W2 /Gm /GX /ZI /Od /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /D "SILC_DEBUG" /FD /GZ /c
+# ADD CPP /nologo /MTd /W2 /Gm /GX /ZI /Od /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSILC_EXPORTS" /D "MP_API_COMPATIBLE" /D "SILC_DEBUG" /FD /GZ /c
 # SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -133,10 +133,6 @@ SOURCE=..\..\lib\silccore\silcpayload.c
 
 SOURCE=..\..\lib\silccore\silcprivate.c
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccore\silcprotocol.c
-# End Source File
 # End Group
 # Begin Group "silcske"
 
@@ -180,6 +176,10 @@ SOURCE=..\..\lib\silcutil\silcmemory.c
 # Begin Source File
 
 SOURCE=..\..\lib\silcutil\silcnet.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcprotocol.c
 # End Source File
 # Begin Source File
 
@@ -454,6 +454,26 @@ SOURCE=..\..\lib\trq\trq_list_x_015.c
 SOURCE=..\..\lib\trq\trq_list_x_016.c
 # End Source File
 # End Group
+# Begin Group "silcsftp No. 1"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silcsftp\sftp_client.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcsftp\sftp_fs_memory.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcsftp\sftp_server.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcsftp\sftp_util.c
+# End Source File
+# End Group
 # End Group
 # Begin Group "Header Files"
 
@@ -500,10 +520,6 @@ SOURCE=..\..\lib\silccore\silcpayload.h
 # Begin Source File
 
 SOURCE=..\..\lib\silccore\silcprivate.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccore\silcprotocol.h
 # End Source File
 # End Group
 # Begin Group "silcske No. 1"
@@ -568,6 +584,10 @@ SOURCE=..\..\lib\silcutil\silcmutex.h
 # Begin Source File
 
 SOURCE=..\..\lib\silcutil\silcnet.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcprotocol.h
 # End Source File
 # Begin Source File
 
@@ -800,6 +820,22 @@ SOURCE=..\..\lib\trq\trq_list_f.h
 # Begin Source File
 
 SOURCE=..\..\lib\trq\trq_list_x.h
+# End Source File
+# End Group
+# Begin Group "silcsftp"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silcsftp\sftp_util.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcsftp\silcsftp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcsftp\silcsftp_fs.h
 # End Source File
 # End Group
 # Begin Source File

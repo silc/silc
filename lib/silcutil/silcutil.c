@@ -165,7 +165,11 @@ uint64 silc_file_size(const char *filename)
   int ret;
   struct stat stats;
 
+#ifndef SILC_WIN32
   ret = lstat(filename, &stats);
+#else
+  ret = stat(filename, &stats);
+#endif
   if (ret < 0)
     return 0;
 

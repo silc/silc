@@ -730,8 +730,12 @@ void mem_readdir(void *context, SilcSFTP sftp,
       *strrchr(date, ':') = '\0';
 
     if (!entry->directory)
-      if (!lstat(entry->data + 7, &stats))
-	filesize = stats.st_size;
+#ifndef SILC_WIN32
+		if (!lstat(entry->data + 7, &stats))
+#else
+		if (!stat(entry->data + 7, &stats))
+#endif
+			filesize = stats.st_size;
 
     /* Long name format is:
        drwx------   1   324210 Apr  8 08:40 mail/
@@ -861,7 +865,11 @@ void mem_lstat(void *context, SilcSFTP sftp,
   }    
 
   /* Get real stat */
+#ifndef SILC_WIN32
   ret = lstat(entry->data + 7, &stats);
+#else
+  ret = stat(entry->data + 7, &stats);
+#endif
   if (ret == -1) {
     (*callback)(sftp, silc_sftp_map_errno(errno), NULL, callback_context);
     return;
