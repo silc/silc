@@ -21,7 +21,6 @@
 #include "silcincludes.h"
 
 #include "rsa.h"
-#include "pkcs1.h"
 
 /* The main SILC PKCS structure. */
 struct SilcPKCSStruct {

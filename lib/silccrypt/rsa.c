@@ -483,6 +483,8 @@ SILC_PKCS_API_CONTEXT_LEN(rsa)
   return sizeof(RsaKey);
 }
 
+/* Raw RSA routines */
+
 SILC_PKCS_API_ENCRYPT(rsa)
 {
   RsaKey *key = (RsaKey *)context;
@@ -594,6 +596,167 @@ SILC_PKCS_API_VERIFY(rsa)
     ret = FALSE;
 
   silc_mp_uninit(&mp_tmp);
+  silc_mp_uninit(&mp_tmp2);
+  silc_mp_uninit(&mp_dst);
+
+  return ret;
+}
+
+
+/* PKCS#1 RSA routines */
+
+SILC_PKCS_API_ENCRYPT(pkcs1)
+{
+  RsaKey *key = (RsaKey *)context;
+  SilcMPInt mp_tmp;
+  SilcMPInt mp_dst;
+  unsigned char padded[2048 + 1];
+  SilcUInt32 len = (key->bits + 7) / 8;
+
+  if (sizeof(padded) < len)
+    return FALSE;
+
+  /* Pad data */
+  if (!silc_pkcs1_encode(SILC_PKCS1_BT_PUB, src, src_len,
+			 padded, len, NULL))
+    return FALSE;
+
+  silc_mp_init(&mp_tmp);
+  silc_mp_init(&mp_dst);
+
+  /* Data to MP */
+  silc_mp_bin2mp(padded, len, &mp_tmp);
+
+  /* Encrypt */
+  rsa_public_operation(key, &mp_tmp, &mp_dst);
+
+  /* MP to data */
+  silc_mp_mp2bin_noalloc(&mp_dst, dst, len);
+  *dst_len = len;
+
+  memset(padded, 0, sizeof(padded));
+  silc_mp_uninit(&mp_tmp);
+  silc_mp_uninit(&mp_dst);
+
+  return TRUE;
+}
+
+SILC_PKCS_API_DECRYPT(pkcs1)
+{
+  RsaKey *key = (RsaKey *)context;
+  SilcMPInt mp_tmp;
+  SilcMPInt mp_dst;
+  unsigned char *padded, unpadded[2048 + 1];
+  SilcUInt32 padded_len;
+
+  silc_mp_init(&mp_tmp);
+  silc_mp_init(&mp_dst);
+
+  /* Data to MP */
+  silc_mp_bin2mp(src, src_len, &mp_tmp);
+
+  /* Decrypt */
+  rsa_private_operation(key, &mp_tmp, &mp_dst);
+
+  /* MP to data */
+  padded = silc_mp_mp2bin(&mp_dst, (key->bits + 7) / 8, &padded_len);
+
+  /* Unpad data */
+  if (!silc_pkcs1_decode(SILC_PKCS1_BT_PUB, padded, padded_len,
+			 unpadded, sizeof(unpadded), dst_len)) {
+    memset(padded, 0, padded_len);
+    silc_free(padded);
+    silc_mp_uninit(&mp_tmp);
+    silc_mp_uninit(&mp_dst);
+    return FALSE;
+  }
+
+  /* Copy to destination */
+  memcpy(dst, unpadded, *dst_len);
+
+  memset(padded, 0, padded_len);
+  memset(unpadded, 0, sizeof(unpadded));
+  silc_free(padded);
+  silc_mp_uninit(&mp_tmp);
+  silc_mp_uninit(&mp_dst);
+
+  return TRUE;
+}
+
+SILC_PKCS_API_SIGN(pkcs1)
+{
+  RsaKey *key = (RsaKey *)context;
+  SilcMPInt mp_tmp;
+  SilcMPInt mp_dst;
+  unsigned char padded[2048 + 1];
+  SilcUInt32 len = (key->bits + 7) / 8;
+
+  if (sizeof(padded) < len)
+    return FALSE;
+
+  /* Pad data */
+  if (!silc_pkcs1_encode(SILC_PKCS1_BT_PRV1, src, src_len,
+			 padded, len, NULL))
+    return FALSE;
+
+  silc_mp_init(&mp_tmp);
+  silc_mp_init(&mp_dst);
+
+  /* Data to MP */
+  silc_mp_bin2mp(padded, len, &mp_tmp);
+
+  /* Sign */
+  rsa_private_operation(key, &mp_tmp, &mp_dst);
+
+  /* MP to data */
+  silc_mp_mp2bin_noalloc(&mp_dst, dst, len);
+  *dst_len = len;
+
+  memset(padded, 0, sizeof(padded));
+  silc_mp_uninit(&mp_tmp);
+  silc_mp_uninit(&mp_dst);
+
+  return TRUE;
+}
+
+SILC_PKCS_API_VERIFY(pkcs1)
+{
+  RsaKey *key = (RsaKey *)context;
+  int ret = TRUE;
+  SilcMPInt mp_tmp2;
+  SilcMPInt mp_dst;
+  unsigned char *verify, unpadded[2048 + 1];
+  SilcUInt32 verify_len, len = (key->bits + 7) / 8;
+
+  silc_mp_init(&mp_tmp2);
+  silc_mp_init(&mp_dst);
+
+  /* Format the signature into MP int */
+  silc_mp_bin2mp(signature, signature_len, &mp_tmp2);
+
+  /* Verify */
+  rsa_public_operation(key, &mp_tmp2, &mp_dst);
+
+  /* MP to data */
+  verify = silc_mp_mp2bin(&mp_dst, len, &verify_len);
+
+  /* Unpad data */
+  if (!silc_pkcs1_decode(SILC_PKCS1_BT_PRV1, verify, verify_len,
+			 unpadded, sizeof(unpadded), &len)) {
+    memset(verify, 0, verify_len);
+    silc_free(verify);
+    silc_mp_uninit(&mp_tmp2);
+    silc_mp_uninit(&mp_dst);
+    return FALSE;
+  }
+
+  /* Compare */
+  if (memcmp(data, unpadded, len))
+    ret = FALSE;
+
+  memset(verify, 0, verify_len);
+  memset(unpadded, 0, sizeof(unpadded));
+  silc_free(verify);
   silc_mp_uninit(&mp_tmp2);
   silc_mp_uninit(&mp_dst);
 

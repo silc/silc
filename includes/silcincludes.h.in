@@ -231,6 +231,7 @@ extern "C" {
 #include "silchmac.h"
 #include "silcrng.h"
 #include "silcpkcs.h"
+#include "silcpkcs1.h"
 
 /* More SILC util library includes */
 #include "silcmutex.h"

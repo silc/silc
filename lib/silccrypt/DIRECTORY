@@ -5,6 +5,7 @@
 @LINK=silcrng.html:SILC RNG Interface
 @LINK=silccipher.html:SILC Cipher API
 @LINK=silcpkcs.html:SILC PKCS API
+@LINK=silcpkcs1.html:SILC PKCS#1 API
 @LINK=silchash.html:SILC Hash Interface
 @LINK=silchmac.html:SILC HMAC Interface
 -->
@@ -25,4 +26,3 @@ strong random number generator.
 
 <br /><br />
 @LINKS@
-
