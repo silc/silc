@@ -563,7 +563,7 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
 
-    if (entry->data.registered == FALSE) {
+    if (entry->connection && entry->data.registered == FALSE) {
       if (clients_count == 1)
 	silc_server_command_send_status_data(cmd, SILC_COMMAND_WHOIS,
 					     SILC_STATUS_ERR_NO_SUCH_NICK,
@@ -1296,7 +1296,7 @@ silc_server_command_identify_send_reply(SilcServerCommandContext cmd,
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
 
-    if (entry->data.registered == FALSE) {
+    if (entry->connection && entry->data.registered == FALSE) {
       if (clients_count == 1)
 	silc_server_command_send_status_data(cmd, SILC_COMMAND_IDENTIFY,
 					     SILC_STATUS_ERR_NO_SUCH_NICK,
