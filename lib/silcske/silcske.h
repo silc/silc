@@ -20,7 +20,7 @@
 #ifndef SILCSKE_H
 #define SILCSKE_H
 
-/****h* silcske/SilcSKEAPI
+/****h* silcske/SILC SKE Interface
  *
  * DESCRIPTION
  *

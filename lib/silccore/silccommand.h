@@ -18,7 +18,7 @@
 
 */
 
-/****h* silccore/SilcCommandAPI
+/****h* silccore/SILC Command Interface
  *
  * DESCRIPTION
  *

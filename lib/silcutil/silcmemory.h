@@ -17,7 +17,7 @@
 
 */
 
-/****h* silcutil/SilcMemoryAPI
+/****h* silcutil/SILC Memory Interface
  *
  * DESCRIPTION
  *

@@ -20,11 +20,15 @@
 @LINK=silczip.html:SILC Zip API
 -->
 
-<BIG><B>SILC Utility Library</B></BIG>
-<BR /><BR />
-<B>Introduction</B>
+<big><b>SILC Utility Library</b></big>
+<br />
+<small>Directory: lib/silcutil/</small>
+<br />
+<small>Library: libsilc.a, libsilc.lib</small>
+<br /><br />
+<b>Introduction</b>
 
-<BR /><BR />
+<br /><br />
 SILC Utility Library provides various utility routines for the applications.
 For example, it provides the application's main loop, called the SILC
 Scheduler.  It can handle all kinds of tasks, like socket connections and
@@ -32,5 +36,5 @@ timeout tasks.  The SILC Utility Library also provides various buffer
 management routines.  All of these routines work on multiple platforms
 such as Unix and WIN32.
 
-<BR /><BR />
+<br /><br />
 @LINKS@

@@ -73,7 +73,7 @@ RB_Generate_Documentation (
 	    }
         }
 
-      RB_Generate_Header_Start (dest_doc, cur_header);
+      RB_Generate_Header_Start (dest_doc, cur_header, src_name);
 
       next_line = cur_header->contents;
       item_type = RB_Find_Item (&next_line, &item_line);
@@ -296,7 +296,8 @@ RB_Generate_Doc_Start (
 		      int item_type;
 		      char *next_line, *item_line = NULL;
 		    
-		      RB_Generate_Header_Start (dest_doc, cur_header);
+		      RB_Generate_Header_Start (dest_doc, cur_header, 
+						src_name);
 
 		      next_line = cur_header->contents;
 		      item_type = RB_Find_Item (&next_line, &item_line);
@@ -548,7 +549,8 @@ RB_Generate_Doc_End (FILE * dest_doc, char *name)
  */
 
 void
-RB_Generate_Header_Start (FILE * dest_doc, struct RB_header *cur_header)
+RB_Generate_Header_Start (FILE * dest_doc, struct RB_header *cur_header,
+			  const char *src_name)
 {
   char *cook_link;
 
@@ -593,6 +595,13 @@ RB_Generate_Header_Start (FILE * dest_doc, struct RB_header *cur_header)
 		     "</FONT></B><BR><BR>\n\n",
 		     cur_header->function_name,
 		     cur_header->function_name);
+	  else if (cur_header->type == MAIN_HEADER)
+	    fprintf (dest_doc, 
+		     "\n<FONT SIZE=\"+2\" COLOR=\"#000055\"><B>"
+		     "<A NAME=\"%s\">%s</A>"
+		     "</FONT></B><BR><SMALL>Header: %s</SMALL><BR><BR>\n\n",
+		     cur_header->function_name,
+		     cur_header->function_name, src_name);
 	  else
 	    fprintf (dest_doc, 
 		     "\n<FONT SIZE=\"+2\" COLOR=\"#000055\"><B>"

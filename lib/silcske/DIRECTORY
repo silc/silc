@@ -7,14 +7,18 @@
 @LINK=silcske_payload.html:SKE Payloads
 -->
 
-<BIG><B>SILC Key Exchange Library</B></BIG>
-<BR /><BR />
-<B>Introduction</B>
+<big><b>SILC Key Exchange Library</b></big>
+<br />
+<small>Directory: lib/silcske/</small>
+<br />
+<small>Library: libsilc.a, libsilc.lib</small>
+<br /><br />
+<b>Introduction</b>
 
-<BR /><BR />
+<br /><br />
 SILC Key Exchange (SKE) Library, is an implementation of the SKE protocol.
 It provides the key exchange protocol for all SILC applications.
 
-<BR /><BR />
+<br /><br />
 @LINKS@
 

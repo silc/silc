@@ -17,7 +17,7 @@
 
 */
 
-/****h* silcske/SilcSKEPayloads
+/****h* silcske/SKE Payloads
  *
  * DESCRIPTION
  *

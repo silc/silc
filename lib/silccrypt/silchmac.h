@@ -20,7 +20,7 @@
 #ifndef SILCHMAC_H
 #define SILCHMAC_H
 
-/****h* silccrypt/SilcHMACAPI
+/****h* silccrypt/SILC HMAC Interface
  *
  * DESCRIPTION
  *

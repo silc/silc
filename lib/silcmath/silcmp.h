@@ -18,7 +18,7 @@
  
 */
 
-/****h* silcmath/SilcMPAPI
+/****h* silcmath/SILC MP Interface
  *
  * DESCRIPTION
  *

@@ -1,0 +1,178 @@
+<big><b>Building the Toolkit</b></big>
+
+<br />&nbsp;<br />
+SILC Toolkit works on various platforms, such as on several Unix systems and 
+on Windows.  Building of the Toolkit on some platform may differ from the
+other.  This document describes how to build the Toolkit from the sources,
+to create linkable libraries and binaries, on all platforms the Toolkit
+support.
+
+<br />&nbsp;<br />
+The building instructions for all platforms are also included in the Toolkit
+package.  Please refer to the INSTALL file for general building instructions
+for Unix systems, README.WIN32 for building on Windows systems, and
+README.MACOSX for building on Mac OS X.
+
+<br />&nbsp;<br />
+<li><a href="#unix">Building on Unix & Linux</a><br />
+<li><a href="#windows">Building on Windows</a><br />
+<li><a href="#macosx">Building on Mac OS X</a>
+
+<br />&nbsp;<br />&nbsp;<br />
+<b><a name="unix"></a>Building on Unix & Linux</b>
+
+<br />&nbsp;<br />
+Building the Toolkit on Unix will produce binaries of all libraries, and
+SILC Client and SILC Server.  The Toolkit package includes also Client and
+Server as an example applications, and they are compiled automatically.
+The libraries are compiled to provide staticly linkable libraries.  Two
+libraries are produced: libsilc.a and libsilcclient.a.  The libsilc.a includes
+everything else except the Client library.  The libsilcclient.a includes
+only the Client library.
+
+<br />&nbsp;<br />
+To build Toolkit on Unix systems, give commands:
+
+<br />&nbsp;<br />
+<tt>
+./configure<br />
+make
+</tt>
+
+<br />&nbsp;<br />
+On some systems you may need to give "gmake" command instead of "make".  The
+./configure can take several options as arguments.  To see them all give
+command:
+
+<br />&nbsp;<br />
+<tt>./configure --help</tt>
+
+<br />&nbsp;<br />
+The most important configuration options you may consider to use are:
+
+<br />&nbsp;<br />
+<tt>--enable-debug</tt>
+
+<br />&nbsp;<br />
+If you would like to enable the debugging for the compiled binaries
+you can give this option to the `configure'.  It is recommended to use
+this option when you are doing development with Toolkit.  It is helpful
+to enable run-time debugging.
+
+<br />&nbsp;<br />
+<tt>--with-gmp=PATH</tt>
+
+<br />&nbsp;<br />
+If you wish to use GMP library for arbitrary precision arithmetic
+library instead of using the MPI library included in the package, you can
+give the --with-gmp=PATH option to the `configure'.  The PATH is the path
+to the GMP library in your system.
+
+<br />&nbsp;<br />
+<tt>--disable-asm</tt>
+
+<br />&nbsp;<br />
+If you have trouble compiling the assembler optimized code in the
+package or does not want to use them, you can give the --disable-asm
+option to the `configure' script.  This will assure that assembler
+optimized code is not compiled in.
+
+<br />&nbsp;<br />
+<tt>--disable-threads</tt>
+
+<br />&nbsp;<br />
+If you do not want to compile the programs with multi threads support
+you can give --disable-threads option.  This will disable the SILC Thread
+API and SILC Mutex API.  Furthermore if SILC Thread API is used when this
+option is used, the routines work, but do not work in threads (are run
+in the calling process and can block the process).
+
+<br />&nbsp;<br />
+<tt>--enable-ipv6</tt>
+
+<br />&nbsp;<br />
+The `configure' will attempt to check for IPv6 support in your system.
+However, if it fails, but you still want to compile in the IPv6 support
+you can give --enable-ipv6 option to force the IPv6 support.
+
+<br />&nbsp;<br />
+After compilation you can install the Toolkit into your system by giving
+the command:
+
+<br />&nbsp;<br />
+<tt>make install</tt>
+
+
+<br />&nbsp;<br />&nbsp;<br />
+<b><a name="windows"></a>Building on Windows</b>
+
+<br />&nbsp;<br />
+The Toolkit can be compiled several different ways on Windows.  However,
+this document describes the method to build the Toolkit to produce native
+Win32 binaries.  The Toolkit package can also be compiled on Cygwin and
+MinGW.  For these systems please refer to the README.WIN32 file in the
+Toolkit package.
+
+<br />&nbsp;<br />
+The Toolkit package includes ready MSVC++ Workspace files, that will 
+automatically compile the Toolkit.  The MSVC++ workspace and project files
+resides in the win32/ subdirectory of the Toolkit package.  The `silc.dsw'
+file is the workspace file that automatically supports compiling the Toolkit
+and to generate the SILC Core DLL and SILC Client DLL libraries.
+
+<br />&nbsp;<br />
+The SILC Core DLL is named as libsilc and will generate libsilc.dll, and
+the SILC Client DLL is named as libsilcclient and will generate
+libsilcclient.dll.  Both of the projects also automatically generates
+libsilc.lib and libsilcclient.lib import libraries that may be used to
+link against a client application.
+
+<br />&nbsp;<br />
+Generally you do not need to do any specific settings to compile the
+Toolkit.  However, you must compile the libsilc before compiling the
+libsilclient, since the SILC Client DLL depends on the SILC Core DLL.
+You may compile the DLLs as either Release or Debug version.  Just select
+the preferred method of compilation.  The Debug version will compile the
+SILC Toolkit with run-time debugging support, which is recommended when
+doing development with the Toolkit.
+
+<br />&nbsp;<br />&nbsp;<br />
+<b><a name="macosx"></a>Building on Mac OS X</b>
+
+<br />&nbsp;<br />
+Building the Toolkit on Mac OS X is almost identical on compiling on Unix
+system.  The reason for this is that the Mac OS X is Unix based operating
+system.  To build the Toolkit on Mac OS X, give the following commands:
+
+<br />&nbsp;<br />
+<tt>
+setenv CFLAGS -no-cpp-precomp<br />
+./configure powerpc<br />
+make
+</tt>
+
+<br />&nbsp;<br />
+The ./configure can take several options as arguments.  To see them all give
+command:
+
+<br />&nbsp;<br />
+<tt>./configure --help</tt>
+
+<br />&nbsp;<br />
+If you do not want to compile the applications, or they do not compile on
+your system, you can also choose to compile only the libraries, and skip
+all applications.  In this case, before giving the "make" command, go
+to the lib/ subdirectory, and give "make" command there:
+
+<br />&nbsp;<br />
+<tt>
+cd lib/<br />
+make
+</tt>
+
+<br />&nbsp;<br />
+After compilation you can install the Toolkit into your system by giving
+the command:
+
+<br />&nbsp;<br />
+<tt>make install</tt>

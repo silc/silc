@@ -17,7 +17,7 @@
 
 */
 
-/****h* silcske/SilcSKEStatuses
+/****h* silcske/SKE Status Types
  *
  * DESCRIPTION
  *

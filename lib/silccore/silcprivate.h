@@ -18,7 +18,7 @@
 
 */
 
-/****h* silccore/SilcPrivateAPI
+/****h* silccore/SILC Private Message Interface
  *
  * DESCRIPTION
  *

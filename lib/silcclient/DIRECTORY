@@ -5,11 +5,15 @@
 @LINK=silcclient.html:Client Library Interface
 -->
 
-<BIG><B>SILC Client Library</B></BIG>
-<BR /><BR />
-<B>Introduction</B>
+<big><b>SILC Client Library</b></big>
+<br />
+<small>Directory: lib/silcclient/</small>
+<br />
+<small>Library: libsilcclient.a, libsilcclient.lib</small>
+<br /><br />
+<b>Introduction</b>
 
-<BR /><BR />
+<br /><br />
 SILC Client Library is SILC Client implementation without the actual user 
 interface. The library uses common and core components of SILC protocol from
 lib/silccore library and normal utility routines from lib/silcutil library.
@@ -18,7 +22,7 @@ without actual user interface.  The library provides the API for the
 application which it can use to implement generally whatever user interface
 it wants.
 
-<BR /><BR />
+<br /><br />
 The `silcclient.h' file defines the function prototypes that application must
 implement in order to be able to create the user interface with the
 library.  The idea is that the application can implement whatever user
@@ -28,5 +32,5 @@ it does not include any user interface specific issues such as window
 handling or item handling on the screen etc.  These does not interest
 the library.
 
-<BR /><BR />
+<br /><br />
 @LINKS@

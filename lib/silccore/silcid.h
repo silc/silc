@@ -18,7 +18,7 @@
 
 */
 
-/****h* silccore/SilcIDAPI
+/****h* silccore/SILC ID Interface
  *
  * DESCRIPTION
  *

@@ -18,7 +18,7 @@
 
 */
 
-/****h* silcutil/SilcBufferFormatAPI
+/****h* silcutil/SILC Buffer Format Interface
  *
  * DESCRIPTION
  *

@@ -18,7 +18,7 @@
 
 */
 
-/****h* silccore/SilcAuthAPI
+/****h* silccore/SILC Authentication Interface
  *
  * DESCRIPTION
  *

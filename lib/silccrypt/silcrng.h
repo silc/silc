@@ -17,7 +17,7 @@
 
 */
 
-/****h* silccrypt/SilcRNGAPI
+/****h* silccrypt/SILC RNG Interface
  *
  * DESCRIPTION
  *

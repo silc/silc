@@ -73,8 +73,12 @@ RB_Analyse_Document (FILE * document)
 	    {
 	      RB_Say ("found header [line %5d]: \"%s\"\n",
 		      line_number, new_header->name);
+#if 0
 	      if ((new_header->function_name
 		   = RB_Function_Name (new_header->name)) == NULL)
+#endif
+	      if ((new_header->function_name
+		   = RB_Function_Name (line_buffer)) == NULL)
 		{
 		  RB_Panic ("Can't determine the \"function\" name.\n");
 		}
@@ -408,14 +412,17 @@ RB_Find_Header_Name (void)
   skip_while (isspace (*cur_char));
   if (*cur_char)
     {
-      char *end_char, old_char;
+      char *n;
+      int len;
 
-      end_char = cur_char + RB_WordLen (cur_char);
-      old_char = *end_char;
-      *end_char = '\0';
-      cur_char = RB_StrDup (cur_char);
-      *end_char = old_char;
-      return (cur_char);
+      if (strchr(cur_char, '\n'))
+	*strchr(cur_char, '\n') = '\0';
+
+      len = RB_WordLen(cur_char);
+
+      n = calloc(len + 1, sizeof(*cur_char));
+      strncpy(n, cur_char, len);
+      return n;
     }
   return (NULL);
 }

@@ -17,7 +17,7 @@
 
 */
 
-/****h* silcske/SilcSKEGroups
+/****h* silcske/SKE Diffie Hellman Groups
  *
  * DESCRIPTION
  *

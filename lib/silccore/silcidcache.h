@@ -18,7 +18,7 @@
 
 */
 
-/****h* silccore/SilcIDCacheAPI
+/****h* silccore/SILC ID Cache Interface
  *
  * DESCRIPTION
  * 

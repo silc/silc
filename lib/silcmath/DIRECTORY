@@ -5,14 +5,18 @@
 @LINK=silcmath.html:SILC Math Interface
 -->
 
-<BIG><B>SILC Math Library</B></BIG>
-<BR /><BR />
+<big><b>SILC Math Library</b></big>
+<br />
+<small>Directory: lib/silcmath/</small>
+<br />
+<small>Library: libsilc.a, libsilc.lib</small>
+<br /><br />
 <B>Introduction</B>
 
-<BR /><BR />
+<br /><br />
 SILC Math Library provides arbitrary precision artichmetic routines for
 public key cryptosystems, prime number generation routines, and other
 math utility functions for applications.
 
-<BR /><BR />
+<br /><br />
 @LINKS@

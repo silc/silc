@@ -18,7 +18,7 @@
 
 */
 
-/****h* silcutil/SilcNetAPI
+/****h* silcutil/SILC Net Interface
  *
  * DESCRIPTION
  *

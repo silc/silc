@@ -17,7 +17,7 @@
 
 */
 
-/****h* silcclient/SilcClientAPI
+/****h* silcclient/Client Library Interface
  *
  * DESCRIPTION
  *

@@ -47,8 +47,8 @@ will work in single thread only.
 `--enable-ipv6'
 
    The `configure' will attempt to check for IPv6 support in your system.
-   However, if it fails, but you still want to compile in the IPv6 support
-   you can give --enable-ipv6 option to force the IPv6 support.
+However, if it fails, but you still want to compile in the IPv6 support
+you can give --enable-ipv6 option to force the IPv6 support.
 
 Basic Installation
 ==================

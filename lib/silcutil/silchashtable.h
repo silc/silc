@@ -17,7 +17,7 @@
 
 */
 
-/****h* silcutil/SilcHashTableAPI
+/****h* silcutil/SILC Hash Table Interface
  *
  * DESCRIPTION
  *
@@ -33,7 +33,7 @@
  * an extended interface where caller can specify its own hash and comparison
  * functions.
  *
- * There are two ways tro traverse the entire hash table if this feature
+ * There are two ways to traverse the entire hash table if this feature
  * is needed. There exists a foreach function that calls a foreach
  * callback for each entry in the hash table. Other way is to use
  * SilcHashTableList structure and traverse the hash table inside while()

@@ -356,7 +356,6 @@ ServerConnection {
 	Host = "10.2.1.7";
 	Passphrase = "verysecret";
 	#Publickey = "/path/to/the/public.key";
-	VersionID = 1;
 	Params = "normal";
 	Backup = false;
 };
@@ -391,7 +390,6 @@ RouterConnection {
 	Port = 706;
 	Passphrase = "verysecret";
 	#Publickey = "/path/to/the/public.key";
-	VersionID = 1;
 	Params = "normal";
 	Initiator = true;
 	#BackupHost = "10.2.1.6";

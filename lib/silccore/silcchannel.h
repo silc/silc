@@ -18,7 +18,7 @@
 
 */
 
-/****h* silccore/SilcChannelAPI
+/****h* silccore/SILC Channel Interface
  *
  * DESCRIPTION
  *

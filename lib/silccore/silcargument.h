@@ -17,7 +17,7 @@
 
 */
 
-/****h* silccore/SilcArgumentAPI
+/****h* silccore/SILC Argument Interface
  *
  * DESCRIPTION
  *

@@ -18,7 +18,7 @@
 
 */
 
-/****h* silcutil/SilcMutexAPI
+/****h* silcutil/SILC Mutex Interface
  *
  * DESCRIPTION
  *

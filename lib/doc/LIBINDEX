@@ -27,15 +27,20 @@ of the Toolkit always delivers the latest version of this reference manual.
 <br /><br /><br />
 <li><a href="intro_reference.html">Introduction to the Manual</a><br />
 <li><a href="programming_conv.html">Programming Conventions</a><br />
+<li><a href="building.html">Building the Toolkit</a>
+
+<br /><br />
+<b>Toolkit Reference</b>
+<br /><br />
 @BODY@
 
-<br /><br /><br />
+<br /><br />
 <b>Resource Links</b>
 <br /><br />
 Please refer to these outside links for more information about the SILC 
 project and SILC Protocol.
 
-<br /><br /><br />
+<br /><br />
 <li><a href="http://silcnet.org">SILC Project Website</a><br />
 <li><a href="http://silcnet.org/?page=docs">SILC Protocol Documentation</a><br />
 <li><a href="http://silcnet.org/?page=whitepaper">SILC White Paper</a><br />

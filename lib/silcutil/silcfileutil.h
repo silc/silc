@@ -17,7 +17,7 @@
 
 */
 
-/****h* silcutil/SilcFileUtilAPI
+/****h* silcutil/Silc File Util Interface
  *
  * DESCRIPTION
  *

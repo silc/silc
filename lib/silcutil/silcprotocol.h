@@ -18,7 +18,7 @@
 
 */
 
-/****h* silccore/silcprotocol.h
+/****h* silccore/SILC Protocol Interface
  *
  * DESCRIPTION
  *

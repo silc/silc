@@ -20,7 +20,7 @@
 #ifndef SILCSFTP_H
 #define SILCSFTP_H
 
-/****h* silcsftp/SilcSFTPAPI
+/****h* silcsftp/SILC SFTP Interface
  *
  * DESCRIPTION
  *

@@ -18,7 +18,7 @@
 
 */
 
-/****h* silccore/SilcNotifyAPI
+/****h* silccore/SILC Notify Interface
  *
  * DESCRIPTION
  *

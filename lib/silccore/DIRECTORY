@@ -13,15 +13,19 @@
 @LINK=silcpacket.html:Packet Protocol Interface
 -->
 
-<BIG><B>SILC Core Library</B></BIG>
-<BR /><BR />
-<B>Introduction</B>
+<big><b>SILC Core Library</b></big>
+<br />
+<small>Directory: lib/silccore/</small>
+<br />
+<small>Library: libsilc.a, libsilc.lib</small>
+<br /><br />
+<b>Introduction</b>
 
-<BR /><BR />
+<br /><br />
 SILC Core Library includes all the core components of the SILC Protocol.
 It provides routines to encode and decode all SILC packet payloads defined
 in the protocol specification.  It provides packet assembling and parsing
 routines, and routines for sending private message and channel messages.
 
-<BR /><BR />
+<br /><br />
 @LINKS@

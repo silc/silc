@@ -18,7 +18,7 @@
 
 */
 
-/****h* silcutil/SilcSocketConnectionAPI
+/****h* silcutil/SILC Socket Interface
  *
  * DESCRIPTION
  *

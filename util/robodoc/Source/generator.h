@@ -8,7 +8,7 @@ void RB_Generate_Header_Name (FILE *, char *);
 void RB_Generate_Item_Name (FILE *, int);
 void RB_Generate_Doc_Start (FILE *, char *, char *, char);
 void RB_Generate_Doc_End (FILE *, char *);
-void RB_Generate_Header_Start (FILE *, struct RB_header *);
+void RB_Generate_Header_Start (FILE *, struct RB_header *, const char *);
 void RB_Generate_Header_End (FILE *, struct RB_header *);
 int RB_HTML_Extra (FILE * dest_doc, int item_type, char *cur_char);
 void RB_Generate_Index (FILE * dest, char *name);

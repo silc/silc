@@ -18,7 +18,7 @@
 
 */
 
-/****h* silcutil/SilcConfigAPI
+/****h* silcutil/SILC Config Interface
  *
  * DESCRIPTION
  *

@@ -17,7 +17,7 @@
 
 */
 
-/****h* silccore/SilcPacketAPI
+/****h* silccore/Packet Protocol Interface
  *
  * DESCRIPTION
  *

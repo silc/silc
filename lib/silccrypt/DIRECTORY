@@ -3,22 +3,26 @@
 @FILENAME=silccryptlib.html
 @LINK=silcrng_intro.html:Introduction to SILC RNG
 @LINK=silcrng.html:SILC RNG Interface
+@LINK=silchmac.html:SILC HMAC Interface
 @LINK=silccipher.html:SILC Cipher API
 @LINK=silchash.html:SILC Hash API
-@LINK=silchmac.html:SILC HMAC API
 @LINK=silcpkcs.html:SILC PKCS API
 -->
 
-<BIG><B>SILC Crypto Library</B></BIG>
-<BR /><BR />
-<B>Introduction</B>
+<big><b>SILC Crypto Library</b></big>
+<br />
+<small>Directory: lib/silccrypt/</small>
+<br />
+<small>Library: libsilc.a, libsilc.lib</small>
+<br /><br />
+<b>Introduction</b>
 
-<BR /><BR />
+<br /><br />
 SILC Crypto Library provides cryptographic routines for applications.  It
 provides interfaces for ciphers, hash functions, HMACs and public key
 cryptosystems.  In addition is also provides interfaces for cryptographically
 strong random number generator.
 
-<BR /><BR />
+<br /><br />
 @LINKS@
 

@@ -18,7 +18,7 @@
 
 */
 
-/****h* silccore/SilcMode
+/****h* silccore/SILC Modes
  *
  * DESCRIPTION
  *

@@ -20,7 +20,7 @@
 
 */
  
-/****h* silcutil/SilcScheduleAPI
+/****h* silcutil/SILC Schedule Interface
  *
  * DESCRIPTION
  *

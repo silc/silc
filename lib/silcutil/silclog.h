@@ -18,7 +18,7 @@
 
 */
 
-/****h* silcutil/SilcLogAPI
+/****h* silcutil/SILC Logging Interface
  *
  * DESCRIPTION
  *

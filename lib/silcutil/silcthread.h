@@ -18,7 +18,7 @@
 
 */
 
-/****h* silcutil/SilcThreadAPI
+/****h* silcutil/SILC Thread Interface
  *
  * DESCRIPTION
  *
