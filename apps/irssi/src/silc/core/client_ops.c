@@ -1365,6 +1365,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       char *topic, *name;
       int usercount;
       char users[20];
+      char tmp[256], *cp, *dm = NULL;
       
       if (!success)
 	return;
@@ -1373,6 +1374,19 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       name = va_arg(vp, char *);
       topic = va_arg(vp, char *);
       usercount = va_arg(vp, int);
+
+      if (!silc_term_utf8() && silc_utf8_valid(topic, strlen(topic))) {
+	memset(tmp, 0, sizeof(tmp));
+	cp = tmp;
+	if (strlen(topic) > sizeof(tmp) - 1) {
+	  dm = silc_calloc(strlen(topic) + 1, sizeof(*dm));
+	  cp = dm;
+	}
+
+	silc_utf8_decode(topic, strlen(topic), SILC_STRING_LANGUAGE,
+			 cp, strlen(topic));
+	topic = cp;
+      }
       
       if (status == SILC_STATUS_LIST_START ||
 	  status == SILC_STATUS_OK)
@@ -1386,6 +1400,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_LIST,
 			 name, users, topic ? topic : "");
+      silc_free(dm);
     }
     break;
     
@@ -1584,13 +1599,27 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     {
       SilcChannelEntry channel;
       char *topic;
+      char tmp[256], *cp, *dm = NULL;
       
       if (!success)
 	return;
       
       channel = va_arg(vp, SilcChannelEntry);
       topic = va_arg(vp, char *);
-      
+
+      if (!silc_term_utf8() && silc_utf8_valid(topic, strlen(topic))) {
+	memset(tmp, 0, sizeof(tmp));
+	cp = tmp;
+	if (strlen(topic) > sizeof(tmp) - 1) {
+	  dm = silc_calloc(strlen(topic) + 1, sizeof(*dm));
+	  cp = dm;
+	}
+
+	silc_utf8_decode(topic, strlen(topic), SILC_STRING_LANGUAGE,
+			 cp, strlen(topic));
+	topic = cp;
+      }
+
       if (topic) {
 	chanrec = silc_channel_find_entry(server, channel);
 	if (chanrec) {
@@ -1606,6 +1635,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_TOPIC_NOT_SET,
 			   channel->channel_name);
       }
+      silc_free(dm);
     }
     break;
 
