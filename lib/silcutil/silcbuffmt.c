@@ -22,24 +22,7 @@
    is too short. Must be fixed. There are some other obvious bugs as
    well. */
 /*
- * $Id$
- * $Log$
- * Revision 1.2  2000/09/29 07:11:27  priikone
- * 	Explcitly cast some va_arg()s as it requires it nowadays.
- *
- * Revision 1.1  2000/09/13 17:45:16  priikone
- * 	Splitted SILC core library. Core library includes now only
- * 	SILC protocol specific stuff. New utility library includes the
- * 	old stuff from core library that is more generic purpose stuff.
- *
- * Revision 1.2  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+ * $Id$ */
 
 #include "silcincludes.h"
 

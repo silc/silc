@@ -116,18 +116,6 @@ typedef struct SilcBufferStruct {
   unsigned char *data;
   unsigned char *tail;
   unsigned char *end;
-
-  /* Method functions. */
-  unsigned char *(*pull)(struct SilcBufferStruct *, unsigned int);
-  unsigned char *(*push)(struct SilcBufferStruct *, unsigned int);
-  unsigned char *(*pull_tail)(struct SilcBufferStruct *, unsigned int);
-  unsigned char *(*push_tail)(struct SilcBufferStruct *, unsigned int);
-  unsigned char *(*put)(struct SilcBufferStruct *, unsigned char *, 
-			unsigned int);
-  unsigned char *(*put_head)(struct SilcBufferStruct *, unsigned char *, 
-			     unsigned int);
-  unsigned char *(*put_tail)(struct SilcBufferStruct *, unsigned char *, 
-			     unsigned int);
 } SilcBufferObject;
 
 typedef SilcBufferObject *SilcBuffer;
@@ -144,6 +132,42 @@ typedef SilcBufferObject *SilcBuffer;
  * Optimized buffer managing routines.  These are short inline
  * functions.
  */
+
+extern inline
+SilcBuffer silc_buffer_alloc(unsigned int len)
+{
+  SilcBuffer sb;
+  unsigned char *data;
+
+  /* Allocate new SilcBuffer */
+  sb = silc_calloc(1, sizeof(*sb));
+
+  /* Allocate the actual data area */
+  data = silc_calloc(len, sizeof(*data));
+  memset(data, 0, len);
+
+  /* Set pointers to the new buffer */
+  sb->truelen = len;
+  sb->len = 0;
+  sb->head = data;
+  sb->data = data;
+  sb->tail = data;
+  sb->end = data + sb->truelen;
+
+  return sb;
+}
+
+/* Free's a SilcBuffer */
+
+extern inline
+void silc_buffer_free(SilcBuffer sb)
+{
+  if (sb) {
+    memset(sb->head, 'F', sb->truelen);
+    silc_free(sb->head);
+    silc_free(sb);
+  }
+}
 
 /* Pulls current data area towards end. The length of the currently
    valid data area is also decremented. Returns pointer to the data
@@ -328,9 +352,9 @@ unsigned char *silc_buffer_put_tail(SilcBuffer sb,
 #endif /* !SILC_DEBUG */
 
 /* Prototypes */
+#ifdef SILC_DEBUG
 SilcBuffer silc_buffer_alloc(unsigned int len);
 void silc_buffer_free(SilcBuffer sb);
-#ifdef SILC_DEBUG
 unsigned char *silc_buffer_pull(SilcBuffer sb, unsigned int len);
 unsigned char *silc_buffer_push(SilcBuffer sb, unsigned int len);
 unsigned char *silc_buffer_pull_tail(SilcBuffer sb, unsigned int len);

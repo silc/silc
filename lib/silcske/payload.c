@@ -22,6 +22,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.6  2000/10/31 19:48:31  priikone
+ * 	A LOT updates. Cannot separate. :)
+ *
  * Revision 1.5  2000/07/19 07:04:37  priikone
  * 	Added version detection support to SKE. Minor bugfixes.
  *
@@ -257,6 +260,7 @@ silc_ske_payload_start_decode(SilcSKE ske,
  err:
   silc_ske_payload_start_free(payload);
 
+  ske->status = status;
   return status;
 }
 
@@ -388,6 +392,7 @@ SilcSKEStatus silc_ske_payload_one_decode(SilcSKE ske,
 
  err:
   silc_free(payload);
+  ske->status = status;
   return status;
 }
 
@@ -530,6 +535,7 @@ SilcSKEStatus silc_ske_payload_two_decode(SilcSKE ske,
   if (payload->sign_data)
     silc_free(payload->sign_data);
   silc_free(payload);
+  ske->status = status;
   return status;
 }
 

@@ -20,52 +20,7 @@
 /*
  * Server side of the protocols.
  */
-/*
- * $Id$
- * $Log$
- * Revision 1.10  2000/10/09 11:41:17  priikone
- * 	Changed to use new generic payloads.
- * 	Implemented new protocol compliant notify messages.
- * 	Implemented protocol compliant channel messages.
- * 	Bugfixes.
- *
- * Revision 1.9  2000/07/20 10:17:25  priikone
- * 	Added dynamic protocol registering/unregistering support.  The
- * 	patch was provided by cras.
- *
- * Revision 1.8  2000/07/19 07:08:09  priikone
- * 	Added version detection support to SKE.
- *
- * Revision 1.7  2000/07/14 06:14:20  priikone
- * 	Put the HMAC keys into the HMAC object instead of having them
- * 	saved elsewhere; now we can use silc_hmac_make insteaad of
- * 	silc_hmac_make_with_key.
- *
- * Revision 1.6  2000/07/12 05:59:41  priikone
- * 	Major rewrite of ID Cache system. Support added for the new
- * 	ID cache system. Major rewrite of ID List stuff on server.  All
- * 	SilcXXXList's are now called SilcXXXEntry's and they are pointers
- * 	by default. A lot rewritten ID list functions.
- *
- * Revision 1.5  2000/07/10 05:42:14  priikone
- * 	Support for public key encoding functions added.
- *
- * Revision 1.4  2000/07/07 06:55:59  priikone
- * 	Added SILC style public key support and made server to use
- * 	it at all time.
- *
- * Revision 1.3  2000/07/06 07:15:31  priikone
- * 	Cleaner code fro password and public key authentication.
- * 	Deprecated old `channel_auth' protocol.
- *
- * Revision 1.2  2000/07/05 06:13:04  priikone
- * 	Support for SILC style public keys added.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "serverincludes.h"
 #include "server_internal.h"
@@ -156,6 +111,14 @@ static void silc_server_protocol_ke_set_keys(SilcSKE ske,
   silc_hmac_set_key(conn_data->hmac, keymat->hmac_key, keymat->hmac_key_len);
 
   sock->user_data = (void *)conn_data;
+}
+
+/* XXX TODO */
+
+SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
+				     unsigned int len)
+{
+  return SILC_SKE_STATUS_OK;
 }
 
 /* Performs key exchange protocol. This is used for both initiator
@@ -350,6 +313,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       protocol->state = SILC_PROTOCOL_STATE_END;
     }
     break;
+
   case SILC_PROTOCOL_STATE_END:
     {
       /* 
@@ -386,9 +350,33 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	silc_protocol_free(protocol);
     }
     break;
+
   case SILC_PROTOCOL_STATE_ERROR:
     /*
      * Error occured
+     */
+
+    /* Send abort notification */
+    silc_ske_abort(ctx->ske, ctx->ske->status, 
+		   silc_server_protocol_ke_send_packet,
+		   context);
+
+    /* Unregister the timeout task since the protocol has ended. 
+       This was the timeout task to be executed if the protocol is
+       not completed fast enough. */
+    if (ctx->timeout_task)
+      silc_task_unregister(server->timeout_queue, ctx->timeout_task);
+
+    /* On error the final callback is always called. */
+    if (protocol->final_callback)
+      protocol->execute_final(server->timeout_queue, 0, protocol, fd);
+    else
+      silc_protocol_free(protocol);
+    break;
+
+  case SILC_PROTOCOL_STATE_FAILURE:
+    /*
+     * We have received failure from remote
      */
 
     /* Unregister the timeout task since the protocol has ended. 
@@ -403,6 +391,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
     else
       silc_protocol_free(protocol);
     break;
+
   case SILC_PROTOCOL_STATE_UNKNOWN:
     break;
   }
@@ -880,10 +869,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
       /* 
        * End protocol
        */
+      unsigned char ok[4];
 
-      /* Succesfully authenticated */
-      silc_server_packet_send(server, ctx->sock, SILC_PACKET_SUCCESS, 
-			      0, NULL, 0, TRUE);
+      SILC_PUT32_MSB(SILC_CONN_AUTH_OK, ok);
+
+      /* Authentication failed */
+      silc_server_packet_send(server, ctx->sock, SILC_PACKET_FAILURE,
+			      0, ok, 4, TRUE);
 
       /* Unregister the timeout task since the protocol has ended. 
 	 This was the timeout task to be executed if the protocol is
@@ -901,12 +893,15 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
   case SILC_PROTOCOL_STATE_ERROR:
     {
       /*
-       * Error 
+       * Error. Send notify to remote.
        */
+      unsigned char error[4];
+
+      SILC_PUT32_MSB(SILC_CONN_AUTH_FAILED, error);
 
       /* Authentication failed */
       silc_server_packet_send(server, ctx->sock, SILC_PACKET_FAILURE,
-			      0, NULL, 0, TRUE);
+			      0, error, 4, TRUE);
 
       /* Unregister the timeout task since the protocol has ended. 
 	 This was the timeout task to be executed if the protocol is
@@ -921,6 +916,25 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	silc_protocol_free(protocol);
     }
     break;
+
+  case SILC_PROTOCOL_STATE_FAILURE:
+    /*
+     * We have received failure from remote
+     */
+
+    /* Unregister the timeout task since the protocol has ended. 
+       This was the timeout task to be executed if the protocol is
+       not completed fast enough. */
+    if (ctx->timeout_task)
+      silc_task_unregister(server->timeout_queue, ctx->timeout_task);
+
+    /* On error the final callback is always called. */
+    if (protocol->final_callback)
+      protocol->execute_final(server->timeout_queue, 0, protocol, fd);
+    else
+      silc_protocol_free(protocol);
+    break;
+
   case SILC_PROTOCOL_STATE_UNKNOWN:
     break;
   }

@@ -22,7 +22,7 @@
 #include "silcincludes.h"
 
 /* Set TRUE/FALSE to enable/disable debugging */
-int silc_debug;
+int silc_debug = FALSE;
 
 /* SILC Log name strings. These strings are printed to the log file. */
 const SilcLogTypeName silc_log_types[] =
@@ -54,22 +54,6 @@ static SilcLogCb fatal_cb = NULL;
 /* Debug callbacks. If set these are used instead of default ones. */
 static SilcDebugCb debug_cb = NULL;
 static SilcDebugHexdumpCb debug_hexdump_cb = NULL;
-
-/* Formats arguments to a string and returns it after allocating memory
-   for it. It must be remembered to free it later. */
-
-char *silc_log_format(char *fmt, ...)
-{
-  va_list args;
-  static char buf[8192];
-
-  memset(buf, 0, sizeof(buf));
-  va_start(args, fmt);
-  vsnprintf(buf, sizeof(buf) - 1, fmt, args);
-  va_end(args);
-
-  return strdup(buf);
-}
 
 /* Outputs the log message to what ever log file selected. */
 

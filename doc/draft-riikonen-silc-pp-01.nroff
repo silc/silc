@@ -435,9 +435,7 @@ List of SILC Packet types are defined as follows.
           server to client, although it may be sent from server to another
           server as well.  Client never sends this packet.  Server may
           send this packet to channel as well when the packet is 
-          distributed to all clients on the channel.  Receiver of this 
-          packet may ignore the packet if it chooses so.  However, it 
-          should not be ignored.
+          distributed to all clients on the channel.
 
           Payload of the packet:  See section 2.3.7 Notify Payload.
 
@@ -656,6 +654,9 @@ List of SILC Packet types are defined as follows.
           packet maybe sent to entity that is indirectly connected to
           the sender.
 
+          When received, the server or router must distribute
+          SILC_NOTIFY_TYPE_JOIN to local clients on the channel.
+
           Payload of the packet:  See section 2.3.21 New Channel User
                                   Payload
 
@@ -678,6 +679,9 @@ List of SILC Packet types are defined as follows.
           packet SILC_PACKET_NEW_CHANNEL_USER except that it may
           include several payloads.  Client must not send this packet.
 
+          When received, the server or router must distribute
+          SILC_NOTIFY_TYPE_JOIN to local clients on the channel.
+
           Payload of the packet:  See section 2.3.23 New Channel User
                                   List Payload
 
@@ -692,6 +696,12 @@ List of SILC Packet types are defined as follows.
           packet.  This packet maybe sent to entity that is indirectly
           connected to the sender.
 
+          When received and the replaced ID is Client ID the server or
+          router must distribute SILC_NOTIFY_TYPE_NICK_CHANGE to the
+          local clients on the channels (if any) of the client whose
+          ID was changed.  However, the notify type must be sent only
+          once per client.
+
           Payload of the packet:  See section 2.3.24 Replace ID Payload
 
 
@@ -702,6 +712,12 @@ List of SILC Packet types are defined as follows.
           this packet.  This packet maybe sent to entity that is
           indirectly connected to the sender.
 
+          When received and the replaced ID is Client ID the server or
+          router must distribute SILC_NOTIFY_TYPE_SIGNOFF to the
+          local clients on the channels (if any) of the client whose
+          ID was changed.  However, the notify type must be sent only
+          once per client.
+
           Payload of the packet:  See section 2.3.25 Remove ID Payload
 
 
@@ -711,6 +727,9 @@ List of SILC Packet types are defined as follows.
           used by router to notify other routers in the network that a
           client has left a channel.  This packet maybe sent to entity
           that is indirectly connected to the sender.
+
+          When received, the server or router must distribute
+          SILC_NOTIFY_TYPE_LEAVEW to local clients on the channel.
 
           Payload of the packet:  See section 2.3.26 Remove Channel User
                                   Payload
@@ -1007,9 +1026,10 @@ o Reject Indication (variable length) - Indication of
 
 Notify payload is used to send notify messages.  The payload is usually
 sent from server to client, however, server may send it to another
-server as well.  Client must not send this payload.  The receiver of
-this payload may totally ignore the contents of the payload, however,
-notify message should be noted and possibly logged.
+server as well.  This payload may also be sent to a channel.  Client must
+not send this payload.  The receiver of this payload may totally ignore the
+contents of the payload, however, notify message should be noted and
+possibly logged.
 
 The payload may only be sent with SILC_PACKET_NOTIFY packet.  It must
 not be sent in any other packet type.  Following diagram represents the
@@ -1020,14 +1040,10 @@ Notify Payload.
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|          Notify Type          |        Message Length         |
+|          Notify Type          |        Payload Length         |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-| Argument Nums |                                               |
-+-+-+-+-+-+-+-+-+                                               +
-|                                                               |
-~                        Notify Message                         ~
-|                                                               |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| Argument Nums |
++-+-+-+-+-+-+-+-+
 .in 3
 
 .ce
@@ -1038,70 +1054,148 @@ Figure 9:  Notify Payload
 o Notify Type (2 bytes) - Indicates the type of the notify
   message.
 
-o Message Length (2 bytes) - Length of the Notify Message area 
-  not ncluding the length of any other fields in the payload.
+o Payload Length (2 bytes) - Length of the entire Notify Payload
+  including any associated Argument Payloads.
 
 o Argument Nums (2 bytes) - Indicates the number of Argument
   Payloads associated to this payload.  Notify types may define
   arguments to be send along the notify message.
-
-o Notify Message (variable length) - Human readable notify
-  message.  The format of this message is implementation specific.
-  The message can be for example "%s has joined channel %s".
 .in 3
 
-Following notify types has been defined:
+Following list of currently defined notify types.  The format for notify
+arguments is same as in SILC commands described in [SILC1].  Also, all
+ID's sent in arguments are sent inside ID Payload.
 
 .in 6
 0     SILC_NOTIFY_TYPE_NONE
 
-      If no specific notify type apply for the notify
-      message this type may be used.
+      If no specific notify type apply for the notify message this type
+      may be used.
 
-      No arguments associated to this type.
+      Max Arguments:  1
+          Arguments:  (1) <message>
+
+      The <message> is implementation specific free text string.  Receiver
+      may ignore this message.
+
 
 1     SILC_NOTIFY_TYPE_INVITE
 
-      Sent when receiver has been invited to a channel.
+      Sent when receiver has been invited to a channel.  This type must be
+      sent directly to the invited client.
 
-      This type includes two arguments: nickname and channel name.
+      Max Arguments:  2
+          Arguments:  (1) <Client ID>  (2) <Channel ID>
+
+      The <Client ID> is the client who invites the receiver of this type 
+      to channel indicated by <Channel ID>.
+
 
 2     SILC_NOTIFY_TYPE_JOIN
 
-      Sent when client has joined to a channel.
+      Sent when client has joined to a channel.  The server must distribute
+      this type only to the local clients on the channel and then send
+      SILC_PACKET_NEW_CHANNEL_USER packet to its primary route.  The router
+      or server receiving the packet distributes this type to the local
+      clients on the channel.  See description of SILC_PACKET_NEW_CHANNEL_USER
+      packet for more information.
 
-      This type includes six arguments: Client ID, nickname, username,
-      hostname, Channel ID and channel name.  The Client ID and Channel ID
-      are sent inside ID Payload.
+      Max Arguments:  1
+          Arguments:  (1) <Client ID>
+
+      The <Client ID> is the client that joined to the channel.
+
 
 3     SILC_NOTIFY_TYPE_LEAVE
 
-      Sent when client has left a channel.
+      Sent when client has left a channel.  The server must distribute
+      this type only to the local clients on the channel and then send
+      SILC_PACKET_REMOVE_CHANNEL_USER packet to its primary route.  The
+      router or server receiving the packet distributes this type to the
+      local clients on the channel.  See description of 
+      SILC_PACKET_REMOVE_CHANNEL_USER packet for more information.
 
-      This type includes four arguments: nickname, server name,
-      Channel ID and channel name.  The Channel ID is sent inside ID
-      Payload.
+      Max Arguments:  1
+          Arguments:  (1) <Client ID>
+
+      The <Client ID> is the client who left the channel.
+
 
 4     SILC_NOTIFY_TYPE_SIGNOFF
 
-      Sent when client signoffs from SILC network.
+      Sent when client signoffs from SILC network.  This type is sent only
+      if the client was joined to any channel.  This type is sent by server
+      or router when SILC_PACKET_REMOVE_ID packet has been received.  See
+      detailed information from description of SILC_PACKET_REMOVE_ID packet.
 
-      This type includes three arguments: nickname, server name and
-      Channel ID.  The Channel ID is sent inside ID Payload.
+      Max Arguments:  1
+          Arguments:  (1) <Client ID>
+
+      The <Client ID> is the client who left SILC network.
+
 
 5     SILC_NOTIFY_TYPE_TOPIC_SET
 
-      Sent when topic is set/changed on a channel.
+      Sent when topic is set/changed on a channel.  This type must be sent
+      only to the clients who is joined on the channel whose topic was
+      set or changed.
 
-      This type includes four arguments: Channel ID, topic, nickname and
-      hostname.  The Channel ID is sent inside ID Payload.
+      Max Arguments:  2
+          Arguments:  (1) <Client ID>  (2) <topic>
+
+      The <Client ID> is the client who set or changed the <topic>.
+
 
 6     SILC_NOTIFY_TYPE_NICK_CHANGE
 
-      Sent when client changes nick on a channel.
+      Sent when client changes nick on a channel.  This type is sent only if
+      the client has joined to any channel.  This type is sent by server or
+      router when SILC_PACKET_REPLACE_ID packet has been received.  See 
+      detailed information from description of SILC_PACKET_REPLACE_ID packet.
 
-      This type includes two arguments: nickname and Channel ID.
-      The Channel ID is sent inside ID Payload.
+      Max Arguments:  2
+          Arguments:  (1) <Old Client ID>  (2) <New Client ID>
+
+      The <Old Client ID> is the old ID of the client who changed the 
+      nickname.  The <New Client ID> is the new ID generated by the change
+      of the nickname.
+
+
+7     SILC_NOTIFY_TYPE_CMODE_CHANGE
+
+      Sent when channel mode has changed.  This type must be sent only to
+      the clients who is joined on the channel whose mode was changed.
+
+      Max Arguments:  2
+          Arguments:  (1) <Client ID>  (2) <mode mask>
+
+      The <Client ID> is the client who changed the mode.  The <mode mask>
+      is the new mode mask of the channel.
+
+
+8     SILC_NOTIFY_TYPE_CUMODE_CHANGE
+
+      Sent when user mode on channel has changed.  This type must be sent
+      only to the clients who is joined on the channel where the target 
+      client is on.
+
+      Max Arguments: 3
+          Arguments:  (1) <Client ID>  (2) <mode mask>
+                      (3) <Target Client ID>
+
+      The <Client ID> is the client who changed the mode.  The <mode mask>
+      is the new mode mask of the channel.  The <Target Client ID> is the
+      client whose mode was changed.
+
+
+9     SILC_NOTIFY_TYPE_MOTD
+
+      Sent when Message of the Day (motd) is sent to client.
+
+      Max Arguments:  1
+          Arguments:  (1) <motd>
+
+      The <motd> is the Message of the Day.
 .in 3
 
 Notify types starting from 16384 are reserved for private notify

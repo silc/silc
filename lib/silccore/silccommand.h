@@ -34,21 +34,21 @@ typedef struct SilcCommandPayloadStruct *SilcCommandPayload;
 /* Command flags. These set how the commands behave on different
    situations. These can be OR'ed together to set multiple flags. */
 typedef enum {
-  SILC_CF_NONE = 0,
+  SILC_CF_NONE           = 0,
 
   /* Command may only be used once per (about) 2 seconds */
-  SILC_CF_LAG = (1L << 1),
+  SILC_CF_LAG            = (1L << 1),
 
   /* Command is available for registered connections (connections
      whose ID has been created. */
-  SILC_CF_REG = (1L << 2),
+  SILC_CF_REG            = (1L << 2),
 
   /* Command is available only for server operators */
-  SILC_CF_OPER = (1L << 3),
+  SILC_CF_OPER           = (1L << 3),
 
   /* Command is available only for SILC (router) operators. If this 
      is set SILC_CF_OPER is not necessary to be set. */
-  SILC_CF_SILC_OPER = (1L << 4),
+  SILC_CF_SILC_OPER      = (1L << 4),
 
 } SilcCommandFlag;
 
@@ -72,13 +72,14 @@ typedef enum {
 #define SILC_COMMAND_MOTD		15
 #define SILC_COMMAND_UMODE		16
 #define SILC_COMMAND_CMODE		17
-#define SILC_COMMAND_KICK		18
-#define	SILC_COMMAND_RESTART	        19
-#define	SILC_COMMAND_CLOSE		20
-#define	SILC_COMMAND_DIE		21
-#define SILC_COMMAND_SILCOPER	        22
-#define SILC_COMMAND_LEAVE		23
-#define SILC_COMMAND_NAMES		24
+#define SILC_COMMAND_CUMODE		18
+#define SILC_COMMAND_KICK		19
+#define	SILC_COMMAND_RESTART	        20
+#define	SILC_COMMAND_CLOSE		21
+#define	SILC_COMMAND_DIE		22
+#define SILC_COMMAND_SILCOPER	        23
+#define SILC_COMMAND_LEAVE		24
+#define SILC_COMMAND_NAMES		25
 
 /* Reserved */
 #define SILC_COMMAND_RESERVED           255
@@ -107,24 +108,25 @@ typedef unsigned short SilcCommandStatus;
 #define SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID  23
 #define SILC_STATUS_ERR_NICKNAME_IN_USE     24
 #define SILC_STATUS_ERR_NOT_ON_CHANNEL      25
-#define SILC_STATUS_ERR_USER_ON_CHANNEL     26
-#define SILC_STATUS_ERR_NOT_REGISTERED      27
-#define SILC_STATUS_ERR_NOT_ENOUGH_PARAMS   28
-#define SILC_STATUS_ERR_TOO_MANY_PARAMS     29
-#define SILC_STATUS_ERR_PERM_DENIED         30
-#define SILC_STATUS_ERR_BANNED_FROM_SERVER  31
-#define SILC_STATUS_ERR_BAD_PASSWORD        32
-#define SILC_STATUS_ERR_CHANNEL_IS_FULL     33
-#define SILC_STATUS_ERR_NOT_INVITED         34
-#define SILC_STATUS_ERR_BANNED_FROM_CHANNEL 35
-#define SILC_STATUS_ERR_UNKNOWN_MODE        36
-#define SILC_STATUS_ERR_NOT_YOU             37
-#define SILC_STATUS_ERR_NO_CHANNEL_PRIV     38
-#define SILC_STATUS_ERR_NO_SERVER_PRIV      39
-#define SILC_STATUS_ERR_NO_ROUTER_PRIV      40
-#define SILC_STATUS_ERR_BAD_NICKNAME        41
-#define SILC_STATUS_ERR_BAD_CHANNEL         42
-#define SILC_STATUS_ERR_AUTH_FAILED         43
+#define SILC_STATUS_ERR_USER_NOT_ON_CHANNEL 26
+#define SILC_STATUS_ERR_USER_ON_CHANNEL     27
+#define SILC_STATUS_ERR_NOT_REGISTERED      28
+#define SILC_STATUS_ERR_NOT_ENOUGH_PARAMS   29
+#define SILC_STATUS_ERR_TOO_MANY_PARAMS     30
+#define SILC_STATUS_ERR_PERM_DENIED         31
+#define SILC_STATUS_ERR_BANNED_FROM_SERVER  32
+#define SILC_STATUS_ERR_BAD_PASSWORD        33
+#define SILC_STATUS_ERR_CHANNEL_IS_FULL     34
+#define SILC_STATUS_ERR_NOT_INVITED         35
+#define SILC_STATUS_ERR_BANNED_FROM_CHANNEL 36
+#define SILC_STATUS_ERR_UNKNOWN_MODE        37
+#define SILC_STATUS_ERR_NOT_YOU             38
+#define SILC_STATUS_ERR_NO_CHANNEL_PRIV     39
+#define SILC_STATUS_ERR_NO_SERVER_PRIV      40
+#define SILC_STATUS_ERR_NO_ROUTER_PRIV      41
+#define SILC_STATUS_ERR_BAD_NICKNAME        42
+#define SILC_STATUS_ERR_BAD_CHANNEL         43
+#define SILC_STATUS_ERR_AUTH_FAILED         44
 
 /* Prototypes */
 SilcCommandPayload silc_command_payload_parse(SilcBuffer buffer);
@@ -137,6 +139,9 @@ SilcBuffer silc_command_payload_encode(SilcCommand cmd,
 SilcBuffer silc_command_payload_encode_va(SilcCommand cmd, 
 					  unsigned short ident, 
 					  unsigned int argc, ...);
+SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd, 
+					   unsigned short ident, 
+					   unsigned int argc, va_list ap);
 SilcBuffer 
 silc_command_reply_payload_encode_va(SilcCommand cmd, 
 				     SilcCommandStatus status,

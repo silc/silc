@@ -528,3 +528,19 @@ void silc_parse_command_line(unsigned char *buffer,
 
   *parsed_num = argc;
 }
+
+/* Formats arguments to a string and returns it after allocating memory
+   for it. It must be remembered to free it later. */
+
+char *silc_format(char *fmt, ...)
+{
+  va_list args;
+  static char buf[8192];
+
+  memset(buf, 0, sizeof(buf));
+  va_start(args, fmt);
+  vsnprintf(buf, sizeof(buf) - 1, fmt, args);
+  va_end(args);
+
+  return strdup(buf);
+}

@@ -27,13 +27,13 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 void silc_private_message(SilcClient client, SilcClientConnection conn,
 			  char *sender, char *msg);
 void silc_notify(SilcClient client, SilcClientConnection conn, 
-		 SilcNotifyPayload notify_payload);
+		 SilcNotifyType type, ...);
 void silc_command(SilcClient client, SilcClientConnection conn, 
 		  SilcClientCommandContext cmd_context, int success,
 		  SilcCommand command);
 void silc_command_reply(SilcClient client, SilcClientConnection conn,
 			SilcCommandPayload cmd_payload, int success,
-			SilcCommandStatus status, SilcCommand command, ...);
+			SilcCommand command, SilcCommandStatus status, ...);
 void silc_connect(SilcClient client, SilcClientConnection conn, int success);
 void silc_disconnect(SilcClient client, SilcClientConnection conn);
 unsigned char *silc_ask_passphrase(SilcClient client, 
@@ -46,5 +46,7 @@ int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 			 SilcProtocolAuthMeth *auth_meth,
 			 unsigned char **auth_data,
 			 unsigned int *auth_data_len);
+void silc_failure(SilcClient client, SilcClientConnection conn, 
+		  SilcProtocol protocol, void *failure);
 
 #endif

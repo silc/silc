@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.2  2000/10/31 19:48:32  priikone
+ * 	A LOT updates. Cannot separate. :)
+ *
  * Revision 1.1  2000/09/13 17:45:16  priikone
  * 	Splitted SILC core library. Core library includes now only
  * 	SILC protocol specific stuff. New utility library includes the
@@ -149,8 +152,9 @@ int silc_net_create_connection(int port, char *host)
     return -1;
   }
 
-  /* Set appropriate option */
+  /* Set appropriate options */
   silc_net_set_socket_opt(sock, IPPROTO_TCP, TCP_NODELAY, 1);
+  silc_net_set_socket_opt(sock, SOL_SOCKET, SO_KEEPALIVE, 1);
 
   SILC_LOG_DEBUG(("Connection created"));
 
@@ -205,8 +209,9 @@ int silc_net_create_connection_async(int port, char *host)
     }
   }
 
-  /* Set appropriate option */
+  /* Set appropriate options */
   silc_net_set_socket_opt(sock, IPPROTO_TCP, TCP_NODELAY, 1);
+  silc_net_set_socket_opt(sock, SOL_SOCKET, SO_KEEPALIVE, 1);
 
   SILC_LOG_DEBUG(("Connection operation in progress"));
 
@@ -303,4 +308,14 @@ void silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
   *ip = silc_calloc(strlen(host_ip) + 1, sizeof(char));
   memcpy(*ip, host_ip, strlen(host_ip));
   SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));
+}
+
+/* Return name of localhost. */
+
+char *silc_net_localhost()
+{
+  char hostname[256];
+  if (!gethostname(hostname, sizeof(hostname)))
+    return strdup(hostname);
+  return NULL;
 }

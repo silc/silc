@@ -1,3 +1,158 @@
+Tue Oct 31 20:10:37 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Updated README.
+
+	* Added TRQ (efficient deque and list library) into lib/trq.  This is
+	  a very good list library that is currently used in the SILC.  Defined
+	  SilcList API over the library because I didn't like the API very
+	  much.  See lib/trq/silclist.h for the API and examples of how to
+	  use the API.  Fixed various places in the code to use the new
+	  SilcList API. The SilcList is meant for lists that has a structure
+	  already defined as a list.  It is not suitable to add just some
+	  context to the list (in TRQ, the context is the list actually).
+
+	  So, I defined SilcDList that can be used for the purpose where 
+	  predefined list structure does not exit.  This can be used as
+	  such list.  Now some context just can be added to the SilcDList.
+	  Currently this list is not used in the SILC just yet, though there
+	  are a lot places where this can replace dynamically allocated
+	  tables and I will fix these places, later, to use SilcDList.
+	  See lib/trq/silcdlist.h for SilcDList (they are all inline functions,
+	  and use TRQ internally).
+
+	  Also fixed some annoying warning messages that the original TRQ
+	  code generated.  Also minor changes to TRQ's Makefile.in.
+
+	* Added support for querying by Client ID to both WHOIS and 
+	  IDENTIFY commands into server, as required by the protocol.
+
+	* Removed method function pointers from SilcBuffer structure. They
+	  weren't used to anything and just increased the context size for
+	  no good reason.  This change also made silc_buffer_alloc and
+	  silc_buffer_free functions inline functions.
+
+	* Disabled command flooding detection support until it's fixed so 
+	  that it accepts commands in but does not execute them more than once
+	  in two seconds.
+
+	* Added silc_net_localhost(), to return local hostname, into
+	  lib/silcutil/silcnet.[ch].  Also added client->hostname pointer
+	  that must be initialized before calling silc_client_init.
+
+	* Added new function: silc_server_send_notify_on_channels to send
+	  notify messages to all channels client has joined.  It is assured
+	  that the message is sent only once per client.
+
+	* Moved silc_log_format (from lib/silcutil/silclog.[ch] into
+	  lib/silcutil/silcutil.[ch] as silc_format function.  The new 
+	  function is generic and is used by server as well, not only by
+	  the logging routines.
+
+	* Added new SKE status type: SILC_SKE_STATUS_BAD_VERSION to indicate
+	  the provided version string was not acceptable.  Added new function:
+	  silc_ske_check_version into lib/silcske/silcske.h.  The function
+	  must be implemented by the application (client or server) and it
+	  does not reside in the SKE library.  The function checks the version
+	  string remote end sent.
+
+	* Added back pointers (to opaque context and to SilcSocketConnection) 
+	  into SilcPacketContext structure into lib/silccore/silcpacket.h.
+
+	* Added silc_packet_context_dup into lib/silccore/silcpacket.[ch] to
+	  duplicate packet context structure.
+
+	* Changed `notify' client operation to send same arguments as client
+	  receives from server except for ID's.  ID's are mapped to correct
+	  ID entry and that is returned.  Also, if channel entry is not sent
+	  by server but the notify is for channel the channel entry is sent
+	  to application (otherwise application doesn't know that it is for
+	  channel (library gets it from packet's Destination ID)).
+
+	* Added silc_client_remove_from_channels into client library to 
+	  remove a client from all channels it has joined to.  Used when 
+	  received SIGNOFF notify from server.  Added also new function
+	  silc_client_replace_from_channels to replace old ID entry with
+	  new ID entry on all channels.  Used when received NICK_CHANGE
+	  notify from server.
+
+	* Fixed ID Cache list handling in silc_idlist_get_client in 
+	  lib/silcclient/idlist.c.  Also, added silc_idlist_get_client_by_id
+	  to get (or query) client by ID.
+
+	* Updated TODO list.
+
+	* Added connection authentication status message defined by the
+	  protocol: SILC_CONN_AUTH_OK and SILC_CONN_AUTH_FAILED and added the
+	  support for these into the code in client and server side.
+
+	* Added generic function silc_client_send_command to send any command
+	  with variable argument list.  Application should use this function
+	  to send commands if the command functions provided by the library
+	  does not suite for the application's user interface needs.
+
+	* Added new `failure' client operation.  Application is notified about
+	  received failure packet if client is executing a protocol.  In this
+	  case the protocol's execution has failed.
+
+	* Added SKE's end notify to send the SKE_SUCCESS notify message that
+	  is required by the protocol.
+
+	* Added SILC_PROTOCOL_STATE_FAILURE to indicate received failure
+	  packet from remote.  SILC_PROTOCOL_STATE_ERROR indicates local
+	  error at our end.
+
+	* Added status flag to SilcSKE object to indicate realtime status
+	  of the SKE protocol.
+
+	* Application receives now exactly same command reply arguments as
+	  the library receives from server.  However, if ID is received the
+	  corresponding ID entry is returned to the application (eg. Client
+	  ID is mapped to correct SilcClientEntry entry and that is returned).
+	  Changed command_reply client operation due to this change.
+
+	* Changed all ID's in commands and in command replys as ID Payloads.
+	  Change affected both client and server side codes.
+
+	  All ID's sent in SILC network (with execption of ID's in SILC
+	  Packet header) are sent in ID Payload to support variable length
+	  ID's.
+
+	* Server now notifies nick changes and notifies all clients on
+	  the channels about the new nickname (about the new Client ID,
+	  actually).
+
+	* Implemented CMODE command to change channel modes. Supports all
+	  channel modes defined by the protocol specs except ban and invite
+	  lists. (Also, private channel key mode is supported but support for
+	  setting private channel key in client is missing, thus, this mode
+	  has no effect on client side (except that server requires that the
+	  client uses private channel key and normal channel traffic does not
+	  work anymore)).
+
+	  Also, invite mode works per se, but INVITE command does not work
+	  yet correctly, so you can set channel as invite only channel but
+	  inviting clients to the channel does not work (it is yet to be
+	  thought what's the best way to do it).
+
+	* Added new command SILC_COMMAND_CUMODE to change user mode on the
+	  channel.  Defined user modes: CHANNEL_FOUNDER and CHANNEL_OPERATOR.
+	  Implemented CUMODE command to change user's mode on the channel.
+	  Supports all modes defined by the protocol specs.
+
+	* Added NAMES command reply to return users modes on the channel.
+
+	* Removed unnecessary and slow ciphers from lib/silccrypt.
+
+	* Set SO_KEEPALIVE option to connection sockets by default.
+
+	* Added new command reply status: SILC_STATUS_USER_NOT_ON_CHANNEL.
+
+	* Added notify types: MOTD, CMODE_CHANGE and CUMODE_CHANGE.  Also,
+	  redefined the Notify Payload into protocol specs.
+
+	* Added silc_id_payload_parse_id to get ID directly from raw
+	  ID payload data.
+
 Mon Oct  9 20:57:02 EEST 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed SILC_COMMAND_IDENTIFY in protocol specification to 

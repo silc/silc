@@ -180,7 +180,7 @@ typedef enum {
 #define SILC_STR_UI_XNSTRING_ALLOC(x, l) \
   SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC, (x), (l)
 
-/* Marks end of the argument list. This must the at the end of the
+/* Marks end of the argument list. This must be at the end of the
    argument list or error will occur. */
 #define SILC_STR_END SILC_BUFFER_PARAM_END
 

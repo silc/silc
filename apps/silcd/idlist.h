@@ -232,7 +232,7 @@ struct SilcClientEntryStruct {
   /* Pointer to the router */
   SilcServerEntry router;
 
-  /* Pointers to channels this client has joined */
+  /* List of channels client has joined to */
   SilcChannelEntry *channel;
   unsigned int channel_count;
 
@@ -258,14 +258,15 @@ struct SilcClientEntryStruct {
 
        Pointer to the client list. This is the client currently on channel.
 
-   int mode
+   unsigned int mode
 
        Client's current mode on the channel.
 
 */
 typedef struct SilcChannelClientEntryStruct {
   SilcClientEntry client;
-  int mode;
+  unsigned int mode;
+  struct SilcChannelClientEntryStruct *next;
 } *SilcChannelClientEntry;
 
 /* 
@@ -290,9 +291,10 @@ typedef struct SilcChannelClientEntryStruct {
 
        Logical name of the channel.
 
-   int mode
+   unsigned int mode
 
-       Current mode of the channel.
+       Current mode of the channel.  See lib/silccore/silcchannel.h for
+       all modes.
 
    SilcChannelID *id
 
@@ -312,6 +314,11 @@ typedef struct SilcChannelClientEntryStruct {
    char *topic
 
        Current topic of the channel.
+
+   char *cipher
+
+       Default cipher of the channel. If this is NULL then server picks
+       the cipher to be used. This can be set at SILC_COMMAND_JOIN.
 
    SilcServerEntry router
 
@@ -336,14 +343,24 @@ typedef struct SilcChannelClientEntryStruct {
 */
 struct SilcChannelEntryStruct {
   char *channel_name;
-  int mode;
+  unsigned int mode;
   SilcChannelID *id;
   int global_users;
   char *topic;
+  char *cipher;
+
+  /* Data that is related to different channel modes. */
+  struct {
+    unsigned int user_limit;
+    unsigned char *passphrase;
+    unsigned char *ban_list;
+    unsigned char *invite_list;
+    unsigned char *cipher;
+    unsigned int key_len;
+  } mode_data;
 
   /* List of users on channel */
-  SilcChannelClientEntry user_list;
-  unsigned int user_list_count;
+  SilcList user_list;
 
   /* Pointer to the router */
   SilcServerEntry router;

@@ -32,6 +32,7 @@ SilcSKE silc_ske_alloc()
   SILC_LOG_DEBUG(("Allocating new Key Exchange object"));
 
   ske = silc_calloc(1, sizeof(*ske));
+  ske->status = SILC_SKE_STATUS_OK;
 
   return ske;
 }
@@ -200,6 +201,7 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
   if (status == SILC_SKE_STATUS_OK)
     return SILC_SKE_STATUS_ERROR;
 
+  ske->status = status;
   return status;
 }
 
@@ -368,6 +370,7 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
   if (status == SILC_SKE_STATUS_OK)
     return SILC_SKE_STATUS_ERROR;
 
+  ske->status = status;
   return status;
 }
 
@@ -425,6 +428,7 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
   if (status == SILC_SKE_STATUS_OK)
     return SILC_SKE_STATUS_ERROR;
 
+  ske->status = status;
   return status;
 }
 
@@ -499,6 +503,7 @@ SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske,
   if (status == SILC_SKE_STATUS_OK)
     return SILC_SKE_STATUS_ERROR;
 
+  ske->status = status;
   return status;
 }
 
@@ -640,6 +645,7 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
   if (status == SILC_SKE_STATUS_OK)
     return SILC_SKE_STATUS_ERROR;
 
+  ske->status = status;
   return status;
 }
 
@@ -651,18 +657,22 @@ SilcSKEStatus silc_ske_end(SilcSKE ske,
 			   SilcSKESendPacketCb send_packet,
 			   void *context)
 {
-  SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer packet;
 
   SILC_LOG_DEBUG(("Start"));
 
-  packet = silc_buffer_alloc(1);
-  packet->len = 0;
+  packet = silc_buffer_alloc(4);
+  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+  silc_buffer_format(packet,
+		     SILC_STR_UI_SHORT(SILC_SKE_STATUS_OK),
+		     SILC_STR_END);
 
   if (send_packet)
     (*send_packet)(ske, packet, SILC_PACKET_SUCCESS, context);
 
-  return status;
+  silc_buffer_free(packet);
+
+  return SILC_SKE_STATUS_OK;
 }
 
 /* Aborts the Key Exchange protocol. This is called if error occurs
@@ -781,7 +791,8 @@ silc_ske_select_security_properties(SilcSKE ske,
   payload->cookie_len = SILC_SKE_COOKIE_LEN;
   memcpy(payload->cookie, rp->cookie, SILC_SKE_COOKIE_LEN);
 
-  /* XXX Do version check */
+  /* Check version string */
+  silc_ske_check_version(ske, rp->version, rp->version_len);
 
   /* Put our version to our reply */
   payload->version = strdup(version);

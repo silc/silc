@@ -26,8 +26,9 @@
    client entry. This entry also includes the private message keys if
    they are used. */
 typedef struct SilcClientEntryStruct {
-  char *nickname;
-  char *server;
+  char *nickname;             /* nickname[@server] */
+  char *username;	      /* username[@host] */
+  char *server;		      /* SILC server name */
   unsigned int num;
   SilcClientID *id;
 
@@ -39,6 +40,12 @@ typedef struct SilcClientEntryStruct {
 
 typedef SilcClientEntryObject *SilcClientEntry;
 
+/* Client and its mode on a channel */
+typedef struct {
+  SilcClientEntry client;
+  unsigned int mode;
+} SilcChannelUsers;
+
 /* Channel entry context. This is allocate for every channel client has
    joined to. This includes for example the channel specific keys */
 /* XXX channel_key is the server generated key. Later this context must 
@@ -49,7 +56,7 @@ typedef struct SilcChannelEntryStruct {
   unsigned int mode;
   int on_channel;
 
-  SilcClientEntry *clients;
+  SilcChannelUsers *clients;
   unsigned int clients_count;
 
   /* Channel keys */
@@ -68,6 +75,10 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       char *nickname,
 				       char *server,
 				       unsigned int num);
+SilcClientEntry silc_idlist_get_client_by_id(SilcClient client,
+					     SilcClientConnection conn,
+					     SilcClientID *client_id,
+					     int query);
 SilcChannelEntry silc_idlist_get_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 char *channel);

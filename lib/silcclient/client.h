@@ -118,7 +118,7 @@ struct SilcClientConnectionObject {
   SilcClientAway *away;
 
   /* Pointer back to the SilcClient. This object is passed to the application
-     and the actual client object is accesible thourh this pointer. */
+     and the actual client object is accesible through this pointer. */
   SilcClient client;
 
   /* User data context. Library does not touch this. */
@@ -132,8 +132,9 @@ struct SilcClientObject {
    * of this structure.
    */
 
-  /* Users's username and realname. */
+  /* Users's username, hostname and realname. */
   char *username;
+  char *hostname;
   char *realname;
 
   /* Private and public key of the user. */
@@ -263,15 +264,14 @@ void silc_client_error_by_server(SilcClient client,
 				 SilcBuffer message);
 void silc_client_notify_by_server(SilcClient client,
 				  SilcSocketConnection sock,
-				  SilcBuffer message);
+				  SilcPacketContext *packet);
 void silc_client_receive_new_id(SilcClient client,
 				SilcSocketConnection sock,
-				unsigned char *id_string);
+				SilcIDPayload idp);
 void silc_client_new_channel_id(SilcClient client,
 				SilcSocketConnection sock,
 				char *channel_name,
-				unsigned int mode,
-				unsigned char *id_string);
+				unsigned int mode, SilcIDPayload idp);
 void silc_client_receive_channel_key(SilcClient client,
 				     SilcSocketConnection sock,
 				     SilcBuffer packet);
@@ -281,4 +281,11 @@ void silc_client_channel_message(SilcClient client,
 void silc_client_private_message(SilcClient client, 
 				 SilcSocketConnection sock, 
 				 SilcPacketContext *packet);
+void silc_client_remove_from_channels(SilcClient client,
+				      SilcClientConnection conn,
+				      SilcClientEntry client_entry);
+void silc_client_replace_from_channels(SilcClient client, 
+				       SilcClientConnection conn,
+				       SilcClientEntry old,
+				       SilcClientEntry new);
 #endif

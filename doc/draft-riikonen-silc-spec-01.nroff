@@ -823,11 +823,7 @@ about packet forwarding.
 Note that the command reply is usually sent only after client has sent
 the command request but server is allowed to send command reply packet
 to client even if client has not requested the command.  Client may,
-however, choose not to accept the command reply, but there are some
-command replies that the client should accept.  Example of a such
-command reply is reply to SILC_COMMAND_CMODE command that the server
-uses to distribute the channel mode on all clients on the channel
-when the mode has changed.
+however, choose ignore the command reply, but should not.
 
 It is expected that some of the commands may be miss-used by clients
 resulting various problems on the server side.  Every implementation
@@ -1727,7 +1723,7 @@ List of all defined commands in SILC follows.
    1    SILC_COMMAND_WHOIS
 
         Max Arguments:  3
-            Arguments:  (1) <nickname>[@<server>]  (2) [<Client ID>]
+            Arguments:  (1) [<nickname>[@<server>]]  (2) [<Client ID>]
                         (3) [<count>]
 
         Whois command is used to query various information about specific
@@ -1840,7 +1836,7 @@ List of all defined commands in SILC follows.
    3    SILC_COMMAND_IDENTIFY
 
         Max Arguments:  2
-            Arguments:  (1) <nickname>[@<server>]  (2) [<Client ID>]
+            Arguments:  (1) [<nickname>[@<server>]]  (2) [<Client ID>]
                         (3) [<count>]
 
         Identify.  Identify command is almost analogous to WHOIS command,
@@ -1865,7 +1861,7 @@ List of all defined commands in SILC follows.
         be based on specific nickname request.
 
         Implementations may not want to give interface access to this
-        command as it is hardly a command that would be used a end user.
+        command as it is hardly a command that would be used by an end user.
         However, it must be implemented as it is used with private message
         sending.
 
@@ -1913,6 +1909,12 @@ List of all defined commands in SILC follows.
         nicknames in SILC are case-sensitive which must be taken into
         account when searching clients by nickname.
 
+        When nickname is changed new Client ID is generated.  Server must
+        distribute SILC_NOTIFY_TYPE_NICK_CHANGE to local clients on the
+        channels (if any) the client is joined on.  Then it must send
+        SILC_PACKET_REPLACE_ID to its primary route to replace the old
+        Client ID with the new one.
+
         Reply messages to the command:
 
         Max Arguments:  2
@@ -1933,10 +1935,6 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NOT_REGISTERED
             SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
             SILC_STATUS_ERR_TOO_MANY_PARAMS
-
-
-
-
 
 
    5    SILC_COMMAND_LIST
@@ -2225,9 +2223,6 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_AUTH_FAILED
 
 
-
-
-
    14   SILC_COMMAND_JOIN
 
         Max Arguments:  3
@@ -2268,7 +2263,7 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  5
+        Max Arguments:  6
             Arguments:  (1) <Status Payload>  (2) <channel> 
                         (3) <Channel ID>      (4) <channel mode mask>
                         (5) [<ban mask>]      (6) [<invite list>]
@@ -2388,11 +2383,11 @@ List of all defined commands in SILC follows.
 
    17   SILC_COMMAND_CMODE
 
-        Max Arguments:  8
+        Max Arguments:  7
             Arguments:  (1) <Channel ID>    (2) <channel mode mask>
                         (3) [<user limit>]  (4) [<passphrase>]
                         (5) [<ban mask>]    (6) [<invite list>]
-                        (7) [<Client ID>]   (8) [<cipher>[:<key len>]]
+                        (7) [<cipher>[:<key len>]]
 
         This command is used by client to set or change channel flags on
         a channel.  Channel has several modes that set various properties
@@ -2401,6 +2396,9 @@ List of all defined commands in SILC follows.
         target channel.  The client changing channel mode must be on
         the same channel and poses sufficient privileges to be able to
         change the mode.
+
+        When the mode is changed SILC_NOTIFY_TYPE_CMODE_CHANGE notify
+        type is distributed to the channel.
 
         Following channel modes are defined:
 
@@ -2525,13 +2523,18 @@ List of all defined commands in SILC follows.
               unsetting a ban mask the mask must be provided as
               argument.  Channel founder and channel operator may
               set/unset this mode.  Channel founder may not be
-              added to the ban list.
+              added to the ban list.  <ban mask> is comma (`,') separated
+              list of banned clients in following format:
+
+                [<nickname>!][<username>]@[<hostname>]
+
+              Wildcards maybe used when banning clients.
 
               Typical implementation would use [+|-]b on user interface
               to set/unset this mode.
 
 
-           0x0100    SILC_CMODE_INVITE
+           0x0100    SILC_CMODE_INVITE_LIST
 
               Invite list has been set to the channel.  The invite list
               can be used to mark the clients that is able to join
@@ -2539,32 +2542,28 @@ List of all defined commands in SILC follows.
               be invite-only channel.  The <invite list> argument is the
               set invite mask.  When unsetting entry from the invite list
               the entry must be provided as argument.  Channel founder and
-              channel operator may set/unset this mode.
+              channel operator may set/unset this mode.  The <invite list>
+              is command (`,') separated list of invited clients in following
+              format:
+
+                [<nickname>!][<username>]@[<hostname>]
+
+              Wildcards maybe used when setting the invite list.
 
               Typical implementation would use [+|-]I on user interface
               to set/unset this mode.
 
         
-           0x0200    SILC_CMODE_OPERATOR
-
-              Sets channel operator privileges on the channel for a
-              client on the channel.  The <Client ID> argument is the
-              target client on the channel.  Channel founder and
-              channel operator may set/unset (promote/demote) this
-              mode.
-
-              Typical implementation would use [+|-]o on user interface
-              to set/unset this mode.
-
-
-           0x0400    SILC_CMODE_CIPHER
+           0x0200    SILC_CMODE_CIPHER
 
               Sets specific cipher to be used to protect channel
               traffic.  The <cipher> argument is the requested cipher.
               When set or unset the server must re-generate new
               channel key.  If <key len> argument is specified with
               <cipher> argument the new key is generated of <key len>
-              length.
+              length in bits.  Only channel founder may set the cipher of 
+              the channel.  When unset the new key is generated using
+              default cipher for the channel.
 
               Typical implementation would use [+|-]c on user interface
               to set/unset this mode.
@@ -2585,9 +2584,7 @@ List of all defined commands in SILC follows.
             Arguments:  (1) <Status Payload>  (2) <channel mode mask>
 
         This command replies with the changed channel mode mask that
-        client is required to keep locally.  The same mask is also
-        sent to all clients on channel by sending additional command
-        reply to them.
+        client is required to keep locally.
 
         Status messages:
 
@@ -2601,12 +2598,76 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CHANNEL_ID
             SILC_STATUS_ERR_NO_CHANNEL_PRIV
             SILC_STATUS_ERR_UNKNOWN_MODE
-            SILC_STATUS_ERR_NO_CLIENT_ID
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
 
 
+   19   SILC_COMMAND_CUMODE
+
+        Max Arguments:  3
+            Arguments:  (1) <Channel ID>  (2) <mode mask>
+                        (3) <Client ID>
+
+        This command is used by client to change channel user modes on
+        channel.  Users on channel may have some special modes and this
+        command is used by channel operators to set or change these modes.
+        The <Channel ID> is the ID of the target channel.  The <mode mask>
+        is OR'ed mask of modes.  The <Client ID> is the target client.
+        The client changing channel user modes must be on the same channel
+        as the target client and poses sufficient privileges to be able to
+        change the mode.
+
+        When the mode is changed SILC_NOTIFY_TYPE_CUMODE_CHANGE notify
+        type is distributed to the channel.
+
+        Following channel modes are defined:
+
+           0x0000    SILC_CUMODE_NONE
+
+              No specific mode.  This is the normal situation for client.
+              Also, this is the mode set when removing all modes from client.
 
 
-   18   SILC_COMMAND_KICK
+           0x0001    SILC_CUMODE_FOUNDER
+
+              The client is channel founder of the channel.  This mode
+              cannot be set by other client, it is set by the server when
+              the channel was founded (created).  The mode is provided 
+              because client may remove the founder rights from itself.
+
+
+           0x0002    SILC_CUMODE_OPERATOR
+
+              Sets channel operator privileges on the channel for a
+              client on the channel.  Channel founder and channel operator
+              may set/unset (promote/demote) this mode.
+
+
+        Reply messages to the command:
+
+        Max Arguments:  3
+            Arguments:  (1) <Status Payload>  (2) <channel user mode mask>
+                        (3) <Client ID>
+
+        This command replies with the changed channel user mode mask that
+        client is required to keep locally.  The <Client ID> is the target
+        client.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ON_CHANNEL
+            SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID
+            SILC_STATUS_ERR_BAD_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_ID
+            SILC_STATUS_ERR_NO_CHANNEL_PRIV
+            SILC_STATUS_ERR_UNKNOWN_MODE
+            SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
+
+
+   19   SILC_COMMAND_KICK
 
         Max Arguments:  3
             Arguments:  (1) <channel>  (2) <Client ID>  
@@ -2637,7 +2698,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CLIENT_ID
 
 
-   19   SILC_COMMAND_RESTART
+   20   SILC_COMMAND_RESTART
 
         Max Arguments:  0
             Arguments:  None
@@ -2662,7 +2723,7 @@ List of all defined commands in SILC follows.
 
 
 
-   20   SILC_COMMAND_CLOSE
+   21   SILC_COMMAND_CLOSE
 
         Max Arguments:  1
             Arguments:  (1) <Server ID>
@@ -2689,7 +2750,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SUCH_SERVER_ID
 
 
-   21   SILC_COMMAND_DIE
+   22   SILC_COMMAND_DIE
 
         Max Arguments:  0
             Arguments:  None
@@ -2714,7 +2775,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SERVER_PRIV
 
 
-   22   SILC_COMMAND_SILCOPER
+   23   SILC_COMMAND_SILCOPER
 
         Max Arguments:  2
             Arguments:  (1) <username>  (2) <authentication data>
@@ -2754,7 +2815,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_AUTH_FAILED
 
 
-   23   SILC_COMMAND_LEAVE
+   24   SILC_COMMAND_LEAVE
 
         Max Arguments:  1
             Arguments:  (1) <Channel ID>
@@ -2782,7 +2843,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CHANNEL_ID
 
 
-   24   SILC_COMMAND_NAMES
+   25   SILC_COMMAND_NAMES
 
         Max Arguments:  1
             Arguments:  (1) <Channel ID>
@@ -2797,21 +2858,26 @@ List of all defined commands in SILC follows.
         command must not send the list of users, as private and secret
         channels cannot be seen by outside.  In this case the returned
         name list may include a indication that the server could not 
-        resolve the names of the users on the channel.
+        resolve the names of the users on the channel.  Also, in this case
+        Client ID's or client modes are not sent either.
 
         Reply messages to the command:
 
-        Max Arguments:  3
+        Max Arguments:  5
             Arguments:  (1) <Status Payload>  (2) <Channel ID>
                         (3) <name list>       (4) <Client ID list>
+                        (5) <client mode list>
 
         This command replies with the Channel ID of the requested channel,
         comma separated list of users on the channel and Client ID list
         of the users on the list.  The Client ID list has Client ID's
         of all users in the list.  First Client ID in the list must be
-        the Client ID of the first user in <name list>.  The Client ID
-        List is formed by adding Client ID's each after each.  Note that
-        the Client ID list is binary data.
+        the Client ID of the first user in <name list>.  The <Client ID
+        list> is formed by adding Client ID's each after each.  Note that
+        the Client ID list is binary data and the length of each ID must
+        be snooped from the data.  The <client mode list> is formed by
+        adding client's user modes on the channel each after each (4 bytes 
+        each).
 
         Status messages:
 
@@ -2825,7 +2891,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NOT_ON_CHANNEL
 
 
-   25 - 199
+   26 - 199
 
         Currently undefined commands.
 
@@ -2995,95 +3061,100 @@ List of all defined command status messages following.
    25   SILC_STATUS_ERR_NOT_ON_CHANNEL
 
         "You are not on that channel".  The command were specified for
-        client user is not currently on.
+        channel user is not currently on.
 
-   26   SILC_STATUS_ERR_USER_ON_CHANNEL
+   26   SILC_STATUS_ERR_USER_NOT_ON_CHANNEL
+
+        "They are not on channel".  The requested target client is not
+        on requested channel.
+
+   27   SILC_STATUS_ERR_USER_ON_CHANNEL
 
         "User already on channel".  User were invited on channel they
         already are on.
 
-   27   SILC_STATUS_ERR_NOT_REGISTERED
+   28   SILC_STATUS_ERR_NOT_REGISTERED
 
         "You have not registered".  User executed command that requires
         the client to be registered on the server before it may be
         executed.
 
-   28   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+   29   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
 
         "Not enough parameters".  Command requires more parameters
         than provided.
 
-   29   SILC_STATUS_ERR_TOO_MANY_PARAMS
+   30   SILC_STATUS_ERR_TOO_MANY_PARAMS
 
         "Too many parameters".  Too many parameters were provided
         for the command.
 
-   30   SILC_STATUS_ERR_PERM_DENIED
+   31   SILC_STATUS_ERR_PERM_DENIED
 
         "Your host is not among the privileged".  The client tried to
         register on server that does not allow this host to connect.
 
-   31   SILC_STATUS_ERR_BANNED_FROM_SERVER
+   32   SILC_STATUS_ERR_BANNED_FROM_SERVER
 
         "You are banned from this server".  The client tried to register
         on server that has explicitly denied this host to connect.
 
-   32   SILC_STATUS_ERR_BAD_PASSWORD
+   33   SILC_STATUS_ERR_BAD_PASSWORD
 
         "Cannot join channel. Incorrect password".  Password provided for 
         channel were not accepted.
 
-   33   SILC_STATUS_ERR_CHANNEL_IS_FULL
+   34   SILC_STATUS_ERR_CHANNEL_IS_FULL
 
         "Cannot join channel. Channel is full".  The channel is full
         and client cannot be joined to it.
 
-   34   SILC_STATUS_ERR_NOT_INVITED
+   35   SILC_STATUS_ERR_NOT_INVITED
 
         "Cannot join channel. You have not been invited".  The channel
         is invite only channel and client has not been invited.
 
-   35   SILC_STATUS_ERR_BANNED_FROM_CHANNEL
+   36   SILC_STATUS_ERR_BANNED_FROM_CHANNEL
 
         "Cannot join channel. You have been banned".  The client has
         been banned from the channel.
 
-   36   SILC_STATUS_ERR_UNKNOWN_MODE
+   37   SILC_STATUS_ERR_UNKNOWN_MODE
 
         "Unknown mode".  Mode provided by the client were unknown to
         the server.
 
-   37   SILC_STATUS_ERR_NOT_YOU
+   38   SILC_STATUS_ERR_NOT_YOU
 
         "Cannot change mode for other users".  User tried to change
         someone else's mode.
 
-   38   SILC_STATUS_ERR_NO_CHANNEL_PRIV
+   39   SILC_STATUS_ERR_NO_CHANNEL_PRIV
 
         "Permission denied. You are not channel operator".  Command may 
         be executed only by channel operator.
 
-   39   SILC_STATUS_ERR_NO_SERVER_PRIV
+   40   SILC_STATUS_ERR_NO_SERVER_PRIV
 
         "Permission denied. You are not server operator".  Command may
         be executed only by server operator.
 
-   40   SILC_STATUS_ERR_NO_ROUTER_PRIV
+   41   SILC_STATUS_ERR_NO_ROUTER_PRIV
 
         "Permission denied. You are not SILC operator".  Command may be
         executed only by router (SILC) operator.
 
-   41   SILC_STATUS_ERR_BAD_NICKNAME
+   42   SILC_STATUS_ERR_BAD_NICKNAME
 
         "Bad nickname".  Nickname requested contained illegal characters
         or were malformed.
 
-   42   SILC_STATUS_ERR_BAD_CHANNEL
+   43   SILC_STATUS_ERR_BAD_CHANNEL
 
         "Bad channel name".  Channel requested contained illegal characters
         or were malformed.
 
-   43   SILC_STATUS_ERR_AUTH_FAILED
+   44   SILC_STATUS_ERR_AUTH_FAILED
 
         "Authentication failed".  The authentication data sent as 
         argument were wrong and thus authentication failed.

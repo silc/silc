@@ -26,7 +26,8 @@ SUBDIRS = \
 	silcmath \
 	silcske \
 	silcutil \
-	silcclient
+	silcclient \
+	trq
 #        zlib
 
 # SILC Library dirs
@@ -37,7 +38,8 @@ SILCLIB_DIRS = \
 	silcsim \
 	silcmath \
 	silcske \
-	silcutil
+	silcutil \
+	trq
 
 # SILC Client Library dirs
 SILCCLIENTLIB_DIRS = \

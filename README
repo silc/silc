@@ -71,6 +71,53 @@ Following commands has been, at least partly, implemented:
 		Leaves the channel.  If /leave * is given the client
 		leaves the current channel.
 
+	/CMODE	<channel> +|-<modes> [{ <arguments>}]
+
+		Changes/sets channel mode.  Most of the modes require
+		special privileges, such as channel operator or channel
+		founder privileges to work.  The mode is added by adding
+		+ before the option(s) and removed by adding - before
+		the option(s).  Following modes are available:
+
+		p		Set/unset channel as private channel
+		s		Set/unset channel as secret channel
+		k		Set/unset that channel uses private channel key
+		i		Set/unset channel as invite only channel
+		t		Set/unset that only channel operator or 
+				founder may set channel topic
+		l <limit>	Set/unset channel's user limit
+		a <passphrase>	Set/unset passphrase for channel that must
+				be provided when joining to the channel.
+		b <username!nickname@server>	
+				Add client to/remove client from ban list
+		I <username!nickname@server>	
+				Add client to/remove client from invite list
+		c <cipher>[:<keylen>]
+				Set/unset channel's cipher
+
+		Multiple modes can be set/unset at once if the modes does not
+		require any arguments.  If mode requires an argument then only
+		one mode can be set at once.
+
+	/CUMODE	<channel> +|-<modes> <nickname>[@<server>]
+
+		Changes/set user's mode on a channel.  Most of the modes 
+		require that the client who changes some client's mode must
+		be channel founder or channel operator.  Following channel
+		user modes are available:
+
+		a <nickname>[@<server>]
+				Set/unset all modes (cannot be used to set
+				both founder and operator rights, can be used
+				only to remove both modes at once).
+		f <nickname>[@<server>]
+				Unset channel founder.  Channel founder rights
+				cannot be set by user (only by server) so this
+				can be used only to unset the mode.
+		o <nickname>[@<server>]
+				Set/unset channel operator.  Requires that 
+				you are channel operator or channel founder.
+
 	/MSG    <nickname> <message>
 
 		Sends private message to remote client.  Support for

@@ -176,6 +176,47 @@ SilcBuffer silc_command_payload_encode_va(SilcCommand cmd,
   return buffer;
 }
 
+/* Same as above but with va_list. */
+
+SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd, 
+					   unsigned short ident, 
+					   unsigned int argc, va_list ap)
+{
+  unsigned char **argv;
+  unsigned int *argv_lens = NULL, *argv_types = NULL;
+  unsigned char *x;
+  unsigned int x_len;
+  unsigned int x_type;
+  SilcBuffer buffer;
+  int i;
+
+  argv = silc_calloc(argc, sizeof(unsigned char *));
+  argv_lens = silc_calloc(argc, sizeof(unsigned int));
+  argv_types = silc_calloc(argc, sizeof(unsigned int));
+
+  for (i = 0; i < argc; i++) {
+    x_type = va_arg(ap, unsigned int);
+    x = va_arg(ap, unsigned char *);
+    x_len = va_arg(ap, unsigned int);
+
+    argv[i] = silc_calloc(x_len + 1, sizeof(unsigned char));
+    memcpy(argv[i], x, x_len);
+    argv_lens[i] = x_len;
+    argv_types[i] = x_type;
+  }
+
+  buffer = silc_command_payload_encode(cmd, argc, argv, 
+				       argv_lens, argv_types, ident);
+
+  for (i = 0; i < argc; i++)
+    silc_free(argv[i]);
+  silc_free(argv);
+  silc_free(argv_lens);
+  silc_free(argv_types);
+
+  return buffer;
+}
+
 /* Same as above except that this is used to encode strictly command
    reply packets. The command status message to be returned is sent as
    extra argument to this function. The `argc' must not count `status'

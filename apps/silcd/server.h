@@ -33,6 +33,18 @@ typedef struct SilcServerObjectStruct *SilcServer;
 #define SILC_SERVER 0
 #define SILC_ROUTER 1
 
+/* Macros */
+
+/* This macro is used to send notify messages with formatted string. The
+   string is formatted with arguments and the formatted string is sent as
+   argument. */
+#define SILC_SERVER_SEND_NOTIFY(server, sock, type, fmt)		    \
+do {									    \
+  char *__fmt__ = silc_format fmt;					    \
+  silc_server_send_notify(server, sock, type, 1, __fmt__, strlen(__fmt__)); \
+  silc_free(__fmt__);							    \
+} while(0);
+
 /* Prototypes */
 int silc_server_alloc(SilcServer *new_server);
 void silc_server_free(SilcServer server);
@@ -121,23 +133,21 @@ void silc_server_send_error(SilcServer server,
 void silc_server_send_notify(SilcServer server,
 			     SilcSocketConnection sock,
 			     SilcNotifyType type,
-			     unsigned int argc,
-			     unsigned int format,
-			     const char *fmt, ...);
+			     unsigned int argc, ...);
 void silc_server_send_notify_dest(SilcServer server,
 				  SilcSocketConnection sock,
 				  void *dest_id,
 				  SilcIdType dest_id_type,
 				  SilcNotifyType type,
-				  unsigned int argc,
-				  unsigned int format,
-				  const char *fmt, ...);
+				  unsigned int argc, ...);
 void silc_server_send_notify_to_channel(SilcServer server,
 					SilcChannelEntry channel,
 					SilcNotifyType type,
-					unsigned int argc,
-					unsigned int format,
-					const char *fmt, ...);
+					unsigned int argc, ...);
+void silc_server_send_notify_on_channels(SilcServer server,
+					 SilcClientEntry client,
+					 SilcNotifyType type,
+					 unsigned int argc, ...);
 void silc_server_send_new_id(SilcServer server,
 			     SilcSocketConnection sock,
 			     int broadcast,

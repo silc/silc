@@ -25,7 +25,8 @@
 
 echo "Cleaning entire SILC source tree..."
 echo "All errors and warnings may be safely ignored."
-make distclean
+make clean -k
+make distclean -k
 rm -f includes/stamp-*
 rm -f includes/silcconfig.*
 rm -f includes/version_internal.h
@@ -43,9 +44,11 @@ rm -f lib/silcmath/Makefile.in
 rm -f lib/silcsim/Makefile.in
 rm -f lib/silcsim/modules/Makefile.in
 rm -f lib/silcske/Makefile.in
+rm -f lib/trq/Makefile
 rm -rf lib/silcmath/gmp/.deps
 rm -f silcd/Makefile.in silcd/log* silcd/*.log
 rm -f silc/Makefile.in silc/log* silc/*.log
 rm -f aclocal.m4
+rm -f config.status
 rm -f configure
 echo "Done."

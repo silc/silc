@@ -41,4 +41,4 @@ EXTRA_DIST = *.h
 INCLUDES = -I. -I.. -I../lib/silccore -I../lib/silccrypt \
 	-I../lib/silcmath -I../lib/silcske -I../lib/silcsim \
 	-I../includes -I../lib/silcutil \
-	-I../lib/silcmath/gmp
+	-I../lib/silcmath/gmp -I../lib/trq

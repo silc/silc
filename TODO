@@ -15,6 +15,23 @@ help is really appreciated - and needed.
 New features TODO
 =================
 
+ o We should replace all short, int, long, unsigned short, unsigned int,
+   unsigned long with some pre-defined datatypes that really are what
+   we want on all platforms.  int16, uint16, int32, uint32 etc. are
+   what we could use or maybe SilcInt16, SilcUInt16 etc.  Also, boolean
+   datatype should be defined.
+
+ o Add boolean (or bool), typedef of unsigned char.
+
+ o More platform supports should be added.  The code is pretty much
+   generic but there are some parts that require porting (SIM).  Also, 
+   some support for different platforms is needed into configure.in.
+
+ o SILC requires currently GCC to work because we use GCC specific 
+   compilation options.  Generally any compiler that supports inline
+   functions and can build shared libraries (for SIMs) should work.  
+   These cases should be included into configure.in.
+
  o Extended SIM (SILC Module) support.  Currently only SILC Cipher API
    and SILC Hash API may be used as SIM's.  What I have in mind is to
    have extended support for SIM's so that basically any SILC API could
@@ -35,37 +52,14 @@ New features TODO
    example code (code that we could use directly pretty easily) for
    other platforms.
 
- o We should replace all short, int, long, unsigned short, unsigned int,
-   unsigned long with some pre-defined datatypes that really are what
-   we want on all platforms.  int16, uint16, int32, uint32 etc. are
-   what we could use or maybe SilcInt16, SilcUInt16 etc.  Also, boolean
-   datatype should be defined.
-
- o More platform supports should be added.  The code is pretty much
-   generic but there are some parts that require porting (SIM).  Also, 
-   some support for different platforms is needed into configure.in.
-
- o SILC requires currently GCC to work because we use GCC specific 
-   compilation options.  Generally any compiler that supports inline
-   functions and can build shared libraries (for SIMs) should work.  
-   These cases should be included into configure.in.
-
-
-TODO In SILC Client
-===================
-
- o Implement all commands.  A lot of commands are still yet to be
-   implemented.  Most of them are trivial but some will require some
-   planning.  Go see the command.c for unimplemented commands.
+TODO In SILC Client Library
+===========================
 
  o Non-blocking connection on the background must be stopped if some
    other connection on same window has established.  Now it is possible
    that some non-blocking connection timeouts on the background when
    we already have a working connection to some other place; things
    goes bad.
-
- o Finish WHOIS, finish JOIN and other commands that are partly
-   implemented.
 
  o Input line on UI is buggy.  Cursor movement etc bugs.  Too lazy to
    fix it.
@@ -87,42 +81,19 @@ TODO In SILC Client
    from file and using them (see corresponding code in server, it should
    support public key authentication already).
 
- o Multiple windows support.  Basic support for multiple windows already
-   exists but a lot is still missing to get it working.  Also, some
-   of the existing stuff probably needs to be tweaked a bit before the
-   multiple windows support could be done.  And of course the actual
-   commands that control the windows needs to be written (/WINDDOW).
-
- o Implement /KEYMAP (or similiar) command to remap control and function
-   keys.
-
- o Implement /ALIAS command to make command aliases.
-
- o Implement /set/if/do/while etc as in IRC2.  Maybe post 1.0 task.
-   Some scripting would be good.
-
  o Connection Authentication request resolving is missing and must be
    done.  This is required by the protocol.
+
+ o Move ssh_client_notify_by_server to its own file (like notify.[ch]).
 
  o Key Exchange protocol's responder side is missing from client.  
    Generally it is possible for the client to be responder so it should
    be implemented (See corresponding code from server).  Error handling
    in the KE protocol is also in pretty bad shape in client.
 
- o Configuration file format - could be better.
-
- o Write help files for commands.  Nice format for the help files should
-   be selected.  I'm open for ideas.
-
- o All allocations and freeing needs to be checked for memory leaks.
-
 
 TODO In SILC Server
 ===================
-
- o Implement all commands on server side.  A lot of commands are still yet
-   to be implemented.  Most of them are trivial but some will require some
-   planning.  Go see the command.c for unimplemented commands.
 
  o DNS/IP lookup blocks the server.  This must be fixed.  Check the
    resolver stuff (resolver(3), resolver(5)).  Either we have to do the
@@ -145,13 +116,7 @@ TODO In SILC Server
  o Client history must be implemented.  Protocol says that server must
    keep history information about clients for some period of time.
 
- o Channel flags and user modes on channels are not implemented yet as
-   /MODE command is not implemented yet in client and server.
-
  o Protocol execution timeouts are hard coded, should be configurable.
-
- o serverutil.c I guess should be created for util-like functions that
-   now resides in server.c, which is getting too big.
 
  o serverconfig.c and the function naming in it is inconsistent.  It is 
    not silc_config_server* it should be silc_server_config*.  As should
@@ -177,8 +142,6 @@ TODO In SILC Server
  o Statistics are totally missing from the server.  It would be nice
    to gather some statistics.
 
- o All allocations and freeing needs to be checked for memory leaks.
-
 
 TODO In SILC Libraries
 ======================
@@ -187,26 +150,17 @@ TODO In SILC Libraries
    server, actually).  If PFS is set, re-key must cause new key exchange.
    This is required by the SILC protocol.
 
+ o silc_id_str2id must also take ID length as argument. Otherwise, variable
+   length ID's (after we add IPv6) will not work.
+
  o Re-key in general is actually missing (from everywhere) and must be done.
 
- o SKE does not send correct status types.  Types are defined but not
-   sent.
-
- o Connection authentication protocol does not send correct status types.
-   These types are not defined currently at all.
+ o ID Cache expiry does not work.
 
  o PKCS#1 style RSA public key encryption/decryption/sign/verify is 
    missing, and should be added for interoperability reasons.  The thing 
    I've done now is bad and should be removed as soon as possible (or 
    the protocol should then state the method of how they should be done).
-
- o Slow ciphers should be removed.  I think we don't need more than
-   the AES finalists plus blowfish and RC5.
-
- o These slow ciphers actually don't work currently as I've tested
-   only the ones that are worth testing.  The CBC mode on these slow
-   ciphers probably don't work.  No need to worry, these ciphers should
-   be removed.
 
  o Scheduler needs to be analyzed on high load as it might be unfair
    towards select() because it may run timeout tasks before select() and
@@ -233,25 +187,11 @@ TODO In SILC Libraries
    cleaner.  Introducing silc_cipher_encrypt/decrypt/set_key etc.
    functions (I actually don't understand why have I left these un-done).
 
- o Packet processing routines in client and server are actually pretty
-   much generic and should be moved from the client/server to the library
-   as generic routines (silc_<client/server>_packet_decrypt_rest* etc).
-   This requires heavy changes to the client and server.
-
  o Random Number Generator needs some tweaking.  Reading /dev/random may
    block resulting slow initialization of RNG.  Some other things in the
    RNG may block as well.  Also, I have some pending changes to the RNG 
    that needs to be commited (from Schneier's Yarrow-160 paper).  They 
    should make the RNG even better.
-
- o Logging should be made more generic in a way that application can
-   set to where the logging is destined to.  Now, it is always destined
-   to stdout (or stderr) which is a bad thing for client.  Ie. some
-   sort of logging registration functions or similiar should be done
-   (silclog.[ch] in core).  The actual output of logs should be done
-   by callback function in the application not in lib.
-
- o All allocations and freeing needs to be checked for memory leaks.
 
  o silc_buffer_[un]format() needs to be made more stable as it may
    crash the SILC if malformed data is sent as argument.  There are a
@@ -310,11 +250,5 @@ TODO After 1.0
  o SSH2 public keys support.  Maybe - not really needed but could be
    nice as SSH is widely used all over the place.  SILC Protocol 
    supports SSH2 public keys.
-
- o IRC support for SILC client.  This would be nice to have on client
-   as it could be used to connect to SILC and IRC.  People wouldn't
-   have to have two different clients when same would work on both.
-   I'd like to see this done as SIM, after the extended SIM support
-   has been added to SILC.
 
  o Cipher optimizations (asm, that this) at least for i386 would be nice.

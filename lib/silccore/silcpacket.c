@@ -368,6 +368,11 @@ void silc_packet_receive_process(SilcSocketConnection sock,
   SilcPacketParserContext *parse_ctx;
   int packetlen, paddedlen, count, mac_len = 0;
 
+  /* We need at least 2 bytes of data to be able to start processing
+     the packet. */
+  if (sock->inbuf->len < 2)
+    return;
+
   if (hmac)
     mac_len = hmac->hash->hash->hash_len;
 
@@ -380,7 +385,7 @@ void silc_packet_receive_process(SilcSocketConnection sock,
 
     if (packetlen < SILC_PACKET_MIN_LEN) {
       SILC_LOG_DEBUG(("Received invalid packet, dropped"));
-      continue;
+      return;
     }
 
     if (sock->inbuf->len < paddedlen + mac_len) {
@@ -727,3 +732,37 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx)
 
   return ctx->type;
 }
+
+/* Duplicates packet context. Duplicates the entire context and its
+   contents. */
+
+SilcPacketContext *silc_packet_context_dup(SilcPacketContext *ctx)
+{
+  SilcPacketContext *new;
+
+  new = silc_calloc(1, sizeof(*new));
+  new->buffer = silc_buffer_copy(ctx->buffer);
+  new->type = ctx->type;
+  new->flags = ctx->flags;
+
+  new->src_id = silc_calloc(ctx->src_id_len, sizeof(*new->src_id));
+  memcpy(new->src_id, ctx->src_id, ctx->src_id_len);
+  new->src_id_len = ctx->src_id_len;
+  new->src_id_type = ctx->src_id_type;
+
+  new->dst_id = silc_calloc(ctx->dst_id_len, sizeof(*new->dst_id));
+  memcpy(new->dst_id, ctx->dst_id, ctx->dst_id_len);
+  new->dst_id_len = ctx->dst_id_len;
+  new->dst_id_type = ctx->dst_id_type;
+
+  new->truelen = ctx->truelen;
+  new->padlen = ctx->padlen;
+
+  new->rng = ctx->rng;
+  new->context = ctx->context;
+  new->sock = ctx->sock;
+
+  return new;
+}
+
+

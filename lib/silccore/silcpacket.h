@@ -124,6 +124,10 @@ typedef struct {
 
   /* For padding generation */
   SilcRng rng;
+
+  /* Back pointers */
+  void *context;
+  SilcSocketConnection sock;
 } SilcPacketContext;
 
 /* 
@@ -243,5 +247,6 @@ void silc_packet_receive_process(SilcSocketConnection sock,
 				 void *context);
 SilcPacketType silc_packet_parse(SilcPacketContext *ctx);
 SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx);
+SilcPacketContext *silc_packet_context_dup(SilcPacketContext *ctx);
 
 #endif

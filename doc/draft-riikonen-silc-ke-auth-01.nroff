@@ -752,7 +752,8 @@ returned in the SILC_PACKET_SUCCESS or SILC_PACKET_FAILURE packets to
 indicate the status of the protocol.  Implementations may map the
 status types to human readable error message.  All types except the
 SILC_SKE_STATUS_OK type must be sent in SILC_PACKET_FAILURE packet.
-Following status types are defined:
+The length of status is 32 bits (4 bytes). Following status types are 
+defined:
 
 .in 6
 0   SILC_SKE_STATUS_OK
@@ -798,6 +799,11 @@ Following status types are defined:
 8   SILC_SKE_STATUS_INCORRECT_SIGNATURE
 
     Provided signature was incorrect.
+
+
+9   SILC_SKE_STATUS_BAD_VERSION
+
+    Provided version string was not acceptable.
 .in 3
 
 
@@ -971,7 +977,8 @@ may be returned in the SILC_PACKET_SUCCESS or SILC_PACKET_FAILURE packets
 to indicate the status of the protocol.  Implementations may map the
 status types to human readable error message.  All types except the
 SILC_AUTH_STATUS_OK type must be sent in SILC_PACKET_FAILURE packet.
-Following status types are defined:
+The length of status is 32 bits (4 bytes). Following status types are 
+defined:
 
 0   SILC_AUTH_OK
 

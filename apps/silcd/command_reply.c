@@ -86,6 +86,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   SilcCommandStatus status;
   SilcChannelID *id;
   SilcChannelEntry entry;
+  unsigned int len;
   unsigned char *id_string;
   char *channel_name, *tmp;
 
@@ -102,19 +103,22 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     goto out;
 
   /* Get channel ID */
-  id_string = silc_argument_get_arg_type(cmd->args, 3, NULL);
+  id_string = silc_argument_get_arg_type(cmd->args, 3, &len);
   if (!id_string)
     goto out;
 
   channel_name = strdup(tmp);
 
   /* Add the channel to our local list. */
-  id = silc_id_str2id(id_string, SILC_ID_CHANNEL);
+  id = silc_id_payload_parse_id(id_string, len);
   entry = silc_idlist_add_channel(server->local_list, channel_name, 
 				  SILC_CHANNEL_MODE_NONE, id, 
 				  server->id_entry->router, NULL);
-  if (!entry)
+  if (!entry) {
+    silc_free(channel_name);
+    silc_free(id);
     goto out;
+  }
 
   entry->global_users = TRUE;
 
@@ -136,29 +140,27 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
   SilcServerCommandReplyContext cmd = (SilcServerCommandReplyContext)context;
   SilcServer server = cmd->server;
   SilcCommandStatus status;
-  unsigned char *tmp;
 
   SILC_LOG_DEBUG(("Start"));
 
-  tmp = silc_argument_get_arg_type(cmd->args, 1, NULL);
-  SILC_GET16_MSB(status, tmp);
+  SILC_GET16_MSB(status, silc_argument_get_arg_type(cmd->args, 1, NULL));
   if (status != SILC_STATUS_OK)
     goto out;
 
   /* Process one identify reply */
   if (status == SILC_STATUS_OK) {
     SilcClientID *client_id;
+    unsigned int len;
     unsigned char *id_data;
     char *nickname, *username;
 
-    id_data = silc_argument_get_arg_type(cmd->args, 2, NULL);
+    id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
     nickname = silc_argument_get_arg_type(cmd->args, 3, NULL);
     if (!id_data || !nickname)
       goto out;
 
     username = silc_argument_get_arg_type(cmd->args, 4, NULL);
-
-    client_id = silc_id_str2id(id_data, SILC_ID_CLIENT);
+    client_id = silc_id_payload_parse_id(id_data, len);
 
     /* Add the client always to our global list. If normal or router server
        ever gets here it means they don't have this client's information

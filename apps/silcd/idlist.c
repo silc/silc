@@ -17,42 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.8  2000/10/06 08:10:23  priikone
- * 	Added WHOIS to send multiple replies if multiple nicknames are
- * 	found.
- * 	Added MOTD command and [motd] config section and server also sends
- * 	motd to client on connection now.
- * 	Fixed TOPIC command some more.
- *
- * Revision 1.7  2000/07/26 07:04:01  priikone
- * 	Added server_find_by_id, replace_[server/client]_id.
- *
- * Revision 1.6  2000/07/17 11:47:30  priikone
- * 	Added command lagging support. Added idle counting support.
- *
- * Revision 1.5  2000/07/12 05:59:41  priikone
- * 	Major rewrite of ID Cache system. Support added for the new
- * 	ID cache system. Major rewrite of ID List stuff on server.  All
- * 	SilcXXXList's are now called SilcXXXEntry's and they are pointers
- * 	by default. A lot rewritten ID list functions.
- *
- * Revision 1.4  2000/07/06 07:16:13  priikone
- * 	Added SilcPublicKey's
- *
- * Revision 1.3  2000/07/05 06:14:01  priikone
- * 	Global costemic changes.
- *
- * Revision 1.2  2000/07/03 05:52:11  priikone
- * 	Fixed typo and a bug.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "serverincludes.h"
 #include "idlist.h"
@@ -412,6 +377,8 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
   channel->id = id;
   channel->router = router;
   channel->channel_key = channel_key;
+  silc_list_init(channel->user_list, struct SilcChannelClientEntryStruct, 
+		 next);
 
   if (!silc_idcache_add(id_list->channels, channel->channel_name, 
 			SILC_ID_CHANNEL, (void *)channel->id, 
@@ -428,6 +395,8 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 void silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
 {
   if (entry) {
+    SilcChannelClientEntry chl;
+
     /* Remove from cache */
     if (entry->id)
       silc_idcache_del_by_id(id_list->channels, SILC_ID_CHANNEL, 
@@ -447,9 +416,12 @@ void silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
       silc_free(entry->key);
     }
     memset(entry->iv, 0, sizeof(entry->iv));
-
-    if (entry->user_list_count)
-      silc_free(entry->user_list);
+    
+    silc_list_start(entry->user_list);
+    while ((chl = silc_list_get(entry->user_list)) != SILC_LIST_END) {
+      silc_list_del(entry->user_list, chl);
+      silc_free(chl);
+    }
   }
 }
 

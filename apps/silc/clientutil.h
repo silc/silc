@@ -43,5 +43,8 @@ int silc_client_create_key_pair(char *pkcs_name, int bits,
 				SilcPrivateKey *ret_prv_key);
 int silc_client_check_silc_dir();
 int silc_client_load_keys(SilcClient client);
+char *silc_client_chmode(unsigned int mode);
+char *silc_client_chumode(unsigned int mode);
+char *silc_client_chumode_char(unsigned int mode);
 
 #endif

@@ -30,16 +30,22 @@ typedef struct SilcChannelPayloadStruct *SilcChannelPayload;
 typedef struct SilcChannelKeyPayloadStruct *SilcChannelKeyPayload;
 
 /* Channel modes */
-#define SILC_CHANNEL_MODE_NONE       0x0000
-#define SILC_CHANNEL_MODE_PRIVATE    0x0001 /* private channel */
-#define SILC_CHANNEL_MODE_SECRET     0x0002 /* secret channel */
-#define SILC_CHANNEL_MODE_PRIVKEY    0x0004 /* channel has private key */
-#define SILC_CHANNEL_MODE_INVITE     0x0008 /* invite only channel */
+#define SILC_CHANNEL_MODE_NONE        0x0000
+#define SILC_CHANNEL_MODE_PRIVATE     0x0001 /* private channel */
+#define SILC_CHANNEL_MODE_SECRET      0x0002 /* secret channel */
+#define SILC_CHANNEL_MODE_PRIVKEY     0x0004 /* channel has private key */
+#define SILC_CHANNEL_MODE_INVITE      0x0008 /* invite only channel */
+#define SILC_CHANNEL_MODE_TOPIC       0x0010 /* topic setting by operator */
+#define SILC_CHANNEL_MODE_ULIMIT      0x0020 /* user limit set */
+#define SILC_CHANNEL_MODE_PASSPHRASE  0x0040 /* passphrase set */
+#define SILC_CHANNEL_MODE_BAN         0x0080 /* ban list set */
+#define SILC_CHANNEL_MODE_INVITE_LIST 0x0100 /* invite list set */
+#define SILC_CHANNEL_MODE_CIPHER      0x0200 /* sets cipher of channel */
 
 /* User modes on channel */
-#define SILC_CHANNEL_UMODE_NONE      0x0000
-#define SILC_CHANNEL_UMODE_CHANFO    0x0001 /* channel founder */
-#define SILC_CHANNEL_UMODE_CHANOP    0x0002 /* channel operator */
+#define SILC_CHANNEL_UMODE_NONE       0x0000 /* Normal user */
+#define SILC_CHANNEL_UMODE_CHANFO     0x0001 /* channel founder */
+#define SILC_CHANNEL_UMODE_CHANOP     0x0002 /* channel operator */
 
 /* Prototypes */
 SilcChannelPayload silc_channel_payload_parse(SilcBuffer buffer);

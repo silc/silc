@@ -128,6 +128,8 @@ do {							\
 
 /* Prototypes */
 void silc_client_command_free(SilcClientCommandContext cmd);
+void silc_client_send_command(SilcClient client, SilcClientConnection conn,
+			      SilcCommand command, unsigned int argc, ...);
 SilcClientCommand *silc_client_command_find(const char *name);
 void silc_client_command_pending(SilcCommand reply_cmd,
 				 SilcClientCommandCallback callback,
@@ -150,6 +152,7 @@ SILC_CLIENT_CMD_FUNC(join);
 SILC_CLIENT_CMD_FUNC(motd);
 SILC_CLIENT_CMD_FUNC(umode);
 SILC_CLIENT_CMD_FUNC(cmode);
+SILC_CLIENT_CMD_FUNC(cumode);
 SILC_CLIENT_CMD_FUNC(kick);
 SILC_CLIENT_CMD_FUNC(restart);
 SILC_CLIENT_CMD_FUNC(close);

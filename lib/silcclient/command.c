@@ -41,10 +41,11 @@ SilcClientCommand silc_command_list[] =
   SILC_CLIENT_CMD(ping, PING, "PING", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(oper, OPER, "OPER",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
-  SILC_CLIENT_CMD(join, JOIN, "JOIN", SILC_CF_LAG | SILC_CF_REG, 2),
+  SILC_CLIENT_CMD(join, JOIN, "JOIN", SILC_CF_LAG | SILC_CF_REG, 4),
   SILC_CLIENT_CMD(motd, MOTD, "MOTD", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(umode, UMODE, "UMODE", SILC_CF_LAG | SILC_CF_REG, 2),
-  SILC_CLIENT_CMD(cmode, CMODE, "CMODE", SILC_CF_LAG | SILC_CF_REG, 2),
+  SILC_CLIENT_CMD(cmode, CMODE, "CMODE", SILC_CF_LAG | SILC_CF_REG, 4),
+  SILC_CLIENT_CMD(cumode, CUMODE, "CUMODE", SILC_CF_LAG | SILC_CF_REG, 5),
   SILC_CLIENT_CMD(kick, KICK, "KICK", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(restart, RESTART, "RESTART",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
@@ -75,6 +76,24 @@ SilcClientCommand silc_command_list[] =
 
 /* List of pending commands. */
 SilcClientCommandPending *silc_command_pending = NULL;
+
+/* Generic function to send any command. The arguments must be sent already
+   encoded into correct form in correct order. */
+
+void silc_client_send_command(SilcClient client, SilcClientConnection conn,
+			      SilcCommand command, unsigned int argc, ...)
+{
+  SilcBuffer packet;
+  va_list ap;
+
+  va_start(ap, argc);
+
+  packet = silc_command_payload_encode_vap(command, 0, argc, ap);
+  silc_client_packet_send(client, conn->sock, SILC_PACKET_COMMAND, 
+			  NULL, 0, NULL, NULL, packet->data, 
+			  packet->len, TRUE);
+  silc_buffer_free(packet);
+}
 
 /* Finds and returns a pointer to the command list. Return NULL if the
    command is not found. */
@@ -264,6 +283,9 @@ SILC_CLIENT_CMD_FUNC(nick)
     goto out;
   }
 
+  if (!strncmp(conn->nickname, cmd->argv[1], cmd->argv_lens[1]))
+    goto out;
+
   /* Show current nickname */
   if (cmd->argc < 2) {
     if (cmd->conn) {
@@ -274,6 +296,7 @@ SILC_CLIENT_CMD_FUNC(nick)
       cmd->client->ops->say(cmd->client, conn, 
 			    "Your nickname is %s", conn->nickname);
     }
+
     /* XXX Notify application */
     COMMAND;
     goto out;
@@ -314,8 +337,7 @@ SILC_CLIENT_CMD_FUNC(topic)
   SilcClientConnection conn = cmd->conn;
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
-  SilcBuffer buffer;
-  unsigned char *id_string;
+  SilcBuffer buffer, idp;
   char *name;
 
   if (!cmd->conn) {
@@ -358,19 +380,20 @@ SILC_CLIENT_CMD_FUNC(topic)
   channel = (SilcChannelEntry)id_cache->context;
 
   /* Send TOPIC command to the server */
-  id_string = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
+  idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
   if (cmd->argc > 2)
     buffer = silc_command_payload_encode_va(SILC_COMMAND_TOPIC, 0, 2, 
-					    1, id_string, SILC_ID_CHANNEL_LEN,
+					    1, idp->data, idp->len,
 					    2, cmd->argv[2], 
 					    strlen(cmd->argv[2]));
   else
     buffer = silc_command_payload_encode_va(SILC_COMMAND_TOPIC, 1, 
-					    1, id_string, SILC_ID_CHANNEL_LEN,
+					    1, idp->data, idp->len,
 					    0);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
+  silc_buffer_free(idp);
 
   /* Notify application */
   COMMAND;
@@ -388,10 +411,9 @@ SILC_CLIENT_CMD_FUNC(invite)
   SilcClientConnection conn = cmd->conn;
   SilcClientEntry client_entry;
   SilcChannelEntry channel_entry;
-  SilcBuffer buffer;
+  SilcBuffer buffer, clidp, chidp;
   unsigned int num = 0;
   char *nickname = NULL, *server = NULL;
-  unsigned char *client_id, *channel_id;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -416,32 +438,37 @@ SILC_CLIENT_CMD_FUNC(invite)
   /* Find client entry */
   client_entry = silc_idlist_get_client(client, conn, nickname, server, num);
   if (!client_entry) {
+    if (nickname)
+      silc_free(nickname);
+    if (server)
+      silc_free(server);
+
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
     silc_client_command_pending(SILC_COMMAND_IDENTIFY, 
 				silc_client_command_invite, context);
     return;
   }
-  
-  client_id = silc_id_id2str(client_entry->id, SILC_ID_CLIENT);
 
   /* Find channel entry */
   channel_entry = silc_idlist_get_channel(client, conn, cmd->argv[2]);
   if (!channel_entry) {
     cmd->client->ops->say(cmd->client, conn, "You are not on that channel");
-    silc_free(client_id);
     COMMAND_ERROR;
     goto out;
   }
 
-  channel_id = silc_id_id2str(channel_entry->id, SILC_ID_CHANNEL);
-
+  /* Send command */
+  clidp = silc_id_payload_encode(client_entry->id, SILC_ID_CLIENT);
+  chidp = silc_id_payload_encode(channel_entry->id, SILC_ID_CHANNEL);
   buffer = silc_command_payload_encode_va(SILC_COMMAND_INVITE, 0, 2,
-					  1, client_id, SILC_ID_CLIENT_LEN,
-					  2, channel_id, SILC_ID_CHANNEL_LEN);
+					  1, clidp->data, clidp->len,
+					  2, chidp->data, chidp->len);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
+  silc_buffer_free(clidp);
+  silc_buffer_free(chidp);
 
   cmd->client->ops->say(cmd->client, conn, 
 			"Inviting %s to channel %s", cmd->argv[1], 
@@ -553,8 +580,6 @@ SILC_CLIENT_CMD_FUNC(ping)
   if (cmd->argc == 1 || !strcmp(cmd->argv[1], conn->remote_host))
     name = strdup(conn->remote_host);
 
-  id = silc_id_str2id(conn->remote_id_data, SILC_ID_SERVER);
-
   /* Send the command */
   buffer = silc_command_payload_encode_va(SILC_COMMAND_PING, 0, 1, 
 					  1, conn->remote_id_data, 
@@ -562,6 +587,8 @@ SILC_CLIENT_CMD_FUNC(ping)
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
+
+  id = silc_id_str2id(conn->remote_id_data, SILC_ID_SERVER);
 
   /* Start counting time */
   for (i = 0; i < conn->ping_count; i++) {
@@ -636,15 +663,26 @@ SILC_CLIENT_CMD_FUNC(join)
   }
 
   /* Send JOIN command to the server */
-  buffer = silc_command_payload_encode(SILC_COMMAND_JOIN,
-				       cmd->argc - 1, ++cmd->argv,
-				       ++cmd->argv_lens, ++cmd->argv_types, 0);
+  if (cmd->argc == 2)
+    buffer = 
+      silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 1,
+				     1, cmd->argv[1], cmd->argv_lens[1]);
+  else if (cmd->argc == 3)
+    /* XXX Buggy */
+    buffer = 
+      silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 2,
+				     1, cmd->argv[1], cmd->argv_lens[1],
+				     2, cmd->argv[2], cmd->argv_lens[2]);
+  else
+    buffer = 
+      silc_command_payload_encode_va(SILC_COMMAND_JOIN, 0, 3,
+				     1, cmd->argv[1], cmd->argv_lens[1],
+				     2, cmd->argv[2], cmd->argv_lens[2],
+				     3, cmd->argv[3], cmd->argv_lens[3]);
+
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
-  cmd->argv--;
-  cmd->argv_lens--;
-  cmd->argv_types--;
 
   /* Notify application */
   COMMAND;
@@ -652,6 +690,8 @@ SILC_CLIENT_CMD_FUNC(join)
  out:
   silc_client_command_free(cmd);
 }
+
+/* MOTD command. Requests motd from server. */
 
 SILC_CLIENT_CMD_FUNC(motd)
 {
@@ -687,16 +727,340 @@ SILC_CLIENT_CMD_FUNC(motd)
   silc_client_command_free(cmd);
 }
 
+/* UMODE. Set user mode in SILC. */
+
 SILC_CLIENT_CMD_FUNC(umode)
 {
+
 }
+
+/* CMODE command. Sets channel mode. Modes that does not require any arguments
+   can be set several at once. Those modes that require argument must be set
+   separately (unless set with modes that does not require arguments). */
 
 SILC_CLIENT_CMD_FUNC(cmode)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcChannelEntry channel;
+  SilcBuffer buffer, chidp;
+  unsigned char *name, *cp, modebuf[4], tmp[4], *arg = NULL;
+  unsigned int mode, add, type, len, arg_len = 0;
+  int i;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 3) {
+    cmd->client->ops->say(cmd->client, conn, 
+	       	  "Usage: /CMODE <channel> +|-<modes> [{ <arguments>}]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argv[1][0] == '*') {
+    if (!conn->current_channel) {
+      cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
+      COMMAND_ERROR;
+      goto out;
+    }
+
+    channel = conn->current_channel;
+  } else {
+    name = cmd->argv[1];
+
+    channel = silc_idlist_get_channel(cmd->client, conn, name);
+    if (!channel) {
+      cmd->client->ops->say(cmd->client, conn, "You are on that channel");
+      COMMAND_ERROR;
+      goto out;
+    }
+  }
+
+  mode = channel->mode;
+
+  /* Are we adding or removing mode */
+  if (cmd->argv[2][0] == '-')
+    add = FALSE;
+  else
+    add = TRUE;
+
+  /* Argument type to be sent to server */
+  type = 0;
+
+  /* Parse mode */
+  cp = cmd->argv[2] + 1;
+  len = strlen(cp);
+  for (i = 0; i < len; i++) {
+    switch(cp[i]) {
+    case 'p':
+      if (add)
+	mode |= SILC_CHANNEL_MODE_PRIVATE;
+      else
+	mode &= ~SILC_CHANNEL_MODE_PRIVATE;
+      break;
+    case 's':
+      if (add)
+	mode |= SILC_CHANNEL_MODE_SECRET;
+      else
+	mode &= ~SILC_CHANNEL_MODE_SECRET;
+      break;
+    case 'k':
+      if (add)
+	mode |= SILC_CHANNEL_MODE_PRIVKEY;
+      else
+	mode &= ~SILC_CHANNEL_MODE_PRIVKEY;
+      break;
+    case 'i':
+      if (add)
+	mode |= SILC_CHANNEL_MODE_INVITE;
+      else
+	mode &= ~SILC_CHANNEL_MODE_INVITE;
+      break;
+    case 't':
+      if (add)
+	mode |= SILC_CHANNEL_MODE_TOPIC;
+      else
+	mode &= ~SILC_CHANNEL_MODE_TOPIC;
+      break;
+    case 'l':
+      if (add) {
+	int ll;
+	mode |= SILC_CHANNEL_MODE_ULIMIT;
+	type = 3;
+	ll = atoi(cmd->argv[3]);
+	SILC_PUT32_MSB(ll, tmp);
+	arg = tmp;
+	arg_len = 4;
+      } else {
+	mode &= ~SILC_CHANNEL_MODE_ULIMIT;
+      }
+      break;
+    case 'a':
+      if (add) {
+	mode |= SILC_CHANNEL_MODE_PASSPHRASE;
+	type = 4;
+	arg = cmd->argv[3];
+	arg_len = cmd->argv_lens[3];
+      } else {
+	mode &= ~SILC_CHANNEL_MODE_PASSPHRASE;
+      }
+      break;
+    case 'b':
+      if (add) {
+	mode |= SILC_CHANNEL_MODE_BAN;
+	type = 5;
+	arg = cmd->argv[3];
+	arg_len = cmd->argv_lens[3];
+      } else {
+	mode &= ~SILC_CHANNEL_MODE_BAN;
+      }
+      break;
+    case 'I':
+      if (add) {
+	mode |= SILC_CHANNEL_MODE_INVITE_LIST;
+	type = 6;
+	arg = cmd->argv[3];
+	arg_len = cmd->argv_lens[3];
+      } else {
+	mode &= ~SILC_CHANNEL_MODE_INVITE_LIST;
+      }
+      break;
+    case 'c':
+      if (add) {
+	mode |= SILC_CHANNEL_MODE_CIPHER;
+	type = 8;
+	arg = cmd->argv[3];
+	arg_len = cmd->argv_lens[3];
+      } else {
+	mode &= ~SILC_CHANNEL_MODE_CIPHER;
+      }
+      break;
+    default:
+      COMMAND_ERROR;
+      goto out;
+      break;
+    }
+  }
+
+  if (type && cmd->argc < 3) {
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  SILC_PUT32_MSB(mode, modebuf);
+
+  /* Send the command packet. We support sending only one mode at once
+     that requires an argument. */
+  if (type && arg) {
+    buffer = 
+      silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 3, 
+				     1, chidp->data, chidp->len, 
+				     2, modebuf, sizeof(modebuf),
+				     type, arg, arg_len);
+  } else {
+    buffer = 
+      silc_command_payload_encode_va(SILC_COMMAND_CMODE, 0, 2, 
+				     1, chidp->data, chidp->len, 
+				     2, modebuf, sizeof(modebuf));
+  }
+
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+  silc_buffer_free(chidp);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
 }
+
+/* CUMODE command. Changes client's mode on a channel. */
+
+SILC_CLIENT_CMD_FUNC(cumode)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcChannelEntry channel;
+  SilcClientEntry client_entry;
+  SilcBuffer buffer, clidp, chidp;
+  unsigned char *name, *cp, modebuf[4];
+  unsigned int mode = 0, add, len;
+  char *nickname = NULL, *server = NULL;
+  unsigned int num = 0;
+  int i;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 4) {
+    cmd->client->ops->say(cmd->client, conn, 
+	       	  "Usage: /CUMODE <channel> +|-<modes> <nickname>[@<server>]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argv[1][0] == '*') {
+    if (!conn->current_channel) {
+      cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
+      COMMAND_ERROR;
+      goto out;
+    }
+
+    channel = conn->current_channel;
+  } else {
+    name = cmd->argv[1];
+
+    channel = silc_idlist_get_channel(cmd->client, conn, name);
+    if (!channel) {
+      cmd->client->ops->say(cmd->client, conn, "You are on that channel");
+      COMMAND_ERROR;
+      goto out;
+    }
+  }
+
+  /* Parse the typed nickname. */
+  if (!silc_parse_nickname(cmd->argv[3], &nickname, &server, &num)) {
+    cmd->client->ops->say(cmd->client, conn, "Bad nickname");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  /* Find client entry */
+  client_entry = silc_idlist_get_client(cmd->client, conn, 
+					nickname, server, num);
+  if (!client_entry) {
+    /* Client entry not found, it was requested thus mark this to be
+       pending command. */
+    silc_client_command_pending(SILC_COMMAND_CUMODE, 
+				silc_client_command_cumode, context);
+    return;
+  }
+  
+  for (i = 0; i < channel->clients_count; i++)
+    if (channel->clients[i].client == client_entry) {
+      mode = channel->clients[i].mode;
+      break;
+    }
+
+  /* Are we adding or removing mode */
+  if (cmd->argv[2][0] == '-')
+    add = FALSE;
+  else
+    add = TRUE;
+
+  /* Parse mode */
+  cp = cmd->argv[2] + 1;
+  len = strlen(cp);
+  for (i = 0; i < len; i++) {
+    switch(cp[i]) {
+    case 'a':
+      if (add) {
+	mode |= SILC_CHANNEL_UMODE_CHANFO;
+	mode |= SILC_CHANNEL_UMODE_CHANOP;
+      } else {
+	mode = SILC_CHANNEL_UMODE_NONE;
+      }
+      break;
+    case 'f':
+      if (add)
+	mode |= SILC_CHANNEL_UMODE_CHANFO;
+      else
+	mode &= ~SILC_CHANNEL_UMODE_CHANFO;
+      break;
+    case 'o':
+      if (add)
+	mode |= SILC_CHANNEL_UMODE_CHANOP;
+      else
+	mode &= ~SILC_CHANNEL_UMODE_CHANOP;
+      break;
+    default:
+      COMMAND_ERROR;
+      goto out;
+      break;
+    }
+  }
+
+  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  SILC_PUT32_MSB(mode, modebuf);
+  clidp = silc_id_payload_encode(client_entry->id, SILC_ID_CLIENT);
+
+  /* Send the command packet. We support sending only one mode at once
+     that requires an argument. */
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_CUMODE, 0, 3, 
+					  1, chidp->data, chidp->len, 
+					  2, modebuf, 4,
+					  3, clidp->data, clidp->len);
+
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+  silc_buffer_free(chidp);
+  silc_buffer_free(clidp);
+  
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
+}
+
+/* KICK command. Kicks a client out of channel. */
 
 SILC_CLIENT_CMD_FUNC(kick)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+
 }
 
 SILC_CLIENT_CMD_FUNC(restart)
@@ -723,8 +1087,7 @@ SILC_CLIENT_CMD_FUNC(leave)
   SilcClientConnection conn = cmd->conn;
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
-  SilcBuffer buffer;
-  unsigned char *id_string;
+  SilcBuffer buffer, idp;
   char *name;
 
   if (!cmd->conn) {
@@ -766,12 +1129,13 @@ SILC_CLIENT_CMD_FUNC(leave)
   channel = (SilcChannelEntry)id_cache->context;
 
   /* Send LEAVE command to the server */
-  id_string = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
+  idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
   buffer = silc_command_payload_encode_va(SILC_COMMAND_LEAVE, 0, 1, 
-					  1, id_string, SILC_ID_CHANNEL_LEN);
+					  1, idp->data, idp->len);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
+  silc_buffer_free(idp);
 
   /* We won't talk anymore on this channel */
   cmd->client->ops->say(cmd->client, conn, "You have left channel %s", name);
@@ -784,7 +1148,6 @@ SILC_CLIENT_CMD_FUNC(leave)
   silc_free(channel->key);
   silc_cipher_free(channel->channel_key);
   silc_free(channel);
-  silc_free(id_string);
 
   /* Notify application */
   COMMAND;
@@ -801,9 +1164,8 @@ SILC_CLIENT_CMD_FUNC(names)
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
   SilcIDCacheEntry id_cache = NULL;
-  SilcBuffer buffer;
+  SilcBuffer buffer, idp;
   char *name;
-  unsigned char *id_string;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -832,19 +1194,19 @@ SILC_CLIENT_CMD_FUNC(names)
   }
 
   /* Send NAMES command to the server */
-  id_string = silc_id_id2str(id_cache->id, SILC_ID_CHANNEL);
+  idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
   buffer = silc_command_payload_encode_va(SILC_COMMAND_NAMES, 0, 1, 
-					  1, id_string, SILC_ID_CHANNEL_LEN);
+					  1, idp->data, idp->len);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 
 			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
   silc_buffer_free(buffer);
-  silc_free(id_string);
+  silc_buffer_free(idp);
 
   /* Register dummy pending command that will tell the reply command
      that user called this command. Server may send reply to this command
      even if user did not send this command thus we want to handle things
      differently when user sent the command. This is dummy and won't be
-     execute. */
+     executed. */
   /* XXX this is kludge and should be removed after pending command reply 
      support is added. Currently only commands may be pending not command
      replies. */

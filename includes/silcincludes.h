@@ -157,6 +157,10 @@
 #include "silcpacket.h"
 #include "silcnotify.h"
 
+/* TRQ (SilcList API and SilcDList API) */
+#include "silclist.h"
+#include "silcdlist.h"
+
 #ifdef SILC_SIM
 /* SILC Module library includes */
 #include "silcsim.h"

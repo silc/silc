@@ -31,7 +31,6 @@
 struct SilcNotifyPayloadStruct {
   SilcNotifyType type;
   unsigned int argc;
-  unsigned char *message;
   SilcArgumentPayload args;
 };
 
@@ -55,18 +54,11 @@ SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer)
   if (len > buffer->len)
     goto err;
 
-  silc_buffer_pull(buffer, 5);
-  silc_buffer_unformat(buffer,
-		       SILC_STR_UI_XNSTRING_ALLOC(&new->message, len),
-		       SILC_STR_END);
-
   if (new->argc) {
-    silc_buffer_pull(buffer, len);
+    silc_buffer_pull(buffer, 5);
     new->args = silc_argument_payload_parse(buffer, new->argc);
-    silc_buffer_push(buffer, len);
+    silc_buffer_push(buffer, 5);
   }
-
-  silc_buffer_push(buffer, 5);
 
   return new;
 
@@ -79,8 +71,8 @@ SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer)
    argument payloads will be associated to the notify payload. Variable
    arguments must be {usigned char *, unsigned int (len)}. */
 
-SilcBuffer silc_notify_payload_encode(SilcNotifyType type, char *message,
-				      unsigned int argc, va_list ap)
+SilcBuffer silc_notify_payload_encode(SilcNotifyType type, unsigned int argc, 
+				      va_list ap)
 {
   SilcBuffer buffer;
   SilcBuffer args = NULL;
@@ -114,25 +106,22 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, char *message,
     silc_free(argv_lens);
     silc_free(argv_types);
   }
-    
-  i = strlen(message);
-  len += 5 + i;
+
+  len += 5;
   buffer = silc_buffer_alloc(len);
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
-
   silc_buffer_format(buffer,
 		     SILC_STR_UI_SHORT(type),
-		     SILC_STR_UI_SHORT(i),
+		     SILC_STR_UI_SHORT(len),
 		     SILC_STR_UI_CHAR(argc),
-		     SILC_STR_UI_XNSTRING(message, i),
 		     SILC_STR_END);
 
   if (argc) {
-    silc_buffer_pull(buffer, 5 + i);
+    silc_buffer_pull(buffer, 5);
     silc_buffer_format(buffer,
 		       SILC_STR_UI_XNSTRING(args->data, args->len),
 		       SILC_STR_END);
-    silc_buffer_push(buffer, 5 + i);
+    silc_buffer_push(buffer, 5);
     silc_buffer_free(args);
   }
 
@@ -145,7 +134,6 @@ void silc_notify_payload_free(SilcNotifyPayload payload)
 {
   if (payload) {
     silc_argument_payload_free(payload->args);
-    silc_free(payload->message);
     silc_free(payload);
   }
 }
@@ -162,13 +150,6 @@ SilcNotifyType silc_notify_get_type(SilcNotifyPayload payload)
 unsigned int silc_notify_get_arg_num(SilcNotifyPayload payload)
 {
   return payload->argc;
-}
-
-/* Return notify message */
-
-unsigned char *silc_notify_get_message(SilcNotifyPayload payload)
-{
-  return payload->message;
 }
 
 /* Return argument payload */

@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.2  2000/10/31 19:48:32  priikone
+ * 	A LOT updates. Cannot separate. :)
+ *
  * Revision 1.1  2000/09/13 17:45:15  priikone
  * 	Splitted SILC core library. Core library includes now only
  * 	SILC protocol specific stuff. New utility library includes the
@@ -37,46 +40,14 @@
 #include "silcincludes.h"
 #include "silcbuffer.h"
 
-static unsigned char *silc_buffer_pull_i(SilcBuffer sb, unsigned int len)
-{
-  return silc_buffer_pull(sb, len);
-}
+#ifdef SILC_DEBUG		/* If we are doing debugging we won't
+				   have the optimized inline buffer functions
+				   available as optimization is not set
+				   to compiler. These normal routines are
+				   used in debugging mode. */
 
-static unsigned char *silc_buffer_push_i(SilcBuffer sb, unsigned int len)
-{
-  return silc_buffer_push(sb, len);
-}
-
-static unsigned char *silc_buffer_pull_tail_i(SilcBuffer sb, unsigned int len)
-{
-  return silc_buffer_pull_tail(sb, len);
-}
-
-static unsigned char *silc_buffer_push_tail_i(SilcBuffer sb, unsigned int len)
-{
-  return silc_buffer_push_tail(sb, len);
-}
-
-static unsigned char *silc_buffer_put_head_i(SilcBuffer sb, 
-					     unsigned char *data,
-					     unsigned int len)
-{
-  return silc_buffer_put_head(sb, data, len);
-}
-
-static unsigned char *silc_buffer_put_i(SilcBuffer sb, 
-					unsigned char *data,
-					unsigned int len)
-{
-  return silc_buffer_put(sb, data, len);
-}
-
-static unsigned char *silc_buffer_put_tail_i(SilcBuffer sb, 
-					     unsigned char *data,
-					     unsigned int len)
-{
-  return silc_buffer_put_tail(sb, data, len);
-}
+/* XXX These are currenly obsolete as SILC is compiled always with -O
+   flag thus inline functions maybe used always. So, fix these. */
 
 /* Allocates a new SilcBuffer and returns a pointer to it. The data
    area of the new buffer is set to the real beginning of the buffer. 
@@ -109,15 +80,6 @@ SilcBuffer silc_buffer_alloc(unsigned int len)
   sb->tail = data;
   sb->end = data + sb->truelen;
 
-  /* Set the function pointers */
-  sb->pull = silc_buffer_pull_i;
-  sb->push = silc_buffer_push_i;
-  sb->pull_tail = silc_buffer_pull_tail_i;
-  sb->push_tail = silc_buffer_push_tail_i;
-  sb->put = silc_buffer_put_i;
-  sb->put_head = silc_buffer_put_head_i;
-  sb->put_tail = silc_buffer_put_tail_i;
-
   return sb;
 }
 
@@ -131,15 +93,6 @@ void silc_buffer_free(SilcBuffer sb)
     silc_free(sb);
   }
 }
-
-#ifdef SILC_DEBUG		/* If we are doing debugging we won't
-				   have the optimized inline buffer functions
-				   available as optimization is not set
-				   to compiler. These normal routines are
-				   used in debugging mode. */
-
-/* XXX These are currenly obsolte as SILC is compiled always with -O
-   flag thus inline functions maybe used. So, fix these. */
 
 /* Pulls current data area towards end. The length of the currently
    valid data area is also decremented. Returns pointer to the data

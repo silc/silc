@@ -65,62 +65,160 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 }
 
 
-/* Notify message to the client.  The `notify_payload' is the Notify
-   Payload received from server.  Client library may parse it to cache
-   some data received from the payload but it is the application's 
-   responsiblity to retrieve the message and arguments from the payload.
-   The message in the payload sent by server is implementation specific
-   thus it is recommended that application will generate its own message. */
-/* XXX should generate own messages based on notify type. */
+/* Notify message to the client. The notify arguments are sent in the
+   same order as servers sends them. The arguments are same as received
+   from the server except for ID's.  If ID is received application receives
+   the corresponding entry to the ID. For example, if Client ID is received
+   application receives SilcClientEntry.  Also, if the notify type is
+   for channel the channel entry is sent to application (even if server
+   does not send it). */
 
 void silc_notify(SilcClient client, SilcClientConnection conn, 
-		 SilcNotifyPayload notify_payload)
+		 SilcNotifyType type, ...)
 {
-  SilcNotifyType type;
-  SilcArgumentPayload args;
+  SilcClientInternal app = (SilcClientInternal)client->application;
+  va_list vp;
   char message[4096];
-  char *msg;
+  SilcClientEntry client_entry, client_entry2;
+  SilcChannelEntry channel_entry;
+  char *tmp;
+  unsigned int tmp_int;
 
-  type = silc_notify_get_type(notify_payload);
-  msg = silc_notify_get_message(notify_payload);
-  args = silc_notify_get_args(notify_payload);
+  va_start(vp, type);
 
   memset(message, 0, sizeof(message));
 
   /* Get arguments (defined by protocol in silc-pp-01 -draft) */
   switch(type) {
   case SILC_NOTIFY_TYPE_NONE:
-    strncat(message, msg, strlen(msg));
+    tmp = va_arg(vp, char *);
+    if (!tmp)
+      return;
+    strcpy(message, tmp);
     break;
+
   case SILC_NOTIFY_TYPE_INVITE:
-    snprintf(message, sizeof(message), msg, 
-	     silc_argument_get_arg_type(args, 1, NULL),
-	     silc_argument_get_arg_type(args, 2, NULL));
+    client_entry = va_arg(vp, SilcClientEntry);
+    channel_entry = va_arg(vp, SilcChannelEntry);
+    snprintf(message, sizeof(message), "%s invites you to channel %s", 
+	     client_entry->nickname, channel_entry->channel_name);
     break;
+
   case SILC_NOTIFY_TYPE_JOIN:
-    snprintf(message, sizeof(message), msg, 
-	     silc_argument_get_arg_type(args, 2, NULL),
-	     silc_argument_get_arg_type(args, 3, NULL),
-	     silc_argument_get_arg_type(args, 4, NULL),
-	     silc_argument_get_arg_type(args, 6, NULL));
+    client_entry = va_arg(vp, SilcClientEntry);
+    channel_entry = va_arg(vp, SilcChannelEntry);
+    snprintf(message, sizeof(message), "%s (%s) has joined channel %s", 
+	     client_entry->nickname, client_entry->username, 
+	     channel_entry->channel_name);
     break;
+
   case SILC_NOTIFY_TYPE_LEAVE:
-    snprintf(message, sizeof(message), msg, 
-	     silc_argument_get_arg_type(args, 1, NULL),
-	     silc_argument_get_arg_type(args, 2, NULL),
-	     silc_argument_get_arg_type(args, 4, NULL));
+    client_entry = va_arg(vp, SilcClientEntry);
+    channel_entry = va_arg(vp, SilcChannelEntry);
+    if (client_entry->server)
+      snprintf(message, sizeof(message), "%s@%s has left channel %s", 
+	       client_entry->nickname, client_entry->server, 
+	       channel_entry->channel_name);
+    else
+      snprintf(message, sizeof(message), "%s has left channel %s", 
+	       client_entry->nickname, channel_entry->channel_name);
     break;
+
   case SILC_NOTIFY_TYPE_SIGNOFF:
-    snprintf(message, sizeof(message), msg, 
-	     silc_argument_get_arg_type(args, 1, NULL),
-	     silc_argument_get_arg_type(args, 2, NULL));
+    client_entry = va_arg(vp, SilcClientEntry);
+    if (client_entry->server)
+      snprintf(message, sizeof(message), "Signoff: %s@%s", 
+	       client_entry->nickname, client_entry->server);
+    else
+      snprintf(message, sizeof(message), "Signoff: %s", 
+	       client_entry->nickname);
     break;
+
   case SILC_NOTIFY_TYPE_TOPIC_SET:
-    snprintf(message, sizeof(message), msg, 
-	     silc_argument_get_arg_type(args, 3, NULL),
-	     silc_argument_get_arg_type(args, 4, NULL),
-	     silc_argument_get_arg_type(args, 2, NULL));
+    client_entry = va_arg(vp, SilcClientEntry);
+    tmp = va_arg(vp, char *);
+    channel_entry = va_arg(vp, SilcChannelEntry);
+    if (client_entry->server)
+      snprintf(message, sizeof(message), "%s@%s set topic on %s: %s", 
+	       client_entry->nickname, client_entry->server,
+	       channel_entry->channel_name, tmp);
+    else
+      snprintf(message, sizeof(message), "%s set topic on %s: %s", 
+	       client_entry->nickname, channel_entry->channel_name, tmp);
     break;
+
+  case SILC_NOTIFY_TYPE_NICK_CHANGE:
+    client_entry = va_arg(vp, SilcClientEntry);
+    client_entry2 = va_arg(vp, SilcClientEntry);
+    if (client_entry->server && client_entry2->server)
+      snprintf(message, sizeof(message), "%s@%s is known as %s@%s", 
+	       client_entry->nickname, client_entry->server,
+	       client_entry2->nickname, client_entry2->server);
+    else
+      snprintf(message, sizeof(message), "%s is known as %s", 
+	       client_entry->nickname, client_entry2->nickname);
+    break;
+
+  case SILC_NOTIFY_TYPE_CMODE_CHANGE:
+    client_entry = va_arg(vp, SilcClientEntry);
+    tmp = silc_client_chmode(va_arg(vp, unsigned int));
+    channel_entry = va_arg(vp, SilcChannelEntry);
+    if (tmp)
+      snprintf(message, sizeof(message), "%s changed channel mode to +%s", 
+	       client_entry->nickname, tmp);
+    else
+      snprintf(message, sizeof(message), "%s removed all channel modes", 
+	       client_entry->nickname);
+    if (app->screen->bottom_line->channel_mode)
+      silc_free(app->screen->bottom_line->channel_mode);
+    app->screen->bottom_line->channel_mode = tmp;
+    silc_screen_print_bottom_line(app->screen, 0);
+    break;
+
+  case SILC_NOTIFY_TYPE_CUMODE_CHANGE:
+    client_entry = va_arg(vp, SilcClientEntry);
+    tmp_int = va_arg(vp, unsigned int);
+    tmp = silc_client_chumode(tmp_int);
+    client_entry2 = va_arg(vp, SilcClientEntry);
+    channel_entry = va_arg(vp, SilcChannelEntry);
+    if (tmp)
+      snprintf(message, sizeof(message), "%s changed %s mode to +%s", 
+	       client_entry->nickname, client_entry2->nickname, tmp);
+    else
+      snprintf(message, sizeof(message), "%s removed %s modes", 
+	       client_entry->nickname, client_entry2->nickname);
+    if (client_entry2 == conn->local_entry) {
+      if (app->screen->bottom_line->mode)
+	silc_free(app->screen->bottom_line->mode);
+      app->screen->bottom_line->mode = silc_client_chumode_char(tmp_int);
+      silc_screen_print_bottom_line(app->screen, 0);
+    }
+    silc_free(tmp);
+    break;
+
+  case SILC_NOTIFY_TYPE_MOTD:
+    {
+      char line[256];
+      int i;
+      tmp = va_arg(vp, unsigned char *);
+
+      i = 0;
+      while(tmp[i] != 0) {
+	if (tmp[i++] == '\n') {
+	  memset(line, 0, sizeof(line));
+	  strncat(line, tmp, i - 1);
+	  tmp += i;
+	  
+	  silc_say(client, conn, "%s", line);
+	  
+	  if (!strlen(tmp))
+	    break;
+	  i = 0;
+	}
+      }
+    }
+    return;
+
   default:
     break;
   }
@@ -183,29 +281,54 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 
 void silc_command_reply(SilcClient client, SilcClientConnection conn,
 			SilcCommandPayload cmd_payload, int success,
-			SilcCommandStatus status, SilcCommand command, ...)
+			SilcCommand command, SilcCommandStatus status, ...)
 {
   SilcClientInternal app = (SilcClientInternal)client->application;
   va_list vp;
+  int i;
 
   if (!success)
     return;
 
-  va_start(vp, command);
+  va_start(vp, status);
 
   switch(command)
     {
 
     case SILC_COMMAND_JOIN:
-      app->screen->bottom_line->channel = va_arg(vp, char *);
-      silc_screen_print_bottom_line(app->screen, 0);
+      {
+	unsigned int mode;
+
+	app->screen->bottom_line->channel = va_arg(vp, char *);
+	(void)va_arg(vp, void *);
+	mode = va_arg(vp, unsigned int);
+	app->screen->bottom_line->channel_mode = silc_client_chmode(mode);
+	silc_screen_print_bottom_line(app->screen, 0);
+      }
       break;
 
     case SILC_COMMAND_NICK:
-      app->screen->bottom_line->nickname = va_arg(vp, char *);
-      silc_screen_print_bottom_line(app->screen, 0);
+      {
+	SilcClientEntry entry;
+
+	entry = va_arg(vp, SilcClientEntry);
+	silc_say(client, conn, "Your current nickname is %s", entry->nickname);
+	app->screen->bottom_line->nickname = entry->nickname;
+	silc_screen_print_bottom_line(app->screen, 0);
+      }
       break;
 
+    case SILC_COMMAND_NAMES:
+      for (i = 0; i < conn->current_channel->clients_count; i++)
+	if (conn->current_channel->clients[i].client == conn->local_entry) {
+	  if (app->screen->bottom_line->mode)
+	    silc_free(app->screen->bottom_line->mode);
+	  app->screen->bottom_line->mode = 
+	    silc_client_chumode_char(conn->current_channel->clients[i].mode);
+	  silc_screen_print_bottom_line(app->screen, 0);
+	  break;
+	}
+      break;
     }
 }
 
@@ -460,6 +583,20 @@ int silc_get_auth_method(SilcClient client, SilcClientConnection conn,
   return FALSE;
 }
 
+/* Notifies application that failure packet was received.  This is called
+   if there is some protocol active in the client.  The `protocol' is the
+   protocol context.  The `failure' is opaque pointer to the failure
+   indication.  Note, that the `failure' is protocol dependant and application
+   must explicitly cast it to correct type.  Usually `failure' is 32 bit
+   failure type (see protocol specs for all protocol failure types). */
+
+void silc_failure(SilcClient client, SilcClientConnection conn, 
+		  SilcProtocol protocol, void *failure)
+{
+  SilcClientInternal app = (SilcClientInternal)client->application;
+
+}
+
 /* SILC client operations */
 SilcClientOperations ops = {
   say:                  silc_say,
@@ -473,4 +610,5 @@ SilcClientOperations ops = {
   get_auth_method:      silc_get_auth_method,
   verify_server_key:    silc_verify_server_key,
   ask_passphrase:       silc_ask_passphrase,
+  failure:              silc_failure,
 };

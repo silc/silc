@@ -31,13 +31,12 @@ typedef struct SilcSKESecurityPropertiesStruct *SilcSKESecurityProperties;
 
 /* Supported Public Key Types, defined by the protocol */
 typedef enum {
-  SILC_SKE_PK_TYPE_SILC = 1,	/* Mandatory type */
-  /* Optional types. These are not implemented currently
-  SILC_SKE_PK_TYPE_SSH2 = 2,
-  SILC_SKE_PK_TYPE_X509V3 = 3,
+  SILC_SKE_PK_TYPE_SILC    = 1,	/* Mandatory type */
+  /* Optional types. These are not implemented currently */
+  SILC_SKE_PK_TYPE_SSH2    = 2,
+  SILC_SKE_PK_TYPE_X509V3  = 3,
   SILC_SKE_PK_TYPE_OPENPGP = 4,
-  SILC_SKE_PK_TYPE_SPKI = 5
-  */
+  SILC_SKE_PK_TYPE_SPKI    = 5
 } SilcSKEPKType;
 
 /* Packet sending callback. Caller of the SKE routines must provide
@@ -136,6 +135,9 @@ struct SilcSKEStruct {
   /* Pointer to the what ever user data. This is set by the caller
      and is not touched by the SKE. The caller must also free this one. */
   void *user_data;
+
+  /* Current status of SKE */
+  SilcSKEStatus status;
 };
 
 /* Prototypes */
@@ -207,4 +209,7 @@ SilcSKEStatus silc_ske_process_key_material(SilcSKE ske,
 					    unsigned int req_enc_key_len,
 					    unsigned int req_hmac_key_len,
 					    SilcSKEKeyMaterial *key);
+SilcSKEStatus silc_ske_check_version(SilcSKE ske,
+				     unsigned char *version,
+				     unsigned int version_len);
 #endif

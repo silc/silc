@@ -119,6 +119,14 @@ static void silc_client_protocol_ke_set_keys(SilcSKE ske,
   silc_hmac_set_key(conn->hmac, keymat->hmac_key, keymat->hmac_key_len);
 }
 
+/* XXX TODO */
+
+SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
+				     unsigned int len)
+{
+  return SILC_SKE_STATUS_OK;
+}
+
 /* Performs key exchange protocol. This is used for both initiator
    and responder key exchange. This may be called recursively. */
 
@@ -314,6 +322,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
       protocol->state = SILC_PROTOCOL_STATE_END;
     }
     break;
+
   case SILC_PROTOCOL_STATE_END:
     {
       /* 
@@ -338,8 +347,29 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	silc_protocol_free(protocol);
     }
     break;
+
   case SILC_PROTOCOL_STATE_ERROR:
+    /*
+     * Error during protocol
+     */
     
+    /* Send abort notification */
+    silc_ske_abort(ctx->ske, ctx->ske->status, 
+		   silc_client_protocol_ke_send_packet,
+		   context);
+
+    /* On error the final callback is always called. */
+    if (protocol->final_callback)
+      protocol->execute_final(client->timeout_queue, 0, protocol, fd);
+    else
+      silc_protocol_free(protocol);
+    break;
+
+  case SILC_PROTOCOL_STATE_FAILURE:
+    /*
+     * Received failure from remote.
+     */
+
     /* On error the final callback is always called. */
     if (protocol->final_callback)
       protocol->execute_final(client->timeout_queue, 0, protocol, fd);
@@ -448,13 +478,16 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
   case SILC_PROTOCOL_STATE_ERROR:
     {
       /* 
-       * Error
+       * Error. Send notify to remote.
        */
+      unsigned char error[4];
+
+      SILC_PUT32_MSB(SILC_CONN_AUTH_FAILED, error);
 
       /* Error in protocol. Send FAILURE packet. Although I don't think
 	 this could ever happen on client side. */
       silc_client_packet_send(client, ctx->sock, SILC_PACKET_FAILURE,
-			      NULL, 0, NULL, NULL, NULL, 0, TRUE);
+			      NULL, 0, NULL, NULL, error, 4, TRUE);
 
       /* On error the final callback is always called. */
       if (protocol->final_callback)
@@ -462,7 +495,19 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
       else
 	silc_protocol_free(protocol);
     }
+
+  case SILC_PROTOCOL_STATE_FAILURE:
+    /*
+     * Received failure from remote.
+     */
+
+    /* On error the final callback is always called. */
+    if (protocol->final_callback)
+      protocol->execute_final(client->timeout_queue, 0, protocol, fd);
+    else
+      silc_protocol_free(protocol);
     break;
+
   case SILC_PROTOCOL_STATE_UNKNOWN:
     break;
   }

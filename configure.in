@@ -33,7 +33,7 @@ case "$target" in
     ;;
 esac
 
-AM_INIT_AUTOMAKE(silc, 20001009)
+AM_INIT_AUTOMAKE(silc, 20001101)
 AC_PREREQ(2.3)
 AM_CONFIG_HEADER(includes/silcdefs.h)
 
@@ -118,7 +118,6 @@ AC_ARG_ENABLE(debug,
     ;;
 esac ], CFLAGS="-O2 -g $CFLAGS"
         AC_MSG_RESULT(no))
-
 
 # SOCKS4 support checking
 AC_MSG_CHECKING(whether to support SOCKS4)
@@ -232,6 +231,7 @@ AC_ARG_WITH(silcd-config-file,
 # Other configure scripts
 #AC_CONFIG_SUBDIRS(lib/zlib)
 AC_CONFIG_SUBDIRS(lib/silcmath/gmp)
+AC_CONFIG_SUBDIRS(lib/trq)
 
 AC_OUTPUT( \
 Makefile

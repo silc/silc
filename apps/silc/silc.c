@@ -267,6 +267,7 @@ SILC Secure Internet Live Conferencing, version %s\n",
 
   /* Get user information */
   silc->username = silc_get_username();
+  silc->hostname = silc_net_localhost();
   silc->realname = silc_get_real_name();
 
   /* Register all configured ciphers, PKCS and hash functions. */

@@ -23,26 +23,7 @@
  * old version of the SILC client dating back to 1997.
  */
 /* XXX: Input line handling is really buggy! */
-/*
- * $Id$
- * $Log$
- * Revision 1.5  2000/07/19 09:19:05  priikone
- * 	Enhancements to AWAY command.
- *
- * Revision 1.4  2000/07/10 05:38:08  priikone
- * 	Fixed screen refresh.
- *
- * Revision 1.3  2000/07/07 06:52:10  priikone
- * 	Fixed screen refresh routine.
- *
- * Revision 1.2  2000/07/05 06:12:05  priikone
- * 	Global cosmetic changes.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "clientincludes.h"
 
@@ -224,6 +205,14 @@ void silc_screen_print_bottom_line(SilcScreen screen, int win_index)
     strncat(buf, " ", 1);
     strncat(buf, line->channel, len > SILC_SCREEN_MAX_CHANNEL_LEN ?
 	    SILC_SCREEN_MAX_CHANNEL_LEN : len);
+  }
+
+  if (line->channel_mode) {
+    len = strlen(line->channel_mode);
+    strncat(buf, " (+", 3);
+    strncat(buf, line->channel_mode, len > SILC_SCREEN_MAX_CHANNEL_LEN ?
+	    SILC_SCREEN_MAX_CHANNEL_LEN : len);
+    strncat(buf, ")", 2);
   }
 
   if (line->away)

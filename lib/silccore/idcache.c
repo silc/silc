@@ -17,30 +17,7 @@
   GNU General Public License for more details.
 
 */
-/*
- * $Id$
- * $Log$
- * Revision 1.6  2000/07/26 07:03:20  priikone
- * 	Use ID check as well in silc_idcache_add.
- *
- * Revision 1.5  2000/07/18 06:51:48  priikone
- * 	Use length of data found from cache instead of length of searched
- * 	data in comparison.
- *
- * Revision 1.4  2000/07/17 11:46:36  priikone
- * 	Added debug logging
- *
- * Revision 1.3  2000/07/12 05:54:01  priikone
- * 	Major rewrite of whole ID Cache system.
- *
- * Revision 1.2  2000/07/05 06:06:35  priikone
- * 	Global cosmetic change.
- *
- * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
- * 	Imported from internal CVS/Added Log headers.
- *
- *
- */
+/* $Id$ */
 
 #include "silcincludes.h"
 #include "idcache.h"

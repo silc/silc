@@ -37,15 +37,17 @@ typedef unsigned short SilcNotifyType;
 #define SILC_NOTIFY_TYPE_SIGNOFF         4 /* "signoff" */
 #define SILC_NOTIFY_TYPE_TOPIC_SET       5 /* "topic has been changed" */
 #define SILC_NOTIFY_TYPE_NICK_CHANGE     6 /* "has changed nickname" */
+#define SILC_NOTIFY_TYPE_CMODE_CHANGE    7 /* "has changed channel mode" */
+#define SILC_NOTIFY_TYPE_CUMODE_CHANGE   8 /* "has change mode" */
+#define SILC_NOTIFY_TYPE_MOTD            9 /* message of the day */
 
 /* Prototypes */
 SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer);
-SilcBuffer silc_notify_payload_encode(SilcNotifyType type, char *message,
-				      unsigned int argc, va_list ap);
+SilcBuffer silc_notify_payload_encode(SilcNotifyType type, unsigned int argc, 
+				      va_list ap);
 void silc_notify_payload_free(SilcNotifyPayload payload);
 SilcNotifyType silc_notify_get_type(SilcNotifyPayload payload);
 unsigned int silc_notify_get_arg_num(SilcNotifyPayload payload);
-unsigned char *silc_notify_get_message(SilcNotifyPayload payload);
 SilcArgumentPayload silc_notify_get_args(SilcNotifyPayload payload);
 
 #endif

@@ -72,21 +72,23 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
     entry = (SilcClientEntry)id_cache->context;
   } else {
     /* Check multiple cache entries for match */
-    while (silc_idcache_list_next(list, &id_cache)) {
-      entry = (SilcClientEntry)id_cache->context;
-
+    silc_idcache_list_first(list, &id_cache);
+    entry = (SilcClientEntry)id_cache->context;
+    
+    while (entry) {
       if (server && entry->server && 
-	  strncasecmp(server, entry->server, strlen(server))) {
-	entry = NULL;
-	continue;
-      }
+	  !strncasecmp(server, entry->server, strlen(server)))
+	break;
       
-      if (num && entry->num != num) {
+      if (num && entry->num == num)
+	break;
+
+      if (!silc_idcache_list_next(list, &id_cache)) {
 	entry = NULL;
-	continue;
+	break;
       }
 
-      break;
+      entry = (SilcClientEntry)id_cache->context;
     }
 
     /* If match weren't found, request it */
@@ -98,6 +100,32 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
     silc_idcache_list_free(list);
 
   return entry;
+}
+
+/* Finds client entry from cache by Client ID. If the entry is not found
+   from the cache this function can query it from the server. */
+
+SilcClientEntry silc_idlist_get_client_by_id(SilcClient client,
+					     SilcClientConnection conn,
+					     SilcClientID *client_id,
+					     int query)
+{
+  SilcIDCacheEntry id_cache;
+
+  /* Find ID from cache */
+  if (!silc_idcache_find_by_id_one(conn->client_cache, client_id, 
+				   SILC_ID_CLIENT, &id_cache)) {
+    if (!query) {
+      return NULL;
+    } else {
+      SilcBuffer idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+      silc_client_send_command(client, conn, SILC_COMMAND_WHOIS, 1,
+			       2, idp->data, idp->len);
+      return NULL;
+    }
+  }
+
+  return (SilcClientEntry)id_cache->context;
 }
 
 /* Finds channel entry from ID cache by channel name. */

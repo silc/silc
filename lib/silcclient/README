@@ -65,6 +65,7 @@ some other tasks that must be done before initializing the client.  Following
 pointers must be set before calling the initializing function:
 
 	client->username
+	client->hostname
 	client->realname
 	client->pkcs
 	client->public_key

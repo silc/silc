@@ -38,13 +38,13 @@ typedef struct {
   void (*private_message)(SilcClient client, SilcClientConnection conn,
 			  char *sender, char *msg);
   void (*notify)(SilcClient client, SilcClientConnection conn, 
-		 SilcNotifyPayload notify_payload);
+		 SilcNotifyType type, ...);
   void (*command)(SilcClient client, SilcClientConnection conn, 
 		  SilcClientCommandContext cmd_context, int success,
 		  SilcCommand command);
   void (*command_reply)(SilcClient client, SilcClientConnection conn,
 			SilcCommandPayload cmd_payload, int success,
-			SilcCommandStatus status, SilcCommand command, ...);
+			SilcCommand command, SilcCommandStatus status, ...);
   void (*connect)(SilcClient client, SilcClientConnection conn, int success);
   void (*disconnect)(SilcClient client, SilcClientConnection conn);
   int (*get_auth_method)(SilcClient client, SilcClientConnection conn,
@@ -57,6 +57,8 @@ typedef struct {
 			   SilcSKEPKType pk_type);
   unsigned char *(*ask_passphrase)(SilcClient client, 
 				   SilcClientConnection conn);
+  void (*failure)(SilcClient client, SilcClientConnection conn, 
+		  SilcProtocol protocol, void *failure);
 } SilcClientOperations;
 
 /* 
@@ -82,15 +84,16 @@ typedef struct {
    sender received in the packet.
 
 
-   void (*notify)(SilcClient client, SilcClientConnection conn, 
-		  SilcNotifyPayload notify_payload);
+   void (*notify)(SilcClient client, SilcClientConnection conn, ...);
 
-   Notify message to the client.  The `notify_payload' is the Notify
-   Payload received from server.  Client library may parse it to cache
-   some data received from the payload but it is the application's 
-   responsiblity to retrieve the message and arguments from the payload.
-   The message in the payload sent by server is implementation specific
-   thus it is recommended that application will generate its own message.
+   Notify message to the client. The notify arguments are sent in the
+   same order as servers sends them. The arguments are same as received
+   from the server except for ID's.  If ID is received application receives
+   the corresponding entry to the ID. For example, if Client ID is received
+   application receives SilcClientEntry.  Also, if the notify type is
+   for channel the channel entry is sent to application (even if server
+   does not send it because client library gets the channel entry from
+   the Channel ID in the packet's header).
 
 
    void (*command)(SilcClient client, SilcClientConnection conn, 
@@ -169,6 +172,17 @@ typedef struct {
 
    Ask (interact, that is) a passphrase from user. Returns the passphrase
    or NULL on error. 
+
+
+   void (*failure)(SilcClient client, SilcClientConnection conn, 
+                   SilcProtocol protocol, void *failure);
+
+   Notifies application that failure packet was received.  This is called
+   if there is some protocol active in the client.  The `protocol' is the
+   protocol context.  The `failure' is opaque pointer to the failure
+   indication.  Note, that the `failure' is protocol dependant and application
+   must explicitly cast it to correct type.  Usually `failure' is 32 bit
+   failure type (see protocol specs for all protocol failure types).
 
 */
 

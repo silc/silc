@@ -107,17 +107,54 @@ SilcIDPayload silc_id_payload_parse_data(unsigned char *data,
   return NULL;
 }
 
+/* Return the ID directly from the raw payload data. */
+
+void *silc_id_payload_parse_id(unsigned char *data, unsigned int len)
+{
+  SilcBuffer buffer;
+  SilcIdType type;
+  unsigned short idlen;
+  unsigned char *id;
+
+  buffer = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  silc_buffer_put(buffer, data, len);
+
+  silc_buffer_unformat(buffer,
+		       SILC_STR_UI_SHORT(&type),
+		       SILC_STR_UI_SHORT(&idlen),
+		       SILC_STR_END);
+
+  silc_buffer_pull(buffer, 4);
+
+  if (idlen > buffer->len)
+    goto err;
+
+  silc_buffer_unformat(buffer,
+		       SILC_STR_UI_XNSTRING_ALLOC(&id, idlen),
+		       SILC_STR_END);
+
+  silc_buffer_free(buffer);
+
+  return silc_id_str2id(id, type);
+
+ err:
+  silc_buffer_free(buffer);
+  return NULL;
+}
+
 /* Encodes ID Payload */
 
-SilcBuffer silc_id_payload_encode(void *id, unsigned short len,
-				  SilcIdType type)
+SilcBuffer silc_id_payload_encode(void *id, SilcIdType type)
 {
   SilcBuffer buffer;
   unsigned char *id_data;
+  unsigned int len;
 
   SILC_LOG_DEBUG(("Parsing ID payload"));
 
   id_data = silc_id_id2str(id, type);
+  len = silc_id_get_len(type);
 
   buffer = silc_buffer_alloc(4 + len);
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
@@ -152,6 +189,22 @@ SilcIdType silc_id_payload_get_type(SilcIDPayload payload)
 void *silc_id_payload_get_id(SilcIDPayload payload)
 {
   return silc_id_str2id(payload->id, payload->type);
+}
+
+/* Get raw ID data. Data is duplicated. */
+
+unsigned char *silc_id_payload_get_data(SilcIDPayload payload)
+{
+  unsigned char *ret = silc_calloc(payload->len, sizeof(*ret));
+  memcpy(ret, payload->id, payload->len);
+  return ret;
+}
+
+/* Get length of ID */
+
+unsigned int silc_id_payload_get_len(SilcIDPayload payload)
+{
+  return payload->len;
 }
 
 /******************************************************************************

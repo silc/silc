@@ -70,19 +70,19 @@ extern unsigned int log_fatal_size;
 #define SILC_LOG_INFO(fmt) (silc_log_output(log_info_file, \
                                            log_info_size, \
 					   SILC_LOG_INFO, \
-					   silc_log_format fmt))
+					   silc_format fmt))
 #define SILC_LOG_WARNING(fmt) (silc_log_output(log_warning_file, \
                                                log_warning_size, \
 					       SILC_LOG_WARNING, \
-					       silc_log_format fmt))
+					       silc_format fmt))
 #define SILC_LOG_ERROR(fmt) (silc_log_output(log_error_file, \
                                              log_error_size, \
 					     SILC_LOG_ERROR, \
-					     silc_log_format fmt))
+					     silc_format fmt))
 #define SILC_LOG_FATAL(fmt) (silc_log_output(log_fatal_file, \
                                              log_fatal_size, \
 					     SILC_LOG_FATAL, \
-					     silc_log_format fmt))
+					     silc_format fmt))
 
 /* Debug macro is a bit different from other logging macros and it
    is compiled in only if debugging is enabled. */
@@ -90,20 +90,19 @@ extern unsigned int log_fatal_size;
 #define SILC_LOG_DEBUG(fmt) (silc_log_output_debug(__FILE__, \
 						   __FUNCTION__, \
 						   __LINE__, \
-						   silc_log_format fmt))
+						   silc_format fmt))
 #define SILC_LOG_HEXDUMP(fmt, data, len) \
   (silc_log_output_hexdump(__FILE__, \
 			   __FUNCTION__, \
 			   __LINE__, \
                            (data), (len), \
-			   silc_log_format fmt))
+			   silc_format fmt))
 #else
 #define SILC_LOG_DEBUG(fmt)
 #define SILC_LOG_HEXDUMP(fmt, data, len)
 #endif
 
 /* Prototypes */
-char *silc_log_format(char *fmt, ...);
 void silc_log_output_debug(char *file, char *function, 
                            int line, char *string);
 void silc_log_output(const char *filename, unsigned int maxsize,
