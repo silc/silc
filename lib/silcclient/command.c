@@ -37,7 +37,7 @@ SilcClientCommand silc_command_list[] =
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
   SILC_CLIENT_CMD(info, INFO, "INFO", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(connect, CONNECT, "CONNECT",
-		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
+		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 3),
   SILC_CLIENT_CMD(ping, PING, "PING", SILC_CF_LAG | SILC_CF_REG, 2),
   SILC_CLIENT_CMD(oper, OPER, "OPER",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
@@ -52,7 +52,7 @@ SilcClientCommand silc_command_list[] =
   SILC_CLIENT_CMD(close, CLOSE, "CLOSE",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
   SILC_CLIENT_CMD(shutdown, SHUTDOWN, "SHUTDOWN",
-		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 2),
+		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER, 1),
   SILC_CLIENT_CMD(silcoper, SILCOPER, "SILOPER",
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_SILC_OPER, 2),
   SILC_CLIENT_CMD(leave, LEAVE, "LEAVE", SILC_CF_LAG | SILC_CF_REG, 2),
@@ -617,10 +617,6 @@ SILC_CLIENT_CMD_FUNC(info)
   silc_client_command_free(cmd);
 }
 
-SILC_CLIENT_CMD_FUNC(connect)
-{
-}
-
 /* Command PING. Sends ping to server. This is used to test the 
    communication channel. */
 
@@ -682,10 +678,6 @@ SILC_CLIENT_CMD_FUNC(ping)
 
  out:
   silc_client_command_free(cmd);
-}
-
-SILC_CLIENT_CMD_FUNC(oper)
-{
 }
 
 SILC_CLIENT_CMD_FUNC(trace)
@@ -1229,6 +1221,59 @@ SILC_CLIENT_CMD_FUNC(kick)
   silc_client_command_free(cmd);
 }
 
+SILC_CLIENT_CMD_FUNC(silcoper)
+{
+}
+
+SILC_CLIENT_CMD_FUNC(oper)
+{
+}
+
+/* CONNECT command. Connects the server to another server. */
+
+SILC_CLIENT_CMD_FUNC(connect)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer;
+  unsigned char port[4];
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc < 2) {
+    cmd->client->ops->say(cmd->client, conn, 
+			  "Usage: /CONNECT <server> [<port>]");
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  if (cmd->argc == 3)
+    SILC_PUT32_MSB(atoi(cmd->argv[2]), port);
+
+  if (cmd->argc == 3)
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_CONNECT, 0, 2, 
+					    1, cmd->argv[1], 
+					    strlen(cmd->argv[1]),
+					    2, port, 4);
+  else
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_CONNECT, 0, 1,
+					    1, cmd->argv[1], 
+					    strlen(cmd->argv[1]));
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL,
+			  0, NULL, NULL, buffer->data, buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
+}
+
 SILC_CLIENT_CMD_FUNC(restart)
 {
 }
@@ -1237,14 +1282,29 @@ SILC_CLIENT_CMD_FUNC(close)
 {
 }
  
+/* SHUTDOWN command. Shutdowns the server. */
+
 SILC_CLIENT_CMD_FUNC(shutdown)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR;
+    goto out;
+  }
+
+  /* Send the command */
+  silc_client_send_command(cmd->client, cmd->conn, 
+			   SILC_COMMAND_SHUTDOWN, 0, 0);
+
+  /* Notify application */
+  COMMAND;
+
+ out:
+  silc_client_command_free(cmd);
 }
  
-SILC_CLIENT_CMD_FUNC(silcoper)
-{
-}
-
 /* LEAVE command. Leaves a channel. Client removes itself from a channel. */
 
 SILC_CLIENT_CMD_FUNC(leave)

@@ -45,7 +45,6 @@ SilcClientCommandReply silc_command_reply_list[] =
   SILC_CLIENT_CMD_REPLY(list, LIST),
   SILC_CLIENT_CMD_REPLY(topic, TOPIC),
   SILC_CLIENT_CMD_REPLY(invite, INVITE),
-  SILC_CLIENT_CMD_REPLY(quit, QUIT),
   SILC_CLIENT_CMD_REPLY(kill, KILL),
   SILC_CLIENT_CMD_REPLY(info, INFO),
   SILC_CLIENT_CMD_REPLY(connect, CONNECT),
@@ -59,7 +58,7 @@ SilcClientCommandReply silc_command_reply_list[] =
   SILC_CLIENT_CMD_REPLY(kick, KICK),
   SILC_CLIENT_CMD_REPLY(restart, RESTART),
   SILC_CLIENT_CMD_REPLY(close, CLOSE),
-  SILC_CLIENT_CMD_REPLY(die, DIE),
+  SILC_CLIENT_CMD_REPLY(shutdown, SHUTDOWN),
   SILC_CLIENT_CMD_REPLY(silcoper, SILCOPER),
   SILC_CLIENT_CMD_REPLY(leave, LEAVE),
   SILC_CLIENT_CMD_REPLY(users, USERS),
@@ -626,10 +625,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
   silc_client_command_reply_free(cmd);
 }
  
-SILC_CLIENT_CMD_REPLY_FUNC(quit)
-{
-}
-
 SILC_CLIENT_CMD_REPLY_FUNC(kill)
 {
 }
@@ -679,10 +674,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(info)
  out:
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_INFO);
   silc_client_command_reply_free(cmd);
-}
-
-SILC_CLIENT_CMD_REPLY_FUNC(connect)
-{
 }
 
 /* Received reply to PING command. The reply time is shown to user. */
@@ -740,10 +731,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
  out:
   SILC_CLIENT_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_PING);
   silc_client_command_reply_free(cmd);
-}
-
-SILC_CLIENT_CMD_REPLY_FUNC(oper)
-{
 }
 
 /* Received reply for JOIN command. */
@@ -1037,6 +1024,18 @@ SILC_CLIENT_CMD_REPLY_FUNC(kick)
   silc_client_command_reply_free(cmd);
 }
 
+SILC_CLIENT_CMD_REPLY_FUNC(silcoper)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(oper)
+{
+}
+
+SILC_CLIENT_CMD_REPLY_FUNC(connect)
+{
+}
+
 SILC_CLIENT_CMD_REPLY_FUNC(restart)
 {
 }
@@ -1045,14 +1044,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(close)
 {
 }
  
-SILC_CLIENT_CMD_REPLY_FUNC(die)
+SILC_CLIENT_CMD_REPLY_FUNC(shutdown)
 {
 }
  
-SILC_CLIENT_CMD_REPLY_FUNC(silcoper)
-{
-}
-
 /* Reply to LEAVE command. */
 
 SILC_CLIENT_CMD_REPLY_FUNC(leave)

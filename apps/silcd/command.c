@@ -2976,9 +2976,12 @@ SILC_SERVER_CMD_FUNC(connect)
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   unsigned char *tmp;
   unsigned int tmp_len;
-  unsigned int port;
+  unsigned int port = SILC_PORT;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CONNECT, cmd, 0, 0);
+
+  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
 
   /* Check whether client has the permissions. */
   if (client->mode == SILC_UMODE_NONE) {
@@ -3036,6 +3039,9 @@ SILC_SERVER_CMD_FUNC(close)
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_CLOSE, cmd, 0, 0);
 
+  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
+
   /* Check whether client has the permissions. */
   if (client->mode == SILC_UMODE_NONE) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_CLOSE,
@@ -3092,6 +3098,9 @@ SILC_SERVER_CMD_FUNC(shutdown)
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
 
   SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_SHUTDOWN, cmd, 0, 0);
+
+  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+    goto out;
 
   /* Check whether client has the permission. */
   if (client->mode == SILC_UMODE_NONE) {
