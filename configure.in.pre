@@ -1065,6 +1065,7 @@ includes/Makefile
 lib/Makefile
 lib/contrib/Makefile
 lib/silccore/Makefile
+lib/silccore/tests/Makefile
 lib/silccrypt/Makefile
 lib/silccrypt/tests/Makefile
 lib/silcmath/Makefile
