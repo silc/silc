@@ -1,3 +1,15 @@
+Mon Oct  8 16:47:42 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added --disable-asm configuration option.  Affected files
+	  configure.in.pre, lib/silcmath/mpi/configure.in.  A patch
+	  by salo.
+
+	* Implemented the backup resuming protocol that is used to
+	  resume the primary router position in the cell after the
+	  primary router comes back online.  Affected files
+	  silcd/server_backup.[ch], silcd/server, silcd/packet_receive.c,
+	  and silcd/server_util.[ch].
+
 Sun Oct  7 12:29:25 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Sleep two (2) seconds after sending QUIT command to server.

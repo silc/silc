@@ -35,12 +35,14 @@ bool silc_server_remove_clients_by_server(SilcServer server,
    `from' and which are originated from a server that we have connection
    to, when we've acting as backup router. If it is FALSE the `to' will
    be the new source. This function also removes the clients that are
-   *really* originated from `from'. These are clients that the `from'
-   owns, and not just clients that are behind the `from'. */
+   *really* originated from `from' if `remove_from' is TRUE. These are
+   clients that the `from' owns, and not just clients that are behind
+   the `from'. */
 void silc_server_update_clients_by_server(SilcServer server, 
 					  SilcServerEntry from,
 					  SilcServerEntry to,
-					  bool resolve_real_server);
+					  bool resolve_real_server,
+					  bool remove_from);
 
 /* Checks whether given channel has global users.  If it does this returns
    TRUE and FALSE if there is only locally connected clients on the channel. */

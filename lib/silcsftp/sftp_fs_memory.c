@@ -16,6 +16,7 @@
   GNU General Public License for more details.
 
 */
+/* $Id$ */
 /* XXX TODO Win32 support */
 
 #include "silcincludes.h"

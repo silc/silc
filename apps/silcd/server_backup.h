@@ -20,6 +20,15 @@
 #ifndef SERVER_BACKUP_H
 #define SERVER_BACKUP_H
 
+/* Backup resuming protocol types */
+#define SILC_SERVER_BACKUP_START            1
+#define SILC_SERVER_BACKUP_START_GLOBAL     2
+#define SILC_SERVER_BACKUP_CONNECTED        3
+#define SILC_SERVER_BACKUP_ENDING           4
+#define SILC_SERVER_BACKUP_RESUMED          5
+#define SILC_SERVER_BACKUP_RESUMED_GLOBAL   6
+#define SILC_SERVER_BACKUP_REPLACED         20
+
 /* Adds the `backup_server' to be one of our backup router. This can be
    called multiple times to set multiple backup routers. If `local' is
    TRUE then the `backup_server' is in the local cell, if FALSE it is
@@ -53,10 +62,9 @@ bool silc_server_backup_replaced_get(SilcServer server,
 				     SilcServerID *server_id,
 				     SilcServerEntry *server_entry);
 
-/* Deletes the IP address and port from the `server_id' from being replaced
-   by an backup router. */
+/* Deletes a replaced host by the set `server_entry. */
 void silc_server_backup_replaced_del(SilcServer server,
-				     SilcServerID *server_id);
+				     SilcServerEntry server_entry);
 
 /* Broadcast the received packet indicated by `packet' to all of our backup 
    routers. All router wide information is passed using broadcast packets. 

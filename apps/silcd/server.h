@@ -187,11 +187,14 @@ void silc_server_announce_get_channels(SilcServer server,
 				       SilcChannelID ***channel_ids,
 				       unsigned long creation_time);
 void silc_server_announce_servers(SilcServer server, bool global,
-				  unsigned long creation_time);
+				  unsigned long creation_time,
+				  SilcSocketConnection remote);
 void silc_server_announce_clients(SilcServer server,
-				  unsigned long creationg_time);
+				  unsigned long creation_time,
+				  SilcSocketConnection remote);
 void silc_server_announce_channels(SilcServer server,
-				   unsigned long creationg_time);
+				   unsigned long creation_time,
+				   SilcSocketConnection remote);
 void silc_server_get_users_on_channel(SilcServer server,
 				      SilcChannelEntry channel,
 				      SilcBuffer *user_list,

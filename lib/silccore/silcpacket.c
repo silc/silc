@@ -671,7 +671,7 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx)
 
 /* Allocate packet context */
 
-SilcPacketContext *silc_packet_context_alloc()
+SilcPacketContext *silc_packet_context_alloc(void)
 {
   SilcPacketContext *ctx = silc_calloc(1, sizeof(*ctx));
   ctx->users++;

@@ -1700,7 +1700,7 @@ SilcServerEntry silc_server_new_server(SilcServer server,
     SilcBuffer packet = silc_buffer_alloc(2);
     silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
     silc_buffer_format(packet,
-		       SILC_STR_UI_CHAR(20),
+		       SILC_STR_UI_CHAR(SILC_SERVER_BACKUP_REPLACED),
 		       SILC_STR_UI_CHAR(0),
 		       SILC_STR_END);
     silc_server_packet_send(server, sock, 
@@ -1997,6 +1997,7 @@ void silc_server_new_channel(SilcServer server,
   unsigned char *id;
   uint32 id_len;
   uint32 mode;
+  SilcServerEntry server_entry;
   SilcChannelEntry channel;
 
   SILC_LOG_DEBUG(("Processing New Channel"));
@@ -2023,6 +2024,8 @@ void silc_server_new_channel(SilcServer server,
     channel_name[255] = '\0';
 
   id = silc_channel_get_id(payload, &id_len);
+
+  server_entry = (SilcServerEntry)sock->user_data;
 
   if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
     /* Add the channel to global list as it is coming from router. It 
@@ -2066,7 +2069,8 @@ void silc_server_new_channel(SilcServer server,
 	 on the router's IP address.  Check whether the ID is based in our
 	 IP and if it is not then create a new ID and enforce the server
 	 to switch the ID. */
-      if (!SILC_ID_COMPARE(channel_id, server->id, server->id->ip.data_len)) {
+      if (server_entry->server_type != SILC_BACKUP_ROUTER &&
+	  !SILC_ID_COMPARE(channel_id, server->id, server->id->ip.data_len)) {
 	SilcChannelID *tmp;
 	SILC_LOG_DEBUG(("Forcing the server to change Channel ID"));
 	

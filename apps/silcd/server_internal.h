@@ -73,7 +73,6 @@ struct SilcServerStruct {
 					does not have connection to network. */
   bool listenning;		     /* TRUE if server is listenning for
 					incoming connections. */
-
   SilcServerEntry id_entry;	     /* Server's own ID entry */
   SilcServerEntry router;	     /* Pointer to the primary router */
   unsigned long router_connect;	     /* Time when router was connected */

@@ -366,23 +366,6 @@ do {									     \
 
 /* Prototypes */
 
-/****f* silccore/SilcPacketAPI/silc_packet_write
- *
- * SYNOPSIS
- *
- *    int silc_packet_write(int sock, SilcBuffer src);
- *
- * DESCRIPTION
- *
- *    Writes data from encrypted buffer to the socket connection. If the
- *    data cannot be written at once, it will be written later with a timeout. 
- *    The data is written from the data section of the buffer, not from head
- *    or tail section. This automatically pulls the data section towards end
- *    after writing the data.
- *
- ***/
-int silc_packet_write(int sock, SilcBuffer src);
-
 /****f* silccore/SilcPacketAPI/silc_packet_send
  *
  * SYNOPSIS
@@ -498,31 +481,6 @@ void silc_packet_send_prepare(SilcSocketConnection sock,
 			      uint32 header_len,
 			      uint32 padlen,
 			      uint32 data_len);
-
-/****f* silccore/SilcPacketAPI/silc_packet_read
- *
- * SYNOPSIS
- *
- *    int silc_packet_read(int fd, SilcSocketConnection sock);
- *
- * DESCRIPTION
- *
- *    Reads data from the socket connection into the incoming data buffer.
- *    However, this does not parse the packet, it only reads some amount from
- *    the network. If there are more data available that can be read at a time
- *    the rest of the data will be read later with a timeout and only after
- *    that the packet is ready to be parsed. 
- *
- *    The destination buffer sent as argument must be initialized before 
- *    calling this function, and, the data section and the start of the tail
- *    section must be same. Ie. we add the read data to the tail section of
- *    the buffer hence the data section is the start of the buffer.
- *
- *    This returns amount of bytes read or -1 on error or -2 on case where
- *    all of the data could not be read at once.
- *
- ***/
-int silc_packet_read(int fd, SilcSocketConnection sock);
 
 /****f* silccore/SilcPacketAPI/silc_packet_receive
  *
@@ -644,7 +602,7 @@ SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx);
  *    silc_packet_context_free function.
  *
  ***/
-SilcPacketContext *silc_packet_context_alloc();
+SilcPacketContext *silc_packet_context_alloc(void);
 
 /****f* silccore/SilcPacketAPI/silc_packet_context_dup
  *
