@@ -18,6 +18,9 @@ Mon Mar 17 18:35:24 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 	* Fixed INVITE notify sending in INVITE command, send it
 	  only when needed.  Affected file silcd/command.c.
 
+	* Handle the founder key change properly in CMODE_CHANGE
+	  notify.  Bug #122.  Affected file silcd/packet_receive.c.
+
 Sun Mar  9 16:29:20 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Remove the mark for output (mark it only for input) after

@@ -720,18 +720,9 @@ void silc_server_notify(SilcServer server,
       if (channel->founder_key)
 	silc_pkcs_public_key_free(channel->founder_key);
       channel->founder_key = NULL;
-      silc_pkcs_public_key_payload_decode(tmp, tmp_len, &channel->founder_key);
-
-      if (!channel->founder_key || 
-	  (client && client->data.public_key && 
-	   server->server_type == SILC_ROUTER &&
-	   !silc_pkcs_public_key_compare(channel->founder_key,
-					 client->data.public_key))) {
-	/* A really buggy server isn't checking public keys correctly.
-	   It's not possible that the mode setter and founder wouldn't
-	   have same public key. */
+      if (!silc_pkcs_public_key_payload_decode(tmp, tmp_len,
+					       &channel->founder_key)) {
 	SILC_LOG_DEBUG(("Enforcing sender to change channel mode"));
-
 	mode &= ~SILC_CHANNEL_MODE_FOUNDER_AUTH;
 	silc_server_send_notify_cmode(server, sock, FALSE, channel,
 				      mode, server->id, SILC_ID_SERVER,
@@ -741,9 +732,6 @@ void silc_server_notify(SilcServer server,
 	if (channel->founder_key)
 	  silc_pkcs_public_key_free(channel->founder_key);
 	channel->founder_key = NULL;
-      } else if (client && !client->data.public_key) {
-	client->data.public_key = 
-	  silc_pkcs_public_key_copy(channel->founder_key);
       }
     }
 
@@ -913,6 +901,8 @@ void silc_server_notify(SilcServer server,
 	silc_hash_table_list(channel->user_list, &htl);
 	while (silc_hash_table_get(&htl, NULL, (void *)&chl2))
 	  if (chl2->mode & SILC_CHANNEL_UMODE_CHANFO) {
+	    /* XXX this is not correct anymore in 1.2 -Pekka */
+
 	    /* If the founder on the channel is not the one whom has set
 	       the founder mode, then it's possible that this CUMODE_CHANGE
 	       is correct.  Due to netsplits it's possible that this
