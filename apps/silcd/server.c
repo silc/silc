@@ -2098,6 +2098,13 @@ SILC_TASK_CALLBACK(silc_server_close_connection_final)
 void silc_server_close_connection(SilcServer server,
 				  SilcSocketConnection sock)
 {
+  SILC_LOG_INFO(("Closing connection %s:%d [%s]", sock->hostname,
+                  sock->port,
+                  (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+                   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+                   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+                   "Router")));
+
   /* We won't listen for this connection anymore */
   silc_schedule_unset_listen_fd(server->schedule, sock->sock);
 
@@ -2149,13 +2156,6 @@ void silc_server_disconnect_remote(SilcServer server,
   va_end(ap);
 
   SILC_LOG_DEBUG(("Disconnecting remote host"));
-
-  SILC_LOG_INFO(("Disconnecting %s:%d [%s]", sock->hostname,
-                  sock->port,
-                  (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
-                   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
-                   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
-                   "Router")));
 
   /* Notify remote end that the conversation is over. The notify message
      is tried to be sent immediately. */
