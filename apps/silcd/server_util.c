@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -119,6 +119,7 @@ silc_server_remove_clients_channels(SilcServer server,
       silc_hash_table_add(channels, channel, channel);
   }
   silc_hash_table_list_reset(&htl);
+  assert(!silc_hash_table_count(client->channels));
 }
 
 /* This function removes all client entries that are originated from
@@ -1024,6 +1025,7 @@ bool silc_server_channel_delete(SilcServer server,
 
     /* Totally delete the channel and all users on the channel. The
        users are deleted automatically in silc_idlist_del_channel. */
+    channel->disabled = TRUE;
     silc_schedule_task_del_by_context(server->schedule, channel->rekey);
     if (silc_idlist_del_channel(server->local_list, channel)) {
       server->stat.my_channels--;

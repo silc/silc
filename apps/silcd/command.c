@@ -1866,9 +1866,11 @@ static void silc_server_command_join_channel(SilcServer server,
 				      &resolve);
     if (!client) {
       if (!resolve || cmd->pending) {
-	silc_server_command_send_status_reply(
+	tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+	silc_server_command_send_status_data(
 					 cmd, SILC_COMMAND_JOIN,
-					 SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
+					 SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 0,
+					 2, tmp, tmp_len);
 	goto out;
       }
 
@@ -1978,9 +1980,6 @@ static void silc_server_command_join_channel(SilcServer server,
       silc_strncat(check2, sizeof(check2),
 		   cmd->sock->hostname, strlen(cmd->sock->hostname));
     }
-
-    SILC_LOG_DEBUG(("check : %s", check));
-    SILC_LOG_DEBUG(("check2: %s", check2));
 
     /* Check invite list if channel is invite-only channel */
     if (channel->mode & SILC_CHANNEL_MODE_INVITE) {
@@ -2323,15 +2322,15 @@ SILC_SERVER_CMD_FUNC(join)
   tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
   if (!tmp) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
+					  SILC_STATUS_ERR_NO_CLIENT_ID,
 					  0);
     goto out;
   }
   client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
   if (!client_id) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
-					  0);
+    silc_server_command_send_status_data(cmd, SILC_COMMAND_JOIN,
+					 SILC_STATUS_ERR_BAD_CLIENT_ID, 0,
+					 2, tmp, tmp_len);
     goto out;
   }
 
