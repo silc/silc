@@ -550,7 +550,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 
 	SILC_LOG_DEBUG(("Client %s",
 			silc_id_render(client->id, SILC_ID_CLIENT)));
-	if (client->router)
+	if (client->router && client->router->id)
 	  SILC_LOG_DEBUG(("Client->router %s",
 			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 
@@ -583,7 +583,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 	  client->router = to;
 	}
 
-	if (client->router)
+	if (client->router && client->router->id)
 	  SILC_LOG_DEBUG(("Client changed to %s",
 			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 
@@ -613,7 +613,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 
 	SILC_LOG_DEBUG(("Client %s",
 			silc_id_render(client->id, SILC_ID_CLIENT)));
-	if (client->router)
+	if (client->router && client->router->id)
 	  SILC_LOG_DEBUG(("Client->router %s",
 			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 
@@ -642,7 +642,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 	  client->router = to;
 	}
 
-	if (client->router)
+	if (client->router && client->router->id)
 	  SILC_LOG_DEBUG(("Client changed to %s",
 			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 

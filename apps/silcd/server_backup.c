@@ -688,6 +688,8 @@ void silc_server_backup_resume_router(SilcServer server,
       unsigned char data[4];
       SILC_LOG_DEBUG(("Backup resuming not allowed since we are still "
 		      "primary router"));
+      SILC_LOG_INFO(("Backup resuming not allowed since we are still "
+		     "primary router"));
       SILC_PUT32_MSB(SILC_SERVER_BACKUP_START, data);
       silc_server_packet_send(server, sock, SILC_PACKET_FAILURE, 0,
 			      data, 4, FALSE);

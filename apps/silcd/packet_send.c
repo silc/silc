@@ -49,8 +49,17 @@ int silc_server_packet_send_real(SilcServer server,
 		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		       "Router")));
 
-      if (sock->user_data)
+      if (sock->user_data) {
+	/* If backup then mark that resuming will not be allowed */
+	if (server->server_type == SILC_ROUTER && !server->backup_router &&
+	    sock->type == SILC_SOCKET_TYPE_SERVER) {
+	  SilcServerEntry server_entry = sock->user_data;
+	  if (server_entry->server_type == SILC_BACKUP_ROUTER)
+	    server->backup_closed = TRUE;
+	}
+
 	silc_server_free_sock_user_data(server, sock, NULL);
+      }
       SILC_SET_DISCONNECTING(sock);
       silc_server_close_connection(server, sock);
       return ret;
@@ -776,8 +785,8 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
     }
 
     memcpy(iv, data + (data_len - iv_len - mac_len), iv_len);
-    silc_message_payload_encrypt(data, data_len - iv_len - mac_len, 
-                                 data_len - mac_len, iv, iv_len, 
+    silc_message_payload_encrypt(data, data_len - iv_len - mac_len,
+                                 data_len - mac_len, iv, iv_len,
                                  channel->channel_key, channel->hmac);
   }
 

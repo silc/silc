@@ -2289,8 +2289,17 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		       "Router")));
 
-      if (sock->user_data)
+      if (sock->user_data) {
+	/* If backup then mark that resuming will not be allowed */
+	if (server->server_type == SILC_ROUTER && !server->backup_router &&
+	    sock->type == SILC_SOCKET_TYPE_SERVER) {
+	  SilcServerEntry server_entry = sock->user_data;
+	  if (server_entry->server_type == SILC_BACKUP_ROUTER)
+	    server->backup_closed = TRUE;
+	}
+
 	silc_server_free_sock_user_data(server, sock, NULL);
+      }
       SILC_SET_DISCONNECTING(sock);
       silc_server_close_connection(server, sock);
     }
@@ -2311,8 +2320,17 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		       "Router"), strerror(errno)));
 
-      if (sock->user_data)
+      if (sock->user_data) {
+	/* If backup then mark that resuming will not be allowed */
+	if (server->server_type == SILC_ROUTER && !server->backup_router &&
+	    sock->type == SILC_SOCKET_TYPE_SERVER) {
+	  SilcServerEntry server_entry = sock->user_data;
+	  if (server_entry->server_type == SILC_BACKUP_ROUTER)
+	    server->backup_closed = TRUE;
+	}
+
 	silc_server_free_sock_user_data(server, sock, NULL);
+      }
       SILC_SET_DISCONNECTING(sock);
       silc_server_close_connection(server, sock);
     }
@@ -2337,7 +2355,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     if (sock->user_data) {
       char tmp[128];
 
-      /* If backup disconnected then mark that resuming willl not be allowed */
+      /* If backup disconnected then mark that resuming will not be allowed */
       if (server->server_type == SILC_ROUTER && !server->backup_router &&
 	  sock->type == SILC_SOCKET_TYPE_SERVER && sock->user_data) {
 	SilcServerEntry server_entry = sock->user_data;
@@ -2398,8 +2416,18 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     if (SILC_PRIMARY_ROUTE(server) == sock && server->backup_router)
       server->backup_noswitch = TRUE;
 
-    if (sock->user_data)
+    if (sock->user_data) {
+      /* If we are router and backup errorred then mark that resuming
+	 will not be allowed */
+      if (server->server_type == SILC_ROUTER && !server->backup_router &&
+	  sock->type == SILC_SOCKET_TYPE_SERVER) {
+	SilcServerEntry server_entry = sock->user_data;
+	if (server_entry->server_type == SILC_BACKUP_ROUTER)
+	  server->backup_closed = TRUE;
+      }
+
       silc_server_free_sock_user_data(server, sock, NULL);
+    }
     SILC_SET_DISCONNECTING(sock);
     silc_server_close_connection(server, sock);
   }
@@ -2621,7 +2649,7 @@ void silc_server_packet_parse_type(SilcServer server,
       /* Do not switch to backup in case of error */
       server->backup_noswitch = (status == SILC_STATUS_OK ? FALSE : TRUE);
 
-      /* If backup disconnected then mark that resuming willl not be allowed */
+      /* If backup disconnected then mark that resuming will not be allowed */
       if (server->server_type == SILC_ROUTER && !server->backup_router &&
 	  sock->type == SILC_SOCKET_TYPE_SERVER && sock->user_data) {
 	SilcServerEntry server_entry = sock->user_data;
