@@ -563,15 +563,20 @@ esac ], CFLAGS="-O2 -g $CFLAGS"
 #
 # Pthread checking
 #
-AC_CHECK_HEADERS(pthread.h, [ AC_DEFINE(SILC_HAVE_PTHREAD) ], 
+want_threads=false
+AC_CHECK_HEADERS(pthread.h, 
+	[ AC_DEFINE(SILC_HAVE_PTHREAD) 
+          want_threads=true ],
 	[ if test -f /usr/pkg/include/pthread.h ; then
 	    AC_DEFINE(SILC_HAVE_PTHREAD)
 	    AC_MSG_RESULT(Found pthread.h in /usr/pkg/include/)
 	    CFLAGS="$CFLAGS -I/usr/pkg/include"
+            want_threads=true
           elif test -f /usr/contrib/include/pthread.h ; then
 	    AC_DEFINE(SILC_HAVE_PTHREAD)
 	    AC_MSG_RESULT(Found pthread.h in /usr/contrib/include/)
 	    CFLAGS="$CFLAGS -I/usr/contrib/include"
+            want_threads=true
           fi
 	])
 
@@ -579,17 +584,16 @@ AC_ARG_ENABLE(threads,
 [  --disable-threads       Do not compile with multi-thread support],
 [ case "${enableval}" in
   yes)
-    AC_DEFINE(SILC_THREADS)
     want_threads=true
     ;;
   *)
     want_threads=false
     ;;
-esac ], AC_DEFINE(SILC_THREADS)
-	want_threads=true)
+esac ])
 
 AM_CONDITIONAL(SILC_THREADS, test x$want_threads = xtrue)
 if test x$want_threads = xtrue; then
+  AC_DEFINE(SILC_THREADS)
   TMP_LIBS="$LIBS"
   LIBS="-lpthread"
   AC_TRY_LINK([#include <pthread.h>],

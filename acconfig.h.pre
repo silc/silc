@@ -12,6 +12,7 @@
 
 /* Multi-thread support */
 #undef SILC_THREADS
+#undef SILC_HAVE_PTHREAD
 
 /* Default paths */
 #undef SILC_ETCDIR
@@ -70,9 +71,6 @@
 #undef Rdup2
 #undef Rfclose
 #undef Rgethostbyname
-
-/* POSIX thread checking */
-#undef SILC_HAVE_PTHREAD
 
 /* Native WIN32 compilation (-mno-cygwin GCC option) under cygwin, though
    the code compiles with any native WIN32 compiler. */
