@@ -103,6 +103,10 @@ SILC_TASK_CALLBACK(silc_socket_heartbeat)
   if (!hb->heartbeat)
     return;
 
+  if (SILC_IS_DISCONNECTING(hb->sock) ||
+      SILC_IS_DISCONNECTED(hb->sock))
+    return;
+
   if (hb->hb_callback)
     hb->hb_callback(hb->sock, hb->hb_context);
 
@@ -249,6 +253,10 @@ void silc_socket_host_lookup(SilcSocketConnection sock,
   SilcSocketHostLookup lookup;
 
   SILC_LOG_DEBUG(("Performing async host lookup"));
+
+  if (SILC_IS_DISCONNECTING(sock) ||
+      SILC_IS_DISCONNECTED(sock))
+    return;
 
   lookup = silc_calloc(1, sizeof(*lookup));
   lookup->sock = silc_socket_dup(sock);	/* Increase reference counter */
