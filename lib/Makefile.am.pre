@@ -69,7 +69,12 @@ remove:
 	-rm -rf libsilc.a
 	-rm -rf libsilcclient.a
 
-if SILC_DIST_CLIENT
+if SILC_DIST_TOOLKIT
+install-exec-hook:
+	-mkdir -p $(libdir)
+	-$(LIBTOOL) $(INSTALL) libsilc.la $(libdir)/
+	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(libdir)/
+else
 install-exec-hook:
 	-mkdir -p $(libdir)
 	# Install libraries only if static were not compiled.  Assume
@@ -80,11 +85,6 @@ install-exec-hook:
 	-@if test '!' -f $(top_srcdir)/lib/.libs/libsilcclient.a ; then \
 	   $(LIBTOOL) $(INSTALL) libsilcclient.la $(libdir)/ \
 	fi
-else
-install-exec-hook:
-	-mkdir -p $(libdir)
-	-$(LIBTOOL) $(INSTALL) libsilc.la $(libdir)/
-	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(libdir)/
 endif
 
 if SILC_DIST_WIN32DLL
