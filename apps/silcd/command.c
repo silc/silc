@@ -4477,7 +4477,7 @@ SILC_SERVER_CMD_FUNC(connect)
     goto out;
   }
 
-  if (server->server_type == SILC_ROUTER && 
+  if (server->server_type == SILC_ROUTER && !server->backup_router &&
       client->mode & SILC_UMODE_SERVER_OPERATOR) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CONNECT,
 					  SILC_STATUS_ERR_NO_ROUTER_PRIV, 0);
