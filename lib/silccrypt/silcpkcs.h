@@ -850,7 +850,8 @@ bool silc_pkcs_save_public_key(char *filename, SilcPublicKey public_key,
  *
  * DESCRIPTION
  *
- *    Saves public key into file. Returns FALSE on error.
+ *    Saves public key into file.  The public key is already encoded as
+ *    data when calling this function.  Returns FALSE on error.
  *
  ***/
 bool silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
@@ -862,37 +863,22 @@ bool silc_pkcs_save_public_key_data(char *filename, unsigned char *data,
  * SYNOPSIS
  *
  *    bool silc_pkcs_save_private_key(char *filename,
- *				      SilcPrivateKey private_key,
- *				      unsigned char *passphrase,
- *				      SilcUInt32 encoding);
+ *	                              SilcPrivateKey private_key,
+ *                                    unsigned char *passphrase,
+ *                                    SilcUInt32 passphrase_len,
+ *                                    SilcUInt32 encoding);
  *
  * DESCRIPTION
  *
- *    Saves private key into file. Returns FALSE on error.
+ *    Saves private key into file.  The private key is encrypted into
+ *    the file with the `passphrase' as a key.  The encryption algorithm
+ *    is AES with 256 bit key in CBC mode.  Returns FALSE on error.
  *
  ***/
 bool silc_pkcs_save_private_key(char *filename, SilcPrivateKey private_key, 
 				unsigned char *passphrase,
+				SilcUInt32 passphrase_len,
 				SilcUInt32 encoding);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_save_private_key_data
- *
- * SYNOPSIS
- *
- *    bool silc_pkcs_save_private_key_data(char *filename, unsigned char *data,
- *					   SilcUInt32 data_len,
- *					   unsigned char *passphrase,
- *					   SilcUInt32 encoding);
- *
- * DESCRIPTION
- *
- *    Saves private key into file. Returns FALSE on error.
- *
- ***/
-bool silc_pkcs_save_private_key_data(char *filename, unsigned char *data, 
-				     SilcUInt32 data_len,
-				     unsigned char *passphrase,
-				     SilcUInt32 encoding);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_load_public_key
  *
@@ -915,16 +901,21 @@ bool silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
  * SYNOPSIS
  *
  *    bool silc_pkcs_load_private_key(char *filename,
- *				      SilcPrivateKey *private_key,
- *				      SilcUInt32 encoding);
+ *                                    SilcPrivateKey *private_key,
+ *                                    unsigned char *passphrase,
+ *                                    SilcUInt32 passphrase_len,
+ *                                    SilcUInt32 encoding);
  *
  * DESCRIPTION
  *
  *    Load private key from file and allocates new private key. Returns TRUE
- *    if loading was successful.
+ *    if loading was successful. The `passphrase' is used as decryption
+ *    key of the private key file.
  *
  ***/
 bool silc_pkcs_load_private_key(char *filename, SilcPrivateKey *private_key,
+				unsigned char *passphrase,
+				SilcUInt32 passphrase_len,
 				SilcUInt32 encoding);
 
 #endif /* SILCPKCS_H */

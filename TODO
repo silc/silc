@@ -36,9 +36,6 @@ TODO for SILC Server 1.0
 TODO/bugs In SILC Libraries
 ===========================
 
- o Private key encryption to silc_pkcs_[save/load]_private_key[_data]
-   function.
-
  o WIN32 silc_net_create_connection_async does not work the same way
    than on Unix.  Do it with threads on WIN32.  The function works but
    is not actually async currently (Fix this to 0.9.x).

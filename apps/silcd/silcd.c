@@ -526,7 +526,7 @@ int main(int argc, char **argv)
     silc_hash_register_default();
     silc_hmac_register_default();
     silc_create_key_pair(opt_pkcs, opt_bits, pubfile, prvfile,
-			 opt_identifier, NULL, NULL, NULL, FALSE);
+			 opt_identifier, "", NULL, NULL, NULL, FALSE);
     exit(0);
   }
 
@@ -539,11 +539,24 @@ int main(int argc, char **argv)
   if (ret == FALSE)
     goto fail;
 
+  /* Register default crypto stuff since we are going to need them 
+     in the configuration file parsing phase */
+  silc_cipher_register_default();
+  silc_pkcs_register_default();
+  silc_hash_register_default();
+  silc_hmac_register_default();
+
   /* Read configuration files */
   silcd->config = silc_server_config_alloc(silcd_config_file);
   if (silcd->config == NULL)
     goto fail;
   silcd->config_file = silcd_config_file;
+
+  /* Unregister the default crypto stuff so that configuration takes effect */
+  silc_cipher_unregister_all();
+  silc_pkcs_unregister_all();
+  silc_hash_unregister_all();
+  silc_hmac_unregister_all();
 
   /* Check for another silcd running */
   silc_server_checkpid(silcd);

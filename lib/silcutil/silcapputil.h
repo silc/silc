@@ -44,6 +44,7 @@
  *                              const char *pub_filename,
  *                              const char *prv_filename,
  *                              const char *pub_identifier,
+ *                              const char *passphrase,
  *                              SilcPKCS *return_pkcs,
  *                              SilcPublicKey *return_public_key,
  *                              SilcPrivateKey *return_private_key,
@@ -59,6 +60,10 @@
  *    The `pub_identifier' is the public key identifier (for example:
  *    "UN=foobar, HN=hostname"), or if NULL the routine generates it
  *    automatically.
+ *
+ *    The `passphrase' is the passphrase that is used to encrypt the
+ *    private key file.  It is recommended that you would protect your
+ *    private key file with a passphrase.
  *
  *    The routine returns FALSE if error occurs during key generation.
  *    Function returns TRUE when success and returns the created SilcPKCS
@@ -84,6 +89,7 @@ bool silc_create_key_pair(const char *pkcs_name,
 			  const char *pub_filename,
 			  const char *prv_filename,
 			  const char *pub_identifier,
+			  const char *passphrase,
 			  SilcPKCS *return_pkcs,
 			  SilcPublicKey *return_public_key,
 			  SilcPrivateKey *return_private_key,
@@ -96,6 +102,7 @@ bool silc_create_key_pair(const char *pkcs_name,
  *    bool silc_load_key_pair(const char *pub_filename,
  *                            const char *prv_filename,
  *                            SilcPKCS *return_pkcs,
+ *                            const char *passphrase,
  *                            SilcPublicKey *return_public_key,
  *                            SilcPrivateKey *return_private_key);
  *
@@ -107,11 +114,13 @@ bool silc_create_key_pair(const char *pkcs_name,
  *    public key into `return_public_key' pointer, private key into
  *    `return_private_key' pointer and the SilcPKCS object to the
  *    `return_pkcs'.  The SilcPKCS can be used to perform public key
- *    cryptographic operations.
+ *    cryptographic operations.  The `passphrase' is the passphrase
+ *    which will be used to decrypt the private key file.
  *
  ***/
 bool silc_load_key_pair(const char *pub_filename,
 			const char *prv_filename,
+			const char *passphrase,
 			SilcPKCS *return_pkcs,
 			SilcPublicKey *return_public_key,
 			SilcPrivateKey *return_private_key);

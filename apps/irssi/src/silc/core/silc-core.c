@@ -310,8 +310,29 @@ void silc_opt_callback(poptContext con,
     silc_hash_register_default();
     silc_hmac_register_default();
     silc_create_key_pair(opt_pkcs, opt_bits, NULL, NULL, NULL,
-			 NULL, NULL, NULL, TRUE);
+			 NULL, NULL, NULL, NULL, TRUE);
     exit(0);
+  }
+}
+
+static void sig_init_finished(void)
+{
+  /* Check ~/.silc directory and public and private keys */
+  if (!silc_client_check_silc_dir()) {
+    idletag = -1;
+    exit(1);
+  }
+
+  /* Load public and private key */
+  if (!silc_client_load_keys(silc_client)) {
+    idletag = -1;
+    exit(1);
+  }
+
+  /* Initialize the SILC client */
+  if (!silc_client_init(silc_client)) {
+    idletag = -1;
+    exit(1);
   }
 }
 
@@ -383,6 +404,7 @@ void silc_core_init(void)
 #endif
 
   signal_add("setup changed", (SIGNAL_FUNC) sig_setup_changed);
+  signal_add("irssi init finished", (SIGNAL_FUNC) sig_init_finished);
 
   silc_init_userinfo();
 
@@ -410,24 +432,6 @@ void silc_core_init(void)
   silc_client->nickname = g_strdup(settings_get_str("nick"));
   silc_client->hostname = silc_net_localhost();
   silc_client->realname = g_strdup(settings_get_str("real_name"));
-
-  /* Check ~/.silc directory and public and private keys */
-  if (silc_client_check_silc_dir() == FALSE) {
-    idletag = -1;
-    return;
-  }
-
-  /* Load public and private key */
-  if (silc_client_load_keys(silc_client) == FALSE) {
-    idletag = -1;
-    return;
-  }
-
-  /* Initialize the SILC client */
-  if (!silc_client_init(silc_client)) {
-    idletag = -1;
-    return;
-  }
 
   silc_log_set_callback(SILC_LOG_INFO, silc_log_misc, NULL);
   silc_log_set_callback(SILC_LOG_WARNING, silc_log_misc, NULL);
@@ -473,6 +477,7 @@ void silc_core_deinit(void)
     signal_emit("chat protocol deinit", 1,
 		chat_protocol_find("SILC"));
     signal_remove("setup changed", (SIGNAL_FUNC) sig_setup_changed);
+    signal_remove("irssi init finished", (SIGNAL_FUNC) sig_init_finished);
 
     silc_server_deinit();
     silc_channels_deinit();

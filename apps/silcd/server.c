@@ -988,8 +988,12 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
 			     silc_server_connect_to_router_retry,
 			     context, 0, 1, SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
-    else
+    else {
       silc_server_config_unref(&sconn->conn);
+      silc_free(sconn->remote_host);
+      silc_free(sconn->backup_replace_ip);
+      silc_free(sconn);
+    }
     return;
   }
 

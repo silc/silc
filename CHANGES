@@ -1,3 +1,20 @@
+Sat Nov  2 21:26:56 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for encrypted private key files.  Now
+	  passphrase must be provided when new key pair is created
+	  (can be empty though), and prompted when loading the
+	  private key.  Added support for loading the old-style
+	  non-encrypted private keys as well.  Affected files
+	  lib/silccrypt/silcpkcs.[ch], Irssi SILC client and
+	  SILC Server.
+
+	* Fixed silc_get_input to accept input on all terminals.
+	  Affected file lib/silcutil/silcutil.c.
+
+	* Moved the Irssi SILC client key loading and other stuff
+	  to be called after the arguments and UI is initialized.
+	  Affected file irssi/src/silc/core/silc-core.c.  Bug #31.
+
 Sat Nov  2 12:53:09 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed connection closing in client library to not crash.

@@ -238,7 +238,7 @@ int silc_client_check_silc_dir()
       silc_create_key_pair(SILC_CLIENT_DEF_PKCS,
 			   SILC_CLIENT_DEF_PKCS_LEN,
 			   file_public_key, file_private_key, NULL,
-			   NULL, NULL, NULL, FALSE);
+			   NULL, NULL, NULL, NULL, FALSE);
       printf("Press <Enter> to continue...\n");
       getchar();
     } else {
@@ -260,7 +260,7 @@ int silc_client_check_silc_dir()
       silc_create_key_pair(SILC_CLIENT_DEF_PKCS,
 			   SILC_CLIENT_DEF_PKCS_LEN,
 			   file_public_key, file_private_key, NULL,
-			   NULL, NULL, NULL, FALSE);
+			   NULL, NULL, NULL, NULL, FALSE);
       printf("Press <Enter> to continue...\n");
       getchar();
     } else {
@@ -312,7 +312,7 @@ int silc_client_check_silc_dir()
       silc_create_key_pair(SILC_CLIENT_DEF_PKCS,
 			   SILC_CLIENT_DEF_PKCS_LEN,
 			   file_public_key, file_private_key, NULL,
-			   NULL, NULL, NULL, FALSE);
+			   NULL, NULL, NULL, NULL, FALSE);
       printf("Press <Enter> to continue...\n");
       getchar();
     } else {
@@ -335,6 +335,7 @@ int silc_client_load_keys(SilcClient client)
 {
   char pub[256], prv[256];
   struct passwd *pw;
+  bool ret;
 
   SILC_LOG_DEBUG(("Loading public and private keys"));
 
@@ -350,6 +351,13 @@ int silc_client_load_keys(SilcClient client)
   snprintf(pub, sizeof(pub) - 1, "%s/%s",
 	   get_irssi_dir(), SILC_CLIENT_PUBLIC_KEY_NAME);
   
-  return silc_load_key_pair(pub, prv, &client->pkcs, &client->public_key,
-			    &client->private_key);
+  /* Try loading first with "" passphrase, for those that didn't set
+     passphrase for private key, and only if that fails let it prompt
+     for passphrase. */
+  ret = silc_load_key_pair(pub, prv, "", &client->pkcs, &client->public_key,
+			   &client->private_key);
+  if (!ret)
+    ret = silc_load_key_pair(pub, prv, NULL, &client->pkcs,
+			     &client->public_key, &client->private_key);
+  return ret;
 }

@@ -59,6 +59,7 @@ bool silc_create_key_pair(const char *pkcs_name,
 			  const char *pub_filename,
 			  const char *prv_filename,
 			  const char *pub_identifier,
+			  const char *passphrase,
 			  SilcPKCS *return_pkcs,
 			  SilcPublicKey *return_public_key,
 			  SilcPrivateKey *return_private_key,
@@ -75,6 +76,7 @@ bool silc_create_key_pair(const char *pkcs_name,
   char *prvfile = prv_filename ? strdup(prv_filename) : NULL;
   char *alg = pkcs_name ? strdup(pkcs_name) : NULL;
   char *identifier = pub_identifier ? strdup(pub_identifier) : NULL;
+  char *pass = passphrase ? strdup(passphrase) : NULL;
 
   if (interactive && (!alg || !pub_filename || !prv_filename))
     printf("\
@@ -155,7 +157,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   if (!pkfile) {
     if (interactive) {
       memset(line, 0, sizeof(line));
-      snprintf(line, sizeof(line), "Public key filename [public_key.pub] ");
+      snprintf(line, sizeof(line), "Public key filename [public_key.pub]: ");
       pkfile = silc_get_input(line, FALSE);
     }
     if (!pkfile)
@@ -165,11 +167,19 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   if (!prvfile) {
     if (interactive) {
       memset(line, 0, sizeof(line));
-      snprintf(line, sizeof(line), "Public key filename [private_key.prv] ");
+      snprintf(line, sizeof(line), "Private key filename [private_key.prv]: ");
       prvfile = silc_get_input(line, FALSE);
     }
     if (!prvfile)
       prvfile = strdup("private_key.prv");
+  }
+
+  if (!pass) {
+    memset(line, 0, sizeof(line));
+    snprintf(line, sizeof(line), "Private key passphrase: ");
+    pass = silc_get_input(line, TRUE);
+    if (!pass)
+      pass = strdup("");
   }
 
   /* Generate keys */
@@ -192,7 +202,9 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   key = silc_pkcs_get_private_key(pkcs, &key_len);
   prv_key = silc_pkcs_private_key_alloc(silc_pkcs_get_name(pkcs),
 					key, key_len);
-  silc_pkcs_save_private_key(prvfile, prv_key, NULL, SILC_PKCS_FILE_BIN);
+  silc_pkcs_save_private_key(prvfile, prv_key,
+			     (unsigned char *)pass, strlen(pass),
+			     SILC_PKCS_FILE_BIN);
   if (return_private_key)
     *return_private_key = prv_key;
   else
@@ -217,6 +229,8 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   silc_free(pkfile);
   silc_free(prvfile);
   silc_free(identifier);
+  memset(pass, 0, strlen(pass));
+  silc_free(pass);
 
   return TRUE;
 }
@@ -225,23 +239,38 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 
 bool silc_load_key_pair(const char *pub_filename,
 			const char *prv_filename,
+			const char *passphrase,
 			SilcPKCS *return_pkcs,
 			SilcPublicKey *return_public_key,
 			SilcPrivateKey *return_private_key)
 {
+  char *pass = passphrase ? strdup(passphrase) : NULL;
+
   SILC_LOG_DEBUG(("Loading public and private keys"));
 
   if (silc_pkcs_load_public_key((char *)pub_filename, return_public_key,
 				SILC_PKCS_FILE_PEM) == FALSE)
     if (silc_pkcs_load_public_key((char *)pub_filename, return_public_key,
-				  SILC_PKCS_FILE_BIN) == FALSE)
+				  SILC_PKCS_FILE_BIN) == FALSE) {
+      memset(pass, 0, strlen(pass));
       return FALSE;
+    }
+
+  if (!pass) {
+    pass = silc_get_input("Private key passphrase: ", TRUE);
+    if (!pass)
+      pass = strdup("");
+  }
 
   if (silc_pkcs_load_private_key((char *)prv_filename, return_private_key,
+				 (unsigned char *)pass, strlen(pass),
 				 SILC_PKCS_FILE_BIN) == FALSE)
     if (silc_pkcs_load_private_key((char *)prv_filename, return_private_key,
-				   SILC_PKCS_FILE_PEM) == FALSE)
+				   (unsigned char *)pass, strlen(pass),
+				   SILC_PKCS_FILE_PEM) == FALSE) {
+      memset(pass, 0, strlen(pass));
       return FALSE;
+    }
 
   if (return_pkcs) {
     silc_pkcs_alloc((*return_public_key)->name, return_pkcs);
@@ -249,6 +278,7 @@ bool silc_load_key_pair(const char *pub_filename,
     silc_pkcs_private_key_set(*return_pkcs, *return_private_key);
   }
 
+  memset(pass, 0, strlen(pass));
   return TRUE;
 }
 

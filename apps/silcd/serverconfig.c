@@ -536,9 +536,9 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
 
     /* try to load specified file, if fail stop config parsing */
     if (!silc_pkcs_load_private_key(file_tmp, &server_info->private_key,
-				    SILC_PKCS_FILE_BIN))
+				    "", 0, SILC_PKCS_FILE_BIN))
       if (!silc_pkcs_load_private_key(file_tmp, &server_info->private_key,
-				      SILC_PKCS_FILE_PEM)) {
+				      "", 0, SILC_PKCS_FILE_PEM)) {
 	SILC_SERVER_LOG_ERROR(("Error: Could not load private key file."));
 	return SILC_CONFIG_EPRINTLINE;
       }
@@ -1202,11 +1202,11 @@ static const SilcConfigTable table_routerconn[] = {
 };
 
 static const SilcConfigTable table_main[] = {
-  { "general",		SILC_CONFIG_ARG_BLOCK,	NULL,	       table_general },
   { "cipher",		SILC_CONFIG_ARG_BLOCK,	fetch_cipher,  table_cipher },
   { "hash",		SILC_CONFIG_ARG_BLOCK,	fetch_hash,    table_hash },
   { "hmac",		SILC_CONFIG_ARG_BLOCK,	fetch_hmac,    table_hmac },
   { "pkcs",		SILC_CONFIG_ARG_BLOCK,	fetch_pkcs,    table_pkcs },
+  { "general",		SILC_CONFIG_ARG_BLOCK,	NULL,	       table_general },
   { "serverinfo",	SILC_CONFIG_ARG_BLOCK,	fetch_serverinfo, table_serverinfo },
   { "logging",		SILC_CONFIG_ARG_BLOCK,	NULL,	       table_logging },
   { "connectionparams",	SILC_CONFIG_ARG_BLOCK,	fetch_connparam, table_connparam },
