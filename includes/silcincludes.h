@@ -130,7 +130,7 @@
 #include <regex.h>
 #endif
 
-#ifdef HAVE_PTHREAD_H
+#ifdef SILC_HAVE_PTHREAD
 #include <pthread.h>
 #endif
 

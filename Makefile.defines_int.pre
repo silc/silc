@@ -33,6 +33,11 @@ silc_install_prefix=@prefix@
 SILC_COMMON_LIBS= @LIBS@ -L$(silc_top_srcdir)/lib -lsilc
 
 #
+# Common compilation flags
+#
+SILC_CFLAGS=@CFLAGS@
+
+#
 # Installation defines
 #
 silc_etcdir=@ETCDIR@

@@ -67,7 +67,6 @@ AC_CHECK_HEADERS(netinet/in.h netinet/tcp.h netdb.h)
 AC_CHECK_HEADERS(pwd.h grp.h termcap.h paths.h)
 AC_CHECK_HEADERS(ncurses.h signal.h ctype.h regex.h)
 AC_CHECK_HEADERS(arpa/inet.h sys/mman.h limits.h)
-AC_CHECK_HEADERS(pthread.h)
 
 # Data type checking
 AC_TYPE_SIGNAL
@@ -532,7 +531,9 @@ AC_ARG_WITH(silcd-config-file,
                           server [/etc/silc/silcd.conf]],
 [ AC_DEFINE_UNQUOTED(SILC_SERVER_CONFIG_FILE, "$withval") ])
 
+#
 # Native WIN32 compilation under cygwin
+#
 AC_ARG_WITH(win32,
 [  --with-win32            Compile native WIN32 code (-mno-cygwin)],
 [ AC_DEFINE(SILC_WIN32)
@@ -540,7 +541,9 @@ AC_ARG_WITH(win32,
   CFLAGS="-mno-cygwin $CFLAGS" 
   LIBS="$LIBS -lwsock32" ])
 
+#
 # Debug checking
+#
 AC_MSG_CHECKING(for enabled debugging)
 AC_ARG_ENABLE(debug,
 [  --enable-debug          Enable debugging (warning: it is heavy!)],
@@ -557,7 +560,21 @@ AC_ARG_ENABLE(debug,
 esac ], CFLAGS="-O2 -g $CFLAGS"
         AC_MSG_RESULT(no))
 
+#
 # Pthread checking
+#
+AC_CHECK_HEADERS(pthread.h, [ AC_DEFINE(SILC_HAVE_PTHREAD) ], 
+	[ if test -f /usr/pkg/include/pthread.h ; then
+	    AC_DEFINE(SILC_HAVE_PTHREAD)
+	    AC_MSG_RESULT(Found pthread.h in /usr/pkg/include/)
+	    CFLAGS="$CFLAGS -I/usr/pkg/include"
+          elif test -f /usr/contrib/include/pthread.h ; then
+	    AC_DEFINE(SILC_HAVE_PTHREAD)
+	    AC_MSG_RESULT(Found pthread.h in /usr/contrib/include/)
+	    CFLAGS="$CFLAGS -I/usr/contrib/include"
+          fi
+	])
+
 AC_ARG_ENABLE(threads,
 [  --disable-threads       Do not compile with multi-thread support],
 [ case "${enableval}" in
@@ -573,9 +590,42 @@ esac ], AC_DEFINE(SILC_THREADS)
 
 AM_CONDITIONAL(SILC_THREADS, test x$want_threads = xtrue)
 if test x$want_threads = xtrue; then
-  AC_TRY_COMPILE([#include <pthread.h>],
-  		 [pthread_attr_t attr; pthread_attr_init(&attr);],
-  		 LIBS="$LIBS -lpthread")
+  TMP_LIBS="$LIBS"
+  LIBS="-lpthread"
+  AC_TRY_LINK([#include <pthread.h>],
+  	      [pthread_attr_t attr; pthread_attr_init(&attr);], ,
+  LIBS="-L/usr/pkg/lib -lpthread"
+  AC_TRY_LINK([#include <pthread.h>],
+  	      [pthread_attr_t attr; pthread_attr_init(&attr);], ,
+  LIBS="-L/usr/contrib/lib -lpthread"
+  AC_TRY_LINK([#include <pthread.h>],
+  	      [pthread_attr_t attr; pthread_attr_init(&attr);], , LIBS=""
+  )))
+
+  CFLAGS="$CFLAGS -D_REENTRANT"
+  case $host in
+    *-aix*)
+      CFLAGS="$CFLAGS -D_THREAD_SAFE"
+      if test x"$GCC" = xyes; then
+        CFLAGS="$CFLAGS -mthreads"  
+      fi
+      ;;
+    *-freebsd2.2*)
+      CFLAGS="$CFLAGS -D_THREAD_SAFE"
+      ;;
+    *-sysv5uw7*)  # UnixWare 7
+      if test "$GCC" != "yes"; then
+        CFLAGS="$CFLAGS -Kthread"
+      else
+        CFLAGS="$CFLAGS -pthread"
+      fi
+      ;;
+    *-dg-dgux*)  # DG/UX
+      CFLAGS="$CFLAGS -D_POSIX4A_DRAFT10_SOURCE"
+      ;;
+    esac
+
+  LIBS="$TMP_LIBS $LIBS"
 fi
 
 #

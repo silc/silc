@@ -71,6 +71,9 @@
 #undef Rfclose
 #undef Rgethostbyname
 
+/* POSIX thread checking */
+#undef SILC_HAVE_PTHREAD
+
 /* Native WIN32 compilation (-mno-cygwin GCC option) under cygwin, though
    the code compiles with any native WIN32 compiler. */
 #undef SILC_WIN32

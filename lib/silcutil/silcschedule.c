@@ -613,6 +613,8 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   if ((!schedule->fd_queue && !schedule->timeout_queue 
        && !schedule->generic_queue) || schedule->valid == FALSE) {
     SILC_LOG_DEBUG(("Scheduler not valid anymore, exiting"));
+    if (!schedule->is_locked)
+      silc_mutex_unlock(schedule->lock);
     return FALSE;
   }
 
@@ -632,8 +634,11 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
      tasks. The silc_select() listens to these file descriptors. */
   SILC_SCHEDULE_SELECT_TASKS;
 
-  if (schedule->max_fd == -1 && !schedule->timeout)
+  if (schedule->max_fd == -1 && !schedule->timeout) {
+    if (!schedule->is_locked)
+      silc_mutex_unlock(schedule->lock);
     return FALSE;
+  }
 
   if (schedule->timeout) {
     SILC_LOG_DEBUG(("timeout: sec=%d, usec=%d", schedule->timeout->tv_sec,
