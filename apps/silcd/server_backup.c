@@ -1197,6 +1197,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
     SILC_LOG_ERROR(("Error occurred during backup router resuming protcool"));
   }
 
+  if (server->server_shutdown)
+    return;
+
   /* Remove this protocol from all server entries that has it */
   if (silc_idcache_get_all(server->local_list->servers, &list)) {
     if (silc_idcache_list_first(list, &id_cache)) {

@@ -2144,6 +2144,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   SilcCipher cipher = NULL;
   SilcHmac hmac = NULL;
   SilcUInt32 sequence = 0;
+  bool local_is_router;
   int ret;
 
   if (!sock) {
@@ -2265,10 +2266,20 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     sequence = idata->psn_receive;
   }
 
-  /* Process the packet. This will call the parser that will then
+  /* Then, process the packet. This will call the parser that will then
      decrypt and parse the packet. */
-  ret = silc_packet_receive_process(sock, server->server_type == SILC_ROUTER ?
-			            TRUE : FALSE, cipher, hmac, sequence,
+
+  local_is_router = (server->server_type == SILC_ROUTER);
+
+  /* If socket connection is our primary, we are backup and we are doing
+     backup resuming, we won't process the packet as being a router 
+     (affects channel message decryption). */
+  if (server->backup_router && SILC_SERVER_IS_BACKUP(sock) &&
+      SILC_PRIMARY_ROUTE(server) == sock)
+    local_is_router = FALSE;
+
+  ret = silc_packet_receive_process(sock, local_is_router,
+			            cipher, hmac, sequence,
 			            silc_server_packet_parse, server);
 
   /* If processing failed the connection is closed. */
@@ -2406,14 +2417,14 @@ bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
        and we want to call this processor with valid cipher. */
     if (idata)
       ret = silc_packet_receive_process(
-				  sock, server->server_type == SILC_ROUTER ?
-				  TRUE : FALSE, idata->receive_key,
+				  sock, server->server_type == SILC_ROUTER,
+				  idata->receive_key,
 				  idata->hmac_receive, idata->psn_receive,
 				  silc_server_packet_parse, server);
     else
       ret = silc_packet_receive_process(
-				  sock, server->server_type == SILC_ROUTER ?
-				  TRUE : FALSE, NULL, NULL, 0,
+				  sock, server->server_type == SILC_ROUTER,
+				  NULL, NULL, 0,
 				  silc_server_packet_parse, server);
 
     if (!ret) {
@@ -2919,7 +2930,7 @@ void silc_server_close_connection(SilcServer server,
   char tmp[128];
 
   if (!server->sockets[sock->sock] && SILC_IS_DISCONNECTED(sock)) {
-    silc_schedule_task_add(server->schedule, 0,
+    silc_schedule_task_add(server->schedule, sock->sock,
 			   silc_server_close_connection_final,
 			   (void *)sock, 0, 1, SILC_TASK_TIMEOUT,
 			   SILC_TASK_PRI_NORMAL);
@@ -2961,7 +2972,7 @@ void silc_server_close_connection(SilcServer server,
     }
   }
 
-  silc_schedule_task_add(server->schedule, 0,
+  silc_schedule_task_add(server->schedule, sock->sock,
 			 silc_server_close_connection_final,
 			 (void *)sock, 0, 1, SILC_TASK_TIMEOUT,
 			 SILC_TASK_PRI_NORMAL);

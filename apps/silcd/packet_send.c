@@ -741,6 +741,9 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
 					    unsigned char *data,
 					    unsigned int data_len)
 {
+  SilcUInt32 mac_len, iv_len;
+  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
+
   /* If we are router and the packet came from router and private key
      has not been set for the channel then we must encrypt the packet
      as it was decrypted with the session key shared between us and the
@@ -748,11 +751,17 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
      same channel key. */
   if (server->server_type == SILC_ROUTER &&
       sock->type == SILC_SOCKET_TYPE_ROUTER &&
-      !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY) &&
-      channel->channel_key) {
-    SilcUInt32 mac_len = silc_hmac_len(channel->hmac);
-    SilcUInt32 iv_len = silc_cipher_get_block_len(channel->channel_key);
-    unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
+      !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY) && channel->key) {
+
+    /* If we are backup router and remote is our primary router and
+       we are currently doing backup resuming protocol we must not
+       re-encrypt message with session key. */
+    if (server->backup_router && SILC_SERVER_IS_BACKUP(sock) &&
+	SILC_PRIMARY_ROUTE(server) == sock)
+      return TRUE;
+
+    mac_len = silc_hmac_len(channel->hmac);
+    iv_len = silc_cipher_get_block_len(channel->channel_key);
 
     if (data_len <= mac_len + iv_len) {
       SILC_LOG_WARNING(("Corrupted channel message, cannot relay it"));
