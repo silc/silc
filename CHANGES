@@ -1,3 +1,13 @@
+Fri Nov  7 19:38:42 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added some better comments to lib/silccrypt/silcpkcs.h,
+	  optimized some routines in lib/silccrypt/silcpkcs.c.
+	  Added test_silcpkcs into lib/silccrypt/tests/.
+
+	* Fixed silc_rng_global_init to actually init the global RNG
+	  if RNG wasn't provided for it.  Affected file is
+	  lib/silccrypt/silrng.c.
+
 Thu Nov  6 21:08:28 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_hash_table_find_by_context_ext.  Affected files

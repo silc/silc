@@ -293,7 +293,10 @@ char *silc_pkcs_get_supported(void)
 bool silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
 			    SilcRng rng)
 {
-  return pkcs->pkcs->init(pkcs->context, bits_key_len, rng);
+  bool ret = pkcs->pkcs->init(pkcs->context, bits_key_len, rng);
+  if (ret)
+    pkcs->key_len = bits_key_len;
+  return ret;
 }
 
 /* Returns the length of the key */
@@ -636,9 +639,8 @@ SilcPublicKey silc_pkcs_public_key_alloc(const char *name,
   public_key = silc_calloc(1, sizeof(*public_key));
   public_key->name = strdup(name);
   public_key->pk_len = pk_len;
-  public_key->pk = silc_calloc(pk_len, sizeof(*public_key->pk));
+  public_key->pk = silc_memdup(pk, pk_len);
   public_key->pk_type = SILC_SKE_PK_TYPE_SILC;
-  memcpy(public_key->pk, pk, pk_len);
 
   if (!silc_utf8_valid(identifier, strlen(identifier))) {
     int len = silc_utf8_encoded_len(identifier, strlen(identifier), 0);
@@ -678,8 +680,7 @@ SilcPrivateKey silc_pkcs_private_key_alloc(const char *name,
   private_key = silc_calloc(1, sizeof(*private_key));
   private_key->name = strdup(name);
   private_key->prv_len = prv_len;
-  private_key->prv = silc_calloc(prv_len, sizeof(*private_key->prv));
-  memcpy(private_key->prv, prv, prv_len);
+  private_key->prv = silc_memdup(prv, prv_len);
 
   return private_key;
 }
@@ -690,7 +691,10 @@ void silc_pkcs_private_key_free(SilcPrivateKey private_key)
 {
   if (private_key) {
     silc_free(private_key->name);
-    silc_free(private_key->prv);
+    if (private_key->prv) {
+      memset(private_key->prv, 0, private_key->prv_len);
+      silc_free(private_key->prv);
+    }
     silc_free(private_key);
   }
 }
@@ -701,26 +705,10 @@ void silc_pkcs_private_key_free(SilcPrivateKey private_key)
 unsigned char *
 silc_pkcs_public_key_encode(SilcPublicKey public_key, SilcUInt32 *len)
 {
-  SilcBuffer buf;
-  unsigned char *ret;
-
-  buf = silc_buffer_alloc_size(public_key->len + 4);
-  if (!buf)
-    return NULL;
-
-  silc_buffer_format(buf,
-		     SILC_STR_UI_INT(public_key->len),
-		     SILC_STR_UI_SHORT(strlen(public_key->name)),
-		     SILC_STR_UI32_STRING(public_key->name),
-		     SILC_STR_UI_SHORT(strlen(public_key->identifier)),
-		     SILC_STR_UI32_STRING(public_key->identifier),
-		     SILC_STR_UI_XNSTRING(public_key->pk,
-					  public_key->pk_len),
-		     SILC_STR_END);
-
-  ret = silc_buffer_steal(buf, len);
-  silc_buffer_free(buf);
-  return ret;
+  return silc_pkcs_public_key_data_encode(public_key->pk,
+					  public_key->pk_len,
+					  public_key->name,
+					  public_key->identifier, len);
 }
 
 /* Encodes SILC style public key. Returns the encoded data. */
@@ -966,25 +954,9 @@ SilcPublicKey silc_pkcs_public_key_copy(SilcPublicKey public_key)
 unsigned char *
 silc_pkcs_private_key_encode(SilcPrivateKey private_key, SilcUInt32 *len)
 {
-  SilcBuffer buf;
-  unsigned char *ret;
-  SilcUInt32 totlen;
-
-  totlen = 2 + strlen(private_key->name) + private_key->prv_len;
-  buf = silc_buffer_alloc_size(totlen);
-  if (!buf)
-    return NULL;
-
-  silc_buffer_format(buf,
-		     SILC_STR_UI_SHORT(strlen(private_key->name)),
-		     SILC_STR_UI32_STRING(private_key->name),
-		     SILC_STR_UI_XNSTRING(private_key->prv,
-					  private_key->prv_len),
-		     SILC_STR_END);
-
-  ret = silc_buffer_steal(buf, len);
-  silc_buffer_free(buf);
-  return ret;
+  return silc_pkcs_private_key_data_encode(private_key->prv,
+					   private_key->prv_len,
+					   private_key->name, len);
 }
 
 /* Encodes SILC private key. Returns the encoded data. */

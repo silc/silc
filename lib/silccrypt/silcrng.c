@@ -1,10 +1,10 @@
 /*
 
-  silcrng.c 
+  silcrng.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Created: Sun Mar  9 00:09:18 1997
  *
  * The original RNG was based on Secure Shell's random number generator
- * by Tatu Ylönen and was used as reference when programming this RNG.  
+ * by Tatu Ylönen and was used as reference when programming this RNG.
  * This RNG has been rewritten twice since the creation.
  */
 
@@ -54,7 +54,7 @@ static void silc_rng_get_hard_noise(SilcRng rng);
 static void silc_rng_get_medium_noise(SilcRng rng);
 static void silc_rng_get_soft_noise(SilcRng rng);
 
-/* 
+/*
    SILC SilcRng State context.
 
    This object is used by the random number generator to provide
@@ -81,8 +81,8 @@ typedef struct SilcRngStateContext {
   struct SilcRngStateContext *next;
 } *SilcRngState;
 
-/* 
-   SILC Random Number Generator object. 
+/*
+   SILC Random Number Generator object.
 
    This object holds random pool which is used to generate the random
    numbers used by various routines needing cryptographically strong
@@ -179,7 +179,7 @@ void silc_rng_free(SilcRng rng)
   }
 }
 
-/* Initializes random number generator by getting noise from environment. 
+/* Initializes random number generator by getting noise from environment.
    The environmental noise is our so called seed. One should not call
    this function more than once. */
 
@@ -200,7 +200,7 @@ void silc_rng_init(SilcRng rng)
   first = rng->state;
   for (i = SILC_RNG_STATE_NUM - 1; i >= 1; i--) {
     next = silc_calloc(1, sizeof(*rng->state));
-    next->low = 
+    next->low =
       (i * (sizeof(rng->pool) / SILC_RNG_STATE_NUM));
     next->pos =
       (i * (sizeof(rng->pool) / SILC_RNG_STATE_NUM)) + 8;
@@ -229,7 +229,7 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   struct tms ptime;
 #endif
   SilcUInt32 pos;
-  
+
   pos = silc_rng_get_position(rng);
 
   silc_rng_xor(rng, clock(), 0);
@@ -308,7 +308,7 @@ static void silc_rng_get_hard_noise(SilcRng rng)
 #ifndef SILC_WIN32
   unsigned char buf[32];
   int fd, len, i;
-  
+
   /* Get noise from /dev/[u]random if available */
   fd = open(rng->devrandom, O_RDONLY);
   if (fd < 0)
@@ -342,22 +342,22 @@ static void silc_rng_exec_command(SilcRng rng, char *command)
   FILE *fd;
   int i;
   int c;
-  
+
   /* Open process */
   fd = popen(command, "r");
   if (!fd)
     return;
-  
+
   /* Get data as much as we can get into the buffer */
   for (i = 0; i < sizeof(buf); i++) {
     c = fgetc(fd);
     if (c == EOF)
-      break; 
+      break;
     buf[i] = c;
   }
-  
+
   pclose(fd);
-  
+
   if (i != 0) {
     /* Add the buffer into random pool */
     silc_rng_add_noise(rng, buf, i);
@@ -366,7 +366,7 @@ static void silc_rng_exec_command(SilcRng rng, char *command)
 #endif
 }
 
-/* This function adds the contents of the buffer as noise into random 
+/* This function adds the contents of the buffer as noise into random
    pool. After adding the noise the pool is stirred. */
 
 void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, SilcUInt32 len)
@@ -397,7 +397,7 @@ static void silc_rng_xor(SilcRng rng, SilcUInt32 val, unsigned int pos)
   SILC_PUT32_MSB(val, &rng->pool[pos]);
 }
 
-/* This function stirs the random pool by encrypting buffer in CFB 
+/* This function stirs the random pool by encrypting buffer in CFB
    (cipher feedback) mode with SHA1 algorithm. */
 
 static void silc_rng_stir_pool(SilcRng rng)
@@ -483,7 +483,7 @@ static SilcUInt32 silc_rng_get_position(SilcRng rng)
     rng->state->pos = rng->state->low;
 
 #ifdef SILC_RNG_DEBUG
-    fprintf(stderr, "state: %p: low: %lu, pos: %lu\n", 
+    fprintf(stderr, "state: %p: low: %lu, pos: %lu\n",
 	    rng->state, rng->state->low, rng->state->pos);
 #endif
 
@@ -607,10 +607,13 @@ SilcRng global_rng = NULL;
 
 bool silc_rng_global_init(SilcRng rng)
 {
-  if (rng)
+  if (rng) {
     global_rng = rng;
-  else
-    global_rng = silc_rng_alloc();
+    return TRUE;
+  }
+
+  global_rng = silc_rng_alloc();
+  silc_rng_init(global_rng);
 
   return TRUE;
 }

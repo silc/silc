@@ -4,7 +4,7 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -413,9 +413,9 @@ extern DLLAPI bool silc_debug_hexdump;
  */
 #if defined(SILC_DEBUG)
 #define SILC_LOG_HEXDUMP(fmt, data, len) silc_log_output_hexdump(__FILE__, \
-				__FUNCTION__, \
-				__LINE__, \
-				(data), (len), \
+				__FUNCTION__,				   \
+				__LINE__,				   \
+				(void *)(data), (len),			   \
 				silc_format fmt)
 #else
 #define SILC_LOG_HEXDUMP(fmt, data, len)
@@ -472,7 +472,7 @@ char *silc_log_get_file(SilcLogType type);
  *
  * SYNOPSIS
  *
- *    bool silc_log_set_file(SilcLogType type, char *filename, 
+ *    bool silc_log_set_file(SilcLogType type, char *filename,
  *                           SilcUInt32 maxsize,
  *                           SilcSchedule scheduler);
  *
@@ -484,8 +484,8 @@ char *silc_log_get_file(SilcLogType type);
  *    logging settings are not changed.
  *
  *    You can disable logging for a channel by specifying NULL filename, the
- *    maxsize in this case is not important.  The `scheduler' parameter is 
- *    needed by the internal logging to allow buffered output and thus to 
+ *    maxsize in this case is not important.  The `scheduler' parameter is
+ *    needed by the internal logging to allow buffered output and thus to
  *    save HD activity.
  *
  ***/
@@ -508,7 +508,7 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
  *    handler.
  *
  *    You can disable/remove a callback by setting it to NULL or calling the
- *    function silc_log_reset_callbacks.  If set, the callback function 
+ *    function silc_log_reset_callbacks.  If set, the callback function
  *    must be in the form described by SilcLogCb.
  *
  * SEE ALSO
