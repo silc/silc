@@ -17,6 +17,7 @@
 @LINK=silcfileutil.html:SILC File Util Interface
 @LINK=silcstrutil.html:SILC String Util Interface
 @LINK=silcutf8.html:SILC UTF-8 Interface
+@LINK=silcstringprep.html:SILC Stringprep Interface
 @LINK=silcutil.html:SILC Util Interface
 @LINK=silclist.html:SILC List Interface
 @LINK=silcdlist.html:SILC Dynamic List Interface
