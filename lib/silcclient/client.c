@@ -248,7 +248,8 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
       if (conn->pending_commands)
 	silc_dlist_uninit(conn->pending_commands);
       silc_free(conn->remote_host);
-      silc_dlist_uninit(conn->ftp_sessions);
+      if (conn->ftp_sessions)
+        silc_dlist_uninit(conn->ftp_sessions);
       silc_free(conn);
 
       client->internal->conns[i] = NULL;

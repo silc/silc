@@ -693,7 +693,6 @@ void silc_client_ftp_free_sessions(SilcClient client,
       silc_client_ftp_session_free(session);
     }
     silc_dlist_del(conn->ftp_sessions, session);
-    silc_dlist_uninit(conn->ftp_sessions);
   }
 }
 
@@ -726,7 +725,11 @@ void silc_client_ftp_session_free(SilcClientFtpSession session)
 
   SILC_LOG_DEBUG(("Free session"));
 
-  silc_dlist_del(session->conn->ftp_sessions, session);
+  if (session->conn && session->conn->ftp_sessions)
+    silc_dlist_del(session->conn->ftp_sessions, session);
+
+  if (session->conn && session->conn->active_session == session)
+    session->conn->active_session = NULL;
 
   if (session->sftp) {
     if (session->server)
@@ -770,6 +773,7 @@ void silc_client_ftp_session_free(SilcClientFtpSession session)
   silc_free(session->hostname);
   silc_free(session->filepath);
   silc_free(session->path);
+  memset(session, 'F', sizeof(*session));
   silc_free(session);
 }
 
@@ -1031,7 +1035,7 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
 
   silc_dlist_start(conn->ftp_sessions);
   while ((session = silc_dlist_get(conn->ftp_sessions)) != SILC_LIST_END) {
-    if (session->client_entry == client_entry)
+    if (session->client_entry == client_entry && !session->server)
       break;
   }
 

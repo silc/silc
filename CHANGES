@@ -1,3 +1,10 @@
+Mon Sep  9 12:18:18 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Incoming file transfer request cannot use same session as
+	  the sending session.  This can happen when sending file to
+	  yourself.  Crashed the client on quit.  Affected file
+	  lib/silcclient/client_ftp.c.  Bug #24.
+
 Sun Sep  8 18:39:25 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Implemented the draft-riikonen-precense-attrs draft and
