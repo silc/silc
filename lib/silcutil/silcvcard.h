@@ -23,9 +23,9 @@
  *
  * Implementation of the VCard 3.0 standard (RFC 2426) that can be used
  * with Requested Attributes (in WHOIS command) to deliver personal
- * information.  All fields are not supported since some other the
+ * information.  All fields are not supported since some of the
  * information are not needed in context of SILC.  If such VCard is
- * received this ignores the unsupported fields.
+ * received this implementation ignores the unsupported fields.
  *
  ***/
 
@@ -96,6 +96,8 @@ typedef struct {
 
   char *note;		    /* a note, string */
   char *rev;		    /* revision of card, UTC date string */
+
+  bool dynamic;		    /* TRUE when dynamically allocated */
 } SilcVCardStruct, *SilcVCard;
 /***/
 
@@ -134,6 +136,20 @@ unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len);
  ***/
 bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
 		       SilcVCard vcard);
+
+/****f* silcutil/SilcVCard/silc_vcard_alloc
+ *
+ * SYNOPSIS
+ *
+ *    SilcVCard silc_vcard_alloc(void);
+ *
+ * DESCRIPTION
+ *
+ *    Allocate a SilcVCard context which must be freed with the
+ *    silc_vcard_free function.
+ *
+ ***/
+SilcVCard silc_vcard_alloc(void);
 
 /****f* silcutil/SilcVCard/silc_vcard_free
  *

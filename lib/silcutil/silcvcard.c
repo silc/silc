@@ -25,53 +25,6 @@
 #define VCARD_VERSION "VERSION:3.0\n"
 #define VCARD_FOOTER "END:VCARD"
 
-/* Free all data inside the card structure */
-
-static void silc_vcard_free_internal(SilcVCard vcard)
-{
-  int i;
-
-  silc_free(vcard->full_name);
-  silc_free(vcard->family_name);
-  silc_free(vcard->first_name);
-  silc_free(vcard->middle_names);
-  silc_free(vcard->prefix);
-  silc_free(vcard->suffix);
-  silc_free(vcard->nickname);
-  silc_free(vcard->bday);
-  silc_free(vcard->title);
-  silc_free(vcard->role);
-  silc_free(vcard->org_name);
-  silc_free(vcard->org_unit);
-  silc_free(vcard->categories);
-  silc_free(vcard->class);
-  silc_free(vcard->url);
-  silc_free(vcard->label);
-  for (i = 0; i < vcard->num_addrs; i++) {
-    silc_free(vcard->addrs[i].type);
-    silc_free(vcard->addrs[i].pbox);
-    silc_free(vcard->addrs[i].ext_addr);
-    silc_free(vcard->addrs[i].street_addr);
-    silc_free(vcard->addrs[i].city);
-    silc_free(vcard->addrs[i].state);
-    silc_free(vcard->addrs[i].code);
-    silc_free(vcard->addrs[i].country);
-  }
-  silc_free(vcard->addrs);
-  for (i = 0; i < vcard->num_tels; i++) {
-    silc_free(vcard->tels[i].type);
-    silc_free(vcard->tels[i].tel);
-  }
-  silc_free(vcard->tels);
-  for (i = 0; i < vcard->num_emails; i++) {
-    silc_free(vcard->emails[i].type);
-    silc_free(vcard->emails[i].address);
-  }
-  silc_free(vcard->emails);
-  silc_free(vcard->note);
-  silc_free(vcard->rev);
-}
-
 /* Encode VCard */
 
 unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
@@ -363,20 +316,74 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
   }
 
   if (!has_begin || !has_end) {
-    silc_vcard_free_internal(vcard);
+    silc_vcard_free(vcard);
     return FALSE;
   }
 
   return TRUE;
 }
 
+/* Allocate vcard context */
+
+SilcVCard silc_vcard_alloc(void)
+{
+  SilcVCard vcard = silc_calloc(1, sizeof(*vcard));
+  if (!vcard)
+    return NULL;
+  vcard->dynamic = TRUE;
+  return vcard;
+}
+
 /* Free the vcard structure */
 
 void silc_vcard_free(SilcVCard vcard)
 {
-  silc_vcard_free_internal(vcard);
-  memset(vcard, 'F', sizeof(*vcard));
-  silc_free(vcard);
+  int i;
+
+  silc_free(vcard->full_name);
+  silc_free(vcard->family_name);
+  silc_free(vcard->first_name);
+  silc_free(vcard->middle_names);
+  silc_free(vcard->prefix);
+  silc_free(vcard->suffix);
+  silc_free(vcard->nickname);
+  silc_free(vcard->bday);
+  silc_free(vcard->title);
+  silc_free(vcard->role);
+  silc_free(vcard->org_name);
+  silc_free(vcard->org_unit);
+  silc_free(vcard->categories);
+  silc_free(vcard->class);
+  silc_free(vcard->url);
+  silc_free(vcard->label);
+  for (i = 0; i < vcard->num_addrs; i++) {
+    silc_free(vcard->addrs[i].type);
+    silc_free(vcard->addrs[i].pbox);
+    silc_free(vcard->addrs[i].ext_addr);
+    silc_free(vcard->addrs[i].street_addr);
+    silc_free(vcard->addrs[i].city);
+    silc_free(vcard->addrs[i].state);
+    silc_free(vcard->addrs[i].code);
+    silc_free(vcard->addrs[i].country);
+  }
+  silc_free(vcard->addrs);
+  for (i = 0; i < vcard->num_tels; i++) {
+    silc_free(vcard->tels[i].type);
+    silc_free(vcard->tels[i].tel);
+  }
+  silc_free(vcard->tels);
+  for (i = 0; i < vcard->num_emails; i++) {
+    silc_free(vcard->emails[i].type);
+    silc_free(vcard->emails[i].address);
+  }
+  silc_free(vcard->emails);
+  silc_free(vcard->note);
+  silc_free(vcard->rev);
+
+  if (vcard->dynamic) {
+    memset(vcard, 'F', sizeof(*vcard));
+    silc_free(vcard);
+  }
 }
 
 /* Print card to file stream */
