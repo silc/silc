@@ -2066,6 +2066,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	  ctx->conn_type = SILC_SOCKET_TYPE_SERVER;
 	new_server->server_type = SILC_BACKUP_ROUTER;
 
+	SILC_SERVER_SEND_OPERS(server, FALSE, TRUE, SILC_NOTIFY_TYPE_NONE,
+			       ("Backup router %s is now online",
+				sock->hostname));
+
 	/* Remove the backup waiting with timeout */
 	silc_schedule_task_add(server->schedule, 0,
 			       silc_server_backup_router_wait,
