@@ -231,5 +231,15 @@ FORMAT_REC fecommon_silc_formats[] = {
         { "lstkey_loadpub", "Could not load public key file `$0'", 1, { 0 } },
 	{ "lstkey_list", "Stored {hilight $0} public keys:", 1, { 0 } },
 
+	/* Network */
+	{ NULL, "Network", 0},
+
+	{ "silcnet_added", "SILCNet $0 saved", 1, { 0 } },
+	{ "silcnet_removed", "SILCNet $0 removed", 1, { 0 } },
+	{ "silcnet_not_found", "SILCNet $0 not found", 1, { 0 } },
+	{ "silcnet_header", "%#SILCNets:", 0 },
+	{ "silcnet_line", "%#$0: $1", 2, { 0, 0 } },
+	{ "silcnet_footer", "", 0 },
+
 	{ NULL, NULL, 0 }
 };

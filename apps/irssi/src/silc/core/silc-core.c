@@ -29,6 +29,7 @@
 #include "silc-channels.h"
 #include "silc-queries.h"
 #include "silc-nicklist.h"
+#include "silc-chatnets.h"
 
 #include "signals.h"
 #include "levels.h"
@@ -480,6 +481,7 @@ void silc_core_init(void)
   silc_queries_init();
   silc_expandos_init();
   silc_lag_init();
+  silc_chatnets_init();
 
   module_register("silc", "core");
 }
@@ -501,6 +503,7 @@ void silc_core_deinit(void)
   silc_queries_deinit();
   silc_expandos_deinit();
   silc_lag_deinit();
+  silc_chatnets_deinit();
   
   chat_protocol_unregister("SILC");
   
