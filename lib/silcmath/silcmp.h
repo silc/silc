@@ -223,7 +223,7 @@ void silc_mp_add(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *    to `dst'.
  *
  ***/
-void silc_mp_add_ui(SilcMPInt *dst, SilcMPInt *mp1, mp_digit ui);
+void silc_mp_add_ui(SilcMPInt *dst, SilcMPInt *mp1, uint32 ui);
 
 /****f* silcmath/SilcMPAPI/silc_mp_sub
  *
