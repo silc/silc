@@ -26,7 +26,7 @@ typedef struct {
 } SHA1_CTX;
 
 /* Function forward declerations */
-void SHA1Transform(uint32 state[5], unsigned char buffer[64]);
+void SHA1Transform(uint32 *state, const unsigned char *data);
 void SHA1Init(SHA1_CTX* context);
 void SHA1Update(SHA1_CTX* context, unsigned char* data, uint32 len);
 void SHA1Final(unsigned char digest[20], SHA1_CTX* context);

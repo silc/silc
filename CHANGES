@@ -3,6 +3,8 @@ Wed Jul 18 09:40:04 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	* Added for WIN32 support for the new scheduler as well.
 	  Affected file lib/silcutil/win32/silcwin32schedule.c.
 
+	* Fixed the SHA1 implementation to work on various platforms.
+
 Tue Jul 17 23:04:10 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Rewrote the SILC Scheduler entirely.  Removed the old SILC Task
