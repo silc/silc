@@ -1,7 +1,5 @@
-BUAHAAAA!!!!! :) - Pekka
-
 <?php
-//test
+//test 2
 
 function Hits() {
 
