@@ -21,8 +21,6 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-#include "command_reply.h"
-
 /* 
    Structure holding one command and pointer to its function. 
 
@@ -57,7 +55,15 @@ typedef struct {
   SilcArgumentPayload args;
   SilcPacketContext *packet;
   int pending;			/* Command is being re-processed when TRUE */
+  int users;			/* Reference counter */
 } *SilcServerCommandContext;
+
+/* Pending Command callback destructor. This is called after calling the
+   pending callback or if error occurs while processing the pending command.
+   If error occurs then the callback won't be called at all, and only this
+   destructor is called. The `context' is the context given for the function
+   silc_server_command_pending. */
+typedef void (*SilcServerPendingDestructor)(void *context);
 
 /* Structure holding pending commands. If command is pending it will be
    executed after command reply has been received and executed. */
@@ -65,10 +71,13 @@ typedef struct SilcServerCommandPendingStruct {
   SilcServer server;
   SilcCommand reply_cmd;
   SilcCommandCb callback;
+  SilcServerPendingDestructor destructor;
   void *context;
   unsigned short ident;
   struct SilcServerCommandPendingStruct *next;
 } SilcServerCommandPending;
+
+#include "command_reply.h"
 
 /* Macros */
 
@@ -81,21 +90,32 @@ typedef struct SilcServerCommandPendingStruct {
 void silc_server_command_##func(void *context)
 
 /* Executed pending command */
-#define SILC_SERVER_COMMAND_EXEC_PENDING(ctx, cmd)			\
+#define SILC_SERVER_PENDING_EXEC(ctx, cmd)				\
 do {									\
-  if (ctx->callback) {							\
+  if (ctx->callback)							\
     (*ctx->callback)(ctx->context);					\
-    silc_server_command_pending_del(ctx->server, cmd, ctx->ident);	\
-  }									\
+} while(0)
+
+/* Execute destructor for pending command */
+#define SILC_SERVER_PENDING_DESTRUCTOR(ctx, cmd)			\
+do {									\
+  silc_server_command_pending_del(ctx->server, cmd, ctx->ident);	\
+  if (ctx->destructor)							\
+    (*ctx->destructor)(ctx->context);					\
 } while(0)
 
 /* Prototypes */
 void silc_server_command_process(SilcServer server,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);
+SilcServerCommandContext silc_server_command_alloc();
+void silc_server_command_free(SilcServerCommandContext ctx);
+SilcServerCommandContext 
+silc_server_command_dup(SilcServerCommandContext ctx);
 void silc_server_command_pending(SilcServer server,
 				 SilcCommand reply_cmd,
 				 unsigned short ident,
+				 SilcServerPendingDestructor destructor,
 				 SilcCommandCb callback,
 				 void *context);
 void silc_server_command_pending_del(SilcServer server,

@@ -1,3 +1,36 @@
+Mon Feb 19 14:26:49 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Changed SILC_SERVER_COMMAND_EXEC_PENDING macro to the name
+	  SILC_SERVER_PENDING_EXEC and added an new macro
+	  SILC_SERVER_PENDING_DESTRUCTOR which is called to free the
+	  data or when error occurs while processing the pending command.
+
+	  Added new argument `destructor' into silc_server_command_pending
+	  and to the SilcServerCommandPending object.  This destructor is
+	  now called after calling the pending callback or if error occurs
+	  immediately.  If error occurs the actual pending callback won't
+	  be called at all - only the destructor.  The destructor may be
+	  NULL if destructor is not needed.
+
+	  All this applies for client library code as well.  Similar
+	  changes were made there as well for the pending commands.
+
+	  In the client, the application must now allocate the 
+	  SilcClientCommandContext with the silc_client_command_alloc
+	  function.
+
+	* Added reference counter to the SilcServerCommandContext.  Added
+	  function silc_server_command_alloc and silc_server_command_dup 
+	  functions.
+
+	  Same type of functions added to the client library for the same
+	  purpose as well.
+
+	* Removed the cmd_ident from IDListData away since it is now 
+	  global for all connections.  It is the command identifier used
+	  in command sending and with pending commands.  The affected file
+	  is silcd/idlist.h.
+
 Mon Feb 19 00:50:57 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed the client operation API: channel_message operation's

@@ -21,8 +21,6 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-#include "command_reply.h"
-
 /* 
    Structure holding one command and pointer to its function. 
 
@@ -71,13 +69,22 @@ typedef struct {
   unsigned int *argv_lens;
   unsigned int *argv_types;
   int pending;			/* Command is being re-processed when TRUE */
+  int users;			/* Reference counter */
 } *SilcClientCommandContext;
+
+/* Pending Command callback destructor. This is called after calling the
+   pending callback or if error occurs while processing the pending command.
+   If error occurs then the callback won't be called at all, and only this
+   destructor is called. The `context' is the context given for the function
+   silc_client_command_pending. */
+typedef void (*SilcClientPendingDestructor)(void *context);
 
 /* Structure holding pending commands. If command is pending it will be
    executed after command reply has been executed. */
 typedef struct SilcClientCommandPendingStruct {
   SilcCommand reply_cmd;
   SilcCommandCb callback;
+  SilcClientPendingDestructor destructor;
   void *context;
   unsigned short ident;
   struct SilcClientCommandPendingStruct *next;
@@ -85,6 +92,8 @@ typedef struct SilcClientCommandPendingStruct {
 
 /* List of pending commands */
 extern SilcClientCommandPending *silc_command_pending;
+
+#include "command_reply.h"
 
 /* Macros */
 
@@ -97,24 +106,34 @@ extern SilcClientCommandPending *silc_command_pending;
 void silc_client_command_##func(void *context)
 
 /* Executed pending command callback */
-#define SILC_CLIENT_COMMAND_EXEC_PENDING(ctx, cmd)			\
+#define SILC_CLIENT_PENDING_EXEC(ctx, cmd)	\
+do {						\
+  if ((ctx)->callback)				\
+    (*ctx->callback)(ctx->context);		\
+} while(0)
+
+/* Execute destructor for pending command */
+#define SILC_CLIENT_PENDING_DESTRUCTOR(ctx, cmd)			\
 do {									\
-  if ((ctx)->callback) {						\
-    (*ctx->callback)(ctx->context);					\
-    silc_client_command_pending_del((ctx)->sock->user_data, (cmd),	\
-				    (ctx)->ident);			\
-  }									\
+  silc_client_command_pending_del((ctx)->sock->user_data, (cmd),	\
+				  (ctx)->ident);			\
+  if (ctx->destructor)							\
+    (*ctx->destructor)(ctx->context);					\
 } while(0)
 
 /* Prototypes */
-void silc_client_command_free(SilcClientCommandContext cmd);
 void silc_client_send_command(SilcClient client, SilcClientConnection conn,
 			      SilcCommand command, unsigned short ident,
 			      unsigned int argc, ...);
 SilcClientCommand *silc_client_command_find(const char *name);
+SilcClientCommandContext silc_client_command_alloc();
+void silc_client_command_free(SilcClientCommandContext ctx);
+SilcClientCommandContext 
+silc_client_command_dup(SilcClientCommandContext ctx);
 void silc_client_command_pending(SilcClientConnection conn,
 				 SilcCommand reply_cmd,
 				 unsigned short ident,
+				 SilcClientPendingDestructor destructor,
 				 SilcCommandCb callback,
 				 void *context);
 void silc_client_command_pending_del(SilcClientConnection conn,

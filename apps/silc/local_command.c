@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.5  2001/02/19 13:47:30  priikone
+ * 	updates.
+ *
  * Revision 1.4  2001/02/16 00:33:23  priikone
  * 	updates.
  *
@@ -146,7 +149,7 @@ SILC_CLIENT_LCMD_FUNC(msg)
   if (!client_entry) {
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
-    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 0,
+    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 0, NULL,
 				silc_client_local_command_msg, context);
     return;
   }

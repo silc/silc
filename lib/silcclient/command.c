@@ -117,6 +117,7 @@ SilcClientCommand *silc_client_command_find(const char *name)
 void silc_client_command_pending(SilcClientConnection conn,
 				 SilcCommand reply_cmd,
 				 unsigned short ident,
+				 SilcClientPendingDestructor destructor,
 				 SilcCommandCb callback,
 				 void *context)
 {
@@ -127,6 +128,7 @@ void silc_client_command_pending(SilcClientConnection conn,
   reply->ident = ident;
   reply->context = context;
   reply->callback = callback;
+  reply->destructor = destructor;
   silc_dlist_add(conn->pending_commands, reply);
 }
 
@@ -162,6 +164,7 @@ int silc_client_command_pending_check(SilcClientConnection conn,
     if (r->reply_cmd == command && r->ident == ident) {
       ctx->context = r->context;
       ctx->callback = r->callback;
+      ctx->destructor = r->destructor;
       ctx->ident = ident;
       return TRUE;
     }
@@ -170,17 +173,48 @@ int silc_client_command_pending_check(SilcClientConnection conn,
   return FALSE;
 }
 
+/* Allocate Command Context */
+
+SilcClientCommandContext silc_client_command_alloc()
+{
+  SilcClientCommandContext ctx = silc_calloc(1, sizeof(*ctx));
+  ctx->users++;
+  return ctx;
+}
+
 /* Free command context and its internals */
 
-void silc_client_command_free(SilcClientCommandContext cmd)
+void silc_client_command_free(SilcClientCommandContext ctx)
 {
-  int i;
+  ctx->users--;
+  SILC_LOG_DEBUG(("Command context %p refcnt %d->%d", ctx, ctx->users + 1,
+		  ctx->users));
+  if (ctx->users < 1) {
+    int i;
 
-  if (cmd) {
-    for (i = 0; i < cmd->argc; i++)
-      silc_free(cmd->argv[i]);
-    silc_free(cmd);
+    for (i = 0; i < ctx->argc; i++)
+      silc_free(ctx->argv[i]);
+    silc_free(ctx);
   }
+}
+
+/* Duplicate Command Context by adding reference counter. The context won't
+   be free'd untill it hits zero. */
+
+SilcClientCommandContext 
+silc_client_command_dup(SilcClientCommandContext ctx)
+{
+  ctx->users++;
+  SILC_LOG_DEBUG(("Command context %p refcnt %d->%d", ctx, ctx->users - 1,
+		  ctx->users));
+  return ctx;
+}
+
+/* Pending command destructor. */
+
+static void silc_client_command_destructor(void *context)
+{
+  silc_client_command_free((SilcClientCommandContext)context);
 }
 
 /* Command WHOIS. This command is used to query information about 
@@ -447,8 +481,10 @@ SILC_CLIENT_CMD_FUNC(invite)
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
     silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 0,
-				silc_client_command_invite, context);
-    return;
+				silc_client_command_destructor,
+				silc_client_command_invite, 
+				silc_client_command_dup(cmd));
+    goto out;
   }
 
   /* Find channel entry */
@@ -996,8 +1032,10 @@ SILC_CLIENT_CMD_FUNC(cumode)
     /* Client entry not found, it was requested thus mark this to be
        pending command. */
     silc_client_command_pending(conn, SILC_COMMAND_CUMODE, 0,  
-				silc_client_command_cumode, context);
-    return;
+				silc_client_command_destructor,
+				silc_client_command_cumode, 
+				silc_client_command_dup(cmd));
+    goto out;
   }
   
   while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
@@ -1238,9 +1276,11 @@ SILC_CLIENT_CMD_FUNC(users)
        same context and reprocesses the command. When reprocessing we actually
        display the information on the screen. */
     silc_client_command_pending(conn, SILC_COMMAND_USERS, 0, 
-				silc_client_command_users, context);
+				silc_client_command_destructor,
+				silc_client_command_users, 
+				silc_client_command_dup(cmd));
     cmd->pending = TRUE;
-    return;
+    goto out;
   }
 
   if (cmd->pending) {

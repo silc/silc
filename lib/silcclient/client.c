@@ -1281,7 +1281,34 @@ static void silc_client_notify_by_server_pending(void *context)
 {
   SilcPacketContext *p = (SilcPacketContext *)context;
   silc_client_notify_by_server(p->context, p->sock, p);
-  silc_packet_context_free(p);
+}
+
+/* Destructor for the pending command callback */
+
+static void silc_client_notify_by_server_destructor(void *context)
+{
+  silc_packet_context_free((SilcPacketContext *)context);
+}
+
+/* Resolve client information from server by Client ID. */
+
+static void silc_client_notify_by_server_resolve(SilcClient client,
+						 SilcClientConnection conn,
+						 SilcPacketContext *packet,
+						 SilcClientID *client_id)
+{
+  SilcPacketContext *p = silc_packet_context_dup(packet);
+  SilcBuffer idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+
+  p->context = (void *)client;
+  p->sock = conn->sock;
+
+  silc_client_send_command(client, conn, SILC_COMMAND_WHOIS, ++conn->cmd_ident,
+			   1, 3, idp->data, idp->len);
+  silc_client_command_pending(conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
+			      silc_client_notify_by_server_destructor,
+			      silc_client_notify_by_server_pending, p);
+  silc_buffer_free(idp);
 }
 
 /* Received notify message from server */
@@ -1338,13 +1365,9 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Find Client entry and if not found query it */
-    client_entry = silc_idlist_get_client_by_id(client, conn, client_id, TRUE);
+    client_entry = silc_idlist_get_client_by_id(client, conn, client_id);
     if (!client_entry) {
-      SilcPacketContext *p = silc_packet_context_dup(packet);
-      p->context = (void *)client;
-      p->sock = sock;
-      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, SILC_IDLIST_IDENT,
-				  silc_client_notify_by_server_pending, p);
+      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;
     }
 
@@ -1388,27 +1411,15 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Find Client entry and if not found query it */
-    client_entry = silc_idlist_get_client_by_id(client, conn, client_id, TRUE);
+    client_entry = silc_idlist_get_client_by_id(client, conn, client_id);
     if (!client_entry) {
-      SilcPacketContext *p = silc_packet_context_dup(packet);
-      p->context = (void *)client;
-      p->sock = sock;
-      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, SILC_IDLIST_IDENT, 
-				  silc_client_notify_by_server_pending, p);
+      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;
     }
 
     /* If nickname or username hasn't been resolved, do so */
     if (!client_entry->nickname || !client_entry->username) {
-      SilcPacketContext *p = silc_packet_context_dup(packet);
-      SilcBuffer idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
-      silc_client_send_command(client, conn, SILC_COMMAND_WHOIS, 
-			       SILC_IDLIST_IDENT, 1, 
-			       3, idp->data, idp->len);
-      p->context = (void *)client;
-      p->sock = sock;
-      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, SILC_IDLIST_IDENT, 
-				  silc_client_notify_by_server_pending, p);
+      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;
     }
 
@@ -1454,7 +1465,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id, FALSE);
+      silc_idlist_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -1501,7 +1512,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id, FALSE);
+      silc_idlist_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -1544,7 +1555,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id, FALSE);
+      silc_idlist_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -1593,13 +1604,9 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry and if not found query it */
     client_entry2 = 
-      silc_idlist_get_client_by_id(client, conn, client_id, TRUE);
+      silc_idlist_get_client_by_id(client, conn, client_id);
     if (!client_entry2) {
-      SilcPacketContext *p = silc_packet_context_dup(packet);
-      p->context = (void *)client;
-      p->sock = sock;
-      silc_client_command_pending(conn, SILC_COMMAND_WHOIS, SILC_IDLIST_IDENT,
-				  silc_client_notify_by_server_pending, p);
+      silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;
     }
     silc_free(client_id);
@@ -1615,7 +1622,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find old Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id, FALSE);
+      silc_idlist_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -1659,7 +1666,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id, FALSE);
+      silc_idlist_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -1706,7 +1713,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find Client entry */
     client_entry = 
-      silc_idlist_get_client_by_id(client, conn, client_id, FALSE);
+      silc_idlist_get_client_by_id(client, conn, client_id);
     if (!client_entry)
       goto out;
 
@@ -1729,7 +1736,7 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Find target Client entry */
     client_entry2 = 
-      silc_idlist_get_client_by_id(client, conn, client_id, FALSE);
+      silc_idlist_get_client_by_id(client, conn, client_id);
     if (!client_entry2)
       goto out;
 

@@ -21,6 +21,8 @@
 #ifndef COMMAND_REPLY_H
 #define COMMAND_REPLY_H
 
+#include "command.h"
+
 /* Structure holding one command reply and pointer to its function. */
 typedef struct {
   SilcCommandCb cb;
@@ -38,8 +40,9 @@ typedef struct {
   SilcArgumentPayload args;
 
   /* If defined this executes the pending command. */
-  void *context;
+  SilcServerPendingDestructor destructor;
   SilcCommandCb callback;
+  void *context;
   unsigned short ident;
 } *SilcServerCommandReplyContext;
 

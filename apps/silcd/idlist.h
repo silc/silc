@@ -53,7 +53,6 @@ typedef struct {
   SilcPKCS pkcs;
   SilcPublicKey public_key;
 
-  unsigned short cmd_ident;  /* Current command identifier, 0 not used */
   long last_receive;         /* Time last received data */
   long last_sent;	     /* Time last sent data */
   unsigned char registered;  /* Boolean whether connection is registered */

@@ -646,7 +646,7 @@ SILC_TASK_CALLBACK(silc_client_run_commands)
 
     /* Allocate command context. This and its internals must be free'd 
        by the command routine receiving it. */
-    ctx = silc_calloc(1, sizeof(*ctx));
+    ctx = silc_client_command_alloc();
     ctx->client = client;
     ctx->conn = app->conn;
     ctx->command = cmd;

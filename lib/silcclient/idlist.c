@@ -48,7 +48,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 
     /* No ID found. Do query from the server. The query is done by 
        sending simple IDENTIFY command to the server. */
-    ctx = silc_calloc(1, sizeof(*ctx));
+    ctx = silc_client_command_alloc();
     ctx->client = client;
     ctx->conn = conn;
     ctx->command = silc_client_command_find("IDENTIFY");
@@ -102,13 +102,11 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
   return entry;
 }
 
-/* Finds client entry from cache by Client ID. If the entry is not found
-   from the cache this function can query it from the server. */
+/* Finds client entry from cache by Client ID. */
 
 SilcClientEntry silc_idlist_get_client_by_id(SilcClient client,
 					     SilcClientConnection conn,
-					     SilcClientID *client_id,
-					     int query)
+					     SilcClientID *client_id)
 {
   SilcIDCacheEntry id_cache;
 
@@ -117,17 +115,8 @@ SilcClientEntry silc_idlist_get_client_by_id(SilcClient client,
 
   /* Find ID from cache */
   if (!silc_idcache_find_by_id_one(conn->client_cache, client_id, 
-				   SILC_ID_CLIENT, &id_cache)) {
-    if (!query) {
-      return NULL;
-    } else {
-      SilcBuffer idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
-      silc_client_send_command(client, conn, SILC_COMMAND_WHOIS, 
-			       SILC_IDLIST_IDENT, 1, 
-			       3, idp->data, idp->len);
-      return NULL;
-    }
-  }
+				   SILC_ID_CLIENT, &id_cache))
+    return NULL;
 
   return (SilcClientEntry)id_cache->context;
 }

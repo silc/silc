@@ -87,6 +87,9 @@ struct SilcServerStruct {
   unsigned int id_string_len;
   SilcIdType id_type;
 
+  /* Current command identifier, 0 not used */
+  unsigned short cmd_ident;
+
   /* Server's own ID entry. */
   SilcServerEntry id_entry;
 

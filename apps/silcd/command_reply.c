@@ -231,9 +231,10 @@ SILC_SERVER_CMD_REPLY_FUNC(whois)
     goto out;
 
   /* Execute any pending commands */
-  SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_WHOIS);
+  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
 
  out:
+  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_WHOIS);
   silc_server_command_reply_free(cmd);
 }
 
@@ -350,9 +351,10 @@ SILC_SERVER_CMD_REPLY_FUNC(identify)
     goto out;
 
   /* Execute any pending commands */
-  SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_IDENTIFY);
+  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_IDENTIFY);
 
  out:
+  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_IDENTIFY);
   silc_server_command_reply_free(cmd);
 }
 
@@ -451,9 +453,10 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
   silc_buffer_free(keyp);
 
   /* Execute any pending commands */
-  SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_JOIN);
+  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
 
  out:
+  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_JOIN);
   silc_server_command_reply_free(cmd);
 }
 
@@ -577,9 +580,10 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
   silc_buffer_free(client_mode_list);
 
   /* Execute any pending commands */
-  SILC_SERVER_COMMAND_EXEC_PENDING(cmd, SILC_COMMAND_USERS);
+  SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
 
  out:
+  SILC_SERVER_PENDING_DESTRUCTOR(cmd, SILC_COMMAND_USERS);
   if (channel_id)
     silc_free(channel_id);
   silc_server_command_reply_free(cmd);
