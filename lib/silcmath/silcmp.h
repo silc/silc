@@ -417,7 +417,7 @@ void silc_mp_or(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *
  * SYNOPSIS
  *
- *    void silc_mp_or(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
+ *    void silc_mp_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *
  * DESCRIPTION
  *
