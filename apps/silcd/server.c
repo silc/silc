@@ -960,15 +960,19 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
      process. Either we have to do our own resolver stuff or in the future
      we can use threads. */
   /* Perform name and address lookups for the remote host. */
-  silc_net_check_host_by_sock(sock, &newsocket->hostname, &newsocket->ip);
-  if ((server->params->require_reverse_mapping && !newsocket->hostname) ||
-      !newsocket->ip) {
-    SILC_LOG_ERROR(("IP/DNS lookup failed"));
-    server->stat.conn_failures++;
-    return;
+  if (!silc_net_check_host_by_sock(sock, &newsocket->hostname, 
+				   &newsocket->ip)) {
+    if ((server->params->require_reverse_mapping && !newsocket->hostname) ||
+	!newsocket->ip) {
+      SILC_LOG_ERROR(("IP/DNS lookup failed %s",
+		      newsocket->hostname ? newsocket->hostname :
+		      newsocket->ip ? newsocket->ip : ""));
+      server->stat.conn_failures++;
+      return;
+    }
+    if (!newsocket->hostname)
+      newsocket->hostname = strdup(newsocket->ip);
   }
-  if (!newsocket->hostname)
-    newsocket->hostname = strdup(newsocket->ip);
   newsocket->port = silc_net_get_remote_port(sock);
 
   SILC_LOG_INFO(("Incoming connection from %s (%s)", newsocket->hostname,

@@ -10,6 +10,11 @@ Tue Apr 10 16:20:34 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Do not send re-key packets immediately but through packet queue.
 	  Affected file silcd/protocol.c and lib/silcclient/protocol.c.
 
+	* Changed silc_net_check_host_by_sock to return FALSE if the
+	  IP/DNS could not be resolved.  Though, it returns the IP address
+	  now even if it could not resolve it (but returns also FALSE).
+	  Affected file lib/silcutil/silcnet.[ch].
+
 Mon Apr  9 21:54:44 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added silc_pkcs_decode_identifier to decode the public key's

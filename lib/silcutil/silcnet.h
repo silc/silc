@@ -31,7 +31,7 @@ int silc_net_accept_connection(int sock);
 int silc_net_set_socket_nonblock(int sock);
 int silc_net_set_socket_opt(int sock, int level, int option, int on);
 int silc_net_is_ip(const char *addr);
-void silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
+bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
 uint16 silc_net_get_remote_port(int sock);
 uint16 silc_net_get_local_port(int sock);
 char *silc_net_localhost();

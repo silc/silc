@@ -237,7 +237,7 @@ int silc_net_is_ip(const char *addr)
 /* Performs lookups for remote name and IP address. This peforms reverse
    lookup as well to verify that the IP has FQDN. */
 
-void silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
+bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
 {
   struct sockaddr_in remote;
   struct hostent *dest;
@@ -255,13 +255,20 @@ void silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
   len = sizeof(remote);
   rval = getpeername(sock, (struct sockaddr *)&remote, &len);
   if (rval < 0)
-    return;
+    return FALSE;
+
+  host_ip = inet_ntoa(remote.sin_addr);
+  if (!host_ip)
+    return FALSE;
+
+  *ip = silc_calloc(strlen(host_ip) + 1, sizeof(char));
+  memcpy(*ip, host_ip, strlen(host_ip));
 
   /* Get host by address */
   dest = gethostbyaddr((char *)&remote.sin_addr, 
 		       sizeof(struct in_addr), AF_INET);
   if (!dest)
-    return;
+    return FALSE;
 
   /* Get same host by name to see that the remote host really is
      the who it says it is */
@@ -274,7 +281,7 @@ void silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
 
   dest = gethostbyname(host_name);
   if (!dest)
-    return;
+    return FALSE;
 
   /* Find the address from list */
   for (i = 0; dest->h_addr_list[i]; i++)
@@ -282,15 +289,14 @@ void silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
 	       sizeof(struct in_addr)))
       break;
   if (!dest->h_addr_list[i])
-    return;
+    return FALSE;
 
-  host_ip = inet_ntoa(remote.sin_addr);
-  if (!host_ip)
-    return;
-
+  silc_free(*ip);
   *ip = silc_calloc(strlen(host_ip) + 1, sizeof(char));
   memcpy(*ip, host_ip, strlen(host_ip));
   SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));
+
+  return TRUE;
 }
 
 /* Return remote port by socket. */
