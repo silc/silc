@@ -10,6 +10,9 @@ Wed Nov  6 17:18:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  with the command line.  Affected files are 
 	  lib/silcclient/silcclient.h, command.[ch].
 
+	* Fixed silc_get_input to NULL-terminate the returned input.
+	  Affected file lib/silcutil/silcutil.c.
+
 Mon Nov  4 16:02:59 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Print notify for server opers when backup router comes
