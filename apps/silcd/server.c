@@ -1596,6 +1596,9 @@ void silc_server_disconnect_remote(SilcServer server,
   va_list ap;
   unsigned char buf[4096];
 
+  if (!sock)
+    return;
+
   memset(buf, 0, sizeof(buf));
   va_start(ap, fmt);
   vsprintf(buf, fmt, ap);
