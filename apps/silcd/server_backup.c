@@ -430,6 +430,17 @@ void silc_server_backup_send_dest(SilcServer server,
   }
 }
 
+SILC_TASK_CALLBACK(silc_server_backup_timeout)
+{
+  SilcProtocol protocol = context;
+  SilcServer server = app_context;
+
+  SILC_LOG_INFO(("Timeout occurred during backup resuming protocol"));
+  silc_protocol_cancel(protocol, server->schedule);
+  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+  silc_protocol_execute_final(protocol, server->schedule);
+}
+
 /* Processes incoming RESUME_ROUTER packet. This can give the packet
    for processing to the protocol handler or allocate new protocol if
    start command is received. */
@@ -544,6 +555,10 @@ void silc_server_backup_resume_router(SilcServer server,
 			&sock->protocol, proto_ctx, 
 			silc_server_protocol_backup_done);
     silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
+    silc_schedule_task_add(server->schedule, sock->sock,
+			   silc_server_backup_timeout,
+			   sock->protocol, 30, 0, SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_NORMAL);
   }
 }
 
@@ -619,6 +634,11 @@ SILC_TASK_CALLBACK(silc_server_backup_connected_later)
 		      &sock->protocol, proto_ctx, 
 		      silc_server_protocol_backup_done);
   silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
+
+  silc_schedule_task_add(server->schedule, sock->sock,
+			 silc_server_backup_timeout,
+			 sock->protocol, 30, 0, SILC_TASK_TIMEOUT,
+			 SILC_TASK_PRI_NORMAL);
 }
 
 /* Called when we've established connection back to our primary router
@@ -1199,6 +1219,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
   SilcIDCacheList list;
   SilcIDCacheEntry id_cache;
 
+  silc_schedule_task_del_by_context(server->schedule, protocol);
+
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     SILC_LOG_ERROR(("Error occurred during backup router resuming protcool"));
@@ -1216,6 +1238,29 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 
 	if (sock->protocol == protocol) {
 	  sock->protocol = NULL;
+
+	  /* Backup closes connection and reconnects if error occurred */
+	  if (SILC_PRIMARY_ROUTE(server) == sock && server->backup_router) {
+	    if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
+		protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
+	      server->backup_noswitch = TRUE;
+	      server->server_type = SILC_BACKUP_ROUTER;
+
+	      if (sock->user_data)
+		silc_server_free_sock_user_data(server, sock, NULL);
+	      silc_server_close_connection(server, sock);
+
+	      silc_schedule_task_add(server->schedule, 0,
+				     silc_server_connect_to_router,
+				     server, 1, 0,
+				     SILC_TASK_TIMEOUT,
+				     SILC_TASK_PRI_NORMAL);
+
+	      if (!silc_idcache_list_next(list, &id_cache))
+		break;
+	      continue;
+	    }
+	  }
 
 	  if (server_entry->data.status & SILC_IDLIST_STATUS_DISABLED)
 	    server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
@@ -1237,6 +1282,29 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 	if (sock->protocol == protocol) {
 	  sock->protocol = NULL;
 
+	  /* Backup closes connection and reconnects if error occurred */
+	  if (SILC_PRIMARY_ROUTE(server) == sock && server->backup_router) {
+	    if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
+		protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
+	      server->backup_noswitch = TRUE;
+	      server->server_type = SILC_BACKUP_ROUTER;
+
+	      if (sock->user_data)
+		silc_server_free_sock_user_data(server, sock, NULL);
+	      silc_server_close_connection(server, sock);
+
+	      silc_schedule_task_add(server->schedule, 0,
+				     silc_server_connect_to_router,
+				     server, 1, 0,
+				     SILC_TASK_TIMEOUT,
+				     SILC_TASK_PRI_NORMAL);
+
+	      if (!silc_idcache_list_next(list, &id_cache))
+		break;
+	      continue;
+	    }
+	  }
+
 	  if (server_entry->data.status & SILC_IDLIST_STATUS_DISABLED)
 	    server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
 	}
@@ -1248,7 +1316,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
     silc_idcache_list_free(list);
   }
 
-  SILC_LOG_INFO(("Backup resuming protocol ended successfully"));
+  if (protocol->state != SILC_PROTOCOL_STATE_ERROR &&
+      protocol->state != SILC_PROTOCOL_STATE_FAILURE)
+    SILC_LOG_INFO(("Backup resuming protocol ended successfully"));
 
   if (ctx->sock->protocol)
     ctx->sock->protocol = NULL;

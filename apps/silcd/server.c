@@ -30,7 +30,6 @@
 SILC_TASK_CALLBACK(silc_server_rehash_close_connection);
 SILC_TASK_CALLBACK(silc_server_connect_to_router_retry);
 SILC_TASK_CALLBACK(silc_server_connect_router);
-SILC_TASK_CALLBACK(silc_server_connect_to_router);
 SILC_TASK_CALLBACK(silc_server_connect_to_router_second);
 SILC_TASK_CALLBACK(silc_server_connect_to_router_final);
 SILC_TASK_CALLBACK(silc_server_accept_new_connection);
@@ -1005,7 +1004,7 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
    server to do authentication and key exchange with our router - called
    from schedule. */
 
-SILC_TASK_CALLBACK(silc_server_connect_to_router)
+SILC_TASK_CALLBACK_GLOBAL(silc_server_connect_to_router)
 {
   SilcServer server = (SilcServer)context;
   SilcServerConnection sconn;
@@ -2240,7 +2239,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
       else
 	silc_server_free_sock_user_data(server, sock, NULL);
     } else if (server->router_conn && server->router_conn->sock == sock &&
-	     !server->router && server->standalone)
+	       !server->router && server->standalone)
       silc_schedule_task_add(server->schedule, 0,
 			     silc_server_connect_to_router,
 			     server, 1, 0,
@@ -2962,7 +2961,8 @@ void silc_server_close_connection(SilcServer server,
   if (!sock->user_data) {
     /* If any protocol is active cancel its execution. It will call
        the final callback which will finalize the disconnection. */
-    if (sock->protocol) {
+    if (sock->protocol && sock->protocol->protocol &&
+	sock->protocol->protocol->type != SILC_PROTOCOL_SERVER_BACKUP) {
       SILC_LOG_DEBUG(("Cancelling protocol, calling final callback"));
       silc_protocol_cancel(sock->protocol, server->schedule);
       sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -3319,7 +3319,8 @@ void silc_server_free_sock_user_data(SilcServer server,
   }
 
   /* If any protocol is active cancel its execution */
-  if (sock->protocol) {
+  if (sock->protocol && sock->protocol->protocol &&
+      sock->protocol->protocol->type != SILC_PROTOCOL_SERVER_BACKUP) {
     SILC_LOG_DEBUG(("Cancelling protocol, calling final callback"));
     silc_protocol_cancel(sock->protocol, server->schedule);
     sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -3565,7 +3566,8 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
 
   /* If we have protocol active we must assure that we call the protocol's
      final callback so that all the memory is freed. */
-  if (sock->protocol) {
+  if (sock->protocol && sock->protocol->protocol &&
+      sock->protocol->protocol->type != SILC_PROTOCOL_SERVER_BACKUP) {
     protocol = sock->protocol->protocol->type;
     silc_protocol_cancel(sock->protocol, server->schedule);
     sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;

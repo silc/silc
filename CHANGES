@@ -7,6 +7,13 @@ Wed Dec 11 20:20:07 EET 2002 Pekka Riikonen <priikone@silcnet.org>
 	  that it is NULL is some odd case.  Affected files are
 	  lib/silcutil/[unix/win32]/silc[unix/win32]sockconn.c.
 
+	* Do not call final protocol callback for backup router
+	  resuming protocol when closing connection.  It is closed
+	  by timeout in case of error.  Affected file silcd/server.c.
+
+	* Backup reconnect to router if backup resuming protocol
+	  failed.  Affected file silcd/server_backup.c.
+
 Wed Dec 11 10:01:26 CET 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed double free in SKE library error hadling when signature

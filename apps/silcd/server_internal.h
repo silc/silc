@@ -232,6 +232,7 @@ do {						\
 /* Prototypes */
 SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final);
 SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_callback);
+SILC_TASK_CALLBACK_GLOBAL(silc_server_connect_to_router);
 void silc_server_watcher_list_destroy(void *key, void *context,
 				      void *user_context);
 
