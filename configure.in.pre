@@ -72,7 +72,7 @@ AC_CHECK_HEADERS(unistd.h string.h getopt.h errno.h fcntl.h assert.h)
 AC_CHECK_HEADERS(sys/types.h sys/stat.h sys/time.h stddef.h)
 AC_CHECK_HEADERS(netinet/in.h netinet/tcp.h xti.h netdb.h)
 AC_CHECK_HEADERS(pwd.h grp.h termcap.h paths.h)
-AC_CHECK_HEADERS(ncurses.h signal.h ctype.h regex.h utime.h iconv.h)
+AC_CHECK_HEADERS(ncurses.h signal.h ctype.h utime.h iconv.h)
 AC_CHECK_HEADERS(arpa/inet.h sys/mman.h limits.h termios.h locale.h langinfo.h)
 
 # Data type checking
@@ -110,8 +110,7 @@ if test x$ac_socket_found = x0; then
 fi
 AC_CHECK_FUNCS(gethostname gethostbyaddr getservbyname getservbyport)
 AC_CHECK_FUNCS(select listen bind shutdown close connect)
-AC_CHECK_FUNCS(fcntl setsockopt)
-AC_CHECK_FUNCS(getopt_long time)
+AC_CHECK_FUNCS(fcntl setsockopt time)
 AC_CHECK_FUNCS(chmod stat fstat getenv putenv strerror ctime gettimeofday)
 AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid)
 AC_CHECK_FUNCS(setgroups initgroups)
@@ -133,6 +132,14 @@ AC_CHECK_HEADERS(dlfcn.h,
     LIBS="$LIBS -ldl",
     AC_MSG_RESULT(no SIM support found)),
   AC_MSG_RESULT(no SIM support found))
+
+#
+# lib/contrib conditionals
+#
+AC_CHECK_HEADER(regex.h, have_regex=1, have_regex=0)
+AM_CONDITIONAL(HAVE_REGEX, test x$have_regex = x1)
+AC_CHECK_FUNC(getopt_long, have_getopt_long=1, have_getopt_long=0)
+AM_CONDITIONAL(HAVE_GETOPT_LONG, test x$have_getopt_long = x1)
 
 #
 # Installation

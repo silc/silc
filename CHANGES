@@ -16,6 +16,9 @@ Sat Jun 22 17:06:58 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  reason of the disconnection and optional disconnection
 	  message.  Affected file lib/silcclient/silcclient.h.
 
+	* Made the compilation of lib/contrib/ stuff conditional.
+	  Affected files configure.in.pre, lib/contrib/Makefile.am.
+
 Sat Jun 22 12:49:21 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* All CMODE_CHANGE and CUMODE_CHANGE notifys are now sent back

@@ -180,7 +180,7 @@ extern "C" {
 #endif
 
 #ifndef HAVE_REGEX_H
-#include "../lib/contrib/regex.h"
+#include "regex.h"
 #else
 #include <regex.h>
 #endif
@@ -216,7 +216,7 @@ extern "C" {
 #endif				/* !SILC_WIN32 */
 
 #ifndef HAVE_GETOPT_LONG
-#include "../lib/contrib/getopt.h"
+#include "getopt.h"
 #endif
 
 /* Include generic SILC type definitions */

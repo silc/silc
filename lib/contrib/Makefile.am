@@ -20,15 +20,30 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 noinst_LIBRARIES = libcontrib.a
 
+if HAVE_GETOPT_LONG
+GETOPT =
+else
+GETOPT = getopt.c getopt1.c
+endif
+
+if HAVE_REGEX
+REGEX =
+else
+REGEX = regex.c
+endif
+
 if SILC_WIN32
 libcontrib_a_SOURCES =
 else
 libcontrib_a_SOURCES = \
-	getopt.c \
-	getopt1.c \
-	regex.c
+	$(GETOPT) \
+	$(REGEX)
 endif
 
-EXTRA_DIST = *.h
+if SILC_DIST_TOOLKIT
+include_HEADERS = getopt.h regex.h
+endif
+
+EXTRA_DIST = *.c *.h
 
 include $(top_srcdir)/Makefile.defines.in
