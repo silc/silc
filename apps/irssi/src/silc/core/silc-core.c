@@ -582,186 +582,237 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       g_free(old);
       break;
     }
-
-    case SILC_COMMAND_LIST:
-      {
-	char *topic, *name;
-	int usercount;
-	unsigned char buf[256], tmp[16];
-	int i, len;
-
-	if (!success)
-	  return;
-
-	/* XXX should use irssi routines */
-
-	(void)va_arg(vp, SilcChannelEntry);
-	name = va_arg(vp, char *);
-	topic = va_arg(vp, char *);
-	usercount = va_arg(vp, int);
-
-	if (status == SILC_STATUS_LIST_START ||
-	    status == SILC_STATUS_OK)
-	  silc_say(client, conn, 
-	  "  Channel                                  Users     Topic");
-
-	memset(buf, 0, sizeof(buf));
-	strncat(buf, "  ", 2);
-	len = strlen(name);
-	strncat(buf, name, len > 40 ? 40 : len);
-	if (len < 40)
-	  for (i = 0; i < 40 - len; i++)
-	    strcat(buf, " ");
-	strcat(buf, " ");
-
-	memset(tmp, 0, sizeof(tmp));
-	if (usercount) {
-	  snprintf(tmp, sizeof(tmp), "%d", usercount);
-	  strcat(buf, tmp);
-	}
-	len = strlen(tmp);
-	if (len < 10)
-	  for (i = 0; i < 10 - len; i++)
-	    strcat(buf, " ");
-	strcat(buf, " ");
-
-	if (topic) {
-	  len = strlen(topic);
-	  strncat(buf, topic, len);
-	}
-
-	silc_say(client, conn, "%s", buf);
-      }
-      break;
-
-    case SILC_COMMAND_UMODE:
-      {
-	uint32 mode;
-
-	if (!success)
-	  return;
-
-	mode = va_arg(vp, uint32);
-
-	/* XXX todo */
-      }
-      break;
-
-    case SILC_COMMAND_OPER:
-#if 0
-      if (status == SILC_STATUS_OK) {
-	conn->local_entry->mode |= SILC_UMODE_SERVER_OPERATOR;
-	if (app->screen->bottom_line->umode)
-	  silc_free(app->screen->bottom_line->umode);
-	app->screen->bottom_line->umode = strdup("Server Operator");;
-	silc_screen_print_bottom_line(app->screen, 0);
-      }
-#endif
-      break;
-
-    case SILC_COMMAND_SILCOPER:
-#if 0
-      if (status == SILC_STATUS_OK) {
-	conn->local_entry->mode |= SILC_UMODE_ROUTER_OPERATOR;
-	if (app->screen->bottom_line->umode)
-	  silc_free(app->screen->bottom_line->umode);
-	app->screen->bottom_line->umode = strdup("SILC Operator");;
-	silc_screen_print_bottom_line(app->screen, 0);
-      }
-#endif
-      break;
-
-  case SILC_COMMAND_USERS: 
+    
+  case SILC_COMMAND_LIST:
     {
-      SilcChannelEntry channel;
-      SilcChannelUser user;
-      NICK_REC *ownnick;
+      char *topic, *name;
+      int usercount;
+      unsigned char buf[256], tmp[16];
+      int i, len;
       
       if (!success)
 	return;
-
-      channel = va_arg(vp, SilcChannelEntry);
-      chanrec = silc_channel_find_entry(server, channel);
-      if (chanrec == NULL)
-	break;
       
-      silc_list_start(channel->clients);
-      while ((user = silc_list_get(channel->clients)) != NULL)
-	silc_nicklist_insert(chanrec, user, FALSE);
+      /* XXX should use irssi routines */
       
-      ownnick = NICK(silc_nicklist_find(chanrec, conn->local_entry));
-      nicklist_set_own(CHANNEL(chanrec), ownnick);
-      signal_emit("channel joined", 1, chanrec);
-      fe_channels_nicklist(CHANNEL(chanrec),
-			   CHANNEL_NICKLIST_FLAG_ALL);
-      break;
+      (void)va_arg(vp, SilcChannelEntry);
+      name = va_arg(vp, char *);
+      topic = va_arg(vp, char *);
+      usercount = va_arg(vp, int);
+      
+      if (status == SILC_STATUS_LIST_START ||
+	  status == SILC_STATUS_OK)
+	silc_say(client, conn, 
+		 "  Channel                                  Users     Topic");
+      
+      memset(buf, 0, sizeof(buf));
+      strncat(buf, "  ", 2);
+      len = strlen(name);
+      strncat(buf, name, len > 40 ? 40 : len);
+      if (len < 40)
+	for (i = 0; i < 40 - len; i++)
+	  strcat(buf, " ");
+      strcat(buf, " ");
+      
+      memset(tmp, 0, sizeof(tmp));
+      if (usercount) {
+	snprintf(tmp, sizeof(tmp), "%d", usercount);
+	strcat(buf, tmp);
+      }
+      len = strlen(tmp);
+      if (len < 10)
+	for (i = 0; i < 10 - len; i++)
+	  strcat(buf, " ");
+      strcat(buf, " ");
+      
+      if (topic) {
+	len = strlen(topic);
+	strncat(buf, topic, len);
+      }
+      
+      silc_say(client, conn, "%s", buf);
     }
-
-    case SILC_COMMAND_BAN:
-      {
-	SilcChannelEntry channel;
-	char *ban_list;
-
-	if (!success)
-	  return;
-
-	/* XXX should use irssi routines */
-
+    break;
+    
+  case SILC_COMMAND_UMODE:
+    {
+      uint32 mode;
+      
+      if (!success)
+	return;
+      
+      mode = va_arg(vp, uint32);
+      
+      /* XXX todo */
+    }
+    break;
+    
+  case SILC_COMMAND_OPER:
+#if 0
+    if (status == SILC_STATUS_OK) {
+      conn->local_entry->mode |= SILC_UMODE_SERVER_OPERATOR;
+      if (app->screen->bottom_line->umode)
+	silc_free(app->screen->bottom_line->umode);
+      app->screen->bottom_line->umode = strdup("Server Operator");;
+      silc_screen_print_bottom_line(app->screen, 0);
+    }
+#endif
+    break;
+    
+  case SILC_COMMAND_SILCOPER:
+#if 0
+    if (status == SILC_STATUS_OK) {
+      conn->local_entry->mode |= SILC_UMODE_ROUTER_OPERATOR;
+      if (app->screen->bottom_line->umode)
+	silc_free(app->screen->bottom_line->umode);
+      app->screen->bottom_line->umode = strdup("SILC Operator");;
+      silc_screen_print_bottom_line(app->screen, 0);
+    }
+#endif
+    break;
+    
+  case SILC_COMMAND_USERS: 
+    {
+      SilcChannelEntry channel;
+      SilcChannelUser chu;
+      int line_len;
+      char *line;
+      
+      if (!success)
+	return;
+      
+      channel = va_arg(vp, SilcChannelEntry);
+      
+      /* There are two ways to do this, either parse the list (that
+	 the command_reply sends (just take it with va_arg()) or just
+	 traverse the channel's client list.  I'll do the latter.  See
+	 JOIN command reply for example for the list. */
+      
+      silc_say(client, conn, "Users on %s", channel->channel_name);
 	
-	channel = va_arg(vp, SilcChannelEntry);
-	ban_list = va_arg(vp, char *);
-
-	if (ban_list)
-	  silc_say(client, conn, "%s ban list: %s", channel->channel_name,
-		   ban_list);
-	else
-	  silc_say(client, conn, "%s ban list not set", channel->channel_name);
-      }
-      break;
-
-    case SILC_COMMAND_GETKEY:
-      {
-	SilcIdType id_type;
-	void *entry;
-	SilcPublicKey public_key;
-	unsigned char *pk;
-	uint32 pk_len;
-
-	id_type = va_arg(vp, uint32);
-	entry = va_arg(vp, void *);
-	public_key = va_arg(vp, SilcPublicKey);
-
-	pk = silc_pkcs_public_key_encode(public_key, &pk_len);
-
-	if (id_type == SILC_ID_CLIENT) {
-	  silc_verify_public_key(client, conn, SILC_SOCKET_TYPE_CLIENT,
-				 pk, pk_len, SILC_SKE_PK_TYPE_SILC);
+      line = silc_calloc(1024, sizeof(*line));
+      line_len = 1024;
+      silc_list_start(channel->clients);
+      while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+	SilcClientEntry e = chu->client;
+	int i, len1;
+	char *m, tmp[80];
+	
+	memset(line, 0, line_len);
+	
+	if (strlen(e->nickname) + strlen(e->server) + 100 > line_len) {
+	  silc_free(line);
+	  line_len += strlen(e->nickname) + strlen(e->server) + 100;
+	  line = silc_calloc(line_len, sizeof(*line));
 	}
-
-	silc_free(pk);
-      }
-
-    case SILC_COMMAND_TOPIC:
-      {
-	SilcChannelEntry channel;
-	char *topic;
-
-	if (!success)
-	  return;
 	
-	channel = va_arg(vp, SilcChannelEntry);
-	topic = va_arg(vp, char *);
-
-	/* XXX should use irssi routines */
-
-	if (topic)
-	  silc_say(client, conn, 
-		   "Topic on channel %s: %s", channel->channel_name,
-		   topic);
+	memset(tmp, 0, sizeof(tmp));
+	m = silc_client_chumode_char(chu->mode);
+	
+	strncat(line, " ", 1);
+	strncat(line, e->nickname, strlen(e->nickname));
+	strncat(line, e->server ? "@" : "", 1);
+	
+	len1 = 0;
+	if (e->server)
+	  len1 = strlen(e->server);
+	strncat(line, e->server ? e->server : "", len1 > 30 ? 30 : len1);
+	
+	len1 = strlen(line);
+	if (len1 >= 30) {
+	  memset(&line[29], 0, len1 - 29);
+	} else {
+	  for (i = 0; i < 30 - len1 - 1; i++)
+	    strcat(line, " ");
+	}
+	
+	if (e->mode & SILC_UMODE_GONE)
+	  strcat(line, "  G");
+	else
+	  strcat(line, "  H");
+	strcat(tmp, m ? m : "");
+	strncat(line, tmp, strlen(tmp));
+	
+	if (strlen(tmp) < 5)
+	  for (i = 0; i < 5 - strlen(tmp); i++)
+	    strcat(line, " ");
+	
+	strcat(line, e->username ? e->username : "");
+	
+	silc_say(client, conn, "%s", line);
+	
+	if (m)
+	  silc_free(m);
       }
-      break;
+      
+      silc_free(line);
+    }
+    break;
+
+  case SILC_COMMAND_BAN:
+    {
+      SilcChannelEntry channel;
+      char *ban_list;
+      
+      if (!success)
+	return;
+      
+      /* XXX should use irssi routines */
+          
+      channel = va_arg(vp, SilcChannelEntry);
+      ban_list = va_arg(vp, char *);
+      
+      if (ban_list)
+	silc_say(client, conn, "%s ban list: %s", channel->channel_name,
+		 ban_list);
+      else
+	silc_say(client, conn, "%s ban list not set", channel->channel_name);
+    }
+    break;
+    
+  case SILC_COMMAND_GETKEY:
+    {
+      SilcIdType id_type;
+      void *entry;
+      SilcPublicKey public_key;
+      unsigned char *pk;
+      uint32 pk_len;
+      
+      id_type = va_arg(vp, uint32);
+      entry = va_arg(vp, void *);
+      public_key = va_arg(vp, SilcPublicKey);
+      
+      pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+      
+      if (id_type == SILC_ID_CLIENT) {
+	silc_verify_public_key(client, conn, SILC_SOCKET_TYPE_CLIENT,
+			       pk, pk_len, SILC_SKE_PK_TYPE_SILC);
+      }
+      
+      silc_free(pk);
+    }
+    
+  case SILC_COMMAND_TOPIC:
+    {
+      SilcChannelEntry channel;
+      char *topic;
+      
+      if (!success)
+	return;
+      
+      channel = va_arg(vp, SilcChannelEntry);
+      topic = va_arg(vp, char *);
+      
+      /* XXX should use irssi routines */
+      
+      if (topic)
+	silc_say(client, conn, 
+		 "Topic on channel %s: %s", channel->channel_name,
+		 topic);
+    }
+    break;
   }
-  
+
   va_end(vp);
 }
 

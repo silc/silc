@@ -309,7 +309,7 @@ void silc_server_init(void)
   command_bind("topic", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("cmode", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("cumode", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind("users", MODULE_NAME, (SIGNAL_FUNC) command_users);
+  command_bind("users", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("list", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("ban", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind("silcoper", MODULE_NAME, (SIGNAL_FUNC) command_self);
@@ -341,7 +341,7 @@ void silc_server_deinit(void)
   command_unbind("topic", (SIGNAL_FUNC) command_self);
   command_unbind("cmode", (SIGNAL_FUNC) command_self);
   command_unbind("cumode", (SIGNAL_FUNC) command_self);
-  command_unbind("users", (SIGNAL_FUNC) command_users);
+  command_unbind("users", (SIGNAL_FUNC) command_self);
   command_unbind("list", (SIGNAL_FUNC) command_self);
   command_unbind("silcoper", (SIGNAL_FUNC) command_self);
   command_unbind("umode", (SIGNAL_FUNC) command_self);
