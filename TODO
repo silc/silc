@@ -75,6 +75,9 @@ TODO/bugs In SILC Server
 TODO/bugs In SILC Libraries
 ===========================
 
+ o Move all utility stuff to undef lib/silcutil/.  This includes trq,
+   dotconf and zlib.
+
  o Incomplete IPv6 support:
 
 	o All network routines in lib/silcutil/silcnet.[ch] does not
