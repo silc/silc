@@ -783,7 +783,7 @@ silc_server_public_key_authentication(SilcServer server,
 
 static int
 silc_server_get_public_key_auth(SilcServer server,
-				unsigned char *auth_data,
+				unsigned char **auth_data,
 				uint32 *auth_data_len,
 				SilcSKE ske)
 {
@@ -804,12 +804,14 @@ silc_server_get_public_key_auth(SilcServer server,
 					  ske->start_payload_copy->len),
 		     SILC_STR_END);
 
+  *auth_data = silc_calloc(silc_pkcs_get_key_len(pkcs), sizeof(**auth_data));
   if (silc_pkcs_sign_with_hash(pkcs, ske->prop->hash, auth->data, 
-			       auth->len, auth_data, auth_data_len)) {
+			       auth->len, *auth_data, auth_data_len)) {
     silc_buffer_free(auth);
     return TRUE;
   }
 
+  silc_free(*auth_data);
   silc_buffer_free(auth);
   return FALSE;
 }
@@ -1073,13 +1075,9 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  
 	case SILC_AUTH_PUBLIC_KEY:
 	  {
-	    unsigned char sign[1024];
-
 	    /* Public key authentication */
-	    silc_server_get_public_key_auth(server, sign, &auth_data_len,
+	    silc_server_get_public_key_auth(server, &auth_data, &auth_data_len,
 					    ctx->ske);
-	    auth_data = silc_calloc(auth_data_len, sizeof(*auth_data));
-	    memcpy(auth_data, sign, auth_data_len);
 	    break;
 	  }
 	}

@@ -1,4 +1,10 @@
-Wed Feb 13 20:51:13 EET 2002  Johnny Mnemonic <johnny@themnemonic.org>
+Wed Feb 13 23:16:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the public key authentication to allocate always the
+	  destination signature buffer instead of using static buffer.
+	  Affected file silcd/protocol.c.
+
+Wed Feb 13 20:51:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Unified the serverconfig.[ch]'s helper function interface.
 	  Affected file silcd/serverconfig.[ch].
