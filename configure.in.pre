@@ -977,7 +977,7 @@ fi
 #
 AC_MSG_CHECKING(whether to compile native WIN32 code)
 AC_ARG_WITH(win32,
-  [  --with-win32            compile native WIN32 code (-mno-cygwin)],
+  [  --with-win32            compile native WIN32 (MinGW) code (-mno-cygwin)],
   [
     AC_MSG_RESULT(yes)
     AC_DEFINE(SILC_WIN32)
