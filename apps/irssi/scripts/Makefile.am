@@ -5,6 +5,7 @@ script_DATA = \
 	autorejoin.pl \
 	clones.pl \
 	hello.pl \
+	mail.pl \
 	privmsg.pl \
 	realname.pl \
 	quitmsg.pl
