@@ -1,6 +1,6 @@
 bin_PROGRAMS = silc
 
-include $(top_srcdir)/Makefile.defines
+include $(top_srcdir)/Makefile.defines.in
 
 ADD_INCLUDES = \
 	$(GLIB_CFLAGS) \
@@ -14,13 +14,14 @@ ADD_INCLUDES = \
 
 silc_DEPENDENCIES = @COMMON_LIBS@
 
+LIBS = $(SILC_COMMON_LIBS)
 silc_LDADD = \
 	@COMMON_LIBS@ \
 	@PERL_LINK_LIBS@ \
 	@PERL_FE_LINK_LIBS@ \
 	$(PROG_LIBS) \
         $(CURSES_LIBS) \
-	-L../../../lib -lsilcclient $(SILC_COMMON_LIBS)
+	-L../../../lib -lsilcclient
 
 silc_SOURCES = \
         gui-entry.c \

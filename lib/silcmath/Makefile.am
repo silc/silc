@@ -33,5 +33,4 @@ libsilcmath_a_SOURCES = \
 
 EXTRA_DIST = *.h
 
-include $(top_srcdir)/Makefile.defines
-
+include $(top_srcdir)/Makefile.defines.in

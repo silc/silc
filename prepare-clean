@@ -30,6 +30,7 @@ make distclean -k
 rm -f Makefile.am
 rm -f Makefile.defines
 rm -f Makefile.defines.in
+rm -f Makefile.defines_int
 rm -f Makefile.defines_int.in
 rm -f irssi/Makefile.defines
 rm -f irssi/Makefile.defines.in

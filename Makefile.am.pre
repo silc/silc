@@ -21,7 +21,7 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 SUBDIRS = lib irssi silc silcd doc includes
 DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 
-include $(top_srcdir)/Makefile.defines
+include $(top_srcdir)/Makefile.defines.in
 
 dist-bzip: distdir
 	-chmod -R a+r $(distdir)

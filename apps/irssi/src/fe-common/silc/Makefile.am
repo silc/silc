@@ -1,11 +1,10 @@
-INCLUDES = $(GLIB_CFLAGS) -I$(IRSSI_INCLUDE) -I$(IRSSI_INCLUDE)/src
-
-SILC_INCLUDE=../../../..
 IRSSI_INCLUDE=../../..
 
-INCLUDES = \
+include $(top_srcdir)/Makefile.defines.in
+
+ADD_INCLUDES = \
         $(GLIB_CFLAGS) \
-        -DSYSCONFDIR=\""$(sysconfdir)"\" \
+        -DSYSCONFDIR=\""$(silc_etcdir)"\" \
         -I$(IRSSI_INCLUDE) -I$(IRSSI_INCLUDE)/src \
         -I$(IRSSI_INCLUDE)/src/core \
         -I$(IRSSI_INCLUDE)/src/fe-common/core \

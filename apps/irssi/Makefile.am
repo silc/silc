@@ -8,7 +8,10 @@ default-theme.h: $(srcdir)/default.theme
 
 SUBDIRS = src docs
 
-confdir = $(sysconfdir)/irssi
+include $(top_srcdir)/Makefile.defines.in
+
+#confdir = $(sysconfdir)/irssi
+confdir = $(silc_etcdir)
 conf_DATA = config default.theme
 
 noinst_HEADERS = irssi-version.h

@@ -40,4 +40,4 @@ LDADD =
 
 EXTRA_DIST = *.h
 
-include $(top_srcdir)/Makefile.defines
+include $(top_srcdir)/Makefile.defines.in

@@ -151,9 +151,10 @@ AC_ARG_WITH(etcdir,
   no)
     ;;
   yes)
+    ETCDIR="$withval"
     ;;
   *)
-    ETCDIR="$withwal"
+    ETCDIR="$withval"
     ;;
   esac ],
 )
@@ -167,9 +168,10 @@ AC_ARG_WITH(helpdir,
   no)
     ;;
   yes)
+    HELPDIR="$withval"
     ;;
   *)
-    HELPDIR="$withwal"
+    HELPDIR="$withval"
     ;;
   esac ],
 )
@@ -183,9 +185,10 @@ AC_ARG_WITH(docdir,
   no)
     ;;
   yes)
+    DOCDIR="$withval"
     ;;
   *)
-    DOCDIR="$withwal"
+    DOCDIR="$withval"
     ;;
   esac ],
 )
@@ -199,9 +202,10 @@ AC_ARG_WITH(simdir,
   no)
     ;;
   yes)
+    MODULESDIR="$withval"
     ;;
   *)
-    MODULESDIR="$withwal"
+    MODULESDIR="$withval"
     ;;
   esac ],
 )
@@ -215,9 +219,10 @@ AC_ARG_WITH(logsdir,
   no)
     ;;
   yes)
+    LOGSDIR="$withval"
     ;;
   *)
-    LOGSDIR="$withwal"
+    LOGSDIR="$withval"
     ;;
   esac ],
 )
@@ -395,6 +400,8 @@ AC_CONFIG_SUBDIRS(lib/trq)
 
 SILC_TOP_SRCDIR=`pwd`
 AC_SUBST(SILC_TOP_SRCDIR)
+#SILC_INSTALL_PREFIX=$ac_default_prefix
+#AC_SUBST(SILC_INSTALL_PREFIX)
 AC_SUBST(LIBS)
 INCLUDE_DEFINES_INT="include \$(top_srcdir)/Makefile.defines_int"
 AC_SUBST(INCLUDE_DEFINES_INT)

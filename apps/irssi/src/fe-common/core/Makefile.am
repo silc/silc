@@ -1,10 +1,12 @@
 noinst_LIBRARIES = libfe_common_core.a
 
+include $(top_srcdir)/Makefile.defines.in
+
 INCLUDES = \
 	$(GLIB_CFLAGS) \
 	-I$(top_srcdir)/src -I$(top_srcdir)/src/core/ \
-	-DHELPDIR=\""$(datadir)/irssi/help"\" \
-	-DSYSCONFDIR=\""$(sysconfdir)"\"
+	-DHELPDIR=\""$(silc_helpdir)"\" \
+	-DSYSCONFDIR=\""$(silc_etcdir)"\"
 
 libfe_common_core_a_SOURCES = \
 	autorun.c \

@@ -1,4 +1,7 @@
-docdir = $(prefix)/doc/irssi
+include $(top_srcdir)/Makefile.defines.in
+
+#docdir = $(prefix)/doc/irssi
+docdir = $(silc_docdir)
 
 doc_DATA = \
 	formats.txt \

@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 #
-#  Copyright (C) 2000 - 2001 Pekka Riikonen
+#  Copyright (C) 2001 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -19,19 +19,21 @@
 #
 # This file is intended to include all common compilation defines for the
 # SILC source tree.  All Makefile.ams in the SILC source tree are expected
-# to include this file (Makefile.defines).  Also this file may be included
+# to include this file (Makefile.defines.in).  Also this file may be included
 # in any external project that is included in the SILC source tree.
 #
 # Add following to your Makefile.am:
 #
-# include $(top_srcdir)/Makefile.defines
+# include $(top_srcdir)/Makefile.defines.in
 #
-#
-# All packages in the SILC source tree that include the Makefile.defines
+# All packages in the SILC source tree that include the Makefile.defines.in
 # must also include the following two lines in their configure.in file.
 #
 # INCLUDE_DEFINES_INT="include \$(top_srcdir)/Makefile.defines_int"   
 # AC_SUBST(INCLUDE_DEFINES_INT)
+#
+# (See the Makefile.defines_int.pre for all different definitions but DO NOT
+#  directly include that file!)
 #
 
 @INCLUDE_DEFINES_INT@

@@ -25,6 +25,7 @@
 # Generic definitions
 #
 silc_top_srcdir=@SILC_TOP_SRCDIR@
+silc_install_prefix=@prefix@
 
 #
 # Common libraries that are linked against the created executable
@@ -35,7 +36,7 @@ SILC_COMMON_LIBS= @LIBS@ -L$(silc_top_srcdir)/lib -lsilc
 # Installation defines
 #
 silc_etcdir=@ETCDIR@
-silc_modulesdir=$(prefix)/@MODULESDIR@
-silc_helpdir=$(prefix)/@HELPDIR@
-silc_docdir=$(prefix)/@DOCDIR@
-silc_logsdir=$(prefix)/@LOGSDIR@
+silc_modulesdir=$(silc_install_prefix)/@MODULESDIR@
+silc_helpdir=$(silc_install_prefix)/@HELPDIR@
+silc_docdir=$(silc_install_prefix)/@DOCDIR@
+silc_logsdir=$(silc_install_prefix)/@LOGSDIR@
