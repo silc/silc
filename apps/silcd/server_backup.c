@@ -23,6 +23,7 @@
 
 SILC_TASK_CALLBACK(silc_server_protocol_backup_done);
 SILC_TASK_CALLBACK(silc_server_backup_connect_to_router);
+SILC_TASK_CALLBACK(silc_server_backup_announce_watches);
 
 static void silc_server_backup_connect_primary(SilcServer server,
 					       SilcServerEntry server_entry,
@@ -1305,6 +1306,12 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
       SILC_LOG_INFO(("We are now the primary router of our cell again"));
       server->wait_backup = FALSE;
 
+      /* Announce WATCH list a little later */
+      silc_schedule_task_add(server->schedule, 0,
+			     silc_server_backup_announce_watches,
+			     silc_socket_dup(ctx->sock), 4, 0,
+			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+
       /* For us this is the end of this protocol. */
       if (protocol->final_callback)
 	silc_protocol_execute_final(protocol, server->schedule);
@@ -1497,6 +1504,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 	    /* Announce our clients and channels to the router */
 	    silc_server_announce_clients(server, 0, sock);
 	    silc_server_announce_channels(server, 0, sock);
+
+	    /* Announce WATCH list a little later */
+	    silc_schedule_task_add(server->schedule, 0,
+				   silc_server_backup_announce_watches,
+				   silc_socket_dup(sock), 5, 0,
+				   SILC_TASK_TIMEOUT,
+				   SILC_TASK_PRI_NORMAL);
 	  }
 
 	  continue;
@@ -1519,6 +1533,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
       /* Announce our clients and channels to the router */
       silc_server_announce_clients(server, 0, server->router->connection);
       silc_server_announce_channels(server, 0, server->router->connection);
+
+      /* Announce WATCH list a little later */
+      silc_schedule_task_add(server->schedule, 0,
+			     silc_server_backup_announce_watches,
+			     silc_socket_dup(server->router->connection), 4, 0,
+			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
     }
   } else {
     /* Error */
@@ -1559,4 +1579,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
   silc_protocol_free(protocol);
   silc_free(ctx->sessions);
   silc_free(ctx);
+}
+
+SILC_TASK_CALLBACK(silc_server_backup_announce_watches)
+{
+  SilcSocketConnection sock = context;
+  SilcServer server = app_context;
+  if (sock->users > 1)
+    silc_server_announce_watches(server, sock);
+  silc_socket_free(sock);
 }

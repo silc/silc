@@ -5055,6 +5055,51 @@ void silc_server_announce_channels(SilcServer server,
   silc_free(channel_ids);
 }
 
+/* Announces WATCH list. */
+
+void silc_server_announce_watches(SilcServer server,
+				  SilcSocketConnection remote)
+{
+  SilcHashTableList htl;
+  SilcBuffer buffer, idp, args, pkp;
+  SilcClientEntry client;
+  void *key;
+
+  SILC_LOG_DEBUG(("Announcing watch list"));
+
+  /* XXX because way we save the nicks (hash) we cannot announce them. */
+
+  /* XXX we should send all public keys in one command if client is
+     watching more than one key */
+  silc_hash_table_list(server->watcher_list_pk, &htl);
+  while (silc_hash_table_get(&htl, &key, (void *)&client)) {
+    if (!client || !client->id)
+      continue;
+
+    idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+    args = silc_buffer_alloc_size(2);
+    silc_buffer_format(args,
+		       SILC_STR_UI_SHORT(1),
+		       SILC_STR_END);
+    pkp = silc_pkcs_public_key_payload_encode(key);
+    args = silc_argument_payload_encode_one(args, pkp->data, pkp->len, 0x00);
+    buffer = silc_command_payload_encode_va(SILC_COMMAND_WATCH,
+					    ++server->cmd_ident, 2,
+					    1, idp->data, idp->len,
+					    4, args->data, args->len);
+
+    /* Send command */
+    silc_server_packet_send(server, remote, SILC_PACKET_COMMAND, 0,
+			    buffer->data, buffer->len, TRUE);
+
+    silc_buffer_free(pkp);
+    silc_buffer_free(args);
+    silc_buffer_free(idp);
+    silc_buffer_free(buffer);
+  }
+  silc_hash_table_list_reset(&htl);
+}
+
 /* Assembles user list and users mode list from the `channel'. */
 
 bool silc_server_get_users_on_channel(SilcServer server,

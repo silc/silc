@@ -658,7 +658,8 @@ SILC_SERVER_CMD_FUNC(nick)
   }
 
   /* Check for same nickname */
-  if (!memcmp(client->nickname, nick, nick_len)) {
+  if (strlen(client->nickname) == nick_len &&
+      !memcmp(client->nickname, nick, nick_len)) {
     nidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
     silc_free(nickc);
     goto send_reply;
@@ -2088,6 +2089,7 @@ static void silc_server_command_join_channel(SilcServer server,
       passphrase = silc_memdup(tmp, tmp_len);
 
     if (!passphrase || !channel->passphrase ||
+	strlen(channel->passphrase) != strlen(passphrase) ||
         memcmp(passphrase, channel->passphrase, strlen(channel->passphrase))) {
       chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
       silc_server_command_send_status_data(cmd, SILC_COMMAND_JOIN,
@@ -4097,7 +4099,6 @@ SILC_SERVER_CMD_FUNC(detach)
 SILC_SERVER_CMD_FUNC(watch)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
-  SilcServerEntry server_entry;
   SilcServer server = cmd->server;
   char *add_nick, *del_nick;
   SilcUInt32 add_nick_len, del_nick_len, tmp_len, pk_len;
@@ -4112,6 +4113,11 @@ SILC_SERVER_CMD_FUNC(watch)
       /* Send the command to router */
       SilcBuffer tmpbuf;
       SilcUInt16 old_ident;
+
+      /* If backup receives this from primary, handle it locally */
+      if (server->server_type == SILC_BACKUP_ROUTER &&
+	  cmd->sock == SILC_PRIMARY_ROUTE(server))
+	goto process_watch;
 
       SILC_LOG_DEBUG(("Forwarding WATCH to router"));
 
@@ -4131,20 +4137,28 @@ SILC_SERVER_CMD_FUNC(watch)
       cmd->pending = TRUE;
       silc_command_set_ident(cmd->payload, old_ident);
       silc_buffer_free(tmpbuf);
-    } else if (context2) {
-      /* Received reply from router, just send same data to the client. */
-      SilcServerCommandReplyContext reply = context2;
-      SilcStatus status;
+      goto out;
+    } else {
+      if (!context2)
+        goto out;
 
-      SILC_LOG_DEBUG(("Received reply to WATCH from router"));
-      silc_command_get_status(reply->payload, &status, NULL);
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH, status,
-					    0);
+      /* Backup router handles the WATCH command also. */
+      if (server->server_type != SILC_BACKUP_ROUTER) {
+	/* Received reply from router, just send same data to the client. */
+	SilcServerCommandReplyContext reply = context2;
+	SilcStatus status;
+
+	SILC_LOG_DEBUG(("Received reply to WATCH from router"));
+	silc_command_get_status(reply->payload, &status, NULL);
+	silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH, status,
+					      0);
+	goto out;
+      }
     }
-    goto out;
   }
 
   /* We are router and keep the watch list for local cell */
+ process_watch:
 
   /* Get the client ID */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
@@ -4166,10 +4180,16 @@ SILC_SERVER_CMD_FUNC(watch)
   client = silc_idlist_find_client_by_id(server->local_list,
 					 client_id, TRUE, NULL);
   if (!client) {
-    silc_server_command_send_status_data(cmd, SILC_COMMAND_WATCH,
-					 SILC_STATUS_ERR_NO_SUCH_CLIENT_ID, 0,
-					 2, tmp, tmp_len);
-    goto out;
+    /* Backup checks global list also */
+    if (server->server_type == SILC_BACKUP_ROUTER)
+      client = silc_idlist_find_client_by_id(server->global_list,
+					     client_id, TRUE, NULL);
+    if (!client) {
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_WATCH,
+					   SILC_STATUS_ERR_NO_SUCH_CLIENT_ID,
+					   0, 2, tmp, tmp_len);
+      goto out;
+    }
   }
 
   /* Take public key for watching by public key */
@@ -4350,6 +4370,10 @@ SILC_SERVER_CMD_FUNC(watch)
     }
   }
 
+  /* Send reply */
+  silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH,
+					SILC_STATUS_OK, 0);
+
   /* Distribute the watch list to backup routers too */
   if (server->backup) {
     SilcBuffer tmpbuf;
@@ -4360,9 +4384,6 @@ SILC_SERVER_CMD_FUNC(watch)
 			    FALSE, TRUE);
     silc_buffer_free(tmpbuf);
   }
-
-  silc_server_command_send_status_reply(cmd, SILC_COMMAND_WATCH,
-					SILC_STATUS_OK, 0);
 
  out:
   silc_free(client_id);

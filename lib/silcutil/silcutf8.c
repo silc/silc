@@ -545,16 +545,12 @@ bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len)
 
 bool silc_utf8_strcasecmp(const char *s1, const char *s2)
 {
-  SilcUInt32 n;
-
   if (s1 == s2)
     return TRUE;
+  if (strlen(s1) != strlen(s2))
+    return FALSE;
 
-  n = strlen(s2);
-  if (strlen(s1) > n)
-    n = strlen(s1);
-
-  return silc_utf8_strncasecmp(s1, s2, n);
+  return silc_utf8_strncasecmp(s1, s2, strlen(s1));
 }
 
 /* Pretty close strcasecmp */

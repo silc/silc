@@ -1636,8 +1636,9 @@ void silc_server_notify(SilcServer server,
 				       FALSE, TRUE);
 
       /* Check if anyone is watching this nickname */
-      silc_server_check_watcher_list(server, client, NULL,
-				     SILC_NOTIFY_TYPE_KILLED);
+      if (server->server_type == SILC_ROUTER)
+	silc_server_check_watcher_list(server, client, NULL,
+				       SILC_NOTIFY_TYPE_KILLED);
 
       /* Remove from public key hash table. */
       if (client->data.public_key)
