@@ -805,6 +805,9 @@ lib/silcske/Makefile
 lib/silcutil/Makefile
 lib/silcutil/unix/Makefile
 lib/silcutil/win32/Makefile
+lib/silcutil/beos/Makefile
+lib/silcutil/os2/Makefile
+lib/silcutil/epoc/Makefile
 lib/silcsftp/Makefile
 lib/silcsftp/tests/Makefile
 doc/example_silcd.conf

@@ -1,3 +1,22 @@
+Sat Feb 23 20:31:43 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added `prefer_ipv6' argument to the functions
+	  silc_net_gethostbyname[_async].  If it is TRUE it will return
+	  IPv6 address over IPv4.  If FALSE IPv4 address is returned
+	  even if IPv6 address was found.  Affected files
+	  lib/silcutil/silcnet.[ch].
+
+	* Added support silc_net_create_connection[_async] to fallback
+	  to IPv4 address if IPv6 address could not be used (like if
+	  it doesn't work on a specific system).  Affected file in
+	  lib/silcutil/unix/silcunixnet.c.
+
+Sat Feb 23 15:20:30 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_schedule_reinit function to do the enlarging
+	  of the max tasks handling capabilities of the scheduler.
+	  Affected files lib/silcutil/silcschedule.[ch].
+
 Wed Feb 20 20:41:01 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added automatic extern "C" { ... } for C++ compilers so the

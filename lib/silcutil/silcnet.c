@@ -91,6 +91,7 @@ bool silc_net_is_ip(const char *addr)
 typedef struct {
   SilcNetResolveCallback completion;
   void *context;
+  bool prefer_ipv6;
   SilcSchedule schedule;
   char *input;
   char *result;
@@ -116,7 +117,7 @@ static void *silc_net_gethostbyname_thread(void *context)
   SilcNetResolveContext r = (SilcNetResolveContext)context;
   char tmp[64];
 
-  if (silc_net_gethostbyname(r->input, tmp, sizeof(tmp)))
+  if (silc_net_gethostbyname(r->input, r->prefer_ipv6, tmp, sizeof(tmp)))
     r->result = strdup(tmp);
 
   silc_schedule_task_add(r->schedule, 0, silc_net_resolve_completion, r, 0, 1,
@@ -143,24 +144,45 @@ static void *silc_net_gethostbyaddr_thread(void *context)
 
 /* Resolves IP address for hostname. */
 
-bool silc_net_gethostbyname(const char *name, char *address,
+bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address, 
 			    uint32 address_len)
 {
 #ifdef HAVE_IPV6
-  struct addrinfo hints, *ai;
+  struct addrinfo hints, *ai, *tmp, *ip4 = NULL, *ip6 = NULL;
 
   memset(&hints, 0, sizeof(hints));
   hints.ai_socktype = SOCK_STREAM;
   if (getaddrinfo(name, NULL, &hints, &ai))
     return FALSE;
 
-  if (getnameinfo(ai->ai_addr, ai->ai_addrlen, address,
+  for (tmp = ai; tmp; tmp = tmp->ai_next) {
+    if (tmp->ai_family == AF_INET6) {
+      ip6 = tmp;
+      if (ip4)
+	break;
+      continue;
+    }
+    if (tmp->ai_family == AF_INET) {
+      ip4 = tmp;
+      if (ip6)
+	break;
+      continue;
+    }
+  }
+
+  tmp = (prefer_ipv6 ? (ip6 ? ip6 : ip4) : (ip4 ? ip4 : ip6));
+  if (!tmp) {
+    freeaddrinfo(ai);
+    return FALSE;
+  }
+
+  if (getnameinfo(tmp->ai_addr, tmp->ai_addrlen, address,
 		  address_len, NULL, 0, NI_NUMERICHOST)) {
     freeaddrinfo(ai);
     return FALSE;
-  } else {
-    freeaddrinfo(ai);
   }
+
+  freeaddrinfo(ai);
 #else
   struct hostent *hp;
   struct in_addr ip;
@@ -186,6 +208,7 @@ bool silc_net_gethostbyname(const char *name, char *address,
 /* Resolves IP address for hostname async. */
 
 void silc_net_gethostbyname_async(const char *name, 
+				  bool prefer_ipv6,
 				  SilcSchedule schedule,
 				  SilcNetResolveCallback completion,
 				  void *context)
@@ -194,6 +217,7 @@ void silc_net_gethostbyname_async(const char *name,
 
   r->completion = completion;
   r->context = context;
+  r->prefer_ipv6 = prefer_ipv6;
   r->schedule = schedule;
   r->input = strdup(name);
 
@@ -453,7 +477,7 @@ char *silc_net_localhost(void)
   if (gethostname(hostname, sizeof(hostname)))
     return NULL;
 
-  if (!silc_net_gethostbyname(hostname, ip_addr, sizeof(ip_addr)))
+  if (!silc_net_gethostbyname(hostname, TRUE, ip_addr, sizeof(ip_addr)))
     return strdup(hostname);
 
   silc_net_gethostbyaddr(ip_addr, hostname, sizeof(hostname));
@@ -469,7 +493,7 @@ char *silc_net_localip(void)
   if (gethostname(hostname, sizeof(hostname)))
     return NULL;
 
-  if (!silc_net_gethostbyname(hostname, ip_addr, sizeof(ip_addr)))
+  if (!silc_net_gethostbyname(hostname, TRUE, ip_addr, sizeof(ip_addr)))
     return NULL;
 
   return strdup(ip_addr);

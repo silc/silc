@@ -252,18 +252,21 @@ typedef void (*SilcNetResolveCallback)(const char *result, void *context);
  *
  * SYNOPSIS
  *
- *    bool silc_net_gethostbyname(const char *name, char *address, 
- *                                uint32 address_len);
+ *    bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, 
+ *                                char *address, uint32 address_len);
  *
  * DESCRIPTION
  *
- *    Resolves the IP address of the hostname indicated by the `host'.
- *    This returns TRUE and the IP address of the host, or FALSE
- *    if the address could not be resolved.  This is synchronous
- *    function and will block the calling process.
+ *    Resolves the IP address of the hostname indicated by the `name'.
+ *    This returns TRUE and the IP address of the host to the `address'
+ *    buffer, or FALSE if the address could not be resolved.  This is
+ *    synchronous function and will block the calling process.  If the
+ *    `prefer_ipv6' is TRUE then this will return IPv6 address if it
+ *    finds.  If FALSE if returns IPv4 address even if it found IPv6
+ *    address also.
  *
  ***/
-bool silc_net_gethostbyname(const char *name, char *address, 
+bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address, 
 			    uint32 address_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_gethostbyname_async
@@ -271,6 +274,7 @@ bool silc_net_gethostbyname(const char *name, char *address,
  * SYNOPSIS
  *
  *    void silc_net_gethostbyname_async(const char *name, 
+ *                                      bool prefer_ipv6,
  *                                      SilcSchedule schedule,
  *                                      SilcNetResolveCallback completion,
  *                                      void *context)
@@ -278,12 +282,17 @@ bool silc_net_gethostbyname(const char *name, char *address,
  * DESCRIPTION
  *
  *    Asynchronously resolves the IP address of the hostname indicated
- *    by the `host'.  This function returns immediately, and the
+ *    by the `name'.  This function returns immediately, and the
  *    `completion' callback will be called after the resolving is
  *    completed.
  *
+ *    If the `prefer_ipv6' is TRUE then this will return IPv6 address if it
+ *    finds.  If FALSE if returns IPv4 address even if it found IPv6
+ *    address also.
+ *
  ***/
 void silc_net_gethostbyname_async(const char *name, 
+				  bool prefer_ipv6,
 				  SilcSchedule schedule,
 				  SilcNetResolveCallback completion,
 				  void *context);
@@ -298,9 +307,9 @@ void silc_net_gethostbyname_async(const char *name,
  * DESCRIPTION
  *
  *    Resolves the hostname for the IP address indicated by the `addr'
- *    This returns TRUE and the resolved hostname, or FALSE on error.
- *    The `addr' may be either IPv4 or IPv6 address.  This is
- *    synchronous function and will block the calling process.
+ *    This returns TRUE and the resolved hostname to the `name' buffer, 
+ *    or FALSE on error. The `addr' may be either IPv4 or IPv6 address.
+ *    This is synchronous function and will block the calling process.
  *
  ***/
 bool silc_net_gethostbyaddr(const char *addr, char *name, uint32 name_len);

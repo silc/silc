@@ -35,6 +35,8 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o Remove old  0.6.x backwards support.
+
  o Configuration file additions:
 
 	o Add incoming connection frequency, incoming connection frequency

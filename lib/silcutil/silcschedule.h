@@ -316,6 +316,26 @@ SilcSchedule silc_schedule_init(int max_tasks);
  ***/
 bool silc_schedule_uninit(SilcSchedule schedule);
 
+/****f* silcutil/SilcScheduleAPI/silc_schedule_reinit
+ *
+ * SYNOPSIS
+ *
+ *    SilcSchedule silc_schedule_reinit(int max_tasks);
+ *
+ * DESCRIPTION
+ *
+ *    This function can be called to enlarge the task handling capabilities
+ *    of the scheduler indicated by `schedule'.  The `max_tasks' must be
+ *    larger than what was set in silc_schedule_init function.  This function
+ *    returns FALSE if it cannot reinit the scheduler.  This function does
+ *    not do anything else except ready the scheduler to handle `max_tasks'
+ *    number of tasks after this function returns.  It is safe to call this
+ *    function at any time, and it is guaranteed that existing tasks remain
+ *    as they are in the scheduler.
+ *
+ ***/
+bool silc_schedule_reinit(SilcSchedule schedule, int max_tasks);
+
 /****f* silcutil/SilcScheduleAPI/silc_schedule_stop
  *
  * SYNOPSIS

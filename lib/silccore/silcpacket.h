@@ -511,7 +511,7 @@ int silc_packet_receive(SilcSocketConnection sock);
  *
  * DESCRIPTION
  *
- *    Processes and decrypts the incmoing data, and calls parser callback
+ *    Processes and decrypts the incoming data, and calls parser callback
  *    for each received packet that will handle the actual packet parsing.
  *    If more than one packet was received this calls the parser multiple
  *    times.  The parser callback will get context SilcPacketParserContext

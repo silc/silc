@@ -250,6 +250,20 @@ bool silc_schedule_uninit(SilcSchedule schedule)
   return TRUE;
 }
 
+/* Enlarge the capabilities of the scheduler to handle tasks to `max_tasks'. */
+
+bool silc_schedule_reinit(SilcSchedule schedule, int max_tasks)
+{
+  silc_mutex_lock(schedule->lock);
+  if (schedule->max_fd <= max_tasks)
+    return FALSE;
+  schedule->fd_list = silc_realloc(schedule->fd_list, 
+				   (sizeof(*schedule->fd_list) * max_tasks));
+  schedule->max_fd = max_tasks;
+  silc_mutex_unlock(schedule->lock);
+  return TRUE;
+}
+
 /* Stops the schedule even if it is not supposed to be stopped yet. 
    After calling this, one should call silc_schedule_uninit (after the 
    silc_schedule has returned). */

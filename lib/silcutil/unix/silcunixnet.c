@@ -155,11 +155,13 @@ int silc_net_create_connection(const char *local_ip, int port,
   int sock, rval;
   char ip_addr[64];
   SilcSockaddr desthost;
+  bool prefer_ipv6 = TRUE;
 
   SILC_LOG_DEBUG(("Creating connection to host %s port %d", host, port));
 
   /* Do host lookup */
-  if (!silc_net_gethostbyname(host, ip_addr, sizeof(ip_addr))) {
+ retry:
+  if (!silc_net_gethostbyname(host, prefer_ipv6, ip_addr, sizeof(ip_addr))) {
     SILC_LOG_ERROR(("Network (%s) unreachable: could not resolve the "
 		    "IP address", host));
     return -1;
@@ -172,6 +174,13 @@ int silc_net_create_connection(const char *local_ip, int port,
   /* Create the connection socket */
   sock = socket(desthost.sin.sin_family, SOCK_STREAM, 0);
   if (sock < 0) {
+    /* If address is IPv6, then fallback to IPv4 and see whether we can do
+       better with that on socket creation. */
+    if (prefer_ipv6 && silc_net_is_ip6(ip_addr)) {
+      prefer_ipv6 = FALSE;
+      goto retry;
+    }
+
     SILC_LOG_ERROR(("Cannot create socket: %s", strerror(errno)));
     return -1;
   }
@@ -216,12 +225,14 @@ int silc_net_create_connection_async(const char *local_ip, int port,
   int sock, rval;
   char ip_addr[64];
   SilcSockaddr desthost;
+  bool prefer_ipv6 = TRUE;
 
   SILC_LOG_DEBUG(("Creating connection (async) to host %s port %d", 
 		  host, port));
 
   /* Do host lookup */
-  if (!silc_net_gethostbyname(host, ip_addr, sizeof(ip_addr))) {
+ retry:
+  if (!silc_net_gethostbyname(host, prefer_ipv6, ip_addr, sizeof(ip_addr))) {
     SILC_LOG_ERROR(("Network (%s) unreachable: could not resolve the "
 		    "IP address", host));
     return -1;
@@ -234,6 +245,13 @@ int silc_net_create_connection_async(const char *local_ip, int port,
   /* Create the connection socket */
   sock = socket(desthost.sin.sin_family, SOCK_STREAM, 0);
   if (sock < 0) {
+    /* If address is IPv6, then fallback to IPv4 and see whether we can do
+       better with that on socket creation. */
+    if (prefer_ipv6 && silc_net_is_ip6(ip_addr)) {
+      prefer_ipv6 = FALSE;
+      goto retry;
+    }
+
     SILC_LOG_ERROR(("Cannot create socket: %s", strerror(errno)));
     return -1;
   }
