@@ -2744,6 +2744,7 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
   /* If we have protocol active we must assure that we call the protocol's
      final callback so that all the memory is freed. */
   if (sock->protocol) {
+    silc_protocol_cancel(sock->protocol, server->schedule);
     sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
     silc_protocol_execute_final(sock->protocol, server->schedule);
     return;
