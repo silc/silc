@@ -24,6 +24,8 @@
 /* Prototypes */
 char *silc_file_read(const char *filename, int *return_len);
 int silc_file_write(const char *filename, const char *buffer, int len);
+int silc_file_write_mode(const char *filename, const char *buffer, 
+			 int len, int mode);
 int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin);
 int silc_check_line(char *buf);
 char *silc_get_time();

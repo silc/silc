@@ -24,8 +24,11 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:55  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:06:12  priikone
+ * 	Added file saving with specific mode.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:55  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -48,7 +51,10 @@ char *silc_file_read(const char *filename, int *return_len)
   }
 
   filelen = lseek(fd, (off_t)0L, SEEK_END);
-  lseek(fd, (off_t)0L, SEEK_SET);  
+  if (filelen < 0)
+    return NULL;
+  if (lseek(fd, (off_t)0L, SEEK_SET) < 0)
+    return NULL;
 
   if (filelen < 0) {
     SILC_LOG_ERROR(("Cannot open file %s: %s", filename, strerror(errno)));
@@ -79,6 +85,29 @@ int silc_file_write(const char *filename, const char *buffer, int len)
   int fd;
         
   if ((fd = creat(filename, 0644)) == -1) {
+    SILC_LOG_ERROR(("Cannot open file %s for writing: %s", strerror(errno)));
+    return -1;
+  }
+  
+  if ((write(fd, buffer, len)) == -1) {
+    SILC_LOG_ERROR(("Cannot write to file %s: %s", strerror(errno)));
+    return -1;
+  }
+
+  close(fd);
+  
+  return 0;
+}
+
+/* Writes a buffer to the file.  If the file is created specific mode is
+   set to the file. */
+
+int silc_file_write_mode(const char *filename, const char *buffer, 
+			 int len, int mode)
+{
+  int fd;
+        
+  if ((fd = creat(filename, mode)) == -1) {
     SILC_LOG_ERROR(("Cannot open file %s for writing: %s", strerror(errno)));
     return -1;
   }
