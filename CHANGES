@@ -1,3 +1,11 @@
+Sat Mar  3 19:15:43 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Some "Incomplete WHOIS info" errors has been appearing on the
+	  log files.  Took away the entry->userinfo check from WHOIS
+	  reply sending.  The entry->userinfo is now " " if client did not
+	  provide one.  I thought this was fixed earlier but something
+	  is wrong still.  Let's see if the error still appears.
+
 Wed Feb 28 20:56:29 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed a minor bug in the login when the channel key is

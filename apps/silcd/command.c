@@ -541,25 +541,15 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
       
       SILC_PUT32_MSB((time(NULL) - entry->data.last_receive), idle);
       
-      /* XXX */
-      if (entry->userinfo)
-	packet = 
-	  silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
-					       status, ident, 5, 
-					       2, idp->data, idp->len,
-					       3, nh, strlen(nh),
-					       4, uh, strlen(uh),
-					       5, entry->userinfo, 
-					       strlen(entry->userinfo),
-					       7, idle, 4);
-      else
-	packet = 
-	  silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
-					       status, ident, 4, 
-					       2, idp->data, idp->len,
-					       3, nh, strlen(nh),
-					       4, uh, strlen(uh),
-					       7, idle, 4);
+      packet = 
+	silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
+					     status, ident, 5, 
+					     2, idp->data, idp->len,
+					     3, nh, strlen(nh),
+					     4, uh, strlen(uh),
+					     5, entry->userinfo, 
+					     strlen(entry->userinfo),
+					     7, idle, 4);
     }
     
     silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
