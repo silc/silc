@@ -73,7 +73,7 @@ toolkit-install:
 	-mkdir -p $(docdir)/toolkit/
 	-$(INSTALL_DATA) $(srcdir)/doc/toolkit/silc* $(docdir)/toolkit
 	-$(INSTALL_DATA) $(srcdir)/doc/toolkit/index* $(docdir)/toolkit
-	-$(INSTALL_DATA) $(srcdir)/doc/*.gif $(docdir)/toolkit
+	-$(INSTALL_DATA) $(srcdir)/lib/doc/*.gif $(docdir)/toolkit
 
 examples-install:
 	-mkdir -p $(docdir)/examples/

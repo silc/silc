@@ -1,0 +1,123 @@
+<big><b>Introduction to the Manual</b></big>
+<br />&nbsp;<br />
+
+The SILC Toolkit reference manual is a fairly large set of documents.  The
+manual includes hundreds of individual document files totalling more than
+7 MB of content space.  This document is designed to help you understand
+how the reference manual is organized, how it can be used efficiently, and
+how to find the information you need.
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>Target Audience</b>
+
+<br />&nbsp;<br />
+This Toolkit reference manual is targeted at application developers who
+would like add SILC support into their application, and to create new
+SILC based applications.  It is especially aimed at C and C++ programmers,
+who would like to create SILC client applications, either based on command
+line interface (CLI) or on graphical user interface (GUI).
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>Overview</b>
+
+<br />&nbsp;<br />
+The SILC Toolkit Reference Manual has collected the essential information
+needed by application developers.  The following guide and reference
+information is included in this manual:
+
+<br />&nbsp;<br />
+<li>Describing the documentation conventions<br />
+<li>Describing the Toolkit design<br />
+<li>Describing the SILC Protocol<br />
+<li>Describing the programming conventions and idioms<br />
+<li>Documenting the set of public APIs available for programmers<br />
+<li>Describing the usage of various libraries
+
+<br />&nbsp;<br />
+You can download the latest SILC Toolkit from the 
+<a href="http://silcnet.org">SILC Project Website</a>, which includes the
+latest version of the reference manual. The Toolkit package includes the
+full sources of the Toolkit, and includes several example applications and
+piece of example codes.
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>Using the Reference Manual</b>
+
+<br />&nbsp;<br />
+The API references are ogranized by libraries.  Each library will include
+list of interfaces it provides.  Each of the interface in the library
+provides list of public API items.  Each of the item in the list is a hyper
+link that opens the detailed page describing the API item.  All API 
+references are automatically generated from the sources and they have a clear
+structural layout.  The references can provide cross links to other
+references inside the specific interface or the specific library.
+
+<br />&nbsp;<br />
+The list of the library interface items can also include links to guides
+that describe the use of a specific library or interface.  These are
+intended as HOWTOs for programmers describing all aspects of the library
+or interface.  They make the application development easier by also providing
+small examples.
+
+<br />&nbsp;<br />
+All interfaces provided by the reference manual are public, and it does not
+describe any internal or undocumented interfaces.  Since the reference
+manual is automatically generated, it is constantly evolving.  It also
+may omit some of the interfaces or libraries, that have not yet been
+documented in the sources.
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>Document Layout</b>
+
+<br />&nbsp;<br />
+The document layout provides quick links to libraries, interfaces and
+specific API items by including list of links in the left and/or right
+side of the page in the web browser.  These links can be used to directly
+access the specific library, interface or API item.  The link lists may include
+other links to guides, and reference links to outside the reference manual
+as well.
+
+<br />&nbsp;<br />&nbsp;<br />
+<b>Reference Conventions</b>
+
+<br />&nbsp;<br />
+The structural layout of a API item describes the following information 
+about the item:
+
+<br />&nbsp;<br />
+<li>Type.  Types that can appear are Variable, Structure, Function.  A name
+that appears without type is constant, usually #define, enum or typedef.
+Usually the source code of the constants are appended to the reference.
+
+<br />&nbsp;<br />
+<li>Name.  Describes the name of the item.  All functions start with 
+<b>silc_</b> prefix, macros start with <b>SILC_</b> prefix, and type names
+and structures start with <b>Silc</b> prefix.
+
+<br />&nbsp;<br />
+<li>Synopsis.  Functions also describe the synopsis of the function.
+
+<br />&nbsp;<br />
+<li>Description.  Each of the item is described in detail of what the item
+does and how it can be used.
+
+<br />&nbsp;<br />
+<li>Notes.  Optionally the item may describe additional notes to the
+detailed description.  These usually describe various exeptions or other
+important notes that the programmer should be aware of.
+
+<br />&nbsp;<br />
+<li>Example.  Optionally the item may include a piece of source code that
+give short example of how the item may be used.
+
+<br />&nbsp;<br />
+<li>See Also.  Optionally the item may include list of links to other
+items, or some other references that relate to the described item.
+
+<br />&nbsp;<br />
+<li>Source.  Optionally the item may include the actual source code from
+the header file where the documentation was automatically generated.
+
+<br />&nbsp;<br />
+Note that some of these informations are optional and not all API items
+include all of these informations.

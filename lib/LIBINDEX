@@ -3,23 +3,37 @@
  the SILC Document generator.
 -->
 
-<FONT SIZE="+2" COLOR="#000044"><B>SILC Toolkit Reference Manual</B></FONT>
-<BR>
+<big><b>SILC Toolkit Reference Manual</b></big>
+<br />
 <small>
-Copyright &copy; 2001 - 2002 The SILC Project<BR>
-Version: @VERSION@<BR>
+Version: @VERSION@<br />
+Copyright &copy; 2001 - 2002 The SILC Project<br />
 Updated: @DATE@
 </small>
-<BR><BR>
-<B><FONT SIZE="2">Note that this document is still under work and does not
-include yet all references for SILC Toolkit interfaces.</FONT></B>
-<BR><BR>
+<br /><br /><br /><br />
+Welcome to the SILC Toolkit Reference Manual.  The manual is a complete
+developer guide and reference for the SILC application programmer.  The manual
+is intended for application programmers who would like to integrate the SILC
+support into their application, and to create new SILC applications.
+<br /><br />
+The guide is especially targeted to SILC client application developers, and
+provides full reference for the SILC Client Library, and a developer guide to
+create new SILC client applications.
+<br /><br />
+The application programming interfaces are automatically generated from the
+Toolkit sources, and the documentation is constantly evolving.  New versions
+of the Toolkit always delivers the latest version of this reference manual.
+<br /><br />
+
 @BODY@
 
-<BR><BR>
-<BIG><B>Resource Links</B></BIG>
-<BR><BR>
-<LI><A HREF="http://silcnet.org">SILC Project Website</a><BR>
-<LI><A HREF="http://silcnet.org/?page=docs">SILC Protocol Documentation</a><BR>
-<LI><A HREF="http://silcnet.org/?page=whitepaper">SILC White Paper</a><BR>
-<LI><A HREF="http://silcnet.org/?page=faq">SILC FAQ</a><BR>
+<br /><br />
+<b>Resource Links</b>
+<br /><br />
+Please refer to these outside links for more information about the SILC 
+project and SILC Protocol.
+<br /><br />
+<li><a href="http://silcnet.org">SILC Project Website</a><br />
+<li><a href="http://silcnet.org/?page=docs">SILC Protocol Documentation</a><br />
+<li><a href="http://silcnet.org/?page=whitepaper">SILC White Paper</a><br />
+<li><a href="http://silcnet.org/?page=faq">SILC FAQ</a><br />

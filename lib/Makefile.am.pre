@@ -101,3 +101,14 @@ libsilcclient.a:
 	find $(SILCCLIENTLIB_DIRS) -type f -name *.o | xargs $(AR) cru libsilcclient.a
 	$(RANLIB) libsilcclient.a
 
+if SILC_DIST_TOOLKIT
+SILC_EXTRA_DIST = doc
+else
+if SILC_DIST_SERVER
+SILC_EXTRA_DIST = 
+else
+SILC_EXTRA_DIST =
+endif
+endif
+
+EXTRA_DIST = $(SILC_EXTRA_DIST)
