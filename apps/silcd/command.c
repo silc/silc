@@ -631,7 +631,7 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
 					  r->ident);
     silc_server_packet_send(server, r->router->connection,
 			    SILC_PACKET_COMMAND, cmd->packet->flags,
-			    res_cmd->data, res_cmd->len, TRUE);
+			    res_cmd->data, res_cmd->len, FALSE);
 
     /* Reprocess this packet after received reply */
     silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
@@ -1576,7 +1576,7 @@ silc_server_command_identify_check_client(SilcServerCommandContext cmd,
 					  r->ident);
     silc_server_packet_send(server, r->router->connection,
 			    SILC_PACKET_COMMAND, cmd->packet->flags,
-			    res_cmd->data, res_cmd->len, TRUE);
+			    res_cmd->data, res_cmd->len, FALSE);
 
     /* Reprocess this packet after received reply */
     silc_server_command_pending(server, SILC_COMMAND_WHOIS, 
