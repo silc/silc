@@ -1951,6 +1951,8 @@ static int silc_server_command_bad_chars(char *nick)
     if (nick[i] == ')') return TRUE;
     if (nick[i] == '{') return TRUE;
     if (nick[i] == '}') return TRUE;
+    if (nick[i] == '<') return TRUE;
+    if (nick[i] == '>') return TRUE;
   }
 
   return FALSE;
