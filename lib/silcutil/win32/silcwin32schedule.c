@@ -42,6 +42,8 @@
 
    o http://msdn.microsoft.com/library/default.asp?
      url=/library/en-us/winui/hh/winui/messques_77zk.asp 
+   o http://msdn.microsoft.com/library/default.asp?
+     url=/library/en-us/winsock/hh/winsock/apistart_9g1e.asp
 
 */
 
