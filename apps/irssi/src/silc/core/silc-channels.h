@@ -19,6 +19,7 @@ typedef struct {
   GSList *banlist;		/* list of bans */
   GSList *ebanlist;		/* list of ban exceptions */
   GSList *invitelist;		/* invite list */
+  SilcUInt32 cur_key;
   SilcChannelEntry entry;
 } SILC_CHANNEL_REC;
 

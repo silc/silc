@@ -71,7 +71,7 @@ void silc_client_send_private_message(SilcClient client,
   /* We have private message specific key */
 
   /* Get data used in the encryption */
-  cipher = client_entry->send_key;
+  cipher = conn->send_key;
   hmac = conn->hmac_send;
   block_len = silc_cipher_get_block_len(cipher);
 
@@ -103,7 +103,6 @@ void silc_client_send_private_message(SilcClient client,
   }
 
   /* Encrypt the header and padding of the packet. */
-  cipher = conn->send_key;
   silc_packet_encrypt(cipher, hmac, conn->psn_send++,
 		      (SilcBuffer)&packet, SILC_PACKET_HEADER_LEN + 
 		      packetdata.src_id_len + packetdata.dst_id_len +

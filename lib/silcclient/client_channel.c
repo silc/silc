@@ -471,6 +471,7 @@ void silc_client_receive_channel_key(SilcClient client,
 int silc_client_add_channel_private_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcChannelEntry channel,
+					const char *name,
 					char *cipher,
 					char *hmac,
 					unsigned char *key,
@@ -520,6 +521,7 @@ int silc_client_add_channel_private_key(SilcClient client,
 
   /* Save the key */
   entry = silc_calloc(1, sizeof(*entry));
+  entry->name = name ? strdup(name) : NULL;
   entry->key = silc_memdup(keymat->send_enc_key, keymat->enc_key_len / 8);
   entry->key_len = keymat->enc_key_len / 8;
 
@@ -565,6 +567,7 @@ int silc_client_del_channel_private_keys(SilcClient client,
     silc_dlist_del(channel->private_keys, entry);
     memset(entry->key, 0, entry->key_len);
     silc_free(entry->key);
+    silc_free(entry->name);
     silc_cipher_free(entry->cipher);
     silc_hmac_free(entry->hmac);
     silc_free(entry);
@@ -603,6 +606,7 @@ int silc_client_del_channel_private_key(SilcClient client,
       silc_dlist_del(channel->private_keys, entry);
       memset(entry->key, 0, entry->key_len);
       silc_free(entry->key);
+      silc_free(entry->name);
       silc_cipher_free(entry->cipher);
       silc_hmac_free(entry->hmac);
       silc_free(entry);
@@ -656,6 +660,18 @@ void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
 					   SilcUInt32 key_count)
 {
   silc_free(keys);
+}
+
+/* Sets the `key' to be used as current channel private key on the
+   `channel'.  Packet sent after calling this function will be secured
+   with `key'. */
+
+void silc_client_current_channel_private_key(SilcClient client,
+					     SilcClientConnection conn,
+					     SilcChannelEntry channel,
+					     SilcChannelPrivateKey key)
+{
+  channel->curr_key = key;
 }
 
 /* Returns the SilcChannelUser entry if the `client_entry' is joined on the 

@@ -15,8 +15,8 @@ Types:
   MSG        The command is performed for private messages
              affecting the <nickname>.
 
-  CHANNEL    The command is performed for channel affecting
-             the <channel>.
+  CHANNEL    The command is performed for the channel indicated
+             by <channel> (* matches current channel).
 
 Commands:
 
@@ -27,7 +27,7 @@ Commands:
     negotiated key material is used.  If the negotiation has not
     been performed this command has no effect.
 
-    If the type is `msg' and the <key> is `*' then random key
+    If the type is MSG and the <key> is `*' then random key
     will be generated automatically.  The <cipher> may be set
     for both private message and channel private keys and the
     <hmac> may be set only to the channel private keys.
@@ -44,8 +44,16 @@ Commands:
   list
 
     List all private keys that has been set.  If the type is
-    `msg' and the <nickname> is ´*' then all private message
+    MSG and the <nickname> is ´*' then all private message
     keys that you've set will be listed.
+
+  change     [<number>]
+
+    This command can be used only when type is CHANNEL.  This is
+    used to change the current channel private key.  The <number>
+    may indicate what key is changed.  If it is not provided then
+    next key is changed to current channel private key.  By default
+    this command is also bound to Meta-K (Alt+Shift+k) key.
 
   agreement  [<hostname> [<port>]]
 
@@ -82,3 +90,10 @@ Commands:
     your key agreement request.  You will see a notify on the
     screen when the reply arrives.  The <hostname> and <port> is the
     hostname and port of the remote client's key agreement server.
+
+Examples:
+
+  Set channel private key to current channel, and list all keys:
+
+    /KEY CHANNEL set very_secret_key_this_is
+    /KEY CHANNEL list

@@ -450,6 +450,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   SilcClientConnection conn;
   SilcClientEntry *entrys, client_entry = NULL;
   SilcUInt32 entry_count;
+  SILC_CHANNEL_REC *chanrec = NULL;
   SilcChannelEntry channel_entry = NULL;
   char *nickname = NULL, *tmp;
   int command = 0, port = 0, type = 0;
@@ -525,11 +526,12 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
       name = argv[2];
     }
 
-    channel_entry = silc_client_get_channel(silc_client, conn, name);
-    if (!channel_entry) {
+    chanrec = silc_channel_find(server, name);
+    if (chanrec == NULL) {
       silc_free(nickname);
-      cmd_return_error(CMDERR_NOT_JOINED);
+      cmd_return_error(CMDERR_CHAN_NOT_FOUND);
     }
+    channel_entry = chanrec->entry;
   }
 
   /* Set command */
@@ -576,7 +578,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 	  hmac = argv[6];
 
 	if (!silc_client_add_channel_private_key(silc_client, conn, 
-						 channel_entry,
+						 channel_entry, NULL,
 						 cipher, hmac,
 						 argv[4],
 						 argv_lens[4])) {
@@ -776,22 +778,18 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
        
         hostname = (char *)settings_get_str("auto_public_ip");
 
-/* If the hostname isn't set, treat this case as if auto_public_ip wasn't
- * set.
- */
+	/* If the hostname isn't set, treat this case as if auto_public_ip 
+	   wasn't set. */
         if ((hostname) && (*hostname == '\0')) {
            hostname = NULL;
-        }
-        else {
+        } else {
           bindhost = (char *)settings_get_str("auto_bind_ip");
             
-/* if the bind_ip isn't set, but the public_ip IS, then assume then
- * public_ip is the same value as the bind_ip.
- */
-          if ((bindhost) && (*bindhost == '\0')) {
+	  /* if the bind_ip isn't set, but the public_ip IS, then assume then
+	     public_ip is the same value as the bind_ip. */
+          if ((bindhost) && (*bindhost == '\0'))
             bindhost = hostname;
-          }
-           port = settings_get_int("auto_bind_port");
+	  port = settings_get_int("auto_bind_port");
         }
       }  /* if use_auto_addr */
     }
@@ -810,6 +808,48 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
     internal = silc_calloc(1, sizeof(*internal));
     internal->type = type;
     internal->server = server;
+  }
+
+  /* Change current channel private key */
+  if (!strcasecmp(argv[3], "change")) {
+    command = 6;
+    if (type == 2) {
+      /* Unset channel key(s) */
+      SilcChannelPrivateKey *keys;
+      SilcUInt32 keys_count;
+      int number;
+
+      keys = silc_client_list_channel_private_keys(silc_client, conn, 
+						   channel_entry,
+						   &keys_count);
+      if (!keys)
+	goto out;
+
+      if (argc == 4) {
+	chanrec->cur_key++;
+	if (chanrec->cur_key >= keys_count)
+	  chanrec->cur_key = 0;
+      }
+
+      if (argc > 4) {
+	number = atoi(argv[4]);
+	if (!number || number > keys_count)
+	  chanrec->cur_key = 0;
+	else
+	  chanrec->cur_key = number - 1;
+      }
+
+      /* Set the current channel private key */
+      silc_client_current_channel_private_key(silc_client, conn, 
+					      channel_entry, 
+					      keys[chanrec->cur_key]);
+      printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			 SILCTXT_CH_PRIVATE_KEY_CHANGE, chanrec->cur_key + 1,
+			 channel_entry->channel_name);
+
+      silc_client_free_channel_private_keys(keys, keys_count);
+      goto out;
+    }
   }
 
   if (command == 0) {

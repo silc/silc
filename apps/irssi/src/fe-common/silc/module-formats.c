@@ -68,6 +68,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "channel_private_key_nomode", "Private key mode is not set on channel {channel $0}", 1, { 0 } },
 	{ "channel_private_key_error", "Could not add private key to channel {channel $0}", 1, { 0 } },
 	{ "channel_private_key_list", "Channel {channel $0} private keys%:  Cipher           Hmac             Key", 1, { 0 } },
+	{ "channel_private_change", "You are using private key n:o $0 on {channel $1}", 2, { 1, 0 } },
 	{ "private_key_list", "Private message keys%:  Client                         Cipher         Key", 0 },
 	{ "private_key_list_nick", "Private message keys with {nick $0}%:  Client                         Cipher         Key", 1, { 0 } },
 	{ "key_agreement", "Requesting key agreement with {nick $0}", 1, { 0 } },

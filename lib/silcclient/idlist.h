@@ -61,14 +61,6 @@ struct SilcChannelUserStruct {
   SilcChannelEntry channel;
 };
 
-/* Structure to hold one channel private key. */
-struct SilcChannelPrivateKeyStruct {
-  SilcCipher cipher;		      /* The cipher and key */
-  SilcHmac hmac;		      /* The HMAC and hmac key */
-  unsigned char *key;		      /* The key data */
-  SilcUInt32 key_len;		      /* The key length */
-};
-
 /* Channel entry context. This is allocate for every channel client has
    joined to. This includes for example the channel specific keys */
 struct SilcChannelEntryStruct {
