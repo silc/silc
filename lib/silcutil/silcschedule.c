@@ -742,7 +742,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 
 	  /* Add the fd to be listened, the task found now applies to this
 	     fd as well. */
-	  silc_schedule_set_listen_fd(schedule, fd, SILC_TASK_READ);
+	  silc_schedule_set_listen_fd(schedule, fd, SILC_TASK_READ, FALSE);
 	  return task;
 	}
 	
@@ -781,7 +781,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
   /* If the task is non-timeout task we have to tell the scheduler that we
      would like to have these tasks scheduled at some odd distant future. */
   if (type != SILC_TASK_TIMEOUT)
-    silc_schedule_set_listen_fd(schedule, fd, SILC_TASK_READ);
+    silc_schedule_set_listen_fd(schedule, fd, SILC_TASK_READ, FALSE);
 
   silc_mutex_lock(queue->lock);
 
@@ -882,8 +882,8 @@ void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context)
    call this directly if wanted. This can be called multiple times for
    one file descriptor to set different iomasks. */
 
-void silc_schedule_set_listen_fd(SilcSchedule schedule,
-				 SilcUInt32 fd, SilcTaskEvent iomask)
+void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
+				 SilcTaskEvent mask, bool send_events)
 {
   int i;
   bool found = FALSE;
@@ -896,10 +896,14 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule,
   for (i = 0; i < schedule->max_fd; i++)
     if (schedule->fd_list[i].fd == fd) {
       schedule->fd_list[i].fd = fd;
-      schedule->fd_list[i].events = iomask;
+      schedule->fd_list[i].events = mask;
       if (i > schedule->last_fd)
 	schedule->last_fd = i;
       found = TRUE;
+      if (send_events) {
+	schedule->fd_list[i].revents = mask;
+	silc_schedule_dispatch_nontimeout(schedule);
+      }
       break;
     }
 
@@ -907,9 +911,13 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule,
     for (i = 0; i < schedule->max_fd; i++)
       if (schedule->fd_list[i].events == 0) {
 	schedule->fd_list[i].fd = fd;
-	schedule->fd_list[i].events = iomask;
+	schedule->fd_list[i].events = mask;
 	if (i > schedule->last_fd)
 	  schedule->last_fd = i;
+	if (send_events) {
+	  schedule->fd_list[i].revents = mask;
+	  silc_schedule_dispatch_nontimeout(schedule);
+	}
 	break;
       }
 

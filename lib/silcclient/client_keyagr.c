@@ -397,7 +397,8 @@ silc_client_connect_to_client_internal(SilcClientInternalConnectContext *ctx)
 				     (void *)ctx, 0, 0, 
 				     SILC_TASK_FD,
 				     SILC_TASK_PRI_NORMAL);
-  silc_schedule_set_listen_fd(ctx->client->schedule, sock, SILC_TASK_WRITE);
+  silc_schedule_set_listen_fd(ctx->client->schedule, sock, SILC_TASK_WRITE,
+			      FALSE);
 
   ctx->sock = sock;
 

@@ -563,7 +563,7 @@ void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context);
  * SYNOPSIS
  *
  *    void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
- *                                     SilcTaskEvent mask);
+ *                                     SilcTaskEvent mask, bool send_events);
  *
  * DESCRIPTION
  *
@@ -576,9 +576,14 @@ void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context);
  *    whenever you need to change the events. This can be called multiple
  *    times to change the events.
  *
+ *    If the `send_events' is TRUE then this function sends the events
+ *    in `mask' to the application.  If FALSE then they are sent only
+ *    after the event occurs in reality.  In normal cases the `send_events'
+ *    is set to FALSE.
+ *
  ***/
 void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
-				 SilcTaskEvent mask);
+				 SilcTaskEvent mask, bool send_events);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_unset_listen_fd
  *

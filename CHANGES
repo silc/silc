@@ -1,3 +1,11 @@
+Sun Oct 20 19:54:55 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added 'send_events' boolean argument to the function
+	  silc_schedule_set_listen_fd which sends the set events to
+	  the application explicitly if set to TRUE.  Default action
+	  should be FALSE.  Affected file lib/silcutil/silcschedule.[ch],
+	  lib/silcclient/client_internal.h and silcd/server_internal.h.
+
 Sun Oct 20 14:12:24 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Merged with irssi.org CVS.

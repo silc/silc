@@ -64,7 +64,7 @@ static void send_packet(SilcSocketConnection sock,
     return;
 
   silc_schedule_set_listen_fd(client->schedule, sock->sock, 
-			      (SILC_TASK_READ | SILC_TASK_WRITE));
+			      (SILC_TASK_READ | SILC_TASK_WRITE), FALSE);
   SILC_SET_OUTBUF_PENDING(sock);
 }
 
@@ -97,7 +97,7 @@ SILC_TASK_CALLBACK(packet_process)
     if (ret < 0)
       return;
 
-    silc_schedule_set_listen_fd(client->schedule, fd, SILC_TASK_READ);
+    silc_schedule_set_listen_fd(client->schedule, fd, SILC_TASK_READ, FALSE);
     SILC_UNSET_OUTBUF_PENDING(sock);
     silc_buffer_clear(sock->outbuf);
     return;

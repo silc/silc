@@ -102,15 +102,15 @@ do {							\
 		         SILC_TASK_PRI_NORMAL);		\
 } while(0)
 
-#define SILC_CLIENT_SET_CONNECTION_FOR_INPUT(s, fd)		\
-do {								\
-  silc_schedule_set_listen_fd((s), (fd), SILC_TASK_READ);	\
+#define SILC_CLIENT_SET_CONNECTION_FOR_INPUT(s, fd)			\
+do {									\
+  silc_schedule_set_listen_fd((s), (fd), SILC_TASK_READ, FALSE);	\
 } while(0)
      
-#define SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT(s, fd)		\
-do {								\
-  silc_schedule_set_listen_fd((s), (fd), (SILC_TASK_READ |	\
-				          SILC_TASK_WRITE));	\
+#define SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT(s, fd)			\
+do {									\
+  silc_schedule_set_listen_fd((s), (fd), (SILC_TASK_READ |		\
+				          SILC_TASK_WRITE), FALSE);	\
 } while(0)
 
 /* Finds socket connection object by file descriptor */
