@@ -4477,7 +4477,6 @@ void silc_server_save_users_on_channel(SilcServer server,
   SilcClientEntry client;
   SilcIDCacheEntry cache;
   SilcChannelClientEntry chl;
-  bool global;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -4499,17 +4498,15 @@ void silc_server_save_users_on_channel(SilcServer server,
       continue;
     }
 
-    global = FALSE;
+    cache = NULL;
 
     /* Check if we have this client cached already. */
     client = silc_idlist_find_client_by_id(server->local_list, client_id,
 					   server->server_type, &cache);
-    if (!client) {
+    if (!client)
       client = silc_idlist_find_client_by_id(server->global_list,
 					     client_id, server->server_type,
 					     &cache);
-      global = TRUE;
-    }
     if (!client) {
       /* If router did not find such Client ID in its lists then this must
 	 be bogus client or some router in the net is buggy. */
@@ -4531,13 +4528,10 @@ void silc_server_save_users_on_channel(SilcServer server,
       }
 
       client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
-    } else {
-      /* Found, if it is from global list we'll assure that we won't
-	 expire it now that the entry is on channel. */
-      if (global)
-	cache->expire = 0;
     }
 
+    if (cache)
+      cache->expire = 0;
     silc_free(client_id);
 
     if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {

@@ -159,12 +159,12 @@ silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
 
   server = (SilcServerEntry)id_cache->context;
 
-  if (ret_entry)
-    *ret_entry = id_cache;
-
   if (server && registered && 
       !(server->data.status & SILC_IDLIST_STATUS_REGISTERED))
     return NULL;
+
+  if (ret_entry)
+    *ret_entry = id_cache;
 
   SILC_LOG_DEBUG(("Found"));
 
@@ -187,12 +187,12 @@ silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
 
   server = (SilcServerEntry)id_cache->context;
   
-  if (ret_entry)
-    *ret_entry = id_cache;
-
   if (server && registered &&
       !(server->data.status & SILC_IDLIST_STATUS_REGISTERED))
     return NULL;
+
+  if (ret_entry)
+    *ret_entry = id_cache;
 
   SILC_LOG_DEBUG(("Found"));
 
@@ -239,12 +239,12 @@ silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
   
   silc_idcache_list_free(list);
 
-  if (ret_entry)
-    *ret_entry = id_cache;
-
   if (server && registered &&
       !(server->data.status & SILC_IDLIST_STATUS_REGISTERED))
     return NULL;
+
+  if (ret_entry)
+    *ret_entry = id_cache;
 
   SILC_LOG_DEBUG(("Found"));
 
@@ -493,12 +493,12 @@ silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
 
   client = (SilcClientEntry)id_cache->context;
 
-  if (ret_entry)
-    *ret_entry = id_cache;
-
   if (client && registered &&
       !(client->data.status & SILC_IDLIST_STATUS_REGISTERED))
     return NULL;
+
+  if (ret_entry)
+    *ret_entry = id_cache;
 
   SILC_LOG_DEBUG(("Found"));
 

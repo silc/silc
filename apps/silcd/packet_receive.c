@@ -3370,6 +3370,7 @@ void silc_server_resume_client(SilcServer server,
 {
   SilcBuffer buffer = packet->buffer, buf;
   SilcIDListData idata;
+  SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry detached_client;
   SilcClientID *client_id = NULL;
   unsigned char *id_string, *auth = NULL;
@@ -3741,10 +3742,12 @@ void silc_server_resume_client(SilcServer server,
 
     /* Get entry to the client, and resolve it if we don't have it. */
     detached_client = silc_idlist_find_client_by_id(server->local_list, 
-						    client_id, TRUE, NULL);
+						    client_id, TRUE,
+						    &id_cache);
     if (!detached_client) {
       detached_client = silc_idlist_find_client_by_id(server->global_list,
-						      client_id, TRUE, NULL);
+						      client_id, TRUE,
+						      &id_cache);
       if (!detached_client) {
 	SILC_LOG_DEBUG(("Resuming client is unknown"));
 	silc_free(client_id);
@@ -3797,6 +3800,7 @@ void silc_server_resume_client(SilcServer server,
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
     detached_client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
+    id_cache->expire = 0;
 
     /* Update channel information regarding global clients on channel. */
     if (server->server_type == SILC_SERVER) {
