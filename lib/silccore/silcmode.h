@@ -1,24 +1,24 @@
-/****h* silccore/silcmode.h
- *
- * NAME
- *
- * silcmode.h
- *
- * COPYRIGHT
- *
- * Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
- *
- * Copyright (C) 2001 Pekka Riikonen
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+/*
+ 
+  silcmode.h
+ 
+  Author: Pekka Riikonen <priikone@silcnet.org>
+  
+  Copyright (C) 2001 Pekka Riikonen
+  
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+ 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+*/
+
+/****h* silccore/SilcMode
  *
  * DESCRIPTION
  *
@@ -52,7 +52,7 @@
 #define SILC_CHANNEL_MODE_FOUNDER_AUTH 0x0200 /* sets founder auth data */
 /***/
 
-/****d* silccore/Modes/ChannelModes
+/****d* silccore/Modes/ChannelUserModes
  *
  * DESCRIPTION
  *
@@ -65,7 +65,7 @@
 #define SILC_CHANNEL_UMODE_CHANOP      0x0002 /* channel operator */
 /***/
 
-/****d* silccore/Modes/ChannelModes
+/****d* silccore/Modes/SilcUserMode
  *
  * DESCRIPTION
  *

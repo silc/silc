@@ -2,8 +2,6 @@
  
   silcsockconn.h
  
-  COPYRIGHT
- 
   Author: Pekka Riikonen <priikone@silnet.org>
  
   Copyright (C) 1997 - 2001 Pekka Riikonen
@@ -20,7 +18,7 @@
 
 */
 
-/****h* silcutil/silcsockconn.h
+/****h* silcutil/SilcSocketConnectionAPI
  *
  * DESCRIPTION
  *

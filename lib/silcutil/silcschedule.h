@@ -20,7 +20,7 @@
 
 */
  
-/****h* silcutil/silcschedule.h
+/****h* silcutil/SilcScheduleAPI
  *
  * DESCRIPTION
  *

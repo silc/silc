@@ -1,3 +1,10 @@
+Sun Aug 12 20:48:14 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added the SILC Document generator to the scripts/silcdoc.
+	  It can be used to generate the Toolkit Reference Manual out
+	  of the source tree.  Internally it will also use the RoboDoc
+	  generator now imported in util/robodoc.
+
 Sun Aug 12 12:28:17 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added couple of return's in rekey protocol if error orccurred
