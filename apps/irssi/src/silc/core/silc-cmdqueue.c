@@ -100,7 +100,30 @@ bool silc_queue_command_call(SilcClient client,
 
   va_end(ap);
 
-  /* FIXME: UTF-8-tify parameters of cmd */
+  if (!silc_term_utf8()) {
+    int len = silc_utf8_encoded_len(cmd, strlen(cmd), SILC_STRING_LANGUAGE);
+    char *message = silc_calloc(len + 1, sizeof(*cmd));
+    if (message == NULL) {
+
+      if (need_free)
+        g_free(cmd);
+
+      g_critical("file %s: line %d: assertion `message != NULL' failed.",
+          	 __FILE__, __LINE__);
+
+      return FALSE;
+    }
+    silc_utf8_encode(cmd, strlen(cmd), SILC_STRING_LANGUAGE,
+		     message, len);
+
+    if (need_free)
+      g_free(cmd);
+
+    need_free = TRUE;
+    cmd = g_strdup(message);
+
+    silc_free(message);
+  }
 
   /* queueing disabled -> immediate execution */
   if (list == NULL) {

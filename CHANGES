@@ -1,3 +1,10 @@
+Fri Feb 13 13:53:45 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Convert all commands to UTF-8 before passing them to the
+	  client library.  Still need to convert replies from UTF-8 to
+	  the locale encoding.  Affected file 
+	  irssi/src/silc/core/silc-cmdqueue.c
+	  
 Fri Feb 13 13:13:07 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* redirect all silc_client_command_calls through a queueing framework.
