@@ -183,12 +183,12 @@ abstracts = {
   # private message from you, $0 = "msg", $1 = target nick
   ownprivmsg = "->*%c$1-%n* %g";
 
-  # own private message in query
-  ownprivmsgnick = "{msgnick  $0-}%g";
-  ownprivnick = "$0-";
-
   # private message in query
-  privmsgnick = "{msgnick  $0-%n}";
+  privmsgnick = "*%c$0%n* ";
+
+  # own private message in query
+  ownprivmsgnick = "->*%c$0%n* %g$1-";
+  ownprivnick = "$0-";
 
 
   ##

@@ -38,7 +38,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "ownaction", "{ownaction $0}", 1, { 0 } },
 	{ "ownnotice", "{ownnotice $0}", 1, { 0 } },
 
-	/* WHOIS and WHOWAS messages */
+	/* WHOIS, WHOWAS and USERS (alias WHO) messages */
 	{ NULL, "Who Queries", 0 },
 
 	{ "whois", "{nick $0} {nickhost $1}%: realname : $2", 3, { 0, 0, 0 } },
@@ -46,6 +46,8 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "whois_modes", " modes    : $0", 1, { 0 } },
 	{ "whois_idle", " idle     : $0", 1, { 0 } },
 	{ "whowas", "{nick $0} was {nickhost $1} ($2)", 3, { 0, 0, 0 } },
+	{ "users_header", "Users on {channelhilight $0}", 1, { 0 } },
+	{ "users", " %|{nick $[!20]0} $[!5]1 $2 {comment {hilight $3}}", 4, { 0, 0, 0, 0 } },
 
 	/* Key management and key agreement */
 	{ NULL, "Key Management And Key Agreement", 0 },
@@ -65,6 +67,14 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "key_agreement_error", "Error occurred during key agreement with {nick $0}", 1, { 0 } },
 	{ "key_agreement_failure", "Key agreement failed with {nick $0}", 1, { 0 } },
 	{ "key_agreement_timeout", "Timeout during key agreement. The key agreement was not performed with {nick $0}", 1, { 0 } },
+
+	/* Key management and key agreement */
+	{ NULL, "Misc", 0 },
+
+	{ "server_oper", "You are now {hilight server operator}", 0, { 0 } },
+	{ "router_oper", "You are now {hilight SILC operator}", 0, { 0 } },
+	{ "list_header", "  Channel                              Users   Topic", 0, { 0 } },
+	{ "list", "  %|{channelhilight $[36]0} {hilight $[7]1} $2", 3, { 0, 0, 0 } },
 
 	{ NULL, NULL, 0 }
 };

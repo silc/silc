@@ -55,6 +55,7 @@ settings = {
     autoclose_windows = "no";
     use_msgs_window = "no";
     autocreate_windows = "no";
+    autocreate_query_level = "none";
   };
   "fe-text" = { topicbar = "no"; mail_counter = "yes"; indent = "8"; };
 };

@@ -24,18 +24,17 @@
 
 #include "silc-queries.h"
 
-QUERY_REC *silc_query_create(SILC_SERVER_REC *server,
+QUERY_REC *silc_query_create(const char *server_tag,
 			     const char *nick, int automatic)
 {
   QUERY_REC *rec;
 
-  g_return_val_if_fail(server == NULL || IS_SILC_SERVER(server), NULL);
   g_return_val_if_fail(nick != NULL, NULL);
 
   rec = g_new0(QUERY_REC, 1);
   rec->chat_type = SILC_PROTOCOL;
   rec->name = g_strdup(nick);
-  rec->server = (SERVER_REC *) server;
+  rec->server_tag = g_strdup(server_tag);
   query_init(rec, automatic);
   return rec;
 }

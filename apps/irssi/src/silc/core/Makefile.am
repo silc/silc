@@ -24,6 +24,7 @@ INCLUDES = \
 noinst_LIBRARIES=libsilc_core.a
 
 libsilc_core_a_SOURCES = \
+	client_ops.c \
 	clientutil.c \
 	clientconfig.c \
 	silc-channels.c \
@@ -35,6 +36,9 @@ libsilc_core_a_SOURCES = \
 
 noinst_HEADERS = \
 	module.h \
+	client_ops.h \
+	clientutil.h \
+	clientconfig.h \
 	silc-channels.h \
 	silc-core.h \
 	silc-nicklist.h \

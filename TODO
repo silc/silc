@@ -1,6 +1,14 @@
 TODO/bugs In SILC Client Library
 ================================
 
+ o The client library must manage somehow when receiving client that has
+   same nickname, same server, same username but different Client ID than
+   what we have in the cache.  It is now assumed that they are different
+   client but it might not be.  It should at least number the clients
+   using the client->num so that they can be accessed from the user
+   interface separately or it could just remove the old client unless
+   it is on some channels.
+
  o Add local commands to list the current server and client public keys
    that the user has.  And a local command to dump the contents of the
    public key to the screen.

@@ -519,13 +519,10 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     {
       char *topic, *name;
       int usercount;
-      unsigned char buf[256], tmp[16];
-      int i, len;
+      char users[20];
       
       if (!success)
 	return;
-      
-      /* XXX should use irssi routines */
       
       (void)va_arg(vp, SilcChannelEntry);
       name = va_arg(vp, char *);
@@ -534,35 +531,13 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       
       if (status == SILC_STATUS_LIST_START ||
 	  status == SILC_STATUS_OK)
-	silc_say(client, conn, 
-		 "  Channel                                  Users     Topic");
-      
-      memset(buf, 0, sizeof(buf));
-      strncat(buf, "  ", 2);
-      len = strlen(name);
-      strncat(buf, name, len > 40 ? 40 : len);
-      if (len < 40)
-	for (i = 0; i < 40 - len; i++)
-	  strcat(buf, " ");
-      strcat(buf, " ");
-      
-      memset(tmp, 0, sizeof(tmp));
-      if (usercount) {
-	snprintf(tmp, sizeof(tmp), "%d", usercount);
-	strcat(buf, tmp);
-      }
-      len = strlen(tmp);
-      if (len < 10)
-	for (i = 0; i < 10 - len; i++)
-	  strcat(buf, " ");
-      strcat(buf, " ");
-      
-      if (topic) {
-	len = strlen(topic);
-	strncat(buf, topic, len);
-      }
-      
-      silc_say(client, conn, "%s", buf);
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_LIST_HEADER);
+
+      snprintf(users, sizeof(users) - 1, "%d", usercount);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_LIST,
+			 name, users, topic ? topic : "");
     }
     break;
     
@@ -580,88 +555,50 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     break;
     
   case SILC_COMMAND_OPER:
-    silc_say(client, conn, "You are now server operator");
+    printformat_module("fe-common/silc", server, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_SERVER_OPER);
     break;
     
   case SILC_COMMAND_SILCOPER:
-    silc_say(client, conn, "You are now SILC operator");
+    printformat_module("fe-common/silc", server, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_ROUTER_OPER);
     break;
     
   case SILC_COMMAND_USERS: 
     {
       SilcChannelEntry channel;
       SilcChannelUser chu;
-      int line_len;
-      char *line;
       
       if (!success)
 	return;
       
       channel = va_arg(vp, SilcChannelEntry);
       
-      /* There are two ways to do this, either parse the list (that
-	 the command_reply sends (just take it with va_arg()) or just
-	 traverse the channel's client list.  I'll do the latter.  See
-	 JOIN command reply for example for the list. */
-      
-      silc_say(client, conn, "Users on %s", channel->channel_name);
-	
-      line = silc_calloc(1024, sizeof(*line));
-      line_len = 1024;
+      printformat_module("fe-common/silc", server, channel->channel_name,
+			 MSGLEVEL_CRAP, SILCTXT_USERS_HEADER,
+			 channel->channel_name);
+
       silc_list_start(channel->clients);
       while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
 	SilcClientEntry e = chu->client;
-	int i, len1;
-	char *m, tmp[80];
+	char stat[5], *mode;
 	
-	memset(line, 0, line_len);
-	
-	if (strlen(e->nickname) + strlen(e->server) + 100 > line_len) {
-	  silc_free(line);
-	  line_len += strlen(e->nickname) + strlen(e->server) + 100;
-	  line = silc_calloc(line_len, sizeof(*line));
-	}
-	
-	memset(tmp, 0, sizeof(tmp));
-	m = silc_client_chumode_char(chu->mode);
-	
-	strncat(line, " ", 1);
-	strncat(line, e->nickname, strlen(e->nickname));
-	strncat(line, e->server ? "@" : "", 1);
-	
-	len1 = 0;
-	if (e->server)
-	  len1 = strlen(e->server);
-	strncat(line, e->server ? e->server : "", len1 > 30 ? 30 : len1);
-	
-	len1 = strlen(line);
-	if (len1 >= 30) {
-	  memset(&line[29], 0, len1 - 29);
-	} else {
-	  for (i = 0; i < 30 - len1 - 1; i++)
-	    strcat(line, " ");
-	}
-	
+	memset(stat, 0, sizeof(stat));
+	mode = silc_client_chumode_char(chu->mode);
 	if (e->mode & SILC_UMODE_GONE)
-	  strcat(line, "  G");
+	  strcat(stat, "G");
 	else
-	  strcat(line, "  H");
-	strcat(tmp, m ? m : "");
-	strncat(line, tmp, strlen(tmp));
-	
-	if (strlen(tmp) < 5)
-	  for (i = 0; i < 5 - strlen(tmp); i++)
-	    strcat(line, " ");
-	
-	strcat(line, e->username ? e->username : "");
-	
-	silc_say(client, conn, "%s", line);
-	
-	if (m)
-	  silc_free(m);
+	  strcat(stat, "H");
+	if (mode)
+	  strcat(stat, mode);
+
+	printformat_module("fe-common/silc", server, channel->channel_name,
+			   MSGLEVEL_CRAP, SILCTXT_USERS,
+			   e->nickname, stat, e->username, 
+			   e->realname ? e->realname : "");
+	if (mode)
+	  silc_free(mode);
       }
-      
-      silc_free(line);
     }
     break;
 

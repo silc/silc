@@ -13,7 +13,7 @@
 #define silc_query_find(server, name) \
 	query_find(SERVER(server), name)
 
-QUERY_REC *silc_query_create(SILC_SERVER_REC *server,
+QUERY_REC *silc_query_create(const char *server_tag,
 			     const char *nick, int automatic);
 void silc_queries_init(void);
 void silc_queries_deinit(void);

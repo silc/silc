@@ -545,6 +545,488 @@ static void command_away(const char *data, SILC_SERVER_REC *server,
   /* XXX TODO */
 }
 
+typedef struct {
+  int type;			/* 1 = msg, 2 = channel */
+  SILC_SERVER_REC *server;
+} *KeyInternal;
+
+static SilcSKEKeyMaterial *curr_key = NULL;
+
+/* Key agreement callback that is called after the key agreement protocol
+   has been performed. This is called also if error occured during the
+   key agreement protocol. The `key' is the allocated key material and
+   the caller is responsible of freeing it. The `key' is NULL if error
+   has occured. The application can freely use the `key' to whatever
+   purpose it needs. See lib/silcske/silcske.h for the definition of
+   the SilcSKEKeyMaterial structure. */
+
+static void keyagr_completion(SilcClient client,
+			      SilcClientConnection conn,
+			      SilcClientEntry client_entry,
+			      SilcKeyAgreementStatus status,
+			      SilcSKEKeyMaterial *key,
+			      void *context)
+{
+  KeyInternal i = (KeyInternal)context;
+
+  curr_key = NULL;
+
+  switch(status) {
+  case SILC_KEY_AGREEMENT_OK:
+    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_NOTICES,
+		       SILCTXT_KEY_AGREEMENT_OK, client_entry->nickname);
+
+    if (i->type == 1) {
+      /* Set the private key for this client */
+      silc_client_del_private_message_key(client, conn, client_entry);
+      silc_client_add_private_message_key_ske(client, conn, client_entry,
+					      NULL, key);
+      printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_NOTICES,
+			 SILCTXT_KEY_AGREEMENT_PRIVMSG, 
+			 client_entry->nickname);
+      silc_ske_free_key_material(key);
+    }
+    
+    break;
+    
+  case SILC_KEY_AGREEMENT_ERROR:
+    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_NOTICES,
+		       SILCTXT_KEY_AGREEMENT_ERROR, client_entry->nickname);
+    break;
+    
+  case SILC_KEY_AGREEMENT_FAILURE:
+    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_NOTICES,
+		       SILCTXT_KEY_AGREEMENT_FAILURE, client_entry->nickname);
+    break;
+    
+  case SILC_KEY_AGREEMENT_TIMEOUT:
+    printformat_module("fe-common/silc", i->server, NULL, MSGLEVEL_NOTICES,
+		       SILCTXT_KEY_AGREEMENT_TIMEOUT, client_entry->nickname);
+    break;
+    
+  default:
+    break;
+  } 
+
+  if (i)
+    silc_free(i);
+}
+
+/* Local command KEY. This command is used to set and unset private
+   keys for channels, set and unset private keys for private messages
+   with remote clients and to send key agreement requests and
+   negotiate the key agreement protocol with remote client.  The
+   key agreement is supported only to negotiate private message keys,
+   it currently cannot be used to negotiate private keys for channels,
+   as it is not convenient for that purpose. */
+
+typedef struct {
+  SILC_SERVER_REC *server;
+  char *data;
+  WI_ITEM_REC *item;
+} *KeyGetClients;
+
+/* Callback to be called after client information is resolved from the
+   server. */
+
+SILC_CLIENT_CMD_FUNC(key_get_clients)
+{
+  KeyGetClients internal = (KeyGetClients)context;
+  signal_emit("command key", 3, internal->data, internal->server,
+	      internal->item);
+  silc_free(internal->data);
+  silc_free(internal);
+}
+
+static void command_key(const char *data, SILC_SERVER_REC *server,
+			WI_ITEM_REC *item)
+{
+  SilcClientConnection conn = server->conn;
+  SilcClientEntry client_entry = NULL;
+  SilcChannelEntry channel_entry = NULL;
+  uint32 num = 0;
+  char *nickname = NULL, *serv = NULL, *tmp;
+  int command = 0, port = 0, type = 0;
+  char *hostname = NULL;
+  KeyInternal internal = NULL;
+  uint32 argc = 0;
+  unsigned char **argv;
+  uint32 *argv_lens, *argv_types;
+ 
+  if (!IS_SILC_SERVER(server) || !server->connected)
+    cmd_return_error(CMDERR_NOT_CONNECTED);
+
+  /* Now parse all arguments */
+  tmp = g_strconcat("KEY", " ", data, NULL);
+  silc_parse_command_line(tmp, &argv, &argv_lens, &argv_types, &argc, 7);
+  g_free(tmp);
+
+  if (argc < 4) {
+    silc_say(silc_client, conn, "Usage: /KEY msg|channel <nickname|channel> "
+	     "set|unset|agreement|negotiate [<arguments>]");
+    return;
+  }
+
+  /* Get type */
+  if (!strcasecmp(argv[1], "msg"))
+    type = 1;
+  if (!strcasecmp(argv[1], "channel"))
+    type = 2;
+
+  if (type == 0) {
+    silc_say(silc_client, conn, "Usage: /KEY msg|channel <nickname|channel> "
+	     "set|unset|agreement|negotiate [<arguments>]");
+    return;
+  }
+
+  if (type == 1) {
+    if (argv[2][0] == '*') {
+      nickname = "*";
+    } else {
+      /* Parse the typed nickname. */
+      if (!silc_parse_nickname(argv[2], &nickname, &serv, &num)) {
+	silc_say(silc_client, conn, "Bad nickname");
+	return;
+      }
+      
+      /* Find client entry */
+      client_entry = silc_idlist_get_client(silc_client, conn, nickname, 
+					    serv, num, TRUE);
+      if (!client_entry) {
+	KeyGetClients inter = silc_calloc(1, sizeof(*inter));
+	inter->server = server;
+	inter->data = strdup(data);
+	inter->item = item;
+
+	/* Client entry not found, it was requested thus mark this to be
+	   pending command. */
+	silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, 
+				    conn->cmd_ident, 
+				    NULL, silc_client_command_key_get_clients, 
+				    inter);
+	goto out;
+      }
+    }
+  }
+
+  if (type == 2) {
+    /* Get channel entry */
+    char *name;
+
+    if (argv[2][0] == '*') {
+      if (!conn->current_channel) {
+	if (nickname)
+	  silc_free(nickname);
+	if (serv)
+	  silc_free(serv);
+	cmd_return_error(CMDERR_NOT_JOINED);
+      }
+      name = conn->current_channel->channel_name;
+    } else {
+      name = argv[2];
+    }
+
+    channel_entry = silc_client_get_channel(silc_client, conn, name);
+    if (!channel_entry) {
+      if (nickname)
+	silc_free(nickname);
+      if (serv)
+	silc_free(serv);
+      cmd_return_error(CMDERR_NOT_JOINED);
+    }
+  }
+
+  /* Set command */
+  if (!strcasecmp(argv[3], "set")) {
+    command = 1;
+
+    if (argc == 4) {
+      if (curr_key && type == 1 && client_entry) {
+	silc_client_del_private_message_key(silc_client, conn, client_entry);
+	silc_client_add_private_message_key_ske(silc_client, conn, 
+						client_entry, NULL, curr_key);
+	goto out;
+      }
+    }
+
+    if (argc >= 5) {
+      if (type == 1 && client_entry) {
+	/* Set private message key */
+	
+	silc_client_del_private_message_key(silc_client, conn, client_entry);
+
+	if (argc >= 6)
+	  silc_client_add_private_message_key(silc_client, conn, client_entry,
+					      argv[5], argv[4],
+					      argv_lens[4],
+					      (argv[4][0] == '*' ?
+					       TRUE : FALSE));
+	else
+	  silc_client_add_private_message_key(silc_client, conn, client_entry,
+					      NULL, argv[4],
+					      argv_lens[4],
+					      (argv[4][0] == '*' ?
+					       TRUE : FALSE));
+
+	/* Send the key to the remote client so that it starts using it
+	   too. */
+	silc_client_send_private_message_key(silc_client, conn, 
+					     client_entry, TRUE);
+      } else if (type == 2) {
+	/* Set private channel key */
+	char *cipher = NULL, *hmac = NULL;
+
+	if (!(channel_entry->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
+	  printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			     SILCTXT_CH_PRIVATE_KEY_NOMODE, 
+			     channel_entry->channel_name);
+	  goto out;
+	}
+
+	if (argc >= 6)
+	  cipher = argv[5];
+	if (argc >= 7)
+	  hmac = argv[6];
+
+	if (!silc_client_add_channel_private_key(silc_client, conn, 
+						 channel_entry,
+						 cipher, hmac,
+						 argv[4],
+						 argv_lens[4])) {
+	  printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			     SILCTXT_CH_PRIVATE_KEY_ERROR, 
+			     channel_entry->channel_name);
+	  goto out;
+	}
+
+	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			   SILCTXT_CH_PRIVATE_KEY_ADD, 
+			   channel_entry->channel_name);
+      }
+    }
+
+    goto out;
+  }
+  
+  /* Unset command */
+  if (!strcasecmp(argv[3], "unset")) {
+    command = 2;
+
+    if (type == 1 && client_entry) {
+      /* Unset private message key */
+      silc_client_del_private_message_key(silc_client, conn, client_entry);
+    } else if (type == 2) {
+      /* Unset channel key(s) */
+      SilcChannelPrivateKey *keys;
+      uint32 keys_count;
+      int number;
+
+      if (argc == 4)
+	silc_client_del_channel_private_keys(silc_client, conn, 
+					     channel_entry);
+
+      if (argc > 4) {
+	number = atoi(argv[4]);
+	keys = silc_client_list_channel_private_keys(silc_client, conn, 
+						     channel_entry,
+						     &keys_count);
+	if (!keys)
+	  goto out;
+
+	if (!number || number > keys_count) {
+	  silc_client_free_channel_private_keys(keys, keys_count);
+	  goto out;
+	}
+
+	silc_client_del_channel_private_key(silc_client, conn, channel_entry,
+					    keys[number - 1]);
+	silc_client_free_channel_private_keys(keys, keys_count);
+      }
+
+      goto out;
+    }
+  }
+
+  /* List command */
+  if (!strcasecmp(argv[3], "list")) {
+    command = 3;
+
+    if (type == 1) {
+      SilcPrivateMessageKeys keys;
+      uint32 keys_count;
+      int k, i, len;
+      char buf[1024];
+
+      keys = silc_client_list_private_message_keys(silc_client, conn, 
+						   &keys_count);
+      if (!keys)
+	goto out;
+
+      /* list the private message key(s) */
+      if (nickname[0] == '*') {
+	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			   SILCTXT_PRIVATE_KEY_LIST);
+	for (k = 0; k < keys_count; k++) {
+	  memset(buf, 0, sizeof(buf));
+	  strncat(buf, "  ", 2);
+	  len = strlen(keys[k].client_entry->nickname);
+	  strncat(buf, keys[k].client_entry->nickname, len > 30 ? 30 : len);
+	  if (len < 30)
+	    for (i = 0; i < 30 - len; i++)
+	      strcat(buf, " ");
+	  strcat(buf, " ");
+	  
+	  len = strlen(keys[k].cipher);
+	  strncat(buf, keys[k].cipher, len > 14 ? 14 : len);
+	  if (len < 14)
+	    for (i = 0; i < 14 - len; i++)
+	      strcat(buf, " ");
+	  strcat(buf, " ");
+
+	  if (keys[k].key)
+	    strcat(buf, "<hidden>");
+	  else
+	    strcat(buf, "*generated*");
+
+	  silc_say(silc_client, conn, "%s", buf);
+	}
+      } else {
+	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			   SILCTXT_PRIVATE_KEY_LIST_NICK,
+			   client_entry->nickname);
+	for (k = 0; k < keys_count; k++) {
+	  if (keys[k].client_entry != client_entry)
+	    continue;
+
+	  memset(buf, 0, sizeof(buf));
+	  strncat(buf, "  ", 2);
+	  len = strlen(keys[k].client_entry->nickname);
+	  strncat(buf, keys[k].client_entry->nickname, len > 30 ? 30 : len);
+	  if (len < 30)
+	    for (i = 0; i < 30 - len; i++)
+	      strcat(buf, " ");
+	  strcat(buf, " ");
+	  
+	  len = strlen(keys[k].cipher);
+	  strncat(buf, keys[k].cipher, len > 14 ? 14 : len);
+	  if (len < 14)
+	    for (i = 0; i < 14 - len; i++)
+	      strcat(buf, " ");
+	  strcat(buf, " ");
+
+	  if (keys[k].key)
+	    strcat(buf, "<hidden>");
+	  else
+	    strcat(buf, "*generated*");
+
+	  silc_say(silc_client, conn, "%s", buf);
+	}
+      }
+
+      silc_client_free_private_message_keys(keys, keys_count);
+    } else if (type == 2) {
+      SilcChannelPrivateKey *keys;
+      uint32 keys_count;
+      int k, i, len;
+      char buf[1024];
+
+      keys = silc_client_list_channel_private_keys(silc_client, conn, 
+						   channel_entry,
+						   &keys_count);
+      if (!keys)
+	goto out;
+      
+      printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
+			 SILCTXT_CH_PRIVATE_KEY_LIST,
+			 channel_entry->channel_name);
+      for (k = 0; k < keys_count; k++) {
+	memset(buf, 0, sizeof(buf));
+	strncat(buf, "  ", 2);
+
+	len = strlen(keys[k]->cipher->cipher->name);
+	strncat(buf, keys[k]->cipher->cipher->name, len > 16 ? 16 : len);
+	if (len < 16)
+	  for (i = 0; i < 16 - len; i++)
+	    strcat(buf, " ");
+	strcat(buf, " ");
+	
+	len = strlen(keys[k]->hmac->hmac->name);
+	strncat(buf, keys[k]->hmac->hmac->name, len > 16 ? 16 : len);
+	if (len < 16)
+	  for (i = 0; i < 16 - len; i++)
+	    strcat(buf, " ");
+	strcat(buf, " ");
+	
+	strcat(buf, "<hidden>");
+
+	silc_say(silc_client, conn, "%s", buf);
+      }
+      
+      silc_client_free_channel_private_keys(keys, keys_count);
+    }
+
+    goto out;
+  }
+
+  /* Send command is used to send key agreement */
+  if (!strcasecmp(argv[3], "agreement")) {
+    command = 4;
+
+    if (argc >= 5)
+      hostname = argv[4];
+    if (argc >= 6)
+      port = atoi(argv[5]);
+
+    internal = silc_calloc(1, sizeof(*internal));
+    internal->type = type;
+    internal->server = server;
+  }
+
+  /* Start command is used to start key agreement (after receiving the
+     key_agreement client operation). */
+  if (!strcasecmp(argv[3], "negotiate")) {
+    command = 5;
+
+    if (argc >= 5)
+      hostname = argv[4];
+    if (argc >= 6)
+      port = atoi(argv[5]);
+
+    internal = silc_calloc(1, sizeof(*internal));
+    internal->type = type;
+    internal->server = server;
+  }
+
+  if (command == 0) {
+    silc_say(silc_client, conn, "Usage: /KEY msg|channel <nickname|channel> "
+	     "set|unset|agreement|negotiate [<arguments>]");
+    goto out;
+  }
+
+  if (command == 4 && client_entry) {
+    printformat_module("fe-common/silc", server, NULL, MSGLEVEL_NOTICES,
+		       SILCTXT_KEY_AGREEMENT, argv[2]);
+    silc_client_send_key_agreement(silc_client, conn, client_entry, hostname, 
+				   port, 120, keyagr_completion, internal);
+    goto out;
+  }
+
+  if (command == 5 && client_entry && hostname) {
+    printformat_module("fe-common/silc", server, NULL, MSGLEVEL_NOTICES,
+		       SILCTXT_KEY_AGREEMENT_NEGOTIATE, argv[2]);
+    silc_client_perform_key_agreement(silc_client, conn, client_entry, 
+				      hostname, port, keyagr_completion, 
+				      internal);
+    goto out;
+  }
+
+ out:
+  if (nickname)
+    silc_free(nickname);
+  if (serv)
+    silc_free(serv);
+}
+
 void silc_channels_init(void)
 {
   signal_add("channel destroyed", (SIGNAL_FUNC) sig_channel_destroyed);
@@ -570,6 +1052,7 @@ void silc_channels_init(void)
   command_bind("me", MODULE_NAME, (SIGNAL_FUNC) command_me);
   command_bind("notice", MODULE_NAME, (SIGNAL_FUNC) command_notice);
   command_bind("away", MODULE_NAME, (SIGNAL_FUNC) command_away);
+  command_bind("key", MODULE_NAME, (SIGNAL_FUNC) command_key);
 
   silc_nicklist_init();
 }
@@ -601,6 +1084,7 @@ void silc_channels_deinit(void)
   command_unbind("me", (SIGNAL_FUNC) command_me);
   command_unbind("notice", (SIGNAL_FUNC) command_notice);
   command_unbind("away", (SIGNAL_FUNC) command_away);
+  command_unbind("key", (SIGNAL_FUNC) command_key);
 
   silc_nicklist_deinit();
 }

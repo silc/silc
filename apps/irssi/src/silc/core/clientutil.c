@@ -43,14 +43,6 @@
 #include "fe-common/core/printtext.h"
 #include "fe-common/core/keyboard.h"
 
-/* Asks yes/no from user on the input line. Returns TRUE on "yes" and
-   FALSE on "no". */
-
-void silc_client_ask_yes_no(char *prompt, SIGNAL_FUNC func)
-{
-  keyboard_entry_redirect(func, prompt, 0, NULL);
-}
-
 /* Lists supported (builtin) ciphers */
 
 void silc_client_list_ciphers()
