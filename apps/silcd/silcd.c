@@ -126,14 +126,11 @@ static void silc_checkpid(SilcServer silcd)
 
 int main(int argc, char **argv)
 {
-  int ret;
-  int opt, option_index;
-  int foreground = FALSE;
+  int ret, opt, option_index;
   char *config_file = NULL;
+  bool foreground = FALSE;
   SilcServer silcd;
   struct sigaction sa;
-
-  silc_debug = FALSE;
 
   /* Parse command line arguments */
   if (argc > 1) {
@@ -153,11 +150,13 @@ int main(int argc, char **argv)
 	  exit(0);
 	  break;
 	case 'd':
+#ifdef SILC_DEBUG
 	  silc_debug = TRUE;
 	  silc_debug_hexdump = TRUE;
 	  silc_log_set_debug_string(optarg);
 	  foreground = TRUE;
-#ifndef SILC_DEBUG
+	  silc_log_quick = TRUE;
+#else
 	  fprintf(stdout, 
 		  "Run-time debugging is not enabled. To enable it recompile\n"
 		  "the server with --enable-debug configuration option.\n");

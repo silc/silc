@@ -99,9 +99,18 @@ lassi.kuo.fi.ssh.com:10.2.1.6:Kuopio, Finland:706
 # Log files.
 #
 # This section is used to set various logging files, their paths
-# and maximum sizes. All the other directives except those defined
-# below are ignored in this section. Log files are purged after they
-# reach the maximum set byte size.
+# and maximum sizes. There are only four defined channels allowed for
+# defining (see list below).
+# The log channels have an importance value, and most important channels
+# are printed on the less important ones, thus setting the logging file
+# for "infologfile" will ensure logging for all channels, while setting
+# logging file for "errorlogfile" will ensure logging for channels
+# "error" and "fatal" only.
+# If a message can't find a valid output file it will be discarded, thus,
+# if you unset all files you will completely disable server logging (and
+# this is NOT recommended).
+# If maximum size is given, the logfile will be rotated to a logfile with
+# the ".old" extension added. Older logfiles are flushed.
 #
 # Format: infologfile:<path>:<max byte size>
 #         warninglogile:<path>:<max byte size>
@@ -109,10 +118,10 @@ lassi.kuo.fi.ssh.com:10.2.1.6:Kuopio, Finland:706
 #         fatallogile:<path>:<max byte size>
 #
 [Logging]
-infologfile:@LOGSDIR@/silcd.log:10000
-#warninglogfile:@LOGSDIR@/silcd_warning.log:10000
-#errorlogfile:@LOGSDIR@/error.log:10000
-#fatallogfile:@LOGSDIR@/silcd_error.log:
+infologfile:@LOGSDIR@/silcd.log:50000
+warninglogfile:@LOGSDIR@/silcd_warnings.log:50000
+#errorlogfile:@LOGSDIR@/silcd_errors.log:50000
+#fatallogfile:@LOGSDIR@/silcd_fatals.log:
 
 #
 # Connection classes.

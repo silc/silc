@@ -267,7 +267,7 @@ int silc_server_config_parse(SilcServerConfig config, SilcBuffer buffer,
 int silc_server_config_parse_lines(SilcServerConfig config, 
 				   SilcServerConfigParse parse_config);
 int silc_server_config_check_sections(uint32 checkmask);
-void silc_server_config_setlogfiles(SilcServerConfig config);
+void silc_server_config_setlogfiles(SilcServerConfig config, SilcSchedule sked);
 bool silc_server_config_register_ciphers(SilcServerConfig config);
 bool silc_server_config_register_pkcs(SilcServerConfig config);
 bool silc_server_config_register_hashfuncs(SilcServerConfig config);

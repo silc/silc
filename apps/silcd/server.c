@@ -143,7 +143,6 @@ int silc_server_init(SilcServer server)
 
   /* Set log files where log message should be saved. */
   server->config->server = server;
-  silc_server_config_setlogfiles(server->config);
  
   /* Register all configured ciphers, PKCS and hash functions. */
   if (!silc_server_config_register_ciphers(server->config))
@@ -284,7 +283,7 @@ int silc_server_init(SilcServer server)
   server->schedule = silc_schedule_init(SILC_SERVER_MAX_CONNECTIONS);
   if (!server->schedule)
     goto err0;
-  
+
   /* Add the first task to the scheduler. This is task that is executed by
      timeout. It expires as soon as the caller calls silc_server_run. This
      task performs authentication protocol and key exchange with our
@@ -304,6 +303,9 @@ int silc_server_init(SilcServer server)
 			 SILC_TASK_FD,
 			 SILC_TASK_PRI_NORMAL);
   server->listenning = TRUE;
+
+  /* Send log file configuration */
+  silc_server_config_setlogfiles(server->config, server->schedule);
 
   /* If server connections has been configured then we must be router as
      normal server cannot have server connections, only router connections. */
@@ -499,8 +501,10 @@ void silc_server_stop(SilcServer server)
 {
   SILC_LOG_DEBUG(("Stopping server"));
 
-  silc_schedule_stop(server->schedule);
-  silc_schedule_uninit(server->schedule);
+  if (server->schedule) {
+    silc_schedule_stop(server->schedule);
+    silc_schedule_uninit(server->schedule);
+  }
 
   silc_server_protocols_unregister();
 
@@ -2337,7 +2341,7 @@ void silc_server_free_client_data(SilcServer server,
   /* Remove client from all channels */
   if (notify)
     silc_server_remove_from_channels(server, NULL, client, 
-				     TRUE, signoff, TRUE);
+				     TRUE, (char *)signoff, TRUE);
   else
     silc_server_remove_from_channels(server, NULL, client, 
 				     FALSE, NULL, FALSE);

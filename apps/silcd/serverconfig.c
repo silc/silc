@@ -96,11 +96,12 @@ SilcServerConfig silc_server_config_alloc(char *filename)
   if ((silc_server_config_parse_lines(new, config_parse)) == FALSE)
     goto fail;
 
-  silc_free(buffer);
+  silc_buffer_free(buffer);
 
   return new;
 
  fail:
+  silc_buffer_free(buffer);
   silc_free(new);
   return NULL;
 }
@@ -1140,7 +1141,7 @@ int silc_server_config_parse_lines(SilcServerConfig config,
   }
 
   if (check == FALSE)
-    return FALSE;;
+    return FALSE;
 
   /* Check that all mandatory sections really were found. If not, the server
      cannot function and we return error. */
@@ -1218,48 +1219,24 @@ int silc_server_config_check_sections(uint32 checkmask)
 
 /* Sets log files where log messages is saved by the server. */
 
-void silc_server_config_setlogfiles(SilcServerConfig config)
+void silc_server_config_setlogfiles(SilcServerConfig config, SilcSchedule sked)
 {
   SilcServerConfigSectionLogging *log;
-  char *info, *warning, *error, *fatal;
-  uint32 info_size, warning_size, error_size, fatal_size;
 
   SILC_LOG_DEBUG(("Setting configured log file names"));
-
-  /* Set default files before checking configuration */
-  info = SILC_LOG_FILE_INFO;
-  warning = SILC_LOG_FILE_WARNING;
-  error = SILC_LOG_FILE_ERROR;
-  fatal = SILC_LOG_FILE_FATAL;
-  info_size = 0;
-  warning_size = 0;
-  error_size = 0;
-  fatal_size = 0;
-
   log = config->logging;
-  while(log) {
-    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_INFO)) {
-      info = log->filename;
-      info_size = log->maxsize;
-    }
-    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_WARNING)) {
-      warning = log->filename;
-      warning_size = log->maxsize;
-    }
-    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_ERROR)) {
-      error = log->filename;
-      error_size = log->maxsize;
-    }
-    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_FATAL)) {
-      fatal = log->filename;
-      fatal_size = log->maxsize;
-    }
+  while (log) {
+    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_INFO))
+      silc_log_set_file(SILC_LOG_INFO, log->filename, log->maxsize, sked);
+    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_WARNING))
+      silc_log_set_file(SILC_LOG_WARNING, log->filename, log->maxsize, sked);
+    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_ERROR))
+      silc_log_set_file(SILC_LOG_ERROR, log->filename, log->maxsize, sked);
+    if (!strcmp(log->logtype, SILC_CONFIG_SERVER_LF_FATAL))
+      silc_log_set_file(SILC_LOG_FATAL, log->filename, log->maxsize, sked);
 
     log = log->next;
   }
-
-  silc_log_set_files(info, info_size, warning, warning_size,
-		     error, error_size, fatal, fatal_size);
 }
 
 /* Registers configured ciphers. These can then be allocated by the

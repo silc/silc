@@ -158,19 +158,10 @@ static void silc_init_userinfo(void)
 
 /* Log callbacks */
 
-static void silc_log_info(char *message)
+static bool silc_log_misc(SilcLogType type, char *message, void *context)
 {
   fprintf(stderr, "%s\n", message);
-}
-
-static void silc_log_warning(char *message)
-{
-  fprintf(stderr, "%s\n", message);
-}
-
-static void silc_log_error(char *message)
-{
-  fprintf(stderr, "%s\n", message);
+  return TRUE;
 }
 
 /* Init SILC. Called from src/fe-text/silc.c */
@@ -273,8 +264,10 @@ void silc_core_init_finish(void)
     silc_debug = TRUE;
     silc_debug_hexdump = TRUE;
     silc_log_set_debug_string(opt_debug);
-    silc_log_set_callbacks(silc_log_info, silc_log_warning,
-			   silc_log_error, NULL);
+    silc_log_set_callback(SILC_LOG_INFO, silc_log_misc, NULL);
+    silc_log_set_callback(SILC_LOG_WARNING, silc_log_misc, NULL);
+    silc_log_set_callback(SILC_LOG_ERROR, silc_log_misc, NULL);
+    silc_log_set_callback(SILC_LOG_FATAL, silc_log_misc, NULL);
 #ifndef SILC_DEBUG
     fprintf(stdout, 
 	    "Run-time debugging is not enabled. To enable it recompile\n"
@@ -289,7 +282,6 @@ void silc_core_init_finish(void)
   /* Initialize the auto_addr variables Is "server" the best choice for
    * this?  No existing category seems to apply.
    */
-  
   settings_add_bool("server", "use_auto_addr", FALSE);
   settings_add_str("server", "auto_bind_ip", "");
   settings_add_str("server", "auto_public_ip", "");

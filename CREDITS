@@ -28,6 +28,15 @@ S: Snellmanninkatu 34 A 15
 S: 70100 Kuopio
 S: Finland
 
+N: Johnny Mnemonic
+E: johnny@themnemonic.org
+W: http://www.themnemonic.org/
+P: 1024D/34E2AB40 9AC6 1460 A5D0 4DB7 70D0  5DA5 C17F 50CD 34E2 AB40
+D: RPM packages
+D: silclog, misc bugfixes
+S: 35100 Padova
+S: Italy
+
 N: Juha Räsänen
 E: jmrasane@lut.fi
 D: Persistent nagger

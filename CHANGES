@@ -1,3 +1,41 @@
+Sun Jan  6 12:49:40 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not print the warning about log files not being initialized
+	  more than once to avoid excess logging.  Affected file is
+	  lib/silcutil/silclog.c.
+
+	* Fixed the SIM compilation in lib/silcsim/Makefile.am.  Fixed
+	  the SIM copying in make install in Makefile.am.pre.
+
+Sun Jan  6 01:10:21 CET 2001  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Rewritten silclog APIs. Globally interesting changes follows:
+	  silc_log_set_files() changed to silc_log_set_file().
+	  silc_log_set_callbacks() changed to silc_log_set_callback().
+	  ROBOdoc documented silclog header file.
+	  SilcLogCb now returns bool to wether inihibit the default
+	  handler or not (to keep the old behaviour return always TRUE).
+	  The new APIs should also fix the problem of the
+	  silcd_error.log file that was written in the current directory.
+
+	  New features:
+	  Log files streams will remain opened after silc_log_set_file()
+	  call, means less CPU usage notably on high traffic servers.
+	  File streams are now full buffered, and flushed to the disk
+	  every 5 minutes, lesses HD activity and CPU usage.
+	  Messages can be redirected, allowing admins to configure
+	  one single logfile for all server messages.
+	  the silc_log_quick global variable to activate fast-logging.
+	  Affected files lib/silcutil/silclog.[ch]
+
+	* Changed some code to conform new silclog APIs. Affected
+	  files are doc/example_silcd.conf.in, silcd/server.c
+	  irssi/src/silc/core/silc-core.c, silcd/serverconfig.[ch],
+	  silcd/silcd.c.
+
+	* Fixed a memory leak that could occur in some situations.
+	  Affected file silcd/serverconfig.c.
+
 Sat Jan  5 13:37:29 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added the silc_client_del_client to remove the client from
