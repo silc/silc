@@ -1118,26 +1118,29 @@ void silc_client_notify_by_server(SilcClient client,
     /* Get comment */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
 
-    /* Notify application. The channel entry is sent last as this notify
-       is for channel but application don't know it from the arguments
-       sent by server. */
-    client->internal->ops->notify(client, conn, type, client_entry, tmp,
-				  client_entry2, channel);
-
     /* Remove kicked client from channel */
-    if (client_entry == conn->local_entry) {
-      /* If I was kicked from channel, remove the channel */
-      if (conn->current_channel == channel)
-	conn->current_channel = NULL;
-      silc_client_del_channel(client, conn, channel);
-    } else {
+    if (client_entry != conn->local_entry) {
       chu = silc_client_on_channel(channel, client_entry);
       if (chu) {
 	silc_hash_table_del(client_entry->channels, channel);
 	silc_hash_table_del(channel->user_list, client_entry);
 	silc_free(chu);
       }
+    }
 
+    /* Notify application. The channel entry is sent last as this notify
+       is for channel but application don't know it from the arguments
+       sent by server. */
+    client->internal->ops->notify(client, conn, type, client_entry, tmp,
+				  client_entry2, channel);
+
+    /* Remove kicked client (us) from channel */
+    if (client_entry == conn->local_entry) {
+      /* If I was kicked from channel, remove the channel */
+      if (conn->current_channel == channel)
+	conn->current_channel = NULL;
+      silc_client_del_channel(client, conn, channel);
+    } else {
       if (!silc_hash_table_count(client_entry->channels)) {
 	SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
 	res->context = client;
