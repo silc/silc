@@ -57,7 +57,8 @@ static int idletag;
 SilcClient silc_client = NULL;
 SilcClientConfig silc_config = NULL;
 extern SilcClientOperations ops;
-extern int silc_debug;
+extern bool silc_debug;
+extern bool silc_debug_hexdump;
 #ifdef SILC_SIM
 /* SIM (SILC Module) table */
 SilcSimContext **sims = NULL;
@@ -270,6 +271,7 @@ void silc_core_init_finish(void)
 
   if (opt_debug) {
     silc_debug = TRUE;
+    silc_debug_hexdump = TRUE;
     silc_log_set_debug_string(opt_debug);
     silc_log_set_callbacks(silc_log_info, silc_log_warning,
 			   silc_log_error, NULL);

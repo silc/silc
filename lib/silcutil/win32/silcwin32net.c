@@ -28,7 +28,7 @@
    If argument `ip_addr' is NULL `any' address will be used. Returns 
    the created socket or -1 on error. */
 
-int silc_net_create_server(int port, char *ip_addr)
+int silc_net_create_server(int port, const char *ip_addr)
 {
   SOCKET sock;
   int rval;

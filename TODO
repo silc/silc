@@ -38,9 +38,11 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
- o JOIN command's argument handling is buggy.  See the XXX in the code.
-
  o key agreement with itself causes the packet sequence numbers go grazy.
+
+ o WHOIS shows the formatted nickname wrong in some circumstances.
+
+ o JOIN command's argument handling is buggy.  See the XXX in the code.
 
 
 TODO/bugs In SILC Server
@@ -192,5 +194,7 @@ TODO After 1.0
  o SSH2 public keys support.  Maybe - not really needed but could be
    nice as SSH is widely used all over the place.  SILC Protocol 
    supports SSH2 public keys.
+
+ o OpenPGP certificate support.
 
  o Cipher optimizations (asm, that this) at least for i386 would be nice.

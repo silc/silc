@@ -318,12 +318,10 @@ void silc_client_send_key_agreement(SilcClient client,
   if (hostname) {
     ke = silc_calloc(1, sizeof(*ke));
     
-    if (bindhost) {
+    if (bindhost)
       ke->fd = silc_net_create_server(port, bindhost);
-    }
-    else {
-    ke->fd = silc_net_create_server(port, hostname);
-    }
+    else
+      ke->fd = silc_net_create_server(port, hostname);
 
     if (ke->fd < 0) {
       client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR, 

@@ -70,7 +70,7 @@ Usage: silcd [options]\n\
 \n\
   Generic Options:\n\
   -f  --config-file=FILE        Alternate configuration file\n\
-  -d  --debug                   Enable debugging (no daemon)\n\
+  -d  --debug=string            Enable debugging (no daemon)\n\
   -h  --help                    Display this message\n\
   -V  --version                 Display version\n\
 \n\
@@ -125,6 +125,7 @@ int main(int argc, char **argv)
 	  break;
 	case 'd':
 	  silc_debug = TRUE;
+	  silc_debug_hexdump = TRUE;
 	  silc_log_set_debug_string(optarg);
 	  break;
 	case 'f':

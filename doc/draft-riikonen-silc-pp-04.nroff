@@ -8,16 +8,16 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXX
+.ds RH 13 November 2001
 .ds CH
 .na
 .hy 0
 .in 0
 .nf
-Network Working Group                                      P. Riikonen
+Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-pp-04.txt                           XXX
-Expires: XXX
+draft-riikonen-silc-pp-04.txt                           13 November 2001
+Expires: 13 May 2002
 
 .in 3
 
@@ -2774,6 +2774,8 @@ security of this protocol.
 [RFC2119]    Bradner, S., "Key Words for use in RFCs to Indicate
              Requirement Levels", BCP 14, RFC 2119, March 1997.
 
+[SFTP]       Ylonen T., and Lehtinen S., "Secure Shell File Transfer
+             Protocol", Internet Draft, March 2001.
 
 .ti 0
 5 Author's Address
@@ -2786,4 +2788,4 @@ Finland
 
 EMail: priikone@silcnet.org
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 13 May 2002

@@ -22,7 +22,8 @@
 #define SILCLOG_H
 
 /* Set TRUE/FALSE to enable/disable debugging */
-extern int silc_debug;
+extern bool silc_debug;
+extern bool silc_debug_hexdump;
 extern char *silc_debug_string;
 
 /* SILC Log types */

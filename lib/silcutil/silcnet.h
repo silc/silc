@@ -53,7 +53,7 @@
  *    the created socket or -1 on error.
  *
  ***/
-int silc_net_create_server(int port, char *ip_addr);
+int silc_net_create_server(int port, const char *ip_addr);
 
 /****f* silcutil/SilcNetAPI/silc_net_close_server
  *

@@ -1,3 +1,35 @@
+Thu Nov  8 22:21:09 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Call check_version SKE callback for initiator too.  Affected
+	  file lib/silcske/silcske.c.
+
+	* Implemented fix for security hole found in the SKE that was
+	  fixed in the specification few days back; the initiator's
+	  public key is now added to the HASH value computation.
+	  Added backwards support for the old way of doing it too, for
+	  old clients and old servers.  Affected file is
+	  lib/silcske/silcske.c.
+
+	* Enabled mutual authentication by default in SKE.  If initiator
+	  is not providing mutual authentication the responder will
+	  force it.  This will provide the proof of posession of the
+	  private key for responder.  The affected files are
+	  lib/silcclient/protocol.c and silcd/protocol.c.
+
+	* Do not cache anymore the server's public key during SKE.
+	  We do mutual authentication so the proof of posession of
+	  private key is done, and if the server is authenticated in
+	  conn auth protocol with public key we must have the public
+	  key already.  Affected file silcd/protocol.c.
+
+	* Added new global debug variable: silc_debug_hexdump.  If
+	  it is set to TRUE SILC_LOG_HEXDUMP will be printed.  Affected
+	  file lib/silcutil/silclog.[ch].
+
+	* Fixed compilation warning due to char * -> const char *.
+	  Affected files lib/silcutil/silcnet.h, and
+	  lib/silccore/silcauth.[ch].
+
 Wed Nov  7 20:43:03 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed CMODE command when new channel key was created.  If

@@ -22,7 +22,8 @@
 #include "silcincludes.h"
 
 /* Set TRUE/FALSE to enable/disable debugging */
-int silc_debug = FALSE;
+bool silc_debug = FALSE;
+bool silc_debug_hexdump = FALSE;
 char *silc_debug_string = NULL;
 
 /* SILC Log name strings. These strings are printed to the log file. */
@@ -178,7 +179,7 @@ void silc_log_output_hexdump(char *file, char *function,
   int off, pos, count;
   unsigned char *data = (unsigned char *)data_in;
 
-  if (!silc_debug) {
+  if (!silc_debug_hexdump) {
     silc_free(string);
     return;
   }
@@ -315,5 +316,9 @@ void silc_log_reset_debug_callbacks()
 void silc_log_set_debug_string(const char *debug_string)
 {
   silc_free(silc_debug_string);
-  silc_debug_string = silc_string_regexify(debug_string);
+  if (strchr(debug_string, '(') &&
+      strchr(debug_string, ')'))
+    silc_debug_string = strdup(debug_string);
+  else
+    silc_debug_string = silc_string_regexify(debug_string);
 }

@@ -213,8 +213,10 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 
   if (maj != maj2)
     status = SILC_SKE_STATUS_BAD_VERSION;
-  if (min < min2)
-    status = SILC_SKE_STATUS_BAD_VERSION;
+
+  /* XXX backward support for 0.6.1 */
+  if (maj == 0 && min == 6 && build < 2)
+    ske->backward_version = 1;
 
   if (status != SILC_SKE_STATUS_OK)
     client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
@@ -328,7 +330,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	SilcSKEStartPayload *start_payload;
 
 	/* Assemble security properties. */
-	silc_ske_assemble_security_properties(ske, SILC_SKE_SP_FLAG_NONE, 
+	silc_ske_assemble_security_properties(ske, SILC_SKE_SP_FLAG_MUTUAL, 
 					      client->silc_client_version,
 					      &start_payload);
 

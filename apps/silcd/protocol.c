@@ -56,6 +56,13 @@ silc_verify_public_key_internal(SilcServer server, SilcSocketConnection sock,
     return TRUE;
   }
 
+  /* XXX For now, accept server keys without verification too. We are
+     currently always doing mutual authentication so the proof of posession
+     of the private key is verified, and if server is authenticated in
+     conn auth protocol with public key we MUST have the key already. */
+  return TRUE;
+  /* Rest is unreachable code! */
+  
   memset(filename, 0, sizeof(filename));
   memset(file, 0, sizeof(file));
   snprintf(file, sizeof(file) - 1, "serverkey_%s_%d.pub", sock->hostname, 
@@ -364,6 +371,10 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
   if (maj == 0 && min < 5)
     status = SILC_SKE_STATUS_BAD_VERSION;
 
+  /* XXX backward support for 0.6.1 */
+  if (maj == 0 && min == 6 && build < 2)
+    ske->backward_version = 1;
+
   return status;
 }
 
@@ -455,12 +466,12 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	   properties packet from initiator. */
 	status = silc_ske_responder_start(ske, ctx->rng, ctx->sock,
 					  silc_version_string,
-					  ctx->packet->buffer, FALSE);
+					  ctx->packet->buffer, TRUE);
       } else {
 	SilcSKEStartPayload *start_payload;
 
 	/* Assemble security properties. */
-	silc_ske_assemble_security_properties(ske, SILC_SKE_SP_FLAG_NONE, 
+	silc_ske_assemble_security_properties(ske, SILC_SKE_SP_FLAG_MUTUAL, 
 					      silc_version_string,
 					      &start_payload);
 

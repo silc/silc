@@ -314,7 +314,7 @@ SilcKeyAgreementPayload silc_key_agreement_payload_parse(SilcBuffer buffer);
  *    Encodes the Key Agreement protocol and returns the encoded buffer
  *
  ***/
-SilcBuffer silc_key_agreement_payload_encode(char *hostname,
+SilcBuffer silc_key_agreement_payload_encode(const char *hostname,
 					     uint32 port);
 
 /****f* silccore/SilcAuthAPI/silc_key_agreement_payload_free

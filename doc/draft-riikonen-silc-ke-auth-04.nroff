@@ -8,16 +8,16 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet-Draft
-.ds RH XXX
+.ds RH 13 November 2001
 .ds CH
 .na
 .hy 0
 .in 0
 .nf
-Network Working Group                                      P. Riikonen
+Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-ke-auth-04.txt                      XXX
-Expires: XXX
+draft-riikonen-silc-ke-auth-04.txt                      13 November 2001
+Expires: 13 May 2002
 
 .in 3
 
@@ -87,13 +87,13 @@ Table of Contents
   2.5 Key Exchange Status Types ................................. 15
 3 SILC Connection Authentication Protocol ....................... 16
   3.1 Connection Auth Payload ................................... 18
-  3.2 Connection Authentication Types ........................... 18
+  3.2 Connection Authentication Types ........................... 19
       3.2.1 Passphrase Authentication ........................... 19
       3.2.2 Public Key Authentication ........................... 19
-  3.3 Connection Authentication Status Types .................... 19
+  3.3 Connection Authentication Status Types .................... 20
 4 Security Considerations ....................................... 20
 5 References .................................................... 20
-6 Author's Address .............................................. 21
+6 Author's Address .............................................. 22
 
 
 .ti 0
@@ -939,6 +939,8 @@ o Authentication Data (variable length) - The actual
 .in 3
 
 
+
+
 .ti 0
 3.2 Connection Authentication Types
 
@@ -987,14 +989,14 @@ which is then signed.
   auth_hash = hash(HASH | Key Exchange Start Payload);
   signature = sign(auth_hash);
 
-The hash() function used to compute the value is the hash function negotiated
-in the SKE protocol.  The server MUST verify the data, thus it must keep
-the HASH and the Key Exchange Start Payload saved during SKE and
-authentication protocols.
+The hash() function used to compute the value is the hash function
+negotiated in the SKE protocol.  The server MUST verify the data, thus
+it must keep the HASH and the Key Exchange Start Payload saved during
+SKE and authentication protocols.
 
 If the verified signature matches the sent signature, the authentication
-were successful and SILC_PACKET_SUCCESS is sent.  If it failed the protocol
-execution is stopped and SILC_PACKET_FAILURE is sent.
+were successful and SILC_PACKET_SUCCESS is sent.  If it failed the
+protocol execution is stopped and SILC_PACKET_FAILURE is sent.
 
 This is REQUIRED authentication method to be supported by all SILC
 implementations.
@@ -1109,4 +1111,4 @@ Finland
 
 EMail: priikone@silcnet.org
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 13 May 2002
