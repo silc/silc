@@ -11,6 +11,10 @@ Sun Jun 24 19:49:23 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	* Do not use ptime structure or any of the posix process
 	  functions on WIN32 in lib/silccrypt/silrng.c.
 
+	* Added silc_gettimeofday to provide generic function
+	  for struct timeval on all platforms.  Added the function
+	  to lib/silcutil/silcutil.h.
+
 Sun Jun 24 12:19:52 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Moved the lib/silccore/silcsockconn.[ch] to the utility

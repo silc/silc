@@ -390,7 +390,7 @@ do {									    \
     task = NULL;							    \
 									    \
     /* Get the current time */						    \
-    gettimeofday(&curtime, NULL);					    \
+    silc_gettimeofday(&curtime);					    \
     schedule->timeout = NULL;						    \
 									    \
     /* First task in the task queue has always the smallest timeout. */	    \
@@ -572,7 +572,7 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   case 0:
     /* Timeout */
     SILC_LOG_DEBUG(("Running timeout tasks"));
-    gettimeofday(&curtime, NULL);
+    silc_gettimeofday(&curtime);
     SILC_SCHEDULE_RUN_TIMEOUT_TASKS;
     break;
   default:

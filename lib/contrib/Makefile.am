@@ -21,9 +21,7 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 noinst_LIBRARIES = libcontrib.a
 
 if SILC_WIN32
-libcontrib_a_SOURCES = \
-	getopt.c \
-	getopt1.c
+libcontrib_a_SOURCES =
 else
 libcontrib_a_SOURCES = \
 	getopt.c \

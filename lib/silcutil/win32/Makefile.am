@@ -23,6 +23,7 @@ noinst_LIBRARIES = libsilcwin32util.a
 libsilcwin32util_a_SOURCES = 	\
 	silcwin32net.c		\
 	silcwin32schedule.c	\
-	silcwin32sockconn.c
+	silcwin32sockconn.c	\
+	silcwin32util.c
 
 include $(top_srcdir)/Makefile.defines.in

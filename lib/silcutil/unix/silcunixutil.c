@@ -167,3 +167,10 @@ char *silc_get_real_name()
 
   return realname;
 }
+
+/* Return current time to struct timeval. */
+
+int silc_gettimeofday(struct timeval *p)
+{
+  return gettimeofday(p, NULL);
+}

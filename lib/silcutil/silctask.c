@@ -312,7 +312,7 @@ SilcTask silc_task_register(SilcTaskQueue queue, int fd,
 
   /* Create timeout if marked to be timeout task */
   if (((seconds + useconds) > 0) && (type == SILC_TASK_TIMEOUT)) {
-    gettimeofday(&new->timeout, NULL);
+    silc_gettimeofday(&new->timeout);
     new->timeout.tv_sec += seconds + (useconds / 1000000L);
     new->timeout.tv_usec += (useconds % 1000000L);
     if (new->timeout.tv_usec > 999999L) {
