@@ -4,6 +4,15 @@ Sat Dec 20 14:42:36 EET 2003  Pekka Riikonen <priikone@silcnet.org>
 	  search error.  Added support in send_reply to send errors
 	  without specific argument.  Affected file silcd/server_query.c.
 
+	* Fixed the WHOIS, IDENTIFY and WHOWAS error handling in SILC 
+	  Client for NO_SUCH_NICK.  It was against the protocol specs.
+	  Affected file irssi/src/silc/core/client_ops.c.
+
+	* Added backwards support for the wrong NO_SUCH_NICK error sending
+	  in server.  To be removed in SILC Server 1.0.  Both old clients
+	  and clients with fixed error handling now works.  Affected file
+	  silcd/server_query.c.
+
 Sat Dec 20 00:44:47 CET 2003  Patrik Weiskircher <pat@icore.at>
 
 	* fixed a bug in the whois using attributes function where no 

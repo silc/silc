@@ -309,7 +309,7 @@ char * silc_unescape_data(const char *escaped_data, SilcUInt32 *length)
             break;
         }
     }
-  
+
     *length = j;
     return data;
 }
@@ -318,7 +318,7 @@ char * silc_escape_data(const char *data, SilcUInt32 len)
 {
     char *escaped_data, *ptr, *ptr0, *ptr1;
     int i = 0, j = 0;
-  
+
     escaped_data = silc_calloc(2 * len, sizeof(char));
 
     while (i < len) {
@@ -326,10 +326,10 @@ char * silc_escape_data(const char *data, SilcUInt32 len)
         ptr1 = memchr(data + i, 1, len - i);
 
         ptr = (ptr0 < ptr1 ? (ptr0 ? ptr0 : ptr1) : (ptr1 ? ptr1 : ptr0));
-    
+
         if (ptr) {
             int inc = (ptr - data) - i;
-            if (inc) 
+            if (inc)
                 memcpy(escaped_data + j, data + i, inc);
             j += inc;
             i += inc;
@@ -341,7 +341,7 @@ char * silc_escape_data(const char *data, SilcUInt32 len)
             break;
         }
     }
-	  
+
     return escaped_data;
 }
 
@@ -354,7 +354,7 @@ void silc_emit_mime_sig(SILC_SERVER_REC *server, WI_ITEM_REC *item,
    escaped_data = silc_escape_data(data, data_len);
 
    signal_emit("mime", 5, server, item, escaped_data, nick, verified);
- 
+
    silc_free(escaped_data);
 }
 
@@ -528,8 +528,8 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 
   if (flags & SILC_MESSAGE_FLAG_DATA) {
     silc_emit_mime_sig(server,
-		sender->nickname ? 
-		(WI_ITEM_REC *)query_find(SERVER(server), sender->nickname) : 
+		sender->nickname ?
+		(WI_ITEM_REC *)query_find(SERVER(server), sender->nickname) :
 		NULL,
 		message, message_len,
       		sender->nickname ? sender->nickname : "[<unknown>]",
@@ -1556,7 +1556,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	/* Print the unknown nick for user */
 	unsigned char *tmp =
 	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
-				     3, NULL);
+				     2, NULL);
 	if (tmp)
 	  silc_say_error("%s: %s", tmp,
 			 silc_get_status_message(status));
@@ -1674,7 +1674,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	/* Print the unknown nick for user */
 	unsigned char *tmp =
 	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
-				     3, NULL);
+				     2, NULL);
 	if (tmp)
 	  silc_say_error("%s: %s", tmp,
 			 silc_get_status_message(status));
@@ -1708,11 +1708,10 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     {
       char *nickname, *username, *realname;
 
-      if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
-	  status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
-	char *tmp;
-	tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
-					 3, NULL);
+      if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
+	char *tmp =
+	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
+				     2, NULL);
 	if (tmp)
 	  silc_say_error("%s: %s", tmp,
 			 silc_get_status_message(status));
