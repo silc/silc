@@ -607,3 +607,4 @@ EXPORTS
 	silc_sftp_fs_memory_del_dir @ 798 ;
 	silc_sftp_fs_memory_add_file @ 799 ;
 	silc_sftp_fs_memory_del_file @ 800 ;
+	silc_net_addr2bin_ne @ 801 ; 

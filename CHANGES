@@ -12,6 +12,16 @@ Fri Oct 12 18:37:24 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 	  send the TOPIC_CHANGE notify and not SERVER_SIGNOFF notify.
 	  Affected file silcd/packet_send.c.
 
+	* Changed the SFTP Filesystem interface.  Changed the
+	  SilcSFTPFilesystemStruct to SilcSFTPFilesystemOps to include
+	  the filesystem operation function.  The SilcSFTPFilesystem
+	  is now a context that is allocated by all filesystem allocation
+	  functions and it already includes the operations structure
+	  and filesystem specific context.  It is given as argument
+	  now to the silc_sftp_server_start.  This made the interface
+	  a bit cleaner.  Affected file lib/silcsftp/silcsftp[_fs].h,
+	  lib/silcsftp/sftp_fs_memory.c and sftp_server.c.
+
 Thu Oct 11 22:19:26 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the backup router adding and getting interfaces
