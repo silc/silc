@@ -1,16 +1,15 @@
 /*
 
-  groups.h
+  silcske_groups.h 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2001 Pekka Riikonen
+  Copyright (C) 2000 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -24,12 +23,13 @@
  *
  * This interface defines the Diffie Hellman group management and utility
  * functions for the SKE.  They can be used find DH groups by group number,
- * and group name.  These routines are used during the SKE session.
+ * and group name.  These routines are used during the SKE session by the
+ * SKE library. However, application may use these as well if needed.
  *
  ***/
 
-#ifndef GROUPS_H
-#define GROUPS_H
+#ifndef SILCSKE_GROUPS_H
+#define SILCSKE_GROUPS_H
 
 #include "silcske_status.h"
 
@@ -141,4 +141,4 @@ int silc_ske_group_get_number(SilcSKEDiffieHellmanGroup group);
  ***/
 const char *silc_ske_group_get_name(SilcSKEDiffieHellmanGroup group);
 
-#endif
+#endif /* SILCSKE_GROUPS_H */

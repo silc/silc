@@ -291,8 +291,8 @@ typedef uint32 * void *;
 
 /* SILC Key Exchange library includes */
 #include "silcske.h"
-#include "payload.h"
-#include "groups.h"
+#include "silcske_payload.h"
+#include "silcske_groups.h"
 
 /* SILC SFTP library */
 #include "silcsftp.h"

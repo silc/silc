@@ -1,3 +1,14 @@
+Sun Feb 17 10:10:14 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* ROBOdoc documented the lib/silcske/silcsftp.h, and improved
+	  the SKE interface a bit.
+
+	* Fixed padding problem in PKCS#1. The padding was not actually
+	  random since the random number generator was used incorrectly.
+	  This security bug affects only when encrypting with PKCS#1, and
+	  it is not currently used at all in SILC. SILC only use signing
+	  with PKCS#1. Affected file lib/silccrypt/pkcs1.c.
+
 Sat Feb 16 13:44:24 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Rewrote the notify handling in Irssi SILC client to not call

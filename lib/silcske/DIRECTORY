@@ -1,8 +1,10 @@
 <!--
 @LIBRARY=SILC Key Exchange Library
 @FILENAME=silcskelib.html
-@LINK=silcske.html:SILC SKE API
-@LINK=silcske_status.html:SILC SKE Status
+@LINK=silcske.html:SILC SKE Interface
+@LINK=silcske_status.html:SKE Status Types
+@LINK=silcske_groups.html:SKE Diffie Hellman Groups
+@LINK=silcske_payload.html:SKE Payloads
 -->
 
 <BIG><B>SILC Key Exchange Library</B></BIG>

@@ -45,10 +45,6 @@ TODO/bugs In SILC Server
 
 	o Add rehashing support.
 
- o Assure that server is allowed to connect only once to router.  Meaning
-   if server connection is established already, same connection cannot be
-   established again.
-
  o If server send CUMODE_CHANGE notify (like setting founder) to router
    and router does not have founder on channel (founder is left or there's
    no founder on channel at all), the router will accept the server's
@@ -102,8 +98,8 @@ TODO in Toolkit Documentation
 Stuff that needs to be done in order to complete the Tooolkit Reference
 Manual.
 
- o Lots of ROBOdoc header formatting is undone in lib/silcske, 
-   lib/silcutil, and lib/silccrypt.
+ o Lots of ROBOdoc header formatting is undone in lib/silcutil, and 
+   lib/silccrypt.
 
  o Write "Programming with Toolkit" document, describing how to build
    Toolkit, how the build system works, where is everything, how

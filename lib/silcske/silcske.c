@@ -1,16 +1,15 @@
 /*
 
-  silcske.c
+  silcske.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2001 Pekka Riikonen
+  Copyright (C) 2002 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -22,6 +21,15 @@
 #include "silcincludes.h"
 #include "silcske.h"
 #include "groups_internal.h"
+
+/* Static functions */
+static SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n, 
+					 uint32 len, 
+					 SilcMPInt *rnd);
+static SilcSKEStatus silc_ske_make_hash(SilcSKE ske, 
+					unsigned char *return_hash,
+					uint32 *return_hash_len,
+					int initiator);
 
 /* Structure to hold all SKE callbacks. */
 struct SilcSKECallbacksStruct {
@@ -35,7 +43,7 @@ struct SilcSKECallbacksStruct {
 
 /* Allocates new SKE object. */
 
-SilcSKE silc_ske_alloc()
+SilcSKE silc_ske_alloc(SilcRng rng, void *context)
 {
   SilcSKE ske;
 
@@ -43,6 +51,8 @@ SilcSKE silc_ske_alloc()
 
   ske = silc_calloc(1, sizeof(*ske));
   ske->status = SILC_SKE_STATUS_OK;
+  ske->rng = rng;
+  ske->user_data = context;
   ske->users = 1;
 
   return ske;
@@ -317,7 +327,8 @@ SilcSKEStatus silc_ske_initiator_phase_1(SilcSKE ske,
 
 SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 					 SilcPublicKey public_key,
-					 SilcPrivateKey private_key)
+					 SilcPrivateKey private_key,
+					 SilcSKEPKType pk_type)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer payload_buf;
@@ -366,7 +377,7 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
     }
     payload->pk_len = pk_len;
   }
-  payload->pk_type = SILC_SKE_PK_TYPE_SILC;
+  payload->pk_type = pk_type;
 
   /* Compute signature data if we are doing mutual authentication */
   if (private_key && ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
@@ -533,7 +544,7 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
    public key, f, and signature. This function verifies the public key,
    computes the secret shared key and verifies the signature. 
 
-   The `callback' will be called to indicate that the caller may
+   The `proto_continue' will be called to indicate that the caller may
    continue with the SKE protocol.  The caller must not continue
    before the SKE libary has called that callback.  If this function
    returns an error the callback will not be called.  It is called
@@ -622,7 +633,7 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
 
 SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
 				       SilcSocketConnection sock,
-				       char *version,
+				       const char *version,
 				       SilcBuffer start_payload,
 				       SilcSKESecurityPropertyFlag flags)
 {
@@ -690,8 +701,7 @@ SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
 /* The selected security properties from the initiator payload is now 
    encoded into Key Exchange Start Payload and sent to the initiator. */
 
-SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske, 
-					 SilcSKEStartPayload *start_payload)
+SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer payload_buf;
@@ -703,39 +713,40 @@ SilcSKEStatus silc_ske_responder_phase_1(SilcSKE ske,
   /* Allocate security properties from the payload. These are allocated
      only for this negotiation and will be free'd after KE is over. */
   ske->prop = prop = silc_calloc(1, sizeof(*prop));
-  prop->flags = start_payload->flags;
-  status = silc_ske_group_get_by_name(start_payload->ke_grp_list, &group);
+  prop->flags = ske->start_payload->flags;
+  status = silc_ske_group_get_by_name(ske->start_payload->ke_grp_list, &group);
   if (status != SILC_SKE_STATUS_OK)
     goto err;
 
   prop->group = group;
 
-  if (silc_pkcs_alloc(start_payload->pkcs_alg_list, 
+  if (silc_pkcs_alloc(ske->start_payload->pkcs_alg_list, 
 		      &prop->pkcs) == FALSE) {
     status = SILC_SKE_STATUS_UNKNOWN_PKCS;
     goto err;
   }
 
-  if (silc_cipher_alloc(start_payload->enc_alg_list, 
+  if (silc_cipher_alloc(ske->start_payload->enc_alg_list, 
 			&prop->cipher) == FALSE) {
     status = SILC_SKE_STATUS_UNKNOWN_CIPHER;
     goto err;
   }
 
-  if (silc_hash_alloc(start_payload->hash_alg_list,
+  if (silc_hash_alloc(ske->start_payload->hash_alg_list,
 		      &prop->hash) == FALSE) {
     status = SILC_SKE_STATUS_UNKNOWN_HASH_FUNCTION;
     goto err;
   }
 
-  if (silc_hmac_alloc(start_payload->hmac_alg_list, NULL,
+  if (silc_hmac_alloc(ske->start_payload->hmac_alg_list, NULL,
 		      &prop->hmac) == FALSE) {
     status = SILC_SKE_STATUS_UNKNOWN_HMAC;
     goto err;
   }
 
   /* Encode the payload */
-  status = silc_ske_payload_start_encode(ske, start_payload, &payload_buf);
+  status = silc_ske_payload_start_encode(ske, ske->start_payload, 
+					 &payload_buf);
   if (status != SILC_SKE_STATUS_OK)
     goto err;
 
@@ -895,7 +906,7 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
    and computes f = g ^ x mod p. This then puts the result f to a Key
    Exchange Payload. 
 
-   The `callback' will be called to indicate that the caller may
+   The `proto_continue' will be called to indicate that the caller may
    continue with the SKE protocol.  The caller must not continue
    before the SKE libary has called that callback.  If this function
    returns an error the callback will not be called.  It is called
@@ -1114,7 +1125,7 @@ SilcSKEStatus silc_ske_abort(SilcSKE ske, SilcSKEStatus status)
 SilcSKEStatus 
 silc_ske_assemble_security_properties(SilcSKE ske,
 				      SilcSKESecurityPropertyFlag flags,
-				      char *version,
+				      const char *version,
 				      SilcSKEStartPayload **return_payload)
 {
   SilcSKEStartPayload *rp;
@@ -1125,7 +1136,7 @@ silc_ske_assemble_security_properties(SilcSKE ske,
   rp = silc_calloc(1, sizeof(*rp));
 
   /* Set flags */
-  rp->flags = flags;
+  rp->flags = (unsigned char)flags;
 
   /* Set random cookie */
   rp->cookie = silc_calloc(SILC_SKE_COOKIE_LEN, sizeof(*rp->cookie));
@@ -1178,7 +1189,7 @@ silc_ske_assemble_security_properties(SilcSKE ske,
 
 SilcSKEStatus 
 silc_ske_select_security_properties(SilcSKE ske,
-				    char *version,
+				    const char *version,
 				    SilcSKEStartPayload *payload,
 				    SilcSKEStartPayload *remote_payload)
 {
@@ -1541,9 +1552,9 @@ silc_ske_select_security_properties(SilcSKE ske,
 /* Creates random number such that 1 < rnd < n and at most length
    of len bits. The rnd sent as argument must be initialized. */
 
-SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n, 
-				  uint32 len, 
-				  SilcMPInt *rnd)
+static SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n, 
+					 uint32 len, 
+					 SilcMPInt *rnd)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   unsigned char *string;
@@ -1577,10 +1588,10 @@ SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n,
    hash value defined in the protocol. If it is FALSE then this is used
    to create the HASH value defined by the protocol. */
 
-SilcSKEStatus silc_ske_make_hash(SilcSKE ske, 
-				 unsigned char *return_hash,
-				 uint32 *return_hash_len,
-				 int initiator)
+static SilcSKEStatus silc_ske_make_hash(SilcSKE ske, 
+					unsigned char *return_hash,
+					uint32 *return_hash_len,
+					int initiator)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer buf;

@@ -457,9 +457,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
       SilcSKE ske;
 
       /* Allocate Key Exchange object */
-      ske = silc_ske_alloc();
-      ctx->ske = ske;
-      ske->rng = server->rng;
+      ctx->ske = ske = silc_ske_alloc(server->rng, server);
       
       silc_ske_set_callbacks(ske, silc_server_protocol_ke_send_packet, NULL,
 			     silc_server_protocol_ke_verify_key,
@@ -514,8 +512,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
        */
       if (ctx->responder == TRUE) {
 	/* Sends the selected security properties to the initiator. */
-	status = silc_ske_responder_phase_1(ctx->ske, 
-					    ctx->ske->start_payload);
+	status = silc_ske_responder_phase_1(ctx->ske);
       } else {
 	/* Call Phase-1 function. This processes the Key Exchange Start
 	   paylaod reply we just got from the responder. The callback
@@ -562,7 +559,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	   Key Exhange 1 Payload to the responder. */
 	status = silc_ske_initiator_phase_2(ctx->ske,
 					    server->public_key,
-					    server->private_key);
+					    server->private_key,
+					    SILC_SKE_PK_TYPE_SILC);
 	protocol->state++;
       }
 
@@ -1382,8 +1380,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	    return;
 	  }
 
-	  ctx->ske = silc_ske_alloc();
-	  ctx->ske->rng = server->rng;
+	  ctx->ske = silc_ske_alloc(server->rng, server);
 	  ctx->ske->prop = silc_calloc(1, sizeof(*ctx->ske->prop));
 	  silc_ske_group_get_by_number(idata->rekey->ske_group,
 				       &ctx->ske->prop->group);
@@ -1438,8 +1435,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	   * Use Perfect Forward Secrecy, ie. negotiate the key material
 	   * using the SKE protocol.
 	   */
-	  ctx->ske = silc_ske_alloc();
-	  ctx->ske->rng = server->rng;
+	  ctx->ske = silc_ske_alloc(server->rng, server);
 	  ctx->ske->prop = silc_calloc(1, sizeof(*ctx->ske->prop));
 	  silc_ske_group_get_by_number(idata->rekey->ske_group,
 				       &ctx->ske->prop->group);
@@ -1449,7 +1445,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 				 NULL, NULL, NULL, silc_ske_check_version,
 				 context);
       
-	  status = silc_ske_initiator_phase_2(ctx->ske, NULL, NULL);
+	  status = silc_ske_initiator_phase_2(ctx->ske, NULL, NULL, 0);
 	  if (status != SILC_SKE_STATUS_OK) {
 	    SILC_LOG_WARNING(("Error (%s) during Re-key (PFS)",
 			      silc_ske_map_status(status)));

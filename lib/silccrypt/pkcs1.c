@@ -164,7 +164,7 @@ RSA_FormatOneBlock(uint32 modulusLen, RSA_BlockType blockType,
 	for (i = 0; i < padLen; i++) {
 	    /* Pad with non-zero random data. */
 	    do {
-		silc_rng_global_get_byte(bp + i);
+	      bp[i] = silc_rng_global_get_byte();
 	    } while (bp[i] == RSA_BLOCK_AFTER_PAD_OCTET);
 	}
 	bp += padLen;
