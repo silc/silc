@@ -1947,3 +1947,14 @@ void silc_server_inviteban_destruct(void *key, void *context,
     break;
   }
 }
+
+/* Creates connections accoring to configuration. */
+
+void silc_server_create_connections(SilcServer server)
+{
+  silc_schedule_task_del_by_callback(server->schedule,
+				     silc_server_connect_to_router);
+  silc_schedule_task_add(server->schedule, 0,
+			 silc_server_connect_to_router, server, 0, 1,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+}

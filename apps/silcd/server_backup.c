@@ -1054,6 +1054,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 
 	    SILC_LOG_DEBUG(("Sending RESUMED to %s",
 			    server_entry->server_name));
+	    SILC_LOG_INFO(("Sending RESUMED to %s",
+			   server_entry->server_name));
 
 	    server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
 
@@ -1091,6 +1093,8 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 
 	    SILC_LOG_DEBUG(("Sending RESUMED to %s",
 			    server_entry->server_name));
+	    SILC_LOG_INFO(("Sending RESUMED to %s",
+			   server_entry->server_name));
 
 	    server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
 
@@ -1263,12 +1267,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 	      if (sock->user_data)
 		silc_server_free_sock_user_data(server, sock, NULL);
 	      silc_server_close_connection(server, sock);
-
-	      silc_schedule_task_add(server->schedule, 0,
-				     silc_server_connect_to_router,
-				     server, 1, 0,
-				     SILC_TASK_TIMEOUT,
-				     SILC_TASK_PRI_NORMAL);
+	      silc_server_create_connections(server);
 
 	      if (!silc_idcache_list_next(list, &id_cache))
 		break;
@@ -1308,12 +1307,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 	      if (sock->user_data)
 		silc_server_free_sock_user_data(server, sock, NULL);
 	      silc_server_close_connection(server, sock);
-
-	      silc_schedule_task_add(server->schedule, 0,
-				     silc_server_connect_to_router,
-				     server, 1, 0,
-				     SILC_TASK_TIMEOUT,
-				     SILC_TASK_PRI_NORMAL);
+	      silc_server_create_connections(server);
 
 	      if (!silc_idcache_list_next(list, &id_cache))
 		break;

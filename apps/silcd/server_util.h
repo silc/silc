@@ -207,4 +207,7 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 void silc_server_inviteban_destruct(void *key, void *context,
 				    void *user_context);
 
+/* Creates connections accoring to configuration. */
+void silc_server_create_connections(SilcServer server);
+
 #endif /* SERVER_UTIL_H */

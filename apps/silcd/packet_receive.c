@@ -2164,6 +2164,16 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     return NULL;
   }
 
+  /* Make sure this client hasn't registered already */
+  if (idata->status & SILC_IDLIST_STATUS_REGISTERED) {
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_OPERATION_ALLOWED,
+				  "Too many registrations");
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
+    return NULL;
+  }
+
   /* Parse incoming packet */
   ret = silc_buffer_unformat(buffer,
 			     SILC_STR_UI16_NSTRING_ALLOC(&username, 
@@ -2413,6 +2423,16 @@ SilcServerEntry silc_server_new_server(SilcServer server,
     local = FALSE;
   }
 
+  /* Make sure this server hasn't registered already */
+  if (idata->status & SILC_IDLIST_STATUS_REGISTERED) {
+    silc_server_disconnect_remote(server, sock, 
+				  SILC_STATUS_ERR_OPERATION_ALLOWED,
+				  "Too many registrations");
+    if (sock->user_data)
+      silc_server_free_sock_user_data(server, sock, NULL);
+    return NULL;
+  }
+
   /* Parse the incoming packet */
   ret = silc_buffer_unformat(buffer,
 			     SILC_STR_UI16_NSTRING_ALLOC(&id_string, &id_len),
@@ -2474,19 +2494,38 @@ SilcServerEntry silc_server_new_server(SilcServer server,
   server_entry = silc_idlist_find_server_by_id(server->local_list, 
 					       server_id, TRUE, NULL);
   if (server_entry) {
-    silc_idcache_del_by_context(server->local_list->servers, server_entry);
+    if (SILC_IS_LOCAL(server_entry)) {
+      silc_server_disconnect_remote(server, server_entry->connection, 
+				    SILC_STATUS_ERR_OPERATION_ALLOWED,
+				    "Too many registrations");
+      if (((SilcSocketConnection)server_entry->connection)->user_data)
+	silc_server_free_sock_user_data(server, sock, NULL);
+    } else {
+      silc_idcache_del_by_context(server->local_list->servers, server_entry);
+    }
   } else {
     server_entry = silc_idlist_find_server_by_id(server->global_list, 
 						 server_id, TRUE, NULL);
-    if (server_entry) 
-      silc_idcache_del_by_context(server->global_list->servers, server_entry);
+    if (server_entry) {
+      if (SILC_IS_LOCAL(server_entry)) {
+	silc_server_disconnect_remote(server, server_entry->connection, 
+				      SILC_STATUS_ERR_OPERATION_ALLOWED,
+				      "Too many registrations");
+	if (((SilcSocketConnection)server_entry->connection)->user_data)
+	  silc_server_free_sock_user_data(server, server_entry->connection,
+					  NULL);
+      } else {
+	silc_idcache_del_by_context(server->global_list->servers,
+				    server_entry);
+      }
+    }
   }
 
   /* Update server entry */
   idata->status |= SILC_IDLIST_STATUS_REGISTERED;
   new_server->server_name = server_name;
   new_server->id = server_id;
-  
+
   SILC_LOG_DEBUG(("New server id(%s)",
 		  silc_id_render(server_id, SILC_ID_SERVER)));
 

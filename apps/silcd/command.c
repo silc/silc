@@ -4772,17 +4772,19 @@ SILC_SERVER_CMD_FUNC(close)
   /* Close the connection to the server */
   sock = (SilcSocketConnection)server_entry->connection;
 
-  /* If we shutdown primary router connection manually then don't trigger
-     any reconnect or backup router connections, by setting the router
-     to NULL here. */
+  server->backup_noswitch = TRUE;
   if (server->router == server_entry) {
     server->id_entry->router = NULL;
     server->router = NULL;
     server->standalone = TRUE;
   }
-  silc_server_free_sock_user_data(server, sock, NULL);
-  silc_server_close_connection(server, sock);
-  
+  silc_server_disconnect_remote(server, sock,
+				SILC_STATUS_ERR_BANNED_FROM_SERVER,
+				"Closed by administrator");
+  if (sock->user_data)
+    silc_server_free_sock_user_data(server, sock, NULL);
+  server->backup_noswitch = FALSE;
+
  out:
   silc_server_command_free(cmd);
 }
