@@ -52,8 +52,7 @@ unsigned char *silc_mp_mp2bin(SilcInt *val, unsigned int len,
 }
 
 /* Samve as above but does not allocate any memory.  The encoded data is
-   returned into `dst' and it's length to the `ret_len'. If `dst_len is
-   non-zero then the destination buffer is assumbed to be that large. */
+   returned into `dst' and it's length to the `ret_len'. */
 
 void silc_mp_mp2bin_noalloc(SilcInt *val, unsigned char *dst,
 			    unsigned int dst_len)

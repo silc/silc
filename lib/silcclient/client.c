@@ -54,6 +54,9 @@ SilcClient silc_client_alloc(SilcClientOperations *ops, void *application)
 void silc_client_free(SilcClient client)
 {
   if (client) {
+    if (client->rng)
+      silc_rng_free(client->rng);
+
     silc_free(client);
   }
 }
@@ -76,7 +79,7 @@ int silc_client_init(SilcClient client)
   /* Initialize random number generator */
   client->rng = silc_rng_alloc();
   silc_rng_init(client->rng);
-  silc_math_primegen_init(); /* XXX */
+  silc_rng_global_init(client->rng);
 
   /* Register protocols */
   silc_client_protocols_register();
