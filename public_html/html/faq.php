@@ -40,19 +40,23 @@
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_50" class="normal">
 2.8 How secure SILC really is?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_60" class="normal">
-2.9 Does SILC  support instant messaging?</a><br />
+2.9 Does SILC support instant messaging?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_70" class="normal">
 2.10 Why SILC does not have LINKS command like in IRC?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_80" class="normal">
 2.11 Why SILC does not have STATS command like in IRC?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_90" class="normal">
 2.12 Is anyone outside a channel able to see the channel messages?</a><br />
+ &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_95" class="normal">
+2.13 How can I register my channel in SILC?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_100" class="normal">
-2.13 Is it true that all messages are encrypted in SILC?</a><br />
+2.14 Is it true that all messages are encrypted in SILC?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_110" class="normal">
-2.14 Can server or SILC operator gain operator mode on a channel?</a><br />
+2.15 Can server or SILC operator gain operator mode on a channel?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_120" class="normal">
-2.15 I have suggestions to SILC Protocol, what can I do?</a>
+2.16 Channel name doesn't have #-character or does it?</a><br />
+ &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f2_130" class="normal">
+2.17 I have suggestions to SILC Protocol, what can I do?</a>
 
 <br />&nbsp;<br />
 <a href="#f3_0" class="normal">3. Client Questions</a><br />
@@ -91,7 +95,11 @@
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f3_160" class="normal">
 3.17 How do I list the users of a channel?</a><br />
  &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f3_170" class="normal">
-3.18 What is the difference between OPER and SILCOPER commands?</a>
+3.18 What is the difference between OPER and SILCOPER commands?</a><br />
+ &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f3_180" class="normal">
+3.19 My Cygwin client crashes with message "Couldn't create //.silc directory"</a><br />
+ &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f3_190" class="normal">
+3.20 Why /join #silc and /join silc doesn't join the same channel?</a>
 
 <br />&nbsp;<br />
 <a href="#f4_0" class="normal">4. Server Questions</a><br />
@@ -286,7 +294,7 @@ it since it has builtin support for same features that DCC have.  You can
 transfer files securely and encrypted directly with another client.  You 
 can also negotiate secret key material with another client directly to 
 use it in private message encryption.  The private messages are not, 
-however sent directly between clients.  The protocol, on the hand 
+however sent directly between clients.  The protocol, on the other hand 
 does not prohibit sending messages directly between clients if the 
 implementation would support it.  The current SILC Client implementation 
 does not support it.  This means that private messages travel through the 
@@ -383,6 +391,22 @@ see the messages even if they would be compromised.  So, longer answer
 results into same as the short one; No.
 <br />&nbsp;<br />
 
+<a name="f2_95"></a>
+<samp class="highlight">Q: How can I register my channel in SILC?</samp><br />
+A: There is no channel registration in SILC. When you join a non-existing
+channel, it is created and it will exist until the last person leaves it.
+When you join a new channel you became the founder (see also 
+<a href="#f3_70" class="normal">
+Q: What does the founder mode on channel mean, and how do I set it?</a> and
+<a href="#f3_80" class="normal">
+Q: I am founder of invite only channel, how can I join the channel after
+I have left it?</a>)
+and you can preserve your founder status while the channel exists. Cell or
+network wide founder status or persistent founder status (preserving even
+empty channels for limited time) is a debated TODO item and it may or may
+not happen. If it does, its effect could be similar to channel registration.
+<br />&nbsp;<br />
+
 <a name="f2_100"></a>
 <samp class="highlight">Q: Is it true that all messages are encrypted in SILC?</samp><br />
 A: Most definitely yes.  The SILC protocol makes it impossible to send
@@ -402,6 +426,16 @@ do anything more than a normal user.
 <br />&nbsp;<br />
 
 <a name="f2_120"></a>
+<samp class="highlight">Q: Channel name doesn't have #-character or does it?</samp><br />
+A: The #-character is not mandatory part of channel name, like it is in 
+IRC.  This means that giving the command /JOIN #silc and /JOIN silc 
+will join to different channels.  This is intentional since the 
+#-character clearly is IRC feature and has nothing to do with SILC.  If 
+you want it to have the character then just join to the channel with 
+#-character in the name.
+<br />&nbsp;<br />
+
+<a name="f2_130"></a>
 <samp class="highlight">Q: I have suggestions to SILC Protocol, what can I do?</samp><br />
 A: All suggestions and improvements are of course welcome. You should read 
 the protocol specifications first to check out whether your idea is 
@@ -668,6 +702,22 @@ A: The OPER command is used to gain server operator privileges on normal
 SILC server, while SILCOPER is used to gain router operator (also known as
 SILC operator) privileges on router server.  You cannot use SILCOPER command
 on normal SILC server, it works only on router server.
+<br />&nbsp;<br />
+
+<a name="f3_180"></a>
+<samp class="highlight">Q: My Cygwin client crashes with message "Couldn't create //.silc directory"</samp><br />
+A: A solutions should be setting HOME enviroment variable to the directory where you
+have unpacked your SILC Client. Type to your command prompt something like: <br />
+<tt class="normal">c:\&gt;set HOME=c:\silc</tt>
+<br />&nbsp;<br />
+
+<a name="f3_190"></a>
+<samp class="highlight">Q: Why /join #silc and /join silc doesn't join the same channel?</samp><br />
+A: The #-character is not mandatory part of channel name in SILC.  So 
+#silc and silc are two different channels.  The #-character in channel 
+name is IRC feature and has nothing to do with SILC.  If you have 
+#-character in the channel name, then it is part of the channel name, just 
+like %-character, or &-character could be part of channel name.
 <br />&nbsp;<br />
 
 
