@@ -123,6 +123,7 @@ void silc_map_free(SilcMap map)
       silc_free(mapconn->down_color);
       silc_free(mapconn->down_text_color);
       silc_free(mapconn->data.motd);
+      memset(mapconn, 'F', sizeof(*mapconn));
       silc_free(mapconn);
     }
     silc_dlist_uninit(map->conns);

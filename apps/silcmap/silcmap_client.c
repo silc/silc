@@ -425,6 +425,7 @@ silc_connected(SilcClient client, SilcClientConnection conn,
 
   if (mapconn->down) {
     /* Already timeouted */
+    SILC_LOG_DEBUG(("Connection already timedout"));
     silc_client_close_connection(client, conn);
     return;
   }
