@@ -1060,15 +1060,21 @@ SilcClientFileError silc_client_file_close(SilcClient client,
   silc_dlist_start(conn->internal->ftp_sessions);
   while ((session = silc_dlist_get(conn->internal->ftp_sessions))
 	 != SILC_LIST_END) {
-    if (session->session_id == session_id) {
+    if (session->session_id == session_id)
       break;
-    }
   }
 
   if (session == SILC_LIST_END) {
     SILC_LOG_DEBUG(("Unknown session ID: %d\n", session_id));
     return SILC_CLIENT_FILE_UNKNOWN_SESSION;
   }
+
+  if (session->monitor)
+    (*session->monitor)(session->client, session->conn,
+			SILC_CLIENT_FILE_MONITOR_CLOSED,
+			SILC_CLIENT_FILE_OK, 0, 0,
+			session->client_entry, session->session_id,
+			session->filepath, session->monitor_context);
 
   silc_client_ftp_session_free(session);
 

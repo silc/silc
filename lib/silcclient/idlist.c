@@ -132,7 +132,7 @@ SILC_CLIENT_CMD_FUNC(get_client_callback)
 
   /* Get the clients */
   clients = silc_client_get_clients_local(i->client, i->conn,
-					  i->nickname, i->server,
+					  i->nickname, NULL,
 					  &clients_count);
   if (clients) {
     i->completion(i->client, i->conn, clients, clients_count, i->context);
@@ -155,12 +155,14 @@ SILC_CLIENT_CMD_FUNC(get_client_callback)
    get the client entry since this function may be very slow and should
    be used only to initially get the client entries. */
 
-void silc_client_get_clients(SilcClient client,
-			     SilcClientConnection conn,
-			     const char *nickname,
-			     const char *server,
-			     SilcGetClientCallback completion,
-			     void *context)
+void silc_client_get_clients_i(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcCommand command,
+			       const char *nickname,
+			       const char *server,
+			       SilcBuffer attributes,
+			       SilcGetClientCallback completion,
+			       void *context)
 {
   GetClientInternal i;
   int len;
@@ -190,21 +192,55 @@ void silc_client_get_clients(SilcClient client,
   }
 
   /* Register our own command reply for this command */
-  silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
-			       silc_client_command_reply_identify_i, 0,
-			       ++conn->cmd_ident);
-
-  /* Send the command */
-  silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
-			   conn->cmd_ident, 1, 1, userhost,
-			   strlen(userhost));
+  if (command == SILC_COMMAND_IDENTIFY) {
+    silc_client_command_register(client, command, NULL, NULL,
+				 silc_client_command_reply_identify_i, 0,
+				 ++conn->cmd_ident);
+    /* Send the command */
+    silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
+			     conn->cmd_ident, 1, 1, userhost,
+			     strlen(userhost));
+  } else {
+    silc_client_command_register(client, command, NULL, NULL,
+				 silc_client_command_reply_whois_i, 0,
+				 ++conn->cmd_ident);
+    /* Send the command */
+    silc_client_command_send(client, conn, command, conn->cmd_ident, 2,
+			     1, userhost, strlen(userhost),
+			     3, attributes ? attributes->data : NULL,
+			     attributes ? attributes->len : 0);
+  }
 
   /* Add pending callback */
-  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
+  silc_client_command_pending(conn, command, conn->cmd_ident,
 			      silc_client_command_get_client_callback,
 			      (void *)i);
-
   silc_free(userhost);
+}
+
+void silc_client_get_clients(SilcClient client,
+			     SilcClientConnection conn,
+			     const char *nickname,
+			     const char *server,
+			     SilcGetClientCallback completion,
+			     void *context)
+{
+  silc_client_get_clients_i(client, conn, SILC_COMMAND_IDENTIFY,
+			    nickname, server, NULL,
+			    completion, context);
+}
+
+void silc_client_get_clients_whois(SilcClient client,
+				   SilcClientConnection conn,
+				   const char *nickname,
+				   const char *server,
+				   SilcBuffer attributes,
+				   SilcGetClientCallback completion,
+				   void *context)
+{
+  silc_client_get_clients_i(client, conn, SILC_COMMAND_WHOIS,
+			    nickname, server, attributes,
+			    completion, context);
 }
 
 /* The old style function to find client entry. This is used by the

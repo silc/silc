@@ -1300,6 +1300,48 @@ void silc_client_get_clients(SilcClient client,
 			     SilcGetClientCallback completion,
 			     void *context);
 
+/****f* silcclient/SilcClientAPI/silc_client_get_clients
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_get_clients_whois(SilcClient client,
+ *                                       SilcClientConnection conn,
+ *                                       const char *nickname,
+ *                                       const char *server,
+ *                                       SilcBuffer attributes,
+ *                                       SilcGetClientCallback completion,
+ *                                       void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Finds client entry or entries by the `nickname' and `server'. The
+ *    completion callback will be called when the client entries has been
+ *    found.  After the server returns the client information it is cached
+ *    and can be accesses locally at a later time.  The resolving is done
+ *    with WHOIS command.  The `server' may be NULL.
+ *
+ *    If the `attributes' is non-NULL then the buffer includes Requested
+ *    Attributes which can be used to fetch very detailed information
+ *    about the user. If it is NULL then only normal WHOIS query is
+ *    made (for more information about attributes see SilcAttribute).
+ *    Caller may create the `attributes' with silc_client_attributes_request
+ *    function.
+ *
+ * NOTES
+ *
+ *    The resolving is done with WHOIS command. For this reason this
+ *    command may take a long time because it resolves detailed user
+ *    information.
+ *
+ ***/
+void silc_client_get_clients_whois(SilcClient client,
+				   SilcClientConnection conn,
+				   const char *nickname,
+				   const char *server,
+				   SilcBuffer attributes,
+				   SilcGetClientCallback completion,
+				   void *context);
+
 /****f* silcclient/SilcClientAPI/silc_client_get_clients_local
  *
  * SYNOPSIS
@@ -2618,7 +2660,10 @@ silc_client_file_receive(SilcClient client,
  *    If file transmission is being conducted it will be aborted
  *    automatically. This function is also used to close the session
  *    after successful file transmission. This function can be used
- *    also to reject incoming file transmission request.
+ *    also to reject incoming file transmission request.  If the
+ *    session was already started and the monitor callback was set
+ *    the monitor callback will be called with the monitor status
+ *    SILC_CLIENT_FILE_MONITOR_CLOSED.
  *
  ***/
 SilcClientFileError silc_client_file_close(SilcClient client,

@@ -597,6 +597,9 @@ static void silc_client_file_monitor(SilcClient client,
   FtpSession ftp;
   char fsize[32];
 
+  if (status == SILC_CLIENT_FILE_MONITOR_CLOSED)
+    return;
+
   snprintf(fsize, sizeof(fsize) - 1, "%llu", ((filesize + 1023) / 1024));
 
   silc_dlist_start(server->ftp_sessions);

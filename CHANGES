@@ -1,3 +1,13 @@
+Fri Feb 20 20:37:38 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Call the monitor callback with _CLOSED status from the
+	  silc_client_file_close.  Affected files are
+	  lib/silcclient/client_fpt.c, silcclient.h
+
+	* Added silc_client_get_clients_whois which resolves using
+	  WHOIS, and supports requested attributes as well.
+	  Affected files are lib/silcclient/silcclient.h, idlist.c.
+
 Fri Feb 19 21:09:22 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support for asking the destination filename where
