@@ -160,6 +160,13 @@
  * random data for future initializing. This is important and must be
  * implemented in the future.
  *
+ * The caller must be cautios when using this RNG with native WIN32 system.
+ * The RNG most likely is impossible to set in unguessable state just by
+ * using the RNG's input data sources.  On WIN32 it is stronly suggested
+ * that caller would add more random noise after the initialization of the
+ * RNG using the silc_rng_add_noise function.  For example, random mouse
+ * movements may be used.
+ *
  ***/
 
 #ifndef SILCRNG_H

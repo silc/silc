@@ -303,6 +303,7 @@ static void silc_rng_get_hard_noise(SilcRng rng)
 
 static void silc_rng_exec_command(SilcRng rng, char *command)
 {
+#ifndef SILC_WIN32
   char buf[1024];
   FILE *fd;
   int i;
@@ -329,6 +330,7 @@ static void silc_rng_exec_command(SilcRng rng, char *command)
   /* Add the buffer into random pool */
   silc_rng_add_noise(rng, buf, strlen(buf));
   memset(buf, 0, sizeof(buf));
+#endif
 }
 
 /* This function adds the contents of the buffer as noise into random 

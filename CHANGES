@@ -1,3 +1,26 @@
+Fri Jun 29 20:05:25 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Assure that sock->user_data is not NULL in the function
+	  silc_server_packet_send in silcd/packet_send.c.
+
+	* Disconnect the remote connection if it could not be added
+	  to any ID lists in the server.  The affected file is
+	  silcd/server.c.
+
+	* Check in silc_server_packet_send[_real/dest] that the
+	  socket is not disconnecting and ignore the data if it is.
+	  Affected file silcd/packet_send.c.
+
+	* Define inline to __inline on native WIN32 compilation.
+	  Affected file includes/silcwin32.h.
+
+	* Added some explicit type casts for inline code since MSVC
+	  require them.  Affected files lib/silcutil/silcbuffer.h,
+	  lib/trq/silcdlist.h and lib/trq/silclist.h.
+
+	* Print warning in log files from now on if the packet
+	  decryption fails.  Affected file silcd/server.c.
+
 Thu Jun 28 21:30:39 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the `say' client operation's interface to accept

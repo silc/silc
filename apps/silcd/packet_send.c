@@ -2,7 +2,7 @@
 
   packet_send.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
   Copyright (C) 1997 - 2001 Pekka Riikonen
 
@@ -34,6 +34,10 @@ int silc_server_packet_send_real(SilcServer server,
 				 int force_send)
 {
   int ret;
+
+  /* If disconnecting, ignore the data */
+  if (SILC_IS_DISCONNECTING(sock))
+    return -1;
 
   /* If rekey protocol is active we must assure that all packets are
      sent through packet queue. */
@@ -79,16 +83,24 @@ void silc_server_packet_send(SilcServer server,
   if (!sock)
     return;
 
+  /* If disconnecting, ignore the data */
+  if (SILC_IS_DISCONNECTING(sock))
+    return;
+
   /* Get data used in the packet sending, keys and stuff */
   switch(sock->type) {
   case SILC_SOCKET_TYPE_CLIENT:
-    dst_id = ((SilcClientEntry)sock->user_data)->id;
-    dst_id_type = SILC_ID_CLIENT;
+    if (sock->user_data) {
+      dst_id = ((SilcClientEntry)sock->user_data)->id;
+      dst_id_type = SILC_ID_CLIENT;
+    }
     break;
   case SILC_SOCKET_TYPE_SERVER:
   case SILC_SOCKET_TYPE_ROUTER:
-    dst_id = ((SilcServerEntry)sock->user_data)->id;
-    dst_id_type = SILC_ID_SERVER;
+    if (sock->user_data) {
+      dst_id = ((SilcServerEntry)sock->user_data)->id;
+      dst_id_type = SILC_ID_SERVER;
+    }
     break;
   default:
     break;
@@ -121,6 +133,10 @@ void silc_server_packet_send_dest(SilcServer server,
   SilcHmac hmac = NULL;
   unsigned char *dst_id_data = NULL;
   uint32 dst_id_len = 0;
+
+  /* If disconnecting, ignore the data */
+  if (SILC_IS_DISCONNECTING(sock))
+    return;
 
   SILC_LOG_DEBUG(("Sending packet, type %d", type));
 

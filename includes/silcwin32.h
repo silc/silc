@@ -28,5 +28,8 @@
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
 
+#undef inline
+#define inline __inline
+
 #endif
 

@@ -2,7 +2,7 @@
 
   server.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
   Copyright (C) 1997 - 2001 Pekka Riikonen
 
@@ -1224,8 +1224,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     return;
   }
 
-  sock->type = ctx->conn_type;
-  switch(sock->type) {
+  switch(ctx->conn_type) {
   case SILC_SOCKET_TYPE_CLIENT:
     {
       SilcClientEntry client;
@@ -1242,7 +1241,11 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       if (!client) {
 	SILC_LOG_ERROR(("Could not add new client to cache"));
 	silc_free(sock->user_data);
-	break;
+	silc_server_disconnect_remote(server, sock, 
+				      "Server closed connection: "
+				      "Authentication failed");
+	server->stat.auth_failures++;
+	goto out;
       }
 
       /* Statistics */
@@ -1259,13 +1262,14 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     {
       SilcServerEntry new_server;
       SilcServerConfigSectionServerConnection *conn = 
-	sock->type == SILC_SOCKET_TYPE_SERVER ? ctx->sconfig : ctx->rconfig;
+	ctx->conn_type == SILC_SOCKET_TYPE_SERVER ? 
+	ctx->sconfig : ctx->rconfig;
 
       SILC_LOG_DEBUG(("Remote host is %s", 
-		      sock->type == SILC_SOCKET_TYPE_SERVER ? 
+		      ctx->conn_type == SILC_SOCKET_TYPE_SERVER ? 
 		      "server" : "router"));
       SILC_LOG_INFO(("Connection from %s (%s) is %s", sock->hostname,
-		     sock->ip, sock->type == SILC_SOCKET_TYPE_SERVER ? 
+		     sock->ip, ctx->conn_type == SILC_SOCKET_TYPE_SERVER ? 
 		     "server" : "router"));
 
       /* Add the server into server cache. The server name and Server ID
@@ -1274,18 +1278,22 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	 are router. */
       new_server = 
 	silc_idlist_add_server(server->local_list, NULL,
-			       sock->type == SILC_SOCKET_TYPE_SERVER ?
+			       ctx->conn_type == SILC_SOCKET_TYPE_SERVER ?
 			       SILC_SERVER : SILC_ROUTER, NULL, 
-			       sock->type == SILC_SOCKET_TYPE_SERVER ?
+			       ctx->conn_type == SILC_SOCKET_TYPE_SERVER ?
 			       server->id_entry : NULL, sock);
       if (!new_server) {
 	SILC_LOG_ERROR(("Could not add new server to cache"));
 	silc_free(sock->user_data);
-	break;
+	silc_server_disconnect_remote(server, sock, 
+				      "Server closed connection: "
+				      "Authentication failed");
+	server->stat.auth_failures++;
+	goto out;
       }
 
       /* Statistics */
-      if (sock->type == SILC_SOCKET_TYPE_SERVER)
+      if (ctx->conn_type == SILC_SOCKET_TYPE_SERVER)
 	server->stat.my_servers++;
       else
 	server->stat.my_routers++;
@@ -1295,7 +1303,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 
       /* Check whether this connection is to be our primary router connection
 	 if we dont' already have the primary route. */
-      if (server->standalone && sock->type == SILC_SOCKET_TYPE_ROUTER) {
+      if (server->standalone && ctx->conn_type == SILC_SOCKET_TYPE_ROUTER) {
 	if (silc_server_config_is_primary_route(server->config) &&
 	    !conn->initiator)
 	  break;
@@ -1313,6 +1321,8 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   default:
     break;
   }
+
+  sock->type = ctx->conn_type;
 
   /* Add the common data structure to the ID entry. */
   if (id_entry)
@@ -1334,6 +1344,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 			    silc_server_perform_heartbeat,
 			    server->timeout_queue);
 
+ out:
   silc_task_unregister_by_callback(server->timeout_queue,
 				   silc_server_failure_callback);
   silc_protocol_free(protocol);
@@ -1512,8 +1523,15 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 			    idata ? idata->hmac_receive : NULL, 
 			    packet->buffer, packet,
 			    silc_server_packet_decrypt_check, parse_ctx);
-  if (ret < 0)
+  if (ret < 0) {
+    SILC_LOG_WARNING(("Packet decryption failed for connection "
+		      "%s:%d [%s]", sock->hostname, sock->port,  
+		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		       "Router")));
     goto out;
+  }
 
   if (ret == 0) {
     /* Parse the packet. Packet type is returned. */
