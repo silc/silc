@@ -577,13 +577,6 @@ static void silc_client_process_message(SilcClientInternal app)
     (*cmd->cb)(ctx);
 
   } else {
-    if (app->conn->current_channel)
-      silc_client_send_channel_message(app->client, 
-				       app->conn,
-				       app->conn->current_channel, NULL,
-				       0, "HALOO", 5, TRUE);
-
-#if 0
     /* Normal message to a channel */
     if (len && app->conn && app->conn->current_channel &&
 	app->conn->current_channel->on_channel == TRUE) {
@@ -593,7 +586,6 @@ static void silc_client_process_message(SilcClientInternal app)
 				       app->conn->current_channel, NULL,
 				       0, data, strlen(data), TRUE);
     }
-#endif
   }
 
  out:

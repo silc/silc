@@ -77,7 +77,8 @@ typedef struct {
   SilcHash hash;
 
   /* HMAC */
-  SilcHmac hmac;
+  SilcHmac hmac_send;
+  SilcHmac hmac_receive;
 
   /* Public key */
   SilcPublicKey public_key;

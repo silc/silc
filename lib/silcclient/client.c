@@ -557,7 +557,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
   conn->remote_id_data_len = SILC_ID_SERVER_LEN;
 
   /* Register re-key timeout */
-  conn->rekey->timeout = 30; /* XXX hardcoded */
+  conn->rekey->timeout = 3600; /* XXX hardcoded */
   conn->rekey->context = (void *)client;
   silc_task_register(client->timeout_queue, conn->sock->sock, 
 		     silc_client_rekey_callback,
@@ -636,7 +636,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
       silc_buffer_push(sock->outbuf, 
 		       sock->outbuf->data - sock->outbuf->head);
 
-    ret = silc_client_packet_send_real(client, sock, TRUE, FALSE);
+    ret = silc_client_packet_send_real(client, sock, TRUE, TRUE);
 
     /* If returned -2 could not write to connection now, will do
        it later. */
@@ -686,7 +686,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
     /* Process the packet. This will call the parser that will then
        decrypt and parse the packet. */
     if (sock->type != SILC_SOCKET_TYPE_UNKNOWN)
-      silc_packet_receive_process(sock, conn->receive_key, conn->hmac,
+      silc_packet_receive_process(sock, conn->receive_key, conn->hmac_receive,
 				  silc_client_packet_parse, client);
     else
       silc_packet_receive_process(sock, NULL, NULL,
@@ -738,7 +738,8 @@ SILC_TASK_CALLBACK(silc_client_packet_parse_real)
 
   /* Decrypt the received packet */
   if (sock->type != SILC_SOCKET_TYPE_UNKNOWN)
-    ret = silc_packet_decrypt(conn->receive_key, conn->hmac, buffer, packet,
+    ret = silc_packet_decrypt(conn->receive_key, conn->hmac_receive, 
+			      buffer, packet,
 			      silc_client_packet_decrypt_check, parse_ctx);
   else
     ret = silc_packet_decrypt(NULL, NULL, buffer, packet,
@@ -1085,8 +1086,8 @@ void silc_client_packet_send(SilcClient client,
     if (!cipher && ((SilcClientConnection)sock->user_data)->send_key)
       cipher = ((SilcClientConnection)sock->user_data)->send_key;
 
-    if (!hmac && ((SilcClientConnection)sock->user_data)->hmac)
-      hmac = ((SilcClientConnection)sock->user_data)->hmac;
+    if (!hmac && ((SilcClientConnection)sock->user_data)->hmac_send)
+      hmac = ((SilcClientConnection)sock->user_data)->hmac_send;
 
     if (!dst_id && ((SilcClientConnection)sock->user_data)->remote_id) {
       dst_id = ((SilcClientConnection)sock->user_data)->remote_id;
@@ -1182,8 +1183,8 @@ void silc_client_packet_send_flush(SilcClient client,
     if (!cipher && ((SilcClientConnection)sock->user_data)->send_key)
       cipher = ((SilcClientConnection)sock->user_data)->send_key;
 
-    if (!hmac && ((SilcClientConnection)sock->user_data)->hmac)
-      hmac = ((SilcClientConnection)sock->user_data)->hmac;
+    if (!hmac && ((SilcClientConnection)sock->user_data)->hmac_send)
+      hmac = ((SilcClientConnection)sock->user_data)->hmac_send;
 
     if (!dst_id && ((SilcClientConnection)sock->user_data)->remote_id) {
       dst_id = ((SilcClientConnection)sock->user_data)->remote_id;
@@ -1295,8 +1296,8 @@ void silc_client_close_connection(SilcClient client,
       silc_cipher_free(conn->send_key);
     if (conn->receive_key)
       silc_cipher_free(conn->receive_key);
-    if (conn->hmac)
-      silc_hmac_free(conn->hmac);
+    if (conn->hmac_send)	/* conn->hmac_receive is same */
+      silc_hmac_free(conn->hmac_send);
     if (conn->pending_commands)
       silc_dlist_uninit(conn->pending_commands);
     if (conn->rekey)
@@ -1307,7 +1308,8 @@ void silc_client_close_connection(SilcClient client,
     conn->remote_type = 0;
     conn->send_key = NULL;
     conn->receive_key = NULL;
-    conn->hmac = NULL;
+    conn->hmac_send = NULL;
+    conn->hmac_receive = NULL;
     conn->local_id = NULL;
     conn->local_id_data = NULL;
     conn->remote_host = NULL;
@@ -1737,11 +1739,13 @@ SILC_TASK_CALLBACK(silc_client_rekey_final)
     return;
   }
 
+#if 0
   /* Take the keys into use */
   if (ctx->pfs == TRUE)
     silc_client_protocol_rekey_generate_pfs(client, ctx);
   else
     silc_client_protocol_rekey_generate(client, ctx);
+#endif
 
   /* Cleanup */
   silc_protocol_free(protocol);

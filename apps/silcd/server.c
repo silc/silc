@@ -884,12 +884,12 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
      timeout!! */
   hb_context = silc_calloc(1, sizeof(*hb_context));
   hb_context->server = server;
-  silc_socket_set_heartbeat(sock, 30, hb_context,
+  silc_socket_set_heartbeat(sock, 600, hb_context,
 			    silc_server_perform_heartbeat,
 			    server->timeout_queue);
 
   /* Register re-key timeout */
-  idata->rekey->timeout = 60; /* XXX hardcoded */
+  idata->rekey->timeout = 3600; /* XXX hardcoded */
   idata->rekey->context = (void *)server;
   silc_task_register(server->timeout_queue, sock->sock, 
 		     silc_server_rekey_callback,
@@ -1259,7 +1259,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
      timeout!! */
   hb_context = silc_calloc(1, sizeof(*hb_context));
   hb_context->server = server;
-  silc_socket_set_heartbeat(sock, 30, hb_context,
+  silc_socket_set_heartbeat(sock, 600, hb_context,
 			    silc_server_perform_heartbeat,
 			    server->timeout_queue);
 
@@ -1380,7 +1380,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
   if (idata) {
     idata->last_receive = time(NULL);
     cipher = idata->receive_key;
-    hmac = idata->hmac;
+    hmac = idata->hmac_receive;
   }
  
   /* Process the packet. This will call the parser that will then
@@ -1431,12 +1431,14 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   SilcServer server = (SilcServer)parse_ctx->context;
   SilcSocketConnection sock = parse_ctx->sock;
   SilcPacketContext *packet = parse_ctx->packet;
+  SilcIDListData idata = (SilcIDListData)sock->user_data;
   int ret;
 
   SILC_LOG_DEBUG(("Start"));
 
   /* Decrypt the received packet */
-  ret = silc_packet_decrypt(parse_ctx->cipher, parse_ctx->hmac, 
+  ret = silc_packet_decrypt(idata ? idata->receive_key : NULL, 
+			    idata ? idata->hmac_receive : NULL, 
 			    packet->buffer, packet,
 			    silc_server_packet_decrypt_check, parse_ctx);
   if (ret < 0)
@@ -1760,7 +1762,7 @@ void silc_server_packet_parse_type(SilcServer server,
 
 	/* Let the protocol handle the packet */
 	sock->protocol->execute(server->timeout_queue, 0, 
-				sock->protocol, sock->sock, 0, 1);
+				sock->protocol, sock->sock, 0, 0);
       } else {
 	SilcServerKEInternalContext *proto_ctx = 
 	  (SilcServerKEInternalContext *)sock->protocol->context;
@@ -1806,7 +1808,7 @@ void silc_server_packet_parse_type(SilcServer server,
 
 	/* Let the protocol handle the packet */
 	sock->protocol->execute(server->timeout_queue, 0, 
-				sock->protocol, sock->sock, 0, 1);
+				sock->protocol, sock->sock, 0, 0);
       } else {
 	SilcServerKEInternalContext *proto_ctx = 
 	  (SilcServerKEInternalContext *)sock->protocol->context;
@@ -1972,14 +1974,8 @@ void silc_server_packet_parse_type(SilcServer server,
       proto_ctx->packet = silc_packet_context_dup(packet);
 
       /* Let the protocol handle the packet */
-      if (proto_ctx->responder == FALSE)
-	sock->protocol->execute(server->timeout_queue, 0, 
-				sock->protocol, sock->sock,
-				0, 0);
-      else
-	sock->protocol->execute(server->timeout_queue, 0, 
-				sock->protocol, sock->sock,
-				0, 100000);
+      sock->protocol->execute(server->timeout_queue, 0, 
+			      sock->protocol, sock->sock, 0, 0);
     } else {
       SILC_LOG_ERROR(("Received Re-key done packet but no re-key "
 		      "protocol active, packet dropped."));
@@ -2832,7 +2828,7 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
 
   silc_task_register(server->timeout_queue, 0, 
 		     silc_server_channel_key_rekey,
-		     (void *)rekey, 30, 0,
+		     (void *)rekey, 3600, 0,
 		     SILC_TASK_TIMEOUT,
 		     SILC_TASK_PRI_NORMAL);
 }
@@ -2903,7 +2899,7 @@ void silc_server_create_channel_key(SilcServer server,
 				     silc_server_channel_key_rekey);
     silc_task_register(server->timeout_queue, 0, 
 		       silc_server_channel_key_rekey,
-		       (void *)channel->rekey, 30, 0,
+		       (void *)channel->rekey, 3600, 0,
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_NORMAL);
   }
@@ -3008,7 +3004,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 				     silc_server_channel_key_rekey);
     silc_task_register(server->timeout_queue, 0, 
 		       silc_server_channel_key_rekey,
-		       (void *)channel->rekey, 30, 0,
+		       (void *)channel->rekey, 3600, 0,
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_NORMAL);
   }
@@ -3700,11 +3696,13 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
     return;
   }
 
+#if 0
   /* Take the keys into use */
   if (ctx->pfs == TRUE)
     silc_server_protocol_rekey_generate_pfs(server, ctx);
   else
     silc_server_protocol_rekey_generate(server, ctx);
+#endif
 
   /* Cleanup */
   silc_protocol_free(protocol);

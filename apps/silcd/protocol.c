@@ -124,14 +124,15 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
   }
 
   /* Save HMAC key to be used in the communication. */
-  if (!silc_hmac_alloc(hmac->hmac->name, NULL, &idata->hmac)) {
+  if (!silc_hmac_alloc(hmac->hmac->name, NULL, &idata->hmac_send)) {
     silc_cipher_free(idata->send_key);
     silc_cipher_free(idata->receive_key);
     silc_hash_free(idata->hash);
     silc_free(conn_data);
     return FALSE;
   }
-  silc_hmac_set_key(idata->hmac, keymat->hmac_key, keymat->hmac_key_len);
+  silc_hmac_set_key(idata->hmac_send, keymat->hmac_key, keymat->hmac_key_len);
+  idata->hmac_receive = idata->hmac_send;
 
   sock->user_data = (void *)conn_data;
 
@@ -1005,49 +1006,67 @@ static void
 silc_server_protocol_rekey_validate(SilcServer server,
 				    SilcServerRekeyInternalContext *ctx,
 				    SilcIDListData idata,
-				    SilcSKEKeyMaterial *keymat)
+				    SilcSKEKeyMaterial *keymat,
+				    bool send)
 {
   if (ctx->responder == TRUE) {
-    silc_cipher_set_key(idata->send_key, keymat->receive_enc_key, 
-			keymat->enc_key_len);
-    silc_cipher_set_iv(idata->send_key, keymat->receive_iv);
-    silc_cipher_set_key(idata->receive_key, keymat->send_enc_key, 
-			keymat->enc_key_len);
-    silc_cipher_set_iv(idata->receive_key, keymat->send_iv);
+    if (send) {
+      silc_cipher_set_key(idata->send_key, keymat->receive_enc_key, 
+			  keymat->enc_key_len);
+      silc_cipher_set_iv(idata->send_key, keymat->receive_iv);
+    } else {
+      silc_cipher_set_key(idata->receive_key, keymat->send_enc_key, 
+			  keymat->enc_key_len);
+      silc_cipher_set_iv(idata->receive_key, keymat->send_iv);
+    }
   } else {
-    silc_cipher_set_key(idata->send_key, keymat->send_enc_key, 
-			keymat->enc_key_len);
-    silc_cipher_set_iv(idata->send_key, keymat->send_iv);
-    silc_cipher_set_key(idata->receive_key, keymat->receive_enc_key, 
-			keymat->enc_key_len);
-    silc_cipher_set_iv(idata->receive_key, keymat->receive_iv);
+    if (send) {
+      silc_cipher_set_key(idata->send_key, keymat->send_enc_key, 
+			  keymat->enc_key_len);
+      silc_cipher_set_iv(idata->send_key, keymat->send_iv);
+    } else {
+      silc_cipher_set_key(idata->receive_key, keymat->receive_enc_key, 
+			  keymat->enc_key_len);
+      silc_cipher_set_iv(idata->receive_key, keymat->receive_iv);
+    }
   }
 
-  silc_hmac_set_key(idata->hmac, keymat->hmac_key, keymat->hmac_key_len);
+  if (send) {
+    silc_hmac_alloc(idata->hmac_send->hmac->name, NULL, &idata->hmac_send);
+    silc_hmac_set_key(idata->hmac_send, keymat->hmac_key, 
+		      keymat->hmac_key_len);
+  } else {
+    silc_hmac_free(idata->hmac_receive);
+    idata->hmac_receive = idata->hmac_send;
+  }
 
   /* Save the current sending encryption key */
-  memset(idata->rekey->send_enc_key, 0, idata->rekey->enc_key_len);
-  silc_free(idata->rekey->send_enc_key);
-  idata->rekey->send_enc_key = 
-    silc_calloc(keymat->enc_key_len / 8,
-		sizeof(*idata->rekey->send_enc_key));
-  memcpy(idata->rekey->send_enc_key, keymat->send_enc_key, 
-	 keymat->enc_key_len / 8);
-  idata->rekey->enc_key_len = keymat->enc_key_len / 8;
+  if (!send) {
+    memset(idata->rekey->send_enc_key, 0, idata->rekey->enc_key_len);
+    silc_free(idata->rekey->send_enc_key);
+    idata->rekey->send_enc_key = 
+      silc_calloc(keymat->enc_key_len / 8,
+		  sizeof(*idata->rekey->send_enc_key));
+    memcpy(idata->rekey->send_enc_key, keymat->send_enc_key, 
+	   keymat->enc_key_len / 8);
+    idata->rekey->enc_key_len = keymat->enc_key_len / 8;
+  }
 }
 
 /* This function actually re-generates (when not using PFS) the keys and
    takes them into use. */
 
 void silc_server_protocol_rekey_generate(SilcServer server,
-					 SilcServerRekeyInternalContext *ctx)
+					 SilcServerRekeyInternalContext *ctx,
+					 bool send)
 {
   SilcIDListData idata = (SilcIDListData)ctx->sock->user_data;
   SilcSKEKeyMaterial *keymat;
   uint32 key_len = silc_cipher_get_key_len(idata->send_key);
   uint32 hash_len = idata->hash->hash->hash_len;
 
-  SILC_LOG_DEBUG(("Generating new session keys (no PFS)"));
+  SILC_LOG_DEBUG(("Generating new %s session keys (no PFS)",
+		  send ? "sending" : "receiving"));
 
   /* Generate the new key */
   keymat = silc_calloc(1, sizeof(*keymat));
@@ -1057,7 +1076,7 @@ void silc_server_protocol_rekey_generate(SilcServer server,
 				     idata->hash, keymat);
 
   /* Set the keys into use */
-  silc_server_protocol_rekey_validate(server, ctx, idata, keymat);
+  silc_server_protocol_rekey_validate(server, ctx, idata, keymat, send);
 
   silc_ske_free_key_material(keymat);
 }
@@ -1067,7 +1086,8 @@ void silc_server_protocol_rekey_generate(SilcServer server,
 
 void 
 silc_server_protocol_rekey_generate_pfs(SilcServer server,
-					SilcServerRekeyInternalContext *ctx)
+					SilcServerRekeyInternalContext *ctx,
+					bool send)
 {
   SilcIDListData idata = (SilcIDListData)ctx->sock->user_data;
   SilcSKEKeyMaterial *keymat;
@@ -1076,7 +1096,8 @@ silc_server_protocol_rekey_generate_pfs(SilcServer server,
   unsigned char *tmpbuf;
   uint32 klen;
 
-  SILC_LOG_DEBUG(("Generating new session keys (with PFS)"));
+  SILC_LOG_DEBUG(("Generating new %s session keys (with PFS)",
+		  send ? "sending" : "receiving"));
 
   /* Encode KEY to binary data */
   tmpbuf = silc_mp_mp2bin(ctx->ske->KEY, 0, &klen);
@@ -1087,7 +1108,7 @@ silc_server_protocol_rekey_generate_pfs(SilcServer server,
 				     idata->hash, keymat);
 
   /* Set the keys into use */
-  silc_server_protocol_rekey_validate(server, ctx, idata, keymat);
+  silc_server_protocol_rekey_validate(server, ctx, idata, keymat, send);
 
   memset(tmpbuf, 0, klen);
   silc_free(tmpbuf);
@@ -1186,6 +1207,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	  silc_server_packet_send(server, ctx->sock, SILC_PACKET_REKEY_DONE,
 				  0, NULL, 0, FALSE);
 
+	  /* After we send REKEY_DONE we must set the sending encryption
+	     key to the new key since all packets after this packet must
+	     encrypted with the new key. */
+	  silc_server_protocol_rekey_generate(server, ctx, TRUE);
+
 	  /* The protocol ends in next stage. */
 	  protocol->state = SILC_PROTOCOL_STATE_END;
 	}
@@ -1236,6 +1262,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	     now. */ 
 	  silc_server_packet_send(server, ctx->sock, SILC_PACKET_REKEY_DONE,
 				  0, NULL, 0, FALSE);
+
+	  /* After we send REKEY_DONE we must set the sending encryption
+	     key to the new key since all packets after this packet must
+	     encrypted with the new key. */
+	  silc_server_protocol_rekey_generate(server, ctx, TRUE);
 
 	  /* The protocol ends in next stage. */
 	  protocol->state = SILC_PROTOCOL_STATE_END;
@@ -1301,6 +1332,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
     silc_server_packet_send(server, ctx->sock, SILC_PACKET_REKEY_DONE,
 			    0, NULL, 0, FALSE);
     
+    /* After we send REKEY_DONE we must set the sending encryption
+       key to the new key since all packets after this packet must
+       encrypted with the new key. */
+    silc_server_protocol_rekey_generate_pfs(server, ctx, TRUE);
+
     /* The protocol ends in next stage. */
     protocol->state = SILC_PROTOCOL_STATE_END;
     break;
@@ -1315,6 +1351,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
       protocol->state = SILC_PROTOCOL_STATE_ERROR;
       protocol->execute(server->timeout_queue, 0, protocol, fd, 0, 0);
     }
+
+    /* We received the REKEY_DONE packet and all packets after this is
+       encrypted with the new key so set the decryption key to the new key */
+    silc_server_protocol_rekey_generate(server, ctx, FALSE);
 
     /* Protocol has ended, call the final callback */
     if (protocol->final_callback)

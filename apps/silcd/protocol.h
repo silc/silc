@@ -104,10 +104,5 @@ int silc_server_protocol_ke_set_keys(SilcSKE ske,
 				     SilcHmac hmac,
 				     SilcSKEDiffieHellmanGroup group,
 				     bool is_responder);
-void silc_server_protocol_rekey_generate(SilcServer server,
-					 SilcServerRekeyInternalContext *ctx);
-void 
-silc_server_protocol_rekey_generate_pfs(SilcServer server,
-					SilcServerRekeyInternalContext *ctx);
 
 #endif

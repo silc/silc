@@ -166,7 +166,7 @@ void silc_server_packet_send_dest(SilcServer server,
 
   if (idata) {
     cipher = idata->send_key;
-    hmac = idata->hmac;
+    hmac = idata->hmac_send;
   }
 
   /* Encrypt the packet */
@@ -262,7 +262,7 @@ void silc_server_packet_send_srcdest(SilcServer server,
 
   if (idata) {
     cipher = idata->send_key;
-    hmac = idata->hmac;
+    hmac = idata->hmac_send;
   }
 
   /* Encrypt the packet */
@@ -304,7 +304,7 @@ void silc_server_packet_broadcast(SilcServer server,
     silc_buffer_push(buffer, buffer->data - buffer->head);
     silc_packet_send_prepare(sock, 0, 0, buffer->len); 
     silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
-    silc_packet_encrypt(idata->send_key, idata->hmac, 
+    silc_packet_encrypt(idata->send_key, idata->hmac_send, 
 			sock->outbuf, sock->outbuf->len);
 
     SILC_LOG_HEXDUMP(("Broadcasted packet, len %d", sock->outbuf->len),
@@ -338,7 +338,7 @@ void silc_server_packet_route(SilcServer server,
   silc_buffer_push(buffer, buffer->data - buffer->head);
   silc_packet_send_prepare(sock, 0, 0, buffer->len); 
   silc_buffer_put(sock->outbuf, buffer->data, buffer->len);
-  silc_packet_encrypt(idata->send_key, idata->hmac, 
+  silc_packet_encrypt(idata->send_key, idata->hmac_send, 
 		      sock->outbuf, sock->outbuf->len);
 
   SILC_LOG_HEXDUMP(("Routed packet, len %d", sock->outbuf->len),
@@ -455,7 +455,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
       SILC_LOG_DEBUG(("Sending channel message to router for routing"));
       
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-					      idata->send_key, idata->hmac, 
+					      idata->send_key, 
+					      idata->hmac_send, 
 					      data, data_len, FALSE, 
 					      force_send);
     }
@@ -489,7 +490,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
 
       /* Send the packet */
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-					      idata->send_key, idata->hmac, 
+					      idata->send_key, 
+					      idata->hmac_send, 
 					      data, data_len, FALSE, 
 					      force_send);
 
@@ -518,7 +520,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
 
       /* Send the packet */
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-					      idata->send_key, idata->hmac, 
+					      idata->send_key, 
+					      idata->hmac_send, 
 					      data, data_len, FALSE, 
 					      force_send);
     }
@@ -590,7 +593,8 @@ void silc_server_packet_relay_to_channel(SilcServer server,
       SILC_LOG_DEBUG(("Sending channel message to router for routing"));
 
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-					      idata->send_key, idata->hmac, 
+					      idata->send_key, 
+					      idata->hmac_send, 
 					      data, data_len, TRUE, 
 					      force_send);
     }
@@ -692,7 +696,8 @@ void silc_server_packet_relay_to_channel(SilcServer server,
   
 	/* Send the packet (to normal server) */
 	silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-						idata->send_key, idata->hmac, 
+						idata->send_key, 
+						idata->hmac_send, 
 						data, data_len, TRUE, 
 						force_send);
 
@@ -715,7 +720,8 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 
       /* Send the packet */
       silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-					      idata->send_key, idata->hmac, 
+					      idata->send_key, 
+					      idata->hmac_send, 
 					      data, data_len, TRUE, 
 					      force_send);
     }
@@ -1327,7 +1333,8 @@ void silc_server_send_notify_on_channels(SilcServer server,
 
 	/* Send the packet */
 	silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-						idata->send_key, idata->hmac, 
+						idata->send_key, 
+						idata->hmac_send, 
 						data, data_len, FALSE, 
 						force_send);
 	
@@ -1362,7 +1369,8 @@ void silc_server_send_notify_on_channels(SilcServer server,
 
 	/* Send the packet */
 	silc_server_packet_send_to_channel_real(server, sock, &packetdata,
-						idata->send_key, idata->hmac, 
+						idata->send_key, 
+						idata->hmac_send, 
 						data, data_len, FALSE, 
 						force_send);
 

@@ -1,3 +1,14 @@
+Fri Apr 13 00:09:08 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Ok, rewrote the logic of the re-key and now it seems to work.
+	  I tested it on high traffic with frequent re-keys without
+	  problems.  Added hmac_receive (and renamed hmac to hmac_send)
+	  in SilcClientConnection in lib/silcclient/client.h and
+	  in SilcIDListData in silcd/idlist.h.  Also, removed the
+	  SilcPacketParserContext's cipher and hmac fields as they are
+	  not needed anymore and actually caused some problems when
+	  the ciphers and hmac's changed underneath the packet parser.
+
 Thu Apr 12 14:42:51 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* If re-key protocol is active then process the incoming packets
