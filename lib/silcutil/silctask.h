@@ -239,6 +239,7 @@ void func(void *qptr, int type, void *context, int fd)
 void silc_task_queue_alloc(SilcSchedule schedule, SilcTaskQueue *queue, 
 			   bool valid);
 void silc_task_queue_free(SilcTaskQueue queue);
+void silc_task_queue_wakeup(SilcTaskQueue queue);
 SilcTask silc_task_add(SilcTaskQueue queue, SilcTask task, 
 		       SilcTaskPriority priority);
 SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask task,
@@ -248,7 +249,6 @@ SilcTask silc_task_register(SilcTaskQueue queue, int fd,
 			    long seconds, long useconds, 
 			    SilcTaskType type, 
 			    SilcTaskPriority priority);
-int silc_task_remove(SilcTaskQueue queue, SilcTask task);
 void silc_task_unregister(SilcTaskQueue queue, SilcTask task);
 void silc_task_unregister_by_fd(SilcTaskQueue queue, int fd);
 void silc_task_unregister_by_callback(SilcTaskQueue queue, 

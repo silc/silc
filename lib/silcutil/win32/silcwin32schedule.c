@@ -165,3 +165,80 @@ int silc_select(int n, fd_set *readfds, fd_set *writefds,
 
   return -1;
 }
+
+/* Internal wakeup context. */
+typedef struct {
+  HANDLE wakeup_sema;
+  SilcTask wakeup_task;
+} *SilcWin32Wakeup;
+
+SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
+{
+  /* Nothing */
+}
+
+#endif /* SILC_THREADS */
+
+/* Initializes the wakeup of the scheduler. In multi-threaded environment
+   the scheduler needs to be wakenup when tasks are added or removed from
+   the task queues. This will initialize the wakeup for the scheduler.
+   Any tasks that needs to be registered must be registered to the `queue'.
+   It is guaranteed that the scheduler will automatically free any
+   registered tasks in this queue. This is system specific routine. */
+
+void *silc_schedule_wakeup_init(void *queue)
+{
+#ifdef SILC_THREADS
+  SilcWin32Wakeup wakeup;
+
+  wakeup = silc_calloc(1, sizeof(*wakeup));
+
+  wakeup->wakeup_sema = CreateSemaphore(NULL, 0, 100, NULL);
+  if (!wakeup->wakeup_sema) {
+    silc_free(wakeup);
+    return NULL;
+  }
+
+  wakeup->wakeup_task = silc_task_register(queue, (int)wakeup->wakeup_sema,
+					   silc_schedule_wakeup_cb, wakeup,
+					   0, 0, SILC_TASK_FD, 
+					   SILC_TASK_PRI_NORMAL);
+  if (!wakeup->wakeup_task) {
+    CloseHandle(wakeup->wakeup_sema);
+    silc_free(wakeup);
+    return NULL;
+  }
+
+  return (void *)wakeup;
+#endif
+  return NULL;
+}
+
+/* Uninitializes the system specific wakeup. */
+
+void silc_schedule_wakeup_uninit(void *context)
+{
+#ifdef SILC_THREADS
+  SilcWin32Wakeup wakeup = (SilcWin32Wakeup)context;
+
+  if (!wakeup)
+    return;
+
+  CloseHandle(wakeup->wakeup_sema);
+  silc_free(wakeup);
+#endif
+}
+
+/* Wakes up the scheduler */
+
+void silc_schedule_wakeup_internal(void *context)
+{
+#ifdef SILC_THREADS
+  SilcWin32Wakeup wakeup = (SilcWin32Wakeup)context;
+
+  if (!wakeup)
+    return;
+
+  ReleaseSemaphore(wakeup->wakeup_sema, 1, NULL);
+#endif
+}

@@ -22,9 +22,28 @@
 
 #include "silcincludes.h"
 
-/* System specific implementation of the select. */
+/* Routine to remove the task. Implemented in silctask.c. */
+int silc_task_remove(SilcTaskQueue queue, SilcTask task);
+
+/* System specific routines. Implemented under unix/ and win32/. */
+
+/* System specific select(). */
 int silc_select(int n, fd_set *readfds, fd_set *writefds,
 		fd_set *exceptfds, struct timeval *timeout);
+
+/* Initializes the wakeup of the scheduler. In multi-threaded environment
+   the scheduler needs to be wakenup when tasks are added or removed from
+   the task queues. This will initialize the wakeup for the scheduler.
+   Any tasks that needs to be registered must be registered to the `queue'.
+   It is guaranteed that the scheduler will automatically free any
+   registered tasks in this queue. This is system specific routine. */
+void *silc_schedule_wakeup_init(void *queue);
+
+/* Uninitializes the system specific wakeup. */
+void silc_schedule_wakeup_uninit(void *context);
+
+/* Wakes up the scheduler. This is platform specific routine */
+void silc_schedule_wakeup_internal(void *context);
 
 /* Structure holding list of file descriptors, scheduler is supposed to
    be listenning. The max_fd field is the maximum number of possible file
@@ -98,6 +117,12 @@ typedef struct {
        managed automatically by the scheduler and should be considered to 
        be read-only field otherwise.
 
+   void *wakeup
+
+       System specific wakeup context. On multi-threaded environments the
+       scheduler needs to be wakenup (in the thread) when tasks are added
+       or removed. This is initialized by silc_schedule_wakeup_init.
+
 */
 struct SilcScheduleStruct {
   SilcTaskQueue fd_queue;
@@ -109,6 +134,7 @@ struct SilcScheduleStruct {
   fd_set in;
   fd_set out;
   int max_fd;
+  void *wakeup;
   SILC_MUTEX_DEFINE(lock);
 };
 
@@ -156,7 +182,11 @@ SilcSchedule silc_schedule_init(SilcTaskQueue *fd_queue,
   schedule->max_fd = -1;
   for (i = 0; i < max_fd; i++)
     schedule->fd_list.fd[i] = -1;
+
   silc_mutex_alloc(&schedule->lock);
+
+  /* Initialize the wakeup */
+  schedule->wakeup = silc_schedule_wakeup_init(schedule->fd_queue);
 
   return schedule;
 }
@@ -195,6 +225,9 @@ bool silc_schedule_uninit(SilcSchedule schedule)
     memset(schedule->fd_list.fd, -1, schedule->fd_list.max_fd);
     silc_free(schedule->fd_list.fd);
   }
+
+  /* Uninit the wakeup */
+  silc_schedule_wakeup_uninit(schedule->wakeup);
 
   silc_mutex_free(schedule->lock);
 
@@ -537,6 +570,7 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   SilcTask task;
   SilcTaskQueue queue;
   struct timeval curtime;
+  int ret;
 
   SILC_LOG_DEBUG(("In scheduler loop"));
 
@@ -564,8 +598,6 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
      tasks. The select() listens to these file descriptors. */
   SILC_SCHEDULE_SELECT_TASKS;
 
-  silc_mutex_unlock(schedule->lock);
-
   if (schedule->max_fd == -1 && !schedule->timeout)
     return FALSE;
 
@@ -580,12 +612,16 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
     schedule->timeout = &timeout;
   }
 
+  silc_mutex_unlock(schedule->lock);
+
   /* This is the main select(). The program blocks here until some
      of the selected file descriptors change status or the selected
      timeout expires. */
   SILC_LOG_DEBUG(("Select"));
-  switch (silc_select(schedule->max_fd + 1, &schedule->in,
-		      &schedule->out, 0, schedule->timeout)) {
+  ret = silc_select(schedule->max_fd + 1, &schedule->in,
+		    &schedule->out, 0, schedule->timeout);
+
+  switch (ret) {
   case -1:
     /* Error */
     if (errno == EINTR)
@@ -626,4 +662,21 @@ void silc_schedule(SilcSchedule schedule)
   /* Start the scheduler loop */
   while (silc_schedule_one(schedule, -1)) 
     ;
+}
+
+/* Wakes up the scheduler. This is used only in multi-threaded
+   environments where threads may add new tasks or remove old tasks
+   from task queues. This is called to wake up the scheduler in the
+   main thread so that it detects the changes in the task queues.
+   If threads support is not compiled in this function has no effect.
+   Implementation of this function is platform specific. */
+
+void silc_schedule_wakeup(SilcSchedule schedule)
+{
+#ifdef SILC_THREADS
+  SILC_LOG_DEBUG(("Wakeup scheduler"));
+  silc_mutex_lock(schedule->lock);
+  silc_schedule_wakeup_internal(schedule->wakeup);
+  silc_mutex_unlock(schedule->lock);
+#endif
 }

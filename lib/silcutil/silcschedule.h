@@ -160,4 +160,22 @@ void silc_schedule(SilcSchedule schedule);
  ***/
 bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs);
 
+/****f* silcutil/SilcScheduleAPI/silc_schedule_wakeup
+ *
+ * SYNOPSIS
+ *
+ *    void silc_schedule_wakeup(SilcSchedule schedule);
+ *
+ * DESCRIPTION
+ *
+ *    Wakes up the scheduler. This is used only in multi-threaded
+ *    environments where threads may add new tasks or remove old tasks
+ *    from task queues. This is called to wake up the scheduler in the
+ *    main thread so that it detects the changes in the task queues.
+ *    If threads support is not compiled in this function has no effect.
+ *    Implementation of this function may be platform specific.
+ *
+ ***/
+void silc_schedule_wakeup(SilcSchedule schedule);
+
 #endif

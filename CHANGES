@@ -1,3 +1,24 @@
+Mon Jul  9 13:40:03 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added new function silc_schedule_wakeup that is used in
+	  multi-threaded environment to wakeup the main thread's
+	  schduler. It needs to be used when a thread adds a new task
+	  or removes a task from task queues. After waking up, the
+	  scheduler will detect the task queue changes. If threads
+	  support is not compiled in this function has no effect.
+	  Implemented the wakeup mechanism to both Unix and WIN32
+	  systems.  Affected files are lib/silcutil/silcschedule.[ch],
+	  lib/silcutil/unix/silcunixschedule.c and the
+	  lib/silcutil/win32/silcwin32schedule.c.
+
+	* Added new function silc_task_queue_wakeup to wakeup the
+	  scheduler by the specified task queue.  Affected file
+	  lib/silcutil/silctask.[ch].
+
+	* The silc_socket_host_lookup_start now wakes up the scheduler
+	  after adding the timeout task.  Affected file is
+	  lib/silcutil/silcsockconn.c.
+
 Mon Jul  9 00:24:45 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added new function silc_socket_host_lookup to perform

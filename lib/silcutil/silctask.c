@@ -49,6 +49,17 @@ void silc_task_queue_free(SilcTaskQueue queue)
   silc_free(queue);
 }
 
+/* Wakes up the task queue. This actually wakes up the scheduler of this
+   task queue. This is called in multi-threaded environment to wake up
+   the scheduler after adding or removing tasks from the task queue. */
+
+void silc_task_queue_wakeup(SilcTaskQueue queue)
+{
+  silc_mutex_lock(queue->lock);
+  silc_schedule_wakeup(queue->schedule);
+  silc_mutex_unlock(queue->lock);
+}
+
 /* Adds a non-timeout task into the task queue. This function is used
    by silc_task_register function. Returns a pointer to the registered 
    task. */
@@ -353,9 +364,8 @@ SilcTask silc_task_register(SilcTaskQueue queue, int fd,
 }
 
 /* Removes (unregisters) a task from particular task queue. This function
-   is used internally by scheduler. One should not call this function
-   to unregister tasks, instead silc_task_unregister_task function
-   should be used. */
+   is used internally by scheduler. This must be called holding the 
+   queue->lock. */
 
 int silc_task_remove(SilcTaskQueue queue, SilcTask task)
 {
@@ -364,10 +374,7 @@ int silc_task_remove(SilcTaskQueue queue, SilcTask task)
   if (!queue)
     return FALSE;
 
-  silc_mutex_lock(queue->lock);
-
   if (!queue->task) {
-    silc_mutex_unlock(queue->lock);
     return FALSE;
   }
 
@@ -386,7 +393,6 @@ int silc_task_remove(SilcTaskQueue queue, SilcTask task)
     }
 
     queue->task = NULL;
-    silc_mutex_unlock(queue->lock);
     return TRUE;
   }
 
@@ -409,13 +415,11 @@ int silc_task_remove(SilcTaskQueue queue, SilcTask task)
 	queue->task = silc_task_get_first(queue, next);
       
       silc_free(old);
-      silc_mutex_unlock(queue->lock);
       return TRUE;
     }
     old = old->prev;
 
     if (old == first) {
-      silc_mutex_unlock(queue->lock);
       return FALSE;
     }
   }
@@ -462,9 +466,13 @@ void silc_task_unregister(SilcTaskQueue queue, SilcTask task)
 
   SILC_LOG_DEBUG(("Unregistering task"));
 
+  silc_mutex_lock(queue->lock);
+
   /* Unregister the specific task */
   if (task->valid)
     task->valid = FALSE;
+
+  silc_mutex_unlock(queue->lock);
 }
 
 /* Unregister a task by file descriptor. This invalidates the task. */
