@@ -1373,6 +1373,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	    /* Error in protocol */
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
+	    return;
 	  }
 
 	  ctx->ske = silc_ske_alloc();
@@ -1507,6 +1508,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	  /* Error in protocol */
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
 	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
+	  return;
 	}
 	
 	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer);
@@ -1543,7 +1545,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
     if (ctx->packet->type != SILC_PACKET_REKEY_DONE) {
       /* Error in protocol */
       protocol->state = SILC_PROTOCOL_STATE_ERROR;
-      silc_protocol_execute(protocol, server->schedule, 0, 0);
+      silc_protocol_execute(protocol, server->schedule, 0, 300000);
+      return;
     }
 
     /* We received the REKEY_DONE packet and all packets after this is

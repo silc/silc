@@ -2111,7 +2111,6 @@ void silc_server_close_connection(SilcServer server,
 
   /* Unregister all tasks */
   silc_schedule_task_del_by_fd(server->schedule, sock->sock);
-  silc_schedule_task_del_by_fd(server->schedule, sock->sock);
 
   /* Close the actual connection */
   silc_net_close_connection(sock->sock);
@@ -2133,9 +2132,9 @@ void silc_server_close_connection(SilcServer server,
   }
 
   silc_schedule_task_add(server->schedule, 0, 
-		     silc_server_close_connection_final,
-		     (void *)sock, 0, 1, SILC_TASK_TIMEOUT, 
-		     SILC_TASK_PRI_NORMAL);
+			 silc_server_close_connection_final,
+			 (void *)sock, 0, 1, SILC_TASK_TIMEOUT, 
+			 SILC_TASK_PRI_NORMAL);
 }
 
 /* Sends disconnect message to remote connection and disconnects the 
@@ -3977,9 +3976,9 @@ SILC_TASK_CALLBACK(silc_server_rekey_callback)
 
   /* Re-register re-key timeout */
   silc_schedule_task_add(server->schedule, sock->sock, 
-		     silc_server_rekey_callback,
-		     context, idata->rekey->timeout, 0,
-		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+			 silc_server_rekey_callback,
+			 context, idata->rekey->timeout, 0,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
 /* The final callback for the REKEY protocol. This will actually take the

@@ -869,8 +869,7 @@ void silc_server_notify(SilcServer server,
 
       /* If the client is one of ours, then close the connection to the
 	 client now. This removes the client from all channels as well. */
-      if (packet->dst_id_type == SILC_ID_CLIENT && client->data.registered &&
-	  client->connection) {
+      if (packet->dst_id_type == SILC_ID_CLIENT && client->connection) {
 	sock = client->connection;
 	silc_server_free_client_data(server, NULL, client, FALSE, NULL);
 	silc_server_close_connection(server, sock);

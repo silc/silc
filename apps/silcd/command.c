@@ -2533,7 +2533,7 @@ SILC_SERVER_CMD_FUNC(kill)
 
   /* Remove the client entry, If it is locally connected then we will also
      disconnect the client here */
-  if (remote_client->data.registered && remote_client->connection) {
+  if (remote_client->connection) {
     /* Remove locally conneted client */
     SilcSocketConnection sock = remote_client->connection;
     silc_server_free_client_data(server, sock, remote_client, FALSE, NULL);
@@ -4614,8 +4614,7 @@ SILC_SERVER_CMD_FUNC(close)
 
   /* Close the connection to the server */
   sock = (SilcSocketConnection)server_entry->connection;
-  if (sock->user_data)
-    silc_server_free_sock_user_data(server, sock);
+  silc_server_free_sock_user_data(server, sock);
   silc_server_close_connection(server, sock);
   
  out:
