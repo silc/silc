@@ -355,9 +355,9 @@ else
       ;;
   esac
 
-  # Intel C++ Compiler needs -c99 (or -restrict)
+  # Intel C++ Compiler needs -restrict
   if test "x$CC" = "xicc"; then
-    SILC_ADD_CFLAGS(-c99)
+    SILC_ADD_CFLAGS(-restrict)
   fi
 fi
 
