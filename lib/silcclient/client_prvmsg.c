@@ -276,22 +276,8 @@ static void silc_client_private_message_key_cb(SilcClient client,
   if (key_len > packet->buffer->len)
     goto out;
 
-  /* Now take the key in use */
-  if (!silc_client_add_private_message_key(client, conn, clients[0],
-					   cipher, hmac, key, key_len,
-					   FALSE, TRUE))
-    goto out;
-
-  /* Print some info for application */
-  client->internal->ops->say(
-		     client, conn, SILC_CLIENT_MESSAGE_AUDIT,
-		     "Received private message key from %s%s%s %s%s%s",
-		     clients[0]->nickname,
-		     clients[0]->server ? "@" : "",
-		     clients[0]->server ? clients[0]->server : "",
-		     clients[0]->username ? "(" : "",
-		     clients[0]->username ? clients[0]->username : "",
-		     clients[0]->username ? ")" : "");
+  /* Mark that we are responder */
+  clients[0]->prv_resp = TRUE;
 
  out:
   silc_free(cipher);
@@ -299,8 +285,8 @@ static void silc_client_private_message_key_cb(SilcClient client,
   silc_packet_context_free(packet);
 }
 
-/* Processes incoming Private Message Key payload. The libary always
-   accepts the key and takes it into use. */
+/* Processes incoming Private Message Key payload to indicate that the
+   sender whishes to set up a static private message key. */
 
 void silc_client_private_message_key(SilcClient client,
 				     SilcSocketConnection sock,
@@ -501,20 +487,13 @@ bool silc_client_add_private_message_key_ske(SilcClient client,
   return TRUE;
 }
 
-/* Sends private message key payload to the remote client indicated by
-   the `client_entry'. If the `force_send' is TRUE the packet is sent
-   immediately. Returns FALSE if error occurs, TRUE otherwise. The
-   application should call this function after setting the key to the
-   client.
+/* Sends private message key indicator.  The sender of this packet is
+   going to be the initiator, if and when, the users set up a static
+   private message key (not Key Agreement). */
 
-   Note that the key sent using this function is sent to the remote client
-   through the SILC network. The packet is protected using normal session
-   keys. */
-
-bool silc_client_send_private_message_key(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcClientEntry client_entry,
-					 bool force_send)
+bool silc_client_send_private_message_key_request(SilcClient client,
+						  SilcClientConnection conn,
+						  SilcClientEntry client_entry)
 {
   SilcSocketConnection sock;
   SilcBuffer buffer;
@@ -527,7 +506,7 @@ bool silc_client_send_private_message_key(SilcClient client,
   if (!client_entry->send_key || !client_entry->key)
     return FALSE;
 
-  SILC_LOG_DEBUG(("Sending private message key"));
+  SILC_LOG_DEBUG(("Sending private message key indicator"));
 
   cipher = silc_cipher_get_name(client_entry->send_key);
   cipher_len = strlen(cipher);
@@ -535,12 +514,8 @@ bool silc_client_send_private_message_key(SilcClient client,
   hmac_len = strlen(hmac);
 
   /* Create private message key payload */
-  buffer = silc_buffer_alloc(2 + client_entry->key_len);
-  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+  buffer = silc_buffer_alloc_size(4 + cipher_len + hmac_len);
   silc_buffer_format(buffer,
-		     SILC_STR_UI_SHORT(client_entry->key_len),
-		     SILC_STR_UI_XNSTRING(client_entry->key,
-					  client_entry->key_len),
 		     SILC_STR_UI_SHORT(cipher_len),
 		     SILC_STR_UI_XNSTRING(cipher,
 					  cipher_len),
@@ -552,7 +527,7 @@ bool silc_client_send_private_message_key(SilcClient client,
   /* Send the packet */
   silc_client_packet_send(client, sock, SILC_PACKET_PRIVATE_MESSAGE_KEY,
 			  client_entry->id, SILC_ID_CLIENT, NULL, NULL,
-			  buffer->data, buffer->len, force_send);
+			  buffer->data, buffer->len, TRUE);
   silc_free(buffer);
 
   return TRUE;

@@ -629,7 +629,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
        */
       unsigned char *auth_data = NULL;
       SilcUInt32 auth_data_len = 0;
-      unsigned char sign[1024];
+      unsigned char sign[2048 + 1];
 
       switch(ctx->auth_meth) {
       case SILC_AUTH_NONE:

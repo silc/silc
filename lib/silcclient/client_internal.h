@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001, 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -271,6 +271,9 @@ void silc_client_notify_by_server(SilcClient client,
 void silc_client_private_message(SilcClient client,
 				 SilcSocketConnection sock,
 				 SilcPacketContext *packet);
+void silc_client_private_message_key(SilcClient client,
+				     SilcSocketConnection sock,
+				     SilcPacketContext *packet);
 void silc_client_connection_auth_request(SilcClient client,
 					 SilcSocketConnection sock,
 					 SilcPacketContext *packet);

@@ -228,8 +228,10 @@ struct SilcClientEntryStruct {
   SilcEntryStatus status;	/* Status mask */
   SilcHashTable channels;	/* All channels client has joined */
   SilcUInt16 resolve_cmd_ident;	/* Command identifier when resolving */
-  bool generated;		/* TRUE if library generated `key' */
-  bool valid;			/* FALSE if this entry is not valid */
+  unsigned int generated   : 1; /* TRUE if library generated `key' */
+  unsigned int valid       : 1;	/* FALSE if this entry is not valid */
+  unsigned int prv_resp    : 1; /* TRUE if private message key indicator
+				   has been received (responder). */
 
   /* Application specific data.  Application may set here whatever it wants. */
   void *context;
@@ -1995,6 +1997,40 @@ SilcPrivateMessageKeys
 silc_client_list_private_message_keys(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcUInt32 *key_count);
+
+/****f* silcclient/SilcClientAPI/silc_client_send_private_message_key_request
+ *
+ * SYNOPSIS
+ *
+ *    bool
+ *    silc_client_send_private_message_key_request(SilcClient client,
+ *                                               SilcClientConnection conn,
+ *                                               SilcClientEntry client_entry);
+ *
+ * DESCRIPTION
+ *
+ *    This function can be used to send an private message key indicator
+ *    request to the remote client indicated by 'client_entry'.  This can
+ *    be used when setting a static or pre-shared private message key.
+ *    The sender of this packet is the initiator and must set the 'responder'
+ *    argument in silc_client_add_private_message_key function to FALSE.
+ *    The receiver of this indicator request must set it to TRUE, if the
+ *    receiver decides to set a private message key.  By using this
+ *    function applications may automate initiator/responder setting in
+ *    private message key functions, without asking from user which one is
+ *    the initiator and which one is responder.
+ *
+ * NOTES
+ *
+ *    The sender of this packet must set the private message key for
+ *    'client_entry' before calling this function.  The 'responder'
+ *    argument MUST be set to FALSE when setting the key.
+ *
+ ***/
+bool
+silc_client_send_private_message_key_request(SilcClient client,
+					     SilcClientConnection conn,
+					     SilcClientEntry client_entry);
 
 /****f* silcclient/SilcClientAPI/silc_client_free_private_message_keys
  *

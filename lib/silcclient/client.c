@@ -1167,8 +1167,9 @@ void silc_client_packet_parse_type(SilcClient client,
 
   case SILC_PACKET_PRIVATE_MESSAGE_KEY:
     /*
-     * Received private message key
+     * Received private message key indicator
      */
+    silc_client_private_message_key(client, sock, packet);
     break;
 
   case SILC_PACKET_COMMAND:

@@ -22,6 +22,14 @@ Sat Feb 28 16:25:09 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 	  Affected files lib/silcclient/silcclient.h, command_reply.c
 	  and client_notify.c.
 
+	* Added support to the new private message key indicator
+	  packet.  Added a new function to the client library:
+	  silc_client_send_private_message_key_request.  The sender
+	  indicates to be initiator, and receiver is responder.
+	  Added the indicator to the SilcClientEntry as 'prv_resp'
+	  boolean.  Affected files are lib/silcclient/silcclient.h
+	  client.[ch], and client_prvmsg.c.
+
 Fri Feb 27 11:25:26 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the JOIN command calling when called with both
