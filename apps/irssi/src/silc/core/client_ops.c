@@ -426,8 +426,6 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   if (!message)
     return;
 
-  /* FIXME: replace those printformat calls with signals and add signature
-            information to them (if present) */
   if (flags & SILC_MESSAGE_FLAG_ACTION)
     if(flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
       char tmp[256], *cp, *dm = NULL;
@@ -439,16 +437,23 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
       }
       silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
                        cp, message_len);
-      printformat_module("fe-common/silc", server, channel->channel_name,
-                         MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION,
-                         nick == NULL ? "[<unknown>]" : nick->nick, cp);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message silc signed_action", 6, server, cp, nick->nick,
+		    nick->host, channel->channel_name, verified);
+      else
+        signal_emit("message silc action", 6, server, cp, nick->nick,
+		    nick->host, channel->channel_name);
       silc_free(dm);
     } else {
-      printformat_module("fe-common/silc", server, channel->channel_name,
-                         MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION,
-                         nick == NULL ? "[<unknown>]" : nick->nick,
-                         message);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message silc signed_action", 6, server, message,
+		    nick->nick, nick->host, channel->channel_name, verified);
+      else
+        signal_emit("message silc action", 6, server, message,
+		    nick->nick, nick->host, channel->channel_name);
     }
+  /* FIXME: replace those printformat calls with signals and add signature
+            information to them (if present) */
   else if (flags & SILC_MESSAGE_FLAG_NOTICE)
     if(flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
       char tmp[256], *cp, *dm = NULL;
@@ -554,6 +559,42 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 
   if (!message)
     return;
+
+  if (flags & SILC_MESSAGE_FLAG_ACTION) {
+    if(flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
+      char tmp[256], *cp, *dm = NULL;
+      memset(tmp, 0, sizeof(tmp));
+      cp = tmp;
+      if(message_len > sizeof(tmp) - 1) {
+        dm = silc_calloc(message_len + 1, sizeof(*dm));
+        cp = dm;
+      }
+      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+                       cp, message_len);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message silc signed_private_action", 6, server, cp, 
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL, 
+		    NULL, verified);
+      else
+        signal_emit("message silc private_action", 6, server, cp, 
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL, NULL);
+      silc_free(dm);
+    } else {
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message silc signed_private_action", 6, server, message, 
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL, 
+		    NULL, verified);
+      else
+        signal_emit("message silc private_action", 6, server, message, 
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL, NULL);
+    }
+    return;
+  }
+  /* FIXME: added notices */
 
   if (flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
     char tmp[256], *cp, *dm = NULL;

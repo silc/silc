@@ -1,6 +1,10 @@
 
 @SYNTAX:action@
 
-Same as ME, but gets channel as an additional parameter. Example: /ACTION silc yawns (This outputs the following to channel silc: * Nick yawns)
+Sends and ACTION to target.
+For example: /ME * sits back. (sends ACTION "sits back" to the current window)
+
+      -channel: interpret <target> as channel name
+      -sign: add signature
 
 See also: ME

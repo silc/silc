@@ -3,6 +3,13 @@ Mon Jan 03 23:26:38 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 	* Fixed typo in perl module.  Affected file 
 	  irssi/src/perl/silc/Server.xs
 
+	* Changed the way ACTION flagged messages are treated. Added support
+	  for actions in queries and signing actions.  Affected files
+	  irssi/default.theme; irssi/docs/help/in/action.in;
+	  irssi/src/fe-common/silc/module-formats.[ch], fe-silc-messages.c,
+	  fe-silc-queries.c; irssi/src/silc/core/client_ops.c, silc-channels.c,
+	  silc-servers.[ch]
+
 Mon Jan 03 16:04:29 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Incorrectly reported error when client had to be resolved from

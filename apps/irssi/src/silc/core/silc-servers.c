@@ -51,9 +51,9 @@
 void silc_servers_reconnect_init(void);
 void silc_servers_reconnect_deinit(void);
 
-static int silc_send_channel(SILC_SERVER_REC *server,
-			      char *channel, char *msg,
-			      SilcMessageFlags flags)
+int silc_send_channel(SILC_SERVER_REC *server,
+		      char *channel, char *msg,
+		      SilcMessageFlags flags)
 {
   SILC_CHANNEL_REC *rec;
 
@@ -135,8 +135,8 @@ static void silc_send_msg_clients(SilcClient client,
   g_free(rec);
 }
 
-static int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
-			  int msg_len, SilcMessageFlags flags)
+int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
+		  int msg_len, SilcMessageFlags flags)
 {
   PRIVMSG_REC *rec;
   SilcClientEntry *clients;
@@ -426,7 +426,7 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: MOTD [<server>] */
 /* SYNTAX: LIST [<channel>] */
 /* SYNTAX: ME <message> */
-/* SYNTAX: ACTION <channel> <message> */
+/* SYNTAX: ACTION [-sign] [-channel] <target> <message> */
 /* SYNTAX: AWAY [<message>] */
 /* SYNTAX: INFO [<server>] */
 /* SYNTAX: NICK <nickname> */

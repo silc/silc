@@ -73,4 +73,9 @@ void silc_server_free_ftp(SILC_SERVER_REC *server,
 			  SilcClientEntry client_entry);
 bool silc_term_utf8(void);
 
+int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
+		  int msg_len, SilcMessageFlags flags);
+int silc_send_channel(SILC_SERVER_REC *server,
+		      char *channel, char *msg,
+		      SilcMessageFlags flags);
 #endif
