@@ -19,5 +19,5 @@ give,
 
 WARNING: The debugging is very very heavy and you currently cannot turn
 it off if you have compiled it with this option.  However, if you're
-going to develop or debug SILC you whould compile with this option.
+going to develop or debug SILC you should compile with this option.
 
