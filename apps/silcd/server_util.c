@@ -1700,7 +1700,8 @@ silc_server_check_watcher_list_foreach(void *key, void *context,
 				  notify->client,
 				  notify->new_nick ? notify->new_nick :
 				  (const char *)notify->client->nickname,
-				  notify->notify);
+				  notify->notify,
+				  notify->client->data.public_key);
   }
 }
 
@@ -1777,6 +1778,25 @@ bool silc_server_del_from_watcher_list(SilcServer server,
 	 then free the key to not leak memory. */
       if (!silc_hash_table_find(server->watcher_list, key, NULL, NULL))
 	silc_free(key);
+
+      found = TRUE;
+    }
+  }
+  silc_hash_table_list_reset(&htl);
+
+  silc_hash_table_list(server->watcher_list_pk, &htl);
+  while (silc_hash_table_get(&htl, &key, (void *)&entry)) {
+    if (entry == client) {
+      silc_hash_table_del_by_context(server->watcher_list_pk, key, client);
+
+      if (client->id)
+	SILC_LOG_DEBUG(("Removing %s from WATCH list",
+			silc_id_render(client->id, SILC_ID_CLIENT)));
+
+      /* Now check whether there still exists entries with this key, if not
+	 then free the key to not leak memory. */
+      if (!silc_hash_table_find(server->watcher_list_pk, key, NULL, NULL))
+        silc_pkcs_public_key_free(key);
 
       found = TRUE;
     }

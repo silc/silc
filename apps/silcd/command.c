@@ -4082,7 +4082,7 @@ SILC_SERVER_CMD_FUNC(watch)
   }
 
   /* Take public key for watching by public key */
-  pk = silc_argument_get_arg_type(cmd->args, 3, &pk_len);
+  pk = silc_argument_get_arg_type(cmd->args, 4, &pk_len);
 
   /* Take nickname */
   add_nick = silc_argument_get_arg_type(cmd->args, 2, &add_nick_len);
@@ -4188,7 +4188,7 @@ SILC_SERVER_CMD_FUNC(watch)
 					    0);
       goto out;
     }
-   
+
     pk = silc_argument_get_next_arg(pkargs, &type, &pk_len);
     while (pk) {
       if (!silc_pkcs_public_key_payload_decode(pk, pk_len, &public_key))
@@ -4220,7 +4220,7 @@ SILC_SERVER_CMD_FUNC(watch)
 
 	/* Add the client to the watcher list with the specified public
 	   key. */
-	silc_hash_table_add(server->watcher_list, public_key, client);
+	silc_hash_table_add(server->watcher_list_pk, pkkey, client);
 
       } else if (type == 0x01) {
 	/* Delete public key from watch list */
@@ -4240,9 +4240,9 @@ SILC_SERVER_CMD_FUNC(watch)
 	silc_hash_table_del_by_context(server->watcher_list_pk,
 				       public_key, client);
 
-	/* Now check whether there still exists entries with this key, if 
+	/* Now check whether there still exists entries with this key, if
 	   not then free the key to not leak memory. */
-	if (!silc_hash_table_find(server->watcher_list, hash, NULL, NULL))
+	if (!silc_hash_table_find(server->watcher_list_pk, hash, NULL, NULL))
 	  silc_pkcs_public_key_free(pkkey);
         silc_pkcs_public_key_free(public_key);
       }

@@ -5,6 +5,14 @@ Mon Feb 23 23:31:15 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 	  crashes on AMD64.  Affected files are lib/silcutil/silcbuffmt.h,
 	  lib/silcclient/silcvcard.c, silcd/server_util.c.
 
+	* Fixed the adding of public key to the WATCH list in server.
+	  Fixed the WATCH notify sending to client.  Affected files
+	  are silcd/packet_send.[ch], command.c, server_util.c.
+
+	* Implemented the watching by public key in the SILC Client
+	  Library and SILC Client.  Affected files are
+	  lib/silcclient/command.c and client_notify.c.
+
 Mon Feb 23 09:30:30 CET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support for public key watching in server.  Affected

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -800,8 +800,8 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
     }
 
     memcpy(iv, data + (data_len - iv_len - mac_len), iv_len);
-    silc_message_payload_encrypt(data, totlen, data_len - mac_len, 
-                                 iv, iv_len, channel->channel_key, 
+    silc_message_payload_encrypt(data, totlen, data_len - mac_len,
+                                 iv, iv_len, channel->channel_key,
 				 channel->hmac);
   }
 
@@ -1548,22 +1548,28 @@ void silc_server_send_notify_watch(SilcServer server,
 				   SilcClientEntry watcher,
 				   SilcClientEntry client,
 				   const char *nickname,
-				   SilcNotifyType type)
+				   SilcNotifyType type,
+				   SilcPublicKey public_key)
 {
-  SilcBuffer idp;
+  SilcBuffer idp, pkp = NULL;
   unsigned char mode[4], n[2];
 
   idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
   SILC_PUT16_MSB(type, n);
   SILC_PUT32_MSB(client->mode, mode);
+  if (public_key)
+    pkp = silc_pkcs_public_key_payload_encode(public_key);
   silc_server_send_notify_dest(server, sock, FALSE, watcher->id,
 			       SILC_ID_CLIENT, SILC_NOTIFY_TYPE_WATCH,
-			       4, idp->data, idp->len,
+			       5, idp->data, idp->len,
 			       nickname, nickname ? strlen(nickname) : 0,
 			       mode, sizeof(mode),
 			       type != SILC_NOTIFY_TYPE_NONE ?
-			       n : NULL, sizeof(n));
+			       n : NULL, sizeof(n),
+			       pkp ? pkp->data : NULL,
+			       pkp ? pkp->len : 0);
   silc_buffer_free(idp);
+  silc_buffer_free(pkp);
 }
 
 /* Sends notify message destined to specific entity. */
