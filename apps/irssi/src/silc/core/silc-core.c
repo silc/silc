@@ -277,7 +277,8 @@ void silc_core_init_finish(void)
   silc_config = silc_client_config_alloc(SILC_CLIENT_HOME_CONFIG_FILE);
 
   /* Get user information */
-  silc_client->username = g_strdup(settings_get_str("user_name"));
+//  silc_client->username = g_strdup(settings_get_str("user_name"));
+  silc_client->username = strdup("priikone@pelle.palle.polle.puu");
   silc_client->hostname = silc_net_localhost();
   silc_client->realname = g_strdup(settings_get_str("real_name"));
 
