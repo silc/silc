@@ -292,7 +292,8 @@ bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
   struct sockaddr_storage remote;
   char s[NI_MAXHOST];
 
-  *hostname = NULL;
+  if (hostname)
+    *hostname = NULL;
   *ip = NULL;
 
   SILC_LOG_DEBUG(("Resolving remote hostname and IP address"));
@@ -315,7 +316,8 @@ bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
   struct sockaddr_in remote;
   char *host_ip;
 
-  *hostname = NULL;
+  if (hostname)
+    *hostname = NULL;
   *ip = NULL;
 
   SILC_LOG_DEBUG(("Resolving remote hostname and IP address"));
@@ -335,19 +337,22 @@ bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
     return FALSE;
 #endif
 
-  /* Get host by address */
-  if (!silc_net_gethostbyaddr(*ip, host, sizeof(host)))
-    return FALSE;
+  /* Do reverse lookup if we want hostname too. */
+  if (hostname) {
+    /* Get host by address */
+    if (!silc_net_gethostbyaddr(*ip, host, sizeof(host)))
+      return FALSE;
 
-  *hostname = silc_memdup(host, strlen(host));
-  SILC_LOG_DEBUG(("Resolved hostname `%s'", *hostname));
+    *hostname = silc_memdup(host, strlen(host));
+    SILC_LOG_DEBUG(("Resolved hostname `%s'", *hostname));
 
-  /* Reverse */
-  if (!silc_net_gethostbyname(*hostname, TRUE, host, sizeof(host)))
-    return FALSE;
+    /* Reverse */
+    if (!silc_net_gethostbyname(*hostname, TRUE, host, sizeof(host)))
+      return FALSE;
 
-  if (strcmp(*ip, host))
-    return FALSE;
+    if (strcmp(*ip, host))
+      return FALSE;
+  }
 
   SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));
   return TRUE;
@@ -365,7 +370,8 @@ bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
   struct sockaddr_storage local;
   char s[NI_MAXHOST];
 
-  *hostname = NULL;
+  if (hostname)
+    *hostname = NULL;
   *ip = NULL;
 
   SILC_LOG_DEBUG(("Resolving local hostname and IP address"));
@@ -388,7 +394,8 @@ bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
   struct sockaddr_in local;
   char *host_ip;
 
-  *hostname = NULL;
+  if (hostname)
+    *hostname = NULL;
   *ip = NULL;
 
   SILC_LOG_DEBUG(("Resolving local hostname and IP address"));
@@ -408,19 +415,22 @@ bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
     return FALSE;
 #endif
 
-  /* Get host by address */
-  if (!silc_net_gethostbyaddr(*ip, host, sizeof(host)))
-    return FALSE;
+  /* Do reverse lookup if we want hostname too. */
+  if (hostname) {
+    /* Get host by address */
+    if (!silc_net_gethostbyaddr(*ip, host, sizeof(host)))
+      return FALSE;
 
-  *hostname = silc_memdup(host, strlen(host));
-  SILC_LOG_DEBUG(("Resolved hostname `%s'", *hostname));
+    *hostname = silc_memdup(host, strlen(host));
+    SILC_LOG_DEBUG(("Resolved hostname `%s'", *hostname));
 
-  /* Reverse */
-  if (!silc_net_gethostbyname(*hostname, TRUE, host, sizeof(host)))
-    return FALSE;
+    /* Reverse */
+    if (!silc_net_gethostbyname(*hostname, TRUE, host, sizeof(host)))
+      return FALSE;
 
-  if (strcmp(*ip, host))
-    return FALSE;
+    if (strcmp(*ip, host))
+      return FALSE;
+  }
 
   SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));
   return TRUE;

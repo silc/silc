@@ -1,3 +1,12 @@
+Sun Oct 26 21:19:02 EET 2003 Pekka Riikonen <priikone@silcnet.org>
+
+	* Resolve the IP for file transfer listener from the connection
+	  socket.  Affected file lib/silcclient/client_ftp.c.
+
+	* Accept NULL hostname parameter in the functions
+          silc_net_check_[local|remote]_by_socket.  Do not reverse lookup
+	  if hostname is not wanted.
+
 Fri Oct 24 21:24:12 CEST 2003  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* Fixed race condition between silc_client_init and 

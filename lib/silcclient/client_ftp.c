@@ -850,17 +850,22 @@ silc_client_file_send(SilcClient client,
 
   /* Create the listener for incoming key exchange protocol. */
   if (!do_not_bind) {
+    session->listener = -1;
     if (local_ip)
       session->hostname = strdup(local_ip);
     else
-      session->hostname = silc_net_localip();
-    session->listener = silc_net_create_server(local_port, session->hostname);
+      silc_net_check_local_by_sock(conn->sock->sock, NULL,
+				   &session->hostname);
+    if (session->hostname)
+      session->listener = silc_net_create_server(local_port,
+						 session->hostname);
     if (session->listener < 0) {
       /* Could not create listener. Do the second best thing; send empty
 	 key agreement packet and let the remote client provide the point
 	 for the key exchange. */
       SILC_LOG_DEBUG(("Could not create listener"));
       silc_free(session->hostname);
+      session->listener = 0;
       session->hostname = NULL;
       session->port = 0;
     } else {
@@ -957,10 +962,13 @@ silc_client_file_receive(SilcClient client,
   } else {
     /* Add the listener for the key agreement */
     SILC_LOG_DEBUG(("Creating listener for file transfer"));
-    session->hostname = silc_net_localip();
-    session->listener = silc_net_create_server(0, session->hostname);
+    session->listener = -1;
+    silc_net_check_local_by_sock(conn->sock->sock, NULL, &session->hostname);
+    if (session->hostname)
+      session->listener = silc_net_create_server(0, session->hostname);
     if (session->listener < 0) {
       SILC_LOG_DEBUG(("Could not create listener"));
+      session->listener = 0;
       client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR, 
 				 "Cannot create listener on %s: %s", 
 				 session->hostname, strerror(errno));
