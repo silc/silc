@@ -199,21 +199,27 @@ void silc_id_payload_free(SilcIDPayload payload)
 
 SilcIdType silc_id_payload_get_type(SilcIDPayload payload)
 {
-  return payload->type;
+  return payload ? payload->type : 0;
 }
 
 /* Get ID */
 
 void *silc_id_payload_get_id(SilcIDPayload payload)
 {
-  return silc_id_str2id(payload->id, payload->len, payload->type);
+  return payload ? silc_id_str2id(payload->id, payload->len,
+                                  payload->type) : NULL;
 }
 
 /* Get raw ID data. Data is duplicated. */
 
 unsigned char *silc_id_payload_get_data(SilcIDPayload payload)
 {
-  unsigned char *ret = silc_calloc(payload->len, sizeof(*ret));
+  unsigned char *ret;
+
+  if (!payload)
+    return NULL;
+
+  ret = silc_calloc(payload->len, sizeof(*ret));
   memcpy(ret, payload->id, payload->len);
   return ret;
 }
@@ -222,7 +228,7 @@ unsigned char *silc_id_payload_get_data(SilcIDPayload payload)
 
 unsigned int silc_id_payload_get_len(SilcIDPayload payload)
 {
-  return payload->len;
+  return payload ? payload->len : 0;
 }
 
 /******************************************************************************
@@ -411,6 +417,9 @@ unsigned int silc_argument_get_arg_num(SilcArgumentPayload payload)
 unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
 					   unsigned int *ret_len)
 {
+  if (!payload)
+    return NULL;
+
   payload->pos = 0;
 
   if (ret_len)
@@ -424,6 +433,9 @@ unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
 unsigned char *silc_argument_get_next_arg(SilcArgumentPayload payload,
 					  unsigned int *ret_len)
 {
+  if (!payload)
+    return NULL;
+
   if (payload->pos >= payload->argc)
     return NULL;
 
@@ -440,6 +452,9 @@ unsigned char *silc_argument_get_arg_type(SilcArgumentPayload payload,
 					  unsigned int *ret_len)
 {
   int i;
+
+  if (!payload)
+    return NULL;
 
   for (i = 0; i < payload->argc; i++)
     if (payload->argv_types[i] == type)
