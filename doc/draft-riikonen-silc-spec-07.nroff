@@ -1385,7 +1385,7 @@ md5              MD5, length = 16        (RECOMMENDED)
 
 Data integrity is protected by computing a message authentication code
 (MAC) of the packet data.  See [SILC2] for details how to compute the
-MAC.
+MAC for a packet.
 
 The following MAC algorithms are defined in SILC protocol:
 
@@ -2159,12 +2159,14 @@ mandatory cipher and HMAC in private message encryption.
 
 Channel messages are delivered to group of users.  The group forms a
 channel and all clients on the channel receives messages sent to the
-channel.
+channel.  The Source ID in the SILC Packet Header MUST be the Client ID
+of the sender of the message.
 
 Channel messages are destined to channel by specifying the Channel ID
 as Destination ID in the SILC Packet Header.  The server MUST then
 distribute the message to all clients on the channel by sending the
-channel message destined explicitly to a client on the channel.
+channel message destined explicitly to a client on the channel.  However,
+the Destination ID MUST still remain as the Channel ID.
 
 If server receives a channel message packet which includes invalid
 destination Channel ID the server MUST send SILC_NOTIFY_TYPE_ERROR
@@ -2217,25 +2219,24 @@ MUST be protected with the new key.
 
 Client usually sends the commands in the SILC network.  In this case
 the client simply sends the command packet to server and the server
-processes it and replies with command reply packet.  See the [SILC3]
+processes it and replies with command reply packet.  See the [SILC4]
 for detailed description of all commands.
 
-However, if the server is not able to process the command, it is sent
-to the server's router.  This is case for example with commands such
-as, SILC_COMMAND_JOIN and SILC_COMMAND_WHOIS commands.  However, there
-are other commands as well.  For example, if client sends the WHOIS
+However, if the server is not able to process the command, it is sent to
+the server's router.  This is case for example with commands such as,
+SILC_COMMAND_JOIN and SILC_COMMAND_WHOIS commands.  However, there are
+other commands as well [SILC4].  For example, if client sends the WHOIS
 command requesting specific information about some client the server must
-send the WHOIS command to router so that all clients in SILC network
-are searched.  The router, on the other hand, sends the WHOIS command
-further to receive the exact information about the requested client.
-The WHOIS command travels all the way to the server which owns the client
-and it replies with command reply packet.  Finally, the server which
-sent the command receives the command reply and it must be able to
-determine which client sent the original command.  The server then
-sends command reply to the client.  Implementations should have some
-kind of cache to handle, for example, WHOIS information.  Servers
-and routers along the route could all cache the information for faster
-referencing in the future.
+send the WHOIS command to router so that all clients in SILC network are
+searched.  The router, on the other hand, sends the WHOIS command further
+to receive the exact information about the requested client.  The WHOIS
+command travels all the way to the server which owns the client and it
+replies with command reply packet.  Finally, the server which sent the
+command receives the command reply and it must be able to determine which
+client sent the original command.  The server then sends command reply to
+the client.  Implementations should have some kind of cache to handle, for
+example, WHOIS information.  Servers and routers along the route could all
+cache the information for faster referencing in the future.
 
 The commands sent by server may be sent hop by hop until someone is able
 to process the command.  However, it is preferred to destine the command
@@ -2352,10 +2353,10 @@ Client ID was changed or not the server MUST send SILC_PACKET_NEW_ID
 packet to the client.  Only after this the client is resumed back
 to the network and may start sending packets and messages.
 
-It is also possible that the server does not know about the channels
-that the client has joined.  In this case it join the client internally
-to the channels, generate new channel keys and distribute the keys
-to the channels as described in section 4.4.
+It is also possible that the server does not know about the global 
+channels that the client has joined.  In this case it join the client 
+internally to the channels, generate new channel keys and distribute the 
+keys to the channels as described in section 4.4.
 
 It is implementation issue for how long servers keep detached client
 sessions.  It is RECOMMENDED that the detached sessions would be
