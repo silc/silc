@@ -7,7 +7,3 @@ is used for sending private messages to other persons.
 Examples:
 
 /MSG friend Hi, what's up?
-
-/MSG #irssi Hello, is the new gtk-version out already?
-(This format is rarely needed.)
-
