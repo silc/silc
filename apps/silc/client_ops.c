@@ -277,6 +277,7 @@ void silc_command(SilcClient client, SilcClientConnection conn,
 
   switch(command)
     {
+	
     case SILC_COMMAND_QUIT:
       app->screen->bottom_line->channel = NULL;
       silc_screen_print_bottom_line(app->screen, 0);
@@ -314,6 +315,9 @@ void silc_client_show_users(SilcClient client,
   silc_list_start(channel->clients);
   while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
     char *m, *n = chu->client->nickname;
+    if (!n)
+      continue;
+
     len2 = strlen(n);
     len1 += len2;
     
@@ -372,6 +376,45 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 
   switch(command)
     {
+    case SILC_COMMAND_WHOIS:
+      {
+	char buf[1024], *nickname, *username, *realname;
+	int len;
+	unsigned int idle;
+
+	(void)va_arg(vp, SilcClientEntry);
+	nickname = va_arg(vp, char *);
+	username = va_arg(vp, char *);
+	realname = va_arg(vp, char *);
+	(void)va_arg(vp, void *);
+	idle = va_arg(vp, unsigned int);
+
+	memset(buf, 0, sizeof(buf));
+
+	if (nickname) {
+	  len = strlen(nickname);
+	  strncat(buf, nickname, len);
+	  strncat(buf, " is ", 4);
+	}
+	
+	if (username) {
+	  strncat(buf, username, strlen(nickname));
+	}
+	
+	if (realname) {
+	  strncat(buf, " (", 2);
+	  strncat(buf, realname, strlen(realname));
+	  strncat(buf, ")", 1);
+	}
+
+	client->ops->say(client, conn, "%s", buf);
+	if (idle && nickname)
+	  client->ops->say(client, conn, "%s has been idle %d %s",
+			   nickname,
+			   idle > 60 ? (idle / 60) : idle,
+			   idle > 60 ? "minutes" : "seconds");
+      }
+      break;
 
     case SILC_COMMAND_JOIN:
       {

@@ -1281,6 +1281,9 @@ SILC_SERVER_CMD_FUNC(nick)
     goto out;
   }
 
+  if (strlen(nick) > 128)
+    nick[127] = '\0';
+
   /* Create new Client ID */
   silc_id_create_client_id(cmd->server->id, cmd->server->rng, 
 			   cmd->server->md5hash, nick,
@@ -1975,6 +1978,9 @@ SILC_SERVER_CMD_FUNC(join)
     goto out;
   }
   channel_name = tmp;
+
+  if (strlen(channel_name) > 256)
+    channel_name[255] = '\0';
 
   if (silc_server_command_bad_chars(channel_name) == TRUE) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,

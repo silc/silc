@@ -1,3 +1,24 @@
+Mon Mar 12 18:43:38 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Server now enforces the maximum length for the nickname and
+	  the channel as protocol specification dictates.  128 bytes for
+	  nickname and 256 bytes for channel name.
+
+	* Moved the WHOIS printing to the application.  The client libary
+	  does not print out the WHOIS information anymore, the application
+	  must do it.  Renamed silc_client_command_reply_whois_print to
+	  the silc_client_command_reply_whois_save.
+
+	  The client's idle time is also sent to the application now, and
+	  the idle is shown on screen.
+
+	* Added silc_client_command_reply_identify_save to save the
+	  received IDENTIFY entries.
+
+	* Do not check for channel private keys in message sending and
+	  reception if the channel does not have the PRIVKEY mode set.
+	  Affected file lib/silclient/client_channel.c.
+
 Sun Mar 11 20:25:06 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed a minor bug if WHOIS and IDENTIFY command parsing that

@@ -1047,6 +1047,9 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   silc_id_create_client_id(server->id, server->rng, server->md5hash,
 			   username, &client_id);
 
+  if (strlen(username) > 128)
+    username[127] = '\0';
+
   /* Update client entry */
   idata->registered = TRUE;
   client->nickname = strdup(username);

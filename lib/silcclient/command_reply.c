@@ -207,20 +207,18 @@ void silc_client_command_reply_free(SilcClientCommandReplyContext cmd)
 }
 
 static void 
-silc_client_command_reply_whois_print(SilcClientCommandReplyContext cmd,
-				      SilcCommandStatus status)
+silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
+				     SilcCommandStatus status)
 {
-  char buf[256];
-  int argc, len;
-  unsigned char *id_data;
-  char *nickname = NULL, *username = NULL;
-  char *realname = NULL;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcClientID *client_id;
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client_entry = NULL;
-  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
-  
-  memset(buf, 0, sizeof(buf));
+  int argc, len;
+  unsigned char *id_data, *tmp;
+  char *nickname = NULL, *username = NULL;
+  char *realname = NULL;
+  unsigned int idle = 0;
   
   argc = silc_argument_get_arg_num(cmd->args);
 
@@ -237,26 +235,22 @@ silc_client_command_reply_whois_print(SilcClientCommandReplyContext cmd,
   }
   
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
-  if (nickname) {
-    strncat(buf, nickname, len);
-    strncat(buf, " is ", 4);
-  }
-  
   username = silc_argument_get_arg_type(cmd->args, 4, &len);
-  if (username) {
-    strncat(buf, username, len);
-  }
-  
   realname = silc_argument_get_arg_type(cmd->args, 5, &len);
-  if (realname) {
-    strncat(buf, " (", 2);
-    strncat(buf, realname, len);
-    strncat(buf, ")", 1);
+  if (!nickname || !username || !realname) {
+    COMMAND_REPLY_ERROR;
+    return;
   }
-  
+
+  tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
+  if (tmp)
+    SILC_GET32_MSB(idle, tmp);
+
   /* Check if we have this client cached already. */
   if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
 				   SILC_ID_CLIENT, &id_cache)) {
+    SILC_LOG_DEBUG(("Adding new client entry"));
+
     client_entry = silc_calloc(1, sizeof(*client_entry));
     client_entry->id = client_id;
     silc_parse_nickname(nickname, &client_entry->nickname, 
@@ -279,6 +273,8 @@ silc_client_command_reply_whois_print(SilcClientCommandReplyContext cmd,
     if (client_entry->realname)
       silc_free(client_entry->realname);
 
+    SILC_LOG_DEBUG(("Updating client entry"));
+
     silc_parse_nickname(nickname, &client_entry->nickname, 
 			&client_entry->server, &client_entry->num);
     client_entry->username = strdup(username);
@@ -291,12 +287,10 @@ silc_client_command_reply_whois_print(SilcClientCommandReplyContext cmd,
     silc_free(client_id);
   }
 
-  if (!cmd->callback)
-    cmd->client->ops->say(cmd->client, conn, "%s", buf);
-
   /* Notify application */
-  COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
-		 NULL, NULL));
+  if (!cmd->callback)
+    COMMAND_REPLY((ARGS, client_entry, nickname, username, realname, 
+		   NULL, idle));
 }
 
 /* Received reply for WHOIS command. This maybe called several times
@@ -337,21 +331,20 @@ SILC_CLIENT_CMD_REPLY_FUNC(whois)
   }
 
   /* Display one whois reply */
-  if (status == SILC_STATUS_OK) {
-    silc_client_command_reply_whois_print(cmd, status);
-  }
+  if (status == SILC_STATUS_OK)
+    silc_client_command_reply_whois_save(cmd, status);
 
-  /* XXX list should not be displayed untill all items has been received. */
-  if (status == SILC_STATUS_LIST_START) {
-    silc_client_command_reply_whois_print(cmd, status);
-  }
+  /* List */
+  if (status == SILC_STATUS_LIST_START ||
+      status == SILC_STATUS_LIST_ITEM ||
+      status == SILC_STATUS_LIST_END)
+    silc_client_command_reply_whois_save(cmd, status);
 
-  if (status == SILC_STATUS_LIST_ITEM) {
-    silc_client_command_reply_whois_print(cmd, status);
-  }
-
-  if (status == SILC_STATUS_LIST_END) {
-    silc_client_command_reply_whois_print(cmd, status);
+  /* Pending callbacks are not executed if this was an list entry */
+  if (status != SILC_STATUS_OK &&
+      status != SILC_STATUS_LIST_END) {
+    silc_client_command_reply_free(cmd);
+    return;
   }
 
   /* Execute any pending command callbacks */
@@ -369,6 +362,77 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
 
 }
 
+static void 
+silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
+					SilcCommandStatus status)
+{
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+  SilcClientID *client_id;
+  SilcIDCacheEntry id_cache = NULL;
+  SilcClientEntry client_entry = NULL;
+  int argc, len;
+  unsigned char *id_data;
+  char *nickname = NULL, *username = NULL;
+  
+  argc = silc_argument_get_arg_num(cmd->args);
+
+  id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
+  if (!id_data) {
+    COMMAND_REPLY_ERROR;
+    return;
+  }
+  
+  client_id = silc_id_payload_parse_id(id_data, len);
+  if (!client_id) {
+    COMMAND_REPLY_ERROR;
+    return;
+  }
+  
+  nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
+  username = silc_argument_get_arg_type(cmd->args, 4, &len);
+
+  /* Check if we have this client cached already. */
+  if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
+				   SILC_ID_CLIENT, &id_cache)) {
+    SILC_LOG_DEBUG(("Adding new client entry"));
+
+    client_entry = silc_calloc(1, sizeof(*client_entry));
+    client_entry->id = client_id;
+    silc_parse_nickname(nickname, &client_entry->nickname, 
+			&client_entry->server, &client_entry->num);
+    if (username)
+      client_entry->username = strdup(username);
+    
+    /* Add client to cache */
+    silc_idcache_add(conn->client_cache, client_entry->nickname,
+		     SILC_ID_CLIENT, client_id, (void *)client_entry, TRUE);
+  } else {
+    client_entry = (SilcClientEntry)id_cache->context;
+    if (client_entry->nickname)
+      silc_free(client_entry->nickname);
+    if (client_entry->server)
+      silc_free(client_entry->server);
+    if (username && client_entry->username)
+      silc_free(client_entry->username);
+    
+    SILC_LOG_DEBUG(("Updating client entry"));
+
+    silc_parse_nickname(nickname, &client_entry->nickname, 
+			&client_entry->server, &client_entry->num);
+    
+    if (username)
+      client_entry->username = strdup(username);
+    
+    id_cache->data = client_entry->nickname;
+    silc_idcache_sort_by_data(conn->client_cache);
+    
+    silc_free(client_id);
+  }
+
+  /* Notify application */
+  COMMAND_REPLY((ARGS, client_entry, nickname, username));
+}
+
 /* Received reply for IDENTIFY command. This maybe called several times
    for one IDENTIFY command as server may reply with list of results. 
    This is totally silent and does not print anything on screen. */
@@ -377,8 +441,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
-  SilcClientEntry client_entry;
-  SilcIDCacheEntry id_cache = NULL;
   SilcCommandStatus status;
   unsigned char *tmp;
 
@@ -409,61 +471,17 @@ SILC_CLIENT_CMD_REPLY_FUNC(identify)
     }
   }
 
-  /* Display one whois reply */
-  if (status == SILC_STATUS_OK ||
-      status == SILC_STATUS_LIST_START ||
+  /* Save one IDENTIFY entry */
+  if (status == SILC_STATUS_OK)
+    silc_client_command_reply_identify_save(cmd, status);
+
+  /* List */
+  if (status == SILC_STATUS_LIST_START ||
       status == SILC_STATUS_LIST_ITEM ||
-      status == SILC_STATUS_LIST_END) {
-    unsigned int len;
-    unsigned char *id_data;
-    char *nickname;
-    char *username;
-    SilcClientID *client_id;
+      status == SILC_STATUS_LIST_END)
+    silc_client_command_reply_identify_save(cmd, status);
 
-    id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
-    if (!id_data)
-      goto out;
-    client_id = silc_id_payload_parse_id(id_data, len);
-    if (!client_id)
-      goto out;
-
-    nickname = silc_argument_get_arg_type(cmd->args, 3, NULL);
-    username = silc_argument_get_arg_type(cmd->args, 4, NULL);
-
-    if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
-				     SILC_ID_CLIENT, &id_cache)) {
-      client_entry = silc_calloc(1, sizeof(*client_entry));
-      client_entry->id = client_id;
-      silc_parse_nickname(nickname, &client_entry->nickname, 
-			  &client_entry->server, &client_entry->num);
-      if (username)
-	client_entry->username = strdup(username);
-    
-      /* Add client to cache */
-      silc_idcache_add(conn->client_cache, client_entry->nickname,
-		       SILC_ID_CLIENT, client_id, (void *)client_entry, TRUE);
-    } else {
-      client_entry = (SilcClientEntry)id_cache->context;
-      if (client_entry->nickname)
-	silc_free(client_entry->nickname);
-      if (client_entry->server)
-	silc_free(client_entry->server);
-      if (username && client_entry->username)
-	silc_free(client_entry->username);
-
-      silc_parse_nickname(nickname, &client_entry->nickname, 
-			  &client_entry->server, &client_entry->num);
-
-      if (username)
-	client_entry->username = strdup(username);
-
-      id_cache->data = client_entry->nickname;
-      silc_idcache_sort_by_data(conn->client_cache);
-    
-      silc_free(client_id);
-    }
-  }
-
+  /* Pending callbacks are not executed if this was an list entry */
   if (status != SILC_STATUS_OK &&
       status != SILC_STATUS_LIST_END) {
     silc_client_command_reply_free(cmd);
