@@ -31,7 +31,7 @@ Mon Oct 29 17:43:04 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check for partial packet in data queue after every packet that
 	  was found from the queue.  Return and wait for more data if 
-	  there is partial data in queue.  Affecte file is
+	  there is partial data in queue.  Affected file is
 	  lib/silccore/silcpacket.c.
 
 Sun Oct 28 18:46:27 EST 2001  Pekka Riikonen <priikone@silcnet.org>
