@@ -1261,11 +1261,11 @@ static const SilcConfigTable table_connparam[] = {
   { "version_software",	       SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
   { "version_software_vendor", SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
   { "anonymous",               SILC_CONFIG_ARG_TOGGLE, fetch_connparam,	NULL },
-  { "qos",    	               SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
-  { "qos_rate_limit",          SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
-  { "qos_bytes_limit",         SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
-  { "qos_limit_sec",           SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
-  { "qos_limit_usec",          SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "qos",    	               SILC_CONFIG_ARG_TOGGLE, fetch_connparam,	NULL },
+  { "qos_rate_limit",          SILC_CONFIG_ARG_INT,    fetch_connparam,	NULL },
+  { "qos_bytes_limit",         SILC_CONFIG_ARG_INT,    fetch_connparam,	NULL },
+  { "qos_limit_sec",           SILC_CONFIG_ARG_INT,    fetch_connparam,	NULL },
+  { "qos_limit_usec",          SILC_CONFIG_ARG_INT,    fetch_connparam,	NULL },
   { 0, 0, 0, 0 }
 };
 

@@ -1,9 +1,24 @@
+Tue Nov 23 16:54:35 CET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed Win32 scheduler to not stuck anymore.  A patch from
+	  Juha Räsänen.  Affected file is
+	  lib/silcutil/win32/silcwin32schedule.c.
+
+	* Fixed QoS parsing for connection blocks in server.  Affected
+	  file is silcd/serverconfig.c.
+
+	* Fixed server statistics increasing in server.  Affected file
+	  is silcd/server.c.
+
+	* The CLOSE command now marks backup router as self disconnected
+	  to avoid resuming problems.  Affected file silcd/command.c.
+
 Wed Sep 22 19:46:32 CEST 2004  Patrik Weiskircher <pat@icore.at>
 
-  * When using silc_net_create_connection[_async], and your system can
-    create IPv6 sockets, it will try to connect to the IPv6 host. Now it
-    tries to connect to an IPv4 host if IPv6 fails. Affected file
-    lib/silcutil/unix/silcunixnet.c
+	* When using silc_net_create_connection[_async], and your system can
+	  create IPv6 sockets, it will try to connect to the IPv6 host. 
+	  Now it tries to connect to an IPv4 host if IPv6 fails. Affected 
+	  file lib/silcutil/unix/silcunixnet.c
 
 Fri Jun 18 19:26:58 CEST 2004  Pekka Riikonen <priikone@silcnet.org>
 
