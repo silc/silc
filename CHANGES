@@ -1,3 +1,9 @@
+Thu Mar 29 19:10:28 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed a fatal bug when client does /join 1 2 3 4 5 6 the server
+	  crashed since it did not handle the fact that there is no cipher
+	  called "3" and didn't check the error condition.  Now fixed.
+
 Thu Mar 29 12:26:25 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Implemented the RESTART command in the client.
