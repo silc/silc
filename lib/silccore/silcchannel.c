@@ -99,8 +99,7 @@ SilcBuffer silc_channel_payload_encode(unsigned short data_len,
   buffer = silc_buffer_alloc(len + iv_len);
 
   /* Generate padding */
-  for (i = 0; i < pad_len; i++)
-    pad[i] = silc_rng_get_byte(rng);
+  for (i = 0; i < pad_len; i++) pad[i] = silc_rng_get_byte(rng);
 
   silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
 

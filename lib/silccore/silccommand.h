@@ -136,6 +136,7 @@ SilcBuffer silc_command_payload_encode(SilcCommand cmd,
 				       unsigned int *argv_lens,
 				       unsigned int *argv_types,
 				       unsigned short ident);
+SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload);
 SilcBuffer silc_command_payload_encode_va(SilcCommand cmd, 
 					  unsigned short ident, 
 					  unsigned int argc, ...);
@@ -151,5 +152,6 @@ void silc_command_free_payload(SilcCommandPayload payload);
 SilcCommand silc_command_get(SilcCommandPayload payload);
 SilcArgumentPayload silc_command_get_args(SilcCommandPayload payload);
 unsigned short silc_command_get_ident(SilcCommandPayload payload);
+void silc_command_set_ident(SilcCommandPayload payload, unsigned short ident);
 
 #endif

@@ -42,6 +42,7 @@ SilcBuffer silc_argument_payload_encode(unsigned int argc,
 					unsigned char **argv,
 					unsigned int *argv_lens,
 					unsigned int *argv_types);
+SilcBuffer silc_argument_payload_encode_payload(SilcArgumentPayload payload);
 void silc_argument_payload_free(SilcArgumentPayload payload);
 unsigned int silc_argument_get_arg_num(SilcArgumentPayload payload);
 unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,

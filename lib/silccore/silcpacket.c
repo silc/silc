@@ -204,8 +204,7 @@ void silc_packet_assemble(SilcPacketContext *ctx)
 
   /* Get random padding */
 #if 1
-  for (i = 0; i < ctx->padlen; i++)
-    tmppad[i] = silc_rng_get_byte(ctx->rng);
+  for (i = 0; i < ctx->padlen; i++) tmppad[i] = silc_rng_get_byte(ctx->rng);
 #else
   /* XXX: For testing - to be removed */
   memset(tmppad, 65, sizeof(tmppad));

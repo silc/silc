@@ -328,6 +328,40 @@ SilcBuffer silc_argument_payload_encode(unsigned int argc,
   return buffer;
 }
 
+/* Same as above but encode the buffer from SilcArgumentPayload structure
+   instead of raw data. */
+
+SilcBuffer silc_argument_payload_encode_payload(SilcArgumentPayload payload)
+{
+  SilcBuffer buffer;
+  unsigned int len;
+  int i;
+
+  SILC_LOG_DEBUG(("Encoding Argument payload"));
+
+  len = 0;
+  for (i = 0; i < payload->argc; i++)
+    len += 3 + payload->argv_lens[i];
+
+  buffer = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+
+  /* Put arguments */
+  for (i = 0; i < payload->argc; i++) {
+    silc_buffer_format(buffer,
+		       SILC_STR_UI_SHORT(payload->argv_lens[i]),
+		       SILC_STR_UI_CHAR(payload->argv_types[i]),
+		       SILC_STR_UI_XNSTRING(payload->argv[i], 
+					    payload->argv_lens[i]),
+		       SILC_STR_END);
+    silc_buffer_pull(buffer, 3 + payload->argv_lens[i]);
+  }
+
+  silc_buffer_push(buffer, len);
+
+  return buffer;
+}
+
 #if 0
 /* Encodes Argument payload with variable argument list. The arguments
    must be: unsigned int, unsigned char *, unsigned int, ... One 

@@ -126,6 +126,49 @@ SilcBuffer silc_command_payload_encode(SilcCommand cmd,
   return buffer;
 }
 
+/* Same as above but encode the buffer from SilcCommandPayload structure
+   instead of raw data. */
+
+SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload)
+{
+  SilcBuffer buffer;
+  SilcBuffer args = NULL;
+  unsigned int len = 0;
+  unsigned int argc = 0;
+
+  SILC_LOG_DEBUG(("Encoding command payload"));
+
+  if (payload->args) {
+    args = silc_argument_payload_encode_payload(payload->args);
+    len = args->len;
+    argc = silc_argument_get_arg_num(payload->args);
+  }
+
+  len += SILC_COMMAND_PAYLOAD_LEN;
+  buffer = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(buffer, SILC_BUFFER_END(buffer));
+
+  /* Create Command payload */
+  silc_buffer_format(buffer,
+		     SILC_STR_UI_SHORT(len),
+		     SILC_STR_UI_CHAR(payload->cmd),
+		     SILC_STR_UI_CHAR(argc),
+		     SILC_STR_UI_SHORT(payload->ident),
+		     SILC_STR_END);
+
+  /* Add arguments */
+  if (args) {
+    silc_buffer_pull(buffer, SILC_COMMAND_PAYLOAD_LEN);
+    silc_buffer_format(buffer,
+		       SILC_STR_UI_XNSTRING(args->data, args->len),
+		       SILC_STR_END);
+    silc_buffer_push(buffer, SILC_COMMAND_PAYLOAD_LEN);
+    silc_free(args);
+  }
+
+  return buffer;
+}
+
 /* Encodes Command payload with variable argument list. The arguments
    must be: unsigned int, unsigned char *, unsigned int, ... One 
    {unsigned int, unsigned char * and unsigned int} forms one argument, 
@@ -303,4 +346,13 @@ SilcArgumentPayload silc_command_get_args(SilcCommandPayload payload)
 unsigned short silc_command_get_ident(SilcCommandPayload payload)
 {
   return payload->ident;
+}
+
+/* Function to set identifier to already allocated Command Payload. Command
+   payloads are frequentlly resent in SILC and thusly this makes it easy
+   to set the identifier. */
+
+void silc_command_set_ident(SilcCommandPayload payload, unsigned short ident)
+{
+  payload->ident = ident;
 }
