@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet-Draft
-.ds RH 22 July 2001
+.ds RH 21 August 2001
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                      P. Riikonen
 Internet-Draft
-draft-riikonen-silc-ke-auth-03.txt                        22 July 2001
-Expires: 22 January 2002
+draft-riikonen-silc-ke-auth-03.txt                      21 August 2001
+Expires: 21 February 2002
 
 .in 3
 
@@ -1091,4 +1091,4 @@ Finland
 
 EMail: priikone@silcnet.org
 
-This Internet-Draft expires 22 January 2002
+This Internet-Draft expires 21 February 2002
