@@ -20,8 +20,12 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  2000/06/27 11:36:56  priikone
- * Initial revision
+ * Revision 1.2  2000/07/05 06:11:00  priikone
+ * 	Added ~./silc directory checking, autoloading of keys and
+ * 	tweaked the key pair generation function.
+ *
+ * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -286,7 +290,7 @@ char *silc_client_get_input(const char *prompt)
   fd = open("/dev/tty", O_RDONLY);
   if (fd < 0) {
     fprintf(stderr, "silc: %s\n", strerror(errno));
-    exit(1);
+    return NULL;
   }
 
   memset(input, 0, sizeof(input));
@@ -296,7 +300,7 @@ char *silc_client_get_input(const char *prompt)
 
   if ((read(fd, input, sizeof(input))) < 0) {
     fprintf(stderr, "silc: %s\n", strerror(errno));
-    exit(1);
+    return NULL;
   }
 
   if (strlen(input) <= 1)
@@ -323,7 +327,7 @@ char *silc_client_get_passphrase(const char *prompt)
   fd = open("/dev/tty", O_RDONLY);
   if (fd < 0) {
     fprintf(stderr, "silc: %s\n", strerror(errno));
-    exit(1);
+    return NULL;
   }
 
   signal(SIGINT, SIG_IGN);
@@ -343,7 +347,7 @@ char *silc_client_get_passphrase(const char *prompt)
 
   if ((read(fd, input, sizeof(input))) < 0) {
     fprintf(stderr, "silc: %s\n", strerror(errno));
-    exit(1);
+    return NULL;
   }
 
   if (strlen(input) <= 1) {
@@ -367,18 +371,51 @@ char *silc_client_get_passphrase(const char *prompt)
 #endif
 }
 
+/* Returns identifier string for public key generation. */
+
+char *silc_client_create_identifier()
+{
+  char *username = NULL, *realname = NULL;
+  char hostname[256], email[256];
+  
+  /* Get realname */
+  realname = silc_get_real_name();
+
+  /* Get hostname */
+  memset(hostname, 0, sizeof(hostname));
+  gethostname(hostname, sizeof(hostname));
+
+  /* Get username (mandatory) */
+  username = silc_get_username();
+  if (!username)
+    return NULL;
+
+  /* Create default email address, whether it is right or not */
+  snprintf(email, sizeof(email), "%s@%s", username, hostname);
+
+  return silc_pkcs_encode_identifier(username, hostname, realname, email,
+				     NULL, NULL);
+}
+
 /* Creates new public key and private key pair. This is used only
    when user wants to create new key pair from command line. */
 
-void silc_client_create_key_pair(char *pkcs_name, int bits)
+int silc_client_create_key_pair(char *pkcs_name, int bits,
+				char *public_key, char *private_key,
+				char *identifier, 
+				SilcPublicKey *ret_pub_key,
+				SilcPrivateKey *ret_prv_key)
 {
   SilcPKCS pkcs;
+  SilcPublicKey pub_key;
+  SilcPrivateKey prv_key;
   SilcRng rng;
   unsigned char *key;
   unsigned int key_len;
   char *pkfile = NULL, *prvfile = NULL;
 
-  printf("\
+  if (!pkcs_name || !public_key || !private_key)
+    printf("\
 New pair of keys will be created.  Please, answer to following questions.\n\
 ");
 
@@ -396,6 +433,11 @@ New pair of keys will be created.  Please, answer to following questions.\n\
     }
   }
 
+  if (!silc_pkcs_is_supported(pkcs_name)) {
+    fprintf(stderr, "Unsupported PKCS `%s'", pkcs_name);
+    return FALSE;
+  }
+
   if (!bits) {
     char *length = NULL;
     length = 
@@ -406,39 +448,281 @@ New pair of keys will be created.  Please, answer to following questions.\n\
       bits = atoi(length);
   }
 
+  if (!identifier) {
+    char *def = silc_client_create_identifier();
+
+    if (identifier)
+      snprintf(def, sizeof(def), "Public key identifier [%s]: ", def);
+    else
+      snprintf(def, sizeof(def),
+	       "Public key identifier (eg. UN=priikone, HN=poseidon.pspt.fi, "
+	       "RN=Pekka Riikonen, E=priikone@poseidon.pspt.fi): ");
+
+  again_ident:
+    identifier = silc_client_get_input(def);
+    if (!identifier)
+      goto again_ident;
+
+    if (def)
+      silc_free(def);
+  }
+
   rng = silc_rng_alloc();
   silc_rng_init(rng);
   silc_math_primegen_init();
 
- again_pk:
-  pkfile = silc_client_get_input("Public key filename: ");
-  if (!pkfile) {
-    printf("Public key filename must be defined\n");
-    goto again_pk;
+  if (!public_key) {
+  again_pk:
+    pkfile = silc_client_get_input("Public key filename: ");
+    if (!pkfile) {
+      printf("Public key filename must be defined\n");
+      goto again_pk;
+    }
+  } else {
+    pkfile = public_key;
   }
 
- again_prv:
-  prvfile = silc_client_get_input("Private key filename: ");
-  if (!prvfile) {
-    printf("Private key filename must be defined\n");
-    goto again_prv;
+  if (!private_key) {
+  again_prv:
+    prvfile = silc_client_get_input("Private key filename: ");
+    if (!prvfile) {
+      printf("Private key filename must be defined\n");
+      goto again_prv;
+    }
+  } else {
+    prvfile = private_key;
   }
 
   /* Generate keys */
   silc_pkcs_alloc(pkcs_name, &pkcs);
   pkcs->pkcs->init(pkcs->context, bits, rng);
 
-  /* Save keys into file */
+  /* Save public key into file */
   key = silc_pkcs_get_public_key(pkcs, &key_len);
-  silc_pkcs_save_public_key(pkcs, pkfile, key, key_len);
+  pub_key = silc_pkcs_public_key_alloc(pkcs->pkcs->name, identifier,
+				       key, key_len);
+  silc_pkcs_save_public_key(pkfile, pub_key);
+  if (ret_pub_key)
+    *ret_pub_key = pub_key;
+
   memset(key, 0, sizeof(key_len));
   silc_free(key);
+
+  /* Save private key into file */
   key = silc_pkcs_get_private_key(pkcs, &key_len);
-  silc_pkcs_save_private_key(pkcs, prvfile, key, key_len, "");
+  prv_key = silc_pkcs_private_key_alloc(pkcs->pkcs->name, key, key_len);
+
+  silc_pkcs_save_private_key(prvfile, prv_key, NULL);
+  if (ret_prv_key)
+    *ret_prv_key = prv_key;
+
   memset(key, 0, sizeof(key_len));
   silc_free(key);
 
   silc_math_primegen_uninit();
   silc_rng_free(rng);
   silc_pkcs_free(pkcs);
+
+  return TRUE;
+}
+
+/* This checks stats for various SILC files and directories. First it 
+   checks if ~/.silc directory exist and is owned by the correct user. If 
+   it doesn't exist, it will create the directory. After that it checks if
+   user's Public and Private key files exists and that they aren't expired.
+   If they doesn't exist or they are expired, they will be (re)created
+   after return. */
+
+int silc_client_check_silc_dir()
+{
+  char filename[256], file_public_key[256], file_private_key[256];
+  char *identifier;
+  struct stat st;
+  struct passwd *pw;
+  int firstime = FALSE;
+  time_t curtime, modtime;
+
+  SILC_LOG_DEBUG(("Checking ~./silc directory"));
+
+  memset(filename, 0, sizeof(filename));
+  memset(file_public_key, 0, sizeof(file_public_key));
+  memset(file_private_key, 0, sizeof(file_private_key));
+
+  pw = getpwuid(getuid());
+  if (!pw) {
+    fprintf(stderr, "silc: %s\n", strerror(errno));
+    return FALSE;
+  }
+
+  identifier = silc_client_create_identifier();
+
+  /* We'll take home path from /etc/passwd file to be sure. */
+  snprintf(filename, sizeof(filename) - 1, "%s/.silc/", pw->pw_dir);
+
+  /*
+   * Check ~/.silc directory
+   */
+  if ((stat(filename, &st)) == -1) {
+    /* If dir doesn't exist */
+    if (errno == ENOENT) {
+      if (pw->pw_uid == geteuid()) {
+	if ((mkdir(filename, 0755)) == -1) {
+	  fprintf(stderr, "Couldn't create `%s' directory\n", filename);
+	  return FALSE;
+	}
+
+	/* Directory was created. First time running SILC */
+	firstime = TRUE;
+      } else {
+	fprintf(stderr, "Couldn't create `%s' directory due to a wrong uid!\n",
+		filename);
+	return FALSE;
+      }
+    } else {
+      fprintf(stderr, "%s\n", strerror(errno));
+      return FALSE;
+    }
+  }
+    
+  /* Check the owner of the dir */
+  if (st.st_uid != 0 && st.st_uid != pw->pw_uid) { 
+    fprintf(stderr, "You don't seem to own `%s' directory\n",
+	    filename);
+    return FALSE;
+  }
+  
+  /* Check the permissions of the dir */
+  if ((st.st_mode & 0777) != 0755) {
+    if ((chmod(filename, 0755)) == -1) {
+      fprintf(stderr, "Permissions for `%s' directory must be 0755\n", 
+	      filename);
+      return FALSE;
+    }
+  }
+  
+  /*
+   * Check Public and Private keys
+   */
+  snprintf(file_public_key, sizeof(file_public_key) - 1, "%s%s", 
+	   filename, SILC_CLIENT_PUBLIC_KEY_NAME);
+  snprintf(file_private_key, sizeof(file_private_key) - 1, "%s%s", 
+	   filename, SILC_CLIENT_PRIVATE_KEY_NAME);
+  
+  /* If running SILC first time */
+  if (firstime) {
+    fprintf(stdout, "Running SILC for the first time.\n");
+    silc_client_create_key_pair(SILC_CLIENT_DEF_PKCS, 
+				SILC_CLIENT_DEF_PKCS_LEN,
+				file_public_key, file_private_key, 
+				identifier, NULL, NULL);
+    return TRUE;
+  }
+  
+  if ((stat(file_public_key, &st)) == -1) {
+    /* If file doesn't exist */
+    if (errno == ENOENT) {
+      fprintf(stdout, "Your public key doesn't exist\n");
+      silc_client_create_key_pair(SILC_CLIENT_DEF_PKCS, 
+				  SILC_CLIENT_DEF_PKCS_LEN,
+				  file_public_key, 
+				  file_private_key, identifier, NULL, NULL);
+    } else {
+      fprintf(stderr, "%s\n", strerror(errno));
+      return FALSE;
+    }
+  }
+
+  if ((stat(file_private_key, &st)) == -1) {
+    /* If file doesn't exist */
+    if (errno == ENOENT) {
+      fprintf(stdout, "Your private key doesn't exist\n");
+      silc_client_create_key_pair(SILC_CLIENT_DEF_PKCS, 
+				  SILC_CLIENT_DEF_PKCS_LEN,
+				  file_public_key, 
+				  file_private_key, identifier, NULL, NULL);
+    } else {
+      fprintf(stderr, "%s\n", strerror(errno));
+      return FALSE;
+    }
+  }
+    
+  /* Check the owner of the public key */
+  if (st.st_uid != 0 && st.st_uid != pw->pw_uid) { 
+    fprintf(stderr, "You don't seem to own your public key!?\n");
+    return FALSE;
+  }
+  
+  /* Check the owner of the private key */
+  if (st.st_uid != 0 && st.st_uid != pw->pw_uid) { 
+    fprintf(stderr, "You don't seem to own your private key!?\n");
+    return FALSE;
+  }
+    
+  /* Check the permissions for the private key */
+  if ((st.st_mode & 0777) != 0600) {
+    fprintf(stderr, "Wrong permissions in your private key file `%s'!\n"
+	    "Trying to change them ... ", file_private_key);
+    if ((chmod(file_private_key, 0600)) == -1) {
+      fprintf(stderr,
+	      "Failed to change permissions for private key file!\n" 
+	      "Permissions for your private key file must be 0600.\n");
+      return FALSE;
+    }
+    fprintf(stderr, "Done.\n\n");
+  }
+
+  /* See if the key has expired. */
+  modtime = st.st_mtime;	/* last modified */
+  curtime = time(0) - modtime;
+    
+  /* 86400 is seconds in a day. */
+  if (curtime >= (86400 * SILC_CLIENT_KEY_EXPIRES)) {
+    fprintf(stdout, 
+	    "--------------------------------------------------\n"
+	    "Your private key has expired and needs to be\n" 
+	    "recreated.  This will be done automatically now.\n"
+	    "Your new key will expire in %d days from today.\n"
+	    "--------------------------------------------------\n",
+	    SILC_CLIENT_KEY_EXPIRES);
+
+    silc_client_create_key_pair(SILC_CLIENT_DEF_PKCS, 
+				SILC_CLIENT_DEF_PKCS_LEN,
+				file_public_key, 
+				file_private_key, identifier, NULL, NULL);
+  }
+  
+  if (identifier)
+    silc_free(identifier);
+
+  return TRUE;
+}
+
+/* Loads public and private key from files. */
+
+int silc_client_load_keys(SilcClient client)
+{
+  char filename[256];
+  struct passwd *pw;
+
+  SILC_LOG_DEBUG(("Loading public and private keys"));
+
+  pw = getpwuid(getuid());
+  if (!pw)
+    return FALSE;
+
+  memset(filename, 0, sizeof(filename));
+  snprintf(filename, sizeof(filename) - 1, "%s/.silc/%s", 
+	   pw->pw_dir, SILC_CLIENT_PRIVATE_KEY_NAME);
+
+  if (silc_pkcs_load_private_key(filename, &client->private_key) == FALSE)
+    return FALSE;
+
+  memset(filename, 0, sizeof(filename));
+  snprintf(filename, sizeof(filename) - 1, "%s/.silc/%s", 
+	   pw->pw_dir, SILC_CLIENT_PUBLIC_KEY_NAME);
+
+  if (silc_pkcs_load_public_key(filename, &client->public_key) == FALSE)
+    return FALSE;
+
+  return TRUE;
 }

@@ -35,6 +35,13 @@ char *silc_client_get_passphrase(const char *prompt);
 void silc_client_list_ciphers();
 void silc_client_list_hash_funcs();
 void silc_client_list_pkcs();
-void silc_client_create_key_pair(char *pkcs_name, int bits);
+char *silc_client_create_identifier();
+int silc_client_create_key_pair(char *pkcs_name, int bits,
+				char *public_key, char *private_key,
+				char *identifier, 
+				SilcPublicKey *ret_pub_key,
+				SilcPrivateKey *ret_prv_key);
+int silc_client_check_silc_dir();
+int silc_client_load_keys(SilcClient client);
 
 #endif

@@ -20,11 +20,15 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/05 06:11:00  priikone
+ * 	Added ~./silc directory checking, autoloading of keys and
+ * 	tweaked the key pair generation function.
+ *
  * Revision 1.2  2000/06/30 10:49:48  priikone
  * 	Added SOCKS4 and SOCKS5 support for SILC client.
  *
  * Revision 1.1.1.1  2000/06/27 11:36:56  priikone
- * 	Importet from internal CVS/Added Log headers.
+ * 	Imported from internal CVS/Added Log headers.
  *
  *
  */
@@ -228,11 +232,16 @@ SILC Secure Internet Live Conferencing, version %s\n",
 
   if (opt_create_keypair == TRUE) {
     /* Create new key pair and exit */
-    silc_client_create_key_pair(opt_pkcs, opt_bits);
+    silc_client_create_key_pair(opt_pkcs, opt_bits, 
+				NULL, NULL, NULL, NULL, NULL);
     exit(0);
   }
 
   /* Read local configuration file */
+
+  /* Check ~/.silc directory and public and private keys */
+  if (silc_client_check_silc_dir() == FALSE)
+    goto fail;
 
 #ifdef SOCKS
   /* Init SOCKS */
@@ -261,6 +270,8 @@ SILC Secure Internet Live Conferencing, version %s\n",
   exit(0);
 
  fail:
+  if (opt_config_file)
+    silc_free(opt_config_file);
   if (config)
     silc_client_config_free(config);
   if (silc)

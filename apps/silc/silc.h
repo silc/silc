@@ -32,4 +32,15 @@
    home directory. This may override global configuration settings. */
 #define SILC_CLIENT_HOME_CONFIG_FILE ".silcrc"
 
+/* Default public and private key file names */
+#define SILC_CLIENT_PUBLIC_KEY_NAME "public_key.pub"
+#define SILC_CLIENT_PRIVATE_KEY_NAME "private_key.prv"
+
+/* Default key expiration time, one year. */
+#define SILC_CLIENT_KEY_EXPIRES 365
+
+/* Default settings for creating key pair */
+#define SILC_CLIENT_DEF_PKCS "rsa"
+#define SILC_CLIENT_DEF_PKCS_LEN 1024
+
 #endif
