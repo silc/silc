@@ -257,7 +257,7 @@ char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
   }
 
   silc_buffer_push(buf, buf->data - buf->head);
-  identifier = silc_calloc(tlen, sizeof(*identifier));
+  identifier = silc_calloc(tlen + 1, sizeof(*identifier));
   memcpy(identifier, buf->data, tlen);
   silc_buffer_free(buf);
 
