@@ -2579,7 +2579,7 @@ allowed to be routed to the client.  Not all packets may be sent by
 some odd entity to client that is indirectly connected to the sender.
 See section 2.3 SILC Packet Types and paragraph about indirectly connected
 entities and sending packets to them.  The section mentions the packets
-that may be sent to indirectly connected entities.  It is clear that some
+that may be sent to indirectly connected entities.  It is clear that
 server cannot send, for example, disconnect packet to client that is not
 directly connected to the server.
 
