@@ -109,12 +109,12 @@ do {								\
 /* SILC Task object. Represents one task in the scheduler. */
 struct SilcTaskStruct {
   SilcUInt32 fd;
-  struct timeval timeout;
-  SilcTaskCallback callback;
-  void *context;
-  bool valid;
-  SilcTaskPriority priority;
-  SilcTaskType type;
+  SilcTaskCallback callback;	   /* Task callback */
+  void *context;		   /* Task callback context */
+  struct timeval timeout;	   /* Set for timeout tasks */
+  unsigned int valid : 1;	   /* Set when task is valid */
+  unsigned int priority : 2;	   /* Priority of the task */
+  unsigned int type : 5;           /* Type of the task */
 
   /* Pointers forming doubly linked circular list */
   struct SilcTaskStruct *next;

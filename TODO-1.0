@@ -90,23 +90,6 @@ least could be done.
 	  SILC_BUFFER_LEN macro can do the same.  These would save
 	  totally 8 bytes of memory per buffer.
 
-	o Scheduler can be optimized for FD tasks by changing the fd_queue
-	  to SilcHashTable instead of using linked list.  We need to do
-	  one-to-one mapping of FD to task and hash table is more efficient
-	  for this usage.
-
-	  Also redefine the silc_select to perhaps return a separate
-	  structure of the events that actually occurred, instead of
-	  returning the events in the fd_list which is then traversed
-	  in the generic code to find the changed events.  This can be
-	  made faster by having own struct which includes only the
-	  changed events, thus the tarversing is faster since the whole
-	  fd_list is not traversed anymore (it is still traversed in the
-	  silc_select but at least it removes one extra tarversing later
-	  for the same list).
-
-	  Other task queues should be changed to use SilcList.
-
  o Optimizations in Server
 
 	o Remove the big switch statement from the function 
@@ -139,6 +122,8 @@ least could be done.
 
  o Rewrite SilcProtocol to be SilcFSM (see ~/silcfsm).
 
+ o Do some scheduler optimizations (see ~/silcschedule).
+
  o Change SILC_TASK_CALLBACK to non-static, and remove the macro
    SILC_TASK_CALLBACK_GLOBAL.
 
@@ -146,10 +131,6 @@ least could be done.
 
  o SILC RNG does not implement random seed files, and they should be
    implemented.
-
- o Add SILC scheduler's internal routines into a table of implementation
-   function pointers, that the generic code then takes as extern from
-   implementation.  These are the silc_schedule_internal_* routines.
 
  o Cipher optimizations (asm, that this) at least for i386 would be nice.
 

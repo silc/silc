@@ -164,17 +164,19 @@ typedef unsigned char SilcPacketFlags;
  *
  *    Short description of the fields following:
  *
- *    SilcBuffer buffer
+ *    SilcUInt16 truelen
  *
- *      The data buffer.
- *
- *    SilcPacketType type
- *
- *      Type of the packet. Types are defined below.
+ *      True length of the packet.  This may be set by the caller before
+ *      calling any of the silc_packet_* routines.  If not provided the
+ *      library will calculate the values.
  *
  *    SilcPacketFlags flags
  *
  *      Packet flags. Flags are defined above.
+ *
+ *    SilcPacketType type
+ *
+ *      Type of the packet. Types are defined below.
  *
  *    unsigned char *src_id
  *    SilcUInt8 src_id_len
@@ -190,15 +192,19 @@ typedef unsigned char SilcPacketFlags;
  *      Destination ID, its length and type. On packet reception retuned
  *      ID's are always the hash values of the ID's from the packet.
  *
- *    SilcUInt16 truelen
  *    SilcUInt8 padlen
  *
- *      The true lenght of the packet and the padded length of the packet.
- *      These may be set by the caller before calling any of the 
- *      silc_packet_* routines. If not provided the library will calculate
- *      the values.
+ *      The padded length of the packet.  This may be set by the caller
+ *      before calling any of the silc_packet_* routines. If not provided
+ *      the library will calculate the values.
  *
- *    int users;
+ *    unsigned int long_pad
+ * 
+ *      If set to TRUE the packet will include the maximum padding allowed
+ *      in SILC packet, which is 128 bytes.  If FALSE only the amount of
+ *      padding needed will be applied.
+ *
+ *    unsigned int users;
  *
  *      Reference counter for this context. The context is freed only 
  *      after the reference counter hits zero. The counter is added
@@ -209,28 +215,29 @@ typedef unsigned char SilcPacketFlags;
  *
  *      Packet sequence number.
  *
+ *    SilcBuffer buffer
+ *
+ *      The actual packet data.
+ *
  ***/
 typedef struct {
-  SilcBuffer buffer;
-
   SilcUInt16 truelen;
   SilcPacketFlags flags;
   SilcPacketType type;
-  SilcUInt8 padlen;
 
   unsigned char *src_id;
+  unsigned char *dst_id;
   SilcUInt8 src_id_len;
   SilcUInt8 src_id_type;
-
-  unsigned char *dst_id;
   SilcUInt8 dst_id_len;
   SilcUInt8 dst_id_type;
 
-  int users;
-  bool long_pad;		/* Set to TRUE to use maximum padding
-				   in packet (up to 256 bytes). */
+  SilcUInt8 padlen;
+  unsigned int long_pad : 1;	/* Set when maximum padding in packet */
+  unsigned int users : 23;	/* Reference counter */
 
   SilcUInt32 sequence;
+  SilcBuffer buffer;
 } SilcPacketContext;
 
 /****s* silccore/SilcPacketAPI/SilcPacketParserContext

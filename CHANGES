@@ -1,3 +1,12 @@
+Fri Mar 29 21:55:41 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Made some structure optimizations.  SFTP memory FS MemFSEntry
+	  entry structure.  Optimized SilcTask structure.  Optimized
+	  SilcPacketContext structure.
+
+	  Affected files lib/silcsftp/sftp_fs_memory.c,
+	  lib/silcutil/silcschedule.c, lib/silccore/silcpacket.h.
+
 Fri Mar 29 10:41:07 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* And yet again reverted back the config thing since Johnny

@@ -119,7 +119,7 @@ typedef struct SilcTaskStruct *SilcTask;
 typedef enum {
   /* File descriptor task that performs some event over file descriptors.
      These tasks are for example network connections. */
-  SILC_TASK_FD,
+  SILC_TASK_FD           = 0,
 
   /* Timeout tasks are tasks that are executed after the specified 
      time has elapsed. After the task is executed the task is removed
@@ -190,7 +190,7 @@ typedef enum {
      has expired only and only when every other task with higher priority 
      has already been run. For non-timeout tasks this priority behaves
      same way. Life is not fair for tasks with this priority. */
-  SILC_TASK_PRI_LOW,
+  SILC_TASK_PRI_LOW      = 0,
 
   /* Normal priority that is used mostly in SILC. This is priority that
      should always be used unless you specificly need some other priority.

@@ -28,17 +28,16 @@
 
 const struct SilcSFTPFilesystemOpsStruct silc_sftp_fs_memory;
 
-/* Memory filesystem entry */
 typedef struct MemFSEntryStruct {
-  char *name;                       /* Name of the entry */
-  char *data;			    /* Data of the entry */
-  bool directory;		    /* TRUE if this is directory */
-  SilcSFTPFSMemoryPerm perm;	    /* Permissions */
   struct MemFSEntryStruct **entry;  /* Files and sub-directories */
-  SilcUInt32 entry_count;		    /* Number of files and sub-directories */
+  SilcUInt32 entry_count;      	    /* Number of files and sub-directories */
   struct MemFSEntryStruct *parent;  /* non-NULL if `directory' is TRUE,
 				       includes parent directory. */
   unsigned long created;	    /* Time of creation */
+  char *name;                       /* Name of the entry */
+  char *data;			    /* Data of the entry */
+  unsigned int directory : 1;	    /* Set if this is directory */
+  unsigned int perm : 7;	    /* Permissions */
 } *MemFSEntry;
 
 /* File handle. */
