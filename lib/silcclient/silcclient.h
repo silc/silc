@@ -211,6 +211,7 @@ struct SilcClientEntryStruct {
   SilcDList attrs;		/* Requested Attributes (maybe NULL) */
   unsigned char *fingerprint;	/* Fingerprint of client's public key */
   SilcUInt32 fingerprint_len;	/* Length of the fingerprint */
+  SilcPublicKey public_key;	/* User's public key, may be NULL */
 
   /* Private message keys */
   SilcCipher send_key;		/* Private message key for sending */
@@ -256,6 +257,7 @@ struct SilcChannelEntryStruct {
   SilcChannelID *id;			     /* Channel ID */
   SilcUInt32 mode;			     /* Channel mode, ChannelModes. */
   char *topic;				     /* Current topic, may be NULL */
+  SilcPublicKey founder_key;		     /* Founder key, may be NULL */
 
   /* All clients that has joined this channel.  The key to the table is the
      SilcClientEntry and the context is SilcChannelUser context. */

@@ -160,7 +160,7 @@ void silc_client_command_reply_free(SilcClientCommandReplyContext cmd)
   }
 }
 
-static void
+void
 silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
 				     SilcStatus status,
 				     bool notify)
@@ -968,7 +968,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   SilcUInt32 argc, mode = 0, len, list_count;
   char *topic, *tmp, *channel_name = NULL, *hmac;
   SilcBuffer keyp = NULL, client_id_list = NULL, client_mode_list = NULL;
-  SilcPublicKey founder_key = NULL;
   SilcBufferStruct chpklist;
   int i;
 
@@ -1042,6 +1041,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   }
 
   conn->current_channel = channel;
+  channel->mode = mode;
 
   /* Get hmac */
   hmac = silc_argument_get_arg_type(cmd->args, 11, NULL);
@@ -1129,8 +1129,12 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 
   /* Get founder key */
   tmp = silc_argument_get_arg_type(cmd->args, 15, &len);
-  if (tmp)
-    silc_pkcs_public_key_payload_decode(tmp, len, &founder_key);
+  if (tmp) {
+    if (channel->founder_key)
+      silc_pkcs_public_key_free(channel->founder_key);
+    channel->founder_key = NULL;
+    silc_pkcs_public_key_payload_decode(tmp, len, &channel->founder_key);
+  }
 
   /* Get channel public key list */
   tmp = silc_argument_get_arg_type(cmd->args, 16, &len);
@@ -1146,13 +1150,12 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   COMMAND_REPLY((SILC_ARGS, channel_name, channel, mode, 0,
 		 keyp ? keyp->head : NULL, NULL,
 		 NULL, topic, hmac, list_count, client_id_list,
-		 client_mode_list, founder_key, tmp ? &chpklist : NULL));
+		 client_mode_list, channel->founder_key,
+		 tmp ? &chpklist : NULL));
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
   silc_client_command_reply_free(cmd);
-  if (founder_key)
-    silc_pkcs_public_key_free(founder_key);
   silc_buffer_free(keyp);
   silc_buffer_free(client_id_list);
   silc_buffer_free(client_mode_list);
@@ -1960,9 +1963,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
       silc_hash_make(cmd->client->sha1hash, tmp + 4, len - 4,
 		     client_entry->fingerprint);
     }
+    if (!client_entry->public_key) {
+      client_entry->public_key = public_key;
+      public_key = NULL;
+    }
 
     /* Notify application */
-    COMMAND_REPLY((SILC_ARGS, id_type, client_entry, public_key));
+    COMMAND_REPLY((SILC_ARGS, id_type, client_entry,
+		   client_entry->public_key));
   } else if (id_type == SILC_ID_SERVER) {
     /* Received server's public key */
     server_id = silc_id_payload_get_id(idp);

@@ -1,6 +1,6 @@
 /*
 
-  command.h 
+  command.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -122,7 +122,7 @@ void silc_client_command_pending_del(SilcClientConnection conn,
 SilcClientCommandPendingCallbacks
 silc_client_command_pending_check(SilcClientConnection conn,
 				  SilcClientCommandReplyContext ctx,
-				  SilcCommand command, 
+				  SilcCommand command,
 				  SilcUInt16 ident,
 				  SilcUInt32 *callbacks_count);
 void silc_client_command_process(SilcClient client,

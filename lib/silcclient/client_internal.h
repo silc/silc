@@ -293,5 +293,9 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
 void silc_client_packet_queue_purge(SilcClient client,
 				    SilcSocketConnection sock);
 SILC_TASK_CALLBACK_GLOBAL(silc_client_rekey_callback);
+void
+silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
+				     SilcStatus status,
+				     bool notify);
 
 #endif

@@ -121,8 +121,11 @@ typedef struct {
   SilcGetClientCallback completion;
   void *context;
   char *nickname;
-  char *server;
+  SilcClientEntry *clients;
+  SilcUInt32 clients_count;
 } *GetClientInternal;
+
+/* Completion for IDENTIFY */
 
 SILC_CLIENT_CMD_FUNC(get_client_callback)
 {
@@ -142,8 +145,124 @@ SILC_CLIENT_CMD_FUNC(get_client_callback)
   }
 
   silc_free(i->nickname);
-  silc_free(i->server);
   silc_free(i);
+}
+
+/* Completion for WHOIS */
+
+SILC_CLIENT_CMD_FUNC(get_client_callback_wc)
+{
+  GetClientInternal i = (GetClientInternal)context;
+  SilcClientCommandReplyContext cmd = context2;
+  SilcClientID *client_id = NULL;
+  SilcClientEntry client_entry = NULL;
+  unsigned char *id_data;
+  SilcUInt32 len;
+
+  /* Get the client entry just returned from server */
+  id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
+  if (id_data)
+    client_id = silc_id_payload_parse_id(id_data, len, NULL);
+  if (client_id)
+    client_entry = silc_client_get_client_by_id(i->client,
+						i->conn, client_id);
+  if (!client_entry) {
+    if (!SILC_STATUS_IS_ERROR(cmd->status) &&
+	cmd->status != SILC_STATUS_OK &&
+	cmd->status != SILC_STATUS_LIST_END) {
+      silc_free(client_id);
+      return;
+    }
+
+    i->completion(i->client, i->conn, i->clients, i->clients_count,
+		  i->context);
+    silc_free(client_id);
+    silc_free(i->clients);
+    silc_free(i->nickname);
+    silc_free(i);
+    return;
+  }
+
+  /* Save the client */
+  i->clients = silc_realloc(i->clients,
+			    (sizeof(*i->clients) * (i->clients_count + 1)));
+  i->clients[i->clients_count] = client_entry;
+  i->clients_count++;
+
+  /* Return if more data is expected */
+  if (cmd->status != SILC_STATUS_OK &&
+      cmd->status != SILC_STATUS_LIST_END) {
+    silc_free(client_id);
+    return;
+  }
+
+  i->completion(i->client, i->conn, i->clients, i->clients_count,
+		i->context);
+
+  silc_free(client_id);
+  silc_free(i->clients);
+  silc_free(i->nickname);
+  silc_free(i);
+}
+
+/* Our own WHOIS reply processor. */
+
+SILC_CLIENT_CMD_FUNC(get_client_callback_w)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (!silc_command_get_status(cmd->payload, NULL, NULL)) {
+    if (SILC_STATUS_IS_ERROR(cmd->status))
+      goto out;
+    if (cmd->status == SILC_STATUS_LIST_END)
+      goto out;
+    goto err;
+  }
+
+  /* Save WHOIS info */
+  silc_client_command_reply_whois_save(cmd, cmd->status, FALSE);
+
+  /* Call pending completion for each reply */
+  if (cmd->status != SILC_STATUS_OK &&
+      cmd->status != SILC_STATUS_LIST_END) {
+    if (cmd->callbacks[0].callback)
+      (*cmd->callbacks[0].callback)(cmd->callbacks[0].context, cmd);
+    silc_client_command_reply_free(cmd);
+    return;
+  }
+
+ out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
+
+ err:
+  /* If we received notify for invalid ID we'll remove the ID if we
+     have it cached. */
+  if (cmd->error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
+    SilcClientEntry client_entry;
+    SilcUInt32 tmp_len;
+    unsigned char *tmp =
+      silc_argument_get_arg_type(silc_command_get_args(cmd->payload),
+				 2, &tmp_len);
+    if (tmp) {
+      SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+      if (client_id) {
+	client_entry = silc_client_get_client_by_id(cmd->client, conn,
+						    client_id);
+	if (client_entry)
+	  silc_client_del_client(cmd->client, conn, client_entry);
+	silc_free(client_id);
+      }
+    }
+  }
+
+  /* Unregister this command reply */
+  silc_client_command_unregister(cmd->client, SILC_COMMAND_WHOIS,
+				 NULL, silc_client_command_reply_whois_i,
+				 cmd->ident);
+  silc_client_command_reply_free(cmd);
 }
 
 /* Finds client entry or entries by the `nickname' and `server'. The
@@ -166,18 +285,17 @@ void silc_client_get_clients_i(SilcClient client,
 {
   GetClientInternal i;
   int len;
-  char *userhost;
+  char *userhost = NULL;
 
   assert(client && conn);
 
-  if (!nickname)
+  if (!nickname && !attributes)
     return;
 
   i = silc_calloc(1, sizeof(*i));
   i->client = client;
   i->conn = conn;
-  i->nickname = strdup(nickname);
-  i->server = server ? strdup(server) : NULL;
+  i->nickname = nickname ? strdup(nickname) : NULL;
   i->completion = completion;
   i->context = context;
 
@@ -187,7 +305,7 @@ void silc_client_get_clients_i(SilcClient client,
     silc_strncat(userhost, len, nickname, strlen(nickname));
     silc_strncat(userhost, len, "@", 1);
     silc_strncat(userhost, len, server, strlen(server));
-  } else {
+  } else if (nickname) {
     userhost = silc_memdup(nickname, strlen(nickname));
   }
 
@@ -200,21 +318,26 @@ void silc_client_get_clients_i(SilcClient client,
     silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
 			     conn->cmd_ident, 1, 1, userhost,
 			     strlen(userhost));
+
+    /* Add pending callback */
+    silc_client_command_pending(conn, command, conn->cmd_ident,
+				silc_client_command_get_client_callback,
+				(void *)i);
   } else {
     silc_client_command_register(client, command, NULL, NULL,
-				 silc_client_command_reply_whois_i, 0,
+				 silc_client_command_get_client_callback_w, 0,
 				 ++conn->cmd_ident);
     /* Send the command */
     silc_client_command_send(client, conn, command, conn->cmd_ident, 2,
-			     1, userhost, strlen(userhost),
+			     1, userhost, userhost ? strlen(userhost) : 0,
 			     3, attributes ? attributes->data : NULL,
 			     attributes ? attributes->len : 0);
-  }
 
-  /* Add pending callback */
-  silc_client_command_pending(conn, command, conn->cmd_ident,
-			      silc_client_command_get_client_callback,
-			      (void *)i);
+    /* Add pending callback */
+    silc_client_command_pending(conn, command, conn->cmd_ident,
+				silc_client_command_get_client_callback_wc,
+				(void *)i);
+  }
   silc_free(userhost);
 }
 
@@ -903,6 +1026,8 @@ void silc_client_del_client_entry(SilcClient client,
   silc_free(client_entry->server);
   silc_free(client_entry->id);
   silc_free(client_entry->fingerprint);
+  if (client_entry->public_key)
+    silc_pkcs_public_key_free(client_entry->public_key);
   silc_hash_table_free(client_entry->channels);
   if (client_entry->send_key)
     silc_cipher_free(client_entry->send_key);
@@ -1001,6 +1126,8 @@ bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
   silc_free(channel->channel_name);
   silc_free(channel->topic);
   silc_free(channel->id);
+  if (channel->founder_key)
+    silc_pkcs_public_key_free(channel->founder_key);
   silc_free(channel->key);
   if (channel->channel_key)
     silc_cipher_free(channel->channel_key);
