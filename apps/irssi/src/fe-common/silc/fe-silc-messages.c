@@ -1,6 +1,6 @@
 /*
 
-  fe-messages.c
+  fe-silc-messages.c
 
   Author: Jochen Eisinger <c0ffee@penguin-breeder.org>
 
@@ -121,25 +121,6 @@ static void sig_signed_message_public(SERVER_REC * server, const char *msg,
   g_free_not_null(color);
 }
 
-static void sig_signed_message_private(SERVER_REC * server,
-				       const char *msg, const char *nick,
-				       const char *address, int verified)
-{
-  QUERY_REC *query;
-  char *freemsg = NULL;
-
-  query = query_find(server, nick);
-
-  if (settings_get_bool("emphasis"))
-    msg = freemsg = expand_emphasis((WI_ITEM_REC *) query, msg);
-
-  printformat_module("fe-common/silc", server, nick, MSGLEVEL_MSGS,
-		     query == NULL ? VERIFIED_MSG(verified, SILCTXT_MSG_PRIVATE) :
-		     VERIFIED_MSG(verified, SILCTXT_MSG_PRIVATE_QUERY), nick, address, msg);
-
-  g_free_not_null(freemsg);
-}
-
 static void sig_signed_message_own_public(SERVER_REC * server,
 					  const char *msg,
 					  const char *target)
@@ -184,86 +165,19 @@ static void sig_signed_message_own_public(SERVER_REC * server,
   g_free_not_null(freemsg);
 }
 
-static void sig_signed_message_own_private(SERVER_REC * server,
-					   const char *msg,
-					   const char *target,
-					   const char *origtarget)
-{
-  QUERY_REC *query;
-  char *freemsg = NULL;
-
-  g_return_if_fail(server != NULL);
-  g_return_if_fail(msg != NULL);
-
-  if (target == NULL) {
-    /* this should only happen if some special target failed and
-       we should display some error message. currently the special
-       targets are only ',' and '.'. */
-    g_return_if_fail(strcmp(origtarget, ",") == 0 ||
-		     strcmp(origtarget, ".") == 0);
-
-    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CLIENTNOTICE,
-		       *origtarget == ',' ? SILCTXT_NO_MSGS_GOT :
-		       SILCTXT_NO_MSGS_SENT);
-    signal_stop();
-    return;
-  }
-
-  query = privmsg_get_query(server, target, TRUE, MSGLEVEL_MSGS);
-
-  if (settings_get_bool("emphasis"))
-    msg = freemsg = expand_emphasis((WI_ITEM_REC *) query, msg);
-
-  printformat_module("fe-common/silc", server, target,
-		     MSGLEVEL_MSGS | MSGLEVEL_NOHILIGHT | MSGLEVEL_NO_ACT,
-		     query == NULL ? SILCTXT_OWN_MSG_PRIVATE_SIGNED :
-		     SILCTXT_OWN_MSG_PRIVATE_QUERY_SIGNED, target, msg,
-		     server->nick);
-
-  g_free_not_null(freemsg);
-}
-
-static void sig_signed_message_query(SERVER_REC *server, const char *msg,
-				const char *nick, const char *address,
-				int verified)
-{
-	QUERY_REC *query;
-
-	/* create query window if needed */
-	query = privmsg_get_query(server, nick, FALSE, MSGLEVEL_MSGS);
-
-	/* reset the query's last_unread_msg timestamp */
-        if (query != NULL)
-		query->last_unread_msg = time(NULL);
-}
-
 
 void fe_silc_messages_init(void)
 {
   signal_add_last("message signed_public",
 		  (SIGNAL_FUNC) sig_signed_message_public);
-  signal_add_last("message signed_private",
-		  (SIGNAL_FUNC) sig_signed_message_private);
   signal_add_last("message signed_own_public",
 		  (SIGNAL_FUNC) sig_signed_message_own_public);
-  signal_add_last("message signed_own_private",
-		  (SIGNAL_FUNC) sig_signed_message_own_private);
-
-  signal_add_first("message signed_private",
-  		   (SIGNAL_FUNC) sig_signed_message_query);
 }
 
 void fe_silc_messages_deinit(void)
 {
   signal_remove("message signed_public",
 		(SIGNAL_FUNC) sig_signed_message_public);
-  signal_remove("message signed_private",
-		(SIGNAL_FUNC) sig_signed_message_private);
   signal_remove("message signed_own_public",
 		(SIGNAL_FUNC) sig_signed_message_own_public);
-  signal_remove("message signed_own_private",
-		(SIGNAL_FUNC) sig_signed_message_own_private);
-
-  signal_remove("message signed_private",
-  		(SIGNAL_FUNC) sig_signed_message_query);
 }

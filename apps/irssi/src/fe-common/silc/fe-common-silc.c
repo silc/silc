@@ -24,17 +24,14 @@
 #include "signals.h"
 #include "themes.h"
 
-void fe_silc_channels_init(void);
-void fe_silc_channels_deinit(void);
+#include "fe-silcnet.h"
+#include "fe-silc-messages.h"
+#include "fe-silc-queries.h"
+#include "fe-silc-channels.h"
+
 
 void fe_silc_modules_init(void);
 void fe_silc_modules_deinit(void);
-
-void fe_silc_messages_init(void);
-void fe_silc_messages_deinit(void);
-
-void fe_silcnet_init(void);
-void fe_silcnet_deinit(void);
 
 void fe_silc_init(void)
 {
@@ -43,6 +40,7 @@ void fe_silc_init(void)
   fe_silc_channels_init();
   fe_silc_modules_init();
   fe_silc_messages_init();
+  fe_silc_queries_init();
   fe_silcnet_init();
 
   module_register("silc", "fe");
@@ -50,6 +48,7 @@ void fe_silc_init(void)
 
 void fe_silc_deinit(void)
 {
+  fe_silc_queries_deinit();
   fe_silc_messages_deinit();
   fe_silc_modules_deinit();
   fe_silc_channels_deinit();

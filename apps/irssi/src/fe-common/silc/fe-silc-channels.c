@@ -1,5 +1,5 @@
 /*
- fe-channels.c : irssi
+ fe-silc-channels.c : irssi
 
     Copyright (C) 2000 Timo Sirainen
 

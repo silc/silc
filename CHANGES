@@ -1,3 +1,10 @@
+Sat Jan 03 12:15:38 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Changed filenames of silc/fe module not to collide with filenames
+	  from core/fe.  Also seperated public messages printing from
+	  query messages printing.  Affected files are all in
+	  irssi/src/fe-common/silc.
+
 Sat Jan  3 12:18:07 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the invite process handling during joining to use
