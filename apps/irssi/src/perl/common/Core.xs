@@ -2,6 +2,8 @@
 #include "irssi-version.h"
 #include "core.h"
 
+#include "pidwait.h"
+
 #define DEFAULT_COMMAND_CATEGORY "Perl scripts' commands"
 
 void perl_signal_add_hash(int priority, SV *sv)
@@ -242,7 +244,7 @@ input_add(source, condition, func, data)
 	SV *func
 	SV *data
 CODE:
-	RETVAL = perl_input_add(source, condition, func, data);
+	RETVAL = perl_input_add(source, condition, func, data, FALSE);
 OUTPUT:
 	RETVAL
 

@@ -7,7 +7,7 @@ if test -n "`grep '^#undef VERSION' config.h.in`"; then
 fi
 
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(Irssi-SILC, 0.8.6)
+AM_INIT_AUTOMAKE(Irssi-SILC, 0.8.6+)
 
 AM_MAINTAINER_MODE
 
@@ -244,6 +244,35 @@ if test $irssi_cv_type_socklen_t = no; then
 AC_DEFINE(socklen_t, int, Define to 'int' if <sys/socket.h> doesn't define.)
 fi
 AC_MSG_RESULT($irssi_cv_type_socklen_t)
+
+dnl * off_t checks, try to make it 64bit
+AC_DEFINE_UNQUOTED(_FILE_OFFSET_BITS, $preferred_off_t_bits)
+
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+
+if test $sizeof_off_t = 8; then
+  offt_64bit=yes
+else
+  offt_64bit=no
+fi
+                
+if test x$sizeof_off_t = x$ac_cv_sizeof_long; then
+  # try to use unsigned long always first
+  AC_DEFINE_UNQUOTED(PRIuUOFF_T, "lu")
+  AC_DEFINE(UOFF_T_LONG)
+elif test x$sizeof_off_t = x$ac_cv_sizeof_int; then
+  # next try int
+  AC_DEFINE_UNQUOTED(PRIuUOFF_T, "u")
+  AC_DEFINE(UOFF_T_INT)
+elif test x$sizeof_off_t = x$ac_cv_sizeof_long_long; then
+  # and finally long long
+  AC_DEFINE_UNQUOTED(PRIuUOFF_T, "llu")
+  AC_DEFINE(UOFF_T_LONG_LONG)
+else                    
+  AC_ERROR([Couldn't find integer type for off_t])
+fi
 
 dnl **
 dnl ** check for socks
