@@ -692,7 +692,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     (SilcServerKEInternalContext *)protocol->context;
   SilcServer server = (SilcServer)ctx->server;
   SilcServerConnection sconn = (SilcServerConnection)ctx->context;
-  SilcSocketConnection sock = server->sockets[fd];
+  SilcSocketConnection sock = ctx->sock;
   SilcServerConnAuthInternalContext *proto_ctx;
   SilcServerConfigSectionServerConnection *conn = NULL;
 
