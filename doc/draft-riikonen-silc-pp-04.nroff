@@ -2163,7 +2163,9 @@ it is a standalone server and it does not have router connection,
 in this case server acts as router.  Normal server send JOIN command
 to the router (after it has received JOIN command from client) which
 then processes the command and creates the channel.  Client MUST NOT
-send this packet.
+send this packet.  Server may send this packet to a router when it is
+announcing its existing channels to the router after it has connected
+to the router.
 
 The packet uses generic Channel Payload as New Channel Payload.  See
 section 2.3.2.3 for generic Channel Payload.  The Mode Mask field in the
@@ -2252,7 +2254,7 @@ represents the Resume Router Payload.
                      1
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|     Opcode    |  Session ID   |
+|      Type     |  Session ID   |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
 
@@ -2261,8 +2263,8 @@ Figure 22:  Resume Router Payload
 
 
 .in 6
-o Opcode (1 byte) - Indicates the opcode for the backup resume
-  protocol.
+o Type (1 byte) - Indicates the type of the backup resume
+  protocol packet.  The type values are defined in [SILC1].
 
 o Session ID (1 bytes) - Indicates the session ID for the
   backup resume protocol.  The sender of the packet sets this
@@ -2445,7 +2447,7 @@ It must be noted that this is only when the channel messages are sent
 from router to another router.  In all other cases the channel
 message encryption and decryption is as described above.  This
 different processing of channel messages with router to router
-connection is because channel keys are cell specific.  All cells has
+connection is because channel keys are cell specific.  All cells have
 their own channel keys thus the channel message traveling from one
 cell to another MUST be protected as it would be any normal SILC
 packet.

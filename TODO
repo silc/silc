@@ -57,11 +57,6 @@ TODO/bugs In SILC Server
    each JOIN command will create and distribute the new channel key
    to everybody on the channel.
 
- o Optimize the JOIN command in normal server.  When router returns
-   command reply for JOIN it returns the new channel key.  We however
-   still create new channel key when processing the pending JOIN command.
-   This works ok but is not necessary.
-
  o Optimize the WHOIS and IDENTIFY commands to somehow check whether the
    requested clients are on some channel that the server knows about.  If
    this is the case then the request is not needed to be forwarded to the

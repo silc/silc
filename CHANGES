@@ -1,3 +1,16 @@
+Tue Oct  9 17:45:43 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Wrote the definition of the backup resuming protocol to the
+	  protocol specification.
+
+	* Removed one redundant channel key generation from normal
+	  server during joining procedure.  Removed one redundant
+	  channel key sending from server to router during joining
+	  procedure.  Affected file silcd/command.c.
+
+	* Made minor bugfixes to the backup router resuming protocol.
+	  Affected file silcd/server_backup.c, server.c.
+
 Mon Oct  8 16:47:42 EDT 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added --disable-asm configuration option.  Affected files

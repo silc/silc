@@ -396,7 +396,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 	  /* Skip clients that are *really* owned by the `from' */
 	  if (SILC_ID_COMPARE(from->id, client->id, 
 			      client->id->ip.data_len)) {
-	    SILC_LOG_DEBUG(("Found really owned client, will remove it"));
+	    SILC_LOG_DEBUG(("Found really owned client, skip it"));
 	    if (!silc_idcache_list_next(list, &id_cache))
 	      break;
 	    else
@@ -435,7 +435,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 	  /* Skip clients that are *really* owned by the `from' */
 	  if (SILC_ID_COMPARE(from->id, client->id, 
 			      client->id->ip.data_len)) {
-	    SILC_LOG_DEBUG(("Found really owned client, will remove it"));
+	    SILC_LOG_DEBUG(("Found really owned client, skip it"));
 	    if (!silc_idcache_list_next(list, &id_cache))
 	      break;
 	    else

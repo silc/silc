@@ -2952,7 +2952,8 @@ static void silc_server_command_join_channel(SilcServer server,
 					     SilcServerCommandContext cmd,
 					     SilcChannelEntry channel,
 					     SilcClientID *client_id,
-					     int created,
+					     bool created,
+					     bool create_key,
 					     uint32 umode)
 {
   SilcSocketConnection sock = cmd->sock;
@@ -3080,17 +3081,17 @@ static void silc_server_command_join_channel(SilcServer server,
   }
 
   /* Generate new channel key as protocol dictates */
-  if ((!created && silc_hash_table_count(channel->user_list) > 0) || 
-      !channel->channel_key)
+  if (create_key) {
     if (!silc_server_create_channel_key(server, channel, 0))
       goto out;
 
-  /* Send the channel key. This is broadcasted to the channel but is not
-     sent to the client who is joining to the channel. */
-  if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
-    silc_server_send_channel_key(server, NULL, channel, 
-				 server->server_type == SILC_ROUTER ? 
-				 FALSE : !server->standalone);
+    /* Send the channel key. This is broadcasted to the channel but is not
+       sent to the client who is joining to the channel. */
+    if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
+      silc_server_send_channel_key(server, NULL, channel, 
+				   server->server_type == SILC_ROUTER ? 
+				   FALSE : !server->standalone);
+  }
 
   /* Join the client to the channel by adding it to channel's user list.
      Add also the channel to client entry's channels list for fast cross-
@@ -3202,7 +3203,7 @@ SILC_SERVER_CMD_FUNC(join)
   char *tmp, *channel_name = NULL, *cipher, *hmac;
   SilcChannelEntry channel;
   uint32 umode = 0;
-  int created = FALSE;
+  bool created = FALSE, create_key = TRUE;
   SilcClientID *client_id;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_JOIN, cmd, 1, 4);
@@ -3269,13 +3270,14 @@ SILC_SERVER_CMD_FUNC(join)
 						 hmac, channel_name, TRUE);
 	if (!channel) {
 	  silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-				     SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+		   			SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
 	  goto out;
 	}
-
+	
 	umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	created = TRUE;
-
+	create_key = FALSE;
+	
       } else {
 
 	/* The channel does not exist on our server. If we are normal server 
@@ -3328,6 +3330,7 @@ SILC_SERVER_CMD_FUNC(join)
 
 	  umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	  created = TRUE;
+	  create_key = FALSE;
 	}
       }
     }
@@ -3358,21 +3361,30 @@ SILC_SERVER_CMD_FUNC(join)
 
 	umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 	created = TRUE;
+	create_key = FALSE;
       }
     }
   }
 
-  /* If the channel does not have global users and is also empty it means the
-     channel was created globally (by our router) and the client will be the
-     channel founder and operator. */
-  if (!channel->global_users && !silc_hash_table_count(channel->user_list)) {
-    umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
-    created = TRUE;		/* Created globally by our router */
+  /* Check whether the channel was created by our router */
+  if (cmd->pending && context2) {
+    SilcServerCommandReplyContext reply = 
+      (SilcServerCommandReplyContext)context2;
+    if (silc_command_get(reply->payload) == SILC_COMMAND_JOIN) {
+      tmp = silc_argument_get_arg_type(reply->args, 6, NULL);
+      SILC_GET32_MSB(created, tmp);
+      create_key = FALSE;	/* Router returned the key already */
+    }
   }
+
+  /* If the channel does not have global users and is also empty the client
+     will be the channel founder and operator. */
+  if (!channel->global_users && !silc_hash_table_count(channel->user_list))
+    umode = (SILC_CHANNEL_UMODE_CHANOP | SILC_CHANNEL_UMODE_CHANFO);
 
   /* Join to the channel */
   silc_server_command_join_channel(server, cmd, channel, client_id,
-				   created, umode);
+				   created, create_key, umode);
 
   silc_free(client_id);
 

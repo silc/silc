@@ -965,9 +965,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 				 TRUE : FALSE);
 	}
 
-	/* Announce all of our information to the new primary router. We
-	   announce all that was updated after the protocol was started since
-	   the router knows all the older stuff. */
+	/* Announce all of our information to the new primary router. */
 	if (server->server_type == SILC_ROUTER)
 	  silc_server_announce_servers(server, FALSE, 0,
 				       server->router->connection);
@@ -977,17 +975,6 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_protocol_backup)
 				     server->router->connection);
 	silc_server_announce_channels(server, 0,
 				      server->router->connection);
-#if 0
-	if (server->server_type == SILC_ROUTER)
-	  silc_server_announce_servers(server, FALSE, ctx->start - 60,
-				       server->router->connection);
-	
-	/* Announce our clients and channels to the router */
-	silc_server_announce_clients(server, ctx->start - 60,
-				     server->router->connection);
-	silc_server_announce_channels(server, ctx->start - 60,
-				      server->router->connection);
-#endif
       }
 
       /* Protocol has ended, call the final callback */

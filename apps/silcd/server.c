@@ -1319,7 +1319,9 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 			       ctx->conn_type == SILC_SOCKET_TYPE_SERVER ?
 			       SILC_SERVER : SILC_ROUTER, NULL, 
 			       ctx->conn_type == SILC_SOCKET_TYPE_SERVER ?
-			       server->id_entry : NULL, sock);
+			       server->id_entry : 
+			       (conn->backup_router ? server->id_entry : 
+				NULL), sock);
       if (!new_server) {
 	SILC_LOG_ERROR(("Could not add new server to cache"));
 	silc_free(sock->user_data);
@@ -1350,14 +1352,6 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	  new_server->server_type = SILC_BACKUP_ROUTER;
 	}
       }
-
-#if 0
-      /* If the incoming connection is normal server and marked as backup
-	 server then it will use us as backup router. We'll disable the
-	 connection until it is allowed to be used. */
-      if (ctx->conn_type == SILC_SOCKET_TYPE_SERVER && conn->backup_router)
-	SILC_SET_DISABLED(sock);
-#endif
 
       /* Check whether this connection is to be our primary router connection
 	 if we do not already have the primary route. */
@@ -2382,16 +2376,6 @@ void silc_server_free_sock_user_data(SilcServer server,
 	/* Announce all of our stuff that was created about 5 minutes ago.
 	   The backup router knows all the other stuff already. */
 	if (server->server_type == SILC_ROUTER)
-	  silc_server_announce_servers(server, FALSE, 0,
-				       server->router->connection);
-
-	/* Announce our clients and channels to the router */
-	silc_server_announce_clients(server, 0,
-				     server->router->connection);
-	silc_server_announce_channels(server, 0,
-				      server->router->connection);
-#if 0
-	if (server->server_type == SILC_ROUTER)
 	  silc_server_announce_servers(server, FALSE, time(0) - 300,
 				       server->router->connection);
 
@@ -2400,7 +2384,6 @@ void silc_server_free_sock_user_data(SilcServer server,
 				     server->router->connection);
 	silc_server_announce_channels(server, time(0) - 300,
 				      server->router->connection);
-#endif
       }
       break;
     }

@@ -1575,28 +1575,102 @@ and it is intended that the original router of the cell will reassume
 its position as primary router when it comes back online.  The backup
 router that is now acting as primary router of the cell must constantly
 try to connect to the original primary router of the cell.  It is
-recommended that it would try to reconnect every 2 minutes to the primary
-router.
+RECOMMENDED that it would try to reconnect in 30 second intervals to
+the primary router.
 
-When the connection is established to the primary router, the backup 
-router must announce all of its servers, clients, channels and other
-information to the primary router.  It must then send packet
-SILC_PACKET_RESUME_ROUTER to all of the server connections.  This
-packet is used to tell the servers that they must reconnect to the
-original primary router of the cell.  When they have established the
-connection to the router they must send the same packet back to the
-primary router as an indication that they have successfully connected
-back to the primary router.  Then, the primary router will send the
-same packet to the primary router as an indication that it will pass
-over the tasks of being primary router of the cell and will revert back
-as being normal server (but still existing as backup router) in the cell.
+When the connection is established to the primary router the backup
+resuming protocol is executed.  The protocol is advanced as follows:
 
-When the primary router receives the SILC_PACKET_RESUME_ROUTER packet
-it must announce all of its servers, clients, channels and other information
-to its primary router.
+  1. Backup router sends SILC_PACKET_RESUME_ROUTER packet with type
+     value 1 the primary router that came back online.  The packet
+     will indicate the primary router has been replaced by the backup
+     router.  After sending the packet the backup router will announce
+     all of its channels, channel users, modes etc. to the primary
+     router.
 
-All the connections that were used as primary routes will revert back
-as being passive connections.
+  2. Backup router sends SILC_PACKET_RESUME_ROUTER packet with type
+     value 2 to its current primary router to indicate that it will
+     resign as being primary router.  Then, backup router sends the
+     SILC_PACKET_RESUME_ROUTER packet with type value 1 to all
+     connected servers to also indicate that it will resign as being
+     primary router.
+
+  3. Backup router also send SILC_PACKET_RESUME_ROUTER packet with
+     type value 2 to the router that is using the backup router
+     currently as its primary router.
+
+  4. Any server and router that receives the SILC_PACKET_RESUME_ROUTER
+     with type value 1 or 2 must reconnect immediately to the
+     primary router of the cell that came back online.  After they
+     have created the connection they MUST NOT use that connection
+     as active primary route but still route all packets to the
+     backup router.  After the connection is created they MUST send
+     SILC_PACKET_RESUME_ROUTER with type value 3 back to the
+     backup router.  The session ID value found in the first packet
+     MUST be set in this packet.
+
+  5. Backup router MUST wait for all packets with type value 3 before
+     it continues with the protocol.  It knows from the session ID values
+     set in the packet when it have received all packets.  The session
+     value should be different in all packets it have send earlier.
+     After the packets is received the backup router sends the
+     SILC_PACKET_RESUME_ROUTER packet with type value 4 to the
+     primary router that came back online.  This packet will indicate 
+     that the backup router is now ready to resign as being primary
+     router.  The session ID value in this packet MUST be the same as
+     in first packet sent to the primary router.  During this time
+     the backup router should still route all packets it is receiving
+     from server connections.
+
+  6. The primary router receives the packet and send the
+     SILC_PACKET_RESUME_ROUTER with type value 5 to all connected servers
+     including the backup router.  It also sends the packet with type
+     value 6 to its primary router, and to the router that is using
+     it as its primary router.  The Session ID value in this packet
+     SHOULD be zero (0).
+
+  7. Any server and router that receives the SILC_PACKET_RESUME_ROUTER
+     with type value 5 or 6 must switch their primary route to the
+     new primary router and remove the route for the backup router, since
+     it is not anymore the primary router of the cell.  They must also
+     update their local database to understand that the clients are
+     not originated from the backup router but from the locally connected
+     servers.  After that they MUST announce their channels, channel
+     users, modes etc. to the primary router.  They must not use the
+     backup router connection after this and the connection is considered
+     to be passive connection.  The implementations SHOULD be able
+     to disable the connection without closing the actual link.
+
+After this protocol is executed the backup router is now again normal
+server in the cell that has the backup link to the primary router.  The
+primary router feeds the router specific data again to the backup router.
+All server connections in the backup router are considered passive
+connections.
+
+When the primary router of the cell comes back online and connects
+to its primary router, the remote primary router must send the 
+SILC_PACKET_RESUME_ROUTER with type value 20 indicating that the
+connection is not allowed since the router has been replaced by an
+backup router.  The session ID value in this packet SHOULD be zero (0).
+When the router receives this packet it must not use the connection
+as active connection but to understand that it cannot act as primary
+router in the cell.  It must wait that the backup router connects to
+it, and the backup resuming protocol is executed.
+
+The following type values has been defined for SILC_PACKET_RESUME_ROUTER
+packet:
+
+  1    SILC_SERVER_BACKUP_START
+  2    SILC_SERVER_BACKUP_START_GLOBAL
+  3    SILC_SERVER_BACKUP_START_CONNECTED
+  4    SILC_SERVER_BACKUP_START_ENDING
+  5    SILC_SERVER_BACKUP_START_RESUMED
+  6    SILC_SERVER_BACKUP_START_GLOBAL
+  20   SILC_SERVER_BACKUP_START_REPLACED
+
+If any other value is found in the type field the packet must be 
+discarded.  The SILC_PACKET_RESUME_ROUTER packet and its payload
+is defined in [SILC2].
 
 
 .ti 0

@@ -194,8 +194,10 @@ void silc_server_notify(SilcServer server,
       break;
 
     /* Do not add client to channel if it is there already */
-    if (silc_server_client_on_channel(client, channel))
+    if (silc_server_client_on_channel(client, channel)) {
+      SILC_LOG_DEBUG(("Client already on channel"));
       break;
+    }
 
     /* Send to channel */
     silc_server_packet_send_to_channel(server, sock, channel, packet->type, 
