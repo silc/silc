@@ -73,7 +73,7 @@ void silc_server_notify(SilcServer server,
     if (dst_sock)
       /* Relay the packet */
       silc_server_relay_packet(server, dst_sock, idata->send_key,
-			       idata->hmac_receive, idata->psn_send++,
+			       idata->hmac_send, idata->psn_send++,
 			       packet, TRUE);
   }
 
