@@ -5,6 +5,11 @@ Mon Sep 16 12:02:54 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  in task callback functions.  Affected files are
 	  lib/silcutil/silcutil.[ch].
 
+	* The hb_context in SilcSocketConnection is not freed
+	  automatically anymore (application must free it).  Freeing
+	  it automatic is inconsistent.  Affected files are
+	  lib/silcutil/silcsockconn.[ch].
+
 Sun Sep 15 22:16:19 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support for removing explicitly added client connections

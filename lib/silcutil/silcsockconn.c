@@ -73,7 +73,6 @@ void silc_socket_free(SilcSocketConnection sock)
     silc_buffer_free(sock->outbuf);
     if (sock->hb) {
       silc_schedule_task_del(sock->hb->schedule, sock->hb->hb_task);
-      silc_free(sock->hb->hb_context);
       silc_free(sock->hb);
     }
 
@@ -130,7 +129,6 @@ void silc_socket_set_heartbeat(SilcSocketConnection sock,
 {
   if (sock->hb) {
     silc_schedule_task_del(schedule, sock->hb->hb_task);
-    silc_free(sock->hb->hb_context);
     silc_free(sock->hb);
   }
 

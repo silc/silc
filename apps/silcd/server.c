@@ -252,10 +252,10 @@ bool silc_server_init_secondary(SilcServer server)
 
     newsocket->user_data = (void *)server->id_entry;
     silc_schedule_task_add(server->schedule, sock_list[sock],
-			 silc_server_accept_new_connection,
-			 (void *)server, 0, 0,
-			 SILC_TASK_FD,
-			 SILC_TASK_PRI_NORMAL);
+			   silc_server_accept_new_connection,
+			   (void *)server, 0, 0,
+			   SILC_TASK_FD,
+			   SILC_TASK_PRI_NORMAL);
   }
 
   return TRUE;
@@ -1469,8 +1469,6 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
   SilcServerConfigDeny *deny;
   int port;
 
-  context = (void *)server;
-
   /* Check whether we could resolve both IP and FQDN. */
   if (!sock->ip || (!strcmp(sock->ip, sock->hostname) &&
 		    server->config->require_reverse_lookup)) {
@@ -1491,6 +1489,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
      However, this doesn't set the scheduler for outgoing traffic, it
      will be set separately by calling SILC_SET_CONNECTION_FOR_OUTPUT,
      later when outgoing data is available. */
+  context = (void *)server;
   SILC_REGISTER_CONNECTION_FOR_IO(sock->sock);
 
   SILC_LOG_INFO(("Incoming connection %s (%s)", sock->hostname,

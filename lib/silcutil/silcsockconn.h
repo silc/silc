@@ -373,8 +373,8 @@ typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
  *    allocated by the application and will be sent as argument to the
  *    `hb_callback' function that is called when the `heartbeat' timeout
  *    expires.  The callback `hb_context' won't be touched by the library
- *    but will be freed automatically when calling silc_socket_free.  The
- *    `schedule' is the application's scheduler.
+ *    but and must be freed by the application.  The `schedule' is the
+ *    application's scheduler.
  *
  ***/
 void silc_socket_set_heartbeat(SilcSocketConnection sock, 
