@@ -19,21 +19,21 @@
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 all:
-	touch draft-riikonen-silc-spec-01.txt
-	touch draft-riikonen-silc-pp-01.txt
-	touch draft-riikonen-silc-ke-auth-01.txt
+	touch draft-riikonen-silc-spec-02.txt
+	touch draft-riikonen-silc-pp-02.txt
+	touch draft-riikonen-silc-ke-auth-02.txt
 	-cd ..
 
 dist-hook:
-	touch draft-riikonen-silc-spec-01.txt
-	touch draft-riikonen-silc-pp-01.txt
-	touch draft-riikonen-silc-ke-auth-01.txt
-	./makerfc draft-riikonen-silc-spec-01.nroff \
-		draft-riikonen-silc-spec-01.txt
-	./makerfc draft-riikonen-silc-pp-01.nroff \
-		draft-riikonen-silc-pp-01.txt
-	./makerfc draft-riikonen-silc-ke-auth-01.nroff \
-		draft-riikonen-silc-ke-auth-01.txt
+	touch draft-riikonen-silc-spec-02.txt
+	touch draft-riikonen-silc-pp-02.txt
+	touch draft-riikonen-silc-ke-auth-02.txt
+	./makerfc draft-riikonen-silc-spec-02.nroff \
+		draft-riikonen-silc-spec-02.txt
+	./makerfc draft-riikonen-silc-pp-02.nroff \
+		draft-riikonen-silc-pp-02.txt
+	./makerfc draft-riikonen-silc-ke-auth-02.nroff \
+		draft-riikonen-silc-ke-auth-02.txt
 
 EXTRA_DIST = \
 	CodingStyle \
