@@ -1,0 +1,47 @@
+#!/bin/sh
+#
+# No Copyright 2002 Pekka Riikonen <priikone@silcnet.org>
+#
+# This script fixes the fundamental problem of libtool: it is not 
+# configurable in run-time.  This changes the libtool so that it becomes
+# more generic and configurable in run-time.  It is possible to specify
+# how the libtool should behave by environment variables.
+#
+# Environment variables:
+#
+# LIBTOOL_ENABLE_SHARED
+# LIBTOOL_ENABLE_STATIC
+#
+# Set either to "yes" or "no" value.  "no" is equivalent to being disabled.
+# If environment variables are not given then the default settings apply.
+#
+
+# Sanity checks
+if test '!' -f ./libtool; then
+  echo "./libtool does not exist"
+  exit 0
+fi
+
+# Take configuration from the ./libtool
+sed '/^# ltmain\.sh/q' ./libtool >./libtool.tmp
+
+# Put our wrapper to the new libtool.  This allows the run-time
+# configuration of the libtool.  This could include a lot of other
+# things like command line arguments too.
+cat << EOF >> ./libtool.tmp
+if test "\$LIBTOOL_ENABLE_SHARED" != ""; then
+  build_libtool_libs=\$LIBTOOL_ENABLE_SHARED
+fi
+if test "\$LIBTOOL_ENABLE_STATIC" != ""; then
+  build_old_libs=\$LIBTOOL_ENABLE_STATIC
+fi
+EOF
+
+# Do a trick with the ltmain.sh to make these settings valid
+ltmain=`pwd`/ltmain.sh
+echo ". $ltmain" >> ./libtool.tmp
+mv ./libtool ./libtool.orig
+mv ./libtool.tmp ./libtool
+chmod +x ./libtool
+
+exit 1

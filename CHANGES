@@ -8,6 +8,12 @@ Wed Dec  4 18:29:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  decoded and encoded public key.  Affected files are
 	  lib/silccore/silcmessage.[ch].
 
+	* Added libtoolfix script that makes the libtool more generic
+	  and configurable in run-time.  Now we can specify in run-time
+	  if what kind of libraries we want to create, regardless of
+	  configuration.  SIMs are now creates even if --disable-shared
+	  was explicitly given.
+
 Tue Dec  3 23:26:55 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed founder key sending in CMODE command in client.

@@ -20,6 +20,10 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 noinst_LTLIBRARIES = libsilccrypt.la
 
+# Compile silccrypt always also as shared library since the SIMs will
+# need it.
+LIBTOOL_ENABLE_SHARED=yes
+
 libsilccrypt_la_SOURCES = \
 	none.c \
 	rc5.c \
