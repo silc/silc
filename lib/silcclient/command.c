@@ -947,7 +947,7 @@ SILC_CLIENT_CMD_FUNC(join)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
-  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelEntry channel;
   SilcBuffer buffer, idp, auth = NULL;
   char *name, *passphrase = NULL, *cipher = NULL, *hmac = NULL;
   int i;
@@ -964,12 +964,9 @@ SILC_CLIENT_CMD_FUNC(join)
   }
   
   /* See if we have joined to the requested channel already */
-  if (silc_idcache_find_by_name_one(conn->channel_cache, cmd->argv[1],
-				    &id_cache)) {
-    SilcChannelEntry channel = (SilcChannelEntry)id_cache->context;
-    if (channel->on_channel)
-      goto out;
-  }
+  channel = silc_client_get_channel(cmd->client, conn, cmd->argv[1]);
+  if (channel && silc_client_on_channel(channel, conn->local_entry))
+    goto out;
 
   idp = silc_id_payload_encode(conn->local_id, SILC_ID_CLIENT);
 
@@ -1467,13 +1464,9 @@ SILC_CLIENT_CMD_FUNC(cumode)
   }
   
   /* Get the current mode */
-  silc_list_start(channel->clients);
-  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-    if (chu->client == client_entry) {
-      mode = chu->mode;
-      break;
-    }
-  }
+  chu = silc_client_on_channel(channel, client_entry);
+  if (chu)
+    mode = chu->mode;
 
   /* Are we adding or removing mode */
   if (cmd->argv[2][0] == '-')
@@ -1995,8 +1988,8 @@ SILC_CLIENT_CMD_FUNC(leave)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
-  SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
+  SilcChannelUser chu;
   SilcBuffer buffer, idp;
   char *name;
 
@@ -2025,19 +2018,25 @@ SILC_CLIENT_CMD_FUNC(leave)
     name = cmd->argv[1];
   }
 
-  /* Get the Channel ID of the channel */
-  if (!silc_idcache_find_by_name_one(conn->channel_cache, name, &id_cache)) {
+  /* Get the channel entry */
+  channel = silc_client_get_channel(cmd->client, conn, name);
+  if (!channel) {
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
 	"You are not on that channel");
     COMMAND_ERROR;
     goto out;
   }
 
-  channel = (SilcChannelEntry)id_cache->context;
-  channel->on_channel = FALSE;
+  /* Remove us from channel */
+  chu = silc_client_on_channel(channel, conn->local_entry);
+  if (chu) {
+    silc_hash_table_del(chu->client->channels, chu->channel);
+    silc_hash_table_del(chu->channel->user_list, chu->client);
+    silc_free(chu);
+  }
 
   /* Send LEAVE command to the server */
-  idp = silc_id_payload_encode(id_cache->id, SILC_ID_CHANNEL);
+  idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
   buffer = silc_command_payload_encode_va(SILC_COMMAND_LEAVE, 0, 1, 
 					  1, idp->data, idp->len);
   silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND, NULL, 

@@ -151,14 +151,9 @@ static void event_join(SILC_SERVER_REC *server, va_list va)
   } else {
     chanrec = silc_channel_find_entry(server, channel);
     if (chanrec != NULL) {
-      SilcChannelUser user;
-
-      silc_list_start(chanrec->entry->clients);
-      while ((user = silc_list_get(chanrec->entry->clients)) != NULL)
-	if (user->client == client) {
-	  nickrec = silc_nicklist_insert(chanrec, user, TRUE);
-	  break;
-	}
+      SilcChannelUser chu = silc_client_on_channel(channel, client);
+      if (chu)
+	nickrec = silc_nicklist_insert(chanrec, chu, TRUE);
     }
   }
 

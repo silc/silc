@@ -51,6 +51,11 @@ TODO/bugs In SILC Client Library
 TODO/bugs In SILC Server
 ========================
 
+ o If server send CUMODE_CHANGE notify (like setting founder) to router
+   and router does not have founder on channel (founder is left or there's
+   no founder on channel at all), the router will accept the server's
+   founder mode change, even though it perhaps should not do that.
+
  o Make the normal server save user counts with LIST command reply.
 
  o The router should check for validity of received notify packets from

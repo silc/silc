@@ -1,3 +1,32 @@
+Thu Jan 31 19:06:22 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added function silc_client_add_channel, 
+	  silc_client_replace_channel_id, and removed functions
+	  silc_client_new_channel_id and silc_idlist_get_channel_by_id
+	  from client library.
+
+	* Added cross reference of the joined channels to the 
+	  SilcClientEntry, and changed the SilcChannelEntry's
+	  users list to SilcHashTable.  The affected files are
+	  lib/silcclient/idlist.[ch].
+
+	* Fixed a bug in hash table tarversing.  While the hash table
+	  is traversed with SilcHashTableList the table must not be
+	  rehashed.  It is now guaranteed that auto rehashable tables
+	  are not rehashed while tarversing the list.  Also defined that
+	  silc_hash_table_rehash must not be called while tarversing
+	  the table.  Added function silc_hash_table_list_reset that must
+	  be called after the tarversing is over.  The affected files are
+	  lib/silcutil/silchashtable.[ch].
+
+	* Changed all hash table traversing to call the new
+	  silc_hash_table_list_reset in server and in client library.
+
+	* Added function silc_client_on_channel to return the 
+	  SilcChannelUser entry if the specified client entry is joined
+	  on the specified channel.  This is exported to application as
+	  well.  Affected files lib/silcclient/client_channel.c, silcapi.h.
+
 Wed Jan 30 19:14:31 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed founder regaining problem with JOIN command on normal

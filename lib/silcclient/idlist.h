@@ -1,16 +1,15 @@
 /*
 
-  idlist.h
+  idlist.h 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -21,6 +20,9 @@
 #ifndef IDLIST_H
 #define IDLIST_H
 
+typedef struct SilcChannelEntryStruct *SilcChannelEntry;
+
+/* Client entry status */
 typedef enum {
   SILC_CLIENT_STATUS_NONE       = 0x0000,
   SILC_CLIENT_STATUS_RESOLVING  = 0x0001,
@@ -51,13 +53,14 @@ typedef struct {
   bool generated;		/* TRUE if library generated the key */
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
   SilcClientStatus status;	/* Status mask */
+  SilcHashTable channels;	/* All channels client has joined */
 } *SilcClientEntry;
 
 /* Client and its mode on a channel */
 typedef struct SilcChannelUserStruct {
   SilcClientEntry client;
   uint32 mode;
-  struct SilcChannelUserStruct *next;
+  SilcChannelEntry channel;
 } *SilcChannelUser;
 
 /* Structure to hold one channel private key. */
@@ -70,14 +73,13 @@ typedef struct {
 
 /* Channel entry context. This is allocate for every channel client has
    joined to. This includes for example the channel specific keys */
-typedef struct SilcChannelEntryStruct {
+struct SilcChannelEntryStruct {
   char *channel_name;
   SilcChannelID *id;
   uint32 mode;
-  bool on_channel;
 
-  /* Joined clients */
-  SilcList clients;
+  /* All clients that has joined this channel */
+  SilcHashTable user_list;
 
   /* Channel keys */
   SilcCipher channel_key;                    /* The channel key */
@@ -94,7 +96,7 @@ typedef struct SilcChannelEntryStruct {
   SilcCipher old_channel_key;
   SilcHmac old_hmac;
   SilcTask rekey_task;
-} *SilcChannelEntry;
+};
 
 /* Server entry context. This represents one server. When server information
    is resolved with INFO command the server info is saved in this context. 
@@ -127,10 +129,15 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       const char *nickname,
 				       const char *format,
 				       bool query);
-SilcChannelEntry silc_idlist_get_channel_by_id(SilcClient client,
-					       SilcClientConnection conn,
-					       SilcChannelID *channel_id,
-					       int query);
+SilcChannelEntry silc_client_add_channel(SilcClient client,
+					 SilcClientConnection conn,
+					 const char *channel_name,
+					 uint32 mode, 
+					 SilcChannelID *channel_id);
+bool silc_client_replace_channel_id(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcChannelEntry channel,
+				    SilcChannelID *new_id);
 void silc_client_nickname_format(SilcClient client, 
 				 SilcClientConnection conn,
 				 SilcClientEntry client_entry);

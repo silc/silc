@@ -834,6 +834,18 @@ void silc_hash_table_list(SilcHashTable ht, SilcHashTableList *htl)
   htl->ht = ht;
   htl->entry = NULL;
   htl->index = 0;
+  htl->auto_rehash = ht->auto_rehash;
+
+  /* Disallow rehashing of the table while traversing the table */
+  ht->auto_rehash = FALSE;
+}
+
+/* Resets the `htl' SilcHashTableList. */
+
+void silc_hash_table_list_reset(SilcHashTableList *htl)
+{
+  /* Set back the original auto rehash value to the table */
+  htl->ht->auto_rehash = htl->auto_rehash;
 }
 
 /* Returns always the next entry in the hash table into the `key' and

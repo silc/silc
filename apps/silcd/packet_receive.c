@@ -630,6 +630,7 @@ void silc_server_notify(SilcServer server,
 	  if (chl2) {
 	    chl2->mode = mode;
 	    silc_free(channel_id);
+	    silc_hash_table_list_reset(&htl);
 	    goto out;
 	  }
 	}
@@ -650,6 +651,7 @@ void silc_server_notify(SilcServer server,
 	  chl2 = chl;
 	}
       }
+      silc_hash_table_list_reset(&htl);
       
       /* Send the same notify to the channel */
       if (!notify_sent)

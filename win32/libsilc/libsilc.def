@@ -555,3 +555,4 @@ EXPORTS
 	silc_log_get_file @ 846 ;
 	silc_log_quick @ 847 ;
 	silc_log_flushdelay @ 848 ;
+	silc_hash_table_list_reset @ 849 ;

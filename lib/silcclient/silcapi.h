@@ -964,11 +964,11 @@ bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
  *
  * SYNOPSIS
  *
- *    typedef void (*SilcGetClientCallback)(SilcClient client,
- *                                          SilcClientConnection conn,
- *                                          SilcClientEntry *clients,
- *                                          uint32 clients_count,
- *                                          void *context);
+ *    typedef void (*SilcGetChannelCallback)(SilcClient client,
+ *                                           SilcClientConnection conn,
+ *                                           SilcChannelEntry *channels,
+ *                                           uint32 channels_count,
+ *                                           void *context);
  *
  * DESCRIPTION
  *
@@ -1116,6 +1116,23 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
  ***/
 bool silc_client_del_server(SilcClient client, SilcClientConnection conn,
 			    SilcServerEntry server);
+
+/****f* silcclient/SilcClientAPI/silc_client_on_channel
+ *
+ * SYNOPSIS
+ *
+ *    SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
+ *                                           SilcClientEntry client_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the ChannelUser entry if the `client_entry' is joined on the 
+ *    channel indicated by the `channel'. NULL if client is not joined on
+ *    the channel. 
+ *
+ ***/
+SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
+				       SilcClientEntry client_entry);
 
 /* Command management (command.c) */
 

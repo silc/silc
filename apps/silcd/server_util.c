@@ -105,6 +105,7 @@ static void silc_server_remove_clients_channels(SilcServer server,
 	  silc_hash_table_del(channel->user_list, chl2->client);
 	  silc_free(chl2);
 	}
+	silc_hash_table_list_reset(&htl2);
 	continue;
       }
 
@@ -121,6 +122,7 @@ static void silc_server_remove_clients_channels(SilcServer server,
     if (!silc_hash_table_find(channels, channel, NULL, NULL))
       silc_hash_table_add(channels, channel, channel);
   }
+  silc_hash_table_list_reset(&htl);
 
   silc_buffer_free(clidp);
 }
@@ -340,8 +342,11 @@ bool silc_server_remove_clients_by_server(SilcServer server,
      must re-generate the channel key. */
   silc_hash_table_list(channels, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&channel)) {
-    if (!silc_server_create_channel_key(server, channel, 0))
+    if (!silc_server_create_channel_key(server, channel, 0)) {
+      silc_hash_table_list_reset(&htl);
+      silc_hash_table_free(channels);
       return FALSE;
+    }
 
     /* Do not send the channel key if private channel key mode is set */
     if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY)
@@ -351,6 +356,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 				 server->server_type == SILC_ROUTER ? 
 				 FALSE : !server->standalone);
   }
+  silc_hash_table_list_reset(&htl);
   silc_hash_table_free(channels);
 
   return TRUE;
@@ -699,9 +705,12 @@ bool silc_server_channel_has_global(SilcChannelEntry channel)
 
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
-    if (chl->client->router)
+    if (chl->client->router) {
+      silc_hash_table_list_reset(&htl);
       return TRUE;
+    }
   }
+  silc_hash_table_list_reset(&htl);
 
   return FALSE;
 }
@@ -716,9 +725,12 @@ bool silc_server_channel_has_local(SilcChannelEntry channel)
 
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
-    if (!chl->client->router)
+    if (!chl->client->router) {
+      silc_hash_table_list_reset(&htl);
       return TRUE;
+    }
   }
+  silc_hash_table_list_reset(&htl);
 
   return FALSE;
 }

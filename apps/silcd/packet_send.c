@@ -661,6 +661,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
 					    force_send);
   }
 
+  silc_hash_table_list_reset(&htl);
   silc_free(routed);
   silc_free(packetdata.src_id);
   silc_free(packetdata.dst_id);
@@ -943,6 +944,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 					    force_send);
   }
 
+  silc_hash_table_list_reset(&htl);
   silc_free(routed);
   silc_free(packetdata.src_id);
   silc_free(packetdata.dst_id);
@@ -981,6 +983,7 @@ void silc_server_packet_send_local_channel(SilcServer server,
 				   force_send);
     }
   }
+  silc_hash_table_list_reset(&htl);
 }
 
 /* Routine used to send (relay, route) private messages to some destination.
@@ -1613,8 +1616,10 @@ void silc_server_send_notify_on_channels(SilcServer server,
 	sent_clients[sent_clients_count++] = c;
       }
     }
+    silc_hash_table_list_reset(&htl2);
   }
 
+  silc_hash_table_list_reset(&htl);
   silc_free(routed);
   silc_free(sent_clients);
   silc_free(packetdata.src_id);

@@ -161,13 +161,11 @@ void silc_client_private_message(SilcClient client,
     goto out;
 
   /* Check whether we know this client already */
-  if (!silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)remote_id, 
-				       NULL, NULL, 
-				       silc_hash_client_id_compare, NULL,
-				       &id_cache) || 
+  remote_client = silc_client_get_client_by_id(client, conn, remote_id);
+  if (!remote_client ||
       ((SilcClientEntry)id_cache->context)->nickname == NULL) {
 
-    if (id_cache && id_cache->context) {
+    if (remote_client) {
       remote_client = (SilcClientEntry)id_cache->context;
       if (remote_client->status & SILC_CLIENT_STATUS_RESOLVING) {
 	remote_client->status &= ~SILC_CLIENT_STATUS_RESOLVING;
@@ -182,8 +180,6 @@ void silc_client_private_message(SilcClient client,
 					 silc_packet_context_dup(packet));
     return;
   }
-
-  remote_client = (SilcClientEntry)id_cache->context;
 
   /* Parse the payload and decrypt it also if private message key is set */
   payload = silc_private_message_payload_parse(packet->buffer->data,

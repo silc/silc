@@ -170,15 +170,13 @@ static void silc_client_channel_message_cb(SilcClient client,
   SilcChannelClientResolve res = (SilcChannelClientResolve)context;
 
   if (clients_count == 1) {
-    SilcIDCacheEntry id_cache = NULL;
     SilcChannelEntry channel;
     unsigned char *message;
 
-    if (!silc_idcache_find_by_id_one(conn->channel_cache, res->channel_id, 
-				     &id_cache))
+    channel = silc_client_get_channel_by_id(client, conn, res->channel_id);
+    if (!channel)
       goto out;
 
-    channel = (SilcChannelEntry)id_cache->context;
     message = silc_channel_message_get_data(res->payload, NULL);
     
     /* Pass the message to application */
@@ -207,10 +205,8 @@ void silc_client_channel_message(SilcClient client,
   SilcChannelMessagePayload payload = NULL;
   SilcChannelID *id = NULL;
   SilcChannelEntry channel;
-  SilcChannelUser chu;
-  SilcIDCacheEntry id_cache = NULL;
+  SilcClientEntry client_entry;
   SilcClientID *client_id = NULL;
-  bool found = FALSE;
   unsigned char *message;
 
   SILC_LOG_DEBUG(("Start"));
@@ -228,10 +224,9 @@ void silc_client_channel_message(SilcClient client,
     goto out;
 
   /* Find the channel entry from channels on this connection */
-  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)id, &id_cache))
+  channel = silc_client_get_channel_by_id(client, conn, id);
+  if (!channel)
     goto out;
-
-  channel = (SilcChannelEntry)id_cache->context;
 
   /* If there is no channel private key then just decrypt the message 
      with the channel key. If private keys are set then just go through
@@ -274,16 +269,8 @@ void silc_client_channel_message(SilcClient client,
   }
 
   /* Find client entry */
-  silc_list_start(channel->clients);
-  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-    if (SILC_ID_CLIENT_COMPARE(chu->client->id, client_id) && 
-	chu->client->nickname) {
-      found = TRUE;
-      break;
-    }
-  }
-
-  if (!found) {
+  client_entry = silc_client_get_client_by_id(client, conn, client_id);
+  if (!client_entry || !client_entry->nickname) {
     /* Resolve the client info */
     SilcChannelClientResolve res = silc_calloc(1, sizeof(*res));
     res->payload = payload;
@@ -296,19 +283,22 @@ void silc_client_channel_message(SilcClient client,
     goto out;
   }
 
+  if (!silc_client_on_channel(channel, client_entry)) {
+    SILC_LOG_WARNING(("Received channel message from client not on channel"));
+    goto out;
+  }
+
   message = silc_channel_message_get_data(payload, NULL);
 
   /* Pass the message to application */
   client->internal->ops->channel_message(
-				 client, conn, chu->client, channel,
+				 client, conn, client_entry, channel,
 				 silc_channel_message_get_flags(payload),
 				 message);
 
  out:
-  if (id)
-    silc_free(id);
-  if (client_id)
-    silc_free(client_id);
+  silc_free(id);
+  silc_free(client_id);
   if (payload)
     silc_channel_message_payload_free(payload);
 }
@@ -334,14 +324,14 @@ SILC_TASK_CALLBACK(silc_client_save_channel_key_rekey)
    receive Channel Key Payload and when we are processing JOIN command 
    reply. */
 
-void silc_client_save_channel_key(SilcClientConnection conn,
+void silc_client_save_channel_key(SilcClient client,
+				  SilcClientConnection conn,
 				  SilcBuffer key_payload, 
 				  SilcChannelEntry channel)
 {
   unsigned char *id_string, *key, *cipher, *hmac, hash[32];
   uint32 tmp_len;
   SilcChannelID *id;
-  SilcIDCacheEntry id_cache = NULL;
   SilcChannelKeyPayload payload;
 
   payload = silc_channel_key_payload_parse(key_payload->data,
@@ -363,12 +353,9 @@ void silc_client_save_channel_key(SilcClientConnection conn,
 
   /* Find channel. */
   if (!channel) {
-    if (!silc_idcache_find_by_id_one(conn->channel_cache, 
-				     (void *)id, &id_cache))
+    channel = silc_client_get_channel_by_id(client, conn, id);
+    if (!channel)
       goto out;
-    
-    /* Get channel entry */
-    channel = (SilcChannelEntry)id_cache->context;
   }
 
   hmac = (channel->hmac ? (char *)silc_hmac_get_name(channel->hmac) : 
@@ -382,11 +369,11 @@ void silc_client_save_channel_key(SilcClientConnection conn,
   if (channel->old_hmac)
     silc_hmac_free(channel->old_hmac);
   if (channel->rekey_task)
-    silc_schedule_task_del(conn->client->schedule, channel->rekey_task);
+    silc_schedule_task_del(client->schedule, channel->rekey_task);
   channel->old_channel_key = channel->channel_key;
   channel->old_hmac = channel->hmac;
   channel->rekey_task = 
-    silc_schedule_task_add(conn->client->schedule, 0,
+    silc_schedule_task_add(client->schedule, 0,
 			   silc_client_save_channel_key_rekey, channel,
 			   10, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
@@ -401,7 +388,7 @@ void silc_client_save_channel_key(SilcClientConnection conn,
   memcpy(channel->key, key, tmp_len);
 
   if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
-    conn->client->internal->ops->say(
+    client->internal->ops->say(
 			   conn->client, conn, 
 			   SILC_CLIENT_MESSAGE_AUDIT,
 			   "Cannot talk to channel: unsupported cipher %s", 
@@ -437,7 +424,7 @@ void silc_client_receive_channel_key(SilcClient client,
   SILC_LOG_DEBUG(("Received key for channel"));
 
   /* Save the key */
-  silc_client_save_channel_key(sock->user_data, packet, NULL);
+  silc_client_save_channel_key(client, sock->user_data, packet, NULL);
 }
 
 /* Adds private key for channel. This may be set only if the channel's mode
@@ -658,4 +645,20 @@ void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
 					   uint32 key_count)
 {
   silc_free(keys);
+}
+
+/* Returns the SilcChannelUser entry if the `client_entry' is joined on the 
+   channel indicated by the `channel'. NULL if client is not joined on
+   the channel. */
+
+SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
+				       SilcClientEntry client_entry)
+{
+  SilcChannelUser chu;
+
+  if (silc_hash_table_find(channel->user_list, client_entry, NULL, 
+			   (void *)&chu))
+    return chu;
+
+  return NULL;
 }

@@ -1,6 +1,6 @@
 /*
 
-  idlist.c
+  idlist.c 
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -8,9 +8,8 @@
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -586,6 +585,8 @@ silc_client_add_client(SilcClient client, SilcClientConnection conn,
   client_entry->mode = mode;
   if (nick)
     client_entry->nickname = strdup(nick);
+  client_entry->channels = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
+						 NULL, NULL, NULL, TRUE);
 
   /* Format the nickname */
   silc_client_nickname_format(client, conn, client_entry);
@@ -597,6 +598,7 @@ silc_client_add_client(SilcClient client, SilcClientConnection conn,
     silc_free(client_entry->username);
     silc_free(client_entry->hostname);
     silc_free(client_entry->server);
+    silc_hash_table_free(client_entry->channels);
     silc_free(client_entry);
     return NULL;
   }
@@ -653,6 +655,7 @@ void silc_client_del_client_entry(SilcClient client,
   silc_free(client_entry->server);
   silc_free(client_entry->id);
   silc_free(client_entry->fingerprint);
+  silc_hash_table_free(client_entry->channels);
   if (client_entry->send_key)
     silc_cipher_free(client_entry->send_key);
   if (client_entry->receive_key)
@@ -680,12 +683,65 @@ bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
   return ret;
 }
 
+/* Add new channel entry to the ID Cache */
+
+SilcChannelEntry silc_client_add_channel(SilcClient client,
+					 SilcClientConnection conn,
+					 const char *channel_name,
+					 uint32 mode, 
+					 SilcChannelID *channel_id)
+{
+  SilcChannelEntry channel;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  channel = silc_calloc(1, sizeof(*channel));
+  channel->channel_name = strdup(channel_name);
+  channel->id = channel_id;
+  channel->mode = mode;
+  channel->user_list = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
+					     NULL, NULL, NULL, TRUE);
+
+  /* Put it to the ID cache */
+  if (!silc_idcache_add(conn->channel_cache, channel->channel_name, 
+			(void *)channel->id, (void *)channel, 0, NULL)) {
+    silc_free(channel->channel_name);
+    silc_hash_table_free(channel->user_list);
+    silc_free(channel);
+    return NULL;
+  }
+
+  return channel;
+}
+
+/* Foreach callbcak to free all users from the channel when deleting a
+   channel entry. */
+
+static void silc_client_del_channel_foreach(void *key, void *context,
+					    void *user_context)
+{
+  SilcChannelUser chu = (SilcChannelUser)context;
+
+  /* Remove the context from the client's channel hash table as that
+     table and channel's user_list hash table share this same context. */
+  silc_hash_table_del(chu->client->channels, chu->channel);
+  silc_free(chu);
+}
+
 /* Removes channel from the cache by the channel entry. */
 
 bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
 			     SilcChannelEntry channel)
 {
   bool ret = silc_idcache_del_by_context(conn->channel_cache, channel);
+
+  /* Free all client entrys from the users list. The silc_hash_table_free
+     will free all the entries so they are not freed at the foreach 
+     callback. */
+  silc_hash_table_foreach(channel->user_list, silc_client_del_channel_foreach,
+			  NULL);
+  silc_hash_table_free(channel->user_list);
+
   silc_free(channel->channel_name);
   silc_free(channel->id);
   silc_free(channel->key);
@@ -702,6 +758,30 @@ bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
   silc_client_del_channel_private_keys(client, conn, channel);
   silc_free(channel);
   return ret;
+}
+
+/* Replaces the channel ID of the `channel' to `new_id'. Returns FALSE
+   if the ID could not be changed. */
+
+bool silc_client_replace_channel_id(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcChannelEntry channel,
+				    SilcChannelID *new_id)
+{
+  if (!new_id)
+    return FALSE;
+
+  SILC_LOG_DEBUG(("Old Channel ID id(%s)", 
+		  silc_id_render(channel->id, SILC_ID_CHANNEL)));
+  SILC_LOG_DEBUG(("New Channel ID id(%s)", 
+		  silc_id_render(new_id, SILC_ID_CHANNEL)));
+
+  silc_idcache_del_by_id(conn->channel_cache, channel->id);
+  silc_free(channel->id);
+  channel->id = new_id;
+  return silc_idcache_add(conn->channel_cache, channel->channel_name, 
+			  (void *)channel->id, (void *)channel, 0, NULL);
+
 }
 
 /* Finds entry for channel by the channel name. Returns the entry or NULL
@@ -814,39 +894,6 @@ void silc_client_get_channel_by_id_resolve(SilcClient client,
   silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
 			      silc_client_command_get_channel_by_id_callback, 
 			      (void *)i);
-}
-
-/* Find channel entry by ID. This routine is used internally by the library. */
-
-SilcChannelEntry silc_idlist_get_channel_by_id(SilcClient client,
-					       SilcClientConnection conn,
-					       SilcChannelID *channel_id,
-					       int query)
-{
-  SilcBuffer idp;
-  SilcChannelEntry channel;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  channel = silc_client_get_channel_by_id(client, conn, channel_id);
-  if (channel)
-    return channel;
-
-  if (query) {
-    /* Register our own command reply for this command */
-    silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
-				 silc_client_command_reply_identify_i, 0,
-				 ++conn->cmd_ident);
-
-    /* Send the command */
-    idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
-    silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY, 
-			     conn->cmd_ident,
-			     1, 5, idp->data, idp->len);
-    silc_buffer_free(idp);
-  }
-
-  return NULL;
 }
 
 /* Finds entry for server by the server name. */

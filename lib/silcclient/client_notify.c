@@ -103,7 +103,6 @@ void silc_client_notify_by_server(SilcClient client,
   SilcChannelEntry channel;
   SilcChannelUser chu;
   SilcServerEntry server;
-  SilcIDCacheEntry id_cache = NULL;
   unsigned char *tmp;
   uint32 tmp_len, mode;
 
@@ -143,10 +142,7 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Get the channel entry */
-    channel = NULL;
-    if (silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				    &id_cache))
-      channel = (SilcChannelEntry)id_cache->context;
+    channel = silc_client_get_channel_by_id(client, conn, channel_id);
 
     /* Get sender Client ID */
     tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
@@ -222,17 +218,17 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Get channel entry */
-    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     &id_cache))
+    channel = silc_client_get_channel_by_id(client, conn, channel_id);
+    if (!channel)
       break;
 
-    channel = (SilcChannelEntry)id_cache->context;
-
-    /* Add client to channel */
-    if (client_entry != conn->local_entry) {
+    /* Join the client to channel */
+    if (!silc_client_on_channel(channel, client_entry)) {
       chu = silc_calloc(1, sizeof(*chu));
       chu->client = client_entry;
-      silc_list_add(channel->clients, chu);
+      chu->channel = channel;
+      silc_hash_table_add(channel->user_list, client_entry, chu);
+      silc_hash_table_add(client_entry->channels, channel, chu);
     }
 
     /* Notify application. The channel entry is sent last as this notify
@@ -269,20 +265,16 @@ void silc_client_notify_by_server(SilcClient client,
 				SILC_ID_CHANNEL);
     if (!channel_id)
       goto out;
-    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				 &id_cache))
+    channel = silc_client_get_channel_by_id(client, conn, channel_id);
+    if (!channel)
       break;
 
-    channel = (SilcChannelEntry)id_cache->context;
-
     /* Remove client from channel */
-    silc_list_start(channel->clients);
-    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-      if (chu->client == client_entry) {
-	silc_list_del(channel->clients, chu);
-	silc_free(chu);
-	break;
-      }
+    chu = silc_client_on_channel(channel, client_entry);
+    if (chu) {
+      silc_hash_table_del(client_entry->channels, channel);
+      silc_hash_table_del(channel->user_list, client_entry);
+      silc_free(chu);
     }
 
     /* Notify application. The channel entry is sent last as this notify
@@ -406,11 +398,9 @@ void silc_client_notify_by_server(SilcClient client,
 				SILC_ID_CHANNEL);
     if (!channel_id)
       goto out;
-    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				 &id_cache))
+    channel = silc_client_get_channel_by_id(client, conn, channel_id);
+    if (!channel)
       break;
-
-    channel = (SilcChannelEntry)id_cache->context;
 
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
@@ -562,13 +552,11 @@ void silc_client_notify_by_server(SilcClient client,
       silc_id_payload_free(idp);
       goto out;
     }
-    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     &id_cache)) {
+    channel = silc_client_get_channel_by_id(client, conn, channel_id);
+    if (!channel) {
       silc_id_payload_free(idp);
       goto out;
     }
-
-    channel = (SilcChannelEntry)id_cache->context;
 
     /* Save the new mode */
     channel->mode = mode;
@@ -652,20 +640,14 @@ void silc_client_notify_by_server(SilcClient client,
 				SILC_ID_CHANNEL);
     if (!channel_id)
       goto out;
-    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				 &id_cache))
+    channel = silc_client_get_channel_by_id(client, conn, channel_id);
+    if (!channel)
       break;
 
-    channel = (SilcChannelEntry)id_cache->context;
-
     /* Save the mode */
-    silc_list_start(channel->clients);
-    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-      if (chu->client == client_entry) {
-	chu->mode = mode;
-	break;
-      }
-    }
+    chu = silc_client_on_channel(channel, client_entry);
+    if (chu)
+      chu->mode = mode;
 
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
@@ -706,37 +688,24 @@ void silc_client_notify_by_server(SilcClient client,
     channel_id = silc_id_payload_parse_id(tmp, tmp_len);
     if (!channel_id)
       goto out;
-    
+
     /* Get the channel entry */
-    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     &id_cache))
-      break;
+    channel = silc_client_get_channel_by_id(client, conn, channel_id);
+    if (!channel)
+      goto out;
 
-    channel = (SilcChannelEntry)id_cache->context;
-
-    SILC_LOG_DEBUG(("Old Channel ID id(%s)", 
-		    silc_id_render(channel->id, SILC_ID_CHANNEL)));
-
-    /* Remove the old channel entry */
-    silc_idcache_del_by_context(conn->channel_cache, channel);
-
-    /* Free the old ID */
-    silc_free(channel->id);
+    silc_free(channel_id);
 
     /* Get the new ID */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
     if (!tmp)
       goto out;
-    channel->id = silc_id_payload_parse_id(tmp, tmp_len);
-    if (!channel->id)
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!channel_id)
       goto out;
 
-    SILC_LOG_DEBUG(("New Channel ID id(%s)", 
-		    silc_id_render(channel->id, SILC_ID_CHANNEL)));
-
-    /* Add the channel entry again to ID cache */
-    silc_idcache_add(conn->channel_cache, channel->channel_name, 
-		     channel->id, channel, 0, NULL);
+    /* Replace the Channel ID */
+    silc_client_replace_channel_id(client, conn, channel, channel_id);
 
     /* Notify application */
     client->internal->ops->notify(client, conn, type, channel, channel);
@@ -768,11 +737,9 @@ void silc_client_notify_by_server(SilcClient client,
 				SILC_ID_CHANNEL);
     if (!channel_id)
       goto out;
-    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				     &id_cache))
+    channel = silc_client_get_channel_by_id(client, conn, channel_id);
+    if (!channel)
       break;
-
-    channel = (SilcChannelEntry)id_cache->context;
 
     /* Get the kicker */
     tmp = silc_argument_get_arg_type(args, 3, &tmp_len);

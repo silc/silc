@@ -1516,7 +1516,10 @@ void silc_client_receive_new_id(SilcClient client,
   conn->local_entry->server = strdup(conn->remote_host);
   conn->local_entry->id = conn->local_id;
   conn->local_entry->valid = TRUE;
-  
+  conn->local_entry->channels = silc_hash_table_alloc(1, silc_hash_ptr, 
+						      NULL, NULL,
+						      NULL, NULL, NULL, TRUE);
+
   /* Put it to the ID cache */
   silc_idcache_add(conn->client_cache, strdup(conn->nickname), conn->local_id, 
 		   (void *)conn->local_entry, 0, NULL);
@@ -1545,73 +1548,22 @@ void silc_client_receive_new_id(SilcClient client,
   }
 }
 
-/* Processed received Channel ID for a channel. This is called when client
-   joins to channel and server replies with channel ID. The ID is cached. 
-   Returns the created channel entry. This is also called when received
-   channel ID in for example USERS command reply that we do not have. */
-
-SilcChannelEntry silc_client_new_channel_id(SilcClient client,
-					    SilcSocketConnection sock,
-					    char *channel_name,
-					    uint32 mode, 
-					    SilcIDPayload idp)
-{
-  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
-  SilcChannelEntry channel;
-
-  SILC_LOG_DEBUG(("New channel ID"));
-
-  channel = silc_calloc(1, sizeof(*channel));
-  channel->channel_name = channel_name;
-  channel->id = silc_id_payload_get_id(idp);
-  channel->mode = mode;
-  silc_list_init(channel->clients, struct SilcChannelUserStruct, next);
-
-  /* Put it to the ID cache */
-  silc_idcache_add(conn->channel_cache, channel->channel_name, 
-		   (void *)channel->id, (void *)channel, 0, NULL);
-
-  return channel;
-}
-
-/* Removes a client entry from all channel it has joined. This really is
-   a performance killer (client_entry should have pointers to channel 
-   entry list). */
+/* Removes a client entry from all channels it has joined. */
 
 void silc_client_remove_from_channels(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry client_entry)
 {
-  SilcIDCacheEntry id_cache;
-  SilcIDCacheList list;
-  SilcChannelEntry channel;
+  SilcHashTableList htl;
   SilcChannelUser chu;
 
-  if (!silc_idcache_get_all(conn->channel_cache, &list))
-    return;
-
-  silc_idcache_list_first(list, &id_cache);
-  channel = (SilcChannelEntry)id_cache->context;
-  
-  while (channel) {
-    
-    /* Remove client from channel */
-    silc_list_start(channel->clients);
-    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-      if (chu->client == client_entry) {
-	silc_list_del(channel->clients, chu);
-	silc_free(chu);
-	break;
-      }
-    }
-
-    if (!silc_idcache_list_next(list, &id_cache))
-      break;
-    
-    channel = (SilcChannelEntry)id_cache->context;
+  silc_hash_table_list(client_entry->channels, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
+    silc_hash_table_del(chu->client->channels, chu->channel);
+    silc_hash_table_del(chu->channel->user_list, chu->client);
+    silc_free(chu);
   }
-
-  silc_idcache_list_free(list);
+  silc_hash_table_list_reset(&htl);
 }
 
 /* Replaces `old' client entries from all channels to `new' client entry.
@@ -1624,35 +1576,20 @@ void silc_client_replace_from_channels(SilcClient client,
 				       SilcClientEntry old,
 				       SilcClientEntry new)
 {
-  SilcIDCacheEntry id_cache;
-  SilcIDCacheList list;
-  SilcChannelEntry channel;
+  SilcHashTableList htl;
   SilcChannelUser chu;
 
-  if (!silc_idcache_get_all(conn->channel_cache, &list))
-    return;
-
-  silc_idcache_list_first(list, &id_cache);
-  channel = (SilcChannelEntry)id_cache->context;
-  
-  while (channel) {
-    
+  silc_hash_table_list(old->channels, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
     /* Replace client entry */
-    silc_list_start(channel->clients);
-    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-      if (chu->client == old) {
-	chu->client = new;
-	break;
-      }
-    }
-
-    if (!silc_idcache_list_next(list, &id_cache))
-      break;
+    silc_hash_table_del(chu->client->channels, chu->channel);
+    silc_hash_table_del(chu->channel->user_list, chu->client);
     
-    channel = (SilcChannelEntry)id_cache->context;
+    chu->client = new;
+    silc_hash_table_add(chu->channel->user_list, chu->client, chu);
+    silc_hash_table_add(chu->client->channels, chu->channel, chu);
   }
-
-  silc_idcache_list_free(list);
+  silc_hash_table_list_reset(&htl);
 }
 
 /* Registers failure timeout to process the received failure packet

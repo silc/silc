@@ -80,6 +80,7 @@ typedef struct SilcHashTableStruct *SilcHashTable;
  *    silc_hash_table_list(hash_table, &htl);
  *    while (silc_hash_table_get(&htl, (void *)&key, (void *)&context))
  *      ...
+ *    silc_hash_table_list_reset(&htl);
  *
  * SOURCE
  */
@@ -90,6 +91,7 @@ struct SilcHashTableListStruct {
   SilcHashTable ht;
   void *entry;
   uint32 index;
+  bool auto_rehash;
 };
 /***/
 
@@ -383,10 +385,32 @@ void silc_hash_table_rehash(SilcHashTable ht, uint32 new_size);
  * DESCRIPTION
  *
  *    Prepares the `htl' SilcHashTableList sent as argument to be used in the
- *    hash table traversing with the silc_hash_table_get.
+ *    hash table traversing with the silc_hash_table_get.  After the hash
+ *    table traversing is completed the silc_hash_table_list_reset must be
+ *    called.
+ *
+ * NOTES
+ *
+ *    The hash table will not be rehashed during the traversing of the list,
+ *    even if the table was marked as auto rehashable.  The caller also must
+ *    not call silc_hash_table_rehash while traversing the list.
  *
  ***/
 void silc_hash_table_list(SilcHashTable ht, SilcHashTableList *htl);
+
+/****f* silcutil/SilcHashTableAPI/silc_hash_table_list_reset
+ *
+ * SYNOPSIS
+ *
+ *    void silc_hash_table_list_reset(SilcHashTableList *htl);
+ *
+ * DESCRIPTION
+ *
+ *    Resets the `htl' SilcHashTableList.  This must be called after the
+ *    hash table traversing is completed.
+ *
+ ***/
+void silc_hash_table_list_reset(SilcHashTableList *htl);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_get
  *

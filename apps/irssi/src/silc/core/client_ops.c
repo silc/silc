@@ -94,17 +94,10 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   
   nick = silc_nicklist_find(chanrec, sender);
   if (!nick) {
-    /* We didn't find client but it clearly exists, add it. It must be
-       found on the channel->clients list. */
-    SilcChannelUser chu;
-
-    silc_list_start(channel->clients);
-    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-      if (chu->client == sender) {
-	nick = silc_nicklist_insert(chanrec, chu, FALSE);
-	break;
-      }
-    }
+    /* We didn't find client but it clearly exists, add it. */
+    SilcChannelUser chu = silc_client_on_channel(channel, sender);
+    if (chu)
+      nick = silc_nicklist_insert(chanrec, chu, FALSE);
   }
 
   if (flags & SILC_MESSAGE_FLAG_ACTION)
@@ -295,6 +288,7 @@ static void silc_client_join_get_users(SilcClient client,
 				       void *context)
 {
   SilcChannelEntry channel = (SilcChannelEntry)context;
+  SilcHashTableList htl;
   SilcChannelUser chu;
   SILC_SERVER_REC *server = conn->context;
   SILC_CHANNEL_REC *chanrec;
@@ -308,14 +302,15 @@ static void silc_client_join_get_users(SilcClient client,
   if (chanrec == NULL)
     return;
 
-  silc_list_start(channel->clients);
-  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+  silc_hash_table_list(channel->user_list, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
     if (!chu->client->nickname)
       continue;
     if (chu->mode & SILC_CHANNEL_UMODE_CHANFO)
       founder = chu->client;
     silc_nicklist_insert(chanrec, chu, FALSE);
   }
+  silc_hash_table_list_reset(&htl);
 
   ownnick = NICK(silc_nicklist_find(chanrec, conn->local_entry));
   nicklist_set_own(CHANNEL(chanrec), ownnick);
@@ -753,6 +748,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     
   case SILC_COMMAND_USERS: 
     {
+      SilcHashTableList htl;
       SilcChannelEntry channel;
       SilcChannelUser chu;
       
@@ -765,8 +761,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 			 MSGLEVEL_CRAP, SILCTXT_USERS_HEADER,
 			 channel->channel_name);
 
-      silc_list_start(channel->clients);
-      while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+      silc_hash_table_list(channel->user_list, &htl);
+      while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
 	SilcClientEntry e = chu->client;
 	char stat[5], *mode;
 
@@ -791,6 +787,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	if (mode)
 	  silc_free(mode);
       }
+      silc_hash_table_list_reset(&htl);
     }
     break;
 

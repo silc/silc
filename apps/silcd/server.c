@@ -2604,6 +2604,7 @@ void silc_server_remove_from_channels(SilcServer server,
 	  silc_hash_table_del(channel->user_list, chl2->client);
 	  silc_free(chl2);
 	}
+	silc_hash_table_list_reset(&htl2);
 	continue;
       }
 
@@ -2628,7 +2629,7 @@ void silc_server_remove_from_channels(SilcServer server,
     if (keygen && !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
       /* Re-generate channel key */
       if (!silc_server_create_channel_key(server, channel, 0))
-	return;
+	goto out;
       
       /* Send the channel key to the channel. The key of course is not sent
 	 to the client who was removed from the channel. */
@@ -2638,6 +2639,8 @@ void silc_server_remove_from_channels(SilcServer server,
     }
   }
 
+ out:
+  silc_hash_table_list_reset(&htl);
   silc_buffer_free(clidp);
 }
 
@@ -2724,6 +2727,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
 	silc_hash_table_del(channel->user_list, chl2->client);
 	silc_free(chl2);
       }
+      silc_hash_table_list_reset(&htl2);
       return FALSE;
     }
 
@@ -3005,7 +3009,7 @@ bool silc_server_create_channel_key(SilcServer server,
     channel->rekey->task = 
       silc_schedule_task_add(server->schedule, 0, 
 			     silc_server_channel_key_rekey,
-			     (void *)channel->rekey, 36, 0,
+			     (void *)channel->rekey, 3600, 0,
 			     SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
   }
@@ -3117,7 +3121,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
     channel->rekey->task = 
       silc_schedule_task_add(server->schedule, 0, 
 			     silc_server_channel_key_rekey,
-			     (void *)channel->rekey, 36, 0,
+			     (void *)channel->rekey, 3600, 0,
 			     SILC_TASK_TIMEOUT,
 			     SILC_TASK_PRI_NORMAL);
   }
@@ -3433,6 +3437,7 @@ void silc_server_announce_get_channel_users(SilcServer server,
 
     silc_buffer_free(clidp);
   }
+  silc_hash_table_list_reset(&htl);
   silc_buffer_free(chidp);
 }
 
@@ -3676,6 +3681,7 @@ void silc_server_get_users_on_channel(SilcServer server,
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chl))
     len += (silc_id_get_len(chl->client->id, SILC_ID_CLIENT) + 4);
+  silc_hash_table_list_reset(&htl);
 
   client_id_list = silc_buffer_alloc(len);
   client_mode_list = 
@@ -3697,6 +3703,7 @@ void silc_server_get_users_on_channel(SilcServer server,
 
     list_count++;
   }
+  silc_hash_table_list_reset(&htl);
   silc_buffer_push(client_id_list, 
 		   client_id_list->data - client_id_list->head);
   silc_buffer_push(client_mode_list, 
@@ -3921,6 +3928,7 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
     silc_buffer_pull(buffer, len);
     silc_free(cid);
   }
+  silc_hash_table_list_reset(&htl);
 
   if (buffer)
     silc_buffer_push(buffer, buffer->data - buffer->head);

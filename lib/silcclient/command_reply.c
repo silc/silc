@@ -211,7 +211,6 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
 {
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcClientID *client_id;
-  SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client_entry = NULL;
   int argc;
   uint32 len;
@@ -266,16 +265,13 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   fingerprint = silc_argument_get_arg_type(cmd->args, 9, &fingerprint_len);
 
   /* Check if we have this client cached already. */
-  if (!silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)client_id, 
-				       NULL, NULL, 
-				       silc_hash_client_id_compare, NULL,
-				       &id_cache)) {
+  client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
+  if (!client_entry) {
     SILC_LOG_DEBUG(("Adding new client entry"));
     client_entry = 
       silc_client_add_client(cmd->client, conn, nickname, username, realname,
 			     client_id, mode);
   } else {
-    client_entry = (SilcClientEntry)id_cache->context;
     silc_client_update_client(cmd->client, conn, client_entry, 
 			      nickname, username, realname, mode);
     silc_free(client_id);
@@ -356,7 +352,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcCommandStatus status;
   SilcClientID *client_id;
-  SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client_entry = NULL;
   uint32 len;
   unsigned char *id_data;
@@ -378,11 +373,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
   }
 
   /* Get the client entry, if exists */
-  if (silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)client_id, 
-				      NULL, NULL, 
-				      silc_hash_client_id_compare, NULL,
-				      &id_cache)) 
-    client_entry = (SilcClientEntry)id_cache->context;
+  client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
   silc_free(client_id);
 
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
@@ -458,17 +449,13 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
     SILC_LOG_DEBUG(("Received client information"));
 
     /* Check if we have this client cached already. */
-    if (!silc_idcache_find_by_id_one_ext(conn->client_cache, 
-					 (void *)client_id, 
-					 NULL, NULL, 
-					 silc_hash_client_id_compare, NULL,
-					 &id_cache)) {
+    client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
+    if (!client_entry) {
       SILC_LOG_DEBUG(("Adding new client entry"));
       client_entry = 
 	silc_client_add_client(cmd->client, conn, name, info, NULL,
 			       silc_id_dup(client_id, id_type), 0);
     } else {
-      client_entry = (SilcClientEntry)id_cache->context;
       silc_client_update_client(cmd->client, conn, client_entry, 
 				name, info, NULL, 0);
     }
@@ -517,16 +504,15 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
     SILC_LOG_DEBUG(("Received channel information"));
 
     /* Check if we have this channel cached already. */
-    if (!silc_idcache_find_by_id_one(conn->channel_cache, 
-				     (void *)channel_id, &id_cache)) {
+    channel_entry = silc_client_get_channel_by_id(client, conn, channel_id);
+    if (!channel_entry) {
       if (!name)
 	break;
 
-      SILC_LOG_DEBUG(("Adding new channel entry"));
-      channel_entry = silc_client_new_channel_id(client, conn->sock, 
-						 strdup(name), 0, idp);
-    } else {
-      channel_entry = (SilcChannelEntry)id_cache->context;
+      /* Add new channel entry */
+      channel_entry = silc_client_add_channel(client, conn, name, 0,
+					      channel_id);
+      channel_id = NULL;
     }
 
     /* Notify application */
@@ -680,7 +666,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
   SilcCommandStatus status;
   SilcChannelEntry channel;
   SilcChannelID *channel_id = NULL;
-  SilcIDCacheEntry id_cache = NULL;
   unsigned char *tmp;
   char *topic;
   uint32 argc, len;
@@ -714,15 +699,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
     goto out;
 
   /* Get the channel entry */
-  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				   &id_cache)) {
+  channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
+  if (!channel) {
     silc_free(channel_id);
     COMMAND_REPLY_ERROR;
     goto out;
   }
   
-  channel = (SilcChannelEntry)id_cache->context;
-
   /* Notify application */
   COMMAND_REPLY((ARGS, channel, topic));
 
@@ -740,7 +723,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
   SilcCommandStatus status;
   SilcChannelEntry channel;
   SilcChannelID *channel_id;
-  SilcIDCacheEntry id_cache;
   unsigned char *tmp;
   uint32 len;
 
@@ -763,14 +745,12 @@ SILC_CLIENT_CMD_REPLY_FUNC(invite)
     goto out;
 
   /* Get the channel entry */
-  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				   &id_cache)) {
+  channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
+  if (!channel) {
     silc_free(channel_id);
     COMMAND_REPLY_ERROR;
     goto out;
   }
-  
-  channel = (SilcChannelEntry)id_cache->context;
 
   /* Get the invite list */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
@@ -941,11 +921,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcCommandStatus status;
-  SilcIDPayload idp = NULL;
   SilcChannelEntry channel;
-  SilcIDCacheEntry id_cache = NULL;
   SilcChannelUser chu;
-  uint32 argc, mode, len, list_count;
+  SilcChannelID *channel_id;
+  uint32 argc, mode = 0, len, list_count;
   char *topic, *tmp, *channel_name = NULL, *hmac;
   SilcBuffer keyp = NULL, client_id_list = NULL, client_mode_list = NULL;
   int i;
@@ -977,7 +956,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     COMMAND_REPLY_ERROR;
     goto out;
   }
-  channel_name = strdup(tmp);
+  channel_name = tmp;
 
   /* Get Channel ID */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
@@ -985,13 +964,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	"Cannot join channel: Bad reply packet");
     COMMAND_REPLY_ERROR;
-    silc_free(channel_name);
     goto out;
   }
-  idp = silc_id_payload_parse(tmp, len);
-  if (!idp) {
+  channel_id = silc_id_payload_parse_id(tmp, len);
+  if (!channel_id) {
     COMMAND_REPLY_ERROR;
-    silc_free(channel_name);
     goto out;
   }
 
@@ -999,8 +976,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   tmp = silc_argument_get_arg_type(cmd->args, 5, NULL);
   if (tmp)
     SILC_GET32_MSB(mode, tmp);
-  else
-    mode = 0;
 
   /* Get channel key */
   tmp = silc_argument_get_arg_type(cmd->args, 7, &len);
@@ -1013,15 +988,16 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   /* Get topic */
   topic = silc_argument_get_arg_type(cmd->args, 10, NULL);
 
-  /* If we have the channel entry, remove it and create a new one */
+  /* Check whether we have this channel entry already. */
   channel = silc_client_get_channel(cmd->client, conn, channel_name);
-  if (channel)
-    silc_client_del_channel(cmd->client, conn, channel);
-
-  /* Save received Channel ID. This actually creates the channel */
-  channel = silc_client_new_channel_id(cmd->client, cmd->sock, channel_name, 
-				       mode, idp);
-  silc_id_payload_free(idp);
+  if (channel) {
+    if (!SILC_ID_CHANNEL_COMPARE(channel->id, channel_id))
+      silc_client_replace_channel_id(cmd->client, conn, channel, channel_id);
+  } else {
+    /* Create new channel entry */
+    channel = silc_client_add_channel(cmd->client, conn, channel_name, 
+				      mode, channel_id);
+  }
 
   conn->current_channel = channel;
 
@@ -1032,7 +1008,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
       SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR, 
 	  "Cannot join channel: Unsupported HMAC `%s'", hmac);
       COMMAND_REPLY_ERROR;
-      silc_free(channel_name);
       goto out;
     }
   }
@@ -1079,27 +1054,23 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     SILC_GET32_MSB(mode, client_mode_list->data);
 
     /* Check if we have this client cached already. */
-    if (!silc_idcache_find_by_id_one_ext(conn->client_cache, 
-					 (void *)client_id, 
-					 NULL, NULL, 
-					 silc_hash_client_id_compare, NULL,
-					 &id_cache)) {
+    client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
+    if (!client_entry) {
       /* No, we don't have it, add entry for it. */
       client_entry = 
 	silc_client_add_client(cmd->client, conn, NULL, NULL, NULL,
 			       silc_id_dup(client_id, SILC_ID_CLIENT), 0);
-    } else {
-      /* Yes, we have it already */
-      client_entry = (SilcClientEntry)id_cache->context;
     }
 
-    /* Join the client to the channel */
+    /* Join client to the channel */
     chu = silc_calloc(1, sizeof(*chu));
     chu->client = client_entry;
+    chu->channel = channel;
     chu->mode = mode;
-    silc_list_add(channel->clients, chu);
-    silc_free(client_id);
+    silc_hash_table_add(channel->user_list, client_entry, chu);
+    silc_hash_table_add(client_entry->channels, channel, chu);
 
+    silc_free(client_id);
     silc_buffer_pull(client_id_list, idp_len);
     silc_buffer_pull(client_mode_list, 4);
   }
@@ -1109,11 +1080,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 		   client_mode_list->head);
 
   /* Save channel key */
-  if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
-    silc_client_save_channel_key(conn, keyp, channel);
-
-  /* Client is now joined to the channel */
-  channel->on_channel = TRUE;
+  if (keyp && !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
+    silc_client_save_channel_key(cmd->client, conn, keyp, channel);
 
   /* Notify application */
   COMMAND_REPLY((ARGS, channel_name, channel, mode, 0, 
@@ -1239,7 +1207,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
   SilcCommandStatus status;
   unsigned char *tmp;
   uint32 mode;
-  SilcIDCacheEntry id_cache;
   SilcChannelID *channel_id;
   SilcChannelEntry channel;
   uint32 len;
@@ -1261,15 +1228,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
     goto out;
 
   /* Get the channel entry */
-  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				   &id_cache)) {
+  channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
+  if (!channel) {
     silc_free(channel_id);
     COMMAND_REPLY_ERROR;
     goto out;
   }
   
-  channel = (SilcChannelEntry)id_cache->context;
-
   /* Get channel mode */
   tmp = silc_argument_get_arg_type(cmd->args, 3, NULL);
   if (!tmp) {
@@ -1299,7 +1264,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcCommandStatus status;
-  SilcIDCacheEntry id_cache = NULL;
   SilcClientID *client_id;
   SilcChannelID *channel_id;
   SilcClientEntry client_entry;
@@ -1332,15 +1296,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
     goto out;
 
   /* Get the channel entry */
-  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				   &id_cache)) {
+  channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
+  if (!channel) {
     silc_free(channel_id);
     COMMAND_REPLY_ERROR;
     goto out;
   }
   
-  channel = (SilcChannelEntry)id_cache->context;
-
   /* Get Client ID */
   id = silc_argument_get_arg_type(cmd->args, 4, &len);
   if (!id) {
@@ -1356,27 +1318,19 @@ SILC_CLIENT_CMD_REPLY_FUNC(cumode)
   }
   
   /* Get client entry */
-  if (!silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)client_id, 
-				       NULL, NULL, 
-				       silc_hash_client_id_compare, NULL,
-				       &id_cache)) {
+  client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
+  if (!client_entry) {
     silc_free(channel_id);
     silc_free(client_id);
     COMMAND_REPLY_ERROR;
     goto out;
   }
 
-  client_entry = (SilcClientEntry)id_cache->context;
-
   /* Save the mode */
   SILC_GET32_MSB(mode, modev);
-  silc_list_start(channel->clients);
-  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-    if (chu->client == client_entry) {
-      chu->mode = mode;
-      break;
-    }
-  }
+  chu = silc_client_on_channel(channel, client_entry);
+  if (chu)
+    chu->mode = mode;
 
   /* Notify application */
   COMMAND_REPLY((ARGS, mode, channel, client_entry));
@@ -1489,7 +1443,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(ban)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcCommandStatus status;
-  SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
   SilcChannelID *channel_id;
   unsigned char *tmp;
@@ -1514,15 +1467,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(ban)
     goto out;
 
   /* Get the channel entry */
-  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				   &id_cache)) {
+  channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
+  if (!channel) {
     silc_free(channel_id);
     COMMAND_REPLY_ERROR;
     goto out;
   }
   
-  channel = (SilcChannelEntry)id_cache->context;
-
   /* Get the ban list */
   tmp = silc_argument_get_arg_type(cmd->args, 3, &len);
 
@@ -1608,6 +1559,30 @@ SILC_CLIENT_CMD_REPLY_FUNC(leave)
   silc_client_command_reply_free(cmd);
 }
 
+/* Channel resolving callback for USERS command reply. */
+
+static void silc_client_command_reply_users_cb(SilcClient client,
+					       SilcClientConnection conn,
+					       SilcChannelEntry *channels,
+					       uint32 channels_count,
+					       void *context)
+{
+  if (!channels_count) {
+    SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+    SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+    SilcCommandStatus status = SILC_STATUS_ERR_NO_SUCH_CHANNEL;
+
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	"%s", silc_client_command_status_message(status));
+    COMMAND_REPLY_ERROR;
+    SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_USERS);
+    silc_client_command_reply_free(cmd);
+    return;
+  }
+
+  silc_client_command_reply_users(context, NULL);
+}
+
 /* Reply to USERS command. Received list of client ID's and theirs modes
    on the channel we requested. */
 
@@ -1616,8 +1591,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcCommandStatus status;
-  SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
+  SilcClientEntry client_entry;
   SilcChannelUser chu;
   SilcChannelID *channel_id = NULL;
   SilcBuffer client_id_list = NULL;
@@ -1682,26 +1657,18 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
   silc_buffer_put(client_mode_list, tmp, tmp_len);
 
   /* Get channel entry */
-  if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				   &id_cache)) {
+  channel = silc_client_get_channel_by_id(cmd->client, conn, channel_id);
+  if (!channel) {
     /* Resolve the channel from server */
-    silc_idlist_get_channel_by_id(cmd->client, conn, channel_id, TRUE);
-    
-    /* Register pending command callback. After we've received the channel
-       information we will reprocess this command reply by re-calling this
-       USERS command reply callback. */
-    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
-				silc_client_command_reply_users, cmd);
+    silc_client_get_channel_by_id_resolve(cmd->client, conn, channel_id,
+					  silc_client_command_reply_users_cb,
+					  cmd);
+    silc_free(channel_id);
+    if (client_id_list)
+      silc_buffer_free(client_id_list);
+    if (client_mode_list)
+      silc_buffer_free(client_mode_list);
     return;
-  } else {
-    channel = (SilcChannelEntry)id_cache->context;
-  }
-
-  /* Remove old client list from channel. */
-  silc_list_start(channel->clients);
-  while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-    silc_list_del(channel->clients, chu);
-    silc_free(chu);
   }
 
   /* Cache the received Client ID's and modes. */
@@ -1709,7 +1676,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     uint16 idp_len;
     uint32 mode;
     SilcClientID *client_id;
-    SilcClientEntry client;
 
     /* Client ID */
     SILC_GET16_MSB(idp_len, client_id_list->data + 2);
@@ -1722,18 +1688,9 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
     SILC_GET32_MSB(mode, client_mode_list->data);
 
     /* Check if we have this client cached already. */
-    id_cache = NULL;
-    silc_idcache_find_by_id_one_ext(conn->client_cache, 
-				    (void *)client_id, 
-				    NULL, NULL, 
-				    silc_hash_client_id_compare, NULL,
-				    &id_cache);
-
-    if (!id_cache || !((SilcClientEntry)id_cache->context)->username ||
-	!((SilcClientEntry)id_cache->context)->realname) {
-
-      if (id_cache && id_cache->context) {
-	SilcClientEntry client_entry = (SilcClientEntry)id_cache->context;
+    client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
+    if (!client_entry || !client_entry->username || !client_entry->realname) {
+      if (client_entry) {
 	if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
 	  silc_buffer_pull(client_id_list, idp_len);
 	  silc_buffer_pull(client_mode_list, 4);
@@ -1756,17 +1713,16 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
       res_argv_types[res_argc] = res_argc + 3;
       res_argc++;
     } else {
-      /* Found the client, join it to the channel */
-      client = (SilcClientEntry)id_cache->context;
-      chu = silc_calloc(1, sizeof(*chu));
-      chu->client = client;
-      chu->mode = mode;
-      silc_list_add(channel->clients, chu);
-
-      silc_free(client_id);
-      id_cache = NULL;
+      if (!silc_client_on_channel(channel, client_entry)) {
+	chu = silc_calloc(1, sizeof(*chu));
+	chu->client = client_entry;
+	chu->channel = channel;
+	silc_hash_table_add(channel->user_list, client_entry, chu);
+	silc_hash_table_add(client_entry->channels, channel, chu);
+      }
     }
 
+    silc_free(client_id);
     silc_buffer_pull(client_id_list, idp_len);
     silc_buffer_pull(client_mode_list, 4);
   }
@@ -1794,14 +1750,21 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
 				silc_client_command_reply_users, cmd);
 
     silc_buffer_free(res_cmd);
-    if (channel_id)
-      silc_free(channel_id);
-
+    silc_free(channel_id);
     silc_free(res_argv);
     silc_free(res_argv_lens);
     silc_free(res_argv_types);
+    if (client_id_list)
+      silc_buffer_free(client_id_list);
+    if (client_mode_list)
+      silc_buffer_free(client_mode_list);
     return;
   }
+  
+  silc_buffer_push(client_id_list, (client_id_list->data - 
+				    client_id_list->head));
+  silc_buffer_push(client_mode_list, (client_mode_list->data - 
+				      client_mode_list->head));
 
   /* Notify application */
   COMMAND_REPLY((ARGS, channel, list_count, client_id_list, client_mode_list));
@@ -1876,16 +1839,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
   if (id_type == SILC_ID_CLIENT) {
     /* Received client's public key */
     client_id = silc_id_payload_get_id(idp);
-    if (!silc_idcache_find_by_id_one_ext(conn->client_cache, 
-					 (void *)client_id, 
-					 NULL, NULL, 
-					 silc_hash_client_id_compare, NULL,
-					 &id_cache)) {
+    client_entry = silc_client_get_client_by_id(cmd->client, conn, client_id);
+    if (!client_entry) {
       COMMAND_REPLY_ERROR;
       goto out;
     }
-
-    client_entry = (SilcClientEntry)id_cache->context;
 
     /* Notify application */
     COMMAND_REPLY((ARGS, id_type, client_entry, public_key));

@@ -164,12 +164,8 @@ void silc_client_error_by_server(SilcClient client,
 void silc_client_receive_new_id(SilcClient client,
 				SilcSocketConnection sock,
 				SilcIDPayload idp);
-SilcChannelEntry silc_client_new_channel_id(SilcClient client,
-					    SilcSocketConnection sock,
-					    char *channel_name,
-					    uint32 mode, 
-					    SilcIDPayload idp);
-void silc_client_save_channel_key(SilcClientConnection conn,
+void silc_client_save_channel_key(SilcClient client,
+				  SilcClientConnection conn,
 				  SilcBuffer key_payload, 
 				  SilcChannelEntry channel);
 void silc_client_receive_channel_key(SilcClient client,
