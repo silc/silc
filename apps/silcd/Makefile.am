@@ -36,7 +36,11 @@ silcd_SOURCES = \
 
 silcd_DEPENDENCIES = ../lib/libsilc.a
 
+if SILC_BUILD_GMP
 LDADD = -L. -L.. -L../lib -lsilc
+else
+LDADD = -L. -L.. -L../lib -lsilc -L/usr/lib -L/usr/local/lib -lgmp
+endif
 
 EXTRA_DIST = *.h
 

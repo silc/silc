@@ -18,7 +18,11 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
+if SILC_BUILD_GMP
 SUBDIRS = gmp
+else
+SUBDIRS =
+endif
 
 noinst_LIBRARIES = libsilcmath.a
 

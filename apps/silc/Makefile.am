@@ -30,7 +30,12 @@ silc_SOURCES = \
 
 silc_DEPENDENCIES = ../lib/libsilcclient.a ../lib/libsilc.a
 
+if SILC_BUILD_GMP
 LDADD = -L. -L.. -L../lib -lsilcclient -lsilc -lcurses
+else
+LDADD = -L. -L.. -L../lib -lsilcclient -lsilc -lcurses -L/usr/lib \
+	-L/usr/local/lib -lgmp
+endif
 
 EXTRA_DIST = *.h
 

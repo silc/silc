@@ -219,6 +219,42 @@ if test "x$socks" = "x5"; then
   AC_DEFINE(Rgethostbyname, SOCKSgethostbyname)
 fi
 
+# GMP Library checking
+AC_MSG_CHECKING(whether to compile GMP)
+AC_ARG_WITH(gmp,
+[  --with-gmp              Build the GMP in the SILC source tree],
+[ case "${withval}" in
+  yes) 
+    AM_CONDITIONAL(SILC_BUILD_GMP, test x$withval = xyes)
+    AC_MSG_RESULT(yes)
+    ;;
+  *)
+    AC_CHECK_HEADER(gmp.h,
+      AC_CHECK_LIB(gmp, __gmpz_init,
+        AM_CONDITIONAL(SILC_BUILD_GMP, test x$withval = yes)
+        AC_MSG_RESULT(no),
+        AM_CONDITIONAL(SILC_BUILD_GMP, test x$withval != yes)
+        AC_MSG_RESULT(yes)
+      ),
+      AM_CONDITIONAL(SILC_BUILD_GMP, test x$withval != yes)
+      AC_MSG_RESULT(yes)
+    )
+    ;;
+esac ], [
+  AC_CHECK_HEADER(gmp.h,
+    AC_CHECK_LIB(gmp, __gmpz_init,
+      build_gmp=false
+      AM_CONDITIONAL(SILC_BUILD_GMP, test x$build_gmp = xtrue)
+      AC_MSG_RESULT(no),
+      build_gmp=true
+      AM_CONDITIONAL(SILC_BUILD_GMP, test x$build_gmp = xtrue)
+      AC_MSG_RESULT(yes)
+    ),
+    build_gmp=true
+    AM_CONDITIONAL(SILC_BUILD_GMP, test x$build_gmp = xtrue)
+    AC_MSG_RESULT(yes)
+  )
+])
 
 AC_ARG_WITH(silcd-config-file,
 [  --with-silcd-config-file[=PATH]
@@ -231,9 +267,9 @@ AC_ARG_WITH(silcd-config-file,
 
 # Other configure scripts
 #AC_CONFIG_SUBDIRS(lib/zlib)
-AC_CONFIG_SUBDIRS(lib/dotconf)
-AC_CONFIG_SUBDIRS(lib/silcmath/gmp)
-AC_CONFIG_SUBDIRS(lib/trq)
+#AC_CONFIG_SUBDIRS(lib/dotconf)
+#AC_CONFIG_SUBDIRS(lib/silcmath/gmp)
+#AC_CONFIG_SUBDIRS(lib/trq)
 
 AC_OUTPUT( \
 Makefile
