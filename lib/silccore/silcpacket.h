@@ -204,6 +204,9 @@ typedef void (*SilcPacketParserCallback)(SilcPacketParserContext
 #define SILC_PACKET_NEW_CHANNEL_USER_LIST 25     /* List of users on "" */
 #define SILC_PACKET_REPLACE_ID           26      /* To replace old ID */
 #define SILC_PACKET_REMOVE_ID            27      /* To remove ID */
+#define SILC_PACKET_REMOVE_CHANNEL_USER  28      /* Remove user from channel */
+#define SILC_PACKET_REKEY                29
+#define SILC_PACKET_REKEY_DONE           30
 /* #define SILC_PACKET_MAX               255 */
 
 /* Macros */
