@@ -1,3 +1,8 @@
+Mon Oct 21 21:30:40 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Merged DISCONNECT fix, and autoconn port fix from Irssi
+	  CVS.
+
 Sun Oct 20 19:54:55 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added 'send_events' boolean argument to the function
