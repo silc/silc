@@ -507,7 +507,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			    ("There are %d clients on %d server in our cell",
 			     server->stat.cell_clients,
-			     server->stat.cell_servers));
+			     server->stat.cell_servers + 1));
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			    ("I have %d clients, %d channels, %d servers and "
 			     "%d routers",
@@ -1358,6 +1358,9 @@ void silc_server_remove_id(SilcServer server,
       /* Remove the client entry */
       silc_idlist_del_client(id_list, (SilcClientEntry)id_entry);
       server->stat.clients--;
+      if (sock->type == SILC_SOCKET_TYPE_SERVER &&
+          server->server_type == SILC_ROUTER)
+        server->stat.cell_clients--;
 
       SILC_LOG_DEBUG(("Removed client id(%s) from [%s] %s",
 		      silc_id_render(id, SILC_ID_CLIENT),
@@ -1372,6 +1375,9 @@ void silc_server_remove_id(SilcServer server,
     if (id_entry) {
       silc_idlist_del_server(id_list, (SilcServerEntry)id_entry);
       server->stat.servers--;
+      if (sock->type == SILC_SOCKET_TYPE_SERVER &&
+          server->server_type == SILC_ROUTER)
+        server->stat.cell_servers--;
 
       SILC_LOG_DEBUG(("Removed server id(%s) from [%s] %s",
 		      silc_id_render(id, SILC_ID_SERVER),
@@ -1386,6 +1392,9 @@ void silc_server_remove_id(SilcServer server,
     if (id_entry) {
       silc_idlist_del_channel(id_list, (SilcChannelEntry)id_entry);
       server->stat.channels--;
+      if (sock->type == SILC_SOCKET_TYPE_SERVER &&
+          server->server_type == SILC_ROUTER)
+        server->stat.cell_channels--;
 
       SILC_LOG_DEBUG(("Removed channel id(%s) from [%s] %s",
 		      silc_id_render(id, SILC_ID_CHANNEL),
