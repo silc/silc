@@ -336,14 +336,36 @@ void silc_server_replace_id(SilcServer server,
   /* Replace the old ID */
   switch(old_id_type) {
   case SILC_ID_CLIENT:
-    SILC_LOG_DEBUG(("Old Client ID id(%s)", 
-		    silc_id_render(id, SILC_ID_CLIENT)));
-    SILC_LOG_DEBUG(("New Client ID id(%s)", 
-		    silc_id_render(id2, SILC_ID_CLIENT)));
-    if (silc_idlist_replace_client_id(server->local_list, id, id2) == NULL)
-      if (server->server_type == SILC_ROUTER)
-	silc_idlist_replace_client_id(server->global_list, id, id2);
-    break;
+    {
+      SilcBuffer nidp, oidp;
+      SilcClientEntry client = NULL;
+
+      SILC_LOG_DEBUG(("Old Client ID id(%s)", 
+		      silc_id_render(id, SILC_ID_CLIENT)));
+      SILC_LOG_DEBUG(("New Client ID id(%s)", 
+		      silc_id_render(id2, SILC_ID_CLIENT)));
+
+      if ((client = silc_idlist_replace_client_id(server->local_list, 
+						  id, id2)) == NULL)
+	if (server->server_type == SILC_ROUTER)
+	  client = silc_idlist_replace_client_id(server->global_list, id, id2);
+      
+      if (client) {
+	oidp = silc_id_payload_encode(id, SILC_ID_CLIENT);
+	nidp = silc_id_payload_encode(id2, SILC_ID_CLIENT);
+
+	/* Send the NICK_CHANGE notify type to local clients on the channels
+	   this client is joined to. */
+	silc_server_send_notify_on_channels(server, client, 
+					    SILC_NOTIFY_TYPE_NICK_CHANGE, 2,
+					    oidp->data, oidp->len, 
+					    nidp->data, nidp->len);
+	
+	silc_buffer_free(nidp);
+	silc_buffer_free(oidp);
+      }
+      break;
+    }
 
   case SILC_ID_SERVER:
     SILC_LOG_DEBUG(("Old Server ID id(%s)", 
@@ -859,7 +881,7 @@ void silc_server_notify(SilcServer server,
   SilcNotifyType type;
   SilcArgumentPayload args;
   SilcChannelID *channel_id;
-  SilcClientID *client_id;
+  SilcClientID *client_id, *client_id2;
   SilcChannelEntry channel;
   SilcClientEntry client;
   unsigned char *tmp;
@@ -1013,8 +1035,10 @@ void silc_server_notify(SilcServer server,
     if (!client) {
       client = silc_idlist_find_client_by_id(server->local_list, 
 					     client_id, NULL);
-      if (!client)
+      if (!client) {
+	silc_free(client_id);
 	goto out;
+      }
     }
     silc_free(client_id);
 
@@ -1025,12 +1049,76 @@ void silc_server_notify(SilcServer server,
     silc_idlist_del_client(server->global_list, client);
     break;
 
+  case SILC_NOTIFY_TYPE_NICK_CHANGE:
+    {
+      /* 
+       * Distribute the notify to local clients on the channel
+       */
+      unsigned char *id, *id2;
+
+      SILC_LOG_DEBUG(("NICK CHANGE notify"));
+      
+      /* Get old client ID */
+      id = silc_argument_get_arg_type(args, 1, &tmp_len);
+      if (!id)
+	goto out;
+      client_id = silc_id_payload_parse_id(id, tmp_len);
+      
+      /* Get new client ID */
+      id2 = silc_argument_get_arg_type(args, 2, &tmp_len);
+      if (!id2)
+	goto out;
+      client_id2 = silc_id_payload_parse_id(id2, tmp_len);
+      
+      SILC_LOG_DEBUG(("Old Client ID id(%s)", 
+		      silc_id_render(client_id, SILC_ID_CLIENT)));
+      SILC_LOG_DEBUG(("New Client ID id(%s)", 
+		      silc_id_render(client_id2, SILC_ID_CLIENT)));
+
+      /* Replace the Client ID */
+      client = silc_idlist_replace_client_id(server->global_list, client_id,
+					     client_id2);
+      if (!client)
+	client = silc_idlist_replace_client_id(server->local_list, client_id, 
+					       client_id2);
+
+      if (client)
+	/* Send the NICK_CHANGE notify type to local clients on the channels
+	   this client is joined to. */
+	silc_server_send_notify_on_channels(server, client, 
+					    SILC_NOTIFY_TYPE_NICK_CHANGE, 2,
+					    id, tmp_len, 
+					    id2, tmp_len);
+
+      silc_free(client_id);
+      if (!client)
+	silc_free(client_id2);
+      break;
+    }
+  case SILC_NOTIFY_TYPE_TOPIC_SET:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+    SILC_LOG_DEBUG(("TOPIC SET notify (not-impl XXX)"));
+    break;
+
+  case SILC_NOTIFY_TYPE_CMODE_CHANGE:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+    SILC_LOG_DEBUG(("CMODE CHANGE notify (not-impl XXX)"));
+    break;
+
+  case SILC_NOTIFY_TYPE_CUMODE_CHANGE:
+    /* 
+     * Distribute the notify to local clients on the channel
+     */
+    SILC_LOG_DEBUG(("CUMODE CHANGE notify (not-impl XXX)"));
+    break;
+
     /* Ignore rest notify types for now */
   case SILC_NOTIFY_TYPE_NONE:
   case SILC_NOTIFY_TYPE_INVITE:
-  case SILC_NOTIFY_TYPE_TOPIC_SET:
-  case SILC_NOTIFY_TYPE_CMODE_CHANGE:
-  case SILC_NOTIFY_TYPE_CUMODE_CHANGE:
   case SILC_NOTIFY_TYPE_MOTD:
   default:
     break;

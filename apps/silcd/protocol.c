@@ -886,7 +886,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
       SILC_PUT32_MSB(SILC_CONN_AUTH_OK, ok);
 
       /* Authentication failed */
-      silc_server_packet_send(server, ctx->sock, SILC_PACKET_FAILURE,
+      silc_server_packet_send(server, ctx->sock, SILC_PACKET_SUCCESS,
 			      0, ok, 4, TRUE);
 
       /* Unregister the timeout task since the protocol has ended. 

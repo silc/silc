@@ -1,3 +1,25 @@
+Sat Feb  3 15:44:54 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Oops, a little mistake in server's connection authentication 
+	  protocol.  The protocol is not ended with FAILURE but with
+	  SUCCESS if the authentication is Ok. :)  Affected file is
+	  silcd/protocol.c.
+
+	* Implemented NICK_CHANGE notify handling in server in the file
+	  silcd/packet_receive.c  The NICK_CHANGE notify is distributed to
+	  the local clients on the channel.  After the changing nickname
+	  in router environment snhould work and the [<unknown>] nickname
+	  should appear no more.
+ 
+	  The silc_server_replace_id function that receives the Replace ID
+	  payload now sends the NICK_CHANGE notify type also in the file
+	  silcd/packet_receive.c
+
+	* Changed WHOIS and IDENTIFY command to support the maximum amount
+	  of arguments defined in protocol specs (3328 arguments).  This 
+	  fixed a bug that caused problems when there were more than three
+	  users on a channel.
+
 Fri Feb  2 11:42:56 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Added extra parameter, command identifier, to the
@@ -16,7 +38,7 @@ Fri Feb  2 11:42:56 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  that we are now re-sending.  Ignored if NULL.  Affected file
 	  silcd/packet_send.[ch].
 
-	* Added some server statistics support in sil/server_internal.h
+	* Added some server statistics support in silcd/server_internal.h
 	  SilcServerStatistics structure and around the server code.  Also
 	  send some nice statistics information when client is connecting
 	  to the client.

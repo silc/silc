@@ -768,7 +768,7 @@ SILC_SERVER_CMD_FUNC(whois)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   int ret;
 
-  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_WHOIS, cmd, 1, 3);
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_WHOIS, cmd, 1, 3328);
 
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT)
     ret = silc_server_command_whois_from_client(cmd);
@@ -1167,7 +1167,7 @@ SILC_SERVER_CMD_FUNC(identify)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   int ret;
 
-  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_IDENTIFY, cmd, 1, 3);
+  SILC_SERVER_COMMAND_CHECK_ARGC(SILC_COMMAND_IDENTIFY, cmd, 1, 3328);
 
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT)
     ret = silc_server_command_identify_from_client(cmd);
@@ -1225,7 +1225,7 @@ SILC_SERVER_CMD_FUNC(nick)
   /* Send notify about nickname change to our router. We send the new
      ID and ask to replace it with the old one. If we are router the
      packet is broadcasted. */
-  if (!cmd->server->standalone)
+  if (!server->standalone)
     silc_server_send_replace_id(server, server->router->connection, 
 				server->server_type == SILC_SERVER ? 
 				FALSE : TRUE, client->id,
@@ -1646,6 +1646,8 @@ void silc_server_command_send_users(SilcServer server,
   SilcServerCommandContext cmd;
   SilcBuffer buffer, idp;
   SilcPacketContext *packet = silc_packet_context_alloc();
+
+  SILC_LOG_DEBUG(("Start"));
 
   /* Create USERS command packet and process it. */
   idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
