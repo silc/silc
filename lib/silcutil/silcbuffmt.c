@@ -250,7 +250,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
 	SILC_GET16_MSB(len2, src->data);
 	silc_buffer_pull(src, 2);
 	HAS_SPACE(src, len2);
-	if (x) {
+	if (x && len2) {
 	  *x = silc_calloc(len2 + 1, sizeof(unsigned char));
 	  memcpy(*x, src->data, len2);
 	}
@@ -278,7 +278,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
 	SILC_GET32_MSB(len2, src->data);
 	silc_buffer_pull(src, 4);
 	HAS_SPACE(src, len2);
-	if (x) {
+	if (x && len2) {
 	  *x = silc_calloc(len2 + 1, sizeof(unsigned char));
 	  memcpy(*x, src->data, len2);
 	}
@@ -312,7 +312,7 @@ int silc_buffer_unformat(SilcBuffer src, ...)
 	HAS_SPACE(src, len2);
 	if (len)
 	  *len = len2;
-	if (x) {
+	if (x && len2) {
 	  *x = silc_calloc(len2 + 1, sizeof(unsigned char));
 	  memcpy(*x, src->data, len2);
 	}

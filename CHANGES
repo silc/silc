@@ -9,6 +9,10 @@ Wed Mar 14 20:37:35 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	  server code.  Various commands now includes the CF_LAG_STRICT
 	  flag to disallow any kind of miss-use of the command.
 
+	* Fixed the silc_buffer_unformat to not to allocate any data
+	  if the length of the data is zero.  It used to allocate the
+	  length + 1.  Affected file lib/silcutil/silcbuffmt.c.
+
 Wed Mar 14 16:10:30 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Changed the format of AdminConnection configuration section
