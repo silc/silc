@@ -167,6 +167,13 @@ describe new stuff to be added to protocol versions 1.x.
     can be used to silence (moderate) normal users and opers (this set
     only by founder).  To be included in protocol version 1.1.
 
+ 7. Channel Message Payload needs slight redesining to include the IV
+    field to the MAC generation of the payload.  It is authenticated
+    by the packet's MAC but not by the payload's MAC.  Since the IV
+    belongs to the payload, its integrity should be protected by the
+    payload MAC and not alone by packet MAC.  To be included in protocol 
+    version 1.1.
+
 
 TODO After 1.0
 ==============
