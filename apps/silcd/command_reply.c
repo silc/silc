@@ -495,7 +495,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 						   server_id, FALSE, NULL);
     if (!server_entry) {
       /* If router did not find such Server ID in its lists then this must
-	 be bogus client or some router in the net is buggy. */
+	 be bogus server or some router in the net is buggy. */
       if (server->server_type == SILC_ROUTER)
 	goto error;
       
@@ -529,8 +529,8 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
       channel = silc_idlist_find_channel_by_id(server->global_list, channel_id,
 					       NULL);
     if (!channel) {
-      /* If router did not find such Server ID in its lists then this must
-	 be bogus client or some router in the net is buggy. */
+      /* If router did not find such Channel ID in its lists then this must
+	 be bogus channel or some router in the net is buggy. */
       if (server->server_type == SILC_ROUTER)
 	goto error;
       
