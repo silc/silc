@@ -27,6 +27,8 @@
    they are used. */
 typedef struct SilcClientEntryStruct {
   char *nickname;
+  char *server;
+  unsigned int num;
   SilcClientID *id;
 
   /* Keys, these are defined if private message key has been defined 
@@ -55,5 +57,16 @@ typedef struct SilcChannelEntryStruct {
 } SilcChannelEntryObject;
 
 typedef SilcChannelEntryObject *SilcChannelEntry;
+
+/* Prototypes */
+
+SilcClientEntry silc_idlist_get_client(SilcClient client,
+				       SilcClientWindow win,
+				       char *nickname,
+				       char *server,
+				       unsigned int num);
+SilcChannelEntry silc_idlist_get_channel(SilcClient client,
+					 SilcClientWindow win,
+					 char *channel);
 
 #endif
