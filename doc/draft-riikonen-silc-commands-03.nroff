@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXX
+.ds RH 15 May 2002
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-commands-03.txt                     XXX
-Expires: XXX
+draft-riikonen-silc-commands-03.txt                          15 May 2002
+Expires: 15 November 2002
 
 .in 3
 
@@ -75,12 +75,12 @@ Table of Contents
 2 SILC Commands .................................................  2
   2.1 SILC Commands Syntax ......................................  2
   2.2 SILC Commands List ........................................  4
-  2.3 SILC Command Status Payload ............................... 33
-3 SILC Status Types ............................................. 33
-4 Security Considerations ....................................... 38
-5 References .................................................... 38
-6 Author's Address .............................................. 40
-Appendix A ...................................................... xx
+  2.3 SILC Command Status Payload ............................... 40
+3 SILC Status Types ............................................. 41
+4 Security Considerations ....................................... 47
+5 References .................................................... 47
+6 Author's Address .............................................. 49
+Appendix A ...................................................... 49
 
 
 .ti 0
@@ -1073,7 +1073,7 @@ List of all defined commands in SILC follows.
            0x00000100    SILC_UMODE_ANONYMOUS
 
               Marks that the client is anonymous client.  Server
-              that specificly is designed for anonymous services
+              that specifically is designed for anonymous services
               can set and unset this mode.  Client MUST NOT set or
               unset this mode itself.  A client with this mode set
               would have the username and the hostname information
@@ -1582,6 +1582,8 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_CLIENT_ID
 
 
+
+
    20   SILC_COMMAND_BAN
 
         Max Arguments:  3
@@ -1628,6 +1630,8 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NOT_ON_CHANNEL
             SILC_STATUS_ERR_NO_CHANNEL_PRIV
             SILC_STATUS_ERR_RESOURCE_LIMIT
+
+
 
 
    21   SILC_COMMAND_DETACH
@@ -1800,7 +1804,7 @@ List of all defined commands in SILC follows.
         channel; either the argument <Channel ID> or the <channel name>. 
         One of these arguments must be present.  The server MUST resolve
         the joined clients and reply with a lists of users on the channel
-	and with list of user modes on the channel.
+        and with list of user modes on the channel.
 
         If the requested channel is a private or secret channel, this
         command MUST NOT send the list of users, but error is returned
@@ -1872,10 +1876,10 @@ List of all defined commands in SILC follows.
         This command is used to negotiate a service agreement with a
         remote server.  If this command is given without arguments it
         MAY return the service list, if it is publicly available.  The
-        <service name> is a service sepcific identifier, and the
-        <auth payload> MAY be used to authenticate the requestor to the
+        <service name> is a service specific identifier, and the
+        <auth payload> MAY be used to authenticate the requester to the
         remote service.  The authentication to a service may be based
-        on previous agreement with the requestor and the service
+        on previous agreement with the requester and the service
         provider.  The command MAY also take additional service
         specific arguments.
 
@@ -1917,6 +1921,8 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_PERM_DENIED
 
 
+
+
    28 - 199
 
         Currently undefined commands.
@@ -1940,8 +1946,8 @@ List of all defined commands in SILC follows.
 Command Status Payload is sent in command reply messages to indicate
 the status of the command.  The payload is one of argument in the
 command thus this is the data area in Command Argument Payload described
-in [SILC2].  The payload is only 2 bytes of length.  The following
-diagram represents the Command Status Payload (field is always in
+in [SILC2].  The payload is only 2 bytes in length.  The following
+diagram represents the Command Status Payload (fields are always in
 MSB first order).
 
 
@@ -2379,7 +2385,7 @@ Finland
 
 EMail: priikone@iki.fi
 
-This Internet-Draft expires XXX
+This Internet-Draft expires 15 November 2002
 
 
 .ti 0
@@ -2432,7 +2438,7 @@ this sort of command reply for WHOIS command.
 The information received from the client MAY be cached in the
 server's end.  The caching may be desired for example if the client
 can be detached from the network.  This way the server is then able
-to provide at least partial information for a requestor.  The
+to provide at least partial information for a requester.  The
 server MAY also process the command reply and verify whether the
 attributes provided in the reply are actually valid.  If it can do
 this, and verify that they indeed are valid values it MAY append
@@ -2440,7 +2446,7 @@ a digital signature at the end of the attributes with the
 ATTRIBUTE_SERVER_DIGITAL_SIGNATURE as defined in [ATTRS].  The
 server then MUST provide valid WHOIS command reply to the sender
 of the command.   Other servers and routers that receive the command
-reply enroute to the original sender MAY also cache the information.
+reply en route to the original sender MAY also cache the information.
 
 The client which receives the command reply to the WHOIS command
 SHOULD verify the ATTRIBUTE_USER_DIGITAL_SIGNATURE and the
