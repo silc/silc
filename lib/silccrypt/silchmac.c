@@ -429,7 +429,7 @@ void silc_hmac_init_with_key(SilcHmac hmac, const unsigned char *key,
 			     SilcUInt32 key_len)
 {
   SilcHash hash = hmac->hash;
-  silc_hmac_init_internal(hmac, hmac->key, hmac->key_len);
+  silc_hmac_init_internal(hmac, (unsigned char *)key, key_len);
   silc_hash_init(hash);
   silc_hash_update(hash, hmac->inner_pad, silc_hash_block_len(hash));
 }
