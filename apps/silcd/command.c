@@ -234,9 +234,15 @@ void silc_server_command_process(SilcServer server,
      seconds. */
   if (sock->type == SILC_SOCKET_TYPE_CLIENT) {
     SilcClientEntry client = (SilcClientEntry)sock->user_data;
-    SilcServerCommandTimeout timeout = silc_calloc(1, sizeof(*timeout));
+    SilcServerCommandTimeout timeout;
     int fast;
 
+    if (!client) {
+      SILC_LOG_DEBUG(("Client entry is invalid"));
+      silc_server_command_free(ctx);
+    }
+
+    timeout = silc_calloc(1, sizeof(*timeout));
     timeout->ctx = ctx;
     timeout->cmd = cmd;
 
@@ -2082,7 +2088,7 @@ SILC_SERVER_CMD_FUNC(nick)
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   int nickfail = 0;
 
-  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_NICK, cmd, 1, 1);
@@ -2378,6 +2384,9 @@ SILC_SERVER_CMD_FUNC(topic)
   SilcUInt32 argc, tmp_len;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
 
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
+    goto out;
+
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_TOPIC, cmd, 1, 2);
 
   argc = silc_argument_get_arg_num(cmd->args);
@@ -2536,7 +2545,7 @@ SILC_SERVER_CMD_FUNC(invite)
 
   /* Check whether the sender of this command is on the channel. */
   sender = (SilcClientEntry)sock->user_data;
-  if (!silc_server_client_on_channel(sender, channel, &chl)) {
+  if (!sender || !silc_server_client_on_channel(sender, channel, &chl)) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_INVITE,
 					  SILC_STATUS_ERR_NOT_ON_CHANNEL, 0);
     goto out;
@@ -2792,7 +2801,7 @@ SILC_SERVER_CMD_FUNC(kill)
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_KILL, cmd, 1, 2);
 
-  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
 
   /* KILL command works only on router */
@@ -3196,6 +3205,8 @@ static void silc_server_command_join_channel(SilcServer server,
   /* Get the client entry */
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
     client = (SilcClientEntry)sock->user_data;
+    if (!client)
+      return;
   } else {
     client = silc_server_get_client_resolve(server, client_id, FALSE, 
 					    &resolve);
@@ -3558,6 +3569,13 @@ SILC_SERVER_CMD_FUNC(join)
 
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
     SilcClientEntry entry = (SilcClientEntry)cmd->sock->user_data;
+    if (!entry) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
+					    0);
+      goto out;
+    }
+
     silc_free(client_id);
     client_id = silc_id_dup(entry->id, SILC_ID_CLIENT);
 
@@ -3877,7 +3895,7 @@ SILC_SERVER_CMD_FUNC(umode)
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   bool set_mask = FALSE;
 
-  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_UMODE, cmd, 1, 2);
@@ -3968,6 +3986,11 @@ SILC_SERVER_CMD_FUNC(cmode)
   SilcPublicKey founder_key = NULL;
   unsigned char *fkey = NULL;
   SilcUInt32 fkey_len = 0;
+
+  if (!client) {
+    silc_server_command_free(cmd);
+    return;
+  }
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_CMODE, cmd, 1, 7);
 
@@ -4370,6 +4393,9 @@ SILC_SERVER_CMD_FUNC(cumode)
   unsigned char *fkey = NULL;
   SilcUInt32 fkey_len = 0;
 
+  if (!client)
+    goto out;
+
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_CUMODE, cmd, 3, 4);
 
   /* Get Channel ID */
@@ -4724,6 +4750,9 @@ SILC_SERVER_CMD_FUNC(kick)
   SilcUInt32 tmp_len, target_idp_len;
   unsigned char *tmp, *comment, *target_idp;
 
+  if (!client)
+    goto out;
+
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_LEAVE, cmd, 1, 3);
 
   /* Get Channel ID */
@@ -4870,10 +4899,10 @@ SILC_SERVER_CMD_FUNC(oper)
   bool result = FALSE;
   SilcPublicKey cached_key;
 
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_OPER, cmd, 1, 2);
-
-  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
+
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_OPER, cmd, 1, 2);
 
   /* Get the username */
   username = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
@@ -5017,7 +5046,7 @@ SILC_SERVER_CMD_FUNC(detach)
     goto out;
   }
 
-  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_DETACH, cmd, 0, 0);
@@ -5257,10 +5286,10 @@ SILC_SERVER_CMD_FUNC(silcoper)
   bool result = FALSE;
   SilcPublicKey cached_key;
 
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_SILCOPER, cmd, 1, 2);
-
-  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
+
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_SILCOPER, cmd, 1, 2);
 
   if (server->server_type != SILC_ROUTER) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
@@ -5363,7 +5392,7 @@ SILC_SERVER_CMD_FUNC(ban)
   SilcUInt32 id_len, tmp_len;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
 
-  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_BAN, cmd, 0, 3);
@@ -5482,6 +5511,9 @@ SILC_SERVER_CMD_FUNC(leave)
   SilcChannelEntry channel;
   SilcUInt32 len;
   unsigned char *tmp;
+
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !id_entry)
+    goto out;
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_LEAVE, cmd, 1, 2);
 
@@ -5906,10 +5938,10 @@ SILC_SERVER_CMD_FUNC(connect)
   SilcUInt32 tmp_len;
   SilcUInt32 port = SILC_PORT;
 
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_PRIV_CONNECT, cmd, 1, 2);
-
-  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
+
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_PRIV_CONNECT, cmd, 1, 2);
 
   /* Check whether client has the permissions. */
   if (!(client->mode & SILC_UMODE_SERVER_OPERATOR) &&
@@ -5965,10 +5997,10 @@ SILC_SERVER_CMD_FUNC(close)
   unsigned char *name;
   SilcUInt32 port = SILC_PORT;
 
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_PRIV_CLOSE, cmd, 1, 2);
-
-  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
+
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_PRIV_CLOSE, cmd, 1, 2);
 
   /* Check whether client has the permissions. */
   if (!(client->mode & SILC_UMODE_SERVER_OPERATOR) &&
@@ -6035,10 +6067,10 @@ SILC_SERVER_CMD_FUNC(shutdown)
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
 
-  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_PRIV_SHUTDOWN, cmd, 0, 0);
-
-  if (!client || cmd->sock->type != SILC_SOCKET_TYPE_CLIENT)
+  if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT || !client)
     goto out;
+
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_PRIV_SHUTDOWN, cmd, 0, 0);
 
   /* Check whether client has the permission. */
   if (!(client->mode & SILC_UMODE_SERVER_OPERATOR) &&

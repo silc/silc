@@ -1,3 +1,8 @@
+Sun Jul 14 21:33:32 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not process commands if the sock->user_data is NULL.
+	  Affected file silcd/command.c.
+
 Tue Jul  9 19:03:11 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed buffer overflow and security problems (loosing bits
