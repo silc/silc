@@ -2,7 +2,7 @@ TODO/bugs in Irssi SILC client
 ==============================
 
  o /cumode for unknown nick does not give any error message (Fix this to
-   1.0).
+   0.9.x).
 
 
 TODO/bugs In SILC Client Library
@@ -12,17 +12,11 @@ TODO/bugs In SILC Client Library
    though).  This should be added and perhaps new client operation
    should be added to notify application that it was received and
    set the key only if application wishes to set (accept the key) it
-   (Do this to 1.0).
+   (Do this to 0.9.x).
 
 
 TODO/bugs In SILC Server
 ========================
-
- o Configuration file additions (Do this to 0.8.x):
-
-	o Add incoming connection frequency, incoming connection frequency
-	  for single IP address, key exchange frequency, key exchange
-	  frequency for single IP. Add also frequency base.
 
  o Implement the SILC_CUMODE_QUIET user mode (Do this to 0.9.x).
 
@@ -30,7 +24,7 @@ TODO/bugs In SILC Server
    the core library, client and server.  Maybe implementations of
    RFC 2425 and RFC 2426 to make it complete.
 
- o Backup router related issues (Fix this to 1.0):
+ o Backup router related issues (Fix this to 0.9.x):
 
  	o Channel user mode changes are notified unnecessarely when
 	  switching to backup router on router crash.
@@ -40,7 +34,7 @@ TODO/bugs In SILC Server
    seconds.  Now it is possible to accept n incoming JOIN commands
    and process them without any timeouts.  THis must be employed because
    each JOIN command will create and distribute the new channel key
-   to everybody on the channel (Fix this to 1.0).
+   to everybody on the channel (Fix this to 0.9.x).
 
  o Lots of statistics updating is missing around the server.
 
@@ -54,14 +48,14 @@ TODO/bugs In SILC Libraries
 
  o WIN32 silc_net_create_connection_async does not work the same way
    than on Unix.  Do it with threads on WIN32.  The function works but
-   is not actually async currently (Fix this to 1.0).
+   is not actually async currently (Fix this to 0.9.x).
 
 
 TODO in Toolkit Documentation
 =============================
 
 Stuff that needs to be done in order to complete the Tooolkit Reference
-Manual (Do these to 0.9 and 1.0).
+Manual (Do these to 0.9.x).
 
  o ROBOdoc documenting missing from lib/silcutil/silcbuffer.h.
 
