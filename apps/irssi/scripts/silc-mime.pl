@@ -3,7 +3,7 @@
 use vars qw($VERSION %IRSSI);
 
 use Irssi 20020704;
-$VERSION = "1.1";
+$VERSION = "1.2";
 %IRSSI = (
     authors	=> "Jochen 'c0ffee' Eisinger",
     contact	=> "c0ffee\@penguin-breeder.org",
@@ -129,6 +129,8 @@ my %partial;
 # -1 failure, 0 success
 sub process_mime_entity {
   my ($witem, $signed, $sender, $entity) = @_;
+
+  my ($mimetype, $fh, $tempfile, $parser, $ret, $io, $mcap, $cmd);  
 
   $mimetype = Mail::Field->new('Content-type', $entity->head->get('Content-Type'));
 
@@ -475,7 +477,7 @@ Irssi::theme_register(['load_mailcap', 'Loading mailcaps from {hilight $0}',
 	'mime_data_send', 'sending "{hilight $0}" data message',
 	'mime_data_send_signed', 'sending "{hilight $0}" data message (signature {flag_signed})',
 	'mime_data_multi', 'sending "{hilight $0}" data message ($1 chunks)',
-	'mime_data_multi_signed', 'sending "{hilight $0}" data message ($1 chunks, signaute {flag_signed})']);
+	'mime_data_multi_signed', 'sending "{hilight $0}" data message ($1 chunks, signature {flag_signed})']);
 
 
 
