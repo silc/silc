@@ -148,30 +148,19 @@ bool silc_net_gethostbyname(const char *name, char *address,
 {
 #ifdef HAVE_IPV6
   struct addrinfo hints, *ai;
-  char hbuf[NI_MAXHOST];
 
   memset(&hints, 0, sizeof(hints));
   hints.ai_socktype = SOCK_STREAM;
   if (getaddrinfo(name, NULL, &hints, &ai))
     return FALSE;
 
-  if (getnameinfo(ai->ai_addr, ai->ai_addrlen, hbuf,
-		  sizeof(hbuf), NULL, 0, NI_NUMERICHOST))
+  if (getnameinfo(ai->ai_addr, ai->ai_addrlen, address,
+		  address_len, NULL, 0, NI_NUMERICHOST)) {
+    freeaddrinfo(ai);
     return FALSE;
-
-  if (ai->ai_family == AF_INET) {
-    if (!inet_ntop(ai->ai_family, 
-		   &((struct sockaddr_in *)ai->ai_addr)->sin_addr,
-		   address, address_len))
-      return FALSE;
   } else {
-    if (!inet_ntop(ai->ai_family, 
-		   &((struct sockaddr_in6 *)ai->ai_addr)->sin6_addr,
-		   address, address_len))
-      return FALSE;
+    freeaddrinfo(ai);
   }
-
-  freeaddrinfo(ai);
 #else
   struct hostent *hp;
   struct in_addr ip;
@@ -224,11 +213,10 @@ bool silc_net_gethostbyaddr(const char *addr, char *name, uint32 name_len)
   
   if (getaddrinfo(addr, NULL, &req, &ai))
     return FALSE;
-  if (name_len < strlen(ai->ai_canonname))
+  if (getnameinfo(ai->ai_addr, ai->ai_addrlen, name, name_len, NULL, 0, 0)) {
+    freeaddrinfo(ai);
     return FALSE;
-  memset(name, 0, name_len);
-  strncpy(name, ai->ai_canonname, strlen(ai->ai_canonname));
-
+  }
   freeaddrinfo(ai);
 #else
   struct hostent *hp;
@@ -396,6 +384,22 @@ bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
 
 uint16 silc_net_get_remote_port(int sock)
 {
+#ifdef HAVE_IPV6
+  struct sockaddr_storage remote;
+  int len;
+  char s[NI_MAXSERV];
+
+  memset(&remote, 0, sizeof(remote));
+  len = sizeof(remote);
+  if (getpeername(sock, (struct sockaddr *)&remote, &len) < 0)
+    return 0;
+
+  if (getnameinfo((struct sockaddr *)&remote, len, NULL, 0, s, sizeof(s),
+      NI_NUMERICSERV))
+    return 0;
+  
+  return atoi(s);
+#else
   struct sockaddr_in remote;
   int len;
 
@@ -405,12 +409,29 @@ uint16 silc_net_get_remote_port(int sock)
     return 0;
 
   return ntohs(remote.sin_port);
+#endif
 }
 
 /* Return local port by socket. */
 
 uint16 silc_net_get_local_port(int sock)
 {
+#ifdef HAVE_IPV6
+  struct sockaddr_storage local;
+  int len;
+  char s[NI_MAXSERV];
+
+  memset(&local, 0, sizeof(local));
+  len = sizeof(local);
+  if (getsockname(sock, (struct sockaddr *)&local, &len) < 0)
+    return 0;
+
+  if (getnameinfo((struct sockaddr *)&local, len, NULL, 0, s, sizeof(s),
+      NI_NUMERICSERV))
+    return 0;
+  
+  return atoi(s);
+#else
   struct sockaddr_in local;
   int len;
 
@@ -420,6 +441,7 @@ uint16 silc_net_get_local_port(int sock)
     return 0;
 
   return ntohs(local.sin_port);
+#endif
 }
 
 /* Return name of localhost. */

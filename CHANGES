@@ -1,3 +1,8 @@
+Sat Feb  2 16:54:18 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Applied IPv6 fix patch from Jun-ichiro itojun Hagino.
+	  Affected file lib/silcutil/silcnet.c.
+
 Fri Feb  1 22:33:11 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a bug in hash table internal routine for traversing
