@@ -2877,8 +2877,10 @@ bool silc_server_create_channel_key(SilcServer server,
   }
 
   if (!channel->channel_key)
-    if (!silc_cipher_alloc(SILC_DEFAULT_CIPHER, &channel->channel_key))
+    if (!silc_cipher_alloc(SILC_DEFAULT_CIPHER, &channel->channel_key)) {
+      channel->channel_key = NULL;
       return FALSE;
+    }
 
   if (key_len)
     len = key_len;
@@ -2999,6 +3001,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 
   /* Create new cipher */
   if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
+    channel->channel_key = NULL;
     channel = NULL;
     goto out;
   }
@@ -3374,7 +3377,7 @@ void silc_server_announce_get_channels(SilcServer server,
 	(*channel_ids)[i] = NULL;
 	silc_server_announce_get_channel_users(server, channel,
 					       channel_users,
-					       channel_users_modes[i]);
+					       &(*channel_users_modes)[i]);
 	(*channel_ids)[i] = channel->id;
 	i++;
 

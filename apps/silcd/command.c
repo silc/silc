@@ -3842,6 +3842,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   if (mode_mask & SILC_CHANNEL_MODE_CIPHER) {
     if (!(channel->mode & SILC_CHANNEL_MODE_CIPHER)) {
       /* Cipher to use protect the traffic */
+      SilcCipher newkey, oldkey;
 
       /* Get cipher */
       cipher = silc_argument_get_arg_type(cmd->args, 5, NULL);
@@ -3852,17 +3853,25 @@ SILC_SERVER_CMD_FUNC(cmode)
       }
 
       /* Delete old cipher and allocate the new one */
-      silc_cipher_free(channel->channel_key);
-      if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
+      if (!silc_cipher_alloc(cipher, &newkey)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
 	goto out;
       }
 
+      oldkey = channel->channel_key;
+      channel->channel_key = newkey;
+
       /* Re-generate channel key */
-      if (!silc_server_create_channel_key(server, channel, 0))
+      if (!silc_server_create_channel_key(server, channel, 0)) {
+	/* We don't have new key, revert to old one */
+	channel->channel_key = oldkey;
 	goto out;
-    
+      }
+
+      /* Remove old channel key for good */
+      silc_cipher_free(oldkey);
+
       /* Send the channel key. This sends it to our local clients and if
 	 we are normal server to our router as well. */
       silc_server_send_channel_key(server, NULL, channel, 
@@ -3873,21 +3882,29 @@ SILC_SERVER_CMD_FUNC(cmode)
     if (channel->mode & SILC_CHANNEL_MODE_CIPHER) {
       /* Cipher mode is unset. Remove the cipher and revert back to 
 	 default cipher */
+      SilcCipher newkey, oldkey;
       cipher = channel->cipher;
 
       /* Delete old cipher and allocate default one */
-      silc_cipher_free(channel->channel_key);
-      if (!silc_cipher_alloc(cipher ? cipher : SILC_DEFAULT_CIPHER, 
-			     &channel->channel_key)) {
+      if (!silc_cipher_alloc(cipher ? cipher : SILC_DEFAULT_CIPHER, &newkey)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 				   SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
 	goto out;
       }
 
+      oldkey = channel->channel_key;
+      channel->channel_key = newkey;
+
       /* Re-generate channel key */
-      if (!silc_server_create_channel_key(server, channel, 0))
+      if (!silc_server_create_channel_key(server, channel, 0)) {
+	/* We don't have new key, revert to old one */
+	channel->channel_key = oldkey;
 	goto out;
+      }
       
+      /* Remove old channel key for good */
+      silc_cipher_free(oldkey);
+
       /* Send the channel key. This sends it to our local clients and if
 	 we are normal server to our router as well. */
       silc_server_send_channel_key(server, NULL, channel, 
@@ -3900,6 +3917,7 @@ SILC_SERVER_CMD_FUNC(cmode)
     if (!(channel->mode & SILC_CHANNEL_MODE_HMAC)) {
       /* HMAC to use protect the traffic */
       unsigned char hash[32];
+      SilcHmac newhmac;
 
       /* Get hmac */
       hmac = silc_argument_get_arg_type(cmd->args, 6, NULL);
@@ -3910,18 +3928,19 @@ SILC_SERVER_CMD_FUNC(cmode)
       }
 
       /* Delete old hmac and allocate the new one */
-      silc_hmac_free(channel->hmac);
-      if (!silc_hmac_alloc(hmac, NULL, &channel->hmac)) {
+      if (!silc_hmac_alloc(hmac, NULL, &newhmac)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
 	goto out;
       }
 
+      silc_hmac_free(channel->hmac);
+      channel->hmac = newhmac;
+
       /* Set the HMAC key out of current channel key. The client must do
 	 this locally. */
       silc_hash_make(silc_hmac_get_hash(channel->hmac), channel->key, 
-		     channel->key_len / 8, 
-		     hash);
+		     channel->key_len / 8, hash);
       silc_hmac_set_key(channel->hmac, hash, 
 			silc_hash_len(silc_hmac_get_hash(channel->hmac)));
       memset(hash, 0, sizeof(hash));
@@ -3930,17 +3949,20 @@ SILC_SERVER_CMD_FUNC(cmode)
     if (channel->mode & SILC_CHANNEL_MODE_HMAC) {
       /* Hmac mode is unset. Remove the hmac and revert back to 
 	 default hmac */
+      SilcHmac newhmac;
       unsigned char hash[32];
       hmac = channel->hmac_name;
 
       /* Delete old hmac and allocate default one */
       silc_hmac_free(channel->hmac);
-      if (!silc_hmac_alloc(hmac ? hmac : SILC_DEFAULT_HMAC, NULL, 
-			   &channel->hmac)) {
+      if (!silc_hmac_alloc(hmac ? hmac : SILC_DEFAULT_HMAC, NULL, &newhmac)) {
 	silc_server_command_send_status_reply(cmd, SILC_COMMAND_CMODE,
 				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
 	goto out;
       }
+
+      silc_hmac_free(channel->hmac);
+      channel->hmac = newhmac;
 
       /* Set the HMAC key out of current channel key. The client must do
 	 this locally. */

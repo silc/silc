@@ -1,3 +1,10 @@
+Wed Nov  7 20:43:03 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed CMODE command when new channel key was created.  If
+	  the creation failed the old key was removed.  Next time giving
+	  same command would crash the server since the old key was
+	  freed already.  Affected file silcd/command.c.
+
 Wed Nov  7 17:15:07 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_log_set_debug_string function to set a regex
