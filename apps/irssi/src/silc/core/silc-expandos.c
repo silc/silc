@@ -144,10 +144,12 @@ void silc_expandos_init(void)
 		 "window changed", EXPANDO_ARG_NONE,
 		 "window item changed", EXPANDO_ARG_WINDOW,
 		 "nick mode changed", EXPANDO_ARG_WINDOW_ITEM, NULL);
+  expando_create("j", expando_silc_version, NULL);
 }
 
 void silc_expandos_deinit(void)
 {
+  expando_destroy("j", expando_silc_version);
   expando_destroy("usermode", expando_usermode);
   expando_destroy("cumode", expando_cumode);
   expando_destroy("cumode_space", expando_cumode_space);

@@ -97,8 +97,8 @@ Examples:
 
   Set channel private key to current channel, and list all keys:
 
-    /KEY CHANNEL set very_secret_key_this_is
-    /KEY CHANNEL list
+    /KEY CHANNEL * set very_secret_key_this_is
+    /KEY CHANNEL * list
     /KEY MSG nickname set secretkey
     /KEY MSG nick set secretkey -responder
     /KEY MSG foo agreement 10.2.1.7 5000
