@@ -16,7 +16,7 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-spec-06.txt                         XXX
+draft-riikonen-silc-spec-07.txt                         XXX
 Expires: XXX
 
 .in 3
@@ -107,6 +107,7 @@ Table of Contents
              3.10.1.2 CTR Mode .................................. 24
              3.10.1.3 Randomized CBC Mode ....................... 25
       3.10.2 Public Key Algorithms .............................. 26
+             3.10.2.1 Multi-Precision Integers .................. XXX
       3.10.3 Hash Functions ..................................... 26
       3.10.4 MAC Algorithms ..................................... 27
       3.10.5 Compression Algorithms ............................. 27
@@ -1351,6 +1352,17 @@ SSH2 public keys the signature is computed as described in [SSH-TRANS].
 When using X.509 version 3 certificates the signature is computed as
 described in [PKCS7].  When using OpenPGP certificates the signature is
 computed as described in [PGP].
+
+
+.ti 0
+3.10.2.1 Multi-Precision Integers
+
+Multi-Precision (MP) integers in SILC are encoded and decoded as defined
+in PKCS #1 [PKCS1].  MP integers are unsigned, encoded with desired octet
+length.  This means that if the octet length is more than the actual
+length of the integer one or more leading zero octets will appear at the
+start of the encoding.  The actual length of the integer is the bit size
+of the integer not counting any leading zero bits.
 
 
 .ti 0
