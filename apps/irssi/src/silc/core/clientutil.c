@@ -157,9 +157,9 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 
   if (!bits) {
     char *length = NULL;
-    length = silc_get_input("Key length in bits [1024]: ", FALSE);
+    length = silc_get_input("Key length in bits [2048]: ", FALSE);
     if (!length)
-      bits = 1024;
+      bits = 2048;
     else
       bits = atoi(length);
   }

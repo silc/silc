@@ -23,7 +23,7 @@
 
 /* Default settings for creating key pair */
 #define SILC_CLIENT_DEF_PKCS "rsa"
-#define SILC_CLIENT_DEF_PKCS_LEN 1024
+#define SILC_CLIENT_DEF_PKCS_LEN 2048
 
 extern SilcClient silc_client;
 
