@@ -20,6 +20,6 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 SUBDIRS = libsilc libsilcclient
 
-EXTRA_DIST = silcdefs.h trq_conf.h silc.dsw
+EXTRA_DIST = silcdefs.h trq_conf.h silc.dsw copy_dll
 
 include $(top_srcdir)/Makefile.defines.in

@@ -746,9 +746,6 @@ List of SILC Packet types are defined as follows.
           registered to the primary router.  The client MUST NOT send this
           packet.
 
-          This packet MUST NOT be sent as list and the List flag MUST
-          NOT be set.
-
           Payload of the packet:  See section 2.3.21 Cell Routers Payload
 
 
@@ -856,8 +853,7 @@ needs and supports arguments, such as commands.  Number of arguments
 associated with a packet MUST be indicated by the packet payload which
 needs the arguments.  Argument Payloads MUST always reside right after
 the packet payload needing the arguments.  Incorrect amount of argument
-payloads MUST cause rejection of the packet.  The following diagram
-represents the Argument Payload.
+payloads MUST cause rejection of the packet.
 
 The following diagram represents the Argument Payload.
 
