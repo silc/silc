@@ -50,12 +50,12 @@ TODO/bugs In SILC Server
    each JOIN command will create and distribute the new channel key
    to everybody on the channel.
 
+ o The backup router support described in the protocol specification
+   should be done at some point.
+
  o Incomplete IPv6 support:
 
 	o silcd/serverid.c and its routines supports only IPv4.
-
- o The backup router support described in the protocol specification
-   should be done at some point.
 
  o New configuration file format must be added.  The new one will be
    done using the dotconf config library (lib/dotconf).  The following
@@ -113,7 +113,8 @@ TODO/Bugs in native WIN32 support (libraries)
 =============================================
 
  o silc_net_create_connection_async does not work the same way than on
-   Unix.  Do it with threads on WIN32.
+   Unix.  Do it with threads on WIN32.  The function works but is not
+   actually async currently.
 
 
 TODO In SILC Protocol
