@@ -69,7 +69,7 @@ void silc_client_send_private_message(SilcClient client,
 
   /* Get data used in the encryption */
   cipher = client_entry->send_key;
-  hmac = conn->hmac;
+  hmac = conn->hmac_send;
 
   /* Set the packet context pointers. */
   packetdata.flags = SILC_PACKET_FLAG_PRIVMSG_KEY;

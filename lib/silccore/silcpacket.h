@@ -158,14 +158,6 @@ typedef struct {
 
        The associated connection.
 
-   SilcCipher cipher
-
-       The cipher to be used in the decryption.
-
-   SilcHmac hmac
-
-       The HMAC to be used in the decryption.
-
    void *context
 
        User context that is sent to the silc_packet_receive_process
@@ -177,8 +169,6 @@ typedef struct {
 typedef struct {
   SilcPacketContext *packet;
   SilcSocketConnection sock;
-  SilcCipher cipher;
-  SilcHmac hmac;
   void *context;
 } SilcPacketParserContext;
 

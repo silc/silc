@@ -1526,37 +1526,21 @@ void silc_server_packet_parse(SilcPacketParserContext *parser_context)
     break;
   case SILC_SOCKET_TYPE_CLIENT:
     /* Parse the packet with timeout (unless protocol is active) */
-
-    /* If REKEY protocol is active we must proccess the packets synchronously
-       since we must assure that incoming packets that are encrypted with
-       the old key is processed before the new keys is set to use. */
-    if (SILC_SERVER_IS_REKEY(sock))
-      silc_server_packet_parse_real(server->timeout_queue, SILC_TASK_READ,
-				    (void *)parser_context, sock->sock);
-    else
-      silc_task_register(server->timeout_queue, sock->sock,
-			 silc_server_packet_parse_real,
-			 (void *)parser_context, 0, 
-			 (sock->protocol ? 1 : 100000),
-			 SILC_TASK_TIMEOUT,
-			 SILC_TASK_PRI_NORMAL);
+    silc_task_register(server->timeout_queue, sock->sock,
+		       silc_server_packet_parse_real,
+		       (void *)parser_context, 0, 
+		       (sock->protocol ? 1 : 100000),
+		       SILC_TASK_TIMEOUT,
+		       SILC_TASK_PRI_NORMAL);
     break;
   case SILC_SOCKET_TYPE_SERVER:
   case SILC_SOCKET_TYPE_ROUTER:
     /* Packets from servers are parsed as soon as possible */
-
-    /* If REKEY protocol is active we must proccess the packets synchronously
-       since we must assure that incoming packets that are encrypted with
-       the old key is processed before the new keys is set to use. */
-    if (SILC_SERVER_IS_REKEY(sock))
-      silc_server_packet_parse_real(server->timeout_queue, SILC_TASK_READ,
-				    (void *)parser_context, sock->sock);
-    else
-      silc_task_register(server->timeout_queue, sock->sock,
-			 silc_server_packet_parse_real,
-			 (void *)parser_context, 0, 1,
-			 SILC_TASK_TIMEOUT,
-			 SILC_TASK_PRI_NORMAL);
+    silc_task_register(server->timeout_queue, sock->sock,
+		       silc_server_packet_parse_real,
+		       (void *)parser_context, 0, 1,
+		       SILC_TASK_TIMEOUT,
+		       SILC_TASK_PRI_NORMAL);
     break;
   default:
     return;

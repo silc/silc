@@ -778,6 +778,7 @@ void silc_client_packet_parse(SilcPacketParserContext *parser_context)
 
   /* Parse the packet */
 
+#if 0
   /* If REKEY protocol is active we must proccess the packets synchronously
      since we must assure that incoming packets that are encrypted with
      the old key is processed before the new keys is set to use. */
@@ -786,6 +787,7 @@ void silc_client_packet_parse(SilcPacketParserContext *parser_context)
 				  (void *)parser_context, 
 				  parser_context->sock->sock);
   else
+#endif
     silc_task_register(client->timeout_queue, parser_context->sock->sock, 
 		       silc_client_packet_parse_real,
 		       (void *)parser_context, 0, 1, 

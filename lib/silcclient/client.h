@@ -85,7 +85,8 @@ struct SilcClientConnectionStruct {
   /* Keys and stuff negotiated in the SKE protocol */
   SilcCipher send_key;
   SilcCipher receive_key;
-  SilcHmac hmac;
+  SilcHmac hmac_send;
+  SilcHmac hmac_receive;
   SilcHash hash;
 
   /* Client ID and Channel ID cache. Messages transmitted in SILC network

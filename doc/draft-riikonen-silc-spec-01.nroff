@@ -1791,10 +1791,15 @@ without executing SKE protocol.  In this case, the new key is created by
 hashing the old key with hash function selected earlier in the SKE
 protocol.  If the digest length of the hash function is too short for the
 key, then the key is distributed as described in section Processing the
-Key Material in [SILC3].  After both parties has regenerated the session
-key, both send SILC_PACKET_REKEY_DONE packet to each other.  These packets
-are still secured with the old key.  After these packets, the following
-packets must be protected with the new key.
+Key Material in [SILC3].
+
+After both parties has regenerated the session key, both send
+SILC_PACKET_REKEY_DONE packet to each other.  These packets are still
+secured with the old key.  After these packets, the following packets
+must be protected with the new key.  After sending the REKEY_DONE packet
+all subsequent sent packets must be encrypted with the new key.  After
+receiving the REKEY_DONE packet all subsequent packets must be
+decrypted with the new key.
 
 
 .ti 0

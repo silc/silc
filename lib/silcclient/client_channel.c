@@ -100,7 +100,7 @@ void silc_client_send_channel_message(SilcClient client,
 
   /* Get data used in packet header encryption, keys and stuff. */
   cipher = conn->send_key;
-  hmac = conn->hmac;
+  hmac = conn->hmac_send;
   id_string = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
 
   /* Set the packet context pointers. The destination ID is always

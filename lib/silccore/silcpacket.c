@@ -403,8 +403,6 @@ void silc_packet_receive_process(SilcSocketConnection sock,
     parse_ctx->packet = silc_packet_context_alloc();
     parse_ctx->packet->buffer = silc_buffer_alloc(paddedlen + mac_len);
     parse_ctx->sock = sock;
-    parse_ctx->cipher = cipher;
-    parse_ctx->hmac = hmac;
     parse_ctx->context = context;
 
     silc_buffer_pull_tail(parse_ctx->packet->buffer, 

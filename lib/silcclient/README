@@ -42,18 +42,19 @@ for detailed definition of SilcClient object.
 `ops' can be defined for example as follows:
 
 SilcClientOperations ops = {
-  say:                  silc_say,
-  channel_message:      silc_channel_message,
-  private_message:      silc_private_message,
-  notify:               silc_notify,
-  command:              silc_command,
-  command_reply:        silc_command_reply,
-  connect:              silc_connect,
-  disconnect:           silc_disconnect,
-  get_auth_method:      silc_get_auth_method,
-  verify_public_key:    silc_verify_public_key,
-  ask_passphrase:       silc_ask_passphrase,
-  failure:              silc_failure,
+  silc_say,
+  silc_channel_message,
+  silc_private_message,
+  silc_notify,
+  silc_command,
+  silc_command_reply,
+  silc_connect,
+  silc_disconnect,
+  silc_get_auth_method,
+  silc_verify_public_key,
+  silc_ask_passphrase,
+  silc_failure,
+  silc_key_agreement,
 };
 
 

@@ -104,10 +104,5 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
 				      SilcHash hash,
 				      SilcHmac hmac,
 				      SilcSKEDiffieHellmanGroup group);
-void silc_client_protocol_rekey_generate(SilcClient client,
-					 SilcClientRekeyInternalContext *ctx);
-void 
-silc_client_protocol_rekey_generate_pfs(SilcClient client,
-					SilcClientRekeyInternalContext *ctx);
 
 #endif
