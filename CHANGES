@@ -1,3 +1,18 @@
+Sun Mar 27 19:02:48 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Imported new silc_utf8_[encode|decode] routines from
+	  my internal SILC 1.1 source tree.  New encodings added:
+	  SILC_STRING_LOCALE (SILC_STRING_LANGUAGE is deprecated),
+	  SILC_STRING_UTF8, SILC_STRING_PRINTABLE, SILC_STRING_VISIBLE,
+	  SILC_STRING_TELETEX, SILC_STRING_NUMERICAL and
+	  SILC_STRING_LDAP_DN.
+
+	* Splitted UTF-8 routines into lib/silcutil/silcutf8.[ch].
+
+	* Implemented stringprep (RFC 3454) API.  Internally we use
+	  GNU Libidn's stringprep, for now, so it is required now to
+	  compile SILC sources.  Added lib/silcutil/silcstringprep.[ch].
+
 Wed Mar 23 11:20:33 CET 2005  Jochen Eisinger <jochen@penguin-breeder.org>
 
 	* If the passphrases entered do not match while generating a new key,

@@ -4,7 +4,7 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -361,7 +361,7 @@ void silc_log_reset_all() {
 
 /* Outputs the debug message to stderr. */
 
-void silc_log_output_debug(char *file, char *function,
+void silc_log_output_debug(char *file, const char *function,
 			   int line, char *string)
 {
   if (!silc_debug)
@@ -373,7 +373,7 @@ void silc_log_output_debug(char *file, char *function,
     goto end;
 
   if (silc_log_debug_cb) {
-    if ((*silc_log_debug_cb)(file, function, line, string,
+    if ((*silc_log_debug_cb)(file, (char *)function, line, string,
 			     silc_log_debug_context))
       goto end;
   }
@@ -387,7 +387,7 @@ void silc_log_output_debug(char *file, char *function,
 
 /* Hexdumps a message */
 
-void silc_log_output_hexdump(char *file, char *function,
+void silc_log_output_hexdump(char *file, const char *function,
 			     int line, void *data_in,
 			     SilcUInt32 len, char *string)
 {
@@ -404,7 +404,8 @@ void silc_log_output_hexdump(char *file, char *function,
     goto end;
 
   if (silc_log_hexdump_cb) {
-    if ((*silc_log_hexdump_cb)(file, function, line, data_in, len, string,
+    if ((*silc_log_hexdump_cb)(file, (char *)function, line,
+			       data_in, len, string,
 			       silc_log_hexdump_context))
       goto end;
   }

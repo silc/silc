@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2002 Pekka Riikonen
+#  Copyright (C) 2000 - 2004 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -62,7 +62,9 @@ libsilcutil_la_SOURCES = \
 	silcsockconn.c	\
 	silcprotocol.c	\
 	silcvcard.c	\
-	silcapputil.c
+	silcapputil.c	\
+	silcutf8.c	\
+	silcstringprep.c
 
 if SILC_DIST_TOOLKIT
 include_HEADERS =	\
@@ -86,6 +88,8 @@ include_HEADERS =	\
 	silcstrutil.h	\
 	silcvcard.h	\
 	silcapputil.h	\
+	silcutf8.h	\
+	silcstringprep.h	\
 	silctypes.h
 endif
 

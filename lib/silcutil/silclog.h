@@ -4,7 +4,7 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -569,7 +569,7 @@ void silc_log_reset_all();
  *
  * SYNOPSIS
  *
- *    void silc_log_output_debug(char *file, char *function,
+ *    void silc_log_output_debug(char *file, const char *function,
  *                               int line, char *string);
  *
  * DESCRIPTION
@@ -581,7 +581,7 @@ void silc_log_reset_all();
  *    dynamic allocated (null-terminated) buffer.
  *
  ***/
-void silc_log_output_debug(char *file, char *function,
+void silc_log_output_debug(char *file, const char *function,
 			   int line, char *string);
 
 /****f* silcutil/SilcLogAPI/silc_log_output_hexdump
@@ -602,7 +602,7 @@ void silc_log_output_debug(char *file, char *function,
  *    `string' must be a dynamic allocated (null-terminated) buffer.
  *
  ***/
-void silc_log_output_hexdump(char *file, char *function,
+void silc_log_output_hexdump(char *file, const char *function,
 			     int line, void *data_in,
 			     SilcUInt32 len, char *string);
 

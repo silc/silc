@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2001 - 2003 Pekka Riikonen
+  Copyright (C) 2001 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ char * silc_convert_utf8_string(const char *str)
   }
 
   if (!silc_term_utf8() && silc_utf8_valid(str, message_len))
-    silc_utf8_decode(str, message_len, SILC_STRING_LANGUAGE,
+    silc_utf8_decode(str, message_len, SILC_STRING_LOCALE,
                      message, message_len);
   else
     strcpy(message, str);
@@ -459,7 +459,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
         dm = silc_calloc(message_len + 1, sizeof(*dm));
         cp = dm;
       }
-      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+      silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
                        cp, message_len);
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
         signal_emit("message silc signed_action", 6, server, cp, nick->nick,
@@ -485,7 +485,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
         dm = silc_calloc(message_len + 1, sizeof(*dm));
         cp = dm;
       }
-      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+      silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
                        cp, message_len);
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
 	signal_emit("message silc signed_notice", 6, server, cp, nick->nick,
@@ -513,7 +513,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 	cp = dm;
       }
 
-      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+      silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
 		       cp, message_len);
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
         signal_emit("message signed_public", 6, server, cp,
@@ -596,7 +596,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
         dm = silc_calloc(message_len + 1, sizeof(*dm));
         cp = dm;
       }
-      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+      silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
                        cp, message_len);
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
         signal_emit("message silc signed_private_action", 6, server, cp, 
@@ -628,7 +628,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
         dm = silc_calloc(message_len + 1, sizeof(*dm));
         cp = dm;
       }
-      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+      silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
                        cp, message_len);
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
         signal_emit("message silc signed_private_notice", 6, server, cp, 
@@ -662,7 +662,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
         cp = dm;
       }
 
-      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+      silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
   		     cp, message_len);
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
         signal_emit("message signed_private", 5, server, cp,
@@ -1936,7 +1936,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	    cp = dm;
 	  }
 
-	  silc_utf8_decode(topic, strlen(topic), SILC_STRING_LANGUAGE,
+	  silc_utf8_decode(topic, strlen(topic), SILC_STRING_LOCALE,
 			   cp, strlen(topic));
 	  topic = cp;
 	}
@@ -2043,7 +2043,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  cp = dm;
 	}
 
-	silc_utf8_decode(topic, strlen(topic), SILC_STRING_LANGUAGE,
+	silc_utf8_decode(topic, strlen(topic), SILC_STRING_LOCALE,
 			 cp, strlen(topic));
 	topic = cp;
       }
@@ -2295,7 +2295,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  cp = dm;
 	}
 
-	silc_utf8_decode(topic, strlen(topic), SILC_STRING_LANGUAGE,
+	silc_utf8_decode(topic, strlen(topic), SILC_STRING_LOCALE,
 			 cp, strlen(topic));
 	topic = cp;
       }

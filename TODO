@@ -25,7 +25,10 @@ TODO for SILC Server 1.0
 
  o Check for valid ban strings.  Check ban string notifying.
 
- o stringprep (RFC3454) for UTF-8 strings + all other UTF-8 string things.
+ o Basic UTF-8 stringprep profile that makes sure UTF-8 strings are
+   as defined in spec-08 section 3.13.
+
+ o Start using the stringprep for identifier strings.
 
  o Check that founder key is distributed ok during backup resuming.
 
@@ -35,8 +38,15 @@ TODO for SILC Server 1.0
 TODO/bugs In SILC Libraries
 ===========================
 
- o Add the compilation flags for Toolkit apps to check, ala:
-   _SILC_TOOLKIT_ENABLE_DEBUG, etc.
+ o Add following defines in silcincludes.h and silcclient.h for 
+   third-party software:
+
+	__SILC_LIBSILC_HAVE_PTHREAD
+	__SILC_LIBSILC_HAVE_SIM
+        __SILC_LIBSILC_ENABLE_DEBUG
+	__SILC_LIBSILCCLIENT_HAVE_PTHREAD
+	__SILC_LIBSILCCLIENT_HAVE_SIM
+        __SILC_LIBSILCCLIENT_ENABLE_DEBUG
 
  o Test cases for all payload encoding and decoding routins in lib/silccore/
 

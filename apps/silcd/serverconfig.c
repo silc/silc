@@ -4,7 +4,7 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -127,9 +127,9 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
     if (auth_data && auth_data_len) {
       if (!silc_utf8_valid(p, strlen(p))) {
 	*auth_data_len = silc_utf8_encoded_len(p, strlen(p),
-					       SILC_STRING_LANGUAGE);
+					       SILC_STRING_LOCALE);
 	*auth_data = silc_calloc(*auth_data_len, sizeof(unsigned char));
-	silc_utf8_encode(p, strlen(p), SILC_STRING_LANGUAGE, *auth_data,
+	silc_utf8_encode(p, strlen(p), SILC_STRING_LOCALE, *auth_data,
 			 *auth_data_len);
       } else {
 	*auth_data = (void *) strdup(p);

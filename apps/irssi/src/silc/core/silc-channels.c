@@ -1,7 +1,7 @@
 /*
   silc-channels.c : irssi
 
-  Copyright (C) 2000 - 2001 Timo Sirainen
+  Copyright (C) 2000 - 2001, 2004 Timo Sirainen
                             Pekka Riikonen <priikone@poseidon.pspt.fi>
 
   This program is free software; you can redistribute it and/or modify
@@ -249,10 +249,10 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
 
   if (!silc_term_utf8()) {
     int len = silc_utf8_encoded_len(msg, strlen(msg),
-				    SILC_STRING_LANGUAGE);
+				    SILC_STRING_LOCALE);
     message = silc_calloc(len + 1, sizeof(*message));
     g_return_if_fail(message != NULL);
-    silc_utf8_encode(msg, strlen(msg), SILC_STRING_LANGUAGE,
+    silc_utf8_encode(msg, strlen(msg), SILC_STRING_LOCALE,
 		     message, len);
   }
 
@@ -353,10 +353,10 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
 
   if (!silc_term_utf8()) {
     int len = silc_utf8_encoded_len(msg, strlen(msg),
-				    SILC_STRING_LANGUAGE);
+				    SILC_STRING_LOCALE);
     message = silc_calloc(len + 1, sizeof(*message));
     g_return_if_fail(message != NULL);
-    silc_utf8_encode(msg, strlen(msg), SILC_STRING_LANGUAGE,
+    silc_utf8_encode(msg, strlen(msg), SILC_STRING_LOCALE,
 		     message, len);
   }
 

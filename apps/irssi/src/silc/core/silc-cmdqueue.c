@@ -38,7 +38,7 @@ void silc_queue_flush(SilcClientConnection conn)
   if (list != NULL) {
     GSList *tmp;
 
-    for (tmp = g_slist_next(list); tmp != NULL; tmp = g_slist_next(tmp)) 
+    for (tmp = g_slist_next(list); tmp != NULL; tmp = g_slist_next(tmp))
       silc_client_command_call(silc_client, conn, tmp->data);
 
     g_slist_foreach(list, (GFunc) cmd_list_remove_cb, NULL);
@@ -58,7 +58,7 @@ void silc_queue_enable(SilcClientConnection conn)
 void silc_queue_disable(SilcClientConnection conn)
 {
   GSList *list = g_hash_table_lookup(cmd_queues, conn);
- 
+
    if (list != NULL) {
      silc_queue_flush(conn);
      g_slist_free(list);
@@ -101,7 +101,7 @@ bool silc_queue_command_call(SilcClient client,
   va_end(ap);
 
   if (!silc_term_utf8()) {
-    int len = silc_utf8_encoded_len(cmd, strlen(cmd), SILC_STRING_LANGUAGE);
+    int len = silc_utf8_encoded_len(cmd, strlen(cmd), SILC_STRING_LOCALE);
     char *message = silc_calloc(len + 1, sizeof(*cmd));
     if (message == NULL) {
 
@@ -113,8 +113,7 @@ bool silc_queue_command_call(SilcClient client,
 
       return FALSE;
     }
-    silc_utf8_encode(cmd, strlen(cmd), SILC_STRING_LANGUAGE,
-		     message, len);
+    silc_utf8_encode(cmd, strlen(cmd), SILC_STRING_LOCALE, message, len);
 
     if (need_free)
       g_free(cmd);

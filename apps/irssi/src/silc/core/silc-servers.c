@@ -1,7 +1,7 @@
 /*
   silc-server.c : irssi
 
-  Copyright (C) 2000 - 2003 Timo Sirainen
+  Copyright (C) 2000 - 2004 Timo Sirainen
                             Pekka Riikonen <priikone@silcnet.org>
 
   This program is free software; you can redistribute it and/or modify
@@ -245,10 +245,10 @@ static void send_message(SILC_SERVER_REC *server, char *target,
   g_return_if_fail(msg != NULL);
 
   if (!silc_term_utf8()) {
-    len = silc_utf8_encoded_len(msg, strlen(msg), SILC_STRING_LANGUAGE);
+    len = silc_utf8_encoded_len(msg, strlen(msg), SILC_STRING_LOCALE);
     message = silc_calloc(len + 1, sizeof(*message));
     g_return_if_fail(message != NULL);
-    silc_utf8_encode(msg, strlen(msg), SILC_STRING_LANGUAGE, message, len);
+    silc_utf8_encode(msg, strlen(msg), SILC_STRING_LOCALE, message, len);
   }
 
   if (target_type == SEND_TARGET_CHANNEL)
@@ -541,10 +541,10 @@ static void command_smsg(const char *data, SILC_SERVER_REC *server,
     int len, result;
 
     if (!silc_term_utf8()) {
-      len = silc_utf8_encoded_len(msg, strlen(msg), SILC_STRING_LANGUAGE);
+      len = silc_utf8_encoded_len(msg, strlen(msg), SILC_STRING_LOCALE);
       message = silc_calloc(len + 1, sizeof(*message));
       g_return_if_fail(message != NULL);
-      silc_utf8_encode(msg, strlen(msg), SILC_STRING_LANGUAGE, message, len);
+      silc_utf8_encode(msg, strlen(msg), SILC_STRING_LOCALE, message, len);
     }
 
     if (target_type == SEND_TARGET_CHANNEL)
