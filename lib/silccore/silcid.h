@@ -264,7 +264,7 @@ typedef struct {
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_id_id2str(void *id, SilcIdType type);
+ *    unsigned char *silc_id_id2str(const void *id, SilcIdType type);
  *
  * DESCRIPTION
  *
@@ -272,13 +272,14 @@ typedef struct {
  *    convert the ID's to data for inclusion in the packets.
  *
  ***/
-unsigned char *silc_id_id2str(void *id, SilcIdType type);
+unsigned char *silc_id_id2str(const void *id, SilcIdType type);
 
 /****f* silccore/SilcIDAPI/silc_id_str2id
  *
  * SYNOPSIS
  *
- *    void *silc_id_str2id(unsigned char *id, uint32 id_len, SilcIdType type);
+ *    void *silc_id_str2id(const unsigned char *id, uint32 id_len, 
+ *                         SilcIdType type);
  *
  * DESCRIPTION
  *
@@ -286,26 +287,26 @@ unsigned char *silc_id_id2str(void *id, SilcIdType type);
  *    ID out of data that has been taken for example from packet.
  *
  ***/
-void *silc_id_str2id(unsigned char *id, uint32 id_len, SilcIdType type);
+void *silc_id_str2id(const unsigned char *id, uint32 id_len, SilcIdType type);
 
 /****f* silccore/SilcIDAPI/silc_id_get_len
  *
  * SYNOPSIS
  *
- *    uint32 silc_id_get_len(void *id, SilcIdType type);
+ *    uint32 silc_id_get_len(const void *id, SilcIdType type);
  *
  * DESCRIPTION
  *
  *    Returns the true length of the ID of the type `type'.
  *
  ***/
-uint32 silc_id_get_len(void *id, SilcIdType type);
+uint32 silc_id_get_len(const void *id, SilcIdType type);
 
 /****f* silccore/SilcIDAPI/silc_id_dup
  *
  * SYNOPSIS
  *
- *    void *silc_id_dup(void *id, SilcIdType type);
+ *    void *silc_id_dup(const void *id, SilcIdType type);
  *
  * DESCRIPTION
  *
@@ -313,6 +314,6 @@ uint32 silc_id_get_len(void *id, SilcIdType type);
  *    duplicated ID.
  *
  ***/
-void *silc_id_dup(void *id, SilcIdType type);
+void *silc_id_dup(const void *id, SilcIdType type);
 
 #endif

@@ -38,55 +38,16 @@ struct SilcIDPayloadStruct {
 
 /* Parses buffer and return ID payload into payload structure */
 
-SilcIDPayload silc_id_payload_parse(SilcBuffer buffer)
+SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
+				    uint32 payload_len)
 {
-  SilcIDPayload new;
-  int ret;
-
-  SILC_LOG_DEBUG(("Parsing ID payload"));
-
-  new = silc_calloc(1, sizeof(*new));
-
-  ret = silc_buffer_unformat(buffer,
-			     SILC_STR_UI_SHORT(&new->type),
-			     SILC_STR_UI_SHORT(&new->len),
-			     SILC_STR_END);
-  if (ret == -1)
-    goto err;
-
-  silc_buffer_pull(buffer, 4);
-
-  if (new->len > buffer->len)
-    goto err;
-
-  ret = silc_buffer_unformat(buffer,
-			     SILC_STR_UI_XNSTRING_ALLOC(&new->id, new->len),
-			     SILC_STR_END);
-  if (ret == -1)
-    goto err;
-
-  silc_buffer_push(buffer, 4);
-
-  return new;
-
- err:
-  silc_free(new);
-  return NULL;
-}
-
-/* Parses data and return ID payload into payload structure. */
-
-SilcIDPayload silc_id_payload_parse_data(unsigned char *data, 
-					 uint32 len)
-{
-  SilcIDPayload new;
   SilcBufferStruct buffer;
+  SilcIDPayload new;
   int ret;
 
   SILC_LOG_DEBUG(("Parsing ID payload"));
 
-  silc_buffer_set(&buffer, data, len);
-
+  silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
   new = silc_calloc(1, sizeof(*new));
 
   ret = silc_buffer_unformat(&buffer,
@@ -107,6 +68,8 @@ SilcIDPayload silc_id_payload_parse_data(unsigned char *data,
   if (ret == -1)
     goto err;
 
+  silc_buffer_push(&buffer, 4);
+
   return new;
 
  err:
@@ -116,7 +79,7 @@ SilcIDPayload silc_id_payload_parse_data(unsigned char *data,
 
 /* Return the ID directly from the raw payload data. */
 
-void *silc_id_payload_parse_id(unsigned char *data, uint32 len)
+void *silc_id_payload_parse_id(const unsigned char *data, uint32 len)
 {
   SilcBufferStruct buffer;
   SilcIdType type;
@@ -125,8 +88,7 @@ void *silc_id_payload_parse_id(unsigned char *data, uint32 len)
   int ret;
   void *id;
 
-  silc_buffer_set(&buffer, data, len);
-
+  silc_buffer_set(&buffer, (unsigned char *)data, len);
   ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI_SHORT(&type),
 			     SILC_STR_UI_SHORT(&idlen),
@@ -155,7 +117,7 @@ void *silc_id_payload_parse_id(unsigned char *data, uint32 len)
 
 /* Encodes ID Payload */
 
-SilcBuffer silc_id_payload_encode(void *id, SilcIdType type)
+SilcBuffer silc_id_payload_encode(const void *id, SilcIdType type)
 {
   SilcBuffer buffer;
   unsigned char *id_data;
@@ -250,11 +212,13 @@ struct SilcArgumentPayloadStruct {
 
 /* Parses arguments and returns them into Argument Payload structure. */
 
-SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
+SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
+						uint32 payload_len,
 						uint32 argc)
 {
+  SilcBufferStruct buffer;
   SilcArgumentPayload new;
-  uint16 payload_len = 0;
+  uint16 p_len = 0;
   unsigned char arg_num = 0;
   unsigned char arg_type = 0;
   uint32 pull_len = 0;
@@ -262,6 +226,7 @@ SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
 
   SILC_LOG_DEBUG(("Parsing argument payload"));
 
+  silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
   new = silc_calloc(1, sizeof(*new));
   new->argv = silc_calloc(argc, sizeof(unsigned char *));
   new->argv_lens = silc_calloc(argc, sizeof(uint32));
@@ -270,39 +235,39 @@ SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
   /* Get arguments */
   arg_num = 1;
   for (i = 0; i < argc; i++) {
-    ret = silc_buffer_unformat(buffer,
-			       SILC_STR_UI_SHORT(&payload_len),
+    ret = silc_buffer_unformat(&buffer,
+			       SILC_STR_UI_SHORT(&p_len),
 			       SILC_STR_UI_CHAR(&arg_type),
 			       SILC_STR_END);
     if (ret == -1)
       goto err;
     
-    new->argv_lens[i] = payload_len;
+    new->argv_lens[i] = p_len;
     new->argv_types[i] = arg_type;
 
-    if (payload_len > buffer->len - 3)
+    if (p_len > buffer.len - 3)
       break;
     
     /* Get argument data */
-    silc_buffer_pull(buffer, 3);
-    ret = silc_buffer_unformat(buffer,
+    silc_buffer_pull(&buffer, 3);
+    ret = silc_buffer_unformat(&buffer,
 			       SILC_STR_UI_XNSTRING_ALLOC(&new->argv[i], 
-							  payload_len),
+							  p_len),
 			       SILC_STR_END);
     if (ret == -1)
       goto err;
 
-    silc_buffer_pull(buffer, payload_len);
-    pull_len += 3 + payload_len;
+    silc_buffer_pull(&buffer, p_len);
+    pull_len += 3 + p_len;
   }
 
-  if (buffer->len != 0)
+  if (buffer.len != 0)
     goto err;
 
   new->argc = argc;
   new->pos = 0;
 
-  silc_buffer_push(buffer, pull_len);
+  silc_buffer_push(&buffer, pull_len);
 
   return new;
 

@@ -1,3 +1,30 @@
+Mon Nov 26 18:09:48 EET 2001  Pekka Riikonen <priikone@silcnet.org>'
+
+	* Fixed LIST command reply sending in server.  Affected file
+	  silcd/command.c.
+
+	* Server now sends the kicker's client ID in the KICK notify
+	  to the kicked client.  Affected file silcd/command.c.
+
+	* The client library now parses the kickers client ID and
+	  UI displays it.  Affected files lib/silcclient/client_notify.c
+	  and irssi/src/silc/core/silc-channels.c, module-formats.c.
+
+	* Made all payload parsing function prototypes consistent.
+	  They all take now const unsigned char * and uint32 pair as
+	  the payload data instead of SilcBuffer.  Changes all around
+	  the source tree.  Other unsigned char* -> const unsigned char*
+	  changes around the tree as well.
+
+	* Optimized SFTP client and server packet sending not to
+	  allocate new buffer for each packet but to recycle the
+	  first allocated buffer.  Affected files are
+	  lib/silcsftp/sftp_client.c, sftp_server.c, sftp_util.[ch].
+
+	* Optimized the SFTP client to use SilcList instead of
+	  SilcDList for requests, because it is faster.  Affected file
+	  is lib/silcsftp/sftp_client.c.
+
 Mon Nov 26 15:01:53 CET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* If client entry is deleted with active key agreement

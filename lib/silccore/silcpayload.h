@@ -70,7 +70,8 @@ typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
  *
  * SYNOPSIS
  *
- *    SilcIDPayload silc_id_payload_parse(SilcBuffer buffer);
+ *    SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
+ *                                        uint32 payload_len);
  *
  * DESCRIPTION
  *
@@ -78,30 +79,14 @@ typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
  *    `buffer' is raw payload buffer.
  *
  ***/
-SilcIDPayload silc_id_payload_parse(SilcBuffer buffer);
-
-/****f* silccore/SilcGenericPayloadAPI/silc_id_payload_parse_data
- *
- * SYNOPSIS
- *
- *    SilcIDPayload silc_id_payload_parse_data(unsigned char *data, 
- *                                             uint32 len);
- *
- * DESCRIPTION
- *
- *    Parses buffer and return ID payload into payload structure. The
- *    `data' and `len' are the raw payload buffer. This is equivalent
- *    to the silc_id_payload_parse function.
- *
- ***/
-SilcIDPayload silc_id_payload_parse_data(unsigned char *data, 
-					 uint32 len);
+SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
+				    uint32 payload_len);
 
 /****f* silccore/SilcGenericPayloadAPI/silc_id_payload_parse_id
  *
  * SYNOPSIS
  *
- *    void *silc_id_payload_parse_id(unsigned char *data, uint32 len);
+ *    void *silc_id_payload_parse_id(const unsigned char *data, uint32 len);
  *
  * DESCRIPTION
  *
@@ -109,13 +94,13 @@ SilcIDPayload silc_id_payload_parse_data(unsigned char *data,
  *    caller must free the returned ID.
  *
  ***/
-void *silc_id_payload_parse_id(unsigned char *data, uint32 len);
+void *silc_id_payload_parse_id(const unsigned char *data, uint32 len);
 
 /****f* silccore/SilcGenericPayloadAPI/silc_id_payload_encode
  *
  * SYNOPSIS
  *
- *    SilcBuffer silc_id_payload_encode(void *id, SilcIdType type);
+ *    SilcBuffer silc_id_payload_encode(const void *id, SilcIdType type);
  *
  * DESCRIPTION
  *
@@ -123,7 +108,7 @@ void *silc_id_payload_parse_id(unsigned char *data, uint32 len);
  *    into the payload. Returns the encoded payload buffer.
  *
  ***/
-SilcBuffer silc_id_payload_encode(void *id, SilcIdType type);
+SilcBuffer silc_id_payload_encode(const void *id, SilcIdType type);
 
 /****f* silccore/SilcGenericPayloadAPI/silc_id_payload_encode_data
  *
@@ -213,8 +198,10 @@ uint32 silc_id_payload_get_len(SilcIDPayload payload);
  *
  * SYNOPSIS
  *
- *    SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
- *                                                    uint32 argc);
+ *    SilcArgumentPayload 
+ *    silc_argument_payload_parse(const unsigned char *payload,
+ *                                uint32 payload_len,
+ *                                uint32 argc);
  *
  * DESCRIPTION
  *
@@ -226,7 +213,8 @@ uint32 silc_id_payload_get_len(SilcIDPayload payload);
  *    the number of the arguments.
  *
  ***/
-SilcArgumentPayload silc_argument_payload_parse(SilcBuffer buffer,
+SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
+						uint32 payload_len,
 						uint32 argc);
 
 /****f* silccore/SilcGenericPayloadAPI/silc_argument_payload_encode

@@ -29,7 +29,7 @@
 
 /* Converts ID to string. */
 
-unsigned char *silc_id_id2str(void *id, SilcIdType type)
+unsigned char *silc_id_id2str(const void *id, SilcIdType type)
 {
   unsigned char *ret_id;
   SilcServerID *server_id;
@@ -69,7 +69,7 @@ unsigned char *silc_id_id2str(void *id, SilcIdType type)
 
 /* Converts string to a ID */
 
-void *silc_id_str2id(unsigned char *id, uint32 id_len, SilcIdType type)
+void *silc_id_str2id(const unsigned char *id, uint32 id_len, SilcIdType type)
 {
 
   switch(type) {
@@ -131,7 +131,7 @@ void *silc_id_str2id(unsigned char *id, uint32 id_len, SilcIdType type)
 
 /* Returns length of the ID */
 
-uint32 silc_id_get_len(void *id, SilcIdType type)
+uint32 silc_id_get_len(const void *id, SilcIdType type)
 {
   switch(type) {
   case SILC_ID_SERVER:
@@ -159,7 +159,7 @@ uint32 silc_id_get_len(void *id, SilcIdType type)
 
 /* Duplicate ID data */
 
-void *silc_id_dup(void *id, SilcIdType type)
+void *silc_id_dup(const void *id, SilcIdType type)
 {
   switch(type) {
   case SILC_ID_SERVER:
