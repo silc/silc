@@ -1707,6 +1707,7 @@ static void silc_server_command_join_channel(SilcServer server,
   bool resolve;
   unsigned char *fkey = NULL;
   SilcUInt32 fkey_len = 0;
+  const char *cipher;
 
   SILC_LOG_DEBUG(("Joining client to channel"));
 
@@ -1917,12 +1918,11 @@ static void silc_server_command_join_channel(SilcServer server,
 
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
     tmp = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+    cipher = silc_cipher_get_name(channel->channel_key);
     keyp = silc_channel_key_payload_encode(silc_id_get_len(channel->id,
 							   SILC_ID_CHANNEL), 
 					   tmp,
-					   strlen(channel->channel_key->
-						  cipher->name),
-					   channel->channel_key->cipher->name,
+					   strlen(cipher), cipher,
 					   channel->key_len / 8, channel->key);
     silc_free(tmp);
   }
@@ -2611,8 +2611,8 @@ SILC_SERVER_CMD_FUNC(cmode)
       silc_server_send_channel_key(server, NULL, channel, 
 				   server->server_type == SILC_ROUTER ? 
 				   FALSE : !server->standalone);
-	
-      cipher = channel->channel_key->cipher->name;
+
+      cipher = (char *)silc_cipher_get_name(channel->channel_key);
       hmac = (char *)silc_hmac_get_name(channel->hmac);
     }
   }

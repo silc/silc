@@ -101,8 +101,9 @@ void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
   /* Encrypt the data area of the packet. */
   if (cipher) {
     SILC_LOG_DEBUG(("Encrypting packet, cipher %s, len %d", 
-		    cipher->cipher->name, len));
-    silc_cipher_encrypt(cipher, buffer->data, buffer->data, len, cipher->iv);
+		    silc_cipher_get_name(cipher), len));
+    silc_cipher_encrypt(cipher, buffer->data, buffer->data, len,
+			silc_cipher_get_iv(cipher));
   }
 
   /* Pull the HMAC into the visible data area in the buffer */
@@ -326,7 +327,8 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
     /* Decrypt first 16 bytes of the packet */
     if (!SILC_IS_INBUF_PENDING(sock) && cipher)
       silc_cipher_decrypt(cipher, sock->inbuf->data, sock->inbuf->data, 
-			  SILC_PACKET_MIN_HEADER_LEN, cipher->iv);
+			  SILC_PACKET_MIN_HEADER_LEN,
+			  silc_cipher_get_iv(cipher));
 
     /* Get packet lenght and full packet length with padding */
     SILC_PACKET_LENGTH(sock->inbuf, packetlen, paddedlen);
@@ -477,7 +479,7 @@ static int silc_packet_decrypt_rest(SilcCipher cipher, SilcHmac hmac,
     /* Decrypt rest of the packet */
     silc_buffer_pull(buffer, SILC_PACKET_MIN_HEADER_LEN);
     silc_cipher_decrypt(cipher, buffer->data, buffer->data, buffer->len, 
-			cipher->iv);
+			silc_cipher_get_iv(cipher));
     silc_buffer_push(buffer, SILC_PACKET_MIN_HEADER_LEN);
 
     SILC_LOG_HEXDUMP(("Fully decrypted packet, len %d", buffer->len),
@@ -525,7 +527,8 @@ static int silc_packet_decrypt_rest_special(SilcCipher cipher,
 		      "packet dropped"));
       return FALSE;
     }
-    silc_cipher_decrypt(cipher, buffer->data, buffer->data, len, cipher->iv);
+    silc_cipher_decrypt(cipher, buffer->data, buffer->data, len,
+			silc_cipher_get_iv(cipher));
     silc_buffer_push(buffer, SILC_PACKET_MIN_HEADER_LEN);
     SILC_LOG_HEXDUMP(("packet, len %d", buffer->len), 
 		     buffer->data, buffer->len);

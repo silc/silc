@@ -69,7 +69,7 @@ silc_private_message_payload_parse(unsigned char *payload,
   /* Decrypt the payload */
   if (cipher)
     silc_cipher_decrypt(cipher, buffer.data, buffer.data, 
-			buffer.len, cipher->iv);
+			buffer.len, silc_cipher_get_iv(cipher));
 
   newp = silc_calloc(1, sizeof(*newp));
   if (!newp)
@@ -144,7 +144,7 @@ SilcBuffer silc_private_message_payload_encode(SilcUInt16 flags,
   if (cipher) {
     /* Encrypt payload of the packet. */
     silc_cipher_encrypt(cipher, buffer->data, buffer->data, 
-			buffer->len, cipher->iv);
+			buffer->len, silc_cipher_get_iv(cipher));
     memset(pad, 0, sizeof(pad));
   }
 

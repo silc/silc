@@ -1456,8 +1456,8 @@ void silc_server_send_connect_notifys(SilcServer server,
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Your connection is secured with %s cipher, "
 			   "key length %d bits",
-			   idata->send_key->cipher->name,
-			   idata->send_key->cipher->key_len));
+			   silc_cipher_get_name(idata->send_key),
+			   silc_cipher_get_key_len(idata->send_key)));
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Your current nickname is %s",
 			   client->nickname));

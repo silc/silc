@@ -456,13 +456,15 @@ int silc_client_send_private_message_key(SilcClient client,
   SilcSocketConnection sock = conn->sock;
   SilcBuffer buffer;
   int cipher_len;
+  const char *cipher;
 
   if (!client_entry->send_key || !client_entry->key)
     return FALSE;
 
   SILC_LOG_DEBUG(("Sending private message key"));
 
-  cipher_len = strlen(client_entry->send_key->cipher->name);
+  cipher = silc_cipher_get_name(client_entry->send_key);
+  cipher_len = strlen(cipher);
 
   /* Create private message key payload */
   buffer = silc_buffer_alloc(2 + client_entry->key_len);
@@ -472,7 +474,7 @@ int silc_client_send_private_message_key(SilcClient client,
 		     SILC_STR_UI_XNSTRING(client_entry->key, 
 					  client_entry->key_len),
 		     SILC_STR_UI_SHORT(cipher_len),
-		     SILC_STR_UI_XNSTRING(client_entry->send_key->cipher->name,
+		     SILC_STR_UI_XNSTRING(cipher,
 					  cipher_len),
 		     SILC_STR_END);
 
@@ -548,7 +550,7 @@ silc_client_list_private_message_keys(SilcClient client,
 
     if (entry->send_key) {
       keys[count].client_entry = entry;
-      keys[count].cipher = entry->send_key->cipher->name;
+      keys[count].cipher = (char *)silc_cipher_get_name(entry->send_key);
       keys[count].key = entry->generated == FALSE ? entry->key : NULL;
       keys[count].key_len = entry->generated == FALSE ? entry->key_len : 0;
       count++;

@@ -1780,6 +1780,7 @@ void silc_server_send_channel_key(SilcServer server,
   SilcBuffer packet;
   unsigned char *chid;
   SilcUInt32 tmp_len;
+  const char *cipher;
  
   SILC_LOG_DEBUG(("Sending key to channel %s", channel->channel_name));
  
@@ -1791,11 +1792,11 @@ void silc_server_send_channel_key(SilcServer server,
     return;
  
   /* Encode channel key packet */
-  tmp_len = strlen(channel->channel_key->cipher->name);
+  cipher = silc_cipher_get_name(channel->channel_key);
+  tmp_len = strlen(cipher);
   packet = silc_channel_key_payload_encode(silc_id_get_len(channel->id,
 							   SILC_ID_CHANNEL),
-					   chid, tmp_len,
-                                           channel->channel_key->cipher->name,
+					   chid, tmp_len, cipher,
                                            channel->key_len / 8, channel->key);
   silc_server_packet_send_to_channel(server, sender, channel, 
 				     SILC_PACKET_CHANNEL_KEY,

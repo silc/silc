@@ -219,6 +219,7 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
 {
   SilcUnknownEntry conn_data;
   SilcIDListData idata;
+  const char *cname = silc_cipher_get_name(cipher);
 
   SILC_LOG_DEBUG(("Setting new keys into use"));
 
@@ -226,14 +227,14 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
   idata = (SilcIDListData)conn_data;
 
   /* Allocate cipher to be used in the communication */
-  if (!silc_cipher_alloc(cipher->cipher->name, &idata->send_key)) {
+  if (!silc_cipher_alloc((char *)cname, &idata->send_key)) {
     silc_free(conn_data);
-    SILC_LOG_ERROR(("Cannot allocate algorithm: %s", cipher->cipher->name));
+    SILC_LOG_ERROR(("Cannot allocate algorithm: %s", cname));
     return FALSE;
   }
-  if (!silc_cipher_alloc(cipher->cipher->name, &idata->receive_key)) {
+  if (!silc_cipher_alloc((char *)cname, &idata->receive_key)) {
     silc_free(conn_data);
-    SILC_LOG_ERROR(("Cannot allocate algorithm: %s", cipher->cipher->name));
+    SILC_LOG_ERROR(("Cannot allocate algorithm: %s", cname));
     return FALSE;
   }
   
@@ -314,7 +315,7 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
 
   SILC_LOG_INFO(("%s (%s) security properties: %s %s %s %s", 
 		 sock->hostname, sock->ip,
-		 idata->send_key->cipher->name,
+		 silc_cipher_get_name(idata->send_key),
 		 (char *)silc_hmac_get_name(idata->hmac_send),
 		 silc_hash_get_name(idata->hash),
 		 ske->prop->flags & SILC_SKE_SP_FLAG_PFS ? "PFS" : ""));

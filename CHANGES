@@ -11,6 +11,16 @@ Thu Oct 24 12:22:35 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  channel message with wrong key during backup resuming
 	  protocol.  Affected file silcd/packet_send.c.
 
+	* ROBODoc documented lib/silccrypt/silccipher.h.  A patch by
+	  Toni Willberg (toniw@iki.fi)
+
+	* Changed the SilcCipher context to be private.  Changed the
+	  silc_cipher_get_iv to just return pointer to the IV.  Added
+	  silc_cipher_get_name to return the name of the cipher.
+	  Fixed code all around to support these changes.  Affected
+	  files are lib/silccrypt/silccipher.[ch], client library and
+	  server.
+
 Wed Oct 23 19:01:41 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed unaligned access in lib/silccore/silcattrs.c.

@@ -811,8 +811,9 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 	memset(buf, 0, sizeof(buf));
 	strncat(buf, "  ", 2);
 
-	len = strlen(keys[k]->cipher->cipher->name);
-	strncat(buf, keys[k]->cipher->cipher->name, len > 16 ? 16 : len);
+	len = strlen(silc_cipher_get_name(keys[k]->cipher));
+	strncat(buf, silc_cipher_get_name(keys[k]->cipher),
+		len > 16 ? 16 : len);
 	if (len < 16)
 	  for (i = 0; i < 16 - len; i++)
 	    strcat(buf, " ");

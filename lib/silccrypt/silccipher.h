@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2002 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,26 +21,33 @@
 #ifndef SILCCIPHER_H
 #define SILCCIPHER_H
 
-/* 
-   SILC Cipher object.
+/****h* silccrypt/SILC Cipher Interface
+ *
+ * DESCRIPTION
+ *
+ * This is the interface for cipher functions.  It provides cipher
+ * registering and unregistering routines, encryption and decryption
+ * routines.
+ *
+ ***/
 
-   Default SILC cipher object to represent any cipher. The function
-   pointers are the stub functions for each implemented cipher. Following
-   short description of the fields:
+/****s* silccrypt/SilcCipherAPI/SilcCipher
+ *
+ * NAME
+ * 
+ *    typedef struct { ... } SilcCipher;
+ *
+ * DESCRIPTION
+ *
+ *    This context is the actual cipher context and is allocated
+ *    by silc_cipher_alloc and given as argument usually to all
+ *    silc_cipher _* functions.  It is freed by the silc_cipher_free
+ *    function.
+ *
+ ***/
+typedef struct SilcCipherStruct *SilcCipher;
 
-   char *name
-
-       Logical name of the cipher.
-
-   SilcUInt32 block_len
-
-       Block size of the cipher.
-
-   SilcUInt32 key_len
-
-       Length of the key of the cipher (in bits).
-
-*/
+/* The default SILC Cipher object to represent any cipher in SILC. */
 typedef struct {
   char *name;
   SilcUInt32 block_len;
@@ -57,18 +64,6 @@ typedef struct {
 
 #define SILC_CIPHER_MAX_IV_SIZE 16
 
-/* The main SilcCipher structure. Use SilcCipher instead of SilcCipherStruct.
-   Also remember that SilcCipher is a pointer. */
-typedef struct SilcCipherStruct {
-  SilcCipherObject *cipher;
-  void *context;
-  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
-  void (*set_iv)(struct SilcCipherStruct *, const unsigned char *);
-  void (*get_iv)(struct SilcCipherStruct *, unsigned char *);
-  SilcUInt32 (*get_key_len)(struct SilcCipherStruct *);
-  SilcUInt32 (*get_block_len)(struct SilcCipherStruct *);
-} *SilcCipher;
-
 /* Marks for all ciphers in silc. This can be used in silc_cipher_unregister
    to unregister all ciphers at once. */
 #define SILC_ALL_CIPHERS ((SilcCipherObject *)1)
@@ -78,6 +73,7 @@ extern DLLAPI const SilcCipherObject silc_default_ciphers[];
 
 /* Default cipher in the SILC protocol */
 #define SILC_DEFAULT_CIPHER "aes-256-cbc"
+
 
 /* Macros */
 
@@ -113,29 +109,243 @@ bool silc_##cipher##_decrypt_cbc(void *context,			\
 				 unsigned char *dst,		\
 				 SilcUInt32 len,		\
 				 unsigned char *iv)
+
+
 #define SILC_CIPHER_API_CONTEXT_LEN(cipher)			\
 SilcUInt32 silc_##cipher##_context_len()
 
+
 /* Prototypes */
+
+/****f* silccrypt/SilcCipherAPI/
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_cipher_register(const SilcCipherObject *cipher);
+ *
+ * DESCRIPTION
+ *
+ *    Register a new cipher into SILC. This is used at the initialization of
+ *    the SILC. This function allocates a new object for the cipher to be
+ *    registered. Therefore, if memory has been allocated for the object sent
+ *    as argument it has to be free'd after this function returns succesfully.
+ *
+ ***/
 bool silc_cipher_register(const SilcCipherObject *cipher);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_unregister
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_cipher_unregister(SilcCipherObject *cipher);
+ *
+ * DESCRIPTION
+ *
+ *    Unregister a cipher from the SILC.
+ *
+ ***/
 bool silc_cipher_unregister(SilcCipherObject *cipher);
+
+/****f* silccrypt/SilcCipherAPI/
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_cipher_register_default(void);
+ *
+ * DESCRIPTION
+ *
+ *    Function that registers all the default ciphers (all builtin ciphers). 
+ *    The application may use this to register the default ciphers if specific
+ *    ciphers in any specific order is not wanted.
+ *
+ ***/
 bool silc_cipher_register_default(void);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_unregister_all
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_cipher_unregister_all(void);
+ *
+ * DESCRIPTION
+ *
+ *    Unregisters all ciphers.
+ *
+ ***/
 bool silc_cipher_unregister_all(void);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_alloc
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher);
+ *
+ * DESCRIPTION
+ *
+ *    Allocates a new SILC cipher object. Function returns 1 on succes and 0 
+ *    on error. The allocated cipher is returned in new_cipher argument. The
+ *    caller must set the key to the cipher after this function has returned
+ *    by calling the ciphers set_key function.
+ *
+ ***/
 bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_free
+ *
+ * SYNOPSIS
+ *
+ *    void silc_cipher_free(SilcCipher cipher);
+ *
+ * DESCRIPTION
+ *
+ *    Frees the given cipher.
+ *
+ ***/
 void silc_cipher_free(SilcCipher cipher);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_is_supported(
+ *
+ * SYNOPSIS
+ *
+ * bool silc_cipher_is_supported(const unsigned char *name);
+ *
+ * DESCRIPTION
+ *
+ *    Returns TRUE if cipher `name' is supported.
+ * 
+ ***/
 bool silc_cipher_is_supported(const unsigned char *name);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_get_supported
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_cipher_get_supported(void);
+ *
+ * DESCRIPTION
+ *
+ *    Returns comma separated list of supported ciphers.
+ *
+ ***/
 char *silc_cipher_get_supported(void);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_encrypt
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
+ *                             unsigned char *dst, SilcUInt32 len, 
+ *                             unsigned char *iv);
+ *
+ * DESCRIPTION
+ *
+ *    Encrypts data from `src' into `dst' with the specified cipher and
+ *    Initial Vector (IV).  The `src' and `dst' maybe same buffer.
+ * 
+ ***/
 bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
 			 unsigned char *dst, SilcUInt32 len, 
 			 unsigned char *iv);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_decrypt
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
+ *                             unsigned char *dst, SilcUInt32 len, 
+ *                             unsigned char *iv);
+ *
+ * DESCRIPTION
+ *
+ *    Decrypts data from `src' into `dst' with the specified cipher and
+ *    Initial Vector (IV).  The `src' and `dst' maybe same buffer.
+ *
+ ***/
 bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 			 unsigned char *dst, SilcUInt32 len, 
 			 unsigned char *iv);
+
+/****f* silccrypt/SilcCipherAPI/
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
+ *                             SilcUInt32 keylen);
+ *
+ * DESCRIPTION
+ *
+ *    Sets the key for the cipher.  The `keylen' is the key length in
+ *    bits.
+ *
+ ***/
 bool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
 			 SilcUInt32 keylen);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_set_iv
+ *
+ * SYNOPSIS
+ *
+ *    void silc_cipher_set_iv(SilcCipher cipher, const unsigned char *iv);
+ *
+ * DESCRIPTION
+ *
+ *    Sets the IV (initial vector) for the cipher.  The `iv' must be 
+ *    the size of the block size of the cipher.
+ *
+ ***/
 void silc_cipher_set_iv(SilcCipher cipher, const unsigned char *iv);
-void silc_cipher_get_iv(SilcCipher cipher, unsigned char *iv);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_get_iv
+ *
+ * SYNOPSIS
+ *
+ *    unsigned char *silc_cipher_get_iv(SilcCipher cipher);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the IV (initial vector) of the cipher.  The returned 
+ *    pointer must not be freed by the caller.
+ * 
+ ***/
+unsigned char *silc_cipher_get_iv(SilcCipher cipher);
+
+/****f* silccrypt/SilcCipherAPI/SilcUInt32 silc_cipher_get_key_len
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_cipher_get_key_len(SilcCipher cipher);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the key length of the cipher in bits.
+ * 
+ ***/
 SilcUInt32 silc_cipher_get_key_len(SilcCipher cipher);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_get_block_len
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_cipher_get_block_len(SilcCipher cipher);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the block size of the cipher in bytes.
+ *
+ ***/
 SilcUInt32 silc_cipher_get_block_len(SilcCipher cipher);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_get_name
+ *
+ * SYNOPSIS
+ *
+ *    const char *silc_cipher_get_name(SilcCipher cipher);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the name of the cipher.
+ *
+ ***/
+const char *silc_cipher_get_name(SilcCipher cipher);
 
 #endif

@@ -117,12 +117,13 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
 				      bool is_responder)
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
+  const char *cname = silc_cipher_get_name(cipher);
 
   SILC_LOG_DEBUG(("Setting new keys into use"));
 
   /* Allocate cipher to be used in the communication */
-  silc_cipher_alloc(cipher->cipher->name, &conn->send_key);
-  silc_cipher_alloc(cipher->cipher->name, &conn->receive_key);
+  silc_cipher_alloc((char *)cname, &conn->send_key);
+  silc_cipher_alloc((char *)cname, &conn->receive_key);
   silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, &conn->hmac_send);
   silc_hmac_alloc((char *)silc_hmac_get_name(hmac), NULL, &conn->hmac_receive);
 

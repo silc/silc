@@ -486,7 +486,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     tmp = silc_client_chmode(mode,
 			     channel->channel_key ? 
-			     channel->channel_key->cipher->name : "",
+			     silc_cipher_get_name(channel->channel_key) : "",
 			     channel->hmac ? 
 			     silc_hmac_get_name(channel->hmac) : "");
     
@@ -1314,7 +1314,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
       mode = silc_client_chmode(modei, 
 				channel_entry->channel_key ? 
-				channel_entry->channel_key->cipher->name : "",
+				silc_cipher_get_name(channel_entry->
+						     channel_key) : "",
 				channel_entry->hmac ? 
 				silc_hmac_get_name(channel_entry->hmac) : "");
       g_free_not_null(chanrec->mode);

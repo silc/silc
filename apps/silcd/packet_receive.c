@@ -2860,9 +2860,10 @@ void silc_server_new_channel(SilcServer server,
   char *channel_name;
   SilcUInt32 name_len;
   unsigned char *id;
-  SilcUInt32 id_len;
+  SilcUInt32 id_len, cipher_len;
   SilcServerEntry server_entry;
   SilcChannelEntry channel;
+  const char *cipher;
 
   if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
       packet->src_id_type != SILC_ID_SERVER ||
@@ -2983,10 +2984,10 @@ void silc_server_new_channel(SilcServer server,
       /* Send the new channel key to the server */
       id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
       id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
+      cipher = silc_cipher_get_name(channel->channel_key);
+      cipher_len = strlen(cipher);
       chk = silc_channel_key_payload_encode(id_len, id,
-					    strlen(channel->channel_key->
-						   cipher->name),
-					    channel->channel_key->cipher->name,
+					    cipher_len, cipher,
 					    channel->key_len / 8, 
 					    channel->key);
       silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
@@ -3049,11 +3050,10 @@ void silc_server_new_channel(SilcServer server,
 	/* Send to the server */
 	id = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
 	id_len = silc_id_get_len(channel->id, SILC_ID_CHANNEL);
+	cipher = silc_cipher_get_name(channel->channel_key);
+	cipher_len = strlen(cipher);
 	chk = silc_channel_key_payload_encode(id_len, id,
-					      strlen(channel->channel_key->
-						     cipher->name),
-					      channel->channel_key->
-					      cipher->name,
+					      cipher_len, cipher,
 					      channel->key_len / 8, 
 					      channel->key);
 	silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
@@ -3436,6 +3436,7 @@ void silc_server_resume_client(SilcServer server,
   SilcHashTableList htl;
   SilcChannelClientEntry chl;
   SilcServerResumeResolve r;
+  const char *cipher;
 
   ret = silc_buffer_unformat(buffer,
 			     SILC_STR_UI16_NSTRING(&id_string, &id_len),
@@ -3764,13 +3765,12 @@ void silc_server_resume_client(SilcServer server,
       }
 
       id_string = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+      cipher = silc_cipher_get_name(channel->channel_key);
       keyp = 
 	silc_channel_key_payload_encode(silc_id_get_len(channel->id,
 							SILC_ID_CHANNEL), 
 					id_string,
-					strlen(channel->channel_key->
-					       cipher->name),
-					channel->channel_key->cipher->name,
+					strlen(cipher), cipher,
 					channel->key_len / 8, channel->key);
       silc_free(id_string);
 

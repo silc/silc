@@ -22,6 +22,13 @@
 #include "silcincludes.h"
 #include "ciphers.h"		/* Includes cipher definitions */
 
+/* The SilcCipher context */
+struct SilcCipherStruct {
+  SilcCipherObject *cipher;
+  void *context;
+  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
+};
+
 #ifndef SILC_EPOC
 /* Dynamically registered list of ciphers. */
 SilcDList silc_cipher_list = NULL;
@@ -228,10 +235,6 @@ bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
     *new_cipher = silc_calloc(1, sizeof(**new_cipher));
     (*new_cipher)->cipher = entry; 
     (*new_cipher)->context = silc_calloc(1, entry->context_len());
-    (*new_cipher)->set_iv = silc_cipher_set_iv;
-    (*new_cipher)->get_iv = silc_cipher_get_iv;
-    (*new_cipher)->get_key_len = silc_cipher_get_key_len;
-    (*new_cipher)->get_block_len = silc_cipher_get_block_len;
     return TRUE;
   }
 
@@ -349,12 +352,11 @@ void silc_cipher_set_iv(SilcCipher cipher, const unsigned char *iv)
   memcpy(&cipher->iv, iv, cipher->cipher->block_len);
 }
 
-/* Returns the IV (initial vector) of the cipher. The IV is returned 
-   to 'iv' argument. */
+/* Returns the IV (initial vector) of the cipher. */
 
-void silc_cipher_get_iv(SilcCipher cipher, unsigned char *iv)
+unsigned char *silc_cipher_get_iv(SilcCipher cipher)
 {
-  memcpy(iv, &cipher->iv, cipher->cipher->block_len);
+  return cipher->iv;
 }
 
 /* Returns the key length of the cipher. */
@@ -369,4 +371,11 @@ SilcUInt32 silc_cipher_get_key_len(SilcCipher cipher)
 SilcUInt32 silc_cipher_get_block_len(SilcCipher cipher)
 {
   return cipher->cipher->block_len;
+}
+
+/* Returns the name of the cipher */
+
+const char *silc_cipher_get_name(SilcCipher cipher)
+{
+  return (const char *)cipher->cipher->name;
 }
