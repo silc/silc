@@ -86,6 +86,10 @@
 1.37 Should I then always use private keys for all messages?</a><br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_370" class="normal">
 1.38 How likely is it that some server would become compromised?</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_380" class="normal">
+1.39 It is said SILC is designed security in mind from the day one. What does it mean?<a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#f1_390" class="normal">
+1.40 If someone joins/leaves the channel, how is assured that he cannot decrypt old/new channel messages?</a><br />
 
 <br />&nbsp;<br />
 
@@ -98,7 +102,8 @@ A: This FAQ answers questions regarding cryptography and security in SILC
    understand a bit more about cryptography and security.  When we make 
    claims or assumptions about security issues we always try to include 
    the reference to the answer which then can be used to learn more about 
-   the specific security issue.
+   the specific security issue.  Also, all claims about SILC's security
+   are made only when we can prove them.
 <br />&nbsp;<br />
 
 <a name="f1_20"></a>
@@ -221,6 +226,20 @@ A: The MAC for SILC packet in the secure binary packet protocol is
    is appended at the end of the SILC packet, and is never encrypted.
    Also the channel message MAC is computed from plaintext when channel
    message is sent.
+<br />&nbsp;<br />
+   In recent times there has been research on the MAC computation orders
+   and under formal analysis the MAC computation order Encrypt-and-MAC
+   (MAC is computed from plaintext) has been found to be vulnerable to 
+   various attacks.  The IPSEC (ESP) is using so called Encrypt-then-MAC
+   (MAC is computed from ciphertext) order and it was found to be the
+   only order which resisted all attacks.  However, the attacks has been 
+   highly theoretical and no practical attacks exist as of today.  
+   Also, other security protocols using same MAC computation order as SILC 
+   are for example SSH and TLS/SSL (Encrypt-and-MAC order).  SILC will not
+   be changing the MAC computation order, instead in the future so called
+   "authenticated encryption" modes will be used which provides both
+   privacy and integrity which renders the probable MAC order problem 
+   void.
 <br />&nbsp;<br />
 
 <a name="f1_160"></a>
@@ -579,5 +598,31 @@ A: Like said in last questions all these scenarios were hypothetical, and
    unlikely, but a possibility.  Server administrators must keep the 
    machine protected in general too, since if the machine is compromised 
    a whole lot of other stuff is compromised too, not just SILC server.
+<br />&nbsp;<br />
+
+<a name="f1_380"></a>
+<samp class="highlight">Q: It is said SILC is designed security in mind
+from the day one. What does it mean?</samp><br />
+A: It means that when SILC was designed it was designed as security
+protocol, not as conferencing protocol which has security features.  It
+means that security was the top priority and security issues was analyzed
+when adding new features to the protocol.  It also means, that SILC was
+designed from attacker's point of view.  Instead of just adding security
+measures to the protocol we first analyzed attacks against the protocol
+(and other protocols) and then designed the SILC to resist the attacks.
+<br />&nbsp;<br />
+
+<a name="f1_390"></a>
+<samp class="highlight">Q: If someone joins/leaves the channel, how is 
+assured that he cannot decrypt old/new channel messages?</samp><br />
+A: Channel key is always regenerated when someone joins or leaves the
+channel.  This assures that it is not possible to decrypt channel messages
+before you have joined the channel, you cannot decrypt old channel 
+messages after you have joined the channel since they were encrypted with 
+different key, and you cannot decrypt channel message after leaving the 
+channel since all new messages will be encrypted with differnet key.  In 
+short, you will know the channel key only when you are joined on the 
+channel, and this is the only time when channel messages can be sent or 
+received.
 <br />&nbsp;<br />
 
