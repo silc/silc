@@ -3,6 +3,10 @@ Sun Feb 11 18:19:51 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 	* Added new config entry [Identity] to fork the server and run
 	  it as specific user and group.  A patch from Bostik.
 
+	* Imported Dotconf configuration library into lib/dotconf.
+	  This will be used to create the SILC configuration files later.
+	  It will appear in the distsribution after this commit.
+
 Sat Feb 10 21:13:45 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* A big code auditing weekend happening.  Auditing code for 
