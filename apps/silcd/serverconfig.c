@@ -157,7 +157,7 @@
        +<Remote address or name>:<Port>
 
 */
-SilcConfigServerSection silc_config_server_sections[] = {
+SilcServerConfigSection silc_server_config_sections[] = {
   { "[Cipher]", 
     SILC_CONFIG_SERVER_SECTION_TYPE_CIPHER, 4 },
   { "[PKCS]", 
@@ -198,11 +198,11 @@ SilcConfigServerSection silc_config_server_sections[] = {
    parses the file. The parsed data is returned to the newly allocated
    configuration object. */
 
-SilcConfigServer silc_config_server_alloc(char *filename)
+SilcServerConfig silc_server_config_alloc(char *filename)
 {
-  SilcConfigServer new;
+  SilcServerConfig new;
   SilcBuffer buffer;
-  SilcConfigServerParse config_parse;
+  SilcServerConfigParse config_parse;
 
   SILC_LOG_DEBUG(("Allocating new configuration object"));
 
@@ -220,9 +220,9 @@ SilcConfigServer silc_config_server_alloc(char *filename)
   silc_config_open(filename, &buffer);
   if (!buffer)
     goto fail;
-  if ((silc_config_server_parse(new, buffer, &config_parse)) == FALSE)
+  if ((silc_server_config_parse(new, buffer, &config_parse)) == FALSE)
     goto fail;
-  if ((silc_config_server_parse_lines(new, config_parse)) == FALSE)
+  if ((silc_server_config_parse_lines(new, config_parse)) == FALSE)
     goto fail;
 
   silc_free(buffer);
@@ -236,7 +236,7 @@ SilcConfigServer silc_config_server_alloc(char *filename)
 
 /* Free's a configuration object. */
 
-void silc_config_server_free(SilcConfigServer config)
+void silc_server_config_free(SilcServerConfig config)
 {
   if (config) {
     silc_free(config->filename);
@@ -262,14 +262,14 @@ void silc_config_server_free(SilcConfigServer config)
    buffer sent as argument can be safely free'd after this function has
    succesfully returned. */
 
-int silc_config_server_parse(SilcConfigServer config, SilcBuffer buffer, 
-			     SilcConfigServerParse *return_config)
+int silc_server_config_parse(SilcServerConfig config, SilcBuffer buffer, 
+			     SilcServerConfigParse *return_config)
 {
   int i, begin;
   unsigned int linenum;
   char line[1024], *cp;
-  SilcConfigServerSection *cptr = NULL;
-  SilcConfigServerParse parse = *return_config, first = NULL;
+  SilcServerConfigSection *cptr = NULL;
+  SilcServerConfigParse parse = *return_config, first = NULL;
 
   SILC_LOG_DEBUG(("Parsing configuration file"));
 
@@ -313,7 +313,7 @@ int silc_config_server_parse(SilcConfigServer config, SilcBuffer buffer,
 	*strchr(cp, '\n') = '\0';
       
       /* Check for matching sections */
-      for (cptr = silc_config_server_sections; cptr->section; cptr++)
+      for (cptr = silc_server_config_sections; cptr->section; cptr++)
 	if (!strncasecmp(cp, cptr->section, strlen(cptr->section)))
 	  break;
 
@@ -379,13 +379,13 @@ int silc_config_server_parse(SilcConfigServer config, SilcBuffer buffer,
    parse_config argument is uninitialized automatically during this
    function. */
 
-int silc_config_server_parse_lines(SilcConfigServer config, 
-				   SilcConfigServerParse parse_config)
+int silc_server_config_parse_lines(SilcServerConfig config, 
+				   SilcServerConfigParse parse_config)
 {
   int ret, check = FALSE;
   unsigned int checkmask;
   char *tmp;
-  SilcConfigServerParse pc = parse_config;
+  SilcServerConfigParse pc = parse_config;
   SilcBuffer line;
 
   SILC_LOG_DEBUG(("Parsing configuration lines"));
@@ -1049,7 +1049,7 @@ int silc_config_server_parse_lines(SilcConfigServer config,
 
   /* Check that all mandatory sections really were found. If not, the server
      cannot function and we return error. */
-  ret = silc_config_server_check_sections(checkmask);
+  ret = silc_server_config_check_sections(checkmask);
   if (ret == FALSE) {
     /* XXX */
 
@@ -1084,7 +1084,7 @@ int silc_config_server_parse_lines(SilcConfigServer config,
 /* This function checks that the mask sent as argument includes all the 
    sections that are mandatory in SILC server. */
 
-int silc_config_server_check_sections(unsigned int checkmask)
+int silc_server_config_check_sections(unsigned int checkmask)
 {
   if (!(checkmask & (1L << SILC_CONFIG_SERVER_SECTION_TYPE_SERVER_INFO))) {
     
@@ -1118,9 +1118,9 @@ int silc_config_server_check_sections(unsigned int checkmask)
 
 /* Sets log files where log messages is saved by the server. */
 
-void silc_config_server_setlogfiles(SilcConfigServer config)
+void silc_server_config_setlogfiles(SilcServerConfig config)
 {
-  SilcConfigServerSectionLogging *log;
+  SilcServerConfigSectionLogging *log;
   char *info, *warning, *error, *fatal;
   unsigned int info_size, warning_size, error_size, fatal_size;
 
@@ -1165,9 +1165,9 @@ void silc_config_server_setlogfiles(SilcConfigServer config)
 /* Registers configured ciphers. These can then be allocated by the
    server when needed. */
 
-void silc_config_server_register_ciphers(SilcConfigServer config)
+void silc_server_config_register_ciphers(SilcServerConfig config)
 {
-  SilcConfigServerSectionAlg *alg;
+  SilcServerConfigSectionAlg *alg;
   SilcServer server = (SilcServer)config->server;
 
   SILC_LOG_DEBUG(("Registering configured ciphers"));
@@ -1247,9 +1247,9 @@ void silc_config_server_register_ciphers(SilcConfigServer config)
    as SIM's. This checks now only that the PKCS user requested is 
    really out there. */
 
-void silc_config_server_register_pkcs(SilcConfigServer config)
+void silc_server_config_register_pkcs(SilcServerConfig config)
 {
-  SilcConfigServerSectionAlg *alg = config->pkcs;
+  SilcServerConfigSectionAlg *alg = config->pkcs;
   SilcServer server = (SilcServer)config->server;
   SilcPKCS tmp = NULL;
 
@@ -1271,9 +1271,9 @@ void silc_config_server_register_pkcs(SilcConfigServer config)
 /* Registers configured hash functions. These can then be allocated by the
    server when needed. */
 
-void silc_config_server_register_hashfuncs(SilcConfigServer config)
+void silc_server_config_register_hashfuncs(SilcServerConfig config)
 {
-  SilcConfigServerSectionAlg *alg;
+  SilcServerConfigSectionAlg *alg;
   SilcServer server = (SilcServer)config->server;
 
   SILC_LOG_DEBUG(("Registering configured hash functions"));
@@ -1346,12 +1346,12 @@ void silc_config_server_register_hashfuncs(SilcConfigServer config)
 /* Returns client authentication information from server configuration
    by host (name or ip). */
 
-SilcConfigServerSectionClientConnection *
-silc_config_server_find_client_conn(SilcConfigServer config, 
+SilcServerConfigSectionClientConnection *
+silc_server_config_find_client_conn(SilcServerConfig config, 
 				    char *host, int port)
 {
   int i;
-  SilcConfigServerSectionClientConnection *client = NULL;
+  SilcServerConfigSectionClientConnection *client = NULL;
 
   if (!host)
     return NULL;
@@ -1376,12 +1376,12 @@ silc_config_server_find_client_conn(SilcConfigServer config,
 /* Returns server connection info from server configuartion by host 
    (name or ip). */
 
-SilcConfigServerSectionServerConnection *
-silc_config_server_find_server_conn(SilcConfigServer config, 
+SilcServerConfigSectionServerConnection *
+silc_server_config_find_server_conn(SilcServerConfig config, 
 				    char *host, int port)
 {
   int i;
-  SilcConfigServerSectionServerConnection *serv = NULL;
+  SilcServerConfigSectionServerConnection *serv = NULL;
 
   if (!host)
     return NULL;
@@ -1405,12 +1405,12 @@ silc_config_server_find_server_conn(SilcConfigServer config,
 /* Returns router connection info from server configuartion by
    host (name or ip). */
 
-SilcConfigServerSectionServerConnection *
-silc_config_server_find_router_conn(SilcConfigServer config, 
+SilcServerConfigSectionServerConnection *
+silc_server_config_find_router_conn(SilcServerConfig config, 
 				    char *host, int port)
 {
   int i;
-  SilcConfigServerSectionServerConnection *serv = NULL;
+  SilcServerConfigSectionServerConnection *serv = NULL;
 
   if (!host)
     return NULL;
@@ -1434,7 +1434,7 @@ silc_config_server_find_router_conn(SilcConfigServer config,
 /* Prints out example configuration file with default built in
    configuration values. */
 
-void silc_config_server_print()
+void silc_server_config_print()
 {
   char *buf;
 

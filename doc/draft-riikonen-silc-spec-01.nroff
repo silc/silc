@@ -2195,6 +2195,7 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_TOO_MANY_PARAMS
             SILC_STATUS_ERR_NO_SUCH_CLIENT_ID
             SILC_STATUS_ERR_NO_CLIENT_ID
+            SILC_STATUS_ERR_NO_ROUTER_PRIV
 
 
    10   SILC_COMMAND_INFO

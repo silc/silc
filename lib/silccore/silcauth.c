@@ -52,7 +52,7 @@ SilcAuthPayload silc_auth_payload_parse(SilcBuffer buffer)
   /* Parse the payload */
   ret = silc_buffer_unformat(buffer, 
 			     SILC_STR_UI_SHORT(&new->len),
-			     SILC_STR_UI_CHAR(&new->auth_method),
+			     SILC_STR_UI_SHORT(&new->auth_method),
 			     SILC_STR_UI16_NSTRING_ALLOC(&new->random_data,
 							 &new->random_len),
 			     SILC_STR_UI16_NSTRING_ALLOC(&new->auth_data,

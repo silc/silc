@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 	  break;
 	case 'c':
 	  /* Print out example configuration file */
-	  silc_config_server_print();
+	  silc_server_config_print();
 	  exit(0);
 	  break;
 	case 'd':
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
     goto fail;
 
   /* Read configuration files */
-  silcd->config = silc_config_server_alloc(config_file);
+  silcd->config = silc_server_config_alloc(config_file);
   if (silcd->config == NULL)
     goto fail;
 

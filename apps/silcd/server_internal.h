@@ -127,7 +127,7 @@ struct SilcServerStruct {
   SilcHmac sha1hmac;
 
   /* Configuration object */
-  SilcConfigServer config;
+  SilcServerConfig config;
 
   /* Random pool */
   SilcRng rng;

@@ -1,3 +1,9 @@
+Wed Feb 21 12:44:00 EET 2001  Mika Boström <bostik@lut.fi>
+
+ 	* Changed all SilcConfigServer* and silc_config_server* to
+	  SilcServerConfig* and silc_server_config*, respectively.
+	  Patch by Bostik.
+
 Wed Feb 21 00:10:00 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Associated the ID (client or server ID) to the Authentication

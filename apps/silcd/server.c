@@ -129,12 +129,12 @@ int silc_server_init(SilcServer server)
 
   /* Set log files where log message should be saved. */
   server->config->server = server;
-  silc_config_server_setlogfiles(server->config);
+  silc_server_config_setlogfiles(server->config);
  
   /* Register all configured ciphers, PKCS and hash functions. */
-  silc_config_server_register_ciphers(server->config);
-  silc_config_server_register_pkcs(server->config);
-  silc_config_server_register_hashfuncs(server->config);
+  silc_server_config_register_ciphers(server->config);
+  silc_server_config_register_pkcs(server->config);
+  silc_server_config_register_hashfuncs(server->config);
 
   /* Initialize random number generator for the server. */
   server->rng = silc_rng_alloc();
@@ -636,7 +636,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
   /* If we are a SILC router we need to establish all of our primary
      routes. */
   if (server->server_type == SILC_ROUTER) {
-    SilcConfigServerSectionServerConnection *ptr;
+    SilcServerConfigSectionServerConnection *ptr;
 
     SILC_LOG_DEBUG(("We are router"));
 
@@ -720,10 +720,10 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
   /* Resolve the authentication method used in this connection */
   proto_ctx->auth_meth = SILC_AUTH_PASSWORD;
   if (server->config->routers) {
-    SilcConfigServerSectionServerConnection *conn = NULL;
+    SilcServerConfigSectionServerConnection *conn = NULL;
 
     /* Check if we find a match from user configured connections */
-    conn = silc_config_server_find_router_conn(server->config,
+    conn = silc_server_config_find_router_conn(server->config,
 					       sock->hostname,
 					       sock->port);
     if (conn) {

@@ -592,14 +592,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 	/* Remote end is client */
 	if (conn_type == SILC_SOCKET_TYPE_CLIENT) {
-	  SilcConfigServerSectionClientConnection *client = NULL;
+	  SilcServerConfigSectionClientConnection *client = NULL;
 	  client = 
-	    silc_config_server_find_client_conn(server->config,
+	    silc_server_config_find_client_conn(server->config,
 						ctx->sock->ip,
 						ctx->sock->port);
 	  if (!client)
 	    client = 
-	      silc_config_server_find_client_conn(server->config,
+	      silc_server_config_find_client_conn(server->config,
 						  ctx->sock->hostname,
 						  ctx->sock->port);
 	  
@@ -671,14 +671,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	
 	/* Remote end is server */
 	if (conn_type == SILC_SOCKET_TYPE_SERVER) {
-	  SilcConfigServerSectionServerConnection *serv = NULL;
+	  SilcServerConfigSectionServerConnection *serv = NULL;
 	  serv = 
-	    silc_config_server_find_server_conn(server->config,
+	    silc_server_config_find_server_conn(server->config,
 						ctx->sock->ip,
 						ctx->sock->port);
 	  if (!serv)
 	    serv = 
-	      silc_config_server_find_server_conn(server->config,
+	      silc_server_config_find_server_conn(server->config,
 						  ctx->sock->hostname,
 						  ctx->sock->port);
 	  
@@ -750,14 +750,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	
 	/* Remote end is router */
 	if (conn_type == SILC_SOCKET_TYPE_ROUTER) {
-	  SilcConfigServerSectionServerConnection *serv = NULL;
+	  SilcServerConfigSectionServerConnection *serv = NULL;
 	  serv = 
-	    silc_config_server_find_router_conn(server->config,
+	    silc_server_config_find_router_conn(server->config,
 						ctx->sock->ip,
 						ctx->sock->port);
 	  if (!serv)
 	    serv = 
-	      silc_config_server_find_router_conn(server->config,
+	      silc_server_config_find_router_conn(server->config,
 						  ctx->sock->hostname,
 						  ctx->sock->port);
 	  

@@ -435,10 +435,10 @@ int silc_client_config_parse_lines(SilcClientConfig config,
 	}
 
 	if (!strcmp(tmp, SILC_CLIENT_CONFIG_AUTH_METH_PASSWD))
-	  config->conns->auth_meth = SILC_PROTOCOL_CONN_AUTH_PASSWORD;
+	  config->conns->auth_meth = SILC_AUTH_PASSWORD;
 
 	if (!strcmp(tmp, SILC_CLIENT_CONFIG_AUTH_METH_PUBKEY))
-	  config->conns->auth_meth = SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY;
+	  config->conns->auth_meth = SILC_AUTH_PUBLIC_KEY;
 
 	silc_free(tmp);
       }
