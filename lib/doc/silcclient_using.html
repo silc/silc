@@ -38,6 +38,28 @@ get access all SILC Client Library routines:
 #include "silcclient.h"
 </tt>
 
+<br />&nbsp;<br />&nbsp;<br />
+<b>Network Initialization on Win32</b>
+
+<br />&nbsp;<br />
+If you are programming your SILC client application on Windows system,
+you will need to initialize the network routines in order to be able
+to use the client library.  The network initialization is done by
+calling the silc_net_win32_init at the start of your Windows application.
+Usually this is done either in main() or WinMain() function, or other
+similar place.  This function should be called before calling any other
+SILC routine.
+
+<br />&nbsp;<br />
+<tt>
+if (silc_net_win32_init() == FALSE)<br />
+&nbsp;&nbsp;exit_with_error();
+</tt>
+
+<br />&nbsp;<br />
+This function is available only on Win32 platforms, and on other platforms
+the network routines are initialized automatically by the operating system.
+
 
 <br />&nbsp;<br />&nbsp;<br />
 <b>Creating Client</b>
