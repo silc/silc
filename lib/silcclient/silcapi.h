@@ -370,10 +370,14 @@ void silc_client_command_pending(SilcClientConnection conn,
 
 /* Adds private message key to the client library. The key will be used to
    encrypt all private message between the client and the remote client
-   indicated by the `client_entry'.  If `key' is NULL and the boolean value
-   `generate_key' is TRUE then the library will generate random key.  
-   Otherwise the `key' provided by the application will be used.  It maybe
-   random key or pre-shared-key.
+   indicated by the `client_entry'. If the key and the IV arguments are NULL
+   and the boolean value `generate_key' is TRUE the library will generate
+   random key. Otherwise, the key material provided by the application
+   will be used. It maybe random key or pre-shared-key. If the send
+   and receive keys should be same they may be set to same. Same applies
+   for send IV and receive IV, they maybe same. If the IV arguments
+   are NULL, the library will use NULL as IV (may not be desired from
+   the security persperctive).
 
    It is not necessary to set key for normal private message usage. If the
    key is not set then the private messages are encrypted using normal
@@ -388,8 +392,14 @@ void silc_client_command_pending(SilcClientConnection conn,
 int silc_client_add_private_message_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcClientConnection client_entry,
-					unsigned char *key,
-					unsigned int key_len,
+					unsigned char *send_key,
+					unsigned int send_key_len,
+					unsigned char *receive_key,
+					unsigned int receive_key_len,
+					unsigned char *send_iv,
+					unsigned int send_iv_len,
+					unsigned char *receive_iv;
+					unsigned int receive_iv_len,
 					int generate_key);
 
 /* Removes the private message from the library. The key won't be used
@@ -401,11 +411,13 @@ int silc_client_del_private_message_key(SilcClient client,
 
 /* Structure to hold the list of private message keys. The array of this
    structure is returned by the silc_client_list_private_message_keys
-   function.  */
+   function. The IV's are not returned as they are not important. */
 typedef struct {
   SilcClientEntry client_entry;       /* The remote client entry */
-  unsigned char *key;		      /* The raw key data */
-  unsigned int key_len;		      /* The key length */
+  unsigned char *send_key;     	      /* The raw key data */
+  unsigned int send_key_len;   	      /* The key length */
+  unsigned char *receive_key;	      /* The raw key data */
+  unsigned int receive_key_len;	      /* The key length */
   int generated;		      /* TRUE if library generated the key */
 } *SilcPrivateMessageKeys;
 
@@ -500,12 +512,12 @@ void silc_client_free_channel_private_keys(SilcChannelPrivateKey *keys,
    key agreement protocol. The `key' is the allocated key material and
    the caller is responsible of freeing it. The `key' is NULL if error
    has occured. The application can freely use the `key' to whatever
-   purpose it needs. */
+   purpose it needs. See lib/silcske/silcske.h for the definition of
+   the SilcSKEKeyMaterial structure. */
 typedef void (*SilcKeyAgreementCallback)(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcClientEntry client_entry,
-					 unsigned char *key,
-					 unsigned int key_len,
+					 SilcSKEKeyMaterial *key,
 					 void *context);
 
 /* Sends key agreement request to the remote client indicated by the
