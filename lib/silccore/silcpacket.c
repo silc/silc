@@ -378,7 +378,7 @@ void silc_packet_receive_process(SilcSocketConnection sock,
     silc_buffer_put(parse_ctx->packet->buffer, sock->inbuf->data, 
     		    paddedlen + mac_len);
 
-    SILC_LOG_HEXDUMP(("Incoming packet (%d) (%d bytes decrypted), len %d", 
+    SILC_LOG_HEXDUMP(("Incoming packet (%d) (%dB decrypted), len %d", 
 		      sequence - 1, block_len, paddedlen + mac_len),
 		     sock->inbuf->data, paddedlen + mac_len);
 

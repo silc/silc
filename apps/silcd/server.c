@@ -2240,12 +2240,15 @@ void silc_server_free_client_data(SilcServer server,
      to the network before removing the client entry. */
   silc_server_packet_queue_purge(server, sock);
 
+  if (!client->id)
+    return;
+
   /* Send SIGNOFF notify to routers. */
   if (notify && !server->standalone && server->router)
     silc_server_send_notify_signoff(server, server->router->connection,
 				    server->server_type == SILC_SERVER ?
 				    FALSE : TRUE, client->id, signoff);
-
+    
   /* Remove client from all channels */
   if (notify)
     silc_server_remove_from_channels(server, NULL, client, 
@@ -2253,7 +2256,7 @@ void silc_server_free_client_data(SilcServer server,
   else
     silc_server_remove_from_channels(server, NULL, client, 
 				     FALSE, NULL, FALSE);
-
+    
   /* We will not delete the client entry right away. We will take it
      into history (for WHOWAS command) for 5 minutes */
   i->server = server;

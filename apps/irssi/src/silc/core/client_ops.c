@@ -90,6 +90,18 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
     return;
   
   nick = silc_nicklist_find(chanrec, sender);
+  if (!nick) {
+    /* We didn't find client but it clearly exists, add it. */
+    SilcChannelUser chu;
+
+    silc_list_start(channel->clients);
+    while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+      if (chu->client == sender) {
+	nick = silc_nicklist_insert(chanrec, chu, FALSE);
+	break;
+      }
+    }
+  }
 
   if (flags & SILC_MESSAGE_FLAG_ACTION)
     printformat_module("fe-common/silc", server, channel->channel_name,
@@ -285,6 +297,8 @@ static void silc_client_join_get_users(SilcClient client,
 
   silc_list_start(channel->clients);
   while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
+    if (!chu->client->nickname)
+      continue;
     if (chu->mode & SILC_CHANNEL_UMODE_CHANFO)
       founder = chu->client;
     silc_nicklist_insert(chanrec, chu, FALSE);
@@ -671,6 +685,9 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
 	SilcClientEntry e = chu->client;
 	char stat[5], *mode;
+
+	if (!e->nickname)
+	  continue;
 	
 	memset(stat, 0, sizeof(stat));
 	mode = silc_client_chumode_char(chu->mode);
@@ -683,8 +700,10 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
 	printformat_module("fe-common/silc", server, channel->channel_name,
 			   MSGLEVEL_CRAP, SILCTXT_USERS,
-			   e->nickname, stat, e->username, 
-			   e->hostname, e->realname ? e->realname : "");
+			   e->nickname, stat, 
+			   e->username ? e->username : "",
+			   e->hostname ? e->hostname : "",
+			   e->realname ? e->realname : "");
 	if (mode)
 	  silc_free(mode);
       }

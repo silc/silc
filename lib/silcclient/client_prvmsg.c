@@ -164,7 +164,8 @@ void silc_client_private_message(SilcClient client,
   if (!silc_idcache_find_by_id_one_ext(conn->client_cache, (void *)remote_id, 
 				       NULL, NULL, 
 				       silc_hash_client_id_compare, NULL,
-				       &id_cache)) {
+				       &id_cache) || 
+      ((SilcClientEntry)id_cache->context)->nickname == NULL) {
     /* Resolve the client info */
     silc_client_get_client_by_id_resolve(client, conn, remote_id,
 					 silc_client_private_message_cb,

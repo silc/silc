@@ -1706,6 +1706,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(users)
       if (id_cache && id_cache->context) {
 	SilcClientEntry client_entry = (SilcClientEntry)id_cache->context;
 	if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
+	  client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
 	  silc_buffer_pull(client_id_list, idp_len);
 	  silc_buffer_pull(client_mode_list, 4);
 	  continue;

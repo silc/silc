@@ -184,8 +184,10 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* If nickname or username hasn't been resolved, do so */
     if (!client_entry->nickname || !client_entry->username) {
-      if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING)
+      if (client_entry->status & SILC_CLIENT_STATUS_RESOLVING) {
+	client_entry->status &= ~SILC_CLIENT_STATUS_RESOLVING;
 	goto out;
+      }
       client_entry->status |= SILC_CLIENT_STATUS_RESOLVING;
       silc_client_notify_by_server_resolve(client, conn, packet, client_id);
       goto out;

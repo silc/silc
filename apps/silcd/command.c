@@ -3642,8 +3642,9 @@ int silc_server_check_cmode_rights(SilcChannelEntry channel,
      modes are available automatically for channel operator. */
 
   if (mode & SILC_CHANNEL_MODE_PRIVKEY) {
-    if (is_op && !is_fo)
-      return FALSE;
+    if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
+      if (is_op && !is_fo)
+	return FALSE;
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
       if (is_op && !is_fo)
@@ -3652,8 +3653,9 @@ int silc_server_check_cmode_rights(SilcChannelEntry channel,
   }
   
   if (mode & SILC_CHANNEL_MODE_PASSPHRASE) {
-    if (is_op && !is_fo)
-      return FALSE;
+    if (!(channel->mode & SILC_CHANNEL_MODE_PASSPHRASE))
+      if (is_op && !is_fo)
+	return FALSE;
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_PASSPHRASE) {
       if (is_op && !is_fo)
@@ -3662,8 +3664,9 @@ int silc_server_check_cmode_rights(SilcChannelEntry channel,
   }
 
   if (mode & SILC_CHANNEL_MODE_CIPHER) {
-    if (is_op && !is_fo)
-      return FALSE;
+    if (!(channel->mode & SILC_CHANNEL_MODE_CIPHER))
+      if (is_op && !is_fo)
+	return FALSE;
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_CIPHER) {
       if (is_op && !is_fo)
@@ -3672,8 +3675,9 @@ int silc_server_check_cmode_rights(SilcChannelEntry channel,
   }
   
   if (mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
-    if (is_op && !is_fo)
-      return FALSE;
+    if (!(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH))
+      if (is_op && !is_fo)
+	return FALSE;
   } else {
     if (channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
       if (is_op && !is_fo)

@@ -21,6 +21,11 @@
 #ifndef IDLIST_H
 #define IDLIST_H
 
+typedef enum {
+  SILC_CLIENT_STATUS_NONE       = 0x0000,
+  SILC_CLIENT_STATUS_RESOLVING  = 0x0001,
+} SilcClientStatus;
+
 /* Client entry context. When client receives information about new client
    (it receives its ID, for example, by IDENTIFY request) we create new
    client entry. This entry also includes the private message keys if
@@ -43,6 +48,7 @@ typedef struct {
   uint32 key_len;
   bool generated;		/* TRUE if library generated the key */
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
+  SilcClientStatus status;	/* Status mask */
 } *SilcClientEntry;
 
 /* Client and its mode on a channel */

@@ -1,7 +1,7 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o /key msg * list crashes the client
+ o Add the SFTP support.
 
  o Add local command to switch the channel's private key when channel has
    several private keys.  Currently sending channel messages with many
@@ -14,9 +14,6 @@ TODO/bugs in Irssi SILC client
  o Add local commands to list the current server and client public keys
    that the user has.  And a local command to dump the contents of the
    public key to the screen.  Something like LISTKEYS, SHOWKEY...
-
- o The QUIT command should wait for server's disconnection (at least for
-   a while) before exiting the application.
 
  o The JOIN command's HELP is generated from Irssi IRCs JOIN help and
    the syntax is not same in SILC.  This must be fixed.  Most likely
@@ -40,6 +37,8 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
+ o Add the SFTP support.
+
  o JOIN command's argument handling is buggy.  See the XXX in the code.
 
 
@@ -54,7 +53,7 @@ TODO/bugs In SILC Server
  o Channel user mode changes are notified unnecessarely when switching
    to backup router on router crash.
 
- o Change the sever to connect to another server from low ports (706)
+ o Change the server to connect to another server from low ports (706)
    and not from high ports.  Currently we cannot do incoming connection
    checking by remote port because the port is not fixed.
 
@@ -119,6 +118,9 @@ TODO/bugs In SILC Server
 
 TODO/bugs In SILC Libraries
 ===========================
+
+ o Add some silc_rng_get_byte_fast that read directly from /dev/urandom.
+   That can be used for padding generation.  The current is too slow.
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Comp API must be

@@ -2149,7 +2149,12 @@ SILC_CLIENT_CMD_FUNC(getkey)
     /* Check whether user requested server actually */
     server_entry = silc_client_get_server(client, conn, cmd->argv[1]);
 
-    if (!server_entry && !cmd->pending) {
+    if (!server_entry) {
+      if (cmd->pending) {
+	COMMAND_ERROR;
+	goto out;
+      }
+
       /* No. what ever user wants we don't have it, so resolve it. We
 	 will try to resolve both client and server, one of them is
 	 bound to be wrong. */

@@ -223,10 +223,6 @@ typedef struct {
   uint8 dst_id_len;
   uint8 dst_id_type;
 
-  /* Back pointers */
-  void *context;
-  SilcSocketConnection sock;
-
   int users;
   bool long_pad;		/* Set to TRUE to use maximum padding
 				   in packet (up to 256 bytes). */

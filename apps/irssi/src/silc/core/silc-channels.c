@@ -829,7 +829,7 @@ SILC_CLIENT_CMD_FUNC(key_get_clients)
 static void command_key(const char *data, SILC_SERVER_REC *server,
 			WI_ITEM_REC *item)
 {
-  SilcClientConnection conn = server->conn;
+  SilcClientConnection conn;
   SilcClientEntry client_entry = NULL;
   SilcChannelEntry channel_entry = NULL;
   char *nickname = NULL, *tmp;
@@ -840,8 +840,10 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   unsigned char **argv;
   uint32 *argv_lens, *argv_types;
  
-  if (!IS_SILC_SERVER(server) || !server->connected)
+  if (!server || !IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
+
+  conn = server->conn;
 
   /* Now parse all arguments */
   tmp = g_strconcat("KEY", " ", data, NULL);
@@ -870,7 +872,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 
   if (type == 1) {
     if (argv[2][0] == '*') {
-      nickname = "*";
+      nickname = strdup("*");
     } else {
       /* Parse the typed nickname. */
       if (!silc_parse_userfqdn(argv[2], &nickname, NULL)) {
@@ -1099,6 +1101,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
       }
 
       silc_client_free_private_message_keys(keys, keys_count);
+
     } else if (type == 2) {
       SilcChannelPrivateKey *keys;
       uint32 keys_count;
@@ -1108,12 +1111,14 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
       keys = silc_client_list_channel_private_keys(silc_client, conn, 
 						   channel_entry,
 						   &keys_count);
-      if (!keys)
-	goto out;
-      
+
       printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_CH_PRIVATE_KEY_LIST,
 			 channel_entry->channel_name);
+
+      if (!keys)
+	goto out;
+      
       for (k = 0; k < keys_count; k++) {
 	memset(buf, 0, sizeof(buf));
 	strncat(buf, "  ", 2);

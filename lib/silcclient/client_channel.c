@@ -248,7 +248,8 @@ void silc_client_channel_message(SilcClient client,
   /* Find client entry */
   silc_list_start(channel->clients);
   while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
-    if (SILC_ID_CLIENT_COMPARE(chu->client->id, client_id)) {
+    if (SILC_ID_CLIENT_COMPARE(chu->client->id, client_id) && 
+	chu->client->nickname) {
       found = TRUE;
       break;
     }
