@@ -265,7 +265,8 @@ static void silc_client_ftp_data(SilcSFTP sftp,
 
   /* Read more, until EOF is received */
   session->read_offset += data_len;
-  silc_sftp_read(sftp, session->read_handle, session->read_offset, 64512,
+  silc_sftp_read(sftp, session->read_handle, session->read_offset, 
+                 SILC_PACKET_MAX_LEN - 1024,
 		 silc_client_ftp_data, session);
 
   /* Call monitor callback */
@@ -331,7 +332,8 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
   session->read_handle = handle;
 
   /* Now, start reading the file */
-  silc_sftp_read(sftp, session->read_handle, session->read_offset, 64512,
+  silc_sftp_read(sftp, session->read_handle, session->read_offset,
+                 SILC_PACKET_MAX_LEN - 1024,
 		 silc_client_ftp_data, session);
 
   /* Call monitor callback */
