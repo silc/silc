@@ -131,10 +131,8 @@ bool silc_id_create_channel_id(SilcServer server,
   while (1) {
     if (!silc_idlist_find_channel_by_id(server->local_list, 
 					*new_id, NULL))
-      if (!silc_idlist_find_channel_by_id(server->global_list, 
-					  *new_id, NULL))
-	break;
-    
+      break;
+
     (*new_id)->rnd++;
     
     if (finding && (*new_id)->rnd == 0)
