@@ -128,7 +128,7 @@ AC_ARG_ENABLE(perl-path,
 			perl_lib_dir_given=yes
 		fi
 	fi,
-	want_perl=yes)
+	want_perl=no)
 
 AC_ARG_ENABLE(perl,
 [  --enable-perl[=yes|no|static]  Build with Perl support - also specifies
@@ -141,8 +141,7 @@ AC_ARG_ENABLE(perl,
 	else
 		want_perl=no
 	fi,
-	want_perl=yes)
-want_perl=no
+	want_perl=no)
 
 AC_ARG_WITH(tests,
 [  --with-tests           Run all the tests],
