@@ -5,6 +5,9 @@ Tue Mar  5 14:37:27 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 	  lib/silccrypt/silcpkcs.[ch], silchash.[ch], silchmac.[ch] and
 	  silccipher.[ch].
 
+	* Changed the internal SFTP Memory FS table to const.  Affected
+	  file lib/silcsftp/sftp_fs_memory.c.
+
 Sun Mar  3 18:37:13 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the buffer formatting and unformatting routines to
