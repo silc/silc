@@ -24,6 +24,8 @@ libsilcwin32util_a_SOURCES = 	\
 	silcwin32net.c		\
 	silcwin32schedule.c	\
 	silcwin32sockconn.c	\
-	silcwin32util.c
+	silcwin32util.c		\
+	silcwin32mutex.c	\
+	silcwin32thread.c
 
 include $(top_srcdir)/Makefile.defines.in

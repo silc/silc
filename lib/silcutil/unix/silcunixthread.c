@@ -65,7 +65,7 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 
 void silc_thread_exit(void *exit_value)
 {
-  pthread_exit(NULL);
+  pthread_exit(exit_value);
 }
 
 SilcThread silc_thread_self(void)

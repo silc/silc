@@ -1,6 +1,6 @@
 /*
 
-  silcunixmutex.c
+  silcwin32mutex.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -25,32 +25,34 @@
 
 /* SILC Mutex structure */
 struct SilcMutexStruct {
-  pthread_mutex_t mutex;
+  HANDLE mutex;
 };
 
 SilcMutex silc_mutex_alloc(void)
 {
   SilcMutex mutex = silc_calloc(1, sizeof(*mutex));
-  pthread_mutex_init(&mutex->mutex, NULL);
+  mutex->mutex = CreateMutex(NULL, FALSE, NULL);
+  if (!mutex->mutex) {
+    silc_free(mutex);
+    return NULL;
+  }
   return mutex;
 }
 
 void silc_mutex_free(SilcMutex mutex)
 {
-  pthread_mutex_destroy(&mutex->mutex);
+  CloseHandle(mutex->mutex);
   silc_free(mutex);
 }
 
 void silc_mutex_lock(SilcMutex mutex)
 {
-  if (pthread_mutex_lock(&mutex->mutex))
-    assert(FALSE);
+  WaitForSingleObject(mutex->mutex, INFINITE);
 }
 
 void silc_mutex_unlock(SilcMutex mutex)
 {
-  if (pthread_mutex_unlock(&mutex->mutex))
-    assert(FALSE);
+  ReleaseMutex(mutex->mutex);
 }
 
 #endif /* SILC_THREADS */

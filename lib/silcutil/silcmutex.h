@@ -104,7 +104,7 @@ void silc_mutex_lock(SilcMutex mutex);
  *
  * DESCRIPTION
  *
- *    Unlocks the mutex and thus releases it for another threads that
+ *    Unlocks the mutex and thus releases it for another thread that
  *    may be waiting for the lock.
  *
  * NOTES

@@ -1,3 +1,8 @@
+Sun Jul  8 11:16:01 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Implemented the SILC Mutex API and SILC Thread API for WIN32
+	  in lib/silcutil/win32/.
+
 Sun Jul  8 00:18:15 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Defined SILC Mutex API and SILC Thread API and implemented
