@@ -35,6 +35,7 @@ dist-hook:
 
 EXTRA_DIST = \
 	CodingStyle \
+	FAQ \
 	example_silcd.conf \
 	example_silc.conf \
 	draft-riikonen*.txt
