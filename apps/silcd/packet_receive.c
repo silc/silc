@@ -470,7 +470,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   idata->registered = TRUE;
   client->nickname = strdup(username);
   client->username = username;
-  client->userinfo = realname;
+  client->userinfo = realname ? realname : strdup("");
   client->id = client_id;
 
   /* Update the cache entry */

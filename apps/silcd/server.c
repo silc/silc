@@ -1873,7 +1873,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 	silc_server_send_remove_id(server, server->router->connection,
 				   server->server_type == SILC_SERVER ?
 				   FALSE : TRUE, user_data->id, 
-				   SILC_ID_CLIENT_LEN, SILC_ID_CLIENT);
+				   SILC_ID_SERVER_LEN, SILC_ID_SERVER);
 
       /* Then also free all client entries that this server owns as
 	 they will become invalid now as well. */
