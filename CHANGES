@@ -1,3 +1,9 @@
+Thu Apr 11 22:29:33 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Defined that server receives USERS command reply for private
+	  and secret channels too.  Updated protocol specs and the
+	  code in server.  Affected file silcd/command.c.
+
 Thu Apr 11 16:32:08 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the UMODE's mode mask argument to be optional.  If

@@ -219,6 +219,7 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 					       SilcClientEntry client);
 SilcClientEntry silc_server_get_client_resolve(SilcServer server,
 					       SilcClientID *client_id,
+					       bool always_resolve,
 					       bool *resolved);
 void silc_server_stderr(char *message);
 

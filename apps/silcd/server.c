@@ -3888,6 +3888,7 @@ void silc_server_save_users_on_channel(SilcServer server,
   SilcClientID *client_id;
   SilcClientEntry client;
   SilcIDCacheEntry cache;
+  SilcChannelClientEntry chl;
   bool global;
 
   SILC_LOG_DEBUG(("Start"));
@@ -3951,15 +3952,18 @@ void silc_server_save_users_on_channel(SilcServer server,
 
     silc_free(client_id);
 
-    if (!silc_server_client_on_channel(client, channel, NULL)) {
+    if (!silc_server_client_on_channel(client, channel, &chl)) {
       /* Client was not on the channel, add it. */
-      SilcChannelClientEntry chl = silc_calloc(1, sizeof(*chl));
+      chl = silc_calloc(1, sizeof(*chl));
       chl->client = client;
       chl->mode = mode;
       chl->channel = channel;
       silc_hash_table_add(channel->user_list, chl->client, chl);
       silc_hash_table_add(client->channels, chl->channel, chl);
       channel->user_count++;
+    } else {
+      /* Update mode */
+      chl->mode = mode;
     }
   }
 }
@@ -4107,6 +4111,7 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 
 SilcClientEntry silc_server_get_client_resolve(SilcServer server,
 					       SilcClientID *client_id,
+					       bool always_resolve,
 					       bool *resolved)
 {
   SilcClientEntry client;
@@ -4126,7 +4131,8 @@ SilcClientEntry silc_server_get_client_resolve(SilcServer server,
   if (!client && server->standalone)
     return NULL;
 
-  if (!client || !client->nickname || !client->username) {
+  if (!client || !client->nickname || !client->username ||
+      always_resolve) {
     SilcBuffer buffer, idp;
 
     client->data.status |= SILC_IDLIST_STATUS_RESOLVING;

@@ -1631,16 +1631,13 @@ List of all defined commands in SILC follows.
         This command is used to list user names currently on the requested
         channel; either the argument <Channel ID> or the <channel name>. 
         One of these arguments must be present.  The server MUST resolve
-        the user names and send a comma (`,') separated list of user names
-        on the channel.  Server or router MAY resolve the names by sending
-        SILC_COMMAND_WHOIS or SILC_COMMAND_IDENTIFY commands.
+        the joined clients and reply with a lists of users on the channel
+	and with list of user modes on the channel.
 
         If the requested channel is a private or secret channel, this
-        command MUST NOT send the list of users, as private and secret
-        channels cannot be seen by outside.  In this case the returned
-        name list MAY include a indication that the server could not 
-        resolve the names of the users on the channel.  Also, in this case
-        Client ID's or client modes are not sent either.
+        command MUST NOT send the list of users, but error is returned
+        to the sender, except if the sender is on the channel, or the
+        sender is server.
 
         Reply messages to the command:
 

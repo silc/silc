@@ -464,7 +464,7 @@ void silc_server_notify(SilcServer server,
       if (client) {
 	/* Send the NICK_CHANGE notify type to local clients on the channels
 	   this client is joined to. */
-	silc_server_send_notify_on_channels(server, NULL, client,
+	silc_server_send_notify_on_channels(server, client, client,
 					    SILC_NOTIFY_TYPE_NICK_CHANGE, 3,
 					    id, tmp_len, id2, tmp_len,
 					    nickname, nickname ?
@@ -1460,8 +1460,7 @@ void silc_server_private_message(SilcServer server,
     SilcBuffer idp;
 
     if (client && client->mode & SILC_UMODE_DETACHED) {
-      SILC_LOG_DEBUG(("Locally connected client is detached, "
-		      "discarding packet"));
+      SILC_LOG_DEBUG(("Client is detached, discarding packet"));
       return;
     }
 
@@ -1747,9 +1746,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   SilcBuffer buffer = packet->buffer;
   SilcClientEntry client;
   SilcClientID *client_id;
-  SilcBuffer reply;
   SilcIDListData idata;
-  char *username = NULL, *realname = NULL, *id_string;
+  char *username = NULL, *realname = NULL;
   SilcUInt16 username_len;
   SilcUInt32 id_len;
   int ret;
@@ -1925,17 +1923,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 			    client->id, SILC_ID_CLIENT, id_len);
   
   /* Send the new client ID to the client. */
-  id_string = silc_id_id2str(client->id, SILC_ID_CLIENT);
-  reply = silc_buffer_alloc_size(2 + 2 + id_len);
-  silc_buffer_format(reply,
-		     SILC_STR_UI_SHORT(SILC_ID_CLIENT),
-		     SILC_STR_UI_SHORT(id_len),
-		     SILC_STR_UI_XNSTRING(id_string, id_len),
-		     SILC_STR_END);
-  silc_server_packet_send(server, sock, SILC_PACKET_NEW_ID, 0, 
-			  reply->data, reply->len, FALSE);
-  silc_free(id_string);
-  silc_buffer_free(reply);
+  silc_server_send_new_id(server, sock, FALSE, client->id, SILC_ID_CLIENT,
+			  silc_id_get_len(client->id, SILC_ID_CLIENT));
 
   /* Send some nice info to the client */
   silc_server_send_connect_notifys(server, sock, client);
@@ -2816,6 +2805,7 @@ typedef struct {
   SilcServer server;
   SilcSocketConnection sock;
   SilcPacketContext *packet;
+  void *data;
 } *SilcServerResumeResolve;
 
 SILC_SERVER_CMD_FUNC(resume_resolve)
@@ -2824,8 +2814,11 @@ SILC_SERVER_CMD_FUNC(resume_resolve)
   SilcServer server = r->server;
   SilcSocketConnection sock = r->sock;
   SilcServerCommandReplyContext reply = context2;
+  SilcClientEntry client;
 
-  if (!context2 || !silc_command_get_status(reply->payload, NULL, NULL)) {
+  SILC_LOG_DEBUG(("Start"));
+
+  if (!reply || !silc_command_get_status(reply->payload, NULL, NULL)) {
     SILC_LOG_ERROR(("Client %s (%s) tried to resume unknown client, "
 		    "closing connection", sock->hostname, sock->ip));
     silc_server_disconnect_remote(server, sock, 
@@ -2834,12 +2827,40 @@ SILC_SERVER_CMD_FUNC(resume_resolve)
     goto out;
   }
 
+  if (reply && silc_command_get(reply->payload) == SILC_COMMAND_WHOIS) {
+    /* Get entry to the client, and resolve it if we don't have it. */
+    client = silc_idlist_find_client_by_id(server->local_list, 
+					   r->data, TRUE, NULL);
+    if (!client) {
+      client = silc_idlist_find_client_by_id(server->global_list,
+					     r->data, TRUE, NULL);
+      if (!client) {
+	SILC_LOG_ERROR(("Client %s (%s) tried to resume unknown client, "
+			"closing connection", sock->hostname, sock->ip));
+	silc_server_disconnect_remote(server, sock, 
+				      "Server closed connection: "
+				      "Incomplete resume information");
+	goto out;
+      }
+    }
+
+    if (!(client->mode & SILC_UMODE_DETACHED)) {
+      SILC_LOG_ERROR(("Client %s (%s) tried to resume un-detached client, "
+		      "closing connection", sock->hostname, sock->ip));
+      silc_server_disconnect_remote(server, sock, 
+				    "Server closed connection: "
+				    "Incomplete resume information");
+      goto out;
+    }
+  }
+
   /* Reprocess the packet */
   silc_server_resume_client(server, sock, r->packet);
 
  out:
   silc_socket_free(r->sock);
   silc_packet_context_free(r->packet);
+  silc_free(r->data);
   silc_free(r);
 }
 
@@ -2859,8 +2880,13 @@ void silc_server_resume_client(SilcServer server,
   unsigned char *id_string, *auth = NULL;
   SilcUInt16 id_len, auth_len = 0;
   int ret, nickfail = 0;
-  bool resolved, local;
+  bool resolved, local, nick_change = FALSE;
+  SilcChannelEntry channel;
+  SilcHashTableList htl;
+  SilcChannelClientEntry chl;
   SilcServerResumeResolve r;
+
+  SILC_LOG_DEBUG(("Start"));
 
   ret = silc_buffer_unformat(buffer,
 			     SILC_STR_UI16_NSTRING(&id_string, &id_len),
@@ -2871,9 +2897,6 @@ void silc_server_resume_client(SilcServer server,
   if (sock->type == SILC_SOCKET_TYPE_CLIENT) {
     /* Client send this and is attempting to resume to old client session */
     SilcClientEntry client;
-    SilcChannelEntry channel;
-    SilcHashTableList htl;
-    SilcChannelClientEntry chl;
     SilcBuffer keyp;
 
     if (ret != -1) {
@@ -2896,19 +2919,20 @@ void silc_server_resume_client(SilcServer server,
     idata = (SilcIDListData)client;
 
     /* Get entry to the client, and resolve it if we don't have it. */
-    detached_client = silc_server_get_client_resolve(server, client_id, 
+    detached_client = silc_server_get_client_resolve(server, client_id, FALSE,
 						     &resolved);
     if (!detached_client) {
       if (resolved) {
 	/* The client info is being resolved. Reprocess this packet after
 	   receiving the reply to the query. */
+	SILC_LOG_DEBUG(("Resolving client"));
 	r = silc_calloc(1, sizeof(*r));
 	if (!r)
 	  return;
-
 	r->server = server;
 	r->sock = silc_socket_dup(sock);
 	r->packet = silc_packet_context_dup(packet);
+	r->data = silc_id_dup(client_id, SILC_ID_CLIENT);
 	silc_server_command_pending(server, SILC_COMMAND_WHOIS,
 				    server->cmd_ident,
 				    silc_server_command_resume_resolve, r);
@@ -2924,10 +2948,28 @@ void silc_server_resume_client(SilcServer server,
 
     /* Check that the client is detached */
     if (!(detached_client->mode & SILC_UMODE_DETACHED)) {
-      SILC_LOG_ERROR(("Client %s (%s) tried to resume un-detached client, "
-		      "closing connection", sock->hostname, sock->ip));
-      silc_server_disconnect_remote(server, sock, "Server closed connection: "
-				    "Incomplete resume information");
+      if (server->server_type == SILC_SERVER && !server->standalone) {
+	/* The client info is being resolved. Reprocess this packet after
+	   receiving the reply to the query. */
+	SILC_LOG_DEBUG(("Resolving client mode"));
+	silc_server_get_client_resolve(server, client_id, TRUE, NULL);
+	r = silc_calloc(1, sizeof(*r));
+	if (!r)
+	  return;
+	r->server = server;
+	r->sock = silc_socket_dup(sock);
+	r->packet = silc_packet_context_dup(packet);
+	r->data = silc_id_dup(client_id, SILC_ID_CLIENT);
+	silc_server_command_pending(server, SILC_COMMAND_WHOIS,
+				    server->cmd_ident,
+				    silc_server_command_resume_resolve, r);
+      } else {
+	SILC_LOG_ERROR(("Client %s (%s) tried to resume un-detached client, "
+			"closing connection", sock->hostname, sock->ip));
+	silc_server_disconnect_remote(server, sock, 
+				      "Server closed connection: "
+				      "Incomplete resume information");
+      }
       return;
     }
 
@@ -2945,10 +2987,12 @@ void silc_server_resume_client(SilcServer server,
 	SilcSocketConnection dest_sock = 
 	  silc_server_get_client_route(server, NULL, 0, client_id, NULL, NULL);
 
+	SILC_LOG_DEBUG(("Resolving client public key"));
+
 	silc_server_send_command(server, dest_sock ? dest_sock : 
 				 server->router->connection,
 				 SILC_COMMAND_GETKEY, ++server->cmd_ident,
-				 1, idp->data, idp->len);
+				 1, 1, idp->data, idp->len);
 
 	r = silc_calloc(1, sizeof(*r));
 	if (!r)
@@ -2993,17 +3037,27 @@ void silc_server_resume_client(SilcServer server,
 
     /* Send the RESUME_CLIENT packet to our primary router so that others
        know this client isn't detached anymore. */
-    if (!server->standalone) {
-      buf = silc_buffer_alloc_size(2 + id_len);
-      silc_buffer_format(buf,
-			 SILC_STR_UI_SHORT(id_len),
-			 SILC_STR_UI_XNSTRING(id_string, id_len),
-			 SILC_STR_END);
+    buf = silc_buffer_alloc_size(2 + id_len);
+    silc_buffer_format(buf,
+		       SILC_STR_UI_SHORT(id_len),
+		       SILC_STR_UI_XNSTRING(id_string, id_len),
+		       SILC_STR_END);
+
+    /* Send to primary router */
+    if (!server->standalone)
       silc_server_packet_send(server, server->router->connection,
 			      SILC_PACKET_RESUME_CLIENT, 0, 
 			      buf->data, buf->len, TRUE);
-      silc_buffer_free(buf);
-    }
+
+    /* As router we must deliver this packet directly to the original
+       server whom this client was earlier. */
+    if (server->server_type == SILC_ROUTER && detached_client->router)
+      silc_server_packet_send(server, detached_client->router->connection,
+			      SILC_PACKET_RESUME_CLIENT, 0, 
+			      buf->data, buf->len, TRUE);
+    silc_buffer_free(buf);
+
+    detached_client->router = NULL;
 
     /* Delete this client entry since we're resuming to old one. */
     server->stat.my_clients--;
@@ -3028,38 +3082,53 @@ void silc_server_resume_client(SilcServer server,
 	snprintf(&client->nickname[strlen(client->nickname) - 1], 1, 
 		 "%d", nickfail);
       }
+      nick_change = TRUE;
+    }
 
+    if (nick_change) {
       /* Notify about Client ID change, nickname doesn't actually change. */
       if (!server->standalone)
 	silc_server_send_notify_nick_change(server, server->router->connection,
 					    FALSE, client->id, client_id,
 					    client->nickname);
-      
-      silc_free(client->id);
-      client->id = client_id;
+    }
+
+    /* Send the new client ID to the client. After this client may start
+       receiving other packets, and may start sending packets too. */
+    silc_server_send_new_id(server, sock, FALSE, client_id, SILC_ID_CLIENT,
+			    silc_id_get_len(client_id, SILC_ID_CLIENT));
+
+    if (nick_change) {
+      /* Send NICK change notify to channels as well. */
+      SilcBuffer oidp, nidp;
+      oidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+      nidp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+      silc_server_send_notify_on_channels(server, NULL, client, 
+					  SILC_NOTIFY_TYPE_NICK_CHANGE, 3,
+					  oidp->data, oidp->len, 
+					  nidp->data, nidp->len,
+					  client->nickname, 
+					  strlen(client->nickname));
+      silc_buffer_free(oidp);
+      silc_buffer_free(nidp);
     }
 
     /* Add the client again to the ID cache to get it to correct list */
     if (!silc_idcache_del_by_context(server->local_list->clients, client))
       silc_idcache_del_by_context(server->global_list->clients, client);
+    silc_free(client->id);
+    client->id = client_id;
+    client_id = NULL;
     silc_idcache_add(server->local_list->clients, client->nickname,
-		     client->id, client, client->mode, NULL);
-
-    /* Send the new client ID to the client. */
-    id_string = silc_id_id2str(client->id, SILC_ID_CLIENT);
-    buf = silc_buffer_alloc_size(2 + 2 + id_len);
-    silc_buffer_format(buf,
-		       SILC_STR_UI_SHORT(SILC_ID_CLIENT),
-		       SILC_STR_UI_SHORT(id_len),
-		       SILC_STR_UI_XNSTRING(id_string, id_len),
-		       SILC_STR_END);
-    silc_server_packet_send(server, sock, SILC_PACKET_NEW_ID, 0, 
-			    buf->data, buf->len, FALSE);
-    silc_free(id_string);
-    silc_buffer_free(buf);
+		     client->id, client, 0, NULL);
 
     /* Send some nice info to the client */
     silc_server_send_connect_notifys(server, sock, client);
+
+    /* XXX normal server may not know about any joined channels!!! 
+       Do this by saving the joined list in the resume_resolve callback.
+       Resolve it here with USERS per channel. */
+
 
     /* Send all channel keys of channels the client has joined */
     silc_hash_table_list(client->channels, &htl);
@@ -3079,6 +3148,7 @@ void silc_server_resume_client(SilcServer server,
       /* Send the key packet to client */
       silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
 			      keyp->data, keyp->len, FALSE);
+      channel->global_users = silc_server_channel_has_global(channel);
     }
     silc_hash_table_list_reset(&htl);
 
@@ -3146,18 +3216,31 @@ void silc_server_resume_client(SilcServer server,
       }
     }
 
+    SILC_LOG_DEBUG(("Resuming detached client"));
+
     /* Change the client to correct list. */
     if (!silc_idcache_del_by_context(server->local_list->clients,
 				     detached_client))
       silc_idcache_del_by_context(server->global_list->clients,
 				  detached_client);
-    silc_idcache_add(local ? server->local_list->clients :
-		     server->global_list->clients, detached_client->nickname,
+    silc_idcache_add(local && server->server_type == SILC_ROUTER ? 
+		     server->local_list->clients : 
+		     server->global_list->clients, 
+		     detached_client->nickname,
 		     detached_client->id, detached_client, FALSE, NULL);
 
     /* Change the owner of the client if needed */
     if (detached_client->router != server_entry)
       detached_client->router = server_entry;
+
+    /* Update channel information regarding global clients on channel. */
+    if (server->server_type == SILC_SERVER) {
+      silc_hash_table_list(detached_client->channels, &htl);
+      while (silc_hash_table_get(&htl, NULL, (void **)&chl))
+	chl->channel->global_users = 
+	  silc_server_channel_has_global(chl->channel);
+      silc_hash_table_list_reset(&htl);
+    }
 
     /* If the sender of this packet is server and we are router we need to
        broadcast this packet to other routers in the network. */

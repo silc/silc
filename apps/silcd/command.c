@@ -791,9 +791,8 @@ silc_server_command_whois_send_reply(SilcServerCommandContext cmd,
       
     SILC_PUT32_MSB(entry->mode, mode);
 
-    if (entry->connection) {
+    if (entry->connection)
       SILC_PUT32_MSB((time(NULL) - entry->data.last_receive), idle);
-    }
 
     packet = 
       silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
@@ -2457,7 +2456,7 @@ SILC_SERVER_CMD_FUNC(invite)
     }
 
     /* Get the client entry */
-    dest = silc_server_get_client_resolve(server, dest_id, &resolve);
+    dest = silc_server_get_client_resolve(server, dest_id, FALSE, &resolve);
     if (!dest) {
       if (server->server_type != SILC_SERVER || !resolve) {
 	silc_server_command_send_status_reply(
@@ -3074,7 +3073,8 @@ static void silc_server_command_join_channel(SilcServer server,
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
     client = (SilcClientEntry)sock->user_data;
   } else {
-    client = silc_server_get_client_resolve(server, client_id, &resolve);
+    client = silc_server_get_client_resolve(server, client_id, FALSE, 
+					    &resolve);
     if (!client) {
       if (cmd->pending)
 	goto out;
@@ -5102,20 +5102,13 @@ SILC_SERVER_CMD_FUNC(users)
   }
 
   /* If the channel is private or secret do not send anything, unless the
-     user requesting this command is on the channel. */
+     user requesting this command is on the channel or is server */
   if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT) {
     if (channel->mode & (SILC_CHANNEL_MODE_PRIVATE | SILC_CHANNEL_MODE_SECRET)
 	&& !silc_server_client_on_channel(cmd->sock->user_data, channel, 
 					  NULL)) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
-					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
-      goto out;
-    }
-  } else {
-    if (channel->mode & 
-	(SILC_CHANNEL_MODE_PRIVATE | SILC_CHANNEL_MODE_SECRET)) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
-					    SILC_STATUS_ERR_NO_SUCH_CHANNEL);
+					    SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
   }
@@ -5198,7 +5191,8 @@ SILC_SERVER_CMD_FUNC(getkey)
 					     client_id, TRUE, NULL);
     
     if ((!client && !cmd->pending && !server->standalone) ||
-	(client && !client->connection && !cmd->pending) ||
+	(client && !client->connection && !cmd->pending &&
+	 !(client->mode & SILC_UMODE_DETACHED)) ||
 	(client && !client->data.public_key && !cmd->pending)) {
       SilcBuffer tmpbuf;
       SilcUInt16 old_ident;

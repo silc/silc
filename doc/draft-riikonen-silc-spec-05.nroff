@@ -2164,7 +2164,9 @@ in the SKE protocol for this connection.  If the signature is valid
 the server MUST unset the SILC_UMODE_DETACHED flag, and send the
 SILC_PACKET_RESUME_CLIENT packet to its primary router.  The routers
 MUST broadcast the packet and unset the SILC_UMODE_DETACHED flag
-when the packet is received.
+when the packet is received.  If the server is router server it also
+MUST send the SILC_PACKET_RESUME_CLIENT packet to the original server
+whom owned the detached client.
 
 The servers and routers that receives the SILC_PACKET_RESUME_CLIENT
 packet MUST know whether the packet already has been received for

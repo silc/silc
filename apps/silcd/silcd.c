@@ -426,8 +426,8 @@ int main(int argc, char **argv)
 
   /* Stop the server and free it. */
   silc_server_stop(silcd);
-  silc_server_free(silcd);
   silc_server_config_destroy(silcd->config);
+  silc_server_free(silcd);
 
   /* Flush the logging system */
   silc_log_flush_all();

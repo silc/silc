@@ -456,7 +456,7 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
 
     /* Ignore my ID */
-    if (SILC_ID_CLIENT_COMPARE(client_id, conn->local_id))
+    if (conn->local_id && SILC_ID_CLIENT_COMPARE(client_id, conn->local_id))
       break;
 
     /* Find old Client entry */
@@ -482,6 +482,31 @@ void silc_client_notify_by_server(SilcClient client,
     tmp = silc_argument_get_arg_type(args, 3, NULL);
     if (tmp) {
       /* Protocol version 1.1 */
+      char *tmp_nick;
+
+      /* Check whether nickname changed at all.  It is possible that nick
+	 change notify is received but nickname didn't changed, only the
+	 ID changes. */
+      if (client->internal->params->nickname_parse)
+	client->internal->params->nickname_parse(client_entry->nickname,
+						 &tmp_nick);
+      else
+	tmp_nick = strdup(tmp);
+
+      if (!strcmp(tmp, tmp_nick)) {
+	/* Nickname didn't change. Update only the ID */
+	silc_idcache_del_by_context(conn->client_cache, client_entry);
+	silc_free(client_entry->id);
+	client_entry->id = silc_id_dup(client_id, SILC_ID_CLIENT);
+	silc_idcache_add(conn->client_cache, strdup(tmp),
+			 client_entry->id, client_entry, 0, NULL);
+
+	/* Notify application */
+	client->internal->ops->notify(client, conn, type, 
+				      client_entry, client_entry);
+	break;
+      }
+      silc_free(tmp_nick);
 
       /* Create new client entry, and save all old information with the
 	 new nickname and client ID */

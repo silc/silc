@@ -936,6 +936,7 @@ static void silc_task_queue_alloc(SilcTaskQueue *queue)
 static void silc_task_queue_free(SilcTaskQueue queue)
 {
   silc_mutex_free(queue->lock);
+  memset(queue, 'F', sizeof(*queue));
   silc_free(queue);
 }
 
@@ -1172,10 +1173,11 @@ static int silc_schedule_task_remove(SilcTaskQueue queue, SilcTask task)
     next = first;
 
     while(1) {
-      next = next->next;
-      silc_free(next->prev);
-      if (next == first)
+      old = next->next;
+      silc_free(next);
+      if (old == first)
 	break;
+      next = old;
     }
 
     queue->task = NULL;

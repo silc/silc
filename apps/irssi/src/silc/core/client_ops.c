@@ -335,6 +335,9 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     client_entry = va_arg(va, SilcClientEntry);
     client_entry2 = va_arg(va, SilcClientEntry);
+
+    if (!strcmp(client_entry->nickname, client_entry2->nickname))
+      break;
     
     memset(userhost, 0, sizeof(userhost));
     snprintf(userhost, sizeof(userhost) - 1, "%s@%s",
@@ -1913,8 +1916,7 @@ silc_detach(SilcClient client, SilcClientConnection conn,
   /* Save the detachment data to file. */
 
   memset(file, 0, sizeof(file));
-  snprintf(file, sizeof(file) - 1, "%s/session.%s.%d", get_irssi_dir(),
-	   conn->remote_host, conn->remote_port);
+  snprintf(file, sizeof(file) - 1, "%s/session", get_irssi_dir());
   silc_file_writefile(file, detach_data, detach_data_len);
 }
 

@@ -204,7 +204,7 @@ static void sig_connected(SILC_SERVER_REC *server)
   /* Try to read detached session data and use it if found. */
   memset(&params, 0, sizeof(params));
   memset(file, 0, sizeof(file));
-  snprintf(file, sizeof(file) - 1, "%s/session.%s.%d", get_irssi_dir(),
+  snprintf(file, sizeof(file) - 1, "%s/session", get_irssi_dir(),
 	   server->connrec->address, server->connrec->port);
   params.detach_data = silc_file_readfile(file, &params.detach_data_len);
 
