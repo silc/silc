@@ -1,10 +1,20 @@
 #!/bin/sh
 # Run this to generate all the initial makefiles, etc.
 
+PKG_NAME="Irssi SILC"
+
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
 
-PKG_NAME="Irssi SILC"
+if test ! -f $srcdir/irssi.cvs -a -f $srcdir/configure; then
+  echo
+  echo "Use ./configure instead"
+  echo
+  echo "This script should only be run if you got sources from CVS."
+  echo "If you really want to do this, say:"
+  echo "  touch irssi.cvs"
+  exit 0
+fi
 
 if test ! -f $srcdir/configure.in; then
     echo -n "**Error**: Directory \`$srcdir\' does not look like the"
@@ -27,7 +37,7 @@ cat docs/help/Makefile.am.gen|sed "s/@HELPFILES@/$files/g"|sed 's/?/\\?/g'|tr '!
 
 # .html -> .txt with lynx
 echo "Documentation: html -> txt..."
-lynx -dump -nolist docs/startup-HOWTO.html > docs/startup-HOWTO.txt
+lynx -dump -nolist docs/faq.html|perl -pe 's/^ *//; if ($_ eq "\n" && $state eq "Q") { $_ = ""; } elsif (/^([QA]):/) { $state = $1 } elsif ($_ ne "\n") { $_ = "   $_"; };' > docs/faq.txt
 
 echo "Checking auto* tools..."
 
@@ -134,3 +144,7 @@ automake --add-missing --gnu $am_opt
 #else
 #  echo Skipping configure process.
 #fi
+
+# make sure perl hashes have correct length
+find src/perl -name *.c -o -name *.xs | xargs grep -n hv_store | perl -ne 'if (/"(\w+)",\s*(\d+)/) { print unless $2 == length $1 }'
+

@@ -50,6 +50,7 @@ THEME_REC *theme_create(const char *path, const char *name)
 	g_return_val_if_fail(name != NULL, NULL);
 
 	rec = g_new0(THEME_REC, 1);
+	rec->refcount = 1;
 	rec->path = g_strdup(path);
 	rec->name = g_strdup(name);
 	rec->abstracts = g_hash_table_new((GHashFunc) g_str_hash,
@@ -83,12 +84,8 @@ static void theme_module_destroy(const char *key, MODULE_THEME_REC *rec)
 	g_free(rec);
 }
 
-void theme_destroy(THEME_REC *rec)
+static void theme_real_destroy(THEME_REC *rec)
 {
-	themes = g_slist_remove(themes, rec);
-
-	signal_emit("theme destroyed", 1, rec);
-
 	g_hash_table_foreach(rec->abstracts, (GHFunc) theme_abstract_destroy, NULL);
 	g_hash_table_destroy(rec->abstracts);
 	g_hash_table_foreach(rec->modules, (GHFunc) theme_module_destroy, NULL);
@@ -100,6 +97,20 @@ void theme_destroy(THEME_REC *rec)
 	g_free(rec->path);
 	g_free(rec->name);
 	g_free(rec);
+}
+
+static void theme_unref(THEME_REC *rec)
+{
+	if (--rec->refcount == 0)
+		theme_real_destroy(rec);
+}
+
+void theme_destroy(THEME_REC *rec)
+{
+	themes = g_slist_remove(themes, rec);
+	signal_emit("theme destroyed", 1, rec);
+
+	theme_unref(rec);
 }
 
 static char *theme_replace_expand(THEME_REC *theme, int index,
@@ -242,10 +253,11 @@ static int data_is_empty(const char **data)
 {
 	/* since we don't know the real argument list, assume there's always
 	   an argument in them */
-	char *arglist[] = {
+	static char *arglist[] = {
 		"x", "x", "x", "x", "x", "x","x", "x", "x", "x",
 		NULL
 	};
+	SERVER_REC *server;
 	const char *p;
 	char *ret;
         int free_ret, empty;
@@ -266,8 +278,12 @@ static int data_is_empty(const char **data)
 
 	/* variable - check if it's empty */
         p++;
-	ret = parse_special((char **) &p,
-			    active_win == NULL ? NULL : active_win->active_server,
+
+	server = active_win == NULL ? NULL :
+		active_win->active_server != NULL ?
+		active_win->active_server : active_win->connect_server;
+
+	ret = parse_special((char **) &p, server,
 			    active_win == NULL ? NULL : active_win->active,
 			    arglist, &free_ret, NULL, 0);
         p++;
@@ -1207,10 +1223,20 @@ static void read_settings(void)
 
 static void themes_read(void)
 {
+	GSList *refs;
 	char *fname;
 
-	while (themes != NULL)
-		theme_destroy(themes->data);
+	/* increase every theme's refcount, and destroy them. this way if
+	   we want to use the theme before it's reloaded we don't crash. */
+	refs = NULL;
+	while (themes != NULL) {
+		THEME_REC *theme = themes->data;
+
+		refs = g_slist_prepend(refs, theme);
+
+		theme->refcount++;
+		theme_destroy(theme);
+	}
 
 	/* first there's default theme.. */
 	current_theme = theme_load("default");
@@ -1223,7 +1249,12 @@ static void themes_read(void)
 	}
 
         window_themes_update();
-        change_theme(settings_get_str("theme"), FALSE);
+	change_theme(settings_get_str("theme"), FALSE);
+
+	while (refs != NULL) {
+		theme_unref(refs->data);
+		refs = g_slist_remove(refs, refs->data);
+	}
 }
 
 void themes_init(void)

@@ -153,7 +153,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ NULL, "Highlighting", 0 },
 
 	{ "hilight_header", "%#Highlights:", 0 },
-	{ "hilight_line", "%#$[-4]0 $1 $2 $3$4$5", 7, { 1, 0, 0, 0, 0, 0, 0 } },
+	{ "hilight_line", "%#$[-4]0 $1 $2 $3$4", 5, { 1, 0, 0, 0, 0 } },
 	{ "hilight_footer", "", 0 },
 	{ "hilight_not_found", "Highlight not found: $0", 1, { 0 } },
 	{ "hilight_removed", "Highlight removed: $0", 1, { 0 } },
@@ -234,6 +234,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ NULL, "Ignores", 0 },
 
 	{ "ignored", "Ignoring {hilight $1} from {nick $0}", 2, { 0, 0 } },
+	{ "ignored_options", "Ignoring {hilight $1} from {nick $0} {comment $2}", 3, { 0, 0, 0 } },
 	{ "unignored", "Unignored {nick $0}", 1, { 0 } },
 	{ "ignore_not_found", "{nick $0} is not being ignored", 1, { 0 } },
 	{ "ignore_no_ignores", "There are no ignores", 0 },
@@ -263,6 +264,11 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "set_not_boolean", "Setting {hilight $0} isn't boolean, use /SET", 1, { 0 } },
 	{ "translation_not_found", "Error opening translation table file $0: $1", 2, { 0, 0 } },
 	{ "translation_file_error", "Error parsing translation table file $0", 1, { 0 } },
+	{ "no_completions", "There's no completions", 0 },
+	{ "completion_removed", "Removed completion $0", 1, { 0 } },
+	{ "completion_header", "%#Key        Value                                    Auto", 0 },
+	{ "completion_line", "%#$[10]0 $[!40]1 $2", 3, { 0, 0, 0 } },
+	{ "completion_footer", "", 0 },
 
 	{ NULL, NULL, 0 }
 };

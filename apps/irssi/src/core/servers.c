@@ -110,6 +110,7 @@ static char *server_create_tag(SERVER_CONNECT_REC *conn)
 		server_create_address_tag(conn->address);
 
 	if (conn->tag != NULL && server_find_tag(conn->tag) == NULL &&
+            server_find_lookup_tag(conn->tag) == NULL &&
 	    strncmp(conn->tag, tag, strlen(tag)) == 0) {
 		/* use the existing tag if it begins with the same ID -
 		   this is useful when you have several connections to
@@ -123,8 +124,13 @@ static char *server_create_tag(SERVER_CONNECT_REC *conn)
 
 	/* then just append numbers after tag until unused is found.. */
 	str = g_string_new(tag);
-	for (num = 2; server_find_tag(str->str) != NULL; num++)
+
+	num = 2;
+	while (server_find_tag(str->str) != NULL ||
+	       server_find_lookup_tag(str->str) != NULL) {
 		g_string_sprintf(str, "%s%d", tag, num);
+		num++;
+	}
 	g_free(tag);
 
 	tag = str->str;
@@ -161,16 +167,52 @@ static void server_connect_callback_init(SERVER_REC *server, GIOChannel *handle)
 	server_connect_finished(server);
 }
 
-static void server_connect_callback_readpipe(SERVER_REC *server)
+static void server_real_connect(SERVER_REC *server, IPADDR *ip,
+				const char *unix_socket)
 {
-	SERVER_CONNECT_REC *conn;
-	RESOLVED_IP_REC iprec;
 	GIOChannel *handle;
-        IPADDR *ip, *own_ip;
-	const char *errormsg;
+        IPADDR *own_ip;
         int port;
 
-	g_return_if_fail(IS_SERVER(server));
+	g_return_if_fail(ip != NULL || unix_socket != NULL);
+
+	signal_emit("server connecting", 2, server, ip);
+
+	if (ip != NULL) {
+		own_ip = ip == NULL ? NULL :
+			(IPADDR_IS_V6(ip) ? server->connrec->own_ip6 :
+			 server->connrec->own_ip4);
+		port = server->connrec->proxy != NULL ?
+			server->connrec->proxy_port : server->connrec->port;
+		handle = server->connrec->use_ssl ?
+			net_connect_ip_ssl(ip, port, own_ip) :
+			net_connect_ip(ip, port, own_ip);
+	} else {
+		handle = net_connect_unix(unix_socket);
+	}
+
+	if (handle == NULL) {
+		/* failed */
+		if (server->connrec->use_ssl && errno == ENOSYS)
+			server->no_reconnect = TRUE;
+
+		server->connection_lost = TRUE;
+		server_connect_failed(server, g_strerror(errno));
+	} else {
+		server->handle = net_sendbuffer_create(handle, 0);
+		server->connect_tag =
+			g_input_add(handle, G_INPUT_WRITE | G_INPUT_READ,
+				    (GInputFunction)
+				    server_connect_callback_init,
+				    server);
+	}
+}
+
+static void server_connect_callback_readpipe(SERVER_REC *server)
+{
+	RESOLVED_IP_REC iprec;
+        IPADDR *ip;
+	const char *errormsg;
 
 	g_source_remove(server->connect_tag);
 	server->connect_tag = -1;
@@ -204,33 +246,18 @@ static void server_connect_callback_readpipe(SERVER_REC *server)
 			&iprec.ip6 : &iprec.ip4;
 	}
 
-        conn = server->connrec;
-	port = conn->proxy != NULL ? conn->proxy_port : conn->port;
-	own_ip = ip == NULL ? NULL :
-		(IPADDR_IS_V6(ip) ? conn->own_ip6 : conn->own_ip4);
-
-	handle = NULL;
 	if (ip != NULL) {
-		signal_emit("server connecting", 2, server, ip);
-                if (server->handle == NULL)
-			handle = net_connect_ip(ip, port, own_ip);
-		else
-                        handle = net_sendbuffer_handle(server->handle);
-	}
-
-	if (handle == NULL) {
-		/* failed */
-		if (ip == NULL && (iprec.error == 0 ||
-				   net_hosterror_notfound(iprec.error))) {
-			/* IP wasn't found for the host, don't try to reconnect
-			   back to this server */
+		/* host lookup ok */
+		server_real_connect(server, ip, NULL);
+		errormsg = NULL;
+	} else {
+		if (iprec.error == 0 || net_hosterror_notfound(iprec.error)) {
+			/* IP wasn't found for the host, don't try to
+			   reconnect back to this server */
 			server->dns_error = TRUE;
 		}
 
-		if (ip != NULL) {
-			/* connect() failed */
-			errormsg = g_strerror(errno);
-		} else if (iprec.error == 0) {
+		if (iprec.error == 0) {
 			/* forced IPv4 or IPv6 address but it wasn't found */
 			errormsg = server->connrec->family == AF_INET ?
 				"IPv4 address not found for host" :
@@ -240,18 +267,24 @@ static void server_connect_callback_readpipe(SERVER_REC *server)
 			errormsg = iprec.errorstr != NULL ? iprec.errorstr :
 				"Host lookup failed";
 		}
+
 		server->connection_lost = TRUE;
 		server_connect_failed(server, errormsg);
-		g_free_not_null(iprec.errorstr);
-		return;
 	}
 
-        if (server->handle == NULL)
-		server->handle = net_sendbuffer_create(handle, 0);
-	server->connect_tag =
-		g_input_add(handle, G_INPUT_WRITE | G_INPUT_READ,
-			    (GInputFunction) server_connect_callback_init,
-			    server);
+	g_free(iprec.errorstr);
+}
+
+SERVER_REC *server_connect(SERVER_CONNECT_REC *conn)
+{
+	CHAT_PROTOCOL_REC *proto;
+	SERVER_REC *server;
+
+	proto = CHAT_PROTOCOL(conn);
+	server = proto->server_init_connect(conn);
+	proto->server_connect(server);
+
+	return server;
 }
 
 /* initializes server record but doesn't start connecting */
@@ -270,18 +303,19 @@ void server_connect_init(SERVER_REC *server)
 		g_free_not_null(server->connrec->username);
 
 		str = g_get_user_name();
-		if (*str == '\0') str = "-";
+		if (*str == '\0') str = "unknown";
 		server->connrec->username = g_strdup(str);
 	}
 	if (server->connrec->realname == NULL || *server->connrec->realname == '\0') {
 		g_free_not_null(server->connrec->realname);
 
 		str = g_get_real_name();
-		if (*str == '\0') str = "-";
+		if (*str == '\0') str = server->connrec->username;
 		server->connrec->realname = g_strdup(str);
 	}
 
 	server->tag = server_create_tag(server->connrec);
+	server->connect_tag = -1;
 }
 
 /* starts connecting to server */
@@ -291,48 +325,63 @@ int server_start_connect(SERVER_REC *server)
         int fd[2];
 
 	g_return_val_if_fail(server != NULL, FALSE);
-	if (server->connrec->port <= 0) return FALSE;
-
-	server_connect_init(server);
-
-	if (pipe(fd) != 0) {
-		g_warning("server_connect(): pipe() failed.");
-                g_free(server->tag);
-		g_free(server->nick);
+	if (!server->connrec->unix_socket && server->connrec->port <= 0)
 		return FALSE;
-	}
 
-        server->connect_pipe[0] = g_io_channel_unix_new(fd[0]);
-	server->connect_pipe[1] = g_io_channel_unix_new(fd[1]);
-
-	connect_address = server->connrec->proxy != NULL ?
-		server->connrec->proxy : server->connrec->address;
-	server->connect_pid =
-		net_gethostbyname_nonblock(connect_address,
-					   server->connect_pipe[1]);
-	server->connect_tag =
-		g_input_add(server->connect_pipe[0], G_INPUT_READ,
-			    (GInputFunction) server_connect_callback_readpipe,
-			    server);
 	server->rawlog = rawlog_create();
 
-	lookup_servers = g_slist_append(lookup_servers, server);
+	if (server->connrec->connect_handle != NULL) {
+		/* already connected */
+		GIOChannel *handle = server->connrec->connect_handle;
 
-	signal_emit("server looking", 1, server);
+		server->connrec->connect_handle = NULL;
+		server->handle = net_sendbuffer_create(handle, 0);
+		server_connect_finished(server);
+	} else if (server->connrec->unix_socket) {
+		/* connect with unix socket */
+		server_real_connect(server, NULL, server->connrec->address);
+	} else {
+		/* resolve host name */
+		if (pipe(fd) != 0) {
+			g_warning("server_connect(): pipe() failed.");
+			g_free(server->tag);
+			g_free(server->nick);
+			return FALSE;
+		}
+
+		server->connect_pipe[0] = g_io_channel_unix_new(fd[0]);
+		server->connect_pipe[1] = g_io_channel_unix_new(fd[1]);
+
+		connect_address = server->connrec->proxy != NULL ?
+			server->connrec->proxy : server->connrec->address;
+		server->connect_pid =
+			net_gethostbyname_nonblock(connect_address,
+						   server->connect_pipe[1]);
+		server->connect_tag =
+			g_input_add(server->connect_pipe[0], G_INPUT_READ,
+				    (GInputFunction)
+				    server_connect_callback_readpipe,
+				    server);
+
+		lookup_servers = g_slist_append(lookup_servers, server);
+
+		signal_emit("server looking", 1, server);
+	}
 	return TRUE;
 }
 
 static int server_remove_channels(SERVER_REC *server)
 {
-	GSList *tmp;
+	GSList *tmp, *next;
 	int found;
 
 	g_return_val_if_fail(server != NULL, FALSE);
 
 	found = FALSE;
-	for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
+	for (tmp = server->channels; tmp != NULL; tmp = next) {
 		CHANNEL_REC *channel = tmp->data;
 
+		next = tmp->next;
 		channel_destroy(channel);
 		found = TRUE;
 	}
@@ -440,6 +489,16 @@ SERVER_REC *server_find_tag(const char *tag)
 			return server;
 	}
 
+	return NULL;
+}
+
+SERVER_REC *server_find_lookup_tag(const char *tag)
+{
+	GSList *tmp;
+
+	g_return_val_if_fail(tag != NULL, NULL);
+	if (*tag == '\0') return NULL;
+
 	for (tmp = lookup_servers; tmp != NULL; tmp = tmp->next) {
 		SERVER_REC *server = tmp->data;
 
@@ -485,6 +544,9 @@ void server_connect_unref(SERVER_CONNECT_REC *conn)
 	}
 
         CHAT_PROTOCOL(conn)->destroy_server_connect(conn);
+
+	if (conn->connect_handle != NULL)
+		net_disconnect(conn->connect_handle);
 
 	g_free_not_null(conn->proxy);
 	g_free_not_null(conn->proxy_string);

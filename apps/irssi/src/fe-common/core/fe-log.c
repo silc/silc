@@ -475,12 +475,13 @@ static void log_single_line(WINDOW_REC *window, const char *server_tag,
 	char **targets, **tmp;
 	LOG_REC *log;
 
-	/* save to log created with /WINDOW LOG */
-	ltoa(windownum, window->refnum);
-	log = logs_find_item(LOG_ITEM_WINDOW_REFNUM,
-			     windownum, NULL, NULL);
-	if (log != NULL) {
-		log_write_rec(log, text, level);
+	if (window != NULL) {
+		/* save to log created with /WINDOW LOG */
+		ltoa(windownum, window->refnum);
+		log = logs_find_item(LOG_ITEM_WINDOW_REFNUM,
+				     windownum, NULL, NULL);
+		if (log != NULL)
+			log_write_rec(log, text, level);
 	}
 
 	if (target == NULL)
@@ -591,11 +592,11 @@ static int sig_autoremove(void)
 	return 1;
 }
 
-static void sig_window_item_destroy(WINDOW_REC *window, WI_ITEM_REC *item)
+static void sig_window_item_remove(WINDOW_REC *window, WI_ITEM_REC *item)
 {
 	LOG_REC *log;
 
-	log = logs_find_item(LOG_ITEM_TARGET, item->name,
+	log = logs_find_item(LOG_ITEM_TARGET, item->visible_name,
 			     item->server == NULL ? NULL :
 			     item->server->tag, NULL);
 	if (log != NULL && log->temp)
@@ -709,7 +710,7 @@ void fe_log_init(void)
 	command_bind("window log", NULL, (SIGNAL_FUNC) cmd_window_log);
 	command_bind("window logfile", NULL, (SIGNAL_FUNC) cmd_window_logfile);
 	signal_add_first("print text", (SIGNAL_FUNC) sig_printtext);
-	signal_add("window item destroy", (SIGNAL_FUNC) sig_window_item_destroy);
+	signal_add("window item remove", (SIGNAL_FUNC) sig_window_item_remove);
 	signal_add("window refnum changed", (SIGNAL_FUNC) sig_window_refnum_changed);
 	signal_add("server disconnected", (SIGNAL_FUNC) sig_server_disconnected);
 	signal_add("log locked", (SIGNAL_FUNC) sig_log_locked);
@@ -738,7 +739,7 @@ void fe_log_deinit(void)
 	command_unbind("window log", (SIGNAL_FUNC) cmd_window_log);
 	command_unbind("window logfile", (SIGNAL_FUNC) cmd_window_logfile);
 	signal_remove("print text", (SIGNAL_FUNC) sig_printtext);
-	signal_remove("window item destroy", (SIGNAL_FUNC) sig_window_item_destroy);
+	signal_remove("window item remove", (SIGNAL_FUNC) sig_window_item_remove);
 	signal_remove("window refnum changed", (SIGNAL_FUNC) sig_window_refnum_changed);
 	signal_remove("server disconnected", (SIGNAL_FUNC) sig_server_disconnected);
 	signal_remove("log locked", (SIGNAL_FUNC) sig_log_locked);

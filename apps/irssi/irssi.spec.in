@@ -2,7 +2,7 @@
 Name: 		irssi
 Version: 	@VERSION@
 Release: 	1
-Vendor: 	Timo Sirainen <tss@iki.fi>
+Vendor: 	Timo Sirainen <cras@irssi.org>
 Summary:  	Irssi is a IRC client
 Copyright: 	GPL
 Group: 		Applications/Communications

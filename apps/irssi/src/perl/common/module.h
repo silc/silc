@@ -22,7 +22,6 @@
 #include "channels.h"
 #include "queries.h"
 #include "nicklist.h"
-#include "blob.h"
 
 #include "perl/perl-core.h"
 #include "perl/perl-common.h"
@@ -43,4 +42,3 @@ typedef RECONNECT_REC *Irssi__Reconnect;
 typedef CHANNEL_REC *Irssi__Channel;
 typedef QUERY_REC *Irssi__Query;
 typedef NICK_REC *Irssi__Nick;
-typedef BLOB_REC *Irssi__Blob;

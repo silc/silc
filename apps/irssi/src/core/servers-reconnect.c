@@ -44,6 +44,17 @@ void reconnect_save_status(SERVER_CONNECT_REC *conn, SERVER_REC *server)
 	conn->away_reason = !server->usermode_away ? NULL :
 		g_strdup(server->away_reason);
 
+	if (!server->connected) {
+		/* default to channels/usermode from connect record
+		   since server isn't fully connected yet */
+		g_free_not_null(conn->channels);
+		conn->channels = server->connrec->no_autojoin_channels ? NULL :
+			g_strdup(server->connrec->channels);
+
+		g_free_not_null(conn->channels);
+		conn->channels = g_strdup(server->connrec->channels);
+	}
+
 	signal_emit("server reconnect save status", 2, conn, server);
 }
 
@@ -99,7 +110,7 @@ static int server_reconnect_timeout(void)
 			conn = rec->conn;
 			server_connect_ref(conn);
 			server_reconnect_destroy(rec);
-			CHAT_PROTOCOL(conn)->server_connect(conn);
+			server_connect(conn);
 			server_connect_unref(conn);
 		}
 	}
@@ -164,6 +175,8 @@ server_connect_copy_skeleton(SERVER_CONNECT_REC *src, int connect_info)
 	dest->away_reason = g_strdup(src->away_reason);
         dest->no_autojoin_channels = src->no_autojoin_channels;
 
+	dest->use_ssl = src->use_ssl;
+
 	return dest;
 }
 
@@ -208,8 +221,8 @@ static void sig_reconnect(SERVER_REC *server)
 		sserver->last_connect = server->connect_time == 0 ?
 			time(NULL) : server->connect_time;
 		sserver->last_failed = !server->connected;
-		if (server->banned) sserver->banned = TRUE;
-                if (server->dns_error) sserver->dns_error = TRUE;
+		sserver->banned = server->banned;
+                sserver->dns_error = server->dns_error;
 	}
 
 	if (sserver == NULL || conn->chatnet == NULL) {
@@ -329,36 +342,50 @@ static void reconnect_all(void)
 	while (list != NULL) {
 		conn = list->data;
 
-		CHAT_PROTOCOL(conn)->server_connect(conn);
+		server_connect(conn);
                 server_connect_unref(conn);
                 list = g_slist_remove(list, conn);
 	}
 }
 
-/* SYNTAX: RECONNECT <tag> */
+/* SYNTAX: RECONNECT <tag> [<quit message>] */
 static void cmd_reconnect(const char *data, SERVER_REC *server)
 {
 	SERVER_CONNECT_REC *conn;
 	RECONNECT_REC *rec;
-	int tag;
+	char *tag, *msg;
+	void *free_arg;
+	int tagnum;
 
-	if (*data == '\0' && server != NULL) {
-		/* reconnect back to same server */
+	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_GETREST, &tag, &msg))
+		return;
+
+	if (*tag != '\0' && strcmp(tag, "*") != 0)
+		server = server_find_tag(tag);
+
+	if (server != NULL) {
+		/* reconnect connected server */
 		conn = server_connect_copy_skeleton(server->connrec, TRUE);
 
 		if (server->connected)
 			reconnect_save_status(conn, server);
-		signal_emit("command disconnect", 2, "* Reconnecting", server);
+
+		msg = g_strconcat("* ", *msg == '\0' ?
+				  "Reconnecting" : msg, NULL);
+		signal_emit("command disconnect", 2, msg, server);
+		g_free(msg);
 
 		conn->reconnection = TRUE;
-		CHAT_PROTOCOL(conn)->server_connect(conn);
+		server_connect(conn);
 		server_connect_unref(conn);
+		cmd_params_free(free_arg);
                 return;
 	}
 
-	if (g_strcasecmp(data, "all") == 0) {
+	if (g_strcasecmp(tag, "all") == 0) {
 		/* reconnect all servers in reconnect queue */
                 reconnect_all();
+		cmd_params_free(free_arg);
                 return;
 	}
 
@@ -371,20 +398,21 @@ static void cmd_reconnect(const char *data, SERVER_REC *server)
 		if (g_strncasecmp(data, "RECON-", 6) == 0)
 			data += 6;
 
-		tag = atoi(data);
-		rec = tag <= 0 ? NULL : reconnect_find_tag(tag);
-
-		if (rec == NULL) {
-			signal_emit("server reconnect not found", 1, data);
-                        return;
-		}
+		tagnum = atoi(tag);
+		rec = tagnum <= 0 ? NULL : reconnect_find_tag(tagnum);
 	}
 
-	conn = rec->conn;
-	server_connect_ref(conn);
-	server_reconnect_destroy(rec);
-	CHAT_PROTOCOL(conn)->server_connect(conn);
-	server_connect_unref(conn);
+	if (rec == NULL) {
+		signal_emit("server reconnect not found", 1, data);
+	} else {
+		conn = rec->conn;
+		server_connect_ref(conn);
+		server_reconnect_destroy(rec);
+		server_connect(conn);
+		server_connect_unref(conn);
+	}
+
+	cmd_params_free(free_arg);
 }
 
 static void cmd_disconnect(const char *data, SERVER_REC *server)
@@ -423,7 +451,7 @@ static void read_settings(void)
 
 void servers_reconnect_init(void)
 {
-	settings_add_int("server", "server_reconnect_time", 3000);
+	settings_add_int("server", "server_reconnect_time", 300);
 
 	reconnects = NULL;
 	last_reconnect_tag = 0;

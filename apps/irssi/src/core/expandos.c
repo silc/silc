@@ -318,6 +318,17 @@ static char *expando_cmdchars(SERVER_REC *server, void *item, int *free_ret)
 	return (char *) settings_get_str("cmdchars");
 }
 
+/* first CMDCHAR */
+static char *expando_cmdchar(SERVER_REC *server, void *item, int *free_ret)
+{
+	char str[2] = { 0, 0 };
+
+	str[0] = *settings_get_str("cmdchars");
+
+	*free_ret = TRUE;
+	return g_strdup(str);
+}
+
 /* modes of current channel, if any */
 static char *expando_chanmode(SERVER_REC *server, void *item, int *free_ret)
 {
@@ -358,7 +369,8 @@ static char *expando_serverversion(SERVER_REC *server, void *item, int *free_ret
 /* target of current input (channel or QUERY nickname) */
 static char *expando_target(SERVER_REC *server, void *item, int *free_ret)
 {
-	return item == NULL ? "" : ((WI_ITEM_REC *) item)->name;
+	return item == NULL ? "" :
+		(char *) window_item_get_target((WI_ITEM_REC *) item);
 }
 
 /* client release date (in YYYYMMDD format) */
@@ -459,6 +471,12 @@ static char *expando_servertag(SERVER_REC *server, void *item, int *free_ret)
 static char *expando_chatnet(SERVER_REC *server, void *item, int *free_ret)
 {
 	return server == NULL ? "" : server->connrec->chatnet;
+}
+
+/* visible_name of current window item */
+static char *expando_itemname(SERVER_REC *server, void *item, int *free_ret)
+{
+	return item == NULL ? "" : ((WI_ITEM_REC *) item)->visible_name;
 }
 
 static void sig_message_public(SERVER_REC *server, const char *msg,
@@ -578,12 +596,15 @@ void expandos_init(void)
 		       "", EXPANDO_NEVER, NULL);
 	expando_create("K", expando_cmdchars,
 		       "setup changed", EXPANDO_ARG_NONE, NULL);
+	expando_create("k", expando_cmdchar,
+		       "setup changed", EXPANDO_ARG_NONE, NULL);
 	expando_create("M", expando_chanmode,
 		       "window changed", EXPANDO_ARG_NONE,
 		       "window item changed", EXPANDO_ARG_WINDOW,
 		       "channel mode changed", EXPANDO_ARG_WINDOW_ITEM, NULL);
 	expando_create("N", expando_nick,
 		       "window changed", EXPANDO_ARG_NONE,
+		       "window connect changed", EXPANDO_ARG_WINDOW,
 		       "window server changed", EXPANDO_ARG_WINDOW,
                        "server nick changed", EXPANDO_ARG_SERVER, NULL);
 	expando_create("O", expando_statusoper,
@@ -611,6 +632,7 @@ void expandos_init(void)
 	expando_create("W", expando_workdir, NULL);
 	expando_create("Y", expando_realname,
 		       "window changed", EXPANDO_ARG_NONE,
+		       "window connect changed", EXPANDO_ARG_WINDOW,
 		       "window server changed", EXPANDO_ARG_WINDOW, NULL);
 	expando_create("Z", expando_time,
 		       "time changed", EXPANDO_ARG_NONE, NULL);
@@ -630,10 +652,17 @@ void expandos_init(void)
 		       "query address changed", EXPANDO_ARG_WINDOW_ITEM, NULL);
 	expando_create("tag", expando_servertag,
 		       "window changed", EXPANDO_ARG_NONE,
+		       "window connect changed", EXPANDO_ARG_WINDOW,
 		       "window server changed", EXPANDO_ARG_WINDOW, NULL);
 	expando_create("chatnet", expando_chatnet,
 		       "window changed", EXPANDO_ARG_NONE,
+		       "window connect changed", EXPANDO_ARG_WINDOW,
 		       "window server changed", EXPANDO_ARG_WINDOW, NULL);
+	expando_create("itemname", expando_itemname,
+		       "window changed", EXPANDO_ARG_NONE,
+		       "window item changed", EXPANDO_ARG_WINDOW,
+		       "window item name changed", EXPANDO_ARG_WINDOW_ITEM,
+		       NULL);
 
 	read_settings();
 

@@ -50,11 +50,12 @@ static int ret_texts[] = {
 	TXT_NOT_GOOD_IDEA
 };
 
+int command_hide_output;
+
 /* keep the whole command line here temporarily. we need it in
    "default command" event handler, but there we don't know if the start of
    the line had one or two command chars, and which one.. */
 static const char *current_cmdline;
-static int hide_output;
 
 static GTimeVal time_command_last, time_command_now;
 static int last_command_cmd, command_cmd;
@@ -198,12 +199,6 @@ static void event_command(const char *data)
 {
 	const char *cmdchar;
 
-	if (*data == '\0') {
-		/* empty line, forget it. */
-                signal_stop();
-		return;
-	}
-
 	/* save current command line */
 	current_cmdline = data;
 
@@ -212,13 +207,15 @@ static void event_command(const char *data)
 	last_command_cmd = command_cmd;
 
 	g_get_current_time(&time_command_now);
-	command_cmd = strchr(settings_get_str("cmdchars"), *data) != NULL;
+	command_cmd = *data != '\0' &&
+		strchr(settings_get_str("cmdchars"), *data) != NULL;
 
 	/* /^command hides the output of the command */
-	cmdchar = strchr(settings_get_str("cmdchars"), *data);
+	cmdchar = *data == '\0' ? NULL :
+		strchr(settings_get_str("cmdchars"), *data);
 	if (cmdchar != NULL && (data[1] == '^' ||
 				(data[1] == *cmdchar && data[2] == '^'))) {
-                hide_output = TRUE;
+                command_hide_output = TRUE;
 		signal_add_first("print starting", (SIGNAL_FUNC) sig_stop);
 		signal_add_first("print format", (SIGNAL_FUNC) sig_stop);
 		signal_add_first("print text", (SIGNAL_FUNC) sig_stop);
@@ -227,8 +224,8 @@ static void event_command(const char *data)
 
 static void event_command_last(const char *data)
 {
-	if (hide_output) {
-		hide_output = FALSE;
+	if (command_hide_output) {
+		command_hide_output = FALSE;
 		signal_remove("print starting", (SIGNAL_FUNC) sig_stop);
 		signal_remove("print format", (SIGNAL_FUNC) sig_stop);
 		signal_remove("print text", (SIGNAL_FUNC) sig_stop);
@@ -318,7 +315,7 @@ static void event_list_subcommands(const char *command)
 
 void fe_core_commands_init(void)
 {
-	hide_output = FALSE;
+	command_hide_output = FALSE;
 
 	command_cmd = FALSE;
 	memset(&time_command_now, 0, sizeof(GTimeVal));

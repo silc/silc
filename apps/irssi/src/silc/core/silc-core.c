@@ -444,9 +444,10 @@ void silc_core_init(void)
   rec->create_channel_setup = create_channel_setup;
   rec->create_server_connect = create_server_connect;
   rec->destroy_server_connect = destroy_server_connect;
-  rec->server_connect = (SERVER_REC *(*) (SERVER_CONNECT_REC *))
-    silc_server_connect; 
-  rec->channel_create = (CHANNEL_REC *(*) (SERVER_REC *, const char *, int))
+  rec->server_init_connect = silc_server_init_connect; 
+  rec->server_connect = silc_server_connect;
+  rec->channel_create = (CHANNEL_REC *(*) (SERVER_REC *, const char *, 
+					   const char *, int))
     silc_channel_create;
   rec->query_create = (QUERY_REC *(*) (const char *, const char *, int))
     silc_query_create;

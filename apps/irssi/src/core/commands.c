@@ -497,13 +497,17 @@ static char *cmd_get_quoted_param(char **data)
 	quote = **data; (*data)++;
 
 	pos = *data;
-	while (**data != '\0' && **data != quote) {
+	while (**data != '\0' && (**data != quote || (*data)[1] != ' ')) {
 		if (**data == '\\' && (*data)[1] != '\0')
                         g_memmove(*data, (*data)+1, strlen(*data));
 		(*data)++;
 	}
 
-	if (**data != '\0') *(*data)++ = '\0';
+	if (**data == quote) {
+		*(*data)++ = '\0';
+		if (**data == ' ')
+			(*data)++;
+	}
 
 	return pos;
 }
@@ -653,11 +657,12 @@ typedef struct {
         GHashTable *options;
 } CMD_TEMP_REC;
 
-static char *get_optional_channel(WI_ITEM_REC *active_item, char **data,
-				  int require_name)
+static const char *
+get_optional_channel(WI_ITEM_REC *active_item, char **data, int require_name)
 {
         CHANNEL_REC *chanrec;
-	char *tmp, *origtmp, *channel, *ret;
+	const char *ret;
+	char *tmp, *origtmp, *channel;
 
 	if (active_item == NULL) {
                 /* no active channel in window, channel required */
@@ -670,10 +675,10 @@ static char *get_optional_channel(WI_ITEM_REC *active_item, char **data,
 	if (strcmp(channel, "*") == 0 && !require_name) {
                 /* "*" means active channel */
 		cmd_get_param(data);
-		ret = active_item->name;
+		ret = window_item_get_target(active_item);
 	} else if (!server_ischannel(active_item->server, channel)) {
                 /* we don't have channel parameter - use active channel */
-		ret = active_item->name;
+		ret = window_item_get_target(active_item);
 	} else {
 		/* Find the channel first and use it's name if found.
 		   This allows automatic !channel -> !XXXXXchannel replaces. */
@@ -730,7 +735,7 @@ int cmd_get_params(const char *data, gpointer *free_me, int count, ...)
 			/* optional channel as first parameter */
 			require_name = (count & PARAM_FLAG_OPTCHAN_NAME) ==
 				PARAM_FLAG_OPTCHAN_NAME;
-			arg = get_optional_channel(item, &datad, require_name);
+			arg = (char *) get_optional_channel(item, &datad, require_name);
 
 			str = (char **) va_arg(args, char **);
 			if (str != NULL) *str = arg;
@@ -911,13 +916,8 @@ static void event_command(const char *line, SERVER_REC *server, void *item)
 
 	g_return_if_fail(line != NULL);
 
-	if (*line == '\0') {
-		/* empty line, forget it. */
-                signal_stop();
-		return;
-	}
-
-	cmdchar = strchr(settings_get_str("cmdchars"), *line);
+	cmdchar = *line == '\0' ? NULL :
+		strchr(settings_get_str("cmdchars"), *line);
 	if (cmdchar != NULL && line[1] == ' ') {
 		/* "/ text" = same as sending "text" to active channel. */
 		line += 2;

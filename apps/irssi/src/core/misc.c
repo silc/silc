@@ -26,7 +26,6 @@
 #ifdef HAVE_REGEX_H
 #  include <regex.h>
 #endif
-#include <pwd.h>
 
 typedef struct {
 	int condition;
@@ -449,25 +448,20 @@ int mkpath(const char *path, int mode)
 	return 0;
 }
 
-/* Get home directory */
-const char *get_home_dir(void)
-{
-       struct passwd *pw = getpwuid(getuid());
-       if (!pw) {
-	 if (g_getenv("HOME"))
-	   return g_getenv("HOME");
-	 else
-	   return ".";
-       }
-       return pw->pw_dir;
-}
-
 /* convert ~/ to $HOME */
 char *convert_home(const char *path)
 {
-	return *path == '~' && (*(path+1) == '/' || *(path+1) == '\0') ?
-		g_strconcat((char *)get_home_dir(), path+1, NULL) :
-		g_strdup(path);
+	const char *home;
+
+	if (*path == '~' && (*(path+1) == '/' || *(path+1) == '\0')) {
+		home = g_get_home_dir();
+		if (home == NULL)
+			home = ".";
+
+		return g_strconcat(home, path+1, NULL);
+	} else {
+		return g_strdup(path);
+	}
 }
 
 int g_istr_equal(gconstpointer v, gconstpointer v2)
@@ -783,4 +777,20 @@ int expand_escape(const char **data)
 		*data += 2;
 		return strtol(digit, NULL, 8);
 	}
+}
+
+/* Escape all '"', "'" and '\' chars with '\' */
+char *escape_string(const char *str)
+{
+	char *ret, *p;
+
+	p = ret = g_malloc(strlen(str)*2+1);
+	while (*str != '\0') {
+		if (*str == '"' || *str == '\'' || *str == '\\')
+			*p++ = '\\';
+		*p++ = *str++;
+	}
+	*p = '\0';
+
+	return ret;
 }

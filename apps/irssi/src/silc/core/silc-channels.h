@@ -28,7 +28,9 @@ void silc_channels_deinit(void);
 
 /* Create new SILC channel record */
 SILC_CHANNEL_REC *silc_channel_create(SILC_SERVER_REC *server,
-				      const char *name, int automatic);
+				      const char *name,
+				      const char *visible_name,
+				      int automatic);
 SILC_CHANNEL_REC *silc_channel_find_entry(SILC_SERVER_REC *server,
 					  SilcChannelEntry entry);
 

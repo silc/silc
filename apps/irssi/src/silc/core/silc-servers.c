@@ -323,33 +323,37 @@ static void sig_disconnected(SILC_SERVER_REC *server)
   }
 }
 
-SILC_SERVER_REC *silc_server_connect(SILC_SERVER_CONNECT_REC *conn){
+SERVER_REC *silc_server_init_connect(SERVER_CONNECT_REC *conn)
+{
   SILC_SERVER_REC *server;
 
   g_return_val_if_fail(IS_SILC_SERVER_CONNECT(conn), NULL);
   if (conn->address == NULL || *conn->address == '\0') 
     return NULL;
   if (conn->nick == NULL || *conn->nick == '\0') {
-    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, 
-	      "Cannot connect: nickname is not set");
+    silc_say_error("Cannot connect: nickname is not set");
     return NULL;
   }
 
   server = g_new0(SILC_SERVER_REC, 1);
   server->chat_type = SILC_PROTOCOL;
-  server->connrec = conn;
+  server->connrec = (SILC_SERVER_CONNECT_REC *)conn;
+  server_connect_ref(conn);
+
   if (server->connrec->port <= 0) 
     server->connrec->port = 706;
 
-  server_connect_ref(SERVER_CONNECT(conn));
+  server_connect_init((SERVER_REC *)server);
+  return (SERVER_REC *)server;
+}
 
-  if (!server_start_connect((SERVER_REC *) server)) {
-    server_connect_unref(SERVER_CONNECT(conn));
+void silc_server_connect(SERVER_REC *server)
+{
+  if (!server_start_connect(server)) {
+    server_connect_unref(server->connrec);
     g_free(server);
-    return NULL;
+    return;
   }
-
-  return server;
 }
 
 /* Return a string of all channels in server in server->channels_join() 
@@ -476,7 +480,7 @@ static void command_self(const char *data, SILC_SERVER_REC *server,
 
   if (IS_SILC_CHANNEL(item)) {
     SILC_CHANNEL_REC *chanrec;
-    chanrec = silc_channel_find(server, item->name);
+    chanrec = silc_channel_find(server, item->visible_name);
     if (chanrec)
       server->conn->current_channel = chanrec->entry;
   }

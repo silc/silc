@@ -146,6 +146,7 @@ static void session_save_channel(CHANNEL_REC *channel, CONFIG_REC *config,
 	node = config_node_section(node, NULL, NODE_TYPE_BLOCK);
 
 	config_node_set_str(config, node, "name", channel->name);
+	config_node_set_str(config, node, "visible_name", channel->visible_name);
 	config_node_set_str(config, node, "topic", channel->topic);
 	config_node_set_str(config, node, "topic_by", channel->topic_by);
 	config_node_set_int(config, node, "topic_time", channel->topic_time);
@@ -181,6 +182,8 @@ static void session_save_server(SERVER_REC *server, CONFIG_REC *config,
 	config_node_set_str(config, node, "password", server->connrec->password);
 	config_node_set_str(config, node, "nick", server->nick);
 
+	config_node_set_bool(config, node, "use_ssl", server->connrec->use_ssl);
+
 	handle = g_io_channel_unix_get_fd(net_sendbuffer_handle(server->handle));
 	config_node_set_int(config, node, "handle", handle);
 
@@ -215,13 +218,14 @@ static void session_restore_channel_nicks(CHANNEL_REC *channel,
 static void session_restore_channel(SERVER_REC *server, CONFIG_NODE *node)
 {
         CHANNEL_REC *channel;
-	const char *name;
+	const char *name, *visible_name;
 
 	name = config_node_get_str(node, "name", NULL);
 	if (name == NULL)
 		return;
 
-	channel = CHAT_PROTOCOL(server)->channel_create(server, name, TRUE);
+	visible_name = config_node_get_str(node, "visible_name", NULL);
+	channel = CHAT_PROTOCOL(server)->channel_create(server, name, visible_name, TRUE);
 	channel->topic = g_strdup(config_node_get_str(node, "topic", NULL));
 	channel->topic_by = g_strdup(config_node_get_str(node, "topic_by", NULL));
 	channel->topic_time = config_node_get_int(node, "topic_time", 0);
@@ -274,12 +278,13 @@ static void session_restore_server(CONFIG_NODE *node)
 				  chatnet, password, nick);
 	if (conn != NULL) {
 		conn->reconnection = TRUE;
+		conn->connect_handle = g_io_channel_unix_new(handle);
 
-		server = proto->server_connect(conn);
-                server->handle = net_sendbuffer_create(g_io_channel_unix_new(handle), 0);
+		server = proto->server_init_connect(conn);
 		server->session_reconnect = TRUE;
-
 		signal_emit("session restore server", 2, server, node);
+
+		proto->server_connect(server);
 	}
 }
 

@@ -39,7 +39,6 @@
 #include "fe-common/silc/module-formats.h"
 
 #include "core.h"
-#include "blob.h"
 
 static void 
 silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
@@ -111,20 +110,6 @@ void silc_say_error(char *msg, ...)
   va_end(va);
 }
 
-void silc_emit_mime_sig(SILC_SERVER_REC *server, SILC_CHANNEL_REC *channel,
-			const char *data, SilcUInt32 data_len,
-			const char *encoding, const char *type,
-			const char *nick)
-{
-  BLOB_REC blob;
-
-  blob_fill(&blob);
-  blob.octets = data_len;
-  blob.data = (char *)data;
-
-  signal_emit("mime", 6, server, channel, &blob, encoding, type, nick);
-}
-
 /* Message for a channel. The `sender' is the nickname of the sender 
    received in the packet. The `channel_name' is the name of the channel. */
 
@@ -172,10 +157,6 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 	!strstr(type, "text/vnd")) {
       /* It is something textual, display it */
       message = (const unsigned char *)data;
-    } else {
-      silc_emit_mime_sig(server, chanrec, data, data_len, 
-			 enc, type, nick->nick);
-      message = NULL;
     }
   }
 
@@ -254,10 +235,6 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 	!strstr(type, "text/vnd")) {
       /* It is something textual, display it */
       message = (const unsigned char *)data;
-    } else {
-      silc_emit_mime_sig(server, NULL, data, data_len, 
-			 enc, type, sender->nickname);
-      message = NULL;
     }
   }
 
@@ -1010,8 +987,6 @@ static void silc_client_join_get_users(SilcClient client,
 		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_TOPIC,
 		       channel->channel_name, chanrec->topic);
 
-  fe_channels_nicklist(CHANNEL(chanrec), CHANNEL_NICKLIST_FLAG_ALL);
-
   if (founder) {
     if (founder == conn->local_entry)
       printformat_module("fe-common/silc", 
@@ -1329,7 +1304,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
       chanrec = silc_channel_find(server, channel);
       if (!chanrec)
-	chanrec = silc_channel_create(server, channel, TRUE);
+	chanrec = silc_channel_create(server, channel, channel, TRUE);
 
       if (topic) {
 	g_free_not_null(chanrec->topic);
@@ -2185,10 +2160,10 @@ void silc_failure(SilcClient client, SilcClientConnection conn,
    desired (application may start it later by calling the function
    silc_client_perform_key_agreement). */
 
-int silc_key_agreement(SilcClient client, SilcClientConnection conn,
-		       SilcClientEntry client_entry, const char *hostname,
-		       SilcUInt16 port, SilcKeyAgreementCallback *completion,
-		       void **context)
+bool silc_key_agreement(SilcClient client, SilcClientConnection conn,
+		        SilcClientEntry client_entry, const char *hostname,
+		        SilcUInt16 port, SilcKeyAgreementCallback *completion,
+		        void **context)
 {
   char portstr[12];
 

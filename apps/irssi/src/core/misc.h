@@ -61,10 +61,6 @@ int regexp_match(const char *str, const char *regexp);
 
 /* Create the directory and all it's parent directories */
 int mkpath(const char *path, int mode);
-
-/* Get home directory */
-const char *get_home_dir(void);
-
 /* convert ~/ to $HOME */
 char *convert_home(const char *path);
 
@@ -108,5 +104,8 @@ GSList *columns_sort_list(GSList *list, int rows);
 /* Expand escape string, the first character in data should be the
    one after '\'. Returns the expanded character or -1 if error. */
 int expand_escape(const char **data);
+
+/* Escape all '"', "'" and '\' chars with '\' */
+char *escape_string(const char *str);
 
 #endif

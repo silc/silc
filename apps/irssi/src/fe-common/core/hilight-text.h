@@ -5,7 +5,9 @@
 #  include <regex.h>
 #endif
 
-typedef struct {
+typedef struct _HILIGHT_REC HILIGHT_REC;
+
+struct _HILIGHT_REC {
 	char *text;
 
 	char **channels; /* if non-NULL, check the text only from these channels */
@@ -25,7 +27,7 @@ typedef struct {
 	unsigned int regexp_compiled:1; /* should always be TRUE, unless regexp is invalid */
 	regex_t preg;
 #endif
-} HILIGHT_REC;
+};
 
 extern GSList *hilights;
 
@@ -37,6 +39,9 @@ HILIGHT_REC *hilight_match(SERVER_REC *server, const char *channel,
 char *hilight_match_nick(SERVER_REC *server, const char *channel,
 			 const char *nick, const char *address,
 			 int level, const char *msg);
+
+void hilight_create(HILIGHT_REC *rec);
+void hilight_remove(HILIGHT_REC *rec);
 
 void hilight_text_init(void);
 void hilight_text_deinit(void);

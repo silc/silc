@@ -59,7 +59,8 @@ typedef struct {
   SilcUInt32 umode;
 } SILC_SERVER_REC;
 
-SILC_SERVER_REC *silc_server_connect(SILC_SERVER_CONNECT_REC *conn);
+SERVER_REC *silc_server_init_connect(SERVER_CONNECT_REC *conn);
+void silc_server_connect(SERVER_REC *server);
 
 /* Return a string of all channels in server in server->channels_join() 
    format */

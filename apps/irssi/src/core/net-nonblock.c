@@ -186,7 +186,7 @@ static void simple_readpipe(SIMPLE_THREAD_REC *rec, GIOChannel *pipe)
 {
 	RESOLVED_IP_REC iprec;
 	GIOChannel *handle;
-        IPADDR *ip;
+	IPADDR *ip;
 
 	g_return_if_fail(rec != NULL);
 

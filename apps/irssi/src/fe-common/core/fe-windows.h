@@ -26,6 +26,7 @@ struct _WINDOW_REC {
 	GSList *items;
 	WI_ITEM_REC *active;
 	SERVER_REC *active_server;
+	SERVER_REC *connect_server;
         char *servertag; /* active_server must be either NULL or have this tag (unless there's items in this window) */
 
 	int level; /* message level */
@@ -69,7 +70,7 @@ void window_set_level(WINDOW_REC *window, int level);
 void window_set_immortal(WINDOW_REC *window, int immortal);
 
 /* return active item's name, or if none is active, window's name */
-char *window_get_active_name(WINDOW_REC *window);
+const char *window_get_active_name(WINDOW_REC *window);
 
 WINDOW_REC *window_find_level(void *server, int level);
 WINDOW_REC *window_find_closest(void *server, const char *name, int level);

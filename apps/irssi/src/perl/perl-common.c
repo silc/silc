@@ -39,7 +39,6 @@
 #include "channels.h"
 #include "queries.h"
 #include "nicklist.h"
-#include "blob.h"
 
 #include "perl-common.h"
 
@@ -220,20 +219,14 @@ char *perl_get_use_list(void)
         return ret;
 }
 
-void irssi_callXS(void (*subaddr)(CV* cv), CV *cv, SV **mark)
+void irssi_callXS(void (*subaddr)(pTHX_ CV* cv), CV *cv, SV **mark)
 {
 	dSP;
 
 	PUSHMARK(mark);
-	(*subaddr)(cv);
+	(*subaddr)(aTHX_ cv);
 
 	PUTBACK;
-}
-
-static void perl_blob_fill_hash(HV *hv, BLOB_REC *blob)
-{
-	hv_store(hv, "octets", 6, newSViv(blob->octets), 0);
-	hv_store(hv, "data", 4, newSVpv(blob->data, blob->octets), 0);
 }
 
 void perl_chatnet_fill_hash(HV *hv, CHATNET_REC *chatnet)
@@ -333,7 +326,7 @@ void perl_window_item_fill_hash(HV *hv, WI_ITEM_REC *item)
 	if (item->server != NULL) {
 		hv_store(hv, "server", 6, iobject_bless(item->server), 0);
 	}
-	hv_store(hv, "name", 4, new_pv(item->name), 0);
+	hv_store(hv, "visible_name", 12, new_pv(item->visible_name), 0);
 
 	hv_store(hv, "createtime", 10, newSViv(item->createtime), 0);
 	hv_store(hv, "data_level", 10, newSViv(item->data_level), 0);
@@ -350,6 +343,7 @@ void perl_channel_fill_hash(HV *hv, CHANNEL_REC *channel)
         if (channel->ownnick != NULL)
 		hv_store(hv, "ownnick", 7, iobject_bless(channel->ownnick), 0);
 
+	hv_store(hv, "name", 4, new_pv(channel->name), 0);
 	hv_store(hv, "topic", 5, new_pv(channel->topic), 0);
 	hv_store(hv, "topic_by", 8, new_pv(channel->topic_by), 0);
 	hv_store(hv, "topic_time", 10, newSViv(channel->topic_time), 0);
@@ -376,6 +370,7 @@ void perl_query_fill_hash(HV *hv, QUERY_REC *query)
 
 	perl_window_item_fill_hash(hv, (WI_ITEM_REC *) query);
 
+	hv_store(hv, "name", 4, new_pv(query->name), 0);
 	hv_store(hv, "last_unread_msg", 15, newSViv(query->last_unread_msg), 0);
 	hv_store(hv, "address", 7, new_pv(query->address), 0);
 	hv_store(hv, "server_tag", 10, new_pv(query->server_tag), 0);
@@ -425,8 +420,10 @@ static void perl_ignore_fill_hash(HV *hv, IGNORE_REC *ignore)
 	hv_store(hv, "mask", 4, new_pv(ignore->mask), 0);
 	hv_store(hv, "servertag", 9, new_pv(ignore->servertag), 0);
 	av = newAV();
-	for (tmp = ignore->channels; *tmp != NULL; tmp++) {
-		av_push(av, new_pv(*tmp));
+	if (ignore->channels != NULL) {
+		for (tmp = ignore->channels; *tmp != NULL; tmp++) {
+			av_push(av, new_pv(*tmp));
+		}
 	}
 	hv_store(hv, "channels", 8, newRV_noinc((SV*)av), 0);
 	hv_store(hv, "pattern", 7, new_pv(ignore->pattern), 0);
@@ -631,10 +628,6 @@ void perl_common_start(void)
 	plain_stashes = g_hash_table_new((GHashFunc) g_str_hash,
 					 (GCompareFunc) g_str_equal);
         irssi_add_plains(core_plains);
-	irssi_add_object(module_get_uniq_id("BLOB", 0), 0,
-			"Irssi::Blob",
-			(PERL_OBJECT_FUNC) perl_blob_fill_hash);
-
 
         use_protocols = NULL;
 	g_slist_foreach(chat_protocols, (GFunc) perl_register_protocol, NULL);

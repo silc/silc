@@ -31,4 +31,3 @@ BOOT:
 	irssi_boot(Rawlog);
 	irssi_boot(Server);
 	irssi_boot(Settings);
-	irssi_boot(Blob);

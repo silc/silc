@@ -31,7 +31,6 @@
 #include "rawlog.h"
 #include "misc.h"
 #include "settings.h"
-#include "blob.h"
 
 #include "channels-setup.h"
 
@@ -46,21 +45,10 @@
 
 #include "silc-commands.h"
 
-void sig_mime(SILC_SERVER_REC *server, SILC_CHANNEL_REC *channel,
-	      BLOB_REC *blob, const char *enc, const char *type,
-	      const char *nick)
-{
-  if (!(IS_SILC_SERVER(server)))
-    return;
-  
-  printformat_module("fe-common/silc", server, 
-		     channel == NULL ? NULL : channel->name,
-		     MSGLEVEL_CRAP, SILCTXT_MESSAGE_DATA,
-		     nick == NULL ? "[<unknown>]" : nick, type);
-}
-
 SILC_CHANNEL_REC *silc_channel_create(SILC_SERVER_REC *server,
-				      const char *name, int automatic)
+				      const char *name,
+				      const char *visible_name,
+				      int automatic)
 {
   SILC_CHANNEL_REC *rec;
 
@@ -69,10 +57,8 @@ SILC_CHANNEL_REC *silc_channel_create(SILC_SERVER_REC *server,
 
   rec = g_new0(SILC_CHANNEL_REC, 1);
   rec->chat_type = SILC_PROTOCOL;
-  rec->name = g_strdup(name);
-  rec->server = server;
-
-  channel_init((CHANNEL_REC *) rec, automatic);
+  channel_init((CHANNEL_REC *)rec, (SERVER_REC *)server, name, name,
+	       automatic);
   return rec;
 }
 
@@ -158,7 +144,7 @@ static void command_part(const char *data, SILC_SERVER_REC *server,
   if (!strcmp(data, "*") || *data == '\0') {
     if (!IS_SILC_CHANNEL(item))
       cmd_return_error(CMDERR_NOT_JOINED);
-    data = item->name;
+    data = item->visible_name;
   }
 
   chanrec = silc_channel_find(server, data);
@@ -209,7 +195,7 @@ static void command_me(const char *data, SILC_SERVER_REC *server,
   if (argc < 2)
     cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
-  chanrec = silc_channel_find(server, item->name);
+  chanrec = silc_channel_find(server, item->visible_name);
   if (chanrec == NULL) 
     cmd_return_error(CMDERR_CHAN_NOT_FOUND);
 
@@ -334,7 +320,7 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
   if (argc < 2)
     cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
-  chanrec = silc_channel_find(server, item->name);
+  chanrec = silc_channel_find(server, item->visible_name);
   if (chanrec == NULL) 
     cmd_return_error(CMDERR_CHAN_NOT_FOUND);
 
@@ -990,7 +976,6 @@ void silc_channels_init(void)
   signal_add("channel destroyed", (SIGNAL_FUNC) sig_channel_destroyed);
   signal_add("server connected", (SIGNAL_FUNC) sig_connected);
   signal_add("server quit", (SIGNAL_FUNC) sig_server_quit);
-  signal_add("mime", (SIGNAL_FUNC) sig_mime);
 
   command_bind_silc("part", MODULE_NAME, (SIGNAL_FUNC) command_part);
   command_bind_silc("me", MODULE_NAME, (SIGNAL_FUNC) command_me);
@@ -1008,7 +993,6 @@ void silc_channels_deinit(void)
   signal_remove("channel destroyed", (SIGNAL_FUNC) sig_channel_destroyed);
   signal_remove("server connected", (SIGNAL_FUNC) sig_connected);
   signal_remove("server quit", (SIGNAL_FUNC) sig_server_quit);
-  signal_remove("mime", (SIGNAL_FUNC) sig_mime);
 
   command_unbind("part", (SIGNAL_FUNC) command_part);
   command_unbind("me", (SIGNAL_FUNC) command_me);

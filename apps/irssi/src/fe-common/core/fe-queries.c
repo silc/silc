@@ -30,6 +30,7 @@
 #include "servers.h"
 #include "queries.h"
 
+#include "fe-core-commands.h"
 #include "fe-windows.h"
 #include "window-items.h"
 #include "printtext.h"
@@ -46,7 +47,8 @@ QUERY_REC *privmsg_get_query(SERVER_REC *server, const char *nick,
         g_return_val_if_fail(nick != NULL, NULL);
 
 	query = query_find(server, nick);
-	if (query == NULL && (querycreate_level & level) != 0 &&
+	if (query == NULL && !command_hide_output &&
+	    (querycreate_level & level) != 0 &&
 	    (!own || settings_get_bool("autocreate_own_query"))) {
 		query = CHAT_PROTOCOL(server)->
 			query_create(server->tag, nick, TRUE);
@@ -192,23 +194,29 @@ static void cmd_window_server(const char *data)
 static void cmd_unquery(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
 	QUERY_REC *query;
+	char *nick;
+	void *free_arg;
 
 	g_return_if_fail(data != NULL);
 
-	if (*data == '\0') {
+	if (!cmd_get_params(data, &free_arg, 1, &nick))
+		return;
+
+	if (*nick == '\0') {
 		/* remove current query */
 		query = QUERY(item);
-		if (query == NULL) return;
 	} else {
-		query = query_find(server, data);
+		query = query_find(server, nick);
 		if (query == NULL) {
 			printformat(server, NULL, MSGLEVEL_CLIENTERROR,
-				    TXT_NO_QUERY, data);
-			return;
+				    TXT_NO_QUERY, nick);
 		}
 	}
 
-	query_destroy(query);
+	if (query != NULL)
+		query_destroy(query);
+
+	cmd_params_free(free_arg);
 }
 
 /* SYNTAX: QUERY [-window] [-<server tag>] <nick> [<message>] */

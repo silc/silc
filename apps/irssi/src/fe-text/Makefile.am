@@ -23,6 +23,7 @@ silc_LDADD = \
 	@PERL_FE_LINK_LIBS@ \
 	@PERL_LINK_FLAGS@ \
 	@PROG_LIBS@	\
+	@TEXTUI_LIBS@	\
 	-L../../../lib -lsilcclient
 silc_LDFLAGS = -export-dynamic
 

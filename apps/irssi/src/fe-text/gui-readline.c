@@ -162,6 +162,12 @@ void handle_key(unichar key)
 		str[utf16_char_to_utf8(key, str)] = '\0';
 	}
 
+	if (strcmp(str, "^") == 0) {
+		/* change it as ^^ */
+		str[1] = '^';
+		str[2] = '\0';
+	}
+
 	if (escape_next_key || !key_pressed(keyboard, str)) {
 		/* key wasn't used for anything, print it */
                 escape_next_key = FALSE;
@@ -175,14 +181,10 @@ static void key_send_line(void)
         char *str, *add_history;
 
 	str = gui_entry_get_text(active_entry);
-	if (str == NULL || (*str == '\0' && redir == NULL)) {
-                g_free(str);
-		return;
-	}
 
 	/* we can't use gui_entry_get_text() later, since the entry might
 	   have been destroyed after we get back */
-	add_history = g_strdup(str);
+	add_history = *str == '\0' ? NULL : g_strdup(str);
 	history = command_history_current(active_win);
 
 	translate_output(str);
@@ -481,43 +483,98 @@ static void key_active_window(void)
 	signal_emit("command window goto", 3, "active", active_win->active_server, active_win->active);
 }
 
+static SERVER_REC *get_prev_server(SERVER_REC *current)
+{
+	int pos;
+
+	if (current == NULL) {
+		return servers != NULL ? g_slist_last(servers)->data :
+			lookup_servers != NULL ?
+			g_slist_last(lookup_servers)->data : NULL;
+	}
+
+	/* connect2 -> connect1 -> server2 -> server1 -> connect2 -> .. */
+
+	pos = g_slist_index(servers, current);
+	if (pos != -1) {
+		if (pos > 0)
+			return g_slist_nth(servers, pos-1)->data;
+		if (lookup_servers != NULL)
+			return g_slist_last(lookup_servers)->data;
+		return g_slist_last(servers)->data;
+	}
+
+	pos = g_slist_index(lookup_servers, current);
+	g_assert(pos >= 0);
+
+	if (pos > 0)
+		return g_slist_nth(lookup_servers, pos-1)->data;
+	if (servers != NULL)
+		return g_slist_last(servers)->data;
+	return g_slist_last(lookup_servers)->data;
+}
+
+static SERVER_REC *get_next_server(SERVER_REC *current)
+{
+	GSList *pos;
+
+	if (current == NULL) {
+		return servers != NULL ? servers->data :
+			lookup_servers != NULL ? lookup_servers->data : NULL;
+	}
+
+	/* server1 -> server2 -> connect1 -> connect2 -> server1 -> .. */
+
+	pos = g_slist_find(servers, current);
+	if (pos != NULL) {
+		if (pos->next != NULL)
+			return pos->next->data;
+		if (lookup_servers != NULL)
+			return lookup_servers->data;
+		return servers->data;
+	}
+
+	pos = g_slist_find(lookup_servers, current);
+	g_assert(pos != NULL);
+
+	if (pos->next != NULL)
+		return pos->next->data;
+	if (servers != NULL)
+		return servers->data;
+	return lookup_servers->data;
+}
+
 static void key_previous_window_item(void)
 {
 	SERVER_REC *server;
-	GSList *pos;
 
-	if (active_win->items != NULL)
-		signal_emit("command window item prev", 3, "", active_win->active_server, active_win->active);
-	else if (servers != NULL) {
+	if (active_win->items != NULL) {
+		signal_emit("command window item prev", 3, "",
+			    active_win->active_server, active_win->active);
+	} else if (servers != NULL || lookup_servers != NULL) {
 		/* change server */
-		if (active_win->active_server == NULL)
-			server = servers->data;
-		else {
-			pos = g_slist_find(servers, active_win->active_server);
-			server = pos->next != NULL ? pos->next->data : servers->data;
-		}
-		signal_emit("command window server", 3, server->tag, active_win->active_server, active_win->active);
+		server = active_win->active_server;
+		if (server == NULL)
+			server = active_win->connect_server;
+		server = get_prev_server(server);
+		signal_emit("command window server", 3, server->tag,
+			    active_win->active_server, active_win->active);
 	}
 }
 
 static void key_next_window_item(void)
 {
 	SERVER_REC *server;
-	int index;
 
 	if (active_win->items != NULL) {
 		signal_emit("command window item next", 3, "",
 			    active_win->active_server, active_win->active);
-	}
-	else if (servers != NULL) {
+	} else if (servers != NULL || lookup_servers != NULL) {
 		/* change server */
-		if (active_win->active_server == NULL)
-			server = servers->data;
-		else {
-			index = g_slist_index(servers, active_win->active_server);
-			server = index > 0 ? g_slist_nth(servers, index-1)->data :
-				g_slist_last(servers)->data;
-		}
+		server = active_win->active_server;
+		if (server == NULL)
+			server = active_win->connect_server;
+		server = get_next_server(server);
 		signal_emit("command window server", 3, server->tag,
 			    active_win->active_server, active_win->active);
 	}
@@ -647,7 +704,7 @@ void gui_readline_init(void)
 	key_bind("backspace", "", "backspace", NULL, (SIGNAL_FUNC) key_backspace);
 	key_bind("delete_character", "", "delete", NULL, (SIGNAL_FUNC) key_delete_character);
 	key_bind("delete_character", NULL, "^D", NULL, (SIGNAL_FUNC) key_delete_character);
-	key_bind("delete_next_word", "", NULL, NULL, (SIGNAL_FUNC) key_delete_next_word);
+	key_bind("delete_next_word", "meta-d", NULL, NULL, (SIGNAL_FUNC) key_delete_next_word);
 	key_bind("delete_previous_word", "meta-backspace", NULL, NULL, (SIGNAL_FUNC) key_delete_previous_word);
 	key_bind("delete_to_previous_space", "", "^W", NULL, (SIGNAL_FUNC) key_delete_to_previous_space);
 	key_bind("delete_to_next_space", "", "", NULL, (SIGNAL_FUNC) key_delete_to_next_space);

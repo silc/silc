@@ -21,6 +21,8 @@
 #include "module.h"
 #include "network.h"
 
+#include <sys/un.h>
+
 #ifndef INADDR_NONE
 #  define INADDR_NONE INADDR_BROADCAST
 #endif
@@ -217,7 +219,42 @@ GIOChannel *net_connect_ip(IPADDR *ip, int port, IPADDR *my_ip)
 	if (ret < 0 && WSAGetLastError() != WSAEWOULDBLOCK)
 #endif
 	{
+		int old_errno = errno;
 		close(handle);
+		errno = old_errno;
+		return NULL;
+	}
+
+	return g_io_channel_new(handle);
+}
+
+/* Connect to named UNIX socket */
+GIOChannel *net_connect_unix(const char *path)
+{
+	struct sockaddr_un sa;
+	int handle, ret;
+
+	/* create the socket */
+	handle = socket(PF_UNIX, SOCK_STREAM, 0);
+	if (handle == -1)
+		return NULL;
+
+	/* set socket options */
+#ifndef WIN32
+	fcntl(handle, F_SETFL, O_NONBLOCK);
+#endif
+
+	/* connect */
+	memset(&sa, 0, sizeof(sa));
+	sa.sun_family = AF_UNIX;
+	strncpy(sa.sun_path, path, sizeof(sa.sun_path)-1);
+	sa.sun_path[sizeof(sa.sun_path)-1] = '\0';
+
+	ret = connect(handle, (struct sockaddr *) &sa, sizeof(sa));
+	if (ret < 0 && errno != EINPROGRESS) {
+		int old_errno = errno;
+		close(handle);
+		errno = old_errno;
 		return NULL;
 	}
 
@@ -472,12 +509,16 @@ int net_ip2host(IPADDR *ip, char *host)
 #else
 	unsigned long ip4;
 
-	ip4 = ntohl(ip->ip.s_addr);
-	g_snprintf(host, MAX_IP_LEN, "%lu.%lu.%lu.%lu",
-		   (ip4 & 0xff000000UL) >> 24,
-		   (ip4 & 0x00ff0000) >> 16,
-		   (ip4 & 0x0000ff00) >> 8,
-		   (ip4 & 0x000000ff));
+	if (ip->family != AF_INET) {
+		strcpy(host, "0.0.0.0");
+	} else {
+		ip4 = ntohl(ip->ip.s_addr);
+		g_snprintf(host, MAX_IP_LEN, "%lu.%lu.%lu.%lu",
+			   (ip4 & 0xff000000UL) >> 24,
+			   (ip4 & 0x00ff0000) >> 16,
+			   (ip4 & 0x0000ff00) >> 8,
+			   (ip4 & 0x000000ff));
+	}
 #endif
 	return 0;
 }
@@ -486,15 +527,16 @@ int net_host2ip(const char *host, IPADDR *ip)
 {
 	unsigned long addr;
 
-#ifdef HAVE_IPV6
 	if (strchr(host, ':') != NULL) {
 		/* IPv6 */
 		ip->family = AF_INET6;
+#ifdef HAVE_IPV6
 		if (inet_pton(AF_INET6, host, &ip->ip) == 0)
 			return -1;
-	} else
+#else
+		ip->ip.s_addr = 0;
 #endif
-	{
+	} else {
 		/* IPv4 */
 		ip->family = AF_INET;
 #ifdef HAVE_INET_ATON

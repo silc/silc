@@ -53,25 +53,31 @@ static void ignore_print(int index, IGNORE_REC *rec)
 	levels = bits2level(rec->level);
 
 	options = g_string_new(NULL);
-	if (rec->exception) g_string_sprintfa(options, "-except ");
+	if (rec->exception) g_string_append(options, "-except ");
 	if (rec->regexp) {
-		g_string_sprintfa(options, "-regexp ");
+		g_string_append(options, "-regexp ");
 #ifdef HAVE_REGEX_H
 		if (!rec->regexp_compiled)
-			g_string_sprintfa(options, "[INVALID!] ");
+			g_string_append(options, "[INVALID!] ");
 #endif
 	}
-	if (rec->fullword) g_string_sprintfa(options, "-full ");
-	if (rec->replies) g_string_sprintfa(options, "-replies ");
+	if (rec->fullword) g_string_append(options, "-full ");
+	if (rec->replies) g_string_append(options, "-replies ");
 	if (rec->pattern != NULL)
 		g_string_sprintfa(options, "-pattern %s ", rec->pattern);
 
 	if (options->len > 1) g_string_truncate(options, options->len-1);
 
-	printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP,
-		    TXT_IGNORE_LINE, index,
-		    key != NULL ? key : "",
-		    levels != NULL ? levels : "", options->str);
+	if (index >= 0) {
+		printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP,
+			    TXT_IGNORE_LINE, index, key != NULL ? key : "",
+			    levels != NULL ? levels : "", options->str);
+	} else {
+		printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP,
+			    options->len > 0 ? TXT_IGNORED_OPTIONS : TXT_IGNORED,
+			    key != NULL ? key : "",
+			    levels != NULL ? levels : "", options->str);
+	}
 	g_string_free(options, TRUE);
         g_free(key);
 	g_free(levels);
@@ -134,7 +140,7 @@ static void cmd_ignore(const char *data)
 	channels = (chanarg == NULL || *chanarg == '\0') ? NULL :
 		g_strsplit(replace_chars(chanarg, ',', ' '), " ", -1);
 
-	rec = ignore_find(NULL, mask, channels);
+	rec = patternarg != NULL ? NULL: ignore_find(NULL, mask, channels);
 	new_ignore = rec == NULL;
 
 	if (rec == NULL) {
@@ -221,14 +227,7 @@ static void cmd_unignore(const char *data)
 
 static void sig_ignore_created(IGNORE_REC *rec)
 {
-	char *key, *levels;
-
-	key = ignore_get_key(rec);
-	levels = bits2level(rec->level);
-	printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
-		    TXT_IGNORED, key, levels);
-	g_free(key);
-	g_free(levels);
+        ignore_print(-1, rec);
 }
 
 static void sig_ignore_destroyed(IGNORE_REC *rec)

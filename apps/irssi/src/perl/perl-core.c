@@ -84,7 +84,7 @@ static void perl_script_destroy(PERL_SCRIPT_REC *script)
         g_free(script);
 }
 
-extern void boot_DynaLoader(CV* cv);
+extern void boot_DynaLoader(pTHX_ CV* cv);
 
 #if PERL_STATIC_LIBS == 1
 extern void boot_Irssi(CV *cv);
@@ -101,7 +101,7 @@ XS(boot_Irssi_Core)
 }
 #endif
 
-static void xs_init(void)
+static void xs_init(pTHX)
 {
 	dXSUB_SYS;
 
@@ -216,6 +216,7 @@ static int perl_script_eval(PERL_SCRIPT_REC *script)
 	dSP;
 	char *error;
 	int retcount;
+	SV *ret;
 
 	ENTER;
 	SAVETMPS;
@@ -234,19 +235,19 @@ static int perl_script_eval(PERL_SCRIPT_REC *script)
 
         error = NULL;
 	if (SvTRUE(ERRSV)) {
-                error = SvPV(ERRSV, PL_na);
-	} else if (retcount > 0) {
-		error = POPp;
-	}
+		error = SvPV(ERRSV, PL_na);
 
-	if (error != NULL) {
-		if (*error == '\0')
-			error = NULL;
-		else {
-                        error = g_strdup(error);
+		if (error != NULL) {
+			error = g_strdup(error);
 			signal_emit("script error", 2, script, error);
-                        g_free(error);
+			g_free(error);
 		}
+	} else if (retcount > 0) {
+		/* if script returns 0, it means the script wanted to die
+		   immediately without any error message */
+		ret = POPs;
+		if (ret != &PL_sv_undef && SvIOK(ret) && SvIV(ret) == 0)
+			error = "";
 	}
 
 	PUTBACK;

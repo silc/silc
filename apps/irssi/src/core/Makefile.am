@@ -32,6 +32,7 @@ libcore_a_SOURCES = \
 	net-nonblock.c \
 	net-sendbuffer.c \
 	network.c \
+	network-openssl.c \
 	nicklist.c \
 	nickmatch-cache.c \
 	pidwait.c \
@@ -44,8 +45,7 @@ libcore_a_SOURCES = \
 	settings.c \
 	signals.c \
 	special-vars.c \
-	write-buffer.c \
-	blob.c
+	write-buffer.c
 
 structure_headers = \
 	channel-rec.h \
@@ -55,8 +55,7 @@ structure_headers = \
 	server-rec.h \
 	server-setup-rec.h \
 	server-connect-rec.h \
-	window-item-rec.h \
-	blob.h
+	window-item-rec.h
 
 noinst_HEADERS = \
 	args.h \

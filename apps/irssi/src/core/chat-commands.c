@@ -69,7 +69,7 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr,
 		g_hash_table_lookup(optlist, proto->chatnet);
 	conn = server_create_conn(proto != NULL ? proto->id : -1, addr,
 				  atoi(portstr), chatnet, password, nick);
-        if (proto == NULL)
+	if (proto == NULL)
 		proto = chat_protocol_find_id(conn->chat_type);
 
 	if (proto->not_initialized) {
@@ -80,16 +80,23 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr,
 		return NULL;
 	}
 
+	if (strchr(addr, '/') != NULL)
+		conn->unix_socket = TRUE;
+
 	if (g_hash_table_lookup(optlist, "6") != NULL)
 		conn->family = AF_INET6;
 	else if (g_hash_table_lookup(optlist, "4") != NULL)
 		conn->family = AF_INET;
+
+	if(g_hash_table_lookup(optlist, "ssl") != NULL)
+		conn->use_ssl = TRUE;
 
 	if (g_hash_table_lookup(optlist, "!") != NULL)
 		conn->no_autojoin_channels = TRUE;
 
 	if (g_hash_table_lookup(optlist, "noproxy") != NULL)
                 g_free_and_null(conn->proxy);
+
 
 	*rawlog_file = g_strdup(g_hash_table_lookup(optlist, "rawlog"));
 
@@ -105,7 +112,7 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr,
         return conn;
 }
 
-/* SYNTAX: CONNECT [-4 | -6] [-ircnet <ircnet>] [-host <hostname>]
+/* SYNTAX: CONNECT [-4 | -6] [-ssl] [-ircnet <ircnet>] [-host <hostname>]
                    <address>|<chatnet> [<port> [<password> [<nick>]]] */
 static void cmd_connect(const char *data)
 {
@@ -115,7 +122,7 @@ static void cmd_connect(const char *data)
 
 	conn = get_server_connect(data, NULL, &rawlog_file);
 	if (conn != NULL) {
-		server = CHAT_PROTOCOL(conn)->server_connect(conn);
+		server = server_connect(conn);
                 server_connect_unref(conn);
 
 		if (server != NULL && rawlog_file != NULL)
@@ -206,7 +213,7 @@ static void sig_default_command_server(const char *data, SERVER_REC *server,
         signal_emit("command server connect", 3, data, server, item);
 }
 
-/* SYNTAX: SERVER [-4 | -6] [-ircnet <ircnet>] [-host <hostname>]
+/* SYNTAX: SERVER [-4 | -6] [-ssl] [-ircnet <ircnet>] [-host <hostname>]
                   [+]<address>|<chatnet> [<port> [<password> [<nick>]]] */
 static void cmd_server_connect(const char *data, SERVER_REC *server)
 {
@@ -221,7 +228,7 @@ static void cmd_server_connect(const char *data, SERVER_REC *server)
 	if (conn != NULL) {
 		if (!plus_addr)
 			update_reconnection(conn, server);
-		server = CHAT_PROTOCOL(conn)->server_connect(conn);
+		server = server_connect(conn);
 		server_connect_unref(conn);
 
 		if (server != NULL && rawlog_file != NULL)
@@ -242,8 +249,11 @@ static void cmd_disconnect(const char *data, SERVER_REC *server)
 	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_GETREST, &tag, &msg))
 		return;
 
-	if (*tag != '\0' && strcmp(tag, "*") != 0)
+	if (*tag != '\0' && strcmp(tag, "*") != 0) {
 		server = server_find_tag(tag);
+		if (server == NULL)
+			server = server_find_lookup_tag(tag);
+	}
 	if (server == NULL) cmd_param_error(CMDERR_NOT_CONNECTED);
 
 	if (*msg == '\0') msg = (char *) settings_get_str("quit_message");
@@ -344,9 +354,8 @@ static void cmd_msg(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 
 		target_type = IS_CHANNEL(item) ?
 			SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
-		target = item->name;
-	}
-	else if (g_hash_table_lookup(optlist, "channel") != NULL)
+		target = (char *) window_item_get_target(item);
+	} else if (g_hash_table_lookup(optlist, "channel") != NULL)
                 target_type = SEND_TARGET_CHANNEL;
 	else if (g_hash_table_lookup(optlist, "nick") != NULL)
 		target_type = SEND_TARGET_NICK;
@@ -434,7 +443,7 @@ void chat_commands_init(void)
 
         signal_add("default command server", (SIGNAL_FUNC) sig_default_command_server);
 
-	command_set_options("connect", "4 6 !! +host noproxy -rawlog");
+	command_set_options("connect", "4 6 !! ssl +host noproxy -rawlog");
 	command_set_options("join", "invite");
 	command_set_options("msg", "channel nick");
 }

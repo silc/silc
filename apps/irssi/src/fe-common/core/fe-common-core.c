@@ -31,6 +31,7 @@
 #include "servers-setup.h"
 
 #include "autorun.h"
+#include "fe-core-commands.h"
 #include "fe-queries.h"
 #include "hilight-text.h"
 #include "command-history.h"
@@ -90,9 +91,6 @@ void fe_settings_deinit(void);
 
 void window_commands_init(void);
 void window_commands_deinit(void);
-
-void fe_core_commands_init(void);
-void fe_core_commands_deinit(void);
 
 static void print_version(void)
 {
@@ -276,6 +274,8 @@ void glog_func(const char *log_domain, GLogLevelFlags log_level,
 	}
 }
 
+#define MSGS_WINDOW_LEVELS (MSGLEVEL_MSGS|MSGLEVEL_ACTIONS|MSGLEVEL_DCCMSGS)
+
 static void create_windows(void)
 {
 	WINDOW_REC *window;
@@ -289,14 +289,14 @@ static void create_windows(void)
 		window_set_name(window, "(status)");
 		window_set_level(window, MSGLEVEL_ALL ^
 				 (settings_get_bool("use_msgs_window") ?
-				  (MSGLEVEL_MSGS|MSGLEVEL_DCCMSGS) : 0));
+				  MSGS_WINDOW_LEVELS : 0));
                 window_set_immortal(window, TRUE);
 	}
 
 	if (settings_get_bool("use_msgs_window")) {
 		window = window_create(NULL, TRUE);
 		window_set_name(window, "(msgs)");
-		window_set_level(window, MSGLEVEL_MSGS|MSGLEVEL_DCCMSGS);
+		window_set_level(window, MSGS_WINDOW_LEVELS);
                 window_set_immortal(window, TRUE);
 	}
 

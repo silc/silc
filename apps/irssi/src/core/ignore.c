@@ -264,7 +264,7 @@ static void ignore_set_config(IGNORE_REC *rec)
 	CONFIG_NODE *node;
 	char *levelstr;
 
-	if (rec->level == 0 || rec->unignore_time > 0)
+	if (rec->level == 0)
 		return;
 
 	node = iconfig_node_traverse("(ignores", TRUE);
@@ -281,6 +281,9 @@ static void ignore_set_config(IGNORE_REC *rec)
 	if (rec->regexp) iconfig_node_set_bool(node, "regexp", TRUE);
 	if (rec->fullword) iconfig_node_set_bool(node, "fullword", TRUE);
 	if (rec->replies) iconfig_node_set_bool(node, "replies", TRUE);
+	if (rec->unignore_time != 0)
+		iconfig_node_set_int(node, "unignore_time", rec->unignore_time);
+	iconfig_node_set_str(node, "servertag", rec->servertag);
 
 	if (rec->channels != NULL && *rec->channels != NULL) {
 		node = config_node_section(node, "channels", NODE_TYPE_LIST);
@@ -296,9 +299,6 @@ static int ignore_index(IGNORE_REC *find)
 	index = 0;
 	for (tmp = ignores; tmp != NULL; tmp = tmp->next) {
 		IGNORE_REC *rec = tmp->data;
-
-		if (rec->servertag != NULL)
-			continue;
 
 		if (rec == find)
 			return index;
@@ -319,6 +319,7 @@ static void ignore_remove_config(IGNORE_REC *rec)
 static void ignore_init_rec(IGNORE_REC *rec)
 {
 #ifdef HAVE_REGEX_H
+	if (rec->regexp_compiled) regfree(&rec->preg);
 	rec->regexp_compiled = !rec->regexp || rec->pattern == NULL ? FALSE :
 		regcomp(&rec->preg, rec->pattern,
 			REG_EXTENDED|REG_ICASE|REG_NOSUB) == 0;
@@ -368,6 +369,7 @@ void ignore_update_rec(IGNORE_REC *rec)
 		ignores = g_slist_append(ignores, rec);
 		ignore_set_config(rec);
 
+                ignore_init_rec(rec);
 		signal_emit("ignore changed", 1, rec);
 		nickmatch_rebuild(nickmatch);
 	}
@@ -424,6 +426,8 @@ static void read_ignores(void)
 		rec->regexp = config_node_get_bool(node, "regexp", FALSE);
 		rec->fullword = config_node_get_bool(node, "fullword", FALSE);
 		rec->replies = config_node_get_bool(node, "replies", FALSE);
+		rec->unignore_time = config_node_get_int(node, "unignore_time", 0);
+		rec->servertag = g_strdup(config_node_get_str(node, "servertag", 0));
 
 		node = config_node_section(node, "channels", -1);
 		if (node != NULL) rec->channels = config_node_get_list(node);

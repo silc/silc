@@ -64,7 +64,8 @@ static void window_print_items(WINDOW_REC *win)
 		type = module_find_id_str("WINDOW ITEM TYPE", item->type);
 		printformat_window(win, MSGLEVEL_CLIENTCRAP,
 				   TXT_WINDOW_INFO_ITEM,
-				   type == NULL ? "??" : type, item->name,
+				   type == NULL ? "??" : type,
+				   item->visible_name,
 				   item->server == NULL ? "" :
 				   item->server->tag);
 	}
@@ -279,6 +280,8 @@ static WINDOW_REC *window_highest_activity(WINDOW_REC *window)
 static void cmd_window_goto(const char *data)
 {
 	WINDOW_REC *window;
+	char *target;
+	void *free_arg;
 
 	g_return_if_fail(data != NULL);
 
@@ -287,13 +290,18 @@ static void cmd_window_goto(const char *data)
 		return;
 	}
 
-	if (g_strcasecmp(data, "active") == 0)
+	if (!cmd_get_params(data, &free_arg, 1, &target))
+		return;
+
+	if (g_strcasecmp(target, "active") == 0)
                 window = window_highest_activity(active_win);
 	else
-                window = window_find_item(active_win->active_server, data);
+                window = window_find_item(active_win->active_server, target);
 
 	if (window != NULL)
 		window_set_active(window);
+
+	cmd_params_free(free_arg);
 }
 
 /* SYNTAX: WINDOW NEXT */
@@ -392,6 +400,8 @@ static void cmd_window_server(const char *data)
 	if (*tag == '\0')
 		cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 	server = server_find_tag(tag);
+	if (server == NULL)
+		server = server_find_lookup_tag(tag);
 
 	if (g_hash_table_lookup(optlist, "unsticky") != NULL &&
 	    active_win->servertag != NULL) {
@@ -616,17 +626,10 @@ static void cmd_window_move_next(void)
         window_refnums_move_right(active_win);
 }
 
-/* SYNTAX: WINDOW MOVE <number>|<direction> */
-static void cmd_window_move(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
+static void active_window_move_to(int new_refnum)
 {
-	int new_refnum, refnum;
+	int refnum;
 
-	if (!is_numeric(data, 0)) {
-		command_runsub("window move", data, server, item);
-                return;
-	}
-
-	new_refnum = atoi(data);
 	if (new_refnum > active_win->refnum) {
 		for (;;) {
 			refnum = window_refnum_next(active_win->refnum, FALSE);
@@ -646,6 +649,29 @@ static void cmd_window_move(const char *data, SERVER_REC *server, WI_ITEM_REC *i
 	}
 }
 
+/* SYNTAX: WINDOW MOVE FIRST */
+static void cmd_window_move_first(void)
+{
+	active_window_move_to(1);
+}
+
+/* SYNTAX: WINDOW MOVE LAST */
+static void cmd_window_move_last(void)
+{
+	active_window_move_to(windows_refnum_last());
+}
+
+/* SYNTAX: WINDOW MOVE <number>|<direction> */
+static void cmd_window_move(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
+{
+	if (!is_numeric(data, 0)) {
+		command_runsub("window move", data, server, item);
+                return;
+	}
+
+	active_window_move_to(atoi(data));
+}
+
 /* SYNTAX: WINDOW LIST */
 static void cmd_window_list(void)
 {
@@ -660,7 +686,7 @@ static void cmd_window_list(void)
 		levelstr = bits2level(rec->level);
 		printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_WINDOWLIST_LINE,
 			    rec->refnum, rec->name == NULL ? "" : rec->name,
-			    rec->active == NULL ? "" : rec->active->name,
+			    rec->active == NULL ? "" : rec->active->visible_name,
 			    rec->active_server == NULL ? "" : ((SERVER_REC *) rec->active_server)->tag,
 			    levelstr);
 		g_free(levelstr);
@@ -737,7 +763,8 @@ static void cmd_foreach_window(const char *data)
                 list = g_slist_remove(list, list->data);
 	}
 
-        active_win = old;
+	if (g_slist_find(windows, old) != NULL)
+		active_win = old;
 }
 
 void window_commands_init(void)
@@ -765,6 +792,8 @@ void window_commands_init(void)
 	command_bind("window move", NULL, (SIGNAL_FUNC) cmd_window_move);
 	command_bind("window move prev", NULL, (SIGNAL_FUNC) cmd_window_move_prev);
 	command_bind("window move next", NULL, (SIGNAL_FUNC) cmd_window_move_next);
+	command_bind("window move first", NULL, (SIGNAL_FUNC) cmd_window_move_first);
+	command_bind("window move last", NULL, (SIGNAL_FUNC) cmd_window_move_last);
 	command_bind("window list", NULL, (SIGNAL_FUNC) cmd_window_list);
 	command_bind("window theme", NULL, (SIGNAL_FUNC) cmd_window_theme);
 	command_bind("layout", NULL, (SIGNAL_FUNC) cmd_layout);
@@ -804,6 +833,8 @@ void window_commands_deinit(void)
 	command_unbind("window move", (SIGNAL_FUNC) cmd_window_move);
 	command_unbind("window move prev", (SIGNAL_FUNC) cmd_window_move_prev);
 	command_unbind("window move next", (SIGNAL_FUNC) cmd_window_move_next);
+	command_unbind("window move first", (SIGNAL_FUNC) cmd_window_move_first);
+	command_unbind("window move last", (SIGNAL_FUNC) cmd_window_move_last);
 	command_unbind("window list", (SIGNAL_FUNC) cmd_window_list);
 	command_unbind("window theme", (SIGNAL_FUNC) cmd_window_theme);
 	command_unbind("layout", (SIGNAL_FUNC) cmd_layout);

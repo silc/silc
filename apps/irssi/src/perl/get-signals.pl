@@ -51,9 +51,6 @@ while (<STDIN>) {
 	s/WINDOW_REC[^,]*/Irssi::UI::Window/g;
 	s/WI_ITEM_REC[^,]*/iobject/g;
 
-	# silc
-	s/BLOB_REC[^,]*/siobject/g;
-
 	s/([\w\*:]+)(,|$)/"\1"\2/g;
 	print "    { \"$signal\", { $_, NULL } },\n";
 }

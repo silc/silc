@@ -7,7 +7,7 @@ if test -n "`grep '^#undef VERSION' config.h.in`"; then
 fi
 
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(Irssi-SILC, 0.8.5+)
+AM_INIT_AUTOMAKE(Irssi-SILC, 0.8.6)
 
 AM_MAINTAINER_MODE
 
@@ -15,6 +15,7 @@ AC_ISC_POSIX
 AC_PROG_CC
 AC_PROG_CPP
 AC_STDC_HEADERS
+AC_ARG_PROGRAM
 AM_PROG_LIBTOOL
 
 AC_PATH_PROG(sedpath, sed)
@@ -110,7 +111,7 @@ if test "x$prefix" != "xNONE"; then
 	perl_prefix_note=yes
 fi
 
-AC_ARG_WITH(tests,
+AC_ARG_WITH(with-glib2,
 [  --with-glib2           Use GLIB 2.0 instead of 1.2],
 	if test x$withval = xyes; then
 		want_glib2=yes
@@ -182,14 +183,6 @@ AC_ARG_WITH(perl,
 	fi,
 	want_perl=static)
 
-AC_ARG_WITH(tests,
-[  --with-tests           Run all the tests],
-	if test x$withval != xno; then
-		TEST_DIR=test
-	fi,
-	TEST_DIR=)
-AC_SUBST(TEST_DIR)
-
 AC_ARG_ENABLE(ipv6,
 [  --enable-ipv6           Enable IPv6 support],
 	if test x$enableval = xyes; then
@@ -228,7 +221,7 @@ AC_CHECK_FUNC(socket, [], [
 AC_CHECK_FUNC(inet_addr, [], [
 	AC_CHECK_LIB(nsl, inet_addr, [
 		LIBS="$LIBS -lnsl"
-	], -lsocket)
+	])
 ])
 
 dnl * gcc specific options
@@ -462,7 +455,7 @@ dnl **
 if test "x$want_textui" = "xyes"; then
 	AC_CHECK_CURSES
 
-	LIBS="$LIBS $CURSES_LIBS"
+	TEXTUI_LIBS="$LIBS $CURSES_LIBS"
 	if test "x$has_curses" = "xtrue"; then
        		AC_CHECK_FUNC(use_default_colors, AC_DEFINE(HAVE_NCURSES_USE_DEFAULT_COLORS))
        		AC_CHECK_FUNC(idcok, AC_DEFINE(HAVE_CURSES_IDCOK))
@@ -473,19 +466,20 @@ if test "x$want_textui" = "xyes"; then
 		])
 	else
 		AC_CHECK_LIB(tinfo, setupterm, [
-		  LIBS="$LIBS -ltinfo"
+		  TEXTUI_LIBS="$LIBS -ltinfo"
 		  want_terminfo=yes
 		], AC_CHECK_LIB(termlib, tgetent, [
-		  LIBS="$LIBS -ltermlib"
+		  TEXTUI_LIBS="$LIBS -ltermlib"
 		  want_termcap=yes
 		], AC_CHECK_LIB(termcap, tgetent, [
-		  LIBS="$LIBS -ltermcap"
+		  TEXTUI_LIBS="$LIBS -ltermcap"
 		  want_termcap=yes
 		], [
 		  AC_ERROR(Terminfo/termcap not found - install ncurses-devel package)
 		  want_textui=no
 		])))
         fi
+	AC_SUBST(TEXTUI_LIBS)
        	if test "x$want_termcap" = "xyes"; then
        		AC_CHECK_FUNC(tparm,, need_tparm=yes)
 	else
@@ -660,7 +654,6 @@ AM_CONDITIONAL(BUILD_TEXTUI, test "$want_textui" = "yes")
 AM_CONDITIONAL(BUILD_IRSSIBOT, test "$want_irssibot" = "yes")
 AM_CONDITIONAL(BUILD_IRSSIPROXY, test "$want_irssiproxy" = "yes")
 AM_CONDITIONAL(BUILD_PLUGINS, test "$want_plugins" = "yes")
-AM_CONDITIONAL(BUILD_SERVERTEST, test -n "$TEST_DIR")
 AM_CONDITIONAL(HAVE_PERL, test "$want_perl" != "no")
 AM_CONDITIONAL(HAVE_STATIC_PERL, test "$want_perl" = "static")
 AM_CONDITIONAL(NEED_TPARM, test "$need_tparm" = "yes")
@@ -737,7 +730,7 @@ done
 FE_COMMON_LIBS="$FE_COMMON_LIBS../fe-common/core/libfe_common_core.a"
 
 dnl ** common libraries needed by frontends
-COMMON_NOUI_LIBS="$CHAT_LIBS $CORE_LIBS $INTLLIBS"
+COMMON_NOUI_LIBS="$CHAT_LIBS $CORE_LIBS"
 COMMON_LIBS="$FE_COMMON_LIBS $COMMON_NOUI_LIBS"
 AC_SUBST(COMMON_NOUI_LIBS)
 AC_SUBST(COMMON_LIBS)
