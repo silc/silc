@@ -1259,6 +1259,16 @@ void silc_client_notify_by_server(SilcClient client,
   SilcNotifyPayload payload;
   SilcNotifyType type;
   SilcArgumentPayload args;
+  int i;
+
+  SilcClientID *client_id = NULL;
+  SilcChannelID *channel_id = NULL;
+  SilcIDPayload idp;
+  SilcClientEntry client_entry;
+  SilcChannelEntry channel;
+  SilcIDCacheEntry id_cache = NULL;
+  unsigned char *tmp;
+  unsigned int tmp_len;
 
   payload = silc_notify_payload_parse(message);
   type = silc_notify_get_type(payload);
@@ -1268,85 +1278,204 @@ void silc_client_notify_by_server(SilcClient client,
   case SILC_NOTIFY_TYPE_NONE:
     break;
   case SILC_NOTIFY_TYPE_INVITE:
+    /* 
+     * Someone invited me to a channel. Nothing interesting to do here.
+     */
     break;
   case SILC_NOTIFY_TYPE_JOIN:
-    {
-      SilcClientID *client_id;
-      SilcChannelID *channel_id;
-      SilcClientEntry new_client;
-      SilcChannelEntry channel;
-      SilcIDPayload idp;
-      SilcBuffer idp_buf;
-      SilcIDCacheEntry id_cache = NULL;
-      unsigned char *tmp;
-      unsigned int tmp_len;
+    /*
+     * Someone has joined to a channel. Get their ID and nickname and
+     * cache them for later use.
+     */
 
-      /* Get client ID (it's in ID payload) */
-      tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
-      idp_buf = silc_buffer_alloc(tmp_len);
-      silc_buffer_pull_tail(idp_buf, SILC_BUFFER_END(idp_buf));
-      silc_buffer_put(idp_buf, tmp, tmp_len);
+    /* Get client ID (it's in ID payload) */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    idp = silc_id_payload_parse_data(tmp, tmp_len);
+    client_id = silc_id_payload_get_id(idp);
+    silc_id_payload_free(idp);
 
-      /* Parse ID payload and get the ID */
-      idp = silc_id_payload_parse(idp_buf);
-      client_id = silc_id_payload_get_id(idp);
+    /* If it's my ID, ignore */
+    if (!SILC_ID_CLIENT_COMPARE(client_id, conn->local_id))
+      break;
 
-      silc_id_payload_free(idp);
-      silc_buffer_free(idp_buf);
-      
-      /* If it's my ID, ignore */
-      if (!SILC_ID_CLIENT_COMPARE(client_id, conn->local_id))
-	break;
-
-      /* Check if we have that ID already */
-      if (silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
-				      SILC_ID_CLIENT, NULL))
-	break;
-
+    /* Check if we have that ID already */
+    if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
+				     SILC_ID_CLIENT, &id_cache)) {
       /* Add client to cache */
-      new_client = silc_calloc(1, sizeof(*new_client));
-      new_client->id = client_id;
-      new_client->nickname = 
+      client_entry = silc_calloc(1, sizeof(*client_entry));
+      client_entry->id = client_id;
+      client_entry->nickname = 
 	strdup(silc_argument_get_arg_type(args, 2, NULL));
-      silc_idcache_add(conn->client_cache, new_client->nickname, 
-		       SILC_ID_CLIENT, client_id, (void *)new_client, TRUE);
+      silc_idcache_add(conn->client_cache, client_entry->nickname, 
+		       SILC_ID_CLIENT, client_id, (void *)client_entry, TRUE);
+      client_id = NULL;
+    } else {
+      client_entry = (SilcClientEntry)id_cache->context;
+    }
 
-      /* Get Channel ID (it's in ID payload) */
-      tmp = silc_argument_get_arg_type(args, 5, &tmp_len);
-      idp_buf = silc_buffer_alloc(tmp_len);
-      silc_buffer_pull_tail(idp_buf, SILC_BUFFER_END(idp_buf));
-      silc_buffer_put(idp_buf, tmp, tmp_len);
+    /* Get Channel ID (it's in ID payload) */
+    tmp = silc_argument_get_arg_type(args, 5, &tmp_len);
+    idp = silc_id_payload_parse_data(tmp, tmp_len);
+    channel_id = silc_id_payload_get_id(idp);
+    silc_id_payload_free(idp);
 
-      /* Parse ID payload and get the ID */
-      idp = silc_id_payload_parse(idp_buf);
-      channel_id = silc_id_payload_get_id(idp);
+    /* Find channel entry */
+    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				     SILC_ID_CHANNEL, &id_cache))
+      break;
 
-      silc_id_payload_free(idp);
-      silc_buffer_free(idp_buf);
+    channel = (SilcChannelEntry)id_cache->context;
 
-      /* Find channel entry */
-      if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
-				       SILC_ID_CHANNEL, &id_cache))
+    /* Add client to channel */
+    for (i = 0; i < channel->clients_count; i++) {
+      if (channel->clients[i] == NULL) {
+	channel->clients[channel->clients_count] = client_entry;
+	channel->clients_count++;
 	break;
+      }
+    }
 
-      channel = (SilcChannelEntry)id_cache->context;
-
-      /* Add client to channel */
+    if (i == channel->clients_count) {
       channel->clients = silc_realloc(channel->clients, 
 				      sizeof(*channel->clients) * 
 				      (channel->clients_count + 1));
-      channel->clients[channel->clients_count] = new_client;
+      channel->clients[channel->clients_count] = client_entry;
       channel->clients_count++;
-
-      /* XXX add support for multiple same nicks on same channel. Check
-	 for them here */
     }
+
+    /* XXX add support for multiple same nicks on same channel. Check
+       for them here */
     break;
   case SILC_NOTIFY_TYPE_LEAVE:
+    /*
+     * Someone has left a channel. We will remove it from the channel but
+     * we'll keep it in the cache in case we'll need it later.
+     */
+    
+    /* Get nickname */
+    /* XXX Protocol must be changed to send Client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    
+    /* Find channel entry */
+    /* XXX this can return wrong entry */
+    client_entry = silc_idlist_get_client(client, conn, tmp, NULL, 0);
+    if (!client_entry)
+      break;
+    
+    /* Get Channel ID (it's in ID payload) */
+    tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+    idp = silc_id_payload_parse_data(tmp, tmp_len);
+    channel_id = silc_id_payload_get_id(idp);
+    silc_id_payload_free(idp);
+    
+    /* Find channel entry */
+    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				     SILC_ID_CHANNEL, &id_cache))
+      break;
+    
+    channel = (SilcChannelEntry)id_cache->context;
+    
+    /* Remove client from channel */
+    for (i = 0; i < channel->clients_count; i++) {
+      if (channel->clients[i] == client_entry) {
+	channel->clients[i] = NULL;
+	channel->clients_count--;
+	break;
+      }
+    }
     break;
   case SILC_NOTIFY_TYPE_SIGNOFF:
+    /*
+     * Someone left SILC. We'll remove it from the channel and from cache.
+     */
+
+    /* Get nickname */
+    /* XXX Protocol must be changed to send Client ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    
+    /* Find channel entry */
+    /* XXX this can return wrong entry */
+    client_entry = silc_idlist_get_client(client, conn, tmp, NULL, 0);
+    if (!client_entry)
+      break;
+    
+    /* Get Channel ID (it's in ID payload) */
+    tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
+    idp = silc_id_payload_parse_data(tmp, tmp_len);
+    channel_id = silc_id_payload_get_id(idp);
+    silc_id_payload_free(idp);
+    
+    /* Find channel entry */
+    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				     SILC_ID_CHANNEL, &id_cache))
+      break;
+    
+    channel = (SilcChannelEntry)id_cache->context;
+    
+    /* Remove client from channel */
+    for (i = 0; i < channel->clients_count; i++) {
+      if (channel->clients[i] == client_entry) {
+	channel->clients[i] = NULL;
+	channel->clients_count--;
+	break;
+      }
+    }
+
+    /* Remove from cache */
+    silc_idcache_del_by_id(conn->client_cache, SILC_ID_CLIENT, 
+			   client_entry->id);
     break;
   case SILC_NOTIFY_TYPE_TOPIC_SET:
+    /*
+     * Someone set the topic on a channel. Nothing interesting to do here.
+     */
+    break;
+  case SILC_NOTIFY_TYPE_NICK_CHANGE:
+    /*
+     * Someone changed their nickname. Cache the new Client ID.
+     */
+
+    /* XXX Protocol must be changed to send the old Client ID and the
+       new Client ID. Now we get only nickname, thus, we'll make NAMES
+       to receive the new ID. Other choice is to do IDENTIFY but I'm
+       doing NAMES for now. */
+
+    /* Get nickname */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    
+    /* Find channel entry */
+    /* XXX this can return wrong entry */
+    client_entry = silc_idlist_get_client(client, conn, tmp, NULL, 0);
+    if (!client_entry)
+      break;
+    
+    /* Get Channel ID (it's in ID payload) */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    idp = silc_id_payload_parse_data(tmp, tmp_len);
+    channel_id = silc_id_payload_get_id(idp);
+    silc_id_payload_free(idp);
+    
+    /* Find channel entry */
+    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				     SILC_ID_CHANNEL, &id_cache))
+      break;
+    
+    channel = (SilcChannelEntry)id_cache->context;
+    
+    {
+      SilcClientCommandContext ctx;
+      char names[512];
+      
+      ctx = silc_calloc(1, sizeof(*ctx));
+      ctx->client = client;
+      ctx->conn = conn;
+      ctx->command = silc_client_command_find("NAMES");
+      memset(names, 0, sizeof(names));
+      snprintf(names, sizeof(names), "NAMES %s", channel->channel_name);
+      silc_parse_command_line(names, &ctx->argv, &ctx->argv_lens, 
+			      &ctx->argv_types, &ctx->argc, 2);
+      ctx->command->cb(ctx);
+    }
     break;
   default:
     break;
@@ -1354,6 +1483,10 @@ void silc_client_notify_by_server(SilcClient client,
 
   client->ops->notify(client, conn, payload);
   silc_notify_payload_free(payload);
+  if (client_id)
+    silc_free(client_id);
+  if (channel_id)
+    silc_free(channel_id);
 }
 
 /* Processes the received new Client ID from server. Old Client ID is
@@ -1531,15 +1664,9 @@ void silc_client_channel_message(SilcClient client,
   }
 
   /* Pass the message to application */
-  if (packet->src_id_type == SILC_ID_CLIENT) {
-    client->ops->channel_message(client, conn, nickname,
-				 channel->channel_name,
-				 silc_channel_get_data(payload, NULL));
-  } else {
-    /* Message from server */
-    /* XXX maybe this should be passed to app... */
-    client->ops->say(client, conn, "%s", silc_channel_get_data(payload, NULL));
-  }
+  client->ops->channel_message(client, conn, nickname,
+			       channel->channel_name,
+			       silc_channel_get_data(payload, NULL));
 
  out:
   if (id)
@@ -1588,6 +1715,7 @@ void silc_client_private_message(SilcClient client,
     if (!remote_id)
       goto out;
 
+    /* If it's me, ignore */
     if (!SILC_ID_CLIENT_COMPARE(remote_id, conn->local_id))
       goto out;
 

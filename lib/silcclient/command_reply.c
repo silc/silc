@@ -878,11 +878,15 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
     list_count++;
   }
 
+  /* Remove old client list from channel, if exists */
   if (channel->clients) {
     silc_free(channel->clients);
     channel->clients = NULL;
     channel->clients_count = 0;
   }
+
+  /* Allocate room for clients in the channel */
+  channel->clients = silc_calloc(list_count, sizeof(*channel->clients));
 
   /* Cache the received name list and client ID's. This cache expires
      whenever server sends notify message to channel. It means two things;
@@ -898,21 +902,27 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
     client_id = silc_id_str2id(client_id_list->data, SILC_ID_CLIENT);
     silc_buffer_pull(client_id_list, SILC_ID_CLIENT_LEN);
 
-    client = silc_calloc(1, sizeof(*client));
-    client->id = client_id;
-    client->nickname = nickname;
+    /* Check if we have this client cached already. */
+    if (!silc_idcache_find_by_id_one(conn->client_cache, (void *)client_id,
+				     SILC_ID_CLIENT, &id_cache)) {
+      client = silc_calloc(1, sizeof(*client));
+      client->id = client_id;
+      client->nickname = nickname;
 
-    /* Add client to cache */
-    silc_idcache_add(conn->client_cache, nickname, SILC_ID_CLIENT,
-		     client_id, (void *)client, TRUE);
-    name_list = name_list + nick_len + 1;
+      /* Add client to cache */
+      silc_idcache_add(conn->client_cache, nickname, SILC_ID_CLIENT,
+		       client_id, (void *)client, TRUE);
+    } else {
+      client = (SilcClientEntry)id_cache->context;
+      silc_free(client_id);
+      silc_free(nickname);
+      id_cache = NULL;
+    }
 
-    /* Add client to channel */
-    channel->clients = silc_realloc(channel->clients, 
-				    sizeof(*channel->clients) * 
-				    (channel->clients_count + 1));
     channel->clients[channel->clients_count] = client;
     channel->clients_count++;
+
+    name_list += nick_len + 1;
   }
 
   name_list = cp;
