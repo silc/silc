@@ -435,7 +435,6 @@ SilcSFTPStatus silc_sftp_map_errno(int err)
   case ENOENT:
   case ENOTDIR:
   case EBADF:
-  case ELOOP:
     ret = SILC_SFTP_STATUS_NO_SUCH_FILE;
     break;
   case EPERM:

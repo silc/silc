@@ -28,12 +28,14 @@
 
 #include "silcincludes.h"
 
+#ifndef WIN32
 #ifdef HAVE_GETSID
 extern pid_t getsid (pid_t __pid);
 #endif
 
 #ifdef HAVE_GETPGID
 extern pid_t getpgid (pid_t __pid);
+#endif
 #endif
 
 #undef SILC_RNG_DEBUG
