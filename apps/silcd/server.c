@@ -2184,6 +2184,14 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     if (ret == -2)
       return;
 
+    /* The packet has been sent and now it is time to set the connection
+       back to only for input. When there is again some outgoing data
+       available for this connection it will be set for output as well.
+       This call clears the output setting and sets it only for input. */
+    SILC_SET_CONNECTION_FOR_INPUT(server->schedule, fd);
+    SILC_UNSET_OUTBUF_PENDING(sock);
+    silc_buffer_clear(sock->outbuf);
+
     if (ret == -1) {
       SILC_LOG_ERROR(("Error sending packet to connection "
 		      "%s:%d [%s]", sock->hostname, sock->port,
@@ -2191,17 +2199,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
 		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		       "Router")));
-      return;
     }
-
-    /* The packet has been sent and now it is time to set the connection
-       back to only for input. When there is again some outgoing data
-       available for this connection it will be set for output as well.
-       This call clears the output setting and sets it only for input. */
-    SILC_SET_CONNECTION_FOR_INPUT(server->schedule, fd);
-    SILC_UNSET_OUTBUF_PENDING(sock);
-
-    silc_buffer_clear(sock->outbuf);
     return;
   }
 
