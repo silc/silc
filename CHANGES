@@ -8,6 +8,9 @@ Fri Oct 18 10:51:04 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 	  was processing wrong callback context.  Affected files
 	  are lib/silcclient/client.c and protocol.c.
 
+	* Fixed the /ATTR allow off to actually work.  Affected file
+	  is irssi/src/silc/core/silc-queries.c.
+
 Thu Oct 17 23:45:12 EEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed string formatting crashbug in lib/silccore/silcattrs.c.

@@ -261,6 +261,33 @@ void silc_query_attributes_default(SilcClient client,
   memset(&pk, 0, sizeof(pk));
   memset(&vcard, 0, sizeof(vcard));
 
+  allowed = settings_get_bool("attr_allow");
+  if (!allowed) {
+    silc_client_attribute_del(silc_client, conn,
+			      SILC_ATTRIBUTE_USER_INFO, NULL);
+    silc_client_attribute_del(silc_client, conn,
+			      SILC_ATTRIBUTE_SERVICE, NULL);
+    silc_client_attribute_del(silc_client, conn,
+			      SILC_ATTRIBUTE_STATUS_MOOD, NULL);
+    silc_client_attribute_del(silc_client, conn,
+			      SILC_ATTRIBUTE_STATUS_FREETEXT, NULL);
+    silc_client_attribute_del(silc_client, conn,
+			      SILC_ATTRIBUTE_STATUS_MESSAGE, NULL);
+    silc_client_attribute_del(silc_client, conn,
+			      SILC_ATTRIBUTE_PREFERRED_LANGUAGE, NULL);
+    silc_client_attribute_del(silc_client, conn,
+			      SILC_ATTRIBUTE_PREFERRED_CONTACT, NULL);
+    silc_client_attribute_del(silc_client, conn,
+			      SILC_ATTRIBUTE_TIMEZONE, NULL);
+    silc_client_attribute_del(silc_client, conn,
+			      SILC_ATTRIBUTE_GEOLOCATION, NULL);
+    silc_client_attribute_del(silc_client, conn,
+			      SILC_ATTRIBUTE_DEVICE_INFO, NULL);
+    silc_client_attribute_del(silc_client, conn,
+			      SILC_ATTRIBUTE_USER_PUBLIC_KEY, NULL);
+    return;
+  }
+
   sv = settings_get_str("attr_vcard");
   if (sv && *sv) {
     /* Put USER_INFO */
