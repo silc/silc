@@ -1221,7 +1221,8 @@ SILC_CLIENT_CMD_FUNC(users)
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel;
   SilcBuffer buffer, idp;
-  char *name;
+  char *name, *line = NULL;
+  unsigned int line_len = 0;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -1294,18 +1295,25 @@ SILC_CLIENT_CMD_FUNC(users)
     cmd->client->ops->say(cmd->client, conn, "Users on %s", 
 			  channel->channel_name);
 
+    line = silc_calloc(4096, sizeof(*line));
+    line_len = 4096;
     silc_list_start(channel->clients);
     while ((chu = silc_list_get(channel->clients)) != SILC_LIST_END) {
       SilcClientEntry e = chu->client;
-      char *m, tmp[80], line[80], len1;
+      char *m, tmp[80], len1;
 
-      memset(line, 0, sizeof(line));
+      if (strlen(e->nickname) + strlen(e->server) + 100 > line_len) {
+	silc_free(line);
+	line_len += strlen(e->nickname) + strlen(e->server) + 100;
+	line = silc_calloc(line_len, sizeof(*line));
+      }
+
       memset(tmp, 0, sizeof(tmp));
       m = silc_client_chumode_char(chu->mode);
 
-      strcat(line, " ");
-      strcat(line, e->nickname);
-      strcat(line, e->server ? "@" : "");
+      strncat(line, " ", 1);
+      strncat(line, e->nickname, strlen(e->nickname));
+      strncat(line, e->server ? "@" : "", 1);
 
       len1 = 0;
       if (e->server)
@@ -1320,9 +1328,9 @@ SILC_CLIENT_CMD_FUNC(users)
 	  strcat(line, " ");
       }
 
-      strcat(line, "  H");
+      strncat(line, "  H", 3);
       strcat(tmp, m ? m : "");
-      strcat(line, tmp);
+      strncat(line, tmp, strlen(tmp));
 
       if (strlen(tmp) < 5)
 	for (i = 0; i < 5 - strlen(tmp); i++)
@@ -1336,6 +1344,9 @@ SILC_CLIENT_CMD_FUNC(users)
 	silc_free(m);
     }
   }
+
+  if (line)
+    silc_free(line);
 
   /* Notify application */
   COMMAND;
