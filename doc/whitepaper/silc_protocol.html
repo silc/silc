@@ -1,0 +1,280 @@
+<html>
+<header>
+<title>SILC Protocol White Paper</title>
+<link rev=made href="mailto:priikone@silcnet.org">
+<meta name="Author" content="Pekka Riikonen - SILC Project">
+<meta name="Description"
+ content="SILC - Secure Internet Live Conferencing Protocol">
+<meta name="Created" content="Version 1.0 / 05 Aug 2001">
+</head>
+<body bgcolor="#ffffff">
+
+<font face="Helvetica">
+
+<h1>About the White Paper</h1>
+<p>
+The purpose of this white paper is to give short but deep enough introduction
+to the SILC Protocol.  The document describes the purpose of the protocol
+and how the protocol works in practice.  This document is intended for all
+audience.  This document should be easy to understand for non-technical
+person and still be detailed enough for technically oriented person.  See
+the section <a href="#terms">Terms and Abbreviations</a> for terms used
+in this documents.
+<p>
+
+<p>
+(c) Copyright 2001 Pekka Riikonen 
+(<a href="mailto:priikone at silcnet.org">priikone at silcnet.org</a>)
+<p>
+This document is free document; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.  This document is distributed in
+the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+
+<p><br>
+<h1>Summary</h1>
+
+xxx
+
+<p>
+
+<p><br>
+<h1>SILC Protocol</h1>
+<p>
+
+<img src="silc_network.JPG" alt="SILC Network" align="center" border"0">
+
+<p><br>
+<h2>Clients</h2>
+<p>
+
+<p><br>
+<h2>Servers</h2>
+<p>
+
+<p><br>
+<h2>Routers</h2>
+<p>
+
+<img src="silc_routers.JPG" alt="SILC Routers" align="center" border"0">
+
+
+<p><br>
+<h1>SILC Packet Protocol</h1>
+<p>
+
+<img src="silc_packet.JPG" alt="Typical SILC Packet" align="center" border"0">
+
+
+
+<p><br>
+<h1>SILC Key Exchange Protocol</h1>
+<p>
+
+
+<p><br>
+<h1>SILC Connection Authentcation Protocol</h1>
+<p>
+
+
+
+<p><br>
+<h1>Channels</h1>
+<p>
+
+<p><br>
+<h2>Channel Message Delivery</h2>
+<p>
+
+<img src="silc_channel.JPG" alt="Channel Message Delivery" align="center" border"0">
+
+<p><br>
+<h2>Channel Message Delivery With Channel Private Key</h2>
+<p>
+
+
+<p><br>
+<h1>Private Messages</h1>
+<p>
+Private messages are messages that are sent from one client to another 
+through the SILC Network.  They are private because they are not sent to
+anyone else except to the true receiver of the message.  Private messages
+can be used to engage private conversation with another client if channels
+are not desired.
+<p>
+
+As all messages in SILC the private message are also encrypted and
+authenticated.  There are several ways to secure private messages.  By
+default private messages are encrypted using the session keys established
+in the SKE protocol.  It is also possible to negotiate a private message
+key between the two clients and encrypt the messages with that key.  It
+is even possible to encrypt the messages with public key cryptosystem,
+if desired.  The next sections will describe all these private message
+delivery methods.
+
+<p>
+The SILC protocol provides these three methods of delivering private messages
+because none of the methods alone can satisfy the security requirements
+of all people.  The end user should decide the acceptable level of risk,
+the required level of security and other security and usability aspects when
+deciding what way of sending private message suites for them.
+
+
+<p><br>
+<h2>Private Message Delivery With Session Keys</h2>
+<p>
+Sending private messages are by default secured with session keys established
+in the SKE protocol.  This means that the private message is always encrypted
+with the next receiver of the message enroute to the receiving client.
+This also means that the message is decrypted and re-encrypted everytime
+it is sent further to the receiving client.
+<p>
+
+<img src="silc_priv1.JPG" alt="Basic Private Message Delivery" align="center" border"0">
+<p><br>
+
+As the above diagram shows the private messages sent by Client A to the
+Client B travels through the SILC Network and is always decrypted and
+re-encrypted with the session key of the next receiver.  The Client B then
+finally decrypts the private messages that is encrypted with the session
+key shared between the Client B and the Server Y.
+<p>
+
+This way of securing private messages is not perfect and cannot be used
+in all circumstances.  If the clients having the conversation cannot trust
+the servers and routers in the SILC Network they should not send private
+messages that are secured in this manner.  Messages secured in this manner
+can be decrypted by the servers and routers that the clients consider to be
+untrusted.
+<p>
+
+If the clients on the other hand trust the servers and routers in their 
+SILC Network, or they do not care that servers can decrypt their messages,
+sending private messages in this way is very simple from client's point
+of view.  For servers and routers this of course means that they need
+to decrypt and re-encrypt each private message.  Since this way of securing
+private message cannot be used at all times the SILC protocol provides
+other ways of securing private messages.
+
+<p><br>
+<h2>Private Message Delivery With Private Message Key</h2>
+<p>
+Private messages can be secured with private message key as well.  This
+key is known only by the sender of the message and the receiver of the
+message. This way no one else except the sender and the receiver can encrypt
+and decrypt the private messages.  The message is encrypted by the sender
+with the private message key and all the servers and routers pass the message
+through enroute to the receiver.  They cannot decrypt the message since
+they do not have the key.  When sending private messages in this way it
+does not matter whether the clients trust or do not trust the servers and
+routers in the SILC network.
+<p>
+
+<img src="silc_priv2.JPG" alt="Private Messages with Private Message Key" align="center" border"0">
+<p><br>
+
+As the above diagram shows the Client A encrypts the message with private
+message key and sends the message to the SILC Network.  All servers and
+routers merely pass the message through since they cannot decrypt it.
+The Client B then receives the message and decrypts it with the private
+message key.
+<p>
+
+Sending private messages in this manner is always secure since the key is
+shared only by the sender and the receiver.  The problem of this method
+is that the sender and the receiver must somehow agree about the key
+they are going to use.  The private message key can generally be anything.
+It can be a passphrase that only the sender and the receiver knows.  They
+could have been agreed to use some word or phrase as the key sometime
+earlier before they started the conversation.  Or the key maybe from some
+random string from a code book that only the sender and the receiver poses.
+Or it can be a key that is negotiated using some key negotiation protocol.
+<p>
+
+The problem however is fundamental.  How to agree to use some key when
+you cannot reach the other person over secure channel?  The SILC protocol
+solves this problem by providing a possiblity to negotiate the key
+between two clients using the SKE protocol.  One or both of the clients
+may set up the SKE server running in their host and ask the other client
+to connect to it.  As a result of the SKE protocol the clients have
+now shared secret that they can use as private message key.  The key
+is known only by the two clients that exexcuted the SKE protocol.  They
+can then use that key to secure all subsequent private messages.
+<p>
+
+Using this method of private messages delivery is recommended if the
+clients cannot trust the servers and routers in the SILC Network.  The 
+drawback is the extra phase of setting the private message key before
+starting the conversation.  However, using the SKE protocol is the
+recommended way to negotiate the private message key since it can be
+automized and does not cause any extra tasks for end user.
+
+<p><br>
+<h2>Private Message Delivery With Public Key Encryption</h2>
+<p>
+If the clients cannot trust the servers and routers in the SILC Network
+they can use the private message key.  As described in the previous section
+it is easy to set up with the SKE protocol.  However, sometimes the two
+clients do not want to use any passphrases as private message key or
+negotiate the key with SKE, or perhaps they are unable to negotiate the
+key because of some other external problem.  The SILC protocol provides
+yet another way of securing the private messages.  This way does not
+require setting or negotiating private message key.  And, in this method
+also it does not matter whether the clients trust or do not trust the
+servers and routers in the SILC Network.  The method is public key
+encryption.  The clients can encrypt the private messages with the
+receiver's public key and send the message to the network.  The servers
+and routers cannot decrypt the messages since they do not have the
+receiver's private key.  The receiver on the other hand has the private
+key which it uses to decrypt the message.
+<p>
+
+<img src="silc_priv3.JPG" alt="Private Messges with Public Key Cryptosystem" align="center" border"0">
+<p><br>
+
+As the above diagram shows the Client A has the Client B's public key.
+It will encrypt the message with that key and sends the message to the
+SILC Network.  All servers and routers pass the message through since
+they cannot decrypt it.  The Client B then uses its private key to
+decrypt the message.  The Client B has also the Client A's public key 
+that it can use to encrypt messages that it will send to Client A.
+<p>
+
+Even this method of private message delivery is not perfect.  The drawbacks
+of this method is that the public key encryption process, as being
+assymmetric cryptosystem, is much slower than encryption process with
+symmetric cryptosystems.  This is not probably problem with short messages
+but may be inconvenient with long messages.  The other drawback is that the
+sender must first assure that the public key it is using in the encryption
+is actually the receiver's public key.  This is a absolute requirement
+in this method.  If the sender cannot authenticate the receiver's public
+key this method of private message delivery should not be used.  In SILC
+protocol clients can fetch other clients public keys from servers. 
+However, the servers may not have authenticated the fetched public key so
+that should not be fully trusted.  Use of certificates can solve the
+problem.  The receiver's certificate could be authenticated by a third
+party Certificate Authority (CA).
+
+<p>
+Usually verifying the public key is not a problem since the receiver
+can provide the public key on some website, or verify the fingerprint of
+the key over email, or phone call.  The clients can also fetch the
+public keys from SILC servers if they trust that the keys are authentic.
+If both of the clients trust that the public keys are authentic using this
+method of private message delivery is very simple and recommended.
+
+
+<p><br>
+<h1>Conclusions</h1>
+
+
+<a name="terms"></a>
+<h1>Terms and Abbreviations</h1>
+
+</font>
+
+</body>
+</html>

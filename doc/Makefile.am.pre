@@ -21,6 +21,7 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 COMMONDIRS = 
 SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
+makerfc = ../scripts/makerfc
 
 all:
 	touch draft-riikonen-silc-spec-03.txt
@@ -42,13 +43,13 @@ dist-hook:
 	touch draft-riikonen-silc-pp-03.txt
 	touch draft-riikonen-silc-ke-auth-03.txt
 	touch draft-riikonen-silc-commands-01.txt
-	./makerfc draft-riikonen-silc-spec-03.nroff \
+	$(makerfc) draft-riikonen-silc-spec-03.nroff \
 		draft-riikonen-silc-spec-03.txt
-	./makerfc draft-riikonen-silc-pp-03.nroff \
+	$(makerfc) draft-riikonen-silc-pp-03.nroff \
 		draft-riikonen-silc-pp-03.txt
-	./makerfc draft-riikonen-silc-ke-auth-03.nroff \
+	$(makerfc) draft-riikonen-silc-ke-auth-03.nroff \
 		draft-riikonen-silc-ke-auth-03.txt
-	./makerfc draft-riikonen-silc-commands-01.nroff \
+	$(makerfc) draft-riikonen-silc-commands-01.nroff \
 		draft-riikonen-silc-commands-01.txt
 endif
 

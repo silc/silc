@@ -296,7 +296,7 @@ static void event_cmode(SILC_SERVER_REC *server, va_list va)
   uint32 modei;
   SilcIdType idtype;
 
-  idtype = va_arg(va, SilcIdType);
+  idtype = va_arg(va, int);
   entry = va_arg(va, void *);
   modei = va_arg(va, uint32);
   (void)va_arg(va, char *);

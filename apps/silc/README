@@ -1,0 +1,5 @@
+This directory includes the old SILC Client.  It was the first SILC
+client ever made.  However, it is now obsolete and not supported.  It
+is provided here merely as an example code.  Do not try to compile it.
+
+ -Pekka

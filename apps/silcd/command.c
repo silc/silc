@@ -1807,18 +1807,16 @@ SILC_SERVER_CMD_FUNC(nick)
 					FALSE : TRUE, client->id,
 					new_id);
 
+  oidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+
   /* Remove old cache entry */
   silc_idcache_del_by_context(server->local_list->clients, client);
 
-  oidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-
   /* Free old ID */
-  if (client->id)
-    silc_free(client->id);
+  silc_free(client->id);
 
   /* Save the nickname as this client is our local client */
-  if (client->nickname)
-    silc_free(client->nickname);
+  silc_free(client->nickname);
 
   client->nickname = strdup(nick);
   client->id = new_id;
