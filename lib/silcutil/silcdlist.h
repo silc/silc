@@ -60,24 +60,12 @@ typedef struct {
 } *SilcDList;
 /***/
 
-/****s* silcutil/SilcDListAPI/SilcDListEntry
- *
- * NAME
- *
- *    typedef struct SilcDListEntryStruct { ... } *SilcDListEntry;
- *
- * DESCRIPTION
- *
- *    SilcDListEntry structure, one entry in the list. This MUST NOT be used
- *    directly by the application.
- *
- * SOURCE
- */
+/* SilcDListEntry structure, one entry in the list. This MUST NOT be used
+   directly by the application. */
 typedef struct SilcDListEntryStruct {
   void *context;
   struct SilcDListEntryStruct *next;
 } *SilcDListEntry;
-/***/
 
 /****f* silcutil/SilcDListAPI/silc_dlist_init
  *
