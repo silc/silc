@@ -1605,11 +1605,15 @@ static void silc_client_command_oper_send(unsigned char *data,
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer, auth;
 
-  if (cmd->argc == 3) {
-    /* Pulic key auth XXX TODO */
-    auth = NULL;
+  if (cmd->argc >= 3) {
+    /* Encode the public key authentication payload */
+    auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
+					      cmd->client->private_key,
+					      conn->hash,
+					      conn->local_id,
+					      SILC_ID_CLIENT);
   } else {
-    /* Encode the authentication payload */
+    /* Encode the password authentication payload */
     auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
 				    data, data_len);
   }
@@ -1634,8 +1638,6 @@ SILC_CLIENT_CMD_FUNC(oper)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
-  unsigned char *auth_data;
-  uint32 auth_data_len = 0;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -1645,17 +1647,12 @@ SILC_CLIENT_CMD_FUNC(oper)
 
   if (cmd->argc < 2) {
     cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-			  "Usage: /OPER <username> [<public key>]");
+			  "Usage: /OPER <username> [-pubkey]");
     COMMAND_ERROR;
     goto out;
   }
 
-  if (cmd->argc == 3) {
-    /* XXX Get public key */
-    auth_data = NULL;
-    COMMAND_ERROR;
-    goto out;
-  } else {
+  if (cmd->argc < 3) {
     /* Get passphrase */
     cmd->client->ops->ask_passphrase(cmd->client, conn,
 				     silc_client_command_oper_send,
@@ -1663,13 +1660,7 @@ SILC_CLIENT_CMD_FUNC(oper)
     return;
   }
 
-  silc_client_command_oper_send(auth_data, auth_data_len, context);
-
-  memset(auth_data, 0, auth_data_len);
-  silc_free(auth_data);
-
-  /* Notify application */
-  COMMAND;
+  silc_client_command_oper_send(NULL, 0, context);
 
  out:
   silc_client_command_free(cmd);
@@ -1682,11 +1673,15 @@ static void silc_client_command_silcoper_send(unsigned char *data,
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer, auth;
 
-  if (cmd->argc == 3) {
-    /* Pulic key auth XXX TODO */
-    auth = NULL;
+  if (cmd->argc >= 3) {
+    /* Encode the public key authentication payload */
+    auth = silc_auth_public_key_auth_generate(cmd->client->public_key,
+					      cmd->client->private_key,
+					      conn->hash,
+					      conn->local_id,
+					      SILC_ID_CLIENT);
   } else {
-    /* Encode the authentication payload */
+    /* Encode the password authentication payload */
     auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
 				    data, data_len);
   }
@@ -1711,8 +1706,6 @@ SILC_CLIENT_CMD_FUNC(silcoper)
 {
   SilcClientCommandContext cmd = (SilcClientCommandContext)context;
   SilcClientConnection conn = cmd->conn;
-  unsigned char *auth_data;
-  uint32 auth_data_len = 0;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -1722,17 +1715,12 @@ SILC_CLIENT_CMD_FUNC(silcoper)
 
   if (cmd->argc < 2) {
     cmd->client->ops->say(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO, 
-			  "Usage: /SILCOPER <username> [<public key>]");
+			  "Usage: /SILCOPER <username> [-pubkey]");
     COMMAND_ERROR;
     goto out;
   }
 
-  if (cmd->argc == 3) {
-    /* XXX Get public key */
-    auth_data = NULL;
-    COMMAND_ERROR;
-    goto out;
-  } else {
+  if (cmd->argc < 3) {
     /* Get passphrase */
     cmd->client->ops->ask_passphrase(cmd->client, conn,
 				     silc_client_command_silcoper_send,
@@ -1740,13 +1728,7 @@ SILC_CLIENT_CMD_FUNC(silcoper)
     return;
   }
 
-  silc_client_command_silcoper_send(auth_data, auth_data_len, context);
-
-  memset(auth_data, 0, auth_data_len);
-  silc_free(auth_data);
-
-  /* Notify application */
-  COMMAND;
+  silc_client_command_silcoper_send(NULL, 0, context);
 
  out:
   silc_client_command_free(cmd);

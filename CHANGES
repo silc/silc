@@ -1,3 +1,9 @@
+Tue Sep  4 22:31:28 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added public key authentication support to OPER and SILCOPER
+	  commands in the client library.  Affected file is
+	  lib/silcclient/command.c.
+
 Tue Sep  4 12:39:17 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed the get_auth_methdod client operation to be asynchronous.

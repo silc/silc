@@ -1176,6 +1176,14 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
     silc_free(serv);
 }
 
+/* Lists locally saved client and server public keys. */
+
+static void command_listkeys(const char *data, SILC_SERVER_REC *server,
+			     WI_ITEM_REC *item)
+{
+
+}
+
 void silc_channels_init(void)
 {
   signal_add("channel destroyed", (SIGNAL_FUNC) sig_channel_destroyed);
@@ -1202,6 +1210,7 @@ void silc_channels_init(void)
   command_bind("notice", MODULE_NAME, (SIGNAL_FUNC) command_notice);
   command_bind("away", MODULE_NAME, (SIGNAL_FUNC) command_away);
   command_bind("key", MODULE_NAME, (SIGNAL_FUNC) command_key);
+  command_bind("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys);
 
   silc_nicklist_init();
 }
@@ -1234,6 +1243,7 @@ void silc_channels_deinit(void)
   command_unbind("notice", (SIGNAL_FUNC) command_notice);
   command_unbind("away", (SIGNAL_FUNC) command_away);
   command_unbind("key", (SIGNAL_FUNC) command_key);
+  command_unbind("listkeys", (SIGNAL_FUNC) command_listkeys);
 
   silc_nicklist_deinit();
 }

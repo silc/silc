@@ -260,9 +260,9 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: KEY CHANNEL <channel> set|unset|list|agreement|negotiate [<arguments>] */
 /* SYNTAX: KICK <channel> <nickname>[@<server>] [<comment>] */
 /* SYNTAX: KILL <channel> <nickname>[@<server>] [<comment>] */
-/* SYNTAX: OPER <username> [<public key>] */
-/* SYNTAX: SILCOPER <username> [<public key>] */
-/* SYNTAX: TOPIC <channel> [<topic> */
+/* SYNTAX: OPER <username> [-pubkey] */
+/* SYNTAX: SILCOPER <username> [-pubkey] */
+/* SYNTAX: TOPIC <channel> [<topic>] */
 /* SYNTAX: UMODE +|-<modes> */
 /* SYNTAX: WHOIS <nickname>[@<server>] [<count>] */
 /* SYNTAX: WHOWAS <nickname>[@<server>] [<count>] */

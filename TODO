@@ -17,6 +17,9 @@ TODO/bugs in Irssi SILC client
  o The QUIT command should wait for servers disconnection (at least for
    a while) before exiting the application.
 
+ o The JOIN commands HELP is generated from Irssi IRCs JOIN help and
+   the syntax is not same in SILC.  This must be fixed.
+
  o Add PERL scripting support from Irssi CVS.
 
  o Extend the /HELP command to support sub commands or something.  So
