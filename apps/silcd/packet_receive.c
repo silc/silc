@@ -2681,7 +2681,6 @@ void silc_server_new_channel(SilcServer server,
   SilcUInt32 name_len;
   unsigned char *id;
   SilcUInt32 id_len;
-  SilcUInt32 mode;
   SilcServerEntry server_entry;
   SilcChannelEntry channel;
 
@@ -3033,10 +3032,10 @@ void silc_server_connection_auth_request(SilcServer server,
   int ret;
   SilcAuthMethod auth_meth = SILC_AUTH_NONE;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  if (packet->src_id_type && packet->src_id_type != SILC_ID_CLIENT)
+  if (packet->src_id_type && packet->src_id_type != SILC_ID_CLIENT) {
+    SILC_LOG_DEBUG(("Request not from client"));
     return;
+  }
 
   /* Parse the payload */
   ret = silc_buffer_unformat(packet->buffer,
@@ -3063,6 +3062,11 @@ void silc_server_connection_auth_request(SilcServer server,
     } else if (client->publickeys)
       auth_meth = SILC_AUTH_PUBLIC_KEY;
   }
+
+  SILC_LOG_DEBUG(("Authentication method is [%s]",
+		  (auth_meth == SILC_AUTH_NONE ? "None" :
+		   auth_meth == SILC_AUTH_PASSWORD ? "Passphrase" :
+		   "Digital signatures")));
 
   /* Send it back to the client */
   silc_server_send_connection_auth_request(server, sock, conn_type, auth_meth);

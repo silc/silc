@@ -1,3 +1,24 @@
+Thu Jun 20 13:48:15 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
+
+	* Implemented SILC_STRING_BMP and SILC_STRING_UNIVERSAL for
+	  UTF-8 encoding and decoding.  Added also new encodings
+	  SILC_STRING_BMP_LSB and SILC_STRING_UNIVERSAL_LSB.
+
+	  Added also SILC_STRING_LANGUAGE which is language and charset
+	  specific encoder and decoer for those platforms that support
+	  iconv().  It can convert the UTF-8 to and from the locale
+	  specific character set.
+
+	  Affected file lib/silcutil/silcstrutil.[ch].
+
+	* Added macro SILC_NOT_IMPLEMENTED to lib/silcutil/silclog.h.
+
+	* Added function silc_get_command_name to the file
+	  lib/silcutil/silcutil.[ch
+
+	* Improved the server debug output a bit.  Affected files are
+	  in silcd/.
+
 Wed Jun 19 17:46:31 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Save the channel passphrase when received succesful JOIN

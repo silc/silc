@@ -185,7 +185,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 	cp = dm;
       }
 
-      silc_utf8_decode(message, message_len, SILC_STRING_ASCII,
+      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
 		       cp, message_len);
       signal_emit("message public", 6, server, cp,
 		  nick == NULL ? "[<unknown>]" : nick->nick,
@@ -258,7 +258,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
       cp = dm;
     }
 
-    silc_utf8_decode(message, message_len, SILC_STRING_ASCII,
+    silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
 		     cp, message_len);
     signal_emit("message private", 4, server, cp,
 		sender->nickname ? sender->nickname : "[<unknown>]",

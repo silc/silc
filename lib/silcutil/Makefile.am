@@ -37,10 +37,10 @@ endif
 
 if SILC_DIST_TOOLKIT
 SILC_DIST_SOURCE = stacktrace.c
-SILC_DIST_HEADERS = stacktrace.h
+SILC_DIST_HEADER = stacktrace.h
 else
 SILC_DIST_SOURCE =
-SILC_DIST_HEADERS =
+SILC_DIST_HEADER =
 endif
 
 noinst_LIBRARIES = libsilcutil.a
@@ -62,7 +62,7 @@ libsilcutil_a_SOURCES = \
 
 if SILC_DIST_TOOLKIT
 include_HEADERS =	\
-	$(SILC_DIST_SOURCE) \
+	$(SILC_DIST_HEADER) \
 	silcbuffer.h	\
 	silcbuffmt.h	\
 	silcconfig.h	\

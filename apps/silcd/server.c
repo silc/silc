@@ -1929,8 +1929,6 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
   SilcIDListData idata = (SilcIDListData)sock->user_data;
   int ret;
 
-  SILC_LOG_DEBUG(("Parsing packet"));
-
   /* Parse the packet */
   if (parse_ctx->normal)
     ret = silc_packet_parse(packet, idata ? idata->receive_key : NULL);
@@ -1944,8 +1942,10 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
     goto out;
   }
 
-  if (ret == SILC_PACKET_NONE)
+  if (ret == SILC_PACKET_NONE) {
+    SILC_LOG_DEBUG(("Error parsing packet"));
     goto out;
+  }
 
   /* Check that the the current client ID is same as in the client's packet. */
   if (sock->type == SILC_SOCKET_TYPE_CLIENT) {
@@ -1955,6 +1955,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
 				packet->src_id_type);
       if (!id || !SILC_ID_CLIENT_COMPARE(client->id, id)) {
 	silc_free(id);
+	SILC_LOG_DEBUG(("Packet source is not same as sender"));
 	goto out;
       }
       silc_free(id);
@@ -2079,14 +2080,15 @@ void silc_server_packet_parse_type(SilcServer server,
   SilcPacketType type = packet->type;
   SilcIDListData idata = (SilcIDListData)sock->user_data;
 
+  SILC_LOG_DEBUG(("Received %s packet [flags %d]",
+		  silc_get_packet_name(type), packet->flags));
+
   /* Parse the packet type */
   switch (type) {
   case SILC_PACKET_DISCONNECT:
     {
       SilcStatus status;
       char *message = NULL;
-
-      SILC_LOG_DEBUG(("Disconnect packet"));
 
       if (packet->flags & SILC_PACKET_FLAG_LIST)
 	break;
@@ -2113,7 +2115,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * one protocol for connection executing at once hence this
      * success message is for whatever protocol is executing currently.
      */
-    SILC_LOG_DEBUG(("Success packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     if (sock->protocol)
@@ -2126,7 +2127,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * one protocol for connection executing at once hence this
      * failure message is for whatever protocol is executing currently.
      */
-    SILC_LOG_DEBUG(("Failure packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     if (sock->protocol) {
@@ -2143,7 +2143,6 @@ void silc_server_packet_parse_type(SilcServer server,
     break;
 
   case SILC_PACKET_REJECT:
-    SILC_LOG_DEBUG(("Reject packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     return;
@@ -2154,7 +2153,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * Received notify packet. Server can receive notify packets from
      * router. Server then relays the notify messages to clients if needed.
      */
-    SILC_LOG_DEBUG(("Notify packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       silc_server_notify_list(server, sock, packet);
     else
@@ -2170,7 +2168,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * (although probably most common ones) thus they are handled
      * specially.
      */
-    SILC_LOG_DEBUG(("Channel Message packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     idata->last_receive = time(NULL);
@@ -2184,7 +2181,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * locally connected clients on the particular channel. Router
      * never receives this channel and thus is ignored.
      */
-    SILC_LOG_DEBUG(("Channel Key packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_server_channel_key(server, sock, packet);
@@ -2198,7 +2194,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * Recived command. Processes the command request and allocates the
      * command context and calls the command.
      */
-    SILC_LOG_DEBUG(("Command packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_server_command_process(server, sock, packet);
@@ -2210,7 +2205,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * may be reply to command sent by us or reply to command sent by client
      * that we've routed further.
      */
-    SILC_LOG_DEBUG(("Command Reply packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_server_command_reply(server, sock, packet);
@@ -2224,7 +2218,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * Received private message packet. The packet is coming from either
      * client or server.
      */
-    SILC_LOG_DEBUG(("Private Message packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     idata->last_receive = time(NULL);
@@ -2244,7 +2237,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * Key Exchange protocol packets
      */
   case SILC_PACKET_KEY_EXCHANGE:
-    SILC_LOG_DEBUG(("KE packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
 
@@ -2264,7 +2256,6 @@ void silc_server_packet_parse_type(SilcServer server,
     break;
 
   case SILC_PACKET_KEY_EXCHANGE_1:
-    SILC_LOG_DEBUG(("KE 1 packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
 
@@ -2308,7 +2299,6 @@ void silc_server_packet_parse_type(SilcServer server,
     break;
 
   case SILC_PACKET_KEY_EXCHANGE_2:
-    SILC_LOG_DEBUG(("KE 2 packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
 
@@ -2358,7 +2348,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * authentication method for the connection. This packet maybe received
      * at any time.
      */
-    SILC_LOG_DEBUG(("Connection authentication request packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_server_connection_auth_request(server, sock, packet);
@@ -2370,7 +2359,6 @@ void silc_server_packet_parse_type(SilcServer server,
   case SILC_PACKET_CONNECTION_AUTH:
     /* Start of the authentication protocol. We receive here the
        authentication data and will verify it. */
-    SILC_LOG_DEBUG(("Connection auth packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
 
@@ -2397,7 +2385,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * to distribute information about new registered entities in the
      * SILC network.
      */
-    SILC_LOG_DEBUG(("New ID packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       silc_server_new_id_list(server, sock, packet);
     else
@@ -2410,7 +2397,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * we will use to create initial client ID. After creating new
      * ID we will send it to the client.
      */
-    SILC_LOG_DEBUG(("New Client packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_server_new_client(server, sock, packet);
@@ -2422,7 +2408,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * information that we may save. This is received after server has
      * connected to us.
      */
-    SILC_LOG_DEBUG(("New Server packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_server_new_server(server, sock, packet);
@@ -2433,7 +2418,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * Received new channel packet. Information about new channel in the
      * network are distributed using this packet.
      */
-    SILC_LOG_DEBUG(("New Channel packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       silc_server_new_channel_list(server, sock, packet);
     else
@@ -2444,7 +2428,6 @@ void silc_server_packet_parse_type(SilcServer server,
     /*
      * Received heartbeat.
      */
-    SILC_LOG_DEBUG(("Heartbeat packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     break;
@@ -2453,7 +2436,6 @@ void silc_server_packet_parse_type(SilcServer server,
     /*
      * Received heartbeat.
      */
-    SILC_LOG_DEBUG(("Key agreement packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_server_key_agreement(server, sock, packet);
@@ -2464,7 +2446,6 @@ void silc_server_packet_parse_type(SilcServer server,
      * Received re-key packet. The sender wants to regenerate the session
      * keys.
      */
-    SILC_LOG_DEBUG(("Re-key packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_server_rekey(server, sock, packet);
@@ -2474,7 +2455,6 @@ void silc_server_packet_parse_type(SilcServer server,
     /*
      * The re-key is done.
      */
-    SILC_LOG_DEBUG(("Re-key done packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
 
@@ -2499,7 +2479,6 @@ void silc_server_packet_parse_type(SilcServer server,
 
   case SILC_PACKET_FTP:
     /* FTP packet */
-    SILC_LOG_DEBUG(("FTP packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_server_ftp(server, sock, packet);
@@ -2507,7 +2486,6 @@ void silc_server_packet_parse_type(SilcServer server,
 
   case SILC_PACKET_RESUME_CLIENT:
     /* Resume client */
-    SILC_LOG_DEBUG(("Resume Client packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_server_resume_client(server, sock, packet);
@@ -2516,7 +2494,6 @@ void silc_server_packet_parse_type(SilcServer server,
   case SILC_PACKET_RESUME_ROUTER:
     /* Resume router packet received. This packet is received for backup
        router resuming protocol. */
-    SILC_LOG_DEBUG(("Resume router packet"));
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_server_backup_resume_router(server, sock, packet);

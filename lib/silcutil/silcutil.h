@@ -573,7 +573,6 @@ char *silc_get_real_name();
 bool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
 			SilcUInt32 **list);
 
-
 /****f* silcutil/SilcUtilAPI/silc_get_status_message
  *
  * SYNOPSIS
@@ -585,6 +584,32 @@ bool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
  *    Returns status message string
  *
  ***/
-char *silc_get_status_message(unsigned char status);
+const char *silc_get_status_message(unsigned char status);
+
+/****f* silcutil/SilcUtilAPI/silc_get_packet_name
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_get_packet_name(SilcPacketType type);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the name corresponding packet type `type'.
+ *
+ ***/
+const char *silc_get_packet_name(unsigned char type);
+
+/****f* silcutil/SilcUtilAPI/silc_get_command_name
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_get_packet_name(SilcCommand command);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the name corresponding SILC command `command'.
+ *
+ ***/
+const char *silc_get_command_name(unsigned char command);
 
 #endif	/* !SILCUTIL_H */

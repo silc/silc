@@ -200,10 +200,12 @@ static void command_me(const char *data, SILC_SERVER_REC *server,
     cmd_return_error(CMDERR_CHAN_NOT_FOUND);
 
   if (!silc_term_utf8()) {
-    int len = silc_utf8_encoded_len(argv[1], argv_lens[1], SILC_STRING_ASCII);
+    int len = silc_utf8_encoded_len(argv[1], argv_lens[1],
+				    SILC_STRING_LANGUAGE);
     message = silc_calloc(len + 1, sizeof(*message));
     g_return_if_fail(message != NULL);
-    silc_utf8_encode(argv[1], argv_lens[1], SILC_STRING_ASCII, message, len);
+    silc_utf8_encode(argv[1], argv_lens[1], SILC_STRING_LANGUAGE,
+		     message, len);
   }
 
   /* Send the action message */
@@ -261,10 +263,12 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
     cmd_return_error(CMDERR_CHAN_NOT_FOUND);
 
   if (!silc_term_utf8()) {
-    int len = silc_utf8_encoded_len(argv[2], argv_lens[2], SILC_STRING_ASCII);
+    int len = silc_utf8_encoded_len(argv[2], argv_lens[2],
+				    SILC_STRING_LANGUAGE);
     message = silc_calloc(len + 1, sizeof(*message));
     g_return_if_fail(message != NULL);
-    silc_utf8_encode(argv[2], argv_lens[2], SILC_STRING_ASCII, message, len);
+    silc_utf8_encode(argv[2], argv_lens[2], SILC_STRING_LANGUAGE,
+		     message, len);
   }
 
   /* Send the action message */
@@ -321,10 +325,12 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
     cmd_return_error(CMDERR_CHAN_NOT_FOUND);
 
   if (!silc_term_utf8()) {
-    int len = silc_utf8_encoded_len(argv[1], argv_lens[1], SILC_STRING_ASCII);
+    int len = silc_utf8_encoded_len(argv[1], argv_lens[1],
+				    SILC_STRING_LANGUAGE);
     message = silc_calloc(len + 1, sizeof(*message));
     g_return_if_fail(message != NULL);
-    silc_utf8_encode(argv[1], argv_lens[1], SILC_STRING_ASCII, message, len);
+    silc_utf8_encode(argv[1], argv_lens[1], SILC_STRING_LANGUAGE,
+		     message, len);
   }
 
   /* Send the action message */

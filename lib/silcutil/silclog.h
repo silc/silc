@@ -221,7 +221,9 @@ extern DLLAPI bool silc_debug_hexdump;
 /* Macros */
 
 #ifdef SILC_WIN32
+#ifndef __FUNCTION__
 #define __FUNCTION__ ""
+#endif
 #endif
 
 /****d* silcutil/SilcLogAPI/SILC_LOG_INFO
@@ -330,8 +332,11 @@ extern DLLAPI bool silc_debug_hexdump;
 				__FUNCTION__, \
 				__LINE__, \
 				silc_format fmt)
+#define SILC_NOT_IMPLEMENTED(string) \
+  SILC_LOG_DEBUG(("*********** %s: NOT IMPLEMENTED YET", string));
 #else
 #define SILC_LOG_DEBUG(fmt)
+#define SILC_NOT_IMPLEMENTED(string)
 #endif	/* SILC_DEBUG */
 /***/
 

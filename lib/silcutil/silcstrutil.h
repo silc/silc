@@ -88,12 +88,15 @@ unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
  * SOURCE
  */
 typedef enum {
-  SILC_STRING_ASCII     = 0,	/* Any 8 bit ASCII encoding (default) */
-
-  /* Rest are not implemented yet */
-  SILC_STRING_ASCII_ESC = 1,	/* 7 bit ASCII (>0x7f escaped) */
-  SILC_STRING_BMP       = 2,	/* 16 bit, UCS-2, BMP, ISO/IEC 10646 */
-  SILC_STRING_UNIVERSAL = 3,	/* 32 bit, UCS-4, Universal, ISO/IEC 10646 */
+  SILC_STRING_ASCII         = 0, /* Any 8 bit ASCII encoding (default) */
+  SILC_STRING_ASCII_ESC     = 1, /* 7 bit ASCII (>0x7f escaped) */
+  SILC_STRING_BMP           = 2, /* 16 bit, UCS-2, BMP, ISO/IEC 10646 */
+  SILC_STRING_BMP_LSB       = 3, /* BMP, least significant byte first */
+  SILC_STRING_UNIVERSAL     = 4, /* 32 bit, UCS-4, Universal, ISO/IEC 10646 */
+  SILC_STRING_UNIVERSAL_LSB = 5, /* Universal, least significant byte first */
+  SILC_STRING_LANGUAGE      = 6, /* Language and charset specific conversion
+				    on those platforms that support iconv().
+				    Fallback is SILC_STRING_ASCII. */
 } SilcStringEncoding;
 /***/
 

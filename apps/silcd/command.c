@@ -97,15 +97,15 @@ SilcServerCommand silc_command_list[] =
 do {									     \
   SilcUInt32 _argc;							     \
 									     \
-  SILC_LOG_DEBUG(("Start"));						     \
-									     \
   if (silc_server_command_pending_error_check(cmd, context2, command)) {     \
+    SILC_LOG_DEBUG(("Error occurred in command reply, command not called")); \
     silc_server_command_free(cmd);					     \
     return;								     \
   }									     \
 									     \
   _argc = silc_argument_get_arg_num(cmd->args);				     \
   if (_argc < min) {							     \
+    SILC_LOG_DEBUG(("Not enough parameters in command"));		     \
     silc_server_command_send_status_reply(cmd, command,			     \
 					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, \
 					  0);				     \
@@ -113,6 +113,7 @@ do {									     \
     return;								     \
   }									     \
   if (_argc > max) {							     \
+    SILC_LOG_DEBUG(("Too many parameters in command"));			     \
     silc_server_command_send_status_reply(cmd, command,			     \
 					  SILC_STATUS_ERR_TOO_MANY_PARAMS,   \
 					  0);				     \
@@ -157,6 +158,7 @@ SILC_TASK_CALLBACK(silc_server_command_process_timeout)
   SilcClientEntry client = (SilcClientEntry)timeout->ctx->sock->user_data;
 
   if (!client) {
+    SILC_LOG_DEBUG(("Client entry is invalid"));
     silc_server_command_free(timeout->ctx);
     silc_free(timeout);
   }
@@ -164,15 +166,21 @@ SILC_TASK_CALLBACK(silc_server_command_process_timeout)
   /* Update access time */
   client->last_command = time(NULL);
 
-  if (!(timeout->cmd->flags & SILC_CF_REG))
+  if (!(timeout->cmd->flags & SILC_CF_REG)) {
+    SILC_LOG_DEBUG(("Calling %s command",
+		    silc_get_command_name(timeout->cmd->cmd)));
     timeout->cmd->cb(timeout->ctx, NULL);
-  else if (silc_server_is_registered(timeout->ctx->server, 
-				     timeout->ctx->sock, 
-				     timeout->ctx, 
-				     timeout->cmd->cmd))
+  } else if (silc_server_is_registered(timeout->ctx->server, 
+				       timeout->ctx->sock, 
+				       timeout->ctx, 
+				       timeout->cmd->cmd)) {
+    SILC_LOG_DEBUG(("Calling %s command",
+		    silc_get_command_name(timeout->cmd->cmd)));
     timeout->cmd->cb(timeout->ctx, NULL);
-  else
+  } else {
+    SILC_LOG_DEBUG(("Client is not registered"));
     silc_server_command_free(timeout->ctx);
+  }
 
   silc_free(timeout);
 }
@@ -186,8 +194,6 @@ void silc_server_command_process(SilcServer server,
   SilcServerCommandContext ctx;
   SilcServerCommand *cmd;
   SilcCommand command;
-
-  SILC_LOG_DEBUG(("Start"));
 
   /* Allocate command context. This must be free'd by the
      command routine receiving it. */
@@ -215,6 +221,7 @@ void silc_server_command_process(SilcServer server,
       break;
 
   if (!cmd || !cmd->cb) {
+    SILC_LOG_DEBUG(("Unknown command %d", command));
     silc_server_command_send_status_reply(ctx, command,
 					  SILC_STATUS_ERR_UNKNOWN_COMMAND, 0);
     silc_server_command_free(ctx);
@@ -261,12 +268,16 @@ void silc_server_command_process(SilcServer server,
 
   /* Execute for server */
 
-  if (!(cmd->flags & SILC_CF_REG))
+  if (!(cmd->flags & SILC_CF_REG)) {
+    SILC_LOG_DEBUG(("Calling %s command", silc_get_command_name(cmd->cmd)));
     cmd->cb(ctx, NULL);
-  else if (silc_server_is_registered(server, sock, ctx, cmd->cmd))
+  } else if (silc_server_is_registered(server, sock, ctx, cmd->cmd)) {
+    SILC_LOG_DEBUG(("Calling %s command", silc_get_command_name(cmd->cmd)));
     cmd->cb(ctx, NULL);
-  else
+  } else {
+    SILC_LOG_DEBUG(("Server is not registered"));
     silc_server_command_free(ctx);
+  }
 }
 
 /* Allocate Command Context */
@@ -3178,7 +3189,7 @@ static void silc_server_command_join_channel(SilcServer server,
   unsigned char *fkey = NULL;
   SilcUInt32 fkey_len = 0;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Joining client to channel"));
 
   if (!channel)
     return;
@@ -4971,8 +4982,6 @@ SILC_TASK_CALLBACK(silc_server_command_detach_timeout)
   SilcClientID *client_id = (SilcClientID *)q->sock;
   SilcClientEntry client;
 
-  SILC_LOG_DEBUG(("Start"));
-
   client = silc_idlist_find_client_by_id(q->server->local_list, client_id,
 					 FALSE, NULL);
 
@@ -5694,8 +5703,6 @@ SILC_SERVER_CMD_FUNC(getkey)
   SilcBuffer pk = NULL;
   SilcIdType id_type;
   SilcPublicKey public_key;
-
-  SILC_LOG_DEBUG(("Start"));
 
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
   if (!tmp) {

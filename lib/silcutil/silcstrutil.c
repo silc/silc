@@ -192,16 +192,62 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
     return bin_len;
   }
 
+  if (bin_encoding == SILC_STRING_LANGUAGE) {
+#if defined(HAVE_ICONV) && defined(HAVE_NL_LANGINFO) && defined(CODESET)
+    char *fromconv, *icp, *ocp;
+    iconv_t icd;
+    size_t inlen, outlen;
+
+    setlocale(LC_CTYPE, "");
+    fromconv = nl_langinfo(CODESET);
+    if (fromconv && strlen(fromconv)) {
+      icd = iconv_open("UTF-8", fromconv);
+      icp = (char *)bin;
+      ocp = (char *)utf8;
+      inlen = bin_len;
+      outlen = utf8_size;
+      if (icd != (iconv_t)-1 && 
+	  (iconv(icd, &icp, &inlen, &ocp, &outlen) != -1)) {
+	utf8_size -= outlen;
+	iconv_close(icd);
+	return utf8_size;
+      } else {
+	if (icd != (iconv_t)-1)
+	  iconv_close(icd);
+      }
+    }
+#endif
+
+    /* Fallback to 8-bit ASCII */
+    bin_encoding = SILC_STRING_ASCII;
+  }
+
   for (i = 0; i < bin_len; i++) {
     switch (bin_encoding) {
     case SILC_STRING_ASCII:
       charval = bin[i];
       break;
     case SILC_STRING_ASCII_ESC:
+      SILC_NOT_IMPLEMENTED("SILC_STRING_ASCII_ESC");
+      return 0;
       break;
     case SILC_STRING_BMP:
+      SILC_GET16_MSB(charval, bin + i);
+      i += 1;
+      break;
+    case SILC_STRING_BMP_LSB:
+      SILC_GET16_LSB(charval, bin + i);
+      i += 1;
       break;
     case SILC_STRING_UNIVERSAL:
+      SILC_GET32_MSB(charval, bin + i);
+      i += 3;
+      break;
+    case SILC_STRING_UNIVERSAL_LSB:
+      SILC_GET32_LSB(charval, bin + i);
+      i += 3;
+      break;
+    case SILC_STRING_LANGUAGE:
       break;
     }
 
@@ -289,6 +335,36 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
 
   if (!utf8 || !utf8_len)
     return 0;
+
+  if (bin_encoding == SILC_STRING_LANGUAGE) {
+#if defined(HAVE_ICONV) && defined(HAVE_NL_LANGINFO) && defined(CODESET)
+    char *toconv, *icp, *ocp;
+    iconv_t icd;
+    size_t inlen, outlen;
+
+    setlocale(LC_CTYPE, "");
+    toconv = nl_langinfo(CODESET);
+    if (toconv && strlen(toconv)) {
+      icd = iconv_open(toconv, "UTF-8");
+      icp = (char *)utf8;
+      ocp = (char *)bin;
+      inlen = utf8_len;
+      outlen = bin_size;
+      if (icd != (iconv_t)-1 && 
+	  (iconv(icd, &icp, &inlen, &ocp, &outlen) != -1)) {
+	bin_size -= outlen;
+	iconv_close(icd);
+	return bin_size;
+      } else {
+	if (icd != (iconv_t)-1)
+	  iconv_close(icd);
+      }
+    }
+#endif
+
+    /* Fallback to 8-bit ASCII */
+    bin_encoding = SILC_STRING_ASCII;
+  }
 
   for (i = 0; i < utf8_len; i++) {
     if ((utf8[i] & 0x80) == 0x00) {
@@ -383,13 +459,26 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       enclen++;
       break;
     case SILC_STRING_ASCII_ESC:
+      SILC_NOT_IMPLEMENTED("SILC_STRING_ASCII_ESC");
       return 0;
       break;
     case SILC_STRING_BMP:
-      return 0;
+      SILC_PUT16_MSB(charval, bin + enclen);
+      enclen += 2;
+      break;
+    case SILC_STRING_BMP_LSB:
+      SILC_PUT16_LSB(charval, bin + enclen);
+      enclen += 2;
       break;
     case SILC_STRING_UNIVERSAL:
-      return 0;
+      SILC_PUT32_MSB(charval, bin + enclen);
+      enclen += 4;
+      break;
+    case SILC_STRING_UNIVERSAL_LSB:
+      SILC_PUT32_LSB(charval, bin + enclen);
+      enclen += 4;
+      break;
+    case SILC_STRING_LANGUAGE:
       break;
     }
   }

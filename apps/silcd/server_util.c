@@ -1173,6 +1173,8 @@ void silc_server_send_connect_notifys(SilcServer server,
 {
   SilcIDListData idata = (SilcIDListData)client;
 
+  SILC_LOG_DEBUG(("Send welcome notifys"));
+
   /* Send some nice info to the client */
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Welcome to the SILC Network %s",
@@ -1366,7 +1368,8 @@ bool silc_server_check_watcher_list(SilcServer server,
   unsigned char hash[16];
   WatcherNotifyContext n;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Checking watcher list %s",
+		  client->nickname ? client->nickname : ""));
 
   /* If the watching is rejected by the client do nothing */
   if (client->mode & SILC_UMODE_REJECT_WATCHING)

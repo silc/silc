@@ -194,10 +194,10 @@ static void send_message(SILC_SERVER_REC *server, char *target,
   g_return_if_fail(msg != NULL);
 
   if (!silc_term_utf8()) {
-    len = silc_utf8_encoded_len(msg, strlen(msg), SILC_STRING_ASCII);
+    len = silc_utf8_encoded_len(msg, strlen(msg), SILC_STRING_LANGUAGE);
     message = silc_calloc(len + 1, sizeof(*message));
     g_return_if_fail(message != NULL);
-    silc_utf8_encode(msg, strlen(msg), SILC_STRING_ASCII, message, len);
+    silc_utf8_encode(msg, strlen(msg), SILC_STRING_LANGUAGE, message, len);
   }
 
   if (target_type == SEND_TARGET_CHANNEL)

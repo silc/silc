@@ -967,11 +967,11 @@ bool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
 /* Status message structure. Messages are defined below. */
 typedef struct {
   SilcStatus status;
-  char *message;
+  const char *message;
 } SilcStatusMessage;
 
 #define STAT(x) SILC_STATUS_ERR_##x
-const SilcStatusMessage silc_status_messages[] = {
+static const SilcStatusMessage silc_status_messages[] = {
 
   { STAT(NO_SUCH_NICK),      "There was no such nickname" },
   { STAT(NO_SUCH_CHANNEL),   "There was no such channel" },
@@ -1023,7 +1023,7 @@ const SilcStatusMessage silc_status_messages[] = {
 
 /* Returns status message string */
 
-char *silc_get_status_message(unsigned char status)
+const char *silc_get_status_message(unsigned char status)
 {
   int i;
 
@@ -1036,4 +1036,93 @@ char *silc_get_status_message(unsigned char status)
     return "";
 
   return silc_status_messages[i].message;
+}
+
+static const char *packet_name[] = {
+  "NONE",
+  "DISCONNECT",
+  "SUCCESS",
+  "FAILURE",
+  "REJECT",
+  "NOTIFY",
+  "ERROR",
+  "CHANNEL MESSAGE",
+  "CHANNEL KEY",
+  "PRIVATE MESSAGE",
+  "PRIVATE MESSAGE KEY",
+  "COMMAND",
+  "COMMAND REPLY",
+  "KEY EXCHANGE",
+  "KEY EXCHANGE 1",
+  "KEY EXCHANGE 2",
+  "CONNECTION AUTH REQUEST",
+  "CONNECTION AUTH",
+  "NEW ID",
+  "NEW CLIENT",
+  "NEW SERVER",
+  "NEW CHANNEL",
+  "REKEY",
+  "REKEY_DONE",
+  "HEARTBEAT",
+  "KEY AGREEMENT",
+  "RESUME ROUTER",
+  "FTP",
+  "RESUME CLIENT",
+};
+
+/* Returns packet type name */
+
+const char *silc_get_packet_name(unsigned char type)
+{
+  if (type >= SILC_PACKET_MAX)
+    return "RESERVED";
+  if (type >= SILC_PACKET_PRIVATE)
+    return "PRIVATE RANGE";
+  if (type > (sizeof(packet_name) / sizeof(*packet_name)))
+    return "UNKNOWN";
+  return packet_name[type];
+}
+
+static const char *command_name[] = {
+  "NONE",
+  "WHOIS",
+  "WHOWAS",
+  "IDENTIFY",
+  "NICK",
+  "LIST",
+  "TOPIC",
+  "INVITE",
+  "QUIT",
+  "KILL",
+  "INFO",
+  "STATS",
+  "PING",
+  "OPER",
+  "JOIN",
+  "MOTD",
+  "UMODE",
+  "CMODE",
+  "CUMODE",
+  "KICK",
+  "BAN",
+  "DETACH",
+  "WATCH",
+  "SILCOPER",
+  "LEAVE",
+  "USERS",
+  "GETKEY",
+  "SERVICE",
+};
+
+/* Returns command name */
+
+const char *silc_get_command_name(unsigned char command)
+{
+  if (command >= SILC_COMMAND_RESERVED)
+    return "RESERVED";
+  if (command >= SILC_COMMAND_PRIVATE)
+    return "PRIVATE RANGE";
+  if (command > (sizeof(command_name) / sizeof(*command_name)))
+    return "UNKNOWN";
+  return command_name[command];
 }

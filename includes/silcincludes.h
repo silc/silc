@@ -201,6 +201,18 @@ extern "C" {
 #include <utime.h>
 #endif
 
+#ifdef HAVE_ICONV_H
+#include <iconv.h>
+#endif
+
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+
+#ifdef HAVE_LANGINFO_H
+#include <langinfo.h>
+#endif
+
 #endif				/* !SILC_WIN32 */
 
 #ifndef HAVE_GETOPT_LONG

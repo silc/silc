@@ -122,9 +122,10 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, char *p,
     /* p is a plain text password */
     if (auth_data && auth_data_len) {
       if (!silc_utf8_valid(p, strlen(p))) {
-	*auth_data_len = silc_utf8_encoded_len(p, strlen(p), 0);
+	*auth_data_len = silc_utf8_encoded_len(p, strlen(p),
+					       SILC_STRING_LANGUAGE);
 	*auth_data = silc_calloc(*auth_data_len, sizeof(unsigned char));
-	silc_utf8_encode(p, strlen(p), SILC_STRING_ASCII, *auth_data,
+	silc_utf8_encode(p, strlen(p), SILC_STRING_LANGUAGE, *auth_data,
 			 *auth_data_len);
       } else {
 	*auth_data = (void *) strdup(p);

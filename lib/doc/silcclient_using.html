@@ -304,6 +304,86 @@ process manually.
 
 
 <br />&nbsp;<br />&nbsp;<br />
+<b>Debugging</b>
+
+<br />&nbsp;<br />
+Being able to debug what you have coded is important when troubles occurs
+during coding, and they always do.  SILC supports extensive debugging
+capabilities which are also available for client library user.  You should
+have compiled the Toolkit with --enable-debug option so that run-time
+debugging is enabled.
+
+<br />&nbsp;<br />
+To turn on the run-time debugging set the global variable "silc_debug" to
+TRUE.  To see packet hexdumps you can set also "silc_debug_hexdump" to TRUE.
+Hexdumps can create more debug log so not setting it to TRUE by default is
+probably best.  To get debug messages out of specific modules you can set
+a debug string with silc_log_set_debug_string function.  The function takes
+regex string as argument, for example:
+
+<br />&nbsp;<br />
+<tt>
+&nbsp;&nbsp;silc_debug = TRUE;<br />
+&nbsp;&nbsp;silc_log_set_debug_string("*");<br />
+</tt>
+
+<br />&nbsp;<br />
+This piece of code turns on the debugging and sets "*" as debug string.  This
+means that all debug messages are printed.  To get debugging out of only
+for example SILC Client Library the debug string could be "silc_client*".
+The debug string matches to function names and filenames so it is possible
+to get debugging out of specific files, and specific functions.  Other
+examples could be:
+
+<br />&nbsp;<br />
+<tt>
+&nbsp;&nbsp;silc_log_set_debug_string("silc_client*,*socket*,*ske*");<br />
+</tt>
+
+<br />&nbsp;<br />
+By default, all debug messages are printed to standard error output (stderr).
+If you want to redirect the debug messages somewhere else you can set your
+own debug callback with silc_log_set_debug_callbacks function:
+
+<br />&nbsp;<br />
+<tt>
+&nbsp;&nbsp;silc_log_set_debug_callbacks(my_debug_callback, my_context, my_hexdump_callback, my_context);<br />
+</tt>
+
+<br />&nbsp;<br />
+See the lib/silcutil/silclog.h for definition of the callbacks.  See the
+same file for other logging and debugging information.
+
+<br />&nbsp;<br />
+You can also use SILC debugging capabilities in your own application.  To
+produce debug messages you can use SILC_LOG_DEBUG and SILC_LOG_HEXDUMP
+macros in your application.  The SILC_LOG_DEBUG can print out normal debug
+messages with variable argument list, for example:
+
+<br />&nbsp;<br />
+<tt>
+&nbsp;&nbsp;SILC_LOG_DEBUG(("Start"));<br />
+&nbsp;&nbsp;SILC_LOG_DEBUG(("Packet length %d", packet_len));<br />
+&nbsp;&nbsp;SILC_LOG_DEBUG(("The remote is %s on %d", sock->ip, sock->port));
+</tt>
+
+<br />&nbsp;<br />
+The SILC_LOG_HEXDUMP macro can be used dump data which couldn't be printed
+out otherwise, for example binary data.
+
+<br />&nbsp;<br />
+<tt>
+&nbsp;&nbsp;SILC_LOG_HEXDUMP(("Packet"), packet->data, packet->len);<br />
+&nbsp;&nbsp;SILC_LOG_HEXDUMP(("Packet, size=%d", size), packet->data, packet->len);
+</tt>
+
+<br />&nbsp;<br />
+Note that the variable arguments in SILC_LOG_HEXDUMP are before the second
+last parenthesis, and the last two arguments are the data, and its length that
+are hexdumped.
+
+
+<br />&nbsp;<br />&nbsp;<br />
 <b>Example Client</b>
 
 <br />&nbsp;<br />
@@ -333,6 +413,8 @@ int main()
 	  silc_ask_passphrase,
 	  silc_failure,
 	  silc_key_agreement,
+	  silc_ftp,
+	  silc_detach
 	};
 
 	SilcClient client;

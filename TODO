@@ -1,6 +1,8 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o Do UTF-8 decoding on non-utf terminals with iconv() if available.
+
  o Testing
 
 
@@ -44,6 +46,11 @@ TODO/bugs In SILC Server
 
 TODO/bugs In SILC Libraries
 ===========================
+
+ o Remove ../lib/contrib/ from includes and use relative path instead.
+
+ o Remove default irssi/ silcd/ compilation on toolkit, add maybe
+   --without-silcd and --without-irssi.
 
  o WIN32 silc_net_create_connection_async does not work the same way
    than on Unix.  Do it with threads on WIN32.  The function works but

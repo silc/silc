@@ -156,7 +156,7 @@ void silc_server_packet_send_dest(SilcServer server,
   if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED)
     return;
 
-  SILC_LOG_DEBUG(("Sending packet, type %d", type));
+  SILC_LOG_DEBUG(("Sending %s packet", silc_get_packet_name(type)));
 
   if (dst_id) {
     dst_id_data = silc_id_id2str(dst_id, dst_id_type);
@@ -241,7 +241,7 @@ void silc_server_packet_send_srcdest(SilcServer server,
   SilcUInt32 src_id_len = 0;
   int block_len = 0;
 
-  SILC_LOG_DEBUG(("Sending packet, type %d", type));
+  SILC_LOG_DEBUG(("Sending %s packet", silc_get_packet_name(type)));
 
   /* Get data used in the packet sending, keys and stuff */
   idata = (SilcIDListData)sock->user_data;
@@ -1651,7 +1651,7 @@ void silc_server_send_new_id(SilcServer server,
 {
   SilcBuffer idp;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Sending new ID"));
 
   idp = silc_id_payload_encode(id, id_type);
   silc_server_packet_send(server, sock, SILC_PACKET_NEW_ID, 
@@ -1676,7 +1676,7 @@ void silc_server_send_new_channel(SilcServer server,
   unsigned char *cid;
   SilcUInt32 name_len = strlen(channel_name);
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Sending new channel"));
 
   cid = silc_id_id2str(channel_id, SILC_ID_CHANNEL);
   if (!cid)
