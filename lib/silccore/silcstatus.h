@@ -93,6 +93,7 @@ typedef SilcUInt8 SilcStatus;
 #define SILC_STATUS_ERR_AUTH_FAILED         45
 #define SILC_STATUS_ERR_UNKNOWN_ALGORITHM   46
 #define SILC_STATUS_ERR_NO_SUCH_SERVER_ID   47
+#define SILC_STATUS_ERR_NO_SUCH_SERVICE     49
 /***/
 
 #endif /* SILCSTATUS_H */

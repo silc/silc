@@ -1711,7 +1711,61 @@ List of all defined commands in SILC follows.
             SILC_STATUS_ERR_NO_SUCH_SERVER_ID
 
 
-   27 - 199
+   27   SILC_COMMAND_SERVICE
+
+        Max Arguments:  256
+            Arguments:  (1) [<service name>]    (2) [<auth payload>]
+                        (n) [...]
+
+        This command is used to negotiate a service agreement with a
+        remote server.  If this command is given without arguments it
+        MAY return the service list, if it is publicly available.  The
+        <service name> is a service sepcific identifier, and the
+        <auth payload> MAY be used to authenticate the requestor to the
+        remote service.  The authentication to a service may be based
+        on previous agreement with the requestor and the service
+        provider.  The command MAY also take additional service
+        specific arguments.
+
+        This document does not specify any services.  How the services
+        are configured and put available in a server is also out of
+        scope of this document.
+
+        This command MAY be used by client to start using some service
+        in a server, but it also MAY be used by server to negotiate
+        to start using a service in some other server or router.
+
+        After the negotiation is done both of the parties need to know
+        from the service identifier how the service can be used.  The
+        service can be considered to be a protocol which both of the
+        parties need to support.
+
+        Reply messages to the command:
+
+        Max Arguments:  256
+            Arguments:  (1) <Status Payload>      (2) [<service list>]
+                        (3) [<service name>]      (n) [...]
+
+
+        This command MAY reply with the <service list> when command is
+        given without arguments, and the list is a comma separated list
+        of service identifiers.  The <service name> is the service that
+        the sender requested and this is provided when the server has
+        accepted the sender to use the <service name>.  The command
+        reply MAY also have additional service specific arguments.
+
+        Status messages:
+
+            SILC_STATUS_OK
+            SILC_STATUS_ERR_NOT_REGISTERED
+            SILC_STATUS_ERR_NOT_ENOUGH_PARAMS
+            SILC_STATUS_ERR_TOO_MANY_PARAMS
+            SILC_STATUS_ERR_NO_SUCH_SERVICE
+            SILC_STATUS_ERR_AUTH_FAILED
+            SILC_STATUS_ERR_PERM_DENIED
+
+
+   28 - 199
 
         Currently undefined commands.
 
@@ -2048,6 +2102,11 @@ List of all defined status types:
         "No such Server ID".  Server ID provided does not exist.
         The unknown Server ID MUST be provided as next argument
         in the reply.
+
+   49   SILC_STATUS_ERR_NO_SUCH_SERVICE
+
+        "Service does not exist".  Requested service identifier is
+        unknown.
 
 .in 3
 

@@ -149,6 +149,7 @@ typedef unsigned char SilcCommand;
 #define SILC_COMMAND_LEAVE		24
 #define SILC_COMMAND_USERS		25
 #define SILC_COMMAND_GETKEY		26
+#define SILC_COMMAND_SERVICE		27
 
 /* Private range start */
 #define SILC_COMMAND_PRIV_CONNECT       200

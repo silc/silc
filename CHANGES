@@ -1,3 +1,11 @@
+Fri Apr 19 09:02:20 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added service support to SILC protocol.  Added new command
+          SILC_COMMAND_SERVICE.  Updated the protocol specs and the
+          core library.  Services are not implemented in server or
+          client for now.  Protocol TODO #20.  Affected files are
+          lib/silccore/silcstatus.h, lib/silccore/silccommand.h.
+
 Thu Apr 18 14:09:51 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_mime_parse function to parse MIME headers.
