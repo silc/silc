@@ -693,6 +693,7 @@ lib/silcclient/Makefile
 lib/silccore/Makefile
 lib/silccrypt/Makefile
 lib/silcmath/Makefile
+lib/silcmath/mpi/Makefile
 lib/silcmath/mpi/Makefile.defines
 lib/silcmath/mpi/Makefile.defines_int
 lib/silcsim/Makefile
