@@ -1395,8 +1395,15 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
     if (ret == -2)
       return;
 
-    if (ret == -1)
+    if (ret == -1) {
+      SILC_LOG_ERROR(("Error sending packet to connection "
+		      "%s:%d [%s]", sock->hostname, sock->port,  
+		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		       "Router")));
       return;
+    }
     
     /* The packet has been sent and now it is time to set the connection
        back to only for input. When there is again some outgoing data 
@@ -1413,9 +1420,16 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
 
   /* Read some data from connection */
   ret = silc_packet_receive(sock);
-  if (ret < 0)
+  if (ret < 0) {
+    SILC_LOG_ERROR(("Error receiving packet from connection "
+		    "%s:%d [%s]", sock->hostname, sock->port,  
+		    (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		     sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		     sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		     "Router")));
     return;
-    
+  }    
+
   /* EOF */
   if (ret == 0) {
     SILC_LOG_DEBUG(("Read EOF"));
