@@ -124,7 +124,7 @@ cp Makefile.defines_int.in lib/silcmath/mpi
 aclocal
 autoconf
 autoheader >/dev/null 2>/dev/null
-libtoolize --automake --force --copy
+libtoolize --automake --copy
 automake
 
 echo "Preparing mpi"
@@ -132,7 +132,7 @@ cd lib/silcmath/mpi
 aclocal
 autoconf
 autoheader >/dev/null 2>/dev/null
-libtoolize --automake --force --copy
+libtoolize --automake --copy
 automake >/dev/null 2>/dev/null
 cd ../../..
 
