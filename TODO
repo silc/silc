@@ -31,10 +31,11 @@ TODO/bugs In SILC Client Library
 ================================
 
  o Library should save the cumode and not start from 0 everytime then
-   CUMODE is issued.
-
- o Add some silc_client_del_client and other deletion funtions for
-   application to delete client entrys from the cache.
+   CUMODE is issued.  A mechanism of getting the channel entry for
+   CMODE and CUMODE by the command reply identifier must be added.
+   Otherwise saving the modes for the channels and channel user
+   entries are impossible since server does not send Channel ID as
+   command reply in these functions.
 
  o All protocol execution timeouts are hard coded. They should be 
    configurable and the Irssi SILC client should be able to set them
@@ -43,9 +44,6 @@ TODO/bugs In SILC Client Library
 
  o silc_client_close_connection leaks memory.  Read the XXX from code.
 
- o Some of the ops->say's should be removed and moved to the application
-   from the library.  Go through these.
-
  o The client library must manage somehow when receiving client that has
    same nickname, same server, same username but different Client ID than
    what we have in the cache.  It is now assumed that they are different
@@ -53,13 +51,6 @@ TODO/bugs In SILC Client Library
    using the client->num so that they can be accessed from the user
    interface separately or it could just remove the old client unless
    it is on some channels.
-
- o Add client library parameters or options that handle what kind of
-   messages the library should print out (using `say' client operation,
-   for example) and what is left for the application to print.  The
-   appliation could for example set that it handles all command printing
-   but all error printing should be handled by the library, etc...
-   This is not a showstopper.
 
 
 TODO/bugs In SILC Server
@@ -188,6 +179,8 @@ TODO After 1.0
    someone would like to write the X.509 library - but I'm not going 
    to start writing one myself.  Anyhow, the OpenSSL X.509 lib should
    be checked.
+
+   Other package that should be checked is the NSS's X509 library.
 
  o SSH2 public keys support.  Maybe - not really needed but could be
    nice as SSH is widely used all over the place.  SILC Protocol 

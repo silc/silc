@@ -800,7 +800,8 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   g_free(tmp);
 
   if (argc < 4) {
-    silc_say(silc_client, conn, "Usage: /KEY msg|channel <nickname|channel> "
+    silc_say(silc_client, conn, SILC_CLIENT_MESSAGE_INFO,
+	     "Usage: /KEY msg|channel <nickname|channel> "
 	     "set|unset|agreement|negotiate [<arguments>]");
     return;
   }
@@ -812,7 +813,8 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
     type = 2;
 
   if (type == 0) {
-    silc_say(silc_client, conn, "Usage: /KEY msg|channel <nickname|channel> "
+    silc_say(silc_client, conn, SILC_CLIENT_MESSAGE_INFO,
+	     "Usage: /KEY msg|channel <nickname|channel> "
 	     "set|unset|agreement|negotiate [<arguments>]");
     return;
   }
@@ -1018,7 +1020,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 	  else
 	    strcat(buf, "*generated*");
 
-	  silc_say(silc_client, conn, "%s", buf);
+	  silc_say(silc_client, conn, SILC_CLIENT_MESSAGE_INFO, "%s", buf);
 	}
       } else {
 	printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
@@ -1049,7 +1051,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 	  else
 	    strcat(buf, "*generated*");
 
-	  silc_say(silc_client, conn, "%s", buf);
+	  silc_say(silc_client, conn, SILC_CLIENT_MESSAGE_INFO, "%s", buf);
 	}
       }
 
@@ -1089,7 +1091,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 	
 	strcat(buf, "<hidden>");
 
-	silc_say(silc_client, conn, "%s", buf);
+	silc_say(silc_client, conn, SILC_CLIENT_MESSAGE_INFO, "%s", buf);
       }
       
       silc_client_free_channel_private_keys(keys, keys_count);
@@ -1128,7 +1130,8 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   }
 
   if (command == 0) {
-    silc_say(silc_client, conn, "Usage: /KEY msg|channel <nickname|channel> "
+    silc_say(silc_client, conn, SILC_CLIENT_MESSAGE_INFO,
+	     "Usage: /KEY msg|channel <nickname|channel> "
 	     "set|unset|agreement|negotiate [<arguments>]");
     goto out;
   }

@@ -242,7 +242,7 @@ static void silc_client_private_message_key_cb(SilcClient client,
     goto out;
 
   /* Print some info for application */
-  client->ops->say(client, conn, 
+  client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
 		   "Received private message key from %s%s%s %s%s%s", 
 		   clients[0]->nickname,
 		   clients[0]->server ? "@" : "",

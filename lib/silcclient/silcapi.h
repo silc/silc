@@ -166,6 +166,27 @@ typedef void (*SilcAskPassphrase)(unsigned char *passphrase,
  ***/
 typedef void (*SilcVerifyPublicKey)(bool success, void *context);
 
+/****d* silcclient/SilcClientAPI/SilcClientMessageType
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcClientMessageType;
+ *
+ * DESCRIPTION
+ *
+ *    Different message types for `say' client operation.  The application
+ *    may filter the message sent by the library according this type.
+ *
+ * SOURCE
+ */
+typedef enum {
+  SILC_CLIENT_MESSAGE_INFO,	       /* Informational */
+  SILC_CLIENT_MESSAGE_WARNING,	       /* Warning */
+  SILC_CLIENT_MESSAGE_ERROR,	       /* Error */
+  SILC_CLIENT_MESSAGE_AUDIT,	       /* Auditable */
+} SilcClientMessageType;
+/***/
+
 /****s* silcclient/SilcClientAPI/SilcClientOperations
  *
  * NAME
@@ -183,8 +204,12 @@ typedef void (*SilcVerifyPublicKey)(bool success, void *context);
  */
 typedef struct {
   /* Message sent to the application by library. `conn' associates the
-     message to a specific connection.  `conn', however, may be NULL. */
-  void (*say)(SilcClient client, SilcClientConnection conn, char *msg, ...);
+     message to a specific connection.  `conn', however, may be NULL. 
+     The `type' indicates the type of the message sent by the library.
+     The applicationi can for example filter the message according the
+     type. */
+  void (*say)(SilcClient client, SilcClientConnection conn, 
+	      SilcClientMessageType type, char *msg, ...);
 
   /* Message for a channel. The `sender' is the sender of the message 
      The `channel' is the channel. */
@@ -749,6 +774,40 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 					  SilcClientID *client_id,
 					  SilcGetClientCallback completion,
 					  void *context);
+
+/****f* silcclient/SilcClientAPI/silc_client_del_client
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
+ *                                SilcClientEntry client_entry)
+ *
+ * DESCRIPTION
+ *
+ *    Removes client from local cache by the client entry indicated by
+ *    the `client_entry'.  Returns TRUE if the deletion were successful.
+ *
+ ***/
+bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
+			    SilcClientEntry client_entry);
+
+/****f* silcclient/SilcClientAPI/silc_client_del_client_by_id
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_client_del_client_by_id(SilcClient client, 
+ *                                      SilcClientConnection conn,
+ *                                      SilcClientID *client_id);
+ *
+ * DESCRIPTION
+ *
+ *    Removes client from local cache by the Client ID indicated by
+ *    the `Client ID'.  Returns TRUE if the deletion were successful.
+ *
+ ***/
+bool silc_client_del_client_by_id(SilcClient client, 
+				  SilcClientConnection conn,
+				  SilcClientID *client_id);
 
 /****f* silcclient/SilcClientAPI/silc_client_get_channel
  *

@@ -177,12 +177,30 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   return FALSE;
 }
 
+void silc_say(SilcClient client, SilcClientConnection conn, 
+	      char *msg, ...)
+{
+  va_list vp;
+  char message[2048];
+  SilcClientInternal app = (SilcClientInternal)client->application;
+
+  memset(message, 0, sizeof(message));
+  strncat(message, "\n***  ", 5);
+
+  va_start(vp, msg);
+  vsprintf(message + 5, msg, vp);
+  va_end(vp);
+  
+  /* Print the message */
+  silc_print_to_window(app->screen->output_win[0], message);
+}
+
 /* Prints a message with three star (*) sign before the actual message
    on the current output window. This is used to print command outputs
    and error messages. */
 
-void silc_say(SilcClient client, SilcClientConnection conn, 
-	      char *msg, ...)
+void silc_op_say(SilcClient client, SilcClientConnection conn, 
+		 SilcClientMessageType type, char *msg, ...)
 {
   va_list vp;
   char message[2048];
@@ -592,7 +610,7 @@ void silc_client_show_users(SilcClient client,
     k++;
   }
 
-  client->ops->say(client, conn, "Users on %s: %s", channel->channel_name, 
+  silc_say(client, conn, "Users on %s: %s", channel->channel_name, 
 		   name_list);
   silc_free(name_list);
 }
@@ -638,10 +656,10 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
 					   3, NULL);
 	  if (tmp)
-	    client->ops->say(client, conn, "%s: %s", tmp,
+	    silc_say(client, conn, "%s: %s", tmp,
 			     silc_client_command_status_message(status));
 	  else
-	    client->ops->say(client, conn, "%s",
+	    silc_say(client, conn, "%s",
 			     silc_client_command_status_message(status));
 	  break;
 	}
@@ -675,7 +693,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  strncat(buf, ")", 1);
 	}
 
-	client->ops->say(client, conn, "%s", buf);
+	silc_say(client, conn, "%s", buf);
 
 	if (channels) {
 	  SilcDList list = silc_channel_payload_parse_list(channels);
@@ -698,7 +716,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	      silc_free(m);
 	    }
 
-	    client->ops->say(client, conn, "%s", buf);
+	    silc_say(client, conn, "%s", buf);
 	    silc_channel_payload_list_free(list);
 	  }
 	}
@@ -706,18 +724,18 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	if (mode) {
 	  if ((mode & SILC_UMODE_SERVER_OPERATOR) ||
 	      (mode & SILC_UMODE_ROUTER_OPERATOR))
-	    client->ops->say(client, conn, "%s is %s", nickname,
+	    silc_say(client, conn, "%s is %s", nickname,
 			     (mode & SILC_UMODE_SERVER_OPERATOR) ?
 			     "Server Operator" :
 			     (mode & SILC_UMODE_ROUTER_OPERATOR) ?
 			     "SILC Operator" : "[Unknown mode]");
 
 	  if (mode & SILC_UMODE_GONE)
-	    client->ops->say(client, conn, "%s is gone", nickname);
+	    silc_say(client, conn, "%s is gone", nickname);
 	}
 
 	if (idle && nickname)
-	  client->ops->say(client, conn, "%s has been idle %d %s",
+	  silc_say(client, conn, "%s has been idle %d %s",
 			   nickname,
 			   idle > 60 ? (idle / 60) : idle,
 			   idle > 60 ? "minutes" : "seconds");
@@ -735,10 +753,10 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
 					   3, NULL);
 	  if (tmp)
-	    client->ops->say(client, conn, "%s: %s", tmp,
+	    silc_say(client, conn, "%s: %s", tmp,
 			     silc_client_command_status_message(status));
 	  else
-	    client->ops->say(client, conn, "%s",
+	    silc_say(client, conn, "%s",
 			     silc_client_command_status_message(status));
 	  break;
 	}
@@ -769,7 +787,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  strncat(buf, ")", 1);
 	}
 
-	client->ops->say(client, conn, "%s", buf);
+	silc_say(client, conn, "%s", buf);
       }
       break;
 
@@ -817,7 +835,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	client_id_list = va_arg(vp, SilcBuffer);
 
 	if (topic)
-	  client->ops->say(client, conn, "Topic for %s: %s", 
+	  silc_say(client, conn, "Topic for %s: %s", 
 			   app->screen->bottom_line->channel, topic);
 	
 	app->screen->bottom_line->channel_mode = 
@@ -1308,7 +1326,7 @@ int silc_key_agreement(SilcClient client, SilcClientConnection conn,
 
 /* SILC client operations */
 SilcClientOperations ops = {
-  silc_say,
+  silc_op_say,
   silc_channel_message,
   silc_private_message,
   silc_notify,

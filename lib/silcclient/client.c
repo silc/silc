@@ -279,7 +279,7 @@ int silc_client_connect_to_server(SilcClient client, int port,
 
   conn = silc_client_add_connection(client, host, port, context);
 
-  client->ops->say(client, conn, 
+  client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
 		   "Connecting to port %d of server %s", port, host);
 
   /* Allocate internal context for connection process. This is
@@ -337,7 +337,7 @@ int silc_client_start_key_exchange(SilcClient client,
 		      &protocol, (void *)proto_ctx,
 		      silc_client_connect_to_server_second);
   if (!protocol) {
-    client->ops->say(client, conn, 
+    client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 		     "Error: Could not start authentication protocol");
     return FALSE;
   }
@@ -375,9 +375,10 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
   if (opt != 0) {
     if (ctx->tries < 2) {
       /* Connection failed but lets try again */
-      client->ops->say(client, conn, "Could not connect to server %s: %s",
+      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+		       "Could not connect to server %s: %s",
 		       ctx->host, strerror(opt));
-      client->ops->say(client, conn, 
+      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
 		       "Connecting to port %d of server %s resumed", 
 		       ctx->port, ctx->host);
 
@@ -391,7 +392,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
       ctx->tries++;
     } else {
       /* Connection failed and we won't try anymore */
-      client->ops->say(client, conn, "Could not connect to server %s: %s",
+      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+		       "Could not connect to server %s: %s",
 		       ctx->host, strerror(opt));
       silc_schedule_unset_listen_fd(client->schedule, fd);
       silc_net_close_connection(fd);
@@ -1229,7 +1231,7 @@ void silc_client_disconnected_by_server(SilcClient client,
 
   msg = silc_calloc(message->len + 1, sizeof(char));
   memcpy(msg, message->data, message->len);
-  client->ops->say(client, sock->user_data, msg);
+  client->ops->say(client, sock->user_data, SILC_CLIENT_MESSAGE_AUDIT, msg);
   silc_free(msg);
 
   SILC_SET_DISCONNECTED(sock);
@@ -1247,7 +1249,7 @@ void silc_client_error_by_server(SilcClient client,
 
   msg = silc_calloc(message->len + 1, sizeof(char));
   memcpy(msg, message->data, message->len);
-  client->ops->say(client, sock->user_data, msg);
+  client->ops->say(client, sock->user_data, SILC_CLIENT_MESSAGE_AUDIT, msg);
   silc_free(msg);
 }
 

@@ -213,7 +213,7 @@ SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
     status = SILC_SKE_STATUS_BAD_VERSION;
 
   if (status != SILC_SKE_STATUS_OK)
-    client->ops->say(client, conn, 
+    client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
 		     "We don't support server version `%s'", version);
 
   return status;
@@ -239,15 +239,15 @@ static void silc_client_protocol_ke_continue(SilcSKE ske,
 
   if (ske->status != SILC_SKE_STATUS_OK) {
     if (ske->status == SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY) {
-      client->ops->say(client, conn, 
+      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
 		       "Received unsupported server %s public key",
 		       ctx->sock->hostname);
     } else if (ske->status == SILC_SKE_STATUS_PUBLIC_KEY_NOT_PROVIDED) {
-      client->ops->say(client, conn, 
+      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
 		       "Remote host did not send its public key, even though "
 		       "it must send it");
     } else {
-      client->ops->say(client, conn,
+      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 		       "Error during key exchange protocol with server %s",
 		       ctx->sock->hostname);
     }
@@ -455,11 +455,11 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 
       if (status != SILC_SKE_STATUS_OK) {
         if (status == SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY) {
-          client->ops->say(client, conn, 
+          client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
 			   "Received unsupported server %s public key",
 			   ctx->sock->hostname);
         } else {
-          client->ops->say(client, conn,
+          client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
 			   "Error during key exchange protocol with server %s",
 			   ctx->sock->hostname);
         }
@@ -675,7 +675,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
 	  break;
 	}
 
-	client->ops->say(client, conn, 
+	client->ops->say(client, conn, SILC_CLIENT_MESSAGE_INFO,
 			 "Password authentication required by server %s",
 			 ctx->sock->hostname);
 	client->ops->ask_passphrase(client, conn,

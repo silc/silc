@@ -152,7 +152,7 @@ SILC_TASK_CALLBACK(silc_client_process_key_agreement)
 
   sock = silc_net_accept_connection(ke->fd);
   if (sock < 0) {
-    client->ops->say(client, conn, 
+    client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
 		     "Could not accept key agreement connection: ", 
 		     strerror(errno));
     ke->client_entry->ke = NULL;
@@ -180,7 +180,7 @@ SILC_TASK_CALLBACK(silc_client_process_key_agreement)
   /* Perform name and address lookups for the remote host. */
   silc_net_check_host_by_sock(sock, &newsocket->hostname, &newsocket->ip);
   if (!newsocket->hostname && !newsocket->ip) {
-    client->ops->say(client, conn, 
+    client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
 		     "Could not resolve the remote IP or hostname");
     ke->client_entry->ke = NULL;
     ke->completion(ke->client, ke->conn, ke->client_entry, 
@@ -316,7 +316,7 @@ void silc_client_send_key_agreement(SilcClient client,
     ke->fd = silc_net_create_server(port, hostname);
 
     if (ke->fd < 0) {
-      client->ops->say(client, conn, 
+      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR, 
 		       "Cannot create listener on %s on port %d: %s", 
 		       hostname, port, strerror(errno));
       completion(client, conn, client_entry, SILC_KEY_AGREEMENT_FAILURE,
@@ -428,9 +428,10 @@ SILC_TASK_CALLBACK(silc_client_perform_key_agreement_start)
   if (opt != 0) {
     if (ctx->tries < 2) {
       /* Connection failed but lets try again */
-      client->ops->say(client, conn, "Could not connect to client %s: %s",
+      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+		       "Could not connect to client %s: %s",
 		       ctx->host, strerror(opt));
-      client->ops->say(client, conn, 
+      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
 		       "Connecting to port %d of client %s resumed", 
 		       ctx->port, ctx->host);
 
@@ -444,7 +445,8 @@ SILC_TASK_CALLBACK(silc_client_perform_key_agreement_start)
       ctx->tries++;
     } else {
       /* Connection failed and we won't try anymore */
-      client->ops->say(client, conn, "Could not connect to client %s: %s",
+      client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+		       "Could not connect to client %s: %s",
 		       ctx->host, strerror(opt));
       silc_schedule_unset_listen_fd(client->schedule, fd);
       silc_net_close_connection(fd);

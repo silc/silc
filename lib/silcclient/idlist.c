@@ -517,6 +517,25 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 			      (void *)i);
 }
 
+/* Removes client from the cache by the client entry. */
+
+bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
+			    SilcClientEntry client_entry)
+{
+  return silc_idcache_del_by_context(conn->client_cache, client_entry);
+}
+
+/* Removes client from the cache by the client ID. */
+
+bool silc_client_del_client_by_id(SilcClient client, 
+				  SilcClientConnection conn,
+				  SilcClientID *client_id)
+{
+  return silc_idcache_del_by_id_ext(conn->client_cache, (void *)client_id, 
+				    NULL, NULL, 
+				    silc_hash_client_id_compare, NULL);
+}
+
 /* Finds entry for channel by the channel name. Returns the entry or NULL
    if the entry was not found. It is found only if the client is joined
    to the channel. */

@@ -310,7 +310,7 @@ void silc_client_save_channel_key(SilcClientConnection conn,
   memcpy(channel->key, key, tmp_len);
 
   if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
-    conn->client->ops->say(conn->client, conn,
+    conn->client->ops->say(conn->client, conn, SILC_CLIENT_MESSAGE_AUDIT,
 		     "Cannot talk to channel: unsupported cipher %s", cipher);
     goto out;
   }

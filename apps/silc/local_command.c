@@ -304,7 +304,7 @@ static void keyagr_completion(SilcClient client,
       /* Set the private key for this client */
       silc_client_del_private_message_key(client, conn, client_entry);
       silc_client_add_private_message_key_ske(client, conn, client_entry,
-					      NULL, key);
+					      NULL, key, FALSE);
       silc_say(client, conn, "The private messages with the %s are now protected with the private key", client_entry->nickname);
       silc_ske_free_key_material(key);
     }
@@ -410,7 +410,7 @@ SILC_CLIENT_LCMD_FUNC(key)
 
     if (cmd->argv[2][0] == '*') {
       if (!conn->current_channel) {
-	cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
+	silc_say(cmd->client, conn, "You are not on any channel");
 	goto out;
       }
       name = conn->current_channel->channel_name;
@@ -433,7 +433,7 @@ SILC_CLIENT_LCMD_FUNC(key)
       if (curr_key && type == 1 && client_entry) {
 	silc_client_del_private_message_key(client, conn, client_entry);
 	silc_client_add_private_message_key_ske(client, conn, client_entry,
-						NULL, curr_key);
+						NULL, curr_key, FALSE);
 	goto out;
       }
     }
@@ -449,13 +449,13 @@ SILC_CLIENT_LCMD_FUNC(key)
 					      cmd->argv[5], cmd->argv[4],
 					      cmd->argv_lens[4],
 					      (cmd->argv[4][0] == '*' ?
-					       TRUE : FALSE));
+					       TRUE : FALSE), FALSE);
 	else
 	  silc_client_add_private_message_key(client, conn, client_entry,
 					      NULL, cmd->argv[4],
 					      cmd->argv_lens[4],
 					      (cmd->argv[4][0] == '*' ?
-					       TRUE : FALSE));
+					       TRUE : FALSE), FALSE);
 
 	/* Send the key to the remote client so that it starts using it
 	   too. */
@@ -728,7 +728,7 @@ SILC_CLIENT_LCMD_FUNC(me)
 
   if (cmd->argv[1][0] == '*') {
     if (!conn->current_channel) {
-      cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
+      silc_say(cmd->client, conn, "You are not on any channel");
       goto out;
     }
     name = conn->current_channel->channel_name;
@@ -776,7 +776,7 @@ SILC_CLIENT_LCMD_FUNC(notice)
 
   if (cmd->argv[1][0] == '*') {
     if (!conn->current_channel) {
-      cmd->client->ops->say(cmd->client, conn, "You are not on any channel");
+      silc_say(cmd->client, conn, "You are not on any channel");
       goto out;
     }
     name = conn->current_channel->channel_name;

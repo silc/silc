@@ -45,7 +45,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 				SilcVerifyPublicKey completion, void *context);
 
 void silc_say(SilcClient client, SilcClientConnection conn,
-		     char *msg, ...)
+	      SilcClientMessageType type, char *msg, ...)
 {
   SILC_SERVER_REC *server;
   va_list va;

@@ -22,6 +22,8 @@
 #define CLIENT_OPS_H
 
 void silc_say(SilcClient client, SilcClientConnection conn, char *msg, ...);
+void silc_op_say(SilcClient client, SilcClientConnection conn, 
+		 SilcClientMessageType type, char *msg, ...);
 void silc_channel_message(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, 
 			  SilcChannelEntry channel, 
