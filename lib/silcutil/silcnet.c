@@ -290,6 +290,21 @@ void silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
   SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));
 }
 
+/* Return remote port by socket. */
+
+unsigned short silc_net_get_remote_port(int sock)
+{
+  struct sockaddr_in remote;
+  int len;
+
+  memset(&remote, 0, sizeof(remote));
+  len = sizeof(remote);
+  if (getpeername(sock, (struct sockaddr *)&remote, &len) < 0)
+    return 0;
+
+  return ntohs(remote.sin_port);
+}
+
 /* Return name of localhost. */
 
 char *silc_net_localhost()

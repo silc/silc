@@ -938,6 +938,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
   }
   if (!newsocket->hostname)
     newsocket->hostname = strdup(newsocket->ip);
+  newsocket->port = silc_net_get_remote_port(sock);
 
   SILC_LOG_INFO(("Incoming connection from %s (%s)", newsocket->hostname,
 		 newsocket->ip));

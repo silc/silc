@@ -161,6 +161,7 @@ void silc_server_command_process(SilcServer server,
     SILC_LOG_ERROR(("Bad command payload, packet dropped"));
     silc_buffer_free(packet->buffer);
     silc_packet_context_free(packet);
+    silc_socket_free(ctx->sock);
     silc_free(ctx);
     return;
   }
@@ -1752,11 +1753,9 @@ void silc_server_command_send_users(SilcServer server,
     /* If this function was called from pending command then instead of
        processing the command now, register a pending command callback which
        will process it after we've received the automatic USERS command 
-       reply. */
-    silc_server_command_pending(server, SILC_COMMAND_USERS, 0,
-				silc_server_command_destructor,
-				silc_server_command_users,
-				silc_server_command_dup(cmd));
+       reply which server will send in JOIN. */
+    silc_server_command_pending(server, SILC_COMMAND_USERS, 0, NULL,
+				silc_server_command_users, cmd);
     cmd->pending = TRUE;
     silc_buffer_free(buffer);
     silc_buffer_free(idp);

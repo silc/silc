@@ -100,7 +100,7 @@ void silc_server_command_reply_process(SilcServer server,
       break;
 
   if (cmd == NULL || !cmd->cb) {
-    silc_free(ctx);
+    silc_server_command_reply_free(ctx);
     return;
   }
 

@@ -57,6 +57,7 @@ typedef struct {
 void silc_server_command_reply_##func(void *context)
 
 /* Prototypes */
+void silc_server_command_reply_free(SilcServerCommandReplyContext cmd);
 void silc_server_command_reply_process(SilcServer server,
 				       SilcSocketConnection sock,
 				       SilcBuffer buffer);

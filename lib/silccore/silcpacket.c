@@ -71,6 +71,13 @@ int silc_packet_write(int sock, SilcBuffer src)
 
 int silc_packet_send(SilcSocketConnection sock, int force_send)
 {
+  SILC_LOG_DEBUG(("Sending packet to %s:%d [%s]", sock->hostname,
+		  sock->port,  
+		  (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		   "Router")));
+
   /* Send now if forced to do so */
   if (force_send == TRUE) {
     int ret;
@@ -433,17 +440,19 @@ int silc_packet_receive(SilcSocketConnection sock)
 {
   int ret;
 
+  SILC_LOG_DEBUG(("Receiving packet from %s:%d [%s]", sock->hostname,
+		  sock->port, 
+		  (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		   sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		   sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		   "Router")));
+
   /* Allocate the incoming data buffer if not done already. */
   if (!sock->inbuf)
     sock->inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE);
-  
+
   /* Read some data from connection */
   ret = silc_packet_read(sock->sock, sock->inbuf);
-
-  /* Error */
-  if (ret == -1) {
-    SILC_LOG_ERROR(("Error reading packet, dropped"));
-  }
 
   return ret;
 }

@@ -271,6 +271,7 @@ int silc_client_start_key_exchange(SilcClient client,
 
   conn->nickname = strdup(client->username);
   conn->sock->hostname = conn->remote_host;
+  conn->sock->ip = strdup(conn->remote_host);
   conn->sock->port = conn->remote_port;
 
   /* Allocate internal Key Exchange context. This is sent to the
@@ -1180,8 +1181,7 @@ void silc_client_close_connection(SilcClient client,
   silc_net_close_connection(sock->sock);
 
   client->ops->say(client, sock->user_data,
-		   "Closed connection to host %s", sock->hostname ?
-		   sock->hostname : sock->ip);
+		   "Closed connection to host %s", sock->hostname);
 
   /* Free everything */
   if (sock->user_data) {
