@@ -67,7 +67,7 @@ least could be done.
 
 	  These naturally cause the overal memory consumption to grow
 	  but would take away many allocations that can be done several
-	  times in a second.
+	  times in a second (see also ~/silcpacket).
 
 	o Move the actual file descriptor task callback (the callback that
 	  handles the incoming data, outgoing data etc, that is implemnted
@@ -89,23 +89,6 @@ least could be done.
 	  it effectively is buffer->tail - buffer->data, and adding
 	  SILC_BUFFER_LEN macro can do the same.  These would save
 	  totally 8 bytes of memory per buffer.
-
-	o Scheduler can be optimized for FD tasks by changing the fd_queue
-	  to SilcHashTable instead of using linked list.  We need to do
-	  one-to-one mapping of FD to task and hash table is more efficient
-	  for this usage.
-
-	  Also redefine the silc_select to perhaps return a separate
-	  structure of the events that actually occurred, instead of
-	  returning the events in the fd_list which is then traversed
-	  in the generic code to find the changed events.  This can be
-	  made faster by having own struct which includes only the
-	  changed events, thus the tarversing is faster since the whole
-	  fd_list is not traversed anymore (it is still traversed in the
-	  silc_select but at least it removes one extra tarversing later
-	  for the same list).
-
-	  Other task queues should be changed to use SilcList.
 
  o Optimizations in Server
 
@@ -139,17 +122,19 @@ least could be done.
 
  o Rewrite SilcProtocol to be SilcFSM (see ~/silcfsm).
 
- o Change SILC_TASK_CALLBACK to non-static, and remove the macro
-   SILC_TASK_CALLBACK_GLOBAL.
+ o Do some scheduler optimizations and interface changes (see 
+   ~/silcschedule).
+
+ o Change the lib/silccore/silcpacket.[ch] interfaces (see ~/silcpacket).
+
+ o Add abstract SilcStream and SilcSocketStream (see ~/silcstream).
+
+ o Change some of the SILC Net interfaces (see ~/silcnet).
 
  o Add DSS support.
 
  o SILC RNG does not implement random seed files, and they should be
    implemented.
-
- o Add SILC scheduler's internal routines into a table of implementation
-   function pointers, that the generic code then takes as extern from
-   implementation.  These are the silc_schedule_internal_* routines.
 
  o Cipher optimizations (asm, that this) at least for i386 would be nice.
 
@@ -167,3 +152,23 @@ least could be done.
 	o Something needs to be thought to the logging globals as well, 
 	  like silc_debug etc.  They won't work on EPOC.  Perhaps logging
 	  and debugging is to be disabled on EPOC.
+
+ o Check whether we can fully comply with RFC 2779.
+
+
+TODO in SILC Protocol
+=====================
+
+ o Inviting and banning by public key should be made possible.  To be
+   included in protocol version 1.2.
+
+ o UTF-8 support/requirement for nicknames & channel names.  UTF-8 support
+   in terminals and OS's are so hazy that this matter is left for
+   consideration in next version of the protocol (1.2).  For good UTF-8
+   reference and tutorial see: http://www.cl.cam.ac.uk/~mgk25/unicode.html.
+   What should CLI application do if it receives nickname that it cannot
+   display without messing up the terminal?  If UTF-8 is mandatory in 
+   SILC then SILC clients cannot be allowed to start on terminals that do
+   not support UTF-8 (which renders 98% of users unable to use CLI SILC
+   app without hacking their environment).  See also site
+   http://gratrix.net/unicode/

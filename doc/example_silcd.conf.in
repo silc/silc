@@ -63,7 +63,7 @@ General {
 	# remote must be of at least this version, or newer.  If older then
 	# the connection will not be allowed.
 	#
-	# version_protocol         - SILC protocol version ("majog.minor")
+	# version_protocol         - SILC protocol version ("major.minor")
 	# version_software         - software version ("major.minor")
 	# version_software_vendor  - vendor specific version extension
 	#
@@ -105,7 +105,7 @@ General {
 
 	# Key exchange protocol rekey interval (seconds). How often to
 	# regenerate the session key with the remote. Initiator will perform
-	# the rekey and this setting affects only when connecting as intiator.
+	# the rekey and this setting affects only when connecting as initiator.
 	# This can be overridden with ConnectionParams.
 	#key_exchange_rekey = 3600;
 
