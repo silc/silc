@@ -23,6 +23,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2000/07/06 07:15:31  priikone
+ * 	Cleaner code fro password and public key authentication.
+ * 	Deprecated old `channel_auth' protocol.
+ *
  * Revision 1.2  2000/07/05 06:13:04  priikone
  * 	Support for SILC style public keys added.
  *
@@ -36,7 +40,6 @@
 #include "server_internal.h"
 
 SILC_TASK_CALLBACK(silc_server_protocol_connection_auth);
-SILC_TASK_CALLBACK(silc_server_protocol_channel_auth);
 SILC_TASK_CALLBACK(silc_server_protocol_key_exchange);
 
 /* SILC client protocol list */
@@ -44,8 +47,6 @@ const SilcProtocolObject silc_protocol_list[] =
 {
   { SILC_PROTOCOL_SERVER_CONNECTION_AUTH, 
     silc_server_protocol_connection_auth },
-  { SILC_PROTOCOL_SERVER_CHANNEL_AUTH, 
-    silc_server_protocol_channel_auth },
   { SILC_PROTOCOL_SERVER_KEY_EXCHANGE, 
     silc_server_protocol_key_exchange },
 
@@ -122,6 +123,7 @@ static void silc_server_protocol_ke_set_keys(SilcSKE ske,
      If yes, we need to change KE protocol to get the initiators
      public key. */
   silc_pkcs_alloc(pkcs->pkcs->name, &conn_data->pkcs);
+  conn_data->public_key = silc_pkcs_public_key_alloc(XXX);
   silc_pkcs_set_public_key(conn_data->pkcs, ske->ke2_payload->pk_data, 
 			   ske->ke2_payload->pk_len);
 #endif
@@ -400,6 +402,71 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
  * Connection Authentication protocol functions
  */
 
+/* XXX move these to somehwere else */
+
+int silc_server_password_authentication(SilcServer server, char *auth1, 
+					char *auth2)
+{
+  if (!auth1 || !auth2)
+    return FALSE;
+
+  if (!memcmp(auth1, auth2, strlen(auth1)))
+    return TRUE;
+
+  return FALSE;
+}
+
+int silc_server_public_key_authentication(SilcServer server,
+					  char *pkfile,
+					  unsigned char *sign,
+					  unsigned int sign_len,
+					  SilcSKE ske)
+{
+  SilcPublicKey pub_key;
+  SilcPKCS pkcs;
+  int len;
+  SilcBuffer auth;
+
+  if (!pkfile || !sign)
+    return FALSE;
+
+  /* Load public key from file */
+  if (!silc_pkcs_load_public_key(pkfile, &pub_key))
+    return FALSE;
+
+  silc_pkcs_alloc(pub_key->name, &pkcs);
+  if (!silc_pkcs_public_key_set(pkcs, pub_key)) {
+    silc_pkcs_free(pkcs);
+    return FALSE;
+  }
+
+  /* Make the authentication data. Protocol says it is HASH plus
+     KE Start Payload. */
+  len = ske->hash_len + ske->start_payload_copy->len;
+  auth = silc_buffer_alloc(len);
+  silc_buffer_pull_tail(auth, len);
+  silc_buffer_format(auth,
+		     SILC_STR_UI_XNSTRING(ske->hash, ske->hash_len),
+		     SILC_STR_UI_XNSTRING(ske->start_payload_copy->data,
+					  ske->start_payload_copy->len),
+		     SILC_STR_END);
+
+  /* Verify signature */
+  if (pkcs->pkcs->verify(pkcs->context, sign, sign_len,
+			 auth->data, auth->len))
+    {
+      silc_pkcs_free(pkcs);
+      silc_pkcs_public_key_free(pub_key);
+      silc_buffer_free(auth);
+      return TRUE;
+    }
+
+  silc_pkcs_free(pkcs);
+  silc_pkcs_public_key_free(pub_key);
+  silc_buffer_free(auth);
+  return FALSE;
+}
+
 /* Performs connection authentication protocol. If responder, we 
    authenticate the remote data received. If initiator, we will send
    authentication data to the remote end. */
@@ -429,9 +496,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	/*
 	 * We are receiving party
 	 */
+	int ret;
 	unsigned short payload_len;
 	unsigned short conn_type;
 	unsigned char *auth_data;
+
+	SILC_LOG_INFO(("Performing authentication protocol for %s",
+		       ctx->sock->hostname ? ctx->sock->hostname :
+		       ctx->sock->ip));
 
 	/* Parse the received authentication data packet. The received
 	   payload is Connection Auth Payload. */
@@ -501,13 +573,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    case SILC_PROTOCOL_CONN_AUTH_PASSWORD:
 	      /* Password authentication */
 	      SILC_LOG_DEBUG(("Password authentication"));
-	      if (auth_data) {
-		if (!memcmp(client->auth_data, auth_data, strlen(auth_data))) {
-		  memset(auth_data, 0, payload_len);
-		  silc_free(auth_data);
-		  auth_data = NULL;
-		  break;
-		}
+	      ret = silc_server_password_authentication(server, auth_data,
+							client->auth_data);
+
+	      if (ret) {
+		memset(auth_data, 0, payload_len);
+		silc_free(auth_data);
+		auth_data = NULL;
+		break;
 	      }
 
 	      /* Authentication failed */
@@ -522,41 +595,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    case SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY:
 	      /* Public key authentication */
 	      SILC_LOG_DEBUG(("Public key authentication"));
-	      if (auth_data) {
-		SilcIDListUnknown *conn_data;
-		SilcPublicKey pub_key;
-		SilcPKCS pkcs;
-		
-		conn_data = (SilcIDListUnknown *)ctx->sock->user_data;
-		
-		/* Load public key from file */
-		if (silc_pkcs_load_public_key(client->auth_data,
-					      &pub_key) == FALSE) {
-		  
-		  /* Authentication failed */
-		  SILC_LOG_ERROR(("Authentication failed "
-				  "- could not read public key file"));
-		  memset(auth_data, 0, payload_len);
-		  silc_free(auth_data);
-		  auth_data = NULL;
-		  protocol->state = SILC_PROTOCOL_STATE_ERROR;
-		  protocol->execute(server->timeout_queue, 0, 
-				    protocol, fd, 0, 300000);
-		  return;
-		}
-
-		silc_pkcs_alloc(pub_key->name, &pkcs);
-		
-		/* Verify hash value HASH from KE protocol */
-		if (pkcs->pkcs->verify(pkcs->context,
-				       auth_data, payload_len,
-				       ctx->ske->hash, 
-				       ctx->ske->hash_len)
-		    == TRUE) {
-		  silc_pkcs_free(pkcs);
-		  silc_pkcs_public_key_free(pub_key);
-		  break;
-		}
+	      ret = silc_server_public_key_authentication(server, 
+							  client->auth_data,
+							  auth_data,
+							  payload_len, 
+							  ctx->ske);
+							  
+	      if (ret) {
+		memset(auth_data, 0, payload_len);
+		silc_free(auth_data);
+		auth_data = NULL;
+		break;
 	      }
 
 	      SILC_LOG_ERROR(("Authentication failed"));
@@ -603,13 +652,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    case SILC_PROTOCOL_CONN_AUTH_PASSWORD:
 	      /* Password authentication */
 	      SILC_LOG_DEBUG(("Password authentication"));
-	      if (auth_data) {
-		if (!memcmp(serv->auth_data, auth_data, strlen(auth_data))) {
-		  memset(auth_data, 0, payload_len);
-		  silc_free(auth_data);
-		  auth_data = NULL;
-		  break;
-		}
+	      ret = silc_server_password_authentication(server, auth_data,
+							serv->auth_data);
+
+	      if (ret) {
+		memset(auth_data, 0, payload_len);
+		silc_free(auth_data);
+		auth_data = NULL;
+		break;
 	      }
 	      
 	      /* Authentication failed */
@@ -624,41 +674,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    case SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY:
 	      /* Public key authentication */
 	      SILC_LOG_DEBUG(("Public key authentication"));
-	      if (auth_data) {
-		SilcIDListUnknown *conn_data;
-		SilcPublicKey pub_key;
-		SilcPKCS pkcs;
-		
-		conn_data = (SilcIDListUnknown *)ctx->sock->user_data;
-		
-		/* Load public key from file */
-		if (silc_pkcs_load_public_key(serv->auth_data,
-					      &pub_key) == FALSE) {
-		  
-		  /* Authentication failed */
-		  SILC_LOG_ERROR(("Authentication failed "
-				  "- could not read public key file"));
-		  memset(auth_data, 0, payload_len);
-		  silc_free(auth_data);
-		  auth_data = NULL;
-		  protocol->state = SILC_PROTOCOL_STATE_ERROR;
-		  protocol->execute(server->timeout_queue, 0, 
-				    protocol, fd, 0, 300000);
-		  return;
-		}
-		
-		silc_pkcs_alloc(pub_key->name, &pkcs);
-		
-		/* Verify hash value HASH from KE protocol */
-		if (pkcs->pkcs->verify(pkcs->context,
-				       auth_data, payload_len,
-				       ctx->ske->hash, 
-				       ctx->ske->hash_len)
-		    == TRUE) {
-		  silc_pkcs_free(pkcs);
-		  silc_pkcs_public_key_free(pub_key);
-		  break;
-		}
+	      ret = silc_server_public_key_authentication(server, 
+							  serv->auth_data,
+							  auth_data,
+							  payload_len, 
+							  ctx->ske);
+							  
+	      if (ret) {
+		memset(auth_data, 0, payload_len);
+		silc_free(auth_data);
+		auth_data = NULL;
+		break;
 	      }
 
 	      SILC_LOG_ERROR(("Authentication failed"));
@@ -705,13 +731,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    case SILC_PROTOCOL_CONN_AUTH_PASSWORD:
 	      /* Password authentication */
 	      SILC_LOG_DEBUG(("Password authentication"));
-	      if (auth_data) {
-		if (!memcmp(serv->auth_data, auth_data, strlen(auth_data))) {
-		  memset(auth_data, 0, payload_len);
-		  silc_free(auth_data);
-		  auth_data = NULL;
-		  break;
-		}
+	      ret = silc_server_password_authentication(server, auth_data,
+							serv->auth_data);
+
+	      if (ret) {
+		memset(auth_data, 0, payload_len);
+		silc_free(auth_data);
+		auth_data = NULL;
+		break;
 	      }
 	      
 	      /* Authentication failed */
@@ -726,41 +753,17 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    case SILC_PROTOCOL_CONN_AUTH_PUBLIC_KEY:
 	      /* Public key authentication */
 	      SILC_LOG_DEBUG(("Public key authentication"));
-	      if (auth_data) {
-		SilcIDListUnknown *conn_data;
-		SilcPublicKey pub_key;
-		SilcPKCS pkcs;
-		
-		conn_data = (SilcIDListUnknown *)ctx->sock->user_data;
-		
-		/* Load public key from file */
-		if (silc_pkcs_load_public_key(serv->auth_data,
-					      &pub_key) == FALSE) {
-		  
-		  /* Authentication failed */
-		  SILC_LOG_ERROR(("Authentication failed "
-				  "- could not read public key file"));
-		  memset(auth_data, 0, payload_len);
-		  silc_free(auth_data);
-		  auth_data = NULL;
-		  protocol->state = SILC_PROTOCOL_STATE_ERROR;
-		  protocol->execute(server->timeout_queue, 0, 
-				    protocol, fd, 0, 300000);
-		  return;
-		}
-		
-		silc_pkcs_alloc(pub_key->name, &pkcs);
-		
-		/* Verify hash value HASH from KE protocol */
-		if (pkcs->pkcs->verify(pkcs->context,
-				       auth_data, payload_len,
-				       ctx->ske->hash, 
-				       ctx->ske->hash_len)
-		    == TRUE) {
-		  silc_pkcs_public_key_free(pub_key);
-		  silc_pkcs_free(pkcs);
-		  break;
-		}
+	      ret = silc_server_public_key_authentication(server, 
+							  serv->auth_data,
+							  auth_data,
+							  payload_len, 
+							  ctx->ske);
+							  
+	      if (ret) {
+		memset(auth_data, 0, payload_len);
+		silc_free(auth_data);
+		auth_data = NULL;
+		break;
 	      }
 
 	      SILC_LOG_ERROR(("Authentication failed"));
@@ -910,8 +913,4 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
   case SILC_PROTOCOL_STATE_UNKNOWN:
     break;
   }
-}
-
-SILC_TASK_CALLBACK(silc_server_protocol_channel_auth)
-{
 }
