@@ -25,6 +25,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.13  2000/08/21 14:21:21  priikone
+ * 	Fixed channel joining and channel message sending inside a
+ * 	SILC cell. Added silc_server_send_remove_channel_user and
+ * 	silc_server_remove_channel_user functions.
+ *
  * Revision 1.12  2000/07/26 07:05:11  priikone
  * 	Fixed the server to server (server to router actually) connections
  * 	and made the private message work inside a cell. Added functin
@@ -1546,6 +1551,15 @@ void silc_server_packet_parse_type(SilcServer server,
   case SILC_PACKET_REMOVE_ID:
     break;
 
+  case SILC_PACKET_REMOVE_CHANNEL_USER:
+    /*
+     * Received packet to remove user from a channel. Routers notify other
+     * routers about a user leaving a channel.
+     */
+    SILC_LOG_DEBUG(("Remove Channel User packet"));
+    silc_server_remove_channel_user(server, sock, packet);
+    break;
+
   default:
     SILC_LOG_ERROR(("Incorrect packet type %d, packet dropped", type));
     break;
@@ -2126,10 +2140,8 @@ void silc_server_packet_relay_command_reply(SilcServer server,
   SILC_LOG_DEBUG(("Start"));
 
   /* Source must be server or router */
-  /* XXX: actually it must be only router */
   if (packet->src_id_type != SILC_ID_SERVER &&
-      (sock->type != SILC_SOCKET_TYPE_SERVER ||
-       sock->type != SILC_SOCKET_TYPE_ROUTER))
+      sock->type != SILC_SOCKET_TYPE_ROUTER)
     goto out;
 
   /* Destination must be client */
@@ -2220,7 +2232,7 @@ void silc_server_disconnect_remote(SilcServer server,
 }
 
 /* Free's user_data pointer from socket connection object. As this 
-   pointer maybe anything we wil switch here to find the corrent
+   pointer maybe anything we wil switch here to find the correct
    data type and free it the way it needs to be free'd. */
 
 void silc_server_free_sock_user_data(SilcServer server, 
@@ -2298,6 +2310,18 @@ void silc_server_remove_from_channels(SilcServer server,
 	/* If this client is last one on the channel the channel
 	   is removed all together. */
 	if (channel->user_list_count == 1) {
+
+	  /* However, if the channel has marked global users then the 
+	     channel is not created locally, and this does not remove the
+	     channel globally from SILC network, in this case we will
+	     notify that this client has left the channel. */
+	  if (channel->global_users)
+	    silc_server_send_notify_to_channel(server, channel,
+					       "Signoff: %s@%s",
+					       client->nickname,
+					       sock->hostname ?
+					       sock->hostname : sock->ip);
+
 	  silc_idlist_del_channel(server->local_list, channel);
 	  break;
 	}
@@ -2308,8 +2332,10 @@ void silc_server_remove_from_channels(SilcServer server,
 	/* Send notify to channel about client leaving SILC and thus
 	   the entire channel. */
 	silc_server_send_notify_to_channel(server, channel,
-					   "Signoff: %s",
-					   client->nickname);
+					   "Signoff: %s@%s",
+					   client->nickname,
+					   sock->hostname ?
+					   sock->hostname : sock->ip);
       }
     }
   }
@@ -2322,12 +2348,14 @@ void silc_server_remove_from_channels(SilcServer server,
 /* Removes client from one channel. This is used for example when client
    calls LEAVE command to remove itself from the channel. Returns TRUE
    if channel still exists and FALSE if the channel is removed when
-   last client leaves the channel. */
+   last client leaves the channel. If `notify' is FALSE notify messages
+   are not sent. */
 
 int silc_server_remove_from_one_channel(SilcServer server, 
 					SilcSocketConnection sock,
 					SilcChannelEntry channel,
-					SilcClientEntry client)
+					SilcClientEntry client,
+					int notify)
 {
   int i, k;
   SilcChannelEntry ch;
@@ -2349,6 +2377,16 @@ int silc_server_remove_from_one_channel(SilcServer server,
 	/* If this client is last one on the channel the channel
 	   is removed all together. */
 	if (channel->user_list_count == 1) {
+	  /* Notify about leaving client if this channel has global users,
+	     ie. the channel is not created locally. */
+	  if (notify && channel->global_users)
+	    silc_server_send_notify_to_channel(server, channel,
+					       "%s@%s has left channel %s",
+					       client->nickname, 
+					       sock->hostname ?
+					       sock->hostname : sock->ip,
+					       channel->channel_name);
+
 	  silc_idlist_del_channel(server->local_list, channel);
 	  return FALSE;
 	}
@@ -2357,10 +2395,12 @@ int silc_server_remove_from_one_channel(SilcServer server,
 	channel->user_list[k].mode = SILC_CHANNEL_UMODE_NONE;
 
 	/* Send notify to channel about client leaving the channel */
-	silc_server_send_notify_to_channel(server, channel,
-					   "%s has left channel %s",
-					   client->nickname,
-					   channel->channel_name);
+	if (notify)
+	  silc_server_send_notify_to_channel(server, channel,
+					     "%s@%s has left channel %s",
+					     client->nickname, sock->hostname ?
+					     sock->hostname : sock->ip,
+					     channel->channel_name);
       }
     }
   }
@@ -2485,7 +2525,7 @@ void silc_server_private_message(SilcServer server,
 	 "router" of the client is the server who owns the client. Thus
 	 we will send the packet to that server. */
       router = (SilcServerEntry)dst_sock->user_data;
-      assert(client->router == server->id_entry);
+      //      assert(client->router == server->id_entry);
 
       silc_server_private_message_send_internal(server, dst_sock,
 						router->send_key,
@@ -2538,7 +2578,8 @@ void silc_server_private_message(SilcServer server,
   silc_buffer_free(buffer);
 }
 
-/* Process received channel message. */
+/* Process received channel message. The message can be originated from
+   client or server. */
 
 void silc_server_channel_message(SilcServer server,
 				 SilcSocketConnection sock,
@@ -2547,7 +2588,7 @@ void silc_server_channel_message(SilcServer server,
   SilcChannelEntry channel = NULL;
   SilcClientEntry client = NULL;
   SilcChannelID *id = NULL;
-  SilcClientID *sender = NULL;
+  void *sender = NULL;
   SilcBuffer buffer = packet->buffer;
   int i;
 
@@ -2568,15 +2609,21 @@ void silc_server_channel_message(SilcServer server,
     goto out;
   }
 
-  /* See that this client is on the channel */
+  /* See that this client is on the channel. If the message is coming
+     from router we won't do the check as the message is from client that
+     we don't know about. Also, if the original sender is not client
+     (as it can be server as well) we don't do the check. */
   sender = silc_id_str2id(packet->src_id, packet->src_id_type);
-  for (i = 0; i < channel->user_list_count; i++) {
-    client = channel->user_list[i].client;
-    if (client && !SILC_ID_CLIENT_COMPARE(client->id, sender))
-      break;
+  if (sock->type != SILC_SOCKET_TYPE_ROUTER && 
+      packet->src_id_type == SILC_ID_CLIENT) {
+    for (i = 0; i < channel->user_list_count; i++) {
+      client = channel->user_list[i].client;
+      if (client && !SILC_ID_CLIENT_COMPARE(client->id, sender))
+	break;
+    }
+    if (i >= channel->user_list_count)
+      goto out;
   }
-  if (i >= channel->user_list_count)
-    goto out;
 
   /* Distribute the packet to our local clients. This will send the
      packet for further routing as well, if needed. */
@@ -2826,6 +2873,45 @@ void silc_server_send_replace_id(SilcServer server,
 			  packet->data, packet->len, FALSE);
   silc_free(oid);
   silc_free(nid);
+  silc_buffer_free(packet);
+}
+
+/* This function is used to send Remove Channel User payload. This may sent
+   by server but is usually used only by router to notify other routers that
+   user has left a channel. Normal server sends this packet to its router
+   to notify that the router should not hold a record about this client
+   on a channel anymore. Router distributes it further to other routers. */
+
+void silc_server_send_remove_channel_user(SilcServer server,
+					  SilcSocketConnection sock,
+					  int broadcast,
+					  void *client_id, void *channel_id)
+{
+  SilcBuffer packet;
+  unsigned char *clid, *chid;
+
+  clid = silc_id_id2str(client_id, SILC_ID_CLIENT);
+  if (!clid)
+    return;
+
+  chid = silc_id_id2str(channel_id, SILC_ID_CHANNEL);
+  if (!chid)
+    return;
+
+  packet = silc_buffer_alloc(2 + 2 + SILC_ID_CLIENT_LEN + SILC_ID_CHANNEL_LEN);
+  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
+  silc_buffer_format(packet,
+		     SILC_STR_UI_SHORT(SILC_ID_CLIENT_LEN),
+		     SILC_STR_UI_XNSTRING(clid, SILC_ID_CLIENT_LEN),
+		     SILC_STR_UI_SHORT(SILC_ID_CHANNEL_LEN),
+		     SILC_STR_UI_XNSTRING(chid, SILC_ID_CHANNEL_LEN),
+		     SILC_STR_END);
+
+  silc_server_packet_send(server, sock, SILC_PACKET_REMOVE_CHANNEL_USER, 
+			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
+			  packet->data, packet->len, FALSE);
+  silc_free(clid);
+  silc_free(chid);
   silc_buffer_free(packet);
 }
 
@@ -3183,7 +3269,8 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
       sock->type == SILC_SOCKET_TYPE_SERVER) {
     id_list = server->local_list;
     router_sock = sock;
-    router = server->id_entry;
+    router = sock->user_data;
+    /*    router = server->id_entry; */
   } else {
     id_list = server->global_list;
     router_sock = (SilcSocketConnection)server->id_entry->router->connection;
@@ -3220,8 +3307,7 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
   case SILC_ID_CHANNEL:
     /* Add the channel to our local list. We are router and we keep
        cell specific local database of all channels in the cell. */
-    silc_idlist_add_channel(id_list, NULL, 0, id, 
-			    router, NULL);
+    silc_idlist_add_channel(id_list, NULL, 0, id, router, NULL);
     break;
 
   default:
@@ -3231,4 +3317,64 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 
  out:
   silc_free(id_string);
+}
+
+/* Received packet to remove a user from a channel. Routers notify other
+   routers that user has left a channel. Client must not send this packet. 
+   Normal server may send this packet but ignores if it receives one. */
+
+void silc_server_remove_channel_user(SilcServer server,
+				     SilcSocketConnection sock,
+				     SilcPacketContext *packet)
+{
+  SilcBuffer buffer = packet->buffer;
+  unsigned char *tmp1 = NULL, *tmp2 = NULL;
+  SilcClientID *client_id = NULL;
+  SilcChannelID *channel_id = NULL;
+  SilcChannelEntry channel;
+  SilcClientEntry client;
+
+  SILC_LOG_DEBUG(("Removing user from channel"));
+
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      server->server_type == SILC_SERVER)
+    return;
+
+  silc_buffer_unformat(buffer,
+		       SILC_STR_UI16_STRING_ALLOC(&tmp1),
+		       SILC_STR_UI16_STRING_ALLOC(&tmp2),
+		       SILC_STR_END);
+
+  if (!tmp1 || !tmp2)
+    goto out;
+
+  client_id = silc_id_str2id(tmp1, SILC_ID_CLIENT);
+  channel_id = silc_id_str2id(tmp2, SILC_ID_CHANNEL);
+  if (!client_id || !channel_id)
+    goto out;
+
+  /* XXX routers should check server->global_list as well */
+  /* Get channel entry */
+  channel = silc_idlist_find_channel_by_id(server->local_list, channel_id);
+  if (!channel)
+    goto out;
+  
+  /* XXX routers should check server->global_list as well */
+  /* Get client entry */
+  client = silc_idlist_find_client_by_id(server->local_list, client_id);
+  if (!client)
+    goto out;
+
+  /* Remove from channel */
+  silc_server_remove_from_one_channel(server, sock, channel, client, FALSE);
+
+ out:
+  if (tmp1)
+    silc_free(tmp1);
+  if (tmp2)
+    silc_free(tmp2);
+  if (client_id)
+    silc_free(client_id);
+  if (channel_id)
+    silc_free(channel_id);
 }

@@ -96,7 +96,8 @@ void silc_server_remove_from_channels(SilcServer server,
 int silc_server_remove_from_one_channel(SilcServer server, 
 					SilcSocketConnection sock,
 					SilcChannelEntry channel,
-					SilcClientEntry client);
+					SilcClientEntry client,
+					int notify);
 int silc_server_client_on_channel(SilcClientEntry client,
 				  SilcChannelEntry channel);
 void silc_server_disconnect_remote(SilcServer server,
@@ -137,6 +138,10 @@ void silc_server_send_replace_id(SilcServer server,
 				 unsigned int old_id_len,
 				 void *new_id, SilcIdType new_id_type,
 				 unsigned int new_id_len);
+void silc_server_send_remove_channel_user(SilcServer server,
+					  SilcSocketConnection sock,
+					  int broadcast,
+					  void *client_id, void *channel_id);
 void silc_server_replace_id(SilcServer server,
 			    SilcSocketConnection sock,
 			    SilcPacketContext *packet);
@@ -151,5 +156,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 				       SilcPacketContext *packet);
 void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 			SilcPacketContext *packet);
+void silc_server_remove_channel_user(SilcServer server,
+				     SilcSocketConnection sock,
+				     SilcPacketContext *packet);
 
 #endif

@@ -20,6 +20,11 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.13  2000/08/21 14:21:21  priikone
+ * 	Fixed channel joining and channel message sending inside a
+ * 	SILC cell. Added silc_server_send_remove_channel_user and
+ * 	silc_server_remove_channel_user functions.
+ *
  * Revision 1.12  2000/07/26 07:05:11  priikone
  * 	Fixed the server to server (server to router actually) connections
  * 	and made the private message work inside a cell. Added functin
@@ -1388,8 +1393,17 @@ SILC_SERVER_CMD_FUNC(leave)
     goto out;
   }
 
+  /* Notify routers that they should remove this client from their list
+     of clients on the channel. */
+  if (!server->standalone)
+    silc_server_send_remove_channel_user(server, 
+					 server->id_entry->router->connection,
+					 server->server_type == SILC_ROUTER ?
+					 TRUE : FALSE, id_entry->id, id);
+
   /* Remove client from channel */
-  i = silc_server_remove_from_one_channel(server, sock, channel, id_entry);
+  i = silc_server_remove_from_one_channel(server, sock, channel, id_entry,
+					  TRUE);
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_LEAVE,
 					SILC_STATUS_OK);
 
@@ -1520,6 +1534,8 @@ SILC_SERVER_CMD_FUNC(names)
       len++;
     }
   }
+  if (!name_list)
+    name_list = "";
 
   /* Assemble the Client ID list now */
   client_id_list = silc_buffer_alloc(SILC_ID_CLIENT_LEN * 
