@@ -344,6 +344,7 @@ bool silc_server_init(SilcServer server)
   return TRUE;
 
  err:
+  silc_server_config_unref(&server->config_ref);
   silc_net_close_server(sock);
   return FALSE;
 }
@@ -356,7 +357,6 @@ bool silc_server_init(SilcServer server)
 bool silc_server_rehash(SilcServer server)
 {
   SilcServerConfig newconfig;
-  SilcUInt32 max_conns;
 
   SILC_LOG_INFO(("Rehashing server"));
 
@@ -371,22 +371,11 @@ bool silc_server_rehash(SilcServer server)
     return FALSE;
   }
 
-  max_conns = server->config->param.connections_max;
-
-  /* Our old config is gone now. We'll unreference our reference made in
-     silc_server_init and then destroy it since we are destroying it
-     underneath the application (layer which called silc_server_init). */
-  silc_server_config_unref(&server->config_ref);
-  silc_server_config_destroy(server->config);
-
-  /* Take new config context */
-  server->config = newconfig;
-  silc_server_config_ref(&server->config_ref, server->config, server->config);
-
   /* Reinit scheduler if necessary */
-  if (server->config->param.connections_max > max_conns)
-    silc_schedule_reinit(server->schedule, 
-			 server->config->param.connections_max);
+  if (newconfig->param.connections_max > server->config->param.connections_max)
+    if (!silc_schedule_reinit(server->schedule, 
+			      newconfig->param.connections_max))
+      return FALSE;
 
   /* Fix the server_name field */
   if (strcmp(server->server_name, newconfig->server_info->server_name)) {
@@ -397,12 +386,16 @@ bool silc_server_rehash(SilcServer server)
     /* Update the idcache list with a fresh pointer */
     silc_free(server->id_entry->server_name);
     server->id_entry->server_name = strdup(server->server_name);
-    silc_idcache_del_by_context(server->local_list->servers, server->id_entry);
-    silc_idcache_add(server->local_list->servers,
-		     server->id_entry->server_name,
-		     server->id_entry->id, server->id_entry, 0, NULL);
+    if (!silc_idcache_del_by_context(server->local_list->servers, 
+				     server->id_entry))
+      return FALSE;
+    if (!silc_idcache_add(server->local_list->servers,
+			  server->id_entry->server_name,
+			  server->id_entry->id, server->id_entry, 0, NULL))
+      return FALSE;
   }
 
+  /* Set logging */
   silc_server_config_setlogfiles(server);
 
   /* Change new key pair if necessary */
@@ -411,10 +404,10 @@ bool silc_server_rehash(SilcServer server)
 				    newconfig->server_info->public_key)) {
     silc_pkcs_public_key_free(server->public_key);
     silc_pkcs_private_key_free(server->private_key);
-    server->public_key = server->config->server_info->public_key;
-    server->private_key = server->config->server_info->private_key;
-    server->config->server_info->public_key = NULL;
-    server->config->server_info->private_key = NULL;
+    server->public_key = newconfig->server_info->public_key;
+    server->private_key = newconfig->server_info->private_key;
+    newconfig->server_info->public_key = NULL;
+    newconfig->server_info->private_key = NULL;
 
     /* Allocate PKCS context for local public and private keys */
     silc_pkcs_free(server->pkcs);
@@ -432,8 +425,8 @@ bool silc_server_rehash(SilcServer server)
 			 SILC_TASK_PRI_NORMAL);
 
   /* Check whether our router status has changed */
-  if (server->config->servers) {
-    SilcServerConfigServer *ptr = server->config->servers;
+  if (newconfig->servers) {
+    SilcServerConfigServer *ptr = newconfig->servers;
 
     server->server_type = SILC_ROUTER;
     while (ptr) {
@@ -446,6 +439,16 @@ bool silc_server_rehash(SilcServer server)
       ptr = ptr->next;
     }
   }
+
+  /* Our old config is gone now. We'll unreference our reference made in
+     silc_server_init and then destroy it since we are destroying it
+     underneath the application (layer which called silc_server_init). */
+  silc_server_config_unref(&server->config_ref);
+  silc_server_config_destroy(server->config);
+
+  /* Take new config context */
+  server->config = newconfig;
+  silc_server_config_ref(&server->config_ref, server->config, server->config);
 
   SILC_LOG_DEBUG(("Server rehashed"));
 
@@ -685,6 +688,12 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
     server->standalone = TRUE;
     return;
   }
+
+  /* Cancel any possible retry timeouts */
+  silc_schedule_task_del_by_callback(server->schedule,
+				     silc_server_connect_router);
+  silc_schedule_task_del_by_callback(server->schedule,
+				     silc_server_connect_to_router_retry);
 
   /* Create the connections to all our routes */
   for (ptr = server->config->routers; ptr; ptr = ptr->next) {
