@@ -1,3 +1,8 @@
+Wed Mar 10 18:35:24 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Removed expiring of client key pair.  Affected file is
+	  irssi/src/silc/core/clientutil.c
+
 Tue Mar  9 17:11:58 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check the number of connections from real number of

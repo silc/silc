@@ -83,9 +83,8 @@ void silc_client_list_pkcs()
 /* This checks stats for various SILC files and directories. First it 
    checks if ~/.silc directory exist and is owned by the correct user. If 
    it doesn't exist, it will create the directory. After that it checks if
-   user's Public and Private key files exists and that they aren't expired.
-   If they doesn't exist or they are expired, they will be (re)created
-   after return. */
+   user's Public and Private key files exists. If they doesn't exist they 
+   will be created after return. */
 
 int silc_client_check_silc_dir()
 {
@@ -93,7 +92,6 @@ int silc_client_check_silc_dir()
   char servfilename[256], clientfilename[256], friendsfilename[256];
   struct stat st;
   struct passwd *pw;
-  time_t curtime, modtime;
 
   SILC_LOG_DEBUG(("Checking ~./silc directory"));
 
@@ -288,50 +286,6 @@ int silc_client_check_silc_dir()
     fprintf(stderr, "Done.\n\n");
   }
 
-  /* See if the key has expired. */
-  modtime = st.st_mtime;	/* last modified */
-  curtime = time(0) - modtime;
-    
-  /* 86400 is seconds in a day. */
-  if (curtime >= (86400 * SILC_CLIENT_KEY_EXPIRES)) {
-    char answer;
-
-    fprintf(stdout, 
-	    "----------------------------------------------------\n"
-	    "Your private key has expired and needs to be\n" 
-	    "recreated.  Would you like to create a new key pair\n"
-	    "now?  If you answer Yes, the new key will expire in\n"
-	    "%d days from today.  If you answer No, the old key\n"
-	    "will expire again in %d days from today.\n"
-	    "----------------------------------------------------\n",
-	    SILC_CLIENT_KEY_EXPIRES, SILC_CLIENT_KEY_EXPIRES);
-
-    fprintf(stdout, "Would you like to create a new key pair (y/n)?: ");
-    answer = getchar();
-    
-    while ((answer != 'y') && (answer != 'Y') && (answer != 'n') && (answer != 'N')) {
-      while (answer != '\n') answer = getchar();
-      fprintf(stdout, "Answer 'y' or 'n' and press <Enter>\n");
-      fprintf(stdout, "Would you like to create a new key pair (y/n)?: ");
-      answer = getchar();
-    }
-    if (answer == 'Y' || answer == 'y') {
-      silc_create_key_pair(SILC_CLIENT_DEF_PKCS,
-			   SILC_CLIENT_DEF_PKCS_LEN,
-			   file_public_key, file_private_key, NULL,
-			   NULL, NULL, NULL, NULL, FALSE);
-      printf("Press <Enter> to continue...\n");
-      getchar();
-    } else {
-#ifdef HAVE_UTIME
-      struct utimbuf utim;
-      utim.actime = time(NULL);
-      utim.modtime = time(NULL);
-      utime(file_private_key, &utim);
-#endif
-    }
-  }
-  
   return TRUE;
 }
 
