@@ -187,14 +187,14 @@ static bool my_parse_publickeydir(const char *dirname, void **auth_data)
 
   /* errors are not considered fatal */
   while ((get_file = readdir(dp))) {
-    int dirname_len = strlen(dirname);
-    char buf[1024];
     const char *filename = get_file->d_name;
+    char buf[1024];
+    int dirname_len = strlen(dirname), filename_len = strlen(filename);
     struct stat check_file;
 
     /* Ignore "." and "..", and take files only with ".pub" suffix. */
     if (!strcmp(filename, ".") || !strcmp(filename, "..") ||
-	!strstr(filename, ".pub"))
+	(filename_len < 5) || strcmp(filename + filename_len - 4, ".pub"))
       continue;
 
     memset(buf, 0, sizeof(buf));
