@@ -1,6 +1,9 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
+ o Does not show ops and normal users on JOIN correctly, perhaps some
+   theme issue (Fix this to 0.8.x).
+
  o /cumode for unknown nick does not give any error message (Fix this to
    1.0).
 
