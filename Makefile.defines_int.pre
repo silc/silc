@@ -41,7 +41,7 @@ SILC_CFLAGS=@CFLAGS@
 # Installation defines
 #
 silc_etcdir=@ETCDIR@
-silc_modulesdir=$(silc_install_prefix)/@MODULESDIR@
-silc_helpdir=$(silc_install_prefix)/@HELPDIR@
-silc_docdir=$(silc_install_prefix)/@DOCDIR@
-silc_logsdir=$(silc_install_prefix)/@LOGSDIR@
+silc_modulesdir=@MODULESDIR@
+silc_helpdir=@HELPDIR@
+silc_docdir=@DOCDIR@
+silc_logsdir=@LOGSDIR@
