@@ -42,9 +42,6 @@
  *   applications.  These functions are implemented in the SILC Client Library.
  *   Application may freely call these functions from the library.
  *
- * Please, refer to the README file in this directory for the directions
- * of how to use the SILC Client Library.
- *
  ***/
 
 #ifndef SILCCLIENT_H
