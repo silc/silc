@@ -8,6 +8,10 @@ Sat May 18 11:35:19 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 	  the client.  Added support for checking when the resolvers
 	  are finished.  Affected file is lib/silcclient/idlist.c.
 
+	* Wait by default 3 seconds before reconnecting to the server
+	  after being disconnected.  Makes the /detach command a bit
+	  more usable.
+
 Fri May 17 17:23:45 EEST 2002 Pekka Riikonen <priikone@silcnet.org>
 
 	* Check the watcher list before sending signoff notifys
