@@ -3787,9 +3787,19 @@ void silc_server_resume_client(SilcServer server,
     sock->user_data = detached_client;
     detached_client->connection = sock;
 
+    if (client->data.public_key)
+      silc_hash_table_del_by_context(server->pk_hash,
+	                             detached_client->data.public_key,
+				     client);
+
     /* Take new keys and stuff into use in the old entry */
     silc_idlist_del_data(detached_client);
     silc_idlist_add_data(detached_client, idata);
+
+    if (detached_client->data.public_key)
+      silc_hash_table_add(server->pk_hash,
+                          detached_client->data.public_key, client);
+
     detached_client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
     detached_client->data.status |= SILC_IDLIST_STATUS_LOCAL;
@@ -4034,6 +4044,14 @@ void silc_server_resume_client(SilcServer server,
 
     /* Client is detached, and now it is resumed.  Remove the detached
        mode and mark that it is resumed. */
+
+    /* we need to delete the public key from the has .. but do we need to
+     * get the key again? */
+    if (detached_client->data.public_key)
+      silc_hash_table_del_by_context(server->pk_hash,
+	                             detached_client->data.public_key,
+				     detached_client);
+
     silc_idlist_del_data(detached_client);
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
