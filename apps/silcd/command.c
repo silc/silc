@@ -4661,8 +4661,6 @@ SILC_SERVER_CMD_FUNC(leave)
 				 FALSE : !server->standalone);
   }
 
-  silc_free(id);
-
  out:
   if (id)
     silc_free(id);

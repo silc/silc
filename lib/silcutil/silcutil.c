@@ -555,7 +555,7 @@ int silc_string_compare(char *string1, char *string2)
   tmpstr2 = silc_calloc(slen2 + 1, sizeof(char));
   memcpy(tmpstr2, string2, slen2);
   
-  for (i = 0; i < slen2; i++) {
+  for (i = 0; i < slen1; i++) {
     
     /* * wildcard. Only one * wildcard is possible. */
     if (tmpstr1[i] == '*')
@@ -576,11 +576,6 @@ int silc_string_compare(char *string1, char *string2)
 	if (!(slen1 < slen2))
 	  tmpstr2[i] = '?';
       }
-#if 0
-    } else {
-      if (strncmp(tmpstr1, tmpstr2, i))
-	strncpy(tmpstr2, string2, slen2);
-#endif
     }
   }
   

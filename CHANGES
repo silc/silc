@@ -1,3 +1,11 @@
+Fri Apr 20 18:58:43 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed buffer overflow in silc_string_compare in the file
+	  lib/silcutil/silcutil.c.
+
+	* Fixed double free in silc_server_command_leave in the file
+	  silcd/command.c.
+
 Fri Apr 20 14:00:11 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the version checking in the server.  Affected file is

@@ -1521,7 +1521,7 @@ SILC_TASK_CALLBACK(silc_server_packet_parse_real)
     if (client && client->id) {
       void *id = silc_id_str2id(packet->src_id, packet->src_id_len,
 				packet->src_id_type);
-      if (SILC_ID_CLIENT_COMPARE(client->id, id)) {
+      if (!id || SILC_ID_CLIENT_COMPARE(client->id, id)) {
 	silc_free(id);
 	goto out;
       }
