@@ -1282,7 +1282,7 @@ void silc_client_packet_send(SilcClient client,
 			     SilcHmac hmac,
 			     unsigned char *data, 
 			     SilcUInt32 data_len, 
-			     int force_send)
+			     bool force_send)
 {
   SilcPacketContext packetdata;
   const SilcBufferStruct packet;

@@ -266,9 +266,8 @@ void silc_send_heartbeat(SilcSocketConnection sock,
   if (server == NULL)
     return;
 
-  silc_client_packet_send(silc_client, sock, SILC_PACKET_HEARTBEAT, 0,
-		          NULL, 0, FALSE);
-
+  silc_client_packet_send(silc_client, sock, SILC_PACKET_HEARTBEAT,
+			  NULL, 0, NULL, NULL, NULL, 0, FALSE);
 }
 
 static void sig_connected(SILC_SERVER_REC *server)

@@ -2281,6 +2281,45 @@ const SilcHashTable silc_client_attributes_get(SilcClient client,
  ***/
 SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...);
 
+/* Low level packet sending functions */
+
+/****f* silcclient/SilcClientAPI/silc_client_packet_send
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_packet_send(SilcClient client, 
+ *                                 SilcSocketConnection sock,
+ *                                 SilcPacketType type, 
+ *                                 void *dst_id,
+ *                                 SilcIdType dst_id_type,
+ *                                 SilcCipher cipher,
+ *                                 SilcHmac hmac,
+ *                                 unsigned char *data, 
+ *                                 SilcUInt32 data_len, 
+ *                                 bool force_send);
+ *
+ * DESCRIPTION
+ *
+ *    Constructs a Requested Attributes buffer. If the `attribute' is zero (0)
+ *    then all attributes are requested.  Alternatively, `attribute' and
+ *    all variable arguments can each be requested attribute.  In this case
+ *    the last must be set to zero (0) to complete the variable list of
+ *    requested attributes.  See SilcAttribute for all attributes.
+ *    You can give the returned buffer as argument to for example
+ *    silc_client_get_client_by_id_resolve function.
+ *
+ ***/
+void silc_client_packet_send(SilcClient client, 
+			     SilcSocketConnection sock,
+			     SilcPacketType type, 
+			     void *dst_id,
+			     SilcIdType dst_id_type,
+			     SilcCipher cipher,
+			     SilcHmac hmac,
+			     unsigned char *data, 
+			     SilcUInt32 data_len, 
+			     bool force_send);
+
 #include "client.h"
 #include "command.h"
 #include "command_reply.h"
