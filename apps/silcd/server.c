@@ -5081,11 +5081,12 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
     if (ctx->ske)
       silc_ske_free(ctx->ske);
     silc_free(ctx);
-
-    /* Reconnect */
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
-    silc_server_create_connections(server);
+
+    /* Reconnect */
+    if (sock->type != SILC_SOCKET_TYPE_CLIENT)
+      silc_server_create_connections(server);
     return;
   }
 
