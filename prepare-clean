@@ -28,6 +28,13 @@ echo "All errors and warnings may be safely ignored."
 make clean -k
 make distclean -k
 rm -f Makefile.am
+rm -f Makefile.defines
+rm -f Makefile.defines.in
+rm -f Makefile.defines_int.in
+rm -f irssi/Makefile.defines
+rm -f irssi/Makefile.defines.in
+rm -f irssi/Makefile.defines_int
+rm -f irssi/Makefile.defines_int.in
 rm -f lib/Makefile.am
 rm -f configure.in
 rm -f includes/stamp-*

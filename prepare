@@ -96,7 +96,8 @@ cp Makefile.defines.pre Makefile.defines.in
 cp Makefile.defines.in Makefile.defines
 cp Makefile.defines.in irssi
 cp Makefile.defines.in irssi/Makefile.defines
-cp Makefile.defines_int Makefile.defines_int.in
+cp Makefile.defines_int.pre Makefile.defines_int.in
+cp Makefile.defines_int.in Makefile.defines_int
 cp Makefile.defines_int.in irssi
 cp Makefile.defines_int.in irssi/Makefile.defines_int
 

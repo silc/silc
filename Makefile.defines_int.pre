@@ -1,5 +1,5 @@
 #
-#  Makefile.defines_int
+#  Makefile.defines_int.pre
 #
 #  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 #
@@ -24,18 +24,18 @@
 #
 # Generic definitions
 #
-silc_top_srcdir=/home/silc/silc
+silc_top_srcdir=@SILC_TOP_SRCDIR@
 
 #
 # Common libraries that are linked against the created executable
 #
-SILC_COMMON_LIBS= -lncurses -ldl -L$(silc_top_srcdir)/lib -lsilc
+SILC_COMMON_LIBS= @LIBS@ -L$(silc_top_srcdir)/lib -lsilc
 
 #
 # Installation defines
 #
-silc_etcdir=/etc/silc
-silc_modulesdir=$(prefix)/modules
-silc_helpdir=$(prefix)/help
-silc_docdir=$(prefix)/doc
-silc_logsdir=$(prefix)/logs
+silc_etcdir=@ETCDIR@
+silc_modulesdir=$(prefix)/@MODULESDIR@
+silc_helpdir=$(prefix)/@HELPDIR@
+silc_docdir=$(prefix)/@DOCDIR@
+silc_logsdir=$(prefix)/@LOGSDIR@

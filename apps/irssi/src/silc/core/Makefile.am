@@ -1,26 +1,15 @@
-IRSSI_INCLUDE=../../..
-silc_top_srcdir=../../../..
+include $(top_srcdir)/Makefile.defines
 
-INCLUDES = \
+IRSSI_INCLUDE=../../..
+
+ADD_INCLUDES = \
 	$(GLIB_CFLAGS) -I$(IRSSI_INCLUDE) -I$(IRSSI_INCLUDE)/src \
         -DSYSCONFDIR=\""$(sysconfdir)"\" \
         -I$(IRSSI_INCLUDE) \
 	-I$(IRSSI_INCLUDE)/src \
         -I$(IRSSI_INCLUDE)/src/core \
         -I$(IRSSI_INCLUDE)/src/fe-common/core \
-        -I$(IRSSI_INCLUDE)/src/fe-common/silc \
-	-I$(silc_top_srcdir)/lib/silccore \
-	-I$(silc_top_srcdir)/lib/silccrypt \
-        -I$(silc_top_srcdir)/lib/silcmath \
-        -I$(silc_top_srcdir)/lib/silcmath/gmp \
-	-I$(silc_top_srcdir)/lib/silcske \
-	-I$(silc_top_srcdir)/lib/silcsim \
-	-I$(silc_top_srcdir)/lib/silcutil \
-	-I$(silc_top_srcdir)/lib/silcclient \
-	-I$(silc_top_srcdir)/lib/contrib \
-        -I$(silc_top_srcdir)/includes \
-        -I$(silc_top_srcdir)/doc \
-	-I$(silc_top_srcdir)/lib/trq
+        -I$(IRSSI_INCLUDE)/src/fe-common/silc
 
 noinst_LIBRARIES=libsilc_core.a
 
@@ -45,3 +34,4 @@ noinst_HEADERS = \
 	silc-nicklist.h \
 	silc-queries.h \
 	silc-servers.h
+
