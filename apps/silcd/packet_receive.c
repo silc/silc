@@ -893,6 +893,11 @@ void silc_server_notify(SilcServer server,
     }
     client_id = silc_id_payload_parse_id(tmp, tmp_len);
 
+    /* Send to channel */
+    silc_server_packet_send_to_channel(server, channel, packet->type, FALSE,
+				       packet->buffer->data, 
+				       packet->buffer->len, FALSE);
+
     /* If the the client is not in local list we check global list (ie. the
        channel will be global channel) and if it does not exist then create
        entry for the client. */
@@ -919,11 +924,6 @@ void silc_server_notify(SilcServer server,
     } else {
       silc_free(client_id);
     }
-
-    /* Send to channel */
-    silc_server_packet_send_to_channel(server, channel, packet->type, FALSE,
-				       packet->buffer->data, 
-				       packet->buffer->len, FALSE);
     break;
 
   case SILC_NOTIFY_TYPE_LEAVE:
