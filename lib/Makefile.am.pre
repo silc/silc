@@ -87,9 +87,9 @@ endif
 
 libsilc.a:
 	find $(SILCLIB_DIRS) -type f -name *.o | xargs $(AR) cru libsilc.a
-	ranlib libsilc.a
+	$(RANLIB) libsilc.a
 
 libsilcclient.a:
 	find $(SILCCLIENTLIB_DIRS) -type f -name *.o | xargs $(AR) cru libsilcclient.a
-	ranlib libsilcclient.a
+	$(RANLIB) libsilcclient.a
 

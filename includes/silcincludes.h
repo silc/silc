@@ -94,10 +94,14 @@
 #error netinet/in.h not found in the system
 #endif
 
+#ifdef HAVE_XTI_H
+#include <xti.h>
+#else
 #ifdef HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
 #else
-#error netinet/tcp.h not found in the system
+#error xti.h nor even netinet/tcp.h found in the system
+#endif
 #endif
 
 #ifdef HAVE_NETDB_H
