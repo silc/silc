@@ -96,11 +96,6 @@ struct SilcServerStruct {
   /* Table of connected sockets */
   SilcSocketConnection *sockets;
 
-  /* Server keys */
-  SilcCipher send_key;
-  SilcCipher receive_key;
-  SilcCipher none_cipher;
-
   /* Server public key */
   SilcPKCS pkcs;
   SilcPublicKey public_key;

@@ -131,7 +131,6 @@ static int silc_server_is_registered(SilcServer server,
 
   silc_server_command_send_status_reply(cmd, command,
 					SILC_STATUS_ERR_NOT_REGISTERED);
-  silc_server_command_free(cmd);
   return FALSE;
 }
 
@@ -148,6 +147,11 @@ SILC_TASK_CALLBACK(silc_server_command_process_timeout)
 {
   SilcServerCommandTimeout timeout = (SilcServerCommandTimeout)context;
   SilcClientEntry client = (SilcClientEntry)timeout->ctx->sock->user_data;
+
+  if (!client) {
+    silc_server_command_free(timeout->ctx);
+    silc_free(timeout);
+  }
 
   /* Update access time */
   client->last_command = time(NULL);

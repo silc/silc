@@ -163,9 +163,6 @@ int silc_server_init(SilcServer server)
   silc_hash_alloc("md5", &server->md5hash);
   silc_hash_alloc("sha1", &server->sha1hash);
 
-  /* Initialize none cipher */
-  silc_cipher_alloc("none", &server->none_cipher);
-
   /* Allocate PKCS context for local public and private keys */
   silc_pkcs_alloc(server->public_key->name, &server->pkcs);
   silc_pkcs_public_key_set(server->pkcs, server->public_key);
