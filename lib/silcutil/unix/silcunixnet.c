@@ -191,11 +191,11 @@ int silc_net_create_connection(const char *local_ip, int port,
 
     /* Set sockaddr for local listener, and try to bind it. */
     if (silc_net_set_sockaddr(&local, local_ip, 0))
-      bind(sock, &local.sa, sizeof(local));
+      bind(sock, &local.sa, SIZEOF_SOCKADDR(local));
   }
 
   /* Connect to the host */
-  rval = connect(sock, &desthost.sa, sizeof(desthost));
+  rval = connect(sock, &desthost.sa, SIZEOF_SOCKADDR(desthost));
   if (rval < 0) {
     SILC_LOG_ERROR(("Cannot connect to remote host: %s", strerror(errno)));
     shutdown(sock, 2);
@@ -262,14 +262,14 @@ int silc_net_create_connection_async(const char *local_ip, int port,
 
     /* Set sockaddr for local listener, and try to bind it. */
     if (silc_net_set_sockaddr(&local, local_ip, 0))
-      bind(sock, &local.sa, sizeof(local));
+      bind(sock, &local.sa, SIZEOF_SOCKADDR(local));
   }
 
   /* Set the socket to non-blocking mode */
   silc_net_set_socket_nonblock(sock);
 
   /* Connect to the host */
-  rval = connect(sock, &desthost.sa, sizeof(desthost));
+  rval = connect(sock, &desthost.sa, SIZEOF_SOCKADDR(desthost));
   if (rval < 0) {
     if (errno !=  EINPROGRESS) {
       SILC_LOG_ERROR(("Cannot connect to remote host: %s", strerror(errno)));
