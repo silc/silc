@@ -1,3 +1,48 @@
+Sun Nov 25 18:01:45 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Don't use __restrict in older GCC's.  Affected file is
+	  lib/silcmath/mpi/mpi-priv.h.  A patch by salo.
+
+	* silc_net_localhost now attempts to reverse lookup the
+	  IP/hostname.  Affected file lib/silcutil/silcnet.c.
+
+	* Defined <founder auth> argument to the SILC_COMMAND_JOIN
+	  command.  It can be used to gain founder privileges at 
+	  the same time when joining the channel.
+
+	  Defined that the SILC_NOTIFY_TYPE_KICKED send the 
+	  kicker's client ID as well.  Updated protocol specs.
+
+	  Defined that the server must send SILC_COMMAND_IDENTIFY
+	  command reply with error status to client who sent
+	  private message with invalid client ID.
+
+	  Updated the protocol specification.
+
+	* Added silc_server_send_command_reply to send any
+	  command reply.  Affected file silcd/packet_send.[ch].
+
+	* Added silc_id_payload_encode_data to encode ID payload
+	  from raw ID data.  Affected file lib/silccore/silcpayload.[ch].
+
+	* The server now send IDENTIFY command reply with error
+	  status if client ID in private message is invalid.  Affected
+	  file silcd/packet_receive.c.
+
+Sat Nov 24 20:08:22 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Typo fixes in irssi/src/fe-common/silc/module-formats.c.
+	  A patch by Sunfall.
+
+	* Added libtool support for compiling shared objects in
+	  lib/silcsim.  Affected file configure.in.pre and
+	  lib/silcsim/Makefile.am.  Original patch by cras.
+
+Fri Nov 23 23:30:59 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Pid file configuration, and server's config file fixes
+	  patch by toma.  Updated CREDITS file. 
+
 Sun Nov 18 01:34:41 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed silc_client_channel_message to not try to decrypt
@@ -15,6 +60,12 @@ Wed Nov 14 23:44:56 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 	  main loop.  Typically the GUI application would register an
 	  idle task that calls this function multiple times in a second
 	  to quickly process the SILC specific data.
+
+Wed Nov 14 19:16:52 CET 2001  Johnny Mnemonic <johnny@themnemonic.org>
+
+        * Fixed silc_server_drop() for dropping the supplementary
+          groups as well, this could cause a security hole on some
+          systems.
 
 Wed Nov 14 16:22:25 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
