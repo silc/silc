@@ -1,6 +1,6 @@
 Sun Feb 17 10:10:14 EET 2002  Pekka Riikonen <priikone@silcnet.org>
 
-	* ROBOdoc documented the lib/silcske/silcsftp.h, and improved
+	* ROBOdoc documented the lib/silcske/silcske.h, and improved
 	  the SKE interface a bit.
 
 	* Fixed padding problem in PKCS#1. The padding was not actually
