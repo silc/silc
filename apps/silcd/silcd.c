@@ -389,10 +389,10 @@ static void silc_get_debug_level(int level)
     }
 }
 
-/* This function should not be called directly but thru the wrapper
-   macro SILC_SERVER_LOG_STDERR() */
+/* This function should not be called directly but through the appropriate
+   wrapper macro defined in server.h */
 
-void silc_server_stderr(char *message)
+void silc_server_stderr(SilcLogType type, char *message)
 {
   if (silcd->background) {
     char *p, *n = message;
@@ -407,7 +407,8 @@ void silc_server_stderr(char *message)
     }
     *n = 0;
 
-    silc_log_output(SILC_LOG_ERROR, message);
+    /* the message is freed inside the logging function */
+    silc_log_output(type, message);
   }
   else {
     fprintf(stderr, "%s\n", message);
