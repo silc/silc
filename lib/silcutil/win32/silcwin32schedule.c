@@ -52,7 +52,7 @@
 
 int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeout)
 {
-  HANDLE handles[MAXIMUM_WAIT_OBJECTS];
+  static HANDLE handles[MAXIMUM_WAIT_OBJECTS];
   DWORD ready, curtime, timeo;
   int nhandles = 0, i;
   MSG msg;
@@ -83,27 +83,17 @@ int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeou
      and wait just for windows messages. */
   if (nhandles == 0 && timeout) {
     UINT timer = SetTimer(NULL, 0, timeo, NULL);
-    curtime = GetTickCount();
-    while (timer) {
-      WaitMessage();
 
-      while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-	if (msg.message == WM_TIMER) {
-	  KillTimer(NULL, timer);
-	  return 0;
-	}
-	TranslateMessage(&msg); 
-	DispatchMessage(&msg); 
-      }
-
+    GetMessage(&msg, NULL, 0, 0);
+    if (msg.message == WM_TIMER) {
       KillTimer(NULL, timer);
-      if (timeo != INFINITE) {
-	timeo -= GetTickCount() - curtime;
-	if (timeo < 0)
-	  timeo = 0;
-      }
-      timer = SetTimer(NULL, 0, timeo, NULL);
+      return 0;
     }
+    TranslateMessage(&msg); 
+    DispatchMessage(&msg); 
+
+    KillTimer(NULL, timer);
+    timeo = 0;
   }
 
  retry:

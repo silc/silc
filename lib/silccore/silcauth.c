@@ -216,14 +216,8 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
 		     SILC_STR_UI_XNSTRING(pk, pk_len),
 		     SILC_STR_END);
 
-  ret = silc_memdup(buf->data, buf->len);
-  if (!ret)
-    return NULL;
+  ret = silc_buffer_steal(buf, ret_len);
 
-  if (ret_len)
-    *ret_len = buf->len;
-
-  silc_buffer_clear(buf);
   silc_buffer_free(buf);
   silc_free(id_data);
   silc_free(pk);

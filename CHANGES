@@ -1,3 +1,8 @@
+Tue Jan 14 12:25:09 CET 2003 Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_buffer_steal to steal the data from the buffer.
+	  Affected file lib/silcutil/silcbuffer.h.
+
 Sat Jan 11 18:16:29 CET 2003  Giovanni Giacobbi <giovanni@giacobbi.net>
 
 	* Fixed server crash with double Primary block in config file.
