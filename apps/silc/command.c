@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.10  2000/07/19 07:06:33  priikone
+ * 	Added AWAY command.
+ *
  * Revision 1.9  2000/07/12 05:56:32  priikone
  * 	Major rewrite of ID Cache system. Support added for the new
  * 	ID cache system.
@@ -830,7 +833,10 @@ SILC_CLIENT_CMD_FUNC(version)
   silc_client_command_free(cmd);
 }
 
-/* Command MSG. Sends private message to user or list of users. */
+/* Command MSG. Sends private message to user or list of users. Note that
+   private messages are not really commands, they are message packets,
+   however, on user interface it is convenient to show them as commands
+   as that is the common way of sending private messages (like in IRC). */
 /* XXX supports only one destination */
 
 SILC_CLIENT_CMD_FUNC(msg)
@@ -882,6 +888,43 @@ SILC_CLIENT_CMD_FUNC(msg)
   silc_client_command_free(cmd);
 }
 
+/* Local command AWAY. Client replies with away message to whomever sends
+   private message to the client if the away message is set. If this is
+   given without arguments the away message is removed. */
+
 SILC_CLIENT_CMD_FUNC(away)
 {
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientWindow win = NULL;
+  SilcClient client = cmd->client;
+
+  if (!cmd->client->current_win->sock) {
+    SILC_NOT_CONNECTED(cmd->client);
+    goto out;
+  }
+
+  win = (SilcClientWindow)cmd->sock->user_data;
+
+  if (cmd->argc == 1) {
+    if (win->away) {
+      silc_free(win->away->away);
+      silc_free(win->away);
+      win->away = NULL;
+
+      silc_say(client, "Away message removed");
+    }
+  } else {
+
+    if (win->away)
+      silc_free(win->away->away);
+    else
+      win->away = silc_calloc(1, sizeof(*win->away));
+    
+    win->away->away = strdup(cmd->argv[1]);
+
+    silc_say(client, "Away message set: %s", win->away->away);
+  }
+
+ out:
+  silc_client_command_free(cmd);
 }

@@ -38,6 +38,15 @@ typedef struct SilcClientPingStruct {
   char *dest_name;
 } SilcClientPing;
 
+/* Structure to hold away messages set by user. This is mainly created
+   for future extensions where away messages could be set according filters
+   such as nickname and hostname. For now only one away message can 
+   be set in one connection. */
+typedef struct SilcClientAwayStruct {
+  char *away;
+  struct SilcClientAwayStruct *next;
+} SilcClientAway;
+
 /* Window structure used in client to associate all the important
    connection (window) specific data to this structure. How the window
    actually appears on the screen in handeled by the silc_screen*
@@ -104,6 +113,9 @@ struct SilcClientWindowObject {
   /* Requested pings. */
   SilcClientPing *ping;
   unsigned int ping_count;
+
+  /* Set away message */
+  SilcClientAway *away;
 
   /* The actual physical screen. This data is handled by the
      screen handling routines. */

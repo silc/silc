@@ -24,6 +24,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.8  2000/07/19 07:06:51  priikone
+ * 	Added AWAY command.
+ *
  * Revision 1.7  2000/07/12 05:56:32  priikone
  * 	Major rewrite of ID Cache system. Support added for the new
  * 	ID cache system.
@@ -747,13 +750,16 @@ SILC_CLIENT_CMD_REPLY_FUNC(names)
 }
 
 /* Private message received. This processes the private message and
-   finally displays it on the screen. */
+   finally displays it on the screen. Note that private messages are not
+   really commands except on user interface which is reason why this
+   handling resides here. */
 
 SILC_CLIENT_CMD_REPLY_FUNC(msg)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClient client = cmd->client;
-  SilcBuffer buffer = (SilcBuffer)cmd->context;
+  SilcClientWindow win = (SilcClientWindow)cmd->sock->user_data;
+  SilcBuffer buffer = (SilcBuffer)cmd->packet->buffer;
   unsigned short nick_len;
   unsigned char *nickname, *message;
 
@@ -766,6 +772,46 @@ SILC_CLIENT_CMD_REPLY_FUNC(msg)
   message = silc_calloc(buffer->len + 1, sizeof(char));
   memcpy(message, buffer->data, buffer->len);
   silc_print(client, "*%s* %s", nickname, message);
+
+  /* See if we are away (gone). If we are away we will reply to the
+     sender with the set away message. */
+  if (win->away && win->away->away) {
+    SilcClientID *remote_id;
+    SilcClientEntry remote_client;
+    SilcIDCacheEntry id_cache;
+
+    if (cmd->packet->src_id_type != SILC_ID_CLIENT)
+      goto out;
+
+    remote_id = silc_id_str2id(cmd->packet->src_id, SILC_ID_CLIENT);
+    if (!remote_id)
+      goto out;
+
+    /* Check whether we know this client already */
+    if (!silc_idcache_find_by_id_one(win->client_cache, remote_id,
+				     SILC_ID_CLIENT, &id_cache))
+      {
+	/* Allocate client entry */
+	remote_client = silc_calloc(1, sizeof(*remote_client));
+	remote_client->id = remote_id;
+	remote_client->nickname = strdup(nickname);
+
+	/* Save the client to cache */
+	silc_idcache_add(win->client_cache, remote_client->nickname,
+			 SILC_ID_CLIENT, remote_client->id, remote_client, 
+			 TRUE);
+      } else {
+	silc_free(remote_id);
+	remote_client = (SilcClientEntry)id_cache->context;
+      }
+
+    /* Send the away message */
+    silc_client_packet_send_private_message(client, cmd->sock, remote_client,
+					    win->away->away,
+					    strlen(win->away->away), TRUE);
+  }
+
+ out:
   memset(message, 0, buffer->len);
   silc_free(message);
 }
