@@ -343,7 +343,7 @@ multiple same attributes in the packet.
      0x00000040   MOOD_INLOVE       The user feels being in love
      0x00000080   MOOD_SLEEPY       The user feels sleepy
      0x00000100   MOOD_BORED        The user feels bored
-     0x00000200   MOOD_EXCITED      The user feels exited
+     0x00000200   MOOD_EXCITED      The user feels excited
      0x00000400   MOOD_ANXIOUS      The user feels anxious
 
 

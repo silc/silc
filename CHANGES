@@ -1,3 +1,9 @@
+Tue Nov 12 19:46:39 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed public key decoding in crypto library.
+
+	* Added better error printing to SKE library.
+
 Tue Nov 12 08:50:12 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed NICK command to not crash if nickname was not sent.
