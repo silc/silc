@@ -20,6 +20,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.12  2000/07/19 07:07:34  priikone
+ * 	Save packet on private message's command context.
+ *
  * Revision 1.11  2000/07/18 12:20:39  priikone
  * 	Added ^U functionality, clears input line (patch form cras).
  *
@@ -1277,7 +1280,7 @@ void silc_client_packet_parse_type(SilcClient client,
       ctx = silc_calloc(1, sizeof(*ctx));
       ctx->client = client;
       ctx->sock = sock;
-      ctx->context = buffer;	/* kludge */
+      ctx->packet = packet;
       silc_client_command_reply_msg((void *)ctx);
     }
     break;
