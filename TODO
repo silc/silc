@@ -1,8 +1,6 @@
 TODO/bugs in Irssi SILC client
 ==============================
 
- o add --with-iconv
-
  o UTF-8 encode/decode WHOIS userinfos, topic, etc.
 
  o Testing
