@@ -29,6 +29,8 @@
 #include "serverid.h"
 #include "serverconfig.h"
 #include "server.h"
+#include "packet_send.h"
+#include "packet_receive.h"
 #include "route.h"
 #include "protocol.h"
 #include "command.h"

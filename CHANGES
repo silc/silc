@@ -1,3 +1,37 @@
+Wed Nov 22 22:14:19 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Splitted server.[ch] finally.  Created now packet_send.[ch] and
+	  packet_receive.[ch] to separate packet sending and receiving
+	  routines.  The server.[ch] now includes everything else including
+	  actual packet processing (writing and reading data) and other
+	  server issues.
+
+	  Renamed silc_server_private_message_send_internal to
+	  silc_server_send_private_message.  The routine is still though
+	  used only to relay private messages as server does not send
+	  private messages itself.
+
+	  Renamed silc_server_new_channel to silc_server_create_new_channel
+	  and added new function sicl_server_new_channel that handles the
+	  incoming New Channel packet.  Added also new sending function
+	  silc_server_send_new_channel to send New Channel Payload.
+
+	* Added new function silc_server_notify to process incoming notify
+	  packet to the server/router. Server may then relay the notify
+	  to clients if needed.
+
+	* Added new function silc_server_new_channel_user to process incoming
+	  New Channel User packet.  Router will redistribute the packet and
+	  send JOIN notify to its local clients and locally connected servers
+	  if needed.  Normal server will send JOIN notify to its local client
+	  on same channel when received this packet.  Added also corresponding
+	  sending function silc_server_send_new_channel_user to sent the
+	  payload.
+
+	* Added boolean route argument to send_notif_to_channel and
+	  packet_send_to_channel functions to attempt to route the packet
+	  if it is TRUE and send only locally if it is FALSE.
+
 Tue Nov 21 19:49:31 EET 2000  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* silc_server_replace_id now broadcasts the received replace ID

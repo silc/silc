@@ -1702,6 +1702,10 @@ create their own ID's.  Server registers itself to the network by sending
 SILC_PACKET_NEW_SERVER to the router it connected to.  The case is same
 when router connects to another router.
 
+However, this payload is not and must not be used to send information
+about new channels.  New channels are always distributed by sending the
+dedicated SILC_PACKET_NEW_CHANNEL packet.
+
 Hence, this payload is very important and used every time when some
 new entity is registered to the SILC network.  Client never sends this
 payload.  Both client and server (and router) may receive this payload.
@@ -2059,10 +2063,9 @@ o New ID Data (variable length) - The actual new ID data.
 2.3.25 Remove ID Payload
 
 Remove ID payload is used to remove ID from SILC network.  This is used
-for example when client exits SILC network.  The server must in this
-case send this payload to notify that this ID is not valid anymore.
-After this has been send the old ID must not be used anymore.  Client
-must not send this payload.
+when client, server, router or channel is removed from the SILC network.
+After this payload has been send the old ID must not be used anymore.
+Client must not send or receive this payload.
 
 The packet uses generic ID Payload as New ID Payload.  See section
 2.3.2.1 for generic ID Payload.
