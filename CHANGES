@@ -1,3 +1,24 @@
+Tue Oct 30 16:58:14 EST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Send error message to application if opening file for
+	  writing during file transfer fails.  Affected file is
+	  lib/silcclient/client_ftp.c.
+
+	  Remove all file transfer sessions for a client that we're
+	  removing from ID cache.
+
+	  Affected file is lib/silcclient/client_ftp.c.
+
+	* Fixed silc_net_addr2bin to return correct address.  Affected
+	  file lib/silcutil/[unix/win32]/silc[unix/win32]net.c.
+
+	* Fixed file transfer session removing on signoff notify.
+	  Affected file irssi/src/silc/core/silc-servers.c.
+
+	* Added the SilcClientFileError to be returned in the monitor
+	  callback.  Added NO_SUCH_FILE and PERMISSION_DENIED errors.
+	  Affected file lib/silcclient/silcapi.h.
+
 Mon Oct 29 17:43:04 EST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a crash in silc_client_ftp_free_sessions and

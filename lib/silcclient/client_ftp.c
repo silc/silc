@@ -206,6 +206,7 @@ static void silc_client_ftp_monitor(SilcSFTP sftp,
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
 			  SILC_CLIENT_FILE_MONITOR_SEND,
+			  SILC_CLIENT_FILE_OK,
 			  data->offset, session->filesize,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
@@ -243,7 +244,12 @@ static void silc_client_ftp_data(SilcSFTP sftp,
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 0, 0,
+			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  (status == SILC_SFTP_STATUS_NO_SUCH_FILE ?
+			   SILC_CLIENT_FILE_NO_SUCH_FILE :
+			   status == SILC_SFTP_STATUS_PERMISSION_DENIED ?
+			   SILC_CLIENT_FILE_PERMISSION_DENIED :
+			   SILC_CLIENT_FILE_ERROR), 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
 
@@ -265,6 +271,7 @@ static void silc_client_ftp_data(SilcSFTP sftp,
   if (session->monitor)
     (*session->monitor)(session->client, session->conn,
 			SILC_CLIENT_FILE_MONITOR_RECEIVE,
+			SILC_CLIENT_FILE_OK,
 			session->read_offset, session->filesize,
 			session->client_entry, session->session_id,
 			session->filepath, session->monitor_context);
@@ -289,19 +296,31 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 0, 0,
+			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  (status == SILC_SFTP_STATUS_NO_SUCH_FILE ?
+			   SILC_CLIENT_FILE_NO_SUCH_FILE :
+			   status == SILC_SFTP_STATUS_PERMISSION_DENIED ?
+			   SILC_CLIENT_FILE_PERMISSION_DENIED :
+			   SILC_CLIENT_FILE_ERROR), 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
     return;
   }
 
   /* Open the actual local file */
-  session->fd = silc_file_open(session->filepath, O_RDWR | O_CREAT);
+  session->fd = silc_file_open(session->filepath, 
+			       O_RDWR | O_CREAT | O_EXCL);
   if (session->fd < 0) {
     /* Call monitor callback */
+    session->client->ops->say(session->client, session->conn, 
+			      SILC_CLIENT_MESSAGE_ERROR, 
+			      "File `%s' open failed: %s", session->filepath,
+			      strerror(errno));
+
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 0, 0,
+			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_ERROR, 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
     return;
@@ -317,6 +336,7 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
   if (session->monitor)
     (*session->monitor)(session->client, session->conn,
 			SILC_CLIENT_FILE_MONITOR_RECEIVE,
+			SILC_CLIENT_FILE_OK,
 			session->read_offset, session->filesize,
 			session->client_entry, session->session_id,
 			session->filepath, session->monitor_context);
@@ -339,7 +359,12 @@ static void silc_client_ftp_readdir_name(SilcSFTP sftp,
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 0, 0,
+			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  (status == SILC_SFTP_STATUS_NO_SUCH_FILE ?
+			   SILC_CLIENT_FILE_NO_SUCH_FILE :
+			   status == SILC_SFTP_STATUS_PERMISSION_DENIED ?
+			   SILC_CLIENT_FILE_PERMISSION_DENIED :
+			   SILC_CLIENT_FILE_ERROR), 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
     return;
@@ -375,7 +400,12 @@ static void silc_client_ftp_opendir_handle(SilcSFTP sftp,
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 0, 0,
+			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  (status == SILC_SFTP_STATUS_NO_SUCH_FILE ?
+			   SILC_CLIENT_FILE_NO_SUCH_FILE :
+			   status == SILC_SFTP_STATUS_PERMISSION_DENIED ?
+			   SILC_CLIENT_FILE_PERMISSION_DENIED :
+			   SILC_CLIENT_FILE_ERROR), 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
     return;
@@ -403,7 +433,12 @@ static void silc_client_ftp_version(SilcSFTP sftp,
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 0, 0,
+			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  (status == SILC_SFTP_STATUS_NO_SUCH_FILE ?
+			   SILC_CLIENT_FILE_NO_SUCH_FILE :
+			   status == SILC_SFTP_STATUS_PERMISSION_DENIED ?
+			   SILC_CLIENT_FILE_PERMISSION_DENIED :
+			   SILC_CLIENT_FILE_ERROR), 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
     return;
@@ -482,7 +517,8 @@ static void silc_client_ftp_start_key_agreement(SilcClientFtpSession session,
   /* Call monitor callback */
   if (session->monitor)
     (*session->monitor)(session->client, session->conn,
-			SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT, 0, 0,
+			SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT, 
+			SILC_CLIENT_FILE_OK, 0, 0,
 			session->client_entry, session->session_id,
 			NULL, session->monitor_context);
 
@@ -557,7 +593,8 @@ SILC_TASK_CALLBACK(silc_client_ftp_process_key_agreement)
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 0, 0,
+			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_ERROR, 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
     return;
@@ -576,7 +613,8 @@ SILC_TASK_CALLBACK(silc_client_ftp_process_key_agreement)
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 0, 0,
+			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_ERROR, 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
     return;
@@ -588,7 +626,8 @@ SILC_TASK_CALLBACK(silc_client_ftp_process_key_agreement)
   /* Call monitor callback */
   if (session->monitor)
     (*session->monitor)(session->client, session->conn,
-			SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT, 0, 0,
+			SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT, 
+			SILC_CLIENT_FILE_OK, 0, 0,
 			session->client_entry, session->session_id,
 			NULL, session->monitor_context);
 
@@ -663,7 +702,6 @@ void silc_client_ftp_session_free_client(SilcClientConnection conn,
       if (session->sock)
 	session->sock->user_data = NULL;
       silc_client_ftp_session_free(session);
-      break;
     }
   }
 }
@@ -816,7 +854,6 @@ silc_client_file_receive(SilcClient client,
 			 SilcClientConnection conn,
 			 SilcClientFileMonitor monitor,
 			 void *monitor_context,
-			 SilcClientEntry client_entry,
 			 uint32 session_id)
 {
   SilcClientFtpSession session;
@@ -845,7 +882,6 @@ silc_client_file_receive(SilcClient client,
 
   session->monitor = monitor;
   session->monitor_context = monitor_context;
-  session->client_entry = client_entry;
   session->conn = conn;
 
   /* If the hostname and port already exists then the remote client did
@@ -878,7 +914,8 @@ silc_client_file_receive(SilcClient client,
 		       SILC_STR_UI_XNSTRING(keyagr->data, keyagr->len),
 		       SILC_STR_END);
     silc_client_packet_send(client, conn->sock, SILC_PACKET_FTP,
-			    client_entry->id, SILC_ID_CLIENT, NULL, NULL,
+			    session->client_entry->id, 
+			    SILC_ID_CLIENT, NULL, NULL,
 			    ftp->data, ftp->len, FALSE);
     
     silc_buffer_free(keyagr);
@@ -959,7 +996,7 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
   hostname = silc_key_agreement_get_hostname(payload);
   port = silc_key_agreement_get_port(payload);
 
-  if (session == SILC_LIST_END) {
+  if (session == SILC_LIST_END || (!hostname && !port)) {
     /* No session found, create one and let the application know about
        incoming file transfer request. */
     
@@ -968,6 +1005,7 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
     session->session_id = ++conn->next_session_id;
     session->client = client;
     session->conn = conn;
+    session->client_entry = client_entry;
     silc_dlist_add(conn->ftp_sessions, session);
 
     /* Let the application know */
@@ -982,9 +1020,6 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
     goto out;
   }
 
-  if (!hostname)
-    goto out;
-
   session->hostname = strdup(hostname);
   session->port = port;
 
@@ -994,7 +1029,8 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 0, 0,
+			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_ERROR, 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
   }

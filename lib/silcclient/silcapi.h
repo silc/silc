@@ -1772,7 +1772,7 @@ typedef enum {
   SILC_CLIENT_FILE_MONITOR_RECEIVE,
   SILC_CLIENT_FILE_MONITOR_GET,
   SILC_CLIENT_FILE_MONITOR_PUT,
-  SILC_CLIENT_FILE_MONITOR_CLOSE,
+  SILC_CLIENT_FILE_MONITOR_CLOSED,
   SILC_CLIENT_FILE_MONITOR_ERROR,
 } SilcClientMonitorStatus;
 
@@ -1781,6 +1781,8 @@ typedef enum {
   SILC_CLIENT_FILE_ERROR,
   SILC_CLIENT_FILE_UNKNOWN_SESSION,
   SILC_CLIENT_FILE_ALREADY_STARTED,
+  SILC_CLIENT_FILE_NO_SUCH_FILE,
+  SILC_CLIENT_FILE_PERMISSION_DENIED,
 } SilcClientFileError;
 
 /****f* silcclient/SilcClientAPI/silc_client_file_receive
@@ -1790,6 +1792,7 @@ typedef enum {
  *    typedef void (*SilcClientFileMonitor)(SilcClient client,
  *                                          SilcClientConnection conn,
  *                                          SilcClientMonitorStatus status,
+ *                                          SilcClientFileError error,
  *                                          uint64 offset,
  *                                          uint64 filesize,
  *                                          SilcClientEntry client_entry,
@@ -1810,6 +1813,7 @@ typedef enum {
 typedef void (*SilcClientFileMonitor)(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientMonitorStatus status,
+				      SilcClientFileError error,
 				      uint64 offset,
 				      uint64 filesize,
 				      SilcClientEntry client_entry,
@@ -1865,7 +1869,6 @@ uint32 silc_client_file_send(SilcClient client,
  *                             SilcClientConnection conn,
  *                             SilcClientFileMonitor monitor,
  *                             void *monitor_context,
- *                             SilcClientEntry client_entry,
  *                             uint32 session_id);
  *
  * DESCRIPTION
@@ -1888,7 +1891,6 @@ silc_client_file_receive(SilcClient client,
 			 SilcClientConnection conn,
 			 SilcClientFileMonitor monitor,
 			 void *monitor_context,
-			 SilcClientEntry client_entry,
 			 uint32 session_id);
 
 /****f* silcclient/SilcClientAPI/silc_client_file_close

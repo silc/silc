@@ -132,8 +132,10 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "file_show_header", "File transfers", 0 },
 	{ "file_show_line", "  $0 $1: $2kB of $3kB ($4%%) - $5kB/s - $6", 7, { 0, 0, 1, 1, 1, 3, 0 } },
 	{ "file_already_started", "File transfer already started with {nick $0}", 1, { 0  } },
-	{ "file_error", "Error during file transfer with {nick $0}", 1, { 0  } },
-	{ "file_close", "File transfer closed with {nick $0}", 1, { 0  } },
+	{ "file_error", "Error during file transfer with {nick $0}", 1, { 0 } },
+	{ "file_error_no_such_file", "Error during file transfer with {nick $0}: $1: No such file", 2, { 0, 0 } },
+	{ "file_error_permission_denied", "Error during file transfer with {nick $0}: Permission denied", 1, { 0 } },
+	{ "file_close", "File transfer closed with {nick $0} - $1", 2, { 0, 0 } },
 
 	{ NULL, NULL, 0 }
 };

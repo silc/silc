@@ -421,6 +421,7 @@ SILC_TASK_CALLBACK(silc_client_file_close_later)
 static void silc_client_file_monitor(SilcClient client,
 				     SilcClientConnection conn,
 				     SilcClientMonitorStatus status,
+				     SilcClientFileError error,
 				     uint64 offset,
 				     uint64 filesize,
 				     SilcClientEntry client_entry,
@@ -432,13 +433,11 @@ static void silc_client_file_monitor(SilcClient client,
   FtpSession ftp;
   char fsize[32];
 
-  snprintf(fsize, sizeof(fsize) - 1, "%llu", (filesize / 1024));
+  snprintf(fsize, sizeof(fsize) - 1, "%llu", ((filesize + 1023) / 1024));
 
   silc_dlist_start(server->ftp_sessions);
   while ((ftp = silc_dlist_get(server->ftp_sessions)) != SILC_LIST_END) {
-    if (ftp->client_entry == client_entry) {
-      ftp->session_id = session_id;
-
+    if (ftp->session_id == session_id) {
       if (!ftp->filepath && filepath)
 	ftp->filepath = strdup(filepath);
       break;
@@ -449,8 +448,18 @@ static void silc_client_file_monitor(SilcClient client,
     return;
 
   if (status == SILC_CLIENT_FILE_MONITOR_ERROR) {
-    printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
-		       SILCTXT_FILE_ERROR, client_entry->nickname);
+    if (error == SILC_CLIENT_FILE_NO_SUCH_FILE)
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+			 SILCTXT_FILE_ERROR_NO_SUCH_FILE, 
+			 client_entry->nickname, 
+			 filepath ? filepath : "[N/A]");
+    else if (error == SILC_CLIENT_FILE_PERMISSION_DENIED)
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+			 SILCTXT_FILE_ERROR_PERMISSION_DENIED, 
+			 client_entry->nickname);
+    else
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+			 SILCTXT_FILE_ERROR, client_entry->nickname);
     silc_schedule_task_add(silc_client->schedule, 0,
 			   silc_client_file_close_later, ftp,
 			   1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
@@ -462,6 +471,19 @@ static void silc_client_file_monitor(SilcClient client,
   if (status == SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT) {
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_FILE_KEY_EXCHANGE, client_entry->nickname);
+  }
+
+  /* Save some transmission data */
+  if (offset && filesize) {
+    unsigned long delta = time(NULL) - ftp->starttime;
+
+    ftp->percent = ((double)offset / (double)filesize) * (double)100.0;
+    if (delta)
+      ftp->kps = (double)((offset / (double)delta) + 1023) / (double)1024;
+    else
+      ftp->kps = (double)(offset + 1023) / (double)1024;
+    ftp->offset = offset;
+    ftp->filesize = filesize;
   }
 
   if (status == SILC_CLIENT_FILE_MONITOR_SEND) {
@@ -503,15 +525,6 @@ static void silc_client_file_monitor(SilcClient client,
 	server->current_session = NULL;
       silc_dlist_del(server->ftp_sessions, ftp);
     }
-  }
-
-  /* Save some transmission data */
-  if (offset && filesize) {
-    ftp->percent = ((double)offset / (double)filesize) * (double)100.0;
-    ftp->kps = (double)((offset / (double)(time(NULL) - ftp->starttime)) + 
-			1023) / (double)1024;
-    ftp->offset = offset;
-    ftp->filesize = filesize;
   }
 }
 
@@ -614,13 +627,15 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
     client_entry = entrys[0];
     silc_free(entrys);
 
-    silc_client_file_send(silc_client, conn, silc_client_file_monitor, 
-			  server, client_entry, argv[2]);
+    ftp = silc_calloc(1, sizeof(*ftp));
+    ftp->session_id = 
+      silc_client_file_send(silc_client, conn, silc_client_file_monitor, 
+			    server, client_entry, argv[2]);
+
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_FILE_SEND, client_entry->nickname,
 		       argv[2]);
 
-    ftp = silc_calloc(1, sizeof(*ftp));
     ftp->client_entry = client_entry;
     ftp->filepath = strdup(argv[2]);
     ftp->conn = conn;
@@ -663,7 +678,6 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 
       ret = silc_client_file_receive(silc_client, conn, 
 				     silc_client_file_monitor, server,
-				     server->current_session->client_entry,
 				     server->current_session->session_id);
       if (ret != SILC_CLIENT_FILE_OK) {
 	if (ret == SILC_CLIENT_FILE_ALREADY_STARTED)
@@ -681,10 +695,9 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 
     silc_dlist_start(server->ftp_sessions);
     while ((ftp = silc_dlist_get(server->ftp_sessions)) != SILC_LIST_END) {
-      if (ftp->client_entry == client_entry) {
+      if (ftp->client_entry == client_entry && !ftp->filepath) {
 	ret = silc_client_file_receive(silc_client, conn, 
 				       silc_client_file_monitor, server,
-				       ftp->client_entry,
 				       ftp->session_id);
 	if (ret != SILC_CLIENT_FILE_OK) {
 	  if (ret == SILC_CLIENT_FILE_ALREADY_STARTED)
@@ -739,44 +752,30 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 	goto out;
       }
  
-      ret = silc_client_file_close(silc_client, conn, 
-				   server->current_session->session_id);
-      if (ret != SILC_CLIENT_FILE_OK) {
-	if (ret == SILC_CLIENT_FILE_ALREADY_STARTED)
-	  printformat_module("fe-common/silc", server, NULL,
-			     MSGLEVEL_CRAP, SILCTXT_FILE_ALREADY_STARTED,
-			     server->current_session->client_entry->nickname);
-	else
-	  printformat_module("fe-common/silc", server, NULL,
-			     MSGLEVEL_CRAP, SILCTXT_FILE_CLIENT_NA,
-			     server->current_session->client_entry->nickname);
-      } else {
-	printformat_module("fe-common/silc", server, NULL,
-			   MSGLEVEL_CRAP, SILCTXT_FILE_CLOSED,
-			   server->current_session->client_entry->nickname);
-      }
+      silc_client_file_close(silc_client, conn, 
+			     server->current_session->session_id);
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_FILE_CLOSED,
+			 server->current_session->client_entry->nickname,
+			 server->current_session->filepath ?
+			 server->current_session->filepath : "[N/A]");
+      silc_dlist_del(server->ftp_sessions, server->current_session);
+      silc_free(server->current_session->filepath);
+      silc_free(server->current_session);
+      server->current_session = NULL;
       goto out;
     }
 
     silc_dlist_start(server->ftp_sessions);
     while ((ftp = silc_dlist_get(server->ftp_sessions)) != SILC_LIST_END) {
       if (ftp->client_entry == client_entry) {
-	ret = silc_client_file_close(silc_client, conn, ftp->session_id);
-	if (ret != SILC_CLIENT_FILE_OK) {
-	  if (ret == SILC_CLIENT_FILE_ALREADY_STARTED)
-	    printformat_module("fe-common/silc", server, NULL,
-			       MSGLEVEL_CRAP, SILCTXT_FILE_ALREADY_STARTED,
-			       client_entry->nickname);
-	  else
-	    printformat_module("fe-common/silc", server, NULL,
-			       MSGLEVEL_CRAP, SILCTXT_FILE_CLIENT_NA,
-			       client_entry->nickname);
-	} else {
-	  printformat_module("fe-common/silc", server, NULL,
-			     MSGLEVEL_CRAP, SILCTXT_FILE_CLOSED,
-			     client_entry->nickname);
-	}
-
+	silc_client_file_close(silc_client, conn, ftp->session_id);
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_FILE_CLOSED,
+			   client_entry->nickname,
+			   ftp->filepath ? ftp->filepath : "[N/A]");
+	if (ftp == server->current_session)
+	  server->current_session = NULL;
 	silc_dlist_del(server->ftp_sessions, ftp);
 	silc_free(ftp->filepath);
 	silc_free(ftp);
@@ -902,7 +901,6 @@ void silc_server_free_ftp(SILC_SERVER_REC *server,
       silc_dlist_del(server->ftp_sessions, ftp);
       silc_free(ftp->filepath);
       silc_free(ftp);
-      break;
     }
   }
 }

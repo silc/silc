@@ -57,8 +57,9 @@ int silc_net_create_server(int port, char *ip_addr)
     server.sin_port = htons(port);
 
   /* Convert IP address to network byte order */
-  if (ip_addr)
+  if (ip_addr) {
     silc_net_addr2bin(ip_addr, (unsigned char *)&server.sin_addr.s_addr, len);
+  }
   else
     server.sin_addr.s_addr = INADDR_ANY;
 
@@ -270,8 +271,7 @@ int silc_net_set_socket_nonblock(int sock)
 /* Converts the IP number string from numbers-and-dots notation to
    binary form. */
 
-bool silc_net_addr2bin(const char *addr, unsigned char *bin,
-		       uint32 bin_len)
+bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len)
 {
   struct in_addr tmp;
   int ret;
@@ -281,8 +281,7 @@ bool silc_net_addr2bin(const char *addr, unsigned char *bin,
   if (bin_len < 4)
     return FALSE;
 
-  SILC_PUT32_LSB(tmp.s_addr, bin);
-
+  memcpy(bin, (unsigned char *)&tmp.s_addr, 4);
   return ret != 0;
 }
 

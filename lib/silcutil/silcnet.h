@@ -203,8 +203,7 @@ bool silc_net_is_ip(const char *addr);
  *    binary form.
  *
  ***/
-bool silc_net_addr2bin(const char *addr, unsigned char *bin,
-		       uint32 bin_len);
+bool silc_net_addr2bin(const char *addr, void *bin, uint32 bin_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_addr2bin_ne
  *
