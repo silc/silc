@@ -391,7 +391,7 @@ Example with three routers in the network:
 .nf
     S/R1 - > - > - > - > - > - > - S/R2
      \\                               /
-      v                             v
+      ^                             v
        \\ - < -  < - S/R3 - < - < - /
 .in 3
 
