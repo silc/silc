@@ -1,9 +1,10 @@
 <!--
 @LIBRARY=SILC Client Library
 @FILENAME=silcclientlib.html
-@LINK=silcclient_using.html:Using SILC Client Library
-@LINK=notifyargs.html:Arguments for notify Client Operation
-@LINK=silcclient.html:Client Library Interface
+@LINK=silcclient_using.html:Using SILC Client Library Tutorial
+@LINK=command_reply_args.html:Arguments for <b>command_reply</b> Client Operation
+@LINK=notifyargs.html:Arguments for <b>notify</b> Client Operation
+@LINK=silcclient.html:Client Library Interface Reference
 -->
 
 <big><b>SILC Client Library</b></big>
