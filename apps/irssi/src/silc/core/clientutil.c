@@ -303,13 +303,15 @@ int silc_client_check_silc_dir()
   memset(file_public_key, 0, sizeof(file_public_key));
   memset(file_private_key, 0, sizeof(file_private_key));
 
+  identifier = silc_client_create_identifier();
+
   pw = getpwuid(getuid());
   if (!pw) {
     fprintf(stderr, "silc: %s\n", strerror(errno));
+    if (identifier)
+      silc_free(identifier);
     return FALSE;
   }
-
-  identifier = silc_client_create_identifier();
 
   /* We'll take home path from /etc/passwd file to be sure. */
   snprintf(filename, sizeof(filename) - 1, "%s/.silc/", pw->pw_dir);

@@ -1,3 +1,15 @@
+Tue Jan 29 19:49:31 EET 2002  Pekka Riikonen <priikone@silcnet.org>
+
+	* Applied patches from cras:
+
+	  Memory leak fixes around libaries, irssi window resize fix,
+	  new silclist.h and silcdlist.h, all extern inline changed to
+	  static inline.
+
+	* Removed dotconf from lib/dotconf, not needed anymore.
+
+	* Removed TRQ from lib/trq, not needed anymore.
+
 Tue Jan 29 10:35:03 CET 2002  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed a crash in server related to channel announcements.

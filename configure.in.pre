@@ -67,7 +67,7 @@ AC_HEADER_STAT
 
 # More header checking
 AC_CHECK_HEADERS(unistd.h string.h getopt.h errno.h fcntl.h assert.h)
-AC_CHECK_HEADERS(sys/types.h sys/stat.h sys/time.h)
+AC_CHECK_HEADERS(sys/types.h sys/stat.h sys/time.h stddef.h)
 AC_CHECK_HEADERS(netinet/in.h netinet/tcp.h xti.h netdb.h)
 AC_CHECK_HEADERS(pwd.h grp.h termcap.h paths.h)
 AC_CHECK_HEADERS(ncurses.h signal.h ctype.h regex.h)
@@ -755,8 +755,6 @@ fi
 #
 # Other configure scripts
 #
-#AC_CONFIG_SUBDIRS(lib/dotconf)
-AC_CONFIG_SUBDIRS(lib/trq)
 AC_CONFIG_SUBDIRS(irssi)
 AC_CONFIG_SUBDIRS(lib/silcmath/mpi)
 #AC_CONFIG_SUBDIRS(lib/zlib)

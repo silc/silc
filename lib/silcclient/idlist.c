@@ -649,6 +649,7 @@ void silc_client_del_client_entry(SilcClient client,
   silc_free(client_entry->nickname);
   silc_free(client_entry->username);
   silc_free(client_entry->realname);
+  silc_free(client_entry->hostname);
   silc_free(client_entry->server);
   silc_free(client_entry->id);
   silc_free(client_entry->fingerprint);

@@ -31,6 +31,8 @@
 #define is_big5(hi,lo) is_big5_hi(hi) && (is_big5_los(lo) || is_big5_lox(lo))
 #endif WANT_BIG5
 
+void screen_check_resizes(void);
+
 int init_screen(void); /* Initialize screen, detect screen length */
 void deinit_screen(void); /* Deinitialize screen */
 

@@ -2350,6 +2350,4 @@ void silc_client_commands_unregister(SilcClient client)
   SILC_CLIENT_CMDU(leave, LEAVE, "LEAVE");
   SILC_CLIENT_CMDU(users, USERS, "USERS");
   SILC_CLIENT_CMDU(getkey, GETKEY, "GETKEY");
-
-  silc_list_uninit(client->internal->commands);
 }

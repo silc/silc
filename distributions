@@ -57,14 +57,14 @@ toolkit_EXTRA_DIST=README.CVS README.WIN32 silcer
 
 # Irssi SILC Client distribution
 client_SUBDIRS=lib irssi doc includes
-client_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq silcclient silcsftp
+client_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil silcclient silcsftp
 client_SUBDIRS_doc=$(COMMONDIRS)
 client_DISTLABEL=SILC_DIST_CLIENT
 client_EXTRA_DIST=#
 
 # SILC Server distribution
 server_SUBDIRS=lib silcd doc includes
-server_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq silcsftp
+server_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil silcsftp
 server_SUBDIRS_doc=$(COMMONDIRS)
 server_DISTLABEL=SILC_DIST_SERVER
 server_EXTRA_DIST=#
@@ -72,7 +72,7 @@ server_EXTRA_DIST=#
 # Native WIN32 SILC library distribution (will include only the libraries)
 # XXX This is not really used at all!
 win32dll_SUBDIRS=lib doc includes
-win32dll_SUBDIRS_lib=silccore silccrypt silcsim silcmath silcske silcutil trq silcclient
+win32dll_SUBDIRS_lib=silccore silccrypt silcsim silcmath silcske silcutil silcclient
 win32dll_SUBDIRS_doc=$(COMMONDIRS)
 win32dll_DISTLABEL=SILC_DIST_WIN32DLL
 win32dll_EXTRA_DIST=README.CVS README.WIN32

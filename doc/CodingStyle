@@ -576,9 +576,9 @@ Lists
 =====
 
 SILC has two different list API's.  The List API and the Dynamic List API.
-Both are based on the TRQ library.  For definitions of List API see
-lib/trq/silclist.h and for Dynamic List API see lib/trq/silcdlist.h. 
-Following short example of the List API.
+For definitions of List API see lib/silcutil/silclist.h and for Dynamic 
+List API see lib/silcutil/silcdlist.h.  Following short example of the 
+List API.
 
 List API
 

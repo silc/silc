@@ -209,13 +209,21 @@ void silc_hash_make(SilcHash hash, const unsigned char *data,
 char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
 			    uint32 data_len)
 {
+  SilcHash new_hash = NULL;
   unsigned char h[32];
+  char *ret;
 
-  if (!hash)
-    silc_hash_alloc("sha1", &hash);
+  if (!hash) {
+    silc_hash_alloc("sha1", &new_hash);
+    hash = new_hash;
+  }
 
   silc_hash_make(hash, data, data_len, h);
-  return silc_fingerprint(h, hash->hash->hash_len);
+  ret = silc_fingerprint(h, hash->hash->hash_len);
+
+  if (new_hash != NULL)
+    silc_hash_free(new_hash);
+  return ret;
 }
 
 static const char vo[]= "aeiouy";
@@ -229,13 +237,16 @@ static const char co[]= "bcdfghklmnprstvzx";
 char *silc_hash_babbleprint(SilcHash hash, const unsigned char *data,
 			    uint32 data_len)
 {
+  SilcHash new_hash = NULL;
   char *babbleprint;
   unsigned char hval[32];
   unsigned int a, b, c, d, e, check;
   int i, k, out_len;
 
-  if (!hash)
-    silc_hash_alloc("sha1", &hash);
+  if (!hash) {
+    silc_hash_alloc("sha1", &new_hash);
+    hash = new_hash;
+  }
 
   /* Take fingerprint */
   silc_hash_make(hash, data, data_len, hval);
@@ -280,5 +291,7 @@ char *silc_hash_babbleprint(SilcHash hash, const unsigned char *data,
   }
   babbleprint[k + 3] = co[16];
 
+  if (new_hash != NULL)
+    silc_hash_free(new_hash);
   return babbleprint;
 }

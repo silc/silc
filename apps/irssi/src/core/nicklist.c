@@ -76,8 +76,6 @@ static void nick_hash_remove(CHANNEL_REC *channel, NICK_REC *nick)
 /* Add new nick to list */
 void nicklist_insert(CHANNEL_REC *channel, NICK_REC *nick)
 {
-	MODULE_DATA_INIT(nick);
-
 	nick->type = module_get_uniq_id("NICK", 0);
         nick->chat_type = channel->chat_type;
 

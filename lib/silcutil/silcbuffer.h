@@ -128,7 +128,7 @@ typedef struct {
 
 /* Inline functions */
 
-extern inline
+static inline
 SilcBuffer silc_buffer_alloc(uint32 len)
 {
   SilcBuffer sb;
@@ -150,7 +150,7 @@ SilcBuffer silc_buffer_alloc(uint32 len)
 
 /* Free's a SilcBuffer */
 
-extern inline
+static inline
 void silc_buffer_free(SilcBuffer sb)
 {
   if (sb) {
@@ -165,7 +165,7 @@ void silc_buffer_free(SilcBuffer sb)
    can be used to set the data to static buffer without needing any
    memory allocations. The `data' will not be copied to the buffer. */
 
-extern inline
+static inline
 void silc_buffer_set(SilcBuffer sb, unsigned char *data, uint32 data_len)
 {
   sb->data = sb->head = data;
@@ -190,7 +190,7 @@ void silc_buffer_set(SilcBuffer sb, unsigned char *data, uint32 data_len)
            ^
 */
 
-extern inline 
+static inline 
 unsigned char *silc_buffer_pull(SilcBuffer sb, uint32 len)
 {
   unsigned char *old_data = sb->data;
@@ -222,7 +222,7 @@ unsigned char *silc_buffer_pull(SilcBuffer sb, uint32 len)
               ^
 */
 
-extern inline 
+static inline 
 unsigned char *silc_buffer_push(SilcBuffer sb, uint32 len)
 {
   unsigned char *old_data = sb->data;
@@ -254,7 +254,7 @@ unsigned char *silc_buffer_push(SilcBuffer sb, uint32 len)
                         ^
 */
 
-extern inline 
+static inline 
 unsigned char *silc_buffer_pull_tail(SilcBuffer sb, uint32 len)
 {
   unsigned char *old_tail = sb->tail;
@@ -286,7 +286,7 @@ unsigned char *silc_buffer_pull_tail(SilcBuffer sb, uint32 len)
                             ^
 */
 
-extern inline
+static inline
 unsigned char *silc_buffer_push_tail(SilcBuffer sb, uint32 len)
 {
   unsigned char *old_tail = sb->tail;
@@ -312,7 +312,7 @@ unsigned char *silc_buffer_push_tail(SilcBuffer sb, uint32 len)
    Puts data to the head section. 
 */
 
-extern inline
+static inline
 unsigned char *silc_buffer_put_head(SilcBuffer sb, 
 				    const unsigned char *data,
 				    uint32 len)
@@ -334,7 +334,7 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
            Puts data to the data section.
 */
 
-extern inline
+static inline
 unsigned char *silc_buffer_put(SilcBuffer sb, 
 			       const unsigned char *data,
 			       uint32 len)
@@ -356,7 +356,7 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
 			    Puts data to the tail section.
 */
 
-extern inline
+static inline
 unsigned char *silc_buffer_put_tail(SilcBuffer sb, 
 				    const unsigned char *data,
 				    uint32 len)

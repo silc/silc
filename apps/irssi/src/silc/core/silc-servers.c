@@ -203,6 +203,7 @@ static void sig_connected(SILC_SERVER_REC *server)
   fd = g_io_channel_unix_get_fd(net_sendbuffer_handle(server->handle));
   silc_client_start_key_exchange(silc_client, conn, fd);
 
+  server->ftp_sessions = silc_dlist_init();
   server->isnickflag = isnickflag_func;
   server->ischannel = ischannel_func;
   server->get_nick_flags = get_nick_flags;
@@ -213,7 +214,9 @@ static void sig_disconnected(SILC_SERVER_REC *server)
 {
   if (!IS_SILC_SERVER(server))
     return;
-  
+
+  silc_dlist_uninit(server->ftp_sessions);
+
   if (server->conn && server->conn->sock != NULL) {
     silc_client_close_connection(silc_client, NULL, server->conn);
     
@@ -248,8 +251,6 @@ SILC_SERVER_REC *silc_server_connect(SILC_SERVER_CONNECT_REC *conn)
     g_free(server);
     return NULL;
   }
-
-  server->ftp_sessions = silc_dlist_init();
 
   return server;
 }

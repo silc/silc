@@ -1039,6 +1039,10 @@ int silc_pkcs_load_public_key(char *filename, SilcPublicKey *public_key,
       break;
     case SILC_PKCS_FILE_PEM:
       data = silc_decode_pem(data, len, &len);
+      memset(old, 0, data_len);
+      silc_free(old);
+      old = data; 
+      data_len = len;
       break;
     }
 

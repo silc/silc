@@ -53,6 +53,8 @@ include_HEADERS =	\
 	silcsockconn.h	\
 	silcprotocol.h	\
 	silcthread.h	\
+	silclist.h	\
+	silcdlist.h	\
 	silcutil.h
 endif
 

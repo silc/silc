@@ -130,14 +130,6 @@ autoconf
 autoheader >/dev/null 2>/dev/null
 automake
 
-echo "Preparing trq"
-cd lib/trq
-aclocal
-autoconf
-autoheader </dev/null 2>/dev/null
-automake >/dev/null 2>/dev/null
-cd ../..
-
 echo "Preparing mpi"
 cd lib/silcmath/mpi
 aclocal

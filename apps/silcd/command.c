@@ -561,6 +561,8 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
   int i, k;
   bool no_res = TRUE;
 
+  SILC_LOG_DEBUG(("Start"));
+
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
     if (!entry)

@@ -41,13 +41,19 @@
 static int scrx, scry;
 static int use_colors;
 static int freeze_refresh;
+static int resized;
 
 static int init_screen_int(void);
 static void deinit_screen_int(void);
 
 #ifdef SIGWINCH
-
 static void sig_winch(int p)
+{
+	resized = TRUE;
+}
+#endif
+
+void screen_check_resizes(void)
 {
 #if defined (TIOCGWINSZ) && defined (HAVE_CURSES_RESIZETERM)
 	struct winsize ws;
@@ -73,8 +79,8 @@ static void sig_winch(int p)
 #endif
 
 	mainwindows_resize(COLS, LINES);
+	resized = FALSE;
 }
-#endif
 
 static void read_signals(void)
 {

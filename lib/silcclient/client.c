@@ -457,6 +457,8 @@ SILC_TASK_CALLBACK(silc_client_connect_failure)
   SilcClient client = (SilcClient)ctx->client;
 
   client->internal->ops->connect(client, ctx->sock->user_data, FALSE);
+  if (ctx->packet)
+    silc_packet_context_free(ctx->packet);
   silc_free(ctx);
 }
 
@@ -1058,7 +1060,8 @@ void silc_client_packet_parse_type(SilcClient client,
 	
 	if (proto_ctx->packet)
 	  silc_packet_context_free(proto_ctx->packet);
-	
+        if (proto_ctx->dest_id)
+          silc_free(proto_ctx->dest_id);
 	proto_ctx->packet = silc_packet_context_dup(packet);
 	proto_ctx->dest_id_type = packet->src_id_type;
 	proto_ctx->dest_id = silc_id_str2id(packet->src_id, packet->src_id_len,
@@ -1367,13 +1370,15 @@ void silc_client_close_connection(SilcClient client,
 
     /* Clear ID caches */
     if (conn->client_cache)
-      silc_idcache_del_all(conn->client_cache);
+      silc_idcache_free(conn->client_cache);
     if (conn->channel_cache)
-      silc_idcache_del_all(conn->channel_cache);
+      silc_idcache_free(conn->channel_cache);
     if (conn->server_cache)
-      silc_idcache_del_all(conn->server_cache);
+      silc_idcache_free(conn->server_cache);
 
     /* Free data (my ID is freed in above silc_client_del_client) */
+    if (conn->nickname)
+      silc_free(conn->nickname);
     if (conn->remote_host)
       silc_free(conn->remote_host);
     if (conn->local_id_data)
@@ -1504,7 +1509,7 @@ void silc_client_receive_new_id(SilcClient client,
   if (!conn->local_entry)
     conn->local_entry = silc_calloc(1, sizeof(*conn->local_entry));
 
-  conn->local_entry->nickname = conn->nickname;
+  conn->local_entry->nickname = strdup(conn->nickname);
   if (!conn->local_entry->username)
     conn->local_entry->username = strdup(client->username);
   if (!conn->local_entry->hostname)

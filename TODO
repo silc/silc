@@ -30,6 +30,9 @@ TODO/bugs in Irssi SILC client
 TODO/bugs In SILC Client Library
 ================================
 
+ o Rewrite the channel's user list thingy and cross list it to the
+   Client entry.
+
  o The PRIVATE_MESSAGE_KEY packet is not handled (it is implemented 
    though).  This should be added and perhaps new client operation
    should be added to notify application that it was received and
@@ -68,8 +71,7 @@ TODO/bugs In SILC Server
    each JOIN command will create and distribute the new channel key
    to everybody on the channel.
 
- o New configuration file format must be added.  The new one will be
-   done using the dotconf config library (lib/dotconf).  The following
+ o New configuration file format must be added.  The following
    tasks relates closely to this as well and must be done at the same time
    when adding the new config file format:
 

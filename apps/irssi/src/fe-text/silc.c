@@ -83,7 +83,7 @@ static int display_firsttimer = FALSE;
 
 static void sig_exit(void)
 {
-	g_main_quit(main_loop);
+        quitting = TRUE;
 }
 
 /* redraw irssi's screen.. */
@@ -160,7 +160,6 @@ static void textui_finish_init(void)
 
 static void textui_deinit(void)
 {
-	quitting = TRUE;
 	signal(SIGINT, SIG_DFL);
 
         screen_refresh_freeze();
@@ -280,6 +279,8 @@ int main(int argc, char **argv)
 	textdomain(PACKAGE);
 #endif
 
+	quitting = FALSE;
+
 	textui_init();
 	args_execute(argc, argv);
 	silc_init_finish();
@@ -289,7 +290,12 @@ int main(int argc, char **argv)
 
 	textui_finish_init();
 	main_loop = g_main_new(TRUE);
-	g_main_run(main_loop);
+
+	while (!quitting) {
+		g_main_iteration(TRUE);
+                screen_check_resizes();
+	}
+
 	g_main_destroy(main_loop);
 	textui_deinit();
 

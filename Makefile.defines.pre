@@ -55,8 +55,7 @@ INCLUDES = $(ADD_INCLUDES) $(SILC_CFLAGS) \
 	-I$(silc_top_srcdir)/lib/silcclient \
 	-I$(silc_top_srcdir)/lib/contrib \
         -I$(silc_top_srcdir)/includes \
-        -I$(silc_top_srcdir)/doc \
-	-I$(silc_top_srcdir)/lib/trq
+        -I$(silc_top_srcdir)/doc
 
 #
 #includes-install: Makefile

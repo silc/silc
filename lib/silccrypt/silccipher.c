@@ -128,6 +128,8 @@ bool silc_cipher_unregister(SilcCipherObject *cipher)
   while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
     if (cipher == SILC_ALL_CIPHERS || entry == cipher) {
       silc_dlist_del(silc_cipher_list, entry);
+      silc_free(entry->name);
+      silc_free(entry);
 
       if (silc_dlist_count(silc_cipher_list) == 0) {
 	silc_dlist_uninit(silc_cipher_list);

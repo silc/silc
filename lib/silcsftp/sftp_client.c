@@ -333,7 +333,6 @@ void silc_sftp_client_shutdown(SilcSFTP context)
 {
   SilcSFTPClient sftp = (SilcSFTPClient)context;
 
-  silc_list_uninit(sftp->requests);
   if (sftp->packet)
     silc_buffer_free(sftp->packet);
   silc_free(sftp);

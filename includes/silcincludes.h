@@ -138,6 +138,10 @@
 #include <pthread.h>
 #endif
 
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif
+
 #endif				/* !SILC_WIN32 */
 
 #ifndef HAVE_GETOPT_LONG
@@ -149,6 +153,11 @@
 #endif
 #ifndef FALSE
 #define FALSE 0
+#endif
+
+/* Define offsetof */
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 #endif
 
 /* Define types. The types must be at least of the specified size */
@@ -237,6 +246,8 @@ typedef uint32 * void *;
 #include "silchashtable.h"
 #include "silclog.h"
 #include "silcmemory.h"
+#include "silclist.h"
+#include "silcdlist.h"
 #include "silcbuffer.h"
 #include "silcbufutil.h"
 #include "silcbuffmt.h"
@@ -257,10 +268,6 @@ typedef uint32 * void *;
 #include "silcmode.h"
 #include "silcauth.h"
 #include "silcprivate.h"
-
-/* TRQ (SilcList API and SilcDList API) */
-#include "silclist.h"
-#include "silcdlist.h"
 
 #ifdef SILC_SIM
 /* SILC Module library includes */

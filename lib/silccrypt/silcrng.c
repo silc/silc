@@ -350,7 +350,7 @@ static void silc_rng_exec_command(SilcRng rng, char *command)
   pclose(fd);
   
   /* Add the buffer into random pool */
-  silc_rng_add_noise(rng, buf, strlen(buf));
+  silc_rng_add_noise(rng, buf, i);
   memset(buf, 0, sizeof(buf));
 #endif
 }

@@ -26,7 +26,7 @@
 /* Clears and initialiazes the buffer to the state as if it was just
    allocated by silc_buffer_alloc. */
 
-extern inline
+static inline
 void silc_buffer_clear(SilcBuffer sb)
 {
   memset(sb->head, 0, sb->truelen);
@@ -39,7 +39,7 @@ void silc_buffer_clear(SilcBuffer sb)
    currently valid data area, nothing more. Use silc_buffer_clone to
    copy entire buffer. */
 
-extern inline
+static inline
 SilcBuffer silc_buffer_copy(SilcBuffer sb)
 {
   SilcBuffer sb_new;
@@ -55,7 +55,7 @@ SilcBuffer silc_buffer_copy(SilcBuffer sb)
    everything from the source buffer. The result is exact clone of
    the original buffer. */
 
-extern inline
+static inline
 SilcBuffer silc_buffer_clone(SilcBuffer sb)
 {
   SilcBuffer sb_new;
@@ -74,7 +74,7 @@ SilcBuffer silc_buffer_clone(SilcBuffer sb)
    new SilcBuffer pointer. The buffer is exact clone of the old one
    except that there is now more space at the end of buffer. */
 
-extern inline
+static inline
 SilcBuffer silc_buffer_realloc(SilcBuffer sb, uint32 newsize)
 {
   SilcBuffer sb_new;
