@@ -5072,10 +5072,10 @@ SILC_SERVER_CMD_FUNC(close)
     SILC_GET32_MSB(port, tmp);
 
   server_entry = silc_idlist_find_server_by_conn(server->local_list,
-						 name, port, FALSE, NULL);
+						 name, port, TRUE, NULL);
   if (!server_entry)
     server_entry = silc_idlist_find_server_by_conn(server->global_list,
-						   name, port, FALSE, NULL);
+						   name, port, TRUE, NULL);
   if (!server_entry) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CLOSE,
 					  SILC_STATUS_ERR_NO_SERVER_ID, 0);
@@ -5095,8 +5095,10 @@ SILC_SERVER_CMD_FUNC(close)
   /* Close the connection to the server */
   sock = (SilcSocketConnection)server_entry->connection;
 
-  if (server_entry->server_type == SILC_BACKUP_ROUTER)
+  if (server_entry->server_type == SILC_BACKUP_ROUTER) {
     server->backup_closed = TRUE;
+    silc_server_backup_del(server, server_entry);
+  }
 
   server->backup_noswitch = TRUE;
   if (server->router == server_entry) {

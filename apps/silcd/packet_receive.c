@@ -2615,6 +2615,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 					       server_id, TRUE, NULL);
   if (server_entry) {
     if (SILC_IS_LOCAL(server_entry)) {
+      SILC_LOG_ERROR(("Too many registrations from %s (%s)",
+		      sock->ip, sock->hostname));
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_OPERATION_ALLOWED,
 				    "Too many registrations");
@@ -2629,6 +2631,8 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 						 server_id, TRUE, NULL);
     if (server_entry) {
       if (SILC_IS_LOCAL(server_entry)) {
+        SILC_LOG_ERROR(("Too many registrations from %s (%s)",
+		        sock->ip, sock->hostname));
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_OPERATION_ALLOWED,
 				      "Too many registrations");

@@ -873,6 +873,7 @@ void silc_server_remove_servers_by_server(SilcServer server,
 					       TRUE);
 
 	/* Remove the server */
+	silc_server_backup_del(server, server_entry);
 	silc_idlist_del_server(server->local_list, server_entry);
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -900,6 +901,7 @@ void silc_server_remove_servers_by_server(SilcServer server,
 					       TRUE);
 
 	/* Remove the server */
+	silc_server_backup_del(server, server_entry);
 	silc_idlist_del_server(server->global_list, server_entry);
 
 	if (!silc_idcache_list_next(list, &id_cache))
