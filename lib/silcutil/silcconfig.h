@@ -94,6 +94,7 @@
 enum {
   SILC_CONFIG_OK,		/* OK */
   SILC_CONFIG_ESILENT,		/* Error defined by callback function */
+  SILC_CONFIG_EPRINTLINE,	/* Error defined by callback function */
   SILC_CONFIG_EGENERIC,		/* Invalid syntax */
   SILC_CONFIG_EINTERNAL,	/* Internal Error (caused by developer) */
   SILC_CONFIG_ECANTOPEN,	/* Can't open specified file */

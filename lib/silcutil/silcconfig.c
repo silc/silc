@@ -60,6 +60,7 @@ struct SilcConfigEntityObject {
 static char *errorstrs[] = {
   "-OK",					/* SILC_CONFIG_OK */
   "-SILENT",					/* SILC_CONFIG_ESILENT */
+  "-PRINTLINE",					/* SILC_CONFIG_EPRINTLINE */
   "Invalid syntax",				/* SILC_CONFIG_EGENERIC */
   "Internal error! Please report this bug",	/* SILC_CONFIG_EINTERNAL */
   "Can't open specified file",			/* SILC_CONFIG_ECANTOPEN */

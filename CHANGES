@@ -1,3 +1,21 @@
+Mon Apr  8 19:57:40 CEST 2002  Johnny Mnemonic <johnny@themnemonic.org>
+
+	* Added config parse status SILC_CONFIG_EPRINTLINE, this status
+	  must be handled by the application and should tell the application
+	  that an error message was already printed, and it should print the
+	  config coords (line, filename, ...).  Affected files are
+	  silcd/serverconfig.c, lib/silcutil/silcconfig.[ch].
+
+	* Added local macro SILC_SERVER_CONFIG_ALLOCTMP to make the
+	  server config parsing code more readable.
+
+	  Fixed a bug in the fetch_logging() config callback.
+
+	  Affected files is silcd/serverconfig.c.
+
+	* Drop root privileges when started in foreground.  Don't drop them
+	  if debugging also.  Affected file is silcd/silcd.c.
+
 Wed Apr  3 12:36:05 CEST 2002  Pekka Riikonen <priikone@silcnet.org>
 
         * Added better error logging in rekey protocol.  Affected file
