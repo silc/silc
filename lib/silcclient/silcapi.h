@@ -332,7 +332,8 @@ typedef struct {
  * SYNOPSIS
  *
  *    SilcClient silc_client_alloc(SilcClientOperations *ops, 
- *                                 void *application);
+ *                                 void *application,
+ *                                 const char *silc_version);
  *
  * DESCRIPTION
  *
