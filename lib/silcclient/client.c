@@ -744,7 +744,7 @@ SILC_TASK_CALLBACK(silc_client_packet_parse_real)
   silc_client_packet_parse_type(client, sock, packet);
 
  out:
-  silc_buffer_clear(sock->inbuf);
+  /*  silc_buffer_clear(sock->inbuf); */
   silc_packet_context_free(packet);
   silc_free(parse_ctx);
 }

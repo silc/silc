@@ -1,3 +1,11 @@
+Sat Mar 31 15:38:36 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed packet processing on slow links.  Partial packets were
+	  never re-processed because the incoming data buffer was cleared
+	  by the application.  Application must now directly clear the
+	  sock->inbuf, the packet processing routines handle it.  Fixed
+	  this in client library and in server.
+
 Fri Mar 30 16:35:27 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Fixed the WHOIS and IDENTIFY send reply function to really

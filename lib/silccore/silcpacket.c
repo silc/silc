@@ -390,6 +390,7 @@ void silc_packet_receive_process(SilcSocketConnection sock,
 
     if (packetlen < SILC_PACKET_MIN_LEN) {
       SILC_LOG_DEBUG(("Received invalid packet, dropped"));
+      silc_buffer_clear(sock->inbuf);
       return;
     }
 
@@ -427,6 +428,7 @@ void silc_packet_receive_process(SilcSocketConnection sock,
       silc_buffer_pull(sock->inbuf, mac_len);
   }
 
+  SILC_LOG_DEBUG(("Clearing inbound buffer"));
   silc_buffer_clear(sock->inbuf);
 }
 
