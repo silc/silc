@@ -29,4 +29,8 @@ extern SilcClient silc_client;
 
 #define IS_SILC_ITEM(rec) (IS_SILC_CHANNEL(rec) || IS_SILC_QUERY(rec))
 
+#define SILC_MSG_SIGNED_VERIFIED 0
+#define SILC_MSG_SIGNED_UNKNOWN 1
+#define SILC_MSG_SIGNED_FAILED 2
+
 #endif

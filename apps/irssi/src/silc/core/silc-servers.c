@@ -559,7 +559,7 @@ static void command_smsg(const char *data, SILC_SERVER_REC *server,
   }
 
   signal_emit(target != NULL && target_type == SEND_TARGET_CHANNEL ?
-	      "message own_public" : "message own_private", 4,
+	      "message signed_own_public" : "message signed_own_private", 4,
 	      server, msg, target, origtarget);
 
   if (free_ret && target != NULL) g_free(target);
