@@ -1961,7 +1961,7 @@ server's real IP address.
 
 After router has received the SILC_PACKET_NEW_SERVER packet it
 distributes the information about newly registered server to all routers
-in the SILC network.  More information about this in in [SILC2].
+in the SILC network.  More information about this is in [SILC2].
 
 As the client needed to resolve the destination ID this MUST be done by 
 the server that connected to the router, as well.  The way to resolve it 
