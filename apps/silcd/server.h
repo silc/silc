@@ -83,6 +83,10 @@ typedef struct {
 #define SILC_SERVER_MAX_CONNECTIONS    1000	 /* Max connections */
 #define SILC_SERVER_MAX_CONNECTIONS_SINGLE 1000  /* Max connections per host */
 #define SILC_SERVER_LOG_FLUSH_DELAY    300       /* Default log flush delay */
+#define SILC_SERVER_QOS_RATE_LIMIT     10        /* Default QoS rate limit */
+#define SILC_SERVER_QOS_BYTES_LIMIT    2048      /* Default QoS bytes limit */
+#define SILC_SERVER_QOS_LIMIT_SEC      0         /* Default QoS limit sec */
+#define SILC_SERVER_QOS_LIMIT_USEC     500000    /* Default QoS limit usec */
 
 /* Macros */
 

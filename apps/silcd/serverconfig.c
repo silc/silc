@@ -92,6 +92,10 @@ my_set_param_defaults(SilcServerConfigConnParams *params,
   SET_PARAM_DEFAULT(reconnect_interval, SILC_SERVER_RETRY_INTERVAL_MIN);
   SET_PARAM_DEFAULT(reconnect_interval_max, SILC_SERVER_RETRY_INTERVAL_MAX);
   SET_PARAM_DEFAULT(key_exchange_rekey, SILC_SERVER_REKEY);
+  SET_PARAM_DEFAULT(qos_rate_limit, SILC_SERVER_QOS_RATE_LIMIT);
+  SET_PARAM_DEFAULT(qos_bytes_limit, SILC_SERVER_QOS_BYTES_LIMIT);
+  SET_PARAM_DEFAULT(qos_limit_sec, SILC_SERVER_QOS_LIMIT_SEC);
+  SET_PARAM_DEFAULT(qos_limit_usec, SILC_SERVER_QOS_LIMIT_USEC);
 
 #undef SET_PARAM_DEFAULT
 }
