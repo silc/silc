@@ -1340,8 +1340,9 @@ SILC_TASK_CALLBACK(silc_server_command_quit_cb)
     q->sock->user_data = NULL;
   }
 
-  /* Close the connection on our side */
-  silc_server_close_connection(server, q->sock);
+  if (!SILC_IS_DISCONNECTED(q->sock))
+    /* Close the connection on our side */
+    silc_server_close_connection(server, q->sock);
 
   silc_socket_free(q->sock);
   silc_free(q->signoff);
