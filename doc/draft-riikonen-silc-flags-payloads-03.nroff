@@ -380,13 +380,13 @@ support S/MIME may be desired in some implementations.
 5 References
 
 [SILC1]      Riikonen, P., "Secure Internet Live Conferencing (SILC),
-             Protocol Specification", Internet Draft, May 2002.
+             Protocol Specification", Internet Draft, June 2003.
 
 [SILC2]      Riikonen, P., "SILC Packet Protocol", Internet Draft,
-             May 2002.
+             June 2003.
 
 [SILC3]      Riikonen, P., "SILC Key Exchange and Authentication
-             Protocols", Internet Draft, May 2002.
+             Protocols", Internet Draft, June 2003.
 
 [RFC2045]    Freed, N., et al., "Multipurpose Internet Mail Extensions
              (MIME) Part One: Format of Internet Message Bodies",

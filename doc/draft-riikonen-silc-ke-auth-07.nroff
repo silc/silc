@@ -1074,12 +1074,12 @@ security of this protocol.
 5 References
 
 [SILC1]      Riikonen, P., "Secure Internet Live Conferencing (SILC),
-             Protocol Specification", Internet Draft, May 2002.
+             Protocol Specification", Internet Draft, June 2003.
 
 [SILC2]      Riikonen, P., "SILC Packet Protocol", Internet Draft,
-             May 2002.
+             June 2003.
 
-[SILC4]      Riikonen, P., "SILC Commands", Internet Draft, May 2002.
+[SILC4]      Riikonen, P., "SILC Commands", Internet Draft, June 2003.
 
 [IRC]        Oikarinen, J., and Reed D., "Internet Relay Chat Protocol",
              RFC 1459, May 1993.
