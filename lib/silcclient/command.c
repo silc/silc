@@ -285,6 +285,9 @@ SILC_CLIENT_CMD_FUNC(whois)
   SilcClientConnection conn = cmd->conn;
   SilcBuffer buffer, attrs = NULL;
   unsigned char count[4], *tmp = NULL;
+  int i;
+  bool details = FALSE, nick = FALSE;
+  unsigned char *pubkey = NULL;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -302,28 +305,75 @@ SILC_CLIENT_CMD_FUNC(whois)
     goto out;
   }
 
-  if (cmd->argc == 2) {
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,
-					    ++conn->cmd_ident, 1,
-					    1, cmd->argv[1],
-					    cmd->argv_lens[1]);
-  } else {
-    if (!strcasecmp(cmd->argv[2], "-details"))
-      attrs = silc_client_attributes_request(0);
+  for (i = 1; i < cmd->argc; i++) {
+    if (!strcasecmp(cmd->argv[i], "-details")) {
+	details = TRUE;
+    } else if (!strcasecmp(cmd->argv[i], "-pubkey") && cmd->argc > i + 1) {
+	pubkey = cmd->argv[i + 1];
+	i++;
+    } else {
+      /* We assume that the first parameter is the nickname, if it isn't
+         -details or -pubkey. The last parameter should always be the count */
+      if (i == 1) {
+	nick = TRUE;
+      } else if (i == cmd->argc - 1) {
+	int c = atoi(cmd->argv[i]);
+	SILC_PUT32_MSB(c, count);
+	tmp = count;
+      }
+    }
+  }
 
-    if (!attrs || cmd->argc > 3) {
-      int c = atoi(cmd->argc > 3 ? cmd->argv[3] : cmd->argv[2]);
-      SILC_PUT32_MSB(c, count);
-      tmp = count;
+  if (details) {
+    /* if pubkey is set, add all attributes to the
+       attrs buffer, except public key */
+    if (pubkey) {
+      attrs = silc_client_attributes_request(SILC_ATTRIBUTE_USER_INFO,
+                                             SILC_ATTRIBUTE_SERVICE,
+                                             SILC_ATTRIBUTE_STATUS_MOOD,
+                                             SILC_ATTRIBUTE_STATUS_FREETEXT,
+                                             SILC_ATTRIBUTE_STATUS_MESSAGE,
+                                             SILC_ATTRIBUTE_PREFERRED_LANGUAGE,
+                                             SILC_ATTRIBUTE_PREFERRED_CONTACT,
+                                             SILC_ATTRIBUTE_TIMEZONE,
+                                             SILC_ATTRIBUTE_GEOLOCATION,
+                                             SILC_ATTRIBUTE_DEVICE_INFO, 0);
+    } else {
+      attrs = silc_client_attributes_request(0);
+    }
+  }
+
+  if (pubkey) {
+    SilcAttributeObjPk obj;
+    SilcPublicKey pk;
+
+    if (!silc_pkcs_load_public_key(pubkey, &pk, SILC_PKCS_FILE_PEM)) {
+      if (!silc_pkcs_load_public_key(pubkey, &pk, SILC_PKCS_FILE_BIN)) {
+	SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	    "Could not load public key %s, check the filename",
+	    pubkey);
+	COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	goto out;
+      }
     }
 
-    buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,
-					    ++conn->cmd_ident, 3,
-					    1, cmd->argv[1], cmd->argv_lens[1],
-					    2, tmp ? tmp : NULL, tmp ? 4 : 0,
-					    3, attrs ? attrs->data : NULL,
-					    attrs ? attrs->len : 0);
+    obj.type = "silc-rsa";
+    obj.data = silc_pkcs_public_key_encode(pk, &obj.data_len);
+
+    attrs = silc_attribute_payload_encode(attrs,
+                                          SILC_ATTRIBUTE_USER_PUBLIC_KEY, 
+                                          SILC_ATTRIBUTE_FLAG_VALID,
+                                          &obj, sizeof(obj));
   }
+
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,
+                                          ++conn->cmd_ident, 3,
+                                          1, nick ? cmd->argv[1] : NULL, 
+                                          nick ? cmd->argv_lens[1] : 0,
+                                          2, tmp ? tmp : NULL, tmp ? 4 : 0,
+                                          3, attrs ? attrs->data : NULL,
+                                          attrs ? attrs->len : 0);
+
   silc_client_packet_send(cmd->client, cmd->conn->sock,
 			  SILC_PACKET_COMMAND, NULL, 0, NULL, NULL,
 			  buffer->data, buffer->len, TRUE);
@@ -2734,7 +2784,7 @@ void silc_client_commands_register(SilcClient client)
   silc_list_init(client->internal->commands, struct SilcClientCommandStruct,
 		 next);
 
-  SILC_CLIENT_CMD(whois, WHOIS, "WHOIS", 3);
+  SILC_CLIENT_CMD(whois, WHOIS, "WHOIS", 5);
   SILC_CLIENT_CMD(whowas, WHOWAS, "WHOWAS", 3);
   SILC_CLIENT_CMD(identify, IDENTIFY, "IDENTIFY", 3);
   SILC_CLIENT_CMD(nick, NICK, "NICK", 2);

@@ -361,6 +361,11 @@ void silc_server_notify(SilcServer server,
     SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
     silc_schedule_task_del_by_context(server->schedule, client);
 
+    /* Remove from public key hash table. */
+    if (client->data.public_key)
+      silc_hash_table_del_by_context(server->pk_hash, client->data.public_key,
+                                     client);
+
     /* Remove the client from all channels. */
     silc_server_remove_from_channels(server, NULL, client, TRUE,
 				     tmp, FALSE, FALSE);
@@ -1360,6 +1365,12 @@ void silc_server_notify(SilcServer server,
 	    if (local)
 	      silc_server_del_from_watcher_list(server, client);
 
+	    /* Remove from public key hash table. */
+	    if (client->data.public_key)
+	      silc_hash_table_del_by_context(server->pk_hash,
+                                             client->data.public_key,
+                                             client);
+
 	    /* Remove the client */
 	    silc_idlist_del_data(client);
 	    silc_idlist_del_client(local ? server->local_list :
@@ -1607,6 +1618,12 @@ void silc_server_notify(SilcServer server,
       silc_server_check_watcher_list(server, client, NULL,
 				     SILC_NOTIFY_TYPE_KILLED);
 
+      /* Remove from public key hash table. */
+      if (client->data.public_key)
+	silc_hash_table_del_by_context(server->pk_hash,
+	                               client->data.public_key,
+	  			       client);
+
       /* Update statistics */
       server->stat.clients--;
       if (server->stat.cell_clients)
@@ -1789,6 +1806,11 @@ void silc_server_notify(SilcServer server,
 	  client = silc_idlist_find_client_by_id(server->global_list,
 						 client_id, FALSE, NULL);
 	  if (client) {
+	    if (client->data.public_key)
+	      silc_hash_table_del_by_context(server->pk_hash,
+		                             client->data.public_key,
+		                             client);
+
 	    silc_server_remove_from_channels(server, NULL, client, TRUE,
 					     NULL, TRUE, FALSE);
 	    silc_idlist_del_data(client);
@@ -2806,6 +2828,22 @@ static void silc_server_new_id_real(SilcServer server,
       /* Check if anyone is watching this nickname */
       if (server->server_type == SILC_ROUTER && id_list == server->local_list)
 	silc_server_check_watcher_list(server, entry, NULL, 0);
+
+      if (entry->data.public_key) {
+	silc_hash_table_add(server->pk_hash, entry->data.public_key, entry);
+      } else {
+	/* We need to get the public key using GETKEY */
+	SilcBuffer idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
+	SilcSocketConnection dest_sock;
+
+	dest_sock = silc_server_get_client_route(server, NULL, 0, entry->id,
+	                                         NULL, NULL);
+	silc_server_send_command(server, dest_sock ? dest_sock
+	                         : SILC_PRIMARY_ROUTE(server),
+				 SILC_COMMAND_GETKEY, ++server->cmd_ident,
+				 1, 1, idp->data, idp->len);
+	silc_buffer_free(idp);
+      }
     }
     break;
 
@@ -3798,6 +3836,13 @@ void silc_server_resume_client(SilcServer server,
       server->stat.cell_clients--;
     silc_server_remove_from_channels(server, NULL, client, FALSE,
 				     NULL, FALSE, FALSE);
+
+    /* Remove from public key hash table. */
+    if (client->data.public_key)
+      silc_hash_table_del_by_context(server->pk_hash,
+	                             client->data.public_key,
+				     client);
+
     silc_server_del_from_watcher_list(server, client);
     if (!silc_idlist_del_client(server->local_list, client))
       silc_idlist_del_client(server->global_list, client);

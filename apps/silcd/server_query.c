@@ -234,11 +234,15 @@ bool silc_server_query_command(SilcServer server, SilcCommand querycmd,
   switch (querycmd) {
 
   case SILC_COMMAND_WHOIS:
-    /* If we are normal server and query contains nickname, send it
-       directly to router. */
+    /* If we are normal server and query contains nickname OR query
+       doesn't contain nickname or ids BUT attributes, send it to the
+       router */
     if (server->server_type == SILC_SERVER && !server->standalone &&
 	cmd->sock != SILC_PRIMARY_ROUTE(server) &&
-	silc_argument_get_arg_type(cmd->args, 1, NULL)) {
+	 (silc_argument_get_arg_type(cmd->args, 1, NULL) ||
+	 (!silc_argument_get_arg_type(cmd->args, 1, NULL) &&
+	  !silc_argument_get_arg_type(cmd->args, 4, NULL) &&
+	  silc_argument_get_arg_type(cmd->args, 3, NULL)))) {
       silc_server_query_send_router(server, query);
       return TRUE;
     }
@@ -357,13 +361,27 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
   switch (query->querycmd) {
 
   case SILC_COMMAND_WHOIS:
+    /* Get requested attributes if set */
+    tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
+    if (tmp && tmp_len <= SILC_ATTRIBUTE_MAX_REQUEST_LEN) {
+      query->attrs = silc_attribute_payload_parse(tmp, tmp_len);
+
+      /* When Requested Attributes is present we will assure that this
+	 client cannot execute the WHOIS command too fast.  This would be
+	 same as having SILC_CF_LAG_STRICT. */
+      if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT &&
+          cmd->sock->user_data)
+	((SilcClientEntry)cmd->sock->user_data)->fast_command = 6;
+    }
+
     /* Get Client IDs if present. Take IDs always instead of nickname. */
     tmp = silc_argument_get_arg_type(cmd->args, 4, &tmp_len);
     if (!tmp) {
 
       /* Get nickname */
       tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
-      if (!tmp) {
+      if (!tmp && !query->attrs) {
+	/* No nickname, no ids and no attributes - send error */
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
 	silc_server_query_free(query);
@@ -371,8 +389,8 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       }
 
       /* Get the nickname@server string and parse it */
-      if (tmp_len > 128 ||
-	  !silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server)) {
+      if (tmp && ((tmp_len > 128) ||
+	  !silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server))) {
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
 	silc_server_query_free(query);
@@ -425,20 +443,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
     tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
     if (tmp && tmp_len == sizeof(SilcUInt32))
       SILC_GET32_MSB(query->reply_count, tmp);
-
-    /* Get requested attributes if set */
-    tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-    if (tmp && tmp_len <= SILC_ATTRIBUTE_MAX_REQUEST_LEN) {
-      query->attrs = silc_attribute_payload_parse(tmp, tmp_len);
-
-      /* When Requested Attributes is present we will assure that this
-	 client cannot execute the WHOIS command too fast.  This would be
-	 same as having SILC_CF_LAG_STRICT. */
-      if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT &&
-	  cmd->sock->user_data)
-	((SilcClientEntry)cmd->sock->user_data)->fast_command = 6;
-    }
-    break;
+   break;
 
   case SILC_COMMAND_WHOWAS:
     /* Get nickname */
@@ -561,6 +566,103 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 
   /* Start processing the query information */
   silc_server_query_process(server, query, TRUE);
+}
+
+/* Context for holding clients searched by public key. */
+typedef struct {
+  SilcClientEntry **clients;
+  SilcUInt32 *clients_count;
+} *SilcServerPublicKeyUser, SilcServerPublicKeyUserStruct;
+
+void silc_server_public_key_hash_foreach(void *key, void *context,
+                                         void *user_context)
+{
+  SilcServerPublicKeyUser uc = user_context;
+  SilcClientEntry entry = context;
+
+  /* Nothing was found, just return */
+  if (!context)
+    return;
+
+  (*uc->clients) = silc_realloc((*uc->clients),
+                                sizeof((**uc->clients)) *
+                                ((*uc->clients_count) + 1));
+  (*uc->clients)[(*uc->clients_count)++] = entry;
+}
+
+/* If clients are set, limit the found clients using the attributes in
+   the query. If clients are not set, try to find some clients using
+   the attributes */
+
+void silc_server_query_check_attributes(SilcServer server,
+                                        SilcServerQuery query,
+                                        SilcClientEntry **clients,
+                                        SilcUInt32 *clients_count) {
+  SilcClientEntry entry;
+  SilcAttributePayload attr;
+  SilcAttribute attribute;
+  SilcAttributeObjPk pk;
+  SilcPublicKey publickey;
+  int i;
+  bool found = FALSE, no_clients = FALSE;
+
+  /* If no clients were found, we only check the attributes
+     if the user wasn't searching for nickname/ids */
+  if (!*clients) {
+    no_clients = TRUE;
+    if (query->nickname || query->ids_count)
+      return;
+  }
+
+  silc_dlist_start(query->attrs);
+  while ((attr = silc_dlist_get(query->attrs)) != SILC_LIST_END) {
+    attribute = silc_attribute_get_attribute(attr);
+    switch (attribute) {
+
+      case SILC_ATTRIBUTE_USER_PUBLIC_KEY:
+	found = TRUE;
+
+	if (!silc_attribute_get_object(attr, &pk, sizeof(pk)))
+	  continue;
+
+	if (!silc_pkcs_public_key_decode(pk.data, pk.data_len,
+	                                 &publickey))
+	  continue;
+
+	/* If no clients were set on calling this function, we
+	   just search for clients, otherwise we try to limit
+	   the clients */
+	if (no_clients) {
+	  SilcServerPublicKeyUserStruct usercontext;
+
+	  usercontext.clients = clients;
+	  usercontext.clients_count = clients_count;
+
+	  silc_hash_table_find_foreach(server->pk_hash, publickey,
+	                               silc_server_public_key_hash_foreach,
+	                               &usercontext);
+	} else {
+	  for (i = 0; i < *clients_count; i++) {
+	    entry = (*clients)[i];
+
+	    if (!entry->data.public_key)
+	      continue;
+
+	    if (!silc_hash_table_find_by_context(server->pk_hash, publickey,
+		                                 entry, NULL))
+	      (*clients)[i] = NULL;
+	  }
+	}
+	silc_pkcs_public_key_free(publickey);
+	break;
+    }
+  }
+
+  if (!found && !query->nickname && !query->ids) {
+    silc_server_query_send_error(server, query,
+                                 SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
+    silc_server_query_free(query);
+  }
 }
 
 /* Processes the parsed query.  This does the actual finding of the
@@ -717,6 +819,11 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
       }
     }
   }
+
+  /* Check the attributes to narrow down the search by using them. */
+  if (query->attrs)
+    silc_server_query_check_attributes(server, query, &clients,
+                                       &clients_count);
 
   SILC_LOG_DEBUG(("Querying %d clients", clients_count));
   SILC_LOG_DEBUG(("Querying %d servers", servers_count));
@@ -1151,6 +1258,9 @@ void silc_server_query_send_reply(SilcServer server,
     /* Mark all invalid entries */
     for (i = 0, valid_count = 0; i < clients_count; i++) {
       entry = clients[i];
+      if (!entry)
+	continue;
+
       switch (query->querycmd) {
       case SILC_COMMAND_WHOIS:
 	if (!entry->nickname || !entry->username || !entry->userinfo ||
@@ -1379,7 +1489,7 @@ void silc_server_query_send_reply(SilcServer server,
       /* Not one valid entry was found, send error.  If nickname was used
 	 in query send error based on that, otherwise the query->errors
 	 already includes proper errors. */
-      if (query->nickname)
+      if (query->nickname || (!query->nickname && !query->ids && query->attrs))
 	silc_server_query_add_error(server, query, TRUE, 1,
 				    SILC_STATUS_ERR_NO_SUCH_NICK);
     }

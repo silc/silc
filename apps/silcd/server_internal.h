@@ -146,6 +146,9 @@ struct SilcServerStruct {
   /* SIM (SILC Module) list */
   SilcDList sim;
 #endif
+
+  /* Hash table for public keys of all clients */
+  SilcHashTable pk_hash;
 };
 
 /* Failure context. This is allocated when failure packet is received.

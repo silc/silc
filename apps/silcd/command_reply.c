@@ -147,6 +147,12 @@ silc_server_command_process_error(SilcServerCommandReplyContext cmd,
 	client = silc_idlist_find_client_by_id(server->global_list,
 					       client_id, FALSE, NULL);
 	if (client) {
+
+	  if (client->data.public_key)
+	    silc_hash_table_del_by_context(server->pk_hash,
+                                           client->data.public_key,
+                                           client);
+
 	  silc_server_remove_from_channels(server, NULL, client, TRUE,
 					   NULL, TRUE, FALSE);
 	  silc_idlist_del_data(client);
@@ -1276,6 +1282,11 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
       if (!client)
 	goto out;
     }
+
+    if (server->server_type != SILC_SERVER)
+      if (!silc_hash_table_find_by_context(server->pk_hash, public_key,
+					   client, NULL))
+	silc_hash_table_add(server->pk_hash, public_key, client);
 
     client->data.public_key = public_key;
     public_key = NULL;

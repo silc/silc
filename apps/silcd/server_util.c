@@ -211,6 +211,10 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
 	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
+	if (client->data.public_key)
+	  silc_hash_table_del_by_context(server->pk_hash,
+	                                 client->data.public_key,
+	    			         client);
 	silc_server_remove_clients_channels(server, entry, clients,
 					    client, channels);
 	silc_server_del_from_watcher_list(server, client);
@@ -271,6 +275,10 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
 	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
+	if (client->data.public_key)
+	  silc_hash_table_del_by_context(server->pk_hash,
+	                                 client->data.public_key,
+	    			         client);
 	silc_server_remove_clients_channels(server, entry, clients,
 					    client, channels);
 	silc_server_del_from_watcher_list(server, client);
@@ -1639,6 +1647,11 @@ void silc_server_kill_client(SilcServer server,
       silc_schedule_task_del_by_context(server->schedule, remote_client);
       silc_idlist_del_data(remote_client);
     }
+
+    if (remote_client->data.public_key)
+      silc_hash_table_del_by_context(server->pk_hash,
+                                     remote_client->data.public_key,
+                                     remote_client);
 
     /* Remove remote client */
     silc_idlist_del_data(remote_client);

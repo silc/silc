@@ -1,3 +1,14 @@
+Wed Nov  5 19:36:30 CET 2003 Patrik Weiskircher <pat@icore.at>
+
+	* Added support for whois using attributes.
+	  Affected files silcd/command_reply.c, silcd/packet_receive.c,
+	  silcd/server.c, silcd/server_internal.h, silcd/server_query.c,
+	  silcd/server_util.c
+
+	* Added support for whois using public key attribute to /WHOIS i
+	  client command. Affected files irssi/docs/help/in/whois.in,
+	  irssi/src/silc/core/silc-servers.c, lib/silcclient/command.c
+
 Wed Nov  5 23:37:36 EET 2003 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed UMODE setting in server when the client has anonymous

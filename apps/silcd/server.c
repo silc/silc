@@ -148,6 +148,9 @@ void silc_server_free(SilcServer server)
   if (list)
     silc_idcache_list_free(list);
 
+  if (server->pk_hash)
+    silc_hash_table_free(server->pk_hash);
+
   /* Delete all servers */
   list = NULL;
   if (silc_idcache_get_all(server->local_list->servers, &list) &&
@@ -354,6 +357,15 @@ bool silc_server_init(SilcServer server)
 			  silc_hash_data_compare, (void *)CLIENTID_HASH_LEN,
 			  NULL, NULL, TRUE);
   if (!server->watcher_list)
+    goto err;
+
+  /* Init public key list */
+  server->pk_hash =
+    silc_hash_table_alloc(0, silc_hash_public_key, NULL,
+                          silc_hash_public_key_compare, NULL,
+                          NULL, NULL, TRUE);
+
+  if (!server->pk_hash)
     goto err;
 
   /* Create a listening server */
@@ -1959,6 +1971,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
 	  client->mode |= SILC_UMODE_ANONYMOUS;
       }
 
+      /* Add public key to hash list (for whois using attributes) */
+      silc_hash_table_add(server->pk_hash,
+                          entry->data.public_key, client);
+
       id_entry = (void *)client;
       break;
     }
@@ -3267,6 +3283,11 @@ void silc_server_free_client_data(SilcServer server,
 
   /* Remove this client from watcher list if it is */
   silc_server_del_from_watcher_list(server, client);
+
+  /* Remove this client from the public key hash list */
+  if (client->data.public_key)
+    silc_hash_table_del_by_context(server->pk_hash,
+                                   client->data.public_key, client);
 
   /* Update statistics */
   server->stat.my_clients--;

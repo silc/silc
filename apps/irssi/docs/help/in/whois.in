@@ -19,6 +19,9 @@ MAY return following information about the user:
   o User's geographical location
   o Information about the device user is using (computer, PDA, etc)
 
+If the -pubkey option is used WHOIS will only retrieve the clients
+with the corresponding public key.
+
 NOTE: It is also possible to receive other information. Note that
 all users do not want to send these informations or may send only
 some of the information. It also possible that none of these
