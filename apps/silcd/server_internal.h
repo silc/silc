@@ -95,7 +95,8 @@ struct SilcServerStruct {
   /* Back pointer to the primary router of this server. */
   SilcServerEntry router;
 
-  /* SILC server task queues */
+  /* SILC server schduler and task queues */
+  SilcSchedule schedule;
   SilcTaskQueue io_queue;
   SilcTaskQueue timeout_queue;
   SilcTaskQueue generic_queue;
@@ -160,13 +161,6 @@ typedef struct {
   uint32 failure;
 } *SilcServerFailureContext;
 
-/* Session key's re-key context. */
-typedef struct {
-  SilcServer server;
-  SilcSocketConnection sock;
-  uint32 timeout;
-} *SilcServerRekeyContext;
-
 /* Macros */
 
 /* Registers generic task for file descriptor for reading from network and
@@ -182,15 +176,15 @@ do {									\
   silc_task_set_iotype(tmptask, SILC_TASK_WRITE);			\
 } while(0)
 
-#define SILC_SET_CONNECTION_FOR_INPUT(fd)				\
+#define SILC_SET_CONNECTION_FOR_INPUT(s, fd)				\
 do {									\
-  silc_schedule_set_listen_fd((fd), (1L << SILC_TASK_READ));            \
+  silc_schedule_set_listen_fd((s), (fd), (1L << SILC_TASK_READ));	\
 } while(0)
      
-#define SILC_SET_CONNECTION_FOR_OUTPUT(fd)				\
+#define SILC_SET_CONNECTION_FOR_OUTPUT(s, fd)				\
 do {									\
-  silc_schedule_set_listen_fd((fd), ((1L << SILC_TASK_READ) |           \
-				     (1L << SILC_TASK_WRITE)));         \
+  silc_schedule_set_listen_fd((s), (fd), ((1L << SILC_TASK_READ) |	\
+				     (1L << SILC_TASK_WRITE)));		\
 } while(0)
 
 /* Prototypes */

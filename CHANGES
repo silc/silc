@@ -1,3 +1,17 @@
+Sat Jun 23 16:01:00 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added preliminary support for native WIN32 compilation under
+	  cygwin (using the -mno-cygwin option for GCC) to the
+	  ./configure.in.pre.  The --with-win32 now prepares the
+	  compilation for native WIN32.
+
+	* Rewrote the SILC Scheduler interface in the file
+	  lib/silcutil/silcschedule.h.  The scheduler is not context
+	  based and does not have anymore any global static scheduler.
+	  Moved the Unix scheduler to the lib/silcutil/unix/ directory
+	  and created lib/silcutil/win32 directory for WIN32 based
+	  scheduler.
+
 Fri Jun 22 10:44:14 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not handle JOIN notify in the server if the target client

@@ -105,14 +105,6 @@ AC_DEFUN(AC_CHECK_CURSES,[
 	AC_SUBST(CURSES_LIBS)
 	AC_SUBST(CURSES_INCLUDEDIR)
 
-	AC_ARG_WITH(sco,
-	  [  --with-sco              Use this to turn on SCO-specific code],[
-	  if test x$withval = xyes; then
-		AC_DEFINE(SCO_FLAVOR)
-		CFLAGS="$CFLAGS -D_SVID3"
-	  fi
-	])
-
 	AC_ARG_WITH(sunos-curses,
 	  [  --with-sunos-curses     Used to force SunOS 4.x curses],[
 	  if test x$withval = xyes; then
@@ -419,23 +411,6 @@ AC_ARG_WITH(logsdir,
 AC_SUBST(LOGSDIR)
 AC_DEFINE_UNQUOTED(SILC_LOGSDIR, "$LOGSDIR")
 
-# Debug checking
-AC_MSG_CHECKING(for enabled debugging)
-AC_ARG_ENABLE(debug,
-[  --enable-debug          Enable debugging (warning: it is heavy!)],
-[ case "${enableval}" in
-  yes) 
-    AC_MSG_RESULT(yes)
-    AC_DEFINE(SILC_DEBUG)
-    CFLAGS="-O -g $CFLAGS"
-    ;;
-  *)
-    AC_MSG_RESULT(no)
-    CFLAGS="-O2 -g $CFLAGS"
-    ;;
-esac ], CFLAGS="-O2 -g $CFLAGS"
-        AC_MSG_RESULT(no))
-
 # SOCKS4 support checking
 AC_MSG_CHECKING(whether to support SOCKS4)
 AC_ARG_WITH(socks4,
@@ -561,6 +536,30 @@ AC_ARG_WITH(silcd-config-file,
                           server [/etc/silc/silcd.conf]],
 [ AC_DEFINE_UNQUOTED(SILC_SERVER_CONFIG_FILE, "$withval") ])
 
+# Native WIN32 compilation under cygwin
+AC_ARG_WITH(win32,
+[  --with-win32            Compile native WIN32 code (-mno-cygwin)],
+[ AC_DEFINE(SILC_WIN32)
+  AM_CONDITIONAL(SILC_WIN32, test xtrue = xtrue)
+  CFLAGS="-mno-cygwin $CFLAGS" ])
+
+# Debug checking
+AC_MSG_CHECKING(for enabled debugging)
+AC_ARG_ENABLE(debug,
+[  --enable-debug          Enable debugging (warning: it is heavy!)],
+[ case "${enableval}" in
+  yes) 
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(SILC_DEBUG)
+    CFLAGS="-O -g $CFLAGS"
+    ;;
+  *)
+    AC_MSG_RESULT(no)
+    CFLAGS="-O2 -g $CFLAGS"
+    ;;
+esac ], CFLAGS="-O2 -g $CFLAGS"
+        AC_MSG_RESULT(no))
+
 #
 # Other configure scripts
 #
@@ -599,5 +598,7 @@ lib/silcsim/Makefile
 lib/silcsim/modules/Makefile
 lib/silcske/Makefile
 lib/silcutil/Makefile
+lib/silcutil/unix/Makefile
+lib/silcutil/win32/Makefile
 silc/Makefile
 silcd/Makefile)

@@ -46,19 +46,28 @@
 # To prepare the distribution give command ./prepare xyz 1.0.4
 #
 
+# Default Toolkit distribution
 _toolkit_SUBDIRS=lib irssi silc silcd doc includes
 _toolkit_SUBDIRS_lib=$(COMMONDIRS)
 _toolkit_SUBDIRS_doc=$(COMMONDIRS)
 _toolkit_DISTLABEL=SILC_DIST_TOOLKIT
 
+# Irssi SILC Client distribution
 _client_SUBDIRS=lib irssi doc includes
 _client_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq silcclient
 _client_SUBDIRS_doc=$(COMMONDIRS)
 _client_DISTLABEL=SILC_DIST_CLIENT
 
+# SILC Server distribution
 _server_SUBDIRS=lib silcd doc includes
 _server_SUBDIRS_lib=contrib silccore silccrypt silcsim silcmath silcske silcutil trq dotconf
 _server_SUBDIRS_doc=$(COMMONDIRS)
 _server_DISTLABEL=SILC_DIST_SERVER
 
-DISTRIBUTIONS=toolkit client server
+# Native WIN32 SILC library distribution (will include only the libraries)
+_win32dll_SUBDIRS=lib doc includes
+_win32dll_SUBDIRS_lib=$(COMMONDIRS)
+_win32dll_SUBDIRS_doc=$(COMMONDIRS)
+_win32dll_DISTLABEL=SILC_DIST_WIN32DLL
+
+DISTRIBUTIONS=toolkit client server win32dll

@@ -2,9 +2,9 @@
 
   silctask.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2000 Pekka Riikonen
+  Copyright (C) 1998 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,24 +25,23 @@
    queue becomes valid task queue. If it is FALSE scheduler will skip
    the queue. */
 
-void silc_task_queue_alloc(SilcTaskQueue *new, int valid)
+void silc_task_queue_alloc(SilcSchedule schedule, SilcTaskQueue *new, 
+			   bool valid)
 {
-
   SILC_LOG_DEBUG(("Allocating new task queue"));
 
   *new = silc_calloc(1, sizeof(**new));
 
   /* Set the pointers */
+  (*new)->schedule = schedule;
   (*new)->valid = valid;
-  (*new)->task = NULL;
 }
 
 /* Free's a task queue. */
 
-void silc_task_queue_free(SilcTaskQueue old)
+void silc_task_queue_free(SilcTaskQueue queue)
 {
-  if (old)
-    silc_free(old);
+  silc_free(queue);
 }
 
 /* Adds a non-timeout task into the task queue. This function is used
@@ -284,7 +283,8 @@ SilcTask silc_task_register(SilcTaskQueue queue, int fd,
 
 	/* Add the fd to be listened, the task found now applies to this
 	   fd as well. */
-	silc_schedule_set_listen_fd(fd, (1L << SILC_TASK_READ));
+	silc_schedule_set_listen_fd(queue->schedule, 
+				    fd, (1L << SILC_TASK_READ));
 	return task;
       }
 
@@ -308,7 +308,7 @@ SilcTask silc_task_register(SilcTaskQueue queue, int fd,
   /* If the task is non-timeout task we have to tell the scheduler that we
      would like to have these tasks scheduled at some odd distant future. */
   if (type != SILC_TASK_TIMEOUT)
-    silc_schedule_set_listen_fd(fd, (1L << SILC_TASK_READ));
+    silc_schedule_set_listen_fd(queue->schedule, fd, (1L << SILC_TASK_READ));
 
   /* Create timeout if marked to be timeout task */
   if (((seconds + useconds) > 0) && (type == SILC_TASK_TIMEOUT)) {

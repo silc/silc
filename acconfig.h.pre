@@ -68,4 +68,8 @@
 #undef Rfclose
 #undef Rgethostbyname
 
+/* Native WIN32 compilation (-mno-cygwin GCC option) under cygwin, though
+   the code compiles with any native WIN32 compiler. */
+#undef SILC_WIN32
+
 /* SILC distribution definitions (leave this at the end of file) */

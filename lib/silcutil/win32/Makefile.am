@@ -1,9 +1,9 @@
 #
 #  Makefile.am
 #
-#  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+#  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 Pekka Riikonen
+#  Copyright (C) 2001 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,23 +18,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-if SILC_WIN32
-SUBDIRS=win32
-else
-SUBDIRS=unix
-endif
+noinst_LIBRARIES = libsilcwin32util.a
 
-noinst_LIBRARIES = libsilcutil.a
-
-libsilcutil_a_SOURCES = \
-	silcbuffmt.c \
-	silcconfig.c \
-	silclog.c \
-	silcmemory.c \
-	silcnet.c \
-	silctask.c \
-	silcutil.c \
-	silchashtable.c
+libsilcwin32util_a_SOURCES = 
 
 EXTRA_DIST = *.h
 

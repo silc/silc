@@ -1,124 +1,163 @@
-/*
-
-  silcschedule.h
-
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
-
-  Copyright (C) 1998 - 2000 Pekka Riikonen
-
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-*/
+/****h* silcutil/silcschedule.h
+ *
+ * NAME
+ *
+ * silcschedule.h
+ *
+ * COPYRIGHT
+ *
+ * Author: Pekka Riikonen <priikone@silcnet.org>
+ *
+ * Copyright (C) 1998 - 2001 Pekka Riikonen
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ */
 
 #ifndef SILCSCHEDULE_H
 #define SILCSCHEDULE_H
 
-/* Structure holding list of file descriptors, scheduler is supposed to
-   be listenning. The max_fd field is the maximum number of possible file
-   descriptors in the list. This value is set at the initialization
-   of the scheduler and it usually is the maximum number of connections 
-   allowed. */
-typedef struct {
-  int *fd;
-  uint32 last_fd;
-  uint32 max_fd;
-} SilcScheduleFdList;
-
-/* 
-   Silc Schedule object. 
-
-   This is the actual schedule object in Silc. Both Silc client and server 
-   uses this same scheduler. Actually, this scheduler could be used by any
-   program needing scheduling.
-
-   Following short description of the fields:
-
-   SilcTaskQueue fd_queue
-
-       Task queue hook for non-timeout tasks. Usually this means that these
-       tasks perform different kind of I/O on file descriptors. File 
-       descriptors are usually network sockets but they actually can be
-       any file descriptors. This hook is initialized in silc_schedule_init
-       function. Timeout tasks should not be added to this queue because
-       they will never expire.
-
-   SilcTaskQueue timeout_queue
-
-       Task queue hook for timeout tasks. This hook is reserved specificly
-       for tasks with timeout. Non-timeout tasks should not be added to this
-       queue because they will never get scheduled. This hook is also
-       initialized in silc_schedule_init function.
-
-   SilcTaskQueue generic_queue
-
-       Task queue hook for generic tasks. This hook is reserved specificly
-       for generic tasks, tasks that apply to all file descriptors, except
-       to those that have specificly registered a non-timeout task. This hook
-       is also initialized in silc_schedule_init function.
-
-   SilcScheduleFdList fd_list
-
-       List of file descriptors the scheduler is supposed to be listenning.
-       This is updated internally.
-
-   struct timeval *timeout;
-
-       Pointer to the schedules next timeout. Value of this timeout is
-       automatically updated in the silc_schedule function.
-
-   int valid
-
-       Marks validity of the scheduler. This is a boolean value. When this
-       is false the scheduler is terminated and the program will end. This
-       set to true when the scheduler is initialized with silc_schedule_init
-       function.
-
-   fd_set in
-   fd_set out
-
-       File descriptor sets for select(). These are automatically managed
-       by the scheduler and should not be touched otherwise.
-
-   int max_fd
-
-       Number of maximum file descriptors for select(). This, as well, is
-       managed automatically by the scheduler and should be considered to 
-       be read-only field otherwise.
-
-*/
-
-typedef struct {
-  SilcTaskQueue fd_queue;
-  SilcTaskQueue timeout_queue;
-  SilcTaskQueue generic_queue;
-  SilcScheduleFdList fd_list;
-  struct timeval *timeout;
-  int valid;
-  fd_set in;
-  fd_set out;
-  int max_fd;
-} SilcScheduleObject;
-
-typedef SilcScheduleObject SilcSchedule;
+/****s* silcutil/SilcScheduleAPI/SilcSchedule
+ *
+ * NAME
+ * 
+ *    typedef struct SilcScheduleStruct *SilcSchedule;
+ *
+ * DESCRIPTION
+ *
+ *    This context is the actual Scheduler and is allocated by
+ *    the silc_schedule_init funtion.  The context is given as argument
+ *    to all silc_schedule_* functions.  It must be freed by the 
+ *    silc_schedule_uninit function.
+ *
+ ***/
+typedef struct SilcScheduleStruct *SilcSchedule;
 
 /* Prototypes */
-void silc_schedule_init(SilcTaskQueue *fd_queue,
-			SilcTaskQueue *timeout_queue,
-			SilcTaskQueue *generic_queue,
-			int max_fd);
-int silc_schedule_uninit();
-void silc_schedule_stop();
-void silc_schedule_set_listen_fd(int fd, uint32 iomask);
-void silc_schedule_unset_listen_fd(int fd);
-void silc_schedule();
-int silc_schedule_one(int block);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_init
+ *
+ * SYNOPSIS
+ *
+ *    SilcSchedule silc_schedule_init(SilcTaskQueue *fd_queue,
+ *                                    SilcTaskQueue *timeout_queue,
+ *                                    SilcTaskQueue *generic_queue,
+ *                                    int max_fd);
+ *
+ * DESCRIPTION
+ *
+ *    Initializes the scheduler. Sets the non-timeout task queue hook and
+ *    the timeout task queue hook. This must be called before the scheduler
+ *    is able to work. This will allocate the queue pointers if they are
+ *    not allocated. Returns the scheduler context that must be freed by
+ *    the silc_schedule_uninit function.
+ *
+ ***/
+SilcSchedule silc_schedule_init(SilcTaskQueue *fd_queue,
+				SilcTaskQueue *timeout_queue,
+				SilcTaskQueue *generic_queue,
+				int max_fd);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_uninit
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_schedule_uninit(SilcSchedule schedule);
+ *
+ * DESCRIPTION
+ *
+ *    Uninitializes the schedule. This is called when the program is ready
+ *    to end. This removes all tasks and task queues. Returns FALSE if the
+ *    scheduler could not be uninitialized. This happens when the scheduler
+ *    is still valid and silc_schedule_stop has not been called.
+ *
+ ***/
+bool silc_schedule_uninit(SilcSchedule schedule);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_stop
+ *
+ * SYNOPSIS
+ *
+ *    void silc_schedule_stop(SilcSchedule schedule);
+ *
+ * DESCRIPTION
+ *
+ *    Stops the scheduler even if it is not supposed to be stopped yet. 
+ *    After calling this, one must call silc_schedule_uninit (after the 
+ *    silc_schedule has returned).
+ *
+ ***/
+void silc_schedule_stop(SilcSchedule schedule);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_set_listen_fd
+ *
+ * SYNOPSIS
+ *
+ *    void silc_schedule_set_listen_fd(SilcSchedule schedule, 
+ *                                     int fd, uint32 iomask);
+ *
+ * DESCRIPTION
+ *
+ *    Sets a file descriptor to be listened by the scheduler. One can
+ *    call this directly if wanted. This can be called multiple times for
+ *    one file descriptor to set different iomasks.
+ *
+ ***/
+void silc_schedule_set_listen_fd(SilcSchedule schedule, int fd, uint32 iomask);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_unset_listen_fd
+ *
+ * SYNOPSIS
+ *
+ *    void silc_schedule_unset_listen_fd(SilcSchedule schedule, int fd);
+ *
+ * DESCRIPTION
+ *
+ *    Removes a file descriptor from listen list.  The file descriptor
+ *    is not listened by the scheduler after this function.
+ *
+ ***/
+void silc_schedule_unset_listen_fd(SilcSchedule schedule, int fd);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule
+ *
+ * SYNOPSIS
+ *
+ *    void silc_schedule(SilcSchedule schedule);
+ *
+ * DESCRIPTION
+ *
+ *    The SILC scheduler. This is actually the main routine in SILC programs.
+ *    When this returns the program is to be ended. Before this function can
+ *    be called, one must call silc_schedule_init function.
+ *
+ ***/
+void silc_schedule(SilcSchedule schedule);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_schedule_one(SilcSchedule schedule, int block);
+ *
+ * DESCRIPTION
+ *
+ *    Same as the silc_schedule but runs the scheduler only one round
+ *    and then returns.  This function is handy when the SILC scheduler
+ *    is used inside some other external scheduler, for example.  If
+ *    the `timeout_usecs' is positive a timeout will be added to the
+ *    scheduler.  The function will not return in this timeout unless
+ *    some other event occurs.
+ *
+ ***/
+bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs);
 
 #endif

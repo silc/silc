@@ -76,8 +76,8 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_close)
 {
   SilcClientKeyAgreement ke = (SilcClientKeyAgreement)context;
 
-  silc_schedule_unset_listen_fd(ke->sock->sock);
-  silc_schedule_unset_listen_fd(ke->fd);
+  silc_schedule_unset_listen_fd(ke->client->schedule, ke->sock->sock);
+  silc_schedule_unset_listen_fd(ke->client->schedule, ke->fd);
   silc_net_close_connection(ke->sock->sock);
   silc_net_close_connection(ke->fd);
   silc_socket_free(ke->sock);
@@ -120,7 +120,7 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_final)
   if (ctx->dest_id)
     silc_free(ctx->dest_id);
   silc_task_unregister_by_fd(client->io_queue, ke->fd);
-  silc_schedule_unset_listen_fd(ke->fd);
+  silc_schedule_unset_listen_fd(ke->client->schedule, ke->fd);
   silc_net_close_connection(ke->fd);
   if (ke->timeout)
     silc_task_unregister(client->timeout_queue, ke->timeout);
@@ -158,7 +158,7 @@ SILC_TASK_CALLBACK(silc_client_process_key_agreement)
     ke->completion(ke->client, ke->conn, ke->client_entry, 
 		   SILC_KEY_AGREEMENT_ERROR, NULL, ke->context);
     silc_task_unregister_by_fd(client->io_queue, ke->fd);
-    silc_schedule_unset_listen_fd(ke->fd);
+    silc_schedule_unset_listen_fd(ke->client->schedule, ke->fd);
     silc_net_close_connection(ke->fd);
     if (ke->timeout)
       silc_task_unregister(client->timeout_queue, ke->timeout);
@@ -185,7 +185,7 @@ SILC_TASK_CALLBACK(silc_client_process_key_agreement)
     ke->completion(ke->client, ke->conn, ke->client_entry, 
 		   SILC_KEY_AGREEMENT_ERROR, NULL, ke->context);
     silc_task_unregister_by_fd(client->io_queue, ke->fd);
-    silc_schedule_unset_listen_fd(ke->fd);
+    silc_schedule_unset_listen_fd(ke->client->schedule, ke->fd);
     silc_net_close_connection(ke->fd);
     if (ke->timeout)
       silc_task_unregister(client->timeout_queue, ke->timeout);
@@ -245,7 +245,7 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_timeout)
   ke->client_entry->ke = NULL;
   if (ke->fd)
     silc_task_unregister_by_fd(ke->client->io_queue, ke->fd);
-  silc_schedule_unset_listen_fd(ke->fd);
+  silc_schedule_unset_listen_fd(ke->client->schedule, ke->fd);
   silc_net_close_connection(ke->fd);
   silc_free(ke);
 }
@@ -370,7 +370,7 @@ silc_client_connect_to_client_internal(SilcClientInternalConnectContext *ctx)
 				 SILC_TASK_FD,
 				 SILC_TASK_PRI_NORMAL);
   silc_task_reset_iotype(ctx->task, SILC_TASK_WRITE);
-  silc_schedule_set_listen_fd(sock, ctx->task->iomask);
+  silc_schedule_set_listen_fd(ctx->client->schedule, sock, ctx->task->iomask);
 
   ctx->sock = sock;
 
@@ -427,7 +427,7 @@ SILC_TASK_CALLBACK(silc_client_perform_key_agreement_start)
 		       ctx->port, ctx->host);
 
       /* Unregister old connection try */
-      silc_schedule_unset_listen_fd(fd);
+      silc_schedule_unset_listen_fd(client->schedule, fd);
       silc_net_close_connection(fd);
       silc_task_unregister(client->io_queue, ctx->task);
 
@@ -438,7 +438,7 @@ SILC_TASK_CALLBACK(silc_client_perform_key_agreement_start)
       /* Connection failed and we won't try anymore */
       client->ops->say(client, conn, "Could not connect to client %s: %s",
 		       ctx->host, strerror(opt));
-      silc_schedule_unset_listen_fd(fd);
+      silc_schedule_unset_listen_fd(client->schedule, fd);
       silc_net_close_connection(fd);
       silc_task_unregister(client->io_queue, ctx->task);
       silc_free(ctx->host);
@@ -452,7 +452,7 @@ SILC_TASK_CALLBACK(silc_client_perform_key_agreement_start)
     return;
   }
 
-  silc_schedule_unset_listen_fd(fd);
+  silc_schedule_unset_listen_fd(client->schedule, fd);
   silc_task_unregister(client->io_queue, ctx->task);
 
   ke->fd = fd;

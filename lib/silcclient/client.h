@@ -158,7 +158,8 @@ struct SilcClientStruct {
   /* All client operations that are implemented in the application. */
   SilcClientOperations *ops;
 
-  /* SILC client task queues */
+  /* SILC client scheduler and task queues */
+  SilcSchedule schedule;
   SilcTaskQueue io_queue;
   SilcTaskQueue timeout_queue;
   SilcTaskQueue generic_queue;
@@ -202,15 +203,15 @@ do {									\
   silc_task_set_iotype(tmptask, SILC_TASK_WRITE);			\
 } while(0)
 
-#define SILC_CLIENT_SET_CONNECTION_FOR_INPUT(fd)		\
-do {								\
-  silc_schedule_set_listen_fd((fd), (1L << SILC_TASK_READ));	\
-} while(0)							\
+#define SILC_CLIENT_SET_CONNECTION_FOR_INPUT(s, fd)			\
+do {									\
+  silc_schedule_set_listen_fd((s), (fd), (1L << SILC_TASK_READ));	\
+} while(0)
      
-#define SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT(fd)		\
-do {								\
-  silc_schedule_set_listen_fd((fd), ((1L << SILC_TASK_READ) |	\
-				     (1L << SILC_TASK_WRITE)));	\
+#define SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT(s, fd)			\
+do {									\
+  silc_schedule_set_listen_fd((s), (fd), ((1L << SILC_TASK_READ) |	\
+				     (1L << SILC_TASK_WRITE)));		\
 } while(0)
 
 /* Finds socket connection object by file descriptor */

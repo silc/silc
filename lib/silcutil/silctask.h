@@ -2,9 +2,9 @@
 
   silctask.h
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2000 Pekka Riikonen
+  Copyright (C) 1998 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,6 +20,12 @@
 
 #ifndef SILCTASK_H
 #define SILCTASK_H
+
+typedef struct SilcTaskQueueStruct *SilcTaskQueue;
+typedef struct SilcTaskStruct *SilcTask;
+typedef void (*SilcTaskCallback)(void *, int, void *, int);
+
+#include "silcschedule.h"
 
 /* 
    SILC Task object. 
@@ -49,7 +55,7 @@
        structure of the task. Last argument is the file descriptor of the
        task.
 
-   int valid
+   bool valid
 
        Marks for validity of the task. Task that is not valid scheduler 
        will skip. This is boolean value.
@@ -81,22 +87,18 @@
 
 */
 
-typedef void (*SilcTaskCallback)(void *, int, void *, int);
-
-typedef struct SilcTaskStruct {
+struct SilcTaskStruct {
   int fd;
   struct timeval timeout;
   void *context;
   SilcTaskCallback callback;
-  int valid;
+  bool valid;
   int priority;
   int iomask;
 
   struct SilcTaskStruct *next;
   struct SilcTaskStruct *prev;
-} SilcTaskObject;
-
-typedef SilcTaskObject *SilcTask;
+};
 
 /* 
    SILC Task types.
@@ -166,6 +168,10 @@ typedef enum {
 
    Short description of the field following:
 
+   SilcSchedule schedule
+
+       A back pointer to the scheduler.
+
    SilcTask task
 
        Pointer to the tasks in the queue.
@@ -185,13 +191,12 @@ typedef enum {
 
 */
 
-typedef struct SilcTaskQueueStruct {
+struct SilcTaskQueueStruct {
+  SilcSchedule schedule;
   SilcTask task;
   int valid;
   struct timeval timeout;
-} SilcTaskQueueObject;
-
-typedef SilcTaskQueueObject *SilcTaskQueue;
+};
 
 /* Marks for all tasks in a task queue. This can be passed to 
    unregister_task function to cancel all tasks at once. */
@@ -230,8 +235,9 @@ static void func(void *qptr, int type, void *context, int fd)
 void func(void *qptr, int type, void *context, int fd)
 
 /* Prototypes */
-void silc_task_queue_alloc(SilcTaskQueue *new, int valid);
-void silc_task_queue_free(SilcTaskQueue old);
+void silc_task_queue_alloc(SilcSchedule schedule, SilcTaskQueue *new, 
+			   bool valid);
+void silc_task_queue_free(SilcTaskQueue queue);
 SilcTask silc_task_add(SilcTaskQueue queue, SilcTask new, 
 		       SilcTaskPriority priority);
 SilcTask silc_task_add_timeout(SilcTaskQueue queue, SilcTask new,

@@ -267,30 +267,20 @@ int silc_server_init(SilcServer server)
     server->id_entry = id_entry;
   }
 
-  /* Register the task queues. In SILC we have by default three task queues. 
-     One task queue for non-timeout tasks which perform different kind of 
-     I/O on file descriptors, timeout task queue for timeout tasks, and,
-     generic non-timeout task queue whose tasks apply to all connections. */
-  silc_task_queue_alloc(&server->io_queue, TRUE);
-  if (!server->io_queue) {
-    goto err0;
-  }
-  silc_task_queue_alloc(&server->timeout_queue, TRUE);
-  if (!server->timeout_queue) {
-    goto err1;
-  }
-  silc_task_queue_alloc(&server->generic_queue, TRUE);
-  if (!server->generic_queue) {
-    goto err1;
-  }
-
   /* Register protocols */
   silc_server_protocols_register();
 
-  /* Initialize the scheduler */
-  silc_schedule_init(&server->io_queue, &server->timeout_queue, 
-		     &server->generic_queue, 
-		     SILC_SERVER_MAX_CONNECTIONS);
+  /* Initialize the scheduler. This will register the task queues as well.
+     In SILC we have by default three task queues. One task queue for
+     non-timeout tasks which perform different kind of I/O on file
+     descriptors, timeout task queue for timeout tasks, and, generic
+     non-timeout task queue whose tasks apply to all connections. */
+  server->schedule = silc_schedule_init(&server->io_queue, 
+					&server->timeout_queue, 
+					&server->generic_queue, 
+					SILC_SERVER_MAX_CONNECTIONS);
+  if (!server->schedule)
+    goto err0;
   
   /* Add the first task to the queue. This is task that is executed by
      timeout. It expires as soon as the caller calls silc_server_run. This
@@ -342,9 +332,6 @@ int silc_server_init(SilcServer server)
   /* We are done here, return succesfully */
   return TRUE;
 
-  silc_task_queue_free(server->timeout_queue);
- err1:
-  silc_task_queue_free(server->io_queue);
  err0:
   for (i = 0; i < sock_count; i++)
     silc_net_close_server(sock[i]);
@@ -467,8 +454,8 @@ void silc_server_stop(SilcServer server)
   /* Stop the scheduler, although it might be already stopped. This
      doesn't hurt anyone. This removes all the tasks and task queues,
      as well. */
-  silc_schedule_stop();
-  silc_schedule_uninit();
+  silc_schedule_stop(server->schedule);
+  silc_schedule_uninit(server->schedule);
 
   silc_server_protocols_unregister();
 
@@ -487,7 +474,7 @@ void silc_server_run(SilcServer server)
 
   /* Start the scheduler, the heart of the SILC server. When this returns
      the program will be terminated. */
-  silc_schedule();
+  silc_schedule(server->schedule);
 }
 
 /* Timeout callback that will be called to retry connecting to remote
@@ -1404,7 +1391,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
        back to only for input. When there is again some outgoing data 
        available for this connection it will be set for output as well. 
        This call clears the output setting and sets it only for input. */
-    SILC_SET_CONNECTION_FOR_INPUT(fd);
+    SILC_SET_CONNECTION_FOR_INPUT(server->schedule, fd);
     SILC_UNSET_OUTBUF_PENDING(sock);
 
     silc_buffer_clear(sock->outbuf);
@@ -2089,7 +2076,7 @@ void silc_server_close_connection(SilcServer server,
   }
 
   /* We won't listen for this connection anymore */
-  silc_schedule_unset_listen_fd(sock->sock);
+  silc_schedule_unset_listen_fd(server->schedule, sock->sock);
 
   /* Unregister all tasks */
   silc_task_unregister_by_fd(server->io_queue, sock->sock);
@@ -2177,7 +2164,7 @@ void silc_server_free_client_data(SilcServer server,
 
     silc_packet_send(sock, TRUE);
 
-    SILC_SET_CONNECTION_FOR_INPUT(sock->sock);
+    SILC_SET_CONNECTION_FOR_INPUT(server->schedule, sock->sock);
     SILC_UNSET_OUTBUF_PENDING(sock);
     silc_buffer_clear(sock->outbuf);
   }

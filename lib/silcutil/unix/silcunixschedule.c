@@ -1,10 +1,10 @@
 /*
 
-  silcschedule.c
+  silcunixschedule.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2000 Pekka Riikonen
+  Copyright (C) 1998 - 2001 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,21 +21,108 @@
 
 #include "silcincludes.h"
 
-/* The actual schedule object. */
-static SilcSchedule schedule;
+/* Structure holding list of file descriptors, scheduler is supposed to
+   be listenning. The max_fd field is the maximum number of possible file
+   descriptors in the list. This value is set at the initialization
+   of the scheduler and it usually is the maximum number of connections 
+   allowed. */
+typedef struct {
+  int *fd;
+  uint32 last_fd;
+  uint32 max_fd;
+} SilcScheduleFdList;
 
-/* Initializes the schedule. Sets the non-timeout task queue hook and
-   the timeout task queue hook. This must be called before the schedule
-   is able to work. */
+/* 
+   SILC Unix Scheduler structure.
 
-void silc_schedule_init(SilcTaskQueue *fd_queue,
-			SilcTaskQueue *timeout_queue,
-			SilcTaskQueue *generic_queue,
-			int max_fd)
+   This is the actual schedule object in SILC. Both SILC client and server 
+   uses this same scheduler. Actually, this scheduler could be used by any
+   program needing scheduling.
+
+   Following short description of the fields:
+
+   SilcTaskQueue fd_queue
+
+       Task queue hook for non-timeout tasks. Usually this means that these
+       tasks perform different kind of I/O on file descriptors. File 
+       descriptors are usually network sockets but they actually can be
+       any file descriptors. This hook is initialized in silc_schedule_init
+       function. Timeout tasks should not be added to this queue because
+       they will never expire.
+
+   SilcTaskQueue timeout_queue
+
+       Task queue hook for timeout tasks. This hook is reserved specificly
+       for tasks with timeout. Non-timeout tasks should not be added to this
+       queue because they will never get scheduled. This hook is also
+       initialized in silc_schedule_init function.
+
+   SilcTaskQueue generic_queue
+
+       Task queue hook for generic tasks. This hook is reserved specificly
+       for generic tasks, tasks that apply to all file descriptors, except
+       to those that have specificly registered a non-timeout task. This hook
+       is also initialized in silc_schedule_init function.
+
+   SilcScheduleFdList fd_list
+
+       List of file descriptors the scheduler is supposed to be listenning.
+       This is updated internally.
+
+   struct timeval *timeout;
+
+       Pointer to the schedules next timeout. Value of this timeout is
+       automatically updated in the silc_schedule function.
+
+   int valid
+
+       Marks validity of the scheduler. This is a boolean value. When this
+       is false the scheduler is terminated and the program will end. This
+       set to true when the scheduler is initialized with silc_schedule_init
+       function.
+
+   fd_set in
+   fd_set out
+
+       File descriptor sets for select(). These are automatically managed
+       by the scheduler and should not be touched otherwise.
+
+   int max_fd
+
+       Number of maximum file descriptors for select(). This, as well, is
+       managed automatically by the scheduler and should be considered to 
+       be read-only field otherwise.
+
+*/
+struct SilcScheduleStruct {
+  SilcTaskQueue fd_queue;
+  SilcTaskQueue timeout_queue;
+  SilcTaskQueue generic_queue;
+  SilcScheduleFdList fd_list;
+  struct timeval *timeout;
+  int valid;
+  fd_set in;
+  fd_set out;
+  int max_fd;
+};
+
+/* Initializes the scheduler. Sets the non-timeout task queue hook and
+   the timeout task queue hook. This must be called before the scheduler
+   is able to work. This will allocate the queue pointers if they are
+   not allocated. Returns the scheduler context that must be freed by
+   the silc_schedule_uninit function. */
+
+SilcSchedule silc_schedule_init(SilcTaskQueue *fd_queue,
+				SilcTaskQueue *timeout_queue,
+				SilcTaskQueue *generic_queue,
+				int max_fd)
 {
+  SilcSchedule schedule;
   int i;
 
   SILC_LOG_DEBUG(("Initializing scheduler"));
+
+  schedule = silc_calloc(1, sizeof(*schedule));
 
   /* Register the task queues if they are not registered already. In SILC
      we have by default three task queues. One task queue for non-timeout
@@ -43,60 +130,63 @@ void silc_schedule_init(SilcTaskQueue *fd_queue,
      task queue for timeout tasks, and, generic non-timeout task queue whose
      tasks apply to all connections. */
   if (!*fd_queue)
-    silc_task_queue_alloc(fd_queue, TRUE);
+    silc_task_queue_alloc(schedule, fd_queue, TRUE);
   if (!*timeout_queue)
-    silc_task_queue_alloc(timeout_queue, TRUE);
+    silc_task_queue_alloc(schedule, timeout_queue, TRUE);
   if (!*generic_queue)
-    silc_task_queue_alloc(generic_queue, TRUE);
+    silc_task_queue_alloc(schedule, generic_queue, TRUE);
 
-  /* Initialize the schedule */
-  memset(&schedule, 0, sizeof(schedule));
-  schedule.fd_queue = *fd_queue;
-  schedule.timeout_queue = *timeout_queue;
-  schedule.generic_queue = *generic_queue;
-  schedule.fd_list.fd = silc_calloc(max_fd, sizeof(int));
-  schedule.fd_list.last_fd = 0;
-  schedule.fd_list.max_fd = max_fd;
-  schedule.timeout = NULL;
-  schedule.valid = TRUE;
-  FD_ZERO(&schedule.in);
-  FD_ZERO(&schedule.out);
-  schedule.max_fd = -1;
+  /* Initialize the scheduler */
+  schedule->fd_queue = *fd_queue;
+  schedule->timeout_queue = *timeout_queue;
+  schedule->generic_queue = *generic_queue;
+  schedule->fd_list.fd = silc_calloc(max_fd, sizeof(int));
+  schedule->fd_list.last_fd = 0;
+  schedule->fd_list.max_fd = max_fd;
+  schedule->timeout = NULL;
+  schedule->valid = TRUE;
+  FD_ZERO(&schedule->in);
+  FD_ZERO(&schedule->out);
+  schedule->max_fd = -1;
   for (i = 0; i < max_fd; i++)
-    schedule.fd_list.fd[i] = -1;
+    schedule->fd_list.fd[i] = -1;
+
+  return schedule;
 }
 
 /* Uninitializes the schedule. This is called when the program is ready
-   to end. This removes all tasks and task queues. */
+   to end. This removes all tasks and task queues. Returns FALSE if the
+   scheduler could not be uninitialized. This happens when the scheduler
+   is still valid and silc_schedule_stop has not been called. */
 
-int silc_schedule_uninit()
+bool silc_schedule_uninit(SilcSchedule schedule)
 {
 
   SILC_LOG_DEBUG(("Uninitializing scheduler"));
 
-  if (schedule.valid == TRUE)
+  if (schedule->valid == TRUE)
     return FALSE;
 
   /* Unregister all tasks */
-  if (schedule.fd_queue)
-    silc_task_remove(schedule.fd_queue, SILC_ALL_TASKS);
-  if (schedule.timeout_queue)
-    silc_task_remove(schedule.timeout_queue, SILC_ALL_TASKS);
-  if (schedule.generic_queue)
-    silc_task_remove(schedule.generic_queue, SILC_ALL_TASKS);
+  if (schedule->fd_queue)
+    silc_task_remove(schedule->fd_queue, SILC_ALL_TASKS);
+  if (schedule->timeout_queue)
+    silc_task_remove(schedule->timeout_queue, SILC_ALL_TASKS);
+  if (schedule->generic_queue)
+    silc_task_remove(schedule->generic_queue, SILC_ALL_TASKS);
 
   /* Unregister all task queues */
-  if (schedule.fd_queue)
-    silc_task_queue_free(schedule.fd_queue);
-  if (schedule.timeout_queue)
-    silc_task_queue_free(schedule.timeout_queue);
-  if (schedule.generic_queue)
-    silc_task_queue_free(schedule.generic_queue);
+  if (schedule->fd_queue)
+    silc_task_queue_free(schedule->fd_queue);
+  if (schedule->timeout_queue)
+    silc_task_queue_free(schedule->timeout_queue);
+  if (schedule->generic_queue)
+    silc_task_queue_free(schedule->generic_queue);
 
   /* Clear the fd list */
-  if (schedule.fd_list.fd) {
-    memset(schedule.fd_list.fd, -1, schedule.fd_list.max_fd);
-    silc_free(schedule.fd_list.fd);
+  if (schedule->fd_list.fd) {
+    memset(schedule->fd_list.fd, -1, schedule->fd_list.max_fd);
+    silc_free(schedule->fd_list.fd);
   }
 
   memset(&schedule, 'F', sizeof(schedule));
@@ -107,46 +197,40 @@ int silc_schedule_uninit()
    After calling this, one should call silc_schedule_uninit (after the 
    silc_schedule has returned). */
 
-void silc_schedule_stop()
+void silc_schedule_stop(SilcSchedule schedule)
 {
   SILC_LOG_DEBUG(("Stopping scheduler"));
 
-  if (schedule.valid == TRUE)
-    schedule.valid = FALSE;
+  if (schedule->valid == TRUE)
+    schedule->valid = FALSE;
 }
 
 /* Sets a file descriptor to be listened by select() in scheduler. One can
    call this directly if wanted. This can be called multiple times for
    one file descriptor to set different iomasks. */
 
-void silc_schedule_set_listen_fd(int fd, uint32 iomask)
+void silc_schedule_set_listen_fd(SilcSchedule schedule, int fd, uint32 iomask)
 {
-  assert(schedule.valid != FALSE);
-  assert(fd < schedule.fd_list.max_fd);
-
-  schedule.fd_list.fd[fd] = iomask;
+  schedule->fd_list.fd[fd] = iomask;
   
-  if (fd > schedule.fd_list.last_fd)
-    schedule.fd_list.last_fd = fd;
+  if (fd > schedule->fd_list.last_fd)
+    schedule->fd_list.last_fd = fd;
 }
 
 /* Removes a file descriptor from listen list. */
 
-void silc_schedule_unset_listen_fd(int fd)
+void silc_schedule_unset_listen_fd(SilcSchedule schedule, int fd)
 {
-  assert(schedule.valid != FALSE);
-  assert(fd < schedule.fd_list.max_fd);
-
-  schedule.fd_list.fd[fd] = -1;
+  schedule->fd_list.fd[fd] = -1;
   
-  if (fd == schedule.fd_list.last_fd) {
+  if (fd == schedule->fd_list.last_fd) {
     int i;
 
     for (i = fd; i >= 0; i--)
-      if (schedule.fd_list.fd[i] != -1)
+      if (schedule->fd_list.fd[i] != -1)
 	break;
 
-    schedule.fd_list.last_fd = i < 0 ? 0 : i;
+    schedule->fd_list.last_fd = i < 0 ? 0 : i;
   }
 }
 
@@ -158,7 +242,7 @@ void silc_schedule_unset_listen_fd(int fd)
 
 #define SILC_SCHEDULE_RUN_TASKS						   \
 do {									   \
-  queue = schedule.fd_queue;						   \
+  queue = schedule->fd_queue;						   \
   if (queue && queue->valid == TRUE && queue->task) {			   \
     task = queue->task;							   \
  									   \
@@ -172,7 +256,7 @@ do {									   \
 								           \
       if (task->valid) {					           \
 	/* Task ready for reading */				      	   \
-	if ((FD_ISSET(task->fd, &schedule.in)) &&		      	   \
+	if ((FD_ISSET(task->fd, &schedule->in)) &&		      	   \
 	    (task->iomask & (1L << SILC_TASK_READ))) {     	           \
 	  task->callback(queue, SILC_TASK_READ, task->context, task->fd);  \
           is_run = TRUE; 						   \
@@ -181,7 +265,7 @@ do {									   \
 									   \
       if (task->valid) {						   \
 	/* Task ready for writing */					   \
-	if ((FD_ISSET(task->fd, &schedule.out)) &&	       	      	   \
+	if ((FD_ISSET(task->fd, &schedule->out)) &&	       	      	   \
 	    (task->iomask & (1L << SILC_TASK_WRITE))) {		      	   \
 	  task->callback(queue, SILC_TASK_WRITE, task->context, task->fd); \
           is_run = TRUE; 						   \
@@ -216,20 +300,20 @@ do {									   \
 
 #define SILC_SCHEDULE_SELECT_TASKS				\
 do {								\
-  for (i = 0; i <= schedule.fd_list.last_fd; i++) {	       	\
-    if (schedule.fd_list.fd[i] != -1) {				\
+  for (i = 0; i <= schedule->fd_list.last_fd; i++) {	       	\
+    if (schedule->fd_list.fd[i] != -1) {				\
 								\
       /* Set the max fd value for select() to listen */		\
-      if (i > schedule.max_fd)					\
-	schedule.max_fd = i;					\
+      if (i > schedule->max_fd)					\
+	schedule->max_fd = i;					\
 								\
       /* Add tasks for reading */				\
-      if ((schedule.fd_list.fd[i] & (1L << SILC_TASK_READ)))	\
-	FD_SET(i, &schedule.in);				\
+      if ((schedule->fd_list.fd[i] & (1L << SILC_TASK_READ)))	\
+	FD_SET(i, &schedule->in);				\
 								\
       /* Add tasks for writing */				\
-      if ((schedule.fd_list.fd[i] & (1L << SILC_TASK_WRITE)))	\
-	FD_SET(i, &schedule.out);				\
+      if ((schedule->fd_list.fd[i] & (1L << SILC_TASK_WRITE)))	\
+	FD_SET(i, &schedule->out);				\
     }								\
   }                                                             \
 } while(0)
@@ -243,7 +327,7 @@ do {								\
 
 #define SILC_SCHEDULE_RUN_TIMEOUT_TASKS					\
 do {									\
-  queue = schedule.timeout_queue;					\
+  queue = schedule->timeout_queue;					\
   if (queue && queue->valid == TRUE && queue->task) {			\
     task = queue->task;							\
 									\
@@ -298,13 +382,13 @@ do {									\
 
 #define SILC_SCHEDULE_SELECT_TIMEOUT					    \
 do {									    \
-  if (schedule.timeout_queue && schedule.timeout_queue->valid == TRUE) {    \
-    queue = schedule.timeout_queue;					    \
+  if (schedule->timeout_queue && schedule->timeout_queue->valid == TRUE) {    \
+    queue = schedule->timeout_queue;					    \
     task = NULL;							    \
 									    \
     /* Get the current time */						    \
     gettimeofday(&curtime, NULL);					    \
-    schedule.timeout = NULL;						    \
+    schedule->timeout = NULL;						    \
 									    \
     /* First task in the task queue has always the smallest timeout. */	    \
     task = queue->task;							    \
@@ -318,7 +402,7 @@ do {									    \
 									    \
 	  /* The task(s) has expired and doesn't exist on the task queue    \
 	     anymore. We continue with new timeout. */			    \
-          queue = schedule.timeout_queue;				    \
+          queue = schedule->timeout_queue;				    \
           task = queue->task;						    \
           if (task == NULL || task->valid == FALSE)			    \
             break;							    \
@@ -351,7 +435,7 @@ do {									    \
     }									    \
     /* Save the timeout */						    \
     if (task)								    \
-      schedule.timeout = &queue->timeout;				    \
+      schedule->timeout = &queue->timeout;				    \
   }									    \
 } while(0)
 
@@ -364,16 +448,16 @@ do {									    \
 do {									     \
   if (is_run == FALSE) {						     \
     SILC_LOG_DEBUG(("Running generic tasks"));				     \
-    for (i = 0; i <= schedule.fd_list.last_fd; i++)			     \
-      if (schedule.fd_list.fd[i] != -1) {				     \
+    for (i = 0; i <= schedule->fd_list.last_fd; i++)			     \
+      if (schedule->fd_list.fd[i] != -1) {				     \
 									     \
 	/* Check whether this fd is select()ed. */			     \
-	if ((FD_ISSET(i, &schedule.in)) || (FD_ISSET(i, &schedule.out))) {   \
+	if ((FD_ISSET(i, &schedule->in)) || (FD_ISSET(i, &schedule->out))) {   \
 									     \
 	  /* It was selected. Now find the tasks from task queue and execute \
 	     all generic tasks. */					     \
-	  if (schedule.generic_queue && schedule.generic_queue->valid) {     \
-	    queue = schedule.generic_queue;				     \
+	  if (schedule->generic_queue && schedule->generic_queue->valid) {     \
+	    queue = schedule->generic_queue;				     \
 									     \
 	    if (!queue->task)						     \
 	      break;							     \
@@ -385,16 +469,16 @@ do {									     \
 		 execution beacuse the task might have been unregistered     \
 		 in the callback function, ie. it is not valid anymore. */   \
 									     \
-	      if (task->valid && schedule.fd_list.fd[i] != -1) {	     \
+	      if (task->valid && schedule->fd_list.fd[i] != -1) {	     \
 		/* Task ready for reading */				     \
-		if ((schedule.fd_list.fd[i] & (1L << SILC_TASK_READ)))	     \
+		if ((schedule->fd_list.fd[i] & (1L << SILC_TASK_READ)))	     \
 		  task->callback(queue, SILC_TASK_READ,			     \
 				 task->context, i);			     \
 	      }								     \
 									     \
-	      if (task->valid && schedule.fd_list.fd[i] != -1) {	     \
+	      if (task->valid && schedule->fd_list.fd[i] != -1) {	     \
 		/* Task ready for writing */				     \
-		if ((schedule.fd_list.fd[i] & (1L << SILC_TASK_WRITE)))	     \
+		if ((schedule->fd_list.fd[i] & (1L << SILC_TASK_WRITE)))	     \
 		  task->callback(queue, SILC_TASK_WRITE,		     \
 				 task->context, i);			     \
 	      }								     \
@@ -424,7 +508,7 @@ do {									     \
   }									     \
 } while(0)
 
-int silc_schedule_one(int timeout_usecs)
+bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
 {
   struct timeval timeout;
   int is_run, i;
@@ -436,16 +520,16 @@ int silc_schedule_one(int timeout_usecs)
 
   /* If the task queues aren't initialized or we aren't valid anymore
      we will return */
-  if ((!schedule.fd_queue && !schedule.timeout_queue 
-       && !schedule.generic_queue) || schedule.valid == FALSE) {
+  if ((!schedule->fd_queue && !schedule->timeout_queue 
+       && !schedule->generic_queue) || schedule->valid == FALSE) {
     SILC_LOG_DEBUG(("Scheduler not valid anymore, exiting"));
     return FALSE;
   }
 
   /* Clear everything */
-  FD_ZERO(&schedule.in);
-  FD_ZERO(&schedule.out);
-  schedule.max_fd = -1;
+  FD_ZERO(&schedule->in);
+  FD_ZERO(&schedule->out);
+  schedule->max_fd = -1;
   is_run = FALSE;
 
   /* Calculate next timeout for select(). This is the timeout value
@@ -456,36 +540,30 @@ int silc_schedule_one(int timeout_usecs)
      tasks. The select() listens to these file descriptors. */
   SILC_SCHEDULE_SELECT_TASKS;
 
-  if (schedule.max_fd == -1 && !schedule.timeout)
+  if (schedule->max_fd == -1 && !schedule->timeout)
     return FALSE;
 
-  if (schedule.timeout) {
-    SILC_LOG_DEBUG(("timeout: sec=%d, usec=%d", schedule.timeout->tv_sec,
-		    schedule.timeout->tv_usec));
+  if (schedule->timeout) {
+    SILC_LOG_DEBUG(("timeout: sec=%d, usec=%d", schedule->timeout->tv_sec,
+		    schedule->timeout->tv_usec));
   }
 
   if (timeout_usecs >= 0) {
     timeout.tv_sec = 0;
     timeout.tv_usec = timeout_usecs;
-    schedule.timeout = &timeout;
+    schedule->timeout = &timeout;
   }
 
   /* This is the main select(). The program blocks here until some
      of the selected file descriptors change status or the selected
      timeout expires. */
   SILC_LOG_DEBUG(("Select"));
-  switch (select(schedule.max_fd + 1, &schedule.in,
-		 &schedule.out, 0, schedule.timeout)) {
+  switch (select(schedule->max_fd + 1, &schedule->in,
+		 &schedule->out, 0, schedule->timeout)) {
   case -1:
     /* Error */
     if (errno == EINTR)
       break;
-#if 1
-    if (errno == EINVAL && schedule.timeout) {
-      SILC_LOG_ERROR(("Invalid argument (invalid timeout): %lu %lu",
-		      schedule.timeout->tv_sec, schedule.timeout->tv_usec));
-    }
-#endif
     SILC_LOG_ERROR(("Error in select(): %s", strerror(errno)));
     break;
   case 0:
@@ -502,6 +580,7 @@ int silc_schedule_one(int timeout_usecs)
     SILC_SCHEDULE_RUN_GENERIC_TASKS;
     break;
   }
+
   return TRUE;
 }
 
@@ -509,16 +588,16 @@ int silc_schedule_one(int timeout_usecs)
    When this returns the program is to be ended. Before this function can
    be called, one must call silc_schedule_init function. */
 
-void silc_schedule()
+void silc_schedule(SilcSchedule schedule)
 {
   SILC_LOG_DEBUG(("Running scheduler"));
 
-  if (schedule.valid == FALSE) {
+  if (schedule->valid == FALSE) {
     SILC_LOG_ERROR(("Scheduler is not valid, stopping"));
     return;
   }
 
   /* Start the scheduler loop */
-  while (silc_schedule_one(-1)) 
+  while (silc_schedule_one(schedule, -1)) 
     ;
 }

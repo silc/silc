@@ -49,7 +49,7 @@ int silc_server_packet_send_real(SilcServer server,
      This call sets the connection both for input and output (the input
      is set always and this call keeps the input setting, actually). 
      Actual data sending is performed by silc_server_packet_process. */
-  SILC_SET_CONNECTION_FOR_OUTPUT(sock->sock);
+  SILC_SET_CONNECTION_FOR_OUTPUT(server->schedule, sock->sock);
 
   /* Mark to socket that data is pending in outgoing buffer. This flag
      is needed if new data is added to the buffer before the earlier

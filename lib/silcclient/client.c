@@ -87,8 +87,11 @@ int silc_client_init(SilcClient client)
   silc_client_protocols_register();
 
   /* Initialize the scheduler */
-  silc_schedule_init(&client->io_queue, &client->timeout_queue, 
-		     &client->generic_queue, 5000);
+  client->schedule = silc_schedule_init(&client->io_queue, 
+					&client->timeout_queue, 
+					&client->generic_queue, 5000);
+  if (!client->schedule)
+    return FALSE;
 
   return TRUE;
 }
@@ -103,8 +106,8 @@ void silc_client_stop(SilcClient client)
   /* Stop the scheduler, although it might be already stopped. This
      doesn't hurt anyone. This removes all the tasks and task queues,
      as well. */
-  silc_schedule_stop();
-  silc_schedule_uninit();
+  silc_schedule_stop(client->schedule);
+  silc_schedule_uninit(client->schedule);
 
   silc_client_protocols_unregister();
 
@@ -120,7 +123,7 @@ void silc_client_run(SilcClient client)
 
   /* Start the scheduler, the heart of the SILC client. When this returns
      the program will be terminated. */
-  silc_schedule();
+  silc_schedule(client->schedule);
 }
 
 /* Allocates and adds new connection to the client. This adds the allocated
@@ -247,7 +250,7 @@ silc_client_connect_to_server_internal(SilcClientInternalConnectContext *ctx)
 				 SILC_TASK_FD,
 				 SILC_TASK_PRI_NORMAL);
   silc_task_reset_iotype(ctx->task, SILC_TASK_WRITE);
-  silc_schedule_set_listen_fd(sock, ctx->task->iomask);
+  silc_schedule_set_listen_fd(ctx->client->schedule, sock, ctx->task->iomask);
 
   ctx->sock = sock;
 
@@ -377,7 +380,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
 		       ctx->port, ctx->host);
 
       /* Unregister old connection try */
-      silc_schedule_unset_listen_fd(fd);
+      silc_schedule_unset_listen_fd(client->schedule, fd);
       silc_net_close_connection(fd);
       silc_task_unregister(client->io_queue, ctx->task);
 
@@ -388,7 +391,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
       /* Connection failed and we won't try anymore */
       client->ops->say(client, conn, "Could not connect to server %s: %s",
 		       ctx->host, strerror(opt));
-      silc_schedule_unset_listen_fd(fd);
+      silc_schedule_unset_listen_fd(client->schedule, fd);
       silc_net_close_connection(fd);
       silc_task_unregister(client->io_queue, ctx->task);
       silc_free(ctx);
@@ -400,7 +403,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
     return;
   }
 
-  silc_schedule_unset_listen_fd(fd);
+  silc_schedule_unset_listen_fd(client->schedule, fd);
   silc_task_unregister(client->io_queue, ctx->task);
   silc_free(ctx);
 
@@ -591,7 +594,7 @@ int silc_client_packet_send_real(SilcClient client,
      This call sets the connection both for input and output (the input
      is set always and this call keeps the input setting, actually). 
      Actual data sending is performed by silc_client_packet_process. */
-  SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT(sock->sock);
+  SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT(client->schedule, sock->sock);
 
   /* Mark to socket that data is pending in outgoing buffer. This flag
      is needed if new data is added to the buffer before the earlier
@@ -638,7 +641,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
        back to only for input. When there is again some outgoing data 
        available for this connection it will be set for output as well. 
        This call clears the output setting and sets it only for input. */
-    SILC_CLIENT_SET_CONNECTION_FOR_INPUT(fd);
+    SILC_CLIENT_SET_CONNECTION_FOR_INPUT(client->schedule, fd);
     SILC_UNSET_OUTBUF_PENDING(sock);
 
     silc_buffer_clear(sock->outbuf);
@@ -1147,7 +1150,7 @@ void silc_client_close_connection(SilcClient client,
     sock = conn->sock;
 
   /* We won't listen for this connection anymore */
-  silc_schedule_unset_listen_fd(sock->sock);
+  silc_schedule_unset_listen_fd(client->schedule, sock->sock);
 
   /* Unregister all tasks */
   silc_task_unregister_by_fd(client->io_queue, sock->sock);
