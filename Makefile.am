@@ -50,7 +50,7 @@ sim-install:
 	-cp -fR $(srcdir)/lib/silcsim/modules/*.so $(modulesdir)/
 
 doc-install:
-	$(INSTALL_DATA) $(srcdir)/doc/* $(docdir)/
+	-cp -fR $(srcdir)/doc/* $(docdir)/
 	$(INSTALL_DATA) $(srcdir)/COPYING $(docdir)/
 	$(INSTALL_DATA) $(srcdir)/README $(docdir)/
 	$(INSTALL_DATA) $(srcdir)/INSTALL $(docdir)/
@@ -61,7 +61,7 @@ etc-install:
 	  $(INSTALL_DATA) $(srcdir)/doc/example_silcd.conf \
 	  $(etcdir)/silcd.conf; \
 	fi
-	-@if test '!' -f $(etcdir)silc.conf ; then \
+	-@if test '!' -f $(etcdir)/silc.conf ; then \
 	  $(INSTALL_DATA) $(srcdir)/doc/example_silc.conf \
 	  $(etcdir)/silc.conf; \
 	fi

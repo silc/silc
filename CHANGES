@@ -1,3 +1,7 @@
+Tue Apr 10 20:32:44 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed the make install.
+
 Tue Apr 10 16:20:34 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* When MAC computation fails the silc_packet_decrypt returned 0
