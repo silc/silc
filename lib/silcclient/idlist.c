@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2003 Pekka Riikonen
+  Copyright (C) 2001 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -963,6 +963,7 @@ bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
   silc_hash_table_free(channel->user_list);
 
   silc_free(channel->channel_name);
+  silc_free(channel->topic);
   silc_free(channel->id);
   silc_free(channel->key);
   if (channel->channel_key)

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -554,6 +554,11 @@ void silc_client_notify_by_server(SilcClient client,
     if (channel->resolve_cmd_ident) {
       silc_client_channel_wait(client, conn, channel, packet);
       goto out;
+    }
+
+    if (tmp) {
+      silc_free(channel->topic);
+      channel->topic = silc_memdup(tmp, strlen(tmp));
     }
 
     /* Notify application. The channel entry is sent last as this notify

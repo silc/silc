@@ -255,6 +255,7 @@ struct SilcChannelEntryStruct {
   char *channel_name;		             /* Channel name */
   SilcChannelID *id;			     /* Channel ID */
   SilcUInt32 mode;			     /* Channel mode, ChannelModes. */
+  char *topic;				     /* Current topic, may be NULL */
 
   /* All clients that has joined this channel.  The key to the table is the
      SilcClientEntry and the context is SilcChannelUser context. */

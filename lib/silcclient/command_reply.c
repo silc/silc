@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -708,6 +708,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
     goto out;
   }
 
+  if (topic) {
+    silc_free(channel->topic);
+    channel->topic = silc_memdup(topic, strlen(topic));
+  }
+
   /* Notify application */
   COMMAND_REPLY((SILC_ARGS, channel, topic));
 
@@ -1131,6 +1136,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   tmp = silc_argument_get_arg_type(cmd->args, 16, &len);
   if (tmp)
     silc_buffer_set(&chpklist, tmp, len);
+
+  if (topic) {
+    silc_free(channel->topic);
+    channel->topic = silc_memdup(topic, strlen(topic));
+  }
 
   /* Notify application */
   COMMAND_REPLY((SILC_ARGS, channel_name, channel, mode, 0,
