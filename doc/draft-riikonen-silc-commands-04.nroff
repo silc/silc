@@ -1288,9 +1288,8 @@ List of all defined commands in SILC follows.
               channel key that even servers do not know.  Naturally,
               this requires that every client on the channel knows
               the key before hand (it is considered to be pre-shared-
-              key).  The key material is RECOMMENDED to be processed
-              as stated in the [SILC3] in the section Processing the
-              Key Material.
+              key).  The key material SHOULD be processed as stated
+              in the [SILC3] in the section Processing the Key Material.
 
               As it is local setting it is possible to have several
               private channel keys on one channel.  In this case several
@@ -1409,7 +1408,7 @@ List of all defined commands in SILC follows.
 
               If this mode is already set but the <founder pubkey> is
               different the new key will replace the old founder key and
-              the new key is distribute in the network with the
+              the new key is distributed in the network with the
               SILC_NOTIFY_TYPE_CMODE_CHANGE notify.  Only the original
               founder may set this mode multiple times and the client
               MUST have SILC_CUMODE_FOUNDER mode on the channel.
@@ -1419,7 +1418,8 @@ List of all defined commands in SILC follows.
               mode is set the channel MUST NOT be destroyed.  The founder
               can reclaim the founder mode back on these empty channels
               at any time.  Implementations MAY limit the number of how
-              many channels a user can own.
+              many channels a user can own and how long they remain
+              persistent.
 
               Typical implementation would use [+|-]f on user interface
               to set/unset this mode.
@@ -1518,7 +1518,7 @@ List of all defined commands in SILC follows.
               been set, the client can claim channel founder privileges
               by providing the <auth payload> that the server will use
               to authenticate the client.  The public key that server will
-              use to verify the <auth payload> MUST the same public key
+              use to verify the <auth payload> MUST be the same public key
               that was saved when the SILC_CMODE_FOUNDER_AUTH channel
               mode was set.  The client MAY remove this mode at any time.
 
@@ -1893,9 +1893,9 @@ List of all defined commands in SILC follows.
         and with list of user modes on the channel.
 
         If the requested channel is a private or secret channel, this
-        command MUST NOT send the list of users, but error is returned
-        to the sender, except if the sender is on the channel, or the
-        sender is server.
+        command MUST NOT send the list of users, except if the sender is 
+        on the channel, or the sender is a server.  Otherwise, error is
+        returned to the sender.
 
         Reply messages to the command:
 
