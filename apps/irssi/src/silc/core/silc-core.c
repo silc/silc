@@ -91,6 +91,11 @@ static SERVER_CONNECT_REC *create_server_connect(void)
   return g_malloc0(sizeof(SILC_SERVER_CONNECT_REC));
 }
 
+static void destroy_server_connect(SERVER_CONNECT_REC *conn)
+{
+
+}
+
 /* Checks user information and saves them to the config file it they
    do not exist there already. */
 
@@ -321,6 +326,7 @@ void silc_core_init_finish(SERVER_REC *server)
   rec->create_server_setup = create_server_setup;
   rec->create_channel_setup = create_channel_setup;
   rec->create_server_connect = create_server_connect;
+  rec->destroy_server_connect = destroy_server_connect;
   rec->server_connect = (SERVER_REC *(*) (SERVER_CONNECT_REC *))
     silc_server_connect; 
   rec->channel_create = (CHANNEL_REC *(*) (SERVER_REC *, const char *, int))

@@ -4,6 +4,8 @@ include $(top_srcdir)/Makefile.defines.in
 
 moduledir = $(silc_modulesdir)
 
+perl_dirs = common ui textui
+
 module_LTLIBRARIES = $(perl_module_lib) $(perl_module_fe_lib)
 noinst_LTLIBRARIES = $(perl_static_lib) $(perl_static_fe_lib)
 EXTRA_LTLIBRARIES = \
@@ -120,7 +122,7 @@ EXTRA_DIST = \
 	$(textui_sources)
 
 all-local:
-	for dir in common ui textui; do \
+	for dir in $(perl_dirs); do \
 	  cd $$dir && \
 	  if [ ! -f Makefile ]; then \
             $(perlpath) Makefile.PL $(PERL_MM_PARAMS); \
@@ -130,16 +132,18 @@ all-local:
 	done
 
 install-exec-local:
-	for dir in common ui textui; do \
+	for dir in $(perl_dirs); do \
 	  cd $$dir && $(MAKE) install && cd ..; \
 	done
 
 clean-generic:
-	rm -f common/Makefile ui/Makefile textui/Makefile
+	for dir in $(perl_dirs); do rm -f $$dir/Makefile; done
 
 distclean-generic:
-	-(cd common && $(MAKE) realclean && rm -f Makefile.PL)
-	-(cd ui && $(MAKE) realclean && rm -f Makefile.PL)
-	-(cd textui && $(MAKE) realclean && rm -f Makefile.PL)
+	for dir in $(perl_dirs); do \
+	  cd $$dir; \
+	  $(MAKE) realclean; rm -f Makefile.PL; \
+	  cd ..; \
+	done
 
 libperl_core_la_LIBADD = $(PERL_LDFLAGS)
