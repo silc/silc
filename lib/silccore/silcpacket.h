@@ -223,7 +223,8 @@ typedef void (*SilcPacketParserCallback)(SilcPacketParserContext
 #define SILC_PACKET_REKEY                29
 #define SILC_PACKET_REKEY_DONE           30
 #define SILC_PACKET_SET_MODE             31      /* Set mode */
-#define SILC_PACKET_HEARTBEAT            32      /* Heartbeat */
+#define SILC_PACKET_SET_MODE_LIST        32      /* List of Set Mode's */
+#define SILC_PACKET_HEARTBEAT            33      /* Heartbeat */
 /* #define SILC_PACKET_MAX               255 */
 
 /* Macros */

@@ -100,6 +100,10 @@ typedef struct {
 #define SILC_ID_SERVER_COMPARE(id1, id2) \
   SILC_ID_COMPARE(id1, id2, SILC_ID_SERVER_LEN)
 
+/* Compares Channel ID's */
+#define SILC_ID_CHANNEL_COMPARE(id1, id2) \
+  SILC_ID_COMPARE(id1, id2, SILC_ID_CHANNEL_LEN)
+
 /* Compares IP addresses from the ID's. */
 #define SILC_ID_COMPARE_IP(id1, id2) \
   SILC_ID_COMPARE(id1, id2, 4)

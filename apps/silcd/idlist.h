@@ -503,5 +503,8 @@ silc_idlist_find_channel_by_name(SilcIDList id_list, char *name,
 SilcChannelEntry
 silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id,
 			       SilcIDCacheEntry *ret_entry);
+SilcChannelEntry
+silc_idlist_replace_channel_id(SilcIDList id_list, SilcChannelID *old_id,
+			       SilcChannelID *new_id);
 
 #endif

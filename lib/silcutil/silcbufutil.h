@@ -79,6 +79,9 @@ SilcBuffer silc_buffer_realloc(SilcBuffer sb, unsigned int newsize)
 {
   SilcBuffer sb_new;
 
+  if (!sb)
+    return silc_buffer_alloc(newsize);
+
   sb_new = silc_buffer_alloc(newsize);
   silc_buffer_pull_tail(sb_new, SILC_BUFFER_END(sb_new));
   silc_buffer_put(sb_new, sb->head, sb->truelen);

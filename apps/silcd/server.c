@@ -860,6 +860,14 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
 			    silc_server_perform_heartbeat,
 			    server->timeout_queue);
 
+  /* If we are router then announce our possible servers. */
+  if (server->server_type == SILC_ROUTER)
+    silc_server_announce_servers(server);
+
+  /* Announce our clients and channels to the router */
+  silc_server_announce_clients(server);
+  silc_server_announce_channels(server);
+
  out:
   /* Free the temporary connection data context */
   if (sconn)
@@ -1646,6 +1654,15 @@ void silc_server_packet_parse_type(SilcServer server,
     silc_server_new_id(server, sock, packet);
     break;
 
+  case SILC_PACKET_NEW_ID_LIST:
+    /*
+     * Received list of ID's. This packet is used by servers and routers
+     * to notify their primary router about clients and servers they have.
+     */
+    SILC_LOG_DEBUG(("New ID List packet"));
+    silc_server_new_id_list(server, sock, packet);
+    break;
+
   case SILC_PACKET_NEW_CLIENT:
     /*
      * Received new client packet. This includes client information that
@@ -1693,6 +1710,8 @@ void silc_server_packet_parse_type(SilcServer server,
      * existing server or router connects to us and distributes information
      * of all channels it has.
      */
+    SILC_LOG_DEBUG(("New Channel List packet"));
+    silc_server_new_channel_list(server, sock, packet);
     break;
 
   case SILC_PACKET_NEW_CHANNEL_USER_LIST:
@@ -1701,6 +1720,8 @@ void silc_server_packet_parse_type(SilcServer server,
      * when existing server or router connects to us and distributes 
      * information of all channel users it has.
      */
+    SILC_LOG_DEBUG(("New Channel User List packet"));
+    silc_server_new_channel_user_list(server, sock, packet);
     break;
 
   case SILC_PACKET_REPLACE_ID:
@@ -2219,6 +2240,51 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
   return entry;
 }
 
+/* Same as above but creates the channel with Channel ID `channel_id. */
+
+SilcChannelEntry 
+silc_server_create_new_channel_with_id(SilcServer server, 
+				       char *cipher, 
+				       char *channel_name,
+				       SilcChannelID *channel_id)
+{
+  SilcChannelEntry entry;
+  SilcCipher key;
+
+  SILC_LOG_DEBUG(("Creating new channel"));
+
+  if (!cipher)
+    cipher = "twofish";
+
+  /* Allocate cipher */
+  silc_cipher_alloc(cipher, &key);
+
+  channel_name = strdup(channel_name);
+
+  /* Create the channel */
+  entry = silc_idlist_add_channel(server->local_list, channel_name, 
+				  SILC_CHANNEL_MODE_NONE, channel_id, 
+				  NULL, key);
+  if (!entry) {
+    silc_free(channel_name);
+    return NULL;
+  }
+
+  /* Now create the actual key material */
+  silc_server_create_channel_key(server, entry, 16);
+
+  /* Notify other routers about the new channel. We send the packet
+     to our primary route. */
+  if (server->standalone == FALSE) {
+    silc_server_send_new_channel(server, server->router->connection, TRUE, 
+				 channel_name, entry->id, SILC_ID_CHANNEL_LEN);
+  }
+
+  server->stat.my_channels++;
+
+  return entry;
+}
+
 /* Generates new channel key. This is used to create the initial channel key
    but also to re-generate new key for channel. If `key_len' is provided
    it is the bytes of the key length. */
@@ -2359,4 +2425,265 @@ void silc_server_perform_heartbeat(SilcSocketConnection sock,
 
   /* Send the heartbeat */
   silc_server_send_heartbeat(hb->server, sock);
+}
+
+/* Returns assembled of all servers in the given ID list. The packet's
+   form is dictated by the New ID payload. */
+
+static void silc_server_announce_get_servers(SilcServer server,
+					     SilcIDList id_list,
+					     SilcBuffer *servers)
+{
+  SilcIDCacheList list;
+  SilcIDCacheEntry id_cache;
+  SilcServerEntry entry;
+  SilcBuffer idp;
+
+  /* Go through all clients in the list */
+  if (silc_idcache_find_by_id(id_list->clients, SILC_ID_CACHE_ANY, 
+			      SILC_ID_SERVER, &list)) {
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	entry = (SilcServerEntry)id_cache->context;
+
+	idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
+
+	*servers = silc_buffer_realloc(*servers, 
+				       (*servers ? 
+					(*servers)->truelen + idp->len : 
+					idp->len));
+	silc_buffer_pull_tail(*servers, ((*servers)->end - (*servers)->data));
+	silc_buffer_put(*servers, idp->data, idp->len);
+	silc_buffer_pull(*servers, idp->len);
+	silc_buffer_free(idp);
+
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+
+    silc_idcache_list_free(list);
+  }
+}
+
+/* This function is used by router to announce existing servers to our
+   primary router when we've connected to it. */
+
+void silc_server_announce_servers(SilcServer server)
+{
+  SilcBuffer servers = NULL;
+
+  SILC_LOG_DEBUG(("Announcing servers"));
+
+  /* Get servers in local list */
+  silc_server_announce_get_servers(server, server->local_list, &servers);
+
+  /* Get servers in global list */
+  silc_server_announce_get_servers(server, server->global_list, &servers);
+
+  if (servers) {
+    silc_buffer_push(servers, servers->data - servers->head);
+    SILC_LOG_HEXDUMP(("servers"), servers->data, servers->len);
+
+    /* Send the packet */
+    silc_server_packet_send(server, server->router->connection,
+			    SILC_PACKET_NEW_ID_LIST, 0,
+			    servers->data, servers->len, TRUE);
+
+    silc_buffer_free(servers);
+  }
+}
+
+/* Returns assembled packet of all clients in the given ID list. The
+   packet's form is dictated by the New ID Payload. */
+
+static void silc_server_announce_get_clients(SilcServer server,
+					     SilcIDList id_list,
+					     SilcBuffer *clients)
+{
+  SilcIDCacheList list;
+  SilcIDCacheEntry id_cache;
+  SilcClientEntry client;
+  SilcBuffer idp;
+
+  /* Go through all clients in the list */
+  if (silc_idcache_find_by_id(id_list->clients, SILC_ID_CACHE_ANY, 
+			      SILC_ID_CLIENT, &list)) {
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	client = (SilcClientEntry)id_cache->context;
+
+	idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+
+	*clients = silc_buffer_realloc(*clients, 
+				       (*clients ? 
+					(*clients)->truelen + idp->len : 
+					idp->len));
+	silc_buffer_pull_tail(*clients, ((*clients)->end - (*clients)->data));
+	silc_buffer_put(*clients, idp->data, idp->len);
+	silc_buffer_pull(*clients, idp->len);
+	silc_buffer_free(idp);
+
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+
+    silc_idcache_list_free(list);
+  }
+}
+
+/* This function is used to announce our existing clients to our router
+   when we've connected to it. */
+
+void silc_server_announce_clients(SilcServer server)
+{
+  SilcBuffer clients = NULL;
+
+  SILC_LOG_DEBUG(("Announcing clients"));
+
+  /* Get clients in local list */
+  silc_server_announce_get_clients(server, server->local_list,
+				   &clients);
+
+  /* As router we announce our global list as well */
+  if (server->server_type == SILC_ROUTER)
+    silc_server_announce_get_clients(server, server->global_list,
+				     &clients);
+
+  if (clients) {
+    silc_buffer_push(clients, clients->data - clients->head);
+    SILC_LOG_HEXDUMP(("clients"), clients->data, clients->len);
+
+    /* Send the packet */
+    silc_server_packet_send(server, server->router->connection,
+			    SILC_PACKET_NEW_ID_LIST, 0,
+			    clients->data, clients->len, TRUE);
+
+    silc_buffer_free(clients);
+  }
+}
+
+/* Returns assembled packets for all channels and users on those channels
+   from the given ID List. The packets are in the form dictated by the
+   New Channel and New Channel User payloads. */
+
+static void silc_server_announce_get_channels(SilcServer server,
+					      SilcIDList id_list,
+					      SilcBuffer *channels,
+					      SilcBuffer *channel_users)
+{
+  SilcIDCacheList list;
+  SilcIDCacheEntry id_cache;
+  SilcChannelEntry channel;
+  SilcChannelClientEntry chl;
+  unsigned char *cid;
+  unsigned short name_len;
+  int len;
+
+  /* Go through all channels in the list */
+  if (silc_idcache_find_by_id(id_list->channels, SILC_ID_CACHE_ANY, 
+			      SILC_ID_CHANNEL, &list)) {
+    if (silc_idcache_list_first(list, &id_cache)) {
+      while (id_cache) {
+	channel = (SilcChannelEntry)id_cache->context;
+	
+	cid = silc_id_id2str(channel->id, SILC_ID_CHANNEL);
+	name_len = strlen(channel->channel_name);
+
+	len = 4 + name_len + SILC_ID_CHANNEL_LEN;
+	*channels = 
+	  silc_buffer_realloc(*channels, 
+			      (*channels ? (*channels)->truelen + len : len));
+	silc_buffer_pull_tail(*channels, 
+			      ((*channels)->end - (*channels)->data));
+	silc_buffer_format(*channels,
+			   SILC_STR_UI_SHORT(name_len),
+			   SILC_STR_UI_XNSTRING(channel->channel_name, 
+						name_len),
+			   SILC_STR_UI_SHORT(SILC_ID_CHANNEL_LEN),
+			   SILC_STR_UI_XNSTRING(cid, SILC_ID_CHANNEL_LEN),
+			   SILC_STR_END);
+	silc_buffer_pull(*channels, len);
+
+	/* Now find all users on the channel */
+	silc_list_start(channel->user_list);
+	while ((chl = silc_list_get(channel->user_list)) != SILC_LIST_END) {
+	  unsigned char *clid;
+
+	  clid = silc_id_id2str(chl->client->id, SILC_ID_CLIENT);
+	  
+	  len = 4 + SILC_ID_CHANNEL_LEN + SILC_ID_CLIENT_LEN;
+	  *channel_users = 
+	    silc_buffer_realloc(*channel_users, 
+				(*channel_users ? 
+				 (*channel_users)->truelen + len : len));
+	  silc_buffer_pull_tail(*channel_users, 
+				((*channel_users)->end - 
+				 (*channel_users)->data));
+	  silc_buffer_format(*channel_users,
+			     SILC_STR_UI_SHORT(SILC_ID_CHANNEL_LEN),
+			     SILC_STR_UI_XNSTRING(cid, SILC_ID_CHANNEL_LEN),
+			     SILC_STR_UI_SHORT(SILC_ID_CLIENT_LEN),
+			     SILC_STR_UI_XNSTRING(clid, SILC_ID_CLIENT_LEN),
+			     SILC_STR_END);
+	  silc_buffer_pull(*channel_users, len);
+	  silc_free(clid);
+	}
+
+	silc_free(cid);
+
+	if (!silc_idcache_list_next(list, &id_cache))
+	  break;
+      }
+    }
+
+    silc_idcache_list_free(list);
+  }
+}
+
+/* This function is used to announce our existing channels to our router
+   when we've connected to it. This also announces the users on the
+   channels to the router. */
+
+void silc_server_announce_channels(SilcServer server)
+{
+  SilcBuffer channels = NULL, channel_users = NULL;
+
+  SILC_LOG_DEBUG(("Announcing channels and channel users"));
+
+  /* Get channels and channel users in local list */
+  silc_server_announce_get_channels(server, server->local_list,
+				    &channels, &channel_users);
+
+  /* Get channels and channel users in global list */
+  silc_server_announce_get_channels(server, server->global_list,
+				    &channels, &channel_users);
+
+  if (channels) {
+    silc_buffer_push(channels, channels->data - channels->head);
+    SILC_LOG_HEXDUMP(("channels"), channels->data, channels->len);
+
+    /* Send the packet */
+    silc_server_packet_send(server, server->router->connection,
+			    SILC_PACKET_NEW_CHANNEL_LIST, 0,
+			    channels->data, channels->len,
+			    FALSE);
+
+    silc_buffer_free(channels);
+  }
+
+  if (channel_users) {
+    silc_buffer_push(channel_users, channel_users->data - channel_users->head);
+    SILC_LOG_HEXDUMP(("channel users"), channel_users->data, 
+		     channel_users->len);
+
+    /* Send the packet */
+    silc_server_packet_send(server, server->router->connection,
+			    SILC_PACKET_NEW_CHANNEL_USER_LIST, 0,
+			    channel_users->data, channel_users->len,
+			    FALSE);
+
+    silc_buffer_free(channel_users);
+  }
 }

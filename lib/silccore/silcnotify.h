@@ -40,6 +40,7 @@ typedef unsigned short SilcNotifyType;
 #define SILC_NOTIFY_TYPE_CMODE_CHANGE    7 /* "has changed channel mode" */
 #define SILC_NOTIFY_TYPE_CUMODE_CHANGE   8 /* "has change mode" */
 #define SILC_NOTIFY_TYPE_MOTD            9 /* message of the day */
+#define SILC_NOTIFY_TYPE_CHANNEL_CHANGE  10 /* Channel's ID has changed */
 
 /* Prototypes */
 SilcNotifyPayload silc_notify_payload_parse(SilcBuffer buffer);

@@ -111,6 +111,11 @@ SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 						SilcServerID *router_id,
 						char *cipher, 
 						char *channel_name);
+SilcChannelEntry 
+silc_server_create_new_channel_with_id(SilcServer server, 
+				       char *cipher, 
+				       char *channel_name,
+				       SilcChannelID *channel_id);
 void silc_server_create_channel_key(SilcServer server, 
 				    SilcChannelEntry channel,
 				    unsigned int key_len);
@@ -119,5 +124,8 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 					      SilcChannelEntry channel);
 void silc_server_perform_heartbeat(SilcSocketConnection sock,
 				   void *hb_context);
+void silc_server_announce_servers(SilcServer server);
+void silc_server_announce_clients(SilcServer server);
+void silc_server_announce_channels(SilcServer server);
 
 #endif

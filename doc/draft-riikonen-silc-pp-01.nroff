@@ -105,6 +105,7 @@ Table of Contents
       2.3.25 Remove ID Payload .................................. 37
       2.3.26 Remove Channel User Payload ........................ 38
       2.3.27 Set Mode Payload ................................... XXX
+      2.3.28 Set Mode List Payload .............................. XXX
   2.4 SILC ID Types ............................................. 39
   2.5 Packet Encryption And Decryption .......................... 39
       2.5.1 Normal Packet Encryption And Decryption ............. 39
@@ -766,7 +767,17 @@ List of SILC Packet types are defined as follows.
           Payload of the packet:  See section 2.3.27 Set Mode Payload
 
 
-     32   SILC_PACKET_HEARTBEAT
+     32   SILC_PACKET_SET_MODE_LIST
+
+          This packet is used to distribute list of Set Mode payloads
+          from server to routers.  This is equivalent to the packet
+          SILC_PACKET_SET_MODE except that it may include several
+          payloads.  Client must not send this packet.
+
+          Payload of the packet:  See section 2.3.28 Set Mode List
+                                  Payload
+
+     33   SILC_PACKET_HEARTBEAT
 
           This packet is used by clients, servers and routers to keep the
           connection alive.  It is recommended that all servers implement
@@ -774,7 +785,7 @@ List of SILC Packet types are defined as follows.
           This packet does not have a payload.
 
 
-     33 - 199
+     34 - 199
 
          Currently undefined commands.
 
@@ -1200,7 +1211,7 @@ ID's sent in arguments are sent inside ID Payload.
       only to the clients who is joined on the channel where the target 
       client is on.
 
-      Max Arguments: 3
+      Max Arguments:  3
           Arguments:  (1) <Client ID>  (2) <mode mask>
                       (3) <Target Client ID>
 
@@ -1217,6 +1228,21 @@ ID's sent in arguments are sent inside ID Payload.
           Arguments:  (1) <motd>
 
       The <motd> is the Message of the Day.
+
+
+10    SILC_NOTIFY_TYPE_CHANNEL_CHANGE
+
+      Sent when channel's ID has changed for a reason or another.  This 
+      is sent by noral server to the client.  Client must change the 
+      old Channel ID to the new one.  This type must be sent only to the
+      clients who is joined on the channel.
+
+      Max Arguments:  2
+          Arguments:  (1) <Old Channel ID>  (2) <New Channel ID>
+
+      The <Old Channel ID> is the channel's old ID and the <New Channel ID>
+      is the new one that must replace the old one.
+
 .in 3
 
 Notify types starting from 16384 are reserved for private notify
@@ -1992,7 +2018,7 @@ o Client ID (variable length) - The Client ID of the client
 2.3.22 New Channel List Payload
 
 This payload is used to distribute list of new channels from server
-to routers.  It might convenient to send list of new channels when
+to routers.  It might be convenient to send list of new channels when
 existing server connects to router, instead of sending them one
 by one.
 
@@ -2010,14 +2036,14 @@ packet.  They must not be sent in any other packet type.
 .ti 0
 2.3.23 New Channel User List Payload
 
-This payload is used to distribute list of channel users on specific
-channel from server to routers.  It might convenient to send list of
-channel users when existing server connects to router, instead of
-sending them one by one.
+This payload is used to distribute list of channel users on a channel
+from server to routers.  It might convenient to send list of channel
+users when existing server connects to router, instead of sending them
+one by one.  One list may include users for several different channels.
 
 There is no specific payload for this packet type.  The packet type
 uses same payload as described in 2.3.20 New Channel User Payload.
-To form a list several payloads is put in the packet each after each.
+To form a list several payloads is put in the packet one after another.
 The payload is variable in length but can be calculated by calculating
 the length of the fields together.  This forms one New Channel User
 Payload in the list.
@@ -2234,6 +2260,26 @@ o Argument Nums (2 bytes) - Indicates the number of Argument
   arguments to be send along this payload.
 .in 3
 
+
+.ti 0
+2.3.28 Set Mode List Payload
+
+This paylaod is used to distribute list of Set Mode payloads inside
+one packet.  When server announces channels and client's on those 
+channels to its primary router when it connects to it, it is convenient
+to send list of Set Mode payloads to set the modes for the channel
+and clients on those channel.  One list may include several mode
+types.
+
+There is no specific payload for this packet type.  The packet type
+uses same payload as described in 2.3.27 Set Mode Payload.  To form a
+list several payloads are put in the packet one after another.  The
+payload is variable in length but can be calculated by calculating the
+length of the fields together.  This forms one Set Mode payload in the
+list.
+
+The list of payloads may only be sent with packet SILC_PACKET_SET_MODE_LIST.
+They must not be sent in any other packet type.
 
 
 .ti 0

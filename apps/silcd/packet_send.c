@@ -1050,6 +1050,7 @@ void silc_server_send_new_channel(SilcServer server,
 		     SILC_STR_UI_XNSTRING(cid, channel_id_len),
 		     SILC_STR_END);
 
+
   silc_server_packet_send(server, sock, SILC_PACKET_NEW_CHANNEL, 
 			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0, 
 			  packet->data, packet->len, FALSE);

@@ -46,18 +46,26 @@ SilcServerEntry silc_server_new_server(SilcServer server,
 				       SilcPacketContext *packet);
 void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
 			SilcPacketContext *packet);
+void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
+			     SilcPacketContext *packet);
 void silc_server_remove_channel_user(SilcServer server,
 				     SilcSocketConnection sock,
 				     SilcPacketContext *packet);
 void silc_server_new_channel(SilcServer server,
 			     SilcSocketConnection sock,
 			     SilcPacketContext *packet);
-void silc_server_notify(SilcServer server,
-			SilcSocketConnection sock,
-			SilcPacketContext *packet);
+void silc_server_new_channel_list(SilcServer server,
+				  SilcSocketConnection sock,
+				  SilcPacketContext *packet);
 void silc_server_new_channel_user(SilcServer server,
 				  SilcSocketConnection sock,
 				  SilcPacketContext *packet);
+void silc_server_new_channel_user_list(SilcServer server,
+				       SilcSocketConnection sock,
+				       SilcPacketContext *packet);
+void silc_server_notify(SilcServer server,
+			SilcSocketConnection sock,
+			SilcPacketContext *packet);
 void silc_server_remove_id(SilcServer server,
 			   SilcSocketConnection sock,
 			   SilcPacketContext *packet);

@@ -1,3 +1,67 @@
+Sat Feb 17 01:06:44 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added new function into the silcd/server.[ch] files:
+	  silc_server_create_new_channel_with_id to create new channel with
+	  already existing Channel ID.
+
+	* Added new packet type SILC_PACKET_SET_MODE_LIST into the file
+	  lib/silccore/silcpacket.h.  This packet is used t send list of
+	  Set Mode payloads inside one packet.  Server uses this to set
+	  the modes for the channels and clients on those channels, that it
+	  announced to the router when it connected to it.  The protocol
+	  specification has been updated accordingly.
+
+	* The silc_server_new_channel did not handle the packet coming
+	  from normal server as it normally does not send that.  However,
+	  when it announces its channels it does send it.  Implemented
+	  the support for that.
+
+	* Added SILC_ID_CHANNEL_COMPARE macro to compare to Channel ID's
+	  into the file lib/silccore/id.h.
+
+Fri Feb 16 23:57:29 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Fixed memory leaks in the functions silc_idlist_del_client,
+	  silc_idlist_del_channel and silc_idlist_del_server in the file
+	  silcd/idlist.c.  All of those leaked like a sieve.
+
+	* Fixed some small memory leaks in the client's function
+	  silc_client_notify_by_server.
+
+	* Added functions into silcd/server.c: silc_server_announce_clients,
+	  silc_server_announce_channels and silc_server_announce_server.
+	  These functions are used by normal and router server to announce
+	  to its primary router about clients, channels and servers (when
+	  router) that we own.  This is done after we've connected to the
+	  router.
+
+	  These functions effectively implements the following packet types:
+	  SILC_PACKET_NEW_CHANNEL_LIST, SILC_PACKET_NEW_CHANNEL_USER_LIST
+	  and SILC_PACKET_NEW_ID_LIST.
+
+	* Added new functions into the silcd/packet_receive.[ch]:
+	  silc_server_new_id_list, silc_server_new_channel_list and
+	  silc_server_new_channel_user_list to handle the incoming 
+	  NEW_ID_LIST, NEW_CHANNEL_LIST and NEW_CHANNEL_USER_LIST packets.
+
+	* Added support of changing Channel ID in the function
+	  silc_server_replace_id.  If the server that announces a channel
+	  to the router already exists in the router (with same name but
+	  with different Channel ID), router is responsible to send
+	  Replace ID packet to the server and force the server to change
+	  the Channel ID to the one router has.
+
+	* Added new notify type SILC_NOTIFY_TYPE_CHANNEL_CHANGE to notify
+	  client that the Channel ID has been changed by the router.  The
+	  normal server sends this to the client.  Client must start using
+	  the new Channel ID as the channel's ID.
+
+	  Implemented handling of this new type into lib/silcclient/client.c
+	  into the function silc_client_notify_by_server.
+
+	* Added new function silc_idlist_replace_channel_id into the files
+	  silcd/idlist.[ch] to replace the Channel ID.
+
 Fri Feb 16 14:14:00 EET 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Call silc_server_command_identify_check always when processing

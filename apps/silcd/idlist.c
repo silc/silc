@@ -172,6 +172,9 @@ void silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
       silc_free(entry->server_name);
     if (entry->id)
       silc_free(entry->id);
+
+    memset(entry, 'F', sizeof(*entry));
+    silc_free(entry);
   }
 }
 
@@ -238,6 +241,9 @@ void silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
       silc_free(entry->userinfo);
     if (entry->id)
       silc_free(entry->id);
+
+    memset(entry, 'F', sizeof(*entry));
+    silc_free(entry);
   }
 }
 
@@ -528,16 +534,19 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
       memset(entry->key, 0, entry->key_len / 8);
       silc_free(entry->key);
     }
-    memset(entry->iv, 0, sizeof(entry->iv));
     
     silc_list_start(entry->user_list);
     while ((chl = silc_list_get(entry->user_list)) != SILC_LIST_END) {
       silc_list_del(entry->user_list, chl);
       silc_free(chl);
     }
+
+    memset(entry, 'F', sizeof(*entry));
+    silc_free(entry);
+    return TRUE;
   }
 
-  return TRUE;
+  return FALSE;
 }
 
 /* Finds channel by channel name. Channel names are unique and they
@@ -598,6 +607,33 @@ silc_idlist_find_channel_by_id(SilcIDList id_list, SilcChannelID *id,
     *ret_entry = id_cache;
 
   SILC_LOG_DEBUG(("Found"));
+
+  return channel;
+}
+
+/* Replaces old Channel ID with new one. This is done when router forces
+   normal server to change Channel ID. */
+
+SilcChannelEntry
+silc_idlist_replace_channel_id(SilcIDList id_list, SilcChannelID *old_id,
+			       SilcChannelID *new_id)
+{
+  SilcIDCacheEntry id_cache = NULL;
+  SilcChannelEntry channel;
+
+  if (!old_id || !new_id)
+    return NULL;
+
+  SILC_LOG_DEBUG(("Replacing Channel ID"));
+
+  if (!silc_idcache_find_by_id_one(id_list->channels, (void *)old_id, 
+				   SILC_ID_CHANNEL, &id_cache))
+    return NULL;
+
+  channel = (SilcChannelEntry)id_cache->context;
+  silc_free(channel->id);
+  channel->id = new_id;
+  id_cache->id = (void *)new_id;
 
   return channel;
 }

@@ -1605,6 +1605,7 @@ void silc_client_notify_by_server(SilcClient client,
 				  silc_client_notify_by_server_pending, p);
       goto out;
     }
+    silc_free(client_id);
 
     /* Get old Client ID */
     tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
@@ -1774,6 +1775,45 @@ void silc_client_notify_by_server(SilcClient client,
     
     /* Notify application */
     client->ops->notify(client, conn, type, tmp);
+    break;
+
+  case SILC_NOTIFY_TYPE_CHANNEL_CHANGE:
+    /*
+     * Router has enforced a new ID to a channel. Let's change the old
+     * ID to the one provided here.
+     */
+
+    /* Get the old ID */
+    tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
+    if (!tmp)
+      goto out;
+    channel_id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!channel_id)
+      goto out;
+    
+    /* Get the channel entry */
+    if (!silc_idcache_find_by_id_one(conn->channel_cache, (void *)channel_id,
+				     SILC_ID_CHANNEL, &id_cache))
+      break;
+
+    channel = (SilcChannelEntry)id_cache->context;
+
+    /* Free the old ID */
+    silc_free(channel_id);
+    silc_free(channel->id);
+
+    /* Get the new ID */
+    tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
+    if (!tmp)
+      goto out;
+    channel->id = silc_id_payload_parse_id(tmp, tmp_len);
+    if (!channel->id)
+      goto out;
+
+    id_cache->id = (void *)channel->id;
+
+    /* Notify application */
+    client->ops->notify(client, conn, type, channel, channel);
     break;
     
   default:

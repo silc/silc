@@ -385,18 +385,21 @@ void silc_server_replace_id(SilcServer server,
 
   case SILC_ID_SERVER:
     SILC_LOG_DEBUG(("Old Server ID id(%s)", 
-		    silc_id_render(id, SILC_ID_CLIENT)));
+		    silc_id_render(id, SILC_ID_SERVER)));
     SILC_LOG_DEBUG(("New Server ID id(%s)", 
-		    silc_id_render(id2, SILC_ID_CLIENT)));
+		    silc_id_render(id2, SILC_ID_SERVER)));
     if (silc_idlist_replace_server_id(server->local_list, id, id2) == NULL)
       if (server->server_type == SILC_ROUTER)
 	silc_idlist_replace_server_id(server->global_list, id, id2);
     break;
 
   case SILC_ID_CHANNEL:
-    /* XXX Hmm... Basically this cannot occur. Channel ID's cannot be
-       re-generated. */
-    silc_free(id2);
+    SILC_LOG_DEBUG(("Old Channel ID id(%s)", 
+		    silc_id_render(id, SILC_ID_CHANNEL)));
+    SILC_LOG_DEBUG(("New Channel ID id(%s)", 
+		    silc_id_render(id2, SILC_ID_CHANNEL)));
+    if (silc_idlist_replace_channel_id(server->local_list, id, id2) == NULL)
+      silc_idlist_replace_channel_id(server->global_list, id, id2);
     break;
 
   default:
@@ -777,6 +780,245 @@ void silc_server_new_id(SilcServer server, SilcSocketConnection sock,
   silc_id_payload_free(idp);
 }
 
+/* Receoved New Id List packet, list of New ID payloads inside one
+   packet. Process the New ID payloads one by one. */
+
+void silc_server_new_id_list(SilcServer server, SilcSocketConnection sock,
+			     SilcPacketContext *packet)
+{
+  SilcPacketContext *new_id;
+  SilcBuffer idp;
+  unsigned short id_len;
+
+  SILC_LOG_DEBUG(("Processing New ID List"));
+
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      packet->src_id_type != SILC_ID_SERVER)
+    return;
+
+  /* Make copy of the original packet context, except for the actual
+     data buffer, which we will here now fetch from the original buffer. */
+  new_id = silc_packet_context_alloc();
+  new_id->type = SILC_PACKET_NEW_ID;
+  new_id->flags = packet->flags;
+  new_id->src_id = packet->src_id;
+  new_id->src_id_len = packet->src_id_len;
+  new_id->src_id_type = packet->src_id_type;
+  new_id->dst_id = packet->dst_id;
+  new_id->dst_id_len = packet->dst_id_len;
+  new_id->dst_id_type = packet->dst_id_type;
+
+  idp = silc_buffer_alloc(256);
+  new_id->buffer = idp;
+
+  while (packet->buffer->len) {
+    SILC_GET16_MSB(id_len, packet->buffer->data + 2);
+    if ((id_len > packet->buffer->len) ||
+	(id_len > idp->truelen))
+      break;
+
+    silc_buffer_pull_tail(idp, 4 + id_len);
+    silc_buffer_put(idp, packet->buffer->data, 4 + id_len);
+
+    /* Process the New ID */
+    silc_server_new_id(server, sock, new_id);
+
+    silc_buffer_push_tail(idp, 4 + id_len);
+    silc_buffer_pull(packet->buffer, 4 + id_len);
+  }
+
+  silc_buffer_free(idp);
+  silc_free(new_id);
+}
+
+/* Received New Channel packet. Information about new channels in the 
+   network are distributed using this packet. Save the information about
+   the new channel. This usually comes from router but also normal server
+   can send this to notify channels it has when it connects to us. */
+
+void silc_server_new_channel(SilcServer server,
+			     SilcSocketConnection sock,
+			     SilcPacketContext *packet)
+{
+  unsigned char *id;
+  SilcChannelID *channel_id;
+  unsigned short channel_id_len;
+  char *channel_name;
+  int ret;
+
+  SILC_LOG_DEBUG(("Processing New Channel"));
+
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      packet->src_id_type != SILC_ID_SERVER ||
+      server->server_type == SILC_SERVER)
+    return;
+
+  /* Parse payload */
+  ret = silc_buffer_unformat(packet->buffer, 
+			     SILC_STR_UI16_STRING_ALLOC(&channel_name),
+			     SILC_STR_UI16_NSTRING_ALLOC(&id, &channel_id_len),
+			     SILC_STR_END);
+  if (ret == -1) {
+    if (channel_name)
+      silc_free(channel_name);
+    if (id)
+      silc_free(id);
+    return;
+  }
+    
+  /* Decode the channel ID */
+  channel_id = silc_id_str2id(id, channel_id_len, SILC_ID_CHANNEL);
+  if (!channel_id)
+    return;
+
+  if (sock->type == SILC_SOCKET_TYPE_ROUTER) {
+    /* Add the server to global list as it is coming from router. It 
+       cannot be our own channel as it is coming from router. */
+
+    SILC_LOG_DEBUG(("New channel id(%s) from [Router] %s",
+		    silc_id_render(channel_id, SILC_ID_CHANNEL), 
+		    sock->hostname));
+    
+    silc_idlist_add_channel(server->global_list, channel_name, 0, channel_id, 
+			    server->router->connection, NULL);
+
+    server->stat.channels++;
+  } else {
+    /* The channel is coming from our server, thus it is in our cell
+       we will add it to our local list. */
+    SilcChannelEntry channel;
+    SilcBuffer chk;
+
+    SILC_LOG_DEBUG(("New channel id(%s) from [Server] %s",
+		    silc_id_render(channel_id, SILC_ID_CHANNEL), 
+		    sock->hostname));
+    
+    /* Check that we don't already have this channel */
+    channel = silc_idlist_find_channel_by_name(server->local_list, 
+					       channel_name, NULL);
+    if (!channel)
+      channel = silc_idlist_find_channel_by_name(server->global_list, 
+						 channel_name, NULL);
+
+    /* If the channel does not exist, then create it. We create the channel
+       with the channel ID provided by the server. This creates a new
+       key to the channel as well that we will send to the server. */
+    if (!channel) {
+      channel = silc_server_create_new_channel_with_id(server, NULL,
+						       channel_name,
+						       channel_id);
+      if (!channel)
+	return;
+
+      /* Send the new channel key to the server */
+      chk = silc_channel_key_payload_encode(channel_id_len, id,
+					    strlen(channel->channel_key->
+						   cipher->name),
+					    channel->channel_key->cipher->name,
+					    channel->key_len / 8, 
+					    channel->key);
+      silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
+			      chk->data, chk->len, FALSE);
+      silc_buffer_free(chk);
+
+    } else {
+      /* The channel exist by that name, check whether the ID's match.
+	 If they don't then we'll force the server to use the ID we have.
+	 We also create a new key for the channel. */
+
+      if (SILC_ID_CHANNEL_COMPARE(channel_id, channel->id)) {
+	/* They don't match, send Replace ID packet to the server to
+	   force the ID change. */
+	SILC_LOG_DEBUG(("Forcing the server to change Channel ID"));
+	silc_server_send_replace_id(server, sock, FALSE, 
+				    channel_id, SILC_ID_CHANNEL,
+				    SILC_ID_CHANNEL_LEN,
+				    channel->id, SILC_ID_CHANNEL,
+				    SILC_ID_CHANNEL_LEN);
+      }
+
+      /* Create new key for the channel and send it to the server and
+	 everybody else possibly on the channel. */
+
+      silc_server_create_channel_key(server, channel, 0);
+
+      /* Send to the channel */
+      silc_server_send_channel_key(server, sock, channel, FALSE);
+
+      /* Send to the server */
+      chk = silc_channel_key_payload_encode(channel_id_len, id,
+					    strlen(channel->channel_key->
+						   cipher->name),
+					    channel->channel_key->cipher->name,
+					    channel->key_len / 8, 
+					    channel->key);
+      silc_server_packet_send(server, sock, SILC_PACKET_CHANNEL_KEY, 0, 
+			      chk->data, chk->len, FALSE);
+      silc_buffer_free(chk);
+    }
+  }
+
+  silc_free(id);
+}
+
+/* Received New Channel List packet, list of New Channel List payloads inside
+   one packet. Process the New Channel payloads one by one. */
+
+void silc_server_new_channel_list(SilcServer server,
+				  SilcSocketConnection sock,
+				  SilcPacketContext *packet)
+{
+  SilcPacketContext *new;
+  SilcBuffer buffer;
+  unsigned short len1, len2;
+
+  SILC_LOG_DEBUG(("Processing New Channel List"));
+
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      packet->src_id_type != SILC_ID_SERVER ||
+      server->server_type == SILC_SERVER)
+    return;
+
+  /* Make copy of the original packet context, except for the actual
+     data buffer, which we will here now fetch from the original buffer. */
+  new = silc_packet_context_alloc();
+  new->type = SILC_PACKET_NEW_CHANNEL;
+  new->flags = packet->flags;
+  new->src_id = packet->src_id;
+  new->src_id_len = packet->src_id_len;
+  new->src_id_type = packet->src_id_type;
+  new->dst_id = packet->dst_id;
+  new->dst_id_len = packet->dst_id_len;
+  new->dst_id_type = packet->dst_id_type;
+
+  buffer = silc_buffer_alloc(512);
+  new->buffer = buffer;
+
+  while (packet->buffer->len) {
+    SILC_GET16_MSB(len1, packet->buffer->data);
+    if ((len1 > packet->buffer->len) ||
+	(len1 > buffer->truelen))
+      break;
+
+    SILC_GET16_MSB(len2, packet->buffer->data + 2 + len1);
+    if ((len2 > packet->buffer->len) ||
+	(len2 > buffer->truelen))
+      break;
+
+    silc_buffer_pull_tail(buffer, 4 + len1 + len2);
+    silc_buffer_put(buffer, packet->buffer->data, 4 + len1 + len2);
+
+    /* Process the New Channel */
+    silc_server_new_channel(server, sock, new);
+
+    silc_buffer_push_tail(buffer, 4 + len1 + len2);
+    silc_buffer_pull(packet->buffer, 4 + len1 + len2);
+  }
+
+  silc_buffer_free(buffer);
+  silc_free(new);
+}
+
 /* Received Remove Channel User packet to remove a user from a channel. 
    Routers notify other routers that user has left a channel. Client must
    not send this packet. Normal server may send this packet but must not
@@ -798,6 +1040,7 @@ void silc_server_remove_channel_user(SilcServer server,
   SILC_LOG_DEBUG(("Removing user from channel"));
 
   if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      packet->src_id_type != SILC_ID_SERVER ||
       server->server_type == SILC_SERVER)
     return;
 
@@ -859,57 +1102,62 @@ void silc_server_remove_channel_user(SilcServer server,
     silc_free(channel_id);
 }
 
-/* Received New Channel packet. Information about new channels in the 
-   network are distributed using this packet. Save the information about
-   the new channel. */
+/* Received New Channel User List packet, list of New Channel User payloads
+   inside one packet.  Process the payloads one by one. */
 
-void silc_server_new_channel(SilcServer server,
-			     SilcSocketConnection sock,
-			     SilcPacketContext *packet)
+void silc_server_new_channel_user_list(SilcServer server,
+				       SilcSocketConnection sock,
+				       SilcPacketContext *packet)
 {
-  unsigned char *id;
-  SilcChannelID *channel_id;
-  unsigned short channel_id_len;
-  char *channel_name;
-  int ret;
+  SilcPacketContext *new;
+  SilcBuffer buffer;
+  unsigned short len1, len2;
 
-  SILC_LOG_DEBUG(("Processing New Channel"));
+  SILC_LOG_DEBUG(("Processing New Channel User List"));
 
-  if (sock->type != SILC_SOCKET_TYPE_ROUTER ||
-      server->server_type == SILC_SERVER ||
-      packet->src_id_type != SILC_ID_SERVER)
+  if (sock->type == SILC_SOCKET_TYPE_CLIENT ||
+      packet->src_id_type != SILC_ID_SERVER ||
+      server->server_type == SILC_SERVER)
     return;
 
-  /* Parse payload */
-  ret = silc_buffer_unformat(packet->buffer, 
-			     SILC_STR_UI16_STRING_ALLOC(&channel_name),
-			     SILC_STR_UI16_NSTRING_ALLOC(&id, &channel_id_len),
-			     SILC_STR_END);
-  if (ret == -1) {
-    if (channel_name)
-      silc_free(channel_name);
-    if (id)
-      silc_free(id);
-    return;
+  /* Make copy of the original packet context, except for the actual
+     data buffer, which we will here now fetch from the original buffer. */
+  new = silc_packet_context_alloc();
+  new->type = SILC_PACKET_NEW_CHANNEL_USER;
+  new->flags = packet->flags;
+  new->src_id = packet->src_id;
+  new->src_id_len = packet->src_id_len;
+  new->src_id_type = packet->src_id_type;
+  new->dst_id = packet->dst_id;
+  new->dst_id_len = packet->dst_id_len;
+  new->dst_id_type = packet->dst_id_type;
+
+  buffer = silc_buffer_alloc(256);
+  new->buffer = buffer;
+
+  while (packet->buffer->len) {
+    SILC_GET16_MSB(len1, packet->buffer->data);
+    if ((len1 > packet->buffer->len) ||
+	(len1 > buffer->truelen))
+      break;
+
+    SILC_GET16_MSB(len2, packet->buffer->data + 2 + len1);
+    if ((len2 > packet->buffer->len) ||
+	(len2 > buffer->truelen))
+      break;
+
+    silc_buffer_pull_tail(buffer, 4 + len1 + len2);
+    silc_buffer_put(buffer, packet->buffer->data, 4 + len1 + len2);
+
+    /* Process the New Channel User */
+    silc_server_new_channel_user(server, sock, new);
+
+    silc_buffer_push_tail(buffer, 4 + len1 + len2);
+    silc_buffer_pull(packet->buffer, 4 + len1 + len2);
   }
-    
-  /* Decode the channel ID */
-  channel_id = silc_id_str2id(id, channel_id_len, SILC_ID_CHANNEL);
-  if (!channel_id)
-    return;
-  silc_free(id);
 
-  SILC_LOG_DEBUG(("New channel id(%s) from [Router] %s",
-		  silc_id_render(channel_id, SILC_ID_CHANNEL), 
-		  sock->hostname));
-
-  /* Add the new channel. Add it always to global list since if we receive
-     this packet then it cannot be created by ourselves but some other 
-     router hence global channel. */
-  silc_idlist_add_channel(server->global_list, channel_name, 0, channel_id, 
-			  server->router->connection, NULL);
-
-  server->stat.channels++;
+  silc_buffer_free(buffer);
+  silc_free(new);
 }
 
 /* Received notify packet. Server can receive notify packets from router. 

@@ -219,6 +219,9 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     }
     return;
 
+  case SILC_NOTIFY_TYPE_CHANNEL_CHANGE:
+    break;
+
   default:
     break;
   }
