@@ -1,8 +1,14 @@
+Wed Oct  8 19:41:15 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* ERR_BAD_PASSWORD now returns the Channel ID of the channel
+	  where the passphrase was given.  Affected file is
+	  silcd/command.c.
+
 Wed Oct  8 09:32:12 CEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* INVITE and BAN notifys are now delivered from routers to
 	  servers (but not clients) on the channel.  Updated specs and
-	  code.  Affected files silcd/packet_[send|receive].[ch], 
+	  code.  Affected files silcd/packet_[send|receive].[ch],
 	  command.c, server.c and server_util.c.
 
 	* Implemented INVITE and BAN announcing.  Affected files are

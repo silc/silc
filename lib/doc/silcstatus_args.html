@@ -1,7 +1,7 @@
 <big><b>SilcStatus Arguments</b></big>
 
 <br />&nbsp;<br />
-The <a href="silccore-SilcStatus.html">SilcStatus</a> is used to indicate
+The <a href="silcstatus-SilcStatus.html">SilcStatus</a> is used to indicate
 a status (usually error status) of command execution and command reply
 status.  It is also used to deliver disconnection status when server
 disconnects client from the server.  For application it is mainly important
@@ -300,9 +300,9 @@ No arguments returned.
 <tr>
 <td><small>SILC_STATUS_ERR_BAD_PASSWORD</td>
 <td><small>
-Password provided for channel were not accepted.  No arguments returned.
+Password provided for channel were not accepted.  Returns the channel ID.
 </td>
-<td width="40%"><small>N/A
+<td width="40%"><small>const SilcChannelID *channel_id
 </td>
 </tr>
 

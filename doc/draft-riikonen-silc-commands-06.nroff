@@ -2316,7 +2316,8 @@ List of all defined status types:
    33   SILC_STATUS_ERR_BAD_PASSWORD
 
         "Cannot join channel. Incorrect password".  Password provided for
-        channel were not accepted.
+        channel were not accepted.  The next argument MUST be the
+        Channel ID.
 
    34   SILC_STATUS_ERR_CHANNEL_IS_FULL
 

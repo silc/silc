@@ -2043,8 +2043,11 @@ static void silc_server_command_join_channel(SilcServer server,
 
     if (!passphrase || !channel->passphrase ||
         memcmp(passphrase, channel->passphrase, strlen(channel->passphrase))) {
-      silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
-					    SILC_STATUS_ERR_BAD_PASSWORD, 0);
+      chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_JOIN,
+					   SILC_STATUS_ERR_BAD_PASSWORD, 0,
+					   2, chidp->data, chidp->len);
+      silc_buffer_free(chidp);
       goto out;
     }
   }
