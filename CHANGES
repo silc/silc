@@ -1,3 +1,11 @@
+Sat Jan  3 12:18:07 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the invite process handling during joining to use
+	  correct server name for the client that is matched against
+	  the invite string for the channel.  Wrong server name caused
+	  inability to join the channel.  Affected file is
+	  silcd/command.c.
+
 Fri Jan  2 23:34:17 EET 2004  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed the CUMODE channel founder authentication on normal

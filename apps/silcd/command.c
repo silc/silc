@@ -1965,7 +1965,10 @@ static void silc_server_command_join_channel(SilcServer server,
     if (!strchr(client->nickname, '@')) {
       silc_strncat(check2, sizeof(check2), "@", 1);
       silc_strncat(check2, sizeof(check2),
-		   server->server_name, strlen(server->server_name));
+		   SILC_IS_LOCAL(client) ? server->server_name :
+		   client->router->server_name,
+		   SILC_IS_LOCAL(client) ? strlen(server->server_name) :
+		   strlen(client->router->server_name));
     }
     silc_strncat(check2, sizeof(check2), "!", 1);
     silc_strncat(check2, sizeof(check2),
@@ -1975,6 +1978,9 @@ static void silc_server_command_join_channel(SilcServer server,
       silc_strncat(check2, sizeof(check2),
 		   cmd->sock->hostname, strlen(cmd->sock->hostname));
     }
+
+    SILC_LOG_DEBUG(("check : %s", check));
+    SILC_LOG_DEBUG(("check2: %s", check2));
 
     /* Check invite list if channel is invite-only channel */
     if (channel->mode & SILC_CHANNEL_MODE_INVITE) {

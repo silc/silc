@@ -15,9 +15,6 @@ TODO for SILC Server 1.0
 
  o Check that founder key is distributed ok during backup resuming.
 
- o invite (with @server!*@host) not working from normal server/backup
-   router?
-
  o Testing
 
 
