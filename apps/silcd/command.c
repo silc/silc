@@ -547,11 +547,22 @@ silc_server_command_whois_check(SilcServerCommandContext cmd,
 
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
-
-    if (!entry || (entry->nickname && entry->username && entry->userinfo) ||
-	!(entry->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
-	!entry->router)
+    if (!entry)
       continue;
+
+    if ((entry->nickname && entry->username && entry->userinfo) ||
+	!(entry->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
+      if (!entry->router)
+	continue;
+
+      /* If we are normal server, and we've not resolved this client from
+	 router and it is global client, we'll check whether it is on some
+	 channel.  If not then we cannot be sure about its validity, and
+	 we'll resolve it from router. */
+      if (cmd->server->server_type != SILC_SERVER || cmd->pending ||
+	  entry->connection || silc_hash_table_count(entry->channels))
+	continue;
+    }
 
     /* We need to resolve this entry since it is not complete */
 
@@ -1378,6 +1389,7 @@ silc_server_command_identify_parse(SilcServerCommandContext cmd,
   } else {
     /* Command includes ID, we must use that.  Also check whether the command
        has more than one ID set - take them all. */
+    *names = FALSE;
 
     /* Take all ID's from the command packet */
     for (i = 0; i < argc; i++) {
@@ -1496,11 +1508,22 @@ silc_server_command_identify_check_client(SilcServerCommandContext cmd,
 
   for (i = 0; i < clients_count; i++) {
     entry = clients[i];
-
-    if (!entry || entry->nickname || 
-	!(entry->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
-	!entry->router)
+    if (!entry)
       continue;
+
+    if (entry->nickname || 
+	!(entry->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
+      if (!entry->router)
+	continue;
+
+      /* If we are normal server, and we've not resolved this client from
+	 router and it is global client, we'll check whether it is on some
+	 channel.  If not then we cannot be sure about its validity, and
+	 we'll resolve it from router. */
+      if (cmd->server->server_type != SILC_SERVER || cmd->pending ||
+	  entry->connection || silc_hash_table_count(entry->channels))
+	continue;
+    }
 
     /* We need to resolve this entry since it is not complete */
 

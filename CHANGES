@@ -1,3 +1,12 @@
+Sun Dec  2 23:29:07 EET 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* If we are normal server, and we've not resolved client info
+	  in WHOIS or IDENTIFY from router, and it is global client,
+	  we'll check whether it is on some channel.  If it is not
+	  then we cannot be sure about its validity and will resolve it
+	  from router.  Fixes a bug in WHOIS and IDENTIFY.  Affected 
+	  file silcd/command.c.
+
 Sun Dec  2 13:48:46 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Distribute to the channel passphrase in CMODE_CHANGE notify.

@@ -41,10 +41,6 @@ TODO/bugs In SILC Server
  	o Channel user mode changes are notified unnecessarely when
 	  switching to backup router on router crash.
 
- o If client's public key is saved in the server (and doing public key
-   authentication) then the hostname and the username information could
-   be taken from the public key.  Should be a configuration option!
-
  o Add a timeout to handling incoming JOIN commands.  It should be 
    enforced that JOIN command is executed only once in a second or two
    seconds.  Now it is possible to accept n incoming JOIN commands
@@ -70,6 +66,10 @@ TODO/bugs In SILC Server
 	o Connection classes should be actually implemented in
 	  serverconfig.c.  They can be defined but they are totally
 	  ignored currently.  And they should be redefined also.
+
+ o If client's public key is saved in the server (and doing public key
+   authentication) then the hostname and the username information could
+   be taken from the public key.  Should be a configuration option!
 
 
 TODO/bugs In SILC Libraries
