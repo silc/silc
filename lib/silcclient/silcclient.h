@@ -269,9 +269,8 @@ struct SilcChannelEntryStruct {
   SilcChannelPrivateKey curr_key;	     /* Current private key */
 
   /* SilcChannelEntry status information */
-  SilcCipher old_channel_key;
-  SilcHmac old_hmac;
-  SilcTask rekey_task;
+  SilcDList old_channel_keys;
+  SilcDList old_hmacs;
   SilcUInt16 resolve_cmd_ident;		     /* Command identifier when
 						resolving this entry */
 };

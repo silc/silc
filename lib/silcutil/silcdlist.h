@@ -1,6 +1,6 @@
 /*
 
-  silcdlist.h 
+  silcdlist.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -21,7 +21,7 @@
 #define SILDCLIST_H
 
 #include "silclist.h"
- 
+
 /****h* silcutil/SILC Dynamic List Interface
  *
  * DESCRIPTION
@@ -70,9 +70,9 @@ typedef struct SilcDListEntryStruct {
 /****f* silcutil/SilcDListAPI/silc_dlist_init
  *
  * SYNOPSIS
- * 
+ *
  *    static inline
- *    SilcDList silc_dlist_init();
+ *    SilcDList silc_dlist_init(void);
  *
  * DESCRIPTION
  *
@@ -81,7 +81,7 @@ typedef struct SilcDListEntryStruct {
  ***/
 
 static inline
-SilcDList silc_dlist_init()
+SilcDList silc_dlist_init(void)
 {
   SilcDList list;
 
@@ -252,7 +252,7 @@ void silc_dlist_del(SilcDList list, void *context)
  *
  * EXAMPLE
  *
- *    // Traverse the list from the beginning to the end 
+ *    // Traverse the list from the beginning to the end
  *    silc_dlist_start(list)
  *    while ((entry = silc_dlist_get(list)) != SILC_LIST_END) {
  *      ...

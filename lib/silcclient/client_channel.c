@@ -1,10 +1,10 @@
 /*
 
-  client_channel.c 
+  client_channel.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 /* This file includes channel message sending and receiving routines,
-   channel key receiving and setting, and channel private key handling 
+   channel key receiving and setting, and channel private key handling
    routines. */
 
 #include "silcincludes.h"
@@ -26,19 +26,19 @@
 #include "client_internal.h"
 
 /* Sends packet to the `channel'. Packet to channel is always encrypted
-   differently from "normal" packets. SILC header of the packet is 
+   differently from "normal" packets. SILC header of the packet is
    encrypted with the next receiver's key and the rest of the packet is
    encrypted with the channel specific key. Padding and HMAC is computed
    with the next receiver's key. The `data' is the channel message. If
    the `force_send' is TRUE then the packet is sent immediately. */
 
-bool silc_client_send_channel_message(SilcClient client, 
+bool silc_client_send_channel_message(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
 				      SilcChannelPrivateKey key,
 				      SilcMessageFlags flags,
-				      unsigned char *data, 
-				      SilcUInt32 data_len, 
+				      unsigned char *data,
+				      SilcUInt32 data_len,
 				      bool force_send)
 {
   SilcSocketConnection sock;
@@ -65,7 +65,7 @@ bool silc_client_send_channel_message(SilcClient client,
   /* Check if it is allowed to send messages to this channel by us. */
   if (channel->mode & SILC_CHANNEL_MODE_SILENCE_USERS && !chu->mode)
     return FALSE;
-  if (channel->mode & SILC_CHANNEL_MODE_SILENCE_OPERS && 
+  if (channel->mode & SILC_CHANNEL_MODE_SILENCE_OPERS &&
       chu->mode & SILC_CHANNEL_UMODE_CHANOP &&
       !(chu->mode & SILC_CHANNEL_UMODE_CHANFO))
     return FALSE;
@@ -83,13 +83,13 @@ bool silc_client_send_channel_message(SilcClient client,
       cipher = channel->curr_key->cipher;
       hmac = channel->curr_key->hmac;
     } else if (!channel->curr_key && channel->private_keys) {
-      /* Use just some private key since we don't know what to use 
+      /* Use just some private key since we don't know what to use
 	 and private keys are set. */
       silc_dlist_start(channel->private_keys);
       key = silc_dlist_get(channel->private_keys);
       cipher = key->cipher;
       hmac = key->hmac;
-      
+
       /* Use this key as current private key */
       channel->curr_key = key;
     } else {
@@ -140,7 +140,7 @@ bool silc_client_send_channel_message(SilcClient client,
   data_len = SILC_PACKET_DATALEN(data_len, SILC_PACKET_HEADER_LEN +
 				 packetdata.src_id_len +
 				 packetdata.dst_id_len);
-  packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN + 
+  packetdata.truelen = data_len + SILC_PACKET_HEADER_LEN +
     packetdata.src_id_len + packetdata.dst_id_len;
   SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
 		      packetdata.src_id_len +
@@ -153,10 +153,10 @@ bool silc_client_send_channel_message(SilcClient client,
     goto out;
   }
 
-  /* Encrypt the header and padding of the packet. This is encrypted 
+  /* Encrypt the header and padding of the packet. This is encrypted
      with normal session key shared with our server. */
   silc_packet_encrypt(cipher, hmac, conn->internal->psn_send++,
-		      (SilcBuffer)&packet, SILC_PACKET_HEADER_LEN + 
+		      (SilcBuffer)&packet, SILC_PACKET_HEADER_LEN +
 		      packetdata.src_id_len + packetdata.dst_id_len +
 		      packetdata.padlen);
 
@@ -214,7 +214,7 @@ static void silc_client_channel_message_cb(SilcClient client,
     }
 
     message = silc_message_get_data(res->payload, &message_len);
-    
+
     /* Pass the message to application */
     client->internal->ops->channel_message(
 			    client, conn, clients[0], channel, res->payload,
@@ -232,8 +232,8 @@ static void silc_client_channel_message_cb(SilcClient client,
    decrypts the channel message with channel specific key and parses the
    message payload. Finally it displays the message on the screen. */
 
-void silc_client_channel_message(SilcClient client, 
-				 SilcSocketConnection sock, 
+void silc_client_channel_message(SilcClient client,
+				 SilcSocketConnection sock,
 				 SilcPacketContext *packet)
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
@@ -246,7 +246,7 @@ void silc_client_channel_message(SilcClient client,
   unsigned char *message;
   SilcUInt32 message_len;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Received channel message"));
 
   /* Sanity checks */
   if (packet->dst_id_type != SILC_ID_CHANNEL)
@@ -265,7 +265,7 @@ void silc_client_channel_message(SilcClient client,
   if (!channel)
     goto out;
 
-  /* If there is no channel private key then just decrypt the message 
+  /* If there is no channel private key then just decrypt the message
      with the channel key. If private keys are set then just go through
      all private keys and check what decrypts correctly. */
   if (!(channel->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
@@ -278,17 +278,31 @@ void silc_client_channel_message(SilcClient client,
        we will use the old key in decryption. If that fails too then we
        cannot do more and will drop the packet. */
     if (!payload) {
-      if (!channel->old_channel_key) {
-	goto out;
-      }
+      SilcCipher key;
+      SilcHmac hmac;
+      int i;
 
-      payload = silc_message_payload_parse(buffer->data, buffer->len,
-					   FALSE, FALSE,
-					   channel->old_channel_key,
-					   channel->old_hmac);
-      if (!payload) {
+      if (!channel->old_channel_keys ||
+	  !silc_dlist_count(channel->old_channel_keys))
 	goto out;
+
+      SILC_LOG_DEBUG(("Attempting to decrypt with old channel key(s)"));
+
+      silc_dlist_end(channel->old_channel_keys);
+      silc_dlist_end(channel->old_hmacs);
+      for (i = 0; i < silc_dlist_count(channel->old_channel_keys); i++) {
+	key = silc_dlist_get(channel->old_channel_keys);
+	hmac = silc_dlist_get(channel->old_hmacs);
+	if (!key || !hmac)
+	  break;
+
+	payload = silc_message_payload_parse(buffer->data, buffer->len,
+					     FALSE, FALSE, key, hmac);
+	if (payload)
+	  break;
       }
+      if (!payload)
+	goto out;
     }
   } else if (channel->private_keys) {
     SilcChannelPrivateKey entry;
@@ -296,7 +310,7 @@ void silc_client_channel_message(SilcClient client,
     silc_dlist_start(channel->private_keys);
     while ((entry = silc_dlist_get(channel->private_keys)) != SILC_LIST_END) {
       /* Parse the message payload. This also decrypts the payload */
-      payload = silc_message_payload_parse(buffer->data, buffer->len, 
+      payload = silc_message_payload_parse(buffer->data, buffer->len,
 					   FALSE, FALSE,
 					   entry->cipher, entry->hmac);
       if (payload)
@@ -340,29 +354,41 @@ void silc_client_channel_message(SilcClient client,
 }
 
 /* Timeout callback that is called after a short period of time after the
-   new channel key has been created. This removes the old channel key all
-   together. */
+   new channel key has been created.  This removes the first channel key
+   in the list. */
 
 SILC_TASK_CALLBACK(silc_client_save_channel_key_rekey)
 {
   SilcChannelEntry channel = (SilcChannelEntry)context;
+  SilcCipher key;
+  SilcHmac hmac;
 
-  if (channel->old_channel_key)
-    silc_cipher_free(channel->old_channel_key);
-  if (channel->old_hmac)
-    silc_hmac_free(channel->old_hmac);
-  channel->old_channel_key = NULL;
-  channel->old_hmac = NULL;
-  channel->rekey_task = NULL;
+  if (channel->old_channel_keys) {
+    silc_dlist_start(channel->old_channel_keys);
+    key = silc_dlist_get(channel->old_channel_keys);
+    if (key) {
+      silc_dlist_del(channel->old_channel_keys, key);
+      silc_cipher_free(key);
+    }
+  }
+
+  if (channel->old_hmacs) {
+    silc_dlist_start(channel->old_hmacs);
+    hmac = silc_dlist_get(channel->old_hmacs);
+    if (hmac) {
+      silc_dlist_del(channel->old_hmacs, hmac);
+      silc_hmac_free(hmac);
+    }
+  }
 }
 
 /* Saves channel key from encoded `key_payload'. This is used when we
-   receive Channel Key Payload and when we are processing JOIN command 
+   receive Channel Key Payload and when we are processing JOIN command
    reply. */
 
 void silc_client_save_channel_key(SilcClient client,
 				  SilcClientConnection conn,
-				  SilcBuffer key_payload, 
+				  SilcBuffer key_payload,
 				  SilcChannelEntry channel)
 {
   unsigned char *id_string, *key, *cipher, *hmac, hash[32];
@@ -394,24 +420,21 @@ void silc_client_save_channel_key(SilcClient client,
       goto out;
   }
 
-  hmac = (channel->hmac ? (char *)silc_hmac_get_name(channel->hmac) : 
+  hmac = (channel->hmac ? (char *)silc_hmac_get_name(channel->hmac) :
 	  SILC_DEFAULT_HMAC);
 
   /* Save the old key for a short period of time so that we can decrypt
      channel message even after the rekey if some client would be sending
      messages with the old key after the rekey. */
-  if (channel->old_channel_key)
-    silc_cipher_free(channel->old_channel_key);
-  if (channel->old_hmac)
-    silc_hmac_free(channel->old_hmac);
-  if (channel->rekey_task)
-    silc_schedule_task_del(client->schedule, channel->rekey_task);
-  channel->old_channel_key = channel->channel_key;
-  channel->old_hmac = channel->hmac;
-  channel->rekey_task = 
-    silc_schedule_task_add(client->schedule, 0,
-			   silc_client_save_channel_key_rekey, channel,
-			   10, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+  if (!channel->old_channel_keys)
+    channel->old_channel_keys = silc_dlist_init();
+  if (!channel->old_hmacs)
+    channel->old_hmacs = silc_dlist_init();
+  silc_dlist_add(channel->old_channel_keys, channel->channel_key);
+  silc_dlist_add(channel->old_hmacs, channel->hmac);
+  silc_schedule_task_add(client->schedule, 0,
+			 silc_client_save_channel_key_rekey, channel,
+			 10, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   /* Free the old channel key data */
   silc_free(channel->key);
@@ -424,9 +447,9 @@ void silc_client_save_channel_key(SilcClient client,
 
   if (!silc_cipher_alloc(cipher, &channel->channel_key)) {
     client->internal->ops->say(
-			   conn->client, conn, 
+			   conn->client, conn,
 			   SILC_CLIENT_MESSAGE_AUDIT,
-			   "Cannot talk to channel: unsupported cipher %s", 
+			   "Cannot talk to channel: unsupported cipher %s",
 			   cipher);
     goto out;
   }
@@ -437,7 +460,7 @@ void silc_client_save_channel_key(SilcClient client,
   /* Generate HMAC key from the channel key data and set it */
   silc_hmac_alloc(hmac, NULL, &channel->hmac);
   silc_hash_make(silc_hmac_get_hash(channel->hmac), key, tmp_len, hash);
-  silc_hmac_set_key(channel->hmac, hash, 
+  silc_hmac_set_key(channel->hmac, hash,
 		    silc_hash_len(silc_hmac_get_hash(channel->hmac)));
   memset(hash, 0, sizeof(hash));
 
@@ -448,7 +471,7 @@ void silc_client_save_channel_key(SilcClient client,
 
 /* Processes received key for channel. The received key will be used
    to protect the traffic on the channel for now on. Client must receive
-   the key to the channel before talking on the channel is possible. 
+   the key to the channel before talking on the channel is possible.
    This is the key that server has generated, this is not the channel
    private key, it is entirely local setting. */
 
@@ -470,17 +493,17 @@ void silc_client_receive_channel_key(SilcClient client,
    several private keys per one channel. In this case only some of the
    clients on the channel may know the one key and only some the other key.
 
-   If `cipher' and/or `hmac' is NULL then default values will be used 
+   If `cipher' and/or `hmac' is NULL then default values will be used
    (aes-256-cbc for cipher and hmac-sha1-96 for hmac).
 
    The private key for channel is optional. If it is not set then the
    channel messages are encrypted using the channel key generated by the
-   server. However, setting the private key (or keys) for the channel 
+   server. However, setting the private key (or keys) for the channel
    significantly adds security. If more than one key is set the library
    will automatically try all keys at the message decryption phase. Note:
    setting many keys slows down the decryption phase as all keys has to
    be tried in order to find the correct decryption key. However, setting
-   a few keys does not have big impact to the decryption performace. 
+   a few keys does not have big impact to the decryption performace.
 
    NOTE: that this is entirely local setting. The key set using this function
    is not sent to the network at any phase.
@@ -522,8 +545,8 @@ bool silc_client_add_channel_private_key(SilcClient client,
 
   /* Produce the key material */
   keymat = silc_calloc(1, sizeof(*keymat));
-  if (silc_ske_process_key_material_data(key, key_len, 16, 256, 16, 
-					 client->sha1hash, keymat) 
+  if (silc_ske_process_key_material_data(key, key_len, 16, 256, 16,
+					 client->sha1hash, keymat)
       != SILC_SKE_STATUS_OK)
     return FALSE;
 
@@ -556,9 +579,9 @@ bool silc_client_add_channel_private_key(SilcClient client,
 
   /* Generate HMAC key from the channel key data and set it */
   silc_hmac_alloc(hmac, NULL, &entry->hmac);
-  silc_hash_make(silc_hmac_get_hash(entry->hmac), entry->key, 
+  silc_hash_make(silc_hmac_get_hash(entry->hmac), entry->key,
 		 entry->key_len, hash);
-  silc_hmac_set_key(entry->hmac, hash, 
+  silc_hmac_set_key(entry->hmac, hash,
 		    silc_hash_len(silc_hmac_get_hash(entry->hmac)));
   memset(hash, 0, sizeof(hash));
 
@@ -706,7 +729,7 @@ void silc_client_current_channel_private_key(SilcClient client,
   channel->curr_key = key;
 }
 
-/* Returns the SilcChannelUser entry if the `client_entry' is joined on the 
+/* Returns the SilcChannelUser entry if the `client_entry' is joined on the
    channel indicated by the `channel'. NULL if client is not joined on
    the channel. */
 
@@ -715,7 +738,7 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
 {
   SilcChannelUser chu;
 
-  if (silc_hash_table_find(channel->user_list, client_entry, NULL, 
+  if (silc_hash_table_find(channel->user_list, client_entry, NULL,
 			   (void *)&chu))
     return chu;
 
