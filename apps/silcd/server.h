@@ -26,7 +26,7 @@
    the object private hence this declaration. */
 typedef struct SilcServerStruct *SilcServer;
 
-#define SILC_SERVER_MAX_CONNECTIONS 10000
+#define SILC_SERVER_MAX_CONNECTIONS 1000
 
 /* General definitions */
 

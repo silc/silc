@@ -2184,5 +2184,5 @@ void silc_server_rekey(SilcServer server,
 
   if (proto_ctx->pfs == FALSE)
     /* Run the protocol */
-    silc_protocol_execute(protocol, server->timeout_queue, 0, 0);
+    silc_protocol_execute(protocol, server->schedule, 0, 0);
 }

@@ -95,11 +95,8 @@ struct SilcServerStruct {
   /* Back pointer to the primary router of this server. */
   SilcServerEntry router;
 
-  /* SILC server schduler and task queues */
+  /* SILC server scheduler */
   SilcSchedule schedule;
-  SilcTaskQueue io_queue;
-  SilcTaskQueue timeout_queue;
-  SilcTaskQueue generic_queue;
 
   /* ID lists. */
   SilcIDList local_list;
@@ -166,25 +163,23 @@ typedef struct {
 /* Registers generic task for file descriptor for reading from network and
    writing to network. As being generic task the actual task is allocated 
    only once and after that the same task applies to all registered fd's. */
-#define SILC_REGISTER_CONNECTION_FOR_IO(fd)				\
-do {									\
-  SilcTask tmptask = silc_task_register(server->generic_queue, (fd),	\
-					silc_server_packet_process,	\
-					context, 0, 0, 			\
-					SILC_TASK_GENERIC,		\
-					SILC_TASK_PRI_NORMAL);		\
-  silc_task_set_iotype(tmptask, SILC_TASK_WRITE);			\
+#define SILC_REGISTER_CONNECTION_FOR_IO(fd)		\
+do {							\
+  silc_schedule_task_add(server->schedule, (fd),	\
+		         silc_server_packet_process,	\
+		         context, 0, 0,			\
+		         SILC_TASK_GENERIC,		\
+			 SILC_TASK_PRI_NORMAL);		\
 } while(0)
 
-#define SILC_SET_CONNECTION_FOR_INPUT(s, fd)				\
-do {									\
-  silc_schedule_set_listen_fd((s), (fd), (1L << SILC_TASK_READ));	\
+#define SILC_SET_CONNECTION_FOR_INPUT(s, fd)			\
+do {								\
+  silc_schedule_set_listen_fd((s), (fd), SILC_TASK_READ);	\
 } while(0)
      
-#define SILC_SET_CONNECTION_FOR_OUTPUT(s, fd)				\
-do {									\
-  silc_schedule_set_listen_fd((s), (fd), ((1L << SILC_TASK_READ) |	\
-				     (1L << SILC_TASK_WRITE)));		\
+#define SILC_SET_CONNECTION_FOR_OUTPUT(s, fd)				      \
+do {									      \
+  silc_schedule_set_listen_fd((s), (fd), (SILC_TASK_READ | SILC_TASK_WRITE)); \
 } while(0)
 
 /* Prototypes */

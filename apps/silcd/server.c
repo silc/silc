@@ -270,35 +270,29 @@ int silc_server_init(SilcServer server)
   /* Register protocols */
   silc_server_protocols_register();
 
-  /* Initialize the scheduler. This will register the task queues as well.
-     In SILC we have by default three task queues. One task queue for
-     non-timeout tasks which perform different kind of I/O on file
-     descriptors, timeout task queue for timeout tasks, and, generic
-     non-timeout task queue whose tasks apply to all connections. */
-  server->schedule = silc_schedule_init(&server->io_queue, 
-					&server->timeout_queue, 
-					&server->generic_queue, 
-					SILC_SERVER_MAX_CONNECTIONS);
+  /* Initialize the scheduler. */
+  server->schedule = silc_schedule_init(SILC_SERVER_MAX_CONNECTIONS);
   if (!server->schedule)
     goto err0;
   
-  /* Add the first task to the queue. This is task that is executed by
+  /* Add the first task to the scheduler. This is task that is executed by
      timeout. It expires as soon as the caller calls silc_server_run. This
      task performs authentication protocol and key exchange with our
      primary router. */
-  silc_task_register(server->timeout_queue, sock[0], 
-		     silc_server_connect_to_router,
-		     (void *)server, 0, 1,
-		     SILC_TASK_TIMEOUT,
-		     SILC_TASK_PRI_NORMAL);
+  silc_schedule_task_add(server->schedule, sock[0], 
+			 silc_server_connect_to_router,
+			 (void *)server, 0, 1,
+			 SILC_TASK_TIMEOUT,
+			 SILC_TASK_PRI_NORMAL);
 
-  /* Add listener task to the queue. This task receives new connections to the 
-     server. This task remains on the queue until the end of the program. */
-  silc_task_register(server->io_queue, sock[0],
-		     silc_server_accept_new_connection,
-		     (void *)server, 0, 0, 
-		     SILC_TASK_FD,
-		     SILC_TASK_PRI_NORMAL);
+  /* Add listener task to the scheduler. This task receives new connections
+     to the server. This task remains on the queue until the end of the 
+     program. */
+  silc_schedule_task_add(server->schedule, sock[0],
+			 silc_server_accept_new_connection,
+			 (void *)server, 0, 0, 
+			 SILC_TASK_FD,
+			 SILC_TASK_PRI_NORMAL);
   server->listenning = TRUE;
 
   /* If server connections has been configured then we must be router as
@@ -312,20 +306,20 @@ int silc_server_init(SilcServer server)
   /* Clients local list */
   purge = silc_calloc(1, sizeof(*purge));
   purge->cache = server->local_list->clients;
-  purge->timeout_queue = server->timeout_queue;
-  silc_task_register(purge->timeout_queue, 0, 
-		     silc_idlist_purge,
-		     (void *)purge, 600, 0,
-		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+  purge->schedule = server->schedule;
+  silc_schedule_task_add(purge->schedule, 0, 
+			 silc_idlist_purge,
+			 (void *)purge, 600, 0,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 
   /* Clients global list */
   purge = silc_calloc(1, sizeof(*purge));
   purge->cache = server->global_list->clients;
-  purge->timeout_queue = server->timeout_queue;
-  silc_task_register(purge->timeout_queue, 0, 
-		     silc_idlist_purge,
-		     (void *)purge, 300, 0,
-		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+  purge->schedule = server->schedule;
+  silc_schedule_task_add(purge->schedule, 0, 
+			 silc_idlist_purge,
+			 (void *)purge, 300, 0,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 
   SILC_LOG_DEBUG(("Server initialized"));
 
@@ -451,9 +445,6 @@ void silc_server_stop(SilcServer server)
 {
   SILC_LOG_DEBUG(("Stopping server"));
 
-  /* Stop the scheduler, although it might be already stopped. This
-     doesn't hurt anyone. This removes all the tasks and task queues,
-     as well. */
   silc_schedule_stop(server->schedule);
   silc_schedule_uninit(server->schedule);
 
@@ -509,10 +500,10 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
   }
 
   /* Wait one before retrying */
-  silc_task_register(server->timeout_queue, fd, silc_server_connect_router,
-		     context, sconn->retry_timeout, 
-		     server->params->retry_interval_min_usec,
-		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+  silc_schedule_task_add(server->schedule, fd, silc_server_connect_router,
+			 context, sconn->retry_timeout, 
+			 server->params->retry_interval_min_usec,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 }
 
 /* Generic routine to use connect to a router. */
@@ -534,10 +525,10 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
 				    sconn->remote_host);
   if (sock < 0) {
     SILC_LOG_ERROR(("Could not connect to router"));
-    silc_task_register(server->timeout_queue, fd, 
-		       silc_server_connect_to_router_retry,
-		       context, 0, 1, SILC_TASK_TIMEOUT, 
-		       SILC_TASK_PRI_NORMAL);
+    silc_schedule_task_add(server->schedule, fd, 
+			   silc_server_connect_to_router_retry,
+			   context, 0, 1, SILC_TASK_TIMEOUT, 
+			   SILC_TASK_PRI_NORMAL);
     return;
   }
 
@@ -575,7 +566,7 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   /* Register a timeout task that will be executed if the protocol
      is not executed within set limit. */
   proto_ctx->timeout_task = 
-    silc_task_register(server->timeout_queue, sock, 
+    silc_schedule_task_add(server->schedule, sock, 
 		       silc_server_timeout_remote,
 		       server, server->params->protocol_timeout,
 		       server->params->protocol_timeout_usec,
@@ -592,7 +583,7 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   SILC_REGISTER_CONNECTION_FOR_IO(sock);
   
   /* Run the protocol */
-  silc_protocol_execute(protocol, server->timeout_queue, 0, 0);
+  silc_protocol_execute(protocol, server->schedule, 0, 0);
 }
   
 /* This function connects to our primary router or if we are a router this
@@ -621,7 +612,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
       sconn->remote_host = strdup(server->config->routers->host);
       sconn->remote_port = server->config->routers->port;
 
-      silc_task_register(server->timeout_queue, fd, 
+      silc_schedule_task_add(server->schedule, fd, 
 			 silc_server_connect_router,
 			 (void *)sconn, 0, 1, SILC_TASK_TIMEOUT, 
 			 SILC_TASK_PRI_NORMAL);
@@ -651,7 +642,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 	sconn->remote_host = strdup(ptr->host);
 	sconn->remote_port = ptr->port;
 
-	silc_task_register(server->timeout_queue, fd, 
+	silc_schedule_task_add(server->schedule, fd, 
 			   silc_server_connect_router,
 			   (void *)sconn, 0, 1, SILC_TASK_TIMEOUT, 
 			   SILC_TASK_PRI_NORMAL);
@@ -700,7 +691,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     silc_free(ctx);
-    silc_task_unregister_by_callback(server->timeout_queue,
+    silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Key exchange failed");
@@ -727,7 +718,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     silc_free(ctx);
-    silc_task_unregister_by_callback(server->timeout_queue,
+    silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Key exchange failed");
@@ -769,7 +760,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     silc_free(ctx);
-    silc_task_unregister_by_callback(server->timeout_queue,
+    silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Key exchange failed");
@@ -795,14 +786,14 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_second)
      this timelimit the connection will be terminated. Currently
      this is 15 seconds and is hard coded limit (XXX). */
   proto_ctx->timeout_task = 
-    silc_task_register(server->timeout_queue, sock->sock, 
+    silc_schedule_task_add(server->schedule, sock->sock, 
 		       silc_server_timeout_remote,
 		       (void *)server, 15, 0,
 		       SILC_TASK_TIMEOUT,
 		       SILC_TASK_PRI_LOW);
 
   /* Run the protocol */
-  silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 0);
+  silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
 }
 
 /* Finalizes the connection to router. Registers a server task to the
@@ -838,7 +829,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   /* Add a task to the queue. This task receives new connections to the 
      server. This task remains on the queue until the end of the program. */
   if (!server->listenning) {
-    silc_task_register(server->io_queue, server->sock, 
+    silc_schedule_task_add(server->schedule, server->sock, 
 		       silc_server_accept_new_connection,
 		       (void *)server, 0, 0, 
 		       SILC_TASK_FD,
@@ -896,12 +887,12 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_final)
   hb_context->server = server;
   silc_socket_set_heartbeat(sock, 600, hb_context,
 			    silc_server_perform_heartbeat,
-			    server->timeout_queue);
+			    server->schedule);
 
   /* Register re-key timeout */
   idata->rekey->timeout = 3600; /* XXX hardcoded */
   idata->rekey->context = (void *)server;
-  silc_task_register(server->timeout_queue, sock->sock, 
+  silc_schedule_task_add(server->schedule, sock->sock, 
 		     silc_server_rekey_callback,
 		     (void *)sock, idata->rekey->timeout, 0,
 		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
@@ -1044,7 +1035,7 @@ silc_server_accept_new_connection_lookup(SilcSocketConnection sock,
      now, this is a hard coded limit. After 60 secs the connection will
      be closed if the key exchange protocol has not been started. */
   proto_ctx->timeout_task = 
-    silc_task_register(server->timeout_queue, sock->sock, 
+    silc_schedule_task_add(server->schedule, sock->sock, 
 		       silc_server_timeout_remote,
 		       context, 60, 0,
 		       SILC_TASK_TIMEOUT,
@@ -1092,7 +1083,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection)
      is accepted further. */
   silc_socket_host_lookup(newsocket, TRUE, 
 			  silc_server_accept_new_connection_lookup, context, 
-			  server->timeout_queue);
+			  server->schedule);
 }
 
 /* Second part of accepting new connection. Key exchange protocol has been
@@ -1125,7 +1116,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     silc_free(ctx);
-    silc_task_unregister_by_callback(server->timeout_queue,
+    silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Key exchange failed");
@@ -1153,7 +1144,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
     if (ctx->dest_id)
       silc_free(ctx->dest_id);
     silc_free(ctx);
-    silc_task_unregister_by_callback(server->timeout_queue,
+    silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Key exchange failed");
@@ -1194,7 +1185,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_second)
      this timelimit the connection will be terminated. Currently
      this is 60 seconds and is hard coded limit (XXX). */
   proto_ctx->timeout_task = 
-    silc_task_register(server->timeout_queue, sock->sock, 
+    silc_schedule_task_add(server->schedule, sock->sock, 
 		       silc_server_timeout_remote,
 		       (void *)server, 60, 0,
 		       SILC_TASK_TIMEOUT,
@@ -1231,7 +1222,7 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
     silc_free(ctx);
     if (sock)
       sock->protocol = NULL;
-    silc_task_unregister_by_callback(server->timeout_queue,
+    silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_failure_callback);
     silc_server_disconnect_remote(server, sock, "Server closed connection: "
 				  "Authentication failed");
@@ -1357,10 +1348,10 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
   hb_context->server = server;
   silc_socket_set_heartbeat(sock, 600, hb_context,
 			    silc_server_perform_heartbeat,
-			    server->timeout_queue);
+			    server->schedule);
 
  out:
-  silc_task_unregister_by_callback(server->timeout_queue,
+  silc_schedule_task_del_by_callback(server->schedule,
 				   silc_server_failure_callback);
   silc_protocol_free(protocol);
   if (ctx->packet)
@@ -1467,7 +1458,7 @@ SILC_TASK_CALLBACK(silc_server_packet_process)
        start re-connecting phase. */
     if (!server->standalone && sock->type == SILC_SOCKET_TYPE_ROUTER && 
 	sock == server->router->connection)
-      silc_task_register(server->timeout_queue, 0, 
+      silc_schedule_task_add(server->schedule, 0, 
 			 silc_server_connect_to_router,
 			 context, 1, 0,
 			 SILC_TASK_TIMEOUT,
@@ -1643,7 +1634,7 @@ void silc_server_packet_parse(SilcPacketParserContext *parser_context)
   case SILC_SOCKET_TYPE_UNKNOWN:
   case SILC_SOCKET_TYPE_CLIENT:
     /* Parse the packet with timeout */
-    silc_task_register(server->timeout_queue, sock->sock,
+    silc_schedule_task_add(server->schedule, sock->sock,
 		       silc_server_packet_parse_real,
 		       (void *)parser_context, 0, 100000,
 		       SILC_TASK_TIMEOUT,
@@ -1652,7 +1643,7 @@ void silc_server_packet_parse(SilcPacketParserContext *parser_context)
   case SILC_SOCKET_TYPE_SERVER:
   case SILC_SOCKET_TYPE_ROUTER:
     /* Packets from servers are parsed as soon as possible */
-    silc_task_register(server->timeout_queue, sock->sock,
+    silc_schedule_task_add(server->schedule, sock->sock,
 		       silc_server_packet_parse_real,
 		       (void *)parser_context, 0, 1,
 		       SILC_TASK_TIMEOUT,
@@ -1692,7 +1683,7 @@ void silc_server_packet_parse_type(SilcServer server,
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     if (sock->protocol)
-      silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 0);
+      silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
     break;
 
   case SILC_PACKET_FAILURE:
@@ -1711,7 +1702,7 @@ void silc_server_packet_parse_type(SilcServer server,
       f->sock = sock;
       
       /* We will wait 5 seconds to process this failure packet */
-      silc_task_register(server->timeout_queue, sock->sock,
+      silc_schedule_task_add(server->schedule, sock->sock,
 			 silc_server_failure_callback, (void *)f, 5, 0,
 			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
     }
@@ -1830,7 +1821,7 @@ void silc_server_packet_parse_type(SilcServer server,
       proto_ctx->packet = silc_packet_context_dup(packet);
 
       /* Let the protocol handle the packet */
-      silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 100000);
+      silc_protocol_execute(sock->protocol, server->schedule, 0, 100000);
     } else {
       SILC_LOG_ERROR(("Received Key Exchange packet but no key exchange "
 		      "protocol active, packet dropped."));
@@ -1856,7 +1847,7 @@ void silc_server_packet_parse_type(SilcServer server,
 	proto_ctx->packet = silc_packet_context_dup(packet);
 
 	/* Let the protocol handle the packet */
-	silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 0);
+	silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
       } else {
 	SilcServerKEInternalContext *proto_ctx = 
 	  (SilcServerKEInternalContext *)sock->protocol->context;
@@ -1872,7 +1863,7 @@ void silc_server_packet_parse_type(SilcServer server,
 	  break;
 
 	/* Let the protocol handle the packet */
-	silc_protocol_execute(sock->protocol, server->timeout_queue, 
+	silc_protocol_execute(sock->protocol, server->schedule, 
 			      0, 100000);
       }
     } else {
@@ -1900,7 +1891,7 @@ void silc_server_packet_parse_type(SilcServer server,
 	proto_ctx->packet = silc_packet_context_dup(packet);
 
 	/* Let the protocol handle the packet */
-	silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 0);
+	silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
       } else {
 	SilcServerKEInternalContext *proto_ctx = 
 	  (SilcServerKEInternalContext *)sock->protocol->context;
@@ -1916,7 +1907,7 @@ void silc_server_packet_parse_type(SilcServer server,
 	  break;
 
 	/* Let the protocol handle the packet */
-	silc_protocol_execute(sock->protocol, server->timeout_queue, 
+	silc_protocol_execute(sock->protocol, server->schedule, 
 			      0, 100000);
       }
     } else {
@@ -1957,7 +1948,7 @@ void silc_server_packet_parse_type(SilcServer server,
       proto_ctx->packet = silc_packet_context_dup(packet);
 
       /* Let the protocol handle the packet */
-      silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 0);
+      silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
     } else {
       SILC_LOG_ERROR(("Received Connection Auth packet but no authentication "
 		      "protocol active, packet dropped."));
@@ -2064,7 +2055,7 @@ void silc_server_packet_parse_type(SilcServer server,
       proto_ctx->packet = silc_packet_context_dup(packet);
 
       /* Let the protocol handle the packet */
-      silc_protocol_execute(sock->protocol, server->timeout_queue, 0, 0);
+      silc_protocol_execute(sock->protocol, server->schedule, 0, 0);
     } else {
       SILC_LOG_ERROR(("Received Re-key done packet but no re-key "
 		      "protocol active, packet dropped."));
@@ -2091,7 +2082,7 @@ void silc_server_create_connection(SilcServer server,
   sconn->remote_host = strdup(remote_host);
   sconn->remote_port = port;
 
-  silc_task_register(server->timeout_queue, 0, 
+  silc_schedule_task_add(server->schedule, 0, 
 		     silc_server_connect_router,
 		     (void *)sconn, 0, 1, SILC_TASK_TIMEOUT, 
 		     SILC_TASK_PRI_NORMAL);
@@ -2118,14 +2109,14 @@ void silc_server_close_connection(SilcServer server,
   silc_schedule_unset_listen_fd(server->schedule, sock->sock);
 
   /* Unregister all tasks */
-  silc_task_unregister_by_fd(server->io_queue, sock->sock);
-  silc_task_unregister_by_fd(server->timeout_queue, sock->sock);
+  silc_schedule_task_del_by_fd(server->schedule, sock->sock);
+  silc_schedule_task_del_by_fd(server->schedule, sock->sock);
 
   /* Close the actual connection */
   silc_net_close_connection(sock->sock);
   server->sockets[sock->sock] = NULL;
 
-  silc_task_register(server->timeout_queue, 0, 
+  silc_schedule_task_add(server->schedule, 0, 
 		     silc_server_close_connection_final,
 		     (void *)sock, 0, 1, SILC_TASK_TIMEOUT, 
 		     SILC_TASK_PRI_NORMAL);
@@ -2226,7 +2217,7 @@ void silc_server_free_client_data(SilcServer server,
      into history (for WHOWAS command) for 5 minutes */
   i->server = server;
   i->client = client;
-  silc_task_register(server->timeout_queue, 0, 
+  silc_schedule_task_add(server->schedule, 0, 
 		     silc_server_free_client_data_timeout,
 		     (void *)i, 300, 0,
 		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
@@ -2294,9 +2285,9 @@ void silc_server_free_sock_user_data(SilcServer server,
 
   /* If any protocol is active cancel its execution */
   if (sock->protocol) {
-    silc_protocol_cancel(sock->protocol, server->timeout_queue);
+    silc_protocol_cancel(sock->protocol, server->schedule);
     sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
-    silc_protocol_execute_final(sock->protocol, server->timeout_queue);
+    silc_protocol_execute_final(sock->protocol, server->schedule);
     sock->protocol = NULL;
   }
 
@@ -2342,7 +2333,7 @@ static void silc_server_remove_clients_channels(SilcServer server,
 	silc_hash_table_del(channels, channel);
 
       if (channel->rekey)
-	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
+	silc_schedule_task_del_by_context(server->schedule, channel->rekey);
 
       if (!silc_idlist_del_channel(server->local_list, channel))
 	silc_idlist_del_channel(server->global_list, channel);
@@ -2370,7 +2361,7 @@ static void silc_server_remove_clients_channels(SilcServer server,
 	silc_hash_table_del(channels, channel);
 
       if (channel->rekey)
-	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
+	silc_schedule_task_del_by_context(server->schedule, channel->rekey);
 
       if (channel->founder_key) {
 	/* The founder auth data exists, do not remove the channel entry */
@@ -2673,7 +2664,7 @@ void silc_server_remove_from_channels(SilcServer server,
     if (server->server_type == SILC_ROUTER &&
 	silc_hash_table_count(channel->user_list) < 2) {
       if (channel->rekey)
-	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
+	silc_schedule_task_del_by_context(server->schedule, channel->rekey);
       if (!silc_idlist_del_channel(server->local_list, channel))
 	silc_idlist_del_channel(server->global_list, channel);
       server->stat.my_channels--;
@@ -2705,7 +2696,7 @@ void silc_server_remove_from_channels(SilcServer server,
 					   strlen(signoff_message) : 0);
 
       if (channel->rekey)
-	silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
+	silc_schedule_task_del_by_context(server->schedule, channel->rekey);
 
       if (channel->founder_key) {
 	/* The founder auth data exists, do not remove the channel entry */
@@ -2789,7 +2780,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
   if (server->server_type == SILC_ROUTER &&
       silc_hash_table_count(channel->user_list) < 2) {
     if (channel->rekey)
-      silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
+      silc_schedule_task_del_by_context(server->schedule, channel->rekey);
     if (!silc_idlist_del_channel(server->local_list, channel))
       silc_idlist_del_channel(server->global_list, channel);
     silc_buffer_free(clidp);
@@ -2821,7 +2812,7 @@ int silc_server_remove_from_one_channel(SilcServer server,
     silc_buffer_free(clidp);
     
     if (channel->rekey)
-      silc_task_unregister_by_context(server->timeout_queue, channel->rekey);
+      silc_schedule_task_del_by_context(server->schedule, channel->rekey);
 
     if (channel->founder_key) {
       /* The founder auth data exists, do not remove the channel entry */
@@ -2891,7 +2882,7 @@ SILC_TASK_CALLBACK(silc_server_timeout_remote)
      final callback so that all the memory is freed. */
   if (sock->protocol) {
     sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
-    silc_protocol_execute_final(sock->protocol, server->timeout_queue);
+    silc_protocol_execute_final(sock->protocol, server->schedule);
     return;
   }
 
@@ -3039,7 +3030,7 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
   silc_server_create_channel_key(server, rekey->channel, rekey->key_len);
   silc_server_send_channel_key(server, NULL, rekey->channel, FALSE);
 
-  silc_task_register(server->timeout_queue, 0, 
+  silc_schedule_task_add(server->schedule, 0, 
 		     silc_server_channel_key_rekey,
 		     (void *)rekey, 3600, 0,
 		     SILC_TASK_TIMEOUT,
@@ -3108,9 +3099,9 @@ void silc_server_create_channel_key(SilcServer server,
     channel->rekey->channel = channel;
     channel->rekey->key_len = key_len;
 
-    silc_task_unregister_by_callback(server->timeout_queue,
+    silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_channel_key_rekey);
-    silc_task_register(server->timeout_queue, 0, 
+    silc_schedule_task_add(server->schedule, 0, 
 		       silc_server_channel_key_rekey,
 		       (void *)channel->rekey, 3600, 0,
 		       SILC_TASK_TIMEOUT,
@@ -3213,9 +3204,9 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
     channel->rekey->context = (void *)server;
     channel->rekey->channel = channel;
 
-    silc_task_unregister_by_callback(server->timeout_queue,
+    silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_channel_key_rekey);
-    silc_task_register(server->timeout_queue, 0, 
+    silc_schedule_task_add(server->schedule, 0, 
 		       silc_server_channel_key_rekey,
 		       (void *)channel->rekey, 3600, 0,
 		       SILC_TASK_TIMEOUT,
@@ -3620,7 +3611,7 @@ SILC_TASK_CALLBACK(silc_server_failure_callback)
 
   if (f->sock->protocol) {
     f->sock->protocol->state = SILC_PROTOCOL_STATE_FAILURE;
-    silc_protocol_execute(f->sock->protocol, f->server->timeout_queue, 0, 0);
+    silc_protocol_execute(f->sock->protocol, f->server->schedule, 0, 0);
   }
 
   silc_free(f);
@@ -3952,10 +3943,10 @@ SILC_TASK_CALLBACK(silc_server_rekey_callback)
   sock->protocol = protocol;
       
   /* Run the protocol */
-  silc_protocol_execute(protocol, server->timeout_queue, 0, 0);
+  silc_protocol_execute(protocol, server->schedule, 0, 0);
 
   /* Re-register re-key timeout */
-  silc_task_register(server->timeout_queue, sock->sock, 
+  silc_schedule_task_add(server->schedule, sock->sock, 
 		     silc_server_rekey_callback,
 		     context, idata->rekey->timeout, 0,
 		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
@@ -3977,7 +3968,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final)
   if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
-    silc_protocol_cancel(protocol, server->timeout_queue);
+    silc_protocol_cancel(protocol, server->schedule);
     silc_protocol_free(protocol);
     sock->protocol = NULL;
     if (ctx->packet)

@@ -716,9 +716,9 @@ SILC_CLIENT_CMD_FUNC(quit)
   q->conn = cmd->conn;
 
   /* We quit the connection with little timeout */
-  silc_task_register(cmd->client->timeout_queue, cmd->conn->sock->sock,
-		     silc_client_command_quit_cb, (void *)q,
-		     1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+  silc_schedule_task_add(cmd->client->schedule, cmd->conn->sock->sock,
+			 silc_client_command_quit_cb, (void *)q,
+			 1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   /* Notify application */
   COMMAND;

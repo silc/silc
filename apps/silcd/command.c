@@ -224,14 +224,14 @@ void silc_server_command_process(SilcServer server,
 
     if (!fast && ((cmd->flags & SILC_CF_LAG_STRICT) ||
 		  (client->fast_command > 5 && cmd->flags & SILC_CF_LAG)))
-      silc_task_register(server->timeout_queue, sock->sock, 
+      silc_schedule_task_add(server->schedule, sock->sock, 
 			 silc_server_command_process_timeout,
 			 (void *)timeout, 
 			 2 - (time(NULL) - client->last_command), 0,
 			 SILC_TASK_TIMEOUT,
 			 SILC_TASK_PRI_NORMAL);
     else
-      silc_task_register(server->timeout_queue, sock->sock, 
+      silc_schedule_task_add(server->schedule, sock->sock, 
 			 silc_server_command_process_timeout,
 			 (void *)timeout, 
 			 0, 1,
@@ -2428,7 +2428,7 @@ SILC_SERVER_CMD_FUNC(quit)
   q->signoff = tmp ? strdup(tmp) : NULL;
 
   /* We quit the connection with little timeout */
-  silc_task_register(server->timeout_queue, sock->sock,
+  silc_schedule_task_add(server->schedule, sock->sock,
 		     silc_server_command_quit_cb, (void *)q,
 		     0, 200000, SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 

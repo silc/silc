@@ -333,7 +333,7 @@ typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
  *                                   uint32 heartbeat,
  *                                   void *hb_context,
  *                                   SilcSocketConnectionHBCb hb_callback,
- *                                   void *timeout_queue);
+ *                                   SilcSchedule schedule);
  *
  * DESCRIPTION
  *
@@ -343,14 +343,14 @@ typedef void (*SilcSocketConnectionHBCb)(SilcSocketConnection sock,
  *    `hb_callback' function that is called when the `heartbeat' timeout
  *    expires.  The callback `hb_context' won't be touched by the library
  *    but will be freed automatically when calling silc_socket_free.  The
- *    `timeout_queue' is the application's scheduler timeout queue.
+ *    `schedule' is the application's scheduler.
  *
  ***/
 void silc_socket_set_heartbeat(SilcSocketConnection sock, 
 			       uint32 heartbeat,
 			       void *hb_context,
 			       SilcSocketConnectionHBCb hb_callback,
-			       void *timeout_queue);
+			       SilcSchedule schedule);
 
 /****f* silcutil/SilcSocketConnectionAPI/SilcSocketHostLookupCb
  *
@@ -375,7 +375,7 @@ typedef void (*SilcSocketHostLookupCb)(SilcSocketConnection sock,
  *    void silc_socket_host_lookup(SilcSocketConnection sock,
  *                                 SilcSocketHostLookupCb callback,
  *                                 void *context,
- *                                 void *timeout_queue);
+ *                                 SilcSchedule schedule);
  *
  * DESCRIPTION
  *
@@ -383,11 +383,11 @@ typedef void (*SilcSocketHostLookupCb)(SilcSocketConnection sock,
  *    specified socket connection. This may be called when the socket
  *    connection is created and the full IP address and fully qualified
  *    domain name information is desired. The `callback' with `context'
- *    will be called after the lookup is performed. The `timeout_queue'
- *    is the application's scheduler timeout queue which the lookup
- *    routine needs. If the socket connection is freed during the
- *    lookup the library will automatically cancel the lookup and
- *    the `callback' will not be called.
+ *    will be called after the lookup is performed. The `schedule'
+ *    is the application's scheduler which the lookup routine needs. 
+ *    If the socket connection is freed during the lookup the library
+ *    will automatically cancel the lookup and the `callback' will not be
+ *    called.
  *
  *    If `port_lookup' is TRUE then the remote port of the socket 
  *    connection is resolved. After the information is resolved they
@@ -401,6 +401,6 @@ void silc_socket_host_lookup(SilcSocketConnection sock,
 			     bool port_lookup,
 			     SilcSocketHostLookupCb callback,
 			     void *context,
-			     void *timeout_queue);
+			     SilcSchedule schedule);
 
 #endif

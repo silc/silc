@@ -114,30 +114,29 @@ void silc_protocol_free(SilcProtocol protocol)
 /* Executes next state of the protocol. The state must be set before
    calling this function. */
 
-void silc_protocol_execute(SilcProtocol protocol, void *timeout_queue,
+void silc_protocol_execute(SilcProtocol protocol, SilcSchedule schedule,
 			   long secs, long usecs)
 {
   if (secs + usecs) 
-    silc_task_register(timeout_queue, 0, 
-		       protocol->protocol->callback, (void *)protocol, 
-		       secs, usecs, 
-		       SILC_TASK_TIMEOUT,
-		       SILC_TASK_PRI_NORMAL);
+    silc_schedule_task_add(schedule, 0, 
+			   protocol->protocol->callback, (void *)protocol, 
+			   secs, usecs, 
+			   SILC_TASK_TIMEOUT,
+			   SILC_TASK_PRI_NORMAL);
   else
-    protocol->protocol->callback(timeout_queue, 0, (void *)protocol, 0);
+    protocol->protocol->callback(schedule, 0, 0, (void *)protocol);
 }
 
 /* Executes the final callback of the protocol. */
 
-void silc_protocol_execute_final(SilcProtocol protocol, void *timeout_queue)
+void silc_protocol_execute_final(SilcProtocol protocol, SilcSchedule schedule)
 {
-  protocol->final_callback(timeout_queue, 0, (void *)protocol, 0);
+  protocol->final_callback(schedule, 0, 0, (void *)protocol);
 }
 
 /* Cancels the execution of the next state of the protocol. */
 
-void silc_protocol_cancel(SilcProtocol protocol, void *timeout_queue)
+void silc_protocol_cancel(SilcProtocol protocol, SilcSchedule schedule)
 {
-  silc_task_unregister_by_callback(timeout_queue, 
-				   protocol->protocol->callback);
+  silc_schedule_task_del_by_callback(schedule, protocol->protocol->callback);
 }

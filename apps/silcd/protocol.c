@@ -365,7 +365,7 @@ static void silc_server_protocol_ke_continue(SilcSKE ske, void *context)
 		    ske->status));
     
     protocol->state = SILC_PROTOCOL_STATE_ERROR;
-    silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+    silc_protocol_execute(protocol, server->schedule, 0, 300000);
     return;
   }
 
@@ -383,7 +383,7 @@ static void silc_server_protocol_ke_continue(SilcSKE ske, void *context)
      function. */
   if (ctx->responder == TRUE) {
     protocol->state++;
-    silc_protocol_execute(protocol, server->timeout_queue, 0, 100000);
+    silc_protocol_execute(protocol, server->schedule, 0, 100000);
   }
 }
 
@@ -455,14 +455,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 			status));
 
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	return;
       }
 
       /* Advance protocol state and call the next state if we are responder */
       protocol->state++;
       if (ctx->responder == TRUE)
-	silc_protocol_execute(protocol, server->timeout_queue, 0, 100000);
+	silc_protocol_execute(protocol, server->schedule, 0, 100000);
     }
     break;
   case 2:
@@ -493,14 +493,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 			status));
 
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	return;
       }
 
       /* Advance protocol state and call next state if we are initiator */
       protocol->state++;
       if (ctx->responder == FALSE)
-	silc_protocol_execute(protocol, server->timeout_queue, 0, 100000);
+	silc_protocol_execute(protocol, server->schedule, 0, 100000);
     }
     break;
   case 3:
@@ -535,7 +535,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 			status));
 
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	return;
       }
     }
@@ -573,7 +573,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 			status));
 
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	return;
       }
     }
@@ -594,7 +594,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 					     keymat);
       if (status != SILC_SKE_STATUS_OK) {
 	protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	silc_ske_free_key_material(keymat);
 	return;
       }
@@ -609,11 +609,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	 This was the timeout task to be executed if the protocol is
 	 not completed fast enough. */
       if (ctx->timeout_task)
-	silc_task_unregister(server->timeout_queue, ctx->timeout_task);
+	silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
       /* Call the final callback */
       if (protocol->final_callback)
-	silc_protocol_execute_final(protocol, server->timeout_queue);
+	silc_protocol_execute_final(protocol, server->schedule);
       else
 	silc_protocol_free(protocol);
     }
@@ -631,11 +631,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
        This was the timeout task to be executed if the protocol is
        not completed fast enough. */
     if (ctx->timeout_task)
-      silc_task_unregister(server->timeout_queue, ctx->timeout_task);
+      silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
     /* On error the final callback is always called. */
     if (protocol->final_callback)
-      silc_protocol_execute_final(protocol, server->timeout_queue);
+      silc_protocol_execute_final(protocol, server->schedule);
     else
       silc_protocol_free(protocol);
     break;
@@ -649,11 +649,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
        This was the timeout task to be executed if the protocol is
        not completed fast enough. */
     if (ctx->timeout_task)
-      silc_task_unregister(server->timeout_queue, ctx->timeout_task);
+      silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
     /* On error the final callback is always called. */
     if (protocol->final_callback)
-      silc_protocol_execute_final(protocol, server->timeout_queue);
+      silc_protocol_execute_final(protocol, server->schedule);
     else
       silc_protocol_free(protocol);
     break;
@@ -811,14 +811,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	if (ret == -1) {
 	  SILC_LOG_DEBUG(("Bad payload in authentication packet"));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	  silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
 	}
 	
 	if (payload_len != ctx->packet->buffer->len) {
 	  SILC_LOG_DEBUG(("Bad payload in authentication packet"));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	  silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
 	}
 	
@@ -828,7 +828,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    conn_type > SILC_SOCKET_TYPE_ROUTER) {
 	  SILC_LOG_ERROR(("Bad connection type %d", conn_type));
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	  silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
 	}
 	
@@ -842,7 +842,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  if (ret == -1) {
 	    SILC_LOG_DEBUG(("Bad payload in authentication packet"));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	    silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	    return;
 	  }
 	}
@@ -880,7 +880,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      SILC_LOG_DEBUG(("Authentication failed"));
 	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	      silc_protocol_execute(protocol, server->timeout_queue, 
+	      silc_protocol_execute(protocol, server->schedule, 
 				    0, 300000);
 	      return;
 	      break;
@@ -901,7 +901,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      SILC_LOG_DEBUG(("Authentication failed"));
 	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	      silc_protocol_execute(protocol, server->timeout_queue, 
+	      silc_protocol_execute(protocol, server->schedule, 
 				    0, 300000);
 	      return;
 	    }
@@ -911,7 +911,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    SILC_LOG_ERROR(("Authentication failed"));
 	    silc_free(auth_data);
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	    silc_protocol_execute(protocol, server->timeout_queue, 
+	    silc_protocol_execute(protocol, server->schedule, 
 				  0, 300000);
 	    return;
 	  }
@@ -942,7 +942,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      SILC_LOG_DEBUG(("Authentication failed"));
 	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	      silc_protocol_execute(protocol, server->timeout_queue, 
+	      silc_protocol_execute(protocol, server->schedule, 
 				    0, 300000);
 	      return;
 	      break;
@@ -963,7 +963,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      SILC_LOG_DEBUG(("Authentication failed"));
 	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	      silc_protocol_execute(protocol, server->timeout_queue, 
+	      silc_protocol_execute(protocol, server->schedule, 
 				    0, 300000);
 	      return;
 	    }
@@ -972,7 +972,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    SILC_LOG_ERROR(("Remote connection not configured"));
 	    SILC_LOG_ERROR(("Authentication failed"));
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	    silc_protocol_execute(protocol, server->timeout_queue, 
+	    silc_protocol_execute(protocol, server->schedule, 
 				  0, 300000);
 	    silc_free(auth_data);
 	    return;
@@ -1004,7 +1004,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      SILC_LOG_DEBUG(("Authentication failed"));
 	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	      silc_protocol_execute(protocol, server->timeout_queue, 
+	      silc_protocol_execute(protocol, server->schedule, 
 				    0, 300000);
 	      return;
 	      break;
@@ -1025,7 +1025,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	      SILC_LOG_DEBUG(("Authentication failed"));
 	      silc_free(auth_data);
 	      protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	      silc_protocol_execute(protocol, server->timeout_queue, 
+	      silc_protocol_execute(protocol, server->schedule, 
 				    0, 300000);
 	      return;
 	    }
@@ -1035,7 +1035,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	    SILC_LOG_ERROR(("Authentication failed"));
 	    silc_free(auth_data);
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	    silc_protocol_execute(protocol, server->timeout_queue, 
+	    silc_protocol_execute(protocol, server->schedule, 
 				  0, 300000);
 	    return;
 	  }
@@ -1049,7 +1049,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	  
 	/* Advance protocol state. */
 	protocol->state = SILC_PROTOCOL_STATE_END;
-	silc_protocol_execute(protocol, server->timeout_queue, 0, 0);
+	silc_protocol_execute(protocol, server->schedule, 0, 0);
 
       } else {
 	/* 
@@ -1136,11 +1136,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	 This was the timeout task to be executed if the protocol is
 	 not completed fast enough. */
       if (ctx->timeout_task)
-	silc_task_unregister(server->timeout_queue, ctx->timeout_task);
+	silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
       /* Protocol has ended, call the final callback */
       if (protocol->final_callback)
-	silc_protocol_execute_final(protocol, server->timeout_queue);
+	silc_protocol_execute_final(protocol, server->schedule);
       else
 	silc_protocol_free(protocol);
     }
@@ -1162,11 +1162,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 	 This was the timeout task to be executed if the protocol is
 	 not completed fast enough. */
       if (ctx->timeout_task)
-	silc_task_unregister(server->timeout_queue, ctx->timeout_task);
+	silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
       /* On error the final callback is always called. */
       if (protocol->final_callback)
-	silc_protocol_execute_final(protocol, server->timeout_queue);
+	silc_protocol_execute_final(protocol, server->schedule);
       else
 	silc_protocol_free(protocol);
     }
@@ -1181,11 +1181,11 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
        This was the timeout task to be executed if the protocol is
        not completed fast enough. */
     if (ctx->timeout_task)
-      silc_task_unregister(server->timeout_queue, ctx->timeout_task);
+      silc_schedule_task_del(server->schedule, ctx->timeout_task);
 
     /* On error the final callback is always called. */
     if (protocol->final_callback)
-      silc_protocol_execute_final(protocol, server->timeout_queue);
+      silc_protocol_execute_final(protocol, server->schedule);
     else
       silc_protocol_free(protocol);
     break;
@@ -1372,7 +1372,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	  if (ctx->packet->type != SILC_PACKET_KEY_EXCHANGE_1) {
 	    /* Error in protocol */
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	    silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  }
 
 	  ctx->ske = silc_ske_alloc();
@@ -1392,13 +1392,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 			      status));
 	    
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	    silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	    return;
 	  }
 
 	  /* Advance the protocol state */
 	  protocol->state++;
-	  silc_protocol_execute(protocol, server->timeout_queue, 0, 0);
+	  silc_protocol_execute(protocol, server->schedule, 0, 0);
 	} else {
 	  /*
 	   * Do normal and simple re-key.
@@ -1448,7 +1448,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 			      status));
 	    
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	    silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	    return;
 	  }
 
@@ -1493,7 +1493,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 			    status));
 	  
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	  silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
 	}
       }
@@ -1506,7 +1506,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	if (ctx->packet->type != SILC_PACKET_KEY_EXCHANGE_2) {
 	  /* Error in protocol */
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	  silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	}
 	
 	status = silc_ske_initiator_finish(ctx->ske, ctx->packet->buffer);
@@ -1515,7 +1515,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 			    status));
 	  
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
-	  silc_protocol_execute(protocol, server->timeout_queue, 0, 300000);
+	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
 	  return;
 	}
       }
@@ -1543,7 +1543,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
     if (ctx->packet->type != SILC_PACKET_REKEY_DONE) {
       /* Error in protocol */
       protocol->state = SILC_PROTOCOL_STATE_ERROR;
-      silc_protocol_execute(protocol, server->timeout_queue, 0, 0);
+      silc_protocol_execute(protocol, server->schedule, 0, 0);
     }
 
     /* We received the REKEY_DONE packet and all packets after this is
@@ -1552,7 +1552,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 
     /* Protocol has ended, call the final callback */
     if (protocol->final_callback)
-      silc_protocol_execute_final(protocol, server->timeout_queue);
+      silc_protocol_execute_final(protocol, server->schedule);
     else
       silc_protocol_free(protocol);
     break;
@@ -1569,7 +1569,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 
     /* On error the final callback is always called. */
     if (protocol->final_callback)
-      silc_protocol_execute_final(protocol, server->timeout_queue);
+      silc_protocol_execute_final(protocol, server->schedule);
     else
       silc_protocol_free(protocol);
     break;
@@ -1581,7 +1581,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 
     /* On error the final callback is always called. */
     if (protocol->final_callback)
-      silc_protocol_execute_final(protocol, server->timeout_queue);
+      silc_protocol_execute_final(protocol, server->schedule);
     else
       silc_protocol_free(protocol);
     break;

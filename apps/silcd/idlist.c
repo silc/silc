@@ -77,10 +77,10 @@ SILC_TASK_CALLBACK_GLOBAL(silc_idlist_purge)
   SILC_LOG_DEBUG(("Start"));
 
   silc_idcache_purge(i->cache);
-  silc_task_register(i->timeout_queue, 0, 
-		     silc_idlist_purge,
-		     (void *)i, 600, 0,
-		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+  silc_schedule_task_add(i->schedule, 0, 
+			 silc_idlist_purge,
+			 (void *)i, 600, 0,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 }
 
 /******************************************************************************

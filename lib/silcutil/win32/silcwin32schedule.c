@@ -190,7 +190,7 @@ SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
    It is guaranteed that the scheduler will automatically free any
    registered tasks in this queue. This is system specific routine. */
 
-void *silc_schedule_wakeup_init(void *queue)
+void *silc_schedule_wakeup_init(SilcSchedule schedule)
 {
 #ifdef SILC_THREADS
   SilcWin32Wakeup wakeup;
@@ -203,10 +203,11 @@ void *silc_schedule_wakeup_init(void *queue)
     return NULL;
   }
 
-  wakeup->wakeup_task = silc_task_register(queue, (int)wakeup->wakeup_sema,
-					   silc_schedule_wakeup_cb, wakeup,
-					   0, 0, SILC_TASK_FD, 
-					   SILC_TASK_PRI_NORMAL);
+  wakeup->wakeup_task = 
+    silc_schedule_task_add(schedule, (int)wakeup->wakeup_sema,
+			   silc_schedule_wakeup_cb, wakeup,
+			   0, 0, SILC_TASK_FD, 
+			   SILC_TASK_PRI_NORMAL);
   if (!wakeup->wakeup_task) {
     CloseHandle(wakeup->wakeup_sema);
     silc_free(wakeup);

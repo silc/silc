@@ -30,7 +30,7 @@ typedef struct SilcChannelEntryStruct *SilcChannelEntry;
    the cache. */
 typedef struct {
   SilcIDCache cache;
-  void *timeout_queue;
+  SilcSchedule schedule;
 } *SilcIDListPurge;
 
 /* Channel key re-key context. */

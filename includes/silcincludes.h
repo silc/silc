@@ -229,7 +229,6 @@ typedef uint32 * void *;
 #include "silcnet.h"
 #include "silcutil.h"
 #include "silcconfig.h"
-#include "silctask.h"
 #include "silcschedule.h"
 
 /* SILC core library includes */

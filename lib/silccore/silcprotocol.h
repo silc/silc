@@ -297,7 +297,7 @@ void silc_protocol_free(SilcProtocol protocol);
  *
  * SYNOPSIS
  *
- *    void silc_protocol_execute(SilcProtocol protocol, void *timeout_queue,
+ *    void silc_protocol_execute(SilcProtocol protocol, SilcSchedule schedule,
  *                               long secs, long usecs);
  *
  * DESCRIPTION
@@ -305,13 +305,13 @@ void silc_protocol_free(SilcProtocol protocol);
  *    Executes the protocol. This calls the state that has been set.
  *    The state must be set before calling this function. This is then
  *    also used to call always the next state after changing the state
- *    of the protocol. The `timeout_queue' is a timeout task queue from
- *    the application. It is passed to the protocol callback functions.
- *    The `secs' and `usecs' are the timeout before the protocol is
- *    executed. If both zero the protocol is executed immediately.
+ *    of the protocol. The `schedule' is the application's scheduler.
+ *    It is passed to the protocol callback functions. The `secs' and 
+ *    `usecs' are the timeout before the protocol is executed. If both 
+ *    zero the protocol is executed immediately.
  *
  ***/
-void silc_protocol_execute(SilcProtocol protocol, void *timeout_queue,
+void silc_protocol_execute(SilcProtocol protocol, SilcSchedule schedule,
 			   long secs, long usecs);
 
 /****f* silccore/SilcProtocolAPI/silc_protocol_execute_final
@@ -319,23 +319,23 @@ void silc_protocol_execute(SilcProtocol protocol, void *timeout_queue,
  * SYNOPSIS
  *
  *    void 
- *    silc_protocol_execute_final(SilcProtocol protocol, void *timeout_queue);
+ *    silc_protocol_execute_final(SilcProtocol protocol, 
+ *                               SilcSchedule schedule);
  *
  * DESCRIPTION
  *
- *    Executes the final callback for the protocol. The `timeout_queue' is
- *    a timeout task queue from the application. It is passed to the
- *    protocol callback functions. The final callback is executed 
- *    immediately.
+ *    Executes the final callback for the protocol. The `schedule' is
+ *    the application's scheduler.. It is passed to the protocol callback
+ *    functions. The final callback is executed immediately.
  *
  ***/
-void silc_protocol_execute_final(SilcProtocol protocol, void *timeout_queue);
+void silc_protocol_execute_final(SilcProtocol protocol, SilcSchedule schedule);
 
 /****f* silccore/SilcProtocolAPI/silc_protocol_cancel
  *
  * SYNOPSIS
  *
- *    void silc_protocol_cancel(SilcProtocol protocol, void *timeout_queue);
+ *    void silc_protocol_cancel(SilcProtocol protocol, SilcSchedule schedule);
  *
  * DESCRIPTION
  *
@@ -345,6 +345,6 @@ void silc_protocol_execute_final(SilcProtocol protocol, void *timeout_queue);
  *    has elapsed the protocol callback won't be called.
  *
  ***/
-void silc_protocol_cancel(SilcProtocol protocol, void *timeout_queue);
+void silc_protocol_cancel(SilcProtocol protocol, SilcSchedule schedule);
 
 #endif

@@ -1,3 +1,12 @@
+Tue Jul 17 23:04:10 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
+
+	* Rewrote the SILC Scheduler entirely.  Removed the old SILC Task
+	  API.  It is part of the scheduler now.  Everything else is
+	  as previously but some functions has changed their names.
+	  Checkout the lib/silcutil/silcschedule.h for the interface.
+	  Updated all applications to use the new interface.  Affected
+	  files are lib/silcutil/silcschedule.[ch].
+
 Tue Jul 17 16:53:30 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Found a bug in the SKE implementation.  The HASH value,
@@ -6,6 +15,15 @@ Tue Jul 17 16:53:30 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 	  even though it is mandatory.  Affected file lib/silcske/silcske.c.
 	  This unfortunately causes incompatibilities with older
 	  clients and servers.
+
+	* Added WIN32 specific network init and uninit functions:
+	  silc_net_win32_init and silc_net_win32_uninit to init and uninit
+	  the Winsock2.  Affected file lib/silcutil/silcnet.h and
+	  lib/silcutil/win32/silcwin32net.c.
+
+	* Set the socket always to nonblocking mode on WIN32 after
+	  reading data or writing data.  Affected file is
+	  lib/silcutil/win32/silcwin32sockconn.c.
 
 Mon Jul 16 22:55:26 EEST 2001  Pekka Riikonen <priikone@silcnet.org>
 

@@ -20,13 +20,48 @@
 /* $Id$ */
 
 #include "silcincludes.h"
+#include "silcschedule_i.h"
 
 /* Calls normal select() system call. */
 
-int silc_select(int n, fd_set *readfds, fd_set *writefds,
-		fd_set *exceptfds, struct timeval *timeout)
+int silc_select(SilcScheduleFd fds, uint32 fds_count, struct timeval *timeout)
 {
-  return select(n, readfds, writefds, exceptfds, timeout);
+  fd_set in, out;
+  int ret, i, max_fd = 0;
+
+  FD_ZERO(&in);
+  FD_ZERO(&out);
+
+  for (i = 0; i < fds_count; i++) {
+    if (!fds[i].events)
+      continue;
+
+    if (fds[i].fd > max_fd)
+      max_fd = fds[i].fd;
+
+    if (fds[i].events & SILC_TASK_READ)
+      FD_SET(fds[i].fd, &in);
+    if (fds[i].events & SILC_TASK_WRITE)
+      FD_SET(fds[i].fd, &out);
+
+    fds[i].revents = 0;
+  }
+
+  ret = select(max_fd + 1, &in, &out, NULL, timeout);
+  if (ret <= 0)
+    return ret;
+
+  for (i = 0; i < fds_count; i++) {
+    if (!fds[i].events)
+      continue;
+
+    if (FD_ISSET(fds[i].fd, &in))
+      fds[i].revents |= SILC_TASK_READ;
+    if (FD_ISSET(fds[i].fd, &out))
+      fds[i].revents |= SILC_TASK_WRITE;
+  }
+
+  return ret;
 }
 
 #ifdef SILC_THREADS
@@ -54,7 +89,7 @@ SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
    It is quaranteed that the scheduler will automatically free any
    registered tasks in this queue. This is system specific routine. */
 
-void *silc_schedule_wakeup_init(void *queue)
+void *silc_schedule_wakeup_init(SilcSchedule schedule)
 {
 #ifdef SILC_THREADS
   SilcUnixWakeup wakeup;
@@ -66,10 +101,11 @@ void *silc_schedule_wakeup_init(void *queue)
     return NULL;
   }
 
-  wakeup->wakeup_task = silc_task_register(queue, wakeup->wakeup_pipe[0],
-					   silc_schedule_wakeup_cb, wakeup,
-					   0, 0, SILC_TASK_FD, 
-					   SILC_TASK_PRI_NORMAL);
+  wakeup->wakeup_task = 
+    silc_schedule_task_add(schedule, wakeup->wakeup_pipe[0],
+			   silc_schedule_wakeup_cb, wakeup,
+			   0, 0, SILC_TASK_FD, 
+			   SILC_TASK_PRI_NORMAL);
   if (!wakeup->wakeup_task) {
     close(wakeup->wakeup_pipe[0]);
     close(wakeup->wakeup_pipe[1]);

@@ -26,7 +26,7 @@ struct SilcSocketConnectionHBStruct {
   uint32 heartbeat;
   SilcSocketConnectionHBCb hb_callback;
   void *hb_context;
-  void *timeout_queue;
+  SilcSchedule schedule;
   SilcTask hb_task;
   SilcSocketConnection sock;
 };
@@ -35,7 +35,7 @@ struct SilcSocketConnectionHBStruct {
 typedef struct {
   SilcSocketHostLookupCb callback;
   void *context;
-  void *timeout_queue;
+  SilcSchedule schedule;
   SilcSocketConnection sock;
   bool port;
 } *SilcSocketHostLookup;
@@ -72,7 +72,7 @@ void silc_socket_free(SilcSocketConnection sock)
     silc_buffer_free(sock->inbuf);
     silc_buffer_free(sock->outbuf);
     if (sock->hb) {
-      silc_task_unregister(sock->hb->timeout_queue, sock->hb->hb_task);
+      silc_schedule_task_del(sock->hb->schedule, sock->hb->hb_task);
       silc_free(sock->hb->hb_context);
       silc_free(sock->hb);
     }
@@ -104,11 +104,11 @@ SILC_TASK_CALLBACK(silc_socket_heartbeat)
   if (hb->hb_callback)
     hb->hb_callback(hb->sock, hb->hb_context);
 
-  hb->hb_task = silc_task_register(hb->timeout_queue, hb->sock->sock, 
-				   silc_socket_heartbeat,
-				   context, hb->heartbeat, 0,
-				   SILC_TASK_TIMEOUT,
-				   SILC_TASK_PRI_LOW);
+  hb->hb_task = silc_schedule_task_add(hb->schedule, hb->sock->sock, 
+				       silc_socket_heartbeat,
+				       context, hb->heartbeat, 0,
+				       SILC_TASK_TIMEOUT,
+				       SILC_TASK_PRI_LOW);
 }
 
 /* Sets the heartbeat timeout and prepares the socket for performing
@@ -117,20 +117,16 @@ SILC_TASK_CALLBACK(silc_socket_heartbeat)
    `hb_callback' function that is called when the `heartbeat' timeout
    expires.  The callback `hb_context' won't be touched by the library
    but will be freed automatically when calling silc_socket_free.  The
-   `timeout_queue' is the application's scheduler timeout queue. */
+   `schedule' is the application's scheduler. */
 
 void silc_socket_set_heartbeat(SilcSocketConnection sock, 
 			       uint32 heartbeat,
 			       void *hb_context,
 			       SilcSocketConnectionHBCb hb_callback,
-			       void *timeout_queue)
+			       SilcSchedule schedule)
 {
-
-  if (!timeout_queue)
-    return;
-
   if (sock->hb) {
-    silc_task_unregister(sock->hb->timeout_queue, sock->hb->hb_task);
+    silc_schedule_task_del(schedule, sock->hb->hb_task);
     silc_free(sock->hb->hb_context);
     silc_free(sock->hb);
   }
@@ -139,13 +135,13 @@ void silc_socket_set_heartbeat(SilcSocketConnection sock,
   sock->hb->heartbeat = heartbeat;
   sock->hb->hb_context = hb_context;
   sock->hb->hb_callback = hb_callback;
-  sock->hb->timeout_queue = timeout_queue;
+  sock->hb->schedule = schedule;
   sock->hb->sock = sock;
-  sock->hb->hb_task = silc_task_register(timeout_queue, sock->sock,
-                                         silc_socket_heartbeat,
-                                         (void *)sock->hb, heartbeat, 0,
-                                         SILC_TASK_TIMEOUT,
-                                         SILC_TASK_PRI_LOW);
+  sock->hb->hb_task = silc_schedule_task_add(schedule, sock->sock,
+					     silc_socket_heartbeat,
+					     (void *)sock->hb, heartbeat, 0,
+					     SILC_TASK_TIMEOUT,
+					     SILC_TASK_PRI_LOW);
 }
 
 /* Finishing timeout callback that will actually call the user specified
@@ -193,10 +189,10 @@ static void *silc_socket_host_lookup_start(void *context)
   if (!sock->hostname && sock->ip)
     sock->hostname = strdup(sock->ip);
 
-  silc_task_register(lookup->timeout_queue, sock->sock,
-		     silc_socket_host_lookup_finish, lookup, 0, 1,
-		     SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-  silc_task_queue_wakeup(lookup->timeout_queue);
+  silc_schedule_task_add(lookup->schedule, sock->sock,
+			 silc_socket_host_lookup_finish, lookup, 0, 1,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+  silc_schedule_wakeup(lookup->schedule);
 
   return NULL;
 }
@@ -205,30 +201,26 @@ static void *silc_socket_host_lookup_start(void *context)
    specified socket connection. This may be called when the socket
    connection is created and the full IP address and fully qualified
    domain name information is desired. The `callback' with `context'
-   will be called after the lookup is performed. The `timeout_queue'
-   is the application's scheduler timeout queue which the lookup
-   routine needs. If the socket connection is freed during
-   the lookup the library will automatically cancel the lookup and
-   the `callback' will not be called. */
+   will be called after the lookup is performed. The `schedule'
+   is the application's scheduler which the lookup routine needs. If
+   the socket connection is freed during the lookup the library will
+   automatically cancel the lookup and the `callback' will not be called. */
 
 void silc_socket_host_lookup(SilcSocketConnection sock,
 			     bool port_lookup,
 			     SilcSocketHostLookupCb callback,
 			     void *context,
-			     void *timeout_queue)
+			     SilcSchedule schedule)
 {
   SilcSocketHostLookup lookup;
 
   SILC_LOG_DEBUG(("Performing async host lookup"));
 
-  if (!timeout_queue)
-    return;
-
   lookup = silc_calloc(1, sizeof(*lookup));
   lookup->sock = silc_socket_dup(sock);	/* Increase reference counter */
   lookup->callback = callback;
   lookup->context = context;
-  lookup->timeout_queue = timeout_queue;
+  lookup->schedule = schedule;
   lookup->port = port_lookup;
 
   SILC_SET_HOST_LOOKUP(sock);
