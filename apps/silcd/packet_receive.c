@@ -3335,6 +3335,7 @@ void silc_server_resume_client(SilcServer server,
     server->stat.clients--;
     if (server->stat.cell_clients)
       server->stat.cell_clients--;
+    silc_server_del_from_watcher_list(server, client);
     silc_idlist_del_client(server->local_list, client);
     client = detached_client;
 
