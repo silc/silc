@@ -72,6 +72,17 @@ Commands:
       you can reply to the sender with the hostname and
       port of your key agreement server with this command.
 
+      If the hostname and port are ommitted, the irssi
+      boolean variable use_auto_addr will be examined.  If
+      this variable is set, the value of auto_bind_ip will
+      be used as the IP address to listen for the return
+      reply, the value of auto_public_ip will be the IP
+      address sent to the remote client, and auto_bind_port
+      will be the port value to be bound to AND sent to
+      the remote client.  If auto_public_ip is unset, but
+      auto_bind_ip IS, irssi will send the auto_bind_ip
+      variable's value to the remote client.
+
     negotiate  [<hostname> [<port>]]
 
       This may be called to start the key agreement with

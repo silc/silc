@@ -275,6 +275,16 @@ void silc_core_init_finish(void)
   /* Do some irssi initializing */
   settings_add_bool("server", "skip_motd", FALSE);
   settings_add_str("server", "alternate_nick", NULL);
+  
+  /* Initialize the auto_addr variables Is "server" the best choice for
+   * this?  No existing category seems to apply.
+   */
+  
+  settings_add_bool("server", "use_auto_addr", FALSE);
+  settings_add_str("server", "auto_bind_ip", "");
+  settings_add_str("server", "auto_public_ip", "");
+  settings_add_int("server", "auto_bind_port", 0);
+        	    	    	
   silc_init_userinfo();
 
   /* Initialize client parameters */

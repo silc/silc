@@ -15,6 +15,23 @@ Sat Nov  3 23:48:23 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 	* Find correct make to use in prepare-clean.  A patch by
 	  toma.  Affected file prepare-clean.
 
+Sat Nov  3 22:04:00 PST 2001  Brian Costello <bc@mksecure.com>
+
+	* Added irssi variables use_auto_addr, auto_bind_ip,
+          auto_bind_port and auto_public_ip.
+
+	* Changed the interface for silc_client_send_key_agreement
+          in lib/silcclient/silcapi.h
+
+	Affected files:
+
+         irssi/src/silc/core/silc-core.c
+         irssi/config
+         lib/silcclient/silcapi.h
+         irssi/src/silc/core/silc-channels.c
+         lib/silcclient/client_keyagr.c
+         irssi/docs/help/key
+
 Sat Nov  3 17:48:55 EET 2001  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_pkcs_public_key_compare to compare two 

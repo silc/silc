@@ -295,7 +295,8 @@ SILC_TASK_CALLBACK(silc_client_key_agreement_timeout)
 void silc_client_send_key_agreement(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcClientEntry client_entry,
-				    char *hostname,
+				    const char *hostname,
+				    const char *bindhost,
 				    int port,
 				    uint32 timeout_secs,
 				    SilcKeyAgreementCallback completion,
@@ -310,18 +311,28 @@ void silc_client_send_key_agreement(SilcClient client,
   if (client_entry->ke)
     return;
 
-  /* Create the listener if hostname and port was provided */
+  /* Create the listener if hostname and port was provided.
+   * also, use bindhost if it was specified.
+   */
+   
   if (hostname) {
     ke = silc_calloc(1, sizeof(*ke));
+    
+    if (bindhost) {
+      ke->fd = silc_net_create_server(port, bindhost);
+    }
+    else {
     ke->fd = silc_net_create_server(port, hostname);
+    }
 
     if (ke->fd < 0) {
       client->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR, 
 		       "Cannot create listener on %s on port %d: %s", 
-		       hostname, port, strerror(errno));
+		       (bindhost) ? bindhost:hostname, port, strerror(errno));
       completion(client, conn, client_entry, SILC_KEY_AGREEMENT_FAILURE,
 		 NULL, context);
       silc_free(ke);
+
       return;
     }
 
@@ -358,6 +369,7 @@ void silc_client_send_key_agreement(SilcClient client,
 			  client_entry->id, SILC_ID_CLIENT, NULL, NULL,
 			  buffer->data, buffer->len, FALSE);
   silc_buffer_free(buffer);
+
 }
 
 static int 

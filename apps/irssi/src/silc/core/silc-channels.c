@@ -861,6 +861,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   uint32 argc = 0;
   unsigned char **argv;
   uint32 *argv_lens, *argv_types;
+  char *bindhost = NULL;
  
   if (!server || !IS_SILC_SERVER(server) || !server->connected)
     cmd_return_error(CMDERR_NOT_CONNECTED);
@@ -1172,6 +1173,31 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
     internal = silc_calloc(1, sizeof(*internal));
     internal->type = type;
     internal->server = server;
+    
+    if (!hostname) {
+      if (settings_get_bool("use_auto_addr")) {
+       
+        hostname = (char *)settings_get_str("auto_public_ip");
+
+/* If the hostname isn't set, treat this case as if auto_public_ip wasn't
+ * set.
+ */
+        if ((hostname) && (*hostname == '\0')) {
+           hostname = NULL;
+        }
+        else {
+          bindhost = (char *)settings_get_str("auto_bind_ip");
+            
+/* if the bind_ip isn't set, but the public_ip IS, then assume then
+ * public_ip is the same value as the bind_ip.
+ */
+          if ((bindhost) && (*bindhost == '\0')) {
+            bindhost = hostname;
+          }
+           port = settings_get_int("auto_bind_port");
+        }
+      }  /* if use_auto_addr */
+    }
   }
 
   /* Start command is used to start key agreement (after receiving the
@@ -1201,7 +1227,8 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 		       SILCTXT_KEY_AGREEMENT, argv[2]);
     internal->responder = TRUE;
     silc_client_send_key_agreement(silc_client, conn, client_entry, hostname, 
-				   port, 120, keyagr_completion, internal);
+    				   bindhost, port, 120, keyagr_completion, 
+    				   internal);
     if (!hostname)
       silc_free(internal);
     goto out;
