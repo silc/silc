@@ -35,15 +35,8 @@ silcd_SOURCES = \
 	server_version.c
 silcd_DEPENDENCIES = ../lib/libsilc.a
 
-if SILC_BUILD_GMP
-LDADD = -L. -L.. -L../lib -lsilc
-else
-LDADD = -L. -L.. -L../lib -lsilc -L/usr/lib -L/usr/local/lib -lgmp
-endif
+LDADD = -L. $(SILC_COMMON_LIBS)
 
 EXTRA_DIST = *.h
 
-INCLUDES = -I. -I.. -I../lib/silccore -I../lib/silccrypt \
-	-I../lib/silcmath -I../lib/silcske -I../lib/silcsim \
-	-I../includes -I../lib/silcutil \
-	-I../lib/silcmath/gmp -I../lib/trq
+include $(top_srcdir)/Makefile.defines

@@ -30,10 +30,15 @@
 
 /* We need this for `regex.h', and perhaps for the Emacs include files.  */
 #include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
+/*
+ifdef HAVE_CONFIG_H
+##include "config.h"
 #endif
+*/
 
 /* The `emacs' switch turns on certain matching commands
    that make sense only in Emacs. */

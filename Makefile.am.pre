@@ -21,6 +21,8 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 SUBDIRS = lib silc silcd doc includes
 DIST_SUBDIRS = SILC_DISTRIBUTION_SUBDIRS
 
+include $(top_srcdir)/Makefile.defines
+
 dist-bzip: distdir
 	-chmod -R a+r $(distdir)
 	-$(TAR) chof $(distdir).tar $(distdir)
@@ -33,11 +35,11 @@ EXTRA_DIST = CHANGES CREDITS
 # Installing of SILC into the system
 #
 
-etcdir = @ETCDIR@
-modulesdir = $(prefix)/@MODULESDIR@
-helpdir = $(prefix)/@HELPDIR@
-docdir = $(prefix)/@DOCDIR@
-logsdir = $(prefix)/@LOGSDIR@
+etcdir = $(silc_etcdir)
+modulesdir = $(silc_modulesdir)
+helpdir = $(silc_helpdir)
+docdir = $(silc_docdir)
+logsdir = $(silc_logsdir)
 
 install-dirs:
 	-mkdir -p $(etcdir)

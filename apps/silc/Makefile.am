@@ -30,16 +30,8 @@ silc_SOURCES = \
 
 silc_DEPENDENCIES = ../lib/libsilcclient.a ../lib/libsilc.a
 
-if SILC_BUILD_GMP
-LDADD = -L. -L.. -L../lib -lsilcclient -lsilc -lcurses
-else
-LDADD = -L. -L.. -L../lib -lsilcclient -lsilc -lcurses -L/usr/lib \
-	-L/usr/local/lib -lgmp
-endif
+LDADD = -L. -L.. -L../lib -lsilcclient $(SILC_COMMON_LIBS)
 
 EXTRA_DIST = *.h
 
-INCLUDES = -I. -I.. -I../lib/silccore -I../lib/silccrypt \
-	-I../lib/silcmath -I../lib/silcske -I../lib/silcsim \
-	-I../includes -I../lib/silcclient -I../lib/silcutil \
-	-I../lib/silcmath/gmp -I../lib/trq
+include $(top_srcdir)/Makefile.defines

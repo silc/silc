@@ -76,6 +76,5 @@ CLEANFILES = $(SIM_MODULES_DIR)/*.sim.so
 
 EXTRA_DIST = *.h
 
-INCLUDES = -I. -I.. -I../silccrypt -I../silcmath -I../silcske \
-	-I../silccore -I../.. -I../silcutil -I../../includes \
-	-I../silcmath/gmp -I../trq
+include $(top_srcdir)/Makefile.defines
+

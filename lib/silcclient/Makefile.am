@@ -33,7 +33,5 @@ libsilcclient_a_SOURCES = \
 
 EXTRA_DIST = *.h
 
-INCLUDES = -I. -I.. -I../silccore -I../silccrypt -I../silcutil \
-	-I../silcmath -I../silcske -I../silcsim \
-	-I../../includes \
-	-I../silcmath/gmp -I../trq
+include $(top_srcdir)/Makefile.defines
+

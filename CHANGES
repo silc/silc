@@ -1,3 +1,11 @@
+Mon May 28 19:05:22 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
+
+	* Added Makefile.defines[.in] that should for now on be included
+	  in all Makefile.am file in the source tree.  That file includes
+	  all common compilation definitions for SILC source tree.  Also
+	  all external packages that has been included in the SILC source
+	  may include it (like irssi for example) to use the SILC defaults.
+
 Mon May 28 10:30:51 EEST 2001  Pekka Riikonen <priikone@poseidon.pspt.fi>
 
 	* Minor changes to the ./prepare script to change the package

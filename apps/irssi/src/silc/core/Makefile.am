@@ -1,25 +1,17 @@
 INCLUDES = $(GLIB_CFLAGS) -I$(IRSSI_INCLUDE) -I$(IRSSI_INCLUDE)/src
 
-SILC_INCLUDE=../../../..
 IRSSI_INCLUDE=../../..
 
-INCLUDES = \
+include $(top_srcdir)/../Makefile.defines
+
+ADD_INCLUDES = \
         $(GLIB_CFLAGS) \
         -DSYSCONFDIR=\""$(sysconfdir)"\" \
-        -I$(IRSSI_INCLUDE) -I$(IRSSI_INCLUDE)/src \
+        -I$(IRSSI_INCLUDE) \
+	-I$(IRSSI_INCLUDE)/src \
         -I$(IRSSI_INCLUDE)/src/core \
         -I$(IRSSI_INCLUDE)/src/fe-common/core \
-        -I$(IRSSI_INCLUDE)/src/fe-common/silc \
-        -I$(SILC_INCLUDE)/includes \
-        -I$(SILC_INCLUDE)/lib/silccore \
-        -I$(SILC_INCLUDE)/lib/silccrypt \
-        -I$(SILC_INCLUDE)/lib/silcmath \
-        -I$(SILC_INCLUDE)/lib/silcske \
-        -I$(SILC_INCLUDE)/lib/silcsim \
-        -I$(SILC_INCLUDE)/lib/silcutil \
-        -I$(SILC_INCLUDE)/lib/silcclient \
-        -I$(SILC_INCLUDE)/lib/silcmath/gmp \
-        -I$(SILC_INCLUDE)/lib/trq
+        -I$(IRSSI_INCLUDE)/src/fe-common/silc
 
 noinst_LIBRARIES=libsilc_core.a
 
