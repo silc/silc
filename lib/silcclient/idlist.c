@@ -700,6 +700,12 @@ SILC_CLIENT_CMD_FUNC(get_clients_by_channel_cb)
   SilcHashTableList htl;
   SilcChannelUser chu;
 
+  if (i->res_count) {
+    i->res_count--;
+    if (i->res_count)
+      return;
+  }
+
   channel = silc_client_get_channel_by_id(i->client, i->conn, &i->channel_id);
   if (channel && !silc_hash_table_count(channel->user_list)) {
     clients = silc_calloc(silc_hash_table_count(channel->user_list),
