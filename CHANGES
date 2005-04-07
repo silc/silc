@@ -4,6 +4,9 @@ Thu Apr  7 14:50:01 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 	  away.  If it does, stop the query.  Affected file
 	  silcd/server_query.c.
 
+	* Check for valid channel creation in JOIN command reply.
+	  Affected file lib/silcclient/command_reply.c.
+
 Wed Apr  6 16:56:53 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added some better error messages.  Affected file

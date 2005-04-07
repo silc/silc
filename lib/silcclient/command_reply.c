@@ -1049,6 +1049,10 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     channel = silc_client_add_channel(cmd->client, conn, channel_name,
 				      mode, channel_id);
   }
+  if (!channel) {
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_BAD_CHANNEL);
+    goto out;
+  }
 
   conn->current_channel = channel;
   channel->mode = mode;
