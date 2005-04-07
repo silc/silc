@@ -230,6 +230,11 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
     client_entry =
       silc_client_add_client(cmd->client, conn, nickname, username, realname,
 			     client_id, mode);
+    if (!client_entry) {
+      if (notify)
+	COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+      return;
+    }
   } else {
     silc_client_update_client(cmd->client, conn, client_entry,
 			      nickname, username, realname, mode);
@@ -413,6 +418,11 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
       client_entry =
 	silc_client_add_client(cmd->client, conn, name, info, NULL,
 			       silc_id_dup(client_id, id_type), 0);
+      if (!client_entry) {
+	if (notify)
+	  COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	return;
+      }
     } else {
       silc_client_update_client(cmd->client, conn, client_entry,
 				name, info, NULL, 0);
@@ -466,6 +476,11 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
       /* Add new channel entry */
       channel_entry = silc_client_add_channel(client, conn, name, 0,
 					      channel_id);
+      if (!channel_entry) {
+	if (notify)
+	  COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	return;
+      }
       channel_id = NULL;
     }
 
@@ -1116,6 +1131,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
       client_entry =
 	silc_client_add_client(cmd->client, conn, NULL, NULL, NULL,
 			       silc_id_dup(client_id, SILC_ID_CLIENT), 0);
+      if (!client_entry)
+	goto out;
     }
 
     /* Join client to the channel */
