@@ -2893,9 +2893,13 @@ static void silc_server_new_id_real(SilcServer server,
       if (server->server_type == SILC_ROUTER) {
 	/* Add the client's public key to hash table or get the key with
 	   GETKEY command. */
-        if (entry->data.public_key)
-	  silc_hash_table_add(server->pk_hash, entry->data.public_key, entry);
-	else
+        if (entry->data.public_key) {
+	  if (!silc_hash_table_find_by_context(server->pk_hash,
+					       entry->data.public_key,
+					       entry, NULL))
+	    silc_hash_table_add(server->pk_hash, entry->data.public_key,
+				entry);
+	} else
 	  silc_server_send_command(server, router_sock,
 				   SILC_COMMAND_GETKEY, ++server->cmd_ident,
 				   1, 1, buffer->data, buffer->len);

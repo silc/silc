@@ -1,3 +1,9 @@
+Thu Apr  7 14:50:01 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* During query, check if the original command caller goes
+	  away.  If it does, stop the query.  Affected file
+	  silcd/server_query.c.
+
 Wed Apr  6 16:56:53 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added some better error messages.  Affected file

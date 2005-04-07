@@ -323,6 +323,13 @@ void silc_server_query_send_router_reply(void *context, void *reply)
 
   SILC_LOG_DEBUG(("Received reply from router to query"));
 
+  /* If the original command caller has gone away, just stop. */
+  if (query->cmd->sock->users == 1) {
+    SILC_LOG_DEBUG(("Original command caller vanished"));
+    silc_server_query_free(query);
+    return;
+  }
+
   /* Check if router sent error reply */
   if (cmdr && !silc_command_get_status(cmdr->payload, NULL, NULL)) {
     SilcBuffer buffer;
@@ -671,7 +678,7 @@ void silc_server_query_check_attributes(SilcServer server,
 
   /* If no clients were found, we only check the attributes
      if the user wasn't searching for nickname/ids */
-  if (!*clients) {
+  if (!(*clients)) {
     no_clients = TRUE;
     if (query->nickname || query->ids_count)
       return;
@@ -1283,6 +1290,13 @@ void silc_server_query_resolve_reply(void *context, void *reply)
 
   SILC_LOG_DEBUG(("Reprocess the query"));
 
+  /* If the original command caller has gone away, just stop. */
+  if (query->cmd->sock->users == 1) {
+    SILC_LOG_DEBUG(("Original command caller vanished"));
+    silc_server_query_free(query);
+    return;
+  }
+
   /* We have received all queries.  Now re-search all information required
      to complete this query.  Reason we cannot save the values found in
      the first search is that SilcClientEntry, SilcServerEntry and
@@ -1316,7 +1330,7 @@ void silc_server_query_send_reply(SilcServer server,
   SilcUInt32 len;
   SilcBuffer idp;
   int i, k, valid_count;
-  char nh[256], uh[256];
+  char nh[384], uh[384];
   bool sent_reply = FALSE;
 
   SILC_LOG_DEBUG(("Sending reply to query"));
@@ -1404,7 +1418,6 @@ void silc_server_query_send_reply(SilcServer server,
 		       "      : "), entry->nickname));
 
       idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
-      memset(uh, 0, sizeof(uh));
       memset(nh, 0, sizeof(nh));
 
       silc_strncat(nh, sizeof(nh), entry->nickname, strlen(entry->nickname));
@@ -1432,6 +1445,8 @@ void silc_server_query_send_reply(SilcServer server,
 
 	  memset(fempty, 0, sizeof(fempty));
 	  memset(idle, 0, sizeof(idle));
+	  memset(uh, 0, sizeof(uh));
+
 	  silc_strncat(uh, sizeof(uh), entry->username,
 		       strlen(entry->username));
 	  if (!strchr(entry->username, '@') && entry->connection) {

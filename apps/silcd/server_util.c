@@ -223,6 +223,9 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	/* Remove the client entry */
 	if (!server_signoff) {
 	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+	  client->mode = 0;
+	  client->router = NULL;
+	  client->connection = NULL;
 	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
 	} else {
 	  silc_idlist_del_data(client);
@@ -287,6 +290,9 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	/* Remove the client entry */
 	if (!server_signoff) {
 	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+	  client->mode = 0;
+	  client->router = NULL;
+	  client->connection = NULL;
 	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
 	} else {
 	  silc_idlist_del_data(client);
@@ -1656,7 +1662,6 @@ void silc_server_kill_client(SilcServer server,
     if (SILC_IS_LOCAL(remote_client)) {
       server->stat.my_clients--;
       silc_schedule_task_del_by_context(server->schedule, remote_client);
-      silc_idlist_del_data(remote_client);
     }
 
     /* Remove remote client */

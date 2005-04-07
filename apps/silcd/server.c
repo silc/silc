@@ -2040,8 +2040,11 @@ SILC_TASK_CALLBACK(silc_server_accept_new_connection_final)
       }
 
       /* Add public key to hash list (for whois using attributes) */
-      silc_hash_table_add(server->pk_hash,
-                          entry->data.public_key, client);
+      if (!silc_hash_table_find_by_context(server->pk_hash,
+					   entry->data.public_key,
+					   client, NULL))
+	silc_hash_table_add(server->pk_hash,
+			    entry->data.public_key, client);
 
       id_entry = (void *)client;
       break;
