@@ -31,10 +31,12 @@ else
 REGEX = regex.c
 endif
 
+STRINGPREP = nfkc.c rfc3454.c stringprep.c
+
 if SILC_WIN32
-libcontrib_la_SOURCES =
+libcontrib_la_SOURCES = $(STRINGPREP)
 else
-libcontrib_la_SOURCES = nfkc.c rfc3454.c stringprep.c $(GETOPT) $(REGEX)
+libcontrib_la_SOURCES = $(STRINGPREP) $(GETOPT) $(REGEX)
 endif
 
 EXTRA_DIST = *.c *.h
