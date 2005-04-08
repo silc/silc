@@ -133,7 +133,7 @@ EXTRA_DIST = \
 	$(silc_sources)
 
 all-local:
-	for dir in "$(perl_dirs)"; do \
+	for dir in $(perl_dirs); do \
 	  cd $$dir && \
 	  if [ ! -f Makefile ]; then \
             $(perlpath) Makefile.PL $(PERL_MM_PARAMS); \
@@ -143,19 +143,19 @@ all-local:
 	done
 
 install-exec-local:
-	for dir in "$(perl_dirs)"; do \
+	for dir in $(perl_dirs); do \
 	  cd $$dir && $(MAKE) install && cd ..; \
 	done
 
 clean-generic:
-	for dir in "$(perl_dirs)"; do \
+	for dir in $(perl_dirs); do \
 	  cd $$dir; \
 	  $(MAKE) clean; \
 	  cd ..; \
 	done
 
 distclean-generic:
-	for dir in "$(perl_dirs)"; do \
+	for dir in $(perl_dirs); do \
 	  cd $$dir && \
 	  $(MAKE) realclean && rm -f Makefile.PL && \
 	  cd ..; \
