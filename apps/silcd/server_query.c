@@ -407,18 +407,16 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       }
 
       /* Check nickname */
-      if (query->nickname) {
-	tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
-				    SILC_STRING_UTF8, 128, &tmp_len);
-	if (!tmp) {
-	  silc_server_query_send_error(server, query,
-				       SILC_STATUS_ERR_BAD_NICKNAME, 0);
-	  silc_server_query_free(query);
-	  return;
-	}
-	silc_free(query->nickname);
-	query->nickname = tmp;
+      tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
+				  SILC_STRING_UTF8, 128, &tmp_len);
+      if (!tmp) {
+	silc_server_query_send_error(server, query,
+				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
+	silc_server_query_free(query);
+	return;
       }
+      silc_free(query->nickname);
+      query->nickname = tmp;
 
     } else {
       /* Parse the IDs included in the query */
@@ -1555,7 +1553,7 @@ void silc_server_query_send_reply(SilcServer server,
       case SILC_COMMAND_WHOWAS:
 	silc_strncat(uh, sizeof(uh), entry->username, strlen(entry->username));
 	if (!strchr(entry->username, '@'))
-	  silc_strncat(uh, sizeof(uh), "@*private*", 10);
+	  silc_strncat(uh, sizeof(uh), "@-private-", 10);
 
 	/* Send command reply */
 	silc_server_send_command_reply(server, cmd->sock, query->querycmd,
@@ -1581,9 +1579,14 @@ void silc_server_query_send_reply(SilcServer server,
       /* Not one valid entry was found, send error.  If nickname was used
 	 in query send error based on that, otherwise the query->errors
 	 already includes proper errors. */
-      if (query->nickname || (!query->nickname && !query->ids && query->attrs))
+      if (query->nickname || (!query->ids && query->attrs))
 	silc_server_query_add_error(server, query, 1, 1,
 				    SILC_STATUS_ERR_NO_SUCH_NICK);
+
+      /* Make sure some error is sent */
+      if (!query->errors_count)
+	silc_server_query_add_error(server, query, 2, 0,
+				    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     }
   }
 
@@ -1768,13 +1771,8 @@ void silc_server_query_send_reply(SilcServer server,
     }
   }
 
-  if (!sent_reply) {
+  if (!sent_reply)
     SILC_LOG_ERROR(("BUG: Query did not send anything"));
-    SILC_LOG_ERROR(("BUG: Sending %d clients", clients_count));
-    SILC_LOG_ERROR(("BUG: Sending %d servers", servers_count));
-    SILC_LOG_ERROR(("BUG: Sending %d channels", channels_count));
-    SILC_LOG_ERROR(("BUG: Sending %d errors", query->errors_count));
-  }
 
   /* Cleanup */
   silc_server_query_free(query);

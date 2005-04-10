@@ -1,3 +1,8 @@
+Sun Apr 10 11:30:56 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Make sure query sends at least an error back if nothing
+	  more is sent.  Affected file silcd/server_query.c.
+
 Thu Apr  7 14:50:01 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* During query, check if the original command caller goes

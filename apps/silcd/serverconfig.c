@@ -165,6 +165,8 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
 					   NULL, NULL,
 					   my_free_public_key, NULL,
 					   TRUE);
+      SILC_LOG_DEBUG(("Adding public key '%s' to authentication cache",
+		     public_key->identifier));
       silc_hash_table_add(*auth_data, public_key, public_key);
     }
   } else
