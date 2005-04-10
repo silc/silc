@@ -1584,7 +1584,7 @@ void silc_server_query_send_reply(SilcServer server,
 				    SILC_STATUS_ERR_NO_SUCH_NICK);
 
       /* Make sure some error is sent */
-      if (!query->errors_count)
+      if (!query->errors_count && !servers_count && !channels_count)
 	silc_server_query_add_error(server, query, 2, 0,
 				    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     }
