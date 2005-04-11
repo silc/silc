@@ -16,10 +16,17 @@
 #
 
 AD_INIT
+AC_CANONICAL_SYSTEM
+AM_INIT_AUTOMAKE
+AC_PREREQ(2.52)
+AC_CONFIG_HEADERS(includes/silcdefs.h)
 
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+
+#ifdef SILC_DIST_COMPILER
 # Put here any platform specific stuff
 #
-AC_CANONICAL_SYSTEM
 case "$target" in
   *-*-freebsd*)
     check_threads=true
@@ -31,10 +38,6 @@ case "$target" in
     check_threads=true
     ;;
 esac
-
-AM_INIT_AUTOMAKE
-AC_PREREQ(2.52)
-AC_CONFIG_HEADERS(includes/silcdefs.h)
 
 CFLAGS=
 AC_PROG_CC
@@ -48,12 +51,7 @@ __SILC_HAVE_PTHREAD=""
 __SILC_HAVE_SIM=""
 __SILC_ENABLE_DEBUG=""
 
-#
-# Program checking
-#
-AC_PROG_INSTALL
 AC_PROG_RANLIB
-AC_PROG_MAKE_SET
 AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
 AC_PATH_PROG(sedpath, sed)
@@ -170,7 +168,6 @@ AM_CONDITIONAL(HAVE_GETOPT_LONG, test x$have_getopt_long = x1)
 ##  Enable/disable checking
 ##
 
-#ifdef SILC_DIST_IPV6
 # IPv6 support
 #
 AC_MSG_CHECKING(whether to enable IPv6 support)
@@ -226,7 +223,6 @@ if test x$check_ipv6 = xtrue; then
       AC_MSG_RESULT(no)
     )
 fi
-#endif SILC_DIST_IPV6
 
 # Debug checking
 #
@@ -252,7 +248,6 @@ AC_ARG_ENABLE(debug,
     AC_MSG_RESULT(no)
   ])
 
-#ifdef SILC_DIST_ASM
 # Disable all assembler optimizations
 #
 AC_MSG_CHECKING(whether to enable assembler optimizations)
@@ -267,7 +262,6 @@ AC_ARG_ENABLE(asm,
     AC_MSG_RESULT(yes)
     want_asm=true
   ])
-#endif SILC_DIST_ASM
 
 ##
 ## Compiler and compiler flag checks
@@ -334,6 +328,7 @@ if test "$GCC" -a "$host_cpu" = "sparc64"; then
     )
 fi
 AC_SUBST(FIX_SHA1)
+#endif SILC_DIST_COMPILER
 
 ##
 ##  Installation
@@ -341,13 +336,18 @@ AC_SUBST(FIX_SHA1)
 
 # Default installation destination
 #
+#ifdef SILC_DIST_AUTODIST
+AC_PREFIX_DEFAULT(/usr/local/)
+#else !SILC_DIST_AUTODIST
 AC_PREFIX_DEFAULT(/usr/local/silc)
+#endif SILC_DIST_AUTODIST
 if test "x$prefix" != xNONE; then
   silc_prefix="$prefix"
 else
   silc_prefix="$ac_default_prefix"
 fi
 
+#ifndef SILC_DIST_AUTODIST
 # etc directory
 #
 if test "x$sysconfdir" != 'x${prefix}/etc'; then
@@ -370,23 +370,6 @@ AC_ARG_WITH(etcdir,
 AC_SUBST(ETCDIR)
 AC_DEFINE_UNQUOTED([SILC_ETCDIR], "$ETCDIR", [SILC_ETCDIR])
 
-# help directory
-#
-HELPDIR="$silc_prefix/help"
-AC_ARG_WITH(helpdir,
-  [[  --with-helpdir=DIR      directory for SILC help files [PREFIX/help]]],
-  [
-    case "$withval" in
-      no|yes)
-        ;;
-      *)
-       HELPDIR="$withval"
-       ;;
-    esac
-  ])
-AC_SUBST(HELPDIR)
-AC_DEFINE_UNQUOTED([SILC_HELPDIR], "$HELPDIR", [SILC_HELPDIR])
-
 # doc directory
 #
 DOCDIR="$silc_prefix/doc"
@@ -403,6 +386,26 @@ AC_ARG_WITH(docdir,
   ])
 AC_SUBST(DOCDIR)
 AC_DEFINE_UNQUOTED([SILC_DOCDIR], "$DOCDIR", [SILC_DOCDIR])
+#endif SILC_DIST_AUTODIST
+
+#ifdef SILC_DIST_CLIENT
+# help directory
+#
+HELPDIR="$silc_prefix/help"
+AC_ARG_WITH(helpdir,
+  [[  --with-helpdir=DIR      directory for SILC help files [PREFIX/help]]],
+  [
+    case "$withval" in
+      no|yes)
+        ;;
+      *)
+       HELPDIR="$withval"
+       ;;
+    esac
+  ])
+AC_SUBST(HELPDIR)
+AC_DEFINE_UNQUOTED([SILC_HELPDIR], "$HELPDIR", [SILC_HELPDIR])
+#endif SILC_DIST_CLIENT
 
 #ifdef SILC_DIST_SIM
 # SIM modules directory
@@ -424,7 +427,6 @@ AC_DEFINE_UNQUOTED([SILC_MODULESDIR], "$MODULESDIR", [SILC_MODULESDIR])
 #endif SILC_DIST_SIM
 
 #ifdef SILC_DIST_SERVER
-
 # Logs directory
 #
 LOGSDIR="$silc_prefix/logs"
@@ -478,6 +480,7 @@ AC_SUBST(PIDFILE)
 ##
 ##  With/without checkings
 ##
+#ifdef SILC_DIST_COMPILER
 
 #
 # SILC library checking
@@ -860,8 +863,6 @@ if test x$has_iconv = xtrue; then
   fi
 fi
 
-
-#ifdef SILC_DIST_THREAD
 # POSIX threads support
 #
 has_threads=false
@@ -987,8 +988,6 @@ if test x$has_threads = xtrue; then
   AC_DEFINE([SILC_THREADS], [], [HAVE_THREAD])
   __SILC_HAVE_PTHREAD="#define __SILC_HAVE_PTHREAD 1"
 fi
-#endif SILC_DIST_THREAD
-
 
 # Native WIN32 compilation under cygwin
 #
@@ -1075,6 +1074,8 @@ AC_ARG_WITH(libtoolfix,
 AC_SUBST(ETCDIR)
 AC_DEFINE_UNQUOTED([SILC_ETCDIR], "$ETCDIR", [SILC_ETCDIR])
 
+#endif SILC_DIST_COMPILER
+
 ##
 ##  Misc
 ##
@@ -1098,6 +1099,7 @@ SILC_TOP_SRCDIR=`pwd`
 # Included configure scripts
 AD_INCLUDE_CONFIGURE
 
+#ifdef SILC_DIST_COMPILER
 #
 # Substitutions
 #
@@ -1120,6 +1122,8 @@ if test x$libtoolfix = xtrue; then
 fi
 AM_CONDITIONAL(SILC_LIBTOOLFIX, test x$libtoolfix = xtrue)
 
+#endif SILC_DIST_COMPILER
+
 #
 # Makefile outputs
 #
@@ -1128,7 +1132,6 @@ Makefile
 Makefile.defines
 Makefile.defines_int
 doc/Makefile
-doc/example_silcd.conf
 includes/Makefile
 includes/silcversion.h
 includes/silcincludes.h
@@ -1151,7 +1154,10 @@ fi
 if test x$without_silcd = xfalse ; then
 #endif SILC_DIST_TOOLKIT
 #ifdef SILC_DIST_SERVER
-  AC_CONFIG_FILES(silcd/Makefile)
+  AC_CONFIG_FILES(
+silcd/Makefile
+doc/example_silcd.conf
+)
 #endif SILC_DIST_SERVER
 #ifdef SILC_DIST_TOOLKIT
 fi
@@ -1171,6 +1177,7 @@ tutorial/Makefile.defines_int
 
 AC_OUTPUT
 
+#ifdef SILC_DIST_COMPILER
 s_bindir=`eval echo $bindir`;s_bindir=`eval echo $s_bindir`
 s_sbindir=`eval echo $sbindir`;s_sbindir=`eval echo $s_sbindir`
 s_mandir=`eval echo $mandir`;s_mandir=`eval echo $s_mandir`
@@ -1191,8 +1198,10 @@ echo " bin directory .................: $s_bindir"
 echo " sbin directory ................: $s_sbindir"
 echo " etc directory .................: $ETCDIR"
 echo " man directory .................: $s_mandir"
-echo " help directory ................: $HELPDIR"
 echo " doc directory .................: $DOCDIR"
+#ifdef SILC_DIST_CLIENT
+echo " help directory ................: $HELPDIR"
+#endif SILC_DIST_CLIENT
 #ifdef SILC_DIST_SERVER
 echo " logs directory ................: $LOGSDIR"
 #endif SILC_DIST_SERVER
@@ -1236,9 +1245,7 @@ fi
 echo " SIM support ...................: $sim_support"
 #endif SILC_DIST_SIM
 
-#ifdef SILC_DIST_IPV6
 echo " IPv6 support ..................: $summary_ipv6"
-#endif SILC_DIST_IPV6
 
 if test x$has_iconv = xfalse; then
   iconv_support="no"
@@ -1247,14 +1254,12 @@ else
 fi
 echo " Iconv support .................: $iconv_support"
 
-#ifdef SILC_DIST_ASM
 if test x$want_asm = xfalse; then
   summary_asm="no"
 else
   summary_asm="yes"
 fi
 echo " Assembler optimizations .......: $summary_asm"
-#endif SILC_DIST_ASM
 
 #ifdef SILC_DIST_MATH
 mp="MPI"
@@ -1264,13 +1269,12 @@ fi
 echo " Arithmetic library ............: $mp"
 #endif SILC_DIST_MATH
 
-#ifdef SILC_DIST_THREAD
 threads="no"
 if test x$has_threads = xtrue; then
   threads="yes"
 fi
 echo " Multi-threads support .........: $threads"
-#endif SILC_DIST_THREAD
 echo " Debugging enabled .............: $summary_debug"
+#endif SILC_DIST_COMPILER
 echo ""
 echo "Compile the sources with 'make' or 'gmake' command."
