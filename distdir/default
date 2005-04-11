@@ -4,7 +4,7 @@ inherit server
 inherit toolkit
 option no-dist
 define SILC_DIST_INPLACE
-post-hook distdir/post-run
+pre-hook distdir/pre-run
 
 #include README.FOOBAR foobar.dir
 #exclude distdir foobar
