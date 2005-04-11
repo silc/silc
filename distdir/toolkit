@@ -1,9 +1,8 @@
 name Toolkit
 package silc-toolkit
+inherit common
+inherit client
+inherit server
 define SILC_DIST_TOOLKIT
-define SILC_DIST_CLIENT
-define SILC_DIST_CLIENTLIB
-define SILC_DIST_SERVER
-define SILC_DIST_MPI
 include README.CVS README.WIN32 README.MACOSX silcer tutorial
 pre-hook distdir/pre-run

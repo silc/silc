@@ -1,3 +1,4 @@
+#ifdef SILC_DIST_LIB
 #
 #  lib/configure.ad
 #
@@ -23,15 +24,21 @@ if test x$compile_libs = xtrue; then
 AC_MSG_NOTICE([Configuring SILC libraries])
 
 # SILC Library directories
+SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/contrib"
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silccore"
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silccrypt"
+#ifdef SILC_DIST_MATH
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcmath"
+#ifdef SILC_DIST_MPI
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcmath/mpi"
+#endif SILC_DIST_MPI
+#endif SILC_DIST_MATH
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcske"
-SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcsim"
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcutil"
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcsftp"
-SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/contrib"
+#ifdef SILC_DIST_SIM
+SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcsim"
+#endif SILC_DIST_SIM
 #ifdef SILC_DIST_CLIENT
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcclient"
 #endif SILC_DIST_CLIENT
@@ -107,7 +114,9 @@ lib/Makefile
 lib/contrib/Makefile
 lib/silccore/Makefile
 lib/silccrypt/Makefile
+#ifdef SILC_DIST_SIM
 lib/silcsim/Makefile
+#endif SILC_DIST_SIM
 lib/silcske/Makefile
 lib/silcutil/Makefile
 lib/silcutil/unix/Makefile
@@ -115,7 +124,9 @@ lib/silcutil/win32/Makefile
 lib/silcutil/beos/Makefile
 lib/silcutil/os2/Makefile
 lib/silcutil/epoc/Makefile
+#ifdef SILC_DIST_MATH
 lib/silcmath/Makefile
+#endif SILC_DIST_MATH
 lib/silcsftp/Makefile
 #ifdef SILC_DIST_INPLACE
 lib/silcutil/tests/Makefile
@@ -138,3 +149,4 @@ AC_CONFIG_FILES(lib/silcclient/Makefile)
 
 fi	# compile_libs
 
+#endif SILC_DIST_LIB

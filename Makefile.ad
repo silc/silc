@@ -18,7 +18,9 @@
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 SUBDIRS = 		\
+#ifdef SILC_DIST_LIB
 	lib		\
+#endif SILC_DIST_LIB
 #ifdef SILC_DIST_CLIENT
 	irssi		\
 #endif SILC_DIST_CLIENT
@@ -29,8 +31,12 @@ SUBDIRS = 		\
 	silc		\
 	win32		\
 #endif SILC_DIST_TOOLKIT
-	doc		\
-	includes
+#ifdef SILC_DIST_INCLUDES
+	includes	\
+#endif SILC_DIST_INCLUDES
+#ifdef SILC_DIST_DOC
+	doc
+#endif SILC_DIST_DOC
 
 include $(top_srcdir)/Makefile.defines.in
 
@@ -74,8 +80,10 @@ doc-install:
 	-$(INSTALL_DATA) $(srcdir)/INSTALL $(docdir)/
 	-$(INSTALL_DATA) $(srcdir)/TODO $(docdir)/
 
+#ifdef SILC_DIST_SIM
 sim-install:
 	-$(INSTALL_DATA) $(srcdir)/lib/silcsim/*.so $(modulesdir)/
+#endif SILC_DIST_SIM
 
 examples-install:
 	-mkdir -p $(docdir)/examples/
@@ -156,4 +164,7 @@ install-data-hook: 		\
 #ifdef SILC_DIST_TOOLKIT
 	toolkit-install 	\
 #endif SILC_DIST_TOOLKIT
+#ifdef SILC_DIST_SIM
 	sim-install
+#endif SILC_DIST_SIM
+

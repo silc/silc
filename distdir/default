@@ -1,4 +1,5 @@
 # Default distribution for preparing raw CVS sources.
+inherit common
 inherit client
 inherit server
 inherit toolkit
@@ -15,4 +16,5 @@ pre-hook distdir/pre-run
 #pre-dist-hook scripts/foobar-dist-pre.sh
 #post-dist-hook scripts/foobar-dist-post.sh
 #option no-dist
+#option no-inherit
 #option template

@@ -1,6 +1,6 @@
 name Client
 package silc-client
+inherit common
 define SILC_DIST_CLIENT
 define SILC_DIST_CLIENTLIB
-define SILC_DIST_MPI
 pre-hook distdir/pre-run

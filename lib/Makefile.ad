@@ -22,8 +22,12 @@ SILCLIB_DIRS = \
 	contrib \
 	silccore \
 	silccrypt \
+#ifdef SILC_DIST_SIM
 	silcsim \
+#endif SILC_DIST_SIM
+#ifdef SILC_DIST_MATH
 	silcmath \
+#endif SILC_DIST_MATH
 	silcske \
 	silcutil \
 	silcsftp

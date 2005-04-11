@@ -1,0 +1,4 @@
+name SILC Autodist
+package autodist
+define SILC_DIST_AUTODIST
+exclude CHANGES CREDITS libtoolfix TODO README*
