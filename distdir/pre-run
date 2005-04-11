@@ -2,6 +2,7 @@
 echo "Preparing irssi"
 file=irssi/irssi-version.h.in
 cd irssi
+touch $file
 ln -fs ../Makefile.defines.in Makefile.defines.in
 ln -fs ../Makefile.defines_int.in Makefile.defines_int.in
 sh autogen.sh 2>/dev/null 1>/dev/null
