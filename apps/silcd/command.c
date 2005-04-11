@@ -2371,8 +2371,8 @@ SILC_SERVER_CMD_FUNC(join)
 
   /* Check for valid channel name.  This is cached, the original is saved
      in the channel context. */
-  channel_namec = silc_identifier_check(tmp, tmp_len, SILC_STRING_UTF8, 256,
-					NULL);
+  channel_namec = silc_channel_name_check(tmp, tmp_len, SILC_STRING_UTF8, 256,
+					  NULL);
   if (!channel_namec) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					  SILC_STATUS_ERR_BAD_CHANNEL, 0);
@@ -4805,8 +4805,8 @@ SILC_SERVER_CMD_FUNC(users)
 
   /* Check channel name */
   if (channel_name) {
-    channel_namec = silc_identifier_check(channel_name, strlen(channel_name),
-					  SILC_STRING_UTF8, 256, NULL);
+    channel_namec = silc_channel_name_check(channel_name, strlen(channel_name),
+					    SILC_STRING_UTF8, 256, NULL);
     if (!channel_namec) {
       silc_server_command_send_status_reply(cmd, SILC_COMMAND_USERS,
 					    SILC_STATUS_ERR_BAD_CHANNEL, 0);

@@ -1138,8 +1138,8 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
 					     NULL, NULL, NULL, TRUE);
 
   /* Normalize channel name */
-  channel_namec = silc_identifier_check(channel_name, strlen(channel_name),
-					SILC_STRING_UTF8, 256, NULL);
+  channel_namec = silc_channel_name_check(channel_name, strlen(channel_name),
+					  SILC_STRING_UTF8, 256, NULL);
   if (!channel_namec) {
     silc_free(channel->channel_name);
     silc_hash_table_free(channel->user_list);
@@ -1246,9 +1246,9 @@ bool silc_client_replace_channel_id(SilcClient client,
   channel->id = new_id;
 
   /* Normalize channel name */
-  channel_namec = silc_identifier_check(channel->channel_name,
-					strlen(channel->channel_name),
-					SILC_STRING_UTF8, 256, NULL);
+  channel_namec = silc_channel_name_check(channel->channel_name,
+					  strlen(channel->channel_name),
+					  SILC_STRING_UTF8, 256, NULL);
   if (!channel_namec)
     return FALSE;
 
@@ -1275,8 +1275,8 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
   SILC_LOG_DEBUG(("Start"));
 
   /* Normalize name for search */
-  channel = silc_identifier_check(channel, strlen(channel), SILC_STRING_UTF8,
-				  256, NULL);
+  channel = silc_channel_name_check(channel, strlen(channel), SILC_STRING_UTF8,
+				    256, NULL);
   if (!channel)
     return NULL;
 

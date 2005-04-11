@@ -182,15 +182,15 @@ char *silc_strncat(char *dest, SilcUInt32 dest_size,
  *
  *    Checks that the 'identifier' string is valid identifier string
  *    and does not contain any unassigned or prohibited character.  This
- *    function is used to check for valid nicknames, channel names,
- *    server names, usernames, hostnames, service names, algorithm names,
- *    other security property names, and SILC Public Key name.
+ *    function is used to check for valid nicknames, server names, 
+ *    usernames, hostnames, service names, algorithm names, other security 
+ *    property names, and SILC Public Key name.
  *
  *    If the 'max_allowed_length' is non-zero the identifier cannot be
  *    longer than that, and NULL is returned if it is.  If zero (0), no
- *    length limit exist.  For nicknames the max length must be 128 bytes
- *    and for channel names 256 bytes.  Other identifiers has no default
- *    limit, but application may choose one anyway.
+ *    length limit exist.  For nicknames the max length must be 128 bytes.
+ *    Other identifiers has no default limit, but application may choose 
+*     one anyway.
  *
  *    Returns the validated string, that the caller must free.  Returns
  *    NULL if the identifier string is not valid or contain unassigned or
@@ -227,15 +227,15 @@ unsigned char *silc_identifier_check(const unsigned char *identifier,
  *
  *    Checks that the 'identifier' string is valid identifier string
  *    and does not contain any unassigned or prohibited character.  This
- *    function is used to check for valid nicknames, channel names,
- *    server names, usernames, hostnames, service names, algorithm names,
- *    other security property names, and SILC Public Key name.
+ *    function is used to check for valid nicknames, server names, 
+ *    usernames, hostnames, service names, algorithm names, other security 
+ *    property names, and SILC Public Key name.
  *
  *    If the 'max_allowed_length' is non-zero the identifier cannot be
  *    longer than that, and NULL is returned if it is.  If zero (0), no
- *    length limit exist.  For nicknames the max length must be 128 bytes
- *    and for channel names 256 bytes.  Other identifiers has no default
- *    limit, but application may choose one anyway.
+ *    length limit exist.  For nicknames the max length must be 128 bytes.
+ *    Other identifiers has no default limit, but application may choose 
+ *    one anyway.
  *
  *    Returns TRUE if the string is valid and FALSE if it is prohibited.
  *
@@ -244,5 +244,75 @@ bool silc_identifier_verify(const unsigned char *identifier,
 			    SilcUInt32 identifier_len,
 			    SilcStringEncoding identifier_encoding,
 			    SilcUInt32 max_allowed_length);
+
+/****f* silcutil/SilcStrUtilAPI/silc_channel_name_check
+ *
+ * SYNOPSIS
+ *
+ *    unsigned char *
+ *    silc_channel_name_check(const unsigned char *identifier,
+ *                            SilcUInt32 identifier_len,
+ *                            SilcStringEncoding identifier_encoding,
+ *                            SilcUInt32 max_allowed_length,
+ *                            SilcUInt32 *out_len);
+ *
+ * DESCRIPTION
+ *
+ *    Checks that the 'identifier' string is valid channel name string
+ *    and does not contain any unassigned or prohibited character.
+ *
+ *    If the 'max_allowed_length' is non-zero the identifier cannot be
+ *    longer than that, and NULL is returned if it is.  If zero (0), no
+ *    length limit exist.  For channel names the max length must be 256
+ *    bytes.
+ *
+ *    Returns the validated string, that the caller must free.  Returns
+ *    NULL if the identifier string is not valid or contain unassigned or
+ *    prohibited characters.  Such identifier strings must not be used
+ *    SILC protocol.  The returned string is always in UTF-8 encoding.
+ *    The length of the returned string is in 'out_len'.
+ *
+ * NOTES
+ *
+ *    In addition of validating the channel name string, this function
+ *    may map characters to other characters or remove characters from the
+ *    original string.  This is done as defined in the SILC protocol.  Error
+ *    is returned only if the string contains unassigned or prohibited
+ *    characters.  The original 'identifier' is not modified at any point.
+ *
+ ***/
+unsigned char *silc_channel_name_check(const unsigned char *identifier,
+				       SilcUInt32 identifier_len,
+				       SilcStringEncoding identifier_encoding,
+				       SilcUInt32 max_allowed_length,
+				       SilcUInt32 *out_len);
+
+/****f* silcutil/SilcStrUtilAPI/silc_channel_name_verify
+ *
+ * SYNOPSIS
+ *
+ *    bool
+ *    silc_channel_name_check(const unsigned char *identifier,
+ *                            SilcUInt32 identifier_len,
+ *                            SilcStringEncoding identifier_encoding,
+ *                            SilcUInt32 max_allowed_length);
+ *
+ * DESCRIPTION
+ *
+ *    Checks that the 'identifier' string is valid channel name string
+ *    and does not contain any unassigned or prohibited character.
+ *
+ *    If the 'max_allowed_length' is non-zero the identifier cannot be
+ *    longer than that, and NULL is returned if it is.  If zero (0), no
+ *    length limit exist.  For channel names the max length must be 256
+ *    bytes.
+ *
+ *    Returns TRUE if the string is valid and FALSE if it is prohibited.
+ *
+ ***/
+bool silc_channel_name_verify(const unsigned char *identifier,
+			      SilcUInt32 identifier_len,
+			      SilcStringEncoding identifier_encoding,
+			      SilcUInt32 max_allowed_length);
 
 #endif /* SILCSTRUTIL_H */

@@ -3111,8 +3111,8 @@ void silc_server_new_channel(SilcServer server,
   }
 
   /* Check channel name */
-  channel_namec = silc_identifier_check(channel_name, strlen(channel_name),
-					SILC_STRING_UTF8, 256, NULL);
+  channel_namec = silc_channel_name_check(channel_name, strlen(channel_name),
+					  SILC_STRING_UTF8, 256, NULL);
   if (!channel_namec)
     return;
 

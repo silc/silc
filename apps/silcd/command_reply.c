@@ -792,8 +792,8 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
     SILC_LOG_DEBUG(("Received channel information"));
 
     /* Check channel name */
-    info = silc_identifier_check(name, strlen(name), SILC_STRING_UTF8,
-				 256, NULL);
+    info = silc_channel_name_check(name, strlen(name), SILC_STRING_UTF8,
+				   256, NULL);
     if (!info)
       goto error;
 
@@ -1103,8 +1103,8 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     silc_pkcs_public_key_payload_decode(tmp, len, &founder_key);
 
   /* See whether we already have the channel. */
-  channel_namec = silc_identifier_check(channel_name, strlen(channel_name),
-					SILC_STRING_UTF8, 256, NULL);
+  channel_namec = silc_channel_name_check(channel_name, strlen(channel_name),
+					  SILC_STRING_UTF8, 256, NULL);
   if (!channel_namec)
     goto out;
   entry = silc_idlist_find_channel_by_name(server->local_list,
@@ -1512,8 +1512,8 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
   if (tmp)
     SILC_GET32_MSB(usercount, tmp);
 
-  namec = silc_identifier_check(name, strlen(name), SILC_STRING_UTF8,
-				256, NULL);
+  namec = silc_channel_name_check(name, strlen(name), SILC_STRING_UTF8,
+				  256, NULL);
   if (!namec)
     goto out;
 

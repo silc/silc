@@ -25,10 +25,16 @@
    is that its interface is idiotic.  We have our own API here in case
    we'll implement it ourselves later. */
 
-/* Prohibited characters as defined by the protocol in Appendix B */
-const Stringprep_table_element silc_appendix_b[] =
+/* Prohibited characters as defined by the protocol in Appendix C */
+const Stringprep_table_element silc_appendix_c[] =
 {
   {0x000021}, {0x00002A}, {0x00002C}, {0x00003F}, {0x000040},
+  {0}
+};
+
+/* Prohibited characters as defined by the protocol in Appendix D */
+const Stringprep_table_element silc_appendix_d[] =
+{
   {0x0000A2, 0x0000A9},
   {0x0000AC}, {0x0000AE}, {0x0000AF}, {0x0000B0}, {0x0000B1}, {0x0000B4},
   {0x0000B6}, {0x0000B8}, {0x0000D7}, {0x0000F7},
@@ -86,7 +92,31 @@ const Stringprep_profile stringprep_silc_identifier_prep[] =
   {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_8},
   {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_9},
   {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_9},
-  {STRINGPREP_PROHIBIT_TABLE, 0, silc_appendix_b},
+  {STRINGPREP_PROHIBIT_TABLE, 0, silc_appendix_c},
+  {STRINGPREP_PROHIBIT_TABLE, 0, silc_appendix_d},
+  {STRINGPREP_UNASSIGNED_TABLE, 0, stringprep_rfc3454_A_1},
+  {0}
+};
+
+/* Default channel name string profile defined by the protocol */
+const Stringprep_profile stringprep_silc_identifier_ch_prep[] =
+{
+  {STRINGPREP_MAP_TABLE, 0, stringprep_rfc3454_B_1},
+  {STRINGPREP_MAP_TABLE, 0, stringprep_rfc3454_B_2},
+  {STRINGPREP_NFKC, 0, 0},
+  {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_1_1},
+  {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_1_2},
+  {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_2_1},
+  {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_2_2},
+  {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_3},
+  {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_4},
+  {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_5},
+  {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_6},
+  {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_7},
+  {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_8},
+  {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_9},
+  {STRINGPREP_PROHIBIT_TABLE, 0, stringprep_rfc3454_C_9},
+  {STRINGPREP_PROHIBIT_TABLE, 0, silc_appendix_d},
   {STRINGPREP_UNASSIGNED_TABLE, 0, stringprep_rfc3454_A_1},
   {0}
 };
@@ -142,6 +172,8 @@ silc_stringprep(const unsigned char *bin, SilcUInt32 bin_len,
   /* Check profile. */
   if (!strcmp(profile_name, SILC_IDENTIFIER_PREP))
     profile = stringprep_silc_identifier_prep;
+  else if (!strcmp(profile_name, SILC_IDENTIFIER_CH_PREP))
+    profile = stringprep_silc_identifier_ch_prep;
   else if (!strcmp(profile_name, SILC_IDENTIFIERC_PREP))
     profile = stringprep_silc_identifierc_prep;
   else if (!strcmp(profile_name, SILC_CASEFOLD_PREP))

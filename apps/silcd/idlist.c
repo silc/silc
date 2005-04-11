@@ -659,8 +659,8 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 
   /* Normalize name.  This is cached, original is in client context.  */
   if (channel_name) {
-    channel_namec = silc_identifier_check(channel_name, strlen(channel_name),
-					  SILC_STRING_UTF8, 256, NULL);
+    channel_namec = silc_channel_name_check(channel_name, strlen(channel_name),
+					    SILC_STRING_UTF8, 256, NULL);
     if (!channel_namec)
       return NULL;
   }

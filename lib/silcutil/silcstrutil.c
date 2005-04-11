@@ -336,3 +336,60 @@ bool silc_identifier_verify(const unsigned char *identifier,
 
   return TRUE;
 }
+
+unsigned char *silc_channel_name_check(const unsigned char *identifier,
+				       SilcUInt32 identifier_len,
+				       SilcStringEncoding identifier_encoding,
+				       SilcUInt32 max_allowed_length,
+				       SilcUInt32 *out_len)
+{
+  unsigned char *utf8s;
+  SilcUInt32 utf8s_len;
+  SilcStringprepStatus status;
+
+  if (!identifier || !identifier_len)
+    return NULL;
+
+  if (max_allowed_length && identifier_len > max_allowed_length)
+    return NULL;
+
+  status = silc_stringprep(identifier, identifier_len,
+			   identifier_encoding, SILC_IDENTIFIER_CH_PREP, 0,
+			   &utf8s, &utf8s_len, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK) {
+    SILC_LOG_DEBUG(("silc_stringprep() status error %d", status));
+    return NULL;
+  }
+
+  if (out_len)
+    *out_len = utf8s_len;
+
+  return utf8s;
+}
+
+/* Same as above but does not allocate memory, just checks the
+   validity of the string. */
+
+bool silc_channel_name_verify(const unsigned char *identifier,
+			      SilcUInt32 identifier_len,
+			      SilcStringEncoding identifier_encoding,
+			      SilcUInt32 max_allowed_length)
+{
+  SilcStringprepStatus status;
+
+  if (!identifier || !identifier_len)
+    return FALSE;
+
+  if (max_allowed_length && identifier_len > max_allowed_length)
+    return FALSE;
+
+  status = silc_stringprep(identifier, identifier_len,
+			   identifier_encoding, SILC_IDENTIFIER_CH_PREP, 0,
+			   NULL, NULL, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK) {
+    SILC_LOG_DEBUG(("silc_stringprep() status error %d", status));
+    return FALSE;
+  }
+
+  return TRUE;
+}
