@@ -1,3 +1,10 @@
+Mon Apr 11 13:40:27 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added the Autodist into the source tree.  It replaces the
+	  old ./prepare.  It can be used to create distributions as
+	  previously.  See README.CVS and README.DIST.  See
+	  distributions in distdir/.
+
 Sun Apr 10 11:30:56 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Make sure query sends at least an error back if nothing

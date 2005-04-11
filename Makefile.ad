@@ -1,9 +1,9 @@
 #
-#  Makefile.am
+#  Makefile.ad
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2003 Pekka Riikonen
+#  Copyright (C) 2000 - 2005 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -17,12 +17,20 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-COMMONDIRS = lib irssi silc silcd doc includes
-
-# Sub directories defined by "distributions" file, and can be overridden
-# with ./configure, which substitutes these variables.
-SUBDIRS = @SILC_DIST_SUBDIRS@
-DIST_SUBDIRS = @SILC_DIST_SUBDIRS@
+SUBDIRS = 		\
+	lib		\
+#ifdef SILC_DIST_CLIENT
+	irssi		\
+#endif SILC_DIST_CLIENT
+#ifdef SILC_DIST_SERVER
+	silcd		\
+#endif SILC_DIST_SERVER
+#ifdef SILC_DIST_TOOLKIT
+	silc		\
+	win32		\
+#endif SILC_DIST_TOOLKIT
+	doc		\
+	includes
 
 include $(top_srcdir)/Makefile.defines.in
 
@@ -32,8 +40,12 @@ dist-bzip: distdir
 	-bzip2 $(distdir).tar
 	-rm -rf $(distdir)
 
-SILC_EXTRA_DIST = SILC_DISTRIBUTION_EXTRA
-EXTRA_DIST = libtoolfix CHANGES CREDITS $(SILC_EXTRA_DIST)
+EXTRA_DIST = 		\
+#ifdef SILC_DIST_TOOLKIT
+	README.CVS README.WIN32 README.MACOSX silcer tutorial \
+#endif SILC_DIST_TOOLKIT
+	libtoolfix 	\
+	CHANGES CREDITS
 
 #
 # Installing of SILC into the system
@@ -51,15 +63,6 @@ install-dirs:
 	-mkdir -p $(modulesdir)
 	-mkdir -p $(docdir)
 
-install-dirs-client: install-dirs
-	-mkdir -p $(helpdir)
-	-mkdir -p $(mandir)/man1
-
-install-dirs-server: install-dirs
-	-mkdir -p $(logsdir)
-	-mkdir -p $(mandir)/man5
-	-mkdir -p $(mandir)/man8
-
 doc-install:
 	-$(INSTALL_DATA) $(srcdir)/doc/CodingStyle $(docdir)/
 	-$(INSTALL_DATA) $(srcdir)/doc/FAQ $(docdir)/
@@ -71,19 +74,23 @@ doc-install:
 	-$(INSTALL_DATA) $(srcdir)/INSTALL $(docdir)/
 	-$(INSTALL_DATA) $(srcdir)/TODO $(docdir)/
 
+sim-install:
+	-$(INSTALL_DATA) $(srcdir)/lib/silcsim/*.so $(modulesdir)/
+
+examples-install:
+	-mkdir -p $(docdir)/examples/
+	-$(INSTALL_DATA) $(srcdir)/doc/examples/README $(docdir)/examples/
+	-$(INSTALL_DATA) $(srcdir)/doc/examples/silc* $(docdir)/examples/
+
+#ifdef SILC_DIST_CLIENT
+install-dirs-client: install-dirs
+	-mkdir -p $(helpdir)
+	-mkdir -p $(mandir)/man1
+
 doc-install-client: doc-install
 	$(INSTALL_DATA) $(srcdir)/irssi/silc.conf $(docdir)/example_silc.conf
 	-@if test -f $(srcdir)/doc/silc.1 ; then \
 	 $(INSTALL_DATA) $(srcdir)/doc/silc.1 $(mandir)/man1; \
-	fi
-
-doc-install-server: doc-install
-	-$(INSTALL_DATA) $(srcdir)/doc/example_silcd.conf $(docdir)/
-	-@if test -f $(srcdir)/doc/silcd.8 ; then \
-	 $(INSTALL_DATA) $(srcdir)/doc/silcd.8 $(mandir)/man8; \
-	fi
-	-@if test -f $(srcdir)/doc/silcd.conf.5 ; then \
-	 $(INSTALL_DATA) $(srcdir)/doc/silcd.conf.5 $(mandir)/man5; \
 	fi
 
 etc-install-client:
@@ -92,6 +99,22 @@ etc-install-client:
 	    $(INSTALL_DATA) $(srcdir)/irssi/silc.conf \
 	    	$(etcdir)/silc.conf; \
 	  fi; \
+	fi
+#endif SILC_DIST_CLIENT
+
+#ifdef SILC_DIST_SERVER
+install-dirs-server: install-dirs
+	-mkdir -p $(logsdir)
+	-mkdir -p $(mandir)/man5
+	-mkdir -p $(mandir)/man8
+
+doc-install-server: doc-install
+	-$(INSTALL_DATA) $(srcdir)/doc/example_silcd.conf $(docdir)/
+	-@if test -f $(srcdir)/doc/silcd.8 ; then \
+	 $(INSTALL_DATA) $(srcdir)/doc/silcd.8 $(mandir)/man8; \
+	fi
+	-@if test -f $(srcdir)/doc/silcd.conf.5 ; then \
+	 $(INSTALL_DATA) $(srcdir)/doc/silcd.conf.5 $(mandir)/man5; \
 	fi
 
 etc-install-server:
@@ -103,31 +126,34 @@ etc-install-server:
           chmod go= $(etcdir)/silcd.conf; \
 	fi
 
-sim-install:
-	-$(INSTALL_DATA) $(srcdir)/lib/silcsim/*.so $(modulesdir)/
+generate-server-key:
+	-@if test '!' -f $(etcdir)/silcd.pub ; then \
+	  $(sbindir)/silcd -C $(etcdir); \
+	fi
+#endif SILC_DIST_SERVER
 
+#ifdef SILC_DIST_TOOLKIT
 toolkit-install:
 	-mkdir -p $(docdir)/toolkit/
 	-$(INSTALL_DATA) $(srcdir)/doc/toolkit/* $(docdir)/toolkit
 	-$(INSTALL_DATA) $(srcdir)/lib/doc/*.gif $(docdir)/toolkit
 	-cp -R $(srcdir)/tutorial $(prefix)
+#endif SILC_DIST_TOOLKIT
 
-examples-install:
-	-mkdir -p $(docdir)/examples/
-	-$(INSTALL_DATA) $(srcdir)/doc/examples/README $(docdir)/examples/
-	-$(INSTALL_DATA) $(srcdir)/doc/examples/silc* $(docdir)/examples/
-
-generate-server-key:
-	-@if test '!' -f $(etcdir)/silcd.pub ; then \
-	  $(sbindir)/silcd -C $(etcdir); \
-	fi
-
-if SILC_DIST_CLIENT
-install-data-hook: install-dirs-client sim-install doc-install-client etc-install-client
-else
-if SILC_DIST_TOOLKIT
-install-data-hook: install-dirs-client install-dirs-server sim-install doc-install-client doc-install-server toolkit-install examples-install etc-install-client etc-install-server
-else
-install-data-hook: install-dirs-server sim-install doc-install-server examples-install etc-install-server generate-server-key
-endif
-endif
+install-data-hook: 		\
+#ifdef SILC_DIST_CLIENT
+	install-dirs-client	\
+	doc-install-client	\
+	etc-install-client	\
+#endif SILC_DIST_CLIENT
+#ifdef SILC_DIST_SERVER
+	install-dirs-server 	\
+	doc-install-server	\
+	etc-install-server 	\
+	examples-install 	\
+	generate-server-key	\
+#endif SILC_DIST_SERVER
+#ifdef SILC_DIST_TOOLKIT
+	toolkit-install 	\
+#endif SILC_DIST_TOOLKIT
+	sim-install

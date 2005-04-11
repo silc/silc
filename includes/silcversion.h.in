@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,10 @@
 extern "C" {
 #endif
 
-#include "version_internal.h"
+#define SILC_VERSION_STRING "@VERSION@"
+#define SILC_DIST_VERSION_STRING "@VERSION@"
+#define SILC_PROTOCOL_VERSION_STRING "SILC-1.2-@VERSION@ @PACKAGE@"
+#define SILC_NAME "SILC @PACKAGE_NAME@"
 
 /* SILC Protocol version number */
 #define SILC_PROTOCOL_VERSION_CURRENT 12

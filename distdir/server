@@ -1,0 +1,4 @@
+name Server
+package silc-server
+define SILC_DIST_SERVER
+define SILC_DIST_MPI

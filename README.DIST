@@ -25,24 +25,17 @@ compiled and packaged.  The ./prepare script is used to prepare
 distribution for configuration, compilation and packaging.  To prepare a 
 specific distribution with specific version, give command:
 
-	./prepare <name> <version>
+	./autodist <name> <version>
 
 Where the <name> is the distribution name.  It is one of the distributions 
-that was defined in 'distributions' file.  The <version> is the version of 
+that was defined in distdir/ directory.  The <version> is the version of 
 the distribution that will be prepared.  The version format is 
 major.minor.build, for example 0.9.10.  Example:
 
-	./prepare client 0.9.15
+	./autodist client 0.9.15
 
 This prepares 'client' distribution of version 0.9.15.  The package will 
 have the version 0.9.15 automatically.
-
-NOTE for 'toolkit' distribution:  The toolkit version is defined in the 
-'prepare' file itself.  Edit the SILC_VERSION variable inside the 
-'prepare' script, and then run the prepare without the version argument.
-
-NOTE:  You may have to run prepare twice to produce valid Makfiles for
-distribution due to (known but not fixed) bugs in automake.
 
 
 Configuring and compiling the distribution

@@ -1,0 +1,6 @@
+name Client
+package silc-client
+define SILC_DIST_CLIENT
+define SILC_DIST_CLIENTLIB
+define SILC_DIST_MPI
+post-hook distdir/post-run

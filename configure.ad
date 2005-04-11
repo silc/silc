@@ -1,5 +1,5 @@
 #
-#  configure.in.pre
+#  configure.ad
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
@@ -15,7 +15,7 @@
 #  GNU General Public License for more details.
 #
 
-AC_INIT(includes/silcversion.h)
+AD_INIT
 
 # Put here any platform specific stuff
 #
@@ -32,9 +32,7 @@ case "$target" in
     ;;
 esac
 
-# ./prepare script will automatically put the correct version. Do not edit!
-#
-AM_INIT_AUTOMAKE(SILC_PACKAGE, SILC_VERSION)
+AM_INIT_AUTOMAKE
 AC_PREREQ(2.52)
 AC_CONFIG_HEADERS(includes/silcdefs.h)
 
@@ -45,14 +43,6 @@ AC_C_CONST
 
 AC_PROG_LN_S
 AC_SUBST(LN_S)
-
-##
-## Distribution definition. ./prepare will automatically add here a correct
-## value. Do not edit!
-##
-silc_dist=SILC_PACKAGE
-SILC_DIST_SUBDIRS="SILC_DISTRIBUTION_SUBDIRS"
-AC_DEFINE(SILC_DIST_DEFINE)
 
 __SILC_HAVE_PTHREAD=""
 __SILC_HAVE_SIM=""
@@ -135,14 +125,14 @@ AC_CHECK_HEADERS(dlfcn.h,
   [
     AC_CHECK_LIB(dl, dlopen,
       [
-        AC_DEFINE(SILC_SIM)
+        AC_DEFINE([SILC_SIM], [], [HAVE_SIM])
         sim_support=true
         LIBS="$LIBS -ldl"
       ],
       [
         AC_CHECK_LIB(c, dlopen,
           [
-            AC_DEFINE(SILC_SIM)
+            AC_DEFINE([SILC_SIM], [], [HAVE_SIM])
             sim_support=true
           ])
       ])
@@ -160,7 +150,7 @@ fi
 #
 AC_CHECK_HEADER(regex.h,
   [
-    AC_DEFINE(HAVE_REGEX)
+    AC_DEFINE([HAVE_REGEX], [], [HAVE_REGEX])
     have_regex=1
   ], have_regex=0
 )
@@ -168,7 +158,7 @@ AM_CONDITIONAL(HAVE_REGEX, test x$have_regex = x1)
 
 AC_CHECK_FUNC(getopt_long,
   [
-    AC_DEFINE(HAVE_GETOPT_LONG)
+    AC_DEFINE([HAVE_GETOPT_LONG], [], [HAVE_GETOPT_LONG])
     have_getopt_long=1
   ], have_getopt_long=0
 )
@@ -189,7 +179,7 @@ AC_ARG_ENABLE(ipv6,
         want_ipv6=true
         check_ipv6=false
 	summary_ipv6="yes"
-        AC_DEFINE(HAVE_IPV6)
+        AC_DEFINE([HAVE_IPV6], [], [HAVE_IPV6])
         AC_MSG_RESULT(yes)
         ;;
       *)
@@ -226,7 +216,7 @@ if test x$check_ipv6 = xtrue; then
       int family = AF_INET6;
     ],
     [
-      AC_DEFINE(HAVE_IPV6)
+      AC_DEFINE([HAVE_IPV6], [], [HAVE_IPV6])
       AC_MSG_RESULT(yes)
       summary_ipv6="yes"
     ],
@@ -245,7 +235,7 @@ AC_ARG_ENABLE(debug,
     case "${enableval}" in
       yes)
         AC_MSG_RESULT(yes)
-        AC_DEFINE(SILC_DEBUG)
+        AC_DEFINE([SILC_DEBUG], [], [enable-debug])
 	summary_debug="yes"
         __SILC_ENABLE_DEBUG="#define __SILC_ENABLE_DEBUG 1"
         ;;
@@ -373,7 +363,7 @@ AC_ARG_WITH(etcdir,
     esac
   ])
 AC_SUBST(ETCDIR)
-AC_DEFINE_UNQUOTED(SILC_ETCDIR, "$ETCDIR")
+AC_DEFINE_UNQUOTED([SILC_ETCDIR], "$ETCDIR", [SILC_ETCDIR])
 
 # help directory
 #
@@ -390,7 +380,7 @@ AC_ARG_WITH(helpdir,
     esac
   ])
 AC_SUBST(HELPDIR)
-AC_DEFINE_UNQUOTED(SILC_HELPDIR, "$HELPDIR")
+AC_DEFINE_UNQUOTED([SILC_HELPDIR], "$HELPDIR", [SILC_HELPDIR])
 
 # doc directory
 #
@@ -407,7 +397,7 @@ AC_ARG_WITH(docdir,
     esac
   ])
 AC_SUBST(DOCDIR)
-AC_DEFINE_UNQUOTED(SILC_DOCDIR, "$DOCDIR")
+AC_DEFINE_UNQUOTED([SILC_DOCDIR], "$DOCDIR", [SILC_DOCDIR])
 
 # SIM modules directory
 #
@@ -424,7 +414,9 @@ AC_ARG_WITH(simdir,
     esac
   ])
 AC_SUBST(MODULESDIR)
-AC_DEFINE_UNQUOTED(SILC_MODULESDIR, "$MODULESDIR")
+AC_DEFINE_UNQUOTED([SILC_MODULESDIR], "$MODULESDIR", [SILC_MODULESDIR])
+
+#ifdef SILC_DIST_SERVER
 
 # Logs directory
 #
@@ -441,7 +433,7 @@ AC_ARG_WITH(logsdir,
     esac
   ])
 AC_SUBST(LOGSDIR)
-AC_DEFINE_UNQUOTED(SILC_LOGSDIR, "$LOGSDIR")
+AC_DEFINE_UNQUOTED([SILC_LOGSDIR], "$LOGSDIR", [SILC_LOGSDIR])
 
 # silcd config file checking
 #
@@ -449,7 +441,7 @@ summary_silcd_configfile="/etc/silc/silcd.conf"
 AC_ARG_WITH(silcd-config-file,
   [[  --with-silcd-config-file=FILE  use FILE as default configuration file
                                  for SILC Server [/etc/silc/silcd.conf]]],
-    AC_DEFINE_UNQUOTED(SILC_SERVER_CONFIG_FILE, "$withval")
+    AC_DEFINE_UNQUOTED([SILC_SERVER_CONFIG_FILE], "$withval", [SILC_SERVER_CONFIG_FILE])
     summary_silcd_configfile="$withval"
   )
 
@@ -474,7 +466,7 @@ AC_ARG_WITH(silcd-pid-file,
     esac
   ])
 AC_SUBST(PIDFILE)
-
+#endif SILC_DIST_SERVER
 
 ##
 ##  With/without checkings
@@ -484,7 +476,7 @@ AC_SUBST(PIDFILE)
 # SILC library checking
 compile_libs=true
 
-if test "x$silc_dist" != "xsilc-toolkit"; then
+#ifndef SILC_DIST_TOOLKIT
 
 AC_ARG_WITH(silc-includes, 
   [  --with-silc-includes=DIR SILC Toolkit includes [search in DIR]],
@@ -509,7 +501,7 @@ if test "$ac_silc_libs" != "no"; then
   LIBS="$LIBS -L$ac_silc_libs"
 fi
 
-fi # silc_dist != silc-toolkit
+#endif SILC_DIST_TOOLKIT
 
 
 # SOCKS4 support checking
@@ -597,34 +589,34 @@ AC_ARG_WITH(socks5,
   )
 
 if test "x$socks" = "x4"; then
-  AC_DEFINE(SOCKS)
+  AC_DEFINE([SOCKS], [], [Socks])
   CFLAGS="$CFLAGS -Dconnect=Rconnect -Dgetsockname=Rgetsockname -Dbind=Rbind -Daccept=Raccept -Dlisten=Rlisten -Dselect=Rselect"
 fi
 
 if test "x$socks" = "x5"; then
-  AC_DEFINE(SOCKS)
-  AC_DEFINE(SOCKS5)
-  AC_DEFINE(Rconnect, SOCKSconnect)
-  AC_DEFINE(Rgetsockname, SOCKSgetsockname)
-  AC_DEFINE(Rgetpeername, SOCKSgetpeername)
-  AC_DEFINE(Rbind, SOCKSbind)
-  AC_DEFINE(Raccept, SOCKSaccept)
-  AC_DEFINE(Rlisten, SOCKSlisten)
-  AC_DEFINE(Rselect, SOCKSselect)
-  AC_DEFINE(Rrecvfrom, SOCKSrecvfrom)
-  AC_DEFINE(Rsendto, SOCKSsendto)
-  AC_DEFINE(Rrecv, SOCKSrecv)
-  AC_DEFINE(Rsend, SOCKSsend)
-  AC_DEFINE(Rread, SOCKSread)
-  AC_DEFINE(Rwrite, SOCKSwrite)
-  AC_DEFINE(Rrresvport, SOCKSrresvport)
-  AC_DEFINE(Rshutdown, SOCKSshutdown)
-  AC_DEFINE(Rlisten, SOCKSlisten)
-  AC_DEFINE(Rclose, SOCKSclose)
-  AC_DEFINE(Rdup, SOCKSdup)
-  AC_DEFINE(Rdup2, SOCKSdup2)
-  AC_DEFINE(Rfclose, SOCKSfclose)
-  AC_DEFINE(Rgethostbyname, SOCKSgethostbyname)
+  AC_DEFINE([SOCKS], [], [Socks])
+  AC_DEFINE([SOCKS5], [], [Socks5])
+  AC_DEFINE([Rconnect], [SOCKSconnect], [Socks])
+  AC_DEFINE([Rgetsockname], [SOCKSgetsockname], [Socks])
+  AC_DEFINE([Rgetpeername], [SOCKSgetpeername], [Socks])
+  AC_DEFINE([Rbind], [SOCKSbind], [Socks])
+  AC_DEFINE([Raccept], [SOCKSaccept], [Socks])
+  AC_DEFINE([Rlisten], [SOCKSlisten], [Socks])
+  AC_DEFINE([Rselect], [SOCKSselect], [Socks])
+  AC_DEFINE([Rrecvfrom], [SOCKSrecvfrom], [Socks])
+  AC_DEFINE([Rsendto], [SOCKSsendto], [Socks])
+  AC_DEFINE([Rrecv], [SOCKSrecv], [Socks])
+  AC_DEFINE([Rsend], [SOCKSsend], [Socks])
+  AC_DEFINE([Rread], [SOCKSread], [Socks])
+  AC_DEFINE([Rwrite], [SOCKSwrite], [Socks])
+  AC_DEFINE([Rrresvport], [SOCKSrresvport], [Socks])
+  AC_DEFINE([Rshutdown], [SOCKSshutdown], [Socks])
+  AC_DEFINE([Rlisten], [SOCKSlisten], [Socks])
+  AC_DEFINE([Rclose], [SOCKSclose], [Socks])
+  AC_DEFINE([Rdup], [SOCKSdup], [Socks])
+  AC_DEFINE([Rdup2], [SOCKSdup2], [Socks])
+  AC_DEFINE([Rfclose], [SOCKSfclose], [Socks])
+  AC_DEFINE([Rgethostbyname], [SOCKSgethostbyname], [Socks])
 fi
 
 # MP library checking. First check whether user wants to use GMP and use
@@ -660,7 +652,7 @@ AC_ARG_WITH(gmp,
     AC_CHECK_LIB(gmp, __gmpz_init,
       [
         mp_gmp=true
-        AC_DEFINE(SILC_MP_GMP)
+        AC_DEFINE([SILC_MP_GMP], [], [GMP])
         AC_MSG_RESULT(Using GMP as a MP library.)
       ],
       [
@@ -675,7 +667,7 @@ AC_ARG_WITH(gmp,
 AM_CONDITIONAL(SILC_MP_GMP, test x$mp_gmp = xtrue)
 AM_CONDITIONAL(SILC_MP_NSS_MPI, test x$mp_gmp = xfalse)
 if test x$mp_gmp = xfalse; then
-  AC_DEFINE(SILC_MP_NSS_MPI)
+  AC_DEFINE([SILC_MP_NSS_MPI], [], [MPI])
   AC_MSG_RESULT(Using NSS MPI as a MP library.)
 fi
 
@@ -747,7 +739,7 @@ if test x$check_iconv = xtrue; then
         ],
         [
           echo "yes"
-          AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv() function.])
+          AC_DEFINE([HAVE_ICONV], [], [Define if you have the iconv() function.])
           has_iconv=true
           check_iconv=false
         ],
@@ -800,7 +792,7 @@ if test x$check_iconv = xtrue; then
             [
               echo "yes"
               has_iconv=true
-              AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv() function.])
+              AC_DEFINE([HAVE_ICONV], [], [Define if you have the iconv() function.])
             ],
             [
               echo "no"
@@ -982,9 +974,9 @@ if test x$has_threads = xtrue; then
    esac
 
   AC_CHECK_FUNC(pthread_create)
-  AC_DEFINE(SILC_HAVE_PTHREAD)
-  AC_DEFINE(SILC_THREADS)
-  __SILC_HAVE_PTHREAD="#define __SILC_HAVE_PTHEAD 1"
+  AC_DEFINE([SILC_HAVE_PTHREAD], [], [HAVE_PTHREAD])
+  AC_DEFINE([SILC_THREADS], [], [HAVE_THREAD])
+  __SILC_HAVE_PTHREAD="#define __SILC_HAVE_PTHREAD 1"
 fi
 
 # Native WIN32 compilation under cygwin
@@ -994,7 +986,7 @@ AC_ARG_WITH(win32,
   [  --with-win32            compile native WIN32 (MinGW) code (-mno-cygwin)],
   [
     AC_MSG_RESULT(yes)
-    AC_DEFINE(SILC_WIN32)
+    AC_DEFINE([SILC_WIN32], [], [SILC_WIN32])
     win32_support=true
     CFLAGS="-mno-cygwin $CFLAGS"
     LIBS="$LIBS -lwsock32"
@@ -1016,6 +1008,8 @@ AM_CONDITIONAL(SILC_BEOS, test xfalse = xtrue)
 #
 AM_CONDITIONAL(SILC_OS2, test xfalse = xtrue)
 
+#ifdef SILC_DIST_TOOLKIT
+
 # --without-irssi
 #
 without_irssi=false
@@ -1025,7 +1019,6 @@ AC_ARG_WITH(irssi,
   [
     AC_MSG_RESULT(no)
     without_irssi=true
-    SILC_DIST_SUBDIRS=`echo $SILC_DIST_SUBDIRS | $sedpath -e 's/irssi//'`
   ],
   [
     AC_MSG_RESULT(yes)
@@ -1040,18 +1033,21 @@ AC_ARG_WITH(silcd,
   [
     AC_MSG_RESULT(no)
     without_silcd=true
-    SILC_DIST_SUBDIRS=`echo $SILC_DIST_SUBDIRS | $sedpath -e 's/silcd//'`
   ],
   [
     AC_MSG_RESULT(yes)
   ])
 
+#endif SILC_DIST_TOOLKIT
+
+#ifdef SILC_DIST_CLIENT
 # Irssi perl support
 #
 AC_ARG_WITH(perl,
   [[  --with-perl[=yes|no|module]  Build with Perl support - also specifies
                                if it should be built into main silc binary
                                (static, default) or as a module]])
+#endif SILC_DIST_CLIENT
 
 libtoolfix=true
 AC_MSG_CHECKING(whether to do libtoolfix)
@@ -1066,9 +1062,7 @@ AC_ARG_WITH(libtoolfix,
   ])
 
 AC_SUBST(ETCDIR)
-AC_DEFINE_UNQUOTED(SILC_ETCDIR, "$ETCDIR")
-
-
+AC_DEFINE_UNQUOTED([SILC_ETCDIR], "$ETCDIR", [SILC_ETCDIR])
 
 ##
 ##  Misc
@@ -1076,12 +1070,17 @@ AC_DEFINE_UNQUOTED(SILC_ETCDIR, "$ETCDIR")
 
 # Other configure scripts
 #
+
+#ifdef SILC_DIST_TOOLKIT
 if test x$without_irssi = xfalse; then
-  if test "x$silc_dist" = "xsilc-client" ||
-     test "x$silc_dist" = "xsilc-toolkit"; then
-    AC_CONFIG_SUBDIRS(irssi)
-  fi
+#endif SILC_DIST_TOOLKIT
+#ifdef SILC_DIST_CLIENT
+  AC_CONFIG_SUBDIRS(irssi)
+  irssi="yes"
+#endif SILC_DIST_CLIENT
+#ifdef SILC_DIST_TOOLKIT
 fi
+#endif SILC_DIST_TOOLKIT
 
 SILC_TOP_SRCDIR=`pwd`
 
@@ -1095,8 +1094,10 @@ AC_SUBST(SILC_TOP_SRCDIR)
 AC_SUBST(LIBS)
 INCLUDE_DEFINES_INT="include \$(top_srcdir)/Makefile.defines_int"
 AC_SUBST(INCLUDE_DEFINES_INT)
-AC_SUBST(SILC_DIST_SUBDIRS)
 AC_SUBST(SILC_LIB_INCLUDES)
+AC_SUBST(__SILC_HAVE_PTHREAD)
+AC_SUBST(__SILC_HAVE_SIM)
+AC_SUBST(__SILC_ENABLE_DEBUG)
 
 #
 # Fix the libtool to support run-time configuration.  This allows us
@@ -1108,10 +1109,6 @@ if test x$libtoolfix = xtrue; then
 fi
 AM_CONDITIONAL(SILC_LIBTOOLFIX, test x$libtoolfix = xtrue)
 
-AC_SUBST(__SILC_HAVE_PTHREAD)
-AC_SUBST(__SILC_HAVE_SIM)
-AC_SUBST(__SILC_ENABLE_DEBUG)
-
 #
 # Makefile outputs
 #
@@ -1122,30 +1119,35 @@ Makefile.defines_int
 doc/Makefile
 includes/Makefile
 doc/example_silcd.conf
+includes/silcversion.h
 includes/silcincludes.h
 )
 
+#ifdef SILC_DIST_TOOLKIT
 if test x$without_irssi = xfalse ; then
-  if test "x$silc_dist" = "xsilc-client" ||
-     test "x$silc_dist" = "xsilc-toolkit"; then
-    AC_CONFIG_FILES(
+#endif SILC_DIST_TOOLKIT
+#ifdef SILC_DIST_CLIENT
+  AC_CONFIG_FILES(
 irssi/Makefile.defines
 irssi/Makefile.defines_int
 )
-  fi
+#endif SILC_DIST_CLIENT
+#ifdef SILC_DIST_TOOLKIT
 fi
+#endif SILC_DIST_TOOLKIT
 
+#ifdef SILC_DIST_TOOLKIT
 if test x$without_silcd = xfalse ; then
-  if test "x$silc_dist" = "xsilc-server" ||
-     test "x$silc_dist" = "xsilc-toolkit"; then
-    AC_CONFIG_FILES(
-silcd/Makefile
-)
-  fi
+#endif SILC_DIST_TOOLKIT
+#ifdef SILC_DIST_SERVER
+  AC_CONFIG_FILES(silcd/Makefile)
+#endif SILC_DIST_SERVER
+#ifdef SILC_DIST_TOOLKIT
 fi
+#endif SILC_DIST_TOOLKIT
 
-if test "x$silc_dist" = "xsilc-toolkit"; then
-  AC_CONFIG_FILES(
+#ifdef SILC_DIST_TOOLKIT
+AC_CONFIG_FILES(
 silc/Makefile
 win32/Makefile
 win32/libsilc/Makefile
@@ -1154,7 +1156,7 @@ tutorial/Makefile
 tutorial/Makefile.defines
 tutorial/Makefile.defines_int
 )
-fi
+#endif SILC_DIST_TOOLKIT
 
 AC_OUTPUT
 
@@ -1185,25 +1187,28 @@ echo " SIM directory .................: $MODULESDIR"
 echo " include directory .............: $s_includedir"
 echo ""
 
-if test "x$silc_dist" = "xsilc-client" ||
-   test "x$silc_dist" = "xsilc-toolkit"; then
-  irssi="yes"
-  if test x$without_irssi = xtrue; then
-    irssi="no"
-  fi
-echo " Compile SILC Client ...........: $irssi"
-fi
+#ifdef SILC_DIST_SERVER
+silcd="yes"
+#endif SILC_DIST_SERVER
 
-if test "x$silc_dist" = "xsilc-server" ||
-   test "x$silc_dist" = "xsilc-toolkit"; then
-  silcd="yes"
-  if test x$without_silcd = xtrue; then
-    silcd="no"
-  fi
+#ifdef SILC_DIST_TOOLKIT
+if test x$without_irssi = xtrue; then
+  irssi="no"
+fi
+if test x$without_silcd = xtrue; then
+  silcd="no"
+fi
+#endif SILC_DIST_TOOLKIT
+
+#ifdef SILC_DIST_CLIENT
+echo " Compile SILC Client ...........: $irssi"
+#endif SILC_DIST_CLIENT
+
+#ifdef SILC_DIST_SERVER
 echo " Compile SILC Server ...........: $silcd"
 echo " Server configuration file .....: $summary_silcd_configfile"
 echo " Server PID file ...............: $PIDFILE"
-fi
+#endif SILC_DIST_SERVER
 
 if test x$sim_support = xfalse; then
   sim_support="no"
@@ -1238,8 +1243,4 @@ fi
 echo " Multi-threads support .........: $threads"
 echo " Debugging enabled .............: $summary_debug"
 echo ""
-if test "x$silc_dist" = "xsilc-client"; then
-  echo "Compile the sources with 'make' or 'gmake' command (GNU make is required)."
-else
-  echo "Compile the sources with 'make' or 'gmake' command."
-fi
+echo "Compile the sources with 'make' or 'gmake' command."
