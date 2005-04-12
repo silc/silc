@@ -38,7 +38,7 @@
 #endif
 
 /* Default size of the hash table (index to prime table) */
-#define SILC_HASH_TABLE_SIZE 3
+#define SILC_HASH_TABLE_SIZE 2
 
 /* Produce the index by hashing the key */
 #define SILC_HASH_TABLE_HASH(f, c) \
@@ -79,7 +79,7 @@ struct SilcHashTableStruct {
    be one of these. */
 const SilcUInt32 primesize[42] =
 {
-  1, 3, 5, 11, 17, 37, 67, 109, 131, 163, 257, 367, 521, 823, 1031,
+  3, 5, 11, 17, 37, 67, 109, 131, 163, 257, 367, 521, 823, 1031,
   1237, 2053, 2777, 4099, 6247, 8209, 14057, 16411, 21089, 32771, 47431,
   65537, 106721, 131101, 262147, 360163, 524309, 810343, 1048583, 2097169,
   4194319, 6153409, 8388617, 13845163, 16777259, 33554467, 67108879
