@@ -1,7 +1,7 @@
 
 @SYNTAX:action@
 
-Sends and ACTION to target.
+Sends an ACTION to the target.
 For example: /ACTION * sits back. (sends ACTION "sits back" to the current 
 window)
 
