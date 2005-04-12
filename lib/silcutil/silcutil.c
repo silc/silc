@@ -588,9 +588,9 @@ SilcUInt32 silc_hash_data(void *key, void *user_context)
 SilcUInt32 silc_hash_public_key(void *key, void *user_context)
 {
   SilcPublicKey pk = (SilcPublicKey)key;
-  return (pk->len + silc_hash_string(pk->name, NULL) +
-	  silc_hash_string(pk->identifier, NULL) +
-	  silc_hash_data(pk->pk, SILC_32_TO_PTR(pk->pk_len)));
+  return (pk->len + (silc_hash_string(pk->name, NULL) ^
+		     silc_hash_string(pk->identifier, NULL) ^
+		     silc_hash_data(pk->pk, SILC_32_TO_PTR(pk->pk_len))));
 }
 
 /* Compares two strings. It may be used as SilcHashTable comparison
