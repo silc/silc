@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2001 - 2004 Pekka Riikonen
+  Copyright (C) 2001 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -599,23 +599,23 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
       silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
                        cp, message_len);
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
-        signal_emit("message silc signed_private_action", 6, server, cp, 
+        signal_emit("message silc signed_private_action", 6, server, cp,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
-		    sender->username ? userhost : NULL, 
+		    sender->username ? userhost : NULL,
 		    NULL, verified);
       else
-        signal_emit("message silc private_action", 5, server, cp, 
+        signal_emit("message silc private_action", 5, server, cp,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
 		    sender->username ? userhost : NULL, NULL);
       silc_free(dm);
     } else {
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
-        signal_emit("message silc signed_private_action", 6, server, message, 
+        signal_emit("message silc signed_private_action", 6, server, message,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
-		    sender->username ? userhost : NULL, 
+		    sender->username ? userhost : NULL,
 		    NULL, verified);
       else
-        signal_emit("message silc private_action", 5, server, message, 
+        signal_emit("message silc private_action", 5, server, message,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
 		    sender->username ? userhost : NULL, NULL);
     }
@@ -631,23 +631,23 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
       silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
                        cp, message_len);
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
-        signal_emit("message silc signed_private_notice", 6, server, cp, 
+        signal_emit("message silc signed_private_notice", 6, server, cp,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
-		    sender->username ? userhost : NULL, 
+		    sender->username ? userhost : NULL,
 		    NULL, verified);
       else
-        signal_emit("message silc private_notice", 5, server, cp, 
+        signal_emit("message silc private_notice", 5, server, cp,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
 		    sender->username ? userhost : NULL, NULL);
       silc_free(dm);
     } else {
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
-        signal_emit("message silc signed_private_notice", 6, server, message, 
+        signal_emit("message silc signed_private_notice", 6, server, message,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
-		    sender->username ? userhost : NULL, 
+		    sender->username ? userhost : NULL,
 		    NULL, verified);
       else
-        signal_emit("message silc private_notice", 5, server, message, 
+        signal_emit("message silc private_notice", 5, server, message,
 		    sender->nickname ? sender->nickname : "[<unknown>]",
 		    sender->username ? userhost : NULL, NULL);
     }
@@ -674,7 +674,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   		  sender->username ? userhost : NULL);
       silc_free(dm);
       return;
-    } 
+    }
 
     if (flags & SILC_MESSAGE_FLAG_SIGNED)
       signal_emit("message signed_private", 5, server, message,
@@ -684,7 +684,7 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
       signal_emit("message private", 4, server, message,
               sender->nickname ? sender->nickname : "[<unknown>]",
               sender->username ? userhost : NULL);
-  } 
+  }
 }
 
 /* Notify message to the client. The notify arguments are sent in the
@@ -2031,6 +2031,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
       (void)va_arg(vp, SilcChannelEntry);
       name = va_arg(vp, char *);
+      if (!name)
+	return;
       topic = va_arg(vp, char *);
       usercount = va_arg(vp, int);
 
