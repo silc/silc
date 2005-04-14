@@ -1502,6 +1502,8 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
   COMMAND_CHECK_STATUS;
 
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
+  if (!tmp)
+    goto out;
   channel_id = silc_id_payload_parse_id(tmp, len, NULL);
   if (!channel_id)
     goto out;

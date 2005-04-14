@@ -153,7 +153,11 @@ const SilcClientID *old_client_id
 <td><small>
 Returns the list of channel in the SILC network. Each call of command reply
 returns one channel. This means that the command reply is called multiple
-times to return list of channels.  The 'channel_topic' may be NULL.
+times to return list of channels.  The 'channel', 'channel_name' and
+'channel_topic' may be NULL.  However, the 'channel' and 'channel_name'
+are NULL only if there are no channels in the network.  In this case
+this reply is called once with all arguments set to NULL.  Application
+must be able to handle this situation correctly.
 </td>
 <td width="50%"><small>SilcChannelEntry channel, char *channel_name,
 char *channel_topic, SilcUInt32 user_count

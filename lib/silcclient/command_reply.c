@@ -634,7 +634,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(list)
 
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    /* There were no channels in the network. */
+    COMMAND_REPLY((SILC_ARGS, NULL, NULL, 0));
     goto out;
   }
 
