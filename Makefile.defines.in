@@ -43,19 +43,9 @@
 #
 INCLUDES = $(ADD_INCLUDES) $(SILC_CFLAGS) -DHAVE_SILCDEFS_H \
 	-I$(srcdir) -I$(top_srcdir) \
-	-I$(silc_top_srcdir) \
-	-I$(silc_top_srcdir)/lib/silccore \
-	-I$(silc_top_srcdir)/lib/silccrypt \
-        -I$(silc_top_srcdir)/lib/silcmath \
-        -I$(silc_top_srcdir)/lib/silcmath/mpi \
-	-I$(silc_top_srcdir)/lib/silcske \
-	-I$(silc_top_srcdir)/lib/silcsim \
-	-I$(silc_top_srcdir)/lib/silcutil \
-	-I$(silc_top_srcdir)/lib/silcsftp \
-	-I$(silc_top_srcdir)/lib/silcclient \
-	-I$(silc_top_srcdir)/lib/contrib \
-        -I$(silc_top_srcdir)/includes \
-        -I$(silc_top_srcdir)/doc
+	-I$(silc_top_srcdir) $(SILC_LIB_INCLUDES) \
+	-I$(silc_top_srcdir)/includes \
+	-I$(silc_top_srcdir)/doc
 
 #
 #includes-install: Makefile

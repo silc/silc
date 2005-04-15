@@ -38,6 +38,11 @@ SILC_COMMON_LIBS= @LIBS@ -L$(silc_top_srcdir)/lib -lsilc
 SILC_CFLAGS=@CFLAGS@
 
 #
+# SILC Library includes
+#
+SILC_LIB_INCLUDES=@SILC_LIB_INCLUDES@
+
+#
 # Installation defines
 #
 silc_etcdir=@ETCDIR@
