@@ -34,5 +34,4 @@ EXTRA_DIST = \
 	silcbeos.h \
 	silcos2.h \
 	silcversion.h.in \
-	silcdistdefs.h \
-	silcdefs.h.in
+	silcdistdefs.h

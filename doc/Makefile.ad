@@ -94,8 +94,8 @@ EXTRA_DIST = 			\
 #endif SILC_DIST_SERVER
 #ifdef SILC_DIST_TOOLKIT
 	toolkit			\
-#endif SILC_DIST_TOOLKIT
 	CodingStyle 		\
+#endif SILC_DIST_TOOLKIT
 	FAQ 			\
 	example_silcd.conf 	\
 	silcalgs.conf 		\

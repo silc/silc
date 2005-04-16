@@ -19,10 +19,14 @@ AD_INIT
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE
 AC_PREREQ(2.52)
-AC_CONFIG_HEADERS(includes/silcdefs.h)
+AC_CONFIG_HEADERS(silcdefs.h)
 
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
+
+AC_PROG_LN_S
+AC_SUBST(LN_S)
+AC_PATH_PROG(sedpath, sed)
 
 #ifdef SILC_DIST_COMPILER
 # Put here any platform specific stuff
@@ -44,9 +48,6 @@ AC_PROG_CC
 AC_C_INLINE
 AC_C_CONST
 
-AC_PROG_LN_S
-AC_SUBST(LN_S)
-
 __SILC_HAVE_PTHREAD=""
 __SILC_HAVE_SIM=""
 __SILC_ENABLE_DEBUG=""
@@ -54,7 +55,6 @@ __SILC_ENABLE_DEBUG=""
 AC_PROG_RANLIB
 AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
-AC_PATH_PROG(sedpath, sed)
 
 # Header checking
 #
@@ -337,7 +337,7 @@ AC_SUBST(FIX_SHA1)
 # Default installation destination
 #
 #ifdef SILC_DIST_AUTODIST
-AC_PREFIX_DEFAULT(/usr/local/)
+AC_PREFIX_DEFAULT(/usr/local)
 #else !SILC_DIST_AUTODIST
 AC_PREFIX_DEFAULT(/usr/local/silc)
 #endif SILC_DIST_AUTODIST
@@ -477,10 +477,10 @@ AC_ARG_WITH(silcd-pid-file,
 AC_SUBST(PIDFILE)
 #endif SILC_DIST_SERVER
 
+#ifdef SILC_DIST_COMPILER
 ##
 ##  With/without checkings
 ##
-#ifdef SILC_DIST_COMPILER
 
 #
 # SILC library checking
@@ -1105,8 +1105,6 @@ AD_INCLUDE_CONFIGURE
 #
 AC_SUBST(SILC_TOP_SRCDIR)
 AC_SUBST(LIBS)
-INCLUDE_DEFINES_INT="include \$(top_srcdir)/Makefile.defines_int"
-AC_SUBST(INCLUDE_DEFINES_INT)
 AC_SUBST(SILC_LIB_INCLUDES)
 AC_SUBST(__SILC_HAVE_PTHREAD)
 AC_SUBST(__SILC_HAVE_SIM)
@@ -1122,6 +1120,9 @@ if test x$libtoolfix = xtrue; then
 fi
 AM_CONDITIONAL(SILC_LIBTOOLFIX, test x$libtoolfix = xtrue)
 
+INCLUDE_DEFINES_INT="include \$(top_srcdir)/Makefile.defines_int"
+AC_SUBST(INCLUDE_DEFINES_INT)
+
 #endif SILC_DIST_COMPILER
 
 #
@@ -1129,12 +1130,19 @@ AM_CONDITIONAL(SILC_LIBTOOLFIX, test x$libtoolfix = xtrue)
 #
 AC_CONFIG_FILES(
 Makefile
+#ifdef SILC_DIST_DOC
+doc/Makefile
+#endif SILC_DIST_DOC
+#ifdef SILC_DIST_COMPILER
 Makefile.defines
 Makefile.defines_int
-doc/Makefile
 includes/Makefile
 includes/silcversion.h
 includes/silcincludes.h
+#endif SILC_DIST_COMPILER
+#ifdef SILC_DIST_APPS
+apps/Makefile
+#endif SILC_DIST_APPS
 )
 
 #ifdef SILC_DIST_TOOLKIT
@@ -1275,6 +1283,7 @@ if test x$has_threads = xtrue; then
 fi
 echo " Multi-threads support .........: $threads"
 echo " Debugging enabled .............: $summary_debug"
-#endif SILC_DIST_COMPILER
 echo ""
 echo "Compile the sources with 'make' or 'gmake' command."
+#endif SILC_DIST_COMPILER
+

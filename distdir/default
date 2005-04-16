@@ -1,20 +1,16 @@
+# Default distribution
+#
+# NOTE: By default, this distribution cannot be packaged.  Take away the
+# 'no-dist option if you whish to use this as a normal distribution.
+#
+# If you add new distributions into distdir/ inherit them here.
+#
+option no-dist
+
 # Default distribution for preparing raw CVS sources.
 inherit common
 inherit client
 inherit server
 inherit toolkit
-option no-dist
 define SILC_DIST_INPLACE
 pre-hook distdir/pre-run
-
-#include README.FOOBAR foobar.dir
-#exclude distdir foobar
-#define SILC_DIST_DEFAULT
-#undef SILC_DIST_FOOBAR
-#pre-hook scripts/foobar-pre.sh
-#post-hook scripts/foobar-post.sh
-#pre-dist-hook scripts/foobar-dist-pre.sh
-#post-dist-hook scripts/foobar-dist-post.sh
-#option no-dist
-#option no-inherit
-#option template

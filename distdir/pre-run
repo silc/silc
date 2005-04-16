@@ -1,3 +1,9 @@
+#!/bin/sh
+
+distribution=$1
+dist_version=$2
+package=$3
+
 # preparing irssi
 echo "Preparing irssi"
 file=irssi/irssi-version.h.in

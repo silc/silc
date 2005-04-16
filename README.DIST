@@ -25,14 +25,14 @@ compiled and packaged.  The ./prepare script is used to prepare
 distribution for configuration, compilation and packaging.  To prepare a 
 specific distribution with specific version, give command:
 
-	./autodist <name> <version>
+	autodist <name> <version>
 
 Where the <name> is the distribution name.  It is one of the distributions 
 that was defined in distdir/ directory.  The <version> is the version of 
 the distribution that will be prepared.  The version format is 
 major.minor.build, for example 0.9.10.  Example:
 
-	./autodist client 0.9.15
+	autodist client 0.9.15
 
 This prepares 'client' distribution of version 0.9.15.  The package will 
 have the version 0.9.15 automatically.
@@ -62,11 +62,10 @@ After the distribution is prepared, configured and compiled it can be
 packaged with the following commands:
 
 	make -C doc dist-hook
-	make dist
-	make dist-bzip
+	makedist --bzip2
 
-The first command creates a gzipped distribution and the second creates a
-bzipped distribution.
+The 'makedist --bzip2' creates the default 'tar.gz' and 'tar.bz2' 
+distribution.
 
 NOTE:  Before giving this command, make sure that you do not have any of 
 the tests in the SILC source tree compiled.  If they are the binaries
