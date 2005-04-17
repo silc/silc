@@ -74,11 +74,13 @@ excludes=
 # All noprocesses
 noprocess=
 
-# All pre, post pre-dist and post-dist hooks
+# All hooks
 pre_hooks=
 post_hooks=
 pre_dist_hooks=
 post_dist_hooks=
+pre_p_dist_hooks=
+post_p_dist_hooks=
 
 # Distribution license and license header
 license=
@@ -784,6 +786,9 @@ ad_makedist()
     ad_fatal "The '$distribution' distribution cannot be packaged"
   fi
 
+  # Run pre-dist-hooks
+  ad_run_dist_hooks "$pre_dist_hooks"
+
   # Create distribution directory
   ad_debug "Creating distribution directory $am_distdir"
   $MAKE distdir || exit 1
@@ -793,8 +798,8 @@ ad_makedist()
     ad_fatal "Distribution directory $am_distdir not created"
   fi
 
-  # Run pre-dist-hooks
-  ad_run_dist_hooks "$pre_dist_hooks"
+  # Run pre-process-dist-hooks
+  ad_run_dist_hooks "$pre_p_dist_hooks"
 
   # Run excludes
   ad_dist_excludes "$excludes"
@@ -818,8 +823,8 @@ ad_makedist()
   ad_debug "Process distribution tree"
   ad_process_tree $am_distdir
 
-  # Run post-dist-hooks
-  ad_run_dist_hooks "$post_dist_hooks"
+  # Run post-process_dist-hooks
+  ad_run_dist_hooks "$post_p_dist_hooks"
 
   # Make distribution sane
   ad_makedist_makesane
@@ -844,6 +849,9 @@ ad_makedist()
     zip -rq $am_distdir.zip $am_distdir || exit 1
   fi
   rm -f $am_distdir.tar
+
+  # Run post-dist-hooks
+  ad_run_dist_hooks "$post_dist_hooks"
 
   # Cleanup
   rm -rf $am_distdir
@@ -1032,11 +1040,17 @@ ad_parse_distribution()
      | grep "pre-dist-hook " | sed 's/^[       ]*//' | cut -d' ' -f2-`
     local podh=`cat $distdir/$1 | grep -v "^#" \
      | grep "post-dist-hook " | sed 's/^[       ]*//' | cut -d' ' -f2-`
+    local prpdh=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+     | grep "pre-process-dist-hook " | sed 's/^[       ]*//' | cut -d' ' -f2-`
+    local popdh=`cat $distdir/$1 | grep -v "^#" \
+     | grep "post-process-dist-hook " | sed 's/^[       ]*//' | cut -d' ' -f2-`
 
     pre_hooks="$pre_hooks $prh"
     post_hooks="$post_hooks $poh"
     pre_dist_hooks="$pre_dist_hooks $prdh"
     post_dist_hooks="$post_dist_hooks $podh"
+    pre_p_dist_hooks="$pre_p_dist_hooks $prpdh"
+    post_p_dist_hooks="$post_p_dist_hooks $popdh"
     options="$options $opts"
 
     ad_handle_options "$options"

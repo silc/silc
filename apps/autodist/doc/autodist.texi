@@ -805,6 +805,39 @@ executes the script: distribution name, distribution version and package
 name of distribution.  The script may use these arguments if it needs them.
 
 
+@section Directive: pre-process-dist-hook <filename> [...]
+
+The 'pre-process-dist-hook' directive can be used define additional 
+scripts that will be run when Autodist has started distribution creation.
+This directive is optional.  One or more scripts may be defined in one 
+'pre-process-dist-hook' directive.  Zero or more 'pre-process-dist-hook' 
+directives may be set for distribution.  The 'pre-process-dist-hook' hook 
+will be run immediately after the Autodist has created the distribution 
+directory but has not yet started any distribution processing.
+
+The scripts will get four (4) command line arguments when Autodist
+executes the script: distribution name, distribution version, package
+name of distribution and destination distribution directory name.  The
+script may use these arguments if it needs them.
+
+
+@section Directive: post-process-dist-hook <filename> [...]
+
+The 'post-process-dist-hook' directive can be used define additional 
+scripts that will be run when Autodist has finished distribution 
+processing.  This directive is optional.  One or more scripts may be 
+defined in one 'post-process-dist-hook' directive.  Zero or more 
+'post-process-dist-hook' directives may be set for distribution.  The 
+'post-process-dist-hook' hook will be run immediately after the Autodist 
+has finished processing the destination distribution directory but has not 
+yet created the distribution package.
+
+The scripts will get four (4) command line arguments when Autodist
+executes the script: distribution name, distribution version, package
+name of distribution and destination distribution directory name.  The
+script may use these arguments if it needs them.
+
+
 @section Directive: pre-dist-hook <filename> [...]
 
 The 'pre-dist-hook' directive can be used define additional scripts that
@@ -812,8 +845,8 @@ will be run when Autodist has started distribution creation.  This directive
 is optional.  One or more scripts may be defined in one 'pre-dist-hook'
 directive.  Zero or more 'pre-dist-hook' directives may be set for
 distribution.  The 'pre-dist-hook' hook will be run immediately after
-the Autodist has created the distribution directory but has not yet
-started any distribution processing.
+the Autodist has started distribution creation, but has not yet created
+the distribution directory.  This hook is run before 'pre-process-dist-hook'.
 
 The scripts will get four (4) command line arguments when Autodist
 executes the script: distribution name, distribution version, package
@@ -823,18 +856,39 @@ script may use these arguments if it needs them.
 
 @section Directive: post-dist-hook <filename> [...]
 
-The 'post-dist-hook' directive can be used define additional scripts that
-will be run when Autodist has finished distribution processing.  This
-directive is optional.  One or more scripts may be defined in one
-'post-dist-hook' directive.  Zero or more 'post-dist-hook' directives may
-be set for distribution.  The 'post-dist-hook' hook will be run immediately
-after the Autodist has finished processing the destination distribution
-directory but has not yet created the distribution package.
+The 'post-dist-hook' directive can be used define additional scripts that 
+will be run when Autodist has finished distribution creation.  This 
+directive is optional.  One or more scripts may be defined in one 
+'post-dist-hook' directive.  Zero or more 'post-dist-hook' directives may 
+be set for distribution.  The 'post-dist-hook' hook will be run 
+immediately after the Autodist has finished creating the distribution
+package.  This is the last hook Autodist runs.
 
 The scripts will get four (4) command line arguments when Autodist
 executes the script: distribution name, distribution version, package
 name of distribution and destination distribution directory name.  The
 script may use these arguments if it needs them.
+
+
+@section Running hooks
+
+The Autodist runs the hooks in the following order:
+
+Preparing source tree for configuration and compilation:
+@example
+pre-hook
+post-hook
+@end example
+
+Creating distribution:
+@example
+pre-dist-hook
+pre-process-dist-hook
+post-process-dist-hook
+post-dist-hook
+@end example
+
+When creating distribution the 'pre-hook' and 'post-hook' are not run.
 
 
 @section Example distfile
@@ -856,8 +910,8 @@ define SILC_DIST_IRSSI
 undef SILC_DIST_MPI
 exclude doc/draft*
 pre-hook scripts/client-pre-run
-post-dist-hook scripts/client-post-dist-run
-post-dist-hook scripts/client-post-dist-kludge
+post-process-dist-hook scripts/client-post-process
+post-dist-hook scripts/client-post-dist-bin
 @end example
 
 @menu
@@ -1235,7 +1289,7 @@ or using 'autogen.sh' script is not necessary.
 By default the 'autodist.conf' (@pxref{autodist.conf, , , , }) has defined 
 the tools that will be run by the Autodist when preparing the source tree.  
 These are 'aclocal', 'autoheader', 'autoconf', 'automake' and 
-'libtoolize'.  If you do not whish that Autodist runs some or any of these 
+'libtoolize'.  If you do not wish that Autodist runs some or any of these 
 tools automatically, do not set them in the 'autodist.conf'.  You would 
 then need to run them manually. However, this is not recommended.  If you 
 need to run additional preparation scripts you may set your scripts either 
@@ -1262,10 +1316,10 @@ distribution run Autodist without any arguments.
 The Autodist will prepare your source tree.  After that you may run
 './configure' and continue to compile with 'make'.
 
-If you do not whish to use the 'default' distribution, or you whish
+If you do not wish to use the 'default' distribution, or you wish
 to do the development in a tree specificly prepared for some specific
 distribution, or you are preparing to create a new distribution package,
-you will need to run the Autodist with the distribution you whish to
+you will need to run the Autodist with the distribution you wish to
 prepare.
 
 @example
@@ -1309,7 +1363,7 @@ Before creating a new distribution package, you will need to prepare
 the source tree for the distribution you want to create.  After preparing
 your source tree you will be ready to create a new distribution.  The
 Autodist package provides a simple helper script 'makedist' that may
-be used to create the distribution.  However, if you whish, you may
+be used to create the distribution.  However, if you wish, you may
 run the Autodist yourself, as the 'makedist' will call Autodist anyway.
 
 To create a new distribution for the distribution you have prepared for
@@ -1320,7 +1374,7 @@ run makedist.
 @end example
 
 This will run the Autodist and create a new distribution package that
-is archived with 'tar' and compressed with 'gzip'.  If you whish to
+is archived with 'tar' and compressed with 'gzip'.  If you wish to
 create packages also compressed with 'bzip2', 'compress' and/or 'zip'
 you may give one or all of the following options:
 
@@ -1332,7 +1386,7 @@ This example would create, in addition of 'tar.gz' package, also a
 'tar.bz2', 'tar.Z' and '.zip' packages.  Current version of Autodist does
 not support archiving with 'shar'.
 
-If you whish to run additional processing for your distributions when
+If you wish to run additional processing for your distributions when
 they are being packaged you may set 'pre-dist-hook' and/or 'post-dist-hook'
 in your distribution file.  Also note that any hooks provided by Automake
 in Makefiles will be run in normal manner.
@@ -1356,7 +1410,7 @@ For additional help, you may give:
 @section Single distribution tree example, start to finish
 
 Lets suppose you have a simple source tree with one application,
-called 'foozbar' you whish to release.  While you would probably suffice
+called 'foozbar' you wish to release.  While you would probably suffice
 using Autoconf and Automake features you may still use Autodist.
 
 First, you create the default 'distdir' into your software package:
@@ -1387,7 +1441,7 @@ define _DIST_FOOZBAR
 This distribution file go into 'distdir/foozbar'.
 
 And there you go.  You have succesfully integrated Autodist into your
-source tree.  If you need to do development and you whish to use the
+source tree.  If you need to do development and you wish to use the
 'default' distribution for that, you should inherit the new 'foozbar'
 distribution in it.  Add the following line in 'distdir/default':
 
