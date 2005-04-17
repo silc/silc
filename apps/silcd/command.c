@@ -421,7 +421,7 @@ bool silc_server_command_pending_timed(SilcServer server,
   reply->timeout =
     silc_schedule_task_add(server->schedule, 0,
 			   silc_server_command_pending_timeout, reply,
-			   timeout ? timeout : 10, 0,
+			   timeout ? timeout : 12, 0,
 			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
   silc_dlist_add(server->pending_commands, reply);
 
