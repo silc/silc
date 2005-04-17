@@ -84,9 +84,6 @@ AC_SUBST(LIBSILCCLIENT_CURRENT)
 AC_SUBST(LIBSILCCLIENT_REVISION)
 AC_SUBST(LIBSILCCLIENT_AGE)
 
-# Make enable-shared aware
-AM_CONDITIONAL(SILC_ENABLE_SHARED, test "$enable_shared" = yes)
-
 # Stack trace checking
 #
 AC_MSG_CHECKING(whether to enable stack tracing)

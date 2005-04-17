@@ -25,6 +25,7 @@ AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 
 AC_PROG_LN_S
+AC_PROG_EGREP
 AC_SUBST(LN_S)
 AC_PATH_PROG(sedpath, sed)
 
@@ -487,7 +488,6 @@ AC_SUBST(PIDFILE)
 compile_libs=true
 
 #ifndef SILC_DIST_TOOLKIT
-
 AC_ARG_WITH(silc-includes, 
   [  --with-silc-includes=DIR SILC Toolkit includes [search in DIR]],
   [ac_silc_includes="$withval"], [ac_silc_includes="no"])
@@ -495,24 +495,39 @@ AC_ARG_WITH(silc-libs,
   [  --with-silc-libs=DIR     SILC Toolkit libraries [search in DIR]],
   [ac_silc_libs="$withval"], [ac_silc_libs="no"])
 
-#
-# XXX missing checking the __SILC_WITH_XXX defines from the provided libs
-# in order to determine correct libs to link.
+if test -n "$with_silc_includes" || test -n "$with_silc_libs"; then
 
-#
-# XXX missing pkg-config check.
+  # Manually provided libs
+  if test "$ac_silc_includes" != "no"; then
+    compile_libs=false
+    SILC_LIB_INCLUDES="-I$ac_silc_includes"
+  fi
+  if test "$ac_silc_libs" != "no"; then
+    compile_libs=false
+    LIBS="$LIBS -L$ac_silc_libs"
+  fi
 
-if test "$ac_silc_includes" != "no"; then
-  compile_libs=false
-  SILC_LIB_INCLUDES="-I$ac_silc_includes"
+  # Check libs to link against
+  f=`$EGREP __SILC_HAVE_PTHREAD $ac_silc_includes/silcincludes.h`
+  if test -n "$f"; then
+    LIBS="$LIBS -lpthread"
+  fi
+  f=`$EGREP __SILC_HAVE_SIM $ac_silc_includes/silcincludes.h`
+  if test -n "$f"; then
+    LIBS="$LIBS -ldl"
+  fi
+
+else
+  # pkg-config check
+  PKG_CHECK_MODULES(SILC, silc, compile_libs=false, compile_libs=true)
+  PKG_CHECK_MODULES(SILCCLIENT, silcclient, compile_libs=false, compile_libs=true)
+
+  LIBS="$LIBS $SILC_LIBS"
+  CFLAGS="$CFLAGS $SILC_CFLAGS"
+  LIBS="$LIBS $SILCCLIENT_LIBS"
+  CFLAGS="$CFLAGS $SILCCLIENT_CFLAGS"
 fi
-if test "$ac_silc_libs" != "no"; then
-  compile_libs=false
-  LIBS="$LIBS -L$ac_silc_libs"
-fi
-
 #endif SILC_DIST_TOOLKIT
-
 
 # SOCKS4 support checking
 #
@@ -1079,6 +1094,9 @@ AC_DEFINE_UNQUOTED([SILC_ETCDIR], "$ETCDIR", [SILC_ETCDIR])
 ##
 ##  Misc
 ##
+
+# Make enable-shared aware
+AM_CONDITIONAL(SILC_ENABLE_SHARED, test "$enable_shared" = yes)
 
 # Other configure scripts
 #
