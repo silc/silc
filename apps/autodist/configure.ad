@@ -47,6 +47,7 @@ apps/autodist/Makefile
 apps/autodist/autodist
 apps/autodist/makedist
 apps/autodist/doc/Makefile
+apps/autodist/doc/autodist.1
 apps/autodist/tests/Makefile
 )
 #endif SILC_DIST_AUTODIST

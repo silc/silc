@@ -1090,13 +1090,14 @@ a compiler friendly format, defined below, should be used.
 #endif /* SILC_DIST_DEFINE */
 @end example
 
-Note that, only the format defined above is supported.  Other more complex
-use of the preprocessor directives such as using '&&' and '||' in the '#ifdef'
-or '#ifndef' are not supported, and neither is '#elif'.  Also note, that in
-the compiler friendly format the name of the distdef in comments and the
-use of '!' character in the '#else' branch of '#ifdef' are mandatory.  Also
-note, that the distdef conditionals must be placed at the start of the line,
-they must not be indented.
+Note that, only the format defined above is supported.  Other more complex 
+use of the preprocessor directives such as using '&&' and '||' in the 
+'#ifdef' or '#ifndef' are not supported, and neither is '#elif'.  Also 
+note, that the name of the distdef in '#else' and '#ifdef' directives in 
+non-source format and in source format inside C comments (/* */), and the 
+use of '!' character in the '#else' branch of '#ifdef'" are mandatory.  
+Also note, that the distdef conditionals must be placed at the start of 
+the line, they must not be indented.
 
 The following example shows the use of non-source format:
 
@@ -1538,6 +1539,7 @@ undef _DIST_CRYPTO
 
 @example
 # Common template
+option template
 define _DIST_DOC
 define _DIST_LIB
 define _DIST_MATH

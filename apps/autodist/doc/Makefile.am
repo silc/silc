@@ -17,3 +17,6 @@
 
 info_TEXINFOS = autodist.texi
 autodist_TEXINFOS = fdl.texi
+
+man_MANS = autodist.1
+EXTRA_DIST = $(man_MANS)
