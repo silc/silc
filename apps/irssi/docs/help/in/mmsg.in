@@ -1,0 +1,39 @@
+MMSG [<-sign>] [<-channel>] <target> <file> [<type>  [<encoding>]]
+
+Sends a private data message to other user in the network.  The message
+will be send as a MIME encoded data message.
+
+If -channel option is provided then this command actually send channel
+message to the specified channel.  The message IS NOT private message, it
+is normal channel message.
+
+If the -sign optin is provided, the message will be additionally
+digitally signed and the receiver may verify it with your public key.
+
+Messages that exceed roughly 64k will be fragmented automatically and
+sent as separate messages.  The reassembly of the fragments will be done
+automatically by the recipient.
+
+If no transfer-encoding is given it defaults to binary.  If no 
+content-type is given it is guessed using a MIME magic file.
+
+NOTE: You have to have enabled perl support at compile time, and you need to
+load the perl script silc-mime.pl for this to work!
+
+Settings
+
+  mime_magic            - path to MIME magic file, or internal 
+                          defaults if empty
+  mime_default_encoding - encoding to use if none specified
+  mime_temp_dir         - where to store temporary files
+
+  mime_database         - Mailcap files defining MIME handlers
+  mime_unlink_tempfiles - whether to keep temporary files
+  mime_verbose          - Turn on status messages
+  mime_exec_param       - additional parameters to pass to /EXEC
+
+Examples
+
+  /MMSG Foobar smiley.gif image/gif binary
+  /MMSG -channel silc silc.patch text/x-patch 7bit
+  /MMSG -sign * boing.mp3 audio/mpeg

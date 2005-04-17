@@ -302,6 +302,7 @@ SILC_TASK_CALLBACK(dump_stats)
   STAT_OUTPUT("  Authentication failures : %d", silcd->stat.auth_failures);
   STAT_OUTPUT("  Packets sent            : %d", silcd->stat.packets_sent);
   STAT_OUTPUT("  Packets received        : %d", silcd->stat.packets_received);
+  STAT_OUTPUT("  Connections             : %d", silcd->stat.conn_num);
 
 #undef STAT_OUTPUT
 
@@ -315,6 +316,7 @@ SILC_TASK_CALLBACK(dump_stats)
   fprintf(fdd, "  backup_router          : %d\n", silcd->backup_router);
   fprintf(fdd, "  backup_primary         : %d\n", silcd->backup_primary);
   fprintf(fdd, "  backup_noswitch        : %d\n", silcd->backup_noswitch);
+  fprintf(fdd, "  backup_closed          : %d\n", silcd->backup_closed);
   fprintf(fdd, "  wait_backup            : %d\n", silcd->wait_backup);
   if (silcd->router)
     fprintf(fdd, "  primary router         : %s\n",
@@ -390,11 +392,14 @@ SILC_TASK_CALLBACK(dump_stats)
 	c = 1;
 	while (id_cache) {
 	  client_entry = (SilcClientEntry)id_cache->context;
-	  fprintf(fdd, "  %d: name %s id %s status 0x%x\n", c,
+	  server_entry = client_entry->router;
+	  fprintf(fdd, "  %d: name %s id %s status 0x%x from %s\n", c,
 		  client_entry->nickname ? client_entry->nickname :
 		  (unsigned char *)"N/A", client_entry->id ?
 		  silc_id_render(client_entry->id, SILC_ID_CLIENT) : "N/A",
-		  client_entry->data.status);
+		  client_entry->data.status, server_entry ?
+		  server_entry->server_name ? server_entry->server_name : 
+		  "N/A" : "local");
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  c++;
@@ -408,11 +413,14 @@ SILC_TASK_CALLBACK(dump_stats)
 	c = 1;
 	while (id_cache) {
 	  client_entry = (SilcClientEntry)id_cache->context;
-	  fprintf(fdd, "  %d: name %s id %s status 0x%x\n", c,
+	  server_entry = client_entry->router;
+	  fprintf(fdd, "  %d: name %s id %s status 0x%x from %s\n", c,
 		  client_entry->nickname ? client_entry->nickname :
 		  (unsigned char *)"N/A", client_entry->id ?
 		  silc_id_render(client_entry->id, SILC_ID_CLIENT) : "N/A",
-		  client_entry->data.status);
+		  client_entry->data.status, server_entry ?
+		  server_entry->server_name ? server_entry->server_name : 
+		  "N/A" : "local");
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
 	  c++;
@@ -460,6 +468,8 @@ SILC_TASK_CALLBACK(dump_stats)
   fflush(fdd);
   fclose(fdd);
 }
+
+#ifdef SILC_DEBUG
 
 typedef struct {
   int level;
@@ -540,6 +550,7 @@ static void silc_get_debug_level(int level)
       break;
     }
 }
+#endif /* SILC_DEBUG */
 
 /* This function should not be called directly but through the appropriate
    wrapper macro defined in server.h */
@@ -588,7 +599,7 @@ int main(int argc, char **argv)
 	  printf("SILCd Secure Internet Live Conferencing daemon, "
 		 "version %s (base: SILC Toolkit %s)\n",
 		 silc_dist_version, silc_version);
-	  printf("(c) 1997 - 2002 Pekka Riikonen "
+	  printf("(c) 1997 - 2005 Pekka Riikonen "
 		 "<priikone@silcnet.org>\n");
 	  exit(0);
 	  break;

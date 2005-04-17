@@ -55,8 +55,8 @@ info_eol = "false";
 
 # these characters are automatically replaced with specified color
 # (dark grey by default)
-replaces = { "()=" = "%K$*%n"; };
-#replaces = {};
+#replaces = { "()=" = "%K$*%n"; };
+replaces = {};
 
 abstracts = {
   ##
@@ -119,20 +119,30 @@ abstracts = {
   ##
 
   # Generic action
-  action = "%Y* $0 $1-";
+  action = "%c* $*%n ";
 
   # Own sent action
-  ownaction = "%c* $0 $1-";
+  ownaction = "{action $*}";
+
+  # Own sent action with target
+  ownaction_target = "{action $0}%K:%c$1%n ";
+
+  # private action sent by others
+  pvtaction = "%Y(*) $*%n ";
+  pvtaction_query = "%Y* $*%n ";
+
+  # public action sent by others
+  pubaction = "{pvtaction_query $*}";
 
   ##
   ## Notice (/NOTICE command)
   ##
 
   # Generic notice
-  notice = "%C- $0 $1-";
-
-  # Own sent notice
-  ownnotice = "%g- $0 $1-";
+  ownnotice = "%g- $1 -%n ";
+  notice = "%C- $* -%n ";
+  pubnotice_channel = "";
+  pvtnotice_host = "";
 
 
   ##

@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "MP_API_COMPATIBLE" /YX /FD /c
+# ADD CPP /nologo /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "MP_API_COMPATIBLE" /D "HAVE_SILCDEFS_H" /YX /FD /Zm300 /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -64,7 +64,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /W2 /Gm /GX /ZI /Od /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "MP_API_COMPATIBLE" /YX /FD /GZ /c
+# ADD CPP /nologo /W2 /Gm /GX /ZI /Od /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "MP_API_COMPATIBLE" /D "HAVE_SILCDEFS_H" /YX /FD /GZ /c
 # SUBTRACT CPP /WX
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
@@ -126,6 +126,10 @@ SOURCE=..\..\lib\silccore\silcnotify.c
 # Begin Source File
 
 SOURCE=..\..\lib\silccore\silcpacket.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccore\silcstatus.c
 # End Source File
 # End Group
 # Begin Group "silcske"
@@ -285,15 +289,7 @@ SOURCE=..\..\lib\silccrypt\none.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silccrypt\pkcs1.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silccrypt\rc5.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\rc6.c
 # End Source File
 # Begin Source File
 
@@ -318,6 +314,10 @@ SOURCE=..\..\lib\silccrypt\silchmac.c
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\silcpkcs.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccrypt\silcpkcs1.c
 # End Source File
 # Begin Source File
 
@@ -605,23 +605,11 @@ SOURCE=..\..\lib\silccrypt\none.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silccrypt\pkcs1.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silccrypt\rc5.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\rc5_internal.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\rc6.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\rc6_internal.h
 # End Source File
 # Begin Source File
 

@@ -197,6 +197,14 @@ int silc_net_create_connection(const char *local_ip, int port,
   /* Connect to the host */
   rval = connect(sock, &desthost.sa, SIZEOF_SOCKADDR(desthost));
   if (rval < 0) {
+    /* retry using an IPv4 adress, if IPv6 didn't work */
+    if (prefer_ipv6 && silc_net_is_ip6(ip_addr)) {
+      shutdown(sock, 2);
+      close(sock);
+
+      prefer_ipv6 = FALSE;
+      goto retry;
+    }
     SILC_LOG_ERROR(("Cannot connect to remote host: %s", strerror(errno)));
     shutdown(sock, 2);
     close(sock);
@@ -272,6 +280,15 @@ int silc_net_create_connection_async(const char *local_ip, int port,
   rval = connect(sock, &desthost.sa, SIZEOF_SOCKADDR(desthost));
   if (rval < 0) {
     if (errno !=  EINPROGRESS) {
+      /* retry using an IPv4 adress, if IPv6 didn't work */
+      if (prefer_ipv6 && silc_net_is_ip6(ip_addr)) {
+        shutdown(sock, 2);
+        close(sock);
+
+        prefer_ipv6 = FALSE;
+        goto retry;
+      }
+
       SILC_LOG_ERROR(("Cannot connect to remote host: %s", strerror(errno)));
       shutdown(sock, 2);
       close(sock);

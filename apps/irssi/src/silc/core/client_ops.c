@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2001 - 2003 Pekka Riikonen
+  Copyright (C) 2001 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,11 +29,13 @@
 #include "silc-channels.h"
 #include "silc-queries.h"
 #include "silc-nicklist.h"
+#include "silc-cmdqueue.h"
 
 #include "signals.h"
 #include "levels.h"
 #include "settings.h"
 #include "ignore.h"
+#include "special-vars.h"
 #include "fe-common/core/printtext.h"
 #include "fe-common/core/fe-channels.h"
 #include "fe-common/core/keyboard.h"
@@ -48,6 +50,20 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 				unsigned char *pk, SilcUInt32 pk_len,
 				SilcSKEPKType pk_type,
 				SilcVerifyPublicKey completion, void *context);
+
+char *silc_get_session_filename(SILC_SERVER_REC *server)
+{
+  char *file, *expanded;
+
+  expanded = parse_special_string(settings_get_str("session_filename"),
+  				SERVER(server), NULL, "", NULL, 0);
+
+  file = silc_calloc(1, strlen(expanded) + 255);
+  snprintf(file, strlen(expanded) + 255, "%s/%s", get_irssi_dir(), expanded);
+  free(expanded);
+
+  return file;
+}
 
 static void silc_get_umode_string(SilcUInt32 mode, char *buf,
 				  SilcUInt32 buf_size)
@@ -81,6 +97,28 @@ static void silc_get_umode_string(SilcUInt32 mode, char *buf,
     strcat(buf, " [rejects watching]");
   if (mode & SILC_UMODE_BLOCK_INVITE)
     strcat(buf, " [blocks invites]");
+}
+
+/* converts an utf-8 string to current locale */
+char * silc_convert_utf8_string(const char *str)
+{
+  int message_len = (str != NULL ? strlen(str) : 0);
+  char *message = silc_calloc(message_len + 1, sizeof(*message));
+
+  g_return_val_if_fail(message != NULL, NULL);
+
+  if (str == NULL) {
+    *message = 0;
+    return message;
+  }
+
+  if (!silc_term_utf8() && silc_utf8_valid(str, message_len))
+    silc_utf8_decode(str, message_len, SILC_STRING_LOCALE,
+                     message, message_len);
+  else
+    strcpy(message, str);
+
+  return message;
 }
 
 /* print "nick appears as" message to every channel of a server */
@@ -290,62 +328,71 @@ int verify_message_signature(SilcClientEntry sender,
 
 char * silc_unescape_data(const char *escaped_data, SilcUInt32 *length)
 {
-  SilcUInt32 ctr, dest=0;
-  char *data;
+    char *data, *ptr;
+    int i = 0, j = 0, len = strlen(escaped_data);
 
-  data = silc_calloc(strlen(escaped_data), sizeof(char));
-  
-  for (ctr = 0; ctr < strlen(escaped_data); ctr++)
-    if (escaped_data[ctr] == 1)
-      data[dest++] = escaped_data[++ctr] - 1;
-    else
-      data[dest++] = escaped_data[ctr];
+    data = silc_calloc(len, sizeof(char));
 
-  *length = dest;
-  return data;
+    while (i < len) {
+        ptr = memchr(escaped_data + i, 1, len - i);
+        if (ptr) {
+            int inc = (ptr - escaped_data) - i;
+            memcpy(data + j, escaped_data + i, inc);
+            j += inc;
+            i += inc + 2;
+            data[j++] = *(ptr + 1) - 1;
+        } else {
+            memcpy(data + j, escaped_data + i, len - i);
+            j += (len - i);
+            break;
+        }
+    }
+
+    *length = j;
+    return data;
 }
 
 char * silc_escape_data(const char *data, SilcUInt32 len)
 {
-  char *escaped_data;
-  SilcUInt32 ctr, zeros=0;
+    char *escaped_data, *ptr, *ptr0, *ptr1;
+    int i = 0, j = 0;
 
-  for (ctr = 0; ctr < len; ctr++)
-    if (data[ctr] == 0 || data[ctr] == 1)
-      zeros++;
+    escaped_data = silc_calloc(2 * len, sizeof(char));
 
-  escaped_data = silc_calloc(zeros + len, sizeof(char));
+    while (i < len) {
+        ptr0 = memchr(data + i, 0, len - i);
+        ptr1 = memchr(data + i, 1, len - i);
 
-  zeros=0;
-  for (ctr = 0; ctr < len; ctr++)
-    switch (data[ctr]) {
-      case 0:
-	escaped_data[zeros++] = 1;
-	escaped_data[zeros++] = 1;
-	break;
+        ptr = (ptr0 < ptr1 ? (ptr0 ? ptr0 : ptr1) : (ptr1 ? ptr1 : ptr0));
 
-      case 1:
-	escaped_data[zeros++] = 1;
-	escaped_data[zeros++] = 2;
-	break;
-
-      default:
-	escaped_data[zeros++] = data[ctr];
-    } 
+        if (ptr) {
+            int inc = (ptr - data) - i;
+            if (inc)
+                memcpy(escaped_data + j, data + i, inc);
+            j += inc;
+            i += inc;
+            escaped_data[j++] = 1;
+            escaped_data[j++] = *(data + i++) + 1;
+        } else {
+            memcpy(escaped_data + j, data + i, len - i);
+            j += (len - i);
+            break;
+        }
+    }
 
     return escaped_data;
 }
 
-void silc_emit_mime_sig(SILC_SERVER_REC *server, SILC_CHANNEL_REC *channel,
-               const char *data, SilcUInt32 data_len,
-               const char *encoding, const char *type, const char *nick)
+void silc_emit_mime_sig(SILC_SERVER_REC *server, WI_ITEM_REC *item,
+               const char *data, SilcUInt32 data_len, const char *nick,
+	       int verified)
 {
    char *escaped_data;
 
    escaped_data = silc_escape_data(data, data_len);
 
-   signal_emit("mime", 6, server, channel, escaped_data, encoding, type, nick);
- 
+   signal_emit("mime", 5, server, item, escaped_data, nick, verified);
+
    silc_free(escaped_data);
 }
 
@@ -356,6 +403,7 @@ void silc_emit_mime_sig(SILC_SERVER_REC *server, SILC_CHANNEL_REC *channel,
 void silc_channel_message(SilcClient client, SilcClientConnection conn,
 			  SilcClientEntry sender, SilcChannelEntry channel,
 			  SilcMessagePayload payload,
+			  SilcChannelPrivateKey key,
 			  SilcMessageFlags flags, const unsigned char *message,
 			  SilcUInt32 message_len)
 {
@@ -393,34 +441,15 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
   }
 
   if (flags & SILC_MESSAGE_FLAG_DATA) {
-    /* MIME object received, try to display it as well as we can */
-    char type[128], enc[128];
-    unsigned char *data;
-    SilcUInt32 data_len;
-
-    memset(type, 0, sizeof(type));
-    memset(enc, 0, sizeof(enc));
-    if (!silc_mime_parse(message, message_len, NULL, 0, type, sizeof(type) - 1,
-			 enc, sizeof(enc) - 1, &data, &data_len))
-      return;
-
-    /* Then figure out what we can display */
-    if (strstr(type, "text/") && !strstr(type, "text/t140") &&
-	!strstr(type, "text/vnd")) {
-      /* It is something textual, display it */
-      message = (const unsigned char *)data;
-    } else {
-      silc_emit_mime_sig(server, chanrec, data, data_len,
-      		enc, type, nick == NULL ? NULL : nick->nick);
-      message = NULL;
-    }
+    silc_emit_mime_sig(server, (WI_ITEM_REC *)chanrec, message, message_len,
+		nick == NULL ? NULL : nick->nick,
+		flags & SILC_MESSAGE_FLAG_SIGNED ? verified : -1);
+    message = NULL;
   }
 
   if (!message)
     return;
 
-  /* FIXME: replace those printformat calls with signals and add signature
-            information to them (if present) */
   if (flags & SILC_MESSAGE_FLAG_ACTION)
     if(flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
       char tmp[256], *cp, *dm = NULL;
@@ -430,17 +459,22 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
         dm = silc_calloc(message_len + 1, sizeof(*dm));
         cp = dm;
       }
-      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+      silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
                        cp, message_len);
-      printformat_module("fe-common/silc", server, channel->channel_name,
-                         MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION,
-                         nick == NULL ? "[<unknown>]" : nick->nick, cp);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message silc signed_action", 6, server, cp, nick->nick,
+		    nick->host, channel->channel_name, verified);
+      else
+        signal_emit("message silc action", 5, server, cp, nick->nick,
+		    nick->host, channel->channel_name);
       silc_free(dm);
     } else {
-      printformat_module("fe-common/silc", server, channel->channel_name,
-                         MSGLEVEL_ACTIONS, SILCTXT_CHANNEL_ACTION,
-                         nick == NULL ? "[<unknown>]" : nick->nick,
-                         message);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message silc signed_action", 6, server, message,
+		    nick->nick, nick->host, channel->channel_name, verified);
+      else
+        signal_emit("message silc action", 5, server, message,
+		    nick->nick, nick->host, channel->channel_name);
     }
   else if (flags & SILC_MESSAGE_FLAG_NOTICE)
     if(flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
@@ -451,17 +485,22 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
         dm = silc_calloc(message_len + 1, sizeof(*dm));
         cp = dm;
       }
-      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+      silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
                        cp, message_len);
-      printformat_module("fe-common/silc", server, channel->channel_name,
-                         MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE,
-                         nick == NULL ? "[<unknown>]" : nick->nick, cp);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+	signal_emit("message silc signed_notice", 6, server, cp, nick->nick,
+		nick->host, channel->channel_name, verified);
+      else
+	signal_emit("message silc notice", 5, server, cp, nick->nick,
+		nick->host, channel->channel_name);
       silc_free(dm);
     } else {
-      printformat_module("fe-common/silc", server, channel->channel_name,
-                         MSGLEVEL_NOTICES, SILCTXT_CHANNEL_NOTICE,
-                         nick == NULL ? "[<unknown>]" : nick->nick,
-                         message);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+	signal_emit("message silc signed_notice", 6, server, message,
+		nick->nick, nick->host, channel->channel_name, verified);
+      else
+	signal_emit("message silc notice", 5, server, message,
+		nick->nick, nick->host, channel->channel_name);
     }
   else {
     if (flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
@@ -474,7 +513,7 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
 	cp = dm;
       }
 
-      silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
+      silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
 		       cp, message_len);
       if (flags & SILC_MESSAGE_FLAG_SIGNED)
         signal_emit("message signed_public", 6, server, cp,
@@ -535,65 +574,117 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
   }
 
   if (flags & SILC_MESSAGE_FLAG_DATA) {
-    /* MIME object received, try to display it as well as we can */
-    char type[128], enc[128];
-    unsigned char *data;
-    SilcUInt32 data_len;
-
-    memset(type, 0, sizeof(type));
-    memset(enc, 0, sizeof(enc));
-    if (!silc_mime_parse(message, message_len, NULL, 0, type, sizeof(type) - 1,
-			 enc, sizeof(enc) - 1, &data, &data_len))
-      return;
-
-    /* Then figure out what we can display */
-    if (strstr(type, "text/") && !strstr(type, "text/t140") &&
-	!strstr(type, "text/vnd")) {
-      /* It is something textual, display it */
-      message = (const unsigned char *)data;
-    } else {
-      silc_emit_mime_sig(server, NULL, data, data_len,
-      			enc, type, sender->nickname ? sender->nickname :
-				   "[<unknown>]");
-      message = NULL;
-    }
+    silc_emit_mime_sig(server,
+		sender->nickname ?
+		(WI_ITEM_REC *)query_find(SERVER(server), sender->nickname) :
+		NULL,
+		message, message_len,
+      		sender->nickname ? sender->nickname : "[<unknown>]",
+		flags & SILC_MESSAGE_FLAG_SIGNED ? verified : -1);
+    message = NULL;
   }
 
   if (!message)
     return;
 
-  if (flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
-    char tmp[256], *cp, *dm = NULL;
+  if (flags & SILC_MESSAGE_FLAG_ACTION)
+    if(flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
+      char tmp[256], *cp, *dm = NULL;
+      memset(tmp, 0, sizeof(tmp));
+      cp = tmp;
+      if(message_len > sizeof(tmp) - 1) {
+        dm = silc_calloc(message_len + 1, sizeof(*dm));
+        cp = dm;
+      }
+      silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
+                       cp, message_len);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message silc signed_private_action", 6, server, cp,
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL,
+		    NULL, verified);
+      else
+        signal_emit("message silc private_action", 5, server, cp,
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL, NULL);
+      silc_free(dm);
+    } else {
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message silc signed_private_action", 6, server, message,
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL,
+		    NULL, verified);
+      else
+        signal_emit("message silc private_action", 5, server, message,
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL, NULL);
+    }
+  else if (flags & SILC_MESSAGE_FLAG_NOTICE)
+    if(flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
+      char tmp[256], *cp, *dm = NULL;
+      memset(tmp, 0, sizeof(tmp));
+      cp = tmp;
+      if(message_len > sizeof(tmp) - 1) {
+        dm = silc_calloc(message_len + 1, sizeof(*dm));
+        cp = dm;
+      }
+      silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
+                       cp, message_len);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message silc signed_private_notice", 6, server, cp,
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL,
+		    NULL, verified);
+      else
+        signal_emit("message silc private_notice", 5, server, cp,
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL, NULL);
+      silc_free(dm);
+    } else {
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message silc signed_private_notice", 6, server, message,
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL,
+		    NULL, verified);
+      else
+        signal_emit("message silc private_notice", 5, server, message,
+		    sender->nickname ? sender->nickname : "[<unknown>]",
+		    sender->username ? userhost : NULL, NULL);
+    }
+  else {
+    if (flags & SILC_MESSAGE_FLAG_UTF8 && !silc_term_utf8()) {
+      char tmp[256], *cp, *dm = NULL;
 
-    memset(tmp, 0, sizeof(tmp));
-    cp = tmp;
-    if (message_len > sizeof(tmp) - 1) {
-      dm = silc_calloc(message_len + 1, sizeof(*dm));
-      cp = dm;
+      memset(tmp, 0, sizeof(tmp));
+      cp = tmp;
+      if (message_len > sizeof(tmp) - 1) {
+        dm = silc_calloc(message_len + 1, sizeof(*dm));
+        cp = dm;
+      }
+
+      silc_utf8_decode(message, message_len, SILC_STRING_LOCALE,
+  		     cp, message_len);
+      if (flags & SILC_MESSAGE_FLAG_SIGNED)
+        signal_emit("message signed_private", 5, server, cp,
+  		  sender->nickname ? sender->nickname : "[<unknown>]",
+  		  sender->username ? userhost : NULL, verified);
+      else
+        signal_emit("message private", 4, server, cp,
+  		  sender->nickname ? sender->nickname : "[<unknown>]",
+  		  sender->username ? userhost : NULL);
+      silc_free(dm);
+      return;
     }
 
-    silc_utf8_decode(message, message_len, SILC_STRING_LANGUAGE,
-		     cp, message_len);
     if (flags & SILC_MESSAGE_FLAG_SIGNED)
-      signal_emit("message signed_private", 5, server, cp,
-		  sender->nickname ? sender->nickname : "[<unknown>]",
-		  sender->username ? userhost : NULL, verified);
+      signal_emit("message signed_private", 5, server, message,
+              sender->nickname ? sender->nickname : "[<unknown>]",
+              sender->username ? userhost : NULL, verified);
     else
-      signal_emit("message private", 4, server, cp,
-		  sender->nickname ? sender->nickname : "[<unknown>]",
-		  sender->username ? userhost : NULL);
-    silc_free(dm);
-    return;
+      signal_emit("message private", 4, server, message,
+              sender->nickname ? sender->nickname : "[<unknown>]",
+              sender->username ? userhost : NULL);
   }
-
-  if (flags & SILC_MESSAGE_FLAG_SIGNED)
-    signal_emit("message signed_private", 5, server, message,
-	        sender->nickname ? sender->nickname : "[<unknown>]",
-	        sender->username ? userhost : NULL, verified);
-  else
-    signal_emit("message private", 4, server, message,
-	        sender->nickname ? sender->nickname : "[<unknown>]",
-	        sender->username ? userhost : NULL);
 }
 
 /* Notify message to the client. The notify arguments are sent in the
@@ -1201,6 +1292,9 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
   switch (status) {
   case SILC_CLIENT_CONN_SUCCESS:
     /* We have successfully connected to server */
+    if ((client->nickname != NULL) &&
+        (strcmp(client->nickname, client->username)))
+      silc_queue_enable(conn); /* enable queueing until we have our nick */
     server->connected = TRUE;
     signal_emit("event connected", 1, server);
     break;
@@ -1222,14 +1316,37 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
       signal_emit("message own_nick", 4, server, server->nick, old, "");
       g_free(old);
     }
+
+    /* remove the detach data now */
+    {
+      char *file;
+
+      file = silc_get_session_filename(server);
+
+      unlink(file);
+      silc_free(file);
+    }
     break;
 
   default:
-    server->connection_lost = TRUE;
-    if (server->conn)
-      server->conn->context = NULL;
-    server_disconnect(SERVER(server));
-    break;
+    {
+      char * file;
+
+      file = silc_get_session_filename(server);
+
+      if (silc_file_size(file) > 0)
+        printformat_module("fe-common/silc", server, NULL,
+		           MSGLEVEL_CRAP, SILCTXT_REATTACH_FAILED, file);
+
+      silc_free(file);
+
+      server->connection_lost = TRUE;
+      if (server->conn)
+        server->conn->context = NULL;
+      server_disconnect(SERVER(server));
+
+      break;
+    }
   }
 }
 
@@ -1578,7 +1695,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	/* Print the unknown nick for user */
 	unsigned char *tmp =
 	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
-				     3, NULL);
+				     2, NULL);
 	if (tmp)
 	  silc_say_error("%s: %s", tmp,
 			 silc_get_status_message(status));
@@ -1696,7 +1813,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	/* Print the unknown nick for user */
 	unsigned char *tmp =
 	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
-				     3, NULL);
+				     2, NULL);
 	if (tmp)
 	  silc_say_error("%s: %s", tmp,
 			 silc_get_status_message(status));
@@ -1730,11 +1847,10 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     {
       char *nickname, *username, *realname;
 
-      if (status == SILC_STATUS_ERR_NO_SUCH_NICK ||
-	  status == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
-	char *tmp;
-	tmp = silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
-					 3, NULL);
+      if (status == SILC_STATUS_ERR_NO_SUCH_NICK) {
+	char *tmp =
+	  silc_argument_get_arg_type(silc_command_get_args(cmd_payload),
+				     2, NULL);
 	if (tmp)
 	  silc_say_error("%s: %s", tmp,
 			 silc_get_status_message(status));
@@ -1820,7 +1936,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	    cp = dm;
 	  }
 
-	  silc_utf8_decode(topic, strlen(topic), SILC_STRING_LANGUAGE,
+	  silc_utf8_decode(topic, strlen(topic), SILC_STRING_LOCALE,
 			   cp, strlen(topic));
 	  topic = cp;
 	}
@@ -1872,16 +1988,21 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	collider = silc_client_get_client_by_id(client, conn,
 						old->id);
 
-        memset(buf, 0, sizeof(buf));
-        snprintf(buf, sizeof(buf) - 1, "%s@%s",
-		 collider->username, collider->hostname);
-	nicklist_rename_unique(SERVER(server),
-			       old, old->nickname,
-			       collider, collider->nickname);
-	silc_print_nick_change(server, collider->nickname,
-			       client_entry->nickname, buf);
-	g_slist_free(nicks);
+	if (collider != client_entry) {
+
+          memset(buf, 0, sizeof(buf));
+          snprintf(buf, sizeof(buf) - 1, "%s@%s",
+	  	   collider->username, collider->hostname);
+	  nicklist_rename_unique(SERVER(server),
+			         old, old->nickname,
+			         collider, collider->nickname);
+	  silc_print_nick_change(server, collider->nickname,
+			         client_entry->nickname, buf);
+	}
       }
+
+      if (nicks != NULL)
+	g_slist_free(nicks);
 
       old = g_strdup(server->nick);
       server_change_nick(SERVER(server), client_entry->nickname);
@@ -1890,6 +2011,11 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 			     client_entry, client_entry->nickname);
       signal_emit("message own_nick", 4, server, server->nick, old, "");
       g_free(old);
+
+      /* when connecting to a server, the last thing we receive
+         is a SILC_COMMAND_LIST reply. Since we enable queueing
+	 during the connection, we can now safely disable it again */
+      silc_queue_disable(conn);
       break;
     }
 
@@ -1905,6 +2031,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
       (void)va_arg(vp, SilcChannelEntry);
       name = va_arg(vp, char *);
+      if (!name)
+	return;
       topic = va_arg(vp, char *);
       usercount = va_arg(vp, int);
 
@@ -1917,7 +2045,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  cp = dm;
 	}
 
-	silc_utf8_decode(topic, strlen(topic), SILC_STRING_LANGUAGE,
+	silc_utf8_decode(topic, strlen(topic), SILC_STRING_LOCALE,
 			 cp, strlen(topic));
 	topic = cp;
       }
@@ -2169,7 +2297,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  cp = dm;
 	}
 
-	silc_utf8_decode(topic, strlen(topic), SILC_STRING_LANGUAGE,
+	silc_utf8_decode(topic, strlen(topic), SILC_STRING_LOCALE,
 			 cp, strlen(topic));
 	topic = cp;
       }
@@ -2340,11 +2468,19 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
       /* Print the channel public key list */
       if (channel_pubkeys)
-	silc_parse_channel_public_keys(server, channel_entry, channel_pubkeys);
+        silc_parse_channel_public_keys(server, channel_entry, channel_pubkeys);
       else
-	printformat_module("fe-common/silc", server, NULL,
-			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_PK_NO_LIST,
-			   channel_entry->channel_name);
+        printformat_module("fe-common/silc", server, NULL,
+                         MSGLEVEL_CRAP, SILCTXT_CHANNEL_PK_NO_LIST,
+                         channel_entry->channel_name);
+
+    }
+    break;
+
+  case SILC_COMMAND_LEAVE:
+    {
+      /* we might be cycling, so disable queueing again */
+      silc_queue_disable(conn);
     }
     break;
 
@@ -2884,13 +3020,14 @@ void
 silc_detach(SilcClient client, SilcClientConnection conn,
             const unsigned char *detach_data, SilcUInt32 detach_data_len)
 {
-  char file[256];
+  SILC_SERVER_REC *server = conn->context;
+  char *file;
 
   /* Save the detachment data to file. */
 
-  memset(file, 0, sizeof(file));
-  snprintf(file, sizeof(file) - 1, "%s/session", get_irssi_dir());
+  file = silc_get_session_filename(server);
   silc_file_writefile(file, detach_data, detach_data_len);
+  silc_free(file);
 }
 
 

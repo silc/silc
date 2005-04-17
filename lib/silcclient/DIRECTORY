@@ -5,6 +5,7 @@
 @LINK=command_reply_args.html:Arguments for <b>command_reply</b> Client Operation
 @LINK=silcstatus_args.html:SilcStatus Error Arguments in <b>command_reply</b> Client Operation
 @LINK=notifyargs.html:Arguments for <b>notify</b> Client Operation
+@LINK=silcclient_unicode.html:Unicode and UTF-8 Strings in Client Library
 @LINK=silcclient.html:Client Library Interface Reference
 -->
 
@@ -17,7 +18,7 @@
 <b>Introduction</b>
 
 <br /><br />
-SILC Client Library is SILC Client implementation without the actual user 
+SILC Client Library is SILC Client implementation without the actual user
 interface. The library uses common and core components of SILC protocol from
 lib/silccore library and normal utility routines from lib/silcutil library.
 The library has been designed to be complete SILC Client implementation

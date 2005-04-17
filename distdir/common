@@ -1,0 +1,10 @@
+# Common SILC source tree distdefs
+option template
+define SILC_DIST_SILC
+define SILC_DIST_LIB
+define SILC_DIST_INCLUDES
+define SILC_DIST_DOC
+define SILC_DIST_SIM
+define SILC_DIST_MPI
+define SILC_DIST_MATH
+define SILC_DIST_COMPILER

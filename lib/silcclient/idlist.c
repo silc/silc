@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2003 Pekka Riikonen
+  Copyright (C) 2001 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,18 +48,28 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
   SilcClientEntry entry, *clients;
   int i = 0;
   bool found = FALSE;
+  char *nicknamec;
 
   assert(client && conn);
   if (!nickname)
     return NULL;
 
-  /* Find ID from cache */
-  if (!silc_idcache_find_by_name(conn->internal->client_cache,
-				 (char *)nickname, &list))
+  /* Normalize nickname for search */
+  nicknamec = silc_identifier_check(nickname, strlen(nickname),
+				    SILC_STRING_UTF8, 128, NULL);
+  if (!nicknamec)
     return NULL;
+
+  /* Find ID from cache */
+  if (!silc_idcache_find_by_name(conn->internal->client_cache, nicknamec,
+				 &list)) {
+    silc_free(nicknamec);
+    return NULL;
+  }
 
   if (!silc_idcache_list_count(list)) {
     silc_idcache_list_free(list);
+    silc_free(nicknamec);
     return NULL;
   }
 
@@ -80,7 +90,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
     silc_idcache_list_first(list, &id_cache);
     while (id_cache) {
       entry = (SilcClientEntry)id_cache->context;
-      if (strcasecmp(entry->nickname, format)) {
+      if (!silc_utf8_strcasecmp(entry->nickname, format)) {
 	if (!silc_idcache_list_next(list, &id_cache)) {
 	  break;
 	} else {
@@ -94,6 +104,8 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
 	break;
     }
   }
+
+  silc_free(nicknamec);
 
   if (list)
     silc_idcache_list_free(list);
@@ -121,8 +133,11 @@ typedef struct {
   SilcGetClientCallback completion;
   void *context;
   char *nickname;
-  char *server;
+  SilcClientEntry *clients;
+  SilcUInt32 clients_count;
 } *GetClientInternal;
+
+/* Completion for IDENTIFY */
 
 SILC_CLIENT_CMD_FUNC(get_client_callback)
 {
@@ -132,7 +147,7 @@ SILC_CLIENT_CMD_FUNC(get_client_callback)
 
   /* Get the clients */
   clients = silc_client_get_clients_local(i->client, i->conn,
-					  i->nickname, i->server,
+					  i->nickname, NULL,
 					  &clients_count);
   if (clients) {
     i->completion(i->client, i->conn, clients, clients_count, i->context);
@@ -142,8 +157,124 @@ SILC_CLIENT_CMD_FUNC(get_client_callback)
   }
 
   silc_free(i->nickname);
-  silc_free(i->server);
   silc_free(i);
+}
+
+/* Completion for WHOIS */
+
+SILC_CLIENT_CMD_FUNC(get_client_callback_wc)
+{
+  GetClientInternal i = (GetClientInternal)context;
+  SilcClientCommandReplyContext cmd = context2;
+  SilcClientID *client_id = NULL;
+  SilcClientEntry client_entry = NULL;
+  unsigned char *id_data;
+  SilcUInt32 len;
+
+  /* Get the client entry just returned from server */
+  id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
+  if (id_data)
+    client_id = silc_id_payload_parse_id(id_data, len, NULL);
+  if (client_id)
+    client_entry = silc_client_get_client_by_id(i->client,
+						i->conn, client_id);
+  if (!client_entry) {
+    if (!SILC_STATUS_IS_ERROR(cmd->status) &&
+	cmd->status != SILC_STATUS_OK &&
+	cmd->status != SILC_STATUS_LIST_END) {
+      silc_free(client_id);
+      return;
+    }
+
+    i->completion(i->client, i->conn, i->clients, i->clients_count,
+		  i->context);
+    silc_free(client_id);
+    silc_free(i->clients);
+    silc_free(i->nickname);
+    silc_free(i);
+    return;
+  }
+
+  /* Save the client */
+  i->clients = silc_realloc(i->clients,
+			    (sizeof(*i->clients) * (i->clients_count + 1)));
+  i->clients[i->clients_count] = client_entry;
+  i->clients_count++;
+
+  /* Return if more data is expected */
+  if (cmd->status != SILC_STATUS_OK &&
+      cmd->status != SILC_STATUS_LIST_END) {
+    silc_free(client_id);
+    return;
+  }
+
+  i->completion(i->client, i->conn, i->clients, i->clients_count,
+		i->context);
+
+  silc_free(client_id);
+  silc_free(i->clients);
+  silc_free(i->nickname);
+  silc_free(i);
+}
+
+/* Our own WHOIS reply processor. */
+
+SILC_CLIENT_CMD_FUNC(get_client_callback_w)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (!silc_command_get_status(cmd->payload, NULL, NULL)) {
+    if (SILC_STATUS_IS_ERROR(cmd->status))
+      goto out;
+    if (cmd->status == SILC_STATUS_LIST_END)
+      goto out;
+    goto err;
+  }
+
+  /* Save WHOIS info */
+  silc_client_command_reply_whois_save(cmd, cmd->status, FALSE);
+
+  /* Call pending completion for each reply */
+  if (cmd->status != SILC_STATUS_OK &&
+      cmd->status != SILC_STATUS_LIST_END) {
+    if (cmd->callbacks[0].callback)
+      (*cmd->callbacks[0].callback)(cmd->callbacks[0].context, cmd);
+    silc_client_command_reply_free(cmd);
+    return;
+  }
+
+ out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
+
+ err:
+  /* If we received notify for invalid ID we'll remove the ID if we
+     have it cached. */
+  if (cmd->error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
+    SilcClientEntry client_entry;
+    SilcUInt32 tmp_len;
+    unsigned char *tmp =
+      silc_argument_get_arg_type(silc_command_get_args(cmd->payload),
+				 2, &tmp_len);
+    if (tmp) {
+      SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
+      if (client_id) {
+	client_entry = silc_client_get_client_by_id(cmd->client, conn,
+						    client_id);
+	if (client_entry)
+	  silc_client_del_client(cmd->client, conn, client_entry);
+	silc_free(client_id);
+      }
+    }
+  }
+
+  /* Unregister this command reply */
+  silc_client_command_unregister(cmd->client, SILC_COMMAND_WHOIS,
+				 NULL, silc_client_command_reply_whois_i,
+				 cmd->ident);
+  silc_client_command_reply_free(cmd);
 }
 
 /* Finds client entry or entries by the `nickname' and `server'. The
@@ -155,27 +286,28 @@ SILC_CLIENT_CMD_FUNC(get_client_callback)
    get the client entry since this function may be very slow and should
    be used only to initially get the client entries. */
 
-void silc_client_get_clients(SilcClient client,
-			     SilcClientConnection conn,
-			     const char *nickname,
-			     const char *server,
-			     SilcGetClientCallback completion,
-			     void *context)
+void silc_client_get_clients_i(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcCommand command,
+			       const char *nickname,
+			       const char *server,
+			       SilcBuffer attributes,
+			       SilcGetClientCallback completion,
+			       void *context)
 {
   GetClientInternal i;
   int len;
-  char *userhost;
+  char *userhost = NULL;
 
   assert(client && conn);
 
-  if (!nickname)
+  if (!nickname && !attributes)
     return;
 
   i = silc_calloc(1, sizeof(*i));
   i->client = client;
   i->conn = conn;
-  i->nickname = strdup(nickname);
-  i->server = server ? strdup(server) : NULL;
+  i->nickname = nickname ? strdup(nickname) : NULL;
   i->completion = completion;
   i->context = context;
 
@@ -185,26 +317,65 @@ void silc_client_get_clients(SilcClient client,
     silc_strncat(userhost, len, nickname, strlen(nickname));
     silc_strncat(userhost, len, "@", 1);
     silc_strncat(userhost, len, server, strlen(server));
-  } else {
+  } else if (nickname) {
     userhost = silc_memdup(nickname, strlen(nickname));
   }
 
   /* Register our own command reply for this command */
-  silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
-			       silc_client_command_reply_identify_i, 0,
-			       ++conn->cmd_ident);
+  if (command == SILC_COMMAND_IDENTIFY) {
+    silc_client_command_register(client, command, NULL, NULL,
+				 silc_client_command_reply_identify_i, 0,
+				 ++conn->cmd_ident);
+    /* Send the command */
+    silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
+			     conn->cmd_ident, 1, 1, userhost,
+			     strlen(userhost));
 
-  /* Send the command */
-  silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
-			   conn->cmd_ident, 1, 1, userhost,
-			   strlen(userhost));
+    /* Add pending callback */
+    silc_client_command_pending(conn, command, conn->cmd_ident,
+				silc_client_command_get_client_callback,
+				(void *)i);
+  } else {
+    silc_client_command_register(client, command, NULL, NULL,
+				 silc_client_command_get_client_callback_w, 0,
+				 ++conn->cmd_ident);
+    /* Send the command */
+    silc_client_command_send(client, conn, command, conn->cmd_ident, 2,
+			     1, userhost, userhost ? strlen(userhost) : 0,
+			     3, attributes ? attributes->data : NULL,
+			     attributes ? attributes->len : 0);
 
-  /* Add pending callback */
-  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
-			      silc_client_command_get_client_callback,
-			      (void *)i);
-
+    /* Add pending callback */
+    silc_client_command_pending(conn, command, conn->cmd_ident,
+				silc_client_command_get_client_callback_wc,
+				(void *)i);
+  }
   silc_free(userhost);
+}
+
+void silc_client_get_clients(SilcClient client,
+			     SilcClientConnection conn,
+			     const char *nickname,
+			     const char *server,
+			     SilcGetClientCallback completion,
+			     void *context)
+{
+  silc_client_get_clients_i(client, conn, SILC_COMMAND_IDENTIFY,
+			    nickname, server, NULL,
+			    completion, context);
+}
+
+void silc_client_get_clients_whois(SilcClient client,
+				   SilcClientConnection conn,
+				   const char *nickname,
+				   const char *server,
+				   SilcBuffer attributes,
+				   SilcGetClientCallback completion,
+				   void *context)
+{
+  silc_client_get_clients_i(client, conn, SILC_COMMAND_WHOIS,
+			    nickname, server, attributes,
+			    completion, context);
 }
 
 /* The old style function to find client entry. This is used by the
@@ -222,12 +393,19 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
   SilcIDCacheEntry id_cache;
   SilcIDCacheList list = NULL;
   SilcClientEntry entry = NULL;
+  char *nicknamec;
 
   SILC_LOG_DEBUG(("Start"));
 
+  /* Normalize nickname for search */
+  nicknamec = silc_identifier_check(nickname, strlen(nickname),
+				    SILC_STRING_UTF8, 128, NULL);
+  if (!nicknamec)
+    return NULL;
+
   /* Find ID from cache */
   if (!silc_idcache_find_by_name(conn->internal->client_cache,
-				 (char *)nickname, &list)) {
+				 nicknamec, &list)) {
   identify:
 
     if (query) {
@@ -246,8 +424,11 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
       if (list)
 	silc_idcache_list_free(list);
 
+      silc_free(nicknamec);
       return NULL;
     }
+
+    silc_free(nicknamec);
     return NULL;
   }
 
@@ -263,7 +444,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
     while (id_cache) {
       entry = (SilcClientEntry)id_cache->context;
 
-      if (strcasecmp(entry->nickname, format)) {
+      if (!silc_utf8_strcasecmp(entry->nickname, format)) {
 	if (!silc_idcache_list_next(list, &id_cache)) {
 	  entry = NULL;
 	  break;
@@ -280,6 +461,8 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
     if (!entry)
       goto identify;
   }
+
+  silc_free(nicknamec);
 
   if (list)
     silc_idcache_list_free(list);
@@ -517,12 +700,18 @@ SILC_CLIENT_CMD_FUNC(get_clients_by_channel_cb)
   SilcHashTableList htl;
   SilcChannelUser chu;
 
+  if (i->res_count) {
+    i->res_count--;
+    if (i->res_count)
+      return;
+  }
+
   channel = silc_client_get_channel_by_id(i->client, i->conn, &i->channel_id);
   if (channel && !silc_hash_table_count(channel->user_list)) {
     clients = silc_calloc(silc_hash_table_count(channel->user_list),
 			  sizeof(*clients));
     silc_hash_table_list(channel->user_list, &htl);
-    while (silc_hash_table_get(&htl, NULL, (void **)&chu))
+    while (silc_hash_table_get(&htl, NULL, (void *)&chu))
       clients[clients_count++] = chu->client;
     silc_hash_table_list_reset(&htl);
     found = TRUE;
@@ -583,7 +772,7 @@ void silc_client_get_clients_by_channel(SilcClient client,
   }
 
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chu)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
     entry = chu->client;
 
     /* If the entry has incomplete info, then resolve it from the server. */
@@ -795,12 +984,30 @@ silc_client_add_client(SilcClient client, SilcClientConnection conn,
   client_entry->channels = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
 						 NULL, NULL, NULL, TRUE);
 
+  /* Normalize nickname */
+  if (client_entry->nickname) {
+    silc_free(nick);
+    nick = silc_identifier_check(client_entry->nickname,
+				 strlen(client_entry->nickname),
+				 SILC_STRING_UTF8, 128, NULL);
+    if (!nick) {
+      silc_free(client_entry->nickname);
+      silc_free(client_entry->username);
+      silc_free(client_entry->hostname);
+      silc_free(client_entry->server);
+      silc_hash_table_free(client_entry->channels);
+      silc_free(client_entry);
+      return NULL;
+    }
+  }
+
   /* Format the nickname */
   silc_client_nickname_format(client, conn, client_entry);
 
   /* Add client to cache, the non-formatted nickname is saved to cache */
   if (!silc_idcache_add(conn->internal->client_cache, nick, client_entry->id,
 			(void *)client_entry, 0, NULL)) {
+    silc_free(nick);
     silc_free(client_entry->nickname);
     silc_free(client_entry->username);
     silc_free(client_entry->hostname);
@@ -840,6 +1047,16 @@ void silc_client_update_client(SilcClient client,
   if (!client_entry->nickname && nickname) {
     silc_parse_userfqdn(nickname, &nick, &client_entry->server);
     client_entry->nickname = strdup(nick);
+
+    /* Normalize nickname */
+    silc_free(nick);
+    nick = silc_identifier_check(client_entry->nickname,
+				 strlen(client_entry->nickname),
+				 SILC_STRING_UTF8, 128, NULL);
+    if (!nick)
+      return;
+
+    /* Format nickname */
     silc_client_nickname_format(client, conn, client_entry);
   }
   client_entry->mode = mode;
@@ -867,6 +1084,8 @@ void silc_client_del_client_entry(SilcClient client,
   silc_free(client_entry->server);
   silc_free(client_entry->id);
   silc_free(client_entry->fingerprint);
+  if (client_entry->public_key)
+    silc_pkcs_public_key_free(client_entry->public_key);
   silc_hash_table_free(client_entry->channels);
   if (client_entry->send_key)
     silc_cipher_free(client_entry->send_key);
@@ -907,6 +1126,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
 					 SilcChannelID *channel_id)
 {
   SilcChannelEntry channel;
+  char *channel_namec;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -917,9 +1137,20 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   channel->user_list = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
 					     NULL, NULL, NULL, TRUE);
 
+  /* Normalize channel name */
+  channel_namec = silc_channel_name_check(channel_name, strlen(channel_name),
+					  SILC_STRING_UTF8, 256, NULL);
+  if (!channel_namec) {
+    silc_free(channel->channel_name);
+    silc_hash_table_free(channel->user_list);
+    silc_free(channel);
+    return NULL;
+  }
+
   /* Put it to the ID cache */
-  if (!silc_idcache_add(conn->internal->channel_cache, channel->channel_name,
+  if (!silc_idcache_add(conn->internal->channel_cache, channel_namec,
 			(void *)channel->id, (void *)channel, 0, NULL)) {
+    silc_free(channel_namec);
     silc_free(channel->channel_name);
     silc_hash_table_free(channel->user_list);
     silc_free(channel);
@@ -963,7 +1194,10 @@ bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
   silc_hash_table_free(channel->user_list);
 
   silc_free(channel->channel_name);
+  silc_free(channel->topic);
   silc_free(channel->id);
+  if (channel->founder_key)
+    silc_pkcs_public_key_free(channel->founder_key);
   silc_free(channel->key);
   if (channel->channel_key)
     silc_cipher_free(channel->channel_key);
@@ -983,6 +1217,7 @@ bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
       silc_hmac_free(hmac);
     silc_dlist_uninit(channel->old_hmacs);
   }
+  silc_schedule_task_del_by_context(conn->client->schedule, channel);
   silc_client_del_channel_private_keys(client, conn, channel);
   silc_free(channel);
   return ret;
@@ -996,6 +1231,8 @@ bool silc_client_replace_channel_id(SilcClient client,
 				    SilcChannelEntry channel,
 				    SilcChannelID *new_id)
 {
+  char *channel_namec;
+
   if (!new_id)
     return FALSE;
 
@@ -1007,8 +1244,15 @@ bool silc_client_replace_channel_id(SilcClient client,
   silc_idcache_del_by_id(conn->internal->channel_cache, channel->id);
   silc_free(channel->id);
   channel->id = new_id;
-  return silc_idcache_add(conn->internal->channel_cache,
-			  channel->channel_name,
+
+  /* Normalize channel name */
+  channel_namec = silc_channel_name_check(channel->channel_name,
+					  strlen(channel->channel_name),
+					  SILC_STRING_UTF8, 256, NULL);
+  if (!channel_namec)
+    return FALSE;
+
+  return silc_idcache_add(conn->internal->channel_cache, channel_namec,
 			  (void *)channel->id, (void *)channel, 0, NULL);
 
 }
@@ -1030,13 +1274,23 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!silc_idcache_find_by_name_one(conn->internal->channel_cache, channel,
-				     &id_cache))
+  /* Normalize name for search */
+  channel = silc_channel_name_check(channel, strlen(channel), SILC_STRING_UTF8,
+				    256, NULL);
+  if (!channel)
     return NULL;
+
+  if (!silc_idcache_find_by_name_one(conn->internal->channel_cache, channel,
+				     &id_cache)) {
+    silc_free(channel);
+    return NULL;
+  }
 
   entry = (SilcChannelEntry)id_cache->context;
 
   SILC_LOG_DEBUG(("Found"));
+
+  silc_free(channel);
 
   return entry;
 }
@@ -1208,11 +1462,21 @@ SilcServerEntry silc_client_get_server(SilcClient client,
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (!silc_idcache_find_by_name_one(conn->internal->server_cache,
-				     server_name, &id_cache))
+  /* Normalize server name for search */
+  server_name = silc_identifier_check(server_name, strlen(server_name),
+				      SILC_STRING_UTF8, 256, NULL);
+  if (!server_name)
     return NULL;
 
+  if (!silc_idcache_find_by_name_one(conn->internal->server_cache,
+				     server_name, &id_cache)) {
+    silc_free(server_name);
+    return NULL;
+  }
+
   entry = (SilcServerEntry)id_cache->context;
+
+  silc_free(server_name);
 
   return entry;
 }
@@ -1250,6 +1514,7 @@ SilcServerEntry silc_client_add_server(SilcClient client,
 				       SilcServerID *server_id)
 {
   SilcServerEntry server_entry;
+  char *server_namec = NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1263,10 +1528,23 @@ SilcServerEntry silc_client_add_server(SilcClient client,
   if (server_info)
     server_entry->server_info = strdup(server_info);
 
+  /* Normalize server name */
+  if (server_name) {
+    server_namec = silc_identifier_check(server_name, strlen(server_name),
+					 SILC_STRING_UTF8, 256, NULL);
+    if (!server_namec) {
+      silc_free(server_entry->server_id);
+      silc_free(server_entry->server_name);
+      silc_free(server_entry->server_info);
+      silc_free(server_entry);
+      return NULL;
+    }
+  }
+
   /* Add server to cache */
-  if (!silc_idcache_add(conn->internal->server_cache,
-			server_entry->server_name,
+  if (!silc_idcache_add(conn->internal->server_cache, server_namec,
 			server_entry->server_id, server_entry, 0, NULL)) {
+    silc_free(server_namec);
     silc_free(server_entry->server_id);
     silc_free(server_entry->server_name);
     silc_free(server_entry->server_info);
@@ -1298,21 +1576,34 @@ void silc_client_update_server(SilcClient client,
 			       const char *server_name,
 			       const char *server_info)
 {
+  char *server_namec = NULL;
+
   SILC_LOG_DEBUG(("Start"));
 
-  if (server_name && (!server_entry->server_name ||
-		      strcmp(server_entry->server_name, server_name))) {
+  if (server_name &&
+      (!server_entry->server_name ||
+       !silc_utf8_strcasecmp(server_entry->server_name, server_name))) {
 
     silc_idcache_del_by_context(conn->internal->server_cache, server_entry);
     silc_free(server_entry->server_name);
     server_entry->server_name = strdup(server_name);
-    silc_idcache_add(conn->internal->server_cache, server_entry->server_name,
-		     server_entry->server_id,
-		     server_entry, 0, NULL);
+
+    /* Normalize server name */
+    if (server_name) {
+      server_namec = silc_identifier_check(server_name, strlen(server_name),
+					   SILC_STRING_UTF8, 256, NULL);
+      if (!server_namec)
+	return;
+
+      silc_idcache_add(conn->internal->server_cache, server_namec,
+		       server_entry->server_id,
+		       server_entry, 0, NULL);
+    }
   }
 
-  if (server_info && (!server_entry->server_info ||
-		      strcmp(server_entry->server_info, server_info))) {
+  if (server_info &&
+      (!server_entry->server_info ||
+       !silc_utf8_strcasecmp(server_entry->server_info, server_info))) {
     silc_free(server_entry->server_info);
     server_entry->server_info = strdup(server_info);
   }
@@ -1358,7 +1649,7 @@ void silc_client_nickname_format(SilcClient client,
     if (clients[i]->valid && clients[i] != client_entry)
       len++;
     if (clients[i]->valid && clients[i] != client_entry &&
-	!strcmp(clients[i]->nickname, client_entry->nickname))
+	silc_utf8_strcasecmp(clients[i]->nickname, client_entry->nickname))
       freebase = FALSE;
   }
   if (!len || freebase)
@@ -1368,8 +1659,8 @@ void silc_client_nickname_format(SilcClient client,
     unformatted = clients[0];
   else
     for (i = 0; i < clients_count; i++)
-      if (!strncasecmp(clients[i]->nickname, client_entry->nickname,
-		       strlen(clients[i]->nickname)))
+      if (silc_utf8_strncasecmp(clients[i]->nickname, client_entry->nickname,
+				strlen(clients[i]->nickname)))
 	unformatted = clients[i];
 
   /* If we are changing nickname of our local entry we'll enforce
@@ -1444,7 +1735,7 @@ void silc_client_nickname_format(SilcClient client,
 	  break;
 
 	for (i = 0; i < clients_count; i++) {
-	  if (strncasecmp(clients[i]->nickname, newnick, off))
+	  if (!silc_utf8_strncasecmp(clients[i]->nickname, newnick, off))
 	    continue;
 	  if (strlen(clients[i]->nickname) <= off)
 	    continue;

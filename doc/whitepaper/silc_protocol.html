@@ -1,4 +1,4 @@
-<!-- This file is processed with html2ps to generate PostiScript. 
+<!-- This file is processed with html2ps to generate PostiScript.
      Do not edit the HTML syntax unless you know what you are doing. -->
 <html>
 <head>
@@ -7,14 +7,14 @@
 <meta name="Author" content="Pekka Riikonen - SILC Project">
 <meta name="Description"
  content="SILC - Secure Internet Live Conferencing Protocol">
-<meta name="Created" content="Version 1.0.5 / 15 Jab 2002">
+<meta name="Created" content="Version 1.2 / 22 October 2003">
 </head>
 <body bgcolor="#ffffff">
 
 <font face="Helvetica">
 
 <font size="6"><b>SILC Protocol White Paper</b></font><br>
-<font size="2">Version 1.0.5 / 15 Jan 2002</font>
+<font size="2">Version 1.2 / 22 October 2003</font>
 
 <p>
 <h1>Introduction</h1>
@@ -28,7 +28,7 @@ protocols, such as ICQ.  However, all of these different chat protocols
 have something in common; they are all insecure.
 <p>
 
-The security is important feature in applications and protocols in 
+The security is important feature in applications and protocols in
 contemporary network environment.  The older chat protocols, however have
 failed to meet the growing security requirements on the Internet.
 It is not anymore enough to just provide services, like for example
@@ -50,8 +50,8 @@ of the SILC protocol is to provide secure conferencing services.
 
 The SILC Protocol have been developed as Open Source project.  The
 protocol specifications are freely available and they have been submitted to
-the IETF.  The very first implementations of the protocol are also already
-available.
+the IETF.  The protocol is currently stabilizing and has reached a version
+1.2.
 
 <p><br>
 <h1>About This White Paper</h1>
@@ -66,7 +66,7 @@ in this document.
 <p>
 
 <p>
-(c) Copyright 2001 - 2002 Pekka Riikonen 
+(c) Copyright 2001 - 2003 Pekka Riikonen
 (<a href="mailto:priikone at silcnet.org">priikone at silcnet.org</a>)
 <p>
 This document is free document; you can redistribute it and/or modify
@@ -82,24 +82,33 @@ See the GNU General Public License for more details.
 <h1>SILC Protocol</h1>
 <p>
 
-The Secure Internet Live Conferencing (SILC) protocol provides secure
-conferencing services over insecure network channel.  The SILC is IRC
-like protocol, however it does not support IRC.  Strong cryptographic
-methods are used to protect SILC packets inside the SILC network.  SILC
-provides all the common conferencing services like channels, channel
-messages, private messages, nicknames, various commands, and secure
-file transfer.  Difference to other chat protocol is in the design of
-the protocol.  The SILC protocol has been designed from the day one
-security in mind and it shows in the protocol design.
+Secure Internet Live Conferencing, or SILC in short, is a modern
+conferencing protocol which provides rich conferencing features with
+high security.  One of the main design principles of the protocol was
+security. Many of the SILC features are found in traditional chat
+protocols such as IRC but many of the SILC features can also be found
+in Instant Message (IM) style protocols.
+<p>
+
+SILC combines features from both of these chat protocol styles, and
+can be implemented as either IRC-like system or IM-like system. In
+fact, SILC removes the need to make such distinction between these
+two protocol styles. Some of the more advanced and security features
+of the protocol are new to all conferencing protocols. SILC also
+supports multimedia messages and can also be implemented as a
+video and audio conferencing system.  The protocol is also compact
+and robust and suites well for mobile environments where the low
+bandwidth sets special requirements for protocols.  All packet sizes
+in SILC can be even further reduced by utlizing compression.
 <p>
 
 The packets and messages in the SILC network are always encrypted and
 authenticated.  It is not possible to send unencrypted messages in SILC
 at all.  This assures that end user cannot even accidently send unencrypted
-messages while thinking that it is encrypted.  This is one of the problems 
+messages while thinking that it is encrypted.  This is one of the problems
 of most of the other chat protocols that provide so called plugin encryption.
 They are not secure by default but try to provide security by applying
-external security protocol such as PGP or SSL over the insecure chat
+external security protocol such as PGP or SSL over the insecure
 protocol.  In these cases the security is achieved usually by encrypting the
 data while key management, message authentication and other security issues
 may be left out, leaving the implementation vulnerable to various security
@@ -129,17 +138,42 @@ a key exchange protocol is executed to negotiate file transfer session
 key.
 <p>
 
-The network topology is also different to various other chat protocols,
-like for example IRC.  IRC has tree style network, but SILC network can be
-described more as an hybrid ring-mesh network.  The routers in the network
-form a ring, but they can also have other direct routers (secondary routes)
-to other routers.  A router in the network is also called a cell, when it
-has multiple servers and clients connected to it.  The cell can also have
-backup routers in case the primary router becomes unresponsive.
+The SILC protocol also supports so called detaching, a novel idea where
+it is possible to detach from the server without actually quitting the
+network.  It is then later possible to resume the connection back to some
+server in the network, and be like you were never gone.
+<p>
+
+The SILC protocol also allows distribution and exchange of public keys
+and certificates through the SILC network.  It is also possible to fetch
+detailed user information from other users through the SILC network.  It
+is possible to fetch for example users's business card, pictures,
+certificates, etc.
+<p>
+
+SILC protocol also supports services, which are extensions to the core
+protocol.  They can be used to augment the features of the protocol or
+to add entirely new features without breaking backwards compatibility.
+Services can be negotiated online and authenticated with passphrases or
+with digital signatures.
+<p>
+
+The network topology is also different from traditional conferencing and
+chat protocols.  The SILC network forms so called hybrid ring-mesh network
+at the router level, and star network at the server level.  This sort of
+network topology allows better scalability and faster delivery of packets
+than traditional spanning tree style network.  The router servers and normal
+servers also has the distinction that only router's know global information
+and keep the global network state up to date, and normal servers keep only
+local information up to date.  This significantly increases the scalability
+of the network.  The network also supports backup routers which can be
+used to protect the network against netsplits.
 
 <p><br>
 <object data="silc_network.jpg" type="application/postscript">
-<img src="silc_network.png" alt="SILC Network" align="center" border"0">
+<a href="silc_network.png">
+<img src="s_silc_network.png" alt="SILC Network" align="center" 
+border="0"></a>
 </object>
 <p><br>
 
@@ -168,13 +202,14 @@ The end user, however does not use Client IDs.  The end users usually selects
 a preferred nickname they want to use, and identifies themself with that
 nickname to other users on the network.  The nicknames are not unique in
 the SILC Network.  There can be multiple same nicknames at the same time
-on the network.  The maximum length for the nickname is 128 characters.
+on the network.  The maximum length for the nickname is 128 bytes.
 <p>
 
 Most of the other chat protocols have unique nicknames.  This is where SILC
 differs from most of the other chat protocols.  The purpose of this
 feature is to make IRC style nickname wars obsolete, as no one owns their
-nickname; there can always be somene else with the same nickname.
+nickname; there can always be somene else with the same nickname.  This
+feature also makes nickname registering services obsolete.
 <p>
 
 When client connects to the server the SILC Key Exchange (SKE) protocol and
@@ -224,7 +259,7 @@ and the SILC Connection Authentication protocol are executed, just like
 when client connects to server.  The SKE results in to the session key
 that is used to secure the communication between the server and the
 router.  The connection authentication protocol is used to authenticate
-the server to the router.  The authentication is always based in either 
+the server to the router.  The authentication is always based in either
 passphrase or public key (or certificates).
 
 
@@ -265,7 +300,9 @@ network as its primary route.
 
 <p><br>
 <object data="silc_routers.jpg" type="application/postscript">
-<img src="silc_routers.png" alt="SILC Routers" align="center" border"0">
+<a href="silc_routers.png">
+<img src="s_silc_routers.png" alt="SILC Routers" align="center" 
+border="0"></a>
 </object>
 <p><br>
 
@@ -285,8 +322,8 @@ the routers.  All the secondary routes also have their own session keys.
 <p>
 
 The basis of SILC protocol relies in the SILC packets and they are with
-out a doubt the most important part of the protocol.  The SILC Packet 
-protocol is a binary packet protocol.  The protocol provides secure
+out a doubt the most important part of the protocol.  The SILC Packet
+protocol is a secure binary packet protocol.  The protocol provides secure
 binary packets and assures that the contents of the packets are secured
 and authenticated.
 <p>
@@ -297,12 +334,14 @@ packets in SILC network are always encrypted and their integrity is
 assured by computed Message Authentication Codes (MAC).  The protocol
 defines several packet types and packet payloads.  Each packet type
 usually has a specific packet payload that actually defines the contents
-of the packet.  Hence, the actual data in the packet is the packet payload 
+of the packet.  Hence, the actual data in the packet is the packet payload
 defined in the protocol.
 
 <p><br>
 <object data="silc_packet.jpg" type="application/postscript">
-<img src="silc_packet.png" alt="Typical SILC Packet" align="center" border"0">
+<a href="silc_packet_png">
+<img src="s_silc_packet.png" alt="Typical SILC Packet" align="center" 
+border="0"></a>
 </object>
 <p><br>
 
@@ -315,7 +354,7 @@ however depends on the packet payload.  Some of the payloads are encrypted
 with the session key and some are encrypted with other keys, for example
 with channel message keys.  The SILC Packet Header is always encrypted with
 the session key.  The MAC is computed from the SILC Packet Header and the
-data area before encrypting the packet.
+data area after encryption.  This is so called Encrypt-Then-MAC order.
 
 
 <p><br>
@@ -330,7 +369,7 @@ connects to router.  And, there is no reason why it could not be executed
 between two clients too, if two clients would need to create secret key.
 The purpose of the SKE protocol is to create session keys to be used
 in current SILC session.  The SKE is based on the Diffie-Hellman key
-exchange algorithm, and is immune to for example man-in-the-middle attacks 
+exchange algorithm, and is immune to for example man-in-the-middle attacks
 by using digital signatures.
 <p>
 
@@ -370,12 +409,12 @@ connection is closed immeadiately.
 <p>
 
 The public key or certificate that is received during the SKE protocol
-must be verified.  If it is not verified it would be possible to 
+must be verified.  If it is not verified it would be possible to
 execute a man-in-the-middle attack against the SKE protocol.  If
 certificates are used they can be verified by a third party Certification
 Authority (CA).  Verifying a public key requires either confirming
 a fingerprint of the public key over phone or email, or the server
-can for example publish the fingerprint (and the public key) on some 
+can for example publish the fingerprint (and the public key) on some
 website.  In real life systems accepting the public key without
 verification, however is often desired.  In many security protocols,
 such as in SSH2, the public key is accepted without verification
@@ -404,7 +443,7 @@ created by the servers and routers itself.
 
 Since the SILC Connection Authentication protocol is always executed after
 the SKE protocol, session keys has been established already.  This means
-that all packets sent in the connection authentication protocol are encrypted 
+that all packets sent in the connection authentication protocol are encrypted
 and authenticated.
 <p>
 
@@ -415,7 +454,7 @@ to the server.  As the packet sent by, for example client, is entirely
 encrypted it is safe to send the passphrase inside the packet.
 <p>
 
-If the authentication is based to public key then, for example the client, 
+If the authentication is based to public key then, for example the client,
 signs data with its private key and sends it to the server.  The server
 then verifies this signature by using the client's public key.  The
 packet is also encrypted in the case of public key authentication.
@@ -433,7 +472,7 @@ this the client is ready to communicate in the SILC Network.
 A channel is a named group of one or more clients which will all receive
 messages addressed to that channel.  The channel is created when first
 client joins to it, and the channel ceases to exist when the last client
-leaves it.  When channel exists, any client can reference it using the 
+leaves it.  When channel exists, any client can reference it using the
 name of the channel.  Channel is a place where group of people can engage
 conversation.
 <p>
@@ -489,7 +528,9 @@ have clients on the channel and all clients that have joined the channel.
 
 <p><br>
 <object data="silc_channel.jpg" type="application/postscript">
-<img src="silc_channel.png" alt="Channel Message Delivery" align="center" border"0">
+<a href="silc_channel.png">
+<img src="s_silc_channel.png" alt="Channel Message Delivery" 
+align="center" border="0"></a>
 </object>
 <p><br>
 
@@ -573,7 +614,7 @@ same time.
 <p><br>
 <h1>Private Messages</h1>
 <p>
-Private messages are messages that are sent from one client to another 
+Private messages are messages that are sent from one client to another
 through the SILC Network.  They are private because they are not sent to
 anyone else except to the true receiver of the message.  Private messages
 can be used to engage private conversation with another client if channels
@@ -607,13 +648,15 @@ signature of each of the message using the sender's public key.
 <p>
 Sending private messages are by default secured with session keys established
 in the SKE protocol.  This means that the private message is always encrypted
-with the session key of the next receiver of the message enroute to the 
+with the session key of the next receiver of the message enroute to the
 receiving client.  This also means that the message is decrypted and
 re-encrypted everytime it is sent further to the receiving client.
 
 <p><br>
 <object data="silc_priv1.jpg" type="application/postscript">
-<img src="silc_priv1.png" alt="Basic Private Message Delivery" align="center" border"0">
+<a href="silc_priv1.png">
+<img src="s_silc_priv1.png" alt="Basic Private Message Delivery" 
+align="center" border="0"></a>
 </object>
 <p><br>
 
@@ -632,7 +675,7 @@ can be decrypted by the servers and routers that the clients may consider
 to be untrusted.
 <p>
 
-If the clients on the other hand trust the servers and routers in their 
+If the clients on the other hand trust the servers and routers in their
 SILC Network, or they do not care that servers can decrypt their messages,
 sending private messages in this way is very simple from client's point
 of view.  For servers and routers this of course means that they need
@@ -656,7 +699,9 @@ routers in the SILC network.
 
 <p><br>
 <object data="silc_priv2.jpg" type="application/postscript">
-<img src="silc_priv2.png" alt="Private Messages with Private Message Key" align="center" border"0">
+<a href="silc_priv2.png">
+<img src="s_silc_priv2.png" alt="Private Messages with Private Message 
+Key" align="center" border="0"></a>
 </object>
 <p><br>
 
@@ -691,13 +736,14 @@ that key to secure all subsequent private messages.
 <p>
 
 Using this method of private messages delivery is recommended if the
-clients cannot trust the servers and routers in the SILC Network.  The 
+clients cannot trust the servers and routers in the SILC Network.  The
 drawback is the extra phase of setting the private message key before
 starting the conversation.  However, using the SKE protocol is the
 recommended way to negotiate the private message key since it can be
 automatized and does not cause any extra tasks for end user.
 
 
+<!--
 <p><br>
 <h2>Private Message Delivery With Public Key Encryption</h2>
 <p>
@@ -735,6 +781,25 @@ the key over email, or phone call.  The clients can also fetch the
 public keys from SILC servers.  If both of the clients trust that the
 public keys are authentic using this method of private message delivery
 is very simple and recommended.
+-->
+
+
+<p><br>
+<h1>MIME Messages</h1>
+
+SILC Protocol supports MIME messages as normal channel and private 
+messages.  By using MIME messages it is possible to send for example
+images, music and video and audio stream in SILC.  Any MIME type that is
+supported by the application can be sent via SILC network.
+<p>
+
+The MIME messages are utilized by using so called Message Flags in the
+message payload that is used in SILC protocol.  The Message Flags
+indicates the recipient that the message is a MIME message and it then
+knows how to interpret the message.  Using Message Flags it possible also
+to send other kind of messages and to augment features of normal channel
+and private messages.
+
 
 
 <p><br>
@@ -767,53 +832,31 @@ possible.
 <p><br>
 <h1>Future of the Protocol</h1>
 
-The current protocol version is 1.0.  This does not mean that the protocol
-is perfect and does not need further development.  There is still features
-that are missing from the protocol, and it is clear that the protocol needs
-to mature a bit more.  There has been a talk about adding features like
-permanent channels, more wide channel founder privileges, and other similar
-features.  The network model of the protocol allows powerful routing
-capabilities, however the routing is not fully defined yet in the protocol
-and requires more in depth work.  The protocol is still in draft phase
-and is open for new features.  However, it is our intention that the
-protocol will be standardized in the future.
+The protocol has matured into the version 1.2 over the past few years.
+It has reached a level where it is the most rich featured conferencing
+protocol as of today.  It is the SILC Project's intention to standardize
+the SILC protocol in the IETF and this is where the focus is now moving.
 
 
 <p><br>
 <h1>Conclusion</h1>
 
-The Secure Internet Live Conferencing (SILC) protocol is a new generation
-chat protocol that provides all the common conferencing services with
-strong support for security.  It has wide range of security properties
-that should meet the highest levels of security requirements, while not
-forgetting easy of use.  The network topology offers new architectural
-solution with better scalability over traditional chat protocols.
+Secure Internet Live Conferencing is a modern conferencing protocol which
+provides rich conferencing features with high security.  It has a wide
+range of security properties and features that should meet the highest
+levels of security requirements, while not forgetting ease of use.  The
+network topology offers new architectural solution with better scalability
+over traditional chat protocols.
 
 
 <p><br>
 <h1>Further Information</h1>
 <p>
 More detailed information about the SILC protocol is available in the
-SILC protocol specification documents.  There exists currently four
+SILC protocol specification documents.  There exists currently six
 Internet Drafts that defines the protocol in great detail.  The Internet
-Drafts are available from the following sources but also from the
-<a href="http://www.ietf.org">IETF website</a>.
-<p>
-
-- <a href="http://silcnet.org/docs/draft-riikonen-silc-spec-04.txt">
-Secure Internet Live Conferencing (SILC), Protocol Specification</a>
-<br>
-
-- <a href="http://silcnet.org/docs/draft-riikonen-silc-pp-04.txt">
-SILC Packet Protocol</a>
-<br>
-
-- <a href="http://silcnet.org/docs/draft-riikonen-silc-ke-auth-04.txt">
-SILC Key Exchange and Authentication Protocols</a>
-<br>
-
-- <a href="http://silcnet.org/docs/draft-riikonen-silc-commands-02.txt">
-SILC Commands</a>
+Drafts are available from the <a href="http://silcnet.org">SILC Project
+website</a> but also from the <a href="http://www.ietf.org">IETF website</a>.
 <p>
 
 For comprehensive introduction to cryptography refer to the
@@ -846,7 +889,7 @@ it also means verifying the origin of a message.
 
 - Certificate
 <p>
-Certificate is a digital document which can be used to verify the 
+Certificate is a digital document which can be used to verify the
 identity of a person or host.  In SILC, certificates can be used to prove
 identity of clients, servers and routers.  Basically certificate is a public
 key with subject name.  SILC supports X.509, OpenPGP and SPKI certificates.

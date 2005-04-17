@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,13 +35,17 @@ int silc_server_packet_send_real(SilcServer server,
   int ret;
 
   /* If disconnecting, ignore the data */
-  if (SILC_IS_DISCONNECTING(sock))
+  if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock))
     return -1;
 
   /* Send the packet */
   ret = silc_packet_send(sock, FALSE);
   if (ret != -2) {
     if (ret == -1) {
+      SILC_SET_CONNECTION_FOR_INPUT(server->schedule, sock->sock);
+      SILC_UNSET_OUTBUF_PENDING(sock);
+      silc_buffer_clear(sock->outbuf);
+
       SILC_LOG_ERROR(("Error sending packet to connection "
 		      "%s:%d [%s]", sock->hostname, sock->port,
 		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
@@ -49,8 +53,17 @@ int silc_server_packet_send_real(SilcServer server,
 		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
 		       "Router")));
 
-      if (sock->user_data)
+      if (sock->user_data) {
+	/* If backup then mark that resuming will not be allowed */
+	if (server->server_type == SILC_ROUTER && !server->backup_router &&
+	    sock->type == SILC_SOCKET_TYPE_SERVER) {
+	  SilcServerEntry server_entry = sock->user_data;
+	  if (server_entry->server_type == SILC_BACKUP_ROUTER)
+	    server->backup_closed = TRUE;
+	}
+
 	silc_server_free_sock_user_data(server, sock, NULL);
+      }
       SILC_SET_DISCONNECTING(sock);
       silc_server_close_connection(server, sock);
       return ret;
@@ -98,14 +111,15 @@ void silc_server_packet_send(SilcServer server,
   idata = (SilcIDListData)sock->user_data;
 
   /* If disconnecting, ignore the data */
-  if (SILC_IS_DISCONNECTING(sock))
+  if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock))
     return;
 
   /* If entry is disabled do not sent anything.  Allow hearbeat and
      rekeys, though */
   if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED &&
        type != SILC_PACKET_HEARTBEAT && type != SILC_PACKET_REKEY &&
-       type != SILC_PACKET_REKEY_DONE) ||
+       type != SILC_PACKET_REKEY_DONE && type != SILC_PACKET_KEY_EXCHANGE_1
+       && type != SILC_PACKET_KEY_EXCHANGE_2) ||
       (sock->user_data == server->id_entry)) {
     SILC_LOG_DEBUG(("Connection is disabled"));
     return;
@@ -162,14 +176,18 @@ void silc_server_packet_send_dest(SilcServer server,
   int block_len = 0;
 
   /* If disconnecting, ignore the data */
-  if (!sock || SILC_IS_DISCONNECTING(sock))
+  if (!sock || SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock))
     return;
 
   idata = (SilcIDListData)sock->user_data;
 
-  /* If entry is disabled do not sent anything. */
-  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED) ||
-      sock->user_data == server->id_entry) {
+  /* If entry is disabled do not sent anything.  Allow hearbeat and
+     rekeys, though */
+  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED &&
+       type != SILC_PACKET_HEARTBEAT && type != SILC_PACKET_REKEY &&
+       type != SILC_PACKET_REKEY_DONE && type != SILC_PACKET_KEY_EXCHANGE_1
+       && type != SILC_PACKET_KEY_EXCHANGE_2) ||
+      (sock->user_data == server->id_entry)) {
     SILC_LOG_DEBUG(("Connection is disabled"));
     return;
   }
@@ -276,9 +294,13 @@ void silc_server_packet_send_srcdest(SilcServer server,
   /* Get data used in the packet sending, keys and stuff */
   idata = (SilcIDListData)sock->user_data;
 
-  /* If entry is disabled do not sent anything. */
-  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED) ||
-      sock->user_data == server->id_entry) {
+  /* If entry is disabled do not sent anything.  Allow hearbeat and
+     rekeys, though */
+  if ((idata && idata->status & SILC_IDLIST_STATUS_DISABLED &&
+       type != SILC_PACKET_HEARTBEAT && type != SILC_PACKET_REKEY &&
+       type != SILC_PACKET_REKEY_DONE && type != SILC_PACKET_KEY_EXCHANGE_1
+       && type != SILC_PACKET_KEY_EXCHANGE_2) ||
+      (sock->user_data == server->id_entry)) {
     SILC_LOG_DEBUG(("Connection is disabled"));
     return;
   }
@@ -467,7 +489,7 @@ void silc_server_packet_send_clients(SilcServer server,
 
   /* Send to all clients in table */
   silc_hash_table_list(clients, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&client)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&client)) {
     /* If client has router set it is not locally connected client and
        we will route the message to the router set in the client. Though,
        send locally connected server in all cases. */
@@ -655,7 +677,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
 
   /* Send the message to clients on the channel's client list. */
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     client = chl->client;
     if (!client)
       continue;
@@ -750,6 +772,7 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
 {
   SilcUInt32 mac_len, iv_len;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
+  SilcUInt16 totlen, len;
 
   /* If we are router and the packet came from router and private key
      has not been set for the channel then we must encrypt the packet
@@ -775,9 +798,23 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
       return FALSE;
     }
 
+    totlen = 2;
+    SILC_GET16_MSB(len, data + totlen);
+    totlen += 2 + len;
+    if (totlen + iv_len + mac_len + 2 > data_len) {
+      SILC_LOG_WARNING(("Corrupted channel message, cannot relay it"));
+      return FALSE;
+    }
+    SILC_GET16_MSB(len, data + totlen);
+    totlen += 2 + len;
+    if (totlen + iv_len + mac_len > data_len) {
+      SILC_LOG_WARNING(("Corrupted channel message, cannot relay it"));
+      return FALSE;
+    }
+
     memcpy(iv, data + (data_len - iv_len - mac_len), iv_len);
-    silc_message_payload_encrypt(data, data_len - iv_len, data_len,
-				 iv, iv_len, channel->channel_key,
+    silc_message_payload_encrypt(data, totlen, data_len - mac_len,
+                                 iv, iv_len, channel->channel_key,
 				 channel->hmac);
   }
 
@@ -871,7 +908,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
 
   /* Send the message to clients on the channel's client list. */
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     client = chl->client;
     if (!client || client == sender_entry)
       continue;
@@ -1039,7 +1076,7 @@ void silc_server_packet_send_local_channel(SilcServer server,
 
   /* Send the message to clients on the channel's client list. */
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     if (chl->client && SILC_IS_LOCAL(chl->client)) {
       sock = chl->client->connection;
 
@@ -1290,16 +1327,18 @@ void silc_server_send_notify_cmode(SilcServer server,
 				   SilcBuffer channel_pubkeys)
 {
   SilcBuffer idp, fkey = NULL;
-  unsigned char mode[4];
+  unsigned char mode[4], ulimit[4];
 
   idp = silc_id_payload_encode((void *)id, id_type);
   SILC_PUT32_MSB(mode_mask, mode);
   if (founder_key)
     fkey = silc_pkcs_public_key_payload_encode(founder_key);
+  if (channel->mode & SILC_CHANNEL_MODE_ULIMIT)
+    SILC_PUT32_MSB(channel->user_limit, ulimit);
 
   silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
 			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_CMODE_CHANGE,
-			       7, idp->data, idp->len,
+			       8, idp->data, idp->len,
 			       mode, 4,
 			       cipher, cipher ? strlen(cipher) : 0,
 			       hmac, hmac ? strlen(hmac) : 0,
@@ -1307,7 +1346,11 @@ void silc_server_send_notify_cmode(SilcServer server,
 			       strlen(passphrase) : 0,
 			       fkey ? fkey->data : NULL, fkey ? fkey->len : 0,
 			       channel_pubkeys ? channel_pubkeys->data : NULL,
-			       channel_pubkeys ? channel_pubkeys->len : 0);
+			       channel_pubkeys ? channel_pubkeys->len : 0,
+			       mode_mask & SILC_CHANNEL_MODE_ULIMIT ?
+			       ulimit : NULL,
+			       mode_mask & SILC_CHANNEL_MODE_ULIMIT ?
+			       sizeof(ulimit) : 0);
   silc_buffer_free(fkey);
   silc_buffer_free(idp);
 }
@@ -1524,22 +1567,28 @@ void silc_server_send_notify_watch(SilcServer server,
 				   SilcClientEntry watcher,
 				   SilcClientEntry client,
 				   const char *nickname,
-				   SilcNotifyType type)
+				   SilcNotifyType type,
+				   SilcPublicKey public_key)
 {
-  SilcBuffer idp;
+  SilcBuffer idp, pkp = NULL;
   unsigned char mode[4], n[2];
 
   idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
   SILC_PUT16_MSB(type, n);
   SILC_PUT32_MSB(client->mode, mode);
+  if (public_key)
+    pkp = silc_pkcs_public_key_payload_encode(public_key);
   silc_server_send_notify_dest(server, sock, FALSE, watcher->id,
 			       SILC_ID_CLIENT, SILC_NOTIFY_TYPE_WATCH,
-			       4, idp->data, idp->len,
+			       5, idp->data, idp->len,
 			       nickname, nickname ? strlen(nickname) : 0,
 			       mode, sizeof(mode),
 			       type != SILC_NOTIFY_TYPE_NONE ?
-			       n : NULL, sizeof(n));
+			       n : NULL, sizeof(n),
+			       pkp ? pkp->data : NULL,
+			       pkp ? pkp->len : 0);
   silc_buffer_free(idp);
+  silc_buffer_free(pkp);
 }
 
 /* Sends notify message destined to specific entity. */
@@ -1656,12 +1705,12 @@ void silc_server_send_notify_on_channels(SilcServer server,
   packetdata.src_id_type = SILC_ID_SERVER;
 
   silc_hash_table_list(client->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     channel = chl->channel;
 
     /* Send the message to all clients on the channel's client list. */
     silc_hash_table_list(channel->user_list, &htl2);
-    while (silc_hash_table_get(&htl2, NULL, (void **)&chl2)) {
+    while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
       c = chl2->client;
 
       if (sender && c == sender)
@@ -2003,19 +2052,35 @@ void silc_server_send_connection_auth_request(SilcServer server,
 }
 
 /* Purge the outgoing packet queue to the network if there is data. This
-   function can be used to empty the packet queue. It is guaranteed that
-   after this function returns the outgoing data queue is empty. */
+   function can be used to empty the packet queue. */
 
 void silc_server_packet_queue_purge(SilcServer server,
 				    SilcSocketConnection sock)
 {
   if (sock && SILC_IS_OUTBUF_PENDING(sock) &&
       !(SILC_IS_DISCONNECTING(sock)) && !(SILC_IS_DISCONNECTED(sock))) {
+    int ret;
+
     SILC_LOG_DEBUG(("Purging outgoing queue"));
+
     server->stat.packets_sent++;
-    silc_packet_send(sock, TRUE);
-    SILC_UNSET_OUTBUF_PENDING(sock);
+    ret = silc_packet_send(sock, TRUE);
+    if (ret == -2) {
+      if (sock->outbuf && sock->outbuf->len > 0) {
+	/* Couldn't send all data, put the queue back up, we'll send
+	   rest later. */
+	SILC_LOG_DEBUG(("Could not purge immediately, sending rest later"));
+	SILC_SET_CONNECTION_FOR_OUTPUT(server->schedule, sock->sock);
+	SILC_SET_OUTBUF_PENDING(sock);
+	return;
+      }
+    } else if (ret == -1) {
+      SILC_LOG_ERROR(("Error purging packet queue, packets dropped"));
+    }
+
+    /* Purged all data */
     SILC_SET_CONNECTION_FOR_INPUT(server->schedule, sock->sock);
+    SILC_UNSET_OUTBUF_PENDING(sock);
     silc_buffer_clear(sock->outbuf);
   }
 }

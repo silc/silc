@@ -159,6 +159,7 @@ SilcUInt32 silc_argument_get_arg_num(SilcArgumentPayload payload);
  * SYNOPSIS
  *
  *    unsigned char *silc_argument_get_first_arg(SilcArgumentPayload payload,
+ *                                               SilcUInt32 *type,
  *                                               SilcUInt32 *ret_len);
  *
  * DESCRIPTION

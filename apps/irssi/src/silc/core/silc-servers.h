@@ -38,18 +38,6 @@ typedef struct {
 #define STRUCT_SERVER_CONNECT_REC SILC_SERVER_CONNECT_REC
 typedef struct {
 #include "server-rec.h"
-  /* Command sending queue */
-  int cmdcount;		/* number of commands in `cmdqueue'. Can be more than
-			   there actually is, to make flood control remember
-			   how many messages can be sent before starting the
-			   flood control */
-  int cmd_last_split;	/* Last command wasn't sent entirely to server.
-			   First item in `cmdqueue' should be re-sent. */
-  GSList *cmdqueue;
-  GTimeVal last_cmd;	/* last time command was sent to server */
-  
-  GSList *idles;	/* Idle queue - send these commands to server
-			   if there's nothing else to do */
 
   SilcDList ftp_sessions;
   FtpSession current_session;
@@ -73,4 +61,9 @@ void silc_server_free_ftp(SILC_SERVER_REC *server,
 			  SilcClientEntry client_entry);
 bool silc_term_utf8(void);
 
+int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
+		  int msg_len, SilcMessageFlags flags);
+int silc_send_channel(SILC_SERVER_REC *server,
+		      char *channel, char *msg,
+		      SilcMessageFlags flags);
 #endif

@@ -1,0 +1,112 @@
+How to create SILC distributions
+================================
+
+This document describes how to prepare SILC distributions in SILC source
+tree and how to package distributions for releasing.  This also defines
+the procedure what one should do when distribution is created for
+releasing.
+
+
+The 'distributions' file
+========================
+
+The 'distributions' file descibres all distributions that can be created 
+from the SILC CVS source tree.  You should read that file if you want to 
+learn how to create new distributions.  The file already defines the main 
+distributions that can be created from the soure tree.  These are the 
+'client', 'server' and 'toolkit' distributions.
+
+
+Preparing distribution
+======================
+
+The SILC CVS source tree must be prepared before it can be configured, 
+compiled and packaged.  The ./prepare script is used to prepare 
+distribution for configuration, compilation and packaging.  To prepare a 
+specific distribution with specific version, give command:
+
+	autodist <name> <version>
+
+Where the <name> is the distribution name.  It is one of the distributions 
+that was defined in distdir/ directory.  The <version> is the version of 
+the distribution that will be prepared.  The version format is 
+major.minor.build, for example 0.9.10.  Example:
+
+	autodist client 0.9.15
+
+This prepares 'client' distribution of version 0.9.15.  The package will 
+have the version 0.9.15 automatically.
+
+
+Configuring and compiling the distribution
+==========================================
+
+When you prepare the distribution for releasing you should configure the 
+distribution without any specific configuration options, hence just give 
+the command:
+
+	./configure
+
+To compile the distribution, give command:
+
+	make
+
+If you want you can clear the environment first with make clean command, 
+but this is not necessary.
+
+
+Packaging the distribution
+==========================
+
+After the distribution is prepared, configured and compiled it can be 
+packaged with the following commands:
+
+	make -C doc dist-hook
+	makedist --bzip2
+
+The 'makedist --bzip2' creates the default 'tar.gz' and 'tar.bz2' 
+distribution.
+
+NOTE:  Before giving this command, make sure that you do not have any of 
+the tests in the SILC source tree compiled.  If they are the binaries
+will be included in the distribution which is not allowed.  The tests are 
+always located in the tests/ directory, for example lib/silccore/tests/.
+The tests are not compiled by default, but if you compiled them by 
+yourself make sure you make clean them before creating the distribution.
+
+NOTE:  Same thing must be assured for silcer/ and tutorial/ sub
+directories.  Make sure they are not compiled and does not include any
+extra files.  If you haven't compiled them after the CVS checkout, they do
+not include any extra files.
+
+NOTE for 'toolkit' distribution:  Before giving make dist the following
+must be done:
+
+	go to util/robodoc/
+	give ./configure;make to compile robodoc
+	go to doc/
+	give make toolkit-ref-html
+
+This then creates the Toolkit reference manual.  After this the toolkit 
+distribution can be packaged.
+
+
+Before releasing the distribution
+=================================
+
+Before releasing the distribution the created distribution must be tagged 
+in the CVS so that it can be checkout at a later time, if needed.  The tag 
+format is as follows:
+
+	silc_<name>_<version>
+
+Where <name> is the distribution name and <version> is the version of the 
+distribution in following format: major_minor_build, for example 0_9_10.  
+Example:
+
+	silc_client_0_9_15
+
+To tag the distribution go to the root of the SILC CVS source tree and 
+give, for example, command:
+
+	cvs tag silc_client_0_9_15

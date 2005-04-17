@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -244,7 +244,10 @@ typedef struct SilcChannelClientEntryStruct {
 
    unsigned char *nickname
 
-       The nickname of the client.
+       The nickname of the client.  This is nickname in original format,
+       not casefolded or normalized.  However, it is checked to assure
+       that prohibited characters do not exist.  The casefolded version
+       is in the ID Cache.
 
    char *servername
 
@@ -366,6 +369,10 @@ struct SilcClientEntryStruct {
   /* data.status is RESOLVING and this includes the resolving command
      reply identifier. */
   SilcUInt16 resolve_cmd_ident;
+
+  /* we need this so nobody can resume more than once at the same time -
+   * server crashes, really odd behaviour, ... */
+  SilcClientEntry resuming_client;
 };
 
 /*
@@ -388,7 +395,10 @@ struct SilcClientEntryStruct {
 
    char *channel_name
 
-       Logical name of the channel.
+       Logical name of the channel.  This is the original format, not
+       the casefolded or normalized.  However, this is checked to assure
+       that prohibited characters do not exist.  The casefolded version
+       is in the ID Cache.
 
    SilcUInt32 mode
 

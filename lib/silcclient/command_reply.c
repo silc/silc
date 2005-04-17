@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -160,7 +160,7 @@ void silc_client_command_reply_free(SilcClientCommandReplyContext cmd)
   }
 }
 
-static void
+void
 silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
 				     SilcStatus status,
 				     bool notify)
@@ -230,6 +230,11 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
     client_entry =
       silc_client_add_client(cmd->client, conn, nickname, username, realname,
 			     client_id, mode);
+    if (!client_entry) {
+      if (notify)
+	COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+      return;
+    }
   } else {
     silc_client_update_client(cmd->client, conn, client_entry,
 			      nickname, username, realname, mode);
@@ -413,6 +418,11 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
       client_entry =
 	silc_client_add_client(cmd->client, conn, name, info, NULL,
 			       silc_id_dup(client_id, id_type), 0);
+      if (!client_entry) {
+	if (notify)
+	  COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	return;
+      }
     } else {
       silc_client_update_client(cmd->client, conn, client_entry,
 				name, info, NULL, 0);
@@ -466,6 +476,11 @@ silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
       /* Add new channel entry */
       channel_entry = silc_client_add_channel(client, conn, name, 0,
 					      channel_id);
+      if (!channel_entry) {
+	if (notify)
+	  COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	return;
+      }
       channel_id = NULL;
     }
 
@@ -580,9 +595,19 @@ SILC_CLIENT_CMD_REPLY_FUNC(nick)
       silc_free(conn->nickname);
     conn->nickname = strdup(tmp);
     conn->local_entry->nickname = conn->nickname;
+
+    /* Normalize nickname */
+    tmp = silc_identifier_check(conn->nickname, strlen(conn->nickname),
+				SILC_STRING_UTF8, 128, NULL);
+    if (!tmp) {
+      COMMAND_REPLY_ERROR(SILC_STATUS_ERR_BAD_NICKNAME);
+      goto out;
+    }
+
     silc_client_nickname_format(cmd->client, conn, conn->local_entry);
-    silc_idcache_add(conn->internal->client_cache, strdup(tmp),
-                     conn->local_entry->id, conn->local_entry, 0, NULL);
+
+    silc_idcache_add(conn->internal->client_cache, tmp,
+		     conn->local_entry->id, conn->local_entry, 0, NULL);
   }
 
   /* Notify application */
@@ -609,7 +634,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(list)
 
   tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
   if (!tmp) {
-    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    /* There were no channels in the network. */
+    COMMAND_REPLY((SILC_ARGS, NULL, NULL, 0));
     goto out;
   }
 
@@ -706,6 +732,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(topic)
     silc_free(channel_id);
     COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
+  }
+
+  if (topic) {
+    silc_free(channel->topic);
+    channel->topic = silc_memdup(topic, strlen(topic));
   }
 
   /* Notify application */
@@ -963,7 +994,6 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
   SilcUInt32 argc, mode = 0, len, list_count;
   char *topic, *tmp, *channel_name = NULL, *hmac;
   SilcBuffer keyp = NULL, client_id_list = NULL, client_mode_list = NULL;
-  SilcPublicKey founder_key = NULL;
   SilcBufferStruct chpklist;
   int i;
 
@@ -1035,8 +1065,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
     channel = silc_client_add_channel(cmd->client, conn, channel_name,
 				      mode, channel_id);
   }
+  if (!channel) {
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_BAD_CHANNEL);
+    goto out;
+  }
 
   conn->current_channel = channel;
+  channel->mode = mode;
 
   /* Get hmac */
   hmac = silc_argument_get_arg_type(cmd->args, 11, NULL);
@@ -1097,6 +1132,8 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
       client_entry =
 	silc_client_add_client(cmd->client, conn, NULL, NULL, NULL,
 			       silc_id_dup(client_id, SILC_ID_CLIENT), 0);
+      if (!client_entry)
+	goto out;
     }
 
     /* Join client to the channel */
@@ -1119,30 +1156,45 @@ SILC_CLIENT_CMD_REPLY_FUNC(join)
 		   client_mode_list->head);
 
   /* Save channel key */
-  if (keyp && !(channel->mode & SILC_CHANNEL_MODE_PRIVKEY))
+  if (keyp)
     silc_client_save_channel_key(cmd->client, conn, keyp, channel);
 
   /* Get founder key */
   tmp = silc_argument_get_arg_type(cmd->args, 15, &len);
-  if (tmp)
-    silc_pkcs_public_key_payload_decode(tmp, len, &founder_key);
+  if (tmp) {
+    if (channel->founder_key)
+      silc_pkcs_public_key_free(channel->founder_key);
+    channel->founder_key = NULL;
+    silc_pkcs_public_key_payload_decode(tmp, len, &channel->founder_key);
+  }
+
+  /* Get user limit */
+  tmp = silc_argument_get_arg_type(cmd->args, 17, &len);
+  if (tmp && len == 4)
+    SILC_GET32_MSB(channel->user_limit, tmp);
+  if (!(channel->mode & SILC_CHANNEL_MODE_ULIMIT))
+    channel->user_limit = 0;
 
   /* Get channel public key list */
   tmp = silc_argument_get_arg_type(cmd->args, 16, &len);
   if (tmp)
     silc_buffer_set(&chpklist, tmp, len);
 
+  if (topic) {
+    silc_free(channel->topic);
+    channel->topic = silc_memdup(topic, strlen(topic));
+  }
+
   /* Notify application */
   COMMAND_REPLY((SILC_ARGS, channel_name, channel, mode, 0,
 		 keyp ? keyp->head : NULL, NULL,
 		 NULL, topic, hmac, list_count, client_id_list,
-		 client_mode_list, founder_key, tmp ? &chpklist : NULL));
+		 client_mode_list, channel->founder_key,
+		 tmp ? &chpklist : NULL, channel->user_limit));
 
  out:
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_JOIN);
   silc_client_command_reply_free(cmd);
-  if (founder_key)
-    silc_pkcs_public_key_free(founder_key);
   silc_buffer_free(keyp);
   silc_buffer_free(client_id_list);
   silc_buffer_free(client_mode_list);
@@ -1294,6 +1346,13 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
       public_key = NULL;
   }
 
+  /* Get user limit */
+  tmp = silc_argument_get_arg_type(cmd->args, 6, &len);
+  if (tmp && len == 4)
+    SILC_GET32_MSB(channel->user_limit, tmp);
+  if (!(channel->mode & SILC_CHANNEL_MODE_ULIMIT))
+    channel->user_limit = 0;
+
   /* Get channel public key(s) */
   tmp = silc_argument_get_arg_type(cmd->args, 5, &len);
   if (tmp)
@@ -1301,7 +1360,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(cmode)
 
   /* Notify application */
   COMMAND_REPLY((SILC_ARGS, channel, mode, public_key,
-		 tmp ? &channel_pubkeys : NULL));
+		 tmp ? &channel_pubkeys : NULL, channel->user_limit));
 
   silc_free(channel_id);
 
@@ -1933,6 +1992,11 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
       public_key = NULL;
   }
 
+  if (!public_key) {
+    COMMAND_REPLY_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+
   id_type = silc_id_payload_get_type(idp);
   if (id_type == SILC_ID_CLIENT) {
     /* Received client's public key */
@@ -1950,9 +2014,14 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
       silc_hash_make(cmd->client->sha1hash, tmp + 4, len - 4,
 		     client_entry->fingerprint);
     }
+    if (!client_entry->public_key) {
+      client_entry->public_key = public_key;
+      public_key = NULL;
+    }
 
     /* Notify application */
-    COMMAND_REPLY((SILC_ARGS, id_type, client_entry, public_key));
+    COMMAND_REPLY((SILC_ARGS, id_type, client_entry,
+		   client_entry->public_key));
   } else if (id_type == SILC_ID_SERVER) {
     /* Received server's public key */
     server_id = silc_id_payload_get_id(idp);

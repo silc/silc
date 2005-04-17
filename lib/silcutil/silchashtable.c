@@ -38,7 +38,7 @@
 #endif
 
 /* Default size of the hash table (index to prime table) */
-#define SILC_HASH_TABLE_SIZE 3
+#define SILC_HASH_TABLE_SIZE 2
 
 /* Produce the index by hashing the key */
 #define SILC_HASH_TABLE_HASH(f, c) \
@@ -79,7 +79,7 @@ struct SilcHashTableStruct {
    be one of these. */
 const SilcUInt32 primesize[42] =
 {
-  1, 3, 5, 11, 17, 37, 67, 109, 131, 163, 257, 367, 521, 823, 1031,
+  3, 5, 11, 17, 37, 67, 109, 131, 163, 257, 367, 521, 823, 1031,
   1237, 2053, 2777, 4099, 6247, 8209, 14057, 16411, 21089, 32771, 47431,
   65537, 106721, 131101, 262147, 360163, 524309, 810343, 1048583, 2097169,
   4194319, 6153409, 8388617, 13845163, 16777259, 33554467, 67108879
@@ -653,21 +653,8 @@ bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
 bool silc_hash_table_find(SilcHashTable ht, void *key,
 			  void **ret_key, void **ret_context)
 {
-  SilcHashTableEntry *entry;
-
-  entry = silc_hash_table_find_internal_simple(ht, key, ht->hash,
-					       ht->hash_user_context,
-					       ht->compare,
-					       ht->compare_user_context);
-  if (*entry == NULL)
-    return FALSE;
-
-  if (ret_key)
-    *ret_key = (*entry)->key;
-  if (ret_context)
-    *ret_context = (*entry)->context;
-
-  return TRUE;
+  return silc_hash_table_find_ext(ht, key, ret_key, ret_context,
+				  NULL, NULL, NULL, NULL);
 }
 
 /* Same as above but with specified hash and comparison functions. */
@@ -707,12 +694,30 @@ bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
 bool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
 				     void *context, void **ret_key)
 {
+  return silc_hash_table_find_by_context_ext(ht, key, context, ret_key,
+					     NULL, NULL, NULL, NULL);
+}
+
+/* Same as above but with specified hash and comparison functions. */
+
+bool silc_hash_table_find_by_context_ext(SilcHashTable ht, void *key,
+					 void *context, void **ret_key,
+					 SilcHashFunction hash,
+					 void *hash_user_context,
+					 SilcHashCompare compare,
+					 void *compare_user_context)
+{
   SilcHashTableEntry *entry;
 
   entry = silc_hash_table_find_internal_context(ht, key, context, NULL,
-						ht->hash,
+						hash ? hash : ht->hash,
+						hash_user_context ?
+						hash_user_context :
 						ht->hash_user_context,
+						compare ? compare :
 						ht->compare,
+						compare_user_context ?
+						compare_user_context :
 						ht->compare_user_context);
   if (!entry || !(*entry))
     return FALSE;

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2003 Pekka Riikonen
+  Copyright (C) 2002 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,19 +42,19 @@ typedef struct {
 typedef struct {
   void *id;			    /* ID */
   SilcIdType id_type;		    /* ID type */
-  SilcUInt16 index;		    /* Index to IDs */
-  unsigned int from_cmd : 1;   	    /* TRUE if `index' is from command args,
-				       otherwise from query->ids */
+  unsigned int index : 15;	    /* Index to IDs */
+  unsigned int type : 2;   	    /* 0 = take from query->ids, 1 = take
+				       from args, 2 = no args in error. */
   unsigned int error : 7;	    /* The actual error (SilcStatus) */
 } *SilcServerQueryError;
 
 /* Query session context */
 typedef struct {
   /* Queried data */
-  char *nickname;		    /* Queried nickname */
+  char *nickname;		    /* Queried nickname, normalized */
   char *nick_server;		    /* Queried nickname's server */
-  char *server_name;		    /* Queried server name */
-  char *channel_name;		    /* Queried channel name */
+  char *server_name;		    /* Queried server name, normalized */
+  char *channel_name;		    /* Queried channel name, normalized */
   SilcServerQueryID ids;	    /* Queried IDs */
   SilcUInt32 ids_count;		    /* number of queried IDs */
   SilcUInt32 reply_count;	    /* Requested reply count */
@@ -80,7 +80,7 @@ void silc_server_query_send_error(SilcServer server,
 				  SilcStatus error, ...);
 void silc_server_query_add_error(SilcServer server,
 				 SilcServerQuery query,
-				 bool from_cmd,
+				 SilcUInt32 type,
 				 SilcUInt32 index,
 				 SilcStatus error);
 void silc_server_query_add_error_id(SilcServer server,
@@ -173,11 +173,13 @@ void silc_server_query_send_error(SilcServer server,
    processing and this function can be used to add one error.  The
    `index' is the index to the command context which includes the argument
    which caused the error, or it is the index to query->ids, depending
-   on value of `from_cmd'. */
+   on value of `type'.  If `type' is 0 the index is to query->ids, if
+   it is 1 it is index to the command context arguments, and if it is
+   2 the index is ignored and no argument is included in the error. */
 
 void silc_server_query_add_error(SilcServer server,
 				 SilcServerQuery query,
-				 bool from_cmd,
+				 SilcUInt32 type,
 				 SilcUInt32 index,
 				 SilcStatus error)
 {
@@ -186,7 +188,7 @@ void silc_server_query_add_error(SilcServer server,
   if (!query->errors)
     return;
   query->errors[query->errors_count].index = index;
-  query->errors[query->errors_count].from_cmd = from_cmd;
+  query->errors[query->errors_count].type = type;
   query->errors[query->errors_count].error = error;
   query->errors[query->errors_count].id = NULL;
   query->errors[query->errors_count].id_type = 0;
@@ -206,7 +208,7 @@ void silc_server_query_add_error_id(SilcServer server,
   if (!query->errors)
     return;
   query->errors[query->errors_count].index = 0;
-  query->errors[query->errors_count].from_cmd = FALSE;
+  query->errors[query->errors_count].type = 0;
   query->errors[query->errors_count].error = error;
   query->errors[query->errors_count].id = silc_id_dup(id, id_type);
   query->errors[query->errors_count].id_type = id_type;
@@ -234,11 +236,15 @@ bool silc_server_query_command(SilcServer server, SilcCommand querycmd,
   switch (querycmd) {
 
   case SILC_COMMAND_WHOIS:
-    /* If we are normal server and query contains nickname, send it
-       directly to router. */
-    if (server->server_type == SILC_SERVER && !server->standalone &&
+    /* If we are normal server and query contains nickname OR query
+       doesn't contain nickname or ids BUT attributes, send it to the
+       router */
+    if (server->server_type != SILC_ROUTER && !server->standalone &&
 	cmd->sock != SILC_PRIMARY_ROUTE(server) &&
-	silc_argument_get_arg_type(cmd->args, 1, NULL)) {
+	 (silc_argument_get_arg_type(cmd->args, 1, NULL) ||
+	 (!silc_argument_get_arg_type(cmd->args, 1, NULL) &&
+	  !silc_argument_get_arg_type(cmd->args, 4, NULL) &&
+	  silc_argument_get_arg_type(cmd->args, 3, NULL)))) {
       silc_server_query_send_router(server, query);
       return TRUE;
     }
@@ -317,6 +323,13 @@ void silc_server_query_send_router_reply(void *context, void *reply)
 
   SILC_LOG_DEBUG(("Received reply from router to query"));
 
+  /* If the original command caller has gone away, just stop. */
+  if (query->cmd->sock->users == 1) {
+    SILC_LOG_DEBUG(("Original command caller vanished"));
+    silc_server_query_free(query);
+    return;
+  }
+
   /* Check if router sent error reply */
   if (cmdr && !silc_command_get_status(cmdr->payload, NULL, NULL)) {
     SilcBuffer buffer;
@@ -357,13 +370,27 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
   switch (query->querycmd) {
 
   case SILC_COMMAND_WHOIS:
+    /* Get requested attributes if set */
+    tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
+    if (tmp && !query->attrs && tmp_len <= SILC_ATTRIBUTE_MAX_REQUEST_LEN) {
+      query->attrs = silc_attribute_payload_parse(tmp, tmp_len);
+
+      /* When Requested Attributes is present we will assure that this
+	 client cannot execute the WHOIS command too fast.  This would be
+	 same as having SILC_CF_LAG_STRICT. */
+      if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT &&
+          cmd->sock->user_data)
+	((SilcClientEntry)cmd->sock->user_data)->fast_command = 6;
+    }
+
     /* Get Client IDs if present. Take IDs always instead of nickname. */
     tmp = silc_argument_get_arg_type(cmd->args, 4, &tmp_len);
     if (!tmp) {
 
       /* Get nickname */
       tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
-      if (!tmp) {
+      if (!tmp && !query->attrs) {
+	/* No nickname, no ids and no attributes - send error */
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
 	silc_server_query_free(query);
@@ -371,13 +398,25 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       }
 
       /* Get the nickname@server string and parse it */
-      if (tmp_len > 128 ||
-	  !silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server)) {
+      if (tmp && ((tmp_len > 128) ||
+	  !silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server))) {
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
 	silc_server_query_free(query);
 	return;
       }
+
+      /* Check nickname */
+      tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
+				  SILC_STRING_UTF8, 128, &tmp_len);
+      if (!tmp) {
+	silc_server_query_send_error(server, query,
+				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
+	silc_server_query_free(query);
+	return;
+      }
+      silc_free(query->nickname);
+      query->nickname = tmp;
 
     } else {
       /* Parse the IDs included in the query */
@@ -390,7 +429,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 
 	id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
 	if (!id || id_type != SILC_ID_CLIENT) {
-	  silc_server_query_add_error(server, query, TRUE, i + 4,
+	  silc_server_query_add_error(server, query, 1, i + 4,
 				      SILC_STATUS_ERR_BAD_CLIENT_ID);
 	  continue;
 	}
@@ -425,20 +464,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
     tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
     if (tmp && tmp_len == sizeof(SilcUInt32))
       SILC_GET32_MSB(query->reply_count, tmp);
-
-    /* Get requested attributes if set */
-    tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-    if (tmp && tmp_len <= SILC_ATTRIBUTE_MAX_REQUEST_LEN) {
-      query->attrs = silc_attribute_payload_parse(tmp, tmp_len);
-
-      /* When Requested Attributes is present we will assure that this
-	 client cannot execute the WHOIS command too fast.  This would be
-	 same as having SILC_CF_LAG_STRICT. */
-      if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT &&
-	  cmd->sock->user_data)
-	((SilcClientEntry)cmd->sock->user_data)->fast_command = 6;
-    }
-    break;
+   break;
 
   case SILC_COMMAND_WHOWAS:
     /* Get nickname */
@@ -459,6 +485,18 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       return;
     }
 
+    /* Check nickname */
+    tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
+				SILC_STRING_UTF8, 128, &tmp_len);
+    if (!tmp) {
+      silc_server_query_send_error(server, query,
+				   SILC_STATUS_ERR_BAD_NICKNAME, 0);
+      silc_server_query_free(query);
+      return;
+    }
+    silc_free(query->nickname);
+    query->nickname = tmp;
+
     /* Get the max count of reply messages allowed */
     tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
     if (tmp && tmp_len == sizeof(SilcUInt32))
@@ -476,19 +514,51 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	/* Get the nickname@server string and parse it */
 	if (tmp_len > 128 ||
 	    !silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server))
-	  silc_server_query_add_error(server, query, TRUE, 1,
+	  silc_server_query_add_error(server, query, 1, 1,
 				      SILC_STATUS_ERR_BAD_NICKNAME);
+
+	/* Check nickname */
+	tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
+				    SILC_STRING_UTF8, 128, &tmp_len);
+	if (!tmp) {
+	  silc_server_query_send_error(server, query,
+				       SILC_STATUS_ERR_BAD_NICKNAME, 0);
+	  silc_server_query_free(query);
+	  return;
+	}
+	silc_free(query->nickname);
+	query->nickname = tmp;
       }
 
       /* Try get server name */
       tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-      if (tmp)
-	query->server_name = silc_memdup(tmp, tmp_len);
+      if (tmp) {
+	/* Check server name */
+	tmp = silc_identifier_check(tmp, tmp_len, SILC_STRING_UTF8,
+				    256, &tmp_len);
+	if (!tmp) {
+	  silc_server_query_send_error(server, query,
+				       SILC_STATUS_ERR_BAD_SERVER, 0);
+	  silc_server_query_free(query);
+	  return;
+	}
+	query->server_name = tmp;
+      }
 
       /* Get channel name */
       tmp = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
-      if (tmp && tmp_len <= 256)
-	query->channel_name = silc_memdup(tmp, tmp_len);
+      if (tmp && tmp_len <= 256) {
+	/* Check channel name */
+	tmp = silc_identifier_check(tmp, tmp_len, SILC_STRING_UTF8,
+				    256, &tmp_len);
+	if (!tmp) {
+	  silc_server_query_send_error(server, query,
+				       SILC_STATUS_ERR_BAD_CHANNEL, 0);
+	  silc_server_query_free(query);
+	  return;
+	}
+	query->channel_name = tmp;
+      }
 
       if (!query->nickname && !query->server_name && !query->channel_name) {
 	silc_server_query_send_error(server, query,
@@ -508,7 +578,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 
 	id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
 	if (!id) {
-	  silc_server_query_add_error(server, query, TRUE, i + 5,
+	  silc_server_query_add_error(server, query, 1, i + 5,
 				      SILC_STATUS_ERR_BAD_CLIENT_ID);
 	  continue;
 	}
@@ -563,6 +633,115 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
   silc_server_query_process(server, query, TRUE);
 }
 
+/* Context for holding clients searched by public key. */
+typedef struct {
+  SilcClientEntry **clients;
+  SilcUInt32 *clients_count;
+  bool found;
+} *SilcServerPublicKeyUser, SilcServerPublicKeyUserStruct;
+
+void silc_server_public_key_hash_foreach(void *key, void *context,
+                                         void *user_context)
+{
+  SilcServerPublicKeyUser uc = user_context;
+  SilcClientEntry entry = context;
+
+  /* Nothing was found, just return */
+  if (!context)
+    return;
+
+  uc->found = TRUE;
+
+  (*uc->clients) = silc_realloc((*uc->clients),
+                                sizeof((**uc->clients)) *
+				((*uc->clients_count) + 1));
+  (*uc->clients)[(*uc->clients_count)++] = entry;
+}
+
+/* If clients are set, limit the found clients using the attributes in
+   the query. If clients are not set, try to find some clients using
+   the attributes */
+
+void silc_server_query_check_attributes(SilcServer server,
+                                        SilcServerQuery query,
+                                        SilcClientEntry **clients,
+                                        SilcUInt32 *clients_count) {
+  SilcClientEntry entry;
+  SilcAttributePayload attr;
+  SilcAttribute attribute;
+  SilcAttributeObjPk pk;
+  SilcPublicKey publickey;
+  int i;
+  bool found = FALSE, no_clients = FALSE;
+
+  /* If no clients were found, we only check the attributes
+     if the user wasn't searching for nickname/ids */
+  if (!(*clients)) {
+    no_clients = TRUE;
+    if (query->nickname || query->ids_count)
+      return;
+  }
+
+  silc_dlist_start(query->attrs);
+  while ((attr = silc_dlist_get(query->attrs)) != SILC_LIST_END) {
+    attribute = silc_attribute_get_attribute(attr);
+    switch (attribute) {
+
+      case SILC_ATTRIBUTE_USER_PUBLIC_KEY:
+	SILC_LOG_DEBUG(("Finding clients by public key attribute"));
+
+	if (!silc_attribute_get_object(attr, &pk, sizeof(pk)))
+	  continue;
+
+	if (!silc_pkcs_public_key_decode(pk.data, pk.data_len,
+	                                 &publickey)) {
+	  silc_free(pk.type);
+	  silc_free(pk.data);
+	  continue;
+	}
+
+	/* If no clients were set on calling this function, we
+	   just search for clients, otherwise we try to limit
+	   the clients */
+	if (no_clients) {
+	  SilcServerPublicKeyUserStruct usercontext;
+
+	  usercontext.clients = clients;
+	  usercontext.clients_count = clients_count;
+	  usercontext.found = FALSE;
+
+	  silc_hash_table_find_foreach(server->pk_hash, publickey,
+	                               silc_server_public_key_hash_foreach,
+	                               &usercontext);
+
+	  if (usercontext.found == TRUE)
+	    found = TRUE;
+	} else {
+	  for (i = 0; i < *clients_count; i++) {
+	    entry = (*clients)[i];
+
+	    if (!entry->data.public_key)
+	      continue;
+
+	    if (!silc_hash_table_find_by_context(server->pk_hash, publickey,
+		                                 entry, NULL))
+	      (*clients)[i] = NULL;
+	    else
+	      found = TRUE;
+	  }
+	}
+	silc_free(pk.type);
+	silc_free(pk.data);
+	silc_pkcs_public_key_free(publickey);
+	break;
+    }
+  }
+
+  if (!found && !query->nickname && !query->ids)
+    silc_server_query_add_error(server, query, 2, 0,
+                                SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+}
+
 /* Processes the parsed query.  This does the actual finding of the
    queried information and prepares for sending reply to the original
    sender of the query command. */
@@ -611,7 +790,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
     }
 
     if (!clients)
-      silc_server_query_add_error(server, query, TRUE, 1,
+      silc_server_query_add_error(server, query, 1, 1,
 				  SILC_STATUS_ERR_NO_SUCH_NICK);
   }
 
@@ -628,7 +807,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
     }
 
     if (!servers)
-      silc_server_query_add_error(server, query, TRUE, 2,
+      silc_server_query_add_error(server, query, 1, 2,
 				  SILC_STATUS_ERR_NO_SUCH_SERVER);
   }
 
@@ -646,7 +825,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
     }
 
     if (!channels)
-      silc_server_query_add_error(server, query, TRUE, 3,
+      silc_server_query_add_error(server, query, 1, 3,
 				  SILC_STATUS_ERR_NO_SUCH_CHANNEL);
   }
 
@@ -667,7 +846,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
 	  entry = silc_idlist_find_client_by_id(server->global_list,
 						id, TRUE, NULL);
 	if (!entry) {
-	  silc_server_query_add_error(server, query, FALSE, i,
+	  silc_server_query_add_error(server, query, 0, i,
 				      SILC_STATUS_ERR_NO_SUCH_CLIENT_ID);
 	  continue;
 	}
@@ -685,7 +864,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
 	  entry = silc_idlist_find_server_by_id(server->global_list,
 						id, TRUE, NULL);
 	if (!entry) {
-	  silc_server_query_add_error(server, query, FALSE, i,
+	  silc_server_query_add_error(server, query, 0, i,
 				      SILC_STATUS_ERR_NO_SUCH_SERVER_ID);
 	  continue;
 	}
@@ -702,7 +881,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
 	  entry = silc_idlist_find_channel_by_id(server->global_list, id,
 						 NULL);
 	if (!entry) {
-	  silc_server_query_add_error(server, query, FALSE, i,
+	  silc_server_query_add_error(server, query, 0, i,
 				      SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID);
 	  continue;
 	}
@@ -717,6 +896,11 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
       }
     }
   }
+
+  /* Check the attributes to narrow down the search by using them. */
+  if (query->attrs)
+    silc_server_query_check_attributes(server, query, &clients,
+                                       &clients_count);
 
   SILC_LOG_DEBUG(("Querying %d clients", clients_count));
   SILC_LOG_DEBUG(("Querying %d servers", servers_count));
@@ -786,6 +970,11 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
       if (query->attrs && SILC_IS_LOCAL(client_entry) &&
 	  (client_entry->mode & SILC_UMODE_DETACHED ||
 	   client_entry->data.status & SILC_IDLIST_STATUS_NOATTR))
+	continue;
+
+      /* If attributes are present in query, and in the entry and we have
+	 done resolvings already we don't need to resolve anymore */
+      if (query->resolved && query->attrs && client_entry->attrs)
 	continue;
 
       /* Resolve the detailed client information. If client is local we
@@ -1099,6 +1288,13 @@ void silc_server_query_resolve_reply(void *context, void *reply)
 
   SILC_LOG_DEBUG(("Reprocess the query"));
 
+  /* If the original command caller has gone away, just stop. */
+  if (query->cmd->sock->users == 1) {
+    SILC_LOG_DEBUG(("Original command caller vanished"));
+    silc_server_query_free(query);
+    return;
+  }
+
   /* We have received all queries.  Now re-search all information required
      to complete this query.  Reason we cannot save the values found in
      the first search is that SilcClientEntry, SilcServerEntry and
@@ -1132,7 +1328,7 @@ void silc_server_query_send_reply(SilcServer server,
   SilcUInt32 len;
   SilcBuffer idp;
   int i, k, valid_count;
-  char nh[256], uh[256];
+  char nh[384], uh[384];
   bool sent_reply = FALSE;
 
   SILC_LOG_DEBUG(("Sending reply to query"));
@@ -1151,6 +1347,9 @@ void silc_server_query_send_reply(SilcServer server,
     /* Mark all invalid entries */
     for (i = 0, valid_count = 0; i < clients_count; i++) {
       entry = clients[i];
+      if (!entry)
+	continue;
+
       switch (query->querycmd) {
       case SILC_COMMAND_WHOIS:
 	if (!entry->nickname || !entry->username || !entry->userinfo ||
@@ -1217,7 +1416,6 @@ void silc_server_query_send_reply(SilcServer server,
 		       "      : "), entry->nickname));
 
       idp = silc_id_payload_encode(entry->id, SILC_ID_CLIENT);
-      memset(uh, 0, sizeof(uh));
       memset(nh, 0, sizeof(nh));
 
       silc_strncat(nh, sizeof(nh), entry->nickname, strlen(entry->nickname));
@@ -1245,6 +1443,8 @@ void silc_server_query_send_reply(SilcServer server,
 
 	  memset(fempty, 0, sizeof(fempty));
 	  memset(idle, 0, sizeof(idle));
+	  memset(uh, 0, sizeof(uh));
+
 	  silc_strncat(uh, sizeof(uh), entry->username,
 		       strlen(entry->username));
 	  if (!strchr(entry->username, '@') && entry->connection) {
@@ -1278,8 +1478,8 @@ void silc_server_query_send_reply(SilcServer server,
 	  if (query->attrs) {
 	    if (!entry->attrs && SILC_IS_LOCAL(entry)) {
 	      tmpattrs = silc_server_query_reply_attrs(server, query, entry);
-	      entry->attrs = silc_memdup(tmpattrs->data, tmpattrs->len);
-	      entry->attrs_len = tmpattrs->len;
+	      entry->attrs = silc_buffer_steal(tmpattrs, &len);
+	      entry->attrs_len = len;
 	      silc_buffer_free(tmpattrs);
 	    }
 	    attrs = entry->attrs;
@@ -1353,7 +1553,7 @@ void silc_server_query_send_reply(SilcServer server,
       case SILC_COMMAND_WHOWAS:
 	silc_strncat(uh, sizeof(uh), entry->username, strlen(entry->username));
 	if (!strchr(entry->username, '@'))
-	  silc_strncat(uh, sizeof(uh), "@*private*", 10);
+	  silc_strncat(uh, sizeof(uh), "@-private-", 10);
 
 	/* Send command reply */
 	silc_server_send_command_reply(server, cmd->sock, query->querycmd,
@@ -1379,9 +1579,14 @@ void silc_server_query_send_reply(SilcServer server,
       /* Not one valid entry was found, send error.  If nickname was used
 	 in query send error based on that, otherwise the query->errors
 	 already includes proper errors. */
-      if (query->nickname)
-	silc_server_query_add_error(server, query, TRUE, 1,
+      if (query->nickname || (!query->ids && query->attrs))
+	silc_server_query_add_error(server, query, 1, 1,
 				    SILC_STATUS_ERR_NO_SUCH_NICK);
+
+      /* Make sure some error is sent */
+      if (!query->errors_count && !servers_count && !channels_count)
+	silc_server_query_add_error(server, query, 2, 0,
+				    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     }
   }
 
@@ -1491,15 +1696,19 @@ void silc_server_query_send_reply(SilcServer server,
       idp = NULL;
 
       /* Take error argument */
-      if (query->errors[i].from_cmd) {
+      if (query->errors[i].type == 1) {
+	/* Take from sent arguments */
 	len = 0;
 	tmp = silc_argument_get_arg_type(cmd->args,
 					 query->errors[i].index, &len);
-	if (query->errors[i].index == 1)
-	  type = 3;		    /* Nickname */
-	else
-	  type = 2;		    /* ID */
+	type = 2;
+      } else if (query->errors[i].type == 2) {
+	/* No argument */
+	len = 0;
+	tmp = NULL;
+	type = 0;
       } else if (!query->errors[i].id) {
+	/* Take from query->ids */
 	idp =
 	  silc_id_payload_encode(query->ids[query->errors[i].index].id,
 				 query->ids[query->errors[k].index].id_type);
@@ -1507,6 +1716,7 @@ void silc_server_query_send_reply(SilcServer server,
 	len = idp->len;
 	type = 2;
       } else {
+	/* Take added ID. */
 	idp = silc_id_payload_encode(query->errors[i].id,
 				     query->errors[k].id_type);
 	tmp = idp->data;
@@ -1532,6 +1742,18 @@ void silc_server_query_send_reply(SilcServer server,
 		      silc_get_status_message(query->errors[i].error),
 		      query->errors[i].error));
 
+#if 1 /* XXX Backwards compatibility.  Remove in 1.0. */
+      if (query->errors[i].error == SILC_STATUS_ERR_NO_SUCH_NICK)
+	/* Send error */
+	silc_server_send_command_reply(server, cmd->sock, query->querycmd,
+				       (status == SILC_STATUS_OK ?
+					query->errors[i].error : status),
+				       (status == SILC_STATUS_OK ?
+					0 : query->errors[i].error), ident, 2,
+				       type, tmp, len,
+				       3, tmp, len);
+      else
+#endif
       /* Send error */
       silc_server_send_command_reply(server, cmd->sock, query->querycmd,
 				     (status == SILC_STATUS_OK ?
@@ -1539,6 +1761,7 @@ void silc_server_query_send_reply(SilcServer server,
 				     (status == SILC_STATUS_OK ?
 				      0 : query->errors[i].error), ident, 1,
 				     type, tmp, len);
+
       silc_buffer_free(idp);
       sent_reply = TRUE;
 

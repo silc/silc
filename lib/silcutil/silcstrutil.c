@@ -1,10 +1,10 @@
 /*
 
-  silcstrutil.c 
+  silcstrutil.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2003 Pekka Riikonen
+  Copyright (C) 2002 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -170,360 +170,6 @@ unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
   return data;
 }
 
-/* Encodes the string `bin' of which encoding is `bin_encoding' to the
-   UTF-8 encoding into the buffer `utf8' which is of size of `utf8_size'.
-   Returns the length of the UTF-8 encoded string, or zero (0) on error.
-   By default `bin_encoding' is ASCII, and the caller needs to know the
-   encoding of the input string if it is anything else. */
-
-SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
-			    SilcStringEncoding bin_encoding,
-			    unsigned char *utf8, SilcUInt32 utf8_size)
-{
-  SilcUInt32 enclen = 0, i, charval = 0;
-
-  if (!bin || !bin_len)
-    return 0;
-
-  if (silc_utf8_valid(bin, bin_len) && bin_len <= utf8_size) {
-    memcpy(utf8, bin, bin_len);
-    return bin_len;
-  }
-
-  if (bin_encoding == SILC_STRING_LANGUAGE) {
-#if defined(HAVE_ICONV) && defined(HAVE_NL_LANGINFO) && defined(CODESET)
-    char *fromconv, *icp, *ocp;
-    iconv_t icd;
-    size_t inlen, outlen;
-
-    setlocale(LC_CTYPE, "");
-    fromconv = nl_langinfo(CODESET);
-    if (fromconv && strlen(fromconv)) {
-      icd = iconv_open("UTF-8", fromconv);
-      icp = (char *)bin;
-      ocp = (char *)utf8;
-      inlen = bin_len;
-      outlen = utf8_size;
-      if (icp && ocp && icd != (iconv_t)-1) {
-	if (iconv(icd, &icp, &inlen, &ocp, &outlen) != -1) {
-	  utf8_size -= outlen;
-	  iconv_close(icd);
-	  return utf8_size;
-	}
-      }
-      if (icd != (iconv_t)-1)
-	iconv_close(icd);
-    }
-#endif
-
-    /* Fallback to 8-bit ASCII */
-    bin_encoding = SILC_STRING_ASCII;
-  }
-
-  for (i = 0; i < bin_len; i++) {
-    switch (bin_encoding) {
-    case SILC_STRING_ASCII:
-      charval = bin[i];
-      break;
-    case SILC_STRING_ASCII_ESC:
-      SILC_NOT_IMPLEMENTED("SILC_STRING_ASCII_ESC");
-      return 0;
-      break;
-    case SILC_STRING_BMP:
-      if (i + 1 >= bin_len)
-	return 0;
-      SILC_GET16_MSB(charval, bin + i);
-      i += 1;
-      break;
-    case SILC_STRING_BMP_LSB:
-      if (i + 1 >= bin_len)
-	return 0;
-      SILC_GET16_LSB(charval, bin + i);
-      i += 1;
-      break;
-    case SILC_STRING_UNIVERSAL:
-      if (i + 3 >= bin_len)
-	return 0;
-      SILC_GET32_MSB(charval, bin + i);
-      i += 3;
-      break;
-    case SILC_STRING_UNIVERSAL_LSB:
-      if (i + 3 >= bin_len)
-	return 0;
-      SILC_GET32_LSB(charval, bin + i);
-      i += 3;
-      break;
-    default:
-      return 0;
-      break;
-    }
-
-    if (charval < 0x80) {
-      if (utf8) {
-	if (enclen > utf8_size)
-	  return 0;
-
-	utf8[enclen] = (unsigned char)charval;
-      }
-      enclen++;
-    } else if (charval < 0x800) {
-      if (utf8) {
-	if (enclen + 2 > utf8_size)
-	  return 0;
-
-	utf8[enclen    ] = (unsigned char )(((charval >> 6)  & 0x1f) | 0xc0);
-	utf8[enclen + 1] = (unsigned char )((charval & 0x3f) | 0x80);
-      }
-      enclen += 2;
-    } else if (charval < 0x10000) {
-      if (utf8) {
-	if (enclen + 3 > utf8_size)
-	  return 0;
-
-	utf8[enclen    ] = (unsigned char )(((charval >> 12) & 0xf)  | 0xe0);
-	utf8[enclen + 1] = (unsigned char )(((charval >> 6)  & 0x3f) | 0x80);
-	utf8[enclen + 2] = (unsigned char )((charval & 0x3f) | 0x80);
-      }
-      enclen += 3;
-    } else if (charval < 0x200000) {
-      if (utf8) {
-	if (enclen + 4 > utf8_size)
-	  return 0;
-
-	utf8[enclen    ] = (unsigned char )(((charval >> 18) & 0x7)  | 0xf0);
-	utf8[enclen + 1] = (unsigned char )(((charval >> 12) & 0x3f) | 0x80);
-	utf8[enclen + 2] = (unsigned char )(((charval >> 6)  & 0x3f) | 0x80);
-	utf8[enclen + 3] = (unsigned char )((charval & 0x3f) | 0x80);
-      }
-      enclen += 4;
-    } else if (charval < 0x4000000) {
-      if (utf8) {
-	if (enclen + 5 > utf8_size)
-	  return 0;
-
-	utf8[enclen    ] = (unsigned char )(((charval >> 24) & 0x3)  | 0xf8);
-	utf8[enclen + 1] = (unsigned char )(((charval >> 18) & 0x3f) | 0x80);
-	utf8[enclen + 2] = (unsigned char )(((charval >> 12) & 0x3f) | 0x80);
-	utf8[enclen + 3] = (unsigned char )(((charval >> 6)  & 0x3f) | 0x80);
-	utf8[enclen + 4] = (unsigned char )((charval & 0x3f) | 0x80);
-      }
-      enclen += 5;
-    } else {
-      if (utf8) {
-	if (enclen + 6 > utf8_size)
-	  return 0;
-
-	utf8[enclen    ] = (unsigned char )(((charval >> 30) & 0x1)  | 0xfc);
-	utf8[enclen + 1] = (unsigned char )(((charval >> 24) & 0x3f) | 0x80);
-	utf8[enclen + 2] = (unsigned char )(((charval >> 18) & 0x3f) | 0x80);
-	utf8[enclen + 3] = (unsigned char )(((charval >> 12) & 0x3f) | 0x80);
-	utf8[enclen + 4] = (unsigned char )(((charval >> 6)  & 0x3f) | 0x80);
-	utf8[enclen + 5] = (unsigned char )((charval & 0x3f) | 0x80);
-      }
-      enclen += 6;
-    }
-  }
-
-  return enclen;
-}
-
-/* Decodes UTF-8 encoded string `utf8' to string of which encoding is
-   to be `bin_encoding', into the `bin' buffer of size of `bin_size'.
-   Returns the length of the decoded buffer, or zero (0) on error.
-   By default `bin_encoding' is ASCII, and the caller needs to know to
-   which encoding the output string is to be encoded if ASCII is not
-   desired. */
-
-SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
-			    SilcStringEncoding bin_encoding,
-			    unsigned char *bin, SilcUInt32 bin_size)
-{
-  SilcUInt32 enclen = 0, i, charval;
-
-  if (!utf8 || !utf8_len)
-    return 0;
-
-  if (bin_encoding == SILC_STRING_LANGUAGE) {
-#if defined(HAVE_ICONV) && defined(HAVE_NL_LANGINFO) && defined(CODESET)
-    char *toconv, *icp, *ocp;
-    iconv_t icd;
-    size_t inlen, outlen;
-
-    setlocale(LC_CTYPE, "");
-    toconv = nl_langinfo(CODESET);
-    if (toconv && strlen(toconv)) {
-      icd = iconv_open(toconv, "UTF-8");
-      icp = (char *)utf8;
-      ocp = (char *)bin;
-      inlen = utf8_len;
-      outlen = bin_size;
-      if (icp && ocp && icd != (iconv_t)-1) {
-	if (iconv(icd, &icp, &inlen, &ocp, &outlen) != -1) {
-	  bin_size -= outlen;
-	  iconv_close(icd);
-	  return bin_size;
-	}
-      }
-      if (icd != (iconv_t)-1)
-	iconv_close(icd);
-    }
-#endif
-
-    /* Fallback to 8-bit ASCII */
-    bin_encoding = SILC_STRING_ASCII;
-  }
-
-  for (i = 0; i < utf8_len; i++) {
-    if ((utf8[i] & 0x80) == 0x00) {
-      charval = utf8[i] & 0x7f;
-    } else if ((utf8[i] & 0xe0) == 0xc0) {
-      if (i + 1 >= utf8_len)
-	return 0;
-
-      if ((utf8[i + 1] & 0xc0) != 0x80)
-        return 0;
-
-      charval = (utf8[i++] & 0x1f) << 6;
-      charval |= utf8[i] & 0x3f;
-      if (charval < 0x80)
-        return 0;
-    } else if ((utf8[i] & 0xf0) == 0xe0) {
-      if (i + 2 >= utf8_len)
-	return 0;
-
-      if (((utf8[i + 1] & 0xc0) != 0x80) || 
-	  ((utf8[i + 2] & 0xc0) != 0x80))
-        return 0;
-
-      charval = (utf8[i++]  & 0xf)  << 12;
-      charval |= (utf8[i++] & 0x3f) << 6;
-      charval |= utf8[i] & 0x3f;
-      if (charval < 0x800)
-        return 0;
-    } else if ((utf8[i] & 0xf8) == 0xf0) {
-      if (i + 3 >= utf8_len)
-	return 0;
-
-      if (((utf8[i + 1] & 0xc0) != 0x80) || 
-	  ((utf8[i + 2] & 0xc0) != 0x80) ||
-	  ((utf8[i + 3] & 0xc0) != 0x80))
-        return 0;
-
-      charval = ((SilcUInt32)(utf8[i++] & 0x7)) << 18;
-      charval |= (utf8[i++] & 0x3f) << 12;
-      charval |= (utf8[i++] & 0x3f) << 6;
-      charval |= utf8[i] & 0x3f;
-      if (charval < 0x10000)
-        return 0;
-    } else if ((utf8[i] & 0xfc) == 0xf8) {
-      if (i + 4 >= utf8_len)
-	return 0;
-
-      if (((utf8[i + 1] & 0xc0) != 0x80) || 
-	  ((utf8[i + 2] & 0xc0) != 0x80) ||
-	  ((utf8[i + 3] & 0xc0) != 0x80) ||
-	  ((utf8[i + 4] & 0xc0) != 0x80))
-        return 0;
-
-      charval = ((SilcUInt32)(utf8[i++]  & 0x3))  << 24;
-      charval |= ((SilcUInt32)(utf8[i++] & 0x3f)) << 18;
-      charval |= ((SilcUInt32)(utf8[i++] & 0x3f)) << 12;
-      charval |= (utf8[i++] & 0x3f) << 6;
-      charval |= utf8[i] & 0x3f;
-      if (charval < 0x200000)
-        return 0;
-    } else if ((utf8[i] & 0xfe) == 0xfc) {
-      if (i + 5 >= utf8_len)
-	return 0;
-
-      if (((utf8[i + 1] & 0xc0) != 0x80) || 
-	  ((utf8[i + 2] & 0xc0) != 0x80) ||
-	  ((utf8[i + 3] & 0xc0) != 0x80) ||
-	  ((utf8[i + 4] & 0xc0) != 0x80) ||
-	  ((utf8[i + 5] & 0xc0) != 0x80))
-        return 0;
-
-      charval = ((SilcUInt32)(utf8[i++]  & 0x1))  << 30;
-      charval |= ((SilcUInt32)(utf8[i++] & 0x3f)) << 24;
-      charval |= ((SilcUInt32)(utf8[i++] & 0x3f)) << 18;
-      charval |= ((SilcUInt32)(utf8[i++] & 0x3f)) << 12;
-      charval |= (utf8[i++] & 0x3f) << 6;
-      charval |= utf8[i] & 0x3f;
-      if (charval < 0x4000000)
-        return 0;
-    } else {
-      return 0;
-    }
-
-    switch (bin_encoding) {
-    case SILC_STRING_ASCII:
-      if (bin) {
-        if (enclen + 1 > bin_size)
-          return 0;
-
-        bin[enclen] = (unsigned char)charval;
-      }
-      enclen++;
-      break;
-    case SILC_STRING_ASCII_ESC:
-      SILC_NOT_IMPLEMENTED("SILC_STRING_ASCII_ESC");
-      return 0;
-      break;
-    case SILC_STRING_BMP:
-      if (bin)
-	SILC_PUT16_MSB(charval, bin + enclen);
-      enclen += 2;
-      break;
-    case SILC_STRING_BMP_LSB:
-      if (bin)
-	SILC_PUT16_LSB(charval, bin + enclen);
-      enclen += 2;
-      break;
-    case SILC_STRING_UNIVERSAL:
-      if (bin)
-	SILC_PUT32_MSB(charval, bin + enclen);
-      enclen += 4;
-      break;
-    case SILC_STRING_UNIVERSAL_LSB:
-      if (bin)
-	SILC_PUT32_LSB(charval, bin + enclen);
-      enclen += 4;
-      break;
-    default:
-      return 0;
-      break;
-    }
-  }
-
-  return enclen;
-}
-
-/* Returns the length of UTF-8 encoded string if the `bin' of
-   encoding of `bin_encoding' is encoded with silc_utf8_encode. */
-
-SilcUInt32 silc_utf8_encoded_len(const unsigned char *bin, SilcUInt32 bin_len,
-				 SilcStringEncoding bin_encoding)
-{
-  return silc_utf8_encode(bin, bin_len, bin_encoding, NULL, 0);
-}
-
-/* Returns the length of decoded string if the `bin' of encoding of
-   `bin_encoding' is decoded with silc_utf8_decode. */
-
-SilcUInt32 silc_utf8_decoded_len(const unsigned char *bin, SilcUInt32 bin_len,
-				 SilcStringEncoding bin_encoding)
-{
-  return silc_utf8_decode(bin, bin_len, bin_encoding, NULL, 0);
-}
-
-/* Returns TRUE if the `utf8' string of length of `utf8_len' is valid
-   UTF-8 encoded string, FALSE if it is not UTF-8 encoded string. */
-
-bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len)
-{
-  return silc_utf8_decode(utf8, utf8_len, 0, NULL, 0) != 0;
-}
-
 /* Mime constants and macros */
 #define MIME_VERSION "MIME-Version: "
 #define MIME_VERSION_LEN 14
@@ -532,15 +178,24 @@ bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len)
 #define MIME_TRANSFER_ENCODING "Content-Transfer-Encoding: "
 #define MIME_TRANSFER_ENCODING_LEN 27
 
-#define MIME_GET_FIELD(header, mime, mime_len, field, field_len,	\
+#define MIME_GET_FIELD(mime, mime_len, field, field_len,		\
 		       dest, dest_size)					\
 do {									\
   if (dest) {								\
-    char *f = strstr(header, field);					\
+    char *f = strstr(mime, field);					\
     if (f) {								\
-      f = (char *)mime + (f - header) + field_len;			\
-      for (i = 0; i < (mime_len - (f - (char *)mime)); i++) {		\
-        if (f[i] == '\r' || f[i] == '\n' || i == dest_size)		\
+      int parse_len;							\
+      f += field_len;							\
+      parse_len = (mime_len - (f - (char *)mime));			\
+      for (i = 0; i < parse_len; i++) {					\
+        if ((i == dest_size) ||						\
+	    ((f[i] == '\n') && 						\
+	       ((i == parse_len - 1) ||					\
+		  ((f[i+1] != ' ') && (f[i+1] != '\t')))) ||		\
+	    ((f[i] == '\r') &&						\
+	       ((i == parse_len - 1) || (f[i+1] == '\n')) &&		\
+	       ((i >= parse_len - 2) || 				\
+		  ((f[i+2] != ' ') && (f[i+2] != '\t')))))		\
           break;							\
         dest[i] = f[i];							\
       }									\
@@ -550,46 +205,47 @@ do {									\
 
 /* Parses MIME object and MIME header in it. */
 
-bool 
+bool
 silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
                 char *version, SilcUInt32 version_size,
                 char *content_type, SilcUInt32 content_type_size,
                 char *transfer_encoding, SilcUInt32 transfer_encoding_size,
                 unsigned char **mime_data_ptr, SilcUInt32 *mime_data_len)
-{ 
+{
   int i;
-  char header[256];
-   
-  memcpy(header, mime, 256 > mime_len ? mime_len : 256);
-  header[sizeof(header) - 1] = '\0';
+  unsigned char *tmp;
 
-  /* Check for mandatory Content-Type field */
-  if (!strstr(header, MIME_CONTENT_TYPE))
-    return FALSE;
-  
   /* Get the pointer to the data area in the object */
   for (i = 0; i < mime_len; i++) {
-    if (mime_len >= i + 4 &&
-	mime[i    ] == '\r' && mime[i + 1] == '\n' &&
-	mime[i + 2] == '\r' && mime[i + 3] == '\n')
+    if ((mime_len >= i + 4 &&
+	 mime[i    ] == '\r' && mime[i + 1] == '\n' &&
+	 mime[i + 2] == '\r' && mime[i + 3] == '\n') ||
+	(mime_len >= i + 2 &&
+	 mime[i    ] == '\n' && mime[i + 1] == '\n'))
       break;
   }
   if (i >= mime_len)
     return FALSE;
 
   if (mime_data_ptr)
-    *mime_data_ptr = (unsigned char *)mime + i + 4;
+    *mime_data_ptr = (unsigned char *)mime + i +
+	    (mime[i] == '\n' ? 2 : 4);
   if (mime_data_len)
-    *mime_data_len = mime_len - ((mime + i + 4) - mime);
-  
+    *mime_data_len = mime_len - (i + (mime[i] == '\n' ? 2 : 4));
+
+  /* Check for mandatory Content-Type field */
+  tmp = strstr(mime, MIME_CONTENT_TYPE);
+  if (!tmp || (tmp - mime) >= i)
+    return FALSE;
+
   /* Get MIME version, Content-Type and Transfer Encoding fields */
-  MIME_GET_FIELD(header, mime, mime_len,
+  MIME_GET_FIELD(mime, mime_len,
 		 MIME_VERSION, MIME_VERSION_LEN,
 		 version, version_size);
-  MIME_GET_FIELD(header, mime, mime_len,
+  MIME_GET_FIELD(mime, mime_len,
 		 MIME_CONTENT_TYPE, MIME_CONTENT_TYPE_LEN,
 		 content_type, content_type_size);
-  MIME_GET_FIELD(header, mime, mime_len,
+  MIME_GET_FIELD(mime, mime_len,
 		 MIME_TRANSFER_ENCODING, MIME_TRANSFER_ENCODING_LEN,
 		 transfer_encoding, transfer_encoding_size);
 
@@ -616,4 +272,124 @@ char *silc_strncat(char *dest, SilcUInt32 dest_size,
   }
 
   return dest;
+}
+
+/* Checks that the 'identifier' string is valid identifier string
+   and does not contain any unassigned or prohibited character.  This
+   function is used to check for valid nicknames, channel names,
+   server names, usernames, hostnames, service names, algorithm names,
+   other security property names, and SILC Public Key name. */
+
+unsigned char *silc_identifier_check(const unsigned char *identifier,
+				     SilcUInt32 identifier_len,
+				     SilcStringEncoding identifier_encoding,
+				     SilcUInt32 max_allowed_length,
+				     SilcUInt32 *out_len)
+{
+  unsigned char *utf8s;
+  SilcUInt32 utf8s_len;
+  SilcStringprepStatus status;
+
+  if (!identifier || !identifier_len)
+    return NULL;
+
+  if (max_allowed_length && identifier_len > max_allowed_length)
+    return NULL;
+
+  status = silc_stringprep(identifier, identifier_len,
+			   identifier_encoding, SILC_IDENTIFIER_PREP, 0,
+			   &utf8s, &utf8s_len, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK) {
+    SILC_LOG_DEBUG(("silc_stringprep() status error %d", status));
+    return NULL;
+  }
+
+  if (out_len)
+    *out_len = utf8s_len;
+
+  return utf8s;
+}
+
+/* Same as above but does not allocate memory, just checks the
+   validity of the string. */
+
+bool silc_identifier_verify(const unsigned char *identifier,
+			    SilcUInt32 identifier_len,
+			    SilcStringEncoding identifier_encoding,
+			    SilcUInt32 max_allowed_length)
+{
+  SilcStringprepStatus status;
+
+  if (!identifier || !identifier_len)
+    return FALSE;
+
+  if (max_allowed_length && identifier_len > max_allowed_length)
+    return FALSE;
+
+  status = silc_stringprep(identifier, identifier_len,
+			   identifier_encoding, SILC_IDENTIFIER_PREP, 0,
+			   NULL, NULL, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK) {
+    SILC_LOG_DEBUG(("silc_stringprep() status error %d", status));
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+unsigned char *silc_channel_name_check(const unsigned char *identifier,
+				       SilcUInt32 identifier_len,
+				       SilcStringEncoding identifier_encoding,
+				       SilcUInt32 max_allowed_length,
+				       SilcUInt32 *out_len)
+{
+  unsigned char *utf8s;
+  SilcUInt32 utf8s_len;
+  SilcStringprepStatus status;
+
+  if (!identifier || !identifier_len)
+    return NULL;
+
+  if (max_allowed_length && identifier_len > max_allowed_length)
+    return NULL;
+
+  status = silc_stringprep(identifier, identifier_len,
+			   identifier_encoding, SILC_IDENTIFIER_CH_PREP, 0,
+			   &utf8s, &utf8s_len, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK) {
+    SILC_LOG_DEBUG(("silc_stringprep() status error %d", status));
+    return NULL;
+  }
+
+  if (out_len)
+    *out_len = utf8s_len;
+
+  return utf8s;
+}
+
+/* Same as above but does not allocate memory, just checks the
+   validity of the string. */
+
+bool silc_channel_name_verify(const unsigned char *identifier,
+			      SilcUInt32 identifier_len,
+			      SilcStringEncoding identifier_encoding,
+			      SilcUInt32 max_allowed_length)
+{
+  SilcStringprepStatus status;
+
+  if (!identifier || !identifier_len)
+    return FALSE;
+
+  if (max_allowed_length && identifier_len > max_allowed_length)
+    return FALSE;
+
+  status = silc_stringprep(identifier, identifier_len,
+			   identifier_encoding, SILC_IDENTIFIER_CH_PREP, 0,
+			   NULL, NULL, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK) {
+    SILC_LOG_DEBUG(("silc_stringprep() status error %d", status));
+    return FALSE;
+  }
+
+  return TRUE;
 }

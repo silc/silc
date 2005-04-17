@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2002 Pekka Riikonen
+#  Copyright (C) 2002 - 2003 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,8 @@ bin_PROGRAMS = 	test_sha1 	\
 		test_hmacsha1	\
 		test_hmacmd5	\
 		test_aes	\
-		test_twofish
+		test_twofish	\
+		test_silcpkcs
 
 test_sha1_SOURCES = test_sha1.c
 test_md5_SOURCES = test_md5.c
@@ -31,6 +32,8 @@ test_hmacmd5_SOURCES = test_hmacmd5.c
 
 test_aes_SOURCES = test_aes.c
 test_twofish_SOURCES = test_aes.c
+
+test_silcpkcs_SOURCES = test_silcpkcs.c
 
 LIBS = $(SILC_COMMON_LIBS)
 LDADD = -L.. -L../.. -lsilc

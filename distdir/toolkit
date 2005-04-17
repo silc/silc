@@ -1,0 +1,13 @@
+name Toolkit
+package silc-toolkit
+bug-report silc-devel@lists.silcnet.org
+inherit common
+inherit client
+inherit server
+define SILC_DIST_TOOLKIT
+include README.CVS
+include README.WIN32
+include README.MACOSX
+include silcer
+include tutorial
+pre-hook distdir/pre-run

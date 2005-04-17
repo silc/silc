@@ -82,7 +82,7 @@ static int sig_check_lag(void)
 				server_disconnect((SERVER_REC *) rec);
 			}
 		} else if (rec->lag_last_check+lag_check_time < now &&
-			 rec->cmdcount == 0 && rec->connected) {
+			 rec->connected) {
 			/* no commands in buffer - get the lag */
 			lag_get(rec);
 		}

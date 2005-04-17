@@ -4,7 +4,7 @@ include $(top_srcdir)/Makefile.defines.in
 
 moduledir = $(silc_modulesdir)
 
-perl_dirs = common ui textui
+perl_dirs = common ui textui silc
 
 module_LTLIBRARIES = $(perl_module_lib) $(perl_module_fe_lib)
 noinst_LTLIBRARIES = $(perl_static_lib) $(perl_static_fe_lib)
@@ -23,7 +23,7 @@ INCLUDES = \
 	-I$(top_srcdir)/src/fe-common/core \
 	-I$(top_srcdir)/src/fe-common/silc \
 	$(GLIB_CFLAGS) \
-	-DSCRIPTDIR=\""$(libdir)/silc/scripts"\" \
+	-DSCRIPTDIR=\""$(datadir)/silc/scripts"\" \
 	-DPERL_USE_LIB=\""$(PERL_USE_LIB)"\" \
 	-DPERL_STATIC_LIBS=$(PERL_STATIC_LIBS) \
 	$(PERL_CFLAGS)
@@ -113,6 +113,15 @@ textui_sources = \
 	textui/typemap \
 	textui/module.h
 
+silc_sources = \
+	silc/Silc.xs \
+	silc/Silc.pm \
+	silc/Channel.xs \
+	silc/Server.xs \
+	silc/Query.xs \
+	silc/typemap \
+	silc/module.h
+
 EXTRA_DIST = \
 	libperl_dynaloader.la \
 	libperl_orig.la \
@@ -120,7 +129,8 @@ EXTRA_DIST = \
 	irssi-core.pl \
 	$(common_sources) \
 	$(ui_sources) \
-	$(textui_sources)
+	$(textui_sources) \
+	$(silc_sources)
 
 all-local:
 	for dir in $(perl_dirs); do \
@@ -146,8 +156,8 @@ clean-generic:
 
 distclean-generic:
 	for dir in $(perl_dirs); do \
-	  cd $$dir; \
-	  $(MAKE) realclean; rm -f Makefile.PL; \
+	  cd $$dir && \
+	  $(MAKE) realclean && rm -f Makefile.PL && \
 	  cd ..; \
 	done
 

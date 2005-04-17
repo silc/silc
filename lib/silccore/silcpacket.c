@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,8 +56,12 @@ int silc_packet_send(SilcSocketConnection sock, bool force_send)
     ret = silc_socket_write(sock);
 
     if (ret == -1) {
-      SILC_LOG_ERROR(("Error sending packet, dropped: %s",
-                      strerror(errno)));
+      SILC_LOG_ERROR(("Error sending packet to %s:%d [%s], dropped: %s",
+		      sock->hostname ? sock->hostname : "", sock->port,
+		      (sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
+		       sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
+		       sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
+		       "Router"), strerror(errno)));
     }
     if (ret != -2)
       return ret;
@@ -323,10 +327,12 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
     mac_len = silc_hmac_len(hmac);
 
   /* Parse the packets from the data */
+  silc_socket_dup(sock);
   while (sock->inbuf->len > 0 && cont) {
 
     if (sock->inbuf->len < SILC_PACKET_MIN_HEADER_LEN) {
       SILC_LOG_DEBUG(("Partial packet in queue, waiting for the rest"));
+      silc_socket_free(sock);
       return TRUE;
     }
 
@@ -349,6 +355,7 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
       SILC_LOG_ERROR(("Received too short packet"));
       memset(header, 0, sizeof(header));
       silc_buffer_clear(sock->inbuf);
+      silc_socket_free(sock);
       return FALSE;
     }
 
@@ -357,6 +364,7 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
 		      "(%d bytes)", paddedlen + mac_len - sock->inbuf->len));
       SILC_SET_INBUF_PENDING(sock);
       memset(tmp, 0, sizeof(tmp));
+      silc_socket_free(sock);
       return TRUE;
     }
 
@@ -364,23 +372,27 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
     if (!silc_packet_check_mac(hmac, sock->inbuf->data, paddedlen,
 			       sock->inbuf->data + paddedlen, sequence)) {
       SILC_LOG_WARNING(("Packet MAC check failed %s:%d "
-			"[%s type %d len %dB seq %d] [%s]",
+			"[%s type %d len %dB blen %dB seq %d] [%s] proto %d",
 			sock->hostname, sock->port,
 			silc_get_packet_name(header[3]),
-			header[3], paddedlen, sequence,
+			header[3], paddedlen, sock->inbuf->len, sequence,
 			(sock->type == SILC_SOCKET_TYPE_UNKNOWN ? "Unknown" :
 			 sock->type == SILC_SOCKET_TYPE_CLIENT ? "Client" :
 			 sock->type == SILC_SOCKET_TYPE_SERVER ? "Server" :
-			 "Router")));
+			 "Router"),
+			sock->protocol ? sock->protocol->protocol->type : -1));
       memset(tmp, 0, sizeof(tmp));
       silc_buffer_clear(sock->inbuf);
+      silc_socket_free(sock);
       return FALSE;
     }
 
     SILC_UNSET_INBUF_PENDING(sock);
     parse_ctx = silc_calloc(1, sizeof(*parse_ctx));
-    if (!parse_ctx)
+    if (!parse_ctx) {
+      silc_socket_free(sock);
       return FALSE;
+    }
     parse_ctx->packet = silc_packet_context_alloc();
     parse_ctx->packet->buffer = silc_buffer_alloc_size(paddedlen);
     parse_ctx->packet->type = (SilcPacketType)header[3];
@@ -431,6 +443,7 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
 	memset(tmp, 0, sizeof(tmp));
 	silc_packet_context_free(parse_ctx->packet);
 	silc_free(parse_ctx);
+	silc_socket_free(sock);
 	return FALSE;
       }
     }
@@ -457,11 +470,21 @@ bool silc_packet_receive_process(SilcSocketConnection sock,
     memset(tmp, 0, sizeof(tmp));
   }
 
-  if (cont == FALSE && sock->inbuf->len > 0)
+  /* Don't clear buffer if pending data is in the buffer */
+  if (cont == FALSE && sock->inbuf->len > 0) {
+    silc_socket_free(sock);
     return TRUE;
+  }
+
+  /* Don't clear buffer if QoS data exists in the buffer */
+  if (sock->qos && sock->qos->data_len > 0) {
+    silc_socket_free(sock);
+    return TRUE;
+  }
 
   SILC_LOG_DEBUG(("Clearing inbound buffer"));
   silc_buffer_clear(sock->inbuf);
+  silc_socket_free(sock);
   return TRUE;
 }
 

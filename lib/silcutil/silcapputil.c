@@ -175,21 +175,24 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   }
 
   if (!pass) {
-    char *pass2 = NULL;
-    pass = silc_get_input("Private key passphrase: ", TRUE);
-    if (!pass) {
-      pass = strdup("");
-    } else {
-      while (TRUE) {
+    while (TRUE) {
+      char *pass2 = NULL;
+      pass = silc_get_input("Private key passphrase: ", TRUE);
+      if (!pass) {
+        pass = strdup("");
+	break;
+      } else {
+	bool match;
 	printf("\n");
 	pass2 = silc_get_input("Retype private key passphrase: ", TRUE);
 	if (!pass2)
 	  pass2 = strdup("");
-	if (!strcmp(pass, pass2))
+	match = !strcmp(pass, pass2);
+	silc_free(pass2);
+	if (match)
 	  break;
-	fprintf(stderr, "\nPassphrases do not match");
+	fprintf(stderr, "\nPassphrases do not match\n\n");
       }
-      silc_free(pass2);
     }
   }
 

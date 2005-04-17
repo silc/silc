@@ -1,6 +1,6 @@
 /*
 
-  silc-queries.c 
+  silc-queries.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -433,6 +433,8 @@ void silc_query_attributes_default(SilcClient client,
 	mask |= SILC_ATTRIBUTE_CONTACT_MMS;
       if (!strcasecmp(*entry, "CHAT"))
 	mask |= SILC_ATTRIBUTE_CONTACT_CHAT;
+      if (!strcasecmp(*entry, "VIDEO"))
+	mask |= SILC_ATTRIBUTE_CONTACT_VIDEO;
     }
     silc_client_attribute_add(silc_client, conn,
 			      SILC_ATTRIBUTE_PREFERRED_CONTACT, (void *)mask,
@@ -702,6 +704,8 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 	  silc_strncat(tmp, sizeof(tmp), "SMS ", strlen(" SMS"));
 	if (mask & SILC_ATTRIBUTE_CONTACT_MMS)
 	  silc_strncat(tmp, sizeof(tmp), "MMS ", strlen(" MMS"));
+	if (mask & SILC_ATTRIBUTE_CONTACT_VIDEO)
+	  silc_strncat(tmp, sizeof(tmp), "VIDEO ", strlen(" VIDEO"));
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_ATTR_PREFERRED_CONTACT, tmp);
       }
@@ -876,7 +880,7 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 
   if (verify->userpk.data) {
     silc_verify_public_key(client, conn, SILC_SOCKET_TYPE_CLIENT,
-			   verify->userpk.data, verify->userpk.data_len, 
+			   verify->userpk.data, verify->userpk.data_len,
 			   SILC_SKE_PK_TYPE_SILC,
 			   silc_query_attributes_print_final, verify);
   } else {
@@ -917,10 +921,10 @@ static void silc_query_attributes_print_final(bool success, void *context)
   for (i = 0; i < strlen(fingerprint); i++)
     if (fingerprint[i] == ' ')
       fingerprint[i] = '_';
-  
+
   /* Filename for dir */
   tmp = fingerprint + strlen(fingerprint) - 9;
-  snprintf(filename, sizeof(filename) - 1, "%s/friends/%s", 
+  snprintf(filename, sizeof(filename) - 1, "%s/friends/%s",
 	   get_irssi_dir(), tmp);
   silc_free(fingerprint);
 
@@ -968,7 +972,7 @@ static void silc_query_attributes_accept(const char *line, void *context)
 
     /* Filename for dir */
     tmp = fingerprint + strlen(fingerprint) - 9;
-    snprintf(filename, sizeof(filename) - 1, "%s/friends/%s", 
+    snprintf(filename, sizeof(filename) - 1, "%s/friends/%s",
 	     get_irssi_dir(), tmp);
 
     /* Create dir if it doesn't exist */
@@ -1020,7 +1024,7 @@ static void silc_query_attributes_accept(const char *line, void *context)
     }
 
     /* Save MIME message data */
-    if (verify->extension.mime) {
+    if (verify->message.mime) {
       memset(filename2, 0, sizeof(filename2));
       snprintf(filename2, sizeof(filename2) - 1, "%s/status_message.mime",
 	       filename);

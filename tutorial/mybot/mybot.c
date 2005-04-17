@@ -167,6 +167,7 @@ static void
 silc_channel_message(SilcClient client, SilcClientConnection conn,
 		     SilcClientEntry sender, SilcChannelEntry channel,
 		     SilcMessagePayload payload,
+		     SilcChannelPrivateKey key,
 		     SilcMessageFlags flags, const unsigned char *message,
 		     SilcUInt32 message_len)
 {

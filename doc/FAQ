@@ -357,7 +357,7 @@
    Q: Does SILC support moderated channels?
    A: Yes. Channel founder can moderate both normal users and channel
    operators so that they cannot talk on the channel. It is also possible
-   to queit one specific user on the channel if needed.
+   to quiet one specific user on the channel if needed.
 
    Q: What does the "watching" mean?
    A: You can set a "watch" list for yourself in the server. This means

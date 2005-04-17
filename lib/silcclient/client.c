@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -88,10 +88,12 @@ void silc_client_free(SilcClient client)
     if (client->rng)
       silc_rng_free(client->rng);
 
-    silc_cipher_unregister_all();
-    silc_pkcs_unregister_all();
-    silc_hash_unregister_all();
-    silc_hmac_unregister_all();
+    if (!client->internal->params->dont_register_crypto_library) {
+      silc_cipher_unregister_all();
+      silc_pkcs_unregister_all();
+      silc_hash_unregister_all();
+      silc_hmac_unregister_all();
+    }
 
     silc_hash_free(client->md5hash);
     silc_hash_free(client->sha1hash);
@@ -118,13 +120,37 @@ bool silc_client_init(SilcClient client)
   assert(client->hostname);
   assert(client->realname);
 
-  /* Initialize the crypto library.  If application has done this already
-     this has no effect.  Also, we will not be overriding something
-     application might have registered earlier. */
-  silc_cipher_register_default();
-  silc_pkcs_register_default();
-  silc_hash_register_default();
-  silc_hmac_register_default();
+  /* Validate essential strings */
+  if (client->nickname)
+    if (!silc_identifier_verify(client->nickname, strlen(client->nickname),
+				SILC_STRING_UTF8, 128)) {
+      SILC_LOG_ERROR(("Malformed nickname '%s'", client->nickname));
+      return FALSE;
+    }
+  if (!silc_identifier_verify(client->username, strlen(client->username),
+			      SILC_STRING_UTF8, 128)) {
+    SILC_LOG_ERROR(("Malformed username '%s'", client->username));
+    return FALSE;
+  }
+  if (!silc_identifier_verify(client->hostname, strlen(client->hostname),
+			      SILC_STRING_UTF8, 256)) {
+    SILC_LOG_ERROR(("Malformed hostname '%s'", client->hostname));
+    return FALSE;
+  }
+  if (!silc_utf8_valid(client->realname, strlen(client->realname))) {
+    SILC_LOG_ERROR(("Malformed realname '%s'", client->realname));
+    return FALSE;
+  }
+
+  if (!client->internal->params->dont_register_crypto_library) {
+    /* Initialize the crypto library.  If application has done this already
+       this has no effect.  Also, we will not be overriding something
+       application might have registered earlier. */
+    silc_cipher_register_default();
+    silc_pkcs_register_default();
+    silc_hash_register_default();
+    silc_hmac_register_default();
+  }
 
   /* Initialize hash functions for client to use */
   silc_hash_alloc("md5", &client->md5hash);
@@ -201,12 +227,6 @@ void silc_client_run_one(SilcClient client)
   silc_schedule_one(client->schedule, 0);
 }
 
-static void silc_client_entry_destructor(SilcIDCache cache,
-					 SilcIDCacheEntry entry)
-{
-  silc_free(entry->name);
-}
-
 /* Allocates and adds new connection to the client. This adds the allocated
    connection to the connection table and returns a pointer to it. A client
    can have multiple connections to multiple servers. Every connection must
@@ -234,9 +254,11 @@ silc_client_add_connection(SilcClient client,
   conn->remote_port = port;
   conn->context = context;
   conn->internal->client_cache =
-    silc_idcache_alloc(0, SILC_ID_CLIENT, silc_client_entry_destructor);
-  conn->internal->channel_cache = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL);
-  conn->internal->server_cache = silc_idcache_alloc(0, SILC_ID_SERVER, NULL);
+    silc_idcache_alloc(0, SILC_ID_CLIENT, NULL, FALSE, TRUE);
+  conn->internal->channel_cache = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL,
+						     FALSE, TRUE);
+  conn->internal->server_cache = silc_idcache_alloc(0, SILC_ID_SERVER, NULL,
+						    FALSE, TRUE);
   conn->internal->pending_commands = silc_dlist_init();
   conn->internal->ftp_sessions = silc_dlist_init();
 
@@ -572,7 +594,7 @@ SILC_TASK_CALLBACK(silc_client_connect_failure)
   SilcClient client = (SilcClient)ctx->client;
 
   client->internal->ops->connected(client, ctx->sock->user_data,
-				   SILC_CLIENT_CONN_ERROR);
+				   SILC_CLIENT_CONN_ERROR_KE);
   if (ctx->packet)
     silc_packet_context_free(ctx->packet);
   silc_free(ctx);
@@ -587,8 +609,7 @@ SILC_TASK_CALLBACK(silc_client_connect_failure_auth)
     (SilcClientConnAuthInternalContext *)context;
   SilcClient client = (SilcClient)ctx->client;
 
-  client->internal->ops->connected(client, ctx->sock->user_data,
-				   SILC_CLIENT_CONN_ERROR);
+  client->internal->ops->connected(client, ctx->sock->user_data, ctx->status);
   silc_free(ctx);
 }
 
@@ -636,7 +657,8 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_start)
       silc_free(ctx);
 
       /* Notify application of failure */
-      client->internal->ops->connected(client, conn, SILC_CLIENT_CONN_ERROR);
+      client->internal->ops->connected(client, conn,
+				       SILC_CLIENT_CONN_ERROR_TIMEOUT);
     }
     return;
   }
@@ -788,6 +810,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
       protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
     /* Error occured during protocol */
     SILC_LOG_DEBUG(("Error during authentication protocol"));
+    ctx->status = SILC_CLIENT_CONN_ERROR_AUTH;
     goto err;
   }
 
@@ -799,12 +822,15 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     unsigned char *old_id;
     SilcUInt16 old_id_len;
 
-    if (!silc_client_process_detach_data(client, conn, &old_id, &old_id_len))
+    if (!silc_client_process_detach_data(client, conn, &old_id, &old_id_len)) {
+      ctx->status = SILC_CLIENT_CONN_ERROR_RESUME;
       goto err;
+    }
 
     old_client_id = silc_id_str2id(old_id, old_id_len, SILC_ID_CLIENT);
     if (!old_client_id) {
       silc_free(old_id);
+      ctx->status = SILC_CLIENT_CONN_ERROR_RESUME;
       goto err;
     }
 
@@ -817,6 +843,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
     if (!auth) {
       silc_free(old_client_id);
       silc_free(old_id);
+      ctx->status = SILC_CLIENT_CONN_ERROR_RESUME;
       goto err;
     }
 
@@ -1056,8 +1083,6 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
 
     /* Parse the incoming packet type */
     silc_client_packet_parse_type(client, sock, packet);
-    silc_packet_context_free(packet);
-    silc_free(parser_context);
 
     /* Reprocess the buffer since we'll return FALSE. This is because
        the `conn->internal->receive_key' might have become valid by processing
@@ -1070,6 +1095,9 @@ static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
     else
       silc_packet_receive_process(sock, FALSE, NULL, NULL, 0,
 				  silc_client_packet_parse, client);
+
+    silc_packet_context_free(packet);
+    silc_free(parser_context);
 
     return FALSE;
   }
@@ -1161,8 +1189,9 @@ void silc_client_packet_parse_type(SilcClient client,
 
   case SILC_PACKET_PRIVATE_MESSAGE_KEY:
     /*
-     * Received private message key
+     * Received private message key indicator
      */
+    silc_client_private_message_key(client, sock, packet);
     break;
 
   case SILC_PACKET_COMMAND:
@@ -1495,8 +1524,21 @@ void silc_client_packet_queue_purge(SilcClient client,
 				    SilcSocketConnection sock)
 {
   if (sock && SILC_IS_OUTBUF_PENDING(sock) &&
-      (SILC_IS_DISCONNECTED(sock) == FALSE)) {
-    silc_packet_send(sock, TRUE);
+      !(SILC_IS_DISCONNECTED(sock))) {
+    int ret;
+
+    ret = silc_packet_send(sock, TRUE);
+    if (ret == -2) {
+      if (sock->outbuf && sock->outbuf->len > 0) {
+	/* Couldn't send all data, put the queue back up, we'll send
+	   rest later. */
+	SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT(client->schedule, sock->sock);
+	SILC_SET_OUTBUF_PENDING(sock);
+	return;
+      }
+    }
+
+    /* Purged all data */
     SILC_UNSET_OUTBUF_PENDING(sock);
     SILC_CLIENT_SET_CONNECTION_FOR_INPUT(client->schedule, sock->sock);
     silc_buffer_clear(sock->outbuf);
@@ -1671,7 +1713,7 @@ static void silc_client_resume_session_cb(SilcClient client,
   /* Notify application that connection is created to server */
   client->internal->ops->connected(client, conn, success ?
 				   SILC_CLIENT_CONN_SUCCESS_RESUME :
-				   SILC_CLIENT_CONN_ERROR);
+				   SILC_CLIENT_CONN_ERROR_RESUME);
 
   if (success) {
     /* Issue INFO command to fetch the real server name and server
@@ -1696,6 +1738,7 @@ void silc_client_receive_new_id(SilcClient client,
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   int connecting = FALSE;
   SilcClientID *client_id = silc_id_payload_get_id(idp);
+  char *nickname;
 
   if (!conn->local_entry)
     connecting = TRUE;
@@ -1738,9 +1781,14 @@ void silc_client_receive_new_id(SilcClient client,
 							NULL, NULL, NULL,
 							TRUE);
 
-  /* Put it to the ID cache */
-  silc_idcache_add(conn->internal->client_cache,
-		   strdup(conn->nickname), conn->local_id,
+  /* Normalize nickname */
+  nickname = silc_identifier_check(conn->nickname, strlen(conn->nickname),
+				   SILC_STRING_UTF8, 128, NULL);
+  if (!nickname)
+    return;
+
+    /* Put it to the ID cache */
+  silc_idcache_add(conn->internal->client_cache, nickname, conn->local_id,
 		   (void *)conn->local_entry, 0, NULL);
 
   if (connecting) {
@@ -1759,7 +1807,8 @@ void silc_client_receive_new_id(SilcClient client,
     if (!conn->internal->params.detach_data) {
       /* Send NICK command if the nickname was set by the application (and is
 	 not same as the username). Send this with little timeout. */
-      if (client->nickname && strcmp(client->nickname, client->username))
+      if (client->nickname &&
+	  !silc_utf8_strcasecmp(client->nickname, client->username))
 	silc_schedule_task_add(client->schedule, 0,
 			       silc_client_send_auto_nick, conn,
 			       1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
@@ -1798,7 +1847,7 @@ void silc_client_remove_from_channels(SilcClient client,
   SilcChannelUser chu;
 
   silc_hash_table_list(client_entry->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chu)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
     silc_hash_table_del(chu->client->channels, chu->channel);
     silc_hash_table_del(chu->channel->user_list, chu->client);
     silc_free(chu);
@@ -1821,7 +1870,7 @@ void silc_client_replace_from_channels(SilcClient client,
   SilcChannelUser chu;
 
   silc_hash_table_list(old->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chu)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
     /* Replace client entry */
     silc_hash_table_del(chu->client->channels, chu->channel);
     silc_hash_table_del(chu->channel->user_list, chu->client);
@@ -1848,7 +1897,7 @@ void silc_client_process_failure(SilcClient client,
 
     /* Notify application */
     client->internal->ops->failure(client, sock->user_data, sock->protocol,
-				   (void *)failure);
+				   SILC_32_TO_PTR(failure));
   }
 }
 

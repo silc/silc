@@ -4,13 +4,12 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -22,7 +21,7 @@
 #include "silcincludes.h"
 
 /* Writes data from encrypted buffer to the socket connection. If the
-   data cannot be written at once, it will be written later with a timeout. 
+   data cannot be written at once, it will be written later with a timeout.
    The data is written from the data section of the buffer, not from head
    or tail section. This automatically pulls the data section towards end
    after writing the data. */
@@ -34,7 +33,7 @@ int silc_socket_write(SilcSocketConnection sock)
   SilcBuffer src = sock->outbuf;
 
   if (!src)
-    return -2;
+    return -1;
   if (SILC_IS_DISABLED(sock))
     return -1;
 
@@ -72,12 +71,15 @@ int silc_socket_write(SilcSocketConnection sock)
 
 SILC_TASK_CALLBACK(silc_socket_read_qos)
 {
-  SilcSocketConnection sock = context;
-  sock->qos->applied = TRUE;
+  SilcSocketConnectionQos qos = context;
+  SilcSocketConnection sock = qos->sock;
+  qos->applied = TRUE;
   if (sock->users > 1)
-    silc_schedule_set_listen_fd(sock->qos->schedule, sock->sock,
+    silc_schedule_set_listen_fd(qos->schedule, sock->sock,
 				(SILC_TASK_READ | SILC_TASK_WRITE), TRUE);
-  sock->qos->applied = FALSE;
+  else
+    silc_schedule_unset_listen_fd(qos->schedule, sock->sock);
+  qos->applied = FALSE;
   silc_socket_free(sock);
 }
 
@@ -108,14 +110,15 @@ int silc_socket_read(SilcSocketConnection sock)
 
       if (sock->inbuf->len - len > sock->qos->read_limit_bytes) {
 	/* Seems we need to apply QoS for the remaining data as well */
+	silc_socket_dup(sock);
 	silc_schedule_task_add(sock->qos->schedule, sock->sock,
-			       silc_socket_read_qos, silc_socket_dup(sock),
+			       silc_socket_read_qos, sock->qos,
 			       sock->qos->limit_sec, sock->qos->limit_usec,
 			       SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 	silc_schedule_unset_listen_fd(sock->qos->schedule, sock->sock);
-      
+
 	/* Hide the rest of the data from the buffer. */
-	sock->qos->data_len = (sock->inbuf->len - len - 
+	sock->qos->data_len = (sock->inbuf->len - len -
 			       sock->qos->read_limit_bytes);
 	silc_buffer_push_tail(sock->inbuf, sock->qos->data_len);
       }
@@ -153,10 +156,10 @@ int silc_socket_read(SilcSocketConnection sock)
 
   if (!sock->inbuf)
     sock->inbuf = silc_buffer_alloc(SILC_SOCKET_BUF_SIZE);
-  
+
   /* If the data does not fit to the buffer reallocate it */
   if ((sock->inbuf->end - sock->inbuf->tail) < len)
-    sock->inbuf = silc_buffer_realloc(sock->inbuf, sock->inbuf->truelen + 
+    sock->inbuf = silc_buffer_realloc(sock->inbuf, sock->inbuf->truelen +
 				      (len * 2));
   silc_buffer_put_tail(sock->inbuf, buf, len);
   silc_buffer_pull_tail(sock->inbuf, len);
@@ -179,8 +182,9 @@ int silc_socket_read(SilcSocketConnection sock)
 
     /* If we are not withing rate limit apply QoS for the read data */
     if (sock->qos->cur_rate > sock->qos->read_rate) {
+      silc_socket_dup(sock);
       silc_schedule_task_add(sock->qos->schedule, sock->sock,
-			     silc_socket_read_qos, silc_socket_dup(sock),
+			     silc_socket_read_qos, sock->qos,
 			     sock->qos->limit_sec, sock->qos->limit_usec,
 			     SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
       silc_schedule_unset_listen_fd(sock->qos->schedule, sock->sock);
@@ -198,8 +202,9 @@ int silc_socket_read(SilcSocketConnection sock)
     } else {
       /* Check the byte limit, and do not return more than allowed */
       if (sock->inbuf->len > sock->qos->read_limit_bytes) {
+	silc_socket_dup(sock);
 	silc_schedule_task_add(sock->qos->schedule, sock->sock,
-			       silc_socket_read_qos, silc_socket_dup(sock),
+			       silc_socket_read_qos, sock->qos,
 			       sock->qos->limit_sec, sock->qos->limit_usec,
 			       SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
 	silc_schedule_unset_listen_fd(sock->qos->schedule, sock->sock);

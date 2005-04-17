@@ -2,15 +2,14 @@
 
   silccipher.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -37,47 +36,38 @@ SilcDList silc_cipher_list = NULL;
 /* Static list of ciphers for silc_cipher_register_default(). */
 const SilcCipherObject silc_default_ciphers[] =
 {
-  { "aes-256-cbc", 16, 256, silc_aes_set_key, 
+  { "aes-256-cbc", 16, 256, silc_aes_set_key,
     silc_aes_set_key_with_string, silc_aes_encrypt_cbc,
     silc_aes_decrypt_cbc, silc_aes_context_len },
-  { "aes-192-cbc", 16, 192, silc_aes_set_key, 
+  { "aes-192-cbc", 16, 192, silc_aes_set_key,
     silc_aes_set_key_with_string, silc_aes_encrypt_cbc,
     silc_aes_decrypt_cbc, silc_aes_context_len },
-  { "aes-128-cbc", 16, 128, silc_aes_set_key, 
+  { "aes-128-cbc", 16, 128, silc_aes_set_key,
     silc_aes_set_key_with_string, silc_aes_encrypt_cbc,
     silc_aes_decrypt_cbc, silc_aes_context_len },
-  { "twofish-256-cbc", 16, 256, silc_twofish_set_key, 
+  { "twofish-256-cbc", 16, 256, silc_twofish_set_key,
     silc_twofish_set_key_with_string,
-    silc_twofish_encrypt_cbc, silc_twofish_decrypt_cbc, 
+    silc_twofish_encrypt_cbc, silc_twofish_decrypt_cbc,
     silc_twofish_context_len },
-  { "twofish-192-cbc", 16, 192, silc_twofish_set_key, 
+  { "twofish-192-cbc", 16, 192, silc_twofish_set_key,
     silc_twofish_set_key_with_string,
-    silc_twofish_encrypt_cbc, silc_twofish_decrypt_cbc, 
+    silc_twofish_encrypt_cbc, silc_twofish_decrypt_cbc,
     silc_twofish_context_len },
-  { "twofish-128-cbc", 16, 128, silc_twofish_set_key, 
+  { "twofish-128-cbc", 16, 128, silc_twofish_set_key,
     silc_twofish_set_key_with_string,
-    silc_twofish_encrypt_cbc, silc_twofish_decrypt_cbc, 
+    silc_twofish_encrypt_cbc, silc_twofish_decrypt_cbc,
     silc_twofish_context_len },
-  { "rc6-256-cbc", 16, 256, silc_rc6_set_key, silc_rc6_set_key_with_string,
-    silc_rc6_encrypt_cbc, silc_rc6_decrypt_cbc, 
-    silc_rc6_context_len },
-  { "rc6-192-cbc", 16, 192, silc_rc6_set_key, silc_rc6_set_key_with_string,
-    silc_rc6_encrypt_cbc, silc_rc6_decrypt_cbc, 
-    silc_rc6_context_len },
-  { "rc6-128-cbc", 16, 128, silc_rc6_set_key, silc_rc6_set_key_with_string,
-    silc_rc6_encrypt_cbc, silc_rc6_decrypt_cbc, 
-    silc_rc6_context_len },
   { "cast-256-cbc", 16, 256, silc_cast_set_key, silc_cast_set_key_with_string,
-    silc_cast_encrypt_cbc, silc_cast_decrypt_cbc, 
+    silc_cast_encrypt_cbc, silc_cast_decrypt_cbc,
     silc_cast_context_len },
   { "cast-192-cbc", 16, 192, silc_cast_set_key, silc_cast_set_key_with_string,
-    silc_cast_encrypt_cbc, silc_cast_decrypt_cbc, 
+    silc_cast_encrypt_cbc, silc_cast_decrypt_cbc,
     silc_cast_context_len },
   { "cast-128-cbc", 16, 128, silc_cast_set_key, silc_cast_set_key_with_string,
-    silc_cast_encrypt_cbc, silc_cast_decrypt_cbc, 
+    silc_cast_encrypt_cbc, silc_cast_decrypt_cbc,
     silc_cast_context_len },
   { "none", 0, 0, silc_none_set_key, silc_none_set_key_with_string,
-    silc_none_encrypt_cbc, silc_none_decrypt_cbc, 
+    silc_none_encrypt_cbc, silc_none_decrypt_cbc,
     silc_none_context_len },
 
   { NULL, 0, 0, NULL, NULL, NULL, NULL, NULL }
@@ -156,7 +146,7 @@ bool silc_cipher_unregister(SilcCipherObject *cipher)
   return FALSE;
 }
 
-/* Function that registers all the default ciphers (all builtin ciphers). 
+/* Function that registers all the default ciphers (all builtin ciphers).
    The application may use this to register the default ciphers if specific
    ciphers in any specific order is not wanted. */
 
@@ -190,7 +180,7 @@ bool silc_cipher_unregister_all(void)
   return TRUE;
 }
 
-/* Allocates a new SILC cipher object. Function returns 1 on succes and 0 
+/* Allocates a new SILC cipher object. Function returns 1 on succes and 0
    on error. The allocated cipher is returned in new_cipher argument. The
    caller must set the key to the cipher after this function has returned
    by calling the ciphers set_key function. */
@@ -200,7 +190,7 @@ bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
   SilcCipherObject *entry = NULL;
 
   SILC_LOG_DEBUG(("Allocating new cipher object"));
-  
+
 #ifndef SILC_EPOC
   if (silc_cipher_list) {
     silc_dlist_start(silc_cipher_list);
@@ -224,7 +214,7 @@ bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
 
   if (entry) {
     *new_cipher = silc_calloc(1, sizeof(**new_cipher));
-    (*new_cipher)->cipher = entry; 
+    (*new_cipher)->cipher = entry;
     (*new_cipher)->context = silc_calloc(1, entry->context_len());
     return TRUE;
   }
@@ -281,8 +271,8 @@ char *silc_cipher_get_supported(void)
     while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
       len += strlen(entry->name);
       list = silc_realloc(list, len + 1);
-      
-      memcpy(list + (len - strlen(entry->name)), 
+
+      memcpy(list + (len - strlen(entry->name)),
 	     entry->name, strlen(entry->name));
       memcpy(list + len, ",", 1);
       len++;
@@ -295,8 +285,8 @@ char *silc_cipher_get_supported(void)
       entry = (SilcCipherObject *)&(silc_default_ciphers[i]);
       len += strlen(entry->name);
       list = silc_realloc(list, len + 1);
-      
-      memcpy(list + (len - strlen(entry->name)), 
+
+      memcpy(list + (len - strlen(entry->name)),
 	     entry->name, strlen(entry->name));
       memcpy(list + len, ",", 1);
       len++;
@@ -312,7 +302,7 @@ char *silc_cipher_get_supported(void)
 /* Encrypts */
 
 bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
-			 unsigned char *dst, SilcUInt32 len, 
+			 unsigned char *dst, SilcUInt32 len,
 			 unsigned char *iv)
 {
 #ifdef SILC_DEBUG
@@ -327,11 +317,11 @@ bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
 /* Decrypts */
 
 bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
-			 unsigned char *dst, SilcUInt32 len, 
+			 unsigned char *dst, SilcUInt32 len,
 			 unsigned char *iv)
 {
 #ifdef SILC_DEBUG
-  assert((len & (cipher->cipher->block_len - 1)) == 0);
+  /*  assert((len & (cipher->cipher->block_len - 1)) == 0); */
 #endif
   if (len & (cipher->cipher->block_len - 1))
     return FALSE;

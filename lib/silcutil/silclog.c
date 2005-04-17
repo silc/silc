@@ -4,7 +4,7 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -123,7 +123,7 @@ static void silc_log_checksize(SilcLog log)
   /* It's too big */
   fprintf(log->fp, "[%s] [%s] Cycling log file, over max "
 	  "logsize (%lu kilobytes)\n",
-	  silc_get_time(0), log->typename, log->maxsize / 1024);
+	  silc_get_time(0), log->typename, (unsigned long)log->maxsize / 1024);
   fflush(log->fp);
   fclose(log->fp);
   memset(newname, 0, sizeof(newname));
@@ -137,6 +137,9 @@ static void silc_log_checksize(SilcLog log)
   if (!(log->fp = fopen(log->filename, "w")))
     SILC_LOG_WARNING(("Couldn't reopen logfile %s for type \"%s\": %s",
 		      log->filename, log->typename, strerror(errno)));
+#ifdef HAVE_CHMOD
+  chmod(log->filename, 0600);
+#endif /* HAVE_CHMOD */
 }
 
 /* Reset a logging channel (close and reopen) */
@@ -279,6 +282,9 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
 	      filename, strerror(errno));
       return FALSE;
     }
+#ifdef HAVE_CHMOD
+    chmod(filename, 0600);
+#endif /* HAVE_CHMOD */
   }
 
   /* clean the logging channel */
@@ -302,7 +308,7 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
     if (silc_log_scheduled)
       return TRUE;
 
-    /* Add schedule hook with a short delay to make sure we'll use 
+    /* Add schedule hook with a short delay to make sure we'll use
        right delay */
     silc_schedule_task_add(scheduler, 0, silc_log_fflush_callback,
 			   (void *) scheduler, 10, 0,
@@ -361,7 +367,7 @@ void silc_log_reset_all() {
 
 /* Outputs the debug message to stderr. */
 
-void silc_log_output_debug(char *file, char *function,
+void silc_log_output_debug(char *file, const char *function,
 			   int line, char *string)
 {
   if (!silc_debug)
@@ -373,7 +379,7 @@ void silc_log_output_debug(char *file, char *function,
     goto end;
 
   if (silc_log_debug_cb) {
-    if ((*silc_log_debug_cb)(file, function, line, string,
+    if ((*silc_log_debug_cb)(file, (char *)function, line, string,
 			     silc_log_debug_context))
       goto end;
   }
@@ -387,7 +393,7 @@ void silc_log_output_debug(char *file, char *function,
 
 /* Hexdumps a message */
 
-void silc_log_output_hexdump(char *file, char *function,
+void silc_log_output_hexdump(char *file, const char *function,
 			     int line, void *data_in,
 			     SilcUInt32 len, char *string)
 {
@@ -404,7 +410,8 @@ void silc_log_output_hexdump(char *file, char *function,
     goto end;
 
   if (silc_log_hexdump_cb) {
-    if ((*silc_log_hexdump_cb)(file, function, line, data_in, len, string,
+    if ((*silc_log_hexdump_cb)(file, (char *)function, line,
+			       data_in, len, string,
 			       silc_log_hexdump_context))
       goto end;
   }

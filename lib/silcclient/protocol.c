@@ -2,14 +2,13 @@
 
   protocol.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  the Free Software Foundation; version 2 of the License.
 
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,9 +16,6 @@
   GNU General Public License for more details.
 
 */
-/*
- * Client side of the protocols.
- */
 /* $Id$ */
 
 #include "silcincludes.h"
@@ -633,7 +629,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_connection_auth)
        */
       unsigned char *auth_data = NULL;
       SilcUInt32 auth_data_len = 0;
-      unsigned char sign[1024];
+      unsigned char sign[2048 + 1];
 
       switch(ctx->auth_meth) {
       case SILC_AUTH_NONE:
@@ -938,6 +934,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 	   */
 
 	  /* Send the REKEY_DONE to indicate we will take new keys into use */
+	  silc_client_packet_queue_purge(client, ctx->sock);
 	  silc_client_packet_send(client, ctx->sock,
 				  SILC_PACKET_REKEY_DONE,
 				  NULL, 0, NULL, NULL, NULL, 0, FALSE);
@@ -995,6 +992,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 
 	  /* Send the REKEY_DONE to indicate we will take new keys into use
 	     now. */
+	  silc_client_packet_queue_purge(client, ctx->sock);
 	  silc_client_packet_send(client, ctx->sock,
 				  SILC_PACKET_REKEY_DONE,
 				  NULL, 0, NULL, NULL, NULL, 0, FALSE);
@@ -1060,6 +1058,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 
     /* Send the REKEY_DONE to indicate we will take new keys into use
        now. */
+    silc_client_packet_queue_purge(client, ctx->sock);
     silc_client_packet_send(client, ctx->sock, SILC_PACKET_REKEY_DONE,
 			    NULL, 0, NULL, NULL, NULL, 0, FALSE);
 
@@ -1067,6 +1066,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
        key to the new key since all packets after this packet must
        encrypted with the new key. */
     silc_client_protocol_rekey_generate_pfs(client, ctx, TRUE);
+    silc_client_packet_queue_purge(client, ctx->sock);
 
     /* The protocol ends in next stage. */
     protocol->state = SILC_PROTOCOL_STATE_END;
@@ -1089,6 +1089,7 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
       silc_client_protocol_rekey_generate_pfs(client, ctx, FALSE);
     else
       silc_client_protocol_rekey_generate(client, ctx, FALSE);
+    silc_client_packet_queue_purge(client, ctx->sock);
 
     /* Protocol has ended, call the final callback */
     if (protocol->final_callback)

@@ -1,0 +1,10 @@
+
+@SYNTAX:silcnet@
+
+     -nick, -user, -realname: Specify what nick/user/name to use
+     -host: Specify what host name to use, if you have multiple
+
+Shows and changes the settings of defined SILC networks.
+
+See also: CONNECT
+

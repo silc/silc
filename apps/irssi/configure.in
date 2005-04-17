@@ -7,7 +7,7 @@ if test -n "`grep '^#undef VERSION' config.h.in`"; then
 fi
 
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(Irssi-SILC, 0.8.6+)
+AM_INIT_AUTOMAKE(SILC-Client, 0.8.6+)
 
 AM_MAINTAINER_MODE
 
@@ -664,6 +664,7 @@ AM_CONDITIONAL(HAVE_PERL, test "$want_perl" != "no")
 AM_CONDITIONAL(HAVE_STATIC_PERL, test "$want_perl" = "static")
 AM_CONDITIONAL(NEED_TPARM, test "$need_tparm" = "yes")
 AM_CONDITIONAL(USE_CURSES, test "$want_terminfo" != "yes" -a "$want_termcap" != "yes")
+AM_CONDITIONAL(BUILD_SERVERTEST, false)
 
 # move LIBS to PROG_LIBS so they're not tried to be used when linking eg. perl libraries
 PROG_LIBS=$LIBS
@@ -794,6 +795,7 @@ src/perl/Makefile
 src/perl/common/Makefile.PL
 src/perl/ui/Makefile.PL
 src/perl/textui/Makefile.PL
+src/perl/silc/Makefile.PL
 scripts/Makefile
 docs/Makefile
 docs/help/Makefile

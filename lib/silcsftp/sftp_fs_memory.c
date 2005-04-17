@@ -1,10 +1,10 @@
 /*
 
-  sftp_fs_memory.c 
+  sftp_fs_memory.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -76,8 +76,8 @@ static bool mem_add_entry(MemFSEntry dir, MemFSEntry entry,
   int i;
 
   /* Must be both write and exec permissions */
-  if (check_perm && 
-      !((dir->perm & SILC_SFTP_FS_PERM_WRITE) && 
+  if (check_perm &&
+      !((dir->perm & SILC_SFTP_FS_PERM_WRITE) &&
 	(dir->perm & SILC_SFTP_FS_PERM_EXEC)))
     return FALSE;
 
@@ -150,7 +150,7 @@ static bool mem_del_entry(MemFSEntry entry, bool check_perm)
   return TRUE;
 }
 
-/* Finds first occurence of entry named `name' under the directory `dir'. 
+/* Finds first occurence of entry named `name' under the directory `dir'.
    This does not check subdirectories recursively. */
 
 static MemFSEntry mem_find_entry(MemFSEntry dir, const char *name,
@@ -458,7 +458,7 @@ bool silc_sftp_fs_memory_del_file(SilcSFTPFilesystem fs, void *dir,
   if (!filename)
     return FALSE;
 
-  return mem_del_entry_name(dir ? dir : memfs->root, filename, 
+  return mem_del_entry_name(dir ? dir : memfs->root, filename,
 			    strlen(filename), FALSE);
 }
 
@@ -492,7 +492,7 @@ unsigned char *mem_encode_handle(void *context, SilcSFTP sftp,
   return data;
 }
 
-void mem_open(void *context, SilcSFTP sftp, 
+void mem_open(void *context, SilcSFTP sftp,
 	      const char *filename,
 	      SilcSFTPFileOperation pflags,
 	      SilcSFTPAttributes attrs,
@@ -520,20 +520,20 @@ void mem_open(void *context, SilcSFTP sftp,
   if (entry->directory || !entry->data) {
     (*callback)(sftp, SILC_SFTP_STATUS_FAILURE, NULL, callback_context);
     return;
-  }    
+  }
 
   /* Check for reading */
-  if ((pflags & SILC_SFTP_FXF_READ) && 
+  if ((pflags & SILC_SFTP_FXF_READ) &&
       !(entry->perm & SILC_SFTP_FS_PERM_READ)) {
-    (*callback)(sftp, SILC_SFTP_STATUS_PERMISSION_DENIED, NULL, 
+    (*callback)(sftp, SILC_SFTP_STATUS_PERMISSION_DENIED, NULL,
 		callback_context);
     return;
-  }    
+  }
 
   /* Check for writing */
-  if (((pflags & SILC_SFTP_FXF_WRITE) || (pflags & SILC_SFTP_FXF_APPEND)) && 
+  if (((pflags & SILC_SFTP_FXF_WRITE) || (pflags & SILC_SFTP_FXF_APPEND)) &&
       !(entry->perm & SILC_SFTP_FS_PERM_WRITE)) {
-    (*callback)(sftp, SILC_SFTP_STATUS_PERMISSION_DENIED, NULL, 
+    (*callback)(sftp, SILC_SFTP_STATUS_PERMISSION_DENIED, NULL,
 		callback_context);
     return;
   }
@@ -548,7 +548,7 @@ void mem_open(void *context, SilcSFTP sftp,
     flags |= O_APPEND;
 
   /* Attempt to open the file for real. */
-  fd = silc_file_open_mode(entry->data + 7, flags, 
+  fd = silc_file_open_mode(entry->data + 7, flags,
 			   (attrs->flags & SILC_SFTP_ATTR_PERMISSIONS ?
 			    attrs->permissions : 0600));
   if (fd == -1) {
@@ -559,10 +559,10 @@ void mem_open(void *context, SilcSFTP sftp,
   /* File opened, return handle */
   handle = mem_create_handle(fs, fd, entry);
   if (handle)
-    (*callback)(sftp, SILC_SFTP_STATUS_OK, (SilcSFTPHandle)handle, 
+    (*callback)(sftp, SILC_SFTP_STATUS_OK, (SilcSFTPHandle)handle,
 		callback_context);
   else
-    (*callback)(sftp, SILC_SFTP_STATUS_PERMISSION_DENIED, NULL, 
+    (*callback)(sftp, SILC_SFTP_STATUS_PERMISSION_DENIED, NULL,
 		callback_context);
 }
 
@@ -578,7 +578,7 @@ void mem_close(void *context, SilcSFTP sftp,
   if (h->fd != -1) {
     ret = silc_file_close(h->fd);
     if (ret == -1) {
-      (*callback)(sftp, silc_sftp_map_errno(errno), NULL, NULL, 
+      (*callback)(sftp, silc_sftp_map_errno(errno), NULL, NULL,
 		  callback_context);
       return;
     }
@@ -590,7 +590,7 @@ void mem_close(void *context, SilcSFTP sftp,
 
 void mem_read(void *context, SilcSFTP sftp,
 	      SilcSFTPHandle handle,
-	      SilcUInt64 offset, 
+	      SilcUInt64 offset,
 	      SilcUInt32 len,
 	      SilcSFTPDataCallback callback,
 	      void *callback_context)
@@ -621,7 +621,7 @@ void mem_read(void *context, SilcSFTP sftp,
   }
 
   /* Return data */
-  (*callback)(sftp, SILC_SFTP_STATUS_OK, (const unsigned char *)data, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OK, (const unsigned char *)data,
 	      ret, callback_context);
 
   silc_free(data);
@@ -643,7 +643,7 @@ void mem_write(void *context, SilcSFTP sftp,
   /* Attempt to write */
   ret = silc_file_write(h->fd, data, data_len);
   if (ret <= 0) {
-    (*callback)(sftp, silc_sftp_map_errno(errno), NULL, NULL, 
+    (*callback)(sftp, silc_sftp_map_errno(errno), NULL, NULL,
 		callback_context);
     return;
   }
@@ -657,7 +657,7 @@ void mem_remove(void *context, SilcSFTP sftp,
 		void *callback_context)
 {
   /* Remove is not supported */
-  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
@@ -668,7 +668,7 @@ void mem_rename(void *context, SilcSFTP sftp,
 		void *callback_context)
 {
   /* Rename is not supported */
-  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
@@ -679,7 +679,7 @@ void mem_mkdir(void *context, SilcSFTP sftp,
 	       void *callback_context)
 {
   /* Mkdir is not supported */
-  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
@@ -689,7 +689,7 @@ void mem_rmdir(void *context, SilcSFTP sftp,
 	       void *callback_context)
 {
   /* Rmdir is not supported */
-  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
@@ -715,11 +715,11 @@ void mem_opendir(void *context, SilcSFTP sftp,
   if (!entry->directory) {
     (*callback)(sftp, SILC_SFTP_STATUS_FAILURE, NULL, callback_context);
     return;
-  }    
+  }
 
   /* Must be read permissions to open a directory */
   if (!(entry->perm & SILC_SFTP_FS_PERM_READ)) {
-    (*callback)(sftp, SILC_SFTP_STATUS_PERMISSION_DENIED, NULL, 
+    (*callback)(sftp, SILC_SFTP_STATUS_PERMISSION_DENIED, NULL,
 		callback_context);
     return;
   }
@@ -727,10 +727,10 @@ void mem_opendir(void *context, SilcSFTP sftp,
   /* Directory opened, return handle */
   handle = mem_create_handle(fs, 0, entry);
   if (handle)
-    (*callback)(sftp, SILC_SFTP_STATUS_OK, (SilcSFTPHandle)handle, 
+    (*callback)(sftp, SILC_SFTP_STATUS_OK, (SilcSFTPHandle)handle,
 		callback_context);
   else
-    (*callback)(sftp, SILC_SFTP_STATUS_PERMISSION_DENIED, NULL, 
+    (*callback)(sftp, SILC_SFTP_STATUS_PERMISSION_DENIED, NULL,
 		callback_context);
 }
 
@@ -795,8 +795,13 @@ void mem_readdir(void *context, SilcSFTP sftp,
 	     ((entry->perm & SILC_SFTP_FS_PERM_WRITE) ? 'w' : '-'),
 	     ((entry->perm & SILC_SFTP_FS_PERM_EXEC) ? 'x' : '-'),
 	     (entry->directory ? (int)entry->entry_count : 1),
-	     filesize, date, entry->name,
-	     (entry->directory ? "/" : 
+#ifndef SILC_WIN32
+	     (unsigned long long)filesize,
+#else
+	     (unsigned long)filesize,
+#endif
+	     date, entry->name,
+	     (entry->directory ? "/" :
 	      ((entry->perm & SILC_SFTP_FS_PERM_EXEC) ? "*" : "")));
 
     /* Add attributes */
@@ -864,7 +869,7 @@ void mem_stat(void *context, SilcSFTP sftp,
   if (entry->directory || !entry->data) {
     (*callback)(sftp, SILC_SFTP_STATUS_FAILURE, NULL, callback_context);
     return;
-  }    
+  }
 
   /* Get real stat */
   ret = stat(entry->data + 7, &stats);
@@ -877,7 +882,7 @@ void mem_stat(void *context, SilcSFTP sftp,
   if (!attrs) {
     (*callback)(sftp, SILC_SFTP_STATUS_FAILURE, NULL, callback_context);
     return;
-  }    
+  }
   attrs->flags = (SILC_SFTP_ATTR_SIZE |
 		  SILC_SFTP_ATTR_UIDGID |
 		  SILC_SFTP_ATTR_ACMODTIME);
@@ -888,7 +893,7 @@ void mem_stat(void *context, SilcSFTP sftp,
   attrs->mtime = stats.st_mtime;
 
   /* Return attributes */
-  (*callback)(sftp, SILC_SFTP_STATUS_OK, (const SilcSFTPAttributes)attrs, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OK, (const SilcSFTPAttributes)attrs,
 	      callback_context);
 
   silc_sftp_attr_free(attrs);
@@ -918,7 +923,7 @@ void mem_lstat(void *context, SilcSFTP sftp,
   if (entry->directory || !entry->data) {
     (*callback)(sftp, SILC_SFTP_STATUS_FAILURE, NULL, callback_context);
     return;
-  }    
+  }
 
   /* Get real stat */
 #ifndef SILC_WIN32
@@ -935,7 +940,7 @@ void mem_lstat(void *context, SilcSFTP sftp,
   if (!attrs) {
     (*callback)(sftp, SILC_SFTP_STATUS_FAILURE, NULL, callback_context);
     return;
-  }    
+  }
   attrs->flags = (SILC_SFTP_ATTR_SIZE |
 		  SILC_SFTP_ATTR_UIDGID |
 		  SILC_SFTP_ATTR_ACMODTIME);
@@ -946,7 +951,7 @@ void mem_lstat(void *context, SilcSFTP sftp,
   attrs->mtime = stats.st_mtime;
 
   /* Return attributes */
-  (*callback)(sftp, SILC_SFTP_STATUS_OK, (const SilcSFTPAttributes)attrs, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OK, (const SilcSFTPAttributes)attrs,
 	      callback_context);
 
   silc_sftp_attr_free(attrs);
@@ -965,7 +970,7 @@ void mem_fstat(void *context, SilcSFTP sftp,
   if (h->entry->directory || !h->entry->data) {
     (*callback)(sftp, SILC_SFTP_STATUS_FAILURE, NULL, callback_context);
     return;
-  }    
+  }
 
   /* Get real stat */
   ret = fstat(h->fd, &stats);
@@ -978,7 +983,7 @@ void mem_fstat(void *context, SilcSFTP sftp,
   if (!attrs) {
     (*callback)(sftp, SILC_SFTP_STATUS_FAILURE, NULL, callback_context);
     return;
-  }    
+  }
   attrs->flags = (SILC_SFTP_ATTR_SIZE |
 		  SILC_SFTP_ATTR_UIDGID |
 		  SILC_SFTP_ATTR_ACMODTIME);
@@ -989,12 +994,12 @@ void mem_fstat(void *context, SilcSFTP sftp,
   attrs->mtime = stats.st_mtime;
 
   /* Return attributes */
-  (*callback)(sftp, SILC_SFTP_STATUS_OK, (const SilcSFTPAttributes)attrs, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OK, (const SilcSFTPAttributes)attrs,
 	      callback_context);
 
   silc_sftp_attr_free(attrs);
 }
-     
+
 void mem_setstat(void *context, SilcSFTP sftp,
 		 const char *path,
 		 SilcSFTPAttributes attrs,
@@ -1002,7 +1007,7 @@ void mem_setstat(void *context, SilcSFTP sftp,
 		 void *callback_context)
 {
   /* Setstat is not supported */
-  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
@@ -1013,7 +1018,7 @@ void mem_fsetstat(void *context, SilcSFTP sftp,
 		  void *callback_context)
 {
   /* Fsetstat is not supported */
-  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
@@ -1034,7 +1039,7 @@ void mem_symlink(void *context, SilcSFTP sftp,
 		 void *callback_context)
 {
   /* Symlink is not supported */
-  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
@@ -1074,7 +1079,7 @@ void mem_realpath(void *context, SilcSFTP sftp,
     goto fail;
   name->count = 1;
 
-  (*callback)(sftp, SILC_SFTP_STATUS_OK, (const SilcSFTPName)name, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OK, (const SilcSFTPName)name,
 	      callback_context);
 
   silc_sftp_name_free(name);
@@ -1092,7 +1097,7 @@ void mem_extended(void *context, SilcSFTP sftp,
 		  void *callback_context)
 {
   /* Extended is not supported */
-  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, 0, 
+  (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, 0,
 	      callback_context);
 }
 

@@ -48,8 +48,9 @@ General {
 	# without FQDN cannot connect to the server.
 	#require_reverse_lookup = true;
 
-	# Maximum number of incoming connections allowed to this server.
-	# If more attempt to connect they will be refused.
+	# Maximum number of connections server can handle.  If you want
+	# to limit the number of incoming connections, define the
+	# connections_max in the ConnectionParams.
 	connections_max = 1000;
 
 	# Maximum number of incoming connections allowed per single host.

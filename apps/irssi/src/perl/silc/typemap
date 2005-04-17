@@ -1,0 +1,15 @@
+TYPEMAP
+Irssi::Silc::Server		T_IrssiObj
+Irssi::Silc::Channel		T_IrssiObj
+Irssi::Silc::Query		T_IrssiObj
+Irssi::Silc::Nick		T_IrssiObj
+
+INPUT
+
+T_IrssiObj
+	$var = irssi_ref_object($arg)
+
+OUTPUT
+
+T_IrssiObj
+	$arg = iobject_bless((SERVER_REC *)$var);

@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 12 August 2003
+.ds RH 11 February 2004
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-commands-06.txt                       12 August 2003
-Expires: 12 February 2004
+draft-riikonen-silc-commands-06.txt                     11 February 2004
+Expires: 11 August 2004
 
 .in 3
 
@@ -76,13 +76,13 @@ Table of Contents
   2.1 SILC Commands Syntax ......................................  4
   2.2 SILC Command Argument Idioms ..............................  4
   2.3 SILC Commands List ........................................  5
-  2.4 SILC Command Status Payload ............................... 42
-3 SILC Status Types ............................................. 43
-4 Security Considerations ....................................... 50
-5 References .................................................... 50
-6 Author's Address .............................................. 51
-Appendix A ...................................................... 51
-Full Copyright Statement ........................................ 53
+  2.4 SILC Command Status Payload ............................... 43
+3 SILC Status Types ............................................. 44
+4 Security Considerations ....................................... 51
+5 References .................................................... 51
+6 Author's Address .............................................. 52
+Appendix A ...................................................... 52
+Full Copyright Statement ........................................ 54
 
 
 .ti 0
@@ -213,10 +213,9 @@ ID, length of the ID and the actual ID data.  This way variable length
 ID's can be sent as arguments.
 
 All passphrases that may be sent in commands as arguments MUST be
-UTF-8 [RFC2279] encoded.  All strings, with exeption of nicknames and
-channel names [SILC1], are UTF-8 encoded.  This includes strings like
-algorithm names, quit, kick and kill messages, service identifiers and
-others.
+UTF-8 [RFC3629] encoded.  All strings sent as arguments in command and
+command reply are also UTF-8 encoded, unless otherwise defined.  See
+the [SILC1] for general UTF-8 definition in SILC protocol.
 
 All public keys and certificates that are sent as arguments are actually
 Public Key Payloads [SILC2].  This way it is possible to send different
@@ -260,28 +259,34 @@ List of all defined commands in SILC follows.
 
         It is also possible to search the user by Client ID.  If the
         <Client ID> is provided server MUST use it as the search value
-        instead of the <nickname>.  One of the arguments MUST be given.
-        It is also possible to define multiple Client ID's to search
-        multiple users sending only one WHOIS command.  In this case the
-        Client ID's are appended as normal arguments.
+        instead of the <nickname>.  It is also possible to define multiple
+        Client ID's to search multiple users sending only one WHOIS
+        command.  In this case the Client ID's are appended as normal
+        arguments.
+
+        The <Requested Attributes> is defined in [ATTRS] and can be used
+        to request various information about the client.  See Appendix A
+        for definition of using these attributes in SILC.  If neither the
+        <nickname> or <Client ID> arguments are present but the attributes
+        are, the server MUST use the attributes to do the searching.  If
+        none of the arguments, <nickname>, <Client ID> and <Requested
+        Attributes> are present, error MUST be retuned.  Server MAY
+        use the <Requested Attributes> to narrow down the search if they
+        present at any time.
 
         To prevent miss-use of this command wildcards in the nickname
         or in the server name are not permitted.  It is not allowed
         to request all users on some server.  The WHOIS requests MUST
         be based on explicit nickname request.
 
-        The WHOIS request MUST be always sent to the router by server
-        so that all users are searched.  However, the server still MUST
-        search its locally connected clients.  The router MUST send
+        The WHOIS request MUST be always sent to the router by normal
+        server so that all users are searched.  However, the server still
+        MUST search its locally connected clients.  The router MUST send
         this command to the server which owns the requested client, if
         the router is unable to provide all mandatory information about
         the client.  That server MUST reply to the command.  Server MUST
         NOT send whois replies to the client until it has received the
         reply from its router.
-
-        The <Requested Attributes> is defined in [ATTRS] and can be used
-        to request various information about the client.  See Appendix A
-        for definition of using these attributes in SILC.
 
         Reply messages to the command:
 
@@ -483,9 +488,8 @@ List of all defined commands in SILC follows.
             Arguments:  (1) <nickname>
 
         Set/change nickname.  This command is used to set nickname for
-        user.  Nickname MUST NOT include any whitespaces (` '),
-        non-printable characters, commas (`,'), '@', '!' or any wildcard
-        characters.
+        user.  See [SILC1] for definition of correctly formatted
+        nickname.
 
         When nickname is changed new Client ID is generated.  Server MUST
         distribute SILC_NOTIFY_TYPE_NICK_CHANGE to local clients on the
@@ -926,10 +930,8 @@ List of all defined commands in SILC follows.
         created.  If server is normal server this command MUST be sent
         to router which will create the channel.  The channel MAY be
         protected with passphrase.  If this is the case the passphrase
-        MUST be sent along the join command.
-
-        The name of the <channel> MUST NOT include any spaces (` '),
-        non-printable characters, commas (`,') or any wildcard characters.
+        MUST be sent along the join command.  See the [SILC1] for
+        definition of correctly formatted channel name, <channel>.
 
         The second argument <Client ID> is the Client ID of the client
         which is joining to the client.  When client sends this command
@@ -995,7 +997,7 @@ List of all defined commands in SILC follows.
 
         Reply messages to the command:
 
-        Max Arguments:  16
+        Max Arguments:  17
             Arguments:  (1) <Status Payload>        (2) <channel>
                         (3) <Channel ID>            (4) <Client ID>
                         (5) <channel mode mask>     (6) <created>
@@ -1004,6 +1006,7 @@ List of all defined commands in SILC follows.
                         (11) [<hmac>]               (12) <list count>
                         (13) <Client ID list>       (14) <client mode list>
                         (15) [<founder pubkey>]     (16) [<channel pubkeys>]
+                        (17) [<user limit>]
 
         This command replies with the channel name requested by the
         client, channel ID of the channel and topic of the channel
@@ -1012,6 +1015,7 @@ List of all defined commands in SILC follows.
         which tells all the modes set on the channel.  If the channel
         is created the mode mask is zero (0) and <created> is 0x01.
         If ban mask and/or invite list is set they are sent as well.
+        The <user limit> is the user limit on the channel, if one is set.
 
         The <list count>, <Client ID list> and <client mode list> are
         the clients currently on the channel and their modes on the
@@ -1478,22 +1482,23 @@ List of all defined commands in SILC follows.
         to all clients on the channel by sending the notify type
         SILC_NOTIFY_TYPE_CMODE_CHANGE.  The notify type MUST also be sent
         to the server's primary router.  If the <channel mode mask> was
-        not provided this command returns the mode mask, founder key
-        and channel public key list to the client.
+        not provided this command returns the mode mask, founder key,
+        channel public key list and the current user limit to the client.
 
         Reply messages to the command:
 
-        Max Arguments:  5
+        Max Arguments:  6
             Arguments:  (1) <Status Payload>    (2) <Channel ID>
                         (3) <channel mode mask> (4) [<founder pubkey>]
-                        (5) [<channel pubkeys>]
+                        (5) [<channel pubkeys>] (6) [<user limit>]
 
         This command replies with the changed channel mode mask that
         client MUST keep locally.  It may also return the channel
         founder's public key if it is set.  It may also return list of
         channel public keys when the list was altered.  The <channel
         pubkeys> is Argument List Payload and each argument includes
-        one public key.
+        one public key.  The <user limit> is the current user limit
+        on the channel, if one is set.
 
         Status messages:
 
@@ -1784,9 +1789,9 @@ List of all defined commands in SILC follows.
 
    22   SILC_COMMAND_WATCH
 
-        Max Arguments:  3
+        Max Arguments:  4
             Arguments:  (1) <Client ID>       (2) [<add nickname>]
-                        (3) [<del nickname>]
+                        (3) [<del nickname>]  (4) [<public key>]
 
         This command is used to set up a watch for <add nickname>
         nickname.  When a user in the network appears with the
@@ -1798,14 +1803,26 @@ List of all defined commands in SILC follows.
 
         The <del nickname> is a nickname that has been previously
         added to watch list and is now removed from it.  Notifications
-        for that nickname will not be delivered anymore.
+        for that nickname will not be delivered anymore.  The nickname
+        set to watch MUST NOT include any wildcards.  Note also that a
+        nickname may match several users since nicknames are not unique.
+        Implementations MAY set limits for how many nicknames client
+        can watch.
+
+        OPTIONALLY this command may also be set to watch clients' actions
+        in the network using their public key or certificate.  The
+        <public key> MAY be present, and it is an Argument List Payload
+        where each argument is a Public Key Payload including public key
+        to be added or removed from the watch list.  To To add a public
+        key to watch list the argument type is 0x00, and the argument is
+        the public key.  To remove a public key from watch list list the
+        argument type is 0x01, and the argument is the public key to be
+        removed from the list.  An implementation MAY limit the number of
+        public keys that can be set on the watch list.  Implementation MAY
+        add and remove multiple public keys at the same time by including
+        multiple arguments to the <public key> Argument List Payload.
 
         The <Client ID> is the Client ID of the sender of this command.
-
-        The nickname set to watch MUST NOT include any wildcards.
-        Note also that a nickname may match several users since
-        nicknames are not unique.  Implementations MAY set limits
-        for how many nicknames client can watch.
 
         When normal server receives this command from client it
         MUST send it to its router.  Router will process the command
@@ -1998,7 +2015,7 @@ List of all defined commands in SILC follows.
         remote service.  The authentication to a service may be based
         on previous agreement with the requester and the service
         provider.  The command MAY also take additional service
-        specific arguments.  The <service name> is UTF-8 string.
+        specific arguments.
 
         This document does not specify any services.  How the services
         are configured and put available in a server is also out of
@@ -2518,8 +2535,8 @@ security of this protocol.
 [RFC2119]    Bradner, S., "Key Words for use in RFCs to Indicate
              Requirement Levels", BCP 14, RFC 2119, March 1997.
 
-[RFC2279]    Yergeau, F., "UTF-8, a transformation format of ISO
-             10646", RFC 2279, January 1998.
+[RFC3629]    Yergeau, F., "UTF-8, a transformation format of ISO
+             10646", RFC 3629, November 2003.
 
 [ATTRS]      Riikonen, P., "User Online Presence and Information
              Attributes", Internet Draft, May 2002.

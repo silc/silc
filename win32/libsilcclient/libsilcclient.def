@@ -141,7 +141,7 @@ EXPORTS
 	silc_client_command_send @ 126 ;
 	silc_client_send_key_agreement @ 127 ;
 	silc_client_send_private_message @ 128 ;
-	silc_client_send_private_message_key @ 129 ;
+	silc_client_send_private_message_key_request @ 129 ;
 	silc_client_start_key_exchange @ 131 ;
 	silc_client_stop @ 132 ;
 	silc_idlist_get_client @ 137 ;
@@ -166,3 +166,5 @@ EXPORTS
         silc_client_attributes_request @ 156 ;
 	silc_client_get_channel_resolve @ 157 ;
 	silc_client_get_clients_by_channel @ 158 ;
+	silc_client_get_clients_whois @ 159 ;
+	silc_client_send_packet @ 160 ;

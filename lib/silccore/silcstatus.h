@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2003 Pekka Riikonen
+  Copyright (C) 2002 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -102,6 +102,8 @@ typedef SilcUInt8 SilcStatus;
 #define SILC_STATUS_ERR_TIMEDOUT            54
 #define SILC_STATUS_ERR_UNSUPPORTED_PUBLIC_KEY    55
 #define SILC_STATUS_ERR_OPERATION_ALLOWED   56
+#define SILC_STATUS_ERR_BAD_SERVER          57
+#define SILC_STATUS_ERR_BAD_USERNAME        58
 /***/
 
 #define SILC_STATUS_IS_ERROR(status) (status >= SILC_STATUS_ERR_NO_SUCH_NICK)

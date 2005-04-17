@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ silc_server_remove_clients_channels(SilcServer server,
   /* Remove the client from all channels. The client is removed from
      the channels' user list. */
   silc_hash_table_list(client->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     channel = chl->channel;
 
     /* Remove channel if this is last client leaving the channel, unless
@@ -101,7 +101,7 @@ silc_server_remove_clients_channels(SilcServer server,
     /* Mark other local clients to the table of clients whom will receive
        the SERVER_SIGNOFF notify. */
     silc_hash_table_list(channel->user_list, &htl2);
-    while (silc_hash_table_get(&htl2, NULL, (void **)&chl2)) {
+    while (silc_hash_table_get(&htl2, NULL, (void *)&chl2)) {
       SilcClientEntry c = chl2->client;
       if (!c)
 	continue;
@@ -119,6 +119,7 @@ silc_server_remove_clients_channels(SilcServer server,
       silc_hash_table_add(channels, channel, channel);
   }
   silc_hash_table_list_reset(&htl);
+  assert(!silc_hash_table_count(client->channels));
 }
 
 /* This function removes all client entries that are originated from
@@ -211,6 +212,10 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
 	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
+	if (client->data.public_key)
+	  silc_hash_table_del_by_context(server->pk_hash,
+	                                 client->data.public_key,
+	    			         client);
 	silc_server_remove_clients_channels(server, entry, clients,
 					    client, channels);
 	silc_server_del_from_watcher_list(server, client);
@@ -218,6 +223,9 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	/* Remove the client entry */
 	if (!server_signoff) {
 	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+	  client->mode = 0;
+	  client->router = NULL;
+	  client->connection = NULL;
 	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
 	} else {
 	  silc_idlist_del_data(client);
@@ -271,6 +279,10 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
 	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
+	if (client->data.public_key)
+	  silc_hash_table_del_by_context(server->pk_hash,
+	                                 client->data.public_key,
+	    			         client);
 	silc_server_remove_clients_channels(server, entry, clients,
 					    client, channels);
 	silc_server_del_from_watcher_list(server, client);
@@ -278,6 +290,9 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 	/* Remove the client entry */
 	if (!server_signoff) {
 	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+	  client->mode = 0;
+	  client->router = NULL;
+	  client->connection = NULL;
 	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
 	} else {
 	  silc_idlist_del_data(client);
@@ -352,7 +367,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
      this server's client(s) on the channel. As they left the channel we
      must re-generate the channel key. */
   silc_hash_table_list(channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&channel)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&channel)) {
     if (!silc_server_create_channel_key(server, channel, 0)) {
       silc_hash_table_list_reset(&htl);
       silc_hash_table_free(channels);
@@ -542,7 +557,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 
 	SILC_LOG_DEBUG(("Client %s",
 			silc_id_render(client->id, SILC_ID_CLIENT)));
-	if (client->router)
+	if (client->router && client->router->id)
 	  SILC_LOG_DEBUG(("Client->router %s",
 			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 
@@ -575,7 +590,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 	  client->router = to;
 	}
 
-	if (client->router)
+	if (client->router && client->router->id)
 	  SILC_LOG_DEBUG(("Client changed to %s",
 			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 
@@ -605,7 +620,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 
 	SILC_LOG_DEBUG(("Client %s",
 			silc_id_render(client->id, SILC_ID_CLIENT)));
-	if (client->router)
+	if (client->router && client->router->id)
 	  SILC_LOG_DEBUG(("Client->router %s",
 			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 
@@ -634,7 +649,7 @@ void silc_server_update_clients_by_server(SilcServer server,
 	  client->router = to;
 	}
 
-	if (client->router)
+	if (client->router && client->router->id)
 	  SILC_LOG_DEBUG(("Client changed to %s",
 			  silc_id_render(client->router->id, SILC_ID_SERVER)));
 
@@ -864,6 +879,7 @@ void silc_server_remove_servers_by_server(SilcServer server,
 					       TRUE);
 
 	/* Remove the server */
+	silc_server_backup_del(server, server_entry);
 	silc_idlist_del_server(server->local_list, server_entry);
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -891,6 +907,7 @@ void silc_server_remove_servers_by_server(SilcServer server,
 					       TRUE);
 
 	/* Remove the server */
+	silc_server_backup_del(server, server_entry);
 	silc_idlist_del_server(server->global_list, server_entry);
 
 	if (!silc_idcache_list_next(list, &id_cache))
@@ -966,7 +983,7 @@ bool silc_server_channel_has_global(SilcChannelEntry channel)
   SilcHashTableList htl;
 
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     if (chl->client->router) {
       silc_hash_table_list_reset(&htl);
       return TRUE;
@@ -986,7 +1003,7 @@ bool silc_server_channel_has_local(SilcChannelEntry channel)
   SilcHashTableList htl;
 
   silc_hash_table_list(channel->user_list, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chl)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     if (SILC_IS_LOCAL(chl->client)) {
       silc_hash_table_list_reset(&htl);
       return TRUE;
@@ -1009,6 +1026,8 @@ bool silc_server_channel_delete(SilcServer server,
   SilcHashTableList htl;
   bool delchan = !(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH);
 
+  SILC_LOG_DEBUG(("Deleting channel %s", channel->channel_name));
+
   if (delchan) {
     /* Update statistics */
     if (server->server_type == SILC_ROUTER)
@@ -1016,6 +1035,7 @@ bool silc_server_channel_delete(SilcServer server,
 
     /* Totally delete the channel and all users on the channel. The
        users are deleted automatically in silc_idlist_del_channel. */
+    channel->disabled = TRUE;
     silc_schedule_task_del_by_context(server->schedule, channel->rekey);
     if (silc_idlist_del_channel(server->local_list, channel)) {
       server->stat.my_channels--;
@@ -1052,7 +1072,7 @@ bool silc_server_channel_delete(SilcServer server,
   }
   silc_hash_table_list_reset(&htl);
 
-  SILC_LOG_DEBUG(("Channel %s remains", channel->channel_name));
+  SILC_LOG_DEBUG(("Channel %s remains (permanent)", channel->channel_name));
 
   return TRUE;
 }
@@ -1070,7 +1090,7 @@ bool silc_server_client_on_channel(SilcClientEntry client,
     return FALSE;
 
   return silc_hash_table_find(client->channels, channel, NULL,
-			      (void **)chl);
+			      (void *)chl);
 }
 
 /* Checks string for bad characters and returns TRUE if they are found. */
@@ -1193,7 +1213,7 @@ SilcPublicKey silc_server_find_public_key(SilcServer server,
 		  silc_hash_table_count(local_public_keys)));
 
   if (!silc_hash_table_find_ext(local_public_keys, remote_public_key,
-				(void **)&cached_key, NULL,
+				(void *)&cached_key, NULL,
 				silc_hash_public_key, NULL,
 				silc_hash_public_key_compare, NULL)) {
     SILC_LOG_ERROR(("Public key not found"));
@@ -1221,7 +1241,7 @@ SilcPublicKey silc_server_get_public_key(SilcServer server,
   assert(silc_hash_table_count(local_public_keys) < 2);
 
   silc_hash_table_list(local_public_keys, &htl);
-  if (!silc_hash_table_get(&htl, NULL, (void **)&cached_key)) {
+  if (!silc_hash_table_get(&htl, NULL, (void *)&cached_key)) {
     silc_hash_table_list_reset(&htl);
     return NULL;
   }
@@ -1527,7 +1547,7 @@ void silc_server_send_connect_notifys(SilcServer server,
 
   if (server->stat.cell_clients && server->stat.cell_servers + 1)
     SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
-			    ("There are %d clients on %d server in our cell",
+			    ("There are %d clients on %d servers in our cell",
 			     server->stat.cell_clients,
 			     server->stat.cell_servers));
   if (server->server_type == SILC_ROUTER) {
@@ -1634,10 +1654,14 @@ void silc_server_kill_client(SilcServer server,
     SILC_OPER_STATS_UPDATE(remote_client, server, SILC_UMODE_SERVER_OPERATOR);
     SILC_OPER_STATS_UPDATE(remote_client, router, SILC_UMODE_ROUTER_OPERATOR);
 
+    if (remote_client->data.public_key)
+      silc_hash_table_del_by_context(server->pk_hash,
+                                     remote_client->data.public_key,
+                                     remote_client);
+
     if (SILC_IS_LOCAL(remote_client)) {
       server->stat.my_clients--;
       silc_schedule_task_del_by_context(server->schedule, remote_client);
-      silc_idlist_del_data(remote_client);
     }
 
     /* Remove remote client */
@@ -1685,13 +1709,14 @@ silc_server_check_watcher_list_foreach(void *key, void *context,
 				  notify->client,
 				  notify->new_nick ? notify->new_nick :
 				  (const char *)notify->client->nickname,
-				  notify->notify);
+				  notify->notify,
+				  notify->client->data.public_key);
   }
 }
 
-/* This function checks whether the `client' nickname is being watched
-   by someone, and notifies the watcher of the notify change of notify
-   type indicated by `notify'. */
+/* This function checks whether the `client' nickname and/or 'client'
+   public key is being watched by someone, and notifies the watcher of the
+   notify change of notify type indicated by `notify'. */
 
 bool silc_server_check_watcher_list(SilcServer server,
 				    SilcClientEntry client,
@@ -1710,10 +1735,13 @@ bool silc_server_check_watcher_list(SilcServer server,
 
   /* Make hash from the nick, or take it from Client ID */
   if (client->nickname) {
-    char nick[128 + 1];
-    memset(nick, 0, sizeof(nick));
-    silc_to_lower(client->nickname, nick, sizeof(nick) - 1);
-    silc_hash_make(server->md5hash, nick, strlen(nick), hash);
+    unsigned char *nickc;
+    nickc = silc_identifier_check(client->nickname, strlen(client->nickname),
+				  SILC_STRING_UTF8, 128, NULL);
+    if (!nickc)
+      return FALSE;
+    silc_hash_make(server->md5hash, nickc, strlen(nickc), hash);
+    silc_free(nickc);
   } else {
     memset(hash, 0, sizeof(hash));
     memcpy(hash, client->id->hash, sizeof(client->id->hash));
@@ -1724,9 +1752,16 @@ bool silc_server_check_watcher_list(SilcServer server,
   n.new_nick = new_nick;
   n.notify = notify;
 
-  /* Send notify to all watchers */
+  /* Send notify to all watchers watching this nickname */
   silc_hash_table_find_foreach(server->watcher_list, hash,
 			       silc_server_check_watcher_list_foreach, &n);
+
+  /* Send notify to all watchers watching this public key */
+  if (client->data.public_key)
+    silc_hash_table_find_foreach(server->watcher_list_pk,
+				 client->data.public_key,
+			         silc_server_check_watcher_list_foreach,
+				 &n);
 
   return TRUE;
 }
@@ -1743,7 +1778,7 @@ bool silc_server_del_from_watcher_list(SilcServer server,
   bool found = FALSE;
 
   silc_hash_table_list(server->watcher_list, &htl);
-  while (silc_hash_table_get(&htl, &key, (void **)&entry)) {
+  while (silc_hash_table_get(&htl, &key, (void *)&entry)) {
     if (entry == client) {
       silc_hash_table_del_by_context(server->watcher_list, key, client);
 
@@ -1755,6 +1790,25 @@ bool silc_server_del_from_watcher_list(SilcServer server,
 	 then free the key to not leak memory. */
       if (!silc_hash_table_find(server->watcher_list, key, NULL, NULL))
 	silc_free(key);
+
+      found = TRUE;
+    }
+  }
+  silc_hash_table_list_reset(&htl);
+
+  silc_hash_table_list(server->watcher_list_pk, &htl);
+  while (silc_hash_table_get(&htl, &key, (void *)&entry)) {
+    if (entry == client) {
+      silc_hash_table_del_by_context(server->watcher_list_pk, key, client);
+
+      if (client->id)
+	SILC_LOG_DEBUG(("Removing %s from WATCH list",
+			silc_id_render(client->id, SILC_ID_CLIENT)));
+
+      /* Now check whether there still exists entries with this key, if not
+	 then free the key to not leak memory. */
+      if (!silc_hash_table_find(server->watcher_list_pk, key, NULL, NULL))
+        silc_pkcs_public_key_free(key);
 
       found = TRUE;
     }
@@ -1830,6 +1884,8 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
   SilcBuffer entry, idp = NULL, pkp = NULL;
   bool ret = FALSE;
 
+  SILC_LOG_DEBUG(("Matching invite/ban"));
+
   if (type < 1 || type > 3 || !check)
     return FALSE;
 
@@ -1855,7 +1911,7 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
 
   /* Compare the list */
   silc_hash_table_list(list, &htl);
-  while (silc_hash_table_get(&htl, (void **)&t, (void **)&entry)) {
+  while (silc_hash_table_get(&htl, (void *)&t, (void *)&entry)) {
     if (type == t) {
       if (type == 1) {
 	if (silc_string_match(entry->data, tmp)) {
@@ -1879,7 +1935,7 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
 
 /* Process invite or ban information */
 
-void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
+bool silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 				   SilcUInt8 action, SilcArgumentPayload args)
 {
   unsigned char *tmp;
@@ -1897,72 +1953,46 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
     tmp = silc_argument_get_first_arg(args, &type, &len);
     while (tmp) {
       if (type == 1) {
-	/* Invite string.  Get the old invite string from hash table
-	   and append this at the end of the existing one. */
-	if (!silc_hash_table_find(list, (void *)1, NULL, (void *)&tmp2)) {
-	  tmp2 = silc_calloc(1, sizeof(*tmp2));
-	  silc_hash_table_add(list, (void *)1, tmp2);
+	/* Check validity of the string */
+	if (!silc_utf8_valid(tmp, len) || !len) {
+	  tmp = silc_argument_get_next_arg(args, &type, &len);
+	  continue;
 	}
 
-	/* Check that the string is not part of invite string already */
-	if (action == 0x00) {
-	  if (silc_string_match(tmp2->data, tmp))
+	/* Check if the string is added already */
+	silc_hash_table_list(list, &htl);
+	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
+	  if (type == 1 && silc_string_match(tmp2->data, tmp)) {
+	    tmp = NULL;
 	    break;
-
-	  if (len) {
-	    if (tmp[len - 1] == ',')
-	      tmp[len - 1] = '\0';
-	    silc_buffer_strformat(tmp2, tmp, SILC_STR_END);
-	    silc_buffer_strformat(tmp2, ",", SILC_STR_END);
 	  }
-	} else {
-	  /* Announced list.  Check each entry in the list */
-	  unsigned char e[256];
-	  char *start, *end, *n, *rtmp;
-	  int i, k;
+	}
+	silc_hash_table_list_reset(&htl);
 
-	  rtmp = silc_memdup(tmp, len);
-	  for (i = 0, k = 0; i < len; i++) {
-	    if (tmp[i] != ',')
-	      continue;
-
-	    memset(e, 0, sizeof(e));
-	    silc_strncat(e, sizeof(e), tmp + k, i - k);
-	    if (!silc_string_match(tmp2->data, e)) {
-	      k = i + 1;
-	      continue;
-	    }
-
-	    /* Matches.  Delete it since we have it already */
-	    start = strstr(rtmp, e);
-	    if (start && strlen(start) >= (i - k)) {
-	      end = start + (i - k);
-	      n = silc_calloc(strlen(rtmp) - (i - k), sizeof(*n));
-	      strncat(n, rtmp, start - rtmp);
-	      if (strlen(end) > 1)
-		strncat(n, end + 1, ((rtmp + strlen(rtmp)) - end) - 1);
-	      silc_free(rtmp);
-	      rtmp = n;
-	    }
-
-	    k = i + 1;
-	  }
-
-	  /* Save the part that we didn't already have. */
-	  if (strlen(rtmp) > 1) {
-	    silc_buffer_strformat(tmp2, rtmp, SILC_STR_END);
-	    silc_buffer_strformat(tmp2, ",", SILC_STR_END);
-	  }
-	  silc_free(rtmp);
+	if (tmp) {
+	  /* Add the string to hash table */
+	  tmp2 = silc_buffer_alloc_size(len + 1);
+	  if (tmp[len - 1] == ',')
+	    tmp[len - 1] = '\0';
+	  silc_buffer_put(tmp2, tmp, len);
+	  silc_hash_table_add(list, (void *)1, tmp2);
 	}
 
       } else if (type == 2) {
 	/* Public key.  Check first if the public key is already on the
 	   list and ignore it if it is, otherwise, add it to hash table. */
+	SilcPublicKey pk;
+
+	/* Verify validity of the public key */
+	if (!silc_pkcs_public_key_payload_decode(tmp, len, &pk)) {
+	  tmp = silc_argument_get_next_arg(args, &type, &len);
+	  continue;
+	}
+	silc_pkcs_public_key_free(pk);
 
 	/* Check if the public key is in the list already */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
 	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
 	    tmp = NULL;
 	    break;
@@ -1982,7 +2012,7 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 
 	/* Check if the ID is in the list already */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
 	  if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
 	    tmp = NULL;
 	    break;
@@ -2008,36 +2038,36 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
     tmp = silc_argument_get_first_arg(args, &type, &len);
     while (tmp) {
       if (type == 1) {
-	/* Invite string.  Get the old string from hash table and delete
-	   the requested string. */
-	char *string = NULL, *start, *end, *n;
+	/* Check validity of the string */
+	if (!silc_utf8_valid(tmp, len)) {
+	  tmp = silc_argument_get_next_arg(args, &type, &len);
+	  continue;
+	}
 
-	if (silc_hash_table_find(list, (void *)1, NULL, (void **)&tmp2)) {
-	  string = tmp2->head;
-	  if (tmp2->truelen && !strncmp(string, tmp, tmp2->truelen - 1)) {
-	    /* Delete entire string */
-	    silc_hash_table_del(list, (void *)1);
-	  } else if (tmp2->truelen) {
-	    /* Delete part of the string */
-	    start = strstr(string, tmp);
-	    if (start && strlen(start) >= len) {
-	      end = start + len;
-	      n = silc_calloc(strlen(string) - len, sizeof(*n));
-	      strncat(n, string, start - string);
-	      if (strlen(end) > 1)
-		strncat(n, end + 1, ((string + strlen(string)) - end) - 1);
-	      silc_free(tmp2->head);
-	      silc_buffer_set(tmp2, n, strlen(n));
-	    }
+	/* Delete from the list */
+	silc_hash_table_list(list, &htl);
+	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
+	  if (type == 1 && silc_string_match(tmp2->data, tmp)) {
+	    silc_hash_table_del_by_context(list, (void *)1, tmp2);
+	    break;
 	  }
 	}
+	silc_hash_table_list_reset(&htl);
 
       } else if (type == 2) {
 	/* Public key. */
+	SilcPublicKey pk;
+
+	/* Verify validity of the public key */
+	if (!silc_pkcs_public_key_payload_decode(tmp, len, &pk)) {
+	  tmp = silc_argument_get_next_arg(args, &type, &len);
+	  continue;
+	}
+	silc_pkcs_public_key_free(pk);
 
 	/* Delete from the invite list */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
 	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
 	    silc_hash_table_del_by_context(list, (void *)2, tmp2);
 	    break;
@@ -2050,7 +2080,7 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 
 	/* Delete from the invite list */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void **)&type, (void **)&tmp2)) {
+	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
 	  if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
 	    silc_hash_table_del_by_context(list, (void *)3, tmp2);
 	    break;
@@ -2062,6 +2092,8 @@ void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
       tmp = silc_argument_get_next_arg(args, &type, &len);
     }
   }
+
+  return TRUE;
 }
 
 /* Destructor for invite and ban list entrys */
@@ -2178,7 +2210,7 @@ SilcBuffer silc_server_get_channel_pk_list(SilcServer server,
 		     SILC_STR_END);
 
   silc_hash_table_list(channel->channel_pubkeys, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&pk)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&pk)) {
     pkp = silc_pkcs_public_key_payload_encode(pk);
     list = silc_argument_payload_encode_one(list, pkp->data, pkp->len,
 					    announce ? 0x03 :
@@ -2232,7 +2264,7 @@ SilcStatus silc_server_set_channel_pk_list(SilcServer server,
   if (chpk && type == 0x03 && channel->channel_pubkeys &&
       server->server_type != SILC_ROUTER) {
     SilcBuffer sidp;
-    unsigned char mask[4];
+    unsigned char mask[4], ulimit[4];
 
     SILC_LOG_DEBUG(("Router enforces its list, remove old list"));
     silc_hash_table_free(channel->channel_pubkeys);
@@ -2241,8 +2273,10 @@ SilcStatus silc_server_set_channel_pk_list(SilcServer server,
     /* Send notify that removes the old list */
     sidp = silc_id_payload_encode(server->id, SILC_ID_SERVER);
     SILC_PUT32_MSB((channel->mode & (~SILC_CHANNEL_MODE_CHANNEL_AUTH)), mask);
+    if (channel->mode & SILC_CHANNEL_MODE_ULIMIT)
+      SILC_PUT32_MSB(channel->user_limit, ulimit);
     silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
-				       SILC_NOTIFY_TYPE_CMODE_CHANGE, 7,
+				       SILC_NOTIFY_TYPE_CMODE_CHANGE, 8,
 				       sidp->data, sidp->len,
 				       mask, 4,
 				       channel->cipher,
@@ -2254,7 +2288,13 @@ SilcStatus silc_server_set_channel_pk_list(SilcServer server,
 				       channel->passphrase,
 				       channel->passphrase ?
 				       strlen(channel->passphrase) : 0,
-				       NULL, 0, NULL, 0);
+				       NULL, 0, NULL, 0,
+				       (channel->mode &
+					SILC_CHANNEL_MODE_ULIMIT ?
+					ulimit : NULL),
+				       (channel->mode &
+					SILC_CHANNEL_MODE_ULIMIT ?
+					sizeof(ulimit) : 0));
     silc_buffer_free(sidp);
   }
 
@@ -2305,7 +2345,7 @@ bool silc_server_verify_channel_auth(SilcServer server,
 
   /* Find the public key with the hash */
   if (!silc_hash_table_find(channel->channel_pubkeys, pkhash,
-			    NULL, (void **)&chpk)) {
+			    NULL, (void *)&chpk)) {
     SILC_LOG_DEBUG(("Public key not found in channel public key list"));
     goto out;
   }

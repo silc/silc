@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -156,7 +156,7 @@ bool silc_parse_userfqdn(const char *string, char **left, char **right)
     }
   } else {
     if (left)
-      *left = strdup(string);
+      *left = silc_memdup(string, strlen(string));
   }
 
   return TRUE;
@@ -467,6 +467,25 @@ SilcUInt32 silc_hash_string(void *key, void *user_context)
   return h;
 }
 
+/* Hash UTF-8 string */
+
+SilcUInt32 silc_hash_utf8_string(void *key, void *user_context)
+{
+  unsigned char *s = (unsigned char *)key;
+  SilcUInt32 h = 0, g;
+
+  while (*s != '\0') {
+    h = (h << 4) + *s;
+    if ((g = h & 0xf0000000)) {
+      h = h ^ (g >> 24);
+      h = h ^ g;
+    }
+    s++;
+  }
+
+  return h;
+}
+
 /* Basic hash function to hash integers. May be used with the SilcHashTable. */
 
 SilcUInt32 silc_hash_uint(void *key, void *user_context)
@@ -478,14 +497,14 @@ SilcUInt32 silc_hash_uint(void *key, void *user_context)
 
 SilcUInt32 silc_hash_ptr(void *key, void *user_context)
 {
-  return (SilcUInt32)key;
+  return SILC_PTR_TO_32(key);
 }
 
 /* Hash a ID. The `user_context' is the ID type. */
 
 SilcUInt32 silc_hash_id(void *key, void *user_context)
 {
-  SilcIdType id_type = (SilcIdType)(SilcUInt32)user_context;
+  SilcIdType id_type = (SilcIdType)SILC_PTR_TO_32(user_context);
   SilcUInt32 h = 0;
   int i;
 
@@ -553,7 +572,7 @@ SilcUInt32 silc_hash_client_id_hash(void *key, void *user_context)
 
 SilcUInt32 silc_hash_data(void *key, void *user_context)
 {
-  SilcUInt32 len = (SilcUInt32)user_context, h = 0;
+  SilcUInt32 len = SILC_PTR_TO_32(user_context), h = 0;
   unsigned char *data = (unsigned char *)key;
   int i;
 
@@ -569,9 +588,9 @@ SilcUInt32 silc_hash_data(void *key, void *user_context)
 SilcUInt32 silc_hash_public_key(void *key, void *user_context)
 {
   SilcPublicKey pk = (SilcPublicKey)key;
-  return (pk->len + silc_hash_string(pk->name, NULL) +
-	  silc_hash_string(pk->identifier, NULL) +
-	  silc_hash_data(pk->pk, (void *)pk->pk_len));
+  return (pk->len + (silc_hash_string(pk->name, NULL) ^
+		     silc_hash_string(pk->identifier, NULL) ^
+		     silc_hash_data(pk->pk, SILC_32_TO_PTR(pk->pk_len))));
 }
 
 /* Compares two strings. It may be used as SilcHashTable comparison
@@ -588,7 +607,7 @@ bool silc_hash_string_compare(void *key1, void *key2, void *user_context)
 
 bool silc_hash_id_compare(void *key1, void *key2, void *user_context)
 {
-  SilcIdType id_type = (SilcIdType)(SilcUInt32)user_context;
+  SilcIdType id_type = (SilcIdType)SILC_PTR_TO_32(user_context);
   return (id_type == SILC_ID_CLIENT ?
 	  SILC_ID_COMPARE_HASH((SilcClientID *)key1, (SilcClientID *)key2) :
 	  SILC_ID_COMPARE_TYPE(key1, key2, id_type));
@@ -605,8 +624,19 @@ bool silc_hash_client_id_compare(void *key1, void *key2, void *user_context)
 
 bool silc_hash_data_compare(void *key1, void *key2, void *user_context)
 {
-  SilcUInt32 len = (SilcUInt32)user_context;
+  SilcUInt32 len = SILC_PTR_TO_32(user_context);
   return !memcmp(key1, key2, len);
+}
+
+/* Compares UTF-8 string. */
+
+bool silc_hash_utf8_compare(void *key1, void *key2, void *user_context)
+{
+  int l1 = strlen((char *)key1);
+  int l2 = strlen((char *)key2);
+  if (l1 > l2)
+    l2 = l1;
+  return !memcmp(key1, key2, l2);
 }
 
 /* Compares two SILC Public keys. It may be used as SilcHashTable
@@ -1046,6 +1076,8 @@ static const SilcStatusMessage silc_status_messages[] = {
   { STAT(TIMEDOUT), "Service timed out" },
   { STAT(UNSUPPORTED_PUBLIC_KEY), "Unsupported public key type" },
   { STAT(OPERATION_ALLOWED), "Operation is not allowed" },
+  { STAT(BAD_SERVER), "Bad server name" },
+  { STAT(BAD_USERNAME), "Bad user name" },
 
   { 0, NULL }
 };

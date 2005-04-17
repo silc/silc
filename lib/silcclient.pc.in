@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: @PACKAGE@ (client library)
+Description: SILC Client Library
+Version: @VERSION@
+Conflicts: libsilc <= 0.9.12
+Requires: silc = @VERSION@
+Libs: @LIBS@ -L${libdir} -lsilcclient
+Cflags: -I${includedir}
+

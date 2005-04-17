@@ -1,6 +1,6 @@
 /*
 
-  silcvcard.c 
+  silcvcard.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -43,44 +43,44 @@ unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
        "FN:", vcard->full_name, "\n",
        "N:", vcard->family_name, ";", vcard->first_name, ";",
        vcard->middle_names, ";", vcard->prefix, ";", vcard->suffix, "\n",
-       SILC_STR_END);
+       SILC_STRFMT_END);
 
   if (vcard->nickname)
     silc_buffer_strformat(&buffer,
 			  "NICKNAME:", vcard->nickname, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   if (vcard->bday)
     silc_buffer_strformat(&buffer,
 			  "BDAY:", vcard->bday, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   if (vcard->title)
     silc_buffer_strformat(&buffer,
 			  "TITLE:", vcard->title, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   if (vcard->role)
     silc_buffer_strformat(&buffer,
 			  "ROLE:", vcard->role, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   if (vcard->org_name)
     silc_buffer_strformat(&buffer,
 			  "ORG:", vcard->org_name, ";", vcard->org_unit, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   if (vcard->categories)
     silc_buffer_strformat(&buffer,
 			  "CATEGORIES:", vcard->categories, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   if (vcard->catclass)
     silc_buffer_strformat(&buffer,
 			  "CLASS:", vcard->catclass, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   if (vcard->url)
     silc_buffer_strformat(&buffer,
 			  "URL:", vcard->url, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   if (vcard->label)
     silc_buffer_strformat(&buffer,
 			  "LABEL;", vcard->url, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   for (i = 0; i < vcard->num_addrs; i++) {
     silc_buffer_strformat(&buffer,
 			  "ADR;TYPE=",
@@ -92,32 +92,32 @@ unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len)
 			  vcard->addrs[i].state, ";",
 			  vcard->addrs[i].code, ";",
 			  vcard->addrs[i].country, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   }
   for (i = 0; i < vcard->num_tels; i++) {
     silc_buffer_strformat(&buffer,
 			  "TEL;TYPE=",
 			  vcard->tels[i].type, ":",
 			  vcard->tels[i].telnum, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   }
   for (i = 0; i < vcard->num_emails; i++) {
     silc_buffer_strformat(&buffer,
 			  "EMAIL;TYPE=",
 			  vcard->emails[i].type, ":",
 			  vcard->emails[i].address, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   }
   if (vcard->note)
     silc_buffer_strformat(&buffer,
 			  "NOTE:", vcard->note, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
   if (vcard->rev)
     silc_buffer_strformat(&buffer,
 			  "REV:", vcard->rev, "\n",
-			  SILC_STR_END);
+			  SILC_STRFMT_END);
 
-  silc_buffer_strformat(&buffer, VCARD_FOOTER, SILC_STR_END);
+  silc_buffer_strformat(&buffer, VCARD_FOOTER, SILC_STRFMT_END);
 
   if (vcard_len)
     *vcard_len = buffer.truelen;
@@ -174,7 +174,7 @@ bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
   unsigned char *val;
   bool has_begin = FALSE, has_end = FALSE;
   int len, i, off = 0;
-  
+
   val = (unsigned char *)data;
   while (val) {
     len = 0;

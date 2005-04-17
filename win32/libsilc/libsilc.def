@@ -370,11 +370,6 @@ EXPORTS
 	silc_rc5_encrypt_cbc @ 612 ;
 	silc_rc5_set_key @ 613 ;
 	silc_rc5_set_key_with_string @ 614 ;
-	silc_rc6_context_len @ 615 ;
-	silc_rc6_decrypt_cbc @ 616 ;
-	silc_rc6_encrypt_cbc @ 617 ;
-	silc_rc6_set_key @ 618 ;
-	silc_rc6_set_key_with_string @ 619 ;
 	silc_realloc @ 620 ;
 	silc_rng_add_noise @ 621 ;
 	silc_rng_alloc @ 622 ;
@@ -590,4 +585,16 @@ EXPORTS
 	silc_auth_get_public_data @ 910 ;
 	silc_auth_public_key_auth_generate_wpub @ 911 ;
 	silc_status_get_args @ 912 ;
-
+	silc_vcard_encode @ 913 ;
+	silc_vcard_decode @ 914 ;
+	silc_vcard_alloc @ 915 ;
+	silc_vcard_free @ 916 ;
+	silc_vcard_fprintf @ 917 ;
+	silc_hash_babbleprint @ 918 ;
+	silc_get_real_name @ 919 ;
+	silc_get_username @ 920 ;
+	silc_utf8_strcasecmp @ 921 ;
+	silc_utf8_strncasecmp @ 922 ;
+	silc_stringprep @ 923;
+	silc_identifier_check @ 924 ;
+	silc_identifier_verify @ 925 ;

@@ -4,7 +4,7 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -127,9 +127,9 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
     if (auth_data && auth_data_len) {
       if (!silc_utf8_valid(p, strlen(p))) {
 	*auth_data_len = silc_utf8_encoded_len(p, strlen(p),
-					       SILC_STRING_LANGUAGE);
+					       SILC_STRING_LOCALE);
 	*auth_data = silc_calloc(*auth_data_len, sizeof(unsigned char));
-	silc_utf8_encode(p, strlen(p), SILC_STRING_LANGUAGE, *auth_data,
+	silc_utf8_encode(p, strlen(p), SILC_STRING_LOCALE, *auth_data,
 			 *auth_data_len);
       } else {
 	*auth_data = (void *) strdup(p);
@@ -149,7 +149,7 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
       }
 
     if (*auth_data &&
-	silc_hash_table_find_ext(*auth_data, public_key, (void **)&cached_key,
+	silc_hash_table_find_ext(*auth_data, public_key, (void *)&cached_key,
 				 NULL, silc_hash_public_key, NULL,
 				 silc_hash_public_key_compare, NULL)) {
       silc_pkcs_public_key_free(public_key);
@@ -165,6 +165,8 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
 					   NULL, NULL,
 					   my_free_public_key, NULL,
 					   TRUE);
+      SILC_LOG_DEBUG(("Adding public key '%s' to authentication cache",
+		     public_key->identifier));
       silc_hash_table_add(*auth_data, public_key, public_key);
     }
   } else
@@ -730,7 +732,10 @@ SILC_CONFIG_CALLBACK(fetch_connparam)
     config->tmp = NULL;
     return SILC_CONFIG_OK;
   }
-  SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigConnParams);
+  if (!tmp) {
+    SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigConnParams);
+    tmp->reconnect_keep_trying = TRUE;
+  }
 
   if (!strcmp(name, "name")) {
     CONFIG_IS_DOUBLE(tmp->name);
@@ -831,7 +836,7 @@ SILC_CONFIG_CALLBACK(fetch_client)
   else if (!strcmp(name, "passphrase")) {
     CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
-			   (void **)&tmp->passphrase,
+			   (void *)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
@@ -839,13 +844,13 @@ SILC_CONFIG_CALLBACK(fetch_client)
   }
   else if (!strcmp(name, "publickey")) {
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
-			   (void **)&tmp->publickeys, NULL)) {
+			   (void *)&tmp->publickeys, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
   else if (!strcmp(name, "publickeydir")) {
-    if (!my_parse_publickeydir((char *) val, (void **)&tmp->publickeys)) {
+    if (!my_parse_publickeydir((char *) val, (void *)&tmp->publickeys)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -903,7 +908,7 @@ SILC_CONFIG_CALLBACK(fetch_admin)
   else if (!strcmp(name, "passphrase")) {
     CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
-			   (void **)&tmp->passphrase,
+			   (void *)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
@@ -911,13 +916,13 @@ SILC_CONFIG_CALLBACK(fetch_admin)
   }
   else if (!strcmp(name, "publickey")) {
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
-			   (void **)&tmp->publickeys, NULL)) {
+			   (void *)&tmp->publickeys, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
   else if (!strcmp(name, "publickeydir")) {
-    if (!my_parse_publickeydir((char *) val, (void **)&tmp->publickeys)) {
+    if (!my_parse_publickeydir((char *) val, (void *)&tmp->publickeys)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1008,7 +1013,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
   else if (!strcmp(name, "passphrase")) {
     CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
-			   (void **)&tmp->passphrase,
+			   (void *)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
@@ -1017,7 +1022,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
   else if (!strcmp(name, "publickey")) {
     CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
-			   (void **)&tmp->publickeys, NULL)) {
+			   (void *)&tmp->publickeys, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1084,7 +1089,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
   else if (!strcmp(name, "passphrase")) {
     CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
-			   (void **)&tmp->passphrase,
+			   (void *)&tmp->passphrase,
 			   &tmp->passphrase_len)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
@@ -1093,7 +1098,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
   else if (!strcmp(name, "publickey")) {
     CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
-			   (void **)&tmp->publickeys, NULL)) {
+			   (void *)&tmp->publickeys, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1258,11 +1263,11 @@ static const SilcConfigTable table_connparam[] = {
   { "version_software",	       SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
   { "version_software_vendor", SILC_CONFIG_ARG_STR,    fetch_connparam,	NULL },
   { "anonymous",               SILC_CONFIG_ARG_TOGGLE, fetch_connparam,	NULL },
-  { "qos",    	               SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
-  { "qos_rate_limit",          SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
-  { "qos_bytes_limit",         SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
-  { "qos_limit_sec",           SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
-  { "qos_limit_usec",          SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "qos",    	               SILC_CONFIG_ARG_TOGGLE, fetch_connparam,	NULL },
+  { "qos_rate_limit",          SILC_CONFIG_ARG_INT,    fetch_connparam,	NULL },
+  { "qos_bytes_limit",         SILC_CONFIG_ARG_INT,    fetch_connparam,	NULL },
+  { "qos_limit_sec",           SILC_CONFIG_ARG_INT,    fetch_connparam,	NULL },
+  { "qos_limit_usec",          SILC_CONFIG_ARG_INT,    fetch_connparam,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -1373,6 +1378,7 @@ static bool silc_server_config_check(SilcServerConfig config)
 	 "connection. You have marked it incorrectly as backup router."));
     ret = FALSE;
   }
+#if 0
   if (config->routers && config->routers->initiator == FALSE &&
       config->routers->backup_router == FALSE) {
     SILC_SERVER_LOG_ERROR((
@@ -1380,6 +1386,7 @@ static bool silc_server_config_check(SilcServerConfig config)
 	 "connection and it must be marked as Initiator."));
     ret = FALSE;
   }
+#endif
   if (config->routers && config->routers->backup_router == TRUE &&
       !config->servers && !config->routers->next) {
     SILC_SERVER_LOG_ERROR((
@@ -1399,10 +1406,16 @@ static bool silc_server_config_check(SilcServerConfig config)
 	  "same host.", r->host));
       ret = FALSE;
     }
+
+    if (r->initiator == FALSE && r->port != 0) {
+      SILC_SERVER_LOG_WARNING(("\nWarning: Initiator is FALSE and Port is "
+                               "specified. Ignoring Port value."));
+      r->port = 0;
+    }
   }
-  
+
   /* ServerConnection sanity checks */
-  
+
   for (s = config->servers; s; s = s->next) {
     if (s->backup_router) {
       b = TRUE;
@@ -1446,6 +1459,7 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
   /* general config defaults */
   config_new->refcount = 1;
   config_new->logging_timestamp = TRUE;
+  config_new->param.reconnect_keep_trying = TRUE;
 
   /* obtain a config file object */
   file = silc_config_open(filename);

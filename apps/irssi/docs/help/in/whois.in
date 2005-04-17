@@ -27,6 +27,9 @@ responds to your request on the behalf of the user if the user
 does not want to respond to you.  In this case the returned
 information may be incomplete.
 
+If the -pubkey option is used WHOIS will only retrieve the clients
+with the corresponding public key.
+
 If you want to send your information in WHOIS you can set the
 information with ATTR command.  See HELP ATTR.
 

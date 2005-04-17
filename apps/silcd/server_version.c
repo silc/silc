@@ -19,6 +19,6 @@
 */
 
 #include "serverincludes.h"
-#include "version_internal.h"
+#include "silcversion.h"
 
 const char *server_version = SILC_DIST_VERSION_STRING;

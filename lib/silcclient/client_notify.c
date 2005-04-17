@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -444,12 +444,6 @@ void silc_client_notify_by_server(SilcClient client,
     if (!client_entry)
       goto out;
 
-    /* Remove from all channels */
-    silc_client_remove_from_channels(client, conn, client_entry);
-
-    /* Remove from cache */
-    silc_idcache_del_by_context(conn->internal->client_cache, client_entry);
-
     /* Get signoff message */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
     if (tmp_len > 128)
@@ -457,6 +451,12 @@ void silc_client_notify_by_server(SilcClient client,
 
     /* Notify application */
     client->internal->ops->notify(client, conn, type, client_entry, tmp);
+
+    /* Remove from all channels */
+    silc_client_remove_from_channels(client, conn, client_entry);
+
+    /* Remove from cache */
+    silc_idcache_del_by_context(conn->internal->client_cache, client_entry);
 
     /* Free data */
     silc_client_del_client_entry(client, conn, client_entry);
@@ -556,6 +556,11 @@ void silc_client_notify_by_server(SilcClient client,
       goto out;
     }
 
+    if (tmp) {
+      silc_free(channel->topic);
+      channel->topic = silc_memdup(tmp, strlen(tmp));
+    }
+
     /* Notify application. The channel entry is sent last as this notify
        is for channel but application don't know it from the arguments
        sent by server. */
@@ -627,13 +632,20 @@ void silc_client_notify_by_server(SilcClient client,
        ID changes.  Check whether the hashes in the Client ID match, if
        they do nickname didn't change. */
     if (SILC_ID_COMPARE_HASH(client_entry->id, client_id) &&
-	!strcmp(tmp, client_entry->nickname)) {
+	silc_utf8_strcasecmp(tmp, client_entry->nickname)) {
       /* Nickname didn't change.  Update only Client ID. */
+
+      /* Normalize nickname */
+      tmp = silc_identifier_check(tmp, strlen(tmp),
+				  SILC_STRING_UTF8, 128, NULL);
+      if (!tmp)
+	goto out;
+
       silc_idcache_del_by_context(conn->internal->client_cache,
 				  client_entry);
       silc_free(client_entry->id);
       client_entry->id = silc_id_dup(client_id, SILC_ID_CLIENT);
-      silc_idcache_add(conn->internal->client_cache, strdup(tmp),
+      silc_idcache_add(conn->internal->client_cache, tmp,
 		       client_entry->id, client_entry, 0, NULL);
 
       /* Notify application */
@@ -838,6 +850,13 @@ void silc_client_notify_by_server(SilcClient client,
 	if (!silc_pkcs_public_key_payload_decode(tmp, tmp_len, &founder_key))
 	  founder_key = NULL;
       }
+
+      /* Get user limit */
+      tmp = silc_argument_get_arg_type(args, 8, &tmp_len);
+      if (tmp && tmp_len == 4)
+        SILC_GET32_MSB(channel->user_limit, tmp);
+      if (!(channel->mode & SILC_CHANNEL_MODE_ULIMIT))
+        channel->user_limit = 0;
 
       /* Get the channel public key that was added or removed */
       tmp = silc_argument_get_arg_type(args, 7, &tmp_len);
@@ -1118,26 +1137,29 @@ void silc_client_notify_by_server(SilcClient client,
     /* Get comment */
     tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
 
-    /* Notify application. The channel entry is sent last as this notify
-       is for channel but application don't know it from the arguments
-       sent by server. */
-    client->internal->ops->notify(client, conn, type, client_entry, tmp,
-				  client_entry2, channel);
-
     /* Remove kicked client from channel */
-    if (client_entry == conn->local_entry) {
-      /* If I was kicked from channel, remove the channel */
-      if (conn->current_channel == channel)
-	conn->current_channel = NULL;
-      silc_client_del_channel(client, conn, channel);
-    } else {
+    if (client_entry != conn->local_entry) {
       chu = silc_client_on_channel(channel, client_entry);
       if (chu) {
 	silc_hash_table_del(client_entry->channels, channel);
 	silc_hash_table_del(channel->user_list, client_entry);
 	silc_free(chu);
       }
+    }
 
+    /* Notify application. The channel entry is sent last as this notify
+       is for channel but application don't know it from the arguments
+       sent by server. */
+    client->internal->ops->notify(client, conn, type, client_entry, tmp,
+				  client_entry2, channel);
+
+    /* Remove kicked client (us) from channel */
+    if (client_entry == conn->local_entry) {
+      /* If I was kicked from channel, remove the channel */
+      if (conn->current_channel == channel)
+	conn->current_channel = NULL;
+      silc_client_del_channel(client, conn, channel);
+    } else {
       if (!silc_hash_table_count(client_entry->channels)) {
 	SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
 	res->context = client;
@@ -1348,6 +1370,9 @@ void silc_client_notify_by_server(SilcClient client,
        */
       SilcNotifyType notify = 0;
       bool del_client = FALSE;
+      unsigned char *pk;
+      SilcUInt32 pk_len;
+      SilcPublicKey public_key = NULL;
 
       SILC_LOG_DEBUG(("Notify: WATCH"));
 
@@ -1393,15 +1418,25 @@ void silc_client_notify_by_server(SilcClient client,
 
 	/* If same nick, the client was new to us and has become "present"
 	   to network.  Send NULL as nick to application. */
-	if (tmp_nick && !strcmp(tmp, tmp_nick))
+	if (tmp_nick && silc_utf8_strcasecmp(tmp, tmp_nick))
 	  tmp = NULL;
 
 	silc_free(tmp_nick);
       }
 
+      /* Get public key, if present */
+      pk = silc_argument_get_arg_type(args, 5, &pk_len);
+      if (pk && !client_entry->public_key) {
+        if (silc_pkcs_public_key_payload_decode(pk, pk_len, &public_key)) {
+	  client_entry->public_key = public_key;
+	  public_key = NULL;
+	}
+      }
+
       /* Notify application. */
       client->internal->ops->notify(client, conn, type, client_entry,
-				    tmp, mode, notify);
+				    tmp, mode, notify,
+				    client_entry->public_key);
 
       client_entry->mode = mode;
 
@@ -1425,6 +1460,8 @@ void silc_client_notify_by_server(SilcClient client,
 			       silc_client_notify_del_client_cb, res,
 			       1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
       }
+
+      silc_pkcs_public_key_free(public_key);
     }
     break;
 

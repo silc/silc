@@ -1,0 +1,102 @@
+#
+#  Makefile.ad
+#
+#  Author: Pekka Riikonen <priikone@silcnet.org>
+#
+#  Copyright (C) 2000 - 2005 Pekka Riikonen
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+
+AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
+
+all:
+	touch draft-riikonen-silc-spec-08.txt
+	touch draft-riikonen-silc-pp-09.txt
+	touch draft-riikonen-silc-ke-auth-08.txt
+	touch draft-riikonen-silc-commands-06.txt
+	touch draft-riikonen-silc-flags-payloads-04.txt
+	touch draft-riikonen-presence-attrs-03.txt
+
+#ifdef SILC_DIST_TOOLKIT
+makerfc = $(SILC_TOP_SRCDIR)/scripts/makerfc
+
+toolkit-ref-html:
+	-@if test -f $(SILC_TOP_SRCDIR)/util/robodoc/Source/robodoc ; then \
+	  echo Generating Toolkit Reference Manual ; \
+	  rm -rf toolkit ; mkdir toolkit ; cd ../scripts/silcdoc ; \
+	  ./silcdoc HTML ../../lib/ $(SILC_TOP_SRCDIR)/doc/toolkit \
+	  $(SILC_TOP_SRCDIR)/util/robodoc/Source/robodoc ; \
+	else  \
+	  echo ROBODoc is not compiled! Cannot generate documentation! ; \
+        fi
+
+toolkit-ref-pdf:
+	-@if test -f $(SILC_TOP_SRCDIR)/util/robodoc/Source/robodoc ; then \
+	  echo Generating Toolkit Reference Manual ; \
+	  cd ../scripts/silcdoc ; \
+	  ./silcdoc PS ../../lib/ $(SILC_TOP_SRCDIR)/doc/toolkit.ps \
+	  $(SILC_TOP_SRCDIR)/util/robodoc/Source/robodoc ; \
+	  ps2pdf $(SILC_TOP_SRCDIR)/doc/toolkit.ps $(SILC_TOP_SRCDIR)/doc/toolkit.pdf; \
+          rm -rf $(SILC_TOP_SRCDIR)/doc/toolkit.ps; \
+	else  \
+	  echo ROBODoc is not compiled! Cannot generate documentation! ; \
+        fi
+
+dist-hook:
+	rm -rf `find $(top_distdir)/doc -name CVS`
+	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
+	touch draft-riikonen-silc-spec-08.txt
+	touch draft-riikonen-silc-pp-09.txt
+	touch draft-riikonen-silc-ke-auth-08.txt
+	touch draft-riikonen-silc-commands-06.txt
+	touch draft-riikonen-silc-flags-payloads-04.txt
+	touch draft-riikonen-presence-attrs-03.txt
+	$(makerfc) draft-riikonen-silc-spec-08.nroff \
+		draft-riikonen-silc-spec-08.txt
+	$(makerfc) draft-riikonen-silc-pp-09.nroff \
+		draft-riikonen-silc-pp-09.txt
+	$(makerfc) draft-riikonen-silc-ke-auth-08.nroff \
+		draft-riikonen-silc-ke-auth-08.txt
+	$(makerfc) draft-riikonen-silc-commands-06.nroff \
+		draft-riikonen-silc-commands-06.txt
+	$(makerfc) draft-riikonen-silc-flags-payloads-04.nroff \
+		draft-riikonen-silc-flags-payloads-04.txt
+	$(makerfc) draft-riikonen-presence-attrs-03.nroff \
+		draft-riikonen-presence-attrs-03.txt
+
+#else !SILC_DIST_TOOLKIT
+dist-hook:
+	rm -rf `find $(top_distdir)/doc -name CVS`
+	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
+	rm draft-riikonen*.txt
+	touch draft-riikonen-silc-spec-08.txt
+	touch draft-riikonen-silc-pp-09.txt
+	touch draft-riikonen-silc-ke-auth-08.txt
+	touch draft-riikonen-silc-commands-06.txt
+	touch draft-riikonen-silc-flags-payloads-04.txt
+	touch draft-riikonen-presence-attrs-03.txt
+#endif SILC_DIST_TOOLKIT
+
+EXTRA_DIST = 			\
+#ifdef SILC_DIST_CLIENT
+	silc.1			\
+#endif SILC_DIST_CLIENT
+#ifdef SILC_DIST_SERVER
+	examples silcd.8 silcd.conf.5	\
+#endif SILC_DIST_SERVER
+#ifdef SILC_DIST_TOOLKIT
+	toolkit			\
+	CodingStyle 		\
+#endif SILC_DIST_TOOLKIT
+	FAQ 			\
+	example_silcd.conf 	\
+	silcalgs.conf 		\
+	draft-riikonen*.txt

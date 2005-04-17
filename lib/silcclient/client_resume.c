@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002, 2003 Pekka Riikonen
+  Copyright (C) 2002, 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ SilcBuffer silc_client_get_detach_data(SilcClient client,
 
   /* Save all joined channels */
   silc_hash_table_list(conn->local_entry->channels, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&chu)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
     unsigned char *chid = silc_id_id2str(chu->channel->id, SILC_ID_CHANNEL);
     SilcUInt16 chid_len = silc_id_get_len(chu->channel->id, SILC_ID_CHANNEL);
 
@@ -110,18 +110,21 @@ bool silc_client_process_detach_data(SilcClient client,
   SilcBufferStruct detach;
   SilcUInt32 ch_count;
   int i, len;
+  char *newnick;
 
   SILC_LOG_DEBUG(("Start"));
 
-  silc_free(conn->nickname);
   silc_buffer_set(&detach, conn->internal->params.detach_data,
 		  conn->internal->params.detach_data_len);
 
   SILC_LOG_HEXDUMP(("Detach data"), detach.data, detach.len);
 
+  *old_id = NULL;
+  *old_id_len = 0;
+
   /* Take the old client ID from the detachment data */
   len = silc_buffer_unformat(&detach,
-			     SILC_STR_UI16_NSTRING_ALLOC(&conn->nickname,
+			     SILC_STR_UI16_NSTRING_ALLOC(&newnick,
 							 NULL),
 			     SILC_STR_UI16_NSTRING_ALLOC(old_id, old_id_len),
 			     SILC_STR_UI_INT(NULL),
@@ -129,6 +132,11 @@ bool silc_client_process_detach_data(SilcClient client,
 			     SILC_STR_END);
   if (len == -1)
     return FALSE;
+  if (!newnick || !(*old_id) || !(*old_id_len))
+    return FALSE;
+
+  silc_free(conn->nickname);
+  conn->nickname = newnick;
 
   silc_buffer_pull(&detach, len);
 

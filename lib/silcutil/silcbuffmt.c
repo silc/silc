@@ -524,7 +524,7 @@ int silc_buffer_strformat(SilcBuffer dst, ...)
 
   /* Parse the arguments by formatting type. */
   while(1) {
-    char *string = va_arg(va, char *);
+    char *string = (char *)va_arg(va, void *);
 
     if (!string)
       continue;

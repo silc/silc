@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2000 - 2001 Pekka Riikonen
+  Copyright (C) 2000 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -68,6 +68,8 @@ struct SilcIDCacheStruct {
   SilcHashTable context_table;
   SilcIDCacheDestructor destructor;
   SilcIdType type;
+  unsigned int delete_id : 1;
+  unsigned int delete_name : 1;
 };
 
 /*
@@ -99,7 +101,8 @@ struct SilcIDCacheListStruct {
    cache. */
 
 SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
-			       SilcIDCacheDestructor destructor)
+			       SilcIDCacheDestructor destructor,
+			       bool delete_id, bool delete_name)
 {
   SilcIDCache cache;
 
@@ -109,17 +112,20 @@ SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
   if (!cache)
     return NULL;
   cache->id_table = silc_hash_table_alloc(count, silc_hash_id,
-					  (void *)(SilcUInt32)id_type,
+					  SILC_32_TO_PTR(id_type),
 					  silc_hash_id_compare,
-					  (void *)(SilcUInt32)id_type,
-					  silc_idcache_destructor, NULL, TRUE);
-  cache->name_table = silc_hash_table_alloc(count, silc_hash_string, NULL,
-					    silc_hash_string_compare, NULL,
+					  SILC_32_TO_PTR(id_type),
+					  silc_idcache_destructor,
+					  cache, TRUE);
+  cache->name_table = silc_hash_table_alloc(count, silc_hash_utf8_string, NULL,
+					    silc_hash_utf8_compare, NULL,
 					    NULL, NULL, TRUE);
   cache->context_table = silc_hash_table_alloc(count, silc_hash_ptr, NULL,
 					       NULL, NULL, NULL, NULL, TRUE);
   cache->destructor = destructor;
   cache->type = id_type;
+  cache->delete_id = delete_id;
+  cache->delete_name = delete_name;
 
   if (!cache->id_table || !cache->name_table || !cache->context_table) {
     if (cache->id_table)
@@ -191,6 +197,13 @@ static void silc_idcache_destructor(void *key, void *context,
 {
   SilcIDCacheEntry c = context;
   if (c) {
+    SilcIDCache cache = user_context;
+    if (cache) {
+      if (cache->delete_id)
+	silc_free(c->id);
+      if (cache->delete_name)
+	silc_free(c->name);
+    }
     memset(c, 'F', sizeof(*c));
     silc_free(c);
   }
@@ -257,7 +270,6 @@ bool silc_idcache_del_by_id_ext(SilcIDCache cache, void *id,
     ret = silc_hash_table_del_ext(cache->id_table, c->id, hash,
 				  hash_context, compare, compare_context,
 				  NULL, NULL);
-
   return ret;
 }
 

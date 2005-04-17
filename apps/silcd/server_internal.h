@@ -61,6 +61,7 @@ typedef struct {
   SilcUInt32 auth_failures;		  /* Authentication failures */
   SilcUInt32 packets_sent;		  /* Sent SILC packets */
   SilcUInt32 packets_received;		  /* Received SILC packets */
+  SilcUInt32 conn_num;			  /* Number of connections */
 } SilcServerStatistics;
 
 /*
@@ -111,6 +112,7 @@ struct SilcServerStruct {
   SilcIDList local_list;
   SilcIDList global_list;
   SilcHashTable watcher_list;
+  SilcHashTable watcher_list_pk;
 
   /* Table of connected sockets */
   SilcSocketConnection *sockets;
@@ -146,6 +148,9 @@ struct SilcServerStruct {
   /* SIM (SILC Module) list */
   SilcDList sim;
 #endif
+
+  /* Hash table for public keys of all clients */
+  SilcHashTable pk_hash;
 };
 
 /* Failure context. This is allocated when failure packet is received.

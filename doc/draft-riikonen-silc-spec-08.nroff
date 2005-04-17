@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 11 August 2003
+.ds RH 11 February 2004
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-spec-08.txt                           11 August 2003
-Expires: 11 February 2004
+draft-riikonen-silc-spec-08.txt                         11 February 2004
+Expires: 11 August 2004
 
 .in 3
 
@@ -73,7 +73,7 @@ Table of Contents
 1 Introduction ..................................................  3
   1.1 Requirements Terminology ..................................  4
 2 SILC Concepts .................................................  4
-  2.1 SILC Network Topology .....................................  4
+  2.1 SILC Network Topology .....................................  5
   2.2 Communication Inside a Cell ...............................  6
   2.3 Communication in the Network ..............................  7
   2.4 Channel Communication .....................................  7
@@ -89,7 +89,7 @@ Table of Contents
       3.3.1 Router's Local ID List .............................. 13
       3.3.2 Router's Global ID List ............................. 14
       3.3.3 Router's Server ID .................................. 14
-  3.4 Channels .................................................. 14
+  3.4 Channels .................................................. 15
       3.4.1 Channel ID .......................................... 16
   3.5 Operators ................................................. 16
   3.6 SILC Commands ............................................. 17
@@ -111,28 +111,32 @@ Table of Contents
       3.10.3 Hash Functions ..................................... 27
       3.10.4 MAC Algorithms ..................................... 27
       3.10.5 Compression Algorithms ............................. 28
-  3.11 SILC Public Key .......................................... 29
+  3.11 SILC Public Key .......................................... 28
   3.12 SILC Version Detection ................................... 31
-  3.13 Backup Routers ........................................... 31
-      3.13.1 Switching to Backup Router ......................... 33
-      3.13.2 Resuming Primary Router ............................ 34
-4 SILC Procedures ............................................... 36
-  4.1 Creating Client Connection ................................ 37
-  4.2 Creating Server Connection ................................ 38
-      4.2.1 Announcing Clients, Channels and Servers ............ 39
-  4.3 Joining to a Channel ...................................... 40
-  4.4 Channel Key Generation .................................... 41
-  4.5 Private Message Sending and Reception ..................... 42
-  4.6 Private Message Key Generation ............................ 42
-  4.7 Channel Message Sending and Reception ..................... 43
-  4.8 Session Key Regeneration .................................. 44
-  4.9 Command Sending and Reception ............................. 44
-  4.10 Closing Connection ....................................... 45
-  4.11 Detaching and Resuming a Session ......................... 46
-5 Security Considerations ....................................... 47
-6 References .................................................... 48
-7 Author's Address .............................................. 50
-8 Full Copyright Statement ...................................... 50
+  3.13 UTF-8 Strings in SILC .................................... 31
+      3.13.1 UTF-8 Identifier Strings ........................... 32
+  3.14 Backup Routers ........................................... 33
+      3.14.1 Switching to Backup Router ......................... 35
+      3.14.2 Resuming Primary Router ............................ 36
+4 SILC Procedures ............................................... 38
+  4.1 Creating Client Connection ................................ 38
+  4.2 Creating Server Connection ................................ 40
+      4.2.1 Announcing Clients, Channels and Servers ............ 40
+  4.3 Joining to a Channel ...................................... 42
+  4.4 Channel Key Generation .................................... 43
+  4.5 Private Message Sending and Reception ..................... 44
+  4.6 Private Message Key Generation ............................ 44
+  4.7 Channel Message Sending and Reception ..................... 45
+  4.8 Session Key Regeneration .................................. 46
+  4.9 Command Sending and Reception ............................. 46
+  4.10 Closing Connection ....................................... 47
+  4.11 Detaching and Resuming a Session ......................... 48
+5 Security Considerations ....................................... 49
+6 References .................................................... 50
+7 Author's Address .............................................. 52
+Appendix A ...................................................... 52
+Appendix B ...................................................... 54
+Full Copyright Statement ........................................ 54
 
 .ti 0
 List of Figures
@@ -210,6 +214,7 @@ known as a channel.
 This section does not focus to security issues.  Instead, basic network
 concepts are introduced to make the topology of the SILC network
 clear.
+
 
 
 .ti 0
@@ -466,8 +471,8 @@ host names to be used along with the nicknames on user interface to
 identify specific users when sending messages.  This feature of SILC
 makes IRC style nickname-wars obsolete as no one owns their nickname;
 there can always be someone else with the same nickname.  Also, any kind
-of nickname registering service becomes obsolete.  The maximum length of
-nickname is 128 bytes.
+of nickname registering service becomes obsolete.  See the section 3.13.1
+for more information about nicknames.
 
 
 .ti 0
@@ -502,11 +507,13 @@ o Random number or counter - Random number to further
   possible to have 2^8 same nicknames from the same
   server IP address.
 
-o MD5 hash - MD5 hash value of the lowercase nickname is
+o MD5 hash - MD5 hash value of the case folded nickname is
   truncated taking 88 bits from the start of the hash value.
   This hash value is used to search the user's Client ID
-  from the ID lists.  Note that the nickname MUST be in
-  lowercase format.
+  from the ID lists.  Note that the nickname MUST be prepared
+  using the stringprep [RFC3454] profile described in the
+  Appendix A before computing the MD5 hash.  See also the
+  section 3.13.1 for more information.
 
 .in 3
 Collisions could occur when more than 2^8 clients using same nickname
@@ -574,7 +581,6 @@ client list        - All clients in server
    o Receiving key
    o Public key
 
-
 channel list       - All channels in server
    o Channel name
    o Channel ID
@@ -582,7 +588,6 @@ channel list       - All channels in server
    o Client ID modes on channel
    o Channel key
 .in 3
-
 
 
 .ti 0
@@ -636,7 +641,6 @@ numbers must be officially assigned by the IANA.
 
 Server on network above privileged ports (>1023) SHOULD NOT be trusted
 as they could have been set up by untrusted party.
-
 
 
 .ti 0
@@ -738,6 +742,8 @@ normal servers same types of IDs applies for routers as well.  See
 section 3.2.2 Server ID.
 
 
+
+
 .ti 0
 3.4 Channels
 
@@ -754,14 +760,12 @@ channel.
 
 Channel names are unique although the real uniqueness comes from 64 bit
 Channel ID.  However, channel names are still unique and no two global
-channels with same name may exist.  The channel name is a string of
-maximum length of 256 bytes.  Channel names MUST NOT contain any
-whitespaces (`  '), any non-printable ASCII characters, commas (`,')
-and wildcard characters.
+channels with same name may exist.  See the section 3.13.1 for more
+information about channel names.
 
-Channels can have operators that can administrate the channel and
-operate all of its modes.  The following operators on channel exist on
-the SILC network.
+Channels can have operators that can administrate the channel and operate
+all of its modes.  The following operators on channel exist on the
+SILC network.
 
 .in 6
 o Channel founder - When channel is created the joining client becomes
@@ -1082,7 +1086,7 @@ to connect to server without explicit authentication.  Servers are
 REQUIRED to use authentication protocol when connecting.  The
 authentication may be based on passphrase (pre-shared secret) or public
 key based on digital signatures.  All passphrases sent in SILC protocol
-MUST be UTF-8 [RFC2279] encoded. The connection authentication protocol
+MUST be UTF-8 [RFC3629] encoded. The connection authentication protocol
 is described in detail in [SILC3].
 
 
@@ -1402,7 +1406,6 @@ md5              MD5, length = 16        (RECOMMENDED)
 .in 3
 
 
-
 .ti 0
 3.10.4 MAC Algorithms
 
@@ -1621,7 +1624,86 @@ SILC-1.2-2.4.5 Vendor Limited
 
 
 .ti 0
-3.13 Backup Routers
+3.13 UTF-8 Strings in SILC
+
+By default all strings that are sent in SILC protocol MUST be UTF-8
+[RFC3269] encoded, unless otherwise defined.  This means that any string
+sent inside for example, command, command reply, notify or any packet
+payload is UTF-8 encoded.  Also nicknames, channel names, server names,
+and hostnames are UTF-8 encoded.  This definition does not affect
+messages sent in SILC, as the Message Payload provides its own mechanism
+to indicate whether a message is UTF-8 text message, data message, which
+may use its own character encoding, or pure binary message [SILC2].
+
+Certain limitations are imposed on the UTF-8 encoded strings in SILC.
+The UTF-8 encoded strings MUST NOT include any characters that are
+marked in the Unicode standard as control codes, noncharacters,
+reserved or private range characters, or any other illegal Unicode
+characters.  Also the BOM (Byte-Order Mark) MUST NOT be used as byte
+order signature in UTF-8 encoded strings.  A string containing these
+characters MUST be treated as malformed UTF-8 encoding.
+
+The Unicode standard defines that malformed sequences shall be signalled
+by replacing the sequence with a replacement character.  Even though,
+in case of SILC these strings may not be malformed UTF-8 encodings
+they MUST be treated as malformed strings.  Implementation MAY use
+a replacement character, however, the character Unicode standard defines
+MUST NOT be used, but another character must be chosen.  It is, however,
+RECOMMENDED that an error is returned instead of using replacement
+character if it is possible.  For example, when setting a nickname
+with SILC_COMMAND_NICK command, implementation is able to send error
+indication back to the command sender.  It must be noted that on server
+implementation if a character sequence is merely outside of current
+character subset, but is otherwise valid character, it MUST NOT be
+replaced by a replacement character.
+
+On user interface where UTF-8 strings are displayed the implementation
+is RECOMMENDED to escape any character that it is unable to render
+properly.  The escaping may be done for example as described in
+[RFC2253].  The escaping makes it possible to retrieve the original
+UTF-8 encoding.  Alternatively, a replacement character may be used
+if it does not cause practical problems to the implementation.
+
+
+.ti 0
+3.13.1 UTF-8 Identifier Strings
+
+Identifier strings are special strings in SILC protocol that require
+more careful processing, than the general UTF-8 strings described in the
+previous section.  These strings include the nicknames, channel names,
+server names, hostnames and some other identifier strings.  These strings
+are prepared using the stringprep [RFC3454] standard.  The Appendix A
+defines the stringprep profile for SILC identifier strings and conforming
+implementation MUST use the profile to prepare any identifier string.
+
+The stringprep profile describes how identifier strings are prepared,
+what characters they may include, and which characters are prohibited.
+Identifier strings with prohibited characters MUST be treated as
+malformed strings.
+
+Because of the profile the identifier strings in SILC may generally
+include only letters, numbers, most punctuation characters, and some
+other characters.  For practical reasons most symbol characters and
+many other special characters are prohibited.  All identifier strings
+are case folded and comparing the identifier strings MUST be done as
+caseless matching.  Also, identifier strings may not include any
+commas (','), '@', '!' or any wildcard characters, as defined in the
+stringprep profile in Appendix A.
+
+In general, the identifier strings does not have a maximum length.
+However, the length of a nickname string MUST NOT exceed 128 bytes, and
+the length of a channel name string MUST NOT exceed 256 bytes.  Since
+these strings are UTF-8 encoded the length of one character may be
+longer than one byte.  This means that the character length of these
+strings may be shorter than the maximum length of the string in bytes.
+The minimum length of an identifier string MUST be at least one character,
+which may be one byte or more in length.  Implementation MAY limit the
+maximum length of an identifier string, with exception of the nickname
+and channel name strings which has the explicit length definition.
+
+
+.ti 0
+3.14 Backup Routers
 
 Backup routers may exist in the cell in addition to the primary router.
 However, they must not be active routers or act as routers in the cell.
@@ -1702,7 +1784,7 @@ router as described above.
 
 
 .ti 0
-3.13.1 Switching to Backup Router
+3.14.1 Switching to Backup Router
 
 When the primary router of the cell becomes unresponsive, for example
 by sending EOF to the connection, all the parties of this protocol MUST
@@ -1750,7 +1832,7 @@ and Servers.
 
 
 .ti 0
-3.13.2 Resuming Primary Router
+3.14.2 Resuming Primary Router
 
 Usually the primary router is unresponsive only a short period of time
 and it is intended that the original router of the cell will resume
@@ -1869,8 +1951,6 @@ so on.  The references [SILC2], [SILC3] and [SILC4] permeate this
 section's definitions.
 
 
-
-
 .ti 0
 4.1 Creating Client Connection
 
@@ -1938,6 +2018,8 @@ the SILC network).  More information about this in [SILC2].
 Router server MUST also check whether some client in the local cell
 is watching for the nickname this new client has, and send the
 SILC_NOTIFY_TYPE_WATCH to the watcher.
+
+
 
 
 .ti 0
@@ -2009,7 +2091,7 @@ MUST be announced by compiling a list of Notify Payloads with the
 SILC_NOTIFY_TOPIC_SET notify type into the SILC_PACKET_NOTIFY packet.
 Also, channel's invite and ban lists MUST be announced by compiling list
 of Notify Payloads with the SILC_NOTIFY_TYPE_INVITE and
-SILC_NOTIFY_TYPE_BAN notify types, respectively, into the 
+SILC_NOTIFY_TYPE_BAN notify types, respectively, into the
 SILC_PACKET_NOTIFY packet.
 
 The router which receives these lists MUST process them and broadcast
@@ -2181,37 +2263,44 @@ process.
 4.6 Private Message Key Generation
 
 Private message MAY be protected with a key generated by the client.
-The key may be generated and sent to the other client by sending packet
-SILC_PACKET_PRIVATE_MESSAGE_KEY which travels through the network
-and is secured by session keys.  After that the private message key
-is used in the private message communication between those clients.
-The key sent inside the payload SHOULD be randomly generated.  This
-packet MUST NOT be used to send pre-shared keys.
+One way to generate private message key is to use static or pre-shared
+keys in the client implementation.  Client that wants to indicate other
+client on the network that a private message key should be set, the
+client MAY send SILC_PACKET_PRIVATE_MESSAGE_KEY packet to indicate this.
+The actual key material has to be transferred outside the SILC network,
+or it has to be pre-shared key.  The client receiving this packet knows
+that the sender wishes to use private message key in private message
+communication.  In case of static or pre-shared keys the IV used in
+the encryption SHOULD be chosen randomly.  Sending the
+SILC_PACKET_PRIVATE_MESSAGE_KEY is not mandatory, and clients may
+naturally agree to use a key without sending the packet.
 
-Another choice is to entirely use keys that are not sent through
-the SILC network at all.  This significantly adds security.  This key
-could be a pre-shared key that is known by both of the clients.  Both
-agree about using the key and start sending packets that indicate
-that the private message is secured using private message key.  In
-case of pre-shared keys (static keys) the IV used in encryption SHOULD
-be chosen randomly.
-
-It is also possible to negotiate fresh key material by performing
-Key Agreement.  The SILC_PACKET_KEY_AGREEMENT packet MAY be used to
-negotiate the fresh key material.  In this case the resulting key
-material is used to secure the private messages.  Also, the IV used
-in encryption is used as defined in [SILC3], unless otherwise stated
-by the encryption mode used.  By performing Key Agreement the clients
-may negotiate the cipher and HMAC to be used in the private message
-encryption and to negotiate additional security parameters.
+Another choice to use private message keys is to negotiate fresh key
+material by performing the Key Agreement.  The SILC_PACKET_KEY_AGREEMENT
+packet MAY be used to negotiate the fresh key material.  In this case
+the resulting key material is used to secure the private messages.
+Also, the IV used in encryption is used as defined in [SILC3], unless
+otherwise stated by the encryption mode used.  By performing Key
+Agreement the clients can also negotiate the cipher and HMAC to be used
+in the private message encryption and to negotiate additional security
+parameters.  The actual Key Agreement [SILC2] is performed by executing
+the SILC Key Exchange protocol [SILC3], peer to peer.  Because of NAT
+devices in the network, it might be impossible to perform the Key
+Agreement.  In this case using static or pre-shared key and sending the
+SILC_PACKET_PRIVATE_MESSAGE_KEY to indicate the use of a private message
+key is a working alternative.
 
 If the key is pre-shared key or other key material not generated by
 Key Agreement, then the key material SHOULD be processed as defined
-in [SILC3].  The hash function to be used SHOULD be SHA1.  In the
-processing, however, the HASH, as defined in [SILC3] MUST be ignored.
-After processing the key material it is employed as defined in [SILC3].
-In this case also, implementations SHOULD use the SILC protocol's
-mandatory cipher and HMAC in private message encryption.
+in [SILC3].  In the processing, however, the HASH, as defined in [SILC3]
+MUST be ignored.  After processing the key material it is employed as
+defined in [SILC3].  If the SILC_PACKET_PRIVATE_MESSAGE_KEY was sent,
+then it defines the cipher and HMAC to be used.  The hash algorithm to be
+used in the key material processing is the one that HMAC algorithm is
+defined to use.  If the SILC_PACKET_PRIVATE_MESSAGE_KEY was not sent at
+all, then the hash algorithm to be used SHOULD be SHA1.  In this case
+also, implementations SHOULD use the SILC protocol's mandatory cipher
+and HMAC in private message encryption.
 
 
 .ti 0
@@ -2328,8 +2417,6 @@ Router server MUST also check whether some client in the local cell
 is watching for the nickname this client has, and send the
 SILC_NOTIFY_TYPE_WATCH to the watcher, unless the client which left
 the network has the SILC_UMODE_REJECT_WATCHING user mode set.
-
-
 
 
 .ti 0
@@ -2539,8 +2626,8 @@ should have a forum to discuss the cell management issues.
 [RFC2119]    Bradner, S., "Key Words for use in RFCs to Indicate
              Requirement Levels", BCP 14, RFC 2119, March 1997.
 
-[RFC2279]    Yergeau, F., "UTF-8, a transformation format of ISO
-             10646", RFC 2279, January 1998.
+[RFC3629]    Yergeau, F., "UTF-8, a transformation format of ISO
+             10646", RFC 3629, November 2003.
 
 [RFC1321]    Rivest R., "The MD5 Message-Digest Algorithm", RFC 1321,
              April 1992.
@@ -2554,6 +2641,9 @@ should have a forum to discuss the cell management issues.
 [RFC2253]    Wahl, M., et al., "Lightweight Directory Access Protocol
              (v3): UTF-8 String Representation of Distinguished Names",
              RFC 2253, December 1997.
+
+[RFC3454]    Hoffman, P., et al., "Preparation of Internationalized
+             Strings ("stringprep")", RFC 3454, December 2002.
 
 
 .ti 0
@@ -2569,7 +2659,98 @@ EMail: priikone@iki.fi
 
 
 .ti 0
-8 Full Copyright Statement
+Appendix A
+
+This appendix defines the stringprep [RFC3454] profile for string
+identifiers in SILC protocol.  Compliant implementation MUST use this
+profile to prepare the identifier strings in the SILC protocol.  The
+profile defines the following as required by [RFC3454].
+
+- Intended applicability of the profile:  the following identifiers in
+  the SILC Protocol;  nicknames, channel names, usernames, server names,
+  hostnames, service names, algorithm names and other security property
+  names [SILC3], and SILC Public Key name.
+
+- The character repertoire that is the input and output to
+  stringprep:  Unicode 3.2 with the list of unassigned code points
+  being the Table A.1, as defined in [RFC3454].
+
+- The mapping tables used:  the following tables are used, in order,
+  as defined in [RFC3454].
+
+    Table B.1
+    Table B.2
+
+  The mandatory case folding is done using the Table B.2 which includes
+  the characters for the normalization form KC.
+
+- The Unicode normalization used:  the Unicode normalization form
+  KC is used, as defined in [RFC3454].
+
+- The prohibited characters as output:  the following tables are used
+  to prohibit characters, as defined in [RFC3454];
+
+    Table C.1.1
+    Table C.1.2
+    Table C.2.1
+    Table C.2.2
+    Table C.3
+    Table C.4
+    Table C.5
+    Table C.6
+    Table C.7
+    Table C.8
+    Table C.9
+
+- Additional prohibited characters as output:  in addition, the following
+  tables are used to prohibit characters, as defined in this document;
+
+    Appendix B
+
+- The bidirectional string testing used:  bidirectional string testing
+  is ignored in this profile.
+
+This profile is to be maintained in the IANA registry for stringprep
+profiles.  The name of this profile is "silc-identifier-prep" and this
+document defines the profile.  This document defines the first version of
+this profile.
+
+
+.ti 0
+Appendix B
+
+This appendix defines additional prohibited characters in the identifier
+strings as defined in the stringprep profile in Appendix A.  Note that
+the prohibited character tables listed in the Appendix A may include some
+of the same characters listed in this appendix as well.
+
+Reserved US-ASCII characters
+0021 002A 002C 003F 0040
+
+Symbol characters and other symbol like characters
+00A2-00A9 00AC 00AE 00AF 00B0 00B1 00B4 00B6 00B8 00D7 00F7
+02C2-02C5 02D2-02FF 0374 0375 0384 0385 03F6 0482 060E 060F
+06E9 06FD 06FE 09F2 09F3 09FA 0AF1 0B70 0BF3-0BFA 0E3F
+0F01-0F03 0F13-0F17 0F1A-0F1F 0F34 0F36 0F38 0FBE 0FBF
+0FC0-0FC5 0FC7-0FCF 17DB 1940 19E0-19FF 1FBD 1FBF-1FC1
+1FCD-1FCF 1FDD-1FDF 1FED-1FEF 1FFD 1FFE 2044 2052 207A-207C
+208A-208C 20A0-20B1 2100-214F 2150-218F 2190-21FF 2200-22FF
+2300-23FF 2400-243F 2440-245F 2460-24FF 2500-257F 2580-259F
+25A0-25FF 2600-26FF 2700-27BF 27C0-27EF 27F0-27FF 2800-28FF
+2900-297F 2980-29FF 2A00-2AFF 2B00-2BFF 2E9A 2EF4-2EFF
+2FF0-2FFF 303B-303D 3040 3095-3098 309F-30A0 30FF-3104
+312D-3130 318F 31B8-31FF 321D-321F 3244-325F 327C-327E
+32B1-32BF 32CC-32CF 32FF 3377-337A 33DE-33DF 33FF 4DB6-4DFF
+9FA6-9FFF A48D-A48F A4A2-A4A3 A4B4 A4C1 A4C5 A4C7-ABFF
+D7A4-D7FF FA2E-FAFF FFE0-FFEE FFFC 10000-1007F 10080-100FF
+10100-1013F 1D000-1D0FF 1D100-1D1FF 1D300-1D35F 1D400-1D7FF
+
+Other characters
+E0100-E01EF
+
+
+.ti 0
+Full Copyright Statement
 
 Copyright (C) The Internet Society (2003). All Rights Reserved.
 

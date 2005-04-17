@@ -24,13 +24,19 @@ ADD_INCLUDES = \
 noinst_LIBRARIES = libfe_common_silc.a
 
 libfe_common_silc_a_SOURCES = \
-	fe-channels.c \
+	fe-silc-channels.c \
 	fe-common-silc.c \
 	module-formats.c \
 	silc-modules.c \
-	fe-messages.c
+	fe-silc-messages.c \
+	fe-silcnet.c \
+	fe-silc-queries.c
 
 noinst_HEADERS = \
 	module-formats.h \
+	fe-silc-channels.h \
+	fe-silc-messages.h \
+	fe-silc-queries.h \
+	fe-silcnet.h \
 	fe-common-silc.h \
 	module.h

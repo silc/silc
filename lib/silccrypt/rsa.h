@@ -2,15 +2,14 @@
 
   rsa.h
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -36,6 +35,11 @@ SILC_PKCS_API_ENCRYPT(rsa);
 SILC_PKCS_API_DECRYPT(rsa);
 SILC_PKCS_API_SIGN(rsa);
 SILC_PKCS_API_VERIFY(rsa);
+
+SILC_PKCS_API_ENCRYPT(pkcs1);
+SILC_PKCS_API_DECRYPT(pkcs1);
+SILC_PKCS_API_SIGN(pkcs1);
+SILC_PKCS_API_VERIFY(pkcs1);
 
 
 #endif

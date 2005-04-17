@@ -32,7 +32,7 @@ path in your system which contains lib/ and include/ for GMP library.
 GMP can be used as a fall-back if you have problems with the MPI library
 included within this package.
 
-'--with-iconv[=DIR]'
+`--with-iconv[=DIR]'
 
    If your system doesn't provide iconv() function in its native libraries
 (usually libc) or if this function is broken (e.g. older Solaris systems),

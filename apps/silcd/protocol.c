@@ -1400,6 +1400,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	   */
 
 	  /* Send the REKEY_DONE to indicate we will take new keys into use */
+	  silc_server_packet_queue_purge(server, ctx->sock);
 	  silc_server_packet_send(server, ctx->sock, SILC_PACKET_REKEY_DONE,
 				  0, NULL, 0, FALSE);
 
@@ -1456,6 +1457,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 
 	  /* Send the REKEY_DONE to indicate we will take new keys into use
 	     now. */
+	  silc_server_packet_queue_purge(server, ctx->sock);
 	  silc_server_packet_send(server, ctx->sock, SILC_PACKET_REKEY_DONE,
 				  0, NULL, 0, FALSE);
 
@@ -1524,6 +1526,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 
     /* Send the REKEY_DONE to indicate we will take new keys into use
        now. */
+    silc_server_packet_queue_purge(server, ctx->sock);
     silc_server_packet_send(server, ctx->sock, SILC_PACKET_REKEY_DONE,
 			    0, NULL, 0, FALSE);
 
@@ -1531,6 +1534,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
        key to the new key since all packets after this packet must
        encrypted with the new key. */
     silc_server_protocol_rekey_generate_pfs(server, ctx, TRUE);
+    silc_server_packet_queue_purge(server, ctx->sock);
 
     /* The protocol ends in next stage. */
     protocol->state = SILC_PROTOCOL_STATE_END;
@@ -1558,6 +1562,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
       silc_server_protocol_rekey_generate_pfs(server, ctx, FALSE);
     else
       silc_server_protocol_rekey_generate(server, ctx, FALSE);
+    silc_server_packet_queue_purge(server, ctx->sock);
 
     /* Assure that after calling final callback there cannot be pending
        executions for this protocol anymore. This just unregisters any

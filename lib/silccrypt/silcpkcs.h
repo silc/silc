@@ -1,10 +1,10 @@
 /*
 
-  silcpkcs.h 
+  silcpkcs.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -362,6 +362,7 @@ char *silc_pkcs_get_supported(void);
  * DESCRIPTION
  *
  *    Generate new key pair into the `pkcs' context. Returns FALSE on error.
+ *    If the `rng' is NULL global SILC RNG will be used.
  *
  ***/
 bool silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
@@ -375,7 +376,7 @@ bool silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
  *
  * DESCRIPTION
  *
- *    Returns the length of the key.
+ *    Returns the length of the key in bits.
  *
  ***/
 SilcUInt32 silc_pkcs_get_key_len(SilcPKCS self);
@@ -401,8 +402,9 @@ const char *silc_pkcs_get_name(SilcPKCS pkcs);
  *
  * DESCRIPTION
  *
- *    Returns SILC style public key.  The caller must free the returned
- *    data.
+ *    Returns SILC style public key for the PKCS.  Note that this is not
+ *    the SILC Public Key, but the raw public key data from the PKCS.
+ *    The caller must free the returned data.
  *
  ***/
 unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, SilcUInt32 *len);
@@ -416,8 +418,9 @@ unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, SilcUInt32 *len);
  *
  * DESCRIPTION
  *
- *    Returns SILC style private key.  The caller must free the returned
- *    data and SHOULD zero the memory area before freeing.
+ *    Returns SILC style private key.  Note that this is not SilcPrivateKey
+ *    but the raw private key bits from the PKCS.  The caller must free the
+ *    returned data and SHOULD zero the memory area before freeing.
  *
  ***/
 unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, SilcUInt32 *len);
@@ -431,7 +434,8 @@ unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, SilcUInt32 *len);
  *
  * DESCRIPTION
  *
- *    Sets public key from SilcPublicKey. Returns the length of the key.
+ *    Sets public key from SilcPublicKey. Returns the length of the key in
+ *    bits.
  *
  ***/
 SilcUInt32 silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key);
@@ -461,10 +465,12 @@ SilcUInt32 silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
  *
  * DESCRIPTION
  *
- *    Sets private key from SilcPrivateKey. Returns the length of the key.
+ *    Sets private key from SilcPrivateKey. Returns the length of the key
+ *    in bits.
  *
  ***/
-SilcUInt32 silc_pkcs_private_key_set(SilcPKCS pkcs, SilcPrivateKey private_key);
+SilcUInt32 silc_pkcs_private_key_set(SilcPKCS pkcs,
+				     SilcPrivateKey private_key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_private_key_data_set
  *
@@ -540,7 +546,8 @@ bool silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
  *
  * DESCRIPTION
  *
- *    Verifies signature.  Returns FALSE on error.
+ *    Verifies signature.  Returns FALSE on error.  The 'signature' is
+ *    verified against the 'data'.
  *
  ***/
 bool silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature,
@@ -644,8 +651,11 @@ void silc_pkcs_free_identifier(SilcPublicKeyIdentifier identifier);
  *
  * DESCRIPTION
  *
- *    Allocates SILC style public key formed from sent arguments.  All data
- *    is duplicated.
+ *    Allocates SILC style public key formed from sent arguments.  The
+ *    'name' is the algorithm (PKCS) name, the 'identifier' is the public
+ *    key identifier generated with silc_pkcs_encode_identifier, and the
+ *    'pk' and 'pk_len' are the raw public key data returned for example
+ *    by silc_pkcs_get_public_key.
  *
  ***/
 SilcPublicKey silc_pkcs_public_key_alloc(const char *name,
@@ -661,7 +671,7 @@ SilcPublicKey silc_pkcs_public_key_alloc(const char *name,
  *
  * DESCRIPTION
  *
- *    Frees public key.
+ *    Frees public key and all data in it.
  *
  ***/
 void silc_pkcs_public_key_free(SilcPublicKey public_key);
@@ -676,8 +686,9 @@ void silc_pkcs_public_key_free(SilcPublicKey public_key);
  *
  * DESCRIPTION
  *
- *    Allocates SILC private key formed from sent arguments.  All data is
- *    duplicated.
+ *    Allocates SILC private key formed from sent arguments.  The 'name'
+ *    is the algorithm name, and the 'prv' and 'prv_len' are the raw
+ *    private key bits returned by silc_pkcs_get_private_key.
  *
  ***/
 SilcPrivateKey silc_pkcs_private_key_alloc(const char *name,
@@ -692,7 +703,8 @@ SilcPrivateKey silc_pkcs_private_key_alloc(const char *name,
  *
  * DESCRIPTION
  *
- *    Frees private key.
+ *    Frees private key and all data in it.  The private key is zeroed
+ *    before it is freed.
  *
  ***/
 void silc_pkcs_private_key_free(SilcPrivateKey private_key);

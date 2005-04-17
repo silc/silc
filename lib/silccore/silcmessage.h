@@ -96,8 +96,9 @@ typedef SilcUInt16 SilcMessageFlags;
 #define SILC_MESSAGE_FLAG_REPLY       0x0040	  /* A reply */
 #define SILC_MESSAGE_FLAG_DATA        0x0080	  /* MIME object */
 #define SILC_MESSAGE_FLAG_UTF8        0x0100	  /* UTF-8 string */
-#define SILC_MESSAGE_FLAG_RESERVED    0x0200	  /* to 0x0800 */
-#define SILC_MESSAGE_FLAG_PRIVATE     0x1000	  /* to 0x8000 */
+#define SILC_MESSAGE_FLAG_ACK         0x0200	  /* ACK messages */
+#define SILC_MESSAGE_FLAG_RESERVED    0x0400	  /* to 0x1000 */
+#define SILC_MESSAGE_FLAG_PRIVATE     0x2000	  /* to 0x8000 */
 /***/
 
 /****f* silccore/SilcMessageAPI/silc_message_payload_decrypt
@@ -455,7 +456,9 @@ int silc_message_signed_verify(SilcMessageSignedPayload sig,
  * SYNOPSIS
  *
  *    SilcPublicKey
- *    silc_message_signed_get_public_key(SilcMessageSignedPayload sig);
+ *    silc_message_signed_get_public_key(SilcMessageSignedPayload sig,
+ *                                       unsigned char **pk_data,
+ *                                       SilcUInt32 *pk_data_len);
  *
  * DESCRIPTION
  *

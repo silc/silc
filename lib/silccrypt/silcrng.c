@@ -1,10 +1,10 @@
 /*
 
-  silcrng.c 
+  silcrng.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Created: Sun Mar  9 00:09:18 1997
  *
  * The original RNG was based on Secure Shell's random number generator
- * by Tatu Ylönen and was used as reference when programming this RNG.  
+ * by Tatu Ylönen and was used as reference when programming this RNG.
  * This RNG has been rewritten twice since the creation.
  */
 
@@ -54,7 +54,7 @@ static void silc_rng_get_hard_noise(SilcRng rng);
 static void silc_rng_get_medium_noise(SilcRng rng);
 static void silc_rng_get_soft_noise(SilcRng rng);
 
-/* 
+/*
    SILC SilcRng State context.
 
    This object is used by the random number generator to provide
@@ -81,8 +81,8 @@ typedef struct SilcRngStateContext {
   struct SilcRngStateContext *next;
 } *SilcRngState;
 
-/* 
-   SILC Random Number Generator object. 
+/*
+   SILC Random Number Generator object.
 
    This object holds random pool which is used to generate the random
    numbers used by various routines needing cryptographically strong
@@ -179,7 +179,7 @@ void silc_rng_free(SilcRng rng)
   }
 }
 
-/* Initializes random number generator by getting noise from environment. 
+/* Initializes random number generator by getting noise from environment.
    The environmental noise is our so called seed. One should not call
    this function more than once. */
 
@@ -200,7 +200,7 @@ void silc_rng_init(SilcRng rng)
   first = rng->state;
   for (i = SILC_RNG_STATE_NUM - 1; i >= 1; i--) {
     next = silc_calloc(1, sizeof(*rng->state));
-    next->low = 
+    next->low =
       (i * (sizeof(rng->pool) / SILC_RNG_STATE_NUM));
     next->pos =
       (i * (sizeof(rng->pool) / SILC_RNG_STATE_NUM)) + 8;
@@ -229,7 +229,10 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   struct tms ptime;
 #endif
   SilcUInt32 pos;
-  
+#ifdef HAVE_GETRUSAGE
+  struct rusage r;
+#endif
+
   pos = silc_rng_get_position(rng);
 
   silc_rng_xor(rng, clock(), 0);
@@ -277,7 +280,30 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   silc_rng_xor(rng, getpgrp(), pos++);
 #endif
 #endif
-
+#ifdef HAVE_GETRUSAGE
+  getrusage(RUSAGE_SELF, &r);
+  silc_rng_xor(rng, (r.ru_utime.tv_sec + r.ru_utime.tv_usec), pos++);
+  silc_rng_xor(rng, (r.ru_utime.tv_sec ^ r.ru_utime.tv_usec), pos++);
+  silc_rng_xor(rng, (r.ru_stime.tv_sec + r.ru_stime.tv_usec), pos++);
+  silc_rng_xor(rng, (r.ru_stime.tv_sec ^ r.ru_stime.tv_usec), pos++);
+  silc_rng_xor(rng, (r.ru_maxrss + r.ru_ixrss), pos++);
+  silc_rng_xor(rng, (r.ru_maxrss ^ r.ru_ixrss), pos++);
+  silc_rng_xor(rng, (r.ru_idrss + r.ru_idrss), pos++);
+  silc_rng_xor(rng, (r.ru_idrss ^ r.ru_idrss), pos++);
+  silc_rng_xor(rng, (r.ru_idrss << 16), pos++);
+  silc_rng_xor(rng, (r.ru_minflt + r.ru_majflt), pos++);
+  silc_rng_xor(rng, (r.ru_minflt ^ r.ru_majflt), pos++);
+  silc_rng_xor(rng, (r.ru_nswap + r.ru_oublock + r.ru_inblock), pos++);
+  silc_rng_xor(rng, (r.ru_nswap << 8), pos++);
+  silc_rng_xor(rng, (r.ru_inblock + r.ru_oublock), pos++);
+  silc_rng_xor(rng, (r.ru_inblock ^ r.ru_oublock), pos++);
+  silc_rng_xor(rng, (r.ru_msgsnd ^ r.ru_msgrcv), pos++);
+  silc_rng_xor(rng, (r.ru_nsignals + r.ru_msgsnd + r.ru_msgrcv), pos++);
+  silc_rng_xor(rng, (r.ru_nsignals << 16), pos++);
+  silc_rng_xor(rng, (r.ru_nvcsw + r.ru_nivcsw), pos++);
+  silc_rng_xor(rng, (r.ru_nvcsw ^ r.ru_nivcsw), pos++);
+#endif
+  
 #ifdef SILC_RNG_DEBUG
   SILC_LOG_HEXDUMP(("pool"), rng->pool, sizeof(rng->pool));
 #endif
@@ -290,6 +316,10 @@ static void silc_rng_get_soft_noise(SilcRng rng)
 
 static void silc_rng_get_medium_noise(SilcRng rng)
 {
+  /* If getrusage is available, there is no need for shell commands */
+#ifdef HAVE_GETRUSAGE
+  return;
+#endif
   silc_rng_exec_command(rng, "ps -leaww 2> /dev/null");
   silc_rng_exec_command(rng, "ls -afiln ~ 2> /dev/null");
   silc_rng_exec_command(rng, "ls -afiln /proc 2> /dev/null");
@@ -308,7 +338,7 @@ static void silc_rng_get_hard_noise(SilcRng rng)
 #ifndef SILC_WIN32
   unsigned char buf[32];
   int fd, len, i;
-  
+
   /* Get noise from /dev/[u]random if available */
   fd = open(rng->devrandom, O_RDONLY);
   if (fd < 0)
@@ -342,22 +372,22 @@ static void silc_rng_exec_command(SilcRng rng, char *command)
   FILE *fd;
   int i;
   int c;
-  
+
   /* Open process */
   fd = popen(command, "r");
   if (!fd)
     return;
-  
+
   /* Get data as much as we can get into the buffer */
   for (i = 0; i < sizeof(buf); i++) {
     c = fgetc(fd);
     if (c == EOF)
-      break; 
+      break;
     buf[i] = c;
   }
-  
+
   pclose(fd);
-  
+
   if (i != 0) {
     /* Add the buffer into random pool */
     silc_rng_add_noise(rng, buf, i);
@@ -366,7 +396,7 @@ static void silc_rng_exec_command(SilcRng rng, char *command)
 #endif
 }
 
-/* This function adds the contents of the buffer as noise into random 
+/* This function adds the contents of the buffer as noise into random
    pool. After adding the noise the pool is stirred. */
 
 void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, SilcUInt32 len)
@@ -397,7 +427,7 @@ static void silc_rng_xor(SilcRng rng, SilcUInt32 val, unsigned int pos)
   SILC_PUT32_MSB(val, &rng->pool[pos]);
 }
 
-/* This function stirs the random pool by encrypting buffer in CFB 
+/* This function stirs the random pool by encrypting buffer in CFB
    (cipher feedback) mode with SHA1 algorithm. */
 
 static void silc_rng_stir_pool(SilcRng rng)
@@ -483,7 +513,7 @@ static SilcUInt32 silc_rng_get_position(SilcRng rng)
     rng->state->pos = rng->state->low;
 
 #ifdef SILC_RNG_DEBUG
-    fprintf(stderr, "state: %p: low: %lu, pos: %lu\n", 
+    fprintf(stderr, "state: %p: low: %lu, pos: %lu\n",
 	    rng->state, rng->state->low, rng->state->pos);
 #endif
 
@@ -496,6 +526,8 @@ static SilcUInt32 silc_rng_get_position(SilcRng rng)
 
 SilcUInt8 silc_rng_get_byte(SilcRng rng)
 {
+  SilcUInt8 byte;
+
   rng->threshold++;
 
   /* Get more soft noise after 64 bits threshold */
@@ -508,7 +540,8 @@ SilcUInt8 silc_rng_get_byte(SilcRng rng)
     silc_rng_get_hard_noise(rng);
   }
 
-  return rng->pool[silc_rng_get_position(rng)];
+  do byte = rng->pool[silc_rng_get_position(rng)]; while (byte == 0x00);
+  return byte;
 }
 
 /* Return random byte as fast as possible. Reads from /dev/urandom if
@@ -529,7 +562,7 @@ SilcUInt8 silc_rng_get_byte_fast(SilcRng rng)
   if (read(rng->fd_devurandom, buf, sizeof(buf)) < 0)
     return silc_rng_get_byte(rng);
 
-  return buf[0];
+  return buf[0] != 0x00 ? buf[0] : silc_rng_get_byte(rng);
 #else
   return silc_rng_get_byte(rng);
 #endif
@@ -565,7 +598,7 @@ SilcUInt32 silc_rng_get_rn32(SilcRng rng)
   return num;
 }
 
-/* Returns random number string. Returned string is in HEX format. */
+/* Returns non-zero random number string. Returned string is in HEX format. */
 
 unsigned char *silc_rng_get_rn_string(SilcRng rng, SilcUInt32 len)
 {
@@ -580,7 +613,7 @@ unsigned char *silc_rng_get_rn_string(SilcRng rng, SilcUInt32 len)
   return string;
 }
 
-/* Returns random number binary data. */
+/* Returns non-zero random number binary data. */
 
 unsigned char *silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len)
 {
@@ -607,10 +640,13 @@ SilcRng global_rng = NULL;
 
 bool silc_rng_global_init(SilcRng rng)
 {
-  if (rng)
+  if (rng) {
     global_rng = rng;
-  else
-    global_rng = silc_rng_alloc();
+    return TRUE;
+  }
+
+  global_rng = silc_rng_alloc();
+  silc_rng_init(global_rng);
 
   return TRUE;
 }

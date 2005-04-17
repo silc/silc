@@ -1,10 +1,10 @@
 /*
 
-  silctypes.h 
+  silctypes.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -79,6 +79,10 @@
  *
  * SOURCE
  */
+#ifdef SILC_MACOSX
+#define bool _Bool
+#endif
+
 #ifndef __cplusplus
 #ifndef bool
 #define bool unsigned char
@@ -489,6 +493,93 @@ do {						\
                (((SilcUInt32)(l) & (SilcUInt32)0x0000FF00UL) << 8)  |	\
                (((SilcUInt32)(l) & (SilcUInt32)0x00FF0000UL) >> 8)  |	\
                (((SilcUInt32)(l) & (SilcUInt32)0xFF000000UL) >> 24))
+/***/
+
+/****d* silcutil/SILCTypes/SILC_PTR_TO_32
+ *
+ * NAME
+ *
+ *    #define SILC_PTR_TO_32 ...
+ *
+ * DESCRIPTION
+ *
+ *    Type casts a pointer's value into a 32-bit integer.  Use this to
+ *    avoid compiler warnings when type casting pointers to integers
+ *    of different size.
+ *
+ * SOURCE
+ */
+#if SILC_SIZEOF_VOID_P < 8
+#define SILC_PTR_TO_32(_ptr__) ((SilcUInt32)(_ptr__))
+#else
+#define SILC_PTR_TO_32(_ptr__) 						\
+  ((SilcUInt32)((SilcUInt64)(_ptr__) & (SilcUInt32)0xFFFFFFFFUL))
+#endif
+/***/
+
+/****d* silcutil/SILCTypes/SILC_PTR_TO_64
+ *
+ * NAME
+ *
+ *    #define SILC_PTR_TO_64 ...
+ *
+ * DESCRIPTION
+ *
+ *    Type casts a pointer's value into a 64-bit integer.  Use this to
+ *    avoid compiler warnings when type casting pointers to integers
+ *    of different size.
+ *
+ * SOURCE
+ */
+#if SILC_SIZEOF_VOID_P < 8
+#define SILC_PTR_TO_64(_ptr__) ((SilcUInt64)((SilcUInt32)(_ptr__)))
+#else
+#define SILC_PTR_TO_64(_ptr__) 						\
+  ((SilcUInt64)((SilcUInt64)(_ptr__) & (SilcUInt32)0xFFFFFFFFUL))
+#endif
+/***/
+
+/****d* silcutil/SILCTypes/SILC_32_TO_PTR
+ *
+ * NAME
+ *
+ *    #define SILC_PTR_TO_32 ...
+ *
+ * DESCRIPTION
+ *
+ *    Type casts a 32-bit integer value into a pointer.  Use this to
+ *    avoid compiler warnings when type casting integers to pointers of
+ *    different size.
+ *
+ * SOURCE
+ */
+#if SILC_SIZEOF_VOID_P < 8
+#define SILC_32_TO_PTR(_ival__) ((void *)((SilcUInt32)(_ival__)))
+#else
+#define SILC_32_TO_PTR(_ival__) ((void *)((SilcUInt64)(_ival__)))
+#endif
+/***/
+
+/****d* silcutil/SILCTypes/SILC_64_TO_PTR
+ *
+ * NAME
+ *
+ *    #define SILC_PTR_TO_64 ...
+ *
+ * DESCRIPTION
+ *
+ *    Type casts a 64-bit integer value into a pointer.  Use this to
+ *    avoid compiler warnings when type casting integers to pointers of
+ *    different size.
+ *
+ * SOURCE
+ */
+#if SILC_SIZEOF_VOID_P < 8
+#define SILC_64_TO_PTR(_ival__)						\
+  ((void *)((SilcUInt32)((SilcUInt64)(_ival__) & (SilcUInt32)0xFFFFFFFFUL)))
+#else
+#define SILC_64_TO_PTR(_ival__) ((void *)((SilcUInt64)(_ival__)))
+#endif
 /***/
 
 #endif /* SILCTYPES_H */

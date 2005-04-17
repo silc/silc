@@ -8,9 +8,5 @@ and server. It may also return multiple entries if the
 nickname has been used recently by several people. These
 multiples may be limited by specifying a count to show. 
 
-WHOWAS will work regardless of whether the queried nick
-is in use. If no arguments are given, the client's current
-nickname is used. 
-
 See also: WHOIS
 

@@ -1,0 +1,111 @@
+#
+#  Makefile.am
+#
+#  Author: Pekka Riikonen <priikone@silcnet.org>
+#
+#  Copyright (C) 2000 - 2005 Pekka Riikonen
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+
+AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
+
+# SILC Library dirs
+SILCLIB_DIRS = \
+	contrib \
+	silccore \
+	silccrypt \
+#ifdef SILC_DIST_SIM
+	silcsim \
+#endif SILC_DIST_SIM
+#ifdef SILC_DIST_MATH
+	silcmath \
+#endif SILC_DIST_MATH
+	silcske \
+	silcutil \
+	silcsftp
+
+SILCLIB = libsilc.a
+
+#ifdef SILC_DIST_CLIENTLIB
+# SILC Client Library dirs
+SILCCLIENTLIB_DIRS = silcclient
+SILCCLIENTLIB = libsilcclient.a
+#endif SILC_DIST_CLIENTLIB
+
+SUBDIRS = $(SILCLIB_DIRS) $(SILCCLIENTLIB_DIRS)
+
+CLEANFILES = libsilc.a libsilcclient.a
+DISTCLEANFILES = libsilc.a libsilcclient.a
+
+remove:
+	-rm -f libsilc.a
+	-rm -f libsilcclient.a
+
+all:	remove $(SILCLIB) $(SILCCLIENTLIB)
+
+#ifdef SILC_DIST_TOOLKIT
+install-exec-hook:
+	-mkdir -p $(DESTDIR)$(libdir)
+	-$(LIBTOOL) $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
+	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(DESTDIR)$(libdir)/
+#else !SILC_DIST_TOOLKIT
+
+#ifdef SILC_DIST_SERVER
+install-exec-hook:
+if SILC_ENABLE_SHARED
+	-mkdir -p $(libdir)
+	-$(LIBTOOL) $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
+	-rm -rf $(DESTDIR)$(libdir)/libsilc.a
+endif
+#endif SILC_DIST_SERVER
+
+#ifdef SILC_DIST_CLIENT
+install-exec-hook:
+if SILC_ENABLE_SHARED
+	-mkdir -p $(libdir)
+	-$(LIBTOOL) $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
+	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(DESTDIR)$(libdir)/
+	-rm -rf $(DESTDIR)$(libdir)/libsilc.a
+	-rm -rf $(DESTDIR)$(libdir)/libsilcclient.a
+endif
+#endif SILC_DIST_CLIENT
+#endif SILC_DIST_TOOLKIT
+
+LIB_BASE_VERSION=@LIB_BASE_VERSION@
+LIBSILC_CURRENT=@LIBSILC_CURRENT@
+LIBSILC_REVISION=@LIBSILC_REVISION@
+LIBSILC_AGE=@LIBSILC_AGE@
+
+libsilc.a:
+	find $(SILCLIB_DIRS) -type f -name *.lo | xargs \
+	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
+	-version-info $(LIBSILC_CURRENT):$(LIBSILC_REVISION):$(LIBSILC_AGE) \
+	-release $(LIB_BASE_VERSION) -rpath $(DESTDIR)$(libdir) -o libsilc.la
+
+#ifdef SILC_DIST_CLIENTLIB
+LIBSILCCLIENT_CURRENT=@LIBSILCCLIENT_CURRENT@
+LIBSILCCLIENT_REVISION=@LIBSILCCLIENT_REVISION@
+LIBSILCCLIENT_AGE=@LIBSILCCLIENT_AGE@
+
+libsilcclient.a:
+	find $(SILCCLIENTLIB_DIRS) -type f -name *.lo | xargs \
+	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
+	-version-info $(LIBSILCCLIENT_CURRENT):$(LIBSILCCLIENT_REVISION):$(LIBSILCCLIENT_AGE) \
+	-release $(LIB_BASE_VERSION) -rpath $(DESTDIR)$(libdir) -o libsilcclient.la
+#endif SILC_DIST_CLIENTLIB
+
+#ifdef SILC_DIST_TOOLKIT
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = silc.pc silcclient.pc
+
+EXTRA_DIST = doc silc.pc.in silcclient.pc.in
+#endif SILC_DIST_TOOLKIT
+

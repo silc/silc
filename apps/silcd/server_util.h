@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -202,7 +202,7 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
 				 SilcUInt8 type, void *check);
 
 /* Process invite or ban information */
-void silc_server_inviteban_process(SilcServer server, SilcHashTable list,
+bool silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 				   SilcUInt8 action, SilcArgumentPayload args);
 
 /* Destructor for invite or ban list entrys */

@@ -1,0 +1,16 @@
+# Default distribution
+#
+# NOTE: By default, this distribution cannot be packaged.  Take away the
+# 'no-dist option if you whish to use this as a normal distribution.
+#
+# If you add new distributions into distdir/ inherit them here.
+#
+option no-dist
+
+# Default distribution for preparing raw CVS sources.
+inherit common
+inherit client
+inherit server
+inherit toolkit
+define SILC_DIST_INPLACE
+pre-hook distdir/pre-run

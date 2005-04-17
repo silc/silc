@@ -4,13 +4,12 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2003 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -40,10 +39,10 @@ typedef struct {
   bool port;
 } *SilcSocketHostLookup;
 
-/* Allocates a new socket connection object. The allocated object is 
+/* Allocates a new socket connection object. The allocated object is
    returned to the new_socket argument. */
 
-void silc_socket_alloc(int sock, SilcSocketType type, void *user_data, 
+void silc_socket_alloc(int sock, SilcSocketType type, void *user_data,
 		       SilcSocketConnection *new_socket)
 {
   SILC_LOG_DEBUG(("Allocating new socket connection object"));
@@ -75,7 +74,10 @@ void silc_socket_free(SilcSocketConnection sock)
       silc_schedule_task_del(sock->hb->schedule, sock->hb->hb_task);
       silc_free(sock->hb);
     }
-    silc_free(sock->qos);
+    if (sock->qos) {
+      silc_schedule_task_del_by_context(sock->qos->schedule, sock->qos);
+      silc_free(sock->qos);
+    }
     silc_free(sock->ip);
     silc_free(sock->hostname);
 
@@ -110,7 +112,7 @@ SILC_TASK_CALLBACK(silc_socket_heartbeat)
   if (hb->hb_callback)
     hb->hb_callback(hb->sock, hb->hb_context);
 
-  hb->hb_task = silc_schedule_task_add(hb->schedule, hb->sock->sock, 
+  hb->hb_task = silc_schedule_task_add(hb->schedule, hb->sock->sock,
 				       silc_socket_heartbeat,
 				       context, hb->heartbeat, 0,
 				       SILC_TASK_TIMEOUT,
@@ -125,7 +127,7 @@ SILC_TASK_CALLBACK(silc_socket_heartbeat)
    but will be freed automatically when calling silc_socket_free.  The
    `schedule' is the application's scheduler. */
 
-void silc_socket_set_heartbeat(SilcSocketConnection sock, 
+void silc_socket_set_heartbeat(SilcSocketConnection sock,
 			       SilcUInt32 heartbeat,
 			       void *hb_context,
 			       SilcSocketConnectionHBCb hb_callback,
@@ -156,17 +158,30 @@ void silc_socket_set_heartbeat(SilcSocketConnection sock,
    that is read.  It is guaranteed that silc_socket_read never returns
    more that `read_limit_bytes' of data.  If more is read the limit
    will be applied for the reading.  The `limit_sec' and `limit_usec'
-   specifies the limit that is applied if `read_rate' and/or 
+   specifies the limit that is applied if `read_rate' and/or
    `read_limit_bytes' is reached.  The `schedule' is the application's
    scheduler. */
 
-void silc_socket_set_qos(SilcSocketConnection sock, 
+void silc_socket_set_qos(SilcSocketConnection sock,
 			 SilcUInt32 read_rate,
 			 SilcUInt32 read_limit_bytes,
 			 SilcUInt32 limit_sec,
 			 SilcUInt32 limit_usec,
 			 SilcSchedule schedule)
 {
+  if (!sock)
+    return;
+
+  if (sock->qos && !read_rate && !read_limit_bytes &&
+      !limit_sec && !limit_usec && !schedule) {
+    silc_schedule_task_del_by_context(sock->qos->schedule, sock->qos);
+    silc_free(sock->qos);
+    sock->qos = NULL;
+    return;
+  }
+  if (!schedule)
+    return;
+
   if (!sock->qos) {
     sock->qos = silc_calloc(1, sizeof(*sock->qos));
     if (!sock->qos)
@@ -179,6 +194,7 @@ void silc_socket_set_qos(SilcSocketConnection sock,
   sock->qos->schedule = schedule;
   memset(&sock->qos->next_limit, 0, sizeof(sock->qos->next_limit));
   sock->qos->cur_rate = 0;
+  sock->qos->sock = sock;
 }
 
 /* Finishing timeout callback that will actually call the user specified
@@ -223,7 +239,7 @@ static void *silc_socket_host_lookup_start(void *context)
   if (lookup->port)
     sock->port = silc_net_get_remote_port(sock->sock);
 
-  silc_net_check_host_by_sock(sock->sock, &sock->hostname, &sock->ip);  
+  silc_net_check_host_by_sock(sock->sock, &sock->hostname, &sock->ip);
   if (!sock->hostname && sock->ip)
     sock->hostname = strdup(sock->ip);
 

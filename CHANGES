@@ -1,3 +1,918 @@
+Sat Apr 16 20:23:48 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added Autodist.
+
+Thu Apr 14 20:25:08 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Handle empty LIST command reply correcttly in server.  Affected
+	  file silcd/command_reply.c.
+
+	* Handle empty LIST command reply correctly in client library.
+	  The application will now receive one LIST command reply with
+	  all arguments set to NULL if there are no channels.  Updated
+	  Client Library documentation accordingly.  Affected file
+	  lib/silcclient/command_reply.c.
+
+Tue Apr 12 00:02:09 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added channel name string stringprep profile to the protocol
+	  and implementation to allow a little free'er channel name
+	  strings.  Affected files are lib/silcutil/silcstringprep.[ch].
+
+	* Added silc_channel_name_[check|verify] to check and verify
+	  channel name strings.  Affected files are
+	  lib/silcutil/silcstrutil.[ch].
+
+	* Added support for the new channel name preparation in client
+	  library and server.  Affected files in lib/silcclient and
+	  silcd/.
+
+Mon Apr 11 13:40:27 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added the Autodist into the source tree.  It replaces the
+	  old ./prepare.  It can be used to create distributions as
+	  previously.  See README.CVS and README.DIST.  See
+	  distributions in distdir/.
+
+Sun Apr 10 11:30:56 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Make sure query sends at least an error back if nothing
+	  more is sent.  Affected file silcd/server_query.c.
+
+Thu Apr  7 14:50:01 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* During query, check if the original command caller goes
+	  away.  If it does, stop the query.  Affected file
+	  silcd/server_query.c.
+
+	* Check for valid channel creation in JOIN command reply.
+	  Affected file lib/silcclient/command_reply.c.
+
+	* Handle the resolver counter in silc_client_get_users_by_channel
+	  callback correctly.  Fixed auto-join bug in Gaim.  Affected
+	  file lib/silcclient/idlist.c.
+
+Wed Apr  6 16:56:53 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added some better error messages.  Affected file
+	  silcd/command_reply.c and packet_receive.c.
+
+	* Handle error in WATCH command propely on backup router.
+	  Affected file silcd/command.c.
+
+	* Fixed freeing of unfreeable variable in WHOIS command reply.
+	  Affected file silcd/command_reply.c.
+
+Wed Apr  6 09:10:31 CEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added pkg-config .pc file creation for silc core library
+	  and silcclient library.  A patch by c0ffee.
+
+	* Removed the need for GNU Libidn.  Added the simple stringprep
+	  from libidn into lib/contrib/.  It is now used also on Windows
+	  build.
+
+Mon Apr  4 15:15:46 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Simplified the invite and ban string handling in the
+	  server.  Check for valid invite and ban arguments also.
+	  Affected file silcd/server_util.c.
+
+Sun Apr  3 14:58:53 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added WATCH list announcing in backup router protocol.
+	  Affected files are silcd/command.c, server.c, server_backup.c.
+
+	* Do not change users mode to founder on normal server/backup
+	  if the founder mode is set, and user is first one to join.
+	  Affected file silcd/pcaket_receive.c.
+
+	* Do not send CUMODE_CHANGE notify back to sender.  Affected
+	  file silcd/packet_receive.c.
+
+	* Added getrusage() to take noise in SILC RNG.  A patch by
+	  Mika Boström.  Affected files are configure.in.pre,
+	  includes/silcincludes.h.in, lib/silccrypt/silcrng.c.
+
+Sat Apr  2 18:09:30 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Splitted the SILC libraries configuration into a configure
+	  fragment into lib/configure.ad.  It is now possible, once
+	  this feature is added, to specify whether to compile or not
+	  compile included SILC libraries.  Affected files are
+	  configure.in.pre, lib/silcmath/mpi/configure.ad,
+	  lib/configure.ad, Makefile.defines.pre and
+	  Makefile.defines_int.pre.
+
+	* Added --with-silc-includes and --with-silc-libs to configure.
+	  If specified the included libs are not compiled, but the
+	  specified libs are used.  Pkg-config is not yet supported.
+	  Affected file configure.in.pre.
+
+	* Fixed WATCH command handling on backup router.  Router does not
+	  send the watch command any more to backup if it originates from
+	  backup.  Affected file silcd/command.c.
+
+Fri Apr  1 18:52:47 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed announcing to not announce unregistered clients.
+	  Affected file silcd/server.c.
+
+	* Fixed username handling in command reply.  Affected file
+	  silcd/command_reply.c.
+
+	* Log files are now 0600.  Affected file lib/silcutil/silclog.c.
+
+Thu Mar 31 22:34:22 CEST 2005  Patrik Weiskircher <pat@icore.at>
+
+	* Added new define SILC_MACOSX, if __APPLE__ and __MACH__ is defined.
+          Affected file: includes/silcincludes.h.in
+
+	* bool is defined as _Bool on Mac OS X now.
+          Affected file: lib/silcutil/silctypes.h
+
+Thu Mar 31 08:52:06 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for UTF-8 nicknames, channel names and
+	  server names in client library.  Affected files in
+	  lib/silcclient/.
+
+	* Added __SILC_HAVE_PTHREAD, __SILC_HAVE_SIM, __SILC_HAVE_LIBIDN,
+	  and __SILC_ENABLE_DEBUG to include/silcclient.h for third-party
+	  software to check how Toolkit has been compiled.
+
+Wed Mar 30 22:16:35 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_utf8_str[n]casecmp into lib/silcutil/silcutf8.[ch].
+
+	* Use silc_utf8_str[n]casecmp instead of strcmp routines
+	  in library and in SILC Client when dealing with nicknames
+	  and other identifier strings.  Affected file in client lib
+	  and irssi.
+
+	* Convert nickname to UTF-8 in /msg and /smsg.  Affected file
+	  irssi/src/silc/core/silc-servers.c.
+
+Wed Mar 30 10:50:02 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed idcache to work with the new identifier strings.
+	  Affected file lib/silccore/silcidcache.c.
+
+	* Added UTF-8 hash and compare function for SilcHashTable.
+	  Affected file lib/silcutil/silcutil.[ch].
+
+	* Added casefolding stringprep, SILC_CASEFOLD_PREP.
+	  Affected file lib/silcutil/silcstringprep.[ch].
+
+	* Changed the identifier string handling to include the original
+	  format in client, server, channel entries and normalized
+	  format in cache.  Affected files in silcd/.
+
+Tue Mar 29 16:51:35 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for the new identifier strings and their
+	  validity checking.  Nicknames, channel names and usernames
+	  can now include practically any kind of letters and various
+	  other characters.  Affected files in silcd/ and in libraries.
+
+	  NOTE: comparing these strings should now be done with memcmp()
+	  to check binary compatibility.  All these strings are normalized
+	  and casing is irrelevant.
+
+	* Added silc_identifier_check to lib/silcutil/silcstrutil.[ch]
+	  as easy function for applications to check whether identifier
+	  strings are valid.
+
+Tue Mar 29 00:45:11 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed SILC_STRING_LDAP_DN encoding and decoding.  Affected
+	  file lib/silcutil/silcutf8.c.
+
+	* Added SILC_STRING_UTF8_ESCAPE to lib/silcutil/silcstrutil.h.
+
+Mon Mar 28 22:46:23 CEST 2005  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Make public key in getkey reply mandatory.  Affected file
+	  lib/silcclient/command_reply.c
+
+Sun Mar 27 19:03:31 CEST 2005  Patrik Weiskircher <pat@icore.at>
+
+	* Added Parameter dont_register_crypto_library to
+	  SilcClientParam. If set to TRUE, silcclient library will
+	  not initalize the Crypto Libraries and application
+	  will need to do it. Affected file lib/silcclient/silcclient.h,
+          lib/silcclient/client.c.
+
+Sun Mar 27 19:02:48 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Imported new silc_utf8_[encode|decode] routines from
+	  my internal SILC 1.1 source tree.  New encodings added:
+	  SILC_STRING_LOCALE (SILC_STRING_LANGUAGE is deprecated),
+	  SILC_STRING_UTF8, SILC_STRING_PRINTABLE, SILC_STRING_VISIBLE,
+	  SILC_STRING_TELETEX, SILC_STRING_NUMERICAL and
+	  SILC_STRING_LDAP_DN.
+
+	* Splitted UTF-8 routines into lib/silcutil/silcutf8.[ch].
+
+	* Implemented stringprep (RFC 3454) API.  Internally we use
+	  GNU Libidn's stringprep, for now, so it is required now to
+	  compile SILC sources.  Added lib/silcutil/silcstringprep.[ch].
+
+	* Added checking for GNU Libidn and --with-libidn to configure.
+
+Wed Mar 23 11:20:33 CET 2005  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* If the passphrases entered do not match while generating a new key,
+	  completly start over instead of going into an infinite loop asking
+	  the user to re-enter the passphrase correctly.  Affected file
+	  lib/silcutil/silcapputil.c
+
+Sun Jan  9 14:28:51 CET 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Make sure server is removed from backup list when it is
+	  deleted.  Affected files silcd/command.c, server.c,
+	  server_util.c.
+
+	* Close socket when connecting to router fails.  Affected
+	  file silcd/server.c.
+
+Tue Jan  4 13:06:26 CET 2005  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Adopt configuration toolchain to current auto-tools.
+	  Affected files prepare, irssi/configure.in
+	* Revert most of the UTF-8 fixes to SILC Client 1.0.1.  Will
+	  redo that.  Affected files irssi/src/silc/core/client_ops.c,
+	  irssi/src/fe-common/silc/fe-silc-channels.c
+	* Take over command line options into silcclient data structure.
+	  Affected file irssi/src/silc/core/silc-core.c
+
+Wed Dec  8 16:15:11 CET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Do not try to initiate backup resuming protocol forever.
+	  Affected file silcd/server_backup.c.
+
+Wed Nov 24 18:24:05 CET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* ID change in resuming has to be done before changing
+	  detached client's modes, since the ID change may fail and
+	  leave ghosts on the network.  Affected file is
+	  silcd/packet_receive.c.
+
+Tue Nov 23 16:54:35 CET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed Win32 scheduler to not stuck anymore.  A patch from
+	  Juha Räsänen.  Affected file is
+	  lib/silcutil/win32/silcwin32schedule.c.
+
+	* Fixed QoS parsing for connection blocks in server.  Affected
+	  file is silcd/serverconfig.c.
+
+	* Fixed server statistics increasing in server.  Affected file
+	  is silcd/server.c.
+
+	* The CLOSE command now marks backup router as self disconnected
+	  to avoid resuming problems.  Affected file silcd/command.c.
+
+Wed Sep 22 19:46:32 CEST 2004  Patrik Weiskircher <pat@icore.at>
+
+	* When using silc_net_create_connection[_async], and your system can
+	  create IPv6 sockets, it will try to connect to the IPv6 host.
+	  Now it tries to connect to an IPv4 host if IPv6 fails. Affected
+	  file lib/silcutil/unix/silcunixnet.c
+
+Fri Jun 18 19:26:58 CEST 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check for valid route when receiving packet from router and
+	  when routing it to local server in the cell.  A patch from
+	  Matt Miller.  Affected files silcd/router.c and server.c.
+
+Sat May  1 13:55:54 CEST 2004  Patrik Weiskircher <pat@icore.at>
+
+	* Couldn't detach and reattach twice, because of the previous
+	  commit. Affected file silcd/packet_receive.c
+
+Fri Apr 30 19:40:28 CEST 2004  Patrik Weiskircher <pat@icore.at>
+
+	* Added check to ignore Port value if Initiator is FALSE.
+	  Remote router coudln't connect if Port was set. Affected file
+	  silcd/serverconfig.c
+
+	* If some client tries to resume more than once at the same time,
+	  server crashed. Router didn't crash, but showed odd behaviour
+	  (didn't allow clients to join anymore, ..). Affected files
+	  silcd/packet_receive.c silcd/idlist.h
+
+Mon Mar 15 21:10:08 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Destroy the file transfer session in silc_client_file_close
+	  with timeout.  Affected file lib/silcclient/client_ftp.c.
+
+	* Call SFTP server monitor in READ and WRITE after the actual
+	  operations.  Affected file lib/silcsftp/sftp_server.c.
+
+Wed Mar 10 21:30:02 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Create one configure script from configure fragments
+	  (configure.ad).  This is a first step towards new distribution
+	  system.  Affected files prepare, configure.in.pre,
+	  lib/silcmath/mpi/configure.ad.
+
+Wed Mar 10 18:35:24 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Removed expiring of client key pair.  Affected file is
+	  irssi/src/silc/core/clientutil.c
+
+Tue Mar  9 17:11:58 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check the number of connections from real number of
+	  connections instead of socket number, when deciding if
+	  server is full.  Affected files are silcd/server.c,
+	  server_internal.h and silcd.c.
+
+	* Clarified the connections_max meaning in General section
+	  in doc/example_silcd.conf.in.
+
+	* The reconnect_keep_trying default value set to TRUE
+	  if it is not defined in the config file.  Affected file
+	  silcd/serverconfig.c.
+
+Wed Mar  3 15:13:49 CET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed crashbug in connection closing, after a protocol
+	  completion callback, which might have closed it already.
+	  Affected file silcd/server.c.
+
+	* Fixed rekey with PFS in backup router.  It did not allow
+	  rekeys with PFS, and when the rekey protocol timedout
+	  it crashed the backup router without the above fix.  Affected
+	  file silcd/packet_send.c and server.c.
+
+Sat Feb 28 16:25:09 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* The silc_client_add_channel_private_key now returns the
+	  private key context if pointer is given as argument.
+	  Affected files are lib/silcclient/silcclient.h and
+	  client_channel.c.
+
+	* Added support for using channel private keys in SILC
+	  Client Library even if the private key mode is not set
+	  on the channel.  Affected file lib/silcclient/client_channel.c.
+
+	* The channel private key used to decrypt message is now
+	  delivered to the application in the 'channel_messageÃ' client
+	  operation.  Affected files are lib/silcclient/silcclient.h
+	  and client_channel.c.
+
+	* Fixed wrong arg type for user limit in CMODE command reply.
+	  Affected file silcd/command.c.
+
+	* The user limit is now taken and saved to SilcClientEntry in
+	  JOIN and CMODE command replies and in CMODE_CHANGE notify.
+	  Affected files lib/silcclient/silcclient.h, command_reply.c
+	  and client_notify.c.
+
+	* Added support to the new private message key indicator
+	  packet.  Added a new function to the client library:
+	  silc_client_send_private_message_key_request.  The sender
+	  indicates to be initiator, and receiver is responder.
+	  Added the indicator to the SilcClientEntry as 'prv_resp'
+	  boolean.  Affected files are lib/silcclient/silcclient.h
+	  client.[ch], and client_prvmsg.c.
+
+Fri Feb 27 11:25:26 CET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the JOIN command calling when called with both
+	 -auth and -founder.  Affected file is lib/silcclien/command.c.
+
+Wed Feb 25 23:12:11 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check watcher list for resumed clients as well.  Affected
+	  file is silcd/packet_receive.c.
+
+Tue Feb 24 16:49:10 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Implemented the user limit to the CMODE_CHANGE notify,
+	  CMODE command reply and JOIN command reply in server.
+	  Affected files are silcd/server.c, command.c, command_reply.c,
+	  packet_send.c and packet_receive.c.
+
+Mon Feb 23 23:31:15 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Defined SILC_STRFMT_END that must be used now with
+	  silc_buffer_strformat, instead of SILC_STR_END.  Fixes
+	  crashes on AMD64.  Affected files are lib/silcutil/silcbuffmt.h,
+	  lib/silcclient/silcvcard.c, silcd/server_util.c.
+
+	* Fixed the adding of public key to the WATCH list in server.
+	  Fixed the WATCH notify sending to client.  Affected files
+	  are silcd/packet_send.[ch], command.c, server_util.c.
+
+	* Implemented the watching by public key in the SILC Client
+	  Library and SILC Client.  Affected files are
+	  lib/silcclient/command.c and client_notify.c.
+
+Mon Feb 23 09:30:30 CET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for public key watching in server.  Affected
+	  files are silcd/server.c, server_internal.h, command.c,
+	  server_util.c.
+
+Sun Feb 22 19:03:59 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added public key to the SIlcClientEntry.  Affected files
+	  are lib/silcclient/silcclient.h, command_reply.c, idlist.c
+
+	* Fixed the get_clients_whois reply processing to return
+	  exactly same entries server returned.  Makes it possible
+	  to search using attributes.  Affected file is
+	  lib/silcclient/idlist.c.
+
+Sat Feb 21 19:21:57 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Save founder key to SilcChannelEntry.  Affected files are
+	  lib/silcclient/silcclient.h, command_reply.c, idlist.c.
+
+Fri Feb 20 20:37:38 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Call the monitor callback with _CLOSED status from the
+	  silc_client_file_close.  Affected files are
+	  lib/silcclient/client_fpt.c, silcclient.h
+
+	* Added silc_client_get_clients_whois which resolves using
+	  WHOIS, and supports requested attributes as well.
+	  Affected files are lib/silcclient/silcclient.h, idlist.c.
+
+Fri Feb 19 21:09:22 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for asking the destination filename where
+	  the downloaded file is saved in the file transfer.  Affected
+	  files are lib/silccilent/silcclient.h, client_ftp.c.
+
+Wed Feb 18 02:46:17 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed error handling in resuming data processing.  Affected
+	  files are lib/silcclient/client_resume.c and client.c.
+
+Tue Feb 17 19:34:30 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed silc_client_send_private_message to return TRUE correctly.
+	  Affected file lib/silcclient/client_prvmsg.c.
+
+	* Added topic to the SilcChannelEntry.  Affected files are
+	  lib/silcclient/silcclient.h, command_reply.c, client_notify.c.
+
+Fri Feb 13 14:19:14 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Use conn->cmd_ident for all silc_client_command_call()s.  Affected
+	  file lib/silcclient/command.c
+
+Fri Feb 13 13:53:45 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Convert all commands to UTF-8 before passing them to the
+	  client library.  Still need to convert replies from UTF-8 to
+	  the locale encoding.  Affected file
+	  irssi/src/silc/core/silc-cmdqueue.c
+
+Fri Feb 13 13:13:07 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* redirect all silc_client_command_calls through a queueing framework.
+	  This fixes /CYCLE and the annoying "nick change after auto-joining
+	  a channel".  Furthermore it defines one central point where
+	  command parameters can be UTF-8-ified.  Affected files
+	  irssi/src/silc/core/Makefile, client_ops.c, silc-channels.c,
+	  silc-servers.[ch], silc-core.c, silc-cmdqueue.[ch], silc-lag.c
+
+Fri Feb 13 12:04:41 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* use asynchronous connect() to establish router connections.
+	  Fixes problem when the primary router goes down.  Affected files
+	  silcd/server.c, silcd/server_backup.c
+
+Thu Feb 12 20:09:59 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC_[32|64]_TO_PTR and SILC_PTR_TO_[32|64] macros.
+	  Fixed various compilation warnings when type casting ints
+	  to pointers or vice versa, of different size.  Updates around
+	  the source free.
+
+Tue Feb  3 23:25:17 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Surrogates not allowed in UTF-8 strings, updated decoder.
+	  Affected file lib/silcutil/silcstrutil.c.  Added UTF-8
+	  testers in lib/silcutil/tests/ directory.
+
+Wed Jan 14 18:42:44 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC_CLIENT_CONN_ERROR_KE, ERROR_AUTH, ERROR_RESUME and
+	  ERROR_TIMEOUT SilcClientConnectionStatus errors.  Affected
+	  files are lib/silcclient/silcclient.h, client.c.
+
+Mon Jan 12 13:01:10 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* When resuming a session fails, notify the user that the session
+	  file needs to be removed eventually.  Affected files
+	  irssi/src/fe-common/silc/module-formats.[ch],
+	  irssi/src/silc/core/client_ops.c.
+
+Tue Jan 04 12:16:04 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Added DIST_SUBDIRS symbols to include all subdirs in distributions.
+	  Affected files lib/silcutil/Makefile.am, lib/silcmath/Makefile.am
+
+	* Typofix in Irssi::Silc module.  Affected file
+	  irssi/src/perl/silc/Silc.xs.
+
+Tue Jan 04 02:43:44 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Changed the way NOTICE flagged messages are treated. Added support
+	  for notices in queries and signing notices.  Affected files
+	  irssi/default.theme; irssi/docs/help/in/notice.in;
+	  irssi/src/fe-common/silc/module-formats.[ch], fe-silc-messages.c;
+	  irssi/src/silc/core/client_ops.c, silc-channels.c, silc-servers.c
+
+	* Fixed typo in /ACTION help.  Affected file
+	  irssi/docs/help/in/action.in
+
+Mon Jan 03 23:26:38 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Fixed typo in perl module.  Affected file
+	  irssi/src/perl/silc/Server.xs
+
+	* Changed the way ACTION flagged messages are treated. Added support
+	  for actions in queries and signing actions.  Affected files
+	  irssi/default.theme; irssi/docs/help/in/action.in;
+	  irssi/src/fe-common/silc/module-formats.[ch], fe-silc-messages.c,
+	  fe-silc-queries.c; irssi/src/silc/core/client_ops.c, silc-channels.c,
+	  silc-servers.[ch]
+
+Mon Jan 03 16:04:29 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Incorrectly reported error when client had to be resolved from
+	  server in /SMSG.  Affected file irssi/src/silc/core/silc-servers.c
+
+Sat Jan  3 16:37:15 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed whois public key hash table deleting and adding in
+	  detached client case.  Affected file silcd/packet_receive.c.
+
+Sat Jan 03 12:15:38 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Changed filenames of silc/fe module not to collide with filenames
+	  from core/fe.  Also seperated public messages printing from
+	  query messages printing.  Affected files are all in
+	  irssi/src/fe-common/silc.
+
+Sat Jan  3 12:18:07 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the invite process handling during joining to use
+	  correct server name for the client that is matched against
+	  the invite string for the channel.  Wrong server name caused
+	  inability to join the channel.  Affected file is
+	  silcd/command.c.
+
+Fri Jan  2 23:34:17 EET 2004  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed the CUMODE channel founder authentication on normal
+	  server to not remove the founder rights on existing founder
+	  before checking that router accepts the mode change.  Affected
+	  files are silcd/command.c and silcd/packet_receive.c.
+
+	* Remove the server entry correctly when rekey timeouts and
+	  remote router connection on normal server is closed.  Fixes
+	  a crash where server uses the freed server entry.  Affected
+	  file silcd/server.c.
+
+Fri Jan 02 10:28:15 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Add /SILCNET [ADD|REMOVE|LIST] command to manage different SILC
+	  networks.  This is the first step in solving the bug about
+	  /SERVER ADD -silcnet <silcnet>.  Affected files
+	  irssi/docs/in/silcnet.in; irssi/src/fe-common/silc/Makefile.am,
+	  fe-silcnet.c, fe-common-silc.c, module-formats.[ch];
+	  irssi/src/silc/core/silc-chatnets.[ch], silc-core.c, Makefile.am
+
+Thu Jan 01 20:11:32 CET 2004  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* /SMSG and /MMSG now correctly create new queries. Affected files
+	  irssi/src/fe-common/silc/fe-messages.c, irssi/scripts/silc-mime.pl
+
+	* Add basic support for SILC protocol specific variables in perl.
+	  Affected files irssi/src/perl/silc/*, irssi/configure.in,
+	  irssi/src/perl/Makefile.am
+
+Wed Dec 31 17:06:55 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Don't use silc_get_input, it's obviously not reliable.  Fixes
+	  issue when the current key expires.  Affect file
+	  irssi/src/silc/core/clientutils.c
+
+	* Make the session data filename configurable.  This makes it
+	  possible to have different session files for different
+	  SILC networks.  Affected files irssi/src/silc/core/silc-core.c,
+	  client_ops.[ch], silc-servers.c,
+	  irssi/src/silc/fe-common/silc/module-formats.[ch]
+
+	* Use the same set of libtool files for the MPI lib as for the
+	  rest of the toolkit.  Affected files lib/silcmath/mpi/config.guess,
+	  config.sub, configure.in, install-sh, missing, mkinstalldirs
+
+Sun Dec 28 21:57:39 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed server statistics decrementing error to not go to
+	  negative.  Affected file silcd/packet_receive.c.
+
+Sat Dec 20 14:42:36 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Use silc_server_query_add_error to add error in public key
+	  search error.  Added support in send_reply to send errors
+	  without specific argument.  Affected file silcd/server_query.c.
+
+	* Fixed the WHOIS, IDENTIFY and WHOWAS error handling in SILC
+	  Client for NO_SUCH_NICK.  It was against the protocol specs.
+	  Affected file irssi/src/silc/core/client_ops.c.
+
+	* Added backwards support for the wrong NO_SUCH_NICK error sending
+	  in server.  To be removed in SILC Server 1.0.  Both old clients
+	  and clients with fixed error handling now works.  Affected file
+	  silcd/server_query.c.
+
+Sat Dec 20 00:44:47 CET 2003  Patrik Weiskircher <pat@icore.at>
+
+	* fixed a bug in the whois using attributes function where no
+	  error was sent if no nickname and client id but the attributes were
+	  given to whois. Affected file silcd/server_query.c
+
+Tue Dec 16 21:34:59 CET 2003  Patrik Weiskircher <pat@icore.at>
+
+	* remove public key from public key hashtable on detach. Affected
+	  file silcd/packet_receive.c
+
+	* free public key hashtable before removing clients on server
+	  shutdown. Affected file silcd/server.c
+
+	* remove public key prior deleting client-data on killing a client.
+	  Affected file silcd/server_util.c
+
+Sat Dec 06 21:35:14 CET 2003  Patrik Weiskircher <pat@icore.at>
+
+	* Getting the MOTD from other servers works now. Affected
+	  files are silcd/command.c and silcd/command_reply.c
+
+Thu Dec 04 11:33:46 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Initialize the variable idletag, since it is tested in
+	  silc_core_deinit for its default value.  Affected file
+	  irssi/src/silc/core/silc-core.c
+
+Sun Nov 30 19:47:02 CET 2003  Patrik Weiskircher <pat@icore.at>
+
+	* Fixed signed channel messages across cells. Affected file
+	  silcd/packet_send.c
+
+Fri Nov 28 19:13:21 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed the SILC_LOG_* macros to not be empty if SILC_DEBUG
+	  is not defined.  They can now be safely used in if-statements
+	  without braces.  Affected file lib/silcutil/silclog.h.
+
+	* Added the checks for backup closing connection due to error
+	  (local or remote) and thus not allow the resuming to occur
+	  in reconnect.  Affected files are silcd/packet_send.c
+	  and server.c.
+
+Tue Nov 25 15:20:59 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Help file updates.  Affected files in irssi/src/docs/help/in/.
+
+Wed Nov 23 20:51:21 CET 2003  Patrik Weiskircher <pat@icore.at>
+
+	* Fixed channel messages across cells. Affected file
+	  silcd/packet_send.c
+
+Wed Nov 12 11:34:56 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed file transmission accepting in client library to not
+	  start the negotiation if user hasn't accepted the transfer,
+	  instead create new session for resent transfer.  Affected
+	  file lib/silcclient/client_ftp.c.
+
+	* Show the session ID in the file transmision list.  Remove
+	  session from list that failed to transfer.  Switch the current
+	  session automatically after transmission, and in errors, to new
+	  session if other sessions exists in the transfer list.  Affected
+	  files are irssi/src/silc/core/silc-servers.c,
+	  irssi/src/fe-common/silc/modfule-formats.c.
+
+Mon Nov 10 14:41:40 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Fixed MIME header parsing for the hopefully last time.  Affected
+	  file lib/silcutil/silcstrutil.c
+
+Mon Nov 10 13:03:46 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Rewrote the PKCS#1 routines.  Added lib/silccrypt/silcpkcs1.[ch].
+
+	* The SILC RNG is now gauranteed to return non-zero random
+	  values.  Affected files are lib/silccrypt/silcrng.[ch].
+
+Sun Nov  9 20:44:56 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed nickname formatting when changing only case of the
+	  nickname.  Affected file lib/silcclient/idlist.c.
+
+Sun Nov  9 19:33:59 CET 2003  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Fixed a memory leak and incorrect printing of the "appears as"
+	  message.  Affected file irssi/src/silc/core/client_ops.c
+
+Sun Nov  9 17:45:11 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added CRT (Chinese Remainder Theorem) supported RSA
+	  private keys and private key operations.  This significantly
+	  increases private key operation efficiency.  No compatibility
+	  issues with new or old private keys.  Affected files are
+	  lib/silccrypt/rsa.[ch], rsa_internal.h and pkcs1.c.
+
+Sat Nov  8 13:08:53 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed GCC-3.3.2 related compilation warnings from the
+	  source tree.
+
+Fri Nov  7 23:01:47 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Removed RC6 from distributions.
+
+Fri Nov  7 19:38:42 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added some better comments to lib/silccrypt/silcpkcs.h,
+	  optimized some routines in lib/silccrypt/silcpkcs.c.
+	  Added test_silcpkcs into lib/silccrypt/tests/.
+
+	* Fixed silc_rng_global_init to actually init the global RNG
+	  if RNG wasn't provided for it.  Affected file is
+	  lib/silccrypt/silrng.c.
+
+Thu Nov  6 21:08:28 EET 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_hash_table_find_by_context_ext.  Affected files
+	  lib/silcutil/silchashtable.[ch].
+
+	* Save the public key on normal server in WHOIS command reply
+	  from attributes, if present, and add it to public key hash
+	  table.  Fixes WHOIS resolving by public key on normal server.
+
+	  Optimized the attributes resolving on normal server to not
+	  resolve if we resolved them already from router.
+
+	  Affected files are silcd/server_query.c, command_reply.c.
+
+Wed Nov  5 19:36:30 CET 2003 Patrik Weiskircher <pat@icore.at>
+
+	* Added support for whois using attributes.
+	  Affected files silcd/command_reply.c, silcd/packet_receive.c,
+	  silcd/server.c, silcd/server_internal.h, silcd/server_query.c,
+	  silcd/server_util.c
+
+	* Added support for whois using public key attribute to /WHOIS i
+	  client command. Affected files irssi/docs/help/in/whois.in,
+	  irssi/src/silc/core/silc-servers.c, lib/silcclient/command.c
+
+Wed Nov  5 23:37:36 EET 2003 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed UMODE setting in server when the client has anonymous
+	  mode set.  The mode setting was not working.  Affected file
+ 	  silcd/command.c.
+
+Mon Nov  2 11:36:08 CET 2003 Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Fixed some bugs and typos related to sending split messages.
+          Print notification when sending messages with /MMSG.  Affected
+	  files irssi/scripts/silc-mime.pl, irssi/src/silc/core/client_ops.c
+
+Fri Oct 31 12:33:59 EET 2003 Pekka Riikonen <priikone@silcnet.org>
+
+	* Optimized the socket referencing in packet routines, client
+	  library and server.  Affected files are lib/silccore/silcpacket.c,
+	  lib/silcclient/client.c and silcd/server.c.
+
+	* If silc_socket_set_qos is given with NULL arguments the QoS is
+	  reset from the socket.  Affected files are
+	  lib/silcutil/silcsockconn.[ch].
+
+Thu Oct 30 21:23:24 CET 2003 Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Add a /LISTKEYS command which lists the locally cached
+	  client and server keys.  Affected files
+	  irssi/src/fe-common/module-formats.[ch],
+	  irssi/src/silc/core/silc-{channels,servers}.c
+	  irssi/docs/help/in/listkeys.in
+
+Thu Oct 30 20:23:40 EET 2003 Pekka Riikonen <priikone@silcnet.org>
+
+	* Check that packet queue purging was successful.  Affected
+	  files lib/silcclient/client.c and silcd/packet_send.c.  Related
+	  to MAC failed errors.
+
+	* Do not clear the inbuf even if it is empty if QoS was applied
+	  to it.  Otherwise the QoS data is cleared and MAC failed error
+	  will occur.  Affected file lib/silccore/silcpacket.c.
+
+	* Use the rekey period time as rekey protocol timeout value.
+	  If the rekey does not succeed during the rekey period there's
+	  something very wrong, and we most likely end up with wrong keys,
+	  do graceful reconnect then.   Affected file silcd/server.c.
+
+	* Take reference of the socket in the parser context, as it's
+	  possible to have the parsers in queue after the socket is
+	  disconnected and this may cause crash.  Affected files are
+	  lib/silccore/silcpacket.c, lib/silcclient/client.c and
+	  silcd/server.c.
+
+Thu Oct 30 17:01:01 EET 2003 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed KICK command reply sending, it sent to replies.
+	  Affected file silcd/command.c.
+
+Wed Oct 30 14:06:52 CET 2003 Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Finish the silc-mime.pl script. It now supports MIME type
+	  guessing using magic files, signing data messages, executing
+	  MIME handlers in background. Affected files
+	  irssi/scripts/silc-mime.pl and irssi/docs/help/in/mmsg.in
+
+	* Changed MIME signal handler to make things easier for the perl
+	  script. Affected files irssi/src/silc/core/client_ops.c,
+	  silc-servers.c, and irssi/docs/signals.txt
+
+	* Cleaned up the silc_mime_parse function and fixed detection
+	  of wrapped header lines. Affected file lib/silcutil/silcstrutil.c
+
+Sun Oct 26 21:19:02 EET 2003 Pekka Riikonen <priikone@silcnet.org>
+
+	* Resolve the IP for file transfer listener from the connection
+	  socket.  Affected file lib/silcclient/client_ftp.c.
+
+	* Accept NULL hostname parameter in the functions
+          silc_net_check_[local|remote]_by_socket.  Do not reverse lookup
+	  if hostname is not wanted.
+
+Fri Oct 24 21:24:12 CEST 2003  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Fixed race condition between silc_client_init and
+          my_silc_scheduler. Affected file irssi/src/silc/core/silc-core.c
+
+Fri Oct 24 16:43:40 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed file transfer connection closing when SIGNOFF for
+	  the client is received from server.  Affected file is
+	  lib/silcclient/client_ftp.c.
+
+Tue Oct 21 13:35:57 CEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check for disconnected socket in QUIT callback.  Affected
+	  file silcd/command.c.
+
+Thu Oct 21 09:43:17 CEST 2003  Jochen Eisinger <jochen@penguin-breeder.org>
+
+        * Modified the MIME parsing to allow \n and \r\n as delimiters.
+	  Affected files lib/silcutil/silcstrutil.c
+
+	* Cleaned up the escape/unescape functions for correctness and
+	  speed. Affected file irssi/src/silc/core/client_ops.c
+
+	* Removed handling for data messages with Content-Type: text/*,
+	  moved parsing of MIME headers to the signal handler, added
+	  support for signing and verifying data messages. Affected
+	  files are irssi/docs/signals.txt, irssi/src/silc/core/client_ops.c,
+	  irssi/src/silc/core/silc-{servers,channels}.c
+
+	* Added a perl script for handling data messages based on
+	  information read from Mailcap files. New file
+	  irssi/scripts/silc-mime.pl
+
+Mon Oct 20 16:08:22 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added new SILC_MESSAGE_FLAG_ACK that can  be used to
+	  acknowledge recepetion of a message to the sender.  Updated
+	  protocol specs.
+
+Sat Oct 18 11:55:33 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
+
+	* Unregister channel key saving callback when deleting channel.
+	  Affected file lib/silcclient/idlist.c.
+
+	* Do not remove the client from channels in NOTIFY_TYPE_SIGNOFF
+	  before calling notify client operation.  Affected file is
+	  lib/silcclient/client_notify.c.
+
+	* Unregister QoS tasks when deleting the socket connection.
+	  Affected files lib/silcutil/silcsockconn.[ch],
+	  unix/silcunixsockconn.c.
+
+	* Implemented latest presence-attrs draft changes.  Affected
+	  files lib/silccore/silcattrs.h and
+	  irssi/src/silc/core/silc-queries.c.
+
 Tue Oct 14 18:24:53 EEST 2003  Pekka Riikonen <priikone@silcnet.org>
 
 	* Save old channel keys in list to allow more rapid change

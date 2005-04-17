@@ -14,7 +14,7 @@
 <b>Introduction</b>
 
 <br /><br />
-SILC SFTP Library provides SSH File Transfer Protocol client and server
+SILC SFTP Library provides Secure File Transfer Protocol client and server
 implementation.  The SFTP protocol is the mandatory file transfer protocol
 used for file transfers in the SILC protocol.  The same interface is used
 for SFTP client and SFTP server.

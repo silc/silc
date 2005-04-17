@@ -53,7 +53,8 @@
 int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeout)
 {
   HANDLE handles[MAXIMUM_WAIT_OBJECTS];
-  DWORD ready, curtime, timeo;
+  DWORD ready, curtime;
+  LONG timeo;
   int nhandles = 0, i;
   MSG msg;
 
@@ -99,6 +100,7 @@ int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeou
       KillTimer(NULL, timer);
       if (timeo != INFINITE) {
 	timeo -= GetTickCount() - curtime;
+	curtime = GetTickCount();
 	if (timeo < 0)
 	  timeo = 0;
       }
@@ -137,6 +139,7 @@ int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeou
        return and we will give the wait another try. */
     if (timeo != INFINITE) {
       timeo -= GetTickCount() - curtime;
+      curtime = GetTickCount();
       if (timeo < 0)
 	timeo = 0;
     }

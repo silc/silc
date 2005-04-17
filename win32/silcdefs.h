@@ -56,12 +56,14 @@
 /* #undef HAVE_RTLD_LAZY */
 
 /* Types */
+/*
 #define SILC_SIZEOF_LONG_LONG 8
 #define SILC_SIZEOF_LONG 4
 #define SILC_SIZEOF_INT 4
 #define SILC_SIZEOF_SHORT 2
 #define SILC_SIZEOF_CHAR 1
 #define SILC_SIZEOF_VOID_P 4
+*/
 
 /* MP library */
 /* #undef SILC_MP_GMP */

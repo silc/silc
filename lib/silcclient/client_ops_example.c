@@ -31,15 +31,16 @@ silc_say(SilcClient client, SilcClientConnection conn,
 static void
 silc_channel_message(SilcClient client, SilcClientConnection conn,
 		     SilcClientEntry sender, SilcChannelEntry channel,
-		     SilcMessagePayload payload, SilcMessageFlags flags,
-		     const unsigned char *message, SilcUInt32 message_len)
+		     SilcMessagePayload payload, SilcChannelPrivateKey key,
+		     SilcMessageFlags flags, const unsigned char *message,
+		     SilcUInt32 message_len)
 {
 
 }
 
 
 /* Private message to the client. The `sender' is the sender of the
-   message. The message is `message'and maybe NULL.  The `flags'  
+   message. The message is `message'and maybe NULL.  The `flags'
    indicates message flags  and it is used to determine how the message
    can be interpreted (like it may tell the message is multimedia
    message). */

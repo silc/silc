@@ -131,7 +131,7 @@ do {							\
  *    };
  *
  *    SilcList list;
- *    silc_list_init(list, struct SilcInternalEntryStruct, next, prev);
+ *    silc_list_init_prev(list, struct SilcInternalEntryStruct, next, prev);
  *
  ***/
 #define silc_list_init_prev(list, type, nextfield, prevfield)	\

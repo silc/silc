@@ -1,13 +1,28 @@
-TODO for Irssi SILC Client 1.0
-==============================
+TODO for SILC Client 1.0 branch
+===============================
 
- o Testing - See test plan:
-     http://silcnet.org/docs/silc-client-1.0-test.pdf
-     http://silcnet.org/docs/silc-client-1.0-test.ps
+ o Bugs reported on the mailing list that will be fixed eventually.
+   The numbers are arbitrary and assigned by me (c0ffee), bugs in
+   parentheses are fixed.
+
+   (#1    Ignore ALL doesn't ignore target using /me)
+   #2    specification of the silc network
+   (#3    expired private key dialogue doesn't work)
+   #4    silc client allows setting non-utf8 topics
+   #5    SILC-client displaying wrong totals with /names
 
 
 TODO for SILC Server 1.0
 ========================
+
+ o BUG: silc_idlist_del_client had been called but sock->user_data remained
+   and pointed to invalid pointer.  Where it was called is not known.
+
+ o Basic UTF-8 stringprep profile that makes sure UTF-8 strings are
+   as defined in spec-08 section 3.13.
+
+ o Server sometimes connects more than once to router and keeps
+   connecting even though connection exists.
 
  o Testing
 
@@ -15,17 +30,18 @@ TODO for SILC Server 1.0
 TODO/bugs In SILC Libraries
 ===========================
 
- o Test cases for all cryptographic primitive in lib/silccrypt/
-
  o Test cases for all payload encoding and decoding routins in lib/silccore/
 
  o Test cases for math library routines in lib/silcmath/
+
+ o Implement new version of SFTP protocol (missing versions 4 and 5, we
+   have version 3).
 
 
 TODO in Toolkit Documentation
 =============================
 
-Stuff that needs to be done in order to complete the Tooolkit Reference
+Stuff that needs to be done in order to complete the Toolkit Reference
 Manual (Do these to 0.9.x).
 
  o Write "Programming with Toolkit" document, describing how to build

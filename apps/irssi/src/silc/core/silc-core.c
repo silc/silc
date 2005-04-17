@@ -29,6 +29,8 @@
 #include "silc-channels.h"
 #include "silc-queries.h"
 #include "silc-nicklist.h"
+#include "silc-chatnets.h"
+#include "silc-cmdqueue.h"
 
 #include "signals.h"
 #include "levels.h"
@@ -42,7 +44,7 @@
 static char *opt_pkcs = NULL;
 static int opt_bits = 0;
 
-static int idletag;
+static int idletag = -1;
 
 SilcClient silc_client = NULL;
 extern SilcClientOperations ops;
@@ -260,6 +262,16 @@ void silc_opt_callback(poptContext con,
 		       const struct poptOption *opt,
 		       const char *arg, void *data)
 {
+  if (strcmp(opt->longName, "nick") == 0) {
+    g_free(silc_client->nickname);  
+    silc_client->nickname = g_strdup(arg);
+  }
+
+  if (strcmp(opt->longName, "hostname") == 0) {
+    silc_free(silc_client->hostname);  
+    silc_client->hostname = g_strdup(arg);
+  }
+
   if (strcmp(opt->longName, "list-ciphers") == 0) {
     silc_cipher_register_default();
     silc_client_list_ciphers();
@@ -331,22 +343,19 @@ void silc_opt_callback(poptContext con,
 static void sig_init_finished(void)
 {
   /* Check ~/.silc directory and public and private keys */
-  if (!silc_client_check_silc_dir()) {
-    idletag = -1;
+  if (!silc_client_check_silc_dir())
     exit(1);
-  }
 
   /* Load public and private key */
-  if (!silc_client_load_keys(silc_client)) {
-    idletag = -1;
+  if (!silc_client_load_keys(silc_client))
     exit(1);
-  }
 
   /* Initialize the SILC client */
-  if (!silc_client_init(silc_client)) {
-    idletag = -1;
+  if (!silc_client_init(silc_client))
     exit(1);
-  }
+
+  /* register SILC scheduler */
+  idletag = g_timeout_add(5, (GSourceFunc) my_silc_scheduler, NULL);
 }
 
 /* Init SILC. Called from src/fe-text/silc.c */
@@ -401,6 +410,7 @@ void silc_core_init(void)
   settings_add_int("server", "connauth_request_secs", 2);
   settings_add_int("server", "heartbeat", 300);
   settings_add_bool("server", "ignore_message_signatures", FALSE);
+  settings_add_str("server", "session_filename", "session.$chatnet");
 
   /* Requested Attributes settings */
   settings_add_bool("silc", "attr_allow", TRUE);
@@ -477,13 +487,13 @@ void silc_core_init(void)
   chat_protocol_register(rec);
   g_free(rec);
 
+  silc_queue_init();
   silc_server_init();
   silc_channels_init();
   silc_queries_init();
   silc_expandos_init();
   silc_lag_init();
-
-  idletag = g_timeout_add(5, (GSourceFunc) my_silc_scheduler, NULL);
+  silc_chatnets_init();
 
   module_register("silc", "core");
 }
@@ -492,22 +502,23 @@ void silc_core_init(void)
 
 void silc_core_deinit(void)
 {
-  if (idletag != -1) {
-    signal_emit("chat protocol deinit", 1,
-		chat_protocol_find("SILC"));
-    signal_remove("setup changed", (SIGNAL_FUNC) sig_setup_changed);
-    signal_remove("irssi init finished", (SIGNAL_FUNC) sig_init_finished);
-
-    silc_server_deinit();
-    silc_channels_deinit();
-    silc_queries_deinit();
-    silc_expandos_deinit();
-    silc_lag_deinit();
-    
-    chat_protocol_unregister("SILC");
-    
+  if (idletag != -1)
     g_source_remove(idletag);
-  }
+  
+  signal_emit("chat protocol deinit", 1,
+      	chat_protocol_find("SILC"));
+  signal_remove("setup changed", (SIGNAL_FUNC) sig_setup_changed);
+  signal_remove("irssi init finished", (SIGNAL_FUNC) sig_init_finished);
+
+  silc_queue_deinit();
+  silc_server_deinit();
+  silc_channels_deinit();
+  silc_queries_deinit();
+  silc_expandos_deinit();
+  silc_lag_deinit();
+  silc_chatnets_deinit();
+  
+  chat_protocol_unregister("SILC");
   
   g_free(silc_client->username);
   g_free(silc_client->realname);

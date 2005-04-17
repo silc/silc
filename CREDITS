@@ -33,9 +33,17 @@ S: Skinnarilankatu 28 E 2
 S: 53850 Lappeenranta
 S: Finland
 
+N: Jochen "c0ffee" Eisinger
+E: jochen@penguin-breeder.org
+W: http://penguin-breeder.org/
+D: maintainer of the SILC Client & SILC Plugin
+D: several new subtle bugs disguised as fixes and patches
+S: Haslacher Str. 45
+S: 79115 Freiburg
+S: Germany
+
 N: Giovanni Giacobbi
 E: giovanni@giacobbi.net
-E: johnny@themnemonic.org
 P: 1024D/B2D79FC1 6247 640C 1C90 1EE4 D800  E4E2 2D58 3DF1 B2D7 9FC1
 D: silcconfig, silclog, various patches around
 D: RPM packages
@@ -44,7 +52,7 @@ S: Italy
 
 N: Pekka Riikonen
 E: priikone@silcnet.org
-E: priikone@ssh.com
+E: priikone@iki.fi
 P: 1024/A924ED4F AD 82 53 2D 84 FF C7 D1  FF 63 19 0E 1A 78 9F 8A  A9 24 ED 4F
 D: Protocol architect
 D: Main developer
@@ -69,15 +77,15 @@ D: Bughunting
 
 N: Lubomir Sedlacik
 E: salo@Xtrmntr.org
+E: salo@NetBSD.org
 W: http://Xtrmntr.org
-P: 1024/7E3B70E2 DB EC 8B EC 9A 90 EC EC  0F EF 71 6E 59 CE B7 0B  7E 3B 70 E2
-D: web pages
+P: 1024/54BC7263 75 B2 2B 96 CD 75 03 85  1C 49 39 B8 8B 08 C3 0E  54 BC 72 63
 D: configure.in bugfixes
-D: NetBSD and Solaris packages
+D: NetBSD packages
 D: project server administrator
 D: mirrors coordinator
-S: 92101 Piestany
-S: Slovakia
+S: 15000 Prague
+S: Czech Republic
 
 N: Timo Sirainen
 E: tss@iki.fi
@@ -105,13 +113,21 @@ S: Arnyas ut 38-40/H
 S: 1121 Budapest
 S: Hungary
 
+N: Patrik Weiskircher
+E: pat@icore.at
+P: 1024D/BF475975 3240 EE43 E979 C5B9 981F  12D5 EC14 B9CD BF47 5975
+D: patch for whois using attributes
+S: Kandlgasse 17/3
+S: 1070 Vienna
+S: Austria
+
 N: Toni Willberg
 W: http://toniw.iki.fi/
 E: toniw@iki.fi
-D: bugzilla.silcnet.org admin
-D: silc.peelo.com admin
-D: Silc Admin development
-D: Testing
+D: silc.atbusiness.com admin
+D: www.fi.silcnet.org admin
+D: Hunting the client library bugs while developing Silky.
+D: General whining.
 S: Helsinki
 S: Finland
 

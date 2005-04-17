@@ -1,10 +1,10 @@
 /*
 
-  client_ftp.c 
+  client_ftp.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2004 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,10 +23,10 @@
 #include "client_internal.h"
 
 static int
-silc_client_connect_to_client(SilcClient client, 
+silc_client_connect_to_client(SilcClient client,
 			      SilcClientConnection conn, int port,
 			      char *host, void *context);
-static int 
+static int
 silc_client_connect_to_client_internal(SilcClientInternalConnectContext *ctx);
 SILC_TASK_CALLBACK(silc_client_ftp_connected);
 static void silc_client_ftp_start_key_agreement(SilcClientFtpSession session,
@@ -48,12 +48,14 @@ struct SilcClientFtpSessionStruct {
 
   SilcClientFileMonitor monitor;
   void *monitor_context;
+  SilcClientFileAskName ask_name;
+  void *ask_name_context;
   char *filepath;
   char *path;
 
   SilcSFTP sftp;
   SilcSFTPFilesystem fs;
-  unsigned int server : 1;
+  unsigned int server : 1;	/* File sender sets this to TRUE */
   unsigned int bound  : 1;
 
   SilcSFTPHandle dir_handle;
@@ -82,8 +84,8 @@ SILC_TASK_CALLBACK(silc_client_ftp_connected)
       client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 				 "Could not connect to client %s: %s",
 				 ctx->host, strerror(opt));
-      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, 
-				 "Connecting to port %d of client %s resumed", 
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
+				 "Connecting to port %d of client %s resumed",
 				 ctx->port, ctx->host);
 
       /* Unregister old connection try */
@@ -115,7 +117,7 @@ SILC_TASK_CALLBACK(silc_client_ftp_connected)
   silc_client_ftp_start_key_agreement(session, fd);
 }
 
-static int 
+static int
 silc_client_connect_to_client_internal(SilcClientInternalConnectContext *ctx)
 {
   int sock;
@@ -127,9 +129,9 @@ silc_client_connect_to_client_internal(SilcClientInternalConnectContext *ctx)
 
   /* Register task that will receive the async connect and will
      read the result. */
-  ctx->task = silc_schedule_task_add(ctx->client->schedule, sock, 
+  ctx->task = silc_schedule_task_add(ctx->client->schedule, sock,
 				     silc_client_ftp_connected,
-				     (void *)ctx, 0, 0, 
+				     (void *)ctx, 0, 0,
 				     SILC_TASK_FD,
 				     SILC_TASK_PRI_NORMAL);
   silc_schedule_set_listen_fd(ctx->client->schedule, sock, SILC_TASK_WRITE,
@@ -139,7 +141,7 @@ silc_client_connect_to_client_internal(SilcClientInternalConnectContext *ctx)
 }
 
 static int
-silc_client_connect_to_client(SilcClient client, 
+silc_client_connect_to_client(SilcClient client,
 			      SilcClientConnection conn, int port,
 			      char *host, void *context)
 {
@@ -185,8 +187,8 @@ static void silc_client_ftp_send_packet(SilcBuffer packet, void *context)
 		     SILC_STR_END);
 
   /* Send the packet immediately */
-  silc_client_packet_send(client, session->sock, SILC_PACKET_FTP, NULL, 
-			  0, NULL, NULL, session->packet->data, 
+  silc_client_packet_send(client, session->sock, SILC_PACKET_FTP, NULL,
+			  0, NULL, NULL, session->packet->data,
 			  session->packet->len, TRUE);
 
   /* Clear buffer */
@@ -194,7 +196,7 @@ static void silc_client_ftp_send_packet(SilcBuffer packet, void *context)
   session->packet->len = 0;
 }
 
-/* SFTP monitor callback for SFTP server. This reports the application 
+/* SFTP monitor callback for SFTP server. This reports the application
    how the transmission is going along. This function is for the client
    who made the file available for download. */
 
@@ -248,7 +250,7 @@ static void silc_client_ftp_data(SilcSFTP sftp,
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_MONITOR_ERROR,
 			  (status == SILC_SFTP_STATUS_NO_SUCH_FILE ?
 			   SILC_CLIENT_FILE_NO_SUCH_FILE :
 			   status == SILC_SFTP_STATUS_PERMISSION_DENIED ?
@@ -268,7 +270,7 @@ static void silc_client_ftp_data(SilcSFTP sftp,
 
   /* Read more, until EOF is received */
   session->read_offset += data_len;
-  silc_sftp_read(sftp, session->read_handle, session->read_offset, 
+  silc_sftp_read(sftp, session->read_handle, session->read_offset,
                  SILC_PACKET_MAX_LEN - 1024,
 		 silc_client_ftp_data, session);
 
@@ -302,7 +304,7 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_MONITOR_ERROR,
 			  (status == SILC_SFTP_STATUS_NO_SUCH_FILE ?
 			   SILC_CLIENT_FILE_NO_SUCH_FILE :
 			   status == SILC_SFTP_STATUS_PERMISSION_DENIED ?
@@ -320,16 +322,16 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
   session->fd = silc_file_open(path, O_RDWR | O_CREAT | O_EXCL);
   if (session->fd < 0) {
     /* Call monitor callback */
-    session->client->internal->ops->say(session->client, session->conn, 
-					SILC_CLIENT_MESSAGE_ERROR, 
-					"File `%s' open failed: %s", 
+    session->client->internal->ops->say(session->client, session->conn,
+					SILC_CLIENT_MESSAGE_ERROR,
+					"File `%s' open failed: %s",
 					session->filepath,
 					strerror(errno));
 
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 
-			  SILC_CLIENT_FILE_ERROR, 0, 0,
+			  SILC_CLIENT_FILE_MONITOR_ERROR,
+			  SILC_CLIENT_FILE_PERMISSION_DENIED, 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
     return;
@@ -352,6 +354,37 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
 			session->filepath, session->monitor_context);
 }
 
+static void silc_client_ftp_ask_name(const char *filepath,
+				     void *context)
+{
+  SilcClientFtpSession session = (SilcClientFtpSession)context;
+  SilcSFTPAttributesStruct attr;
+  char *remote_file = NULL;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (filepath) {
+    remote_file = session->filepath;
+    session->filepath = NULL;
+    silc_free(session->path);
+    session->path = NULL;
+    session->filepath = strdup(filepath);
+  } else {
+    remote_file = strdup(session->filepath);
+  }
+
+  /* Now open the file */
+  memset(&attr, 0, sizeof(attr));
+  silc_sftp_open(session->sftp, remote_file, SILC_SFTP_FXF_READ, &attr,
+		 silc_client_ftp_open_handle, session);
+
+  /* Close the directory handle */
+  silc_sftp_close(session->sftp, session->dir_handle, NULL, NULL);
+  session->dir_handle = NULL;
+
+  silc_free(remote_file);
+}
+
 /* Returns the file name available for download. This is the downloader's
    function. */
 
@@ -361,7 +394,6 @@ static void silc_client_ftp_readdir_name(SilcSFTP sftp,
 					 void *context)
 {
   SilcClientFtpSession session = (SilcClientFtpSession)context;
-  SilcSFTPAttributesStruct attr;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -369,7 +401,7 @@ static void silc_client_ftp_readdir_name(SilcSFTP sftp,
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_MONITOR_ERROR,
 			  (status == SILC_SFTP_STATUS_NO_SUCH_FILE ?
 			   SILC_CLIENT_FILE_NO_SUCH_FILE :
 			   status == SILC_SFTP_STATUS_PERMISSION_DENIED ?
@@ -380,18 +412,21 @@ static void silc_client_ftp_readdir_name(SilcSFTP sftp,
     return;
   }
 
-  /* Now open the file */
-  memset(&attr, 0, sizeof(attr));
-  silc_sftp_open(sftp, name->filename[0], SILC_SFTP_FXF_READ, &attr,
-		 silc_client_ftp_open_handle, session);
-
   /* Save the important attributes like filename and file size */
   session->filepath = strdup(name->filename[0]);
   session->filesize = name->attrs[0]->size;
 
-  /* Close the directory handle */
-  silc_sftp_close(sftp, session->dir_handle, NULL, NULL);
-  session->dir_handle = NULL;
+  /* If the path was not provided, ask from application where to save the
+     downloaded file. */
+  if (!session->path && session->ask_name) {
+    session->ask_name(session->client, session->conn, session->session_id,
+		      name->filename[0], silc_client_ftp_ask_name, session,
+		      session->ask_name_context);
+    return;
+  }
+
+  /* Start downloading immediately to current directory. */
+  silc_client_ftp_ask_name(NULL, session);
 }
 
 /* Returns the file handle after giving opendir command. This is the
@@ -410,7 +445,7 @@ static void silc_client_ftp_opendir_handle(SilcSFTP sftp,
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_MONITOR_ERROR,
 			  (status == SILC_SFTP_STATUS_NO_SUCH_FILE ?
 			   SILC_CLIENT_FILE_NO_SUCH_FILE :
 			   status == SILC_SFTP_STATUS_PERMISSION_DENIED ?
@@ -443,7 +478,7 @@ static void silc_client_ftp_version(SilcSFTP sftp,
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_MONITOR_ERROR,
 			  (status == SILC_SFTP_STATUS_NO_SUCH_FILE ?
 			   SILC_CLIENT_FILE_NO_SUCH_FILE :
 			   status == SILC_SFTP_STATUS_PERMISSION_DENIED ?
@@ -464,7 +499,7 @@ static void silc_client_ftp_version(SilcSFTP sftp,
 SILC_TASK_CALLBACK(silc_client_ftp_key_agreement_final)
 {
   SilcProtocol protocol = (SilcProtocol)context;
-  SilcClientKEInternalContext *ctx = 
+  SilcClientKEInternalContext *ctx =
     (SilcClientKEInternalContext *)protocol->context;
   SilcClientFtpSession session = (SilcClientFtpSession)ctx->context;
   SilcClientConnection conn = (SilcClientConnection)ctx->sock->user_data;
@@ -476,7 +511,7 @@ SILC_TASK_CALLBACK(silc_client_ftp_key_agreement_final)
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_MONITOR_ERROR,
 			  SILC_CLIENT_FILE_KEY_AGREEMENT_FAILED, 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
@@ -499,7 +534,7 @@ SILC_TASK_CALLBACK(silc_client_ftp_key_agreement_final)
     /* If we are the SFTP client then start the SFTP session and retrieve
        the info about the file available for download. */
     session->sftp = silc_sftp_client_start(silc_client_ftp_send_packet,
-					   session, silc_client_ftp_version, 
+					   session, silc_client_ftp_version,
 					   session);
   } else {
     /* Start SFTP server */
@@ -542,7 +577,7 @@ static void silc_client_ftp_start_key_agreement(SilcClientFtpSession session,
   /* Call monitor callback */
   if (session->monitor)
     (*session->monitor)(session->client, session->conn,
-			SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT, 
+			SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT,
 			SILC_CLIENT_FILE_OK, 0, 0,
 			session->client_entry, session->session_id,
 			NULL, session->monitor_context);
@@ -569,15 +604,15 @@ static void silc_client_ftp_start_key_agreement(SilcClientFtpSession session,
   proto_ctx->verify = silc_client_protocol_ke_verify_key;
 
   /* Perform key exchange protocol. */
-  silc_protocol_alloc(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE, 
+  silc_protocol_alloc(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE,
 		      &protocol, (void *)proto_ctx,
 		      silc_client_ftp_key_agreement_final);
   conn->sock->protocol = protocol;
 
   /* Register the connection for network input and output. This sets
-     that scheduler will listen for incoming packets for this connection 
+     that scheduler will listen for incoming packets for this connection
      and sets that outgoing packets may be sent to this connection as well.
-     However, this doesn't set the scheduler for outgoing traffic, it will 
+     However, this doesn't set the scheduler for outgoing traffic, it will
      be set separately by calling SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT,
      later when outgoing data is available. */
   context = (void *)client;
@@ -607,7 +642,7 @@ SILC_TASK_CALLBACK(silc_client_ftp_process_key_agreement)
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_MONITOR_ERROR,
 			  SILC_CLIENT_FILE_ERROR, 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
@@ -627,7 +662,7 @@ SILC_TASK_CALLBACK(silc_client_ftp_process_key_agreement)
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_MONITOR_ERROR,
 			  SILC_CLIENT_FILE_ERROR, 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
@@ -640,7 +675,7 @@ SILC_TASK_CALLBACK(silc_client_ftp_process_key_agreement)
   /* Call monitor callback */
   if (session->monitor)
     (*session->monitor)(session->client, session->conn,
-			SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT, 
+			SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT,
 			SILC_CLIENT_FILE_OK, 0, 0,
 			session->client_entry, session->session_id,
 			NULL, session->monitor_context);
@@ -665,14 +700,14 @@ SILC_TASK_CALLBACK(silc_client_ftp_process_key_agreement)
 
   /* Prepare the connection for key exchange protocol. We allocate the
      protocol but will not start it yet. The connector will be the
-     initiator of the protocol thus we will wait for initiation from 
+     initiator of the protocol thus we will wait for initiation from
      there before we start the protocol. */
-  silc_protocol_alloc(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE, 
-		      &newsocket->protocol, proto_ctx, 
+  silc_protocol_alloc(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE,
+		      &newsocket->protocol, proto_ctx,
 		      silc_client_ftp_key_agreement_final);
 
   /* Register the connection for network input and output. This sets
-     that scheduler will listen for incoming packets for this connection 
+     that scheduler will listen for incoming packets for this connection
      and sets that outgoing packets may be sent to this connection as well.
      However, this doesn't set the scheduler for outgoing traffic, it
      will be set separately by calling SILC_CLIENT_SET_CONNECTION_FOR_OUTPUT,
@@ -713,11 +748,8 @@ void silc_client_ftp_session_free_client(SilcClientConnection conn,
   silc_dlist_start(conn->internal->ftp_sessions);
   while ((session = silc_dlist_get(conn->internal->ftp_sessions))
 	 != SILC_LIST_END) {
-    if (session->client_entry == client_entry) {
-      if (session->sock)
-	session->sock->user_data = NULL;
+    if (session->client_entry == client_entry)
       silc_client_ftp_session_free(session);
-    }
   }
 }
 
@@ -747,7 +779,7 @@ void silc_client_ftp_session_free(SilcClientFtpSession session)
 
   /* Destroy listener */
   if (session->listener) {
-    silc_schedule_unset_listen_fd(session->client->schedule, 
+    silc_schedule_unset_listen_fd(session->client->schedule,
 				  session->listener);
     silc_net_close_connection(session->listener);
     silc_schedule_task_del_by_fd(session->client->schedule, session->listener);
@@ -755,7 +787,7 @@ void silc_client_ftp_session_free(SilcClientFtpSession session)
 
   /* Destroy session connection */
   if (session->sock) {
-    silc_schedule_unset_listen_fd(session->client->schedule, 
+    silc_schedule_unset_listen_fd(session->client->schedule,
 				  session->sock->sock);
     silc_net_close_connection(session->sock->sock);
 
@@ -781,13 +813,13 @@ void silc_client_ftp_session_free(SilcClientFtpSession session)
   silc_free(session);
 }
 
-/* Sends a file indicated by the `filepath' to the remote client 
+/* Sends a file indicated by the `filepath' to the remote client
    indicated by the `client_entry'.  This will negotiate a secret key
    with the remote client before actually starting the transmission of
    the file.  The `monitor' callback will be called to monitor the
    transmission of the file. */
 
-SilcClientFileError 
+SilcClientFileError
 silc_client_file_send(SilcClient client,
 		      SilcClientConnection conn,
 		      SilcClientFileMonitor monitor,
@@ -812,7 +844,7 @@ silc_client_file_send(SilcClient client,
   silc_dlist_start(conn->internal->ftp_sessions);
   while ((session = silc_dlist_get(conn->internal->ftp_sessions))
 	 != SILC_LIST_END) {
-    if (session->filepath && !strcmp(session->filepath, filepath) && 
+    if (session->filepath && !strcmp(session->filepath, filepath) &&
 	session->client_entry == client_entry)
       return SILC_CLIENT_FILE_ALREADY_STARTED;
   }
@@ -853,17 +885,22 @@ silc_client_file_send(SilcClient client,
 
   /* Create the listener for incoming key exchange protocol. */
   if (!do_not_bind) {
+    session->listener = -1;
     if (local_ip)
       session->hostname = strdup(local_ip);
     else
-      session->hostname = silc_net_localip();
-    session->listener = silc_net_create_server(local_port, session->hostname);
+      silc_net_check_local_by_sock(conn->sock->sock, NULL,
+				   &session->hostname);
+    if (session->hostname)
+      session->listener = silc_net_create_server(local_port,
+						 session->hostname);
     if (session->listener < 0) {
       /* Could not create listener. Do the second best thing; send empty
 	 key agreement packet and let the remote client provide the point
 	 for the key exchange. */
       SILC_LOG_DEBUG(("Could not create listener"));
       silc_free(session->hostname);
+      session->listener = 0;
       session->hostname = NULL;
       session->port = 0;
     } else {
@@ -909,13 +946,15 @@ silc_client_file_send(SilcClient client,
    actually starting the file transmission.  The `monitor' callback
    will be called to monitor the transmission. */
 
-SilcClientFileError 
+SilcClientFileError
 silc_client_file_receive(SilcClient client,
 			 SilcClientConnection conn,
 			 SilcClientFileMonitor monitor,
 			 void *monitor_context,
 			 const char *path,
-			 SilcUInt32 session_id)
+			 SilcUInt32 session_id,
+			 SilcClientFileAskName ask_name,
+			 void *ask_name_context)
 {
   SilcClientFtpSession session;
   SilcBuffer keyagr, ftp;
@@ -946,6 +985,8 @@ silc_client_file_receive(SilcClient client,
 
   session->monitor = monitor;
   session->monitor_context = monitor_context;
+  session->ask_name = ask_name;
+  session->ask_name_context = ask_name_context;
   session->conn = conn;
   session->path = path ? strdup(path) : NULL;
 
@@ -954,18 +995,21 @@ silc_client_file_receive(SilcClient client,
      create the connection ourselves. */
   if (session->hostname && session->port) {
     SILC_LOG_DEBUG(("Connecting to remote client"));
-    if (silc_client_connect_to_client(client, conn, session->port, 
+    if (silc_client_connect_to_client(client, conn, session->port,
 				      session->hostname, session) < 0)
       return SILC_CLIENT_FILE_ERROR;
   } else {
     /* Add the listener for the key agreement */
     SILC_LOG_DEBUG(("Creating listener for file transfer"));
-    session->hostname = silc_net_localip();
-    session->listener = silc_net_create_server(0, session->hostname);
+    session->listener = -1;
+    silc_net_check_local_by_sock(conn->sock->sock, NULL, &session->hostname);
+    if (session->hostname)
+      session->listener = silc_net_create_server(0, session->hostname);
     if (session->listener < 0) {
       SILC_LOG_DEBUG(("Could not create listener"));
-      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR, 
-				 "Cannot create listener on %s: %s", 
+      session->listener = 0;
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+				 "Cannot create listener on %s: %s",
 				 session->hostname, strerror(errno));
       return SILC_CLIENT_FILE_ERROR;
     }
@@ -973,10 +1017,10 @@ silc_client_file_receive(SilcClient client,
     silc_schedule_task_add(client->schedule, session->listener,
 			   silc_client_ftp_process_key_agreement, session,
 			   0, 0, SILC_TASK_FD, SILC_TASK_PRI_NORMAL);
-    
+
     /* Send the key agreement inside FTP packet */
     SILC_LOG_DEBUG(("Sending key agreement for file transfer"));
-    keyagr = silc_key_agreement_payload_encode(session->hostname, 
+    keyagr = silc_key_agreement_payload_encode(session->hostname,
 					       session->port);
     ftp = silc_buffer_alloc(1 + keyagr->len);
     silc_buffer_pull_tail(ftp, SILC_BUFFER_END(ftp));
@@ -985,15 +1029,20 @@ silc_client_file_receive(SilcClient client,
 		       SILC_STR_UI_XNSTRING(keyagr->data, keyagr->len),
 		       SILC_STR_END);
     silc_client_packet_send(client, conn->sock, SILC_PACKET_FTP,
-			    session->client_entry->id, 
+			    session->client_entry->id,
 			    SILC_ID_CLIENT, NULL, NULL,
 			    ftp->data, ftp->len, FALSE);
-    
+
     silc_buffer_free(keyagr);
     silc_buffer_free(ftp);
   }
 
   return SILC_CLIENT_FILE_OK;
+}
+
+SILC_TASK_CALLBACK(silc_client_file_close_final)
+{
+  silc_client_ftp_session_free(context);
 }
 
 /* Closes file transmission session indicated by the `session_id'.
@@ -1016,9 +1065,8 @@ SilcClientFileError silc_client_file_close(SilcClient client,
   silc_dlist_start(conn->internal->ftp_sessions);
   while ((session = silc_dlist_get(conn->internal->ftp_sessions))
 	 != SILC_LIST_END) {
-    if (session->session_id == session_id) {
+    if (session->session_id == session_id)
       break;
-    }
   }
 
   if (session == SILC_LIST_END) {
@@ -1026,7 +1074,17 @@ SilcClientFileError silc_client_file_close(SilcClient client,
     return SILC_CLIENT_FILE_UNKNOWN_SESSION;
   }
 
-  silc_client_ftp_session_free(session);
+  if (session->monitor)
+    (*session->monitor)(session->client, session->conn,
+			SILC_CLIENT_FILE_MONITOR_CLOSED,
+			SILC_CLIENT_FILE_OK, 0, 0,
+			session->client_entry, session->session_id,
+			session->filepath, session->monitor_context);
+
+  /* Destroy via timeout */
+  silc_schedule_task_add(session->client->schedule, 0,
+			 silc_client_file_close_final, session,
+			 0, 1, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
 
   return SILC_CLIENT_FILE_OK;
 }
@@ -1077,12 +1135,18 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
   if (!port)
     hostname = NULL;
 
-  if (session == SILC_LIST_END || (!hostname && !port)) {
+  /* If session doesn't exist, we create one and let applicationi know about
+     incoming file transfer request.  If session exists, but we are responder
+     it means that the remote sent another request and user hasn't even
+     accepted the first one yet.  We assume this session is new session
+     as well. */
+  if (session == SILC_LIST_END || (!hostname && !port) ||
+      (session && session->server == FALSE)) {
     /* No session found, create one and let the application know about
        incoming file transfer request. */
     SILC_LOG_DEBUG(("New file transfer session ID: %d",
 		    conn->internal->next_session_id + 1));
-    
+
     /* Add new session */
     session = silc_calloc(1, sizeof(*session));
     session->session_id = ++conn->internal->next_session_id;
@@ -1099,22 +1163,23 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
       session->hostname = strdup(hostname);
       session->port = port;
     }
-    
+
     goto out;
   }
-
-  session->hostname = strdup(hostname);
-  session->port = port;
 
   /* Session exists, continue with key agreement protocol. */
   SILC_LOG_DEBUG(("Session ID %d exists, connecting to remote client",
 		  session->session_id));
-  if (silc_client_connect_to_client(client, conn, port, 
+
+  session->hostname = strdup(hostname);
+  session->port = port;
+
+  if (silc_client_connect_to_client(client, conn, port,
 				    hostname, session) < 0) {
     /* Call monitor callback */
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
-			  SILC_CLIENT_FILE_MONITOR_ERROR, 
+			  SILC_CLIENT_FILE_MONITOR_ERROR,
 			  SILC_CLIENT_FILE_ERROR, 0, 0,
 			  session->client_entry, session->session_id,
 			  session->filepath, session->monitor_context);
@@ -1170,7 +1235,7 @@ void silc_client_ftp(SilcClient client,
     if (packet->src_id_type != SILC_ID_CLIENT)
       return;
 
-    remote_id = silc_id_str2id(packet->src_id, packet->src_id_len, 
+    remote_id = silc_id_str2id(packet->src_id, packet->src_id_len,
 			       SILC_ID_CLIENT);
     if (!remote_id)
       return;

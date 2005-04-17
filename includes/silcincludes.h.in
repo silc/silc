@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -63,6 +63,12 @@ extern "C" {
 #endif
 #endif
 
+#if defined(__MACH__) && defined(__APPLE__)
+#ifndef SILC_MACOSX
+#define SILC_MACOSX
+#endif
+#endif
+
 /* Types */
 #define SILC_SIZEOF_LONG_LONG @SILC_SIZEOF_LONG_LONG@
 #define SILC_SIZEOF_LONG @SILC_SIZEOF_LONG@
@@ -71,9 +77,15 @@ extern "C" {
 #define SILC_SIZEOF_CHAR @SILC_SIZEOF_CHAR@
 #define SILC_SIZEOF_VOID_P @SILC_SIZEOF_VOID_P@
 
-#if defined(HAVE_SILCDEFS_H) || defined(SILC_WIN32)
+/* Compilation time defines, for third-party software */
+@__SILC_HAVE_PTHREAD@
+@__SILC_HAVE_SIM@
+@__SILC_ENABLE_DEBUG@
+
+#if defined(HAVE_SILCDEFS_H)
 /* Automatically generated configuration header */
 #include "silcdefs.h"
+#include "silcdistdefs.h"
 #endif /* HAVE_SILCDEFS_H */
 
 /* Platform specific includes */
@@ -206,6 +218,10 @@ extern "C" {
 #include <langinfo.h>
 #endif
 
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#endif
+
 #endif				/* !SILC_WIN32 */
 
 #ifndef HAVE_GETOPT_LONG
@@ -231,6 +247,7 @@ extern "C" {
 #include "silchmac.h"
 #include "silcrng.h"
 #include "silcpkcs.h"
+#include "silcpkcs1.h"
 
 /* More SILC util library includes */
 #include "silcmutex.h"
@@ -243,6 +260,8 @@ extern "C" {
 #include "silcnet.h"
 #include "silcfileutil.h"
 #include "silcstrutil.h"
+#include "silcutf8.h"
+#include "silcstringprep.h"
 #include "silcutil.h"
 #include "silcconfig.h"
 #include "silcprotocol.h"
