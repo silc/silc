@@ -214,8 +214,9 @@ ad_create_distdefs_h()
 #
 ad_make_configure()
 {
-  ad_debug ">ad_make_configure"
   local run_autoconf=false
+
+  ad_debug ">ad_make_configure"
 
   rm -f configure
 
@@ -270,13 +271,15 @@ ad_make_configure()
 #
 ad_make_configure_ac()
 {
+  local check
+
   ad_debug ">ad_make_configure_ac: $1"
 
   if test '!' -f $1; then
     ad_fatal "The configure file '$1' does not exist"
   fi
 
-  local check="`cat $1 | sed 's/^[ 	]*//' | grep -v "^#" | grep -e "AD_INIT"`"
+  check="`cat $1 | sed 's/^[ 	]*//' | grep -v "^#" | grep -e "AD_INIT"`"
   if test -z $check; then
     rm -f configure.ad.cfs
     rm -f $fname $fname.tmp
@@ -296,7 +299,7 @@ ad_make_configure_ac()
   done
 
   if test -f configure.ad.cfs; then
-    local check="`cat $1 | sed 's/^[ 	]*//' | grep -v "^#" | grep -e "AD_INCLUDE_CONFIGURE"`"
+    check="`cat $1 | sed 's/^[ 	]*//' | grep -v "^#" | grep -e "AD_INCLUDE_CONFIGURE"`"
     if test -z $check; then
       rm -f configure.ad.cfs
       ad_warning "configure.ad fragments found but 'AD_INCLUDE_CONFIGURE' is not set"
@@ -455,13 +458,15 @@ ad_process_ads()
 #
 ad_dist_includes()
 {
+  local incs
+
   ad_debug ">ad_dist_includes: $1 $2"
 
   # By default do not expand pathnames
   set -f
 
   # Add : separator at the end
-  local incs="`echo "$1" | sed 's/$/ : /'`"
+  incs="`echo "$1" | sed 's/$/ : /'`"
 
   src=
   dst=
@@ -920,6 +925,23 @@ ad_clear_options()
 #
 ad_parse_distribution()
 {
+  local inhs
+  local defs
+  local undefs
+  local incs
+  local excs
+  local nops
+  local opts
+  local dname
+  local dpname
+  local bugr
+  local prh
+  local poh
+  local prdh
+  local podh
+  local prpdh
+  local popdh
+
   ad_debug ">ad_parse_distribution: $1 $2"
 
   if test '!' -f $distdir/$1; then
@@ -927,11 +949,11 @@ ad_parse_distribution()
   fi
 
   # Get inherited
-  local inhs=`cat $distdir/$1 | sed 's/^[ 	]*//' | grep -v "^#" \
+  inhs=`cat $distdir/$1 | sed 's/^[ 	]*//' | grep -v "^#" \
     | grep "inherit " | cut -d' ' -f2 | sort | uniq`
 
   # Get distdefs
-  local defs=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+  defs=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
    | grep "define " | cut -d' ' -f2 | sort | uniq`
 
   if test "$inhs" = "" && test "$defs" = ""; then
@@ -939,23 +961,23 @@ ad_parse_distribution()
   fi
 
   # Get undefined distdefs
-  local undefs=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+  undefs=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
    | grep "undef " | cut -d' ' -f2 | sort | uniq`
 
   # Get includes
-  local incs=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+  incs=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
     | grep "include " | sed 's/include / : /'`
 
   # Get excludes
-  local excs=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+  excs=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
     | grep "exclude " | cut -d' ' -f2- | sort | uniq`
 
   # Get noprocesses
-  local nops=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+  nops=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
     | grep "noprocess " | cut -d' ' -f2- | sort | uniq`
 
   # Get options
-  local opts=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+  opts=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
     | grep "option " | cut -d' ' -f2- | sort | uniq`
 
   # Check options
@@ -1002,7 +1024,7 @@ ad_parse_distribution()
 
   if test x$2 = xfalse; then
     # Get distribution name
-    local dname=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+    dname=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
       | grep "name " | cut -d' ' -f2-`
 
     if test "$dname"; then
@@ -1010,7 +1032,7 @@ ad_parse_distribution()
     fi
 
     # Get distribution package name (optional)
-    local dpname=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+    dpname=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
      | grep "package " | cut -d' ' -f2`
 
     if test "$dpname"; then
@@ -1020,7 +1042,7 @@ ad_parse_distribution()
     fi
 
     # Get Bug-report email address (optional)
-    local bugr=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+    bugr=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
      | grep "bug-report " | cut -d' ' -f2-`
 
     if test "$bugr"; then
@@ -1032,17 +1054,17 @@ ad_parse_distribution()
     ad_debug "bug-report=$bug_report"
 
     # Get hooks (optional)
-    local prh=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+    prh=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
      | grep "pre-hook " | cut -d' ' -f2-`
-    local poh=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+    poh=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
      | grep "post-hook " | cut -d' ' -f2-`
-    local prdh=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+    prdh=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
      | grep "pre-dist-hook " | sed 's/^[       ]*//' | cut -d' ' -f2-`
-    local podh=`cat $distdir/$1 | grep -v "^#" \
+    podh=`cat $distdir/$1 | grep -v "^#" \
      | grep "post-dist-hook " | sed 's/^[       ]*//' | cut -d' ' -f2-`
-    local prpdh=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
+    prpdh=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
      | grep "pre-process-dist-hook " | sed 's/^[       ]*//' | cut -d' ' -f2-`
-    local popdh=`cat $distdir/$1 | grep -v "^#" \
+    popdh=`cat $distdir/$1 | grep -v "^#" \
      | grep "post-process-dist-hook " | sed 's/^[       ]*//' | cut -d' ' -f2-`
 
     pre_hooks="$pre_hooks $prh"
@@ -1161,10 +1183,10 @@ ad_process_license_header()
 #
 ad_process_noprocess()
 {
-  ad_debug ">ad_process_noprocess"
   local np=false
-
   local n="sed "
+
+  ad_debug ">ad_process_noprocess"
 
   for i in $noprocess
   do
@@ -1191,6 +1213,9 @@ ad_process_noprocess()
 ad_process_file()
 {
   local found=false
+  local f
+  local defs
+  local ndefs
 
   # Process only regular files
   if test '!' -f $1; then
@@ -1199,7 +1224,7 @@ ad_process_file()
 
   ad_debug ">ad_process_file: $1 $2"
 
-  local f="autodist.tmp.script"
+  f="autodist.tmp.script"
   rm -f $f
 
   # If license header is provided, replace the license header in the file.
@@ -1208,11 +1233,11 @@ ad_process_file()
   ad_debug "Getting #ifdef's and #ifndef's"
 
   # Get defined distribution defines
-  local defs=`awk "/^#ifdef "$DP"_DIST_|^#else "$DP"_DIST_/ { print; }" \
+  defs=`awk "/^#ifdef "$DP"_DIST_|^#else "$DP"_DIST_/ { print; }" \
     $1 |cut -d'*' -f2 |cut -d' ' -f2 | sort | uniq`
 
   # Get explicitly not-defined distribution defines
-  local ndefs=`awk "/^#ifndef "$DP"_DIST_|^#else !"$DP"_DIST_/ { print; }" \
+  ndefs=`awk "/^#ifndef "$DP"_DIST_|^#else !"$DP"_DIST_/ { print; }" \
     $1 |cut -d'*' -f2 |cut -d' ' -f2 | cut -d'!' -f2 | sort | uniq`
 
   ad_debug "defs=$defs"
@@ -1293,6 +1318,9 @@ ad_process_file()
 ad_process_source_file()
 {
   local found=false
+  local f
+  local defs
+  local ndefs
 
   # Process only regular files
   if test '!' -f $1; then
@@ -1301,7 +1329,7 @@ ad_process_source_file()
 
   ad_debug ">ad_process_source_file: $1 $2"
 
-  local f="autodist.tmp.script"
+  f="autodist.tmp.script"
   rm -f $f
 
   # If license header is provided, replace the license header in the file.
@@ -1310,11 +1338,11 @@ ad_process_source_file()
   ad_debug "Getting #ifdef's and #ifndef's"
 
   # Get defined distribution defines
-  local defs=`awk '/^#ifdef SILC_DIST_|^#else \/\* SILC_DIST_/ { print; }' \
+  defs=`awk '/^#ifdef SILC_DIST_|^#else \/\* SILC_DIST_/ { print; }' \
     $1 |cut -d'*' -f2 |cut -d' ' -f2 | sort | uniq`
 
   # Get explicitly not-defined distribution defines
-  local ndefs=`awk '/^#ifndef SILC_DIST_|^#else \/\* \!SILC_DIST_/ { print; }' \
+  ndefs=`awk '/^#ifndef SILC_DIST_|^#else \/\* \!SILC_DIST_/ { print; }' \
     $1 |cut -d'*' -f2 |cut -d' ' -f2 | cut -d'!' -f2 | sort | uniq`
 
   ad_debug "defs=$defs ndefs=$ndefs"
