@@ -511,6 +511,7 @@ if test -n "$with_silc_includes" || test -n "$with_silc_libs"; then
   f=`$EGREP __SILC_HAVE_PTHREAD $ac_silc_includes/silcincludes.h`
   if test -n "$f"; then
     LIBS="$LIBS -lpthread"
+    check_threads=false
   fi
   f=`$EGREP __SILC_HAVE_SIM $ac_silc_includes/silcincludes.h`
   if test -n "$f"; then
