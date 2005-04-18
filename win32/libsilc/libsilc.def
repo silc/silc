@@ -598,3 +598,5 @@ EXPORTS
 	silc_stringprep @ 923;
 	silc_identifier_check @ 924 ;
 	silc_identifier_verify @ 925 ;
+	silc_channel_name_check @ 926 ;
+	silc_channel_name_verify @ 927 ;

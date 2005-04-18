@@ -427,57 +427,6 @@ AC_SUBST(MODULESDIR)
 AC_DEFINE_UNQUOTED([SILC_MODULESDIR], "$MODULESDIR", [SILC_MODULESDIR])
 #endif SILC_DIST_SIM
 
-#ifdef SILC_DIST_SERVER
-# Logs directory
-#
-LOGSDIR="$silc_prefix/logs"
-AC_ARG_WITH(logsdir,
-  [[  --with-logsdir=DIR      directory for SILC Server logs [PREFIX/logs]]],
-  [
-    case "$withval" in
-      no|yes)
-        ;;
-      *)
-        LOGSDIR="$withval"
-        ;;
-    esac
-  ])
-AC_SUBST(LOGSDIR)
-AC_DEFINE_UNQUOTED([SILC_LOGSDIR], "$LOGSDIR", [SILC_LOGSDIR])
-
-# silcd config file checking
-#
-summary_silcd_configfile="/etc/silc/silcd.conf"
-AC_ARG_WITH(silcd-config-file,
-  [[  --with-silcd-config-file=FILE  use FILE as default configuration file
-                                 for SILC Server [/etc/silc/silcd.conf]]],
-    AC_DEFINE_UNQUOTED([SILC_SERVER_CONFIG_FILE], "$withval", [SILC_SERVER_CONFIG_FILE])
-    summary_silcd_configfile="$withval"
-  )
-
-# silcd pid file checking
-#
-if test "x$localstatedir" != 'x${prefix}/var'; then
-  PIDFILE="$localstatedir/silcd.pid"
-else
-  PIDFILE="$silc_prefix/var/silcd.pid"
-fi
-
-AC_ARG_WITH(silcd-pid-file,
-  [[  --with-silcd-pid-file=FILE     use FILE as default pid file for SILC
-                                 Server [/var/run/silcd.pid]]],
-  [
-    case "$withval" in
-      no|yes)
-        ;;
-      *)
-        PIDFILE="$withval"
-        ;;
-    esac
-  ])
-AC_SUBST(PIDFILE)
-#endif SILC_DIST_SERVER
-
 #ifdef SILC_DIST_COMPILER
 ##
 ##  With/without checkings
@@ -1180,19 +1129,6 @@ fi
 #endif SILC_DIST_TOOLKIT
 
 #ifdef SILC_DIST_TOOLKIT
-if test x$without_silcd = xfalse ; then
-#endif SILC_DIST_TOOLKIT
-#ifdef SILC_DIST_SERVER
-  AC_CONFIG_FILES(
-silcd/Makefile
-doc/example_silcd.conf
-)
-#endif SILC_DIST_SERVER
-#ifdef SILC_DIST_TOOLKIT
-fi
-#endif SILC_DIST_TOOLKIT
-
-#ifdef SILC_DIST_TOOLKIT
 AC_CONFIG_FILES(
 silc/Makefile
 win32/Makefile
@@ -1240,10 +1176,6 @@ echo " SIM directory .................: $MODULESDIR"
 echo " include directory .............: $s_includedir"
 #endif SILC_DIST_INCLUDES
 echo ""
-
-#ifdef SILC_DIST_SERVER
-silcd="yes"
-#endif SILC_DIST_SERVER
 
 #ifdef SILC_DIST_TOOLKIT
 if test x$without_irssi = xtrue; then
