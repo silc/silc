@@ -28,9 +28,11 @@ SILCLIB_DIRS = \
 #ifdef SILC_DIST_MATH
 	silcmath \
 #endif SILC_DIST_MATH
+#ifdef SILC_DIST_SFTP
+	silcsftp \
+#endif SILC_DIST_SFTP
 	silcske \
-	silcutil \
-	silcsftp
+	silcutil
 
 SILCLIB = libsilc.a
 

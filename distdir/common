@@ -7,4 +7,5 @@ define SILC_DIST_DOC
 define SILC_DIST_SIM
 define SILC_DIST_MPI
 define SILC_DIST_MATH
+define SILC_DIST_SFTP
 define SILC_DIST_COMPILER

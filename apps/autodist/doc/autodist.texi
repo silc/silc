@@ -1023,6 +1023,9 @@ preparation.  They will be processed when creating the distribution package.
 If you need processed files during configuration or compilation then they
 need to have '.ad' suffix.
 
+Note that, the distdef format used in these files must be the non-source
+format.
+
 @menu
 * Distdefines::                 Using distdefs in files
 @end menu

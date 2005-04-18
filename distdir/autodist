@@ -18,4 +18,3 @@ exclude apps/autodist/TODO apps/autodist/CHANGES
 exclude README.* ltmain.sh
 
 noprocess apps/autodist/doc apps/autodist/tests
-

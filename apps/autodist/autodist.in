@@ -1611,6 +1611,11 @@ ad_make_makefile_ams
 ad_make_configure_ac ./configure.ad
 
 #
+# Process all files with .ad suffix for distribution processing
+#
+ad_process_ads
+
+#
 # Generate configure script
 #
 ad_make_configure
@@ -1619,11 +1624,6 @@ ad_make_configure
 # Generate Makefile.in files
 #
 ad_make_makefile_ins
-
-#
-# Process all files with .ad suffix for distribution processing
-#
-ad_process_ads
 
 #
 # Create autodist.dist
