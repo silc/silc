@@ -1,8 +1,6 @@
 name Server
 package silc-server
 bug-report silc-devel@lists.silcnet.org
-license distdir/BSD
-license-header distdir/GPL-header distdir/BSD-header
 inherit common
 define SILC_DIST_SERVER
 undef SILC_DIST_SFTP

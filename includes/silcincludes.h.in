@@ -295,9 +295,11 @@ extern "C" {
 #include "silcske_payload.h"
 #include "silcske_groups.h"
 
+#ifdef SILC_DIST_SFTP
 /* SILC SFTP library */
 #include "silcsftp.h"
 #include "silcsftp_fs.h"
+#endif /* SILC_DIST_SFTP */
 
 #ifdef __cplusplus
 }
