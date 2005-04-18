@@ -523,10 +523,12 @@ else
   PKG_CHECK_MODULES(SILC, silc, compile_libs=false, compile_libs=true)
   PKG_CHECK_MODULES(SILCCLIENT, silcclient, compile_libs=false, compile_libs=true)
 
-  LIBS="$LIBS $SILC_LIBS"
-  CFLAGS="$CFLAGS $SILC_CFLAGS"
-  LIBS="$LIBS $SILCCLIENT_LIBS"
-  CFLAGS="$CFLAGS $SILCCLIENT_CFLAGS"
+  if test x$compile_libs = xfalse; then
+    LIBS="$LIBS $SILC_LIBS"
+    CFLAGS="$CFLAGS $SILC_CFLAGS"
+    LIBS="$LIBS $SILCCLIENT_LIBS"
+    CFLAGS="$CFLAGS $SILCCLIENT_CFLAGS"
+  fi
 fi
 #endif SILC_DIST_TOOLKIT
 
@@ -1216,7 +1218,6 @@ echo "---------------------------"
 echo " Target host ...................: $target"
 echo " Compiler ......................: $CC"
 echo " CFLAGS ........................: $CFLAGS"
-echo " CPPFLAGS ......................: $CPPFLAGS"
 echo " LDFLAGS .......................: $LDFLAGS"
 echo " LIBS ..........................: $LIBS"
 echo ""
