@@ -11,3 +11,4 @@ include README.MACOSX
 include silcer
 include tutorial
 pre-hook distdir/pre-run
+post-dist-hook distdir/post-dist

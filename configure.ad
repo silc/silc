@@ -461,6 +461,7 @@ if test -n "$with_silc_includes" || test -n "$with_silc_libs"; then
   if test -n "$f"; then
     LIBS="$LIBS -lpthread"
     check_threads=false
+    has_threads=true
   fi
   f=`$EGREP __SILC_HAVE_SIM $ac_silc_includes/silcincludes.h`
   if test -n "$f"; then
@@ -832,7 +833,6 @@ fi
 
 # POSIX threads support
 #
-has_threads=false
 AC_MSG_CHECKING(whether to search for POSIX threads)
 AC_ARG_WITH(pthreads,
   [[  --with-pthreads[=DIR]   use POSIX threads [search in DIR/include and DIR/lib]]],
@@ -856,6 +856,7 @@ AC_ARG_WITH(pthreads,
   ])
 
 if test x$check_threads = xtrue; then
+  has_threads=false
   SAVE_LIBS="$LIBS"
   SAVE_CFLAGS="$CFLAGS"
   SAVE_LDFLAGS="$LDFLAGS"
@@ -986,7 +987,6 @@ AM_CONDITIONAL(SILC_BEOS, test xfalse = xtrue)
 AM_CONDITIONAL(SILC_OS2, test xfalse = xtrue)
 
 #ifdef SILC_DIST_TOOLKIT
-
 # --without-irssi
 #
 without_irssi=false
@@ -1014,7 +1014,6 @@ AC_ARG_WITH(silcd,
   [
     AC_MSG_RESULT(yes)
   ])
-
 #endif SILC_DIST_TOOLKIT
 
 #ifdef SILC_DIST_CLIENT

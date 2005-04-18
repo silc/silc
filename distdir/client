@@ -5,3 +5,4 @@ inherit common
 define SILC_DIST_CLIENT
 define SILC_DIST_CLIENTLIB
 pre-hook distdir/pre-run
+post-dist-hook distdir/post-dist

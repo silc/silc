@@ -1,0 +1,14 @@
+#!/bin/sh
+
+distribution=$1
+dist_version=$2
+package=$3
+distdir=$4
+
+if test -f $distdir.tar.gz; then
+  md5sum $distdir.tar.gz > distdir.tar.gz.md5
+fi
+if test -f $distdir.tar.bz2; then
+  md5sum $distdir.tar.bz2 > distdir.tar.bz2.md5
+fi
+

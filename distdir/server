@@ -5,3 +5,4 @@ license distdir/BSD
 license-header distdir/GPL-header distdir/BSD-header
 inherit common
 define SILC_DIST_SERVER
+post-dist-hook distdir/post-dist
