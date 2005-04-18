@@ -921,12 +921,6 @@ SILC_CONFIG_CALLBACK(fetch_admin)
       goto got_err;
     }
   }
-  else if (!strcmp(name, "publickeydir")) {
-    if (!my_parse_publickeydir((char *) val, (void *)&tmp->publickeys)) {
-      got_errno = SILC_CONFIG_EPRINTLINE;
-      goto got_err;
-    }
-  }
   else
     return SILC_CONFIG_EINTERNAL;
   return SILC_CONFIG_OK;

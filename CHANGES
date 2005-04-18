@@ -1,3 +1,10 @@
+Mon Apr 18 09:53:28 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added pkg-config check to configure.
+
+	* The PublicKeyDir must not be used with Admin block in server
+	  config.  Affected file silcd/serverconfig.c.
+
 Sat Apr 16 20:23:48 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added Autodist.
