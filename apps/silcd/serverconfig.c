@@ -1280,7 +1280,6 @@ static const SilcConfigTable table_admin[] = {
   { "nick",		SILC_CONFIG_ARG_STRE,	fetch_admin,	NULL },
   { "passphrase",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { "publickey",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
-  { "publickeydir",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { "port",		SILC_CONFIG_ARG_INT,	fetch_admin,	NULL },
   { "params",		SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { 0, 0, 0, 0 }
