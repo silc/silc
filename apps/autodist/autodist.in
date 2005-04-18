@@ -35,7 +35,7 @@
 
 # Be Bourne compatible
 if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
-  # XXX We actually may not work on zsh
+  # Despite of this, we have managed to segfault some zsh's.
   emulate sh
   NULLCMD=:
   # Zsh 3.x and 4.x performs word splitting on ${1+"$@"}, which
@@ -101,7 +101,7 @@ distdefs=
 undistdefs=
 
 # All distribution options
-options=
+doptions=
 opt_template=false
 opt_no_dist=false
 opt_no_inherit=false
@@ -778,7 +778,7 @@ ad_makedist_makesane()
     ad_fatal "Makefile: No such file or directory"
   fi
 
-  configh=`grep "^CONFIG_HEADER" Makefile | cut -d= -f2 | sed 's/^[ \t]//'`
+  configh=`grep "^CONFIG_HEADER" Makefile | cut -d= -f2 | sed 's/^[ 	]*//'`
   touch $am_distdir/$configh.in 1>/dev/null 2>/dev/null
 
   files=`find $am_distdir -name Makefile\.in`
@@ -1114,10 +1114,10 @@ ad_parse_distribution()
     post_dist_hooks="$post_dist_hooks $podh"
     pre_p_dist_hooks="$pre_p_dist_hooks $prpdh"
     post_p_dist_hooks="$post_p_dist_hooks $popdh"
-    options="$options $opts"
+    doptions="$doptions $opts"
 
-    ad_handle_options "$options"
-    ad_debug "options=$options"
+    ad_handle_options "$doptions"
+    ad_debug "options=$doptions"
   fi
 
   # Return to caller
@@ -1148,8 +1148,7 @@ ad_process_distdefs()
     distdefs=`echo $distdefs | sed s/$i//`
   done
 
-  rm -f autodist.tmp.defs autodist.pre.hooks autodist.post.hooks
-  rm -f autodist.pre.dist.hooks autodist.post.dist.hooks
+  rm -f autodist.tmp.defs
 
   # Remove duplicate distdefs
   for i in $distdefs
