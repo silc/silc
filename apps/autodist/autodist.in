@@ -376,7 +376,7 @@ ad_make_configure_ac()
 
   # Remove any trailing backslashes
   if test -f "$fname"; then
-    cat $fname | sed -e :a -e '/\\$/N; s/\\\n//; ta' > configure.ac
+    cat $fname | sed -e :a -e '/\\$/N; s/[ 	]*\\\n//; ta' > configure.ac
   else
     cp -p $fname.tmp configure.ac
   fi
@@ -437,7 +437,7 @@ ad_make_makefile_ams()
 
     # Remove any trailing backslashes
     if test -f "$fname.tmp"; then
-      cat $fname.tmp | sed -e :a -e '/\\$/N; s/\\\n//; ta' >> $fname.am
+      cat $fname.tmp | sed -e :a -e '/\\$/N; s/[ 	]*\\\n//; ta' >> $fname.am
     else
       cat $ff >> $fname.am
     fi

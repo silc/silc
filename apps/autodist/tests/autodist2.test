@@ -26,11 +26,12 @@ echo configure.ad ok
 EOF
 
 cat << EOF > Makefile.ad
-SUBDIRS=	\
+SUBDIRS=	\\
 #ifndef _DIST_TEST
-	nodef	\
+	nodef	\\
 #endif _DIST_TEST
-#endif
+	.	\\
+
 EOF
 
 rm -rf distdir subdir
