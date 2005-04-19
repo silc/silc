@@ -263,7 +263,11 @@ ad_make_configure()
 
   if test "$ACLOCAL"; then
     ad_debug "Running aclocal"
-    $ACLOCAL 1>/dev/null 2>/dev/null
+    if test x$debug = xtrue; then
+      $ACLOCAL
+    else
+      $ACLOCAL 1>/dev/null 2>/dev/null
+    fi
     if test $? != 0; then
       ad_fatal "aclocal failed"
     fi
@@ -1030,13 +1034,13 @@ ad_parse_distribution()
     ad_fatal "Template distribution '$1' cannot be prepared or packaged"
   fi
 
-  ad_debug "inherits=$inhs"
-  ad_debug "distdefs=$defs"
-  ad_debug "includes=$incs"
-  ad_debug "excludes=$excs"
-  ad_debug "noprocess=$nops"
-  ad_debug "undistdefs=$undefs"
-  ad_debug "options=$opts"
+  ad_debug "inherits: $inhs"
+  ad_debug "distdefs: $defs"
+  ad_debug "includes: $incs"
+  ad_debug "excludes: $excs"
+  ad_debug "noprocess: $nops"
+  ad_debug "undistdefs: $undefs"
+  ad_debug "options: $opts"
 
   # Expand distdefs from inherited distributions
   for i in $inhs
@@ -1060,8 +1064,8 @@ ad_parse_distribution()
   licenseh=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
     | grep "license-header " | sed 's/license-header / : /'`
 
-  ad_debug "license=$license"
-  ad_debug "licenseh=$licenseh"
+  ad_debug "license: $license"
+  ad_debug "licenseh: $licenseh"
 
   if test x$2 = xfalse; then
     # Get distribution name
@@ -1090,9 +1094,9 @@ ad_parse_distribution()
       bug_report=$bugr
     fi
 
-    ad_debug "distribution=$distribution"
-    ad_debug "package=$package"
-    ad_debug "bug-report=$bug_report"
+    ad_debug "distribution: $distribution"
+    ad_debug "package: $package"
+    ad_debug "bug-report: $bug_report"
 
     # Get hooks (optional)
     prh=`cat $distdir/$1 | sed 's/^[       ]*//' | grep -v "^#" \
@@ -1117,7 +1121,7 @@ ad_parse_distribution()
     doptions="$doptions $opts"
 
     ad_handle_options "$doptions"
-    ad_debug "options=$doptions"
+    ad_debug "options: $doptions"
   fi
 
   # Return to caller
@@ -1280,8 +1284,8 @@ ad_process_file()
   ndefs=`awk "/^#ifndef "$DP"_DIST_|^#else !"$DP"_DIST_/ { print; }" \
     $1 |cut -d'*' -f2 |cut -d' ' -f2 | cut -d'!' -f2 | sort | uniq`
 
-  ad_debug "defs=$defs"
-  ad_debug "ndefs=$ndefs"
+  ad_debug "defs in $1: $defs"
+  ad_debug "ndefs in $1: $ndefs"
 
   # Create the script to include and exclude stuff in the file according
   # to the distribution defines
@@ -1385,7 +1389,8 @@ ad_process_source_file()
   ndefs=`awk '/^#ifndef SILC_DIST_|^#else \/\* \!SILC_DIST_/ { print; }' \
     $1 |cut -d'*' -f2 |cut -d' ' -f2 | cut -d'!' -f2 | sort | uniq`
 
-  ad_debug "defs=$defs ndefs=$ndefs"
+  ad_debug "defs in $1: $defs"
+  ad_debug "ndefs in $1: $ndefs"
 
   # Create the script to include and exclude stuff in the file according
   # to the distribution defines
@@ -1468,7 +1473,7 @@ ad_run_hooks()
     if test '!' -f $i; then
       ad_fatal "Hook script $i does not exist"
     fi
-    sh $i $distribution $dist_version $package || exit 1
+    sh $i "$distribution" "$dist_version" "$package" || exit 1
   done
 
   ad_debug "<ad_run_hooks: $1"
@@ -1488,7 +1493,7 @@ ad_run_dist_hooks()
     if test '!' -f $i; then
       ad_fatal "Dist hook script $i does not exist"
     fi
-    sh $i $distribution $dist_version $package $am_distdir || exit 1
+    sh $i "$distribution" "$dist_version" "$package" "$am_distdir" || exit 1
   done
 
   ad_debug "<ad_run_dist_hooks: $1"
