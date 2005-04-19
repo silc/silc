@@ -1370,8 +1370,8 @@ Autodist package provides a simple helper script 'makedist' that may
 be used to create the distribution.  However, if you wish, you may
 run the Autodist yourself, as the 'makedist' will call Autodist anyway.
 
-To create a new distribution for the distribution you have prepared for
-run makedist.
+To create a new distribution for the distribution you have prepared for,
+run first './configure' and then 'makedist'.
 
 @example
   makedist
