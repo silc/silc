@@ -454,6 +454,8 @@ void silc_idlist_client_destructor(SilcIDCache cache,
     silc_free(client->userinfo);
     silc_free(client->id);
     silc_free(client->attrs);
+    if (client->data.public_key)
+      silc_pkcs_public_key_free(client->data.public_key);
     silc_hash_table_free(client->channels);
 
     memset(client, 'A', sizeof(*client));
