@@ -51,7 +51,7 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcclient"
 # Do the releases and library versioning according to following rules:
 #
 #  - If any code has changed in library, increment [LIB]_REVISION
-#  - If functions were added, set [LIB]_REVISION to 0
+#  - If functions were added, removed or changed, set [LIB]_REVISION to 0
 #  - If functions were added, removed or changed, increment [LIB]_CURRENT
 #  - If functions were added, increment [LIB]_AGE
 #  - If functions were removed, set [LIB]_AGE to 0
@@ -68,14 +68,14 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcclient"
 LIB_BASE_VERSION=1.0
 
 # libsilc versions
-LIBSILC_CURRENT=4		# prev = 3
+LIBSILC_CURRENT=5		# prev = 4
 LIBSILC_REVISION=0		# prev = 0
-LIBSILC_AGE=3			# prev = 2
+LIBSILC_AGE=3			# prev = 3
 
 # libsilcclient versions
-LIBSILCCLIENT_CURRENT=4		# prev = 3
+LIBSILCCLIENT_CURRENT=4		# prev = 4
 LIBSILCCLIENT_REVISION=0	# prev = 0
-LIBSILCCLIENT_AGE=3		# prev = 2
+LIBSILCCLIENT_AGE=3		# prev = 3
 
 # Substitute the version numbers
 AC_SUBST(LIB_BASE_VERSION)

@@ -111,7 +111,8 @@ typedef struct SilcIDCacheListStruct *SilcIDCacheList;
  * SYNOPSIS
  *
  *    typedef void (*SilcIDCacheDestructor)(SilcIDCache cache,
- *                                          SilcIDCacheEntry entry);
+ *                                          SilcIDCacheEntry entry,
+ *                                          void *context);
  *
  * DESCRIPTION
  *
@@ -122,7 +123,8 @@ typedef struct SilcIDCacheListStruct *SilcIDCacheList;
  *
  ***/
 typedef void (*SilcIDCacheDestructor)(SilcIDCache cache,
-				      SilcIDCacheEntry entry);
+				      SilcIDCacheEntry entry,
+				      void *context);
 
 #define SILC_ID_CACHE_EXPIRE 3600
 #define SILC_ID_CACHE_EXPIRE_DEF (time(NULL) + SILC_ID_CACHE_EXPIRE)
@@ -134,7 +136,9 @@ typedef void (*SilcIDCacheDestructor)(SilcIDCache cache,
  * SYNOPSIS
  *
  *    SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
- *                                   SilcIDCacheDestructor destructor);
+ *                                   SilcIDCacheDestructor destructor,
+ *                                   void *destructor_context,
+ *                                   bool delete_id, bool delete_name);
  *
  * DESCRIPTION
  *
@@ -150,6 +154,7 @@ typedef void (*SilcIDCacheDestructor)(SilcIDCache cache,
  ***/
 SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
 			       SilcIDCacheDestructor destructor,
+			       void *destructor_context,
 			       bool delete_id, bool delete_name);
 
 /****f* silccore/SilcIDCacheAPI/silc_idcache_free
