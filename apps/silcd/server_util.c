@@ -1093,66 +1093,6 @@ bool silc_server_client_on_channel(SilcClientEntry client,
 			      (void *)chl);
 }
 
-/* Checks string for bad characters and returns TRUE if they are found. */
-
-bool silc_server_name_bad_chars(const char *name, SilcUInt32 name_len)
-{
-  int i;
-
-  for (i = 0; i < name_len; i++) {
-    if (!isascii(name[i]))
-      return TRUE;
-    if (name[i] <= 32) return TRUE;
-    if (name[i] == ' ') return TRUE;
-    if (name[i] == '*') return TRUE;
-    if (name[i] == '?') return TRUE;
-    if (name[i] == ',') return TRUE;
-    if (name[i] == '@') return TRUE;
-    if (name[i] == '!') return TRUE;
-  }
-
-  return FALSE;
-}
-
-/* Same as silc_server_name_bad_chars but check for channel names. */
-
-bool silc_server_name_bad_chchars(const char *name, SilcUInt32 name_len)
-{
-  int i;
-
-  for (i = 0; i < name_len; i++) {
-    if (!isascii(name[i]))
-      return TRUE;
-    if (name[i] <= 32) return TRUE;
-    if (name[i] == ' ') return TRUE;
-    if (name[i] == '*') return TRUE;
-    if (name[i] == '?') return TRUE;
-    if (name[i] == ',') return TRUE;
-  }
-
-  return FALSE;
-}
-
-/* Modifies the `name' if it includes bad characters and returns new
-   allocated name that does not include bad characters. */
-
-char *silc_server_name_modify_bad(const char *name, SilcUInt32 name_len)
-{
-  int i;
-  char *newname = strdup(name);
-
-  for (i = 0; i < name_len; i++) {
-    if (!isascii(newname[i])) newname[i] = '_';
-    if (newname[i] <= 32) newname[i] = '_';
-    if (newname[i] == ' ') newname[i] = '_';
-    if (newname[i] == '*') newname[i] = '_';
-    if (newname[i] == '?') newname[i] = '_';
-    if (newname[i] == ',') newname[i] = '_';
-  }
-
-  return newname;
-}
-
 /* Find number of sockets by IP address indicated by `ip'. Returns 0 if
    socket connections with the IP address does not exist. */
 
