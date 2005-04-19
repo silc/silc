@@ -343,22 +343,22 @@ bool silc_server_init(SilcServer server)
   /* Initialize ID caches */
   server->local_list->clients =
     silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor,
-		       FALSE, TRUE);
+		       server, FALSE, TRUE);
   server->local_list->servers =
-    silc_idcache_alloc(0, SILC_ID_SERVER, NULL, FALSE, TRUE);
+    silc_idcache_alloc(0, SILC_ID_SERVER, NULL, NULL, FALSE, TRUE);
   server->local_list->channels =
-    silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL, FALSE, TRUE);
+    silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL, NULL, FALSE, TRUE);
 
   /* These are allocated for normal server as well as these hold some
      global information that the server has fetched from its router. For
      router these are used as they are supposed to be used on router. */
   server->global_list->clients =
     silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor,
-		       FALSE, TRUE);
+		       server, FALSE, TRUE);
   server->global_list->servers =
-    silc_idcache_alloc(0, SILC_ID_SERVER, NULL, FALSE, TRUE);
+    silc_idcache_alloc(0, SILC_ID_SERVER, NULL, NULL, FALSE, TRUE);
   server->global_list->channels =
-    silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL, FALSE, TRUE);
+    silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL, NULL, FALSE, TRUE);
 
   /* Init watcher lists */
   server->watcher_list =

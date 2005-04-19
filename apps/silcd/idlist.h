@@ -616,7 +616,8 @@ silc_idlist_replace_client_id(SilcServer server,
 			      SilcIDList id_list, SilcClientID *old_id,
 			      SilcClientID *new_id, const char *nickname);
 void silc_idlist_client_destructor(SilcIDCache cache,
-				   SilcIDCacheEntry entry);
+				   SilcIDCacheEntry entry,
+				   void *context);
 SilcChannelEntry
 silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 			SilcChannelID *id, SilcServerEntry router,

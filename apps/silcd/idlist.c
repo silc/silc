@@ -407,7 +407,6 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
   SILC_LOG_DEBUG(("Start"));
 
   if (entry) {
-    /* Remove from cache. Destructor callback deletes stuff. */
     if (!silc_idcache_del_by_context(id_list->clients, entry)) {
       SILC_LOG_DEBUG(("Unknown client, did not delete"));
       return FALSE;
@@ -435,12 +434,19 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 /* ID Cache destructor */
 
 void silc_idlist_client_destructor(SilcIDCache cache,
-				   SilcIDCacheEntry entry)
+				   SilcIDCacheEntry entry,
+				   void *context)
 {
+  SilcServer server = context;
   SilcClientEntry client;
 
   client = (SilcClientEntry)entry->context;
   if (client) {
+    /* Remove this client from the public key hash list */
+    if (client->data.public_key)
+      silc_hash_table_del_by_context(server->pk_hash,
+				     client->data.public_key, client);
+
     assert(!silc_hash_table_count(client->channels));
     silc_free(client->nickname);
     silc_free(client->servername);
