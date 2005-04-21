@@ -427,7 +427,8 @@ and are ignored.
 
 The 'name' directive defines the name of the distribution.  It is optional
 directive, and if omitted the distribution name will be the name of the
-distfile.
+distfile.  The 'PACKAGE_NAME' define delivered by Autoconf will contain
+this name string.
 
 Example:
 @example
@@ -444,6 +445,8 @@ optional directive, and if omitted the distribution package name will
 be the name of the distribution, if defined, or if omitted, then the name
 of the distfile.  If this directive is omitted then normal GNU convention
 is used to decide the package name, derived from the distribution name.
+The 'PACKAGE_TARNAME' define delivered by Autoconf will contain this
+package name string.
 
 Example:
 @example
@@ -458,8 +461,8 @@ Will create distribution packages named, for example, as
 
 The 'bug-report' directive can be used to define the email address where
 the bug-reports for the distribution should be sent.  The directive is
-optional.  The 'bug-report' email address will be set for the Autoconf
-which will deliver it via AC_INIT macro.
+optional.  The 'PACKAGE_BUGREPORT' define delivered by Autoconf will
+contain this bug report string.
 
 
 @section Directive: license <filename>
@@ -513,8 +516,8 @@ If the new header file has fewer lines that the current header file, all
 of the lines from the current header will not be replaced.  If the new header
 has fewer lines, empty lines must be added to it.  If the new header file
 has more lines than the current header file, the extra lines will not appear
-in the replaced header.  Basic rule is to always make sure the header file
-has equal amount of lines in them.
+in the replaced header.  Basic rule is to always make sure the header 
+files have equal amount of lines in them.
 
 Second limitation is in indentation of the header files.  It is suggested,
 though not mandatory, that the header files have the same indentation as
@@ -523,6 +526,16 @@ starts at the second character instead of at the start of the line, then
 the header file should start the license text at the second character also.
 If same indentation is not used the appearance of the replaced header
 may not be perfect.  While this is a cosmetic issue, one still to remember.
+
+Third limitation is that the distribution cannot be partially re-licensed.  
+If the 'license-header' directive is used then all files that have the 
+specified header will be replaced with the new header.  There are 
+currently two ways to not re-license a file;  use different license header 
+in the file than one specified in 'license-header', or specify the file or 
+directory in 'noprocess' directive.  Using 'noprocess' is not possible if 
+the file needs to be otherwise processed for the distribution.  Future 
+versions of Autodist may provide a mechanism to re-license only part of 
+the distribution.
 
 Example current header:
 @example
@@ -639,14 +652,14 @@ distribution.  The following options are available.
 template
 @end example
 
-When set, the distribution is a template distribution.  Templates are
-special distributions which cannot be prepared or packaged with Autodist.
-Templates can only be inherited.  Usually, templates are used to define a
-common template distribution for other distributions.  Templates may set
-distdefs, undefines, includes and excludes.  A large software project
-could have several distributions that share a common base.  In this case
-defining the common base as a template distribution and then inheriting
-that distribution makes it easier to manage the distfiles.
+When set, the distribution is a template distribution.  Templates are 
+special distributions which cannot be prepared or packaged with Autodist. 
+Templates can only be inherited.  Usually, templates are used to define a 
+common template distribution for other distributions.  Templates may set 
+distdefs, undefines, includes, excludes and noprocesses.  A large software 
+project could have several distributions that share a common base.  In 
+this case defining the common base as a template distribution and then 
+inheriting that distribution makes it easier to manage the distfiles.
 
 @example
 no-dist
@@ -1106,7 +1119,7 @@ a compiler friendly format, defined below, should be used.
 Note that, only the format defined above is supported.  Other more complex
 use of the preprocessor directives such as using '&&' and '||' in the
 '#ifdef' or '#ifndef' are not supported, and neither is '#elif'.  Also
-note, that the name of the distdef in '#else' and '#ifdef' directives in
+note, that the name of the distdef in '#else' and '#endif' directives in
 non-source format and in source format inside C comments (/* */), and the
 use of '!' character in the '#else' branch of '#ifdef'" are mandatory.
 Also note, that the distdef conditionals must be placed at the start of
@@ -1167,6 +1180,8 @@ The following example shows the use of source code format:
 
 #ifndef SILC_DIST_FOOBAR
   foobar_replacement();
+  foobar_hack_init();
+  foobar_init();
 #else /* SILC_DIST_FOOBAR */
   real_foobar();
 #endif /* SILC_DIST_FOOBAR */
@@ -1343,6 +1358,8 @@ prepare.
 This prepares your source tree for 'example-distribution' of version
 '1.0.3'.  After that you may run './configure' and continue to compile
 with 'make'.  If the version is omitted the version will be '0.0'.
+The 'PACKAGE_VERSION' define delivered by Autoconf will contain this
+version.
 
 Note that, running Autodist for preparation merely prepares your source
 tree for the distribution, it does not create an actual distribution
@@ -1406,16 +1423,11 @@ This example would create, in addition of 'tar.gz' package, also a
 'tar.bz2', 'tar.Z' and '.zip' packages.  Current version of Autodist does
 not support archiving with 'shar'.
 
-If you wish to run additional processing for your distributions when
-they are being packaged you may set 'pre-dist-hook' and/or 'post-dist-hook'
-in your distribution file.  Also note that any hooks provided by Automake
-in Makefiles will be run in normal manner.
-
-For additional help, you may give:
-
-@example
-  makedist --help
-@end example
+If you wish to run additional processing for your distributions when they 
+are being packaged you may set 'pre-process-dist-hook', 
+'post-process-dist-hook, 'pre-dist-hook' and/or 'post-dist-hook' in your 
+distribution file.  Also note that any hooks provided by Automake in 
+Makefiles will be run in normal manner.
 
 
 @node Examples
@@ -1441,7 +1453,7 @@ First, you create the default 'distdir' into your software package:
 
 Then, you create the 'configure.ad' file from your existing 'configure.ac'
 or 'configure.in' file.  If you don't have configure script written yet,
-please refer to the Autoconf manual.  In the 'autodist.ad' you add as
+please refer to the Autoconf manual.  In the 'configure.ad' you add as
 first macro in the file:
 
 @example
@@ -1516,7 +1528,7 @@ directory 'distdir':
 
 Then, you create the 'configure.ad' file from your existing 'configure.ac'
 or 'configure.in' file.  If you don't have configure script written yet,
-please refer to the Autoconf manual.  In the 'autodist.ad' you add as
+please refer to the Autoconf manual.  In the 'configure.ad' you add as
 first macro in the file:
 
 @example
