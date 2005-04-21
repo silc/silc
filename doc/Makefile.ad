@@ -74,7 +74,6 @@ dist-hook:
 
 #else !SILC_DIST_TOOLKIT
 dist-hook:
-	rm -rf `find $(top_distdir)/doc -name CVS`
 	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
 	rm draft-riikonen*.txt
 	touch draft-riikonen-silc-spec-08.txt
