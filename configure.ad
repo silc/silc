@@ -44,7 +44,9 @@ case "$target" in
     ;;
 esac
 
-CFLAGS=
+# Control compiler optimizations
+CFLAGS=`echo $CFLAGS | sed 's/-O[ 0123456789s]*//g'`
+
 AC_PROG_CC
 AC_C_INLINE
 AC_C_CONST
