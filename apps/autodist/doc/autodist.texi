@@ -349,7 +349,7 @@ AUTOMAKE="automake -a -c"
 The 'AUTOMAKE' specifies the location of the 'automake' tool.  If
 Autodist should not run 'automake' this option may be removed or set
 to empty value.  User need to then run it manually.  By default, the
-'-a'  and '-c' options are given to 'automake' to add any missing required 
+'-a'  and '-c' options are given to 'automake' to add any missing required
 files.
 
 
@@ -556,7 +556,7 @@ In this example, if the text in the current header file is found in any
 file in the distribution it will be replaced with the new header file.
 Notice that, both header files has same amount of lines (8 lines).
 
-Note that, the current header must match exactly the header used in 
+Note that, the current header must match exactly the header used in
 files.  Otherwise the replacement will not be complete.
 
 
@@ -807,12 +807,12 @@ name of distribution.  The script may use these arguments if it needs them.
 
 @section Directive: pre-process-dist-hook <filename> [...]
 
-The 'pre-process-dist-hook' directive can be used define additional 
+The 'pre-process-dist-hook' directive can be used define additional
 scripts that will be run when Autodist has started distribution creation.
-This directive is optional.  One or more scripts may be defined in one 
-'pre-process-dist-hook' directive.  Zero or more 'pre-process-dist-hook' 
-directives may be set for distribution.  The 'pre-process-dist-hook' hook 
-will be run immediately after the Autodist has created the distribution 
+This directive is optional.  One or more scripts may be defined in one
+'pre-process-dist-hook' directive.  Zero or more 'pre-process-dist-hook'
+directives may be set for distribution.  The 'pre-process-dist-hook' hook
+will be run immediately after the Autodist has created the distribution
 directory but has not yet started any distribution processing.
 
 The scripts will get four (4) command line arguments when Autodist
@@ -823,13 +823,13 @@ script may use these arguments if it needs them.
 
 @section Directive: post-process-dist-hook <filename> [...]
 
-The 'post-process-dist-hook' directive can be used define additional 
-scripts that will be run when Autodist has finished distribution 
-processing.  This directive is optional.  One or more scripts may be 
-defined in one 'post-process-dist-hook' directive.  Zero or more 
-'post-process-dist-hook' directives may be set for distribution.  The 
-'post-process-dist-hook' hook will be run immediately after the Autodist 
-has finished processing the destination distribution directory but has not 
+The 'post-process-dist-hook' directive can be used define additional
+scripts that will be run when Autodist has finished distribution
+processing.  This directive is optional.  One or more scripts may be
+defined in one 'post-process-dist-hook' directive.  Zero or more
+'post-process-dist-hook' directives may be set for distribution.  The
+'post-process-dist-hook' hook will be run immediately after the Autodist
+has finished processing the destination distribution directory but has not
 yet created the distribution package.
 
 The scripts will get four (4) command line arguments when Autodist
@@ -856,11 +856,11 @@ script may use these arguments if it needs them.
 
 @section Directive: post-dist-hook <filename> [...]
 
-The 'post-dist-hook' directive can be used define additional scripts that 
-will be run when Autodist has finished distribution creation.  This 
-directive is optional.  One or more scripts may be defined in one 
-'post-dist-hook' directive.  Zero or more 'post-dist-hook' directives may 
-be set for distribution.  The 'post-dist-hook' hook will be run 
+The 'post-dist-hook' directive can be used define additional scripts that
+will be run when Autodist has finished distribution creation.  This
+directive is optional.  One or more scripts may be defined in one
+'post-dist-hook' directive.  Zero or more 'post-dist-hook' directives may
+be set for distribution.  The 'post-dist-hook' hook will be run
 immediately after the Autodist has finished creating the distribution
 package.  This is the last hook Autodist runs.
 
@@ -875,17 +875,27 @@ script may use these arguments if it needs them.
 The Autodist runs the hooks in the following order:
 
 Preparing source tree for configuration and compilation:
+
 @example
+<...Autodist started...>
 pre-hook
+<...preparation...>
 post-hook
+<...Autodist exits...>
 @end example
 
 Creating distribution:
+
 @example
+<...Autodist started...>
 pre-dist-hook
+<...distribution directory created...>
 pre-process-dist-hook
+<...processing all files, processing excludes and includes...>
 post-process-dist-hook
+<...creating distribution package...>
 post-dist-hook
+<...Autodist exits...>
 @end example
 
 When creating distribution the 'pre-hook' and 'post-hook' are not run.
@@ -1052,7 +1062,7 @@ configuration and compilation (@pxref{Preparing source tree, , , , }).
 By default the distdefs are named '_DIST_XXX', where 'XXX' is the name of
 distdef.  However, many projects will want to define their own prefix
 for distdefs in the 'autodist.conf' configuration file (@pxref{autodist.conf, , , , }).
-In the following examples a prefix 'SILC' is used, hence the prefix for 
+In the following examples a prefix 'SILC' is used, hence the prefix for
 the distdefs are 'SILC_DIST_'.
 
 The basic format for the distdefs are as follows:
@@ -1093,13 +1103,13 @@ a compiler friendly format, defined below, should be used.
 #endif /* SILC_DIST_DEFINE */
 @end example
 
-Note that, only the format defined above is supported.  Other more complex 
-use of the preprocessor directives such as using '&&' and '||' in the 
-'#ifdef' or '#ifndef' are not supported, and neither is '#elif'.  Also 
-note, that the name of the distdef in '#else' and '#ifdef' directives in 
-non-source format and in source format inside C comments (/* */), and the 
-use of '!' character in the '#else' branch of '#ifdef'" are mandatory.  
-Also note, that the distdef conditionals must be placed at the start of 
+Note that, only the format defined above is supported.  Other more complex
+use of the preprocessor directives such as using '&&' and '||' in the
+'#ifdef' or '#ifndef' are not supported, and neither is '#elif'.  Also
+note, that the name of the distdef in '#else' and '#ifdef' directives in
+non-source format and in source format inside C comments (/* */), and the
+use of '!' character in the '#else' branch of '#ifdef'" are mandatory.
+Also note, that the distdef conditionals must be placed at the start of
 the line, they must not be indented.
 
 The following example shows the use of non-source format:
@@ -1173,21 +1183,21 @@ would be:
   real_foobar();
 @end example
 
-Even before processing the source files with Autodist, the preprocessor 
-will respect the preprocessor directives if the code use '#include' to 
-include the distdef header file created by the Autodist (see 
-'autodist.conf' (@pxref{autodist.conf, , , , })).  When the distribution 
-is packaged (@pxref{Creating distribution, , , , }) the Autodist will 
-process the files, and will remove any line not defined to be included.  
+Even before processing the source files with Autodist, the preprocessor
+will respect the preprocessor directives if the code use '#include' to
+include the distdef header file created by the Autodist (see
+'autodist.conf' (@pxref{autodist.conf, , , , })).  When the distribution
+is packaged (@pxref{Creating distribution, , , , }) the Autodist will
+process the files, and will remove any line not defined to be included.
 The preprocessor directives will also be removed.
 
-Because the software project includes the header file with '#include' the 
-distdef header file needs to be present in the distribution, unless it is 
+Because the software project includes the header file with '#include' the
+distdef header file needs to be present in the distribution, unless it is
 placed inside some other '#ifdef' conditional.  If the distribution is
 prepared but not compiled (it is packaged after preparation without
-compilation) then including the distdef header in the source is not 
+compilation) then including the distdef header in the source is not
 necessary.  Including it then in the distribution is not necessary either.
- 
+
 The software project should not use the same name space that distdef
 conditionals use for other than distribution usage.  The Autodist will
 process any line that uses the formats above and has the specified prefix
@@ -1290,14 +1300,14 @@ not using Autodist, then you would do this by running perhaps 'aclocal',
 this process is performed by Autodist, and running these tools manually
 or using 'autogen.sh' script is not necessary.
 
-By default the 'autodist.conf' (@pxref{autodist.conf, , , , }) has defined 
-the tools that will be run by the Autodist when preparing the source tree.  
-These are 'aclocal', 'autoheader', 'autoconf', 'automake' and 
-'libtoolize'.  If you do not wish that Autodist runs some or any of these 
-tools automatically, do not set them in the 'autodist.conf'.  You would 
-then need to run them manually. However, this is not recommended.  If you 
-need to run additional preparation scripts you may set your scripts either 
-in the 'pre-hook' and/or 'post-hook' where you can run what ever 
+By default the 'autodist.conf' (@pxref{autodist.conf, , , , }) has defined
+the tools that will be run by the Autodist when preparing the source tree.
+These are 'aclocal', 'autoheader', 'autoconf', 'automake' and
+'libtoolize'.  If you do not wish that Autodist runs some or any of these
+tools automatically, do not set them in the 'autodist.conf'.  You would
+then need to run them manually. However, this is not recommended.  If you
+need to run additional preparation scripts you may set your scripts either
+in the 'pre-hook' and/or 'post-hook' where you can run what ever
 additional processing you may need to prepare your source tree.
 
 By default the Autodist creates a 'default' distribution when you
