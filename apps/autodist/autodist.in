@@ -826,11 +826,11 @@ ad_makedist()
   fi
 
   # Parse the requested distribution
-  distribution=`cat autodist.dist | grep "dist:" | cut -d: -f2`
-  dist_version=`cat autodist.dist | grep "ver:" | cut -d: -f2`
+  distribution=`cat autodist.dist | grep "dist:" | cut -d: -f2` || exit 1
+  dist_version=`cat autodist.dist | grep "ver:" | cut -d: -f2` || exit 1
+  am_distdir=`cat autodist.dist | grep "distdir:" | cut -d: -f2` || exit 1
   ad_parse_distribution $distribution false
   ad_process_distdefs
-  am_distdir="$package-$dist_version"
 
   if test x$opt_no_dist = xtrue; then
     ad_fatal "The '$distribution' distribution cannot be packaged"
@@ -1676,7 +1676,7 @@ ad_make_makefile_ins
 ad_debug "Creating autodist.dist"
 echo "dist:$distfile" > autodist.dist
 echo "ver:$dist_version" >> autodist.dist
-echo "$package-$dist_version" >> autodist.dist
+echo "distdir:$package-$dist_version" >> autodist.dist
 
 #
 # Run post-hooks

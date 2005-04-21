@@ -1356,7 +1356,7 @@ distribution.
 However, the source files, or any other file (except files ending with
 '.ad' suffix) are not processed by the Autodist.  When compiling
 your sources the preprocessor, however, will respect your distdef
-conditionals inside your source files if you include the distdef header
+conditionals inside your source files if you '#include' the distdef header
 file.  This way, even the compiled binaries will be compiled for that
 distribution, even though the source files has not yet been processed
 by the Autodist.  Rest of the files in the distribution will be processed
@@ -1364,6 +1364,12 @@ when you create the actual distribution package.  It is guaranteed that
 the distribution you have prepared will behave in your source tree exactly
 the same way as if it was already packaged with Autodist (providing that
 you remember to include the distdef header file in your code).
+
+When preparing the source tree Autodist will create a file 'autodist.dist'
+which will contain information on the prepared distribution.  When
+Creating the distribution that file will be read by the Autodist
+automatically.  That file should not be removed or the distribution
+cannot be packaged.
 
 @menu
 * Creating distribution::       Creating distribution with Autodist
