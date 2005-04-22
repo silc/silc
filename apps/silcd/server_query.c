@@ -413,16 +413,18 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       }
 
       /* Check nickname */
-      tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
-				  SILC_STRING_UTF8, 128, &tmp_len);
-      if (!tmp) {
-	silc_server_query_send_error(server, query,
-				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
-	silc_server_query_free(query);
-	return;
+      if (tmp) {
+	tmp = silc_identifier_check(query->nickname, strlen(query->nickname),
+				    SILC_STRING_UTF8, 128, &tmp_len);
+	if (!tmp) {
+	  silc_server_query_send_error(server, query,
+				       SILC_STATUS_ERR_BAD_NICKNAME, 0);
+	  silc_server_query_free(query);
+	  return;
+	}
+	silc_free(query->nickname);
+	query->nickname = tmp;
       }
-      silc_free(query->nickname);
-      query->nickname = tmp;
 
     } else {
       /* Parse the IDs included in the query */

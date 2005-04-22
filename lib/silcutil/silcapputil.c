@@ -1,10 +1,10 @@
 /*
 
-  silcapputil.c 
+  silcapputil.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ static char *silc_create_pk_identifier(void)
   char *username = NULL, *realname = NULL;
   char *hostname, email[256];
   char *ident;
-  
+
   /* Get realname */
   realname = silc_get_real_name();
 
@@ -89,7 +89,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 	alg = silc_get_input("PKCS name (l to list names) [rsa]: ", FALSE);
 	if (!alg)
 	  alg = strdup("rsa");
-    
+
 	if (*alg == 'l' || *alg == 'L') {
 	  char *list = silc_pkcs_get_supported();
 	  printf("%s\n", list);
@@ -347,8 +347,8 @@ bool silc_show_public_key(const char *pub_filename)
     printf("Organization       : %s\n", ident->org);
   if (ident->country)
     printf("Country            : %s\n", ident->country);
-  printf("Fingerprint (SHA1) : %s\n", fingerprint); 
-  printf("Babbleprint (SHA1) : %s\n", babbleprint); 
+  printf("Fingerprint (SHA1) : %s\n", fingerprint);
+  printf("Babbleprint (SHA1) : %s\n", babbleprint);
 
   fflush(stdout);
 
