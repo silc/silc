@@ -4,3 +4,5 @@ TODO In Autodist
 o Autodist should produce output file when 'license-header' is used for
   files that _was not_ re-licensed.  This would be useful to check if
   there are files in the distribution with wrong license.
+
+o Perhaps output autodist.log when processing the source tree.
