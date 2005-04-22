@@ -278,7 +278,7 @@ bool silc_server_init_secondary(SilcServer server)
 
 bool silc_server_init(SilcServer server)
 {
-  int sock;
+  int sock = -1;
   SilcServerID *id;
   SilcServerEntry id_entry;
   SilcIDListPurge purge;
