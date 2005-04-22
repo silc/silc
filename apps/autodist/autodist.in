@@ -688,11 +688,16 @@ ad_process_tree()
 {
   ad_debug ">ad_process_tree: $1"
 
-  # We take all files, other than *.ad, including source files, in case
-  # they use the non-C-compiler-friendly format of distdefs, which is
-  # possible.
-
-  files=`find $am_distdir \! -name \*\.ad`
+  # Take files, except source and .ad files.
+  files=`find $am_distdir \! -name \*\.ad \( \
+ 	\! -name \*\.[cC] -a \
+ 	\! -name \*\.[cC][cCpP] -a \
+ 	\! -name \*\.[cC][xX][xX] -a \
+ 	\! -name \*\.[cC][pP][pP] -a \
+ 	\! -name \*\.[cC]++ -a \
+ 	\! -name \*\.m -a \
+ 	\! -name \*\.[hH] -a \
+ 	\! -name \*\.hh \)`
   files=`echo $files | sed 's/$am_distdir//'`
 
   # Take away noprocess list

@@ -7,6 +7,9 @@ Fri Apr 22 20:23:06 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 	* No Autodist header for "other" '.ad' files as we don't know 
 	  what the file contains.
 
+	* No non-source distdef format processing for source files
+	  anymore.
+
 Tue Apr 19 17:12:09 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Remove extra ' ' and '\t' when joining backslashed lines.
