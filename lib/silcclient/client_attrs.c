@@ -218,10 +218,10 @@ bool silc_client_attribute_del(SilcClient client,
 
 /* Return all attributes */
 
-const SilcHashTable silc_client_attributes_get(SilcClient client,
-					       SilcClientConnection conn)
+SilcHashTable silc_client_attributes_get(SilcClient client,
+					 SilcClientConnection conn)
 {
-  return (const SilcHashTable)conn->internal->attrs;
+  return conn->internal->attrs;
 }
 
 /* Construct a Requested Attributes buffer. If the `attribute' is zero (0)

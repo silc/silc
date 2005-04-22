@@ -354,7 +354,8 @@ unsigned char *silc_message_get_iv(SilcMessagePayload payload);
  *    could not be retrieved from the message.
  *
  *    The caller SHOULD verify the signature by calling the
- *    silc_message_signed_verify function.
+ *    silc_message_signed_verify function.  Caller must not free the
+ *    returned payload pointer.
  *
  ***/
 SilcMessageSignedPayload

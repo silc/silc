@@ -423,10 +423,10 @@ unsigned char *silc_message_get_iv(SilcMessagePayload payload)
 
 /* Return signature of the message */
 
-const SilcMessageSignedPayload
+SilcMessageSignedPayload
 silc_message_get_signature(SilcMessagePayload payload)
 {
-  return (const SilcMessageSignedPayload)payload->sig;
+  return payload->sig;
 }
 
 /******************************************************************************

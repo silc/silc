@@ -290,6 +290,7 @@ if test "$GCC"; then
     SILC_ADD_CFLAGS(-g -O2)
   fi
   SILC_ADD_CFLAGS(-Wall -finline-functions)
+  SILC_ADD_CFLAGS(-Wno-pointer-sign)
 else
   # Other compilers
   case "$target" in
