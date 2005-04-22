@@ -343,7 +343,7 @@ unsigned char *silc_message_get_iv(SilcMessagePayload payload);
  *
  * SYNOPSIS
  *
- *    const SilcMessageSignedPayload
+ *    SilcMessageSignedPayload
  *    silc_message_get_signature(SilcMessagePayload payload);
  *
  * DESCRIPTION
@@ -357,7 +357,7 @@ unsigned char *silc_message_get_iv(SilcMessagePayload payload);
  *    silc_message_signed_verify function.
  *
  ***/
-const SilcMessageSignedPayload
+SilcMessageSignedPayload
 silc_message_get_signature(SilcMessagePayload payload);
 
 /****f* silccore/SilcMessageAPI/silc_message_signed_payload_parse
