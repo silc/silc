@@ -2862,6 +2862,7 @@ void silc_server_packet_parse_type(SilcServer server,
      */
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
+    server->stat.commands_received++;
     silc_server_command_process(server, sock, packet);
     break;
 
@@ -2873,6 +2874,7 @@ void silc_server_packet_parse_type(SilcServer server,
      */
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
+    server->stat.commands_received++;
     silc_server_command_reply(server, sock, packet);
     break;
 
@@ -5079,6 +5081,8 @@ void silc_server_announce_watches(SilcServer server,
     if (!client || !client->id)
       continue;
 
+    server->stat.commands_sent++;
+
     idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
     args = silc_buffer_alloc_size(2);
     silc_buffer_format(args,
@@ -5718,6 +5722,7 @@ SILC_TASK_CALLBACK(silc_server_get_stats)
 
   if (!server->standalone) {
     SILC_LOG_DEBUG(("Retrieving stats from router"));
+    server->stat.commands_sent++;
     idp = silc_id_payload_encode(server->router->id, SILC_ID_SERVER);
     packet = silc_command_payload_encode_va(SILC_COMMAND_STATS,
 					    ++server->cmd_ident, 1,

@@ -4,12 +4,11 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  the Free Software Foundation; version 2 of the License.
 
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -302,6 +301,8 @@ SILC_TASK_CALLBACK(dump_stats)
   STAT_OUTPUT("  Authentication failures : %d", silcd->stat.auth_failures);
   STAT_OUTPUT("  Packets sent            : %d", silcd->stat.packets_sent);
   STAT_OUTPUT("  Packets received        : %d", silcd->stat.packets_received);
+  STAT_OUTPUT("  Commands sent           : %d", silcd->stat.commands_sent);
+  STAT_OUTPUT("  Commands received       : %d", silcd->stat.commands_received);
   STAT_OUTPUT("  Connections             : %d", silcd->stat.conn_num);
 
 #undef STAT_OUTPUT
@@ -398,7 +399,7 @@ SILC_TASK_CALLBACK(dump_stats)
 		  (unsigned char *)"N/A", client_entry->id ?
 		  silc_id_render(client_entry->id, SILC_ID_CLIENT) : "N/A",
 		  client_entry->data.status, server_entry ?
-		  server_entry->server_name ? server_entry->server_name : 
+		  server_entry->server_name ? server_entry->server_name :
 		  "N/A" : "local");
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;
@@ -419,7 +420,7 @@ SILC_TASK_CALLBACK(dump_stats)
 		  (unsigned char *)"N/A", client_entry->id ?
 		  silc_id_render(client_entry->id, SILC_ID_CLIENT) : "N/A",
 		  client_entry->data.status, server_entry ?
-		  server_entry->server_name ? server_entry->server_name : 
+		  server_entry->server_name ? server_entry->server_name :
 		  "N/A" : "local");
 	  if (!silc_idcache_list_next(list, &id_cache))
 	    break;

@@ -962,6 +962,9 @@ SILC_SERVER_CMD_REPLY_FUNC(motd)
       if (server->server_type != SILC_SERVER)
 	goto out;
 
+      /* Statistics */
+      cmd->server->stat.commands_sent++;
+
       /* entry isn't known so we IDENTIFY it. otherwise the
          silc_server_command_motd won't know about it and tell
          the client that there is no such server */

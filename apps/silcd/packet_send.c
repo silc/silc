@@ -1923,6 +1923,9 @@ void silc_server_send_command(SilcServer server,
   SilcBuffer packet;
   va_list ap;
 
+  /* Statistics */
+  server->stat.commands_sent++;
+
   va_start(ap, argc);
 
   packet = silc_command_payload_encode_vap(command, ident, argc, ap);
@@ -1946,12 +1949,15 @@ void silc_server_send_command_reply(SilcServer server,
   SilcBuffer packet;
   va_list ap;
 
+  /* Statistics */
+  server->stat.commands_sent++;
+
   va_start(ap, argc);
 
   packet = silc_command_reply_payload_encode_vap(command, status, error,
 						 ident, argc, ap);
   silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0,
-			  packet->data, packet->len, TRUE);
+			  packet->data, packet->len, FALSE);
   silc_buffer_free(packet);
   va_end(ap);
 }
@@ -1971,6 +1977,9 @@ void silc_server_send_dest_command_reply(SilcServer server,
 {
   SilcBuffer packet;
   va_list ap;
+
+  /* Statistics */
+  server->stat.commands_sent++;
 
   va_start(ap, argc);
 
