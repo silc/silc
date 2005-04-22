@@ -35,6 +35,9 @@ Makefile
 )
 AC_OUTPUT
 echo configure.ad ok
+#else !_DIST_TEST
+echo "ERROR"
+exit 1
 #endif _DIST_TEST
 EOF
 
@@ -69,10 +72,10 @@ cp -p ../../default distdir || exit 1
 cp -p ../../autodist.conf distdir || exit 1
 
 cat << EOF > distdir/test
-name Test Distribution
-package test-distro
-bug-report test-dist@test.org
-define _DIST_TEST
+	name Test Distribution
+	package test-distro
+	bug-report test-dist@test.org
+	define _DIST_TEST
 EOF
 
 touch README NEWS AUTHORS ChangeLog

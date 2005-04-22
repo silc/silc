@@ -35,6 +35,9 @@ Makefile
 )
 AC_OUTPUT
 echo configure.ad ok
+#else !_DIST_TEST
+echo "ERROR"
+exit 1
 #endif _DIST_TEST
 EOF
 
