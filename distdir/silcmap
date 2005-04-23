@@ -13,7 +13,9 @@ undef SILC_DIST_MATH
 undef SILC_DIST_MPI
 
 include apps/silcmap/README README
-exclude README.* CHANGES TODO CREDITS INS
+include apps/autodist/AUTHORS AUTHORS
+include apps/autodist/CHANGES CHANGES
+exclude README.* TODO CREDITS
 
 post-process-dist-hook distdir/post-process-dist
 post-dist-hook distdir/post-dist
