@@ -1,3 +1,9 @@
+Sat Apr 23 12:49:09 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Autodist 1.2.1.
+
+	* Fixed 'noprocess' sed script.
+
 Fri Apr 22 20:23:06 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Autodist 1.2.

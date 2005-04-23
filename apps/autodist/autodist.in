@@ -702,7 +702,7 @@ ad_process_tree()
 
   # Take away noprocess list
   if test -f autodist.noprocess; then
-    files=`echo $files | sh autodist.noprocess` || exit 1
+    files=`echo $files" " | sh autodist.noprocess` || exit 1
   fi
 
   for ff in $files
@@ -746,7 +746,7 @@ ad_process_source_tree()
 
   # Take away noprocess list
   if test -f autodist.noprocess; then
-    files=`echo $files | sh autodist.noprocess` || exit 1
+    files=`echo $files" " | sh autodist.noprocess` || exit 1
   fi
 
   for ff in $files
@@ -1234,14 +1234,17 @@ ad_process_noprocess()
 
   ad_debug ">ad_process_noprocess"
 
+  cur=`pwd`
+  cd $am_distdir || exit 1
   for i in $noprocess
   do
     # Escape
     ie=`echo $i | sed 's/\\//\\\\\//g'` || exit 1
 
-    n="$n -e 's/$am_distdir\\/$ie//'"
+    n="$n -e 's/$am_distdir\\/$ie //'"
     np=true
   done
+  cd $cur || exit 1
 
   rm -f autodist.noprocess
   if test x$np = xtrue; then

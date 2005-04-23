@@ -774,19 +774,22 @@ process a file.  The Autodist will not process the file during
 preparation or during distribution packaging.  This directive is optional.
 One or more file can be specified in the 'noprocess' directive.  Zero or
 more 'noprocess' directives can be used in distribution.  The <filename>
-can be a single file, a single directory or a regular expression that
-will match several files and/or directories.  If directory is specified
-then all files inside the directory will not be processed.
+can be a single file or a regular expression that will match several files.
+Note that, in current Autodist version 'noprocess' cannot be used to
+specify directories.
 
 Example:
 @example
 noprocess autodist.texi
+noprocess apps/foo/*
 @end example
 
-Autodist will not process 'autodist.texi' file.
+Autodist will not process 'autodist.texi' file, and any file that match
+'apps/foo/*'.  Note that, any subdirectory under 'apps/foo/' will not
+match, and will be processed.
 
-Note that, 'noprocess' directive cannot be used to disallow processing
-of any file with '.ad' suffix.
+Also note that, 'noprocess' directive cannot be used to disallow 
+processing of any file with '.ad' suffix.
 
 
 @section Directive: pre-hook <filename> [...]
