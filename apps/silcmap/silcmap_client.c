@@ -305,7 +305,8 @@ static void
 silc_channel_message(SilcClient client, SilcClientConnection conn,
 		     SilcClientEntry sender, SilcChannelEntry channel,
 		     SilcMessagePayload payload,
-		     SilcMessageFlags flags, const unsigned char *message,
+		     SilcChannelPrivateKey key, SilcMessageFlags flags,
+		     const unsigned char *message,
 		     SilcUInt32 message_len)
 {
 
@@ -407,7 +408,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcUInt32 stats_len = va_arg(va, SilcUInt32);
       SilcBufferStruct buf;
 
-      SILC_LOG_DEBUG(("STATS command reply"));
+      SILC_LOG_DEBUG(("STATS command reply from %s", conn->sock->hostname));
 
       /* Get statistics structure */
       silc_buffer_set(&buf, stats, stats_len);
@@ -445,6 +446,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
     break;
 
   default:
+    SILC_LOG_DEBUG(("Unsupported command reply"));
     break;
   };
 
@@ -479,7 +481,7 @@ silc_connected(SilcClient client, SilcClientConnection conn,
 
   silc_schedule_task_del_by_context(client->schedule, mapconn);
 
-  if (status == SILC_CLIENT_CONN_ERROR) {
+  if (status != SILC_CLIENT_CONN_SUCCESS) {
     fprintf(stderr, "Could not connect to server %s\n",
 		     conn->remote_host ? conn->remote_host : "");
     silc_client_close_connection(client, conn);

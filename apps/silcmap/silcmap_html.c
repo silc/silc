@@ -153,7 +153,8 @@ bool silc_map_writehtml(SilcMap map, SilcMapConnection mapconn)
 
     fprintf(fp, "<br /><tt><small>\n");
     begin = 0;
-    while (silc_gets(line, sizeof(line) - 1, pdd, pk_len + 1, &begin) != EOF)
+    while ((begin = silc_gets(line, sizeof(line) - 1, pdd, pk_len + 1, 
+			      begin)) != EOF)
       fprintf(fp, "%s<br />\n", line);
     fprintf(fp, "</small></tt><br />\n");
 
@@ -287,8 +288,8 @@ bool silc_map_writehtml(SilcMap map, SilcMapConnection mapconn)
 
     fprintf(fp, "<br /><tt><small>\n");
     begin = 0;
-    while (silc_gets(line, sizeof(line) - 1, mapconn->data.motd,
-		     strlen(mapconn->data.motd), &begin) != EOF)
+    while ((begin = silc_gets(line, sizeof(line) - 1, mapconn->data.motd,
+			      strlen(mapconn->data.motd), begin)) != EOF)
       fprintf(fp, "%s<br />\n", line);
     fprintf(fp, "</small></tt>\n");
   }

@@ -61,6 +61,7 @@ install-dirs:
 	-mkdir -p $(modulesdir)
 	-mkdir -p $(docdir)
 
+#ifdef SILC_DIST_DOC
 doc-install:
 	-$(INSTALL_DATA) $(srcdir)/doc/CodingStyle $(docdir)/
 	-$(INSTALL_DATA) $(srcdir)/doc/FAQ $(docdir)/
@@ -71,6 +72,7 @@ doc-install:
 	-$(INSTALL_DATA) $(srcdir)/README* $(docdir)/
 	-$(INSTALL_DATA) $(srcdir)/INSTALL $(docdir)/
 	-$(INSTALL_DATA) $(srcdir)/TODO $(docdir)/
+#endif SILC_DIST_DOC
 
 #ifdef SILC_DIST_SIM
 sim-install:
@@ -161,5 +163,4 @@ install-data-hook: 		\
 #endif SILC_DIST_SIM
 
 include $(top_srcdir)/Makefile.defines.in
-
 #endif SILC_DIST_SILC

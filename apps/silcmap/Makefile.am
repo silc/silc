@@ -29,6 +29,6 @@ silcmap_SOURCES = 		\
 LIBS = $(SILC_COMMON_LIBS) -lsilcclient -lsilc -lm
 LDADD =
 
-EXTRA_DIST = *.h
+EXTRA_DIST = *.h silcmap.conf example.server.com_706.pub default.fnt
 
 include $(top_srcdir)/Makefile.defines.in

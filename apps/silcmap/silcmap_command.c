@@ -975,7 +975,7 @@ bool silc_map_commands_parse(SilcMap map, const char *filename)
 
   if (ret && ret != SILC_CONFIG_ESILENT) {
     fprintf(stderr, "Error parsing commands: %s, line %d\n",
-	    silc_config_strerror(ret), silc_config_get_line(file));
+	    silc_config_strerror(ret), (int)silc_config_get_line(file));
     retval = FALSE;
   }
 

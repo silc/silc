@@ -343,7 +343,11 @@ AC_SUBST(FIX_SHA1)
 #ifdef SILC_DIST_AUTODIST
 AC_PREFIX_DEFAULT(/usr/local)
 #else !SILC_DIST_AUTODIST
+#ifdef SILC_DIST_SILCMAP
+AC_PREFIX_DEFAULT(/usr/local)
+#else !SILC_DIST_SILCMAP
 AC_PREFIX_DEFAULT(/usr/local/silc)
+#endif SILC_DIST_SILCMAP
 #endif SILC_DIST_AUTODIST
 if test "x$prefix" != xNONE; then
   silc_prefix="$prefix"
@@ -473,8 +477,13 @@ if test -n "$with_silc_includes" || test -n "$with_silc_libs"; then
 
 else
   # pkg-config check
+#ifdef SILC_DIST_SILCMAP
+  PKG_CHECK_MODULES(SILC, silc, compile_libs=false)
+  PKG_CHECK_MODULES(SILCCLIENT, silcclient, compile_libs=false)
+#else !SILC_DIST_SILCMAP
   PKG_CHECK_MODULES(SILC, silc, compile_libs=false, compile_libs=true)
   PKG_CHECK_MODULES(SILCCLIENT, silcclient, compile_libs=false, compile_libs=true)
+#endif SILC_DIST_SILCMAP
 
   if test x$compile_libs = xfalse; then
     LIBS="$LIBS $SILC_LIBS"
@@ -1164,7 +1173,9 @@ echo " bin directory .................: $s_bindir"
 echo " sbin directory ................: $s_sbindir"
 echo " etc directory .................: $ETCDIR"
 echo " man directory .................: $s_mandir"
+#ifdef SILC_DIST_DOC
 echo " doc directory .................: $DOCDIR"
+#endif SILC_DIST_DOC
 #ifdef SILC_DIST_CLIENT
 echo " help directory ................: $HELPDIR"
 #endif SILC_DIST_CLIENT
