@@ -11,8 +11,13 @@ define SILC_DIST_APPS
 include apps/autodist/INSTALL INSTALL
 include apps/autodist/AUTHORS AUTHORS
 include apps/autodist/README README
+include apps/autodist/TODO TODO
+include apps/autodist/CHANGES CHANGES
 exclude apps/autodist/INSTALL apps/autodist/AUTHORS apps/autodist/README
-exclude TODO README.* ltmain.sh
+exclude apps/autodist/TODO apps/autodist/CHANGES
+exclude README.* ltmain.sh
 
-noprocess apps/autodist/doc apps/autodist/tests
+noprocess apps/autodist/doc/* apps/autodist/tests/*
 
+post-process-dist-hook distdir/post-process-dist
+post-dist-hook distdir/post-dist

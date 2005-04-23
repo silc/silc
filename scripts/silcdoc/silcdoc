@@ -196,7 +196,7 @@ if [ "$TYPE" = "HTML" ]; then
 
   # Generate the top index.html file
   index=`find $SRC -name "LIBINDEX"`
-  version=`grep SILC_VERSION_STRING $SRC/../includes/version_internal.h |cut -d\"  -f2`
+  version=`grep "define SILC_VERSION_STRING" $SRC/../includes/silcversion.h |cut -d\"  -f2`
   curdate=`date`
   sed -e "/@VERSION@/s//$version/" -e "/@DATE@/s//$curdate/" -e "/@BODY@/ r $DST/index.html.tmp" -e s/@BODY@//g $index >$DST/index.html
   sh gen.sh $DST gen_index.php 2 $DST/index.html $DST/index.html

@@ -2800,8 +2800,8 @@ bool silc_client_attribute_del(SilcClient client,
  *    payload while traversing the table.
  *
  ***/
-const SilcHashTable silc_client_attributes_get(SilcClient client,
-					       SilcClientConnection conn);
+SilcHashTable silc_client_attributes_get(SilcClient client,
+					 SilcClientConnection conn);
 
 /****f* silcclient/SilcClientAPI/silc_client_attributes_request
  *

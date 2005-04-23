@@ -67,6 +67,7 @@ struct SilcIDCacheStruct {
   SilcHashTable name_table;
   SilcHashTable context_table;
   SilcIDCacheDestructor destructor;
+  void *context;
   SilcIdType type;
   unsigned int delete_id : 1;
   unsigned int delete_name : 1;
@@ -102,6 +103,7 @@ struct SilcIDCacheListStruct {
 
 SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
 			       SilcIDCacheDestructor destructor,
+			       void *destructor_context,
 			       bool delete_id, bool delete_name)
 {
   SilcIDCache cache;
@@ -123,6 +125,7 @@ SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
   cache->context_table = silc_hash_table_alloc(count, silc_hash_ptr, NULL,
 					       NULL, NULL, NULL, NULL, TRUE);
   cache->destructor = destructor;
+  cache->context = destructor_context;
   cache->type = id_type;
   cache->delete_id = delete_id;
   cache->delete_name = delete_name;
@@ -344,7 +347,7 @@ static void silc_idcache_purge_foreach(void *key, void *context,
     if (ret == TRUE) {
       /* Call the destructor */
       if (cache->destructor)
-	cache->destructor(cache, c);
+	cache->destructor(cache, c, cache->context);
 
       /* Free the entry, it has been deleted from the hash tables */
       silc_idcache_destructor(NULL, c, NULL);
@@ -385,7 +388,7 @@ bool silc_idcache_purge_by_context(SilcIDCache cache, void *context)
   if (ret == TRUE) {
     /* Call the destructor */
     if (cache->destructor)
-      cache->destructor(cache, c);
+      cache->destructor(cache, c, cache->context);
 
     /* Free the entry, it has been deleted from the hash tables */
     silc_idcache_destructor(NULL, c, NULL);

@@ -1,3 +1,27 @@
+Fri Apr 22 12:21:44 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Use silc_server_send_command_reply to send replies instead
+	  of encoding packet itself.  Affected file silcd/command.c.
+
+	* Added command sending and receiving statistics to server.
+	  Affected files in silcd/.
+
+	* GCC 4 warning fixes.  -Wno-pointer-sign option is now used
+	  with GCC, for it not to warn about pointer signedness.
+
+Tue Apr 19 11:57:35 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added context to the SilcIDCache destructor.  Affected
+	  files are lib/silccore/silcidcache.[ch],
+	  lib/silcclient/client.c and silcd/server.c.
+
+Mon Apr 18 09:53:28 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added pkg-config check to configure.
+
+	* The PublicKeyDir must not be used with Admin block in server
+	  config.  Affected file silcd/serverconfig.c.
+
 Sat Apr 16 20:23:48 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added Autodist.

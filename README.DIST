@@ -6,24 +6,16 @@ tree and how to package distributions for releasing.  This also defines
 the procedure what one should do when distribution is created for
 releasing.
 
-
-The 'distributions' file
-========================
-
-The 'distributions' file descibres all distributions that can be created 
-from the SILC CVS source tree.  You should read that file if you want to 
-learn how to create new distributions.  The file already defines the main 
-distributions that can be created from the soure tree.  These are the 
-'client', 'server' and 'toolkit' distributions.
+The distdir/ directory contains all distributions that can be created
+from the source tree.  The distdir/default cannot be packaged, it must
+be used only for development.
 
 
 Preparing distribution
 ======================
 
-The SILC CVS source tree must be prepared before it can be configured, 
-compiled and packaged.  The ./prepare script is used to prepare 
-distribution for configuration, compilation and packaging.  To prepare a 
-specific distribution with specific version, give command:
+To prepare a specific distribution with specific version for packaging,
+give command:
 
 	autodist <name> <version>
 

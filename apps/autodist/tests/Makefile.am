@@ -19,7 +19,10 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 TESTS = 			\
 	autodist1.test		\
-	autodist2.test
+	autodist2.test		\
+	autodist3.test		\
+	autodist4.test		\
+	autodist5.test
 
 clean-local:
 	-rm -rf test

@@ -421,7 +421,7 @@ bool silc_server_command_pending_timed(SilcServer server,
   reply->timeout =
     silc_schedule_task_add(server->schedule, 0,
 			   silc_server_command_pending_timeout, reply,
-			   timeout ? timeout : 10, 0,
+			   timeout ? timeout : 12, 0,
 			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
   silc_dlist_add(server->pending_commands, reply);
 
@@ -488,6 +488,9 @@ silc_server_command_send_status_reply(SilcServerCommandContext cmd,
 {
   SilcBuffer buffer;
 
+  /* Statistics */
+  cmd->server->stat.commands_sent++;
+
   SILC_LOG_DEBUG(("Sending command status %d", status));
 
   buffer =
@@ -514,6 +517,9 @@ silc_server_command_send_status_data(SilcServerCommandContext cmd,
 {
   SilcBuffer buffer;
 
+  /* Statistics */
+  cmd->server->stat.commands_sent++;
+
   SILC_LOG_DEBUG(("Sending command status %d", status));
 
   buffer =
@@ -539,6 +545,9 @@ silc_server_command_send_status_data2(SilcServerCommandContext cmd,
 				      SilcUInt32 arg_len2)
 {
   SilcBuffer buffer;
+
+  /* Statistics */
+  cmd->server->stat.commands_sent++;
 
   SILC_LOG_DEBUG(("Sending command status %d", status));
 
@@ -568,6 +577,9 @@ silc_server_command_pending_error_check(SilcServerCommandContext cmd,
 
   if (!silc_command_get_status(cmdr->payload, NULL, NULL)) {
     SilcBuffer buffer;
+
+    /* Statistics */
+    cmd->server->stat.commands_sent++;
 
     /* Send the same command reply payload */
     silc_command_set_command(cmdr->payload, silc_command_get(cmd->payload));
@@ -623,7 +635,7 @@ SILC_SERVER_CMD_FUNC(nick)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
   SilcServer server = cmd->server;
-  SilcBuffer packet, nidp, oidp = NULL;
+  SilcBuffer nidp, oidp = NULL;
   SilcClientID *new_id;
   SilcUInt32 nick_len;
   unsigned char *nick, *nickc = NULL;
@@ -720,14 +732,11 @@ SILC_SERVER_CMD_FUNC(nick)
 
  send_reply:
   /* Send the new Client ID as reply command back to client */
-  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_NICK,
-						SILC_STATUS_OK, 0, ident, 2,
-						2, nidp->data, nidp->len,
-						3, nick, nick_len);
-  silc_server_packet_send(cmd->server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
-			  0, packet->data, packet->len, FALSE);
-
-  silc_buffer_free(packet);
+  silc_server_send_command_reply(cmd->server, cmd->sock,
+				 SILC_COMMAND_NICK,
+				 SILC_STATUS_OK, 0, ident, 2,
+				 2, nidp->data, nidp->len,
+				 3, nick, nick_len);
   silc_buffer_free(nidp);
   if (oidp)
     silc_buffer_free(oidp);
@@ -746,7 +755,7 @@ silc_server_command_list_send_reply(SilcServerCommandContext cmd,
 				    SilcUInt32 gch_count)
 {
   int i, k;
-  SilcBuffer packet, idp;
+  SilcBuffer idp;
   SilcChannelEntry entry;
   SilcStatus status;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
@@ -801,18 +810,13 @@ silc_server_command_list_send_reply(SilcServerCommandContext cmd,
     }
 
     /* Send the reply */
-    packet =
-      silc_command_reply_payload_encode_va(SILC_COMMAND_LIST,
-					   status, 0, ident, 4,
-					   2, idp->data, idp->len,
-					   3, entry->channel_name,
-					   strlen(entry->channel_name),
-					   4, topic, topic ? strlen(topic) : 0,
-					   5, usercount, 4);
-    silc_server_packet_send(cmd->server, cmd->sock,
-			    SILC_PACKET_COMMAND_REPLY, 0, packet->data,
-			    packet->len, FALSE);
-    silc_buffer_free(packet);
+    silc_server_send_command_reply(cmd->server, cmd->sock, SILC_COMMAND_LIST,
+				   status, 0, ident, 4,
+				   2, idp->data, idp->len,
+				   3, entry->channel_name,
+				   strlen(entry->channel_name),
+				   4, topic, topic ? strlen(topic) : 0,
+				   5, usercount, 4);
     silc_buffer_free(idp);
     k++;
   }
@@ -840,18 +844,13 @@ silc_server_command_list_send_reply(SilcServerCommandContext cmd,
     }
 
     /* Send the reply */
-    packet =
-      silc_command_reply_payload_encode_va(SILC_COMMAND_LIST,
-					   status, 0, ident, 4,
-					   2, idp->data, idp->len,
-					   3, entry->channel_name,
-					   strlen(entry->channel_name),
-					   4, topic, topic ? strlen(topic) : 0,
-					   5, usercount, 4);
-    silc_server_packet_send(cmd->server, cmd->sock,
-			    SILC_PACKET_COMMAND_REPLY, 0, packet->data,
-			    packet->len, FALSE);
-    silc_buffer_free(packet);
+    silc_server_send_command_reply(cmd->server, cmd->sock, SILC_COMMAND_LIST,
+				   status, 0, ident, 4,
+				   2, idp->data, idp->len,
+				   3, entry->channel_name,
+				   strlen(entry->channel_name),
+				   4, topic, topic ? strlen(topic) : 0,
+				   5, usercount, 4);
     silc_buffer_free(idp);
     k++;
   }
@@ -878,6 +877,9 @@ SILC_SERVER_CMD_FUNC(list)
       !server->standalone) {
     SilcBuffer tmpbuf;
     SilcUInt16 old_ident;
+
+    /* Statistics */
+    cmd->server->stat.commands_sent++;
 
     old_ident = silc_command_get_ident(cmd->payload);
     silc_command_set_ident(cmd->payload, ++server->cmd_ident);
@@ -938,7 +940,7 @@ SILC_SERVER_CMD_FUNC(topic)
   SilcChannelID *channel_id;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
-  SilcBuffer packet, idp;
+  SilcBuffer idp;
   unsigned char *tmp;
   SilcUInt32 argc, tmp_len;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
@@ -1045,16 +1047,12 @@ SILC_SERVER_CMD_FUNC(topic)
 
   /* Send the topic to client as reply packet */
   idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
-  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_TOPIC,
-						SILC_STATUS_OK, 0, ident, 2,
-						2, idp->data, idp->len,
-						3, channel->topic,
-						channel->topic ?
-						strlen(channel->topic) : 0);
-  silc_server_packet_send(cmd->server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
-			  0, packet->data, packet->len, FALSE);
-
-  silc_buffer_free(packet);
+  silc_server_send_command_reply(cmd->server, cmd->sock, SILC_COMMAND_TOPIC,
+				 SILC_STATUS_OK, 0, ident, 2,
+				 2, idp->data, idp->len,
+				 3, channel->topic,
+				 channel->topic ?
+				 strlen(channel->topic) : 0);
   silc_buffer_free(idp);
   silc_free(channel_id);
 
@@ -1078,7 +1076,7 @@ SILC_SERVER_CMD_FUNC(invite)
   SilcIDListData idata;
   SilcArgumentPayload args;
   SilcHashTableList htl;
-  SilcBuffer packet, list, tmp2;
+  SilcBuffer list, tmp2;
   SilcBufferStruct alist;
   unsigned char *tmp, *atype = NULL;
   SilcUInt32 len, type, len2;
@@ -1332,15 +1330,12 @@ SILC_SERVER_CMD_FUNC(invite)
 
   /* Send command reply */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
-  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_INVITE,
-						SILC_STATUS_OK, 0, ident, 2,
-						2, tmp, len,
-						3, type && list ?
-						list->data : NULL,
-						type && list ? list->len : 0);
-  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
-			  packet->data, packet->len, FALSE);
-  silc_buffer_free(packet);
+  silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_INVITE,
+				 SILC_STATUS_OK, 0, ident, 2,
+				 2, tmp, len,
+				 3, type && list ?
+				 list->data : NULL,
+				 type && list ? list->len : 0);
   silc_buffer_free(list);
 
  out:
@@ -1556,7 +1551,7 @@ SILC_SERVER_CMD_FUNC(info)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
-  SilcBuffer packet, idp;
+  SilcBuffer idp;
   unsigned char *tmp;
   SilcUInt32 tmp_len;
   char *dest_server = NULL, *server_info = NULL, *server_name;
@@ -1644,6 +1639,9 @@ SILC_SERVER_CMD_FUNC(info)
       SilcBuffer tmpbuf;
       SilcUInt16 old_ident;
 
+      /* Statistics */
+      cmd->server->stat.commands_sent++;
+
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
       tmpbuf = silc_command_payload_encode_payload(cmd->payload);
@@ -1667,6 +1665,9 @@ SILC_SERVER_CMD_FUNC(info)
       /* Send to the primary router */
       SilcBuffer tmpbuf;
       SilcUInt16 old_ident;
+
+      /* Statistics */
+      cmd->server->stat.commands_sent++;
 
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
@@ -1709,18 +1710,14 @@ SILC_SERVER_CMD_FUNC(info)
   server_name = entry->server_name;
 
   /* Send the reply */
-  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_INFO,
-						SILC_STATUS_OK, 0, ident, 3,
-						2, idp->data, idp->len,
-						3, server_name,
-						strlen(server_name),
-						4, server_info,
-						server_info ?
-						strlen(server_info) : 0);
-  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
-			  packet->data, packet->len, FALSE);
-
-  silc_buffer_free(packet);
+  silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_INFO,
+				 SILC_STATUS_OK, 0, ident, 3,
+				 2, idp->data, idp->len,
+				 3, server_name,
+				 strlen(server_name),
+				 4, server_info,
+				 server_info ?
+				 strlen(server_info) : 0);
   silc_buffer_free(idp);
 
  out:
@@ -1809,6 +1806,9 @@ SILC_SERVER_CMD_FUNC(stats)
      statistical information. */
   if (!cmd->pending && server->server_type != SILC_ROUTER &&
       !server->standalone) {
+    /* Statistics */
+    cmd->server->stat.commands_sent++;
+
     /* Send request to our router */
     SilcBuffer idp = silc_id_payload_encode(server->router->id,
 					    SILC_ID_SERVER);
@@ -1852,13 +1852,10 @@ SILC_SERVER_CMD_FUNC(stats)
 		     SILC_STR_UI_INT(server->stat.router_ops),
 		     SILC_STR_END);
 
-  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_STATS,
-						SILC_STATUS_OK, 0, ident, 2,
-						2, tmp, tmp_len,
-						3, stats->data, stats->len);
-  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY,
-			  0, packet->data, packet->len, FALSE);
-  silc_buffer_free(packet);
+  silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_STATS,
+				 SILC_STATUS_OK, 0, ident, 2,
+				 2, tmp, tmp_len,
+				 3, stats->data, stats->len);
   silc_buffer_free(stats);
 
  out:
@@ -2269,6 +2266,9 @@ static void silc_server_command_join_channel(SilcServer server,
   silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0,
 			  reply->data, reply->len, FALSE);
 
+  /* Statistics */
+  cmd->server->stat.commands_sent++;
+
   /* Send JOIN notify to locally connected clients on the channel. If
      we are normal server then router will send or have sent JOIN notify
      already. However since we've added the client already to our channel
@@ -2458,6 +2458,9 @@ SILC_SERVER_CMD_FUNC(join)
 	    goto out;
 	  }
 
+	  /* Statistics */
+	  cmd->server->stat.commands_sent++;
+
 	  old_ident = silc_command_get_ident(cmd->payload);
 	  silc_command_set_ident(cmd->payload, ++server->cmd_ident);
 	  tmpbuf = silc_command_payload_encode_payload(cmd->payload);
@@ -2593,7 +2596,7 @@ SILC_SERVER_CMD_FUNC(motd)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
-  SilcBuffer packet, idp;
+  SilcBuffer idp;
   char *motd, *dest_server = NULL;
   SilcUInt32 motd_len;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
@@ -2633,22 +2636,16 @@ SILC_SERVER_CMD_FUNC(motd)
 	goto out;
 
       motd[motd_len] = 0;
-      packet = silc_command_reply_payload_encode_va(SILC_COMMAND_MOTD,
-						    SILC_STATUS_OK, 0,
-						    ident, 2,
-						    2, idp->data, idp->len,
-						    3, motd, motd_len);
+      silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_MOTD,
+				     SILC_STATUS_OK, 0, ident, 2,
+				     2, idp->data, idp->len,
+				     3, motd, motd_len);
     } else {
       /* No motd */
-      packet = silc_command_reply_payload_encode_va(SILC_COMMAND_MOTD,
-						    SILC_STATUS_OK, 0,
-						    ident, 1,
-						    2, idp->data, idp->len);
+      silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_MOTD,
+				     SILC_STATUS_OK, 0, ident, 1,
+				     2, idp->data, idp->len);
     }
-
-    silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
-			    packet->data, packet->len, FALSE);
-    silc_buffer_free(packet);
     silc_buffer_free(idp);
   } else {
     SilcServerEntry entry;
@@ -2666,6 +2663,9 @@ SILC_SERVER_CMD_FUNC(motd)
       /* Send to the server */
       SilcBuffer tmpbuf;
       SilcUInt16 old_ident;
+
+      /* Statistics */
+      cmd->server->stat.commands_sent++;
 
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
@@ -2693,6 +2693,9 @@ SILC_SERVER_CMD_FUNC(motd)
       /* Send to the primary router */
       SilcBuffer tmpbuf;
       SilcUInt16 old_ident;
+
+      /* Statistics */
+      cmd->server->stat.commands_sent++;
 
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
@@ -2725,15 +2728,12 @@ SILC_SERVER_CMD_FUNC(motd)
     }
 
     idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
-    packet = silc_command_reply_payload_encode_va(SILC_COMMAND_MOTD,
-						  SILC_STATUS_OK, 0, ident, 2,
-						  2, idp->data, idp->len,
-						  3, entry->motd,
-						  entry->motd ?
-						  strlen(entry->motd) : 0);
-    silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
-			    packet->data, packet->len, FALSE);
-    silc_buffer_free(packet);
+    silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_MOTD,
+				   SILC_STATUS_OK, 0, ident, 2,
+				   2, idp->data, idp->len,
+				   3, entry->motd,
+				   entry->motd ?
+				   strlen(entry->motd) : 0);
     silc_buffer_free(idp);
   }
 
@@ -2751,7 +2751,6 @@ SILC_SERVER_CMD_FUNC(umode)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
-  SilcBuffer packet;
   unsigned char *tmp_mask, m[4];
   SilcUInt32 mask = 0;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
@@ -2814,12 +2813,9 @@ SILC_SERVER_CMD_FUNC(umode)
 
   /* Send command reply to sender */
   SILC_PUT32_MSB(client->mode, m);
-  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_UMODE,
-						SILC_STATUS_OK, 0, ident, 1,
-						2, m, sizeof(m));
-  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
-			  packet->data, packet->len, FALSE);
-  silc_buffer_free(packet);
+  silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_UMODE,
+				 SILC_STATUS_OK, 0, ident, 1,
+				 2, m, sizeof(m));
 
  out:
   silc_server_command_free(cmd);
@@ -2836,7 +2832,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   SilcChannelID *channel_id = NULL;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
-  SilcBuffer packet, cidp;
+  SilcBuffer cidp;
   unsigned char *tmp, *tmp_id, *tmp_mask, *chpkdata = NULL;
   char *cipher = NULL, *hmac = NULL, *passphrase = NULL, ulimit[4];
   SilcUInt32 mode_mask = 0, old_mask = 0, tmp_len, tmp_len2, chpklen;
@@ -2924,18 +2920,14 @@ SILC_SERVER_CMD_FUNC(cmode)
     if (channel->channel_pubkeys)
       chpklist = silc_server_get_channel_pk_list(server, channel,
 						 FALSE, FALSE);
-    packet =
-      silc_command_reply_payload_encode_va(SILC_COMMAND_CMODE,
-					   SILC_STATUS_OK, 0, ident, 4,
-					   2, tmp_id, tmp_len2,
-					   3, m, sizeof(m),
-					   4, fkey ? fkey->data : NULL,
-					   fkey ? fkey->len : 0,
-					   5, chpklist ? chpklist->data : NULL,
-					   chpklist ? chpklist->len : 0);
-    silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
-			    packet->data, packet->len, FALSE);
-    silc_buffer_free(packet);
+    silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_CMODE,
+				   SILC_STATUS_OK, 0, ident, 4,
+				   2, tmp_id, tmp_len2,
+				   3, m, sizeof(m),
+				   4, fkey ? fkey->data : NULL,
+				   fkey ? fkey->len : 0,
+				   5, chpklist ? chpklist->data : NULL,
+				   chpklist ? chpklist->len : 0);
     goto out;
   }
 
@@ -3298,26 +3290,21 @@ SILC_SERVER_CMD_FUNC(cmode)
     chpklist = silc_server_get_channel_pk_list(server, channel, FALSE, FALSE);
 
   /* Send command reply to sender */
-  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CMODE,
-						SILC_STATUS_OK, 0, ident, 5,
-						2, tmp_id, tmp_len2,
-						3, tmp_mask, 4,
-						4, fkey ? fkey->data : NULL,
-						fkey ? fkey->len : 0,
-						5, chpklist ? chpklist->data :
-						NULL, chpklist ? chpklist->len
-						: 0,
-						6, (mode_mask &
-						    SILC_CHANNEL_MODE_ULIMIT ?
-						    ulimit : NULL),
-						(mode_mask &
-						 SILC_CHANNEL_MODE_ULIMIT ?
-						 sizeof(ulimit) : 0));
-
-  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
-			  packet->data, packet->len, FALSE);
-
-  silc_buffer_free(packet);
+  silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_CMODE,
+				 SILC_STATUS_OK, 0, ident, 5,
+				 2, tmp_id, tmp_len2,
+				 3, tmp_mask, 4,
+				 4, fkey ? fkey->data : NULL,
+				 fkey ? fkey->len : 0,
+				 5, chpklist ? chpklist->data :
+				 NULL, chpklist ? chpklist->len
+				 : 0,
+				 6, (mode_mask &
+				     SILC_CHANNEL_MODE_ULIMIT ?
+				     ulimit : NULL),
+				 (mode_mask &
+				  SILC_CHANNEL_MODE_ULIMIT ?
+				  sizeof(ulimit) : 0));
   silc_buffer_free(cidp);
 
  out:
@@ -3340,7 +3327,7 @@ SILC_SERVER_CMD_FUNC(cumode)
   SilcChannelEntry channel;
   SilcClientEntry target_client;
   SilcChannelClientEntry chl;
-  SilcBuffer packet, idp;
+  SilcBuffer idp;
   unsigned char *tmp_id, *tmp_ch_id, *tmp_mask;
   SilcUInt32 target_mask, sender_mask = 0, tmp_len, tmp_ch_len;
   int notify = FALSE;
@@ -3682,15 +3669,11 @@ SILC_SERVER_CMD_FUNC(cumode)
   }
 
   /* Send command reply to sender */
-  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_CUMODE,
-						SILC_STATUS_OK, 0, ident, 3,
-						2, tmp_mask, 4,
-						3, tmp_ch_id, tmp_ch_len,
-						4, tmp_id, tmp_len);
-  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
-			  packet->data, packet->len, FALSE);
-
-  silc_buffer_free(packet);
+  silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_CUMODE,
+				 SILC_STATUS_OK, 0, ident, 3,
+				 2, tmp_mask, 4,
+				 3, tmp_ch_id, tmp_ch_len,
+				 4, tmp_id, tmp_len);
   silc_buffer_free(idp);
 
  out:
@@ -3712,7 +3695,7 @@ SILC_SERVER_CMD_FUNC(kick)
   SilcClientID *client_id;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
-  SilcBuffer idp, packet;
+  SilcBuffer idp;
   SilcUInt32 tmp_len, target_idp_len, clen;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   unsigned char *tmp, *comment, *target_idp;
@@ -3816,14 +3799,10 @@ SILC_SERVER_CMD_FUNC(kick)
 
 
   /* Send the reply back to the client */
-  packet =
-    silc_command_reply_payload_encode_va(SILC_COMMAND_KICK,
-					 SILC_STATUS_OK, 0, ident, 2,
-					 2, tmp, tmp_len,
-					 3, target_idp, target_idp_len);
-  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
-			  packet->data, packet->len, FALSE);
-  silc_buffer_free(packet);
+  silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_KICK,
+				 SILC_STATUS_OK, 0, ident, 2,
+				 2, tmp, tmp_len,
+				 3, target_idp, target_idp_len);
 
   /* Send KICKED notify to local clients on the channel */
   idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
@@ -4128,6 +4107,9 @@ SILC_SERVER_CMD_FUNC(watch)
 
       SILC_LOG_DEBUG(("Forwarding WATCH to router"));
 
+      /* Statistics */
+      cmd->server->stat.commands_sent++;
+
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
       tmpbuf = silc_command_payload_encode_payload(cmd->payload);
@@ -4386,6 +4368,10 @@ SILC_SERVER_CMD_FUNC(watch)
   /* Distribute the watch list to backup routers too */
   if (server->backup) {
     SilcBuffer tmpbuf;
+
+    /* Statistics */
+    cmd->server->stat.commands_sent++;
+
     old_ident = silc_command_get_ident(cmd->payload);
     silc_command_set_ident(cmd->payload, ++server->cmd_ident);
     tmpbuf = silc_command_payload_encode_payload(cmd->payload);
@@ -4528,7 +4514,7 @@ SILC_SERVER_CMD_FUNC(ban)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcClientEntry client = (SilcClientEntry)cmd->sock->user_data;
-  SilcBuffer packet, list, tmp2;
+  SilcBuffer list, tmp2;
   SilcChannelEntry channel;
   SilcChannelClientEntry chl;
   SilcChannelID *channel_id = NULL;
@@ -4670,16 +4656,11 @@ SILC_SERVER_CMD_FUNC(ban)
   }
 
   /* Send the reply back to the client */
-  packet =
-    silc_command_reply_payload_encode_va(SILC_COMMAND_BAN,
-					 SILC_STATUS_OK, 0, ident, 2,
-					 2, id, id_len,
-					 3, list ? list->data : NULL,
-					 list ? list->len : 0);
-  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
-			  packet->data, packet->len, FALSE);
-
-  silc_buffer_free(packet);
+  silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_BAN,
+				 SILC_STATUS_OK, 0, ident, 2,
+				 2, id, id_len,
+				 3, list ? list->data : NULL,
+				 list ? list->len : 0);
   silc_buffer_free(list);
 
  out:
@@ -4779,7 +4760,7 @@ SILC_SERVER_CMD_FUNC(users)
   SilcServer server = cmd->server;
   SilcChannelEntry channel;
   SilcChannelID *id = NULL;
-  SilcBuffer packet, idp;
+  SilcBuffer idp;
   unsigned char *channel_id;
   SilcUInt32 channel_id_len;
   SilcBuffer client_id_list;
@@ -4839,6 +4820,9 @@ SILC_SERVER_CMD_FUNC(users)
     if (server->server_type != SILC_ROUTER && !server->standalone &&
 	!cmd->pending) {
       SilcBuffer tmpbuf;
+
+      /* Statistics */
+      cmd->server->stat.commands_sent++;
 
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
       tmpbuf = silc_command_payload_encode_payload(cmd->payload);
@@ -4909,23 +4893,19 @@ SILC_SERVER_CMD_FUNC(users)
 
   /* Send reply */
   idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
-  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_USERS,
-						SILC_STATUS_OK, 0, ident, 4,
-						2, idp->data, idp->len,
-						3, lc, 4,
-						4, client_id_list ?
-						client_id_list->data : NULL,
-						client_id_list ?
-						client_id_list->len : 0,
-						5, client_mode_list ?
-						client_mode_list->data : NULL,
-						client_mode_list ?
-						client_mode_list->len : 0);
-  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
-			  packet->data, packet->len, FALSE);
-
+  silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_USERS,
+				 SILC_STATUS_OK, 0, ident, 4,
+				 2, idp->data, idp->len,
+				 3, lc, 4,
+				 4, client_id_list ?
+				 client_id_list->data : NULL,
+				 client_id_list ?
+				 client_id_list->len : 0,
+				 5, client_mode_list ?
+				 client_mode_list->data : NULL,
+				 client_mode_list ?
+				 client_mode_list->len : 0);
   silc_buffer_free(idp);
-  silc_buffer_free(packet);
   if (client_id_list)
     silc_buffer_free(client_id_list);
   if (client_mode_list)
@@ -4944,7 +4924,6 @@ SILC_SERVER_CMD_FUNC(getkey)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
-  SilcBuffer packet;
   SilcClientEntry client;
   SilcServerEntry server_entry;
   SilcClientID *client_id = NULL;
@@ -4996,6 +4975,9 @@ SILC_SERVER_CMD_FUNC(getkey)
 					       client_id, NULL, NULL);
       if (!dest_sock)
 	goto out;
+
+      /* Statistics */
+      cmd->server->stat.commands_sent++;
 
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
@@ -5049,6 +5031,9 @@ SILC_SERVER_CMD_FUNC(getkey)
       SilcBuffer tmpbuf;
       SilcUInt16 old_ident;
 
+      /* Statistics */
+      cmd->server->stat.commands_sent++;
+
       old_ident = silc_command_get_ident(cmd->payload);
       silc_command_set_ident(cmd->payload, ++server->cmd_ident);
       tmpbuf = silc_command_payload_encode_payload(cmd->payload);
@@ -5086,14 +5071,11 @@ SILC_SERVER_CMD_FUNC(getkey)
   }
 
   tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
-  packet = silc_command_reply_payload_encode_va(SILC_COMMAND_GETKEY,
-						SILC_STATUS_OK, 0, ident, 2,
-						2, tmp, tmp_len,
-						3, pk ? pk->data : NULL,
-						pk ? pk->len : 0);
-  silc_server_packet_send(server, cmd->sock, SILC_PACKET_COMMAND_REPLY, 0,
-			  packet->data, packet->len, FALSE);
-  silc_buffer_free(packet);
+  silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_GETKEY,
+				 SILC_STATUS_OK, 0, ident, 2,
+				 2, tmp, tmp_len,
+				 3, pk ? pk->data : NULL,
+				 pk ? pk->len : 0);
 
  out:
   if (idp)

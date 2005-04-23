@@ -921,12 +921,6 @@ SILC_CONFIG_CALLBACK(fetch_admin)
       goto got_err;
     }
   }
-  else if (!strcmp(name, "publickeydir")) {
-    if (!my_parse_publickeydir((char *) val, (void *)&tmp->publickeys)) {
-      got_errno = SILC_CONFIG_EPRINTLINE;
-      goto got_err;
-    }
-  }
   else
     return SILC_CONFIG_EINTERNAL;
   return SILC_CONFIG_OK;
@@ -1286,7 +1280,6 @@ static const SilcConfigTable table_admin[] = {
   { "nick",		SILC_CONFIG_ARG_STRE,	fetch_admin,	NULL },
   { "passphrase",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { "publickey",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
-  { "publickeydir",	SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { "port",		SILC_CONFIG_ARG_INT,	fetch_admin,	NULL },
   { "params",		SILC_CONFIG_ARG_STR,	fetch_admin,	NULL },
   { 0, 0, 0, 0 }

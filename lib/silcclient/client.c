@@ -254,11 +254,11 @@ silc_client_add_connection(SilcClient client,
   conn->remote_port = port;
   conn->context = context;
   conn->internal->client_cache =
-    silc_idcache_alloc(0, SILC_ID_CLIENT, NULL, FALSE, TRUE);
+    silc_idcache_alloc(0, SILC_ID_CLIENT, NULL, NULL, FALSE, TRUE);
   conn->internal->channel_cache = silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL,
-						     FALSE, TRUE);
+						     NULL, FALSE, TRUE);
   conn->internal->server_cache = silc_idcache_alloc(0, SILC_ID_SERVER, NULL,
-						    FALSE, TRUE);
+						    NULL, FALSE, TRUE);
   conn->internal->pending_commands = silc_dlist_init();
   conn->internal->ftp_sessions = silc_dlist_init();
 

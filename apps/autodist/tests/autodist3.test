@@ -1,6 +1,19 @@
 #!/bin/sh
 
-AUTODIST=../../autodist
+AUTODIST=../autodist
+
+rm -f ./autodist
+
+echo "Testing with /bin/zsh"
+
+# Change shell to zsh
+if test '!' -f /bin/zsh; then
+  echo "/bin/zsh does not exist, cannot run test"
+  exit 0
+fi
+cat $AUTODIST | sed 's/#!\/bin\/sh/#!\/bin\/zsh/' > ./autodist
+
+AUTODIST=../autodist	# from inside tests/test
 
 rm -rf test
 mkdir test
@@ -86,5 +99,5 @@ fi
 echo test ok
 
 # Cleanup
-rm -rf subdir distdir
+rm -rf subdir distdir $AUTODIST
 

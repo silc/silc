@@ -28,9 +28,11 @@ SILCLIB_DIRS = \
 #ifdef SILC_DIST_MATH
 	silcmath \
 #endif SILC_DIST_MATH
+#ifdef SILC_DIST_SFTP
+	silcsftp \
+#endif SILC_DIST_SFTP
 	silcske \
-	silcutil \
-	silcsftp
+	silcutil
 
 SILCLIB = libsilc.a
 
@@ -106,6 +108,6 @@ libsilcclient.a:
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = silc.pc silcclient.pc
 
-EXTRA_DIST = doc silc.pc.in silcclient.pc.in
+EXTRA_DIST = silc.pc.in silcclient.pc.in
 #endif SILC_DIST_TOOLKIT
 

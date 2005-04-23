@@ -1,6 +1,19 @@
 #!/bin/sh
 
-AUTODIST=../../autodist
+AUTODIST=../autodist
+
+rm -f ./autodist
+
+echo "Testing with /bin/ash"
+
+# Change shell to ash
+if test '!' -f /bin/ash; then
+  echo "/bin/zsh does not exist, cannot run test"
+  exit 0
+fi
+cat $AUTODIST | sed 's/#!\/bin\/sh/#!\/bin\/ash/' > ./autodist
+
+AUTODIST=../autodist	# from inside tests/test
 
 rm -rf test
 mkdir test
@@ -59,10 +72,11 @@ cp -p ../../default distdir || exit 1
 cp -p ../../autodist.conf distdir || exit 1
 
 cat << EOF > distdir/test
-name Test Distribution
-package test-distro
+ name Test Distribution
+	package test-distro
 bug-report test-dist@test.org
 define _DIST_TEST
+#define _DIST_NODEF
 EOF
 
 touch README NEWS AUTHORS ChangeLog
@@ -86,5 +100,5 @@ fi
 echo test ok
 
 # Cleanup
-rm -rf subdir distdir
+rm -rf subdir distdir $AUTODIST
 

@@ -22,15 +22,24 @@ Makefile
 )
 AC_OUTPUT
 echo configure.ad ok
+#else !_DIST_DEFAULT
+echo "ERROR"
+exit 1
 #endif _DIST_DEFAULT
 EOF
 
 cat << EOF > Makefile.ad
-SUBDIRS=	\
+SUBDIRS=	\\
 #ifdef _DIST_NODEF
-	nodef	\
+	nodef	\\
+	poa	\\
+	paa	\\
 #endif _DIST_NODEF
-#endif
+	.	\\
+	.	\\
+	.	\\
+	.	\\
+
 EOF
 
 rm -rf distdir subdir
@@ -40,6 +49,9 @@ cat << EOF > subdir/configure.ad
 # subdir/configure.ad fragment
 #ifndef _DIST_NODEF
 echo "_DIST_NODEF ok"
+#else _DIST_NODEF
+echo "ERROR"
+exit 1
 #endif _DIST_NODEF
 EOF
 

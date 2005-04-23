@@ -44,7 +44,7 @@
 
 <table border="0" cellspacing="0" cellpadding="6" width="100%">
  <tr valign="top" bgcolor="#dddddd">
-  <td><small>Copyright &copy; 2001 - 2002 SILC Project<br />
+  <td><small>Copyright &copy; 2001 - 2005 SILC Project<br />
     <a href="http://silcnet.org">SILC Project Website</a></small></td>
   <td align="right"><small>
    <a href="index.html">SILC Toolkit Reference Manual</a><br />
@@ -122,7 +122,7 @@ if ($type == 0) {
 </table>
 <table border="0" cellspacing="0" cellpadding="6" width="100%">
  <tr valign="top" bgcolor="#dddddd">
-  <td><small>Copyright &copy; 2001 - 2002 SILC Project<br />
+  <td><small>Copyright &copy; 2001 - 2005 SILC Project<br />
     <a href="http://silcnet.org">SILC Project Website</a></small></td>
   <td align="right"><small>
    <a href="index.html">SILC Toolkit Reference Manual</a><br />

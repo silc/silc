@@ -343,7 +343,7 @@ unsigned char *silc_message_get_iv(SilcMessagePayload payload);
  *
  * SYNOPSIS
  *
- *    const SilcMessageSignedPayload
+ *    SilcMessageSignedPayload
  *    silc_message_get_signature(SilcMessagePayload payload);
  *
  * DESCRIPTION
@@ -354,10 +354,11 @@ unsigned char *silc_message_get_iv(SilcMessagePayload payload);
  *    could not be retrieved from the message.
  *
  *    The caller SHOULD verify the signature by calling the
- *    silc_message_signed_verify function.
+ *    silc_message_signed_verify function.  Caller must not free the
+ *    returned payload pointer.
  *
  ***/
-const SilcMessageSignedPayload
+SilcMessageSignedPayload
 silc_message_get_signature(SilcMessagePayload payload);
 
 /****f* silccore/SilcMessageAPI/silc_message_signed_payload_parse

@@ -1,0 +1,13 @@
+#!/bin/sh
+
+distribution=$1
+dist_version=$2
+package=$3
+distdir=$4
+
+# Remove all CVS directories, as some may be left when we put directories
+# in EXTRA_DIST or 'include' them in distribution.
+
+if test -d $distdir; then
+  rm -rf `find $distdir -name CVS`
+fi
