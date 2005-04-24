@@ -67,7 +67,7 @@
 
 /* MP library */
 /* #undef SILC_MP_GMP */
-#define SILC_MP_NSS_MPI 1
+#define SILC_MP_SILCMATH 1
 
 /* Redefs for SOCKS5 library */
 /* macros/curses checks */
