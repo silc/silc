@@ -1806,12 +1806,14 @@ SILC_SERVER_CMD_FUNC(stats)
      statistical information. */
   if (!cmd->pending && server->server_type != SILC_ROUTER &&
       !server->standalone) {
+    SilcBuffer idp;
+
     /* Statistics */
     cmd->server->stat.commands_sent++;
 
     /* Send request to our router */
-    SilcBuffer idp = silc_id_payload_encode(server->router->id,
-					    SILC_ID_SERVER);
+    idp = silc_id_payload_encode(server->router->id,
+				 SILC_ID_SERVER);
     packet = silc_command_payload_encode_va(SILC_COMMAND_STATS,
 					    ++server->cmd_ident, 1,
 					    1, idp->data, idp->len);
