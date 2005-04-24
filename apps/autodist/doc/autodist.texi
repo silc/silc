@@ -581,13 +581,14 @@ into the distribution.  The <distfile> specifies the name of the
 inherited distribution.  If the distribution cannot be inherited Autodist
 will give an error.
 
-The 'inherit' will inherit the following information from the distribution:
-distdefs, undefines, includes, excludes and noprocess.  Other information
-will not be inherited.  If the inherited distribution inherits other
-distributions, they will also be inherited automatically.  User should be
-careful when inheriting distributions as it may be possible to create an
-infinite recursion.  The Autodist would allow for this and not detect this
-error.  Zero or more 'inherit' directives may be set for distribution.
+The 'inherit' will inherit the following information from the 
+distribution: distdefs, undefines, includes, excludes and noprocesses.  
+Other information will not be inherited.  If the inherited distribution 
+inherits other distributions, they will also be inherited automatically.  
+User should be careful when inheriting distributions as it may be possible 
+to create an infinite recursion.  The Autodist would allow for this and 
+not detect this error.  Zero or more 'inherit' directives may be set for 
+distribution.
 
 Example:
 @example
@@ -599,6 +600,21 @@ inherit toolkit
 Will inherit distributions 'common', 'client' and 'toolkit' into this
 distribution.  All distdefs, undefines, includes, excludes and noprocesses
 from these distributions are now also part this distribution.
+
+The distribution that is being prepared or packaged take precedence when 
+defining distdefs that were specificly undefined in the inherited 
+distribution.  This means that if the inherited distribution specificly 
+undefines a distdefs but the inheriting distribution (one being prepared 
+or packaged) specificly defines it, the distdef will be defined.  
+Similarly, if the inherited distribution defines a distdef but the 
+inheriting distribution undefines it, the distdef will be undefined.  
+Note that, this precedence works only in the top distribution (the one 
+being prepared or packaged).  If the inherited distribution inherits other 
+distributions, all distdefs (defined and specificly undefined) will be 
+inherited as is.  This means that if one inherited distribution defines a 
+distdef that other inherited distribution distdef undefines, it will be 
+undefined.  However, the top distribution can then override them if 
+needed.
 
 
 @section Directive: define <symbol>

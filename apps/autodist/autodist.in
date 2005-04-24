@@ -1070,6 +1070,16 @@ ad_parse_distribution()
   ad_debug "licenseh: $licenseh"
 
   if test x$2 = xfalse; then
+    # Take rest of the stuff from top distribution
+
+    # We take precedence on defined and undefined distdefs.  Remove
+    # undefined distdefs if we have defined them.
+    for d in $defs
+    do
+      ad_debug "defining undefined $d distdef"
+      undistdefs=`echo $undistdefs | sed s/$d//g`
+    done
+
     # Get distribution name
     dname=`sed 's/^[ 	]*//' < $distdir/$1 | grep -v "^#" \
       | grep "name " | cut -d' ' -f2-`
