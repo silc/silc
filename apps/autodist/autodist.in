@@ -1566,7 +1566,10 @@ while test $# -gt 0; do
     fi
     ad_process_distdefs
     echo "Distdefs:" 1>&2;
-    echo "${distdefs}";
+    for i in $distdefs
+    do
+      echo "$i";
+    done
     exit 0;;
 
   -i | --init)
