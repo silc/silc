@@ -33,6 +33,7 @@ static SilcServer silcd;
 
 static void silc_usage(void);
 
+#ifdef HAVE_GETOPT_LONG
 /* Long command line options */
 static struct option long_opts[] =
 {
@@ -53,6 +54,7 @@ static struct option long_opts[] =
 
   { NULL, 0, NULL, 0 }
 };
+#endif /* HAVE_GETOPT_LONG */
 
 /* Command line option variables */
 static char *opt_keypath = NULL;
@@ -590,8 +592,12 @@ int main(int argc, char **argv)
 
   /* Parse command line arguments */
   if (argc > 1) {
+#ifdef HAVE_GETOPT_LONG
     while ((opt = getopt_long(argc, argv, "f:p:d:D:xhFVC:",
 			      long_opts, &option_index)) != EOF) {
+#else
+    while ((opt = getopt(argc, argv, "f:p:d:D:xhFVC:")) != EOF) {
+#endif /* HAVE_GETOPT_LONG */
       switch(opt) {
 	case 'h':
 	  silc_usage();
