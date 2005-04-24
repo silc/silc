@@ -10,7 +10,10 @@ option no-dist
 # Default distribution for preparing raw CVS sources.
 inherit common
 inherit client
-inherit server
+#inherit server
 inherit toolkit
+
+define SILC_DIST_SERVER
 define SILC_DIST_INPLACE
+
 pre-hook distdir/pre-run
