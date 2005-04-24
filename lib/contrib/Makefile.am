@@ -19,16 +19,10 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 noinst_LTLIBRARIES = libcontrib.la
 
-if HAVE_GETOPT_LONG
-GETOPT =
-else
-GETOPT = getopt.c getopt1.c
-endif
-
 if HAVE_REGEX
 REGEX =
 else
-REGEX = regex.c
+REGEX = regexpr.c
 endif
 
 STRINGPREP = nfkc.c rfc3454.c stringprep.c
@@ -36,7 +30,7 @@ STRINGPREP = nfkc.c rfc3454.c stringprep.c
 if SILC_WIN32
 libcontrib_la_SOURCES = $(STRINGPREP)
 else
-libcontrib_la_SOURCES = $(STRINGPREP) $(GETOPT) $(REGEX)
+libcontrib_la_SOURCES = $(STRINGPREP) $(REGEX)
 endif
 
 EXTRA_DIST = *.c *.h
