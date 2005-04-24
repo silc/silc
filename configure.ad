@@ -165,7 +165,6 @@ AC_CHECK_FUNC(getopt_long,
     have_getopt_long=1
   ], have_getopt_long=0
 )
-AM_CONDITIONAL(HAVE_GETOPT_LONG, test x$have_getopt_long = x1)
 
 ##
 ##  Enable/disable checking
@@ -279,6 +278,18 @@ AC_DEFUN([SILC_ADD_CFLAGS],
   AC_TRY_LINK([], [], [AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no)
 				       CFLAGS="$tmp_CFLAGS"
 				       $2])
+  unset tmp_CFLAGS
+])
+
+# Function to check if compiler flag works, destination specifiable
+# Usage: SILC_ADD_CC_FLAGS(VAR, FLAGS, [ACTION-IF-FAILED])
+AC_DEFUN([SILC_ADD_CC_FLAGS],
+[ tmp_CFLAGS="$1_CFLAGS"
+  $1_CFLAGS="${$1_CFLAGS} $2"
+  AC_MSG_CHECKING(whether $CC accepts $2 flag)
+  AC_TRY_LINK([], [], [AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no)
+				       $1_CFLAGS="$tmp_CFLAGS"
+				       $3])
   unset tmp_CFLAGS
 ])
 
@@ -647,10 +658,10 @@ AC_ARG_WITH(gmp,
   )
 
 AM_CONDITIONAL(SILC_MP_GMP, test x$mp_gmp = xtrue)
-AM_CONDITIONAL(SILC_MP_NSS_MPI, test x$mp_gmp = xfalse)
+AM_CONDITIONAL(SILC_MP_SILCMATH, test x$mp_gmp = xfalse)
 if test x$mp_gmp = xfalse; then
-  AC_DEFINE([SILC_MP_NSS_MPI], [], [MPI])
-  AC_MSG_RESULT(Using NSS MPI as a MP library.)
+  AC_DEFINE([SILC_MP_SILCMAP], [], [SILCMATH])
+  AC_MSG_RESULT(Using SILC Math as a MP library.)
 fi
 #endif SILC_DIST_MATH
 
@@ -1224,11 +1235,9 @@ fi
 echo " Assembler optimizations .......: $summary_asm"
 
 #ifdef SILC_DIST_MATH
-mp="MPI"
 if test x$mp_gmp = xtrue; then
-  mp="GMP"
+  echo " Arithmetic library ............: GMP"
 fi
-echo " Arithmetic library ............: $mp"
 #endif SILC_DIST_MATH
 
 threads="no"

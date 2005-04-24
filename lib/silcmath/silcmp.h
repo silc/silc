@@ -1,21 +1,20 @@
 /*
 
   silcmp.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
- 
+
+  Copyright (C) 1997 - 2005 Pekka Riikonen
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
- 
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
- 
+
 */
 
 /****h* silcmath/SILC MP Interface
@@ -23,11 +22,10 @@
  * DESCRIPTION
  *
  * SILC MP Library Interface. This interface defines the arbitrary
- * precision arithmetic routines for SILC. Currently the actual routines
- * are implemented separately, usually by some other MP library. The
- * interface is generic but is mainly intended for crypto usage. This
- * interface is used by SILC routines that needs big numbers, such as
- * RSA implementation, Diffie-Hellman implementation etc.
+ * precision arithmetic routines for SILC. The interface is generic but
+ * is mainly intended for crypto usage. This interface is used by SILC
+ * routines that needs big numbers, such as RSA implementation,
+ * Diffie-Hellman implementation etc.
  *
  ***/
 
@@ -37,7 +35,12 @@
 #if defined(SILC_MP_GMP)
 #include "mp_gmp.h"		/* SILC_MP_GMP */
 #else
-#include "mp_mpi.h"		/* SILC_MP_NSS_MPI */
+#ifdef SILC_DIST_TMA
+#include "mp_tma.h"
+#endif /* SILC_DIST_TMA */
+#ifdef SILC_DIST_TFM
+#include "mp_tfm.h"
+#endif /* SILC_DIST_TFM */
 #endif
 
 /****d* silcmath/SilcMPAPI/SilcMPInt
@@ -303,7 +306,7 @@ void silc_mp_mul_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
  *
  * DESCRIPTION
  *
- *    Multiply integers `mp1' with 2 ** `exp' and save the result to 
+ *    Multiply integers `mp1' with 2 ** `exp' and save the result to
  *    `dst'. This is equivalent to dst = mp1 * (2 ^ exp).
  *
  ***/
@@ -354,18 +357,18 @@ void silc_mp_div_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui);
  *
  * SYNOPSIS
  *
- *    void silc_mp_div_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1, 
+ *    void silc_mp_div_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1,
  *                        SilcMPInt *mp2);
  *
  * DESCRIPTION
  *
  *    Divide the `mp1' and `mp2' and save the quotient to the `q' and
- *    the remainder to the `r'.  This is equivalent to the q = mp1 / mp2, 
+ *    the remainder to the `r'.  This is equivalent to the q = mp1 / mp2,
  *    r = mp1 mod mp2 (or mp1 = mp2 * q + r). If the `q' or `r' is NULL
  *    then the operation is omitted.
  *
  ***/
-void silc_mp_div_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1, 
+void silc_mp_div_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1,
 		    SilcMPInt *mp2);
 
 /****f* silcmath/SilcMPAPI/silc_mp_div_2exp
@@ -386,7 +389,7 @@ void silc_mp_div_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp);
  *
  * SYNOPSIS
  *
- *    void silc_mp_div_2exp_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1, 
+ *    void silc_mp_div_2exp_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1,
  *                             SilcUInt32 exp);
  *
  * DESCRIPTION
@@ -397,7 +400,7 @@ void silc_mp_div_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp);
  *    is omitted.
  *
  ***/
-void silc_mp_div_2exp_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1, 
+void silc_mp_div_2exp_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1,
 			 SilcUInt32 exp);
 
 /****f* silcmath/SilcMPAPI/silc_mp_mod
@@ -424,7 +427,7 @@ void silc_mp_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *
  * DESCRIPTION
  *
- *    Mathematical MOD function. Produces the remainder of `mp1' and 
+ *    Mathematical MOD function. Produces the remainder of `mp1' and
  *    unsigned word `ui' and saves the result to `dst'. This is equivalent
  *    to dst = mp1 mod ui.
  *
@@ -479,7 +482,7 @@ void silc_mp_pow_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp);
  *
  * SYNOPSIS
  *
- *    void silc_mp_pow_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp, 
+ *    void silc_mp_pow_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp,
  *                         SilcMPInt *mod);
  *
  * DESCRIPTION
@@ -488,14 +491,14 @@ void silc_mp_pow_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp);
  *    This is equivalent to dst = (mp1 ^ exp) mod mod.
  *
  ***/
-void silc_mp_pow_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp, 
+void silc_mp_pow_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp,
 		     SilcMPInt *mod);
 
 /****f* silcmath/SilcMPAPI/silc_mp_pow_mod_ui
  *
  * SYNOPSIS
  *
- *    void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp, 
+ *    void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp,
  *                            SilcMPInt *mod);
  *
  * DESCRIPTION
@@ -504,7 +507,7 @@ void silc_mp_pow_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp,
  *    This is equivalent to dst = (mp1 ^ exp) mod mod.
  *
  ***/
-void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp, 
+void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp,
 			SilcMPInt *mod);
 
 /****f* silcmath/SilcMPAPI/silc_mp_modinv
@@ -515,21 +518,21 @@ void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp,
  *
  * DESCRIPTION
  *
- *    Find multiplicative inverse using Euclid's extended algorithm. 
- *    Computes inverse such that a * inv mod n = 1, where 0 < a < n. 
+ *    Find multiplicative inverse using Euclid's extended algorithm.
+ *    Computes inverse such that a * inv mod n = 1, where 0 < a < n.
  *    Algorithm goes like this:
- *  
+ *
  *    g(0) = n    v(0) = 0
  *    g(1) = a    v(1) = 1
- * 
+ *
  *    y = g(i-1) / g(i)
  *    g(i+1) = g(i-1) - y * g(i) = g(i)-1 mod g(i)
  *    v(i+1) = v(i-1) - y * v(i)
- * 
- *    do until g(i) = 0, then inverse = v(i-1). If inverse is negative then n, 
- *    is added to inverse making it positive again. (Sometimes the algorithm 
- *    has a variable u defined too and it behaves just like v, except that 
- *    initalize values are swapped (i.e. u(0) = 1, u(1) = 0). However, u is 
+ *
+ *    do until g(i) = 0, then inverse = v(i-1). If inverse is negative then n,
+ *    is added to inverse making it positive again. (Sometimes the algorithm
+ *    has a variable u defined too and it behaves just like v, except that
+ *    initalize values are swapped (i.e. u(0) = 1, u(1) = 0). However, u is
  *    not needed by the algorithm so it does not have to be included.)
  *
  ***/
@@ -553,7 +556,7 @@ void silc_mp_gcd(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *mp2);
  *
  * SYNOPSIS
  *
- *    void silc_mp_gcdext(SilcMPInt *g, SilcMPInt *s, SilcMPInt *t, 
+ *    void silc_mp_gcdext(SilcMPInt *g, SilcMPInt *s, SilcMPInt *t,
  *                        SilcMPInt *mp1, SilcMPInt *mp2);
  *
  * DESCRIPTION
@@ -601,8 +604,8 @@ int silc_mp_cmp_si(SilcMPInt *mp1, SilcInt32 si);
  *
  * DESCRIPTION
  *
- *    Compare `mp1' and unsigned word `ui'. Returns posivite, zero, or 
- *    negative if `mp1' > `ui', `mp1' == `ui', or `mp1' < `ui', 
+ *    Compare `mp1' and unsigned word `ui'. Returns posivite, zero, or
+ *    negative if `mp1' > `ui', `mp1' == `ui', or `mp1' < `ui',
  *    respectively.
  *
  ***/
@@ -612,7 +615,7 @@ int silc_mp_cmp_ui(SilcMPInt *mp1, SilcUInt32 ui);
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_mp_mp2bin(SilcMPInt *val, SilcUInt32 len, 
+ *    unsigned char *silc_mp_mp2bin(SilcMPInt *val, SilcUInt32 len,
  *                                  SilcUInt32 *ret_len);
  *
  * DESCRIPTION
@@ -622,7 +625,7 @@ int silc_mp_cmp_ui(SilcMPInt *mp1, SilcUInt32 ui);
  *    buffer is allocated that large. If zero then the size is approximated.
  *
  ***/
-unsigned char *silc_mp_mp2bin(SilcMPInt *val, SilcUInt32 len, 
+unsigned char *silc_mp_mp2bin(SilcMPInt *val, SilcUInt32 len,
 			      SilcUInt32 *ret_len);
 
 /****f* silcmath/SilcMPAPI/silc_mp_mp2bin_noalloc
@@ -645,7 +648,7 @@ void silc_mp_mp2bin_noalloc(SilcMPInt *val, unsigned char *dst,
  *
  * SYNOPSIS
  *
- *    void silc_mp_bin2mp(unsigned char *data, SilcUInt32 len, 
+ *    void silc_mp_bin2mp(unsigned char *data, SilcUInt32 len,
  *                        SilcMPInt *ret);
  *
  * DESCRIPTION

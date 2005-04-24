@@ -17,20 +17,35 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-if SILC_MP_NSS_MPI
-SUBDIRS = mpi
-else
-SUBDIRS =
-endif
-
-DIST_SUBDIRS = mpi
-
 noinst_LTLIBRARIES = libsilcmath.la
 
-if SILC_MP_NSS_MPI
-MP_SOURCE = mp_mpi.c
+if SILC_MP_SILCMATH
+MP_SOURCE = \
+#ifdef SILC_DIST_TMA
+	mp_tma.c \
+	tma.c \
+#endif SILC_DIST_TMA
+#ifdef SILC_DIST_TFM
+	mp_tfm.c \
+	tfm.c
+#endif SILC_DIST_TFM
+
+MP_HEADER = \
+#ifdef SILC_DIST_TMA
+	mp_tma.h \
+	tma.h \
+	tma_class.h \
+	tma_superclass.h \
+#endif SILC_DIST_TMA
+#ifdef SILC_DIST_TFM
+	mp_tfm.h \
+	tfm.h
+#endif SILC_DIST_TFM
+
+AM_CFLAGS = @MATH_CFLAGS@
 else
 MP_SOURCE = mp_gmp.c
+MP_HEADER =
 endif
 
 libsilcmath_la_SOURCES = \
@@ -40,15 +55,13 @@ libsilcmath_la_SOURCES = \
 	$(MP_SOURCE)
 
 #ifdef SILC_DIST_TOOLKIT
-MP_HEADER = mpi/mpi.h mpi/mplogic.h mpi/mpi-config.h
 include_HEADERS = 	\
 	mp_gmp.h	\
-	mp_mpi.h	\
+	$(MP_HEADER)	\
 	silcmath.h	\
-	silcmp.h	\
-	$(MP_HEADER)
+	silcmp.h
 #endif SILC_DIST_TOOLKIT
 
-EXTRA_DIST = mp_gmp.c mp_mpi.c *.h
+EXTRA_DIST = $(MP_SOURCE) $(MP_HEADER) mp_gmp.c mp_gmp.h
 
 include $(top_srcdir)/Makefile.defines.in

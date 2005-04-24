@@ -1,3 +1,27 @@
+Sun Apr 24 12:01:37 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Optimized primer number generator to use simpler conversion
+	  routines.  Also assure that the prime number will have the
+	  highest bit set after modifying it.  Affected file is
+	  lib/silcmath/silcprimegen.c.
+
+	* Added LibTomMath to SILC Math library (SILC_DIST_TMA).
+
+	* Added FastTomMath to SILC Math Library (SILC_DIST_TFM),
+	  for now only for testing purposes, it will not be delivered
+	  in any distribution for now.
+
+	* Removed NSS MPI from the source tree.  Due to upcoming
+	  license change for the SILC Toolkit, we cannot deliver the
+	  NSS MPI anymore.  I decided to replace it in all distributions
+	  with public domain library.
+
+	* Removed GNU regex from lib/contrib and introduced free
+	  GNU compatible regex, lib/contrib/regexpr.[ch].  Added
+	  GNU regex compatible API to it (only partial).
+
+	* Removed getopt routines from lib/contrib.
+
 Fri Apr 22 12:21:44 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Use silc_server_send_command_reply to send replies instead
