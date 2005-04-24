@@ -23,7 +23,7 @@ if SILC_MP_SILCMATH
 MP_SOURCE = \
 #ifdef SILC_DIST_TMA
 	mp_tma.c \
-	tma.c \
+	tma.c
 #endif SILC_DIST_TMA
 #ifdef SILC_DIST_TFM
 	mp_tfm.c \
@@ -35,7 +35,7 @@ MP_HEADER = \
 	mp_tma.h \
 	tma.h \
 	tma_class.h \
-	tma_superclass.h \
+	tma_superclass.h
 #endif SILC_DIST_TMA
 #ifdef SILC_DIST_TFM
 	mp_tfm.h \
