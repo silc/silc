@@ -1151,7 +1151,7 @@ ad_process_distdefs()
   for i in $undistdefs
   do
     ad_debug "undefining $i distdef"
-    distdefs=`echo $distdefs | sed s/$i//`
+    distdefs=`echo $distdefs | sed s/$i//g`
   done
 
   rm -f autodist.tmp.defs
