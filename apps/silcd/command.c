@@ -2634,8 +2634,13 @@ SILC_SERVER_CMD_FUNC(motd)
       /* Send motd */
       motd = silc_file_readfile(server->config->server_info->motd_file,
 				&motd_len);
-      if (!motd)
+      if (!motd) {
+	/* No motd */
+	silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_MOTD,
+				       SILC_STATUS_OK, 0, ident, 1,
+				       2, idp->data, idp->len);
 	goto out;
+      }
 
       motd[motd_len] = 0;
       silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_MOTD,
