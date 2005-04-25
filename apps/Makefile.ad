@@ -19,5 +19,12 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 SUBDIRS = 	\
 #ifdef SILC_DIST_AUTODIST
-	autodist
+	autodist \
 #endif SILC_DIST_AUTODIST
+#ifdef SILC_DIST_SERVER
+	silcd \
+#endif SILC_DIST_SERVER
+#ifdef SILC_DIST_CLIENT
+	irssi \
+#endif SILC_DIST_CLIENT
+

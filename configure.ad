@@ -1070,7 +1070,7 @@ AM_CONDITIONAL(SILC_ENABLE_SHARED, test "$enable_shared" = yes)
 if test x$without_irssi = xfalse; then
 #endif SILC_DIST_TOOLKIT
 #ifdef SILC_DIST_CLIENT
-  AC_CONFIG_SUBDIRS(irssi)
+  AC_CONFIG_SUBDIRS(apps/irssi)
   irssi="yes"
 #endif SILC_DIST_CLIENT
 #ifdef SILC_DIST_TOOLKIT
@@ -1133,8 +1133,8 @@ if test x$without_irssi = xfalse ; then
 #endif SILC_DIST_TOOLKIT
 #ifdef SILC_DIST_CLIENT
   AC_CONFIG_FILES(
-irssi/Makefile.defines
-irssi/Makefile.defines_int
+apps/irssi/Makefile.defines
+apps/irssi/Makefile.defines_int
 )
 #endif SILC_DIST_CLIENT
 #ifdef SILC_DIST_TOOLKIT
@@ -1143,7 +1143,6 @@ fi
 
 #ifdef SILC_DIST_TOOLKIT
 AC_CONFIG_FILES(
-silc/Makefile
 win32/Makefile
 win32/libsilc/Makefile
 win32/libsilcclient/Makefile

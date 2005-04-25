@@ -1,6 +1,6 @@
 #ifdef SILC_DIST_SERVER
 #
-#  silcd/configure.ad
+#  apps/silcd/configure.ad
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
@@ -69,7 +69,7 @@ AC_SUBST(PIDFILE)
 if test x$without_silcd = xfalse ; then
 #endif SILC_DIST_TOOLKIT
   AC_CONFIG_FILES(
-silcd/Makefile
+apps/silcd/Makefile
 doc/example_silcd.conf
 )
 #ifdef SILC_DIST_TOOLKIT

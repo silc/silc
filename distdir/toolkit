@@ -4,15 +4,18 @@ bug-report silc-devel@lists.silcnet.org
 
 inherit common
 inherit client
-#inherit server
+inherit server
 
-define SILC_DIST_SERVER
 define SILC_DIST_TOOLKIT
+
+# SFTP is undefined in server, so force it here
+#define SILC_DIST_SFTP
 
 include README.CVS
 include README.WIN32
 include README.MACOSX
-include silcer
+include apps/silcer
+include apps/silc
 include tutorial
 
 pre-hook distdir/pre-run
