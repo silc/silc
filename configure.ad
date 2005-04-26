@@ -403,44 +403,6 @@ AC_SUBST(DOCDIR)
 AC_DEFINE_UNQUOTED([SILC_DOCDIR], "$DOCDIR", [SILC_DOCDIR])
 #endif SILC_DIST_AUTODIST
 
-#ifdef SILC_DIST_CLIENT
-# help directory
-#
-HELPDIR="$silc_prefix/help"
-AC_ARG_WITH(helpdir,
-  [[  --with-helpdir=DIR      directory for SILC help files [PREFIX/help]]],
-  [
-    case "$withval" in
-      no|yes)
-        ;;
-      *)
-       HELPDIR="$withval"
-       ;;
-    esac
-  ])
-AC_SUBST(HELPDIR)
-AC_DEFINE_UNQUOTED([SILC_HELPDIR], "$HELPDIR", [SILC_HELPDIR])
-#endif SILC_DIST_CLIENT
-
-#ifdef SILC_DIST_SIM
-# SIM modules directory
-#
-MODULESDIR="$silc_prefix/modules"
-AC_ARG_WITH(simdir,
-  [[  --with-simdir=DIR       directory for SIM modules [PREFIX/modules]]],
-  [
-    case "$withval" in
-      no|yes)
-        ;;
-      *)
-        MODULESDIR="$withval"
-        ;;
-    esac
-  ])
-AC_SUBST(MODULESDIR)
-AC_DEFINE_UNQUOTED([SILC_MODULESDIR], "$MODULESDIR", [SILC_MODULESDIR])
-#endif SILC_DIST_SIM
-
 #ifdef SILC_DIST_COMPILER
 ##
 ##  With/without checkings
@@ -613,7 +575,7 @@ fi
 
 #ifdef SILC_DIST_MATH
 # MP library checking. First check whether user wants to use GMP and use
-# it if found. If not or not defined then compile the MPI library in the
+# it if found. If not or not defined then compile the default library in the
 # source tree.
 #
 mp_gmp=false
@@ -622,7 +584,7 @@ SAVE_CFLAGS="$CFLAGS"
 SAVE_LDFLAGS="$LDFLAGS"
 AC_MSG_CHECKING(whether to search for GMP)
 AC_ARG_WITH(gmp,
-  [[  --with-gmp[=DIR]        use GMP instead of MPI [search in DIR/lib and DIR/include]]],
+  [[  --with-gmp[=DIR]        use GMP instead of SILC Math [search in DIR/lib and DIR/include]]],
   [
     case "$withval" in
       no)
@@ -1030,15 +992,6 @@ AC_ARG_WITH(silcd,
   ])
 #endif SILC_DIST_TOOLKIT
 
-#ifdef SILC_DIST_CLIENT
-# Irssi perl support
-#
-AC_ARG_WITH(perl,
-  [[  --with-perl[=yes|no|module]  Build with Perl support - also specifies
-                               if it should be built into main silc binary
-                               (static, default) or as a module]])
-#endif SILC_DIST_CLIENT
-
 libtoolfix=true
 AC_MSG_CHECKING(whether to do libtoolfix)
 AC_ARG_WITH(libtoolfix,
@@ -1053,7 +1006,6 @@ AC_ARG_WITH(libtoolfix,
 
 AC_SUBST(ETCDIR)
 AC_DEFINE_UNQUOTED([SILC_ETCDIR], "$ETCDIR", [SILC_ETCDIR])
-
 #endif SILC_DIST_COMPILER
 
 ##
@@ -1062,20 +1014,6 @@ AC_DEFINE_UNQUOTED([SILC_ETCDIR], "$ETCDIR", [SILC_ETCDIR])
 
 # Make enable-shared aware
 AM_CONDITIONAL(SILC_ENABLE_SHARED, test "$enable_shared" = yes)
-
-# Other configure scripts
-#
-
-#ifdef SILC_DIST_TOOLKIT
-if test x$without_irssi = xfalse; then
-#endif SILC_DIST_TOOLKIT
-#ifdef SILC_DIST_CLIENT
-  AC_CONFIG_SUBDIRS(apps/irssi)
-  irssi="yes"
-#endif SILC_DIST_CLIENT
-#ifdef SILC_DIST_TOOLKIT
-fi
-#endif SILC_DIST_TOOLKIT
 
 SILC_TOP_SRCDIR=`pwd`
 
@@ -1127,19 +1065,6 @@ includes/silcincludes.h
 apps/Makefile
 #endif SILC_DIST_APPS
 )
-
-#ifdef SILC_DIST_TOOLKIT
-if test x$without_irssi = xfalse ; then
-#endif SILC_DIST_TOOLKIT
-#ifdef SILC_DIST_CLIENT
-  AC_CONFIG_FILES(
-apps/irssi/Makefile.defines
-apps/irssi/Makefile.defines_int
-)
-#endif SILC_DIST_CLIENT
-#ifdef SILC_DIST_TOOLKIT
-fi
-#endif SILC_DIST_TOOLKIT
 
 #ifdef SILC_DIST_TOOLKIT
 AC_CONFIG_FILES(

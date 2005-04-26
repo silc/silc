@@ -83,6 +83,25 @@ AC_SUBST(LIBSILCCLIENT_CURRENT)
 AC_SUBST(LIBSILCCLIENT_REVISION)
 AC_SUBST(LIBSILCCLIENT_AGE)
 
+#ifdef SILC_DIST_SIM
+# SIM modules directory
+#
+MODULESDIR="$silc_prefix/modules"
+AC_ARG_WITH(simdir,
+  [[  --with-simdir=DIR       directory for SIM modules [PREFIX/modules]]],
+  [
+    case "$withval" in
+      no|yes)
+        ;;
+      *)
+        MODULESDIR="$withval"
+        ;;
+    esac
+  ])
+AC_SUBST(MODULESDIR)
+AC_DEFINE_UNQUOTED([SILC_MODULESDIR], "$MODULESDIR", [SILC_MODULESDIR])
+#endif SILC_DIST_SIM
+
 #ifdef SILC_DIST_TOOLKIT
 # Stack trace checking
 #
