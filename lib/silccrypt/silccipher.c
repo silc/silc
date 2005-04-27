@@ -66,9 +66,11 @@ const SilcCipherObject silc_default_ciphers[] =
   { "cast-128-cbc", 16, 128, silc_cast_set_key, silc_cast_set_key_with_string,
     silc_cast_encrypt_cbc, silc_cast_decrypt_cbc,
     silc_cast_context_len },
+#ifdef SILC_DEBUG
   { "none", 0, 0, silc_none_set_key, silc_none_set_key_with_string,
     silc_none_encrypt_cbc, silc_none_decrypt_cbc,
     silc_none_context_len },
+#endif /* SILC_DEBUG */
 
   { NULL, 0, 0, NULL, NULL, NULL, NULL, NULL }
 };
