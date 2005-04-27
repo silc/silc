@@ -1893,8 +1893,13 @@ bool silc_server_inviteban_process(SilcServer server, SilcHashTable list,
     tmp = silc_argument_get_first_arg(args, &type, &len);
     while (tmp) {
       if (type == 1) {
-	/* Check validity of the string */
+	/* Check validity of the string.  Actually we should parse the 
+	   whole string and verify all components individually. */
 	if (!silc_utf8_valid(tmp, len) || !len) {
+	  tmp = silc_argument_get_next_arg(args, &type, &len);
+	  continue;
+	}
+	if (strchr(tmp, ',')) {
 	  tmp = silc_argument_get_next_arg(args, &type, &len);
 	  continue;
 	}
@@ -1978,8 +1983,13 @@ bool silc_server_inviteban_process(SilcServer server, SilcHashTable list,
     tmp = silc_argument_get_first_arg(args, &type, &len);
     while (tmp) {
       if (type == 1) {
-	/* Check validity of the string */
+	/* Check validity of the string.  Actually we should parse the 
+	   whole string and verify all components individually. */
 	if (!silc_utf8_valid(tmp, len)) {
+	  tmp = silc_argument_get_next_arg(args, &type, &len);
+	  continue;
+	}
+	if (strchr(tmp, ',')) {
 	  tmp = silc_argument_get_next_arg(args, &type, &len);
 	  continue;
 	}
