@@ -1543,6 +1543,7 @@ void silc_server_query_send_reply(SilcServer server,
 					 3, nh, strlen(nh));
 	  sent_reply = TRUE;
 	} else {
+	  memset(uh, 0, sizeof(uh));
 	  silc_strncat(uh, sizeof(uh), entry->username,
 		       strlen(entry->username));
 	  if (!strchr(entry->username, '@') && entry->connection) {
@@ -1562,6 +1563,7 @@ void silc_server_query_send_reply(SilcServer server,
 	break;
 
       case SILC_COMMAND_WHOWAS:
+	memset(uh, 0, sizeof(uh));
 	silc_strncat(uh, sizeof(uh), entry->username, strlen(entry->username));
 	if (!strchr(entry->username, '@'))
 	  silc_strncat(uh, sizeof(uh), "@-private-", 10);
