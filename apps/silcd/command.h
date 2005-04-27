@@ -4,13 +4,12 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -21,8 +20,8 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-/* 
-   Structure holding one command and pointer to its function. 
+/*
+   Structure holding one command and pointer to its function.
 
    SilcCommandCb cb
 
@@ -35,7 +34,7 @@
    SilcCommandFlag flags
 
        Flags for the command. These set how command behaves on different
-       situations. 
+       situations.
 
 */
 typedef struct {
@@ -79,9 +78,9 @@ typedef struct SilcServerCommandPendingStruct {
 { silc_server_command_##func, SILC_COMMAND_##cmd, flags }
 
 /* Macro used to declare command functions. The `context' will be the
-   SilcServerCommandContext and the `context2' is the 
+   SilcServerCommandContext and the `context2' is the
    SilcServerCommandReplyContext if this function is called from the
-   command reply as pending command callback. Otherwise `context2' 
+   command reply as pending command callback. Otherwise `context2'
    is NULL. */
 #define SILC_SERVER_CMD_FUNC(func) \
 void silc_server_command_##func(void *context, void *context2)
@@ -104,7 +103,7 @@ void silc_server_command_process(SilcServer server,
 				 SilcPacketContext *packet);
 SilcServerCommandContext silc_server_command_alloc();
 void silc_server_command_free(SilcServerCommandContext ctx);
-SilcServerCommandContext 
+SilcServerCommandContext
 silc_server_command_dup(SilcServerCommandContext ctx);
 bool silc_server_command_pending(SilcServer server,
 				 SilcCommand reply_cmd,
@@ -122,7 +121,7 @@ void silc_server_command_pending_del(SilcServer server,
 				     SilcUInt16 ident);
 SilcServerCommandPendingCallbacks
 silc_server_command_pending_check(SilcServer server,
-				  SilcCommand command, 
+				  SilcCommand command,
 				  SilcUInt16 ident,
 				  SilcUInt32 *callbacks_count);
 SILC_SERVER_CMD_FUNC(whois);
@@ -152,6 +151,7 @@ SILC_SERVER_CMD_FUNC(silcoper);
 SILC_SERVER_CMD_FUNC(leave);
 SILC_SERVER_CMD_FUNC(users);
 SILC_SERVER_CMD_FUNC(getkey);
+SILC_SERVER_CMD_FUNC(service);
 
 SILC_SERVER_CMD_FUNC(connect);
 SILC_SERVER_CMD_FUNC(close);

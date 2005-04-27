@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -111,6 +111,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(silcoper);
 SILC_CLIENT_CMD_REPLY_FUNC(leave);
 SILC_CLIENT_CMD_REPLY_FUNC(users);
 SILC_CLIENT_CMD_REPLY_FUNC(getkey);
+SILC_CLIENT_CMD_REPLY_FUNC(service);
 SILC_CLIENT_CMD_REPLY_FUNC(quit);
 
 /* Internal command reply functions */

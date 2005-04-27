@@ -74,6 +74,7 @@ SilcServerCommand silc_command_list[] =
   SILC_SERVER_CMD(leave, LEAVE, SILC_CF_LAG_STRICT | SILC_CF_REG),
   SILC_SERVER_CMD(users, USERS, SILC_CF_LAG | SILC_CF_REG),
   SILC_SERVER_CMD(getkey, GETKEY, SILC_CF_LAG | SILC_CF_REG),
+  SILC_SERVER_CMD(service, SERVICE, SILC_CF_LAG_STRICT | SILC_CF_REG),
 
   SILC_SERVER_CMD(connect, PRIV_CONNECT,
 		  SILC_CF_LAG | SILC_CF_REG | SILC_CF_OPER),
@@ -5090,6 +5091,50 @@ SILC_SERVER_CMD_FUNC(getkey)
   silc_buffer_free(pk);
   silc_free(client_id);
   silc_free(server_id);
+  silc_server_command_free(cmd);
+}
+
+/* Server side of command SERVICE. */
+/* XXX currently this just sends empty reply back */
+
+SILC_SERVER_CMD_FUNC(service)
+{
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+  SilcServer server = cmd->server;
+  SilcUInt32 tmp_len, auth_len;
+  unsigned char *service_name, *auth;
+  bool send_list = FALSE;
+  SilcUInt16 ident = silc_command_get_ident(cmd->payload);
+
+  SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_SERVICE, cmd, 0, 256);
+
+  /* Get requested service */
+  service_name = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+  if (service_name && tmp_len) {
+    /* Verify service name */
+    if (!silc_identifier_verify(service_name, tmp_len,
+				SILC_STRING_UTF8, 256)) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_SERVICE,
+					    SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
+					    0);
+      goto out;
+    }
+  }
+
+  /* Get authentication payload if present */
+  auth = silc_argument_get_arg_type(cmd->args, 2, &auth_len);
+  if (auth) {
+    /* XXX */
+  }
+
+
+  send_list = TRUE;
+
+  /* Send our service list back */
+  silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_SERVICE,
+				 SILC_STATUS_OK, 0, ident, 0);
+
+ out:
   silc_server_command_free(cmd);
 }
 

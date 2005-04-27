@@ -2624,6 +2624,47 @@ SILC_CLIENT_CMD_FUNC(getkey)
   silc_client_command_free(cmd);
 }
 
+/* Command SERVICE.  Negotiates service agreement with server. */
+/* XXX incomplete */
+
+SILC_CLIENT_CMD_FUNC(service)
+{
+  SilcClientCommandContext cmd = (SilcClientCommandContext)context;
+  SilcClientConnection conn = cmd->conn;
+  SilcBuffer buffer;
+  char *name;
+
+  if (!cmd->conn) {
+    SILC_NOT_CONNECTED(cmd->client, cmd->conn);
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_REGISTERED);
+    goto out;
+  }
+
+  if (cmd->argc < 2) {
+    SAY(cmd->client, conn, SILC_CLIENT_MESSAGE_INFO,
+	"Usage: /SERVICE [<service name>] [-pubkey]");
+    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+    goto out;
+  }
+
+  name = cmd->argv[1];
+
+  /* Send SERVICE command to the server */
+  buffer = silc_command_payload_encode_va(SILC_COMMAND_SERVICE,
+					  ++conn->cmd_ident, 1,
+					  1, name, strlen(name));
+  silc_client_packet_send(cmd->client, conn->sock, SILC_PACKET_COMMAND,
+			  NULL, 0, NULL, NULL, buffer->data,
+			  buffer->len, TRUE);
+  silc_buffer_free(buffer);
+
+  /* Notify application */
+  COMMAND(SILC_STATUS_OK);
+
+ out:
+  silc_client_command_free(cmd);
+}
+
 /* Register a new command indicated by the `command' to the SILC client.
    The `name' is optional command name.  If provided the command may be
    searched using the silc_client_command_find by that name.  The
@@ -2847,6 +2888,7 @@ void silc_client_commands_register(SilcClient client)
   SILC_CLIENT_CMD(leave, LEAVE, "LEAVE", 2);
   SILC_CLIENT_CMD(users, USERS, "USERS", 2);
   SILC_CLIENT_CMD(getkey, GETKEY, "GETKEY", 2);
+  SILC_CLIENT_CMD(service, SERVICE, "SERVICE", 10);
 
   SILC_CLIENT_CMD(connect, PRIV_CONNECT, "CONNECT", 3);
   SILC_CLIENT_CMD(close, PRIV_CLOSE, "CLOSE", 3);
@@ -2883,6 +2925,7 @@ void silc_client_commands_unregister(SilcClient client)
   SILC_CLIENT_CMDU(leave, LEAVE, "LEAVE");
   SILC_CLIENT_CMDU(users, USERS, "USERS");
   SILC_CLIENT_CMDU(getkey, GETKEY, "GETKEY");
+  SILC_CLIENT_CMDU(service, SERVICE, "SERVICE");
 
   SILC_CLIENT_CMDU(connect, PRIV_CONNECT, "CONNECT");
   SILC_CLIENT_CMDU(close, PRIV_CLOSE, "CLOSE");
