@@ -1,5 +1,5 @@
-#ifndef GETOPT_H
-#define GETOPT_H
+#ifndef GETOPTI_H
+#define GETOPTI_H
 
 #ifndef SILC_EPOC
 #if !defined(HAVE_GETOPT) && !defined(HAVE_GETOPT_H)
@@ -12,4 +12,4 @@ int getopt(int argc, char * const *argv, const char *optstring);
 #endif /* !HAVE_GETOPT && !HAVE_GETOPT_H */
 #endif /* !SILC_EPOC */
 
-#endif /* GETOPT_H */
+#endif /* GETOPTI_H */

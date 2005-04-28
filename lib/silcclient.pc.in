@@ -8,6 +8,6 @@ Description: SILC Client Library
 Version: @VERSION@
 Conflicts: libsilc <= 0.9.12
 Requires: silc = @VERSION@
-Libs: @LIBS@ -L${libdir} -lsilcclient
+Libs: -L${libdir} -lsilcclient @LIBS@
 Cflags: -I${includedir}
 

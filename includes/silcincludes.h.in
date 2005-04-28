@@ -146,7 +146,7 @@ extern "C" {
 #if defined(HAVE_GETOPT_H) && defined(HAVE_GETOPT)
 #include <getopt.h>
 #else
-#include "getopt.h"
+#include "getopti.h"
 #endif
 
 #ifdef SOCKS5

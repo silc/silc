@@ -36,7 +36,7 @@ silcd_SOURCES = \
 	serverid.c \
 	server_version.c
 
-LIBS = $(SILC_COMMON_LIBS) -lsilc
+LIBS = $(SILC_COMMON_LIBS)
 LDADD =
 
 EXTRA_DIST = *.h
