@@ -697,7 +697,15 @@ ad_process_tree()
  	\! -name \*\.[cC]++ -a \
  	\! -name \*\.m -a \
  	\! -name \*\.[hH] -a \
- 	\! -name \*\.hh \)`
+ 	\! -name \*\.hh -a \
+ 	\! -name \*\.[cC]\.in -a \
+ 	\! -name \*\.[cC][cCpP]\.in -a \
+ 	\! -name \*\.[cC][xX][xX]\.in -a \
+ 	\! -name \*\.[cC][pP][pP]\.in -a \
+ 	\! -name \*\.[cC]++\.in -a \
+ 	\! -name \*\.m\.in -a \
+ 	\! -name \*\.[hH]\.in -a \
+ 	\! -name \*\.hh\.in \)`
   files=`echo $files | sed 's/$am_distdir//'`
 
   # Take away noprocess list
@@ -742,7 +750,15 @@ ad_process_source_tree()
  	-name \*\.[cC]++ -o \
  	-name \*\.m -o \
  	-name \*\.[hH] -o \
- 	-name \*\.hh \)`
+ 	-name \*\.hh -o \
+ 	-name \*\.[cC]\.in -o \
+ 	-name \*\.[cC][cCpP]\.in -o \
+ 	-name \*\.[cC][xX][xX]\.in -o \
+ 	-name \*\.[cC][pP][pP]\.in -o \
+ 	-name \*\.[cC]++\.in -o \
+ 	-name \*\.m\.in -o \
+ 	-name \*\.[hH]\.in -o \
+ 	-name \*\.hh\.in \)`
 
   # Take away noprocess list
   if test -f autodist.noprocess; then

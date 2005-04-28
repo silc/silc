@@ -1066,7 +1066,9 @@ If you need processed files during configuration or compilation then they
 need to have '.ad' suffix.
 
 Note that, the distdef format used in these files must be the non-source
-format.
+format, even if the file is source file.  This is because the distdefs
+are processed during source tree preparation, and the source file will
+have all distdefs removed when it is compiled.
 
 @menu
 * Distdefines::                 Using distdefs in files
@@ -1256,7 +1258,17 @@ The following suffixes will be considered as source files by the Autodist:
     .hh
 @end example
 
+Also, any file that has '.in' suffix with any of the above source file 
+suffixes, the format inside the file must follow the source code format.  
 Using distdefs in any other file must follow the non-source format.
+
+Example:
+@example
+    .c.in
+    .h.in
+@end example
+
+In this example, in both of the files the source code format is used.
 
 
 @node Invoking Autodist
