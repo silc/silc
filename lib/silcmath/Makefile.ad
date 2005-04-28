@@ -62,6 +62,6 @@ include_HEADERS = 	\
 	silcmp.h
 #endif SILC_DIST_TOOLKIT
 
-EXTRA_DIST = $(MP_SOURCE) $(MP_HEADER) mp_gmp.c mp_gmp.h
+EXTRA_DIST = silcmp.h silcmath.h $(MP_SOURCE) $(MP_HEADER) mp_gmp.c mp_gmp.h
 
 include $(top_srcdir)/Makefile.defines.in
