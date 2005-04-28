@@ -185,7 +185,7 @@ extern "C" {
 #endif
 
 #ifndef HAVE_REGEX_H
-#include "regex.h"
+#include "regexpr.h"
 #else
 #include <regex.h>
 #endif

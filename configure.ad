@@ -447,13 +447,17 @@ if test -n "$with_silc_includes" || test -n "$with_silc_libs"; then
 else
   # pkg-config check
   PKG_CHECK_MODULES(SILC, silc, compile_libs=false, compile_libs=true)
+#ifdef SILC_DIST_CLIENTLIB
   PKG_CHECK_MODULES(SILCCLIENT, silcclient, compile_libs=false, compile_libs=true)
+#endif SILC_DIST_CLIENTLIB
 
   if test x$compile_libs = xfalse; then
     LIBS="$LIBS $SILC_LIBS"
     CFLAGS="$CFLAGS $SILC_CFLAGS"
+#ifdef SILC_DIST_CLIENTLIB
     LIBS="$LIBS $SILCCLIENT_LIBS"
     CFLAGS="$CFLAGS $SILCCLIENT_CFLAGS"
+#endif SILC_DIST_CLIENTLIB
   fi
 fi
 #endif SILC_DIST_TOOLKIT
