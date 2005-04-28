@@ -315,7 +315,7 @@ else
     alpha*-dec-osf*)
       SILC_ADD_CFLAGS(-g3 -O2, SILC_ADD_CFLAGS(-g3 -O, SILC_ADD_CFLAGS(-O)))
       ;;
-    mips*-sgi-irix6.5*)
+    mips*-sgi-irix*)
       SILC_ADD_CFLAGS(-g3 -O2, SILC_ADD_CFLAGS(-g3 -O, SILC_ADD_CFLAGS(-O)))
       ;;
     *)
