@@ -418,6 +418,7 @@ AC_DEFINE_UNQUOTED([SILC_DOCDIR], "$DOCDIR", [SILC_DOCDIR])
 #
 # SILC library checking
 compile_libs=true
+LIBSUBDIR=lib
 
 #ifndef SILC_DIST_TOOLKIT
 AC_ARG_WITH(silc-includes,
@@ -433,9 +434,11 @@ if test -n "$with_silc_includes" || test -n "$with_silc_libs"; then
   if test "$ac_silc_includes" != "no"; then
     compile_libs=false
     SILC_LIB_INCLUDES="-I$ac_silc_includes"
+    LIBSUBDIR=
   fi
   if test "$ac_silc_libs" != "no"; then
     compile_libs=false
+    LIBSUBDIR=
     LIBS="$LIBS -L$ac_silc_libs"
   fi
 
@@ -459,6 +462,7 @@ else
 #endif SILC_DIST_CLIENTLIB
 
   if test x$compile_libs = xfalse; then
+    LIBSUBDIR=
     LIBS="$LIBS $SILC_LIBS"
     CFLAGS="$CFLAGS $SILC_CFLAGS"
 #ifdef SILC_DIST_CLIENTLIB
@@ -468,6 +472,8 @@ else
   fi
 fi
 #endif SILC_DIST_TOOLKIT
+
+AC_SUBST(LIBSUBDIR)
 
 # SOCKS4 support checking
 #
