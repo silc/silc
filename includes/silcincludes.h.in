@@ -143,8 +143,10 @@ extern "C" {
 #include <grp.h>
 #include <sys/times.h>
 
-#ifdef HAVE_GETOPT_H
+#if defined(HAVE_GETOPT_H) && defined(HAVE_GETOPT)
 #include <getopt.h>
+#else
+#include "getopt.h"
 #endif
 
 #ifdef SOCKS5
@@ -223,10 +225,6 @@ extern "C" {
 #endif
 
 #endif				/* !SILC_WIN32 */
-
-#ifndef HAVE_GETOPT_LONG
-#include "getopt.h"
-#endif
 
 /* Include generic SILC type definitions */
 #include "silctypes.h"
