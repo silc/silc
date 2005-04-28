@@ -166,6 +166,13 @@ AC_CHECK_FUNC(getopt_long,
   ], have_getopt_long=0
 )
 
+AC_CHECK_FUNC(getopt,
+  [
+    AC_DEFINE([HAVE_GETOPT], [], [HAVE_GETOPT])
+    have_getopt=1
+  ], have_getopt=0
+)
+
 ##
 ##  Enable/disable checking
 ##
@@ -413,7 +420,7 @@ AC_DEFINE_UNQUOTED([SILC_DOCDIR], "$DOCDIR", [SILC_DOCDIR])
 compile_libs=true
 
 #ifndef SILC_DIST_TOOLKIT
-AC_ARG_WITH(silc-includes, 
+AC_ARG_WITH(silc-includes,
   [  --with-silc-includes=DIR SILC Toolkit includes [search in DIR]],
   [ac_silc_includes="$withval"], [ac_silc_includes="no"])
 AC_ARG_WITH(silc-libs,
@@ -1177,4 +1184,3 @@ echo " Debugging enabled .............: $summary_debug"
 echo ""
 echo "Compile the sources with 'make' or 'gmake' command."
 #endif SILC_DIST_COMPILER
-
