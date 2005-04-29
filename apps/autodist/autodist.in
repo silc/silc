@@ -373,7 +373,7 @@ EOF
     sed -e "/AD_INCLUDE_CONFIGURE/s///" $fname.tmp >> $fname
     rm -f configure.ad.cfs $fname.tmp
   else
-    cat $1 >> $fname.tmp
+    cat $1 >> $fname
   fi
 
   # Process AD_INIT
