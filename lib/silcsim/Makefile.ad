@@ -80,4 +80,11 @@ include_HEADERS = silcsim.h silcsimutil.h
 
 EXTRA_DIST = *.h
 
+#
+# Installation
+#
+install-data-hook:
+	-mkdir -p $(modulesdir)
+	-$(INSTALL_DATA) $(top_srcdir)/lib/silcsim/*.so $(modulesdir)/
+
 include $(top_srcdir)/Makefile.defines.in
