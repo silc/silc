@@ -41,7 +41,6 @@ EXTRA_DIST = 		\
 	CHANGES CREDITS
 #endif SILC_DIST_SILC
 
-#ifdef SILC_DIST_SILC
 #ifdef SILC_DIST_CLIENT
 install-dirs-client:
 	-mkdir -p $(etcdir)
@@ -61,14 +60,13 @@ etc-install-client:
 	    	$(etcdir)/silc.conf; \
 	  fi; \
 	fi
-#endif SILC_DIST_CLIENT
 
 install-data-hook: 		\
-#ifdef SILC_DIST_CLIENT
 	install-dirs-client	\
 	doc-install-client	\
 	etc-install-client
 #endif SILC_DIST_CLIENT
 
+#ifdef SILC_DIST_SILC
 include $(top_srcdir)/Makefile.defines.in
 #endif SILC_DIST_SILC
