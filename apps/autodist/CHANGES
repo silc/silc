@@ -1,3 +1,15 @@
+Sat Apr 30 11:49:01 EEST 2005 Pekka Riikonen <priikone@silcnet.org>
+
+	* Added better debug messages.
+
+	* Added log file creation, autodist.log and makedist.log.
+
+	* Fixed license-header to change license only during packaging,
+	  not also during preparation.
+
+	* Fixed .ad processing when the file was not processed, to
+	  copy the original to new name.
+
 Fri Apr 29 16:48:16 EEST 2005 Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed configure.ac creation when no fragments in use.

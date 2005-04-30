@@ -500,6 +500,10 @@ Will replace all appearances of the license header in 'license/BSD-header'
 file to the license header in 'license/GPL-header' in any file in the
 distribution.  Note that, the header change will be performed when
 the distribution is packaged (@pxref{Creating distribution, , , , }).
+The 'makedist.log' file created by Autodist during distribution packaging
+will list all files that were not re-licensed.  The log file can be used
+to check that the distribution is re-licensed correctly, and fix any
+possible mistakes.
 
 With 'license-header' directive you may initially set your files in the
 source tree into what ever license you prefer.  However, if you need to
@@ -1419,6 +1423,9 @@ Creating the distribution that file will be read by the Autodist
 automatically.  That file should not be removed or the distribution
 cannot be packaged.
 
+Autodist also created a log file, 'autodist.log', that will include
+messages created by Autodist during preparation.
+
 @menu
 * Creating distribution::       Creating distribution with Autodist
 @end menu
@@ -1459,6 +1466,14 @@ are being packaged you may set 'pre-process-dist-hook',
 'post-process-dist-hook, 'pre-dist-hook' and/or 'post-dist-hook' in your 
 distribution file.  Also note that any hooks provided by Automake in 
 Makefiles will be run in normal manner.
+
+When creating the distribution Autodist creates a log file, 
+'makedist.log', that will include messages created by Autodist.  It is 
+suggested that this file is checked after distribution is created.  For 
+example, when the 'license-header' directive is used to re-license the 
+distribution, the 'makedist.log' will include list of files that were not 
+re-licensed.  The log file can be used to verify that the distribution was 
+re-licensed correctly, and fix any possible mistakes.
 
 
 @node Examples

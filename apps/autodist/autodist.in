@@ -168,6 +168,7 @@ ad_debug()
 ad_fatal()
 {
   set -f
+  ad_log "error: $1"
   echo autodist: error: $1
   set +f
   exit 1
@@ -181,8 +182,35 @@ ad_fatal()
 ad_warning()
 {
   set -f
+  ad_log "warning: $1"
   echo autodist: warning: $1
   set +f
+}
+
+#
+# Opens a log file.
+#
+# Arguments: ad_log_open <logfile>
+#
+ad_log_open()
+{
+  rm -rf $1
+  exec 5> $1
+
+  cat >&5 << EOF
+This file contains messages produced by the Autodist $ver.
+
+EOF
+}
+
+#
+# Prints to an open log file
+#
+# Arguments: ad_log
+#
+ad_log()
+{
+  echo "$1" >&5
 }
 
 #
@@ -193,7 +221,7 @@ ad_warning()
 #
 ad_initialize()
 {
-  ad_debug ">ad_initialize"
+  ad_debug "Initializing Autodist environment"
 
   # Create default distdir
   if test '!' -f $distdir; then
@@ -210,7 +238,7 @@ ad_initialize()
     cp -p @AUTODISTDIR@/default $distdir
   fi
 
-  ad_debug "<ad_initialize"
+  ad_debug "Autodist environment initialized"
 }
 
 #
@@ -220,7 +248,7 @@ ad_initialize()
 #
 ad_create_distdefs_h()
 {
-  ad_debug ">ad_create_distdefs_h"
+  ad_debug "Creating distdef header file"
 
   fname=$DISTDEFS
   rm -f $fname
@@ -247,7 +275,8 @@ EOF
 
 #endif /* _`echo $DP`_DISTDEFS_H */
 EOF
-  ad_debug "<ad_create_distdefs_h"
+
+  ad_debug "Distdef header file created"
 }
 
 #
@@ -260,7 +289,7 @@ ad_make_configure()
 {
   local run_autoconf=false
 
-  ad_debug ">ad_make_configure"
+  ad_debug "Starting configure creation"
 
   rm -f configure
 
@@ -307,7 +336,7 @@ ad_make_configure()
     fi
   fi
 
-  ad_debug "<ad_make_configure"
+  ad_debug "Ending configure creation"
 }
 
 #
@@ -321,7 +350,11 @@ ad_make_configure_ac()
 {
   local check
 
-  ad_debug ">ad_make_configure_ac: $1"
+  ad_debug "Starting creating configure.ac: $1"
+
+  ad_log ""
+  ad_log "Following configure.ad files were processed into configure.ac:"
+  ad_log "--------------------------------------------------------------"
 
   if test '!' -f $1; then
     ad_fatal "The configure file '$1' does not exist"
@@ -342,7 +375,10 @@ ad_make_configure_ac()
     if test "x$i" = "x$1"; then
       continue
     fi
+
     ad_debug "including $i"
+    ad_log "  $i"
+
     cat $i >> configure.ad.cfs
   done
 
@@ -381,7 +417,7 @@ EOF
 
   # Process for distribution
   rm -f $fname
-  ad_process_file $fname.tmp $fname
+  ad_process_file $fname.tmp $fname false
 
   # Remove any trailing backslashes
   if test -f "$fname"; then
@@ -391,7 +427,10 @@ EOF
   fi
   rm -f $fname $fname.tmp
 
-  ad_debug "<ad_make_configure_ac: $1"
+  ad_log "  ./configure.ad"
+  ad_log ""
+
+  ad_debug "Ending creating configure.ac: $1"
 }
 
 #
@@ -401,7 +440,7 @@ EOF
 #
 ad_make_makefile_ins()
 {
-  ad_debug ">ad_make_makefile_ins"
+  ad_debug "Starting creating Makefile.in files"
 
   if test "$AUTOMAKE"; then
     ad_debug "Running automake"
@@ -411,7 +450,7 @@ ad_make_makefile_ins()
     fi
   fi
 
-  ad_debug "<ad_make_makefile_ins"
+  ad_debug "Ending creating Makefile.in files"
 }
 
 #
@@ -423,11 +462,16 @@ ad_make_makefile_ins()
 #
 ad_make_makefile_ams()
 {
-  ad_debug ">ad_make_makefile_ams"
+  ad_debug "Starting creating Makefile.am files"
+
+  ad_log ""
+  ad_log "Following Makefile.ad files were processed into Makefile.am files:"
+  ad_log "------------------------------------------------------------------"
 
   files=`find . -name Makefile\.ad`
   for ff in $files
   do
+    ad_log "  $ff"
     fname=`echo $ff | sed s/\.ad//`
 
     # Header for the Makefile.am
@@ -444,7 +488,7 @@ EOF
 
     # Run the distribution processing for this Makefile.ad
     ad_debug "Processing $ff to be $fname.am"
-    ad_process_file $ff $fname.tmp
+    ad_process_file $ff $fname.tmp false
 
     # Remove any trailing backslashes
     if test -f "$fname.tmp"; then
@@ -455,31 +499,43 @@ EOF
 
     rm -f $fname.tmp
   done
+  ad_log ""
 
-  ad_debug "<ad_make_makefile_ams"
+  ad_debug "Ending creating Makefile.am files"
 }
 
 #
 # Processes all files with .ad suffix, with exception of configure*.ad
 # and Makefile.ad files, for distribution from the source tree.
 #
-# Arguments: ad_process_ads
+# Arguments: ad_process_ads false
 #
 ad_process_ads()
 {
-  ad_debug ">ad_process_ads"
+  ad_debug "Starting processing .ad files"
+
+  ad_log ""
+  ad_log "Following .ad files were processed:"
+  ad_log "-----------------------------------"
 
   files=`find . -name \*\.ad \! -name configure\*\.ad \! -name Makefile\.ad`
   for i in $files
   do
     fname=`echo $i | sed s/\.ad//`
 
-    # Run the distribution processing for this file
     ad_debug "Processing $i to be $fname"
-    ad_process_file $i $fname
-  done
+    ad_log "  $i into $fname"
 
-  ad_debug "<ad_process_ads"
+    # Run the distribution processing for this file
+    ad_process_file $i $fname false
+    if test -f $fname; then
+      cp -p $i $fname || exit 1
+    fi
+
+  done
+  ad_log ""
+
+  ad_debug "Ending processing .ad files"
 }
 
 #
@@ -502,7 +558,11 @@ ad_dist_includes()
 {
   local incs
 
-  ad_debug ">ad_dist_includes: $1 $2"
+  ad_debug "Starting running includes: $1 $2"
+
+  ad_log ""
+  ad_log "Following files and directories were included in distribution:"
+  ad_log "--------------------------------------------------------------"
 
   # By default do not expand pathnames
   set -f
@@ -553,6 +613,7 @@ ad_dist_includes()
         fi
       fi
 
+      ad_log "  $src into $am_distdir/$d"
       cp -p $src $am_distdir/$d || exit 1
 
     elif test -d "$src"; then
@@ -569,6 +630,7 @@ ad_dist_includes()
           mkdir -p $am_distdir/$d || exit 1
         fi
 
+        ad_log "  $src into $am_distdir/$d"
         cp -pR $src $am_distdir/$d || exit 1
       else
 	# Add to different location
@@ -586,6 +648,7 @@ ad_dist_includes()
           mkdir -p $am_distdir/$d || exit 1
         fi
 
+        ad_log "  $src into $am_distdir/$dst"
         cp -pR $src $am_distdir/$dst || exit 1
       fi
 
@@ -644,10 +707,11 @@ ad_dist_includes()
     src=
     dst=
   done
+  ad_log ""
 
   set +f
 
-  ad_debug "<ad_dist_includes: $1 $2"
+  ad_debug "Ending running includes: $1 $2"
 }
 
 #
@@ -664,15 +728,21 @@ ad_dist_includes()
 #
 ad_dist_excludes()
 {
-  ad_debug ">ad_dist_excludes: $1"
+  ad_debug "Starting running excludes: $1"
+
+  ad_log ""
+  ad_log "Following files and directories were excluded from distribution:"
+  ad_log "----------------------------------------------------------------"
 
   for i in $1
   do
     ad_debug "Excluding $i"
+    ad_log "  $1"
     rm -rf $am_distdir/$i
   done
+  ad_log ""
 
-  ad_debug "<ad_dist_excludes: $1"
+  ad_debug "Ending running excludes: $1"
 }
 
 #
@@ -686,7 +756,7 @@ ad_dist_excludes()
 #
 ad_process_tree()
 {
-  ad_debug ">ad_process_tree: $1"
+  ad_debug "Starting processing non-source files: $1"
 
   # Take files, except source and .ad files.
   files=`find $am_distdir \! -name \*\.ad \( \
@@ -715,14 +785,14 @@ ad_process_tree()
 
   for ff in $files
   do
-    ad_process_file $ff $ff.tmp
+    ad_process_file $ff $ff.tmp true
     if test -f $ff.tmp; then
       rm -f $ff || exit 1
       mv -f $ff.tmp $ff || exit 1
     fi
   done
 
-  ad_debug "<ad_process_tree: $1"
+  ad_debug "Ending processing non-source files: $1"
 }
 
 #
@@ -738,7 +808,7 @@ ad_process_tree()
 #
 ad_process_source_tree()
 {
-  ad_debug ">ad_process_source_tree: $1"
+  ad_debug "Starting processing source files: $1"
 
   # We take only C/C++ files since they use the C compiler friendly
   # version of distdefs.  Other files are not assumed to use them.
@@ -767,14 +837,14 @@ ad_process_source_tree()
 
   for ff in $files
   do
-    ad_process_source_file $ff $ff.tmp
+    ad_process_source_file $ff $ff.tmp true
     if test -f $ff.tmp; then
       rm -f $ff || exit 1
       mv -f $ff.tmp $ff || exit 1
     fi
   done
 
-  ad_debug "<ad_process_source_tree: $1"
+  ad_debug "Ending processing source files: $1"
 }
 
 #
@@ -785,7 +855,7 @@ ad_process_source_tree()
 #
 ad_makedist_makesane()
 {
-  ad_debug ">ad_makedist_makesane:"
+  ad_debug "Making distribution file modtimes sane"
 
   # DO NOT change these order unless you know what you are doing.
   if test -f $am_distdir/configure.ac; then
@@ -817,7 +887,7 @@ ad_makedist_makesane()
     touch $am_distdir/config.status
   fi
 
-  ad_debug "<ad_makedist_makesane:"
+  ad_debug "Distribution made sane"
 }
 
 #
@@ -828,7 +898,12 @@ ad_makedist_makesane()
 #
 ad_makedist()
 {
-  ad_debug ">ad_makedist"
+  ad_log_open "makedist.log"
+  ad_debug "Starting distribution creation"
+
+  ad_log "Starting distribution creation"
+  ad_log "------------------------------"
+  ad_log ""
 
   if test '!' -f autodist.dist; then
     ad_fatal "Autodist has not been run yet to prepare source tree"
@@ -848,6 +923,8 @@ ad_makedist()
   dist_version=`grep "ver:" < autodist.dist | cut -d: -f2` || exit 1
   am_distdir=`grep "distdir:" < autodist.dist | cut -d: -f2` || exit 1
   ad_parse_distribution $distribution false
+  ad_log "  Distribution: $distribution $dist_version"
+  ad_log "  Destination directory: $am_distdir"
   ad_process_distdefs
 
   if test x$opt_no_dist = xtrue; then
@@ -877,11 +954,16 @@ ad_makedist()
 
   # Include specific license file if specified
   if test "$license" != ""; then
+    ad_log "License file in distribution is $am_distdir/COPYING"
     cp -p $license $am_distdir/COPYING || exit 1
   fi
 
   # Process noprocesses
   ad_process_noprocess
+
+  ad_log ""
+  ad_log "Following files were not re-licensed:"
+  ad_log "-------------------------------------"
 
   # Process source files
   ad_debug "Process distribution source tree"
@@ -904,16 +986,20 @@ ad_makedist()
   # Compress
   ad_debug "Compressing distribution package"
   if test x$ad_gzip = xtrue; then
+    ad_debug "Compressing distribution package $am_distdir.tar.gz"
     gzip -9 -c $am_distdir.tar > $am_distdir.tar.gz || exit 1
   fi
   if test x$ad_bzip2 = xtrue; then
+    ad_debug "Compressing distribution package $am_distdir.tar.bz2"
     bzip2 -9 -c $am_distdir.tar > $am_distdir.tar.bz2 || exit 1
   fi
   if test x$ad_compress = xtrue; then
+    ad_debug "Compressing distribution package $am_distdir.tar.Z"
     compress -c $am_distdir.tar > $am_distdir.tar.Z || exit 1
   fi
   if test x$ad_zip = xtrue; then
     rm -f $am_distdir.zip
+    ad_debug "Compressing distribution package $am_distdir.zip"
     zip -rq $am_distdir.zip $am_distdir || exit 1
   fi
   rm -f $am_distdir.tar
@@ -925,7 +1011,9 @@ ad_makedist()
   rm -rf $am_distdir
   rm -f autodist.noprocess
 
-  ad_debug "<ad_makedist"
+  ad_log "Distribution created successfully."
+
+  ad_debug "Ending distribution creation"
 }
 
 #
@@ -945,7 +1033,7 @@ ad_makedist()
 #
 ad_handle_options()
 {
-  ad_debug ">ad_handle_options: $1"
+  ad_debug "Handling options: $1"
 
   for i in $1
   do
@@ -960,8 +1048,6 @@ ad_handle_options()
       continue
     fi
   done
-
-  ad_debug "<ad_handle_options: $1"
 }
 
 #
@@ -971,11 +1057,9 @@ ad_handle_options()
 #
 ad_clear_options()
 {
-  ad_debug ">ad_clear_options"
   opt_template=false
   opt_no_dist=false
   opt_no_inherit=false
-  ad_debug "<ad_clear_options"
 }
 
 #
@@ -1005,7 +1089,7 @@ ad_parse_distribution()
   local prpdh
   local popdh
 
-  ad_debug ">ad_parse_distribution: $1 $2"
+  ad_debug "Starting parsing distribution: $1 $2"
 
   if test '!' -f $distdir/$1; then
     ad_fatal "Distribution '$1' is not declared"
@@ -1160,7 +1244,7 @@ ad_parse_distribution()
   noprocess="$noprocess $nops"
   undistdefs="$undistdefs $undefs"
 
-  ad_debug "<ad_parse_distribution: $1 $2"
+  ad_debug "Ending parsing distribution: $1 $2"
 }
 
 #
@@ -1171,7 +1255,11 @@ ad_parse_distribution()
 #
 ad_process_distdefs()
 {
-  ad_debug ">ad_process_distdefs"
+  ad_debug "Starting processing distdefs"
+
+  ad_log ""
+  ad_log "Following distdefs were processed:"
+  ad_log "----------------------------------"
 
   # Remove all undefined distribution defines
   for i in $undistdefs
@@ -1191,19 +1279,26 @@ ad_process_distdefs()
   distdefs=`echo $distdefs`
   rm -f autodist.tmp.defs
 
+  # Log
+  for i in $distdefs
+  do
+    ad_log "  $i"
+  done
+  ad_log ""
+
   ad_debug "distdefs=$distdefs"
 
-  ad_debug "<ad_process_distdefs"
+  ad_debug "Ending processing distdefs"
 }
 
 #
 # Processes for a license header change.
 #
-# Arguments: ad_process_license_header <scriptfile>
+# Arguments: ad_process_license_header <scriptfile> <sourcefile>
 #
 ad_process_license_header()
 {
-  ad_debug ">ad_process_license_header"
+  ad_debug "Starting license header processing"
 
   # Add : separator at the end
   lics=`echo "$licenseh" | sed 's/$/ : /'`
@@ -1238,14 +1333,14 @@ ad_process_license_header()
     # Awk script to replace the license header
     fl=`sed q $src | sed 's/\\//\\\\\//g' > autodist.lsrc` || exit 1
     ll=`sed -n '$p' $src | sed 's/\\//\\\\\//g' > autodist.ldst` || exit 1
-    echo "/`cat autodist.lsrc`/,/`cat autodist.ldst`/ { FILE1=\"$src\"; FILE2=\"$dst\"; getline F1 < FILE1; getline F2 < FILE2; if (F1) sub(F1, F2); else { F1=\"\$\"; sub(F1, F2); } }" >> $1
+    echo "BEGIN { N=0; } /`cat autodist.lsrc`/,/`cat autodist.ldst`/ { FILE1=\"$src\"; FILE2=\"$dst\"; getline F1 < FILE1; getline F2 < FILE2; if (F1) { N=sub(F1, F2); } else { F1=\"\$\"; N=sub(F1, F2); } if (N == 0) print 0 > \"$2.norelicense\"; } END { if (N == 0) print 0 > \"$2.norelicense\"; }" >> $1
     rm -f autodist.lsrc autodist.ldst
 
     src=
     dst=
   done
 
-  ad_debug "<ad_process_license_header"
+  ad_debug "Ending license header processing"
 }
 
 #
@@ -1258,12 +1353,18 @@ ad_process_noprocess()
   local np=false
   local n="sed "
 
-  ad_debug ">ad_process_noprocess"
+  ad_debug "Starting running noprocesses"
+
+  ad_log ""
+  ad_log "Autodist did not process the following files:"
+  ad_log "---------------------------------------------"
 
   cur=`pwd`
   cd $am_distdir || exit 1
   for i in $noprocess
   do
+    ad_log "  $i"
+
     # Escape
     ie=`echo $i | sed 's/\\//\\\\\//g'` || exit 1
 
@@ -1276,14 +1377,15 @@ ad_process_noprocess()
   if test x$np = xtrue; then
     echo $n > autodist.noprocess || exit 1
   fi
+  ad_log ""
 
-  ad_debug "<ad_process_noprocess"
+  ad_debug "Ending running noprocesses"
 }
 
 #
 # Process a file given as argument for the distribution.
 #
-# Arguments: ad_process_file <filepath> <dest_filepath>
+# Arguments: ad_process_file <filepath> <dest_filepath> <re-license>
 #
 ad_process_file()
 {
@@ -1297,13 +1399,15 @@ ad_process_file()
     return
   fi
 
-  ad_debug ">ad_process_file: $1 $2"
+  ad_debug "Starting processing file: $1 $2"
 
   f="autodist.tmp.script"
   rm -f $f
 
   # If license header is provided, replace the license header in the file.
-  ad_process_license_header $f
+  if test x$3 = xtrue; then
+    ad_process_license_header $f $1
+  fi
 
   ad_debug "Getting #ifdef's and #ifndef's"
 
@@ -1382,13 +1486,19 @@ ad_process_file()
 
   rm -f $f
 
-  ad_debug "<ad_process_file: $1 $2"
+  # Log if file was not relicensed
+  if test -f "$1.norelicense"; then
+    ad_log "  $1"
+    rm -f $1.norelicense
+  fi
+
+  ad_debug "Ending processing file: $1 $2"
 }
 
 #
 # Process a source file given as argument for the distribution.
 #
-# Arguments: ad_process_source_file <filepath> <dest_filepath>
+# Arguments: ad_process_source_file <filepath> <dest_filepath> <re-license>
 #
 ad_process_source_file()
 {
@@ -1402,13 +1512,15 @@ ad_process_source_file()
     return
   fi
 
-  ad_debug ">ad_process_source_file: $1 $2"
+  ad_debug "Starting processing source file: $1 $2"
 
   f="autodist.tmp.script"
   rm -f $f
 
   # If license header is provided, replace the license header in the file.
-  ad_process_license_header $f
+  if test x$3 = xtrue; then
+    ad_process_license_header $f $1
+  fi
 
   ad_debug "Getting #ifdef's and #ifndef's"
 
@@ -1487,7 +1599,13 @@ ad_process_source_file()
 
   rm -f $f
 
-  ad_debug "<ad_process_source_file: $1 $2"
+  # Log if file was not relicensed
+  if test -f "$1.norelicense"; then
+    ad_log "  $1"
+    rm -f $1.norelicense
+  fi
+
+  ad_debug "Ending processing source file: $1 $2"
 }
 
 #
@@ -1497,17 +1615,23 @@ ad_process_source_file()
 #
 ad_run_hooks()
 {
-  ad_debug ">ad_run_hooks: $1"
+  ad_debug "Running hooks: $1"
+
+  ad_log ""
+  ad_log "Running hooks:"
+  ad_log "--------------"
 
   for i in $1
   do
     if test '!' -f $i; then
       ad_fatal "Hook script $i does not exist"
     fi
+    ad_log "  sh $i \"$distribution\" \"$dist_version\" \"$package\""
     sh $i "$distribution" "$dist_version" "$package" || exit 1
   done
+  ad_log ""
 
-  ad_debug "<ad_run_hooks: $1"
+  ad_debug "Ending running hooks: $1"
 }
 
 #
@@ -1517,17 +1641,24 @@ ad_run_hooks()
 #
 ad_run_dist_hooks()
 {
-  ad_debug ">ad_run_dist_hooks: $1"
+  ad_debug "Starting running distributions hooks: $1"
+
+  ad_log ""
+  ad_log "Running distribution hooks:"
+  ad_log "---------------------------"
 
   for i in $1
   do
     if test '!' -f $i; then
       ad_fatal "Dist hook script $i does not exist"
     fi
+
+    ad_log "  sh $i \"$distribution\" \"$dist_version\" \"$package\" \"$am_distdir\""
     sh $i "$distribution" "$dist_version" "$package" "$am_distdir" || exit 1
   done
+  ad_log ""
 
-  ad_debug "<ad_run_dist_hooks: $1"
+  ad_debug "Ending running distribution hooks"
 }
 
 ###############################################################################
@@ -1647,6 +1778,13 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. " 1>
   esac
 done
 
+# Open log file
+ad_log_open "autodist.log"
+
+ad_log "Processing source tree for compilation and configuration"
+ad_log "--------------------------------------------------------"
+ad_log ""
+
 #
 # Parse the requested distribution
 #
@@ -1656,6 +1794,7 @@ if test $# != 0; then
   shift
 fi
 ad_parse_distribution $distribution false
+ad_log "  Distribution: $distribution $dist_version"
 ad_process_distdefs
 
 if test $# != 0; then
@@ -1717,5 +1856,7 @@ echo "distdir:$package-$dist_version" >> autodist.dist
 #
 ad_run_hooks "$post_hooks"
 
+ad_log "Source tree processed successfully."
 ad_debug "Done, now run ./configure and make."
+
 exit 0
