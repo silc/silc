@@ -4,7 +4,5 @@ TODO In Autodist
 o Better 'license-header' implementation.
 
 o Perhaps ability to partially re-license the source tree.  Now all files
-  will be processed if 'license-header' is used.
-
-o Better 'noprocess' so that it would work with directories recursively,
-  such as noprocess foo/bar, would not process anything under foo/bar.
+  will be processed if 'license-header' is used.  Only way to control
+  this is to use 'noprocess' or specify different header in file.

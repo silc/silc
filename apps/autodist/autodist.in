@@ -369,7 +369,7 @@ ad_make_configure_ac()
 
   rm -f configure.ac configure.ad.cfs
 
-  cfs=`find . -name configure\*\.ad`
+  cfs=`find . -type f -name configure\*\.ad`
   for i in $cfs
   do
     if test "x$i" = "x$1"; then
@@ -468,7 +468,7 @@ ad_make_makefile_ams()
   ad_log "Following Makefile.ad files were processed into Makefile.am files:"
   ad_log "------------------------------------------------------------------"
 
-  files=`find . -name Makefile\.ad`
+  files=`find . -type f -name Makefile\.ad`
   for ff in $files
   do
     ad_log "  $ff"
@@ -518,7 +518,7 @@ ad_process_ads()
   ad_log "Following .ad files were processed:"
   ad_log "-----------------------------------"
 
-  files=`find . -name \*\.ad \! -name configure\*\.ad \! -name Makefile\.ad`
+  files=`find . -type f -name \*\.ad \! -name configure\*\.ad \! -name Makefile\.ad`
   for i in $files
   do
     fname=`echo $i | sed s/\.ad//`
@@ -552,7 +552,7 @@ ad_process_ads()
 # source path.  This, in effect, is a cp utility with ability to create
 # directories if they do not exist.
 #
-# Arguments: ad_dist_includes <includeslist> <recursive>
+# Arguments: ad_dist_includes <includeslist> <recursive> <log>
 #
 ad_dist_includes()
 {
@@ -560,9 +560,11 @@ ad_dist_includes()
 
   ad_debug "Starting running includes: $1 $2"
 
-  ad_log ""
-  ad_log "Following files and directories were included in distribution:"
-  ad_log "--------------------------------------------------------------"
+  if test x$3 = xtrue; then
+    ad_log ""
+    ad_log "Following files and directories were included in distribution:"
+    ad_log "--------------------------------------------------------------"
+  fi
 
   # By default do not expand pathnames
   set -f
@@ -613,7 +615,9 @@ ad_dist_includes()
         fi
       fi
 
-      ad_log "  $src into $am_distdir/$d"
+      if test x$3 = xtrue; then
+	ad_log "  $src into $am_distdir/$d"
+      fi
       cp -p $src $am_distdir/$d || exit 1
 
     elif test -d "$src"; then
@@ -633,7 +637,9 @@ ad_dist_includes()
           mkdir -p $am_distdir/$d || exit 1
 	fi
 
-	ad_log "  $src into $am_distdir/$d"
+	if test x$3 = xtrue; then
+	  ad_log "  $src into $am_distdir/$d"
+	fi
 	cp -pR $src $am_distdir/$d || exit 1
       else
 	# Add to different location
@@ -651,7 +657,9 @@ ad_dist_includes()
           mkdir -p $am_distdir/$d || exit 1
         fi
 
-        ad_log "  $src into $am_distdir/$dst"
+	if test x$3 = xtrue; then
+	  ad_log "  $src into $am_distdir/$dst"
+	fi
         cp -pR $src $am_distdir/$dst || exit 1
       fi
 
@@ -710,7 +718,10 @@ ad_dist_includes()
     src=
     dst=
   done
-  ad_log ""
+
+  if test x$3 = xtrue; then
+    ad_log ""
+  fi
 
   set +f
 
@@ -727,23 +738,33 @@ ad_dist_includes()
 #
 # The path may be file, directory or regular expression.
 #
-# Arguments: ad_dist_includes <excludelist>
+# Arguments: ad_dist_includes <excludelist> <log>
 #
 ad_dist_excludes()
 {
   ad_debug "Starting running excludes: $1"
 
-  ad_log ""
-  ad_log "Following files and directories were excluded from distribution:"
-  ad_log "----------------------------------------------------------------"
+  if test x$2 = xtrue; then
+    ad_log ""
+    ad_log "Following files and directories were excluded from distribution:"
+    ad_log "----------------------------------------------------------------"
+  fi
 
+  cur=`pwd`
+  cd $am_distdir || exit 1
   for i in $1
   do
     ad_debug "Excluding $i"
-    ad_log "  $1"
-    rm -rf $am_distdir/$i
+    if test x$2 = xtrue; then
+      ad_log "  $1"
+    fi
+    rm -rf $i
   done
-  ad_log ""
+  cd $cur || exit 1
+
+  if test x$2 = xtrue; then
+    ad_log ""
+  fi
 
   ad_debug "Ending running excludes: $1"
 }
@@ -762,7 +783,7 @@ ad_process_tree()
   ad_debug "Starting processing non-source files: $1"
 
   # Take files, except source and .ad files.
-  files=`find $am_distdir \! -name \*\.ad \( \
+  files=`find $am_distdir -type f \! -name \*\.ad \( \
  	\! -name \*\.[cC] -a \
  	\! -name \*\.[cC][cCpP] -a \
  	\! -name \*\.[cC][xX][xX] -a \
@@ -780,11 +801,6 @@ ad_process_tree()
  	\! -name \*\.[hH]\.in -a \
  	\! -name \*\.hh\.in \)`
   files=`echo $files | sed 's/$am_distdir//'`
-
-  # Take away noprocess list
-  if test -f autodist.noprocess; then
-    files=`echo $files" " | sh autodist.noprocess` || exit 1
-  fi
 
   for ff in $files
   do
@@ -815,7 +831,7 @@ ad_process_source_tree()
 
   # We take only C/C++ files since they use the C compiler friendly
   # version of distdefs.  Other files are not assumed to use them.
-  files=`find $am_distdir \! -name \*\.ad \( \
+  files=`find $am_distdir -type f \! -name \*\.ad \( \
  	-name \*\.[cC] -o \
  	-name \*\.[cC][cCpP] -o \
  	-name \*\.[cC][xX][xX] -o \
@@ -832,11 +848,6 @@ ad_process_source_tree()
  	-name \*\.m\.in -o \
  	-name \*\.[hH]\.in -o \
  	-name \*\.hh\.in \)`
-
-  # Take away noprocess list
-  if test -f autodist.noprocess; then
-    files=`echo $files" " | sh autodist.noprocess` || exit 1
-  fi
 
   for ff in $files
   do
@@ -876,7 +887,7 @@ ad_makedist_makesane()
   configh=`grep "^CONFIG_HEADER" Makefile | cut -d= -f2 | sed 's/^[ 	]*//'`
   touch $am_distdir/$configh.in 1>/dev/null 2>/dev/null
 
-  files=`find $am_distdir -name Makefile\.in`
+  files=`find $am_distdir -type f -name Makefile\.in`
   for i in $files
   do
     touch $i
@@ -928,6 +939,7 @@ ad_makedist()
   ad_parse_distribution $distribution false
   ad_log "  Distribution: $distribution $dist_version"
   ad_log "  Destination directory: $am_distdir"
+  ad_log ""
   ad_process_distdefs
 
   if test x$opt_no_dist = xtrue; then
@@ -950,10 +962,10 @@ ad_makedist()
   ad_run_dist_hooks "$pre_p_dist_hooks"
 
   # Run excludes
-  ad_dist_excludes "$excludes"
+  ad_dist_excludes "$excludes" true
 
   # Run includes
-  ad_dist_includes "$includes"
+  ad_dist_includes "$includes" false true
 
   # Include specific license file if specified
   if test "$license" != ""; then
@@ -961,11 +973,12 @@ ad_makedist()
     ad_log "License file in distribution:"
     ad_log "-----------------------------"
     ad_log "  $license into $am_distdir/COPYING"
+    ad_log ""
     cp -p $license $am_distdir/COPYING || exit 1
   fi
 
-  # Process noprocesses
-  ad_process_noprocess
+  # Process noprocesses, first pass
+  ad_process_noprocess true
 
   ad_log ""
   ad_log "Following files were not re-licensed:"
@@ -978,6 +991,11 @@ ad_makedist()
   # Process non-source files
   ad_debug "Process distribution tree"
   ad_process_tree $am_distdir
+
+  ad_log ""
+
+  # Process noprocesses, second pass
+  ad_process_noprocess false
 
   # Run post-process_dist-hooks
   ad_run_dist_hooks "$post_p_dist_hooks"
@@ -1015,7 +1033,6 @@ ad_makedist()
 
   # Cleanup
   rm -rf $am_distdir
-  rm -f autodist.noprocess
 
   ad_log "Distribution created successfully."
 
@@ -1351,39 +1368,67 @@ ad_process_license_header()
 
 #
 # Process specified noprocesses.  This is called during makedist.
+# The noprocess first copies the noprocess files and dirs into a temp
+# directory, and then removes them from the distdir.  This way they are
+# not processed by Autodist.  After processing they are returned to their
+# correct locations from the temp dir.  Dirty, yeah, but the way we do
+# this until better one comes along.
 #
-# Arguments: ad_process_noprocess
+# Arguments: ad_process_noprocess <process>
+#
+# If <process> is true this excludes and if false this includes.
 #
 ad_process_noprocess()
 {
-  local np=false
-  local n="sed "
-
   ad_debug "Starting running noprocesses"
 
-  ad_log ""
-  ad_log "Autodist did not process the following files:"
-  ad_log "---------------------------------------------"
+  set -f
 
   cur=`pwd`
-  cd $am_distdir || exit 1
-  for i in $noprocess
-  do
-    ad_log "  $i"
 
-    # Escape
-    ie=`echo $i | sed 's/\\//\\\\\//g'` || exit 1
+  if test x$1 = xtrue; then
+    ad_log ""
+    ad_log "Autodist did not process the following files and directories:"
+    ad_log "-------------------------------------------------------------"
 
-    n="$n -e 's/$am_distdir\\/$ie //'"
-    np=true
-  done
-  cd $cur || exit 1
+    f="$cur/autodist__noprocess"
+    rm -rf $f
+    mkdir -p $f || exit 1
 
-  rm -f autodist.noprocess
-  if test x$np = xtrue; then
-    echo $n > autodist.noprocess || exit 1
+    # First, include them to new location with correct directory structure.
+    old_am_distdir="$am_distdir"
+    cd $am_distdir || exit 1
+    am_distdir="$f"
+    nops=" $noprocess"
+    nops=`echo $nops | sed -e 's/ / : /g' -e 's/^/ : /'` || exit 1
+    ad_dist_includes "$nops" false false
+    am_distdir="$old_am_distdir"
+
+    # Then, remove from distdir (they are in temp dir now)
+    for i in $noprocess
+    do
+      ad_log "  $i"
+      rm -rf $i
+    done
+    cd $cur || exit 1
+
+    ad_log ""
+  else
+    # Copy from the temp dir back to distdir
+    cd autodist__noprocess || exit 1
+    old_am_distdir="$am_distdir"
+    am_distdir="$cur/$old_am_distdir"
+    nops=" $noprocess"
+    nops=`echo $nops | sed -e 's/ / : /g' -e 's/^/ : /'` || exit 1
+
+    ad_dist_includes "$nops" false false
+
+    am_distdir="$old_am_distdir"
+    cd $cur || exit 1
+    rm -rf autodist__noprocess
   fi
-  ad_log ""
+
+  set +f
 
   ad_debug "Ending running noprocesses"
 }
@@ -1801,6 +1846,7 @@ if test $# != 0; then
 fi
 ad_parse_distribution $distribution false
 ad_log "  Distribution: $distribution $dist_version"
+ad_log ""
 ad_process_distdefs
 
 if test $# != 0; then
