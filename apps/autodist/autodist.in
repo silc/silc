@@ -915,8 +915,8 @@ ad_makedist()
   ad_log_open "makedist.log"
   ad_debug "Starting distribution creation"
 
-  ad_log "Starting distribution creation"
-  ad_log "------------------------------"
+  ad_log "Created distribution"
+  ad_log "--------------------"
   ad_log ""
 
   if test '!' -f autodist.dist; then
@@ -1388,8 +1388,8 @@ ad_process_noprocess()
 
   if test x$1 = xtrue; then
     ad_log ""
-    ad_log "Autodist did not process the following files and directories:"
-    ad_log "-------------------------------------------------------------"
+    ad_log "Following files and directories were not processed:"
+    ad_log "---------------------------------------------------"
 
     f="$cur/autodist__noprocess"
     rm -rf $f
@@ -1669,7 +1669,7 @@ ad_run_hooks()
   ad_debug "Running hooks: $1"
 
   ad_log ""
-  ad_log "Running hooks:"
+  ad_log "Hooks executed:"
   ad_log "--------------"
 
   for i in $1
@@ -1695,8 +1695,8 @@ ad_run_dist_hooks()
   ad_debug "Starting running distributions hooks: $1"
 
   ad_log ""
-  ad_log "Running distribution hooks:"
-  ad_log "---------------------------"
+  ad_log "Distribution hooks executed:"
+  ad_log "----------------------------"
 
   for i in $1
   do

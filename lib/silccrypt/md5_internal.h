@@ -1,4 +1,4 @@
-/* file ripped from noiz-0.5. -Pekka */
+/* file ripped from noiz-0.5. -Pekka.  Public domain. */
 
 #ifndef MD5_INTERNAL_H
 #define MD5_INTERNAL_H

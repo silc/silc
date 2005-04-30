@@ -5,7 +5,9 @@
 
    At the end of this file SilcClientOperation structure is defined, and
    it is the one the you will give as an argument to the silc_client_alloc
-   function. See also lib/silcclient/README file, and silcclient.h. */
+   function. See also lib/silcclient/README file, and silcclient.h.
+
+   You may freely use this file in your application. */
 
 
 /* Message sent to the application by library. `conn' associates the
