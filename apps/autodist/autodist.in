@@ -632,8 +632,6 @@ ad_dist_includes()
 	if test '!' -d $am_distdir/$d && test "$ds" != "$d"; then
           mkdir -p $am_distdir/$d || exit 1
 	fi
-echo $d
-echo $ds
 
 	ad_log "  $src into $am_distdir/$d"
 	cp -pR $src $am_distdir/$d || exit 1
