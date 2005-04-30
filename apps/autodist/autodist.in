@@ -621,17 +621,22 @@ ad_dist_includes()
 
       if test "$src" = "$dst"; then
 	# Add to same location
-        d=`echo $src | sed 's,/[^/]*$,,'`
-        ds=`echo $src | sed 's/\/$//'`
-        if test "$ds" = "$d"; then
+	d=`echo $src | sed 's,/[^/]*$,,'`
+	ds=`echo $src | sed 's/\/$//'`
+	if test "$ds" = "$d"; then
           d=`echo $d | sed 's,/[^/]*$,,'`
-        fi
-        if test '!' -d $am_distdir/$d && test "$ds" != "$d"; then
+	fi
+	if test "$ds" = "$d"; then
+	  d=""
+	fi
+	if test '!' -d $am_distdir/$d && test "$ds" != "$d"; then
           mkdir -p $am_distdir/$d || exit 1
-        fi
+	fi
+echo $d
+echo $ds
 
-        ad_log "  $src into $am_distdir/$d"
-        cp -pR $src $am_distdir/$d || exit 1
+	ad_log "  $src into $am_distdir/$d"
+	cp -pR $src $am_distdir/$d || exit 1
       else
 	# Add to different location
         check=`echo "$dst" | sed 's/?//; s/*//; s/\[//; s/\]//'`
@@ -954,7 +959,10 @@ ad_makedist()
 
   # Include specific license file if specified
   if test "$license" != ""; then
-    ad_log "License file in distribution is $am_distdir/COPYING"
+    ad_log ""
+    ad_log "License file in distribution:"
+    ad_log "-----------------------------"
+    ad_log "  $license into $am_distdir/COPYING"
     cp -p $license $am_distdir/COPYING || exit 1
   fi
 
