@@ -991,10 +991,11 @@ AC_ARG_WITH(irssi,
   [  --with-irssi            compile with Irssi SILC Client],
   [
     AC_MSG_RESULT(yes)
+    without_irssi=false
   ],
   [
     AC_MSG_RESULT(no)
-    without_irssi=false
+    without_irssi=true
   ])
 
 # --with-silcd
@@ -1005,12 +1006,17 @@ AC_ARG_WITH(silcd,
   [  --with-silcd            compile with SILC Server],
   [
     AC_MSG_RESULT(yes)
+    without_silcd=false
   ],
   [
     AC_MSG_RESULT(no)
-    without_silcd=false
+    without_silcd=true
   ])
 #endif SILC_DIST_TOOLKIT
+#ifdef SILC_DIST_INPLACE
+without_irssi=false
+without_silcd=false
+#endif SILC_DIST_INPLACE
 
 libtoolfix=true
 AC_MSG_CHECKING(whether to do libtoolfix)
@@ -1120,12 +1126,6 @@ echo " sbin directory ................: $s_sbindir"
 echo " etc directory .................: $ETCDIR"
 echo " man directory .................: $s_mandir"
 echo " doc directory .................: $DOCDIR"
-#ifdef SILC_DIST_CLIENT
-echo " help directory ................: $HELPDIR"
-#endif SILC_DIST_CLIENT
-#ifdef SILC_DIST_SERVER
-echo " logs directory ................: $LOGSDIR"
-#endif SILC_DIST_SERVER
 #ifdef SILC_DIST_SIM
 echo " SIM directory .................: $MODULESDIR"
 #endif SILC_DIST_SIM
@@ -1149,8 +1149,6 @@ echo " Compile SILC Client ...........: $irssi"
 
 #ifdef SILC_DIST_SERVER
 echo " Compile SILC Server ...........: $silcd"
-echo " Server configuration file .....: $summary_silcd_configfile"
-echo " Server PID file ...............: $PIDFILE"
 #endif SILC_DIST_SERVER
 
 #ifdef SILC_DIST_SIM
