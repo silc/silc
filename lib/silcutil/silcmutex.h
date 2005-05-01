@@ -1,15 +1,15 @@
 /*
 
   silcmutex.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
+
   Copyright (C) 2001 - 2005 Pekka Riikonen
- 
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
- 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -22,7 +22,7 @@
  * DESCRIPTION
  *
  * Interface for the SILC Mutex locking implementation. This is platform
- * independent mutual exclusion interface for applications that need 
+ * independent mutual exclusion interface for applications that need
  * concurrency control.
  *
  ***/
@@ -33,7 +33,7 @@
 /****s* silcutil/SilcMutexAPI/SilcMutex
  *
  * NAME
- * 
+ *
  *    typedef struct SilcMutexStruct *SilcMutex;
  *
  * DESCRIPTION
@@ -48,7 +48,7 @@ typedef struct SilcMutexStruct *SilcMutex;
 /****d* silcutil/SilcMutexAPI/SILC_MUTEX_DEFINE
  *
  * NAME
- * 
+ *
  *    #define SILC_MUTEX_DEFINE(name) ...
  *
  * DESCRIPTION
