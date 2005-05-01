@@ -20,13 +20,9 @@
 # for getting irssi specific stuff to top configure script with Autodist
 # without polluting the top configure.ad file with these stuff.
 
-IRSSI_SUBDIR=
-
 #ifdef SILC_DIST_TOOLKIT
 if test x$without_irssi = xfalse; then
 #endif SILC_DIST_TOOLKIT
-
-IRSSI_SUBDIR=irssi
 
 # help directory
 #
@@ -62,6 +58,4 @@ irssi="yes"
 #ifdef SILC_DIST_TOOLKIT
 fi	# without_irssi = false
 #endif SILC_DIST_TOOLKIT
-
-AC_SUBST(IRSSI_SUBDIR)
 #endif SILC_DIST_CLIENT

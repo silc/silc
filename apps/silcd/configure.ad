@@ -16,13 +16,9 @@
 #  GNU General Public License for more details.
 #
 
-SILCD_SUBDIR=
-
 #ifdef SILC_DIST_TOOLKIT
 if test x$without_silcd = xfalse; then
 #endif SILC_DIST_TOOLKIT
-
-SILCD_SUBDIR=silcd
 
 # Logs directory
 #
@@ -82,6 +78,4 @@ silcd="yes"
 #ifdef SILC_DIST_TOOLKIT
 fi	# without_silcd = false
 #endif SILC_DIST_TOOLKIT
-
-AC_SUBST(SILCD_SUBDIR)
 #endif SILC_DIST_SERVER
