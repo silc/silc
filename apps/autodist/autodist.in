@@ -1811,8 +1811,8 @@ Operation modes:
   -s, --distdefs [<dist>]   print distribution defines of <dist>, then exit
   -i, --init                initialize Autodist environment, create default
                             distribution directory and distribution, then exit
-  -p, --process <src> <dst> process file <src> into <dst> for distribution,
-                            only non-source files can be processed with -p
+  -p, --process <src> <dst> process Makefile.ad file <src> into <dst> for 
+                            distribution, the exit
   -m, --makedist            create and package distribution
       --gzip                create package compressed with gzip (default)
       --bzip2               create also package compressed with bzip2

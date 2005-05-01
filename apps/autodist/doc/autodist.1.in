@@ -58,8 +58,7 @@ default distribution 'default', then exits.
 .PP
 .TP
 \fB\-p\fR, \fB\-\-process\fR \fB<src>\fR \fB<dst>\fR
-Process file <src> into <dst> for distribution, only non-source files can 
-be processed with -p.
+Process Makefile.ad file <src> into <dst> for distribution, the exits.
 .PP
 .TP
 \fB\-m\fR, \fB\-\-makedist\fR

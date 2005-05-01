@@ -1330,8 +1330,7 @@ default distribution 'default', then exits.
 
 @item -p
 @itemx --process <src> <dst>
-process file <src> into <dst> for distribution, only non-source files can 
-be processed with -p.
+process Makefile.ad file <src> into <dst> for distribution, the exits.
 
 @item -m
 @itemx --makedist
