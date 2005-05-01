@@ -418,8 +418,8 @@ EOF
   # Process AD_INIT
   sed -e "/AD_INIT/s//AC_INIT([$distribution], [$dist_version], [$bug_report], [$package])/" $fname > $fname.tmp
 
-  # Remove AD_ENABLE_DEPENDENCIES
-  sed -e "/^AD_ENABLE_DEPENDENCIES/d" $fname.tmp > $fname
+  # Remove AD_DISABLE_DEPENDENCIES
+  sed -e "/^AD_DISABLE_DEPENDENCIES/d" $fname.tmp > $fname
 
   # Process for distribution
   rm -f $fname.tmp
@@ -493,15 +493,15 @@ ad_make_makefile_ams()
 #
 ad_make_makefile_am()
 {
-  local am_deps=false
+  local am_deps=true
   local f=$1
   local fname=$2
 
-  # Enable dependencies if requested
+  # Disable dependencies if requested
   dc=`sed 's/^[ 	]*//' < configure.ad | grep -v "^#" \
-    | grep "AD_ENABLE_DEPENDENCIES"`
-  if test "$dc" = "AD_ENABLE_DEPENDENCIES"; then
-    am_deps=true
+    | grep "AD_DISABLE_DEPENDENCIES"`
+  if test "$dc" = "AD_DISABLE_DEPENDENCIES"; then
+    am_deps=false
   fi
 
   # Header for the Makefile.am

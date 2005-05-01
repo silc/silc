@@ -1,7 +1,10 @@
 Sun May  1 12:31:55 EEST 2005 Pekka Riikonen <priikone@silcnet.org>
 
-	* Added AD_ENABLE_DEPENDENCIES macro to enable Autodist
-	  dependencies in makefiles.
+	* Added support for dependencies in makefiles.
+
+	* Added AD_DISABLE_DEPENDENCIES macro to disable Autodist
+	  dependencies in makefiles.  Added support for dependencies
+	  in makefiles.
 
 	* Added -p option to Autodist.  It can be used to a process file
 	  from the command line.

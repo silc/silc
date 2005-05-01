@@ -1023,12 +1023,13 @@ configure scripts.  They must not use 'AD_INIT', 'AD_INCLUDE_CONFIGURE',
 @end defmac
 
 
-@defmac AD_ENABLE_DEPENDENCIES
+@defmac AD_DISABLE_DEPENDENCIES
 
-This macro is used to enable Autodist dependencies in 'Makefile.ad' files.  
-If this macro is used, then after editing 'Makefile.ad' file running 
-Autodist manually is not required, but it is run automatically when the 
-source is compiled with 'make'.  This macro has no arguments.
+This macro is used to disable Autodist dependencies in 'Makefile.ad' 
+files.  If this macro is used, then after editing 'Makefile.ad' file the 
+Autodist must be run manually.  When dependencies are enabled editing 
+Autodist is run automatically when source is compiled with 'make'. 
+Dependencies make the development easier.  This macro has no arguments.
 
 Note that, the dependencies are enabled only in the prepared source tree.  
 Depedencies are not delivered to distribution, as they would require the 
