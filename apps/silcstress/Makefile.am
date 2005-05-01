@@ -1,5 +1,5 @@
 #
-#  Makefile.ad
+#  Makefile.am
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
@@ -17,16 +17,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-SUBDIRS = 	\
-#ifdef SILC_DIST_AUTODIST
-	autodist \
-#endif SILC_DIST_AUTODIST
-#ifdef SILC_DIST_SERVER
-	@SILCD_SUBDIR@ \
-#endif SILC_DIST_SERVER
-#ifdef SILC_DIST_CLIENT
-	@IRSSI_SUBDIR@ \
-#endif SILC_DIST_CLIENT
-#ifdef SILC_DIST_INPLACE
-	silcstress
-#endif SILC_DIST_INPLACE
+bin_PROGRAMS = silcstress
+silcstress_SOURCES = silcstress.c
+
+LIBS = -lsilcclient $(SILC_COMMON_LIBS)
+
+include $(top_srcdir)/Makefile.defines.in

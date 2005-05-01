@@ -1,5 +1,6 @@
+#ifdef SILC_DIST_INPLACE
 #
-#  Makefile.ad
+#  apps/silcstress/configure.ad
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
@@ -15,18 +16,10 @@
 #  GNU General Public License for more details.
 #
 
-AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
-
-SUBDIRS = 	\
-#ifdef SILC_DIST_AUTODIST
-	autodist \
-#endif SILC_DIST_AUTODIST
-#ifdef SILC_DIST_SERVER
-	@SILCD_SUBDIR@ \
-#endif SILC_DIST_SERVER
-#ifdef SILC_DIST_CLIENT
-	@IRSSI_SUBDIR@ \
-#endif SILC_DIST_CLIENT
-#ifdef SILC_DIST_INPLACE
-	silcstress
+#
+# Makefile outputs
+#
+AC_CONFIG_FILES(
+apps/silcstress/Makefile
+)
 #endif SILC_DIST_INPLACE
