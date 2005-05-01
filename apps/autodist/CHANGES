@@ -1,3 +1,11 @@
+Sun May  1 12:31:55 EEST 2005 Pekka Riikonen <priikone@silcnet.org>
+
+	* Added AD_ENABLE_DEPENDENCIES macro to enable Autodist
+	  dependencies in makefiles.
+
+	* Added -p option to Autodist.  It can be used to a process file
+	  from the command line.
+
 Sat Apr 30 17:49:05 EEST 2005 Pekka Riikonen <priikone@silcnet.org>
 
 	* The 'noprocess' directive now works recursively with

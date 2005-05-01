@@ -1020,7 +1020,22 @@ macro 'AC_OUTPUT'.  This macro has no arguments.
 Note that, the 'configure.ad' fragments are not real full featured
 configure scripts.  They must not use 'AD_INIT', 'AD_INCLUDE_CONFIGURE',
 'AC_INIT' or any other initialization macros.
+@end defmac
 
+
+@defmac AD_ENABLE_DEPENDENCIES
+
+This macro is used to enable Autodist dependencies in 'Makefile.ad' files.  
+If this macro is used, then after editing 'Makefile.ad' file running 
+Autodist manually is not required, but it is run automatically when the 
+source is compiled with 'make'.  This macro has no arguments.
+
+Note that, the dependencies are enabled only in the prepared source tree.  
+Depedencies are not delivered to distribution, as they would require the 
+presence of 'Makefile.ad' files, which are not delivered to distribution. 
+
+Current Autodist version does not support dependencies in 'configure.ad' 
+files, only in 'Makefile.ad' files.
 @end defmac
 
 @menu
@@ -1311,6 +1326,11 @@ Prints distribution defines of <dist> and exits.
 Initializes Autodist environment.  Creates the default distribution
 directory 'distdir', 'autodist.conf' configuration file and the
 default distribution 'default', then exits.
+
+@item -p
+@itemx --process <src> <dst>
+process file <src> into <dst> for distribution, only non-source files can 
+be processed with -p.
 
 @item -m
 @itemx --makedist
