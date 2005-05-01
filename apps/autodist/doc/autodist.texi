@@ -1329,8 +1329,10 @@ directory 'distdir', 'autodist.conf' configuration file and the
 default distribution 'default', then exits.
 
 @item -p
-@itemx --process <src> <dst>
-process Makefile.ad file <src> into <dst> for distribution, the exits.
+@itemx --process <type> <src> <dst>
+Process file <src> into <dst> for distribution, <type> is 'makefile',
+'configure', 'non-source' or 'source' and defines the type of <src>,
+then exits.
 
 @item -m
 @itemx --makedist

@@ -72,8 +72,12 @@ $AUTODIST || exit 1
 make || exit 1
 echo make ok
 
+echo update test
+touch Makefile.ad
+make || exit 1
+echo update test ok
+
 echo test ok
 
 # Cleanup
 rm -rf subdir distdir
-

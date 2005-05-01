@@ -533,7 +533,7 @@ EOF
 
 # S_AD_ENABLE_DEPENDENCIES
 \$(srcdir)/Makefile.am: Makefile.ad
-	cd \$(top_srcdir) && autodist -p \$(subdir)/Makefile.ad \$(subdir)/Makefile.am && cd \$(subdir)
+	cd \$(top_srcdir) && autodist -p makefile \$(subdir)/Makefile.ad \$(subdir)/Makefile.am && cd \$(subdir)
 # E_AD_ENABLE_DEPENDENCIES
 EOF
   fi
@@ -1713,13 +1713,13 @@ ad_process_source_file()
 }
 
 #
-# Processes a non-source file.  This is the -p, --process option.
+# Processes a file.  This is the -p, --process option.
 #
-# Arguments: ad_process <src> <dst>
+# Arguments: ad_process <type> <src> <dst>
 #
 ad_process()
 {
-  ad_debug "Starting process: $1 $2"
+  ad_debug "Starting process: $1 $2 $3"
 
   nolog=true
 
@@ -1729,13 +1729,41 @@ ad_process()
 
   # Parse distribution
   distribution=`grep "dist:" < autodist.dist | cut -d: -f2` || exit 1
+  dist_version=`grep "ver:" < autodist.dist | cut -d: -f2` || exit 1
   ad_parse_distribution $distribution false
   ad_process_distdefs
 
   # Process file
-  ad_make_makefile_am $1 $2
+  case "$1" in
+    makefile)
+      if test -z $3; then
+	ad_fatal "File type $1 requires <dst> argument"
+      fi
+      ad_make_makefile_am $2 $3
+      exit 0;;
 
-  ad_debug "Ending process: $1 $2"
+    configure)
+      ad_make_configure_ac $2
+      exit 0;;
+
+    non-source)
+      if test -z $3; then
+	ad_fatal "File type $1 requires <dst> argument"
+      fi
+      ad_process_file $2 $3 false
+      exit 0;;
+
+    source)
+      if test -z $3; then
+	ad_fatal "File type $1 requires <dst> argument"
+      fi
+      ad_process_source_file $2 $3 false
+      exit 0;;
+
+    *)
+      ad_fatal "Unknown file type: $1";
+      ;;
+  esac
 }
 
 #
@@ -1811,8 +1839,10 @@ Operation modes:
   -s, --distdefs [<dist>]   print distribution defines of <dist>, then exit
   -i, --init                initialize Autodist environment, create default
                             distribution directory and distribution, then exit
-  -p, --process <src> <dst> process Makefile.ad file <src> into <dst> for 
-                            distribution, the exit
+  -p, --process <type> <src> [<dst>]
+                            process file <src> into <dst> for distribution,
+                            <type> is 'makefile', 'configure', 'non-source'
+                            or 'source' and defines the type of <src>
   -m, --makedist            create and package distribution
       --gzip                create package compressed with gzip (default)
       --bzip2               create also package compressed with bzip2
@@ -1857,8 +1887,8 @@ while test $# -gt 0; do
 
   -p | --process)
     shift;
-    if test $# -eq 2; then
-      ad_process $1 $2
+    if test $# -ge 2; then
+      ad_process $1 $2 $3
     else
       echo "${usage}" 1>&2;
     fi
