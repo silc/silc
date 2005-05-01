@@ -529,11 +529,17 @@ EOF
 
   # Enable dependencies if requested
   if test x$am_deps = xtrue; then
+    # Get list of configure.ad's to get them into deps also
+    cfs=`find . -type f -name configure\*\.ad`
+    cfs=`echo $cfs | sed 's/\.\///g'`
+
     cat >> $fname <<EOF
 
 # S_AD_ENABLE_DEPENDENCIES
 \$(srcdir)/Makefile.am: Makefile.ad
 	cd \$(top_srcdir) && autodist -p makefile \$(subdir)/Makefile.ad \$(subdir)/Makefile.am && cd \$(subdir)
+\$(srcdir)/configure.ac: $cfs
+	cd \$(top_srcdir) && autodist -p configure \$(top_srcdir)/configure.ad && cd \$(subdir)
 # E_AD_ENABLE_DEPENDENCIES
 EOF
   fi

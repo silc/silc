@@ -80,6 +80,7 @@ Integrating Autodist
 * Makefile.ad files::           Makefile.ad for creating Makefile.am
 * Other .ad files::             Other files with .ad suffix
 * Distdefines::                 Using distdefs in files
+* Dependencies::                Autodist dependency support
 
 Invoking Autodist
 
@@ -240,6 +241,7 @@ as they may not exist yet.
 * Makefile.ad files::           Makefile.ad for creating Makefile.am
 * Other .ad files::             Other files with .ad suffix
 * Distdefines::                 Using distdefs in files
+* Dependencies::                Autodist dependency support
 @end menu
 
 
@@ -1025,18 +1027,16 @@ configure scripts.  They must not use 'AD_INIT', 'AD_INCLUDE_CONFIGURE',
 
 @defmac AD_DISABLE_DEPENDENCIES
 
-This macro is used to disable Autodist dependencies in 'Makefile.ad' 
-files.  If this macro is used, then after editing 'Makefile.ad' file the 
-Autodist must be run manually.  When dependencies are enabled editing 
-Autodist is run automatically when source is compiled with 'make'. 
-Dependencies make the development easier.  This macro has no arguments.
+This macro is used to disable Autodist dependencies.  If this macro is
+used, then after editing 'Makefile.ad' and 'configure.ad' files the
+Autodist must be run manually.  When dependencies are enabled Autodist is
+run automatically when source is compiled with 'make'.  Dependencies make
+the development easier.  This macro has no arguments.
 
 Note that, the dependencies are enabled only in the prepared source tree.  
 Depedencies are not delivered to distribution, as they would require the 
-presence of 'Makefile.ad' files, which are not delivered to distribution. 
-
-Current Autodist version does not support dependencies in 'configure.ad' 
-files, only in 'Makefile.ad' files.
+presence of 'Makefile.ad' and 'configure.ad' files, which are not 
+delivered to distribution.
 @end defmac
 
 @menu
@@ -1287,6 +1287,28 @@ Example:
 @end example
 
 In this example, in both of the files the source code format is used.
+
+
+@node Dependencies
+@section Autodist dependency support
+
+Autodist support dependencies for 'Makefile.ad' and 'configure.ad' files.  
+When these files are edited, they are processed by Autodist automatically 
+when the source tree is compiled with 'make'.  This makes development in 
+the source tree easier, when Autodist does not have to be run manually.
+The dependencies can be disabled by using 'AD_DISABLE_DEPENDENCIES' macro 
+in the 'configure.ad' file.
+
+When editing 'configure.ad' fragments the modifcation is detected when the 
+source tree is compiled with 'make' from the top source directory.  
+Giving 'make' in a subdirectory will not detect a change in 'configure.ad' 
+fragment.
+
+Dependencies are present only in the prepared source tree.  They are not 
+delivered to created distribution, as they depend on 'Makefile.ad' and 
+'configure.ad' files which are not present in the created distribution.  
+Autodist automatically removes the dependencies when the distribution is 
+created.
 
 
 @node Invoking Autodist
