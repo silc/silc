@@ -22,9 +22,9 @@ SUBDIRS = 	\
 	autodist \
 #endif SILC_DIST_AUTODIST
 #ifdef SILC_DIST_SERVER
-	silcd \
+	@SILCD_SUBDIR@ \
 #endif SILC_DIST_SERVER
 #ifdef SILC_DIST_CLIENT
-	irssi \
+	@IRSSI_SUBDIR@ \
 #endif SILC_DIST_CLIENT
 

@@ -228,7 +228,7 @@ ad_initialize()
 
   # Create default distdir
   if test '!' -f $distdir; then
-    mkdir -p $distdir
+    mkdir -p -- $distdir
   fi
 
   # Create Autodist configuration file
@@ -642,7 +642,7 @@ ad_dist_includes()
         d=`echo $src | sed 's,/[^/]*$,,'`
         if test "$d" != "$src" && test "$d" != "." && \
 	   test '!' -d $am_distdir/$d; then
-          mkdir -p $am_distdir/$d || exit 1
+          mkdir -p -- $am_distdir/$d || exit 1
         fi
       else
         # Add to different location
@@ -654,7 +654,7 @@ ad_dist_includes()
         d=`echo $dst | sed 's,/[^/]*$,,'`
         if test "$d" != "$dst" && test "$d" != "." && \
 	   test '!' -d $am_distdir/$d; then
-          mkdir -p $am_distdir/$d || exit 1
+          mkdir -p -- $am_distdir/$d || exit 1
         fi
       fi
 
@@ -677,7 +677,7 @@ ad_dist_includes()
 	  d=""
 	fi
 	if test '!' -d $am_distdir/$d && test "$ds" != "$d"; then
-          mkdir -p $am_distdir/$d || exit 1
+          mkdir -p -- $am_distdir/$d || exit 1
 	fi
 
 	if test x$3 = xtrue; then
@@ -697,7 +697,7 @@ ad_dist_includes()
           d=`echo $d | sed 's,/[^/]*$,,'`
         fi
         if test '!' -d $am_distdir/$d && test "$dst" != "$d"; then
-          mkdir -p $am_distdir/$d || exit 1
+          mkdir -p -- $am_distdir/$d || exit 1
         fi
 
 	if test x$3 = xtrue; then
@@ -1456,7 +1456,7 @@ ad_process_noprocess()
 
     f="$cur/autodist__noprocess"
     rm -rf $f
-    mkdir -p $f || exit 1
+    mkdir -p -- $f || exit 1
 
     # First, include them to new location with correct directory structure.
     old_am_distdir="$am_distdir"

@@ -20,6 +20,14 @@
 # for getting irssi specific stuff to top configure script with Autodist
 # without polluting the top configure.ad file with these stuff.
 
+IRSSI_SUBDIR=
+
+#ifdef SILC_DIST_TOOLKIT
+if test x$without_irssi = xfalse; then
+#endif SILC_DIST_TOOLKIT
+
+IRSSI_SUBDIR=irssi
+
 # help directory
 #
 HELPDIR="$silc_prefix/help"
@@ -44,17 +52,16 @@ AC_ARG_WITH(perl,
                                if it should be built into main silc binary
                                (static, default) or as a module]])
 
-#ifdef SILC_DIST_TOOLKIT
-if test x$without_irssi = xfalse; then
-#endif SILC_DIST_TOOLKIT
-  AC_CONFIG_SUBDIRS(apps/irssi)
-  AC_CONFIG_FILES(
+AC_CONFIG_SUBDIRS(apps/irssi)
+AC_CONFIG_FILES(
 apps/irssi/Makefile.defines
 apps/irssi/Makefile.defines_int
 )
-  irssi="yes"
+
+irssi="yes"
 #ifdef SILC_DIST_TOOLKIT
-fi
+fi	# without_irssi = false
 #endif SILC_DIST_TOOLKIT
 
+AC_SUBST(IRSSI_SUBDIR)
 #endif SILC_DIST_CLIENT

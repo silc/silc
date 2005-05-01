@@ -983,32 +983,32 @@ AM_CONDITIONAL(SILC_BEOS, test xfalse = xtrue)
 AM_CONDITIONAL(SILC_OS2, test xfalse = xtrue)
 
 #ifdef SILC_DIST_TOOLKIT
-# --without-irssi
+# --with-irssi
 #
-without_irssi=false
+without_irssi=true
 AC_MSG_CHECKING(whether to compile Irssi SILC Client)
 AC_ARG_WITH(irssi,
-  [  --without-irssi         compile without Irssi SILC Client],
-  [
-    AC_MSG_RESULT(no)
-    without_irssi=true
-  ],
+  [  --with-irssi            compile with Irssi SILC Client],
   [
     AC_MSG_RESULT(yes)
+  ],
+  [
+    AC_MSG_RESULT(no)
+    without_irssi=false
   ])
 
-# --without-silcd
+# --with-silcd
 #
-without_silcd=false
+without_silcd=true
 AC_MSG_CHECKING(whether to compile SILC Server)
 AC_ARG_WITH(silcd,
-  [  --without-silcd         compile without SILC Server],
-  [
-    AC_MSG_RESULT(no)
-    without_silcd=true
-  ],
+  [  --with-silcd            compile with SILC Server],
   [
     AC_MSG_RESULT(yes)
+  ],
+  [
+    AC_MSG_RESULT(no)
+    without_silcd=false
   ])
 #endif SILC_DIST_TOOLKIT
 

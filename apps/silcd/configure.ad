@@ -16,6 +16,14 @@
 #  GNU General Public License for more details.
 #
 
+SILCD_SUBDIR=
+
+#ifdef SILC_DIST_TOOLKIT
+if test x$without_silcd = xfalse; then
+#endif SILC_DIST_TOOLKIT
+
+SILCD_SUBDIR=silcd
+
 # Logs directory
 #
 LOGSDIR="$silc_prefix/logs"
@@ -65,16 +73,15 @@ AC_ARG_WITH(silcd-pid-file,
   ])
 AC_SUBST(PIDFILE)
 
-#ifdef SILC_DIST_TOOLKIT
-if test x$without_silcd = xfalse ; then
-#endif SILC_DIST_TOOLKIT
-  AC_CONFIG_FILES(
+AC_CONFIG_FILES(
 apps/silcd/Makefile
 doc/example_silcd.conf
 )
-#ifdef SILC_DIST_TOOLKIT
-fi
-#endif SILC_DIST_TOOLKIT
 
 silcd="yes"
+#ifdef SILC_DIST_TOOLKIT
+fi	# without_silcd = false
+#endif SILC_DIST_TOOLKIT
+
+AC_SUBST(SILCD_SUBDIR)
 #endif SILC_DIST_SERVER
