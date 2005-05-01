@@ -104,7 +104,7 @@ if [ "$TYPE" = "HTML" ]; then
   for i in $dfiles
   do
     # Get library name
-    name=`grep "@LIBRARY=" $i |cut -d=  -f2`
+    name=`grep "@LIBRARY=" $i |cut -d=  -f2-`
     fname=`grep "@FILENAME=" $i |cut -d=  -f2`
     links=`grep "@LINK=" $i |cut -d=  -f2 |cut -d:  -f1`
 
@@ -113,7 +113,7 @@ if [ "$TYPE" = "HTML" ]; then
     echo "<a href="$fname"><img src="box.gif" border="0" alt="">$name</a><br />" >>$DST/index.tmpl
     for k in $links
     do
-      n=`grep $k $i |cut -d=  -f2 |cut -d:  -f2`
+      n=`grep $k $i |cut -d=  -f2 |cut -d:  -f2-`
       echo "<li><a href="$k">$n</a>" >>$DST/$fname.links
       echo "&nbsp;&nbsp;&nbsp; <a href="$k"><img src="box2.gif" border="0" alt="">$n</a><br />" >>$DST/index.tmpl
     done
@@ -170,7 +170,7 @@ if [ "$TYPE" = "HTML" ]; then
     files=`find $DST -name ""$i"-*.html"`
     for k in $files
     do
-      sh gen.sh $DST gen_index.php 0 $k $k
+      sh gen.sh $DST gen_index.php 0 "$k" "$k"
     done
 
     rm -f $DST/$i-index.tmpl
@@ -180,7 +180,7 @@ if [ "$TYPE" = "HTML" ]; then
   for i in $dfiles
   do
     # Get library name
-    name=`grep "@LIBRARY=" $i |cut -d=  -f2`
+    name=`grep "@LIBRARY=" $i |cut -d=  -f2-`
     fname=`grep "@FILENAME=" $i |cut -d=  -f2`
 
     # Generate links for this library

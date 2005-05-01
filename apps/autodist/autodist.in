@@ -1844,14 +1844,17 @@ if test $# != 0; then
   distfile=$distribution
   shift
 fi
+
 ad_parse_distribution $distribution false
-ad_log "  Distribution: $distribution $dist_version"
-ad_log ""
-ad_process_distdefs
 
 if test $# != 0; then
   dist_version="${1}";
 fi
+
+ad_log "  Distribution: $distribution $dist_version"
+ad_log ""
+
+ad_process_distdefs
 
 ad_debug "Preparing source tree for configuration and compilation..."
 ad_debug "Preparing $distribution distribution version $dist_version"
