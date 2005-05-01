@@ -1122,12 +1122,6 @@ echo " sbin directory ................: $s_sbindir"
 echo " etc directory .................: $ETCDIR"
 echo " man directory .................: $s_mandir"
 echo " doc directory .................: $DOCDIR"
-#ifdef SILC_DIST_CLIENT
-echo " help directory ................: $HELPDIR"
-#endif SILC_DIST_CLIENT
-#ifdef SILC_DIST_SERVER
-echo " logs directory ................: $LOGSDIR"
-#endif SILC_DIST_SERVER
 #ifdef SILC_DIST_SIM
 echo " SIM directory .................: $MODULESDIR"
 #endif SILC_DIST_SIM
@@ -1151,10 +1145,6 @@ echo " Compile SILC Client ...........: $irssi"
 
 #ifdef SILC_DIST_SERVER
 echo " Compile SILC Server ...........: $silcd"
-if test x$without_silcd = xfalse; then
-echo " Server configuration file .....: $summary_silcd_configfile"
-echo " Server PID file ...............: $PIDFILE"
-fi
 #endif SILC_DIST_SERVER
 
 #ifdef SILC_DIST_SIM
