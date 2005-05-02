@@ -4,12 +4,11 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  the Free Software Foundation; version 2 of the License.
 
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -94,6 +93,7 @@ typedef struct SilcServerConfigConnParams {
   SilcUInt32 qos_bytes_limit;
   SilcUInt32 qos_limit_sec;
   SilcUInt32 qos_limit_usec;
+  SilcUInt32 chlimit;
   unsigned int key_exchange_pfs      : 1;
   unsigned int reconnect_keep_trying : 1;
   unsigned int anonymous             : 1;

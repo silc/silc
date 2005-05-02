@@ -2417,6 +2417,17 @@ SILC_SERVER_CMD_FUNC(join)
       goto out;
     }
 
+#ifndef SILC_DIST_INPLACE
+    /* Limit how many channels client can join */
+    if (entry->channels && silc_hash_table_count(entry->channels) >=
+	server->config->param.chlimit) {
+      silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
+					    SILC_STATUS_ERR_RESOURCE_LIMIT,
+					    0);
+      goto out;
+    }
+#endif /* SILC_DIST_INPLACE */
+
     silc_free(client_id);
     client_id = silc_id_dup(entry->id, SILC_ID_CLIENT);
 
