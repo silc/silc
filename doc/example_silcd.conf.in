@@ -159,6 +159,9 @@ General {
 	#qos_limit_sec = 0;
 	#qos_limit_usec = 500000;
 
+	# Limit on how many channels one client can join.  Default is 50.
+	#channel_join_limit = 100;
+
 	# Debug string.  Debug string can be set to print debugging from
 	# the running server.  The debug is redirected to stderr.
 	# debug_string = "";
