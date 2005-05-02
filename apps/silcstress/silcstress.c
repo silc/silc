@@ -29,12 +29,20 @@
 /*
   Results:
 
-  SILC Server 0.9.20 (debug), Linux 2.6.11, RAM 512 MB:
+  SILC Server 0.9.20 (release), Linux 2.6.11, RAM 512 MB:
+
+    - 3000 channels == silcd size 6 MB (-c 3000 -n)
+    - 10000 channels == silcd size 17 MB (-c 10000 -n)
+    - 30000 channels == silcd size 48 MB (-c 30000 -n)
+      (creating 30000 channels take 14 minutes, because JOIN is LAG_STRICT
+       command, which prevents one client flooding server with commands +
+       Qos was enabled too)
+
+
+  SILC Server 0.9.20 (debug, stack-trace), Linux 2.6.11, RAM 512 MB:
 
     - 3000 channels == silcd size 10 MB (-c 3000 -n)
     - 10000 channels == silcd size 37 MB (-c 10000 -n)
-      (Flooding channel creation is very heavy operation for silcd; JOIN
-       should be controlled better in silcd)
 
     - 1 channel, default data flood, QoS == silcd load < 1.0%
     - 10 channels, default data flood, QoS == silcd load < 4.0%
@@ -53,13 +61,14 @@ typedef struct {
   int loops;
   int flood;
   int channels;
+  int threads;
   bool nosend;
   SilcMutex m;
 } *SilcStress;
 
 typedef struct {
   SilcStress sc;
-  SilcChannelEntry channel;
+  SilcDList channels;
 } *SilcStressWorker;
 
 SilcClientOperations ops;
@@ -74,6 +83,7 @@ static struct option long_opts[] =
   { "loops", 1, NULL,'l' },
   { "flood", 1, NULL,'f' },
   { "nosend", 0, NULL,'n' },
+  { "threads", 1, NULL,'t' },
   { "debug", 2, NULL, 'd' },
   { "help", 0, NULL, 'h' },
   { "version", 0, NULL,'V' },
@@ -94,6 +104,7 @@ static void silc_stress_usage(void)
 "  -l  --loops=NUMBER            Number of loops to send data (def: 1024)\n"
 "  -f  --flood=NUMBER            Send message in every usec (def: 50000)\n"
 "  -n  --nosend                  Don't send any data\n"
+"  -t  --threads=NUMBER          Number of threads to use (def: 1)\n"
 "  -d  --debug=string            Enable debugging\n"
 "  -h  --help                    Display this message and exit\n"
 "  -V  --version                 Display version and exit\n"
@@ -104,12 +115,12 @@ static void silc_stress_usage(void)
 int main(int argc, char **argv)
 {
   int opt, option_index;
-  int c = 1, port = 706, b = 512, l = 1024, f = 50000, n = FALSE;
+  int c = 1, port = 706, b = 512, l = 1024, f = 50000, n = FALSE, t = 1;
   char *server = NULL;
   SilcStress sc;
 
   if (argc > 1) {
-    while ((opt = getopt_long(argc, argv, "d:hVc:s:p:m:l:f:n",
+    while ((opt = getopt_long(argc, argv, "d:hVc:s:p:m:l:f:nt:",
 			      long_opts, &option_index)) != EOF) {
       switch(opt) {
 	case 'h':
@@ -145,6 +156,9 @@ int main(int argc, char **argv)
 	case 'm':
 	  b = atoi(optarg);
 	  break;
+	case 't':
+	  t = atoi(optarg);
+	  break;
 	case 'p':
 	  port = atoi(optarg);
 	  break;
@@ -172,6 +186,7 @@ int main(int argc, char **argv)
   sc->loops = l;
   sc->flood = f;
   sc->nosend = n;
+  sc->threads = t;
 
   sc->client = silc_client_alloc(&ops, NULL, sc, NULL);
   if (!sc->client)
@@ -203,6 +218,7 @@ int main(int argc, char **argv)
 
   silc_client_run(sc->client);
 
+  silc_mutex_free(sc->m);
   silc_client_free(sc->client);
   silc_free(sc);
   silc_free(server);
@@ -218,27 +234,36 @@ silc_stress_worker(void *context)
   SilcStressWorker w = context;
   SilcClient client = w->sc->client;
   SilcClientConnection conn = w->sc->conn;
-  SilcChannelEntry channel = w->channel;
+  SilcChannelEntry channel;
   char *tmp;
   int i;
 
   tmp = silc_calloc(w->sc->msize, sizeof(*tmp));
-  if (!tmp)
+  if (!tmp) {
+    fprintf(stderr, "out of mem\n");
+    silc_dlist_uninit(w->channels);
     return NULL;
+  }
 
   memset(tmp, 'M', w->sc->msize);
 
   for (i = 0; i < w->sc->loops; i++) {
-    /* Our packet routines don't like threads, so let's lock :( */
-    silc_mutex_lock(w->sc->m);
-    if (!w->sc->conn)
-      return NULL;
-    silc_client_send_channel_message(client, conn, channel, NULL, 0,
-				     tmp, w->sc->msize, TRUE);
-    silc_mutex_unlock(w->sc->m);
+    silc_dlist_start(w->channels);
+    while ((channel = silc_dlist_get(w->channels)) != SILC_LIST_END) {
+      /* Our packet routines don't like threads, so let's lock :( */
+      silc_mutex_lock(w->sc->m);
+      if (!w->sc->conn) {
+	silc_dlist_uninit(w->channels);
+	return NULL;
+      }
+      silc_client_send_channel_message(client, conn, channel, NULL, 0,
+				       tmp, w->sc->msize, TRUE);
+      silc_mutex_unlock(w->sc->m);
+    }
     usleep(w->sc->flood);
   }
 
+  silc_dlist_uninit(w->channels);
   silc_free(tmp);
 
   return NULL;
@@ -369,23 +394,42 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
   va_start(va, status);
 
   /* Check for successful JOIN */
-  if (command == SILC_COMMAND_JOIN && sc->nosend == FALSE) {
-    /* Create worker thread for data sending */
-    SilcThread t;
-    SilcChannelEntry channel;
+  if (command == SILC_COMMAND_JOIN && sc->nosend == FALSE &&
+      silc_hash_table_count(conn->local_entry->channels) == sc->channels) {
+    /* Create worker threads for data sending */
     SilcStressWorker w;
+    SilcHashTableList htl;
+    SilcChannelUser chu;
+    int i, k;
 
-    (void)va_arg(va, SilcClientEntry);
-    channel = va_arg(va, SilcChannelEntry);
+    printf("Creating %d threads (%d channels/thread)\n",
+	   sc->threads, silc_hash_table_count(conn->local_entry->channels) /
+	   sc->threads);
 
-    w = silc_calloc(1, sizeof(*w));
-    if (!w)
-      exit(1);
+    silc_hash_table_list(conn->local_entry->channels, &htl);
+    for (i = 0; i < sc->threads; i++) {
 
-    w->sc = sc;
-    w->channel = channel;
+      w = silc_calloc(1, sizeof(*w));
+      if (!w) {
+	fprintf(stderr, "out of mem\n");
+	exit(1);
+      }
 
-    t = silc_thread_create(silc_stress_worker, w, FALSE);
+      w->sc = sc;
+      w->channels = silc_dlist_init();
+      if (!w->channels) {
+	fprintf(stderr, "out of mem\n");
+	exit(1);
+      }
+
+      for (k = 0; k < (silc_hash_table_count(conn->local_entry->channels) /
+		       sc->threads); k++)
+	while (silc_hash_table_get(&htl, NULL, (void *)&chu))
+	  silc_dlist_add(w->channels, chu->channel);
+
+      silc_thread_create(silc_stress_worker, w, FALSE);
+    }
+    silc_hash_table_list_reset(&htl);
   }
 
   va_end(va);
@@ -421,10 +465,13 @@ silc_connected(SilcClient client, SilcClientConnection conn,
   for (i = 0; i < sc->channels; i++) {
     memset(tmp, 0, sizeof(tmp));
     snprintf(tmp, sizeof(tmp) - 1, "JOIN %d", i);
+
+    /* Our packet routines don't like threads, so let's lock :( */
+    silc_mutex_lock(sc->m);
     silc_client_command_call(client, conn, tmp);
+    silc_mutex_unlock(sc->m);
+    usleep(50000);
   }
-
-
 }
 
 
