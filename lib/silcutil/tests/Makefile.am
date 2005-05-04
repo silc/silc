@@ -17,11 +17,13 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-bin_PROGRAMS = 	test_silcstrutil test_silcstringprep test_silchashtable
+bin_PROGRAMS = 	test_silcstrutil test_silcstringprep test_silchashtable \
+	test_silclist
 
 test_silcstrutil_SOURCES = test_silcstrutil.c
 test_silcstringprep_SOURCES = test_silcstringprep.c
 test_silchashtable_SOURCES = test_silchashtable.c
+test_silclist_SOURCES = test_silclist.c
 
 LIBS = $(SILC_COMMON_LIBS)
 LDADD = -L.. -L../.. -lsilc
