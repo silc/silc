@@ -799,7 +799,7 @@ ad_dist_excludes()
   do
     ad_debug "Excluding $i"
     if test x$2 = xtrue; then
-      ad_log "  $1"
+      ad_log "  $i"
     fi
     rm -rf $i
   done
