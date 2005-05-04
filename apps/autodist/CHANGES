@@ -1,3 +1,7 @@
+Wed May  4 10:58:24 EEST 2005 Pekka Riikonen <priikone@silcnet.org>
+
+	* Autodist 1.3.
+
 Sun May  1 17:31:55 EEST 2005 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added support for dependencies in makefiles.

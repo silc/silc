@@ -30,3 +30,4 @@ SUBDIRS = 	\
 #ifdef SILC_DIST_INPLACE
 	silcstress
 #endif SILC_DIST_INPLACE
+

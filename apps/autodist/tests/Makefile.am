@@ -22,7 +22,9 @@ TESTS = 			\
 	autodist2.test		\
 	autodist3.test		\
 	autodist4.test		\
-	autodist5.test
+	autodist5.test		\
+	autodist6.test		\
+	autodist7.test
 
 clean-local:
 	-rm -rf test
