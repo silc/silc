@@ -86,7 +86,8 @@ bool silc_mutex_alloc(SilcMutex *mutex);
  *
  * DESCRIPTION
  *
- *    Free SILC Mutex object and frees all allocated memory.
+ *    Free SILC Mutex object and frees all allocated memory.  If `mutex'
+ *    is NULL this function has no effect.
  *
  ***/
 void silc_mutex_free(SilcMutex mutex);
@@ -101,7 +102,8 @@ void silc_mutex_free(SilcMutex mutex);
  *
  *    Locks the mutex. If the mutex is locked by another thread the
  *    current thread will block until the other thread has issued
- *    silc_mutex_unlock for the mutex.
+ *    silc_mutex_unlock for the mutex.  If `mutex' is NULL this function
+ *    has no effect.
  *
  * NOTES
  *
@@ -121,7 +123,8 @@ void silc_mutex_lock(SilcMutex mutex);
  * DESCRIPTION
  *
  *    Unlocks the mutex and thus releases it for another thread that
- *    may be waiting for the lock.
+ *    may be waiting for the lock.  If `mutex' is NULL this function
+ *    has no effect.
  *
  * NOTES
  *

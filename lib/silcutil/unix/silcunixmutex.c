@@ -9,7 +9,7 @@
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -44,27 +44,33 @@ bool silc_mutex_alloc(SilcMutex *mutex)
 void silc_mutex_free(SilcMutex mutex)
 {
 #ifdef SILC_THREADS
-  pthread_mutex_destroy(&mutex->mutex);
-  silc_free(mutex);
+  if (mutex) {
+    pthread_mutex_destroy(&mutex->mutex);
+    silc_free(mutex);
+  }
 #endif /* SILC_THREADS */
 }
 
 void silc_mutex_lock(SilcMutex mutex)
 {
 #ifdef SILC_THREADS
-  if (pthread_mutex_lock(&mutex->mutex))
-    assert(FALSE);
-  assert(mutex->locked == 0);
-  mutex->locked = 1;
+  if (mutex) {
+    if (pthread_mutex_lock(&mutex->mutex))
+      assert(FALSE);
+    assert(mutex->locked == 0);
+    mutex->locked = 1;
+  }
 #endif /* SILC_THREADS */
 }
 
 void silc_mutex_unlock(SilcMutex mutex)
 {
 #ifdef SILC_THREADS
-  assert(mutex->locked == 1);
-  mutex->locked = 0;
-  if (pthread_mutex_unlock(&mutex->mutex))
-    assert(FALSE);
+  if (mutex) {
+    assert(mutex->locked == 1);
+    mutex->locked = 0;
+    if (pthread_mutex_unlock(&mutex->mutex))
+      assert(FALSE);
+  }
 #endif /* SILC_THREADS */
 }
