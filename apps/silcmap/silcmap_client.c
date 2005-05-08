@@ -440,8 +440,8 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 
       SILC_LOG_DEBUG(("MOTD command reply"));
 
-      mapconn->data.motd = strdup(motd);
-      mapconn->motd_received = TRUE;
+      mapconn->data.motd = motd ? strdup(motd) : NULL;
+      mapconn->motd_received = motd ? TRUE : FALSE;
     }
     break;
 
