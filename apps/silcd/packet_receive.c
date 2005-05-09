@@ -613,7 +613,7 @@ void silc_server_notify(SilcServer server,
       /* If we received same mode from our primary check whether founder
 	 mode and key in the notify is set.  We update the founder key
 	 here since we may have wrong one */
-      if (server->server_type == SILC_SERVER &&
+      if (server->server_type != SILC_ROUTER &&
 	  sock == SILC_PRIMARY_ROUTE(server) &&
 	  mode & SILC_CHANNEL_MODE_FOUNDER_AUTH) {
 	SILC_LOG_DEBUG(("Founder public key received from router"));
@@ -811,7 +811,10 @@ void silc_server_notify(SilcServer server,
     /* Process channel public key(s). */
     tmp = silc_argument_get_arg_type(args, 7, &tmp_len);
     if (tmp && mode & SILC_CHANNEL_MODE_CHANNEL_AUTH) {
-      SilcStatus ret =
+      SilcStatus ret;
+      SILC_LOG_DEBUG(("Channel public key list received from router"));
+
+      ret =
 	silc_server_set_channel_pk_list(server, sock, channel, tmp, tmp_len);
 
       /* If list was set already we will enforce the same list to server. */

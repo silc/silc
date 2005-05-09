@@ -1219,7 +1219,7 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
 
   /* Get channel public key list */
   tmp = silc_argument_get_arg_type(cmd->args, 16, &len);
-  if (tmp && server->server_type == SILC_SERVER)
+  if (tmp && server->server_type != SILC_ROUTER)
     silc_server_set_channel_pk_list(server, NULL, entry, tmp, len);
 
   /* The the user limit */
