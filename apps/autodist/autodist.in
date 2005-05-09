@@ -1831,11 +1831,10 @@ ad_run_dist_hooks()
 usage="Usage: autodist [options] [distribution] [version]"
 help="\
 Autodist prepares source tree for configuration, compilation and
-distribution.  Prepares the source tree from the \`autodist.ad'
-configuration file.  Generates Automake.am files from Automake.ad
-files, configure.ac file from configure.ad file(s), generates the
-configure script by running Autoconf tool, and generates Makefile.in
-files by running Automake tool.
+distribution.  Generates Automake.am files from Automake.ad files, 
+configure.ac file from configure.ad file(s), generates the configure 
+script by running Autoconf tool, and generates Makefile.in files by 
+running Automake tool.
 
 Operation modes:
   -h, --help                print this help, then exit
