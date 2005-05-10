@@ -155,7 +155,7 @@ fi
 #
 AC_CHECK_HEADER(regex.h,
   [
-    AC_DEFINE([HAVE_REGEX], [], [HAVE_REGEX])
+    AC_DEFINE([HAVE_REGEX_H], [], [HAVE_REGEX_H])
     have_regex=1
   ], have_regex=0
 )
@@ -999,6 +999,7 @@ AC_ARG_WITH(irssi,
     AC_MSG_RESULT(no)
     without_irssi=true
   ])
+AM_CONDITIONAL(with_irssi, test xwithout_irssi = xfalse)
 
 # --with-silcd
 #
