@@ -1,10 +1,10 @@
 /*
 
-  mp_gmp.c 
+  mp_gmp.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -121,7 +121,7 @@ void silc_mp_div_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 ui)
   mpz_div_ui(dst, mp1, ui);
 }
 
-void silc_mp_div_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1, 
+void silc_mp_div_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1,
 		    SilcMPInt *mp2)
 {
   if (q && r)
@@ -137,7 +137,7 @@ void silc_mp_div_2exp(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp)
   mpz_fdiv_q_2exp(dst, mp1, exp);
 }
 
-void silc_mp_div_2exp_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1, 
+void silc_mp_div_2exp_qr(SilcMPInt *q, SilcMPInt *r, SilcMPInt *mp1,
 			 SilcUInt32 exp)
 {
   if (q)
@@ -172,13 +172,13 @@ void silc_mp_pow_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp)
   mpz_pow_ui(dst, mp1, exp);
 }
 
-void silc_mp_pow_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp, 
+void silc_mp_pow_mod(SilcMPInt *dst, SilcMPInt *mp1, SilcMPInt *exp,
 		     SilcMPInt *mod)
 {
   mpz_powm(dst, mp1, exp, mod);
 }
 
-void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp, 
+void silc_mp_pow_mod_ui(SilcMPInt *dst, SilcMPInt *mp1, SilcUInt32 exp,
 			SilcMPInt *mod)
 {
   mpz_powm_ui(dst, mp1, exp, mod);

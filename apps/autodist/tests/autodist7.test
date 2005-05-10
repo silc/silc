@@ -1,0 +1,69 @@
+#!/bin/sh
+
+AUTODIST=../../autodist
+
+rm -rf test
+mkdir test
+
+cd test || exit 1
+
+chmod +x $AUTODIST || exit 1
+
+cat << EOF > configure.ad
+AD_INIT
+AD_DISABLE_DEPENDENCIES
+#ifdef _DIST_DEFAULT
+AC_CANONICAL_BUILD
+AM_INIT_AUTOMAKE
+AC_PREREQ(2.52)
+AC_CONFIG_HEADERS(config.h)
+AC_CONFIG_FILES(
+Makefile
+)
+AC_OUTPUT
+echo configure.ad ok
+#else !_DIST_DEFAULT
+echo "ERROR"
+exit 1
+#endif _DIST_DEFAULT
+EOF
+
+cat << EOF > Makefile.ad
+SUBDIRS=	\\
+#ifdef _DIST_NODEF
+	nodef	\\
+	poa	\\
+	paa	\\
+#endif _DIST_NODEF
+	.	\\
+	.	\\
+	.	\\
+	.	\\
+
+EOF
+
+rm -rf distdir subdir
+mkdir -p subdir || exit 1
+
+$AUTODIST -i || exit 1
+if test '!' -d distdir; then
+  echo "error: distdir/ does no exist"
+  exit 1
+fi 
+
+cp -p ../../default distdir || exit 1
+cp -p ../../autodist.conf distdir || exit 1
+
+touch README NEWS AUTHORS ChangeLog
+
+$AUTODIST || exit 1
+
+./configure || exit 1
+make || exit 1
+echo make ok
+
+echo test ok
+
+# Cleanup
+rm -rf subdir distdir
+

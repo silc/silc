@@ -17,11 +17,17 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-SUBDIRS = 		\
+SUBDIRS = 	\
 #ifdef SILC_DIST_AUTODIST
-	autodist	\
+	autodist \
 #endif SILC_DIST_AUTODIST
-#ifdef SILC_DIST_SILCMAP
-	silcmap
-#endif SILC_DIST_SILCMAP
+#ifdef SILC_DIST_SERVER
+	@SILCD_SUBDIR@ \
+#endif SILC_DIST_SERVER
+#ifdef SILC_DIST_CLIENT
+	@IRSSI_SUBDIR@ \
+#endif SILC_DIST_CLIENT
+#ifdef SILC_DIST_INPLACE
+	silcstress
+#endif SILC_DIST_INPLACE
 

@@ -536,6 +536,7 @@ int silc_packet_receive(SilcSocketConnection sock);
  *    bool silc_packet_receive_process(SilcSocketConnection sock,
  *                                     bool local_is_router,
  *                                     SilcCipher cipher, SilcHmac hmac,
+ *                                     SilcUInt32 sequence,
  *                                     SilcPacketParserCallback parser,
  *                                     void *parser_context);
  *

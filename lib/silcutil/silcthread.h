@@ -1,16 +1,15 @@
 /*
 
   silcmutex.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
-  Copyright (C) 2001 Pekka Riikonen
- 
+
+  Copyright (C) 2001 - 2005 Pekka Riikonen
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
- 
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -24,7 +23,7 @@
  *
  * Interface for SILC Thread implementation. This is platform independent
  * interface of threads for applications that need concurrent execution
- * with the application's main thread. The threads created with this 
+ * with the application's main thread. The threads created with this
  * interface executes concurrently with the calling thread.
  *
  ***/
@@ -37,7 +36,7 @@
 /****s* silcutil/SilcThreadAPI/SilcThread
  *
  * NAME
- * 
+ *
  *    typedef struct SilcThreadStruct *SilcThread;
  *
  * DESCRIPTION
@@ -72,7 +71,7 @@ typedef void *(*SilcThreadStart)(void *context);
  *
  * SYNOPSIS
  *
- *    SilcThread silc_thread_create(SilcThreadStart start_func, 
+ *    SilcThread silc_thread_create(SilcThreadStart start_func,
  *                                  void *context, bool waitable);
  * DESCRIPTION
  *

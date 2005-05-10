@@ -1893,8 +1893,13 @@ bool silc_server_inviteban_process(SilcServer server, SilcHashTable list,
     tmp = silc_argument_get_first_arg(args, &type, &len);
     while (tmp) {
       if (type == 1) {
-	/* Check validity of the string */
+	/* Check validity of the string.  Actually we should parse the
+	   whole string and verify all components individually. */
 	if (!silc_utf8_valid(tmp, len) || !len) {
+	  tmp = silc_argument_get_next_arg(args, &type, &len);
+	  continue;
+	}
+	if (strchr(tmp, ',')) {
 	  tmp = silc_argument_get_next_arg(args, &type, &len);
 	  continue;
 	}
@@ -1978,8 +1983,13 @@ bool silc_server_inviteban_process(SilcServer server, SilcHashTable list,
     tmp = silc_argument_get_first_arg(args, &type, &len);
     while (tmp) {
       if (type == 1) {
-	/* Check validity of the string */
+	/* Check validity of the string.  Actually we should parse the
+	   whole string and verify all components individually. */
 	if (!silc_utf8_valid(tmp, len)) {
+	  tmp = silc_argument_get_next_arg(args, &type, &len);
+	  continue;
+	}
+	if (strchr(tmp, ',')) {
 	  tmp = silc_argument_get_next_arg(args, &type, &len);
 	  continue;
 	}
@@ -2097,8 +2107,8 @@ silc_server_process_channel_pk(SilcServer server,
 
   if (type == 0x00) {
     /* Add new public key to channel public key list */
-    SILC_LOG_DEBUG(("Add new channel public key to channel %s",
-		    channel->channel_name));
+    SILC_LOG_DEBUG(("Add new channel public key %s to channel %s",
+		    chpk->identifier, channel->channel_name));
 
     /* Check for resource limit */
     if (silc_hash_table_count(channel->channel_pubkeys) > 64) {

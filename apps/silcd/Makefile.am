@@ -36,9 +36,50 @@ silcd_SOURCES = \
 	serverid.c \
 	server_version.c
 
-LIBS = $(SILC_COMMON_LIBS) -lsilc
+LIBS = $(SILC_COMMON_LIBS)
 LDADD =
 
 EXTRA_DIST = *.h
+
+install-dirs-server:
+	-mkdir -p $(docdir)
+	-mkdir -p $(etcdir)
+	-mkdir -p $(logsdir)
+	-mkdir -p $(mandir)/man5
+	-mkdir -p $(mandir)/man8
+
+doc-install-server:
+	-$(INSTALL_DATA) $(top_srcdir)/doc/example_silcd.conf $(docdir)/
+	-@if test -f $(top_srcdir)/doc/silcd.8 ; then \
+	 $(INSTALL_DATA) $(top_srcdir)/doc/silcd.8 $(mandir)/man8; \
+	fi
+	-@if test -f $(top_srcdir)/doc/silcd.conf.5 ; then \
+	 $(INSTALL_DATA) $(top_srcdir)/doc/silcd.conf.5 $(mandir)/man5; \
+	fi
+
+etc-install-server:
+	-@if test '!' -f $(etcdir)/silcd.conf ; then \
+	  $(INSTALL_DATA) $(top_srcdir)/doc/example_silcd.conf \
+		$(etcdir)/silcd.conf; \
+	  $(INSTALL_DATA) $(top_srcdir)/doc/silcalgs.conf \
+		$(etcdir)/silcalgs.conf; \
+          chmod go= $(etcdir)/silcd.conf; \
+	fi
+
+examples-install:
+	-mkdir -p $(docdir)/examples/
+	-$(INSTALL_DATA) $(top_srcdir)/doc/examples/* $(docdir)/examples/
+
+generate-server-key:
+	-@if test '!' -f $(etcdir)/silcd.pub ; then \
+	  $(sbindir)/silcd -C $(etcdir); \
+	fi
+
+install-data-hook: 		\
+	install-dirs-server 	\
+	doc-install-server	\
+	etc-install-server 	\
+	examples-install 	\
+	generate-server-key
 
 include $(top_srcdir)/Makefile.defines.in

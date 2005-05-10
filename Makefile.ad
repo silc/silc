@@ -18,20 +18,13 @@
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 SUBDIRS = 		\
+#ifdef SILC_DIST_LIB
+	@LIBSUBDIR@	\
+#endif SILC_DIST_LIB
 #ifdef SILC_DIST_APPS
 	apps		\
 #endif SILC_DIST_APPS
-#ifdef SILC_DIST_LIB
-	lib		\
-#endif SILC_DIST_LIB
-#ifdef SILC_DIST_CLIENT
-	irssi		\
-#endif SILC_DIST_CLIENT
-#ifdef SILC_DIST_SERVER
-	silcd		\
-#endif SILC_DIST_SERVER
 #ifdef SILC_DIST_TOOLKIT
-	silc		\
 	win32		\
 #endif SILC_DIST_TOOLKIT
 #ifdef SILC_DIST_INCLUDES
@@ -44,123 +37,38 @@ SUBDIRS = 		\
 EXTRA_DIST = 		\
 	silcdefs.h.in	\
 #ifdef SILC_DIST_SILC
-#ifdef SILC_DIST_TOOLKIT
-	README.CVS README.WIN32 README.MACOSX silcer tutorial \
-#endif SILC_DIST_TOOLKIT
 	libtoolfix 	\
 	CHANGES CREDITS
 #endif SILC_DIST_SILC
 
-#ifdef SILC_DIST_SILC
-#
-# Installing of SILC into the system
-#
-
-install-dirs:
-	-mkdir -p $(etcdir)
-	-mkdir -p $(modulesdir)
-	-mkdir -p $(docdir)
-
-#ifdef SILC_DIST_DOC
-doc-install:
-	-$(INSTALL_DATA) $(srcdir)/doc/CodingStyle $(docdir)/
-	-$(INSTALL_DATA) $(srcdir)/doc/FAQ $(docdir)/
-	-$(INSTALL_DATA) $(srcdir)/doc/*.txt $(docdir)/
-	-$(INSTALL_DATA) $(srcdir)/COPYING $(docdir)/
-	-$(INSTALL_DATA) $(srcdir)/CHANGES $(docdir)/
-	-$(INSTALL_DATA) $(srcdir)/CREDITS $(docdir)/
-	-$(INSTALL_DATA) $(srcdir)/README* $(docdir)/
-	-$(INSTALL_DATA) $(srcdir)/INSTALL $(docdir)/
-	-$(INSTALL_DATA) $(srcdir)/TODO $(docdir)/
-#endif SILC_DIST_DOC
-
-#ifdef SILC_DIST_SIM
-sim-install:
-	-$(INSTALL_DATA) $(srcdir)/lib/silcsim/*.so $(modulesdir)/
-#endif SILC_DIST_SIM
-
 #ifdef SILC_DIST_CLIENT
-install-dirs-client: install-dirs
+if with_irssi
+install-dirs-client:
+	-mkdir -p $(etcdir)
 	-mkdir -p $(helpdir)
 	-mkdir -p $(mandir)/man1
 
-doc-install-client: doc-install
-	$(INSTALL_DATA) $(srcdir)/irssi/silc.conf $(docdir)/example_silc.conf
+doc-install-client:
+	$(INSTALL_DATA) $(srcdir)/apps/irssi/silc.conf $(docdir)/example_silc.conf
 	-@if test -f $(srcdir)/doc/silc.1 ; then \
 	 $(INSTALL_DATA) $(srcdir)/doc/silc.1 $(mandir)/man1; \
 	fi
 
 etc-install-client:
-	-@if test '!' -d $(srcdir)/irssi ; then \
+	-@if test '!' -d $(srcdir)/apps/irssi ; then \
 	  if test '!' -f $(etcdir)/silc.conf ; then \
-	    $(INSTALL_DATA) $(srcdir)/irssi/silc.conf \
+	    $(INSTALL_DATA) $(srcdir)/apps/irssi/silc.conf \
 	    	$(etcdir)/silc.conf; \
 	  fi; \
 	fi
-#endif SILC_DIST_CLIENT
-
-#ifdef SILC_DIST_SERVER
-install-dirs-server: install-dirs
-	-mkdir -p $(logsdir)
-	-mkdir -p $(mandir)/man5
-	-mkdir -p $(mandir)/man8
-
-doc-install-server: doc-install
-	-$(INSTALL_DATA) $(srcdir)/doc/example_silcd.conf $(docdir)/
-	-@if test -f $(srcdir)/doc/silcd.8 ; then \
-	 $(INSTALL_DATA) $(srcdir)/doc/silcd.8 $(mandir)/man8; \
-	fi
-	-@if test -f $(srcdir)/doc/silcd.conf.5 ; then \
-	 $(INSTALL_DATA) $(srcdir)/doc/silcd.conf.5 $(mandir)/man5; \
-	fi
-
-etc-install-server:
-	-@if test '!' -f $(etcdir)/silcd.conf ; then \
-	  $(INSTALL_DATA) $(srcdir)/doc/example_silcd.conf \
-		$(etcdir)/silcd.conf; \
-	  $(INSTALL_DATA) $(srcdir)/doc/silcalgs.conf \
-		$(etcdir)/silcalgs.conf; \
-          chmod go= $(etcdir)/silcd.conf; \
-	fi
-
-examples-install:
-	-mkdir -p $(docdir)/examples/
-	-$(INSTALL_DATA) $(srcdir)/doc/examples/README $(docdir)/examples/
-	-$(INSTALL_DATA) $(srcdir)/doc/examples/silc* $(docdir)/examples/
-
-generate-server-key:
-	-@if test '!' -f $(etcdir)/silcd.pub ; then \
-	  $(sbindir)/silcd -C $(etcdir); \
-	fi
-#endif SILC_DIST_SERVER
-
-#ifdef SILC_DIST_TOOLKIT
-toolkit-install:
-	-mkdir -p $(docdir)/toolkit/
-	-$(INSTALL_DATA) $(srcdir)/doc/toolkit/* $(docdir)/toolkit
-	-$(INSTALL_DATA) $(srcdir)/lib/doc/*.gif $(docdir)/toolkit
-	-cp -R $(srcdir)/tutorial $(docdir)
-#endif SILC_DIST_TOOLKIT
 
 install-data-hook: 		\
-#ifdef SILC_DIST_CLIENT
 	install-dirs-client	\
 	doc-install-client	\
-	etc-install-client	\
+	etc-install-client
+endif
 #endif SILC_DIST_CLIENT
-#ifdef SILC_DIST_SERVER
-	install-dirs-server 	\
-	doc-install-server	\
-	etc-install-server 	\
-	examples-install 	\
-	generate-server-key	\
-#endif SILC_DIST_SERVER
-#ifdef SILC_DIST_TOOLKIT
-	toolkit-install 	\
-#endif SILC_DIST_TOOLKIT
-#ifdef SILC_DIST_SIM
-	sim-install
-#endif SILC_DIST_SIM
 
+#ifdef SILC_DIST_SILC
 include $(top_srcdir)/Makefile.defines.in
 #endif SILC_DIST_SILC

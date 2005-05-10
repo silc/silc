@@ -862,7 +862,7 @@ void silc_sftp_extended(SilcSFTP sftp,
  * DESCRIPTION
  *
  *    Starts SFTP server and returns a context to it.  This function returns
- *    the allocated SFTP client context or NULL on error. The `send_packet'
+ *    the allocated SFTP server context or NULL on error. The `send_packet'
  *    is called by the library when it needs to send a packet. The `fs' is the
  *    filesystem context allocated by the application.  Each socket connection
  *    should start its own server by calling this function.
@@ -983,7 +983,7 @@ typedef void (*SilcSFTPMonitor)(SilcSFTP sftp,
  *
  * DESCRIPTION
  *
- *    Sets monitor callback to monitor various request sent by an client.
+ *    Sets monitor callback to monitor various request sent by a client.
  *    When request that has been set in the `monitors' is received the
  *    monitor callback will be called to notify the caller.
  *

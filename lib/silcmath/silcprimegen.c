@@ -1,16 +1,15 @@
 /*
 
   silcprimegen.c
-  
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 1997 - 2000 Pekka Riikonen
+  Author: Pekka Riikonen <priikone@silcnet.org>
+
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -22,17 +21,17 @@
 
 #include "silcincludes.h"
 
-/* 
-   Fixed primetable for small prime division. We use this primetable to 
-   test if possible prime is divisible any of these. Primetable is NULL 
-   terminated. This same primetable can be found in SSH and PGP except that 
-   SSH don't have prime 2 in the table. This sort of prime table is easily 
+/*
+   Fixed primetable for small prime division. We use this primetable to
+   test if possible prime is divisible any of these. Primetable is NULL
+   terminated. This same primetable can be found in SSH and PGP except that
+   SSH don't have prime 2 in the table. This sort of prime table is easily
    created, for example, using sieve of Erastosthenes.
-   
-   Just to include; if somebody is interested about Erastosthenes. Creating a 
-   small prime table using sieve of Erastosthenes would go like this: Write 
+
+   Just to include; if somebody is interested about Erastosthenes. Creating a
+   small prime table using sieve of Erastosthenes would go like this: Write
    down a list of integers in range of 2 to n. Here in example n = 20.
-   
+
    2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 
    Then mark all multiples of 2 (Note: 2 is a prime number):
@@ -46,9 +45,9 @@
        x   x   x x  x     x     x  x  x     x     x
 
    And continue doing this, marking all multiples of the next unmarked
-   number until there are now new unmarked numbers. And there you have a 
+   number until there are now new unmarked numbers. And there you have a
    prime table. So in this example, primes between 2 - 20 are:
-   
+
    2 3 5 7 11 13 17 19
 
 */
@@ -187,10 +186,10 @@ static SilcUInt32 primetable[] =
 };
 
 
-/* Find appropriate prime. It generates a number by taking random bytes. 
-   It then tests the number that it's not divisible by any of the small 
-   primes and then it performs Fermat's prime test. I thank Rieks Joosten 
-   (r.joosten@pijnenburg.nl) for such a good help with prime tests. 
+/* Find appropriate prime. It generates a number by taking random bytes.
+   It then tests the number that it's not divisible by any of the small
+   primes and then it performs Fermat's prime test. I thank Rieks Joosten
+   (r.joosten@pijnenburg.nl) for such a good help with prime tests.
 
    If argument verbose is TRUE this will display some status information
    about the progress of generation. */
@@ -202,6 +201,7 @@ bool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose,
   SilcUInt32 i, b, k;
   SilcUInt32 *spmods;
   SilcMPInt r, base, tmp, tmp2, oprime;
+  bool valid = FALSE;
 
   silc_mp_init(&r);
   silc_mp_init(&base);
@@ -213,92 +213,99 @@ bool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose,
 
   SILC_LOG_DEBUG(("Generating new prime"));
 
-  /* Get random number and assure that the first digit is not zero since
-     our conversion routines does not like the first digit being zero. */
-  do {
-    if (numbuf) {
-      memset(numbuf, 0, (bits / 8));
-      silc_free(numbuf);
-    }
+  while (valid == FALSE) {
+    /* Get random number */
     if (rng)
-      numbuf = silc_rng_get_rn_string(rng, (bits / 8));
+      numbuf = silc_rng_get_rn_data(rng, (bits / 8));
     else
-      numbuf = silc_rng_global_get_rn_string((bits / 8));
+      numbuf = silc_rng_global_get_rn_data((bits / 8));
     if (!numbuf)
       return FALSE;
-  } while (numbuf[0] == '0');
 
-  /* Convert into MP and set the size */
-  silc_mp_set_str(prime, numbuf, 16);  
-  silc_mp_mod_2exp(prime, prime, bits);
+    /* Convert into MP and set the size */
+    silc_mp_bin2mp(numbuf, (bits / 8), prime);
+    silc_mp_mod_2exp(prime, prime, bits);
 
-  /* Empty buffer */
-  memset(numbuf, 0, (bits / 8));
-  silc_free(numbuf);
+    /* Empty buffer */
+    memset(numbuf, 0, (bits / 8));
+    silc_free(numbuf);
 
-  /* Number could be even number, so we'll make it odd. */
-  silc_mp_set_ui(&tmp, 1);
-  silc_mp_or(prime, prime, &tmp);		/* OR operator */
+    /* Set highest bit */
+    silc_mp_set_ui(&tmp, 1);
+    silc_mp_mul_2exp(&tmp, &tmp, bits - 1);
+    silc_mp_or(prime, prime, &tmp);
 
-  /* Init modulo table with the prime candidate and the primes
-     in the primetable. */
-  spmods = silc_calloc(1, sizeof(primetable) * sizeof(SilcUInt32));
-  for (i = 0; primetable[i] != 0; i++) {
-    silc_mp_mod_ui(&tmp, prime, primetable[i]);
-    spmods[i] = silc_mp_get_ui(&tmp);
-  }
+    /* Number could be even number, so we'll make it odd. */
+    silc_mp_set_ui(&tmp, 1);
+    silc_mp_or(prime, prime, &tmp);
 
-  /* k is added by 2, this way we skip all even numbers (prime is odd). */
-  silc_mp_set(&oprime, prime);
-  for (k = 0;; k += 2) {
-    silc_mp_add_ui(&oprime, prime, k);
-    
-    /* See if the prime has a divisor in primetable[].
-     * If it has then it's a composite. We add k to the
-     * original modulo value, k is added by 2 on every roll.
-     * This way we don't have to re-init the whole table if
-     * the number is composite. 
-     */
-    for (b = 0; b < i; b++) {
-      silc_mp_set_ui(&tmp2, spmods[b]);
-      silc_mp_add_ui(&tmp2, &tmp2, k);
-      silc_mp_mod_ui(&tmp, &tmp2, primetable[b]);
-      
-      /* If mod is 0, the number is composite */
-      if (silc_mp_cmp_ui(&tmp, 0) == 0)
-	break;
+    /* Init modulo table with the prime candidate and the primes
+       in the primetable. */
+    spmods = silc_calloc(1, sizeof(primetable) * sizeof(SilcUInt32));
+    for (i = 0; primetable[i] != 0; i++) {
+      silc_mp_mod_ui(&tmp, prime, primetable[i]);
+      spmods[i] = silc_mp_get_ui(&tmp);
     }
-    if (b < i)
-      continue;
-    
-    /* Passed the quick test. */
-    
-    /* Does the prime pass the Fermat's prime test.
-     * r = 2 ^ p mod p, if r == 2, then p is probably a prime. 
-     */
-    silc_mp_pow_mod(&r, &base, &oprime, &oprime);
-    if (silc_mp_cmp_ui(&r, 2) != 0) {
-      if (verbose) {
-	printf(".");
-	fflush(stdout);
+
+    /* k is added by 2, this way we skip all even numbers (prime is odd). */
+    silc_mp_set(&oprime, prime);
+    for (k = 0;; k += 2) {
+      silc_mp_add_ui(&oprime, prime, k);
+
+      /* See if the prime has a divisor in primetable[].
+       * If it has then it's a composite. We add k to the
+       * original modulo value, k is added by 2 on every roll.
+       * This way we don't have to re-init the whole table if
+       * the number is composite.
+       */
+      for (b = 0; b < i; b++) {
+	silc_mp_set_ui(&tmp2, spmods[b]);
+	silc_mp_add_ui(&tmp2, &tmp2, k);
+	silc_mp_mod_ui(&tmp, &tmp2, primetable[b]);
+
+	/* If mod is 0, the number is composite */
+	if (silc_mp_cmp_ui(&tmp, 0) == 0)
+	  break;
       }
-      continue;
+      if (b < i)
+	continue;
+
+      /* Passed the quick test. */
+
+      /* Does the prime pass the Fermat's prime test.
+       * r = 2 ^ p mod p, if r == 2, then p is probably a prime.
+       */
+      silc_mp_pow_mod(&r, &base, &oprime, &oprime);
+      if (silc_mp_cmp_ui(&r, 2) != 0) {
+	if (verbose) {
+	  printf(".");
+	  fflush(stdout);
+	}
+	continue;
+      }
+
+      /* Passed the Fermat's test. And I don't think
+       * we have to do more tests. If anyone wants to do more
+       * tests, MP library has probability of prime test:
+       *
+       * if (silc_mp_probab_prime_p(prime, 25))
+       *     break;                          found a probable prime
+       *
+       * However, this is very slow.
+       */
+      /* XXX: this could be done if some argument, say strict_primes, is
+	 TRUE when we are willing to spend more time on the prime test and
+	 to get, perhaps, better primes. */
+      silc_mp_set(prime, &oprime);
+      break;
     }
-    
-    /* Passed the Fermat's test. And I don't think
-     * we have to do more tests. If anyone wants to do more
-     * tests, MP library has probability of prime test:
-     *
-     * if (silc_mp_probab_prime_p(prime, 25))
-     *     break;                          found a probable prime 
-     *
-     * However, this is very slow.
-     */
-    /* XXX: this could be done if some argument, say strict_primes, is
-       TRUE when we are willing to spend more time on the prime test and
-       to get, perhaps, better primes. */
-    silc_mp_set(prime, &oprime);
-    break;
+
+    /* Check highest bit */
+    silc_mp_div_2exp(&tmp, prime, bits - 1);
+    if (silc_mp_get_ui(&tmp) == 1) {
+      valid = TRUE;
+      break;
+    }
   }
 
   silc_free(spmods);
@@ -308,34 +315,34 @@ bool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose,
   silc_mp_uninit(&tmp2);
   silc_mp_uninit(&oprime);
 
-  return TRUE;
+  return valid;
 }
 
-/* Performs primality testings for given number. Returns TRUE if the 
+/* Performs primality testings for given number. Returns TRUE if the
    number is probably a prime. */
 
 bool silc_math_prime_test(SilcMPInt *p)
 {
   SilcMPInt r, base, tmp;
   int i, ret = 0;
-  
+
   silc_mp_init(&r);
   silc_mp_init(&tmp);
   silc_mp_init(&base);
   silc_mp_set_ui(&base, 2);
-  
+
   SILC_LOG_DEBUG(("Testing probability of prime"));
 
   /* See if the number is divisible by any of the
      small primes in primetable[]. */
   for (i = 0; primetable[i] != 0; i++) {
     silc_mp_mod_ui(&tmp, p, primetable[i]);
-    
+
     /* If mod is 0, the number is composite */
     if (silc_mp_cmp_ui(&tmp, 0) == 0)
       ret = -1;
   }
-  
+
   /* Does the prime pass the Fermat's prime test.
    * r = 2 ^ p mod p, if r == 2, then p is probably a prime.
    */
@@ -346,7 +353,7 @@ bool silc_math_prime_test(SilcMPInt *p)
   silc_mp_uninit(&r);
   silc_mp_uninit(&tmp);
   silc_mp_uninit(&base);
-  
+
   if (ret)
     return FALSE;
 

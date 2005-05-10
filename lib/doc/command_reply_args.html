@@ -399,6 +399,20 @@ SilcPublicKey public_key
 </td>
 </tr>
 
+<tr>
+<td><small>SILC_COMMAND_SERVICE</td>
+<td><small>
+Returns the service list in the server, or information on the accepted
+and authenticated service.  The 'service_list' maybe NULL if server does
+not support any services.  It is NULL also when 'name' is not NULL.  The
+'service_list' is a comma separated list of services the server supports.
+The 'name' MAY be NULL also.  The 'name' is the requested service, and it is
+non-NULL only if server accepted and authenticated client's request.
+</td>
+<td width="50%"><small>const char *server_list, const char *service_name
+</td>
+</tr>
+
 </table>
 
 <br />&nbsp;<br />

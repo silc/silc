@@ -340,7 +340,7 @@ void silc_sftp_fs_memory_free(SilcSFTPFilesystem fs);
  *
  * SYNOPSIS
  *
- *    void *silc_sftp_fs_memory_add_dir(void *context, void *dir,
+ *    void *silc_sftp_fs_memory_add_dir(SilcSFTPFilesystem fs, void *dir,
  *                                      SilcSFTPFSMemoryPerm perm,
  *                                      const char *name);
  *

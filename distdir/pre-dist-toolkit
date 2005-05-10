@@ -1,0 +1,16 @@
+#!/bin/sh
+
+distribution=$1
+dist_version=$2
+package=$3
+distdir=$4
+
+./configure --with-irssi --with-silcd
+
+cd doc
+make dist-hook
+rm -rf toolkit
+make toolkit-ref-html
+cp ../lib/doc/*.gif toolkit
+cd ..
+

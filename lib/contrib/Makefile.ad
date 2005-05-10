@@ -1,0 +1,52 @@
+#
+#  Makefile.am
+#
+#  Author: Pekka Riikonen <priikone@silcnet.org>
+#
+#  Copyright (C) 2000 - 2005 Pekka Riikonen
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+
+AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
+
+noinst_LTLIBRARIES = libcontrib.la
+
+if HAVE_REGEX
+REGEX =
+else
+REGEX = regexpr.c
+endif
+
+STRINGPREP = nfkc.c rfc3454.c stringprep.c
+
+if SILC_WIN32
+libcontrib_la_SOURCES = getopti.c $(STRINGPREP)
+else
+libcontrib_la_SOURCES = getopti.c $(STRINGPREP) $(REGEX)
+endif
+
+#ifdef SILC_DIST_TOOLKIT
+if HAVE_REGEX
+REGEXH =
+else
+REGEXH = regexpr.h
+endif
+include_HEADERS =       \
+	$(REGEXH)	\
+	getopti.h	\
+	gunicomp.h	\
+	gunidecomp.h	\
+	stringprep.h
+#endif SILC_DIST_TOOLKIT
+
+EXTRA_DIST = *.c *.h
+
+include $(top_srcdir)/Makefile.defines.in

@@ -231,29 +231,13 @@ SOURCE=..\..\lib\silcutil\win32\silcwin32util.c
 # Begin Group "silcmath"
 
 # PROP Default_Filter ""
-# Begin Group "mpi"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\lib\silcmath\mpi\mpi.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silcmath\mpi\mplogic.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silcmath\mpi\mpmontg.c
-# End Source File
-# End Group
 # Begin Source File
 
 SOURCE=..\..\lib\silcmath\modinv.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcmath\mp_mpi.c
+SOURCE=..\..\lib\silcmath\mp_tma.c
 # End Source File
 # Begin Source File
 
@@ -262,6 +246,10 @@ SOURCE=..\..\lib\silcmath\mpbin.c
 # Begin Source File
 
 SOURCE=..\..\lib\silcmath\silcprimegen.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcmath\tma.c
 # End Source File
 # End Group
 # Begin Group "silccrypt"
@@ -515,41 +503,9 @@ SOURCE=..\..\lib\silcutil\silcvcard.h
 # Begin Group "silcmath No. 1"
 
 # PROP Default_Filter ""
-# Begin Group "mpi No. 1"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\lib\silcmath\mpi\logtab.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silcmath\mpi\montmulf.h
-# End Source File
-# Begin Source File
-
-SOURCE="..\..\lib\silcmath\mpi\mpi-config.h"
-# End Source File
-# Begin Source File
-
-SOURCE="..\..\lib\silcmath\mpi\mpi-priv.h"
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silcmath\mpi\mpi.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silcmath\mpi\mplogic.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silcmath\mpi\mpprime.h
-# End Source File
-# End Group
-# Begin Source File
-
-SOURCE=..\..\lib\silcmath\mp_mpi.h
+SOURCE=..\..\lib\silcmath\mp_tma.h
 # End Source File
 # Begin Source File
 
@@ -558,6 +514,18 @@ SOURCE=..\..\lib\silcmath\silcmath.h
 # Begin Source File
 
 SOURCE=..\..\lib\silcmath\silcmp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcmath\tma.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcmath\tma_class.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcmath\tma_superclass.h
 # End Source File
 # End Group
 # Begin Group "silccrypt No. 1"

@@ -4,12 +4,11 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  the Free Software Foundation; version 2 of the License.
   
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -61,7 +60,9 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
   thread->start_func = start_func;
   thread->context = context;
   thread->waitable = waitable;
-  thread->thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)silc_thread_win32_start, (void *)thread, 0, &id);
+  thread->thread =
+    CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)silc_thread_win32_start,
+		 (void *)thread, 0, &id);
 
   if (!thread->thread) {
     SILC_LOG_ERROR(("Could not create new thread"));
@@ -113,7 +114,7 @@ SilcThread silc_thread_self(void)
   }
 
   return (SilcThread)self;
-#else
+	#else
   return NULL;
 #endif
 }
@@ -130,9 +131,7 @@ bool silc_thread_wait(SilcThread thread, void **exit_value)
 
   /* The thread is waitable thus we will free all memory after the
      WaitForSingleObject returns, the thread is destroyed after that. */
-
-  /* 2 sec timeout, otherwise we would run to infinite loop some cases.. */
-  if (WaitForSingleObject(self->thread, 2000) == WAIT_TIMEOUT)
+  if (WaitForSingleObject(self->thread, 2500) == WAIT_TIMEOUT)
     TerminateThread(self->thread, 0);
 
   silc_free(self);

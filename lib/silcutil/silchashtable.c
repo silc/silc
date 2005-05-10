@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2003 Pekka Riikonen
+  Copyright (C) 2001 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -77,12 +77,13 @@ struct SilcHashTableStruct {
 
 /* Prime sizes for the hash table. The size of the table will always
    be one of these. */
-const SilcUInt32 primesize[42] =
+const SilcUInt32 primesize[] =
 {
   3, 5, 11, 17, 37, 67, 109, 131, 163, 257, 367, 521, 823, 1031,
-  1237, 2053, 2777, 4099, 6247, 8209, 14057, 16411, 21089, 32771, 47431,
-  65537, 106721, 131101, 262147, 360163, 524309, 810343, 1048583, 2097169,
-  4194319, 6153409, 8388617, 13845163, 16777259, 33554467, 67108879
+  1237, 1447, 2053, 2389, 2777, 3323, 4099, 5059, 6247, 7001, 8209, 10993,
+  14057, 16411, 19181, 21089, 25033, 32771, 40009, 47431, 65537, 106721,
+  131101, 262147, 360163, 524309, 810343, 1048583, 2097169, 4194319,
+  6153409, 8388617, 13845163, 16777259, 33554467, 67108879
 };
 
 /* Find appropriate size for the hash table. The size will be a prime. */

@@ -29,9 +29,6 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silccore"
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silccrypt"
 #ifdef SILC_DIST_MATH
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcmath"
-#ifdef SILC_DIST_MPI
-SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcmath/mpi"
-#endif SILC_DIST_MPI
 #endif SILC_DIST_MATH
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcutil"
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcske"
@@ -86,6 +83,25 @@ AC_SUBST(LIBSILCCLIENT_CURRENT)
 AC_SUBST(LIBSILCCLIENT_REVISION)
 AC_SUBST(LIBSILCCLIENT_AGE)
 
+#ifdef SILC_DIST_SIM
+# SIM modules directory
+#
+MODULESDIR="$silc_prefix/modules"
+AC_ARG_WITH(simdir,
+  [[  --with-simdir=DIR       directory for SIM modules [PREFIX/modules]]],
+  [
+    case "$withval" in
+      no|yes)
+        ;;
+      *)
+        MODULESDIR="$withval"
+        ;;
+    esac
+  ])
+AC_SUBST(MODULESDIR)
+AC_DEFINE_UNQUOTED([SILC_MODULESDIR], "$MODULESDIR", [SILC_MODULESDIR])
+#endif SILC_DIST_SIM
+
 #ifdef SILC_DIST_TOOLKIT
 # Stack trace checking
 #
@@ -125,9 +141,6 @@ lib/silcutil/win32/Makefile
 lib/silcutil/beos/Makefile
 lib/silcutil/os2/Makefile
 lib/silcutil/epoc/Makefile
-#ifdef SILC_DIST_MATH
-lib/silcmath/Makefile
-#endif SILC_DIST_MATH
 #ifdef SILC_DIST_SFTP
 lib/silcsftp/Makefile
 #endif SILC_DIST_SFTP

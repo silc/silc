@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2005 Pekka Riikonen
+#  Copyright (C) 2005 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -17,28 +17,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LTLIBRARIES = libcontrib.la
+bin_PROGRAMS = silcstress
+silcstress_SOURCES = silcstress.c
 
-if HAVE_GETOPT_LONG
-GETOPT =
-else
-GETOPT = getopt.c getopt1.c
-endif
-
-if HAVE_REGEX
-REGEX =
-else
-REGEX = regex.c
-endif
-
-STRINGPREP = nfkc.c rfc3454.c stringprep.c
-
-if SILC_WIN32
-libcontrib_la_SOURCES = $(STRINGPREP)
-else
-libcontrib_la_SOURCES = $(STRINGPREP) $(GETOPT) $(REGEX)
-endif
-
-EXTRA_DIST = *.c *.h
+LIBS = -lsilcclient $(SILC_COMMON_LIBS)
 
 include $(top_srcdir)/Makefile.defines.in

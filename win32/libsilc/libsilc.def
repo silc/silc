@@ -98,7 +98,7 @@ EXPORTS
 	silc_command_set_command @ 323 ;
 	silc_command_set_ident @ 324 ;
 	silc_config_open @ 327 ;
-	silc_debug @ 328 DATA ;
+	silc_log_debug @ 328;
 	silc_pem_decode @ 329 ;
 	silc_default_ciphers @ 330 DATA ;
 	silc_default_hash @ 331 DATA ;
@@ -522,10 +522,10 @@ EXPORTS
 	silc_log_reset_all @ 844 ;
 	silc_log_flush_all @ 845 ;
 	silc_log_get_file @ 846 ;
-	silc_log_quick @ 847 DATA ;
-	silc_log_flushdelay @ 848 DATA ;
+	silc_log_quick @ 847;
+	silc_log_flushdelay @ 848;
 	silc_hash_table_list_reset @ 849 ;
-	silc_debug_hexdump @ 850 DATA ;
+	silc_log_debug_hexdump @ 850;
 	silc_memdup @ 851 ;
 	silc_command_get_status @ 852 ;
 	silc_utf8_encode @ 853 ;

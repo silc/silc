@@ -80,6 +80,7 @@ Integrating Autodist
 * Makefile.ad files::           Makefile.ad for creating Makefile.am
 * Other .ad files::             Other files with .ad suffix
 * Distdefines::                 Using distdefs in files
+* Dependencies::                Autodist dependency support
 
 Invoking Autodist
 
@@ -240,6 +241,7 @@ as they may not exist yet.
 * Makefile.ad files::           Makefile.ad for creating Makefile.am
 * Other .ad files::             Other files with .ad suffix
 * Distdefines::                 Using distdefs in files
+* Dependencies::                Autodist dependency support
 @end menu
 
 
@@ -500,6 +502,10 @@ Will replace all appearances of the license header in 'license/BSD-header'
 file to the license header in 'license/GPL-header' in any file in the
 distribution.  Note that, the header change will be performed when
 the distribution is packaged (@pxref{Creating distribution, , , , }).
+The 'makedist.log' file created by Autodist during distribution packaging
+will list all files that were not re-licensed.  The log file can be used
+to check that the distribution is re-licensed correctly, and fix any
+possible mistakes.
 
 With 'license-header' directive you may initially set your files in the
 source tree into what ever license you prefer.  However, if you need to
@@ -581,13 +587,14 @@ into the distribution.  The <distfile> specifies the name of the
 inherited distribution.  If the distribution cannot be inherited Autodist
 will give an error.
 
-The 'inherit' will inherit the following information from the distribution:
-distdefs, undefines, includes, excludes and noprocess.  Other information
-will not be inherited.  If the inherited distribution inherits other
-distributions, they will also be inherited automatically.  User should be
-careful when inheriting distributions as it may be possible to create an
-infinite recursion.  The Autodist would allow for this and not detect this
-error.  Zero or more 'inherit' directives may be set for distribution.
+The 'inherit' will inherit the following information from the 
+distribution: distdefs, undefines, includes, excludes and noprocesses.  
+Other information will not be inherited.  If the inherited distribution 
+inherits other distributions, they will also be inherited automatically.  
+User should be careful when inheriting distributions as it may be possible 
+to create an infinite recursion.  The Autodist would allow for this and 
+not detect this error.  Zero or more 'inherit' directives may be set for 
+distribution.
 
 Example:
 @example
@@ -599,6 +606,21 @@ inherit toolkit
 Will inherit distributions 'common', 'client' and 'toolkit' into this
 distribution.  All distdefs, undefines, includes, excludes and noprocesses
 from these distributions are now also part this distribution.
+
+The distribution that is being prepared or packaged take precedence when 
+defining distdefs that were specificly undefined in the inherited 
+distribution.  This means that if the inherited distribution specificly 
+undefines a distdefs but the inheriting distribution (one being prepared 
+or packaged) specificly defines it, the distdef will be defined.  
+Similarly, if the inherited distribution defines a distdef but the 
+inheriting distribution undefines it, the distdef will be undefined.  
+Note that, this precedence works only in the top distribution (the one 
+being prepared or packaged).  If the inherited distribution inherits other 
+distributions, all distdefs (defined and specificly undefined) will be 
+inherited as is.  This means that if one inherited distribution defines a 
+distdef that other inherited distribution distdef undefines, it will be 
+undefined.  However, the top distribution can then override them if 
+needed.
 
 
 @section Directive: define <symbol>
@@ -769,26 +791,24 @@ This will exclude the file 'README' and anything that match 'doc/client*'.
 
 @section Directive: noprocess <filename> [...]
 
-The 'noprocess' directive can be used to tell Autodist specificly not to
-process a file.  The Autodist will not process the file during
-preparation or during distribution packaging.  This directive is optional.
-One or more file can be specified in the 'noprocess' directive.  Zero or
-more 'noprocess' directives can be used in distribution.  The <filename>
-can be a single file or a regular expression that will match several files.
-Note that, in current Autodist version 'noprocess' cannot be used to
-specify directories.
+The 'noprocess' directive can be used to tell Autodist specificly not to 
+process files or directories.  The Autodist will not process the files 
+during distribution packaging.  This directive is optional.  One or more 
+files can be specified in the 'noprocess' directive.  Zero or more 
+'noprocess' directives can be used in distribution.  The <filename> can be 
+a single file, a single directory or a regular expression that will match 
+several files and/or directories.
 
 Example:
 @example
 noprocess autodist.texi
-noprocess apps/foo/*
+noprocess apps/foo/
 @end example
 
-Autodist will not process 'autodist.texi' file, and any file that match
-'apps/foo/*'.  Note that, any subdirectory under 'apps/foo/' will not
-match, and will be processed.
+Autodist will not process 'autodist.texi' file, and any files and 
+directories under 'apps/foo/'.
 
-Also note that, 'noprocess' directive cannot be used to disallow 
+Note that, 'noprocess' directive cannot be used to disallow 
 processing of any file with '.ad' suffix.
 
 
@@ -1002,7 +1022,21 @@ macro 'AC_OUTPUT'.  This macro has no arguments.
 Note that, the 'configure.ad' fragments are not real full featured
 configure scripts.  They must not use 'AD_INIT', 'AD_INCLUDE_CONFIGURE',
 'AC_INIT' or any other initialization macros.
+@end defmac
 
+
+@defmac AD_DISABLE_DEPENDENCIES
+
+This macro is used to disable Autodist dependencies.  If this macro is
+used, then after editing 'Makefile.ad' and 'configure.ad' files the
+Autodist must be run manually.  When dependencies are enabled Autodist is
+run automatically when source is compiled with 'make'.  Dependencies make
+the development easier.  This macro has no arguments.
+
+Note that, the dependencies are enabled only in the prepared source tree.  
+Depedencies are not delivered to distribution, as they would require the 
+presence of 'Makefile.ad' and 'configure.ad' files, which are not 
+delivered to distribution.
 @end defmac
 
 @menu
@@ -1050,7 +1084,9 @@ If you need processed files during configuration or compilation then they
 need to have '.ad' suffix.
 
 Note that, the distdef format used in these files must be the non-source
-format.
+format, even if the file is source file.  This is because the distdefs
+are processed during source tree preparation, and the source file will
+have all distdefs removed when it is compiled.
 
 @menu
 * Distdefines::                 Using distdefs in files
@@ -1240,7 +1276,39 @@ The following suffixes will be considered as source files by the Autodist:
     .hh
 @end example
 
+Also, any file that has '.in' suffix with any of the above source file 
+suffixes, the format inside the file must follow the source code format.  
 Using distdefs in any other file must follow the non-source format.
+
+Example:
+@example
+    .c.in
+    .h.in
+@end example
+
+In this example, in both of the files the source code format is used.
+
+
+@node Dependencies
+@section Autodist dependency support
+
+Autodist support dependencies for 'Makefile.ad' and 'configure.ad' files.  
+When these files are edited, they are processed by Autodist automatically 
+when the source tree is compiled with 'make'.  This makes development in 
+the source tree easier, when Autodist does not have to be run manually.
+The dependencies can be disabled by using 'AD_DISABLE_DEPENDENCIES' macro 
+in the 'configure.ad' file.
+
+When editing 'configure.ad' fragments the modifcation is detected when the 
+source tree is compiled with 'make' from the top source directory.  
+Giving 'make' in a subdirectory will not detect a change in 'configure.ad' 
+fragment.
+
+Dependencies are present only in the prepared source tree.  They are not 
+delivered to created distribution, as they depend on 'Makefile.ad' and 
+'configure.ad' files which are not present in the created distribution.  
+Autodist automatically removes the dependencies when the distribution is 
+created.
 
 
 @node Invoking Autodist
@@ -1281,6 +1349,12 @@ Prints distribution defines of <dist> and exits.
 Initializes Autodist environment.  Creates the default distribution
 directory 'distdir', 'autodist.conf' configuration file and the
 default distribution 'default', then exits.
+
+@item -p
+@itemx --process <type> <src> <dst>
+Process file <src> into <dst> for distribution, <type> is 'makefile',
+'configure', 'non-source' or 'source' and defines the type of <src>,
+then exits.
 
 @item -m
 @itemx --makedist
@@ -1391,6 +1465,9 @@ Creating the distribution that file will be read by the Autodist
 automatically.  That file should not be removed or the distribution
 cannot be packaged.
 
+Autodist also created a log file, 'autodist.log', that will include
+messages created by Autodist during preparation.
+
 @menu
 * Creating distribution::       Creating distribution with Autodist
 @end menu
@@ -1431,6 +1508,14 @@ are being packaged you may set 'pre-process-dist-hook',
 'post-process-dist-hook, 'pre-dist-hook' and/or 'post-dist-hook' in your 
 distribution file.  Also note that any hooks provided by Automake in 
 Makefiles will be run in normal manner.
+
+When creating the distribution Autodist creates a log file, 
+'makedist.log', that will include messages created by Autodist.  It is 
+suggested that this file is checked after distribution is created.  For 
+example, when the 'license-header' directive is used to re-license the 
+distribution, the 'makedist.log' will include list of files that were not 
+re-licensed.  The log file can be used to verify that the distribution was 
+re-licensed correctly, and fix any possible mistakes.
 
 
 @node Examples

@@ -1,0 +1,67 @@
+#ifdef SILC_DIST_CLIENT
+#
+#  apps/irssi/configure.ad
+#
+#  Author: Pekka Riikonen <priikone@silcnet.org>
+#
+#  Copyright (C) 2005 Pekka Riikonen
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+
+# The actual configure script is apps/irssi/configure.in.  This file is
+# for getting irssi specific stuff to top configure script with Autodist
+# without polluting the top configure.ad file with these stuff.
+
+IRSSI_SUBDIR=
+
+#ifdef SILC_DIST_TOOLKIT
+if test x$without_irssi = xfalse; then
+#endif SILC_DIST_TOOLKIT
+
+IRSSI_SUBDIR=irssi
+
+# help directory
+#
+HELPDIR="$silc_prefix/help"
+AC_ARG_WITH(helpdir,
+  [[  --with-helpdir=DIR      directory for SILC Client help files [PREFIX/help]]],
+  [
+    case "$withval" in
+      no|yes)
+        ;;
+      *)
+       HELPDIR="$withval"
+       ;;
+    esac
+  ])
+AC_SUBST(HELPDIR)
+AC_DEFINE_UNQUOTED([SILC_HELPDIR], "$HELPDIR", [SILC_HELPDIR])
+
+# Irssi perl support
+#
+AC_ARG_WITH(perl,
+  [[  --with-perl[=yes|no|module]  Build with Perl support - also specifies
+                               if it should be built into main silc binary
+                               (static, default) or as a module]])
+
+AC_CONFIG_SUBDIRS(apps/irssi)
+AC_CONFIG_FILES(
+apps/irssi/Makefile.defines
+apps/irssi/Makefile.defines_int
+)
+
+irssi="yes"
+#ifdef SILC_DIST_TOOLKIT
+fi	# without_irssi = false
+#endif SILC_DIST_TOOLKIT
+
+AC_SUBST(IRSSI_SUBDIR)
+#endif SILC_DIST_CLIENT

@@ -1,51 +1,51 @@
 /*
- * rsa.c 	RSA Public and Private key generation functions,
- *	   	RSA encrypt and decrypt functions.
- *
- * Author: Pekka Riikonen <priikone@silcnet.org>
- *
- * Copyright (C) 1997 - 2003 Pekka Riikonen
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * Created: Sat Mar  1 13:26:45 1997 pekka
- *
- * RSA public key cryptographic algorithm used in this distribution is:
- *
- * 	Key generation:
- * 	p, q		primes
- * 	p != q
- *	n = p * q	modulus
- *
- *	Public key exponent:
- *	e   relatively prime to (p-1) * (q-1)
- *	Private key exponent:
- *	d = e ^ -1 mod lcm(((p-1) * (q-1)))
- *
- *	Encryption:
- *	c = m ^ e mod n
- *	Decryption:
- *	m = c ^ d mod n
- *
- * Supports CRT (Chinese Remainder Theorem) for private key operations.
- *
- * The SSH's (Secure Shell), PGP's (Pretty Good Privacy) and RSAREF
- * Toolkit were used as reference when coding this implementation. They
- * all were a big help for me.
- *
- * I also suggest reading Bruce Schneier's; Applied Cryptography, Second
- * Edition, John Wiley & Sons, Inc. 1996. This book deals about RSA and
- * everything else too about cryptography.
- *
- */
+
+  rsa.c 	RSA Public and Private key generation functions,
+ 	   	RSA encrypt and decrypt functions.
+ 
+  Author: Pekka Riikonen <priikone@silcnet.org>
+ 
+  Copyright (C) 1997 - 2005 Pekka Riikonen
+ 
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; version 2 of the License.
+ 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+ 
+  Created: Sat Mar  1 13:26:45 1997 pekka
+ 
+  RSA public key cryptographic algorithm used in this distribution is:
+ 
+  	Key generation:
+  	p, q		primes
+  	p != q
+ 	n = p * q	modulus
+ 
+ 	Public key exponent:
+ 	e   relatively prime to (p-1) * (q-1)
+ 	Private key exponent:
+ 	d = e ^ -1 mod lcm(((p-1) * (q-1)))
+ 
+ 	Encryption:
+ 	c = m ^ e mod n
+ 	Decryption:
+ 	m = c ^ d mod n
+ 
+  Supports CRT (Chinese Remainder Theorem) for private key operations.
+ 
+  The SSH's (Secure Shell), PGP's (Pretty Good Privacy) and RSAREF
+  Toolkit were used as reference when coding this implementation. They
+  all were a big help for me.
+ 
+  I also suggest reading Bruce Schneier's; Applied Cryptography, Second
+  Edition, John Wiley & Sons, Inc. 1996. This book deals about RSA and
+  everything else too about cryptography.
+ 
+*/
 /* $Id$ */
 
 /*

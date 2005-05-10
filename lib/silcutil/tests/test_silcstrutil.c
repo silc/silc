@@ -52,12 +52,30 @@ int main(int argc, char **argv)
 {
   bool success = FALSE;
   unsigned char *s1, *s2, *s3, *s4;
-  int l;
+  int l, opt;
 
-  if (argc > 1 && !strcmp(argv[1], "-d")) {
-    silc_debug = 1;
-    silc_debug_hexdump = 1;
-    silc_log_set_debug_string("*strutil*");
+  while ((opt = getopt(argc, argv, "hVd")) != EOF) {
+      switch(opt) {
+        case 'h':
+          printf("usage: test_silcstrutil\n");
+	  exit(0);
+          break;
+        case 'V':
+          printf("Secure Internet Live Conferencing\n");
+          exit(0);
+          break;
+        case 'd':
+          silc_debug = TRUE;
+	  silc_debug_hexdump = TRUE;
+          if (optarg)
+            silc_log_set_debug_string(optarg);
+	  else
+	    silc_log_set_debug_string("*strutil*");
+          break;
+	default:
+	  exit(1);
+	  break;
+      }
   }
 
   /* Failure tests */

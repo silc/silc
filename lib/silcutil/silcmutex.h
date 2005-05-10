@@ -1,16 +1,15 @@
 /*
 
   silcmutex.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
-  Copyright (C) 2001 Pekka Riikonen
- 
+
+  Copyright (C) 2001 - 2005 Pekka Riikonen
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
- 
+  the Free Software Foundation; version 2 of the License.
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -23,7 +22,7 @@
  * DESCRIPTION
  *
  * Interface for the SILC Mutex locking implementation. This is platform
- * independent mutual exclusion interface for applications that need 
+ * independent mutual exclusion interface for applications that need
  * concurrency control.
  *
  ***/
@@ -34,7 +33,7 @@
 /****s* silcutil/SilcMutexAPI/SilcMutex
  *
  * NAME
- * 
+ *
  *    typedef struct SilcMutexStruct *SilcMutex;
  *
  * DESCRIPTION
@@ -49,7 +48,7 @@ typedef struct SilcMutexStruct *SilcMutex;
 /****d* silcutil/SilcMutexAPI/SILC_MUTEX_DEFINE
  *
  * NAME
- * 
+ *
  *    #define SILC_MUTEX_DEFINE(name) ...
  *
  * DESCRIPTION
@@ -87,7 +86,8 @@ bool silc_mutex_alloc(SilcMutex *mutex);
  *
  * DESCRIPTION
  *
- *    Free SILC Mutex object and frees all allocated memory.
+ *    Free SILC Mutex object and frees all allocated memory.  If `mutex'
+ *    is NULL this function has no effect.
  *
  ***/
 void silc_mutex_free(SilcMutex mutex);
@@ -102,7 +102,8 @@ void silc_mutex_free(SilcMutex mutex);
  *
  *    Locks the mutex. If the mutex is locked by another thread the
  *    current thread will block until the other thread has issued
- *    silc_mutex_unlock for the mutex.
+ *    silc_mutex_unlock for the mutex.  If `mutex' is NULL this function
+ *    has no effect.
  *
  * NOTES
  *
@@ -122,7 +123,8 @@ void silc_mutex_lock(SilcMutex mutex);
  * DESCRIPTION
  *
  *    Unlocks the mutex and thus releases it for another thread that
- *    may be waiting for the lock.
+ *    may be waiting for the lock.  If `mutex' is NULL this function
+ *    has no effect.
  *
  * NOTES
  *

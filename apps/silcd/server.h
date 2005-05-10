@@ -86,6 +86,7 @@ typedef struct {
 #define SILC_SERVER_QOS_BYTES_LIMIT    2048      /* Default QoS bytes limit */
 #define SILC_SERVER_QOS_LIMIT_SEC      0         /* Default QoS limit sec */
 #define SILC_SERVER_QOS_LIMIT_USEC     500000    /* Default QoS limit usec */
+#define SILC_SERVER_CH_JOIN_LIMIT      50        /* Default join limit */
 
 /* Macros */
 

@@ -4,13 +4,13 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001, 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -48,8 +48,6 @@ static int idletag = -1;
 
 SilcClient silc_client = NULL;
 extern SilcClientOperations ops;
-extern bool silc_debug;
-extern bool silc_debug_hexdump;
 
 void silc_expandos_init(void);
 void silc_expandos_deinit(void);
@@ -94,8 +92,8 @@ static void destroy_server_connect(SERVER_CONNECT_REC *conn)
 static void silc_init_userinfo(void)
 {
   const char *set, *nick, *user_name;
-  char *str;   
-        
+  char *str;
+
   /* check if nick/username/realname wasn't read from setup.. */
   set = settings_get_str("real_name");
   if (set == NULL || *set == '\0') {
@@ -105,7 +103,7 @@ static void silc_init_userinfo(void)
     settings_set_str("real_name",
 		     str != NULL ? str : silc_get_real_name());
   }
- 
+
   /* username */
   user_name = settings_get_str("user_name");
   if (user_name == NULL || *user_name == '\0') {
@@ -125,10 +123,10 @@ static void silc_init_userinfo(void)
     if (!str)
       str = g_getenv("IRCNICK");
     settings_set_str("nick", str != NULL ? str : user_name);
-    
+
     nick = settings_get_str("nick");
   }
-                
+
   /* alternate nick */
   set = settings_get_str("alternate_nick");
   if (set == NULL || *set == '\0') {
@@ -165,14 +163,15 @@ static void sig_setup_changed(void)
   bool debug = settings_get_bool("debug");
   if (debug) {
     const char *debug_string = settings_get_str("debug_string");
-    i_debug = silc_debug = TRUE;
+    i_debug = TRUE;
+    silc_log_debug(TRUE);
     if (strlen(debug_string))
       silc_log_set_debug_string(debug_string);
     silc_log_set_debug_callbacks(silc_irssi_debug_print, NULL, NULL, NULL);
     return;
   }
   if (i_debug)
-    silc_debug = FALSE;
+    silc_log_debug(FALSE);
 #endif
 }
 
@@ -180,7 +179,7 @@ static void sig_setup_changed(void)
 
 static bool silc_log_misc(SilcLogType type, char *message, void *context)
 {
-  printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP, "%s: %s", 
+  printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP, "%s: %s",
 	    (type == SILC_LOG_INFO ? "[Info]" :
 	     type == SILC_LOG_WARNING ? "[Warning]" : "[Error]"), message);
   return TRUE;
@@ -202,7 +201,7 @@ static void silc_register_cipher(SilcClient client, const char *cipher)
 	silc_cipher_register(&(silc_default_ciphers[i]));
 	break;
       }
-    
+
     if (!silc_cipher_is_supported(cipher)) {
       SILC_LOG_ERROR(("Unknown cipher `%s'", cipher));
       exit(1);
@@ -223,7 +222,7 @@ static void silc_register_hash(SilcClient client, const char *hash)
 	silc_hash_register(&(silc_default_hash[i]));
 	break;
       }
-    
+
     if (!silc_hash_is_supported(hash)) {
       SILC_LOG_ERROR(("Unknown hash function `%s'", hash));
       exit(1);
@@ -244,7 +243,7 @@ static void silc_register_hmac(SilcClient client, const char *hmac)
 	silc_hmac_register(&(silc_default_hmacs[i]));
 	break;
       }
-    
+
     if (!silc_hmac_is_supported(hmac)) {
       SILC_LOG_ERROR(("Unknown HMAC `%s'", hmac));
       exit(1);
@@ -257,18 +256,18 @@ static void silc_register_hmac(SilcClient client, const char *hmac)
 
 /* Finalize init. Init finish signal calls this. */
 
-void silc_opt_callback(poptContext con, 
+void silc_opt_callback(poptContext con,
 		       enum poptCallbackReason reason,
 		       const struct poptOption *opt,
 		       const char *arg, void *data)
 {
   if (strcmp(opt->longName, "nick") == 0) {
-    g_free(silc_client->nickname);  
+    g_free(silc_client->nickname);
     silc_client->nickname = g_strdup(arg);
   }
 
   if (strcmp(opt->longName, "hostname") == 0) {
-    silc_free(silc_client->hostname);  
+    silc_free(silc_client->hostname);
     silc_client->hostname = g_strdup(arg);
   }
 
@@ -297,11 +296,11 @@ void silc_opt_callback(poptContext con,
   }
 
   if (strcmp(opt->longName, "debug") == 0) {
-    silc_debug = TRUE;
-    silc_debug_hexdump = TRUE;
+    silc_log_debug(TRUE);
+    silc_log_debug_hexdump(TRUE);
     silc_log_set_debug_string(arg);
 #ifndef SILC_DEBUG
-    fprintf(stdout, 
+    fprintf(stdout,
 	    "Run-time debugging is not enabled. To enable it recompile\n"
 	    "the client with --enable-debug configuration option.\n");
     sleep(1);
@@ -476,14 +475,14 @@ void silc_core_init(void)
   rec->create_channel_setup = create_channel_setup;
   rec->create_server_connect = create_server_connect;
   rec->destroy_server_connect = destroy_server_connect;
-  rec->server_init_connect = silc_server_init_connect; 
+  rec->server_init_connect = silc_server_init_connect;
   rec->server_connect = silc_server_connect;
-  rec->channel_create = (CHANNEL_REC *(*) (SERVER_REC *, const char *, 
+  rec->channel_create = (CHANNEL_REC *(*) (SERVER_REC *, const char *,
 					   const char *, int))
     silc_channel_create;
   rec->query_create = (QUERY_REC *(*) (const char *, const char *, int))
     silc_query_create;
-  
+
   chat_protocol_register(rec);
   g_free(rec);
 
@@ -504,7 +503,7 @@ void silc_core_deinit(void)
 {
   if (idletag != -1)
     g_source_remove(idletag);
-  
+
   signal_emit("chat protocol deinit", 1,
       	chat_protocol_find("SILC"));
   signal_remove("setup changed", (SIGNAL_FUNC) sig_setup_changed);
@@ -517,9 +516,9 @@ void silc_core_deinit(void)
   silc_expandos_deinit();
   silc_lag_deinit();
   silc_chatnets_deinit();
-  
+
   chat_protocol_unregister("SILC");
-  
+
   g_free(silc_client->username);
   g_free(silc_client->realname);
   silc_free(silc_client->hostname);

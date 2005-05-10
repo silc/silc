@@ -33,6 +33,7 @@ static SilcServer silcd;
 
 static void silc_usage(void);
 
+#ifdef HAVE_GETOPT_LONG
 /* Long command line options */
 static struct option long_opts[] =
 {
@@ -53,6 +54,7 @@ static struct option long_opts[] =
 
   { NULL, 0, NULL, 0 }
 };
+#endif /* HAVE_GETOPT_LONG */
 
 /* Command line option variables */
 static char *opt_keypath = NULL;
@@ -590,8 +592,12 @@ int main(int argc, char **argv)
 
   /* Parse command line arguments */
   if (argc > 1) {
+#ifdef HAVE_GETOPT_LONG
     while ((opt = getopt_long(argc, argv, "f:p:d:D:xhFVC:",
 			      long_opts, &option_index)) != EOF) {
+#else
+    while ((opt = getopt(argc, argv, "f:p:d:D:xhFVC:")) != EOF) {
+#endif /* HAVE_GETOPT_LONG */
       switch(opt) {
 	case 'h':
 	  silc_usage();
@@ -606,11 +612,11 @@ int main(int argc, char **argv)
 	  break;
 	case 'd':
 #ifdef SILC_DEBUG
-	  silc_debug = TRUE;
+	  silc_log_debug(TRUE);
+	  silc_log_quick(TRUE);
 	  if (optarg)
 	    silc_log_set_debug_string(optarg);
 	  foreground = TRUE;	    /* implied */
-	  silc_log_quick = TRUE;    /* implied */
 #else
 	  fprintf(stderr,
 		  "Run-time debugging is not enabled. To enable it recompile\n"
@@ -619,11 +625,11 @@ int main(int argc, char **argv)
 	  break;
 	case 'D':
 #ifdef SILC_DEBUG
-	  silc_debug = TRUE;
+	  silc_log_debug(TRUE);
+	  silc_log_quick(TRUE);
 	  if (optarg)
 	    silc_get_debug_level(atoi(optarg));
 	  foreground = TRUE;	    /* implied */
-	  silc_log_quick = TRUE;    /* implied */
 #else
 	  fprintf(stderr,
 		  "Run-time debugging is not enabled. To enable it recompile\n"
@@ -632,10 +638,10 @@ int main(int argc, char **argv)
 	  break;
 	case 'x':
 #ifdef SILC_DEBUG
-	  silc_debug_hexdump = TRUE;
-	  silc_debug = TRUE; /* implied */
+	  silc_log_debug(TRUE);
+	  silc_log_debug_hexdump(TRUE);
+	  silc_log_quick(TRUE);
 	  foreground = TRUE; /* implied */
-	  silc_log_quick = TRUE; /* implied */
 #else
 	  fprintf(stderr,
 		  "Run-time debugging is not enabled. To enable it recompile\n"
@@ -766,12 +772,9 @@ int main(int argc, char **argv)
       snprintf(buf, sizeof(buf) - 1, "%d\n", getpid());
       silc_file_writefile(pidfile, buf, strlen(buf));
     }
-  }
 
-  /* Drop root if we are not in debug mode, so you don't need to bother about
-     file writing permissions and so on */
-  if (!silc_debug)
     silc_server_drop_privs(silcd);
+  }
 
   /* Run the server. When this returns the server has been stopped
      and we will exit. */

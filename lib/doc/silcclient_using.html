@@ -29,7 +29,7 @@ and other utility functions.
 <b>Including Library Headers</b>
 
 <br />&nbsp;<br />
-Your application must include the following includes in your sources to 
+Your application must include the following includes in your sources to
 get access all SILC Client Library routines:
 
 <br />&nbsp;<br />
@@ -83,7 +83,7 @@ manner:
 `context' can be some application specific context that will be saved into
 the SilcClient object.  It is up to the caller to free this context.
 SilcClient is always passed to the application thus the application
-specific context can be retrieved from the SilcClient object.  See 
+specific context can be retrieved from the SilcClient object.  See
 `client.h' file for detailed definition of SilcClient object.
 
 <br />&nbsp;<br />
@@ -179,30 +179,30 @@ should initialize the user interface.
 <b>Running the Client in GUI application</b>
 
 <br />&nbsp;<br />
-Many GUI applications has their own main loop or event loop, which they 
-would like to use or are forced to use by the underlaying system.  If you 
-are developing for example GUI application on Unix system, and you are 
-using GTK+ or QT as GUI library you would probably like to use their own 
-main loop.  SILC Client can be run under external main loop as well.  The 
-interface provides a function silc_client_run_one which will run the 
-client library once, and returns immediately.  During that running it can 
-process incoming data and send outgoing data, but it is guaranteed that it 
+Many GUI applications has their own main loop or event loop, which they
+would like to use or are forced to use by the underlaying system.  If you
+are developing for example GUI application on Unix system, and you are
+using GTK+ or QT as GUI library you would probably like to use their own
+main loop.  SILC Client can be run under external main loop as well.  The
+interface provides a function silc_client_run_one which will run the
+client library once, and returns immediately.  During that running it can
+process incoming data and send outgoing data, but it is guaranteed that it
 will not block the calling process.
 
 <br />&nbsp;<br />
-It is suggested that you would call this function as many times in a 
-second as possible to provide smooth action for the client library.  You 
-can use an timeout task, or an idle task provided by your GUI library to 
-accomplish this.  After you have initialized the client library with 
-silc_client_init, you should register the timeout task or idle task that 
-will call the silc_client_run_one periodically.  In the Toolkit package 
-there is GTK-- GUI example in silcer/ directory.  That example calls the 
-silc_client_run_one every 50 milliseconds, and it should be sufficient for 
+It is suggested that you would call this function as many times in a
+second as possible to provide smooth action for the client library.  You
+can use an timeout task, or an idle task provided by your GUI library to
+accomplish this.  After you have initialized the client library with
+silc_client_init, you should register the timeout task or idle task that
+will call the silc_client_run_one periodically.  In the Toolkit package
+there is GTK-- GUI example in silcer/ directory.  That example calls the
+silc_client_run_one every 50 milliseconds, and it should be sufficient for
 smooth working.
 
 <br />&nbsp;<br />
-For Win32 the silc_client_run can be used instead of using the Windows's 
-own event loop.  However, if you would like to use the silc_client_run_one 
+For Win32 the silc_client_run can be used instead of using the Windows's
+own event loop.  However, if you would like to use the silc_client_run_one
 also on Win32 systems it is possible.
 
 
@@ -210,7 +210,7 @@ also on Win32 systems it is possible.
 <b>Running Client in GTK--</b>
 
 <br />&nbsp;<br />
-Here is a short example how to run the SILC Client libary under the 
+Here is a short example how to run the SILC Client libary under the
 Gnome/GTK--'s main loop:
 
 <br />&nbsp;<br />
@@ -238,8 +238,8 @@ Gnome::Main::timeout.connect(slot(this, &YourClass::silc_scheduler), 50);<br />
 </tt>
 
 <br />&nbsp;<br />
-This will call the function silc_scheduler every 50 millisecconds, which 
-on the otherhand will call silc_client_run_one, which will make the SILC 
+This will call the function silc_scheduler every 50 millisecconds, which
+on the otherhand will call silc_client_run_one, which will make the SILC
 Client library work on the background of the GUI application.
 
 
@@ -263,9 +263,9 @@ screen.  IRC is usually implemented this way, however it is not the
 necessary way to associate the client's connections.  SilcClientConnection
 object is provided by the library (and is always passed to the application)
 that can be used in the application to associate the connection from the
-library.  Application specific context can be saved to the 
+library.  Application specific context can be saved to the
 SilcClientConnection object which then can be retrieved in the application,
-thus perhaps associate the connection with what ever object in 
+thus perhaps associate the connection with what ever object in
 application (window or something else).
 
 
@@ -299,7 +299,7 @@ After connection has been created application must call:
 
 <br />&nbsp;<br />
 NOTE: These calls are performed only and only if application did not call
-silc_client_connect_to_server function, but performed the connecting 
+silc_client_connect_to_server function, but performed the connecting
 process manually.
 
 
@@ -317,21 +317,21 @@ debugging is enabled.
 Then, to say in your application you would like to use the debugging use
 the SILC_ENABLE_DEBUG macro.  Put this macro to your main header file, or
 some other file that needs the debugging enabled.  After using this macro
-you are able to use the debugging routines provided by the SILC Toolkit.  
+you are able to use the debugging routines provided by the SILC Toolkit.
 Note that, the Toolkit library must be compiled with --enable-debug for
 this macro to have any effect.
 
 <br />&nbsp;<br />
-To turn on the run-time debugging set the global variable "silc_debug" to
-TRUE.  To see packet hexdumps you can set also "silc_debug_hexdump" to TRUE.
-Hexdumps can create more debug log so not setting it to TRUE by default is
-probably best.  To get debug messages out of specific modules you can set
-a debug string with silc_log_set_debug_string function.  The function takes
-regex string as argument, for example:
+To turn on the run-time debugging call function silc_log_debug with TRUE
+value.  To see packet hexdumps you can call also silc_log_debug_hexdump
+with TRUE value.  Hexdumps can create more debug log so not setting it
+to TRUE by default is probably best.  To get debug messages out of specific
+modules you can set a debug string with silc_log_set_debug_string function.
+The function takes regex string as argument, for example:
 
 <br />&nbsp;<br />
 <tt>
-&nbsp;&nbsp;silc_debug = TRUE;<br />
+&nbsp;&nbsp;silc_log_debug(TRUE);<br />
 &nbsp;&nbsp;silc_log_set_debug_string("*");<br />
 </tt>
 
@@ -457,7 +457,7 @@ int main()
 	/* Start the client. This will start the scheduler. At this phase
 	   the user might have the user interface in front of him already.
 	   He will use the user interface to create the connection to the
-	   server for example. When this function returns the program is 
+	   server for example. When this function returns the program is
 	  ended. */
 	silc_client_run(client);
 

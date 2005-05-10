@@ -2,17 +2,39 @@ name Toolkit
 package silc-toolkit
 bug-report silc-devel@lists.silcnet.org
 
+# Inherits
 inherit common
 inherit client
 inherit server
-define SILC_DIST_TOOLKIT
 
+# License
+license distdir/TOOLKIT
+include distdir/GPL GPL
+include distdir/BSD BSD
+license-header distdir/GPL-header distdir/TOOLKIT-header
+
+# Distdefs
+define SILC_DIST_TOOLKIT
+# SFTP is undefined in server, so force it here
+define SILC_DIST_SFTP
+
+# Includes
 include README.CVS
 include README.WIN32
 include README.MACOSX
-include silcer
+include apps/silcer
+include apps/silc
 include tutorial
+
+# Noprocess to optimize packaging and avoid re-licensing of certain files
+noprocess COPYING GPL BSD
+noprocess doc/toolkit/
+noprocess apps/
+noprocess win32/
+noprocess lib/silcutil/silcconfig.[ch]
 
 pre-hook distdir/pre-run
 post-process-dist-hook distdir/post-process-dist
+pre-dist-hook distdir/pre-dist-toolkit
 post-dist-hook distdir/post-dist
+

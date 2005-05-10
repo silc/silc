@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2003 Pekka Riikonen
+  Copyright (C) 1998 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -595,6 +595,16 @@ bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
     silc_schedule_internal_signals_call(schedule->internal, schedule);
     schedule->signal_tasks = FALSE;
     SILC_SCHEDULE_LOCK(schedule);
+  }
+
+  /* If the task queues aren't initialized or we aren't valid anymore
+     we will return */
+  if ((!schedule->fd_queue && !schedule->timeout_queue
+       && !schedule->generic_queue) || schedule->valid == FALSE) {
+    SILC_LOG_DEBUG(("Scheduler not valid anymore, exiting"));
+    if (!schedule->is_locked)
+      SILC_SCHEDULE_UNLOCK(schedule);
+    return FALSE;
   }
 
   /* If the task queues aren't initialized or we aren't valid anymore

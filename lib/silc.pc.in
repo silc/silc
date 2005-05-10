@@ -7,6 +7,6 @@ Name: @PACKAGE@
 Description: SILC Library
 Version: @VERSION@
 Conflicts: libsilc <= 0.9.12
-Libs: @LIBS@ -L${libdir} -lsilc
+Libs: -L${libdir} -lsilc @LIBS@
 Cflags: -I${includedir}
 

@@ -59,6 +59,10 @@ distribution.
 
 Following directories currently exist in SILC source tree.
 
+  apps/
+
+	All applications.
+
   doc/
 
         Includes all the SILC documentation.  Some of the documentation
@@ -69,7 +73,7 @@ Following directories currently exist in SILC source tree.
 
         Includes SILC include files.
 
-  irssi/
+  apps/irssi/
 
 	Includes the Irssi SILC Client.
 
@@ -136,19 +140,19 @@ Following directories currently exist in SILC source tree.
         Includes the official SILC web pages and everything that relates
         to them.  This directory never appears on public distribution.
 
-  silc/
+  apps/silc/
 
 	Includes an example implementation of ncurses based SILC client.
 	It won't compile with current Toolkit since it is not being 
 	updated.  It is still good example for Toolkit programmer to 
 	figure out how to use SILC Toolkit.
 
-  silcer/
+  apps/silcer/
 
 	Includes an example implementation of GUI (Gnome) base SILC
 	client.  Please read silcer/README for more information.
 
-  silcd/
+  apps/silcd/
 
         Includes SILC server.  There can be some extra files that will
         never appear in public distribution, such as, configuration files.

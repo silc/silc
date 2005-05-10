@@ -1,10 +1,10 @@
 /*
 
-  silchmac.c 
+  silchmac.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1999 - 2001 Pekka Riikonen
+  Copyright (C) 1999 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,13 +24,11 @@
 struct SilcHmacStruct {
   SilcHmacObject *hmac;
   SilcHash hash;
-
-  unsigned char *key;
-  SilcUInt32 key_len;
-
   unsigned char inner_pad[64];
   unsigned char outer_pad[64];
-  bool allocated_hash;		/* TRUE if the hash was allocated */
+  unsigned char *key;
+  unsigned int key_len        : 31;
+  unsigned int allocated_hash : 1;   /* TRUE if the hash was allocated */
 };
 
 #ifndef SILC_EPOC
@@ -146,7 +144,7 @@ bool silc_hmac_unregister(SilcHmacObject *hmac)
   return FALSE;
 }
 
-/* Function that registers all the default hmacs (all builtin ones). 
+/* Function that registers all the default hmacs (all builtin ones).
    The application may use this to register the default hmacs if
    specific hmacs in any specific order is not wanted. */
 
@@ -220,7 +218,7 @@ bool silc_hmac_alloc(const char *name, SilcHash hash, SilcHmac *new_hmac)
     silc_dlist_start(silc_hmac_list);
     while ((entry = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
       if (!strcmp(entry->name, name)) {
-	(*new_hmac)->hmac = entry; 
+	(*new_hmac)->hmac = entry;
 	return TRUE;
       }
     }
@@ -290,7 +288,7 @@ bool silc_hmac_is_supported(const char *name)
 
   if (!name)
     return FALSE;
-  
+
   if (silc_hmac_list) {
     silc_dlist_start(silc_hmac_list);
     while ((entry = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
@@ -323,8 +321,8 @@ char *silc_hmac_get_supported()
     while ((entry = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
       len += strlen(entry->name);
       list = silc_realloc(list, len + 1);
-      
-      memcpy(list + (len - strlen(entry->name)), 
+
+      memcpy(list + (len - strlen(entry->name)),
 	     entry->name, strlen(entry->name));
       memcpy(list + len, ",", 1);
       len++;
@@ -337,8 +335,8 @@ char *silc_hmac_get_supported()
       entry = (SilcHmacObject *)&(silc_default_hmacs[i]);
       len += strlen(entry->name);
       list = silc_realloc(list, len + 1);
-      
-      memcpy(list + (len - strlen(entry->name)), 
+
+      memcpy(list + (len - strlen(entry->name)),
 	     entry->name, strlen(entry->name));
       memcpy(list + len, ",", 1);
       len++;
@@ -383,7 +381,7 @@ void silc_hmac_make(SilcHmac hmac, unsigned char *data,
    key. The key is sent as argument to the function. */
 
 void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
-			     SilcUInt32 data_len, 
+			     SilcUInt32 data_len,
 			     unsigned char *key, SilcUInt32 key_len,
 			     unsigned char *return_hash,
 			     SilcUInt32 *return_len)
@@ -397,7 +395,7 @@ void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
 
 /* Creates the HMAC just as above except that the hash value is truncated
    to the truncated_len sent as argument. NOTE: One should not truncate to
-   less than half of the length of original hash value. However, this 
+   less than half of the length of original hash value. However, this
    routine allows these dangerous truncations. */
 
 void silc_hmac_make_truncated(SilcHmac hmac, unsigned char *data,

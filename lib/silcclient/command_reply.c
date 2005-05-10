@@ -2046,6 +2046,32 @@ SILC_CLIENT_CMD_REPLY_FUNC(getkey)
   silc_client_command_reply_free(cmd);
 }
 
+/* Reply to SERVICE command. */
+/* XXX incomplete */
+
+SILC_CLIENT_CMD_REPLY_FUNC(service)
+{
+  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
+  SilcUInt32 tmp_len;
+  unsigned char *service_list, *name;
+
+  COMMAND_CHECK_STATUS;
+
+  /* Get service list */
+  service_list = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+
+  /* Get requested service name */
+  name = silc_argument_get_arg_type(cmd->args, 3, &tmp_len);
+
+  /* Notify application */
+  COMMAND_REPLY((SILC_ARGS, service_list, name));
+
+ out:
+  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_SERVICE);
+ err:
+  silc_client_command_reply_free(cmd);
+}
+
 SILC_CLIENT_CMD_REPLY_FUNC(quit)
 {
   silc_client_command_reply_free(context);

@@ -4,12 +4,11 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  the Free Software Foundation; version 2 of the License.
 
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -97,6 +96,7 @@ my_set_param_defaults(SilcServerConfigConnParams *params,
   SET_PARAM_DEFAULT(qos_bytes_limit, SILC_SERVER_QOS_BYTES_LIMIT);
   SET_PARAM_DEFAULT(qos_limit_sec, SILC_SERVER_QOS_LIMIT_SEC);
   SET_PARAM_DEFAULT(qos_limit_usec, SILC_SERVER_QOS_LIMIT_USEC);
+  SET_PARAM_DEFAULT(chlimit, SILC_SERVER_CH_JOIN_LIMIT);
 
 #undef SET_PARAM_DEFAULT
 }
@@ -304,6 +304,9 @@ SILC_CONFIG_CALLBACK(fetch_generic)
   }
   else if (!strcmp(name, "qos_limit_usec")) {
     config->param.qos_limit_usec = *(SilcUInt32 *)val;
+  }
+  else if (!strcmp(name, "channel_join_limit")) {
+    config->param.chlimit = *(SilcUInt32 *)val;
   }
   else if (!strcmp(name, "debug_string")) {
     CONFIG_IS_DOUBLE(config->debug_string);
@@ -1168,6 +1171,7 @@ static const SilcConfigTable table_general[] = {
   { "qos_bytes_limit",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "qos_limit_sec",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "qos_limit_usec",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "channel_join_limit",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "debug_string",    		SILC_CONFIG_ARG_STR,	fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
@@ -1915,11 +1919,11 @@ void silc_server_config_setlogfiles(SilcServer server)
 
   SILC_LOG_DEBUG(("Setting configured log file names and options"));
 
-  silc_log_timestamp = config->logging_timestamp;
-  silc_log_quick = config->logging_quick;
-  silc_log_flushdelay = (config->logging_flushdelay ?
-			 config->logging_flushdelay :
-			 SILC_SERVER_LOG_FLUSH_DELAY);
+  silc_log_timestamp(config->logging_timestamp);
+  silc_log_quick(config->logging_quick);
+  silc_log_flushdelay(config->logging_flushdelay ?
+		      config->logging_flushdelay :
+		      SILC_SERVER_LOG_FLUSH_DELAY);
 
   if ((this = config->logging_fatals))
     silc_log_set_file(SILC_LOG_FATAL, this->file, this->maxsize,
