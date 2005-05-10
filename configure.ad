@@ -56,7 +56,9 @@ __SILC_HAVE_SIM=""
 __SILC_ENABLE_DEBUG=""
 
 AC_PROG_RANLIB
+#ifndef SILC_DIST_TOOLKIT
 AC_DISABLE_SHARED
+#endif SILC_DIST_TOOLKIT
 AC_PROG_LIBTOOL
 
 # Header checking
@@ -1013,6 +1015,10 @@ AC_ARG_WITH(silcd,
     without_silcd=true
   ])
 #endif SILC_DIST_TOOLKIT
+#ifdef SILC_DIST_INPLACE
+without_irssi=false
+without_silcd=false
+#endif SILC_DIST_INPLACE
 
 libtoolfix=true
 AC_MSG_CHECKING(whether to do libtoolfix)

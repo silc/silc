@@ -51,7 +51,6 @@ toolkit-ref-pdf:
         fi
 
 dist-hook:
-	rm -rf `find $(top_distdir)/doc -name CVS`
 	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
 	touch draft-riikonen-silc-spec-08.txt
 	touch draft-riikonen-silc-pp-09.txt
@@ -88,6 +87,8 @@ doc-install:
 	-mkdir -p $(docdir)
 #ifdef SILC_DIST_TOOLKIT
 	-$(INSTALL_DATA) $(top_srcdir)/doc/CodingStyle $(docdir)/
+	-$(INSTALL_DATA) $(top_srcdir)/GPL $(docdir)/
+	-$(INSTALL_DATA) $(top_srcdir)/BSD $(docdir)/
 #endif SILC_DIST_TOOLKIT
 	-$(INSTALL_DATA) $(top_srcdir)/doc/FAQ $(docdir)/
 	-$(INSTALL_DATA) $(top_srcdir)/doc/*.txt $(docdir)/

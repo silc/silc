@@ -10,4 +10,5 @@ distdir=$4
 
 if test -d $distdir; then
   rm -rf `find $distdir -name CVS`
+  rm -rf `find $distdir -name Makefile`
 fi

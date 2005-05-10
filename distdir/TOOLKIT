@@ -1,0 +1,25 @@
+The SILC Toolkit distribution is dual-licensed distribution.  The 
+following licenses govern this distribution, and you are free to choose 
+either one of the licenses:
+
+ - GNU General Public License, Version 2 	(see file GPL)
+ - Revised BSD License				(see file BSD)
+
+Choose GNU GPL if your application is also GNU GPL or other similar 
+compatible Open Source licensed application.
+
+Choose Revised BSD license if your application is also BSD licensed or 
+commercial application.
+
+NOTE: The files under the subdirectory apps/ are only GNU GPL licensed 
+example application code.  They are not compiled by default in SILC 
+Toolkit, and not delivered into the any compiled binary or library.  They 
+are not dual-licensed code.
+
+Always verify the license from the file you are using.
+
+All code that is included in the compiled libraries (*) are dual-licensed
+and you may freely choose the license you wish to use from the above list.
+
+(*) lib/silcutil/silcconfig.c and lib/silcutil/silcconfig.h files are only 
+    GNU GPL licensed.  They are not dual licensed.

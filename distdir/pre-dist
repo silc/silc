@@ -1,0 +1,14 @@
+#!/bin/sh
+
+distribution=$1
+dist_version=$2
+package=$3
+distdir=$4
+
+cd doc
+make dist-hook
+rm -rf toolkit
+make toolkit-ref-html
+cp ../lib/doc/*.gif toolkit
+cd ..
+

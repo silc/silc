@@ -191,7 +191,7 @@ void silc_log_output(SilcLogType type, char *string)
 
     log = silc_log_get_context(--type);
   }
-  if (!log)
+  if (!log || !log->fp)
     goto end;
 
  found:

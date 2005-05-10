@@ -16,6 +16,6 @@ inherit toolkit
 define SILC_DIST_INPLACE
 
 # SFTP is undefined in server, so force it here
-#define SILC_DIST_SFTP
+define SILC_DIST_SFTP
 
 pre-hook distdir/pre-run

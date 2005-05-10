@@ -146,7 +146,9 @@ extern "C" {
 #if defined(HAVE_GETOPT_H) && defined(HAVE_GETOPT)
 #include <getopt.h>
 #else
+#if defined(HAVE_SILCDEFS_H)
 #include "getopti.h"
+#endif /* HAVE_SILCDEFS_H */
 #endif
 
 #ifdef SOCKS5
@@ -187,7 +189,9 @@ extern "C" {
 #endif
 
 #ifndef HAVE_REGEX_H
+#if defined(HAVE_SILCDEFS_H)
 #include "regexpr.h"
+#endif /* HAVE_SILCDEFS_H */
 #else
 #include <regex.h>
 #endif
