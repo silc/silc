@@ -87,8 +87,6 @@ doc-install:
 	-mkdir -p $(docdir)
 #ifdef SILC_DIST_TOOLKIT
 	-$(INSTALL_DATA) $(top_srcdir)/doc/CodingStyle $(docdir)/
-	-$(INSTALL_DATA) $(top_srcdir)/GPL $(docdir)/
-	-$(INSTALL_DATA) $(top_srcdir)/BSD $(docdir)/
 #endif SILC_DIST_TOOLKIT
 	-$(INSTALL_DATA) $(top_srcdir)/doc/FAQ $(docdir)/
 	-$(INSTALL_DATA) $(top_srcdir)/doc/*.txt $(docdir)/
