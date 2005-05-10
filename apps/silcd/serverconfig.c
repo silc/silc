@@ -1919,11 +1919,11 @@ void silc_server_config_setlogfiles(SilcServer server)
 
   SILC_LOG_DEBUG(("Setting configured log file names and options"));
 
-  silc_log_timestamp = config->logging_timestamp;
-  silc_log_quick = config->logging_quick;
-  silc_log_flushdelay = (config->logging_flushdelay ?
-			 config->logging_flushdelay :
-			 SILC_SERVER_LOG_FLUSH_DELAY);
+  silc_log_timestamp(config->logging_timestamp);
+  silc_log_quick(config->logging_quick);
+  silc_log_flushdelay(config->logging_flushdelay ?
+		      config->logging_flushdelay :
+		      SILC_SERVER_LOG_FLUSH_DELAY);
 
   if ((this = config->logging_fatals))
     silc_log_set_file(SILC_LOG_FATAL, this->file, this->maxsize,

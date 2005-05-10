@@ -295,7 +295,7 @@ bool silc_server_init(SilcServer server)
 #ifdef SILC_DEBUG
   /* Set debugging on if configured */
   if (server->config->debug_string) {
-    silc_debug = TRUE;
+    silc_log_debug(TRUE);
     silc_log_set_debug_string(server->config->debug_string);
   }
 #endif /* SILC_DEBUG */
@@ -572,7 +572,7 @@ bool silc_server_rehash(SilcServer server)
   SILC_LOG_INFO(("Rehashing server"));
 
   /* Reset the logging system */
-  silc_log_quick = TRUE;
+  silc_log_quick(TRUE);
   silc_log_flush_all();
 
   /* Start the main rehash phase (read again the config file) */
@@ -764,7 +764,7 @@ bool silc_server_rehash(SilcServer server)
 #ifdef SILC_DEBUG
   /* Set debugging on if configured */
   if (server->config->debug_string) {
-    silc_debug = TRUE;
+    silc_log_debug(TRUE);
     silc_log_set_debug_string(server->config->debug_string);
   }
 #endif /* SILC_DEBUG */

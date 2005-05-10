@@ -71,6 +71,7 @@ include_HEADERS =	\
 	silcconfig.h	\
 	silchashtable.h	\
 	silclog.h	\
+	silclog_i.h	\
 	silcmemory.h	\
 	silcmutex.h	\
 	silcnet.h	\

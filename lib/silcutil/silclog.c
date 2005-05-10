@@ -2,7 +2,7 @@
 
   silclog.c
 
-  Author: Giovanni Giacobbi <giovanni@giacobbi.net>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
   Copyright (C) 1997 - 2005 Pekka Riikonen
 
@@ -20,264 +20,221 @@
 
 #include "silcincludes.h"
 
-/* Minimum time delay for log flushing calls (in seconds) */
-#define SILC_LOG_FLUSH_MIN_DELAY 2
+/* SilcLogSettings context */
+typedef struct {
+  SilcUInt32 flushdelay;
 
-/* nice macro for looping through all logs -- makes the code more readable */
-#define SILC_FOREACH_LOG(__x__) for (__x__ = 0; __x__ < SILC_LOG_MAX; __x__++)
+  char debug_string[128];
+  SilcLogDebugCb debug_cb;
+  void *debug_context;
+  SilcLogHexdumpCb hexdump_cb;
+  void *hexdump_context;
 
-/* Our working struct -- at the moment we keep it private, but this could
- * change in the future */
-struct SilcLogStruct {
+  unsigned int timestamp       : 1;
+  unsigned int quick           : 1;
+  unsigned int debug           : 1;
+  unsigned int debug_hexdump   : 1;
+  unsigned int scheduled       : 1;
+  unsigned int no_init         : 1;
+  unsigned int starting        : 1;
+} *SilcLogSettings, SilcLogSettingsStruct;
+
+/* SilcLog context */
+typedef struct {
   char filename[256];
   FILE *fp;
-  SilcUInt32 maxsize;
+  SilcUInt64 maxsize;
   const char *typename;
   SilcLogType type;
   SilcLogCb cb;
   void *context;
-};
-typedef struct SilcLogStruct *SilcLog;
+} *SilcLog, SilcLogStruct;
 
-/* These are the known logging channels.  We initialize this struct with most
- * of the fields set to NULL, because we'll fill in those values at runtime. */
-static struct SilcLogStruct silclogs[SILC_LOG_MAX] = {
+/* Default settings */
+static SilcLogSettingsStruct silclog =
+{
+  300,
+  { 0 },
+  NULL, NULL,
+  NULL, NULL,
+  TRUE,
+  FALSE,
+  FALSE,
+  FALSE,
+  FALSE,
+  FALSE,
+  TRUE,
+};
+
+/* Default log contexts */
+static SilcLogStruct silclogs[4] =
+{
   {"", NULL, 0, "Info", SILC_LOG_INFO, NULL, NULL},
   {"", NULL, 0, "Warning", SILC_LOG_WARNING, NULL, NULL},
   {"", NULL, 0, "Error", SILC_LOG_ERROR, NULL, NULL},
   {"", NULL, 0, "Fatal", SILC_LOG_FATAL, NULL, NULL},
 };
 
-/* Causes logging output to contain timestamps */
-bool silc_log_timestamp = TRUE;
+/* Return log context by type */
 
-/* If TRUE, log files will be flushed for each log input */
-bool silc_log_quick = FALSE;
-
-/* Set TRUE/FALSE to enable/disable debugging */
-bool silc_debug = FALSE;
-bool silc_debug_hexdump = FALSE;
-
-/* Flush delay (in seconds) */
-long silc_log_flushdelay = 300;
-
-/* Regular pattern matching expression for the debug output */
-char silc_log_debug_string[128];
-
-/* Debug callbacks. If set, these are triggered for each specific output. */
-static SilcLogDebugCb silc_log_debug_cb = NULL;
-static void *silc_log_debug_context = NULL;
-static SilcLogHexdumpCb silc_log_hexdump_cb = NULL;
-static void *silc_log_hexdump_context = NULL;
-
-/* Did we register already our functions to the scheduler? */
-static bool silc_log_scheduled = FALSE;
-static bool silc_log_no_init = FALSE;
-
-/* This is only needed during starting up -- don't lose any logging message */
-static bool silc_log_starting = TRUE;
-
-/* The type wrapper utility. Translates a SilcLogType id to the corresponding
- * logfile, or NULL if not found. */
-static SilcLog silc_log_find_by_type(SilcLogType type)
+static SilcLog silc_log_get_context(SilcLogType type)
 {
-  /* this is not really needed, but i think it's more secure */
-  switch (type) {
-    case SILC_LOG_INFO:
-      return &silclogs[SILC_LOG_INFO];
-    case SILC_LOG_WARNING:
-      return &silclogs[SILC_LOG_WARNING];
-    case SILC_LOG_ERROR:
-      return &silclogs[SILC_LOG_ERROR];
-    case SILC_LOG_FATAL:
-      return &silclogs[SILC_LOG_FATAL];
-    default:
-      return NULL;
-  }
-  return NULL;
+  if (type < 1 || type > 4)
+    return NULL;
+  return &silclogs[(int)type - 1];
 }
 
-/* Given an open log file, checks the size and rotates it if there is a
- * max size set lower then the current size */
+/* Check log file site and cycle log file if it is over max size. */
+
 static void silc_log_checksize(SilcLog log)
 {
-  char newname[127];
-  long size;
+  char newname[256];
+  SilcUInt64 size;
 
   if (!log || !log->fp || !log->maxsize)
-    return; /* we are not interested */
-
-  if ((size = ftell(log->fp)) < 0) {
-    /* OMG, EBADF is here.. we'll try our best.. */
-    FILE *oldfp = log->fp;
-    fclose(oldfp); /* we can discard the error */
-    log->fp = NULL; /* make sure we don't get here recursively */
-    SILC_LOG_ERROR(("Error while checking size of the log file %s, fp=%p",
-		    log->filename, oldfp));
     return;
+
+  size = silc_file_size(log->filename);
+  if (!size) {
+    fclose(log->fp);
+    log->fp = NULL;
   }
+
   if (size < log->maxsize)
     return;
 
-  /* It's too big */
-  fprintf(log->fp, "[%s] [%s] Cycling log file, over max "
-	  "logsize (%lu kilobytes)\n",
+  /* Cycle log file */
+  fprintf(log->fp,
+	  "[%s] [%s] Cycling log file, over max log size (%lu kilobytes)\n",
 	  silc_get_time(0), log->typename, (unsigned long)log->maxsize / 1024);
   fflush(log->fp);
   fclose(log->fp);
+
   memset(newname, 0, sizeof(newname));
   snprintf(newname, sizeof(newname) - 1, "%s.old", log->filename);
   unlink(newname);
-
-  /* I heard the following syscall may cause portability issues, but I don't
-   * have any other solution since SILC library doesn't provide any other
-   * function like this. -Johnny */
   rename(log->filename, newname);
-  if (!(log->fp = fopen(log->filename, "w")))
-    SILC_LOG_WARNING(("Couldn't reopen logfile %s for type \"%s\": %s",
+
+  log->fp = fopen(log->filename, "w");
+  if (!log->fp)
+    SILC_LOG_WARNING(("Couldn't reopen log file '%s' for type '%s': %s",
 		      log->filename, log->typename, strerror(errno)));
 #ifdef HAVE_CHMOD
   chmod(log->filename, 0600);
 #endif /* HAVE_CHMOD */
 }
 
-/* Reset a logging channel (close and reopen) */
-
-static bool silc_log_reset(SilcLog log)
-{
-  if (!log) return FALSE;
-  if (log->fp) {
-    fflush(log->fp);
-    fclose(log->fp);
-  }
-  if (!log->filename[0]) return FALSE;
-  if (!(log->fp = fopen(log->filename, "a+"))) {
-    SILC_LOG_WARNING(("Couldn't reset logfile %s for type \"%s\": %s",
-		      log->filename, log->typename, strerror(errno)));
-    return FALSE;
-  }
-
-  return TRUE;
-}
-
 /* Internal timeout callback to flush log channels and check file sizes */
 
 SILC_TASK_CALLBACK(silc_log_fflush_callback)
 {
-  unsigned int u;
-  if (!silc_log_quick) {
+  SilcLog log;
+
+  if (!silclog.quick) {
     silc_log_flush_all();
-    SILC_FOREACH_LOG(u)
-      silc_log_checksize(&silclogs[u]);
+    log = silc_log_get_context(SILC_LOG_INFO);
+    silc_log_checksize(log);
+    log = silc_log_get_context(SILC_LOG_WARNING);
+    silc_log_checksize(log);
+    log = silc_log_get_context(SILC_LOG_ERROR);
+    silc_log_checksize(log);
+    log = silc_log_get_context(SILC_LOG_FATAL);
+    silc_log_checksize(log);
   }
-  silc_log_starting = FALSE;
-  if (silc_log_flushdelay < SILC_LOG_FLUSH_MIN_DELAY)
-    silc_log_flushdelay = SILC_LOG_FLUSH_MIN_DELAY;
-  silc_schedule_task_add((SilcSchedule) context, 0, silc_log_fflush_callback,
-			 context, silc_log_flushdelay, 0, SILC_TASK_TIMEOUT,
+
+  silclog.starting = FALSE;
+
+  if (silclog.flushdelay < 2)
+    silclog.flushdelay = 2;
+  silc_schedule_task_add(context, 0, silc_log_fflush_callback, context,
+			 silclog.flushdelay, 0, SILC_TASK_TIMEOUT,
 			 SILC_TASK_PRI_NORMAL);
 }
 
-/* Outputs the log message to the first available channel. Channels are
- * ordered by importance (see SilcLogType documentation).
- * More important channels can be printed on less important ones, but not
- * vice-versa. */
+/* Output log message to log file */
 
 void silc_log_output(SilcLogType type, char *string)
 {
   const char *typename = NULL;
+  SilcLog log = silc_log_get_context(type);
   FILE *fp;
-  SilcLog log;
 
-  if ((type > SILC_LOG_MAX) || !(log = silc_log_find_by_type(type)))
+  if (!log)
     goto end;
 
-  /* Save the original typename, because even if we redirect the message
-   * to another channel we'll keep however the original channel name */
-  typename = log->typename;
-
-  /* If there is a custom callback set, use it and return. */
-  if (log->cb) {
+  /* Forward to callback if set */
+  if (log->cb)
     if ((*log->cb)(type, string, log->context))
       goto end;
-  }
 
-  if (!silc_log_scheduled) {
-    if (silc_log_no_init == FALSE) {
+  typename = log->typename;
+
+  if (!silclog.scheduled) {
+    if (silclog.no_init == FALSE) {
       fprintf(stderr,
 	      "Warning, trying to output without log files initialization, "
 	      "log output is going to stderr\n");
-      silc_log_no_init = TRUE;
+      silclog.no_init = TRUE;
     }
-    /* redirect output */
+
     fp = stderr;
     log = NULL;
     goto found;
   }
 
-  /* ok, now we have to find an open stream */
-  while (TRUE) {
-    if (log && (fp = log->fp)) goto found;
-    if (type == 0) break;
-    log = silc_log_find_by_type(--type);
-  }
+  /* Find open log file */
+  while (log) {
+    if (log->fp) {
+      fp = log->fp;
+      break;
+    }
 
-  /* Couldn't find any open stream.. sorry :( */
-  SILC_LOG_DEBUG(("Warning! couldn't find any available log channel!"));
-  goto end;
+    log = silc_log_get_context(--type);
+  }
+  if (!log)
+    goto end;
 
  found:
-  /* writes the logging string to the selected channel */
-  if (silc_log_timestamp)
+  if (silclog.timestamp)
     fprintf(fp, "[%s] [%s] %s\n", silc_get_time(0), typename, string);
   else
     fprintf(fp, "[%s] %s\n", typename, string);
 
-  if (silc_log_quick || silc_log_starting) {
+  if (silclog.quick || silclog.starting) {
     fflush(fp);
-    if (log) /* we may have been redirected to stderr */
+    if (log)
       silc_log_checksize(log);
   }
 
  end:
-  /* If debugging, also output the logging message to the console */
-  if (typename && silc_debug) {
+  /* Output log to stderr if debugging */
+  if (typename && silclog.debug) {
     fprintf(stderr, "[Logging] [%s] %s\n", typename, string);
     fflush(stderr);
   }
   silc_free(string);
 }
 
-/* returns an internally allocated pointer to a logging channel file */
-char *silc_log_get_file(SilcLogType type)
-{
-  SilcLog log;
+/* Set and initialize the specified log file. */
 
-  if (!(log = silc_log_find_by_type(type)))
-    return NULL;
-  if (log->fp)
-    return log->filename;
-  return NULL;
-}
-
-/* Set and initialize the specified logging channel. See the API reference */
 bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
 		       SilcSchedule scheduler)
 {
   FILE *fp = NULL;
   SilcLog log;
 
-  log = silc_log_find_by_type(type);
+  log = silc_log_get_context(type);
   if (!log)
     return FALSE;
 
-  SILC_LOG_DEBUG(("Setting \"%s\" file to %s (max size=%d)",
+  SILC_LOG_DEBUG(("Setting '%s' file to %s (max size=%d)",
 		  log->typename, filename, maxsize));
 
-  /* before assuming the new file, make sure we can open it */
+  /* Open log file */
   if (filename) {
-    if (!(fp = fopen(filename, "a+"))) {
-      fprintf(stderr, "warning: couldn't open log file %s: %s\n",
+    fp = fopen(filename, "a+");
+    if (!fp) {
+      fprintf(stderr, "warning: couldn't open log file '%s': %s\n",
 	      filename, strerror(errno));
       return FALSE;
     }
@@ -286,7 +243,7 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
 #endif /* HAVE_CHMOD */
   }
 
-  /* clean the logging channel */
+  /* Close previous log file if it exists */
   if (strlen(log->filename)) {
     if (log->fp)
       fclose(log->fp);
@@ -294,74 +251,193 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
     log->fp = NULL;
   }
 
+  /* Set new log file */
   if (fp) {
-    memset(log->filename, 0, sizeof(log->filename));
-    strncpy(log->filename, filename,
-	    strlen(filename) < sizeof(log->filename) ? strlen(filename) :
-	    sizeof(log->filename) - 1);
     log->fp = fp;
     log->maxsize = maxsize;
+
+    memset(log->filename, 0, sizeof(log->filename));
+    silc_strncat(log->filename, sizeof(log->filename), filename,
+		 strlen(filename));
   }
 
+  /* Add flush timeout */
   if (scheduler) {
-    if (silc_log_scheduled)
-      return TRUE;
-
-    /* Add schedule hook with a short delay to make sure we'll use
-       right delay */
-    silc_schedule_task_add(scheduler, 0, silc_log_fflush_callback,
-			   (void *) scheduler, 10, 0,
-			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-    silc_log_scheduled = TRUE;
+    silc_schedule_task_del_by_callback(scheduler, silc_log_fflush_callback);
+    silc_schedule_task_add(scheduler, 0, silc_log_fflush_callback, scheduler,
+			   10, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+    silclog.scheduled = TRUE;
   }
 
   return TRUE;
+}
+
+/* Return log filename */
+
+char *silc_log_get_file(SilcLogType type)
+{
+  SilcLog log = silc_log_get_context(type);
+  return log && log->fp ? log->filename : NULL;
 }
 
 /* Sets a log callback, set callback to NULL to return to default behaviour */
 
 void silc_log_set_callback(SilcLogType type, SilcLogCb cb, void *context)
 {
-  SilcLog log;
+  SilcLog log = silc_log_get_context(type);
+  if (log) {
+    log->cb = cb;
+    log->context = context;
+  }
+}
 
-  if (!(log = silc_log_find_by_type(type)))
+/* Reset log callbacks */
+
+void silc_log_reset_callbacks(void)
+{
+  SilcLog log;
+  log = silc_log_get_context(SILC_LOG_INFO);
+  log->cb = log->context = NULL;
+  log = silc_log_get_context(SILC_LOG_WARNING);
+  log->cb = log->context = NULL;
+  log = silc_log_get_context(SILC_LOG_ERROR);
+  log->cb = log->context = NULL;
+  log = silc_log_get_context(SILC_LOG_FATAL);
+  log->cb = log->context = NULL;
+}
+
+/* Flush all log files */
+
+void silc_log_flush_all(void)
+{
+  SilcLog log;
+  log = silc_log_get_context(SILC_LOG_INFO);
+  if (log->fp)
+    fflush(log->fp);
+  log = silc_log_get_context(SILC_LOG_WARNING);
+  if (log->fp)
+    fflush(log->fp);
+  log = silc_log_get_context(SILC_LOG_ERROR);
+  if (log->fp)
+    fflush(log->fp);
+  log = silc_log_get_context(SILC_LOG_FATAL);
+  if (log->fp)
+    fflush(log->fp);
+}
+
+/* Reset a log file */
+
+static void silc_log_reset(SilcLog log)
+{
+  if (log->fp) {
+    fflush(log->fp);
+    fclose(log->fp);
+  }
+
+  if (!strlen(log->filename))
     return;
 
-  log->cb = cb;
-  log->context = context;
+  log->fp = fopen(log->filename, "a+");
+  if (!log->fp)
+    SILC_LOG_WARNING(("Couldn't reset log file '%s' for type '%s': %s",
+		      log->filename, log->typename, strerror(errno)));
 }
 
-/* Resets log callbacks */
+/* Reset all log files */
 
-void silc_log_reset_callbacks()
+void silc_log_reset_all(void)
 {
-  unsigned int u;
-  SILC_FOREACH_LOG(u) {
-    silclogs[u].cb = NULL;
-    silclogs[u].context = NULL;
-  }
-}
-
-/* Flushes all opened logging channels */
-
-void silc_log_flush_all() {
-  unsigned int u;
-  SILC_LOG_DEBUG(("Flushing all logs"));
-  SILC_FOREACH_LOG(u) {
-    if (silclogs[u].fp)
-      fflush(silclogs[u].fp);
-  }
-}
-
-/* Resets all known logging channels */
-
-void silc_log_reset_all() {
-  unsigned int u;
-  SILC_LOG_DEBUG(("Resetting all logs"));
-  SILC_FOREACH_LOG(u)
-    silc_log_reset(&silclogs[u]);
-  /* Immediately flush any possible warning message */
+  SilcLog log;
+  log = silc_log_get_context(SILC_LOG_INFO);
+  if (log->fp)
+    silc_log_reset(log);
+  log = silc_log_get_context(SILC_LOG_WARNING);
+  if (log->fp)
+    silc_log_reset(log);
+  log = silc_log_get_context(SILC_LOG_ERROR);
+  if (log->fp)
+    silc_log_reset(log);
+  log = silc_log_get_context(SILC_LOG_FATAL);
+  if (log->fp)
+    silc_log_reset(log);
   silc_log_flush_all();
+}
+
+/* Sets debug callbacks */
+
+void silc_log_set_debug_callbacks(SilcLogDebugCb debug_cb,
+				  void *debug_context,
+				  SilcLogHexdumpCb hexdump_cb,
+				  void *hexdump_context)
+{
+  silclog.debug_cb = debug_cb;
+  silclog.debug_context = debug_context;
+  silclog.hexdump_cb = hexdump_cb;
+  silclog.hexdump_context = hexdump_context;
+}
+
+/* Resets debug callbacks */
+
+void silc_log_reset_debug_callbacks()
+{
+  silclog.debug_cb = NULL;
+  silclog.debug_context = NULL;
+  silclog.hexdump_cb = NULL;
+  silclog.hexdump_context = NULL;
+}
+
+/* Set current debug string */
+
+void silc_log_set_debug_string(const char *debug_string)
+{
+  char *string;
+  int len;
+  if ((strchr(debug_string, '(') && strchr(debug_string, ')')) ||
+      strchr(debug_string, '$'))
+    string = strdup(debug_string);
+  else
+    string = silc_string_regexify(debug_string);
+  len = strlen(string);
+  if (len >= sizeof(silclog.debug_string))
+    len = sizeof(silclog.debug_string) - 1;
+  memset(silclog.debug_string, 0, sizeof(silclog.debug_string));
+  strncpy(silclog.debug_string, string, len);
+  silc_free(string);
+}
+
+/* Set timestamp */
+
+void silc_log_timestamp(bool enable)
+{
+  silclog.timestamp = enable;
+}
+
+/* Set flushdelay */
+
+void silc_log_flushdelay(SilcUInt32 flushdelay)
+{
+  silclog.flushdelay = flushdelay;
+}
+
+/* Set quick logging */
+
+void silc_log_quick(bool enable)
+{
+  silclog.quick = enable;
+}
+
+/* Set debugging */
+
+void silc_log_debug(bool enable)
+{
+  silclog.debug = enable;
+}
+
+/* Set debug hexdump */
+
+void silc_log_debug_hexdump(bool enable)
+{
+  silclog.debug_hexdump = enable;
 }
 
 /* Outputs the debug message to stderr. */
@@ -369,17 +445,16 @@ void silc_log_reset_all() {
 void silc_log_output_debug(char *file, const char *function,
 			   int line, char *string)
 {
-  if (!silc_debug)
+  if (!silclog.debug)
     goto end;
 
-  if (silc_log_debug_string &&
-      !silc_string_regex_match(silc_log_debug_string, file) &&
-      !silc_string_regex_match(silc_log_debug_string, function))
+  if (!silc_string_regex_match(silclog.debug_string, file) &&
+      !silc_string_regex_match(silclog.debug_string, function))
     goto end;
 
-  if (silc_log_debug_cb) {
-    if ((*silc_log_debug_cb)(file, (char *)function, line, string,
-			     silc_log_debug_context))
+  if (silclog.debug_cb) {
+    if ((*silclog.debug_cb)(file, (char *)function, line, string,
+			    silclog.debug_context))
       goto end;
   }
 
@@ -400,18 +475,16 @@ void silc_log_output_hexdump(char *file, const char *function,
   int off, pos, count;
   unsigned char *data = (unsigned char *)data_in;
 
-  if (!silc_debug_hexdump)
+  if (!silclog.debug_hexdump)
     goto end;
 
-  if (silc_log_debug_string &&
-      !silc_string_regex_match(silc_log_debug_string, file) &&
-      !silc_string_regex_match(silc_log_debug_string, function))
+  if (!silc_string_regex_match(silclog.debug_string, file) &&
+      !silc_string_regex_match(silclog.debug_string, function))
     goto end;
 
-  if (silc_log_hexdump_cb) {
-    if ((*silc_log_hexdump_cb)(file, (char *)function, line,
-			       data_in, len, string,
-			       silc_log_hexdump_context))
+  if (silclog.hexdump_cb) {
+    if ((*silclog.hexdump_cb)(file, (char *)function, line,
+			      data_in, len, string, silclog.hexdump_context))
       goto end;
   }
 
@@ -473,47 +546,5 @@ void silc_log_output_hexdump(char *file, const char *function,
   }
 
  end:
-  silc_free(string);
-}
-
-/* Sets debug callbacks */
-
-void silc_log_set_debug_callbacks(SilcLogDebugCb debug_cb,
-				  void *debug_context,
-				  SilcLogHexdumpCb hexdump_cb,
-				  void *hexdump_context)
-{
-  silc_log_debug_cb = debug_cb;
-  silc_log_debug_context = debug_context;
-  silc_log_hexdump_cb = hexdump_cb;
-  silc_log_hexdump_context = hexdump_context;
-}
-
-/* Resets debug callbacks */
-
-void silc_log_reset_debug_callbacks()
-{
-  silc_log_debug_cb = NULL;
-  silc_log_debug_context = NULL;
-  silc_log_hexdump_cb = NULL;
-  silc_log_hexdump_context = NULL;
-}
-
-/* Set current debug string */
-
-void silc_log_set_debug_string(const char *debug_string)
-{
-  char *string;
-  int len;
-  if ((strchr(debug_string, '(') && strchr(debug_string, ')')) ||
-      strchr(debug_string, '$'))
-    string = strdup(debug_string);
-  else
-    string = silc_string_regexify(debug_string);
-  len = strlen(string);
-  if (len >= sizeof(silc_log_debug_string))
-    len = sizeof(silc_log_debug_string) - 1;
-  memset(silc_log_debug_string, 0, sizeof(silc_log_debug_string));
-  strncpy(silc_log_debug_string, string, len);
   silc_free(string);
 }
