@@ -71,16 +71,11 @@ directories.  Make sure they are not compiled and does not include any
 extra files.  If you haven't compiled them after the CVS checkout, they do
 not include any extra files.
 
-NOTE for 'toolkit' distribution:  Before giving make dist the following
-must be done:
+NOTE for 'toolkit' distribution:  Running ./configure for toolkit 
+distribution is not necessary.  Toolkit is packaged simply by giving 
+command:
 
-	go to util/robodoc/
-	give ./configure;make to compile robodoc
-	go to doc/
-	give make toolkit-ref-html
-
-This then creates the Toolkit reference manual.  After this the toolkit 
-distribution can be packaged.
+	makedist
 
 
 Before releasing the distribution
