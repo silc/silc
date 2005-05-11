@@ -36,6 +36,11 @@ int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count,
     if (!fds[i].events)
       continue;
 
+#ifdef FD_SETSIZE
+    if (fds[i].fd >= FD_SETSIZE)
+      break;
+#endif /* FD_SETSIZE */
+
     if (fds[i].fd > max_fd)
       max_fd = fds[i].fd;
 
@@ -54,6 +59,11 @@ int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count,
   for (i = 0; i < fds_count; i++) {
     if (!fds[i].events)
       continue;
+
+#ifdef FD_SETSIZE
+    if (fds[i].fd >= FD_SETSIZE)
+      break;
+#endif /* FD_SETSIZE */
 
     if (FD_ISSET(fds[i].fd, &in))
       fds[i].revents |= SILC_TASK_READ;
