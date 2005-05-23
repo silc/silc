@@ -18,8 +18,5 @@ are not dual-licensed code.
 
 Always verify the license from the file you are using.
 
-All code that is included in the compiled libraries (*) are dual-licensed
-and you may freely choose the license you wish to use from the above list.
-
-(*) lib/silcutil/silcconfig.c and lib/silcutil/silcconfig.h files are only 
-    GNU GPL licensed.  They are not dual licensed.
+All code that is included in the compiled libraries are dual-licensed and 
+you may freely choose the license you wish to use from the above list.
