@@ -1,3 +1,8 @@
+Thu May 26 20:31:06 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check for valid return value from regcomp.  Affected file
+	  lib/silcutil/unix/silcunixutil.c.
+
 Tue May 10 19:55:13 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Check for FD_SETSIZE in silc_select to not go over.
