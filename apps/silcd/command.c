@@ -2966,6 +2966,10 @@ SILC_SERVER_CMD_FUNC(cmode)
 	 new channel key. Clients are not using private channel keys
 	 anymore after this. */
 
+      /* if we don't remove the flag from the mode
+       * silc_server_create_channel_key won't create a new key */
+      channel->mode &= ~SILC_CHANNEL_MODE_PRIVKEY;
+
       /* Re-generate channel key */
       if (!silc_server_create_channel_key(server, channel, 0))
 	goto out;
