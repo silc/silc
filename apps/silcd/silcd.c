@@ -264,8 +264,8 @@ SILC_TASK_CALLBACK(dump_stats)
   char filename[256];
 
   memset(filename, 0, sizeof(filename));
-  snprintf(filename, sizeof(filename) - 1, "/tmp/silcd.%d.stats", getpid());
-  fdd = fopen(filename, "w+");
+  snprintf(filename, sizeof(filename) - 1, "/tmp/silcd.%d.stats-XXXXXX", getpid());
+  fdd = mkstemp(filename);
   if (!fdd)
     return;
 
