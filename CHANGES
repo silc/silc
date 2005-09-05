@@ -1,3 +1,8 @@
+Mon Sep  5 18:40:22 CEST 2005  Jochen Eisinger <c0ffee@penguin-breeder.org>
+
+	* mkstemp returns -1 on error, thanks to brad@comstyle.com for
+	  pointing this out.  Affected file apps/silcd/silcd.c
+
 Fri Sep  2 23:44:37 CEST 2005  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* Fixed the insecure temporary file creation issue now that it's
