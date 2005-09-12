@@ -1,3 +1,8 @@
+Mon Sep 12 18:13:38 CEST 2005  Jochen Eisinger <c0ffee@penguin-breeder.org>
+
+	* and it doesn't return FILE* but a file descriptor.  Affected
+	  file apps/silcd/silcd.c
+
 Mon Sep  5 18:40:22 CEST 2005  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* mkstemp returns -1 on error, thanks to brad@comstyle.com for

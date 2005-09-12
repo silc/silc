@@ -261,13 +261,16 @@ SILC_TASK_CALLBACK(stop_server)
 SILC_TASK_CALLBACK(dump_stats)
 {
   FILE *fdd;
+  int fd;
   char filename[256];
 
   memset(filename, 0, sizeof(filename));
   snprintf(filename, sizeof(filename) - 1, "/tmp/silcd.%d.stats-XXXXXX", getpid());
-  fdd = mkstemp(filename);
-  if (fdd == -1)
+  fd = mkstemp(filename);
+  if (fd == -1)
     return;
+
+  fdd = fdopen(fd, "w");
 
 #define STAT_OUTPUT(fmt, stat) fprintf(fdd, fmt "\n", (int)stat);
 
