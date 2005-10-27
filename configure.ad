@@ -644,7 +644,7 @@ AC_ARG_WITH(gmp,
 AM_CONDITIONAL(SILC_MP_GMP, test x$mp_gmp = xtrue)
 AM_CONDITIONAL(SILC_MP_SILCMATH, test x$mp_gmp = xfalse)
 if test x$mp_gmp = xfalse; then
-  AC_DEFINE([SILC_MP_SILCMAP], [], [SILCMATH])
+  AC_DEFINE([SILC_MP_SILCMATH], [], [SILCMATH])
   AC_MSG_RESULT(Using SILC Math as a MP library.)
 fi
 #endif SILC_DIST_MATH
