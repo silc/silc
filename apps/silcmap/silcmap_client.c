@@ -544,6 +544,11 @@ silc_disconnected(SilcClient client, SilcClientConnection conn,
   SILC_LOG_DEBUG(("Disconnected from server %s:%d", conn->remote_host,
 		  conn->remote_port));
 
+  /* Mark that this server is down. */
+  silc_schedule_task_add(map->client->schedule, 0,
+			 silc_map_connect_timeout, mapconn, 0, 1,
+			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+
   mapconn->conn = NULL;
 }
 
