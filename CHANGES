@@ -1,3 +1,8 @@
+Wed Nov 16 00:36:53 CET 2005  Jochen Eisinger <c0ffee@penguin-breeder.org>
+
+	* fixed wrong return code in term_init.  Affected file
+	  apps/irssi/src/fe-text/terminfo-core.c
+	  
 Mon Sep 12 18:13:38 CEST 2005  Jochen Eisinger <c0ffee@penguin-breeder.org>
 
 	* and it doesn't return FILE* but a file descriptor.  Affected
