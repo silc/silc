@@ -283,8 +283,8 @@ int main(int argc, char **argv)
   int i;
 
   if (argc > 1 && !strcmp(argv[1], "-d")) {
-    silc_debug = 1;
-    silc_debug_hexdump = 1;
+    silc_log_debug(TRUE);
+    silc_log_debug_hexdump(TRUE);
     silc_log_set_debug_string("*crypt*,*pkcs*,*rsa*,*primegen*");
   }
   silc_hash_register_default();

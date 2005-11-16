@@ -1,42 +1,41 @@
 #include "silcincludes.h"
 
-/* Test vectors from NIST secure hashing definition for SHA-1 */
+/* Test vectors from NIST secure hashing definition for SHA-256 */
 
 /* First test vector */
 const unsigned char data1[] = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
-const unsigned char data1_digest[] = "\x84\x98\x3e\x44\x1c\x3b\xd2\x6e\xba\xae\x4a\xa1\xf9\x51\x29\xe5\xe5\x46\x70\xf1";
+const unsigned char data1_digest[] = "\x24\x8d\x6a\x61\xd2\x06\x38\xb8\xe5\xc0\x26\x93\x0c\x3e\x60\x39\xa3\x3c\xe4\x59\x64\xff\x21\x67\xf6\xec\xed\xd4\x19\xdb\x06\xc1";
 
-/* Second test vector. This will be allocated with 1000000 'a' characters
-   and hashed */
-char *data2 = NULL;
-const unsigned char data2_digest[] = "\x34\xaa\x97\x3c\xd4\xc4\xda\xa4\xf6\x1e\xeb\x2b\xdb\xad\x27\x31\x65\x34\x01\x6f";
+/* Second test vector */
+const unsigned char data2[] = "abc";
+const unsigned char data2_digest[] = "\xba\x78\x16\xbf\x8f\x01\xcf\xea\x41\x41\x40\xde\x5d\xae\x22\x23\xb0\x03\x61\xa3\x96\x17\x7a\x9c\xb4\x10\xff\x61\xf2\x00\x15\xad";
 
 int main(int argc, char **argv)
 {
   bool success = FALSE;
   unsigned char digest[20];
-  SilcHash sha1;
+  SilcHash sha256;
   
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_log_debug(TRUE);
     silc_log_debug_hexdump(TRUE);
-    silc_log_set_debug_string("*crypt*,*hash*,*sha1*");
+    silc_log_set_debug_string("*crypt*,*hash*,*sha256*");
   }
 
   SILC_LOG_DEBUG(("Registering builtin hash functions"));
   silc_hash_register_default();
 
-  SILC_LOG_DEBUG(("Allocating sha1 hash function"));
-  if (!silc_hash_alloc("sha1", &sha1)) {
-    SILC_LOG_DEBUG(("Allocating sha1 hash function failed"));
+  SILC_LOG_DEBUG(("Allocating sha256 hash function"));
+  if (!silc_hash_alloc("sha256", &sha256)) {
+    SILC_LOG_DEBUG(("Allocating sha256 hash function failed"));
     goto err;
   }
 
   /* First test vector */
   SILC_LOG_DEBUG(("First test vector"));
-  silc_hash_init(sha1);
-  silc_hash_update(sha1, data1, strlen(data1));
-  silc_hash_final(sha1, digest);
+  silc_hash_init(sha256);
+  silc_hash_update(sha256, data1, strlen(data1));
+  silc_hash_final(sha256, digest);
   SILC_LOG_HEXDUMP(("Message"), (unsigned char *)data1, strlen(data1));
   SILC_LOG_HEXDUMP(("Digest"), digest, sizeof(digest));
   SILC_LOG_HEXDUMP(("Expected digest"), (unsigned char *)data1_digest,
@@ -47,13 +46,12 @@ int main(int argc, char **argv)
   }
   SILC_LOG_DEBUG(("Hash is successful"));
   
-  /* First test vector */
-  SILC_LOG_DEBUG(("Second test vector"));
-  data2 = silc_malloc(1000000);
-  memset(data2, 'a', 1000000);
-  silc_hash_init(sha1);
-  silc_hash_update(sha1, data2, 1000000);
-  silc_hash_final(sha1, digest);
+  /* Second test vector */
+  SILC_LOG_DEBUG(("First test vector"));
+  silc_hash_init(sha256);
+  silc_hash_update(sha256, data2, strlen(data2));
+  silc_hash_final(sha256, digest);
+  SILC_LOG_HEXDUMP(("Message"), (unsigned char *)data2, strlen(data2));
   SILC_LOG_HEXDUMP(("Digest"), digest, sizeof(digest));
   SILC_LOG_HEXDUMP(("Expected digest"), (unsigned char *)data2_digest,
 		   sizeof(digest));
@@ -62,15 +60,14 @@ int main(int argc, char **argv)
     goto err;
   }
   SILC_LOG_DEBUG(("Hash is successful"));
-
+  
   success = TRUE;
   
  err:
   SILC_LOG_DEBUG(("Testing was %s", success ? "SUCCESS" : "FAILURE"));
   fprintf(stderr, "Testing was %s\n", success ? "SUCCESS" : "FAILURE");
 
-  silc_free(data2);
-  silc_hash_free(sha1);
+  silc_hash_free(sha256);
   silc_hash_unregister_all();
   return success;
 }
