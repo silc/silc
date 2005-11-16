@@ -38,10 +38,10 @@ SilcDList silc_hash_list = NULL;
 /* Default hash functions for silc_hash_register_default(). */
 const SilcHashObject silc_default_hash[] = 
 {
-  { "sha1", 20, 64, silc_sha1_init, silc_sha1_update, silc_sha1_final,
-    silc_sha1_transform, silc_sha1_context_len },
   { "sha256", 32, 64, silc_sha256_init, silc_sha256_update, silc_sha256_final,
     silc_sha256_transform, silc_sha256_context_len },
+  { "sha1", 20, 64, silc_sha1_init, silc_sha1_update, silc_sha1_final,
+    silc_sha1_transform, silc_sha1_context_len },
   { "md5", 16, 64, silc_md5_init, silc_md5_update, silc_md5_final,
     silc_md5_transform, silc_md5_context_len },
 
