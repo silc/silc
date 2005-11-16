@@ -1,3 +1,7 @@
+Wed Nov 16 17:53:55 EET 2005 Pekka Riikonen <priikone@silcnet.org>
+
+	* Don't try to log with -s option.
+
 Wed May  4 10:58:24 EEST 2005 Pekka Riikonen <priikone@silcnet.org>
 
 	* Autodist 1.3.

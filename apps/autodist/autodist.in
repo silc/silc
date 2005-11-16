@@ -1871,6 +1871,7 @@ while test $# -gt 0; do
 
   -s | --distdefs)
     shift;
+    nolog=true
     if test $# -eq 0; then
       ad_parse_distribution $distribution false
       echo "Distribution: ${distribution}" 1>&2;
