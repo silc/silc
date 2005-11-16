@@ -18,6 +18,7 @@
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 bin_PROGRAMS = 	test_sha1 	\
+		test_sha256	\
 		test_md5	\
 		test_hmacsha1	\
 		test_hmacmd5	\
@@ -26,6 +27,7 @@ bin_PROGRAMS = 	test_sha1 	\
 		test_silcpkcs
 
 test_sha1_SOURCES = test_sha1.c
+test_sha256_SOURCES = test_sha256.c
 test_md5_SOURCES = test_md5.c
 test_hmacsha1_SOURCES = test_hmacsha1.c
 test_hmacmd5_SOURCES = test_hmacmd5.c
