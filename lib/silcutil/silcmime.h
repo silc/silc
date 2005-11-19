@@ -135,8 +135,8 @@ void silc_mime_assembler_free(SilcMimeAssembler assembler);
  *
  * SYNOPSIS
  *
- *    SilcMime silc_mime_parse(const unsigned char *data,
- *                             SilcUInt32 data_len);
+ *    SilcMime silc_mime_decode(const unsigned char *data,
+ *                              SilcUInt32 data_len);
  *
  * DESCRIPTION
  *
@@ -146,12 +146,12 @@ void silc_mime_assembler_free(SilcMimeAssembler assembler);
  * EXAMPLE
  *
  *    // Parse MIME message and get its content type
- *    mime = silc_mime_parse(data, data_len);
+ *    mime = silc_mime_decode(data, data_len);
  *    type = silc_mime_get_field(mime, "Content-Type");
  *    ...
  *
  *    // Assemble received MIME fragment
- *    mime = silc_mime_parse(data, data_len);
+ *    mime = silc_mime_decode(data, data_len);
  *    if (silc_mime_is_partial(mime) == TRUE)
  *      silc_mime_assmeble(assembler, mime);
  *
@@ -195,7 +195,7 @@ unsigned char *silc_mime_encode(SilcMime mime, SilcUInt32 *encoded_len);
  * EXAMPLE
  *
  *    // Assemble received MIME fragment
- *    mime = silc_mime_parse(data, data_len);
+ *    mime = silc_mime_decode(data, data_len);
  *    if (silc_mime_is_partial(mime) == TRUE)
  *      silc_mime_assmeble(assembler, mime);
  *
