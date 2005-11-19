@@ -3111,7 +3111,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   if (mode_mask & SILC_CHANNEL_MODE_HMAC) {
     if (!(channel->mode & SILC_CHANNEL_MODE_HMAC)) {
       /* HMAC to use protect the traffic */
-      unsigned char hash[32];
+      unsigned char hash[SILC_HASH_MAXLEN];
       SilcHmac newhmac;
 
       /* Get hmac */
@@ -3147,7 +3147,7 @@ SILC_SERVER_CMD_FUNC(cmode)
       /* Hmac mode is unset. Remove the hmac and revert back to
 	 default hmac */
       SilcHmac newhmac;
-      unsigned char hash[32];
+      unsigned char hash[SILC_HASH_MAXLEN];
       hmac = channel->hmac_name;
 
       /* Delete old hmac and allocate default one */
@@ -4112,7 +4112,7 @@ SILC_SERVER_CMD_FUNC(watch)
   SilcServer server = cmd->server;
   char *add_nick, *del_nick;
   SilcUInt32 add_nick_len, del_nick_len, tmp_len, pk_len;
-  unsigned char hash[16], *tmp,  *pk, *nick;
+  unsigned char hash[SILC_HASH_MAXLEN], *tmp,  *pk, *nick;
   SilcClientEntry client;
   SilcClientID *client_id = NULL;
   SilcUInt16 old_ident;

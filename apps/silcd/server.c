@@ -4129,7 +4129,7 @@ bool silc_server_create_channel_key(SilcServer server,
 				    SilcUInt32 key_len)
 {
   int i;
-  unsigned char channel_key[32], hash[32];
+  unsigned char channel_key[32], hash[SILC_HASH_MAXLEN];
   SilcUInt32 len;
 
   if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY) {
@@ -4212,7 +4212,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 {
   SilcChannelKeyPayload payload = NULL;
   SilcChannelID *id = NULL;
-  unsigned char *tmp, hash[32];
+  unsigned char *tmp, hash[SILC_HASH_MAXLEN];
   SilcUInt32 tmp_len;
   char *cipher;
 

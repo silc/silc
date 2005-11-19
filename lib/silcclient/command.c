@@ -1190,7 +1190,7 @@ SILC_CLIENT_CMD_FUNC(join)
     } else if (!strcasecmp(cmd->argv[i], "-auth")) {
       SilcPublicKey pubkey = cmd->client->public_key;
       SilcPrivateKey privkey = cmd->client->private_key;
-      unsigned char *pk, pkhash[20], *pubdata;
+      unsigned char *pk, pkhash[SILC_HASH_MAXLEN], *pubdata;
       SilcUInt32 pk_len;
 
       if (cmd->argc >= i + 3) {

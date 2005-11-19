@@ -331,7 +331,7 @@ char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
 			    SilcUInt32 data_len)
 {
   SilcHash new_hash = NULL;
-  unsigned char h[32];
+  unsigned char h[SILC_HASH_MAXLEN];
   char *ret;
 
   if (!hash) {
@@ -360,7 +360,7 @@ char *silc_hash_babbleprint(SilcHash hash, const unsigned char *data,
 {
   SilcHash new_hash = NULL;
   char *babbleprint;
-  unsigned char hval[32];
+  unsigned char hval[SILC_HASH_MAXLEN];
   unsigned int a, b, c, d, e, check;
   int i, k, out_len;
 

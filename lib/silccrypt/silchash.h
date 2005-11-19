@@ -84,6 +84,7 @@ extern DLLAPI const SilcHashObject silc_default_hash[];
 
 /* Default HASH function in the SILC protocol */
 #define SILC_DEFAULT_HASH "sha1"
+#define SILC_HASH_MAXLEN 64
 
 /* Macros */
 

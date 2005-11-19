@@ -406,7 +406,7 @@ bool silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
 			      unsigned char *src, SilcUInt32 src_len,
 			      unsigned char *dst, SilcUInt32 *dst_len)
 {
-  unsigned char hashr[32];
+  unsigned char hashr[SILC_HASH_MAXLEN];
   SilcUInt32 hash_len;
   int ret;
 
@@ -430,7 +430,7 @@ bool silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash,
 				unsigned char *data,
 				SilcUInt32 data_len)
 {
-  unsigned char hashr[32];
+  unsigned char hashr[SILC_HASH_MAXLEN];
   SilcUInt32 hash_len;
   int ret;
 

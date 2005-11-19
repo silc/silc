@@ -752,7 +752,7 @@ void silc_server_notify(SilcServer server,
     /* Get the hmac */
     tmp = silc_argument_get_arg_type(args, 4, &tmp_len);
     if (tmp) {
-      unsigned char hash[32];
+      unsigned char hash[SILC_HASH_MAXLEN];
 
       if (channel->hmac)
 	silc_hmac_free(channel->hmac);
