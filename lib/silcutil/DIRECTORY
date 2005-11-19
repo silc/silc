@@ -23,6 +23,7 @@
 @LINK=silcdlist.html:SILC Dynamic List Interface
 @LINK=silcvcard.html:SILC VCard Interface
 @LINK=silcapputil.html:SILC Application Utilities
+@LINK=silcmime.html:SILC MIME Interface
 -->
 
 <big><b>SILC Utility Library</b></big>

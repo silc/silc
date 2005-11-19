@@ -142,6 +142,10 @@ unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
  *    the data without the MIME header.  The caller is responsible of
  *    NULL terminating the buffers it provides.
  *
+ * NOTES
+ *
+ *    This function is deprecated.  Use the SilcMime API instead.
+ *
  ***/
 bool
 silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,

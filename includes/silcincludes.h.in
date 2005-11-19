@@ -270,6 +270,7 @@ extern "C" {
 #include "silcsockconn.h"
 #include "silcvcard.h"
 #include "silcapputil.h"
+#include "silcmime.h"
 
 /* SILC core library includes */
 #include "silcargument.h"
