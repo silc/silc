@@ -436,6 +436,16 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 			     silc_ske_check_version, context);
 
       if (ctx->responder == TRUE) {
+	if (!ctx->packet) {
+	  SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol with %s (%s)",
+			  silc_ske_map_status(status), ctx->sock->hostname,
+			  ctx->sock->ip));
+
+	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
+	  return;
+	}
+
 	/* Start the key exchange by processing the received security
 	   properties packet from initiator. */
 	SILC_LOG_DEBUG(("Process security property list (KE)"));
@@ -488,6 +498,16 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	SILC_LOG_DEBUG(("Send security property list reply (KE)"));
 	status = silc_ske_responder_phase_1(ctx->ske);
       } else {
+	if (!ctx->packet) {
+	  SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol with %s (%s)",
+			  silc_ske_map_status(status), ctx->sock->hostname,
+			  ctx->sock->ip));
+
+	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
+	  return;
+	}
+
 	/* Call Phase-1 function. This processes the Key Exchange Start
 	   paylaod reply we just got from the responder. The callback
 	   function will receive the processed payload where we will
@@ -522,6 +542,16 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
        * Phase 2
        */
       if (ctx->responder == TRUE) {
+	if (!ctx->packet) {
+	  SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol with %s (%s)",
+			  silc_ske_map_status(status), ctx->sock->hostname,
+			  ctx->sock->ip));
+
+	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
+	  return;
+	}
+
 	/* Process the received Key Exchange 1 Payload packet from
 	   the initiator. This also creates our parts of the Diffie
 	   Hellman algorithm. The silc_server_protocol_ke_continue
@@ -572,6 +602,16 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
 	/* End the protocol on the next round */
 	protocol->state = SILC_PROTOCOL_STATE_END;
       } else {
+	if (!ctx->packet) {
+	  SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol with %s (%s)",
+			  silc_ske_map_status(status), ctx->sock->hostname,
+			  ctx->sock->ip));
+
+	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
+	  return;
+	}
+
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
 	   sent by responder. The silc_server_protocol_ke_continue will
 	   be called after the public key has been verified. */
@@ -891,6 +931,13 @@ SILC_TASK_CALLBACK(silc_server_protocol_connection_auth)
 
 	SILC_LOG_INFO(("Performing authentication protocol for %s (%s)",
 		       ctx->sock->hostname, ctx->sock->ip));
+
+	if (!ctx->packet) {
+	  SILC_LOG_ERROR(("Bad authentication protocol request"));
+	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
+	  return;
+	}
 
 	/* Parse the received authentication data packet. The received
 	   payload is Connection Auth Payload. */
@@ -1360,6 +1407,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	   * using the SKE protocol.
 	   */
 
+	  if (!ctx->packet) {
+	    SILC_LOG_ERROR(("Error during Re-key, with %s (%s)",
+			    ctx->sock->hostname, ctx->sock->ip));
+	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	    silc_protocol_execute(protocol, server->schedule, 0, 300000);
+	    return;
+	  }
+
 	  if (ctx->packet->type != SILC_PACKET_KEY_EXCHANGE_1) {
 	    SILC_LOG_ERROR(("Error during Re-key (R PFS): re-key state is "
 			    "incorrect (received %d, expected %d packet), "
@@ -1501,6 +1556,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
 	/*
 	 * The packet type must be KE packet
 	 */
+	if (!ctx->packet) {
+	  SILC_LOG_ERROR(("Error during Re-key, with %s (%s)",
+			  ctx->sock->hostname, ctx->sock->ip));
+	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	  silc_protocol_execute(protocol, server->schedule, 0, 300000);
+	  return;
+	}
+
 	if (ctx->packet->type != SILC_PACKET_KEY_EXCHANGE_2) {
 	  SILC_LOG_ERROR(("Error during Re-key (I PFS): re-key state is "
 			  "incorrect (received %d, expected %d packet), "
@@ -1544,6 +1607,14 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
     /*
      * End protocol
      */
+
+    if (!ctx->packet) {
+      SILC_LOG_ERROR(("Error during Re-key, with %s (%s)",
+		     ctx->sock->hostname, ctx->sock->ip));
+      protocol->state = SILC_PROTOCOL_STATE_ERROR;
+      silc_protocol_execute(protocol, server->schedule, 0, 300000);
+      return;
+    }
 
     if (ctx->packet->type != SILC_PACKET_REKEY_DONE) {
       SILC_LOG_ERROR(("Error during Re-key (%s PFS): re-key state is "
