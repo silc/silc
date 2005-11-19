@@ -116,7 +116,7 @@ void silc_mime_free(SilcMime mime);
  *
  ***/
 SilcMimeAssembler silc_mime_assembler_alloc(SilcMimeComplete complete,
-								    void *complete_context);
+					    void *complete_context);
 
 /****f* silcutil/SILCMIMEAPI/silc_mime_assembler_free
  *
@@ -284,7 +284,7 @@ const char *silc_mime_get_field(SilcMime mime, const char *field);
  *
  ***/
 void silc_mime_add_data(SilcMime mime, const unsigned char *data,
-				    SilcUInt32 data_len);
+			SilcUInt32 data_len);
 
 /****f* silcutil/SILCMIMEAPI/silc_mime_get_data
  *
@@ -328,7 +328,7 @@ bool silc_mime_is_partial(SilcMime mime);
  *
  ***/
 void silc_mime_set_multipart(SilcMime mime, const char *type,
-					    const char *boundary);
+			     const char *boundary);
 
 /****f* silcutil/SILCMIMEAPI/silc_mime_add_multipart
  *
