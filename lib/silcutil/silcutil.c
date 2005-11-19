@@ -490,7 +490,7 @@ SilcUInt32 silc_hash_utf8_string(void *key, void *user_context)
 
 SilcUInt32 silc_hash_uint(void *key, void *user_context)
 {
-  return *(SilcUInt32 *)key;
+  return SILC_PTR_TO_32(key);
 }
 
 /* Basic hash funtion to hash pointers. May be used with the SilcHashTable. */
