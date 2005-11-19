@@ -73,6 +73,7 @@ void silc_mime_free(SilcMime mime)
     silc_dlist_uninit(mime->multiparts);
   }
   silc_free(mime->boundary);
+  silc_free(mime->data);
   silc_free(mime);
 }
 
@@ -331,18 +332,13 @@ unsigned char *silc_mime_encode(SilcMime mime, SilcUInt32 *encoded_len)
 
 	 memset(tmp, 0, sizeof(tmp));
 	 memset(tmp2, 0, sizeof(tmp2));
-	 if (i == 0) {
-	   /* If fields are not present, add extra CRLF */
-	   if (!silc_hash_table_count(part->fields))
-		snprintf(tmp2, sizeof(tmp2) - 1, "\r\n");
-	   snprintf(tmp, sizeof(tmp) - 1, "--%s\r\n%s", mime->boundary, tmp2);
-	   i = 1;
-	 } else {
-	   /* If fields are not present, add extra CRLF */
-	   if (!silc_hash_table_count(part->fields))
-		snprintf(tmp2, sizeof(tmp2) - 1, "\r\n");
-	   snprintf(tmp, sizeof(tmp) - 1, "\r\n--%s\r\n%s", mime->boundary, tmp2);
-	 }
+
+	 /* If fields are not present, add extra CRLF */
+	 if (!silc_hash_table_count(part->fields))
+	   snprintf(tmp2, sizeof(tmp2) - 1, "\r\n");
+	 snprintf(tmp, sizeof(tmp) - 1, "%s--%s\r\n%s",
+			i != 0 ? "\r\n" : "", mime->boundary, tmp2);
+	 i = 1;
 
 	 buffer = silc_buffer_realloc(buffer, buffer->truelen + pd_len +
 							strlen(tmp));
@@ -697,7 +693,7 @@ bool silc_mime_is_partial(SilcMime mime)
   if (!type)
     return FALSE;
 
-  if (strstr(type, "message/partial"))
+  if (!strstr(type, "message/partial"))
     return FALSE;
 
   return TRUE;
