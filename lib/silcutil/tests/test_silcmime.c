@@ -3,26 +3,6 @@
 #include "silcincludes.h"
 #include "silcmime.h"
 
-struct foo {
-  int i;
-  struct foo *next;
-};
-
-static void ass_complete(SilcMime mime, void *context)
-{
-  unsigned char *enc;
-  SilcUInt32 enc_len;
-
-  SILC_LOG_DEBUG(("Defragmentation completed"));
-  SILC_LOG_DEBUG(("Encoding MIME context"));
-  enc = silc_mime_encode(mime, &enc_len);
-  if (!enc)
-    SILC_LOG_DEBUG(("Error encoding"));
-  SILC_LOG_DEBUG(("Encoded MIME message: \n%s", enc));
-  silc_free(enc);
-  silc_mime_free(mime);
-}
-
 int main(int argc, char **argv)
 {
   bool success = FALSE;
@@ -34,6 +14,7 @@ int main(int argc, char **argv)
   SilcUInt32 enc_len;
   SilcDList frag;
   SilcBuffer buf;
+  const char *mtype;
 
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_log_debug(TRUE);
@@ -173,9 +154,10 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("Re-encoded MIME message: \n%s", enc));
   silc_free(enc);
   SILC_LOG_DEBUG(("Get multiparts"));
-  frag = silc_mime_get_multiparts(mime);
+  frag = silc_mime_get_multiparts(mime, &mtype);
   if (!frag)
     goto err;
+  SILC_LOG_DEBUG(("Multipart type '%s'", mtype));
   silc_dlist_start(frag);
   while ((part = silc_dlist_get(frag)) != SILC_LIST_END) {
     SILC_LOG_DEBUG(("Encoding MIME part"));
@@ -191,7 +173,7 @@ int main(int argc, char **argv)
 
   /* Fragmentation test */
   SILC_LOG_DEBUG(("Allocating MIME assembler"));
-  ass = silc_mime_assembler_alloc(ass_complete, NULL);
+  ass = silc_mime_assembler_alloc();
   if (!ass)
     goto err;
   SILC_LOG_DEBUG(("Allocating MIME message context"));
@@ -231,7 +213,16 @@ int main(int argc, char **argv)
     part = silc_mime_decode(buf->data, buf->len);
     if (!silc_mime_is_partial(part))
 	 goto err;
-    silc_mime_assemble(ass, part);
+    part = silc_mime_assemble(ass, part);
+    if (part) {
+      SILC_LOG_DEBUG(("Defragmentation completed"));
+      SILC_LOG_DEBUG(("Encoding MIME context"));
+      enc = silc_mime_encode(mime, &enc_len);
+      if (!enc)
+        SILC_LOG_DEBUG(("Error encoding"));
+      SILC_LOG_DEBUG(("Encoded MIME message: \n%s", enc));
+      silc_free(enc);
+    }
   }
   silc_mime_partial_free(frag);
   silc_mime_assembler_free(ass);

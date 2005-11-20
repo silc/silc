@@ -60,21 +60,6 @@ typedef struct SilcMimeStruct *SilcMime;
  ***/
 typedef struct SilcMimeAssemblerStruct *SilcMimeAssembler;
 
-/****f* silcutil/SILCMIMEAPI/SilcMimeComplete
- *
- * SYNOPSIS
- *
- *    typedef void (*SilcMimeComplete)(SilcMime mime, void *context);
- *
- * DESCRIPTION
- *
- *    Callback function that is called by silc_mime_assemble function when
- *    all fragments has been received.  The `mime' is the complete MIME
- *    message.  It must be freed with silc_mime_free.
- *
- ***/
-typedef void (*SilcMimeComplete)(SilcMime mime, void *context);
-
 /****f* silcutil/SILCMIMEAPI/silc_mime_alloc
  *
  * SYNOPSIS
@@ -105,18 +90,14 @@ void silc_mime_free(SilcMime mime);
  *
  * SYNOPSIS
  *
- *    SilcMimeAssembler silc_mime_assembler_alloc(SilcMimeComplete complete,
- *                                                void *complete_context);
+ *    SilcMimeAssembler silc_mime_assembler_alloc(void);
  *
  * DESCRIPTION
  *
- *    Allocates MIME fragment assembler.  The `complete' callback will be
- *    whenever a MIME message has been assembled completely.  It delivers
- *    the complete MIME message to the caller.
+ *    Allocates MIME fragment assembler.
  *
  ***/
-SilcMimeAssembler silc_mime_assembler_alloc(SilcMimeComplete complete,
-					    void *complete_context);
+SilcMimeAssembler silc_mime_assembler_alloc(void);
 
 /****f* silcutil/SILCMIMEAPI/silc_mime_assembler_free
  *
@@ -181,26 +162,31 @@ unsigned char *silc_mime_encode(SilcMime mime, SilcUInt32 *encoded_len);
  *
  * SYNOPSIS
  *
- *    void silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial);
+ *    SilcMime silc_mime_assemble(SilcMimeAssembler assembler,
+ *                                SilcMime partial);
  *
  * DESCRIPTION
  *
  *    Processes and attempts to assemble the received MIME fragment `partial'.
  *    To check if a received MIME message is a fragment use the
- *    silc_mime_is_partial function.  The callback that was given as argument
- *    to the function silc_mime_assembler_alloc will be called when all
- *    fragments has been received, to deliver the complete MIME message.
- *    Caller must not free the `partial'.
+ *    silc_mime_is_partial function.  Returns NULL if all fragments has not
+ *    yet been received, or the newly allocated completed MIME message if
+ *    all fragments were received.  The caller must free the returned
+ *    SilcMime context.  The caller must not free the `partial'.
  *
  * EXAMPLE
  *
  *    // Assemble received MIME fragment
  *    mime = silc_mime_decode(data, data_len);
- *    if (silc_mime_is_partial(mime) == TRUE)
- *      silc_mime_assmeble(assembler, mime);
+ *    if (silc_mime_is_partial(mime) == TRUE) {
+ *      complete = silc_mime_assmeble(assembler, mime);
+ *      if (complete == NULL)
+ *        return;
+ *      ...
+ *    }
  *
  ***/
-void silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial);
+SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial);
 
 /****f* silcutil/SILCMIMEAPI/silc_mime_encode_partial
  *
@@ -378,16 +364,17 @@ bool silc_mime_is_multipart(SilcMime mime);
  *
  * SYNOPSIS
  *
- *    SilcDList silc_mime_get_multiparts(SilcMime mime);
+ *    SilcDList silc_mime_get_multiparts(SilcMime mime, const char **type);
  *
  * DESCRIPTION
  *
  *    Returns list of the parts from the MIME message `mime'.  Each entry
  *    in the list is SilcMime context.  The caller must not free the returned
  *    list or the SilcMime contexts in the list.  Returns NULL if no parts
- *    exists in the MIME message.
+ *    exists in the MIME message.  Returns the multipart type (like "mixed")
+ *    into `type' pointer.
  *
  ***/
-SilcDList silc_mime_get_multiparts(SilcMime mime);
+SilcDList silc_mime_get_multiparts(SilcMime mime, const char **type);
 
 #endif /* SILCMIME_H */

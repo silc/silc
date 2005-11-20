@@ -26,11 +26,10 @@ struct SilcMimeStruct {
   SilcUInt32 data_len;
   SilcDList multiparts;
   char *boundary;
+  char *multitype;
 };
 
 struct SilcMimeAssemblerStruct {
-  SilcMimeComplete complete;
-  void *complete_context;
   SilcHashTable fragments;
 };
 
@@ -73,6 +72,7 @@ void silc_mime_free(SilcMime mime)
     silc_dlist_uninit(mime->multiparts);
   }
   silc_free(mime->boundary);
+  silc_free(mime->multitype);
   silc_free(mime->data);
   silc_free(mime);
 }
@@ -84,8 +84,7 @@ static void silc_mime_assembler_dest(void *key, void *context,
   silc_hash_table_free(context);
 }
 
-SilcMimeAssembler silc_mime_assembler_alloc(SilcMimeComplete complete,
-								    void *complete_context)
+SilcMimeAssembler silc_mime_assembler_alloc(void)
 {
   SilcMimeAssembler assembler;
 
@@ -93,8 +92,6 @@ SilcMimeAssembler silc_mime_assembler_alloc(SilcMimeComplete complete,
   if (!assembler)
     return NULL;
 
-  assembler->complete = complete;
-  assembler->complete_context = complete_context;
   assembler->fragments =
     silc_hash_table_alloc(0, silc_hash_string, NULL,
 			  silc_hash_string_compare, NULL,
@@ -188,6 +185,21 @@ SilcMime silc_mime_decode(const unsigned char *data, SilcUInt32 data_len)
     mime->multiparts = silc_dlist_init();
     if (!mime->multiparts)
       goto err;
+
+    /* Get multipart type */
+    value = strchr(field, '/');
+    if (!value)
+      goto err;
+    value++;
+    if (strchr(field, '"'))
+      value++;
+    if (!strchr(field, ';'))
+      goto err;
+    memset(b, 0, sizeof(b));
+    strncat(b, value, strchr(field, ';') - value);
+    if (strchr(b, '"'))
+      *strchr(b, '"') = '\0';
+    mime->multitype = silc_memdup(b, strlen(b));
 
     /* Get boundary */
     value = strrchr(field, '=');
@@ -372,7 +384,7 @@ static void silc_mime_assemble_dest(void *key, void *context,
   silc_mime_free(context);
 }
 
-void silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
+SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
 {
   char *type, *id = NULL, *tmp;
   SilcHashTable f;
@@ -437,7 +449,7 @@ void silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
 	 goto err;
     silc_hash_table_add(f, SILC_32_TO_PTR(number), partial);
     silc_hash_table_add(assembler->fragments, id, f);
-    return;
+    return NULL;
   }
 
   /* Try to get total number */
@@ -462,14 +474,14 @@ void silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
   /* If more fragments to come, add to hash table */
   if (number != total) {
     silc_hash_table_add(f, SILC_32_TO_PTR(number), partial);
-    return;
+    return NULL;
   }
 
   silc_hash_table_add(f, SILC_32_TO_PTR(number), partial);
 
   /* Verify that we really have all the fragments */
   if (silc_hash_table_count(f) < total)
-    return;
+    return NULL;
 
   /* Assemble the complete MIME message now. We get them in order from
      the hash table. */
@@ -503,21 +515,19 @@ void silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
   if (!complete)
     goto err;
 
-  if (assembler->complete)
-    assembler->complete(complete, assembler->complete_context);
-
   /* Delete the hash table entry. Destructors will free memory */
   silc_hash_table_del(assembler->fragments, (void *)id);
-
   silc_free(id);
   silc_buffer_free(compbuf);
-  return;
+
+  return complete;
 
  err:
   silc_free(id);
   if (compbuf)
     silc_buffer_free(compbuf);
   silc_mime_free(partial);
+  return NULL;
 }
 
 SilcDList silc_mime_encode_partial(SilcMime mime, int max_size)
@@ -737,10 +747,13 @@ bool silc_mime_is_multipart(SilcMime mime)
   return mime->multiparts != NULL;
 }
 
-SilcDList silc_mime_get_multiparts(SilcMime mime)
+SilcDList silc_mime_get_multiparts(SilcMime mime, const char **type)
 {
   if (!mime)
     return NULL;
+
+  if (type)
+    *type = (const char *)mime->multitype;
 
   return mime->multiparts;
 }
