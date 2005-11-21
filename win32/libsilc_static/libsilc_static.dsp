@@ -177,6 +177,10 @@ SOURCE=..\..\lib\silcutil\silcmemory.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcutil\silcmime.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcutil\silcnet.c
 # End Source File
 # Begin Source File
@@ -286,6 +290,10 @@ SOURCE=..\..\lib\silccrypt\rsa.c
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\sha1.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccrypt\sha256.c
 # End Source File
 # Begin Source File
 
@@ -461,6 +469,10 @@ SOURCE=..\..\lib\silcutil\silcmemory.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcutil\silcmime.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcutil\silcmutex.h
 # End Source File
 # Begin Source File
@@ -598,6 +610,14 @@ SOURCE=..\..\lib\silccrypt\sha1.h
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\sha1_internal.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccrypt\sha256.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccrypt\sha256_internal.h
 # End Source File
 # Begin Source File
 
