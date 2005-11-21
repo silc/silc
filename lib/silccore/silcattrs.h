@@ -82,6 +82,7 @@ typedef SilcUInt8 SilcAttribute;
 #define SILC_ATTRIBUTE_SERVER_PUBLIC_KEY      13 /* SilcAttributeObjPk */
 #define SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE 14 /* SilcAttributeObjPk */
 #define SILC_ATTRIBUTE_SERVER_DIGITAL_SIGNATURE 15 /* SilcAttributeObjPk */
+#define SILC_ATTRIBUTE_USER_ICON	      16 /* SilcAttributeObjMime */
 /***/
 
 /* Maximum length of attribute request packet */

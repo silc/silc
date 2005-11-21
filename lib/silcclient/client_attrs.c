@@ -246,7 +246,8 @@ SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...)
 					  SILC_ATTRIBUTE_TIMEZONE,
 					  SILC_ATTRIBUTE_GEOLOCATION,
 					  SILC_ATTRIBUTE_DEVICE_INFO,
-					  SILC_ATTRIBUTE_USER_PUBLIC_KEY, 0);
+					  SILC_ATTRIBUTE_USER_PUBLIC_KEY,
+					  SILC_ATTRIBUTE_USER_ICON, 0);
 
   va_start(va, attribute);
   while (attribute) {

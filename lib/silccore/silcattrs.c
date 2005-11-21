@@ -119,6 +119,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 
     case SILC_ATTRIBUTE_STATUS_MESSAGE:
     case SILC_ATTRIBUTE_EXTENSION:
+    case SILC_ATTRIBUTE_USER_ICON:
       {
 	SilcAttributeObjMime *mime = object;
 	if (object_size != sizeof(*mime))
@@ -549,6 +550,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
 
   case SILC_ATTRIBUTE_STATUS_MESSAGE:
   case SILC_ATTRIBUTE_EXTENSION:
+  case SILC_ATTRIBUTE_USER_ICON:
     {
       SilcAttributeObjMime *mime = object;
       if (object_size != sizeof(*mime))
