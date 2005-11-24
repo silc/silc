@@ -399,7 +399,7 @@ SilcSKEStatus silc_ske_initiator_phase_2(SilcSKE ske,
 
   /* Compute signature data if we are doing mutual authentication */
   if (private_key && ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
-    unsigned char hash[32], sign[2048 + 1];
+    unsigned char hash[SILC_HASH_MAXLEN], sign[2048 + 1];
     SilcUInt32 hash_len, sign_len;
 
     SILC_LOG_DEBUG(("We are doing mutual authentication"));
@@ -464,7 +464,7 @@ static void silc_ske_initiator_finish_final(SilcSKE ske,
 					    void *context)
 {
   SilcSKEKEPayload *payload;
-  unsigned char hash[32];
+  unsigned char hash[SILC_HASH_MAXLEN];
   SilcUInt32 hash_len;
   SilcPublicKey public_key = NULL;
 
@@ -854,7 +854,7 @@ static void silc_ske_responder_phase2_final(SilcSKE ske,
   if (ske->start_payload &&
       ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
     SilcPublicKey public_key = NULL;
-    unsigned char hash[32];
+    unsigned char hash[SILC_HASH_MAXLEN];
     SilcUInt32 hash_len;
 
     /* Decode the public key */
@@ -1017,7 +1017,7 @@ SilcSKEStatus silc_ske_responder_finish(SilcSKE ske,
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer payload_buf;
   SilcMPInt *KEY;
-  unsigned char hash[32], sign[2048 + 1], *pk;
+  unsigned char hash[SILC_HASH_MAXLEN], sign[2048 + 1], *pk;
   SilcUInt32 hash_len, sign_len, pk_len;
 
   SILC_LOG_DEBUG(("Start"));
@@ -1747,7 +1747,7 @@ silc_ske_process_key_material_data(unsigned char *data,
 				   SilcSKEKeyMaterial *key)
 {
   SilcBuffer buf;
-  unsigned char hashd[32];
+  unsigned char hashd[SILC_HASH_MAXLEN];
   SilcUInt32 hash_len = req_hmac_key_len;
   SilcUInt32 enc_key_len = req_enc_key_len / 8;
 
@@ -1783,7 +1783,8 @@ silc_ske_process_key_material_data(unsigned char *data,
   buf->data[0] = 2;
   if (enc_key_len > hash_len) {
     SilcBuffer dist;
-    unsigned char k1[32], k2[32], k3[32];
+    unsigned char k1[SILC_HASH_MAXLEN], k2[SILC_HASH_MAXLEN],
+	k3[SILC_HASH_MAXLEN];
     unsigned char *dtmp;
 
     /* XXX */
@@ -1845,7 +1846,8 @@ silc_ske_process_key_material_data(unsigned char *data,
   buf->data[0] = 3;
   if (enc_key_len > hash_len) {
     SilcBuffer dist;
-    unsigned char k1[32], k2[32], k3[32];
+    unsigned char k1[SILC_HASH_MAXLEN], k2[SILC_HASH_MAXLEN],
+	k3[SILC_HASH_MAXLEN];
     unsigned char *dtmp;
 
     /* XXX */

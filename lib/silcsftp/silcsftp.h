@@ -386,8 +386,7 @@ typedef void (*SilcSFTPExtendedCallback)(SilcSFTP sftp,
  *
  * SYNOPSIS
  *
- *    SilcSFTP silc_sftp_client_start(SilcSFTPSendPacketCallback send_packet,
- *                                    void *send_context,
+ *    SilcSFTP silc_sftp_client_start(SilcStream stream,
  *                                    SilcSFTPVersionCallback callback,
  *                                    void *context);
  *
@@ -397,12 +396,11 @@ typedef void (*SilcSFTPExtendedCallback)(SilcSFTP sftp,
  *    indicated by the `callback' will be called after the SFTP session has
  *    been started and server has returned the version of the protocol.  The
  *    SFTP client context is returned in the callback too.  This returns the
- *    allocated SFTP client context or NULL on error.  Each socket connection
- *    should allocate their own SFTP client by calling this function.
+ *    allocated SFTP client context or NULL on error.  The `stream' will be
+ *    used to read from and write to the SFTP packets.
  *
  ***/
-SilcSFTP silc_sftp_client_start(SilcSFTPSendPacketCallback send_packet,
-				void *send_context,
+SilcSFTP silc_sftp_client_start(SilcStream stream,
 				SilcSFTPVersionCallback callback,
 				void *context);
 
@@ -420,13 +418,6 @@ SilcSFTP silc_sftp_client_start(SilcSFTPSendPacketCallback send_packet,
  *
  ***/
 void silc_sftp_client_shutdown(SilcSFTP sftp);
-
-/* Function that is called to process the incmoing SFTP packet. */
-/* XXX Some day this will go away and we have automatic receive callbacks
-   for SilcSocketConnection API or SilcPacketContext API. */
-void silc_sftp_client_receive_process(SilcSFTP sftp,
-				      SilcSocketConnection sock,
-				      SilcPacketContext *packet);
 
 /****f* silcsftp/SilcSFTPAPI/silc_sftp_open
  *
@@ -992,12 +983,5 @@ void silc_sftp_server_set_monitor(SilcSFTP sftp,
 				  SilcSFTPMonitors monitors,
 				  SilcSFTPMonitor monitor,
 				  void *context);
-
-/* Function that is called to process the incmoing SFTP packet. */
-/* XXX Some day this will go away and we have automatic receive callbacks
-   for SilcSocketConnection API or SilcPacketContext API. */
-void silc_sftp_server_receive_process(SilcSFTP sftp,
-				      SilcSocketConnection sock,
-				      SilcPacketContext *packet);
 
 #endif /* SILCSFTP_H */

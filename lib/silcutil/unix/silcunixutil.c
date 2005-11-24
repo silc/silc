@@ -98,7 +98,7 @@ int silc_string_regex_match(const char *regex, const char *string)
   regex_t preg;
   int ret = FALSE;
   
-  if (regcomp(&preg, regex, REG_NOSUB | REG_EXTENDED) < 0)
+  if (regcomp(&preg, regex, REG_NOSUB | REG_EXTENDED) != 0)
     return FALSE;
 
   if (regexec(&preg, string, 0, NULL, 0) == 0)

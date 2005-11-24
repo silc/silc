@@ -18,12 +18,19 @@
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 bin_PROGRAMS = 	test_silcstrutil test_silcstringprep test_silchashtable \
-	test_silclist
+	test_silclist test_silcfsm test_silcasync test_silcschedule \
+	test_silcnet test_silcstack test_silcmime
 
 test_silcstrutil_SOURCES = test_silcstrutil.c
 test_silcstringprep_SOURCES = test_silcstringprep.c
 test_silchashtable_SOURCES = test_silchashtable.c
 test_silclist_SOURCES = test_silclist.c
+test_silcmime_SOURCES = test_silcmime.c
+test_silcfsm_SOURCES = test_silcfsm.c
+test_silcasync_SOURCES = test_silcasync.c
+test_silcschedule_SOURCES = test_silcschedule.c
+test_silcnet_SOURCES = test_silcnet.c
+test_silcstack_SOURCES = test_silcstack.c
 
 LIBS = $(SILC_COMMON_LIBS)
 LDADD = -L.. -L../.. -lsilc

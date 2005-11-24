@@ -211,13 +211,14 @@ int main(int argc, char **argv)
   int i;
 
   if (argc > 1 && !strcmp(argv[1], "-d")) {
-    silc_debug = 1;
-    silc_debug_hexdump = 1;
+    silc_log_debug(TRUE);
+    silc_log_debug_hexdump(TRUE);
+    silc_log_quick(TRUE);
     silc_log_set_debug_string("*table*");
   }
 
   if (argc > 1 && !strcmp(argv[1], "-D")) {
-    silc_debug = 1;
+    silc_log_debug(TRUE);
     dump = TRUE;
     silc_log_set_debug_string("*table*");
   }
@@ -246,7 +247,7 @@ int main(int argc, char **argv)
   auto_rehash = TRUE;
   if (!alloc_table())
     goto err;
-  count = 3999;
+  count = 17999;
   if (!add_entries())
     goto err;
   SILC_LOG_DEBUG(("rehash"));

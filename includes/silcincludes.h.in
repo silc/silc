@@ -234,12 +234,15 @@ extern "C" {
 #include "silctypes.h"
 #include "silcversion.h"
 
+/* SILC util library includes */
+#include "silcstack.h"
+#include "silcmemory.h"
+
 /* Math library includes */
 #include "silcmp.h"
 #include "silcmath.h"
 
-/* SILC util library includes */
-#include "silcmemory.h"
+/* More SILC util library includes */
 #include "silcbuffer.h"
 #include "silcbuffmt.h"
 
@@ -252,6 +255,7 @@ extern "C" {
 #include "silcpkcs1.h"
 
 /* More SILC util library includes */
+#include "silctime.h"
 #include "silcmutex.h"
 #include "silcthread.h"
 #include "silcschedule.h"
@@ -259,6 +263,8 @@ extern "C" {
 #include "silclog.h"
 #include "silclist.h"
 #include "silcdlist.h"
+#include "silcasync.h"
+#include "silcstream.h"
 #include "silcnet.h"
 #include "silcfileutil.h"
 #include "silcstrutil.h"
@@ -266,10 +272,16 @@ extern "C" {
 #include "silcstringprep.h"
 #include "silcutil.h"
 #include "silcconfig.h"
-#include "silcprotocol.h"
-#include "silcsockconn.h"
+#include "silcfsm.h"
+#include "silcsocketstream.h"
+#include "silcfdstream.h"
 #include "silcvcard.h"
 #include "silcapputil.h"
+
+#ifdef SILC_DIST_ASN1
+#include "silcasn1.h"
+#include "silcber.h"
+#endif /* SILC_DIST_ASN1 */
 
 /* SILC core library includes */
 #include "silcargument.h"
@@ -284,7 +296,6 @@ extern "C" {
 #include "silcmode.h"
 #include "silcauth.h"
 #include "silcattrs.h"
-#include "silcvcard.h"
 
 #if defined(SILC_SIM)
 /* SILC Module library includes */

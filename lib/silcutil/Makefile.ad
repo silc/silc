@@ -46,22 +46,28 @@ noinst_LTLIBRARIES = libsilcutil.la
 
 libsilcutil_la_SOURCES = \
 	$(SILC_DIST_SOURCE) \
-	silcbuffmt.c \
-	silcconfig.c \
-	silclog.c \
-	silcmemory.c \
-	silcnet.c \
-	silcschedule.c \
-	silcfileutil.c \
-	silcstrutil.c \
-	silcutil.c \
+	silcbuffmt.c 	\
+	silcconfig.c 	\
+	silclog.c 	\
+	silcmemory.c 	\
+	silcnet.c 	\
+	silcschedule.c 	\
+	silcfileutil.c 	\
+	silcstrutil.c 	\
+	silcutil.c 	\
 	silchashtable.c \
-	silcsockconn.c	\
-	silcprotocol.c	\
 	silcvcard.c	\
 	silcapputil.c	\
 	silcutf8.c	\
-	silcstringprep.c
+	silcstringprep.c \
+	silcstream.c	\
+	silcfdstream.c	\
+	silcsocketstream.c \
+	silcfsm.c	\
+	silcasync.c	\
+	silctime.c	\
+	silcmime.c	\
+	silcstack.c
 
 #ifdef SILC_DIST_TOOLKIT
 include_HEADERS =	\
@@ -76,8 +82,7 @@ include_HEADERS =	\
 	silcmutex.h	\
 	silcnet.h	\
 	silcschedule.h	\
-	silcsockconn.h	\
-	silcprotocol.h	\
+	silcschedule_i.h \
 	silcthread.h	\
 	silclist.h	\
 	silcdlist.h	\
@@ -87,8 +92,19 @@ include_HEADERS =	\
 	silcvcard.h	\
 	silcapputil.h	\
 	silcutf8.h	\
-	silcstringprep.h	\
-	silctypes.h
+	silcstringprep.h \
+	silctypes.h	\
+	silcstream.h	\
+	silcfdstream.h \
+	silcsocketstream.h \
+	silcfsm.h	\
+	silcfsm_i.h	\
+	silctime.h	\
+	silcmime.h	\
+	silcasync.h	\
+	silcasync_i.h	\
+	silcstack.h	\
+	silcstack_i.h
 
 SILC_EXTRA_DIST = tests
 #endif SILC_DIST_TOOLKIT

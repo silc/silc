@@ -24,7 +24,7 @@ libsilcunixutil_la_SOURCES = 	\
 	silcunixschedule.c	\
 	silcunixnet.c		\
 	silcunixutil.c		\
-	silcunixsockconn.c	\
+	silcunixsocketstream.c	\
 	silcunixmutex.c		\
 	silcunixthread.c
 

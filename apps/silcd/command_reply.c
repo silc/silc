@@ -331,7 +331,7 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     if (server->server_type != SILC_ROUTER && !client->data.public_key) {
       SilcAttributePayload attr;
       SilcAttributeObjPk pk;
-      unsigned char f[20];
+      unsigned char f[SILC_HASH_MAXLEN];
       SilcDList attrs = silc_attribute_payload_parse(tmp, len);
 
       SILC_LOG_DEBUG(("Take client public key from attributes"));

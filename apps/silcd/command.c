@@ -2966,6 +2966,10 @@ SILC_SERVER_CMD_FUNC(cmode)
 	 new channel key. Clients are not using private channel keys
 	 anymore after this. */
 
+      /* if we don't remove the flag from the mode
+       * silc_server_create_channel_key won't create a new key */
+      channel->mode &= ~SILC_CHANNEL_MODE_PRIVKEY;
+
       /* Re-generate channel key */
       if (!silc_server_create_channel_key(server, channel, 0))
 	goto out;
@@ -3107,7 +3111,7 @@ SILC_SERVER_CMD_FUNC(cmode)
   if (mode_mask & SILC_CHANNEL_MODE_HMAC) {
     if (!(channel->mode & SILC_CHANNEL_MODE_HMAC)) {
       /* HMAC to use protect the traffic */
-      unsigned char hash[32];
+      unsigned char hash[SILC_HASH_MAXLEN];
       SilcHmac newhmac;
 
       /* Get hmac */
@@ -3143,7 +3147,7 @@ SILC_SERVER_CMD_FUNC(cmode)
       /* Hmac mode is unset. Remove the hmac and revert back to
 	 default hmac */
       SilcHmac newhmac;
-      unsigned char hash[32];
+      unsigned char hash[SILC_HASH_MAXLEN];
       hmac = channel->hmac_name;
 
       /* Delete old hmac and allocate default one */
@@ -4108,7 +4112,7 @@ SILC_SERVER_CMD_FUNC(watch)
   SilcServer server = cmd->server;
   char *add_nick, *del_nick;
   SilcUInt32 add_nick_len, del_nick_len, tmp_len, pk_len;
-  unsigned char hash[16], *tmp,  *pk, *nick;
+  unsigned char hash[SILC_HASH_MAXLEN], *tmp,  *pk, *nick;
   SilcClientEntry client;
   SilcClientID *client_id = NULL;
   SilcUInt16 old_ident;

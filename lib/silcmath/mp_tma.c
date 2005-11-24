@@ -26,6 +26,13 @@ void silc_mp_init(SilcMPInt *mp)
   (void)mp_init(mp);
 }
 
+bool silc_mp_sinit(SilcStack stack, SilcMPInt *mp)
+{
+  /* XXX TODO */
+  mp_init(mp);
+  return TRUE;
+}
+
 void silc_mp_uninit(SilcMPInt *mp)
 {
   mp_clear(mp);

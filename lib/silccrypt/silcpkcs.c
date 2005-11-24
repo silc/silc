@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -406,7 +406,7 @@ bool silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
 			      unsigned char *src, SilcUInt32 src_len,
 			      unsigned char *dst, SilcUInt32 *dst_len)
 {
-  unsigned char hashr[32];
+  unsigned char hashr[SILC_HASH_MAXLEN];
   SilcUInt32 hash_len;
   int ret;
 
@@ -430,7 +430,7 @@ bool silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash,
 				unsigned char *data,
 				SilcUInt32 data_len)
 {
-  unsigned char hashr[32];
+  unsigned char hashr[SILC_HASH_MAXLEN];
   SilcUInt32 hash_len;
   int ret;
 
@@ -800,7 +800,7 @@ bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
 
   /* Get key data. We assume that rest of the buffer is key data. */
   silc_buffer_pull(&buf, 2 + pkcs_len + 2 + identifier_len);
-  key_len = buf.len;
+  key_len = silc_buffer_len(&buf);
   ret = silc_buffer_unformat(&buf,
 			     SILC_STR_UI_XNSTRING_ALLOC(&key_data, key_len),
 			     SILC_STR_END);
@@ -1009,7 +1009,7 @@ bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
     goto err;
   }
 
-  if (pkcs_len < 1 || pkcs_len > buf.truelen) {
+  if (pkcs_len < 1 || pkcs_len > silc_buffer_truelen(&buf)) {
     SILC_LOG_DEBUG(("Malformed private key buffer"));
     goto err;
   }
@@ -1022,7 +1022,7 @@ bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
 
   /* Get key data. We assume that rest of the buffer is key data. */
   silc_buffer_pull(&buf, 2 + pkcs_len);
-  key_len = buf.len;
+  key_len = silc_buffer_len(&buf);
   ret = silc_buffer_unformat(&buf,
 			     SILC_STR_UI_XNSTRING_ALLOC(&key_data, key_len),
 			     SILC_STR_END);
@@ -1091,7 +1091,7 @@ static bool silc_pkcs_save_public_key_internal(const char *filename,
 		     SILC_STR_END);
 
   /* Save into file */
-  if (silc_file_writefile(filename, buf->data, buf->len)) {
+  if (silc_file_writefile(filename, buf->data, silc_buffer_len(buf))) {
     silc_free(tmp);
     silc_buffer_free(buf);
     return FALSE;
@@ -1218,14 +1218,14 @@ static bool silc_pkcs_save_private_key_internal(const char *filename,
 		     SILC_STR_END);
 
   /* Encrypt. */
-  silc_cipher_encrypt(aes, enc->data, enc->data, enc->len - len,
+  silc_cipher_encrypt(aes, enc->data, enc->data, silc_buffer_len(enc) - len,
 		      silc_cipher_get_iv(aes));
 
   silc_buffer_push(enc, 4);
 
   /* Compute HMAC over the encrypted data and append the MAC to data.
      The key is the first digest of the original key material. */
-  data_len = enc->len - len;
+  data_len = silc_buffer_len(enc) - len;
   silc_hmac_init_with_key(sha1hmac, keymat, 16);
   silc_hmac_update(sha1hmac, enc->data, data_len);
   silc_buffer_pull(enc, data_len);
@@ -1240,7 +1240,7 @@ static bool silc_pkcs_save_private_key_internal(const char *filename,
   silc_cipher_free(aes);
 
   data = enc->data;
-  data_len = enc->len;
+  data_len = silc_buffer_len(enc);
 
   switch (encoding) {
   case SILC_PKCS_FILE_BIN:
@@ -1262,7 +1262,8 @@ static bool silc_pkcs_save_private_key_internal(const char *filename,
 		     SILC_STR_END);
 
   /* Save into a file */
-  if (silc_file_writefile_mode(filename, buf->data, buf->len, 0600)) {
+  if (silc_file_writefile_mode(filename, buf->data,
+			       silc_buffer_len(buf), 0600)) {
     silc_buffer_clear(buf);
     silc_buffer_free(buf);
     silc_buffer_clear(enc);

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,8 +25,7 @@
 
 int silc_file_open(const char *filename, int flags)
 {
-  int fd = open(filename, flags, 0600);
-  return fd;
+  return silc_file_open_mode(filename, flags, 0600);
 }
 
 /* Opens a file indicated by the filename `filename' with flags indicated

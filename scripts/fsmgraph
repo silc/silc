@@ -1,0 +1,102 @@
+#!/bin/sh
+#
+#  Author: Pekka Riikonen <priikone@silcnet.org>
+#
+#  Copyright (C) 2005 Pekka Riikonen
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  Usage: ./fsmgraph file | dot -Tps -o outfile.ps
+#
+#  Graphviz dot is required to create the graphs.
+
+##############################################################################
+
+# Get the starts
+starts=`awk '/^SILC_FSM_STATE\(/,/^}/ { next } { print }' $@ | grep "silc_fsm_start" | cut -d, -f2 | cut -d\) -f1`
+
+# Get all states
+states=`grep "^SILC_FSM_STATE(" $@ | grep -v ");" | cut -d\( -f2 | cut -d\) -f1`
+
+# Output the graph
+echo "digraph G {"
+
+# Draw starts
+for i in $starts
+do
+  echo "\"start $i\" [shape=plaintext];"
+  echo "\"start $i\" -> $i;"
+done
+
+# Draw states and transitions
+for i in $states
+do
+  echo "$i;"
+
+  # This weird line gets us all state transitions and their optioanl
+  # comment lines which be put as labels
+  tr=`cat $@ | grep -v "^SILC_FSM_STATE($i);" | awk '/^SILC_FSM_STATE\('$i'\)/,/^}/ { if (/\/\*\* /) print; if (/silc_fsm_next/) print; }' | sed 's/^[ 	]*//; s/\\/\\*\\* /L:/; s/\\*\\///; s/silc_fsm_next/T:silc_fsm_next/' | sed '/L:/s/ /\\\\/g; /T:/s/ /\\\\/g; s/T:/T: /; s/L:/L: /'`
+
+  # Get thread starts
+  threads=`cat $@ | grep -v "^SILC_FSM_STATE($i);" | awk '/^SILC_FSM_STATE\('$i'\)/,/^}/ { if (/silc_fsm_start/) print; }' | cut -d, -f2 | cut -d\) -f1`
+
+  # Get async calls
+  asyncs=`cat $@ | grep -v "^SILC_FSM_STATE($i);" | awk '/^SILC_FSM_STATE\('$i'\)/,/^}/ { if (/SILC_FSM_CALL\(/) print; }' | sed 's/SILC_FSM_CALL(//' | cut -d= -f2 | cut -d\( -f1`
+
+  trname=""
+  label=""
+
+  # Draw transitions
+  for t in $tr
+  do
+    if test "$t" = "L:"; then
+      label="$t"
+      continue
+    fi
+    if test "$t" = "T:"; then
+      trname="$t"
+      continue
+    fi
+    if test "$label" = "L:"; then
+      label="$t"
+      continue
+    fi
+    if test "$trname" = "T:"; then
+      trname="$t"
+    fi
+
+    # Unescape
+    if test "$label"; then
+      label=`echo $label | sed 's/\\\\/ /g'`
+    fi
+    trname=`echo $trname | sed 's/\\\\/ /g'`
+    trname=`echo $trname | cut -d, -f2 | cut -d\) -f1`
+
+    echo "$i -> $trname [label=\"$label\"];"
+
+    trname=""
+    label=""
+  done
+
+  # Draw thread transitions
+  for h in $threads
+  do
+    echo "$i -> $h [style=dotted];"
+  done
+
+  # Draw async calls
+  for a in $asyncs
+  do
+    echo "\"$a\" [shape=plaintext];"
+    echo "$i -> \"$a\" [style=dotted];"
+  done
+done
+
+echo "}"

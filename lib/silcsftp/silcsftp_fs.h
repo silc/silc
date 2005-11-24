@@ -1,10 +1,10 @@
 /*
 
-  silcsftp_fs.h 
+  silcsftp_fs.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@
  *
  *    The directories cannot be removed from remote access using the
  *    filesystem access function sftp_rmdir.  This is because the filesystem
- *    is one-user filesystem and differentiating between users is not 
+ *    is one-user filesystem and differentiating between users is not
  *    possible.  Thus, it would allow anyone to remove directories and
  *    their contents.  Removing directories is possible only locally using
  *    the silc_sftp_fs_memory_del_dir function.  The same thing is with
@@ -63,7 +63,7 @@
  *    the silc_sftp_fs_memory_del_file function.  Also, files can not ever
  *    be executed from remote access.
  *
- *    Also some of the file operation flags are not supported, such as 
+ *    Also some of the file operation flags are not supported, such as
  *    SILC_SFTP_FXF_CREAT, SILC_SFTP_FXF_TRUNC and SILC_SFTP_FXF_EXCL
  *    since they would require access to a real filesystem file which does
  *    not exist yet, or would mean destroying the file.  However, the
@@ -76,8 +76,8 @@
 /****s* silcsftp/SilcSFTPFSAPI/SilcSFTPFilesystemOps
  *
  * NAME
- * 
- *    typedef struct SilcSFTPFilesystemOpsStruct { ... } 
+ *
+ *    typedef struct SilcSFTPFilesystemOpsStruct { ... }
  *                     *SilcSFTPFilesystemOps;
  *
  * DESCRIPTION
@@ -91,7 +91,7 @@
  * SOURCE
  */
 typedef struct SilcSFTPFilesystemOpsStruct {
-  /* Find a file handle by the file handle data indicated by the `data'. 
+  /* Find a file handle by the file handle data indicated by the `data'.
      If the handle is not found this returns NULL. */
   SilcSFTPHandle (*sftp_get_handle)(void *context, SilcSFTP sftp,
 				    const unsigned char *data,
@@ -106,8 +106,8 @@ typedef struct SilcSFTPFilesystemOpsStruct {
   /* Open a file indicated by the `filename' with flags indicated by the
      `pflags', and with attributes indicated by the `attr'.  Calls the
      `callback' to return the opened file handle. */
-  void (*sftp_open)(void *context, SilcSFTP sftp, 
-		    const char *filename, 
+  void (*sftp_open)(void *context, SilcSFTP sftp,
+		    const char *filename,
 		    SilcSFTPFileOperation pflags,
 		    SilcSFTPAttributes attr,
 		    SilcSFTPHandleCallback callback,
@@ -115,7 +115,7 @@ typedef struct SilcSFTPFilesystemOpsStruct {
 
   /* Closes the file indicated by the file handle `handle'.  Calls the
      `callback' to indicate the status of the closing. */
-  void (*sftp_close)(void *context, SilcSFTP sftp, 
+  void (*sftp_close)(void *context, SilcSFTP sftp,
 		     SilcSFTPHandle handle,
 		     SilcSFTPStatusCallback callback,
 		     void *callback_context);
@@ -124,14 +124,14 @@ typedef struct SilcSFTPFilesystemOpsStruct {
      from the offset of `offset' at most `len' bytes.  The `callback' is
      called to return the read data. */
   void (*sftp_read)(void *context, SilcSFTP sftp,
-		    SilcSFTPHandle handle, 
-		    SilcUInt64 offset, 
+		    SilcSFTPHandle handle,
+		    SilcUInt64 offset,
 		    SilcUInt32 len,
 		    SilcSFTPDataCallback callback,
 		    void *callback_context);
 
   /* Writes to a file indicated by the file handle `handle' starting from
-     offset of `offset' at most `data_len' bytes of `data'.  The `callback' 
+     offset of `offset' at most `data_len' bytes of `data'.  The `callback'
      is called to indicate the status of the writing. */
   void (*sftp_write)(void *context, SilcSFTP sftp,
 		     SilcSFTPHandle handle,
@@ -208,7 +208,7 @@ typedef struct SilcSFTPFilesystemOpsStruct {
 		     SilcSFTPHandle handle,
 		     SilcSFTPAttrCallback callback,
 		     void *callback_context);
-  
+
   /* Sets a file attributes to a file indicated by the `path' with the
      attributes indicated by the `attrs'.  Calls the `callback' to indicate
      the status of the setting. */
@@ -250,7 +250,7 @@ typedef struct SilcSFTPFilesystemOpsStruct {
 			SilcSFTPNameCallback callback,
 			void *callback_context);
 
-  /* Performs an extended operation indicated by the `request' with 
+  /* Performs an extended operation indicated by the `request' with
      optional extended operation data indicated by the `data'.  The callback
      is called to return any data associated with the extended request. */
   void (*sftp_extended)(void *context, SilcSFTP sftp,
@@ -265,7 +265,7 @@ typedef struct SilcSFTPFilesystemOpsStruct {
 /****s* silcsftp/SilcSFTPFSAPI/SilcSFTPFilesystem
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } *SilcSFTPFilesystem;
  *
  * DESCRIPTION
@@ -288,7 +288,7 @@ typedef struct {
 /****d* silcsftp/SilcSFTPFSAPI/SilcSFTPFSMemoryPerm
  *
  * NAME
- * 
+ *
  *    typedef enum { ... } SilcSFTPFSMemoryPerm;
  *
  * DESCRIPTION
@@ -351,9 +351,9 @@ void silc_sftp_fs_memory_free(SilcSFTPFilesystem fs);
  *    or new subdirectories under the directory. The `dir' is the parent
  *    directory of the directory to be added. If this directory is to be
  *    added to the root directory the `dir' is NULL.  The `name' is the name
- *    of the directory. If error occurs this returns NULL. The `perm' will 
+ *    of the directory. If error occurs this returns NULL. The `perm' will
  *    indicate the permissions for the directory and they work in POSIX
- *    style. 
+ *    style.
  *
  ***/
 void *silc_sftp_fs_memory_add_dir(SilcSFTPFilesystem fs, void *dir,

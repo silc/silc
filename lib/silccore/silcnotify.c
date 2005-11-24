@@ -1,10 +1,10 @@
 /*
 
-  silcnotify.c 
+  silcnotify.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2002 Pekka Riikonen
+  Copyright (C) 2000 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -58,12 +58,12 @@ SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
   if (ret == -1)
     goto err;
 
-  if (len > buffer.len)
+  if (len > silc_buffer_len(&buffer))
     goto err;
 
   if (newp->argc) {
     silc_buffer_pull(&buffer, 5);
-    newp->args = silc_argument_payload_parse(buffer.data, buffer.len, 
+    newp->args = silc_argument_payload_parse(buffer.data, silc_buffer_len(&buffer),
 					     newp->argc);
     silc_buffer_push(&buffer, 5);
   }
@@ -79,7 +79,7 @@ SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
    argument payloads will be associated to the notify payload. Variable
    arguments must be {usigned char *, SilcUInt32 (len)}. */
 
-SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc, 
+SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
 				      va_list ap)
 {
   SilcBuffer buffer;
@@ -105,14 +105,14 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
       silc_free(argv);
       return NULL;
     }
-    
+
     for (i = 0, k = 0; i < argc; i++) {
       x = va_arg(ap, unsigned char *);
       x_len = va_arg(ap, SilcUInt32);
 
       if (!x || !x_len)
 	continue;
-      
+
       argv[k] = silc_memdup(x, x_len);
       if (!argv[k])
 	return NULL;
@@ -122,7 +122,7 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
     }
 
     args = silc_argument_payload_encode(k, argv, argv_lens, argv_types);
-    len = args->len;
+    len = silc_buffer_len(args);
 
     for (i = 0; i < k; i++)
       silc_free(argv[i]);
@@ -144,7 +144,7 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
   if (k) {
     silc_buffer_pull(buffer, 5);
     silc_buffer_format(buffer,
-		       SILC_STR_UI_XNSTRING(args->data, args->len),
+		       SILC_STR_UI_XNSTRING(args->data, silc_buffer_len(args)),
 		       SILC_STR_END);
     silc_buffer_push(buffer, 5);
     silc_buffer_free(args);
@@ -155,14 +155,14 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
 
 /* Same as above but takes argument from the `args' Argument Payload. */
 
-SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type, 
+SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type,
 					   SilcUInt32 argc,
 					   SilcBuffer args)
 {
   SilcBuffer buffer;
   SilcUInt32 len;
 
-  len = 5 + (args ? args->len : 0);
+  len = 5 + (args ? silc_buffer_len(args) : 0);
   buffer = silc_buffer_alloc_size(len);
   if (!buffer)
     return NULL;
@@ -175,7 +175,7 @@ SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type,
   if (args) {
     silc_buffer_pull(buffer, 5);
     silc_buffer_format(buffer,
-		       SILC_STR_UI_XNSTRING(args->data, args->len),
+		       SILC_STR_UI_XNSTRING(args->data, silc_buffer_len(args)),
 		       SILC_STR_END);
     silc_buffer_push(buffer, 5);
   }

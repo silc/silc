@@ -65,8 +65,9 @@ int main(int argc, char **argv)
           exit(0);
           break;
         case 'd':
-          silc_debug = TRUE;
-	  silc_debug_hexdump = TRUE;
+          silc_log_debug(TRUE);
+	  silc_log_debug_hexdump(TRUE);
+	  silc_log_quick(TRUE);
           if (optarg)
             silc_log_set_debug_string(optarg);
 	  else

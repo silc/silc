@@ -325,7 +325,9 @@ struct SilcSKESecurityPropertiesStruct {
  */
 struct SilcSKEStruct {
   /* The connection object. This is initialized by the caller. */
+#if 0
   SilcSocketConnection sock;
+#endif
 
   /* Security properties negotiated */
   SilcSKESecurityProperties prop;
@@ -501,7 +503,9 @@ void silc_ske_set_callbacks(SilcSKE ske,
  *
  ***/
 SilcSKEStatus silc_ske_initiator_start(SilcSKE ske, SilcRng rng,
+#if 0
 				       SilcSocketConnection sock,
+#endif
 				       SilcSKEStartPayload *start_payload);
 
 /****f* silcske/SilcSKEAPI/silc_ske_initiator_phase_1
@@ -625,7 +629,9 @@ SilcSKEStatus silc_ske_initiator_finish(SilcSKE ske,
  *
  ***/
 SilcSKEStatus silc_ske_responder_start(SilcSKE ske, SilcRng rng,
+#if 0
 				       SilcSocketConnection sock,
+#endif
 				       const char *version,
 				       SilcBuffer start_payload,
 				       SilcSKESecurityPropertyFlag flags);

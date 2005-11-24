@@ -1,15 +1,15 @@
 /*
- 
+
   silcid.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
+
   Copyright (C) 1997 - 2005 Pekka Riikonen
- 
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
- 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -42,7 +42,7 @@
 /****d* silccore/SilcIDAPI/SilcIdType
  *
  * NAME
- * 
+ *
  *    typedef SilcUInt16 SilcIdType;
  *
  * DESCRIPTION
@@ -71,7 +71,7 @@ typedef SilcUInt16 SilcIdType;
 /****s* silccore/SilcIDAPI/SilcIDPayload
  *
  * NAME
- * 
+ *
  *    typedef struct SilcIDPayloadStruct *SilcIDPayload;
  *
  * DESCRIPTION
@@ -107,7 +107,7 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
  *
  * SYNOPSIS
  *
- *    void *silc_id_payload_parse_id(const unsigned char *data, 
+ *    void *silc_id_payload_parse_id(const unsigned char *data,
  *                                   SilcUInt32 len,
  *                                   SilcIdType *type);
  *
@@ -221,7 +221,7 @@ SilcUInt32 silc_id_payload_get_len(SilcIDPayload payload);
 /****s* silccore/SilcIDAPI/SilcIDIP
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcIDIP;
  *
  * DESCRIPTION
@@ -241,13 +241,13 @@ typedef struct {
 /****s* silccore/SilcIDAPI/SilcServerID
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcServerID;
  *
  * DESCRIPTION
  *
  *    64 or 160 bit SilcServerID structure:
- *  
+ *
  *     n bit IP address
  *    16 bit port
  *    16 bit random number
@@ -264,7 +264,7 @@ typedef struct {
 /****s* silccore/SilcIDAPI/SilcClientID
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcClientID;
  *
  * DESCRIPTION
@@ -287,7 +287,7 @@ typedef struct {
 /****s* silccore/SilcIDAPI/SilcChannelID
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcChannelID;
  *
  * DESCRIPTION
@@ -312,7 +312,7 @@ typedef struct {
 /****d* silccore/SilcIDAPI/SILC_ID_COMPARE
  *
  * NAME
- * 
+ *
  *    #define SILC_ID_COMPARE ...
  *
  * DESCRIPTION
@@ -328,7 +328,7 @@ typedef struct {
 /****d* silccore/SilcIDAPI/SILC_ID_CLIENT_COMPARE
  *
  * NAME
- * 
+ *
  *    #define SILC_ID_CLIENT_COMPARE ...
  *
  * DESCRIPTION
@@ -344,7 +344,7 @@ typedef struct {
 /****d* silccore/SilcIDAPI/SILC_ID_SERVER_COMPARE
  *
  * NAME
- * 
+ *
  *    #define SILC_ID_SERVER_COMPARE ...
  *
  * DESCRIPTION
@@ -360,7 +360,7 @@ typedef struct {
 /****d* silccore/SilcIDAPI/SILC_ID_CHANNEL_COMPARE
  *
  * NAME
- * 
+ *
  *    #define SILC_ID_CHANNEL_COMPARE ...
  *
  * DESCRIPTION
@@ -376,7 +376,7 @@ typedef struct {
 /****d* silccore/SilcIDAPI/SILC_ID_COMPARE_TYPE
  *
  * NAME
- * 
+ *
  *    #define SILC_ID_COMPARE_TYPE ...
  *
  * DESCRIPTION
@@ -394,7 +394,7 @@ typedef struct {
 /****d* silccore/SilcIDAPI/SILC_ID_COMPARE_HASH
  *
  * NAME
- * 
+ *
  *    #define SILC_ID_COMPARE_HASH ...
  *
  * DESCRIPTION
@@ -416,7 +416,8 @@ typedef struct {
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_id_id2str(const void *id, SilcIdType type);
+ *    unsigned char *silc_id_id2str(const void *id, SilcIdType type,
+ *                                  SilcUInt32 *ret_id_len);
  *
  * DESCRIPTION
  *
@@ -425,14 +426,15 @@ typedef struct {
  *    silc_id_get_len to get the length of the ID.
  *
  ***/
-unsigned char *silc_id_id2str(const void *id, SilcIdType type);
+unsigned char *silc_id_id2str(const void *id, SilcIdType type,
+			      SilcUInt32 *ret_id_len);
 
 /****f* silccore/SilcIDAPI/silc_id_str2id
  *
  * SYNOPSIS
  *
- *    void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len, 
- *                         SilcIdType type);
+ *    bool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
+ *                        SilcIdType type, void *ret_id);
  *
  * DESCRIPTION
  *
@@ -440,8 +442,8 @@ unsigned char *silc_id_id2str(const void *id, SilcIdType type);
  *    ID out of data that has been taken for example from packet.
  *
  ***/
-void *silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
-		     SilcIdType type);
+bool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
+		    SilcIdType type, void *ret_id);
 
 /****f* silccore/SilcIDAPI/silc_id_get_len
  *

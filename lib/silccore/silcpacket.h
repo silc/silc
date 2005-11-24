@@ -1,10 +1,10 @@
 /*
 
-  silcpacket.h 
+  silcpacket.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,25 +31,7 @@
 #ifndef SILCPACKET_H
 #define SILCPACKET_H
 
-/* Default byte size of the packet. */
-#define SILC_PACKET_DEFAULT_SIZE SILC_SOCKET_BUF_SIZE
-
-/* Header length without source and destination ID's. */
-#define SILC_PACKET_HEADER_LEN 10
-
-/* Minimum length of SILC Packet Header. This much is decrypted always
-   when packet is received to be able to get all the relevant data out
-   from the header. */
-#define SILC_PACKET_MIN_HEADER_LEN 16
-
-/* Maximum padding length */
-#define SILC_PACKET_MAX_PADLEN 128
-
-/* Default padding length */
-#define SILC_PACKET_DEFAULT_PADLEN 16
-
-/* Minimum packet length */
-#define SILC_PACKET_MIN_LEN (SILC_PACKET_HEADER_LEN + 1)
+/* XXX many of these could go to silcpacket_i.h */
 
 /* Maximum packet length */
 #define SILC_PACKET_MAX_LEN 0xffff
@@ -60,7 +42,7 @@
 /****d* silccore/SilcPacketAPI/SilcPacketType
  *
  * NAME
- * 
+ *
  *    typedef SilcUInt8 SilcPacketType;
  *
  * DESCRIPTION
@@ -106,23 +88,10 @@ typedef SilcUInt8 SilcPacketType;
 #define SILC_PACKET_MAX                  255     /* RESERVED */
 /***/
 
-/****d* silccore/SilcPacketAPI/SilcPacketVersion
- *
- * NAME
- * 
- *    typedef SilcUInt8 SilcPacketVersion;
- *
- * DESCRIPTION
- *
- *    SILC packet version type definition.
- *
- ***/
-typedef SilcUInt8 SilcPacketVersion;
-
 /****d* silccore/SilcPacketAPI/SilcPacketFlags
  *
  * NAME
- * 
+ *
  *    typedef SilcUInt8 SilcPacketFlags;
  *
  * DESCRIPTION
@@ -139,506 +108,596 @@ typedef SilcUInt8 SilcPacketFlags;
 #define SILC_PACKET_FLAG_LIST             0x02	  /* Packet is a list */
 #define SILC_PACKET_FLAG_BROADCAST        0x04	  /* Packet is a broadcast */
 #define SILC_PACKET_FLAG_COMPRESSED       0x08    /* Payload is compressed */
+
+/* Impelemntation specific flags */
+#define SILC_PACKET_FLAG_LONG_PAD         0x10    /* Use maximum padding */
 /***/
 
-/* Rest of flags still available
-#define SILC_PACKET_FLAG_XXX              0x10
-#define SILC_PACKET_FLAG_XXX              0x20
-#define SILC_PACKET_FLAG_XXX              0x40
-#define SILC_PACKET_FLAG_XXX              0x80
-*/
-
-/****s* silccore/SilcPacketAPI/SilcPacketContext
+/****s* silccore/SilcPacketAPI/SilcPacketEngine
  *
  * NAME
- * 
- *    typedef struct { ... } SilcPacketContext;
+ *
+ *    typedef struct SilcPacketEngineStruct *SilcPacketEngine;
  *
  * DESCRIPTION
  *
- *    In packet sending this is filled and sent to silc_packet_assemble 
- *    which then uses it to assemble new packet. In packet reception pointer 
- *    to this context is sent to silc_packet_parse which parses the packet 
- *    and returns the relevant information to this structure. On packet 
- *    reception returned ID's are always the hash values of the ID's from 
- *    the packet. 
- *
- *    Short description of the fields following:
- *
- *    SilcUInt16 truelen
- *
- *      True length of the packet.  This may be set by the caller before
- *      calling any of the silc_packet_* routines.  If not provided the
- *      library will calculate the values.
- *
- *    SilcPacketFlags flags
- *
- *      Packet flags. Flags are defined above.
- *
- *    SilcPacketType type
- *
- *      Type of the packet. Types are defined below.
- *
- *    unsigned char *src_id
- *    SilcUInt8 src_id_len
- *    SilcUInt8 src_id_type
- *
- *      Source ID, its length and type. On packet reception retuned ID's
- *      are always the hash values of the ID's from the packet.
- *
- *    unsigned char *dst_id;
- *    SilcUInt8 dst_id_len;
- *    SilcUInt8 src_id_type;
- *
- *      Destination ID, its length and type. On packet reception retuned
- *      ID's are always the hash values of the ID's from the packet.
- *
- *    bool long_pad
- * 
- *      If set to TRUE the packet will include the maximum padding allowed
- *      in SILC packet, which is 128 bytes.  If FALSE only the amount of
- *      padding needed will be applied.
- *
- *    SilcUInt16 users;
- *
- *      Reference counter for this context. The context is freed only 
- *      after the reference counter hits zero. The counter is added
- *      calling silc_packet_context_dup and decreased by calling the
- *      silc_packet_context_free.
- *
- *    SilcUInt8 padlen
- *
- *      The padded length of the packet.  This may be set by the caller
- *      before calling any of the silc_packet_* routines. If not provided
- *      the library will calculate the values.
- *
- *    SilcUInt32 sequence;
- *
- *      Packet sequence number.  Set only when this context is a parsed
- *      packet.
- *
- *    SilcBuffer buffer
- *
- *      The actual packet data.  Set only when this context is a parsed
- *      packet.
+ *    The packet engine context, allocated by silc_packet_engine_start.
+ *    The engine is destroyed with silc_packet_engine_stop.
  *
  ***/
-typedef struct {
-  SilcUInt16 truelen;
-  SilcPacketFlags flags;
-  SilcPacketType type;
+typedef struct SilcPacketEngineStruct *SilcPacketEngine;
 
-  unsigned char *src_id;
-  unsigned char *dst_id;
-  unsigned int src_id_len : 5;
-  unsigned int src_id_type : 2;
-  unsigned int dst_id_len : 5;
-  unsigned int dst_id_type : 2;
-  unsigned int long_pad : 1;	  /* Set when maximum padding in packet */
-  unsigned int users : 9;	  /* Reference counter */
-  unsigned int padlen : 8;
-
-  SilcUInt32 sequence;
-  SilcBuffer buffer;
-} SilcPacketContext;
-
-/****s* silccore/SilcPacketAPI/SilcPacketParserContext
+/****s* silccore/SilcPacketAPI/SilcPacketStream
  *
  * NAME
- * 
- *    typedef struct { ... } SilcPacketParserContext;
+ *
+ *    typedef struct SilcPacketStreamStruct *SilcPacketStream;
  *
  * DESCRIPTION
  *
- *    This context is used in packet reception when the function
- *    silc_packet_receive_process calls parser callback that performs
- *    the actual packet decryption and parsing. This context is sent as
- *    argument to the parser function. This context must be free'd by
- *    the parser callback function.
- *
- *    Following description of the fields:
- *
- *    SilcPacketContext *packet
- *
- *      The actual packet received from the network. In this phase the
- *      context is not parsed, only the packet->buffer is allocated and
- *      it includes the raw packet data, which is encrypted.
- *
- *    bool normal
- *
- *      Indicates whether the received packet is normal or special packet.
- *      If special the parsing process is special also.
- *
- *    SilcSocketConnection sock
- *
- *      The associated connection.
- *
- *    void *context
- *
- *      User context that is sent to the silc_packet_receive_process
- *      function. This usually includes application and connection specific
- *      data.
+ *    The packet stream context, allocated by silc_packet_stream_create.
+ *    The stream is destroyed with silc_packet_stream_destroy.
  *
  ***/
-typedef struct {
-  SilcPacketContext *packet;
-  bool normal;
-  SilcSocketConnection sock;
-  void *context;
-} SilcPacketParserContext;
+typedef struct SilcPacketStreamStruct *SilcPacketStream;
 
-/****f* silccore/SilcPacketAPI/SilcPacketParserCallback
+/****s* silccore/SilcPacketAPI/SilcPacket
+ *
+ * NAME
+ *
+ *    typedef struct SilcPacketStruct *SilcPacket;
+ *
+ * DESCRIPTION
+ *
+ *    The SilcPacket is returned by the packet engine in the SilcPacketReceive
+ *    callback.  The application can parse the data payload from the
+ *    SilcPacket.  Also packet type, flags, and sender and destination
+ *    IDs are available.  The application must free the packet with the
+ *    silc_packet_free function.
+ *
+ * SOURCE
+ */
+typedef struct SilcPacketStruct {
+  struct SilcPacketStruct *next;
+  SilcBufferStruct buffer;		 /* Packet data payload */
+  unsigned char *src_id;		 /* Source ID */
+  unsigned char *dst_id;		 /* Destination ID */
+  unsigned int src_id_len  : 6;		 /* Source ID length */
+  unsigned int src_id_type : 2;		 /* Source ID type */
+  unsigned int dst_id_len  : 6;		 /* Destination ID length */
+  unsigned int dst_id_type : 2;		 /* Destination ID type */
+  SilcPacketType type;			 /* Packet type */
+  SilcPacketFlags flags;		 /* Packet flags */
+} *SilcPacket;
+/***/
+
+/****d* silcutil/SilcPacketAPI/SilcPacketError
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcPacketError
+ *
+ * DESCRIPTION
+ *
+ *    Packet errors.  This is returned in the error callback.  If application
+ *    needs the actual lower level stream error, it needs to retrieve it
+ *    from the actual stream.
+ *
+ * SOURCE
+ */
+typedef enum {
+  SILC_PACKET_ERR_READ,			 /* Error while reading */
+  SILC_PACKET_ERR_WRITE,       		 /* Error while writing */
+  SILC_PACKET_ERR_MAC_FAILED,     	 /* Packet MAC check failed */
+  SILC_PACKET_ERR_DECRYPTION_FAILED,   	 /* Packet decryption failed */
+  SILC_PACKET_ERR_MALFORMED,		 /* Packet is malformed */
+  SILC_PACKET_ERR_NO_MEMORY,	 	 /* System out of memory */
+} SilcPacketError;
+/***/
+
+/****f* silccore/SilcPacketAPI/SilcPacketReceiveCb
  *
  * SYNOPSIS
  *
- *    typedef bool (*SilcPacketParserCallback)(SilcPacketParserContext 
- *                                             *parse_context);
+ *    typedef void (*SilcPacketReceiveCb)(SilcPacketEngine engine,
+ *                                        SilcPacketStream stream,
+ *                                        SilcPacket packet,
+ *                                        void *callback_context,
+ *                                        void *app_context);
  *
  * DESCRIPTION
  *
- *    This callback is given to the silc_packet_receive_process function.
- *    The callback is called by the library every time a packet is
- *    received from the network. After the packet has been decrypted
- *    and at least partially parsed it is passed to the application
- *    for further parsing using this callback and the SilcPacketParserContext
- *    context. The application receiving the SilcPacketParserContext
- *    must free it.
- *
- *    This returns TRUE if the library should continue packet processing
- *    (assuming there is more data to be processed), and FALSE if the
- *    upper layer does not want the library to continue but to leave the
- *    rest of the data is the packet queue untouched.  Application may
- *    want to do this for example if the cipher is not ready before 
- *    processing a certain packet.  In this case the application wants
- *    to recall the processing function with the correct cipher.
+ *    The packet receive callback is called by the packet engine when a new
+ *    SILC Packet has arrived.  The application must free the returned
+ *    SilcPacket with silc_packet_free.  This callback is set in the
+ *    SilcPacketCallbacks structure.
  *
  ***/
-typedef bool (*SilcPacketParserCallback)(SilcPacketParserContext 
-					 *parse_context, void *context);
+typedef void (*SilcPacketReceiveCb)(SilcPacketEngine engine,
+				    SilcPacketStream stream,
+				    SilcPacket packet,
+				    void *callback_context,
+				    void *app_context);
 
-/* Macros */
-
-/****d* silccore/SilcPacketAPI/SILC_PACKET_LENGTH
+/****f* silccore/SilcPacketAPI/SilcPacketEosCb
  *
- * NAME
- * 
- *    #define SILC_PACKET_LENGTH ...
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcPacketEosCb)(SilcPacketEngine engine,
+ *                                    SilcPacketStream stream,
+ *                                    void *callback_context,
+ *                                    void *app_context);
  *
  * DESCRIPTION
  *
- *    Returns true length of the packet. This is primarily used by the
- *    libary in packet parsing phase but the application may use it as
- *    well if needed.
+ *    The End Of Stream (EOS) callback, that is called by the packet engine
+ *    when the underlaying stream has ended.  No more data can be sent to
+ *    the stream or read from it.  The `stream' must be destroyed by
+ *    calling the silc_packet_stream_destroy.  This callback is set in the
+ *    SilcPacketCallbacks structure.
  *
- * SOURCE
- */
-#define SILC_PACKET_LENGTH(__packetdata, __ret_truelen, __ret_paddedlen) \
-do {									 \
-  SILC_GET16_MSB((__ret_truelen), (__packetdata));			 \
-  (__ret_paddedlen) = (__ret_truelen) + (SilcUInt8)(__packetdata)[4];	 \
-} while(0)
-/***/
+ ***/
+typedef void (*SilcPacketEosCb)(SilcPacketEngine engine,
+				SilcPacketStream stream,
+				void *callback_context,
+				void *app_context);
 
-/****d* silccore/SilcPacketAPI/SILC_PACKET_DATALEN
+/****f* silccore/SilcPacketAPI/SilcPacketErrorCb
  *
- * NAME
- * 
- *    #define SILC_PACKET_DATALEN ...
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcPacketErrorCb)(SilcPacketEngine engine,
+ *                                      SilcPacketStream stream,
+ *                                      SilcPacketError error,
+ *                                      void *callback_context,
+ *                                      void *app_context);
  *
  * DESCRIPTION
  *
- *    Calculates the data length with given header length.  This macro
- *    can be used to check whether the data_len with header_len exceeds
- *    SILC_PACKET_MAX_LEN.  If it does, this returns the new data_len
- *    so that the SILC_PACKET_MAX_LEN is not exceeded.  If the data_len
- *    plus header_len fits SILC_PACKET_MAX_LEN the returned data length
- *    is the data_len given as argument.  This macro can be used when
- *    assembling packet.
+ *    The error callback that is called by the packet engine if an error
+ *    occurs.  The `error' will indicate the error.  This callback is set
+ *    in the SilcPacketCallbacks structure.
  *
- * SOURCE
- */
-#define SILC_PACKET_DATALEN(data_len, header_len)			  \
-  ((data_len + header_len) > SILC_PACKET_MAX_LEN ? 			  \
-   data_len - ((data_len + header_len) - SILC_PACKET_MAX_LEN) : data_len)
-/***/
+ ***/
+typedef void (*SilcPacketErrorCb)(SilcPacketEngine engine,
+				  SilcPacketStream stream,
+				  SilcPacketError error,
+				  void *callback_context,
+				  void *app_context);
 
-/****d* silccore/SilcPacketAPI/SILC_PACKET_PADLEN
+/****s* silccore/SilcPacketAPI/SilcPacketStream
  *
  * NAME
- * 
- *    #define SILC_PACKET_PADLEN ...
+ *
+ *    typedef struct SilcPacketStreamStruct *SilcPacketStream;
  *
  * DESCRIPTION
  *
- *    Calculates the length of the padding in the packet. This is used
- *    by various library routines to determine needed padding length.
+ *    This structure is sent as argument to the silc_packet_engine_start
+ *    function to set the callback functions for the packet engine.  The
+ *    packet engine will call the callbacks when necessary.  Application
+ *    must always be provided for the packet engine.
  *
  * SOURCE
  */
-#define SILC_PACKET_PADLEN(__packetlen, __blocklen, __padlen)		    \
-do {									    \
-  __padlen = (SILC_PACKET_DEFAULT_PADLEN - (__packetlen) %		    \
-	      ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN));  \
-  if (__padlen < 8)							    \
-    __padlen += ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN); \
-} while(0)
-/***/
-
-/****d* silccore/SilcPacketAPI/SILC_PACKET_PADLEN_MAX
- *
- * NAME
- * 
- *    #define SILC_PACKET_PADLEN_MAX ...
- *
- * DESCRIPTION
- *
- *    Returns the length of the padding up to the maximum length, which
- *    is 128 bytes. This is used by various library routines to determine
- *    needed padding length.
- *
- * SOURCE
- */
-#define SILC_PACKET_PADLEN_MAX(__packetlen, __blocklen, __padlen)	   \
-do {									   \
-  __padlen = (SILC_PACKET_MAX_PADLEN - (__packetlen) % 			   \
-	      ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN)); \
-} while(0)
+typedef struct {
+  SilcPacketReceiveCb packet_receive;	 /* Called when packet is received */
+  SilcPacketEosCb eos;		         /* Called on end of stream */
+  SilcPacketErrorCb error;	         /* Called on an error */
+} SilcPacketCallbacks;
 /***/
 
 /* Prototypes */
+
+/****f* silccore/SilcPacketAPI/silc_packet_engine_start
+ *
+ * SYNOPSIS
+ *
+ *    SilcPacketEngine
+ *    silc_packet_engine_start(SilcSchedule schedule, SilcRng rng, bool router,
+ *                             SilcPacketCallbacks *callbacks,
+ *                             void *callback_context);
+ *
+ * DESCRIPTION
+ *
+ *    Create new packet engine for processing incoming and outgoing packets.
+ *    If `rng' is non-NULL that RNG will be used to create necessary random
+ *    numbers during packet processing.  If NULL, Global RNG will be used.
+ *    If `router' is  TRUE then the application is considered to be router
+ *    server, and certain packets are handled differently.  Client and normal
+ *    server must set it to FALSE.  The `callbacks' is a SilcPacketCallbacks
+ *    structure provided by the caller which includes the callbacks that is
+ *    called when for example packet is received, or end of stream is called
+ *
+ * NOTES
+ *
+ *    The packet engine is thread safe.  Also the `schedule' and `rng' are
+ *    thread safe.  You can use one packet engine in multi threaded
+ *    application.
+ *
+ ***/
+SilcPacketEngine
+silc_packet_engine_start(SilcSchedule schedule, SilcRng rng, bool router,
+			 SilcPacketCallbacks *callbacks,
+			 void *callback_context);
+
+/****f* silccore/SilcPacketAPI/silc_packet_engine_stop
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_engine_stop(SilcPacketEngine engine);
+ *
+ * DESCRIPTION
+ *
+ *    Stop the packet engine.  No new packets can be sent or received after
+ *    calling this, and the `engine' will become invalid.
+ *
+ ***/
+void silc_packet_engine_stop(SilcPacketEngine engine);
+
+/****f* silccore/SilcPacketAPI/silc_packet_stream_create
+ *
+ * SYNOPSIS
+ *
+ *    SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
+ *                                               SilcStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Create new packet stream and use the `stream' as underlaying stream.
+ *    Usually the `stream' would be a socket stream, but it can be any
+ *    stream.  After this function returns, packets can immediately be
+ *    sent to or received from the stream.
+ *
+ * NOTES
+ *
+ *    SilcPacketStream cannot be used with silc_stream_* routines (such as
+ *    silc_stream_read and silc_stream_write) because of its special nature.
+ *    Use the silc_packet_send and the silc_packet_send_ext to send packets.
+ *    To read packets you will receive the packet receive callback from
+ *    packet engine.  Destroy the stream with silc_packet_stream_destroy.
+ *
+ *    If you need to send only one type of SILC packets, then it is possible
+ *    to create SILC Packet Streamer with silc_packet_streamer_create, which
+ *    can be used with silc_stream_read and silc_stream_write.
+ *
+ *    The SilcPacketStream is not thread safe.  If you share same stream
+ *    with multiple threads concurrency control need to be employed.  It
+ *    is recommended to create new SilcPacketStream for every thread.
+ *
+ ***/
+SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
+					   SilcStream stream);
+
+/****f* silccore/SilcPacketAPI/silc_packet_stream_destroy
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_stream_destroy(SilcPacketStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Destroy packet stream and the underlaying stream.  This will also
+ *    send end of stream to the underlaying stream.
+ *
+ ***/
+void silc_packet_stream_destroy(SilcPacketStream stream);
+
+/****f* silccore/SilcPacketAPI/silc_packet_streamer_create
+ *
+ * SYNOPSIS
+ *
+ *    SilcStream silc_packet_streamer_create(SilcPacketStream stream,
+ *                                           SilcPacketType packet_type,
+ *                                           SilcPacketFlags packet_flags);
+ *
+ * DESCRIPTION
+ *
+ *    This function can be used to create a SILC Packet Streamer that will
+ *    stream only one type of packet indicated by `packet_type' with packet
+ *    flags `packet_flags'.  This is special purpose function as usually
+ *    multiple different types of packets need to be sent in application.
+ *    There are cases however when creating streamer is simpler and more
+ *    efficient.  Cases such as file transfer stream or other data streams
+ *    that only send and receive one type of packet.  While it would be
+ *    possible to use silc_packet_send function to send packets it is
+ *    more efficient to create the SILC Packet Streamer and use the
+ *    silc_stream_read and silc_stream_write functions.
+ *
+ *    The encryption and decryption keys, and other information will be
+ *    retrieved from the packet stream indicated by `stream', which must be
+ *    created before creating the streamer.
+ *
+ * NOTES
+ *
+ *    The packet type that is assocated with the packet stream `stream' will
+ *    only be available through the returned SilcStream.  That packet type
+ *    will not be delivered to the packet callbacks.  To return to the
+ *    normal operation destroy the streamer silc_packet_streamer_destroy.
+ *
+ ***/
+SilcStream silc_packet_streamer_create(SilcPacketStream stream,
+				       SilcPacketType packet_type,
+				       SilcPacketFlags packet_flags);
+
+/****f* silccore/SilcPacketAPI/silc_packet_streamer_destroy
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_streamer_destroy(SilcStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Destroys the created packet streamer.  Use this function only for
+ *    stream created with silc_packet_streamer_create.  The packet type
+ *    that was associated with the streamer can be received in the packet
+ *    callbacks after the streamer is destroyed.
+ *
+ ***/
+void silc_packet_streamer_destroy(SilcStream stream);
+
+/****f* silccore/SilcPacketAPI/silc_packet_stream_get_stream
+ *
+ * SYNOPSIS
+ *
+ *    SilcStream silc_packet_stream_get_stream(SilcPacketStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the actual stream that is associated with the packet stream
+ *    `stream'.  The caller must not free the returned stream.  The returned
+ *    stream is the same pointer that was set for silc_packet_stream_create.
+ *    This function couled be used for example when an error callback is
+ *    called by the packet engine to retrieve the actual lower level error
+ *    from the stream.
+ *
+ ***/
+SilcStream silc_packet_stream_get_stream(SilcPacketStream stream);
+
+/****f* silccore/SilcPacketAPI/silc_packet_stream_callbacks
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_stream_callbacks(SilcPacketStream stream,
+ *                                      SilcPacketCallbacks *callbacks,
+ *                                      void *callback_context);
+ *
+ * DESCRIPTION
+ *
+ *    This is optional function which can be used to set specific callbacks
+ *    for the packet stream indicated by `stream'.  If these are set then
+ *    `callbacks' will be used instead of the ones set for the function
+ *    silc_packet_engine_start.  To reset the normal behaviour call this
+ *    function again with `callbacks' as NULL.  Note that the responsibility
+ *    of handling end of stream, and error conditions moves to the layer
+ *    calling this function since the original callbacks set in the
+ *    silc_packet_engine_start will not be called.
+ *
+ ***/
+void silc_packet_stream_callbacks(SilcPacketStream stream,
+				  SilcPacketCallbacks *callbacks,
+				  void *callback_context);
+
+/****f* silccore/SilcPacketAPI/silc_packet_stream_ref
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_stream_ref(SilcPacketStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Increase reference counter for the stream indicated by `stream'.  This
+ *    can be used to take a reference for the stream.  To unreference the
+ *    stream call silc_packet_stream_unref function.
+ *
+ ***/
+void silc_packet_stream_ref(SilcPacketStream stream);
+
+/****f* silccore/SilcPacketAPI/silc_packet_stream_unref
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_stream_unref(SilcPacketStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Decrease reference counter for the stream indicated by `stream'.  If
+ *    the counter hits zero the stream will be destroyed automatically.
+ *
+ ***/
+void silc_packet_stream_unref(SilcPacketStream stream);
+
+/****f* silccore/SilcPacketAPI/silc_packet_set_context
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_set_context(SilcPacketStream stream, void *app_context);
+ *
+ * DESCRIPTION
+ *
+ *    Set an application specific context to the stream.  The context will
+ *    be delivered to all callback functions, and it can be retrieved by
+ *    calling silc_packet_get_context function as well.  Note that this is
+ *    separate packet stream specific context, and not the same as
+ *    `callback_context' in silc_packet_engine_start.  Both will be delivered
+ *    to the callbacks.
+ *
+ ***/
+void silc_packet_set_context(SilcPacketStream stream, void *app_context);
+
+/****f* silccore/SilcPacketAPI/silc_packet_get_context
+ *
+ * SYNOPSIS
+ *
+ *    void *silc_packet_get_context(SilcPacketStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the current set application context, or NULL if none is set.
+ *
+ ***/
+void *silc_packet_get_context(SilcPacketStream stream);
+
+/****f* silccore/SilcPacketAPI/silc_packet_set_ciphers
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_set_ciphers(SilcPacketStream stream, SilcCipher send,
+ *                                 SilcCipher receive);
+ *
+ * DESCRIPTION
+ *
+ *    Set ciphers to be used to encrypt sent packets, and decrypt received
+ *    packets.  This can be called multiple times to change the ciphers.
+ *    In this case if old cipher is set it will be freed.  If ciphers are
+ *    not set packets will not be encrypted or decrypted.
+ *
+ ***/
+void silc_packet_set_ciphers(SilcPacketStream stream, SilcCipher send,
+			     SilcCipher receive);
+
+/****f* silccore/SilcPacketAPI/silc_packet_get_ciphers
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_packet_get_ciphers(SilcPacketStream stream, SilcCipher *send,
+ *                                 SilcCipher *receive);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the pointers of current ciphers from the `stream'.  Returns
+ *    FALSE if ciphers are not set.
+ *
+ ***/
+bool silc_packet_get_ciphers(SilcPacketStream stream, SilcCipher *send,
+			     SilcCipher *receive);
+
+/****f* silccore/SilcPacketAPI/silc_packet_set_hmacs
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_set_hmacs(SilcPacketStream stream, SilcHmac send,
+ *                               SilcHmac receive);
+ *
+ * DESCRIPTION
+ *
+ *    Set HMACs to be used to create MACs for sent packets and to check
+ *    MAC for received packets.  This can be called multiple times to change
+ *    the HMACs.  In this case if old HMAC is set it will be freed.  If
+ *    HMACs are not set MACs are not generated or verified for packets.
+ *
+ ***/
+void silc_packet_set_hmacs(SilcPacketStream stream, SilcHmac send,
+			   SilcHmac receive);
+
+/****f* silccore/SilcPacketAPI/silc_packet_get_hmacs
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_packet_get_hmacs(SilcPacketStream stream, SilcHmac *send,
+ *                               SilcHmac *receive);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the pointers of current HMACs from the `stream'.  Returns
+ *    FALSE if HMACs are not set.
+ *
+ ***/
+bool silc_packet_get_hmacs(SilcPacketStream stream, SilcHmac *send,
+			   SilcHmac *receive);
+
+/****f* silccore/SilcPacketAPI/silc_packet_set_ids
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_packet_set_ids(SilcPacketStream stream,
+ *                             SilcIdType src_id_type, const void *src_id
+ *                             SilcIdType dst_id_type, const void *dst_id);
+ *
+ * DESCRIPTION
+ *
+ *    Set the source ID and destinaion ID to be used when sending packets to
+ *    this packet stream.  The IDs to be used for a packet stream can be
+ *    overridden when sending packets.  However, if the IDs do not ever change
+ *    for the packet stream it is recommended they are set using this function.
+ *    In this case they can be omitted when sending packets to the stream.
+ *    It is also possible to set only source or destination ID.
+ *
+ ***/
+bool silc_packet_set_ids(SilcPacketStream stream,
+			 SilcIdType src_id_type, const void *src_id,
+			 SilcIdType dst_id_type, const void *dst_id);
 
 /****f* silccore/SilcPacketAPI/silc_packet_send
  *
  * SYNOPSIS
  *
- *    int silc_packet_send(SilcSocketConnection sock, bool force_send);
+ *    bool silc_packet_send(SilcPacketStream stream,
+ *                          SilcPacketType type, SilcPacketFlags flags,
+ *                          const unsigned char *data, SilcUInt32 data_len);
  *
  * DESCRIPTION
  *
- *    Actually sends the packet. This flushes the connections outgoing data
- *    buffer. If data is sent directly to the network this returns the bytes
- *    written, if error occured this returns -1 and if the data could not
- *    be written directly to the network at this time this returns -2, in
- *    which case the data should be queued by the caller and sent at some
- *    later time. If `force_send' is TRUE this attempts to write the data
- *    directly to the network, if FALSE, this returns -2.
+ *    Send `data' of length of `data_len' to the packet stream indicated by
+ *    `stream'.  If ciphers and HMACs were set using silc_packet_set_ciphers
+ *    and silc_packet_set_hmacs the packet will be encrypted and MAC will be
+ *    generated for it.  If silc_packet_set_ids was used to set source and
+ *    destination ID for the packet stream those IDs are used in the
+ *    packet.  If IDs have not been set and they need to be provided then
+ *    silc_packet_send_ext function should be used.  Otherwise, the packet
+ *    will not have IDs set at all.
  *
  ***/
-int silc_packet_send(SilcSocketConnection sock, bool force_send);
+bool silc_packet_send(SilcPacketStream stream,
+		      SilcPacketType type, SilcPacketFlags flags,
+		      const unsigned char *data, SilcUInt32 data_len);
 
-/****f* silccore/SilcPacketAPI/silc_packet_encrypt
+/****f* silccore/SilcPacketAPI/silc_packet_send_ext
  *
  * SYNOPSIS
  *
- *    void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, 
- *                             SilcBuffer buffer, SilcUInt32 len);
+ *    bool
+ *    silc_packet_send_ext(SilcPacketStream stream,
+ *                         SilcPacketType type, SilcPacketFlags flags,
+ *                         SilcIdType src_id_type, void *srd_id,
+ *                         SilcIdType dst_id_type, void *dst_id,
+ *                         const unsigned char *data, SilcUInt32 data_len,
+ *                         SilcCipher cipher, SilcHmac hmac);
  *
  * DESCRIPTION
  *
- *    Encrypts a packet. This also creates HMAC of the packet before 
- *    encryption and adds the HMAC at the end of the buffer. This assumes
- *    that there is enough free space at the end of the buffer to add the
- *    computed HMAC. This is the normal way of encrypting packets, if some
- *    other process of HMAC computing and encryption is needed this function
- *    cannot be used. 
+ *    This function can be used to specificly set different parameters of
+ *    the SILC packet to be sent to the stream indicated by `stream'.  This
+ *    function can be used to set specific IDs, cipher and HMAC to be used
+ *    in packet creation. If `truelen' is provided that value is put to the
+ *    SILC packet's truelen field, if it is zero the routine will calculate
+ *    the truelen field for the packet.  If `padlen' is provided that value
+ *    will be the length of the padding for the packet, if zero the routine
+ *    will calculate necessary amount of padding for the packet.  This
+ *    function can be used when specific ciphers, HMACs and IDs has not been
+ *    set for the stream, or setting them for the stream is not suitable.
  *
  ***/
-void silc_packet_encrypt(SilcCipher cipher, SilcHmac hmac, SilcUInt32 sequence,
-			 SilcBuffer buffer, SilcUInt32 len);
-
-/****f* silccore/SilcPacketAPI/silc_packet_assemble
- *
- * SYNOPSIS
- *
- *    bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
- *                              SilcCipher cipher, SilcHmac hmac,
- *                              SilcSocketConnection sock,
- *                              const unsigned char *data, SilcUInt32 data_len,
- *                              const SilcBuffer assembled_packet);
- *
- * DESCRIPTION
- *
- *    Assembles new packet to be ready for encrypting and sending out.
- *    The `packet' is filled by caller to include the packet header specific
- *    values.  This prepares the socket connection's `sock' outoing buffer
- *    for sending data, and returns the assembled packet to the 
- *    `assembled_packet' pointer sent by the caller.  The `assembled_packet'
- *    is a reference to the socket connection's outgoing buffer.  The
- *    returned packet can be encrypted, and then sent to network by calling
- *    silc_packet_send function.  The `assembled_packet' may be freely
- *    modified (like encrypted etc.) but it must not be freed, since it is
- *    reference from `sock' outgoing buffer, and it is const.
- *
- ***/
-bool silc_packet_assemble(SilcPacketContext *packet, SilcRng rng,
-			  SilcCipher cipher, SilcHmac hmac,
-			  SilcSocketConnection sock,
+bool silc_packet_send_ext(SilcPacketStream stream,
+			  SilcPacketType type, SilcPacketFlags flags,
+			  SilcIdType src_id_type, void *src_id,
+			  SilcIdType dst_id_type, void *dst_id,
 			  const unsigned char *data, SilcUInt32 data_len,
-			  const SilcBuffer assembled_packet);
+			  SilcCipher cipher, SilcHmac hmac);
 
-/****f* silccore/SilcPacketAPI/silc_packet_send_prepare
+/****f* silccore/SilcPacketAPI/silc_packet_free
  *
  * SYNOPSIS
  *
- *    bool silc_packet_send_prepare(SilcSocketConnection sock,
- *                                  SilcUInt32 header_len,
- *                                  SilcUInt32 pad_len,
- *                                  SilcUInt32 data_len,
- *                                  SilcHmac hmac,
- *                                  const SilcBuffer packet);
+ *    void silc_packet_free(SilcPacketEngine engine, SilcPacket packet);
  *
  * DESCRIPTION
  *
- *    This function can be used to prepare the outgoing data buffer in
- *    the socket connection specified by `sock' for packet sending.
- *    This is used internally by packet sending routines, but application
- *    may call this if it doesn't call silc_packet_assemble function.
- *    If that function is called then application must not call this since
- *    that function calls this internally.
- *
- *    This returns the prepared data area into the `packet' pointer provided
- *    caller, which can be used then to add data to it, and later encrypt
- *    it.  The `packet' includes reference to the socket connection's
- *    outgoing buffer.  The `packet' may be freely modified (like 
- *    encrypted etc.) but it must not be freed, since it is reference from 
- *    `sock' outgoing buffer, and it is const.
+ *    This function is used to free the SilcPacket pointer that application
+ *    receives in the SilcPacketReceive callback.  Application must free
+ *    the packet.
  *
  ***/
-bool silc_packet_send_prepare(SilcSocketConnection sock,
-			      SilcUInt32 header_len,
-			      SilcUInt32 pad_len,
-			      SilcUInt32 data_len,
-			      SilcHmac hmac,
-			      const SilcBuffer packet);
+void silc_packet_free(SilcPacketEngine engine, SilcPacket packet);
 
-/****f* silccore/SilcPacketAPI/silc_packet_receive
- *
- * SYNOPSIS
- *
- *    int silc_packet_receive(SilcSocketConnection sock);
- *
- * DESCRIPTION
- *
- *    Receives packet from network and reads the data into connection's
- *    incoming data buffer. If the data was read directly this returns the
- *    read bytes, if error occured this returns -1, if the data could not
- *    be read directly at this time this returns -2 in which case the data
- *    should be read again at some later time, or If EOF occured this returns
- *    0.
- *
- ***/
-int silc_packet_receive(SilcSocketConnection sock);
-
-/****f* silccore/SilcPacketAPI/silc_packet_receive_process
- *
- * SYNOPSIS
- *
- *    bool silc_packet_receive_process(SilcSocketConnection sock,
- *                                     bool local_is_router,
- *                                     SilcCipher cipher, SilcHmac hmac,
- *                                     SilcUInt32 sequence,
- *                                     SilcPacketParserCallback parser,
- *                                     void *parser_context);
- *
- * DESCRIPTION
- *
- *    Processes and decrypts the incoming data, and calls parser callback
- *    for each received packet that will handle the actual packet parsing.
- *    If more than one packet was received this calls the parser multiple
- *    times.  The parser callback will get context SilcPacketParserContext
- *    that includes the packet and the `parser_context' sent to this
- *    function. 
- *
- *    The `local_is_router' indicates whether the caller is router server
- *    in which case the receiving process of a certain packet types may
- *    be special.  Normal server and client must set it to FALSE.  The
- *    SilcPacketParserContext will indicate also whether the received
- *    packet was normal or special packet.
- *
- ***/
-bool silc_packet_receive_process(SilcSocketConnection sock,
-				 bool local_is_router,
-				 SilcCipher cipher, SilcHmac hmac,
-				 SilcUInt32 sequence,
-				 SilcPacketParserCallback parser,
-				 void *parser_context);
-
-/****f* silccore/SilcPacketAPI/silc_packet_parse
- *
- * SYNOPSIS
- *
- *    SilcPacketType silc_packet_parse(SilcPacketContext *ctx);
- *
- * DESCRIPTION
- *
- *    Parses the packet. This is called when a whole packet is ready to be
- *    parsed. The buffer sent must be already decrypted before calling this 
- *    function. The len argument must be the true length of the packet. This 
- *    function returns the type of the packet. The data section of the 
- *    buffer is parsed, not head or tail sections.
- *
- ***/
-SilcPacketType silc_packet_parse(SilcPacketContext *ctx, SilcCipher cipher);
-
-/****f* silccore/SilcPacketAPI/silc_packet_parse_special
- *
- * SYNOPSIS
- *
- *    SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx);
- *
- * DESCRIPTION
- *
- *    Perform special SILC Packet header parsing. This is required to some
- *    packet types that have the data payload encrypted with different key
- *    than the header area plus padding of the packet. Hence, this parses
- *    the header in a way that it does not take the data area into account
- *    and parses the header and padding area only.
- *
- ***/
-SilcPacketType silc_packet_parse_special(SilcPacketContext *ctx,
-					 SilcCipher cipher);
-
-/****f* silccore/SilcPacketAPI/silc_packet_context_alloc
- *
- * SYNOPSIS
- *
- *    SilcPacketContext *silc_packet_context_alloc();
- *
- * DESCRIPTION
- *
- *    Allocates a packet context. Packet contexts are used when 
- *    packets are assembled and parsed. The context is freed by the
- *    silc_packet_context_free function.
- *
- ***/
-SilcPacketContext *silc_packet_context_alloc(void);
-
-/****f* silccore/SilcPacketAPI/silc_packet_context_dup
- *
- * SYNOPSIS
- *
- *    SilcPacketContext *silc_packet_context_dup(SilcPacketContext *ctx);
- *
- * DESCRIPTION
- *
- *    Duplicates the packet context. It actually does not duplicate
- *    any data, instead a reference counter is increased.
- *
- ***/
-SilcPacketContext *silc_packet_context_dup(SilcPacketContext *ctx);
-
-/****f* silccore/SilcPacketAPI/silc_packet_context_free
- *
- * SYNOPSIS
- *
- *    void silc_packet_context_free(SilcPacketContext *ctx);
- *
- * DESCRIPTION
- *
- *    Frees the packet context. The context is actually freed when the
- *    reference counter hits zero.
- *
- ***/
-void silc_packet_context_free(SilcPacketContext *ctx);
-
-#endif
+#endif /* SILCPACKET_H */

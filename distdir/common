@@ -13,3 +13,6 @@ define SILC_DIST_COMPILER
 define SILC_DIST_MATH
 define SILC_DIST_TMA
 #define SILC_DIST_TFM
+
+# ASN.1 library
+define SILC_DIST_ASN1

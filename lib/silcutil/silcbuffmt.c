@@ -25,12 +25,12 @@
    be the data that is to be extracted. */
 #define FORMAT_HAS_SPACE(__x__, __req__)	\
   do {						\
-    if (__req__ > (__x__)->len)			\
+    if (__req__ > silc_buffer_len((__x__)))	\
       goto fail;				\
   } while(0)
 #define UNFORMAT_HAS_SPACE(__x__, __req__)	\
   do {						\
-    if (__req__ > (__x__)->len)			\
+    if (__req__ > silc_buffer_len((__x__)))	\
       goto fail;				\
     if ((__req__ + 1) <= 0)			\
       goto fail;				\
@@ -66,6 +66,19 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
     fmt = va_arg(ap, SilcBufferParamType);
 
     switch(fmt) {
+    case SILC_BUFFER_PARAM_OFFSET:
+      {
+	int offst = va_arg(ap, int);
+	if (!offst)
+	  break;
+	if (offst > 1) {
+	  FORMAT_HAS_SPACE(dst, offst);
+	  silc_buffer_pull(dst, offst);
+	} else {
+	  silc_buffer_push(dst, -(offst));
+	}
+	break;
+      }
     case SILC_BUFFER_PARAM_SI8_CHAR:
       {
 	char x = (char)va_arg(ap, int);
@@ -226,6 +239,19 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap)
     fmt = va_arg(ap, SilcBufferParamType);
 
     switch(fmt) {
+    case SILC_BUFFER_PARAM_OFFSET:
+      {
+	int offst = va_arg(ap, int);
+	if (!offst)
+	  break;
+	if (offst > 1) {
+	  UNFORMAT_HAS_SPACE(src, offst);
+	  silc_buffer_pull(src, offst);
+	} else {
+	  silc_buffer_push(src, -(offst));
+	}
+	break;
+      }
     case SILC_BUFFER_PARAM_SI8_CHAR:
       {
 	char *x = va_arg(ap, char *);
@@ -516,26 +542,29 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap)
 
 int silc_buffer_strformat(SilcBuffer dst, ...)
 {
-  int len = dst->truelen;
+  int len = silc_buffer_truelen(dst);
   va_list va;
 
   va_start(va, dst);
 
   /* Parse the arguments by formatting type. */
   while(1) {
-    char *string = (char *)va_arg(va, void *);
+    char *string = va_arg(va, char *);
+    unsigned char *d;
+    SilcInt32 slen;
 
     if (!string)
       continue;
     if (string == (char *)SILC_BUFFER_PARAM_END)
       goto ok;
 
-    dst->head = silc_realloc(dst->head, sizeof(*dst->head) *
-			     (strlen(string) + len + 1));
-    if (!dst->head)
+    slen = strlen(string);
+    d = silc_realloc(dst->head, sizeof(*dst->head) * (slen + len + 1));
+    if (!d)
       return -1;
-    memcpy(dst->head + len, string, strlen(string));
-    len += strlen(string);
+    dst->head = d;
+    memcpy(dst->head + len, string, slen);
+    len += slen;
     dst->head[len] = '\0';
   }
 
@@ -547,7 +576,50 @@ int silc_buffer_strformat(SilcBuffer dst, ...)
   dst->end = dst->head + len;
   dst->data = dst->head;
   dst->tail = dst->end;
-  dst->len = dst->truelen = len;
+
+  va_end(va);
+  return len;
+}
+
+/* Formats strings into a buffer.  Allocates memory from SilcStack. */
+
+int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...)
+{
+  int len = silc_buffer_truelen(dst);
+  va_list va;
+
+  va_start(va, dst);
+
+  /* Parse the arguments by formatting type. */
+  while(1) {
+    char *string = va_arg(va, char *);
+    unsigned char *d;
+    SilcInt32 slen;
+
+    if (!string)
+      continue;
+    if (string == (char *)SILC_BUFFER_PARAM_END)
+      goto ok;
+
+    slen = strlen(string);
+    d = silc_srealloc_ua(stack, len, dst->head,
+			 sizeof(*dst->head) * (slen + len + 1));
+    if (!d)
+      return -1;
+    dst->head = d;
+    memcpy(dst->head + len, string, slen);
+    len += slen;
+    dst->head[len] = '\0';
+  }
+
+  SILC_LOG_DEBUG(("Error occured while formatting buffer"));
+  va_end(va);
+  return -1;
+
+ ok:
+  dst->end = dst->head + len;
+  dst->data = dst->head;
+  dst->tail = dst->end;
 
   va_end(va);
   return len;

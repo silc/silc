@@ -4,12 +4,12 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -19,7 +19,6 @@
 /* $Id$ */
 
 #include "silcincludes.h"
-#include "silcnet.h"
 
 /* Accepts a connection from a particular socket */
 
@@ -37,7 +36,7 @@ int silc_net_set_socket_opt(int sock, int level, int option, int on)
 
 /* Get socket options */
 
-int silc_net_get_socket_opt(int sock, int level, int option, 
+int silc_net_get_socket_opt(int sock, int level, int option,
 			    void *optval, int *opt_len)
 {
   return getsockopt(sock, level, option, optval, opt_len);
@@ -59,7 +58,7 @@ bool silc_net_is_ip4(const char *addr)
 
   if (count != 3)
     return FALSE;
-  
+
   return TRUE;
 }
 
@@ -73,7 +72,7 @@ bool silc_net_is_ip6(const char *addr)
       return FALSE;
     addr++;
   }
-  
+
   return TRUE;
 }
 
@@ -121,7 +120,7 @@ static void *silc_net_gethostbyname_thread(void *context)
     r->result = strdup(tmp);
 
   silc_schedule_task_add(schedule, 0, silc_net_resolve_completion, r, 0, 1,
-			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+			 SILC_TASK_TIMEOUT);
   silc_schedule_wakeup(schedule);
   return NULL;
 }
@@ -138,14 +137,14 @@ static void *silc_net_gethostbyaddr_thread(void *context)
     r->result = strdup(tmp);
 
   silc_schedule_task_add(schedule, 0, silc_net_resolve_completion, r, 0, 1,
-			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+			 SILC_TASK_TIMEOUT);
   silc_schedule_wakeup(schedule);
   return NULL;
 }
 
 /* Resolves IP address for hostname. */
 
-bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address, 
+bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address,
 			    SilcUInt32 address_len)
 {
 #ifdef HAVE_IPV6
@@ -202,13 +201,13 @@ bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address,
   memset(address, 0, address_len);
   strncpy(address, tmp, strlen(tmp));
 #endif
-  
+
   return TRUE;
 }
 
 /* Resolves IP address for hostname async. */
 
-void silc_net_gethostbyname_async(const char *name, 
+void silc_net_gethostbyname_async(const char *name,
 				  bool prefer_ipv6,
 				  SilcSchedule schedule,
 				  SilcNetResolveCallback completion,
@@ -231,11 +230,11 @@ bool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len)
 {
 #ifdef HAVE_IPV6
   struct addrinfo req, *ai;
-  
+
   memset(&req, 0, sizeof(req));
   req.ai_socktype = SOCK_STREAM;
   req.ai_flags = AI_CANONNAME;
-  
+
   if (getaddrinfo(addr, NULL, &req, &ai))
     return FALSE;
   if (getnameinfo(ai->ai_addr, ai->ai_addrlen, name, name_len, NULL, 0, 0)) {
@@ -258,13 +257,13 @@ bool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len)
   memset(name, 0, name_len);
   strncpy(name, hp->h_name, strlen(hp->h_name));
 #endif
-  
+
   return TRUE;
 }
 
 /* Resolves hostname by IP address async. */
 
-void silc_net_gethostbyaddr_async(const char *addr, 
+void silc_net_gethostbyaddr_async(const char *addr,
 				  SilcSchedule schedule,
 				  SilcNetResolveCallback completion,
 				  void *context)
@@ -452,7 +451,7 @@ SilcUInt16 silc_net_get_remote_port(int sock)
   if (getnameinfo((struct sockaddr *)&remote, len, NULL, 0, s, sizeof(s),
 		  NI_NUMERICSERV))
     return 0;
-  
+
   return atoi(s);
 #else
   struct sockaddr_in remote;
@@ -484,7 +483,7 @@ SilcUInt16 silc_net_get_local_port(int sock)
   if (getnameinfo((struct sockaddr *)&local, len, NULL, 0, s, sizeof(s),
 		  NI_NUMERICSERV))
     return 0;
-  
+
   return atoi(s);
 #else
   struct sockaddr_in local;

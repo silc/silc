@@ -1,10 +1,10 @@
 /*
 
-  silccommand.c 
+  silccommand.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
     return NULL;
 
   /* Parse the Command Payload */
-  ret = silc_buffer_unformat(&buffer, 
+  ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI_SHORT(&p_len),
 			     SILC_STR_UI_CHAR(&newp->cmd),
 			     SILC_STR_UI_CHAR(&args_num),
@@ -69,7 +69,7 @@ SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
     return NULL;
   }
 
-  if (p_len != buffer.len) {
+  if (p_len != silc_buffer_len(&buffer)) {
     SILC_LOG_ERROR(("Incorrect command payload in packet"));
     silc_free(newp);
     return NULL;
@@ -83,7 +83,7 @@ SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
 
   silc_buffer_pull(&buffer, SILC_COMMAND_PAYLOAD_LEN);
   if (args_num) {
-    newp->args = silc_argument_payload_parse(buffer.data, buffer.len, 
+    newp->args = silc_argument_payload_parse(buffer.data, silc_buffer_len(&buffer),
 					     args_num);
     if (!newp->args) {
       silc_free(newp);
@@ -114,7 +114,7 @@ SilcBuffer silc_command_payload_encode(SilcCommand cmd,
     args = silc_argument_payload_encode(argc, argv, argv_lens, argv_types);
     if (!args)
       return NULL;
-    len = args->len;
+    len = silc_buffer_len(args);
   }
 
   len += SILC_COMMAND_PAYLOAD_LEN;
@@ -134,7 +134,7 @@ SilcBuffer silc_command_payload_encode(SilcCommand cmd,
   if (argc) {
     silc_buffer_pull(buffer, SILC_COMMAND_PAYLOAD_LEN);
     silc_buffer_format(buffer,
-		       SILC_STR_UI_XNSTRING(args->data, args->len),
+		       SILC_STR_UI_XNSTRING(args->data, silc_buffer_len(args)),
 		       SILC_STR_END);
     silc_buffer_push(buffer, SILC_COMMAND_PAYLOAD_LEN);
     silc_buffer_free(args);
@@ -158,7 +158,7 @@ SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload)
   if (payload->args) {
     args = silc_argument_payload_encode_payload(payload->args);
     if (args)
-      len = args->len;
+      len = silc_buffer_len(args);
     argc = silc_argument_get_arg_num(payload->args);
   }
 
@@ -182,7 +182,7 @@ SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload)
   if (args) {
     silc_buffer_pull(buffer, SILC_COMMAND_PAYLOAD_LEN);
     silc_buffer_format(buffer,
-		       SILC_STR_UI_XNSTRING(args->data, args->len),
+		       SILC_STR_UI_XNSTRING(args->data, silc_buffer_len(args)),
 		       SILC_STR_END);
     silc_buffer_push(buffer, SILC_COMMAND_PAYLOAD_LEN);
     silc_buffer_free(args);
@@ -192,15 +192,15 @@ SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload)
 }
 
 /* Encodes Command payload with variable argument list. The arguments
-   must be: SilcUInt32, unsigned char *, unsigned int, ... One 
-   {SilcUInt32, unsigned char * and unsigned int} forms one argument, 
-   thus `argc' in case when sending one {SilcUInt32, unsigned char * 
+   must be: SilcUInt32, unsigned char *, unsigned int, ... One
+   {SilcUInt32, unsigned char * and unsigned int} forms one argument,
+   thus `argc' in case when sending one {SilcUInt32, unsigned char *
    and SilcUInt32} equals one (1) and when sending two of those it
    equals two (2), and so on. This has to be preserved or bad things
    will happen. The variable arguments is: {type, data, data_len}. */
 
-SilcBuffer silc_command_payload_encode_va(SilcCommand cmd, 
-					  SilcUInt16 ident, 
+SilcBuffer silc_command_payload_encode_va(SilcCommand cmd,
+					  SilcUInt16 ident,
 					  SilcUInt32 argc, ...)
 {
   va_list ap;
@@ -215,8 +215,8 @@ SilcBuffer silc_command_payload_encode_va(SilcCommand cmd,
 
 /* Same as above but with va_list. */
 
-SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd, 
-					   SilcUInt16 ident, 
+SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
+					   SilcUInt16 ident,
 					   SilcUInt32 argc, va_list ap)
 {
   unsigned char **argv = NULL;
@@ -242,10 +242,10 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
       x_type = va_arg(ap, SilcUInt32);
       x = va_arg(ap, unsigned char *);
       x_len = va_arg(ap, SilcUInt32);
-      
+
       if (!x_type || !x || !x_len)
 	continue;
-      
+
       argv[k] = silc_memdup(x, x_len);
       if (!argv[k])
 	goto out;
@@ -255,7 +255,7 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
     }
   }
 
-  buffer = silc_command_payload_encode(cmd, k, argv, argv_lens, 
+  buffer = silc_command_payload_encode(cmd, k, argv, argv_lens,
 				       argv_types, ident);
 
  out:
@@ -273,8 +273,8 @@ SilcBuffer silc_command_payload_encode_vap(SilcCommand cmd,
    extra argument to this function. The `argc' must not count `status'
    as on argument. */
 
-SilcBuffer 
-silc_command_reply_payload_encode_va(SilcCommand cmd, 
+SilcBuffer
+silc_command_reply_payload_encode_va(SilcCommand cmd,
 				     SilcStatus status,
 				     SilcStatus error,
 				     SilcUInt16 ident,
@@ -291,11 +291,11 @@ silc_command_reply_payload_encode_va(SilcCommand cmd,
   return buffer;
 }
 
-SilcBuffer 
-silc_command_reply_payload_encode_vap(SilcCommand cmd, 
+SilcBuffer
+silc_command_reply_payload_encode_vap(SilcCommand cmd,
 				      SilcStatus status,
 				      SilcStatus error,
-				      SilcUInt16 ident, SilcUInt32 argc, 
+				      SilcUInt16 ident, SilcUInt32 argc,
 				      va_list ap)
 {
   unsigned char **argv;
@@ -351,7 +351,7 @@ silc_command_reply_payload_encode_vap(SilcCommand cmd,
     k++;
   }
 
-  buffer = silc_command_payload_encode(cmd, k, argv, argv_lens, 
+  buffer = silc_command_payload_encode(cmd, k, argv, argv_lens,
 				       argv_types, ident);
 
  out:
@@ -397,7 +397,7 @@ SilcUInt16 silc_command_get_ident(SilcCommandPayload payload)
 
 /* Return command status */
 
-bool silc_command_get_status(SilcCommandPayload payload, 
+bool silc_command_get_status(SilcCommandPayload payload,
 			     SilcStatus *status,
 			     SilcStatus *error)
 {

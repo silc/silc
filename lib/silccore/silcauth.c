@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2003 Pekka Riikonen
+  Copyright (C) 2001 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -67,8 +67,8 @@ SilcAuthPayload silc_auth_payload_parse(const unsigned char *data,
     return NULL;
   }
 
-  if (newp->len != buffer.len ||
-      newp->random_len + newp->auth_len > buffer.len - 8) {
+  if (newp->len != silc_buffer_len(&buffer) ||
+      newp->random_len + newp->auth_len > silc_buffer_len(&buffer) - 8) {
     silc_auth_payload_free(newp);
     return NULL;
   }
@@ -510,7 +510,7 @@ silc_key_agreement_payload_parse(const unsigned char *payload,
 							 &newp->hostname_len),
 			     SILC_STR_UI_INT(&newp->port),
 			     SILC_STR_END);
-  if (ret == -1 || newp->hostname_len > buffer.len - 6) {
+  if (ret == -1 || newp->hostname_len > silc_buffer_len(&buffer) - 6) {
     silc_free(newp);
     return NULL;
   }

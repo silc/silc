@@ -402,7 +402,7 @@ void silc_client_save_channel_key(SilcClient client,
 				  SilcBuffer key_payload,
 				  SilcChannelEntry channel)
 {
-  unsigned char *id_string, *key, *cipher, *hmac, hash[32];
+  unsigned char *id_string, *key, *cipher, *hmac, hash[SILC_HASH_MAXLEN];
   SilcUInt32 tmp_len;
   SilcChannelID *id;
   SilcChannelKeyPayload payload;
@@ -535,7 +535,7 @@ bool silc_client_add_channel_private_key(SilcClient client,
 					 SilcChannelPrivateKey *ret_key)
 {
   SilcChannelPrivateKey entry;
-  unsigned char hash[32];
+  unsigned char hash[SILC_HASH_MAXLEN];
   SilcSKEKeyMaterial *keymat;
 
   assert(client && channel);

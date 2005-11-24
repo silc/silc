@@ -41,6 +41,9 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcsim"
 #ifdef SILC_DIST_CLIENT
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcclient"
 #endif SILC_DIST_CLIENT
+#ifdef SILC_DIST_ASN1
+SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcasn1"
+#endif SILC_DIST_ASN1
 
 ##
 ## Library versioning.
@@ -162,6 +165,15 @@ lib/silcclient.pc
 #ifdef SILC_DIST_CLIENTLIB
 AC_CONFIG_FILES(lib/silcclient/Makefile)
 #endif SILC_DIST_CLIENTLIB
+
+#ifdef SILC_DIST_ASN1
+AC_CONFIG_FILES(
+lib/silcasn1/Makefile
+#ifdef SILC_DIST_INPLACE
+lib/silcasn1/tests/Makefile
+#endif SILC_DIST_INPLACE
+)
+#endif SILC_DIST_ASN1
 
 fi	# compile_libs
 

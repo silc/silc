@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,7 +40,8 @@
  * DESCRIPTION
  *
  *    Opens a file indicated by the filename `filename' with flags indicated
- *    by `flags'.  The opening permission defaults to 0600.
+ *    by `flags'.  The opening permission defaults to 0600.  The `flags'
+ *    are defined in open(2).
  *
  ***/
 int silc_file_open(const char *filename, int flags);
@@ -55,7 +56,7 @@ int silc_file_open(const char *filename, int flags);
  *
  *    Opens a file indicated by the filename `filename' with flags indicated
  *    by `flags'.  The argument `mode' specifies the permissions to use in
- *    case a new file is created.
+ *    case a new file is created.  The `flags' are defined in open(2).
  *
  ***/
 int silc_file_open_mode(const char *filename, int flags, int mode);

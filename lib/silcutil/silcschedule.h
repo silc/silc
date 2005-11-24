@@ -1,22 +1,22 @@
 /*
-  
+
   silcschedule.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
+
   Copyright (C) 1998 - 2005 Pekka Riikonen
- 
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
- 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
 
 */
- 
+
 /****h* silcutil/SILC Schedule Interface
  *
  * DESCRIPTION
@@ -25,24 +25,21 @@
  * the application's main loop that can handle incoming data, outgoing data,
  * timeouts and dispatch different kind of tasks.
  *
- * The SILC Scheduler supports file descriptor based tasks, timeout tasks
- * and generic tasks. File descriptor tasks are tasks that perform some 
- * operation over the specified file descriptor. These include network 
- * connections, for example. The timeout tasks are timeouts that are executed
- * after the specified timeout has elapsed. The generic tasks are tasks that
- * apply to all registered file descriptors thus providing one task that
- * applies to many independent connections.
+ * The SILC Scheduler supports file descriptor based tasks and timeout tasks.
+ * File descriptor tasks are tasks that perform some operation over the
+ * specified file descriptor. These include network connections, for example.
+ * The timeout tasks are timeouts that are executed after the specified
+ * timeout has elapsed.
  *
  * The SILC Scheduler is designed to be the sole main loop of the application
  * so that the application does not need any other main loop.  However,
  * SILC Scheduler does support running the scheduler only once, so that the
  * scheduler does not block, and thus providing a possiblity that some
- * external main loop is run over the SILC Scheduler. However, these 
- * applications are considered to be special cases.
+ * external main loop is run over the SILC Scheduler.
  *
  * Typical application first initializes the scheduler and then registers
  * the very first tasks to the scheduler and then run the scheduler.  After
- * the scheduler's run function returns the application is considered to be 
+ * the scheduler's run function returns the application is considered to be
  * ended.
  *
  * On WIN32 systems the SILC Scheduler is too designed to work as the main
@@ -50,7 +47,7 @@
  * it dispatches them from the scheduler, and thus makes it possible to
  * create GUI applications. The scheduler can also handle all kinds of
  * WIN32 handles, this includes sockets created by the SILC Net API routines,
- * WSAEVENT handle objects created by Winsock2 routines and arbitrary 
+ * WSAEVENT handle objects created by Winsock2 routines and arbitrary
  * WIN32 HANDLE objects.
  *
  * The SILC Scheduler supports multi-threads as well. The actual scheduler
@@ -70,14 +67,14 @@
 /****s* silcutil/SilcScheduleAPI/SilcSchedule
  *
  * NAME
- * 
+ *
  *    typedef struct SilcScheduleStruct *SilcSchedule;
  *
  * DESCRIPTION
  *
  *    This context is the actual Scheduler and is allocated by
  *    the silc_schedule_init funtion.  The context is given as argument
- *    to all silc_schedule_* functions.  It must be freed by the 
+ *    to all silc_schedule_* functions.  It must be freed by the
  *    silc_schedule_uninit function.
  *
  ***/
@@ -86,7 +83,7 @@ typedef struct SilcScheduleStruct *SilcSchedule;
 /****s* silcutil/SilcScheduleAPI/SilcTask
  *
  * NAME
- * 
+ *
  *    typedef struct SilcTaskStruct *SilcTask;
  *
  * DESCRIPTION
@@ -101,15 +98,14 @@ typedef struct SilcTaskStruct *SilcTask;
 /****d* silcutil/SilcScheduleAPI/SilcTaskType
  *
  * NAME
- * 
+ *
  *    typedef enum { ... } SilcTaskType;
  *
  * DESCRIPTION
  *
- *    SILC has three types of tasks, non-timeout tasks (tasks that perform
- *    over file descriptors), timeout tasks and generic tasks (tasks that
- *    apply to every file descriptor). This type is sent as argument for the 
- *    task registering function, silc_schedule_task_add.
+ *    SILC has two types of tasks, non-timeout tasks (tasks that perform
+ *    over file descriptors), and timeout tasks.  This type is sent as
+ *    argument for the task registering function, silc_schedule_task_add.
  *
  * SOURCE
  */
@@ -118,32 +114,19 @@ typedef enum {
      These tasks are for example network connections. */
   SILC_TASK_FD           = 0,
 
-  /* Timeout tasks are tasks that are executed after the specified 
+  /* Timeout tasks are tasks that are executed after the specified
      time has elapsed. After the task is executed the task is removed
      automatically from the scheduler. It is safe to re-register the
      task in task callback. It is also safe to unregister a task in
      the task callback. */
   SILC_TASK_TIMEOUT,
-
-  /* Generic tasks are non-timeout tasks and they apply to all file 
-     descriptors, except to those that have explicitly registered a 
-     non-timeout task. These tasks are there to make it simpler and faster 
-     to execute common code that applies to all connections. These are,
-     for example, receiving packets from network and sending packets to
-     network. It doesn't make much sense to register a task that receives
-     a packet from network to every connection when you can have one task
-     that applies to all connections. This is what generic tasks are for.
-     Generic tasks are not bound to any specific file descriptor, however,
-     the correct file descriptor must be passed as argument to task
-     registering function. */
-  SILC_TASK_GENERIC,
 } SilcTaskType;
 /***/
 
 /****d* silcutil/SilcScheduleAPI/SilcTaskEvent
  *
  * NAME
- * 
+ *
  *    typedef enum { ... } SilcTaskEvent;
  *
  * DESCRIPTION
@@ -167,37 +150,6 @@ typedef enum {
 } SilcTaskEvent;
 /***/
 
-/****d* silcutil/SilcScheduleAPI/SilcTaskPriority
- *
- * NAME
- * 
- *    typedef enum { ... } SilcTaskPriority;
- *
- * DESCRIPTION
- *
- *    Task priorities. Tasks may be registered with different priorities.
- *    This type defines the different task priorities. The priorities
- *    behaves same for all type of tasks, fd tasks, timeout tasks and
- *    generic tasks.
- *
- * SOURCE
- */
-typedef enum {
-  /* Lowest priority. The task is scheduled to run after its timeout
-     has expired only and only when every other task with higher priority 
-     has already been run. For non-timeout tasks this priority behaves
-     same way. Life is not fair for tasks with this priority. */
-  SILC_TASK_PRI_LOW      = 0,
-
-  /* Normal priority that is used mostly in SILC. This is priority that
-     should always be used unless you specificly need some other priority.
-     The scheduler will run this task as soon as its timeout has expired.
-     For non-timeout tasks this priority behaves same way. Tasks are run 
-     in FIFO (First-In-First-Out) order. */
-  SILC_TASK_PRI_NORMAL,
-} SilcTaskPriority;
-/***/
-
 /****f* silcutil/SilcScheduleAPI/SilcTaskCallback
  *
  * SYNOPSIS
@@ -218,11 +170,11 @@ typedef enum {
  *    is a caller specified context. If multiple events occurred this
  *    callback is called separately for all events.  The `app_context'
  *    is application specific context that was given as argument to the
- *    silc_schedule_init function.
+ *    silc_schedule_init function.  If the task is timeout task then `fd'
+ *    is zero (0).
  *
  *    To specify task callback function in the application using the
- *    SILC_TASK_CALLBACK and SILC_TASK_CALLBACK_GLOBAL macros is
- *    recommended.
+ *    SILC_TASK_CALLBACK macro is recommended.
  *
  ***/
 typedef void (*SilcTaskCallback)(SilcSchedule schedule, void *app_context,
@@ -234,12 +186,12 @@ typedef void (*SilcTaskCallback)(SilcSchedule schedule, void *app_context,
 /****d* silcutil/SilcScheduleAPI/SILC_ALL_TASKS
  *
  * NAME
- * 
+ *
  *    #define SILC_ALL_TASKS ...
  *
  * DESCRIPTION
  *
- *    Marks for all tasks in the scheduler. This can be passed to 
+ *    Marks for all tasks in the scheduler. This can be passed to
  *    silc_schedule_task_del function to delete all tasks at once.
  *
  * SOURCE
@@ -250,7 +202,7 @@ typedef void (*SilcTaskCallback)(SilcSchedule schedule, void *app_context,
 /****d* silcutil/SilcScheduleAPI/SILC_TASK_CALLBACK
  *
  * NAME
- * 
+ *
  *    #define SILC_TASK_CALLBACK ...
  *
  * DESCRIPTION
@@ -260,28 +212,7 @@ typedef void (*SilcTaskCallback)(SilcSchedule schedule, void *app_context,
  *
  * SOURCE
  */
-#define SILC_TASK_CALLBACK(func)				\
-static void func(SilcSchedule schedule, void *app_context,	\
-		 SilcTaskEvent type,				\
-		 SilcUInt32 fd, void *context)
-/***/
-
-/****d* silcutil/SilcScheduleAPI/SILC_TASK_CALLBACK_GLOBAL
- *
- * NAME
- * 
- *    #define SILC_TASK_CALLBACK_GLOBAL ...
- *
- * DESCRIPTION
- *
- *    Generic macro to define task callback functions. This defines a
- *    function with name `func' as a task callback function.  This
- *    differs from SILC_TASK_CALLBACK in that the defined function is
- *    not static.
- *
- * SOURCE
- */
-#define SILC_TASK_CALLBACK_GLOBAL(func)					\
+#define SILC_TASK_CALLBACK(func)					\
 void func(SilcSchedule schedule, void *app_context, SilcTaskEvent type,	\
 	  SilcUInt32 fd, void *context)
 /***/
@@ -298,11 +229,15 @@ void func(SilcSchedule schedule, void *app_context, SilcTaskEvent type,	\
  *
  *    Initializes the scheduler. This returns the scheduler context that
  *    is given as argument usually to all silc_schedule_* functions.
- *    The `max_tasks' indicates the number of maximum tasks that the
- *    scheduler can handle. The `app_context' is application specific
- *    context that is delivered to all task callbacks. The caller must
- *    free that context.  The 'app_context' can be for example the
- *    application itself.
+ *    The `app_context' is application specific context that is delivered
+ *    to all task callbacks. The caller must free that context.  The
+ *    'app_context' can be for example the application itself.
+ *
+ *    The `max_tasks' is the maximum number of SILC_TASK_FD tasks in the
+ *    scheduler.  Set value to 0 to use default.  Operating system will
+ *    enforce the final limit.  On some operating systems the limit can
+ *    be significantly increased when this function is called in priviliged
+ *    mode (as super user).
  *
  ***/
 SilcSchedule silc_schedule_init(int max_tasks, void *app_context);
@@ -323,26 +258,6 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context);
  ***/
 bool silc_schedule_uninit(SilcSchedule schedule);
 
-/****f* silcutil/SilcScheduleAPI/silc_schedule_reinit
- *
- * SYNOPSIS
- *
- *    SilcSchedule silc_schedule_reinit(int max_tasks);
- *
- * DESCRIPTION
- *
- *    This function can be called to enlarge the task handling capabilities
- *    of the scheduler indicated by `schedule'.  The `max_tasks' must be
- *    larger than what was set in silc_schedule_init function.  This function
- *    returns FALSE if it cannot reinit the scheduler.  This function does
- *    not do anything else except ready the scheduler to handle `max_tasks'
- *    number of tasks after this function returns.  It is safe to call this
- *    function at any time, and it is guaranteed that existing tasks remain
- *    as they are in the scheduler.
- *
- ***/
-bool silc_schedule_reinit(SilcSchedule schedule, int max_tasks);
-
 /****f* silcutil/SilcScheduleAPI/silc_schedule_stop
  *
  * SYNOPSIS
@@ -351,8 +266,8 @@ bool silc_schedule_reinit(SilcSchedule schedule, int max_tasks);
  *
  * DESCRIPTION
  *
- *    Stops the scheduler even if it is not supposed to be stopped yet. 
- *    After calling this, one must call silc_schedule_uninit (after the 
+ *    Stops the scheduler even if it is not supposed to be stopped yet.
+ *    After calling this, one must call silc_schedule_uninit (after the
  *    silc_schedule has returned).  After this is called it is guaranteed
  *    that next time the scheduler enters the main loop it will be stopped.
  *    However, untill it enters the main loop it will not detect that
@@ -369,7 +284,7 @@ void silc_schedule_stop(SilcSchedule schedule);
  *
  * DESCRIPTION
  *
- *    The SILC scheduler. This is actually the main routine in SILC programs.
+ *    The SILC scheduler. The program will run inside this function.
  *    When this returns the program is to be ended. Before this function can
  *    be called, one must call silc_schedule_init function.
  *
@@ -433,18 +348,17 @@ void *silc_schedule_get_context(SilcSchedule schedule);
  * SYNOPSIS
  *
  *    SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
- *                                    SilcTaskCallback callback, 
- *                                    void *context, 
- *                                    long seconds, long useconds, 
- *                                    SilcTaskType type, 
- *                                    SilcTaskPriority priority);
+ *                                    SilcTaskCallback callback,
+ *                                    void *context,
+ *                                    long seconds, long useconds,
+ *                                    SilcTaskType type);
  *
  * DESCRIPTION
  *
  *    Registers a new task to the scheduler. This same function is used
  *    to register all types of tasks. The `type' argument tells what type
- *    of the task is. Note that when registering non-timeout tasks one
- *    should also pass 0 as timeout, as the timeout will be ignored anyway. 
+ *    of the task is. Note that when registering non-timeout (fd) tasks one
+ *    should also pass 0 as timeout, as the timeout will be ignored anyway.
  *    Also, note, that one cannot register timeout task with 0 timeout.
  *    There cannot be zero timeouts, passing zero means no timeout is used
  *    for the task and SILC_TASK_FD is used as default task type in
@@ -455,7 +369,8 @@ void *silc_schedule_get_context(SilcSchedule schedule);
  *    file descriptor but some WIN32 event handle. On WIN32 system the `fd'
  *    may be a socket created by the SILC Net API routines, WSAEVENT object
  *    created by Winsock2 network routines or arbitrary WIN32 HANDLE object.
- *    On Unix systems the `fd' is always the real file descriptor.
+ *    On Unix systems the `fd' is always the real file descriptor.  The
+ *    same `fd' can be added only once.
  *
  *    The `callback' is the task callback that will be called when some
  *    event occurs for this task. The `context' is sent as argument to
@@ -463,19 +378,54 @@ void *silc_schedule_get_context(SilcSchedule schedule);
  *    called after the specified timeout has elapsed.
  *
  *    If the `type' is SILC_TASK_TIMEOUT then `seconds' and `useconds'
- *    may be non-zero.  Otherwise they should be zero. The `priority'
- *    indicates the priority of the task.
+ *    may be non-zero.  Otherwise they should be zero.
  *
  *    It is always safe to call this function in any place. New tasks
  *    may be added also in task callbacks, and in multi-threaded environment
  *    in other threads as well.
- *   
+ *
  ***/
 SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
-				SilcTaskCallback callback, void *context, 
-				long seconds, long useconds, 
-				SilcTaskType type, 
-				SilcTaskPriority priority);
+				SilcTaskCallback callback, void *context,
+				long seconds, long useconds,
+				SilcTaskType type);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_task_add_fd
+ *
+ * SYNOPSIS
+ *
+ *    SilcTask
+ *    silc_schedule_task_add_fd(SilcSchedule schedule, SilcUInt32 fd,
+ *                              SilcTaskCallback callback, void *context);
+ *
+ * DESCRIPTION
+ *
+ *    A convenience function to add fd task.  You may use this if you
+ *    don't want to use the silc_schedule_task_add function to add fd task.
+ *
+ ***/
+#define silc_schedule_task_add_fd(schedule, fd, callback, context)	\
+  silc_schedule_task_add(schedule, fd, callback, context, 0, 0,	SILC_TASK_FD)
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_task_add_timeout
+ *
+ * SYNOPSIS
+ *
+ *    SilcTask
+ *    silc_schedule_task_add_timeout(SilcSchedule schedule,
+ *                                   SilcTaskCallback callback, void *context,
+ *                                   long seconds, long useconds);
+ *
+ * DESCRIPTION
+ *
+ *    A convenience function to add timeout task.  You may use this if
+ *    you don't want to use the silc_schedule_task_add function to add
+ *    timeout task.
+ *
+ ***/
+#define silc_schedule_task_add_timeout(schedule, callback, context, s, u) \
+  silc_schedule_task_add(schedule, 0, callback, context, s, u,		   \
+			 SILC_TASK_TIMEOUT)
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_del
  *
@@ -511,9 +461,6 @@ void silc_schedule_task_del(SilcSchedule schedule, SilcTask task);
  *    in task callbacks (including in the task's own task callback) and
  *    in multi-threaded environment in other threads as well.
  *
- *    Note that generic tasks cannot be deleted using this function
- *    since generic tasks does not match any specific fd.
- *
  ***/
 void silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd);
 
@@ -541,7 +488,7 @@ void silc_schedule_task_del_by_callback(SilcSchedule schedule,
  *
  * SYNOPSIS
  *
- *    void silc_schedule_task_del_by_context(SilcSchedule schedule, 
+ *    void silc_schedule_task_del_by_context(SilcSchedule schedule,
  *                                           void *context);
  *
  * DESCRIPTION
@@ -554,6 +501,27 @@ void silc_schedule_task_del_by_callback(SilcSchedule schedule,
  *
  ***/
 void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_task_del_by_all
+ *
+ * SYNOPSIS
+ *
+ *    void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
+ *                                       SilcTaskCallback callback,
+ *                                       void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Deletes a task from the scheduler by the specified `fd', `callback'
+ *    and `context'.
+ *
+ *    It is safe to call this function in any place. Tasks may be removed
+ *    in task callbacks (including in the task's own task callback) and
+ *    in multi-threaded environment in other threads as well.
+ *
+ ***/
+void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
+				   SilcTaskCallback callback, void *context);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_set_listen_fd
  *
@@ -601,7 +569,7 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd);
  *
  * SYNOPSIS
  *
- *    void silc_schedule_signal_register(SilcSchedule schedule, 
+ *    void silc_schedule_signal_register(SilcSchedule schedule,
  *                                       SilcUInt32 signal,
  *					 SilcTaskCallback callback,
  * 					 void *context);
@@ -611,8 +579,8 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd);
  *    Register signal indicated by `signal' to the scheduler.  Application
  *    should register all signals it is going to use to the scheduler.
  *    The `callback' with `context' will be called after the application
- *    has called silc_schedule_signal_call function in the real signal 
- *    callback.  Application is responsible of calling that, and the 
+ *    has called silc_schedule_signal_call function in the real signal
+ *    callback.  Application is responsible of calling that, and the
  *    signal system will not work without calling silc_schedule_signal_call
  *    function.  The specified `signal' value will be also delivered to
  *    the `callback' as the fd-argument.  The event type in the callback
@@ -620,7 +588,7 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd);
  *    in the `callback' since it is actually called after the signal really
  *    happened.
  *
- *    On platform that does not support signals calling this function has 
+ *    On platform that does not support signals calling this function has
  *    no effect.
  *
  * EXAMPLE
@@ -641,7 +609,7 @@ void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd);
  *
  *    The `signal_handler' can be used as generic signal callback in the
  *    application that merely calls silc_schedule_signal_call, which then
- *    eventually will deliver for example the `hup_signal' callback.  The 
+ *    eventually will deliver for example the `hup_signal' callback.  The
  *    same `signal_handler' can be used with all signals.
  *
  ***/
@@ -652,7 +620,7 @@ void silc_schedule_signal_register(SilcSchedule schedule, SilcUInt32 signal,
  *
  * SYNOPSIS
  *
- *    void silc_schedule_signal_unregister(SilcSchedule schedule, 
+ *    void silc_schedule_signal_unregister(SilcSchedule schedule,
  *                                         SilcUInt32 signal,
  *					   SilcTaskCallback callback,
  * 					   void *context);
@@ -671,19 +639,21 @@ void silc_schedule_signal_unregister(SilcSchedule schedule, SilcUInt32 signal,
  *
  * SYNOPSIS
  *
- *    void silc_schedule_signal_call(SilcSchedule schedule, 
+ *    void silc_schedule_signal_call(SilcSchedule schedule,
  *                                   SilcUInt32 signal);
  *
  * DESCRIPTION
  *
  *    Mark the `signal' to be called later.  Every signal that has been
  *    registered by silc_schedule_signal_register is delivered by calling
- *    this function.  When signal really occurs, the application is 
+ *    this function.  When signal really occurs, the application is
  *    responsible of calling this function in the signal handler.  After
  *    signal is over the scheduler will then safely deliver the callback
  *    that was given to silc_schedule_signal_register function.
  *
  ***/
 void silc_schedule_signal_call(SilcSchedule schedule, SilcUInt32 signal);
+
+#include "silcschedule_i.h"
 
 #endif

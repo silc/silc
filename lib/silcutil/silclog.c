@@ -146,9 +146,8 @@ SILC_TASK_CALLBACK(silc_log_fflush_callback)
 
   if (silclog.flushdelay < 2)
     silclog.flushdelay = 2;
-  silc_schedule_task_add(context, 0, silc_log_fflush_callback, context,
-			 silclog.flushdelay, 0, SILC_TASK_TIMEOUT,
-			 SILC_TASK_PRI_NORMAL);
+  silc_schedule_task_add_timeout(context, silc_log_fflush_callback, context,
+				 silclog.flushdelay, 0);
 }
 
 /* Output log message to log file */
@@ -264,8 +263,8 @@ bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
   /* Add flush timeout */
   if (scheduler) {
     silc_schedule_task_del_by_callback(scheduler, silc_log_fflush_callback);
-    silc_schedule_task_add(scheduler, 0, silc_log_fflush_callback, scheduler,
-			   10, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+    silc_schedule_task_add_timeout(scheduler, silc_log_fflush_callback,
+				   scheduler, 10, 0);
     silclog.scheduled = TRUE;
   }
 

@@ -9,7 +9,7 @@
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -19,7 +19,6 @@
 /* $Id$ */
 
 #include "silcincludes.h"
-#include "silcschedule_i.h"
 
 /* Our "select()" for WIN32. This mimics the behaviour of select() system
    call. It does not call the Winsock's select() though. Its functions
@@ -40,7 +39,7 @@
    References:
 
    o http://msdn.microsoft.com/library/default.asp?
-     url=/library/en-us/winui/hh/winui/messques_77zk.asp 
+     url=/library/en-us/winui/hh/winui/messques_77zk.asp
    o http://msdn.microsoft.com/library/default.asp?
      url=/library/en-us/winsock/hh/winsock/apistart_9g1e.asp
    o http://msdn.microsoft.com/library/default.asp?
@@ -49,39 +48,44 @@
 
 */
 
-int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeout)
+int silc_select(SilcSchedule schedule, void *context);
 {
+  SilcHashTableList htl;
+  SilcTaskFd task;
   HANDLE handles[MAXIMUM_WAIT_OBJECTS];
   DWORD ready, curtime;
   LONG timeo;
-  int nhandles = 0, i;
   MSG msg;
+  int nhandles = 0, i, fd;
 
-  if (fds_count > MAXIMUM_WAIT_OBJECTS)
-    fds_count = MAXIMUM_WAIT_OBJECTS;
-
-  for (i = 0; i < fds_count; i++) {
-    if (!fds[i].events)
+  silc_hash_table_list(schedule->fd_queue, &htl);
+  while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
+    if (!task->events)
       continue;
+    if (nhandles >= MAXIMUM_WAIT_OBJECTS)
+      break;
 
-    if (fds[i].events & SILC_TASK_READ)
-      handles[nhandles++] = (HANDLE)fds[i].fd;
+    if (task->events & SILC_TASK_READ)
+      handles[nhandles++] = (HANDLE)fd;
 
     /* If writing then just set the bit and return */
-    if (fds[i].events & SILC_TASK_WRITE) {
-      fds[i].revents = SILC_TASK_WRITE;
+    if (task->events & SILC_TASK_WRITE) {
+      task->revents = SILC_TASK_WRITE;
       return 1;
     }
 
-    fds[i].revents = 0;
+    task->revents = 0;
   }
+  silc_hash_table_list_reset(&htl);
 
-  timeo = (timeout ? (timeout->tv_sec * 1000) + (timeout->tv_usec / 1000) :
-	   INFINITE);
+  timeo = (schedule->has_timeout ? ((schedule->timeout.tv_sec * 1000) +
+				    (schedule->timeout.tv_usec / 1000))
+	   : INFINITE);
 
   /* If we have nothing to wait and timeout is set then register a timeout
      and wait just for windows messages. */
-  if (nhandles == 0 && timeout) {
+  if (nhandles == 0 && schedule->has_timeout) {
+    SILC_SCHEDULE_UNLOCK(schedule);
     UINT timer = SetTimer(NULL, 0, timeo, NULL);
     curtime = GetTickCount();
     while (timer) {
@@ -90,10 +94,11 @@ int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeou
       while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 	if (msg.message == WM_TIMER) {
 	  KillTimer(NULL, timer);
+	  SILC_SCHEDULE_LOCK(schedule);
 	  return 0;
 	}
-	TranslateMessage(&msg); 
-	DispatchMessage(&msg); 
+	TranslateMessage(&msg);
+	DispatchMessage(&msg);
       }
 
       KillTimer(NULL, timer);
@@ -105,12 +110,15 @@ int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeou
       }
       timer = SetTimer(NULL, 0, timeo, NULL);
     }
+    SILC_SCHEDULE_LOCK(schedule);
   }
 
+  SILC_SCHEDULE_UNLOCK(schedule);
  retry:
   curtime = GetTickCount();
-  ready = MsgWaitForMultipleObjects(nhandles, handles, FALSE, timeo, 
+  ready = MsgWaitForMultipleObjects(nhandles, handles, FALSE, timeo,
 				    QS_ALLINPUT);
+  SILC_SCHEDULE_LOCK(schedule);
 
   if (ready == WAIT_FAILED) {
     /* Wait failed with error */
@@ -129,9 +137,10 @@ int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeou
        creates a window then its main loop (and we're assuming that
        it is our SILC Scheduler) must handle the Windows messages, so do
        it here as the MSDN suggests. */
+    SILC_SCHEDULE_UNLOCK(schedule);
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-      TranslateMessage(&msg); 
-      DispatchMessage(&msg); 
+      TranslateMessage(&msg);
+      DispatchMessage(&msg);
     }
 
     /* If timeout is set then we must update the timeout since we won't
@@ -150,24 +159,31 @@ int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count, struct timeval *timeou
 
     /* Go through all fds even though only one was set. This is to avoid
        starvation of high numbered fds. */
+    nhandles = silc_hash_table_count(schedule->fd_queue);
     ready -= WAIT_OBJECT_0;
     do {
-      for (i = 0; i < fds_count; i++) {
-	if (!fds[i].events)
+      i = 0;
+      silc_hash_table_list(schedule->fd_queue, &htl);
+      while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
+	if (!task->events)
 	  continue;
-	
-	if (fds[i].fd == (int)handles[ready]) {
-	  fds[i].revents |= SILC_TASK_READ;
+
+	if (fd == (int)handles[ready]) {
+	  i++;
+	  task->revents |= SILC_TASK_READ;
 	  break;
 	}
       }
+      silc_hash_table_list_reset(&htl);
 
       /* Check the status of the next handle and set its fd to the fd
 	 set if data is available. */
-      while (++ready < fds_count)
+      SILC_SCHEDULE_UNLOCK(schedule);
+      while (++ready < nhandles)
 	if (WaitForSingleObject(handles[ready], 0) == WAIT_OBJECT_0)
 	  break;
-    } while (ready < fds_count);
+      SILC_SCHEDULE_LOCK(schedule);
+    } while (ready < nhandles);
 
     return i + 1;
   }
@@ -199,8 +215,14 @@ void *silc_schedule_internal_init(SilcSchedule schedule, void *app_context)
 {
 #ifdef SILC_THREADS
   SilcWin32Wakeup wakeup;
+#endif
 
+  schedule->max_tasks = MAXIMUM_WAIT_OBJECTS;
+
+#ifdef SILC_THREADS
   wakeup = silc_calloc(1, sizeof(*wakeup));
+  if (!wakeup)
+    return NULL;
 
   wakeup->wakeup_sema = CreateSemaphore(NULL, 0, 100, NULL);
   if (!wakeup->wakeup_sema) {
@@ -208,11 +230,10 @@ void *silc_schedule_internal_init(SilcSchedule schedule, void *app_context)
     return NULL;
   }
 
-  wakeup->wakeup_task = 
+  wakeup->wakeup_task =
     silc_schedule_task_add(schedule, (int)wakeup->wakeup_sema,
 			   silc_schedule_wakeup_cb, wakeup,
-			   0, 0, SILC_TASK_FD, 
-			   SILC_TASK_PRI_NORMAL);
+			   0, 0, SILC_TASK_FD);
   if (!wakeup->wakeup_task) {
     CloseHandle(wakeup->wakeup_sema);
     silc_free(wakeup);
@@ -227,7 +248,7 @@ void *silc_schedule_internal_init(SilcSchedule schedule, void *app_context)
 
 /* Uninitializes the platform specific scheduler context. */
 
-void silc_schedule_internal_uninit(void *context)
+void silc_schedule_internal_uninit(SilcSchedule schedule, void *context)
 {
 #ifdef SILC_THREADS
   SilcWin32Wakeup wakeup = (SilcWin32Wakeup)context;
@@ -242,7 +263,7 @@ void silc_schedule_internal_uninit(void *context)
 
 /* Wakes up the scheduler */
 
-void silc_schedule_internal_wakeup(void *context)
+void silc_schedule_internal_wakeup(SilcSchedule schedule, void *context)
 {
 #ifdef SILC_THREADS
   SilcWin32Wakeup wakeup = (SilcWin32Wakeup)context;
@@ -256,7 +277,8 @@ void silc_schedule_internal_wakeup(void *context)
 
 /* Register signal */
 
-void silc_schedule_internal_signal_register(void *context,
+void silc_schedule_internal_signal_register(SilcSchedule schedule,
+					    void *context,
                                             SilcUInt32 signal,
                                             SilcTaskCallback callback,
                                             void *callback_context)
@@ -266,7 +288,8 @@ void silc_schedule_internal_signal_register(void *context,
 
 /* Unregister signal */
 
-void silc_schedule_internal_signal_unregister(void *context,
+void silc_schedule_internal_signal_unregister(SilcSchedule schedule,
+					      void *context,
                                               SilcUInt32 signal,
                                               SilcTaskCallback callback,
                                               void *callback_context)
@@ -276,14 +299,16 @@ void silc_schedule_internal_signal_unregister(void *context,
 
 /* Mark signal to be called later. */
 
-void silc_schedule_internal_signal_call(void *context, SilcUInt32 signal)
+void silc_schedule_internal_signal_call(SilcSchedule schedule,
+					void *context, SilcUInt32 signal)
 {
 
 }
 
 /* Call all signals */
 
-void silc_schedule_internal_signals_call(void *context,
+void silc_schedule_internal_signals_call(SilcSchedule schedule,
+					 void *context,
                                          SilcSchedule schedule)
 {
 
@@ -291,14 +316,30 @@ void silc_schedule_internal_signals_call(void *context,
 
 /* Block registered signals in scheduler. */
 
-void silc_schedule_internal_signals_block(void *context)
+void silc_schedule_internal_signals_block(SilcSchedule schedule,
+					  void *context)
 {
 
 }
 
 /* Unblock registered signals in schedule. */
 
-void silc_schedule_internal_signals_unblock(void *context)
+void silc_schedule_internal_signals_unblock(SilcSchedule schedule,
+					    void *context)
 {
 
 }
+
+const SilcScheduleOps schedule_ops =
+{
+  silc_schedule_internal_init,
+  silc_schedule_internal_uninit,
+  silc_select,
+  silc_schedule_internal_wakeup,
+  silc_schedule_internal_signal_register,
+  silc_schedule_internal_signal_unregister,
+  silc_schedule_internal_signal_call,
+  silc_schedule_internal_signals_call,
+  silc_schedule_internal_signals_block,
+  silc_schedule_internal_signals_unblock,
+};

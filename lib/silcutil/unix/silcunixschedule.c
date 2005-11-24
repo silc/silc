@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2004 Pekka Riikonen
+  Copyright (C) 1998 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,50 +19,12 @@
 /* $Id$ */
 
 #include "silcincludes.h"
-#include "silcschedule_i.h"
 
-/* Calls normal select() system call. */
+#if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+#include <poll.h>
+#endif
 
-int silc_select(SilcScheduleFd fds, SilcUInt32 fds_count,
-		struct timeval *timeout)
-{
-  fd_set in, out;
-  int ret, i, max_fd = 0;
-
-  FD_ZERO(&in);
-  FD_ZERO(&out);
-
-  for (i = 0; i < fds_count; i++) {
-    if (!fds[i].events)
-      continue;
-
-    if (fds[i].fd > max_fd)
-      max_fd = fds[i].fd;
-
-    if (fds[i].events & SILC_TASK_READ)
-      FD_SET(fds[i].fd, &in);
-    if (fds[i].events & SILC_TASK_WRITE)
-      FD_SET(fds[i].fd, &out);
-
-    fds[i].revents = 0;
-  }
-
-  ret = select(max_fd + 1, &in, &out, NULL, timeout);
-  if (ret <= 0)
-    return ret;
-
-  for (i = 0; i < fds_count; i++) {
-    if (!fds[i].events)
-      continue;
-
-    if (FD_ISSET(fds[i].fd, &in))
-      fds[i].revents |= SILC_TASK_READ;
-    if (FD_ISSET(fds[i].fd, &out))
-      fds[i].revents |= SILC_TASK_WRITE;
-  }
-
-  return ret;
-}
+const SilcScheduleOps schedule_ops;
 
 #define SIGNAL_COUNT 32
 
@@ -75,6 +37,11 @@ typedef struct {
 
 /* Internal context. */
 typedef struct {
+#if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+  struct rlimit nofile;
+  struct pollfd *fds;
+  SilcUInt32 fds_count;
+#endif /* HAVE_POLL && HAVE_SETRLIMIT && RLIMIT_NOFILE */
   void *app_context;
   int wakeup_pipe[2];
   SilcTask wakeup_task;
@@ -83,12 +50,154 @@ typedef struct {
   SilcUnixSignal signal_call[SIGNAL_COUNT];
 } *SilcUnixScheduler;
 
+#if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+
+/* Calls normal poll() system call. */
+
+int silc_poll(SilcSchedule schedule, void *context)
+{
+  SilcUnixScheduler internal = context;
+  SilcHashTableList htl;
+  SilcTaskFd task;
+  struct pollfd *fds = internal->fds;
+  SilcUInt32 fds_count = internal->fds_count;
+  int fd, ret, i = 0, timeout = -1;
+
+  silc_hash_table_list(schedule->fd_queue, &htl);
+  while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
+    if (!task->events)
+      continue;
+
+    /* Allocate larger fd table if needed */
+    if (i >= fds_count) {
+      struct rlimit nofile;
+
+      fds = silc_realloc(internal->fds, sizeof(*internal->fds) *
+			 (fds_count + (fds_count / 2)));
+      if (!fds)
+	break;
+      internal->fds = fds;
+      internal->fds_count = fds_count = fds_count + (fds_count / 2);
+      internal->nofile.rlim_cur = fds_count;
+      if (fds_count > internal->nofile.rlim_max)
+	internal->nofile.rlim_max = fds_count;
+      if (setrlimit(RLIMIT_NOFILE, &nofile) < 0)
+	break;
+    }
+
+    fds[i].fd = fd;
+    fds[i].events = 0;
+    task->revents = fds[i].revents = 0;
+
+    if (task->events & SILC_TASK_READ)
+      fds[i].events |= (POLLIN | POLLPRI);
+    if (task->events & SILC_TASK_WRITE)
+      fds[i].events |= POLLOUT;
+    i++;
+  }
+  silc_hash_table_list_reset(&htl);
+
+  if (schedule->has_timeout)
+    timeout = ((schedule->timeout.tv_sec * 1000) +
+	       (schedule->timeout.tv_usec / 1000));
+
+  fds_count = i;
+  SILC_SCHEDULE_UNLOCK(schedule);
+  ret = poll(fds, fds_count, timeout);
+  SILC_SCHEDULE_LOCK(schedule);
+  if (ret <= 0)
+    return ret;
+
+  for (i = 0; i < fds_count; i++) {
+    if (!fds[i].revents)
+      continue;
+    if (!silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fds[i].fd),
+			      NULL, (void **)&task))
+      continue;
+
+    fd = fds[i].revents;
+    if (fd & (POLLIN | POLLPRI | POLLERR | POLLHUP | POLLNVAL))
+      task->revents |= SILC_TASK_READ;
+    if (fd & POLLOUT)
+      task->revents |= SILC_TASK_WRITE;
+  }
+
+  return ret;
+}
+
+#else
+
+/* Calls normal select() system call. */
+
+int silc_select(SilcSchedule schedule, void *context)
+{
+  SilcHashTableList htl;
+  SilcTaskFd task;
+  fd_set in, out;
+  int fd, max_fd = 0, ret;
+
+  FD_ZERO(&in);
+  FD_ZERO(&out);
+
+  silc_hash_table_list(schedule->fd_queue, &htl);
+  while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
+    if (!task->events)
+      continue;
+
+#ifdef FD_SETSIZE
+    if (fd >= FD_SETSIZE)
+      break;
+#endif /* FD_SETSIZE */
+
+    if (fd > max_fd)
+      max_fd = fd;
+
+    if (task->events & SILC_TASK_READ)
+      FD_SET(fd, &in);
+    if (task->events & SILC_TASK_WRITE)
+      FD_SET(fd, &out);
+
+    task->revents = 0;
+  }
+  silc_hash_table_list_reset(&htl);
+
+  SILC_SCHEDULE_UNLOCK(schedule);
+  ret = select(max_fd + 1, &in, &out, NULL, (schedule->has_timeout ?
+					     &schedule->timeout : NULL));
+  SILC_SCHEDULE_LOCK(schedule);
+  if (ret <= 0)
+    return ret;
+
+  silc_hash_table_list(schedule->fd_queue, &htl);
+  while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
+    if (!task->events)
+      continue;
+
+#ifdef FD_SETSIZE
+    if (fd >= FD_SETSIZE)
+      break;
+#endif /* FD_SETSIZE */
+
+    if (FD_ISSET(fd, &in))
+      task->revents |= SILC_TASK_READ;
+    if (FD_ISSET(fd, &out))
+      task->revents |= SILC_TASK_WRITE;
+  }
+  silc_hash_table_list_reset(&htl);
+
+  return ret;
+}
+
+#endif /* HAVE_POLL && HAVE_SETRLIMIT && RLIMIT_NOFILE */
+
 #ifdef SILC_THREADS
 
 SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   unsigned char c;
+
+  SILC_LOG_DEBUG(("Wokeup"));
 
   read(internal->wakeup_pipe[0], &c, 1);
 }
@@ -109,6 +218,25 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
   if (!internal)
     return NULL;
 
+#if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+  getrlimit(RLIMIT_NOFILE, &internal->nofile);
+
+  if (schedule->max_tasks > 0) {
+    internal->nofile.rlim_cur = schedule->max_tasks;
+    if (schedule->max_tasks > internal->nofile.rlim_max)
+      internal->nofile.rlim_max = schedule->max_tasks;
+    setrlimit(RLIMIT_NOFILE, &internal->nofile);
+    getrlimit(RLIMIT_NOFILE, &internal->nofile);
+    schedule->max_tasks = internal->nofile.rlim_max;
+  }
+
+  internal->fds = silc_calloc(internal->nofile.rlim_cur,
+			      sizeof(*internal->fds));
+  if (!internal->fds)
+    return NULL;
+  internal->fds_count = internal->nofile.rlim_cur;
+#endif /* HAVE_POLL && HAVE_SETRLIMIT && RLIMIT_NOFILE */
+
   sigemptyset(&internal->signals);
 
 #ifdef SILC_THREADS
@@ -121,8 +249,7 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
   internal->wakeup_task =
     silc_schedule_task_add(schedule, internal->wakeup_pipe[0],
 			   silc_schedule_wakeup_cb, internal,
-			   0, 0, SILC_TASK_FD,
-			   SILC_TASK_PRI_NORMAL);
+			   0, 0, SILC_TASK_FD);
   if (!internal->wakeup_task) {
     SILC_LOG_ERROR(("Could not add a wakeup task, threads won't work"));
     close(internal->wakeup_pipe[0]);
@@ -137,12 +264,14 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
   return (void *)internal;
 }
 
-void silc_schedule_internal_signals_block(void *context);
-void silc_schedule_internal_signals_unblock(void *context);
+void silc_schedule_internal_signals_block(SilcSchedule schedule,
+					  void *context);
+void silc_schedule_internal_signals_unblock(SilcSchedule schedule,
+					    void *context);
 
 /* Uninitializes the platform specific scheduler context. */
 
-void silc_schedule_internal_uninit(void *context)
+void silc_schedule_internal_uninit(SilcSchedule schedule, void *context)
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
 
@@ -154,12 +283,16 @@ void silc_schedule_internal_uninit(void *context)
   close(internal->wakeup_pipe[1]);
 #endif
 
+#if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+  silc_free(internal->fds);
+#endif /* HAVE_POLL && HAVE_SETRLIMIT && RLIMIT_NOFILE */
+
   silc_free(internal);
 }
 
 /* Wakes up the scheduler */
 
-void silc_schedule_internal_wakeup(void *context)
+void silc_schedule_internal_wakeup(SilcSchedule schedule, void *context)
 {
 #ifdef SILC_THREADS
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
@@ -167,11 +300,14 @@ void silc_schedule_internal_wakeup(void *context)
   if (!internal)
     return;
 
+  SILC_LOG_DEBUG(("Wakeup"));
+
   write(internal->wakeup_pipe[1], "!", 1);
 #endif
 }
 
-void silc_schedule_internal_signal_register(void *context,
+void silc_schedule_internal_signal_register(SilcSchedule schedule,
+					    void *context,
 					    SilcUInt32 signal,
                                             SilcTaskCallback callback,
                                             void *callback_context)
@@ -184,7 +320,7 @@ void silc_schedule_internal_signal_register(void *context,
 
   SILC_LOG_DEBUG(("Registering signal %d", signal));
 
-  silc_schedule_internal_signals_block(context);
+  silc_schedule_internal_signals_block(schedule, context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (!internal->signal_call[i].signal) {
@@ -196,11 +332,12 @@ void silc_schedule_internal_signal_register(void *context,
     }
   }
 
-  silc_schedule_internal_signals_unblock(context);
+  silc_schedule_internal_signals_unblock(schedule, context);
   sigaddset(&internal->signals, signal);
 }
 
-void silc_schedule_internal_signal_unregister(void *context,
+void silc_schedule_internal_signal_unregister(SilcSchedule schedule,
+					      void *context,
 					      SilcUInt32 signal,
                                               SilcTaskCallback callback,
                                               void *callback_context)
@@ -213,7 +350,7 @@ void silc_schedule_internal_signal_unregister(void *context,
 
   SILC_LOG_DEBUG(("Unregistering signal %d", signal));
 
-  silc_schedule_internal_signals_block(context);
+  silc_schedule_internal_signals_block(schedule, context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (internal->signal_call[i].signal == signal &&
@@ -226,13 +363,14 @@ void silc_schedule_internal_signal_unregister(void *context,
     }
   }
 
-  silc_schedule_internal_signals_unblock(context);
+  silc_schedule_internal_signals_unblock(schedule, context);
   sigdelset(&internal->signals, signal);
 }
 
 /* Mark signal to be called later. */
 
-void silc_schedule_internal_signal_call(void *context, SilcUInt32 signal)
+void silc_schedule_internal_signal_call(SilcSchedule schedule,
+					void *context, SilcUInt32 signal)
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   int i;
@@ -240,7 +378,7 @@ void silc_schedule_internal_signal_call(void *context, SilcUInt32 signal)
   if (!internal)
     return;
 
-  silc_schedule_internal_signals_block(context);
+  silc_schedule_internal_signals_block(schedule, context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (internal->signal_call[i].signal == signal) {
@@ -250,13 +388,12 @@ void silc_schedule_internal_signal_call(void *context, SilcUInt32 signal)
     }
   }
 
-  silc_schedule_internal_signals_unblock(context);
+  silc_schedule_internal_signals_unblock(schedule, context);
 }
 
 /* Call all signals */
 
-void silc_schedule_internal_signals_call(void *context,
-                                         SilcSchedule schedule)
+void silc_schedule_internal_signals_call(SilcSchedule schedule, void *context)
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   int i;
@@ -266,7 +403,7 @@ void silc_schedule_internal_signals_call(void *context,
   if (!internal)
     return;
 
-  silc_schedule_internal_signals_block(context);
+  silc_schedule_internal_signals_block(schedule, context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (internal->signal_call[i].call &&
@@ -281,12 +418,12 @@ void silc_schedule_internal_signals_call(void *context,
     }
   }
 
-  silc_schedule_internal_signals_unblock(context);
+  silc_schedule_internal_signals_unblock(schedule, context);
 }
 
 /* Block registered signals in scheduler. */
 
-void silc_schedule_internal_signals_block(void *context)
+void silc_schedule_internal_signals_block(SilcSchedule schedule, void *context)
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
 
@@ -298,7 +435,8 @@ void silc_schedule_internal_signals_block(void *context)
 
 /* Unblock registered signals in schedule. */
 
-void silc_schedule_internal_signals_unblock(void *context)
+void silc_schedule_internal_signals_unblock(SilcSchedule schedule,
+					    void *context)
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
 
@@ -307,3 +445,21 @@ void silc_schedule_internal_signals_unblock(void *context)
 
   sigprocmask(SIG_SETMASK, &internal->signals_blocked, NULL);
 }
+
+const SilcScheduleOps schedule_ops =
+{
+  silc_schedule_internal_init,
+  silc_schedule_internal_uninit,
+#if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+  silc_poll,
+#else
+  silc_select,
+#endif /* HAVE_POLL && HAVE_SETRLIMIT && RLIMIT_NOFILE */
+  silc_schedule_internal_wakeup,
+  silc_schedule_internal_signal_register,
+  silc_schedule_internal_signal_unregister,
+  silc_schedule_internal_signal_call,
+  silc_schedule_internal_signals_call,
+  silc_schedule_internal_signals_block,
+  silc_schedule_internal_signals_unblock,
+};

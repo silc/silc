@@ -1,10 +1,10 @@
 /*
 
-  silcargument.c 
+  silcargument.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2002 Pekka Riikonen
+  Copyright (C) 2001 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
   GNU General Public License for more details.
 
 */
-/* Implementation of Argument Payload routines */ 
+/* Implementation of Argument Payload routines */
 /* $Id$ */
 
 #include "silcincludes.h"
@@ -63,7 +63,7 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
   newp->argv_types = silc_calloc(argc, sizeof(SilcUInt32));
   if (!newp->argv_types)
     goto err;
-    
+
   /* Get arguments */
   arg_num = 1;
   for (i = 0; i < argc; i++) {
@@ -71,7 +71,7 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
 			       SILC_STR_UI_SHORT(&p_len),
 			       SILC_STR_UI_CHAR(&arg_type),
 			       SILC_STR_END);
-    if (ret == -1 || p_len > buffer.len - 3)
+    if (ret == -1 || p_len > silc_buffer_len(&buffer) - 3)
       goto err;
 
     newp->argv_lens[i] = p_len;
@@ -80,7 +80,7 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
     /* Get argument data */
     silc_buffer_pull(&buffer, 3);
     ret = silc_buffer_unformat(&buffer,
-			       SILC_STR_UI_XNSTRING_ALLOC(&newp->argv[i], 
+			       SILC_STR_UI_XNSTRING_ALLOC(&newp->argv[i],
 							  p_len),
 			       SILC_STR_END);
     if (ret == -1)
@@ -90,7 +90,7 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
     pull_len += 3 + p_len;
   }
 
-  if (buffer.len != 0) {
+  if (silc_buffer_len(&buffer) != 0) {
     SILC_LOG_DEBUG(("Malformed argument payload"));
     goto err;
   }
@@ -162,12 +162,12 @@ SilcBuffer silc_argument_payload_encode_one(SilcBuffer args,
 
   len = 3 + (SilcUInt16)arg_len;
   buffer = silc_buffer_realloc(buffer,
-			       (buffer ? buffer->truelen + len : len));
+			       (buffer ? silc_buffer_truelen(buffer) + len : len));
   if (!buffer)
     return NULL;
-  silc_buffer_pull(buffer, buffer->len);
+  silc_buffer_pull(buffer, silc_buffer_len(buffer));
   silc_buffer_pull_tail(buffer, len);
-  silc_buffer_format(buffer, 
+  silc_buffer_format(buffer,
 		     SILC_STR_UI_SHORT(arg_len),
 		     SILC_STR_UI_CHAR(arg_type),
 		     SILC_STR_UI_XNSTRING(arg, (SilcUInt16)arg_len),
@@ -199,7 +199,7 @@ SilcBuffer silc_argument_payload_encode_payload(SilcArgumentPayload payload)
     silc_buffer_format(buffer,
 		       SILC_STR_UI_SHORT(payload->argv_lens[i]),
 		       SILC_STR_UI_CHAR(payload->argv_types[i]),
-		       SILC_STR_UI_XNSTRING(payload->argv[i], 
+		       SILC_STR_UI_XNSTRING(payload->argv[i],
 					    payload->argv_lens[i]),
 		       SILC_STR_END);
     silc_buffer_pull(buffer, 3 + payload->argv_lens[i]);

@@ -31,7 +31,6 @@ noprocess COPYING GPL BSD
 noprocess doc/toolkit/
 noprocess apps/
 noprocess win32/
-noprocess lib/silcutil/silcconfig.[ch]
 
 pre-hook distdir/pre-run
 post-process-dist-hook distdir/post-process-dist

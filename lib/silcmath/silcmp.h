@@ -75,6 +75,30 @@ typedef SILC_MP_INT SilcMPInt;
  ***/
 void silc_mp_init(SilcMPInt *mp);
 
+/****f* silcmath/SilcMPAPI/silc_mp_sinit
+ *
+ * SYNOPSIS
+ *
+ *    bool silc_mp_sinit(SilcStack stack, SilcMPInt *mp);
+ *
+ * DESCRIPTION
+ *
+ *    Initializes the SilcMPInt *that is the actual MP Integer.
+ *    This must be called before any of the silc_mp_ routines can be
+ *    used. The integer is uninitialized with the silc_mp_uninit function.
+ *    This routine is equivalent to silc_mp_init but allocates the memory
+ *    from `stack'.
+ *
+ * NOTES
+ *
+ *    The `stack' is saved into the `mp' for the duration of the existence
+ *    of `mp'.  This means that `stack' must not become invalid while `mp'
+ *    is used.  It also means that any routine that may need memory allocation
+ *    to for example enlarge `mp' will allocate the memory from `stack'.
+ *
+ ***/
+bool silc_mp_sinit(SilcStack stack, SilcMPInt *mp);
+
 /****f* silcmath/SilcMPAPI/silc_mp_uninit
  *
  * SYNOPSIS

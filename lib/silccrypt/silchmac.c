@@ -54,7 +54,7 @@ static void silc_hmac_init_internal(SilcHmac hmac, unsigned char *key,
 {
   SilcHash hash = hmac->hash;
   SilcUInt32 block_len;
-  unsigned char hvalue[20];
+  unsigned char hvalue[SILC_HASH_MAXLEN];
   int i;
 
   memset(hmac->inner_pad, 0, sizeof(hmac->inner_pad));
@@ -405,7 +405,7 @@ void silc_hmac_make_truncated(SilcHmac hmac, unsigned char *data,
 			      SilcUInt32 truncated_len,
 			      unsigned char *return_hash)
 {
-  unsigned char hvalue[20];
+  unsigned char hvalue[SILC_HASH_MAXLEN];
 
   SILC_LOG_DEBUG(("Making HMAC for message"));
 
@@ -449,7 +449,7 @@ void silc_hmac_final(SilcHmac hmac, unsigned char *return_hash,
 		     SilcUInt32 *return_len)
 {
   SilcHash hash = hmac->hash;
-  unsigned char mac[20];
+  unsigned char mac[SILC_HASH_MAXLEN];
 
   silc_hash_final(hash, mac);
   silc_hash_init(hash);

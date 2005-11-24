@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ int silc_buffer_format(SilcBuffer dst, ...);
  *    ret = silc_buffer_unformat(buffer,
  *                               SILC_STR_INT(&intval),
  *                               SILC_STR_CHAR(&charval),
- *                               SILC_STR_INT(&intval2),
+ *                               SILC_STR_OFFSET(4),
  *                               SILC_STR_UI16_NSTRING_ALLOC(&str, &str_len),
  *                               SILC_STR_END);
  *    if (ret < 0)
@@ -122,19 +122,40 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap);
  *
  *   Formats a buffer from variable argument list of strings.  Each
  *   string must be NULL-terminated and the variable argument list must
- *   be end with SILC_STRFMT_END argument.  This allows that a string in
+ *   be end with SILC_STR_END argument.  This allows that a string in
  *   the list can be NULL, in which case it is skipped.  This automatically
  *   allocates the space for the buffer data but `dst' must be already
  *   allocated by the caller.
  *
  * EXAMPLE
  *
- *    ret = silc_buffer_strformat(buffer, "foo", "bar", SILC_STRFMT_END);
+ *    ret = silc_buffer_strformat(buffer, "foo", "bar", SILC_STR_END);
  *    if (ret < 0)
  *      error;
  *
  ***/
 int silc_buffer_strformat(SilcBuffer dst, ...);
+
+/* SilcStack aware versions */
+
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_sstrformat
+ *
+ * SYNOPSIS
+ *
+ *   int silc_buffer_strformat(SilcStack stack, SilcBuffer dst, ...);
+ *
+ * DESCRIPTION
+ *
+ *   Formats a buffer from variable argument list of strings.  Each
+ *   string must be NULL-terminated and the variable argument list must
+ *   be end with SILC_STR_END argument.  This allows that a string in
+ *   the list can be NULL, in which case it is skipped.  This automatically
+ *   allocates the space for the buffer data but `dst' must be already
+ *   allocated by the caller.  This function is equivalent to
+ *   silc_buffer_strformat but allocates memory from `stack'.
+ *
+ ***/
+int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
 
 /* Macros for expanding parameters into variable function argument list.
    These are passed to silc_buffer_format and silc_buffer_unformat
@@ -180,6 +201,8 @@ typedef enum {
   SILC_BUFFER_PARAM_UI32_NSTRING_ALLOC,	/* Alloc + memcpy */
   SILC_BUFFER_PARAM_UI_XNSTRING,	/* No copy */
   SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC,	/* Alloc + memcpy */
+
+  SILC_BUFFER_PARAM_OFFSET,
 
   SILC_BUFFER_PARAM_END
 } SilcBufferParamType;
@@ -397,6 +420,34 @@ typedef enum {
 #define SILC_STR_UI_XNSTRING(x, l) SILC_BUFFER_PARAM_UI_XNSTRING, (x), (l)
 #define SILC_STR_UI_XNSTRING_ALLOC(x, l) \
   SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC, (x), (l)
+
+/****d* silcutil/SilcBufferFormatAPI/SILC_STR_OFFSET
+ *
+ * NAME
+ *
+ *    #define SILC_STR_OFFSET() ...
+ *
+ * DESCRIPTION
+ *
+ *    Offset in buffer.  This can be used in formatting and unformatting to
+ *    move the data pointer of the buffer either forwards (positive offset)
+ *    or backwards (negative offset).  It can be used to for example skip
+ *    some types during unformatting.
+ *
+ *    Example:
+ *
+ *    ..., SILC_STR_OFFSET(5), ...
+ *    ..., SILC_STR_OFFSET(-3), ...
+ *
+ *    Moves the data pointer at the point of the offset either forward
+ *    or backward and then moves to the next type.  Multiple SILC_STR_OFFSETs
+ *    can be used in formatting and unformatting at the same time.
+ *
+ ***/
+#define SILC_STR_OFFSET(x) SILC_BUFFER_PARAM_OFFSET, (x)
+
+#define SILC_STR_APPEND
+#define SILC_STR_APPEND_TAIL
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_END
  *

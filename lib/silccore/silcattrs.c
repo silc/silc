@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2004 Pekka Riikonen
+  Copyright (C) 2002 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 			   SILC_STR_UI_INT(service->idle),
 			   SILC_STR_END);
 	object = tmpbuf->data;
-	object_size = tmpbuf->len;
+	object_size = silc_buffer_len(tmpbuf);
       }
       break;
 
@@ -119,6 +119,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 
     case SILC_ATTRIBUTE_STATUS_MESSAGE:
     case SILC_ATTRIBUTE_EXTENSION:
+    case SILC_ATTRIBUTE_USER_ICON:
       {
 	SilcAttributeObjMime *mime = object;
 	if (object_size != sizeof(*mime))
@@ -155,7 +156,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 			   SILC_STR_UI16_STRING(len4 ? geo->accuracy : ""),
 			   SILC_STR_END);
 	object = tmpbuf->data;
-	object_size = tmpbuf->len;
+	object_size = silc_buffer_len(tmpbuf);
       }
       break;
 
@@ -187,7 +188,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 			   SILC_STR_UI16_STRING(len4 ? dev->language : ""),
 			   SILC_STR_END);
 	object = tmpbuf->data;
-	object_size = tmpbuf->len;
+	object_size = silc_buffer_len(tmpbuf);
       }
       break;
 
@@ -207,7 +208,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 			   SILC_STR_UI_XNSTRING(pk->data, pk->data_len),
 			   SILC_STR_END);
 	object = tmpbuf->data;
-	object_size = tmpbuf->len;
+	object_size = silc_buffer_len(tmpbuf);
       }
       break;
 
@@ -286,7 +287,7 @@ SilcDList silc_attribute_payload_parse(const unsigned char *payload,
   silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
   list = silc_dlist_init();
 
-  while (buffer.len) {
+  while (silc_buffer_len(&buffer)) {
     newp = silc_calloc(1, sizeof(*newp));
     if (!newp)
       goto err;
@@ -299,13 +300,13 @@ SilcDList silc_attribute_payload_parse(const unsigned char *payload,
     if (ret == -1)
       goto err;
 
-    if (newp->data_len > buffer.len - 4) {
+    if (newp->data_len > silc_buffer_len(&buffer) - 4) {
       SILC_LOG_ERROR(("Incorrect attribute payload in list"));
       goto err;
     }
 
     len = 4 + newp->data_len;
-    if (buffer.len < len)
+    if (silc_buffer_len(&buffer) < len)
       break;
     silc_buffer_pull(&buffer, len);
 
@@ -349,10 +350,10 @@ SilcBuffer silc_attribute_payload_encode_data(SilcBuffer attrs,
 
   len = 4 + (SilcUInt16)data_len;
   buffer = silc_buffer_realloc(buffer,
-			       (buffer ? buffer->truelen + len : len));
+			       (buffer ? silc_buffer_truelen(buffer) + len : len));
   if (!buffer)
     return NULL;
-  silc_buffer_pull(buffer, buffer->len);
+  silc_buffer_pull(buffer, silc_buffer_len(buffer));
   silc_buffer_pull_tail(buffer, len);
   silc_buffer_format(buffer,
 		     SILC_STR_UI_CHAR(attribute),
@@ -549,6 +550,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
 
   case SILC_ATTRIBUTE_STATUS_MESSAGE:
   case SILC_ATTRIBUTE_EXTENSION:
+  case SILC_ATTRIBUTE_USER_ICON:
     {
       SilcAttributeObjMime *mime = object;
       if (object_size != sizeof(*mime))
@@ -619,7 +621,7 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
 	silc_buffer_unformat(&buffer,
 			     SILC_STR_UI16_NSTRING_ALLOC(&pk->type, &len),
 			     SILC_STR_END);
-      if (res == -1 || len > buffer.len - 2)
+      if (res == -1 || len > silc_buffer_len(&buffer) - 2)
 	break;
       pk->data = silc_memdup(payload->data + 2 + len,
 			     payload->data_len - 2 - len);

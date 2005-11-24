@@ -1,54 +1,268 @@
-TODO for SILC Client 1.0 branch
-===============================
+TODO for 1.1 And Beyond
+=======================
 
- o Bugs reported on the mailing list that will be fixed eventually.
-   The numbers are arbitrary and assigned by me (c0ffee), bugs in
-   parentheses are fixed.
+lib/silccrypt
+=============
 
-   (#1    Ignore ALL doesn't ignore target using /me)
-   #2    specification of the silc network
-   (#3    expired private key dialogue doesn't work)
-   #4    silc client allows setting non-utf8 topics
-   #5    SILC-client displaying wrong totals with /names
+ o Implement the defined SilcDH API.  The definition is in
+   lib/silccrypt/silcdh.h.
+
+ o SSH2 public keys support, allowing the use of SSH2 public keys in
+   SILC.
+
+ o OpenPGP certificate support, allowing the use of PGP public keys
+   in SILC.
+
+ o SILC PKCS (silcpkcs.h) reorganizing when other PK supports added.
+   Move the SILC Public Key routines away from the crypto library into
+   the core library (silccore).  silc_pkcs_public/private_key_* routines
+   to silc_public/private_key_* routines.  The silc_public_key_* routines
+   should also automatically handle SILC Public Keys, and other keys
+   and certificates as well.  Add fe. silcpk.h into silccore.  It should
+   also include the Public Key Payload encoding and decoding routines.
+
+ o Add DSS support.
+
+ o Cipher optimizations (asm, that this) at least for i386 would be nice.
+
+ o ECDSA and ECDH.
 
 
-TODO for SILC Server 1.0
+lib/silccore/silcpacket.[ch]	****PARTLY DONE****
+============================
+
+ o SilcPacketEngine.
+
+ o New SILC Packet API.
+
+
+lib/silccore/silcid.[ch]
 ========================
 
- o BUG: silc_idlist_del_client had been called but sock->user_data remained
-   and pointed to invalid pointer.  Where it was called is not known.
+  o Add silc_id_str2id to accept the destination buffer as argument
+    and thus not require any memory allocation.  Same will happen
+    with silc_id_payload_* functions.
 
- o Basic UTF-8 stringprep profile that makes sure UTF-8 strings are
-   as defined in spec-08 section 3.13.
-
- o Server sometimes connects more than once to router and keeps
-   connecting even though connection exists.
-
- o Testing
+  o silc_id_str2id, silc_id2str to non-allocating routines.
 
 
-TODO/bugs In SILC Libraries
+lib/silcutil
+============
+
+ o Compression routines are missing.  The protocol supports packet
+   compression thus it must be implemented.  SILC Zip API must be
+   defined.
+
+ o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
+   SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
+   in separately.
+
+ o bool -> SilcBool
+
+ o SilcBit, bit field:
+
+   #define SilcBit(b) unsigned int b : 1
+
+
+lib/silcutil/silcbuffer.h	****DONE****
+=========================
+
+ o Remove the `truelen' field from SilcBuffer as it is entirely
+   redundant since we can get the true length of the buffer by
+   doing buffer->end - buffer->header.  Add silc_buffer_truelen
+   macro instead.  Consider also removing `len' field too since
+   it effectively is buffer->tail - buffer->data, and adding
+   silc_buffer_len macro can do the same.  These would save
+   totally 8 bytes of memory per buffer.
+
+
+lib/silcutil/silcbuffmt.[ch]	****PARTY DONE****
+============================
+
+ o SILC_STR_APPEND, _APPEND_TAIL.
+
+ o SILC_STR_OFFSET
+
+
+lib/silcutil/silcstack.[ch]	****DONE****
 ===========================
 
- o Test cases for all payload encoding and decoding routins in lib/silccore/
-
- o Test cases for math library routines in lib/silcmath/
-
- o Implement new version of SFTP protocol (missing versions 4 and 5, we
-   have version 3).
+ o Data stack implementation
 
 
-TODO in Toolkit Documentation
-=============================
+lib/silcutil/silcstream.[ch]	****DONE****
+============================
 
-Stuff that needs to be done in order to complete the Toolkit Reference
-Manual (Do these to 0.9.x).
+ o Add abstract SilcStream.
 
- o Write "Programming with Toolkit" document, describing how to build
-   Toolkit, how the build system works, where is everything, how
-   new (external) projects can be glued into Toolkit (use irssi as an
-   example), and how external projects can use Toolkit without gluing into
-   it (how to link etc), debugging, architecture, types, etc.
 
- o Searching of predefined keywords, exact and partial matches (would be
-   nice).
+lib/silcutil/silcsocketstream.[ch]	****PARTY DONE****
+==================================
+
+ o Add SilcSocketStream.
+
+
+lib/silcutil/epoc/*
+===================
+
+  o lib/silcutil/epoc routines missing or not completed.
+
+  o The PKCS#1 also calls global RNG (even though it is not used
+    currently in SILC, the interface allows its use).
+
+  o Something needs to be thought to the logging globals as well,
+    like silc_debug etc.  They won't work on EPOC.  Perhaps logging
+    and debugging is to be disabled on EPOC.
+
+
+lib/silcutil/silcschedule*.[ch]		****DONE****
+===============================
+
+ o Scheduler can be optimized for FD tasks by changing the fd_queue
+   to SilcHashTable instead of using linked list.  We need to do
+   one-to-one mapping of FD to task and hash table is more efficient
+   for this usage.
+
+   Also redefine the silc_select to perhaps return a separate
+   structure of the events that actually occurred, instead of
+   returning the events in the fd_list which is then traversed
+   in the generic code to find the changed events.  This can be
+   made faster by having own struct which includes only the
+   changed events, thus the tarversing is faster since the whole
+   fd_list is not traversed anymore (it is still traversed in the
+   silc_select but at least it removes one extra tarversing later
+   for the same list).
+
+   Other task queues should be changed to use SilcList.
+
+ o Add SILC scheduler's internal routines into a table of implementation
+   function pointers, that the generic code then takes as extern from
+   implementation.  These are the silc_schedule_internal_* routines.
+
+ o Change SILC_TASK_CALLBACK to non-static, and remove the macro
+   SILC_TASK_CALLBACK_GLOBAL.
+
+
+lib/silcutil/silcasync.[ch]	****DONE****
+===========================
+
+ o Add SilcAsyncOperation to utility library.  Any function that takes
+   callback as an argument must/should return SilcAsyncOperation.
+
+
+lib/silcutil/silctime.[ch]	****DONE****
+===========================
+
+ o SilcTime.
+
+ o system time, universal, generalized.
+
+
+lib/silcmath
+============
+
+ o The SILC MP API function must start returning indication of success
+   and failure of the operation.
+
+ o Do SilcStack support for silc_mp_init, silc_mp_init_size and other
+   any other MP function (including utility ones) that may allocate
+   memory.
+
+ o All utility functions should be made non-allocating ones.
+
+
+lib/silcasn1			****PARTLY DONE****
+============
+
+ o ASN.1 library
+
+ o Header documentation missing.
+
+ o Some string encodings missing (copy/paste matter).
+
+
+lib/silcpkix
+============
+
+ o PKIX implementation
+
+
+lib/silcutil/silcfsm.[ch]	****DONE****
+=========================
+
+ o SILC Finite State Machine API.  Replaces SILC Protocol API,
+
+
+lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
+===============================================
+
+ o Add UDP interface
+
+ o New network interfaces
+
+ o Other functions should remain as they are since these new functions have
+   to use them.  This way we also provide them for applications that want
+   to handle the sockets by themself.
+
+
+apps/silcd
+==========
+
+ o Remove the big switch statement from the function
+   silc_server_packet_parse_type and replace it with predefined
+   table of function pointers where each of the slot in table
+   represents the packet type value.
+
+   Same could be done with notify packets which has big switch
+   statement too.  Same kind of table of notify callbacks could be
+   done as well.
+
+ o The parser callback in the server will add a timeout task for
+   all packets.  It will require registering and allocating a
+   new task to the SilcSchedule.  Maybe, at least, for server
+   and router packets the parser would be called immediately
+   instead of adding it to the scheduler with 0 timeout.  It
+   should be analyzed too how slow the task registering process
+   actually is, and find out ways to optimize it.
+
+ o The SERVER_SIGNOFF notify handing is not optimal, because it'll
+   cause sending of multiple SIGNOFF notify's instead of the one
+   SERVER_SIGNOFF notify that the server received.  This should be
+   optimized so that the only SERVER_SIGNOFF is sent and not
+   SIGNOFF of notify at all (using SIGNOFF takes the idea about
+   SERVER_SIGNOFF away entirely).
+
+ o Another SERVER_SIGNOFF opt/bugfix:  Currently the signoff is
+   sent to a client if it is on same channel as the client that
+   signoffed.  However, the entire SERVER_SIGNOFF list is sent to
+   the client, ie. it may receive clients that was not on the
+   same channel.  This is actually against the specs.  It must be
+   done per channel.  It shouldn't receive the whole list just
+   because one client happened to be on same channel.
+
+ o MAYBE: The SilcChannelClientEntry can be:
+	SilcUInt32 address;
+	SilcUInt32 mode;
+
+  where address is SilcClientEntry address XOR SilcChannelEntry.
+  You can get SilcClientEntry by doing client = chl->address XOR channel,
+  and SilcChannelEntry by doing channel = chl->address XOR client.
+  As long as the other pointer is always available when accessing the
+  structure this can be done.
+
+ o Add reference counters to all Silc*Entry structures
+
+ o SERVICEs support (plugin, SIM)
+
+ o If client's public key is saved in the server (and doing public key
+   authentication) then the hostname and the username information could
+   be taken from the public key.  Should be a configuration option!
+
+ o Add a timeout to handling incoming JOIN commands.  It should be
+   enforced that JOIN command is executed only once in a second or two
+   seconds.  Now it is possible to accept n incoming JOIN commands
+   and process them without any timeouts.  THis must be employed because
+   each JOIN command will create and distribute the new channel key
+   to everybody on the channel (Fix this to 0.9.x).
+
+ o The CMODE cipher & hmac change problem (#101).

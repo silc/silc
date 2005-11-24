@@ -1,15 +1,15 @@
 /*
 
   silcnet.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
+
   Copyright (C) 1997 - 2005 Pekka Riikonen
- 
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
- 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -37,75 +37,154 @@
 
 /* Prototypes */
 
+/****s* silcutil/SilcNetAPI/SilcNetServer
+ *
+ * NAME
+ *
+ *    typedef struct SilcNetServerStruct *SilcNetServer;
+ *
+ * DESCRIPTION
+ *
+ *    The network server (daemon, listener, etc.) context.  This context
+ *    is created with the silc_net_create_server function and destroyed
+ *    with silc_net_close_server function.
+ *
+ ***/
+typedef struct SilcNetServerStruct *SilcNetServer;
+
+/****d* silcutil/SilcNetAPI/SilcNetStatus
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcNetStatus;
+ *
+ * DESCRIPTION
+ *
+ *    Status to indicate the result of the network operation creation.  This
+ *    type is returned in the SilcNetCallback callback function.
+ *
+ * SOURCE
+ */
+typedef enum {
+  SILC_NET_OK,			       /* Everything Ok */
+  SILC_NET_UNKNOWN_IP,		       /* Unknown IP address */
+  SILC_NET_UNKNOWN_HOST,	       /* Unknown hostname */
+  SILC_NET_HOST_UNREACHABLE,	       /* Destination unreachable */
+  SILC_NET_CONNECTION_REFUSED,	       /* Connection refused */
+  SILC_NET_CONNECTION_TIMEOUT,	       /* Connection timedout */
+  SILC_NET_NO_MEMORY,		       /* System out of memory */
+  SILC_NET_ERROR,		       /* Unknown error */
+} SilcNetStatus;
+/***/
+
+/****f* silcutil/SilcNetAPI/SilcNetCallback
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcNetCallback)(SilcNetStatus status,
+ *                                    SilcStream stream, void *context);
+ *
+ * DESCRIPTION
+ *
+ *    A callback function of this type is returned by silc_net_create_server
+ *    and silc_net_connect_async functions.  For silc_net_create_server this
+ *    callback means that new incoming connection was accepted, and the
+ *    `stream' is the socket stream representing the socket connection.
+ *
+ *    For silc_net_connect_async this means that we have connected to the
+ *    remote host and the `stream' is the socket stream for the socket
+ *    connection.  The SILC Stream API (such as silc_stream_read, etc.)
+ *    can be used to read and write to the stream.  The created stream
+ *    is socket stream so various SilcSocketStream API functions can be
+ *    used with the `stream'.
+ *
+ ***/
+typedef void (*SilcNetCallback)(SilcNetStatus status,
+				SilcStream stream, void *context);
+
 /****f* silcutil/SilcNetAPI/silc_net_create_server
  *
  * SYNOPSIS
  *
- *    int silc_net_create_server(int port, char *ip_addr);
+ *    SilcNetServer
+ *    silc_net_create_server(const char **local_ip_addr,
+ *                           SilcUInt32 local_ip_count,
+ *                           int port, bool require_fqdn,
+ *                           SilcSchedule schedule,
+ *                           SilcNetCallback callback, void *context);
  *
  * DESCRIPTION
  *
- *    This function creates server or daemon or listener or what ever. This
- *    does not fork a new process, it must be done by the caller if caller
- *    wants to create a child process. This is used by the SILC server. 
- *    If argument `ip_addr' is NULL `any' address will be used. Returns 
- *    the created socket or -1 on error.
+ *    This function creates server or daemon or listener etc.  This is used
+ *    to create network listener for incoming connections, and `callback'
+ *    will be called everytime new connection is received.  If `local_ip_addr'
+ *    is NULL any address is used.  If provided it can be used bind the
+ *    server to `local_ip_count' many IP addresses provided in `local_ip_addr'
+ *    table.  On success returns the SilcNetServer context, or NULL on error.
+ *    If `require_fqdn' is TRUE the server will require that the incoming
+ *    connection has FQDN to be able to connect.
  *
  ***/
-int silc_net_create_server(int port, const char *ip_addr);
+SilcNetServer
+silc_net_create_server(const char **local_ip_addr, SilcUInt32 local_ip_count,
+		       int port, bool require_fqdn, SilcSchedule schedule,
+		       SilcNetCallback callback, void *context);
 
 /****f* silcutil/SilcNetAPI/silc_net_close_server
  *
  * SYNOPSIS
  *
- *    void silc_net_close_server(int sock);
+ *    void silc_net_close_server(SilcNetServer server);
  *
  * DESCRIPTION
  *
- *    Closes the server by closing the socket connection.
+ *    Closes the network server listener indicated by `server'.
  *
  ***/
-void silc_net_close_server(int sock);
+void silc_net_close_server(SilcNetServer server);
 
-/****f* silcutil/SilcNetAPI/silc_net_create_connection
+/****f* silcutil/SilcNetAPI/silc_net_connect
  *
  * SYNOPSIS
  *
- *    int silc_net_create_connection(const char *local_ip, int port, 
- *                                   const char *host);
+ *    SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
+ *                                            const char *remote_ip_addr,
+ *                                            int remote_port,
+ *                                            SilcSchedule schedule,
+ *                                            SilcNetCallback callback,
+ *                                            void *context);
  *
  * DESCRIPTION
  *
- *    Creates a connection (TCP/IP) to a remote host. Returns the connection
- *    socket or -1 on error. This blocks the process while trying to create
- *    the connection. If the `local_ip' is not NULL then this will bind
- *    the `local_ip' address to a port before creating the connection.  If
- *    it is NULL then this will directly create the connection.
+ *    Creates TCP/IP connection to the remote host indicated by `remote_host'
+ *    which may be hostname or IP address, on the port indicated by
+ *    `remote_port'.  If the `local_ip_addr' is provided the local host is
+ *    bound to that address before creating the connection.  This is
+ *    asynchronous call, and this function returns before the connection is
+ *    actually established.  The `callback' will be called after the
+ *    connection is created to deliver the SilcStream for the created
+ *    connection.
  *
- ***/
-int silc_net_create_connection(const char *localhost, int port, 
-			       const char *host);
+ *    The returned SilcAsyncOperation context can be used to control the
+ *    asynchronous connecting, such as to abort it.  If it is aborted
+ *    using silc_async_abort the `callback' will not be called.  If NULL
+ *    is returned the operation cannot be aborted and the `callback' will
+ *    be called eventually.
+ *
+ */
+SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
+					const char *remote_ip_addr,
+					int remote_port,
+					SilcSchedule schedule,
+					SilcNetCallback callback,
+					void *context);
 
-/****f* silcutil/SilcNetAPI/silc_net_create_connection_async
- *
- * SYNOPSIS
- *
- *    int silc_net_create_connection_async(const char *local_ip, int port, 
- *                                         const char *host);
- *
- * DESCRIPTION
- *
- *    Creates a connection (TCP/IP) to a remote host. Returns the connection
- *    socket or -1 on error. This creates non-blocking socket hence the
- *    connection returns directly. To get the result of the connect() one
- *    must select() the socket and read the result after it's ready. If the
- *    `local_ip' is not NULL then this will bind the `local_ip' address to
- *    a port before creating the connection.  If it is NULL then this will
- *    directly create the connection.
- *
- ***/
-int silc_net_create_connection_async(const char *local_ip, int port, 
-				     const char *host);
+SilcAsyncOperation silc_net_udp_connect(const char *local_ip_addr,
+					const char *remote_ip_addr,
+					int remote_port,
+					SilcSchedule schedule,
+					SilcNetCallback callback,
+					void *context);
 
 /****f* silcutil/SilcNetAPI/silc_net_close_connection
  *
@@ -165,7 +244,7 @@ int silc_net_set_socket_opt(int sock, int level, int option, int on);
  *
  * SYNOPSIS
  *
- *    int silc_net_get_socket_opt(int sock, int level, int option, 
+ *    int silc_net_get_socket_opt(int sock, int level, int option,
  *                                void *optval, int *opt_len);
  *
  * DESCRIPTION
@@ -173,7 +252,7 @@ int silc_net_set_socket_opt(int sock, int level, int option, int on);
  *    Return socket options to the `optval' and `opt_len'.
  *
  ***/
-int silc_net_get_socket_opt(int sock, int level, int option, 
+int silc_net_get_socket_opt(int sock, int level, int option,
 			    void *optval, int *opt_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_is_ip4
@@ -235,7 +314,7 @@ bool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len);
  *
  * SYNOPSIS
  *
- *    typedef void (*SilcNetResolveCallback)(const char *result, 
+ *    typedef void (*SilcNetResolveCallback)(const char *result,
  *                                           void *context);
  *
  * DESCRIPTION
@@ -251,7 +330,7 @@ typedef void (*SilcNetResolveCallback)(const char *result, void *context);
  *
  * SYNOPSIS
  *
- *    bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, 
+ *    bool silc_net_gethostbyname(const char *name, bool prefer_ipv6,
  *                                char *address, SilcUInt32 address_len);
  *
  * DESCRIPTION
@@ -265,14 +344,14 @@ typedef void (*SilcNetResolveCallback)(const char *result, void *context);
  *    address also.
  *
  ***/
-bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address, 
+bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address,
 			    SilcUInt32 address_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_gethostbyname_async
  *
  * SYNOPSIS
  *
- *    void silc_net_gethostbyname_async(const char *name, 
+ *    void silc_net_gethostbyname_async(const char *name,
  *                                      bool prefer_ipv6,
  *                                      SilcSchedule schedule,
  *                                      SilcNetResolveCallback completion,
@@ -290,7 +369,7 @@ bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address,
  *    address also.
  *
  ***/
-void silc_net_gethostbyname_async(const char *name, 
+void silc_net_gethostbyname_async(const char *name,
 				  bool prefer_ipv6,
 				  SilcSchedule schedule,
 				  SilcNetResolveCallback completion,
@@ -300,13 +379,13 @@ void silc_net_gethostbyname_async(const char *name,
  *
  * SYNOPSIS
  *
- *   bool silc_net_gethostbyaddr(const char *addr, char *name, 
+ *   bool silc_net_gethostbyaddr(const char *addr, char *name,
  *                               SilcUInt32 name_len);
  *
  * DESCRIPTION
  *
  *    Resolves the hostname for the IP address indicated by the `addr'
- *    This returns TRUE and the resolved hostname to the `name' buffer, 
+ *    This returns TRUE and the resolved hostname to the `name' buffer,
  *    or FALSE on error. The `addr' may be either IPv4 or IPv6 address.
  *    This is synchronous function and will block the calling process.
  *
@@ -317,7 +396,7 @@ bool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len);
  *
  * SYNOPSIS
  *
- *    void silc_net_gethostbyaddr_async(const char *addr, 
+ *    void silc_net_gethostbyaddr_async(const char *addr,
  *                                      SilcSchedule schedule,
  *                                      SilcNetResolveCallback completion,
  *                                      void *context)
@@ -330,7 +409,7 @@ bool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len);
  *    completed.
  *
  ***/
-void silc_net_gethostbyaddr_async(const char *addr, 
+void silc_net_gethostbyaddr_async(const char *addr,
 				  SilcSchedule schedule,
 				  SilcNetResolveCallback completion,
 				  void *context);
@@ -461,4 +540,6 @@ bool silc_net_win32_init(void);
  ***/
 void silc_net_win32_uninit(void);
 
-#endif
+#include "silcnet_i.h"
+
+#endif /* SILCNET_H */

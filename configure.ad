@@ -59,6 +59,9 @@ AC_PROG_RANLIB
 #ifndef SILC_DIST_TOOLKIT
 AC_DISABLE_SHARED
 #endif SILC_DIST_TOOLKIT
+#ifdef SILC_DIST_INPLACE
+AC_DISABLE_SHARED
+#endif SILC_DIST_INPLACE
 AC_PROG_LIBTOOL
 
 # Header checking
@@ -110,8 +113,8 @@ AC_CHECK_FUNC(socket, [],
   AC_CHECK_LIB(socket, socket, LIBS="$LIBS -lsocket")
 )
 AC_CHECK_FUNCS(gethostname gethostbyaddr getservbyname getservbyport)
-AC_CHECK_FUNCS(select listen bind shutdown close connect setsockopt)
-AC_CHECK_FUNCS(time ctime utime gettimeofday getrusage)
+AC_CHECK_FUNCS(poll select listen bind shutdown close connect setsockopt)
+AC_CHECK_FUNCS(setrlimit time ctime utime gettimeofday getrusage)
 AC_CHECK_FUNCS(chmod fcntl stat fstat getenv putenv strerror)
 AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid)
 AC_CHECK_FUNCS(setgroups initgroups nl_langinfo)

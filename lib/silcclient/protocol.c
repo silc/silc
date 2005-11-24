@@ -284,6 +284,14 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 			     context);
 
       if (ctx->responder == TRUE) {
+	if (!ctx->packet) {
+	  SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
+			    status));
+	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	  silc_protocol_execute(protocol, client->schedule, 0, 0);
+	  return;
+	}
+
 	/* Start the key exchange by processing the received security
 	   properties packet from initiator. */
 	status =
@@ -335,6 +343,14 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	/* Sends the selected security properties to the initiator. */
 	status = silc_ske_responder_phase_1(ctx->ske);
       } else {
+	if (!ctx->packet) {
+	  SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
+			    status));
+	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	  silc_protocol_execute(protocol, client->schedule, 0, 0);
+	  return;
+	}
+
 	/* Call Phase-1 function. This processes the Key Exchange Start
 	   paylaod reply we just got from the responder. The callback
 	   function will receive the processed payload where we will
@@ -365,6 +381,14 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
        * Phase 2
        */
       if (ctx->responder == TRUE) {
+	if (!ctx->packet) {
+	  SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
+			    status));
+	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	  silc_protocol_execute(protocol, client->schedule, 0, 0);
+	  return;
+	}
+
 	/* Process the received Key Exchange 1 Payload packet from
 	   the initiator. This also creates our parts of the Diffie
 	   Hellman algorithm. The silc_client_protocol_ke_continue will
@@ -413,6 +437,14 @@ SILC_TASK_CALLBACK(silc_client_protocol_key_exchange)
 	/* End the protocol on the next round */
 	protocol->state = SILC_PROTOCOL_STATE_END;
       } else {
+	if (!ctx->packet) {
+	  SILC_LOG_WARNING(("Error (type %d) during Key Exchange protocol",
+			    status));
+	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	  silc_protocol_execute(protocol, client->schedule, 0, 0);
+	  return;
+	}
+
 	/* Finish the protocol. This verifies the Key Exchange 2 payload
 	   sent by responder. The silc_client_protocol_ke_continue will
 	   be called after the public key has been verified. */
@@ -899,6 +931,13 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 	   * using the SKE protocol.
 	   */
 
+	  if (!ctx->packet) {
+	    SILC_LOG_WARNING(("Error during Re-key"));
+	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	    silc_protocol_execute(protocol, client->schedule, 0, 300000);
+	    return;
+	  }
+
 	  if (ctx->packet->type != SILC_PACKET_KEY_EXCHANGE_1) {
 	    /* Error in protocol */
 	    protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -1038,6 +1077,13 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
 	/*
 	 * The packet type must be KE packet
 	 */
+	if (!ctx->packet) {
+	  SILC_LOG_WARNING(("Error during Re-key"));
+	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
+	  silc_protocol_execute(protocol, client->schedule, 0, 300000);
+	  return;
+	}
+
 	if (ctx->packet->type != SILC_PACKET_KEY_EXCHANGE_2) {
 	  /* Error in protocol */
 	  protocol->state = SILC_PROTOCOL_STATE_ERROR;
@@ -1076,6 +1122,13 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
     /*
      * End protocol
      */
+
+    if (!ctx->packet) {
+      SILC_LOG_WARNING(("Error during Re-key"));
+      protocol->state = SILC_PROTOCOL_STATE_ERROR;
+      silc_protocol_execute(protocol, client->schedule, 0, 300000);
+      return;
+    }
 
     if (ctx->packet->type != SILC_PACKET_REKEY_DONE) {
       /* Error in protocol */

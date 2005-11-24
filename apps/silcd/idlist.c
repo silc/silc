@@ -507,7 +507,7 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 {
   SilcIDCacheList list = NULL;
   SilcIDCacheEntry id_cache = NULL;
-  unsigned char hash[32];
+  unsigned char hash[SILC_HASH_MAXLEN];
   SilcClientID client_id;
 
   SILC_LOG_DEBUG(("Start"));

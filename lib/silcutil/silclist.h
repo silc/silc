@@ -1,10 +1,10 @@
 /*
 
-  silclist.h 
+  silclist.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2003 Pekka Riikonen
+  Copyright (C) 2002 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
 /****s* silcutil/SilcList/SilcList
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcList;
  *
  * DESCRIPTION
@@ -55,7 +55,7 @@ typedef struct {
 /****d* silcutil/SilcList/SILC_LIST_END
  *
  * NAME
- * 
+ *
  *    #define SILC_LIST_END ...
  *
  * DESCRIPTION
@@ -205,7 +205,7 @@ do {								\
  *
  * DESCRIPTION
  *
- *    Adds new entry indicated by `entry' to the end of the list indicated 
+ *    Adds new entry indicated by `entry' to the end of the list indicated
  *    by `list'.
  *
  ***/
@@ -220,6 +220,48 @@ do {							\
   (list).tail = (entry);				\
   *__silc_list_next(list, entry) = NULL;		\
   (list).count++;					\
+} while(0)
+
+/****f* silcutil/SilcList/silc_list_insert
+ *
+ * SYNOPSIS
+ *
+ *    #define silc_list_insert(list, current, entry) ...
+ *
+ * DESCRIPTION
+ *
+ *    Insert new entry indicated by `entry' after the entry `current'
+ *    to the list indicated by `list'.  If `current' is NULL, then the
+ *    `entry' is added at the head of the list.  Use the silc_list_add
+ *    to add at the end of the list.
+ *
+ ***/
+#define silc_list_insert(list, current, entry)				 \
+do {									 \
+  if (!(current)) {							 \
+    if ((list).head)							 \
+      *__silc_list_next(list, entry) = (list).head;			 \
+    else								 \
+      *__silc_list_next(list, entry) = NULL;				 \
+    if ((list).prev_set && (list).head)					 \
+      *__silc_list_prev(list, (list).head) = entry;			 \
+    if (!(list).tail)							 \
+      (list).tail = (entry);						 \
+    (list).head = (entry);						 \
+    if ((list).prev_set)						 \
+      *__silc_list_prev(list, entry) = NULL;				 \
+  } else {								 \
+    *__silc_list_next(list, entry) = *__silc_list_next(list, current);	 \
+    *__silc_list_next(list, current) = entry;				 \
+    if ((list).prev_set) {						 \
+      *__silc_list_prev(list, entry) = current;				 \
+      if (*__silc_list_next(list, entry))				 \
+        *__silc_list_prev(list, *__silc_list_next(list, entry)) = entry; \
+    }									 \
+    if ((list).tail == (current))					 \
+      (list).tail = (entry);						 \
+  }									 \
+  (list).count++;							 \
 } while(0)
 
 /****f* silcutil/SilcList/silc_list_del
@@ -271,7 +313,7 @@ do {									\
  *
  * EXAMPLE
  *
- *    // Traverse the list from the beginning to the end 
+ *    // Traverse the list from the beginning to the end
  *    silc_list_start(list);
  *    while ((entry = silc_list_get(list)) != SILC_LIST_END) {
  *      ...

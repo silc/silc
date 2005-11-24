@@ -490,7 +490,7 @@ SilcUInt32 silc_hash_utf8_string(void *key, void *user_context)
 
 SilcUInt32 silc_hash_uint(void *key, void *user_context)
 {
-  return *(SilcUInt32 *)key;
+  return SILC_PTR_TO_32(key);
 }
 
 /* Basic hash funtion to hash pointers. May be used with the SilcHashTable. */
@@ -1005,7 +1005,7 @@ bool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
 {
   int i;
 
-  if (mode_list->len / 4 != mode_list_count)
+  if (silc_buffer_len(mode_list) / 4 != mode_list_count)
     return FALSE;
 
   *list = silc_calloc(mode_list_count, sizeof(**list));

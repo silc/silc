@@ -1,3 +1,31 @@
+Sat Nov 19 17:34:51 EET 2005  Pekka Riikonen <priikone@silcnet.org>
+
+        * Added SilcMime API to lib/silcutil/silcmime.[ch].  The old
+          silc_mime_parse is available but deprecated.
+
+        * Check that packet is valid when processing key exchange,
+          authentication and rekey protocols.  Fixes a crashbug.
+          Affected files are apps/silcd/protocol.c and
+          lib/silcclient/protocol.c.
+
+        * Added SILC_HASH_MAXLEN to lib/silccrypt/silchash.h, and changed
+          all hash buffers to use that instead of fixed values.
+
+Wed Nov 16 15:47:12 EET 2005  Pekka Riikonen <priikone@silcnet.org>
+
+        * Added SHA-256 to crypto library.  The SHA-256 takes now
+          precedence over SHA-1.
+
+Thu May 26 20:31:06 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Check for valid return value from regcomp.  Affected file
+	  lib/silcutil/unix/silcunixutil.c.
+
+Tue May 10 23:11:17 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed silc_hash_uint to work with integers.  Affected
+	  file lib/silcutil/silcutil.c.
+
 Tue May 10 15:11:53 EEST 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Rewritten SILC Log API.  Affected files lib/silcutil/silclog.[ch].
