@@ -77,6 +77,10 @@
  *    C++ code this type is defined by the C++, and this definition is
  *    not used.
  *
+ * NOTES
+ *
+ *    This macro is deprecated.  Use SilcBool instead.
+ *
  * SOURCE
  */
 #ifdef SILC_MACOSX
@@ -89,6 +93,19 @@
 #endif
 #endif
 /***/
+
+/****d* silcutil/SILCTypes/SilcBool
+ *
+ * NAME
+ *
+ *    typedef unigned char SilcBool;
+ *
+ * DESCRIPTION
+ *
+ *    Boolean value, and is always 8-bits.  Represents value 0 or 1.
+ *
+ ***/
+typedef unigned char SilcBool;
 
 #define silc_offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 
