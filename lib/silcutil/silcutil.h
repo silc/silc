@@ -78,40 +78,40 @@ const char *silc_get_time(SilcUInt32 timeval);
  *
  * SYNOPSIS
  *
- *    bool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size);
+ *    SilcBool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size);
  *
  * DESCRIPTION
  *
  *    Converts string to capital characters.
  *
  ***/
-bool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size);
+SilcBool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size);
 
 /****f* silcutil/SilcUtilAPI/silc_to_lower
  *
  * SYNOPSIS
  *
- *    bool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size);
+ *    SilcBool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size);
  *
  * DESCRIPTION
  *
  *    Converts string to capital characters.
  *
  ***/
-bool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size);
+SilcBool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size);
 
 /****f* silcutil/SilcUtilAPI/silc_parse_userfqdn
  *
  * SYNOPSIS
  *
- *    bool silc_parse_userfqdn(const char *string, char **left, char **right);
+ *    SilcBool silc_parse_userfqdn(const char *string, char **left, char **right);
  *
  * DESCRIPTION
  *
  *    Parse userfqdn string which is in user@fqdn format.
  *
  ***/
-bool silc_parse_userfqdn(const char *string, char **left, char **right);
+SilcBool silc_parse_userfqdn(const char *string, char **left, char **right);
 
 /****f* silcutil/SilcUtilAPI/silc_parse_command_line
  *
@@ -293,7 +293,7 @@ SilcUInt32 silc_hash_public_key(void *key, void *user_context);
  *
  * SYNOPSIS
  *
- *    bool silc_hash_string_compare(void *key1, void *key2,
+ *    SilcBool silc_hash_string_compare(void *key1, void *key2,
  *                                  void *user_context);
  *
  * DESCRIPTION
@@ -302,13 +302,13 @@ SilcUInt32 silc_hash_public_key(void *key, void *user_context);
  *    function.
  *
  ***/
-bool silc_hash_string_compare(void *key1, void *key2, void *user_context);
+SilcBool silc_hash_string_compare(void *key1, void *key2, void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_hash_id_compare
  *
  * SYNOPSIS
  *
- *    bool silc_hash_id_compare(void *key1, void *key2, void *user_context);
+ *    SilcBool silc_hash_id_compare(void *key1, void *key2, void *user_context);
  *
  * DESCRIPTION
  *
@@ -317,39 +317,39 @@ bool silc_hash_string_compare(void *key1, void *key2, void *user_context);
  *    part of the Client ID. Other ID's are fully compared.
  *
  ***/
-bool silc_hash_id_compare(void *key1, void *key2, void *user_context);
+SilcBool silc_hash_id_compare(void *key1, void *key2, void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_hash_client_id_compare
  *
  * SYNOPSIS
  *
- *    bool silc_hash_client_id_compare(void *key1, void *key2, void *user_context);
+ *    SilcBool silc_hash_client_id_compare(void *key1, void *key2, void *user_context);
  *
  * DESCRIPTION
  *
  *    Compare two Client ID's entirely and not just the hash from the ID.
  *
  ***/
-bool silc_hash_client_id_compare(void *key1, void *key2, void *user_context);
+SilcBool silc_hash_client_id_compare(void *key1, void *key2, void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_hash_data_compare
  *
  * SYNOPSIS
  *
- *    bool silc_hash_data_compare(void *key1, void *key2, void *user_context);
+ *    SilcBool silc_hash_data_compare(void *key1, void *key2, void *user_context);
  *
  * DESCRIPTION
  *
  *    Compares binary data. May be used as SilcHashTable comparison function.
  *
  ***/
-bool silc_hash_data_compare(void *key1, void *key2, void *user_context);
+SilcBool silc_hash_data_compare(void *key1, void *key2, void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_hash_utf8_compare
  *
  * SYNOPSIS
  *
- *    bool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
+ *    SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
  *
  * DESCRIPTION
  *
@@ -357,13 +357,13 @@ bool silc_hash_data_compare(void *key1, void *key2, void *user_context);
  *    expected.  May be used as SilcHashTable comparison function.
  *
  ***/
-bool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
+SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_hash_public_key_compare
  *
  * SYNOPSIS
  *
- *    bool silc_hash_public_key_compare(void *key1, void *key2,
+ *    SilcBool silc_hash_public_key_compare(void *key1, void *key2,
  *                                      void *user_context);
  *
  * DESCRIPTION
@@ -372,7 +372,7 @@ bool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
  *    comparison function.
  *
  ***/
-bool silc_hash_public_key_compare(void *key1, void *key2, void *user_context);
+SilcBool silc_hash_public_key_compare(void *key1, void *key2, void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_client_chmode
  *
@@ -433,7 +433,7 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len);
  *
  * SYNOPSIS
  *
- *    bool silc_string_is_ascii(const unsigned char *data,
+ *    SilcBool silc_string_is_ascii(const unsigned char *data,
  *                              SilcUInt32 data_len);
  *
  * DESCRIPTION
@@ -441,13 +441,13 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len);
  *    Return TRUE if the `data' is ASCII string.
  *
  ***/
-bool silc_string_is_ascii(const unsigned char *data, SilcUInt32 data_len);
+SilcBool silc_string_is_ascii(const unsigned char *data, SilcUInt32 data_len);
 
 /****f* silcutil/SilcUtilAPI/silc_parse_version_string
  *
  * SYNOPSIS
  *
- *    bool silc_parse_version_string(const char *version,
+ *    SilcBool silc_parse_version_string(const char *version,
  *                                   SilcUInt32 *protocol_version,
  *                                   char **protocol_version_string,
  *                                   SilcUInt32 *software_version,
@@ -459,7 +459,7 @@ bool silc_string_is_ascii(const unsigned char *data, SilcUInt32 data_len);
  *    Parses SILC protocol style version string.
  *
  ***/
-bool silc_parse_version_string(const char *version,
+SilcBool silc_parse_version_string(const char *version,
 			       SilcUInt32 *protocol_version,
 			       char **protocol_version_string,
 			       SilcUInt32 *software_version,
@@ -483,14 +483,14 @@ SilcUInt32 silc_version_to_num(const char *version);
  *
  * SYNOPSIS
  *
- *    char *silc_get_input(const char *prompt, bool echo_off);
+ *    char *silc_get_input(const char *prompt, SilcBool echo_off);
  *
  * DESCRIPTION
  *
  *    Displays input prompt on command line and takes input data from user.
  *
  ***/
-char *silc_get_input(const char *prompt, bool echo_off);
+char *silc_get_input(const char *prompt, SilcBool echo_off);
 
 /* System dependant prototypes */
 
@@ -512,7 +512,7 @@ int silc_gettimeofday(struct timeval *p);
  *
  * SYNOPSIS
  *
- *    bool silc_compare_timeval(struct timeval *smaller,
+ *    SilcBool silc_compare_timeval(struct timeval *smaller,
  *                              struct timeval *bigger)
  *
  * DESCRIPTION
@@ -521,7 +521,7 @@ int silc_gettimeofday(struct timeval *p);
  *    time value is smaller than the second time value.
  *
  ***/
-bool silc_compare_timeval(struct timeval *smaller,
+SilcBool silc_compare_timeval(struct timeval *smaller,
 			  struct timeval *bigger);
 
 /****f* silcutil/SilcUtilAPI/silc_string_regexify
@@ -609,7 +609,7 @@ char *silc_get_real_name();
  *
  * SYNOPSIS
  *
- *    bool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
+ *    SilcBool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
  *                            SilcUInt32 **list);
  *
  * DESCRIPTION
@@ -620,7 +620,7 @@ char *silc_get_real_name();
  *    there is error parsing the list.
  *
  ***/
-bool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
+SilcBool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
 			SilcUInt32 **list);
 
 /****f* silcutil/SilcUtilAPI/silc_get_status_message

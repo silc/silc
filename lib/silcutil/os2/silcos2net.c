@@ -38,7 +38,7 @@ typedef union {
 #endif
 } SilcSockaddr;
 
-static bool silc_net_set_sockaddr(SilcSockaddr *addr, const char *ip_addr,
+static SilcBool silc_net_set_sockaddr(SilcSockaddr *addr, const char *ip_addr,
 				  int port)
 {
   int len;
@@ -290,7 +290,7 @@ int silc_net_set_socket_nonblock(int sock)
 /* Converts the IP number string from numbers-and-dots notation to
    binary form. */
 
-bool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
+SilcBool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
 {
   int ret = 0;
 

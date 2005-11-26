@@ -116,7 +116,7 @@ int silc_socket_read(SilcSocketConnection sock)
 
 /* Returns human readable socket error message */
 
-bool silc_socket_get_error(SilcSocketConnection sock, char *error,
+SilcBool silc_socket_get_error(SilcSocketConnection sock, char *error,
 			   SilcUInt32 error_len)
 {
   char *err;

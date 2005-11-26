@@ -32,7 +32,7 @@ typedef struct {
   thread_id thread;
   SilcThreadStart start_func;
   void *context;
-  bool waitable;
+  SilcBool waitable;
 } *SilcBeosThread;
 
 /* Actual routine that is called by BeOS when the thread is created.
@@ -47,7 +47,7 @@ static void *silc_thread_beos_start(void *context)
 #endif
 
 SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
-			      bool waitable)
+			      SilcBool waitable)
 {
 #ifdef SILC_THREADS
   int ret;
@@ -93,7 +93,7 @@ SilcThread silc_thread_self(void)
 #endif
 }
 
-bool silc_thread_wait(SilcThread thread, void **exit_value)
+SilcBool silc_thread_wait(SilcThread thread, void **exit_value)
 {
 #ifdef SILC_THREADS
   status_t ret, retval;

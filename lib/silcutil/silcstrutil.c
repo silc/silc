@@ -205,7 +205,7 @@ do {									\
 
 /* Parses MIME object and MIME header in it. */
 
-bool
+SilcBool
 silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
                 char *version, SilcUInt32 version_size,
                 char *content_type, SilcUInt32 content_type_size,
@@ -313,7 +313,7 @@ unsigned char *silc_identifier_check(const unsigned char *identifier,
 /* Same as above but does not allocate memory, just checks the
    validity of the string. */
 
-bool silc_identifier_verify(const unsigned char *identifier,
+SilcBool silc_identifier_verify(const unsigned char *identifier,
 			    SilcUInt32 identifier_len,
 			    SilcStringEncoding identifier_encoding,
 			    SilcUInt32 max_allowed_length)
@@ -370,7 +370,7 @@ unsigned char *silc_channel_name_check(const unsigned char *identifier,
 /* Same as above but does not allocate memory, just checks the
    validity of the string. */
 
-bool silc_channel_name_verify(const unsigned char *identifier,
+SilcBool silc_channel_name_verify(const unsigned char *identifier,
 			      SilcUInt32 identifier_len,
 			      SilcStringEncoding identifier_encoding,
 			      SilcUInt32 max_allowed_length)

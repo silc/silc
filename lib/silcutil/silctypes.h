@@ -69,7 +69,7 @@
  *
  * NAME
  *
- *    #define bool ...
+ *    #define SilcBool ...
  *
  * DESCRIPTION
  *
@@ -105,7 +105,7 @@
  *    Boolean value, and is always 8-bits.  Represents value 0 or 1.
  *
  ***/
-typedef unigned char SilcBool;
+typedef unsigned char SilcBool;
 
 #define silc_offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 

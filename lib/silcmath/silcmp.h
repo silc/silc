@@ -79,7 +79,7 @@ void silc_mp_init(SilcMPInt *mp);
  *
  * SYNOPSIS
  *
- *    bool silc_mp_sinit(SilcStack stack, SilcMPInt *mp);
+ *    SilcBool silc_mp_sinit(SilcStack stack, SilcMPInt *mp);
  *
  * DESCRIPTION
  *
@@ -97,7 +97,7 @@ void silc_mp_init(SilcMPInt *mp);
  *    to for example enlarge `mp' will allocate the memory from `stack'.
  *
  ***/
-bool silc_mp_sinit(SilcStack stack, SilcMPInt *mp);
+SilcBool silc_mp_sinit(SilcStack stack, SilcMPInt *mp);
 
 /****f* silcmath/SilcMPAPI/silc_mp_uninit
  *

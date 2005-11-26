@@ -352,7 +352,7 @@ struct SilcSKEStruct {
   SilcSchedule schedule;
   SilcFSMStruct fsm;
   SilcAsyncOperationStruct op;
-  bool aborted;
+  SilcBool aborted;
 };
 /***/
 
@@ -579,7 +579,7 @@ silc_ske_assemble_security_properties(SilcSKE ske,
  *
  * SYNOPSIS
  *
- *    bool silc_ske_parse_version(SilcSKE ske,
+ *    SilcBool silc_ske_parse_version(SilcSKE ske,
  *                                SilcUInt32 *protocol_version,
  *                                char **protocol_version_string,
  *                                SilcUInt32 *software_version,
@@ -596,7 +596,7 @@ silc_ske_assemble_security_properties(SilcSKE ske,
  *    string was successfully parsed.
  *
  ***/
-bool silc_ske_parse_version(SilcSKE ske,
+SilcBool silc_ske_parse_version(SilcSKE ske,
 			    SilcUInt32 *protocol_version,
 			    char **protocol_version_string,
 			    SilcUInt32 *software_version,

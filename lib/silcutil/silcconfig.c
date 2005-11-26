@@ -47,7 +47,7 @@ struct SilcConfigFileObject {
   char *p;		/* the Parser poitner */
   SilcUInt32 len;	/* fixed length of the whole file */
   SilcUInt32 line;	/* current parsing line, strictly linked to p */
-  bool included;	/* wether this file is main or included */
+  SilcBool included;	/* wether this file is main or included */
 };
 
 /* We need the entity to base our block-style parsing on */
@@ -177,7 +177,7 @@ static void *silc_config_marshall(SilcConfigType type, const char *val)
 {
   void *pt;
   int val_int;
-  bool val_bool;
+  SilcBool val_boolean;
   char *val_tmp;
   SilcUInt32 val_size;
 
@@ -185,16 +185,16 @@ static void *silc_config_marshall(SilcConfigType type, const char *val)
     case SILC_CONFIG_ARG_TOGGLE:
       if (!strcasecmp(val, "yes") || !strcasecmp(val, "true") ||
 		!strcasecmp(val, "on") || !strcasecmp(val, "1")) {
-	val_bool = TRUE;
+	val_boolean = TRUE;
       }
       else if (!strcasecmp(val, "no") || !strcasecmp(val, "false") ||
 		!strcasecmp(val, "off") || !strcasecmp(val, "0")) {
-	val_bool = FALSE;
+	val_boolean = FALSE;
       }
       else
 	return NULL;
-      pt = silc_calloc(1, sizeof(val_bool));
-      *(bool *)pt = (bool) val_bool;
+      pt = silc_calloc(1, sizeof(val_boolean));
+      *(SilcBool *)pt = (SilcBool) val_boolean;
       return pt;
     case SILC_CONFIG_ARG_INT:
       val_int = (int) strtol(val, &val_tmp, 0);
@@ -354,7 +354,7 @@ char *silc_config_read_current_line(SilcConfigFile *file)
 
 /* (Private) destroy a SilcConfigEntity */
 
-static void silc_config_destroy(SilcConfigEntity ent, bool destroy_opts)
+static void silc_config_destroy(SilcConfigEntity ent, SilcBool destroy_opts)
 {
   SilcConfigOption *oldopt, *nextopt;
   SILC_CONFIG_DEBUG(("Freeing config entity [ent=0x%x] [opts=0x%x]",
@@ -380,7 +380,7 @@ static void silc_config_destroy(SilcConfigEntity ent, bool destroy_opts)
 /* Registers a new option in the specified entity.
  * Returns TRUE on success, FALSE if already registered. */
 
-bool silc_config_register(SilcConfigEntity ent, const char *name,
+SilcBool silc_config_register(SilcConfigEntity ent, const char *name,
 			  SilcConfigType type, SilcConfigCallback cb,
 			  const SilcConfigTable *subtable, void *context)
 {
@@ -424,7 +424,7 @@ bool silc_config_register(SilcConfigEntity ent, const char *name,
 
 /* Register a new option table in the specified config entity */
 
-bool silc_config_register_table(SilcConfigEntity ent,
+SilcBool silc_config_register_table(SilcConfigEntity ent,
 				const SilcConfigTable table[], void *context)
 {
   int i;

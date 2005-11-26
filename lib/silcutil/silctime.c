@@ -47,7 +47,7 @@ const char *silc_time_string(SilcInt64 timeval)
 
 /* Returns time as SilcTime structure */
 
-bool silc_time_value(SilcInt64 timeval, SilcTime ret_time)
+SilcBool silc_time_value(SilcInt64 timeval, SilcTime ret_time)
 {
   struct tm *time;
 
@@ -91,7 +91,7 @@ bool silc_time_value(SilcInt64 timeval, SilcTime ret_time)
 
 /* Fills the SilcTime structure with correct values */
 
-static bool silc_time_fill(SilcTime time,
+static SilcBool silc_time_fill(SilcTime time,
 			   unsigned int year,
 			   unsigned int month,
 			   unsigned int day,
@@ -124,7 +124,7 @@ static bool silc_time_fill(SilcTime time,
 
 /* Returns time from universal time string into SilcTime */
 
-bool silc_time_universal(const char *universal_time, SilcTime ret_time)
+SilcBool silc_time_universal(const char *universal_time, SilcTime ret_time)
 {
   int ret;
   unsigned int year, month, day, hour = 0, minute = 0, second = 0;
@@ -180,7 +180,7 @@ bool silc_time_universal(const char *universal_time, SilcTime ret_time)
 
 /* Encode universal time string. */
 
-bool silc_time_universal_string(SilcTime timeval, char *ret_string,
+SilcBool silc_time_universal_string(SilcTime timeval, char *ret_string,
 				SilcUInt32 ret_string_size)
 {
   int ret, len = 0;
@@ -212,7 +212,7 @@ bool silc_time_universal_string(SilcTime timeval, char *ret_string,
 
 /* Returns time from generalized time string into SilcTime */
 
-bool silc_time_generalized(const char *generalized_time, SilcTime ret_time)
+SilcBool silc_time_generalized(const char *generalized_time, SilcTime ret_time)
 {
   int ret, i;
   unsigned int year, month, day, hour = 0, minute = 0, second = 0;
@@ -290,7 +290,7 @@ bool silc_time_generalized(const char *generalized_time, SilcTime ret_time)
 
 /* Encode generalized time string */
 
-bool silc_time_generalized_string(SilcTime timeval, char *ret_string,
+SilcBool silc_time_generalized_string(SilcTime timeval, char *ret_string,
 				  SilcUInt32 ret_string_size)
 {
   int len = 0, ret;

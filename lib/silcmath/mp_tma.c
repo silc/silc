@@ -26,7 +26,7 @@ void silc_mp_init(SilcMPInt *mp)
   (void)mp_init(mp);
 }
 
-bool silc_mp_sinit(SilcStack stack, SilcMPInt *mp)
+SilcBool silc_mp_sinit(SilcStack stack, SilcMPInt *mp)
 {
   /* XXX TODO */
   mp_init(mp);

@@ -100,8 +100,8 @@ typedef void (*SilcAsyncOperationAbort)(SilcAsyncOperation op,
  *
  * SYNOPSIS
  *
- *    typedef bool (*SilcAsyncOperationPause)(SilcAsyncOperation op,
- *                                            bool pause_operation,
+ *    typedef SilcBool (*SilcAsyncOperationPause)(SilcAsyncOperation op,
+ *                                            SilcBool pause_operation,
  *                                            void *context);
  *
  * DESCRIPTION
@@ -116,8 +116,8 @@ typedef void (*SilcAsyncOperationAbort)(SilcAsyncOperation op,
  *    was (or is going to be) halted or resumed, and FALSE on error.
  *
  ***/
-typedef bool (*SilcAsyncOperationPause)(SilcAsyncOperation op,
-                                        bool pause_operation,
+typedef SilcBool (*SilcAsyncOperationPause)(SilcAsyncOperation op,
+                                        SilcBool pause_operation,
 				        void *context);
 
 /* Upper layer functions for managing asynchronous operations.  Layer
@@ -128,7 +128,7 @@ typedef bool (*SilcAsyncOperationPause)(SilcAsyncOperation op,
  *
  * SYNOPSIS
  *
- *    bool silc_async_halt(SilcAsyncOperation op);
+ *    SilcBool silc_async_halt(SilcAsyncOperation op);
  *
  * DESCRIPTION
  *
@@ -141,13 +141,13 @@ typedef bool (*SilcAsyncOperationPause)(SilcAsyncOperation op,
  *    controls the asynchronous operation.
  *
  ***/
-bool silc_async_halt(SilcAsyncOperation op);
+SilcBool silc_async_halt(SilcAsyncOperation op);
 
 /****f* silcutil/SilcAsyncOperationAPI/silc_async_resume
  *
  * SYNOPSIS
  *
- *    bool silc_async_resume(SilcAsyncOperation op);
+ *    SilcBool silc_async_resume(SilcAsyncOperation op);
  *
  * DESCRIPTION
  *
@@ -159,7 +159,7 @@ bool silc_async_halt(SilcAsyncOperation op);
  *    asynchronous operation.
  *
  ***/
-bool silc_async_resume(SilcAsyncOperation op);
+SilcBool silc_async_resume(SilcAsyncOperation op);
 
 /****f* silcutil/SilcAsyncOperationAPI/silc_async_abort
  *
@@ -239,7 +239,7 @@ SilcAsyncOperation silc_async_alloc(SilcAsyncOperationAbort abort_cb,
  *
  * SYNOPSIS
  *
- *    bool silc_async_init(SilcAsyncOperation op,
+ *    SilcBool silc_async_init(SilcAsyncOperation op,
  *                         SilcAsyncOperationAbort abort_cb,
  *                         SilcAsyncOperationPause pause_cb,
  *                         void *context);
@@ -259,7 +259,7 @@ SilcAsyncOperation silc_async_alloc(SilcAsyncOperationAbort abort_cb,
  *    not provided then these functions has no effect for this operation.
  *
  ***/
-bool silc_async_init(SilcAsyncOperation op,
+SilcBool silc_async_init(SilcAsyncOperation op,
 		     SilcAsyncOperationAbort abort_cb,
 		     SilcAsyncOperationPause pause_cb,
 		     void *context);

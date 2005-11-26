@@ -115,7 +115,7 @@ unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
  *
  * SYNOPSIS
  *
- *    bool
+ *    SilcBool
  *    silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
  *                    char *version, SilcUInt32 version_size,
  *                    char *content_type, SilcUInt32 content_type_size,
@@ -143,7 +143,7 @@ unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
  *    NULL terminating the buffers it provides.
  *
  ***/
-bool
+SilcBool
 silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
                 char *version, SilcUInt32 version_size,
                 char *content_type, SilcUInt32 content_type_size,
@@ -217,7 +217,7 @@ unsigned char *silc_identifier_check(const unsigned char *identifier,
  *
  * SYNOPSIS
  *
- *    bool
+ *    SilcBool
  *    silc_identifier_check(const unsigned char *identifier,
  *                          SilcUInt32 identifier_len,
  *                          SilcStringEncoding identifier_encoding,
@@ -240,7 +240,7 @@ unsigned char *silc_identifier_check(const unsigned char *identifier,
  *    Returns TRUE if the string is valid and FALSE if it is prohibited.
  *
  ***/
-bool silc_identifier_verify(const unsigned char *identifier,
+SilcBool silc_identifier_verify(const unsigned char *identifier,
 			    SilcUInt32 identifier_len,
 			    SilcStringEncoding identifier_encoding,
 			    SilcUInt32 max_allowed_length);
@@ -291,7 +291,7 @@ unsigned char *silc_channel_name_check(const unsigned char *identifier,
  *
  * SYNOPSIS
  *
- *    bool
+ *    SilcBool
  *    silc_channel_name_check(const unsigned char *identifier,
  *                            SilcUInt32 identifier_len,
  *                            SilcStringEncoding identifier_encoding,
@@ -310,7 +310,7 @@ unsigned char *silc_channel_name_check(const unsigned char *identifier,
  *    Returns TRUE if the string is valid and FALSE if it is prohibited.
  *
  ***/
-bool silc_channel_name_verify(const unsigned char *identifier,
+SilcBool silc_channel_name_verify(const unsigned char *identifier,
 			      SilcUInt32 identifier_len,
 			      SilcStringEncoding identifier_encoding,
 			      SilcUInt32 max_allowed_length);

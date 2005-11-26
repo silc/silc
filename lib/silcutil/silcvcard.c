@@ -168,11 +168,11 @@ do {							\
 
 /* Decode VCard */
 
-bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
+SilcBool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
 		       SilcVCard vcard)
 {
   unsigned char *val;
-  bool has_begin = FALSE, has_end = FALSE;
+  SilcBool has_begin = FALSE, has_end = FALSE;
   int len, i, off = 0;
 
   val = (unsigned char *)data;

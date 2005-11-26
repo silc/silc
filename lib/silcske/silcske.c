@@ -2234,7 +2234,7 @@ const char *silc_ske_map_status(SilcSKEStatus status)
 
 /* Parses remote host's version string. */
 
-bool silc_ske_parse_version(SilcSKE ske,
+SilcBool silc_ske_parse_version(SilcSKE ske,
 			    SilcUInt32 *protocol_version,
 			    char **protocol_version_string,
 			    SilcUInt32 *software_version,

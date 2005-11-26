@@ -10,7 +10,7 @@ struct foo {
 
 int main(int argc, char **argv)
 {
-  bool success = FALSE;
+  SilcBool success = FALSE;
   SilcList list;
   struct foo *f, *f1, *f2, *f3, *f4;
 

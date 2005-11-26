@@ -14,7 +14,7 @@ typedef struct {
   SilcAsyncOperation op;
   Callback cb;
   void *cb_context;
-  bool aborted;
+  SilcBool aborted;
 } *Foo;
 
 SILC_FSM_STATE(test_st_start);
@@ -112,7 +112,7 @@ static void destructor(SilcFSM fsm, void *fsm_context,
 
 int main(int argc, char **argv)
 {
-  bool success = FALSE;
+  SilcBool success = FALSE;
   SilcFSM fsm;
   Foo f;
 

@@ -36,7 +36,7 @@ typedef union {
 #endif
 } SilcSockaddr;
 
-static bool silc_net_set_sockaddr(SilcSockaddr *addr, const char *ip_addr,
+static SilcBool silc_net_set_sockaddr(SilcSockaddr *addr, const char *ip_addr,
 				  int port)
 {
   int len;
@@ -120,7 +120,7 @@ SILC_TASK_CALLBACK(silc_net_accept)
 
 SilcNetServer
 silc_net_create_server(const char **local_ip_addr, SilcUInt32 local_ip_count,
-		       int port, bool require_fqdn, SilcSchedule schedule,
+		       int port, SilcBool require_fqdn, SilcSchedule schedule,
 		       SilcNetCallback callback, void *context)
 {
   SilcNetServer netserver = NULL;
@@ -273,7 +273,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
   SilcNetConnect conn = fsm_context;
   int sock, rval;
   SilcSockaddr desthost;
-  bool prefer_ipv6 = TRUE;
+  SilcBool prefer_ipv6 = TRUE;
 
   if (conn->aborted) {
     /** Aborted */
@@ -572,7 +572,7 @@ int silc_net_set_socket_nonblock(int sock)
 /* Converts the IP number string from numbers-and-dots notation to
    binary form. */
 
-bool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
+SilcBool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
 {
   int ret = 0;
 

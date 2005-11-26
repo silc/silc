@@ -105,7 +105,7 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd,
 
 /* Return fds */
 
-bool silc_fd_stream_get_info(SilcStream stream, int *read_fd, int *write_fd)
+SilcBool silc_fd_stream_get_info(SilcStream stream, int *read_fd, int *write_fd)
 {
   SilcFDStream fd_stream = stream;
 
@@ -208,7 +208,7 @@ int silc_fd_stream_write(SilcStream stream, const unsigned char *data,
 
 /* Close stream */
 
-bool silc_fd_stream_close(SilcStream stream)
+SilcBool silc_fd_stream_close(SilcStream stream)
 {
   SilcFDStream fd_stream = stream;
 

@@ -21,7 +21,7 @@
 
 /* Halts async operation */
 
-bool silc_async_halt(SilcAsyncOperation op)
+SilcBool silc_async_halt(SilcAsyncOperation op)
 {
   SILC_LOG_DEBUG(("Halting async operation"));
 
@@ -33,7 +33,7 @@ bool silc_async_halt(SilcAsyncOperation op)
 
 /* Resumes async operation */
 
-bool silc_async_resume(SilcAsyncOperation op)
+SilcBool silc_async_resume(SilcAsyncOperation op)
 {
   SILC_LOG_DEBUG(("Resuming async operation"));
 
@@ -82,7 +82,7 @@ SilcAsyncOperation silc_async_alloc(SilcAsyncOperationAbort abort_cb,
 
 /* Creates new async operation */
 
-bool silc_async_init(SilcAsyncOperation op,
+SilcBool silc_async_init(SilcAsyncOperation op,
 		     SilcAsyncOperationAbort abort_cb,
 		     SilcAsyncOperationPause pause_cb,
 		     void *context)

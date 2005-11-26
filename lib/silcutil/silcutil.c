@@ -99,7 +99,7 @@ const char *silc_get_time(SilcUInt32 timeval)
 
 /* Converts string to capital characters. */
 
-bool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size)
+SilcBool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size)
 {
   int i;
 
@@ -114,7 +114,7 @@ bool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size)
 
 /* Converts string to lower letter characters. */
 
-bool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size)
+SilcBool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size)
 {
   int i;
 
@@ -129,7 +129,7 @@ bool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size)
 
 /* Parse userfqdn string which is in user@fqdn format. */
 
-bool silc_parse_userfqdn(const char *string, char **left, char **right)
+SilcBool silc_parse_userfqdn(const char *string, char **left, char **right)
 {
   SilcUInt32 tlen;
 
@@ -596,7 +596,7 @@ SilcUInt32 silc_hash_public_key(void *key, void *user_context)
 /* Compares two strings. It may be used as SilcHashTable comparison
    function. */
 
-bool silc_hash_string_compare(void *key1, void *key2, void *user_context)
+SilcBool silc_hash_string_compare(void *key1, void *key2, void *user_context)
 {
   return !strcasecmp((char *)key1, (char *)key2);
 }
@@ -605,7 +605,7 @@ bool silc_hash_string_compare(void *key1, void *key2, void *user_context)
    The Client ID's compares only the hash of the Client ID not any other
    part of the Client ID. Other ID's are fully compared. */
 
-bool silc_hash_id_compare(void *key1, void *key2, void *user_context)
+SilcBool silc_hash_id_compare(void *key1, void *key2, void *user_context)
 {
   SilcIdType id_type = (SilcIdType)SILC_PTR_TO_32(user_context);
   return (id_type == SILC_ID_CLIENT ?
@@ -615,14 +615,14 @@ bool silc_hash_id_compare(void *key1, void *key2, void *user_context)
 
 /* Compare two Client ID's entirely and not just the hash from the ID. */
 
-bool silc_hash_client_id_compare(void *key1, void *key2, void *user_context)
+SilcBool silc_hash_client_id_compare(void *key1, void *key2, void *user_context)
 {
   return SILC_ID_COMPARE_TYPE(key1, key2, SILC_ID_CLIENT);
 }
 
 /* Compares binary data. May be used as SilcHashTable comparison function. */
 
-bool silc_hash_data_compare(void *key1, void *key2, void *user_context)
+SilcBool silc_hash_data_compare(void *key1, void *key2, void *user_context)
 {
   SilcUInt32 len = SILC_PTR_TO_32(user_context);
   return !memcmp(key1, key2, len);
@@ -630,7 +630,7 @@ bool silc_hash_data_compare(void *key1, void *key2, void *user_context)
 
 /* Compares UTF-8 string. */
 
-bool silc_hash_utf8_compare(void *key1, void *key2, void *user_context)
+SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context)
 {
   int l1 = strlen((char *)key1);
   int l2 = strlen((char *)key2);
@@ -642,7 +642,7 @@ bool silc_hash_utf8_compare(void *key1, void *key2, void *user_context)
 /* Compares two SILC Public keys. It may be used as SilcHashTable
    comparison function. */
 
-bool silc_hash_public_key_compare(void *key1, void *key2, void *user_context)
+SilcBool silc_hash_public_key_compare(void *key1, void *key2, void *user_context)
 {
   return silc_pkcs_public_key_compare(key1, key2);
 }
@@ -801,7 +801,7 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len)
 
 /* Return TRUE if the `data' is ASCII string. */
 
-bool silc_string_is_ascii(const unsigned char *data, SilcUInt32 data_len)
+SilcBool silc_string_is_ascii(const unsigned char *data, SilcUInt32 data_len)
 {
   int i;
 
@@ -815,7 +815,7 @@ bool silc_string_is_ascii(const unsigned char *data, SilcUInt32 data_len)
 
 /* Parses SILC protocol style version string. */
 
-bool silc_parse_version_string(const char *version,
+SilcBool silc_parse_version_string(const char *version,
 			       SilcUInt32 *protocol_version,
 			       char **protocol_version_string,
 			       SilcUInt32 *software_version,
@@ -911,7 +911,7 @@ SilcUInt32 silc_version_to_num(const char *version)
 
 /* Displays input prompt on command line and takes input data from user */
 
-char *silc_get_input(const char *prompt, bool echo_off)
+char *silc_get_input(const char *prompt, SilcBool echo_off)
 {
 #ifdef SILC_UNIX
   int fd;
@@ -1000,7 +1000,7 @@ char *silc_get_input(const char *prompt, bool echo_off)
 
 /* Return mode list */
 
-bool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
+SilcBool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
 			SilcUInt32 **list)
 {
   int i;
@@ -1190,7 +1190,7 @@ const char *silc_get_command_name(unsigned char command)
 
 /* Return TRUE if `smaller' is smaller than `bigger'. */
 
-bool silc_compare_timeval(struct timeval *smaller,
+SilcBool silc_compare_timeval(struct timeval *smaller,
 			  struct timeval *bigger)
 {
   if ((smaller->tv_sec < bigger->tv_sec) ||

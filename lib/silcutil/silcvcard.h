@@ -97,7 +97,7 @@ typedef struct {
   char *note;		    /* a note, string */
   char *rev;		    /* revision of card, UTC date string */
 
-  bool dynamic;		    /* TRUE when dynamically allocated */
+  SilcBool dynamic;		    /* TRUE when dynamically allocated */
 } SilcVCardStruct, *SilcVCard;
 /***/
 
@@ -122,7 +122,7 @@ unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len);
  *
  * SYNOPSIS
  *
- *    bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
+ *    SilcBool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
  *                           SilcVCard vcard);
  *
  * DESCRIPTION
@@ -134,7 +134,7 @@ unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len);
  *    is freed with silc_vcard_free function when it is not needed anymore.
  *
  ***/
-bool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
+SilcBool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
 		       SilcVCard vcard);
 
 /****f* silcutil/SilcVCard/silc_vcard_alloc

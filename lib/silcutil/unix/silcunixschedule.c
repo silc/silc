@@ -32,7 +32,7 @@ typedef struct {
   SilcUInt32 signal;
   SilcTaskCallback callback;
   void *context;
-  bool call;
+  SilcBool call;
 } SilcUnixSignal;
 
 /* Internal context. */

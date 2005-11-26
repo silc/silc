@@ -72,7 +72,7 @@ typedef void *(*SilcThreadStart)(void *context);
  * SYNOPSIS
  *
  *    SilcThread silc_thread_create(SilcThreadStart start_func,
- *                                  void *context, bool waitable);
+ *                                  void *context, SilcBool waitable);
  * DESCRIPTION
  *
  *    Creates a new thread. The `start_func' with `context' will be
@@ -94,7 +94,7 @@ typedef void *(*SilcThreadStart)(void *context);
  *
  ***/
 SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
-			      bool waitable);
+			      SilcBool waitable);
 
 /****f* silcutil/SilcThreadAPI/silc_thread_exit
  *
@@ -130,7 +130,7 @@ SilcThread silc_thread_self(void);
  *
  * SYNOPSIS
  *
- *    bool silc_thread_wait(SilcThread thread, void **exit_value);
+ *    SilcBool silc_thread_wait(SilcThread thread, void **exit_value);
  *
  * DESCRIPTION
  *
@@ -142,6 +142,6 @@ SilcThread silc_thread_self(void);
  *    FALSE value.
  *
  ***/
-bool silc_thread_wait(SilcThread thread, void **exit_value);
+SilcBool silc_thread_wait(SilcThread thread, void **exit_value);
 
 #endif

@@ -93,7 +93,7 @@ struct SilcStackStruct {
 /* Allocate memory.  If the `aligned' is FALSE this allocates unaligned
    memory, otherwise memory is aligned.  Returns pointer to the memory
    or NULL on error. */
-void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, bool aligned);
+void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, SilcBool aligned);
 
 /* Attempts to reallocate memory by changing the size of the `ptr' into
    `size'.  This routine works only if the previous allocation to `stack'
@@ -102,7 +102,7 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, bool aligned);
    if the `size' does not fit into the current block.  If NULL is returned
    the old memory remains intact. */
 void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
-			 void *ptr, SilcUInt32 size, bool aligned);
+			 void *ptr, SilcUInt32 size, SilcBool aligned);
 
 #ifdef SILC_DIST_INPLACE
 /* Prints statistics of the usage of SilcStack to stdout. */

@@ -21,7 +21,7 @@
 #include "silcincludes.h"
 
 SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
-			      bool waitable)
+			      SilcBool waitable)
 {
 #ifdef SILC_THREADS
   pthread_attr_t attr;
@@ -83,7 +83,7 @@ SilcThread silc_thread_self(void)
 #endif
 }
 
-bool silc_thread_wait(SilcThread thread, void **exit_value)
+SilcBool silc_thread_wait(SilcThread thread, void **exit_value)
 {
 #ifdef SILC_THREADS
   SILC_LOG_DEBUG(("Waiting for thread %p", thread));

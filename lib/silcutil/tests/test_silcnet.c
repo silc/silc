@@ -13,7 +13,7 @@ typedef struct {
   SilcNetStatus client_status;
   SilcStream server_stream;
   SilcNetStatus server_status;
-  bool success;
+  SilcBool success;
 } *Foo;
 
 SILC_FSM_STATE(test_st_start);
@@ -161,7 +161,7 @@ static void destructor(SilcFSM fsm, void *fsm_context,
 
 int main(int argc, char **argv)
 {
-  bool success = FALSE;
+  SilcBool success = FALSE;
   SilcFSM fsm;
   Foo f;
 

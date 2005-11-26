@@ -37,7 +37,7 @@ int silc_stream_write(SilcStream stream, const unsigned char *data,
   return h->ops->write(stream, data, data_len);
 }
 
-bool silc_stream_close(SilcStream stream)
+SilcBool silc_stream_close(SilcStream stream)
 {
   SilcStreamHeader h = stream;
   return h->ops->close(stream);

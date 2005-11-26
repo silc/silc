@@ -386,7 +386,7 @@ char *silc_config_read_current_line(SilcConfigFile *file);
  *
  * SYNOPSIS
  *
- *    bool silc_config_register(SilcConfigEntity ent, const char *name,
+ *    SilcBool silc_config_register(SilcConfigEntity ent, const char *name,
  *                              SilcConfigType type, SilcConfigCallback cb,
  *                              const SilcConfigTable *subtable,
  *                              void *context);
@@ -409,7 +409,7 @@ char *silc_config_read_current_line(SilcConfigFile *file);
  *    silc_config_register_table
  *
  ***/
-bool silc_config_register(SilcConfigEntity ent, const char *name,
+SilcBool silc_config_register(SilcConfigEntity ent, const char *name,
 			  SilcConfigType type, SilcConfigCallback cb,
 			  const SilcConfigTable *subtable, void *context);
 
@@ -417,7 +417,7 @@ bool silc_config_register(SilcConfigEntity ent, const char *name,
  *
  * SYNOPSIS
  *
- *    bool silc_config_register_table(SilcConfigEntity ent,
+ *    SilcBool silc_config_register_table(SilcConfigEntity ent,
  *                                    const SilcConfigTable table[],
  *                                    void *context);
  *
@@ -439,7 +439,7 @@ bool silc_config_register(SilcConfigEntity ent, const char *name,
  *    SilcConfigTable
  *
  ***/
-bool silc_config_register_table(SilcConfigEntity ent,
+SilcBool silc_config_register_table(SilcConfigEntity ent,
 				const SilcConfigTable table[], void *context);
 
 /****f* silcutil/SilcConfigAPI/silc_config_main

@@ -12,13 +12,13 @@ typedef struct FooStruct *Foo;
 typedef struct {
   SilcFSMThreadStruct thread;
   SilcFSMSemaStruct sema;
-  bool finished;
+  SilcBool finished;
   int rounds;
   Foo f;
 } T;
 
 struct FooStruct {
-  bool error;
+  SilcBool error;
   SilcFSM fsm;
   SilcFSMThreadStruct thread;
   int timeout;
@@ -374,7 +374,7 @@ static void destructor(SilcFSM fsm, void *fsm_context,
 
 int main(int argc, char **argv)
 {
-  bool success = FALSE;
+  SilcBool success = FALSE;
   SilcSchedule schedule;
   SilcFSM fsm;
   Foo f;

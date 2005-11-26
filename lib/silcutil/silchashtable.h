@@ -114,7 +114,7 @@ typedef SilcUInt32 (*SilcHashFunction)(void *key, void *user_context);
  *
  * SYNOPSIS
  *
- *    typedef bool (*SilcHashCompare)(void *key1, void *key2,
+ *    typedef SilcBool (*SilcHashCompare)(void *key1, void *key2,
  *                                    void *user_context);
  *
  * DESCRIPTION
@@ -126,7 +126,7 @@ typedef SilcUInt32 (*SilcHashFunction)(void *key, void *user_context);
  *    to the callback.
  *
  ***/
-typedef bool (*SilcHashCompare)(void *key1, void *key2, void *user_context);
+typedef SilcBool (*SilcHashCompare)(void *key1, void *key2, void *user_context);
 
 /****f* silcutil/SilcHashTableAPI/SilcHashDestructor
  *
@@ -175,7 +175,7 @@ typedef void (*SilcHashForeach)(void *key, void *context, void *user_context);
  *                                        void *compare_user_context,
  *                                        SilcHashDestructor destructor,
  *                                        void *destructor_user_context,
- *                                        bool auto_rehash);
+ *                                        SilcBool auto_rehash);
  *
  * DESCRIPTION
  *
@@ -195,7 +195,7 @@ SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size,
 				    void *compare_user_context,
 				    SilcHashDestructor destructor,
 				    void *destructor_user_context,
-				    bool auto_rehash);
+				    SilcBool auto_rehash);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_free
  *
@@ -276,7 +276,7 @@ void silc_hash_table_replace(SilcHashTable ht, void *key, void *context);
  *
  * SYNOPSIS
  *
- *    bool silc_hash_table_del(SilcHashTable ht, void *key);
+ *    SilcBool silc_hash_table_del(SilcHashTable ht, void *key);
  *
  * DESCRIPTION
  *
@@ -285,13 +285,13 @@ void silc_hash_table_replace(SilcHashTable ht, void *key, void *context);
  *    entry was removed successfully and FALSE otherwise.
  *
  ***/
-bool silc_hash_table_del(SilcHashTable ht, void *key);
+SilcBool silc_hash_table_del(SilcHashTable ht, void *key);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_del_by_context
  *
  * SYNOPSIS
  *
- *    bool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
+ *    SilcBool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
  *                                        void *context);
  *
  * DESCRIPTION
@@ -302,14 +302,14 @@ bool silc_hash_table_del(SilcHashTable ht, void *key);
  *    be used to check whether the correct entry is being deleted.
  *
  ***/
-bool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
 				    void *context);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_find
  *
  * SYNOPSIS
  *
- *    bool silc_hash_table_find(SilcHashTable ht, void *key,
+ *    SilcBool silc_hash_table_find(SilcHashTable ht, void *key,
  *                              void **ret_key, void **ret_context);
  *
  * DESCRIPTION
@@ -321,14 +321,14 @@ bool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
  *    maybe used only to check whether given key exists in the table.
  *
  ***/
-bool silc_hash_table_find(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_find(SilcHashTable ht, void *key,
 			  void **ret_key, void **ret_context);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_find_by_context
  *
  * SYNOPSIS
  *
- *    bool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
+ *    SilcBool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
  *                                         void *context, void **ret_key);
  *
  * DESCRIPTION
@@ -342,7 +342,7 @@ bool silc_hash_table_find(SilcHashTable ht, void *key,
  *    the caller already knows the context.
  *
  ***/
-bool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
 				     void *context, void **ret_key);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_find_foreach
@@ -450,7 +450,7 @@ void silc_hash_table_list_reset(SilcHashTableList *htl);
  *
  * SYNOPSIS
  *
- *    bool silc_hash_table_get(SilcHashTableList *htl, void **key,
+ *    SilcBool silc_hash_table_get(SilcHashTableList *htl, void **key,
  *                             void **context);
  *
  * DESCRIPTION
@@ -460,7 +460,7 @@ void silc_hash_table_list_reset(SilcHashTableList *htl);
  *    any entrys.
  *
  ***/
-bool silc_hash_table_get(SilcHashTableList *htl, void **key, void **context);
+SilcBool silc_hash_table_get(SilcHashTableList *htl, void **key, void **context);
 
 
 /* Extended hash table interface (same as above but with specific
@@ -516,7 +516,7 @@ void silc_hash_table_replace_ext(SilcHashTable ht, void *key, void *context,
  *
  * SYNOPSIS
  *
- *    bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
+ *    SilcBool silc_hash_table_del_ext(SilcHashTable ht, void *key,
  *                                 SilcHashFunction hash,
  *                                 void *hash_user_context,
  *                                 SilcHashCompare compare,
@@ -538,7 +538,7 @@ void silc_hash_table_replace_ext(SilcHashTable ht, void *key, void *context,
  *    specific destructor function.
  *
  ***/
-bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_del_ext(SilcHashTable ht, void *key,
 			     SilcHashFunction hash,
 			     void *hash_user_context,
 			     SilcHashCompare compare,
@@ -550,7 +550,7 @@ bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
  *
  * SYNOPSIS
  *
- *    bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
+ *    SilcBool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
  *                                            void *context,
  *                                            SilcHashFunction hash,
  *                                            void *hash_user_context,
@@ -574,7 +574,7 @@ bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
  *    specific destructor function.
  *
  ***/
-bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
 					void *context,
 					SilcHashFunction hash,
 					void *hash_user_context,
@@ -587,7 +587,7 @@ bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
  *
  * SYNOPSIS
  *
- *    bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
+ *    SilcBool silc_hash_table_find_ext(SilcHashTable ht, void *key,
  *                                  void **ret_key, void **ret_context,
  *                                  SilcHashFunction hash,
  *                                  void *hash_user_context,
@@ -608,7 +608,7 @@ bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
  *    comparing function. If not provided the hash table's default is used.
  *
  ***/
-bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_find_ext(SilcHashTable ht, void *key,
 			      void **ret_key, void **ret_context,
 			      SilcHashFunction hash,
 			      void *hash_user_context,
@@ -619,7 +619,7 @@ bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
  *
  * SYNOPSIS
  *
- *    bool silc_hash_table_find_by_context_ext(SilcHashTable ht, void *key,
+ *    SilcBool silc_hash_table_find_by_context_ext(SilcHashTable ht, void *key,
  *                                             void *context, void **ret_key,
  *                                             SilcHashFunction hash,
  *                                             void *hash_user_context,
@@ -642,7 +642,7 @@ bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
  *    comparing function. If not provided the hash table's default is used.
  *
  ***/
-bool silc_hash_table_find_by_context_ext(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_find_by_context_ext(SilcHashTable ht, void *key,
 					 void *context, void **ret_key,
 					 SilcHashFunction hash,
 					 void *hash_user_context,

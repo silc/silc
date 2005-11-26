@@ -66,7 +66,7 @@ typedef struct SilcMutexStruct *SilcMutex;
  *
  * SYNOPSIS
  *
- *    bool silc_mutex_alloc(SilcMutex *mutex);
+ *    SilcBool silc_mutex_alloc(SilcMutex *mutex);
  *
  * DESCRIPTION
  *
@@ -76,7 +76,7 @@ typedef struct SilcMutexStruct *SilcMutex;
  *    on error.
  *
  ***/
-bool silc_mutex_alloc(SilcMutex *mutex);
+SilcBool silc_mutex_alloc(SilcMutex *mutex);
 
 /****f* silcutil/SilcMutexAPI/silc_mutex_free
  *

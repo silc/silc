@@ -109,7 +109,7 @@ typedef void (*SilcNetCallback)(SilcNetStatus status,
  *    SilcNetServer
  *    silc_net_create_server(const char **local_ip_addr,
  *                           SilcUInt32 local_ip_count,
- *                           int port, bool require_fqdn,
+ *                           int port, SilcBool require_fqdn,
  *                           SilcSchedule schedule,
  *                           SilcNetCallback callback, void *context);
  *
@@ -127,7 +127,7 @@ typedef void (*SilcNetCallback)(SilcNetStatus status,
  ***/
 SilcNetServer
 silc_net_create_server(const char **local_ip_addr, SilcUInt32 local_ip_count,
-		       int port, bool require_fqdn, SilcSchedule schedule,
+		       int port, SilcBool require_fqdn, SilcSchedule schedule,
 		       SilcNetCallback callback, void *context);
 
 /****f* silcutil/SilcNetAPI/silc_net_close_server
@@ -259,33 +259,33 @@ int silc_net_get_socket_opt(int sock, int level, int option,
  *
  * SYNOPSIS
  *
- *    bool silc_net_is_ip4(const char *addr);
+ *    SilcBool silc_net_is_ip4(const char *addr);
  *
  * DESCRIPTION
  *
  *    Checks whether IP address sent as argument is valid IPv4 address.
  *
  ***/
-bool silc_net_is_ip4(const char *addr);
+SilcBool silc_net_is_ip4(const char *addr);
 
 /****f* silcutil/SilcNetAPI/silc_net_is_ip6
  *
  * SYNOPSIS
  *
- *    bool silc_net_is_ip6(const char *addr);
+ *    SilcBool silc_net_is_ip6(const char *addr);
  *
  * DESCRIPTION
  *
  *    Checks whether IP address sent as argument is valid IPv6 address.
  *
  ***/
-bool silc_net_is_ip6(const char *addr);
+SilcBool silc_net_is_ip6(const char *addr);
 
 /****f* silcutil/SilcNetAPI/silc_net_is_ip
  *
  * SYNOPSIS
  *
- *    bool silc_net_is_ip(const char *addr);
+ *    SilcBool silc_net_is_ip(const char *addr);
  *
  * DESCRIPTION
  *
@@ -293,13 +293,13 @@ bool silc_net_is_ip6(const char *addr);
  *    This supports both IPv4 and IPv6 addresses.
  *
  ***/
-bool silc_net_is_ip(const char *addr);
+SilcBool silc_net_is_ip(const char *addr);
 
 /****f* silcutil/SilcNetAPI/silc_net_addr2bin
  *
  * SYNOPSIS
  *
- *    bool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len);
+ *    SilcBool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len);
  *
  * DESCRIPTION
  *
@@ -308,7 +308,7 @@ bool silc_net_is_ip(const char *addr);
  *    IPv4 or IPv6 address.
  *
  ***/
-bool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len);
+SilcBool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len);
 
 /****f* silcutil/SilcNetAPI/SilcNetResolveCallback
  *
@@ -330,7 +330,7 @@ typedef void (*SilcNetResolveCallback)(const char *result, void *context);
  *
  * SYNOPSIS
  *
- *    bool silc_net_gethostbyname(const char *name, bool prefer_ipv6,
+ *    SilcBool silc_net_gethostbyname(const char *name, SilcBool prefer_ipv6,
  *                                char *address, SilcUInt32 address_len);
  *
  * DESCRIPTION
@@ -344,7 +344,7 @@ typedef void (*SilcNetResolveCallback)(const char *result, void *context);
  *    address also.
  *
  ***/
-bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address,
+SilcBool silc_net_gethostbyname(const char *name, SilcBool prefer_ipv6, char *address,
 			    SilcUInt32 address_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_gethostbyname_async
@@ -352,7 +352,7 @@ bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address,
  * SYNOPSIS
  *
  *    void silc_net_gethostbyname_async(const char *name,
- *                                      bool prefer_ipv6,
+ *                                      SilcBool prefer_ipv6,
  *                                      SilcSchedule schedule,
  *                                      SilcNetResolveCallback completion,
  *                                      void *context)
@@ -370,7 +370,7 @@ bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address,
  *
  ***/
 void silc_net_gethostbyname_async(const char *name,
-				  bool prefer_ipv6,
+				  SilcBool prefer_ipv6,
 				  SilcSchedule schedule,
 				  SilcNetResolveCallback completion,
 				  void *context);
@@ -379,7 +379,7 @@ void silc_net_gethostbyname_async(const char *name,
  *
  * SYNOPSIS
  *
- *   bool silc_net_gethostbyaddr(const char *addr, char *name,
+ *   SilcBool silc_net_gethostbyaddr(const char *addr, char *name,
  *                               SilcUInt32 name_len);
  *
  * DESCRIPTION
@@ -390,7 +390,7 @@ void silc_net_gethostbyname_async(const char *name,
  *    This is synchronous function and will block the calling process.
  *
  ***/
-bool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len);
+SilcBool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_gethostbyaddr_async
  *
@@ -418,7 +418,7 @@ void silc_net_gethostbyaddr_async(const char *addr,
  *
  * SYNOPSIS
  *
- *    bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
+ *    SilcBool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
  *
  * DESCRIPTION
  *
@@ -426,13 +426,13 @@ void silc_net_gethostbyaddr_async(const char *addr,
  *    lookup as well to verify that the IP has FQDN.
  *
  ***/
-bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
+SilcBool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
 
 /****f* silcutil/SilcNetAPI/silc_net_check_local_by_sock
  *
  * SYNOPSIS
  *
- *    bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip);
+ *    SilcBool silc_net_check_local_by_sock(int sock, char **hostname, char **ip);
  *
  * DESCRIPTION
  *
@@ -440,7 +440,7 @@ bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
  *    lookup as well to verify that the IP has FQDN.
  *
  ***/
-bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip);
+SilcBool silc_net_check_local_by_sock(int sock, char **hostname, char **ip);
 
 /****f* silcutil/SilcNetAPI/silc_net_get_remote_port
  *
@@ -501,7 +501,7 @@ char *silc_net_localip(void);
  *
  * SYNOPSIS
  *
- *    bool silc_net_win32_init(void);
+ *    SilcBool silc_net_win32_init(void);
  *
  * DESCRIPTION
  *
@@ -518,7 +518,7 @@ char *silc_net_localip(void);
  *    This routines is available only on Win32 platform.
  *
  ***/
-bool silc_net_win32_init(void);
+SilcBool silc_net_win32_init(void);
 
 /****f* silcutil/SilcNetAPI/silc_net_win32_uninit
  *

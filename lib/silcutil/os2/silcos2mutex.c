@@ -28,7 +28,7 @@ struct SilcMutexStruct {
   HMTX mutex;
 };
 
-bool silc_mutex_alloc(SilcMutex *mutex)
+SilcBool silc_mutex_alloc(SilcMutex *mutex)
 {
   char name[64];
 

@@ -30,7 +30,7 @@ struct SilcMutexStruct {
 #endif /* SILC_THREADS */
 };
 
-bool silc_mutex_alloc(SilcMutex *mutex)
+SilcBool silc_mutex_alloc(SilcMutex *mutex)
 {
 #ifdef SILC_THREADS
   *mutex = silc_calloc(1, sizeof(**mutex));

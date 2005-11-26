@@ -27,7 +27,7 @@ typedef struct {
   HANDLE thread;
   SilcThreadStart start_func;
   void *context;
-  bool waitable;
+  SilcBool waitable;
 } *SilcWin32Thread;
 
 static DWORD silc_thread_tls;
@@ -48,7 +48,7 @@ unsigned __stdcall silc_thread_win32_start(void *context)
 #endif
 
 SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
-			      bool waitable)
+			      SilcBool waitable)
 {
 #ifdef SILC_THREADS
   SilcWin32Thread thread;
@@ -119,7 +119,7 @@ SilcThread silc_thread_self(void)
 #endif
 }
 
-bool silc_thread_wait(SilcThread thread, void **exit_value)
+SilcBool silc_thread_wait(SilcThread thread, void **exit_value)
 {
 #ifdef SILC_THREADS
   SilcWin32Thread self = (SilcWin32Thread)thread;

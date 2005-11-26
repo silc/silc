@@ -223,7 +223,7 @@ void silc_net_close_connection(int sock)
 /* Converts the IP number string from numbers-and-dots notation to
    binary form. */
 
-bool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
+SilcBool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
 {
   unsigned long ret;
 
@@ -246,7 +246,7 @@ int silc_net_set_socket_nonblock(int sock)
 
 /* Init Winsock2. */
 
-bool silc_net_win32_init(void)
+SilcBool silc_net_win32_init(void)
 {
   int ret, sopt = SO_SYNCHRONOUS_NONALERT;
   WSADATA wdata;

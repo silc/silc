@@ -7,8 +7,8 @@ typedef struct entry_struct {
   int val;
 } *entry;
 
-bool dump = FALSE;
-bool auto_rehash = TRUE;
+SilcBool dump = FALSE;
+SilcBool auto_rehash = TRUE;
 int count = 2000;
 SilcHashTable t = NULL;
 
@@ -18,7 +18,7 @@ SilcUInt32 hash_entry(void *key, void *user_context)
   return e->val + silc_hash_string(e->name, NULL);
 }
 
-bool hash_compare(void *key1, void *key2, void *user_context)
+SilcBool hash_compare(void *key1, void *key2, void *user_context)
 {
   entry e = key1;
   entry e2 = key2;
@@ -38,7 +38,7 @@ void hash_destructor(void *key, void *context, void *user_context)
   silc_free(e);
 }
 
-bool add_entries()
+SilcBool add_entries()
 {
   entry e;
   int i;
@@ -60,7 +60,7 @@ bool add_entries()
   return TRUE;
 }
 
-bool del_entries_with_list()
+SilcBool del_entries_with_list()
 {
   SilcHashTableList htl;
   entry e;
@@ -90,7 +90,7 @@ void del_foreach(void *key, void *context, void *user_context)
   silc_hash_table_del(t, key);
 }
 
-bool del_n_entries_foreach()
+SilcBool del_n_entries_foreach()
 {
   struct entry_struct f;
   int i;
@@ -108,14 +108,14 @@ bool del_n_entries_foreach()
   return TRUE;
 }
 
-bool del_entries_foreach()
+SilcBool del_entries_foreach()
 {
   SILC_LOG_DEBUG(("Deleting all entries with foreach"));
   silc_hash_table_foreach(t, del_foreach, NULL);
   return TRUE;
 }
 
-bool alloc_table()
+SilcBool alloc_table()
 {
   SILC_LOG_DEBUG(("Allocating hash table with %d entries (%s)",
 		  count, auto_rehash ? "auto rehash" : "no auto rehash"));
@@ -137,7 +137,7 @@ bool alloc_table()
   return TRUE;
 }
 
-bool delete_table_with_list()
+SilcBool delete_table_with_list()
 {
 
   SILC_LOG_DEBUG(("Deleting entries with SilcHashTableList"));
@@ -158,7 +158,7 @@ bool delete_table_with_list()
   return TRUE;
 }
 
-bool find_entries()
+SilcBool find_entries()
 {
   struct entry_struct f;
   entry e;
@@ -184,12 +184,12 @@ bool find_entries()
   return TRUE;
 }
 
-bool dump_table()
+SilcBool dump_table()
 {
   SilcHashTableList htl;
   entry e;
   char *name;
-  bool dumpped = FALSE;
+  SilcBool dumpped = FALSE;
 
   SILC_LOG_DEBUG(("Dumping hash table entries"));
 
@@ -207,7 +207,7 @@ bool dump_table()
 
 int main(int argc, char **argv)
 {
-  bool success = FALSE;
+  SilcBool success = FALSE;
   int i;
 
   if (argc > 1 && !strcmp(argv[1], "-d")) {

@@ -26,7 +26,7 @@ extern const SilcScheduleOps schedule_ops;
 static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task);
 static void silc_schedule_dispatch_fd(SilcSchedule schedule);
 static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
-					   bool dispatch_all);
+					   SilcBool dispatch_all);
 
 /* Fd task hash table destructor */
 
@@ -78,7 +78,7 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
    scheduler could not be uninitialized. This happens when the scheduler
    is still valid and silc_schedule_stop has not been called. */
 
-bool silc_schedule_uninit(SilcSchedule schedule)
+SilcBool silc_schedule_uninit(SilcSchedule schedule)
 {
   SILC_LOG_DEBUG(("Uninitializing scheduler"));
 
@@ -172,7 +172,7 @@ static void silc_schedule_dispatch_fd(SilcSchedule schedule)
    tasks are removed here. */
 
 static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
-					   bool dispatch_all)
+					   SilcBool dispatch_all)
 {
   SilcTask t;
   SilcTaskTimeout task;
@@ -220,7 +220,7 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
   SilcTask t;
   SilcTaskTimeout task;
   struct timeval curtime;
-  bool dispatch = TRUE;
+  SilcBool dispatch = TRUE;
 
   /* Get the current time */
   silc_gettimeofday(&curtime);
@@ -278,7 +278,7 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
 
 /* Runs the scheduler once and then returns. */
 
-bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
+SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
 {
   struct timeval timeout;
   int ret;
@@ -688,7 +688,7 @@ static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
    descriptor to set different iomasks. */
 
 void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
-				 SilcTaskEvent mask, bool send_events)
+				 SilcTaskEvent mask, SilcBool send_events)
 {
   SilcTaskFd task;
 

@@ -6,7 +6,7 @@
 
 int main(int argc, char **argv)
 {
-  bool success = FALSE;
+  SilcBool success = FALSE;
   SilcStack stack;
   void *ptr, *ptr2;
   int i;

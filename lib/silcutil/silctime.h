@@ -94,7 +94,7 @@ const char *silc_time_string(SilcInt64 timeval);
  *
  * SYNOPSIS
  *
- *   bool silc_time_value(SilcInt64 timeval, SilcTime ret_time);
+ *   SilcBool silc_time_value(SilcInt64 timeval, SilcTime ret_time);
  *
  * DESCRIPTION
  *
@@ -103,13 +103,13 @@ const char *silc_time_string(SilcInt64 timeval);
  *    Returns FALSE on error, TRUE otherwise.
  *
  ***/
-bool silc_time_value(SilcInt64 timeval, SilcTime ret_time);
+SilcBool silc_time_value(SilcInt64 timeval, SilcTime ret_time);
 
 /****f* silcutil/SilcTimeAPI/silc_time_universal
  *
  * SYNOPSIS
  *
- *    bool silc_time_universal(const char *universal_time,
+ *    SilcBool silc_time_universal(const char *universal_time,
  *                             SilcTime ret_time);
  *
  * DESCRIPTION
@@ -129,13 +129,13 @@ bool silc_time_value(SilcInt64 timeval, SilcTime ret_time);
  *    silc_time_universal("030219190403Z", &ret_time);
  *
  ***/
-bool silc_time_universal(const char *universal_time, SilcTime ret_time);
+SilcBool silc_time_universal(const char *universal_time, SilcTime ret_time);
 
 /****f* silcutil/SilcTimeAPI/silc_time_universal_string
  *
  * SYNOPSIS
  *
- *    bool silc_time_universal_string(SilcTime timeval, char *ret_string,
+ *    SilcBool silc_time_universal_string(SilcTime timeval, char *ret_string,
  *                                    SilcUInt32 ret_string_size);
  *
  * DESCRIPTION
@@ -144,14 +144,14 @@ bool silc_time_universal(const char *universal_time, SilcTime ret_time);
  *    `ret_string' buffer.  Returns FALSE if the buffer is too small.
  *
  ***/
-bool silc_time_universal_string(SilcTime timeval, char *ret_string,
+SilcBool silc_time_universal_string(SilcTime timeval, char *ret_string,
 				SilcUInt32 ret_string_size);
 
 /****f* silcutil/SilcTimeAPI/silc_time_generalized
  *
  * SYNOPSIS
  *
- *    bool silc_time_generalized(const char *generalized_time,
+ *    SilcBool silc_time_generalized(const char *generalized_time,
  *                               SilcTime ret_time);
  *
  * DESCRIPTION
@@ -175,13 +175,13 @@ bool silc_time_universal_string(SilcTime timeval, char *ret_string,
  *    silc_time_generalized("20030219190510.212Z", &ret_time);
  *
  ***/
-bool silc_time_generalized(const char *generalized_time, SilcTime ret_time);
+SilcBool silc_time_generalized(const char *generalized_time, SilcTime ret_time);
 
 /****f* silcutil/SilcTimeAPI/silc_time_generalized_string
  *
  * SYNOPSIS
  *
- *    bool silc_time_generalized_string(SilcTime timeval, char *ret_string,
+ *    SilcBool silc_time_generalized_string(SilcTime timeval, char *ret_string,
  *                                      SilcUInt32 ret_string_size);
  *
  * DESCRIPTION
@@ -190,7 +190,7 @@ bool silc_time_generalized(const char *generalized_time, SilcTime ret_time);
  *    `ret_string' buffer.  Returns FALSE if the buffer is too small.
  *
  ***/
-bool silc_time_generalized_string(SilcTime timeval, char *ret_string,
+SilcBool silc_time_generalized_string(SilcTime timeval, char *ret_string,
 				  SilcUInt32 ret_string_size);
 
 #endif /* SILCTIME_H */

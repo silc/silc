@@ -82,7 +82,7 @@ typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
  * SYNOPSIS
  *
  *    SilcAsyncOperation
- *    silc_socket_stream_create(int sock, bool lookup, bool require_fqdn,
+ *    silc_socket_stream_create(int sock, SilcBool lookup, SilcBool require_fqdn,
  *                              SilcSchedule schedule,
  *                              SilcSocketStreamCallback callback,
  *                              void *context);
@@ -107,7 +107,7 @@ typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
  *
  ***/
 SilcAsyncOperation
-silc_socket_stream_create(int sock, bool lookup, bool require_fqdn,
+silc_socket_stream_create(int sock, SilcBool lookup, SilcBool require_fqdn,
 			  SilcSchedule schedule,
 			  SilcSocketStreamCallback callback,
 			  void *context);
@@ -116,7 +116,7 @@ silc_socket_stream_create(int sock, bool lookup, bool require_fqdn,
  *
  * SYNOPSIS
  *
- *    bool
+ *    SilcBool
  *    silc_socket_stream_get_info(SilcStream stream,
  *                                int *sock, const char **hostname,
  *                                const char **ip, SilcUInt16 *port);
@@ -128,7 +128,7 @@ silc_socket_stream_create(int sock, bool lookup, bool require_fqdn,
  *    if these informations are not available.
  *
  ***/
-bool silc_socket_stream_get_info(SilcStream stream,
+SilcBool silc_socket_stream_get_info(SilcStream stream,
 				 int *sock, const char **hostname,
 				 const char **ip, SilcUInt16 *port);
 
@@ -136,7 +136,7 @@ bool silc_socket_stream_get_info(SilcStream stream,
  *
  * SYNOPSIS
  *
- *    bool
+ *    SilcBool
  *    silc_socket_stream_set_info(SilcStream stream,
  *                                const char *hostname,
  *                                const char *ip, SilcUInt16 port);
@@ -152,7 +152,7 @@ bool silc_socket_stream_get_info(SilcStream stream,
  *    silc_socket_stream_get_info to get the information from the stream.
  *
  ***/
-bool silc_socket_stream_set_info(SilcStream stream,
+SilcBool silc_socket_stream_set_info(SilcStream stream,
 				 const char *hostname,
 				 const char *ip, SilcUInt16 port);
 
@@ -174,7 +174,7 @@ int silc_socket_stream_get_error(SilcStream stream);
  *
  * SYNOPSIS
  *
- *    bool silc_socket_stream_set_qos(SilcStream stream,
+ *    SilcBool silc_socket_stream_set_qos(SilcStream stream,
  *                                    SilcUInt32 read_rate,
  *                                    SilcUInt32 read_limit_bytes,
  *                                    SilcUInt32 limit_sec,
@@ -194,7 +194,7 @@ int silc_socket_stream_get_error(SilcStream stream);
  *    this socket stream that may be pending will be cancelled.
  *
  ***/
-bool silc_socket_stream_set_qos(SilcStream stream,
+SilcBool silc_socket_stream_set_qos(SilcStream stream,
 				SilcUInt32 read_rate,
 				SilcUInt32 read_limit_bytes,
 				SilcUInt32 limit_sec,

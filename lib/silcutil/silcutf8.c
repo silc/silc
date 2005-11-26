@@ -536,14 +536,14 @@ SilcUInt32 silc_utf8_decoded_len(const unsigned char *bin, SilcUInt32 bin_len,
 /* Returns TRUE if the `utf8' string of length of `utf8_len' is valid
    UTF-8 encoded string, FALSE if it is not UTF-8 encoded string. */
 
-bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len)
+SilcBool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len)
 {
   return silc_utf8_decode(utf8, utf8_len, 0, NULL, 0) != 0;
 }
 
 /* Pretty close strcasecmp */
 
-bool silc_utf8_strcasecmp(const char *s1, const char *s2)
+SilcBool silc_utf8_strcasecmp(const char *s1, const char *s2)
 {
   if (s1 == s2)
     return TRUE;
@@ -555,12 +555,12 @@ bool silc_utf8_strcasecmp(const char *s1, const char *s2)
 
 /* Pretty close strcasecmp */
 
-bool silc_utf8_strncasecmp(const char *s1, const char *s2, SilcUInt32 n)
+SilcBool silc_utf8_strncasecmp(const char *s1, const char *s2, SilcUInt32 n)
 {
   unsigned char *s1u, *s2u;
   SilcUInt32 s1u_len, s2u_len;
   SilcStringprepStatus status;
-  bool ret;
+  SilcBool ret;
 
   if (s1 == s2)
     return TRUE;

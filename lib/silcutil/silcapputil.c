@@ -54,7 +54,7 @@ static char *silc_create_pk_identifier(void)
 
 /* Generate key pair */
 
-bool silc_create_key_pair(const char *pkcs_name,
+SilcBool silc_create_key_pair(const char *pkcs_name,
 			  SilcUInt32 key_len_bits,
 			  const char *pub_filename,
 			  const char *prv_filename,
@@ -63,7 +63,7 @@ bool silc_create_key_pair(const char *pkcs_name,
 			  SilcPKCS *return_pkcs,
 			  SilcPublicKey *return_public_key,
 			  SilcPrivateKey *return_private_key,
-			  bool interactive)
+			  SilcBool interactive)
 {
   SilcPKCS pkcs;
   SilcPublicKey pub_key;
@@ -182,7 +182,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
         pass = strdup("");
 	break;
       } else {
-	bool match;
+	SilcBool match;
 	printf("\n");
 	pass2 = silc_get_input("Retype private key passphrase: ", TRUE);
 	if (!pass2)
@@ -251,7 +251,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 
 /* Load key pair */
 
-bool silc_load_key_pair(const char *pub_filename,
+SilcBool silc_load_key_pair(const char *pub_filename,
 			const char *prv_filename,
 			const char *passphrase,
 			SilcPKCS *return_pkcs,
@@ -302,7 +302,7 @@ bool silc_load_key_pair(const char *pub_filename,
 
 /* Dump public key into stdout */
 
-bool silc_show_public_key(const char *pub_filename)
+SilcBool silc_show_public_key(const char *pub_filename)
 {
   SilcPublicKey public_key;
   SilcPublicKeyIdentifier ident;
@@ -363,12 +363,12 @@ bool silc_show_public_key(const char *pub_filename)
 
 /* Change private key passphrase */
 
-bool silc_change_private_key_passphrase(const char *prv_filename,
+SilcBool silc_change_private_key_passphrase(const char *prv_filename,
 					const char *old_passphrase,
 					const char *new_passphrase)
 {
   SilcPrivateKey private_key;
-  bool base64 = FALSE;
+  SilcBool base64 = FALSE;
   char *pass;
 
   pass = old_passphrase ? strdup(old_passphrase) : NULL;

@@ -23,8 +23,8 @@
 
 static void *st_blocks = NULL;
 static unsigned long st_blocks_count = 0;
-static bool dump = FALSE;
-static bool malloc_check = FALSE;
+static SilcBool dump = FALSE;
+static SilcBool malloc_check = FALSE;
 
 #define SILC_ST_DEPTH 10
 

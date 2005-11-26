@@ -32,7 +32,7 @@ typedef struct {
   unsigned long thread;
   SilcThreadStart start_func;
   void *context;
-  bool waitable;
+  SilcBool waitable;
 } *SilcOs2Thread;
 
 /* Actual routine that is called by OS/2 when the thread is created.
@@ -48,7 +48,7 @@ static void silc_thread_os2_start(void *context)
 #endif
 
 SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
-			      bool waitable)
+			      SilcBool waitable)
 {
 #ifdef SILC_THREADS
   int ret;
@@ -95,7 +95,7 @@ SilcThread silc_thread_self(void)
 #endif
 }
 
-bool silc_thread_wait(SilcThread thread, void **exit_value)
+SilcBool silc_thread_wait(SilcThread thread, void **exit_value)
 {
 #ifdef SILC_THREADS
 

@@ -701,7 +701,7 @@ const unsigned char *silc_mime_get_data(SilcMime mime, SilcUInt32 *data_len)
   return mime->data;
 }
 
-bool silc_mime_is_partial(SilcMime mime)
+SilcBool silc_mime_is_partial(SilcMime mime)
 {
   const char *type = silc_mime_get_field(mime, "Content-Type");
   if (!type)
@@ -732,7 +732,7 @@ void silc_mime_set_multipart(SilcMime mime, const char *type,
   mime->multiparts = silc_dlist_init();
 }
 
-bool silc_mime_add_multipart(SilcMime mime, SilcMime part)
+SilcBool silc_mime_add_multipart(SilcMime mime, SilcMime part)
 {
   if (!mime || !mime->multiparts || !part)
     return FALSE;
@@ -741,7 +741,7 @@ bool silc_mime_add_multipart(SilcMime mime, SilcMime part)
   return TRUE;
 }
 
-bool silc_mime_is_multipart(SilcMime mime)
+SilcBool silc_mime_is_multipart(SilcMime mime)
 {
   if (!mime)
     return FALSE;

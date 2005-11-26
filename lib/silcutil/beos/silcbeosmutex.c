@@ -28,7 +28,7 @@ struct SilcMutexStruct {
   sem_id sema;
 };
 
-bool silc_mutex_alloc(SilcMutex *mutex)
+SilcBool silc_mutex_alloc(SilcMutex *mutex)
 {
   int ret;
 

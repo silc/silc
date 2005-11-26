@@ -370,7 +370,7 @@ SilcFSM silc_fsm_alloc(void *fsm_context,
  *
  * SYNOPSIS
  *
- *    bool silc_fsm_init(SilcFSM fsm,
+ *    SilcBool silc_fsm_init(SilcFSM fsm,
  *                       void *fsm_context,
  *                       SilcFSMDestructor destructor,
  *                       void *destructor_context,
@@ -393,7 +393,7 @@ SilcFSM silc_fsm_alloc(void *fsm_context,
  *    silc_fsm_start(&fsm, first_state);
  *
  ***/
-bool silc_fsm_init(SilcFSM fsm,
+SilcBool silc_fsm_init(SilcFSM fsm,
 		   void *fsm_context,
                    SilcFSMDestructor destructor,
                    void *destructor_context,
@@ -407,7 +407,7 @@ bool silc_fsm_init(SilcFSM fsm,
  *                                        void *thread_context,
  *                                        SilcFSMThreadDestructor destructor,
  *                                        void *destructor_context,
- *                                        bool real_thread);
+ *                                        SilcBool real_thread);
  *
  * DESCRIPTION
  *
@@ -468,18 +468,18 @@ SilcFSMThread silc_fsm_thread_alloc(SilcFSM fsm,
 				    void *thread_context,
 				    SilcFSMThreadDestructor destructor,
 				    void *destructor_context,
-				    bool real_thread);
+				    SilcBool real_thread);
 
 /****f* silcutil/SilcFSMAPI/silc_fsm_thread_init
  *
  * SYNOPSIS
  *
- *    bool silc_fsm_thread_init(SilcFSMThread thread,
+ *    SilcBool silc_fsm_thread_init(SilcFSMThread thread,
  *                              SilcFSM fsm,
  *                              void *thread_context,
  *                              SilcFSMThreadDestructor destructor,
  *                              void *destructor_context,
- *                              bool real_thread);
+ *                              SilcBool real_thread);
  *
  * DESCRIPTION
  *
@@ -503,12 +503,12 @@ SilcFSMThread silc_fsm_thread_alloc(SilcFSM fsm,
  *    silc_fsm_start(&thread, first_state);
  *
  ***/
-bool silc_fsm_thread_init(SilcFSMThread thread,
+SilcBool silc_fsm_thread_init(SilcFSMThread thread,
 			  SilcFSM fsm,
 			  void *thread_context,
 			  SilcFSMThreadDestructor destructor,
 			  void *destructor_context,
-			  bool real_thread);
+			  SilcBool real_thread);
 
 /****f* silcutil/SilcFSMAPI/silc_fsm_free
  *

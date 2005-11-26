@@ -145,7 +145,7 @@ SilcUInt32 silc_stack_pop(SilcStack stack)
    memory, otherwise memory is aligned.  Returns pointer to the memory
    or NULL on error. */
 
-void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, bool aligned)
+void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, SilcBool aligned)
 {
   void *ptr;
   SilcUInt32 bsize, bsize2;
@@ -231,7 +231,7 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, bool aligned)
    the old memory remains intact. */
 
 void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
-			 void *ptr, SilcUInt32 size, bool aligned)
+			 void *ptr, SilcUInt32 size, SilcBool aligned)
 {
   SilcUInt32 si = stack->frame->si;
   SilcUInt32 bsize;

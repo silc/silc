@@ -465,7 +465,7 @@ typedef void (*SilcAskPassphrase)(unsigned char *passphrase,
  *
  * SYNOPSIS
  *
- *    typedef void (*SilcVerifyPublicKey)(bool success, void *context);
+ *    typedef void (*SilcVerifyPublicKey)(SilcBool success, void *context);
  *
  * DESCRIPTION
  *
@@ -474,13 +474,13 @@ typedef void (*SilcAskPassphrase)(unsigned char *passphrase,
  *    either success or failure.
  *
  ***/
-typedef void (*SilcVerifyPublicKey)(bool success, void *context);
+typedef void (*SilcVerifyPublicKey)(SilcBool success, void *context);
 
 /****f* silcclient/SilcClientAPI/SilcGetAuthMeth
  *
  * SYNOPSIS
  *
- *    typedef void (*SilcGetAuthMeth)(bool success,
+ *    typedef void (*SilcGetAuthMeth)(SilcBool success,
  *                                    SilcProtocolAuthMeth auth_meth,
  *                                    const unsigned char *auth_data,
  *                                    SilcUInt32 auth_data_len, void *context);
@@ -497,7 +497,7 @@ typedef void (*SilcVerifyPublicKey)(bool success, void *context);
  *    context sent to the get_auth_method client operation.
  *
  ***/
-typedef void (*SilcGetAuthMeth)(bool success,
+typedef void (*SilcGetAuthMeth)(SilcBool success,
 				SilcProtocolAuthMeth auth_meth,
 				const unsigned char *auth_data,
 				SilcUInt32 auth_data_len, void *context);
@@ -618,7 +618,7 @@ typedef struct {
      after application has called the command. Just to tell application
      that the command really was processed. */
   void (*command)(SilcClient client, SilcClientConnection conn,
-		  SilcClientCommandContext cmd_context, bool success,
+		  SilcClientCommandContext cmd_context, SilcBool success,
 		  SilcCommand command, SilcStatus status);
 
   /* Command reply handler. This function is called always in the command reply
@@ -644,7 +644,7 @@ typedef struct {
      ID. For example, if Client ID is receives application receives
      SilcClientEntry. */
   void (*command_reply)(SilcClient client, SilcClientConnection conn,
-			SilcCommandPayload cmd_payload, bool success,
+			SilcCommandPayload cmd_payload, SilcBool success,
 			SilcCommand command, SilcStatus status, ...);
 
   /* Called to indicate that connection was either successfully established
@@ -708,7 +708,7 @@ typedef struct {
      desired (application may start it later by calling the function
      silc_client_perform_key_agreement). If TRUE is returned also the
      `completion' and `context' arguments must be set by the application. */
-  bool (*key_agreement)(SilcClient client, SilcClientConnection conn,
+  SilcBool (*key_agreement)(SilcClient client, SilcClientConnection conn,
 		        SilcClientEntry client_entry, const char *hostname,
 		        SilcUInt16 port, SilcKeyAgreementCallback *completion,
 		        void **context);
@@ -833,7 +833,7 @@ typedef struct {
      is employed only if the library will receive a nickname that is
      already saved in the cache. It is recommended to leave this to FALSE
      value. */
-  bool nickname_force_format;
+  SilcBool nickname_force_format;
 
   /* A callback function provided by the application for the library to
      parse the nickname from the formatted nickname string. Even though
@@ -851,12 +851,12 @@ typedef struct {
      If your application does not support Requested Attributes or you do
      not want to use them set this to TRUE.  See SilcAttribute and
      silc_client_attribute_add for more information on attributes. */
-  bool ignore_requested_attributes;
+  SilcBool ignore_requested_attributes;
 
   /* If this is set to TRUE, the silcclient library will not register and
      deregister the cipher, pkcs, hash and hmac algorithms. The application
      itself will need to handle that. */
-  bool dont_register_crypto_library;
+  SilcBool dont_register_crypto_library;
 
 } SilcClientParams;
 /***/
@@ -908,7 +908,7 @@ void silc_client_free(SilcClient client);
  *
  * SYNOPSIS
  *
- *    bool silc_client_init(SilcClient client);
+ *    SilcBool silc_client_init(SilcClient client);
  *
  * DESCRIPTION
  *
@@ -917,7 +917,7 @@ void silc_client_free(SilcClient client);
  *    client. Returns FALSE if error occurred, TRUE otherwise.
  *
  ***/
-bool silc_client_init(SilcClient client);
+SilcBool silc_client_init(SilcClient client);
 
 /****f* silcclient/SilcClientAPI/silc_client_run
  *
@@ -1165,14 +1165,14 @@ void silc_client_close_connection(SilcClient client,
  *
  * SYNOPSIS
  *
- *    bool silc_client_send_channel_message(SilcClient client,
+ *    SilcBool silc_client_send_channel_message(SilcClient client,
  *                                          SilcClientConnection conn,
  *                                          SilcChannelEntry channel,
  *                                          SilcChannelPrivateKey key,
  *                                          SilcMessageFlags flags,
  *                                          unsigned char *data,
  *                                          SilcUInt32 data_len,
- *                                          bool_force_send);
+ *                                          SilcBool force_send);
  *
  * DESCRIPTION
  *
@@ -1197,26 +1197,26 @@ void silc_client_close_connection(SilcClient client,
  *    blocked).
  *
  ***/
-bool silc_client_send_channel_message(SilcClient client,
+SilcBool silc_client_send_channel_message(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
 				      SilcChannelPrivateKey key,
 				      SilcMessageFlags flags,
 				      unsigned char *data,
 				      SilcUInt32 data_len,
-				      bool force_send);
+				      SilcBool force_send);
 
 /****f* silcclient/SilcClientAPI/silc_client_send_private_message
  *
  * SYNOPSIS
  *
- *    bool silc_client_send_private_message(SilcClient client,
+ *    SilcBool silc_client_send_private_message(SilcClient client,
  *                                          SilcClientConnection conn,
  *                                          SilcClientEntry client_entry,
  *                                          SilcMessageFlags flags,
  *                                          unsigned char *data,
  *                                          SilcUInt32 data_len,
- *                                          bool force_send);
+ *                                          SilcBool force_send);
  *
  * DESCRIPTION
  *
@@ -1234,13 +1234,13 @@ bool silc_client_send_channel_message(SilcClient client,
  *    Returns TRUE if the message was sent, and FALSE if error occurred.
  *
  ***/
-bool silc_client_send_private_message(SilcClient client,
+SilcBool silc_client_send_private_message(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry client_entry,
 				      SilcMessageFlags flags,
 				      unsigned char *data,
 				      SilcUInt32 data_len,
-				      bool force_send);
+				      SilcBool force_send);
 
 
 /* Client and Channel entry retrieval (idlist.c) */
@@ -1518,7 +1518,7 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
  *
  * SYNOPSIS
  *
- *    bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
+ *    SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
  *                                SilcClientEntry client_entry)
  *
  * DESCRIPTION
@@ -1527,7 +1527,7 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
  *    the `client_entry'.  Returns TRUE if the deletion were successful.
  *
  ***/
-bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
+SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
 			    SilcClientEntry client_entry);
 
 /****f* silcclient/SilcClientAPI/SilcGetChannelCallback
@@ -1651,7 +1651,7 @@ void silc_client_get_channel_by_id_resolve(SilcClient client,
  *
  * SYNOPSIS
  *
- *    bool silc_client_del_channel(SilcClient client,
+ *    SilcBool silc_client_del_channel(SilcClient client,
  *                                 SilcClientConnection conn,
  *                                 SilcChannelEntry channel)
  *
@@ -1661,7 +1661,7 @@ void silc_client_get_channel_by_id_resolve(SilcClient client,
  *    the `channel'.  Returns TRUE if the deletion were successful.
  *
  ***/
-bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
+SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
 			     SilcChannelEntry channel);
 
 /****f* silcclient/SilcClientAPI/silc_client_get_server
@@ -1704,7 +1704,7 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
  *
  * SYNOPSIS
  *
- *    bool silc_client_del_server(SilcClient client, SilcClientConnection conn,
+ *    SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
  *                                SilcServerEntry server);
  *
  * DESCRIPTION
@@ -1713,7 +1713,7 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
  *    the `server'.  Returns TRUE if the deletion were successful.
  *
  ***/
-bool silc_client_del_server(SilcClient client, SilcClientConnection conn,
+SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
 			    SilcServerEntry server);
 
 /****f* silcclient/SilcClientAPI/silc_client_on_channel
@@ -1739,7 +1739,7 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
  *
  * SYNOPSIS
  *
- *    bool silc_client_command_call(SilcClient client,
+ *    SilcBool silc_client_command_call(SilcClient client,
  *                                  SilcClientConnection conn,
  *                                  const char *command_line, ...);
  *
@@ -1781,7 +1781,7 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
  *    function instead.
  *
  ***/
-bool silc_client_command_call(SilcClient client,
+SilcBool silc_client_command_call(SilcClient client,
 			      SilcClientConnection conn,
 			      const char *command_line, ...);
 
@@ -1885,15 +1885,15 @@ void silc_client_command_pending(SilcClientConnection conn,
  *
  * SYNOPSIS
  *
- *    bool silc_client_add_private_message_key(SilcClient client,
+ *    SilcBool silc_client_add_private_message_key(SilcClient client,
  *                                             SilcClientConnection conn,
  *                                             SilcClientEntry client_entry,
  *                                             const char *cipher,
  *                                             const char *hmac,
  *                                             unsigned char *key,
  *                                             SilcUInt32 key_len,
- *                                             bool generate_key,
- *                                             bool responder);
+ *                                             SilcBool generate_key,
+ *                                             SilcBool responder);
  *
  * DESCRIPTION
  *
@@ -1919,21 +1919,21 @@ void silc_client_command_pending(SilcClientConnection conn,
  *    otherwise.
  *
  ***/
-bool silc_client_add_private_message_key(SilcClient client,
+SilcBool silc_client_add_private_message_key(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcClientEntry client_entry,
 					 const char *cipher,
 					 const char *hmac,
 					 unsigned char *key,
 					 SilcUInt32 key_len,
-					 bool generate_key,
-					 bool responder);
+					 SilcBool generate_key,
+					 SilcBool responder);
 
 /****f* silcclient/SilcClientAPI/silc_client_add_private_message_key_ske
  *
  * SYNOPSIS
  *
- *    bool
+ *    SilcBool
  *    silc_client_add_private_message_key_ske(SilcClient client,
  *                                            SilcClientConnection conn,
  *                                            SilcClientEntry client_entry,
@@ -1950,19 +1950,19 @@ bool silc_client_add_private_message_key(SilcClient client,
  *    negotiated also in the SKE protocol.
  *
  ***/
-bool silc_client_add_private_message_key_ske(SilcClient client,
+SilcBool silc_client_add_private_message_key_ske(SilcClient client,
 					     SilcClientConnection conn,
 					     SilcClientEntry client_entry,
 					     const char *cipher,
 					     const char *hmac,
 					     SilcSKEKeyMaterial *key,
-					     bool responder);
+					     SilcBool responder);
 
 /****f* silcclient/SilcClientAPI/silc_client_del_private_message_key
  *
  * SYNOPSIS
  *
- *    bool silc_client_del_private_message_key(SilcClient client,
+ *    SilcBool silc_client_del_private_message_key(SilcClient client,
  *                                             SilcClientConnection conn,
  *                                             SilcClientEntry client_entry);
  *
@@ -1973,7 +1973,7 @@ bool silc_client_add_private_message_key_ske(SilcClient client,
  *    client. Returns FALSE on error, TRUE otherwise.
  *
  ***/
-bool silc_client_del_private_message_key(SilcClient client,
+SilcBool silc_client_del_private_message_key(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcClientEntry client_entry);
 
@@ -2006,7 +2006,7 @@ silc_client_list_private_message_keys(SilcClient client,
  *
  * SYNOPSIS
  *
- *    bool
+ *    SilcBool
  *    silc_client_send_private_message_key_request(SilcClient client,
  *                                               SilcClientConnection conn,
  *                                               SilcClientEntry client_entry);
@@ -2060,7 +2060,7 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
  *
  * SYNOPSIS
  *
- *    bool silc_client_add_channel_private_key(SilcClient client,
+ *    SilcBool silc_client_add_channel_private_key(SilcClient client,
  *                                             SilcClientConnection conn,
  *                                             SilcChannelEntry channel,
  *                                             const char *name,
@@ -2105,7 +2105,7 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
  *    as channel private key. However, this API allows it.
  *
  ***/
-bool silc_client_add_channel_private_key(SilcClient client,
+SilcBool silc_client_add_channel_private_key(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcChannelEntry channel,
 					 const char *name,
@@ -2119,7 +2119,7 @@ bool silc_client_add_channel_private_key(SilcClient client,
  *
  * SYNOPSIS
  *
- *    bool silc_client_del_channel_private_keys(SilcClient client,
+ *    SilcBool silc_client_del_channel_private_keys(SilcClient client,
  *                                              SilcClientConnection conn,
  *                                              SilcChannelEntry channel);
  *
@@ -2130,7 +2130,7 @@ bool silc_client_add_channel_private_key(SilcClient client,
  *    on error, TRUE otherwise.
  *
  ***/
-bool silc_client_del_channel_private_keys(SilcClient client,
+SilcBool silc_client_del_channel_private_keys(SilcClient client,
 					  SilcClientConnection conn,
 					  SilcChannelEntry channel);
 
@@ -2138,7 +2138,7 @@ bool silc_client_del_channel_private_keys(SilcClient client,
  *
  * SYNOPSIS
  *
- *    bool silc_client_del_channel_private_key(SilcClient client,
+ *    SilcBool silc_client_del_channel_private_key(SilcClient client,
  *                                            SilcClientConnection conn,
  *                                            SilcChannelEntry channel,
  *                                            SilcChannelPrivateKey key);
@@ -2153,7 +2153,7 @@ bool silc_client_del_channel_private_keys(SilcClient client,
  *    on error, TRUE otherwise.
  *
  ***/
-bool silc_client_del_channel_private_key(SilcClient client,
+SilcBool silc_client_del_channel_private_key(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcChannelEntry channel,
 					 SilcChannelPrivateKey key);
@@ -2608,7 +2608,7 @@ typedef void (*SilcClientFileAskName)(SilcClient client,
  *                          void *monitor_context,
  *                          const char *local_ip,
  *                          SilcUInt32 local_port,
- *                          bool do_not_bind,
+ *                          SilcBool do_not_bind,
  *                          SilcClientEntry client_entry,
  *                          const char *filepath);
  *                          SilcUInt32 *session_id);
@@ -2647,7 +2647,7 @@ silc_client_file_send(SilcClient client,
 		      void *monitor_context,
 		      const char *local_ip,
 		      SilcUInt32 local_port,
-		      bool do_not_bind,
+		      SilcBool do_not_bind,
 		      SilcClientEntry client_entry,
 		      const char *filepath,
 		      SilcUInt32 *session_id);
@@ -2760,7 +2760,7 @@ SilcAttributePayload silc_client_attribute_add(SilcClient client,
  *
  * SYNOPSIS
  *
- *    bool silc_client_attribute_del(SilcClient client,
+ *    SilcBool silc_client_attribute_del(SilcClient client,
  *                                   SilcClientConnection conn,
  *                                   SilcAttribute attribute,
  *                                   SilcAttributePayload attr);
@@ -2777,7 +2777,7 @@ SilcAttributePayload silc_client_attribute_add(SilcClient client,
  *    This function Returns TRUE if the attribute was found and deleted.
  *
  ***/
-bool silc_client_attribute_del(SilcClient client,
+SilcBool silc_client_attribute_del(SilcClient client,
 			       SilcClientConnection conn,
 			       SilcAttribute attribute,
 			       SilcAttributePayload attr);
@@ -2838,7 +2838,7 @@ SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...);
  *
  * SYNOPSIS
  *
- *     bool silc_client_send_packet(SilcClient client,
+ *     SilcBool silc_client_send_packet(SilcClient client,
  *                                  SilcClientConnection conn,
  *                                  SilcPacketType type,
  *                                  const unsigned char *data,
@@ -2854,7 +2854,7 @@ SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...);
  *    be sent.
  *
  ***/
-bool silc_client_send_packet(SilcClient client,
+SilcBool silc_client_send_packet(SilcClient client,
 			     SilcClientConnection conn,
 			     SilcPacketType type,
 			     const unsigned char *data,

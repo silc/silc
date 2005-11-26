@@ -114,7 +114,7 @@ SilcUInt32 silc_utf8_decoded_len(const unsigned char *bin, SilcUInt32 bin_len,
  *
  * SYNOPSIS
  *
- *    bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len);
+ *    SilcBool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len);
  *
  * DESCRIPTION
  *
@@ -122,13 +122,13 @@ SilcUInt32 silc_utf8_decoded_len(const unsigned char *bin, SilcUInt32 bin_len,
  *    UTF-8 encoded string, FALSE if it is not UTF-8 encoded string.
  *
  ***/
-bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len);
+SilcBool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len);
 
 /****f* silcutil/SilcStrUtilAPI/silc_utf8_strcasecmp
  *
  * SYNOPSIS
  *
- *    bool silc_utf8_strcasecmp(const char *s1, const char *s2);
+ *    SilcBool silc_utf8_strcasecmp(const char *s1, const char *s2);
  *
  * DESCRIPTION
  *
@@ -141,13 +141,13 @@ bool silc_utf8_valid(const unsigned char *utf8, SilcUInt32 utf8_len);
  *    Unicode characters will be ignored when comparing.
  *
  ***/
-bool silc_utf8_strcasecmp(const char *s1, const char *s2);
+SilcBool silc_utf8_strcasecmp(const char *s1, const char *s2);
 
 /****f* silcutil/SilcStrUtilAPI/silc_utf8_strncasecmp
  *
  * SYNOPSIS
  *
- *    bool silc_utf8_strcasecmp(const char *s1, const char *s2,
+ *    SilcBool silc_utf8_strcasecmp(const char *s1, const char *s2,
  *                              SilcUInt32 n);
  *
  * DESCRIPTION
@@ -161,6 +161,6 @@ bool silc_utf8_strcasecmp(const char *s1, const char *s2);
  *    Unicode characters will be ignored when comparing.
  *
  ***/
-bool silc_utf8_strncasecmp(const char *s1, const char *s2, SilcUInt32 n);
+SilcBool silc_utf8_strncasecmp(const char *s1, const char *s2, SilcUInt32 n);
 
 #endif /* SILCUTF8_H */

@@ -50,7 +50,7 @@ utf8fail(30, "\xf0\x20\xf9\x20\xfa\x20\xfb\x20", 8);
 
 int main(int argc, char **argv)
 {
-  bool success = FALSE;
+  SilcBool success = FALSE;
   unsigned char *s1, *s2, *s3, *s4;
   int l, opt;
 

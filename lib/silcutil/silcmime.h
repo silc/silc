@@ -290,14 +290,14 @@ const unsigned char *silc_mime_get_data(SilcMime mime, SilcUInt32 *data_len);
  *
  * SYNOPSIS
  *
- *    bool silc_mime_is_partial(SilcMime mime);
+ *    SilcBool silc_mime_is_partial(SilcMime mime);
  *
  * DESCRIPTION
  *
  *    Returns TRUE if the MIME message `mime' is a partial MIME fragment.
  *
  ***/
-bool silc_mime_is_partial(SilcMime mime);
+SilcBool silc_mime_is_partial(SilcMime mime);
 
 /****f* silcutil/SILCMIMEAPI/silc_mime_set_multipart
  *
@@ -320,7 +320,7 @@ void silc_mime_set_multipart(SilcMime mime, const char *type,
  *
  * SYNOPSIS
  *
- *    bool silc_mime_add_multipart(SilcMime mime, SilcMime part);
+ *    SilcBool silc_mime_add_multipart(SilcMime mime, SilcMime part);
  *
  * DESCRIPTION
  *
@@ -344,13 +344,13 @@ void silc_mime_set_multipart(SilcMime mime, const char *type,
  *    silc_mime_add_multipart(mime, part);
  *
  ***/
-bool silc_mime_add_multipart(SilcMime mime, SilcMime part);
+SilcBool silc_mime_add_multipart(SilcMime mime, SilcMime part);
 
 /****f* silcutil/SILCMIMEAPI/silc_mime_is_multipart
  *
  * SYNOPSIS
  *
- *    bool silc_mime_is_multipart(SilcMime mime);
+ *    SilcBool silc_mime_is_multipart(SilcMime mime);
  *
  * DESCRIPTION
  *
@@ -358,7 +358,7 @@ bool silc_mime_add_multipart(SilcMime mime, SilcMime part);
  *    Its parts can be get by calling silc_mime_get_multiparts.
  *
  ***/
-bool silc_mime_is_multipart(SilcMime mime);
+SilcBool silc_mime_is_multipart(SilcMime mime);
 
 /****f* silcutil/SILCMIMEAPI/silc_mime_get_multiparts
  *

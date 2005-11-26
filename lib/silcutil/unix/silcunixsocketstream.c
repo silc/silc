@@ -177,7 +177,7 @@ int silc_socket_stream_write(SilcStream stream, const unsigned char *data,
 #if 0
 /* Returns human readable socket error message */
 
-bool silc_socket_get_error(SilcStream sock, char *error,
+SilcBool silc_socket_get_error(SilcStream sock, char *error,
 			   SilcUInt32 error_len)
 {
   char *err;

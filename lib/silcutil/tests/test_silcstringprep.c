@@ -70,7 +70,7 @@ const test_st tests_norm[] = {
 
 int main(int argc, char **argv)
 {
-  bool success = FALSE;
+  SilcBool success = FALSE;
   int i, enc;
   unsigned char *out = NULL;
   SilcUInt32 out_len;

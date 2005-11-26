@@ -246,7 +246,7 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context);
  *
  * SYNOPSIS
  *
- *    bool silc_schedule_uninit(SilcSchedule schedule);
+ *    SilcBool silc_schedule_uninit(SilcSchedule schedule);
  *
  * DESCRIPTION
  *
@@ -256,7 +256,7 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context);
  *    is still valid and silc_schedule_stop has not been called.
  *
  ***/
-bool silc_schedule_uninit(SilcSchedule schedule);
+SilcBool silc_schedule_uninit(SilcSchedule schedule);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_stop
  *
@@ -295,7 +295,7 @@ void silc_schedule(SilcSchedule schedule);
  *
  * SYNOPSIS
  *
- *    bool silc_schedule_one(SilcSchedule schedule, int block);
+ *    SilcBool silc_schedule_one(SilcSchedule schedule, int block);
  *
  * DESCRIPTION
  *
@@ -307,7 +307,7 @@ void silc_schedule(SilcSchedule schedule);
  *    some other event occurs.
  *
  ***/
-bool silc_schedule_one(SilcSchedule schedule, int timeout_usecs);
+SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_wakeup
  *
@@ -528,7 +528,7 @@ void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
  * SYNOPSIS
  *
  *    void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
- *                                     SilcTaskEvent mask, bool send_events);
+ *                                     SilcTaskEvent mask, SilcBool send_events);
  *
  * DESCRIPTION
  *
@@ -548,7 +548,7 @@ void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
  *
  ***/
 void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
-				 SilcTaskEvent mask, bool send_events);
+				 SilcTaskEvent mask, SilcBool send_events);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_unset_listen_fd
  *

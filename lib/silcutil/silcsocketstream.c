@@ -28,7 +28,7 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
 			    SilcUInt32 buf_len);
 int silc_socket_stream_write(SilcStream stream, const unsigned char *data,
 			     SilcUInt32 data_len);
-bool silc_socket_stream_close(SilcStream stream);
+SilcBool silc_socket_stream_close(SilcStream stream);
 void silc_socket_stream_destroy(SilcStream stream);
 
 /* Internal async host lookup context. */
@@ -166,7 +166,7 @@ static void silc_socket_host_lookup_abort(SilcAsyncOperation op,
 /* Creates socket stream */
 
 SilcAsyncOperation
-silc_socket_stream_create(int sock, bool lookup, bool require_fqdn,
+silc_socket_stream_create(int sock, SilcBool lookup, SilcBool require_fqdn,
 			  SilcSchedule schedule,
 			  SilcSocketStreamCallback callback,
 			  void *context)
@@ -227,7 +227,7 @@ silc_socket_stream_create(int sock, bool lookup, bool require_fqdn,
 
 /* Returns socket stream information */
 
-bool silc_socket_stream_get_info(SilcStream stream,
+SilcBool silc_socket_stream_get_info(SilcStream stream,
 				 int *sock, const char **hostname,
 				 const char **ip, SilcUInt16 *port)
 {
@@ -250,7 +250,7 @@ bool silc_socket_stream_get_info(SilcStream stream,
 
 /* Set socket information */
 
-bool silc_socket_stream_set_info(SilcStream stream,
+SilcBool silc_socket_stream_set_info(SilcStream stream,
 				 const char *hostname,
 				 const char *ip, SilcUInt16 port)
 {
@@ -291,7 +291,7 @@ int silc_socket_stream_get_error(SilcStream stream)
 
 /* Set QoS for socket stream */
 
-bool silc_socket_stream_set_qos(SilcStream stream,
+SilcBool silc_socket_stream_set_qos(SilcStream stream,
 				SilcUInt32 read_rate,
 				SilcUInt32 read_limit_bytes,
 				SilcUInt32 limit_sec,
@@ -337,7 +337,7 @@ bool silc_socket_stream_set_qos(SilcStream stream,
 
 /* Closes socket */
 
-bool silc_socket_stream_close(SilcStream stream)
+SilcBool silc_socket_stream_close(SilcStream stream)
 {
   SilcSocketStream socket_stream = stream;
 

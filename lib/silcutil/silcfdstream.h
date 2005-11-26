@@ -68,7 +68,7 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd,
  *
  * SYNOPSIS
  *
- *    bool
+ *    SilcBool
  *    silc_fd_stream_get_info(SilcStream stream, int *read_fd, int *write_fd);
  *
  * DESCRIPTION
@@ -78,7 +78,7 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd,
  *    function.
  *
  ***/
-bool silc_fd_stream_get_info(SilcStream stream, int *read_fd, int *write_fd);
+SilcBool silc_fd_stream_get_info(SilcStream stream, int *read_fd, int *write_fd);
 
 /****f* silcutil/SilcFDStreamAPI/silc_fd_stream_get_error
  *

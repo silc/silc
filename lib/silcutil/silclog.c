@@ -216,7 +216,7 @@ void silc_log_output(SilcLogType type, char *string)
 
 /* Set and initialize the specified log file. */
 
-bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
+SilcBool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
 		       SilcSchedule scheduler)
 {
   FILE *fp = NULL;
@@ -406,7 +406,7 @@ void silc_log_set_debug_string(const char *debug_string)
 
 /* Set timestamp */
 
-void silc_log_timestamp(bool enable)
+void silc_log_timestamp(SilcBool enable)
 {
   silclog.timestamp = enable;
 }
@@ -420,21 +420,21 @@ void silc_log_flushdelay(SilcUInt32 flushdelay)
 
 /* Set quick logging */
 
-void silc_log_quick(bool enable)
+void silc_log_quick(SilcBool enable)
 {
   silclog.quick = enable;
 }
 
 /* Set debugging */
 
-void silc_log_debug(bool enable)
+void silc_log_debug(SilcBool enable)
 {
   silclog.debug = enable;
 }
 
 /* Set debug hexdump */
 
-void silc_log_debug_hexdump(bool enable)
+void silc_log_debug_hexdump(SilcBool enable)
 {
   silclog.debug_hexdump = enable;
 }

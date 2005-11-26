@@ -66,9 +66,9 @@ struct SilcFSMObject {
 /* Used internally by the SILC_FSM_CALL macros to detect whether async
    call is really async or not. */
 static inline
-bool silc_fsm_set_call(struct SilcFSMObject *fsm, bool async_call)
+SilcBool silc_fsm_set_call(struct SilcFSMObject *fsm, SilcBool async_call)
 {
-  bool old = fsm->async_call;
+  SilcBool old = fsm->async_call;
   fsm->async_call = async_call;
   return old;
 }
@@ -78,7 +78,7 @@ void silc_fsm_continue(void *fsm);
 void silc_fsm_continue_sync(void *fsm);
 
 /* Wait for thread to terminate */
-bool silc_fsm_thread_wait(void *fsm, void *thread);
+SilcBool silc_fsm_thread_wait(void *fsm, void *thread);
 
 /* Semaphores */
 SilcUInt32 silc_fsm_sema_wait(SilcFSMSema sema, void *fsm);

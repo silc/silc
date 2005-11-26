@@ -39,7 +39,7 @@
  *
  * SYNOPSIS
  *
- *    bool silc_create_key_pair(const char *pkcs_name,
+ *    SilcBool silc_create_key_pair(const char *pkcs_name,
  *                              SilcUInt32 key_len_bits,
  *                              const char *pub_filename,
  *                              const char *prv_filename,
@@ -48,7 +48,7 @@
  *                              SilcPKCS *return_pkcs,
  *                              SilcPublicKey *return_public_key,
  *                              SilcPrivateKey *return_private_key,
- *                              bool interactive);
+ *                              SilcBool interactive);
  *
  * DESCRIPTION
  *
@@ -84,7 +84,7 @@
  *    silc_pkcs_register_default function.
  *
  ***/
-bool silc_create_key_pair(const char *pkcs_name,
+SilcBool silc_create_key_pair(const char *pkcs_name,
 			  SilcUInt32 key_len_bits,
 			  const char *pub_filename,
 			  const char *prv_filename,
@@ -93,13 +93,13 @@ bool silc_create_key_pair(const char *pkcs_name,
 			  SilcPKCS *return_pkcs,
 			  SilcPublicKey *return_public_key,
 			  SilcPrivateKey *return_private_key,
-			  bool interactive);
+			  SilcBool interactive);
 
 /****f* silcutil/SilcAppUtil/silc_load_key_pair
  *
  * SYNOPSIS
  *
- *    bool silc_load_key_pair(const char *pub_filename,
+ *    SilcBool silc_load_key_pair(const char *pub_filename,
  *                            const char *prv_filename,
  *                            const char *passphrase,
  *                            SilcPKCS *return_pkcs,
@@ -118,7 +118,7 @@ bool silc_create_key_pair(const char *pkcs_name,
  *    which will be used to decrypt the private key file.
  *
  ***/
-bool silc_load_key_pair(const char *pub_filename,
+SilcBool silc_load_key_pair(const char *pub_filename,
 			const char *prv_filename,
 			const char *passphrase,
 			SilcPKCS *return_pkcs,
@@ -129,7 +129,7 @@ bool silc_load_key_pair(const char *pub_filename,
  *
  * SYNOPSIS
  *
- *    bool silc_show_public_key(const char *pub_filename);
+ *    SilcBool silc_show_public_key(const char *pub_filename);
  *
  * DESCRIPTION
  *
@@ -138,13 +138,13 @@ bool silc_load_key_pair(const char *pub_filename,
  *    into human readable form into stdout.  Returns FALSE on error.
  *
  ***/
-bool silc_show_public_key(const char *pub_filename);
+SilcBool silc_show_public_key(const char *pub_filename);
 
 /****f* silcutil/SilcAppUtil/silc_change_private_key_passphrase
  *
  * SYNOPSIS
  *
- *    bool silc_change_private_key_passphrase(const char *prv_filename,
+ *    SilcBool silc_change_private_key_passphrase(const char *prv_filename,
  *                                            const char *old_passphrase,
  *                                            const char *new_passphrase);
  *
@@ -156,7 +156,7 @@ bool silc_show_public_key(const char *pub_filename);
  *    prompt for them.
  *
  ***/
-bool silc_change_private_key_passphrase(const char *prv_filename,
+SilcBool silc_change_private_key_passphrase(const char *prv_filename,
 					const char *old_passphrase,
 					const char *new_passphrase);
 

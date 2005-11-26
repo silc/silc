@@ -134,7 +134,7 @@ typedef struct {
 
   /* This is called to close the stream.  This is called when the
      silc_stream_close function was called. */
-  bool (*close)(SilcStream stream);
+  SilcBool (*close)(SilcStream stream);
 
   /* This is called to destroy the stream.  This is called when the
      silc_stream_destroy function was called. */
@@ -191,7 +191,7 @@ int silc_stream_write(SilcStream stream, const unsigned char *data,
  *
  * SYNOPSIS
  *
- *    bool silc_stream_close(SilcStream stream);
+ *    SilcBool silc_stream_close(SilcStream stream);
  *
  * DESCRIPTION
  *
@@ -201,7 +201,7 @@ int silc_stream_write(SilcStream stream, const unsigned char *data,
  *    callback will be called with an error status.
  *
  ***/
-bool silc_stream_close(SilcStream stream);
+SilcBool silc_stream_close(SilcStream stream);
 
 /****f* silcutil/SilcStreamAPI/silc_stream_destroy
  *

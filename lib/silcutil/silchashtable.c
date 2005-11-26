@@ -216,7 +216,7 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
 				  void *foreach_user_context)
 {
   SilcHashTableEntry e, tmp;
-  bool auto_rehash, found = FALSE;
+  SilcBool auto_rehash, found = FALSE;
   SilcUInt32 i = SILC_HASH_TABLE_HASH(hash, hash_user_context);
 
   SILC_HT_DEBUG(("index %d key %p", i, key));
@@ -256,7 +256,7 @@ silc_hash_table_find_internal_all(SilcHashTable ht, void *key,
 
 /* Internal routine to add new key to the hash table */
 
-static inline bool
+static inline SilcBool
 silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
 			     SilcHashFunction hash,
 			     void *hash_user_context)
@@ -306,7 +306,7 @@ silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
 
 /* Internal routine to replace old key with new one (if it exists) */
 
-static inline bool
+static inline SilcBool
 silc_hash_table_replace_internal(SilcHashTable ht, void *key, void *context,
 				 SilcHashFunction hash,
 				 void *hash_user_context)
@@ -355,7 +355,7 @@ SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size,
 				    void *compare_user_context,
 				    SilcHashDestructor destructor,
 				    void *destructor_user_context,
-				    bool auto_rehash)
+				    SilcBool auto_rehash)
 {
   SilcHashTable ht;
   SilcUInt32 size_index = SILC_HASH_TABLE_SIZE;
@@ -468,7 +468,7 @@ void silc_hash_table_replace_ext(SilcHashTable ht, void *key, void *context,
    call the destructor funtion for the found entry. Return TRUE if the
    entry was removed successfully and FALSE otherwise. */
 
-bool silc_hash_table_del(SilcHashTable ht, void *key)
+SilcBool silc_hash_table_del(SilcHashTable ht, void *key)
 {
   SilcHashTableEntry *entry, prev, e;
 
@@ -503,7 +503,7 @@ bool silc_hash_table_del(SilcHashTable ht, void *key)
 
 /* Same as above but with specific hash and compare functions. */
 
-bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_del_ext(SilcHashTable ht, void *key,
 			     SilcHashFunction hash,
 			     void *hash_user_context,
 			     SilcHashCompare compare,
@@ -556,7 +556,7 @@ bool silc_hash_table_del_ext(SilcHashTable ht, void *key,
    have duplicate keys. In that case the `context' may be used to check
    whether the correct entry is being deleted. */
 
-bool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
 				    void *context)
 {
   SilcHashTableEntry *entry, prev, e;
@@ -594,7 +594,7 @@ bool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
 
 /* Same as above but with specific hash and compare functions. */
 
-bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
 					void *context,
 					SilcHashFunction hash,
 					void *hash_user_context,
@@ -651,7 +651,7 @@ bool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
    respectively. If the `ret_key and `ret_context' are NULL then this
    maybe used only to check whether given key exists in the table. */
 
-bool silc_hash_table_find(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_find(SilcHashTable ht, void *key,
 			  void **ret_key, void **ret_context)
 {
   return silc_hash_table_find_ext(ht, key, ret_key, ret_context,
@@ -660,7 +660,7 @@ bool silc_hash_table_find(SilcHashTable ht, void *key,
 
 /* Same as above but with specified hash and comparison functions. */
 
-bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_find_ext(SilcHashTable ht, void *key,
 			      void **ret_key, void **ret_context,
 			      SilcHashFunction hash,
 			      void *hash_user_context,
@@ -692,7 +692,7 @@ bool silc_hash_table_find_ext(SilcHashTable ht, void *key,
 
 /* Same as silc_hash_table_find but finds with specific context. */
 
-bool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
 				     void *context, void **ret_key)
 {
   return silc_hash_table_find_by_context_ext(ht, key, context, ret_key,
@@ -701,7 +701,7 @@ bool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
 
 /* Same as above but with specified hash and comparison functions. */
 
-bool silc_hash_table_find_by_context_ext(SilcHashTable ht, void *key,
+SilcBool silc_hash_table_find_by_context_ext(SilcHashTable ht, void *key,
 					 void *context, void **ret_key,
 					 SilcHashFunction hash,
 					 void *hash_user_context,
@@ -773,7 +773,7 @@ void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
 {
   SilcHashTableEntry e, tmp;
   int i;
-  bool auto_rehash;
+  SilcBool auto_rehash;
 
   if (!foreach)
     return;
@@ -802,7 +802,7 @@ void silc_hash_table_rehash(SilcHashTable ht, SilcUInt32 new_size)
   int i;
   SilcHashTableEntry *table, e, tmp;
   SilcUInt32 table_size, size_index;
-  bool auto_rehash;
+  SilcBool auto_rehash;
 
   SILC_HT_DEBUG(("Start"));
 
@@ -857,7 +857,7 @@ void silc_hash_table_rehash_ext(SilcHashTable ht, SilcUInt32 new_size,
   int i;
   SilcHashTableEntry *table, e, tmp;
   SilcUInt32 table_size, size_index;
-  bool auto_rehash;
+  SilcBool auto_rehash;
 
   SILC_HT_DEBUG(("Start"));
 
@@ -931,7 +931,7 @@ void silc_hash_table_list_reset(SilcHashTableList *htl)
    `context' and TRUE.  If this returns FALSE then there are no anymore
    any entrys. Usage: while (silc_hash_table_get(&htl, &key, &context)) */
 
-bool silc_hash_table_get(SilcHashTableList *htl, void **key, void **context)
+SilcBool silc_hash_table_get(SilcHashTableList *htl, void **key, void **context)
 {
   SilcHashTableEntry entry = (SilcHashTableEntry)htl->entry;
 

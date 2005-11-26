@@ -49,7 +49,7 @@ SilcFSM silc_fsm_alloc(void *fsm_context,
 
 /* Initialize FSM */
 
-bool silc_fsm_init(SilcFSM fsm,
+SilcBool silc_fsm_init(SilcFSM fsm,
 		   void *fsm_context,
                    SilcFSMDestructor destructor,
                    void *destructor_context,
@@ -76,7 +76,7 @@ SilcFSMThread silc_fsm_thread_alloc(SilcFSM fsm,
 				    void *thread_context,
 				    SilcFSMThreadDestructor destructor,
 				    void *destructor_context,
-				    bool real_thread)
+				    SilcBool real_thread)
 {
   SilcFSMThread thread;
 
@@ -95,12 +95,12 @@ SilcFSMThread silc_fsm_thread_alloc(SilcFSM fsm,
 
 /* Initialize FSM thread.  Internally machine and thread use same context. */
 
-bool silc_fsm_thread_init(SilcFSMThread thread,
+SilcBool silc_fsm_thread_init(SilcFSMThread thread,
 			  SilcFSM fsm,
 			  void *thread_context,
 			  SilcFSMThreadDestructor destructor,
 			  void *destructor_context,
-			  bool real_thread)
+			  SilcBool real_thread)
 {
   SILC_LOG_DEBUG(("Initializing new thread %p (%s)",
 		  thread, real_thread ? "real" : "FSM"));
@@ -321,7 +321,7 @@ void silc_fsm_set_context(void *fsm, void *fsm_context)
 
 /* Wait for thread to terminate */
 
-bool silc_fsm_thread_wait(void *fsm, void *thread)
+SilcBool silc_fsm_thread_wait(void *fsm, void *thread)
 {
   SilcFSM t = thread;
 #if defined(SILC_DEBUG)

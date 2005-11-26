@@ -44,7 +44,7 @@ int silc_net_get_socket_opt(int sock, int level, int option,
 
 /* Checks whether IP address sent as argument is valid IPv4 address. */
 
-bool silc_net_is_ip4(const char *addr)
+SilcBool silc_net_is_ip4(const char *addr)
 {
   int count = 0;
 
@@ -64,7 +64,7 @@ bool silc_net_is_ip4(const char *addr)
 
 /* Checks whether IP address sent as argument is valid IPv6 address. */
 
-bool silc_net_is_ip6(const char *addr)
+SilcBool silc_net_is_ip6(const char *addr)
 {
   /* XXX does this work with all kinds of IPv6 addresses? */
   while (*addr) {
@@ -78,7 +78,7 @@ bool silc_net_is_ip6(const char *addr)
 
 /* Checks whether IP address sent as argument is valid IP address. */
 
-bool silc_net_is_ip(const char *addr)
+SilcBool silc_net_is_ip(const char *addr)
 {
   if (silc_net_is_ip4(addr))
     return TRUE;
@@ -89,7 +89,7 @@ bool silc_net_is_ip(const char *addr)
 typedef struct {
   SilcNetResolveCallback completion;
   void *context;
-  bool prefer_ipv6;
+  SilcBool prefer_ipv6;
   SilcSchedule schedule;
   char *input;
   char *result;
@@ -144,7 +144,7 @@ static void *silc_net_gethostbyaddr_thread(void *context)
 
 /* Resolves IP address for hostname. */
 
-bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address,
+SilcBool silc_net_gethostbyname(const char *name, SilcBool prefer_ipv6, char *address,
 			    SilcUInt32 address_len)
 {
 #ifdef HAVE_IPV6
@@ -208,7 +208,7 @@ bool silc_net_gethostbyname(const char *name, bool prefer_ipv6, char *address,
 /* Resolves IP address for hostname async. */
 
 void silc_net_gethostbyname_async(const char *name,
-				  bool prefer_ipv6,
+				  SilcBool prefer_ipv6,
 				  SilcSchedule schedule,
 				  SilcNetResolveCallback completion,
 				  void *context)
@@ -226,7 +226,7 @@ void silc_net_gethostbyname_async(const char *name,
 
 /* Resolves hostname by IP address. */
 
-bool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len)
+SilcBool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len)
 {
 #ifdef HAVE_IPV6
   struct addrinfo req, *ai;
@@ -281,7 +281,7 @@ void silc_net_gethostbyaddr_async(const char *addr,
 /* Performs lookups for remote name and IP address. This peforms reverse
    lookup as well to verify that the IP has FQDN. */
 
-bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
+SilcBool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
 {
   char host[1024];
   int rval, len;
@@ -359,7 +359,7 @@ bool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
 /* Performs lookups for local name and IP address. This peforms reverse
    lookup as well to verify that the IP has FQDN. */
 
-bool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
+SilcBool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
 {
   char host[1024];
   int rval, len;

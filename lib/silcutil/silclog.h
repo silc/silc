@@ -55,7 +55,7 @@ typedef enum {
  *
  * SYNOPSIS
  *
- *    typedef bool (*SilcLogCb)(SilcLogType type, char *message,
+ *    typedef SilcBool (*SilcLogCb)(SilcLogType type, char *message,
  *                              void *context);
  *
  * DESCRIPTION
@@ -72,13 +72,13 @@ typedef enum {
  *    silc_log_set_callback
  *
  ***/
-typedef bool (*SilcLogCb)(SilcLogType type, char *message, void *context);
+typedef SilcBool (*SilcLogCb)(SilcLogType type, char *message, void *context);
 
 /****f* silcutil/SilcLogAPI/SilcLogDebugCb
  *
  * SYNOPSIS
  *
- *    typedef bool (*SilcLogDebugCb)(char *file, char *function, int line,
+ *    typedef SilcBool (*SilcLogDebugCb)(char *file, char *function, int line,
  *                                   char *message, void *context);
  *
  * DESCRIPTION
@@ -97,14 +97,14 @@ typedef bool (*SilcLogCb)(SilcLogType type, char *message, void *context);
  *    silc_debug, silc_log_set_debug_callbacks
  *
  ***/
-typedef bool (*SilcLogDebugCb)(char *file, char *function, int line,
+typedef SilcBool (*SilcLogDebugCb)(char *file, char *function, int line,
 			       char *message, void *context);
 
 /****f* silcutil/SilcLogAPI/SilcLogHexdumpCb
  *
  * SYNOPSIS
  *
- *    typedef bool (*SilcDebugHexdumpCb)(char *file, char *function, int line,
+ *    typedef SilcBool (*SilcDebugHexdumpCb)(char *file, char *function, int line,
  *                                       unsigned char *data,
  *                                       SilcUInt32 data_len,
  *                                       char *message, void *context;
@@ -127,7 +127,7 @@ typedef bool (*SilcLogDebugCb)(char *file, char *function, int line,
  *    silc_debug_hexdump, silc_log_set_debug_callbacks
  *
  ***/
-typedef bool (*SilcLogHexdumpCb)(char *file, char *function, int line,
+typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
 				 unsigned char *data, SilcUInt32 data_len,
 				 char *message, void *context);
 
@@ -291,7 +291,7 @@ typedef bool (*SilcLogHexdumpCb)(char *file, char *function, int line,
  *
  * SYNOPSIS
  *
- *    bool silc_log_set_file(SilcLogType type, char *filename,
+ *    SilcBool silc_log_set_file(SilcLogType type, char *filename,
  *                           SilcUInt32 maxsize,
  *                           SilcSchedule scheduler);
  *
@@ -308,7 +308,7 @@ typedef bool (*SilcLogHexdumpCb)(char *file, char *function, int line,
  *    save HD activity.
  *
  ***/
-bool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
+SilcBool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
 		       SilcSchedule scheduler);
 
 /****f* silcutil/SilcLogAPI/silc_log_get_file
@@ -465,7 +465,7 @@ void silc_log_set_debug_string(const char *debug_string);
  *
  * NAME
  *
- *    void silc_log_timestamp(bool enable);
+ *    void silc_log_timestamp(SilcBool enable);
  *
  * DESCRIPTION
  *
@@ -473,7 +473,7 @@ void silc_log_set_debug_string(const char *debug_string);
  *    timestamp and to FALSE to disable it.  Default is TRUE.
  *
  ***/
-void silc_log_timestamp(bool enable);
+void silc_log_timestamp(SilcBool enable);
 
 /****f* silcutil/SilcLogAPI/silc_log_flushdelay
  *
@@ -492,7 +492,7 @@ void silc_log_flushdelay(SilcUInt32 flushdelay);
  *
  * NAME
  *
- *    void silc_log_quick(bool enable);
+ *    void silc_log_quick(SilcBool enable);
  *
  * DESCRIPTION
  *
@@ -510,13 +510,13 @@ void silc_log_flushdelay(SilcUInt32 flushdelay);
  *    Default is FALSE.
  *
  ***/
-void silc_log_quick(bool enable);
+void silc_log_quick(SilcBool enable);
 
 /****v* silcutil/SilcLogAPI/silc_log_debug
  *
  * NAME
  *
- *    void silc_log_debug(bool enable);
+ *    void silc_log_debug(SilcBool enable);
  *
  * DESCRIPTION
  *
@@ -528,13 +528,13 @@ void silc_log_quick(bool enable);
  *    SILC_LOG_DEBUG
  *
  ***/
-void silc_log_debug(bool enable);
+void silc_log_debug(SilcBool enable);
 
 /****v* silcutil/SilcLogAPI/silc_log_debug_hexdump
  *
  * NAME
  *
- *    void silc_log_debug_hexdump(bool enable);
+ *    void silc_log_debug_hexdump(SilcBool enable);
  *
  * DESCRIPTION
  *
@@ -546,6 +546,6 @@ void silc_log_debug(bool enable);
  *    SILC_LOG_HEXDUMP
  *
  ***/
-void silc_log_debug_hexdump(bool enable);
+void silc_log_debug_hexdump(SilcBool enable);
 
 #endif	/* !SILCLOG_H */

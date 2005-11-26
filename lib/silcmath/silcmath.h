@@ -36,7 +36,7 @@
  *
  * SYNOPSIS
  *
- *    int silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose,
+ *    int silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, SilcBool verbose,
  *                            SilcRng);
  *
  * DESCRIPTION
@@ -52,8 +52,8 @@
  *    number number.
  *
  ***/
-bool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose,
-			 SilcRng rng);
+SilcBool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits,
+			     SilcBool verbose, SilcRng rng);
 
 /****f* silcmath/SilcMathAPI/silc_math_prime_test
  *
@@ -67,6 +67,6 @@ bool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, bool verbose,
  *    number is probably a prime.
  *
  ***/
-bool silc_math_prime_test(SilcMPInt *p);
+SilcBool silc_math_prime_test(SilcMPInt *p);
 
 #endif
