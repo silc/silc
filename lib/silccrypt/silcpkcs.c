@@ -63,7 +63,7 @@ const SilcPKCSObject silc_default_pkcs[] =
 /* Register a new PKCS into SILC. This is used at the initialization of
    the SILC. */
 
-bool silc_pkcs_register(const SilcPKCSObject *pkcs)
+SilcBool silc_pkcs_register(const SilcPKCSObject *pkcs)
 {
 #ifndef SILC_EPOC
   SilcPKCSObject *new;
@@ -105,7 +105,7 @@ bool silc_pkcs_register(const SilcPKCSObject *pkcs)
 
 /* Unregister a PKCS from the SILC. */
 
-bool silc_pkcs_unregister(SilcPKCSObject *pkcs)
+SilcBool silc_pkcs_unregister(SilcPKCSObject *pkcs)
 {
 #ifndef SILC_EPOC
   SilcPKCSObject *entry;
@@ -139,7 +139,7 @@ bool silc_pkcs_unregister(SilcPKCSObject *pkcs)
    The application may use this to register the default PKCS if specific
    PKCS in any specific order is not wanted. */
 
-bool silc_pkcs_register_default(void)
+SilcBool silc_pkcs_register_default(void)
 {
 #ifndef SILC_EPOC
   int i;
@@ -151,7 +151,7 @@ bool silc_pkcs_register_default(void)
   return TRUE;
 }
 
-bool silc_pkcs_unregister_all(void)
+SilcBool silc_pkcs_unregister_all(void)
 {
 #ifndef SILC_EPOC
   SilcPKCSObject *entry;
@@ -172,7 +172,7 @@ bool silc_pkcs_unregister_all(void)
 /* Allocates a new SilcPKCS object. The new allocated object is returned
    to the 'new_pkcs' argument. */
 
-bool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs)
+SilcBool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs)
 {
   SilcPKCSObject *entry = NULL;
 
@@ -222,7 +222,7 @@ void silc_pkcs_free(SilcPKCS pkcs)
 
 /* Return TRUE if PKCS algorithm `name' is supported. */
 
-bool silc_pkcs_is_supported(const unsigned char *name)
+SilcBool silc_pkcs_is_supported(const unsigned char *name)
 {
 #ifndef SILC_EPOC
   SilcPKCSObject *entry;
@@ -289,10 +289,10 @@ char *silc_pkcs_get_supported(void)
 
 /* Generate new key pair into the `pkcs' context. */
 
-bool silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
+SilcBool silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
 			    SilcRng rng)
 {
-  bool ret = pkcs->pkcs->init(pkcs->context, bits_key_len, rng);
+  SilcBool ret = pkcs->pkcs->init(pkcs->context, bits_key_len, rng);
   if (ret)
     pkcs->key_len = bits_key_len;
   return ret;
@@ -368,7 +368,7 @@ SilcUInt32 silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
 
 /* Encrypts */
 
-bool silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
+SilcBool silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
 		       unsigned char *dst, SilcUInt32 *dst_len)
 {
   return pkcs->pkcs->encrypt(pkcs->context, src, src_len, dst, dst_len);
@@ -376,7 +376,7 @@ bool silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
 
 /* Decrypts */
 
-bool silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
+SilcBool silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
 		       unsigned char *dst, SilcUInt32 *dst_len)
 {
   return pkcs->pkcs->decrypt(pkcs->context, src, src_len, dst, dst_len);
@@ -384,7 +384,7 @@ bool silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
 
 /* Generates signature */
 
-bool silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
+SilcBool silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
 		    unsigned char *dst, SilcUInt32 *dst_len)
 {
   return pkcs->pkcs->sign(pkcs->context, src, src_len, dst, dst_len);
@@ -392,7 +392,7 @@ bool silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
 
 /* Verifies signature */
 
-bool silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature,
+SilcBool silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature,
 		      SilcUInt32 signature_len, unsigned char *data,
 		      SilcUInt32 data_len)
 {
@@ -402,7 +402,7 @@ bool silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature,
 
 /* Generates signature with hash. The hash is signed. */
 
-bool silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
+SilcBool silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
 			      unsigned char *src, SilcUInt32 src_len,
 			      unsigned char *dst, SilcUInt32 *dst_len)
 {
@@ -424,7 +424,7 @@ bool silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
 /* Verifies signature with hash. The `data' is hashed and verified against
    the `signature'. */
 
-bool silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash,
+SilcBool silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash,
 				unsigned char *signature,
 				SilcUInt32 signature_len,
 				unsigned char *data,
@@ -743,7 +743,7 @@ silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
 /* Decodes SILC style public key. Returns TRUE if the decoding was
    successful. Allocates new public key as well. */
 
-bool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
+SilcBool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
 				 SilcPublicKey *public_key)
 {
   SilcBufferStruct buf;
@@ -870,7 +870,7 @@ SilcBuffer silc_pkcs_public_key_payload_encode(SilcPublicKey public_key)
 /* Decode Public Key Payload and decodes the public key inside it to
    to `payload'. */
 
-bool silc_pkcs_public_key_payload_decode(unsigned char *data,
+SilcBool silc_pkcs_public_key_payload_decode(unsigned char *data,
 					 SilcUInt32 data_len,
 					 SilcPublicKey *public_key)
 {
@@ -912,7 +912,7 @@ bool silc_pkcs_public_key_payload_decode(unsigned char *data,
 /* Compares two public keys and returns TRUE if they are same key, and
    FALSE if they are not same. */
 
-bool silc_pkcs_public_key_compare(SilcPublicKey key1, SilcPublicKey key2)
+SilcBool silc_pkcs_public_key_compare(SilcPublicKey key1, SilcPublicKey key2)
 {
   if (key1 == key2)
     return TRUE;
@@ -987,7 +987,7 @@ silc_pkcs_private_key_data_encode(unsigned char *prv, SilcUInt32 prv_len,
 /* Decodes SILC style private key. Returns TRUE if the decoding was
    successful. Allocates new private key as well. */
 
-bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
+SilcBool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
 				  SilcPrivateKey *private_key)
 {
   SilcBufferStruct buf;
@@ -1058,7 +1058,7 @@ bool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
 
 /* Internal routine to save public key */
 
-static bool silc_pkcs_save_public_key_internal(const char *filename,
+static SilcBool silc_pkcs_save_public_key_internal(const char *filename,
 					       unsigned char *data,
 					       SilcUInt32 data_len,
 					       SilcUInt32 encoding)
@@ -1104,12 +1104,12 @@ static bool silc_pkcs_save_public_key_internal(const char *filename,
 
 /* Saves public key into file */
 
-bool silc_pkcs_save_public_key(const char *filename, SilcPublicKey public_key,
+SilcBool silc_pkcs_save_public_key(const char *filename, SilcPublicKey public_key,
 			       SilcUInt32 encoding)
 {
   unsigned char *data;
   SilcUInt32 data_len;
-  bool ret;
+  SilcBool ret;
 
   data = silc_pkcs_public_key_encode(public_key, &data_len);
   ret = silc_pkcs_save_public_key_internal(filename, data, data_len,
@@ -1120,7 +1120,7 @@ bool silc_pkcs_save_public_key(const char *filename, SilcPublicKey public_key,
 
 /* Saves public key into file */
 
-bool silc_pkcs_save_public_key_data(const char *filename, unsigned char *data,
+SilcBool silc_pkcs_save_public_key_data(const char *filename, unsigned char *data,
 				    SilcUInt32 data_len, SilcUInt32 encoding)
 {
   return silc_pkcs_save_public_key_internal(filename, data, data_len,
@@ -1131,7 +1131,7 @@ bool silc_pkcs_save_public_key_data(const char *filename, unsigned char *data,
 
 /* Internal routine to save private key. */
 
-static bool silc_pkcs_save_private_key_internal(const char *filename,
+static SilcBool silc_pkcs_save_private_key_internal(const char *filename,
 						unsigned char *data,
 						SilcUInt32 data_len,
 						unsigned char *key,
@@ -1280,7 +1280,7 @@ static bool silc_pkcs_save_private_key_internal(const char *filename,
 
 /* Saves private key into file. */
 
-bool silc_pkcs_save_private_key(const char *filename,
+SilcBool silc_pkcs_save_private_key(const char *filename,
 				SilcPrivateKey private_key,
 				unsigned char *passphrase,
 				SilcUInt32 passphrase_len,
@@ -1288,7 +1288,7 @@ bool silc_pkcs_save_private_key(const char *filename,
 {
   unsigned char *data;
   SilcUInt32 data_len;
-  bool ret;
+  SilcBool ret;
 
   data = silc_pkcs_private_key_encode(private_key, &data_len);
   ret = silc_pkcs_save_private_key_internal(filename, data, data_len,
@@ -1302,7 +1302,7 @@ bool silc_pkcs_save_private_key(const char *filename,
 /* Loads public key from file and allocates new public key. Returns TRUE
    if loading was successful. */
 
-bool silc_pkcs_load_public_key(const char *filename, SilcPublicKey *public_key,
+SilcBool silc_pkcs_load_public_key(const char *filename, SilcPublicKey *public_key,
 			       SilcUInt32 encoding)
 {
   unsigned char *cp, *old, *data, byte;
@@ -1362,7 +1362,7 @@ bool silc_pkcs_load_public_key(const char *filename, SilcPublicKey *public_key,
 /* Load private key from file and allocates new private key. Returns TRUE
    if loading was successful. */
 
-bool silc_pkcs_load_private_key(const char *filename,
+SilcBool silc_pkcs_load_private_key(const char *filename,
 				SilcPrivateKey *private_key,
 				unsigned char *passphrase,
 				SilcUInt32 passphrase_len,

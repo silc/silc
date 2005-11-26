@@ -56,7 +56,7 @@ typedef enum {
  *
  * SYNOPSIS
  *
- *    bool silc_pkcs1_encode(SilcPkcs1BlockType bt,
+ *    SilcBool silc_pkcs1_encode(SilcPkcs1BlockType bt,
  *                           const unsigned char *data,
  *                           SilcUInt32 data_len,
  *                           unsigned char *dest_data,
@@ -77,7 +77,7 @@ typedef enum {
  *    function returns TRUE on success.
  *
  ***/
-bool silc_pkcs1_encode(SilcPkcs1BlockType bt,
+SilcBool silc_pkcs1_encode(SilcPkcs1BlockType bt,
 		       const unsigned char *data,
 		       SilcUInt32 data_len,
 		       unsigned char *dest_data,
@@ -88,7 +88,7 @@ bool silc_pkcs1_encode(SilcPkcs1BlockType bt,
  *
  * SYNOPSIS
  *
- *    bool silc_pkcs1_decode(SilcPkcs1BlockType bt,
+ *    SilcBool silc_pkcs1_decode(SilcPkcs1BlockType bt,
  *                           const unsigned char *data,
  *                           SilcUInt32 data_len,
  *                           unsigned char *dest_data,
@@ -105,7 +105,7 @@ bool silc_pkcs1_encode(SilcPkcs1BlockType bt,
  *    Returns the decoded length into `dest_len'.
  *
  ***/
-bool silc_pkcs1_decode(SilcPkcs1BlockType bt,
+SilcBool silc_pkcs1_decode(SilcPkcs1BlockType bt,
 		       const unsigned char *data,
 		       SilcUInt32 data_len,
 		       unsigned char *dest_data,

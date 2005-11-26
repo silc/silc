@@ -51,7 +51,7 @@ const SilcHashObject silc_default_hash[] =
 /* Registers a new hash function into the SILC. This function is used at
    the initialization of the SILC. */
 
-bool silc_hash_register(const SilcHashObject *hash)
+SilcBool silc_hash_register(const SilcHashObject *hash)
 {
 #ifndef SILC_EPOC
   SilcHashObject *new;
@@ -89,7 +89,7 @@ bool silc_hash_register(const SilcHashObject *hash)
 
 /* Unregister a hash function from the SILC. */
 
-bool silc_hash_unregister(SilcHashObject *hash)
+SilcBool silc_hash_unregister(SilcHashObject *hash)
 {
 #ifndef SILC_EPOC
   SilcHashObject *entry;
@@ -123,7 +123,7 @@ bool silc_hash_unregister(SilcHashObject *hash)
    The application may use this to register the default hash funcs if
    specific hash funcs in any specific order is not wanted. */
 
-bool silc_hash_register_default(void)
+SilcBool silc_hash_register_default(void)
 {
 #ifndef SILC_EPOC
   int i;
@@ -135,7 +135,7 @@ bool silc_hash_register_default(void)
   return TRUE;
 }
 
-bool silc_hash_unregister_all(void)
+SilcBool silc_hash_unregister_all(void)
 {
 #ifndef SILC_EPOC
   SilcHashObject *entry;
@@ -156,7 +156,7 @@ bool silc_hash_unregister_all(void)
 /* Allocates a new SilcHash object. New object is returned into new_hash
    argument. */
 
-bool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
+SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
 {
   SilcHashObject *entry = NULL;
   
@@ -226,7 +226,7 @@ const char *silc_hash_get_name(SilcHash hash)
 
 /* Returns TRUE if hash algorithm `name' is supported. */
 
-bool silc_hash_is_supported(const unsigned char *name)
+SilcBool silc_hash_is_supported(const unsigned char *name)
 {
 #ifndef SILC_EPOC
   SilcHashObject *entry;

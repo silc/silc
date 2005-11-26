@@ -33,7 +33,7 @@
    set when `bt' is SILC_PKCS1_BT_PUB.  This function returns TRUE on
    success. */
 
-bool silc_pkcs1_encode(SilcPkcs1BlockType bt,
+SilcBool silc_pkcs1_encode(SilcPkcs1BlockType bt,
 		       const unsigned char *data,
 		       SilcUInt32 data_len,
 		       unsigned char *dest_data,
@@ -96,7 +96,7 @@ bool silc_pkcs1_encode(SilcPkcs1BlockType bt,
    the deocded block does not fit to `dest_data' this returns FALSE.
    Returns TRUE on success. */
 
-bool silc_pkcs1_decode(SilcPkcs1BlockType bt,
+SilcBool silc_pkcs1_decode(SilcPkcs1BlockType bt,
 		       const unsigned char *data,
 		       SilcUInt32 data_len,
 		       unsigned char *dest_data,

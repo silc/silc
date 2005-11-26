@@ -214,7 +214,7 @@ void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, SilcUInt32 len);
  *
  * SYNOPSIS
  *
- *    bool silc_rng_global_init(SilcRng rng);
+ *    SilcBool silc_rng_global_init(SilcRng rng);
  *
  * DESCRIPTION
  *
@@ -234,13 +234,13 @@ void silc_rng_add_noise(SilcRng rng, unsigned char *buffer, SilcUInt32 len);
  *    the RNG as argument.
  *
  ***/
-bool silc_rng_global_init(SilcRng rng);
+SilcBool silc_rng_global_init(SilcRng rng);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_global_uninit
  *
  * SYNOPSIS
  *
- *    bool silc_rng_global_uninit(void);
+ *    SilcBool silc_rng_global_uninit(void);
  *
  * DESCRIPTION
  *
@@ -248,7 +248,7 @@ bool silc_rng_global_init(SilcRng rng);
  *    be called if silc_rng_global_init was called with non-NULL RNG.
  *
  ***/
-bool silc_rng_global_uninit(void);
+SilcBool silc_rng_global_uninit(void);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_global_get_byte
  *

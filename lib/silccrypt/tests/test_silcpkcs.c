@@ -7,7 +7,7 @@ int p_len = 32;
 
 int test()
 {
-  bool success = FALSE;
+  SilcBool success = FALSE;
   SilcPKCS pkcs;
   unsigned char *pk, *prv;
   char *identifier;

@@ -52,11 +52,11 @@ typedef struct {
   SilcUInt32 block_len;
   SilcUInt32 key_len;
 
-  bool (*set_key)(void *, const unsigned char *, SilcUInt32);
-  bool (*set_key_with_string)(void *, const unsigned char *, SilcUInt32);
-  bool (*encrypt)(void *, const unsigned char *, unsigned char *,
+  SilcBool (*set_key)(void *, const unsigned char *, SilcUInt32);
+  SilcBool (*set_key_with_string)(void *, const unsigned char *, SilcUInt32);
+  SilcBool (*encrypt)(void *, const unsigned char *, unsigned char *,
 		  SilcUInt32, unsigned char *);
-  bool (*decrypt)(void *, const unsigned char *, unsigned char *, 
+  SilcBool (*decrypt)(void *, const unsigned char *, unsigned char *, 
 		  SilcUInt32, unsigned char *);
   SilcUInt32 (*context_len)();
 } SilcCipherObject;
@@ -89,21 +89,21 @@ extern DLLAPI const SilcCipherObject silc_default_ciphers[];
 /* These macros can be used to implement the SILC Crypto API and to avoid
    errors in the API these macros should be used always. */
 #define SILC_CIPHER_API_SET_KEY(cipher)			\
-bool silc_##cipher##_set_key(void *context,		\
+SilcBool silc_##cipher##_set_key(void *context,		\
 			     const unsigned char *key,	\
 			     SilcUInt32 keylen)
 #define SILC_CIPHER_API_SET_KEY_WITH_STRING(cipher)			\
-bool silc_##cipher##_set_key_with_string(void *context,			\
+SilcBool silc_##cipher##_set_key_with_string(void *context,			\
 	 			 	 const unsigned char *string,	\
 			 	         SilcUInt32 stringlen)
 #define SILC_CIPHER_API_ENCRYPT_CBC(cipher)			\
-bool silc_##cipher##_encrypt_cbc(void *context,			\
+SilcBool silc_##cipher##_encrypt_cbc(void *context,			\
 				 const unsigned char *src,	\
 		       	         unsigned char *dst,		\
 				 SilcUInt32 len,		\
 			         unsigned char *iv)
 #define SILC_CIPHER_API_DECRYPT_CBC(cipher)			\
-bool silc_##cipher##_decrypt_cbc(void *context,			\
+SilcBool silc_##cipher##_decrypt_cbc(void *context,			\
 			      	 const unsigned char *src,	\
 				 unsigned char *dst,		\
 				 SilcUInt32 len,		\
@@ -120,7 +120,7 @@ SilcUInt32 silc_##cipher##_context_len()
  *
  * SYNOPSIS
  *
- *    bool silc_cipher_register(const SilcCipherObject *cipher);
+ *    SilcBool silc_cipher_register(const SilcCipherObject *cipher);
  *
  * DESCRIPTION
  *
@@ -130,26 +130,26 @@ SilcUInt32 silc_##cipher##_context_len()
  *    as argument it has to be free'd after this function returns succesfully.
  *
  ***/
-bool silc_cipher_register(const SilcCipherObject *cipher);
+SilcBool silc_cipher_register(const SilcCipherObject *cipher);
 
 /****f* silccrypt/SilcCipherAPI/silc_cipher_unregister
  *
  * SYNOPSIS
  *
- *    bool silc_cipher_unregister(SilcCipherObject *cipher);
+ *    SilcBool silc_cipher_unregister(SilcCipherObject *cipher);
  *
  * DESCRIPTION
  *
  *    Unregister a cipher from the SILC.
  *
  ***/
-bool silc_cipher_unregister(SilcCipherObject *cipher);
+SilcBool silc_cipher_unregister(SilcCipherObject *cipher);
 
 /****f* silccrypt/SilcCipherAPI/silc_cipher_register_default
  *
  * SYNOPSIS
  *
- *    bool silc_cipher_register_default(void);
+ *    SilcBool silc_cipher_register_default(void);
  *
  * DESCRIPTION
  *
@@ -158,26 +158,26 @@ bool silc_cipher_unregister(SilcCipherObject *cipher);
  *    ciphers in any specific order is not wanted.
  *
  ***/
-bool silc_cipher_register_default(void);
+SilcBool silc_cipher_register_default(void);
 
 /****f* silccrypt/SilcCipherAPI/silc_cipher_unregister_all
  *
  * SYNOPSIS
  *
- *    bool silc_cipher_unregister_all(void);
+ *    SilcBool silc_cipher_unregister_all(void);
  *
  * DESCRIPTION
  *
  *    Unregisters all ciphers.
  *
  ***/
-bool silc_cipher_unregister_all(void);
+SilcBool silc_cipher_unregister_all(void);
 
 /****f* silccrypt/SilcCipherAPI/silc_cipher_alloc
  *
  * SYNOPSIS
  *
- *    bool silc_cipher_alloc(const unsigned char *name,
+ *    SilcBool silc_cipher_alloc(const unsigned char *name,
  *                           SilcCipher *new_cipher);
  *
  * DESCRIPTION
@@ -188,7 +188,7 @@ bool silc_cipher_unregister_all(void);
  *    by calling the ciphers set_key function.
  *
  ***/
-bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher);
+SilcBool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher);
 
 /****f* silccrypt/SilcCipherAPI/silc_cipher_free
  *
@@ -207,14 +207,14 @@ void silc_cipher_free(SilcCipher cipher);
  *
  * SYNOPSIS
  *
- * bool silc_cipher_is_supported(const unsigned char *name);
+ * SilcBool silc_cipher_is_supported(const unsigned char *name);
  *
  * DESCRIPTION
  *
  *    Returns TRUE if cipher `name' is supported.
  * 
  ***/
-bool silc_cipher_is_supported(const unsigned char *name);
+SilcBool silc_cipher_is_supported(const unsigned char *name);
 
 /****f* silccrypt/SilcCipherAPI/silc_cipher_get_supported
  *
@@ -233,7 +233,7 @@ char *silc_cipher_get_supported(void);
  *
  * SYNOPSIS
  *
- *    bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
+ *    SilcBool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
  *                             unsigned char *dst, SilcUInt32 len, 
  *                             unsigned char *iv);
  *
@@ -244,7 +244,7 @@ char *silc_cipher_get_supported(void);
  *    IV is used.  The `src' and `dst' maybe same buffer.
  * 
  ***/
-bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
+SilcBool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
 			 unsigned char *dst, SilcUInt32 len, 
 			 unsigned char *iv);
 
@@ -252,7 +252,7 @@ bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
  *
  * SYNOPSIS
  *
- *    bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
+ *    SilcBool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
  *                             unsigned char *dst, SilcUInt32 len, 
  *                             unsigned char *iv);
  *
@@ -263,7 +263,7 @@ bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
  *    IV is used.  The `src' and `dst' maybe same buffer.
  *
  ***/
-bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
+SilcBool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 			 unsigned char *dst, SilcUInt32 len, 
 			 unsigned char *iv);
 
@@ -271,7 +271,7 @@ bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
  *
  * SYNOPSIS
  *
- *    bool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
+ *    SilcBool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
  *                             SilcUInt32 keylen);
  *
  * DESCRIPTION
@@ -280,7 +280,7 @@ bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
  *    bits.
  *
  ***/
-bool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
+SilcBool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
 			 SilcUInt32 keylen);
 
 /****f* silccrypt/SilcCipherAPI/silc_cipher_set_iv

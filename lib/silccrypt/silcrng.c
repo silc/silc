@@ -638,7 +638,7 @@ SilcRng global_rng = NULL;
 /* Initialize global RNG. If `rng' is provided it is set as the global
    RNG object (it can be allocated by the application for example). */
 
-bool silc_rng_global_init(SilcRng rng)
+SilcBool silc_rng_global_init(SilcRng rng)
 {
   if (rng) {
     global_rng = rng;
@@ -653,7 +653,7 @@ bool silc_rng_global_init(SilcRng rng)
 
 /* Uninitialize global RNG */
 
-bool silc_rng_global_uninit(void)
+SilcBool silc_rng_global_uninit(void)
 {
   if (global_rng) {
     silc_rng_free(global_rng);

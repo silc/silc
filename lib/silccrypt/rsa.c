@@ -89,7 +89,7 @@ SILC_PKCS_API_INIT(rsa)
 {
   SilcUInt32 prime_bits = keylen / 2;
   SilcMPInt p, q;
-  bool found = FALSE;
+  SilcBool found = FALSE;
 
   if (keylen < 768 || keylen > 16384)
     return FALSE;
@@ -767,7 +767,7 @@ SILC_PKCS_API_VERIFY(pkcs1)
    to compute the modulus n has to be generated before calling this. They
    are then sent as argument for the function. */
 
-bool rsa_generate_keys(RsaKey *key, SilcUInt32 bits,
+SilcBool rsa_generate_keys(RsaKey *key, SilcUInt32 bits,
 		       SilcMPInt *p, SilcMPInt *q)
 {
   SilcMPInt phi, hlp;
@@ -843,7 +843,7 @@ bool rsa_generate_keys(RsaKey *key, SilcUInt32 bits,
 
 /* Clears whole key structure. */
 
-bool rsa_clear_keys(RsaKey *key)
+SilcBool rsa_clear_keys(RsaKey *key)
 {
   key->bits = 0;
   if (key->pub_set) {
@@ -865,7 +865,7 @@ bool rsa_clear_keys(RsaKey *key)
 
 /* RSA public key operation */
 
-bool rsa_public_operation(RsaKey *key, SilcMPInt *src, SilcMPInt *dst)
+SilcBool rsa_public_operation(RsaKey *key, SilcMPInt *src, SilcMPInt *dst)
 {
   /* dst = src ^ e mod n */
   silc_mp_pow_mod(dst, src, &key->e, &key->n);
@@ -874,7 +874,7 @@ bool rsa_public_operation(RsaKey *key, SilcMPInt *src, SilcMPInt *dst)
 
 /* RSA private key operation */
 
-bool rsa_private_operation(RsaKey *key, SilcMPInt *src, SilcMPInt *dst)
+SilcBool rsa_private_operation(RsaKey *key, SilcMPInt *src, SilcMPInt *dst)
 {
   if (!key->crt) {
     /* dst = src ^ d mod n */

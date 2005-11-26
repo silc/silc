@@ -80,7 +80,7 @@ const SilcCipherObject silc_default_ciphers[] =
    registered. Therefore, if memory has been allocated for the object sent
    as argument it has to be free'd after this function returns succesfully. */
 
-bool silc_cipher_register(const SilcCipherObject *cipher)
+SilcBool silc_cipher_register(const SilcCipherObject *cipher)
 {
 #ifndef SILC_EPOC
   SilcCipherObject *new;
@@ -118,7 +118,7 @@ bool silc_cipher_register(const SilcCipherObject *cipher)
 
 /* Unregister a cipher from the SILC. */
 
-bool silc_cipher_unregister(SilcCipherObject *cipher)
+SilcBool silc_cipher_unregister(SilcCipherObject *cipher)
 {
 #ifndef SILC_EPOC
   SilcCipherObject *entry;
@@ -152,7 +152,7 @@ bool silc_cipher_unregister(SilcCipherObject *cipher)
    The application may use this to register the default ciphers if specific
    ciphers in any specific order is not wanted. */
 
-bool silc_cipher_register_default(void)
+SilcBool silc_cipher_register_default(void)
 {
 #ifndef SILC_EPOC
   int i;
@@ -164,7 +164,7 @@ bool silc_cipher_register_default(void)
   return TRUE;
 }
 
-bool silc_cipher_unregister_all(void)
+SilcBool silc_cipher_unregister_all(void)
 {
 #ifndef SILC_EPOC
   SilcCipherObject *entry;
@@ -187,7 +187,7 @@ bool silc_cipher_unregister_all(void)
    caller must set the key to the cipher after this function has returned
    by calling the ciphers set_key function. */
 
-bool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
+SilcBool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
 {
   SilcCipherObject *entry = NULL;
 
@@ -236,7 +236,7 @@ void silc_cipher_free(SilcCipher cipher)
 
 /* Returns TRUE if cipher `name' is supported. */
 
-bool silc_cipher_is_supported(const unsigned char *name)
+SilcBool silc_cipher_is_supported(const unsigned char *name)
 {
 #ifndef SILC_EPOC
   SilcCipherObject *entry;
@@ -303,7 +303,7 @@ char *silc_cipher_get_supported(void)
 
 /* Encrypts */
 
-bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
+SilcBool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
 			 unsigned char *dst, SilcUInt32 len,
 			 unsigned char *iv)
 {
@@ -318,7 +318,7 @@ bool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
 
 /* Decrypts */
 
-bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
+SilcBool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 			 unsigned char *dst, SilcUInt32 len,
 			 unsigned char *iv)
 {
@@ -333,7 +333,7 @@ bool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 
 /* Sets the key for the cipher */
 
-bool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
+SilcBool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
 			 SilcUInt32 keylen)
 {
   return cipher->cipher->set_key(cipher->context, key, keylen);

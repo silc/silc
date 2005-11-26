@@ -95,7 +95,7 @@ void silc_dh_free(SilcDH dh);
  *
  * SYNOPSIS
  *
- *    bool silc_dh_generate_private(SilcDH dh, const SilcMPInt **x);
+ *    SilcBool silc_dh_generate_private(SilcDH dh, const SilcMPInt **x);
  *
  * DESCRIPTION
  *
@@ -105,13 +105,13 @@ void silc_dh_free(SilcDH dh);
  *    the `x' is NULL. The returned `x' must not be freed by the caller. 
  *
  ***/
-bool silc_dh_generate_private(SilcDH dh, const SilcMPInt **x);
+SilcBool silc_dh_generate_private(SilcDH dh, const SilcMPInt **x);
 
 /****f* silccrypt/SilcDH/silc_dh_compute_public
  *
  * SYNOPSIS
  *
- *    bool silc_dh_compute_public(SilcDH dh, const SilcMPInt **y);
+ *    SilcBool silc_dh_compute_public(SilcDH dh, const SilcMPInt **y);
  *
  * DESCRIPTION
  *
@@ -121,13 +121,13 @@ bool silc_dh_generate_private(SilcDH dh, const SilcMPInt **x);
  *    freed by the caller. 
  *
  ***/
-bool silc_dh_compute_public(SilcDH dh, const SilcMPInt **y);
+SilcBool silc_dh_compute_public(SilcDH dh, const SilcMPInt **y);
 
 /****f* silccrypt/SilcDH/silc_dh_remote_public
  *
  * SYNOPSIS
  *
- *    bool silc_dh_compute_public(SilcDH dh, SilcMPInt *y);
+ *    SilcBool silc_dh_compute_public(SilcDH dh, SilcMPInt *y);
  *
  * DESCRIPTION
  *
@@ -136,13 +136,13 @@ bool silc_dh_compute_public(SilcDH dh, const SilcMPInt **y);
  *    on error. 
  *
  ***/
-bool silc_dh_set_remote_public(SilcDH dh, SilcMPInt *y);
+SilcBool silc_dh_set_remote_public(SilcDH dh, SilcMPInt *y);
 
 /****f* silccrypt/SilcDH/silc_dh_compute_key
  *
  * SYNOPSIS
  *
- *    bool silc_dh_compute_key(SilcDH dh, const SilcMPInt **z);
+ *    SilcBool silc_dh_compute_key(SilcDH dh, const SilcMPInt **z);
  *
  * DESCRIPTION
  *
@@ -152,13 +152,13 @@ bool silc_dh_set_remote_public(SilcDH dh, SilcMPInt *y);
  *    freed by the caller. 
  *
  ***/
-bool silc_dh_compute_key(SilcDH dh, const SilcMPInt **z);
+SilcBool silc_dh_compute_key(SilcDH dh, const SilcMPInt **z);
 
 /****f* silccrypt/SilcDH/silc_dh_remote_public
  *
  * SYNOPSIS
  *
- *    bool silc_dh_compute_key_data(SilcDH dh, unsigned char **z, 
+ *    SilcBool silc_dh_compute_key_data(SilcDH dh, unsigned char **z, 
  *                                  SilcUInt32 *z_len);
  *
  * DESCRIPTION
@@ -167,7 +167,7 @@ bool silc_dh_compute_key(SilcDH dh, const SilcMPInt **z);
  *    string.  The caller must free the returned binary string.
  *
  ***/
-bool silc_dh_compute_key_data(SilcDH dh, unsigned char **z, 
+SilcBool silc_dh_compute_key_data(SilcDH dh, unsigned char **z, 
 			      SilcUInt32 *z_len);
 
 #endif

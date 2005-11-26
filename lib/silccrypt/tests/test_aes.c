@@ -22,7 +22,7 @@ const unsigned char c2[] = "\xd2\x96\xcd\x94\xc2\xcc\xcf\x8a\x3a\x86\x30\x28\xb5
 
 int main(int argc, char **argv)
 {
-  bool success = FALSE;
+  SilcBool success = FALSE;
   SilcCipher cipher;
   unsigned char dst[256], pdst[256];
   int i;

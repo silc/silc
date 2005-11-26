@@ -37,10 +37,10 @@ typedef struct {
   unsigned int crt     : 1;	/* TRUE if CRT is used */
 } RsaKey;
 
-bool rsa_generate_keys(RsaKey *key, SilcUInt32 bits,
+SilcBool rsa_generate_keys(RsaKey *key, SilcUInt32 bits,
 		       SilcMPInt *p, SilcMPInt *q);
-bool rsa_clear_keys(RsaKey *key);
-bool rsa_public_operation(RsaKey *key, SilcMPInt *src, SilcMPInt *dst);
-bool rsa_private_operation(RsaKey *key, SilcMPInt *src, SilcMPInt *dst);
+SilcBool rsa_clear_keys(RsaKey *key);
+SilcBool rsa_public_operation(RsaKey *key, SilcMPInt *src, SilcMPInt *dst);
+SilcBool rsa_private_operation(RsaKey *key, SilcMPInt *src, SilcMPInt *dst);
 
 #endif

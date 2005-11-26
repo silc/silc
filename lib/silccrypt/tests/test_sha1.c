@@ -13,7 +13,7 @@ const unsigned char data2_digest[] = "\x34\xaa\x97\x3c\xd4\xc4\xda\xa4\xf6\x1e\x
 
 int main(int argc, char **argv)
 {
-  bool success = FALSE;
+  SilcBool success = FALSE;
   unsigned char digest[20];
   SilcHash sha1;
   

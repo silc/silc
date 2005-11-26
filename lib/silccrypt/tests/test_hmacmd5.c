@@ -28,7 +28,7 @@ const unsigned char data4_digest[] = "\x6f\x63\x0f\xad\x67\xcd\xa0\xee\x1f\xb1\x
 
 int main(int argc, char **argv)
 {
-  bool success = FALSE;
+  SilcBool success = FALSE;
   unsigned char digest[16];
   SilcUInt32 len;
   SilcHmac hmac;

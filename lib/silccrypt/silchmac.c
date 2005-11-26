@@ -84,7 +84,7 @@ static void silc_hmac_init_internal(SilcHmac hmac, unsigned char *key,
 /* Registers a new HMAC into the SILC. This function is used at the
    initialization of the SILC. */
 
-bool silc_hmac_register(const SilcHmacObject *hmac)
+SilcBool silc_hmac_register(const SilcHmacObject *hmac)
 {
 #ifndef SILC_EPOC
   SilcHmacObject *new;
@@ -116,7 +116,7 @@ bool silc_hmac_register(const SilcHmacObject *hmac)
 
 /* Unregister a HMAC from the SILC. */
 
-bool silc_hmac_unregister(SilcHmacObject *hmac)
+SilcBool silc_hmac_unregister(SilcHmacObject *hmac)
 {
 #ifndef SILC_EPOC
   SilcHmacObject *entry;
@@ -150,7 +150,7 @@ bool silc_hmac_unregister(SilcHmacObject *hmac)
    The application may use this to register the default hmacs if
    specific hmacs in any specific order is not wanted. */
 
-bool silc_hmac_register_default(void)
+SilcBool silc_hmac_register_default(void)
 {
 #ifndef SILC_EPOC
   int i;
@@ -162,7 +162,7 @@ bool silc_hmac_register_default(void)
   return TRUE;
 }
 
-bool silc_hmac_unregister_all(void)
+SilcBool silc_hmac_unregister_all(void)
 {
 #ifndef SILC_EPOC
   SilcHmacObject *entry;
@@ -185,7 +185,7 @@ bool silc_hmac_unregister_all(void)
    of the HMAC.  If it is NULL then the hash function is allocated and
    the name of the hash algorithm is derived from the `name'. */
 
-bool silc_hmac_alloc(const char *name, SilcHash hash, SilcHmac *new_hmac)
+SilcBool silc_hmac_alloc(const char *name, SilcHash hash, SilcHmac *new_hmac)
 {
   SILC_LOG_DEBUG(("Allocating new HMAC"));
 
@@ -283,7 +283,7 @@ const char *silc_hmac_get_name(SilcHmac hmac)
 
 /* Returns TRUE if HMAC `name' is supported. */
 
-bool silc_hmac_is_supported(const char *name)
+SilcBool silc_hmac_is_supported(const char *name)
 {
 #ifndef SILC_EPOC
   SilcHmacObject *entry;
