@@ -51,10 +51,10 @@ typedef enum {
  *
  * SYNOPSIS
  *
- *    bool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
+ *    SilcBool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
  *                         SilcBerEncoding encoding, SilcUInt32 tag,
  *                         const unsigned char *data, SilcUInt32 data_len,
- *                         bool indefinite);
+ *                         SilcBool indefinite);
  *
  * DESCRIPTION
  *
@@ -65,19 +65,19 @@ typedef enum {
  *    include the length of the data in the BER block.
  *
  ***/
-bool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
+SilcBool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
 		     SilcBerEncoding encoding, SilcUInt32 tag,
 		     const unsigned char *data, SilcUInt32 data_len,
-		     bool indefinite);
+		     SilcBool indefinite);
 
 /****f* silcasn1/SilcBerAPI/silc_ber_decode
  *
  * SYNOPSIS
  *
- *    bool silc_ber_decode(SilcBuffer ber, SilcBerClass *ber_class,
+ *    SilcBool silc_ber_decode(SilcBuffer ber, SilcBerClass *ber_class,
  *                         SilcBerEncoding *encoding, SilcUInt32 *tag,
  *                         const unsigned char **data, SilcUInt32 *data_len,
- *                         bool *indefinite, SilcUInt32 *identifier_len);
+ *                         SilcBool *indefinite, SilcUInt32 *identifier_len);
  *
  * DESCRIPTION
  *
@@ -92,17 +92,17 @@ bool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
  *    of the entire BER object is `identifier_len' + `data_len'.
  *
  ***/
-bool silc_ber_decode(SilcBuffer ber, SilcBerClass *ber_class,
+SilcBool silc_ber_decode(SilcBuffer ber, SilcBerClass *ber_class,
 		     SilcBerEncoding *encoding, SilcUInt32 *tag,
 		     const unsigned char **data, SilcUInt32 *data_len,
-		     bool *indefinite, SilcUInt32 *identifier_len);
+		     SilcBool *indefinite, SilcUInt32 *identifier_len);
 
 /****f* silcasn1/SilcBerAPI/silc_ber_encoded_len
  *
  * SYNOPSIS
  *
  *    SilcUInt32 silc_ber_encoded_len(SilcUInt32 tag, SilcUInt32 data_len,
- *                                    bool indefinite);
+ *                                    SilcBool indefinite);
  *
  * DESCRIPTION
  *
@@ -112,6 +112,6 @@ bool silc_ber_decode(SilcBuffer ber, SilcBerClass *ber_class,
  *
  ***/
 SilcUInt32 silc_ber_encoded_len(SilcUInt32 tag, SilcUInt32 data_len,
-				bool indefinite);
+				SilcBool indefinite);
 
 #endif /* SILCBER_H */

@@ -102,7 +102,7 @@ SilcBuffer silc_client_get_detach_data(SilcClient client,
    server.  To do that call silc_client_resume_session function.
    This returns the old detached session client ID. */
 
-bool silc_client_process_detach_data(SilcClient client,
+SilcBool silc_client_process_detach_data(SilcClient client,
 				     SilcClientConnection conn,
 				     unsigned char **old_id,
 				     SilcUInt16 *old_id_len)
@@ -184,7 +184,7 @@ typedef struct {
   SilcUInt32 channel_count;
   SilcUInt32 *cmd_idents;
   SilcUInt32 cmd_idents_count;
-  bool success;
+  SilcBool success;
 } *SilcClientResumeSession;
 
 /* Generic command reply callback. */
@@ -249,7 +249,7 @@ void silc_client_resume_session(SilcClient client,
   SilcChannelEntry channel;
   SilcBuffer tmp;
   int i;
-  bool ret;
+  SilcBool ret;
 
   SILC_LOG_DEBUG(("Resuming detached session"));
 

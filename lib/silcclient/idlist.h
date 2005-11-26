@@ -41,7 +41,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
 				       const char *nickname,
 				       const char *format,
-				       bool query);
+				       SilcBool query);
 SilcChannelEntry silc_client_add_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 const char *channel_name,
@@ -57,7 +57,7 @@ void silc_client_update_server(SilcClient client,
 			       SilcServerEntry server_entry,
 			       const char *server_name,
 			       const char *server_info);
-bool silc_client_replace_channel_id(SilcClient client,
+SilcBool silc_client_replace_channel_id(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcChannelEntry channel,
 				    SilcChannelID *new_id);

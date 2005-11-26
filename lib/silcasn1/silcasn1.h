@@ -231,7 +231,7 @@ void silc_asn1_free(SilcAsn1 asn1);
  *
  * SYNOPSIS
  *
- *    bool silc_asn1_init(SilcAsn1 asn1);
+ *    SilcBool silc_asn1_init(SilcAsn1 asn1);
  *
  * DESCRIPTION
  *
@@ -246,7 +246,7 @@ void silc_asn1_free(SilcAsn1 asn1);
  *      error;
  *
  ***/
-bool silc_asn1_init(SilcAsn1 asn1);
+SilcBool silc_asn1_init(SilcAsn1 asn1);
 
 /****f* silcasn1/SilcASN1API/silc_asn1_uninit
  *
@@ -266,7 +266,7 @@ void silc_asn1_uninit(SilcAsn1 asn1);
  *
  * SYNOPSIS
  *
- *    bool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...);
+ *    SilcBool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...);
  *
  * DESCRIPTION
  *
@@ -313,13 +313,13 @@ void silc_asn1_uninit(SilcAsn1 asn1);
  *      string2  [1]  OCTET-STRING }
  *
  ***/
-bool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...);
+SilcBool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...);
 
 /****f* silcasn1/SilcASN1API/silc_asn1_decode
  *
  * SYNOPSIS
  *
- *    bool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
+ *    SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
  *
  * DESCRIPTION
  *
@@ -355,7 +355,7 @@ bool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...);
  *
  * EXAMPLE
  *
- *    bool bool_val, foo;
+ *    SilcBool bool_val, foo;
  *    unsigned char *string, string2;
  *    SilcUInt32 string_len, string2_len;
  *
@@ -370,7 +370,7 @@ bool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...);
  *                     SILC_ASN1_END, SILC_ASN1_END);
  *
  ***/
-bool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
+SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
 
 /****f* silcasn1/SilcASN1API/SILC_ASN1_OPTS
  *
@@ -601,17 +601,17 @@ bool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
  * SYNOPSIS
  *
  *    Encoding:
- *    SILC_ASN1_BOOLEAN(bool)
- *    SILC_ASN1_BOOLEAN_T(opts, tag, bool)
+ *    SILC_ASN1_BOOLEAN(boolval)
+ *    SILC_ASN1_BOOLEAN_T(opts, tag, boolval)
  *
  *    Decoding:
- *    SILC_ASN1_BOOLEAN(&bool)
- *    SILC_ASN1_BOOLEAN_T(opts, tag, &bool)
+ *    SILC_ASN1_BOOLEAN(&boolval)
+ *    SILC_ASN1_BOOLEAN_T(opts, tag, &boolval)
  *
  * DESCRIPTION
  *
  *    Macro used to encode or decode boolean value.  Type boolean type
- *    is bool.
+ *    is SilcBool.
  *
  *    The `opts' is SilcAsn1Options.  The `tag' is a tag number.
  *

@@ -78,8 +78,8 @@ typedef struct {
   void *client;
   void *context;
   SilcSocketConnection sock;
-  bool responder;		    /* TRUE if we are receiving party */
-  bool pfs;			    /* TRUE if PFS is to be used */
+  SilcBool responder;		    /* TRUE if we are receiving party */
+  SilcBool pfs;			    /* TRUE if PFS is to be used */
   SilcSKE ske;			    /* Defined if PFS is used */
   SilcPacketContext *packet;
 } SilcClientRekeyInternalContext;
@@ -106,6 +106,6 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
 				      SilcHash hash,
 				      SilcHmac hmac,
 				      SilcSKEDiffieHellmanGroup group,
-				      bool is_responder);
+				      SilcBool is_responder);
 
 #endif

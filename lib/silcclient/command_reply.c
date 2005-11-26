@@ -163,7 +163,7 @@ void silc_client_command_reply_free(SilcClientCommandReplyContext cmd)
 void
 silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
 				     SilcStatus status,
-				     bool notify)
+				     SilcBool notify)
 {
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcClientID *client_id;
@@ -174,7 +174,7 @@ silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
   char *realname = NULL;
   SilcUInt32 idle = 0, mode = 0;
   SilcBufferStruct channels, ch_user_modes;
-  bool has_channels = FALSE, has_user_modes = FALSE;
+  SilcBool has_channels = FALSE, has_user_modes = FALSE;
   unsigned char *fingerprint;
   SilcUInt32 fingerprint_len;
 
@@ -371,7 +371,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(whowas)
 static void
 silc_client_command_reply_identify_save(SilcClientCommandReplyContext cmd,
 					SilcStatus status,
-					bool notify)
+					SilcBool notify)
 {
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
   SilcClient client = cmd->client;
@@ -1737,8 +1737,8 @@ static void silc_client_command_reply_users_cb(SilcClient client,
 static int
 silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
 				     SilcStatus status,
-				     bool notify,
-				     bool resolve,
+				     SilcBool notify,
+				     SilcBool resolve,
 				     SilcGetChannelCallback get_channel,
 				     SilcCommandCb get_clients)
 {
@@ -1753,7 +1753,7 @@ silc_client_command_reply_users_save(SilcClientCommandReplyContext cmd,
   int i;
   unsigned char **res_argv = NULL;
   SilcUInt32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
-  bool wait_res = FALSE;
+  SilcBool wait_res = FALSE;
 
   SILC_LOG_DEBUG(("Start"));
 

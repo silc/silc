@@ -27,10 +27,10 @@
    function.  If the `indefinite' is TRUE then the BER block will not
    include the length of the data in the BER block. */
 
-bool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
+SilcBool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
 		     SilcBerEncoding encoding, SilcUInt32 tag,
 		     const unsigned char *data, SilcUInt32 data_len,
-		     bool indefinite)
+		     SilcBool indefinite)
 {
   int i = 0, c;
   SilcUInt32 tmp;
@@ -114,10 +114,10 @@ bool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
    `identifier_len' is the length of the BER header, and the length
    of the entire BER object is `identifier_len' + `data_len'. */
 
-bool silc_ber_decode(SilcBuffer ber, SilcBerClass *ber_class,
+SilcBool silc_ber_decode(SilcBuffer ber, SilcBerClass *ber_class,
 		     SilcBerEncoding *encoding, SilcUInt32 *tag,
 		     const unsigned char **data, SilcUInt32 *data_len,
-		     bool *indefinite, SilcUInt32 *identifier_len)
+		     SilcBool *indefinite, SilcUInt32 *identifier_len)
 {
   int i = 0, c;
   SilcUInt32 t;
@@ -240,7 +240,7 @@ bool silc_ber_decode(SilcBuffer ber, SilcBerClass *ber_class,
    encoding with silc_ber_encode. */
 
 SilcUInt32 silc_ber_encoded_len(SilcUInt32 tag, SilcUInt32 data_len,
-				bool indefinite)
+				SilcBool indefinite)
 {
   SilcUInt32 len, tmp;
 

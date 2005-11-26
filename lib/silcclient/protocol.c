@@ -55,7 +55,7 @@ typedef struct {
   void *completion_context;
 } *VerifyKeyContext;
 
-static void silc_client_verify_key_cb(bool success, void *context)
+static void silc_client_verify_key_cb(SilcBool success, void *context)
 {
   VerifyKeyContext verify = (VerifyKeyContext)context;
 
@@ -110,7 +110,7 @@ void silc_client_protocol_ke_set_keys(SilcSKE ske,
 				      SilcHash hash,
 				      SilcHmac hmac,
 				      SilcSKEDiffieHellmanGroup group,
-				      bool is_responder)
+				      SilcBool is_responder)
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
   const char *cname = silc_cipher_get_name(cipher);
@@ -768,7 +768,7 @@ silc_client_protocol_rekey_validate(SilcClient client,
 				    SilcClientRekeyInternalContext *ctx,
 				    SilcSocketConnection sock,
 				    SilcSKEKeyMaterial *keymat,
-				    bool send)
+				    SilcBool send)
 {
   SilcClientConnection conn = (SilcClientConnection)sock->user_data;
 
@@ -819,7 +819,7 @@ silc_client_protocol_rekey_validate(SilcClient client,
 static void
 silc_client_protocol_rekey_generate(SilcClient client,
 				    SilcClientRekeyInternalContext *ctx,
-				    bool send)
+				    SilcBool send)
 {
   SilcClientConnection conn = (SilcClientConnection)ctx->sock->user_data;
   SilcSKEKeyMaterial *keymat;
@@ -848,7 +848,7 @@ silc_client_protocol_rekey_generate(SilcClient client,
 static void
 silc_client_protocol_rekey_generate_pfs(SilcClient client,
 					SilcClientRekeyInternalContext *ctx,
-					bool send)
+					SilcBool send)
 {
   SilcClientConnection conn = (SilcClientConnection)ctx->sock->user_data;
   SilcSKEKeyMaterial *keymat;

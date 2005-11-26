@@ -47,7 +47,7 @@ SilcClientEntry *silc_client_get_clients_local(SilcClient client,
   SilcIDCacheList list = NULL;
   SilcClientEntry entry, *clients;
   int i = 0;
-  bool found = FALSE;
+  SilcBool found = FALSE;
   char *nicknamec;
 
   assert(client && conn);
@@ -388,7 +388,7 @@ SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
 				       const char *nickname,
 				       const char *format,
-				       bool query)
+				       SilcBool query)
 {
   SilcIDCacheEntry id_cache;
   SilcIDCacheList list = NULL;
@@ -487,7 +487,7 @@ SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
   SilcBuffer client_id_list = i->client_id_list;
   SilcClientEntry *clients = NULL;
   SilcUInt32 clients_count = 0;
-  bool found = FALSE;
+  SilcBool found = FALSE;
   int c;
 
   SILC_LOG_DEBUG(("Start"));
@@ -561,7 +561,7 @@ void silc_client_get_clients_by_list(SilcClient client,
   unsigned char **res_argv = NULL;
   SilcUInt32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
   GetClientsByListInternal in;
-  bool wait_res = FALSE;
+  SilcBool wait_res = FALSE;
 
   assert(client && conn && client_id_list);
 
@@ -579,7 +579,7 @@ void silc_client_get_clients_by_list(SilcClient client,
     SilcUInt16 idp_len;
     SilcClientID *client_id;
     SilcClientEntry entry;
-    bool ret;
+    SilcBool ret;
 
     /* Get Client ID */
     SILC_GET16_MSB(idp_len, client_id_list->data + 2);
@@ -695,7 +695,7 @@ SILC_CLIENT_CMD_FUNC(get_clients_by_channel_cb)
   GetClientsByChannelInternal i = context;
   SilcClientEntry *clients = NULL;
   SilcUInt32 clients_count = 0;
-  bool found = FALSE;
+  SilcBool found = FALSE;
   SilcChannelEntry channel;
   SilcHashTableList htl;
   SilcChannelUser chu;
@@ -743,7 +743,7 @@ void silc_client_get_clients_by_channel(SilcClient client,
   unsigned char **res_argv = NULL;
   SilcUInt32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
   SilcBuffer idp;
-  bool wait_res = FALSE;
+  SilcBool wait_res = FALSE;
 
   assert(client && conn && channel);
 
@@ -1100,10 +1100,10 @@ void silc_client_del_client_entry(SilcClient client,
 
 /* Removes client from the cache by the client entry. */
 
-bool silc_client_del_client(SilcClient client, SilcClientConnection conn,
+SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
 			    SilcClientEntry client_entry)
 {
-  bool ret = silc_idcache_del_by_context(conn->internal->client_cache,
+  SilcBool ret = silc_idcache_del_by_context(conn->internal->client_cache,
 					 client_entry);
 
   if (ret) {
@@ -1178,10 +1178,10 @@ static void silc_client_del_channel_foreach(void *key, void *context,
 
 /* Removes channel from the cache by the channel entry. */
 
-bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
+SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
 			     SilcChannelEntry channel)
 {
-  bool ret = silc_idcache_del_by_context(conn->internal->channel_cache,
+  SilcBool ret = silc_idcache_del_by_context(conn->internal->channel_cache,
 					 channel);
 
   SILC_LOG_DEBUG(("Start"));
@@ -1226,7 +1226,7 @@ bool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
 /* Replaces the channel ID of the `channel' to `new_id'. Returns FALSE
    if the ID could not be changed. */
 
-bool silc_client_replace_channel_id(SilcClient client,
+SilcBool silc_client_replace_channel_id(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcChannelEntry channel,
 				    SilcChannelID *new_id)
@@ -1557,10 +1557,10 @@ SilcServerEntry silc_client_add_server(SilcClient client,
 
 /* Removes server from the cache by the server entry. */
 
-bool silc_client_del_server(SilcClient client, SilcClientConnection conn,
+SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
 			    SilcServerEntry server)
 {
-  bool ret = silc_idcache_del_by_context(conn->internal->server_cache, server);
+  SilcBool ret = silc_idcache_del_by_context(conn->internal->server_cache, server);
   silc_free(server->server_name);
   silc_free(server->server_info);
   silc_free(server->server_id);
@@ -1621,7 +1621,7 @@ void silc_client_nickname_format(SilcClient client,
   char *cp;
   char *newnick = NULL;
   int i, off = 0, len;
-  bool freebase;
+  SilcBool freebase;
   SilcClientEntry *clients;
   SilcUInt32 clients_count = 0;
   SilcClientEntry unformatted = NULL;

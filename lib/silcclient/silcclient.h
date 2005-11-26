@@ -2031,7 +2031,7 @@ silc_client_list_private_message_keys(SilcClient client,
  *    argument MUST be set to FALSE when setting the key.
  *
  ***/
-bool
+SilcBool
 silc_client_send_private_message_key_request(SilcClient client,
 					     SilcClientConnection conn,
 					     SilcClientEntry client_entry);

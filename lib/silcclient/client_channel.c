@@ -32,14 +32,14 @@
    with the next receiver's key. The `data' is the channel message. If
    the `force_send' is TRUE then the packet is sent immediately. */
 
-bool silc_client_send_channel_message(SilcClient client,
+SilcBool silc_client_send_channel_message(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcChannelEntry channel,
 				      SilcChannelPrivateKey key,
 				      SilcMessageFlags flags,
 				      unsigned char *data,
 				      SilcUInt32 data_len,
-				      bool force_send)
+				      SilcBool force_send)
 {
   SilcSocketConnection sock;
   SilcBuffer payload;
@@ -50,7 +50,7 @@ bool silc_client_send_channel_message(SilcClient client,
   unsigned char *id_string;
   int block_len;
   SilcChannelUser chu;
-  bool ret = FALSE;
+  SilcBool ret = FALSE;
 
   assert(client && conn && channel);
   sock = conn->sock;
@@ -524,7 +524,7 @@ void silc_client_receive_channel_key(SilcClient client,
    currently it is not expected that the SKE key material would be used
    as channel private key. However, this API allows it. */
 
-bool silc_client_add_channel_private_key(SilcClient client,
+SilcBool silc_client_add_channel_private_key(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcChannelEntry channel,
 					 const char *name,
@@ -598,7 +598,7 @@ bool silc_client_add_channel_private_key(SilcClient client,
    after calling this to protect the channel messages. Returns FALSE on
    on error, TRUE otherwise. */
 
-bool silc_client_del_channel_private_keys(SilcClient client,
+SilcBool silc_client_del_channel_private_keys(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcChannelEntry channel)
 {
@@ -634,7 +634,7 @@ bool silc_client_del_channel_private_keys(SilcClient client,
    old channel key is used hereafter to protect the channel messages. This
    returns FALSE on error, TRUE otherwise. */
 
-bool silc_client_del_channel_private_key(SilcClient client,
+SilcBool silc_client_del_channel_private_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcChannelEntry channel,
 					SilcChannelPrivateKey key)

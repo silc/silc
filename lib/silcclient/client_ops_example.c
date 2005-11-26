@@ -85,7 +85,7 @@ silc_notify(SilcClient client, SilcClientConnection conn,
 
 static void
 silc_command(SilcClient client, SilcClientConnection conn,
-	     SilcClientCommandContext cmd_context, bool success,
+	     SilcClientCommandContext cmd_context, SilcBool success,
 	     SilcCommand command, SilcStatus status)
 {
 
@@ -111,7 +111,7 @@ silc_command(SilcClient client, SilcClientConnection conn,
 
 static void
 silc_command_reply(SilcClient client, SilcClientConnection conn,
-		   SilcCommandPayload cmd_payload, bool success,
+		   SilcCommandPayload cmd_payload, SilcBool success,
 		   SilcCommand command, SilcStatus status, ...)
 {
 
@@ -213,7 +213,7 @@ silc_failure(SilcClient client, SilcClientConnection conn,
    silc_client_perform_key_agreement). If TRUE is returned also the
    `completion' and `context' arguments must be set by the application. */
 
-static bool
+static SilcBool
 silc_key_agreement(SilcClient client, SilcClientConnection conn,
 		   SilcClientEntry client_entry, const char *hostname,
 		   SilcUInt16 port, SilcKeyAgreementCallback *completion,

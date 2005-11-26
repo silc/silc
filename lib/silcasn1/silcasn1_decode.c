@@ -29,9 +29,9 @@
    silc_asn1_decoder function.  This parses the sequence of types and returns
    them as raw BER buffers in an array of SilcBuffers. */
 
-static bool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
+static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
 {
-  bool ret = FALSE;
+  SilcBool ret = FALSE;
   SilcList types;
   SilcAsn1Tag type;
   SilcBuffer *retb;
@@ -39,7 +39,7 @@ static bool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
   SilcAsn1Tag rtag;
   const unsigned char *rdata;
   SilcUInt32 rdata_len, len = 0;
-  bool found = FALSE, rindef;
+  SilcBool found = FALSE, rindef;
 
   struct SilcAsn1SofStruct {
     SilcAsn1Tag type;
@@ -243,11 +243,11 @@ static bool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
    arguments (either very first or first for recursion) for a type.
    The `depth' includes the current depth of recursion. */
 
-static bool
+static SilcBool
 silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 		  SilcAsn1Tag tag, SilcBerClass ber_class,
 		  SilcAsn1Options opts, SilcBuffer src, SilcUInt32 depth,
-		  bool primitive)
+		  SilcBool primitive)
 {
   unsigned char *ptr = src->data;
   SilcAsn1Tag rtype, rtag;
@@ -255,7 +255,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
   SilcBerClass rclass;
   SilcBerEncoding renc;
   SilcUInt32 len = 0;
-  bool ret, indef, rindef, found = FALSE, choice = FALSE;
+  SilcBool ret, indef, rindef, found = FALSE, choice = FALSE;
   const unsigned char *rdata;
   SilcUInt32 rdata_len;
   int i;
@@ -517,7 +517,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
       case SILC_ASN1_TAG_BOOLEAN:
 	{
 	  /* Decode boolean (TRUE/FALSE) value */
-	  SILC_ASN1_VAD(asn1, opts, bool, val);
+	  SILC_ASN1_VAD(asn1, opts, SilcBool, val);
 
 	  if (rdata_len != 1) {
 	    SILC_LOG_DEBUG(("Malformed boolean value"));
@@ -778,14 +778,14 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
   return ret;
 }
 
-bool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...)
+SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...)
 {
   SilcAsn1Tag type, tag;
   SilcAsn1Options opts;
   SilcBerClass ber_class;
   SilcStackFrame frame1, frame2;
   SilcStack stack1 = NULL, stack2 = NULL;
-  bool ret;
+  SilcBool ret;
 
   if (!asn1)
     return FALSE;

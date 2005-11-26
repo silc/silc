@@ -56,18 +56,18 @@
    is TRUE if this encoder receives one primitive type as argument.  If
    it is a constructed type it must be FALSE value. */
 
-static bool
+static SilcBool
 silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 		  SilcAsn1Tag type, SilcAsn1Tag tag, SilcBerClass ber_class,
 		  SilcAsn1Options opts, SilcBuffer dest, SilcUInt32 depth,
-		  bool primitive)
+		  SilcBool primitive)
 {
   unsigned char *ptr = dest->data;
   SilcAsn1Tag rtype, rtag;
   SilcAsn1Options ropts;
   SilcBerClass rclass;
   SilcUInt32 len = 0;
-  bool ret = FALSE, indef;
+  SilcBool ret = FALSE, indef;
   SilcBufferStruct buf;
   SilcStackFrame frame;
 
@@ -588,14 +588,14 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
   return ret;
 }
 
-bool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...)
+SilcBool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...)
 {
   SilcAsn1Tag type, tag;
   SilcAsn1Options opts;
   SilcBerClass ber_class;
   SilcStackFrame frame1, frame2;
   SilcStack stack1 = NULL;
-  bool ret;
+  SilcBool ret;
 
   if (!asn1)
     return FALSE;

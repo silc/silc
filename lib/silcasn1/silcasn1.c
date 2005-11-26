@@ -45,7 +45,7 @@ void silc_asn1_free(SilcAsn1 asn1)
 
 /* Init pre-allocated ASN.1 context */
 
-bool silc_asn1_init(SilcAsn1 asn1)
+SilcBool silc_asn1_init(SilcAsn1 asn1)
 {
   asn1->stack1 = silc_stack_alloc(768);
   if (!asn1->stack1)
@@ -155,14 +155,14 @@ const char *silc_asn1_tag_name(SilcAsn1Tag tag)
 
 /* Dumps the ASN.1 data block into standard output (stdout). */
 
-bool silc_asn1_dump(SilcAsn1 asn1, SilcBuffer src)
+SilcBool silc_asn1_dump(SilcAsn1 asn1, SilcBuffer src)
 {
-  bool ret = FALSE;
+  SilcBool ret = FALSE;
   SilcBerEncoding renc;
   SilcAsn1Tag rtag;
   const unsigned char *rdata;
   SilcUInt32 rdata_len, len = 0;
-  bool rindef;
+  SilcBool rindef;
 
   SILC_LOG_DEBUG(("Dumping ASN.1"));
 

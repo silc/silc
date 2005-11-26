@@ -32,13 +32,13 @@
    message. The `data' is the private message. If the `force_send' is
    TRUE the packet is sent immediately. */
 
-bool silc_client_send_private_message(SilcClient client,
+SilcBool silc_client_send_private_message(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry client_entry,
 				      SilcMessageFlags flags,
 				      unsigned char *data,
 				      SilcUInt32 data_len,
-				      bool force_send)
+				      SilcBool force_send)
 {
   SilcSocketConnection sock;
   SilcBuffer buffer;
@@ -47,7 +47,7 @@ bool silc_client_send_private_message(SilcClient client,
   SilcCipher cipher;
   SilcHmac hmac;
   int block_len;
-  bool ret = FALSE;
+  SilcBool ret = FALSE;
 
   assert(client && conn && client_entry);
   sock = conn->sock;
@@ -330,15 +330,15 @@ void silc_client_private_message_key(SilcClient client,
    Returns FALSE if the key is already set for the `client_entry', TRUE
    otherwise. */
 
-bool silc_client_add_private_message_key(SilcClient client,
+SilcBool silc_client_add_private_message_key(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcClientEntry client_entry,
 					 const char *cipher,
 					 const char *hmac,
 					 unsigned char *key,
 					 SilcUInt32 key_len,
-					 bool generate_key,
-					 bool responder)
+					 SilcBool generate_key,
+					 SilcBool responder)
 {
   unsigned char private_key[32];
   SilcUInt32 len;
@@ -426,13 +426,13 @@ bool silc_client_add_private_message_key(SilcClient client,
    `cipher' and `hmac' SHOULD be provided as it is negotiated also in
    the SKE protocol. */
 
-bool silc_client_add_private_message_key_ske(SilcClient client,
+SilcBool silc_client_add_private_message_key_ske(SilcClient client,
 					     SilcClientConnection conn,
 					     SilcClientEntry client_entry,
 					     const char *cipher,
 					     const char *hmac,
 					     SilcSKEKeyMaterial *key,
-					     bool responder)
+					     SilcBool responder)
 {
   assert(client && client_entry);
 
@@ -491,7 +491,7 @@ bool silc_client_add_private_message_key_ske(SilcClient client,
    going to be the initiator, if and when, the users set up a static
    private message key (not Key Agreement). */
 
-bool silc_client_send_private_message_key_request(SilcClient client,
+SilcBool silc_client_send_private_message_key_request(SilcClient client,
 						  SilcClientConnection conn,
 						  SilcClientEntry client_entry)
 {
@@ -537,7 +537,7 @@ bool silc_client_send_private_message_key_request(SilcClient client,
    after this to protect the private messages with the remote `client_entry'
    client. Returns FALSE on error, TRUE otherwise. */
 
-bool silc_client_del_private_message_key(SilcClient client,
+SilcBool silc_client_del_private_message_key(SilcClient client,
 					SilcClientConnection conn,
 					SilcClientEntry client_entry)
 {

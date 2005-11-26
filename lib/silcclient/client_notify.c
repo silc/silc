@@ -1369,7 +1369,7 @@ void silc_client_notify_by_server(SilcClient client,
        * Received notify about some client we are watching
        */
       SilcNotifyType notify = 0;
-      bool del_client = FALSE;
+      SilcBool del_client = FALSE;
       unsigned char *pk;
       SilcUInt32 pk_len;
       SilcPublicKey public_key = NULL;

@@ -36,7 +36,7 @@ typedef struct {
   unsigned char *send_enc_key;
   SilcUInt32 enc_key_len;
   int ske_group;
-  bool pfs;
+  SilcBool pfs;
   SilcUInt32 timeout;
   void *context;
 } *SilcClientRekey;
@@ -152,7 +152,7 @@ struct SilcClientConnectionInternalStruct {
 /* Session resuming callback */
 typedef void (*SilcClientResumeSessionCallback)(SilcClient client,
 						SilcClientConnection conn,
-						bool success,
+						SilcBool success,
 						void *context);
 
 /* Rekey must be performed at the lastest when this many packets is sent */
@@ -221,10 +221,10 @@ void silc_client_packet_send(SilcClient client,
                              SilcHmac hmac,
                              unsigned char *data,
                              SilcUInt32 data_len,
-                             bool force_send);
+                             SilcBool force_send);
 int silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
-				 bool force_send);
+				 SilcBool force_send);
 void silc_client_ftp_free_sessions(SilcClient client,
 				   SilcClientConnection conn);
 void silc_client_ftp_session_free(SilcClientFtpSession session);
@@ -282,7 +282,7 @@ void silc_client_ftp(SilcClient client,
 		     SilcPacketContext *packet);
 SilcBuffer silc_client_get_detach_data(SilcClient client,
 				       SilcClientConnection conn);
-bool silc_client_process_detach_data(SilcClient client,
+SilcBool silc_client_process_detach_data(SilcClient client,
 				     SilcClientConnection conn,
 				     unsigned char **old_id,
 				     SilcUInt16 *old_id_len);
@@ -299,6 +299,6 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_rekey_callback);
 void
 silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
 				     SilcStatus status,
-				     bool notify);
+				     SilcBool notify);
 
 #endif

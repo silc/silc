@@ -184,12 +184,12 @@ static void silc_client_attribute_del_foreach(void *key, void *context,
 
 /* Delete one attribute */
 
-bool silc_client_attribute_del(SilcClient client,
+SilcBool silc_client_attribute_del(SilcClient client,
 			       SilcClientConnection conn,
 			       SilcAttribute attribute,
 			       SilcAttributePayload attr)
 {
-  bool ret;
+  SilcBool ret;
 
   if (!conn->internal->attrs)
     return FALSE;

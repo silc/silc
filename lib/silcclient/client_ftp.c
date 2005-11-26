@@ -826,7 +826,7 @@ silc_client_file_send(SilcClient client,
 		      void *monitor_context,
 		      const char *local_ip,
 		      SilcUInt32 local_port,
-		      bool do_not_bind,
+		      SilcBool do_not_bind,
 		      SilcClientEntry client_entry,
 		      const char *filepath,
 		      SilcUInt32 *session_id)

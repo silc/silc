@@ -102,14 +102,14 @@ void silc_client_command_free(SilcClientCommandContext ctx);
 SilcClientCommandContext silc_client_command_dup(SilcClientCommandContext ctx);
 SilcClientCommand silc_client_command_find(SilcClient client,
 					   const char *name);
-bool silc_client_command_register(SilcClient client,
+SilcBool silc_client_command_register(SilcClient client,
 				  SilcCommand command,
 				  const char *name,
 				  SilcCommandCb command_function,
 				  SilcCommandCb command_reply_function,
 				  SilcUInt8 max_args,
 				  SilcUInt16 ident);
-bool silc_client_command_unregister(SilcClient client,
+SilcBool silc_client_command_unregister(SilcClient client,
 				    SilcCommand command,
 				    SilcCommandCb command_function,
 				    SilcCommandCb command_reply_function,

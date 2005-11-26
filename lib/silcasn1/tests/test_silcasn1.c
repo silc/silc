@@ -2,15 +2,15 @@
 
 /*
 silc_asn1_encode(asn1, node,
-		 SILC_ASN1_BOOLEAN(bool),
+		 SILC_ASN1_BOOLEAN(SilcBool),
 		 SILC_ASN1_END);
 silc_asn1_encode(asn1, dest,
 		 SILC_ASN1_SEQUENCE_T(SILC_ASN1_PRIVATE, 101),
 		   SILC_ASN1_SEQUENCE_T(0, 9),
 		     SILC_ASN1_SEQUENCE,
 		       SILC_ASN1_ANY_T(0, 33, node),
-		       SILC_ASN1_BOOLEAN_T(0, 4, bool),
-		       SILC_ASN1_BOOLEAN(bool),
+		       SILC_ASN1_BOOLEAN_T(0, 4, boolv),
+		       SILC_ASN1_BOOLEAN(SilcBool),
 		     SILC_ASN1_END,
 		   SILC_ASN1_END,
 		 SILC_ASN1_END);
@@ -23,15 +23,15 @@ silc_asn1_encode(asn1, dest,
 
 /*
 silc_asn1_encode(asn1, node,
-		 SILC_ASN1_BOOLEAN(bool),
+		 SILC_ASN1_BOOLEAN(SilcBool),
 		 SILC_ASN1_END);
 silc_asn1_encode(asn1, dest,
 		 SILC_ASN1_SEQUENCE_T(SILC_ASN1_PRIVATE, 101),
 		   SILC_ASN1_SEQUENCE_T(0, 9),
 		     SILC_ASN1_SEQUENCE,
 		       SILC_ASN1_ANY_T(SILC_ASN1_EXPLICIT, 33, node),
-		       SILC_ASN1_BOOLEAN_T(0, 4, bool),
-		       SILC_ASN1_BOOLEAN(bool),
+		       SILC_ASN1_BOOLEAN_T(0, 4, boolv),
+		       SILC_ASN1_BOOLEAN(SilcBool),
 		     SILC_ASN1_END,
 		   SILC_ASN1_END,
 		 SILC_ASN1_END);
@@ -47,8 +47,8 @@ int main(int argc, char **argv)
 {
   SilcBufferStruct node, node2;
   SilcAsn1 asn1;
-  bool success = FALSE;
-  bool val = TRUE;
+  SilcBool success = FALSE;
+  SilcBool val = TRUE;
   int i;
   unsigned char *str;
   SilcUInt32 str_len;

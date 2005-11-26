@@ -105,7 +105,7 @@ struct SilcAsn1Object {
 const char *silc_asn1_tag_name(SilcAsn1Tag tag);
 
 /* Dumps the ASN.1 data block into standard output (stdout). */
-bool silc_asn1_dump(SilcAsn1 asn1, SilcBuffer src);
+SilcBool silc_asn1_dump(SilcAsn1 asn1, SilcBuffer src);
 #endif /* SILC_DIST_INPLACE */
 
 #endif /* SILCASN1_I_H */

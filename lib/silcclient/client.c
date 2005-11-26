@@ -28,12 +28,12 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second);
 SILC_TASK_CALLBACK(silc_client_connect_to_server_final);
 SILC_TASK_CALLBACK(silc_client_rekey_final);
 
-static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
+static SilcBool silc_client_packet_parse(SilcPacketParserContext *parser_context,
 				     void *context);
 static void silc_client_packet_parse_type(SilcClient client,
 					  SilcSocketConnection sock,
 					  SilcPacketContext *packet);
-void silc_client_resolve_auth_method(bool success,
+void silc_client_resolve_auth_method(SilcBool success,
 				     SilcProtocolAuthMeth auth_meth,
 				     const unsigned char *auth_data,
 				     SilcUInt32 auth_data_len, void *context);
@@ -111,7 +111,7 @@ void silc_client_free(SilcClient client)
    the client ready to be run. One must call silc_client_run to run the
    client. Returns FALSE if error occured, TRUE otherwise. */
 
-bool silc_client_init(SilcClient client)
+SilcBool silc_client_init(SilcClient client)
 {
   SILC_LOG_DEBUG(("Initializing client"));
 
@@ -298,7 +298,7 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
       SilcIDCacheList list;
       SilcIDCacheEntry entry;
       SilcClientCommandPending *r;
-      bool ret;
+      SilcBool ret;
 
       if (silc_idcache_get_all(conn->internal->client_cache, &list)) {
 	ret = silc_idcache_list_first(list, &entry);
@@ -748,7 +748,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_second)
    client operation to resolve the authentication method. We will continue
    the executiong of the protocol in this function. */
 
-void silc_client_resolve_auth_method(bool success,
+void silc_client_resolve_auth_method(SilcBool success,
 				     SilcProtocolAuthMeth auth_meth,
 				     const unsigned char *auth_data,
 				     SilcUInt32 auth_data_len, void *context)
@@ -928,7 +928,7 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
 
 int silc_client_packet_send_real(SilcClient client,
 				 SilcSocketConnection sock,
-				 bool force_send)
+				 SilcBool force_send)
 {
   int ret;
 
@@ -1049,7 +1049,7 @@ SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process)
 /* Parser callback called by silc_packet_receive_process. Thie merely
    registers timeout that will handle the actual parsing when appropriate. */
 
-static bool silc_client_packet_parse(SilcPacketParserContext *parser_context,
+static SilcBool silc_client_packet_parse(SilcPacketParserContext *parser_context,
 				     void *context)
 {
   SilcClient client = (SilcClient)context;
@@ -1412,7 +1412,7 @@ void silc_client_packet_send(SilcClient client,
 			     SilcHmac hmac,
 			     unsigned char *data,
 			     SilcUInt32 data_len,
-			     bool force_send)
+			     SilcBool force_send)
 {
   SilcPacketContext packetdata;
   const SilcBufferStruct packet;
@@ -1504,7 +1504,7 @@ void silc_client_packet_send(SilcClient client,
 /* Packet sending routine for application.  This is the only routine that
    is provided for application to send SILC packets. */
 
-bool silc_client_send_packet(SilcClient client,
+SilcBool silc_client_send_packet(SilcClient client,
 			     SilcClientConnection conn,
 			     SilcPacketType type,
 			     const unsigned char *data,
@@ -1705,7 +1705,7 @@ SILC_TASK_CALLBACK(silc_client_send_auto_nick)
 
 static void silc_client_resume_session_cb(SilcClient client,
 					  SilcClientConnection conn,
-					  bool success,
+					  SilcBool success,
 					  void *context)
 {
   SilcBuffer sidp;

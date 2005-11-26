@@ -80,7 +80,7 @@ SilcClientCommand silc_client_command_find(SilcClient client,
 
 /* Executes a command */
 
-bool silc_client_command_call(SilcClient client,
+SilcBool silc_client_command_call(SilcClient client,
 			      SilcClientConnection conn,
 			      const char *command_line, ...)
 {
@@ -286,7 +286,7 @@ SILC_CLIENT_CMD_FUNC(whois)
   SilcBuffer buffer, attrs = NULL;
   unsigned char count[4], *tmp = NULL;
   int i;
-  bool details = FALSE, nick = FALSE;
+  SilcBool details = FALSE, nick = FALSE;
   unsigned char *pubkey = NULL;
 
   if (!cmd->conn) {
@@ -1664,7 +1664,7 @@ SILC_CLIENT_CMD_FUNC(cmode)
     case 'C':
       if (add) {
 	int k;
-	bool chadd = FALSE;
+	SilcBool chadd = FALSE;
 	SilcPublicKey chpk = NULL;
 
 	mode |= SILC_CHANNEL_MODE_CHANNEL_AUTH;
@@ -2327,7 +2327,7 @@ SILC_CLIENT_CMD_FUNC(watch)
   SilcBuffer buffer, idp = NULL, args = NULL;
   int type = 0;
   const char *pubkey = NULL;
-  bool pubkey_add = TRUE;
+  SilcBool pubkey_add = TRUE;
 
   if (!cmd->conn) {
     SILC_NOT_CONNECTED(cmd->client, cmd->conn);
@@ -2678,7 +2678,7 @@ SILC_CLIENT_CMD_FUNC(service)
    command identifier `ident'. Application usually does not need it
    and set it to zero value. */
 
-bool silc_client_command_register(SilcClient client,
+SilcBool silc_client_command_register(SilcClient client,
 				  SilcCommand command,
 				  const char *name,
 				  SilcCommandCb command_function,
@@ -2705,7 +2705,7 @@ bool silc_client_command_register(SilcClient client,
    `command_function' and command reply function `command_reply_function'.
    Returns TRUE if the command was found and unregistered. */
 
-bool silc_client_command_unregister(SilcClient client,
+SilcBool silc_client_command_unregister(SilcClient client,
 				    SilcCommand command,
 				    SilcCommandCb command_function,
 				    SilcCommandCb command_reply_function,
