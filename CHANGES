@@ -1,3 +1,8 @@
+Sat Nov 26 16:13:40 EET 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* FSM based implementation of SILC SKE.  Simpler interface also.
+	  Affected files are in lib/silcske/.
+
 Sat Nov 19 17:34:51 EET 2005  Pekka Riikonen <priikone@silcnet.org>
 
         * Added SilcMime API to lib/silcutil/silcmime.[ch].  The old
