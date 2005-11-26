@@ -1,10 +1,10 @@
 /*
 
-  silcske_payload.h 
+  silcske_payload.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2002 Pekka Riikonen
+  Copyright (C) 2000 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@
 /****s* silcske/SilcSKEPayloads/SilcSKEStartPayload
  *
  * NAME
- * 
+ *
  *    typedef struct SilcSKEStartPayloadStruct SilcSKEStartPayload;
  *
  * DESCRIPTION
@@ -45,22 +45,22 @@
  *    silc_ske_payload_start_free function.
  *
  ***/
-typedef struct SilcSKEStartPayloadStruct SilcSKEStartPayload;
+typedef struct SilcSKEStartPayloadStruct *SilcSKEStartPayload;
 
 /****s* silcske/SilcSKEPayloads/SilcSKEKEPayload
  *
  * NAME
- * 
+ *
  *    typedef struct SilcSKEKEPayloadStruct SilcSKEKEPayload;
  *
  * DESCRIPTION
  *
  *    This context is the actual Key Exchange Payload and is allocated
  *    by silc_ske_payload_ke_decode. It is freed by calling the
- *    silc_ske_payload_ke_free function. 
+ *    silc_ske_payload_ke_free function.
  *
  ***/
-typedef struct SilcSKEKEPayloadStruct SilcSKEKEPayload;
+typedef struct SilcSKEKEPayloadStruct *SilcSKEKEPayload;
 
 /* SILC Key Exchange Start Payload */
 struct SilcSKEStartPayloadStruct {
@@ -81,7 +81,7 @@ struct SilcSKEStartPayloadStruct {
 
   SilcUInt16 enc_alg_len;
   unsigned char *enc_alg_list;
-  
+
   SilcUInt16 hash_alg_len;
   unsigned char *hash_alg_list;
 
@@ -111,7 +111,7 @@ struct SilcSKEKEPayloadStruct {
  * SYNOPSIS
  *
  *    SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,
- *                                                SilcSKEStartPayload *payload,
+ *                                                SilcSKEStartPayload payload,
  *                                                SilcBuffer *return_buffer);
  *
  * DESCRIPTION
@@ -122,17 +122,17 @@ struct SilcSKEKEPayloadStruct {
  *
  ***/
 SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,
-					    SilcSKEStartPayload *payload,
+					    SilcSKEStartPayload payload,
 					    SilcBuffer *return_buffer);
 
 /****f* silcske/SilcSKEPayloads/silc_ske_payload_start_decode
  *
  * SYNOPSIS
  *
- *    SilcSKEStatus 
+ *    SilcSKEStatus
  *    silc_ske_payload_start_decode(SilcSKE ske,
  *                                  SilcBuffer buffer,
- *                                  SilcSKEStartPayload **return_payload);
+ *                                  SilcSKEStartPayload *return_payload);
  *
  * DESCRIPTION
  *
@@ -141,10 +141,10 @@ SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,
  *    `return_payload' and the caller must free it.
  *
  ***/
-SilcSKEStatus 
+SilcSKEStatus
 silc_ske_payload_start_decode(SilcSKE ske,
 			      SilcBuffer buffer,
-			      SilcSKEStartPayload **return_payload);
+			      SilcSKEStartPayload *return_payload);
 
 /****f* silcske/SilcSKEPayloads/silc_ske_payload_start_free
  *
@@ -157,14 +157,14 @@ silc_ske_payload_start_decode(SilcSKE ske,
  *    Frees the Key Exchange Start Payload indicated by `payload'.
  *
  ***/
-void silc_ske_payload_start_free(SilcSKEStartPayload *payload);
+void silc_ske_payload_start_free(SilcSKEStartPayload payload);
 
 /****f* silcske/SilcSKEPayloads/silc_ske_payload_ke_encode
  *
  * SYNOPSIS
  *
  *    SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
- *                                             SilcSKEKEPayload *payload,
+ *                                             SilcSKEKEPayload payload,
  *                                             SilcBuffer *return_buffer);
  *
  * DESCRIPTION
@@ -175,7 +175,7 @@ void silc_ske_payload_start_free(SilcSKEStartPayload *payload);
  *
  ***/
 SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
-					 SilcSKEKEPayload *payload,
+					 SilcSKEKEPayload payload,
 					 SilcBuffer *return_buffer);
 
 /****f* silcske/SilcSKEPayloads/silc_ske_payload_ke_decode
@@ -184,7 +184,7 @@ SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
  *
  *    SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
  *                                             SilcBuffer buffer,
- *                                             SilcSKEKEPayload 
+ *                                             SilcSKEKEPayload
  *                                               **return_payload);
  *
  * DESCRIPTION
@@ -196,7 +196,7 @@ SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
  ***/
 SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
 					 SilcBuffer buffer,
-					 SilcSKEKEPayload **return_payload);
+					 SilcSKEKEPayload *return_payload);
 
 /****f* silcske/SilcSKEPayloads/silc_ske_payload_ke_free
  *
@@ -209,6 +209,6 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
  *    Frees the Key Exchange Payload indicated by `payload'.
  *
  ***/
-void silc_ske_payload_ke_free(SilcSKEKEPayload *payload);
+void silc_ske_payload_ke_free(SilcSKEKEPayload payload);
 
 #endif /* SILCSKE_PAYLOAD_H */

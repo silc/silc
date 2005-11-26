@@ -1,10 +1,10 @@
 /*
 
-  payload.c 
+  payload.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2002 Pekka Riikonen
+  Copyright (C) 2000 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
    to the other end. */
 
 SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,
-					    SilcSKEStartPayload *payload,
+					    SilcSKEStartPayload payload,
 					    SilcBuffer *return_buffer)
 {
   SilcBuffer buf;
@@ -44,10 +44,10 @@ SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,
 			   SILC_STR_UI_CHAR(0),        /* RESERVED field */
 			   SILC_STR_UI_CHAR(payload->flags),
 			   SILC_STR_UI_SHORT(payload->len),
-			   SILC_STR_UI_XNSTRING(payload->cookie, 
+			   SILC_STR_UI_XNSTRING(payload->cookie,
 						payload->cookie_len),
 			   SILC_STR_UI_SHORT(payload->version_len),
-			   SILC_STR_UI_XNSTRING(payload->version, 
+			   SILC_STR_UI_XNSTRING(payload->version,
 						payload->version_len),
 			   SILC_STR_UI_SHORT(payload->ke_grp_len),
 			   SILC_STR_UI_XNSTRING(payload->ke_grp_list,
@@ -76,7 +76,7 @@ SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,
   /* Return the encoded buffer */
   *return_buffer = buf;
 
-  SILC_LOG_HEXDUMP(("KE Start Payload"), buf->data, buf->len);
+  SILC_LOG_HEXDUMP(("KE Start Payload"), buf->data, silc_buffer_len(buf));
 
   return SILC_SKE_STATUS_OK;
 }
@@ -84,19 +84,20 @@ SilcSKEStatus silc_ske_payload_start_encode(SilcSKE ske,
 /* Parses the Key Exchange Start Payload. Parsed data is returned
    to allocated payload structure. */
 
-SilcSKEStatus 
+SilcSKEStatus
 silc_ske_payload_start_decode(SilcSKE ske,
 			      SilcBuffer buffer,
-			      SilcSKEStartPayload **return_payload)
+			      SilcSKEStartPayload *return_payload)
 {
-  SilcSKEStartPayload *payload;
+  SilcSKEStartPayload payload;
   SilcSKEStatus status = SILC_SKE_STATUS_ERROR;
   unsigned char tmp;
   int ret;
 
   SILC_LOG_DEBUG(("Decoding Key Exchange Start Payload"));
 
-  SILC_LOG_HEXDUMP(("KE Start Payload"), buffer->data, buffer->len);
+  SILC_LOG_HEXDUMP(("KE Start Payload"), buffer->data,
+		   silc_buffer_len(buffer));
 
   payload = silc_calloc(1, sizeof(*payload));
   if (!payload)
@@ -104,12 +105,12 @@ silc_ske_payload_start_decode(SilcSKE ske,
   payload->cookie_len = SILC_SKE_COOKIE_LEN;
 
   /* Parse start of the payload */
-  ret = 
+  ret =
     silc_buffer_unformat(buffer,
 			 SILC_STR_UI_CHAR(&tmp),     /* RESERVED Field */
 			 SILC_STR_UI_CHAR(&payload->flags),
 			 SILC_STR_UI_SHORT(&payload->len),
-			 SILC_STR_UI_XNSTRING_ALLOC(&payload->cookie, 
+			 SILC_STR_UI_XNSTRING_ALLOC(&payload->cookie,
 						    payload->cookie_len),
 			 SILC_STR_UI16_NSTRING_ALLOC(&payload->version,
 						     &payload->version_len),
@@ -138,7 +139,7 @@ silc_ske_payload_start_decode(SilcSKE ske,
     goto err;
   }
 
-  if (payload->len != buffer->len) {
+  if (payload->len != silc_buffer_len(buffer)) {
     SILC_LOG_ERROR(("Garbage after KE Start Payload"));
     status = SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH;
     goto err;
@@ -168,7 +169,7 @@ silc_ske_payload_start_decode(SilcSKE ske,
 
 /* Free's Start Payload */
 
-void silc_ske_payload_start_free(SilcSKEStartPayload *payload)
+void silc_ske_payload_start_free(SilcSKEStartPayload payload)
 {
   if (payload) {
     silc_free(payload->cookie);
@@ -187,7 +188,7 @@ void silc_ske_payload_start_free(SilcSKEStartPayload *payload)
    end. */
 
 SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
-					 SilcSKEKEPayload *payload,
+					 SilcSKEKEPayload payload,
 					 SilcBuffer *return_buffer)
 {
   SilcBuffer buf;
@@ -200,7 +201,7 @@ SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
   if (!payload)
     return SILC_SKE_STATUS_ERROR;
 
-  if (ske->start_payload && 
+  if (ske->start_payload &&
       ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL &&
       !payload->sign_data) {
     SILC_LOG_DEBUG(("Signature data is missing"));
@@ -212,21 +213,21 @@ SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
 
   /* Allocate channel payload buffer. The length of the buffer
      is 4 + public key + 2 + x + 2 + signature. */
-  buf = silc_buffer_alloc_size(4 + payload->pk_len + 2 + x_len + 
+  buf = silc_buffer_alloc_size(4 + payload->pk_len + 2 + x_len +
 			       2 + payload->sign_len);
   if (!buf)
     return SILC_SKE_STATUS_OUT_OF_MEMORY;
 
   /* Encode the payload */
-  ret = silc_buffer_format(buf, 
+  ret = silc_buffer_format(buf,
 			   SILC_STR_UI_SHORT(payload->pk_len),
 			   SILC_STR_UI_SHORT(payload->pk_type),
-			   SILC_STR_UI_XNSTRING(payload->pk_data, 
+			   SILC_STR_UI_XNSTRING(payload->pk_data,
 						payload->pk_len),
 			   SILC_STR_UI_SHORT(x_len),
 			   SILC_STR_UI_XNSTRING(x_str, x_len),
 			   SILC_STR_UI_SHORT(payload->sign_len),
-			   SILC_STR_UI_XNSTRING(payload->sign_data, 
+			   SILC_STR_UI_XNSTRING(payload->sign_data,
 						payload->sign_len),
 			   SILC_STR_END);
   if (ret == -1) {
@@ -239,7 +240,7 @@ SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
   /* Return encoded buffer */
   *return_buffer = buf;
 
-  SILC_LOG_HEXDUMP(("KE Payload"), buf->data, buf->len);
+  SILC_LOG_HEXDUMP(("KE Payload"), buf->data, silc_buffer_len(buf));
 
   memset(x_str, 'F', x_len);
   silc_free(x_str);
@@ -252,10 +253,10 @@ SilcSKEStatus silc_ske_payload_ke_encode(SilcSKE ske,
 
 SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
 					 SilcBuffer buffer,
-					 SilcSKEKEPayload **return_payload)
+					 SilcSKEKEPayload *return_payload)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_ERROR;
-  SilcSKEKEPayload *payload;
+  SilcSKEKEPayload payload;
   unsigned char *x = NULL;
   SilcUInt16 x_len;
   SilcUInt32 tot_len = 0, len2;
@@ -263,13 +264,13 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Decoding Key Exchange Payload"));
 
-  SILC_LOG_HEXDUMP(("KE Payload"), buffer->data, buffer->len);
+  SILC_LOG_HEXDUMP(("KE Payload"), buffer->data, silc_buffer_len(buffer));
 
   payload = silc_calloc(1, sizeof(*payload));
   if (!payload)
     return SILC_SKE_STATUS_OUT_OF_MEMORY;
 
-  len2 = buffer->len;
+  len2 = silc_buffer_len(buffer);
 
   /* Parse start of the payload */
   ret = silc_buffer_unformat(buffer,
@@ -283,7 +284,7 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
   }
 
   if (ske->start_payload &&
-      ((payload->pk_type < SILC_SKE_PK_TYPE_SILC || 
+      ((payload->pk_type < SILC_SKE_PK_TYPE_SILC ||
 	payload->pk_type > SILC_SKE_PK_TYPE_SPKI) || !payload->pk_len)) {
     SILC_LOG_ERROR(("Malformed public key in KE payload"));
     status = SILC_SKE_STATUS_BAD_PAYLOAD;
@@ -298,7 +299,7 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
 			     SILC_STR_UI_XNSTRING_ALLOC(&payload->pk_data,
 							payload->pk_len),
 			     SILC_STR_UI16_NSTRING_ALLOC(&x, &x_len),
-			     SILC_STR_UI16_NSTRING_ALLOC(&payload->sign_data, 
+			     SILC_STR_UI16_NSTRING_ALLOC(&payload->sign_data,
 							 &payload->sign_len),
 			     SILC_STR_END);
   if (ret == -1) {
@@ -316,7 +317,7 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
     goto err;
   }
 
-  if (ske->start_payload && 
+  if (ske->start_payload &&
       (ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) &&
       (payload->sign_len < 3 || !payload->sign_data)) {
     SILC_LOG_ERROR(("The signature data is missing - both parties are "
@@ -330,7 +331,7 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
     status = SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH;
     goto err;
   }
-  
+
   /* Decode the binary data to integer */
   silc_mp_init(&payload->x);
   silc_mp_bin2mp(x, x_len, &payload->x);
@@ -353,7 +354,7 @@ SilcSKEStatus silc_ske_payload_ke_decode(SilcSKE ske,
 
 /* Free's KE Payload */
 
-void silc_ske_payload_ke_free(SilcSKEKEPayload *payload)
+void silc_ske_payload_ke_free(SilcSKEKEPayload payload)
 {
   if (payload) {
     silc_free(payload->pk_data);
