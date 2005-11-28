@@ -26,6 +26,9 @@
  * interface should be used only with real file descriptors, not with
  * sockets.  Use the SILC Socket Stream for sockets.
  *
+ * SILC File Descriptor Stream is not thread-safe.  If same stream must be
+ * used in multithreaded environment concurrency control must be employed.
+ *
  ***/
 
 #ifndef SILCFDSTREAM_H

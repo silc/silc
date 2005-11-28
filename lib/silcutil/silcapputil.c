@@ -197,7 +197,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   }
 
   /* Generate keys */
-  silc_pkcs_alloc(alg, &pkcs);
+  silc_pkcs_alloc(alg, SILC_PKCS_SILC, &pkcs);
   silc_pkcs_generate_key(pkcs, key_len_bits, rng);
 
   /* Save public key into file */
@@ -290,7 +290,7 @@ SilcBool silc_load_key_pair(const char *pub_filename,
     }
 
   if (return_pkcs) {
-    silc_pkcs_alloc((*return_public_key)->name, return_pkcs);
+    silc_pkcs_alloc((*return_public_key)->name, SILC_PKCS_SILC, return_pkcs);
     silc_pkcs_public_key_set(*return_pkcs, *return_public_key);
     silc_pkcs_private_key_set(*return_pkcs, *return_private_key);
   }
@@ -326,7 +326,7 @@ SilcBool silc_show_public_key(const char *pub_filename)
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
   babbleprint = silc_hash_babbleprint(NULL, pk, pk_len);
 
-  if (silc_pkcs_alloc(public_key->name, &pkcs)) {
+  if (silc_pkcs_alloc(public_key->name, SILC_PKCS_SILC, &pkcs)) {
     key_len = silc_pkcs_public_key_set(pkcs, public_key);
     silc_pkcs_free(pkcs);
   }

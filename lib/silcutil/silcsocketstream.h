@@ -26,6 +26,9 @@
  * Stream provides also Quality of Service (QoS) support that can be used
  * to control the throughput of the stream.
  *
+ * SILC Socket Stream is not thread-safe.  If the same socket stream must be
+ * used in multithreaded environment concurrency control must be employed.
+ *
  ***/
 
 #ifndef SILCSOCKETSTREAM_H

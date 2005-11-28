@@ -73,3 +73,8 @@ char *silc_get_real_name(void)
 {
   return silc_get_username();
 }
+
+int silc_file_set_nonblock(int fd)
+{
+  return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+}

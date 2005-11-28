@@ -26,6 +26,10 @@
  * other stream API derived from this API can use this same interface for
  * sending and receiving.
  *
+ * Note that stream implementations usually are not thread-safe.  Always
+ * verify whether a stream implementation is thread-safe by checking their
+ * corresponding documentation.
+ *
  ***/
 
 #ifndef SILCSTREAM_H

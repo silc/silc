@@ -176,3 +176,9 @@ int silc_gettimeofday(struct timeval *p)
 {
   return gettimeofday(p, NULL);
 }
+
+int silc_file_set_nonblock(int fd)
+{
+  return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+}
+

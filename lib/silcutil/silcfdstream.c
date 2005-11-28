@@ -73,7 +73,7 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd,
 {
   SilcFDStream stream;
 
-  if (read_fd < 1 && write_fd < 1)
+  if (read_fd < 1)
     return NULL;
 
   stream = silc_calloc(1, sizeof(*stream));
@@ -85,19 +85,19 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd,
   stream->ops = &silc_fd_stream_ops;
   stream->schedule = schedule;
   stream->fd1 = read_fd;
-  stream->fd1 = write_fd;
+  stream->fd2 = write_fd;
 
   /* Schedule the file descriptors */
   if (write_fd > 0) {
     silc_schedule_task_add_fd(schedule, write_fd, silc_fd_stream_io, stream);
-    silc_net_set_socket_nonblock(write_fd);
+    silc_file_set_nonblock(write_fd);
   }
   if (read_fd > 0) {
     silc_schedule_task_add_fd(schedule, read_fd, silc_fd_stream_io, stream);
     silc_schedule_set_listen_fd(schedule, read_fd, SILC_TASK_READ, FALSE);
-    silc_net_set_socket_nonblock(read_fd);
+    silc_file_set_nonblock(read_fd);
     if (write_fd < 1)
-      write_fd = read_fd;
+      stream->fd2 = stream->fd1;
   }
 
   return stream;
@@ -215,10 +215,14 @@ SilcBool silc_fd_stream_close(SilcStream stream)
   if (!SILC_IS_FD_STREAM(fd_stream))
     return FALSE;
 
-  if (fd_stream->fd1 > 0)
+  if (fd_stream->fd1 > 0) {
     silc_file_close(fd_stream->fd1);
-  if (fd_stream->fd2 > 0 && fd_stream->fd2 != fd_stream->fd1)
+    silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd1);
+  }
+  if (fd_stream->fd2 > 0 && fd_stream->fd2 != fd_stream->fd1) {
     silc_file_close(fd_stream->fd2);
+    silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd2);
+  }
 
   return TRUE;
 }
@@ -233,6 +237,8 @@ void silc_fd_stream_destroy(SilcStream stream)
     return;
 
   silc_fd_stream_close(stream);
+  silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd1);
+  silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd2);
   silc_free(stream);
 }
 
