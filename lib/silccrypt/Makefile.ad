@@ -26,6 +26,7 @@ libsilccrypt_la_SOURCES = \
 	aes.c \
 	rsa.c \
 	sha1.c \
+	sha256.c \
 	twofish.c \
 	blowfish.c \
 	cast.c \
@@ -57,6 +58,9 @@ include_HEADERS =	\
 	rc5.h		\
 	rsa.h		\
 	sha1.h		\
+	sha1_internal.h	\
+	sha256.h	\
+	sha256_internal.h \
 	silccipher.h	\
 	silcdh.h	\
 	silchash.h	\

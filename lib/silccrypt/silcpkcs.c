@@ -40,23 +40,25 @@ SilcDList silc_pkcs_list = NULL;
 /* Static list of PKCS for silc_pkcs_register_default(). */
 const SilcPKCSObject silc_default_pkcs[] =
 {
-  /* RSA with PKCS #1 (Uses directly routines from Raw RSA operations) */
-  { "rsa",
+  /* RSA with PKCS #1 for SILC PKCS */
+  { "rsa", SILC_PKCS_SILC,
     silc_rsa_init, silc_rsa_clear_keys, silc_rsa_get_public_key,
     silc_rsa_get_private_key, silc_rsa_set_public_key,
     silc_rsa_set_private_key, silc_rsa_context_len,
     silc_pkcs1_encrypt, silc_pkcs1_decrypt,
     silc_pkcs1_sign, silc_pkcs1_verify },
 
-  /* Raw RSA operations */
-  { "rsa-raw",
+  /* RSASSA-PKCS1-V1_5 for SSH2 PKCS */
+/*
+  { "rsa", SILC_PKCS_SSH2,
     silc_rsa_init, silc_rsa_clear_keys, silc_rsa_get_public_key,
     silc_rsa_get_private_key, silc_rsa_set_public_key,
     silc_rsa_set_private_key, silc_rsa_context_len,
-    silc_rsa_encrypt, silc_rsa_decrypt,
-    silc_rsa_sign, silc_rsa_verify },
+    silc_pkcs1_encrypt, silc_pkcs1_decrypt,
+    silc_pkcs1_sign, silc_pkcs1_verify },
+*/
 
-  { NULL, NULL, NULL, NULL, NULL,
+  { NULL, 0, NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
@@ -75,13 +77,15 @@ SilcBool silc_pkcs_register(const SilcPKCSObject *pkcs)
     SilcPKCSObject *entry;
     silc_dlist_start(silc_pkcs_list);
     while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
-      if (!strcmp(entry->name, pkcs->name))
+      if (!strcmp(entry->name, pkcs->name) &&
+	  entry->type == pkcs->type)
         return FALSE;
     }
   }
 
   new = silc_calloc(1, sizeof(*new));
   new->name = strdup(pkcs->name);
+  new->type = pkcs->type;
   new->init = pkcs->init;
   new->clear_keys = pkcs->clear_keys;
   new->get_public_key = pkcs->get_public_key;
@@ -172,7 +176,8 @@ SilcBool silc_pkcs_unregister_all(void)
 /* Allocates a new SilcPKCS object. The new allocated object is returned
    to the 'new_pkcs' argument. */
 
-SilcBool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs)
+SilcBool silc_pkcs_alloc(const unsigned char *name, SilcPKCSType type,
+			 SilcPKCS *new_pkcs)
 {
   SilcPKCSObject *entry = NULL;
 
@@ -182,7 +187,7 @@ SilcBool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs)
   if (silc_pkcs_list) {
     silc_dlist_start(silc_pkcs_list);
     while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
-      if (!strcmp(entry->name, name))
+      if (!strcmp(entry->name, name) && entry->type == type)
 	break;
     }
   }
@@ -191,7 +196,8 @@ SilcBool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs)
     /* On EPOC which don't have globals we check our constant hash list. */
     int i;
     for (i = 0; silc_default_pkcs[i].name; i++) {
-      if (!strcmp(silc_default_pkcs[i].name, name)) {
+      if (!strcmp(silc_default_pkcs[i].name, name) &&
+	  silc_default_pkcs[i].type == type) {
 	entry = (SilcPKCSObject *)&(silc_default_pkcs[i]);
 	break;
       }
@@ -290,7 +296,7 @@ char *silc_pkcs_get_supported(void)
 /* Generate new key pair into the `pkcs' context. */
 
 SilcBool silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
-			    SilcRng rng)
+				SilcRng rng)
 {
   SilcBool ret = pkcs->pkcs->init(pkcs->context, bits_key_len, rng);
   if (ret)
@@ -811,7 +817,7 @@ SilcBool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
      code assumes that the PKCS routine checks the format of the key.
      (check only if PKCS are registered) */
   if (SILC_PKCS_LIST) {
-    silc_pkcs_alloc(pkcs_name, &alg);
+    silc_pkcs_alloc(pkcs_name, SILC_PKCS_SILC, &alg);
     if (!alg->pkcs->set_public_key(alg->context, key_data, key_len))
       goto err;
     silc_pkcs_free(alg);
@@ -1033,7 +1039,7 @@ SilcBool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
      code assumes that the PKCS routine checks the format of the key.
      (check only if PKCS are registered) */
   if (SILC_PKCS_LIST) {
-    silc_pkcs_alloc(pkcs_name, &alg);
+    silc_pkcs_alloc(pkcs_name, SILC_PKCS_SILC, &alg);
     if (!alg->pkcs->set_private_key(alg->context, key_data, key_len)) {
       SILC_LOG_DEBUG(("Could not set private key data"));
       goto err;

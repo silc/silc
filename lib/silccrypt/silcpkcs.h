@@ -53,10 +53,33 @@
  ***/
 typedef struct SilcPKCSStruct *SilcPKCS;
 
+/****d* silccrypt/SilcPKCSAPI/SilcPKCSType
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcPKCSType
+ *
+ * DESCRIPTION
+ *
+ *    Public key cryptosystem types.  These are defined by the SILC
+ *    Key Exchange protocol.
+ *
+ * SOURCE
+ */
+typedef enum {
+  SILC_PKCS_SILC    = 1,	/* SILC PKCS (mandatory) */
+  SILC_PKCS_SSH2    = 2,	/* SSH2 PKCS (not supported) */
+  SILC_PKCS_X509V3  = 3,	/* X.509v3 PKCS (not supported) */
+  SILC_PKCS_OPENPGP = 4,	/* OpenPGP PKCS (not supported) */
+  SILC_PKCS_SPKI    = 5,	/* SPKI PKCS (not supported) */
+} SilcPKCSType;
+/***/
+
 /* The default SILC PKCS (Public Key Cryptosystem) object to represent
    any PKCS in SILC. */
 typedef struct SilcPKCSObjectStruct {
   char *name;
+  SilcPKCSType type;
   int (*init)(void *, SilcUInt32, SilcRng);
   void (*clear_keys)(void *);
   unsigned char *(*get_public_key)(void *, SilcUInt32 *);
@@ -303,7 +326,8 @@ SilcBool silc_pkcs_unregister_all(void);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs);
+ *    SilcBool silc_pkcs_alloc(const unsigned char *name,
+ *                             SilcPKCSType type, SilcPKCS *new_pkcs);
  *
  * DESCRIPTION
  *
@@ -311,7 +335,8 @@ SilcBool silc_pkcs_unregister_all(void);
  *    to the 'new_pkcs' argument.  Returns FALSE on error.
  *
  ***/
-SilcBool silc_pkcs_alloc(const unsigned char *name, SilcPKCS *new_pkcs);
+SilcBool silc_pkcs_alloc(const unsigned char *name,
+			 SilcPKCSType type, SilcPKCS *new_pkcs);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_free
  *
@@ -366,7 +391,7 @@ char *silc_pkcs_get_supported(void);
  *
  ***/
 SilcBool silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
-			    SilcRng rng);
+				SilcRng rng);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_key_len
  *
