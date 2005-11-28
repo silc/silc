@@ -45,23 +45,6 @@
  ***/
 typedef struct SilcMutexStruct *SilcMutex;
 
-/****d* silcutil/SilcMutexAPI/SILC_MUTEX_DEFINE
- *
- * NAME
- *
- *    #define SILC_MUTEX_DEFINE(name) ...
- *
- * DESCRIPTION
- *
- *    This macro is used to define new mutex.  Use this macro in an
- *    environment that can be compiled with or without the SILC Mutex
- *    API. This is equivalent to defining SilcMutex `name'; directly.
- *
- * SOURCE
- */
-#define SILC_MUTEX_DEFINE(name) SilcMutex name
-/***/
-
 /****f* silcutil/SilcMutexAPI/silc_mutex_alloc
  *
  * SYNOPSIS

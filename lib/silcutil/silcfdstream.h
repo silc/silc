@@ -67,6 +67,24 @@ SilcStream silc_fd_stream_create(int fd, SilcSchedule schedule);
 SilcStream silc_fd_stream_create2(int read_fd, int write_fd,
 				  SilcSchedule schedule);
 
+/****f* silcutil/SilcFDStreamAPI/silc_fd_stream_file
+ *
+ * SYNOPSIS
+ *
+ *    SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
+ *                                   SilcBool writing, SilcSchedule schedule);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_fd_stream_create but creates the stream by opening the
+ *    file indicated by `filename'.  If the `reading' is TRUE the file is
+ *    opened for reading.  If the `writing' is TRUE the file is opened
+ *    for writing.
+ *
+ ***/
+SilcStream silc_fd_stream_file(const char *filename, SilcBool reading, 
+			       SilcBool writing, SilcSchedule schedule);
+
 /****f* silcutil/SilcFDStreamAPI/silc_fd_stream_get_info
  *
  * SYNOPSIS

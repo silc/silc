@@ -103,6 +103,31 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd,
   return stream;
 }
 
+/* Create by opening file */
+
+SilcStream silc_fd_stream_file(const char *filename,
+			       SilcBool reading, SilcBool writing,
+			       SilcSchedule schedule)
+{
+  int fd, flags = 0;
+
+  if (!filename)
+    return NULL;
+
+  if (reading)
+    flags |= O_RDONLY;
+  if (writing)
+    flags |= O_WRONLY;
+  if (reading && writing)
+    flags |= O_RDWR;
+
+  fd = silc_file_open(filename, flags);
+  if (fd < 0)
+    return NULL;
+
+  return silc_fd_stream_create(fd, schedule);
+}
+
 /* Return fds */
 
 SilcBool silc_fd_stream_get_info(SilcStream stream, int *read_fd, int *write_fd)

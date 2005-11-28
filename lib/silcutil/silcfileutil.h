@@ -100,7 +100,7 @@ int silc_file_write(int fd, const char *buffer, SilcUInt32 len);
  ***/
 int silc_file_close(int fd);
 
-/****f* silcutil/SilcNetAPI/silc_file_set_nonblock
+/****f* silcutil/SilcFileUtilAPI/silc_file_set_nonblock
  *
  * SYNOPSIS
  *
