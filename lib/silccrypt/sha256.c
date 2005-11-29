@@ -58,7 +58,7 @@ static inline unsigned RORc(unsigned word, int i)
 }
 
 #else
-#define RORc(x, y) ( ((((unsigned long)(x)&0xFFFFFFFFUL)>>(unsignedlong)((y)&31)) | ((unsigned long)(x)<<(unsigned long)(32-((y)&31)))) &0xFFFFFFFFUL)
+#define RORc(x, y) ( ((((unsigned long)(x)&0xFFFFFFFFUL)>>(unsigned long)((y)&31)) | ((unsigned long)(x)<<(unsigned long)(32-((y)&31)))) &0xFFFFFFFFUL)
 #endif /* _MSC_VER */
 
 /* Various logical functions */
