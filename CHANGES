@@ -1,3 +1,8 @@
+Wed Dec 14 19:21:42 CET 2005 Jochen Eisinger <coffee@silcnet.org>
+
+	* Fixed autodist configuration for sic-client.  Affected file
+	  configure.ad
+
 Tue Nov 29 07:52:11 CET 2005 Patrik Weiskircher <pat@icore.at>
 
 	* Fixed compile error on non-i386.  Affected file 
