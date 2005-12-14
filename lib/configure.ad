@@ -70,8 +70,8 @@ LIBSILC_REVISION=1		# prev = 0
 LIBSILC_AGE=4			# prev = 4
 
 # libsilcclient versions
-LIBSILCCLIENT_CURRENT=4		# prev = 4
-LIBSILCCLIENT_REVISION=1	# prev = 0
+LIBSILCCLIENT_CURRENT=4		# prev = 4 (Toolkit 1.0.1)
+LIBSILCCLIENT_REVISION=2	# prev = 1
 LIBSILCCLIENT_AGE=3		# prev = 3
 
 # Substitute the version numbers
