@@ -65,9 +65,9 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcclient"
 LIB_BASE_VERSION=1.0
 
 # libsilc versions
-LIBSILC_CURRENT=6		# prev = 5
-LIBSILC_REVISION=0		# prev = 0
-LIBSILC_AGE=4			# prev = 3
+LIBSILC_CURRENT=6		# prev = 6 (Toolkit 1.0.1)
+LIBSILC_REVISION=1		# prev = 0
+LIBSILC_AGE=4			# prev = 4
 
 # libsilcclient versions
 LIBSILCCLIENT_CURRENT=4		# prev = 4
