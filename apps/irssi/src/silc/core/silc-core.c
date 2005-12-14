@@ -343,18 +343,24 @@ static void sig_init_finished(void)
 {
   /* Check ~/.silc directory and public and private keys */
   if (!silc_client_check_silc_dir())
-    exit(1);
+    goto err;
 
   /* Load public and private key */
   if (!silc_client_load_keys(silc_client))
-    exit(1);
+    goto err;
 
   /* Initialize the SILC client */
   if (!silc_client_init(silc_client))
-    exit(1);
+    goto err;
 
   /* register SILC scheduler */
   idletag = g_timeout_add(5, (GSourceFunc) my_silc_scheduler, NULL);
+
+  return;
+
+err:
+  sleep(2);
+  exit(1);
 }
 
 /* Init SILC. Called from src/fe-text/silc.c */
@@ -457,7 +463,11 @@ void silc_core_init(void)
   /* Get user information */
   silc_client->username = g_strdup(settings_get_str("user_name"));
   silc_client->nickname = g_strdup(settings_get_str("nick"));
-  silc_client->hostname = silc_net_localhost();
+  if (settings_get_str("hostname") == NULL || 
+	*(settings_get_str("hostname")) == '\0')
+    silc_client->hostname = silc_net_localhost();
+  else
+    silc_client->hostname = g_strdup(settings_get_str("hostname"));
   silc_client->realname = g_strdup(settings_get_str("real_name"));
 
   silc_log_set_callback(SILC_LOG_INFO, silc_log_misc, NULL);
