@@ -1,4 +1,4 @@
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Test vectors from draft-ietf-ipsec-ciph-sha-256-01.txt */
 

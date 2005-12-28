@@ -244,7 +244,7 @@ silc_auth_public_key_auth_generate_wpub(SilcPublicKey public_key,
  *
  * SYNOPSIS
  *
- *    bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
+ *    SilcBool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
  *                                          SilcPublicKey public_key,
  *                                          SilcHash hash,
  *                                          const void *id, SilcIdType type);
@@ -255,7 +255,7 @@ silc_auth_public_key_auth_generate_wpub(SilcPublicKey public_key,
  *    successful.
  *
  ***/
-bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
+SilcBool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
 				      SilcPublicKey public_key, SilcHash hash,
 				      const void *id, SilcIdType type);
 
@@ -263,7 +263,7 @@ bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
  *
  * SYNOPSIS
  *
- *    bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
+ *    SilcBool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
  *                                               SilcUInt32 payload_len,
  *                                               SilcPublicKey public_key,
  *                                               SilcHash hash,
@@ -277,7 +277,7 @@ bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
  *    was successful.
  *
  ***/
-bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
+SilcBool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
 					   SilcUInt32 payload_len,
 					   SilcPublicKey public_key,
 					   SilcHash hash,
@@ -287,7 +287,7 @@ bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
  *
  * SYNOPSIS
  *
- *    bool silc_auth_verify(SilcAuthPayload payload,
+ *    SilcBool silc_auth_verify(SilcAuthPayload payload,
  *                          SilcAuthMethod auth_method,
  *                          const void *auth_data, SilcUInt32 auth_data_len,
  *                          SilcHash hash, const void *id, SilcIdType type);
@@ -302,7 +302,7 @@ bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
  *    `auth_data' is the SilcPublicKey and the `auth_data_len' is ignored.
  *
  ***/
-bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
+SilcBool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
 		      const void *auth_data, SilcUInt32 auth_data_len,
 		      SilcHash hash, const void *id, SilcIdType type);
 
@@ -310,7 +310,7 @@ bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
  *
  * SYNOPSIS
  *
- *    bool silc_auth_verify_data(const unsigned char *payload,
+ *    SilcBool silc_auth_verify_data(const unsigned char *payload,
  *                               SilcUInt32 payload_len,
  *                               SilcAuthMethod auth_method,
  *                               const void *auth_data,
@@ -328,7 +328,7 @@ bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
  *    `auth_data' is the SilcPublicKey and the `auth_data_len' is ignored.
  *
  ***/
-bool silc_auth_verify_data(const unsigned char *payload,
+SilcBool silc_auth_verify_data(const unsigned char *payload,
 			   SilcUInt32 payload_len,
 			   SilcAuthMethod auth_method, const void *auth_data,
 			   SilcUInt32 auth_data_len, SilcHash hash,

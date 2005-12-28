@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -526,8 +526,9 @@ SilcUInt32 silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
  *    Encrypts. Returns FALSE on error.
  *
  ***/
-SilcBool silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
-		       unsigned char *dst, SilcUInt32 *dst_len);
+SilcBool silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src,
+			   SilcUInt32 src_len,
+			   unsigned char *dst, SilcUInt32 *dst_len);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_decrypt
  *
@@ -542,8 +543,9 @@ SilcBool silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len
  *    Decrypts.  Returns FALSE on error.
  *
  ***/
-SilcBool silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
-		       unsigned char *dst, SilcUInt32 *dst_len);
+SilcBool silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src,
+			   SilcUInt32 src_len,
+			   unsigned char *dst, SilcUInt32 *dst_len);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_sign
  *
@@ -559,7 +561,7 @@ SilcBool silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len
  *
  ***/
 SilcBool silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
-		    unsigned char *dst, SilcUInt32 *dst_len);
+			unsigned char *dst, SilcUInt32 *dst_len);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_verify
  *
@@ -576,8 +578,8 @@ SilcBool silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
  *
  ***/
 SilcBool silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature,
-		      SilcUInt32 signature_len, unsigned char *data,
-		      SilcUInt32 data_len);
+			  SilcUInt32 signature_len, unsigned char *data,
+			  SilcUInt32 data_len);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_sign_with_hash
  *
@@ -594,8 +596,8 @@ SilcBool silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature,
  *
  ***/
 SilcBool silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
-			      unsigned char *src, SilcUInt32 src_len,
-			      unsigned char *dst, SilcUInt32 *dst_len);
+				  unsigned char *src, SilcUInt32 src_len,
+				  unsigned char *dst, SilcUInt32 *dst_len);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_verify_with_hash
  *
@@ -614,10 +616,10 @@ SilcBool silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
  *
  ***/
 SilcBool silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash,
-				unsigned char *signature,
-				SilcUInt32 signature_len,
-				unsigned char *data,
-				SilcUInt32 data_len);
+				    unsigned char *signature,
+				    SilcUInt32 signature_len,
+				    unsigned char *data,
+				    SilcUInt32 data_len);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_encode_identifier
  *

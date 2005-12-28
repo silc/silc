@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* limit debug logging verbosity */
 #if 0

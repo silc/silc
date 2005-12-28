@@ -4,7 +4,7 @@ bug-report silc-devel@lists.silcnet.org
 
 # Inherits
 inherit common
-inherit client
+#inherit client
 inherit server
 
 # License

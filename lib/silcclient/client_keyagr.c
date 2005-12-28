@@ -23,7 +23,7 @@
    and in protocol.c. This file implements the client-to-client key
    agreement as defined by the SILC protocol. */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcclient.h"
 #include "client_internal.h"
 

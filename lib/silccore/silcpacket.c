@@ -21,28 +21,38 @@
  */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
+
+/************************** Types and definitions ***************************/
 
 /* Packet engine */
 struct SilcPacketEngineStruct {
-  SilcSchedule schedule;		 /* Application's scheduler */
   SilcRng rng;		                 /* RNG for engine */
   SilcPacketCallbacks *callbacks;	 /* Packet callbacks */
   void *callback_context;		 /* Context for callbacks */
-  SilcDList streams;			 /* All streams in engine */
+  SilcList streams;			 /* All streams in engine */
   SilcList packet_pool;       		 /* Free list for received packets */
   SilcMutex lock;			 /* Engine lock */
-  bool local_is_router;
+  SilcBool local_is_router;
 };
+
+/* Packet procesor context */
+typedef struct SilcPacketProcessStruct {
+  SilcInt32 priority;		         /* Priority */
+  SilcPacketType *types;		 /* Packets to process */
+  SilcPacketCallbacks *callbacks;	 /* Callbacks or NULL */
+  void *callback_context;
+} *SilcPacketProcess;
 
 /* Packet stream */
 struct SilcPacketStreamStruct {
+  struct SilcPacketStreamStruct *next;
   SilcPacketEngine engine;		 /* Packet engine */
   SilcStream stream;			 /* Underlaying stream */
+  SilcMutex lock;			 /* Stream lock */
+  SilcDList process;			 /* Packet processors, it set */
   SilcHashTable streamers;	         /* Valid if streamers exist */
-  void *app_context;			 /* Applicationn context */
-  SilcPacketCallbacks *callbacks;	 /* Callbacks or NULL */
-  void *callback_context;
+  void *stream_context;			 /* Stream context */
   SilcBufferStruct inbuf;	         /* In buffer */
   SilcBufferStruct outbuf;		 /* Out buffer */
   SilcUInt32 send_psn;			 /* Sending sequence */
@@ -58,6 +68,8 @@ struct SilcPacketStreamStruct {
   unsigned int dst_id_len  : 6;
   unsigned int dst_id_type : 2;
   SilcUInt8 refcnt;			 /* Reference counter */
+  unsigned int is_router   : 1;		 /* Set if router stream */
+  unsigned int destroyed   : 1;		 /* Set if destroyed */
 };
 
 /* Initial size of stream buffers */
@@ -117,54 +129,190 @@ do {									   \
 	      ((__blocklen) ? (__blocklen) : SILC_PACKET_DEFAULT_PADLEN)); \
 } while(0)
 
-static void silc_packet_stream_io(SilcStream stream, SilcStreamStatus status,
-				  void *context);
-
-/* Receive packet callback */
-#define SILC_PACKET_CALLBACK_PACKET(s, p)				\
-do {									\
-  if ((s)->callbacks && (s)->callbacks->packet_receive)			\
-    (s)->callbacks->packet_receive((s)->engine, s, p,			\
-			           (s)->callback_context,		\
-			           (s)->app_context);			\
-  else									\
-    (s)->engine->callbacks->packet_receive((s)->engine, s, p,		\
-				           (s)->callback_context,	\
-				           (s)->app_context);		\
-} while(0)
-
 /* EOS callback */
 #define SILC_PACKET_CALLBACK_EOS(s)					\
 do {									\
-  if ((s)->callbacks && (s)->callbacks->eos)				\
-    (s)->callbacks->eos((s)->engine, stream, (s)->callback_context,	\
-			(s)->app_context);				\
-  else									\
-    (s)->engine->callbacks->eos((s)->engine, s,				\
-			        (s)->callback_context,			\
-				(s)->app_context);			\
+  (s)->engine->callbacks->eos((s)->engine, s,				\
+			      (s)->engine->callback_context,		\
+			      (s)->stream_context);			\
 } while(0)
 
 /* Error callback */
 #define SILC_PACKET_CALLBACK_ERROR(s, err)				\
 do {									\
-  if ((s)->callbacks && (s)->callbacks->error)				\
-    (s)->callbacks->error((s)->engine, s, err, (s)->callback_context,	\
-			  (s)->app_context);				\
-  else									\
-    (s)->engine->callbacks->error((s)->engine, s, err,			\
-				  (s)->callback_context,		\
-				  (s)->app_context);			\
+  (s)->engine->callbacks->error((s)->engine, s, err,			\
+				(s)->engine->callback_context,  	\
+				(s)->stream_context);			\
 } while(0)
 
-static SilcPacket silc_packet_alloc(SilcPacketEngine engine);
+
+/************************ Static utility functions **************************/
+
 static void silc_packet_read_process(SilcPacketStream stream);
 
+/* Our stream IO notifier callback. */
+
+static void silc_packet_stream_io(SilcStream stream, SilcStreamStatus status,
+				  void *context)
+{
+  SilcPacketStream ps = context;
+  int ret;
+
+  silc_mutex_lock(ps->lock);
+
+  if (ps->destroyed) {
+    silc_mutex_unlock(ps->lock);
+    return;
+  }
+
+  switch (status) {
+
+  case SILC_STREAM_CAN_WRITE:
+    if (!silc_buffer_headlen(&ps->outbuf)) {
+      silc_mutex_unlock(ps->lock);
+      return;
+    }
+
+    SILC_LOG_DEBUG(("Writing pending data to stream"));
+
+    /* Write pending data to stream */
+    while (silc_buffer_len(&ps->outbuf) > 0) {
+      ret = silc_stream_write(ps->stream, ps->outbuf.data,
+			      silc_buffer_len(&ps->outbuf));
+      if (ret == 0) {
+	/* EOS */
+	silc_buffer_reset(&ps->outbuf);
+	silc_mutex_unlock(ps->lock);
+	SILC_PACKET_CALLBACK_EOS(ps);
+	return;
+      }
+
+      if (ret == -2) {
+	/* Error */
+	silc_buffer_reset(&ps->outbuf);
+	silc_mutex_unlock(ps->lock);
+	SILC_PACKET_CALLBACK_ERROR(ps, SILC_PACKET_ERR_WRITE);
+	return;
+      }
+
+      if (ret == -1) {
+	/* Cannot write now, write later. */
+	silc_mutex_unlock(ps->lock);
+	return;
+      }
+
+      /* Wrote data */
+      silc_buffer_pull(&ps->outbuf, ret);
+    }
+
+    silc_buffer_reset(&ps->outbuf);
+
+    silc_mutex_unlock(ps->lock);
+    break;
+
+  case SILC_STREAM_CAN_READ:
+    /* Packet receiving can only happen in one thread, so locking is not
+       required in packet receiving procedure. */
+    silc_mutex_unlock(ps->lock);
+
+    SILC_LOG_DEBUG(("Reading data from stream"));
+
+    /* Make sure we have fair amount of free space in inbuf */
+    if (silc_buffer_taillen(&ps->inbuf) < SILC_PACKET_DEFAULT_SIZE)
+      if (!silc_buffer_realloc(&ps->inbuf, silc_buffer_truelen(&ps->inbuf) +
+			       SILC_PACKET_DEFAULT_SIZE * 2))
+	return;
+
+    /* Read data from stream */
+    ret = silc_stream_read(ps->stream, ps->inbuf.tail,
+			   silc_buffer_taillen(&ps->inbuf));
+
+    if (ret == 0) {
+      /* EOS */
+      silc_buffer_reset(&ps->inbuf);
+      SILC_PACKET_CALLBACK_EOS(ps);
+      return;
+    }
+
+    if (ret == -2) {
+      /* Error */
+      silc_buffer_reset(&ps->inbuf);
+      SILC_PACKET_CALLBACK_ERROR(ps, SILC_PACKET_ERR_READ);
+      return;
+    }
+
+    if (ret == -1) {
+      /* Cannot read now, do it later. */
+      silc_buffer_pull(&ps->inbuf, silc_buffer_len(&ps->inbuf));
+      return;
+    }
+
+    /* Read some data */
+    silc_buffer_pull_tail(&ps->inbuf, ret);
+
+    /* Now process the data */
+    silc_packet_read_process(ps);
+
+    break;
+
+  default:
+    silc_mutex_unlock(ps->lock);
+    break;
+  }
+}
+
+/* Allocate packet */
+
+static SilcPacket silc_packet_alloc(SilcPacketEngine engine)
+{
+  SilcPacket packet;
+
+  SILC_LOG_DEBUG(("Packet pool count %d",
+		  silc_list_count(engine->packet_pool)));
+
+  silc_mutex_lock(engine->lock);
+
+  /* Get packet from freelist or allocate new one. */
+  packet = silc_list_get(engine->packet_pool);
+  if (!packet) {
+    void *tmp;
+
+    silc_mutex_unlock(engine->lock);
+
+    packet = silc_calloc(1, sizeof(*packet));
+    if (!packet)
+      return NULL;
+
+    SILC_LOG_DEBUG(("Allocating new packet %p", packet));
+
+    tmp = silc_malloc(SILC_PACKET_DEFAULT_SIZE);
+    if (!tmp) {
+      silc_free(packet);
+      return NULL;
+    }
+    silc_buffer_set(&packet->buffer, tmp, SILC_PACKET_DEFAULT_SIZE);
+    silc_buffer_reset(&packet->buffer);
+
+    return packet;
+  }
+
+  SILC_LOG_DEBUG(("Get packet %p", packet));
+
+  /* Delete from freelist */
+  silc_list_del(engine->packet_pool, packet);
+
+  silc_mutex_unlock(engine->lock);
+
+  return packet;
+}
+
+
+/******************************** Packet API ********************************/
 
 /* Allocate new packet engine */
 
 SilcPacketEngine
-silc_packet_engine_start(SilcSchedule schedule, SilcRng rng, bool router,
+silc_packet_engine_start(SilcRng rng, SilcBool router,
 			 SilcPacketCallbacks *callbacks,
 			 void *callback_context)
 {
@@ -175,7 +323,7 @@ silc_packet_engine_start(SilcSchedule schedule, SilcRng rng, bool router,
 
   SILC_LOG_DEBUG(("Starting new packet engine"));
 
-  if (!schedule || !callbacks)
+  if (!callbacks)
     return NULL;
   if (!callbacks->packet_receive || !callbacks->eos || !callbacks->error)
     return NULL;
@@ -188,7 +336,7 @@ silc_packet_engine_start(SilcSchedule schedule, SilcRng rng, bool router,
   engine->local_is_router = router;
   engine->callbacks = callbacks;
   engine->callback_context = callback_context;
-  engine->streams = silc_dlist_init();
+  silc_list_init(engine->streams, struct SilcPacketStreamStruct, next);
   silc_mutex_alloc(&engine->lock);
 
   /* Allocate packet free list */
@@ -202,6 +350,7 @@ silc_packet_engine_start(SilcSchedule schedule, SilcRng rng, bool router,
     if (!tmp)
       return NULL;
     silc_buffer_set(&packet->buffer, tmp, SILC_PACKET_DEFAULT_SIZE);
+    silc_buffer_reset(&packet->buffer);
 
     silc_list_add(engine->packet_pool, packet);
   }
@@ -228,6 +377,7 @@ void silc_packet_engine_stop(SilcPacketEngine engine)
 /* Create new packet stream */
 
 SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
+					   SilcSchedule schedule,
 					   SilcStream stream)
 {
   SilcPacketStream ps;
@@ -251,17 +401,24 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
   if (!tmp)
     return NULL;
   silc_buffer_set(&ps->inbuf, tmp, SILC_PACKET_DEFAULT_SIZE);
+  silc_buffer_reset(&ps->inbuf);
   tmp = silc_malloc(SILC_PACKET_DEFAULT_SIZE);
   if (!tmp)
     return NULL;
   silc_buffer_set(&ps->outbuf, tmp, SILC_PACKET_DEFAULT_SIZE);
+  silc_buffer_reset(&ps->outbuf);
+
+  /* Initialize packet procesors list */
+  ps->process = silc_dlist_init();
 
   /* Set IO notifier callback */
-  silc_stream_set_notifier(ps->stream, silc_packet_stream_io, ps);
+  silc_stream_set_notifier(ps->stream, schedule, silc_packet_stream_io, ps);
+
+  silc_mutex_alloc(&ps->lock);
 
   /* Add to engine */
   silc_mutex_lock(engine->lock);
-  silc_dlist_add(engine->streams, ps);
+  silc_list_add(engine->streams, ps);
   silc_mutex_unlock(engine->lock);
 
   return ps;
@@ -273,14 +430,17 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
 {
   if (!stream)
     return;
-  if (stream->refcnt > 1)
+
+  if (stream->refcnt > 1) {
+    stream->destroyed = TRUE;
     return;
+  }
 
   SILC_LOG_DEBUG(("Destroying packet stream %p", stream));
 
   /* Delete from engine */
   silc_mutex_lock(stream->engine->lock);
-  silc_dlist_del(stream->engine->streams, stream);
+  silc_list_del(stream->engine->streams, stream);
   silc_mutex_unlock(stream->engine->lock);
 
   /* Clear and free buffers */
@@ -289,50 +449,175 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
   silc_free(silc_buffer_steal(&stream->inbuf, NULL));
   silc_free(silc_buffer_steal(&stream->outbuf, NULL));
 
+  silc_dlist_uninit(stream->process);
+
   /* XXX */
 
   silc_free(stream);
 }
 
+/* Marks as router stream */
 
-/* Set new packet callbacks for stream */
-
-void silc_packet_stream_callbacks(SilcPacketStream stream,
-				  SilcPacketCallbacks *callbacks,
-				  void *callback_context)
+void silc_packet_stream_set_router(SilcPacketStream stream)
 {
-  stream->callbacks = callbacks;
-  stream->callback_context = callback_context;
+  stream->is_router = TRUE;
+}
+
+/* Links `callbacks' to `stream' for specified packet types */
+
+SilcBool silc_packet_stream_link(SilcPacketStream stream,
+				 SilcPacketCallbacks *callbacks,
+				 void *callback_context,
+				 int priority, ...)
+{
+  va_list ap;
+  SilcPacketProcess p, e;
+  SilcInt32 packet_type;
+  int i;
+
+  SILC_LOG_DEBUG(("Linking callbacks %p to stream %p", callbacks, stream));
+
+  if (!callbacks)
+    return FALSE;
+  if (!callbacks->packet_receive)
+    return FALSE;
+
+  p = silc_calloc(1, sizeof(*p));
+  if (!p)
+    return FALSE;
+
+  p->priority = priority;
+  p->callbacks = callbacks;
+  p->callback_context = callback_context;
+
+  silc_mutex_lock(stream->lock);
+
+  if (!stream->process) {
+    stream->process = silc_dlist_init();
+    if (!stream->process)
+      return FALSE;
+  }
+
+  /* According to priority set the procesor to correct position.  First
+     entry has the highest priority */
+  silc_dlist_start(stream->process);
+  while ((e = silc_dlist_get(stream->process)) != SILC_LIST_END) {
+    if (p->priority > e->priority) {
+      silc_dlist_insert(stream->process, p);
+      break;
+    }
+  }
+  if (!e)
+    silc_dlist_add(stream->process, p);
+
+  silc_mutex_unlock(stream->lock);
+
+  /* Get packet types to process */
+  va_start(ap, priority);
+  i = 1;
+  while (1) {
+    packet_type = va_arg(ap, SilcInt32);
+
+    if (packet_type == SILC_PACKET_ANY)
+      break;
+
+    if (packet_type == -1)
+      break;
+
+    p->types = silc_realloc(p->types, sizeof(*p->types) * (i + 1));
+    if (!p->types)
+      return FALSE;
+
+    p->types[i - 1] = (SilcPacketType)packet_type;
+    i++;
+  }
+  if (p->types)
+    p->types[i - 1] = 0;
+  va_end(ap);
+
+  silc_packet_stream_ref(stream);
+
+  return TRUE;
+}
+
+/* Unlinks `callbacks' from `stream'. */
+
+void silc_packet_stream_unlink(SilcPacketStream stream,
+			       SilcPacketCallbacks *callbacks,
+			       void *callback_context)
+{
+  SilcPacketProcess p;
+
+  SILC_LOG_DEBUG(("Unlinking callbacks %p from stream %p",
+		  callbacks, stream));
+
+  silc_mutex_lock(stream->lock);
+
+  silc_dlist_start(stream->process);
+  while ((p = silc_dlist_get(stream->process)) != SILC_LIST_END)
+    if (p->callbacks == callbacks &&
+	p->callback_context == callback_context) {
+      silc_dlist_del(stream->process, p);
+      silc_free(p);
+      break;
+    }
+
+  if (!silc_dlist_count(stream->process)) {
+    silc_dlist_uninit(stream->process);
+    stream->process = NULL;
+  }
+
+  silc_mutex_unlock(stream->lock);
+
+  silc_packet_stream_unref(stream);
 }
 
 /* Reference packet stream */
 
 void silc_packet_stream_ref(SilcPacketStream stream)
 {
+  silc_mutex_lock(stream->lock);
   stream->refcnt++;
+  silc_mutex_unlock(stream->lock);
 }
 
 /* Unreference packet stream */
 
 void silc_packet_stream_unref(SilcPacketStream stream)
 {
+  silc_mutex_lock(stream->lock);
   stream->refcnt--;
+  silc_mutex_unlock(stream->lock);
   if (stream->refcnt == 0)
     silc_packet_stream_destroy(stream);
 }
 
+/* Return engine */
+
+SilcPacketEngine silc_packet_get_engine(SilcPacketStream stream)
+{
+  return stream->engine;
+}
+
 /* Set application context for packet stream */
 
-void silc_packet_set_context(SilcPacketStream stream, void *app_context)
+void silc_packet_set_context(SilcPacketStream stream, void *stream_context)
 {
-  stream->app_context = app_context;
+  stream->stream_context = stream_context;
 }
 
 /* Return application context from packet stream */
 
 void *silc_packet_get_context(SilcPacketStream stream)
 {
-  return stream->app_context;
+  return stream->stream_context;
+}
+
+/* Return underlaying stream */
+
+SilcStream silc_packet_stream_get_stream(SilcPacketStream stream)
+{
+  return stream->stream;
 }
 
 /* Set ciphers for packet stream */
@@ -347,8 +632,8 @@ void silc_packet_set_ciphers(SilcPacketStream stream, SilcCipher send,
 
 /* Return current ciphers from packet stream */
 
-bool silc_packet_get_ciphers(SilcPacketStream stream, SilcCipher *send,
-			     SilcCipher *receive)
+SilcBool silc_packet_get_ciphers(SilcPacketStream stream, SilcCipher *send,
+				 SilcCipher *receive)
 {
   if (!stream->send_key && !stream->receive_key)
     return FALSE;
@@ -373,8 +658,8 @@ void silc_packet_set_hmacs(SilcPacketStream stream, SilcHmac send,
 
 /* Return current HMACs from packet stream */
 
-bool silc_packet_get_hmacs(SilcPacketStream stream, SilcHmac *send,
-			   SilcHmac *receive)
+SilcBool silc_packet_get_hmacs(SilcPacketStream stream, SilcHmac *send,
+			       SilcHmac *receive)
 {
   if (!stream->send_hmac && !stream->receive_hmac)
     return FALSE;
@@ -389,11 +674,12 @@ bool silc_packet_get_hmacs(SilcPacketStream stream, SilcHmac *send,
 
 /* Set SILC IDs to packet stream */
 
-bool silc_packet_set_ids(SilcPacketStream stream,
-			SilcIdType src_id_type, const void *src_id,
-			 SilcIdType dst_id_type, const void *dst_id)
+SilcBool silc_packet_set_ids(SilcPacketStream stream,
+			     SilcIdType src_id_type, const void *src_id,
+			     SilcIdType dst_id_type, const void *dst_id)
 {
   SilcUInt32 len;
+  unsigned char tmp[32];
 
   if (!src_id && !dst_id)
     return FALSE;
@@ -402,7 +688,9 @@ bool silc_packet_set_ids(SilcPacketStream stream,
 
   if (src_id) {
     silc_free(stream->src_id);
-    stream->src_id = silc_id_id2str(src_id, src_id_type, &len);
+    if (!silc_id_id2str(src_id, src_id_type, tmp, sizeof(tmp), &len))
+      return FALSE;
+    stream->src_id = silc_memdup(tmp, len);
     if (!stream->src_id)
       return FALSE;
     stream->src_id_type = src_id_type;
@@ -411,7 +699,9 @@ bool silc_packet_set_ids(SilcPacketStream stream,
 
   if (dst_id) {
     silc_free(stream->dst_id);
-    stream->dst_id = silc_id_id2str(dst_id, dst_id_type, &len);
+    if (!silc_id_id2str(dst_id, dst_id_type, tmp, sizeof(tmp), &len))
+      return FALSE;
+    stream->dst_id = silc_memdup(tmp, len);
     if (!stream->dst_id)
       return FALSE;
     stream->dst_id_type = dst_id_type;
@@ -421,22 +711,63 @@ bool silc_packet_set_ids(SilcPacketStream stream,
   return TRUE;
 }
 
+/* Free packet */
+
+void silc_packet_free(SilcPacket packet)
+{
+  SilcPacketStream stream = packet->stream;
+
+  SILC_LOG_DEBUG(("Freeing packet %p", packet));
+
+#if defined(SILC_DEBUG)
+  /* Check for double free */
+  assert(packet->stream != NULL);
+#endif /* SILC_DEBUG */
+
+  silc_mutex_lock(stream->engine->lock);
+
+  packet->stream = NULL;
+  packet->src_id = packet->dst_id = NULL;
+  silc_buffer_reset(&packet->buffer);
+
+  /* Put the packet back to freelist */
+  silc_list_add(stream->engine->packet_pool, packet);
+
+  silc_mutex_unlock(stream->engine->lock);
+}
+
+/* Creates streamer */
+
+SilcStream silc_packet_streamer_create(SilcPacketStream stream,
+				       SilcPacketType packet_type,
+				       SilcPacketFlags packet_flags)
+{
+  /* XXX TODO */
+  return NULL;
+}
+
+/* Destroyes streamer */
+
+void silc_packet_streamer_destroy(SilcStream stream)
+{
+
+}
+
+
+/****************************** Packet Sending ******************************/
+
 /* Prepare outgoing data buffer for packet sending.  Returns the
    pointer to that buffer into the `packet'. */
 
-static bool silc_packet_send_prepare(SilcPacketStream stream,
-				     SilcUInt32 totlen,
-							  SilcHmac hmac,
-				     const SilcBuffer packet)
+static SilcBool silc_packet_send_prepare(SilcPacketStream stream,
+					 SilcUInt32 totlen,
+					 SilcHmac hmac,
+					 SilcBuffer packet)
 {
   unsigned char *oldptr;
   unsigned int mac_len = hmac ? silc_hmac_len(hmac) : 0;
 
   totlen += mac_len;
-
-  /* If head is empty, the buffer is free for our use (no pending data) */
-  if (!silc_buffer_headlen(&stream->outbuf))
-    silc_buffer_reset(&stream->outbuf);
 
   /* Allocate more space if needed */
   if (silc_buffer_taillen(&stream->outbuf) < totlen) {
@@ -448,33 +779,33 @@ static bool silc_packet_send_prepare(SilcPacketStream stream,
   /* Pull data area for the new packet, and return pointer to the start of
      the data area and save the pointer in to the `packet'.  MAC is pulled
      later after it's computed. */
-  oldptr = silc_buffer_pull_tail(&stream->outbuf, totlen - mac_len);
+  oldptr = silc_buffer_pull_tail(&stream->outbuf, totlen);
   silc_buffer_set(packet, oldptr, totlen);
+  silc_buffer_push_tail(packet, mac_len);
 
   return TRUE;
 }
 
-
 /* Internal routine to send packet */
 
-static bool silc_packet_send_raw(SilcPacketStream stream,
-				 SilcPacketType type,
-				 SilcPacketFlags flags,
-				 SilcIdType src_id_type,
-				 unsigned char *src_id,
-				 SilcUInt32 src_id_len,
-				 SilcIdType dst_id_type,
-				 unsigned char *dst_id,
-				 SilcUInt32 dst_id_len,
-				 const unsigned char *data,
-				 SilcUInt32 data_len,
-				 SilcCipher cipher,
-				 SilcHmac hmac)
+static SilcBool silc_packet_send_raw(SilcPacketStream stream,
+				     SilcPacketType type,
+				     SilcPacketFlags flags,
+				     SilcIdType src_id_type,
+				     unsigned char *src_id,
+				     SilcUInt32 src_id_len,
+				     SilcIdType dst_id_type,
+				     unsigned char *dst_id,
+				     SilcUInt32 dst_id_len,
+				     const unsigned char *data,
+				     SilcUInt32 data_len,
+				     SilcCipher cipher,
+				     SilcHmac hmac)
 {
   unsigned char tmppad[SILC_PACKET_MAX_PADLEN];
   int block_len = (cipher ? silc_cipher_get_block_len(cipher) : 0);
   int i, enclen, truelen, padlen;
-  const SilcBufferStruct packet;
+  SilcBufferStruct packet;
 
   SILC_LOG_DEBUG(("Sending packet %s (%d) flags %d, src %d dst %d,"
 		  "data len %d", silc_get_packet_name(type), stream->send_psn,
@@ -510,22 +841,24 @@ static bool silc_packet_send_raw(SilcPacketStream stream,
       SILC_PACKET_PADLEN_MAX(truelen, block_len, padlen);
     else
       SILC_PACKET_PADLEN(truelen, block_len, padlen);
+
+    enclen += padlen;
   }
 
   /* Remove implementation specific flags */
   flags &= ~(SILC_PACKET_FLAG_LONG_PAD);
 
-  /* Get packet pointer from the outgoing buffer */
-  if (!silc_packet_send_prepare(stream, truelen + padlen, hmac, &packet))
-    return FALSE;
-
   /* Get random padding */
-  if (stream->engine->rng)
-    for (i = 0; i < padlen; i++) tmppad[i] =
-					   silc_rng_get_byte_fast(stream->engine->rng);
-  else
-    for (i = 0; i < padlen; i++) tmppad[i] =
-					   silc_rng_global_get_byte_fast();
+  for (i = 0; i < padlen; i++) tmppad[i] =
+				 silc_rng_get_byte_fast(stream->engine->rng);
+
+  silc_mutex_lock(stream->lock);
+
+  /* Get packet pointer from the outgoing buffer */
+  if (!silc_packet_send_prepare(stream, truelen + padlen, hmac, &packet)) {
+    silc_mutex_unlock(stream->lock);
+    return FALSE;
+  }
 
   /* Create the packet.  This creates the SILC header, adds padding, and
      the actual packet data. */
@@ -544,22 +877,26 @@ static bool silc_packet_send_raw(SilcPacketStream stream,
 			 SILC_STR_UI_XNSTRING(tmppad, padlen),
 			 SILC_STR_UI_XNSTRING(data, data_len),
 			 SILC_STR_END);
-  if (i < 0)
+  if (i < 0) {
+    silc_mutex_unlock(stream->lock);
     return FALSE;
+  }
 
   SILC_LOG_HEXDUMP(("Assembled packet, len %d", silc_buffer_len(&packet)),
 		   packet.data, silc_buffer_len(&packet));
 
   /* Encrypt the packet */
   if (cipher)
-    if (!silc_cipher_encrypt(cipher, packet.data, packet.data, enclen, NULL)) {
+    if (!silc_cipher_encrypt(cipher, packet.data, packet.data,
+			     enclen, NULL)) {
       SILC_LOG_ERROR(("Packet encryption failed"));
+      silc_mutex_unlock(stream->lock);
       return FALSE;
     }
 
   /* Compute HMAC */
   if (hmac) {
-    unsigned char mac[32], psn[4];
+    unsigned char psn[4];
     SilcUInt32 mac_len;
 
     /* MAC is computed from the entire encrypted packet data, and put
@@ -574,41 +911,45 @@ static bool silc_packet_send_raw(SilcPacketStream stream,
   }
 
   /* Write the packet to the stream */
-  while (silc_buffer_len(&packet) > 0) {
-    i = silc_stream_write(stream->stream, packet.data,
-			  silc_buffer_len(&packet));
+  while (silc_buffer_len(&stream->outbuf) > 0) {
+    i = silc_stream_write(stream->stream, stream->outbuf.data,
+			  silc_buffer_len(&stream->outbuf));
     if (i == 0) {
       /* EOS */
-      SILC_PACKET_CALLBACK_EOS(stream);
       silc_buffer_reset(&stream->outbuf);
+      silc_mutex_unlock(stream->lock);
+      SILC_PACKET_CALLBACK_EOS(stream);
       return FALSE;
     }
 
     if (i == -2) {
       /* Error */
-      SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_WRITE);
       silc_buffer_reset(&stream->outbuf);
+      silc_mutex_unlock(stream->lock);
+      SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_WRITE);
       return FALSE;
     }
 
     if (i == -1) {
       /* Cannot write now, write later. */
-      silc_buffer_pull(&packet, silc_buffer_len(&packet));
+      silc_mutex_unlock(stream->lock);
       return TRUE;
     }
 
     /* Wrote data */
-    silc_buffer_pull(&packet, i);
+    silc_buffer_pull(&stream->outbuf, i);
   }
+  silc_buffer_reset(&stream->outbuf);
 
+  silc_mutex_unlock(stream->lock);
   return TRUE;
 }
 
 /* Sends a packet */
 
-bool silc_packet_send(SilcPacketStream stream,
-		      SilcPacketType type, SilcPacketFlags flags,
-		      const unsigned char *data, SilcUInt32 data_len)
+SilcBool silc_packet_send(SilcPacketStream stream,
+			  SilcPacketType type, SilcPacketFlags flags,
+			  const unsigned char *data, SilcUInt32 data_len)
 {
   return silc_packet_send_raw(stream, type, flags,
 			      stream->src_id_type,
@@ -624,141 +965,47 @@ bool silc_packet_send(SilcPacketStream stream,
 
 /* Sends a packet, extended routine */
 
-bool silc_packet_send_ext(SilcPacketStream stream,
-			  SilcPacketType type, SilcPacketFlags flags,
-			  SilcIdType src_id_type, void *src_id,
-			  SilcIdType dst_id_type, void *dst_id,
-			  const unsigned char *data, SilcUInt32 data_len,
-			  SilcCipher cipher, SilcHmac hmac)
+SilcBool silc_packet_send_ext(SilcPacketStream stream,
+			      SilcPacketType type, SilcPacketFlags flags,
+			      SilcIdType src_id_type, void *src_id,
+			      SilcIdType dst_id_type, void *dst_id,
+			      const unsigned char *data, SilcUInt32 data_len,
+			      SilcCipher cipher, SilcHmac hmac)
 {
-  bool ret;
-  unsigned char *src_id_data = NULL, *dst_id_data = NULL;
+  unsigned char src_id_data[32], dst_id_data[32];
   SilcUInt32 src_id_len, dst_id_len;
 
-  /* XXX non-allocating id2str needed! */
-
   if (src_id)
-    src_id_data = silc_id_id2str(src_id, src_id_type, &src_id_len);
-  if (src_id)
-    dst_id_data = silc_id_id2str(dst_id, dst_id_type, &dst_id_len);
+    if (!silc_id_id2str(src_id, src_id_type, src_id_data,
+			sizeof(src_id_data), &src_id_len))
+      return FALSE;
+  if (dst_id)
+    if (!silc_id_id2str(dst_id, dst_id_type, dst_id_data,
+			sizeof(dst_id_data), &dst_id_len))
+      return FALSE;
 
-  ret = silc_packet_send_raw(stream, type, flags,
-			     src_id_type,
-			     src_id_data,
-			     src_id_len,
-			     dst_id_type,
-			     dst_id_data,
-			     dst_id_len,
-			     data, data_len,
-			     cipher,
-			     hmac);
-
-  silc_free(src_id_data);
-  silc_free(dst_id_data);
-
-  return ret;
+  return silc_packet_send_raw(stream, type, flags,
+			      src_id_type,
+			      src_id_data,
+			      src_id_len,
+			      dst_id_type,
+			      dst_id_data,
+			      dst_id_len,
+			      data, data_len,
+			      cipher,
+			      hmac);
 }
 
-/* Our stream IO notifier callback. */
 
-static void silc_packet_stream_io(SilcStream stream, SilcStreamStatus status,
-				  void *context)
-{
-  SilcPacketStream ps = context;
-  int ret;
-
-  switch (status) {
-
-  case SILC_STREAM_CAN_WRITE:
-    if (!silc_buffer_headlen(&ps->outbuf))
-      return;
-
-    SILC_LOG_DEBUG(("Writing pending data to stream"));
-
-    /* Write pending data to stream */
-    silc_buffer_push(&ps->outbuf, silc_buffer_headlen(&ps->outbuf));
-    while (silc_buffer_len(&ps->outbuf) > 0) {
-      ret = silc_stream_write(ps->stream, ps->outbuf.data,
-			      silc_buffer_len(&ps->outbuf));
-      if (ret == 0) {
-	/* EOS */
-	SILC_PACKET_CALLBACK_EOS(ps);
-	silc_buffer_reset(&ps->outbuf);
-	return;
-      }
-
-      if (ret == -2) {
-	/* Error */
-	SILC_PACKET_CALLBACK_ERROR(ps, SILC_PACKET_ERR_WRITE);
-	silc_buffer_reset(&ps->outbuf);
-	return;
-      }
-
-      if (ret == -1) {
-	/* Cannot write now, write later. */
-	silc_buffer_pull(&ps->outbuf, silc_buffer_len(&ps->outbuf));
-	return;
-      }
-
-      /* Wrote data */
-      silc_buffer_pull(&ps->outbuf, ret);
-    }
-
-    break;
-
-  case SILC_STREAM_CAN_READ:
-    SILC_LOG_DEBUG(("Reading data from stream"));
-
-    /* Make sure we have fair amount of free space in inbuf */
-    if (silc_buffer_taillen(&ps->inbuf) < SILC_PACKET_DEFAULT_SIZE)
-      if (!silc_buffer_realloc(&ps->inbuf, silc_buffer_truelen(&ps->inbuf) +
-			       SILC_PACKET_DEFAULT_SIZE * 2))
-	return;
-
-    /* Read data from stream */
-    ret = silc_stream_read(ps->stream, &ps->inbuf.tail,
-			   silc_buffer_taillen(&ps->inbuf));
-
-    if (ret == 0) {
-      /* EOS */
-      SILC_PACKET_CALLBACK_EOS(ps);
-      silc_buffer_reset(&ps->inbuf);
-      return;
-    }
-
-    if (ret == -2) {
-      /* Error */
-      SILC_PACKET_CALLBACK_ERROR(ps, SILC_PACKET_ERR_READ);
-      silc_buffer_reset(&ps->inbuf);
-      return;
-    }
-
-    if (ret == -1) {
-      /* Cannot read now, do it later. */
-      silc_buffer_pull(&ps->inbuf, silc_buffer_len(&ps->inbuf));
-      return;
-    }
-
-    /* Read some data */
-    silc_buffer_pull_tail(&ps->inbuf, ret);
-
-    /* Now process the data */
-    silc_packet_read_process(ps);
-
-    break;
-
-  default:
-    break;
-  }
-}
+/***************************** Packet Receiving *****************************/
 
 /* Checks MAC in the packet. Returns TRUE if MAC is Ok. */
 
-static bool silc_packet_check_mac(SilcHmac hmac,
-				  const unsigned char *data,
-				  SilcUInt32 data_len,
-				  const unsigned char *packet_mac,
-				  SilcUInt32 sequence)
+static SilcBool silc_packet_check_mac(SilcHmac hmac,
+				      const unsigned char *data,
+				      SilcUInt32 data_len,
+				      const unsigned char *packet_mac,
+				      SilcUInt32 sequence)
 {
   /* Check MAC */
   if (hmac) {
@@ -791,7 +1038,7 @@ static bool silc_packet_check_mac(SilcHmac hmac,
 
 static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 			       SilcUInt32 sequence, SilcBuffer buffer,
-			       bool normal)
+			       SilcBool normal)
 {
   if (normal == TRUE) {
     if (cipher) {
@@ -837,7 +1084,7 @@ static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
    parsed. The buffer sent must be already decrypted before calling this
    function. */
 
-static bool silc_packet_parse(SilcPacketStream stream, SilcPacket packet)
+static SilcBool silc_packet_parse(SilcPacket packet)
 {
   SilcBuffer buffer = &packet->buffer;
   SilcUInt8 padlen = (SilcUInt8)buffer->data[4];
@@ -898,9 +1145,92 @@ static bool silc_packet_parse(SilcPacketStream stream, SilcPacket packet)
   silc_buffer_pull(buffer, SILC_PACKET_HEADER_LEN +
 		   packet->src_id_len + packet->dst_id_len + padlen);
 
-  SILC_LOG_DEBUG(("Incoming packet type: %d", packet->type));
+  SILC_LOG_DEBUG(("Incoming packet type: %d (%s)", packet->type,
+		  silc_get_packet_name(packet->type)));
 
   return TRUE;
+}
+
+/* Dispatch packet to application */
+
+static void silc_packet_dispatch(SilcPacket packet)
+{
+  SilcPacketStream stream = packet->stream;
+  SilcPacketProcess p;
+  SilcBool default_sent = FALSE;
+  SilcPacketType *pt;
+
+  /* Parse the packet */
+  if (!silc_packet_parse(packet)) {
+    SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MALFORMED);
+    silc_packet_free(packet);
+    return;
+  }
+
+  /* Dispatch packet to all packet processors that want it */
+
+  if (!stream->process) {
+    /* Send to default processor as no others exist */
+    SILC_LOG_DEBUG(("Dispatching packet to default callbacks"));
+    if (!stream->engine->callbacks->
+	packet_receive(stream->engine, stream, packet,
+		       stream->engine->callback_context,
+		       stream->stream_context))
+      silc_packet_free(packet);
+    return;
+  }
+
+  silc_dlist_start(stream->process);
+  while ((p = silc_dlist_get(stream->process)) != SILC_LIST_END) {
+
+    /* If priority is 0 or less, we send to default processor first
+       because default processor has 0 priority */
+    if (!default_sent && p->priority <= 0) {
+      SILC_LOG_DEBUG(("Dispatching packet to default callbacks"));
+      default_sent = TRUE;
+      if (stream->engine->callbacks->
+	  packet_receive(stream->engine, stream, packet,
+			 stream->engine->callback_context,
+			 stream->stream_context)) {
+	return;
+      }
+    }
+
+    /* Send to processor */
+    if (!p->types) {
+      /* Send all packet types */
+      SILC_LOG_DEBUG(("Dispatching packet to %p callbacks", p->callbacks));
+      if (p->callbacks->packet_receive(stream->engine, stream, packet,
+				       p->callback_context,
+				       stream->stream_context))
+	return;
+    } else {
+      /* Send specific types */
+      for (pt = p->types; *pt; pt++)
+	if (*pt == packet->type) {
+	  SILC_LOG_DEBUG(("Dispatching packet to %p callbacks",
+			  p->callbacks));
+	  if (p->callbacks->packet_receive(stream->engine, stream, packet,
+					   p->callback_context,
+					   stream->stream_context))
+	    return;
+	  break;
+	}
+    }
+  }
+
+  if (!default_sent) {
+    /* Send to default processor as it has not been sent yet */
+    SILC_LOG_DEBUG(("Dispatching packet to default callbacks"));
+    if (stream->engine->callbacks->
+	packet_receive(stream->engine, stream, packet,
+		       stream->engine->callback_context,
+		       stream->stream_context))
+      return;
+  }
+
+  /* If we got here, no one wanted the packet, so drop it */
+  silc_packet_free(packet);
 }
 
 /* Process incoming data and parse packets. */
@@ -912,7 +1242,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
   SilcUInt32 paddedlen, mac_len, block_len;
   unsigned char tmp[SILC_PACKET_MIN_HEADER_LEN], *header;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
-  bool normal = TRUE;
+  SilcBool normal = TRUE;
   int ret;
 
   /* Parse the packets from the data */
@@ -957,7 +1287,6 @@ static void silc_packet_read_process(SilcPacketStream stream)
 		      "(%d bytes)",
 		      paddedlen + mac_len - silc_buffer_len(&stream->inbuf)));
       memset(tmp, 0, sizeof(tmp));
-/*      silc_buffer_reset(&stream->inbuf); */
       return;
     }
 
@@ -981,14 +1310,15 @@ static void silc_packet_read_process(SilcPacketStream stream)
     }
 
     /* Allocate more space to packet buffer, if needed */
-    if (silc_buffer_len(&packet->buffer) < paddedlen) {
+    if (silc_buffer_truelen(&packet->buffer) < paddedlen) {
       if (!silc_buffer_realloc(&packet->buffer,
 			       silc_buffer_truelen(&packet->buffer) +
 			       (paddedlen -
 				silc_buffer_truelen(&packet->buffer)))) {
 	SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_NO_MEMORY);
+	silc_packet_free(packet);
 	memset(tmp, 0, sizeof(tmp));
-      silc_buffer_reset(&stream->inbuf);
+	silc_buffer_reset(&stream->inbuf);
 	return;
       }
     }
@@ -1003,7 +1333,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
 	normal = FALSE;
       else if (packet->type != SILC_PACKET_CHANNEL_MESSAGE ||
 	       (packet->type == SILC_PACKET_CHANNEL_MESSAGE &&
-		stream->engine->local_is_router == TRUE))
+		stream->is_router == TRUE))
 	normal = TRUE;
     } else {
       if (packet->type == SILC_PACKET_PRIVATE_MESSAGE &&
@@ -1018,6 +1348,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
 		     stream->inbuf.data, paddedlen + mac_len);
 
     /* Put the decrypted part, and rest of the encrypted data, and decrypt */
+    silc_buffer_pull_tail(&packet->buffer, paddedlen);
     silc_buffer_put(&packet->buffer, header, block_len);
     silc_buffer_pull(&packet->buffer, block_len);
     silc_buffer_put(&packet->buffer, stream->inbuf.data + block_len,
@@ -1028,6 +1359,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
 				stream->receive_psn, &packet->buffer, normal);
       if (ret < 0) {
 	SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_DECRYPTION_FAILED);
+	silc_packet_free(packet);
 	memset(tmp, 0, sizeof(tmp));
 	return;
       }
@@ -1036,83 +1368,13 @@ static void silc_packet_read_process(SilcPacketStream stream)
     }
     silc_buffer_push(&packet->buffer, block_len);
 
-    /* Parse the packet */
-    if (!silc_packet_parse(stream, packet)) {
-      SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MALFORMED);
-      memset(tmp, 0, sizeof(tmp));
-      return;
-    }
-
-    /* Send the packet to application */
-    SILC_PACKET_CALLBACK_PACKET(stream, packet);
-
     /* Pull the packet from inbuf thus we'll get the next one in the inbuf. */
     silc_buffer_pull(&stream->inbuf, paddedlen + mac_len);
+
+    /* Dispatch the packet to application */
+    packet->stream = stream;
+    silc_packet_dispatch(packet);
   }
 
-  SILC_LOG_DEBUG(("Resetting inbound buffer"));
   silc_buffer_reset(&stream->inbuf);
-}
-
-/* Allocate packet */
-
-SilcPacket silc_packet_alloc(SilcPacketEngine engine)
-{
-  SilcPacket packet;
-
-  SILC_LOG_DEBUG(("Packet pool count %d",
-		  silc_list_count(engine->packet_pool)));
-
-  silc_mutex_lock(engine->lock);
-
-  /* Get packet from freelist or allocate new one. */
-  packet = silc_list_get(engine->packet_pool);
-  if (!packet) {
-    silc_mutex_unlock(engine->lock);
-    packet = silc_calloc(1, sizeof(*packet));
-    if (!packet)
-      return NULL;
-    SILC_LOG_DEBUG(("Allocating new packet %p", packet));
-    return packet;
-  }
-
-  SILC_LOG_DEBUG(("Get packet %p", packet));
-
-  /* Delete from freelist */
-  silc_list_del(engine->packet_pool, packet);
-
-  silc_mutex_unlock(engine->lock);
-
-  return packet;
-}
-
-/* Free packet */
-
-void silc_packet_free(SilcPacketEngine engine, SilcPacket packet)
-{
-  SILC_LOG_DEBUG(("Freeing packet %p", packet));
-
-  silc_buffer_reset(&packet->buffer);
-
-  /* Put the packet back to freelist */
-  silc_mutex_lock(engine->lock);
-  silc_list_add(engine->packet_pool, packet);
-  silc_mutex_unlock(engine->lock);
-}
-
-/* Creates streamer */
-
-SilcStream silc_packet_streamer_create(SilcPacketStream stream,
-				       SilcPacketType packet_type,
-				       SilcPacketFlags packet_flags)
-{
-  /* XXX TODO */
-  return NULL;
-}
-
-/* Destroyes streamer */
-
-void silc_packet_streamer_destroy(SilcStream stream)
-{
-
 }

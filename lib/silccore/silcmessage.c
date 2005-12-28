@@ -20,7 +20,7 @@
    private messages. */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcmessage.h"
 
 /******************************************************************************
@@ -59,13 +59,13 @@ struct SilcMessagePayloadStruct {
 
 /* Decrypts the Message Payload. The `data' is the actual Message Payload */
 
-bool silc_message_payload_decrypt(unsigned char *data,
+SilcBool silc_message_payload_decrypt(unsigned char *data,
 				  size_t data_len,
-				  bool private_message,
-				  bool static_key,
+				  SilcBool private_message,
+				  SilcBool static_key,
 				  SilcCipher cipher,
 				  SilcHmac hmac,
-				  bool check_mac)
+				  SilcBool check_mac)
 {
   SilcUInt32 mac_len, iv_len = 0, block_len;
   SilcUInt16 len, totlen, dlen;
@@ -148,8 +148,8 @@ bool silc_message_payload_decrypt(unsigned char *data,
 SilcMessagePayload
 silc_message_payload_parse(unsigned char *payload,
 			   SilcUInt32 payload_len,
-			   bool private_message,
-			   bool static_key,
+			   SilcBool private_message,
+			   SilcBool static_key,
 			   SilcCipher cipher,
 			   SilcHmac hmac)
 {
@@ -229,7 +229,7 @@ silc_message_payload_parse(unsigned char *payload,
    Payload encoding routines but application may call this too if needed.
    The `true_len' is the data length which is used to create MAC out of. */
 
-bool silc_message_payload_encrypt(unsigned char *data,
+SilcBool silc_message_payload_encrypt(unsigned char *data,
 				  SilcUInt32 data_len,
 				  SilcUInt32 true_len,
 				  unsigned char *iv,
@@ -263,8 +263,8 @@ bool silc_message_payload_encrypt(unsigned char *data,
 SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
 				       const unsigned char *data,
 				       SilcUInt32 data_len,
-				       bool generate_iv,
-				       bool private_message,
+				       SilcBool generate_iv,
+				       SilcBool private_message,
 				       SilcCipher cipher,
 				       SilcHmac hmac,
 				       SilcRng rng,
@@ -571,7 +571,7 @@ silc_message_signed_payload_encode(const unsigned char *message_payload,
   /* Sign the buffer */
 
   /* Allocate PKCS object */
-  if (!silc_pkcs_alloc(private_key->name, &pkcs)) {
+  if (!silc_pkcs_alloc(private_key->name, SILC_PKCS_SILC, &pkcs)) {
     SILC_LOG_ERROR(("Could not allocated PKCS"));
     silc_buffer_clear(sign);
     silc_buffer_free(sign);
@@ -679,7 +679,7 @@ int silc_message_signed_verify(SilcMessageSignedPayload sig,
     return ret;
 
   /* Allocate PKCS object */
-  if (!silc_pkcs_alloc(remote_public_key->name, &pkcs)) {
+  if (!silc_pkcs_alloc(remote_public_key->name, SILC_PKCS_SILC, &pkcs)) {
     silc_buffer_clear(sign);
     silc_buffer_free(sign);
     return ret;

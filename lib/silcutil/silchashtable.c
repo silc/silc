@@ -25,7 +25,7 @@
    hash table. */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silchashtable.h"
 
 /* Define to 1 if you want hash table debug enabled */
@@ -430,18 +430,20 @@ SilcUInt32 silc_hash_table_count(SilcHashTable ht)
    hash table. This function quarantees that the entry is always added
    to the hash table reliably (it is collision resistant). */
 
-void silc_hash_table_add(SilcHashTable ht, void *key, void *context)
+SilcBool silc_hash_table_add(SilcHashTable ht, void *key, void *context)
 {
-  silc_hash_table_add_internal(ht, key, context, ht->hash,
-			       ht->hash_user_context);
+  return silc_hash_table_add_internal(ht, key, context, ht->hash,
+				      ht->hash_user_context);
 }
 
 /* Same as above but with specific hash function and user context. */
 
-void silc_hash_table_add_ext(SilcHashTable ht, void *key, void *context,
-			     SilcHashFunction hash, void *hash_user_context)
+SilcBool silc_hash_table_add_ext(SilcHashTable ht, void *key, void *context,
+				 SilcHashFunction hash,
+				 void *hash_user_context)
 {
-  silc_hash_table_add_internal(ht, key, context, hash, hash_user_context);
+  return silc_hash_table_add_internal(ht, key, context,
+				      hash, hash_user_context);
 }
 
 /* Same as above but if the `key' already exists in the hash table
@@ -449,19 +451,21 @@ void silc_hash_table_add_ext(SilcHashTable ht, void *key, void *context,
    the `context. The destructor function will be called for the
    replaced key and context. */
 
-void silc_hash_table_replace(SilcHashTable ht, void *key, void *context)
+SilcBool silc_hash_table_replace(SilcHashTable ht, void *key, void *context)
 {
-  silc_hash_table_replace_internal(ht, key, context, ht->hash,
-				   ht->hash_user_context);
+  return silc_hash_table_replace_internal(ht, key, context, ht->hash,
+					  ht->hash_user_context);
 }
 
 /* Same as above but with specific hash function. */
 
-void silc_hash_table_replace_ext(SilcHashTable ht, void *key, void *context,
-				 SilcHashFunction hash,
-				 void *hash_user_context)
+SilcBool silc_hash_table_replace_ext(SilcHashTable ht, void *key,
+				     void *context,
+				     SilcHashFunction hash,
+				     void *hash_user_context)
 {
-  silc_hash_table_replace_internal(ht, key, context, hash, hash_user_context);
+  return silc_hash_table_replace_internal(ht, key, context,
+					  hash, hash_user_context);
 }
 
 /* Removes the entry from the hash table by the provided `key'. This will

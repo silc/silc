@@ -21,7 +21,7 @@
    channel key receiving and setting, and channel private key handling
    routines. */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcclient.h"
 #include "client_internal.h"
 

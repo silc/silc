@@ -32,7 +32,7 @@
  * received but ID entry does not exist, NULL is sent.
  */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcclient.h"
 #include "client_internal.h"
 

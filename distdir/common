@@ -16,3 +16,6 @@ define SILC_DIST_TMA
 
 # ASN.1 library
 define SILC_DIST_ASN1
+
+# Key Repository library
+define SILC_DIST_SKR

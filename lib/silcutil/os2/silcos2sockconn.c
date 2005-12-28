@@ -20,7 +20,7 @@
 
 /* XXX TODO */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Writes data from encrypted buffer to the socket connection. If the
    data cannot be written at once, it will be written later with a timeout. 

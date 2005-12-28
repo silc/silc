@@ -17,27 +17,39 @@
 
 */
 
-#include "silcincludes.h"
-#include "silcmime.h"
+#include "silc.h"
 
-struct SilcMimeStruct {
-  SilcHashTable fields;
-  unsigned char *data;
-  SilcUInt32 data_len;
-  SilcDList multiparts;
-  char *boundary;
-  char *multitype;
-};
+/************************ Static utility functions **************************/
 
-struct SilcMimeAssemblerStruct {
-  SilcHashTable fragments;
-};
+/* MIME fields destructor */
 
 static void silc_mime_field_dest(void *key, void *context, void *user_context)
 {
   silc_free(key);
   silc_free(context);
 }
+
+/* Assembler fragment destructor */
+
+static void silc_mime_assembler_dest(void *key, void *context,
+				     void *user_context)
+{
+  silc_free(key);
+  silc_hash_table_free(context);
+}
+
+/* Assembler partial MIME destructor */
+
+static void silc_mime_assemble_dest(void *key, void *context,
+				    void *user_context)
+{
+  silc_mime_free(context);
+}
+
+
+/******************************* Public API *********************************/
+
+/* Allocate MIME context */
 
 SilcMime silc_mime_alloc(void)
 {
@@ -58,6 +70,8 @@ SilcMime silc_mime_alloc(void)
   return mime;
 }
 
+/* Free MIME context */
+
 void silc_mime_free(SilcMime mime)
 {
   SilcMime m;
@@ -77,12 +91,7 @@ void silc_mime_free(SilcMime mime)
   silc_free(mime);
 }
 
-static void silc_mime_assembler_dest(void *key, void *context,
-							  void *user_context)
-{
-  silc_free(key);
-  silc_hash_table_free(context);
-}
+/* Allocate MIME assembler */
 
 SilcMimeAssembler silc_mime_assembler_alloc(void)
 {
@@ -104,15 +113,20 @@ SilcMimeAssembler silc_mime_assembler_alloc(void)
   return assembler;
 }
 
+/* Free MIME assembler */
+
 void silc_mime_assembler_free(SilcMimeAssembler assembler)
 {
   silc_hash_table_free(assembler->fragments);
   silc_free(assembler);
 }
 
-SilcMime silc_mime_decode(const unsigned char *data, SilcUInt32 data_len)
+/* Decode MIME message */
+
+SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
+			  SilcUInt32 data_len)
 {
-  SilcMime mime;
+  SilcMime m = NULL;
   int i, k;
   char *tmp, *field, *value, *line;
 
@@ -121,9 +135,12 @@ SilcMime silc_mime_decode(const unsigned char *data, SilcUInt32 data_len)
   if (!data)
     return NULL;
 
-  mime = silc_mime_alloc();
-  if (!mime)
-    return NULL;
+  if (!mime) {
+    mime = silc_mime_alloc();
+    if (!mime)
+      return NULL;
+    m = mime;
+  }
 
   /* Parse the fields */
   line = tmp = (char *)data;
@@ -255,7 +272,7 @@ SilcMime silc_mime_decode(const unsigned char *data, SilcUInt32 data_len)
 	  k -= 2;
 
 	  /* Parse the part */
-	  p = silc_mime_decode(line, k - i);
+	  p = silc_mime_decode(NULL, line, k - i);
 	  if (!p)
 	    goto err;
 
@@ -275,9 +292,12 @@ SilcMime silc_mime_decode(const unsigned char *data, SilcUInt32 data_len)
   return mime;
 
  err:
-  silc_mime_free(mime);
+  if (m)
+    silc_mime_free(m);
   return NULL;
 }
+
+/* Encode MIME message */
 
 unsigned char *silc_mime_encode(SilcMime mime, SilcUInt32 *encoded_len)
 {
@@ -379,11 +399,7 @@ unsigned char *silc_mime_encode(SilcMime mime, SilcUInt32 *encoded_len)
   return ret;
 }
 
-static void silc_mime_assemble_dest(void *key, void *context,
-							 void *user_context)
-{
-  silc_mime_free(context);
-}
+/* Assembles MIME message from partial MIME messages */
 
 SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
 {
@@ -512,7 +528,7 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
   }
 
   /* Now parse the complete MIME message and deliver it */
-  complete = silc_mime_decode((const unsigned char *)compbuf->head,
+  complete = silc_mime_decode(NULL, (const unsigned char *)compbuf->head,
 			      silc_buffer_truelen(compbuf));
   if (!complete)
     goto err;
@@ -531,6 +547,8 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
   silc_mime_free(partial);
   return NULL;
 }
+
+/* Encodes partial MIME messages */
 
 SilcDList silc_mime_encode_partial(SilcMime mime, int max_size)
 {
@@ -642,6 +660,8 @@ SilcDList silc_mime_encode_partial(SilcMime mime, int max_size)
   return list;
 }
 
+/* Free partial MIME list */
+
 void silc_mime_partial_free(SilcDList partials)
 {
   SilcBuffer buf;
@@ -655,6 +675,8 @@ void silc_mime_partial_free(SilcDList partials)
   silc_dlist_uninit(partials);
 }
 
+/* Add field */
+
 void silc_mime_add_field(SilcMime mime, const char *field, const char *value)
 {
   if (!mime || !field || !value)
@@ -662,6 +684,8 @@ void silc_mime_add_field(SilcMime mime, const char *field, const char *value)
 
   silc_hash_table_add(mime->fields, strdup(field), strdup(value));
 }
+
+/* Get field */
 
 const char *silc_mime_get_field(SilcMime mime, const char *field)
 {
@@ -677,6 +701,8 @@ const char *silc_mime_get_field(SilcMime mime, const char *field)
   return (const char *)value;
 }
 
+/* Add data */
+
 void silc_mime_add_data(SilcMime mime, const unsigned char *data,
 			SilcUInt32 data_len)
 {
@@ -690,6 +716,8 @@ void silc_mime_add_data(SilcMime mime, const unsigned char *data,
   mime->data_len = data_len;
 }
 
+/* Get data */
+
 const unsigned char *silc_mime_get_data(SilcMime mime, SilcUInt32 *data_len)
 {
   if (!mime)
@@ -700,6 +728,8 @@ const unsigned char *silc_mime_get_data(SilcMime mime, SilcUInt32 *data_len)
 
   return mime->data;
 }
+
+/* Returns TRUE if partial message */
 
 SilcBool silc_mime_is_partial(SilcMime mime)
 {
@@ -712,6 +742,8 @@ SilcBool silc_mime_is_partial(SilcMime mime)
 
   return TRUE;
 }
+
+/* Set as multipart message */
 
 void silc_mime_set_multipart(SilcMime mime, const char *type,
 			     const char *boundary)
@@ -732,6 +764,8 @@ void silc_mime_set_multipart(SilcMime mime, const char *type,
   mime->multiparts = silc_dlist_init();
 }
 
+/* Add multipart */
+
 SilcBool silc_mime_add_multipart(SilcMime mime, SilcMime part)
 {
   if (!mime || !mime->multiparts || !part)
@@ -741,6 +775,8 @@ SilcBool silc_mime_add_multipart(SilcMime mime, SilcMime part)
   return TRUE;
 }
 
+/* Return TRUE if has multiparts */
+
 SilcBool silc_mime_is_multipart(SilcMime mime)
 {
   if (!mime)
@@ -748,6 +784,8 @@ SilcBool silc_mime_is_multipart(SilcMime mime)
 
   return mime->multiparts != NULL;
 }
+
+/* Returns multiparts */
 
 SilcDList silc_mime_get_multiparts(SilcMime mime, const char **type)
 {

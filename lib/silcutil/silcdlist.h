@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2003 Pekka Riikonen
+  Copyright (C) 2000 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,6 +56,8 @@
  */
 typedef struct SilcDListStruct {
   SilcList list;
+  void *current;
+  void *prev;
 } *SilcDList;
 /***/
 
@@ -88,6 +90,7 @@ SilcDList silc_dlist_init(void)
   list = (SilcDList)silc_malloc(sizeof(*list));
   if (!list)
     return NULL;
+  list->current = list->prev = NULL;
   silc_list_init_prev(list->list, struct SilcDListEntryStruct, next, prev);
 
   return list;
@@ -158,6 +161,7 @@ static inline
 void silc_dlist_start(SilcDList list)
 {
   silc_list_start(list->list);
+  list->current = list->prev = NULL;
 }
 
 /****f* silcutil/SilcDListAPI/silc_dlist_end
@@ -178,6 +182,7 @@ static inline
 void silc_dlist_end(SilcDList list)
 {
   silc_list_end(list->list);
+  list->current = list->prev = NULL;
 }
 
 /****f* silcutil/SilcDListAPI/silc_dlist_add
@@ -185,7 +190,7 @@ void silc_dlist_end(SilcDList list)
  * SYNOPSIS
  *
  *    static inline
- *    void silc_dlist_add(SilcDList list, void *context);
+ *    SilcBool silc_dlist_add(SilcDList list, void *context);
  *
  * DESCRIPTION
  *
@@ -195,13 +200,40 @@ void silc_dlist_end(SilcDList list)
  ***/
 
 static inline
-void silc_dlist_add(SilcDList list, void *context)
+SilcBool silc_dlist_add(SilcDList list, void *context)
 {
   SilcDListEntry e = (SilcDListEntry)silc_malloc(sizeof(*e));
   if (!e)
-    return;
+    return FALSE;
   e->context = context;
   silc_list_add(list->list, e);
+  return TRUE;
+}
+
+/****f* silcutil/SilcDList/silc_dlist_insert
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBool silc_dlist_insert(SilcDList list, void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Insert new entry to the list between current and previous entry.
+ *    If list is at the start this adds the entry at head of the list.
+ *    Use silc_dlist_add to add at the end of the list.
+ *
+ ***/
+
+static inline
+SilcBool silc_dlist_insert(SilcDList list, void *context)
+{
+  SilcDListEntry e = (SilcDListEntry)silc_malloc(sizeof(*e));
+  if (!e)
+    return FALSE;
+  e->context = context;
+  silc_list_insert(list->list, list->prev, e);
+  return TRUE;
 }
 
 /****f* silcutil/SilcDListAPI/silc_dlist_del
@@ -229,6 +261,10 @@ void silc_dlist_del(SilcDList list, void *context)
 #if defined(SILC_DEBUG)
       memset(e, 'F', sizeof(*e));
 #endif
+      if (list->current == e)
+	list->current = NULL;
+      if (list->prev == e)
+	list->prev = NULL;
       silc_free(e);
       break;
     }
@@ -263,7 +299,9 @@ void silc_dlist_del(SilcDList list, void *context)
 static inline
 void *silc_dlist_get(SilcDList list)
 {
-  SilcDListEntry e = (SilcDListEntry)silc_list_get(list->list);
+  SilcDListEntry e;
+  list->prev = list->current;
+  list->current = e = (SilcDListEntry)silc_list_get(list->list);
   if (e != SILC_LIST_END)
     return e->context;
   return SILC_LIST_END;

@@ -9,7 +9,7 @@ option no-dist
 
 # Default distribution for preparing raw CVS sources.
 inherit common
-inherit client
+#inherit client
 inherit server
 inherit toolkit
 

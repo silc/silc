@@ -19,7 +19,7 @@
 
 /* #define SILC_STACK_DEBUG 1 */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Allocate the stack */
 
@@ -258,7 +258,8 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
 
   /* Align the old size if needed */
   old_size = (aligned ?
-	      SILC_STACK_ALIGN(old_size, SILC_STACK_DEFAULT_ALIGN) : old_size);
+	      SILC_STACK_ALIGN(old_size,
+			       SILC_STACK_DEFAULT_ALIGN) : old_size);
 
   /* Compute the size of current stack block */
   bsize = SILC_STACK_BLOCK_SIZE(stack, si);
@@ -275,7 +276,8 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
   /* Now check that the new size fits to this block */
   if (stack->stack[si]->bytes_left >= size) {
     /* It fits, so simply return the old pointer */
-    size = (aligned ? SILC_STACK_ALIGN(size, SILC_STACK_DEFAULT_ALIGN) : size);
+    size = (aligned ? SILC_STACK_ALIGN(size,
+				       SILC_STACK_DEFAULT_ALIGN) : size);
     stack->stack[si]->bytes_left -= (size - old_size);
     SILC_STACK_STAT(stack, bytes_malloc, (size - old_size));
     return ptr;

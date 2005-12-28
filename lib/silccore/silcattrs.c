@@ -19,7 +19,7 @@
 /* Implementation of Attribute Payload routines */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcattrs.h"
 
 /******************************************************************************
@@ -121,11 +121,12 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
     case SILC_ATTRIBUTE_EXTENSION:
     case SILC_ATTRIBUTE_USER_ICON:
       {
-	SilcAttributeObjMime *mime = object;
+	SilcMime mime = object;
 	if (object_size != sizeof(*mime))
 	  return NULL;
-	object = (void *)mime->mime;
-	object_size = mime->mime_len;
+	str = silc_mime_encode(mime, &object_size);
+	if (!str)
+	  return NULL;
       }
       break;
 
@@ -416,7 +417,7 @@ const unsigned char *silc_attribute_get_data(SilcAttributePayload payload,
 /* Construct digital signature verification data */
 
 unsigned char *silc_attribute_get_verify_data(SilcDList attrs,
-					      bool server_verification,
+					      SilcBool server_verification,
 					      SilcUInt32 *data_len)
 {
   SilcAttributePayload attr;
@@ -464,11 +465,11 @@ unsigned char *silc_attribute_get_verify_data(SilcDList attrs,
 
 /* Return parsed attribute object */
 
-bool silc_attribute_get_object(SilcAttributePayload payload,
+SilcBool silc_attribute_get_object(SilcAttributePayload payload,
 			       void *object, SilcUInt32 object_size)
 {
   SilcUInt16 len;
-  bool ret = FALSE;
+  SilcBool ret = FALSE;
 
   if (!object || payload->flags & SILC_ATTRIBUTE_FLAG_INVALID)
     return FALSE;
@@ -552,11 +553,11 @@ bool silc_attribute_get_object(SilcAttributePayload payload,
   case SILC_ATTRIBUTE_EXTENSION:
   case SILC_ATTRIBUTE_USER_ICON:
     {
-      SilcAttributeObjMime *mime = object;
+      SilcMime mime = object;
       if (object_size != sizeof(*mime))
 	break;
-      mime->mime = (const unsigned char *)payload->data;
-      mime->mime_len = payload->data_len;
+      if (!silc_mime_decode(mime, payload->data, payload->data_len))
+	break;
       ret = TRUE;
     }
     break;

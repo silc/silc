@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Accepts a connection from a particular socket */
 
@@ -144,8 +144,9 @@ static void *silc_net_gethostbyaddr_thread(void *context)
 
 /* Resolves IP address for hostname. */
 
-SilcBool silc_net_gethostbyname(const char *name, SilcBool prefer_ipv6, char *address,
-			    SilcUInt32 address_len)
+SilcBool silc_net_gethostbyname(const char *name,
+				SilcBool prefer_ipv6, char *address,
+				SilcUInt32 address_len)
 {
 #ifdef HAVE_IPV6
   struct addrinfo hints, *ai, *tmp, *ip4 = NULL, *ip6 = NULL;

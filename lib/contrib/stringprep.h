@@ -30,7 +30,7 @@ extern "C"
 #include <stddef.h>		/* size_t */
 #include <stdlib.h>
 
-#include "silcincludes.h"
+#include "silc.h"
 
 #ifndef uint32_t
 #define uint32_t SilcUInt32

@@ -40,7 +40,7 @@
 
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* 
    SILC Module (SIM) Context.

@@ -105,13 +105,13 @@ typedef SilcUInt16 SilcMessageFlags;
  *
  * SYNOPSIS
  *
- *    bool silc_message_payload_decrypt(unsigned char *data,
+ *    SilcBool silc_message_payload_decrypt(unsigned char *data,
  *                                      size_t data_len,
- *                                      bool private_message,
- *                                      bool static_key,
+ *                                      SilcBool private_message,
+ *                                      SilcBool static_key,
  *                                      SilcCipher cipher,
  *                                      SilcHmac hmac,
- *                                      bool check_mac);
+ *                                      SilcBool check_mac);
  *
  * DESCRIPTION
  *
@@ -130,13 +130,13 @@ typedef SilcUInt16 SilcMessageFlags;
  *    `check_mac' is FALSE then MAC is not verified.
  *
  ***/
-bool silc_message_payload_decrypt(unsigned char *data,
+SilcBool silc_message_payload_decrypt(unsigned char *data,
 				  size_t data_len,
-				  bool private_message,
-				  bool static_key,
+				  SilcBool private_message,
+				  SilcBool static_key,
 				  SilcCipher cipher,
 				  SilcHmac hmac,
-				  bool check_mac);
+				  SilcBool check_mac);
 
 /****f* silccore/SilcMessageAPI/silc_message_payload_parse
  *
@@ -145,8 +145,8 @@ bool silc_message_payload_decrypt(unsigned char *data,
  *    SilcMessagePayload 
  *    silc_message_payload_parse(unsigned char *payload,
  *                               SilcUInt32 payload_len,
- *                               bool private_message,
- *                               bool static_key,
+ *                               SilcBool private_message,
+ *                               SilcBool static_key,
  *                               SilcCipher cipher,
  *                               SilcHmac hmac);
  *
@@ -170,8 +170,8 @@ bool silc_message_payload_decrypt(unsigned char *data,
 SilcMessagePayload 
 silc_message_payload_parse(unsigned char *payload,
 			   SilcUInt32 payload_len,
-			   bool private_message,
-			   bool static_key,
+			   SilcBool private_message,
+			   SilcBool static_key,
 			   SilcCipher cipher,
 			   SilcHmac hmac);
 
@@ -179,7 +179,7 @@ silc_message_payload_parse(unsigned char *payload,
  *
  * SYNOPSIS
  *
- *    bool silc_message_payload_encrypt(unsigned char *data,
+ *    SilcBool silc_message_payload_encrypt(unsigned char *data,
  *                                      SilcUInt32 data_len,
  *                                      SilcUInt32 true_len,
  *                                      unsigned char *iv,
@@ -201,7 +201,7 @@ silc_message_payload_parse(unsigned char *payload,
  *    to compute the MAC for the payload.
  *
  ***/
-bool silc_message_payload_encrypt(unsigned char *data,
+SilcBool silc_message_payload_encrypt(unsigned char *data,
 				  SilcUInt32 data_len,
 				  SilcUInt32 true_len,
 				  unsigned char *iv,
@@ -216,8 +216,8 @@ bool silc_message_payload_encrypt(unsigned char *data,
  *    SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
  *                                           const unsigned char *data,
  *                                           SilcUInt32 data_len,
- *                                           bool generate_iv,
- *                                           bool private_message,
+ *                                           SilcBool generate_iv,
+ *                                           SilcBool private_message,
  *                                           SilcCipher cipher,
  *                                           SilcHmac hmac,
  *                                           SilcRng rng,
@@ -257,8 +257,8 @@ bool silc_message_payload_encrypt(unsigned char *data,
 SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
 				       const unsigned char *data,
 				       SilcUInt32 data_len,
-				       bool generate_iv,
-				       bool private_message,
+				       SilcBool generate_iv,
+				       SilcBool private_message,
 				       SilcCipher cipher,
 				       SilcHmac hmac,
 				       SilcRng rng,

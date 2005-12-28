@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Our "select()" for WIN32. This mimics the behaviour of select() system
    call. It does not call the Winsock's select() though. Its functions

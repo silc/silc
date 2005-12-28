@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Maybe works, or maybe not */
 #include "../unix/silcunixnet.c"

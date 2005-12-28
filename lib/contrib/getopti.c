@@ -1,5 +1,5 @@
 /* Our own convenience getopt.  Public Domain. */
-#include "silcincludes.h"
+#include "silc.h"
 
 #ifndef SILC_EPOC
 #if !defined(HAVE_GETOPT) && !defined(HAVE_GETOPT_H)

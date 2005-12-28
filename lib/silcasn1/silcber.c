@@ -18,7 +18,7 @@
 */
 /* Basic Encoding Rules (BER) encoder and decoder. */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcber.h"
 
 /* Encodes a BER data block into the `ber', which must already have

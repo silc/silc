@@ -40,7 +40,7 @@ $Id$
 
 #include <stdio.h>
 #include <assert.h>
-//#include "silcincludes.h"
+//#include "silc.h"
 #include "regexpr.h"
 
 #define MACRO_BEGIN do {

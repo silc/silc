@@ -39,7 +39,7 @@ Mean:          378 cycles =    67.8 mbits/sec
 
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "twofish_internal.h"
 #include "twofish.h"
 

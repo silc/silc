@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "mp_tfm.h"
 
 void silc_mp_init(SilcMPInt *mp)

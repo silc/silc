@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcpkcs1.h"
 
 /* Minimum padding in block */

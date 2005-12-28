@@ -17,7 +17,7 @@
 
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 typedef struct {
   SilcStreamOps *ops;
@@ -49,9 +49,15 @@ void silc_stream_destroy(SilcStream stream)
   return h->ops->destroy(stream);
 }
 
-void silc_stream_set_notifier(SilcStream stream, SilcStreamNotifier notifier,
-			      void *context)
+void silc_stream_set_notifier(SilcStream stream, SilcSchedule schedule,
+			      SilcStreamNotifier notifier, void *context)
 {
   SilcStreamHeader h = stream;
-  return h->ops->notifier(stream, notifier, context);
+  return h->ops->notifier(stream, schedule, notifier, context);
+}
+
+SilcSchedule silc_stream_get_schedule(SilcStream stream)
+{
+  SilcStreamHeader h = stream;
+  return h->ops->get_schedule(stream);
 }

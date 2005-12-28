@@ -39,7 +39,7 @@ Mean:          500 cycles =    51.2 mbits/sec
 
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "rijndael_internal.h"
 #include "aes.h"
 

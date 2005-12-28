@@ -2,9 +2,6 @@
 @LIBRARY=SILC Key Exchange Library
 @FILENAME=silcskelib.html
 @LINK=silcske.html:SILC SKE Interface
-@LINK=silcske_status.html:SKE Status Types
-@LINK=silcske_groups.html:SKE Diffie Hellman Groups
-@LINK=silcske_payload.html:SKE Payloads
 -->
 
 <big><b>SILC Key Exchange Library</b></big>
@@ -21,4 +18,3 @@ It provides the key exchange protocol for all SILC applications.
 
 <br /><br />
 @LINKS@
-

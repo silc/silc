@@ -1,6 +1,6 @@
 /*
 
-  silcincludes.h
+  silc.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -277,6 +277,7 @@ extern "C" {
 #include "silcfdstream.h"
 #include "silcvcard.h"
 #include "silcapputil.h"
+#include "silcmime.h"
 
 #ifdef SILC_DIST_ASN1
 #include "silcasn1.h"
@@ -297,6 +298,10 @@ extern "C" {
 #include "silcauth.h"
 #include "silcattrs.h"
 
+#ifdef SILC_DIST_SKR
+#include "silcskr.h"
+#endif /* SILC_DIST_SKR */
+
 #if defined(SILC_SIM)
 /* SILC Module library includes */
 #include "silcsim.h"
@@ -307,6 +312,7 @@ extern "C" {
 #include "silcske.h"
 #include "silcske_payload.h"
 #include "silcske_groups.h"
+#include "silcconnauth.h"
 
 #ifdef SILC_DIST_SFTP
 /* SILC SFTP library */

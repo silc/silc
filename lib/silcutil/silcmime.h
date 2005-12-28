@@ -116,28 +116,32 @@ void silc_mime_assembler_free(SilcMimeAssembler assembler);
  *
  * SYNOPSIS
  *
- *    SilcMime silc_mime_decode(const unsigned char *data,
+ *    SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
  *                              SilcUInt32 data_len);
  *
  * DESCRIPTION
  *
  *    Decodes a MIME message and returns the parsed message into newly
- *    allocated SilcMime context.
+ *    allocated SilcMime context and returns it.  If `mime' is non-NULL
+ *    then the MIME message will be encoded into the pre-allocated `mime'
+ *    context and same context is returned.  If it is NULL then newly
+ *    allocated SilcMime context is returned.  On error NULL is returned.
  *
  * EXAMPLE
  *
  *    // Parse MIME message and get its content type
- *    mime = silc_mime_decode(data, data_len);
+ *    mime = silc_mime_decode(NULL, data, data_len);
  *    type = silc_mime_get_field(mime, "Content-Type");
  *    ...
  *
  *    // Assemble received MIME fragment
- *    mime = silc_mime_decode(data, data_len);
+ *    mime = silc_mime_decode(NULL, data, data_len);
  *    if (silc_mime_is_partial(mime) == TRUE)
  *      silc_mime_assmeble(assembler, mime);
  *
  ***/
-SilcMime silc_mime_decode(const unsigned char *data, SilcUInt32 data_len);
+SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
+			  SilcUInt32 data_len);
 
 /****f* silcutil/SILCMIMEAPI/silc_mime_encode
  *
@@ -376,5 +380,7 @@ SilcBool silc_mime_is_multipart(SilcMime mime);
  *
  ***/
 SilcDList silc_mime_get_multiparts(SilcMime mime, const char **type);
+
+#include "silcmime_i.h"
 
 #endif /* SILCMIME_H */

@@ -1,10 +1,10 @@
 /*
 
-  silchash.c 
+  silchash.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 #include "md5.h"
 #include "sha1.h"
@@ -36,7 +36,7 @@ SilcDList silc_hash_list = NULL;
 #endif /* SILC_EPOC */
 
 /* Default hash functions for silc_hash_register_default(). */
-const SilcHashObject silc_default_hash[] = 
+const SilcHashObject silc_default_hash[] =
 {
   { "sha256", 32, 64, silc_sha256_init, silc_sha256_update, silc_sha256_final,
     silc_sha256_transform, silc_sha256_context_len },
@@ -119,7 +119,7 @@ SilcBool silc_hash_unregister(SilcHashObject *hash)
   return FALSE;
 }
 
-/* Function that registers all the default hash funcs (all builtin ones). 
+/* Function that registers all the default hash funcs (all builtin ones).
    The application may use this to register the default hash funcs if
    specific hash funcs in any specific order is not wanted. */
 
@@ -159,7 +159,7 @@ SilcBool silc_hash_unregister_all(void)
 SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
 {
   SilcHashObject *entry = NULL;
-  
+
   SILC_LOG_DEBUG(("Allocating new hash object"));
 
 #ifndef SILC_EPOC
@@ -263,8 +263,8 @@ char *silc_hash_get_supported(void)
     while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
       len += strlen(entry->name);
       list = silc_realloc(list, len + 1);
-      
-      memcpy(list + (len - strlen(entry->name)), 
+
+      memcpy(list + (len - strlen(entry->name)),
 	     entry->name, strlen(entry->name));
       memcpy(list + len, ",", 1);
       len++;
@@ -277,8 +277,8 @@ char *silc_hash_get_supported(void)
       entry = (SilcHashObject *)&(silc_default_hash[i]);
       len += strlen(entry->name);
       list = silc_realloc(list, len + 1);
-      
-      memcpy(list + (len - strlen(entry->name)), 
+
+      memcpy(list + (len - strlen(entry->name)),
 	     entry->name, strlen(entry->name));
       memcpy(list + len, ",", 1);
       len++;
@@ -293,7 +293,7 @@ char *silc_hash_get_supported(void)
 
 /* Creates the hash value and returns it to the return_hash argument. */
 
-void silc_hash_make(SilcHash hash, const unsigned char *data, 
+void silc_hash_make(SilcHash hash, const unsigned char *data,
 		    SilcUInt32 len, unsigned char *return_hash)
 {
   silc_hash_init(hash);
@@ -378,15 +378,15 @@ char *silc_hash_babbleprint(SilcHash hash, const unsigned char *data,
   babbleprint[0] = co[16];
 
   check = 1;
-  for (i = 0, k = 1; i < hash->hash->hash_len - 1; i += 2, k += 6) { 
+  for (i = 0, k = 1; i < hash->hash->hash_len - 1; i += 2, k += 6) {
     a = (((hval[i] >> 6) & 3) + check) % 6;
     b = (hval[i] >> 2) & 15;
     c = ((hval[i] & 3) + (check / 6)) % 6;
     d = (hval[i + 1] >> 4) & 15;
     e = hval[i + 1] & 15;
-    
+
     check = ((check * 5) + (hval[i] * 7) + hval[i + 1]) % 36;
-    
+
     babbleprint[k + 0] = vo[a];
     babbleprint[k + 1] = co[b];
     babbleprint[k + 2] = vo[c];
@@ -402,7 +402,7 @@ char *silc_hash_babbleprint(SilcHash hash, const unsigned char *data,
     babbleprint[k + 0] = vo[a];
     babbleprint[k + 1] = co[b];
     babbleprint[k + 2] = vo[c];
-  } else { 
+  } else {
     a = check % 6;
     b = 16;
     c = check / 6;

@@ -1,15 +1,15 @@
 /*
- 
+
   silcchannel.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
+
   Copyright (C) 1997 - 2005 Pekka Riikonen
- 
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
- 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -37,7 +37,7 @@
 /****s* silccore/SilcChannelAPI/SilcChannelPayload
  *
  * NAME
- * 
+ *
  *    typedef struct SilcChannelPayloadStruct *SilcChannelPayload;
  *
  * DESCRIPTION
@@ -53,7 +53,7 @@ typedef struct SilcChannelPayloadStruct *SilcChannelPayload;
 /****s* silccore/SilcChannelAPI/SilcChannelKeyPayload
  *
  * NAME
- * 
+ *
  *    typedef struct SilcChannelKeyPayloadStruct *SilcChannelKeyPayload;
  *
  * DESCRIPTION
@@ -72,7 +72,7 @@ typedef struct SilcChannelKeyPayloadStruct *SilcChannelKeyPayload;
  *
  * SYNOPSIS
  *
- *    SilcChannelPayload 
+ *    SilcChannelPayload
  *    silc_channel_payload_parse(const unsigned char *payload,
  *                               SilcUInt32 payload_len);
  *
@@ -184,16 +184,17 @@ unsigned char *silc_channel_get_id(SilcChannelPayload payload,
  *
  * SYNOPSIS
  *
- *    SilcChannelID *silc_channel_get_id_parse(SilcChannelPayload payload);
+ *    SilcBool silc_channel_get_id_parse(SilcChannelPayload payload,
+ *                                       SilcChannelID *ret_channel_id);
  *
  * DESCRIPTION
  *
  *    Return the Channel ID as parsed ID. This is equivalent to the
- *    silc_channel_get_id execpt that the ID is already parsed. The caller
- *    must free the parsed Channel ID.
+ *    silc_channel_get_id execpt that the ID is already parsed.
  *
  ***/
-SilcChannelID *silc_channel_get_id_parse(SilcChannelPayload payload);
+SilcBool silc_channel_get_id_parse(SilcChannelPayload payload,
+				   SilcChannelID *ret_channel_id);
 
 /****f* silccore/SilcChannelAPI/silc_channel_get_mode
  *
@@ -214,17 +215,17 @@ SilcUInt32 silc_channel_get_mode(SilcChannelPayload payload);
  *
  * SYNOPSIS
  *
- *    SilcChannelKeyPayload 
+ *    SilcChannelKeyPayload
  *    silc_channel_key_payload_parse(const unsigned char *payload,
  *                                   uin32 payload_len);
  *
  * DESCRIPTION
  *
- *     Parses channel key payload returning new channel key payload 
+ *     Parses channel key payload returning new channel key payload
  *     structure.
  *
  ***/
-SilcChannelKeyPayload 
+SilcChannelKeyPayload
 silc_channel_key_payload_parse(const unsigned char *payload,
 			       SilcUInt32 payload_len);
 
@@ -241,7 +242,7 @@ silc_channel_key_payload_parse(const unsigned char *payload,
  *
  * DESCRIPTION
  *
- *    Encodes channel key payload into a buffer and returns it. This is used 
+ *    Encodes channel key payload into a buffer and returns it. This is used
  *    to add channel key payload into a packet.
  *
  ***/
@@ -269,7 +270,7 @@ void silc_channel_key_payload_free(SilcChannelKeyPayload payload);
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_channel_key_get_id(SilcChannelKeyPayload payload, 
+ *    unsigned char *silc_channel_key_get_id(SilcChannelKeyPayload payload,
  *                                           SilcUInt32 *id_len);
  *
  * DESCRIPTION
@@ -278,7 +279,7 @@ void silc_channel_key_payload_free(SilcChannelKeyPayload payload);
  *    free it.
  *
  ***/
-unsigned char *silc_channel_key_get_id(SilcChannelKeyPayload payload, 
+unsigned char *silc_channel_key_get_id(SilcChannelKeyPayload payload,
 				       SilcUInt32 *id_len);
 
 /****f* silccore/SilcChannelAPI/silc_channel_key_get_cipher

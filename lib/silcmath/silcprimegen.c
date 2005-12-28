@@ -19,7 +19,7 @@
 /* Created: Mon Dec  8 16:35:37 GMT+0200 1997 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /*
    Fixed primetable for small prime division. We use this primetable to

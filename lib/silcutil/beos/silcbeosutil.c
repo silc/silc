@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Inspects the `string' for wildcards and returns regex string that can
    be used by the GNU regex library. A comma (`,') in the `string' means

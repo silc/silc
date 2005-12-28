@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* SILC Mutex structure */
 struct SilcMutexStruct {
@@ -34,9 +34,13 @@ SilcBool silc_mutex_alloc(SilcMutex *mutex)
 {
 #ifdef SILC_THREADS
   *mutex = silc_calloc(1, sizeof(**mutex));
+  if (!(*mutex))
+    return FALSE;
   InitializeCriticalSection(&((*mutex)->mutex));
-#endif /* SILC_THREADS */
   return TRUE;
+#else
+  return FALSE;
+#endif /* SILC_THREADS */
 }
 
 void silc_mutex_free(SilcMutex mutex)

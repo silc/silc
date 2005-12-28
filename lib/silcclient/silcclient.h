@@ -2778,9 +2778,9 @@ SilcAttributePayload silc_client_attribute_add(SilcClient client,
  *
  ***/
 SilcBool silc_client_attribute_del(SilcClient client,
-			       SilcClientConnection conn,
-			       SilcAttribute attribute,
-			       SilcAttributePayload attr);
+				   SilcClientConnection conn,
+				   SilcAttribute attribute,
+				   SilcAttributePayload attr);
 
 /****f* silcclient/SilcClientAPI/silc_client_attributes_get
  *

@@ -23,7 +23,7 @@
    since the silc_thread_self() causes that BeOS and OS/2 is hard to
    do to support this SilcThread API */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 #ifdef SILC_THREADS
 

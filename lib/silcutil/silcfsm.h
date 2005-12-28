@@ -183,17 +183,23 @@ typedef void (*SilcFSMThreadDestructor)(SilcFSMThread thread,
  *
  * DESCRIPTION
  *
- *    This macro is used to declare a FSM state function.
+ *    This macro is used to declare a FSM state function.  The `fsm' is
+ *    the SilcFSM or SilcFSMThread context, the `fsm_context' is the context
+ *    given as argument to silc_fsm_alloc, silc_fsm_init, silc_fsm_thread_init,
+ *    or silc_fsm_thread_alloc function.  The `state_context' is the optional
+ *    state specific context set with silc_fsm_set_state_context function.
  *
  * SOURCE
  */
 #define SILC_FSM_STATE(name)						\
-SilcFSMStatus name(struct SilcFSMObject *fsm, void *fsm_context)
+SilcFSMStatus name(struct SilcFSMObject *fsm, void *fsm_context,	\
+		   void *state_context)
 /***/
 
 /* State function callback */
 typedef SilcFSMStatus (*SilcFSMStateCallback)(struct SilcFSMObject *fsm,
-					      void *fsm_context);
+					      void *fsm_context,
+					      void *state_context);
 
 /****d* silcutil/SilcFSMAPI/SILC_FSM_CALL
  *
@@ -261,7 +267,7 @@ do {						\
     silc_fsm_continue(fsm);			\
 } while(0)
 
-/****d* silcutil/SilcFSMAPI/SILC_FSM_CALL_CONTINUE
+/****d* silcutil/SilcFSMAPI/SILC_FSM_CALL_CONTINUE_SYNC
  *
  * NAME
  *
@@ -309,7 +315,7 @@ do {						\
  *    This macro is the only way to safely make sure that the thread has
  *    terminated by the time FSM continues from the waiting state.  Using
  *    semaphores to signal from the thread before SILC_FSM_FINISH is returned
- *    works with normal FSM threads, but especially with real system threads,
+ *    works with normal FSM threads, but especially with real system threads
  *    it does not guarantee that the FSM won't continue before the thread has
  *    actually terminated.  Usually this is not a problem, but it can be a
  *    problem if the FSM is waiting to be freed or uninitialized.  In this
@@ -371,10 +377,10 @@ SilcFSM silc_fsm_alloc(void *fsm_context,
  * SYNOPSIS
  *
  *    SilcBool silc_fsm_init(SilcFSM fsm,
- *                       void *fsm_context,
- *                       SilcFSMDestructor destructor,
- *                       void *destructor_context,
- *                       SilcSchedule schedule);
+ *                           void *fsm_context,
+ *                           SilcFSMDestructor destructor,
+ *                           void *destructor_context,
+ *                           SilcSchedule schedule);
  *
  * DESCRIPTION
  *
@@ -394,10 +400,10 @@ SilcFSM silc_fsm_alloc(void *fsm_context,
  *
  ***/
 SilcBool silc_fsm_init(SilcFSM fsm,
-		   void *fsm_context,
-                   SilcFSMDestructor destructor,
-                   void *destructor_context,
-                   SilcSchedule schedule);
+		       void *fsm_context,
+                       SilcFSMDestructor destructor,
+                       void *destructor_context,
+                       SilcSchedule schedule);
 
 /****f* silcutil/SilcFSMAPI/silc_fsm_thread_alloc
  *
@@ -474,7 +480,7 @@ SilcFSMThread silc_fsm_thread_alloc(SilcFSM fsm,
  *
  * SYNOPSIS
  *
- *    SilcBool silc_fsm_thread_init(SilcFSMThread thread,
+ *    void silc_fsm_thread_init(SilcFSMThread thread,
  *                              SilcFSM fsm,
  *                              void *thread_context,
  *                              SilcFSMThreadDestructor destructor,
@@ -503,7 +509,7 @@ SilcFSMThread silc_fsm_thread_alloc(SilcFSM fsm,
  *    silc_fsm_start(&thread, first_state);
  *
  ***/
-SilcBool silc_fsm_thread_init(SilcFSMThread thread,
+void silc_fsm_thread_init(SilcFSMThread thread,
 			  SilcFSM fsm,
 			  void *thread_context,
 			  SilcFSMThreadDestructor destructor,
@@ -633,6 +639,11 @@ void silc_fsm_next(void *fsm, SilcFSMStateCallback next_state);
  *    the specified timeout.  This function is used with both SilcFSM and
  *    SilcFSMThread contexts.
  *
+ * NOTES
+ *
+ *    If both `seconds' and `useconds' are 0, the effect is same as calling
+ *    silc_fsm_next function, and SILC_FSM_CONTINUE must be returned.
+ *
  * EXAMPLE
  *
  *    // Move to next state after 10 seconds
@@ -642,6 +653,58 @@ void silc_fsm_next(void *fsm, SilcFSMStateCallback next_state);
  ***/
 void silc_fsm_next_later(void *fsm, SilcFSMStateCallback next_state,
 			 SilcUInt32 seconds, SilcUInt32 useconds);
+
+/****f* silcutil/SilcFSMAPI/silc_fsm_continue
+ *
+ * SYNOPSIS
+ *
+ *    void silc_fsm_continue(void *fsm);
+ *
+ * DESCRIPTION
+ *
+ *    Continues in the state machine from a SILC_FSM_WAIT state.  This can
+ *    be called from outside waiting FSM to continue to the next state.
+ *    This function can be used instead of SILC_FSM_CALL_CONTINUE macro
+ *    in case the SILC_FSM_CALL was not used.  This must not be used if
+ *    SILC_FSM_CALL was used.  This function is used with both SilcFSM and
+ *    SilcFSMThread contexts.
+ *
+ ***/
+void silc_fsm_continue(void *fsm);
+
+/****f* silcutil/SilcFSMAPI/silc_fsm_continue_sync
+ *
+ * SYNOPSIS
+ *
+ *    void silc_fsm_continue_sync(void *fsm);
+ *
+ * DESCRIPTION
+ *
+ *    Continues immediately in the state machine from a SILC_FSM_WAIT state.
+ *    This can be called from outside waiting FSM to immediately continue to
+ *    the next state.  This function can be used instead of the
+ *    SILC_FSM_CALL_CONTINUE_SYNC macro in case the SILC_FSM_CALL was not used.
+ *    This must not be used if SILC_FSM_CALL was used.  This function is used
+ *    with both SilcFSM and SilcFSMThread contexts.
+ *
+ ***/
+void silc_fsm_continue_sync(void *fsm);
+
+/****f* silcutil/SilcFSMAPI/silc_fsm_set_context
+ *
+ * SYNOPSIS
+ *
+ *    void silc_fsm_set_context(void *fsm, void *fsm_context);
+ *
+ * DESCRIPTION
+ *
+ *    Set new context for the `fsm'.  This function can be used to change
+ *    the context inside the `fsm', if needed.  This function is used with
+ *    both SilcFSM and SilcFSMThread contexts.  The context is the
+ *    `fsm_context' in the state function (SILC_FSM_STATE).
+ *
+ ***/
+void silc_fsm_set_context(void *fsm, void *fsm_context);
 
 /****f* silcutil/SilcFSMAPI/silc_fsm_get_context
  *
@@ -659,20 +722,36 @@ void silc_fsm_next_later(void *fsm, SilcFSMStateCallback next_state,
  ***/
 void *silc_fsm_get_context(void *fsm);
 
-/****f* silcutil/SilcFSMAPI/silc_fsm_set_context
+/****f* silcutil/SilcFSMAPI/silc_fsm_set_state_context
  *
  * SYNOPSIS
  *
- *    void silc_fsm_set_context(void *fsm, void *fsm_context);
+ *    void silc_fsm_set_state_context(void *fsm, void *state_context);
  *
  * DESCRIPTION
  *
- *    Set new context for the `fsm'.  This function can be used to change
- *    the context inside the `fsm', if needed.  This function is used with
- *    both SilcFSM and SilcFSMThread contexts.
+ *    Set's a state specific context for the `fsm'.  This function can be
+ *    used to change the state context inside the `fsm', if needed.  This
+ *    function is used with both SilcFSM and SilcFSMThread contexts.  The
+ *    context is the `state_context' in the state function (SILC_FSM_STATE).
  *
  ***/
-void silc_fsm_set_context(void *fsm, void *fsm_context);
+void silc_fsm_set_state_context(void *fsm, void *state_context);
+
+/****f* silcutil/SilcFSMAPI/silc_fsm_get_state_context
+ *
+ * SYNOPSIS
+ *
+ *    void *silc_fsm_get_state_context(void *fsm);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the state context associated with the `fsm'.  It is the context
+ *    that was set with silc_fsm_set_state_context function.  This function
+ *    is used with both SilcFSM and SilcFSMThread contexts.
+ *
+ ***/
+void *silc_fsm_get_state_context(void *fsm);
 
 /****f* silcutil/SilcFSMAPI/silc_fsm_get_schedule
  *
@@ -693,11 +772,24 @@ void silc_fsm_set_context(void *fsm, void *fsm_context);
  *    scheduler in the thread.  Note that, once the thread finishes the
  *    returned SilcSchedule becomes invalid.
  *
- *    Every other time this returns the SilcSchedule pointer that was given
+ *    In other times this returns the SilcSchedule pointer that was given
  *    to silc_fsm_alloc or silc_fsm_init.
  *
  ***/
 SilcSchedule silc_fsm_get_schedule(void *fsm);
+
+/****f* silcutil/SilcFSMAPI/silc_fsm_get_machine
+ *
+ * SYNOPSIS
+ *
+ *    SilcFSM silc_fsm_get_machine(SilcFSMThread thread);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the machine from the FSM thread indicated by `thread'.
+ *
+ ***/
+SilcFSM silc_fsm_get_machine(SilcFSMThread thread);
 
 
 /* FSM Semaphores */
@@ -754,10 +846,6 @@ typedef struct SilcFSMSemaObject SilcFSMSemaStruct;
  *    Use the macros SILC_FSM_SEMA_WAIT and SILC_FSM_SEMA_TIMEDWAIT to wait
  *    for semaphore.  Use the SILC_FSM_SEMA_POST macro to increment the
  *    counter and wake up all waiters.
- *
- *    FSM semaphores are machine specific.  The context cannot be shared
- *    between multiple machines.  The same context naturally can be shared
- *    between the machine and its threads.
  *
  ***/
 SilcFSMSema silc_fsm_sema_alloc(SilcFSM fsm, SilcUInt32 value);
@@ -847,14 +935,16 @@ do {						\
  *
  * NAME
  *
- *    SILC_FSM_SEMA_TIMEDWAIT(semaphore, seconds, useconds)
+ *    SILC_FSM_SEMA_TIMEDWAIT(semaphore, seconds, useconds, timedout)
  *
  * DESCRIPTION
  *
  *    Macro used to wait for the `semaphore' to become non-zero, or until
  *    the timeout specified by `seconds' and `useconds' has elapsed.  If
  *    the timeout occurs before the semaphore becomes non-zero, the machine
- *    will wakeup.  This macro can only be used in FSM state functions.
+ *    will wakeup.  The `timedout' is SilcBool pointer and if it is
+ *    non-NULL indication of whether timeout occurred or not is saved to
+ *    the pointer.  This macro can only be used in FSM state functions.
  *    When the semaphore is signalled or timedout the FSM will re-enter
  *    the current state (or state that was set with silc_fsm_next before
  *    waiting).
@@ -863,22 +953,28 @@ do {						\
  *
  *    SILC_FSM_STATE(silc_foo_state)
  *    {
+ *      SilcBool timedout;
  *      ...
  *
- *      // Wait here for async call to complete, or 10 seconds for timeout
- *      SILC_FSM_SEMA_TIMEDWAIT(ctx->async_sema, 10, 0);
  *
- *      // Async call completed or timeout occurred
+ *      // Wait here for async call to complete, or 10 seconds for timeout
+ *      SILC_FSM_SEMA_TIMEDWAIT(ctx->async_sema, 10, 0, &timedout);
+ *
+ *      // See if timeout occurred
+ *      if (timedout == TRUE)
+ *        fatal(error);
+ *
+ *      // Async call completed
  *      if (ctx->async_success == FALSE)
  *        fatal(error);
  *      ...
  *    }
  *
  ***/
-#define SILC_FSM_SEMA_TIMEDWAIT(sema, seconds, useconds)		\
-do {									\
-  if (silc_fsm_sema_timedwait(sema, fsm, seconds, useconds) == 0)	\
-    return SILC_FSM_WAIT;						\
+#define SILC_FSM_SEMA_TIMEDWAIT(sema, seconds, useconds, ret_to)	  \
+do {									  \
+  if (silc_fsm_sema_timedwait(sema, fsm, seconds, useconds, ret_to) == 0) \
+    return SILC_FSM_WAIT;						  \
 } while(0)
 
 /****f* silcutil/SilcFSMAPI/SILC_FSM_SEMA_POST

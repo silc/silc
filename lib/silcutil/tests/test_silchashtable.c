@@ -1,6 +1,6 @@
 /* Hash table tests */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 typedef struct entry_struct {
   char name[8];

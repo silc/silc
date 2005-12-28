@@ -17,13 +17,16 @@
 
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 SILC_TASK_CALLBACK(silc_fsm_run);
 SILC_TASK_CALLBACK(silc_fsm_finish);
 SILC_TASK_CALLBACK(silc_fsm_sema_timedout);
 SILC_TASK_CALLBACK(silc_fsm_start_real_thread);
 static void *silc_fsm_thread(void *context);
+static void silc_fsm_thread_termination_post(SilcFSMSema sema);
+static void silc_fsm_sema_ref(SilcFSMSema sema);
+static void silc_fsm_sema_unref(SilcFSMSema sema);
 
 /* Allocate FSM */
 
@@ -50,15 +53,16 @@ SilcFSM silc_fsm_alloc(void *fsm_context,
 /* Initialize FSM */
 
 SilcBool silc_fsm_init(SilcFSM fsm,
-		   void *fsm_context,
-                   SilcFSMDestructor destructor,
-                   void *destructor_context,
-                   SilcSchedule schedule)
+		       void *fsm_context,
+		       SilcFSMDestructor destructor,
+		       void *destructor_context,
+		       SilcSchedule schedule)
 {
   if (!schedule)
     return FALSE;
 
   fsm->fsm_context = fsm_context;
+  fsm->state_context = NULL;
   fsm->destructor = destructor;
   fsm->destructor_context = destructor_context;
   fsm->schedule = schedule;
@@ -84,18 +88,14 @@ SilcFSMThread silc_fsm_thread_alloc(SilcFSM fsm,
   if (!thread)
     return NULL;
 
-  if (!silc_fsm_thread_init(thread, fsm, thread_context, destructor,
-			    destructor_context, real_thread)) {
-    silc_free(thread);
-    return NULL;
-  }
-
+  silc_fsm_thread_init(thread, fsm, thread_context, destructor,
+		       destructor_context, real_thread);
   return thread;
 }
 
 /* Initialize FSM thread.  Internally machine and thread use same context. */
 
-SilcBool silc_fsm_thread_init(SilcFSMThread thread,
+void silc_fsm_thread_init(SilcFSMThread thread,
 			  SilcFSM fsm,
 			  void *thread_context,
 			  SilcFSMThreadDestructor destructor,
@@ -110,6 +110,7 @@ SilcBool silc_fsm_thread_init(SilcFSMThread thread,
 #endif /* SILC_DEBUG */
 
   thread->fsm_context = thread_context;
+  thread->state_context = NULL;
   thread->destructor = (SilcFSMDestructor)destructor;
   thread->destructor_context = destructor_context;
   thread->schedule = fsm->schedule;
@@ -125,8 +126,6 @@ SilcBool silc_fsm_thread_init(SilcFSMThread thread,
   if (real_thread && !fsm->u.m.lock)
     if (!silc_mutex_alloc(&fsm->u.m.lock))
       thread->real_thread = FALSE;
-
-  return TRUE;
 }
 
 /* FSM is destroyed through scheduler to make sure that all dying
@@ -203,13 +202,8 @@ SILC_TASK_CALLBACK(silc_fsm_start_real_thread)
 
   SILC_LOG_DEBUG(("Could not create real thread, using normal FSM thread"));
 
-  f->real_thread = FALSE;
-  if (f->u.m.lock) {
-    silc_mutex_free(f->u.m.lock);
-    f->u.m.lock = NULL;
-  }
-
   /* Normal FSM operation */
+  f->real_thread = FALSE;
   silc_fsm_continue_sync(f);
 }
 
@@ -225,7 +219,7 @@ void silc_fsm_start(void *fsm, SilcFSMStateCallback start_state)
   f->next_state = start_state;
   f->synchronous = FALSE;
 
-  /* Start real threads through scheduler */
+  /* Start real thread through scheduler */
   if (f->thread && f->real_thread) {
     silc_schedule_task_add_timeout(f->schedule, silc_fsm_start_real_thread,
 				   f, 0, 1);
@@ -248,7 +242,7 @@ void silc_fsm_start_sync(void *fsm, SilcFSMStateCallback start_state)
   f->next_state = start_state;
   f->synchronous = TRUE;
 
-  /* Start real threads through scheduler */
+  /* Start real thread directly */
   if (f->thread && f->real_thread) {
     silc_fsm_start_real_thread(f->schedule,
 			       silc_schedule_get_context(f->schedule),
@@ -275,6 +269,8 @@ void silc_fsm_next_later(void *fsm, SilcFSMStateCallback next_state,
 {
   SilcFSM f = fsm;
   f->next_state = next_state;
+  if (!seconds && !useconds)
+    return;
   silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f,
 				 seconds, useconds);
 }
@@ -303,12 +299,12 @@ SilcSchedule silc_fsm_get_schedule(void *fsm)
   return f->schedule;
 }
 
-/* Get context */
+/* Return thread's machine */
 
-void *silc_fsm_get_context(void *fsm)
+SilcFSM silc_fsm_get_machine(SilcFSMThread thread)
 {
-  SilcFSM f = fsm;
-  return f->fsm_context;
+  assert(thread->thread);
+  return (SilcFSM)thread->u.t.fsm;
 }
 
 /* Set context */
@@ -317,6 +313,30 @@ void silc_fsm_set_context(void *fsm, void *fsm_context)
 {
   SilcFSM f = fsm;
   f->fsm_context = fsm_context;
+}
+
+/* Get context */
+
+void *silc_fsm_get_context(void *fsm)
+{
+  SilcFSM f = fsm;
+  return f->fsm_context;
+}
+
+/* Set state context */
+
+void silc_fsm_set_state_context(void *fsm, void *state_context)
+{
+  SilcFSM f = fsm;
+  f->state_context = state_context;
+}
+
+/* Get state context */
+
+void *silc_fsm_get_state_context(void *fsm)
+{
+  SilcFSM f = fsm;
+  return f->state_context;
 }
 
 /* Wait for thread to terminate */
@@ -343,16 +363,12 @@ SILC_TASK_CALLBACK(silc_fsm_run)
 
   SILC_LOG_DEBUG(("Running %s %p", fsm->thread ? "thread" : "FSM", fsm));
 
-  /* Run the state */
-  status = fsm->next_state(fsm, fsm->fsm_context);
+  /* Run the states */
+  do
+    status = fsm->next_state(fsm, fsm->fsm_context, fsm->state_context);
+  while (status == SILC_FSM_CONTINUE);
 
   switch (status) {
-  case SILC_FSM_CONTINUE:
-    /* Synchronously move to next state */
-    SILC_LOG_DEBUG(("State continue %p", fsm));
-    silc_fsm_run(schedule, app_context, type, fd, context);
-    break;
-
   case SILC_FSM_WAIT:
     /* The machine is in hold */
     SILC_LOG_DEBUG(("State wait %p", fsm));
@@ -383,6 +399,9 @@ SILC_TASK_CALLBACK(silc_fsm_run)
       silc_schedule_task_add_timeout(fsm->schedule, silc_fsm_finish,
 				     fsm, 0, 1);
     break;
+
+  default:
+    break;
   }
 }
 
@@ -400,8 +419,7 @@ SILC_TASK_CALLBACK(silc_fsm_finish)
   if (fsm->thread) {
     /* This is thread, send signal */
     if (fsm->u.t.sema) {
-      silc_fsm_sema_post(fsm->u.t.sema);
-      silc_fsm_sema_wait(fsm->u.t.sema, fsm->u.t.sema->fsm);
+      silc_fsm_thread_termination_post(fsm->u.t.sema);
       silc_fsm_sema_free(fsm->u.t.sema);
       fsm->u.t.sema = NULL;
     }
@@ -421,20 +439,6 @@ SILC_TASK_CALLBACK(silc_fsm_finish)
   }
 }
 
-/* Signalled, semaphore */
-
-static void silc_fsm_signal(SilcFSM fsm)
-{
-  SILC_LOG_DEBUG(("Signalled %s %p", fsm->thread ? "thread" : "FSM", fsm));
-
-  /* Continue */
-  silc_fsm_continue(fsm);
-
-  /* Wakeup the destination's scheduler in case the signaller is a
-     real thread. */
-  silc_schedule_wakeup(fsm->schedule);
-}
-
 /* Allocate FSM semaphore */
 
 SilcFSMSema silc_fsm_sema_alloc(SilcFSM fsm, SilcUInt32 value)
@@ -446,6 +450,7 @@ SilcFSMSema silc_fsm_sema_alloc(SilcFSM fsm, SilcUInt32 value)
     return NULL;
 
   silc_fsm_sema_init(sema, fsm, value);
+  sema->allocated = TRUE;
 
   return sema;
 }
@@ -458,7 +463,9 @@ void silc_fsm_sema_init(SilcFSMSema sema, SilcFSM fsm, SilcUInt32 value)
 #if defined(SILC_DEBUG)
   assert(!fsm->thread);
 #endif /* SILC_DEBUG */
+  memset(sema, 0, sizeof(*sema));
   sema->fsm = fsm;
+  sema->refcnt = 0;
   silc_list_init(sema->waiters, struct SilcFSMObject, next);
   sema->value = value;
 }
@@ -467,10 +474,28 @@ void silc_fsm_sema_init(SilcFSMSema sema, SilcFSM fsm, SilcUInt32 value)
 
 void silc_fsm_sema_free(SilcFSMSema sema)
 {
+  if (sema->refcnt > 0)
+    return;
 #if defined(SILC_DEBUG)
   assert(silc_list_count(sema->waiters) == 0);
 #endif /* SILC_DEBUG */
   silc_free(sema);
+}
+
+/* Reference semaphore */
+
+static void silc_fsm_sema_ref(SilcFSMSema sema)
+{
+  sema->refcnt++;
+}
+
+/* Unreference semaphore */
+
+static void silc_fsm_sema_unref(SilcFSMSema sema)
+{
+  sema->refcnt--;
+  if (sema->refcnt == 0 && sema->allocated)
+    silc_fsm_sema_free(sema);
 }
 
 /* Wait until semaphore is non-zero. */
@@ -509,16 +534,25 @@ SilcUInt32 silc_fsm_sema_wait(SilcFSMSema sema, void *fsm)
 /* Wait util semaphore is non-zero, or timeout occurs. */
 
 SilcUInt32 silc_fsm_sema_timedwait(SilcFSMSema sema, void *fsm,
-				   SilcUInt32 seconds, SilcUInt32 useconds)
+				   SilcUInt32 seconds, SilcUInt32 useconds,
+				   SilcBool *ret_to)
 {
+  SilcMutex lock = sema->fsm->u.m.lock;
   SilcFSM f = fsm;
   SilcUInt32 value;
+
+  silc_mutex_lock(lock);
 
   if (f->sema_timedout) {
     SILC_LOG_DEBUG(("Semaphore was timedout"));
     f->sema_timedout = FALSE;
+    if (ret_to)
+      *ret_to = TRUE;
+    silc_mutex_unlock(lock);
     return 1;
   }
+
+  silc_mutex_unlock(lock);
 
   value = silc_fsm_sema_wait(sema, fsm);
   if (!value) {
@@ -526,6 +560,9 @@ SilcUInt32 silc_fsm_sema_timedwait(SilcFSMSema sema, void *fsm,
 				   f, seconds, useconds);
     f->sema = sema;
   }
+
+  if (ret_to)
+    *ret_to = FALSE;
 
   return value;
 }
@@ -542,13 +579,45 @@ SILC_TASK_CALLBACK(silc_fsm_sema_timedout)
   /* Remove the waiter from the semaphore */
   silc_mutex_lock(lock);
   silc_list_del(fsm->sema->waiters, fsm);
-  silc_mutex_unlock(lock);
-
-  fsm->sema = NULL;
-  fsm->sema_timedout = TRUE;
 
   /* Continue */
-  silc_fsm_continue(fsm);
+  if (fsm->sema) {
+    silc_fsm_continue(fsm);
+    fsm->sema_timedout = TRUE;
+    fsm->sema = NULL;
+  }
+
+  silc_mutex_unlock(lock);
+}
+
+/* Signalled, semaphore */
+
+SILC_TASK_CALLBACK(silc_fsm_signal)
+{
+  SilcFSMSemaPost p = context;
+  SilcMutex lock = p->sema->fsm->u.m.lock;
+
+  /* If the semaphore value has went to zero while we've been waiting this
+     callback, sempahore has been been signalled already.  It can happen
+     when using real threads because the FSM may not be waiting state when
+     the sempahore is posted. */
+  silc_mutex_lock(lock);
+  if (!p->sema->value) {
+    silc_mutex_unlock(lock);
+    silc_fsm_sema_unref(p->sema);
+    silc_free(p);
+    return;
+  }
+  silc_mutex_unlock(lock);
+
+  SILC_LOG_DEBUG(("Signalled %s %p", p->fsm->thread ? "thread" : "FSM",
+		  p->fsm));
+
+  /* Signal */
+  silc_fsm_continue_sync(p->fsm);
+
+  silc_fsm_sema_unref(p->sema);
+  silc_free(p);
 }
 
 /* Increase semaphore */
@@ -556,6 +625,7 @@ SILC_TASK_CALLBACK(silc_fsm_sema_timedout)
 void silc_fsm_sema_post(SilcFSMSema sema)
 {
   SilcFSM fsm;
+  SilcFSMSemaPost p;
   SilcMutex lock = sema->fsm->u.m.lock;
 
   SILC_LOG_DEBUG(("Posting semaphore %p", sema));
@@ -570,7 +640,42 @@ void silc_fsm_sema_post(SilcFSMSema sema)
 				    fsm);
       fsm->sema = NULL;
     }
-    silc_fsm_signal(fsm);
+
+    p = silc_calloc(1, sizeof(*p));
+    if (!p)
+      continue;
+    p->sema = sema;
+    p->fsm = fsm;
+    silc_fsm_sema_ref(sema);
+
+    /* Signal through scheduler.  Wake up destination scheduler in case
+       caller is a real thread. */
+    silc_schedule_task_add_timeout(fsm->schedule, silc_fsm_signal, p, 0, 1);
+    silc_schedule_wakeup(fsm->schedule);
+  }
+
+  silc_mutex_unlock(lock);
+}
+
+/* Post thread termination semaphore.  Special function used only to
+   signal thread termination when SILC_FSM_THREAD_WAIT was used. */
+
+static void silc_fsm_thread_termination_post(SilcFSMSema sema)
+{
+  SilcFSM fsm;
+  SilcMutex lock = sema->fsm->u.m.lock;
+
+  SILC_LOG_DEBUG(("Post thread termination semaphore %p", sema));
+
+  silc_mutex_lock(lock);
+
+  silc_list_start(sema->waiters);
+  while ((fsm = silc_list_get(sema->waiters)) != SILC_LIST_END) {
+    /* Signal on thread termination.  Wake up destination scheduler in case
+       caller is a real thread. */
+    silc_list_del(sema->waiters, fsm);
+    silc_fsm_continue(fsm);
+    silc_schedule_wakeup(fsm->schedule);
   }
 
   silc_mutex_unlock(lock);

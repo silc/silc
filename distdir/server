@@ -4,6 +4,7 @@ bug-report silc-devel@lists.silcnet.org
 
 inherit common
 define SILC_DIST_SERVER
+define SILC_DIST_SERVERLIB
 undef SILC_DIST_SFTP
 
 post-process-dist-hook distdir/post-process-dist

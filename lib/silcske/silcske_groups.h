@@ -1,10 +1,10 @@
 /*
 
-  silcske_groups.h 
+  silcske_groups.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2002 Pekka Riikonen
+  Copyright (C) 2000 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,13 +31,11 @@
 #ifndef SILCSKE_GROUPS_H
 #define SILCSKE_GROUPS_H
 
-#include "silcske_status.h"
-
 /****s* silcske/SilcSKEGroups/SilcSKEDiffieHellmanGroup
  *
  * NAME
- * 
- *    typedef struct SilcSKEDiffieHellmanGroupStruct 
+ *
+ *    typedef struct SilcSKEDiffieHellmanGroupStruct
  *                     *SilcSKEDiffieHellmanGroup;
  *
  * DESCRIPTION
@@ -55,7 +53,7 @@ typedef struct SilcSKEDiffieHellmanGroupStruct *SilcSKEDiffieHellmanGroup;
  *
  * SYNOPSIS
  *
- *    SilcSKEStatus 
+ *    SilcSKEStatus
  *    silc_ske_group_get_by_number(int number,
  *                                 SilcSKEDiffieHellmanGroup *ret);
  *
@@ -73,7 +71,7 @@ SilcSKEStatus silc_ske_group_get_by_number(int number,
  *
  * SYNOPSIS
  *
- *    SilcSKEStatus 
+ *    SilcSKEStatus
  *    silc_ske_get_group_by_name(const char *name,
  *                               SilcSKEDiffieHellmanGroup *ret);
  *

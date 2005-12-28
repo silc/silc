@@ -19,7 +19,7 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 #ifdef SILC_DIST_TOOLKIT
 include_HEADERS = \
-	silcincludes.h \
+	silc.h \
 	silcwin32.h \
 	silcepoc.h \
 	silcbeos.h \
@@ -28,7 +28,7 @@ include_HEADERS = \
 #endif SILC_DIST_TOOLKIT
 
 EXTRA_DIST = \
-	silcincludes.h \
+	silc.h \
 	silcwin32.h \
 	silcepoc.h \
 	silcbeos.h \

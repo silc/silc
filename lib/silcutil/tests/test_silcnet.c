@@ -1,6 +1,6 @@
 /* SILC Net API tests */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 SilcSchedule schedule;
 
@@ -50,7 +50,7 @@ SILC_FSM_STATE(test_st_connect)
   SILC_LOG_DEBUG(("test_st_connect"));
   SILC_LOG_DEBUG(("Connecting to server"));
 
-  silc_fsm_next(fsm, test_st_connected);
+  silc_fsm_next(fsm, test_st_connected, NULL);
   SILC_FSM_CALL(silc_net_tcp_connect(NULL, "localhost", 5000,
 				     silc_fsm_get_schedule(fsm),
 				     test_connected, f));
@@ -88,18 +88,18 @@ SILC_FSM_STATE(test_st_start)
   if (!f->server) {
     /** Creating network listener failed */
     SILC_LOG_DEBUG(("Listener creation failed"));
-    silc_fsm_next(fsm, test_st_finish);
+    silc_fsm_next(fsm, test_st_finish, NULL);
     return SILC_FSM_CONTINUE;
   }
 
   /* Create thread to connect to the listener */
   silc_fsm_thread_init(&f->thread, fsm, f, NULL, NULL, FALSE);
-  silc_fsm_start(&f->thread, test_st_connect);
+  silc_fsm_start(&f->thread, test_st_connect, NULL);
 
   /** Start waiting connection */
   SILC_LOG_DEBUG(("Start waiting for incoming connections"));
   silc_fsm_sema_init(&f->sema, fsm, 0);
-  silc_fsm_next(fsm, test_st_second);
+  silc_fsm_next(fsm, test_st_second, NULL);
   return SILC_FSM_CONTINUE;
 }
 
@@ -116,7 +116,7 @@ SILC_FSM_STATE(test_st_second)
   if (f->client_status != SILC_NET_OK) {
     /** Accepting new connection failed */
     SILC_LOG_DEBUG(("Accepting failed %d", f->client_status));
-    silc_fsm_next(fsm, test_st_finish);
+    silc_fsm_next(fsm, test_st_finish, NULL);
     return SILC_FSM_CONTINUE;
   }
 
@@ -125,7 +125,7 @@ SILC_FSM_STATE(test_st_second)
 
   /** Finish */
   f->success = TRUE;
-  silc_fsm_next(fsm, test_st_finish);
+  silc_fsm_next(fsm, test_st_finish, NULL);
   return SILC_FSM_CONTINUE;
 }
 
@@ -182,7 +182,7 @@ int main(int argc, char **argv)
   fsm = silc_fsm_alloc(f, destructor, NULL, schedule);
   if (!fsm)
     goto err;
-  silc_fsm_start(fsm, test_st_start);
+  silc_fsm_start(fsm, test_st_start, NULL);
   f->fsm = fsm;
 
   SILC_LOG_DEBUG(("Running scheduler"));

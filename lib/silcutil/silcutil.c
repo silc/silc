@@ -22,7 +22,7 @@
  */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Gets line from a buffer. Stops reading when a newline or EOF occurs.
    This doesn't remove the newline sign from the destination buffer. The
@@ -129,37 +129,47 @@ SilcBool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size)
 
 /* Parse userfqdn string which is in user@fqdn format. */
 
-SilcBool silc_parse_userfqdn(const char *string, char **left, char **right)
+int silc_parse_userfqdn(const char *string,
+			char *user, SilcUInt32 user_size,
+			char *fqdn, SilcUInt32 fqdn_size)
 {
   SilcUInt32 tlen;
 
-  if (!string)
-    return FALSE;
+  if (!string || (!user && !fqdn))
+    return 0;
 
   if (string[0] == '@') {
-    if (left)
-      *left = strdup(string);
-    return TRUE;
+    if (user) {
+      memset(user, 0, user_size);
+      silc_strncat(user, user_size, string, strlen(string));
+    }
+
+    return 1;
   }
 
   if (strchr(string, '@')) {
     tlen = strcspn(string, "@");
 
-    if (left) {
-      *left = silc_calloc(tlen + 1, sizeof(char));
-      memcpy(*left, string, tlen);
+    if (user) {
+      memset(user, 0, user_size);
+      silc_strncat(user, user_size, string, tlen);
     }
 
-    if (right) {
-      *right = silc_calloc((strlen(string) - tlen) + 1, sizeof(char));
-      memcpy(*right, string + tlen + 1, strlen(string) - tlen - 1);
+    if (fqdn) {
+      memset(fqdn, 0, fqdn_size);
+      silc_strncat(fqdn, fqdn_size, string + tlen + 1,
+		   strlen(string) - tlen - 1);
     }
-  } else {
-    if (left)
-      *left = silc_memdup(string, strlen(string));
+
+    return 2;
   }
 
-  return TRUE;
+  if (user) {
+    memset(user, 0, user_size);
+    silc_strncat(user, user_size, string, strlen(string));
+  }
+
+  return 1;
 }
 
 /* Parses command line. At most `max_args' is taken. Rest of the line
@@ -243,7 +253,7 @@ void silc_parse_command_line(unsigned char *buffer,
 char *silc_format(char *fmt, ...)
 {
   va_list args;
-  static char buf[8192];
+  char buf[8192];
 
   memset(buf, 0, sizeof(buf));
   va_start(args, fmt);
@@ -613,6 +623,14 @@ SilcBool silc_hash_id_compare(void *key1, void *key2, void *user_context)
 	  SILC_ID_COMPARE_TYPE(key1, key2, id_type));
 }
 
+/* Compares two ID's. Compares full IDs. */
+
+SilcBool silc_hash_id_compare_full(void *key1, void *key2, void *user_context)
+{
+  SilcIdType id_type = (SilcIdType)SILC_PTR_TO_32(user_context);
+  return SILC_ID_COMPARE_TYPE(key1, key2, id_type);
+}
+
 /* Compare two Client ID's entirely and not just the hash from the ID. */
 
 SilcBool silc_hash_client_id_compare(void *key1, void *key2, void *user_context)
@@ -634,8 +652,8 @@ SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context)
 {
   int l1 = strlen((char *)key1);
   int l2 = strlen((char *)key2);
-  if (l1 > l2)
-    l2 = l1;
+  if (l1 != l2)
+    return FALSE;
   return !memcmp(key1, key2, l2);
 }
 
@@ -816,11 +834,11 @@ SilcBool silc_string_is_ascii(const unsigned char *data, SilcUInt32 data_len)
 /* Parses SILC protocol style version string. */
 
 SilcBool silc_parse_version_string(const char *version,
-			       SilcUInt32 *protocol_version,
-			       char **protocol_version_string,
-			       SilcUInt32 *software_version,
-			       char **software_version_string,
-			       char **vendor_version)
+				   SilcUInt32 *protocol_version,
+				   char **protocol_version_string,
+				   SilcUInt32 *software_version,
+				   char **software_version_string,
+				   char **vendor_version)
 {
   char *cp, buf[32];
   int maj = 0, min = 0;

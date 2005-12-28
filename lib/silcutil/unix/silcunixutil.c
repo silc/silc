@@ -22,7 +22,7 @@
  */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* XXX lib/contrib/regex.c might cmopile on WIN32 as well */
 

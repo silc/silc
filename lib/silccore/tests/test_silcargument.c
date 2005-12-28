@@ -29,7 +29,7 @@
    silc_argument_get_arg_type
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcargument.h"
 
 #define ARG_NUM 250
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
   unsigned char **argvv, *a;
   SilcUInt32 *argvv_lens, l;
   SilcUInt32 *argvv_types, t;
-  bool success = FALSE;
+  SilcBool success = FALSE;
 
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_debug = 1;

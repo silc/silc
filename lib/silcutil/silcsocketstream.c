@@ -17,7 +17,9 @@
 
 */
 
-#include "silcincludes.h"
+#include "silc.h"
+
+/************************** Types and definitions ***************************/
 
 #define SILC_IS_SOCKET_STREAM(s) (s->ops == &silc_socket_stream_ops)
 
@@ -41,6 +43,9 @@ typedef struct {
   unsigned int require_fqdn : 1;
   unsigned int aborted      : 1;
 } *SilcSocketHostLookup;
+
+
+/************************ Static utility functions **************************/
 
 /* The IO process callback that calls the notifier callback to upper
    layer. */
@@ -92,16 +97,6 @@ SILC_TASK_CALLBACK(silc_socket_host_lookup_finish)
     silc_free(stream->hostname);
     silc_free(stream);
     stream = lookup->stream = NULL;
-  }
-
-  /* Add the socket to scheduler */
-  if (stream) {
-    silc_schedule_task_add_fd(stream->schedule, stream->sock,
-			      silc_socket_stream_io, stream);
-
-    /* Initially set socket for reading */
-    silc_schedule_set_listen_fd(stream->schedule, stream->sock,
-				SILC_TASK_READ, FALSE);
   }
 
   /* Return the created socket stream to the caller */
@@ -162,6 +157,9 @@ static void silc_socket_host_lookup_abort(SilcAsyncOperation op,
      good time and handle the abortion after it finishes. */
   lookup->aborted = TRUE;
 }
+
+
+/******************************* Public API *********************************/
 
 /* Creates socket stream */
 
@@ -228,8 +226,8 @@ silc_socket_stream_create(int sock, SilcBool lookup, SilcBool require_fqdn,
 /* Returns socket stream information */
 
 SilcBool silc_socket_stream_get_info(SilcStream stream,
-				 int *sock, const char **hostname,
-				 const char **ip, SilcUInt16 *port)
+				     int *sock, const char **hostname,
+				     const char **ip, SilcUInt16 *port)
 {
   SilcSocketStream socket_stream = stream;
 
@@ -251,8 +249,8 @@ SilcBool silc_socket_stream_get_info(SilcStream stream,
 /* Set socket information */
 
 SilcBool silc_socket_stream_set_info(SilcStream stream,
-				 const char *hostname,
-				 const char *ip, SilcUInt16 port)
+				     const char *hostname,
+				     const char *ip, SilcUInt16 port)
 {
   SilcSocketStream socket_stream = stream;
 
@@ -292,10 +290,10 @@ int silc_socket_stream_get_error(SilcStream stream)
 /* Set QoS for socket stream */
 
 SilcBool silc_socket_stream_set_qos(SilcStream stream,
-				SilcUInt32 read_rate,
-				SilcUInt32 read_limit_bytes,
-				SilcUInt32 limit_sec,
-				SilcUInt32 limit_usec)
+				    SilcUInt32 read_rate,
+				    SilcUInt32 read_limit_bytes,
+				    SilcUInt32 limit_sec,
+				    SilcUInt32 limit_usec)
 {
   SilcSocketStream socket_stream = stream;
 
@@ -362,6 +360,7 @@ void silc_socket_stream_destroy(SilcStream stream)
   silc_socket_stream_close(socket_stream);
   silc_free(socket_stream->ip);
   silc_free(socket_stream->hostname);
+  silc_schedule_task_del_by_fd(socket_stream->schedule, socket_stream->sock);
 
   if (socket_stream->qos) {
     silc_schedule_task_del_by_context(socket_stream->schedule,
@@ -380,6 +379,7 @@ void silc_socket_stream_destroy(SilcStream stream)
 /* Sets stream notification callback for the stream */
 
 void silc_socket_stream_notifier(SilcStream stream,
+				 SilcSchedule schedule,
 				 SilcStreamNotifier callback,
 				 void *context)
 {
@@ -392,6 +392,35 @@ void silc_socket_stream_notifier(SilcStream stream,
 
   socket_stream->notifier = callback;
   socket_stream->notifier_context = context;
+  socket_stream->schedule = schedule;
+
+  if (socket_stream->notifier) {
+    /* Add the socket to scheduler.  Safe to call if already added. */
+    silc_schedule_task_add_fd(socket_stream->schedule, socket_stream->sock,
+			      silc_socket_stream_io, socket_stream);
+
+    /* Initially set socket for reading */
+    silc_schedule_set_listen_fd(socket_stream->schedule, socket_stream->sock,
+				SILC_TASK_READ, FALSE);
+  } else {
+    /* Unschedule the socket */
+    silc_schedule_unset_listen_fd(socket_stream->schedule,
+				  socket_stream->sock);
+    silc_schedule_task_del_by_fd(socket_stream->schedule,
+				 socket_stream->sock);
+  }
+}
+
+/* Return associated scheduler */
+
+SilcSchedule silc_socket_stream_get_schedule(SilcStream stream)
+{
+  SilcSocketStream socket_stream = stream;
+
+  if (!SILC_IS_SOCKET_STREAM(socket_stream))
+    return NULL;
+
+  return socket_stream->schedule;
 }
 
 /* SILC Socket Stream ops.  Functions are implemented under the
@@ -403,4 +432,5 @@ const SilcStreamOps silc_socket_stream_ops =
   silc_socket_stream_close,
   silc_socket_stream_destroy,
   silc_socket_stream_notifier,
+  silc_socket_stream_get_schedule,
 };

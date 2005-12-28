@@ -19,7 +19,7 @@
 /* Channel Payload and Channel Key Payload implementations. */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcchannel.h"
 
 /******************************************************************************
@@ -210,10 +210,12 @@ unsigned char *silc_channel_get_id(SilcChannelPayload payload,
 
 /* Return the channel ID as parsed ID. */
 
-SilcChannelID *silc_channel_get_id_parse(SilcChannelPayload payload)
+SilcBool silc_channel_get_id_parse(SilcChannelPayload payload,
+				   SilcChannelID *ret_channel_id)
 {
   return silc_id_str2id(payload->channel_id, payload->id_len,
-			SILC_ID_CHANNEL);
+			SILC_ID_CHANNEL, ret_channel_id,
+			sizeof(SilcChannelID));
 }
 
 /* Return the mode. The mode is arbitrary. It can be the mode of the

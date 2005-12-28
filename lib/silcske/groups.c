@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "groups_internal.h"
 
 /* Fixed and public Diffie Hellman Groups defined by the SKE

@@ -45,8 +45,8 @@ typedef struct {
   void *head;			     /* Start of the list */
   void *tail;			     /* End of the list */
   void *current;		     /* Current pointer in list */
-  unsigned int next_offset : 16;     /* Offset to 'next' pointer */
-  unsigned int prev_offset : 16;     /* Offset to 'prev' pointer */
+  SilcUInt16 next_offset;	     /* Offset to 'next' pointer */
+  SilcUInt16 prev_offset;	     /* Offset to 'prev' pointer */
   unsigned int prev_set    : 1;	     /* Set if 'prev' exists */
   unsigned int end_set     : 1;	     /* Set if silc_list_end was called */
   unsigned int count       : 30;     /* Number of entries in the list */

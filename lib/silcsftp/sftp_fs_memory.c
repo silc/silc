@@ -19,7 +19,7 @@
 /* $Id$ */
 /* XXX TODO Win32 support */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcsftp.h"
 #include "silcsftp_fs.h"
 #include "sftp_util.h"

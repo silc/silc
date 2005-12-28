@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Platform specific implementation */
 extern const SilcScheduleOps schedule_ops;
@@ -331,16 +331,16 @@ SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   ret = schedule_ops.select(schedule, schedule->internal);
 
   switch (ret) {
+  case 0:
+    /* Timeout */
+    SILC_LOG_DEBUG(("Running timeout tasks"));
+    silc_schedule_dispatch_timeout(schedule, FALSE);
+    break;
   case -1:
     /* Error */
     if (errno == EINTR)
       break;
     SILC_LOG_ERROR(("Error in select(): %s", strerror(errno)));
-    break;
-  case 0:
-    /* Timeout */
-    SILC_LOG_DEBUG(("Running timeout tasks"));
-    silc_schedule_dispatch_timeout(schedule, FALSE);
     break;
   default:
     /* There is some data available now */
@@ -424,8 +424,6 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
     if (!ttask)
       goto out;
 
-    SILC_LOG_DEBUG(("Registering new timeout task %p", ttask));
-
     ttask->header.type = 1;
     ttask->header.callback = callback;
     ttask->header.context = context;
@@ -436,11 +434,14 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
       silc_gettimeofday(&ttask->timeout);
       ttask->timeout.tv_sec += seconds + (useconds / 1000000L);
       ttask->timeout.tv_usec += (useconds % 1000000L);
-      if (ttask->timeout.tv_usec > 999999L) {
+      if (ttask->timeout.tv_usec >= 1000000L) {
 	ttask->timeout.tv_sec += 1;
 	ttask->timeout.tv_usec -= 1000000L;
       }
     }
+
+    SILC_LOG_DEBUG(("New timeout task %p: sec=%d, usec=%d", ttask,
+		    seconds, useconds));
 
     /* Add task to correct spot so that the first task in the list has
        the earliest timeout. */
@@ -461,7 +462,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
   } else {
     /* Check if fd is already added */
     if (silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fd),
-			     NULL, NULL))
+			     NULL, (void **)&task))
       goto out;
 
     /* Check max tasks */
@@ -475,7 +476,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
     if (!ftask)
       goto out;
 
-    SILC_LOG_DEBUG(("Registering new fd task %p fd=%d", ftask, fd));
+    SILC_LOG_DEBUG(("New fd task %p fd=%d", ftask, fd));
 
     ftask->header.type = 0;
     ftask->header.callback = callback;

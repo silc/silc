@@ -1,4 +1,4 @@
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Test vectors from RFC 2202 */
 

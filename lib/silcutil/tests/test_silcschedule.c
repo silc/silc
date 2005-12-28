@@ -1,10 +1,10 @@
 /* SilcSchedule tests */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 typedef void (*Callback)(void *context);
 
-#define NUM_TTASK 20
+#define NUM_TTASK 200
 #ifdef FD_SETSIZE
 #define NUM_FTASK FD_SETSIZE
 #else
@@ -24,8 +24,10 @@ SILC_TASK_CALLBACK(cont)
 
   SILC_LOG_DEBUG(("Adding %d fd tasks", NUM_FTASK - 10));
 
+#if 0
   for (i = 0; i < NUM_FTASK - 10; i++)
     silc_schedule_task_add_fd(schedule, i + 5, foo, (void *)(i + 5));
+#endif
 }
 
 SILC_TASK_CALLBACK(timeout)
@@ -40,9 +42,14 @@ SILC_TASK_CALLBACK(start)
 
   SILC_LOG_DEBUG(("Adding %d timeout tasks", NUM_TTASK));
 
+#if 0
   for (i = 0; i < NUM_TTASK; i++)
     silc_schedule_task_add_timeout(schedule, timeout, (void *)i,
-	0, (i * 720391) & 999999);
+	i + (i & 9999), (i * 720391) & 999999);
+#endif
+
+  for (i = 0; i < NUM_TTASK; i++)
+    silc_schedule_task_add_timeout(schedule, timeout, (void *)i, 0, 1);
 
   silc_schedule_task_add_timeout(schedule, cont, (void *)i, 0, 100);
 }

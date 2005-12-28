@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcauth.h"
 
 /******************************************************************************
@@ -201,24 +201,21 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
 				 SilcIdType type, SilcUInt32 *ret_len)
 {
   SilcBuffer buf;
-  unsigned char *pk, *id_data, *ret;
+  unsigned char *pk, id_data[32], *ret;
   SilcUInt32 pk_len, id_len;
 
   pk = silc_pkcs_public_key_encode(public_key, &pk_len);
   if (!pk)
     return NULL;
 
-  id_data = silc_id_id2str(id, type);
-  if (!id_data) {
+  if (!silc_id_id2str(id, type, id_data, sizeof(id_data), &id_len)) {
     silc_free(pk);
     return NULL;
   }
-  id_len = silc_id_get_len(id, type);
 
   buf = silc_buffer_alloc_size(random_len + id_len + pk_len);
   if (!buf) {
     silc_free(pk);
-    silc_free(id_data);
     return NULL;
   }
   silc_buffer_format(buf,
@@ -230,7 +227,6 @@ silc_auth_public_key_encode_data(SilcPublicKey public_key,
   ret = silc_buffer_steal(buf, ret_len);
 
   silc_buffer_free(buf);
-  silc_free(id_data);
   silc_free(pk);
 
   return ret;
@@ -294,7 +290,7 @@ silc_auth_public_key_auth_generate_wpub(SilcPublicKey public_key,
     return NULL;
 
   /* Allocate PKCS object */
-  if (!silc_pkcs_alloc(private_key->name, &pkcs)) {
+  if (!silc_pkcs_alloc(private_key->name, SILC_PKCS_SILC, &pkcs)) {
     memset(tmp, 0, tmp_len);
     silc_free(tmp);
     return NULL;
@@ -327,9 +323,10 @@ silc_auth_public_key_auth_generate_wpub(SilcPublicKey public_key,
 /* Verifies the authentication data. Returns TRUE if authentication was
    successful. */
 
-bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
-				      SilcPublicKey public_key, SilcHash hash,
-				      const void *id, SilcIdType type)
+SilcBool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
+					  SilcPublicKey public_key,
+					  SilcHash hash,
+					  const void *id, SilcIdType type)
 {
   unsigned char *tmp;
   SilcUInt32 tmp_len;
@@ -347,7 +344,7 @@ bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
   }
 
   /* Allocate PKCS object */
-  if (!silc_pkcs_alloc(public_key->name, &pkcs)) {
+  if (!silc_pkcs_alloc(public_key->name, SILC_PKCS_SILC, &pkcs)) {
     memset(tmp, 0, tmp_len);
     silc_free(tmp);
     return FALSE;
@@ -376,11 +373,11 @@ bool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
 
 /* Same as above but the payload is not parsed yet. This will parse it. */
 
-bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
-					   SilcUInt32 payload_len,
-					   SilcPublicKey public_key,
-					   SilcHash hash,
-					   const void *id, SilcIdType type)
+SilcBool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
+					       SilcUInt32 payload_len,
+					       SilcPublicKey public_key,
+					       SilcHash hash,
+					       const void *id, SilcIdType type)
 {
   SilcAuthPayload auth_payload;
   int ret;
@@ -406,9 +403,9 @@ bool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
    authentication then the `auth_data' is the SilcPublicKey and the
    `auth_data_len' is ignored. */
 
-bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
-		      const void *auth_data, SilcUInt32 auth_data_len,
-		      SilcHash hash, const void *id, SilcIdType type)
+SilcBool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
+			  const void *auth_data, SilcUInt32 auth_data_len,
+			  SilcHash hash, const void *id, SilcIdType type)
 {
   SILC_LOG_DEBUG(("Verifying authentication"));
 
@@ -453,14 +450,15 @@ bool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
 
 /* Same as above but parses the authentication payload before verify. */
 
-bool silc_auth_verify_data(const unsigned char *payload,
-			   SilcUInt32 payload_len,
-			   SilcAuthMethod auth_method, const void *auth_data,
-			   SilcUInt32 auth_data_len, SilcHash hash,
-			   const void *id, SilcIdType type)
+SilcBool silc_auth_verify_data(const unsigned char *payload,
+			       SilcUInt32 payload_len,
+			       SilcAuthMethod auth_method,
+			       const void *auth_data,
+			       SilcUInt32 auth_data_len, SilcHash hash,
+			       const void *id, SilcIdType type)
 {
   SilcAuthPayload auth_payload;
-  bool ret;
+  SilcBool ret;
 
   auth_payload = silc_auth_payload_parse(payload, payload_len);
   if (!auth_payload || (auth_payload->auth_len == 0))

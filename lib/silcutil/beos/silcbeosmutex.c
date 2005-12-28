@@ -19,7 +19,7 @@
 /* I used Apache's APR code as a reference here. */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 #ifdef SILC_THREADS
 

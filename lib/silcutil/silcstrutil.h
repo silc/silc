@@ -111,45 +111,6 @@ char *silc_pem_encode_file(unsigned char *data, SilcUInt32 data_len);
 unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
 			       SilcUInt32 *ret_len);
 
-/****f* silcutil/SilcStrUtilAPI/silc_mime_parse
- *
- * SYNOPSIS
- *
- *    SilcBool
- *    silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
- *                    char *version, SilcUInt32 version_size,
- *                    char *content_type, SilcUInt32 content_type_size,
- *                    char *transfer_encoding,
- *                    SilcUInt32 transfer_encoding_size,
- *                    unsigned char **mime_data_ptr,
- *                    SilcUInt32 *mime_data_len);
- *
- * DESCRIPTION
- *
- *    Parses MIME header indicated by `mime' data block of length of
- *    `mime_len'.  Returns TRUE if the `mime' is valid MIME object.
- *    Parses from the MIME header the MIME Version (if present) and
- *    copies it to the `version' pointer if provided, content type
- *    indicating the data in the MIME object and copies it to the
- *    `content_type' if provided, and the tranfer encoding (if present)
- *    indicating the encoding of the data and copies it to the
- *    `content_transfer_encoding' if provided.
- *
- *    The pointer to the actual data in the MIME object is saved into
- *    `mime_data_ptr'.  The pointer is a location in the `mime' and it
- *    does not allocate or copy anything, ie. the `mime_data_ptr' is a
- *    pointer to the `mime'.  The `mime_data_len' indicates the length of
- *    the data without the MIME header.  The caller is responsible of
- *    NULL terminating the buffers it provides.
- *
- ***/
-SilcBool
-silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
-                char *version, SilcUInt32 version_size,
-                char *content_type, SilcUInt32 content_type_size,
-                char *transfer_encoding, SilcUInt32 transfer_encoding_size,
-                unsigned char **mime_data_ptr, SilcUInt32 *mime_data_len);
-
 /****f* silcutil/SilcStrUtilAPI/silc_strncat
  *
  * SYNOPSIS
@@ -182,14 +143,14 @@ char *silc_strncat(char *dest, SilcUInt32 dest_size,
  *
  *    Checks that the 'identifier' string is valid identifier string
  *    and does not contain any unassigned or prohibited character.  This
- *    function is used to check for valid nicknames, server names, 
- *    usernames, hostnames, service names, algorithm names, other security 
+ *    function is used to check for valid nicknames, server names,
+ *    usernames, hostnames, service names, algorithm names, other security
  *    property names, and SILC Public Key name.
  *
  *    If the 'max_allowed_length' is non-zero the identifier cannot be
  *    longer than that, and NULL is returned if it is.  If zero (0), no
  *    length limit exist.  For nicknames the max length must be 128 bytes.
- *    Other identifiers has no default limit, but application may choose 
+ *    Other identifiers has no default limit, but application may choose
 *     one anyway.
  *
  *    Returns the validated string, that the caller must free.  Returns
@@ -227,14 +188,14 @@ unsigned char *silc_identifier_check(const unsigned char *identifier,
  *
  *    Checks that the 'identifier' string is valid identifier string
  *    and does not contain any unassigned or prohibited character.  This
- *    function is used to check for valid nicknames, server names, 
- *    usernames, hostnames, service names, algorithm names, other security 
+ *    function is used to check for valid nicknames, server names,
+ *    usernames, hostnames, service names, algorithm names, other security
  *    property names, and SILC Public Key name.
  *
  *    If the 'max_allowed_length' is non-zero the identifier cannot be
  *    longer than that, and NULL is returned if it is.  If zero (0), no
  *    length limit exist.  For nicknames the max length must be 128 bytes.
- *    Other identifiers has no default limit, but application may choose 
+ *    Other identifiers has no default limit, but application may choose
  *    one anyway.
  *
  *    Returns TRUE if the string is valid and FALSE if it is prohibited.

@@ -38,7 +38,7 @@
  *
  * SYNOPSIS
  *
- *    SilcStream silc_fd_stream_create(int fd, SilcSchedule schedule);
+ *    SilcStream silc_fd_stream_create(int fd);
  *
  * DESCRIPTION
  *
@@ -46,15 +46,17 @@
  *    by `fd'.  The stream is closed with the silc_stream_close and destroyed
  *    with the silc_stream_destroy.
  *
+ *    The silc_stream_set_notifier must be called in order to be able to read
+ *    from and write to this file descriptor stream.
+ *
  ***/
-SilcStream silc_fd_stream_create(int fd, SilcSchedule schedule);
+SilcStream silc_fd_stream_create(int fd);
 
 /****f* silcutil/SilcFDStreamAPI/silc_fd_stream_create2
  *
  * SYNOPSIS
  *
- *    SilcStream silc_fd_stream_create2(int read_fd, int write_fd,
- *                                      SilcSchedule schedule);
+ *    SilcStream silc_fd_stream_create2(int read_fd, int write_fd);
  *
  * DESCRIPTION
  *
@@ -63,16 +65,18 @@ SilcStream silc_fd_stream_create(int fd, SilcSchedule schedule);
  *    and `write_fd' opened for writing.  The stream is closed with the
  *    silc_stream_close and destroyed with the silc_stream_destroy.
  *
+ *    The silc_stream_set_notifier must be called in order to be able to read
+ *    from and write to this file descriptor stream.
+ *
  ***/
-SilcStream silc_fd_stream_create2(int read_fd, int write_fd,
-				  SilcSchedule schedule);
+SilcStream silc_fd_stream_create2(int read_fd, int write_fd);
 
 /****f* silcutil/SilcFDStreamAPI/silc_fd_stream_file
  *
  * SYNOPSIS
  *
  *    SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
- *                                   SilcBool writing, SilcSchedule schedule);
+ *                                   SilcBool writing);
  *
  * DESCRIPTION
  *
@@ -81,9 +85,12 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd,
  *    opened for reading.  If the `writing' is TRUE the file is opened
  *    for writing.
  *
+ *    The silc_stream_set_notifier must be called in order to be able to read
+ *    from and write to this file descriptor stream.
+ *
  ***/
-SilcStream silc_fd_stream_file(const char *filename, SilcBool reading, 
-			       SilcBool writing, SilcSchedule schedule);
+SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
+			       SilcBool writing);
 
 /****f* silcutil/SilcFDStreamAPI/silc_fd_stream_get_info
  *
@@ -99,7 +106,8 @@ SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
  *    function.
  *
  ***/
-SilcBool silc_fd_stream_get_info(SilcStream stream, int *read_fd, int *write_fd);
+SilcBool silc_fd_stream_get_info(SilcStream stream,
+				 int *read_fd, int *write_fd);
 
 /****f* silcutil/SilcFDStreamAPI/silc_fd_stream_get_error
  *

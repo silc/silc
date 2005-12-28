@@ -17,26 +17,29 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
+#ifdef SILC_DIST_SFTP
+#	silcsftp
 #endif SILC_DIST_SFTP
 
 # SILC Library dirs
-SILCLIB_DIRS = \
-	contrib \
-	silcutil \
-	silccrypt \
+SILCLIB_DIRS = 		\
+	contrib 	\
+	silccore	\
+	silcutil 	\
+	silccrypt 	\
+#ifdef SILC_DIST_SKR
+	silcskr 	\
+#endif SILC_DIST_SKR
 #ifdef SILC_DIST_MATH
-	silcmath \
+	silcmath 	\
 #endif SILC_DIST_MATH
 #ifdef SILC_DIST_SIM
-	silcsim \
-#ifdef SILC_DIST_ASN1
-	silcasn1 \
-#endif SILC_DIST_ASN1
+	silcsim 	\
 #endif SILC_DIST_SIM
-	silccore \
-	silcske \
-#ifdef SILC_DIST_SFTP
-	silcsftp
+#ifdef SILC_DIST_ASN1
+	silcasn1	\
+#endif SILC_DIST_ASN1
+	silcske
 
 SILCLIB = libsilc.a
 
@@ -46,22 +49,30 @@ SILCCLIENTLIB_DIRS = silcclient
 SILCCLIENTLIB = libsilcclient.a
 #endif SILC_DIST_CLIENTLIB
 
-SUBDIRS = $(SILCLIB_DIRS) #$(SILCCLIENTLIB_DIRS)
+#ifdef SILC_DIST_SERVERLIB
+# SILC Server Library dirs
+SILCSERVERLIB_DIRS = silcserver
+SILCSERVERLIB = libsilcserver.a
+#endif SILC_DIST_SERVERLIB
 
-CLEANFILES = libsilc.a libsilcclient.a
-DISTCLEANFILES = libsilc.a libsilcclient.a
+SUBDIRS = $(SILCLIB_DIRS) $(SILCSERVERLIB_DIRS) ###$(SILCCLIENTLIB_DIRS)
+
+CLEANFILES = libsilc.a libsilcclient.a libsilcserver.a
+DISTCLEANFILES = libsilc.a libsilcclient.a libsilcserver.a
 
 remove:
 	-rm -f libsilc.a
 	-rm -f libsilcclient.a
+	-rm -f libsilcserver.a
 
-all:	remove $(SILCLIB) #$(SILCCLIENTLIB)
+all:	remove $(SILCLIB) $(SILCSERVERLIB) ###$(SILCCLIENTLIB)
 
 #ifdef SILC_DIST_TOOLKIT
 install-exec-hook:
 	-mkdir -p $(DESTDIR)$(libdir)
 	-$(LIBTOOL) $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
 	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(DESTDIR)$(libdir)/
+	-$(LIBTOOL) $(INSTALL) libsilcserver.la $(DESTDIR)$(libdir)/
 #else !SILC_DIST_TOOLKIT
 
 #ifdef SILC_DIST_SERVER
@@ -69,7 +80,9 @@ install-exec-hook:
 if SILC_ENABLE_SHARED
 	-mkdir -p $(libdir)
 	-$(LIBTOOL) $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
+	-$(LIBTOOL) $(INSTALL) libsilcserver.la $(DESTDIR)$(libdir)/
 	-rm -rf $(DESTDIR)$(libdir)/libsilc.a
+	-rm -rf $(DESTDIR)$(libdir)/libsilcserver.a
 endif
 #endif SILC_DIST_SERVER
 
@@ -108,11 +121,23 @@ libsilcclient.a:
 	-release $(LIB_BASE_VERSION) -rpath $(DESTDIR)$(libdir) -o libsilcclient.la
 #endif SILC_DIST_CLIENTLIB
 
+#ifdef SILC_DIST_SERVERLIB
+LIBSILCSERVER_CURRENT=@LIBSILCSERVER_CURRENT@
+LIBSILCSERVER_REVISION=@LIBSILCSERVER_REVISION@
+LIBSILCSERVER_AGE=@LIBSILCSERVER_AGE@
+
+libsilcserver.a:
+	find $(SILCSERVERLIB_DIRS) -type f -name *.lo | xargs \
+	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
+	-version-info $(LIBSILCSERVER_CURRENT):$(LIBSILCSERVER_REVISION):$(LIBSILCSERVER_AGE) \
+	-release $(LIB_BASE_VERSION) -rpath $(DESTDIR)$(libdir) -o libsilcserver.la
+#endif SILC_DIST_SERVERLIB
+
 #ifdef SILC_DIST_TOOLKIT
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = silc.pc silcclient.pc
+pkgconfig_DATA = silc.pc silcclient.pc silcserver.pc
 
-EXTRA_DIST = silc.pc.in silcclient.pc.in
+EXTRA_DIST = silc.pc.in silcclient.pc.in silcserver.pc.in
 #endif SILC_DIST_TOOLKIT
 
 #ifdef SILC_DIST_TOOLKIT

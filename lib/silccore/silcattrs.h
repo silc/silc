@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2003 Pekka Riikonen
+  Copyright (C) 2002 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -67,22 +67,22 @@ typedef SilcUInt8 SilcAttribute;
    comment is the structure or data type that must be used with the
    silc_attribute_get_object function to fetch parsed attribute. */
 #define SILC_ATTRIBUTE_NONE                   0
-#define SILC_ATTRIBUTE_USER_INFO              1 /* SilcVCard */
-#define SILC_ATTRIBUTE_SERVICE                2 /* SilcAttributeObjService */
-#define SILC_ATTRIBUTE_STATUS_MOOD            3 /* SilcAttributeMood */
-#define SILC_ATTRIBUTE_STATUS_FREETEXT        4 /* char * (UTF-8 string) */
-#define SILC_ATTRIBUTE_STATUS_MESSAGE         5 /* SilcAttributeObjMime */
-#define SILC_ATTRIBUTE_PREFERRED_LANGUAGE     6 /* char * (UTF-8 string) */
-#define SILC_ATTRIBUTE_PREFERRED_CONTACT      7 /* SilcAttributeContact */
-#define SILC_ATTRIBUTE_TIMEZONE               8 /* char * (UTF-8 string) */
-#define SILC_ATTRIBUTE_GEOLOCATION            9 /* SilcAttributeObjGeo */
-#define SILC_ATTRIBUTE_DEVICE_INFO            10 /* SilcAttributeObjDevice */
-#define SILC_ATTRIBUTE_EXTENSION              11 /* SilcAttributeObjMime */
-#define SILC_ATTRIBUTE_USER_PUBLIC_KEY        12 /* SilcAttributeObjPk */
-#define SILC_ATTRIBUTE_SERVER_PUBLIC_KEY      13 /* SilcAttributeObjPk */
-#define SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE 14 /* SilcAttributeObjPk */
+#define SILC_ATTRIBUTE_USER_INFO              1   /* SilcVCard */
+#define SILC_ATTRIBUTE_SERVICE                2   /* SilcAttributeObjService */
+#define SILC_ATTRIBUTE_STATUS_MOOD            3   /* SilcAttributeMood */
+#define SILC_ATTRIBUTE_STATUS_FREETEXT        4   /* char * (UTF-8 string) */
+#define SILC_ATTRIBUTE_STATUS_MESSAGE         5   /* SilcMime */
+#define SILC_ATTRIBUTE_PREFERRED_LANGUAGE     6   /* char * (UTF-8 string) */
+#define SILC_ATTRIBUTE_PREFERRED_CONTACT      7   /* SilcAttributeContact */
+#define SILC_ATTRIBUTE_TIMEZONE               8   /* char * (UTF-8 string) */
+#define SILC_ATTRIBUTE_GEOLOCATION            9   /* SilcAttributeObjGeo */
+#define SILC_ATTRIBUTE_DEVICE_INFO            10  /* SilcAttributeObjDevice */
+#define SILC_ATTRIBUTE_EXTENSION              11  /* SilcMime */
+#define SILC_ATTRIBUTE_USER_PUBLIC_KEY        12  /* SilcAttributeObjPk */
+#define SILC_ATTRIBUTE_SERVER_PUBLIC_KEY      13  /* SilcAttributeObjPk */
+#define SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE 14  /* SilcAttributeObjPk */
 #define SILC_ATTRIBUTE_SERVER_DIGITAL_SIGNATURE 15 /* SilcAttributeObjPk */
-#define SILC_ATTRIBUTE_USER_ICON	      16 /* SilcAttributeObjMime */
+#define SILC_ATTRIBUTE_USER_ICON	      16  /* SilcMime */
 /***/
 
 /* Maximum length of attribute request packet */
@@ -358,7 +358,7 @@ const unsigned char *silc_attribute_get_data(SilcAttributePayload payload,
  *
  *    unsigned char *
  *    silc_attribute_get_verify_data(SilcDList attrs,
- *                                   bool server_verification,
+ *                                   SilcBool server_verification,
  *                                   SilcUInt32 *data_len);
  *
  * DESCRIPTION
@@ -373,7 +373,7 @@ const unsigned char *silc_attribute_get_data(SilcAttributePayload payload,
  *
  ***/
 unsigned char *silc_attribute_get_verify_data(SilcDList attrs,
-					      bool server_verification,
+					      SilcBool server_verification,
 					      SilcUInt32 *data_len);
 
 /* Object structures */
@@ -395,27 +395,8 @@ typedef struct SilcAttributeObjServiceStruct {
   SilcUInt32 idle;		/* Idle time in the service */
   char signon[64];		/* Signon date and time (UTC) */
   char address[256];		/* service address */
-  bool status;			/* online status (TRUE present in service) */
+  SilcBool status;		/* online status (TRUE present in service) */
 } SilcAttributeObjService;
-/***/
-
-/****s* silccore/SilcAttributesAPI/SilcAttributeObjMime
- *
- * NAME
- *
- *    typedef struct { ... } SilcAttributeObjMime;
- *
- * DESCRIPTION
- *
- *    Data type for MIME object as attribute.  The data in the structure
- *    is valid as long as the payload structure is valid.
- *
- * SOURCE
- */
-typedef struct SilcAttributeObjMimeStruct {
-  const unsigned char *mime;	/* MIME buffer */
-  SilcUInt32 mime_len;		/* length of the MIME buffer */
-} SilcAttributeObjMime;
 /***/
 
 /****s* silccore/SilcAttributesAPI/SilcAttributeObjGeo
@@ -500,9 +481,9 @@ typedef struct SilcAttributeObjPkStruct {
  *
  * SYNOPSIS
  *
- *    bool silc_attribute_get_object(SilcAttributePayload payload,
- *                                   void *object,
- *                                   SilcUInt32 object_size);
+ *    SilcBool silc_attribute_get_object(SilcAttributePayload payload,
+ *                                       void *object,
+ *                                       SilcUInt32 object_size);
  *
  * DESCRIPTION
  *
@@ -526,10 +507,15 @@ typedef struct SilcAttributeObjPkStruct {
  *    memset(&dev, 0, sizeof(dev));
  *    if (!silc_attribute_get_object(payload, (void *)&dev, sizeof(dev)))
  *      error();
+ *
+ *    case SILC_ATTRIBUTE_USER_ICON:
+ *    mime = silc_mime_alloc();
+ *    if (!silc_attribute_get_object(payload, (void *)mime, sizeof(*mime)))
+ *      error();
  *    ...
  *
  ***/
-bool silc_attribute_get_object(SilcAttributePayload payload,
-			       void *object, SilcUInt32 object_size);
+SilcBool silc_attribute_get_object(SilcAttributePayload payload,
+				   void *object, SilcUInt32 object_size);
 
 #endif /* SILCATTRS_H */

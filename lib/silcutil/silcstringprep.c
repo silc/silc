@@ -17,7 +17,7 @@
 
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcstringprep.h"
 #include <stringprep.h>
 

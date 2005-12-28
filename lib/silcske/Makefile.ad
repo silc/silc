@@ -22,14 +22,15 @@ noinst_LTLIBRARIES = libsilcske.la
 libsilcske_la_SOURCES = \
 	silcske.c \
 	payload.c \
-        groups.c
+        groups.c  \
+	silcconnauth.c
 
 #ifdef SILC_DIST_TOOLKIT
 include_HEADERS = 		\
 	silcske_groups.h	\
 	silcske_payload.h	\
-	silcske_status.h	\
-	silcske.h
+	silcske.h		\
+	silcconnauth.h
 #endif SILC_DIST_TOOLKIT
 
 EXTRA_DIST = *.h

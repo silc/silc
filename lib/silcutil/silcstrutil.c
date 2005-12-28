@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcstrutil.h"
 
 static unsigned char pem_enc[64] =
@@ -168,88 +168,6 @@ unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
     *ret_len = j;
 
   return data;
-}
-
-/* Mime constants and macros */
-#define MIME_VERSION "MIME-Version: "
-#define MIME_VERSION_LEN 14
-#define MIME_CONTENT_TYPE "Content-Type: "
-#define MIME_CONTENT_TYPE_LEN 14
-#define MIME_TRANSFER_ENCODING "Content-Transfer-Encoding: "
-#define MIME_TRANSFER_ENCODING_LEN 27
-
-#define MIME_GET_FIELD(mime, mime_len, field, field_len,		\
-		       dest, dest_size)					\
-do {									\
-  if (dest) {								\
-    char *f = strstr(mime, field);					\
-    if (f) {								\
-      int parse_len;							\
-      f += field_len;							\
-      parse_len = (mime_len - (f - (char *)mime));			\
-      for (i = 0; i < parse_len; i++) {					\
-        if ((i == dest_size) ||						\
-	    ((f[i] == '\n') && 						\
-	       ((i == parse_len - 1) ||					\
-		  ((f[i+1] != ' ') && (f[i+1] != '\t')))) ||		\
-	    ((f[i] == '\r') &&						\
-	       ((i == parse_len - 1) || (f[i+1] == '\n')) &&		\
-	       ((i >= parse_len - 2) || 				\
-		  ((f[i+2] != ' ') && (f[i+2] != '\t')))))		\
-          break;							\
-        dest[i] = f[i];							\
-      }									\
-    }									\
-  }									\
-} while(0)
-
-/* Parses MIME object and MIME header in it. */
-
-SilcBool
-silc_mime_parse(const unsigned char *mime, SilcUInt32 mime_len,
-                char *version, SilcUInt32 version_size,
-                char *content_type, SilcUInt32 content_type_size,
-                char *transfer_encoding, SilcUInt32 transfer_encoding_size,
-                unsigned char **mime_data_ptr, SilcUInt32 *mime_data_len)
-{
-  int i;
-  unsigned char *tmp;
-
-  /* Get the pointer to the data area in the object */
-  for (i = 0; i < mime_len; i++) {
-    if ((mime_len >= i + 4 &&
-	 mime[i    ] == '\r' && mime[i + 1] == '\n' &&
-	 mime[i + 2] == '\r' && mime[i + 3] == '\n') ||
-	(mime_len >= i + 2 &&
-	 mime[i    ] == '\n' && mime[i + 1] == '\n'))
-      break;
-  }
-  if (i >= mime_len)
-    return FALSE;
-
-  if (mime_data_ptr)
-    *mime_data_ptr = (unsigned char *)mime + i +
-	    (mime[i] == '\n' ? 2 : 4);
-  if (mime_data_len)
-    *mime_data_len = mime_len - (i + (mime[i] == '\n' ? 2 : 4));
-
-  /* Check for mandatory Content-Type field */
-  tmp = strstr(mime, MIME_CONTENT_TYPE);
-  if (!tmp || (tmp - mime) >= i)
-    return FALSE;
-
-  /* Get MIME version, Content-Type and Transfer Encoding fields */
-  MIME_GET_FIELD(mime, mime_len,
-		 MIME_VERSION, MIME_VERSION_LEN,
-		 version, version_size);
-  MIME_GET_FIELD(mime, mime_len,
-		 MIME_CONTENT_TYPE, MIME_CONTENT_TYPE_LEN,
-		 content_type, content_type_size);
-  MIME_GET_FIELD(mime, mime_len,
-		 MIME_TRANSFER_ENCODING, MIME_TRANSFER_ENCODING_LEN,
-		 transfer_encoding, transfer_encoding_size);
-
-  return TRUE;
 }
 
 /* Concatenates the `src' into `dest'.  If `src_len' is more than the

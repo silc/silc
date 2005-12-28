@@ -19,7 +19,7 @@
 /* $Id$ */
 /* Implementation of the VCard (RFC 2426) */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 #define VCARD_HEADER "BEGIN:VCARD\n"
 #define VCARD_VERSION "VERSION:3.0\n"

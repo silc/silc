@@ -1,3 +1,19 @@
+Wed Dec 28 13:55:22 EET 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC Key Repository library, lib/silcskr.
+
+	* Added SILC Server library, lib/silcserver.
+
+Mon Dec 19 18:04:24 EET 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* MIME objects in attributes now use SilcMime.  Affected files
+	  are lib/silccore/silcattrs.[ch].
+
+Sat Dec 17 20:13:31 EET 2005  Pekka Riikonen <priikone@silcnet.org>
+
+	* Synchronize semaphore posting for real threads in FSM.
+	  Affected files are lib/silcutil/silcfsm.c, silcfsm_i.h.
+
 Mon Nov 28 17:06:54 EET 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_file_set_nonblock.  Affected file is

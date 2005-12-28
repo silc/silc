@@ -29,7 +29,7 @@
    silc_sftp_close();
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcsftp.h"
 
 typedef struct {

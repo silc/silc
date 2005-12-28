@@ -1,6 +1,6 @@
 /* SilcAsyncOperation tests */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcfsm.h"
 #include "silcasync.h"
 
@@ -80,14 +80,17 @@ SILC_FSM_STATE(test_st_start)
 SILC_FSM_STATE(test_st_second)
 {
   Foo f = fsm_context;
+  SilcBool timedout;
 
   SILC_LOG_DEBUG(("test_st_second"));
 
-  SILC_FSM_SEMA_TIMEDWAIT(&f->sema, 0, 1);
+  SILC_FSM_SEMA_TIMEDWAIT(&f->sema, 0, 1, &timedout);
 
-  SILC_LOG_DEBUG(("Sema timedout, aborting async operation"));
-  if (f->op)
-    silc_async_abort(f->op, NULL, NULL);
+  if (timedout == TRUE) {
+    SILC_LOG_DEBUG(("Sema timedout, aborting async operation"));
+    if (f->op)
+      silc_async_abort(f->op, NULL, NULL);
+  }
 
   /** Finish */
   silc_fsm_next_later(fsm, test_st_finish, 2, 0);

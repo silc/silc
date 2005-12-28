@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* XXX GNU regex may work on Win32 too!! */
 char *silc_string_regexify(const char *string)

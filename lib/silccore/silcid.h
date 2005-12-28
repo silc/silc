@@ -107,18 +107,20 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
  *
  * SYNOPSIS
  *
- *    void *silc_id_payload_parse_id(const unsigned char *data,
- *                                   SilcUInt32 len,
- *                                   SilcIdType *type);
+ *    SilcBool silc_id_payload_parse_id(const unsigned char *data,
+ *                                      SilcUInt32 len,
+ *                                      SilcIdType *type, void *ret_id,
+ *                                      SilcUInt32 ret_id_size);
  *
  * DESCRIPTION
  *
- *    Return ID directly from the raw ID Payload data buffer. The
- *    caller must free the returned ID.
+ *    Return ID directly from the raw ID Payload data buffer.  This does
+ *    not allocate any memory.
  *
  ***/
-void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
-			       SilcIdType *type);
+SilcBool silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
+				  SilcIdType *type, void *ret_id,
+				  SilcUInt32 ret_id_size);
 
 /****f* silccore/SilcIDAPI/silc_id_payload_encode
  *
@@ -181,15 +183,16 @@ SilcIdType silc_id_payload_get_type(SilcIDPayload payload);
  *
  * SYNOPSIS
  *
- *    void *silc_id_payload_get_id(SilcIDPayload payload);
+ *    SilcBool silc_id_payload_get_id(SilcIDPayload payload, void *ret_id,
+ *                                    SilcUInt32 ret_id_len);
  *
  * DESCRIPTION
  *
- *    Returns the ID in the ID Payload. The caller must free the
- *    returned ID.
+ *    Returns the ID in the ID Payload. This does not allocate any memory.
  *
  ***/
-void *silc_id_payload_get_id(SilcIDPayload payload);
+SilcBool silc_id_payload_get_id(SilcIDPayload payload, void *ret_id,
+				SilcUInt32 ret_id_len);
 
 /****f* silccore/SilcIDAPI/silc_id_payload_get_data
  *
@@ -416,34 +419,38 @@ typedef struct {
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_id_id2str(const void *id, SilcIdType type,
- *                                  SilcUInt32 *ret_id_len);
+ *    SilcBool silc_id_id2str(const void *id, SilcIdType type,
+ *                            unsigned char *ret_id, SilcUInt32 ret_id_size,
+ *                            SilcUInt32 *ret_id_len);
  *
  * DESCRIPTION
  *
  *    Converts an ID of type `type' to data. This can be used to
- *    convert the ID's to data for inclusion in the packets.  Use the
- *    silc_id_get_len to get the length of the ID.
+ *    convert the ID's to data for inclusion in the packets.  This does
+ *    not allocate any memory.
  *
  ***/
-unsigned char *silc_id_id2str(const void *id, SilcIdType type,
-			      SilcUInt32 *ret_id_len);
+SilcBool silc_id_id2str(const void *id, SilcIdType type,
+			unsigned char *ret_id, SilcUInt32 ret_id_size,
+			SilcUInt32 *ret_id_len);
 
 /****f* silccore/SilcIDAPI/silc_id_str2id
  *
  * SYNOPSIS
  *
- *    bool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
- *                        SilcIdType type, void *ret_id);
+ *    SilcBool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
+ *                            SilcIdType type, void *ret_id,
+ *                            SilcUInt32 ret_id_size);
  *
  * DESCRIPTION
  *
  *    Converts ID data string to an ID. This can be used to get the
- *    ID out of data that has been taken for example from packet.
+ *    ID out of data that has been taken for example from packet.  This
+ *    does not allocate any memory.
  *
  ***/
-bool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
-		    SilcIdType type, void *ret_id);
+SilcBool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
+			SilcIdType type, void *ret_id, SilcUInt32 ret_id_size);
 
 /****f* silccore/SilcIDAPI/silc_id_get_len
  *

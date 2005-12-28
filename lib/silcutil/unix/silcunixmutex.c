@@ -18,13 +18,12 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* SILC Mutex structure */
 struct SilcMutexStruct {
 #ifdef SILC_THREADS
   pthread_mutex_t mutex;
-  unsigned int locked : 1;
 #else
   void *tmp;
 #endif /* SILC_THREADS */
@@ -37,8 +36,10 @@ SilcBool silc_mutex_alloc(SilcMutex *mutex)
   if (*mutex == NULL)
     return FALSE;
   pthread_mutex_init(&(*mutex)->mutex, NULL);
-#endif /* SILC_THREADS */
   return TRUE;
+#else
+  return FALSE;
+#endif /* SILC_THREADS */
 }
 
 void silc_mutex_free(SilcMutex mutex)
@@ -57,8 +58,6 @@ void silc_mutex_lock(SilcMutex mutex)
   if (mutex) {
     if (pthread_mutex_lock(&mutex->mutex))
       assert(FALSE);
-    assert(mutex->locked == 0);
-    mutex->locked = 1;
   }
 #endif /* SILC_THREADS */
 }
@@ -67,8 +66,6 @@ void silc_mutex_unlock(SilcMutex mutex)
 {
 #ifdef SILC_THREADS
   if (mutex) {
-    assert(mutex->locked == 1);
-    mutex->locked = 0;
     if (pthread_mutex_unlock(&mutex->mutex))
       assert(FALSE);
   }

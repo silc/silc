@@ -17,7 +17,7 @@
 
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcsftp.h"
 
 typedef struct {

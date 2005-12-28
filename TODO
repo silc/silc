@@ -28,7 +28,7 @@ lib/silccrypt
  o ECDSA and ECDH.
 
 
-lib/silccore/silcpacket.[ch]	****PARTLY DONE****
+lib/silccore/silcpacket.[ch]	****DONE****
 ============================
 
  o SilcPacketEngine.
@@ -36,7 +36,13 @@ lib/silccore/silcpacket.[ch]	****PARTLY DONE****
  o New SILC Packet API.
 
 
-lib/silccore/silcid.[ch]
+lib/silccore/silcpacket.[ch]
+============================
+
+ o IV Included flag support, UDP transport support
+
+
+lib/silccore/silcid.[ch]	****DONE****
 ========================
 
   o Add silc_id_str2id to accept the destination buffer as argument
@@ -46,7 +52,13 @@ lib/silccore/silcid.[ch]
   o silc_id_str2id, silc_id2str to non-allocating routines.
 
 
-lib/silcutil
+lib/silccore
+============
+
+  o All payload encoding routines should take SilcStack as argument.
+
+
+lib/silcutil			****PARTLY DONE****
 ============
 
  o Compression routines are missing.  The protocol supports packet
@@ -100,6 +112,8 @@ lib/silcutil/silcsocketstream.[ch]	****PARTY DONE****
 ==================================
 
  o Add SilcSocketStream.
+
+ o Test QoS
 
 
 lib/silcutil/epoc/*
@@ -205,25 +219,8 @@ lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
    to handle the sockets by themself.
 
 
-apps/silcd
-==========
-
- o Remove the big switch statement from the function
-   silc_server_packet_parse_type and replace it with predefined
-   table of function pointers where each of the slot in table
-   represents the packet type value.
-
-   Same could be done with notify packets which has big switch
-   statement too.  Same kind of table of notify callbacks could be
-   done as well.
-
- o The parser callback in the server will add a timeout task for
-   all packets.  It will require registering and allocating a
-   new task to the SilcSchedule.  Maybe, at least, for server
-   and router packets the parser would be called immediately
-   instead of adding it to the scheduler with 0 timeout.  It
-   should be analyzed too how slow the task registering process
-   actually is, and find out ways to optimize it.
+lib/silcserver
+==============
 
  o The SERVER_SIGNOFF notify handing is not optimal, because it'll
    cause sending of multiple SIGNOFF notify's instead of the one
@@ -264,5 +261,11 @@ apps/silcd
    and process them without any timeouts.  THis must be employed because
    each JOIN command will create and distribute the new channel key
    to everybody on the channel (Fix this to 0.9.x).
+
+ o Related to above.  If multiple JOINs are received in sequence perhaps
+   new key should be created only once, if the JOINs are handeled at the same
+   time.  Now we create multiple keys and never end up using them because
+   many JOINs are processed at the same time in sequence.  Only the last
+   key ends up being used.
 
  o The CMODE cipher & hmac change problem (#101).

@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcid.h"
 
 /* ID lengths (in bytes) without the IP address part */
@@ -64,7 +64,8 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
 
   silc_buffer_pull(&buffer, 4);
 
-  if (newp->len > silc_buffer_len(&buffer) || newp->len > SILC_PACKET_MAX_ID_LEN)
+  if (newp->len > silc_buffer_len(&buffer) ||
+      newp->len > SILC_PACKET_MAX_ID_LEN)
     goto err;
 
   ret = silc_buffer_unformat(&buffer,
@@ -72,8 +73,6 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
-
-  silc_buffer_push(&buffer, 4);
 
   return newp;
 
@@ -85,15 +84,15 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
 
 /* Return the ID directly from the raw payload data. */
 
-void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
-			       SilcIdType *ret_type)
+SilcBool silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
+				  SilcIdType *ret_type, void *ret_id,
+				  SilcUInt32 ret_id_size)
 {
   SilcBufferStruct buffer;
   SilcIdType type;
   SilcUInt16 idlen;
   unsigned char *id_data;
   int ret;
-  void *id;
 
   silc_buffer_set(&buffer, (unsigned char *)data, len);
   ret = silc_buffer_unformat(&buffer,
@@ -117,16 +116,17 @@ void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
   if (ret == -1)
     goto err;
 
-  id = silc_id_str2id(id_data, idlen, type);
+  if (!silc_id_str2id(id_data, idlen, type, ret_id, ret_id_size))
+    goto err;
 
   if (ret_type)
     *ret_type = type;
 
-  return id;
+  return TRUE;
 
  err:
   SILC_LOG_DEBUG(("Error parsing ID payload"));
-  return NULL;
+  return FALSE;
 }
 
 /* Encodes ID Payload */
@@ -134,14 +134,13 @@ void *silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
 SilcBuffer silc_id_payload_encode(const void *id, SilcIdType type)
 {
   SilcBuffer buffer;
-  unsigned char *id_data;
+  unsigned char id_data[32];
   SilcUInt32 len;
 
-  id_data = silc_id_id2str(id, type);
-  len = silc_id_get_len(id, type);
+  if (!silc_id_id2str(id, type, id_data, sizeof(id_data), &len))
+    return NULL;
   buffer = silc_id_payload_encode_data((const unsigned char *)id_data,
 				       len, type);
-  silc_free(id_data);
   return buffer;
 }
 
@@ -180,10 +179,13 @@ SilcIdType silc_id_payload_get_type(SilcIDPayload payload)
 
 /* Get ID */
 
-void *silc_id_payload_get_id(SilcIDPayload payload)
+SilcBool silc_id_payload_get_id(SilcIDPayload payload, void *ret_id,
+				SilcUInt32 ret_id_len)
 {
-  return payload ? silc_id_str2id(payload->id, payload->len,
-                                  payload->type) : NULL;
+  if (!payload)
+    return FALSE;
+  return silc_id_str2id(payload->id, payload->len, payload->type,
+			ret_id, ret_id_len);
 }
 
 /* Get raw ID data. Data is duplicated. */
@@ -205,62 +207,56 @@ SilcUInt32 silc_id_payload_get_len(SilcIDPayload payload)
 
 /* Converts ID to string. */
 
-unsigned char *silc_id_id2str(const void *id, SilcIdType type,
-			      SilcUInt32 *ret_id_len)
+SilcBool silc_id_id2str(const void *id, SilcIdType type,
+			unsigned char *ret_id, SilcUInt32 ret_id_size,
+			SilcUInt32 *ret_id_len)
 {
-  unsigned char *ret_id;
   SilcServerID *server_id;
   SilcClientID *client_id;
   SilcChannelID *channel_id;
   SilcUInt32 id_len = silc_id_get_len(id, type);
 
+  if (id_len > ret_id_size)
+    return FALSE;
+
   if (ret_id_len)
     *ret_id_len = id_len;
 
   if (id_len > SILC_PACKET_MAX_ID_LEN)
-    return NULL;
+    return FALSE;
 
   switch(type) {
   case SILC_ID_SERVER:
     server_id = (SilcServerID *)id;
-    ret_id = silc_calloc(id_len, sizeof(unsigned char));
-    if (!ret_id)
-      return NULL;
     memcpy(ret_id, server_id->ip.data, server_id->ip.data_len);
     SILC_PUT16_MSB(server_id->port, &ret_id[server_id->ip.data_len]);
     SILC_PUT16_MSB(server_id->rnd, &ret_id[server_id->ip.data_len + 2]);
-    return ret_id;
+    return TRUE;
     break;
   case SILC_ID_CLIENT:
     client_id = (SilcClientID *)id;
-    ret_id = silc_calloc(id_len, sizeof(unsigned char));
-    if (!ret_id)
-      return NULL;
     memcpy(ret_id, client_id->ip.data, client_id->ip.data_len);
     ret_id[client_id->ip.data_len] = client_id->rnd;
     memcpy(&ret_id[client_id->ip.data_len + 1], client_id->hash,
 	   CLIENTID_HASH_LEN);
-    return ret_id;
+    return TRUE;
     break;
   case SILC_ID_CHANNEL:
     channel_id = (SilcChannelID *)id;
-    ret_id = silc_calloc(id_len, sizeof(unsigned char));
-    if (!ret_id)
-      return NULL;
     memcpy(ret_id, channel_id->ip.data, channel_id->ip.data_len);
     SILC_PUT16_MSB(channel_id->port, &ret_id[channel_id->ip.data_len]);
     SILC_PUT16_MSB(channel_id->rnd, &ret_id[channel_id->ip.data_len + 2]);
-    return ret_id;
+    return TRUE;
     break;
   }
 
-  return NULL;
+  return FALSE;
 }
 
 /* Converts string to a ID */
 
-bool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
-		    SilcIdType type, void *ret_id)
+SilcBool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
+			SilcIdType type, void *ret_id, SilcUInt32 ret_id_size)
 {
   if (id_len > SILC_PACKET_MAX_ID_LEN)
     return FALSE;
@@ -274,6 +270,10 @@ bool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
 	  id_len != ID_SERVER_LEN_PART + 16)
 	return FALSE;
 
+      if (ret_id_size < sizeof(SilcServerID))
+	return FALSE;
+
+      memset(ret_id, 0, ret_id_size);
       memcpy(server_id->ip.data, id, (id_len > ID_SERVER_LEN_PART + 4 ?
 				      16 : 4));
       server_id->ip.data_len = (id_len > ID_SERVER_LEN_PART + 4 ? 16 : 4);
@@ -290,6 +290,10 @@ bool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
 	  id_len != ID_CLIENT_LEN_PART + 16)
 	return FALSE;
 
+      if (ret_id_size < sizeof(SilcClientID))
+	return FALSE;
+
+      memset(ret_id, 0, ret_id_size);
       memcpy(client_id->ip.data, id, (id_len > ID_CLIENT_LEN_PART + 4 ?
 				      16 : 4));
       client_id->ip.data_len = (id_len > ID_CLIENT_LEN_PART + 4 ? 16 : 4);
@@ -307,6 +311,10 @@ bool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
 	  id_len != ID_CHANNEL_LEN_PART + 16)
 	return FALSE;
 
+      if (ret_id_size < sizeof(SilcChannelID))
+	return FALSE;
+
+      memset(ret_id, 0, ret_id_size);
       memcpy(channel_id->ip.data, id, (id_len > ID_CHANNEL_LEN_PART + 4 ?
 				       16 : 4));
       channel_id->ip.data_len = (id_len > ID_CHANNEL_LEN_PART + 4 ? 16 : 4);

@@ -1,6 +1,6 @@
 /* SILC FD Stream tests */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 SilcBool success = FALSE;
 SilcSchedule schedule;
@@ -58,13 +58,13 @@ SILC_FSM_STATE(st_readwrite)
   }
 
   SILC_LOG_DEBUG(("Creating FD stream (two fds)"));
-  stream = silc_fd_stream_create2(fd1, fd2, schedule);
+  stream = silc_fd_stream_create2(fd1, fd2);
   if (!stream) {
     SILC_LOG_DEBUG(("Error creating stream"));
     goto err;
   }
 
-  silc_stream_set_notifier(stream, stream_notifier2, fsm);
+  silc_stream_set_notifier(stream, schedule, stream_notifier2, fsm);
 
   /* Stream between the fiels */
   SILC_LOG_DEBUG(("Read/write 3 bytes at a time"));
@@ -115,7 +115,7 @@ SILC_FSM_STATE(st_readwrite)
     SILC_LOG_DEBUG(("Destroying stream"));
     silc_stream_destroy(stream);
   }
- 
+
   silc_fsm_next(fsm, st_end);
   return SILC_FSM_CONTINUE;
 
@@ -126,27 +126,20 @@ SILC_FSM_STATE(st_readwrite)
 
 SILC_FSM_STATE(st_write)
 {
-  int ret, i, k, fd;
+  int ret, i, k;
   char *cp;
 
   /* Simple writing example */
   SILC_LOG_DEBUG(("Open file /tmp/test_silcfdstream for writing"));
-
-  unlink("/tmp/test_silcfdstream");
-  fd = silc_file_open("/tmp/test_silcfdstream", O_CREAT | O_RDWR);
-  if (fd < 0) {
-    SILC_LOG_DEBUG(("Error opening file"));
-    goto err;
-  }
-
   SILC_LOG_DEBUG(("Creating FD stream"));
-  stream = silc_fd_stream_create(fd, schedule);
+  unlink("/tmp/test_silcfdstream");
+  stream = silc_fd_stream_file("/tmp/test_silcfdstream", FALSE, TRUE);
   if (!stream) {
     SILC_LOG_DEBUG(("Error creating stream"));
     goto err;
   }
 
-  silc_stream_set_notifier(stream, stream_notifier, fsm);
+  silc_stream_set_notifier(stream, schedule, stream_notifier, fsm);
 
   memset(buf1, 0, sizeof(buf1));
   for (i = 0; i < sizeof(buf1); i++)

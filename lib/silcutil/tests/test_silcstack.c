@@ -1,6 +1,6 @@
 /* SilcStack tests */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 #define NUM_ALLS 300
 

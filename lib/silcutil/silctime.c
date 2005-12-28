@@ -17,7 +17,7 @@
 
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Return time since Epoch */
 
@@ -92,12 +92,12 @@ SilcBool silc_time_value(SilcInt64 timeval, SilcTime ret_time)
 /* Fills the SilcTime structure with correct values */
 
 static SilcBool silc_time_fill(SilcTime time,
-			   unsigned int year,
-			   unsigned int month,
-			   unsigned int day,
-			   unsigned int hour,
-			   unsigned int minute,
-			   unsigned int second)
+			       unsigned int year,
+			       unsigned int month,
+			       unsigned int day,
+			       unsigned int hour,
+			       unsigned int minute,
+			       unsigned int second)
 {
   if (year > 8191)
     return FALSE;
@@ -181,7 +181,7 @@ SilcBool silc_time_universal(const char *universal_time, SilcTime ret_time)
 /* Encode universal time string. */
 
 SilcBool silc_time_universal_string(SilcTime timeval, char *ret_string,
-				SilcUInt32 ret_string_size)
+				    SilcUInt32 ret_string_size)
 {
   int ret, len = 0;
   memset(ret_string, 0, ret_string_size);
@@ -291,7 +291,7 @@ SilcBool silc_time_generalized(const char *generalized_time, SilcTime ret_time)
 /* Encode generalized time string */
 
 SilcBool silc_time_generalized_string(SilcTime timeval, char *ret_string,
-				  SilcUInt32 ret_string_size)
+				      SilcUInt32 ret_string_size)
 {
   int len = 0, ret;
   memset(ret_string, 0, ret_string_size);

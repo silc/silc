@@ -17,7 +17,7 @@
 
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 #ifdef SILC_STACKTRACE
 

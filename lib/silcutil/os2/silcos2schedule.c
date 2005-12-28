@@ -20,7 +20,7 @@
 
 /* XXX TODO */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcschedule_i.h"
 
 /* Calls normal select() system call. */

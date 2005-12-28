@@ -1,4 +1,4 @@
-#include "silcincludes.h"
+#include "silc.h"
 
 /*
 silc_asn1_encode(asn1, node,

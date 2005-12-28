@@ -10,7 +10,7 @@
  *
  * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.org
  */
-#include "silcincludes.h"
+#include "silc.h"
 #include "sha256_internal.h"
 #include "sha256.h"
 

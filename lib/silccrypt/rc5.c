@@ -38,7 +38,7 @@
  *
  */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "rc5_internal.h"
 #include "rc5.h"
 

@@ -17,7 +17,7 @@
 
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcutf8.h"
 
 /* Encodes the string `bin' of which encoding is `bin_encoding' to the

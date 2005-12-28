@@ -136,7 +136,7 @@ SilcBool silc_time_universal(const char *universal_time, SilcTime ret_time);
  * SYNOPSIS
  *
  *    SilcBool silc_time_universal_string(SilcTime timeval, char *ret_string,
- *                                    SilcUInt32 ret_string_size);
+ *                                        SilcUInt32 ret_string_size);
  *
  * DESCRIPTION
  *
@@ -145,14 +145,14 @@ SilcBool silc_time_universal(const char *universal_time, SilcTime ret_time);
  *
  ***/
 SilcBool silc_time_universal_string(SilcTime timeval, char *ret_string,
-				SilcUInt32 ret_string_size);
+				    SilcUInt32 ret_string_size);
 
 /****f* silcutil/SilcTimeAPI/silc_time_generalized
  *
  * SYNOPSIS
  *
  *    SilcBool silc_time_generalized(const char *generalized_time,
- *                               SilcTime ret_time);
+ *                                   SilcTime ret_time);
  *
  * DESCRIPTION
  *
@@ -175,14 +175,15 @@ SilcBool silc_time_universal_string(SilcTime timeval, char *ret_string,
  *    silc_time_generalized("20030219190510.212Z", &ret_time);
  *
  ***/
-SilcBool silc_time_generalized(const char *generalized_time, SilcTime ret_time);
+SilcBool
+silc_time_generalized(const char *generalized_time, SilcTime ret_time);
 
 /****f* silcutil/SilcTimeAPI/silc_time_generalized_string
  *
  * SYNOPSIS
  *
  *    SilcBool silc_time_generalized_string(SilcTime timeval, char *ret_string,
- *                                      SilcUInt32 ret_string_size);
+ *                                          SilcUInt32 ret_string_size);
  *
  * DESCRIPTION
  *
@@ -191,6 +192,6 @@ SilcBool silc_time_generalized(const char *generalized_time, SilcTime ret_time);
  *
  ***/
 SilcBool silc_time_generalized_string(SilcTime timeval, char *ret_string,
-				  SilcUInt32 ret_string_size);
+				      SilcUInt32 ret_string_size);
 
 #endif /* SILCTIME_H */

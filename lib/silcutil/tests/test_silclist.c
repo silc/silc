@@ -1,6 +1,6 @@
 /* SilcList tests */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 struct foo {
   int i;

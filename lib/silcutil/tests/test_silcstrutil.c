@@ -1,6 +1,6 @@
 /* UTF-8 decoding tests */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 #define utf8fail(n, data, len)			\
 const unsigned char u##n[] = (data);		\

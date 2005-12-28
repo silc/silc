@@ -19,7 +19,7 @@
 /* Implementation of Argument Payload routines */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcargument.h"
 
 /******************************************************************************

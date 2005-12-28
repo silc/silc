@@ -30,7 +30,9 @@
 struct SilcFSMSemaObject {
   SilcFSM fsm;			        /* Machine */
   SilcList waiters;			/* List of SilcFSM pointers */
-  SilcUInt32 value;			/* Current semaphore value */
+  unsigned int value     : 21;		/* Current semaphore value */
+  unsigned int refcnt    : 10;		/* Reference counter */
+  unsigned int allocated : 1;		/* Set if allocated */
 };
 
 /* FSM and FSM thread context */
@@ -40,6 +42,7 @@ struct SilcFSMObject {
   SilcSchedule schedule;		/* Scheduler */
   SilcFSMSema sema;			/* Valid if waiting sema timeout */
   SilcFSMStateCallback next_state;	/* Next state in machine */
+  void *state_context;		        /* Extra state specific context */
   SilcFSMDestructor destructor;		/* Destructor */
   void *destructor_context;
   union {
@@ -63,6 +66,12 @@ struct SilcFSMObject {
   unsigned int synchronous      : 1;    /* Set if silc_fsm_start_sync called */
 };
 
+/* Semaphore post context */
+typedef struct {
+  SilcFSMSema sema;		        /* Semaphore */
+  SilcFSM fsm;				/* Signalled FSM */
+} *SilcFSMSemaPost;
+
 /* Used internally by the SILC_FSM_CALL macros to detect whether async
    call is really async or not. */
 static inline
@@ -73,17 +82,14 @@ SilcBool silc_fsm_set_call(struct SilcFSMObject *fsm, SilcBool async_call)
   return old;
 }
 
-/* Continues after callback */
-void silc_fsm_continue(void *fsm);
-void silc_fsm_continue_sync(void *fsm);
-
 /* Wait for thread to terminate */
 SilcBool silc_fsm_thread_wait(void *fsm, void *thread);
 
 /* Semaphores */
 SilcUInt32 silc_fsm_sema_wait(SilcFSMSema sema, void *fsm);
 SilcUInt32 silc_fsm_sema_timedwait(SilcFSMSema sema, void *fsm,
-				   SilcUInt32 seconds, SilcUInt32 useconds);
+				   SilcUInt32 seconds, SilcUInt32 useconds,
+				   SilcBool *ret_to);
 void silc_fsm_sema_post(SilcFSMSema sema);
 
 #endif /* SILCFSM_I_H */

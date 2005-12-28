@@ -25,7 +25,7 @@
  * This RNG has been rewritten twice since the creation.
  */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 #ifndef WIN32
 #ifdef HAVE_GETSID

@@ -1,4 +1,4 @@
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Test vectors from NIST secure hashing definition for SHA-1 */
 

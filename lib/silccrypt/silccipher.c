@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "ciphers.h"		/* Includes cipher definitions */
 
 /* The SilcCipher context */

@@ -1,15 +1,15 @@
 /*
- 
+
   silcmode.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
-  
+
   Copyright (C) 2001 - 2005 Pekka Riikonen
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
- 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -38,20 +38,20 @@
  *
  * SOURCE
  */
-#define SILC_CHANNEL_MODE_NONE         0x0000
-#define SILC_CHANNEL_MODE_PRIVATE      0x0001 /* private channel */
-#define SILC_CHANNEL_MODE_SECRET       0x0002 /* secret channel */
-#define SILC_CHANNEL_MODE_PRIVKEY      0x0004 /* channel has private key */
-#define SILC_CHANNEL_MODE_INVITE       0x0008 /* invite only channel */
-#define SILC_CHANNEL_MODE_TOPIC        0x0010 /* topic setting by operator */
-#define SILC_CHANNEL_MODE_ULIMIT       0x0020 /* user limit set */
-#define SILC_CHANNEL_MODE_PASSPHRASE   0x0040 /* passphrase set */
-#define SILC_CHANNEL_MODE_CIPHER       0x0080 /* sets cipher of the channel */
-#define SILC_CHANNEL_MODE_HMAC         0x0100 /* sets hmac of the channel */
-#define SILC_CHANNEL_MODE_FOUNDER_AUTH 0x0200 /* sets founder auth data */
+#define SILC_CHANNEL_MODE_NONE          0x0000
+#define SILC_CHANNEL_MODE_PRIVATE       0x0001 /* private channel */
+#define SILC_CHANNEL_MODE_SECRET        0x0002 /* secret channel */
+#define SILC_CHANNEL_MODE_PRIVKEY       0x0004 /* channel has private key */
+#define SILC_CHANNEL_MODE_INVITE        0x0008 /* invite only channel */
+#define SILC_CHANNEL_MODE_TOPIC         0x0010 /* topic setting by operator */
+#define SILC_CHANNEL_MODE_ULIMIT        0x0020 /* user limit set */
+#define SILC_CHANNEL_MODE_PASSPHRASE    0x0040 /* passphrase set */
+#define SILC_CHANNEL_MODE_CIPHER        0x0080 /* sets cipher of the channel */
+#define SILC_CHANNEL_MODE_HMAC          0x0100 /* sets hmac of the channel */
+#define SILC_CHANNEL_MODE_FOUNDER_AUTH  0x0200 /* sets founder auth data */
 #define SILC_CHANNEL_MODE_SILENCE_USERS 0x0400 /* sets founder auth data */
 #define SILC_CHANNEL_MODE_SILENCE_OPERS 0x0800 /* sets founder auth data */
-#define SILC_CHANNEL_MODE_CHANNEL_AUTH 0x1000 /* channel auth (signature) */
+#define SILC_CHANNEL_MODE_CHANNEL_AUTH  0x1000 /* channel auth (signature) */
 /***/
 
 /****d* silccore/Modes/ChannelUserModes

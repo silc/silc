@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Macros to check whether there is enough free space to add the
    required amount of data. For unformatting this means that there must

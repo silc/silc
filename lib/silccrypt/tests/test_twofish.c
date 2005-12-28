@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "silcincludes.h"
+#include "silc.h"
 
 #include "twofish.h"
 

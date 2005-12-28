@@ -19,7 +19,7 @@
 /* I used Apache's APR code as a reference here. */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* XXX This leaks memory. Perhaps the SilcThread API should be changed
    since the silc_thread_self() causes that BeOS and OS/2 is hard to

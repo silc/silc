@@ -1,6 +1,6 @@
 /* Stringprep tests */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 typedef struct {
   const char *comment;

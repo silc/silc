@@ -20,7 +20,7 @@
 /* This file includes the private message sending and receiving routines
    and private message key handling routines. */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcclient.h"
 #include "client_internal.h"
 

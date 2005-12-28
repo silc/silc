@@ -38,12 +38,18 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcsftp"
 #ifdef SILC_DIST_SIM
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcsim"
 #endif SILC_DIST_SIM
-#ifdef SILC_DIST_CLIENT
+#ifdef SILC_DIST_CLIENTLIB
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcclient"
-#endif SILC_DIST_CLIENT
+#endif SILC_DIST_CLIENTLIB
 #ifdef SILC_DIST_ASN1
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcasn1"
 #endif SILC_DIST_ASN1
+#ifdef SILC_DIST_SKR
+SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcskr"
+#endif SILC_DIST_SKR
+#ifdef SILC_DIST_SERVERLIB
+SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcserver"
+#endif SILC_DIST_SERVERLIB
 
 ##
 ## Library versioning.
@@ -56,8 +62,8 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcasn1"
 #  - If functions were added, increment [LIB]_AGE
 #  - If functions were removed, set [LIB]_AGE to 0
 #
-# where [LIB] is LIBSILC and LIBSILCCLIENT, and where "functions" means
-# functions public interfaces.
+# where [LIB] is LIBSILC, LIBSILCCLIENT or LIBSILCSERVER, and where 
+# "functions" means functions public interfaces (API).
 #
 # The LIB_BASE_VERSION defines the SILC software major.minor version and
 # it is increment only when these version numbers actually change.
@@ -65,17 +71,22 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcasn1"
 
 # Base version for libraries.  Do not change this unless SILC version
 # changes too.
-LIB_BASE_VERSION=1.0
+LIB_BASE_VERSION=1.1
 
 # libsilc versions
-LIBSILC_CURRENT=5		# prev = 4
+LIBSILC_CURRENT=1		# prev = 0
 LIBSILC_REVISION=0		# prev = 0
-LIBSILC_AGE=3			# prev = 3
+LIBSILC_AGE=0			# prev = 0
 
 # libsilcclient versions
-LIBSILCCLIENT_CURRENT=4		# prev = 4
+LIBSILCCLIENT_CURRENT=1		# prev = 0
 LIBSILCCLIENT_REVISION=0	# prev = 0
-LIBSILCCLIENT_AGE=3		# prev = 3
+LIBSILCCLIENT_AGE=0		# prev = 0
+
+# libsilcserver versions
+LIBSILCSERVER_CURRENT=1		# prev = 0
+LIBSILCSERVER_REVISION=0	# prev = 0
+LIBSILCSERVER_AGE=0		# prev = 0
 
 # Substitute the version numbers
 AC_SUBST(LIB_BASE_VERSION)
@@ -85,6 +96,9 @@ AC_SUBST(LIBSILC_AGE)
 AC_SUBST(LIBSILCCLIENT_CURRENT)
 AC_SUBST(LIBSILCCLIENT_REVISION)
 AC_SUBST(LIBSILCCLIENT_AGE)
+AC_SUBST(LIBSILCSERVER_CURRENT)
+AC_SUBST(LIBSILCSERVER_REVISION)
+AC_SUBST(LIBSILCSERVER_AGE)
 
 #ifdef SILC_DIST_SIM
 # SIM modules directory
@@ -159,12 +173,20 @@ lib/silcsftp/tests/Makefile
 AC_CONFIG_FILES(
 lib/silc.pc
 lib/silcclient.pc
+lib/silcserver.pc
 )
 #endif SILC_DIST_TOOLKIT
 
 #ifdef SILC_DIST_CLIENTLIB
 AC_CONFIG_FILES(lib/silcclient/Makefile)
 #endif SILC_DIST_CLIENTLIB
+
+#ifdef SILC_DIST_SERVERLIB
+AC_CONFIG_FILES(
+lib/silcserver/Makefile
+lib/silcserver/tests/Makefile
+)
+#endif SILC_DIST_SERVERLIB
 
 #ifdef SILC_DIST_ASN1
 AC_CONFIG_FILES(
@@ -174,6 +196,15 @@ lib/silcasn1/tests/Makefile
 #endif SILC_DIST_INPLACE
 )
 #endif SILC_DIST_ASN1
+
+#ifdef SILC_DIST_SKR
+AC_CONFIG_FILES(
+lib/silcskr/Makefile
+#ifdef SILC_DIST_INPLACE
+lib/silcskr/tests/Makefile
+#endif SILC_DIST_INPLACE
+)
+#endif SILC_DIST_SKR
 
 fi	# compile_libs
 

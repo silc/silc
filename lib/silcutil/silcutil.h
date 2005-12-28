@@ -104,14 +104,20 @@ SilcBool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_parse_userfqdn(const char *string, char **left, char **right);
+ *    int silc_parse_userfqdn(const char *string,
+ *                            char *user, SilcUInt32 user_size,
+ *                            char *fqdn, SilcUInt32 fqdn_size);
  *
  * DESCRIPTION
  *
- *    Parse userfqdn string which is in user@fqdn format.
+ *    Parse userfqdn string which is in user@fqdn format.  Returns 0 on
+ *    error, 1 if `user' was filled and 2 if both `user' and `fqdn'
+ *    was filled.
  *
  ***/
-SilcBool silc_parse_userfqdn(const char *string, char **left, char **right);
+int silc_parse_userfqdn(const char *string,
+			char *user, SilcUInt32 user_size,
+			char *fqdn, SilcUInt32 fqdn_size);
 
 /****f* silcutil/SilcUtilAPI/silc_parse_command_line
  *
@@ -308,7 +314,8 @@ SilcBool silc_hash_string_compare(void *key1, void *key2, void *user_context);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_hash_id_compare(void *key1, void *key2, void *user_context);
+ *    SilcBool silc_hash_id_compare(void *key1, void *key2,
+ *                                  void *user_context);
  *
  * DESCRIPTION
  *
@@ -319,24 +326,43 @@ SilcBool silc_hash_string_compare(void *key1, void *key2, void *user_context);
  ***/
 SilcBool silc_hash_id_compare(void *key1, void *key2, void *user_context);
 
+/****f* silcutil/SilcUtilAPI/silc_hash_id_compare_full
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_hash_id_compare_full(void *key1, void *key2,
+ *                                       void *user_context)
+ *
+ * DESCRIPTION
+ *
+ *    Compares two ID's. May be used as SilcHashTable comparison function.
+ *    To compare full ID's instead of only partial, like the
+ *    silc_hash_id_compare does, use this function.
+ *
+ ***/
+SilcBool silc_hash_id_compare_full(void *key1, void *key2, void *user_context);
+
 /****f* silcutil/SilcUtilAPI/silc_hash_client_id_compare
  *
  * SYNOPSIS
  *
- *    SilcBool silc_hash_client_id_compare(void *key1, void *key2, void *user_context);
+ *    SilcBool silc_hash_client_id_compare(void *key1, void *key2,
+ *                                         void *user_context);
  *
  * DESCRIPTION
  *
  *    Compare two Client ID's entirely and not just the hash from the ID.
  *
  ***/
-SilcBool silc_hash_client_id_compare(void *key1, void *key2, void *user_context);
+SilcBool silc_hash_client_id_compare(void *key1, void *key2,
+				     void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_hash_data_compare
  *
  * SYNOPSIS
  *
- *    SilcBool silc_hash_data_compare(void *key1, void *key2, void *user_context);
+ *    SilcBool silc_hash_data_compare(void *key1, void *key2,
+ *                                    void *user_context);
  *
  * DESCRIPTION
  *
@@ -349,7 +375,8 @@ SilcBool silc_hash_data_compare(void *key1, void *key2, void *user_context);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
+ *    SilcBool silc_hash_utf8_compare(void *key1, void *key2,
+ *                                    void *user_context);
  *
  * DESCRIPTION
  *
@@ -364,7 +391,7 @@ SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
  * SYNOPSIS
  *
  *    SilcBool silc_hash_public_key_compare(void *key1, void *key2,
- *                                      void *user_context);
+ *                                          void *user_context);
  *
  * DESCRIPTION
  *
@@ -372,7 +399,8 @@ SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
  *    comparison function.
  *
  ***/
-SilcBool silc_hash_public_key_compare(void *key1, void *key2, void *user_context);
+SilcBool silc_hash_public_key_compare(void *key1, void *key2,
+				      void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_client_chmode
  *

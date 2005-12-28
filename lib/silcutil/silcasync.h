@@ -117,8 +117,8 @@ typedef void (*SilcAsyncOperationAbort)(SilcAsyncOperation op,
  *
  ***/
 typedef SilcBool (*SilcAsyncOperationPause)(SilcAsyncOperation op,
-                                        SilcBool pause_operation,
-				        void *context);
+					    SilcBool pause_operation,
+					    void *context);
 
 /* Upper layer functions for managing asynchronous operations.  Layer
    that has received SilcAsyncOperation context can control the async
@@ -260,9 +260,9 @@ SilcAsyncOperation silc_async_alloc(SilcAsyncOperationAbort abort_cb,
  *
  ***/
 SilcBool silc_async_init(SilcAsyncOperation op,
-		     SilcAsyncOperationAbort abort_cb,
-		     SilcAsyncOperationPause pause_cb,
-		     void *context);
+			 SilcAsyncOperationAbort abort_cb,
+			 SilcAsyncOperationPause pause_cb,
+			 void *context);
 
 /****f* silcutil/SilcAsyncOperationAPI/silc_async_free
  *

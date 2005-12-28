@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* QoS read handler, this will call the read and write events to indicate
    that data is available again after a timeout. */

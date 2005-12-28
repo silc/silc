@@ -451,13 +451,13 @@ if test -n "$with_silc_includes" || test -n "$with_silc_libs"; then
   fi
 
   # Check libs to link against
-  f=`$EGREP __SILC_HAVE_PTHREAD $ac_silc_includes/silcincludes.h`
+  f=`$EGREP __SILC_HAVE_PTHREAD $ac_silc_includes/silc.h`
   if test -n "$f"; then
     LIBS="$LIBS -lpthread"
     check_threads=false
     has_threads=true
   fi
-  f=`$EGREP __SILC_HAVE_SIM $ac_silc_includes/silcincludes.h`
+  f=`$EGREP __SILC_HAVE_SIM $ac_silc_includes/silc.h`
   if test -n "$f"; then
     LIBS="$LIBS -ldl"
   fi
@@ -468,6 +468,9 @@ else
 #ifdef SILC_DIST_CLIENTLIB
   PKG_CHECK_MODULES(SILCCLIENT, silcclient, compile_libs=false, compile_libs=true)
 #endif SILC_DIST_CLIENTLIB
+#ifdef SILC_DIST_SERVERLIB
+  PKG_CHECK_MODULES(SILCSERVER, silcserver, compile_libs=false, compile_libs=true)
+#endif SILC_DIST_SERVERLIB
 
   if test x$compile_libs = xfalse; then
     LIBSUBDIR=
@@ -477,6 +480,10 @@ else
     LIBS="$LIBS $SILCCLIENT_LIBS"
     CFLAGS="$CFLAGS $SILCCLIENT_CFLAGS"
 #endif SILC_DIST_CLIENTLIB
+#ifdef SILC_DIST_SERVERLIB
+    LIBS="$LIBS $SILCSERVER_LIBS"
+    CFLAGS="$CFLAGS $SILCSERVER_CFLAGS"
+#endif SILC_DIST_SERVERLIB
   fi
 fi
 #endif SILC_DIST_TOOLKIT
@@ -1091,7 +1098,7 @@ Makefile.defines
 Makefile.defines_int
 includes/Makefile
 includes/silcversion.h
-includes/silcincludes.h
+includes/silc.h
 #endif SILC_DIST_COMPILER
 #ifdef SILC_DIST_APPS
 apps/Makefile

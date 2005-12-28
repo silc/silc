@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Opens a file indicated by the filename `filename' with flags indicated
    by the `flags'. */

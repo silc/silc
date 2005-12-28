@@ -17,7 +17,7 @@
 
 */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 /* Halts async operation */
 
@@ -83,9 +83,9 @@ SilcAsyncOperation silc_async_alloc(SilcAsyncOperationAbort abort_cb,
 /* Creates new async operation */
 
 SilcBool silc_async_init(SilcAsyncOperation op,
-		     SilcAsyncOperationAbort abort_cb,
-		     SilcAsyncOperationPause pause_cb,
-		     void *context)
+			 SilcAsyncOperationAbort abort_cb,
+			 SilcAsyncOperationPause pause_cb,
+			 void *context)
 {
   assert(abort_cb);
   op->abort_cb = abort_cb;

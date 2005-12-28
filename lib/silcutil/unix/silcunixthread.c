@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 
 SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 			      SilcBool waitable)

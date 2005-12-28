@@ -1,6 +1,6 @@
 /* SilcMime tests */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcmime.h"
 
 int main(int argc, char **argv)
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("Encoded MIME message: \n%s", enc));
   silc_mime_free(mime);
   SILC_LOG_DEBUG(("Decoding MIME message"));
-  mime = silc_mime_decode(enc, enc_len);
+  mime = silc_mime_decode(NULL, enc, enc_len);
   if (!mime)
     goto err;
   SILC_LOG_DEBUG(("Re-encoding MIME context"));
@@ -143,7 +143,7 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("Encoded MIME message: \n%s", enc));
   silc_mime_free(mime);
   SILC_LOG_DEBUG(("Decoding MIME message"));
-  mime = silc_mime_decode(enc, enc_len);
+  mime = silc_mime_decode(NULL, enc, enc_len);
   if (!mime)
     goto err;
   SILC_LOG_DEBUG(("Re-encoding MIME context"));
@@ -210,7 +210,7 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("Defragment"));
   silc_dlist_start(frag);
   while ((buf = silc_dlist_get(frag)) != SILC_LIST_END) {
-    part = silc_mime_decode(buf->data, silc_buffer_len(buf));
+    part = silc_mime_decode(NULL, buf->data, silc_buffer_len(buf));
     if (!silc_mime_is_partial(part))
 	 goto err;
     part = silc_mime_assemble(ass, part);

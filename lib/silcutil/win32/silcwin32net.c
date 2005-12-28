@@ -20,7 +20,7 @@
 
 /* XXX IPv6 support missing */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcnet.h"
 
 /* This function creates server or daemon or listener or what ever. This

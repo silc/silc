@@ -1,6 +1,6 @@
 /* SILC FSM tests */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcfsm.h"
 
 typedef void (*Callback)(void *context);
@@ -116,14 +116,9 @@ SILC_FSM_STATE(test_st_fourth)
   f->timeout = 1;
 
   SILC_LOG_DEBUG(("Creating FSM thread"));
-  if (!silc_fsm_thread_init(&f->thread, fsm, f, NULL, NULL, FALSE)) {
-    /** Error creating thread */
-    SILC_LOG_DEBUG(("Error creating thread"));
-    f->error = TRUE;
-    silc_fsm_next(fsm, test_st_finish);
-    return SILC_FSM_CONTINUE;
-  }
+  silc_fsm_thread_init(&f->thread, fsm, f, NULL, NULL, FALSE);
   SILC_LOG_DEBUG(("Starting thread"));
+  /*** Start thread */
   silc_fsm_start(&f->thread, test_thread_st_start);
 
   /** Waiting thread to terminate */
@@ -165,20 +160,14 @@ SILC_FSM_STATE(test_st_fifth)
   silc_fsm_sema_init(&f->sema, fsm, 0);
 
   SILC_LOG_DEBUG(("Creating FSM thread"));
-  if (!silc_fsm_thread_init(&f->thread, fsm, f, NULL, NULL, TRUE)) {
-    /** Error creating real thread */
-    SILC_LOG_DEBUG(("Error creating thread"));
-    f->error = TRUE;
-    silc_fsm_next(fsm, test_st_finish);
-    return SILC_FSM_CONTINUE;
-  }
+  silc_fsm_thread_init(&f->thread, fsm, f, NULL, NULL, TRUE);
   SILC_LOG_DEBUG(("Starting thread"));
   silc_fsm_start(&f->thread, test_thread2_st_start);
 
   /** Waiting thread to terminate, timeout */
   SILC_LOG_DEBUG(("Waiting for thread to terminate for 5 seconds"));
   silc_fsm_next(fsm, test_st_sixth);
-  SILC_FSM_SEMA_TIMEDWAIT(&f->sema, 5, 0);
+  SILC_FSM_SEMA_TIMEDWAIT(&f->sema, 5, 0, NULL);
   return SILC_FSM_CONTINUE;
 }
 
@@ -247,15 +236,8 @@ SILC_FSM_STATE(test_st_seventh)
     f->threads[i].rounds = 10;
     f->threads[i].f = f;
     silc_fsm_sema_init(&f->threads[i].sema, fsm, 0);
-    if (!silc_fsm_thread_init(&f->threads[i].thread, fsm,
-			      &f->threads[i], NULL, NULL, FALSE)) {
-      /** Error creating thread */
-      SILC_LOG_DEBUG(("Error creating thread"));
-      f->error = TRUE;
-      silc_fsm_next(fsm, test_st_finish);
-      return SILC_FSM_CONTINUE;
-    }
-
+    silc_fsm_thread_init(&f->threads[i].thread, fsm,
+			 &f->threads[i], NULL, NULL, FALSE);
     silc_fsm_start(&f->threads[i].thread, test_thread3_st_start);
   }
 
@@ -317,15 +299,8 @@ SILC_FSM_STATE(test_st_ninth)
     f->threads2[i].rounds = 10;
     f->threads2[i].f = f;
     silc_fsm_sema_init(&f->threads2[i].sema, fsm, 0);
-    if (!silc_fsm_thread_init(&f->threads2[i].thread, fsm,
-			      &f->threads2[i], NULL, NULL, TRUE)) {
-      /** Error creating real thread */
-      SILC_LOG_DEBUG(("Error creating real thread"));
-      f->error = TRUE;
-      silc_fsm_next(fsm, test_st_finish);
-      return SILC_FSM_CONTINUE;
-    }
-
+    silc_fsm_thread_init(&f->threads2[i].thread, fsm,
+			 &f->threads2[i], NULL, NULL, TRUE);
     silc_fsm_start(&f->threads2[i].thread, test_thread4_st_start);
   }
 

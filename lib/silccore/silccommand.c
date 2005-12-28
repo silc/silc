@@ -18,7 +18,7 @@
 */
 /* $Id$ */
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silccommand.h"
 
 /******************************************************************************
@@ -83,7 +83,8 @@ SilcCommandPayload silc_command_payload_parse(const unsigned char *payload,
 
   silc_buffer_pull(&buffer, SILC_COMMAND_PAYLOAD_LEN);
   if (args_num) {
-    newp->args = silc_argument_payload_parse(buffer.data, silc_buffer_len(&buffer),
+    newp->args = silc_argument_payload_parse(buffer.data,
+					     silc_buffer_len(&buffer),
 					     args_num);
     if (!newp->args) {
       silc_free(newp);
@@ -134,7 +135,8 @@ SilcBuffer silc_command_payload_encode(SilcCommand cmd,
   if (argc) {
     silc_buffer_pull(buffer, SILC_COMMAND_PAYLOAD_LEN);
     silc_buffer_format(buffer,
-		       SILC_STR_UI_XNSTRING(args->data, silc_buffer_len(args)),
+		       SILC_STR_UI_XNSTRING(args->data,
+					    silc_buffer_len(args)),
 		       SILC_STR_END);
     silc_buffer_push(buffer, SILC_COMMAND_PAYLOAD_LEN);
     silc_buffer_free(args);
@@ -182,7 +184,8 @@ SilcBuffer silc_command_payload_encode_payload(SilcCommandPayload payload)
   if (args) {
     silc_buffer_pull(buffer, SILC_COMMAND_PAYLOAD_LEN);
     silc_buffer_format(buffer,
-		       SILC_STR_UI_XNSTRING(args->data, silc_buffer_len(args)),
+		       SILC_STR_UI_XNSTRING(args->data,
+					    silc_buffer_len(args)),
 		       SILC_STR_END);
     silc_buffer_push(buffer, SILC_COMMAND_PAYLOAD_LEN);
     silc_buffer_free(args);
@@ -397,7 +400,7 @@ SilcUInt16 silc_command_get_ident(SilcCommandPayload payload)
 
 /* Return command status */
 
-bool silc_command_get_status(SilcCommandPayload payload,
+SilcBool silc_command_get_status(SilcCommandPayload payload,
 			     SilcStatus *status,
 			     SilcStatus *error)
 {

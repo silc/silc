@@ -1,0 +1,17 @@
+<!--
+@LIBRARY=SILC Server Library
+@FILENAME=silcserverlib.html
+@LINK=silcserver.html:SILC Server API Reference
+@LINK=silcserver_params.html:SILC Server Parameters API Reference
+-->
+
+<big><b>SILC Server Library</b></big>
+<br />
+<small>Directory: lib/server/</small>
+<br />
+<small>Library: libsilcserver.a, libsilcserver.lib</small>
+<br /><br />
+<b>Introduction</b>
+
+<br /><br />
+@LINKS@

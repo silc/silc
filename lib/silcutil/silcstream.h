@@ -144,10 +144,16 @@ typedef struct {
      silc_stream_destroy function was called. */
   void (*destroy)(SilcStream stream);
 
-  /* This is called to set a notifier callback to the stream.  This is
-     called when silc_stream_set_notifier was called. */
-  void (*notifier)(SilcStream stream, SilcStreamNotifier callback,
-		   void *context);
+  /* This is called to set a notifier callback to the stream and schedule
+     the stream.  Stream should not be scheduled before calling this
+     function.  If stream does not need scheduler then the scheduler can
+     be ignored.  This is called when silc_stream_set_notifier was called. */
+  void (*notifier)(SilcStream stream, SilcSchedule schedule,
+		   SilcStreamNotifier callback, void *context);
+
+  /* This is called to return the associated scheduler, if set.  This is
+     called when silc_stream_get_schedule was called. */
+  SilcSchedule (*get_schedule)(SilcStream stream);
 } SilcStreamOps;
 /***/
 
@@ -229,19 +235,37 @@ void silc_stream_destroy(SilcStream stream);
  * SYNOPSIS
  *
  *    void silc_stream_set_notifier(SilcStream stream,
+ *                                  SilcSchedule schedule,
  *                                  SilcStreamNotifier notifier,
  *                                  void *context);
  *
  * DESCRIPTION
  *
  *    Set a notifier callback for the stream indicated by `stream' to be called
- *    when some action takes place on the stream.  It is called for example
- *    when data is available for reading or writing, or if an error occurs.
- *    This can be called at any time for valid stream.  If `notifier' is set
- *    to NULL no callback will be called for the stream.
+ *    when some action takes place on the stream.  This effectively means
+ *    scheduling the stream for various actions, that then eventually will
+ *    be delivered to caller in the `notifier'  callback.  It is called for
+ *    example when data is available for reading or writing, or if an error
+ *    occurs.  This can be called at any time for valid stream.
+ *    If `notifier' is set to NULL no callback will be called for the stream,
+ *    and the stream is not scheduled anymore.
  *
  ***/
-void silc_stream_set_notifier(SilcStream stream, SilcStreamNotifier notifier,
-			      void *context);
+void silc_stream_set_notifier(SilcStream stream, SilcSchedule schedule,
+			      SilcStreamNotifier notifier, void *context);
+
+/****f* silcutil/SilcStreamAPI/silc_stream_get_schedule
+ *
+ * SYNOPSIS
+ *
+ *    SilcSchedule silc_stream_get_schedule(SilcStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the scheduler that has been associated with the `stream', or
+ *    NULL if one has not been set for the `stream'.
+ *
+ ***/
+SilcSchedule silc_stream_get_schedule(SilcStream stream);
 
 #endif /* SILCSTREAM_H */

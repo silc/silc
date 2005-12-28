@@ -85,7 +85,8 @@ typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
  * SYNOPSIS
  *
  *    SilcAsyncOperation
- *    silc_socket_stream_create(int sock, SilcBool lookup, SilcBool require_fqdn,
+ *    silc_socket_stream_create(int sock, SilcBool lookup,
+ *                              SilcBool require_fqdn,
  *                              SilcSchedule schedule,
  *                              SilcSocketStreamCallback callback,
  *                              void *context);
@@ -110,7 +111,8 @@ typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
  *
  ***/
 SilcAsyncOperation
-silc_socket_stream_create(int sock, SilcBool lookup, SilcBool require_fqdn,
+silc_socket_stream_create(int sock, SilcBool lookup,
+			  SilcBool require_fqdn,
 			  SilcSchedule schedule,
 			  SilcSocketStreamCallback callback,
 			  void *context);
@@ -132,8 +134,8 @@ silc_socket_stream_create(int sock, SilcBool lookup, SilcBool require_fqdn,
  *
  ***/
 SilcBool silc_socket_stream_get_info(SilcStream stream,
-				 int *sock, const char **hostname,
-				 const char **ip, SilcUInt16 *port);
+				     int *sock, const char **hostname,
+				     const char **ip, SilcUInt16 *port);
 
 /****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_set_info
  *
@@ -156,8 +158,8 @@ SilcBool silc_socket_stream_get_info(SilcStream stream,
  *
  ***/
 SilcBool silc_socket_stream_set_info(SilcStream stream,
-				 const char *hostname,
-				 const char *ip, SilcUInt16 port);
+				     const char *hostname,
+				     const char *ip, SilcUInt16 port);
 
 /****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_get_error
  *
@@ -178,10 +180,10 @@ int silc_socket_stream_get_error(SilcStream stream);
  * SYNOPSIS
  *
  *    SilcBool silc_socket_stream_set_qos(SilcStream stream,
- *                                    SilcUInt32 read_rate,
- *                                    SilcUInt32 read_limit_bytes,
- *                                    SilcUInt32 limit_sec,
- *                                    SilcUInt32 limit_usec)
+ *                                        SilcUInt32 read_rate,
+ *                                        SilcUInt32 read_limit_bytes,
+ *                                        SilcUInt32 limit_sec,
+ *                                        SilcUInt32 limit_usec)
  *
  * DESCRIPTION
  *
@@ -198,10 +200,10 @@ int silc_socket_stream_get_error(SilcStream stream);
  *
  ***/
 SilcBool silc_socket_stream_set_qos(SilcStream stream,
-				SilcUInt32 read_rate,
-				SilcUInt32 read_limit_bytes,
-				SilcUInt32 limit_sec,
-				SilcUInt32 limit_usec);
+				    SilcUInt32 read_rate,
+				    SilcUInt32 read_limit_bytes,
+				    SilcUInt32 limit_sec,
+				    SilcUInt32 limit_usec);
 
 #include "silcsocketstream_i.h"
 

@@ -382,7 +382,7 @@ SilcUInt16 silc_command_get_ident(SilcCommandPayload payload);
  *
  * SYNOPSIS
  *
- *    bool silc_command_get_status(SilcCommandPayload payload,
+ *    SilcBool silc_command_get_status(SilcCommandPayload payload,
  *                                 SilcStatus *status,
  *                                 SilcStatus *error);
  *
@@ -396,7 +396,7 @@ SilcUInt16 silc_command_get_ident(SilcCommandPayload payload);
  *    which indicates that there will be list of errors.
  *
  ***/
-bool silc_command_get_status(SilcCommandPayload payload,
+SilcBool silc_command_get_status(SilcCommandPayload payload,
 			     SilcStatus *status,
 			     SilcStatus *error);
 
