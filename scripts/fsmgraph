@@ -45,7 +45,7 @@ do
   tr=`cat $@ | grep -v "^SILC_FSM_STATE($i);" | awk '/^SILC_FSM_STATE\('$i'\)/,/^}/ { if (/\/\*\* /) print; if (/silc_fsm_next/) print; }' | sed 's/^[ 	]*//; s/\\/\\*\\* /L:/; s/\\*\\///; s/silc_fsm_next/T:silc_fsm_next/' | sed '/L:/s/ /\\\\/g; /T:/s/ /\\\\/g; s/T:/T: /; s/L:/L: /'`
 
   # Get thread starts
-  threads=`cat $@ | grep -v "^SILC_FSM_STATE($i);" | awk '/^SILC_FSM_STATE\('$i'\)/,/^}/ { if (/silc_fsm_start/) print; }' | cut -d, -f2 | cut -d\) -f1`
+  threads=`cat $@ | grep -v "^SILC_FSM_STATE($i);" | awk '/^SILC_FSM_STATE\('$i'\)/,/^}/ { if (/\/\*\*\* /) print; if (/silc_fsm_start/) print; }' | sed 's/^[ ]*//; s/\\/\\*\\*\\* /L:/; s/\\*\\///; s/silc_fsm_start/T:silc_fsm_start/' | sed '/L:/s/ /\\\\/g; /T:/s/ /\\\\/g; s/T:/T: /; s/L:/L: /'`
 
   # Get async calls
   asyncs=`cat $@ | grep -v "^SILC_FSM_STATE($i);" | awk '/^SILC_FSM_STATE\('$i'\)/,/^}/ { if (/SILC_FSM_CALL\(/) print; }' | sed 's/SILC_FSM_CALL(//' | cut -d= -f2 | cut -d\( -f1`
@@ -79,16 +79,42 @@ do
     trname=`echo $trname | sed 's/\\\\/ /g'`
     trname=`echo $trname | cut -d, -f2 | cut -d\) -f1`
 
-    echo "$i -> $trname [label=\"$label\"];"
+    echo "$i -> $trname [label=\" $label \"];"
 
     trname=""
     label=""
   done
 
   # Draw thread transitions
-  for h in $threads
+  for t in $threads
   do
-    echo "$i -> $h [style=dotted];"
+    if test "$t" = "L:"; then
+      label="$t"
+      continue
+    fi
+    if test "$t" = "T:"; then
+      trname="$t"
+      continue
+    fi
+    if test "$label" = "L:"; then
+      label="$t"
+      continue
+    fi
+    if test "$trname" = "T:"; then
+      trname="$t"
+    fi
+
+    # Unescape
+    if test "$label"; then
+      label=`echo $label | sed 's/\\\\/ /g'`
+    fi
+    trname=`echo $trname | sed 's/\\\\/ /g'`
+    trname=`echo $trname | cut -d, -f2 | cut -d\) -f1`
+
+    echo "$i -> $trname [label=\" $label \"] [style=dotted];"
+
+    trname=""
+    label=""
   done
 
   # Draw async calls

@@ -1,0 +1,10 @@
+#!/bin/sh
+
+files=`find . -type f -name \*\.[ch]`
+
+for i in $files
+do
+  cp $i $i.tmp
+  sed -e '/bool /s//SilcBool /' -e '/(bool)/s//(SilcBool)/' -e '/(bool *)/s//(SilcBool *)/' $i.tmp >$i
+  rm $i.tmp
+done
