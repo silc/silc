@@ -296,12 +296,19 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
     indef = (opts & SILC_ASN1_INDEFINITE ? TRUE : FALSE);
 
     /* By default UNIVERSAL is implied unless the following conditions
-       are met when CONTEXT will apply. */
+       are met when CONTEXT will apply.  For SILC_ASN1_TAG_ANY_PRIMITIVE
+       the class is changed only if flags dictate it. */
     if (ber_class == SILC_BER_CLASS_UNIVERSAL) {
-      if (tag != type ||
-	  opts & SILC_ASN1_IMPLICIT ||
-	  opts & SILC_ASN1_EXPLICIT)
-	ber_class = SILC_BER_CLASS_CONTEXT;
+      if (type == SILC_ASN1_TAG_ANY_PRIMITIVE) {
+	if (opts & SILC_ASN1_IMPLICIT ||
+	    opts & SILC_ASN1_EXPLICIT)
+	  ber_class = SILC_BER_CLASS_CONTEXT;
+      } else {
+	if (tag != type ||
+	    opts & SILC_ASN1_IMPLICIT ||
+	    opts & SILC_ASN1_EXPLICIT)
+	  ber_class = SILC_BER_CLASS_CONTEXT;
+      }
     }
 
     /* Now decode a BER encoded block from the source buffer.  It must be
@@ -408,6 +415,16 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 
 	  *node = silc_buffer_srealloc_size(stack1, *node, len + rdata_len);
 	  silc_buffer_put(*node, rdata - len, rdata_len + len);
+	  break;
+	}
+
+      case SILC_ASN1_TAG_ANY_PRIMITIVE:
+	{
+	  /* ANY_PRIMITIVE returns the raw data blob of any primitive type. */
+	  SILC_ASN1_VAD(asn1, opts, SilcBufferStruct, prim);
+
+	  *prim = silc_buffer_srealloc_size(stack1, *prim, rdata_len);
+	  silc_buffer_put(*prim, rdata, rdata_len);
 	  break;
 	}
 

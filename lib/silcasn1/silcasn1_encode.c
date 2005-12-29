@@ -91,12 +91,19 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
     indef = (opts & SILC_ASN1_INDEFINITE ? TRUE : FALSE);
 
     /* By default UNIVERSAL is implied unless the following conditions
-       are met when CONTEXT will apply. */
+       are met when CONTEXT will apply.  For SILC_ASN1_TAG_ANY_PRIMITIVE
+       the class is changed only if flags dictate it. */
     if (ber_class == SILC_BER_CLASS_UNIVERSAL) {
-      if (tag != type ||
-	  opts & SILC_ASN1_IMPLICIT ||
-	  opts & SILC_ASN1_EXPLICIT)
-	ber_class = SILC_BER_CLASS_CONTEXT;
+      if (type == SILC_ASN1_TAG_ANY_PRIMITIVE) {
+	if (opts & SILC_ASN1_IMPLICIT ||
+	    opts & SILC_ASN1_EXPLICIT)
+	  ber_class = SILC_BER_CLASS_CONTEXT;
+      } else {
+	if (tag != type ||
+	    opts & SILC_ASN1_IMPLICIT ||
+	    opts & SILC_ASN1_EXPLICIT)
+	  ber_class = SILC_BER_CLASS_CONTEXT;
+      }
     }
 
 #ifdef SILC_DEBUG
@@ -194,6 +201,24 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 					   silc_buffer_truelen(dest) + len);
 	  silc_buffer_put(dest, node->data, len);
 	}
+	break;
+      }
+
+    case SILC_ASN1_TAG_ANY_PRIMITIVE:
+      {
+	/* ANY_PRIMITIVE is any primitive in encoded format. */
+	SilcBuffer prim = va_arg(asn1->ap, SilcBuffer);
+	if (!prim)
+	  break;
+
+	/* Encode the primitive data */
+	len = silc_ber_encoded_len(tag, silc_buffer_len(prim), FALSE);
+	dest = silc_buffer_srealloc_size(stack1, dest,
+					 silc_buffer_truelen(dest) + len);
+	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
+			      tag, prim->data, silc_buffer_len(prim), FALSE);
+	if (!ret)
+	  goto fail;
 	break;
       }
 

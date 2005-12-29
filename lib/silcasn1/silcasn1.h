@@ -443,6 +443,52 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
 #define SILC_ASN1_ANY(x) SILC_ASN1_U1(ANY, x)
 #define SILC_ASN1_ANY_T(o, t, x) SILC_ASN1_T1(ANY, o, t, x)
 
+/****f* silcasn1/SilcASN1API/SILC_ASN1_ANY_PRIMITIVE
+ *
+ * SYNOPSIS
+ *
+ *    Encoding:
+ *    SILC_ASN1_ANY_PRIMITIVE(tag, buffer)
+ *    SILC_ASN1_ANY_PRIMITIVE_T(opts, tag, buffer)
+ *
+ *    Decoding:
+ *    SILC_ASN1_ANY_PRIMITIVE(tag, &buffer)
+ *    SILC_ASN1_ANY_PRIMITIVE_T(opts, tag, &buffer)
+ *
+ * DESCRIPTION
+ *
+ *    Special macro used to encode pre-encoded primitive data blob.  The data
+ *    can be any primitive type that is already encoded in correct format.
+ *    The caller is responsible of making sure the data is formatted
+ *    correctly.  When decoding this returns the raw data blob and the caller
+ *    must know of what type and format it is.  The buffer type is SilcBuffer.
+ *
+ *    This macro can be used in cases when the data to be encoded is already
+ *    in encoded format, and it only needs to be added to ASN.1 tree.  The
+ *    SILC_ASN1_ANY cannot be used with primitives when tagging implicitly,
+ *    in these cases this macro can be used.
+ *
+ *    The `opts' is SilcAsn1Options.  The `tag' is a tag number.
+ *
+ * EXAMPLE
+ *
+ *    // Get MP integer in encoded format
+ *    mpbuf = mp_get_octet_string(mp);
+ *
+ *    // Encode the MP integer data to the tree
+ *    silc_asn1_encode(asn1, tree,
+ *                     SILC_ASN1_ANY_PRIMITIVE(SILC_ASN1_TAG_INTEGER, mpbuf),
+ *                     SILC_ASN1_END);
+ *
+ *    // Decode the MP integer data from the tree
+ *    silc_asn1_decode(asn1, tree,
+ *                     SILC_ASN1_ANY_PRIMITIVE(SILC_ASN1_TAG_INTEGER, &buffer),
+ *                     SILC_ASN1_END);
+ *
+ ***/
+#define SILC_ASN1_ANY_PRIMITIVE(t, x) SILC_ASN1_T1(ANY_PRIMITIVE, 0, t, x)
+#define SILC_ASN1_ANY_PRIMITIVE_T(o, t, x) SILC_ASN1_T1(ANY_PRIMITIVE, o, t, x)
+
 /****f* silcasn1/SilcASN1API/SILC_ASN1_SEQUENCE
  *
  * SYNOPSIS

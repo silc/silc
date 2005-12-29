@@ -52,6 +52,7 @@ int main(int argc, char **argv)
   int i;
   unsigned char *str;
   SilcUInt32 str_len;
+  char tmp[32];
 
   memset(&node, 0, sizeof(node));
   memset(&node2, 0, sizeof(node2));
@@ -319,6 +320,112 @@ int main(int argc, char **argv)
   }
   SILC_LOG_DEBUG(("Decoding success"));
   SILC_LOG_DEBUG(("Boolean val %d", val));
+  memset(&node2, 0, sizeof(node2));
+  printf("\n");
+
+
+  memset(&node, 0, sizeof(node));
+  SILC_LOG_DEBUG(("Encoding ASN.1 tree (ANY_PRIMITIVE)"));
+  memset(tmp, 0, sizeof(tmp));
+  tmp[0] = 0xff;
+  silc_buffer_set(&node2, tmp, 1);
+  SILC_LOG_DEBUG(("Encoding success"));
+  success =
+    silc_asn1_encode(asn1, &node,
+		     SILC_ASN1_SEQUENCE,
+		       SILC_ASN1_ANY_PRIMITIVE(SILC_ASN1_TAG_BOOLEAN,
+					       &node2),
+		     SILC_ASN1_END, SILC_ASN1_END);
+  if (!success) {
+    SILC_LOG_DEBUG(("Encoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Encoding success"));
+  SILC_LOG_HEXDUMP(("ASN.1 tree"), node.data, silc_buffer_len(&node));
+  memset(&node2, 0, sizeof(node2));
+  SILC_LOG_DEBUG(("Decoding ASN.1 tree (ANY_PRIMITIVE)"));
+  success =
+    silc_asn1_decode(asn1, &node,
+		     SILC_ASN1_SEQUENCE,
+		       SILC_ASN1_ANY_PRIMITIVE(SILC_ASN1_TAG_BOOLEAN,
+					       &node2),
+		     SILC_ASN1_END, SILC_ASN1_END);
+  if (!success) {
+    SILC_LOG_DEBUG(("Decoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Boolean val %d", node2.data[0]));
+  if (node2.data[0] != 0xff) {
+    SILC_LOG_DEBUG(("Decoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Decoding success"));
+  memset(&node, 0, sizeof(node));
+  SILC_LOG_DEBUG(("Encoding ASN.1 tree (ANY_PRIMITIVE)"));
+  memset(tmp, 0, sizeof(tmp));
+  tmp[0] = 0xff;
+  silc_buffer_set(&node2, tmp, 1);
+  SILC_LOG_DEBUG(("Encoding success"));
+  success =
+    silc_asn1_encode(asn1, &node,
+		     SILC_ASN1_SEQUENCE,
+		       SILC_ASN1_ANY_PRIMITIVE(SILC_ASN1_TAG_BOOLEAN,
+					       &node2),
+		     SILC_ASN1_END, SILC_ASN1_END);
+  if (!success) {
+    SILC_LOG_DEBUG(("Encoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Encoding success"));
+  SILC_LOG_HEXDUMP(("ASN.1 tree"), node.data, silc_buffer_len(&node));
+  memset(&node2, 0, sizeof(node2));
+  SILC_LOG_DEBUG(("Decoding ASN.1 tree (ANY_PRIMITIVE)"));
+  success =
+    silc_asn1_decode(asn1, &node,
+		     SILC_ASN1_SEQUENCE,
+		       SILC_ASN1_BOOLEAN(&val),
+		     SILC_ASN1_END, SILC_ASN1_END);
+  if (!success) {
+    SILC_LOG_DEBUG(("Decoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Decoding success"));
+  SILC_LOG_DEBUG(("Boolean val %d", val));
+  memset(&node, 0, sizeof(node));
+  SILC_LOG_DEBUG(("Encoding ASN.1 tree (ANY_PRIMITIVE)"));
+  memset(tmp, 0, sizeof(tmp));
+  tmp[0] = 0xff;
+  silc_buffer_set(&node2, tmp, 1);
+  SILC_LOG_DEBUG(("Encoding success"));
+  success =
+    silc_asn1_encode(asn1, &node,
+		     SILC_ASN1_SEQUENCE,
+		       SILC_ASN1_BOOLEAN(val),
+		     SILC_ASN1_END, SILC_ASN1_END);
+  if (!success) {
+    SILC_LOG_DEBUG(("Encoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Encoding success"));
+  SILC_LOG_HEXDUMP(("ASN.1 tree"), node.data, silc_buffer_len(&node));
+  memset(&node2, 0, sizeof(node2));
+  SILC_LOG_DEBUG(("Decoding ASN.1 tree (ANY_PRIMITIVE)"));
+  success =
+    silc_asn1_decode(asn1, &node,
+		     SILC_ASN1_SEQUENCE,
+		       SILC_ASN1_ANY_PRIMITIVE(SILC_ASN1_TAG_BOOLEAN,
+					       &node2),
+		     SILC_ASN1_END, SILC_ASN1_END);
+  if (!success) {
+    SILC_LOG_DEBUG(("Decoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Boolean val %d", node2.data[0]));
+  if (node2.data[0] != 0xff) {
+    SILC_LOG_DEBUG(("Decoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Decoding success"));
   memset(&node2, 0, sizeof(node2));
   printf("\n");
 

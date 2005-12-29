@@ -36,11 +36,12 @@ struct SilcAsn1Object {
 #define SILC_ASN1_RECURSION_DEPTH 512
 
 /* Implementation specific special tags.  Range is 0x7000 - 0x7fff. */
-#define SILC_ASN1_TAG_ANY          0x7000   /* SILC_ASN1_ANY given  */
-#define SILC_ASN1_TAG_FUNC         0x7001   /* Callback encoder/decoder */
-#define SILC_ASN1_TAG_OPTS         0x7002   /* SILC_ASN1_OPTS given */
-#define SILC_ASN1_TAG_CHOICE       0x7003   /* SILC_ASN1_CHOICE given */
-#define SILC_ASN1_TAG_SEQUENCE_OF  0x7004   /* SILC_ASN1_SEQUENCE_OF given */
+#define SILC_ASN1_TAG_ANY           0x7000  /* SILC_ASN1_ANY given  */
+#define SILC_ASN1_TAG_FUNC          0x7001  /* Callback encoder/decoder */
+#define SILC_ASN1_TAG_OPTS          0x7002  /* SILC_ASN1_OPTS given */
+#define SILC_ASN1_TAG_CHOICE        0x7003  /* SILC_ASN1_CHOICE given */
+#define SILC_ASN1_TAG_SEQUENCE_OF   0x7004  /* SILC_ASN1_SEQUENCE_OF given */
+#define SILC_ASN1_TAG_ANY_PRIMITIVE 0x7005  /* Pre-encoded primitive data */
 
 /* Helper macros for adding the arguments to encoder and decoder. */
 

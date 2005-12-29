@@ -28,9 +28,9 @@
    include the length of the data in the BER block. */
 
 SilcBool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
-		     SilcBerEncoding encoding, SilcUInt32 tag,
-		     const unsigned char *data, SilcUInt32 data_len,
-		     SilcBool indefinite)
+			 SilcBerEncoding encoding, SilcUInt32 tag,
+			 const unsigned char *data, SilcUInt32 data_len,
+			 SilcBool indefinite)
 {
   int i = 0, c;
   SilcUInt32 tmp;
@@ -115,9 +115,9 @@ SilcBool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
    of the entire BER object is `identifier_len' + `data_len'. */
 
 SilcBool silc_ber_decode(SilcBuffer ber, SilcBerClass *ber_class,
-		     SilcBerEncoding *encoding, SilcUInt32 *tag,
-		     const unsigned char **data, SilcUInt32 *data_len,
-		     SilcBool *indefinite, SilcUInt32 *identifier_len)
+			 SilcBerEncoding *encoding, SilcUInt32 *tag,
+			 const unsigned char **data, SilcUInt32 *data_len,
+			 SilcBool *indefinite, SilcUInt32 *identifier_len)
 {
   int i = 0, c;
   SilcUInt32 t;

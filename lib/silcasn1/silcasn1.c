@@ -88,9 +88,10 @@ const char *silc_asn1_tag_name(SilcAsn1Tag tag)
     return "choice";
   case SILC_ASN1_TAG_ANY:
     return "any";
+  case SILC_ASN1_TAG_ANY_PRIMITIVE:
+    return "any primitive";
   case SILC_ASN1_TAG_SEQUENCE_OF:
     return "sequence of";
-
   case SILC_ASN1_TAG_SEQUENCE:
     return "sequence";
   case SILC_ASN1_TAG_SET:
