@@ -662,7 +662,7 @@ unsigned char *silc_mp_mp2bin(SilcMPInt *val, SilcUInt32 len,
  * DESCRIPTION
  *
  *    Same as silc_mp_mp2bin but does not allocate any memory.  The
- *    encoded data is returned into `dst' and it's length to the `ret_len'.
+ *    encoded data is returned into `dst' of size of `dst_len'.
  *
  ***/
 void silc_mp_mp2bin_noalloc(SilcMPInt *val, unsigned char *dst,

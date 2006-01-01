@@ -451,7 +451,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_getkey)
   tmp = silc_argument_get_arg_type(args, 3, &len);
   if (!tmp)
     goto out;
-  if (!silc_pkcs_public_key_payload_decode(tmp, len, &public_key))
+  if (!silc_public_key_payload_decode(tmp, len, &public_key))
     goto out;
 
   /* Store the public key */

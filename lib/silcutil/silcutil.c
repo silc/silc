@@ -593,14 +593,23 @@ SilcUInt32 silc_hash_data(void *key, void *user_context)
   return h;
 }
 
-/* Hashed SILC Public key. */
+/* Hash public key of any type. */
 
 SilcUInt32 silc_hash_public_key(void *key, void *user_context)
 {
-  SilcPublicKey pk = (SilcPublicKey)key;
-  return (pk->len + (silc_hash_string(pk->name, NULL) ^
-		     silc_hash_string(pk->identifier, NULL) ^
-		     silc_hash_data(pk->pk, SILC_32_TO_PTR(pk->pk_len))));
+  SilcPublicKey public_key = key;
+  unsigned char *pk;
+  SilcUInt32 pk_len;
+  SilcUInt32 hash = 0;
+
+  pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+  if (!pk)
+    return hash;
+
+  hash = silc_hash_data(pk, SILC_32_TO_PTR(pk_len));
+  silc_free(pk);
+
+  return hash;
 }
 
 /* Compares two strings. It may be used as SilcHashTable comparison
@@ -633,7 +642,8 @@ SilcBool silc_hash_id_compare_full(void *key1, void *key2, void *user_context)
 
 /* Compare two Client ID's entirely and not just the hash from the ID. */
 
-SilcBool silc_hash_client_id_compare(void *key1, void *key2, void *user_context)
+SilcBool silc_hash_client_id_compare(void *key1, void *key2,
+				     void *user_context)
 {
   return SILC_ID_COMPARE_TYPE(key1, key2, SILC_ID_CLIENT);
 }
@@ -660,7 +670,8 @@ SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context)
 /* Compares two SILC Public keys. It may be used as SilcHashTable
    comparison function. */
 
-SilcBool silc_hash_public_key_compare(void *key1, void *key2, void *user_context)
+SilcBool silc_hash_public_key_compare(void *key1, void *key2,
+				      void *user_context)
 {
   return silc_pkcs_public_key_compare(key1, key2);
 }

@@ -252,6 +252,7 @@ extern "C" {
 #include "silchmac.h"
 #include "silcrng.h"
 #include "silcpkcs.h"
+#include "silcpk.h"
 #include "silcpkcs1.h"
 
 /* More SILC util library includes */
@@ -297,6 +298,7 @@ extern "C" {
 #include "silcmode.h"
 #include "silcauth.h"
 #include "silcattrs.h"
+#include "silcpubkey.h"
 
 #ifdef SILC_DIST_SKR
 #include "silcskr.h"

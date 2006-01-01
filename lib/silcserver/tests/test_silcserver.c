@@ -26,7 +26,7 @@ int main(int argc, char **argv)
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_log_debug(TRUE);
     silc_log_debug_hexdump(TRUE);
-    silc_log_set_debug_string("*server*,*skr*,*ske*,*connauth*,*packet*,*stream*,*net*");
+    silc_log_set_debug_string("*server*,*skr*,*ske*,*connauth*,*packet*,*stream*,*net*,*pkcs*,*asn1*");
   }
 
   SILC_LOG_DEBUG(("Allocating scheduler"));
@@ -49,11 +49,10 @@ int main(int argc, char **argv)
     goto err;
   info->server_name = strdup("test server");
 
-  if (!silc_load_key_pair("test.pub", "test.prv", "", NULL,
+  if (!silc_load_key_pair("test.pub", "test.prv", "",
 			  &info->public_key,
 			  &info->private_key)) {
     if (!silc_create_key_pair("rsa", 2048, "test.pub", "test.prv", NULL, "",
-			      NULL,
 			      &info->public_key,
 			      &info->private_key, FALSE)) {
       goto err;

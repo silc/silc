@@ -224,7 +224,7 @@ silc_ske_select_security_properties(SilcSKE ske,
 
       SILC_LOG_DEBUG(("Proposed PKCS alg `%s'", item));
 
-      if (silc_pkcs_is_supported(item) == TRUE) {
+      if (silc_pkcs_find_algorithm(item, NULL)) {
 	SILC_LOG_DEBUG(("Found PKCS alg `%s'", item));
 
 	payload->pkcs_alg_len = len;
@@ -635,6 +635,8 @@ static SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
       return SILC_SKE_STATUS_ERROR;
     }
 
+    SILC_LOG_HEXDUMP(("hash buf"), buf->data, silc_buffer_len(buf));
+
     memset(e, 0, e_len);
     silc_free(e);
   }
@@ -707,8 +709,6 @@ void silc_ske_free(SilcSKE ske)
     if (ske->prop) {
       if (ske->prop->group)
 	silc_ske_group_free(ske->prop->group);
-      if (ske->prop->pkcs)
-	silc_pkcs_free(ske->prop->pkcs);
       if (ske->prop->cipher)
 	silc_cipher_free(ske->prop->cipher);
       if (ske->prop->hash)
@@ -876,8 +876,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
 
   prop->group = group;
 
-  if (silc_pkcs_alloc(payload->pkcs_alg_list, ske->pk_type,
-		      &prop->pkcs) == FALSE) {
+  if (silc_pkcs_find_algorithm(payload->pkcs_alg_list, NULL) == NULL) {
     status = SILC_SKE_STATUS_UNKNOWN_PKCS;
     goto err;
   }
@@ -907,8 +906,6 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
 
   silc_ske_group_free(group);
 
-  if (prop->pkcs)
-    silc_pkcs_free(prop->pkcs);
   if (prop->cipher)
     silc_cipher_free(prop->cipher);
   if (prop->hash)
@@ -1016,10 +1013,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
     SILC_LOG_DEBUG(("Signing HASH_i value"));
 
     /* Sign the hash value */
-    silc_pkcs_private_key_data_set(ske->prop->pkcs, ske->private_key->prv,
-				   ske->private_key->prv_len);
-    if (silc_pkcs_get_key_len(ske->prop->pkcs) / 8 > sizeof(sign) - 1 ||
-	!silc_pkcs_sign(ske->prop->pkcs, hash, hash_len, sign, &sign_len)) {
+    if (!silc_pkcs_sign(ske->private_key, hash, hash_len, sign,
+			sizeof(sign) - 1, &sign_len, NULL)) {
       /** Error computing signature */
       silc_mp_uninit(x);
       silc_free(x);
@@ -1106,14 +1101,24 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
   silc_mp_pow_mod(KEY, &payload->x, ske->x, &ske->prop->group->group);
   ske->KEY = KEY;
 
-  if (payload->pk_data && ske->callbacks->verify_key) {
+  /* Decode the remote's public key */
+  if (payload->pk_data &&
+      !silc_pkcs_public_key_alloc(payload->pk_type,
+				  payload->pk_data, payload->pk_len,
+				  &ske->prop->public_key)) {
+    SILC_LOG_ERROR(("Unsupported/malformed public key received"));
+    status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
+    goto err;
+  }
+
+  if (ske->prop->public_key && ske->callbacks->verify_key) {
     SILC_LOG_DEBUG(("Verifying public key"));
 
     /** Waiting public key verification */
     silc_fsm_next(fsm, silc_ske_st_initiator_phase4);
-    SILC_FSM_CALL(ske->callbacks->verify_key(ske, payload->pk_data,
-					     payload->pk_len,
+    SILC_FSM_CALL(ske->callbacks->verify_key(ske,
 					     payload->pk_type,
+					     ske->prop->public_key,
 					     ske->callbacks->context,
 					     silc_ske_pk_verified, NULL));
     /* NOT REACHED */
@@ -1149,7 +1154,6 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
   SilcSKEKEPayload payload;
   unsigned char hash[SILC_HASH_MAXLEN];
   SilcUInt32 hash_len;
-  SilcPublicKey public_key = NULL;
   int key_len, block_len;
 
   if (ske->aborted) {
@@ -1168,15 +1172,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
 
   payload = ske->ke2_payload;
 
-  if (payload->pk_data) {
-    /* Decode the public key */
-    if (!silc_pkcs_public_key_decode(payload->pk_data, payload->pk_len,
-				     &public_key)) {
-      SILC_LOG_ERROR(("Unsupported/malformed public key received"));
-      status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
-      goto err;
-    }
-
+  if (ske->prop->public_key) {
     SILC_LOG_DEBUG(("Public key is authentic"));
 
     /* Compute the hash value */
@@ -1190,9 +1186,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
     SILC_LOG_DEBUG(("Verifying signature (HASH)"));
 
     /* Verify signature */
-    silc_pkcs_public_key_set(ske->prop->pkcs, public_key);
-    if (silc_pkcs_verify(ske->prop->pkcs, payload->sign_data,
-			 payload->sign_len, hash, hash_len) == FALSE) {
+    if (!silc_pkcs_verify(ske->prop->public_key, payload->sign_data,
+			 payload->sign_len, hash, hash_len, NULL)) {
       SILC_LOG_ERROR(("Signature verification failed, incorrect signature"));
       status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
       goto err;
@@ -1200,7 +1195,6 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
 
     SILC_LOG_DEBUG(("Signature is Ok"));
 
-    silc_pkcs_public_key_free(public_key);
     memset(hash, 'F', hash_len);
   }
 
@@ -1233,9 +1227,6 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
   silc_mp_uninit(ske->KEY);
   silc_free(ske->KEY);
   ske->KEY = NULL;
-
-  if (public_key)
-    silc_pkcs_public_key_free(public_key);
 
   if (ske->hash) {
     memset(ske->hash, 'F', hash_len);
@@ -1475,8 +1466,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
   /* XXX these shouldn't be allocated before we know the remote's
      public key type.  It's unnecessary to allocate these because the
      select_security_properties has succeeded already. */
-  if (silc_pkcs_alloc(ske->start_payload->pkcs_alg_list,
-		      SILC_PKCS_SILC, &prop->pkcs) == FALSE) {
+  if (!silc_pkcs_find_algorithm(ske->start_payload->pkcs_alg_list, NULL)) {
     status = SILC_SKE_STATUS_UNKNOWN_PKCS;
     goto err;
   }
@@ -1517,8 +1507,6 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
   if (group)
     silc_ske_group_free(group);
 
-  if (prop->pkcs)
-    silc_pkcs_free(prop->pkcs);
   if (prop->cipher)
     silc_cipher_free(prop->cipher);
   if (prop->hash)
@@ -1590,14 +1578,27 @@ SILC_FSM_STATE(silc_ske_st_responder_phase3)
       return SILC_FSM_CONTINUE;
     }
 
-    if (recv_payload->pk_data && ske->callbacks->verify_key) {
+    /* Decode the remote's public key */
+    if (recv_payload->pk_data &&
+	!silc_pkcs_public_key_alloc(recv_payload->pk_type,
+				    recv_payload->pk_data,
+				    recv_payload->pk_len,
+				    &ske->prop->public_key)) {
+      /** Error decoding public key */
+      SILC_LOG_ERROR(("Unsupported/malformed public key received"));
+      ske->status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
+      silc_fsm_next(fsm, silc_ske_st_responder_error);
+      return SILC_FSM_CONTINUE;
+    }
+
+    if (ske->prop->public_key && ske->callbacks->verify_key) {
       SILC_LOG_DEBUG(("Verifying public key"));
 
       /** Waiting public key verification */
       silc_fsm_next(fsm, silc_ske_st_responder_phase4);
-      SILC_FSM_CALL(ske->callbacks->verify_key(ske, recv_payload->pk_data,
-					       recv_payload->pk_len,
+      SILC_FSM_CALL(ske->callbacks->verify_key(ske,
 					       recv_payload->pk_type,
+					       ske->prop->public_key,
 					       ske->callbacks->context,
 					       silc_ske_pk_verified, NULL));
       /* NOT REACHED */
@@ -1638,20 +1639,8 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
      Authentication flag is set. */
   if (ske->start_payload &&
       ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
-    SilcPublicKey public_key = NULL;
     unsigned char hash[SILC_HASH_MAXLEN];
     SilcUInt32 hash_len;
-
-    /* Decode the public key */
-    if (!silc_pkcs_public_key_decode(recv_payload->pk_data,
-				     recv_payload->pk_len,
-				     &public_key)) {
-      /** Error decoding public key */
-      SILC_LOG_ERROR(("Unsupported/malformed public key received"));
-      ske->status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
-      silc_fsm_next(fsm, silc_ske_st_responder_error);
-      return SILC_FSM_CONTINUE;
-    }
 
     SILC_LOG_DEBUG(("Public key is authentic"));
 
@@ -1667,9 +1656,8 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
     SILC_LOG_DEBUG(("Verifying signature (HASH_i)"));
 
     /* Verify signature */
-    silc_pkcs_public_key_set(ske->prop->pkcs, public_key);
-    if (silc_pkcs_verify(ske->prop->pkcs, recv_payload->sign_data,
-			 recv_payload->sign_len, hash, hash_len) == FALSE) {
+    if (!silc_pkcs_verify(ske->prop->public_key, recv_payload->sign_data,
+			  recv_payload->sign_len, hash, hash_len, NULL)) {
       /** Incorrect signature */
       SILC_LOG_ERROR(("Signature verification failed, incorrect signature"));
       ske->status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
@@ -1679,7 +1667,6 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
 
     SILC_LOG_DEBUG(("Signature is Ok"));
 
-    silc_pkcs_public_key_free(public_key);
     memset(hash, 'F', hash_len);
   }
 
@@ -1769,10 +1756,8 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
     SILC_LOG_DEBUG(("Signing HASH value"));
 
     /* Sign the hash value */
-    silc_pkcs_private_key_data_set(ske->prop->pkcs, ske->private_key->prv,
-				   ske->private_key->prv_len);
-    if (silc_pkcs_get_key_len(ske->prop->pkcs) / 8 > sizeof(sign) - 1 ||
-	!silc_pkcs_sign(ske->prop->pkcs, hash, hash_len, sign, &sign_len)) {
+    if (!silc_pkcs_sign(ske->private_key, hash, hash_len, sign,
+			sizeof(sign) - 1, &sign_len, NULL)) {
       /** Error computing signature */
       status = SILC_SKE_STATUS_SIGNATURE_ERROR;
       silc_fsm_next(fsm, silc_ske_st_responder_error);

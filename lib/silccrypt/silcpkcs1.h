@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 Pekka Riikonen
+  Copyright (C) 2003 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -78,11 +78,11 @@ typedef enum {
  *
  ***/
 SilcBool silc_pkcs1_encode(SilcPkcs1BlockType bt,
-		       const unsigned char *data,
-		       SilcUInt32 data_len,
-		       unsigned char *dest_data,
-		       SilcUInt32 dest_data_size,
-		       SilcRng rng);
+			   const unsigned char *data,
+			   SilcUInt32 data_len,
+			   unsigned char *dest_data,
+			   SilcUInt32 dest_data_size,
+			   SilcRng rng);
 
 /****f* silccrypt/SilcPKCS1API/silc_pkcs1_decode
  *
@@ -106,10 +106,10 @@ SilcBool silc_pkcs1_encode(SilcPkcs1BlockType bt,
  *
  ***/
 SilcBool silc_pkcs1_decode(SilcPkcs1BlockType bt,
-		       const unsigned char *data,
-		       SilcUInt32 data_len,
-		       unsigned char *dest_data,
-		       SilcUInt32 dest_data_size,
-		       SilcUInt32 *dest_len);
+			   const unsigned char *data,
+			   SilcUInt32 data_len,
+			   unsigned char *dest_data,
+			   SilcUInt32 dest_data_size,
+			   SilcUInt32 *dest_len);
 
 #endif /* SILCPKCS1_H */

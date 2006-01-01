@@ -34,6 +34,8 @@ unsigned char *silc_mp_mp2bin(SilcMPInt *val, SilcUInt32 len,
 
   size = (len ? len : ((silc_mp_sizeinbase(val, 2) + 7) / 8));
   ret = silc_calloc(size, sizeof(*ret));
+  if (!ret)
+    return NULL;
 
   silc_mp_init(&tmp);
   silc_mp_set(&tmp, val);

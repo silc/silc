@@ -53,6 +53,8 @@ int main(int argc, char **argv)
   unsigned char *str;
   SilcUInt32 str_len;
   char tmp[32];
+  SilcRng rng;
+  SilcMPInt mpint, mpint2;
 
   memset(&node, 0, sizeof(node));
   memset(&node2, 0, sizeof(node2));
@@ -62,6 +64,10 @@ int main(int argc, char **argv)
     silc_log_debug_hexdump(TRUE);
     silc_log_set_debug_string("*asn1*,*ber*");
   }
+
+  silc_hash_register_default();
+  rng = silc_rng_alloc();
+  silc_rng_init(rng);
 
   SILC_LOG_DEBUG(("Allocating ASN.1 context"));
   asn1 = silc_asn1_alloc();
@@ -583,6 +589,7 @@ int main(int argc, char **argv)
   memset(&node, 0, sizeof(node));
   printf("\n");
 
+
   memset(&node, 0, sizeof(node));
   SILC_LOG_DEBUG(("Encoding ASN.1 tree 9"));
   success =
@@ -639,6 +646,39 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("Decoding success"));
   SILC_LOG_DEBUG(("Boolean val %d", val));
   SILC_LOG_DEBUG(("Ooctet-string %s, len %d", str, str_len));
+  printf("\n");
+
+
+  memset(&node, 0, sizeof(node));
+  SILC_LOG_DEBUG(("Encoding ASN.1 tree 10 (INTEGER)"));
+  str = silc_rng_get_rn_data(rng, 256);
+  silc_mp_init(&mpint);
+  silc_mp_init(&mpint2);
+  silc_mp_bin2mp(str, 256, &mpint);
+  success =
+    silc_asn1_encode(asn1, &node,
+		     SILC_ASN1_INT(&mpint),
+		     SILC_ASN1_END);
+  if (!success) {
+    SILC_LOG_DEBUG(("Encoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Encoding success"));
+  SILC_LOG_HEXDUMP(("ASN.1 tree"), node.data, silc_buffer_len(&node));
+  SILC_LOG_DEBUG(("Decoding ASN.1 tree 9"));
+  success =
+    silc_asn1_decode(asn1, &node,
+		     SILC_ASN1_INT(&mpint2),
+		     SILC_ASN1_END);
+  if (silc_mp_cmp(&mpint, &mpint2) != 0) {
+    SILC_LOG_DEBUG(("INTEGER MISMATCH"));
+    goto out;
+  }
+  if (!success) {
+    SILC_LOG_DEBUG(("Decoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Decoding success"));
   printf("\n");
 
 #endif

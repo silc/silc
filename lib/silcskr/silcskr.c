@@ -82,8 +82,7 @@ static void silc_skr_type_string(SilcSKRFindType type, void *data,
     break;
 
   case SILC_SKR_FIND_PUBLIC_KEY:
-    snprintf(retbuf, retbuf_size, "[%s] [%s]", find_name[type],
-	     ((SilcPublicKey)data)->identifier);
+    snprintf(retbuf, retbuf_size, "[%s] [%p]", find_name[type], data);
     break;
 
   default:
@@ -131,18 +130,11 @@ static void silc_skr_destructor(void *key, void *context, void *user_context)
 
   /* Destroy key */
   entry->refcnt--;
-  if (entry->refcnt == 0) {
-    switch (entry->key.pk_type) {
-    case SILC_PKCS_SILC:
-      silc_pkcs_public_key_free(entry->key.key);
-      break;
+  if (entry->refcnt > 0)
+    return;
 
-    default:
-      break;
-    }
-
-    silc_free(entry);
-  }
+  silc_pkcs_public_key_free(entry->key.key);
+  silc_free(entry);
 }
 
 /* Hash table hash function for key entries */
@@ -285,11 +277,16 @@ static SilcSKRStatus silc_skr_add_silc(SilcSKR skr,
 				       SilcSKRKeyUsage usage,
 				       void *key_context)
 {
-  SilcPublicKeyIdentifier ident = NULL;
   SilcSKRKeyInternal key;
   SilcSKRStatus status = SILC_SKR_ERROR;
+  SilcPublicKeyIdentifier ident;
+  SilcSILCPublicKey silc_pubkey;
 
-  SILC_LOG_DEBUG(("Adding SILC public key [%s]", public_key->identifier));
+  /* Get the SILC public key */
+  silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
+  ident = &silc_pubkey->identifier;
+
+  SILC_LOG_DEBUG(("Adding SILC public key [%s]", ident->username));
 
   silc_mutex_lock(skr->lock);
 
@@ -298,7 +295,7 @@ static SilcSKRStatus silc_skr_add_silc(SilcSKR skr,
 			  public_key, NULL, key_context, 0)) {
     silc_mutex_unlock(skr->lock);
     SILC_LOG_DEBUG(("Key already added"));
-    return status;
+    return status | SILC_SKR_ALREADY_EXIST;
   }
 
   /* Allocate key entry */
@@ -309,16 +306,8 @@ static SilcSKRStatus silc_skr_add_silc(SilcSKR skr,
   }
 
   key->key.usage = usage;
-  key->key.pk_type = public_key->pk_type;
   key->key.key = public_key;
   key->key.key_context = key_context;
-
-  ident = silc_pkcs_decode_identifier(public_key->identifier);
-  if (!ident) {
-    silc_mutex_unlock(skr->lock);
-    silc_pkcs_free_identifier(ident);
-    return status | SILC_SKR_NO_MEMORY;
-  }
 
   /* Add key specifics */
 
@@ -328,7 +317,7 @@ static SilcSKRStatus silc_skr_add_silc(SilcSKR skr,
   key->refcnt++;
 
   if (!silc_skr_add_entry(skr, SILC_SKR_FIND_PKCS_TYPE,
-			  SILC_32_TO_PTR(public_key->pk_type), key))
+			  SILC_32_TO_PTR(SILC_PKCS_SILC), key))
     goto err;
   key->refcnt++;
 
@@ -383,12 +372,10 @@ static SilcSKRStatus silc_skr_add_silc(SilcSKR skr,
 
   silc_mutex_unlock(skr->lock);
 
-  silc_free(ident);
   return SILC_SKR_OK;
 
  err:
   silc_mutex_unlock(skr->lock);
-  silc_free(ident);
   return status;
 }
 
@@ -403,7 +390,7 @@ static SilcSKRStatus silc_skr_add_silc_simple(SilcSKR skr,
   SilcSKRKeyInternal key;
   SilcSKRStatus status = SILC_SKR_ERROR;
 
-  SILC_LOG_DEBUG(("Adding SILC public key [%s]", public_key->identifier));
+  SILC_LOG_DEBUG(("Adding SILC public key"));
 
   silc_mutex_lock(skr->lock);
 
@@ -412,7 +399,7 @@ static SilcSKRStatus silc_skr_add_silc_simple(SilcSKR skr,
 			  public_key, NULL, key_context, 0)) {
     silc_mutex_unlock(skr->lock);
     SILC_LOG_DEBUG(("Key already added"));
-    return status;
+    return status | SILC_SKR_ALREADY_EXIST;
   }
 
   /* Allocate key entry */
@@ -423,7 +410,6 @@ static SilcSKRStatus silc_skr_add_silc_simple(SilcSKR skr,
   }
 
   key->key.usage = usage;
-  key->key.pk_type = public_key->pk_type;
   key->key.key = public_key;
   key->key.key_context = key_context;
 
@@ -567,12 +553,16 @@ SilcSKRStatus silc_skr_add_public_key(SilcSKR skr,
 				      SilcSKRKeyUsage usage,
 				      void *key_context)
 {
+  SilcPKCSType type;
+
   if (!public_key)
     return SILC_SKR_ERROR;
 
+  type = silc_pkcs_get_type(public_key);
+
   SILC_LOG_DEBUG(("Adding public key to repository"));
 
-  switch (public_key->pk_type) {
+  switch (type) {
 
   case SILC_PKCS_SILC:
     return silc_skr_add_silc(skr, public_key, usage, key_context);
@@ -592,12 +582,16 @@ SilcSKRStatus silc_skr_add_public_key_simple(SilcSKR skr,
 					     SilcSKRKeyUsage usage,
 					     void *key_context)
 {
+  SilcPKCSType type;
+
   if (!public_key)
     return SILC_SKR_ERROR;
 
+  type = silc_pkcs_get_type(public_key);
+
   SILC_LOG_DEBUG(("Adding public key to repository"));
 
-  switch (public_key->pk_type) {
+  switch (type) {
 
   case SILC_PKCS_SILC:
     return silc_skr_add_silc_simple(skr, public_key, usage, key_context);
@@ -807,38 +801,5 @@ SilcAsyncOperation silc_skr_find(SilcSKR skr, SilcSKRFind find,
     callback(skr, find, SILC_SKR_OK, results, callback_context);
   }
 
-  return NULL;
-}
-
-/* Helper function to find specificly SILC style public keys */
-
-SilcAsyncOperation silc_skr_find_silc(SilcSKR skr,
-				      SilcPublicKey public_key,
-				      SilcSKRFindCallback callback,
-				      void *callback_context)
-{
-  SilcSKRFind find = NULL;
-  SilcAsyncOperation op;
-
-  SILC_LOG_DEBUG(("Finding SILC public key"));
-
-  if (!public_key || public_key->pk_type != SILC_PKCS_SILC)
-    goto err;
-
-  find = silc_skr_find_alloc();
-  if (!find)
-    goto err;
-
-  if (!silc_skr_find_set_public_key(find, public_key))
-    goto err;
-
-  op = silc_skr_find(skr, find, callback, callback_context);
-
-  return op;
-
- err:
-  if (find)
-    silc_skr_find_free(find);
-  callback(skr, NULL, SILC_SKR_ERROR, NULL, callback_context);
   return NULL;
 }

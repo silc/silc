@@ -22,9 +22,9 @@
  * DESCRIPTION
  *
  * The SILC secure binary packet protocol interface, provides interface for
- * sending and receiving SILC packets.  The interface provides a packet engine,
- * that can be used to receive packets from packet streams, and routines
- * for sending all kinds of SILC packets.
+ * sending and receiving SILC packets.  The interface provides a packet
+ * engine, that can be used to receive packets from packet streams, and
+ * routines for sending all kinds of SILC packets.
  *
  * The packet engine and packet stream are thread safe.  They can be safely
  * used in multi threaded environment.

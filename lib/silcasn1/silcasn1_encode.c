@@ -199,6 +199,8 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	  len = silc_buffer_len(node);
 	  dest = silc_buffer_srealloc_size(stack1, dest,
 					   silc_buffer_truelen(dest) + len);
+	  if (!dest)
+	    goto fail;
 	  silc_buffer_put(dest, node->data, len);
 	}
 	break;
@@ -266,11 +268,15 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	     bytes in 1s complement */
 	} else {
 	  /* Positive */
-	  len = (silc_mp_sizeinbase(mpint, 2) + 7) / 8;
-	  len += len & 7 ? 1: 0;
+	  len = silc_mp_sizeinbase(mpint, 2);
+	  if (!(len & 7))
+	    len = ((len + 7) / 8) + 1;
+	  else
+	    len = (len + 7) / 8;
 	  silc_stack_push(stack2, &frame);
 	  silc_buffer_srealloc_size(stack2, &buf,
 				    silc_buffer_truelen(&buf) + len);
+	  buf.data[0] = 0x00;
 	  silc_mp_mp2bin_noalloc(mpint, buf.data, silc_buffer_len(&buf));
 	}
 

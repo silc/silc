@@ -27,9 +27,8 @@
 
 static void
 silc_server_accept_verify_key(SilcSKE ske,
-			      const unsigned char *pk_data,
-			      SilcUInt32 pk_len,
 			      SilcSKEPKType pk_type,
+			      SilcPublicKey public_key,
 			      void *context,
 			      SilcSKEVerifyCbCompletion completion,
 			      void *completion_context)

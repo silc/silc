@@ -183,8 +183,8 @@ void silc_server_command_free(SilcServerCommand cmd)
 
   silc_mutex_lock(thread->server->lock);
 
-  /* Check for double free */
 #if defined(SILC_DEBUG)
+  /* Check for double free */
   assert(cmd->packet != NULL);
 #endif /* SILC_DEBUG */
 

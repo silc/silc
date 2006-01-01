@@ -121,8 +121,7 @@ typedef struct {
   SilcCipher cipher;			 /* Selected cipher */
   SilcHmac hmac;			 /* Selected HMAC */
   SilcHash hash;			 /* Selected hash algorithm */
-  SilcPKCS pkcs;			 /* Selected PKCS and remote's
-					    public key/certificate */
+  SilcPublicKey public_key;              /* Remote public key */
 } *SilcSKESecurityProperties;
 /***/
 
@@ -229,9 +228,8 @@ typedef void (*SilcSKEVerifyCbCompletion)(SilcSKE ske,
  * SYNOPSIS
  *
  *    typedef void (*SilcSKEVerifyCb)(SilcSKE ske,
- *                                    const unsigned char *pk_data,
- *                                    SilcUInt32 pk_len,
  *                                    SilcSKEPKType pk_type,
+ *                                    SilcPublicKey public_key,
  *                                    void *context,
  *                                    SilcSKEVerifyCbCompletion completion,
  *                                    void *completion_context);
@@ -247,9 +245,8 @@ typedef void (*SilcSKEVerifyCbCompletion)(SilcSKE ske,
  *
  ***/
 typedef void (*SilcSKEVerifyCb)(SilcSKE ske,
-				const unsigned char *pk_data,
-				SilcUInt32 pk_len,
 				SilcSKEPKType pk_type,
+				SilcPublicKey public_key,
 				void *context,
 				SilcSKEVerifyCbCompletion completion,
 				void *completion_context);

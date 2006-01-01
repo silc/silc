@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2005 Pekka Riikonen
+  Copyright (C) 2003 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 #include "silc.h"
 #include "silcasn1.h"
 #include "silcber.h"
-
 
 /************************** ASN.1 Decoder routines **************************/
 
@@ -472,7 +471,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 
 	    /* 2s complement and change sign */
 	    silc_mp_init(&z);
-	    silc_mp_set(&z, 0);
+	    silc_mp_set_ui(&z, 0);
 	    silc_mp_add_ui(*intval, *intval, 1);
 	    silc_mp_sub(*intval, &z, *intval);
 	    silc_mp_uninit(&z);

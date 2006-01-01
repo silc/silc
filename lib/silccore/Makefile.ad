@@ -19,18 +19,19 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 noinst_LTLIBRARIES = libsilccore.la
 
-libsilccore_la_SOURCES = \
-	silcid.c \
-	silcidcache.c \
-	silcmessage.c \
-	silcchannel.c \
-	silccommand.c \
-	silcpacket.c \
-	silcargument.c \
-	silcnotify.c \
-	silcauth.c \
-	silcattrs.c \
-	silcstatus.c
+libsilccore_la_SOURCES = 	\
+	silcid.c 		\
+	silcidcache.c 		\
+	silcmessage.c 		\
+	silcchannel.c 		\
+	silccommand.c 		\
+	silcpacket.c 		\
+	silcargument.c 		\
+	silcnotify.c 		\
+	silcauth.c 		\
+	silcattrs.c 		\
+	silcstatus.c		\
+	silcpubkey.c
 
 #ifdef SILC_DIST_TOOLKIT
 include_HEADERS =	\
@@ -45,7 +46,8 @@ include_HEADERS =	\
 	silcpacket.h	\
 	silcargument.h	\
 	silcstatus.h	\
-	silcattrs.h
+	silcattrs.h	\
+	silcpubkey.h
 
 SILC_EXTRA_DIST = tests
 #endif SILC_DIST_TOOLKIT

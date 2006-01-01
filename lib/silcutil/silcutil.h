@@ -290,7 +290,7 @@ SilcUInt32 silc_hash_data(void *key, void *user_context);
  *
  * DESCRIPTION
  *
- *    Hashed SILC Public key.
+ *    Hash public key of any type.
  *
  ***/
 SilcUInt32 silc_hash_public_key(void *key, void *user_context);

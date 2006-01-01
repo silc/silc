@@ -330,7 +330,6 @@ struct SilcServerStruct {
   SilcUInt16 cmd_ident;
 
   /* Server public key */
-  SilcPKCS pkcs;
   SilcPublicKey public_key;
   SilcPrivateKey private_key;
 

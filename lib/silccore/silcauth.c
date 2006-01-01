@@ -279,7 +279,6 @@ silc_auth_public_key_auth_generate_wpub(SilcPublicKey public_key,
   unsigned char *tmp;
   SilcUInt32 tmp_len;
   SilcBuffer buf;
-  SilcPKCS pkcs;
 
   SILC_LOG_DEBUG(("Generating Authentication Payload with data"));
 
@@ -289,22 +288,11 @@ silc_auth_public_key_auth_generate_wpub(SilcPublicKey public_key,
   if (!tmp)
     return NULL;
 
-  /* Allocate PKCS object */
-  if (!silc_pkcs_alloc(private_key->name, SILC_PKCS_SILC, &pkcs)) {
-    memset(tmp, 0, tmp_len);
-    silc_free(tmp);
-    return NULL;
-  }
-  silc_pkcs_public_key_set(pkcs, public_key);
-  silc_pkcs_private_key_set(pkcs, private_key);
-
   /* Compute the hash and the signature. */
-  if (silc_pkcs_get_key_len(pkcs) / 8 > sizeof(auth_data) - 1 ||
-      !silc_pkcs_sign_with_hash(pkcs, hash, tmp, tmp_len, auth_data,
-				&auth_len)) {
+  if (!silc_pkcs_sign(private_key, tmp, tmp_len, auth_data,
+		      sizeof(auth_data) - 1, &auth_len, hash)) {
     memset(tmp, 0, tmp_len);
     silc_free(tmp);
-    silc_pkcs_free(pkcs);
     return NULL;
   }
 
@@ -315,7 +303,6 @@ silc_auth_public_key_auth_generate_wpub(SilcPublicKey public_key,
   memset(tmp, 0, tmp_len);
   memset(auth_data, 0, sizeof(auth_data));
   silc_free(tmp);
-  silc_pkcs_free(pkcs);
 
   return buf;
 }
@@ -330,7 +317,6 @@ SilcBool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
 {
   unsigned char *tmp;
   SilcUInt32 tmp_len;
-  SilcPKCS pkcs;
 
   SILC_LOG_DEBUG(("Verifying authentication data"));
 
@@ -343,28 +329,18 @@ SilcBool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
     return FALSE;
   }
 
-  /* Allocate PKCS object */
-  if (!silc_pkcs_alloc(public_key->name, SILC_PKCS_SILC, &pkcs)) {
-    memset(tmp, 0, tmp_len);
-    silc_free(tmp);
-    return FALSE;
-  }
-  silc_pkcs_public_key_set(pkcs, public_key);
-
   /* Verify the authentication data */
-  if (!silc_pkcs_verify_with_hash(pkcs, hash, payload->auth_data,
-				  payload->auth_len, tmp, tmp_len)) {
+  if (!silc_pkcs_verify(public_key, payload->auth_data,
+			payload->auth_len, tmp, tmp_len, hash)) {
 
     memset(tmp, 0, tmp_len);
     silc_free(tmp);
-    silc_pkcs_free(pkcs);
     SILC_LOG_DEBUG(("Authentication failed"));
     return FALSE;
   }
 
   memset(tmp, 0, tmp_len);
   silc_free(tmp);
-  silc_pkcs_free(pkcs);
 
   SILC_LOG_DEBUG(("Authentication successful"));
 

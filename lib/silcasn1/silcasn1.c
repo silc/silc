@@ -66,10 +66,6 @@ SilcBool silc_asn1_init(SilcAsn1 asn1)
 
 void silc_asn1_uninit(SilcAsn1 asn1)
 {
-#if 1
-  silc_stack_stats(asn1->stack1);
-  silc_stack_stats(asn1->stack2);
-#endif
   silc_stack_free(asn1->stack1);
   silc_stack_free(asn1->stack2);
 }

@@ -1,10 +1,10 @@
 /*
 
-  silchash.h 
+  silchash.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 /****s* silccrypt/SilcHashAPI/SilcHash
  *
  * NAME
- * 
+ *
  *    typedef struct SilcHashStruct *SilcHash;
  *
  * DESCRIPTION
@@ -50,7 +50,7 @@ typedef struct SilcHashStruct *SilcHash;
 /****s* silccrypt/SilcHashAPI/SilcHashObject
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcHashObject;
  *
  * DESCRIPTION
@@ -310,7 +310,7 @@ void silc_hash_make(SilcHash hash, const unsigned char *data,
  *    put them into a buffer and compute the digest from the buffer by
  *    calling the silc_hash_make, or you can use the silc_hash_init,
  *    silc_hash_update and silc_hash_final to do the digest.  This function
- *    prepares the allocated hash function context for this kind of digest 
+ *    prepares the allocated hash function context for this kind of digest
  *    computation.  To add the data to be used in the digest computation
  *    call the silc_hash_update function.
  *

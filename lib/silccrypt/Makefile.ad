@@ -20,22 +20,23 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 noinst_LTLIBRARIES = libsilccrypt.la
 
 libsilccrypt_la_SOURCES = \
-	none.c \
-	rc5.c \
-	md5.c \
-	aes.c \
-	rsa.c \
-	sha1.c \
-	sha256.c \
-	twofish.c \
-	blowfish.c \
-	cast.c \
-	silccipher.c \
-	silchash.c \
-	silchmac.c \
-	silcrng.c \
-	silcpkcs.c \
-	silcpkcs1.c
+	none.c 		\
+	rc5.c 		\
+	md5.c 		\
+	aes.c 		\
+	rsa.c 		\
+	sha1.c 		\
+	sha256.c 	\
+	twofish.c 	\
+	blowfish.c 	\
+	cast.c 		\
+	silccipher.c 	\
+	silchash.c 	\
+	silchmac.c 	\
+	silcrng.c 	\
+	silcpkcs.c 	\
+	silcpkcs1.c	\
+	silcpk.c
 
 if SILC_LIBTOOLFIX
 # Tell libtool to compile silccrypt as shared since silcsim will need it.
@@ -68,7 +69,8 @@ include_HEADERS =	\
 	silcpkcs.h	\
 	silcrng.h	\
 	silcpkcs1.h	\
-	twofish.h
+	twofish.h	\
+	silcpk.h
 
 SILC_EXTRA_DIST = tests
 #endif SILC_DIST_TOOLKIT

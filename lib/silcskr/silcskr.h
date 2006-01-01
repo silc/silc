@@ -95,26 +95,20 @@ typedef enum {
  *
  * NAME
  *
- *    typedef struct SilcSKRKeyStruct { ... } *SilcSKRKey
+ *    typedef struct SilcSKRKeyStruct { ... } *SilcSKRKey;
  *
  * DESCRIPTION
  *
- *    This context holds the public key cryptosystem key type and the key
- *    context that has been saved in the key repository.  This context is
- *    returned in the SilcSKRFindCallback list.  Each entry in the list is
- *    SilcSKRKey.
- *
- *    The key context saved in SilcSKRKey is based on the PKCS type and
- *    caller can explicitly type cast the key to correct type based on the
- *    PKCS type.
+ *    This context holds the public key, optional public key specific
+ *    context and public key usage bits.  This context is returned in
+ *    the SilcSKRFindCallback list.  Each entry in the list is SIlcSKRKey.
  *
  * SOURCE
  *
  */
 typedef struct SilcSKRKeyStruct {
   SilcSKRKeyUsage usage;	/* Key usage */
-  SilcPKCSType pk_type;		/* PKCS type */
-  void *key;			/* SILC_PKCS_SILC: SilcPublicKey */
+  SilcPublicKey key;		/* Public key */
   void *key_context;		/* Optional key specific context */
 } *SilcSKRKey;
 /***/
@@ -251,7 +245,7 @@ void silc_skr_uninit(SilcSKR skr);
  *
  *    // Add a key to repository
  *    if (silc_skr_add_public_key(repository, public_key,
- *                                SILC_SKR_USAGW_ANY, NULL) != SILC_SKR_OK)
+ *                                SILC_SKR_USAGE_ANY, NULL) != SILC_SKR_OK)
  *      goto error;
  *
  ***/
@@ -494,38 +488,13 @@ SilcBool silc_skr_find_set_usage(SilcSKRFind find, SilcSKRKeyUsage usage);
  *    `find'.  As the finding procedure may be asynchronous this returns
  *    SilcAsyncOperation that may be used to control (like abort) the
  *    operation.  The `callback' with `callback_context' will be called
- *    to return found keys.  If this returns NULL, operation cannot be
- *    controlled, however it is not an error.
+ *    to return found keys.  If this returns NULL the finding was not
+ *    asynchronous, and the `callback' has been called already.
  *
  ***/
 SilcAsyncOperation silc_skr_find(SilcSKR skr, SilcSKRFind find,
 				 SilcSKRFindCallback callback,
 				 void *callback_context);
-
-/****f* silcskr/SilcSKRAPI/silc_skr_find_silc
- *
- * SYNOPSIS
- *
- *    SilcAsyncOperation silc_skr_find_silc(SilcSKR skr,
- *                                          SilcPublicKey public_key,
- *                                          SilcSKRFindCallback callback,
- *                                          void *callback_context);
- *
- * DESCRIPTION
- *
- *    A helper function that can be used to find specificly SILC style
- *    public keys from the repository.  This returns found key(s) by
- *    the `public_key'.  As the finding procedure may be asynchronous
- *    this returns SilcAsyncOperation that may be used to control (like
- *    abort) the operation.  The `callback' with `callback_context' will
- *    be called to return found keys.  If this returns NULL, operation
- *    cannot be controlled, however it is not an error.
- *
- ***/
-SilcAsyncOperation silc_skr_find_silc(SilcSKR skr,
-				      SilcPublicKey public_key,
-				      SilcSKRFindCallback callback,
-				      void *callback_context);
 
 #include "silcskr_i.h"
 

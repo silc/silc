@@ -1,15 +1,15 @@
 /*
 
   silcmath.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
-  Copyright (C) 1997 - 2001 Pekka Riikonen
- 
+
+  Copyright (C) 1997 - 2005 Pekka Riikonen
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
- 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -36,15 +36,15 @@
  *
  * SYNOPSIS
  *
- *    int silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits, SilcBool verbose,
- *                            SilcRng);
+ *    SilcBool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits,
+ *                                 SilcBool verbose, SilcRng rng);
  *
  * DESCRIPTION
  *
- *    Find appropriate prime. It generates a number by taking random bytes. 
- *    It then tests the number that it's not divisible by any of the small 
- *    primes and then it performs Fermat's prime test. I thank Rieks Joosten 
- *    (r.joosten@pijnenburg.nl) for such a good help with prime tests. 
+ *    Find appropriate prime. It generates a number by taking random bytes.
+ *    It then tests the number that it's not divisible by any of the small
+ *    primes and then it performs Fermat's prime test. I thank Rieks Joosten
+ *    (r.joosten@pijnenburg.nl) for such a good help with prime tests.
  *
  *    If argument verbose is TRUE this will display some status information
  *    about the progress of generation.  If the `rng' is NULL then global
@@ -63,7 +63,7 @@ SilcBool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits,
  *
  * DESCRIPTION
  *
- *    Performs primality testings for given number. Returns TRUE if the 
+ *    Performs primality testings for given number. Returns TRUE if the
  *    number is probably a prime.
  *
  ***/

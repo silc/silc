@@ -634,13 +634,6 @@ SilcServer silc_server_alloc(void *app_context, SilcServerParams params,
   server->params->server_info->public_key = NULL;
   server->params->server_info->private_key = NULL;
 
-  /* Allocate PKCS context for local public and private keys */
-  if (!silc_pkcs_alloc(server->public_key->name, SILC_PKCS_SILC,
-		       &server->pkcs))
-    goto err;
-  silc_pkcs_public_key_set(server->pkcs, server->public_key);
-  silc_pkcs_private_key_set(server->pkcs, server->private_key);
-
   /* Create network listener(s) */
   server->listeners = silc_dlist_init();
   if (!server->listeners)

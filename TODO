@@ -1,7 +1,7 @@
 TODO for 1.1 And Beyond
 =======================
 
-lib/silccrypt
+lib/silccrypt			****PARTLY DONE****
 =============
 
  o Implement the defined SilcDH API.  The definition is in

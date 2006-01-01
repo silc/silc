@@ -543,7 +543,6 @@ silc_message_signed_payload_encode(const unsigned char *message_payload,
 				   SilcHash hash)
 {
   SilcBuffer buffer, sign;
-  SilcPKCS pkcs;
   unsigned char auth_data[2048 + 1];
   SilcUInt32 auth_len;
   unsigned char *pk = NULL;
@@ -553,11 +552,12 @@ silc_message_signed_payload_encode(const unsigned char *message_payload,
   if (!message_payload || !message_payload_len || !private_key || !hash)
     return NULL;
 
-  if (public_key)
+  if (public_key) {
     pk = silc_pkcs_public_key_encode(public_key, &pk_len);
-
-  /* Now we support only SILC style public key */
-  pk_type = SILC_SKE_PK_TYPE_SILC;
+    if (!pk)
+      return NULL;
+  }
+  pk_type = silc_pkcs_get_type(public_key);
 
   /* Encode the data to be signed */
   sign = silc_message_signed_encode_data(message_payload,
@@ -570,24 +570,12 @@ silc_message_signed_payload_encode(const unsigned char *message_payload,
 
   /* Sign the buffer */
 
-  /* Allocate PKCS object */
-  if (!silc_pkcs_alloc(private_key->name, SILC_PKCS_SILC, &pkcs)) {
-    SILC_LOG_ERROR(("Could not allocated PKCS"));
-    silc_buffer_clear(sign);
-    silc_buffer_free(sign);
-    silc_free(pk);
-    return NULL;
-  }
-  silc_pkcs_private_key_set(pkcs, private_key);
-
   /* Compute the hash and the signature. */
-  if (silc_pkcs_get_key_len(pkcs) / 8 > sizeof(auth_data) - 1 ||
-      !silc_pkcs_sign_with_hash(pkcs, hash, sign->data, silc_buffer_len(sign), auth_data,
-				&auth_len)) {
+  if (!silc_pkcs_sign(private_key, sign->data, silc_buffer_len(sign),
+		      auth_data, sizeof(auth_data) - 1, &auth_len, hash)) {
     SILC_LOG_ERROR(("Could not compute signature"));
     silc_buffer_clear(sign);
     silc_buffer_free(sign);
-    silc_pkcs_free(pkcs);
     silc_free(pk);
     return NULL;
   }
@@ -598,7 +586,6 @@ silc_message_signed_payload_encode(const unsigned char *message_payload,
   if (!buffer) {
     silc_buffer_clear(sign);
     silc_buffer_free(sign);
-    silc_pkcs_free(pkcs);
     memset(auth_data, 0, sizeof(auth_data));
     silc_free(pk);
     return NULL;
@@ -627,7 +614,6 @@ silc_message_signed_payload_encode(const unsigned char *message_payload,
   SILC_LOG_HEXDUMP(("sig payload"), buffer->data, silc_buffer_len(buffer));
 
   memset(auth_data, 0, sizeof(auth_data));
-  silc_pkcs_free(pkcs);
   silc_buffer_clear(sign);
   silc_buffer_free(sign);
   silc_free(pk);
@@ -654,7 +640,6 @@ int silc_message_signed_verify(SilcMessageSignedPayload sig,
 {
   int ret = SILC_AUTH_FAILED;
   SilcBuffer sign;
-  SilcPKCS pkcs;
   SilcBuffer tmp;
 
   if (!sig || !remote_public_key || !hash)
@@ -678,22 +663,13 @@ int silc_message_signed_verify(SilcMessageSignedPayload sig,
   if (!sign)
     return ret;
 
-  /* Allocate PKCS object */
-  if (!silc_pkcs_alloc(remote_public_key->name, SILC_PKCS_SILC, &pkcs)) {
-    silc_buffer_clear(sign);
-    silc_buffer_free(sign);
-    return ret;
-  }
-  silc_pkcs_public_key_set(pkcs, remote_public_key);
-
   /* Verify the authentication data */
-  if (!silc_pkcs_verify_with_hash(pkcs, hash, sig->sign_data,
-				  sig->sign_len,
-				  sign->data, silc_buffer_len(sign))) {
+  if (!silc_pkcs_verify(remote_public_key, sig->sign_data,
+			sig->sign_len,
+			sign->data, silc_buffer_len(sign), hash)) {
 
     silc_buffer_clear(sign);
     silc_buffer_free(sign);
-    silc_pkcs_free(pkcs);
     SILC_LOG_DEBUG(("Signature verification failed"));
     return ret;
   }
@@ -702,7 +678,6 @@ int silc_message_signed_verify(SilcMessageSignedPayload sig,
 
   silc_buffer_clear(sign);
   silc_buffer_free(sign);
-  silc_pkcs_free(pkcs);
 
   SILC_LOG_DEBUG(("Signature verification successful"));
 
@@ -713,13 +688,16 @@ int silc_message_signed_verify(SilcMessageSignedPayload sig,
 
 SilcPublicKey
 silc_message_signed_get_public_key(SilcMessageSignedPayload sig,
-				   unsigned char **pk_data,
+				   const unsigned char **pk_data,
 				   SilcUInt32 *pk_data_len)
 {
   SilcPublicKey pk;
 
-  if (!sig->pk_data || !silc_pkcs_public_key_decode(sig->pk_data,
-						    sig->pk_len, &pk))
+  if (!sig->pk_data)
+    return NULL;
+
+  if (!silc_pkcs_public_key_alloc(sig->pk_type, sig->pk_data,
+				  sig->pk_len, &pk))
     return NULL;
 
   if (pk_data)

@@ -303,14 +303,6 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     return SILC_FSM_CONTINUE;
     break;
 
-  case SILC_PACKET_CONNECTION_AUTH_REQUEST:
-    /** Packet CONNECTION_AUTH_REQUEST */
-    if (packet->flags & SILC_PACKET_FLAG_LIST)
-      break;
-    silc_fsm_next(fsm, silc_server_st_packet_connection_auth_request);
-    return SILC_FSM_CONTINUE;
-    break;
-
   case SILC_PACKET_HEARTBEAT:
   case SILC_PACKET_SUCCESS:
   case SILC_PACKET_FAILURE:

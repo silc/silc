@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2005 Pekka Riikonen
+  Copyright (C) 2003 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@
  * pre-allocated SilcStack is used as memory.
  *
  * The encoding and decoding interface is simple.  silc_asn1_encode is used
- * encode and silc_asn1_decode to decode.  The actual ASN.1 is defined
+ * to encode and silc_asn1_decode to decode.  The actual ASN.1 is defined
  * as variable argument list to the function.  Various macros can be used
  * to encode and decode different ASN.1 types.  All types may also be used
  * to encode and decode with various options (such as implicit and explicit
@@ -101,6 +101,16 @@ typedef struct SilcAsn1Object SilcAsn1Struct;
  *    The SILC_ASN1_ALLOC and SILC_ASN1_ACCUMUL flags can be given only
  *    with SILC_ASN1_OPTS macro.  Other options can be given with various
  *    SILC_ASN1_*_T macros.
+ *
+ * EXAMPLE
+ *
+ *    // Encodes boolean value with explicit tag and private class, and
+ *    // the result is allocated into `dest'.
+ *    silc_asn1_encode(asn1, &dest,
+ *                     SILC_ASN1_OPTS(SILC_ASN1_ALLOC),
+ *                     SILC_ASN1_BOOLEAN_T(SILC_ASN1_PRIVATE |
+ *                                         SILC_ASN1_EXPLICIT, 100, boolval),
+ *                     SILC_ASN1_END);
  *
  * SOURCE
  */
@@ -413,7 +423,7 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
  *
  *    Decoding:
  *    SILC_ASN1_ANY(&buffer)
- *    SILC_ASN1_ANY_T(opts, tag, &buffer)
+ *    SILC_ASN1_ANY_T(opts, tag, buffer)
  *
  * DESCRIPTION
  *
@@ -453,7 +463,7 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
  *
  *    Decoding:
  *    SILC_ASN1_ANY_PRIMITIVE(tag, &buffer)
- *    SILC_ASN1_ANY_PRIMITIVE_T(opts, tag, &buffer)
+ *    SILC_ASN1_ANY_PRIMITIVE_T(opts, tag, buffer)
  *
  * DESCRIPTION
  *
@@ -671,7 +681,7 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
  *
  *    Encoding:
  *    SILC_ASN1_INT(integer)
- *    SILC_ASN1_INT_T(opts, tag, integer)
+ *    SILC_ASN1_INT_T(opts, tag, &integer)
  *
  *    Decoding:
  *    SILC_ASN1_INT(&integer)
@@ -694,7 +704,7 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
  *
  *    Encoding:
  *    SILC_ASN1_ENUM(enum)
- *    SILC_ASN1_ENUM_T(opts, tag, enum)
+ *    SILC_ASN1_ENUM_T(opts, tag, &enum)
  *
  *    Decoding:
  *    SILC_ASN1_ENUM(&enum)
@@ -1110,7 +1120,7 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
  *
  *    Decoding:
  *    SILC_ASN1_UTC_TIME(&str, &timeval)
- *    SILC_ASN1_UTC_TIME_T(opts, tag, &timeval)
+ *    SILC_ASN1_UTC_TIME_T(opts, tag, timeval)
  *
  * DESCRIPTION
  *
@@ -1133,7 +1143,7 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
  *
  *    Decoding:
  *    SILC_ASN1_GEN_TIME(&str, &timeval)
- *    SILC_ASN1_GEN_TIME_T(opts, tag, &timeval)
+ *    SILC_ASN1_GEN_TIME_T(opts, tag, timeval)
  *
  * DESCRIPTION
  *

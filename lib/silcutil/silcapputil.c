@@ -42,8 +42,8 @@ static char *silc_create_pk_identifier(void)
   /* Create default email address, whether it is right or not */
   snprintf(email, sizeof(email), "%s@%s", username, hostname);
 
-  ident = silc_pkcs_encode_identifier(username, hostname, realname, email,
-				      NULL, NULL);
+  ident = silc_pkcs_silc_encode_identifier(username, hostname, realname,
+					   email, NULL, NULL);
   if (realname)
     silc_free(realname);
   silc_free(hostname);
@@ -55,22 +55,16 @@ static char *silc_create_pk_identifier(void)
 /* Generate key pair */
 
 SilcBool silc_create_key_pair(const char *pkcs_name,
-			  SilcUInt32 key_len_bits,
-			  const char *pub_filename,
-			  const char *prv_filename,
-			  const char *pub_identifier,
-			  const char *passphrase,
-			  SilcPKCS *return_pkcs,
-			  SilcPublicKey *return_public_key,
-			  SilcPrivateKey *return_private_key,
-			  SilcBool interactive)
+			      SilcUInt32 key_len_bits,
+			      const char *pub_filename,
+			      const char *prv_filename,
+			      const char *pub_identifier,
+			      const char *passphrase,
+			      SilcPublicKey *return_public_key,
+			      SilcPrivateKey *return_private_key,
+			      SilcBool interactive)
 {
-  SilcPKCS pkcs;
-  SilcPublicKey pub_key;
-  SilcPrivateKey prv_key;
   SilcRng rng;
-  unsigned char *key;
-  SilcUInt32 key_len;
   char line[256];
   char *pkfile = pub_filename ? strdup(pub_filename) : NULL;
   char *prvfile = prv_filename ? strdup(prv_filename) : NULL;
@@ -103,7 +97,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
     }
   }
 
-  if (!silc_pkcs_is_supported(alg)) {
+  if (!silc_pkcs_find_algorithm(alg, NULL)) {
     fprintf(stderr, "Unknown PKCS algorithm `%s' or crypto library"
 	    "is not initialized", alg);
     return FALSE;
@@ -197,34 +191,18 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   }
 
   /* Generate keys */
-  silc_pkcs_alloc(alg, SILC_PKCS_SILC, &pkcs);
-  silc_pkcs_generate_key(pkcs, key_len_bits, rng);
+  if (!silc_pkcs_silc_generate_key(alg, "pkcs1-no-oid", key_len_bits,
+				   identifier, rng, return_public_key,
+				   return_private_key))
+    return FALSE;
 
   /* Save public key into file */
-  key = silc_pkcs_get_public_key(pkcs, &key_len);
-  pub_key = silc_pkcs_public_key_alloc(silc_pkcs_get_name(pkcs),
-				       identifier, key, key_len);
-  silc_pkcs_save_public_key(pkfile, pub_key, SILC_PKCS_FILE_PEM);
-  if (return_public_key)
-    *return_public_key = pub_key;
-  else
-    silc_pkcs_public_key_free(pub_key);
-  memset(key, 0, key_len);
-  silc_free(key);
+  silc_pkcs_save_public_key(pkfile, *return_public_key, SILC_PKCS_FILE_BASE64);
 
   /* Save private key into file */
-  key = silc_pkcs_get_private_key(pkcs, &key_len);
-  prv_key = silc_pkcs_private_key_alloc(silc_pkcs_get_name(pkcs),
-					key, key_len);
-  silc_pkcs_save_private_key(prvfile, prv_key,
-			     (unsigned char *)pass, strlen(pass),
-			     SILC_PKCS_FILE_BIN);
-  if (return_private_key)
-    *return_private_key = prv_key;
-  else
-    silc_pkcs_private_key_free(prv_key);
-  memset(key, 0, key_len);
-  silc_free(key);
+  silc_pkcs_save_private_key(prvfile, *return_private_key,
+			     (const unsigned char *)pass, strlen(pass),
+			     SILC_PKCS_FILE_BIN, rng);
 
   printf("Public key has been saved into `%s'.\n", pkfile);
   printf("Private key has been saved into `%s'.\n", prvfile);
@@ -232,11 +210,6 @@ New pair of keys will be created.  Please, answer to following questions.\n\
     printf("Press <Enter> to continue...\n");
     getchar();
   }
-
-  if (return_pkcs)
-    *return_pkcs = pkcs;
-  else
-    silc_pkcs_free(pkcs);
 
   silc_rng_free(rng);
   silc_free(alg);
@@ -252,25 +225,21 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 /* Load key pair */
 
 SilcBool silc_load_key_pair(const char *pub_filename,
-			const char *prv_filename,
-			const char *passphrase,
-			SilcPKCS *return_pkcs,
-			SilcPublicKey *return_public_key,
-			SilcPrivateKey *return_private_key)
+			    const char *prv_filename,
+			    const char *passphrase,
+			    SilcPublicKey *return_public_key,
+			    SilcPrivateKey *return_private_key)
 {
   char *pass = passphrase ? strdup(passphrase) : NULL;
 
   SILC_LOG_DEBUG(("Loading public and private keys"));
 
-  if (silc_pkcs_load_public_key((char *)pub_filename, return_public_key,
-				SILC_PKCS_FILE_PEM) == FALSE)
-    if (silc_pkcs_load_public_key((char *)pub_filename, return_public_key,
-				  SILC_PKCS_FILE_BIN) == FALSE) {
-      if (pass)
-	memset(pass, 0, strlen(pass));
-      silc_free(pass);
-      return FALSE;
-    }
+  if (!silc_pkcs_load_public_key(pub_filename, return_public_key)) {
+    if (pass)
+      memset(pass, 0, strlen(pass));
+    silc_free(pass);
+    return FALSE;
+  }
 
   if (!pass) {
     pass = silc_get_input("Private key passphrase: ", TRUE);
@@ -278,21 +247,12 @@ SilcBool silc_load_key_pair(const char *pub_filename,
       pass = strdup("");
   }
 
-  if (silc_pkcs_load_private_key((char *)prv_filename, return_private_key,
-				 (unsigned char *)pass, strlen(pass),
-				 SILC_PKCS_FILE_BIN) == FALSE)
-    if (silc_pkcs_load_private_key((char *)prv_filename, return_private_key,
-				   (unsigned char *)pass, strlen(pass),
-				   SILC_PKCS_FILE_PEM) == FALSE) {
-      memset(pass, 0, strlen(pass));
-      silc_free(pass);
-      return FALSE;
-    }
-
-  if (return_pkcs) {
-    silc_pkcs_alloc((*return_public_key)->name, SILC_PKCS_SILC, return_pkcs);
-    silc_pkcs_public_key_set(*return_pkcs, *return_public_key);
-    silc_pkcs_private_key_set(*return_pkcs, *return_private_key);
+  if (!silc_pkcs_load_private_key(prv_filename,
+				  (const unsigned char *)pass, strlen(pass),
+				  return_private_key)) {
+    memset(pass, 0, strlen(pass));
+    silc_free(pass);
+    return FALSE;
   }
 
   memset(pass, 0, strlen(pass));
@@ -305,34 +265,36 @@ SilcBool silc_load_key_pair(const char *pub_filename,
 SilcBool silc_show_public_key(const char *pub_filename)
 {
   SilcPublicKey public_key;
+  SilcSILCPublicKey silc_pubkey;
   SilcPublicKeyIdentifier ident;
   char *fingerprint, *babbleprint;
   unsigned char *pk;
   SilcUInt32 pk_len;
-  SilcPKCS pkcs;
   SilcUInt32 key_len = 0;
 
-  if (silc_pkcs_load_public_key((char *)pub_filename, &public_key,
-				SILC_PKCS_FILE_PEM) == FALSE)
-    if (silc_pkcs_load_public_key((char *)pub_filename, &public_key,
-				  SILC_PKCS_FILE_BIN) == FALSE) {
-      fprintf(stderr, "Could not load public key file `%s'\n", pub_filename);
-      return FALSE;
-    }
+  if (!silc_pkcs_load_public_key((char *)pub_filename, &public_key)) {
+    fprintf(stderr, "Could not load public key file `%s'\n", pub_filename);
+    return FALSE;
+  }
 
-  ident = silc_pkcs_decode_identifier(public_key->identifier);
+  silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
+  if (!silc_pubkey) {
+    silc_pkcs_public_key_free(public_key);
+    return FALSE;
+  }
 
+  ident = &silc_pubkey->identifier;
+  key_len = silc_pkcs_public_key_get_len(public_key);
   pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+  if (!pk) {
+    silc_pkcs_public_key_free(public_key);
+    return FALSE;
+  }
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
   babbleprint = silc_hash_babbleprint(NULL, pk, pk_len);
 
-  if (silc_pkcs_alloc(public_key->name, SILC_PKCS_SILC, &pkcs)) {
-    key_len = silc_pkcs_public_key_set(pkcs, public_key);
-    silc_pkcs_free(pkcs);
-  }
-
   printf("Public key file    : %s\n", pub_filename);
-  printf("Algorithm          : %s\n", public_key->name);
+  printf("Algorithm          : %s\n", silc_pkcs_get_name(public_key));
   if (key_len)
     printf("Key length (bits)  : %d\n", (unsigned int)key_len);
   if (ident->realname)
@@ -356,7 +318,6 @@ SilcBool silc_show_public_key(const char *pub_filename)
   silc_free(babbleprint);
   silc_free(pk);
   silc_pkcs_public_key_free(public_key);
-  silc_pkcs_free_identifier(ident);
 
   return TRUE;
 }
@@ -364,12 +325,12 @@ SilcBool silc_show_public_key(const char *pub_filename)
 /* Change private key passphrase */
 
 SilcBool silc_change_private_key_passphrase(const char *prv_filename,
-					const char *old_passphrase,
-					const char *new_passphrase)
+					    const char *old_passphrase,
+					    const char *new_passphrase)
 {
   SilcPrivateKey private_key;
-  SilcBool base64 = FALSE;
   char *pass;
+  SilcRng rng;
 
   pass = old_passphrase ? strdup(old_passphrase) : NULL;
   if (!pass) {
@@ -378,18 +339,13 @@ SilcBool silc_change_private_key_passphrase(const char *prv_filename,
       pass = strdup("");
   }
 
-  if (silc_pkcs_load_private_key((char *)prv_filename, &private_key,
-				 (unsigned char *)pass, strlen(pass),
-				 SILC_PKCS_FILE_BIN) == FALSE) {
-    base64 = TRUE;
-    if (silc_pkcs_load_private_key((char *)prv_filename, &private_key,
-				   (unsigned char *)pass, strlen(pass),
-				   SILC_PKCS_FILE_PEM) == FALSE) {
-      memset(pass, 0, strlen(pass));
-      silc_free(pass);
-      fprintf(stderr, "Could not load private key `%s' file\n", prv_filename);
-      return FALSE;
-    }
+  if (!silc_pkcs_load_private_key(prv_filename,
+				  (const unsigned char *)pass, strlen(pass),
+				  &private_key)) {
+    memset(pass, 0, strlen(pass));
+    silc_free(pass);
+    fprintf(stderr, "Could not load private key `%s' file\n", prv_filename);
+    return FALSE;
   }
 
   memset(pass, 0, strlen(pass));
@@ -416,9 +372,12 @@ SilcBool silc_change_private_key_passphrase(const char *prv_filename,
     }
   }
 
+  rng = silc_rng_alloc();
+  silc_rng_init(rng);
+
   silc_pkcs_save_private_key((char *)prv_filename, private_key,
 			     (unsigned char *)pass, strlen(pass),
-			     base64 ? SILC_PKCS_FILE_PEM : SILC_PKCS_FILE_BIN);
+			     SILC_PKCS_FILE_BIN, rng);
 
   fprintf(stdout, "\nPassphrase changed\n");
 
@@ -426,5 +385,7 @@ SilcBool silc_change_private_key_passphrase(const char *prv_filename,
   silc_free(pass);
 
   silc_pkcs_private_key_free(private_key);
+  silc_rng_free(rng);
+
   return TRUE;
 }

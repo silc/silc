@@ -75,7 +75,7 @@ SilcBool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
       /* Long form */
 
       /* Calculate the number of octets for the length field */
-      tmp = tag;
+      tmp = data_len;
       c = 0;
       while (tmp) {
 	c++;

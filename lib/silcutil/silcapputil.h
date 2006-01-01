@@ -1,10 +1,10 @@
 /*
 
-  silcapputil.h 
+  silcapputil.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2005 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,15 +40,14 @@
  * SYNOPSIS
  *
  *    SilcBool silc_create_key_pair(const char *pkcs_name,
- *                              SilcUInt32 key_len_bits,
- *                              const char *pub_filename,
- *                              const char *prv_filename,
- *                              const char *pub_identifier,
- *                              const char *passphrase,
- *                              SilcPKCS *return_pkcs,
- *                              SilcPublicKey *return_public_key,
- *                              SilcPrivateKey *return_private_key,
- *                              SilcBool interactive);
+ *                                  SilcUInt32 key_len_bits,
+ *                                  const char *pub_filename,
+ *                                  const char *prv_filename,
+ *                                  const char *pub_identifier,
+ *                                  const char *passphrase,
+ *                                  SilcPublicKey *return_public_key,
+ *                                  SilcPrivateKey *return_private_key,
+ *                                  SilcBool interactive);
  *
  * DESCRIPTION
  *
@@ -65,12 +64,6 @@
  *    private key file.  It is recommended that you would protect your
  *    private key file with a passphrase.
  *
- *    The routine returns FALSE if error occurs during key generation.
- *    Function returns TRUE when success and returns the created SilcPKCS
- *    object, which can be used to perform public key cryptography into
- *    `return_pkcs' pointer, created public key into `return_public_key',
- *    and created private key into `return_private_key' pointer.
- *
  *    If the `interactive' is TRUE then this asks the user (by blocking
  *    the process for input) some questions about key generation (like
  *    public key algorithm, key length, filenames, etc).  If all
@@ -85,45 +78,40 @@
  *
  ***/
 SilcBool silc_create_key_pair(const char *pkcs_name,
-			  SilcUInt32 key_len_bits,
-			  const char *pub_filename,
-			  const char *prv_filename,
-			  const char *pub_identifier,
-			  const char *passphrase,
-			  SilcPKCS *return_pkcs,
-			  SilcPublicKey *return_public_key,
-			  SilcPrivateKey *return_private_key,
-			  SilcBool interactive);
+			      SilcUInt32 key_len_bits,
+			      const char *pub_filename,
+			      const char *prv_filename,
+			      const char *pub_identifier,
+			      const char *passphrase,
+			      SilcPublicKey *return_public_key,
+			      SilcPrivateKey *return_private_key,
+			      SilcBool interactive);
 
 /****f* silcutil/SilcAppUtil/silc_load_key_pair
  *
  * SYNOPSIS
  *
  *    SilcBool silc_load_key_pair(const char *pub_filename,
- *                            const char *prv_filename,
- *                            const char *passphrase,
- *                            SilcPKCS *return_pkcs,
- *                            SilcPublicKey *return_public_key,
- *                            SilcPrivateKey *return_private_key);
+ *                                const char *prv_filename,
+ *                                const char *passphrase,
+ *                                SilcPublicKey *return_public_key,
+ *                                SilcPrivateKey *return_private_key);
  *
  * DESCRIPTION
  *
  *    This routine can be used to load the public key and private key
  *    from files.  This retuns FALSE it either of the key could not be
  *    loaded.  This function returns TRUE on success and returns the
- *    public key into `return_public_key' pointer, private key into
- *    `return_private_key' pointer and the SilcPKCS object to the
- *    `return_pkcs'.  The SilcPKCS can be used to perform public key
- *    cryptographic operations.  The `passphrase' is the passphrase
- *    which will be used to decrypt the private key file.
+ *    public key into `return_public_key' pointer and private key into
+ *    `return_private_key'.  The `passphrase' is the passphrase which
+ *    will be used to decrypt the private key file.
  *
  ***/
 SilcBool silc_load_key_pair(const char *pub_filename,
-			const char *prv_filename,
-			const char *passphrase,
-			SilcPKCS *return_pkcs,
-			SilcPublicKey *return_public_key,
-			SilcPrivateKey *return_private_key);
+			    const char *prv_filename,
+			    const char *passphrase,
+			    SilcPublicKey *return_public_key,
+			    SilcPrivateKey *return_private_key);
 
 /****f* silcutil/SilcAppUtil/silc_show_public_key
  *
@@ -145,8 +133,8 @@ SilcBool silc_show_public_key(const char *pub_filename);
  * SYNOPSIS
  *
  *    SilcBool silc_change_private_key_passphrase(const char *prv_filename,
- *                                            const char *old_passphrase,
- *                                            const char *new_passphrase);
+ *                                                const char *old_passphrase,
+ *                                                const char *new_passphrase);
  *
  * DESCRIPTION
  *
@@ -157,7 +145,7 @@ SilcBool silc_show_public_key(const char *pub_filename);
  *
  ***/
 SilcBool silc_change_private_key_passphrase(const char *prv_filename,
-					const char *old_passphrase,
-					const char *new_passphrase);
+					    const char *old_passphrase,
+					    const char *new_passphrase);
 
 #endif /* SILCAPPUTIL_H */

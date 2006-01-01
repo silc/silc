@@ -17,47 +17,28 @@
 
 */
 
-#ifndef SILCPKCS_H
-#define SILCPKCS_H
-
 /****h* silccrypt/SILC PKCS Interface
  *
  * DESCRIPTION
  *
- *    This is the interface for public key cryptosystems, and various
- *    utility functions related to public keys and private keys.  This
- *    interface also defines the actual PKCS objects, public keys and
- *    private keys.  The interface is generic PKCS interface, which has
- *    capability of supporting any kind of public key algorithm.  This
- *    interface also implements the SILC Public Key and routines for
- *    encoding and decoding SILC Public Key (as defined by the SILC
- *    protocol specification).  Interface or encrypting, decrypting,
- *    producing digital signatures and verifying digital signatures are
- *    also defined in this header.
+ * SILC PKCS API provides generic interface for performing various
+ * public key cryptography related operations with different types of
+ * public and private keys.  Support for loading and saving of different
+ * types of public key and private keys are also provided.
  *
  ***/
 
-/****s* silccrypt/SilcPKCSAPI/SilcPKCS
- *
- * NAME
- *
- *    typedef struct SilcPKCSStruct *SilcPKCS;
- *
- * DESCRIPTION
- *
- *    This context is the actual PKCS context and is allocated
- *    by silc_pkcs_alloc and given as argument usually to all
- *    silc_pkcs_* functions.  It is freed by the silc_pkcs_free
- *    function.
- *
- ***/
-typedef struct SilcPKCSStruct *SilcPKCS;
+#ifndef SILCPKCS_H
+#define SILCPKCS_H
+
+/* Forward declarations */
+typedef struct SilcPKCSObjectStruct SilcPKCSObject;
 
 /****d* silccrypt/SilcPKCSAPI/SilcPKCSType
  *
  * NAME
  *
- *    typedef enum { ... } SilcPKCSType
+ *    typedef enum { ... } SilcPKCSType;
  *
  * DESCRIPTION
  *
@@ -67,7 +48,7 @@ typedef struct SilcPKCSStruct *SilcPKCS;
  * SOURCE
  */
 typedef enum {
-  SILC_PKCS_SILC    = 1,	/* SILC PKCS (mandatory) */
+  SILC_PKCS_SILC    = 1,	/* SILC PKCS */
   SILC_PKCS_SSH2    = 2,	/* SSH2 PKCS (not supported) */
   SILC_PKCS_X509V3  = 3,	/* X.509v3 PKCS (not supported) */
   SILC_PKCS_OPENPGP = 4,	/* OpenPGP PKCS (not supported) */
@@ -75,190 +56,242 @@ typedef enum {
 } SilcPKCSType;
 /***/
 
-/* The default SILC PKCS (Public Key Cryptosystem) object to represent
-   any PKCS in SILC. */
-typedef struct SilcPKCSObjectStruct {
-  char *name;
-  SilcPKCSType type;
-  int (*init)(void *, SilcUInt32, SilcRng);
-  void (*clear_keys)(void *);
-  unsigned char *(*get_public_key)(void *, SilcUInt32 *);
-  unsigned char *(*get_private_key)(void *, SilcUInt32 *);
-  SilcUInt32 (*set_public_key)(void *, unsigned char *, SilcUInt32);
-  SilcUInt32 (*set_private_key)(void *, unsigned char *, SilcUInt32);
-  SilcUInt32 (*context_len)();
-  int (*encrypt)(void *, unsigned char *, SilcUInt32,
-		 unsigned char *, SilcUInt32 *);
-  int (*decrypt)(void *, unsigned char *, SilcUInt32,
-		 unsigned char *, SilcUInt32 *);
-  int (*sign)(void *, unsigned char *, SilcUInt32,
-	      unsigned char *, SilcUInt32 *);
-  int (*verify)(void *, unsigned char *, SilcUInt32,
-		unsigned char *, SilcUInt32);
-} SilcPKCSObject;
-
 /****s* silccrypt/SilcPKCSAPI/SilcPublicKey
  *
  * NAME
  *
- *    typedef struct { ... } *SilcPublicKey, SilcPublicKeyStruct;
+ *    typedef struct { ... } *SilcPublicKey;
  *
  * DESCRIPTION
  *
- *    SILC style public key object.  Public key is read from file to this
- *    object.  Public keys received from network must be in this format as
- *    well.  The format is defined by the SILC protocol specification.
- *    This object is allocated by silc_pkcs_public_key_alloc and freed
- *    by silc_pkcs_public_key_free.  The object is given as argument to
- *    all silc_pkcs_public_key_* functions.
+ *    This context represents any kind of PKCS public key.  It can be
+ *    allocated by silc_pkcs_public_key_alloc and is freed by the
+ *    silc_pkcs_public_key_free.  The PKCS specific public key context
+ *    can be retrieved by calling silc_pkcs_get_context.
  *
  * SOURCE
  */
 typedef struct {
-  SilcUInt16 pk_type;		/* Public key type (SilcSKEPKType) */
-  SilcUInt32 len;
-  char *name;
-  char *identifier;
-  unsigned char *pk;
-  SilcUInt32 pk_len;
-} *SilcPublicKey, SilcPublicKeyStruct;
-/***/
-
-/****s* silccrypt/SilcPKCSAPI/SilcPublicKeyIdentifier
- *
- * NAME
- *
- *    typedef struct { ... } *SilcPublicKeyIdentifier,
- *                            SilcPublicKeyIdentifierStruct;
- *
- * DESCRIPTION
- *
- *    Decoded SILC Public Key identifier.  Note that some of the fields
- *    may be NULL.  This context is allocated by the function
- *    silc_pkcs_decode_identifier and freed by silc_pkcs_free_identifier.
- *    The identifier in SilcPublicKey is the `identifier' field, which
- *    can be given as argument to silc_pkcs_decode_identifier.
- *
- * SOURCE
- */
-typedef struct {
-  char *username;
-  char *host;
-  char *realname;
-  char *email;
-  char *org;
-  char *country;
-} *SilcPublicKeyIdentifier, SilcPublicKeyIdentifierStruct;
+  const SilcPKCSObject *pkcs;	/* PKCS */
+  void *public_key;		/* PKCS specific public key */
+} *SilcPublicKey;
 /***/
 
 /****s* silccrypt/SilcPKCSAPI/SilcPrivateKey
  *
  * NAME
  *
- *    typedef struct { ... } *SilcPrivateKey, SilcPrivateKeyStruct;
+ *    typedef struct { ... } *SilcPrivateKey;
  *
  * DESCRIPTION
  *
- *    SILC style private key object.  Public key is read from file to this
- *    object.  This object is allocated by silc_pkcs_private_key_alloc and
- *    freed by silc_pkcs_private_key_free.  The object is given as argument
- *    to all silc_pkcs_private_key_* functions.
+ *    This context represents any kind of PKCS private key.
  *
- ***/
+ * SOURCE
+ */
 typedef struct {
+  const SilcPKCSObject *pkcs;	/* PKCS */
+  void *private_key;		/* PKCS specific private key */
+} *SilcPrivateKey;
+/***/
+
+/****d* silccrypt/SilcPKCSAPI/SilcPKCSFileEncoding
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcPKCSType
+ *
+ * DESCRIPTION
+ *
+ *    Public and private key file encoding types.
+ *
+ * SOURCE
+ */
+typedef enum {
+  SILC_PKCS_FILE_BIN,		/* Binary encoding */
+  SILC_PKCS_FILE_BASE64		/* Base64 encoding */
+} SilcPKCSFileEncoding;
+/***/
+
+/* The PKCS Algorithm object to represent any PKCS algorithm. */
+typedef struct {
+  /* Algorithm name and scheme */
   char *name;
-  unsigned char *prv;
-  SilcUInt32 prv_len;
-} *SilcPrivateKey, SilcPrivateKeyStruct;
+  char *scheme;
 
-/* Public and private key file headers */
-#define SILC_PKCS_PUBLIC_KEYFILE_BEGIN "-----BEGIN SILC PUBLIC KEY-----\n"
-#define SILC_PKCS_PUBLIC_KEYFILE_END "\n-----END SILC PUBLIC KEY-----\n"
-#define SILC_PKCS_PRIVATE_KEYFILE_BEGIN "-----BEGIN SILC PRIVATE KEY-----\n"
-#define SILC_PKCS_PRIVATE_KEYFILE_END "\n-----END SILC PRIVATE KEY-----\n"
+  /* Supported hash functions, comma separated list */
+  char *hash;
 
-/* Public and private key file encoding types */
-#define SILC_PKCS_FILE_BIN 0
-#define SILC_PKCS_FILE_PEM 1
+  /* Generate new key pair. Returns PKCS algorithm specific public key
+     and private key contexts. */
+  SilcBool (*generate_key)(SilcUInt32 keylen,
+			   SilcRng rng,
+			   void **ret_public_key,
+			   void **ret_private_key);
+
+  /* Public key routines */
+  SilcBool (*import_public_key)(unsigned char *key,
+				SilcUInt32 key_len,
+				void **ret_public_key);
+  unsigned char *(*export_public_key)(void *public_key,
+				      SilcUInt32 *ret_len);
+  SilcUInt32 (*public_key_bitlen)(void *public_key);
+  void *(*public_key_copy)(void *public_key);
+  SilcBool (*public_key_compare)(void *key1, void *key2);
+  void (*public_key_free)(void *public_key);
+
+  /* Private key routines */
+  SilcBool (*import_private_key)(unsigned char *key,
+				 SilcUInt32 key_len,
+				 void **ret_private_key);
+  unsigned char *(*export_private_key)(void *private_key,
+				       SilcUInt32 *ret_len);
+  SilcUInt32 (*private_key_bitlen)(void *public_key);
+  void (*private_key_free)(void *private_key);
+
+  /* Encrypt and decrypt operations */
+  SilcBool (*encrypt)(void *public_key,
+		      unsigned char *src,
+		      SilcUInt32 src_len,
+		      unsigned char *dst,
+		      SilcUInt32 dst_size,
+		      SilcUInt32 *ret_dst_len);
+  SilcBool (*decrypt)(void *private_key,
+		      unsigned char *src,
+		      SilcUInt32 src_len,
+		      unsigned char *dst,
+		      SilcUInt32 dst_size,
+		      SilcUInt32 *ret_dst_len);
+
+  /* Signature and verification operations */
+  SilcBool (*sign)(void *private_key,
+		   unsigned char *src,
+		   SilcUInt32 src_len,
+		   unsigned char *signature,
+		   SilcUInt32 signature_size,
+		   SilcUInt32 *ret_signature_len,
+		   SilcHash hash);
+  SilcBool (*verify)(void *public_key,
+		     unsigned char *signature,
+		     SilcUInt32 signature_len,
+		     unsigned char *data,
+		     SilcUInt32 data_len,
+		     SilcHash hash);
+} SilcPKCSAlgorithm;
+
+/* The PKCS (Public Key Cryptosystem) object to represent any PKCS. */
+struct SilcPKCSObjectStruct {
+  /* PKCS type */
+  SilcPKCSType type;
+
+  /* Public key routines */
+
+  /* Returns PKCS algorithm context from public key */
+  const SilcPKCSAlgorithm *(*get_algorithm)(void *public_key);
+
+  /* Imports from public key file */
+  SilcBool (*import_public_key_file)(unsigned char *filedata,
+				     SilcUInt32 filedata_len,
+				     SilcPKCSFileEncoding encoding,
+				     void **ret_public_key);
+
+  /* Imports from public key binary data */
+  SilcBool (*import_public_key)(unsigned char *key,
+				SilcUInt32 key_len,
+				void **ret_public_key);
+
+  /* Exports public key to file */
+  unsigned char *(*export_public_key_file)(void *public_key,
+					   SilcPKCSFileEncoding encoding,
+					   SilcUInt32 *ret_len);
+
+  /* Export public key as binary data */
+  unsigned char *(*export_public_key)(void *public_key,
+				      SilcUInt32 *ret_len);
+
+  /* Returns key length in bits */
+  SilcUInt32 (*public_key_bitlen)(void *public_key);
+
+  /* Copy public key */
+  void *(*public_key_copy)(void *public_key);
+
+  /* Compares public keys */
+  SilcBool (*public_key_compare)(void *key1, void *key2);
+
+  /* Free public key */
+  void (*public_key_free)(void *public_key);
+
+  /* Private key routines */
+
+  /* Imports from private key file */
+  SilcBool (*import_private_key_file)(unsigned char *filedata,
+				      SilcUInt32 filedata_len,
+				      const char *passphrase,
+				      SilcUInt32 passphrase_len,
+				      SilcPKCSFileEncoding encoding,
+				      void **ret_private_key);
+
+  /* Imports from private key binary data */
+  SilcBool (*import_private_key)(unsigned char *key,
+				 SilcUInt32 key_len,
+				 void **ret_private_key);
+
+  /* Exports private key to file */
+  unsigned char *(*export_private_key_file)(void *private_key,
+					    const char *passphrase,
+					    SilcUInt32 passphrase_len,
+					    SilcPKCSFileEncoding encoding,
+					    SilcRng rng,
+					    SilcUInt32 *ret_len);
+
+  /* Export private key as binary data */
+  unsigned char *(*export_private_key)(void *private_key,
+				       SilcUInt32 *ret_len);
+
+  /* Returns key length in bits */
+  SilcUInt32 (*private_key_bitlen)(void *private_key);
+
+  /* Free private key */
+  void (*private_key_free)(void *private_key);
+
+  /* Encrypt and decrypt operations */
+  SilcBool (*encrypt)(void *public_key,
+		      unsigned char *src,
+		      SilcUInt32 src_len,
+		      unsigned char *dst,
+		      SilcUInt32 dst_size,
+		      SilcUInt32 *ret_dst_len);
+  SilcBool (*decrypt)(void *private_key,
+		      unsigned char *src,
+		      SilcUInt32 src_len,
+		      unsigned char *dst,
+		      SilcUInt32 dst_size,
+		      SilcUInt32 *ret_dst_len);
+
+  /* Signature and verification operations */
+  SilcBool (*sign)(void *private_key,
+		   unsigned char *src,
+		   SilcUInt32 src_len,
+		   unsigned char *signature,
+		   SilcUInt32 signature_size,
+		   SilcUInt32 *ret_signature_len,
+		   SilcHash hash);
+  SilcBool (*verify)(void *public_key,
+		     unsigned char *signature,
+		     SilcUInt32 signature_len,
+		     unsigned char *data,
+		     SilcUInt32 data_len,
+		     SilcHash hash);
+};
 
 /* Marks for all PKCS in silc. This can be used in silc_pkcs_unregister
    to unregister all PKCS at once. */
 #define SILC_ALL_PKCS ((SilcPKCSObject *)1)
+#define SILC_ALL_PKCS_ALG ((SilcPKCSAlgorithm *)1)
 
-/* Static list of PKCS for silc_pkcs_register_default(). */
+/* Static lists of PKCS and PKCS algorithms. */
 extern DLLAPI const SilcPKCSObject silc_default_pkcs[];
-
-/* Default PKXS in the SILC protocol */
-#define SILC_DEFAULT_PKCS "rsa"
-
-/* Macros */
-
-/* Macros used to implement the SILC PKCS API */
-
-/* XXX: This needs slight redesigning. These needs to be made even
-   more generic. I don't like that the actual prime generation is done
-   in PKCS_API_INIT. The primes used in key generation should be sent
-   as argument to the init function. By doing this we would achieve
-   that PKCS could be used as SIM's. The only requirement would be
-   that they are compiled against GMP (well, actually even that would
-   not be a requirement, but the most generic case anyway). The new init
-   would look something like this:
-
-   #define SILC_PKCS_API_INIT(pkcs) \
-   inline int silc_##pkcs##_init(void *context, SilcUInt32 keylen, \
-                                 void *p1, void *p2)
-
-   Now we wouldn't have to send the SilcRng object since the primes are
-   provided as arguments. To send them as void * they could actually be
-   used as in anyway for real (MP_INT (SilcMPInt) or even something else
-   (the pointer could be kludged to be something else in the module))
-   (Plus, the SilcRng object management in prime generation would be
-   simpler and better what it is now (in silcprimegen.c, that is)).
-*/
-
-#define SILC_PKCS_API_INIT(pkcs) \
-int silc_##pkcs##_init(void *context, SilcUInt32 keylen, \
-		       SilcRng rng)
-#define SILC_PKCS_API_CLEAR_KEYS(pkcs) \
-void silc_##pkcs##_clear_keys(void *context)
-#define SILC_PKCS_API_GET_PUBLIC_KEY(pkcs) \
-unsigned char *silc_##pkcs##_get_public_key(void *context, \
-                                            SilcUInt32 *ret_len)
-#define SILC_PKCS_API_GET_PRIVATE_KEY(pkcs) \
-unsigned char *silc_##pkcs##_get_private_key(void *context, \
-                                             SilcUInt32 *ret_len)
-#define SILC_PKCS_API_SET_PUBLIC_KEY(pkcs) \
-SilcUInt32 silc_##pkcs##_set_public_key(void *context, unsigned char *key_data, \
-                                        SilcUInt32 key_len)
-#define SILC_PKCS_API_SET_PRIVATE_KEY(pkcs) \
-SilcUInt32 silc_##pkcs##_set_private_key(void *context, unsigned char *key_data, \
-                                         SilcUInt32 key_len)
-#define SILC_PKCS_API_CONTEXT_LEN(pkcs) \
-SilcUInt32 silc_##pkcs##_context_len()
-#define SILC_PKCS_API_ENCRYPT(pkcs) \
-int silc_##pkcs##_encrypt(void *context, \
-			  unsigned char *src, \
-			  SilcUInt32 src_len, \
-			  unsigned char *dst, \
-			  SilcUInt32 *dst_len)
-#define SILC_PKCS_API_DECRYPT(pkcs) \
-int silc_##pkcs##_decrypt(void *context, \
-			  unsigned char *src, \
-			  SilcUInt32 src_len, \
-			  unsigned char *dst, \
-			  SilcUInt32 *dst_len)
-#define SILC_PKCS_API_SIGN(pkcs) \
-int silc_##pkcs##_sign(void *context, \
-		       unsigned char *src, \
-		       SilcUInt32 src_len, \
-		       unsigned char *dst, \
-		       SilcUInt32 *dst_len)
-#define SILC_PKCS_API_VERIFY(pkcs) \
-int silc_##pkcs##_verify(void *context, \
-			 unsigned char *signature, \
-			 SilcUInt32 signature_len, \
-			 unsigned char *data, \
-			 SilcUInt32 data_len)
+extern DLLAPI const SilcPKCSAlgorithm silc_default_pkcs_alg[];
 
 /* Prototypes */
 
@@ -294,6 +327,34 @@ SilcBool silc_pkcs_register(const SilcPKCSObject *pkcs);
  ***/
 SilcBool silc_pkcs_unregister(SilcPKCSObject *pkcs);
 
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_algorithm_register
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_pkcs_algorithm_register(const SilcPKCSAlgorithm *pkcs);
+ *
+ * DESCRIPTION
+ *
+ *    Registers a new PKCS Algorithm into the SILC.  This function is used
+ *    at the initialization of the SILC.  All registered PKCS algorithms
+ *    should be unregistered with silc_pkcs_unregister.
+ *
+ ***/
+SilcBool silc_pkcs_algorithm_register(const SilcPKCSAlgorithm *pkcs);
+
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_algorithm_unregister
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_pkcs_algorithm_unregister(SilcPKCSAlgorithm *pkcs);
+ *
+ * DESCRIPTION
+ *
+ *    Unregister a PKCS from the SILC. Returns FALSE on error.
+ *
+ ***/
+SilcBool silc_pkcs_algorithm_unregister(SilcPKCSAlgorithm *pkcs);
+
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_register_default
  *
  * SYNOPSIS
@@ -302,9 +363,9 @@ SilcBool silc_pkcs_unregister(SilcPKCSObject *pkcs);
  *
  * DESCRIPTION
  *
- *    Registers all the default PKCS (all builtin PKCS).  The application may
- *    use this to register the default PKCS if specific PKCS in any specific
- *    order is not wanted. Returns FALSE on error.
+ *    Registers all the default PKCS (all builtin PKCS) and PKCS algorithms.
+ *    The application may use this to register the default PKCS if specific
+ *    PKCS in any specific order is not wanted.  Returns FALSE on error.
  *
  ***/
 SilcBool silc_pkcs_register_default(void);
@@ -317,52 +378,10 @@ SilcBool silc_pkcs_register_default(void);
  *
  * DESCRIPTION
  *
- *    Returns FALSE on error.
+ *    Unregister all PKCS and PKCS algorithms. Returns FALSE on error.
  *
  ***/
 SilcBool silc_pkcs_unregister_all(void);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_alloc
- *
- * SYNOPSIS
- *
- *    SilcBool silc_pkcs_alloc(const unsigned char *name,
- *                             SilcPKCSType type, SilcPKCS *new_pkcs);
- *
- * DESCRIPTION
- *
- *    Allocates a new SilcPKCS object.  The new allocated object is returned
- *    to the 'new_pkcs' argument.  Returns FALSE on error.
- *
- ***/
-SilcBool silc_pkcs_alloc(const unsigned char *name,
-			 SilcPKCSType type, SilcPKCS *new_pkcs);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_free
- *
- * SYNOPSIS
- *
- *    void silc_pkcs_free(SilcPKCS pkcs);
- *
- * DESCRIPTION
- *
- *    Frees the PKCS object.
- *
- ***/
-void silc_pkcs_free(SilcPKCS pkcs);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_is_supported
- *
- * SYNOPSIS
- *
- *    SilcBool silc_pkcs_is_supported(const unsigned char *name);
- *
- * DESCRIPTION
- *
- *    Returns TRUE if PKCS algorithm `name' is supported.
- *
- ***/
-SilcBool silc_pkcs_is_supported(const unsigned char *name);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_supported
  *
@@ -377,318 +396,126 @@ SilcBool silc_pkcs_is_supported(const unsigned char *name);
  ***/
 char *silc_pkcs_get_supported(void);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_generate_key
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_find_pkcs
  *
  * SYNOPSIS
  *
- *    SilcBool silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
- *				  SilcRng rng);
+ *    const SilcPKCSObject *silc_pkcs_get_pkcs(SilcPKCSType type);
  *
  * DESCRIPTION
  *
- *    Generate new key pair into the `pkcs' context. Returns FALSE on error.
- *    If the `rng' is NULL global SILC RNG will be used.
+ *    Finds PKCS context by the PKCS type.
  *
  ***/
-SilcBool silc_pkcs_generate_key(SilcPKCS pkcs, SilcUInt32 bits_key_len,
-				SilcRng rng);
+const SilcPKCSObject *silc_pkcs_find_pkcs(SilcPKCSType type);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_key_len
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_find_algorithm
  *
  * SYNOPSIS
  *
- *    SilcUInt32 silc_pkcs_get_key_len(SilcPKCS self);
+ *    const SilcPKCSAlgorithm *silc_pkcs_find_algorithm(const char *algorithm,
+ *                                                      const char *scheme);
  *
  * DESCRIPTION
  *
- *    Returns the length of the key in bits.
+ *    Finds PKCS algorithm context by the algorithm name `algorithm' and
+ *    the algorithm scheme `scheme'.  The `scheme' may be NULL.
  *
  ***/
-SilcUInt32 silc_pkcs_get_key_len(SilcPKCS self);
+const SilcPKCSAlgorithm *silc_pkcs_find_algorithm(const char *algorithm,
+						  const char *scheme);
+
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_pkcs
+ *
+ * SYNOPSIS
+ *
+ *    const SilcPKCSObject *silc_pkcs_get_pkcs(SilcPublicKey public_key);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the PKCS object from `public_key'.
+ *
+ ***/
+const SilcPKCSObject *silc_pkcs_get_pkcs(SilcPublicKey public_key);
+
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_algorithm
+ *
+ * SYNOPSIS
+ *
+ *    const SilcPKCSObject *silc_pkcs_get_algorithm(SilcPublicKey public_key);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the PKCS algorithm object from `public_key'.
+ *
+ ***/
+const SilcPKCSAlgorithm *silc_pkcs_get_algorithm(SilcPublicKey public_key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_name
  *
  * SYNOPSIS
  *
- *    const char *silc_pkcs_get_name(SilcPKCS pkcs);
+ *    const char *silc_pkcs_get_name(SilcPublicKey public_key)
  *
  * DESCRIPTION
  *
- *    Returns PKCS name.
+ *    Returns PKCS algorithm name from the public key.
  *
  ***/
-const char *silc_pkcs_get_name(SilcPKCS pkcs);
+const char *silc_pkcs_get_name(SilcPublicKey public_key);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_public_key
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_type
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, SilcUInt32 *len);
+ *    SilcPKCSType silc_pkcs_get_type(SilcPublicKey public_key);
  *
  * DESCRIPTION
  *
- *    Returns SILC style public key for the PKCS.  Note that this is not
- *    the SILC Public Key, but the raw public key data from the PKCS.
- *    The caller must free the returned data.
+ *    Returns PKCS type from the public key.
  *
  ***/
-unsigned char *silc_pkcs_get_public_key(SilcPKCS pkcs, SilcUInt32 *len);
+SilcPKCSType silc_pkcs_get_type(SilcPublicKey public_key);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_private_key
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_context
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs,
- *                                             SilcUInt32 *len);
+ *    void *silc_pkcs_get_context(SilcPKCSType type, SilcPublicKey public_key);
  *
  * DESCRIPTION
  *
- *    Returns SILC style private key.  Note that this is not SilcPrivateKey
- *    but the raw private key bits from the PKCS.  The caller must free the
- *    returned data and SHOULD zero the memory area before freeing.
+ *    Returns the internal PKCS `type' specific public key context from the
+ *    `public_key'.  The caller needs to explicitly type cast it to correct
+ *    type.  Returns NULL on error.
+ *
+ *    For SILC_PKCS_SILC the returned context is SilcSILCPublicKey.
  *
  ***/
-unsigned char *silc_pkcs_get_private_key(SilcPKCS pkcs, SilcUInt32 *len);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_set
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_pkcs_public_key_set(SilcPKCS pkcs,
- *                                        SilcPublicKey public_key);
- *
- * DESCRIPTION
- *
- *    Sets public key from SilcPublicKey. Returns the length of the key in
- *    bits.
- *
- ***/
-SilcUInt32 silc_pkcs_public_key_set(SilcPKCS pkcs, SilcPublicKey public_key);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_data_set
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_pkcs_public_key_data_set(SilcPKCS pkcs,
- *                                             unsigned char *pk,
- *                                             SilcUInt32 pk_len);
- *
- * DESCRIPTION
- *
- *    Sets public key from data. Returns the length of the key.
- *
- ***/
-SilcUInt32 silc_pkcs_public_key_data_set(SilcPKCS pkcs, unsigned char *pk,
-					 SilcUInt32 pk_len);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_private_key_set
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_pkcs_private_key_set(SilcPKCS pkcs,
- *                                         SilcPrivateKey private_key);
- *
- * DESCRIPTION
- *
- *    Sets private key from SilcPrivateKey. Returns the length of the key
- *    in bits.
- *
- ***/
-SilcUInt32 silc_pkcs_private_key_set(SilcPKCS pkcs,
-				     SilcPrivateKey private_key);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_private_key_data_set
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_pkcs_private_key_data_set(SilcPKCS pkcs,
- *                                              unsigned char *prv,
- *                                              SilcUInt32 prv_len);
- *
- * DESCRIPTION
- *
- *    Sets private key from data. Returns the length of the key.
- *
- ***/
-SilcUInt32 silc_pkcs_private_key_data_set(SilcPKCS pkcs, unsigned char *prv,
-					  SilcUInt32 prv_len);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_encrypt
- *
- * SYNOPSIS
- *
- *    SilcBool silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src,
- *                           SilcUInt32 src_len, unsigned char *dst,
- *                           SilcUInt32 *dst_len);
- *
- * DESCRIPTION
- *
- *    Encrypts. Returns FALSE on error.
- *
- ***/
-SilcBool silc_pkcs_encrypt(SilcPKCS pkcs, unsigned char *src,
-			   SilcUInt32 src_len,
-			   unsigned char *dst, SilcUInt32 *dst_len);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_decrypt
- *
- * SYNOPSIS
- *
- *    SilcBool silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src,
- *                           SilcUInt32 src_len, unsigned char *dst,
- *                           SilcUInt32 *dst_len);
- *
- * DESCRIPTION
- *
- *    Decrypts.  Returns FALSE on error.
- *
- ***/
-SilcBool silc_pkcs_decrypt(SilcPKCS pkcs, unsigned char *src,
-			   SilcUInt32 src_len,
-			   unsigned char *dst, SilcUInt32 *dst_len);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_sign
- *
- * SYNOPSIS
- *
- *    SilcBool silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src,
- *                        SilcUInt32 src_len, unsigned char *dst,
- *                        SilcUInt32 *dst_len);
- *
- * DESCRIPTION
- *
- *    Generates signature.  Returns FALSE on error.
- *
- ***/
-SilcBool silc_pkcs_sign(SilcPKCS pkcs, unsigned char *src, SilcUInt32 src_len,
-			unsigned char *dst, SilcUInt32 *dst_len);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_verify
- *
- * SYNOPSIS
- *
- *    SilcBool silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature,
- *                          SilcUInt32 signature_len, unsigned char *data,
- *                          SilcUInt32 data_len);
- *
- * DESCRIPTION
- *
- *    Verifies signature.  Returns FALSE on error.  The 'signature' is
- *    verified against the 'data'.
- *
- ***/
-SilcBool silc_pkcs_verify(SilcPKCS pkcs, unsigned char *signature,
-			  SilcUInt32 signature_len, unsigned char *data,
-			  SilcUInt32 data_len);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_sign_with_hash
- *
- * SYNOPSIS
- *
- *    SilcBool silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
- *                                  unsigned char *src, SilcUInt32 src_len,
- *                                  unsigned char *dst, SilcUInt32 *dst_len);
- *
- * DESCRIPTION
- *
- *    Generates signature with hash.  The hash is signed.  Returns FALSE on
- *    error.
- *
- ***/
-SilcBool silc_pkcs_sign_with_hash(SilcPKCS pkcs, SilcHash hash,
-				  unsigned char *src, SilcUInt32 src_len,
-				  unsigned char *dst, SilcUInt32 *dst_len);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_verify_with_hash
- *
- * SYNOPSIS
- *
- *    SilcBool silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash,
- *                                    unsigned char *signature,
- *                                    SilcUInt32 signature_len,
- *                                    unsigned char *data,
- *                                    SilcUInt32 data_len);
- *
- * DESCRIPTION
- *
- *    Verifies signature with hash.  The `data' is hashed and verified against
- *    the `signature'.  Returns FALSE on error.
- *
- ***/
-SilcBool silc_pkcs_verify_with_hash(SilcPKCS pkcs, SilcHash hash,
-				    unsigned char *signature,
-				    SilcUInt32 signature_len,
-				    unsigned char *data,
-				    SilcUInt32 data_len);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_encode_identifier
- *
- * SYNOPSIS
- *
- *    char *silc_pkcs_encode_identifier(char *username, char *host,
- *                                      char *realname, char *email,
- *                                      char *org, char *country);
- *
- * DESCRIPTION
- *
- *    Encodes and returns SILC public key identifier. If some of the
- *    arguments is NULL those are not encoded into the identifier string.
- *    Protocol says that at least username and host must be provided.
- *
- ***/
-char *silc_pkcs_encode_identifier(char *username, char *host, char *realname,
-				  char *email, char *org, char *country);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_decode_identifier
- *
- * SYNOPSIS
- *
- *    SilcPublicKeyIdentifier silc_pkcs_decode_identifier(char *identifier);
- *
- * DESCRIPTION
- *
- *    Decodes the provided `identifier' and returns allocated context for
- *    the identifier.
- *
- ***/
-SilcPublicKeyIdentifier silc_pkcs_decode_identifier(char *identifier);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_free_identifier
- *
- * SYNOPSIS
- *
- *    void silc_pkcs_free_identifier(SilcPublicKeyIdentifier identifier);
- *
- * DESCRIPTION
- *
- *    Frees decoded public key identifier context.  Call this to free the
- *    context returned by the silc_pkcs_decode_identifier.
- *
- ***/
-void silc_pkcs_free_identifier(SilcPublicKeyIdentifier identifier);
+void *silc_pkcs_get_context(SilcPKCSType type, SilcPublicKey public_key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_alloc
  *
  * SYNOPSIS
  *
- *    SilcPublicKey silc_pkcs_public_key_alloc(const char *name,
- *                                             const char *identifier,
- *                                             const unsigned char *pk,
- *                                             SilcUInt32 pk_len);
+ *    SilcBool silc_pkcs_public_key_alloc(SilcPKCSType type,
+ *                                        unsigned char *key,
+ *                                        SilcUInt32 key_len
+ *                                        SilcPublicKey *ret_public_key);
  *
  * DESCRIPTION
  *
- *    Allocates SILC style public key formed from sent arguments.  The
- *    'name' is the algorithm (PKCS) name, the 'identifier' is the public
- *    key identifier generated with silc_pkcs_encode_identifier, and the
- *    'pk' and 'pk_len' are the raw public key data returned for example
- *    by silc_pkcs_get_public_key.
+ *    Allocates SilcPublicKey of the type of `type' from the key data
+ *    `key' of length of `key_len' bytes.  Returns FALSE if the `key'
+ *    is malformed or unsupported public key type.  This function can be
+ *    used to create public key from any kind of PKCS public keys that
+ *    the implementation supports.
  *
  ***/
-SilcPublicKey silc_pkcs_public_key_alloc(const char *name,
-					 const char *identifier,
-					 const unsigned char *pk,
-					 SilcUInt32 pk_len);
+SilcBool silc_pkcs_public_key_alloc(SilcPKCSType type,
+				    unsigned char *key,
+				    SilcUInt32 key_len,
+				    SilcPublicKey *ret_public_key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_free
  *
@@ -698,136 +525,46 @@ SilcPublicKey silc_pkcs_public_key_alloc(const char *name,
  *
  * DESCRIPTION
  *
- *    Frees public key and all data in it.
+ *    Frees the public key.
  *
  ***/
 void silc_pkcs_public_key_free(SilcPublicKey public_key);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_private_key_alloc
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_export
  *
  * SYNOPSIS
  *
- *    SilcPrivateKey silc_pkcs_private_key_alloc(const char *name,
- *                                               const unsigned char *prv,
- *                                               SilcUInt32 prv_len);
+ *    unsigned char *silc_pkcs_public_key_encode(SilcPublicKey public_key,
+ *                                               SilcUInt32 *ret_len);
  *
  * DESCRIPTION
  *
- *    Allocates SILC private key formed from sent arguments.  The 'name'
- *    is the algorithm name, and the 'prv' and 'prv_len' are the raw
- *    private key bits returned by silc_pkcs_get_private_key.
+ *    Encodes the `public_key' into a binary format and returns it.  Returns
+ *    NULL on error.  Caller must free the returned buffer.
  *
  ***/
-SilcPrivateKey silc_pkcs_private_key_alloc(const char *name,
-					   const unsigned char *prv,
-					   SilcUInt32 prv_len);
+unsigned char *silc_pkcs_public_key_encode(SilcPublicKey public_key,
+					   SilcUInt32 *ret_len);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_private_key_free
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_get_len
  *
  * SYNOPSIS
  *
- *    void silc_pkcs_private_key_free(SilcPrivateKey private_key);
+ *    SilcUInt32 silc_pkcs_public_key_get_len(SilcPublicKey public_key);
  *
  * DESCRIPTION
  *
- *    Frees private key and all data in it.  The private key is zeroed
- *    before it is freed.
+ *    Returns the key length in bits from the public key.
  *
  ***/
-void silc_pkcs_private_key_free(SilcPrivateKey private_key);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_encode
- *
- * SYNOPSIS
- *
- *    unsigned char *
- *    silc_pkcs_public_key_encode(SilcPublicKey public_key, SilcUInt32 *len);
- *
- * DESCRIPTION
- *
- *    Encodes SILC style public key from SilcPublicKey.  Returns the encoded
- *    data.
- *
- ***/
-unsigned char *
-silc_pkcs_public_key_encode(SilcPublicKey public_key, SilcUInt32 *len);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_data_encode
- *
- * SYNOPSIS
- *
- *    unsigned char *
- *    silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
- *                                     char *pkcs, char *identifier,
- *                                     SilcUInt32 *len);
- *
- * DESCRIPTION
- *
- *    Encodes SILC style public key.  Returns the encoded data.
- *
- ***/
-unsigned char *
-silc_pkcs_public_key_data_encode(unsigned char *pk, SilcUInt32 pk_len,
-                                 char *pkcs, char *identifier,
-                                 SilcUInt32 *len);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_decode
- *
- * SYNOPSIS
- *
- *    SilcBool silc_pkcs_public_key_decode(unsigned char *data,
- *                                     SilcUInt32 data_len,
- *                                     SilcPublicKey *public_key);
- *
- * DESCRIPTION
- *
- *    Decodes SILC style public key. Returns TRUE if the decoding was
- *    successful. Allocates new public key as well.
- *
- ***/
-SilcBool silc_pkcs_public_key_decode(unsigned char *data, SilcUInt32 data_len,
-				 SilcPublicKey *public_key);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_payload_encode
- *
- * SYNOPSIS
- *
- *    SilcBool silc_pkcs_public_key_payload_encode(SilcPublicKey public_key);
- *
- * DESCRIPTION
- *
- *    Encodes the Public Key Payload from the public key indicated by
- *    `public_key' of type of `pk_type'.  The type is SilcSKEPKType.
- *    Returns the encoded payload buffer.
- *
- ***/
-SilcBuffer silc_pkcs_public_key_payload_encode(SilcPublicKey public_key);
-
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_payload_decode
- *
- * SYNOPSIS
- *
- *    SilcBool silc_pkcs_public_key_payload_decode(unsigned char *data,
- *                                             SilcUInt32 data_len,
- *                                             SilcPublicKey *public_key);
- *
- * DESCRIPTION
- *
- *    Decodes Public Key Payload from `data' of `data_len' bytes in length
- *    data buffer into `public_key' pointer.  Returns FALSE if the payload
- *    cannot be decoded.
- *
- ***/
-SilcBool silc_pkcs_public_key_payload_decode(unsigned char *data,
-					 SilcUInt32 data_len,
-					 SilcPublicKey *public_key);
+SilcUInt32 silc_pkcs_public_key_get_len(SilcPublicKey public_key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_compare
  *
  * SYNOPSIS
  *
  *    SilcBool silc_pkcs_public_key_compare(SilcPublicKey key1,
- *                                      SilcPublicKey key2);
+ *                                          SilcPublicKey key2);
  *
  * DESCRIPTION
  *
@@ -845,126 +582,149 @@ SilcBool silc_pkcs_public_key_compare(SilcPublicKey key1, SilcPublicKey key2);
  *
  * DESCRIPTION
  *
- *    Copies the public key indicated by `public_key' and returns new allocated
- *    public key which is indentical to the `public_key'.
+ *    Copies the public key indicated by `public_key' and returns new
+ *    allocated public key which is indentical to the `public_key'.
  *
  ***/
 SilcPublicKey silc_pkcs_public_key_copy(SilcPublicKey public_key);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_private_key_encode
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_private_key_alloc
  *
  * SYNOPSIS
  *
- *    unsigned char *
- *    silc_pkcs_private_key_encode(SilcPrivateKey private_key,
- *                                 SilcUInt32 *len);
+ *    SilcBool silc_pkcs_private_key_alloc(SilcPKCSType type,
+ *                                         unsigned char *key,
+ *                                         SilcUInt32 key_len,
+ *                                         SilcPrivateKey *ret_private_key);
  *
  * DESCRIPTION
  *
- *    Encodes SILC private key from SilcPrivateKey.  Returns the encoded data.
+ *    Allocates SilcPrivateKey of the type of `type' from the key data
+ *    `key' of length of `key_len' bytes.  Returns FALSE if the `key'
+ *    is malformed or unsupported private key type.
  *
  ***/
-unsigned char *
-silc_pkcs_private_key_encode(SilcPrivateKey private_key, SilcUInt32 *len);
+SilcBool silc_pkcs_private_key_alloc(SilcPKCSType type,
+				     unsigned char *key,
+				     SilcUInt32 key_len,
+				     SilcPrivateKey *ret_private_key);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_private_key_data_encode
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_private_key_get_len
  *
  * SYNOPSIS
  *
- *    unsigned char *
- *    silc_pkcs_private_key_data_encode(unsigned char *prv, SilcUInt32 prv_len,
- *                                      char *pkcs, SilcUInt32 *len);
+ *    SilcUInt32 silc_pkcs_private_key_get_len(SilcPrivateKey private_key);
  *
  * DESCRIPTION
  *
- *    Encodes SILC private key.  Returns the encoded data.
+ *    Returns the key length in bits from the public key.
  *
  ***/
-unsigned char *
-silc_pkcs_private_key_data_encode(unsigned char *prv, SilcUInt32 prv_len,
-				  char *pkcs, SilcUInt32 *len);
+SilcUInt32 silc_pkcs_private_key_get_len(SilcPrivateKey private_key);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_private_key_decode
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_private_key_free
  *
  * SYNOPSIS
  *
- *    SilcBool silc_pkcs_private_key_decode(unsigned char *data,
- *                                      SilcUInt32 data_len,
- *                                      SilcPrivateKey *private_key);
+ *    void silc_pkcs_private_key_free(SilcPrivateKey private_key;
  *
  * DESCRIPTION
  *
- *    Decodes SILC style private key.  Returns TRUE if the decoding was
- *    successful.  Allocates new private key as well.
+ *    Frees the private key.
  *
  ***/
-SilcBool silc_pkcs_private_key_decode(unsigned char *data, SilcUInt32 data_len,
-				  SilcPrivateKey *private_key);
+void silc_pkcs_private_key_free(SilcPrivateKey private_key);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_save_public_key
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_encrypt
  *
  * SYNOPSIS
  *
- *    SilcBool silc_pkcs_save_public_key(const char *filename,
- *                                   SilcPublicKey public_key,
- *                                   SilcUInt32 encoding);
+ *    SilcBool silc_pkcs_encrypt(SilcPublicKey public_key,
+ *                               unsigned char *src, SilcUInt32 src_len,
+ *                               unsigned char *dst, SilcUInt32 dst_size,
+ *                               SilcUInt32 *dst_len);
  *
  * DESCRIPTION
  *
- *    Saves public key into file.  Returns FALSE on error.
+ *    Encrypts with the public key. Returns FALSE on error.
  *
  ***/
-SilcBool silc_pkcs_save_public_key(const char *filename, SilcPublicKey public_key,
-			       SilcUInt32 encoding);
+SilcBool silc_pkcs_encrypt(SilcPublicKey public_key,
+			   unsigned char *src, SilcUInt32 src_len,
+			   unsigned char *dst, SilcUInt32 dst_size,
+			   SilcUInt32 *dst_len);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_save_public_key_data
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_decrypt
  *
  * SYNOPSIS
  *
- *    SilcBool silc_pkcs_save_public_key_data(const char *filename,
- *                                        unsigned char *data,
- *                                        SilcUInt32 data_len,
- *                                        SilcUInt32 encoding);
+ *    SilcBool silc_pkcs_decrypt(SilcPrivateKey private_key,
+ *                               unsigned char *src, SilcUInt32 src_len,
+ *                               unsigned char *dst, SilcUInt32 dst_size,
+ *                               SilcUInt32 *dst_len);
  *
  * DESCRIPTION
  *
- *    Saves public key into file.  The public key is already encoded as
- *    data when calling this function.  Returns FALSE on error.
+ *    Decrypts with the private key.  Returns FALSE on error.
  *
  ***/
-SilcBool silc_pkcs_save_public_key_data(const char *filename, unsigned char *data,
-				    SilcUInt32 data_len, SilcUInt32 encoding);
+SilcBool silc_pkcs_decrypt(SilcPrivateKey private_key,
+			   unsigned char *src, SilcUInt32 src_len,
+			   unsigned char *dst, SilcUInt32 dst_size,
+			   SilcUInt32 *dst_len);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_save_private_key
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_sign
  *
  * SYNOPSIS
  *
- *    SilcBool silc_pkcs_save_private_key(const char *filename,
- *                                    SilcPrivateKey private_key,
- *                                    unsigned char *passphrase,
- *                                    SilcUInt32 passphrase_len,
- *                                    SilcUInt32 encoding);
+ *    SilcBool silc_pkcs_sign(SilcPrivateKey private_key,
+ *                            unsigned char *src, SilcUInt32 src_len,
+ *                            unsigned char *dst, SilcUInt32 dst_size,
+ *                            SilcUInt32 *dst_len, SilcHash hash);
  *
  * DESCRIPTION
  *
- *    Saves private key into file.  The private key is encrypted into
- *    the file with the `passphrase' as a key.  The encryption algorithm
- *    is AES with 256 bit key in CBC mode.  Returns FALSE on error.
+ *    Generates signature with the private key.  Returns FALSE on error.
+ *    If `hash' is non-NULL the `src' will be hashed before signing.
  *
  ***/
-SilcBool silc_pkcs_save_private_key(const char *filename,
-				SilcPrivateKey private_key,
-				unsigned char *passphrase,
-				SilcUInt32 passphrase_len,
-				SilcUInt32 encoding);
+SilcBool silc_pkcs_sign(SilcPrivateKey private_key,
+			unsigned char *src, SilcUInt32 src_len,
+			unsigned char *dst, SilcUInt32 dst_size,
+			SilcUInt32 *dst_len, SilcHash hash);
+
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_verify
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_pkcs_verify(SilcPublicKey public_key,
+ *                              unsigned char *signature,
+ *                              SilcUInt32 signature_len,
+ *                              unsigned char *data,
+ *                              SilcUInt32 data_len, SilcHash hash);
+ *
+ * DESCRIPTION
+ *
+ *    Verifies signature.  Returns FALSE on error.  The 'signature' is
+ *    verified against the 'data'.  If the `hash' is non-NULL then the `data'
+ *    will hashed before verification.  If the `hash' is NULL, then the
+ *    hash algorithm to be used is retrieved from the signature.  If it
+ *    isn't present in the signature the verification is done as is without
+ *    hashing.
+ *
+ ***/
+SilcBool silc_pkcs_verify(SilcPublicKey public_key,
+			  unsigned char *signature,
+			  SilcUInt32 signature_len,
+			  unsigned char *data,
+			  SilcUInt32 data_len, SilcHash hash);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_load_public_key
  *
  * SYNOPSIS
  *
  *    SilcBool silc_pkcs_load_public_key(const char *filename,
- *                                   SilcPublicKey *public_key,
- *                                   SilcUInt32 encoding);
+ *                                       SilcPublicKey *ret_public_key);
  *
  * DESCRIPTION
  *
@@ -972,30 +732,71 @@ SilcBool silc_pkcs_save_private_key(const char *filename,
  *    if loading was successful.
  *
  ***/
-SilcBool silc_pkcs_load_public_key(const char *filename, SilcPublicKey *public_key,
-			       SilcUInt32 encoding);
+SilcBool silc_pkcs_load_public_key(const char *filename,
+				   SilcPublicKey *ret_public_key);
+
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_save_public_key
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_pkcs_save_public_key(const char *filename,
+ *                                       SilcPublicKey public_key,
+ *                                       SilcPKCSFileEncoding encoding);
+ *
+ * DESCRIPTION
+ *
+ *    Saves public key into file with specified encoding.  Returns FALSE
+ *    on error.
+ *
+ ***/
+SilcBool silc_pkcs_save_public_key(const char *filename,
+				   SilcPublicKey public_key,
+				   SilcPKCSFileEncoding encoding);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_load_private_key
  *
  * SYNOPSIS
  *
  *    SilcBool silc_pkcs_load_private_key(const char *filename,
- *                                    SilcPrivateKey *private_key,
- *                                    unsigned char *passphrase,
- *                                    SilcUInt32 passphrase_len,
- *                                    SilcUInt32 encoding);
+ *                                        const unsigned char *passphrase,
+ *                                        SilcUInt32 passphrase_len,
+ *                                        SilcPrivateKey *ret_private_key);
  *
  * DESCRIPTION
  *
  *    Loads private key from file and allocates new private key.  Returns TRUE
  *    if loading was successful.  The `passphrase' is used as decryption
- *    key of the private key file.
+ *    key of the private key file, in case it is encrypted.
  *
  ***/
 SilcBool silc_pkcs_load_private_key(const char *filename,
-				SilcPrivateKey *private_key,
-				unsigned char *passphrase,
-				SilcUInt32 passphrase_len,
-				SilcUInt32 encoding);
+				    const unsigned char *passphrase,
+				    SilcUInt32 passphrase_len,
+				    SilcPrivateKey *ret_private_key);
+
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_save_private_key
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_pkcs_save_private_key(const char *filename,
+ *                                        SilcPrivateKey private_key,
+ *                                        const unsigned char *passphrase,
+ *                                        SilcUInt32 passphrase_len,
+ *                                        SilcPKCSFileEncoding encoding,
+ *                                        SilcRng rng);
+ *
+ * DESCRIPTION
+ *
+ *    Saves private key into file.  The private key is encrypted into
+ *    the file with the `passphrase' as a key, if PKCS supports encrypted
+ *    private keys.  Returns FALSE on error.
+ *
+ ***/
+SilcBool silc_pkcs_save_private_key(const char *filename,
+				    SilcPrivateKey private_key,
+				    const unsigned char *passphrase,
+				    SilcUInt32 passphrase_len,
+				    SilcPKCSFileEncoding encoding,
+				    SilcRng rng);
 
 #endif	/* !SILCPKCS_H */
