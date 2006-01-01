@@ -72,11 +72,6 @@
 
      Fixed double free in public key setting.  Use a bit larger e as
      starting point in key generation.
-
-   o Fri Dec 30 13:39:51 EET 2005 Pekka
-
-     Support PKCS #1 format public and private keys.  Support for new
-     PKCS API.
 */
 
 #include "silc.h"

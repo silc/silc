@@ -698,6 +698,29 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
 #define SILC_ASN1_INT(x) SILC_ASN1_U1(INTEGER, x)
 #define SILC_ASN1_INT_T(o, t, x) SILC_ASN1_T1(INTEGER, o, t, x)
 
+/****f* silcasn1/SilcASN1API/SILC_ASN1_SHORT_INT
+ *
+ * SYNOPSIS
+ *
+ *    Encoding:
+ *    SILC_ASN1_SHORT_INT(integer)
+ *    SILC_ASN1_SHORT_INT_T(opts, tag, &integer)
+ *
+ *    Decoding:
+ *    SILC_ASN1_SHORT_INT(&integer)
+ *    SILC_ASN1_SHORT_INT_T(opts, tag, &integer);
+ *
+ * DESCRIPTION
+ *
+ *    Macro used to encode or decode short integer (32 bits).  The
+ *    integer type is SilcUInt32.
+ *
+ *    The `opts' is SilcAsn1Options.  The `tag' is a tag number.
+ *
+ ***/
+#define SILC_ASN1_SHORT_INT(x) SILC_ASN1_U1(SHORT_INTEGER, x)
+#define SILC_ASN1_SHORT_INT_T(o, t, x) SILC_ASN1_T1(SHORT_INTEGER, o, t, x)
+
 /****f* silcasn1/SilcASN1API/SILC_ASN1_ENUM
  *
  * SYNOPSIS

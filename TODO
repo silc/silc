@@ -175,6 +175,11 @@ lib/silcutil/silctime.[ch]	****DONE****
 lib/silcmath
 ============
 
+ o Import TFM.  Talk to Tom to add the missing functions.  Use TFM in
+   client and client library, but TMA in server, due to the significantly
+   increased memory consumption with TFM, and the rare need for public
+   key operations in server.
+
  o The SILC MP API function must start returning indication of success
    and failure of the operation.
 

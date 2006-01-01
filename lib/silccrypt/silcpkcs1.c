@@ -354,6 +354,7 @@ SilcBool silc_pkcs1_import_private_key(unsigned char *key,
   SilcAsn1 asn1;
   SilcBufferStruct alg_key;
   RsaPrivateKey *privkey;
+  SilcUInt32 ver;
 
   if (!ret_private_key)
     return FALSE;
@@ -372,7 +373,7 @@ SilcBool silc_pkcs1_import_private_key(unsigned char *key,
   if (!silc_asn1_decode(asn1, &alg_key,
 			SILC_ASN1_OPTS(SILC_ASN1_ALLOC),
 			SILC_ASN1_SEQUENCE,
-			  SILC_ASN1_INT(NULL),
+			  SILC_ASN1_SHORT_INT(&ver),
 			  SILC_ASN1_INT(&privkey->n),
 			  SILC_ASN1_INT(&privkey->e),
 			  SILC_ASN1_INT(&privkey->d),
@@ -382,6 +383,9 @@ SilcBool silc_pkcs1_import_private_key(unsigned char *key,
 			  SILC_ASN1_INT(&privkey->dQ),
 			  SILC_ASN1_INT(&privkey->qP),
 			SILC_ASN1_END, SILC_ASN1_END))
+    goto err;
+
+  if (ver != 0)
     goto err;
 
   /* Set key length */
@@ -404,7 +408,6 @@ unsigned char *silc_pkcs1_export_private_key(void *private_key,
   RsaPrivateKey *key = private_key;
   SilcAsn1 asn1;
   SilcBufferStruct alg_key;
-  SilcMPInt version;
   unsigned char *ret;
 
   asn1 = silc_asn1_alloc();
@@ -412,13 +415,11 @@ unsigned char *silc_pkcs1_export_private_key(void *private_key,
     return FALSE;
 
   /* Encode to PKCS #1 private key */
-  silc_mp_init(&version);
-  silc_mp_set_ui(&version, 0);
   memset(&alg_key, 0, sizeof(alg_key));
   if (!silc_asn1_encode(asn1, &alg_key,
 			SILC_ASN1_OPTS(SILC_ASN1_ALLOC),
 			SILC_ASN1_SEQUENCE,
-			  SILC_ASN1_INT(&version),
+			  SILC_ASN1_SHORT_INT(0),
 			  SILC_ASN1_INT(&key->n),
 			  SILC_ASN1_INT(&key->e),
 			  SILC_ASN1_INT(&key->d),
@@ -429,7 +430,6 @@ unsigned char *silc_pkcs1_export_private_key(void *private_key,
 			  SILC_ASN1_INT(&key->qP),
 			SILC_ASN1_END, SILC_ASN1_END))
     goto err;
-  silc_mp_uninit(&version);
 
   ret = silc_buffer_steal(&alg_key, ret_len);
   silc_asn1_free(asn1);

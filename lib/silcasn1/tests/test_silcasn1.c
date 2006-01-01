@@ -51,7 +51,7 @@ int main(int argc, char **argv)
   SilcBool val = TRUE;
   int i;
   unsigned char *str;
-  SilcUInt32 str_len;
+  SilcUInt32 str_len, tmpint;
   char tmp[32];
   SilcRng rng;
   SilcMPInt mpint, mpint2;
@@ -707,6 +707,39 @@ int main(int argc, char **argv)
   }
   SILC_LOG_DEBUG(("Decoding success"));
   SILC_LOG_DEBUG(("OID %s", str));
+  printf("\n");
+
+
+  memset(&node, 0, sizeof(node));
+  SILC_LOG_DEBUG(("Encoding ASN.1 tree 12 (SHORT INTEGER)"));
+  str_len = 198761;
+  tmpint = 0;
+  SILC_LOG_DEBUG(("Short integer: %d", str_len));
+  SILC_LOG_DEBUG(("Short integer: %d", tmpint));
+  success =
+    silc_asn1_encode(asn1, &node,
+		     SILC_ASN1_SHORT_INT(str_len),
+		     SILC_ASN1_SHORT_INT_T(SILC_ASN1_IMPLICIT, 100, tmpint),
+		     SILC_ASN1_END);
+  if (!success) {
+    SILC_LOG_DEBUG(("Encoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Encoding success"));
+  SILC_LOG_HEXDUMP(("ASN.1 tree"), node.data, silc_buffer_len(&node));
+  SILC_LOG_DEBUG(("Decoding ASN.1 tree 12 (SHORT INTEGER)"));
+  success =
+    silc_asn1_decode(asn1, &node,
+		     SILC_ASN1_SHORT_INT(&str_len),
+		     SILC_ASN1_SHORT_INT_T(SILC_ASN1_IMPLICIT, 100, &tmpint),
+		     SILC_ASN1_END);
+  if (!success) {
+    SILC_LOG_DEBUG(("Decoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Short integer: %d", str_len));
+  SILC_LOG_DEBUG(("Short integer: %d", tmpint));
+  SILC_LOG_DEBUG(("Decoding success"));
   printf("\n");
 
 

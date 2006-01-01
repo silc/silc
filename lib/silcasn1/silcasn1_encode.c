@@ -184,10 +184,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	    SILC_LOG_DEBUG(("Error decoding underlaying node for ANY"));
 	    goto fail;
 	  }
-	  if (enc != SILC_BER_ENC_CONSTRUCTED) {
-	    SILC_LOG_DEBUG(("ANY was not constructed type"));
-	    goto fail;
-	  }
+	  assert(enc == SILC_BER_ENC_CONSTRUCTED);
 
 	  /* Now encode with implicit tagging */
 	  len = silc_ber_encoded_len(tag, d_len, FALSE);
@@ -294,6 +291,45 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	  goto fail;
 	break;
       }
+
+    case SILC_ASN1_TAG_SHORT_INTEGER:
+      {
+	/* Short Integer */
+	SilcUInt32 sint = va_arg(asn1->ap, SilcUInt32);
+	SilcMPInt z;
+
+	if (tag == SILC_ASN1_TAG_SHORT_INTEGER)
+	  tag = SILC_ASN1_TAG_INTEGER;
+
+	memset(&buf, 0, sizeof(buf));
+
+	silc_stack_push(stack2, &frame);
+	silc_mp_sinit(stack2, &z);
+	silc_mp_set_ui(&z, sint);
+
+	len = silc_mp_sizeinbase(&z, 2);
+	if (!(len & 7))
+	  len = ((len + 7) / 8) + 1;
+	else
+	  len = (len + 7) / 8;
+	silc_buffer_srealloc_size(stack2, &buf,
+				  silc_buffer_truelen(&buf) + len);
+	buf.data[0] = 0x00;
+	silc_mp_mp2bin_noalloc(&z, buf.data, silc_buffer_len(&buf));
+	silc_mp_uninit(&z);
+
+	/* Encode the integer */
+	len = silc_ber_encoded_len(tag, len, indef);
+	dest = silc_buffer_srealloc_size(stack1, dest,
+					 silc_buffer_truelen(dest) + len);
+	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
+			      tag, buf.data, silc_buffer_len(&buf), FALSE);
+	silc_stack_pop(stack2);
+	if (!ret)
+	  goto fail;
+	break;
+      }
+      break;
 
     case SILC_ASN1_TAG_OID:
       {

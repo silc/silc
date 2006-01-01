@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2005 Pekka Riikonen
+  Copyright (C) 2003 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -94,6 +94,8 @@ const char *silc_asn1_tag_name(SilcAsn1Tag tag)
     return "set";
   case SILC_ASN1_TAG_INTEGER:
     return "integer";
+  case SILC_ASN1_TAG_SHORT_INTEGER:
+    return "short integer";
   case SILC_ASN1_TAG_OID:
     return "oid";
   case SILC_ASN1_TAG_BOOLEAN:

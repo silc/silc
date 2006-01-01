@@ -971,7 +971,6 @@ SilcBool silc_pkcs_silc_import_private_key(unsigned char *key,
     /* Parse the RSA SILC private key */
     SilcBufferStruct k;
     SilcMPInt n, e, d, dp, dq, qp, p, q;
-    SilcMPInt version;
     unsigned char *tmp;
     SilcUInt32 len, ver;
 
@@ -1147,12 +1146,10 @@ SilcBool silc_pkcs_silc_import_private_key(unsigned char *key,
     }
 
     /* Encode to PKCS #1 format */
-    silc_mp_init(&version);
-    silc_mp_set_ui(&version, 0);
     memset(&alg_key, 0, sizeof(alg_key));
     if (!silc_asn1_encode(asn1, &alg_key,
 			  SILC_ASN1_SEQUENCE,
-			    SILC_ASN1_INT(&version),
+			    SILC_ASN1_SHORT_INT(0),
 			    SILC_ASN1_INT(&n),
 			    SILC_ASN1_INT(&e),
 			    SILC_ASN1_INT(&d),
@@ -1164,7 +1161,6 @@ SilcBool silc_pkcs_silc_import_private_key(unsigned char *key,
 			  SILC_ASN1_END, SILC_ASN1_END))
       goto err;
 
-    silc_mp_uninit(&version);
     silc_mp_uninit(&n);
     silc_mp_uninit(&e);
     silc_mp_uninit(&e);

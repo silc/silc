@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2005 Pekka Riikonen
+  Copyright (C) 2003 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ struct SilcAsn1Object {
 #define SILC_ASN1_TAG_CHOICE        0x7003  /* SILC_ASN1_CHOICE given */
 #define SILC_ASN1_TAG_SEQUENCE_OF   0x7004  /* SILC_ASN1_SEQUENCE_OF given */
 #define SILC_ASN1_TAG_ANY_PRIMITIVE 0x7005  /* Pre-encoded primitive data */
+#define SILC_ASN1_TAG_SHORT_INTEGER 0x7006  /* Short integer */
 
 /* Helper macros for adding the arguments to encoder and decoder. */
 

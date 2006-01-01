@@ -310,6 +310,10 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
       }
     }
 
+    /* Short integer is actually big integer, so handle it correctly */
+    if (type == SILC_ASN1_TAG_SHORT_INTEGER && type == tag)
+      tag = SILC_ASN1_TAG_INTEGER;
+
     /* Now decode a BER encoded block from the source buffer.  It must be
        exactly the same user is expecting. */
     ret = silc_ber_decode(src, &rclass, &renc, (SilcUInt32 *)&rtag, &rdata,
@@ -483,6 +487,28 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	  break;
 	}
 
+      case SILC_ASN1_TAG_SHORT_INTEGER:
+	{
+	  /* Short Integer */
+	  SilcMPInt z;
+	  SILC_ASN1_VAD(asn1, opts, SilcUInt32, intval);
+
+	  if (rdata_len < 1) {
+	    SILC_LOG_DEBUG(("Malformed integer value"));
+	    SILC_ASN1_VA_FREE(opts, intval);
+	    ret = FALSE;
+	    goto fail;
+	  }
+
+	  silc_stack_push(asn1->stack1, NULL);
+	  silc_mp_sinit(asn1->stack1, &z);
+	  silc_mp_bin2mp((unsigned char *)rdata, rdata_len, &z);
+	  *(*intval) = silc_mp_get_ui(&z);
+	  silc_mp_uninit(&z);
+	  silc_stack_pop(asn1->stack1);
+	  break;
+	}
+
       case SILC_ASN1_TAG_OID:
 	{
 	  /* Object identifier */
@@ -493,6 +519,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 
 	  if (rdata_len < 1) {
 	    SILC_LOG_DEBUG(("Malformed object identifier value"));
+	    SILC_ASN1_VA_FREE(opts, oidstr);
 	    ret = FALSE;
 	    goto fail;
 	  }
@@ -553,6 +580,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 
 	  if (rdata_len < 2) {
 	    SILC_LOG_DEBUG(("Malformed bit string value"));
+	    SILC_ASN1_VA_FREE(opts, d);
 	    ret = FALSE;
 	    goto fail;
 	  }
@@ -579,6 +607,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 
 	  if (rdata_len < 1) {
 	    SILC_LOG_DEBUG(("Malformed UTC time value"));
+	    SILC_ASN1_VA_FREE(opts, t);
 	    ret = FALSE;
 	    goto fail;
 	  }
@@ -600,6 +629,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 
 	  if (rdata_len < 1) {
 	    SILC_LOG_DEBUG(("Malformed generalized time value"));
+	    SILC_ASN1_VA_FREE(opts, t);
 	    ret = FALSE;
 	    goto fail;
 	  }
@@ -607,6 +637,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	  /* Parse the time string */
 	  if (!silc_time_generalized(rdata, *t)) {
 	    SILC_LOG_DEBUG(("Malformed generalized time value"));
+	    SILC_ASN1_VA_FREE(opts, t);
 	    ret = FALSE;
 	    goto fail;
 	  }
@@ -621,6 +652,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 
 	  if (!silc_utf8_valid(rdata, rdata_len)) {
 	    SILC_LOG_DEBUG(("Malformed UTF-8 string value"));
+	    SILC_ASN1_VA_FREE(opts, s);
 	    ret = FALSE;
 	    goto fail;
 	  }
