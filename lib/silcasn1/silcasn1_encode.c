@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2005 Pekka Riikonen
+  Copyright (C) 2003 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -184,7 +184,10 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	    SILC_LOG_DEBUG(("Error decoding underlaying node for ANY"));
 	    goto fail;
 	  }
-	  assert(enc == SILC_BER_ENC_CONSTRUCTED);
+	  if (enc != SILC_BER_ENC_CONSTRUCTED) {
+	    SILC_LOG_DEBUG(("ANY was not constructed type"));
+	    goto fail;
+	  }
 
 	  /* Now encode with implicit tagging */
 	  len = silc_ber_encoded_len(tag, d_len, FALSE);
@@ -297,15 +300,14 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	/* Object identifier */
 	char *cp, *oidstr = va_arg(asn1->ap, char *);
 	SilcUInt32 words[24], oid, mask;
-	int i, c = -1;
+	int i, k, c = 0;
 	if (!oidstr)
 	  break;
 
 	/* Get OID words from the string */
 	cp = strchr(oidstr, '.');
 	while (cp) {
-	  c = sscanf(oidstr, "%lu", (unsigned long *)&oid);
-	  if (c < 1) {
+	  if (sscanf(oidstr, "%lu", (unsigned long *)&oid) != 1) {
 	    SILC_LOG_DEBUG(("Malformed OID string"));
 	    goto fail;
 	  }
@@ -314,6 +316,17 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	  words[c++] = oid;
 	  oidstr = cp + 1;
 	  cp = strchr(oidstr, '.');
+
+	  if (!cp) {
+	    if (sscanf(oidstr, "%lu", (unsigned long *)&oid) != 1) {
+	      SILC_LOG_DEBUG(("Malformed OID string"));
+	      goto fail;
+	    }
+	    if (c + 1 > sizeof(words) / sizeof(words[0]))
+	      goto fail;
+	    words[c++] = oid;
+	    break;
+	  }
 	}
 	if (c < 2) {
 	  SILC_LOG_DEBUG(("Malfromed OID string"));
@@ -339,7 +352,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	for (i = 2, len = 1; i < c; i++) {
 	  oid = words[i];
 	  if (oid) {
-	    c = len;
+	    k = len;
 	    mask = 0;
 	    while (oid) {
 	      buf.data[len++] = (oid & 0x7f) | mask;
@@ -347,11 +360,11 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	      mask |= 0x80;
 	    }
 	    mask = len - 1;
-	    while (c < mask) {
-	      oid = buf.data[c];
-	      buf.data[c] = buf.data[mask];
+	    while (k < mask) {
+	      oid = buf.data[k];
+	      buf.data[k] = buf.data[mask];
 	      buf.data[mask] = oid;
-	      c++;
+	      k++;
 	      mask--;
 	    }
 
@@ -360,7 +373,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	  buf.data[len++] = 0x00;
 	}
 
-	len = silc_ber_encoded_len(tag, len, indef);
+	len = silc_ber_encoded_len(tag, silc_buffer_len(&buf), indef);
 	dest = silc_buffer_srealloc_size(stack1, dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,

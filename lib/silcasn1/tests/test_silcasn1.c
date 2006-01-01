@@ -665,7 +665,7 @@ int main(int argc, char **argv)
   }
   SILC_LOG_DEBUG(("Encoding success"));
   SILC_LOG_HEXDUMP(("ASN.1 tree"), node.data, silc_buffer_len(&node));
-  SILC_LOG_DEBUG(("Decoding ASN.1 tree 9"));
+  SILC_LOG_DEBUG(("Decoding ASN.1 tree 10 (INTEGER)"));
   success =
     silc_asn1_decode(asn1, &node,
 		     SILC_ASN1_INT(&mpint2),
@@ -680,6 +680,35 @@ int main(int argc, char **argv)
   }
   SILC_LOG_DEBUG(("Decoding success"));
   printf("\n");
+
+
+  memset(&node, 0, sizeof(node));
+  SILC_LOG_DEBUG(("Encoding ASN.1 tree 11 (OID)"));
+  success =
+    silc_asn1_encode(asn1, &node,
+		     SILC_ASN1_OPTS(SILC_ASN1_ACCUMUL),
+		     SILC_ASN1_OID("1.2.840.113549"),
+		     SILC_ASN1_END);
+  if (!success) {
+    SILC_LOG_DEBUG(("Encoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Encoding success"));
+  SILC_LOG_HEXDUMP(("ASN.1 tree"), node.data, silc_buffer_len(&node));
+  SILC_LOG_DEBUG(("Decoding ASN.1 tree 11 (OID)"));
+  success =
+    silc_asn1_decode(asn1, &node,
+		     SILC_ASN1_OPTS(SILC_ASN1_ACCUMUL),
+		     SILC_ASN1_OID(&str),
+		     SILC_ASN1_END);
+  if (!success) {
+    SILC_LOG_DEBUG(("Decoding failed"));
+    goto out;
+  }
+  SILC_LOG_DEBUG(("Decoding success"));
+  SILC_LOG_DEBUG(("OID %s", str));
+  printf("\n");
+
 
 #endif
   silc_asn1_free(asn1);

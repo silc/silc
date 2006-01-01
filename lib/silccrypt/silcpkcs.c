@@ -672,13 +672,17 @@ SilcBool silc_pkcs_load_public_key(const char *filename,
 
     if (public_key->pkcs->import_public_key_file(data, data_len,
 						 SILC_PKCS_FILE_BASE64,
-						 &public_key->public_key))
+						 &public_key->public_key)) {
+      silc_free(data);
       return TRUE;
+    }
 
     if (public_key->pkcs->import_public_key_file(data, data_len,
 						 SILC_PKCS_FILE_BIN,
-						 &public_key->public_key))
+						 &public_key->public_key)) {
+      silc_free(data);
       return TRUE;
+    }
   }
 
   silc_free(data);
@@ -745,19 +749,25 @@ SilcBool silc_pkcs_load_private_key(const char *filename,
     if (!private_key->pkcs)
       continue;
 
-    if (private_key->pkcs->import_private_key_file(data, data_len,
-						   passphrase,
-						   passphrase_len,
-						   SILC_PKCS_FILE_BIN,
-						   &private_key->private_key))
+    if (private_key->pkcs->import_private_key_file(
+					      data, data_len,
+					      passphrase,
+					      passphrase_len,
+					      SILC_PKCS_FILE_BIN,
+					      &private_key->private_key)) {
+      silc_free(data);
       return TRUE;
+    }
 
-    if (private_key->pkcs->import_private_key_file(data, data_len,
-						   passphrase,
-						   passphrase_len,
-						   SILC_PKCS_FILE_BASE64,
-						   &private_key->private_key))
+    if (private_key->pkcs->import_private_key_file(
+					      data, data_len,
+					      passphrase,
+					      passphrase_len,
+					      SILC_PKCS_FILE_BASE64,
+					      &private_key->private_key)) {
+      silc_free(data);
       return TRUE;
+    }
   }
 
   silc_free(data);
