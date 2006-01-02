@@ -88,10 +88,12 @@ lib/silcutil/silcbuffer.h	****DONE****
    totally 8 bytes of memory per buffer.
 
 
-lib/silcutil/silcbuffmt.[ch]	****PARTY DONE****
+lib/silcutil/silcbuffmt.[ch]	****PARTLY DONE****
 ============================
 
- o SILC_STR_APPEND, _APPEND_TAIL.
+ o SilcStack aware silc_buffer_unformat
+
+ o silc_buffer_format reallocates automatically
 
  o SILC_STR_OFFSET
 
@@ -199,6 +201,8 @@ lib/silcasn1			****PARTLY DONE****
 
  o Some string encodings missing (copy/paste matter).
 
+ o Negative integer encoding
+
 
 lib/silcpkix
 ============
@@ -226,6 +230,10 @@ lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
 
 lib/silcserver
 ==============
+
+ o (Re)write commands/command replys.
+
+ o (Re)write notify handling.
 
  o The SERVER_SIGNOFF notify handing is not optimal, because it'll
    cause sending of multiple SIGNOFF notify's instead of the one
@@ -274,3 +282,14 @@ lib/silcserver
    key ends up being used.
 
  o The CMODE cipher & hmac change problem (#101).
+
+
+lib/silcclient
+==============
+
+ o Some form of rewrite to make it more efficient.
+
+ o Clear up interfaces.
+
+ o Remove silc_client_run and silc_client_run_one from calling SilcSchedule.
+   Leave the scheduling entirely to application.

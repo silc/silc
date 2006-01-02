@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2005 Pekka Riikonen
+  Copyright (C) 2003 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,8 +43,8 @@
  * silc_smalloc, silc_smalloc_ua, silc_scalloc, silc_srealloc, silc_smemdup,
  * silc_sstrdup, silc_buffer_salloc, silc_buffer_salloc_size,
  * silc_buffer_srealloc, silc_buffer_srealloc_size, silc_buffer_scopy,
- * silc_buffer_sclone, silc_buffer_sunformat, silc_buffer_sstrformat,
- * silc_mp_sinit
+ * silc_buffer_sclone, silc_buffer_sformat, silc_buffer_sformat_vp,
+ * silc_buffer_sstrformat, silc_mp_sinit
  *
  ***/
 

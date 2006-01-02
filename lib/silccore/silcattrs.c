@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2005 Pekka Riikonen
+  Copyright (C) 2002 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -76,6 +76,8 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 	len = strlen(service->address);
 	len2 = strlen(service->signon);
 	tmpbuf = silc_buffer_alloc_size(13 + len + len2);
+	if (!tmpbuf)
+	  return NULL;
 	silc_buffer_format(tmpbuf,
 			   SILC_STR_UI_INT(service->port),
 			   SILC_STR_UI_SHORT(len),

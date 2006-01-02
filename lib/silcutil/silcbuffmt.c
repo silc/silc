@@ -20,28 +20,30 @@
 
 #include "silc.h"
 
-/* Macros to check whether there is enough free space to add the
-   required amount of data. For unformatting this means that there must
-   be the data that is to be extracted. */
-#define FORMAT_HAS_SPACE(__x__, __req__)	\
-  do {						\
-    if (__req__ > silc_buffer_len((__x__)))	\
-      goto fail;				\
-  } while(0)
-#define UNFORMAT_HAS_SPACE(__x__, __req__)	\
-  do {						\
-    if (__req__ > silc_buffer_len((__x__)))	\
-      goto fail;				\
-    if ((__req__ + 1) <= 0)			\
-      goto fail;				\
-  } while(0)
+/************************** Types and definitions ***************************/
 
-/* Formats the arguments sent and puts them into the buffer sent as
-   argument. The buffer must be initialized beforehand and it must have
-   enough free space to include the formatted data. If this function
-   fails caller should not trust the buffer anymore and should free it.
-   This function is used, for example, to create packets to send over
-   network. */
+/* Check that buffer has enough room to format data in it, if not
+   allocate more. */
+#define FORMAT_HAS_SPACE(__s__, __x__, __req__)				    \
+do {									    \
+  if (__req__ > silc_buffer_len((__x__)))				    \
+    if (!silc_buffer_srealloc_size((__s__), (__x__),			    \
+				   silc_buffer_truelen((__x__)) + __req__)) \
+      goto fail;							    \
+  flen += __req__;							    \
+} while(0)
+
+/* Check that there is data to be unformatted */
+#define UNFORMAT_HAS_SPACE(__x__, __req__)	\
+do {						\
+  if (__req__ > silc_buffer_len((__x__)))	\
+    goto fail;					\
+  if ((__req__ + 1) <= 0)			\
+    goto fail;					\
+} while(0)
+
+
+/******************************* Formatting *********************************/
 
 int silc_buffer_format(SilcBuffer dst, ...)
 {
@@ -49,7 +51,7 @@ int silc_buffer_format(SilcBuffer dst, ...)
   int ret;
 
   va_start(ap, dst);
-  ret = silc_buffer_format_vp(dst, ap);
+  ret = silc_buffer_sformat_vp(NULL, dst, ap);
   va_end(ap);
 
   return ret;
@@ -57,9 +59,25 @@ int silc_buffer_format(SilcBuffer dst, ...)
 
 int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
 {
+  return silc_buffer_sformat_vp(NULL, dst, ap);
+}
+
+int silc_buffer_sformat(SilcStack stack, SilcBuffer dst, ...)
+{
+  va_list ap;
+  int ret;
+
+  va_start(ap, dst);
+  ret = silc_buffer_sformat_vp(stack, dst, ap);
+  va_end(ap);
+
+  return ret;
+}
+
+int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap)
+{
   SilcBufferParamType fmt;
-  unsigned char *start_ptr = dst->data;
-  int len;
+  int flen = 0;
 
   /* Parse the arguments by formatting type. */
   while (1) {
@@ -72,17 +90,20 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
 	if (!offst)
 	  break;
 	if (offst > 1) {
-	  FORMAT_HAS_SPACE(dst, offst);
+	  if (offst > silc_buffer_len(dst))
+	    goto fail;
 	  silc_buffer_pull(dst, offst);
+	  len += offst;
 	} else {
 	  silc_buffer_push(dst, -(offst));
+	  len += -(offst);
 	}
 	break;
       }
     case SILC_BUFFER_PARAM_SI8_CHAR:
       {
 	char x = (char)va_arg(ap, int);
-	FORMAT_HAS_SPACE(dst, 1);
+	FORMAT_HAS_SPACE(stack, dst, 1);
 	silc_buffer_put(dst, &x, 1);
 	silc_buffer_pull(dst, 1);
 	break;
@@ -90,7 +111,7 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
     case SILC_BUFFER_PARAM_UI8_CHAR:
       {
 	unsigned char x = (unsigned char)va_arg(ap, int);
-	FORMAT_HAS_SPACE(dst, 1);
+	FORMAT_HAS_SPACE(stack, dst, 1);
 	silc_buffer_put(dst, &x, 1);
 	silc_buffer_pull(dst, 1);
 	break;
@@ -99,7 +120,7 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
       {
 	unsigned char xf[2];
 	SilcInt16 x = (SilcInt16)va_arg(ap, int);
-	FORMAT_HAS_SPACE(dst, 2);
+	FORMAT_HAS_SPACE(stack, dst, 2);
 	SILC_PUT16_MSB(x, xf);
 	silc_buffer_put(dst, xf, 2);
 	silc_buffer_pull(dst, 2);
@@ -109,7 +130,7 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
       {
 	unsigned char xf[2];
 	SilcUInt16 x = (SilcUInt16)va_arg(ap, int);
-	FORMAT_HAS_SPACE(dst, 2);
+	FORMAT_HAS_SPACE(stack, dst, 2);
 	SILC_PUT16_MSB(x, xf);
 	silc_buffer_put(dst, xf, 2);
 	silc_buffer_pull(dst, 2);
@@ -119,7 +140,7 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
       {
 	unsigned char xf[4];
 	SilcInt32 x = va_arg(ap, SilcInt32);
-	FORMAT_HAS_SPACE(dst, 4);
+	FORMAT_HAS_SPACE(stack, dst, 4);
 	SILC_PUT32_MSB(x, xf);
 	silc_buffer_put(dst, xf, 4);
 	silc_buffer_pull(dst, 4);
@@ -129,7 +150,7 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
       {
 	unsigned char xf[4];
 	SilcUInt32 x = va_arg(ap, SilcUInt32);
-	FORMAT_HAS_SPACE(dst, 4);
+	FORMAT_HAS_SPACE(stack, dst, 4);
 	SILC_PUT32_MSB(x, xf);
 	silc_buffer_put(dst, xf, 4);
 	silc_buffer_pull(dst, 4);
@@ -139,7 +160,7 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
       {
 	unsigned char xf[8];
 	SilcInt64 x = va_arg(ap, SilcInt64);
-	FORMAT_HAS_SPACE(dst, sizeof(SilcInt64));
+	FORMAT_HAS_SPACE(stack, dst, sizeof(SilcInt64));
 	SILC_PUT64_MSB(x, xf);
 	silc_buffer_put(dst, xf, sizeof(SilcInt64));
 	silc_buffer_pull(dst, sizeof(SilcInt64));
@@ -149,7 +170,7 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
       {
 	unsigned char xf[8];
 	SilcUInt64 x = va_arg(ap, SilcUInt64);
-	FORMAT_HAS_SPACE(dst, sizeof(SilcUInt64));
+	FORMAT_HAS_SPACE(stack, dst, sizeof(SilcUInt64));
 	SILC_PUT64_MSB(x, xf);
 	silc_buffer_put(dst, xf, sizeof(SilcUInt64));
 	silc_buffer_pull(dst, sizeof(SilcUInt64));
@@ -164,7 +185,7 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
       {
 	unsigned char *x = va_arg(ap, unsigned char *);
 	SilcUInt32 tmp_len = strlen(x);
-	FORMAT_HAS_SPACE(dst, tmp_len);
+	FORMAT_HAS_SPACE(stack, dst, tmp_len);
 	silc_buffer_put(dst, x, tmp_len);
 	silc_buffer_pull(dst, tmp_len);
 	break;
@@ -179,11 +200,11 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
     case SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC:
       {
 	unsigned char *x = va_arg(ap, unsigned char *);
-	SilcUInt32 len = va_arg(ap, SilcUInt32);
+	SilcUInt32 tmp_len = va_arg(ap, SilcUInt32);
 	if (x && len) {
-	  FORMAT_HAS_SPACE(dst, len);
-	  silc_buffer_put(dst, x, len);
-	  silc_buffer_pull(dst, len);
+	  FORMAT_HAS_SPACE(stack, dst, tmp_len);
+	  silc_buffer_put(dst, x, tmp_len);
+	  silc_buffer_pull(dst, tmp_len);
 	}
 	break;
       }
@@ -200,21 +221,17 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap)
 
  fail:
   SILC_LOG_DEBUG(("Error occured while formatting data"));
-  len = dst->data - start_ptr;
-  silc_buffer_push(dst, len);
+  silc_buffer_push(dst, flen);
   return -1;
 
  ok:
   /* Push the buffer back to where it belongs. */
-  len = dst->data - start_ptr;
-  silc_buffer_push(dst, len);
-  return len;
+  silc_buffer_push(dst, flen);
+  return flen;
 }
 
-/* Unformats the buffer sent as argument. The unformatted data is returned
-   to the variable argument list of pointers. The buffer must point to the
-   start of the data area to be unformatted. Buffer maybe be safely free'd
-   after this returns succesfully. */
+
+/****************************** Unformatting ********************************/
 
 int silc_buffer_unformat(SilcBuffer src, ...)
 {
@@ -537,6 +554,9 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap)
   silc_buffer_push(src, len);
   return len;
 }
+
+
+/**************************** Utility functions *****************************/
 
 /* Formats strings into a buffer */
 

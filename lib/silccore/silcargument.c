@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -162,7 +162,8 @@ SilcBuffer silc_argument_payload_encode_one(SilcBuffer args,
 
   len = 3 + (SilcUInt16)arg_len;
   buffer = silc_buffer_realloc(buffer,
-			       (buffer ? silc_buffer_truelen(buffer) + len : len));
+			       (buffer ? silc_buffer_truelen(buffer) +
+				len : len));
   if (!buffer)
     return NULL;
   silc_buffer_pull(buffer, silc_buffer_len(buffer));

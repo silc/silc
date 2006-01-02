@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -335,10 +335,12 @@ SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
 
   /* Sign the message if wanted */
   if (flags & SILC_MESSAGE_FLAG_SIGNED && private_key && hash) {
-    sig = silc_message_signed_payload_encode(buffer->data, silc_buffer_len(buffer),
+    sig = silc_message_signed_payload_encode(buffer->data,
+					     silc_buffer_len(buffer),
 					     public_key, private_key, hash);
     if (sig) {
-      buffer = silc_buffer_realloc(buffer, silc_buffer_truelen(buffer) + silc_buffer_len(sig));
+      buffer = silc_buffer_realloc(buffer, silc_buffer_truelen(buffer) +
+				   silc_buffer_len(sig));
       if (buffer) {
 	silc_buffer_pull(buffer, 6 + data_len + pad_len);
 	silc_buffer_pull_tail(buffer, silc_buffer_len(sig));
@@ -349,14 +351,14 @@ SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
   }
 
   /* Put IV */
-  silc_buffer_pull(buffer, 6 + data_len + pad_len + (sig ? silc_buffer_len(sig) : 0));
+  silc_buffer_pull(buffer, 6 + data_len + pad_len +
+		   (sig ? silc_buffer_len(sig) : 0));
   silc_buffer_pull_tail(buffer, iv_len);
   silc_buffer_format(buffer,
 		     SILC_STR_UI_XNSTRING(iv, iv_len),
 		     SILC_STR_END);
-  silc_buffer_push(buffer, 6 + data_len + pad_len + (sig ? silc_buffer_len(sig) : 0));
-
-  SILC_LOG_HEXDUMP(("foo"), buffer->data, silc_buffer_len(buffer));
+  silc_buffer_push(buffer, 6 + data_len + pad_len +
+		   (sig ? silc_buffer_len(sig) : 0));
 
   /* Now encrypt the Message Payload and compute MAC */
   if (cipher) {
@@ -370,7 +372,8 @@ SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
       return NULL;
     }
   }
-  silc_buffer_pull_tail(buffer, silc_buffer_truelen(buffer) - silc_buffer_len(buffer));
+  silc_buffer_pull_tail(buffer, silc_buffer_truelen(buffer) -
+			silc_buffer_len(buffer));
 
   silc_buffer_free(sig);
   return buffer;
@@ -640,25 +643,25 @@ int silc_message_signed_verify(SilcMessageSignedPayload sig,
 {
   int ret = SILC_AUTH_FAILED;
   SilcBuffer sign;
-  SilcBuffer tmp;
+  SilcBufferStruct tmp;
 
   if (!sig || !remote_public_key || !hash)
     return ret;
 
   /* Generate the signature verification data, the Message Payload */
-  tmp = silc_buffer_alloc_size(6 + message->data_len + message->pad_len);
-  silc_buffer_format(tmp,
+  memset(&tmp, 0, sizeof(tmp));
+  silc_buffer_format(&tmp,
 		     SILC_STR_UI_SHORT(message->flags),
 		     SILC_STR_UI_SHORT(message->data_len),
 		     SILC_STR_UI_XNSTRING(message->data, message->data_len),
 		     SILC_STR_UI_SHORT(message->pad_len),
 		     SILC_STR_UI_XNSTRING(message->pad, message->pad_len),
 		     SILC_STR_END);
-  sign = silc_message_signed_encode_data(tmp->data, silc_buffer_len(tmp),
+  sign = silc_message_signed_encode_data(tmp.data, silc_buffer_len(&tmp),
 					 sig->pk_data, sig->pk_len,
 					 sig->pk_type);
-  silc_buffer_clear(tmp);
-  silc_buffer_free(tmp);
+  silc_buffer_clear(&tmp);
+  silc_free(silc_buffer_steal(&tmp, NULL));
 
   if (!sign)
     return ret;

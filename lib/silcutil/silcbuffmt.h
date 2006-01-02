@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,11 +42,16 @@
  * DESCRIPTION
  *
  *    Formats a buffer from a variable argument list.  Returns -1 on error
- *    and the length of the formatted buffer otherwise.
+ *    and the length of the formatted buffer otherwise.  The buffer is
+ *    enlarged automatically during formatting, if it doesn't already have
+ *    enough space.
  *
  * EXAMPLE
  *
- *    ret = silc_buffer_format(buffer,
+ *    SilcBufferStruct buffer;
+ *
+ *    memset(&buffer, 0, sizeof(buffer));
+ *    ret = silc_buffer_format(&buffer,
  *                             SILC_STR_INT(intval),
  *                             SILC_STR_CHAR(charval),
  *                             SILC_STR_INT(intval),
@@ -58,6 +63,48 @@
  *
  ***/
 int silc_buffer_format(SilcBuffer dst, ...);
+
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_sformat
+ *
+ * SYNOPSIS
+ *
+ *    int silc_buffer_sformat(SilcStack stack, SilcBuffer dst, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_buffer_format but uses `stack' to allocate the memory.
+ *    if `stack' is NULL reverts back to silc_buffer_format call.
+ *
+ ***/
+int silc_buffer_sformat(SilcStack stack, SilcBuffer dst, ...);
+
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_format_vp
+ *
+ * SYNOPSIS
+ *
+ *    int silc_buffer_format_vp(SilcBuffer dst, va_list vp);
+ *
+ * DESCRIPTION
+ *
+ *    Formats a buffer from a variable argument list indicated by the `ap'.
+ *    Returns -1 on error and the length of the formatted buffer otherwise.
+ *
+ ***/
+int silc_buffer_format_vp(SilcBuffer dst, va_list ap);
+
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_format_vp
+ *
+ * SYNOPSIS
+ *
+ *    int silc_buffer_format_vp(SilcBuffer dst, va_list vp);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_buffer_format_vp but uses `stack' to allocate the memory.
+ *    if `stack' is NULL reverts back to silc_buffer_format_vp call.
+ *
+ ***/
+int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap);
 
 /****f* silcutil/SilcBufferFormatAPI/silc_buffer_unformat
  *
@@ -83,20 +130,6 @@ int silc_buffer_format(SilcBuffer dst, ...);
  *
  ***/
 int silc_buffer_unformat(SilcBuffer src, ...);
-
-/****f* silcutil/SilcBufferFormatAPI/silc_buffer_format_vp
- *
- * SYNOPSIS
- *
- *    int silc_buffer_format_vp(SilcBuffer dst, va_list vp);
- *
- * DESCRIPTION
- *
- *    Formats a buffer from a variable argument list indicated by the `ap'.
- *    Returns -1 on error and the length of the formatted buffer otherwise.
- *
- ***/
-int silc_buffer_format_vp(SilcBuffer dst, va_list ap);
 
 /****f* silcutil/SilcBufferFormatAPI/silc_buffer_unformat_vp
  *
@@ -135,8 +168,6 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap);
  *
  ***/
 int silc_buffer_strformat(SilcBuffer dst, ...);
-
-/* SilcStack aware versions */
 
 /****f* silcutil/SilcBufferFormatAPI/silc_buffer_sstrformat
  *
@@ -445,9 +476,6 @@ typedef enum {
  *
  ***/
 #define SILC_STR_OFFSET(x) SILC_BUFFER_PARAM_OFFSET, (x)
-
-#define SILC_STR_APPEND
-#define SILC_STR_APPEND_TAIL
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_END
  *

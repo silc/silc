@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -67,8 +67,8 @@ void silc_mp_set_str(SilcMPInt *dst, const char *str, int base)
 
 SilcUInt32 silc_mp_get_ui(SilcMPInt *mp)
 {
-  SILC_NOT_IMPLEMENTED("silc_mp_get_ui");
-  assert(FALSE);
+  fp_int *tmp = mp;
+  return tmp->used > 0 ? tmp->dp[0] : 0;
 }
 
 char *silc_mp_get_str(char *str, SilcMPInt *mp, int base)

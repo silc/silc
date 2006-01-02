@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2005 Pekka Riikonen
+  Copyright (C) 1998 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -202,15 +202,17 @@ SilcBuffer silc_buffer_alloc(SilcUInt32 len)
   if (!sb)
     return NULL;
 
-  /* Allocate the actual data area */
-  sb->head = (unsigned char *)silc_calloc(len, sizeof(*sb->head));
-  if (!sb->head)
-    return NULL;
+  if (len) {
+    /* Allocate the actual data area */
+    sb->head = (unsigned char *)silc_calloc(len, sizeof(*sb->head));
+    if (!sb->head)
+      return NULL;
 
-  /* Set pointers to the new buffer */
-  sb->data = sb->head;
-  sb->tail = sb->head;
-  sb->end = sb->head + len;
+    /* Set pointers to the new buffer */
+    sb->data = sb->head;
+    sb->tail = sb->head;
+    sb->end = sb->head + len;
+  }
 
   return sb;
 }
@@ -800,7 +802,8 @@ SilcBuffer silc_buffer_realloc_size(SilcBuffer sb, SilcUInt32 newsize)
  *
  *    Allocates new SilcBuffer and returns it.
  *
- *    This routine use SilcStack are memory source.
+ *    This routine use SilcStack are memory source.  If `stack' is NULL
+ *    reverts back to normal allocating routine.
  *
  ***/
 
@@ -808,6 +811,9 @@ static inline
 SilcBuffer silc_buffer_salloc(SilcStack stack, SilcUInt32 len)
 {
   SilcBuffer sb;
+
+  if (!stack)
+    return silc_buffer_alloc(len);
 
   /* Allocate new SilcBuffer */
   sb = (SilcBuffer)silc_scalloc(stack, 1, sizeof(*sb));
@@ -840,7 +846,8 @@ SilcBuffer silc_buffer_salloc(SilcStack stack, SilcUInt32 len)
  *    `len' bytes so that the buffer is ready to use without calling the
  *    silc_buffer_pull_tail.
  *
- *    This routine use SilcStack are memory source.
+ *    This routine use SilcStack are memory source.  If `stack' is NULL
+ *    reverts back to normal allocating routine.
  *
  ***/
 
@@ -868,7 +875,8 @@ SilcBuffer silc_buffer_salloc_size(SilcStack stack, SilcUInt32 len)
  *    is exact clone of the old one except that there is now more space
  *    at the end of buffer.
  *
- *    This routine use SilcStack are memory source.
+ *    This routine use SilcStack are memory source.  If `stack' is NULL
+ *    reverts back to normal allocating routine.
  *
  ***/
 
@@ -878,6 +886,9 @@ SilcBuffer silc_buffer_srealloc(SilcStack stack,
 {
   SilcUInt32 hlen, dlen;
   unsigned char *h;
+
+  if (!stack)
+    return silc_buffer_realloc(sb, newsize);
 
   if (!sb)
     return silc_buffer_salloc(stack, newsize);
@@ -920,7 +931,8 @@ SilcBuffer silc_buffer_srealloc(SilcStack stack,
  *    automatically so that the buffer is ready to use without calling the
  *    silc_buffer_pull_tail.
  *
- *    This routine use SilcStack are memory source.
+ *    This routine use SilcStack are memory source.  If `stack' is NULL
+ *    reverts back to normal allocating routine.
  *
  ***/
 
@@ -948,7 +960,8 @@ SilcBuffer silc_buffer_srealloc_size(SilcStack stack,
  *    currently valid data area, nothing more. Use silc_buffer_clone to
  *    copy entire buffer.
  *
- *    This routine use SilcStack are memory source.
+ *    This routine use SilcStack are memory source.  If `stack' is NULL
+ *    reverts back to normal allocating routine.
  *
  ***/
 
@@ -978,7 +991,8 @@ SilcBuffer silc_buffer_scopy(SilcStack stack, SilcBuffer sb)
  *    everything from the source buffer. The result is exact clone of
  *    the original buffer.
  *
- *    This routine use SilcStack are memory source.
+ *    This routine use SilcStack are memory source.  If `stack' is NULL
+ *    reverts back to normal allocating routine.
  *
  ***/
 
