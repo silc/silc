@@ -1,3 +1,11 @@
+Thu Jan  5 20:02:31 CET 2006 Patrik Weiskircher <pat@icore.at>
+
+	* make sure session->hostname and session->port are valid before the
+	  application callback is done, since things will go wrong if the
+	  application immediately calls silc_client_file_receive. Affected
+	  file lib/silcclient/client_ftp.c.
+	  Patch received from Stefan Siegel <stesie@brokenpipe.de>, thanks!
+
 Fri Dec 30 22:54:21 EET 2005  Pekka Riikonen <priikone@silcnet.org>
 
 	* New SILC PKCS API enabling support for other public keys
