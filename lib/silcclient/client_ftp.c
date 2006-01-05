@@ -1155,14 +1155,14 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
     session->client_entry = client_entry;
     silc_dlist_add(conn->internal->ftp_sessions, session);
 
-    /* Let the application know */
-    client->internal->ops->ftp(client, conn, client_entry,
-			       session->session_id, hostname, port);
-
     if (hostname && port) {
       session->hostname = strdup(hostname);
       session->port = port;
     }
+
+    /* Let the application know */
+    client->internal->ops->ftp(client, conn, client_entry,
+			       session->session_id, hostname, port);
 
     goto out;
   }

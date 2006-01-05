@@ -1,5 +1,12 @@
-Wed Dec 14 19:21:42 CET 2005 Jochen Eisinger <coffee@silcnet.org>
+Thu Jan  5 20:02:31 CET 2006 Patrik Weiskircher <pat@icore.at>
 
+	* make sure session->hostname and session->port are valid before the
+	  application callback is done, since things will go wrong if the
+	  application immediately calls silc_client_file_receive. Affected
+	  file lib/silcclient/client_ftp.c.
+	  Patch received from Stefan Siegel <stesie@brokenpipe.de>, thanks!
+
+Wed Dec 14 19:21:42 CET 2005 Jochen Eisinger <coffee@silcnet.org> 
 	* Fixed autodist configuration for silc-client.  Affected file
 	  configure.ad
 	* Honor user set hostname.  Also give the user a chance to
