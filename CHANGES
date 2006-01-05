@@ -1,6 +1,6 @@
 Wed Dec 14 19:21:42 CET 2005 Jochen Eisinger <coffee@silcnet.org>
 
-	* Fixed autodist configuration for sic-client.  Affected file
+	* Fixed autodist configuration for silc-client.  Affected file
 	  configure.ad
 	* Honor user set hostname.  Also give the user a chance to
 	  read the error message.  Affected file 
