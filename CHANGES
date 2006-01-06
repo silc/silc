@@ -1,3 +1,8 @@
+Fri Jan  6 13:08:15 CET 2006 Jochen Eisinger <coffee@silcnet.org>
+
+	* Fixed more autodist issues.  Affected file doc/Makefile.ad,
+	  apps/irssi/src/perl/Makefile.am, distdir/post-process-dist.
+
 Thu Jan  5 20:02:31 CET 2006 Patrik Weiskircher <pat@icore.at>
 
 	* make sure session->hostname and session->port are valid before the
@@ -7,6 +12,7 @@ Thu Jan  5 20:02:31 CET 2006 Patrik Weiskircher <pat@icore.at>
 	  Patch received from Stefan Siegel <stesie@brokenpipe.de>, thanks!
 
 Wed Dec 14 19:21:42 CET 2005 Jochen Eisinger <coffee@silcnet.org> 
+
 	* Fixed autodist configuration for silc-client.  Affected file
 	  configure.ad
 	* Honor user set hostname.  Also give the user a chance to

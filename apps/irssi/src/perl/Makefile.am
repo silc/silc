@@ -157,7 +157,7 @@ clean-generic:
 distclean-generic:
 	for dir in $(perl_dirs); do \
 	  cd $$dir && \
-	  $(MAKE) realclean && rm -f Makefile.PL && \
+	  test ! -f Makefile || $(MAKE) realclean && rm -f Makefile.PL && \
 	  cd ..; \
 	done
 

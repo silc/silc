@@ -87,6 +87,8 @@ doc-install:
 	-mkdir -p $(docdir)
 #ifdef SILC_DIST_TOOLKIT
 	-$(INSTALL_DATA) $(top_srcdir)/doc/CodingStyle $(docdir)/
+	-$(INSTALL_DATA) $(top_srcdir)/GPL $(docdir)/
+	-$(INSTALL_DATA) $(top_srcdir)/BSD $(docdir)/
 #endif SILC_DIST_TOOLKIT
 	-$(INSTALL_DATA) $(top_srcdir)/doc/FAQ $(docdir)/
 	-$(INSTALL_DATA) $(top_srcdir)/doc/*.txt $(docdir)/
@@ -104,6 +106,9 @@ EXTRA_DIST = 			\
 #ifdef SILC_DIST_CLIENT
 	silc.1			\
 #endif SILC_DIST_CLIENT
+#ifndef SILC_DIST_CLIENT
+	example_silcd.conf 	\
+#endif
 #ifdef SILC_DIST_SERVER
 	examples silcd.8 silcd.conf.5	\
 #endif SILC_DIST_SERVER
@@ -112,7 +117,6 @@ EXTRA_DIST = 			\
 	CodingStyle 		\
 #endif SILC_DIST_TOOLKIT
 	FAQ 			\
-	example_silcd.conf 	\
 	silcalgs.conf 		\
 	draft-riikonen*.txt
 
