@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2005 Pekka Riikonen
+  Copyright (C) 1998 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -528,7 +528,8 @@ void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
  * SYNOPSIS
  *
  *    void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
- *                                     SilcTaskEvent mask, SilcBool send_events);
+ *                                     SilcTaskEvent mask,
+ *                                     SilcBool send_events);
  *
  * DESCRIPTION
  *
