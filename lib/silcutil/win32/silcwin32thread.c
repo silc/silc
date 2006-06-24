@@ -4,12 +4,12 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -19,6 +19,8 @@
 /* $Id$ */
 
 #include "silc.h"
+
+/**************************** SILC Thread API *******************************/
 
 #ifdef SILC_THREADS
 
@@ -82,7 +84,7 @@ void silc_thread_exit(void *exit_value)
 {
 #ifdef SILC_THREADS
   SilcWin32Thread thread = TlsGetValue(silc_thread_tls);
-  
+
   if (thread) {
     /* If the thread is waitable the memory is freed only in silc_thread_wait
        by another thread. If not waitable, free it now. */
@@ -107,8 +109,8 @@ SilcThread silc_thread_self(void)
     HANDLE handle = GetCurrentThread ();
     HANDLE process = GetCurrentProcess ();
     self = silc_calloc(1, sizeof(*self));
-    DuplicateHandle(process, handle, process, 
-		    &self->thread, 0, FALSE, 
+    DuplicateHandle(process, handle, process,
+		    &self->thread, 0, FALSE,
 		    DUPLICATE_SAME_ACCESS);
     TlsSetValue(silc_thread_tls, self);
   }
@@ -142,4 +144,148 @@ SilcBool silc_thread_wait(SilcThread thread, void **exit_value)
 #else
   return FALSE;
 #endif
+}
+
+
+/***************************** SILC Mutex API *******************************/
+
+/* SILC Mutex structure */
+struct SilcMutexStruct {
+#ifdef SILC_THREADS
+  CRITICAL_SECTION mutex;
+  BOOL locked;
+#else
+  void *tmp;
+#endif /* SILC_THREADS */
+};
+
+SilcBool silc_mutex_alloc(SilcMutex *mutex)
+{
+#ifdef SILC_THREADS
+  *mutex = silc_calloc(1, sizeof(**mutex));
+  if (!(*mutex))
+    return FALSE;
+  InitializeCriticalSection(&((*mutex)->mutex));
+  return TRUE;
+#else
+  return FALSE;
+#endif /* SILC_THREADS */
+}
+
+void silc_mutex_free(SilcMutex mutex)
+{
+#ifdef SILC_THREADS
+  if (mutex) {
+    DeleteCriticalSection(&mutex->mutex);
+    silc_free(mutex);
+  }
+#endif /* SILC_THREADS */
+}
+
+void silc_mutex_lock(SilcMutex mutex)
+{
+#ifdef SILC_THREADS
+  if (mutex) {
+    EnterCriticalSection(&mutex->mutex);
+    assert(mutex->locked == FALSE);
+    mutex->locked = TRUE;
+  }
+#endif /* SILC_THREADS */
+}
+
+void silc_mutex_unlock(SilcMutex mutex)
+{
+#ifdef SILC_THREADS
+  if (mutex) {
+    assert(mutex->locked == TRUE);
+    mutex->locked = FALSE;
+    LeaveCriticalSection(&mutex->mutex);
+  }
+#endif /* SILC_THREADS */
+}
+
+
+/**************************** SILC CondVar API ******************************/
+
+/* SILC Conditional Variable context */
+struct SilcCondVarStruct {
+#ifdef SILC_THREADS
+  HANDLE event;
+#endif /* SILC_THREADS*/
+  unsigned int waiters : 23;
+  unsigned int signal  : 1;
+};
+
+SilcBool silc_condvar_alloc(SilcCondVar *cond)
+{
+#ifdef SILC_THREADS
+  *cond = silc_calloc(1, sizeof(**cond));
+  if (*cond == NULL)
+    return FALSE;
+  (*cond)->event = CreateEvent(NULL, TRUE, FALSE, NULL);
+  return TRUE;
+#else
+  return FALSE;
+#endif /* SILC_THREADS*/
+}
+
+void silc_condvar_free(SilcCondVar cond)
+{
+#ifdef SILC_THREADS
+  CloseHandle(cond->event);
+  silc_free(cond);
+#endif /* SILC_THREADS*/
+}
+
+void silc_condvar_signal(SilcCondVar cond)
+{
+#ifdef SILC_THREADS
+  cond->signal = TRUE;
+  SetEvent(cond->event);
+#endif /* SILC_THREADS*/
+}
+
+void silc_condvar_broadcast(SilcCondVar cond)
+{
+#ifdef SILC_THREADS
+  cond->signal = TRUE;
+  SetEvent(cond->event);
+#endif /* SILC_THREADS*/
+}
+
+void silc_condvar_wait(SilcCondVar cond, SilcMutex mutex)
+{
+#ifdef SILC_THREADS
+  silc_condvar_timedwait(cond, mutex, NULL);
+#endif /* SILC_THREADS*/
+}
+
+SilcBool silc_condvar_timedwait(SilcCondVar cond, SilcMutex mutex,
+				int timeout)
+{
+#ifdef SILC_THREADS
+  DWORD ret, t = INFINITE;
+
+  if (timeout)
+    t = timeout;
+
+  while (TRUE) {
+    cond->waiters++;
+    silc_mutex_unlock(mutex);
+
+    ret = WaitForSingleObject(cond->event, t);
+
+    silc_mutex_lock(mutex);
+    cond->waiters--;
+
+    if (ret != WAIT_OBJECT_0)
+      return FALSE;
+
+    if (cond->signal) {
+      cond->signal = FALSE;
+      ResetEvent(cond->event);
+      break;
+    }
+  }
+#endif /* SILC_THREADS*/
 }

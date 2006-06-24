@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2001 Pekka Riikonen
+#  Copyright (C) 2001 - 2006 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ libsilcwin32util_la_SOURCES = 	\
 	silcwin32schedule.c	\
 	silcwin32sockconn.c	\
 	silcwin32util.c		\
-	silcwin32mutex.c	\
 	silcwin32thread.c
 
 include $(top_srcdir)/Makefile.defines.in
