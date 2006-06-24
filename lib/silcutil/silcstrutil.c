@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2005 Pekka Riikonen
+  Copyright (C) 2002 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -232,9 +232,9 @@ unsigned char *silc_identifier_check(const unsigned char *identifier,
    validity of the string. */
 
 SilcBool silc_identifier_verify(const unsigned char *identifier,
-			    SilcUInt32 identifier_len,
-			    SilcStringEncoding identifier_encoding,
-			    SilcUInt32 max_allowed_length)
+				SilcUInt32 identifier_len,
+				SilcStringEncoding identifier_encoding,
+				SilcUInt32 max_allowed_length)
 {
   SilcStringprepStatus status;
 
@@ -289,9 +289,9 @@ unsigned char *silc_channel_name_check(const unsigned char *identifier,
    validity of the string. */
 
 SilcBool silc_channel_name_verify(const unsigned char *identifier,
-			      SilcUInt32 identifier_len,
-			      SilcStringEncoding identifier_encoding,
-			      SilcUInt32 max_allowed_length)
+				  SilcUInt32 identifier_len,
+				  SilcStringEncoding identifier_encoding,
+				  SilcUInt32 max_allowed_length)
 {
   SilcStringprepStatus status;
 
