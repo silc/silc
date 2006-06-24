@@ -1,3 +1,8 @@
+Sat Jun 24 22:33:18 EEST 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added conditional variables.  New files are 
+	  lib/silcutil/silcondvar.h and platform specific implementations.
+
 Thu Jan  5 20:02:31 CET 2006 Patrik Weiskircher <pat@icore.at>
 
 	* make sure session->hostname and session->port are valid before the
