@@ -177,6 +177,21 @@ typedef struct {
 #define silc_buffer_taillen(x) (SilcUInt32)((x)->end - (x)->tail)
 /***/
 
+/****f* silcutil/SilcBufferAPI/silc_buffer_data
+ *
+ * NAME
+ *
+ *    unsigned char *silc_buffer_data(SilcBuffer sb)
+ *
+ * DESCRIPTION
+ *
+ *    Returns pointer to the data area of the buffer.
+ *
+ * SOURCE
+ */
+#define silc_buffer_data(x) (x)->data
+/***/
+
 /* Inline functions */
 
 /****f* silcutil/SilcBufferAPI/silc_buffer_alloc
@@ -226,7 +241,7 @@ SilcBuffer silc_buffer_alloc(SilcUInt32 len)
  *
  * DESCRIPTION
  *
- *    Frees SilcBuffer.
+ *    Frees SilcBuffer.  Can be called safely `sb' as NULL.
  *
  ***/
 
