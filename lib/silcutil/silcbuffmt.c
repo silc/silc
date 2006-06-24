@@ -93,10 +93,10 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap)
 	  if (offst > silc_buffer_len(dst))
 	    goto fail;
 	  silc_buffer_pull(dst, offst);
-	  len += offst;
+	  flen += offst;
 	} else {
 	  silc_buffer_push(dst, -(offst));
-	  len += -(offst);
+	  flen += -(offst);
 	}
 	break;
       }
@@ -201,7 +201,7 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap)
       {
 	unsigned char *x = va_arg(ap, unsigned char *);
 	SilcUInt32 tmp_len = va_arg(ap, SilcUInt32);
-	if (x && len) {
+	if (x && tmp_len) {
 	  FORMAT_HAS_SPACE(stack, dst, tmp_len);
 	  silc_buffer_put(dst, x, tmp_len);
 	  silc_buffer_pull(dst, tmp_len);
