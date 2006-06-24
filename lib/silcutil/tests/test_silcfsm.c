@@ -258,9 +258,6 @@ SILC_FSM_STATE(test_st_eighth)
     }
   }
 
-  for (i = 0; i < NUM_THREADS; i++)
-    silc_fsm_uninit(&f->threads[i].thread);
-
   SILC_LOG_DEBUG(("All %d threads terminated", NUM_THREADS));
 
   /** Move to next thread */
@@ -319,9 +316,6 @@ SILC_FSM_STATE(test_st_tenth)
       SILC_FSM_SEMA_WAIT(&f->threads2[i].sema);
       f->threads2[i].finished = TRUE;
     }
-
-  for (i = 0; i < NUM_THREADS; i++)
-    silc_fsm_uninit(&f->threads2[i].thread);
 
   SILC_LOG_DEBUG(("All %d real threads terminated", NUM_THREADS));
 

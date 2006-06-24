@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -137,6 +137,9 @@ SILC_TASK_CALLBACK(silc_fsm_free_final)
   SilcFSM f = context;
 
 #if defined(SILC_DEBUG)
+  /* We must be finished */
+  assert(f->finished);
+
   /* Machine must not have active threads */
   if (!f->thread && f->u.m.threads)
     assert(f->u.m.threads == 0);
@@ -157,35 +160,6 @@ void silc_fsm_free(void *fsm)
 {
   SilcFSM f = fsm;
   silc_schedule_task_add_timeout(f->schedule, silc_fsm_free_final, f, 0, 1);
-}
-
-/* FSM is uninitialized through scheduler to make sure that all dying
-   real system threads will have their finish callbacks scheduled before
-   this one (when SILC_FSM_THREAD_WAIT was used). */
-
-SILC_TASK_CALLBACK(silc_fsm_uninit_final)
-{
-  SilcFSM f = context;
-
-#if defined(SILC_DEBUG)
-  /* Machine must not have active threads */
-  if (!f->thread && f->u.m.threads)
-    assert(f->u.m.threads == 0);
-#endif /* SILC_DEBUG */
-
-  if (!f->thread && f->u.m.lock)
-    silc_mutex_free(f->u.m.lock);
-
-  if (f->thread && f->u.t.sema)
-    silc_fsm_sema_free(f->u.t.sema);
-}
-
-/* Uninitializes FSM */
-
-void silc_fsm_uninit(void *fsm)
-{
-  SilcFSM f = fsm;
-  silc_schedule_task_add_timeout(f->schedule, silc_fsm_uninit_final, f, 0, 1);
 }
 
 /* Task to start real thread. We start threads through scheduler, not
@@ -433,6 +407,11 @@ SILC_TASK_CALLBACK(silc_fsm_finish)
       fsm->destructor(fsm, fsm->fsm_context, fsm->destructor_context);
 
   } else {
+    if (fsm->u.m.lock) {
+      silc_mutex_free(fsm->u.m.lock);
+      fsm->u.m.lock = NULL;
+    }
+
     /* Call the destructor callback. */
     if (fsm->destructor)
       fsm->destructor(fsm, fsm->fsm_context, fsm->destructor_context);

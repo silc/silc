@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005, 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ typedef struct SilcFSMObject *SilcFSM;
  *
  *    The actual FSM context and can be used as pre-allocated FSM context,
  *    instead of SilcFSM context.  This context is initialized with the
- *    silc_fsm_init function.  It is uninitialized with silc_fsm_uninit.
+ *    silc_fsm_init function.  It need not be uninitialized.
  *
  ***/
 typedef struct SilcFSMObject SilcFSMStruct;
@@ -101,8 +101,7 @@ typedef struct SilcFSMObject *SilcFSMThread;
  *
  *    FSM thread context and can be used as a pre-allocated FSM thread context,
  *    instead of SilcFSMThread context.  This context is initialized with the
- *    silc_fsm_thread_init function.  It is uninitialized with the
- *    silc_fsm_uninit function.
+ *    silc_fsm_thread_init function.  It need not be uninitialized.
  *
  ***/
 typedef struct SilcFSMObject SilcFSMThreadStruct;
@@ -535,26 +534,6 @@ void silc_fsm_thread_init(SilcFSMThread thread,
  *
  ***/
 void silc_fsm_free(void *fsm);
-
-/****f* silcutil/SilcFSMAPI/silc_fsm_uninit
- *
- * SYNOPSIS
- *
- *    void silc_fsm_uninit(void *fsm);
- *
- * DESCRIPTION
- *
- *    Uninitializes a pre-allocated SilcFSM or SilcFSMThread context.
- *    If you used the function silc_fsm_init or silc_fsm_thread_init, call
- *    this function to uninitialize it.  This function is used with both
- *    SilcFSMStruct and SilcFSMThreadStruct contexts.
- *
- * NOTES
- *
- *    When uninitializing FSM, it must not have any active threads.
- *
- ***/
-void silc_fsm_uninit(void *fsm);
 
 /****f* silcutil/SilcFSMAPI/silc_fsm_start
  *
