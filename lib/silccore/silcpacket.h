@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -788,6 +788,100 @@ SilcBool silc_packet_send_ext(SilcPacketStream stream,
 			      SilcIdType dst_id_type, void *dst_id,
 			      const unsigned char *data, SilcUInt32 data_len,
 			      SilcCipher cipher, SilcHmac hmac);
+
+/****f* silccore/SilcPacketAPI/silc_packet_wait
+ *
+ * SYNOPSIS
+ *
+ *    void *silc_packet_wait_init(SilcPacketStream stream, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Initializes a packet waiter for the packet stream `stream' and
+ *    for the variable argument list of packet types.  The function
+ *    silc_packet_wait can be used to block the thread until a packet
+ *    has been received.  This function is used to initialize the waiting
+ *    and to give the list of packet types that caller wish to receive.
+ *    The variable argument list must end with -1.  To receive all
+ *    packets use SILC_PACKET_ANY.  Returns a context that must be given
+ *    to the silc_packet_wait function as argument.  Returns NULL on
+ *    error.  To uninitialize the waiting call silc_packet_wait_uninit.
+ *
+ * EXAMPLE
+ *
+ *      void *waiter;
+ *
+ *      // Will wait for private message packets
+ *      waiter = silc_packet_wait_init(stream,
+ *                                     SILC_PACKET_PRIVATE_MESSAGE, -1);
+ *
+ *
+ ***/
+void *silc_packet_wait_init(SilcPacketStream stream, ...);
+
+/****f* silccore/SilcPacketAPI/silc_packet_wait
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_wait_uninit(void *waiter, SilcPacketStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Uninitializes the waiting context.
+ *
+ ***/
+void silc_packet_wait_uninit(void *waiter, SilcPacketStream stream);
+
+/****f* silccore/SilcPacketAPI/silc_packet_wait
+ *
+ * SYNOPSIS
+ *
+ *    int silc_packet_wait(void *waiter, int timeout,
+ *                         SilcPacket *return_packet)
+ *
+ * DESCRIPTION
+ *
+ *    A special function that can be used to wait for a packet to arrive.
+ *    This function will block the calling process or thread until either
+ *    a packet is received into the `return_packet' pointer or the specified
+ *    timeout value `timeout', which is in milliseconds, will expire.  If
+ *    the timeout is 0, no timeout exist.  Before calling this function the
+ *    silc_packet_wait_init must be called.  The caller is responsible for
+ *    freeing the returned packet with silc_packet_free.
+ *
+ *    This function can be used for example from a thread that wants to
+ *    block until SILC packet has been received.
+ *
+ *    Returns 1 when packet was received, 0 if timeout occurred and -1 if
+ *    error occurred.
+ *
+ * EXAMPLE
+ *
+ *    static int foo_read_data(FooContext c)
+ *    {
+ *      SilcPacket packet;
+ *      void *waiter;
+ *      ...
+ *
+ *      // Will wait for private message packets
+ *      if (c->initialized == FALSE) {
+ *        waiter = silc_packet_wait_init(stream,
+ *                                       SILC_PACKET_PRIVATE_MESSAGE, -1);
+ *        c->initialized = TRUE;
+ *      }
+ *
+ *      ...
+ *      // Wait here until packet is received
+ *      if ((silc_packet_wait(waiter, 0, &packet)) != -1)
+ *        return -1;
+ *
+ *      ... process packet ...
+ *
+ *      return 1;
+ *    }
+ *
+ ***/
+int silc_packet_wait(void *waiter, int timeout, SilcPacket *return_packet);
 
 /****f* silccore/SilcPacketAPI/silc_packet_free
  *

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -211,8 +211,8 @@ static void silc_packet_stream_io(SilcStream stream, SilcStreamStatus status,
     break;
 
   case SILC_STREAM_CAN_READ:
-    /* Packet receiving can only happen in one thread, so locking is not
-       required in packet receiving procedure. */
+    /* Packet receiving can only happen in one thread for one SilcPacketStream,
+       so locking is not required in packet receiving procedure. */
     silc_mutex_unlock(ps->lock);
 
     SILC_LOG_DEBUG(("Reading data from stream"));
@@ -463,14 +463,14 @@ void silc_packet_stream_set_router(SilcPacketStream stream)
   stream->is_router = TRUE;
 }
 
+
 /* Links `callbacks' to `stream' for specified packet types */
 
-SilcBool silc_packet_stream_link(SilcPacketStream stream,
-				 SilcPacketCallbacks *callbacks,
-				 void *callback_context,
-				 int priority, ...)
+static SilcBool silc_packet_stream_link_va(SilcPacketStream stream,
+					   SilcPacketCallbacks *callbacks,
+					   void *callback_context,
+					   int priority, va_list ap)
 {
-  va_list ap;
   SilcPacketProcess p, e;
   SilcInt32 packet_type;
   int i;
@@ -510,10 +510,7 @@ SilcBool silc_packet_stream_link(SilcPacketStream stream,
   if (!e)
     silc_dlist_add(stream->process, p);
 
-  silc_mutex_unlock(stream->lock);
-
   /* Get packet types to process */
-  va_start(ap, priority);
   i = 1;
   while (1) {
     packet_type = va_arg(ap, SilcInt32);
@@ -525,19 +522,40 @@ SilcBool silc_packet_stream_link(SilcPacketStream stream,
       break;
 
     p->types = silc_realloc(p->types, sizeof(*p->types) * (i + 1));
-    if (!p->types)
+    if (!p->types) {
+      silc_mutex_unlock(stream->lock);
       return FALSE;
+    }
 
     p->types[i - 1] = (SilcPacketType)packet_type;
     i++;
   }
   if (p->types)
     p->types[i - 1] = 0;
-  va_end(ap);
+
+  silc_mutex_unlock(stream->lock);
 
   silc_packet_stream_ref(stream);
 
   return TRUE;
+}
+
+/* Links `callbacks' to `stream' for specified packet types */
+
+SilcBool silc_packet_stream_link(SilcPacketStream stream,
+				 SilcPacketCallbacks *callbacks,
+				 void *callback_context,
+				 int priority, ...)
+{
+  va_list ap;
+  SilcBool ret;
+
+  va_start(ap, priority);
+  ret = silc_packet_stream_link_va(stream, callbacks, callback_context,
+				   priority, ap);
+  va_end(ap);
+
+  return ret;
 }
 
 /* Unlinks `callbacks' from `stream'. */
@@ -886,13 +904,15 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
 		   packet.data, silc_buffer_len(&packet));
 
   /* Encrypt the packet */
-  if (cipher)
+  if (cipher) {
+    SILC_LOG_DEBUG(("Encrypting packet"));
     if (!silc_cipher_encrypt(cipher, packet.data, packet.data,
 			     enclen, NULL)) {
       SILC_LOG_ERROR(("Packet encryption failed"));
       silc_mutex_unlock(stream->lock);
       return FALSE;
     }
+  }
 
   /* Compute HMAC */
   if (hmac) {
@@ -1377,4 +1397,143 @@ static void silc_packet_read_process(SilcPacketStream stream)
   }
 
   silc_buffer_reset(&stream->inbuf);
+}
+
+
+/****************************** Packet Waiting ******************************/
+
+/* Packet wait receive callback */
+static SilcBool
+silc_packet_wait_packet_receive(SilcPacketEngine engine,
+				SilcPacketStream stream,
+				SilcPacket packet,
+				void *callback_context,
+				void *stream_context);
+
+/* Packet waiting callbacks */
+static SilcPacketCallbacks silc_packet_wait_cbs =
+{
+  silc_packet_wait_packet_receive, NULL, NULL
+};
+
+/* Packet waiting context */
+typedef struct {
+  SilcMutex wait_lock;
+  SilcCond wait_cond;
+  SilcList packet_queue;
+  SilcBool waiting;
+} *SilcPacketWait;
+
+/* Packet wait receive callback */
+
+static SilcBool
+silc_packet_wait_packet_receive(SilcPacketEngine engine,
+				SilcPacketStream stream,
+				SilcPacket packet,
+				void *callback_context,
+				void *stream_context)
+{
+  SilcPacketWait pw = callback_context;
+
+  /* Signal the waiting thread for a new packet */
+  silc_mutex_lock(pw->wait_lock);
+
+  if (!pw->waiting) {
+    silc_mutex_unlock(pw->wait_lock);
+    return FALSE;
+  }
+
+  silc_list_add(pw->packet_queue, packet);
+  silc_cond_broadcast(pw->wait_cond);
+
+  silc_mutex_unlock(pw->wait_lock);
+
+  return TRUE;
+}
+
+/* Initialize packet waiting */
+
+void *silc_packet_wait_init(SilcPacketStream stream, ...)
+{
+  SilcPacketWait pw;
+  SilcBool ret;
+  va_list ap;
+
+  pw = silc_calloc(1, sizeof(*pw));
+  if (!pw)
+    return NULL;
+
+  /* Allocate mutex and conditional variable */
+  if (!silc_mutex_alloc(&pw->wait_lock)) {
+    silc_free(pw);
+    return NULL;
+  }
+  if (!silc_cond_alloc(&pw->wait_cond)) {
+    silc_mutex_free(pw->wait_lock);
+    silc_free(pw);
+    return NULL;
+  }
+
+  /* Link to the packet stream for the requested packet types */
+  va_start(ap, stream);
+  ret = silc_packet_stream_link_va(stream, &silc_packet_wait_cbs, pw,
+				   10000000, ap);
+  va_end(ap);
+  if (!ret) {
+    silc_cond_free(pw->wait_cond);
+    silc_mutex_free(pw->wait_lock);
+    silc_free(pw);
+    return NULL;
+  }
+
+  /* Initialize packet queue */
+  silc_list_init(pw->packet_queue, struct SilcPacketStruct, next);
+
+  return (void *)pw;
+}
+
+/* Uninitialize packet waiting */
+
+void silc_packet_wait_uninit(void *context, SilcPacketStream stream)
+{
+  SilcPacketWait pw = context;
+  SilcPacket packet;
+
+  silc_mutex_lock(pw->wait_lock);
+  silc_packet_stream_unlink(stream, &silc_packet_wait_cbs, pw);
+
+  /* Free any remaining packets */
+  silc_list_start(pw->packet_queue);
+  while ((packet = silc_list_get(pw->packet_queue)) != SILC_LIST_END)
+    silc_packet_free(packet);
+
+  silc_mutex_unlock(pw->wait_lock);
+
+  silc_cond_free(pw->wait_cond);
+  silc_mutex_free(pw->wait_lock);
+  silc_free(pw);
+}
+
+/* Blocks thread until a packet has been received. */
+
+int silc_packet_wait(void *context, int timeout, SilcPacket *return_packet)
+{
+  SilcPacketWait pw = context;
+  SilcBool ret = FALSE;
+
+  silc_mutex_lock(pw->wait_lock);
+
+  /* Wait here until packet has arrived */
+  pw->waiting = TRUE;
+  while (silc_list_count(pw->packet_queue) == 0)
+    ret = silc_cond_timedwait(pw->wait_cond, pw->wait_lock, timeout);
+
+  /* Return packet */
+  silc_list_start(pw->packet_queue);
+  *return_packet = silc_list_get(pw->packet_queue);
+  silc_list_del(pw->packet_queue, *return_packet);
+
+  silc_mutex_unlock(pw->wait_lock);
+
+  return ret == TRUE ? 1 : 0;
 }
