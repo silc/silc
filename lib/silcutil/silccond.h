@@ -1,6 +1,6 @@
 /*
 
-  silccondvar.h
+  silccond.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -27,45 +27,45 @@
  *
  ***/
 
-#ifndef SILCCONDVAR_H
-#define SILCCONDVAR_H
+#ifndef SILCCOND_H
+#define SILCCOND_H
 
-/****s* silcutil/SilcCondVarAPI/SilcCondVar
+/****s* silcutil/SilcCondAPI/SilcCond
  *
  * NAME
  *
- *    typedef struct SilcCondVarStruct *SilcCondVar;
+ *    typedef struct SilcCondStruct *SilcCond;
  *
  * DESCRIPTION
  *
  *    This context is the actual conditional variable and is allocated
- *    by silc_condvar_alloc and given as argument to all silc_condvar_*
- *    functions.  It is freed by the silc_condvar_free function.
+ *    by silc_cond_alloc and given as argument to all silc_cond_*
+ *    functions.  It is freed by the silc_cond_free function.
  *
  ***/
-typedef struct SilcCondVarStruct *SilcCondVar;
+typedef struct SilcCondStruct *SilcCond;
 
-/****s* silcutil/SilcCondVarAPI/silc_condvar_alloc
+/****s* silcutil/SilcCondAPI/silc_cond_alloc
  *
  * SYNOPSIS
  *
- *    SilcBool silc_condvar_alloc(SilcCondVar *cond);
+ *    SilcBool silc_cond_alloc(SilcCond *cond);
  *
  * DESCRIPTION
  *
  *    Allocates SILC Conditional variable context.  The conditional must
  *    be allocated before it can be used.  It is freed by the
- *    silc_condvar_free function.  This returns TRUE and allocated
+ *    silc_cond_free function.  This returns TRUE and allocated
  *    conditional in to the `cond' pointer and FALSE on error.
  *
  ***/
-SilcBool silc_condvar_alloc(SilcCondVar *cond);
+SilcBool silc_cond_alloc(SilcCond *cond);
 
-/****s* silcutil/SilcCondVarAPI/silc_condvar_free
+/****s* silcutil/SilcCondAPI/silc_cond_free
  *
  * SYNOPSIS
  *
- *    void silc_condvar_free(SilcCondVar cond);
+ *    void silc_cond_free(SilcCond cond);
  *
  * DESCRIPTION
  *
@@ -73,13 +73,13 @@ SilcBool silc_condvar_alloc(SilcCondVar *cond);
  *    has no effect.
  *
  ***/
-void silc_condvar_free(SilcCondVar cond);
+void silc_cond_free(SilcCond cond);
 
-/****s* silcutil/SilcCondVarAPI/silc_condvar_wait
+/****s* silcutil/SilcCondAPI/silc_cond_wait
  *
  * SYNOPSIS
  *
- *    void silc_condvar_wait(SilcCondVar cond, SilcMutex mutex);
+ *    void silc_cond_wait(SilcCond cond, SilcMutex mutex);
  *
  * DESCRIPTION
  *
@@ -93,19 +93,18 @@ void silc_condvar_free(SilcCondVar cond);
  *
  *    silc_mutex_lock(lock);
  *    while (c->a == NULL)
- *      silc_condvar_wait(cond, lock);
+ *      silc_cond_wait(cond, lock);
  *    ...
  *    silc_mutex_unlock(lock);
  *
  ***/
-void silc_condvar_wait(SilcCondVar cond, SilcMutex mutex);
+void silc_cond_wait(SilcCond cond, SilcMutex mutex);
 
-/****s* silcutil/SilcCondVarAPI/silc_condvar_timedwait
+/****s* silcutil/SilcCondAPI/silc_cond_timedwait
  *
  * SYNOPSIS
  *
- *    void silc_condvar_timedwait(SilcCondVar cond, SilcMutex mutex,
- *                                struct timespec *timeout);
+ *    void silc_cond_timedwait(SilcCond cond, SilcMutex mutex, int timeout);
  *
  * DESCRIPTION
  *
@@ -119,41 +118,40 @@ void silc_condvar_wait(SilcCondVar cond, SilcMutex mutex);
  *    state again.
  *
  ***/
-SilcBool silc_condvar_timedwait(SilcCondVar cond, SilcMutex mutex,
-				int timeout);
+SilcBool silc_cond_timedwait(SilcCond cond, SilcMutex mutex, int timeout);
 
-/****s* silcutil/SilcCondVarAPI/silc_condvar_signal
+/****s* silcutil/SilcCondAPI/silc_cond_signal
  *
  * SYNOPSIS
  *
- *    void silc_condvar_signal(SilcCondVar cond);
+ *    void silc_cond_signal(SilcCond cond);
  *
  * DESCRIPTION
  *
  *    Signals a waiting thread and wakes it up.  If there are no waiters
  *    this function has no effect.  In case of multiple waiters only one
- *    is signalled.  To signal all of them use silc_condvar_broadcast.
+ *    is signalled.  To signal all of them use silc_cond_broadcast.
  *
  * NOTES
  *
- *    Before calling this function the mutex used with the silc_condvar_wait
+ *    Before calling this function the mutex used with the silc_cond_wait
  *    must be acquired.
  *
  * EXAMPLE
  *
  *    silc_mutex_lock(lock);
  *    c->a = context;
- *    silc_condvar_signal(cond);
+ *    silc_cond_signal(cond);
  *    silc_mutex_unlock(lock);
  *
  ***/
-void silc_condvar_signal(SilcCondVar cond);
+void silc_cond_signal(SilcCond cond);
 
-/****s* silcutil/SilcCondVarAPI/silc_condvar_broadcast
+/****s* silcutil/SilcCondAPI/silc_cond_broadcast
  *
  * SYNOPSIS
  *
- *    void silc_condvar_broadcast(SilcCondVar cond);
+ *    void silc_cond_broadcast(SilcCond cond);
  *
  * DESCRIPTION
  *
@@ -162,10 +160,10 @@ void silc_condvar_signal(SilcCondVar cond);
  *
  * NOTES
  *
- *    Before calling this function the mutex used with the silc_condvar_wait
+ *    Before calling this function the mutex used with the silc_cond_wait
  *    must be acquired.
  *
  ***/
-void silc_condvar_broadcast(SilcCondVar cond);
+void silc_cond_broadcast(SilcCond cond);
 
-#endif /* SILCCONDVAR_H */
+#endif /* SILCCOND_H */

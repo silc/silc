@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -289,6 +289,22 @@ void silc_mime_add_data(SilcMime mime, const unsigned char *data,
  *
  ***/
 const unsigned char *silc_mime_get_data(SilcMime mime, SilcUInt32 *data_len);
+
+/****f* silcutil/SILCMIMEAPI/silc_mime_steal_data
+ *
+ * SYNOPSIS
+ *
+ *    unsigned char *
+ *    silc_mime_steal_data(SilcMime mime, SilcUInt32 *data_len);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the MIME data from the `mime' message.  The data will be
+ *    removed from the `mime' and the caller is responsible of freeing the
+ *    returned pointer.
+ *
+ ***/
+unsigned char *silc_mime_steal_data(SilcMime mime, SilcUInt32 *data_len);
 
 /****f* silcutil/SILCMIMEAPI/silc_mime_is_partial
  *

@@ -205,10 +205,10 @@ void silc_mutex_unlock(SilcMutex mutex)
 }
 
 
-/**************************** SILC CondVar API ******************************/
+/**************************** SILC Cond API ******************************/
 
 /* SILC Conditional Variable context */
-struct SilcCondVarStruct {
+struct SilcCondStruct {
 #ifdef SILC_THREADS
   HANDLE event;
 #endif /* SILC_THREADS*/
@@ -216,7 +216,7 @@ struct SilcCondVarStruct {
   unsigned int signal  : 1;
 };
 
-SilcBool silc_condvar_alloc(SilcCondVar *cond)
+SilcBool silc_cond_alloc(SilcCond *cond)
 {
 #ifdef SILC_THREADS
   *cond = silc_calloc(1, sizeof(**cond));
@@ -229,7 +229,7 @@ SilcBool silc_condvar_alloc(SilcCondVar *cond)
 #endif /* SILC_THREADS*/
 }
 
-void silc_condvar_free(SilcCondVar cond)
+void silc_cond_free(SilcCond cond)
 {
 #ifdef SILC_THREADS
   CloseHandle(cond->event);
@@ -237,7 +237,7 @@ void silc_condvar_free(SilcCondVar cond)
 #endif /* SILC_THREADS*/
 }
 
-void silc_condvar_signal(SilcCondVar cond)
+void silc_cond_signal(SilcCond cond)
 {
 #ifdef SILC_THREADS
   cond->signal = TRUE;
@@ -245,7 +245,7 @@ void silc_condvar_signal(SilcCondVar cond)
 #endif /* SILC_THREADS*/
 }
 
-void silc_condvar_broadcast(SilcCondVar cond)
+void silc_cond_broadcast(SilcCond cond)
 {
 #ifdef SILC_THREADS
   cond->signal = TRUE;
@@ -253,15 +253,15 @@ void silc_condvar_broadcast(SilcCondVar cond)
 #endif /* SILC_THREADS*/
 }
 
-void silc_condvar_wait(SilcCondVar cond, SilcMutex mutex)
+void silc_cond_wait(SilcCond cond, SilcMutex mutex)
 {
 #ifdef SILC_THREADS
-  silc_condvar_timedwait(cond, mutex, NULL);
+  silc_cond_timedwait(cond, mutex, NULL);
 #endif /* SILC_THREADS*/
 }
 
-SilcBool silc_condvar_timedwait(SilcCondVar cond, SilcMutex mutex,
-				int timeout)
+SilcBool silc_cond_timedwait(SilcCond cond, SilcMutex mutex,
+			     int timeout)
 {
 #ifdef SILC_THREADS
   DWORD ret, t = INFINITE;

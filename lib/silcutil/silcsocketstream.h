@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ typedef enum {
  *
  *    Callback function of this type is called after the socket stream
  *    creation is completed.  If the `stream' is NULL the socket stream could
- *    not be created of the socket connection is not otherwise allowed.  The
+ *    not be created or the socket connection is not otherwise allowed.  The
  *    `status' will indicate the error status.  The `stream' is socket stream
  *    representing the socket connection and silc_socket_stream_* functions
  *    can be used to access the stream.  All other silc_stream_* functions
@@ -99,7 +99,7 @@ typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
  *    and silc_stream_read.  The creation process is asynchronous since
  *    socket connection information, such as hostname and IP address are
  *    resolved, so SilcAsyncOperation is returned which can be used to cancel
- *    the creationg process.  The `callback' will be called to return the
+ *    the creation process.  The `callback' will be called to return the
  *    created socket stream.  To destroy the stream call silc_stream_destroy.
  *
  *    If the `lookup' is TRUE then this will performed IP and hostname lookup
@@ -116,6 +116,20 @@ silc_socket_stream_create(int sock, SilcBool lookup,
 			  SilcSchedule schedule,
 			  SilcSocketStreamCallback callback,
 			  void *context);
+
+SilcAsyncOperation
+silc_socket_tcp_stream_create(int sock, SilcBool lookup,
+			      SilcBool require_fqdn,
+			      SilcSchedule schedule,
+			      SilcSocketStreamCallback callback,
+			      void *context);
+
+SilcAsyncOperation
+silc_socket_udp_stream_create(int sock, SilcBool lookup,
+			      SilcBool require_fqdn,
+			      SilcSchedule schedule,
+			      SilcSocketStreamCallback callback,
+			      void *context);
 
 /****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_get_info
  *
