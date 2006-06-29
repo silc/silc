@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,31 +23,31 @@
 
 /************************** Types and definitions ***************************/
 
-#define SILC_SERVER_COMMAND_CHECK(min, max)		       		     \
-do {									     \
-  SilcUInt32 _argc;							     \
-									     \
-  SILC_LOG_DEBUG(("Start"));						     \
-									     \
-  _argc = silc_argument_get_arg_num(args);				     \
-  if (_argc < min) {							     \
-    SILC_LOG_DEBUG(("Not enough parameters in command"));		     \
-    silc_server_command_send_status_reply(cmd,				     \
-					  silc_command_get(cmd->payload),    \
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, \
-					  0);				     \
-    silc_server_command_free(cmd);					     \
-    return SILC_FSM_FINISH;						     \
-  }									     \
-  if (_argc > max) {							     \
-    SILC_LOG_DEBUG(("Too many parameters in command"));			     \
-    silc_server_command_send_status_reply(cmd,				     \
-					  silc_command_get(cmd->payload),    \
-					  SILC_STATUS_ERR_TOO_MANY_PARAMS,   \
-					  0);				     \
-    silc_server_command_free(cmd);					     \
-    return SILC_FSM_FINISH;						     \
-  }									     \
+#define SILC_SERVER_COMMAND_CHECK(min, max)				\
+do {									\
+  SilcUInt32 _argc;							\
+									\
+  SILC_LOG_DEBUG(("Start"));						\
+									\
+  _argc = silc_argument_get_arg_num(args);				\
+  if (_argc < min) {							\
+    SILC_LOG_DEBUG(("Not enough parameters in command"));		\
+    silc_server_command_status_reply(cmd,				\
+				     silc_command_get(cmd->payload),	\
+				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,	\
+				     0);				\
+    silc_server_command_free(cmd);					\
+    return SILC_FSM_FINISH;						\
+  }									\
+  if (_argc > max) {							\
+    SILC_LOG_DEBUG(("Too many parameters in command"));			\
+    silc_server_command_status_reply(cmd,				\
+				     silc_command_get(cmd->payload),	\
+				     SILC_STATUS_ERR_TOO_MANY_PARAMS,	\
+				     0);				\
+    silc_server_command_free(cmd);					\
+    return SILC_FSM_FINISH;						\
+  }									\
 } while(0)
 
 
@@ -56,7 +56,7 @@ do {									     \
 /* Sends simple status message as command reply packet */
 
 static void
-silc_server_command_send_status_reply(SilcServerCommand cmd,
+silc_server_command_status_reply(SilcServerCommand cmd,
 				      SilcCommand command,
 				      SilcStatus status,
 				      SilcStatus error)
@@ -80,7 +80,7 @@ silc_server_command_send_status_reply(SilcServerCommand cmd,
    type must be sent as argument. */
 
 static void
-silc_server_command_send_status_data(SilcServerCommand cmd,
+silc_server_command_status_data(SilcServerCommand cmd,
 				     SilcCommand command,
 				     SilcStatus status,
 				     SilcStatus error,
@@ -105,7 +105,7 @@ silc_server_command_send_status_data(SilcServerCommand cmd,
 }
 
 static void
-silc_server_command_send_status_data2(SilcServerCommand cmd,
+silc_server_command_status_data2(SilcServerCommand cmd,
 				      SilcCommand command,
 				      SilcStatus status,
 				      SilcStatus error,
@@ -355,6 +355,8 @@ SILC_FSM_STATE(silc_server_st_packet_command)
       else
 	client->fast_command -= 2;
     }
+
+    client->last_command = time(NULL) + timeout;
   }
 
   silc_fsm_set_state_context(fsm, cmd);
@@ -514,6 +516,53 @@ SILC_FSM_STATE(silc_server_st_packet_command)
   return timeout ? SILC_FSM_WAIT : SILC_FSM_CONTINUE;
 }
 
+/********************************* WHOIS ************************************/
+
+SILC_FSM_STATE(silc_server_st_command_whois)
+{
+  SilcServerCommand cmd = state_context;
+  SilcArgumentPayload args = silc_command_get_args(cmd->payload);
+
+  SILC_SERVER_COMMAND_CHECK(1, 256);
+
+  /** WHOIS query */
+  silc_fsm_next(fsm, silc_server_st_query_whois);
+
+  return SILC_FSM_CONTINUE;
+}
+
+
+/********************************* WHOWAS ***********************************/
+
+SILC_FSM_STATE(silc_server_st_command_whowas)
+{
+  SilcServerCommand cmd = state_context;
+  SilcArgumentPayload args = silc_command_get_args(cmd->payload);
+
+  SILC_SERVER_COMMAND_CHECK(1, 2);
+
+  /** WHOWAS query */
+  silc_fsm_next(fsm, silc_server_st_query_whowas);
+
+  return SILC_FSM_CONTINUE;
+}
+
+
+/******************************** IDENTIFY **********************************/
+
+SILC_FSM_STATE(silc_server_st_command_identify)
+{
+  SilcServerCommand cmd = state_context;
+  SilcArgumentPayload args = silc_command_get_args(cmd->payload);
+
+  SILC_SERVER_COMMAND_CHECK(1, 256);
+
+  /** IDENTIFY query */
+  silc_fsm_next(fsm, silc_server_st_query_identify);
+
+  return SILC_FSM_CONTINUE;
+}
+
 
 /********************************** NICK ************************************/
 
@@ -522,7 +571,99 @@ SILC_FSM_STATE(silc_server_st_command_nick)
   SilcServerThread thread = fsm_context;
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
+  SilcClientEntry client = silc_packet_get_context(cmd->packet->stream);
+  SilcBuffer nidp, oidp = NULL;
+  SilcClientID new_id;
+  SilcUInt32 nick_len;
+  unsigned char *nick, *nickc;
+  SilcUInt16 ident = silc_command_get_ident(cmd->payload);
 
+  SILC_SERVER_COMMAND_CHECK(1, 1);
+
+  /* This command can come only from client */
+  if (!SILC_IS_CLIENT(client)) {
+    silc_server_command_status_reply(cmd, SILC_COMMAND_NICK,
+				     SILC_STATUS_ERR_OPERATION_ALLOWED, 0);
+    goto out;
+  }
+
+  /* Get nickname */
+  nick = silc_argument_get_arg_type(args, 1, &nick_len);
+  if (!nick) {
+    silc_server_command_status_reply(cmd, SILC_COMMAND_NICK,
+				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
+    goto out;
+  }
+
+  /* Truncate over long nicks */
+  if (nick_len > 128) {
+    nick_len = 128;
+    nick[nick_len - 1] = '\0';
+  }
+
+  /* Check for same nickname */
+  if (strlen(client->nickname) == nick_len &&
+      !memcmp(client->nickname, nick, nick_len)) {
+    nidp = silc_id_payload_encode(&client->id, SILC_ID_CLIENT);
+    goto send_reply;
+  }
+
+  /* Check for valid nickname string. */
+  nickc = silc_identifier_check(nick, nick_len, SILC_STRING_UTF8, 128, NULL);
+  if (!nickc) {
+    silc_server_command_status_reply(cmd, SILC_COMMAND_NICK,
+				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
+    goto out;
+  }
+
+  /* Create new Client ID */
+  if (!silc_server_create_client_id(thread->server, nickc, &new_id)) {
+    silc_server_command_status_reply(cmd, SILC_COMMAND_NICK,
+				     SILC_STATUS_ERR_OPERATION_ALLOWED, 0);
+    goto out;
+  }
+  silc_free(nickc);
+
+  oidp = silc_id_payload_encode(&client->id, SILC_ID_CLIENT);
+
+  /* Replace the old nickname and ID with new ones.  This checks for
+     validity of the nickname too. */
+  if (!silc_server_replace_client_id(thread->server, &client->id, &new_id,
+				     nick)) {
+    silc_server_command_status_reply(cmd, SILC_COMMAND_NICK,
+				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
+    goto out;
+  }
+
+  nidp = silc_id_payload_encode(&client->id, SILC_ID_CLIENT);
+
+#if 0
+  /* Send notify about nickname and ID change to network. */
+  silc_server_send_notify_nick_change(server, SILC_PRIMARY_ROUTE(server),
+				      SILC_BROADCAST(server), client->id,
+				      &new_id, nick);
+
+  /* Send NICK_CHANGE notify to the client's channels */
+  silc_server_send_notify_on_channels(server, NULL, client,
+				      SILC_NOTIFY_TYPE_NICK_CHANGE, 3,
+				      oidp->data, silc_buffer_len(oidp),
+				      nidp->data, silc_buffer_len(nidp),
+				      client->nickname,
+				      strlen(client->nickname));
+#endif
+
+ send_reply:
+  /* Send the new Client ID as reply command back to client */
+  silc_server_send_command_reply(thread->server, cmd->packet->stream,
+				 SILC_COMMAND_NICK,
+				 SILC_STATUS_OK, 0, ident, 2,
+				 2, nidp->data, silc_buffer_len(nidp),
+				 3, nick, nick_len);
+  silc_buffer_free(nidp);
+  silc_buffer_free(oidp);
+
+ out:
+  silc_server_command_free(cmd);
   return SILC_FSM_FINISH;
 }
 
@@ -589,10 +730,6 @@ SILC_FSM_STATE(silc_server_st_command_kill)
 
 /********************************** INFO ************************************/
 
-/* Server side of command INFO. This sends information about us to
-   the client.  If client requested specific server we will send the
-   command to that server. */
-
 SILC_FSM_STATE(silc_server_st_command_info)
 {
   return SILC_FSM_FINISH;
@@ -613,8 +750,6 @@ SILC_FSM_STATE(silc_server_st_command_stats)
 
 /********************************** PING ************************************/
 
-/* Server side of command PING. */
-
 SILC_FSM_STATE(silc_server_st_command_ping)
 {
   SilcServerThread thread = fsm_context;
@@ -622,35 +757,35 @@ SILC_FSM_STATE(silc_server_st_command_ping)
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
   SilcUInt32 tmp_len;
   unsigned char *tmp;
-  SilcServerID server_id;
+  SilcID id;
 
   SILC_SERVER_COMMAND_CHECK(1, 1);
 
   /* Get Server ID */
   tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
   if (!tmp) {
-    silc_server_command_send_status_reply(cmd, silc_command_get(cmd->payload),
-					  SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,
-					  0);
+    silc_server_command_status_reply(cmd, silc_command_get(cmd->payload),
+				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
     goto out;
   }
-  if (!silc_id_payload_parse_id(tmp, tmp_len, NULL, &server_id,
-				sizeof(server_id))) {
-    silc_server_command_send_status_data(cmd, silc_command_get(cmd->payload),
-					 SILC_STATUS_ERR_BAD_SERVER_ID, 0,
-					 2, tmp, tmp_len);
+  if (!silc_id_payload_parse_id(tmp, tmp_len, &id)) {
+    silc_server_command_status_data(cmd, silc_command_get(cmd->payload),
+				    SILC_STATUS_ERR_BAD_SERVER_ID, 0,
+				    2, tmp, tmp_len);
     goto out;
   }
 
-  if (SILC_ID_SERVER_COMPARE(&server_id, &thread->server->id)) {
-    /* Send our reply */
-    silc_server_command_send_status_reply(cmd, silc_command_get(cmd->payload),
-					  SILC_STATUS_OK, 0);
-  } else {
-    silc_server_command_send_status_data(cmd, silc_command_get(cmd->payload),
-					 SILC_STATUS_ERR_NO_SUCH_SERVER_ID, 0,
-					 2, tmp, tmp_len);
+  /* Must be our ID */
+  if (!SILC_ID_SERVER_COMPARE(&id.u.server_id, &thread->server->id)) {
+    silc_server_command_status_data(cmd, silc_command_get(cmd->payload),
+				    SILC_STATUS_ERR_NO_SUCH_SERVER_ID, 0,
+				    2, tmp, tmp_len);
+    goto out;
   }
+
+  /* Send our reply */
+  silc_server_command_status_reply(cmd, silc_command_get(cmd->payload),
+				   SILC_STATUS_OK, 0);
 
  out:
   silc_server_command_free(cmd);

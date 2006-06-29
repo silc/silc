@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005, 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,6 +23,9 @@
 /***************************** State functions ******************************/
 
 SILC_FSM_STATE(silc_server_st_packet_command);
+SILC_FSM_STATE(silc_server_st_command_whois);
+SILC_FSM_STATE(silc_server_st_command_whowas);
+SILC_FSM_STATE(silc_server_st_command_identify);
 SILC_FSM_STATE(silc_server_st_command_nick);
 SILC_FSM_STATE(silc_server_st_command_list);
 SILC_FSM_STATE(silc_server_st_command_topic);

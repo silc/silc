@@ -1,15 +1,15 @@
 /*
- 
+
   silcnotify.h
- 
+
   Author: Pekka Riikonen <priikone@silcnet.org>
- 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
- 
+
+  Copyright (C) 1997 - 2006 Pekka Riikonen
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
- 
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -33,7 +33,7 @@
 /****s* silccore/SilcNotifyAPI/SilcNotifyPayload
  *
  * NAME
- * 
+ *
  *    typedef struct SilcNotifyPayloadStruct *SilcNotifyPayload;
  *
  * DESCRIPTION
@@ -49,7 +49,7 @@ typedef struct SilcNotifyPayloadStruct *SilcNotifyPayload;
 /****d* silccore/SilcNotifyAPI/SilcNotifyType
  *
  * NAME
- * 
+ *
  *    typedef SilcUInt16 SilcNotifyType;
  *
  * DESCRIPTION
@@ -116,7 +116,7 @@ SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
  *    arguments must be {unsigned char *, SilcUInt32 (len)}.
  *
  ***/
-SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc, 
+SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
 				      va_list ap);
 
 /****f* silccore/SilcNotifyAPI/silc_notify_payload_encode_args
@@ -133,7 +133,7 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
  *    encoded Argument Payload buffer.
  *
  ***/
-SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type, 
+SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type,
 					   SilcUInt32 argc,
 					   SilcBuffer args);
 

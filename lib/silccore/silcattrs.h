@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2005 Pekka Riikonen
+  Copyright (C) 2002 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -454,9 +454,7 @@ typedef struct SilcAttributeObjDeviceStruct {
  *    caller must free the data inside the structure.  The 'type' is one
  *    of following: "silc-rsa", "silc-dss, "ssh-rsa", "ssh-dss",
  *    "pgp-sign-rsa", "pgp-sign-dss", "x509v3-sign-rsa", "x509v3-sign-dss".
- *    See the draft-riikonen-precense-attrs draft for more detailed
- *    information.  The 'type' is NULL when this structure includes a
- *    digital signature.
+ *    The 'type' is NULL when this structure includes a digital signature.
  *
  *    In SILC, at least the "silc-rsa" must be supported.  In this case
  *    the key is normal SILC Public key.  To verify a signature with the

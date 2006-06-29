@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,6 +21,21 @@
 #include "silc.h"
 #include "silcserver.h"
 #include "server_internal.h"
+
+/* Return next available command identifier. */
+
+SilcUInt16 silc_server_cmd_ident(SilcServer server)
+{
+  SilcUInt16 cmd_ident;
+
+  silc_mutex_lock(server->lock);
+  cmd_ident = ++server->cmd_ident;
+  silc_mutex_unlock(server->lock);
+
+  return cmd_ident;
+}
+
+/* XXX locking */
 
 SilcBool silc_server_check_watcher_list(SilcServer server,
 				    SilcClientEntry client,
@@ -125,6 +140,7 @@ SilcBool silc_server_create_client_id(SilcServer server, char *nickname,
   silc_hash_make(server->md5hash, nickname, strlen(nickname), hash);
 
   /* Create the ID */
+  memset(new_id, 0, sizeof(*new_id));
   memcpy(new_id->ip.data, server->id.ip.data, server->id.ip.data_len);
   new_id->ip.data_len = server->id.ip.data_len;
   new_id->rnd = silc_rng_get_byte(server->rng);

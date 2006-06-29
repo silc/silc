@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 #include "silc.h"
 #include "silcserver.h"
 #include "server_internal.h"
+
+/* XXX locking missing from routines! */
 
 /************************ Static utility functions **************************/
 
@@ -241,7 +243,6 @@ silc_server_replace_server_id(SilcServer server, SilcServerID *old_id,
 			      SilcServerID *new_id)
 {
   SilcIDCacheEntry id_cache = NULL;
-  SilcServerEntry entry;
 
   if (!old_id || !new_id)
     return NULL;
@@ -251,14 +252,9 @@ silc_server_replace_server_id(SilcServer server, SilcServerID *old_id,
   SILC_LOG_DEBUG(("New Server ID %s",
 		  silc_id_render(new_id, SILC_ID_SERVER)));
 
-  if (!silc_idcache_find_by_id_one(server->servers, (void *)old_id,
-				   &id_cache))
+  if (!silc_idcache_find_by_id_one(server->servers, old_id, &id_cache))
     return NULL;
-
-  entry = id_cache->context;
-  entry->id = *new_id;
-
-  if (!silc_idcache_update(server->servers, id_cache, old_id, &entry->id,
+  if (!silc_idcache_update(server->servers, id_cache, old_id, new_id,
 			   NULL, NULL)) {
     SILC_LOG_ERROR(("Error updating Server ID"));
     return NULL;
@@ -266,7 +262,7 @@ silc_server_replace_server_id(SilcServer server, SilcServerID *old_id,
 
   SILC_LOG_DEBUG(("Replaced"));
 
-  return entry;
+  return id_cache->context;
 }
 
 
@@ -450,9 +446,9 @@ silc_server_replace_client_id(SilcServer server, SilcClientID *old_id,
     return NULL;
 
   SILC_LOG_DEBUG(("Replacing Client ID %s",
-		  silc_id_render(old_id, SILC_ID_SERVER)));
+		  silc_id_render(old_id, SILC_ID_CLIENT)));
   SILC_LOG_DEBUG(("New Client ID %s",
-		  silc_id_render(new_id, SILC_ID_SERVER)));
+		  silc_id_render(new_id, SILC_ID_CLIENT)));
 
   /* Normalize name. This is cached, original is in client context.  */
   if (nickname) {
@@ -462,15 +458,11 @@ silc_server_replace_client_id(SilcServer server, SilcClientID *old_id,
       return NULL;
   }
 
-  if (!silc_idcache_find_by_id_one(server->clients, (void *)old_id,
-				   &id_cache))
+  if (!silc_idcache_find_by_id_one(server->clients, old_id, &id_cache))
     return NULL;
-
   entry = id_cache->context;
-  entry->id = *new_id;
-
   name = id_cache->name;
-  if (!silc_idcache_update(server->clients, id_cache, old_id, &entry->id,
+  if (!silc_idcache_update(server->clients, id_cache, old_id, new_id,
 			   name, nicknamec)) {
     SILC_LOG_ERROR(("Error updating Client ID"));
     return NULL;
@@ -651,7 +643,6 @@ SilcChannelEntry silc_server_replace_channel_id(SilcServer server,
 						SilcChannelID *new_id)
 {
   SilcIDCacheEntry id_cache = NULL;
-  SilcChannelEntry entry;
 
   if (!old_id || !new_id)
     return NULL;
@@ -661,14 +652,9 @@ SilcChannelEntry silc_server_replace_channel_id(SilcServer server,
   SILC_LOG_DEBUG(("New Channel ID %s",
 		  silc_id_render(new_id, SILC_ID_CHANNEL)));
 
-  if (!silc_idcache_find_by_id_one(server->channels, (void *)old_id,
-				   &id_cache))
+  if (!silc_idcache_find_by_id_one(server->channels, old_id, &id_cache))
     return NULL;
-
-  entry = id_cache->context;
-  entry->id = *new_id;
-
-  if (!silc_idcache_update(server->channels, id_cache, old_id, &entry->id,
+  if (!silc_idcache_update(server->channels, id_cache, old_id, new_id,
 			   NULL, NULL)) {
     SILC_LOG_ERROR(("Error updating Channel ID"));
     return NULL;
@@ -676,7 +662,7 @@ SilcChannelEntry silc_server_replace_channel_id(SilcServer server,
 
   SILC_LOG_DEBUG(("Replaced"));
 
-  return entry;
+  return id_cache->context;
 }
 
 /* Returns channels from the ID list.  If the `channel_id' is NULL then

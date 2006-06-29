@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -81,6 +81,80 @@ SilcBool silc_server_send_new_id(SilcPacketStream stream,
 			 idp->data, silc_buffer_len(idp));
 
   silc_buffer_free(idp);
+  return ret;
+}
+
+
+/****************************** Command packets *****************************/
+
+/* Generic function to send any command. The arguments must be sent already
+   encoded into correct form in correct order, and they must as follows:
+   { argument type, argument data, argument length }. */
+
+SilcBool silc_server_send_command(SilcServer server,
+				  SilcPacketStream stream,
+				  SilcCommand command,
+				  SilcUInt16 ident,
+				  SilcUInt32 argc, ...)
+{
+  SilcBuffer packet;
+  va_list ap;
+  SilcBool ret = FALSE;
+
+  /* Statistics */
+  server->stat.commands_sent++;
+
+  va_start(ap, argc);
+
+  packet = silc_command_payload_encode_vap(command, ident, argc, ap);
+  if (!packet) {
+    va_end(ap);
+    return ret;
+  }
+
+  ret = silc_packet_send(stream, SILC_PACKET_COMMAND, 0,
+			 packet->data, silc_buffer_len(packet));
+
+  silc_buffer_free(packet);
+  va_end(ap);
+
+  return ret;
+}
+
+/* Generic function to send a command reply.  The arguments must be sent
+   already encoded into correct form in correct order, and they must be
+   { argument type, argument data, argument length }. */
+
+SilcBool silc_server_send_command_reply(SilcServer server,
+					SilcPacketStream stream,
+					SilcCommand command,
+					SilcStatus status,
+					SilcStatus error,
+					SilcUInt16 ident,
+					SilcUInt32 argc, ...)
+{
+  SilcBuffer packet;
+  va_list ap;
+  SilcBool ret = FALSE;
+
+  /* Statistics */
+  server->stat.commands_sent++;
+
+  va_start(ap, argc);
+
+  packet = silc_command_reply_payload_encode_vap(command, status, error,
+						 ident, argc, ap);
+  if (!packet) {
+    va_end(ap);
+    return ret;
+  }
+
+  ret = silc_packet_send(stream, SILC_PACKET_COMMAND_REPLY, 0,
+			 packet->data, silc_buffer_len(packet));
+
+  silc_buffer_free(packet);
+  va_end(ap);
+
   return ret;
 }
 

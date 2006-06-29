@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ silc_server_accept_completed(SilcSKE ske, SilcSKEStatus status,
   ac->rekey = rekey;
 
   /* Continue synchronously to take keys into use immediately */
-  SILC_FSM_CALL_CONTINUE_SYNC(ac->t);
+  SILC_FSM_CALL_CONTINUE_SYNC(&ac->t);
 }
 
 /* Authentication data callback */
@@ -129,7 +129,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 {
   SilcServerAccept ac = context;
   ac->auth_success = success;
-  SILC_FSM_CALL_CONTINUE(ac->t);
+  SILC_FSM_CALL_CONTINUE(&ac->t);
 }
 
 /* Free context */
@@ -146,7 +146,6 @@ void silc_server_accept_connection_dest(SilcFSM fsm, void *fsm_context,
 					void *destructor_context)
 {
   SilcServerAccept ac = fsm_context;
-  silc_fsm_free(fsm);
   silc_server_accept_free(ac);
 }
 

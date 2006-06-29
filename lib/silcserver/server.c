@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -249,6 +249,7 @@ SILC_FSM_STATE(silc_server_thread_st_run)
     /* Each packet is processed in FSM thread */
     silc_list_start(thread->packet_queue);
     while ((packet = silc_list_get(thread->packet_queue)) != SILC_LIST_END) {
+      /* XXX shouldn't the fsm be &thread->fsm */
       t = silc_fsm_thread_alloc(fsm, thread, silc_server_thread_packet_dest,
 				NULL, FALSE);
       if (t) {
@@ -276,10 +277,10 @@ SILC_FSM_STATE(silc_server_thread_st_run)
     silc_list_start(thread->new_conns);
     while ((ac = silc_list_get(thread->new_conns)) != SILC_LIST_END) {
       ac->thread = thread;
-      ac->t = silc_fsm_thread_alloc(&thread->fsm, ac,
-				    silc_server_accept_connection_dest,
-				    NULL, FALSE);
-      silc_fsm_start(ac->t, silc_server_st_accept_connection);
+      silc_fsm_thread_init(&ac->t, &thread->fsm, ac,
+			   silc_server_accept_connection_dest,
+			   NULL, FALSE);
+      silc_fsm_start(&ac->t, silc_server_st_accept_connection);
     }
 
     /* Empty the list */

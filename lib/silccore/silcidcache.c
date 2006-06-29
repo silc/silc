@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
 
-  Copyright (C) 2000 - 2005 Pekka Riikonen
+  Copyright (C) 2000 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -229,7 +229,12 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
     if (!silc_hash_table_del_by_context(cache->id_table, old_id, entry))
       return FALSE;
 
-    entry->id = new_id;
+    if (cache->id_type == SILC_ID_CLIENT)
+      *(SilcClientID *)entry->id = *(SilcClientID *)new_id;
+    if (cache->id_type == SILC_ID_SERVER)
+      *(SilcServerID *)entry->id = *(SilcServerID *)new_id;
+    if (cache->id_type == SILC_ID_CHANNEL)
+      *(SilcChannelID *)entry->id = *(SilcChannelID *)new_id;
 
     if (!silc_hash_table_add(cache->id_table, entry->id, entry))
       return FALSE;

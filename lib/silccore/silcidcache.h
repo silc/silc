@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2005 Pekka Riikonen
+  Copyright (C) 2000 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -208,10 +208,11 @@ SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
  * DESCRIPTION
  *
  *    Updates cache `entry' with new values.  If the `new_id' is non-NULL
- *    then the `entry' will be updated with `new_id'.  If the `new_name' is
- *    non-NULL then the `entry' will be updated with `new_name'.  The
- *    caller is responsible of freeing the old values that was added with
- *    silc_idcache_add.
+ *    then the new value will be copied over the old value in the `entry'.
+ *    If the `new_name' is non-NULL then the `entry' will be updated with
+ *    `new_name'.  The caller is responsible of freeing the old name if it
+ *    was updated with new one.  The old ID value does not need to be freed
+ *    as the new value is copied over the old value.
  *
  ***/
 SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,

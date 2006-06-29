@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -123,14 +123,11 @@ struct SilcClientEntryStruct {
   SilcUInt16 attrs_len;		     /* Attributes data length */
   SilcHashTable channels;	     /* Joined channels */
   SilcPacketStream stream;	     /* Connection to entry/origin of entry */
+  SilcUInt16 resolve_cmd_ident;	     /* Command identifier when resolving */
 
   long last_command;
   SilcUInt8 fast_command;
   unsigned long updated;
-
-  /* data.status is RESOLVING and this includes the resolving command
-     reply identifier. */
-  SilcUInt16 resolve_cmd_ident;
 
   /* we need this so nobody can resume more than once at the same time -
    * server crashes, really odd behaviour, ... */
@@ -176,7 +173,7 @@ struct SilcChannelEntryStruct {
 typedef struct SilcServerAcceptStruct {
   SilcEntryDataStruct data;
   SilcServerThread thread;
-  SilcFSMThread t;		     /* Thread for accepting connection */
+  SilcFSMThreadStruct t;	     /* Thread for accepting connection */
   SilcStream stream;		     /* Remote connection */
   SilcPacketStream packet_stream;    /* Remote connection */
   SilcConnAuth connauth;	     /* Connection authentication context */
@@ -357,6 +354,10 @@ struct SilcServerStruct {
 
 /* Macros */
 
+#define SILC_IS_CLIENT(entry) (entry->data.type == SILC_CONN_CLIENT)
+#define SILC_IS_SERVER(entry) (entry->data.type == SILC_CONN_SERVER)
+#define SILC_IS_ROUTER(entry) (entry->data.type == SILC_CONN_ROUTER)
+
 /* Return pointer to the primary router connection */
 #define SILC_PRIMARY_ROUTE(server) server->router
 
@@ -364,8 +365,10 @@ struct SilcServerStruct {
 #define SILC_BROADCAST(server) (server->server_type == SILC_ROUTER)
 
 /* Return TRUE if entry is locally connected or local to us */
-#define SILC_IS_LOCAL(entry) \
-  (((SilcIDListData)entry)->status & SILC_IDLIST_STATUS_LOCAL)
+#define SILC_IS_LOCAL(entry) (((SilcEntryData)entry)->local)
+
+/* Return TRUE if entry is registered */
+#define SILC_IS_REGISTERED(entry) (((SilcEntryData)entry)->registered)
 
 /* Registers generic task for file descriptor for reading from network and
    writing to network. As being generic task the actual task is allocated
@@ -453,19 +456,6 @@ do {									\
   silc_free(__fmt__);							\
 } while(0)
 
-/* Connection retry timeout. We implement exponential backoff algorithm
-   in connection retry. The interval of timeout grows when retry count
-   grows. */
-#define SILC_SERVER_RETRY_COUNT        7	 /* Max retry count */
-#define SILC_SERVER_RETRY_MULTIPLIER   2	 /* Interval growth */
-#define SILC_SERVER_RETRY_RANDOMIZER   2	 /* timeout += rnd % 2 */
-#define SILC_SERVER_RETRY_INTERVAL_MIN 10	 /* Min retry timeout */
-#define SILC_SERVER_RETRY_INTERVAL_MAX 600	 /* Max generated timeout */
-
-#define SILC_SERVER_KEEPALIVE          300	 /* Heartbeat interval */
-#define SILC_SERVER_REKEY              3600	 /* Session rekey interval */
-#define SILC_SERVER_MAX_CONNECTIONS    1000	 /* Max connections */
-#define SILC_SERVER_MAX_CONNECTIONS_SINGLE 1000  /* Max connections per host */
 #define SILC_SERVER_LOG_FLUSH_DELAY    300       /* Default log flush delay */
 
 /* Macros */
