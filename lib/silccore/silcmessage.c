@@ -642,26 +642,25 @@ int silc_message_signed_verify(SilcMessageSignedPayload sig,
 			       SilcHash hash)
 {
   int ret = SILC_AUTH_FAILED;
-  SilcBuffer sign;
-  SilcBufferStruct tmp;
+  SilcBuffer sign, tmp;
 
   if (!sig || !remote_public_key || !hash)
     return ret;
 
   /* Generate the signature verification data, the Message Payload */
-  memset(&tmp, 0, sizeof(tmp));
-  silc_buffer_format(&tmp,
+  tmp = silc_buffer_alloc_size(6 + message->data_len + message->pad_len);
+  silc_buffer_format(tmp,
 		     SILC_STR_UI_SHORT(message->flags),
 		     SILC_STR_UI_SHORT(message->data_len),
 		     SILC_STR_UI_XNSTRING(message->data, message->data_len),
 		     SILC_STR_UI_SHORT(message->pad_len),
 		     SILC_STR_UI_XNSTRING(message->pad, message->pad_len),
 		     SILC_STR_END);
-  sign = silc_message_signed_encode_data(tmp.data, silc_buffer_len(&tmp),
+  sign = silc_message_signed_encode_data(tmp->data, silc_buffer_len(tmp),
 					 sig->pk_data, sig->pk_len,
 					 sig->pk_type);
-  silc_buffer_clear(&tmp);
-  silc_free(silc_buffer_steal(&tmp, NULL));
+  silc_buffer_clear(tmp);
+  silc_buffer_free(tmp);
 
   if (!sign)
     return ret;

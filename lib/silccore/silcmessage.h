@@ -97,7 +97,8 @@ typedef SilcUInt16 SilcMessageFlags;
 #define SILC_MESSAGE_FLAG_DATA        0x0080	  /* MIME object */
 #define SILC_MESSAGE_FLAG_UTF8        0x0100	  /* UTF-8 string */
 #define SILC_MESSAGE_FLAG_ACK         0x0200	  /* ACK messages */
-#define SILC_MESSAGE_FLAG_RESERVED    0x0400	  /* to 0x1000 */
+#define SILC_MESSAGE_FLAG_STOP        0x0400      /* Stop indication */
+#define SILC_MESSAGE_FLAG_RESERVED    0x0800      /* to 0x1000 */
 #define SILC_MESSAGE_FLAG_PRIVATE     0x2000	  /* to 0x8000 */
 /***/
 
