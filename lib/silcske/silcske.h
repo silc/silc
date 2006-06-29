@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2005 Pekka Riikonen
+  Copyright (C) 2000 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -311,7 +311,7 @@ typedef void (*SilcSKECompletionCb)(SilcSKE ske,
  *      silc_ske_assemble_security_properties(ske, SILC_SKE_SP_FLAG_PFS |
  *                                            SILC_SKE_SP_FLAG_MUTUAL,
  *                                            version);
- *    silc_ske_initiator_start(ske);
+ *    silc_ske_initiator_start(ske, stream, start_payload);
  *
  ***/
 SilcSKE silc_ske_alloc(SilcRng rng, SilcSchedule schedule,
@@ -391,13 +391,9 @@ void silc_ske_set_callbacks(SilcSKE ske,
  *
  *    Starts the SILC Key Exchange protocol as initiator.  The completion
  *    callback that was set in silc_ske_set_callbacks will be called once
- *    the protocol has completed.
- *
- *    The `stream' is the network connection to the remote host.  Note that
- *    SKE library will take over the packet stream `stream' while the
- *    protocol is in process.  The application will not receive any packets
- *    for `stream' after this function is called.  The `stream' is turned
- *    over to application once the completion callback is called.
+ *    the protocol has completed.  The `stream' is the network connection
+ *    to the remote host.  The SKE library will handle all key exchange
+ *    packets sent and received in the `stream' connection.
  *
  *    The `start_payload' includes all configured security properties that
  *    will be sent to the responder.  The `start_payload' must be provided.
@@ -431,13 +427,9 @@ silc_ske_initiator(SilcSKE ske,
  *
  *    Starts SILC Key Exchange protocol as responder.  The completion
  *    callback that was set in silc_ske_set_callbacks will be called once
- *    the protocol has completed.
- *
- *    The `stream' is the network connection to the remote host.  Note that
- *    SKE library will take over the packet stream `stream' while the
- *    protocol is in process.  The application will not receive any packets
- *    for `stream' after this function is called.  The `stream' is turned
- *    over to application once the completion callback is called.
+ *    the protocol has completed.  The `stream' is the network connection
+ *    to the remote host.  The SKE library will handle all key exchange
+ *    packets sent and received in the `stream' connection.
  *
  *    The `version' is the responder's SILC protocol version that will be
  *    sent in reply to the initiator.  The `flags' indicates the
