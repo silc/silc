@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -39,6 +39,14 @@
 #ifndef SILCID_H
 #define SILCID_H
 
+/* The ID Lenghts. These are IPv4 based and should be noted if used directly
+   that these cannot be used with IPv6. */
+#define SILC_ID_SERVER_LEN 	(64 / 8)
+#define SILC_ID_CLIENT_LEN 	(128 / 8)
+#define SILC_ID_CHANNEL_LEN 	(64 / 8)
+
+#define CLIENTID_HASH_LEN       (88 / 8) /* Client ID's 88 bit MD5 hash */
+
 /****d* silccore/SilcIDAPI/SilcIdType
  *
  * NAME
@@ -59,167 +67,6 @@ typedef SilcUInt16 SilcIdType;
 #define SILC_ID_CLIENT      2
 #define SILC_ID_CHANNEL     3
 /***/
-
-/* The ID Lenghts. These are IPv4 based and should be noted if used directly
-   that these cannot be used with IPv6. */
-#define SILC_ID_SERVER_LEN 	(64 / 8)
-#define SILC_ID_CLIENT_LEN 	(128 / 8)
-#define SILC_ID_CHANNEL_LEN 	(64 / 8)
-
-#define CLIENTID_HASH_LEN       (88 / 8) /* Client ID's 88 bit MD5 hash */
-
-/****s* silccore/SilcIDAPI/SilcIDPayload
- *
- * NAME
- *
- *    typedef struct SilcIDPayloadStruct *SilcIDPayload;
- *
- * DESCRIPTION
- *
- *    This context is the actual ID Payload and is allocated by
- *    silc_id_payload_parse and given as argument usually to all
- *    silc_id_payload_* functions.  It is freed by the function
- *    silc_id_payload_free.
- *
- ***/
-typedef struct SilcIDPayloadStruct *SilcIDPayload;
-
-/* Prototypes */
-
-/****f* silccore/SilcIDAPI/silc_id_payload_parse
- *
- * SYNOPSIS
- *
- *    SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
- *                                        SilcUInt32 payload_len);
- *
- * DESCRIPTION
- *
- *    Parses buffer and return ID payload into payload structure. The
- *    `buffer' is raw payload buffer.  The caller must free the returned
- *    payload.
- *
- ***/
-SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
-				    SilcUInt32 payload_len);
-
-/****f* silccore/SilcIDAPI/silc_id_payload_parse_id
- *
- * SYNOPSIS
- *
- *    SilcBool silc_id_payload_parse_id(const unsigned char *data,
- *                                      SilcUInt32 len,
- *                                      SilcIdType *type, void *ret_id,
- *                                      SilcUInt32 ret_id_size);
- *
- * DESCRIPTION
- *
- *    Return ID directly from the raw ID Payload data buffer.  This does
- *    not allocate any memory.
- *
- ***/
-SilcBool silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
-				  SilcIdType *type, void *ret_id,
-				  SilcUInt32 ret_id_size);
-
-/****f* silccore/SilcIDAPI/silc_id_payload_encode
- *
- * SYNOPSIS
- *
- *    SilcBuffer silc_id_payload_encode(const void *id, SilcIdType type);
- *
- * DESCRIPTION
- *
- *    Encodes ID Payload. The `id' is the ID of the type `type' to put
- *    into the payload. Returns the encoded payload buffer.
- *
- ***/
-SilcBuffer silc_id_payload_encode(const void *id, SilcIdType type);
-
-/****f* silccore/SilcIDAPI/silc_id_payload_encode_data
- *
- * SYNOPSIS
- *
- *    SilcBuffer silc_id_payload_encode_data(const unsigned char *id,
- *                                           uin32 id_len, SilcIdType type);
- *
- * DESCRIPTION
- *
- *    Encodes ID Payload. The `id' is raw ID data of the length of `id_len'
- *    of type of `type'. Returns the encoded payload buffer.
- *
- ***/
-SilcBuffer silc_id_payload_encode_data(const unsigned char *id,
-				       SilcUInt32 id_len, SilcIdType type);
-
-/****f* silccore/SilcIDAPI/silc_id_payload_free
- *
- * SYNOPSIS
- *
- *    void silc_id_payload_free(SilcIDPayload payload);
- *
- * DESCRIPTION
- *
- *    Frees the ID Payload and all data in it.
- *
- ***/
-void silc_id_payload_free(SilcIDPayload payload);
-
-/****f* silccore/SilcIDAPI/silc_id_payload_get_type
- *
- * SYNOPSIS
- *
- *    SilcIdType silc_id_payload_get_type(SilcIDPayload payload);
- *
- * DESCRIPTION
- *
- *    Returns the ID type from the ID Payload. The type tells the
- *    type of the ID in the payload.
- *
- ***/
-SilcIdType silc_id_payload_get_type(SilcIDPayload payload);
-
-/****f* silccore/SilcIDAPI/silc_id_payload_get_id
- *
- * SYNOPSIS
- *
- *    SilcBool silc_id_payload_get_id(SilcIDPayload payload, void *ret_id,
- *                                    SilcUInt32 ret_id_len);
- *
- * DESCRIPTION
- *
- *    Returns the ID in the ID Payload. This does not allocate any memory.
- *
- ***/
-SilcBool silc_id_payload_get_id(SilcIDPayload payload, void *ret_id,
-				SilcUInt32 ret_id_len);
-
-/****f* silccore/SilcIDAPI/silc_id_payload_get_data
- *
- * SYNOPSIS
- *
- *    unsigned char *silc_id_payload_get_data(SilcIDPayload payload);
- *
- * DESCRIPTION
- *
- *    Returns the raw ID data from the ID Payload. The data is duplicated
- *    and the caller must free it.
- *
- ***/
-unsigned char *silc_id_payload_get_data(SilcIDPayload payload);
-
-/****f* silccore/SilcIDAPI/silc_id_payload_get_len
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_id_payload_get_len(SilcIDPayload payload);
- *
- * DESCRIPTION
- *
- *    Returns the length of the ID in the ID Payload.
- *
- ***/
-SilcUInt32 silc_id_payload_get_len(SilcIDPayload payload);
 
 /****s* silccore/SilcIDAPI/SilcIDIP
  *
@@ -308,6 +155,31 @@ typedef struct {
   SilcUInt16 port;		/* 16 bit port */
   SilcUInt16 rnd;		/* 16 bit random number */
 } SilcChannelID;
+/***/
+
+/****s* silccore/SilcIDAPI/SilcID
+ *
+ * NAME
+ *
+ *    typedef struct { ... } SilcID;
+ *
+ * DESCRIPTION
+ *
+ *    The generic ID structure that can represent SilcClientID, SilcServerID
+ *    and SilcChannelID.  The silc_id_payload_parse_id returns the ID in the
+ *    SilcID structure.  Other routines except either SilcClientID,
+ *    SilcServerID or SilcChannelID as a void pointer.
+ *
+ * SOURCE
+ */
+typedef struct {
+  union {
+    SilcServerID server_id;
+    SilcChannelID channel_id;
+    SilcClientID client_id;
+  } u;
+  SilcIdType type;
+} SilcID;
 /***/
 
 /* Macros */
@@ -413,7 +285,155 @@ typedef struct {
   (!memcmp((id1)->hash, (id2)->hash, CLIENTID_HASH_LEN))
 /***/
 
+/****s* silccore/SilcIDAPI/SilcIDPayload
+ *
+ * NAME
+ *
+ *    typedef struct SilcIDPayloadStruct *SilcIDPayload;
+ *
+ * DESCRIPTION
+ *
+ *    This context is the actual ID Payload and is allocated by
+ *    silc_id_payload_parse and given as argument usually to all
+ *    silc_id_payload_* functions.  It is freed by the function
+ *    silc_id_payload_free.
+ *
+ ***/
+typedef struct SilcIDPayloadStruct *SilcIDPayload;
+
 /* Prototypes */
+
+/****f* silccore/SilcIDAPI/silc_id_payload_parse
+ *
+ * SYNOPSIS
+ *
+ *    SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
+ *                                        SilcUInt32 payload_len);
+ *
+ * DESCRIPTION
+ *
+ *    Parses buffer and return ID payload into payload structure. The
+ *    `buffer' is raw payload buffer.  The caller must free the returned
+ *    payload.
+ *
+ ***/
+SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
+				    SilcUInt32 payload_len);
+
+/****f* silccore/SilcIDAPI/silc_id_payload_parse_id
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_id_payload_parse_id(const unsigned char *data,
+ *                                      SilcUInt32 len, SilcID *ret_id);
+ *
+ * DESCRIPTION
+ *
+ *    Return ID directly from the raw ID Payload data buffer.  This does
+ *    not allocate any memory.
+ *
+ ***/
+SilcBool silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
+				  SilcID *ret_id);
+
+/****f* silccore/SilcIDAPI/silc_id_payload_encode
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer silc_id_payload_encode(const void *id, SilcIdType type);
+ *
+ * DESCRIPTION
+ *
+ *    Encodes ID Payload. The `id' is the ID of the type `type' to put
+ *    into the payload. Returns the encoded payload buffer.
+ *
+ ***/
+SilcBuffer silc_id_payload_encode(const void *id, SilcIdType type);
+
+/****f* silccore/SilcIDAPI/silc_id_payload_encode_data
+ *
+ * SYNOPSIS
+ *
+ *    SilcBuffer silc_id_payload_encode_data(const unsigned char *id,
+ *                                           uin32 id_len, SilcIdType type);
+ *
+ * DESCRIPTION
+ *
+ *    Encodes ID Payload. The `id' is raw ID data of the length of `id_len'
+ *    of type of `type'. Returns the encoded payload buffer.
+ *
+ ***/
+SilcBuffer silc_id_payload_encode_data(const unsigned char *id,
+				       SilcUInt32 id_len, SilcIdType type);
+
+/****f* silccore/SilcIDAPI/silc_id_payload_free
+ *
+ * SYNOPSIS
+ *
+ *    void silc_id_payload_free(SilcIDPayload payload);
+ *
+ * DESCRIPTION
+ *
+ *    Frees the ID Payload and all data in it.
+ *
+ ***/
+void silc_id_payload_free(SilcIDPayload payload);
+
+/****f* silccore/SilcIDAPI/silc_id_payload_get_type
+ *
+ * SYNOPSIS
+ *
+ *    SilcIdType silc_id_payload_get_type(SilcIDPayload payload);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the ID type from the ID Payload. The type tells the
+ *    type of the ID in the payload.
+ *
+ ***/
+SilcIdType silc_id_payload_get_type(SilcIDPayload payload);
+
+/****f* silccore/SilcIDAPI/silc_id_payload_get_id
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_id_payload_get_id(SilcIDPayload payload, void *ret_id,
+ *                                    SilcUInt32 ret_id_len);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the ID in the ID Payload. This does not allocate any memory.
+ *
+ ***/
+SilcBool silc_id_payload_get_id(SilcIDPayload payload, void *ret_id,
+				SilcUInt32 ret_id_len);
+
+/****f* silccore/SilcIDAPI/silc_id_payload_get_data
+ *
+ * SYNOPSIS
+ *
+ *    unsigned char *silc_id_payload_get_data(SilcIDPayload payload);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the raw ID data from the ID Payload. The data is duplicated
+ *    and the caller must free it.
+ *
+ ***/
+unsigned char *silc_id_payload_get_data(SilcIDPayload payload);
+
+/****f* silccore/SilcIDAPI/silc_id_payload_get_len
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_id_payload_get_len(SilcIDPayload payload);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the length of the ID in the ID Payload.
+ *
+ ***/
+SilcUInt32 silc_id_payload_get_len(SilcIDPayload payload);
 
 /****f* silccore/SilcIDAPI/silc_id_id2str
  *

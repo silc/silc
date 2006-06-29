@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -85,14 +85,16 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
 /* Return the ID directly from the raw payload data. */
 
 SilcBool silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
-				  SilcIdType *ret_type, void *ret_id,
-				  SilcUInt32 ret_id_size)
+				  SilcID *ret_id)
 {
   SilcBufferStruct buffer;
   SilcIdType type;
   SilcUInt16 idlen;
   unsigned char *id_data;
   int ret;
+
+  if (!ret_id)
+    return FALSE;
 
   silc_buffer_set(&buffer, (unsigned char *)data, len);
   ret = silc_buffer_unformat(&buffer,
@@ -116,11 +118,21 @@ SilcBool silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
   if (ret == -1)
     goto err;
 
-  if (!silc_id_str2id(id_data, idlen, type, ret_id, ret_id_size))
-    goto err;
+  ret_id->type = type;
 
-  if (ret_type)
-    *ret_type = type;
+  if (type == SILC_ID_CLIENT) {
+    if (!silc_id_str2id(id_data, idlen, type, &ret_id->u.client_id,
+			sizeof(SilcClientID)))
+      goto err;
+  } else if (type == SILC_ID_SERVER) {
+    if (!silc_id_str2id(id_data, idlen, type, &ret_id->u.server_id,
+			sizeof(SilcServerID)))
+      goto err;
+  } else {
+    if (!silc_id_str2id(id_data, idlen, type, &ret_id->u.channel_id,
+			sizeof(SilcChannelID)))
+      goto err;
+  }
 
   return TRUE;
 
