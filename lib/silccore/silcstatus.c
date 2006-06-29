@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2005 Pekka Riikonen
+  Copyright (C) 2003 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -57,14 +57,13 @@ SilcUInt32 silc_status_get_args(SilcStatus status,
   case SILC_STATUS_ERR_NO_SUCH_CLIENT_ID:
   case SILC_STATUS_ERR_BAD_CLIENT_ID:
     {
-      SilcClientID client_id;
+      SilcID id;
       tmp = silc_argument_get_arg_type(args, 2, &len);
       if (!tmp)
 	return 0;
-      if (silc_id_payload_parse_id(tmp, len, NULL, &client_id,
-				   sizeof(client_id)))
+      if (silc_id_payload_parse_id(tmp, len, &id))
 	return 0;
-      *ret_arg1 = silc_id_dup(&client_id, SILC_ID_CLIENT);
+      *ret_arg1 = silc_id_dup(&id.u.client_id, SILC_ID_CLIENT);
       if (!(*ret_arg1))
 	return 0;
       num = 1;
@@ -74,14 +73,13 @@ SilcUInt32 silc_status_get_args(SilcStatus status,
   case SILC_STATUS_ERR_NO_SUCH_SERVER_ID:
   case SILC_STATUS_ERR_BAD_SERVER_ID:
     {
-      SilcServerID server_id;
+      SilcID id;
       tmp = silc_argument_get_arg_type(args, 2, &len);
       if (!tmp)
 	return 0;
-      if (silc_id_payload_parse_id(tmp, len, NULL, &server_id,
-				   sizeof(server_id)))
+      if (silc_id_payload_parse_id(tmp, len, &id))
 	return 0;
-      *ret_arg1 = silc_id_dup(&server_id, SILC_ID_SERVER);
+      *ret_arg1 = silc_id_dup(&id.u.server_id, SILC_ID_SERVER);
       if (!(*ret_arg1))
 	return 0;
       num = 1;
@@ -97,14 +95,13 @@ SilcUInt32 silc_status_get_args(SilcStatus status,
   case SILC_STATUS_ERR_NO_CHANNEL_PRIV:
   case SILC_STATUS_ERR_NO_CHANNEL_FOPRIV:
     {
-      SilcChannelID channel_id;
+      SilcID id;
       tmp = silc_argument_get_arg_type(args, 2, &len);
       if (!tmp)
 	return 0;
-      if (silc_id_payload_parse_id(tmp, len, NULL, &channel_id,
-				   sizeof(channel_id)))
+      if (silc_id_payload_parse_id(tmp, len, &id))
 	return 0;
-      *ret_arg1 = silc_id_dup(&channel_id, SILC_ID_CHANNEL);
+      *ret_arg1 = silc_id_dup(&id.u.channel_id, SILC_ID_CHANNEL);
       if (!(*ret_arg1))
 	return 0;
       num = 1;
@@ -114,26 +111,22 @@ SilcUInt32 silc_status_get_args(SilcStatus status,
   case SILC_STATUS_ERR_USER_NOT_ON_CHANNEL:
   case SILC_STATUS_ERR_USER_ON_CHANNEL:
     {
-      SilcClientID client_id;
-      SilcChannelID channel_id;
-      SilcIdType type;
+      SilcID id;
       tmp = silc_argument_get_arg_type(args, 2, &len);
       if (!tmp)
 	return 0;
-      if (silc_id_payload_parse_id(tmp, len, &type, &client_id,
-				   sizeof(client_id)))
+      if (silc_id_payload_parse_id(tmp, len, &id))
 	return 0;
-      *ret_arg1 = silc_id_dup(&client_id, type);
+      *ret_arg1 = silc_id_dup(&id.u.client_id, id.type);
       if (!(*ret_arg1))
 	return 0;
       num = 1;
       tmp = silc_argument_get_arg_type(args, 3, &len);
       if (!tmp)
 	return num;
-      if (silc_id_payload_parse_id(tmp, len, &type, &channel_id,
-				   sizeof(channel_id)))
+      if (silc_id_payload_parse_id(tmp, len, &id))
 	return 0;
-      *ret_arg2 = silc_id_dup(&channel_id, type);
+      *ret_arg2 = silc_id_dup(&id.u.channel_id, id.type);
       if (!(*ret_arg2))
 	return num;
       num = 2;
