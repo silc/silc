@@ -31,7 +31,7 @@ static SilcBool silc_connauth_packet_receive(SilcPacketEngine engine,
 /* Connection authentication context */
 struct SilcConnAuthStruct {
   SilcSKE ske;
-  SilcFSMStruct fsm;
+  SilcFSM fsm;
   SilcConnectionType conn_type;
   SilcAuthMethod auth_method;
   void *auth_data;
@@ -66,7 +66,7 @@ static SilcBool silc_connauth_packet_receive(SilcPacketEngine engine,
 {
   SilcConnAuth connauth = callback_context;
   connauth->packet = packet;
-  silc_fsm_continue(&connauth->fsm);
+  silc_fsm_continue(connauth->fsm);
   return TRUE;
 }
 
@@ -172,7 +172,7 @@ SILC_TASK_CALLBACK(silc_connauth_timeout)
   SilcConnAuth connauth = context;
   SILC_LOG_DEBUG(("Protocol timeout"));
   connauth->aborted = TRUE;
-  silc_fsm_continue_sync(&connauth->fsm);
+  silc_fsm_continue_sync(connauth->fsm);
 }
 
 /* SKR callback */
@@ -188,7 +188,15 @@ static void silc_connauth_skr_callback(SilcSKR skr, SilcSKRFind find,
   connauth->public_keys = results;
   connauth->skr_status = status;
 
-  SILC_FSM_CALL_CONTINUE(&connauth->fsm);
+  SILC_FSM_CALL_CONTINUE(connauth->fsm);
+}
+
+/* FSM destructor */
+
+static void silc_connauth_fsm_destructor(SilcFSM fsm, void *fsm_context,
+					 void *destructor_context)
+{
+  silc_fsm_free(fsm);
 }
 
 
@@ -209,7 +217,9 @@ SilcConnAuth silc_connauth_alloc(SilcSchedule schedule,
   if (!connauth)
     return NULL;
 
-  if (!silc_fsm_init(&connauth->fsm, connauth, NULL, NULL, schedule)) {
+  connauth->fsm = silc_fsm_alloc(connauth, silc_connauth_fsm_destructor,
+				 NULL, schedule);
+  if (!connauth->fsm) {
     silc_connauth_free(connauth);
     return NULL;
   }
@@ -344,12 +354,12 @@ SILC_FSM_STATE(silc_connauth_st_initiator_result)
   }
   silc_packet_free(connauth->packet);
 
-  /* Call completion callback */
-  connauth->completion(connauth, connauth->success, connauth->context);
-
   silc_packet_stream_unlink(connauth->ske->stream,
 			    &silc_connauth_stream_cbs, connauth);
   silc_schedule_task_del_by_context(silc_fsm_get_schedule(fsm), connauth);
+
+  /* Call completion callback */
+  connauth->completion(connauth, connauth->success, connauth->context);
 
   return SILC_FSM_FINISH;
 }
@@ -412,7 +422,7 @@ silc_connauth_initiator(SilcConnAuth connauth,
 
   /* Start the protocol */
   op = silc_async_alloc(silc_connauth_abort, NULL, connauth);
-  silc_fsm_start(&connauth->fsm, silc_connauth_st_initiator_start);
+  silc_fsm_start(connauth->fsm, silc_connauth_st_initiator_start);
 
   return op;
 }
@@ -688,7 +698,7 @@ silc_connauth_responder(SilcConnAuth connauth,
 
   /* Start the protocol */
   op = silc_async_alloc(silc_connauth_abort, NULL, connauth);
-  silc_fsm_start(&connauth->fsm, silc_connauth_st_responder_start);
+  silc_fsm_start(connauth->fsm, silc_connauth_st_responder_start);
 
   return op;
 }
