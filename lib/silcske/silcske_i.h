@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 struct SilcSKEStruct {
   SilcPacketStream stream;
   SilcRng rng;
+  SilcSKR repository;
   SilcSKECallbacks callbacks;
   void *user_data;
   SilcSKEStatus status;

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2005 Pekka Riikonen
+  Copyright (C) 2000 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -82,6 +82,36 @@ static void silc_ske_pk_verified(SilcSKE ske, SilcSKEStatus status,
 				 void *completion_context)
 {
   ske->status = status;
+  SILC_FSM_CALL_CONTINUE(&ske->fsm);
+}
+
+/* SKR find callback */
+
+static void silc_ske_skr_callback(SilcSKR repository,
+				  SilcSKRFind find,
+				  SilcSKRStatus status,
+				  SilcDList keys, void *context)
+{
+  SilcSKE ske = context;
+
+  silc_skr_find_free(find);
+
+  if (status != SILC_SKR_OK) {
+    if (ske->callbacks->verify_key) {
+      /* Verify from application */
+      ske->callbacks->verify_key(ske, ske->prop->public_key,
+				 ske->callbacks->context,
+				 silc_ske_pk_verified, NULL);
+      return;
+    }
+  }
+
+  if (keys)
+    silc_dlist_uninit(keys);
+
+  /* Continue */
+  ske->status = (status == SILC_SKR_OK ? SILC_SKE_STATUS_OK :
+		 SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY);
   SILC_FSM_CALL_CONTINUE(&ske->fsm);
 }
 
@@ -663,8 +693,8 @@ static SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
 /* Allocates new SKE object. */
 
 SilcSKE silc_ske_alloc(SilcRng rng, SilcSchedule schedule,
-		       SilcPublicKey public_key, SilcPrivateKey private_key,
-		       void *context)
+		       SilcSKR repository, SilcPublicKey public_key,
+		       SilcPrivateKey private_key, void *context)
 {
   SilcSKE ske;
 
@@ -678,11 +708,11 @@ SilcSKE silc_ske_alloc(SilcRng rng, SilcSchedule schedule,
     return NULL;
   ske->status = SILC_SKE_STATUS_OK;
   ske->rng = rng;
+  ske->repository = repository;
   ske->user_data = context;
   ske->schedule = schedule;
   ske->public_key = public_key;
   ske->private_key = private_key;
-  ske->pk_type = SILC_SKE_PK_TYPE_SILC;
 
   return ske;
 }
@@ -995,7 +1025,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
     }
     payload->pk_len = pk_len;
   }
-  payload->pk_type = ske->pk_type;
+  payload->pk_type = silc_pkcs_get_type(ske->public_key);
 
   /* Compute signature data if we are doing mutual authentication */
   if (ske->private_key &&
@@ -1086,7 +1116,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
   }
   ske->ke2_payload = payload;
 
-  if (!payload->pk_data && ske->callbacks->verify_key) {
+  if (!payload->pk_data && (ske->callbacks->verify_key || ske->repository)) {
     SILC_LOG_DEBUG(("Remote end did not send its public key (or certificate), "
 		    "even though we require it"));
     ske->status = SILC_SKE_STATUS_PUBLIC_KEY_NOT_PROVIDED;
@@ -1111,16 +1141,35 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
     goto err;
   }
 
-  if (ske->prop->public_key && ske->callbacks->verify_key) {
+  if (ske->prop->public_key && (ske->callbacks->verify_key ||
+				ske->repository)) {
     SILC_LOG_DEBUG(("Verifying public key"));
 
     /** Waiting public key verification */
     silc_fsm_next(fsm, silc_ske_st_initiator_phase4);
-    SILC_FSM_CALL(ske->callbacks->verify_key(ske,
-					     payload->pk_type,
-					     ske->prop->public_key,
-					     ske->callbacks->context,
-					     silc_ske_pk_verified, NULL));
+
+    /* If repository is provided, verify the key from there. */
+    if (ske->repository) {
+      SilcSKRFind find;
+
+      find = silc_skr_find_alloc();
+      if (!find) {
+	status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+	goto err;
+      }
+      silc_skr_find_set_pkcs_type(find,
+				  silc_pkcs_get_type(ske->prop->public_key));
+      silc_skr_find_set_public_key(find, ske->prop->public_key);
+
+      /* Find key from repository */
+      SILC_FSM_CALL(silc_skr_find(ske->repository, find,
+				  silc_ske_skr_callback, ske));
+    } else {
+      /* Verify from application */
+      SILC_FSM_CALL(ske->callbacks->verify_key(ske, ske->prop->public_key,
+					       ske->callbacks->context,
+					       silc_ske_pk_verified, NULL));
+    }
     /* NOT REACHED */
   }
 
@@ -1569,7 +1618,8 @@ SILC_FSM_STATE(silc_ske_st_responder_phase3)
 
     SILC_LOG_DEBUG(("We are doing mutual authentication"));
 
-    if (!recv_payload->pk_data && ske->callbacks->verify_key) {
+    if (!recv_payload->pk_data && (ske->callbacks->verify_key ||
+				   ske->repository)) {
       /** Public key not provided */
       SILC_LOG_ERROR(("Remote end did not send its public key (or "
 		      "certificate), even though we require it"));
@@ -1591,16 +1641,36 @@ SILC_FSM_STATE(silc_ske_st_responder_phase3)
       return SILC_FSM_CONTINUE;
     }
 
-    if (ske->prop->public_key && ske->callbacks->verify_key) {
+    if (ske->prop->public_key && (ske->callbacks->verify_key ||
+				  ske->repository)) {
       SILC_LOG_DEBUG(("Verifying public key"));
 
       /** Waiting public key verification */
       silc_fsm_next(fsm, silc_ske_st_responder_phase4);
-      SILC_FSM_CALL(ske->callbacks->verify_key(ske,
-					       recv_payload->pk_type,
-					       ske->prop->public_key,
-					       ske->callbacks->context,
-					       silc_ske_pk_verified, NULL));
+
+      /* If repository is provided, verify the key from there. */
+      if (ske->repository) {
+	SilcSKRFind find;
+
+	find = silc_skr_find_alloc();
+	if (!find) {
+	  ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+	  silc_fsm_next(fsm, silc_ske_st_responder_error);
+	  return SILC_FSM_CONTINUE;
+	}
+	silc_skr_find_set_pkcs_type(find,
+				    silc_pkcs_get_type(ske->prop->public_key));
+	silc_skr_find_set_public_key(find, ske->prop->public_key);
+
+	/* Find key from repository */
+	SILC_FSM_CALL(silc_skr_find(ske->repository, find,
+				    silc_ske_skr_callback, ske));
+      } else {
+	/* Verify from application */
+	SILC_FSM_CALL(ske->callbacks->verify_key(ske, ske->prop->public_key,
+						 ske->callbacks->context,
+						 silc_ske_pk_verified, NULL));
+      }
       /* NOT REACHED */
     }
   }
@@ -1767,7 +1837,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
     ske->ke2_payload->sign_len = sign_len;
     memset(sign, 0, sizeof(sign));
   }
-  ske->ke2_payload->pk_type = ske->pk_type;
+  ske->ke2_payload->pk_type = silc_pkcs_get_type(ske->public_key);
 
   /* Encode the Key Exchange Payload */
   status = silc_ske_payload_ke_encode(ske, ske->ke2_payload,

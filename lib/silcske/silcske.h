@@ -228,7 +228,6 @@ typedef void (*SilcSKEVerifyCbCompletion)(SilcSKE ske,
  * SYNOPSIS
  *
  *    typedef void (*SilcSKEVerifyCb)(SilcSKE ske,
- *                                    SilcSKEPKType pk_type,
  *                                    SilcPublicKey public_key,
  *                                    void *context,
  *                                    SilcSKEVerifyCbCompletion completion,
@@ -243,9 +242,11 @@ typedef void (*SilcSKEVerifyCbCompletion)(SilcSKE ske,
  *    arugment to silc_ske_set_callbacks.  See silc_ske_set_callbacks for
  *    more information.
  *
+ *    If the key repository was provided in silc_ske_alloc this callback
+ *    is called only if the public key was not found from the repository.
+ *
  ***/
 typedef void (*SilcSKEVerifyCb)(SilcSKE ske,
-				SilcSKEPKType pk_type,
 				SilcPublicKey public_key,
 				void *context,
 				SilcSKEVerifyCbCompletion completion,
@@ -288,7 +289,7 @@ typedef void (*SilcSKECompletionCb)(SilcSKE ske,
  * SYNOPSIS
  *
  *    SilcSKE silc_ske_alloc(SilcRng rng, SilcSchedule schedule,
- *                           SilcPublicKey public_key,
+ *                           SilcSKR repository, SilcPublicKey public_key,
  *                           SilcPrivateKey private_key, void *context);
  *
  * DESCRIPTION
@@ -302,10 +303,19 @@ typedef void (*SilcSKECompletionCb)(SilcSKE ske,
  *    SKE session context is allocated application must call the
  *    silc_ske_set_callbacks.
  *
+ *    If the `repository' is non-NULL then the remote's public key will be
+ *    verified from the repository.  If it is not provided then the
+ *    SilcSKEVerifyCb callback must be set, and it will be called to
+ *    verify the key.  If both `repository' and the callback is provided the
+ *    callback is called only if the key is not found from the repository.
+ *
+ *    The `public_key' and `private_key' is the caller's identity used
+ *    during the key exchange.
+ *
  * EXMPALE
  *
  *    // Initiator example
- *    ske = silc_ske_alloc(rng, scheduler, app);
+ *    ske = silc_ske_alloc(rng, scheduler, NULL, pk, prv, app);
  *    silc_ske_set_callbacks(ske, verify_public_key, completion, app);
  *    start_payload =
  *      silc_ske_assemble_security_properties(ske, SILC_SKE_SP_FLAG_PFS |
@@ -315,8 +325,8 @@ typedef void (*SilcSKECompletionCb)(SilcSKE ske,
  *
  ***/
 SilcSKE silc_ske_alloc(SilcRng rng, SilcSchedule schedule,
-		       SilcPublicKey public_key, SilcPrivateKey private_key,
-		       void *context);
+		       SilcSKR repository, SilcPublicKey public_key,
+		       SilcPrivateKey private_key, void *context);
 
 /****f* silcske/SilcSKEAPI/silc_ske_free
  *
