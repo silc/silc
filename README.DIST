@@ -71,6 +71,9 @@ directories.  Make sure they are not compiled and does not include any
 extra files.  If you haven't compiled them after the CVS checkout, they do
 not include any extra files.
 
+NOTE: The default make command use by autodist is gmake. You can change
+this by editing distdir/autodist.conf.
+
 NOTE for 'toolkit' distribution:  Running ./configure for toolkit 
 distribution is not necessary.  Toolkit is packaged simply by giving 
 command:

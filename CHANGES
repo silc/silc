@@ -1,3 +1,8 @@
+Sun Jul  2 19:12:36 CEST 2006  Jochen Eisinger <coffee@silcnet.org>
+
+	* Make gmake the default for autodist, so I can properly work
+	  on otaku.  Affected files README.DIST, distdir/autodist.conf
+
 Fri Jan  6 13:08:15 CET 2006 Jochen Eisinger <coffee@silcnet.org>
 
 	* Fixed more autodist issues.  Affected file doc/Makefile.ad,
