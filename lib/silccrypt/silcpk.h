@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ typedef struct {
 typedef struct {
   SilcPublicKeyIdentifierStruct identifier;
   const SilcPKCSAlgorithm *pkcs;   /* PKCS algorithm */
-  void *public_key;	           /* MPKCS algorithm specific public key */
+  void *public_key;	           /* PKCS algorithm specific public key */
 } *SilcSILCPublicKey;
 /***/
 
@@ -101,6 +101,7 @@ typedef struct {
  *    SilcBool silc_pkcs_silc_generate_key(const char *algorithm,
  *                                         const char *scheme,
  *                                         SilcUInt32 bits_key_len,
+ *                                         const char *identifier,
  *                                         SilcRng rng,
  *                                         SilcPublicKey *ret_public_key,
  *                                         SilcPrivateKey *ret_private_key)

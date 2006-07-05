@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -429,53 +429,57 @@ const SilcPKCSAlgorithm *silc_pkcs_find_algorithm(const char *algorithm,
  *
  * SYNOPSIS
  *
- *    const SilcPKCSObject *silc_pkcs_get_pkcs(SilcPublicKey public_key);
+ *    const SilcPKCSObject *silc_pkcs_get_pkcs(void *key);
  *
  * DESCRIPTION
  *
- *    Returns the PKCS object from `public_key'.
+ *    Returns the PKCS object from `key', which may be SilcPublicKey or
+ *    SilcPrivateKey pointer.
  *
  ***/
-const SilcPKCSObject *silc_pkcs_get_pkcs(SilcPublicKey public_key);
+const SilcPKCSObject *silc_pkcs_get_pkcs(void *key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_algorithm
  *
  * SYNOPSIS
  *
- *    const SilcPKCSObject *silc_pkcs_get_algorithm(SilcPublicKey public_key);
+ *    const SilcPKCSAlgorithm *silc_pkcs_get_algorithm(void *key);
  *
  * DESCRIPTION
  *
- *    Returns the PKCS algorithm object from `public_key'.
+ *    Returns the PKCS algorithm object from `key', which may be SilcPublicKey
+ *    or SilcPrivateKey pointer.
  *
  ***/
-const SilcPKCSAlgorithm *silc_pkcs_get_algorithm(SilcPublicKey public_key);
+const SilcPKCSAlgorithm *silc_pkcs_get_algorithm(void *key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_name
  *
  * SYNOPSIS
  *
- *    const char *silc_pkcs_get_name(SilcPublicKey public_key)
+ *    const char *silc_pkcs_get_name(void *key);
  *
  * DESCRIPTION
  *
- *    Returns PKCS algorithm name from the public key.
+ *    Returns PKCS algorithm name from the `key', which may be SilcPublicKey
+ *    or SilcPrivateKey pointer.
  *
  ***/
-const char *silc_pkcs_get_name(SilcPublicKey public_key);
+const char *silc_pkcs_get_name(void *key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_type
  *
  * SYNOPSIS
  *
- *    SilcPKCSType silc_pkcs_get_type(SilcPublicKey public_key);
+ *    SilcPKCSType silc_pkcs_get_type(void *key);
  *
  * DESCRIPTION
  *
- *    Returns PKCS type from the public key.
+ *    Returns PKCS type from the `key', which may be SilcPublicKey or
+ *    SilcPrivateKey pointer.
  *
  ***/
-SilcPKCSType silc_pkcs_get_type(SilcPublicKey public_key);
+SilcPKCSType silc_pkcs_get_type(void *key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_context
  *

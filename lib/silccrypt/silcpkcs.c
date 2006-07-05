@@ -419,30 +419,33 @@ const SilcPKCSAlgorithm *silc_pkcs_find_algorithm(const char *algorithm,
 
 /* Returns PKCS context */
 
-const SilcPKCSObject *silc_pkcs_get_pkcs(SilcPublicKey public_key)
+const SilcPKCSObject *silc_pkcs_get_pkcs(void *key)
 {
+  SilcPublicKey public_key = key;
   return public_key->pkcs;
 }
 
 /* Returns PKCS algorithm context */
 
-const SilcPKCSAlgorithm *silc_pkcs_get_algorithm(SilcPublicKey public_key)
+const SilcPKCSAlgorithm *silc_pkcs_get_algorithm(void *key)
 {
+  SilcPublicKey public_key = key;
   return public_key->pkcs->get_algorithm(public_key->public_key);
 }
 
 /* Return algorithm name */
 
-const char *silc_pkcs_get_name(SilcPublicKey public_key)
+const char *silc_pkcs_get_name(void *key)
 {
-  const SilcPKCSAlgorithm *pkcs = silc_pkcs_get_algorithm(public_key);
+  const SilcPKCSAlgorithm *pkcs = silc_pkcs_get_algorithm(key);
   return pkcs->name;
 }
 
 /* Returns PKCS type */
 
-SilcPKCSType silc_pkcs_get_type(SilcPublicKey public_key)
+SilcPKCSType silc_pkcs_get_type(void *key)
 {
+  SilcPublicKey public_key = key;
   return public_key->pkcs->type;
 }
 
