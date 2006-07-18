@@ -121,7 +121,7 @@ typedef struct {
  *
  * NAME
  *
- *    #define silc_buffer_truelen(buffer)
+ *    SilcUInt32 silc_buffer_truelen(SilcBuffer sb)
  *
  * DESCRIPTION
  *
@@ -136,7 +136,7 @@ typedef struct {
  *
  * NAME
  *
- *    #define silc_buffer_len(buffer)
+ *    SilcUInt32 silc_buffer_len(SilcBuffer sb)
  *
  * DESCRIPTION
  *
@@ -151,7 +151,7 @@ typedef struct {
  *
  * NAME
  *
- *    #define silc_buffer_headlen(buffer)
+ *    SilcUInt32 silc_buffer_headlen(SilcBuffer sb)
  *
  * DESCRIPTION
  *
@@ -166,7 +166,7 @@ typedef struct {
  *
  * NAME
  *
- *    #define silc_buffer_taillen(buffer)
+ *    SilcUInt32 silc_buffer_taillen(SilcBuffer sb)
  *
  * DESCRIPTION
  *
@@ -190,6 +190,30 @@ typedef struct {
  * SOURCE
  */
 #define silc_buffer_data(x) (x)->data
+/***/
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_datalen
+ *
+ * NAME
+ *
+ *    #define silc_buffer_datalen ...
+ *
+ * DESCRIPTION
+ *
+ *    Macro that can be used in function argument list to give the data
+ *    pointer and the data length, instead of calling both silc_buffer_data
+ *    and silc_buffer_len separately.
+ *
+ * EXAMPLE
+ *
+ *    // Following are the same thing
+ *    silc_foo_function(foo, silc_buffer_datalen(buf));
+ *    silc_foo_function(foo, silc_buffer_data(buf), silc_buffer_len(buf));
+ *
+ * SOURCE
+ */
+#define silc_buffer_datalen(x) (x) ? silc_buffer_data(x) : NULL, \
+  (x) ? silc_buffer_len(x) : 0
 /***/
 
 /* Inline functions */
@@ -284,6 +308,27 @@ unsigned char *silc_buffer_steal(SilcBuffer sb, SilcUInt32 *data_len)
     *data_len = silc_buffer_truelen(sb);
   sb->head = sb->data = sb->tail = sb->end = NULL;
   return buf;
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_purge
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    void silc_buffer_purge(SilcBuffer sb);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_buffer_free but free's only the contents of the buffer
+ *    not the buffer itself.  The `sb' remains intact, data is freed.  Buffer
+ *    is ready for re-use after calling this function.
+ *
+ ***/
+
+static inline
+void silc_buffer_purge(SilcBuffer sb)
+{
+  silc_free(silc_buffer_steal(sb, NULL));
 }
 
 /****f* silcutil/SilcBufferAPI/silc_buffer_set
