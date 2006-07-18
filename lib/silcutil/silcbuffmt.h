@@ -61,6 +61,9 @@
  *    if (ret < 0)
  *      error;
  *
+ *    // Free the allocated data
+ *    silc_buffer_purge(&buffer);
+ *
  ***/
 int silc_buffer_format(SilcBuffer dst, ...);
 

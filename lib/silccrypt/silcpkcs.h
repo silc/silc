@@ -621,7 +621,7 @@ SilcBool silc_pkcs_private_key_alloc(SilcPKCSType type,
  *
  * DESCRIPTION
  *
- *    Returns the key length in bits from the public key.
+ *    Returns the key length in bits from the private key.
  *
  ***/
 SilcUInt32 silc_pkcs_private_key_get_len(SilcPrivateKey private_key);

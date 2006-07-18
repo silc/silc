@@ -60,12 +60,12 @@ struct SilcMessagePayloadStruct {
 /* Decrypts the Message Payload. The `data' is the actual Message Payload */
 
 SilcBool silc_message_payload_decrypt(unsigned char *data,
-				  size_t data_len,
-				  SilcBool private_message,
-				  SilcBool static_key,
-				  SilcCipher cipher,
-				  SilcHmac hmac,
-				  SilcBool check_mac)
+				      size_t data_len,
+				      SilcBool private_message,
+				      SilcBool static_key,
+				      SilcCipher cipher,
+				      SilcHmac hmac,
+				      SilcBool check_mac)
 {
   SilcUInt32 mac_len, iv_len = 0, block_len;
   SilcUInt16 len, totlen, dlen;
@@ -230,12 +230,12 @@ silc_message_payload_parse(unsigned char *payload,
    The `true_len' is the data length which is used to create MAC out of. */
 
 SilcBool silc_message_payload_encrypt(unsigned char *data,
-				  SilcUInt32 data_len,
-				  SilcUInt32 true_len,
-				  unsigned char *iv,
-				  SilcUInt32 iv_len,
-				  SilcCipher cipher,
-				  SilcHmac hmac)
+				      SilcUInt32 data_len,
+				      SilcUInt32 true_len,
+				      unsigned char *iv,
+				      SilcUInt32 iv_len,
+				      SilcCipher cipher,
+				      SilcHmac hmac)
 {
   unsigned char mac[32];
   SilcUInt32 mac_len;

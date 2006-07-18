@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -107,12 +107,12 @@ typedef SilcUInt16 SilcMessageFlags;
  * SYNOPSIS
  *
  *    SilcBool silc_message_payload_decrypt(unsigned char *data,
- *                                      size_t data_len,
- *                                      SilcBool private_message,
- *                                      SilcBool static_key,
- *                                      SilcCipher cipher,
- *                                      SilcHmac hmac,
- *                                      SilcBool check_mac);
+ *                                          size_t data_len,
+ *                                          SilcBool private_message,
+ *                                          SilcBool static_key,
+ *                                          SilcCipher cipher,
+ *                                          SilcHmac hmac,
+ *                                          SilcBool check_mac);
  *
  * DESCRIPTION
  *
@@ -132,12 +132,12 @@ typedef SilcUInt16 SilcMessageFlags;
  *
  ***/
 SilcBool silc_message_payload_decrypt(unsigned char *data,
-				  size_t data_len,
-				  SilcBool private_message,
-				  SilcBool static_key,
-				  SilcCipher cipher,
-				  SilcHmac hmac,
-				  SilcBool check_mac);
+				      size_t data_len,
+				      SilcBool private_message,
+				      SilcBool static_key,
+				      SilcCipher cipher,
+				      SilcHmac hmac,
+				      SilcBool check_mac);
 
 /****f* silccore/SilcMessageAPI/silc_message_payload_parse
  *
@@ -181,12 +181,12 @@ silc_message_payload_parse(unsigned char *payload,
  * SYNOPSIS
  *
  *    SilcBool silc_message_payload_encrypt(unsigned char *data,
- *                                      SilcUInt32 data_len,
- *                                      SilcUInt32 true_len,
- *                                      unsigned char *iv,
- *                                      SilcUInt32 iv_len,
- *                                      SilcCipher cipher,
- *                                      SilcHmac hmac);
+ *                                          SilcUInt32 data_len,
+ *                                          SilcUInt32 true_len,
+ *                                          unsigned char *iv,
+ *                                          SilcUInt32 iv_len,
+ *                                          SilcCipher cipher,
+ *                                          SilcHmac hmac);
  *
  * DESCRIPTION
  *
@@ -203,12 +203,12 @@ silc_message_payload_parse(unsigned char *payload,
  *
  ***/
 SilcBool silc_message_payload_encrypt(unsigned char *data,
-				  SilcUInt32 data_len,
-				  SilcUInt32 true_len,
-				  unsigned char *iv,
-				  SilcUInt32 iv_len,
-				  SilcCipher cipher,
-				  SilcHmac hmac);
+				      SilcUInt32 data_len,
+				      SilcUInt32 true_len,
+				      unsigned char *iv,
+				      SilcUInt32 iv_len,
+				      SilcCipher cipher,
+				      SilcHmac hmac);
 
 /****f* silccore/SilcMessageAPI/silc_message_payload_encode
  *

@@ -310,7 +310,8 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
       }
     }
 
-    /* Short integer is actually big integer, so handle it correctly */
+    /* Short integer is actually big integer in the BER data, so handle
+       it correctly */
     if (type == SILC_ASN1_TAG_SHORT_INTEGER && type == tag)
       tag = SILC_ASN1_TAG_INTEGER;
 

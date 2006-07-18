@@ -140,7 +140,7 @@ typedef enum {
  *    returns SILC_FSM_FINISH.  This function will be called through
  *    the scheduler; it will not be called immediately after the state
  *    function returns SILC_FSM_FINISH, but will be called later.
- *    The `fsm' may be freed or uninitialized in this function.
+ *    The `fsm' may be freed in this function.
  *
  ***/
 typedef void (*SilcFSMDestructor)(SilcFSM fsm, void *fsm_context,
@@ -161,7 +161,7 @@ typedef void (*SilcFSMDestructor)(SilcFSM fsm, void *fsm_context,
  *    returns SILC_FSM_FINISH.  This function will be called through
  *    the scheduler; it will not be called immediately after the state
  *    function returns SILC_FSM_FINISH, but will be called later.  The
- *    `thread' may be freed or uninitialized in this function.
+ *    `thread' may be freed in this function.
  *
  * NOTES
  *
@@ -317,8 +317,8 @@ do {						\
  *    works with normal FSM threads, but especially with real system threads
  *    it does not guarantee that the FSM won't continue before the thread has
  *    actually terminated.  Usually this is not a problem, but it can be a
- *    problem if the FSM is waiting to be freed or uninitialized.  In this
- *    case using this macro is strongly recommended.
+ *    problem if the FSM is waiting to be freed.  In this case using this
+ *    macro is strongly recommended.
  *
  ***/
 #define SILC_FSM_THREAD_WAIT(thread)		\
@@ -491,8 +491,7 @@ SilcFSMThread silc_fsm_thread_alloc(SilcFSM fsm,
  *    Initializes a pre-allocated SilcFSMThread context.  This call is
  *    equivalent to silc_fsm_thread_alloc except that this takes the
  *    pre-allocated context as argument.  The silc_fsm_free must not be
- *    called if this was called.  Returns TRUE if the initialization is Ok
- *    or FALSE if error occurred.  If the `real_thread' is TRUE then the
+ *    called if this was called.  If the `real_thread' is TRUE then the
  *    thread will actually be executed in real thread, if platform supports
  *    them.
  *
@@ -874,7 +873,7 @@ void silc_fsm_sema_free(SilcFSMSema sema);
  * EXAMPLE
  *
  *    // Signalling example
- *    ctx->sema = silc_fsm_sema_alloc(fsm, 0);
+ *    ctx->async_sema = silc_fsm_sema_alloc(fsm, 0);
  *    ...
  *
  *    SILC_FSM_STATE(silc_foo_state)
@@ -934,7 +933,6 @@ do {						\
  *    {
  *      SilcBool timedout;
  *      ...
- *
  *
  *      // Wait here for async call to complete, or 10 seconds for timeout
  *      SILC_FSM_SEMA_TIMEDWAIT(ctx->async_sema, 10, 0, &timedout);

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -304,8 +304,8 @@ char *silc_cipher_get_supported(void)
 /* Encrypts */
 
 SilcBool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
-			 unsigned char *dst, SilcUInt32 len,
-			 unsigned char *iv)
+			     unsigned char *dst, SilcUInt32 len,
+			     unsigned char *iv)
 {
 #ifdef SILC_DEBUG
   assert((len & (cipher->cipher->block_len - 1)) == 0);
@@ -319,8 +319,8 @@ SilcBool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
 /* Decrypts */
 
 SilcBool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
-			 unsigned char *dst, SilcUInt32 len,
-			 unsigned char *iv)
+			     unsigned char *dst, SilcUInt32 len,
+			     unsigned char *iv)
 {
 #ifdef SILC_DEBUG
   /*  assert((len & (cipher->cipher->block_len - 1)) == 0); */
@@ -334,7 +334,7 @@ SilcBool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 /* Sets the key for the cipher */
 
 SilcBool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
-			 SilcUInt32 keylen)
+			     SilcUInt32 keylen)
 {
   return cipher->cipher->set_key(cipher->context, key, keylen);
 }

@@ -57,11 +57,11 @@ typedef enum {
  * SYNOPSIS
  *
  *    SilcBool silc_pkcs1_encode(SilcPkcs1BlockType bt,
- *                           const unsigned char *data,
- *                           SilcUInt32 data_len,
- *                           unsigned char *dest_data,
- *                           SilcUInt32 dest_data_size,
- *                           SilcRng rng);
+ *                               const unsigned char *data,
+ *                               SilcUInt32 data_len,
+ *                               unsigned char *dest_data,
+ *                               SilcUInt32 dest_data_size,
+ *                               SilcRng rng);
  *
  * DESCRIPTION
  *
@@ -89,11 +89,11 @@ SilcBool silc_pkcs1_encode(SilcPkcs1BlockType bt,
  * SYNOPSIS
  *
  *    SilcBool silc_pkcs1_decode(SilcPkcs1BlockType bt,
- *                           const unsigned char *data,
- *                           SilcUInt32 data_len,
- *                           unsigned char *dest_data,
- *                           SilcUInt32 dest_data_size,
- *                           SilcUInt32 *dest_len);
+ *                               const unsigned char *data,
+ *                               SilcUInt32 data_len,
+ *                               unsigned char *dest_data,
+ *                               SilcUInt32 dest_data_size,
+ *                               SilcUInt32 *dest_len);
  *
  * DESCRIPTION
  *

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2005 Pekka Riikonen
+  Copyright (C) 2003 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,26 +35,51 @@
 #ifndef SILCBER_H
 #define SILCBER_H
 
+/****d* silcasn1/SilcBerAPI/SilcBerClass
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcBerClass;
+ *
+ * DESCRIPTION
+ *
+ *    Defines the BER classes.
+ *
+ */
 typedef enum {
   SILC_BER_CLASS_UNIVERSAL       = 0x00,   /* Universal */
   SILC_BER_CLASS_APPLICATION     = 0x01,   /* Application */
   SILC_BER_CLASS_CONTEXT         = 0x02,   /* Context-specific */
   SILC_BER_CLASS_PRIVATE         = 0x03,   /* Private */
 } SilcBerClass;
+/***/
 
+/****d* silcasn1/SilcBerAPI/SilcBerEncoding
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcBerEncoding;
+ *
+ * DESCRIPTION
+ *
+ *    Defines the BER encoding type.
+ *
+ */
 typedef enum {
   SILC_BER_ENC_PRIMITIVE         = 0x00,
   SILC_BER_ENC_CONSTRUCTED       = 0x01,
 } SilcBerEncoding;
+/***/
 
 /****f* silcasn1/SilcBerAPI/silc_ber_encode
  *
  * SYNOPSIS
  *
- *    SilcBool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
- *                         SilcBerEncoding encoding, SilcUInt32 tag,
- *                         const unsigned char *data, SilcUInt32 data_len,
- *                         SilcBool indefinite);
+ *    SilcBool
+ *    silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
+ *                    SilcBerEncoding encoding, SilcUInt32 tag,
+ *                    const unsigned char *data, SilcUInt32 data_len,
+ *                    SilcBool indefinite);
  *
  * DESCRIPTION
  *
@@ -66,18 +91,19 @@ typedef enum {
  *
  ***/
 SilcBool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
-		     SilcBerEncoding encoding, SilcUInt32 tag,
-		     const unsigned char *data, SilcUInt32 data_len,
-		     SilcBool indefinite);
+			 SilcBerEncoding encoding, SilcUInt32 tag,
+			 const unsigned char *data, SilcUInt32 data_len,
+			 SilcBool indefinite);
 
 /****f* silcasn1/SilcBerAPI/silc_ber_decode
  *
  * SYNOPSIS
  *
- *    SilcBool silc_ber_decode(SilcBuffer ber, SilcBerClass *ber_class,
- *                         SilcBerEncoding *encoding, SilcUInt32 *tag,
- *                         const unsigned char **data, SilcUInt32 *data_len,
- *                         SilcBool *indefinite, SilcUInt32 *identifier_len);
+ *    SilcBool
+ *    silc_ber_decode(SilcBuffer ber, SilcBerClass *ber_class,
+ *                    SilcBerEncoding *encoding, SilcUInt32 *tag,
+ *                    const unsigned char **data, SilcUInt32 *data_len,
+ *                    SilcBool *indefinite, SilcUInt32 *identifier_len);
  *
  * DESCRIPTION
  *
@@ -93,9 +119,9 @@ SilcBool silc_ber_encode(SilcBuffer ber, SilcBerClass ber_class,
  *
  ***/
 SilcBool silc_ber_decode(SilcBuffer ber, SilcBerClass *ber_class,
-		     SilcBerEncoding *encoding, SilcUInt32 *tag,
-		     const unsigned char **data, SilcUInt32 *data_len,
-		     SilcBool *indefinite, SilcUInt32 *identifier_len);
+			 SilcBerEncoding *encoding, SilcUInt32 *tag,
+			 const unsigned char **data, SilcUInt32 *data_len,
+			 SilcBool *indefinite, SilcUInt32 *identifier_len);
 
 /****f* silcasn1/SilcBerAPI/silc_ber_encoded_len
  *
