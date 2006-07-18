@@ -51,7 +51,6 @@ struct SilcPacketStreamStruct {
   SilcStream stream;			 /* Underlaying stream */
   SilcMutex lock;			 /* Stream lock */
   SilcDList process;			 /* Packet processors, it set */
-  SilcHashTable streamers;	         /* Valid if streamers exist */
   void *stream_context;			 /* Stream context */
   SilcBufferStruct inbuf;	         /* In buffer */
   SilcBufferStruct outbuf;		 /* Out buffer */
@@ -497,8 +496,10 @@ static SilcBool silc_packet_stream_link_va(SilcPacketStream stream,
 
   if (!stream->process) {
     stream->process = silc_dlist_init();
-    if (!stream->process)
+    if (!stream->process) {
+      silc_mutex_unlock(stream->lock);
       return FALSE;
+    }
   }
 
   /* According to priority set the procesor to correct position.  First
@@ -787,24 +788,6 @@ void silc_packet_free(SilcPacket packet)
   silc_mutex_unlock(stream->engine->lock);
 }
 
-/* Creates streamer */
-
-SilcStream silc_packet_streamer_create(SilcPacketStream stream,
-				       SilcPacketType packet_type,
-				       SilcPacketFlags packet_flags)
-{
-  /* XXX TODO */
-  return NULL;
-}
-
-/* Destroyes streamer */
-
-void silc_packet_streamer_destroy(SilcStream stream)
-{
-
-}
-
-
 /****************************** Packet Sending ******************************/
 
 /* Prepare outgoing data buffer for packet sending.  Returns the
@@ -1038,15 +1021,15 @@ SilcBool silc_packet_send_ext(SilcPacketStream stream,
       return FALSE;
 
   return silc_packet_send_raw(stream, type, flags,
-			      src_id_type,
-			      src_id_data,
-			      src_id_len,
-			      dst_id_type,
-			      dst_id_data,
-			      dst_id_len,
+			      src_id ? src_id_type : stream->src_id_type,
+			      src_id ? src_id_data : stream->src_id,
+			      src_id ? src_id_len : stream->src_id_len,
+			      dst_id ? dst_id_type : stream->dst_id_type,
+			      dst_id ? dst_id_data : stream->dst_id,
+			      dst_id ? dst_id_len : stream->dst_id_len,
 			      data, data_len,
-			      cipher,
-			      hmac);
+			      cipher ? cipher : stream->send_key,
+			      hmac ? hmac : stream->send_hmac);
 }
 
 
@@ -1484,7 +1467,7 @@ typedef struct {
   SilcMutex wait_lock;
   SilcCond wait_cond;
   SilcList packet_queue;
-  SilcBool waiting;
+  unsigned int stopped     : 1;
 } *SilcPacketWait;
 
 /* Packet wait receive callback */
@@ -1501,7 +1484,7 @@ silc_packet_wait_packet_receive(SilcPacketEngine engine,
   /* Signal the waiting thread for a new packet */
   silc_mutex_lock(pw->wait_lock);
 
-  if (!pw->waiting) {
+  if (pw->stopped) {
     silc_mutex_unlock(pw->wait_lock);
     return FALSE;
   }
@@ -1557,11 +1540,18 @@ void *silc_packet_wait_init(SilcPacketStream stream, ...)
 
 /* Uninitialize packet waiting */
 
-void silc_packet_wait_uninit(void *context, SilcPacketStream stream)
+void silc_packet_wait_uninit(void *waiter, SilcPacketStream stream)
 {
-  SilcPacketWait pw = context;
+  SilcPacketWait pw = waiter;
   SilcPacket packet;
 
+  /* Signal any threads to stop waiting */
+  silc_mutex_lock(pw->wait_lock);
+  pw->stopped = TRUE;
+  silc_cond_broadcast(pw->wait_cond);
+  silc_mutex_unlock(pw->wait_lock);
+
+  /* Re-acquire lock and free resources */
   silc_mutex_lock(pw->wait_lock);
   silc_packet_stream_unlink(stream, &silc_packet_wait_cbs, pw);
 
@@ -1571,7 +1561,6 @@ void silc_packet_wait_uninit(void *context, SilcPacketStream stream)
     silc_packet_free(packet);
 
   silc_mutex_unlock(pw->wait_lock);
-
   silc_cond_free(pw->wait_cond);
   silc_mutex_free(pw->wait_lock);
   silc_free(pw);
@@ -1579,17 +1568,21 @@ void silc_packet_wait_uninit(void *context, SilcPacketStream stream)
 
 /* Blocks thread until a packet has been received. */
 
-int silc_packet_wait(void *context, int timeout, SilcPacket *return_packet)
+int silc_packet_wait(void *waiter, int timeout, SilcPacket *return_packet)
 {
-  SilcPacketWait pw = context;
+  SilcPacketWait pw = waiter;
   SilcBool ret = FALSE;
 
   silc_mutex_lock(pw->wait_lock);
 
   /* Wait here until packet has arrived */
-  pw->waiting = TRUE;
-  while (silc_list_count(pw->packet_queue) == 0)
+  while (silc_list_count(pw->packet_queue) == 0) {
+    if (pw->stopped) {
+      silc_mutex_unlock(pw->wait_lock);
+      return -1;
+    }
     ret = silc_cond_timedwait(pw->wait_cond, pw->wait_lock, timeout);
+  }
 
   /* Return packet */
   silc_list_start(pw->packet_queue);

@@ -394,10 +394,6 @@ void silc_packet_engine_stop(SilcPacketEngine engine);
  *    To read packets you will receive the packet receive callback from
  *    packet engine.  Destroy the stream with silc_packet_stream_destroy.
  *
- *    If you need to send only one type of SILC packets, then it is possible
- *    to create SILC Packet Streamer with silc_packet_streamer_create, which
- *    can be used with silc_stream_read and silc_stream_write.
- *
  *    The SilcPacketStream is thread safe.  Same context can be safely used
  *    in multi threaded environment.
  *
@@ -435,59 +431,6 @@ void silc_packet_stream_destroy(SilcPacketStream stream);
  *
  ***/
 void silc_packet_stream_set_router(SilcPacketStream stream);
-
-/****f* silccore/SilcPacketAPI/silc_packet_streamer_create
- *
- * SYNOPSIS
- *
- *    SilcStream silc_packet_streamer_create(SilcPacketStream stream,
- *                                           SilcPacketType packet_type,
- *                                           SilcPacketFlags packet_flags);
- *
- * DESCRIPTION
- *
- *    This function can be used to create a SILC Packet Streamer that will
- *    stream only one type of packet indicated by `packet_type' with packet
- *    flags `packet_flags'.  This is special purpose function as usually
- *    multiple different types of packets need to be sent in application.
- *    There are cases however when creating streamer is simpler and more
- *    efficient.  Cases such as file transfer stream or other data streams
- *    that only send and receive one type of packet.  While it would be
- *    possible to use silc_packet_send function to send packets it is
- *    more efficient to create the SILC Packet Streamer and use the
- *    silc_stream_read and silc_stream_write functions.
- *
- *    The encryption and decryption keys, and other information will be
- *    retrieved from the packet stream indicated by `stream', which must be
- *    created before creating the streamer.
- *
- * NOTES
- *
- *    The packet type that is assocated with the packet stream `stream' will
- *    only be available through the returned SilcStream.  That packet type
- *    will not be delivered to the packet callbacks.  To return to the
- *    normal operation destroy the streamer silc_packet_streamer_destroy.
- *
- ***/
-SilcStream silc_packet_streamer_create(SilcPacketStream stream,
-				       SilcPacketType packet_type,
-				       SilcPacketFlags packet_flags);
-
-/****f* silccore/SilcPacketAPI/silc_packet_streamer_destroy
- *
- * SYNOPSIS
- *
- *    void silc_packet_streamer_destroy(SilcStream stream);
- *
- * DESCRIPTION
- *
- *    Destroys the created packet streamer.  Use this function only for
- *    stream created with silc_packet_streamer_create.  The packet type
- *    that was associated with the streamer can be received in the packet
- *    callbacks after the streamer is destroyed.
- *
- ***/
-void silc_packet_streamer_destroy(SilcStream stream);
 
 /****f* silccore/SilcPacketAPI/silc_packet_stream_get_stream
  *
@@ -779,7 +722,8 @@ SilcBool silc_packet_send(SilcPacketStream stream,
  *    Same as silc_packet_send but with this function different sending
  *    parameters can be sent as argument.  This function can be used to
  *    set specific IDs, cipher and HMAC to be used in packet sending,
- *    instead of the ones saved in the `stream'.
+ *    instead of the ones saved in the `stream'.  If any of the extra
+ *    pointers are NULL, default values set to the stream will apply.
  *
  ***/
 SilcBool silc_packet_send_ext(SilcPacketStream stream,
@@ -807,6 +751,11 @@ SilcBool silc_packet_send_ext(SilcPacketStream stream,
  *    to the silc_packet_wait function as argument.  Returns NULL on
  *    error.  To uninitialize the waiting call silc_packet_wait_uninit.
  *
+ * NOTES
+ *
+ *    Note that packets may be available immediately after calling this
+ *    function and they will be buffered, until silc_packet_wait is called.
+ *
  * EXAMPLE
  *
  *      void *waiter;
@@ -827,7 +776,9 @@ void *silc_packet_wait_init(SilcPacketStream stream, ...);
  *
  * DESCRIPTION
  *
- *    Uninitializes the waiting context.
+ *    Uninitializes the waiting context.  This may be called also from
+ *    another thread while other thread is waiting for packets.  This will
+ *    inform the waiting thread to stop waiting.
  *
  ***/
 void silc_packet_wait_uninit(void *waiter, SilcPacketStream stream);
@@ -871,8 +822,8 @@ void silc_packet_wait_uninit(void *waiter, SilcPacketStream stream);
  *      }
  *
  *      ...
- *      // Wait here until packet is received
- *      if ((silc_packet_wait(waiter, 0, &packet)) != -1)
+ *      // Wait here until private message packet is received
+ *      if ((silc_packet_wait(waiter, 0, &packet)) < 0)
  *        return -1;
  *
  *      ... process packet ...
