@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2005 Pekka Riikonen
+  Copyright (C) 1998 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -196,6 +196,7 @@ static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
 
     /* Execute the task if the timeout has expired */
     if (dispatch_all || silc_compare_timeval(&task->timeout, &curtime)) {
+      t->valid = FALSE;
       SILC_SCHEDULE_UNLOCK(schedule);
       t->callback(schedule, schedule->app_context, SILC_TASK_EXPIRE, 0,
 		  t->context);
