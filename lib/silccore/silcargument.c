@@ -297,3 +297,93 @@ unsigned char *silc_argument_get_arg_type(SilcArgumentPayload payload,
 
   return payload->argv[i];
 }
+
+/* Return argument already decoded */
+
+SilcBool silc_argument_get_decoded(SilcArgumentPayload payload,
+				   SilcUInt32 type,
+				   SilcArgumentDecodeType dec_type,
+				   void *ret_arg,
+				   void **ret_arg_alloc)
+{
+  unsigned char *tmp;
+  SilcUInt32 tmp_len;
+
+  tmp = silc_argument_get_arg_type(payload, type, &tmp_len);
+  if (!tmp)
+    return FALSE;
+
+  switch (dec_type) {
+
+  case SILC_ARGUMENT_ID:
+    if (ret_arg)
+      if (!silc_id_payload_parse_id(tmp, tmp_len, (SilcID *)ret_arg))
+	return FALSE;
+
+    if (ret_arg_alloc) {
+      SilcID id;
+      if (!silc_id_payload_parse_id(tmp, tmp_len, &id))
+	return FALSE;
+      *ret_arg_alloc = silc_memdup(&id, sizeof(id));
+    }
+    break;
+
+  case SILC_ARGUMENT_PUBLIC_KEY:
+    {
+      SilcPublicKey public_key;
+
+      if (!ret_arg_alloc)
+	return FALSE;
+
+      if (!silc_public_key_payload_decode(tmp, tmp_len, &public_key))
+	return FALSE;
+
+      *ret_arg_alloc = public_key;
+    }
+    break;
+
+  case SILC_ARGUMENT_ATTRIBUTES:
+    if (!ret_arg_alloc)
+      return FALSE;
+
+    *ret_arg_alloc = silc_attribute_payload_parse(tmp, tmp_len);
+    break;
+
+  case SILC_ARGUMENT_UINT32:
+    if (tmp_len != 4)
+      return FALSE;
+
+    if (ret_arg) {
+      SilcUInt32 *i = ret_arg;
+      SILC_GET32_MSB(*i, tmp);
+    }
+
+    if (ret_arg_alloc) {
+      SilcUInt32 i;
+      SILC_GET32_MSB(i, tmp);
+      *ret_arg_alloc = silc_memdup(&i, sizeof(i));
+    }
+    break;
+
+  case SILC_ARGUMENT_BOOL:
+    if (tmp_len != 1)
+      return FALSE;
+
+    if (ret_arg) {
+      SilcBool *b = ret_arg;
+      *b = (tmp[0] == 0x01 ? TRUE : FALSE);
+    }
+
+    if (ret_arg_alloc) {
+      SilcBool b;
+      b = (tmp[0] == 0x01 ? TRUE : FALSE);
+      *ret_arg_alloc = silc_memdup(&b, sizeof(b));
+    }
+    break;
+
+  default:
+    return FALSE;
+  }
+
+  return TRUE;
+}

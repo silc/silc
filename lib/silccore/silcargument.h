@@ -1,10 +1,10 @@
 /*
 
-  silcargument.h 
+  silcargument.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2002 Pekka Riikonen
+  Copyright (C) 2001 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *
  * DESCRIPTION
  *
- * Implementation of the Argument Payload, that is used to include 
+ * Implementation of the Argument Payload, that is used to include
  * argument to other payload that needs arguments.
  *
  ***/
@@ -32,7 +32,7 @@
 /****s* silccore/SilcArgumentAPI/SilcArgumentPayload
  *
  * NAME
- * 
+ *
  *    typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
  *
  * DESCRIPTION
@@ -49,7 +49,7 @@ typedef struct SilcArgumentPayloadStruct *SilcArgumentPayload;
  *
  * SYNOPSIS
  *
- *    SilcArgumentPayload 
+ *    SilcArgumentPayload
  *    silc_argument_payload_parse(const unsigned char *payload,
  *                                SilcUInt32 payload_len,
  *                                SilcUInt32 argc);
@@ -82,7 +82,7 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
  *    Encodes arguments in to Argument Paylods returning them to SilcBuffer.
  *    The `argv' is the array of the arguments, the `argv_lens' array of
  *    the length of the `argv' arguments and the `argv_types' array of
- *    the argument types of the `argv' arguments. The `argc' is the 
+ *    the argument types of the `argv' arguments. The `argc' is the
  *    number of arguments.
  *
  ***/
@@ -117,7 +117,7 @@ SilcBuffer silc_argument_payload_encode_one(SilcBuffer args,
  *
  * SYNOPSIS
  *
- *    SilcBuffer 
+ *    SilcBuffer
  *    silc_argument_payload_encode_payload(SilcArgumentPayload payload);
  *
  * DESCRIPTION
@@ -212,5 +212,69 @@ unsigned char *silc_argument_get_next_arg(SilcArgumentPayload payload,
 unsigned char *silc_argument_get_arg_type(SilcArgumentPayload payload,
 					  SilcUInt32 type,
 					  SilcUInt32 *ret_len);
+
+/****d* silccore/SilcArgumentAPI/SilcArgumentDecodeType
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcArgumentDecodeType;
+ *
+ * DESCRIPTION
+ *
+ *    Argument decode types used with silc_argument_get_decoded.
+ *
+ * SOURCE
+ */
+typedef enum {
+  SILC_ARGUMENT_ID,		/* SilcID */
+  SILC_ARGUMENT_PUBLIC_KEY,	/* SilcPublicKey (always alloc) */
+  SILC_ARGUMENT_ATTRIBUTES,	/* SilcDList (always alloc) */
+  SILC_ARGUMENT_UINT32,		/* SilcUInt32 */
+  SILC_ARGUMENT_BOOL,		/* SilcBool */
+} SilcArgumentDecodeType;
+/***/
+
+/****f* silccore/SilcArgumentAPI/silc_argument_get_decoded
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_argument_get_decoded(SilcArgumentPayload payload,
+ *                                       SilcUInt32 type,
+ *                                       SilcArgumentDecodeType dec_type,
+ *                                       void *ret_arg,
+ *                                       void *ret_arg_alloc);
+ *
+ * DESCRIPTION
+ *
+ *    Returns decoded argument by type.  This is a helper function to
+ *    decode common argument types directly.  The `type' is the argument
+ *    type number in the payload, and the `dec_type' is the type the
+ *    argument is decoded to.  If the `ret_arg' is non-NULL then the
+ *    decodec data is returned into that pointer.  If the `ret_arg_alloc'
+ *    is non-NULL then this function will allocate the decoded data and
+ *    will return the pointer into `ret_arg_alloc'.  Some types must always
+ *    be allocated; see SilcArgumentDecodeType.
+ *
+ *    Return TRUE if the argument was present and waa successfully decoded.
+ *    FALSE if it is not present, or could not be decoded.
+ *
+ * EXAMPLE
+ *
+ *    SilcID id;
+ *    SilcPublicKey public_key;
+ *
+ *    if (!silc_argument_get_decoded(args, 2, SILC_ARGUMENT_ID, &id, NULL))
+ *      error;
+ *
+ *    if (!silc_argument_get_decoded(args, 4, SILC_ARGUMENT_PUBLIC_KEY,
+ *                                   NULL, &public_key))
+ *      error;
+ *
+ ***/
+SilcBool silc_argument_get_decoded(SilcArgumentPayload payload,
+				   SilcUInt32 type,
+				   SilcArgumentDecodeType dec_type,
+				   void *ret_arg,
+				   void **ret_arg_alloc);
 
 #endif

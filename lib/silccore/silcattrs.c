@@ -468,7 +468,7 @@ unsigned char *silc_attribute_get_verify_data(SilcDList attrs,
 /* Return parsed attribute object */
 
 SilcBool silc_attribute_get_object(SilcAttributePayload payload,
-			       void *object, SilcUInt32 object_size)
+				   void *object, SilcUInt32 object_size)
 {
   SilcUInt16 len;
   SilcBool ret = FALSE;
