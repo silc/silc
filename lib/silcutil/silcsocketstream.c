@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -373,6 +373,8 @@ void silc_socket_stream_destroy(SilcStream stream)
     silc_free(socket_stream->qos);
   }
 
+  silc_schedule_wakeup(socket_stream->schedule);
+
   silc_free(socket_stream);
 }
 
@@ -402,12 +404,14 @@ void silc_socket_stream_notifier(SilcStream stream,
     /* Initially set socket for reading */
     silc_schedule_set_listen_fd(socket_stream->schedule, socket_stream->sock,
 				SILC_TASK_READ, FALSE);
+    silc_schedule_wakeup(socket_stream->schedule);
   } else {
     /* Unschedule the socket */
     silc_schedule_unset_listen_fd(socket_stream->schedule,
 				  socket_stream->sock);
     silc_schedule_task_del_by_fd(socket_stream->schedule,
 				 socket_stream->sock);
+    silc_schedule_wakeup(socket_stream->schedule);
   }
 }
 
