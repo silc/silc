@@ -24,6 +24,7 @@
 #define SILC_IS_SOCKET_STREAM(s) (s->ops == &silc_socket_stream_ops)
 
 const SilcStreamOps silc_socket_stream_ops;
+const SilcStreamOps silc_socket_udp_stream_ops;
 
 /* Platform specific functions */
 int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
@@ -32,6 +33,10 @@ int silc_socket_stream_write(SilcStream stream, const unsigned char *data,
 			     SilcUInt32 data_len);
 SilcBool silc_socket_stream_close(SilcStream stream);
 void silc_socket_stream_destroy(SilcStream stream);
+int silc_socket_udp_stream_read(SilcStream stream, unsigned char *buf,
+				SilcUInt32 buf_len);
+int silc_socket_udp_stream_write(SilcStream stream, const unsigned char *data,
+				 SilcUInt32 data_len);
 
 /* Internal async host lookup context. */
 typedef struct {
@@ -161,13 +166,14 @@ static void silc_socket_host_lookup_abort(SilcAsyncOperation op,
 
 /******************************* Public API *********************************/
 
-/* Creates socket stream */
+/* Creates TCP socket stream */
 
 SilcAsyncOperation
-silc_socket_stream_create(int sock, SilcBool lookup, SilcBool require_fqdn,
-			  SilcSchedule schedule,
-			  SilcSocketStreamCallback callback,
-			  void *context)
+silc_socket_tcp_stream_create(int sock, SilcBool lookup,
+			      SilcBool require_fqdn,
+			      SilcSchedule schedule,
+			      SilcSocketStreamCallback callback,
+			      void *context)
 {
   SilcSocketStream stream;
   SilcSocketHostLookup l;
@@ -179,7 +185,7 @@ silc_socket_stream_create(int sock, SilcBool lookup, SilcBool require_fqdn,
     return NULL;
   }
 
-  SILC_LOG_DEBUG(("Creating new socket stream %p", stream));
+  SILC_LOG_DEBUG(("Creating TCP socket stream %p", stream));
 
   stream->ops = &silc_socket_stream_ops;
   stream->sock = sock;
@@ -221,6 +227,27 @@ silc_socket_stream_create(int sock, SilcBool lookup, SilcBool require_fqdn,
 				   0, 0, l);
     return NULL;
   }
+}
+
+/* Creates UDP socket stream */
+
+SilcStream silc_socket_udp_stream_create(int sock, SilcBool ipv6,
+					 SilcSchedule schedule)
+{
+  SilcSocketStream stream;
+
+  stream = silc_calloc(1, sizeof(*stream));
+  if (!stream)
+    return NULL;
+
+  SILC_LOG_DEBUG(("Creating UDP socket stream %p", stream));
+
+  stream->ops = &silc_socket_udp_stream_ops;
+  stream->sock = sock;
+  stream->schedule = schedule;
+  stream->ipv6 = ipv6;
+
+  return (SilcStream)stream;
 }
 
 /* Returns socket stream information */
@@ -433,6 +460,15 @@ const SilcStreamOps silc_socket_stream_ops =
 {
   silc_socket_stream_read,
   silc_socket_stream_write,
+  silc_socket_stream_close,
+  silc_socket_stream_destroy,
+  silc_socket_stream_notifier,
+  silc_socket_stream_get_schedule,
+};
+const SilcStreamOps silc_socket_udp_stream_ops =
+{
+  silc_socket_udp_stream_read,
+  silc_socket_udp_stream_write,
   silc_socket_stream_close,
   silc_socket_stream_destroy,
   silc_socket_stream_notifier,

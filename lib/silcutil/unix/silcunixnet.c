@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ typedef union {
 } SilcSockaddr;
 
 static SilcBool silc_net_set_sockaddr(SilcSockaddr *addr, const char *ip_addr,
-				  int port)
+				      int port)
 {
   int len;
 
@@ -86,19 +86,19 @@ static SilcBool silc_net_set_sockaddr(SilcSockaddr *addr, const char *ip_addr,
 static void silc_net_accept_stream(SilcSocketStreamStatus status,
 				   SilcStream stream, void *context)
 {
-  SilcNetServer server = context;
+  SilcNetListener listener = context;
 
   if (status != SILC_SOCKET_OK)
     return;
 
-  server->callback(SILC_NET_OK, stream, server->context);
+  listener->callback(SILC_NET_OK, stream, listener->context);
 }
 
 /* Accept incoming connection and notify upper layer */
 
 SILC_TASK_CALLBACK(silc_net_accept)
 {
-  SilcNetServer server = context;
+  SilcNetListener listener = context;
   int sock;
 
   SILC_LOG_DEBUG(("Accepting new connection"));
@@ -112,45 +112,47 @@ SILC_TASK_CALLBACK(silc_net_accept)
   silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
 
   /* Create socket stream */
-  silc_socket_stream_create(sock, TRUE, server->require_fqdn, schedule,
-			    silc_net_accept_stream, server);
+  silc_socket_tcp_stream_create(sock, TRUE, listener->require_fqdn, schedule,
+				silc_net_accept_stream, listener);
 }
 
-/* Create network listener */
+/* Create TCP network listener */
 
-SilcNetServer
-silc_net_create_server(const char **local_ip_addr, SilcUInt32 local_ip_count,
-		       int port, SilcBool require_fqdn, SilcSchedule schedule,
-		       SilcNetCallback callback, void *context)
+SilcNetListener
+silc_net_tcp_create_listener(const char **local_ip_addr,
+			     SilcUInt32 local_ip_count,
+			     int port, SilcBool require_fqdn,
+			     SilcSchedule schedule,
+			     SilcNetCallback callback, void *context)
 {
-  SilcNetServer netserver = NULL;
+  SilcNetListener listener = NULL;
   SilcSockaddr server;
   int i, sock, rval;
   const char *ipany = "0.0.0.0";
 
-  SILC_LOG_DEBUG(("Creating new network listener"));
+  SILC_LOG_DEBUG(("Creating TCP listener"));
 
   if (port < 1 || !schedule || !callback)
     goto err;
 
-  netserver = silc_calloc(1, sizeof(*netserver));
-  if (!netserver) {
+  listener = silc_calloc(1, sizeof(*listener));
+  if (!listener) {
     callback(SILC_NET_NO_MEMORY, NULL, context);
     return NULL;
   }
-  netserver->schedule = schedule;
-  netserver->callback = callback;
-  netserver->context = context;
+  listener->schedule = schedule;
+  listener->callback = callback;
+  listener->context = context;
 
   if (local_ip_count > 0) {
-    netserver->socks = silc_calloc(local_ip_count, sizeof(*netserver->socks));
-    if (!netserver->socks) {
+    listener->socks = silc_calloc(local_ip_count, sizeof(*listener->socks));
+    if (!listener->socks) {
       callback(SILC_NET_NO_MEMORY, NULL, context);
       return NULL;
     }
   } else {
-    netserver->socks = silc_calloc(1, sizeof(*netserver->socks));
-    if (!netserver->socks) {
+    listener->socks = silc_calloc(1, sizeof(*listener->socks));
+    if (!listener->socks) {
       callback(SILC_NET_NO_MEMORY, NULL, context);
       return NULL;
     }
@@ -183,7 +185,7 @@ silc_net_create_server(const char **local_ip_addr, SilcUInt32 local_ip_count,
       goto err;
     }
 
-    /* Bind the server socket */
+    /* Bind the listener socket */
     rval = bind(sock, &server.sa, SIZEOF_SOCKADDR(server));
     if (rval < 0) {
       SILC_LOG_DEBUG(("Cannot bind socket: %s", strerror(errno)));
@@ -201,39 +203,220 @@ silc_net_create_server(const char **local_ip_addr, SilcUInt32 local_ip_count,
     silc_net_set_socket_nonblock(sock);
 
     /* Schedule for incoming connections */
-    silc_schedule_task_add_fd(schedule, sock, silc_net_accept, netserver);
+    silc_schedule_task_add_fd(schedule, sock, silc_net_accept, listener);
 
-    SILC_LOG_DEBUG(("Network listener created, fd=%d", sock));
-    netserver->socks[i] = sock;
-    netserver->socks_count++;
+    SILC_LOG_DEBUG(("TCP listener created, fd=%d", sock));
+    listener->socks[i] = sock;
+    listener->socks_count++;
   }
 
-  return netserver;
+  return listener;
 
  err:
   if (callback)
     callback(SILC_NET_ERROR, NULL, context);
-  if (netserver)
-    silc_net_close_server(netserver);
+  if (listener)
+    silc_net_close_listener(listener);
   return NULL;
 }
 
 /* Close network listener */
 
-void silc_net_close_server(SilcNetServer server)
+void silc_net_close_listener(SilcNetListener listener)
 {
   int i;
 
   SILC_LOG_DEBUG(("Closing network listener"));
 
-  for (i = 0; i < server->socks_count; i++) {
-    silc_schedule_task_del_by_fd(server->schedule, server->socks[i]);
-    shutdown(server->socks[i], 2);
-    close(server->socks[i]);
+  for (i = 0; i < listener->socks_count; i++) {
+    silc_schedule_task_del_by_fd(listener->schedule, listener->socks[i]);
+    shutdown(listener->socks[i], 2);
+    close(listener->socks[i]);
   }
 
-  silc_free(server->socks);
-  silc_free(server);
+  silc_free(listener->socks);
+  silc_free(listener);
+}
+
+/* Create UDP stream */
+
+SilcStream
+silc_net_udp_connect(const char *local_ip_addr, int local_port,
+		     const char *remote_ip_addr, int remote_port,
+		     SilcSchedule schedule)
+{
+  SilcStream stream;
+  SilcSockaddr server;
+  int sock = -1, rval;
+  const char *ipany = "0.0.0.0";
+
+  SILC_LOG_DEBUG(("Creating UDP stream"));
+
+  if (local_port < 1 || !schedule)
+    goto err;
+
+  /* Bind to local addresses */
+  SILC_LOG_DEBUG(("Binding to local address %s",
+		  local_ip_addr ? local_ip_addr : ipany));
+
+  /* Set sockaddr for server */
+  if (!silc_net_set_sockaddr(&server, local_ip_addr ? local_ip_addr : ipany,
+			     local_port))
+    goto err;
+
+  /* Create the socket */
+  sock = socket(server.sin.sin_family, SOCK_DGRAM, 0);
+  if (sock < 0) {
+    SILC_LOG_ERROR(("Cannot create socket: %s", strerror(errno)));
+    goto err;
+  }
+
+  /* Set the socket options */
+  rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
+  if (rval < 0) {
+    SILC_LOG_ERROR(("Cannot set socket options: %s", strerror(errno)));
+    goto err;
+  }
+#ifdef SO_REUSEPORT
+  rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEPORT, 1);
+  if (rval < 0) {
+    SILC_LOG_ERROR(("Cannot set socket options: %s", strerror(errno)));
+    goto err;
+  }
+#endif /* SO_REUSEPORT */
+
+  /* Bind the listener socket */
+  rval = bind(sock, &server.sa, SIZEOF_SOCKADDR(server));
+  if (rval < 0) {
+    SILC_LOG_DEBUG(("Cannot bind socket: %s", strerror(errno)));
+    goto err;
+  }
+
+  /* Set socket to non-blocking mode */
+  silc_net_set_socket_nonblock(sock);
+
+  /* Set to connected state if remote address is provided. */
+  if (remote_ip_addr && remote_port) {
+    if (!silc_net_set_sockaddr(&server, remote_ip_addr, remote_port))
+      goto err;
+
+    rval = connect(sock, &server.sa, SIZEOF_SOCKADDR(server));
+    if (rval < 0) {
+      SILC_LOG_DEBUG(("Cannot connect UDP stream: %s", strerror(errno)));
+      goto err;
+    }
+  }
+
+  /* Set send and receive buffer size */
+#ifdef SO_SNDBUF
+  rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_SNDBUF, 65535);
+  if (rval < 0) {
+    SILC_LOG_ERROR(("Cannot set socket options: %s", strerror(errno)));
+    goto err;
+  }
+#endif /* SO_SNDBUF */
+#ifdef SO_RCVBUF
+  rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_RCVBUF, 65535);
+  if (rval < 0) {
+    SILC_LOG_ERROR(("Cannot set socket options: %s", strerror(errno)));
+    goto err;
+  }
+#endif /* SO_RCVBUF */
+
+  /* Encapsulate into socket stream */
+  stream =
+    silc_socket_udp_stream_create(sock, local_ip_addr ?
+				  silc_net_is_ip6(local_ip_addr) : FALSE,
+				  schedule);
+  if (!stream)
+    goto err;
+
+  SILC_LOG_DEBUG(("UDP stream created, fd=%d", sock));
+  return stream;
+
+ err:
+  if (sock != -1)
+    close(sock);
+  return NULL;
+}
+
+/* Receive UDP packet */
+
+int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
+			 SilcUInt32 remote_ip_addr_size, int *remote_port,
+			 unsigned char *ret_data, SilcUInt32 data_size)
+{
+  SilcSocketStream sock = stream;
+  SilcSockaddr s;
+  struct sockaddr *from;
+  int len, flen;
+
+  SILC_LOG_DEBUG(("Reading data from UDP socket %d", sock->sock));
+
+  if (remote_ip_addr && remote_port) {
+    if (sock->ipv6) {
+      from = (struct sockaddr *)&s.sin6;
+      flen = sizeof(s.sin6);
+    } else {
+      from = (struct sockaddr *)&s.sin;
+      flen = sizeof(s.sin);
+    }
+    len = recvfrom(sock->sock, ret_data, data_size, 0, from, &flen);
+  } else
+    len = recv(sock->sock, ret_data, data_size, 0);
+
+  if (len < 0) {
+    if (errno == EAGAIN || errno == EINTR) {
+      SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
+      silc_schedule_set_listen_fd(sock->schedule, sock->sock,
+				  SILC_TASK_READ, FALSE);
+      return -1;
+    }
+    SILC_LOG_DEBUG(("Cannot read from UDP socket: %d:%s",
+		    sock->sock, strerror(errno)));
+    silc_schedule_unset_listen_fd(sock->schedule, sock->sock);
+    sock->sock_error = errno;
+    return -2;
+  }
+
+  SILC_LOG_DEBUG(("Read %d bytes", len));
+
+  if (!len)
+    silc_schedule_unset_listen_fd(sock->schedule, sock->sock);
+
+  /* Return remote address */
+  if (remote_ip_addr && remote_port) {
+    if (sock->ipv6) {
+      *remote_port = ntohs(s.sin6.sin6_port);
+      inet_ntop(AF_INET6, &s.sin6.sin6_addr, remote_ip_addr,
+		remote_ip_addr_size);
+    } else {
+      *remote_port = ntohs(s.sin.sin_port);
+      inet_ntop(AF_INET, &s.sin.sin_addr, remote_ip_addr,
+		remote_ip_addr_size);
+    }
+  }
+
+  return len;
+}
+
+/* Send UDP packet */
+
+void silc_net_udp_send(SilcStream stream,
+		       const char *remote_ip_addr, int remote_port,
+		       const unsigned char *data, SilcUInt32 data_len)
+{
+  SilcSocketStream sock = stream;
+  SilcSockaddr remote;
+
+  SILC_LOG_DEBUG(("Writing data to UDP socket %d", sock->sock));
+
+  /* Set sockaddr for server */
+  if (!silc_net_set_sockaddr(&remote, remote_ip_addr, remote_port))
+    return;
+
+  /* Send */
+  sendto(sock->sock, data, data_len, 0, &remote.sa, SIZEOF_SOCKADDR(remote));
 }
 
 /* Asynchronous TCP/IP connecting */
@@ -431,7 +614,7 @@ SILC_FSM_STATE(silc_net_connect_st_connected)
 
   /** Connection created */
   silc_fsm_next(fsm, silc_net_connect_st_stream);
-  SILC_FSM_CALL((conn->sop = silc_socket_stream_create(
+  SILC_FSM_CALL((conn->sop = silc_socket_tcp_stream_create(
 				     conn->sock, FALSE, FALSE,
 				     schedule,
 				     silc_net_connect_wait_stream, conn)));

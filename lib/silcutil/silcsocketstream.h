@@ -80,20 +80,20 @@ typedef enum {
 typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
 					 SilcStream stream, void *context);
 
-/****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_create
+/****f* silcutil/SilcSocketStreamAPI/silc_socket_tcp_stream_create
  *
  * SYNOPSIS
  *
  *    SilcAsyncOperation
- *    silc_socket_stream_create(int sock, SilcBool lookup,
- *                              SilcBool require_fqdn,
- *                              SilcSchedule schedule,
- *                              SilcSocketStreamCallback callback,
- *                              void *context);
+ *    silc_socket_tcp_stream_create(int sock, SilcBool lookup,
+ *                                  SilcBool require_fqdn,
+ *                                  SilcSchedule schedule,
+ *                                  SilcSocketStreamCallback callback,
+ *                                  void *context);
  *
  * DESCRIPTION
  *
- *    Creates new socket stream of the socket connection indicated by `sock'.
+ *    Creates TCP socket stream of the TCP connection indicated by `sock'.
  *    The stream can be destroyed by calling the silc_stream_destroy.  Data
  *    can be sent and received from the stream by calling silc_stream_write
  *    and silc_stream_read.  The creation process is asynchronous since
@@ -111,25 +111,40 @@ typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
  *
  ***/
 SilcAsyncOperation
-silc_socket_stream_create(int sock, SilcBool lookup,
-			  SilcBool require_fqdn,
-			  SilcSchedule schedule,
-			  SilcSocketStreamCallback callback,
-			  void *context);
-
-SilcAsyncOperation
 silc_socket_tcp_stream_create(int sock, SilcBool lookup,
 			      SilcBool require_fqdn,
 			      SilcSchedule schedule,
 			      SilcSocketStreamCallback callback,
 			      void *context);
 
-SilcAsyncOperation
-silc_socket_udp_stream_create(int sock, SilcBool lookup,
-			      SilcBool require_fqdn,
-			      SilcSchedule schedule,
-			      SilcSocketStreamCallback callback,
-			      void *context);
+/****f* silcutil/SilcSocketStreamAPI/silc_socket_udp_stream_create
+ *
+ * SYNOPSIS
+ *
+ *    SilcStream silc_socket_udp_stream_create(int sock, SilcBool ipv6,
+ *                                             SilcSchedule schedule);
+ *
+ * DESCRIPTION
+ *
+ *    Creates UDP socket stream of the UDP connection indicated by `sock'.
+ *    The stream can be destroyed by calling the silc_stream_destroy.
+ *
+ *    Note that, UDP packets may be read only through the notifier
+ *    callback (see silc_stream_set_notifier), when SILC_STREAM_CAN_READ
+ *    is returned to the callback.  Because of this the notifier callback
+ *    must be set.
+ *
+ *    Note that, UDP packet sending using silc_stream_write and receiving
+ *    with silc_stream_read works only if the `sock' is a UDP socket in a
+ *    connected state.  If it is not the silc_net_udp_send function and
+ *    silc_net_udp_receive functions must be used.  The SILC_STREAM_CAN_WRITE
+ *    is never returned to the notifier callback.
+ *
+ *    This function returns the created SilcStream or NULL on error.
+ *
+ ***/
+SilcStream silc_socket_udp_stream_create(int sock, SilcBool ipv6,
+					 SilcSchedule schedule);
 
 /****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_get_info
  *

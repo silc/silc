@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -174,11 +174,40 @@ int silc_socket_stream_write(SilcStream stream, const unsigned char *data,
   return ret;
 }
 
+/* Receive UDP packet.  QoS is not supported. */
+
+int silc_socket_udp_stream_read(SilcStream stream, unsigned char *buf,
+				SilcUInt32 buf_len)
+{
+  return silc_net_udp_receive(stream, NULL, 0, NULL, buf, buf_len);
+}
+
+/* Send UDP packet.  This always succeeds. */
+
+int silc_socket_udp_stream_write(SilcStream stream, const unsigned char *data,
+				 SilcUInt32 data_len)
+{
+  SilcSocketStream sock = stream;
+  int ret;
+
+  SILC_LOG_DEBUG(("Writing data to UDP socket %d", sock->sock));
+
+  ret = send(sock->sock, data, data_len, 0);
+  if (ret < 0) {
+    /* Ignore error and return success */
+    SILC_LOG_DEBUG(("Cannot write to UDP socket: %s", strerror(errno)));
+    return data_len;
+  }
+
+  SILC_LOG_DEBUG(("Wrote data %d bytes", ret));
+  return ret;
+}
+
 #if 0
 /* Returns human readable socket error message */
 
 SilcBool silc_socket_get_error(SilcStream sock, char *error,
-			   SilcUInt32 error_len)
+			       SilcUInt32 error_len)
 {
   char *err;
 

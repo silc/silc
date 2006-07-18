@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,8 +22,9 @@
  * DESCRIPTION
  *
  * SILC Net API provides various network routines for applications. It
- * can be used to create TCP/IP connections and servers. Various utility
- * functions for resolving various information is also provided.
+ * can be used to create TCP/IP and UDP/IP connections and listeners.
+ * Various utility functions for resolving various information is also
+ * provided.
  *
  * On WIN32 systems the SILC Net API must initialized by calling the
  * silc_net_win32_init and uninitialized when the application ends by
@@ -37,20 +38,20 @@
 
 /* Prototypes */
 
-/****s* silcutil/SilcNetAPI/SilcNetServer
+/****s* silcutil/SilcNetAPI/SilcNetListener
  *
  * NAME
  *
- *    typedef struct SilcNetServerStruct *SilcNetServer;
+ *    typedef struct SilcNetListenerStruct *SilcNetListener;
  *
  * DESCRIPTION
  *
- *    The network server (daemon, listener, etc.) context.  This context
- *    is created with the silc_net_create_server function and destroyed
- *    with silc_net_close_server function.
+ *    The network listenr context.  This context is created with the
+ *    silc_net_create_listener function and destroyed with
+ *    silc_net_close_listener function.
  *
  ***/
-typedef struct SilcNetServerStruct *SilcNetServer;
+typedef struct SilcNetListenerStruct *SilcNetListener;
 
 /****d* silcutil/SilcNetAPI/SilcNetStatus
  *
@@ -86,64 +87,68 @@ typedef enum {
  *
  * DESCRIPTION
  *
- *    A callback function of this type is returned by silc_net_create_server
- *    and silc_net_connect_async functions.  For silc_net_create_server this
- *    callback means that new incoming connection was accepted, and the
- *    `stream' is the socket stream representing the socket connection.
+ *    A callback of this type is returned by silc_net_tcp_create_listener,
+ *    silc_net_udp_create_listener, silc_net_tcp_connect and
+ *    silc_net_udp_connect functions.  For silc_net_tcp_create_listener
+ *    and silc_net_udp_create_listener this callback means that new incoming
+ *    connection was accepted, and the `stream' is the socket stream
+ *    representing the socket connection.
  *
- *    For silc_net_connect_async this means that we have connected to the
- *    remote host and the `stream' is the socket stream for the socket
- *    connection.  The SILC Stream API (such as silc_stream_read, etc.)
- *    can be used to read and write to the stream.  The created stream
- *    is socket stream so various SilcSocketStream API functions can be
- *    used with the `stream'.
+ *    For silc_net_tcp_connect and silc_net_udp_connect this means that we
+ *    have connected to the remote host and the `stream' is the socket
+ *    stream for the socket connection.  The SILC Stream API (such as
+ *    silc_stream_read, etc.) can be used to read and write to the stream.
+ *    The created stream is socket stream so various SilcSocketStream API
+ *    functions can be used with the `stream'.
  *
  ***/
 typedef void (*SilcNetCallback)(SilcNetStatus status,
 				SilcStream stream, void *context);
 
-/****f* silcutil/SilcNetAPI/silc_net_create_server
+/****f* silcutil/SilcNetAPI/silc_net_tcp_create_listener
  *
  * SYNOPSIS
  *
- *    SilcNetServer
- *    silc_net_create_server(const char **local_ip_addr,
- *                           SilcUInt32 local_ip_count,
- *                           int port, SilcBool require_fqdn,
- *                           SilcSchedule schedule,
- *                           SilcNetCallback callback, void *context);
+ *    SilcNetListener
+ *    silc_net_tcp_create_listener(const char **local_ip_addr,
+ *                                 SilcUInt32 local_ip_count,
+ *                                 int port, SilcBool require_fqdn,
+ *                                 SilcSchedule schedule,
+ *                                 SilcNetCallback callback, void *context);
  *
  * DESCRIPTION
  *
- *    This function creates server or daemon or listener etc.  This is used
- *    to create network listener for incoming connections, and `callback'
- *    will be called everytime new connection is received.  If `local_ip_addr'
- *    is NULL any address is used.  If provided it can be used bind the
- *    server to `local_ip_count' many IP addresses provided in `local_ip_addr'
- *    table.  On success returns the SilcNetServer context, or NULL on error.
- *    If `require_fqdn' is TRUE the server will require that the incoming
+ *    This function creates TCP listener etc.  This is used to create network
+ *    listener for incoming connections, and `callback' will be called
+ *    everytime new connection is received.  If `local_ip_addr' is NULL any
+ *    address is used.  If provided it can be used bind the listener to
+ *    `local_ip_count' many IP addresses provided in `local_ip_addr' table.
+ *    On success returns the SilcNetListener context, or NULL on error.
+ *    If `require_fqdn' is TRUE the listener will require that the incoming
  *    connection has FQDN to be able to connect.
  *
  ***/
-SilcNetServer
-silc_net_create_server(const char **local_ip_addr, SilcUInt32 local_ip_count,
-		       int port, SilcBool require_fqdn, SilcSchedule schedule,
-		       SilcNetCallback callback, void *context);
+SilcNetListener
+silc_net_tcp_create_listener(const char **local_ip_addr,
+			     SilcUInt32 local_ip_count,
+			     int port, SilcBool require_fqdn,
+			     SilcSchedule schedule,
+			     SilcNetCallback callback, void *context);
 
-/****f* silcutil/SilcNetAPI/silc_net_close_server
+/****f* silcutil/SilcNetAPI/silc_net_close_listener
  *
  * SYNOPSIS
  *
- *    void silc_net_close_server(SilcNetServer server);
+ *    void silc_net_close_listener(SilcNetListener listener);
  *
  * DESCRIPTION
  *
- *    Closes the network server listener indicated by `server'.
+ *    Closes the network listener indicated by `listener'.
  *
  ***/
-void silc_net_close_server(SilcNetServer server);
+void silc_net_close_listener(SilcNetListener listener);
 
-/****f* silcutil/SilcNetAPI/silc_net_connect
+/****f* silcutil/SilcNetAPI/silc_net_tcp_connect
  *
  * SYNOPSIS
  *
@@ -179,12 +184,96 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
 					SilcNetCallback callback,
 					void *context);
 
-SilcAsyncOperation silc_net_udp_connect(const char *local_ip_addr,
-					const char *remote_ip_addr,
-					int remote_port,
-					SilcSchedule schedule,
-					SilcNetCallback callback,
-					void *context);
+/****f* silcutil/SilcNetAPI/silc_net_udp_connect
+ *
+ * SYNOPSIS
+ *
+ *    SilcStream
+ *    silc_net_udp_connect(const char *local_ip_addr, int local_port,
+ *                         const char *remote_ip_addr, int remote_port,
+ *                         SilcSchedule schedule);
+ *
+ * DESCRIPTION
+ *
+ *    This function creates UDP stream.  The UDP stream is bound to the
+ *    `local_ip_addr' if it is specified.  The `local_port' must always be
+ *    specified.  If the `remote_ip_addr' and `remote_port' is also provided,
+ *    packets may be sent to that address using silc_stream_write function
+ *    and packets may be received using silc_stream_read function.
+ *
+ *    If the remote address is not provided then packets may only be received
+ *    by using silc_net_udp_receive and sent only by using the function
+ *    silc_net_udp_send.
+ *
+ *    To receive packets the silc_stream_set_notifier must be called for the
+ *    returned SilcStream.  The packets are always received in the notifier
+ *    callback when the SILC_STREAM_CAN_READ is returned to the callback
+ *    To read the packet use silc_stream_read if the remote address was
+ *    provided, and silc_net_udp_receive if it was not.
+ *
+ * EXAMPLE
+ *
+ *    SilcStream udpstream;
+ *
+ *    // Create UDP stream and prepare to receive packets
+ *    udpstream = silc_net_udp_connect("10.2.1.7", 5000,
+ *                                     "10.2.1.100, 5000, schedule);
+ *    silc_stream_set_notifier(udpstream, schedule, receive_callback, context);
+ *
+ *    // Send packet to remote host
+ *    silc_stream_write(udpstream, data, data_len);
+ *
+ ***/
+SilcStream
+silc_net_udp_connect(const char *local_ip_addr, int local_port,
+		     const char *remote_ip_addr, int remote_port,
+		     SilcSchedule schedule);
+
+/****f* silcutil/SilcNetAPI/silc_net_udp_receive
+ *
+ * SYNOPSIS
+ *
+ *    int
+ *    silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
+ *                         SilcUInt32 remote_ip_addr_size, int *remote_port,
+ *                         unsigned char *ret_data, SilcUInt32 data_size)
+ *
+ * DESCRIPTION
+ *
+ *    Receive a UDP packet from the `stream'.  The IP address and port of
+ *    the sender is returned into `remote_ip_addr' buffer and `remote_port'
+ *    pointer.  The packet data is returned into the `ret_data' buffer.
+ *
+ *    Returns the length of the packet, or -1 on error or 0 in case of EOF.
+ *
+ ***/
+int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
+			 SilcUInt32 remote_ip_addr_size, int *remote_port,
+			 unsigned char *ret_data, SilcUInt32 data_size);
+
+/****f* silcutil/SilcNetAPI/silc_net_udp_send
+ *
+ * SYNOPSIS
+ *
+ *    void silc_net_udp_send(SilcStream stream,
+ *                           const char *remote_ip_addr, int remote_port,
+ *                           const unsigned char *data, SilcUInt32 data_len);
+ *
+ * DESCRIPTION
+ *
+ *    Sends an UDP packet to remote host `remote_ip_addr' on `remote_port'.
+ *    This may be used with UDP streams that are not connected to any
+ *    specific remote host.  With those stream silc_stream_write cannot be
+ *    used.  In those cases, this function must be used.  This may also be
+ *    used even if the stream is connected.
+ *
+ *    This function always succeeds, however there is no guarantee that the
+ *    packet is delivered, as UDP is unreliable transport protocol.
+ *
+ ***/
+void silc_net_udp_send(SilcStream stream,
+		       const char *remote_ip_addr, int remote_port,
+		       const unsigned char *data, SilcUInt32 data_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_close_connection
  *
@@ -344,8 +433,8 @@ typedef void (*SilcNetResolveCallback)(const char *result, void *context);
  *    address also.
  *
  ***/
-SilcBool silc_net_gethostbyname(const char *name, SilcBool prefer_ipv6, char *address,
-			    SilcUInt32 address_len);
+SilcBool silc_net_gethostbyname(const char *name, SilcBool prefer_ipv6,
+				char *address, SilcUInt32 address_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_gethostbyname_async
  *
@@ -390,7 +479,8 @@ void silc_net_gethostbyname_async(const char *name,
  *    This is synchronous function and will block the calling process.
  *
  ***/
-SilcBool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len);
+SilcBool silc_net_gethostbyaddr(const char *addr, char *name,
+				SilcUInt32 name_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_gethostbyaddr_async
  *
@@ -418,7 +508,8 @@ void silc_net_gethostbyaddr_async(const char *addr,
  *
  * SYNOPSIS
  *
- *    SilcBool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
+ *    SilcBool silc_net_check_host_by_sock(int sock, char **hostname,
+ *                                         char **ip);
  *
  * DESCRIPTION
  *
@@ -432,7 +523,8 @@ SilcBool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_net_check_local_by_sock(int sock, char **hostname, char **ip);
+ *    SilcBool silc_net_check_local_by_sock(int sock, char **hostname,
+ *                                          char **ip);
  *
  * DESCRIPTION
  *
