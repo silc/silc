@@ -252,7 +252,7 @@ silc_net_udp_connect(const char *local_ip_addr, int local_port,
 
   SILC_LOG_DEBUG(("Creating UDP stream"));
 
-  if (local_port < 1 || !schedule)
+  if (!schedule)
     goto err;
 
   /* Bind to local addresses */

@@ -24,6 +24,7 @@
 @LINK=silcdlist.html:SILC Dynamic List Interface
 @LINK=silcvcard.html:SILC VCard Interface
 @LINK=silcapputil.html:SILC Application Utilities
+@LINK=silcidcache.html:SILC ID Cache Interface
 -->
 
 <big><b>SILC Utility Library</b></big>

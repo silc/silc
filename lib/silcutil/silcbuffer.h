@@ -212,8 +212,8 @@ typedef struct {
  *
  * SOURCE
  */
-#define silc_buffer_datalen(x) (x) ? silc_buffer_data(x) : NULL, \
-  (x) ? silc_buffer_len(x) : 0
+#define silc_buffer_datalen(x) (x) ? silc_buffer_data((x)) : NULL, \
+  (x) ? silc_buffer_len((x)) : 0
 /***/
 
 /* Inline functions */

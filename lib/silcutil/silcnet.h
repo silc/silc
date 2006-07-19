@@ -87,19 +87,17 @@ typedef enum {
  *
  * DESCRIPTION
  *
- *    A callback of this type is returned by silc_net_tcp_create_listener,
- *    silc_net_udp_create_listener, silc_net_tcp_connect and
- *    silc_net_udp_connect functions.  For silc_net_tcp_create_listener
- *    and silc_net_udp_create_listener this callback means that new incoming
- *    connection was accepted, and the `stream' is the socket stream
- *    representing the socket connection.
+ *    A callback of this type is returned by silc_net_tcp_create_listener
+ *    and silc_net_tcp_connect functions.  For silc_net_tcp_create_listener
+ *    this callback means that new incoming connection was accepted, and the
+ *    `stream' is the socket stream representing the socket connection.
  *
- *    For silc_net_tcp_connect and silc_net_udp_connect this means that we
- *    have connected to the remote host and the `stream' is the socket
- *    stream for the socket connection.  The SILC Stream API (such as
- *    silc_stream_read, etc.) can be used to read and write to the stream.
- *    The created stream is socket stream so various SilcSocketStream API
- *    functions can be used with the `stream'.
+ *    For silc_net_tcp_connect this means that we have connected to the
+ *    remote host and the `stream' is the socket stream for the socket
+ *    connection.  The SILC Stream API (such as silc_stream_read, etc.) can
+ *    be used to read and write to the stream.  The created stream is socket
+ *    stream so various SilcSocketStream API functions can be used with
+ *    the `stream'.
  *
  ***/
 typedef void (*SilcNetCallback)(SilcNetStatus status,
@@ -196,10 +194,11 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
  * DESCRIPTION
  *
  *    This function creates UDP stream.  The UDP stream is bound to the
- *    `local_ip_addr' if it is specified.  The `local_port' must always be
- *    specified.  If the `remote_ip_addr' and `remote_port' is also provided,
- *    packets may be sent to that address using silc_stream_write function
- *    and packets may be received using silc_stream_read function.
+ *    `local_ip_addr' if it is specified.  If `local_port' is non-zero the
+ *    stream is bound to that port.  If the `remote_ip_addr' and `remote_port'
+ *    is also provided, packets may be sent to that address using
+ *    silc_stream_write function and packets may be received using
+ *    silc_stream_read function.
  *
  *    If the remote address is not provided then packets may only be received
  *    by using silc_net_udp_receive and sent only by using the function
@@ -224,10 +223,9 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
  *    silc_stream_write(udpstream, data, data_len);
  *
  ***/
-SilcStream
-silc_net_udp_connect(const char *local_ip_addr, int local_port,
-		     const char *remote_ip_addr, int remote_port,
-		     SilcSchedule schedule);
+SilcStream silc_net_udp_connect(const char *local_ip_addr, int local_port,
+				const char *remote_ip_addr, int remote_port,
+				SilcSchedule schedule);
 
 /****f* silcutil/SilcNetAPI/silc_net_udp_receive
  *

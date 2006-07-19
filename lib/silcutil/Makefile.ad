@@ -67,7 +67,8 @@ libsilcutil_la_SOURCES = \
 	silcasync.c	\
 	silctime.c	\
 	silcmime.c	\
-	silcstack.c
+	silcstack.c	\
+	silcidcache.c
 
 #ifdef SILC_DIST_TOOLKIT
 include_HEADERS =	\
@@ -104,7 +105,8 @@ include_HEADERS =	\
 	silcasync.h	\
 	silcasync_i.h	\
 	silcstack.h	\
-	silcstack_i.h
+	silcstack_i.h	\
+	silcidcache.h
 
 SILC_EXTRA_DIST = tests
 #endif SILC_DIST_TOOLKIT
