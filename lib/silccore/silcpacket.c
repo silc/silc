@@ -69,6 +69,7 @@ struct SilcPacketStreamStruct {
   SilcUInt8 refcnt;			 /* Reference counter */
   unsigned int is_router   : 1;		 /* Set if router stream */
   unsigned int destroyed   : 1;		 /* Set if destroyed */
+  unsigned int iv_included : 1;          /* Set if IV included */
 };
 
 /* Initial size of stream buffers */
@@ -77,10 +78,9 @@ struct SilcPacketStreamStruct {
 /* Header length without source and destination ID's. */
 #define SILC_PACKET_HEADER_LEN 10
 
-/* Minimum length of SILC Packet Header. This much is decrypted always
-   when packet is received to be able to get all the relevant data out
-   from the header. */
+/* Minimum length of SILC Packet Header. */
 #define SILC_PACKET_MIN_HEADER_LEN 16
+#define SILC_PACKET_MIN_HEADER_LEN_IV 32
 
 /* Maximum padding length */
 #define SILC_PACKET_MAX_PADLEN 128
@@ -90,9 +90,6 @@ struct SilcPacketStreamStruct {
 
 /* Minimum packet length */
 #define SILC_PACKET_MIN_LEN (SILC_PACKET_HEADER_LEN + 1)
-
-
-/* Macros */
 
 /* Returns true length of the packet. */
 #define SILC_PACKET_LENGTH(__packetdata, __ret_truelen, __ret_paddedlen) \
@@ -465,6 +462,12 @@ void silc_packet_stream_set_router(SilcPacketStream stream)
   stream->is_router = TRUE;
 }
 
+/* Mark to include IV in ciphertext */
+
+void silc_packet_stream_set_iv_included(SilcPacketStream stream)
+{
+  stream->iv_included = TRUE;
+}
 
 /* Links `callbacks' to `stream' for specified packet types */
 
@@ -836,9 +839,9 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
 				     SilcCipher cipher,
 				     SilcHmac hmac)
 {
-  unsigned char tmppad[SILC_PACKET_MAX_PADLEN];
+  unsigned char tmppad[SILC_PACKET_MAX_PADLEN], iv[32], psn[4];
   int block_len = (cipher ? silc_cipher_get_block_len(cipher) : 0);
-  int i, enclen, truelen, padlen;
+  int i, enclen, truelen, padlen, ivlen = 0, psnlen = 0;
   SilcBufferStruct packet;
 
   SILC_LOG_DEBUG(("Sending packet %s (%d) flags %d, src %d dst %d,"
@@ -853,6 +856,13 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
   enclen = truelen = (data_len + SILC_PACKET_HEADER_LEN +
 		      src_id_len + dst_id_len);
 
+  /* If IV is included, the IV and sequence number is added to packet */
+  if (stream->iv_included && cipher) {
+    ivlen = block_len;
+    psnlen = sizeof(psn);
+    memcpy(iv, silc_cipher_get_iv(cipher), block_len);
+  }
+
   /* We automatically figure out the packet structure from the packet
      type and flags, and calculate correct length.  Private messages with
      private keys and channel messages are special packets as their
@@ -862,21 +872,21 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
       type == SILC_PACKET_CHANNEL_MESSAGE) {
 
     /* Padding is calculated from header + IDs */
-    SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN +
-			src_id_len +
-			dst_id_len), block_len, padlen);
+    SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN + src_id_len + dst_id_len +
+			psnlen), block_len, padlen);
 
     /* Length to encrypt, header + IDs + padding. */
-    enclen = SILC_PACKET_HEADER_LEN + src_id_len + dst_id_len + padlen;
+    enclen = (SILC_PACKET_HEADER_LEN + src_id_len + dst_id_len +
+	      padlen + psnlen);
   } else {
 
     /* Padding is calculated from true length of the packet */
     if (flags & SILC_PACKET_FLAG_LONG_PAD)
-      SILC_PACKET_PADLEN_MAX(truelen, block_len, padlen);
+      SILC_PACKET_PADLEN_MAX(truelen + psnlen, block_len, padlen);
     else
-      SILC_PACKET_PADLEN(truelen, block_len, padlen);
+      SILC_PACKET_PADLEN(truelen + psnlen, block_len, padlen);
 
-    enclen += padlen;
+    enclen += padlen + psnlen;
   }
 
   /* Remove implementation specific flags */
@@ -889,14 +899,19 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
   silc_mutex_lock(stream->lock);
 
   /* Get packet pointer from the outgoing buffer */
-  if (!silc_packet_send_prepare(stream, truelen + padlen, hmac, &packet)) {
+  if (!silc_packet_send_prepare(stream, truelen + padlen + ivlen + psnlen,
+				hmac, &packet)) {
     silc_mutex_unlock(stream->lock);
     return FALSE;
   }
 
+  SILC_PUT32_MSB(stream->send_psn, psn);
+
   /* Create the packet.  This creates the SILC header, adds padding, and
      the actual packet data. */
   i = silc_buffer_format(&packet,
+			 SILC_STR_UI_XNSTRING(iv, ivlen),
+			 SILC_STR_UI_XNSTRING(psn, psnlen),
 			 SILC_STR_UI_SHORT(truelen),
 			 SILC_STR_UI_CHAR(flags),
 			 SILC_STR_UI_CHAR(type),
@@ -917,13 +932,13 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
   }
 
   SILC_LOG_HEXDUMP(("Assembled packet, len %d", silc_buffer_len(&packet)),
-		   packet.data, silc_buffer_len(&packet));
+		   silc_buffer_data(&packet), silc_buffer_len(&packet));
 
   /* Encrypt the packet */
   if (cipher) {
     SILC_LOG_DEBUG(("Encrypting packet"));
-    if (!silc_cipher_encrypt(cipher, packet.data, packet.data,
-			     enclen, NULL)) {
+    if (!silc_cipher_encrypt(cipher, packet.data + ivlen,
+			     packet.data + ivlen, enclen, NULL)) {
       SILC_LOG_ERROR(("Packet encryption failed"));
       silc_mutex_unlock(stream->lock);
       return FALSE;
@@ -932,14 +947,12 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
 
   /* Compute HMAC */
   if (hmac) {
-    unsigned char psn[4];
     SilcUInt32 mac_len;
 
     /* MAC is computed from the entire encrypted packet data, and put
        to the end of the packet. */
     silc_hmac_init(hmac);
-    SILC_PUT32_MSB(stream->send_psn, psn);
-    silc_hmac_update(hmac, psn, 4);
+    silc_hmac_update(hmac, psn, sizeof(psn));
     silc_hmac_update(hmac, packet.data, silc_buffer_len(&packet));
     silc_hmac_final(hmac, packet.tail, &mac_len);
     silc_buffer_pull_tail(&packet, mac_len);
@@ -1041,6 +1054,7 @@ static SilcBool silc_packet_check_mac(SilcHmac hmac,
 				      const unsigned char *data,
 				      SilcUInt32 data_len,
 				      const unsigned char *packet_mac,
+				      const unsigned char *packet_seq,
 				      SilcUInt32 sequence)
 {
   /* Check MAC */
@@ -1052,8 +1066,13 @@ static SilcBool silc_packet_check_mac(SilcHmac hmac,
 
     /* Compute HMAC of packet */
     silc_hmac_init(hmac);
-    SILC_PUT32_MSB(sequence, psn);
-    silc_hmac_update(hmac, psn, 4);
+
+    if (!packet_seq) {
+      SILC_PUT32_MSB(sequence, psn);
+      silc_hmac_update(hmac, psn, 4);
+    } else
+      silc_hmac_update(hmac, packet_seq, 4);
+
     silc_hmac_update(hmac, data, data_len);
     silc_hmac_final(hmac, mac, &mac_len);
 
@@ -1295,16 +1314,19 @@ static void silc_packet_read_process(SilcPacketStream stream)
 {
   SilcPacket packet;
   SilcUInt16 packetlen;
-  SilcUInt32 paddedlen, mac_len, block_len;
+  SilcUInt32 paddedlen, mac_len, block_len, ivlen, psnlen;
   unsigned char tmp[SILC_PACKET_MIN_HEADER_LEN], *header;
-  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
+  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE], *packet_seq = NULL;
   SilcBool normal = TRUE;
   int ret;
 
   /* Parse the packets from the data */
   while (silc_buffer_len(&stream->inbuf) > 0) {
+    ivlen = psnlen = 0;
 
-    if (silc_buffer_len(&stream->inbuf) < SILC_PACKET_MIN_HEADER_LEN) {
+    if (silc_buffer_len(&stream->inbuf) <
+	stream->iv_included ? SILC_PACKET_MIN_HEADER_LEN :
+	SILC_PACKET_MIN_HEADER_LEN_IV) {
       SILC_LOG_DEBUG(("Partial packet in queue, waiting for the rest"));
       return;
     }
@@ -1317,10 +1339,24 @@ static void silc_packet_read_process(SilcPacketStream stream)
     /* Decrypt first block of the packet to get the length field out */
     if (stream->receive_key) {
       block_len = silc_cipher_get_block_len(stream->receive_key);
-      memcpy(iv, silc_cipher_get_iv(stream->receive_key), block_len);
-      silc_cipher_decrypt(stream->receive_key, stream->inbuf.data,
+
+      if (stream->iv_included) {
+	/* IV is included in the ciphertext */
+	memcpy(iv, stream->inbuf.data, block_len);
+	ivlen = block_len;
+	psnlen = 4;
+      } else
+	memcpy(iv, silc_cipher_get_iv(stream->receive_key), block_len);
+
+      silc_cipher_decrypt(stream->receive_key, stream->inbuf.data + ivlen,
 			  tmp, block_len, iv);
+
       header = tmp;
+      if (stream->iv_included) {
+	/* Take sequence number from packet */
+	packet_seq = header;
+	header += 4;
+      }
     } else {
       block_len = SILC_PACKET_MIN_HEADER_LEN;
       header = stream->inbuf.data;
@@ -1340,7 +1376,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
       return;
     }
 
-    if (silc_buffer_len(&stream->inbuf) < paddedlen + mac_len) {
+    if (silc_buffer_len(&stream->inbuf) < paddedlen + ivlen + mac_len) {
       SILC_LOG_DEBUG(("Received partial packet, waiting for the rest "
 		      "(%d bytes)",
 		      paddedlen + mac_len - silc_buffer_len(&stream->inbuf)));
@@ -1350,8 +1386,9 @@ static void silc_packet_read_process(SilcPacketStream stream)
 
     /* Check MAC of the packet */
     if (!silc_packet_check_mac(stream->receive_hmac, stream->inbuf.data,
-			       paddedlen, stream->inbuf.data + paddedlen,
-			       stream->receive_psn)) {
+			       paddedlen + ivlen,
+			       stream->inbuf.data + ivlen + paddedlen,
+			       packet_seq, stream->receive_psn)) {
       silc_mutex_unlock(stream->lock);
       SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MAC_FAILED);
       silc_mutex_lock(stream->lock);
@@ -1408,15 +1445,16 @@ static void silc_packet_read_process(SilcPacketStream stream)
     }
 
     SILC_LOG_HEXDUMP(("Incoming packet (%d) len %d",
-		      stream->receive_psn, paddedlen + mac_len),
-		     stream->inbuf.data, paddedlen + mac_len);
+		      stream->receive_psn, paddedlen + ivlen + mac_len),
+		     stream->inbuf.data, paddedlen + ivlen + mac_len);
 
     /* Put the decrypted part, and rest of the encrypted data, and decrypt */
     silc_buffer_pull_tail(&packet->buffer, paddedlen);
-    silc_buffer_put(&packet->buffer, header, block_len);
-    silc_buffer_pull(&packet->buffer, block_len);
-    silc_buffer_put(&packet->buffer, stream->inbuf.data + block_len,
-		    paddedlen - block_len);
+    silc_buffer_put(&packet->buffer, header, block_len - psnlen);
+    silc_buffer_pull(&packet->buffer, block_len - psnlen);
+    silc_buffer_put(&packet->buffer, (stream->inbuf.data + ivlen +
+				      psnlen + (block_len - psnlen)),
+		    paddedlen - ivlen - psnlen - (block_len - psnlen));
     if (stream->receive_key) {
       silc_cipher_set_iv(stream->receive_key, iv);
       ret = silc_packet_decrypt(stream->receive_key, stream->receive_hmac,

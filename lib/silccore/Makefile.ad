@@ -21,7 +21,6 @@ noinst_LTLIBRARIES = libsilccore.la
 
 libsilccore_la_SOURCES = 	\
 	silcid.c 		\
-	silcidcache.c 		\
 	silcmessage.c 		\
 	silcchannel.c 		\
 	silccommand.c 		\
@@ -39,7 +38,6 @@ include_HEADERS =	\
 	silcchannel.h	\
 	silcmessage.h	\
 	silccommand.h	\
-	silcidcache.h	\
 	silcid.h	\
 	silcmode.h	\
 	silcnotify.h	\

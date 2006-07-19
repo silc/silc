@@ -9,7 +9,6 @@
 @LINK=silcstatus.html:SILC Status Types
 @LINK=silcmode.html:SILC Modes
 @LINK=silcid.html:SILC ID Interface
-@LINK=silcidcache.html:SILC ID Cache Interface
 @LINK=silcargument.html:SILC Argument Interface
 @LINK=silcattrs.html:SILC Attributes Interface
 @LINK=silcpacket.html:Packet Protocol Interface

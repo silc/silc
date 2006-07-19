@@ -432,6 +432,24 @@ void silc_packet_stream_destroy(SilcPacketStream stream);
  ***/
 void silc_packet_stream_set_router(SilcPacketStream stream);
 
+/****f* silccore/SilcPacketAPI/silc_packet_stream_set_iv_included
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_stream_set_iv_included(SilcPacketStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Sets an IV Included property for the stream indicated by `stream'.
+ *    This means that the IV used in the encryption will be included in
+ *    the resulted ciphertext.  This makes it possible to send and receive
+ *    packets on unreliable network transport protocol, such as UDP/IP.
+ *    This must be called if the underlaying stream in the `stream' is UDP
+ *    stream.
+ *
+ ***/
+void silc_packet_stream_set_iv_included(SilcPacketStream stream);
+
 /****f* silccore/SilcPacketAPI/silc_packet_stream_get_stream
  *
  * SYNOPSIS
