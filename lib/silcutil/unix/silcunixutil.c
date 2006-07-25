@@ -160,10 +160,13 @@ char *silc_get_real_name()
     
   pw = getpwuid(getuid());
   if (!pw)
-     return strdup("Foo T. Bar");
+    return strdup("Foo T. Bar");
 
   if (strchr(pw->pw_gecos, ','))
     *strchr(pw->pw_gecos, ',') = 0;
+
+  if (!strlen(pw->pw_gecos))
+    return strdup("Foo T. Bar");
 
   realname = strdup(pw->pw_gecos);
 
