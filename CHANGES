@@ -1,3 +1,8 @@
+Tue Aug  8 20:32:13 CEST 2006  Jochen Eisinger <coffee@silcnet.org>
+
+	* Always issue a NICK command on connection (if a nickname was
+	  given at all).  Affected file lib/silcclient/client.c
+
 Sun Jul  2 19:12:36 CEST 2006  Jochen Eisinger <coffee@silcnet.org>
 
 	* Make gmake the default for autodist, so I can properly work
