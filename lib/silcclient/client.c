@@ -1805,9 +1805,10 @@ void silc_client_receive_new_id(SilcClient client,
     silc_buffer_free(sidp);
 
     if (!conn->internal->params.detach_data) {
-      /* Send NICK command if the nickname was set by the application.
-	 Send this with little timeout. */
-      if (client->nickname)
+      /* Send NICK command if the nickname was set by the application (and is
+	 not same as the username). Send this with little timeout. */
+      if (client->nickname &&
+	  !silc_utf8_strcasecmp(client->nickname, client->username))
 	silc_schedule_task_add(client->schedule, 0,
 			       silc_client_send_auto_nick, conn,
 			       1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
