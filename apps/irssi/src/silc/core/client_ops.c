@@ -2013,7 +2013,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
       g_free(old);
 
       /* when connecting to a server, the last thing we receive
-         is a SILC_COMMAND_LIST reply. Since we enable queueing
+         is a SILC_COMMAND_NICK reply. Since we enable queueing
 	 during the connection, we can now safely disable it again */
       silc_queue_disable(conn);
       break;
