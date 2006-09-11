@@ -566,14 +566,14 @@ SilcBool silc_utf8_strncasecmp(const char *s1, const char *s2, SilcUInt32 n)
     return TRUE;
 
   /* Casefold and normalize */
-  status = silc_stringprep(s1, strlen(s1), SILC_STRING_UTF8,
+  status = silc_stringprep(s1, n, SILC_STRING_UTF8,
 			   SILC_IDENTIFIERC_PREP, 0, &s1u,
 			   &s1u_len, SILC_STRING_UTF8);
   if (status != SILC_STRINGPREP_OK)
     return FALSE;
 
   /* Casefold and normalize */
-  status = silc_stringprep(s2, strlen(s2), SILC_STRING_UTF8,
+  status = silc_stringprep(s2, n, SILC_STRING_UTF8,
 			   SILC_IDENTIFIERC_PREP, 0, &s2u,
 			   &s2u_len, SILC_STRING_UTF8);
   if (status != SILC_STRINGPREP_OK)
