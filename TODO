@@ -1,6 +1,9 @@
 TODO for 1.1 And Beyond
 =======================
 
+NOTE: Any item that doesn't have (***DONE) in it, isn't done yet.
+
+
 lib/silccrypt			****PARTLY DONE****
 =============
 
@@ -20,6 +23,7 @@ lib/silccrypt			****PARTLY DONE****
    should also automatically handle SILC Public Keys, and other keys
    and certificates as well.  Add fe. silcpk.h into silccore.  It should
    also include the Public Key Payload encoding and decoding routines.
+   (***DONE)
 
  o Add DSS support.
 
@@ -31,15 +35,15 @@ lib/silccrypt			****PARTLY DONE****
 lib/silccore/silcpacket.[ch]	****DONE****
 ============================
 
- o SilcPacketEngine.
+ o SilcPacketEngine. (***DONE)
 
- o New SILC Packet API.
+ o New SILC Packet API. (***DONE)
 
 
-lib/silccore/silcpacket.[ch]
+lib/silccore/silcpacket.[ch]	****PARTLY DONE****
 ============================
 
- o IV Included flag support, UDP transport support
+ o IV Included flag support, UDP transport support (***TESTING NEEDED)
 
 
 lib/silccore/silcid.[ch]	****DONE****
@@ -47,9 +51,9 @@ lib/silccore/silcid.[ch]	****DONE****
 
   o Add silc_id_str2id to accept the destination buffer as argument
     and thus not require any memory allocation.  Same will happen
-    with silc_id_payload_* functions.
+    with silc_id_payload_* functions. (***DONE)
 
-  o silc_id_str2id, silc_id2str to non-allocating routines.
+  o silc_id_str2id, silc_id2str to non-allocating routines. (***DONE)
 
 
 lib/silccore
@@ -61,6 +65,8 @@ lib/silccore
 lib/silcutil			****PARTLY DONE****
 ============
 
+ o silc_stringprep to non-allocating version.
+
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Zip API must be
    defined.
@@ -69,11 +75,9 @@ lib/silcutil			****PARTLY DONE****
    SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
    in separately.
 
- o bool -> SilcBool
+ o bool -> SilcBool (***DONE)
 
- o SilcBit, bit field:
-
-   #define SilcBit(b) unsigned int b : 1
+ o Silc FD Stream to WIN32 (lib/silcutil/silcfdstream.h)
 
 
 lib/silcutil/silcbuffer.h	****DONE****
@@ -85,7 +89,7 @@ lib/silcutil/silcbuffer.h	****DONE****
    macro instead.  Consider also removing `len' field too since
    it effectively is buffer->tail - buffer->data, and adding
    silc_buffer_len macro can do the same.  These would save
-   totally 8 bytes of memory per buffer.
+   totally 8 bytes of memory per buffer. (***DONE)
 
 
 lib/silcutil/silcbuffmt.[ch]	****PARTLY DONE****
@@ -93,42 +97,33 @@ lib/silcutil/silcbuffmt.[ch]	****PARTLY DONE****
 
  o SilcStack aware silc_buffer_unformat
 
- o silc_buffer_format reallocates automatically
+ o SilcStack aware silc_buffer_format (***DONE)
 
- o SILC_STR_OFFSET
+ o silc_buffer_format reallocates automatically (***DONE)
+
+ o SILC_STR_OFFSET (***DONE)
 
 
 lib/silcutil/silcstack.[ch]	****DONE****
 ===========================
 
- o Data stack implementation
+ o Data stack implementation (***DONE)
 
 
 lib/silcutil/silcstream.[ch]	****DONE****
 ============================
 
- o Add abstract SilcStream.
+ o Add abstract SilcStream. (***DONE)
 
 
 lib/silcutil/silcsocketstream.[ch]	****PARTY DONE****
 ==================================
 
- o Add SilcSocketStream.
+ o Add SilcSocketStream (***DONE)
 
- o Test QoS
+ o Add SilcSocketStream for WIN32
 
-
-lib/silcutil/epoc/*
-===================
-
-  o lib/silcutil/epoc routines missing or not completed.
-
-  o The PKCS#1 also calls global RNG (even though it is not used
-    currently in SILC, the interface allows its use).
-
-  o Something needs to be thought to the logging globals as well,
-    like silc_debug etc.  They won't work on EPOC.  Perhaps logging
-    and debugging is to be disabled on EPOC.
+ o Test QoS after the changes made to socket stream
 
 
 lib/silcutil/silcschedule*.[ch]		****DONE****
@@ -149,14 +144,17 @@ lib/silcutil/silcschedule*.[ch]		****DONE****
    silc_select but at least it removes one extra tarversing later
    for the same list).
 
-   Other task queues should be changed to use SilcList.
+   Other task queues should be changed to use SilcList.  (***DONE)
 
  o Add SILC scheduler's internal routines into a table of implementation
    function pointers, that the generic code then takes as extern from
    implementation.  These are the silc_schedule_internal_* routines.
+   (***DONE)
 
  o Change SILC_TASK_CALLBACK to non-static, and remove the macro
-   SILC_TASK_CALLBACK_GLOBAL.
+   SILC_TASK_CALLBACK_GLOBAL. (***DONE)
+
+ o SILC Schedule API changes to WIN32.
 
 
 lib/silcutil/silcasync.[ch]	****DONE****
@@ -164,14 +162,44 @@ lib/silcutil/silcasync.[ch]	****DONE****
 
  o Add SilcAsyncOperation to utility library.  Any function that takes
    callback as an argument must/should return SilcAsyncOperation.
+   (***DONE)
 
 
 lib/silcutil/silctime.[ch]	****DONE****
 ===========================
 
- o SilcTime.
+ o SilcTime. (***DONE)
 
- o system time, universal, generalized.
+ o system time, universal, generalized. (***DONE)
+
+
+lib/silcutil/silcfsm.[ch]	****DONE****
+=========================
+
+ o SILC Finite State Machine API.  Replaces SILC Protocol API (***DONE)
+
+
+lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
+===============================================
+
+ o Add UDP interface (***DONE)
+
+ o Add UDP interface for WIN32
+
+ o New network interfaces (***DONE)
+
+
+lib/silcutil/epoc/*
+===================
+
+  o lib/silcutil/epoc routines missing or not completed.
+
+  o The PKCS#1 also calls global RNG (even though it is not used
+    currently in SILC, the interface allows its use).
+
+  o Something needs to be thought to the logging globals as well,
+    like silc_debug etc.  They won't work on EPOC.  Perhaps logging
+    and debugging is to be disabled on EPOC.
 
 
 lib/silcmath
@@ -195,11 +223,11 @@ lib/silcmath
 lib/silcasn1			****PARTLY DONE****
 ============
 
- o ASN.1 library
+ o ASN.1 library (***DONE)
 
- o Header documentation missing.
+ o Header documentation missing. (***DONE)
 
- o Some string encodings missing (copy/paste matter).
+ o Some string encodings missing (copy/paste matter). (***DONE)
 
  o Negative integer encoding
 
@@ -208,24 +236,6 @@ lib/silcpkix
 ============
 
  o PKIX implementation
-
-
-lib/silcutil/silcfsm.[ch]	****DONE****
-=========================
-
- o SILC Finite State Machine API.  Replaces SILC Protocol API,
-
-
-lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
-===============================================
-
- o Add UDP interface
-
- o New network interfaces
-
- o Other functions should remain as they are since these new functions have
-   to use them.  This way we also provide them for applications that want
-   to handle the sockets by themself.
 
 
 lib/silcserver
