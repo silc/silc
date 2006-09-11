@@ -116,7 +116,7 @@ typedef void (*SilcNetCallback)(SilcNetStatus status,
  *
  * DESCRIPTION
  *
- *    This function creates TCP listener etc.  This is used to create network
+ *    This function creates TCP listener.  This is used to create network
  *    listener for incoming connections, and `callback' will be called
  *    everytime new connection is received.  If `local_ip_addr' is NULL any
  *    address is used.  If provided it can be used bind the listener to
@@ -171,8 +171,7 @@ void silc_net_close_listener(SilcNetListener listener);
  *    The returned SilcAsyncOperation context can be used to control the
  *    asynchronous connecting, such as to abort it.  If it is aborted
  *    using silc_async_abort the `callback' will not be called.  If NULL
- *    is returned the operation cannot be aborted and the `callback' will
- *    be called eventually.
+ *    is returned the operation cannot be aborted.
  *
  */
 SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,

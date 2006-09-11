@@ -46,6 +46,12 @@ lib/silccore/silcpacket.[ch]	****PARTLY DONE****
  o IV Included flag support, UDP transport support (***TESTING NEEDED)
 
 
+lib/silcske/silcske.[ch]
+========================
+
+ o IV Included flag support (it currently doesn't accept it)
+
+
 lib/silccore/silcid.[ch]	****DONE****
 ========================
 
