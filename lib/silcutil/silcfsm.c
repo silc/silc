@@ -343,6 +343,11 @@ SILC_TASK_CALLBACK(silc_fsm_run)
   while (status == SILC_FSM_CONTINUE);
 
   switch (status) {
+  case SILC_FSM_YIELD:
+    /* Continue through scheduler */
+    silc_fsm_continue(fsm);
+    break;
+
   case SILC_FSM_WAIT:
     /* The machine is in hold */
     SILC_LOG_DEBUG(("State wait %p", fsm));

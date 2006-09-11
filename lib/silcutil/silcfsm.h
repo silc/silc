@@ -29,8 +29,8 @@
  * threads.
  *
  * The FSM provides semaphores because of their versatility.  The FSM
- * semaphores can be used as a conditional variables and signallers, and
- * also as a mutual exclusion locks to protect critical sections.  The FSM
+ * semaphores can be used as mutual exclusion locks to protect critical
+ * sections, and as conditional variables and signallers.  The FSM
  * semaphores can safely be used to synchronize also FSM threads that are
  * executed in real system threads.  This makes SILC FSM very effective
  * tool to implement complex machines whether they are executed in single
@@ -114,12 +114,14 @@ typedef struct SilcFSMObject SilcFSMThreadStruct;
  *
  * DESCRIPTION
  *
- *    Status values that the FSM state functions return.
+ *    Status values that the FSM state functions return.  They dicatate
+ *    how the machine will behave after returning from the state function.
  *
  * SOURCE
  */
 typedef enum {
-  SILC_FSM_CONTINUE,	     /* Continue immediately to next state. */
+  SILC_FSM_CONTINUE,	     /* Continue immediately to next state */
+  SILC_FSM_YIELD,	     /* Continue to next state through scheduler */
   SILC_FSM_WAIT,	     /* Wait for some async call or timeout */
   SILC_FSM_FINISH,	     /* Finish state machine and call destructor
 				through scheduler */
@@ -588,9 +590,11 @@ void silc_fsm_start_sync(void *fsm, SilcFSMStateCallback start_state);
  *
  *    Set the next state to be executed.  If the state function that
  *    call this function returns SILC_FSM_CONTINUE, the `next_state'
- *    will be executed immediately.  This function must always be used
- *    to set the next state in the machine or thread.  This function is
- *    used with both SilcFSM and SilcFSMThread contexts.
+ *    will be executed immediately.  If it returns SILC_FSM_YIELD it
+ *    yields the thread and the `next_state' will be run after other
+ *    threads have run first.  This function must always be used to set
+ *    the next state in the machine or thread.  This function is used
+ *    with both SilcFSM and SilcFSMThread contexts.
  *
  * EXAMPLE
  *
