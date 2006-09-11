@@ -1325,8 +1325,8 @@ static void silc_packet_read_process(SilcPacketStream stream)
     ivlen = psnlen = 0;
 
     if (silc_buffer_len(&stream->inbuf) <
-	stream->iv_included ? SILC_PACKET_MIN_HEADER_LEN :
-	SILC_PACKET_MIN_HEADER_LEN_IV) {
+	stream->iv_included ? SILC_PACKET_MIN_HEADER_LEN_IV :
+	SILC_PACKET_MIN_HEADER_LEN) {
       SILC_LOG_DEBUG(("Partial packet in queue, waiting for the rest"));
       return;
     }
