@@ -197,6 +197,12 @@ lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
  o New network interfaces (***DONE)
 
 
+lib/silcsftp
+============
+
+ o Porting to use the new util library.
+
+
 lib/silcutil/epoc/*
 ===================
 
