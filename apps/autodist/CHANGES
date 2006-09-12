@@ -1,3 +1,7 @@
+Sat Jun 24 23:38:24 EEST 2006 Pekka Riikonen <priikone@silcnet.org>
+
+	* Match distdef names exactly (/^foo$/ instead of /^foo/).
+
 Wed May  4 10:58:24 EEST 2005 Pekka Riikonen <priikone@silcnet.org>
 
 	* Autodist 1.3.
