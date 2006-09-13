@@ -224,6 +224,10 @@ lib/silcmath
    increased memory consumption with TFM, and the rare need for public
    key operations in server.
 
+ o Change LTM and TFM function names when importing to SILC tree to avoid
+   rare linking problems on system that has same named symbols already in
+   the system.
+
  o The SILC MP API function must start returning indication of success
    and failure of the operation.
 
