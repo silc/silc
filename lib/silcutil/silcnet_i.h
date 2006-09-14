@@ -30,8 +30,9 @@ struct SilcNetListenerStruct {
   SilcNetCallback callback;
   void *context;
   int *socks;
-  unsigned int socks_count   : 31;
+  unsigned int socks_count   : 30;
   unsigned int require_fqdn  : 1;
+  unsigned int lookup        : 1;
 };
 
 #endif /* SILCNET_I_H */

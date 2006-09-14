@@ -112,7 +112,8 @@ SILC_TASK_CALLBACK(silc_net_accept)
   silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
 
   /* Create socket stream */
-  silc_socket_tcp_stream_create(sock, TRUE, listener->require_fqdn, schedule,
+  silc_socket_tcp_stream_create(sock, listener->lookup,
+				listener->require_fqdn, schedule,
 				silc_net_accept_stream, listener);
 }
 
@@ -120,8 +121,8 @@ SILC_TASK_CALLBACK(silc_net_accept)
 
 SilcNetListener
 silc_net_tcp_create_listener(const char **local_ip_addr,
-			     SilcUInt32 local_ip_count,
-			     int port, SilcBool require_fqdn,
+			     SilcUInt32 local_ip_count, int port,
+			     SilcBool lookup, SilcBool require_fqdn,
 			     SilcSchedule schedule,
 			     SilcNetCallback callback, void *context)
 {
@@ -143,6 +144,8 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
   listener->schedule = schedule;
   listener->callback = callback;
   listener->context = context;
+  listener->require_fqdn = require_fqdn;
+  listener->lookup = lookup;
 
   if (local_ip_count > 0) {
     listener->socks = silc_calloc(local_ip_count, sizeof(*listener->socks));

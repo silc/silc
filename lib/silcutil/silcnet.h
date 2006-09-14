@@ -109,8 +109,8 @@ typedef void (*SilcNetCallback)(SilcNetStatus status,
  *
  *    SilcNetListener
  *    silc_net_tcp_create_listener(const char **local_ip_addr,
- *                                 SilcUInt32 local_ip_count,
- *                                 int port, SilcBool require_fqdn,
+ *                                 SilcUInt32 local_ip_count, int port,
+ *                                 SilcBool lookup, SilcBool require_fqdn,
  *                                 SilcSchedule schedule,
  *                                 SilcNetCallback callback, void *context);
  *
@@ -123,13 +123,14 @@ typedef void (*SilcNetCallback)(SilcNetStatus status,
  *    `local_ip_count' many IP addresses provided in `local_ip_addr' table.
  *    On success returns the SilcNetListener context, or NULL on error.
  *    If `require_fqdn' is TRUE the listener will require that the incoming
- *    connection has FQDN to be able to connect.
+ *    connection has FQDN to be able to connect.  If the `lookup' is TRUE
+ *    then the incoming connection hostname will be resolved.
  *
  ***/
 SilcNetListener
 silc_net_tcp_create_listener(const char **local_ip_addr,
-			     SilcUInt32 local_ip_count,
-			     int port, SilcBool require_fqdn,
+			     SilcUInt32 local_ip_count, int port,
+			     SilcBool lookup, SilcBool require_fqdn,
 			     SilcSchedule schedule,
 			     SilcNetCallback callback, void *context);
 

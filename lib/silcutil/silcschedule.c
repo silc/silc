@@ -20,6 +20,8 @@
 
 #include "silc.h"
 
+/************************** Types and definitions ***************************/
+
 /* Platform specific implementation */
 extern const SilcScheduleOps schedule_ops;
 
@@ -28,100 +30,15 @@ static void silc_schedule_dispatch_fd(SilcSchedule schedule);
 static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
 					   SilcBool dispatch_all);
 
+
+/************************ Static utility functions **************************/
+
 /* Fd task hash table destructor */
 
 static void silc_schedule_fd_destructor(void *key, void *context,
 					void *user_context)
 {
   silc_free(context);
-}
-
-/* Initializes the scheduler. This returns the scheduler context that
-   is given as arugment usually to all silc_schedule_* functions.
-   The `max_tasks' indicates the number of maximum tasks that the
-   scheduler can handle. The `app_context' is application specific
-   context that is delivered to task callbacks. */
-
-SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
-{
-  SilcSchedule schedule;
-
-  SILC_LOG_DEBUG(("Initializing scheduler"));
-
-  schedule = silc_calloc(1, sizeof(*schedule));
-  if (!schedule)
-    return NULL;
-
-  schedule->fd_queue =
-    silc_hash_table_alloc(0, silc_hash_uint, NULL, NULL, NULL,
-			  silc_schedule_fd_destructor, NULL, TRUE);
-  if (!schedule->fd_queue)
-    return NULL;
-
-  silc_list_init(schedule->timeout_queue, struct SilcTaskTimeoutStruct, next);
-
-  schedule->app_context = app_context;
-  schedule->valid = TRUE;
-  schedule->max_tasks = max_tasks;
-
-  /* Allocate scheduler lock */
-  silc_mutex_alloc(&schedule->lock);
-
-  /* Initialize the platform specific scheduler. */
-  schedule->internal = schedule_ops.init(schedule, app_context);
-
-  return schedule;
-}
-
-/* Uninitializes the schedule. This is called when the program is ready
-   to end. This removes all tasks and task queues. Returns FALSE if the
-   scheduler could not be uninitialized. This happens when the scheduler
-   is still valid and silc_schedule_stop has not been called. */
-
-SilcBool silc_schedule_uninit(SilcSchedule schedule)
-{
-  SILC_LOG_DEBUG(("Uninitializing scheduler"));
-
-  if (schedule->valid == TRUE)
-    return FALSE;
-
-  /* Dispatch all timeouts before going away */
-  SILC_SCHEDULE_LOCK(schedule);
-  silc_schedule_dispatch_timeout(schedule, TRUE);
-  SILC_SCHEDULE_UNLOCK(schedule);
-
-  /* Deliver signals before going away */
-  if (schedule->signal_tasks) {
-    schedule_ops.signals_call(schedule, schedule->internal);
-    schedule->signal_tasks = FALSE;
-  }
-
-  /* Unregister all tasks */
-  silc_schedule_task_remove(schedule, SILC_ALL_TASKS);
-  silc_schedule_task_remove(schedule, SILC_ALL_TASKS);
-
-  /* Unregister all task queues */
-  silc_hash_table_free(schedule->fd_queue);
-
-  /* Uninit the platform specific scheduler. */
-  schedule_ops.uninit(schedule, schedule->internal);
-
-  silc_mutex_free(schedule->lock);
-  silc_free(schedule);
-
-  return TRUE;
-}
-
-/* Stops the schedule even if it is not supposed to be stopped yet.
-   After calling this, one should call silc_schedule_uninit (after the
-   silc_schedule has returned). */
-
-void silc_schedule_stop(SilcSchedule schedule)
-{
-  SILC_LOG_DEBUG(("Stopping scheduler"));
-  SILC_SCHEDULE_LOCK(schedule);
-  schedule->valid = FALSE;
-  SILC_SCHEDULE_UNLOCK(schedule);
 }
 
 /* Executes file descriptor tasks. Invalid tasks are removed here. */
@@ -275,6 +192,146 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
     SILC_LOG_DEBUG(("timeout: sec=%d, usec=%d", schedule->timeout.tv_sec,
 		    schedule->timeout.tv_usec));
   }
+}
+
+/* Removes task from the scheduler.  This must be called with scheduler
+   locked. */
+
+static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
+{
+  SilcTaskFd ftask;
+  SilcTaskTimeout ttask;
+
+  if (task == SILC_ALL_TASKS) {
+    SilcTask task;
+    SilcHashTableList htl;
+    SilcUInt32 fd;
+
+    /* Delete from fd queue */
+    silc_hash_table_list(schedule->fd_queue, &htl);
+    while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task))
+      silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(fd));
+    silc_hash_table_list_reset(&htl);
+
+    /* Delete from timeout queue */
+    silc_list_start(schedule->timeout_queue);
+    while ((task = (SilcTask)silc_list_get(schedule->timeout_queue))
+	   != SILC_LIST_END) {
+      silc_list_del(schedule->timeout_queue, task);
+      silc_free(task);
+    }
+
+    return;
+  }
+
+  /* Delete from timeout queue */
+  if (task->type == 1) {
+    silc_list_start(schedule->timeout_queue);
+    while ((ttask = silc_list_get(schedule->timeout_queue)) != SILC_LIST_END) {
+      if (ttask == (SilcTaskTimeout)task) {
+	silc_list_del(schedule->timeout_queue, ttask);
+	silc_free(ttask);
+	break;
+      }
+    }
+
+    return;
+  }
+
+  /* Delete from fd queue */
+  ftask = (SilcTaskFd)task;
+  silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(ftask->fd));
+}
+
+
+/****************************** Public API **********************************/
+
+/* Initializes the scheduler. This returns the scheduler context that
+   is given as arugment usually to all silc_schedule_* functions.
+   The `max_tasks' indicates the number of maximum tasks that the
+   scheduler can handle. The `app_context' is application specific
+   context that is delivered to task callbacks. */
+
+SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
+{
+  SilcSchedule schedule;
+
+  SILC_LOG_DEBUG(("Initializing scheduler"));
+
+  schedule = silc_calloc(1, sizeof(*schedule));
+  if (!schedule)
+    return NULL;
+
+  schedule->fd_queue =
+    silc_hash_table_alloc(0, silc_hash_uint, NULL, NULL, NULL,
+			  silc_schedule_fd_destructor, NULL, TRUE);
+  if (!schedule->fd_queue)
+    return NULL;
+
+  silc_list_init(schedule->timeout_queue, struct SilcTaskTimeoutStruct, next);
+
+  schedule->app_context = app_context;
+  schedule->valid = TRUE;
+  schedule->max_tasks = max_tasks;
+
+  /* Allocate scheduler lock */
+  silc_mutex_alloc(&schedule->lock);
+
+  /* Initialize the platform specific scheduler. */
+  schedule->internal = schedule_ops.init(schedule, app_context);
+
+  return schedule;
+}
+
+/* Uninitializes the schedule. This is called when the program is ready
+   to end. This removes all tasks and task queues. Returns FALSE if the
+   scheduler could not be uninitialized. This happens when the scheduler
+   is still valid and silc_schedule_stop has not been called. */
+
+SilcBool silc_schedule_uninit(SilcSchedule schedule)
+{
+  SILC_LOG_DEBUG(("Uninitializing scheduler"));
+
+  if (schedule->valid == TRUE)
+    return FALSE;
+
+  /* Dispatch all timeouts before going away */
+  SILC_SCHEDULE_LOCK(schedule);
+  silc_schedule_dispatch_timeout(schedule, TRUE);
+  SILC_SCHEDULE_UNLOCK(schedule);
+
+  /* Deliver signals before going away */
+  if (schedule->signal_tasks) {
+    schedule_ops.signals_call(schedule, schedule->internal);
+    schedule->signal_tasks = FALSE;
+  }
+
+  /* Unregister all tasks */
+  silc_schedule_task_remove(schedule, SILC_ALL_TASKS);
+  silc_schedule_task_remove(schedule, SILC_ALL_TASKS);
+
+  /* Unregister all task queues */
+  silc_hash_table_free(schedule->fd_queue);
+
+  /* Uninit the platform specific scheduler. */
+  schedule_ops.uninit(schedule, schedule->internal);
+
+  silc_mutex_free(schedule->lock);
+  silc_free(schedule);
+
+  return TRUE;
+}
+
+/* Stops the schedule even if it is not supposed to be stopped yet.
+   After calling this, one should call silc_schedule_uninit (after the
+   silc_schedule has returned). */
+
+void silc_schedule_stop(SilcSchedule schedule)
+{
+  SILC_LOG_DEBUG(("Stopping scheduler"));
+  SILC_SCHEDULE_LOCK(schedule);
+  schedule->valid = FALSE;
+  SILC_SCHEDULE_UNLOCK(schedule);
 }
 
 /* Runs the scheduler once and then returns. */
@@ -634,55 +691,6 @@ void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
   }
 
   SILC_SCHEDULE_UNLOCK(schedule);
-}
-
-/* Removes task from the scheduler.  This must be called with scheduler
-   locked. */
-
-static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
-{
-  SilcTaskFd ftask;
-  SilcTaskTimeout ttask;
-
-  if (task == SILC_ALL_TASKS) {
-    SilcTask task;
-    SilcHashTableList htl;
-    SilcUInt32 fd;
-
-    /* Delete from fd queue */
-    silc_hash_table_list(schedule->fd_queue, &htl);
-    while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task))
-      silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(fd));
-    silc_hash_table_list_reset(&htl);
-
-    /* Delete from timeout queue */
-    silc_list_start(schedule->timeout_queue);
-    while ((task = (SilcTask)silc_list_get(schedule->timeout_queue))
-	   != SILC_LIST_END) {
-      silc_list_del(schedule->timeout_queue, task);
-      silc_free(task);
-    }
-
-    return;
-  }
-
-  /* Delete from timeout queue */
-  if (task->type == 1) {
-    silc_list_start(schedule->timeout_queue);
-    while ((ttask = silc_list_get(schedule->timeout_queue)) != SILC_LIST_END) {
-      if (ttask == (SilcTaskTimeout)task) {
-	silc_list_del(schedule->timeout_queue, ttask);
-	silc_free(ttask);
-	break;
-      }
-    }
-
-    return;
-  }
-
-  /* Delete from fd queue */
-  ftask = (SilcTaskFd)task;
-  silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(ftask->fd));
 }
 
 /* Sets a file descriptor to be listened by scheduler. One can call this

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
 */
 
 #include "silc.h"
+
+/************************** Types and definitions ***************************/
 
 #define SILC_IS_FD_STREAM(s) (s->ops == &silc_fd_stream_ops)
 
@@ -33,6 +35,9 @@ typedef struct {
   int fd2;
   int error;
 } *SilcFDStream;
+
+
+/************************ Static utility functions **************************/
 
 /* The IO process callback that calls the notifier callback to upper layer. */
 
@@ -56,6 +61,9 @@ SILC_TASK_CALLBACK(silc_fd_stream_io)
     break;
   }
 }
+
+
+/****************************** Public API **********************************/
 
 /* Create file descriptor stream */
 
