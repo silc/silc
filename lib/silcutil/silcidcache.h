@@ -25,6 +25,9 @@
  * protocol.  Application can save here the ID's it uses and the interface
  * provides fast retrieval of the ID's from the cache.
  *
+ * SILC ID Cache is not thread-safe.  If the same cache context must be 
+ * used in multithreaded environment concurrency control must be employed.
+ *
  ***/
 
 #ifndef SILCIDCACHE_H

@@ -25,6 +25,9 @@
  * MIME messages, multipart MIME messages, including nested multiparts, and
  * MIME fragmentation and defragmentation.
  *
+ * SILC Mime API is not thread-safe.  If the same MIME context must be
+ * used in multithreaded environment concurrency control must be employed.
+ *
  ***/
 
 #ifndef SILCMIME_H

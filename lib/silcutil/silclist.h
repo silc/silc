@@ -24,6 +24,9 @@
  * Implementation of the SilcList interface.  This interface provides
  * simple linked list.
  *
+ * SILC List is not thread-safe.  If the same list context must be used
+ * in multithreaded environment concurrency control must be employed.
+ *
  ***/
 
 #ifndef SILCLIST_H

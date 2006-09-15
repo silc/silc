@@ -122,8 +122,8 @@ unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
- *                           SilcVCard vcard);
+ *    SilcBool silc_vcard_decode(const unsigned char *data,
+ *                               SilcUInt32 data_len, SilcVCard vcard);
  *
  * DESCRIPTION
  *
@@ -135,7 +135,7 @@ unsigned char *silc_vcard_encode(SilcVCard vcard, SilcUInt32 *vcard_len);
  *
  ***/
 SilcBool silc_vcard_decode(const unsigned char *data, SilcUInt32 data_len,
-		       SilcVCard vcard);
+			   SilcVCard vcard);
 
 /****f* silcutil/SilcVCard/silc_vcard_alloc
  *

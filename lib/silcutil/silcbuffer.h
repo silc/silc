@@ -105,6 +105,9 @@
  *     section. Tail section can be pulled towards end, and thus the data
  *     section becomes larger.
  *
+ * SILC Buffer is not thread-safe.  If the same buffer context must be used
+ * in multithreaded environment concurrency control must be employed.
+ *
  * SOURCE
  */
 typedef struct {

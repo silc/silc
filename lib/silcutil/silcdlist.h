@@ -30,13 +30,11 @@
  * will automatically allocate list entries.  Normal SILC List API cannot
  * be used for this purpose because in that case the context passed to the
  * list must be defined as list structure already.  This is not the case in
- * SilcDList.
+ * SilcDList.  But SilcDList is a bit slower than SilcList because it 
+ * requires memory allocation when adding new entries to the list.
  *
- * This is slower than SilcList because this requires one extra memory
- * allocation when adding new entries to the list.  The context is probably
- * allocated already and the new list entry requires one additional memory
- * allocation.  The memory allocation and freeing is done automatically in
- * the API and does not show to the caller.
+ * SILC Dynamic List is not thread-safe.  If the same list context must be 
+ * used in multithreaded environment concurrency control must be employed.
  *
  ***/
 
