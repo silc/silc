@@ -131,7 +131,7 @@ SilcHttpServer silc_http_server_alloc(const char *ip, SilcUInt16 port,
  ***/
 void silc_http_server_free(SilcHttpServer httpd);
 
-/****f* silchttp/SilcHTTPServer/silc_http_server_free
+/****f* silchttp/SilcHTTPServer/silc_http_server_send
  *
  * SYNOPSIS
  *
@@ -150,7 +150,7 @@ SilcBool silc_http_server_send(SilcHttpServer httpd,
 			       SilcHttpConnection conn,
 			       SilcBuffer data);
 
-/****f* silchttp/SilcHTTPServer/silc_http_server_free
+/****f* silchttp/SilcHTTPServer/silc_http_server_send_error
  *
  * SYNOPSIS
  *
