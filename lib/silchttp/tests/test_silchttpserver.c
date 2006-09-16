@@ -19,6 +19,7 @@ static void http_callback(SilcHttpServer httpd, SilcHttpConnection conn,
 			    "<html><head></head><body>",
 			    silc_http_server_get_header(httpd, conn,
 							"User-Agent"),
+			    "<p><img src=\"pr_1995.jpg\">",
 			    "<p>OUR DEFAULT PAGE IS THIS: ",
 			    silc_time_string(silc_time()),
 			    "<P><FORM action=\"/posttest\" method=\"post\"><P>"
@@ -32,6 +33,20 @@ static void http_callback(SilcHttpServer httpd, SilcHttpConnection conn,
 			    SILC_STRFMT_END);
       silc_http_server_add_header(httpd, conn, "X-Date",
 				  silc_time_string(silc_time()));
+      silc_http_server_send(httpd, conn, &page);
+      silc_buffer_purge(&page);
+      return;
+    }
+
+    if (!strcmp(uri, "/pr_1995.jpg")) {
+      SilcUInt32 data_len;
+      unsigned char *data = silc_file_readfile("pr_1995.jpg", &data_len);
+      if (!data) {
+	silc_http_server_send_error(httpd, conn, "404 Not Found", NULL);
+        return;
+      }
+      silc_buffer_set(&page, data, data_len),
+      silc_http_server_add_header(httpd, conn, "Content-Type", "image/jpeg");
       silc_http_server_send(httpd, conn, &page);
       silc_buffer_purge(&page);
       return;

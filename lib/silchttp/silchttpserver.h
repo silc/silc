@@ -24,7 +24,8 @@
  * Very simple HTTP server interface.  This HTTP server supports basic HTTP
  * features.  All pages on the server are dynamically created by the caller
  * of this interface.  The server does not support plugins, modules, cgi-bin,
- * server-side includes or any other special features.
+ * server-side includes or any other special features.  Naturally, the caller
+ * of this interface may itself implement such features.
  *
  ***/
 
@@ -74,7 +75,7 @@ typedef struct SilcHttpConnectionStruct *SilcHttpConnection;
  *
  * DESCRIPTION
  *
- *    The HTTP request callback, that is called everytime a new HTTP request
+ *    The HTTP request callback that is called everytime a new HTTP request
  *    comes from a HTTP client.  The `uri' is the requested URI (web page),
  *    and the `method' is the HTTP request method (GET, POST, etc.).  The
  *    `data' is non-NULL only if the `method' is POST, and it includes the
@@ -218,6 +219,7 @@ const char *silc_http_server_get_header(SilcHttpServer httpd,
  * EXAMPLE
  *
  *    silc_http_server_add_header(httpd, conn, "Content-Type", "image/jpeg");
+ *    silc_http_server_send(httpd, conn, image_data);
  *
  ***/
 SilcBool silc_http_server_add_header(SilcHttpServer httpd,
