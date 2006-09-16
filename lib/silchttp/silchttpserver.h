@@ -31,7 +31,34 @@
 #ifndef SILCHTTPSERVER_H
 #define SILCHTTPSERVER_H
 
+/****s* silchttp/SilcHTTPServer/SilcHttpServer
+ *
+ * NAME
+ *
+ *    typedef struct SilcHttpServerStruct *SilcHttpServer;
+ *
+ * DESCRIPTION
+ *
+ *    The actual HTTP server allocated with silc_http_server_alloc and
+ *    freed with silc_http_server_free.
+ *
+ ***/
 typedef struct SilcHttpServerStruct *SilcHttpServer;
+
+/****s* silchttp/SilcHTTPServer/SilcHttpConnection
+ *
+ * NAME
+ *
+ *    typedef struct SilcHttpConnectionStruct *SilcHttpConnection;
+ *
+ * DESCRIPTION
+ *
+ *    HTTP connection context.  This is allocated by the library and
+ *    delivered to application in SilcHttpServerCallback callbcak function.
+ *    It is given as argument to many silc_http_server_* functions.
+ *    It is freed automatically by the library.
+ *
+ ***/
 typedef struct SilcHttpConnectionStruct *SilcHttpConnection;
 
 /****f* silchttp/SilcHTTPServer/SilcHttpServerCallback
