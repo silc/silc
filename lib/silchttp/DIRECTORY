@@ -1,0 +1,20 @@
+<!--
+@LIBRARY=SILC HTTP Library
+@FILENAME=silchttplib.html
+@LINK=silchttpserver.html:SILC HTTP Server Interface
+-->
+
+<big><b>SILC HTTP Library</b></big>
+<br />
+<small>Directory: lib/silchttp/</small>
+<br />
+<small>Library: libhttp.a, libhttp.lib</small>
+<br /><br />
+<b>Introduction</b>
+
+<br /><br />
+SILC HTTP Library provides currently interface for very simple HTTP 
+Server.
+
+<br /><br />
+@LINKS@

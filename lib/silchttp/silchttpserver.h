@@ -193,7 +193,7 @@ SilcBool silc_http_server_send_error(SilcHttpServer httpd,
  *
  *    Finds a header field indicated by `field' from the current HTTP
  *    request sent by the HTTP client.  Returns the field value or NULL
- *    if suchs header field does not exist.
+ *    if such header field does not exist.
  *
  ***/
 const char *silc_http_server_get_header(SilcHttpServer httpd,

@@ -151,7 +151,7 @@ static SilcBool silc_http_server_parse(SilcHttpServer httpd,
     if (strstr(tmp, "HTTP/1.1"))
       conn->keepalive = TRUE;
     if (strstr(tmp, "HTTP/1.2"))
-    conn->keepalive = TRUE;
+      conn->keepalive = TRUE;
 
     /* Get HTTP headers */
     tmp = memchr(tmp, '\0', data_len - (tmp - data));
