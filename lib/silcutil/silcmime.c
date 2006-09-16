@@ -283,10 +283,11 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
     }
   } else {
     /* Get data area */
-    if (i >= data_len)
+    if (i > data_len)
       i = 0;
     SILC_LOG_DEBUG(("Data len %d", data_len - i));
-    silc_mime_add_data(mime, tmp + i, data_len - i);
+    if (i != data_len)
+      silc_mime_add_data(mime, tmp + i, data_len - i);
   }
 
   return mime;

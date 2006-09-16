@@ -165,7 +165,7 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap);
  *
  * EXAMPLE
  *
- *    ret = silc_buffer_strformat(buffer, "foo", "bar", SILC_STR_END);
+ *    ret = silc_buffer_strformat(buffer, "foo", "bar", SILC_STRFMT_END);
  *    if (ret < 0)
  *      error;
  *
