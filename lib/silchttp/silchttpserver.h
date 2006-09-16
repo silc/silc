@@ -75,22 +75,18 @@ typedef void (*SilcHttpServerCallback)(SilcHttpServer httpd,
  *
  *    SilcHttpServer
  *    silc_http_server_alloc(const char *ip, SilcUInt16 port,
- *                           SilcUInt32 max_connections,
  *                           SilcSchedule schedule,
  *                           SilcHttpServerCallback callback, void *context);
  *
  * DESCRIPTION
  *
  *    Allocates HTTP server and binds it to the IP address `ip' on the
- *    `port'.  If `max_connections' is non-zero, that many connections
- *    are allowed to the HTTP server.  The `callback' with `context' will
- *    be called everytime a new HTTP request comes to the server from
- *    a HTTP client.  In that callback the caller must then reply with
- *    the requested Web page or with an error.
+ *    `port'.  The `callback' with `context' will be called everytime a new
+ *    HTTP request comes to the server from a HTTP client.  In that callback
+ *    the caller must then reply with the requested Web page or with error.
  *
  ***/
 SilcHttpServer silc_http_server_alloc(const char *ip, SilcUInt16 port,
-				      SilcUInt32 max_connections,
 				      SilcSchedule schedule,
 				      SilcHttpServerCallback callback,
 				      void *context);

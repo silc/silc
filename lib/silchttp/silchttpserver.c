@@ -47,6 +47,9 @@ struct SilcHttpConnectionStruct {
   SilcInt64 touched;		    /* Time last connection was touched */
   SilcMime curheaders;		    /* HTTP request headers */
   SilcMime headers;		    /* HTTP reply headers */
+  unsigned char *hptr;		    /* Pointer to start of headers */
+  char *method;			    /* Method */
+  char *uri;			    /* URI */
   unsigned int keepalive    : 1;    /* Keep alive */
 };
 
@@ -68,13 +71,15 @@ static void silc_http_server_close_connection(SilcHttpConnection conn)
   silc_buffer_clear(conn->outbuf);
   silc_buffer_reset(conn->inbuf);
   silc_buffer_reset(conn->outbuf);
+  conn->hptr = conn->method = conn->uri = NULL;
 
   if (conn->keepalive)
     return;
 
-  SILC_LOG_DEBUG(("Closing HTTP connection"));
+  SILC_LOG_DEBUG(("Closing HTTP connection %p", conn));
 
   silc_schedule_task_del_by_context(conn->httpd->schedule, conn);
+  silc_stream_set_notifier(conn->stream, conn->httpd->schedule, NULL, NULL);
   silc_stream_destroy(conn->stream);
 
   /* Add to free list */
@@ -86,97 +91,126 @@ static void silc_http_server_close_connection(SilcHttpConnection conn)
 static SilcBool silc_http_server_parse(SilcHttpServer httpd,
 				       SilcHttpConnection conn)
 {
-  SilcUInt32 data_len;
+  SilcUInt32 data_len, cll;
   unsigned char *data, *tmp;
-  char *method, *uri;
-  const char *value;
+  const char *value, *cl;
   SilcBufferStruct postdata;
+  int i;
 
   SILC_LOG_DEBUG(("Parsing HTTP data"));
-  SILC_LOG_HEXDUMP(("HTTP data"), silc_buffer_data(conn->inbuf),
-		   silc_buffer_len(conn->inbuf));
 
   data = silc_buffer_data(conn->inbuf);
   data_len = silc_buffer_len(conn->inbuf);
 
-  if (data_len < 3)
+  /* Check for end of headers */
+  for (i = 0; i < data_len ; i++) {
+    if (data_len - i >= 4 &&
+	data[i    ] == '\r' && data[i + 1] == '\n' &&
+	data[i + 2] == '\r' && data[i + 3] == '\n')
+      break;
+  }
+  if (i == data_len)
     return TRUE;
 
-  tmp = memchr(data, '\n', data_len);
-  if (!tmp || tmp[-1] != '\r') {
-    if (data_len < SILC_HTTP_SERVER_BUFLEN)
-      return TRUE;
-    return FALSE;
-  }
-  *tmp = 0;
+  SILC_LOG_HEXDUMP(("HTTP data"), silc_buffer_data(conn->inbuf),
+		   silc_buffer_len(conn->inbuf));
 
-  /* Get method */
-  if (strchr(data, ' '))
-    *strchr(data, ' ') = 0;
-  method = data;
-  SILC_LOG_DEBUG(("Method: '%s'", method));
-
-  /* Get URI */
-  tmp = memchr(data, '\0', data_len);
-  if (!tmp) {
-    if (data_len < SILC_HTTP_SERVER_BUFLEN)
-      return TRUE;
-    return FALSE;
-  }
-  tmp++;
-  if (strchr(tmp, ' '))
-    *strchr(tmp, ' ') = 0;
-  uri = tmp;
-  SILC_LOG_DEBUG(("URI: '%s'", uri));
-
-  /* Get HTTP headers */
-  tmp++;
-  tmp = memchr(tmp, '\n', data_len - (tmp - data)) + 1;
-  if (!tmp) {
-    if (data_len < SILC_HTTP_SERVER_BUFLEN)
-      return TRUE;
-    return FALSE;
-  }
-  conn->curheaders = silc_mime_decode(NULL, tmp, data_len - (tmp - data));
-  if (!conn->curheaders) {
-    if (data_len < SILC_HTTP_SERVER_BUFLEN)
-      return TRUE;
-    return FALSE;
-  }
-
-  /* Check for persistent connection */
-  value = silc_mime_get_field(conn->curheaders, "Keep-alive");
-  if (value)
-    conn->keepalive = TRUE;
-  value = silc_mime_get_field(conn->curheaders, "Connection");
-  if (value && !strcasecmp(value, "keep-alive"))
-    conn->keepalive = TRUE;
-  if (value && !strcasecmp(value, "close"))
-    conn->keepalive = FALSE;
-
-  /* Deliver request to caller */
-  if (!strcasecmp(method, "GET") || !strcasecmp(method, "HEAD")) {
-    /* Send request to caller */
-    httpd->callback(httpd, conn, uri, method, NULL, httpd->context);
-
-  } else if (!strcasecmp(method, "POST")) {
-    /* Get POST data */
-    tmp = (unsigned char *)silc_mime_get_data(conn->curheaders, &data_len);
-    if (!tmp) {
-      silc_mime_free(conn->curheaders);
-      conn->curheaders = NULL;
+  if (!conn->method && !conn->uri) {
+    tmp = memchr(data, '\n', data_len);
+    if (!tmp || tmp[-1] != '\r') {
       if (data_len < SILC_HTTP_SERVER_BUFLEN)
 	return TRUE;
       return FALSE;
     }
+    *tmp = 0;
+
+    /* Get method */
+    if (strchr(data, ' '))
+      *strchr(data, ' ') = 0;
+    conn->method = data;
+    SILC_LOG_DEBUG(("Method: '%s'", conn->method));
+
+    /* Get URI */
+    tmp = memchr(data, '\0', data_len);
+    if (!tmp) {
+      if (data_len < SILC_HTTP_SERVER_BUFLEN)
+	return TRUE;
+      return FALSE;
+    }
+    tmp++;
+    if (strchr(tmp, ' '))
+      *strchr(tmp, ' ') = 0;
+    conn->uri = tmp;
+    SILC_LOG_DEBUG(("URI: '%s'", conn->uri));
+
+    /* Protocol version compatibility */
+    tmp = memchr(tmp, '\0', data_len - (tmp - data)) + 1;
+    SILC_LOG_DEBUG(("Protocol: %s", tmp));
+    if (strstr(tmp, "HTTP/1.0"))
+      conn->keepalive = FALSE;
+    if (strstr(tmp, "HTTP/1.1"))
+      conn->keepalive = TRUE;
+    if (strstr(tmp, "HTTP/1.2"))
+    conn->keepalive = TRUE;
+
+    /* Get HTTP headers */
+    tmp = memchr(tmp, '\0', data_len - (tmp - data));
+    if (!tmp) {
+      if (data_len < SILC_HTTP_SERVER_BUFLEN)
+	return TRUE;
+      return FALSE;
+    }
+    if (data_len - (tmp - data) < 2) {
+      if (data_len < SILC_HTTP_SERVER_BUFLEN)
+	return TRUE;
+      return FALSE;
+    }
+    conn->hptr = ++tmp;
+  }
+
+  /* Parse headers and data area */
+  conn->curheaders = silc_mime_decode(NULL, conn->hptr,
+				      data_len - (conn->hptr - data));
+  if (!conn->curheaders)
+    return FALSE;
+
+  /* Check for persistent connection */
+  value = silc_mime_get_field(conn->curheaders, "Connection");
+  if (value && !strcasecmp(value, "close"))
+    conn->keepalive = FALSE;
+
+  /* Deliver request to caller */
+  if (!strcasecmp(conn->method, "GET") || !strcasecmp(conn->method, "HEAD")) {
+    httpd->callback(httpd, conn, conn->uri, conn->method,
+		    NULL, httpd->context);
+
+  } else if (!strcasecmp(conn->method, "POST")) {
+    /* Get POST data */
+    tmp = (unsigned char *)silc_mime_get_data(conn->curheaders, &data_len);
+    if (!tmp)
+      return FALSE;
+
+    /* Check we have received all data */
+    cl = silc_mime_get_field(conn->curheaders, "Content-Length");
+    if (cl && sscanf(cl, "%lu", (unsigned long *)&cll) == 1) {
+      if (data_len < cll) {
+	/* More data to come */
+	silc_mime_free(conn->curheaders);
+	conn->curheaders = NULL;
+	return TRUE;
+      }
+    }
+
     silc_buffer_set(&postdata, tmp, data_len);
     SILC_LOG_HEXDUMP(("HTTP POST data"), tmp, data_len);
 
-    /* Send request to caller */
-    httpd->callback(httpd, conn, uri, method, &postdata, httpd->context);
-
+    httpd->callback(httpd, conn, conn->uri, conn->method,
+		    &postdata, httpd->context);
   } else {
-    /* XXX Send bad request error */
+    /* Send bad request */
+    silc_http_server_send_error(httpd, conn, "400 Bad Request",
+				"<body><h1>400 Bad Request</h1><body>");
+    return TRUE;
   }
 
   return TRUE;
@@ -223,7 +257,7 @@ static SilcBool silc_http_server_send_internal(SilcHttpServer httpd,
 
   if (!headers) {
     /* Data sent, close connection */
-    SILC_LOG_DEBUG(("Data sent"));
+    SILC_LOG_DEBUG(("Data sent %p", conn));
     silc_http_server_close_connection(conn);
   }
 
@@ -267,7 +301,7 @@ SILC_TASK_CALLBACK(silc_http_server_connection_timeout)
   SilcInt64 curtime = silc_time();
 
   if (curtime - conn->touched > SILC_HTTP_SERVER_TIMEOUT) {
-    SILC_LOG_DEBUG(("Connection timeout"));
+    SILC_LOG_DEBUG(("Connection timeout %p", conn));
     conn->keepalive = FALSE;
     silc_http_server_close_connection(conn);
     return;
@@ -289,7 +323,7 @@ static void silc_http_server_io(SilcStream stream, SilcStreamStatus status,
 
   switch (status) {
   case SILC_STREAM_CAN_READ:
-    SILC_LOG_DEBUG(("Read HTTP data"));
+    SILC_LOG_DEBUG(("Read HTTP data %p", conn));
 
     conn->touched = silc_time();
 
@@ -307,6 +341,7 @@ static void silc_http_server_io(SilcStream stream, SilcStreamStatus status,
 			   silc_buffer_taillen(conn->inbuf));
 
     if (ret == 0 || ret == -2) {
+      conn->keepalive = FALSE;
       silc_http_server_close_connection(conn);
       return;
     }
@@ -321,13 +356,15 @@ static void silc_http_server_io(SilcStream stream, SilcStreamStatus status,
 
     /* Parse the data */
     silc_buffer_pull_tail(conn->inbuf, ret);
-    if (!silc_http_server_parse(httpd, conn))
-      silc_buffer_reset(conn->outbuf);
+    if (!silc_http_server_parse(httpd, conn)) {
+      conn->keepalive = FALSE;
+      silc_http_server_close_connection(conn);
+    }
 
     break;
 
   case SILC_STREAM_CAN_WRITE:
-    SILC_LOG_DEBUG(("Write HTTP data"));
+    SILC_LOG_DEBUG(("Write HTTP data %p", conn));
 
     conn->touched = silc_time();
 
@@ -376,18 +413,22 @@ static void silc_http_server_new_connection(SilcNetStatus status,
   silc_list_start(httpd->conns);
   conn = silc_list_get(httpd->conns);
   if (!conn) {
+    /* Add new connection */
     conn = silc_http_server_alloc_connection();
     if (!conn) {
       silc_stream_destroy(stream);
       return;
     }
+    silc_list_add(httpd->allconns, conn);
   }
+  silc_list_del(httpd->conns, conn);
 
   conn->httpd = httpd;
   conn->stream = stream;
 
   silc_socket_stream_get_info(stream, NULL, &hostname, &ip, NULL);
   SILC_LOG_INFO(("HTTPD: New connection %s (%s)", hostname, ip));
+  SILC_LOG_DEBUG(("New connection %p", conn));
 
   /* Schedule the connection for data I/O */
   silc_stream_set_notifier(stream, httpd->schedule, silc_http_server_io, conn);
@@ -404,7 +445,6 @@ static void silc_http_server_new_connection(SilcNetStatus status,
 /* Allocate HTTP server */
 
 SilcHttpServer silc_http_server_alloc(const char *ip, SilcUInt16 port,
-				      SilcUInt32 max_connections,
 				      SilcSchedule schedule,
 				      SilcHttpServerCallback callback,
 				      void *context)
@@ -437,9 +477,7 @@ SilcHttpServer silc_http_server_alloc(const char *ip, SilcUInt16 port,
   httpd->context = context;
 
   /* Allocate connections list */
-  if (!max_connections)
-    max_connections = SILC_HTTP_SERVER_CONNS;
-  for (i = 0; i < max_connections; i++) {
+  for (i = 0; i < SILC_HTTP_SERVER_CONNS; i++) {
     conn = silc_http_server_alloc_connection();
     if (!conn)
       break;
@@ -507,13 +545,15 @@ SilcBool silc_http_server_send(SilcHttpServer httpd,
     }
   }
 
+  silc_mime_add_field(conn->headers, "Last-Modified",
+		      silc_time_string(conn->touched));
   snprintf(tmp, sizeof(tmp), "%d", (int)silc_buffer_len(data));
   silc_mime_add_field(conn->headers, "Content-Length", tmp);
-  silc_mime_add_field(conn->headers, "Connection", "keep-alive");
-  snprintf(tmp, sizeof(tmp), "%d", (int)SILC_HTTP_SERVER_TIMEOUT);
-  silc_mime_add_field(conn->headers, "Keep-alive", tmp);
-  silc_mime_add_field(conn->headers, "Last-Modified",
-  		      silc_time_string(conn->touched));
+  if (conn->keepalive) {
+    silc_mime_add_field(conn->headers, "Connection", "keep-alive");
+    snprintf(tmp, sizeof(tmp), "%d", (int)SILC_HTTP_SERVER_TIMEOUT);
+    silc_mime_add_field(conn->headers, "Keep-alive", tmp);
+  }
 
   headers = silc_mime_encode(conn->headers, &headers_len);
   if (headers) {

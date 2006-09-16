@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     goto err;
 
   SILC_LOG_DEBUG(("Allocating HTTP server at 127.0.0.1:5000"));
-  httpd = silc_http_server_alloc("127.0.0.1", 5000, 0, schedule,
+  httpd = silc_http_server_alloc("127.0.0.1", 5000, schedule,
 				 http_callback, NULL);
   if (!httpd)
     goto err;
