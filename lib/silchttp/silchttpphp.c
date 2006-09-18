@@ -61,7 +61,7 @@ SilcBuffer silc_http_php_file(const char *filename)
   SilcBuffer ret = NULL;
   unsigned char tmp[8192];
   FILE *fd;
-  int len, off = 0;
+  int len;
 
   SILC_LOG_DEBUG(("Executing PHP"));
 
@@ -95,15 +95,19 @@ SilcBuffer silc_http_php_file(const char *filename)
       }
 
       silc_buffer_format(ret,
-			 SILC_STR_OFFSET(off),
-			 SILC_STR_UI_XNSTRING(tmp, len),
+			 SILC_STR_ADVANCE,
+			 SILC_STR_DATA(tmp, len),
 			 SILC_STR_END);
-      off += len;
     }
   } while (len);
 
-  if (ret)
-    silc_buffer_strformat(ret, "\0", SILC_STRFMT_END);
+  if (ret) {
+    silc_buffer_format(ret,
+		       SILC_STR_ADVANCE,
+		       SILC_STR_DATA('\0', 1),
+		       SILC_STR_END);
+    silc_buffer_push(ret, silc_buffer_truelen(ret));
+  }
 
   return ret;
 }
