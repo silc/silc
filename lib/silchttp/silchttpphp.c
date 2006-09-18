@@ -86,10 +86,12 @@ SilcBuffer silc_http_php_file(const char *filename)
     }
 
     if (len) {
-      ret = silc_buffer_alloc(0);
       if (!ret) {
-	pclose(fd);
-	return NULL;
+	ret = silc_buffer_alloc(0);
+	if (!ret) {
+	  pclose(fd);
+	  return NULL;
+	}
       }
 
       silc_buffer_format(ret,
