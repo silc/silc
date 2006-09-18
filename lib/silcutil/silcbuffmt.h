@@ -49,6 +49,7 @@
  * EXAMPLE
  *
  *    SilcBufferStruct buffer;
+ *    SilcBuffer buf;
  *
  *    memset(&buffer, 0, sizeof(buffer));
  *    ret = silc_buffer_format(&buffer,
@@ -63,6 +64,16 @@
  *
  *    // Free the allocated data
  *    silc_buffer_purge(&buffer);
+ *
+ *    // Allocate zero size buffer
+ *    buf = silc_buffer_alloc();
+ *    ret = silc_buffer_format(buf,
+ *                             SILC_STR_INT(intval),
+ *                             SILC_STR_CHAR(charval),
+ *                             SILC_STR_END);
+ *
+ *    // Free the allocated buffer
+ *    silc_buffer_free(buf);
  *
  ***/
 int silc_buffer_format(SilcBuffer dst, ...);
@@ -235,8 +246,11 @@ typedef enum {
   SILC_BUFFER_PARAM_UI32_NSTRING_ALLOC,	/* Alloc + memcpy */
   SILC_BUFFER_PARAM_UI_XNSTRING,	/* No copy */
   SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC,	/* Alloc + memcpy */
+  SILC_BUFFER_PARAM_DATA,	        /* No copy */
+  SILC_BUFFER_PARAM_DATA_ALLOC,		/* Alloc + memcpy */
 
   SILC_BUFFER_PARAM_OFFSET,
+  SILC_BUFFER_PARAM_ADVANCE,
 
   SILC_BUFFER_PARAM_END
 } SilcBufferParamType;
@@ -424,33 +438,32 @@ typedef enum {
 #define SILC_STR_UI32_NSTRING_ALLOC(x, l) \
   SILC_BUFFER_PARAM_UI32_NSTRING_ALLOC, (x), (l)
 
-/****d* silcutil/SilcBufferFormatAPI/SILC_STR_UI_XNSTRING
+/****d* silcutil/SilcBufferFormatAPI/SILC_STR_DATA
  *
  * NAME
  *
- *    #define SILC_STR_UI_XNSTRING() ...
- *    #define SILC_STR_UI_XNSTRING_ALLOC() ...
+ *    #define SILC_STR_DATA() ...
+ *    #define SILC_STR_DATA_ALLOC() ...
  *
  * DESCRIPTION
  *
- *    Extended Unsigned string formatting. Second argument is the length of
- *    the string.
+ *    Binary data formatting.  Second argument is the lenght of the data.
  *
- *    Formatting:    SILC_STR_UI_XNSTRING(unsigned char *, SilcUInt32)
- *    Unformatting:  SILC_STR_UI_XNSTRING(unsigned char **, SilcUInt32)
+ *    Formatting:    SILC_STR_DATA(unsigned char *, SilcUInt32)
+ *    Unformatting:  SILC_STR_DATA(unsigned char **, SilcUInt32)
  *
- *    This type can be used to take arbitrary length string from the buffer
- *    by sending the requested amount of bytes as argument. This differs
- *    from *_STRING and *_NSTRING so that this doesn't try to find the
- *    length of the data from the buffer but the length of the data is
- *    sent as argument. This a handy way to unformat fixed length strings
- *    from the buffer without having the length of the string formatted
- *    in the buffer.
+ *    This type can be used to take arbitrary size data block from the buffer
+ *    by sending the requested amount of bytes as argument.
  *
  *    _ALLOC routines automatically allocates memory for the variable sent
  *    as argument in unformatting.
  *
  ***/
+#define SILC_STR_DATA(x, l) SILC_BUFFER_PARAM_DATA, (x), (l)
+#define SILC_STR_DATA_ALLOC(x, l) \
+  SILC_BUFFER_PARAM_DATA_ALLOC, (x), (l)
+
+/* Deprecated */
 #define SILC_STR_UI_XNSTRING(x, l) SILC_BUFFER_PARAM_UI_XNSTRING, (x), (l)
 #define SILC_STR_UI_XNSTRING_ALLOC(x, l) \
   SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC, (x), (l)
@@ -479,6 +492,38 @@ typedef enum {
  *
  ***/
 #define SILC_STR_OFFSET(x) SILC_BUFFER_PARAM_OFFSET, (x)
+
+/****d* silcutil/SilcBufferFormatAPI/SILC_STR_ADVANCE
+ *
+ * NAME
+ *
+ *    #define SILC_STR_ADVANCE ...
+ *
+ * DESCRIPTION
+ *
+ *    Advance the buffer to the end of the data after the formatting is
+ *    done.  In normal operation when the formatted data is written the
+ *    buffer is located at the start of the data.  With SILC_STR_ADVANCE
+ *    the buffer will be located at the end of the data.  This makes it
+ *    easy to add new data immediately after the previously added data.
+ *
+ * EXAMPLE
+ *
+ *    do {
+ *      len = read(fd, buf, sizeof(buf));
+ *      if (len > 0)
+ *        // Add read data to the buffer
+ *        silc_buffer_format(buffer,
+ *                           SILC_STR_ADVANCE,
+ *                           SILC_STR_UI_XNSTRING(buf, len),
+ *                           SILC_STR_END);
+ *    } while (len > 0);
+ *
+ *    // Move to beginning of buffer
+ *    silc_buffer_push(buffer, silc_buffer_truelen(buffer));
+ *
+ ***/
+#define SILC_STR_ADVANCE SILC_BUFFER_PARAM_ADVANCE
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_END
  *

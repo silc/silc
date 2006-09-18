@@ -78,6 +78,7 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap)
 {
   SilcBufferParamType fmt;
   int flen = 0;
+  SilcBool advance = FALSE;
 
   /* Parse the arguments by formatting type. */
   while (1) {
@@ -194,10 +195,12 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap)
     case SILC_BUFFER_PARAM_UI16_NSTRING:
     case SILC_BUFFER_PARAM_UI32_NSTRING:
     case SILC_BUFFER_PARAM_UI_XNSTRING:
+    case SILC_BUFFER_PARAM_DATA:
     case SILC_BUFFER_PARAM_UI8_NSTRING_ALLOC:
     case SILC_BUFFER_PARAM_UI16_NSTRING_ALLOC:
     case SILC_BUFFER_PARAM_UI32_NSTRING_ALLOC:
     case SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC:
+    case SILC_BUFFER_PARAM_DATA_ALLOC:
       {
 	unsigned char *x = va_arg(ap, unsigned char *);
 	SilcUInt32 tmp_len = va_arg(ap, SilcUInt32);
@@ -211,6 +214,9 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap)
     case SILC_BUFFER_PARAM_END:
       goto ok;
       break;
+    case SILC_BUFFER_PARAM_ADVANCE:
+      advance = TRUE;
+      break;
     default:
       SILC_LOG_DEBUG(("Bad buffer formatting type `%d'. Could not "
 		      "format the data.", fmt));
@@ -221,12 +227,14 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap)
 
  fail:
   SILC_LOG_DEBUG(("Error occured while formatting data"));
-  silc_buffer_push(dst, flen);
+  if (!advance)
+    silc_buffer_push(dst, flen);
   return -1;
 
  ok:
   /* Push the buffer back to where it belongs. */
-  silc_buffer_push(dst, flen);
+  if (!advance)
+    silc_buffer_push(dst, flen);
   return flen;
 }
 
@@ -510,6 +518,7 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap)
 	break;
       }
     case SILC_BUFFER_PARAM_UI_XNSTRING:
+    case SILC_BUFFER_PARAM_DATA:
       {
 	unsigned char **x = va_arg(ap, unsigned char **);
 	SilcUInt32 len = va_arg(ap, SilcUInt32);
@@ -520,6 +529,7 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap)
 	break;
       }
     case SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC:
+    case SILC_BUFFER_PARAM_DATA_ALLOC:
       {
 	unsigned char **x = va_arg(ap, unsigned char **);
 	SilcUInt32 len = va_arg(ap, SilcUInt32);
@@ -533,6 +543,8 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap)
       }
     case SILC_BUFFER_PARAM_END:
       goto ok;
+      break;
+    case SILC_BUFFER_PARAM_ADVANCE:
       break;
     default:
       SILC_LOG_DEBUG(("Bad buffer formatting type `%d'. Could not "
@@ -563,6 +575,7 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap)
 int silc_buffer_strformat(SilcBuffer dst, ...)
 {
   int len = silc_buffer_truelen(dst);
+  int hlen = silc_buffer_headlen(dst);
   va_list va;
 
   va_start(va, dst);
@@ -594,7 +607,7 @@ int silc_buffer_strformat(SilcBuffer dst, ...)
 
  ok:
   dst->end = dst->head + len;
-  dst->data = dst->head;
+  dst->data = dst->head + hlen;
   dst->tail = dst->end;
 
   va_end(va);
