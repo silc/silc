@@ -22,6 +22,6 @@ bin_PROGRAMS = test_silchttpserver
 test_silchttpserver_SOURCES = test_silchttpserver.c
 
 LIBS = $(SILC_COMMON_LIBS)
-LDADD = -L.. -L../.. -lsilc
+LDADD = -L.. -L../.. -lsilc -lsilchttp
 
 include $(top_srcdir)/Makefile.defines.in

@@ -20,11 +20,13 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 noinst_LTLIBRARIES = libsilchttp.la
 
 libsilchttp_la_SOURCES = 	\
-	silchttpserver.c
+	silchttpserver.c	\
+	silchttpphp.c
 
 #ifdef SILC_DIST_TOOLKIT
-include_HEADERS =	\
-	silchttpserver.h
+include_HEADERS =		\
+	silchttpserver.h	\
+	silchttpphp.h
 
 SILC_EXTRA_DIST = tests
 #endif SILC_DIST_TOOLKIT

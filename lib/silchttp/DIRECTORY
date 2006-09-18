@@ -2,6 +2,7 @@
 @LIBRARY=SILC HTTP Library
 @FILENAME=silchttplib.html
 @LINK=silchttpserver.html:SILC HTTP Server Interface
+@LINK=silchttpphp.html:SILC HTTP PHP Translator
 -->
 
 <big><b>SILC HTTP Library</b></big>
@@ -14,7 +15,7 @@
 
 <br /><br />
 SILC HTTP Library provides currently interface for very simple HTTP 
-Server.
+Server.  It also provides support to serve PHP pages through the server.
 
 <br /><br />
 @LINKS@

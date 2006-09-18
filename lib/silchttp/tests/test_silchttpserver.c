@@ -2,6 +2,7 @@
 
 #include "silc.h"
 #include "../silchttpserver.h"
+#include "../silchttpphp.h"
 
 static void http_callback(SilcHttpServer httpd, SilcHttpConnection conn,
 			  const char *uri, const char *method,
@@ -14,6 +15,16 @@ static void http_callback(SilcHttpServer httpd, SilcHttpConnection conn,
   if (!strcasecmp(method, "GET")) {
     /* Send our default page */
     if (!strcmp(uri, "/") || !strcmp(uri, "/index.html")) {
+      SilcBuffer php;
+      const char *php_data = NULL;
+
+      /* Execute PHP data */
+      php = silc_http_php("<small>"
+			  "UPDATED <?php echo getcwd(); echo date(\"Y/m/d\", filemtime(\"test_silchttpserver.c\")); ?>"
+			  "| VERSION 4.0 | A HANDMADE WEB-SITE | (C) 1995 - 2006 PEKKA RIIKONEN");
+      if (php)
+	php_data = silc_buffer_data(php);
+
       memset(&page, 0, sizeof(page));
       silc_buffer_strformat(&page,
 			    "<html><head></head><body>",
@@ -28,13 +39,15 @@ static void http_callback(SilcHttpServer httpd, SilcHttpConnection conn,
 			    "<INPUT type=\"radio\" name=\"sex\" value=\"Male\"> Male<BR>"
 			    "<INPUT type=\"radio\" name=\"sex\" value=\"Female\"> Female<BR>"
 			    "<INPUT type=\"submit\" value=\"Send\"> <INPUT type=\"reset\">"
-			    "</P></FORM>"
+			    "</P></FORM>",
+			    php_data,
 			    "</body></html>",
 			    SILC_STRFMT_END);
       silc_http_server_add_header(httpd, conn, "X-Date",
 				  silc_time_string(silc_time()));
       silc_http_server_send(httpd, conn, &page);
       silc_buffer_purge(&page);
+      silc_buffer_free(php);
       return;
     }
 
