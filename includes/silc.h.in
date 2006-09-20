@@ -260,6 +260,7 @@ extern "C" {
 #include "silcmutex.h"
 #include "silccond.h"
 #include "silcthread.h"
+#include "silcatomic.h"
 #include "silcschedule.h"
 #include "silchashtable.h"
 #include "silclog.h"
@@ -290,7 +291,6 @@ extern "C" {
 #include "silcargument.h"
 #include "silcstatus.h"
 #include "silcid.h"
-#include "silcidcache.h"
 #include "silccommand.h"
 #include "silcmessage.h"
 #include "silcchannel.h"
@@ -300,6 +300,10 @@ extern "C" {
 #include "silcauth.h"
 #include "silcattrs.h"
 #include "silcpubkey.h"
+
+#ifdef SILC_DIST_IDCACHE
+#include "silcidcache.h"
+#endif /* SILC_DIST_IDCACHE */
 
 #ifdef SILC_DIST_SKR
 #include "silcskr.h"
@@ -322,6 +326,12 @@ extern "C" {
 #include "silcsftp.h"
 #include "silcsftp_fs.h"
 #endif /* SILC_DIST_SFTP */
+
+#ifdef SILC_DIST_HTTP
+/* SILC HTTP library */
+#include "silchttpserver.h"
+#include "silchttpphp.h"
+#endif /* SILC_DIST_HTTP */
 
 #ifdef __cplusplus
 }

@@ -50,6 +50,12 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcskr"
 #ifdef SILC_DIST_SERVERLIB
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcserver"
 #endif SILC_DIST_SERVERLIB
+#ifdef SILC_DIST_HTTP
+SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silchttp"
+#endif SILC_DIST_HTTP
+#ifdef SILC_DIST_IDCACHE
+SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcidcache"
+#endif SILC_DIST_IDCACHE
 
 ##
 ## Library versioning.
@@ -205,6 +211,19 @@ lib/silcskr/tests/Makefile
 #endif SILC_DIST_INPLACE
 )
 #endif SILC_DIST_SKR
+
+#ifdef SILC_DIST_HTTP
+AC_CONFIG_FILES(
+lib/silchttp/Makefile
+lib/silchttp/tests/Makefile
+)
+#endif SILC_DIST_HTTP
+
+#ifdef SILC_DIST_IDCACHE
+AC_CONFIG_FILES(
+lib/silcidcache/Makefile
+)
+#endif SILC_DIST_IDCACHE
 
 fi	# compile_libs
 
