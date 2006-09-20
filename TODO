@@ -21,23 +21,33 @@ lib/silccore/silcpacket.[ch]	****PARTLY DONE****
 lib/silccore/silcid.[ch]	****DONE****
 ========================
 
-  o Add silc_id_str2id to accept the destination buffer as argument
-    and thus not require any memory allocation.  Same will happen
-    with silc_id_payload_* functions. (***DONE)
+ o Add silc_id_str2id to accept the destination buffer as argument
+   and thus not require any memory allocation.  Same will happen
+   with silc_id_payload_* functions. (***DONE)
 
-  o silc_id_str2id, silc_id2str to non-allocating routines. (***DONE)
+ o silc_id_str2id, silc_id2str to non-allocating routines. (***DONE)
 
 
 lib/silccore
 ============
 
-  o All payload encoding routines should take SilcStack as argument.
+ o All payload encoding routines should take SilcStack as argument.
+
+
+lib/silcskr
+===========
+
+ o Removing key from the repository is not possible currently.  It should 
+   be.
 
 
 lib/silcske/silcske.[ch]
 ========================
 
  o IV Included flag support in SKE (it currently doesn't accept it)
+
+ o assemble_security_properties to take cipher, hash, hmac, etc. as
+   argument.
 
  o SilcConnAuth header file documentation.
 
@@ -130,6 +140,8 @@ lib/silcutil/silcsocketstream.[ch]	****PARTY DONE****
  o Add SilcSocketStream (***DONE)
 
  o Add SilcSocketStream for WIN32
+
+ o Handle EOS sending to upper layer properly
 
  o Test QoS after the changes made to socket stream
 
