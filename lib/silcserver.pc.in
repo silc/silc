@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: @PACKAGE@ (server library)
+Description: SILC Server Library
+Version: @VERSION@
+Conflicts: libsilc <= 1.1
+Requires: silc = @VERSION@
+Libs: -L${libdir} -lsilcserver @LIBS@
+Cflags: -I${includedir}
+
