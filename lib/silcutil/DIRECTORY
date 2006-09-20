@@ -10,6 +10,7 @@
 @LINK=silcthread.html:SILC Thread Interface
 @LINK=silcmutex.html:SILC Mutex Interface
 @LINK=silccond.html:SILC Conditional Variable Interface
+@LINK=silcatomic.html:SILC Atomic Operations Interface
 @LINK=silcnet.html:SILC Network Interface
 @LINK=silcschedule.html:SILC Schedule Interface
 @LINK=silcsockconn.html:SILC Socket Interface
