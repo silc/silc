@@ -39,7 +39,16 @@ SILCLIB_DIRS = 		\
 #ifdef SILC_DIST_ASN1
 	silcasn1	\
 #endif SILC_DIST_ASN1
-	silcske
+	silcske 	\
+#ifdef SILC_DIST_HTTP
+	silchttp	\
+#endif SILC_DIST_HTTP
+#ifdef SILC_DIST_IDCACHE
+	silcidcache	\
+#endif SILC_DIST_IDCACHE
+#ifdef SILC_DIST_IDCACHE
+	silcvcard	\
+#endif SILC_DIST_IDCACHE
 
 SILCLIB = libsilc.a
 
@@ -55,7 +64,7 @@ SILCSERVERLIB_DIRS = silcserver
 SILCSERVERLIB = libsilcserver.a
 #endif SILC_DIST_SERVERLIB
 
-SUBDIRS = $(SILCLIB_DIRS) $(SILCSERVERLIB_DIRS) ###$(SILCCLIENTLIB_DIRS)
+SUBDIRS = $(SILCLIB_DIRS) $(SILCSERVERLIB_DIRS) $(SILCCLIENTLIB_DIRS)
 
 CLEANFILES = libsilc.a libsilcclient.a libsilcserver.a
 DISTCLEANFILES = libsilc.a libsilcclient.a libsilcserver.a
@@ -65,7 +74,7 @@ remove:
 	-rm -f libsilcclient.a
 	-rm -f libsilcserver.a
 
-all:	remove $(SILCLIB) $(SILCSERVERLIB) ###$(SILCCLIENTLIB)
+all:	remove $(SILCLIB) $(SILCSERVERLIB) $(SILCCLIENTLIB)
 
 #ifdef SILC_DIST_TOOLKIT
 install-exec-hook:

@@ -56,6 +56,9 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silchttp"
 #ifdef SILC_DIST_IDCACHE
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcidcache"
 #endif SILC_DIST_IDCACHE
+#ifdef SILC_DIST_VCARD
+SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcvcard"
+#endif SILC_DIST_VCARD
 
 ##
 ## Library versioning.
@@ -224,6 +227,12 @@ AC_CONFIG_FILES(
 lib/silcidcache/Makefile
 )
 #endif SILC_DIST_IDCACHE
+
+#ifdef SILC_DIST_VCARD
+AC_CONFIG_FILES(
+lib/silcvcard/Makefile
+)
+#endif SILC_DIST_VCARD
 
 fi	# compile_libs
 

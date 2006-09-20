@@ -1,0 +1,21 @@
+<!--
+@LIBRARY=SILC VCard Library
+@FILENAME=silcvcardlib.html
+@LINK=silcvcard.html:SILC VCard Interface
+-->
+
+<big><b>SILC VCard Library</b></big>
+<br />
+<small>Directory: lib/silcvcard/</small>
+<br />
+<small>Library: libvcard.a, libvcard.lib</small>
+<br /><br />
+<b>Introduction</b>
+
+<br /><br />
+SILC VCard Library provides interface for creating and processing VCards, 
+defined in the RFC 2426.  The VCard 3.0 standard is implemented by the 
+library.
+
+<br /><br />
+@LINKS@
