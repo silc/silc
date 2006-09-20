@@ -619,6 +619,7 @@ int silc_buffer_strformat(SilcBuffer dst, ...)
 int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...)
 {
   int len = silc_buffer_truelen(dst);
+  int hlen = silc_buffer_headlen(dst);
   va_list va;
 
   va_start(va, dst);
@@ -651,7 +652,7 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...)
 
  ok:
   dst->end = dst->head + len;
-  dst->data = dst->head;
+  dst->data = dst->head + hlen;
   dst->tail = dst->end;
 
   va_end(va);

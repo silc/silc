@@ -66,7 +66,7 @@
  *    silc_buffer_purge(&buffer);
  *
  *    // Allocate zero size buffer
- *    buf = silc_buffer_alloc();
+ *    buf = silc_buffer_alloc(0);
  *    ret = silc_buffer_format(buf,
  *                             SILC_STR_INT(intval),
  *                             SILC_STR_CHAR(charval),
