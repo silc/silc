@@ -679,10 +679,13 @@ SilcBool silc_pkcs1_verify_no_oid(void *public_key,
   if (hash) {
     silc_hash_make(hash, data, data_len, hashr);
     data = hashr;
+    data_len = silc_hash_len(hash);
   }
 
   /* Compare */
-  if (memcmp(data, unpadded, len))
+  if (len != data_len)
+    ret = FALSE;
+  else if (memcmp(data, unpadded, len))
     ret = FALSE;
 
   memset(verify, 0, verify_len);
