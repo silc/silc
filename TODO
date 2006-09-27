@@ -247,6 +247,8 @@ lib/silcmath
    any other MP function (including utility ones) that may allocate
    memory.
 
+ o Test on x86_64.
+
  o All utility functions should be made non-allocating ones.
 
 
