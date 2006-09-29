@@ -15,7 +15,7 @@ Naming
 
 Generic naming
 
-All identifiers, whether they defines, functions or something else, with
+All identifiers, whether they are defines, functions or something else, with
 exception of variables, has a common naming convention.  Usually all
 identifiers use `silc' prefix to indicate that the identifier is part of
 SILC distribution.  For example, silc_server_init(), SILC_PACKET_TYPE_ERROR,
@@ -95,32 +95,40 @@ And used as `struct SilcDummyStruct *dummy'.  However, this is quite
 rarely used in the SILC, instead structures are typedef'd as following
 later.  When structure is used as object they are defined as follows,
 
-	typedef struct SilcDummyStruct {
+	typedef struct SilcDummyObject {
 	  unsigned char *dummy;
 	  unsigned int flags;
 	  void (*callback)(void *, unsigned int);
-	} SilcDummyObject;
+	} SilcDummyStruct;
 
-If the SilcDummyStruct is not needed it may be omitted (which is very
+If the SilcDummyObject is not needed it may be omitted (which is very
 common in SILC code), leaving,
 
 	typedef struct {
 	  unsigned char *dummy;
 	  unsigned int flags;
 	  void (*callback)(void *, unsigned int);
-	} SilcDummyObject;
+	} SilcDummyStruct;
 
 Finally, it is common that structures are typedef'd pointers as they
 are very flexible to use,
 
-	typedef SilcDummyObject *SilcDummy;
+	typedef SilcDummyStruct *SilcDummy;
+
+or,
+
+	typedef struct {
+	  unsigned char *dummy;
+	  unsigned int flags;
+	  void (*callback)(void *, unsigned int);
+	} SilcDummyStruct, *SilcDummy;
 
 It is common in SILC to typedef structures instead of defining name
 for the structure.  In this case the structure may be used without
 defining `struct' to the code, For example,
 
-	SilcDummyObject dummy_obj;
-	SilcDummyObject *dummy;
+	SilcDummyStruct dummy_obj;
+	SilcDummyStruct *dummy;
 
 If the structure has a pointer typedef then they are defined as normal
 variables but for real they are pointers, For example,
@@ -191,14 +199,10 @@ function.  All inline functions in SILC are defined and written into
 header files.  Inline functions must be defined in following manner
 in the header file,
 
-extern inline void silc_dummy_inline(unsigned int flags)
+static inline void silc_dummy_inline(unsigned int flags)
 {
   doing_little_dummy_things;
 }
-
-Because the function is defined as extern they can be included into
-public header files.  Do not forget to define inline function as extern.
-There are no explicit prototype definitions for inline functions.
 
 
 Indentation
@@ -214,7 +218,7 @@ A tip for those who think that these long function names etc are just
 too long to type, consider using dynamic abbreviation found in Emacs.
 With this cool feature you only have type some part of the string and
 then use the dabbrev to find the rest of the string.  I guess, by
-default it is M-/ in Emacs but I have binded it into Shift-TAB so it
+default it is M-/ in Emacs but I have bound it into Shift-TAB so it
 is fast to use when typing.
 
 
@@ -258,6 +262,9 @@ More examples,
 	  something_else;
 	}
 
+	if (condition)
+	  oneline_no_braces;
+
 
 Commenting
 ==========
@@ -300,7 +307,7 @@ that looks good.  Here are some issues on general appearance.
 	  `==', `+', etc.  Also, when setting a value to variable be
 	  sure to set spaces around `='.  When writing argument list
 	  to a function, space should follow each of the comma in the
-	  list.  However, do not use spaces with parenthesis, for
+	  list.  However, do not use spaces within parenthesis, for
 	  example, `if ( !k )' is not accepted.
 
 	o If you are not sure about how something should be done or
@@ -317,9 +324,9 @@ Now, this really isn't that important but some sort of header should be in
 all source files.
 
 In the start of the source files should include the #include's that are
-needed.  All library source files must include `silcincludes.h', this is
-a must.  Client source file must include at least `clientincludes.h' and
-server source file must include `serverincludes.h'.  Additional include's
+needed.  All library source files must include `silc.h', this is
+a must.  Client source file must include at least `silcclient.h' and
+server source file must include `silcserver.h'.  Additional include's
 may be added as well, however, system specific includes should not be
 added directly (unless it is really a special case).  Go see any source
 file as an example.
