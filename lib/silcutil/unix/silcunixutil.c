@@ -135,13 +135,13 @@ char *silc_get_username()
   char *logname = NULL;
   
   logname = getenv("LOGNAME");
-  if (!logname) {
+  if (!logname || !strlen(logname)) {
     logname = getlogin();
-    if (!logname) {
+    if (!logname || !strlen(logname)) {
       struct passwd *pw;
 
       pw = getpwuid(getuid());
-      if (!pw)
+      if (!pw || !strlen(pw->pw_name))
 	return strdup("foo");
 
       logname = pw->pw_name;

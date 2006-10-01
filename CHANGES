@@ -1,3 +1,8 @@
+Sun Oct  1 20:39:34 CEST 2006  Jochen Eisinger <coffee@silcnet.org>
+
+	* Always return a valid username.  Affected file
+	  lib/silcutil/unix/silcunixutil.c
+
 Sun Jul  2 19:12:36 CEST 2006  Jochen Eisinger <coffee@silcnet.org>
 
 	* Make gmake the default for autodist, so I can properly work
