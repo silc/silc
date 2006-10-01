@@ -1293,7 +1293,7 @@ void silc_connect(SilcClient client, SilcClientConnection conn,
   case SILC_CLIENT_CONN_SUCCESS:
     /* We have successfully connected to server */
     if ((client->nickname != NULL) &&
-        (strcmp(client->nickname, client->username)))
+        (!silc_utf8_strcasecmp(client->nickname, client->username)))
       silc_queue_enable(conn); /* enable queueing until we have our nick */
     server->connected = TRUE;
     signal_emit("event connected", 1, server);
