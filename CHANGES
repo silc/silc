@@ -1,3 +1,11 @@
+Tue Oct  3 21:22:00 CEST 2006  Jochen Eisinger <coffee@silcnet.org>
+
+	* When joining channels with a password given in the config file,
+	  use it.  Also use it when cycling (it would be better to get
+	  the password from the server, but this isn't possible in SILC).
+	  Affected files apps/irssi/src/silc/core/silc-servers.c,
+	  apps/irssi/src/silc/core/silc-channels.c
+
 Sun Oct  1 20:39:34 CEST 2006  Jochen Eisinger <coffee@silcnet.org>
 
 	* Always return a valid username.  Affected file

@@ -113,7 +113,10 @@ static void silc_channels_join(SILC_SERVER_REC *server,
 			       const char *channels, int automatic)
 {
   char **list, **tmp;
+  char *channel, *key;
   SILC_CHANNEL_REC *chanrec;
+  CHANNEL_SETUP_REC *schannel;
+  GString *tmpstr;
 
   list = g_strsplit(channels, ",", -1);
   for (tmp = list; *tmp != NULL; tmp++) {
@@ -121,7 +124,25 @@ static void silc_channels_join(SILC_SERVER_REC *server,
     if (chanrec)
       continue;
 
-    silc_command_exec(server, "JOIN", *tmp);
+    channel = *tmp;
+    key = strchr(channel, ' ');
+    if (key != NULL) {
+	    *key = '\0';
+	    key++;
+    }
+    tmpstr = g_string_new(NULL);
+
+    schannel = channel_setup_find(channel, server->connrec->chatnet);
+    if (key && *key != '\0')
+	    g_string_sprintfa(tmpstr, "%s %s", channel, key);
+    else if (schannel->password && schannel->password[0] != '\0')
+	    g_string_sprintfa(tmpstr, "%s %s", channel, schannel->password);
+    else
+	    g_string_sprintfa(tmpstr, "%s", channel);
+
+    silc_command_exec(server, "JOIN", tmpstr->str);
+
+    g_string_free(tmpstr, FALSE);
   }
 
   g_strfreev(list);
