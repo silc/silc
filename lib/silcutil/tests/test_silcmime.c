@@ -22,7 +22,9 @@ int main(int argc, char **argv)
     silc_log_set_debug_string("*mime*");
   }
 
-  /* Simple MIME test */
+  /* 
+   * Simple MIME test
+   */
   SILC_LOG_DEBUG(("Allocating MIME message context"));
   mime = silc_mime_alloc();
   if (!mime)
@@ -60,7 +62,38 @@ int main(int argc, char **argv)
   silc_free(enc);
   silc_mime_free(mime);
 
-  /* Multipart test, with nesting */
+  /*
+   * Empty data area, only headers present
+   */
+  SILC_LOG_DEBUG(("Allocating MIME message context"));
+  mime = silc_mime_alloc();
+  if (!mime)
+    goto err;
+  SILC_LOG_DEBUG(("Adding Content-Transfer-Encoding: binary"));
+  silc_mime_add_field(mime, "Content-Transfer-Encoding", "binary");
+  SILC_LOG_DEBUG(("No data area, only header present"));
+  SILC_LOG_DEBUG(("Encoding MIME context"));
+  enc = silc_mime_encode(mime, &enc_len);
+  if (!enc)
+    goto err;
+  SILC_LOG_DEBUG(("Encoded MIME message: \n%s", enc));
+  silc_mime_free(mime);
+  SILC_LOG_DEBUG(("Decoding MIME message"));
+  mime = silc_mime_decode(NULL, enc, enc_len);
+  if (!mime)
+    goto err;
+  SILC_LOG_DEBUG(("Re-encoding MIME context"));
+  silc_free(enc);
+  enc = silc_mime_encode(mime, &enc_len);
+  if (!enc)
+    goto err;
+  SILC_LOG_HEXDUMP(("Re-encoded MIME message:"), enc, enc_len);
+  silc_free(enc);
+  silc_mime_free(mime);
+
+  /*
+   * Multipart test, with nesting
+   */
   SILC_LOG_DEBUG(("Allocating MIME message context"));
   mime = silc_mime_alloc();
   if (!mime)
@@ -106,11 +139,21 @@ int main(int argc, char **argv)
   part = silc_mime_alloc();
   if (!part)
     goto err;
-  SILC_LOG_DEBUG(("Adding MIME data, 10 A's + 1 B"));
+  SILC_LOG_DEBUG(("Adding MIME data (NO HEADERS), 10 A's + 1 B"));
   for (i = 0; i < 10; i++)
     tmp[i] = 'A';
   tmp[10] = 'B';
   silc_mime_add_data(part, tmp, 11);
+  SILC_LOG_DEBUG(("Adding part to MIME message"));
+  if (!silc_mime_add_multipart(mime, part))
+    goto err;
+  SILC_LOG_DEBUG(("Allocating part"));
+  part = silc_mime_alloc();
+  if (!part)
+    goto err;
+  SILC_LOG_DEBUG(("Adding Content-Type: image/foobar"));
+  SILC_LOG_DEBUG(("No data area, only header"));
+  silc_mime_add_field(part, "Content-Type", "image/foobar");
   SILC_LOG_DEBUG(("Adding part to MIME message"));
   if (!silc_mime_add_multipart(mime, part))
     goto err;
@@ -171,7 +214,9 @@ int main(int argc, char **argv)
   }
   silc_mime_free(mime);
 
-  /* Fragmentation test */
+  /*
+   * Fragmentation test
+   */
   SILC_LOG_DEBUG(("Allocating MIME assembler"));
   ass = silc_mime_assembler_alloc();
   if (!ass)

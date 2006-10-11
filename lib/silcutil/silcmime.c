@@ -271,6 +271,8 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
 	  /* Remove preceding CRLF */
 	  k -= 2;
 
+ SILC_LOG_HEXDUMP(("line %d", k - i), line, k - i);
+
 	  /* Parse the part */
 	  p = silc_mime_decode(NULL, line, k - i);
 	  if (!p)
@@ -282,11 +284,13 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
       }
     }
   } else {
-    /* Get data area */
-    if (i > data_len)
+    /* Get data area.  If we are at the end and we have fields present
+       there is no data area present, but, if fields are not present we
+       only have data area. */
+    if (i >= data_len && !silc_hash_table_count(mime->fields))
       i = 0;
     SILC_LOG_DEBUG(("Data len %d", data_len - i));
-    if (i != data_len)
+    if (data_len - i)
       silc_mime_add_data(mime, tmp + i, data_len - i);
   }
 
