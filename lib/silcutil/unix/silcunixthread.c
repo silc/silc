@@ -218,5 +218,7 @@ SilcBool silc_cond_timedwait(SilcCond cond, SilcMutex mutex,
   }
 
   return pthread_cond_wait(&cond->cond, &mutex->mutex) == 0;
+#else
+  return FALSE;
 #endif /* SILC_THREADS*/
 }
