@@ -271,8 +271,6 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
 	  /* Remove preceding CRLF */
 	  k -= 2;
 
- SILC_LOG_HEXDUMP(("line %d", k - i), line, k - i);
-
 	  /* Parse the part */
 	  p = silc_mime_decode(NULL, line, k - i);
 	  if (!p)
