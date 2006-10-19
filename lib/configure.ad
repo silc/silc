@@ -31,6 +31,7 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silccrypt"
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcmath"
 #endif SILC_DIST_MATH
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcutil"
+SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcapputil"
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcske"
 #ifdef SILC_DIST_SFTP
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcsftp"
@@ -53,9 +54,6 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcserver"
 #ifdef SILC_DIST_HTTP
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silchttp"
 #endif SILC_DIST_HTTP
-#ifdef SILC_DIST_IDCACHE
-SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcidcache"
-#endif SILC_DIST_IDCACHE
 #ifdef SILC_DIST_VCARD
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcvcard"
 #endif SILC_DIST_VCARD
@@ -167,6 +165,7 @@ lib/silcutil/win32/Makefile
 lib/silcutil/beos/Makefile
 lib/silcutil/os2/Makefile
 lib/silcutil/epoc/Makefile
+lib/silcapputil/Makefile
 #ifdef SILC_DIST_SFTP
 lib/silcsftp/Makefile
 #endif SILC_DIST_SFTP
@@ -221,12 +220,6 @@ lib/silchttp/Makefile
 lib/silchttp/tests/Makefile
 )
 #endif SILC_DIST_HTTP
-
-#ifdef SILC_DIST_IDCACHE
-AC_CONFIG_FILES(
-lib/silcidcache/Makefile
-)
-#endif SILC_DIST_IDCACHE
 
 #ifdef SILC_DIST_VCARD
 AC_CONFIG_FILES(

@@ -26,6 +26,7 @@ SILCLIB_DIRS = 		\
 	contrib 	\
 	silccore	\
 	silcutil 	\
+	silcapputil 	\
 	silccrypt 	\
 #ifdef SILC_DIST_SKR
 	silcskr 	\
@@ -43,9 +44,6 @@ SILCLIB_DIRS = 		\
 #ifdef SILC_DIST_HTTP
 	silchttp	\
 #endif SILC_DIST_HTTP
-#ifdef SILC_DIST_IDCACHE
-	silcidcache	\
-#endif SILC_DIST_IDCACHE
 #ifdef SILC_DIST_IDCACHE
 	silcvcard	\
 #endif SILC_DIST_IDCACHE

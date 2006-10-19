@@ -1,0 +1,22 @@
+<!--
+@LIBRARY=SILC Application Utility Library
+@FILENAME=silcaputillib.html
+@LINK=silcapputil.html:SILC Application Utilities
+@LINK=silcidcache.html:SILC ID Cache Interface
+-->
+
+<big><b>SILC Application Utility Library</b></big>
+<br />
+<small>Directory: lib/silcapputil/</small>
+<br />
+<small>Library: libsilc.a, libsilc.lib</small>
+<br /><br />
+<b>Introduction</b>
+
+<br /><br />
+SILC Application Utility library provides various SILC application 
+specific utility functions.  For example, it provides routines for 
+creating and loading SILC key pair.
+
+<br /><br />
+@LINKS@

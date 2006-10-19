@@ -216,8 +216,8 @@ void silc_log_output(SilcLogType type, char *string)
 
 /* Set and initialize the specified log file. */
 
-SilcBool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
-		       SilcSchedule scheduler)
+SilcBool silc_log_set_file(SilcLogType type, char *filename,
+			   SilcUInt32 maxsize, SilcSchedule scheduler)
 {
   FILE *fp = NULL;
   SilcLog log;

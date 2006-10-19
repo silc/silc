@@ -23,7 +23,6 @@
 @LINK=silcutil.html:SILC Util Interface
 @LINK=silclist.html:SILC List Interface
 @LINK=silcdlist.html:SILC Dynamic List Interface
-@LINK=silcapputil.html:SILC Application Utilities
 -->
 
 <big><b>SILC Utility Library</b></big>

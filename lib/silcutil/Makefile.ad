@@ -56,7 +56,6 @@ libsilcutil_la_SOURCES = \
 	silcstrutil.c 	\
 	silcutil.c 	\
 	silchashtable.c \
-	silcapputil.c	\
 	silcutf8.c	\
 	silcstringprep.c \
 	silcstream.c	\
@@ -88,7 +87,6 @@ include_HEADERS =	\
 	silcfileutil.h	\
 	silcutil.h	\
 	silcstrutil.h	\
-	silcapputil.h	\
 	silcutf8.h	\
 	silcstringprep.h \
 	silctypes.h	\

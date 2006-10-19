@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2005 Pekka Riikonen
+  Copyright (C) 2002 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -386,6 +386,126 @@ SilcBool silc_change_private_key_passphrase(const char *prv_filename,
 
   silc_pkcs_private_key_free(private_key);
   silc_rng_free(rng);
+
+  return TRUE;
+}
+
+/* Checks that the 'identifier' string is valid identifier string
+   and does not contain any unassigned or prohibited character.  This
+   function is used to check for valid nicknames, channel names,
+   server names, usernames, hostnames, service names, algorithm names,
+   other security property names, and SILC Public Key name. */
+
+unsigned char *silc_identifier_check(const unsigned char *identifier,
+				     SilcUInt32 identifier_len,
+				     SilcStringEncoding identifier_encoding,
+				     SilcUInt32 max_allowed_length,
+				     SilcUInt32 *out_len)
+{
+  unsigned char *utf8s;
+  SilcUInt32 utf8s_len;
+  SilcStringprepStatus status;
+
+  if (!identifier || !identifier_len)
+    return NULL;
+
+  if (max_allowed_length && identifier_len > max_allowed_length)
+    return NULL;
+
+  status = silc_stringprep(identifier, identifier_len,
+			   identifier_encoding, SILC_IDENTIFIER_PREP, 0,
+			   &utf8s, &utf8s_len, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK) {
+    SILC_LOG_DEBUG(("silc_stringprep() status error %d", status));
+    return NULL;
+  }
+
+  if (out_len)
+    *out_len = utf8s_len;
+
+  return utf8s;
+}
+
+/* Same as above but does not allocate memory, just checks the
+   validity of the string. */
+
+SilcBool silc_identifier_verify(const unsigned char *identifier,
+				SilcUInt32 identifier_len,
+				SilcStringEncoding identifier_encoding,
+				SilcUInt32 max_allowed_length)
+{
+  SilcStringprepStatus status;
+
+  if (!identifier || !identifier_len)
+    return FALSE;
+
+  if (max_allowed_length && identifier_len > max_allowed_length)
+    return FALSE;
+
+  status = silc_stringprep(identifier, identifier_len,
+			   identifier_encoding, SILC_IDENTIFIER_PREP, 0,
+			   NULL, NULL, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK) {
+    SILC_LOG_DEBUG(("silc_stringprep() status error %d", status));
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+unsigned char *silc_channel_name_check(const unsigned char *identifier,
+				       SilcUInt32 identifier_len,
+				       SilcStringEncoding identifier_encoding,
+				       SilcUInt32 max_allowed_length,
+				       SilcUInt32 *out_len)
+{
+  unsigned char *utf8s;
+  SilcUInt32 utf8s_len;
+  SilcStringprepStatus status;
+
+  if (!identifier || !identifier_len)
+    return NULL;
+
+  if (max_allowed_length && identifier_len > max_allowed_length)
+    return NULL;
+
+  status = silc_stringprep(identifier, identifier_len,
+			   identifier_encoding, SILC_IDENTIFIER_CH_PREP, 0,
+			   &utf8s, &utf8s_len, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK) {
+    SILC_LOG_DEBUG(("silc_stringprep() status error %d", status));
+    return NULL;
+  }
+
+  if (out_len)
+    *out_len = utf8s_len;
+
+  return utf8s;
+}
+
+/* Same as above but does not allocate memory, just checks the
+   validity of the string. */
+
+SilcBool silc_channel_name_verify(const unsigned char *identifier,
+				  SilcUInt32 identifier_len,
+				  SilcStringEncoding identifier_encoding,
+				  SilcUInt32 max_allowed_length)
+{
+  SilcStringprepStatus status;
+
+  if (!identifier || !identifier_len)
+    return FALSE;
+
+  if (max_allowed_length && identifier_len > max_allowed_length)
+    return FALSE;
+
+  status = silc_stringprep(identifier, identifier_len,
+			   identifier_encoding, SILC_IDENTIFIER_CH_PREP, 0,
+			   NULL, NULL, SILC_STRING_UTF8);
+  if (status != SILC_STRINGPREP_OK) {
+    SILC_LOG_DEBUG(("silc_stringprep() status error %d", status));
+    return FALSE;
+  }
 
   return TRUE;
 }
