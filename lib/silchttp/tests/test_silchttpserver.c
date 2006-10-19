@@ -12,6 +12,30 @@
 
 char *htdocs = ".";
 
+/* Add proper content type to reply per URI */
+
+static void http_content_type(SilcHttpServer httpd, SilcHttpConnection conn,
+			      const char *uri)
+{
+  const char *type;
+
+  type = silc_http_server_get_header(httpd, conn, "Content-Type");
+  if (type)
+    silc_http_server_add_header(httpd, conn, "Content-Type", type);
+  else if (strstr(uri, ".jpg"))
+    silc_http_server_add_header(httpd, conn, "Content-Type", "image/jpeg");
+  else if (strstr(uri, ".gif"))
+    silc_http_server_add_header(httpd, conn, "Content-Type", "image/gif");
+  else if (strstr(uri, ".png"))
+    silc_http_server_add_header(httpd, conn, "Content-Type", "image/png");
+  else if (strstr(uri, ".css"))
+    silc_http_server_add_header(httpd, conn, "Content-Type", "text/css");
+  else if (strstr(uri, ".htm"))
+    silc_http_server_add_header(httpd, conn, "Content-Type", "text/html");
+  else if (strstr(uri, ".php"))
+    silc_http_server_add_header(httpd, conn, "Content-Type", "text/html");
+}
+
 /* Serve pages */
 
 static void http_callback_file(SilcHttpServer httpd, SilcHttpConnection conn,
@@ -22,7 +46,6 @@ static void http_callback_file(SilcHttpServer httpd, SilcHttpConnection conn,
   SilcBuffer php;
   char *filedata, filename[256];
   SilcUInt32 data_len;
-  const char *type;
   SilcBool usephp = FALSE;
 
   if (!strcasecmp(method, "GET")) {
@@ -49,15 +72,7 @@ static void http_callback_file(SilcHttpServer httpd, SilcHttpConnection conn,
 	return;
       }
 
-      type = silc_http_server_get_header(httpd, conn, "Content-Type");
-      if (type)
-	silc_http_server_add_header(httpd, conn, "Content-Type", type);
-      else if (strstr(uri, ".jpg"))
-	silc_http_server_add_header(httpd, conn, "Content-Type", "image/jpeg");
-      else if (strstr(uri, ".gif"))
-	silc_http_server_add_header(httpd, conn, "Content-Type", "image/gif");
-      else if (strstr(uri, ".png"))
-	silc_http_server_add_header(httpd, conn, "Content-Type", "image/png");
+      http_content_type(httpd, conn, uri);
 
       /* Send page */
       silc_buffer_set(&page, filedata, data_len);
@@ -70,6 +85,8 @@ static void http_callback_file(SilcHttpServer httpd, SilcHttpConnection conn,
 				    "<body><h1>404 Not Found</h1><p>The page you are looking for cannot be located</body>");
 	return;
       }
+
+      http_content_type(httpd, conn, uri);
 
       /* Send page */
       silc_http_server_send(httpd, conn, php);
