@@ -318,12 +318,18 @@ void *silc_fsm_get_state_context(void *fsm)
 SilcBool silc_fsm_thread_wait(void *fsm, void *thread)
 {
   SilcFSM t = thread;
+
 #if defined(SILC_DEBUG)
   assert(t->thread);
 #endif /* SILC_DEBUG */
+
+  if (t->finished)
+    return FALSE;
   t->u.t.sema = silc_fsm_sema_alloc(t->u.t.fsm, 0);
   if (!t->u.t.sema)
     return FALSE;
+
+  SILC_LOG_DEBUG(("Waiting for thread %p to terminate", thread));
   silc_fsm_sema_wait(t->u.t.sema, fsm);
   return TRUE;
 }
@@ -649,7 +655,7 @@ static void silc_fsm_thread_termination_post(SilcFSMSema sema)
   SilcFSM fsm;
   SilcMutex lock = sema->fsm->u.m.lock;
 
-  SILC_LOG_DEBUG(("Post thread termination semaphore %p", sema));
+  SILC_LOG_DEBUG(("Post thread terminate semaphore %p", sema));
 
   silc_mutex_lock(lock);
 

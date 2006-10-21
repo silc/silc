@@ -307,7 +307,9 @@ do {						\
  *
  *    Macro used to wait for the `thread' to terminate.  The machine or
  *    thread will be suspended while it is waiting for the thread to
- *    terminate.
+ *    terminate.  If the thread to be waited has already terminated (but
+ *    the context has not been freed yet), this will continue immediately
+ *    to the following state without waiting.
  *
  * NOTES
  *
@@ -325,8 +327,9 @@ do {						\
  ***/
 #define SILC_FSM_THREAD_WAIT(thread)		\
 do {						\
-  silc_fsm_thread_wait(fsm, thread);		\
-  return SILC_FSM_WAIT;				\
+  if (silc_fsm_thread_wait(fsm, thread))	\
+    return SILC_FSM_WAIT;			\
+  return SILC_FSM_CONTINUE;			\
 } while(0)
 
 /****f* silcutil/SilcFSMAPI/silc_fsm_alloc
