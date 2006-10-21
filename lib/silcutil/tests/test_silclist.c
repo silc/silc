@@ -38,6 +38,32 @@ int main(int argc, char **argv)
     goto err;
   f4->i = 4;
 
+  SILC_LOG_DEBUG(("Add one entry"));
+  silc_list_add(list, f1);
+  silc_list_start(list);
+  while ((f = silc_list_get(list)) != SILC_LIST_END) {
+    SILC_LOG_DEBUG(("entry %d, %p, next=%p, prev=%p", f->i, f, f->next, 
+		   f->prev));
+  }
+  SILC_LOG_DEBUG(("Delete the entry"));
+  silc_list_del(list, f1);  
+  silc_list_start(list);
+  while ((f = silc_list_get(list)) != SILC_LIST_END)
+    goto err;
+  SILC_LOG_DEBUG(("head=%p", list.head));
+  SILC_LOG_DEBUG(("Re-add the entry"));
+  silc_list_add(list, f1);
+  silc_list_start(list);
+  while ((f = silc_list_get(list)) != SILC_LIST_END) {
+    SILC_LOG_DEBUG(("entry %d, %p, next=%p, prev=%p", f->i, f, f->next, 
+		   f->prev));
+  }
+  SILC_LOG_DEBUG(("Delete the entry"));
+  silc_list_del(list, f1);  
+  silc_list_start(list);
+  while ((f = silc_list_get(list)) != SILC_LIST_END)
+    goto err;
+
   SILC_LOG_DEBUG(("insert f4=%p at head"));
   silc_list_insert(list, NULL, f4);
   silc_list_start(list);

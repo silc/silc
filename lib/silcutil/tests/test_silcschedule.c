@@ -18,9 +18,17 @@ SILC_TASK_CALLBACK(foo)
 
 }
 
-SILC_TASK_CALLBACK(cont)
+SILC_TASK_CALLBACK(timeout)
 {
-  int i;
+  int i = (int)context;
+  SILC_LOG_DEBUG(("Timeout task %d", i));
+}
+
+SILC_TASK_CALLBACK(cont2)
+{
+#ifdef SILC_DEBUG
+  silc_schedule_stats(schedule);
+#endif /* SILC_DEBUG */
 
   SILC_LOG_DEBUG(("Adding %d fd tasks", NUM_FTASK - 10));
 
@@ -30,10 +38,19 @@ SILC_TASK_CALLBACK(cont)
 #endif
 }
 
-SILC_TASK_CALLBACK(timeout)
+SILC_TASK_CALLBACK(cont)
 {
-  int i = (int)context;
-  SILC_LOG_DEBUG(("Timeout task %d", i));
+  int i;
+
+#ifdef SILC_DEBUG
+  silc_schedule_stats(schedule);
+#endif /* SILC_DEBUG */
+
+  SILC_LOG_DEBUG(("Adding %d timeout tasks", NUM_TTASK / 3));
+  for (i = 0; i < NUM_TTASK / 3; i++)
+    silc_schedule_task_add_timeout(schedule, timeout, (void *)i, 0, 1);
+
+  silc_schedule_task_add_timeout(schedule, cont2, (void *)i, 0, 100);
 }
 
 SILC_TASK_CALLBACK(start)
