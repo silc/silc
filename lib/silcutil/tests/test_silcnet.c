@@ -8,7 +8,7 @@ typedef struct {
   SilcFSM fsm;
   SilcFSMSemaStruct sema;
   SilcFSMThreadStruct thread;
-  SilcNetServer server;
+  SilcNetListener server;
   SilcStream client_stream;
   SilcNetStatus client_status;
   SilcStream server_stream;
@@ -50,7 +50,7 @@ SILC_FSM_STATE(test_st_connect)
   SILC_LOG_DEBUG(("test_st_connect"));
   SILC_LOG_DEBUG(("Connecting to server"));
 
-  silc_fsm_next(fsm, test_st_connected, NULL);
+  silc_fsm_next(fsm, test_st_connected);
   SILC_FSM_CALL(silc_net_tcp_connect(NULL, "localhost", 5000,
 				     silc_fsm_get_schedule(fsm),
 				     test_connected, f));
@@ -82,24 +82,24 @@ SILC_FSM_STATE(test_st_start)
   SILC_LOG_DEBUG(("test_st_start"));
 
   SILC_LOG_DEBUG(("Creating network listener"));
-  f->server = silc_net_create_server(NULL, 0, 5000, FALSE,
+  f->server = silc_net_tcp_create_listener(NULL, 0, 5000, TRUE, TRUE,
 				     silc_fsm_get_schedule(fsm),
 				     test_accept_connection, f);
   if (!f->server) {
     /** Creating network listener failed */
     SILC_LOG_DEBUG(("Listener creation failed"));
-    silc_fsm_next(fsm, test_st_finish, NULL);
+    silc_fsm_next(fsm, test_st_finish);
     return SILC_FSM_CONTINUE;
   }
 
   /* Create thread to connect to the listener */
   silc_fsm_thread_init(&f->thread, fsm, f, NULL, NULL, FALSE);
-  silc_fsm_start(&f->thread, test_st_connect, NULL);
+  silc_fsm_start(&f->thread, test_st_connect);
 
   /** Start waiting connection */
   SILC_LOG_DEBUG(("Start waiting for incoming connections"));
   silc_fsm_sema_init(&f->sema, fsm, 0);
-  silc_fsm_next(fsm, test_st_second, NULL);
+  silc_fsm_next(fsm, test_st_second);
   return SILC_FSM_CONTINUE;
 }
 
@@ -116,17 +116,17 @@ SILC_FSM_STATE(test_st_second)
   if (f->client_status != SILC_NET_OK) {
     /** Accepting new connection failed */
     SILC_LOG_DEBUG(("Accepting failed %d", f->client_status));
-    silc_fsm_next(fsm, test_st_finish, NULL);
+    silc_fsm_next(fsm, test_st_finish);
     return SILC_FSM_CONTINUE;
   }
 
   silc_socket_stream_get_info(f->client_stream, NULL, &host, &ip, &port);
   SILC_LOG_DEBUG(("Accepted new connection %s, %s:%d", host, ip, port));
 
-  /** Finish */
+  /** Wait thread to terminate */
   f->success = TRUE;
-  silc_fsm_next(fsm, test_st_finish, NULL);
-  return SILC_FSM_CONTINUE;
+  silc_fsm_next(fsm, test_st_finish);
+  SILC_FSM_THREAD_WAIT(&f->thread);
 }
 
 SILC_FSM_STATE(test_st_finish)
@@ -145,7 +145,7 @@ SILC_FSM_STATE(test_st_finish)
   }
 
   SILC_LOG_DEBUG(("Closing network listener"));
-  silc_net_close_server(f->server);
+  silc_net_close_listener(f->server);
 
   SILC_LOG_DEBUG(("Finish machine"));
   return SILC_FSM_FINISH;
@@ -182,7 +182,7 @@ int main(int argc, char **argv)
   fsm = silc_fsm_alloc(f, destructor, NULL, schedule);
   if (!fsm)
     goto err;
-  silc_fsm_start(fsm, test_st_start, NULL);
+  silc_fsm_start(fsm, test_st_start);
   f->fsm = fsm;
 
   SILC_LOG_DEBUG(("Running scheduler"));

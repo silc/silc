@@ -39,6 +39,11 @@ int main(int argc, char **argv)
 
   SILC_LOG_DEBUG(("Current value: %d (-513)", silc_atomic_get_int(&ref)));
 
+  SILC_LOG_DEBUG(("Swapping -513 with 8739200"));
+  if (!silc_atomic_cas(&ref, silc_atomic_get_int(&ref), 8739200))
+    goto err;
+  SILC_LOG_DEBUG(("Current value: %d (8739200)", silc_atomic_get_int(&ref)));
+
   silc_atomic_uninit(&ref);
 
   success = TRUE;
