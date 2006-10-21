@@ -215,8 +215,7 @@ static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
 
     /* Delete from timeout queue */
     silc_list_start(schedule->timeout_queue);
-    while ((task = (SilcTask)silc_list_get(schedule->timeout_queue))
-	   != SILC_LIST_END) {
+    while ((task = silc_list_get(schedule->timeout_queue))) {
       silc_list_del(schedule->timeout_queue, task);
       silc_free(task);
     }
@@ -230,7 +229,11 @@ static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
     while ((ttask = silc_list_get(schedule->timeout_queue)) != SILC_LIST_END) {
       if (ttask == (SilcTaskTimeout)task) {
 	silc_list_del(schedule->timeout_queue, ttask);
-	silc_free(ttask);
+
+	/* Put to free list */
+	silc_list_add(schedule->free_tasks, ttask);
+	if (silc_list_count(schedule->free_tasks) == 1)
+	  silc_list_start(schedule->free_tasks);
 	break;
       }
     }
@@ -243,6 +246,26 @@ static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
   silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(ftask->fd));
 }
 
+#if defined(SILC_DEBUG)
+/* Print schedule statistics to stdout */
+
+void silc_schedule_stats(SilcSchedule schedule)
+{
+  SilcTaskFd ftask;
+  fprintf(stdout, "Schedule %p statistics:\n\n", schedule);
+  fprintf(stdout, "Num FD tasks: %lu (%lu bytes allocated)\n",
+	  silc_hash_table_count(schedule->fd_queue),
+	  sizeof(*ftask) * silc_hash_table_count(schedule->fd_queue));
+  fprintf(stdout, "Num Timeout tasks: %d (%d bytes allocated)\n",
+	  silc_list_count(schedule->timeout_queue),
+	  sizeof(struct SilcTaskTimeoutStruct) *
+	  silc_list_count(schedule->timeout_queue));
+  fprintf(stdout, "Num Timeout freelist: %d (%d bytes allocated)\n",
+	  silc_list_count(schedule->free_tasks),
+	  sizeof(struct SilcTaskTimeoutStruct) *
+	  silc_list_count(schedule->free_tasks));
+}
+#endif /* SILC_DEBUG */
 
 /****************************** Public API **********************************/
 
@@ -269,6 +292,7 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
     return NULL;
 
   silc_list_init(schedule->timeout_queue, struct SilcTaskTimeoutStruct, next);
+  silc_list_init(schedule->free_tasks, struct SilcTaskTimeoutStruct, next);
 
   schedule->app_context = app_context;
   schedule->valid = TRUE;
@@ -290,6 +314,8 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
 
 SilcBool silc_schedule_uninit(SilcSchedule schedule)
 {
+  SilcTask task;
+
   SILC_LOG_DEBUG(("Uninitializing scheduler"));
 
   if (schedule->valid == TRUE)
@@ -307,8 +333,13 @@ SilcBool silc_schedule_uninit(SilcSchedule schedule)
   }
 
   /* Unregister all tasks */
+  silc_schedule_task_del(schedule, SILC_ALL_TASKS);
   silc_schedule_task_remove(schedule, SILC_ALL_TASKS);
-  silc_schedule_task_remove(schedule, SILC_ALL_TASKS);
+
+  /* Delete timeout task freelist */
+  silc_list_start(schedule->free_tasks);
+  while ((task = silc_list_get(schedule->free_tasks)))
+    silc_free(task);
 
   /* Unregister all task queues */
   silc_hash_table_free(schedule->fd_queue);
@@ -478,9 +509,15 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
   SILC_SCHEDULE_LOCK(schedule);
 
   if (type == SILC_TASK_TIMEOUT) {
-    SilcTaskTimeout tmp, prev, ttask = silc_calloc(1, sizeof(*ttask));
-    if (!ttask)
-      goto out;
+    SilcTaskTimeout tmp, prev, ttask;
+
+    ttask = silc_list_get(schedule->free_tasks);
+    if (!ttask) {
+      ttask = silc_calloc(1, sizeof(*ttask));
+      if (!ttask)
+	goto out;
+    }
+    silc_list_del(schedule->free_tasks, ttask);
 
     ttask->header.type = 1;
     ttask->header.callback = callback;

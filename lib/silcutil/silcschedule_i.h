@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,9 +45,9 @@ typedef struct SilcTaskTimeoutStruct {
 /* Fd task */
 typedef struct {
   struct SilcTaskStruct header;
+  unsigned int events  : 15;
+  unsigned int revents : 15;
   SilcUInt32 fd;
-  unsigned int events  : 16;
-  unsigned int revents : 16;
 } *SilcTaskFd;
 
 /* Scheduler context */
@@ -56,6 +56,7 @@ struct SilcScheduleStruct {
   void *app_context;		   /* Application specific context */
   SilcHashTable fd_queue;	   /* FD task queue */
   SilcList timeout_queue;	   /* Timeout queue */
+  SilcList free_tasks;		   /* Timeout task freelist */
   SilcMutex lock;		   /* Scheduler lock */
   struct timeval timeout;	   /* Current timeout */
   unsigned int max_tasks     : 28; /* Max FD tasks */
@@ -118,5 +119,10 @@ typedef struct {
   /* Unblock registered signals in schedule. */
   void (*signals_unblock)(SilcSchedule schedule, void *context);
 } SilcScheduleOps;
+
+#if defined(SILC_DEBUG)
+/* Print scheduler statistics to stdout. */
+void silc_schedule_stats(SilcSchedule schedule);
+#endif /* SILC_DEBUG */
 
 #endif /* SILCSCHEDULE_I_H */
