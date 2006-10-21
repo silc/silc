@@ -45,7 +45,7 @@
  *
  ***/
 typedef struct {
-  unsigned int year       : 13;	   /* Year,     0 - 8191 */
+  unsigned int year       : 15;	   /* Year,     0 - 32768 */
   unsigned int month      : 4;	   /* Month,    1 - 12 */
   unsigned int day        : 5;	   /* Day,      1 - 31 */
   unsigned int hour       : 5;	   /* Hour,     0 - 23 */
@@ -56,7 +56,6 @@ typedef struct {
   unsigned int utc_minute : 6;	   /* Offset to Zulu (UTC) minutes */
   unsigned int utc_east   : 1;	   /* Offset, 1 east (+), 0 west (-) */
   unsigned int dst        : 1;	   /* Set if daylight saving time */
-  /* 2 bits to spare */
 } *SilcTime, SilcTimeStruct;
 /***/
 
@@ -110,7 +109,7 @@ SilcBool silc_time_value(SilcInt64 timeval, SilcTime ret_time);
  * SYNOPSIS
  *
  *    SilcBool silc_time_universal(const char *universal_time,
- *                             SilcTime ret_time);
+ *                                 SilcTime ret_time);
  *
  * DESCRIPTION
  *

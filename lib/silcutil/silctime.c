@@ -19,6 +19,39 @@
 
 #include "silc.h"
 
+/* Fills the SilcTime structure with correct values */
+
+static SilcBool silc_time_fill(SilcTime time,
+			       unsigned int year,
+			       unsigned int month,
+			       unsigned int day,
+			       unsigned int hour,
+			       unsigned int minute,
+			       unsigned int second)
+{
+  if (year > (1 << 15))
+    return FALSE;
+  if (month < 1 || month > 12)
+    return FALSE;
+  if (day < 1 || day > 31)
+    return FALSE;
+  if (hour > 23)
+    return FALSE;
+  if (minute > 60)
+    return FALSE;
+  if (second > 61)
+    return FALSE;
+
+  time->year = year;
+  time->month = month;
+  time->day = day;
+  time->hour = hour;
+  time->minute = minute;
+  time->second = second;
+
+  return TRUE;
+}
+
 /* Return time since Epoch */
 
 SilcInt64 silc_time(void)
@@ -62,14 +95,12 @@ SilcBool silc_time_value(SilcInt64 timeval, SilcTime ret_time)
     return FALSE;
 
   memset(ret_time, 0, sizeof(*ret_time));
-  ret_time->year    = time->tm_year + 1900;
-  ret_time->month   = time->tm_mon + 1;
-  ret_time->day     = time->tm_mday;
-  ret_time->hour    = time->tm_hour;
-  ret_time->minute  = time->tm_min;
-  ret_time->second  = time->tm_sec;
-  ret_time->dst     = time->tm_isdst ? 1 : 0;
+  if (!silc_time_fill(ret_time, time->tm_year + 1900, time->tm_mon + 1,
+		      time->tm_mday, time->tm_hour, time->tm_min,
+		      time->tm_sec))
+    return FALSE;
 
+  ret_time->dst        = time->tm_isdst ? 1 : 0;
 #ifdef SILC_WIN32
   ret_time->utc_east   = _timezone < 0 ? 1 : 0;
   ret_time->utc_hour   = (ret_time->utc_east ? (-(_timezone)) / 3600 :
@@ -85,39 +116,6 @@ SilcBool silc_time_value(SilcInt64 timeval, SilcTime ret_time)
 			  timezone % 3600);
 #endif /* HAVE_TZSET */
 #endif /* SILC_WIN32 */
-
-  return TRUE;
-}
-
-/* Fills the SilcTime structure with correct values */
-
-static SilcBool silc_time_fill(SilcTime time,
-			       unsigned int year,
-			       unsigned int month,
-			       unsigned int day,
-			       unsigned int hour,
-			       unsigned int minute,
-			       unsigned int second)
-{
-  if (year > 8191)
-    return FALSE;
-  if (month < 1 || month > 12)
-    return FALSE;
-  if (day < 1 || day > 31)
-    return FALSE;
-  if (hour > 23)
-    return FALSE;
-  if (minute > 60)
-    return FALSE;
-  if (second > 61)
-    return FALSE;
-
-  time->year = year;
-  time->month = month;
-  time->day = day;
-  time->hour = hour;
-  time->minute = minute;
-  time->second = second;
 
   return TRUE;
 }
