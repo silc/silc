@@ -167,7 +167,7 @@ void silc_net_close_listener(SilcNetListener listener);
  *    asynchronous call, and this function returns before the connection is
  *    actually established.  The `callback' will be called after the
  *    connection is created to deliver the SilcStream for the created
- *    connection.
+ *    connection.  This function supports IPv6 if the platform supports it.
  *
  *    The returned SilcAsyncOperation context can be used to control the
  *    asynchronous connecting, such as to abort it.  If it is aborted
@@ -210,6 +210,8 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
  *    To read the packet use silc_stream_read if the remote address was
  *    provided, and silc_net_udp_receive if it was not.
  *
+ *    Supports IPv6 if the platform supports it.
+ *
  * EXAMPLE
  *
  *    SilcStream udpstream;
@@ -221,6 +223,11 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
  *
  *    // Send packet to remote host
  *    silc_stream_write(udpstream, data, data_len);
+ *
+ *    Create UDP listener:
+ *
+ *    udpstream = silc_net_udp_connect("0.0.0.0", 500, NULL, 0, schedule);
+ *    silc_stream_set_notifier(udpstream, schedule, receive_callback, context);
  *
  ***/
 SilcStream silc_net_udp_connect(const char *local_ip_addr, int local_port,

@@ -21,10 +21,10 @@
  *
  * DESCRIPTION
  *
- * SILC Buffer Format API provides a few functions for formatting
- * various different data types into a buffer, and retrieving
- * various data from buffer into specific data types.  It is usefull
- * to format for example packets and later unformat them.
+ * SILC Buffer Format API provides functions for formatting different data
+ * types into a buffer and retrieving different data types from a buffer
+ * into specified data types.  It is especially useful to format packets,
+ * protocol payloads and such.
  *
  ***/
 

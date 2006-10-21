@@ -102,7 +102,7 @@ typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
  *    the creation process.  The `callback' will be called to return the
  *    created socket stream.  To destroy the stream call silc_stream_destroy.
  *
- *    If the `lookup' is TRUE then this will performed IP and hostname lookup
+ *    If the `lookup' is TRUE then this will perform IP and hostname lookup
  *    for the socket.  If the `require_fqdn' is TRUE then the socket must
  *    have valid hostname and IP address, otherwise the stream creation will
  *    fail.  If it is FALSE then only valid IP address is required.  Note that,
