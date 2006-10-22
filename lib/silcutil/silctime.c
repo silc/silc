@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2005 Pekka Riikonen
+  Copyright (C) 2003 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@ static SilcBool silc_time_fill(SilcTime time,
 			       unsigned int day,
 			       unsigned int hour,
 			       unsigned int minute,
-			       unsigned int second)
+			       unsigned int second,
+			       unsigned int msec)
 {
   if (year > (1 << 15))
     return FALSE;
@@ -41,6 +42,8 @@ static SilcBool silc_time_fill(SilcTime time,
     return FALSE;
   if (second > 61)
     return FALSE;
+  if (msec > 1000)
+    return FALSE;
 
   time->year = year;
   time->month = month;
@@ -48,6 +51,7 @@ static SilcBool silc_time_fill(SilcTime time,
   time->hour = hour;
   time->minute = minute;
   time->second = second;
+  time->msecond = msec;
 
   return TRUE;
 }
@@ -59,17 +63,35 @@ SilcInt64 silc_time(void)
   return (SilcInt64)time(NULL);
 }
 
+/* Return time since Epoch in milliseconds */
+
+SilcInt64 silc_time_msec(void)
+{
+  struct timeval curtime;
+  silc_gettimeofday(&curtime);
+  return (curtime.tv_sec * 1000) + (curtime.tv_usec / 1000);
+}
+
+/* Return time since Epoch in microseconds */
+
+SilcInt64 silc_time_usec(void)
+{
+  struct timeval curtime;
+  silc_gettimeofday(&curtime);
+  return (curtime.tv_sec * 1000000) + curtime.tv_usec;
+}
+
 /* Returns time as string */
 
-const char *silc_time_string(SilcInt64 timeval)
+const char *silc_time_string(SilcInt64 time_val)
 {
   time_t curtime;
   char *return_time;
 
-  if (!timeval)
-    curtime = time(NULL);
+  if (!time_val)
+    curtime = silc_time();
   else
-    curtime = (time_t)timeval;
+    curtime = (time_t)time_val;
   return_time = ctime(&curtime);
   if (!return_time)
     return NULL;
@@ -80,24 +102,28 @@ const char *silc_time_string(SilcInt64 timeval)
 
 /* Returns time as SilcTime structure */
 
-SilcBool silc_time_value(SilcInt64 timeval, SilcTime ret_time)
+SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time)
 {
   struct tm *time;
+  unsigned int msec = 0;
 
   if (!ret_time)
     return TRUE;
 
-  if (!timeval)
-    timeval = silc_time();
+  if (!time_val)
+    time_val = silc_time_msec();
 
-  time = localtime((time_t *)&timeval);
+  msec = time_val % 1000;
+  time_val /= 1000;
+
+  time = localtime((time_t *)&time_val);
   if (!time)
     return FALSE;
 
   memset(ret_time, 0, sizeof(*ret_time));
   if (!silc_time_fill(ret_time, time->tm_year + 1900, time->tm_mon + 1,
 		      time->tm_mday, time->tm_hour, time->tm_min,
-		      time->tm_sec))
+		      time->tm_sec, msec))
     return FALSE;
 
   ret_time->dst        = time->tm_isdst ? 1 : 0;
@@ -141,7 +167,7 @@ SilcBool silc_time_universal(const char *universal_time, SilcTime ret_time)
   }
 
   /* Fill the SilcTime structure */
-  ret = silc_time_fill(ret_time, year, month, day, hour, minute, second);
+  ret = silc_time_fill(ret_time, year, month, day, hour, minute, second, 0);
   if (!ret) {
     SILC_LOG_DEBUG(("Incorrect values in UTC time string"));
     return FALSE;
@@ -178,28 +204,28 @@ SilcBool silc_time_universal(const char *universal_time, SilcTime ret_time)
 
 /* Encode universal time string. */
 
-SilcBool silc_time_universal_string(SilcTime timeval, char *ret_string,
+SilcBool silc_time_universal_string(SilcTime time_val, char *ret_string,
 				    SilcUInt32 ret_string_size)
 {
   int ret, len = 0;
   memset(ret_string, 0, ret_string_size);
   ret = snprintf(ret_string, ret_string_size - 1,
 		 "%02u%02u%02u%02u%02u%02u",
-		 timeval->year % 100, timeval->month, timeval->day,
-		 timeval->hour, timeval->minute, timeval->second);
+		 time_val->year % 100, time_val->month, time_val->day,
+		 time_val->hour, time_val->minute, time_val->second);
   if (ret < 0)
     return FALSE;
   len += ret;
 
-  if (!timeval->utc_hour && !timeval->utc_minute) {
+  if (!time_val->utc_hour && !time_val->utc_minute) {
     ret = snprintf(ret_string + len, ret_string_size - 1 - len, "Z");
     if (ret < 0)
       return FALSE;
     len += ret;
   } else {
     ret = snprintf(ret_string + len, ret_string_size - 1 - len,
-		   "%c%02u%02u", timeval->utc_east ? '+' : '-',
-		   timeval->utc_hour, timeval->utc_minute);
+		   "%c%02u%02u", time_val->utc_east ? '+' : '-',
+		   time_val->utc_hour, time_val->utc_minute);
     if (ret < 0)
       return FALSE;
     len += ret;
@@ -230,7 +256,7 @@ SilcBool silc_time_generalized(const char *generalized_time, SilcTime ret_time)
   }
 
   /* Fill the SilcTime structure */
-  ret = silc_time_fill(ret_time, year, month, day, hour, minute, second);
+  ret = silc_time_fill(ret_time, year, month, day, hour, minute, second, 0);
   if (!ret) {
     SILC_LOG_DEBUG(("Incorrect values in generalized time string"));
     return FALSE;
@@ -288,40 +314,53 @@ SilcBool silc_time_generalized(const char *generalized_time, SilcTime ret_time)
 
 /* Encode generalized time string */
 
-SilcBool silc_time_generalized_string(SilcTime timeval, char *ret_string,
+SilcBool silc_time_generalized_string(SilcTime time_val, char *ret_string,
 				      SilcUInt32 ret_string_size)
 {
   int len = 0, ret;
   memset(ret_string, 0, ret_string_size);
   ret = snprintf(ret_string, ret_string_size - 1,
 		 "%04u%02u%02u%02u%02u%02u",
-		 timeval->year, timeval->month, timeval->day, timeval->hour,
-		 timeval->minute, timeval->second);
+		 time_val->year, time_val->month, time_val->day, time_val->hour,
+		 time_val->minute, time_val->second);
   if (ret < 0)
     return FALSE;
   len += ret;
 
-  if (timeval->msecond) {
+  if (time_val->msecond) {
     ret = snprintf(ret_string + len, ret_string_size - 1 - len,
-		   ".%lu", (unsigned long)timeval->msecond);
+		   ".%lu", (unsigned long)time_val->msecond);
     if (ret < 0)
       return FALSE;
     len += ret;
   }
 
-  if (!timeval->utc_hour && !timeval->utc_minute) {
+  if (!time_val->utc_hour && !time_val->utc_minute) {
     ret = snprintf(ret_string + len, ret_string_size - 1 - len, "Z");
     if (ret < 0)
       return FALSE;
     len += ret;
   } else {
     ret = snprintf(ret_string + len, ret_string_size - 1 - len,
-		   "%c%02u%02u", timeval->utc_east ? '+' : '-',
-		   timeval->utc_hour, timeval->utc_minute);
+		   "%c%02u%02u", time_val->utc_east ? '+' : '-',
+		   time_val->utc_hour, time_val->utc_minute);
     if (ret < 0)
       return FALSE;
     len += ret;
   }
 
   return TRUE;
+}
+
+/* Return TRUE if `smaller' is smaller than `bigger'. */
+
+SilcBool silc_compare_time_val(struct timeval *smaller,
+			       struct timeval *bigger)
+{
+  if ((smaller->tv_sec < bigger->tv_sec) ||
+      ((smaller->tv_sec == bigger->tv_sec) &&
+       (smaller->tv_usec < bigger->tv_usec)))
+    return TRUE;
+
+  return FALSE;
 }

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2005 Pekka Riikonen
+  Copyright (C) 2003 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
  * DESCRIPTION
  *
  *    This context represents time value.  It includes date and time
- *    down to millisecond precision.
+ *    down to millisecond precision.  The structure size is 64 bits.
  *
  * SOURCE
  *
@@ -73,36 +73,66 @@ typedef struct {
  ***/
 SilcInt64 silc_time(void);
 
+/****f* silcutil/SilcTimeAPI/silc_time_msec
+ *
+ * SYNOPSIS
+ *
+ *    SilcInt64 silc_time_msec(void);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the current time of the system since Epoch in millisecond
+ *    resolution.  Returns - 1 on error.
+ *
+ ***/
+SilcInt64 silc_time_msec(void);
+
+/****f* silcutil/SilcTimeAPI/silc_time_usec
+ *
+ * SYNOPSIS
+ *
+ *    SilcInt64 silc_time_usec(void);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the current time of the system since Epoch in microsecond
+ *    resolution.  Returns - 1 on error.
+ *
+ ***/
+SilcInt64 silc_time_usec(void);
+
 /****f* silcutil/SilcTimeAPI/silc_time_string
  *
  * SYNOPSIS
  *
- *    const char *silc_time_string(SilcInt64 timeval);
+ *    const char *silc_time_string(SilcInt64 time_val);
  *
  * DESCRIPTION
  *
  *    Returns time and date as string.  The caller must not free the string
  *    and next call to this function will delete the old string.  If the
- *    `timeval' is zero (0) returns current time as string, otherwise the
- *    `timeval' as string.  Returns NULL on error.
+ *    `time_val' is zero (0) returns current time as string, otherwise the
+ *    `time_val' as string.  The `time_val' is in seconds since Epoch.
+ *    Returns NULL on error.
  *
  ***/
-const char *silc_time_string(SilcInt64 timeval);
+const char *silc_time_string(SilcInt64 time_val);
 
 /****f* silcutil/SilcTimeAPI/silc_time_value
  *
  * SYNOPSIS
  *
- *   SilcBool silc_time_value(SilcInt64 timeval, SilcTime ret_time);
+ *   SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time);
  *
  * DESCRIPTION
  *
- *    Returns time and date as SilcTime.  If the `timeval' is zero (0)
- *    returns current time as SilcTime, otherwise the `timeval' as SilcTime.
- *    Returns FALSE on error, TRUE otherwise.
+ *    Returns time and date as SilcTime.  If the `time_val' is zero (0)
+ *    returns current time as SilcTime, otherwise the `time_val' as SilcTime.
+ *    The `time_val' is in milliseconds since Epoch.  Returns FALSE on error,
+ *    TRUE otherwise.
  *
  ***/
-SilcBool silc_time_value(SilcInt64 timeval, SilcTime ret_time);
+SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time);
 
 /****f* silcutil/SilcTimeAPI/silc_time_universal
  *
@@ -134,7 +164,7 @@ SilcBool silc_time_universal(const char *universal_time, SilcTime ret_time);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_time_universal_string(SilcTime timeval, char *ret_string,
+ *    SilcBool silc_time_universal_string(SilcTime time_val, char *ret_string,
  *                                        SilcUInt32 ret_string_size);
  *
  * DESCRIPTION
@@ -143,7 +173,7 @@ SilcBool silc_time_universal(const char *universal_time, SilcTime ret_time);
  *    `ret_string' buffer.  Returns FALSE if the buffer is too small.
  *
  ***/
-SilcBool silc_time_universal_string(SilcTime timeval, char *ret_string,
+SilcBool silc_time_universal_string(SilcTime time_val, char *ret_string,
 				    SilcUInt32 ret_string_size);
 
 /****f* silcutil/SilcTimeAPI/silc_time_generalized
@@ -181,7 +211,8 @@ silc_time_generalized(const char *generalized_time, SilcTime ret_time);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_time_generalized_string(SilcTime timeval, char *ret_string,
+ *    SilcBool silc_time_generalized_string(SilcTime time_val,
+ *                                          char *ret_string,
  *                                          SilcUInt32 ret_string_size);
  *
  * DESCRIPTION
@@ -190,7 +221,37 @@ silc_time_generalized(const char *generalized_time, SilcTime ret_time);
  *    `ret_string' buffer.  Returns FALSE if the buffer is too small.
  *
  ***/
-SilcBool silc_time_generalized_string(SilcTime timeval, char *ret_string,
+SilcBool silc_time_generalized_string(SilcTime time_val, char *ret_string,
 				      SilcUInt32 ret_string_size);
+
+/****f* silcutil/SilcTimeAPI/silc_compare_timeval
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_compare_timeval(struct time_val *smaller,
+ *                                  struct time_val *bigger)
+ *
+ * DESCRIPTION
+ *
+ *    Compare two timeval structures and return TRUE if the first
+ *    time value is smaller than the second time value.
+ *
+ ***/
+SilcBool silc_compare_timeval(struct timeval *smaller,
+			      struct timeval *bigger);
+
+/****f* silcutil/SilcTimeAPI/silc_gettimeofday
+ *
+ * SYNOPSIS
+ *
+ *    int silc_gettimeofday(struct timeval *p);
+ *
+ * DESCRIPTION
+ *
+ *    Return current time to struct timeval.  This function is system
+ *    dependant.  Returns 0 on success and -1 on error.
+ *
+ ***/
+int silc_gettimeofday(struct timeval *p);
 
 #endif /* SILCTIME_H */
