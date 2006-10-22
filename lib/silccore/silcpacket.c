@@ -787,6 +787,8 @@ void silc_packet_free(SilcPacket packet)
 
   /* Put the packet back to freelist */
   silc_list_add(stream->engine->packet_pool, packet);
+  if (silc_list_count(stream->engine->packet_pool) == 1)
+    silc_list_start(stream->engine->packet_pool);
 
   silc_mutex_unlock(stream->engine->lock);
 }
