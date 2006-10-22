@@ -71,6 +71,12 @@ SILC_TASK_CALLBACK(start)
   silc_schedule_task_add_timeout(schedule, cont, (void *)i, 0, 100);
 }
 
+SILC_TASK_CALLBACK(interrupt)
+{
+  SILC_LOG_DEBUG(("SIGINT signal"));
+  silc_schedule_stop(schedule);
+}
+
 int main(int argc, char **argv)
 {
   SilcBool success = FALSE;
@@ -86,6 +92,8 @@ int main(int argc, char **argv)
   schedule = silc_schedule_init(NUM_FTASK, NULL);
   if (!schedule)
     goto err;
+
+  silc_schedule_task_add_signal(schedule, SIGINT, interrupt, NULL);
 
   silc_schedule_task_add_timeout(schedule, start, NULL, 0, 1);
 

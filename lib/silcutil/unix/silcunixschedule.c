@@ -45,6 +45,7 @@ typedef struct {
   SilcTaskCallback callback;
   void *context;
   SilcBool call;
+  SilcSchedule schedule;
 } SilcUnixSignal;
 
 #define SIGNAL_COUNT 32
@@ -213,6 +214,7 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
 				  void *app_context)
 {
   SilcUnixScheduler internal;
+  int i;
 
   internal = silc_calloc(1, sizeof(*internal));
   if (!internal)
@@ -261,7 +263,11 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
 
   internal->app_context = app_context;
 
-  memset(signal_call, 0, sizeof(signal_call) / sizeof(signal_call[0]));
+  for (i = 0; i < SIGNAL_COUNT; i++) {
+    signal_call[i].signal = 0;
+    signal_call[i].call = FALSE;
+    signal_call[i].schedule = schedule;
+  }
 
   return (void *)internal;
 }
@@ -317,6 +323,7 @@ static void silc_schedule_internal_sighandler(int signal)
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (signal_call[i].signal == signal) {
       signal_call[i].call = TRUE;
+      signal_call[i].schedule->signal_tasks = TRUE;
       SILC_LOG_DEBUG(("Scheduling signal %d to be called",
 		      signal_call[i].signal));
       break;
