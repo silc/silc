@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -290,17 +290,7 @@ void silc_schedule_internal_signal_register(SilcSchedule schedule,
 
 void silc_schedule_internal_signal_unregister(SilcSchedule schedule,
 					      void *context,
-                                              SilcUInt32 signal,
-                                              SilcTaskCallback callback,
-                                              void *callback_context)
-{
-
-}
-
-/* Mark signal to be called later. */
-
-void silc_schedule_internal_signal_call(SilcSchedule schedule,
-					void *context, SilcUInt32 signal)
+                                              SilcUInt32 signal)
 {
 
 }
@@ -338,7 +328,6 @@ const SilcScheduleOps schedule_ops =
   silc_schedule_internal_wakeup,
   silc_schedule_internal_signal_register,
   silc_schedule_internal_signal_unregister,
-  silc_schedule_internal_signal_call,
   silc_schedule_internal_signals_call,
   silc_schedule_internal_signals_block,
   silc_schedule_internal_signals_unblock,

@@ -554,7 +554,8 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
       silc_list_add(schedule->timeout_queue, ttask);
 
     task = (SilcTask)ttask;
-  } else {
+
+  } else if (type == SILC_TASK_FD) {
     /* Check if fd is already added */
     if (silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fd),
 			     NULL, (void **)&task))
@@ -584,7 +585,14 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
     silc_hash_table_add(schedule->fd_queue, SILC_32_TO_PTR(fd), ftask);
 
     task = (SilcTask)ftask;
+
+  } else if (type == SILC_TASK_SIGNAL) {
+    SILC_SCHEDULE_UNLOCK(schedule);
+    schedule_ops.signal_register(schedule, schedule->internal, (int)fd,
+				 callback, context);
+    return NULL;
   }
+
 
  out:
   SILC_SCHEDULE_UNLOCK(schedule);
@@ -629,7 +637,7 @@ void silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
 
 void silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd)
 {
-  SilcTask task;
+  SilcTask task = NULL;
 
   SILC_LOG_DEBUG(("Unregister task by fd %d", fd));
 
@@ -641,6 +649,10 @@ void silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd)
     task->valid = FALSE;
 
   SILC_SCHEDULE_UNLOCK(schedule);
+
+  /* If it is signal, remove it */
+  if (!task)
+    schedule_ops.signal_unregister(schedule, schedule->internal, fd);
 }
 
 /* Invalidate task by task callback. */
@@ -761,31 +773,4 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
 void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd)
 {
   silc_schedule_set_listen_fd(schedule, fd, 0, FALSE);
-}
-
-/* Register a new signal */
-
-void silc_schedule_signal_register(SilcSchedule schedule, SilcUInt32 signal,
-				   SilcTaskCallback callback, void *context)
-{
-  schedule_ops.signal_register(schedule, schedule->internal, signal,
-				callback, context);
-}
-
-/* Unregister a new signal */
-
-void silc_schedule_signal_unregister(SilcSchedule schedule, SilcUInt32 signal,
-				     SilcTaskCallback callback, void *context)
-{
-  schedule_ops.signal_unregister(schedule, schedule->internal, signal,
-				  callback, context);
-}
-
-/* Call signal indicated by `signal'. */
-
-void silc_schedule_signal_call(SilcSchedule schedule, SilcUInt32 signal)
-{
-  /* Mark that signals needs to be delivered later. */
-  schedule_ops.signal_call(schedule, schedule->internal, signal);
-  schedule->signal_tasks = TRUE;
 }

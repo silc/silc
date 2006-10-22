@@ -120,6 +120,11 @@ typedef enum {
      task in task callback. It is also safe to unregister a task in
      the task callback. */
   SILC_TASK_TIMEOUT,
+
+  /* Platform specific process signal task.  On Unix systems this is one of
+     the signals described in signal(7).  On other platforms this may not
+     be available at all.  Only one callback per signal may be added. */
+  SILC_TASK_SIGNAL
 } SilcTaskType;
 /***/
 
@@ -343,53 +348,6 @@ void silc_schedule_wakeup(SilcSchedule schedule);
  ***/
 void *silc_schedule_get_context(SilcSchedule schedule);
 
-/****f* silcutil/SilcScheduleAPI/silc_schedule_task_add
- *
- * SYNOPSIS
- *
- *    SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
- *                                    SilcTaskCallback callback,
- *                                    void *context,
- *                                    long seconds, long useconds,
- *                                    SilcTaskType type);
- *
- * DESCRIPTION
- *
- *    Registers a new task to the scheduler. This same function is used
- *    to register all types of tasks. The `type' argument tells what type
- *    of the task is. Note that when registering non-timeout (fd) tasks one
- *    should also pass 0 as timeout, as the timeout will be ignored anyway.
- *    Also, note, that one cannot register timeout task with 0 timeout.
- *    There cannot be zero timeouts, passing zero means no timeout is used
- *    for the task and SILC_TASK_FD is used as default task type in
- *    this case.
- *
- *    The `schedule' is the scheduler context. The `fd' is the file
- *    descriptor of the task. On WIN32 systems the `fd' is not actual
- *    file descriptor but some WIN32 event handle. On WIN32 system the `fd'
- *    may be a socket created by the SILC Net API routines, WSAEVENT object
- *    created by Winsock2 network routines or arbitrary WIN32 HANDLE object.
- *    On Unix systems the `fd' is always the real file descriptor.  The
- *    same `fd' can be added only once.
- *
- *    The `callback' is the task callback that will be called when some
- *    event occurs for this task. The `context' is sent as argument to
- *    the task `callback' function. For timeout tasks the callback is
- *    called after the specified timeout has elapsed.
- *
- *    If the `type' is SILC_TASK_TIMEOUT then `seconds' and `useconds'
- *    may be non-zero.  Otherwise they should be zero.
- *
- *    It is always safe to call this function in any place. New tasks
- *    may be added also in task callbacks, and in multi-threaded environment
- *    in other threads as well.
- *
- ***/
-SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
-				SilcTaskCallback callback, void *context,
-				long seconds, long useconds,
-				SilcTaskType type);
-
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_add_fd
  *
  * SYNOPSIS
@@ -400,8 +358,10 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
  *
  * DESCRIPTION
  *
- *    A convenience function to add fd task.  You may use this if you
- *    don't want to use the silc_schedule_task_add function to add fd task.
+ *    Add file descriptor task to scheduler.  The `fd' may be either real
+ *    file descriptor, socket or on some platforms an opaque file descriptor
+ *    handle.  To receive events for the file descriptor set the correct
+ *    request events with silc_schedule_set_listen_fd function.
  *
  ***/
 #define silc_schedule_task_add_fd(schedule, fd, callback, context)	\
@@ -418,14 +378,44 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
  *
  * DESCRIPTION
  *
- *    A convenience function to add timeout task.  You may use this if
- *    you don't want to use the silc_schedule_task_add function to add
- *    timeout task.
+ *    Add timeout task to scheduler.  The `callback' will be called once
+ *    the specified timeout has elapsed.  The task will be removed from the
+ *    scheduler automatically once the task expires.  The event returned
+ *    to the `callback' is SILC_TASK_EXPIRE.
  *
  ***/
 #define silc_schedule_task_add_timeout(schedule, callback, context, s, u) \
   silc_schedule_task_add(schedule, 0, callback, context, s, u,		  \
 			 SILC_TASK_TIMEOUT)
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_task_add_signal
+ *
+ * SYNOPSIS
+ *
+ *    SilcTask
+ *    silc_schedule_task_add_signal(SilcSchedule schedule, int signal,
+ *                                  SilcTaskCallback callback, void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Add platform specific process signal handler to scheduler.  On Unix
+ *    systems the `signal' is one of the signal specified in signal(7).  On
+ *    other platforms this function may not be available at all, and has no
+ *    effect when called.  The event delivered to the `callback' is
+ *    SILC_TASK_INTERRUPT.
+ *
+ * NOTES
+ *
+ *    One signal may be registered only one callback.  Adding second callback
+ *    for signal that already has one will fail.
+ *
+ *    This function always returns NULL.  To remove signal from scheduler by
+ *    the signal call silc_schedule_task_del_by_fd.
+ *
+ ***/
+#define silc_schedule_task_add_signal(schedule, signal, callback, context) \
+  silc_schedule_task_add(schedule, signal, callback, context, 0, 0,	\
+			 SILC_TASK_SIGNAL)
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_del
  *
@@ -565,95 +555,6 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
  *
  ***/
 void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd);
-
-/****f* silcutil/SilcScheduleAPI/silc_schedule_signal_register
- *
- * SYNOPSIS
- *
- *    void silc_schedule_signal_register(SilcSchedule schedule,
- *                                       SilcUInt32 signal,
- *					 SilcTaskCallback callback,
- * 					 void *context);
- *
- * DESCRIPTION
- *
- *    Register signal indicated by `signal' to the scheduler.  Application
- *    should register all signals it is going to use to the scheduler.
- *    The `callback' with `context' will be called after the application
- *    has called silc_schedule_signal_call function in the real signal
- *    callback.  Application is responsible of calling that, and the
- *    signal system will not work without calling silc_schedule_signal_call
- *    function.  The specified `signal' value will be also delivered to
- *    the `callback' as the fd-argument.  The event type in the callback
- *    will be SILC_TASK_INTERRUPT.  It is safe to use any SILC routines
- *    in the `callback' since it is actually called after the signal really
- *    happened.
- *
- *    On platform that does not support signals calling this function has
- *    no effect.
- *
- * EXAMPLE
- *
- *    Typical signal usage case on Unix systems:
- *
- *    struct sigaction sa;
- *    sa.sa_handler = signal_handler;
- *    sigaction(SIGHUP, &sa, NULL);
- *    sigaction(SIGINT, &sa, NULL);
- *    silc_schedule_signal_register(schedule, SIGHUP, hup_signal, context);
- *    silc_schedule_signal_register(schedule, SIGINT, int_signal, context);
- *
- *    static void signal_handler(int sig)
- *    {
- *      silc_schedule_signal_call(schedule, sig);
- *    }
- *
- *    The `signal_handler' can be used as generic signal callback in the
- *    application that merely calls silc_schedule_signal_call, which then
- *    eventually will deliver for example the `hup_signal' callback.  The
- *    same `signal_handler' can be used with all signals.
- *
- ***/
-void silc_schedule_signal_register(SilcSchedule schedule, SilcUInt32 signal,
-				   SilcTaskCallback callback, void *context);
-
-/****f* silcutil/SilcScheduleAPI/silc_schedule_signal_unregister
- *
- * SYNOPSIS
- *
- *    void silc_schedule_signal_unregister(SilcSchedule schedule,
- *                                         SilcUInt32 signal,
- *					   SilcTaskCallback callback,
- * 					   void *context);
- *
- * DESCRIPTION
- *
- *    Unregister a signal indicated by `signal' from the scheduler.  On
- *    platform that does not support signals calling this function has no
- *    effect.
- *
- ***/
-void silc_schedule_signal_unregister(SilcSchedule schedule, SilcUInt32 signal,
-				     SilcTaskCallback callback, void *context);
-
-/****f* silcutil/SilcScheduleAPI/silc_schedule_signal_call
- *
- * SYNOPSIS
- *
- *    void silc_schedule_signal_call(SilcSchedule schedule,
- *                                   SilcUInt32 signal);
- *
- * DESCRIPTION
- *
- *    Mark the `signal' to be called later.  Every signal that has been
- *    registered by silc_schedule_signal_register is delivered by calling
- *    this function.  When signal really occurs, the application is
- *    responsible of calling this function in the signal handler.  After
- *    signal is over the scheduler will then safely deliver the callback
- *    that was given to silc_schedule_signal_register function.
- *
- ***/
-void silc_schedule_signal_call(SilcSchedule schedule, SilcUInt32 signal);
 
 #include "silcschedule_i.h"
 

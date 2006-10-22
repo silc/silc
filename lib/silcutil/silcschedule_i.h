@@ -104,11 +104,7 @@ typedef struct {
 
   /* Unregister signal */
   void (*signal_unregister)(SilcSchedule schedule, void *context,
-			    SilcUInt32 signal, SilcTaskCallback callback,
-			    void *callback_context);
-
-  /* Mark signal to be called later. */
-  void (*signal_call)(SilcSchedule schedule, void *context, SilcUInt32 signal);
+			    SilcUInt32 signal);
 
   /* Call all signals */
   void (*signals_call)(SilcSchedule schedule, void *context);
@@ -119,6 +115,16 @@ typedef struct {
   /* Unblock registered signals in schedule. */
   void (*signals_unblock)(SilcSchedule schedule, void *context);
 } SilcScheduleOps;
+
+/* The generic function to add any type of task to the scheduler.  This
+   used to be exported as is to application, but now they should use the
+   macro wrappers defined in silcschedule.h.  For Fd task the timeout must
+   be zero, for timeout task the timeout must not be zero, for signal task
+   the fd argument is the signal. */
+SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
+				SilcTaskCallback callback, void *context,
+				long seconds, long useconds,
+				SilcTaskType type);
 
 #if defined(SILC_DEBUG)
 /* Print scheduler statistics to stdout. */

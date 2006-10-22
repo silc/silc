@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2005 Pekka Riikonen
+  Copyright (C) 1998 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,15 +26,6 @@
 
 const SilcScheduleOps schedule_ops;
 
-#define SIGNAL_COUNT 32
-
-typedef struct {
-  SilcUInt32 signal;
-  SilcTaskCallback callback;
-  void *context;
-  SilcBool call;
-} SilcUnixSignal;
-
 /* Internal context. */
 typedef struct {
 #if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
@@ -47,8 +38,17 @@ typedef struct {
   SilcTask wakeup_task;
   sigset_t signals;
   sigset_t signals_blocked;
-  SilcUnixSignal signal_call[SIGNAL_COUNT];
 } *SilcUnixScheduler;
+
+typedef struct {
+  SilcUInt32 signal;
+  SilcTaskCallback callback;
+  void *context;
+  SilcBool call;
+} SilcUnixSignal;
+
+#define SIGNAL_COUNT 32
+SilcUnixSignal signal_call[SIGNAL_COUNT];
 
 #if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
 
@@ -261,6 +261,8 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
 
   internal->app_context = app_context;
 
+  memset(signal_call, 0, sizeof(signal_call) / sizeof(signal_call[0]));
+
   return (void *)internal;
 }
 
@@ -306,9 +308,25 @@ void silc_schedule_internal_wakeup(SilcSchedule schedule, void *context)
 #endif
 }
 
+/* Signal handler */
+
+static void silc_schedule_internal_sighandler(int signal)
+{
+  int i;
+
+  for (i = 0; i < SIGNAL_COUNT; i++) {
+    if (signal_call[i].signal == signal) {
+      signal_call[i].call = TRUE;
+      SILC_LOG_DEBUG(("Scheduling signal %d to be called",
+		      signal_call[i].signal));
+      break;
+    }
+  }
+}
+
 void silc_schedule_internal_signal_register(SilcSchedule schedule,
 					    void *context,
-					    SilcUInt32 signal,
+					    SilcUInt32 sig,
                                             SilcTaskCallback callback,
                                             void *callback_context)
 {
@@ -323,24 +341,23 @@ void silc_schedule_internal_signal_register(SilcSchedule schedule,
   silc_schedule_internal_signals_block(schedule, context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
-    if (!internal->signal_call[i].signal) {
-      internal->signal_call[i].signal = signal;
-      internal->signal_call[i].callback = callback;
-      internal->signal_call[i].context = callback_context;
-      internal->signal_call[i].call = FALSE;
+    if (!signal_call[i].signal) {
+      signal_call[i].signal = sig;
+      signal_call[i].callback = callback;
+      signal_call[i].context = callback_context;
+      signal_call[i].call = FALSE;
+      signal(sig, silc_schedule_internal_sighandler);
       break;
     }
   }
 
   silc_schedule_internal_signals_unblock(schedule, context);
-  sigaddset(&internal->signals, signal);
+  sigaddset(&internal->signals, sig);
 }
 
 void silc_schedule_internal_signal_unregister(SilcSchedule schedule,
 					      void *context,
-					      SilcUInt32 signal,
-                                              SilcTaskCallback callback,
-                                              void *callback_context)
+					      SilcUInt32 sig)
 {
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   int i;
@@ -353,42 +370,17 @@ void silc_schedule_internal_signal_unregister(SilcSchedule schedule,
   silc_schedule_internal_signals_block(schedule, context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
-    if (internal->signal_call[i].signal == signal &&
-	internal->signal_call[i].callback == callback &&
-	internal->signal_call[i].context == callback_context) {
-      internal->signal_call[i].signal = 0;
-      internal->signal_call[i].callback = NULL;
-      internal->signal_call[i].context = NULL;
-      internal->signal_call[i].call = FALSE;
+    if (signal_call[i].signal == sig) {
+      signal_call[i].signal = 0;
+      signal_call[i].callback = NULL;
+      signal_call[i].context = NULL;
+      signal_call[i].call = FALSE;
+      signal(sig, SIG_DFL);
     }
   }
 
   silc_schedule_internal_signals_unblock(schedule, context);
-  sigdelset(&internal->signals, signal);
-}
-
-/* Mark signal to be called later. */
-
-void silc_schedule_internal_signal_call(SilcSchedule schedule,
-					void *context, SilcUInt32 signal)
-{
-  SilcUnixScheduler internal = (SilcUnixScheduler)context;
-  int i;
-
-  if (!internal)
-    return;
-
-  silc_schedule_internal_signals_block(schedule, context);
-
-  for (i = 0; i < SIGNAL_COUNT; i++) {
-    if (internal->signal_call[i].signal == signal) {
-      internal->signal_call[i].call = TRUE;
-      SILC_LOG_DEBUG(("Scheduling signal %d to be called",
-		      internal->signal_call[i].signal));
-    }
-  }
-
-  silc_schedule_internal_signals_unblock(schedule, context);
+  sigdelset(&internal->signals, sig);
 }
 
 /* Call all signals */
@@ -406,15 +398,15 @@ void silc_schedule_internal_signals_call(SilcSchedule schedule, void *context)
   silc_schedule_internal_signals_block(schedule, context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
-    if (internal->signal_call[i].call &&
-        internal->signal_call[i].callback) {
+    if (signal_call[i].call &&
+        signal_call[i].callback) {
       SILC_LOG_DEBUG(("Calling signal %d callback",
-		      internal->signal_call[i].signal));
-      internal->signal_call[i].callback(schedule, internal->app_context,
-					SILC_TASK_INTERRUPT,
-					internal->signal_call[i].signal,
-					internal->signal_call[i].context);
-      internal->signal_call[i].call = FALSE;
+		      signal_call[i].signal));
+      signal_call[i].callback(schedule, internal->app_context,
+			      SILC_TASK_INTERRUPT,
+			      signal_call[i].signal,
+			      signal_call[i].context);
+      signal_call[i].call = FALSE;
     }
   }
 
@@ -458,7 +450,6 @@ const SilcScheduleOps schedule_ops =
   silc_schedule_internal_wakeup,
   silc_schedule_internal_signal_register,
   silc_schedule_internal_signal_unregister,
-  silc_schedule_internal_signal_call,
   silc_schedule_internal_signals_call,
   silc_schedule_internal_signals_block,
   silc_schedule_internal_signals_unblock,
