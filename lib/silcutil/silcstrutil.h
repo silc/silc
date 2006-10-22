@@ -111,7 +111,7 @@ char *silc_pem_encode_file(unsigned char *data, SilcUInt32 data_len);
 unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
 			       SilcUInt32 *ret_len);
 
-/****f* silcutil/SilcStrUtilAPI/silc_strncat
+/****f* silcutil/SilcStrStrUtilAPI/silc_strncat
  *
  * SYNOPSIS
  *
@@ -127,5 +127,67 @@ unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
  ***/
 char *silc_strncat(char *dest, SilcUInt32 dest_size,
 		   const char *src, SilcUInt32 src_len);
+
+/****f* silcutil/SilcStrUtilAPI/silc_string_regexify
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_string_regexify(const char *string);
+ *
+ * DESCRIPTION
+ *
+ *    Inspects the `string' for wildcards and returns regex string that can
+ *    be used by the GNU regex library. A comma (`,') in the `string' means
+ *    that the string is list.
+ *
+ *    This function is system dependant.
+ *
+ ***/
+char *silc_string_regexify(const char *string);
+
+/****f* silcutil/SilcStrUtilAPI/silc_string_regex_match
+ *
+ * SYNOPSIS
+ *
+ *    int silc_string_regex_match(const char *regex, const char *string);
+ *
+ * DESCRIPTION
+ *
+ *    Matches the two strings and returns TRUE if the strings match.
+ *
+ *    This function is system dependant.
+ *
+ ***/
+int silc_string_regex_match(const char *regex, const char *string);
+
+/****f* silcutil/SilcStrUtilAPI/silc_string_match
+ *
+ * SYNOPSIS
+ *
+ *    int silc_string_match(const char *string1, const char *string2);
+ *
+ * DESCRIPTION
+ *
+ *    Do regex match to the two strings `string1' and `string2'. If the
+ *    `string2' matches the `string1' this returns TRUE.
+ *
+ *    This function is system dependant.
+ *
+ ***/
+int silc_string_match(const char *string1, const char *string2);
+
+/****f* silcutil/SilcStrUtilAPI/silc_string_compare
+ *
+ * SYNOPSIS
+ *
+ *    int silc_string_compare(char *string1, char *string2);
+ *
+ * DESCRIPTION
+ *
+ *    Compares two strings. Strings may include wildcards '*' and '?'.
+ *    Returns TRUE if strings match.
+ *
+ ***/
+int silc_string_compare(char *string1, char *string2);
 
 #endif /* SILCSTRUTIL_H */

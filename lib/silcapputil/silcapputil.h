@@ -17,7 +17,7 @@
 
 */
 
-/****h* silcutil/SILC Application Utilities
+/****h* silcapputil/SILC Application Utilities
  *
  * DESCRIPTION
  *
@@ -296,5 +296,153 @@ SilcBool silc_channel_name_verify(const unsigned char *identifier,
 				  SilcUInt32 identifier_len,
 				  SilcStringEncoding identifier_encoding,
 				  SilcUInt32 max_allowed_length);
+
+/****f* silcapputil/SilcAppUtil/silc_get_mode_list
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_get_mode_list(SilcBuffer mode_list,
+ *                                SilcUInt32 mode_list_count,
+ *                                SilcUInt32 **list);
+ *
+ * DESCRIPTION
+ *
+ *    Returns modes from list of 32 bit MSB first order values that are
+ *    encoded one after the other in the `mode_list' into the `list'
+ *    array.  The caller must free the returned list.  Return FALSE if
+ *    there is error parsing the list.
+ *
+ ***/
+SilcBool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
+			    SilcUInt32 **list);
+
+/****f* silcapputil/SilcAppUtil/silc_get_status_message
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_get_status_message(SilcStatus status)
+ *
+ * DESCRIPTION
+ *
+ *    Returns status message string
+ *
+ ***/
+const char *silc_get_status_message(unsigned char status);
+
+/****f* silcapputil/SilcAppUtil/silc_get_packet_name
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_get_packet_name(SilcPacketType type);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the name corresponding packet type `type'.
+ *
+ ***/
+const char *silc_get_packet_name(unsigned char type);
+
+/****f* silcapputil/SilcAppUtil/silc_get_command_name
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_get_command_name(SilcCommand command);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the name corresponding SILC command `command'.
+ *
+ ***/
+const char *silc_get_command_name(unsigned char command);
+
+/****f* silcapputil/SilcAppUtil/silc_parse_version_string
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_parse_version_string(const char *version,
+ *                                       SilcUInt32 *protocol_version,
+ *                                       char **protocol_version_string,
+ *                                       SilcUInt32 *software_version,
+ *                                       char **software_version_string,
+ *                                       char **vendor_version);
+ *
+ * DESCRIPTION
+ *
+ *    Parses SILC protocol style version string.
+ *
+ ***/
+SilcBool silc_parse_version_string(const char *version,
+				   SilcUInt32 *protocol_version,
+				   char **protocol_version_string,
+				   SilcUInt32 *software_version,
+				   char **software_version_string,
+				   char **vendor_version);
+
+/****f* silcapputil/SilcAppUtil/silc_version_to_num
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_version_to_num(const char *version);
+ *
+ * DESCRIPTION
+ *
+ *    Converts version string x.x into number representation.
+ *
+ ***/
+SilcUInt32 silc_version_to_num(const char *version);
+
+/****f* silcapputil/SilcAppUtil/silc_client_chmode
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_client_chmode(SilcUInt32 mode, const char *cipher,
+ *                             const char *hmac);
+ *
+ * DESCRIPTION
+ *
+ *    Parses mode mask and returns the mode as string.
+ *
+ ***/
+char *silc_client_chmode(SilcUInt32 mode, const char *cipher,
+			 const char *hmac);
+
+/****f* silcapputil/SilcAppUtil/silc_client_chumode
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_client_chumode(SilcUInt32 mode);
+ *
+ * DESCRIPTION
+ *
+ *    Parses channel user mode mask and returns te mode as string.
+ *
+ ***/
+char *silc_client_chumode(SilcUInt32 mode);
+
+/****f* silcapputil/SilcAppUtil/silc_client_chumode_char
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_client_chumode_char(SilcUInt32 mode);
+ *
+ * DESCRIPTION
+ *
+ *    Parses channel user mode and returns it as special mode character.
+ *
+ ***/
+char *silc_client_chumode_char(SilcUInt32 mode);
+
+/****f* silcutil/SilcUtilAPI/silc_id_render
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_id_render(void *id, SilcIdType id_type);
+ *
+ * DESCRIPTION
+ *
+ *    Renders ID to suitable to print for example to log file.
+ *
+ ***/
+char *silc_id_render(void *id, SilcIdType id_type);
 
 #endif /* SILCAPPUTIL_H */

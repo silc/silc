@@ -191,3 +191,76 @@ char *silc_strncat(char *dest, SilcUInt32 dest_size,
 
   return dest;
 }
+
+/* Compares two strings. Strings may include wildcards '*' and '?'.
+   Returns TRUE if strings match. */
+
+int silc_string_compare(char *string1, char *string2)
+{
+  int i;
+  int slen1;
+  int slen2;
+  char *tmpstr1, *tmpstr2;
+
+  if (!string1 || !string2)
+    return FALSE;
+
+  slen1 = strlen(string1);
+  slen2 = strlen(string2);
+
+  /* See if they are same already */
+  if (!strncmp(string1, string2, slen2) && slen2 == slen1)
+    return TRUE;
+
+  if (slen2 < slen1)
+    if (!strchr(string1, '*'))
+      return FALSE;
+
+  /* Take copies of the original strings as we will change them */
+  tmpstr1 = silc_calloc(slen1 + 1, sizeof(char));
+  memcpy(tmpstr1, string1, slen1);
+  tmpstr2 = silc_calloc(slen2 + 1, sizeof(char));
+  memcpy(tmpstr2, string2, slen2);
+
+  for (i = 0; i < slen1; i++) {
+
+    /* * wildcard. Only one * wildcard is possible. */
+    if (tmpstr1[i] == '*')
+      if (!strncmp(tmpstr1, tmpstr2, i)) {
+	memset(tmpstr2, 0, slen2);
+	strncpy(tmpstr2, tmpstr1, i);
+	break;
+      }
+
+    /* ? wildcard */
+    if (tmpstr1[i] == '?') {
+      if (!strncmp(tmpstr1, tmpstr2, i)) {
+	if (!(slen1 < i + 1))
+	  if (tmpstr1[i + 1] != '?' &&
+	      tmpstr1[i + 1] != tmpstr2[i + 1])
+	    continue;
+
+	if (!(slen1 < slen2))
+	  tmpstr2[i] = '?';
+      }
+    }
+  }
+
+  /* if using *, remove it */
+  if (strchr(tmpstr1, '*'))
+    *strchr(tmpstr1, '*') = 0;
+
+  if (!strcmp(tmpstr1, tmpstr2)) {
+    memset(tmpstr1, 0, slen1);
+    memset(tmpstr2, 0, slen2);
+    silc_free(tmpstr1);
+    silc_free(tmpstr2);
+    return TRUE;
+  }
+
+  memset(tmpstr1, 0, slen1);
+  memset(tmpstr2, 0, slen2);
+  silc_free(tmpstr1);
+  silc_free(tmpstr2);
+  return FALSE;
+}

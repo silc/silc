@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -59,26 +59,12 @@ int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin);
  ***/
 int silc_check_line(char *buf);
 
-/****f* silcutil/SilcUtilAPI/silc_get_time
- *
- * SYNOPSIS
- *
- *    const char *silc_get_time(SilcUInt32 timeval)
- *
- * DESCRIPTION
- *
- *    Returns time as string.  If the the `timeval' is non-zero that
- *    value is returned as string.  If it is zero the current time of the
- *    local machine is returned.
- *
- ***/
-const char *silc_get_time(SilcUInt32 timeval);
-
 /****f* silcutil/SilcUtilAPI/silc_to_upper
  *
  * SYNOPSIS
  *
- *    SilcBool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size);
+ *    SilcBool silc_to_upper(const char *string, char *dest,
+ *                           SilcUInt32 dest_size);
  *
  * DESCRIPTION
  *
@@ -91,7 +77,8 @@ SilcBool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size);
+ *    SilcBool silc_to_lower(const char *string, char *dest,
+ *                           SilcUInt32 dest_size);
  *
  * DESCRIPTION
  *
@@ -158,33 +145,6 @@ void silc_parse_command_line(unsigned char *buffer,
  *
  ***/
 char *silc_format(char *fmt, ...);
-
-/****f* silcutil/SilcUtilAPI/silc_id_render
- *
- * SYNOPSIS
- *
- *    char *silc_id_render(void *id, SilcUInt16 type);
- *
- * DESCRIPTION
- *
- *    Renders ID to suitable to print for example to log file.
- *
- ***/
-char *silc_id_render(void *id, SilcUInt16 type);
-
-/****f* silcutil/SilcUtilAPI/silc_string_compare
- *
- * SYNOPSIS
- *
- *    int silc_string_compare(char *string1, char *string2);
- *
- * DESCRIPTION
- *
- *    Compares two strings. Strings may include wildcards '*' and '?'.
- *    Returns TRUE if strings match.
- *
- ***/
-int silc_string_compare(char *string1, char *string2);
 
 /****f* silcutil/SilcUtilAPI/silc_hash_string
  *
@@ -402,47 +362,6 @@ SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
 SilcBool silc_hash_public_key_compare(void *key1, void *key2,
 				      void *user_context);
 
-/****f* silcutil/SilcUtilAPI/silc_client_chmode
- *
- * SYNOPSIS
- *
- *    char *silc_client_chmode(SilcUInt32 mode, const char *cipher,
- *                             const char *hmac);
- *
- * DESCRIPTION
- *
- *    Parses mode mask and returns the mode as string.
- *
- ***/
-char *silc_client_chmode(SilcUInt32 mode, const char *cipher,
-			 const char *hmac);
-
-/****f* silcutil/SilcUtilAPI/silc_client_chumode
- *
- * SYNOPSIS
- *
- *    char *silc_client_chumode(SilcUInt32 mode);
- *
- * DESCRIPTION
- *
- *    Parses channel user mode mask and returns te mode as string.
- *
- ***/
-char *silc_client_chumode(SilcUInt32 mode);
-
-/****f* silcutil/SilcUtilAPI/silc_client_chumode_char
- *
- * SYNOPSIS
- *
- *    char *silc_client_chumode_char(SilcUInt32 mode);
- *
- * DESCRIPTION
- *
- *    Parses channel user mode and returns it as special mode character.
- *
- ***/
-char *silc_client_chumode_char(SilcUInt32 mode);
-
 /****f* silcutil/SilcUtilAPI/silc_fingerprint
  *
  * SYNOPSIS
@@ -471,42 +390,6 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len);
  ***/
 SilcBool silc_string_is_ascii(const unsigned char *data, SilcUInt32 data_len);
 
-/****f* silcutil/SilcUtilAPI/silc_parse_version_string
- *
- * SYNOPSIS
- *
- *    SilcBool silc_parse_version_string(const char *version,
- *                                   SilcUInt32 *protocol_version,
- *                                   char **protocol_version_string,
- *                                   SilcUInt32 *software_version,
- *                                   char **software_version_string,
- *                                   char **vendor_version);
- *
- * DESCRIPTION
- *
- *    Parses SILC protocol style version string.
- *
- ***/
-SilcBool silc_parse_version_string(const char *version,
-			       SilcUInt32 *protocol_version,
-			       char **protocol_version_string,
-			       SilcUInt32 *software_version,
-			       char **software_version_string,
-			       char **vendor_version);
-
-/****f* silcutil/SilcUtilAPI/silc_version_to_num
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_version_to_num(const char *version);
- *
- * DESCRIPTION
- *
- *    Converts version string x.x into number representation.
- *
- ***/
-SilcUInt32 silc_version_to_num(const char *version);
-
 /****f* silcutil/SilcUtilAPI/silc_get_input
  *
  * SYNOPSIS
@@ -521,84 +404,6 @@ SilcUInt32 silc_version_to_num(const char *version);
 char *silc_get_input(const char *prompt, SilcBool echo_off);
 
 /* System dependant prototypes */
-
-/****f* silcutil/SilcUtilAPI/silc_gettimeofday
- *
- * SYNOPSIS
- *
- *    int silc_gettimeofday(struct timeval *p);
- *
- * DESCRIPTION
- *
- *    Return current time to struct timeval.  This function is system
- *    dependant.  Returns 0 on success and -1 on error.
- *
- ***/
-int silc_gettimeofday(struct timeval *p);
-
-/****f* silcutil/SilcUtilAPI/silc_compare_timeval
- *
- * SYNOPSIS
- *
- *    SilcBool silc_compare_timeval(struct timeval *smaller,
- *                              struct timeval *bigger)
- *
- * DESCRIPTION
- *
- *    Compare two timeval structures and return TRUE if the first
- *    time value is smaller than the second time value.
- *
- ***/
-SilcBool silc_compare_timeval(struct timeval *smaller,
-			  struct timeval *bigger);
-
-/****f* silcutil/SilcUtilAPI/silc_string_regexify
- *
- * SYNOPSIS
- *
- *    char *silc_string_regexify(const char *string);
- *
- * DESCRIPTION
- *
- *    Inspects the `string' for wildcards and returns regex string that can
- *    be used by the GNU regex library. A comma (`,') in the `string' means
- *    that the string is list.
- *
- *    This function is system dependant.
- *
- ***/
-char *silc_string_regexify(const char *string);
-
-/****f* silcutil/SilcUtilAPI/silc_string_regex_match
- *
- * SYNOPSIS
- *
- *    int silc_string_regex_match(const char *regex, const char *string);
- *
- * DESCRIPTION
- *
- *    Matches the two strings and returns TRUE if the strings match.
- *
- *    This function is system dependant.
- *
- ***/
-int silc_string_regex_match(const char *regex, const char *string);
-
-/****f* silcutil/SilcUtilAPI/silc_string_match
- *
- * SYNOPSIS
- *
- *    int silc_string_match(const char *string1, const char *string2);
- *
- * DESCRIPTION
- *
- *    Do regex match to the two strings `string1' and `string2'. If the
- *    `string2' matches the `string1' this returns TRUE.
- *
- *    This function is system dependant.
- *
- ***/
-int silc_string_match(const char *string1, const char *string2);
 
 /****f* silcutil/SilcUtilAPI/silc_get_username
  *
@@ -633,61 +438,20 @@ char *silc_get_username();
  ***/
 char *silc_get_real_name();
 
-/****f* silcutil/SilcUtilAPI/silc_get_mode_list
+/****f* silcutil/SilcUtilAPI/silc_va_copy
  *
  * SYNOPSIS
  *
- *    SilcBool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
- *                            SilcUInt32 **list);
+ *    void silc_va_copy(va_list dest, va_list src);
  *
  * DESCRIPTION
  *
- *    Returns modes from list of 32 bit MSB first order values that are
- *    encoded one after the other in the `mode_list' into the `list'
- *    array.  The caller must free the returned list.  Return FALSE if
- *    there is error parsing the list.
+ *    Copies variable argument list.  This must be called in case the
+ *    variable argument list must be evaluated multiple times.  For each
+ *    evaluation the list must be copied and va_end must be called for
+ *    each copied list.
  *
  ***/
-SilcBool silc_get_mode_list(SilcBuffer mode_list, SilcUInt32 mode_list_count,
-			SilcUInt32 **list);
-
-/****f* silcutil/SilcUtilAPI/silc_get_status_message
- *
- * SYNOPSIS
- *
- *    char *silc_get_status_message(SilcStatus status)
- *
- * DESCRIPTION
- *
- *    Returns status message string
- *
- ***/
-const char *silc_get_status_message(unsigned char status);
-
-/****f* silcutil/SilcUtilAPI/silc_get_packet_name
- *
- * SYNOPSIS
- *
- *    char *silc_get_packet_name(SilcPacketType type);
- *
- * DESCRIPTION
- *
- *    Returns the name corresponding packet type `type'.
- *
- ***/
-const char *silc_get_packet_name(unsigned char type);
-
-/****f* silcutil/SilcUtilAPI/silc_get_command_name
- *
- * SYNOPSIS
- *
- *    char *silc_get_command_name(SilcCommand command);
- *
- * DESCRIPTION
- *
- *    Returns the name corresponding SILC command `command'.
- *
- ***/
-const char *silc_get_command_name(unsigned char command);
+void silc_va_copy(va_list dest, va_list src);
 
 #endif	/* !SILCUTIL_H */

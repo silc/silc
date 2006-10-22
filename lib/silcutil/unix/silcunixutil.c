@@ -4,12 +4,12 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -97,7 +97,7 @@ int silc_string_regex_match(const char *regex, const char *string)
 {
   regex_t preg;
   int ret = FALSE;
-  
+
   if (regcomp(&preg, regex, REG_NOSUB | REG_EXTENDED) != 0)
     return FALSE;
 
@@ -133,7 +133,7 @@ int silc_string_match(const char *string1, const char *string2)
 char *silc_get_username()
 {
   char *logname = NULL;
-  
+
   logname = getenv("LOGNAME");
   if (!logname) {
     logname = getlogin();
@@ -147,7 +147,7 @@ char *silc_get_username()
       logname = pw->pw_name;
     }
   }
-  
+
   return strdup(logname);
 }
 
@@ -157,7 +157,7 @@ char *silc_get_real_name()
 {
   char *realname = NULL;
   struct passwd *pw;
-    
+
   pw = getpwuid(getuid());
   if (!pw)
     return strdup("No Name");
@@ -184,4 +184,3 @@ int silc_file_set_nonblock(int fd)
 {
   return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
 }
-

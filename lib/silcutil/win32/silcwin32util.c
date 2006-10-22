@@ -50,13 +50,13 @@ const BYTE DWLEN = sizeof(DWORD) * 8;
 int silc_gettimeofday(struct timeval *tv)
 {
   FILETIME ft;
-  __int64 msec;
+  __int64 usec;
 
   GetSystemTimeAsFileTime(&ft);
-  msec = (__int64) ft.dwHighDateTime << DWLEN | ft.dwLowDateTime;
-  msec = (msec - FILETIME_1970) / 10;
-  tv->tv_sec  = (long) (msec / 1000000);
-  tv->tv_usec = (long) (msec % 1000000);
+  usec = (__int64) ft.dwHighDateTime << DWLEN | ft.dwLowDateTime;
+  usec = (usec - FILETIME_1970) / 10;
+  tv->tv_sec  = (long) (usec / 1000000);
+  tv->tv_usec = (long) (usec % 1000000);
 
   return 0;
 }
