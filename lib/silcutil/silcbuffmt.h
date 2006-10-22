@@ -202,58 +202,58 @@ int silc_buffer_strformat(SilcBuffer dst, ...);
  ***/
 int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
 
-/* Macros for expanding parameters into variable function argument list.
-   These are passed to silc_buffer_format and silc_buffer_unformat
-   functions. */
-
-/* Buffer parameter types.
-
-   _SI_ = signed
-   _UI_ = unsigned
-
-  Any XXX_STRING_ALLOC types will allocate space for the data and
-  memcpy the data to the pointer sent as argument (in unformatting).
-
-  Any XXX_STRING will not allocate or copy any data.  Instead it
-  will set the pointer to the data.  Note that the data pointer
-  returned (in unformatting) must not be freed.
-
-*/
+/****d* silcutil/SilcBufferFormatAPI/SilcBufferParamType
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcBufferParamType;
+ *
+ * DESCRIPTION
+ *
+ *    Buffer parameter types.  These are not needed when formatting or
+ *    unformatting buffers.  Use the macros such as SILC_STR_UI_CHAR and
+ *    others instead.  These types may be used when describing what a
+ *    buffer looks like, and how it may be formatted and unformatted.
+ *
+ * SOURCE
+ */
 typedef enum {
-  SILC_BUFFER_PARAM_SI8_CHAR,
-  SILC_BUFFER_PARAM_UI8_CHAR,
+  SILC_PARAM_SI8_CHAR,		   /* Signed 8-bit char */
+  SILC_PARAM_UI8_CHAR,		   /* Unsigned 8-bit char */
+  SILC_PARAM_SI16_SHORT,	   /* Signed 16-bit int */
+  SILC_PARAM_UI16_SHORT,	   /* Unsigned 16-bit int */
+  SILC_PARAM_SI32_INT,		   /* Signed 32-bit int */
+  SILC_PARAM_UI32_INT,		   /* Unsigned 32-bit int */
+  SILC_PARAM_SI64_INT,		   /* Signed 64-bit int */
+  SILC_PARAM_UI64_INT,		   /* Unsigned 64-bit int */
+  SILC_PARAM_UI8_STRING,	   /* String (max len 8-bits)*/
+  SILC_PARAM_UI16_STRING,	   /* String (max len 16-bits) */
+  SILC_PARAM_UI32_STRING,	   /* String (max len 32-bits) */
+  SILC_PARAM_BUFFER,		   /* SilcBuffer */
 
-  SILC_BUFFER_PARAM_SI16_SHORT,
-  SILC_BUFFER_PARAM_UI16_SHORT,
+  /* Internal types */
+  SILC_PARAM_DATA,		   /* Binary data */
+  SILC_PARAM_UI8_NSTRING,	   /* String (max len 8-bits) */
+  SILC_PARAM_UI16_NSTRING,	   /* String (max len 16-bits) */
+  SILC_PARAM_UI32_NSTRING,	   /* String (max len 32-bits) */
+  SILC_PARAM_UI8_STRING_ALLOC,	   /* Alloc + memcpy */
+  SILC_PARAM_UI16_STRING_ALLOC,	   /* Alloc + memcpy */
+  SILC_PARAM_UI32_STRING_ALLOC,	   /* Alloc + memcpy */
+  SILC_PARAM_UI8_NSTRING_ALLOC,	   /* Alloc + memcpy */
+  SILC_PARAM_UI16_NSTRING_ALLOC,   /* Alloc + memcpy */
+  SILC_PARAM_UI32_NSTRING_ALLOC,   /* Alloc + memcpy */
+  SILC_PARAM_DATA_ALLOC,	   /* Alloc + memcpy */
+  SILC_PARAM_BUFFER_ALLOC,	   /* Alloc + memcpy */
 
-  SILC_BUFFER_PARAM_SI32_INT,
-  SILC_BUFFER_PARAM_UI32_INT,
+  SILC_PARAM_OFFSET,
+  SILC_PARAM_ADVANCE,
 
-  SILC_BUFFER_PARAM_SI64_INT,
-  SILC_BUFFER_PARAM_UI64_INT,
+  SILC_PARAM_UI_XNSTRING,
+  SILC_PARAM_UI_XNSTRING_ALLOC,
 
-  SILC_BUFFER_PARAM_UI8_STRING,         /* No copy */
-  SILC_BUFFER_PARAM_UI8_STRING_ALLOC,	/* Alloc + memcpy */
-  SILC_BUFFER_PARAM_UI16_STRING,        /* No copy */
-  SILC_BUFFER_PARAM_UI16_STRING_ALLOC,	/* Alloc + memcpy */
-  SILC_BUFFER_PARAM_UI32_STRING,	/* No copy */
-  SILC_BUFFER_PARAM_UI32_STRING_ALLOC,	/* Alloc + memcpy */
-  SILC_BUFFER_PARAM_UI8_NSTRING,	/* No copy */
-  SILC_BUFFER_PARAM_UI8_NSTRING_ALLOC,	/* Alloc + memcpy */
-  SILC_BUFFER_PARAM_UI16_NSTRING,	/* No copy */
-  SILC_BUFFER_PARAM_UI16_NSTRING_ALLOC,	/* Alloc + memcpy */
-  SILC_BUFFER_PARAM_UI32_NSTRING,	/* No copy */
-  SILC_BUFFER_PARAM_UI32_NSTRING_ALLOC,	/* Alloc + memcpy */
-  SILC_BUFFER_PARAM_UI_XNSTRING,	/* No copy */
-  SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC,	/* Alloc + memcpy */
-  SILC_BUFFER_PARAM_DATA,	        /* No copy */
-  SILC_BUFFER_PARAM_DATA_ALLOC,		/* Alloc + memcpy */
-
-  SILC_BUFFER_PARAM_OFFSET,
-  SILC_BUFFER_PARAM_ADVANCE,
-
-  SILC_BUFFER_PARAM_END
+  SILC_PARAM_END
 } SilcBufferParamType;
+/***/
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_*_CHAR
  *
@@ -272,8 +272,8 @@ typedef enum {
  *                   SILC_STR_UI_CHAR(unsigned char *)
  *
  ***/
-#define SILC_STR_SI_CHAR(x) SILC_BUFFER_PARAM_SI8_CHAR, (x)
-#define SILC_STR_UI_CHAR(x) SILC_BUFFER_PARAM_UI8_CHAR, (x)
+#define SILC_STR_SI_CHAR(x) SILC_PARAM_SI8_CHAR, (x)
+#define SILC_STR_UI_CHAR(x) SILC_PARAM_UI8_CHAR, (x)
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_*_SHORT
  *
@@ -284,7 +284,7 @@ typedef enum {
  *
  * DESCRIPTION
  *
- *    Signed/SilcUInt16.
+ *    SilcInt16/SilcUInt16.
  *
  *    Formatting:    SILC_STR_SI_SHORT(short)
  *                   SILC_STR_UI_SHORT(SilcUInt16)
@@ -292,8 +292,8 @@ typedef enum {
  *                   SILC_STR_UI_SHORT(SilcUInt16 *)
  *
  ***/
-#define SILC_STR_SI_SHORT(x) SILC_BUFFER_PARAM_SI16_SHORT, (x)
-#define SILC_STR_UI_SHORT(x) SILC_BUFFER_PARAM_UI16_SHORT, (x)
+#define SILC_STR_SI_SHORT(x) SILC_PARAM_SI16_SHORT, (x)
+#define SILC_STR_UI_SHORT(x) SILC_PARAM_UI16_SHORT, (x)
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_*_INT
  *
@@ -304,7 +304,7 @@ typedef enum {
  *
  * DESCRIPTION
  *
- *    Signed/SilcUInt32.
+ *    SilcInt32/SilcUInt32.
  *
  *    Formatting:    SILC_STR_SI_INT(int)
  *                   SILC_STR_UI_INT(SilcUInt32)
@@ -312,8 +312,8 @@ typedef enum {
  *                   SILC_STR_UI_INT(SilcUInt32 *)
  *
  ***/
-#define SILC_STR_SI_INT(x) SILC_BUFFER_PARAM_SI32_INT, (x)
-#define SILC_STR_UI_INT(x) SILC_BUFFER_PARAM_UI32_INT, (x)
+#define SILC_STR_SI_INT(x) SILC_PARAM_SI32_INT, (x)
+#define SILC_STR_UI_INT(x) SILC_PARAM_UI32_INT, (x)
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_*_INT64
  *
@@ -324,7 +324,7 @@ typedef enum {
  *
  * DESCRIPTION
  *
- *    Signed/SilcUInt64.
+ *    SilcInt64/SilcUInt64.
  *
  *     Formatting:    SILC_STR_SI_INT64(int)
  *                    SILC_STR_UI_INT64(SilcUInt32)
@@ -332,8 +332,8 @@ typedef enum {
  *                    SILC_STR_UI_INT64(SilcUInt32 *)
  *
  ***/
-#define SILC_STR_SI_INT64(x) SILC_BUFFER_PARAM_SI64_INT, (x)
-#define SILC_STR_UI_INT64(x) SILC_BUFFER_PARAM_UI64_INT, (x)
+#define SILC_STR_SI_INT64(x) SILC_PARAM_SI64_INT, (x)
+#define SILC_STR_UI_INT64(x) SILC_PARAM_UI64_INT, (x)
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_*_STRING
  *
@@ -378,12 +378,12 @@ typedef enum {
  *    as argument in unformatting.
  *
  ***/
-#define SILC_STR_UI8_STRING(x) SILC_BUFFER_PARAM_UI8_STRING, (x)
-#define SILC_STR_UI8_STRING_ALLOC(x) SILC_BUFFER_PARAM_UI8_STRING_ALLOC, (x)
-#define SILC_STR_UI16_STRING(x) SILC_BUFFER_PARAM_UI16_STRING, (x)
-#define SILC_STR_UI16_STRING_ALLOC(x) SILC_BUFFER_PARAM_UI16_STRING_ALLOC, (x)
-#define SILC_STR_UI32_STRING(x) SILC_BUFFER_PARAM_UI32_STRING, (x)
-#define SILC_STR_UI32_STRING_ALLOC(x) SILC_BUFFER_PARAM_UI32_STRING_ALLOC, (x)
+#define SILC_STR_UI8_STRING(x) SILC_PARAM_UI8_STRING, (x)
+#define SILC_STR_UI8_STRING_ALLOC(x) SILC_PARAM_UI8_STRING_ALLOC, (x)
+#define SILC_STR_UI16_STRING(x) SILC_PARAM_UI16_STRING, (x)
+#define SILC_STR_UI16_STRING_ALLOC(x) SILC_PARAM_UI16_STRING_ALLOC, (x)
+#define SILC_STR_UI32_STRING(x) SILC_PARAM_UI32_STRING, (x)
+#define SILC_STR_UI32_STRING_ALLOC(x) SILC_PARAM_UI32_STRING_ALLOC, (x)
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_*_NSTRING
  *
@@ -428,15 +428,15 @@ typedef enum {
  *    as argument in unformatting.
  *
  ***/
-#define SILC_STR_UI8_NSTRING(x, l) SILC_BUFFER_PARAM_UI8_NSTRING, (x), (l)
+#define SILC_STR_UI8_NSTRING(x, l) SILC_PARAM_UI8_NSTRING, (x), (l)
 #define SILC_STR_UI8_NSTRING_ALLOC(x, l) \
-  SILC_BUFFER_PARAM_UI8_NSTRING_ALLOC, (x), (l)
-#define SILC_STR_UI16_NSTRING(x, l) SILC_BUFFER_PARAM_UI16_NSTRING, (x), (l)
+  SILC_PARAM_UI8_NSTRING_ALLOC, (x), (l)
+#define SILC_STR_UI16_NSTRING(x, l) SILC_PARAM_UI16_NSTRING, (x), (l)
 #define SILC_STR_UI16_NSTRING_ALLOC(x, l) \
-  SILC_BUFFER_PARAM_UI16_NSTRING_ALLOC, (x), (l)
-#define SILC_STR_UI32_NSTRING(x, l) SILC_BUFFER_PARAM_UI32_NSTRING, (x), (l)
+  SILC_PARAM_UI16_NSTRING_ALLOC, (x), (l)
+#define SILC_STR_UI32_NSTRING(x, l) SILC_PARAM_UI32_NSTRING, (x), (l)
 #define SILC_STR_UI32_NSTRING_ALLOC(x, l) \
-  SILC_BUFFER_PARAM_UI32_NSTRING_ALLOC, (x), (l)
+  SILC_PARAM_UI32_NSTRING_ALLOC, (x), (l)
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_DATA
  *
@@ -447,7 +447,7 @@ typedef enum {
  *
  * DESCRIPTION
  *
- *    Binary data formatting.  Second argument is the lenght of the data.
+ *    Binary data formatting.  Second argument is the length of the data.
  *
  *    Formatting:    SILC_STR_DATA(unsigned char *, SilcUInt32)
  *    Unformatting:  SILC_STR_DATA(unsigned char **, SilcUInt32)
@@ -459,14 +459,37 @@ typedef enum {
  *    as argument in unformatting.
  *
  ***/
-#define SILC_STR_DATA(x, l) SILC_BUFFER_PARAM_DATA, (x), (l)
-#define SILC_STR_DATA_ALLOC(x, l) \
-  SILC_BUFFER_PARAM_DATA_ALLOC, (x), (l)
+#define SILC_STR_DATA(x, l) SILC_PARAM_DATA, (x), (l)
+#define SILC_STR_DATA_ALLOC(x, l) SILC_PARAM_DATA_ALLOC, (x), (l)
 
 /* Deprecated */
-#define SILC_STR_UI_XNSTRING(x, l) SILC_BUFFER_PARAM_UI_XNSTRING, (x), (l)
-#define SILC_STR_UI_XNSTRING_ALLOC(x, l) \
-  SILC_BUFFER_PARAM_UI_XNSTRING_ALLOC, (x), (l)
+#define SILC_STR_UI_XNSTRING(x, l) SILC_PARAM_UI_XNSTRING, (x), (l)
+#define SILC_STR_UI_XNSTRING_ALLOC(x, l) SILC_PARAM_UI_XNSTRING_ALLOC, (x), (l)
+
+/****d* silcutil/SilcBufferFormatAPI/SILC_STR_BUFFER
+ *
+ * NAME
+ *
+ *    #define SILC_STR_BUFFER() ...
+ *    #define SILC_STR_BUFFER_ALLOC() ...
+ *
+ * DESCRIPTION
+ *
+ *    SilcBuffer formatting.
+ *
+ *    Formatting:    SILC_STR_DATA(SilcBuffer)
+ *    Unformatting:  SILC_STR_DATA(SilcBuffer)
+ *
+ *    This type can be used to format and unformat SilcBuffer.  The lenght
+ *    of the buffer will be automatically encoded into the buffer as a 32-bit
+ *    integer.  In unformatting the SilcBuffer context must be pre-allocated.
+ *
+ *    _ALLOC routines automatically allocates memory inside SilcBuffer in
+ *    unformatting.
+ *
+ ***/
+#define SILC_STR_BUFFER(x) SILC_BUFFER_DATA, (x)
+#define SILC_STR_BUFFER_ALLOC(x) SILC_PARAM_BUFFER_ALLOC, (x)
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_OFFSET
  *
@@ -491,7 +514,7 @@ typedef enum {
  *    can be used in formatting and unformatting at the same time.
  *
  ***/
-#define SILC_STR_OFFSET(x) SILC_BUFFER_PARAM_OFFSET, (x)
+#define SILC_STR_OFFSET(x) SILC_PARAM_OFFSET, (x)
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_ADVANCE
  *
@@ -523,7 +546,7 @@ typedef enum {
  *    silc_buffer_push(buffer, silc_buffer_truelen(buffer));
  *
  ***/
-#define SILC_STR_ADVANCE SILC_BUFFER_PARAM_ADVANCE
+#define SILC_STR_ADVANCE SILC_PARAM_ADVANCE
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_END
  *
@@ -537,7 +560,7 @@ typedef enum {
  *    argument list or error will occur.
  *
  ***/
-#define SILC_STR_END SILC_BUFFER_PARAM_END
+#define SILC_STR_END SILC_PARAM_END
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STRFMT_END
  *
