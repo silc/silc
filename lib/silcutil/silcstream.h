@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * SILC Stream API is a generic representation of a stream.  A common API
  * is defined that can be used to read from and write to the stream.  Any
  * other stream API derived from this API can use this same interface for
- * sending and receiving.
+ * reading and writing.
  *
  * Note that stream implementations usually are not thread-safe.  Always
  * verify whether a stream implementation is thread-safe by checking their

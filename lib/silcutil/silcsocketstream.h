@@ -24,7 +24,8 @@
  * Implementation of SILC Socket Stream.  SILC Socket Stream can be used
  * read data from and write data to a socket connection.  The SILC Socket
  * Stream provides also Quality of Service (QoS) support that can be used
- * to control the throughput of the stream.
+ * to control the throughput of the stream.  It also supports both TCP and
+ * UDP, and IPv4 and IPv6.
  *
  * SILC Socket Stream is not thread-safe.  If the same socket stream must be
  * used in multithreaded environment concurrency control must be employed.
