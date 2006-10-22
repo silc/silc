@@ -385,8 +385,8 @@ void *silc_schedule_get_context(SilcSchedule schedule);
  *
  ***/
 #define silc_schedule_task_add_timeout(schedule, callback, context, s, u) \
-  silc_schedule_task_add(schedule, 0, callback, context, s, u,		  \
-			 SILC_TASK_TIMEOUT)
+  silc_schedule_task_add(schedule, 0, callback, context, s, u,		\
+                         SILC_TASK_TIMEOUT)
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_add_signal
  *

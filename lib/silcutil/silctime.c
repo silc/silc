@@ -354,8 +354,8 @@ SilcBool silc_time_generalized_string(SilcTime time_val, char *ret_string,
 
 /* Return TRUE if `smaller' is smaller than `bigger'. */
 
-SilcBool silc_compare_time_val(struct timeval *smaller,
-			       struct timeval *bigger)
+SilcBool silc_compare_timeval(struct timeval *smaller,
+			      struct timeval *bigger)
 {
   if ((smaller->tv_sec < bigger->tv_sec) ||
       ((smaller->tv_sec == bigger->tv_sec) &&
