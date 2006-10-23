@@ -200,6 +200,7 @@ typedef enum {
   SILC_PACKET_ERR_WRITE,       		 /* Error while writing */
   SILC_PACKET_ERR_MAC_FAILED,     	 /* Packet MAC check failed */
   SILC_PACKET_ERR_DECRYPTION_FAILED,   	 /* Packet decryption failed */
+  SILC_PACKET_ERR_UNKNOWN_SID,		 /* Unknown SID (with IV included) */
   SILC_PACKET_ERR_MALFORMED,		 /* Packet is malformed */
   SILC_PACKET_ERR_NO_MEMORY,	 	 /* System out of memory */
 } SilcPacketError;
@@ -446,6 +447,10 @@ void silc_packet_stream_set_router(SilcPacketStream stream);
  *    packets on unreliable network transport protocol, such as UDP/IP.
  *    This must be called if the underlaying stream in the `stream' is UDP
  *    stream.
+ *
+ *    When this is set to the stream the silc_packet_set_sid must be called
+ *    to set new Security ID.  The Security ID will be included with the IV
+ *    in the ciphertext.
  *
  ***/
 void silc_packet_stream_set_iv_included(SilcPacketStream stream);
@@ -697,6 +702,29 @@ SilcBool silc_packet_set_ids(SilcPacketStream stream,
 			     SilcIdType src_id_type, const void *src_id,
 			     SilcIdType dst_id_type, const void *dst_id);
 
+/****f* silccore/SilcPacketAPI/silc_packet_set_sid
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_packet_set_sid(SilcPacketStream stream, SilcUInt8 sid);
+ *
+ * DESCRIPTION
+ *
+ *    Sets new Security ID to the packet stream indicated by `stream'.  This
+ *    is called only if the IV Included property was set to the stream
+ *    by calling silc_packet_stream_set_iv_included.  This function sets
+ *    new Security ID to the stream which is then included in the ciphertext
+ *    of a packet.  The `sid' must be 0 when it is set for the very first
+ *    time and must be increased by one after each rekey.  This function must
+ *    be called every time new keys are added to the stream after a rekey.
+ *
+ *    If this function is called when the IV Included property has not been
+ *    set to the stream the `sid' will be ignored.  Returns FALSE if the
+ *    IV Included has not been set, TRUE otherwise.
+ *
+ ***/
+SilcBool silc_packet_set_sid(SilcPacketStream stream, SilcUInt8 sid);
+
 /****f* silccore/SilcPacketAPI/silc_packet_send
  *
  * SYNOPSIS
@@ -776,11 +804,11 @@ SilcBool silc_packet_send_ext(SilcPacketStream stream,
  *
  * EXAMPLE
  *
- *      void *waiter;
+ *    void *waiter;
  *
- *      // Will wait for private message packets
- *      waiter = silc_packet_wait_init(stream,
- *                                     SILC_PACKET_PRIVATE_MESSAGE, -1);
+ *    // Will wait for private message packets
+ *    waiter = silc_packet_wait_init(stream,
+ *                                   SILC_PACKET_PRIVATE_MESSAGE, -1);
  *
  *
  ***/

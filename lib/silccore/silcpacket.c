@@ -47,6 +47,7 @@ typedef struct SilcPacketProcessStruct {
 /* Packet stream */
 struct SilcPacketStreamStruct {
   struct SilcPacketStreamStruct *next;
+  SilcAtomic refcnt;		         /* Reference counter */
   SilcPacketEngine engine;		 /* Packet engine */
   SilcStream stream;			 /* Underlaying stream */
   SilcMutex lock;			 /* Stream lock */
@@ -55,21 +56,21 @@ struct SilcPacketStreamStruct {
   SilcBufferStruct inbuf;	         /* In buffer */
   SilcBufferStruct outbuf;		 /* Out buffer */
   SilcUInt32 send_psn;			 /* Sending sequence */
-  SilcCipher send_key;			 /* Sending key */
-  SilcHmac send_hmac;			 /* Sending HMAC */
+  SilcCipher send_key[2];		 /* Sending key */
+  SilcHmac send_hmac[2];		 /* Sending HMAC */
   SilcUInt32 receive_psn;		 /* Receiving sequence */
-  SilcCipher receive_key;		 /* Receiving key */
-  SilcHmac receive_hmac;		 /* Receiving HMAC */
+  SilcCipher receive_key[2];		 /* Receiving key */
+  SilcHmac receive_hmac[2];		 /* Receiving HMAC */
   unsigned char *src_id;		 /* Source ID */
   unsigned char *dst_id;		 /* Destination ID */
   unsigned int src_id_len  : 6;
   unsigned int src_id_type : 2;
   unsigned int dst_id_len  : 6;
   unsigned int dst_id_type : 2;
-  SilcUInt8 refcnt;			 /* Reference counter */
   unsigned int is_router   : 1;		 /* Set if router stream */
   unsigned int destroyed   : 1;		 /* Set if destroyed */
   unsigned int iv_included : 1;          /* Set if IV included */
+  SilcUInt8 sid;			 /* Security ID, set if IV included */
 };
 
 /* Initial size of stream buffers */
@@ -80,7 +81,7 @@ struct SilcPacketStreamStruct {
 
 /* Minimum length of SILC Packet Header. */
 #define SILC_PACKET_MIN_HEADER_LEN 16
-#define SILC_PACKET_MIN_HEADER_LEN_IV 32
+#define SILC_PACKET_MIN_HEADER_LEN_IV 32 + 1
 
 /* Maximum padding length */
 #define SILC_PACKET_MAX_PADLEN 128
@@ -390,7 +391,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
 
   ps->engine = engine;
   ps->stream = stream;
-  ps->refcnt++;
+  silc_atomic_init(&ps->refcnt, 1);
 
   /* Allocate buffers */
   tmp = silc_malloc(SILC_PACKET_DEFAULT_SIZE);
@@ -427,7 +428,7 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
   if (!stream)
     return;
 
-  if (stream->refcnt > 1) {
+  if (silc_atomic_get_int(&stream->refcnt) > 1) {
     stream->destroyed = TRUE;
     return;
   }
@@ -450,6 +451,7 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
   /* Destroy the underlaying stream */
   silc_stream_destroy(stream->stream);
 
+  silc_atomic_uninit(&stream->refcnt);
   silc_dlist_uninit(stream->process);
   silc_mutex_free(stream->lock);
   silc_free(stream);
@@ -601,19 +603,14 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
 
 void silc_packet_stream_ref(SilcPacketStream stream)
 {
-  silc_mutex_lock(stream->lock);
-  stream->refcnt++;
-  silc_mutex_unlock(stream->lock);
+  silc_atomic_add_int(&stream->refcnt, 1);
 }
 
 /* Unreference packet stream */
 
 void silc_packet_stream_unref(SilcPacketStream stream)
 {
-  silc_mutex_lock(stream->lock);
-  stream->refcnt--;
-  silc_mutex_unlock(stream->lock);
-  if (stream->refcnt == 0)
+  if (silc_atomic_sub_int(&stream->refcnt, 1) == 0)
     silc_packet_stream_destroy(stream);
 }
 
@@ -657,9 +654,32 @@ void silc_packet_set_ciphers(SilcPacketStream stream, SilcCipher send,
 			     SilcCipher receive)
 {
   SILC_LOG_DEBUG(("Setting new ciphers to packet stream"));
+
   silc_mutex_lock(stream->lock);
-  stream->send_key = send;
-  stream->receive_key = receive;
+
+  /* In case IV Included is set, save the old key */
+  if (stream->iv_included) {
+    if (stream->send_key[1]) {
+      silc_cipher_free(stream->send_key[1]);
+      stream->send_key[1] = stream->send_key[0];
+    }
+    if (stream->receive_key[1]) {
+      silc_cipher_free(stream->receive_key[1]);
+      stream->receive_key[1] = stream->receive_key[0];
+    }
+
+    stream->send_key[0] = send;
+    stream->receive_key[0] = receive;
+  } else {
+    if (stream->send_key[0])
+      silc_cipher_free(stream->send_key[0]);
+    if (stream->send_key[1])
+      silc_cipher_free(stream->receive_key[0]);
+
+    stream->send_key[0] = send;
+    stream->receive_key[0] = receive;
+  }
+
   silc_mutex_unlock(stream->lock);
 }
 
@@ -668,15 +688,15 @@ void silc_packet_set_ciphers(SilcPacketStream stream, SilcCipher send,
 SilcBool silc_packet_get_ciphers(SilcPacketStream stream, SilcCipher *send,
 				 SilcCipher *receive)
 {
-  if (!stream->send_key && !stream->receive_key)
+  if (!stream->send_key[0] && !stream->receive_key[0])
     return FALSE;
 
   silc_mutex_lock(stream->lock);
 
   if (send)
-    *send = stream->send_key;
+    *send = stream->send_key[0];
   if (receive)
-    *receive = stream->receive_key;
+    *receive = stream->receive_key[0];
 
   silc_mutex_unlock(stream->lock);
 
@@ -689,9 +709,32 @@ void silc_packet_set_hmacs(SilcPacketStream stream, SilcHmac send,
 			   SilcHmac receive)
 {
   SILC_LOG_DEBUG(("Setting new HMACs to packet stream"));
+
   silc_mutex_lock(stream->lock);
-  stream->send_hmac = send;
-  stream->receive_hmac = receive;
+
+  /* In case IV Included is set, save the old HMAC */
+  if (stream->iv_included) {
+    if (stream->send_hmac[1]) {
+      silc_hmac_free(stream->send_hmac[1]);
+      stream->send_hmac[1] = stream->send_hmac[0];
+    }
+    if (stream->receive_hmac[1]) {
+      silc_hmac_free(stream->receive_hmac[1]);
+      stream->receive_hmac[1] = stream->receive_hmac[0];
+    }
+
+    stream->send_hmac[0] = send;
+    stream->receive_hmac[0] = receive;
+  } else {
+    if (stream->send_hmac[0])
+      silc_hmac_free(stream->send_hmac[0]);
+    if (stream->receive_hmac[0])
+      silc_hmac_free(stream->receive_hmac[0]);
+
+    stream->send_hmac[0] = send;
+    stream->receive_hmac[0] = receive;
+  }
+
   silc_mutex_unlock(stream->lock);
 }
 
@@ -700,15 +743,15 @@ void silc_packet_set_hmacs(SilcPacketStream stream, SilcHmac send,
 SilcBool silc_packet_get_hmacs(SilcPacketStream stream, SilcHmac *send,
 			       SilcHmac *receive)
 {
-  if (!stream->send_hmac && !stream->receive_hmac)
+  if (!stream->send_hmac[0] && !stream->receive_hmac[0])
     return FALSE;
 
   silc_mutex_lock(stream->lock);
 
   if (send)
-    *send = stream->send_hmac;
+    *send = stream->send_hmac[0];
   if (receive)
-    *receive = stream->receive_hmac;
+    *receive = stream->receive_hmac[0];
 
   silc_mutex_unlock(stream->lock);
 
@@ -763,6 +806,19 @@ SilcBool silc_packet_set_ids(SilcPacketStream stream,
 
   silc_mutex_unlock(stream->lock);
 
+  return TRUE;
+}
+
+/* Adds Security ID (SID) */
+
+SilcBool silc_packet_set_sid(SilcPacketStream stream, SilcUInt8 sid)
+{
+  if (!stream->iv_included)
+    return FALSE;
+
+  SILC_LOG_DEBUG(("Set packet stream %p SID to %d", stream, sid));
+
+  stream->sid = sid;
   return TRUE;
 }
 
@@ -841,7 +897,7 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
 				     SilcCipher cipher,
 				     SilcHmac hmac)
 {
-  unsigned char tmppad[SILC_PACKET_MAX_PADLEN], iv[32], psn[4];
+  unsigned char tmppad[SILC_PACKET_MAX_PADLEN], iv[33], psn[4];
   int block_len = (cipher ? silc_cipher_get_block_len(cipher) : 0);
   int i, enclen, truelen, padlen, ivlen = 0, psnlen = 0;
   SilcBufferStruct packet;
@@ -858,11 +914,12 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
   enclen = truelen = (data_len + SILC_PACKET_HEADER_LEN +
 		      src_id_len + dst_id_len);
 
-  /* If IV is included, the IV and sequence number is added to packet */
+  /* If IV is included, the SID, IV and sequence number is added to packet */
   if (stream->iv_included && cipher) {
-    ivlen = block_len;
     psnlen = sizeof(psn);
-    memcpy(iv, silc_cipher_get_iv(cipher), block_len);
+    ivlen = block_len + 1;
+    iv[0] = stream->sid;
+    memcpy(iv + 1, silc_cipher_get_iv(cipher), block_len);
   }
 
   /* We automatically figure out the packet structure from the packet
@@ -1010,8 +1067,8 @@ SilcBool silc_packet_send(SilcPacketStream stream,
 			      stream->dst_id,
 			      stream->dst_id_len,
 			      data, data_len,
-			      stream->send_key,
-			      stream->send_hmac);
+			      stream->send_key[0],
+			      stream->send_hmac[0]);
 }
 
 /* Sends a packet, extended routine */
@@ -1043,8 +1100,8 @@ SilcBool silc_packet_send_ext(SilcPacketStream stream,
 			      dst_id ? dst_id_data : stream->dst_id,
 			      dst_id ? dst_id_len : stream->dst_id_len,
 			      data, data_len,
-			      cipher ? cipher : stream->send_key,
-			      hmac ? hmac : stream->send_hmac);
+			      cipher ? cipher : stream->send_key[0],
+			      hmac ? hmac : stream->send_hmac[0]);
 }
 
 
@@ -1314,7 +1371,10 @@ static void silc_packet_dispatch(SilcPacket packet)
 
 static void silc_packet_read_process(SilcPacketStream stream)
 {
+  SilcCipher cipher;
+  SilcHmac hmac;
   SilcPacket packet;
+  SilcUInt8 sid;
   SilcUInt16 packetlen;
   SilcUInt32 paddedlen, mac_len, block_len, ivlen, psnlen;
   unsigned char tmp[SILC_PACKET_MIN_HEADER_LEN], *header;
@@ -1325,6 +1385,8 @@ static void silc_packet_read_process(SilcPacketStream stream)
   /* Parse the packets from the data */
   while (silc_buffer_len(&stream->inbuf) > 0) {
     ivlen = psnlen = 0;
+    cipher = stream->receive_key[0];
+    hmac = stream->receive_hmac[0];
 
     if (silc_buffer_len(&stream->inbuf) <
 	stream->iv_included ? SILC_PACKET_MIN_HEADER_LEN_IV :
@@ -1333,25 +1395,46 @@ static void silc_packet_read_process(SilcPacketStream stream)
       return;
     }
 
-    if (stream->receive_hmac)
-      mac_len = silc_hmac_len(stream->receive_hmac);
+    if (hmac)
+      mac_len = silc_hmac_len(hmac);
     else
       mac_len = 0;
 
     /* Decrypt first block of the packet to get the length field out */
-    if (stream->receive_key) {
-      block_len = silc_cipher_get_block_len(stream->receive_key);
+    if (cipher) {
+      block_len = silc_cipher_get_block_len(cipher);
 
       if (stream->iv_included) {
-	/* IV is included in the ciphertext */
-	memcpy(iv, stream->inbuf.data, block_len);
-	ivlen = block_len;
+	/* SID, IV and sequence number is included in the ciphertext */
+	sid = (SilcUInt8)stream->inbuf.data[0];
+	memcpy(iv, stream->inbuf.data + 1, block_len);
+	ivlen = block_len + 1;
 	psnlen = 4;
-      } else
-	memcpy(iv, silc_cipher_get_iv(stream->receive_key), block_len);
 
-      silc_cipher_decrypt(stream->receive_key, stream->inbuf.data + ivlen,
-			  tmp, block_len, iv);
+	/* Check SID, and get correct decryption key */
+	if (sid != stream->sid) {
+	  /* If SID is recent get the previous key and use it */
+	  if (sid > 0 && stream->sid > 0 && stream->sid - 1 == sid &&
+	      stream->receive_key[1] && !stream->receive_hmac[1]) {
+	    cipher = stream->receive_key[1];
+	    hmac = stream->receive_hmac[1];
+	  } else {
+	    /* The SID is unknown, drop rest of the data in buffer */
+	    SILC_LOG_DEBUG(("Unknown Security ID %d in packet, expected %d",
+			    sid, stream->sid));
+	    silc_mutex_unlock(stream->lock);
+	    SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_UNKNOWN_SID);
+	    silc_mutex_lock(stream->lock);
+	    silc_buffer_reset(&stream->inbuf);
+	    return;
+	  }
+	}
+      } else {
+	memcpy(iv, silc_cipher_get_iv(cipher), block_len);
+      }
+
+      silc_cipher_decrypt(cipher, stream->inbuf.data + ivlen, tmp,
+			  block_len, iv);
 
       header = tmp;
       if (stream->iv_included) {
@@ -1387,7 +1470,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
     }
 
     /* Check MAC of the packet */
-    if (!silc_packet_check_mac(stream->receive_hmac, stream->inbuf.data,
+    if (!silc_packet_check_mac(hmac, stream->inbuf.data,
 			       paddedlen + ivlen,
 			       stream->inbuf.data + ivlen + paddedlen,
 			       packet_seq, stream->receive_psn)) {
@@ -1457,10 +1540,10 @@ static void silc_packet_read_process(SilcPacketStream stream)
     silc_buffer_put(&packet->buffer, (stream->inbuf.data + ivlen +
 				      psnlen + (block_len - psnlen)),
 		    paddedlen - ivlen - psnlen - (block_len - psnlen));
-    if (stream->receive_key) {
-      silc_cipher_set_iv(stream->receive_key, iv);
-      ret = silc_packet_decrypt(stream->receive_key, stream->receive_hmac,
-				stream->receive_psn, &packet->buffer, normal);
+    if (cipher) {
+      silc_cipher_set_iv(cipher, iv);
+      ret = silc_packet_decrypt(cipher, hmac, stream->receive_psn,
+				&packet->buffer, normal);
       if (ret < 0) {
 	silc_mutex_unlock(stream->lock);
 	SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_DECRYPTION_FAILED);
