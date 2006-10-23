@@ -176,6 +176,11 @@ silc_ske_select_security_properties(SilcSKE ske,
   payload->cookie_len = SILC_SKE_COOKIE_LEN;
   memcpy(payload->cookie, rp->cookie, SILC_SKE_COOKIE_LEN);
 
+  /* In case IV included flag and session port is set the first 16-bits of
+     cookie will include our session port. */
+  if (rp->flags & SILC_SKE_SP_FLAG_IV_INCLUDED && ske->session_port)
+    SILC_PUT16_MSB(ske->session_port, payload->cookie);
+
   /* Put our version to our reply */
   payload->version = strdup(ske->version);
   if (!payload->version) {
@@ -687,6 +692,72 @@ static SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
   return status;
 }
 
+/* Assembles security properties */
+
+static SilcSKEStartPayload
+silc_ske_assemble_security_properties(SilcSKE ske,
+				      SilcSKESecurityPropertyFlag flags,
+				      const char *version)
+{
+  SilcSKEStartPayload rp;
+  int i;
+
+  SILC_LOG_DEBUG(("Assembling KE Start Payload"));
+
+  rp = silc_calloc(1, sizeof(*rp));
+
+  /* Set flags */
+  rp->flags = (unsigned char)flags;
+
+  /* Set random cookie */
+  rp->cookie = silc_calloc(SILC_SKE_COOKIE_LEN, sizeof(*rp->cookie));
+  for (i = 0; i < SILC_SKE_COOKIE_LEN; i++)
+    rp->cookie[i] = silc_rng_get_byte_fast(ske->rng);
+  rp->cookie_len = SILC_SKE_COOKIE_LEN;
+
+  /* In case IV included flag and session port is set the first 16-bits of
+     cookie will include our session port. */
+  if (flags & SILC_SKE_SP_FLAG_IV_INCLUDED && ske->session_port)
+    SILC_PUT16_MSB(ske->session_port, rp->cookie);
+
+  /* Put version */
+  rp->version = strdup(version);
+  rp->version_len = strlen(version);
+
+  /* Get supported Key Exhange groups */
+  rp->ke_grp_list = silc_ske_get_supported_groups();
+  rp->ke_grp_len = strlen(rp->ke_grp_list);
+
+  /* Get supported PKCS algorithms */
+  rp->pkcs_alg_list = silc_pkcs_get_supported();
+  rp->pkcs_alg_len = strlen(rp->pkcs_alg_list);
+
+  /* Get supported encryption algorithms */
+  rp->enc_alg_list = silc_cipher_get_supported();
+  rp->enc_alg_len = strlen(rp->enc_alg_list);
+
+  /* Get supported hash algorithms */
+  rp->hash_alg_list = silc_hash_get_supported();
+  rp->hash_alg_len = strlen(rp->hash_alg_list);
+
+  /* Get supported HMACs */
+  rp->hmac_alg_list = silc_hmac_get_supported();
+  rp->hmac_alg_len = strlen(rp->hmac_alg_list);
+
+  /* XXX */
+  /* Get supported compression algorithms */
+  rp->comp_alg_list = strdup("none");
+  rp->comp_alg_len = strlen("none");
+
+  rp->len = 1 + 1 + 2 + SILC_SKE_COOKIE_LEN +
+    2 + rp->version_len +
+    2 + rp->ke_grp_len + 2 + rp->pkcs_alg_len +
+    2 + rp->enc_alg_len + 2 + rp->hash_alg_len +
+    2 + rp->hmac_alg_len + 2 + rp->comp_alg_len;
+
+  return rp;
+}
+
 
 /******************************* Protocol API *******************************/
 
@@ -851,6 +922,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
   SilcSKESecurityProperties prop;
   SilcSKEDiffieHellmanGroup group;
   SilcBuffer packet_buf = &ske->packet->buffer;
+  int coff = 0;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -869,11 +941,15 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
     return SILC_FSM_CONTINUE;
   }
 
-  /* Check that the cookie is returned unmodified */
-  if (memcmp(ske->start_payload->cookie, payload->cookie,
-	     ske->start_payload->cookie_len)) {
+  /* Check that the cookie is returned unmodified.  In case IV included
+     flag and session port has been set, the first two bytes of cookie
+     are the session port and we ignore them in this check. */
+  if (payload->flags & SILC_SKE_SP_FLAG_IV_INCLUDED && ske->session_port)
+    coff = 2;
+  if (memcmp(ske->start_payload->cookie + coff, payload->cookie + coff,
+	     SILC_SKE_COOKIE_LEN - coff)) {
     /** Invalid cookie */
-    SILC_LOG_ERROR(("Responder modified our cookie and it must not do it"));
+    SILC_LOG_ERROR(("Invalid cookie, modified or unsupported feature"));
     ske->status = SILC_SKE_STATUS_INVALID_COOKIE;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
@@ -1339,11 +1415,12 @@ static void silc_ske_initiator_finished(SilcFSM fsm, void *fsm_context,
 SilcAsyncOperation
 silc_ske_initiator(SilcSKE ske,
 		   SilcPacketStream stream,
+		   SilcSKEParams params,
 		   SilcSKEStartPayload start_payload)
 {
   SILC_LOG_DEBUG(("Start SKE as initiator"));
 
-  if (!ske || !stream || !start_payload)
+  if (!ske || !stream || !params || !params->version)
     return NULL;
 
   if (!silc_async_init(&ske->op, silc_ske_abort, NULL, ske))
@@ -1352,6 +1429,18 @@ silc_ske_initiator(SilcSKE ske,
   if (!silc_fsm_init(&ske->fsm, ske, silc_ske_initiator_finished, ske,
 		     ske->schedule))
     return NULL;
+
+  if (params->flags & SILC_SKE_SP_FLAG_IV_INCLUDED)
+    ske->session_port = params->session_port;
+
+  /* Generate security properties if not provided */
+  if (!start_payload) {
+    start_payload = silc_ske_assemble_security_properties(ske,
+							  params->flags,
+							  params->version);
+    if (!start_payload)
+      return NULL;
+  }
 
   ske->start_payload = start_payload;
 
@@ -1987,12 +2076,11 @@ static void silc_ske_responder_finished(SilcFSM fsm, void *fsm_context,
 SilcAsyncOperation
 silc_ske_responder(SilcSKE ske,
 		   SilcPacketStream stream,
-		   const char *version,
-		   SilcSKESecurityPropertyFlag flags)
+		   SilcSKEParams params)
 {
   SILC_LOG_DEBUG(("Start SKE as responder"));
 
-  if (!ske || !stream || !version) {
+  if (!ske || !stream || !params || !params->version) {
     return NULL;
   }
 
@@ -2003,11 +2091,13 @@ silc_ske_responder(SilcSKE ske,
 		     ske->schedule))
     return NULL;
 
-  ske->flags = flags;
-  ske->version = strdup(version);
+  ske->responder = TRUE;
+  ske->flags = params->flags;
+  if (ske->flags & SILC_SKE_SP_FLAG_IV_INCLUDED)
+    ske->session_port = params->session_port;
+  ske->version = strdup(params->version);
   if (!ske->version)
     return NULL;
-  ske->responder = TRUE;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;
@@ -2097,67 +2187,6 @@ silc_ske_rekey_responder(SilcSKE ske,
   silc_fsm_start(&ske->fsm, silc_ske_st_rekey_responder_start);
 
   return &ske->op;
-}
-
-/* Assembles security properties */
-
-SilcSKEStartPayload
-silc_ske_assemble_security_properties(SilcSKE ske,
-				      SilcSKESecurityPropertyFlag flags,
-				      const char *version)
-{
-  SilcSKEStartPayload rp;
-  int i;
-
-  SILC_LOG_DEBUG(("Assembling KE Start Payload"));
-
-  rp = silc_calloc(1, sizeof(*rp));
-
-  /* Set flags */
-  rp->flags = (unsigned char)flags;
-
-  /* Set random cookie */
-  rp->cookie = silc_calloc(SILC_SKE_COOKIE_LEN, sizeof(*rp->cookie));
-  for (i = 0; i < SILC_SKE_COOKIE_LEN; i++)
-    rp->cookie[i] = silc_rng_get_byte_fast(ske->rng);
-  rp->cookie_len = SILC_SKE_COOKIE_LEN;
-
-  /* Put version */
-  rp->version = strdup(version);
-  rp->version_len = strlen(version);
-
-  /* Get supported Key Exhange groups */
-  rp->ke_grp_list = silc_ske_get_supported_groups();
-  rp->ke_grp_len = strlen(rp->ke_grp_list);
-
-  /* Get supported PKCS algorithms */
-  rp->pkcs_alg_list = silc_pkcs_get_supported();
-  rp->pkcs_alg_len = strlen(rp->pkcs_alg_list);
-
-  /* Get supported encryption algorithms */
-  rp->enc_alg_list = silc_cipher_get_supported();
-  rp->enc_alg_len = strlen(rp->enc_alg_list);
-
-  /* Get supported hash algorithms */
-  rp->hash_alg_list = silc_hash_get_supported();
-  rp->hash_alg_len = strlen(rp->hash_alg_list);
-
-  /* Get supported HMACs */
-  rp->hmac_alg_list = silc_hmac_get_supported();
-  rp->hmac_alg_len = strlen(rp->hmac_alg_list);
-
-  /* XXX */
-  /* Get supported compression algorithms */
-  rp->comp_alg_list = strdup("none");
-  rp->comp_alg_len = strlen("none");
-
-  rp->len = 1 + 1 + 2 + SILC_SKE_COOKIE_LEN +
-    2 + rp->version_len +
-    2 + rp->ke_grp_len + 2 + rp->pkcs_alg_len +
-    2 + rp->enc_alg_len + 2 + rp->hash_alg_len +
-    2 + rp->hmac_alg_len + 2 + rp->comp_alg_len;
-
-  return rp;
 }
 
 /* Processes the provided key material `data' as the SILC protocol

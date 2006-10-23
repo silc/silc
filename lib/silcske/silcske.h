@@ -179,6 +179,37 @@ typedef struct {
 } *SilcSKERekeyMaterial;
 /***/
 
+/****s* silcske/SilcSKEAPI/SilcSKEParams
+ *
+ * NAME
+ *
+ *    typedef struct { ... } *SilcSKEParams, SilcSKEParamsStruct;
+ *
+ * DESCRIPTION
+ *
+ *    SKE parameters structure.  This structure is given as argument to
+ *    silc_ske_initiator and silc_ske_responder functions.
+ *
+ * SOURCE
+ */
+typedef struct {
+  /* The SKE version string that is sent to the remote end.  This field
+     must be set.  Caller must free the pointer. */
+  char *version;
+
+  /* Security property flags.  When initiator sets these it requests them
+     from the responder.  Responder may set here the flags it supports
+     and wants to enforce for the initiator. */
+  SilcSKESecurityPropertyFlag flags;
+
+  /* SILC Session port when using UDP/IP and SILC_SKE_SP_FLAG_IV_INCLUDED
+     flag.  It is the port the remote will use as SILC session port after
+     the key exchange protocol.  Ignored without SILC_SKE_SP_FLAG_IV_INCLUDED
+     flag. */
+  SilcUInt16 session_port;
+} *SilcSKEParams, SilcSKEParamsStruct;
+/***/
+
 /****d* silcske/SilcSKEAPI/SilcSKEPKType
  *
  * NAME
@@ -315,13 +346,11 @@ typedef void (*SilcSKECompletionCb)(SilcSKE ske,
  * EXMPALE
  *
  *    // Initiator example
+ *    params.version = version;
+ *    params.flags = SILC_SKE_SP_FLAG_PFS | SILC_SKE_SP_FLAG_MUTUAL;
  *    ske = silc_ske_alloc(rng, scheduler, NULL, pk, prv, app);
  *    silc_ske_set_callbacks(ske, verify_public_key, completion, app);
- *    start_payload =
- *      silc_ske_assemble_security_properties(ske, SILC_SKE_SP_FLAG_PFS |
- *                                            SILC_SKE_SP_FLAG_MUTUAL,
- *                                            version);
- *    silc_ske_initiator_start(ske, stream, start_payload);
+ *    silc_ske_initiator_start(ske, stream, &params, NULL);
  *
  ***/
 SilcSKE silc_ske_alloc(SilcRng rng, SilcSchedule schedule,
@@ -395,6 +424,7 @@ void silc_ske_set_callbacks(SilcSKE ske,
  *    SilcAsyncOperation
  *    silc_ske_initiator_start(SilcSKE ske,
  *                             SilcPacketStream stream,
+ *                             SilcSKEParams params,
  *                             SilcSKEStartPayload start_payload);
  *
  * DESCRIPTION
@@ -403,13 +433,14 @@ void silc_ske_set_callbacks(SilcSKE ske,
  *    callback that was set in silc_ske_set_callbacks will be called once
  *    the protocol has completed.  The `stream' is the network connection
  *    to the remote host.  The SKE library will handle all key exchange
- *    packets sent and received in the `stream' connection.
+ *    packets sent and received in the `stream' connection.  The `params'
+ *    include SKE parameters, and it must be provided.
  *
- *    The `start_payload' includes all configured security properties that
- *    will be sent to the responder.  The `start_payload' must be provided.
- *    It can be created by calling silc_ske_assemble_security_properties
- *    function.  The caller must not free the payload once it has been
- *    given as argument to this function.
+ *    If the `start_payload' is NULL the library will generate it
+ *    automatically.  Caller may provide it if it wants to send its own
+ *    security properties instead of using the default ones library
+ *    generates.  If caller provides it, it must not free it once it has
+ *    been given as argument to this function.
  *
  *    This function returns SilcAsyncOperation operation context which can
  *    be used to control the protocol from the application.  Application may
@@ -420,6 +451,7 @@ void silc_ske_set_callbacks(SilcSKE ske,
 SilcAsyncOperation
 silc_ske_initiator(SilcSKE ske,
 		   SilcPacketStream stream,
+		   SilcSKEParams params,
 		   SilcSKEStartPayload start_payload);
 
 /****f* silcske/SilcSKEAPI/silc_ske_responder_start
@@ -429,9 +461,7 @@ silc_ske_initiator(SilcSKE ske,
  *    SilcAsyncOperation
  *    silc_ske_responder_start(SilcSKE ske,
  *                             SilcPacketStream stream,
- *                             const char *version,
- *                             SilcBuffer start_payload,
- *                             SilcSKESecurityPropertyFlag flags);
+ *                             SilcSKEParams params);
  *
  * DESCRIPTION
  *
@@ -439,13 +469,8 @@ silc_ske_initiator(SilcSKE ske,
  *    callback that was set in silc_ske_set_callbacks will be called once
  *    the protocol has completed.  The `stream' is the network connection
  *    to the remote host.  The SKE library will handle all key exchange
- *    packets sent and received in the `stream' connection.
- *
- *    The `version' is the responder's SILC protocol version that will be
- *    sent in reply to the initiator.  The `flags' indicates the
- *    SilcSKESecurityPropertyFlag flags that responder supports and enforces
- *    for the initiator.  Responder may, for example, enforce that the PFS
- *    will be performed in rekey.
+ *    packets sent and received in the `stream' connection.  The `params'
+ *    include SKE parameters, and must be provided.
  *
  *    This function returns SilcAsyncOperation operation context which can
  *    be used to control the protocol from the application.  Application may
@@ -456,8 +481,7 @@ silc_ske_initiator(SilcSKE ske,
 SilcAsyncOperation
 silc_ske_responder(SilcSKE ske,
 		   SilcPacketStream stream,
-		   const char *version,
-		   SilcSKESecurityPropertyFlag flags);
+		   SilcSKEParams params);
 
 SilcAsyncOperation
 silc_ske_rekey_initiator(SilcSKE ske,
@@ -469,31 +493,6 @@ silc_ske_rekey_responder(SilcSKE ske,
 			 SilcPacketStream stream,
 			 SilcBuffer ke_payload,
 			 SilcSKERekeyMaterial rekey);
-
-/****f* silcske/SilcSKEAPI/silc_ske_assemble_security_properties
- *
- * SYNOPSIS
- *
- *    SilcSKEStartPayload
- *    silc_ske_assemble_security_properties(SilcSKE ske,
- *                                          SilcSKESecurityPropertyFlag flags,
- *                                          const char *version);
- *
- * DESCRIPTION
- *
- *    Assembles security properties to Key Exchange Start Payload to be
- *    sent to the remote end.  This checks system wide (SILC system, that is)
- *    settings and chooses from those.  However, if other properties
- *    should be used this function is easy to replace by another function.
- *    Returns NULL on error.  This is an utility function.  This is used
- *    by the initiator of the protocol.  The `version' is the local SILC
- *    protocol version string.
- *
- ***/
-SilcSKEStartPayload
-silc_ske_assemble_security_properties(SilcSKE ske,
-				      SilcSKESecurityPropertyFlag flags,
-				      const char *version);
 
 /****f* silcske/SilcSKEAPI/silc_ske_assemble_security_properties
  *

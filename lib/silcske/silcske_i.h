@@ -69,6 +69,7 @@ struct SilcSKEStruct {
   SilcSchedule schedule;
   SilcFSMStruct fsm;
   SilcAsyncOperationStruct op;
+  SilcUInt16 session_port;
 
   unsigned int aborted    : 1;
   unsigned int responder  : 1;
