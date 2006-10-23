@@ -126,9 +126,9 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 				long seconds, long useconds,
 				SilcTaskType type);
 
-#if defined(SILC_DEBUG)
+#ifdef SILC_DIST_INPLACE
 /* Print scheduler statistics to stdout. */
 void silc_schedule_stats(SilcSchedule schedule);
-#endif /* SILC_DEBUG */
+#endif /* SILC_DIST_INPLACE */
 
 #endif /* SILCSCHEDULE_I_H */

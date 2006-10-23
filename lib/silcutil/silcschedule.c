@@ -246,26 +246,26 @@ static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
   silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(ftask->fd));
 }
 
-#if defined(SILC_DEBUG)
+#ifdef SILC_DIST_INPLACE
 /* Print schedule statistics to stdout */
 
 void silc_schedule_stats(SilcSchedule schedule)
 {
   SilcTaskFd ftask;
   fprintf(stdout, "Schedule %p statistics:\n\n", schedule);
-  fprintf(stdout, "Num FD tasks: %lu (%lu bytes allocated)\n",
+  fprintf(stdout, "Num FD tasks         : %lu (%lu bytes allocated)\n",
 	  silc_hash_table_count(schedule->fd_queue),
 	  sizeof(*ftask) * silc_hash_table_count(schedule->fd_queue));
-  fprintf(stdout, "Num Timeout tasks: %d (%d bytes allocated)\n",
+  fprintf(stdout, "Num Timeout tasks    : %d (%d bytes allocated)\n",
 	  silc_list_count(schedule->timeout_queue),
 	  sizeof(struct SilcTaskTimeoutStruct) *
 	  silc_list_count(schedule->timeout_queue));
-  fprintf(stdout, "Num Timeout freelist: %d (%d bytes allocated)\n",
+  fprintf(stdout, "Num Timeout freelist : %d (%d bytes allocated)\n",
 	  silc_list_count(schedule->free_tasks),
 	  sizeof(struct SilcTaskTimeoutStruct) *
 	  silc_list_count(schedule->free_tasks));
 }
-#endif /* SILC_DEBUG */
+#endif /* SILC_DIST_INPLACE */
 
 /****************************** Public API **********************************/
 
