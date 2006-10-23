@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2004 Pekka Riikonen
+  Copyright (C) 2002 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -65,6 +65,19 @@
 #endif
 /***/
 
+/****d* silcutil/SILCTypes/SilcBool
+ *
+ * NAME
+ *
+ *    typedef unigned char SilcBool;
+ *
+ * DESCRIPTION
+ *
+ *    Boolean value, and is always 8-bits.  Represents value 0 or 1.
+ *
+ ***/
+typedef unsigned char SilcBool;
+
 /****d* silcutil/SILCTypes/bool
  *
  * NAME
@@ -93,19 +106,6 @@
 #endif
 #endif
 /***/
-
-/****d* silcutil/SILCTypes/SilcBool
- *
- * NAME
- *
- *    typedef unigned char SilcBool;
- *
- * DESCRIPTION
- *
- *    Boolean value, and is always 8-bits.  Represents value 0 or 1.
- *
- ***/
-typedef unsigned char SilcBool;
 
 #define silc_offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 
