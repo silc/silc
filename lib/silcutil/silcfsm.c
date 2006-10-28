@@ -371,9 +371,9 @@ SILC_TASK_CALLBACK(silc_fsm_run)
     /* If we are thread and using real threads, the FSM thread will finish
        in the main thread, not in the created thread. */
     if (fsm->thread && fsm->real_thread) {
+      silc_schedule_stop(fsm->schedule);
       silc_schedule_task_add_timeout(app_context, silc_fsm_finish, fsm, 0, 1);
       silc_schedule_wakeup(app_context);
-      silc_schedule_stop(fsm->schedule);
       break;
     }
 
@@ -466,9 +466,8 @@ void silc_fsm_sema_free(SilcFSMSema sema)
 {
   if (sema->refcnt > 0)
     return;
-#if defined(SILC_DEBUG)
-  assert(silc_list_count(sema->waiters) == 0);
-#endif /* SILC_DEBUG */
+  if (silc_list_count(sema->waiters) > 0)
+    return;
   silc_free(sema);
 }
 
