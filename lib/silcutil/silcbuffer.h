@@ -105,8 +105,8 @@
  *     section. Tail section can be pulled towards end, and thus the data
  *     section becomes larger.
  *
- * SILC Buffer is not thread-safe.  If the same buffer context must be used
- * in multithreaded environment concurrency control must be employed.
+ * SILC Buffer is not thread-safe.  If the same SilcBuffer context must be
+ * used in multithreaded environment concurrency control must be employed.
  *
  * SOURCE
  */
@@ -270,6 +270,11 @@ SilcBuffer silc_buffer_alloc(SilcUInt32 len)
  *
  *    Frees SilcBuffer.  Can be called safely `sb' as NULL.
  *
+ * NOTES
+ *
+ *    Must not be called for buffers allocated with silc_buffer_salloc,
+ *    silc_buffer_salloc_size, silc_buffer_scopy and silc_buffer_sclone.
+ *
  ***/
 
 static inline
@@ -325,6 +330,11 @@ unsigned char *silc_buffer_steal(SilcBuffer sb, SilcUInt32 *data_len)
  *    Same as silc_buffer_free but free's only the contents of the buffer
  *    not the buffer itself.  The `sb' remains intact, data is freed.  Buffer
  *    is ready for re-use after calling this function.
+ *
+ * NOTES
+ *
+ *    Must not be called for buffers allocated with silc_buffer_salloc,
+ *    silc_buffer_salloc_size, silc_buffer_scopy and silc_buffer_sclone.
  *
  ***/
 
