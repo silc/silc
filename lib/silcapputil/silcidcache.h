@@ -17,7 +17,7 @@
 
 */
 
-/****h* silcidcache/SILC ID Cache Interface
+/****h* silcapputil/SILC ID Cache Interface
  *
  * DESCRIPTION
  *
@@ -25,7 +25,7 @@
  * protocol.  Application can save here the ID's it uses and the interface
  * provides fast retrieval of the ID's from the cache.
  *
- * SILC ID Cache is not thread-safe.  If the same cache context must be 
+ * SILC ID Cache is not thread-safe.  If the same cache context must be
  * used in multithreaded environment concurrency control must be employed.
  *
  ***/
@@ -33,7 +33,7 @@
 #ifndef SILCIDCACHE_H
 #define SILCIDCACHE_H
 
-/****s* silcidcache/SilcIDCacheAPI/SilcIDCacheEntry
+/****s* silcapputil/SilcIDCacheAPI/SilcIDCacheEntry
  *
  * NAME
  *
@@ -55,7 +55,7 @@ typedef struct SilcIDCacheEntryStruct {
 } *SilcIDCacheEntry;
 /***/
 
-/****s* silcidcache/SilcIDCacheAPI/SilcIDCache
+/****s* silcapputil/SilcIDCacheAPI/SilcIDCache
  *
  * NAME
  *
@@ -71,7 +71,7 @@ typedef struct SilcIDCacheEntryStruct {
  ***/
 typedef struct SilcIDCacheStruct *SilcIDCache;
 
-/****f* silcidcache/SilcIDCacheAPI/SilcIDCacheDestructor
+/****f* silcapputil/SilcIDCacheAPI/SilcIDCacheDestructor
  *
  * SYNOPSIS
  *
@@ -94,7 +94,7 @@ typedef void (*SilcIDCacheDestructor)(SilcIDCache cache,
 
 /* Prototypes */
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_alloc
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_alloc
  *
  * SYNOPSIS
  *
@@ -115,7 +115,7 @@ SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
 			       SilcIDCacheDestructor destructor,
 			       void *destructor_context);
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_free
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_free
  *
  * SYNOPSIS
  *
@@ -128,7 +128,7 @@ SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
  ***/
 void silc_idcache_free(SilcIDCache cache);
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_add
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_add
  *
  * SYNOPSIS
  *
@@ -150,7 +150,7 @@ void silc_idcache_free(SilcIDCache cache);
 SilcIDCacheEntry
 silc_idcache_add(SilcIDCache cache, char *name, void *id, void *context);
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_del
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_del
  *
  * SYNOPSIS
  *
@@ -167,7 +167,7 @@ silc_idcache_add(SilcIDCache cache, char *name, void *id, void *context);
 SilcBool silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry entry,
 			  void *app_context);
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_del_by_id
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_del_by_id
  *
  * SYNOPSIS
  *
@@ -184,7 +184,7 @@ SilcBool silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry entry,
 SilcBool silc_idcache_del_by_id(SilcIDCache cache, void *id,
 				void *app_context);
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_del_by_context
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_del_by_context
  *
  * SYNOPSIS
  *
@@ -200,7 +200,7 @@ SilcBool silc_idcache_del_by_id(SilcIDCache cache, void *id,
 SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
 				     void *app_context);
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_update_id
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_update_id
  *
  * SYNOPSIS
  *
@@ -222,7 +222,7 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
 			     void *old_id, void *new_id,
 			     char *old_name, char *new_name);
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_get_all
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_get_all
  *
  * SYNOPSIS
  *
@@ -237,7 +237,7 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
  ***/
 SilcBool silc_idcache_get_all(SilcIDCache cache, SilcList *ret_list);
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_find_by_id
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_find_by_id
  *
  * SYNOPSIS
  *
@@ -265,7 +265,7 @@ SilcBool silc_idcache_get_all(SilcIDCache cache, SilcList *ret_list);
 SilcBool silc_idcache_find_by_id(SilcIDCache cache, void *id,
 				 SilcList *ret_list);
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_find_by_id_one
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_find_by_id_one
  *
  * SYNOPSIS
  *
@@ -282,7 +282,7 @@ SilcBool silc_idcache_find_by_id(SilcIDCache cache, void *id,
 SilcBool silc_idcache_find_by_id_one(SilcIDCache cache, void *id,
 				     SilcIDCacheEntry *ret);
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_find_by_context
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_find_by_context
  *
  * SYNOPSIS
  *
@@ -298,7 +298,7 @@ SilcBool silc_idcache_find_by_id_one(SilcIDCache cache, void *id,
 SilcBool silc_idcache_find_by_context(SilcIDCache cache, void *context,
 				      SilcIDCacheEntry *ret);
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_find_by_name
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_find_by_name
  *
  * SYNOPSIS
  *
@@ -315,7 +315,7 @@ SilcBool silc_idcache_find_by_context(SilcIDCache cache, void *context,
 SilcBool silc_idcache_find_by_name(SilcIDCache cache, char *name,
 				   SilcList *ret_list);
 
-/****f* silcidcache/SilcIDCacheAPI/silc_idcache_find_by_name_one
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_find_by_name_one
  *
  * SYNOPSIS
  *
