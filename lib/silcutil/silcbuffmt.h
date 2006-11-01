@@ -26,6 +26,10 @@
  * into specified data types.  It is especially useful to format packets,
  * protocol payloads and such.
  *
+ * As the SilcBuffer API is not thread-safe these routines may not be used
+ * in multithreaded environment with a same SilcBuffer context without
+ * concurrency control.
+ *
  ***/
 
 #ifndef SILCBUFFMT_H
@@ -145,6 +149,20 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap);
  ***/
 int silc_buffer_unformat(SilcBuffer src, ...);
 
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_sunformat
+ *
+ * SYNOPSIS
+ *
+ *    int silc_buffer_sunformat(SilcStack stack, SilcBuffer src, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_buffer_unformat but uses `stack' to allocate the memory.
+ *    if `stack' is NULL reverts back to silc_buffer_format call.
+ *
+ ***/
+int silc_buffer_sunformat(SilcStack stack, SilcBuffer src, ...);
+
 /****f* silcutil/SilcBufferFormatAPI/silc_buffer_unformat_vp
  *
  * SYNOPSIS
@@ -158,6 +176,20 @@ int silc_buffer_unformat(SilcBuffer src, ...);
  *
  ***/
 int silc_buffer_unformat_vp(SilcBuffer src, va_list ap);
+
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_sunformat_vp
+ *
+ * SYNOPSIS
+ *
+ *    int silc_buffer_sunformat_vp(SilcBuffer src, va_list vp);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_buffer_unformat_vp but uses `stack' to allocate the
+ *    memory.  if `stack' is NULL reverts back to silc_buffer_format_vp call.
+ *
+ ***/
+int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap);
 
 /****f* silcutil/SilcBufferFormatAPI/silc_buffer_strformat
  *
