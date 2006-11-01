@@ -604,7 +604,6 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 void silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
 {
   if (task == SILC_ALL_TASKS) {
-    SilcTask task;
     SilcHashTableList htl;
 
     SILC_LOG_DEBUG(("Unregister all tasks"));
