@@ -25,9 +25,6 @@
  * applications use these functions when they need to allocate, manipulate
  * and free memory.
  *
- * Currently all allocation routines assert() that the memory was allocated
- * successfully. Hence, if memory allocation fails it is fatal error.
- *
  ***/
 
 #ifndef SILCMEMORY_H
@@ -46,7 +43,8 @@
  * DESCRIPTION
  *
  *    Allocates memory of `size' bytes and returns pointer to the allocated
- *    memory area.  Free the memory by calling silc_free.
+ *    memory area.  Free the memory by calling silc_free.  Returns NULL on
+ *    error.
  *
  ***/
 void *silc_malloc(size_t size);
@@ -61,7 +59,8 @@ void *silc_malloc(size_t size);
  *
  *    Allocates memory of for an array of `items' elements of `size' bytes
  *    and returns pointer to the allocated memory area.  The memory area is
- *    also zeroed.  Free the memory by calling silc_free.
+ *    also zeroed.  Free the memory by calling silc_free.  Returns NULL on
+ *    error.
  *
  ***/
 void *silc_calloc(size_t items, size_t size);

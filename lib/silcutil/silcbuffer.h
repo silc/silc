@@ -409,7 +409,7 @@ unsigned char *silc_buffer_pull(SilcBuffer sb, SilcUInt32 len)
 {
   unsigned char *old_data = sb->data;
 #if defined(SILC_DEBUG)
-  assert(len <= silc_buffer_len(sb));
+  SILC_ASSERT(len <= silc_buffer_len(sb));
 #else
   if (len > silc_buffer_len(sb))
     return NULL;
@@ -453,7 +453,7 @@ unsigned char *silc_buffer_push(SilcBuffer sb, SilcUInt32 len)
 {
   unsigned char *old_data = sb->data;
 #if defined(SILC_DEBUG)
-  assert((sb->data - len) >= sb->head);
+  SILC_ASSERT((sb->data - len) >= sb->head);
 #else
   if ((sb->data - len) < sb->head)
     return NULL;
@@ -497,7 +497,7 @@ unsigned char *silc_buffer_pull_tail(SilcBuffer sb, SilcUInt32 len)
 {
   unsigned char *old_tail = sb->tail;
 #if defined(SILC_DEBUG)
-  assert(len <= silc_buffer_taillen(sb));
+  SILC_ASSERT(len <= silc_buffer_taillen(sb));
 #else
   if (len > silc_buffer_taillen(sb))
     return NULL;
@@ -541,7 +541,7 @@ unsigned char *silc_buffer_push_tail(SilcBuffer sb, SilcUInt32 len)
 {
   unsigned char *old_tail = sb->tail;
 #if defined(SILC_DEBUG)
-  assert((sb->tail - len) >= sb->data);
+  SILC_ASSERT((sb->tail - len) >= sb->data);
 #else
   if ((sb->tail - len) < sb->data)
     return NULL;
@@ -582,7 +582,7 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
 				    SilcUInt32 len)
 {
 #if defined(SILC_DEBUG)
-  assert(len <= silc_buffer_headlen(sb));
+  SILC_ASSERT(len <= silc_buffer_headlen(sb));
 #else
   if (len > silc_buffer_headlen(sb))
     return NULL;
@@ -622,7 +622,7 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
 			       SilcUInt32 len)
 {
 #if defined(SILC_DEBUG)
-  assert(len <= silc_buffer_len(sb));
+  SILC_ASSERT(len <= silc_buffer_len(sb));
 #else
   if (len > silc_buffer_len(sb))
     return NULL;
@@ -662,7 +662,7 @@ unsigned char *silc_buffer_put_tail(SilcBuffer sb,
 				    SilcUInt32 len)
 {
 #if defined(SILC_DEBUG)
-  assert(len <= silc_buffer_taillen(sb));
+  SILC_ASSERT(len <= silc_buffer_taillen(sb));
 #else
   if (len > silc_buffer_taillen(sb))
     return NULL;

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -285,6 +285,27 @@ typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
 #endif	/* SILC_DEBUG */
 /***/
 
+/****d* silcutil/SilcLogAPI/SILC_ASSERT
+ *
+ * NAME
+ *
+ *    #define SILC_ASSERT(experssion)
+ *
+ * DESCRIPTION
+ *
+ *    Assert macro that prints error message to stderr and calls abort()
+ *    if the `expression' is is false (ie. compares equal to zero).  If
+ *    SILC_DEBUG is not defined this macro as no effect.
+ *
+ * SOURCE
+ */
+#if defined(SILC_DEBUG)
+#define SILC_ASSERT(expr) assert((expr));
+#else
+#define SILC_ASSERT(expr) do { } while(0)
+#endif /* SILC_DEBUG */
+/***/
+
 /* Prototypes */
 
 /****f* silcutil/SilcLogAPI/silc_log_set_file
@@ -308,8 +329,8 @@ typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
  *    save HD activity.
  *
  ***/
-SilcBool silc_log_set_file(SilcLogType type, char *filename, SilcUInt32 maxsize,
-		       SilcSchedule scheduler);
+SilcBool silc_log_set_file(SilcLogType type, char *filename,
+			   SilcUInt32 maxsize, SilcSchedule scheduler);
 
 /****f* silcutil/SilcLogAPI/silc_log_get_file
  *

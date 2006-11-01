@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005, 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ SilcBool silc_async_init(SilcAsyncOperation op,
 			 SilcAsyncOperationPause pause_cb,
 			 void *context)
 {
-  assert(abort_cb);
+  SILC_ASSERT(abort_cb);
   op->abort_cb = abort_cb;
   op->pause_cb = pause_cb;
   op->context = context;

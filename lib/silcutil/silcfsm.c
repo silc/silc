@@ -106,7 +106,7 @@ void silc_fsm_thread_init(SilcFSMThread thread,
 		  thread, real_thread ? "real" : "FSM"));
 
 #if defined(SILC_DEBUG)
-  assert(!fsm->thread);
+  SILC_ASSERT(!fsm->thread);
 #endif /* SILC_DEBUG */
 
   thread->fsm_context = thread_context;
@@ -138,11 +138,11 @@ SILC_TASK_CALLBACK(silc_fsm_free_final)
 
 #if defined(SILC_DEBUG)
   /* We must be finished */
-  assert(f->finished);
+  SILC_ASSERT(f->finished);
 
   /* Machine must not have active threads */
   if (!f->thread && f->u.m.threads)
-    assert(f->u.m.threads == 0);
+    SILC_ASSERT(f->u.m.threads == 0);
 #endif /* SILC_DEBUG */
 
   if (!f->thread && f->u.m.lock)
@@ -277,7 +277,7 @@ SilcSchedule silc_fsm_get_schedule(void *fsm)
 
 SilcFSM silc_fsm_get_machine(SilcFSMThread thread)
 {
-  assert(thread->thread);
+  SILC_ASSERT(thread->thread);
   return (SilcFSM)thread->u.t.fsm;
 }
 
@@ -320,7 +320,7 @@ SilcBool silc_fsm_thread_wait(void *fsm, void *thread)
   SilcFSM t = thread;
 
 #if defined(SILC_DEBUG)
-  assert(t->thread);
+  SILC_ASSERT(t->thread);
 #endif /* SILC_DEBUG */
 
   if (t->finished)
@@ -364,7 +364,7 @@ SILC_TASK_CALLBACK(silc_fsm_run)
     /* Finish the state machine */
     SILC_LOG_DEBUG(("State finish %p", fsm));
 #if defined(SILC_DEBUG)
-    assert(!fsm->finished);
+    SILC_ASSERT(!fsm->finished);
 #endif /* SILC_DEBUG */
     fsm->finished = TRUE;
 
@@ -451,7 +451,7 @@ void silc_fsm_sema_init(SilcFSMSema sema, SilcFSM fsm, SilcUInt32 value)
 {
   SILC_LOG_DEBUG(("Initializing semaphore %p", sema));
 #if defined(SILC_DEBUG)
-  assert(!fsm->thread);
+  SILC_ASSERT(!fsm->thread);
 #endif /* SILC_DEBUG */
   memset(sema, 0, sizeof(*sema));
   sema->fsm = fsm;
@@ -500,7 +500,7 @@ SilcUInt32 silc_fsm_sema_wait(SilcFSMSema sema, void *fsm)
     SilcFSM entry;
     silc_list_start(sema->waiters);
     while ((entry = silc_list_get(sema->waiters)) != SILC_LIST_END)
-      assert(entry != fsm);
+      SILC_ASSERT(entry != fsm);
 #endif /* SILC_DEBUG */
 
     SILC_LOG_DEBUG(("Waiting for semaphore %p", sema));
