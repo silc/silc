@@ -369,11 +369,9 @@ SILC_TASK_CALLBACK(silc_fsm_run)
     fsm->finished = TRUE;
 
     /* If we are thread and using real threads, the FSM thread will finish
-       in the main thread, not in the created thread. */
+       after the real thread has finished, in the main thread. */
     if (fsm->thread && fsm->real_thread) {
       silc_schedule_stop(fsm->schedule);
-      silc_schedule_task_add_timeout(app_context, silc_fsm_finish, fsm, 0, 1);
-      silc_schedule_wakeup(app_context);
       break;
     }
 
@@ -697,6 +695,11 @@ static void *silc_fsm_thread(void *context)
   silc_schedule_uninit(fsm->schedule);
 
   fsm->schedule = old;
+
+  /* Finish the FSM thread in the main thread */
+  SILC_ASSERT(fsm->finished);
+  silc_schedule_task_add_timeout(fsm->schedule, silc_fsm_finish, fsm, 0, 1);
+  silc_schedule_wakeup(fsm->schedule);
 
   return NULL;
 }
