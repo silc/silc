@@ -105,9 +105,7 @@ void silc_fsm_thread_init(SilcFSMThread thread,
   SILC_LOG_DEBUG(("Initializing new thread %p (%s)",
 		  thread, real_thread ? "real" : "FSM"));
 
-#if defined(SILC_DEBUG)
   SILC_ASSERT(!fsm->thread);
-#endif /* SILC_DEBUG */
 
   thread->fsm_context = thread_context;
   thread->state_context = NULL;
@@ -319,9 +317,7 @@ SilcBool silc_fsm_thread_wait(void *fsm, void *thread)
 {
   SilcFSM t = thread;
 
-#if defined(SILC_DEBUG)
   SILC_ASSERT(t->thread);
-#endif /* SILC_DEBUG */
 
   if (t->finished)
     return FALSE;
