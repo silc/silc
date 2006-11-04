@@ -737,6 +737,48 @@ void silc_buffer_clear(SilcBuffer sb)
   silc_buffer_reset(sb);
 }
 
+/****f* silcutil/SilcBufferAPI/silc_buffer_start
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    void silc_buffer_start(SilcBuffer sb);
+ *
+ * DESCRIPTION
+ *
+ *    Moves the data area at the start of the buffer.  The tail area remains
+ *    as is.
+ *
+ ***/
+
+static inline
+void silc_buffer_start(SilcBuffer sb)
+{
+  sb->data = sb->head;
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_end
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    void silc_buffer_end(SilcBuffer sb);
+ *
+ * DESCRIPTION
+ *
+ *    Moves the end of the data area to the end of the buffer.  The start
+ *    of the data area remains same.  If the start of data area is at the
+ *    start of the buffer, after this function returns the buffer's data
+ *    area length is the length of the entire buffer.
+ *
+ ***/
+
+static inline
+void silc_buffer_end(SilcBuffer sb)
+{
+  sb->tail = sb->end;
+}
+
 /****f* silcutil/SilcBufferAPI/silc_buffer_copy
  *
  * SYNOPSIS
@@ -859,6 +901,39 @@ SilcBuffer silc_buffer_realloc_size(SilcBuffer sb, SilcUInt32 newsize)
     return NULL;
   silc_buffer_pull_tail(sb, silc_buffer_taillen(sb));
   return sb;
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_enlarge
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBuffer silc_buffer_enlarge(SilcBuffer sb, SilcUInt32 size);
+ *
+ * DESCRIPTION
+ *
+ *    Enlarges the buffer by the amount of `size' if it doesn't have that
+ *    must space in the data area and in the tail area.  Moves the tail
+ *    area automatically after enlarging so that the current data area
+ *    is at least the size of `size'.  If there is more space than `size'
+ *    in the data area this does not do anything.  If there is enough
+ *    space in the tail area this merely moves the tail area to reveal
+ *    the extra space.  Returns FALSE on error.
+ *
+ ***/
+
+static inline
+SilcBool silc_buffer_enlarge(SilcBuffer sb, SilcUInt32 size)
+{
+  if (size > silc_buffer_len(sb)) {
+    if (size > silc_buffer_taillen(sb) + silc_buffer_len(sb))
+      if (!silc_buffer_realloc(sb, silc_buffer_truelen(sb) +
+			       (size - silc_buffer_taillen(sb) -
+				silc_buffer_len(sb))))
+	return FALSE;
+    silc_buffer_pull_tail(sb, size - silc_buffer_len(sb));
+  }
+  return TRUE;
 }
 
 
@@ -1018,6 +1093,43 @@ SilcBuffer silc_buffer_srealloc_size(SilcStack stack,
     return NULL;
   silc_buffer_pull_tail(sb, silc_buffer_taillen(sb));
   return sb;
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_senlarge
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBuffer silc_buffer_senlarge(SilcStack stack, SilcBuffer sb,
+ *                                    SilcUInt32 size);
+ *
+ * DESCRIPTION
+ *
+ *    Enlarges the buffer by the amount of `size' if it doesn't have that
+ *    must space in the data area and in the tail area.  Moves the tail
+ *    area automatically after enlarging so that the current data area
+ *    is at least the size of `size'.  If there is more space than `size'
+ *    in the data area this does not do anything.  If there is enough
+ *    space in the tail area this merely moves the tail area to reveal
+ *    the extra space.  Returns FALSE on error.
+ *
+ *    This routine use SilcStack are memory source.  If `stack' is NULL
+ *    reverts back to normal allocating routine.
+ *
+ ***/
+
+static inline
+SilcBool silc_buffer_senlarge(SilcStack stack, SilcBuffer sb, SilcUInt32 size)
+{
+  if (size > silc_buffer_len(sb)) {
+    if (size > silc_buffer_taillen(sb) + silc_buffer_len(sb))
+      if (!silc_buffer_srealloc(stack, sb, silc_buffer_truelen(sb) +
+				(size - silc_buffer_taillen(sb) -
+				 silc_buffer_len(sb))))
+	return FALSE;
+    silc_buffer_pull_tail(sb, size - silc_buffer_len(sb));
+  }
+  return TRUE;
 }
 
 /****f* silcutil/SilcBufferAPI/silc_buffer_scopy
