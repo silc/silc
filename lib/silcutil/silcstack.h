@@ -44,9 +44,9 @@
  * silc_sstrdup, silc_buffer_salloc, silc_buffer_salloc_size,
  * silc_buffer_srealloc, silc_buffer_srealloc_size, silc_buffer_scopy,
  * silc_buffer_sclone, silc_buffer_sformat, silc_buffer_sformat_vp,
- * silc_buffer_sstrformat, silc_mp_sinit
+ * silc_buffer_sstrformat, silc_buffer_senlarge, silc_mp_sinit
  *
- * The data stack is not thread-safe.  If the same stack context must be 
+ * The data stack is not thread-safe.  If the same stack context must be
  * used in multithreaded environment concurrency control must be employed.
  *
  ***/
