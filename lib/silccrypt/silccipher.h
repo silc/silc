@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -49,9 +49,6 @@ typedef struct SilcCipherStruct *SilcCipher;
 /* The default SILC Cipher object to represent any cipher in SILC. */
 typedef struct {
   char *name;
-  SilcUInt32 block_len;
-  SilcUInt32 key_len;
-
   SilcBool (*set_key)(void *, const unsigned char *, SilcUInt32);
   SilcBool (*set_key_with_string)(void *, const unsigned char *, SilcUInt32);
   SilcBool (*encrypt)(void *, const unsigned char *, unsigned char *,
@@ -59,6 +56,9 @@ typedef struct {
   SilcBool (*decrypt)(void *, const unsigned char *, unsigned char *,
 		  SilcUInt32, unsigned char *);
   SilcUInt32 (*context_len)();
+  unsigned int key_len   : 12;
+  unsigned int block_len : 10;
+  unsigned int iv_len    : 10;
 } SilcCipherObject;
 
 #define SILC_CIPHER_MAX_IV_SIZE 16
@@ -338,6 +338,19 @@ SilcUInt32 silc_cipher_get_key_len(SilcCipher cipher);
  *
  ***/
 SilcUInt32 silc_cipher_get_block_len(SilcCipher cipher);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_get_iv_len
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_cipher_get_iv_len(SilcCipher cipher);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the IV length of the cipher in bytes.
+ *
+ ***/
+SilcUInt32 silc_cipher_get_iv_len(SilcCipher cipher);
 
 /****f* silccrypt/SilcCipherAPI/silc_cipher_get_name
  *
