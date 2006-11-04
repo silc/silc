@@ -1,6 +1,84 @@
+Sat Nov  4 21:50:37 EET 2006  Pekka Riikonen <priikone@silcnet.org
+
+	* Added SILC_STR_FUNC to buffer format API.  Affected files
+	  are lib/silcutil/silcbuffmt.[ch].
+
+	* Added silc_buffer_[s]enlarge to lib/silcutil/silcbuffer.h.
+
+	* No more memory allocation for message payload parsing.
+	  Pre-allocated buffer can be used with message payload encoding.
+	  Affected files lib/silccore/silcmessage.[ch].
+
+Fri Oct 27 21:01:26 EEST 2006  Pekka Riikonen <priikone@silcnet.org
+
+	* Added silc_buffer_sunformat and silc_buffer_sunformat_vp
+	  to silcutil/silcbuffmt.[ch].
+
+Sun Oct 22 13:03:07 EEST 2006  Pekka Riikonen <priikone@silcnet.org
+
+	* Added SILC_STR_BUFFER to format and unformat SilcBuffer.
+	  Affected file lib/silcutil/silcbuffmt.[ch].
+
+	* Removed silc_schedule_signal_[un]register and
+	  silc_schedule_signal_call.  Added silc_schedule_task_add_signal
+	  to add signal task.  Only one callback per signal may be
+	  added.  The signals are now automatically called back to
+	  caller.  Affected files lib/silcutil/silcschedule.[ch] and
+	  silcutil/[unix/win32]/silc[unix/win32]schedule.c.
+
+	* Added silc_time_msec and silc_time_usec to silcutil/silctime.[ch].
+
+	* Added SilcSKEParams for SKE parameters and simplied even more
+	  the SKE interface.  Affected files are lib/silcske/silcske.[ch].
+	  Added support for IV included and session port handling with
+	  UDP/IP connections.
+
+	* Added Secure ID (SID) support with IV Included flag (for UDP/IP)
+	  in lib/silccore/silcpacket.[ch].  Added silc_packet_set_sid
+	  which is called after every rekey when IV Included flag is used.
+	  See SILC specifications for details.
+
+Thu Oct 19 10:03:03 EEST 2006  Pekka Riikonen <priikone@silcnet.org
+
+	* Added lib/silcapputil and moved SILC application specific
+	  utility routines from the generic util library lib/silcutil
+	  to the new library.  Removed lib/silcidcache and moved that
+	  to lib/silcapputil as well.
+
+Tue Sep 19 00:14:11 EEST 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC_STR_ADVANCE.  Affected file is
+	  lib/silcutil/silcbuffmt.[ch].
+
+	* The silc_buffer_strformat preserves buffer locations now.
+
+	* Added lib/silcutil/silcatomic.h for atomic operations.
+
+Sat Sep 16 11:23:06 EEST 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added lib/silchttp, SILC HTTP server, a very simple HTTP
+	  server.
+
+	* Fixed MIME deocing when data portion is not present.
+	  Affected file lib/silcutil/silcmime.c.
+
+Wed Jul 19 12:06:38 EEST 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Moved lib/silccore/silcidcache.[ch] to lib/silcutil/.
+
+	* Added IV Included support to packet routines, to allow
+	  packet sending and receiving on UDP/IP.  Affected files are
+	  lib/silccore/silcpacket.[ch].
+
+	* Added SILC_FSM_YIELD.  Affected files lib/silcutil/silcfsm.[ch].
+
+Tue Jul 18 20:10:28 EEST 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added UDP support to network and socket stream library.
+
 Sat Jun 24 22:33:18 EEST 2006  Pekka Riikonen <priikone@silcnet.org>
 
-	* Added conditional variables.  New files are 
+	* Added conditional variables.  New files are
 	  lib/silcutil/silcondvar.h and platform specific implementations.
 
 Thu Jan  5 20:02:31 CET 2006 Patrik Weiskircher <pat@icore.at>

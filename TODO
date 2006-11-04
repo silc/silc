@@ -37,7 +37,7 @@ lib/silccore
 lib/silcskr
 ===========
 
- o Removing key from the repository is not possible currently.  It should 
+ o Removing key from the repository is not possible currently.  It should
    be.
 
 
@@ -113,7 +113,7 @@ lib/silcutil/silcbuffer.h	****DONE****
 lib/silcutil/silcbuffmt.[ch]	****PARTLY DONE****
 ============================
 
- o SilcStack aware silc_buffer_unformat
+ o SilcStack aware silc_buffer_unformat (***DONE)
 
  o SilcStack aware silc_buffer_format (***DONE)
 
