@@ -111,7 +111,7 @@ SilcStream silc_fd_stream_file(const char *filename,
   if (writing)
     flags |= O_CREAT | O_WRONLY;
   if (reading && writing)
-    flags |= O_CREAT | O_RDWR;
+    flags = O_CREAT | O_RDWR;
 
   fd = silc_file_open(filename, flags);
   if (fd < 0)
