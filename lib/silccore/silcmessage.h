@@ -184,7 +184,6 @@ silc_message_payload_parse(unsigned char *payload,
  *                                          SilcUInt32 data_len,
  *                                          SilcUInt32 true_len,
  *                                          unsigned char *iv,
- *                                          SilcUInt32 iv_len,
  *                                          SilcCipher cipher,
  *                                          SilcHmac hmac);
  *
@@ -206,7 +205,6 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
 				      SilcUInt32 data_len,
 				      SilcUInt32 true_len,
 				      unsigned char *iv,
-				      SilcUInt32 iv_len,
 				      SilcCipher cipher,
 				      SilcHmac hmac);
 
@@ -224,7 +222,8 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
  *                                           SilcRng rng,
  *                                           SilcPublicKey public_key,
  *                                           SilcPrivateKey private_key,
- *                                           SilcHash hash);
+ *                                           SilcHash hash,
+ *                                           SilcBuffer buffer);
  *
  * DESCRIPTION
  *
@@ -254,6 +253,11 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
  *    be included in the message.  The `private_message' and `hash' MUST
  *    be provided.  The `hash' SHOULD be SHA1.
  *
+ *    If the `buffer' is non-NULL then the payload will be encoded into
+ *    that buffer.  The same buffer is returned.  Otherwise new buffer is
+ *    allocated and returned.  The `buffer' will be automatically enlarged
+ *    if the payload does not fit to it.
+ *
  ***/
 SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
 				       const unsigned char *data,
@@ -265,7 +269,8 @@ SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
 				       SilcRng rng,
 				       SilcPublicKey public_key,
 				       SilcPrivateKey private_key,
-				       SilcHash hash);
+				       SilcHash hash,
+				       SilcBuffer buffer);
 
 /****f* silccore/SilcMessageAPI/silc_message_payload_free
  *
