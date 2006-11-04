@@ -35,6 +35,134 @@
 #ifndef SILCBUFFMT_H
 #define SILCBUFFMT_H
 
+/****f* silcutil/SilcBufferFormatAPI/SilcBufferFormatFunc
+ *
+ * SYNOPSIS
+ *
+ *    typedef int (*SilcBufferFormatFunc)(SilcBuffer buffer,
+ *                                        void *value,
+ *                                        void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Formatting function callback given with SILC_STR_FUNC type.  The
+ *    `buffer' is the buffer being formatted at the location where the
+ *    SILC_STR_FUNC was placed in formatting.  The function should call
+ *    silc_buffer_enlarge before it adds the data to the buffer to make
+ *    sure that it has enough space.  The buffer->head points to the
+ *    start of the buffer and silc_buffer_headlen() gives the length
+ *    of the currently formatted data area.  It is also possible to use
+ *    silc_buffer_format with `buffer' which will enlarge the buffer if
+ *    needed.
+ *
+ *    The `value' is the value given to SILC_STR_FUNC that is to be formatted
+ *    into the buffer.  It may be NULL if the function is not formatting
+ *    new data into the buffer.  The `context' is caller specific context.
+ *    Returns -1 on error and length of the formatted value otherwise, and
+ *    0 if nothing was formatted.
+ *
+ ***/
+typedef int (*SilcBufferFormatFunc)(SilcBuffer buffer, void *value,
+				    void *context);
+
+/****f* silcutil/SilcBufferFormatAPI/SilcBufferSFormatFunc
+ *
+ * SYNOPSIS
+ *
+ *    typedef int (*SilcBufferSFormatFunc)(SilcStack stack,
+ *                                         SilcBuffer buffer,
+ *                                         void *value,
+ *                                         void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Formatting function callback given with SILC_STR_FUNC type.  The
+ *    `buffer' is the buffer being formatted at the location where the
+ *    SILC_STR_FUNC was placed in formatting.  The function should call
+ *    silc_buffer_senlarge before it adds the data to the buffer to make
+ *    sure that it has enough space.  The buffer->head points to the
+ *    start of the buffer and silc_buffer_headlen() gives the length
+ *    of the currently formatted data area.  It is also possible to use
+ *    silc_buffer_sformat with `buffer' which will enlarge the buffer if
+ *    needed.
+ *
+ *    The `value' is the value given to SILC_STR_FUNC that is to be formatted
+ *    into the buffer.  It may be NULL if the function is not formatting
+ *    new data into the buffer.  The `context' is caller specific context.
+ *    Returns -1 on error and length of the formatted value otherwise, and
+ *    0 if nothing was formatted.
+ *
+ *    This is same as SilcBufferFormatFunc except the SilcStack will be
+ *    delivered.  This callback must be used when SilcStack is used with
+ *    formatting.
+ *
+ ***/
+typedef int (*SilcBufferSFormatFunc)(SilcStack stack, SilcBuffer buffer,
+				     void *value, void *context);
+
+/****f* silcutil/SilcBufferFormatAPI/SilcBufferUnformatFunc
+ *
+ * SYNOPSIS
+ *
+ *    typedef int (*SilcBufferUnformatFunc)(SilcBuffer buffer,
+ *                                          void **value,
+ *                                          void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Unformatting function callback given with SILC_STR_FUNC type.  The
+ *    `buffer' is the buffer being unformatted and is at the location where
+ *    the SILC_STR_FUNC was placed in unformatting.  The function should
+ *    check there is enough data in the `buffer' before trying to decode
+ *    from it.
+ *
+ *    If this function unformats anything from the buffer its value is to
+ *    be returned to the `value' pointer.  The implementation should itself
+ *    decide whether the unformatted value is allocated or not.  If this
+ *    function does not unformat anything, nothing is returned to `value'
+ *
+ *    The `context' is caller specific context.  Returns -1 on error, and
+ *    length of the unformatted value otherwise, and 0 if nothing was
+ *    unformatted.
+ *
+ ***/
+typedef int (*SilcBufferUnformatFunc)(SilcBuffer buffer, void **value,
+				      void *context);
+
+/****f* silcutil/SilcBufferFormatAPI/SilcBufferSUnformatFunc
+ *
+ * SYNOPSIS
+ *
+ *    typedef int (*SilcBufferSUnformatFunc)(SilcStack stack,
+ *                                           SilcBuffer buffer,
+ *                                           void **value,
+ *                                           void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Unformatting function callback given with SILC_STR_FUNC type.  The
+ *    `buffer' is the buffer being unformatted and is at the location where
+ *    the SILC_STR_FUNC was placed in unformatting.  The function should
+ *    check there is enough data in the `buffer' before trying to decode
+ *    from it.
+ *
+ *    If this function unformats anything from the buffer its value is to
+ *    be returned to the `value' pointer.  The implementation should itself
+ *    decide whether the unformatted value is allocated or not.  If this
+ *    function does not unformat anything, nothing is returned to `value'
+ *
+ *    The `context' is caller specific context.  Returns -1 on error, and
+ *    length of the unformatted value otherwise, and 0 if nothing was
+ *    unformatted.
+ *
+ *    This is same as SilcBufferUnformatFunc except the SilcStack will be
+ *    delivered.  This callback must be used when SilcStack is used with
+ *    unformatting.
+ *
+ ***/
+typedef int (*SilcBufferSUnformatFunc)(SilcStack stack, SilcBuffer buffer,
+				       void **value, void *context);
+
 /* Prototypes */
 
 /****f* silcutil/SilcBufferFormatAPI/silc_buffer_format
@@ -52,16 +180,18 @@
  *
  * EXAMPLE
  *
+ *    Three basic ways of using silc_buffer_format:
+ *
+ *    // Statically allocated zero size buffer
  *    SilcBufferStruct buffer;
- *    SilcBuffer buf;
  *
  *    memset(&buffer, 0, sizeof(buffer));
  *    ret = silc_buffer_format(&buffer,
- *                             SILC_STR_INT(intval),
+ *                             SILC_STR_UI_INT(intval),
  *                             SILC_STR_CHAR(charval),
- *                             SILC_STR_INT(intval),
+ *                             SILC_STR_UI_INT(intval),
  *                             SILC_STR_SHORT(str_len),
- *                             SILC_STR_UI_XNSTRING(str, str_len),
+ *                             SILC_STR_DATA(str, str_len),
  *                             SILC_STR_END);
  *    if (ret < 0)
  *      error;
@@ -69,15 +199,28 @@
  *    // Free the allocated data
  *    silc_buffer_purge(&buffer);
  *
- *    // Allocate zero size buffer
+ *    // Dynamically allocated zero size buffer
+ *    SilcBuffer buf;
  *    buf = silc_buffer_alloc(0);
  *    ret = silc_buffer_format(buf,
- *                             SILC_STR_INT(intval),
+ *                             SILC_STR_UI_INT(intval),
  *                             SILC_STR_CHAR(charval),
  *                             SILC_STR_END);
+ *    if (ret < 0)
+ *      error;
  *
  *    // Free the allocated buffer
  *    silc_buffer_free(buf);
+ *
+ *    // Dynamically allocated buffer with enough space
+ *    SilcBuffer buf;
+ *    buf = silc_buffer_alloc(2 + str_len);
+ *    ret = silc_buffer_format(buf,
+ *                             SILC_STR_UI_SHORT(str_len),
+ *                             SILC_STR_DATA(str, str_len),
+ *                             SILC_STR_END);
+ *    if (ret < 0)
+ *      error;
  *
  ***/
 int silc_buffer_format(SilcBuffer dst, ...);
@@ -138,7 +281,7 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap);
  * EXAMPLE
  *
  *    ret = silc_buffer_unformat(buffer,
- *                               SILC_STR_INT(&intval),
+ *                               SILC_STR_UI_INT(&intval),
  *                               SILC_STR_CHAR(&charval),
  *                               SILC_STR_OFFSET(4),
  *                               SILC_STR_UI16_NSTRING_ALLOC(&str, &str_len),
@@ -279,6 +422,7 @@ typedef enum {
 
   SILC_PARAM_OFFSET,
   SILC_PARAM_ADVANCE,
+  SILC_PARAM_FUNC,
 
   SILC_PARAM_UI_XNSTRING,
   SILC_PARAM_UI_XNSTRING_ALLOC,
@@ -509,19 +653,73 @@ typedef enum {
  *
  *    SilcBuffer formatting.
  *
- *    Formatting:    SILC_STR_DATA(SilcBuffer)
- *    Unformatting:  SILC_STR_DATA(SilcBuffer)
+ *    Formatting:    SILC_STR_BUFFER(SilcBuffer)
+ *    Unformatting:  SILC_STR_BUFFER(SilcBuffer)
  *
- *    This type can be used to format and unformat SilcBuffer.  The lenght
- *    of the buffer will be automatically encoded into the buffer as a 32-bit
- *    integer.  In unformatting the SilcBuffer context must be pre-allocated.
+ *    This type can be used to format and unformat SilcBuffer.  Note that, the
+ *    length of the buffer will be automatically encoded into the buffer as
+ *    a 32-bit integer.  In unformatting the SilcBuffer context must be
+ *    pre-allocated.
  *
  *    _ALLOC routines automatically allocates memory inside SilcBuffer in
  *    unformatting.
  *
  ***/
-#define SILC_STR_BUFFER(x) SILC_BUFFER_DATA, (x)
+#define SILC_STR_BUFFER(x) SILC_PARAM_BUFFER, (x)
 #define SILC_STR_BUFFER_ALLOC(x) SILC_PARAM_BUFFER_ALLOC, (x)
+
+/****d* silcutil/SilcBufferFormatAPI/SILC_STR_FUNC
+ *
+ * NAME
+ *
+ *    #define SILC_STR_FUNC() ...
+ *
+ * DESCRIPTION
+ *
+ *    SilcBuffer formatting.
+ *
+ *    Formatting:    SILC_STR_FUNC(function, void *value, void *context)
+ *    Unformatting:  SILC_STR_FUNC(function, void **value, void *context)
+ *
+ *    This type can be used to call the `function' of the type
+ *    SilcBufferFormatFunc or SilcBufferUnformatFunc to encode or decode
+ *    the `value'.  In encoding the `value' will be passed to the `function'
+ *    and can be encoded into the buffer.  The buffer will be passed as
+ *    well to the `function' at the location where SILC_STR_FUNC is placed
+ *    in formatting.  The `context' delivers caller specific context to
+ *    the `function'
+ *
+ *    In unformatting the `function' will decode the encoded type and
+ *    return it to `value' pointer.  The decoding function should decide
+ *    itself whether to allocate or not the decoded value.
+ *
+ *    The `function' does not have to encode anything and passing `value'
+ *    as NULL is allowed.  The `function' could for example modify the
+ *    existing buffer.
+ *
+ * EXAMPLE
+ *
+ *    // Encode payload, encrypt and compute MAC.
+ *    silc_buffer_format(buf,
+ *                       SILC_STR_FUNC(foo_encode_id, id, ctx),
+ *                       SILC_STR_UI_SHORT(len),
+ *                       SILC_STR_DATA(data, len),
+ *                       SILC_STR_FUNC(foo_buf_encrypt, NULL, key),
+ *                       SILC_STR_FUNC(foo_buf_hmac, NULL, hmac),
+ *                       SILC_STR_DATA(iv, iv_len);
+ *                       SILC_STR_END);
+ *
+ *    // Check MAC, decrypt and decode payload
+ *    silc_buffer_unformat(buf,
+ *                         SILC_STR_FUNC(foo_buf_hmac, NULL, hmac),
+ *                         SILC_STR_FUNC(foo_buf_decrypt, NULL, key),
+ *                         SILC_STR_FUNC(foo_decode_id, &id, ctx),
+ *                         SILC_STR_UI_SHORT(&len),
+ *                         SILC_STR_END);
+ *
+ ***/
+#define SILC_STR_FUNC(func, val, context) SILC_PARAM_FUNC, \
+    func, (val), (context)
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_OFFSET
  *
@@ -570,7 +768,7 @@ typedef enum {
  *        // Add read data to the buffer
  *        silc_buffer_format(buffer,
  *                           SILC_STR_ADVANCE,
- *                           SILC_STR_UI_XNSTRING(buf, len),
+ *                           SILC_STR_DATA(buf, len),
  *                           SILC_STR_END);
  *    } while (len > 0);
  *
