@@ -330,21 +330,6 @@ unsigned char *silc_message_get_data(SilcMessagePayload payload,
  ***/
 unsigned char *silc_message_get_mac(SilcMessagePayload payload);
 
-/****f* silccore/SilcMessageAPI/silc_message_get_iv
- *
- * SYNOPSIS
- *
- *    unsigned char *
- *    silc_message_get_iv(SilcMessagePayload payload);
- *
- * DESCRIPTION
- *
- *    Return the IV of the payload. The caller must already know the
- *    length of the IV. The caller must not free the IV.
- *
- ***/
-unsigned char *silc_message_get_iv(SilcMessagePayload payload);
-
 /****f* silccore/SilcMessageAPI/silc_message_get_signature
  *
  * SYNOPSIS

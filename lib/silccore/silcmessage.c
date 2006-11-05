@@ -48,7 +48,6 @@ struct SilcMessagePayloadStruct {
   SilcUInt16 iv_len;
   unsigned char *data;
   unsigned char *pad;
-  unsigned char *iv;
   unsigned char *mac;
   SilcMessageSignedPayload sig;
 };
@@ -124,13 +123,10 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
   totlen += 2 + len;
   if (totlen + iv_len + mac_len + 2 > data_len)
     return FALSE;
-  SILC_GET16_MSB(len, data + totlen);
-  totlen += 2 + len;
-  if (totlen + iv_len + mac_len > data_len)
-    return FALSE;
-  if (totlen - block_len)
+  if (totlen >= block_len)
     if (!silc_cipher_decrypt(cipher, data + block_len, data + block_len,
-			     totlen - block_len, ivp))
+			     (totlen - block_len) + SILC_MESSAGE_PAD(totlen),
+			     ivp))
       return FALSE;
 
   return TRUE;
@@ -203,14 +199,11 @@ silc_message_payload_parse(unsigned char *payload,
       silc_message_signed_payload_parse(buffer.data + 6 + newp->data_len +
 					newp->pad_len,
 					silc_buffer_len(&buffer) -
-					iv_len - mac_len);
+					iv_len - mac_len - 6 - newp->data_len -
+					newp->pad_len);
   }
 
-  /* Parse IV and MAC from the payload */
-  if (iv_len) {
-    newp->iv = buffer.data + (silc_buffer_len(&buffer) - iv_len - mac_len);
-    newp->iv_len = iv_len;
-  }
+  /* Parse MAC from the payload */
   if (mac_len)
     newp->mac = buffer.data + (silc_buffer_len(&buffer) - mac_len);
 
@@ -329,6 +322,8 @@ SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
 
   if (!data_len)
     return NULL;
+  if (!private_message && (!cipher || !hmac))
+    return NULL;
 
   if (!buffer) {
     buf = buffer = silc_buffer_alloc(0);
@@ -433,13 +428,6 @@ unsigned char *silc_message_get_data(SilcMessagePayload payload,
 unsigned char *silc_message_get_mac(SilcMessagePayload payload)
 {
   return payload->mac;
-}
-
-/* Return IV. The caller knows the length of the IV */
-
-unsigned char *silc_message_get_iv(SilcMessagePayload payload)
-{
-  return payload->iv;
 }
 
 /* Return signature of the message */
