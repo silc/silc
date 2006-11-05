@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2003 Pekka Riikonen
+  Copyright (C) 2001 - 2003, 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -256,8 +256,10 @@ silc_auth_public_key_auth_generate_wpub(SilcPublicKey public_key,
  *
  ***/
 SilcBool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
-				      SilcPublicKey public_key, SilcHash hash,
-				      const void *id, SilcIdType type);
+					  SilcPublicKey public_key,
+					  SilcHash hash,
+					  const void *id,
+					  SilcIdType type);
 
 /****f* silccore/SilcAuthAPI/silc_auth_public_key_auth_verify_data
  *
@@ -278,10 +280,11 @@ SilcBool silc_auth_public_key_auth_verify(SilcAuthPayload payload,
  *
  ***/
 SilcBool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
-					   SilcUInt32 payload_len,
-					   SilcPublicKey public_key,
-					   SilcHash hash,
-					   const void *id, SilcIdType type);
+					       SilcUInt32 payload_len,
+					       SilcPublicKey public_key,
+					       SilcHash hash,
+					       const void *id,
+					       SilcIdType type);
 
 /****f* silccore/SilcAuthAPI/silc_auth_verify
  *
@@ -303,8 +306,8 @@ SilcBool silc_auth_public_key_auth_verify_data(const unsigned char *payload,
  *
  ***/
 SilcBool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
-		      const void *auth_data, SilcUInt32 auth_data_len,
-		      SilcHash hash, const void *id, SilcIdType type);
+			  const void *auth_data, SilcUInt32 auth_data_len,
+			  SilcHash hash, const void *id, SilcIdType type);
 
 /****f* silccore/SilcAuthAPI/silc_auth_verify_data
  *
@@ -329,10 +332,11 @@ SilcBool silc_auth_verify(SilcAuthPayload payload, SilcAuthMethod auth_method,
  *
  ***/
 SilcBool silc_auth_verify_data(const unsigned char *payload,
-			   SilcUInt32 payload_len,
-			   SilcAuthMethod auth_method, const void *auth_data,
-			   SilcUInt32 auth_data_len, SilcHash hash,
-			   const void *id, SilcIdType type);
+			       SilcUInt32 payload_len,
+			       SilcAuthMethod auth_method,
+			       const void *auth_data,
+			       SilcUInt32 auth_data_len, SilcHash hash,
+			       const void *id, SilcIdType type);
 
 /****s* silccore/SilcAuthAPI/SilcKeyAgreementPayload
  *
