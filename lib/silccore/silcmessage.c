@@ -123,6 +123,7 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
   totlen += 2 + len;
   if (totlen + iv_len + mac_len + 2 > data_len)
     return FALSE;
+  totlen += 2;
   if (totlen >= block_len)
     if (!silc_cipher_decrypt(cipher, data + block_len, data + block_len,
 			     (totlen - block_len) + SILC_MESSAGE_PAD(totlen),

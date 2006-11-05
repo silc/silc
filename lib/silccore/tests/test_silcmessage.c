@@ -19,7 +19,7 @@ int main(int argc, char **argv)
   unsigned char *data, tmp[1023];
   SilcUInt32 data_len;
   SilcUInt16 flags;
-  int i;
+  int i, n;
   SilcMessageSignedPayload sig;
 
   if (argc > 1 && !strcmp(argv[1], "-d")) {
@@ -98,11 +98,12 @@ int main(int argc, char **argv)
   silc_message_payload_free(message);
 
   /* Simple private message */
-  SILC_LOG_DEBUG(("Encoding private message len %d (static key)", 10));
+  n = 10;
+  SILC_LOG_DEBUG(("Encoding private message len %d (static key)", n));
   buf = silc_message_payload_encode(SILC_MESSAGE_FLAG_ACTION |
 				    SILC_MESSAGE_FLAG_UTF8 |
 				    SILC_MESSAGE_FLAG_ACK,
-				    msg, 10, TRUE, TRUE,
+				    msg, n, TRUE, TRUE,
 				    key, hmac, rng, NULL, NULL, NULL, buf);
   if (!buf)
     goto err;
@@ -123,18 +124,19 @@ int main(int argc, char **argv)
     goto err;
   data = silc_message_get_data(message, &data_len);
   SILC_LOG_HEXDUMP(("Data"), data, data_len);
-  if (data_len != 10 || memcmp(data, msg, 10))
+  if (data_len != n || memcmp(data, msg, n))
     goto err;
   SILC_LOG_HEXDUMP(("MAC"), silc_message_get_mac(message),
 		   silc_hmac_len(hmac));
   silc_message_payload_free(message);
 
   /* Simple private message */
-  SILC_LOG_DEBUG(("Encoding private message len %d (static key)", 1));
+  n = 1;
+  SILC_LOG_DEBUG(("Encoding private message len %d (static key)", n));
   buf = silc_message_payload_encode(SILC_MESSAGE_FLAG_ACTION |
 				    SILC_MESSAGE_FLAG_UTF8 |
 				    SILC_MESSAGE_FLAG_ACK,
-				    msg, 1, TRUE, TRUE,
+				    msg, n, TRUE, TRUE,
 				    key, hmac, rng, NULL, NULL, NULL, buf);
   if (!buf)
     goto err;
@@ -155,7 +157,7 @@ int main(int argc, char **argv)
     goto err;
   data = silc_message_get_data(message, &data_len);
   SILC_LOG_HEXDUMP(("Data"), data, data_len);
-  if (data_len != 1 || memcmp(data, msg, 1))
+  if (data_len != n || memcmp(data, msg, n))
     goto err;
   SILC_LOG_HEXDUMP(("MAC"), silc_message_get_mac(message),
 		   silc_hmac_len(hmac));
