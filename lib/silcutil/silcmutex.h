@@ -112,10 +112,24 @@ void silc_mutex_lock(SilcMutex mutex);
  * NOTES
  *
  *    The caller must not call the silc_mutex_unlock for an unlocked
- *    mutex or mutex not locked by the current thread.  It is fatal
- *    error if this occurs.
+ *    mutex or mutex not locked by the current thread.
  *
  ***/
 void silc_mutex_unlock(SilcMutex mutex);
+
+/****f* silcutil/SilcMutexAPI/silc_mutex_assert_locked
+ *
+ * SYNOPSIS
+ *
+ *    void silc_mutex_assert_locked(SilcMutex mutex);
+ *
+ * DESCRIPTION
+ *
+ *    Asserts that the `mutex' is locked.  It is fatal error if the mutex
+ *    is not locked.  If debugging is not compiled in this function has
+ *    no effect (SILC_DEBUG define).
+ *
+ ***/
+void silc_mutex_assert_locked(SilcMutex mutex);
 
 #endif

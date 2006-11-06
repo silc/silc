@@ -104,9 +104,8 @@ SilcBool silc_thread_wait(SilcThread thread, void **exit_value)
 struct SilcMutexStruct {
 #ifdef SILC_THREADS
   pthread_mutex_t mutex;
-#else
-  void *tmp;
 #endif /* SILC_THREADS */
+  unsigned int locked : 1;
 };
 
 SilcBool silc_mutex_alloc(SilcMutex *mutex)
@@ -116,6 +115,7 @@ SilcBool silc_mutex_alloc(SilcMutex *mutex)
   if (*mutex == NULL)
     return FALSE;
   pthread_mutex_init(&(*mutex)->mutex, NULL);
+  (*mutex)->locked = FALSE;
   return TRUE;
 #else
   return FALSE;
@@ -137,7 +137,8 @@ void silc_mutex_lock(SilcMutex mutex)
 #ifdef SILC_THREADS
   if (mutex) {
     if (pthread_mutex_lock(&mutex->mutex))
-      assert(FALSE);
+      SILC_ASSERT(FALSE);
+    mutex->locked = TRUE;
   }
 #endif /* SILC_THREADS */
 }
@@ -147,8 +148,17 @@ void silc_mutex_unlock(SilcMutex mutex)
 #ifdef SILC_THREADS
   if (mutex) {
     if (pthread_mutex_unlock(&mutex->mutex))
-      assert(FALSE);
+      SILC_ASSERT(FALSE);
+    mutex->locked = FALSE;
   }
+#endif /* SILC_THREADS */
+}
+
+void silc_mutex_assert_locked(SilcMutex mutex)
+{
+#ifdef SILC_THREADS
+  if (mutex)
+    SILC_ASSERT(mutex->locked);
 #endif /* SILC_THREADS */
 }
 
