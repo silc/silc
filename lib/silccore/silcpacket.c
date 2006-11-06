@@ -47,7 +47,6 @@ typedef struct SilcPacketProcessStruct {
 /* Packet stream */
 struct SilcPacketStreamStruct {
   struct SilcPacketStreamStruct *next;
-  SilcAtomic refcnt;		         /* Reference counter */
   SilcPacketEngine engine;		 /* Packet engine */
   SilcStream stream;			 /* Underlaying stream */
   SilcMutex lock;			 /* Stream lock */
@@ -55,14 +54,15 @@ struct SilcPacketStreamStruct {
   void *stream_context;			 /* Stream context */
   SilcBufferStruct inbuf;	         /* In buffer */
   SilcBufferStruct outbuf;		 /* Out buffer */
-  SilcUInt32 send_psn;			 /* Sending sequence */
   SilcCipher send_key[2];		 /* Sending key */
   SilcHmac send_hmac[2];		 /* Sending HMAC */
-  SilcUInt32 receive_psn;		 /* Receiving sequence */
   SilcCipher receive_key[2];		 /* Receiving key */
   SilcHmac receive_hmac[2];		 /* Receiving HMAC */
   unsigned char *src_id;		 /* Source ID */
   unsigned char *dst_id;		 /* Destination ID */
+  SilcUInt32 send_psn;			 /* Sending sequence */
+  SilcUInt32 receive_psn;		 /* Receiving sequence */
+  SilcAtomic8 refcnt;		         /* Reference counter */
   unsigned int src_id_len  : 6;
   unsigned int src_id_type : 2;
   unsigned int dst_id_len  : 6;
@@ -391,7 +391,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
 
   ps->engine = engine;
   ps->stream = stream;
-  silc_atomic_init(&ps->refcnt, 1);
+  silc_atomic_init8(&ps->refcnt, 1);
 
   /* Allocate buffers */
   tmp = silc_malloc(SILC_PACKET_DEFAULT_SIZE);
@@ -428,7 +428,7 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
   if (!stream)
     return;
 
-  if (silc_atomic_get_int(&stream->refcnt) > 1) {
+  if (silc_atomic_get_int8(&stream->refcnt) > 1) {
     stream->destroyed = TRUE;
     return;
   }
@@ -451,7 +451,7 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
   /* Destroy the underlaying stream */
   silc_stream_destroy(stream->stream);
 
-  silc_atomic_uninit(&stream->refcnt);
+  silc_atomic_uninit8(&stream->refcnt);
   silc_dlist_uninit(stream->process);
   silc_mutex_free(stream->lock);
   silc_free(stream);
@@ -603,14 +603,14 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
 
 void silc_packet_stream_ref(SilcPacketStream stream)
 {
-  silc_atomic_add_int(&stream->refcnt, 1);
+  silc_atomic_add_int8(&stream->refcnt, 1);
 }
 
 /* Unreference packet stream */
 
 void silc_packet_stream_unref(SilcPacketStream stream)
 {
-  if (silc_atomic_sub_int(&stream->refcnt, 1) == 0)
+  if (silc_atomic_sub_int8(&stream->refcnt, 1) == 0)
     silc_packet_stream_destroy(stream);
 }
 
@@ -641,6 +641,18 @@ void *silc_packet_get_context(SilcPacketStream stream)
   return context;
 }
 
+/* Change underlaying stream */
+
+void silc_packet_stream_set_stream(SilcPacketStream ps,
+				   SilcStream stream,
+				   SilcSchedule schedule)
+{
+  if (ps->stream)
+    silc_stream_set_notifier(ps->stream, schedule, NULL, NULL);
+  ps->stream = stream;
+  silc_stream_set_notifier(ps->stream, schedule, silc_packet_stream_io, ps);
+}
+
 /* Return underlaying stream */
 
 SilcStream silc_packet_stream_get_stream(SilcPacketStream stream)
@@ -667,18 +679,15 @@ void silc_packet_set_ciphers(SilcPacketStream stream, SilcCipher send,
       silc_cipher_free(stream->receive_key[1]);
       stream->receive_key[1] = stream->receive_key[0];
     }
-
-    stream->send_key[0] = send;
-    stream->receive_key[0] = receive;
   } else {
     if (stream->send_key[0])
       silc_cipher_free(stream->send_key[0]);
     if (stream->send_key[1])
       silc_cipher_free(stream->receive_key[0]);
-
-    stream->send_key[0] = send;
-    stream->receive_key[0] = receive;
   }
+
+  stream->send_key[0] = send;
+  stream->receive_key[0] = receive;
 
   silc_mutex_unlock(stream->lock);
 }
@@ -722,18 +731,15 @@ void silc_packet_set_hmacs(SilcPacketStream stream, SilcHmac send,
       silc_hmac_free(stream->receive_hmac[1]);
       stream->receive_hmac[1] = stream->receive_hmac[0];
     }
-
-    stream->send_hmac[0] = send;
-    stream->receive_hmac[0] = receive;
   } else {
     if (stream->send_hmac[0])
       silc_hmac_free(stream->send_hmac[0]);
     if (stream->receive_hmac[0])
       silc_hmac_free(stream->receive_hmac[0]);
-
-    stream->send_hmac[0] = send;
-    stream->receive_hmac[0] = receive;
   }
+
+  stream->send_hmac[0] = send;
+  stream->receive_hmac[0] = receive;
 
   silc_mutex_unlock(stream->lock);
 }
@@ -969,8 +975,8 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
   /* Create the packet.  This creates the SILC header, adds padding, and
      the actual packet data. */
   i = silc_buffer_format(&packet,
-			 SILC_STR_UI_XNSTRING(iv, ivlen),
-			 SILC_STR_UI_XNSTRING(psn, psnlen),
+			 SILC_STR_DATA(iv, ivlen),
+			 SILC_STR_DATA(psn, psnlen),
 			 SILC_STR_UI_SHORT(truelen),
 			 SILC_STR_UI_CHAR(flags),
 			 SILC_STR_UI_CHAR(type),
@@ -979,11 +985,11 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
 			 SILC_STR_UI_CHAR(src_id_len),
 			 SILC_STR_UI_CHAR(dst_id_len),
 			 SILC_STR_UI_CHAR(src_id_type),
-			 SILC_STR_UI_XNSTRING(src_id, src_id_len),
+			 SILC_STR_DATA(src_id, src_id_len),
 			 SILC_STR_UI_CHAR(dst_id_type),
-			 SILC_STR_UI_XNSTRING(dst_id, dst_id_len),
-			 SILC_STR_UI_XNSTRING(tmppad, padlen),
-			 SILC_STR_UI_XNSTRING(data, data_len),
+			 SILC_STR_DATA(dst_id, dst_id_len),
+			 SILC_STR_DATA(tmppad, padlen),
+			 SILC_STR_DATA(data, data_len),
 			 SILC_STR_END);
   if (i < 0) {
     silc_mutex_unlock(stream->lock);
@@ -1203,18 +1209,19 @@ static SilcBool silc_packet_parse(SilcPacket packet)
   SilcBuffer buffer = &packet->buffer;
   SilcUInt8 padlen = (SilcUInt8)buffer->data[4];
   SilcUInt8 src_id_len, dst_id_len, src_id_type, dst_id_type;
-  int len, ret;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing incoming packet"));
 
   /* Parse the buffer.  This parses the SILC header of the packet. */
-  len = silc_buffer_unformat(buffer,
+  ret = silc_buffer_unformat(buffer,
+			     SILC_STR_ADVANCE,
 			     SILC_STR_OFFSET(6),
 			     SILC_STR_UI_CHAR(&src_id_len),
 			     SILC_STR_UI_CHAR(&dst_id_len),
 			     SILC_STR_UI_CHAR(&src_id_type),
 			     SILC_STR_END);
-  if (len == -1) {
+  if (ret == -1) {
     SILC_LOG_ERROR(("Malformed packet header, packet dropped"));
     return FALSE;
   }
@@ -1227,12 +1234,10 @@ static SilcBool silc_packet_parse(SilcPacket packet)
   }
 
   ret = silc_buffer_unformat(buffer,
-			     SILC_STR_OFFSET(len),
-			     SILC_STR_UI_XNSTRING(&packet->src_id,
-						  src_id_len),
+			     SILC_STR_ADVANCE,
+			     SILC_STR_DATA(&packet->src_id, src_id_len),
 			     SILC_STR_UI_CHAR(&dst_id_type),
-			     SILC_STR_UI_XNSTRING(&packet->dst_id,
-						  dst_id_len),
+			     SILC_STR_DATA(&packet->dst_id, dst_id_len),
 			     SILC_STR_OFFSET(padlen),
 			     SILC_STR_END);
   if (ret == -1) {
@@ -1252,12 +1257,9 @@ static SilcBool silc_packet_parse(SilcPacket packet)
   packet->src_id_type = src_id_type;
   packet->dst_id_type = dst_id_type;
 
-  SILC_LOG_HEXDUMP(("Parsed packet, len %d", silc_buffer_len(buffer)),
-		   buffer->data, silc_buffer_len(buffer));
-
-  /* Pull SILC header and padding from packet to get the data payload */
-  silc_buffer_pull(buffer, SILC_PACKET_HEADER_LEN +
-		   packet->src_id_len + packet->dst_id_len + padlen);
+  SILC_LOG_HEXDUMP(("Parsed packet, len %d", silc_buffer_headlen(buffer) +
+		   silc_buffer_len(buffer)), buffer->head,
+		   silc_buffer_headlen(buffer) + silc_buffer_len(buffer));
 
   SILC_LOG_DEBUG(("Incoming packet type: %d (%s)", packet->type,
 		  silc_get_packet_name(packet->type)));

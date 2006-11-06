@@ -455,6 +455,26 @@ void silc_packet_stream_set_router(SilcPacketStream stream);
  ***/
 void silc_packet_stream_set_iv_included(SilcPacketStream stream);
 
+/****f* silccore/SilcPacketAPI/silc_packet_stream_set_stream
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_stream_set_stream(SilcPacketStream packet_stream,
+ *                                       SilcStream stream,
+ *                                       SilcSchedule schedule);
+ *
+ * DESCRIPTION
+ *
+ *    This function may be used to change the underlaying stream in the
+ *    packet stream indicated by `packet_stream'.  Note that the old
+ *    stream will not be used after calling this function.  The caller is
+ *    responsible destroying the old stream.
+ *
+ ***/
+void silc_packet_stream_set_stream(SilcPacketStream packet_stream,
+				   SilcStream stream,
+				   SilcSchedule schedule);
+
 /****f* silccore/SilcPacketAPI/silc_packet_stream_get_stream
  *
  * SYNOPSIS
