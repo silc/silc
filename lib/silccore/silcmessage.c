@@ -281,7 +281,7 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
   if (!private_message || (private_message && static_key))
     iv_len = block_len;
 
-  if (data_len <= (mac_len + iv_len))
+  if (data_len <= (mac_len + iv_len + block_len))
     return FALSE;
 
   if (check_mac) {
