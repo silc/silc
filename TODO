@@ -1,7 +1,10 @@
 TODO for 1.1 And Beyond
 =======================
 
-NOTE: Any item that doesn't have (***DONE) in it, isn't done yet.
+NOTE: Any item that doesn't have (***DONE) in it, isn't done yet.  The
+(***TESTING NEEDED) means that the item has been done but not yet properly
+tested.
+
 
 
 lib/silccore/silcpacket.[ch]	****DONE****
@@ -33,6 +36,8 @@ lib/silccore
 
  o All payload encoding routines should take SilcStack as argument.
 
+ o All payload test routines into lib/silccore/tests/.
+
 
 lib/silcskr
 ===========
@@ -44,10 +49,10 @@ lib/silcskr
 lib/silcske/silcske.[ch]
 ========================
 
- o IV Included flag support in SKE (it currently doesn't accept it)
+ o IV Included flag support in SKE (***TESTING NEEDED)
 
- o assemble_security_properties to take cipher, hash, hmac, etc. as
-   argument.
+ o UDP transport changes; retransmission support by using exponential
+   backoff algorithm.
 
  o SilcConnAuth header file documentation.
 
