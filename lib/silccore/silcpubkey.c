@@ -45,7 +45,7 @@ SilcBuffer silc_public_key_payload_encode(SilcPublicKey public_key)
   if (silc_buffer_format(buffer,
 			 SILC_STR_UI_SHORT(pk_len),
 			 SILC_STR_UI_SHORT(type),
-			 SILC_STR_UI_XNSTRING(pk, pk_len),
+			 SILC_STR_DATA(pk, pk_len),
 			 SILC_STR_END) < 0) {
     silc_buffer_free(buffer);
     silc_free(pk);
@@ -72,6 +72,7 @@ SilcBool silc_public_key_payload_decode(unsigned char *data,
 
   silc_buffer_set(&buf, data, data_len);
   ret = silc_buffer_unformat(&buf,
+			     SILC_STR_ADVANCE,
 			     SILC_STR_UI_SHORT(&pk_len),
 			     SILC_STR_UI_SHORT(&pk_type),
 			     SILC_STR_END);
@@ -81,9 +82,8 @@ SilcBool silc_public_key_payload_decode(unsigned char *data,
   if (pk_type < SILC_PKCS_SILC || pk_type > SILC_PKCS_SPKI)
     return FALSE;
 
-  silc_buffer_pull(&buf, 4);
   ret = silc_buffer_unformat(&buf,
-			     SILC_STR_UI_XNSTRING(&pk, pk_len),
+			     SILC_STR_DATA(&pk, pk_len),
 			     SILC_STR_END);
   if (ret < 0)
     return FALSE;

@@ -63,7 +63,8 @@ SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
 
   if (newp->argc) {
     silc_buffer_pull(&buffer, 5);
-    newp->args = silc_argument_payload_parse(buffer.data, silc_buffer_len(&buffer),
+    newp->args = silc_argument_payload_parse(buffer.data,
+					     silc_buffer_len(&buffer),
 					     newp->argc);
     silc_buffer_push(&buffer, 5);
   }
@@ -142,11 +143,10 @@ SilcBuffer silc_notify_payload_encode(SilcNotifyType type, SilcUInt32 argc,
 		     SILC_STR_END);
 
   if (k) {
-    silc_buffer_pull(buffer, 5);
     silc_buffer_format(buffer,
-		       SILC_STR_UI_XNSTRING(args->data, silc_buffer_len(args)),
+		       SILC_STR_OFFSET(5),
+		       SILC_STR_DATA(args->data, silc_buffer_len(args)),
 		       SILC_STR_END);
-    silc_buffer_push(buffer, 5);
     silc_buffer_free(args);
   }
 
@@ -172,13 +172,11 @@ SilcBuffer silc_notify_payload_encode_args(SilcNotifyType type,
 		     SILC_STR_UI_CHAR(argc),
 		     SILC_STR_END);
 
-  if (args) {
-    silc_buffer_pull(buffer, 5);
+  if (args)
     silc_buffer_format(buffer,
-		       SILC_STR_UI_XNSTRING(args->data, silc_buffer_len(args)),
+		       SILC_STR_OFFSET(5),
+		       SILC_STR_DATA(args->data, silc_buffer_len(args)),
 		       SILC_STR_END);
-    silc_buffer_push(buffer, 5);
-  }
 
   return buffer;
 }
