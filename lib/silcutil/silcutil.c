@@ -116,14 +116,18 @@ int silc_parse_userfqdn(const char *string,
 {
   SilcUInt32 tlen;
 
-  if (!string || (!user && !fqdn))
+  if (!user && !fqdn)
+    return 0;
+
+  memset(user, 0, user_size);
+  memset(fqdn, 0, fqdn_size);
+
+  if (!string)
     return 0;
 
   if (string[0] == '@') {
-    if (user) {
-      memset(user, 0, user_size);
+    if (user)
       silc_strncat(user, user_size, string, strlen(string));
-    }
 
     return 1;
   }
@@ -131,24 +135,18 @@ int silc_parse_userfqdn(const char *string,
   if (strchr(string, '@')) {
     tlen = strcspn(string, "@");
 
-    if (user) {
-      memset(user, 0, user_size);
+    if (user)
       silc_strncat(user, user_size, string, tlen);
-    }
 
-    if (fqdn) {
-      memset(fqdn, 0, fqdn_size);
+    if (fqdn)
       silc_strncat(fqdn, fqdn_size, string + tlen + 1,
 		   strlen(string) - tlen - 1);
-    }
 
     return 2;
   }
 
-  if (user) {
-    memset(user, 0, user_size);
+  if (user)
     silc_strncat(user, user_size, string, strlen(string));
-  }
 
   return 1;
 }
