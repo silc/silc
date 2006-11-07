@@ -264,3 +264,52 @@ int silc_string_compare(char *string1, char *string2)
   silc_free(tmpstr2);
   return FALSE;
 }
+
+/* Splits a string containing separator `ch' and returns an array of the
+   splitted strings. */
+
+char **silc_string_split(const char *string, char ch, int *ret_count)
+{
+  char **splitted = NULL, sep[1], *item, *cp;
+  int i = 0, len;
+
+  if (!string)
+    return NULL;
+  if (!ret_count)
+    return NULL;
+
+  splitted = silc_calloc(1, sizeof(*splitted));
+  if (!splitted)
+    return NULL;
+
+  if (!strchr(string, ch)) {
+    splitted[0] = silc_memdup(string, strlen(string));
+    *ret_count = 1;
+    return splitted;
+  }
+
+  sep[0] = ch;
+  cp = (char *)string;
+  while(cp) {
+    len = strcspn(cp, sep);
+    item = silc_memdup(cp, len);
+    if (!item) {
+      silc_free(splitted);
+      return NULL;
+    }
+
+    cp += len;
+    if (strlen(cp) == 0)
+      cp = NULL;
+    else
+      cp++;
+
+    splitted = silc_realloc(splitted, (i + 1) * sizeof(*splitted));
+    if (!splitted)
+      return NULL;
+    splitted[i++] = item;
+  }
+  *ret_count = i;
+
+  return splitted;
+}

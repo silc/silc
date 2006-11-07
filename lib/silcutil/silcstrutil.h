@@ -190,4 +190,21 @@ int silc_string_match(const char *string1, const char *string2);
  ***/
 int silc_string_compare(char *string1, char *string2);
 
+/****f* silcutil/SilcStrUtilAPI/silc_string_split
+ *
+ * SYNOPSIS
+ *
+ *    char **silc_string_split(const char *string, char ch, int *ret_count);
+ *
+ * DESCRIPTION
+ *
+ *    Splits a `string' that has a separator `ch' into an array of strings
+ *    and returns the array.  The `ret_count' will contain the number of
+ *    strings in the array.  Caller must free the strings and the array.
+ *    Returns NULL on error.  If the string does not have `ch' separator
+ *    this returns the `string' in the array.
+ *
+ ***/
+char **silc_string_split(const char *string, char ch, int *ret_count);
+
 #endif /* SILCSTRUTIL_H */
