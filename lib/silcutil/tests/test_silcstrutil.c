@@ -1,4 +1,5 @@
 /* UTF-8 decoding tests */
+/* Other string util tests too */
 
 #include "silc.h"
 
@@ -148,6 +149,18 @@ int main(int argc, char **argv)
 
   silc_free(s3);
   silc_free(s4);
+
+  /* Regex test */
+  SILC_LOG_DEBUG(("Simple regex test"));
+  s1 = "foo,bar,silc,com";
+  SILC_LOG_DEBUG(("Find 'silc' from %s", s1));
+  if (!silc_string_match(s1, "silc"))
+    goto err;
+  SILC_LOG_DEBUG(("Regex match"));
+  SILC_LOG_DEBUG(("Find 'foobar' from %s", s1));
+  if (silc_string_match(s1, "foobar"))
+    goto err;
+  SILC_LOG_DEBUG(("Regex not found (Ok)"));
 
   success = TRUE;
 

@@ -28,10 +28,12 @@ struct FooStruct {
   void *cb_context;
   T threads[NUM_THREADS];
   T threads2[NUM_THREADS];
+  int c;
 };
 
 SILC_FSM_STATE(test_st_start);
 SILC_FSM_STATE(test_st_second);
+SILC_FSM_STATE(test_st_second_timeout);
 SILC_FSM_STATE(test_st_third);
 SILC_FSM_STATE(test_st_fourth);
 SILC_FSM_STATE(test_st_fifth);
@@ -80,9 +82,35 @@ SILC_FSM_STATE(test_st_second)
 {
   SILC_LOG_DEBUG(("test_st_second"));
 
-  /** Move to third state, timeout */
+  /** Move to second timeout state, timeout */
   SILC_LOG_DEBUG(("Move to next state with 2 second timeout"));
-  silc_fsm_next_later(fsm, test_st_third, 2, 0);
+  silc_fsm_next_later(fsm, test_st_second_timeout, 2, 0);
+  return SILC_FSM_WAIT;
+}
+
+SILC_TASK_CALLBACK(test_second_timeout)
+{
+  Foo f = context;
+  SILC_LOG_DEBUG(("test_second_timeout"));
+
+  SILC_LOG_DEBUG(("Interrupt 3 second wait and continue immediately"));
+  f->c++;
+  silc_fsm_next(f->fsm, test_st_third);
+  silc_fsm_continue(f->fsm);
+}
+
+SILC_FSM_STATE(test_st_second_timeout)
+{
+  Foo f = fsm_context;
+
+  SILC_LOG_DEBUG(("test_st_second_timeout"));
+
+  /** Move to third state, timeout */
+  SILC_LOG_DEBUG(("Move to next state with 3 second timeout"));
+  SILC_LOG_DEBUG(("The timeout will be interrupted with silc_fsm_continue"));
+  silc_fsm_next_later(fsm, test_st_third, 3, 0);
+  silc_schedule_task_add_timeout(silc_fsm_get_schedule(fsm),
+				 test_second_timeout, f, 2, 500000);
   return SILC_FSM_WAIT;
 }
 
@@ -98,6 +126,9 @@ SILC_FSM_STATE(test_st_third)
   Foo f = fsm_context;
 
   SILC_LOG_DEBUG(("test_st_third"));
+
+  f->c++;
+  assert(f->c == 2);
 
   f->fsm = fsm;
 
@@ -364,7 +395,7 @@ int main(int argc, char **argv)
   f->schedule = schedule;
 
   SILC_LOG_DEBUG(("Allocating FSM context"));
-  fsm = silc_fsm_alloc(f, destructor, f, schedule);
+  f->fsm = fsm = silc_fsm_alloc(f, destructor, f, schedule);
   if (!fsm)
     goto err;
   silc_fsm_start(fsm, test_st_start);

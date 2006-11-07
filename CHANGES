@@ -1,3 +1,12 @@
+Tue Nov  7 18:04:36 EET 2006  Pekka Riikonen <priikone@silcnet.org
+
+	* Added silc_string_split to lib/silcutil/silcstrutil.[ch].
+
+	* Added silc_mutex_assert_locked to lib/silcutil/silcmutex.h.
+
+	* silc_fsm_continue[_sync] now cancels erlier timeout set with
+	  silc_fsm_next_later.  Affected file lib/silcutil/silcfsm.c.
+
 Sat Nov  4 21:50:37 EET 2006  Pekka Riikonen <priikone@silcnet.org
 
 	* Added SILC_STR_FUNC to buffer format API.  Affected files
