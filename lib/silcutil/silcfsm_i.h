@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -64,6 +64,7 @@ struct SilcFSMObject {
   unsigned int finished         : 1;    /* Set if SILC_FSM_FINISH returned */
   unsigned int sema_timedout    : 1;    /* Set if waiting sema timedout */
   unsigned int synchronous      : 1;    /* Set if silc_fsm_start_sync called */
+  unsigned int next_later       : 1;    /* Set if silc_fsm_next_later called */
 };
 
 /* Semaphore post context */

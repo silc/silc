@@ -629,6 +629,10 @@ void silc_fsm_next(void *fsm, SilcFSMStateCallback next_state);
  *    If both `seconds' and `useconds' are 0, the effect is same as calling
  *    silc_fsm_next function, and SILC_FSM_CONTINUE must be returned.
  *
+ *    If silc_fsm_continue or silc_fsm_continue_sync is called while the
+ *    machine or thread is in SILC_FSM_WAIT state the timeout is automatically
+ *    canceled and the state moves to the next state.
+ *
  * EXAMPLE
  *
  *    // Move to next state after 10 seconds

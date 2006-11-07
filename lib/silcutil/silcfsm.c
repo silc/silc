@@ -245,6 +245,7 @@ void silc_fsm_next_later(void *fsm, SilcFSMStateCallback next_state,
     return;
   silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f,
 				 seconds, useconds);
+  f->next_later = TRUE;
 }
 
 /* Continue after callback or async operation */
@@ -252,7 +253,12 @@ void silc_fsm_next_later(void *fsm, SilcFSMStateCallback next_state,
 void silc_fsm_continue(void *fsm)
 {
   SilcFSM f = fsm;
-  silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f, 0, 1);
+  if (f->next_later) {
+    silc_schedule_task_del_by_all(f->schedule, 0, silc_fsm_run, f);
+    f->next_later = FALSE;
+  }
+  if (!silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f, 0, 1))
+    silc_fsm_run(f->schedule, silc_schedule_get_context(f->schedule), 0, 0, f);
 }
 
 /* Continue after callback or async operation immediately */
@@ -260,6 +266,10 @@ void silc_fsm_continue(void *fsm)
 void silc_fsm_continue_sync(void *fsm)
 {
   SilcFSM f = fsm;
+  if (f->next_later) {
+    silc_schedule_task_del_by_all(f->schedule, 0, silc_fsm_run, f);
+    f->next_later = FALSE;
+  }
   silc_fsm_run(f->schedule, silc_schedule_get_context(f->schedule), 0, 0, f);
 }
 
