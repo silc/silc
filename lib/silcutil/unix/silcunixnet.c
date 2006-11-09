@@ -452,6 +452,7 @@ SILC_TASK_CALLBACK(silc_net_connect_wait)
 {
   SilcNetConnect conn = context;
   SILC_FSM_SEMA_POST(&conn->sema);
+  silc_schedule_task_del_by_fd(schedule, conn->sock);
 }
 
 SILC_FSM_STATE(silc_net_connect_st_start)
