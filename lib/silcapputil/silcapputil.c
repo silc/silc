@@ -262,20 +262,14 @@ SilcBool silc_load_key_pair(const char *pub_filename,
 
 /* Dump public key into stdout */
 
-SilcBool silc_show_public_key(const char *pub_filename)
+SilcBool silc_show_public_key(SilcPublicKey public_key)
 {
-  SilcPublicKey public_key;
   SilcSILCPublicKey silc_pubkey;
   SilcPublicKeyIdentifier ident;
   char *fingerprint, *babbleprint;
   unsigned char *pk;
   SilcUInt32 pk_len;
   SilcUInt32 key_len = 0;
-
-  if (!silc_pkcs_load_public_key((char *)pub_filename, &public_key)) {
-    fprintf(stderr, "Could not load public key file `%s'\n", pub_filename);
-    return FALSE;
-  }
 
   silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
   if (!silc_pubkey) {
@@ -293,7 +287,6 @@ SilcBool silc_show_public_key(const char *pub_filename)
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
   babbleprint = silc_hash_babbleprint(NULL, pk, pk_len);
 
-  printf("Public key file    : %s\n", pub_filename);
   printf("Algorithm          : %s\n", silc_pkcs_get_name(public_key));
   if (key_len)
     printf("Key length (bits)  : %d\n", (unsigned int)key_len);
@@ -317,9 +310,27 @@ SilcBool silc_show_public_key(const char *pub_filename)
   silc_free(fingerprint);
   silc_free(babbleprint);
   silc_free(pk);
-  silc_pkcs_public_key_free(public_key);
 
   return TRUE;
+}
+
+/* Dump public key into stdout */
+
+SilcBool silc_show_public_key_file(const char *pub_filename)
+{
+  SilcPublicKey public_key;
+  SilcBool ret;
+
+  if (!silc_pkcs_load_public_key((char *)pub_filename, &public_key)) {
+    fprintf(stderr, "Could not load public key file `%s'\n", pub_filename);
+    return FALSE;
+  }
+
+  printf("Public key file    : %s\n", pub_filename);
+  ret = silc_show_public_key(public_key);
+  silc_pkcs_public_key_free(public_key);
+
+  return ret;
 }
 
 /* Change private key passphrase */

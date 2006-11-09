@@ -117,7 +117,21 @@ SilcBool silc_load_key_pair(const char *pub_filename,
  *
  * SYNOPSIS
  *
- *    SilcBool silc_show_public_key(const char *pub_filename);
+ *    SilcBool silc_show_public_key(SilcPublicKey public_key);
+ *
+ * DESCRIPTION
+ *
+ *    This routine can be used to dump the SILC public key into human
+ *    readable form into stdout.  Returns FALSE on error.
+ *
+ ***/
+SilcBool silc_show_public_key(SilcPublicKey public_key);
+
+/****f* silcapputil/SilcAppUtil/silc_show_public_key_file
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_show_public_key_file(const char *pub_filename);
  *
  * DESCRIPTION
  *
@@ -126,7 +140,7 @@ SilcBool silc_load_key_pair(const char *pub_filename,
  *    into human readable form into stdout.  Returns FALSE on error.
  *
  ***/
-SilcBool silc_show_public_key(const char *pub_filename);
+SilcBool silc_show_public_key_file(const char *pub_filename);
 
 /****f* silcapputil/SilcAppUtil/silc_change_private_key_passphrase
  *
