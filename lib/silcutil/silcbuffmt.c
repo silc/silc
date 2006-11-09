@@ -313,6 +313,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
   SilcBufferParamType fmt;
   unsigned char *start_ptr = src->data;
   int len = 0;
+  SilcBool advance = FALSE;
 
   /* Parse the arguments by formatting type. */
   while(1) {
@@ -647,6 +648,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
 	break;
       }
     case SILC_PARAM_ADVANCE:
+      advance = TRUE;
       break;
     case SILC_PARAM_END:
       goto ok;
@@ -660,15 +662,17 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
   }
 
  fail:
-  SILC_LOG_DEBUG(("Error occured while unformatting buffer"));
+  SILC_LOG_DEBUG(("Error occured while unformatting buffer, type %d", fmt));
   len = src->data - start_ptr;
   silc_buffer_push(src, len);
   return -1;
 
  ok:
   /* Push the buffer back to the start. */
-  len = src->data - start_ptr;
-  silc_buffer_push(src, len);
+  if (!advance) {
+    len = src->data - start_ptr;
+    silc_buffer_push(src, len);
+  }
   return len;
 }
 
