@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -935,7 +935,8 @@ void silc_hash_table_list_reset(SilcHashTableList *htl)
    `context' and TRUE.  If this returns FALSE then there are no anymore
    any entrys. Usage: while (silc_hash_table_get(&htl, &key, &context)) */
 
-SilcBool silc_hash_table_get(SilcHashTableList *htl, void **key, void **context)
+SilcBool silc_hash_table_get(SilcHashTableList *htl, void **key,
+			     void **context)
 {
   SilcHashTableEntry entry = (SilcHashTableEntry)htl->entry;
 
