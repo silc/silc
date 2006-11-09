@@ -69,7 +69,7 @@ SilcIDPayload silc_id_payload_parse(const unsigned char *payload,
     goto err;
 
   ret = silc_buffer_unformat(&buffer,
-			     SILC_STR_UI_XNSTRING_ALLOC(&newp->id, newp->len),
+			     SILC_STR_DATA_ALLOC(&newp->id, newp->len),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
@@ -113,7 +113,7 @@ SilcBool silc_id_payload_parse_id(const unsigned char *data, SilcUInt32 len,
     goto err;
 
   ret = silc_buffer_unformat(&buffer,
-			     SILC_STR_UI_XNSTRING(&id_data, idlen),
+			     SILC_STR_DATA(&id_data, idlen),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
@@ -167,7 +167,7 @@ SilcBuffer silc_id_payload_encode_data(const unsigned char *id,
   silc_buffer_format(buffer,
 		     SILC_STR_UI_SHORT(type),
 		     SILC_STR_UI_SHORT(id_len),
-		     SILC_STR_UI_XNSTRING(id, id_len),
+		     SILC_STR_DATA(id, id_len),
 		     SILC_STR_END);
   return buffer;
 }
