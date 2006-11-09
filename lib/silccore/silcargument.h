@@ -149,7 +149,7 @@ void silc_argument_payload_free(SilcArgumentPayload payload);
  *
  * DESCRIPTION
  *
- *    Returns the number of argument in the Argument Payload.
+ *    Returns the number of arguments in the Argument Payload.
  *
  ***/
 SilcUInt32 silc_argument_get_arg_num(SilcArgumentPayload payload);
