@@ -120,12 +120,13 @@ static void silc_ske_skr_callback(SilcSKR repository,
 static SilcSKEStatus silc_ske_check_version(SilcSKE ske)
 {
   SilcUInt32 l_protocol_version = 0, r_protocol_version = 0;
+  SilcUInt32 r_software_version = 0;
 
   if (!ske->remote_version || !ske->version)
     return SILC_SKE_STATUS_BAD_VERSION;
 
   if (!silc_parse_version_string(ske->remote_version, &r_protocol_version,
-				 NULL, NULL, NULL, NULL))
+				 NULL, &r_software_version, NULL, NULL))
     return SILC_SKE_STATUS_BAD_VERSION;
 
   if (!silc_parse_version_string(ske->version, &l_protocol_version,
@@ -136,25 +137,72 @@ static SilcSKEStatus silc_ske_check_version(SilcSKE ske)
   if (l_protocol_version < r_protocol_version)
     return SILC_SKE_STATUS_BAD_VERSION;
 
+  /* Backwards compatibility checks */
+
+  /* Old server versions requires "valid" looking Source ID in the SILC
+     packets during initial key exchange.  All version before 1.1.0. */
+  if (r_software_version < 110) {
+    SilcClientID id;
+    memset(&id, 0, sizeof(id));
+    id.ip.data_len = 4;
+    SILC_LOG_DEBUG(("Remote is old version, add dummy Source ID to packets"));
+    silc_packet_set_ids(ske->stream, SILC_ID_CLIENT, &id, 0, NULL);
+  }
+
   return SILC_SKE_STATUS_OK;
 }
 
 /* Selects the supported security properties from the initiator's Key
-   Exchange Start Payload. */
+   Exchange Start Payload.  A responder function.  Saves our reply
+   start payload to ske->start_payload. */
 
 static SilcSKEStatus
 silc_ske_select_security_properties(SilcSKE ske,
-				    SilcSKEStartPayload payload,
-				    SilcSKEStartPayload remote_payload)
+				    SilcSKEStartPayload remote_payload,
+				    SilcSKESecurityProperties *prop)
 {
   SilcSKEStatus status;
-  SilcSKEStartPayload rp;
+  SilcSKEStartPayload rp, payload;
   char *cp;
   int len;
 
   SILC_LOG_DEBUG(("Parsing KE Start Payload"));
 
   rp = remote_payload;
+
+  /* Check for mandatory fields */
+  if (!rp->ke_grp_len) {
+    SILC_LOG_DEBUG(("KE group not defined in payload"));
+    return SILC_SKE_STATUS_BAD_PAYLOAD;
+  }
+  if (!rp->pkcs_alg_len) {
+    SILC_LOG_DEBUG(("PKCS alg not defined in payload"));
+    return SILC_SKE_STATUS_BAD_PAYLOAD;
+  }
+  if (!rp->enc_alg_len) {
+    SILC_LOG_DEBUG(("Encryption alg not defined in payload"));
+    return SILC_SKE_STATUS_BAD_PAYLOAD;
+  }
+  if (!rp->hash_alg_len) {
+    SILC_LOG_DEBUG(("Hash alg not defined in payload"));
+    return SILC_SKE_STATUS_BAD_PAYLOAD;
+  }
+  if (!rp->hmac_alg_len) {
+    SILC_LOG_DEBUG(("HMAC not defined in payload"));
+    return SILC_SKE_STATUS_BAD_PAYLOAD;
+  }
+
+  /* Allocate security properties */
+  *prop = silc_calloc(1, sizeof(**prop));
+  if (!(*prop))
+    return SILC_SKE_STATUS_OUT_OF_MEMORY;
+
+  /* Allocate our reply start payload */
+  payload = silc_calloc(1, sizeof(*payload));
+  if (!payload) {
+    silc_free(*prop);
+    return SILC_SKE_STATUS_OUT_OF_MEMORY;
+  }
 
   /* Check version string */
   ske->remote_version = silc_memdup(rp->version, rp->version_len);
@@ -165,7 +213,7 @@ silc_ske_select_security_properties(SilcSKE ske,
   }
 
   /* Flags are returned unchanged. */
-  payload->flags = rp->flags;
+  (*prop)->flags = payload->flags = rp->flags;
 
   /* Take cookie, we must return it to sender unmodified. */
   payload->cookie = silc_calloc(SILC_SKE_COOKIE_LEN, sizeof(unsigned char));
@@ -178,8 +226,13 @@ silc_ske_select_security_properties(SilcSKE ske,
 
   /* In case IV included flag and session port is set the first 16-bits of
      cookie will include our session port. */
-  if (rp->flags & SILC_SKE_SP_FLAG_IV_INCLUDED && ske->session_port)
+  if (rp->flags & SILC_SKE_SP_FLAG_IV_INCLUDED && ske->session_port) {
+    /* Take remote port */
+    SILC_GET16_MSB((*prop)->remote_port, payload->cookie);
+
+    /* Put out port */
     SILC_PUT16_MSB(ske->session_port, payload->cookie);
+  }
 
   /* Put our version to our reply */
   payload->version = strdup(ske->version);
@@ -229,18 +282,18 @@ silc_ske_select_security_properties(SilcSKE ske,
       return SILC_SKE_STATUS_UNKNOWN_GROUP;
     }
   } else {
-
-    if (!rp->ke_grp_len) {
-      SILC_LOG_DEBUG(("KE group not defined in payload"));
-      silc_free(payload);
-      return SILC_SKE_STATUS_BAD_PAYLOAD;
-    }
-
     SILC_LOG_DEBUG(("Proposed KE group `%s'", rp->ke_grp_list));
     SILC_LOG_DEBUG(("Found KE group `%s'", rp->ke_grp_list));
 
     payload->ke_grp_len = rp->ke_grp_len;
     payload->ke_grp_list = strdup(rp->ke_grp_list);
+  }
+
+  /* Save group to security properties */
+  status = silc_ske_group_get_by_name(payload->ke_grp_list, &(*prop)->group);
+  if (status != SILC_SKE_STATUS_OK) {
+    silc_free(payload);
+    return SILC_SKE_STATUS_UNKNOWN_GROUP;
   }
 
   /* Get supported PKCS algorithms */
@@ -284,14 +337,6 @@ silc_ske_select_security_properties(SilcSKE ske,
       return SILC_SKE_STATUS_UNKNOWN_PKCS;
     }
   } else {
-
-    if (!rp->pkcs_alg_len) {
-      SILC_LOG_DEBUG(("PKCS alg not defined in payload"));
-      silc_free(payload->ke_grp_list);
-      silc_free(payload);
-      return SILC_SKE_STATUS_BAD_PAYLOAD;
-    }
-
     SILC_LOG_DEBUG(("Proposed PKCS alg `%s'", rp->pkcs_alg_list));
     SILC_LOG_DEBUG(("Found PKCS alg `%s'", rp->pkcs_alg_list));
 
@@ -341,20 +386,20 @@ silc_ske_select_security_properties(SilcSKE ske,
       return SILC_SKE_STATUS_UNKNOWN_CIPHER;
     }
   } else {
-
-    if (!rp->enc_alg_len) {
-      SILC_LOG_DEBUG(("Encryption alg not defined in payload"));
-      silc_free(payload->ke_grp_list);
-      silc_free(payload->pkcs_alg_list);
-      silc_free(payload);
-      return SILC_SKE_STATUS_BAD_PAYLOAD;
-    }
-
     SILC_LOG_DEBUG(("Proposed encryption alg `%s' and selected it",
 		    rp->enc_alg_list));
 
     payload->enc_alg_len = rp->enc_alg_len;
     payload->enc_alg_list = strdup(rp->enc_alg_list);
+  }
+
+  /* Save selected cipher to security properties */
+  if (silc_cipher_alloc(payload->enc_alg_list,
+			&(*prop)->cipher) == FALSE) {
+    silc_free(payload->ke_grp_list);
+    silc_free(payload->pkcs_alg_list);
+    silc_free(payload);
+    return SILC_SKE_STATUS_UNKNOWN_CIPHER;
   }
 
   /* Get supported hash algorithms */
@@ -400,21 +445,21 @@ silc_ske_select_security_properties(SilcSKE ske,
       return SILC_SKE_STATUS_UNKNOWN_HASH_FUNCTION;
     }
   } else {
-
-    if (!rp->hash_alg_len) {
-      SILC_LOG_DEBUG(("Hash alg not defined in payload"));
-      silc_free(payload->ke_grp_list);
-      silc_free(payload->pkcs_alg_list);
-      silc_free(payload->enc_alg_list);
-      silc_free(payload);
-      return SILC_SKE_STATUS_BAD_PAYLOAD;
-    }
-
     SILC_LOG_DEBUG(("Proposed hash alg `%s' and selected it",
 		    rp->hash_alg_list));
 
     payload->hash_alg_len = rp->hash_alg_len;
     payload->hash_alg_list = strdup(rp->hash_alg_list);
+  }
+
+  /* Save selected hash algorithm to security properties */
+  if (silc_hash_alloc(ske->start_payload->hash_alg_list,
+		      &(*prop)->hash) == FALSE) {
+    silc_free(payload->ke_grp_list);
+    silc_free(payload->pkcs_alg_list);
+    silc_free(payload->enc_alg_list);
+    silc_free(payload);
+    return SILC_SKE_STATUS_UNKNOWN_HASH_FUNCTION;
   }
 
   /* Get supported HMACs */
@@ -461,22 +506,22 @@ silc_ske_select_security_properties(SilcSKE ske,
       return SILC_SKE_STATUS_UNKNOWN_HMAC;
     }
   } else {
-
-    if (!rp->hmac_alg_len) {
-      SILC_LOG_DEBUG(("HMAC not defined in payload"));
-      silc_free(payload->ke_grp_list);
-      silc_free(payload->pkcs_alg_list);
-      silc_free(payload->enc_alg_list);
-      silc_free(payload->hash_alg_list);
-      silc_free(payload);
-      return SILC_SKE_STATUS_BAD_PAYLOAD;
-    }
-
     SILC_LOG_DEBUG(("Proposed HMAC `%s' and selected it",
 		    rp->hmac_alg_list));
 
     payload->hmac_alg_len = rp->hmac_alg_len;
     payload->hmac_alg_list = strdup(rp->hmac_alg_list);
+  }
+
+  /* Save selected HMACc to security properties */
+  if (silc_hmac_alloc(ske->start_payload->hmac_alg_list, NULL,
+		      &(*prop)->hmac) == FALSE) {
+    silc_free(payload->ke_grp_list);
+    silc_free(payload->pkcs_alg_list);
+    silc_free(payload->enc_alg_list);
+    silc_free(payload->hash_alg_list);
+    silc_free(payload);
+    return SILC_SKE_STATUS_UNKNOWN_HMAC;
   }
 
   /* Get supported compression algorithms */
@@ -527,6 +572,9 @@ silc_ske_select_security_properties(SilcSKE ske,
     2 + payload->ke_grp_len + 2 + payload->pkcs_alg_len +
     2 + payload->enc_alg_len + 2 + payload->hash_alg_len +
     2 + payload->hmac_alg_len + 2 + payload->comp_alg_len;
+
+  /* Save our reply payload */
+  ske->start_payload = payload;
 
   return SILC_SKE_STATUS_OK;
 }
@@ -771,7 +819,7 @@ SilcSKE silc_ske_alloc(SilcRng rng, SilcSchedule schedule,
 
   SILC_LOG_DEBUG(("Allocating new Key Exchange object"));
 
-  if (!rng || !schedule)
+  if (!rng || !schedule || !public_key)
     return NULL;
 
   ske = silc_calloc(1, sizeof(*ske));
@@ -872,6 +920,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4);
 SILC_FSM_STATE(silc_ske_st_initiator_end);
 SILC_FSM_STATE(silc_ske_st_initiator_aborted);
 SILC_FSM_STATE(silc_ske_st_initiator_error);
+SILC_FSM_STATE(silc_ske_st_initiator_failure);
 
 /* Start protocol.  Send our proposal */
 
@@ -903,12 +952,21 @@ SILC_FSM_STATE(silc_ske_st_initiator_start)
      compute the HASH value. */
   ske->start_payload_copy = payload_buf;
 
-  /* Send the packet */
-  /* XXX */
+  /* Send the packet. */
+  if (!silc_packet_send(ske->stream, SILC_PACKET_KEY_EXCHANGE, 0,
+			silc_buffer_data(payload_buf),
+			silc_buffer_len(payload_buf))) {
+    /** Error sending packet */
+    ske->status = SILC_SKE_STATUS_ERROR;
+    silc_fsm_next(fsm, silc_ske_st_initiator_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /* XXX timeout */
 
   /** Wait for responder proposal */
   SILC_LOG_DEBUG(("Waiting for reponder proposal"));
-  silc_fsm_next(ske, silc_ske_st_initiator_phase1);
+  silc_fsm_next(fsm, silc_ske_st_initiator_phase1);
   return SILC_FSM_WAIT;
 }
 
@@ -922,12 +980,15 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
   SilcSKESecurityProperties prop;
   SilcSKEDiffieHellmanGroup group;
   SilcBuffer packet_buf = &ske->packet->buffer;
+  SilcUInt16 remote_port = 0;
+  SilcID id;
   int coff = 0;
 
   SILC_LOG_DEBUG(("Start"));
 
   if (ske->aborted) {
     /** Aborted */
+    silc_packet_free(ske->packet);
     silc_fsm_next(fsm, silc_ske_st_initiator_aborted);
     return SILC_FSM_CONTINUE;
   }
@@ -936,16 +997,35 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
   status = silc_ske_payload_start_decode(ske, packet_buf, &payload);
   if (status != SILC_SKE_STATUS_OK) {
     /** Error decoding Start Payload */
+    silc_packet_free(ske->packet);
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
   }
 
+  /* Get remote ID and set it to stream */
+  if (ske->packet->src_id_len) {
+    silc_id_str2id(ske->packet->src_id, ske->packet->src_id_len,
+		   ske->packet->src_id_type,
+		   (ske->packet->src_id_type == SILC_ID_SERVER ?
+		    (void *)&id.u.server_id : (void *)&id.u.client_id),
+		   (ske->packet->src_id_type == SILC_ID_SERVER ?
+		    sizeof(id.u.server_id) : sizeof(id.u.client_id)));
+    silc_packet_set_ids(ske->stream, 0, NULL, ske->packet->src_id_type,
+			(ske->packet->src_id_type == SILC_ID_SERVER ?
+			 (void *)&id.u.server_id : (void *)&id.u.client_id));
+  }
+
+  silc_packet_free(ske->packet);
+
   /* Check that the cookie is returned unmodified.  In case IV included
      flag and session port has been set, the first two bytes of cookie
      are the session port and we ignore them in this check. */
-  if (payload->flags & SILC_SKE_SP_FLAG_IV_INCLUDED && ske->session_port)
+  if (payload->flags & SILC_SKE_SP_FLAG_IV_INCLUDED && ske->session_port) {
+    /* Take remote port */
+    SILC_GET16_MSB(remote_port, ske->start_payload->cookie);
     coff = 2;
+  }
   if (memcmp(ske->start_payload->cookie + coff, payload->cookie + coff,
 	     SILC_SKE_COOKIE_LEN - coff)) {
     /** Invalid cookie */
@@ -981,6 +1061,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
     goto err;
 
   prop->group = group;
+  prop->remote_port = remote_port;
 
   if (silc_pkcs_find_algorithm(payload->pkcs_alg_list, NULL) == NULL) {
     status = SILC_SKE_STATUS_UNKNOWN_PKCS;
@@ -1086,21 +1167,19 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
 		  &ske->prop->group->group);
 
   /* Get public key */
-  if (ske->public_key) {
-    payload->pk_data = silc_pkcs_public_key_encode(ske->public_key, &pk_len);
-    if (!payload->pk_data) {
-      /** Error encoding public key */
-      silc_mp_uninit(x);
-      silc_free(x);
-      silc_mp_uninit(&payload->x);
-      silc_free(payload);
-      ske->ke1_payload = NULL;
-      ske->status = SILC_SKE_STATUS_ERROR;
-      silc_fsm_next(fsm, silc_ske_st_initiator_error);
-      return SILC_FSM_CONTINUE;
-    }
-    payload->pk_len = pk_len;
+  payload->pk_data = silc_pkcs_public_key_encode(ske->public_key, &pk_len);
+  if (!payload->pk_data) {
+    /** Error encoding public key */
+    silc_mp_uninit(x);
+    silc_free(x);
+    silc_mp_uninit(&payload->x);
+    silc_free(payload);
+    ske->ke1_payload = NULL;
+    ske->status = SILC_SKE_STATUS_ERROR;
+    silc_fsm_next(fsm, silc_ske_st_initiator_error);
+    return SILC_FSM_CONTINUE;
   }
+  payload->pk_len = pk_len;
   payload->pk_type = silc_pkcs_get_type(ske->public_key);
 
   /* Compute signature data if we are doing mutual authentication */
@@ -1133,7 +1212,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
       return SILC_FSM_CONTINUE;
     }
     payload->sign_data = silc_memdup(sign, sign_len);
-    payload->sign_len = sign_len;
+    if (payload->sign_data)
+      payload->sign_len = sign_len;
     memset(sign, 0, sizeof(sign));
   }
 
@@ -1154,8 +1234,17 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
 
   ske->x = x;
 
+  /* Check for backwards compatibility */
+
   /* Send the packet. */
-  /* XXX */
+  if (!silc_packet_send(ske->stream, SILC_PACKET_KEY_EXCHANGE_1, 0,
+			silc_buffer_data(payload_buf),
+			silc_buffer_len(payload_buf))) {
+    /** Error sending packet */
+    ske->status = SILC_SKE_STATUS_ERROR;
+    silc_fsm_next(fsm, silc_ske_st_initiator_error);
+    return SILC_FSM_CONTINUE;
+  }
 
   silc_buffer_free(payload_buf);
 
@@ -1178,6 +1267,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
 
   if (ske->aborted) {
     /** Aborted */
+    silc_packet_free(ske->packet);
     silc_fsm_next(fsm, silc_ske_st_initiator_aborted);
     return SILC_FSM_CONTINUE;
   }
@@ -1186,10 +1276,12 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
   status = silc_ske_payload_ke_decode(ske, packet_buf, &payload);
   if (status != SILC_SKE_STATUS_OK) {
     /** Error decoding KE payload */
+    silc_packet_free(ske->packet);
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
   }
+  silc_packet_free(ske->packet);
   ske->ke2_payload = payload;
 
   if (!payload->pk_data && (ske->callbacks->verify_key || ske->repository)) {
@@ -1305,14 +1397,11 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
     if (status != SILC_SKE_STATUS_OK)
       goto err;
 
-    ske->hash = silc_memdup(hash, hash_len);
-    ske->hash_len = hash_len;
-
     SILC_LOG_DEBUG(("Verifying signature (HASH)"));
 
     /* Verify signature */
     if (!silc_pkcs_verify(ske->prop->public_key, payload->sign_data,
-			 payload->sign_len, hash, hash_len, NULL)) {
+			  payload->sign_len, hash, hash_len, NULL)) {
       SILC_LOG_ERROR(("Signature verification failed, incorrect signature"));
       status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
       goto err;
@@ -1320,6 +1409,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
 
     SILC_LOG_DEBUG(("Signature is Ok"));
 
+    ske->hash = silc_memdup(hash, hash_len);
+    ske->hash_len = hash_len;
     memset(hash, 'F', hash_len);
   }
 
@@ -1338,7 +1429,13 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
   }
 
   /* Send SUCCESS packet */
-  /* XXX */
+  SILC_PUT32_MSB((SilcUInt32)SILC_SKE_STATUS_OK, hash);
+  if (!silc_packet_send(ske->stream, SILC_PACKET_SUCCESS, 0, hash, 4)) {
+    /** Error sending packet */
+    ske->status = SILC_SKE_STATUS_ERROR;
+    silc_fsm_next(fsm, silc_ske_st_initiator_error);
+    return SILC_FSM_CONTINUE;
+  }
 
   /** Waiting completion */
   silc_fsm_next(fsm, silc_ske_st_initiator_end);
@@ -1374,15 +1471,29 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
 {
   SilcSKE ske = fsm_context;
 
+  SILC_LOG_DEBUG(("Start"));
+
   if (ske->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_ske_st_initiator_aborted);
     return SILC_FSM_CONTINUE;
   }
 
+  /* See if received failure from remote */
+  if (ske->packet->type == SILC_PACKET_FAILURE) {
+    silc_packet_free(ske->packet);
+    silc_fsm_next(fsm, silc_ske_st_initiator_failure);
+    return SILC_FSM_CONTINUE;
+  }
+
+  SILC_LOG_DEBUG(("Key exchange completed successfully"));
+
   /* Call the completion callback */
   if (ske->callbacks->completed)
-    ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL, NULL);
+    ske->callbacks->completed(ske, ske->status, ske->prop, ske->keymat,
+			      ske->rekey, ske->user_data);
+
+  silc_packet_free(ske->packet);
 
   return SILC_FSM_FINISH;
 }
@@ -1391,23 +1502,67 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
 
 SILC_FSM_STATE(silc_ske_st_initiator_aborted)
 {
+  SilcSKE ske = fsm_context;
+  unsigned char data[4];
+
+  SILC_LOG_DEBUG(("Aborted by caller"));
+
+  /* Send FAILURE packet */
+  SILC_PUT32_MSB(SILC_SKE_STATUS_ERROR, data);
+  silc_packet_send(ske->stream, SILC_PACKET_FAILURE, 0, data, 4);
 
   return SILC_FSM_FINISH;
 }
 
-/* Error occurred */
+/* Error occurred.  Send error to remote host */
 
 SILC_FSM_STATE(silc_ske_st_initiator_error)
 {
+  SilcSKE ske = fsm_context;
+  SilcSKEStatus status;
+  unsigned char data[4];
+
+  SILC_LOG_DEBUG(("Error %s (%d) occurred during key exchange",
+		  silc_ske_map_status(ske->status), ske->status));
+
+  status = ske->status;
+  if (status > SILC_SKE_STATUS_INVALID_COOKIE)
+    status = SILC_SKE_STATUS_ERROR;
+
+  /* Send FAILURE packet */
+  SILC_PUT32_MSB((SilcUInt32)status, data);
+  silc_packet_send(ske->stream, SILC_PACKET_FAILURE, 0, data, 4);
+
+  /* Call the completion callback */
+  if (ske->callbacks->completed)
+    ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL, NULL);
 
   return SILC_FSM_FINISH;
 }
 
+/* Failure received from remote */
+
+SILC_FSM_STATE(silc_ske_st_initiator_failure)
+{
+  SilcSKE ske = fsm_context;
+
+  SILC_LOG_DEBUG(("Error %s (%d) received during key exchange",
+		  silc_ske_map_status(ske->status), ske->status));
+
+  /* Call the completion callback */
+  if (ske->callbacks->completed)
+    ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL, NULL);
+
+  return SILC_FSM_FINISH;
+}
+
+/* FSM destructor */
 
 static void silc_ske_initiator_finished(SilcFSM fsm, void *fsm_context,
 					void *destructor_context)
 {
-
+  SilcSKE ske = fsm_context;
+  silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
 }
 
 /* Starts the protocol as initiator */
@@ -1443,6 +1598,7 @@ silc_ske_initiator(SilcSKE ske,
   }
 
   ske->start_payload = start_payload;
+  ske->version = params->version;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;
@@ -1464,7 +1620,6 @@ silc_ske_initiator(SilcSKE ske,
 SILC_FSM_STATE(silc_ske_st_responder_start);
 SILC_FSM_STATE(silc_ske_st_responder_phase1);
 SILC_FSM_STATE(silc_ske_st_responder_phase2);
-SILC_FSM_STATE(silc_ske_st_responder_phase3);
 SILC_FSM_STATE(silc_ske_st_responder_phase4);
 SILC_FSM_STATE(silc_ske_st_responder_phase5);
 SILC_FSM_STATE(silc_ske_st_responder_end);
@@ -1494,25 +1649,28 @@ SILC_FSM_STATE(silc_ske_st_responder_start)
   return SILC_FSM_WAIT;
 }
 
-/* Decode initiator's start payload */
+/* Decode initiator's start payload.  Select the security properties from
+   the initiator's start payload and send our reply start payload back. */
 
 SILC_FSM_STATE(silc_ske_st_responder_phase1)
 {
   SilcSKE ske = fsm_context;
   SilcSKEStatus status;
-  SilcSKEStartPayload remote_payload = NULL, payload = NULL;
+  SilcSKEStartPayload remote_payload = NULL;
   SilcBuffer packet_buf = &ske->packet->buffer;
 
   SILC_LOG_DEBUG(("Start"));
 
   if (ske->aborted) {
     /** Aborted */
+    silc_packet_free(ske->packet);
     silc_fsm_next(fsm, silc_ske_st_responder_aborted);
     return SILC_FSM_CONTINUE;
   }
 
   /* See if received failure from remote */
   if (ske->packet->type == SILC_PACKET_FAILURE) {
+    silc_packet_free(ske->packet);
     silc_fsm_next(fsm, silc_ske_st_responder_failure);
     return SILC_FSM_CONTINUE;
   }
@@ -1552,106 +1710,47 @@ SILC_FSM_STATE(silc_ske_st_responder_phase1)
     remote_payload->flags &= ~SILC_SKE_SP_FLAG_IV_INCLUDED;
   }
 
-  /* Parse and select the security properties from the payload */
-  payload = silc_calloc(1, sizeof(*payload));
-  status = silc_ske_select_security_properties(ske, payload, remote_payload);
+  /* Check and select security properties */
+  status = silc_ske_select_security_properties(ske, remote_payload,
+					       &ske->prop);
   if (status != SILC_SKE_STATUS_OK) {
     /** Error selecting proposal */
-    if (remote_payload)
-      silc_ske_payload_start_free(remote_payload);
-    silc_free(payload);
+    silc_ske_payload_start_free(remote_payload);
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
     return SILC_FSM_CONTINUE;
   }
 
-  ske->start_payload = payload;
-
   silc_ske_payload_start_free(remote_payload);
 
-  /** Send proposal to initiator */
-  silc_fsm_next(fsm, silc_ske_st_responder_phase2);
-  return SILC_FSM_CONTINUE;
-}
-
-/* Phase-2.  Send Start Payload */
-
-SILC_FSM_STATE(silc_ske_st_responder_phase2)
-{
-  SilcSKE ske = fsm_context;
-  SilcSKEStatus status;
-  SilcBuffer payload_buf;
-  SilcSKESecurityProperties prop;
-  SilcSKEDiffieHellmanGroup group = NULL;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Allocate security properties from the payload. These are allocated
-     only for this negotiation and will be free'd after KE is over. */
-  ske->prop = prop = silc_calloc(1, sizeof(*prop));
-  if (!ske->prop) {
-    status = SILC_SKE_STATUS_OUT_OF_MEMORY;
-    goto err;
-  }
-  prop->flags = ske->start_payload->flags;
-  status = silc_ske_group_get_by_name(ske->start_payload->ke_grp_list,
-				      &group);
-  if (status != SILC_SKE_STATUS_OK)
-    goto err;
-
-  prop->group = group;
-
-  /* XXX these shouldn't be allocated before we know the remote's
-     public key type.  It's unnecessary to allocate these because the
-     select_security_properties has succeeded already. */
-  if (!silc_pkcs_find_algorithm(ske->start_payload->pkcs_alg_list, NULL)) {
-    status = SILC_SKE_STATUS_UNKNOWN_PKCS;
-    goto err;
-  }
-  if (silc_cipher_alloc(ske->start_payload->enc_alg_list,
-			&prop->cipher) == FALSE) {
-    status = SILC_SKE_STATUS_UNKNOWN_CIPHER;
-    goto err;
-  }
-  if (silc_hash_alloc(ske->start_payload->hash_alg_list,
-		      &prop->hash) == FALSE) {
-    status = SILC_SKE_STATUS_UNKNOWN_HASH_FUNCTION;
-    goto err;
-  }
-  if (silc_hmac_alloc(ske->start_payload->hmac_alg_list, NULL,
-		      &prop->hmac) == FALSE) {
-    status = SILC_SKE_STATUS_UNKNOWN_HMAC;
-    goto err;
-  }
-
-  /* Encode the payload */
+  /* Encode our reply payload to send the selected security properties */
   status = silc_ske_payload_start_encode(ske, ske->start_payload,
-					 &payload_buf);
+					 &packet_buf);
   if (status != SILC_SKE_STATUS_OK)
     goto err;
 
   /* Send the packet. */
   if (!silc_packet_send(ske->stream, SILC_PACKET_KEY_EXCHANGE, 0,
-			payload_buf->data, silc_buffer_len(payload_buf)))
+			silc_buffer_data(packet_buf),
+			silc_buffer_len(packet_buf)))
     goto err;
 
-  silc_buffer_free(payload_buf);
+  silc_buffer_free(packet_buf);
 
   /** Waiting initiator's KE payload */
-  silc_fsm_next(fsm, silc_ske_st_responder_phase3);
+  silc_fsm_next(fsm, silc_ske_st_responder_phase2);
   return SILC_FSM_WAIT;
 
  err:
-  if (group)
-    silc_ske_group_free(group);
-
-  if (prop->cipher)
-    silc_cipher_free(prop->cipher);
-  if (prop->hash)
-    silc_hash_free(prop->hash);
-  if (prop->hmac)
-    silc_hmac_free(prop->hmac);
-  silc_free(prop);
+  if (ske->prop->group)
+    silc_ske_group_free(ske->prop->group);
+  if (ske->prop->cipher)
+    silc_cipher_free(ske->prop->cipher);
+  if (ske->prop->hash)
+    silc_hash_free(ske->prop->hash);
+  if (ske->prop->hmac)
+    silc_hmac_free(ske->prop->hmac);
+  silc_free(ske->prop);
   ske->prop = NULL;
 
   if (status == SILC_SKE_STATUS_OK)
@@ -1663,9 +1762,9 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
   return SILC_FSM_CONTINUE;
 }
 
-/* Phase-3.  Decode initiator's KE payload */
+/* Phase-2.  Decode initiator's KE payload */
 
-SILC_FSM_STATE(silc_ske_st_responder_phase3)
+SILC_FSM_STATE(silc_ske_st_responder_phase2)
 {
   SilcSKE ske = fsm_context;
   SilcSKEStatus status;
@@ -2584,4 +2683,11 @@ SilcBool silc_ske_parse_version(SilcSKE ske,
 				   software_version,
 				   software_version_string,
 				   vendor_version);
+}
+
+/* Get security properties */
+
+SilcSKESecurityProperties silc_ske_get_security_properties(SilcSKE ske)
+{
+  return ske->prop;
 }

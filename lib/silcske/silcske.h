@@ -122,6 +122,8 @@ typedef struct {
   SilcHmac hmac;			 /* Selected HMAC */
   SilcHash hash;			 /* Selected hash algorithm */
   SilcPublicKey public_key;              /* Remote public key */
+  SilcUInt16 remote_port;	         /* Remote port, set when IV Included
+					    set and using UDP/IP */
 } *SilcSKESecurityProperties;
 /***/
 
@@ -243,11 +245,7 @@ typedef enum {
  *
  *    Completion callback that will be called when the public key
  *    has been verified.  The `status' will indicate whether the public
- *    key were trusted or not. If the `status' is PENDING then the status
- *    is not considered to be available at this moment. In this case the
- *    SKE libary will assume that the caller will call this callback again
- *    when the status is available. See silc_ske_set_callbacks for more
- *    information.
+ *    key were trusted or not.
  *
  ***/
 typedef void (*SilcSKEVerifyCbCompletion)(SilcSKE ske,
@@ -341,7 +339,9 @@ typedef void (*SilcSKECompletionCb)(SilcSKE ske,
  *    callback is called only if the key is not found from the repository.
  *
  *    The `public_key' and `private_key' is the caller's identity used
- *    during the key exchange.
+ *    during the key exchange.  Giving `private_key' is optional if the
+ *    SILC_SKE_SP_FLAG_MUTUAL is not set and you are initiator.  For
+ *    responder both `public_key' and `private_key' must be set.
  *
  * EXMPALE
  *
@@ -422,10 +422,10 @@ void silc_ske_set_callbacks(SilcSKE ske,
  * SYNOPSIS
  *
  *    SilcAsyncOperation
- *    silc_ske_initiator_start(SilcSKE ske,
- *                             SilcPacketStream stream,
- *                             SilcSKEParams params,
- *                             SilcSKEStartPayload start_payload);
+ *    silc_ske_initiator(SilcSKE ske,
+ *                       SilcPacketStream stream,
+ *                       SilcSKEParams params,
+                         SilcSKEStartPayload start_payload);
  *
  * DESCRIPTION
  *
@@ -433,8 +433,9 @@ void silc_ske_set_callbacks(SilcSKE ske,
  *    callback that was set in silc_ske_set_callbacks will be called once
  *    the protocol has completed.  The `stream' is the network connection
  *    to the remote host.  The SKE library will handle all key exchange
- *    packets sent and received in the `stream' connection.  The `params'
- *    include SKE parameters, and it must be provided.
+ *    packets sent and received in the `stream' connection.  The library will
+ *    also set the remote host's ID automatically to the `stream'.  The
+ *    `params' include SKE parameters, and it must be provided.
  *
  *    If the `start_payload' is NULL the library will generate it
  *    automatically.  Caller may provide it if it wants to send its own
@@ -494,7 +495,7 @@ silc_ske_rekey_responder(SilcSKE ske,
 			 SilcBuffer ke_payload,
 			 SilcSKERekeyMaterial rekey);
 
-/****f* silcske/SilcSKEAPI/silc_ske_assemble_security_properties
+/****f* silcske/SilcSKEAPI/silc_ske_set_keys
  *
  * SYNOPSIS
  *
@@ -538,7 +539,8 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
  *
  * DESCRIPTION
  *
- *    Utility function to parse the remote host's version string.
+ *    Utility function to parse the remote host's version string.  This can
+ *    be called after the key exchange has been completed.
  *
  ***/
 SilcBool silc_ske_parse_version(SilcSKE ske,
@@ -547,6 +549,21 @@ SilcBool silc_ske_parse_version(SilcSKE ske,
 				SilcUInt32 *software_version,
 				char **software_version_string,
 				char **vendor_version);
+
+/****f* silcske/SilcSKEAPI/silc_ske_get_security_properties
+ *
+ * SYNOPSIS
+ *
+ *    SilcSKESecurityProperties silc_ske_get_security_properties(SilcSKE ske);
+ *
+ * DESCRIPTION
+ *
+ *    Returns negotiated security properties from the `ske' or NULL if they
+ *    have not yet been negotiated.  This may be called to retrieve the
+ *    security properties after the SilcSKECompletionCb has been called.
+ *
+ ***/
+SilcSKESecurityProperties silc_ske_get_security_properties(SilcSKE ske);
 
 /****f* silcske/SilcSKEAPI/silc_ske_map_status
  *
