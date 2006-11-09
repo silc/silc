@@ -836,16 +836,14 @@ void silc_packet_free(SilcPacket packet)
 
   SILC_LOG_DEBUG(("Freeing packet %p", packet));
 
-#if defined(SILC_DEBUG)
   /* Check for double free */
-  assert(packet->stream != NULL);
-#endif /* SILC_DEBUG */
-
-  silc_mutex_lock(stream->engine->lock);
+  SILC_ASSERT(packet->stream != NULL);
 
   packet->stream = NULL;
   packet->src_id = packet->dst_id = NULL;
   silc_buffer_reset(&packet->buffer);
+
+  silc_mutex_lock(stream->engine->lock);
 
   /* Put the packet back to freelist */
   silc_list_add(stream->engine->packet_pool, packet);
@@ -908,7 +906,7 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
   int i, enclen, truelen, padlen, ivlen = 0, psnlen = 0;
   SilcBufferStruct packet;
 
-  SILC_LOG_DEBUG(("Sending packet %s (%d) flags %d, src %d dst %d,"
+  SILC_LOG_DEBUG(("Sending packet %s (%d) flags %d, src %d dst %d, "
 		  "data len %d", silc_get_packet_name(type), stream->send_psn,
 		  flags, src_id_type, dst_id_type, data_len));
 
@@ -1278,9 +1276,9 @@ static void silc_packet_dispatch(SilcPacket packet)
 
   /* Parse the packet */
   if (!silc_packet_parse(packet)) {
-    silc_mutex_unlock(packet->stream->lock);
+    silc_mutex_unlock(stream->lock);
     SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MALFORMED);
-    silc_mutex_lock(packet->stream->lock);
+    silc_mutex_lock(stream->lock);
     silc_packet_free(packet);
     return;
   }
@@ -1290,13 +1288,13 @@ static void silc_packet_dispatch(SilcPacket packet)
   if (!stream->process) {
     /* Send to default processor as no others exist */
     SILC_LOG_DEBUG(("Dispatching packet to default callbacks"));
-    silc_mutex_unlock(packet->stream->lock);
+    silc_mutex_unlock(stream->lock);
     if (!stream->engine->callbacks->
 	packet_receive(stream->engine, stream, packet,
 		       stream->engine->callback_context,
 		       stream->stream_context))
       silc_packet_free(packet);
-    silc_mutex_lock(packet->stream->lock);
+    silc_mutex_lock(stream->lock);
     return;
   }
 
@@ -1308,43 +1306,43 @@ static void silc_packet_dispatch(SilcPacket packet)
     if (!default_sent && p->priority <= 0) {
       SILC_LOG_DEBUG(("Dispatching packet to default callbacks"));
       default_sent = TRUE;
-      silc_mutex_unlock(packet->stream->lock);
+      silc_mutex_unlock(stream->lock);
       if (stream->engine->callbacks->
 	  packet_receive(stream->engine, stream, packet,
 			 stream->engine->callback_context,
 			 stream->stream_context)) {
-	silc_mutex_lock(packet->stream->lock);
+	silc_mutex_lock(stream->lock);
 	return;
       }
-      silc_mutex_lock(packet->stream->lock);
+      silc_mutex_lock(stream->lock);
     }
 
     /* Send to processor */
     if (!p->types) {
       /* Send all packet types */
       SILC_LOG_DEBUG(("Dispatching packet to %p callbacks", p->callbacks));
-      silc_mutex_unlock(packet->stream->lock);
+      silc_mutex_unlock(stream->lock);
       if (p->callbacks->packet_receive(stream->engine, stream, packet,
 				       p->callback_context,
 				       stream->stream_context)) {
-	silc_mutex_lock(packet->stream->lock);
+	silc_mutex_lock(stream->lock);
 	return;
       }
-      silc_mutex_lock(packet->stream->lock);
+      silc_mutex_lock(stream->lock);
     } else {
       /* Send specific types */
       for (pt = p->types; *pt; pt++) {
 	if (*pt != packet->type)
 	  continue;
 	SILC_LOG_DEBUG(("Dispatching packet to %p callbacks", p->callbacks));
-	silc_mutex_unlock(packet->stream->lock);
+	silc_mutex_unlock(stream->lock);
 	if (p->callbacks->packet_receive(stream->engine, stream, packet,
 					 p->callback_context,
 					 stream->stream_context)) {
-	  silc_mutex_lock(packet->stream->lock);
+	  silc_mutex_lock(stream->lock);
 	  return;
 	}
-	silc_mutex_lock(packet->stream->lock);
+	silc_mutex_lock(stream->lock);
 	break;
       }
     }
@@ -1353,15 +1351,15 @@ static void silc_packet_dispatch(SilcPacket packet)
   if (!default_sent) {
     /* Send to default processor as it has not been sent yet */
     SILC_LOG_DEBUG(("Dispatching packet to default callbacks"));
-    silc_mutex_unlock(packet->stream->lock);
+    silc_mutex_unlock(stream->lock);
     if (stream->engine->callbacks->
 	packet_receive(stream->engine, stream, packet,
 		       stream->engine->callback_context,
 		       stream->stream_context)) {
-      silc_mutex_lock(packet->stream->lock);
+      silc_mutex_lock(stream->lock);
       return;
     }
-    silc_mutex_lock(packet->stream->lock);
+    silc_mutex_lock(stream->lock);
   }
 
   /* If we got here, no one wanted the packet, so drop it */
@@ -1391,8 +1389,8 @@ static void silc_packet_read_process(SilcPacketStream stream)
     hmac = stream->receive_hmac[0];
 
     if (silc_buffer_len(&stream->inbuf) <
-	stream->iv_included ? SILC_PACKET_MIN_HEADER_LEN_IV :
-	SILC_PACKET_MIN_HEADER_LEN) {
+	(stream->iv_included ? SILC_PACKET_MIN_HEADER_LEN_IV :
+	 SILC_PACKET_MIN_HEADER_LEN)) {
       SILC_LOG_DEBUG(("Partial packet in queue, waiting for the rest"));
       return;
     }
