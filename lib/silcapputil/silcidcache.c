@@ -223,7 +223,8 @@ SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
 
 SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
 			     void *old_id, void *new_id,
-			     char *old_name, char *new_name)
+			     char *old_name, char *new_name,
+			     SilcBool free_old_name)
 {
   if (old_id && new_id) {
     if (!silc_hash_table_del_by_context(cache->id_table, old_id, entry))
@@ -244,6 +245,8 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
     if (!silc_hash_table_del_by_context(cache->name_table, old_name, entry))
       return FALSE;
 
+    if (free_old_name)
+      silc_free(entry->name);
     entry->name = new_name;
 
     if (!silc_hash_table_add(cache->name_table, entry->name, entry))

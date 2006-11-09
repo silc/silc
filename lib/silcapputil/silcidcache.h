@@ -206,7 +206,8 @@ SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
  *
  *    SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
  *                                 void *old_id, void *new_id,
- *                                 char *old_name, char *new_name);
+ *                                 char *old_name, char *new_name,
+ *                                 SilcBool free_old_name);
  *
  * DESCRIPTION
  *
@@ -215,12 +216,14 @@ SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
  *    If the `new_name' is non-NULL then the `entry' will be updated with
  *    `new_name'.  The caller is responsible of freeing the old name if it
  *    was updated with new one.  The old ID value does not need to be freed
- *    as the new value is copied over the old value.
+ *    as the new value is copied over the old value.  If the `free_old_name'
+ *    is TRUE the library will free the old name from the entry.
  *
  ***/
 SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
 			     void *old_id, void *new_id,
-			     char *old_name, char *new_name);
+			     char *old_name, char *new_name,
+			     SilcBool free_old_name);
 
 /****f* silcapputil/SilcIDCacheAPI/silc_idcache_get_all
  *
