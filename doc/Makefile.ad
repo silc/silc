@@ -108,7 +108,7 @@ EXTRA_DIST = 			\
 #endif SILC_DIST_CLIENT
 #ifndef SILC_DIST_CLIENT
 	example_silcd.conf 	\
-#endif
+#endif SILC_DIST_CLIENT
 #ifdef SILC_DIST_SERVER
 	examples silcd.8 silcd.conf.5	\
 #endif SILC_DIST_SERVER

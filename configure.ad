@@ -984,6 +984,9 @@ AM_CONDITIONAL(SILC_BEOS, test xfalse = xtrue)
 #
 AM_CONDITIONAL(SILC_OS2, test xfalse = xtrue)
 
+# Make enable-shared aware
+AM_CONDITIONAL(SILC_ENABLE_SHARED, test "$enable_shared" = yes)
+
 #ifdef SILC_DIST_TOOLKIT
 # --with-irssi
 #
@@ -1043,9 +1046,6 @@ AC_DEFINE_UNQUOTED([SILC_ETCDIR], "$ETCDIR", [SILC_ETCDIR])
 ##
 ##  Misc
 ##
-
-# Make enable-shared aware
-AM_CONDITIONAL(SILC_ENABLE_SHARED, test "$enable_shared" = yes)
 
 SILC_TOP_SRCDIR=`pwd`
 
