@@ -107,7 +107,7 @@ SILC_FSM_STATE(silc_client_private_message)
   SilcPacket packet = state_context;
   SilcMessagePayload payload = NULL;
   SilcClientID remote_id;
-  SilcClientEntry remote_client;
+  SilcClientEntry remote_client = NULL;
   SilcMessageFlags flags;
   unsigned char *message;
   SilcUInt32 message_len;
@@ -122,9 +122,10 @@ SILC_FSM_STATE(silc_client_private_message)
 
   /* Check whether we know this client already */
   remote_client = silc_client_get_client_by_id(client, conn, &remote_id);
-  if (!remote_client || !remote_client->nickname) {
+  if (!remote_client || !remote_client->nickname[0]) {
     /* Resolve the client info.  We return back to packet thread to receive
        other packets while we wait for the resolving to finish. */
+    silc_client_unref_client(client, conn, remote_client);
     silc_client_get_client_by_id_resolve(client, conn, &remote_id, NULL,
 					 silc_client_private_message_resolved,
 					 packet);
@@ -195,6 +196,7 @@ SILC_FSM_STATE(silc_client_private_message)
 
  out:
   /** Packet processed */
+  silc_client_unref_client(client, conn, remote_client);
   if (payload)
     silc_message_payload_free(payload);
   silc_packet_free(packet);

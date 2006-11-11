@@ -345,10 +345,8 @@ static SilcBool silc_client_get_clients_list_cb(SilcClient client,
 
     /* Get client entry */
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
-    if (client_entry) {
-      silc_client_ref_client(client, conn, client_entry);
+    if (client_entry)
       silc_dlist_add(clients, client_entry);
-    }
 
     if (!silc_buffer_pull(i->client_id_list, idp_len)) {
       status = SILC_STATUS_ERR_BAD_CLIENT_ID;
@@ -416,13 +414,16 @@ void silc_client_get_clients_by_list(SilcClient client,
     /* Check if we have this client cached already.  If we don't have the
        entry or it has incomplete info, then resolve it from the server. */
     entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
-    if (!entry || !entry->nickname || !entry->username || !entry->realname) {
+    if (!entry || !entry->nickname[0] || !entry->username[0] ||
+	!entry->realname) {
       if (!res_argv) {
 	res_argv = silc_calloc(list_count, sizeof(*res_argv));
 	res_argv_lens = silc_calloc(list_count, sizeof(*res_argv_lens));
 	res_argv_types = silc_calloc(list_count, sizeof(*res_argv_types));
-	if (!res_argv || !res_argv_lens || !res_argv_types)
+	if (!res_argv || !res_argv_lens || !res_argv_types) {
+	  silc_client_unref_client(client, conn, entry);
 	  goto err;
+	}
       }
 
       res_argv[res_argc] = client_id_list->data;
@@ -430,6 +431,7 @@ void silc_client_get_clients_by_list(SilcClient client,
       res_argv_types[res_argc] = res_argc + 5;
       res_argc++;
     }
+    silc_client_unref_client(client, conn, entry);
 
     if (!silc_buffer_pull(client_id_list, idp_len))
       goto err;
@@ -557,7 +559,7 @@ void silc_client_get_clients_by_channel(SilcClient client,
     entry = chu->client;
 
     /* If the entry has incomplete info, then resolve it from the server. */
-    if (!entry->nickname || !entry->realname) {
+    if (!entry->nickname[0] || !entry->realname) {
       if (entry->status & SILC_CLIENT_STATUS_RESOLVING) {
 	/* Attach to this resolving and wait until it finishes */
 	silc_client_command_pending(
@@ -809,10 +811,9 @@ void silc_client_ref_client(SilcClient client, SilcClientConnection conn,
 void silc_client_unref_client(SilcClient client, SilcClientConnection conn,
 			      SilcClientEntry client_entry)
 {
-  if (silc_atomic_sub_int8(&client_entry->internal.refcnt, 1) == 0) {
+  if (client_entry &&
+      silc_atomic_sub_int8(&client_entry->internal.refcnt, 1) == 0)
     silc_client_del_client(client, conn, client_entry);
-    return;
-  }
 }
 
 /* Free client entry list */
@@ -822,11 +823,13 @@ void silc_client_list_free(SilcClient client, SilcClientConnection conn,
 {
   SilcClientEntry client_entry;
 
-  silc_dlist_start(client_list);
-  while ((client_entry = silc_dlist_get(client_list)))
-    silc_client_unref_client(client, conn, client_entry);
+  if (client_list) {
+    silc_dlist_start(client_list);
+    while ((client_entry = silc_dlist_get(client_list)))
+      silc_client_unref_client(client, conn, client_entry);
 
-  silc_dlist_uninit(client_list);
+    silc_dlist_uninit(client_list);
+  }
 }
 
 
@@ -1347,7 +1350,7 @@ void silc_client_nickname_format(SilcClient client,
   if (!client->internal->params->nickname_format[0])
     return;
 
-  if (!client_entry->nickname)
+  if (!client_entry->nickname[0])
     return;
 
   /* Get all clients with same nickname. Do not perform the formatting
@@ -1469,5 +1472,5 @@ void silc_client_nickname_format(SilcClient client,
 
   newnick[off] = 0;
   memcpy(client_entry->nickname, newnick, strlen(newnick));
-  silc_dlist_uninit(clients);
+  silc_client_list_free(client, conn, clients);
 }

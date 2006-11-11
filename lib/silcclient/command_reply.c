@@ -111,8 +111,10 @@ static void silc_client_command_process_error(SilcClientCommandContext cmd,
       return;
 
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
-    if (client_entry)
+    if (client_entry) {
+      silc_client_unref_client(client, conn, client_entry);
       silc_client_del_client(client, conn, client_entry);
+    }
   }
 }
 
@@ -438,6 +440,7 @@ SILC_FSM_STATE(silc_client_command_reply_whois)
 			       realname, channel_list, mode, idle, fingerprint,
 			       umodes, client_entry->attrs);
 
+  silc_client_unref_client(client, conn, client_entry);
   if (has_channels) {
     silc_dlist_uninit(channel_list);
     silc_free(umodes);
@@ -459,7 +462,7 @@ SILC_FSM_STATE(silc_client_command_reply_whowas)
   SilcClient client = conn->client;
   SilcCommandPayload payload = state_context;
   SilcArgumentPayload args = silc_command_get_args(payload);
-  SilcClientEntry client_entry;
+  SilcClientEntry client_entry = NULL;
   SilcID id;
   char *nickname, *username;
   char *realname = NULL;
@@ -491,6 +494,7 @@ SILC_FSM_STATE(silc_client_command_reply_whowas)
 			       realname);
 
  out:
+  silc_client_unref_client(client, conn, client_entry);
   silc_fsm_next(fsm, silc_client_command_reply_process);
   return SILC_FSM_CONTINUE;
 }
@@ -548,6 +552,7 @@ SILC_FSM_STATE(silc_client_command_reply_identify)
 
     /* Notify application */
     silc_client_command_callback(cmd, client_entry, name, info);
+    silc_client_unref_client(client, conn, client_entry);
     break;
 
   case SILC_ID_SERVER:
@@ -863,8 +868,10 @@ SILC_FSM_STATE(silc_client_command_reply_kill)
   silc_client_command_callback(cmd, client_entry);
 
   /* Remove the client from all channels and free it */
-  if (client_entry)
+  if (client_entry) {
     silc_client_del_client(client, conn, client_entry);
+    silc_client_unref_client(client, conn, client_entry);
+  }
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_process);
@@ -1153,17 +1160,22 @@ SILC_FSM_STATE(silc_client_command_reply_join)
     /* Join client to the channel */
     if (!silc_client_on_channel(channel, client_entry)) {
       chu = silc_calloc(1, sizeof(*chu));
-      if (!chu)
+      if (!chu) {
+	silc_client_unref_client(client, conn, client_entry);
 	goto out;
+      }
       chu->client = client_entry;
       chu->channel = channel;
       chu->mode = mode;
       silc_hash_table_add(channel->user_list, client_entry, chu);
       silc_hash_table_add(client_entry->channels, channel, chu);
     }
+    silc_client_unref_client(client, conn, client_entry);
 
-    silc_buffer_pull(client_id_list, idp_len);
-    silc_buffer_pull(client_mode_list, 4);
+    if (!silc_buffer_pull(client_id_list, idp_len))
+      goto out;
+    if (!silc_buffer_pull(client_mode_list, 4))
+      goto out;
   }
   silc_buffer_start(client_id_list);
   silc_buffer_start(client_mode_list);
@@ -1443,6 +1455,8 @@ SILC_FSM_STATE(silc_client_command_reply_cumode)
   /* Notify application */
   silc_client_command_callback(cmd, mode, channel, client_entry);
 
+  silc_client_unref_client(client, conn, client_entry);
+
  out:
   silc_fsm_next(fsm, silc_client_command_reply_process);
   return SILC_FSM_CONTINUE;
@@ -1493,6 +1507,8 @@ SILC_FSM_STATE(silc_client_command_reply_kick)
 
   /* Notify application */
   silc_client_command_callback(cmd, channel, client_entry);
+
+  silc_client_unref_client(client, conn, client_entry);
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_process);
@@ -1807,14 +1823,17 @@ SILC_FSM_STATE(silc_client_command_reply_users)
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
     if (client_entry && !silc_client_on_channel(channel, client_entry)) {
       chu = silc_calloc(1, sizeof(*chu));
-      if (!chu)
+      if (!chu) {
+	silc_client_unref_client(client, conn, client_entry);
 	goto out;
+      }
       chu->client = client_entry;
       chu->mode = mode;
       chu->channel = channel;
       silc_hash_table_add(channel->user_list, client_entry, chu);
       silc_hash_table_add(client_entry->channels, channel, chu);
     }
+    silc_client_unref_client(client, conn, client_entry);
 
     if (!silc_buffer_pull(&client_id_list, idp_len))
       goto out;
@@ -1892,6 +1911,7 @@ SILC_FSM_STATE(silc_client_command_reply_getkey)
     /* Notify application */
     silc_client_command_callback(cmd, SILC_ID_CLIENT, client_entry,
 				 client_entry->public_key);
+    silc_client_unref_client(client, conn, client_entry);
   } else if (id.type == SILC_ID_SERVER) {
     /* Received server's public key */
     server_entry = silc_client_get_server_by_id(client, conn, &id.u.server_id);

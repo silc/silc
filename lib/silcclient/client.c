@@ -38,7 +38,6 @@ static SilcBool silc_client_packet_receive(SilcPacketEngine engine,
 					   void *callback_context,
 					   void *stream_context)
 {
-  SilcClient client = callback_context;
   SilcClientConnection conn = stream_context;
 
   /* Packets we do not handle */
@@ -329,9 +328,10 @@ SILC_FSM_STATE(silc_client_new_id)
     goto out;
 
   /* Create local client entry */
-  conn->local_entry = silc_client_add_client(client, conn, (client->nickname ?
-							    client->nickname :
-							    client->username),
+  conn->local_entry = silc_client_add_client(client, conn,
+					     (client->nickname ?
+					      client->nickname :
+					      client->username),
 					     client->username,
 					     client->realname,
 					     &id.u.client_id, 0);
@@ -1096,117 +1096,6 @@ static void silc_client_resume_session_cb(SilcClient client,
 			     conn->cmd_ident, 1, 2, sidp->data, sidp->len);
     silc_buffer_free(sidp);
   }
-}
-
-/* Processes the received new Client ID from server. Old Client ID is
-   deleted from cache and new one is added. */
-
-void silc_client_receive_new_id(SilcClient client,
-				SilcClientConnection conn,
-				SilcIDPayload idp)
-{
-  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
-  int connecting = FALSE;
-  SilcClientID *client_id = silc_id_payload_get_id(idp);
-  char *nickname;
-
-  if (!conn->local_entry)
-    connecting = TRUE;
-
-  /* Delete old ID from ID cache */
-  if (conn->local_id) {
-    /* Check whether they are different */
-    if (SILC_ID_CLIENT_COMPARE(conn->local_id, client_id)) {
-      silc_free(client_id);
-      return;
-    }
-
-    silc_idcache_del_by_context(conn->internal->client_cache,
-				conn->local_entry);
-    silc_free(conn->local_id);
-  }
-
-  /* Save the new ID */
-
-  if (conn->local_id_data)
-    silc_free(conn->local_id_data);
-
-  conn->local_id = client_id;
-  conn->local_id_data = silc_id_payload_get_data(idp);
-  conn->local_id_data_len = silc_id_payload_get_len(idp);;
-
-  if (!conn->local_entry)
-    conn->local_entry = silc_calloc(1, sizeof(*conn->local_entry));
-
-  conn->local_entry->nickname = conn->nickname;
-  if (!conn->local_entry->username)
-    conn->local_entry->username = strdup(client->username);
-  if (!conn->local_entry->server)
-    conn->local_entry->server = strdup(conn->remote_host);
-  conn->local_entry->id = conn->local_id;
-  conn->local_entry->valid = TRUE;
-  if (!conn->local_entry->channels)
-    conn->local_entry->channels = silc_hash_table_alloc(1, silc_hash_ptr,
-							NULL, NULL,
-							NULL, NULL, NULL,
-							TRUE);
-
-  /* Normalize nickname */
-  nickname = silc_identifier_check(conn->nickname, strlen(conn->nickname),
-				   SILC_STRING_UTF8, 128, NULL);
-  if (!nickname)
-    return;
-
-    /* Put it to the ID cache */
-  silc_idcache_add(conn->internal->client_cache, nickname, conn->local_id,
-		   (void *)conn->local_entry, 0, NULL);
-
-#if 0
-  if (connecting) {
-    SilcBuffer sidp;
-
-    /* Issue IDENTIFY command for itself to get resolved hostname
-       correctly from server. */
-    silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
-				 silc_client_command_reply_identify_i, 0,
-				 ++conn->cmd_ident);
-    sidp = silc_id_payload_encode(conn->local_entry->id, SILC_ID_CLIENT);
-    silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
-			     conn->cmd_ident, 1, 5, sidp->data, sidp->len);
-    silc_buffer_free(sidp);
-
-    if (!conn->internal->params.detach_data) {
-      /* Send NICK command if the nickname was set by the application (and is
-	 not same as the username). Send this with little timeout. */
-      if (client->nickname &&
-	  !silc_utf8_strcasecmp(client->nickname, client->username))
-	silc_schedule_task_add(client->schedule, 0,
-			       silc_client_send_auto_nick, conn,
-			       1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-
-      /* Notify application of successful connection. We do it here now that
-	 we've received the Client ID and are allowed to send traffic. */
-      client->internal->ops->connected(client, conn, SILC_CLIENT_CONN_SUCCESS);
-
-      /* Issue INFO command to fetch the real server name and server
-	 information and other stuff. */
-      silc_client_command_register(client, SILC_COMMAND_INFO, NULL, NULL,
-				   silc_client_command_reply_info_i, 0,
-				   ++conn->cmd_ident);
-      sidp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
-      silc_client_command_send(client, conn, SILC_COMMAND_INFO,
-			       conn->cmd_ident, 1, 2, sidp->data, sidp->len);
-      silc_buffer_free(sidp);
-    } else {
-      /* We are resuming session.  Start resolving informations from the
-	 server we need to set the client libary in the state before
-	 detaching the session.  The connect client operation is called
-	 after this is successfully completed */
-      silc_client_resume_session(client, conn, silc_client_resume_session_cb,
-				 NULL);
-    }
-  }
-#endif /* 0 */
 }
 
 /* Removes a client entry from all channels it has joined. */

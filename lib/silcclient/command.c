@@ -925,7 +925,7 @@ SILC_FSM_STATE(silc_client_command_invite)
   SilcChannelEntry channel;
   SilcBuffer clidp, chidp, args = NULL;
   SilcPublicKey pubkey = NULL;
-  SilcDList clients;
+  SilcDList clients = NULL;
   char *nickname = NULL, *name;
   char *invite = NULL;
   unsigned char action[1];
@@ -975,7 +975,6 @@ SILC_FSM_STATE(silc_client_command_invite)
 				      cmd));
 
       client_entry = silc_dlist_get(clients);
-      silc_dlist_uninit(clients);
     } else {
       if (cmd->argv[2][0] == '+')
 	action[0] = 0x00;
@@ -1026,6 +1025,7 @@ SILC_FSM_STATE(silc_client_command_invite)
   silc_buffer_free(chidp);
   silc_buffer_free(args);
   silc_free(nickname);
+  silc_client_list_free(client, conn, clients);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -1123,7 +1123,6 @@ SILC_FSM_STATE(silc_client_command_kill)
 					  cmd));
 
   target = silc_dlist_get(clients);
-  silc_dlist_uninit(clients);
 
   if (cmd->argc >= 3) {
     if (strcasecmp(cmd->argv[2], "-pubkey"))
@@ -1149,6 +1148,7 @@ SILC_FSM_STATE(silc_client_command_kill)
   silc_buffer_free(idp);
   silc_buffer_free(auth);
   silc_free(nickname);
+  silc_client_list_free(client, conn, clients);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -1836,7 +1836,7 @@ SILC_FSM_STATE(silc_client_command_cumode)
   SilcChannelUser chu;
   SilcClientEntry client_entry;
   SilcBuffer clidp, chidp, auth = NULL;
-  SilcDList clients;
+  SilcDList clients = NULL;
   unsigned char *name, *cp, modebuf[4];
   SilcUInt32 mode = 0, add, len;
   char *nickname = NULL;
@@ -1882,7 +1882,6 @@ SILC_FSM_STATE(silc_client_command_cumode)
 					  cmd));
 
   client_entry = silc_dlist_get(clients);
-  silc_dlist_uninit(clients);
 
   /* Get the current mode */
   chu = silc_client_on_channel(channel, client_entry);
@@ -1997,6 +1996,7 @@ SILC_FSM_STATE(silc_client_command_cumode)
   COMMAND(SILC_STATUS_OK);
 
  out:
+  silc_client_list_free(client, conn, clients);
   silc_free(nickname);
   return SILC_FSM_FINISH;
 }
@@ -2013,7 +2013,7 @@ SILC_FSM_STATE(silc_client_command_kick)
   SilcChannelEntry channel;
   SilcBuffer idp, idp2;
   SilcClientEntry target;
-  SilcDList clients;
+  SilcDList clients = NULL;
   char *name;
   char *nickname = NULL;
 
@@ -2062,7 +2062,6 @@ SILC_FSM_STATE(silc_client_command_kick)
     goto out;
   }
   target = silc_dlist_get(clients);
-  silc_dlist_uninit(clients);
 
   /* Send KICK command to the server */
   idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
@@ -2080,6 +2079,7 @@ SILC_FSM_STATE(silc_client_command_kick)
   silc_buffer_free(idp);
   silc_buffer_free(idp2);
   silc_free(nickname);
+  silc_client_list_free(client, conn, clients);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -2553,7 +2553,7 @@ SILC_FSM_STATE(silc_client_command_getkey)
   } else {
     client_entry = silc_dlist_get(clients);
     idp = silc_id_payload_encode(&client_entry->id, SILC_ID_CLIENT);
-    silc_dlist_uninit(clients);
+    silc_client_list_free(client, conn, clients);
   }
 
   /* Send the commmand */
