@@ -35,13 +35,6 @@ struct SilcSKECallbacksStruct {
 /************************ Static utility functions **************************/
 
 SilcSKEKeyMaterial
-silc_ske_process_key_material_data(unsigned char *data,
-				   SilcUInt32 data_len,
-				   SilcUInt32 req_iv_len,
-				   SilcUInt32 req_enc_key_len,
-				   SilcUInt32 req_hmac_key_len,
-				   SilcHash hash);
-SilcSKEKeyMaterial
 silc_ske_process_key_material(SilcSKE ske,
 			      SilcUInt32 req_iv_len,
 			      SilcUInt32 req_enc_key_len,

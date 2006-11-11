@@ -565,6 +565,42 @@ SilcBool silc_ske_parse_version(SilcSKE ske,
  ***/
 SilcSKESecurityProperties silc_ske_get_security_properties(SilcSKE ske);
 
+/****f* silcske/SilcSKEAPI/silc_ske_process_key_material_data
+ *
+ * SYNOPSIS
+ *
+ *    const char *silc_ske_map_status(SilcSKEStatus status);
+ *
+ * DESCRIPTION
+ *
+ *    Utility function to process key data `data' in the way specified
+ *    by the SILC Key Exchange protocol.  This returns the processed key
+ *    material or NULL on error.  Caller must free the returned key
+ *    material context by calling silc_ske_free_key_material.
+ *
+ ***/
+SilcSKEKeyMaterial
+silc_ske_process_key_material_data(unsigned char *data,
+				   SilcUInt32 data_len,
+				   SilcUInt32 req_iv_len,
+				   SilcUInt32 req_enc_key_len,
+				   SilcUInt32 req_hmac_key_len,
+				   SilcHash hash);
+
+/****f* silcske/SilcSKEAPI/silc_ske_free_key_material
+ *
+ * SYNOPSIS
+ *
+ *    void silc_ske_free_key_material(SilcSKEKeyMaterial key)
+ *
+ * DESCRIPTION
+ *
+ *    Utility function to free the key material created by calling
+ *    silc_ske_process_key_material_data.
+ *
+ ***/
+void silc_ske_free_key_material(SilcSKEKeyMaterial key);
+
 /****f* silcske/SilcSKEAPI/silc_ske_map_status
  *
  * SYNOPSIS
