@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2004, 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -1184,28 +1184,4 @@ SILC_TASK_CALLBACK(silc_client_protocol_rekey)
     break;
   }
 
-}
-
-/* Registers protocols used in client */
-
-void silc_client_protocols_register(void)
-{
-  silc_protocol_register(SILC_PROTOCOL_CLIENT_CONNECTION_AUTH,
-			 silc_client_protocol_connection_auth);
-  silc_protocol_register(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE,
-			 silc_client_protocol_key_exchange);
-  silc_protocol_register(SILC_PROTOCOL_CLIENT_REKEY,
-			 silc_client_protocol_rekey);
-}
-
-/* Unregisters protocols */
-
-void silc_client_protocols_unregister(void)
-{
-  silc_protocol_unregister(SILC_PROTOCOL_CLIENT_CONNECTION_AUTH,
-		  	   silc_client_protocol_connection_auth);
-  silc_protocol_unregister(SILC_PROTOCOL_CLIENT_KEY_EXCHANGE,
-			   silc_client_protocol_key_exchange);
-  silc_protocol_unregister(SILC_PROTOCOL_CLIENT_REKEY,
-			   silc_client_protocol_rekey);
 }

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2005 Pekka Riikonen
+  Copyright (C) 2000 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -52,8 +52,61 @@ extern "C" {
 #endif
 
 #include "client.h"
+#include "silcclient_entry.h"
 
 /* General definitions */
+
+/****d* silcclient/SilcClientAPI/SilcClientConnectionStatus
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcClientConnectionStatus
+ *
+ * DESCRIPTION
+ *
+ *    This type is returned to the `connect' client operation to indicate
+ *    the status of the created connection.  It can indicate if it was
+ *    successful or whether an error occurred.
+ *
+ * SOURCE
+ */
+typedef enum {
+  SILC_CLIENT_CONN_SUCCESS,	       /* Successfully connected */
+  SILC_CLIENT_CONN_SUCCESS_RESUME,     /* Successfully connected and
+					  resumed old detached session */
+  SILC_CLIENT_CONN_DISCONNECTED,       /* Remote host disconnected */
+  SILC_CLIENT_CONN_ERROR,	       /* Error occurred during connecting */
+  SILC_CLIENT_CONN_ERROR_KE,	       /* Key Exchange failed */
+  SILC_CLIENT_CONN_ERROR_AUTH,	       /* Authentication failed */
+  SILC_CLIENT_CONN_ERROR_RESUME,       /* Resuming failed */
+  SILC_CLIENT_CONN_ERROR_TIMEOUT,      /* Timeout during connecting */
+} SilcClientConnectionStatus;
+/***/
+
+/****f* silcclient/SilcClientAPI/SilcClientConnectCallback
+ *
+ * SYNOPSIS
+ *
+ *    void (*SilcClientConnectCallback)(SilcClient client,
+ *                                      SilcClientConnection conn,
+ *                                      SilcClientConnectionStatus status,
+ *                                      void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Connect callbak given as argument to silc_client_connect_to_server,
+ *    silc_client_connect_to_client and silc_client_add_connection functions.
+ *    It is called to indicate the status of the connection, indicated
+ *    by the `status'.  It is called after the connection has been
+ *    established to the remote host and when connection is disconnected
+ *    by the remote host.  The `context' is the context given as argument
+ *    to the connecting function.
+ *
+ ***/
+typedef void (*SilcClientConnectCallback)(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcClientConnectionStatus status,
+					  void *context);
 
 /****s* silcclient/SilcClientAPI/SilcClient
  *
@@ -81,10 +134,6 @@ struct SilcClientStruct {
   char *hostname;               /* hostname, MUST be set by application */
   char *realname;               /* Real name, MUST be set be application */
 
-  SilcPublicKey public_key;     /* Public key of user, set by application */
-  SilcPrivateKey private_key;   /* Private key of user, set by application */
-  SilcPKCS pkcs;                /* PKCS allocated by application */
-
   /*
    * The following fields are set by the library
    */
@@ -102,6 +151,7 @@ struct SilcClientStruct {
   void *application;
 
   /* Generic hash context for application usage */
+  /* XXX remove these; not thread safe */
   SilcHash md5hash;
   SilcHash sha1hash;
 
@@ -132,157 +182,33 @@ struct SilcClientConnectionStruct {
   /*
    * Local data
    */
-  char *nickname;		  /* Current nickname */
-  SilcClientEntry local_entry;	  /* Own Client Entry */
-  SilcClientID *local_id;	  /* Current Client ID */
-  unsigned char *local_id_data;	  /* Current Client ID decoded */
-  SilcUInt32 local_id_data_len;
+  SilcClientEntry local_entry;	       /* Own Client Entry */
+  SilcClientID *local_id;	       /* Current Client ID */
+  SilcBuffer local_idp;		       /* Current Client ID Payload */
 
   /*
    * Remote data
    */
-  char *remote_host;		  /* Remote host name, UTF-8 encoded */
-  int remote_port;		  /* Remote port */
-  SilcServerID *remote_id;	  /* Remote Server ID */
-  unsigned char *remote_id_data;  /* Remote Server ID decoded */
-  SilcUInt32 remote_id_data_len;
+  char *remote_host;		       /* Remote host name, UTF-8 encoded */
+  int remote_port;		       /* Remote port */
+  SilcID remote_id;		       /* Remote ID */
+  SilcBuffer remote_idp;	       /* Remote ID Payload */
 
   /*
    * Common data
    */
 
-  /* Current command identifier for a command that was sent last.
-     Application may get the value from this variable to find out the
-     command identifier for last command. */
-  SilcUInt16 cmd_ident;
+  SilcChannelEntry current_channel;    /* Current joined channel */
+  SilcPublicKey public_key;	       /* Public key used in this connection */
+  SilcPrivateKey private_key;	       /* Private key */
+  SilcPacketStream stream;	       /* Connection to remote host */
+  SilcConnectionType type;	       /* Connection type */
+  SilcClientConnectCallback callback;  /* Connection callback */
+  void *context;		       /* Connection context */
+  SilcClient client;		       /* Pointer back to SilcClient */
 
-  /* User data context. Library does not touch this. Application may
-     freely set and use this pointer for its needs. */
-  void *context;
-
-  /* Pointer back to the SilcClient.  Application may use this. */
-  SilcClient client;
-
-  /* Current channel.  Application may use and set this pointer if needed. */
-  SilcChannelEntry current_channel;
-
-  /* Socket connection object for this connection.  Application may
-     use this if needed.  The sock->user_data is back pointer to this
-     structure. */
-  SilcSocketConnection sock;
-
-  /* Internal data for client library. Application cannot access this
-     data at all. */
+  /* Internal data for client library.  Application cannot access this. */
   SilcClientConnectionInternal internal;
-};
-/***/
-
-/****s* silcclient/SilcClientAPI/SilcClientEntry
- *
- * NAME
- *
- *    typedef struct SilcClientEntryStruct { ... } *SilcClientEntry
- *
- * DESCRIPTION
- *
- *    This structure represents a client or a user in the SILC network.
- *    The local user has this structure also and it can be accessed from
- *    SilcClientConnection structure.  All other users in the SILC network
- *    that are accessed using the Client Library routines will have their
- *    own SilcClientEntry structure.  For example, when finding users by
- *    their nickname the Client Library returns this structure back to
- *    the application.  All strings in the structure are UTF-8 encoded.
- *
- * SOURCE
- */
-struct SilcClientEntryStruct {
-  /* General information */
-  char *nickname;		/* nickname */
-  char *username;		/* username */
-  char *hostname;		/* hostname */
-  char *server;			/* SILC server name */
-  char *realname;		/* Realname (userinfo) */
-
-  /* Mode, ID and other information */
-  SilcUInt32 mode;		/* User mode in SILC, see SilcUserMode */
-  SilcClientID *id;		/* The Client ID */
-  SilcDList attrs;		/* Requested Attributes (maybe NULL) */
-  unsigned char *fingerprint;	/* Fingerprint of client's public key */
-  SilcUInt32 fingerprint_len;	/* Length of the fingerprint */
-  SilcPublicKey public_key;	/* User's public key, may be NULL */
-
-  /* Private message keys */
-  SilcCipher send_key;		/* Private message key for sending */
-  SilcCipher receive_key;	/* Private message key for receiving */
-  SilcHmac hmac_send;		/* Private mesage key HMAC for sending */
-  SilcHmac hmac_receive;	/* Private mesage key HMAC for receiving */
-  unsigned char *key;		/* Set only if application provided the
-				   key material. NULL if the library
-				   generated the key. */
-  SilcUInt32 key_len;		/* Key length */
-  SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
-
-  /* SilcClientEntry status information */
-  SilcEntryStatus status;	/* Status mask */
-  SilcHashTable channels;	/* All channels client has joined */
-  SilcUInt16 resolve_cmd_ident;	/* Command identifier when resolving */
-  unsigned int generated   : 1; /* TRUE if library generated `key' */
-  unsigned int valid       : 1;	/* FALSE if this entry is not valid */
-  unsigned int prv_resp    : 1; /* TRUE if private message key indicator
-				   has been received (responder). */
-
-  /* Application specific data.  Application may set here whatever it wants. */
-  void *context;
-};
-/***/
-
-/****s* silcclient/SilcClientAPI/SilcChannelEntry
- *
- * NAME
- *
- *    typedef struct SilcChannelEntryStruct { ... } *SilcChannelEntry
- *
- * DESCRIPTION
- *
- *    This structure represents a channel in the SILC network.  All
- *    channels that the client are aware of or have joined in will be
- *    represented as SilcChannelEntry.  The structure includes information
- *    about the channel.  All strings in the structure are UTF-8 encoded.
- *
- * SOURCE
- */
-struct SilcChannelEntryStruct {
-  /* General information */
-  char *channel_name;		             /* Channel name */
-  SilcChannelID *id;			     /* Channel ID */
-  SilcUInt32 mode;			     /* Channel mode, ChannelModes. */
-  char *topic;				     /* Current topic, may be NULL */
-  SilcPublicKey founder_key;		     /* Founder key, may be NULL */
-  SilcUInt32 user_limit;		     /* User limit on channel */
-
-  /* All clients that has joined this channel.  The key to the table is the
-     SilcClientEntry and the context is SilcChannelUser context. */
-  SilcHashTable user_list;
-
-  /* Channel keys */
-  SilcCipher channel_key;                    /* The channel key */
-  unsigned char *key;			     /* Raw key data */
-  SilcUInt32 key_len;		             /* Raw key data length */
-  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE]; /* Current IV */
-  SilcHmac hmac;			     /* Current HMAC */
-
-  /* Channel private keys */
-  SilcDList private_keys;		     /* List of private keys or NULL */
-  SilcChannelPrivateKey curr_key;	     /* Current private key */
-
-  /* SilcChannelEntry status information */
-  SilcDList old_channel_keys;
-  SilcDList old_hmacs;
-  SilcUInt16 resolve_cmd_ident;		     /* Command identifier when
-						resolving this entry */
-
-  /* Application specific data.  Application may set here whatever it wants. */
-  void *context;
 };
 /***/
 
@@ -310,32 +236,36 @@ struct SilcChannelUserStruct {
 };
 /***/
 
-/****s* silcclient/SilcClientAPI/SilcServerEntry
+/****s* silcclient/SilcClientAPI/SilcClientStats
  *
  * NAME
  *
- *    typedef struct SilcServerEntryStruct { ... } *SilcServerEntry
+ *    typedef struct { ... } SilcClientStats;
  *
  * DESCRIPTION
  *
- *    This structure represents a server in the SILC network.  All servers
- *    that the client is aware of and have for example resolved with
- *    SILC_COMMAND_INFO command have their on SilcServerEntry structure.
- *    All strings in the structure are UTF-8 encoded.
+ *    This structure holds SILC network statistics returned by the
+ *    SILC_COMMAND_STATS command reply to the application.
  *
  * SOURCE
  */
-struct SilcServerEntryStruct {
-  /* General information */
-  char *server_name;			     /* Server name */
-  char *server_info;			     /* Server info */
-  SilcServerID *server_id;		     /* Server ID */
-  SilcUInt16 resolve_cmd_ident;		     /* Command identifier when
-					        resolving this entry */
-
-  /* Application specific data.  Application may set here whatever it wants. */
-  void *context;
-};
+typedef struct {
+  SilcUInt32 starttime;		/* SILC server start time */
+  SilcUInt32 uptime;		/* SILC server uptime*/
+  SilcUInt32 my_clients;	/* Number of clients in the server */
+  SilcUInt32 my_channels;	/* Number of channel in the server */
+  SilcUInt32 my_server_ops;	/* Number of server operators in the server */
+  SilcUInt32 my_router_ops;	/* Number of router operators in the router */
+  SilcUInt32 cell_clients;	/* Number of clients in the cell */
+  SilcUInt32 cell_channels;	/* Number of channels in the cell */
+  SilcUInt32 cell_servers;	/* Number of server in the cell */
+  SilcUInt32 clients;		/* All clients in SILC network */
+  SilcUInt32 channels;		/* All channels in SILC network */
+  SilcUInt32 servers;		/* All servers in SILC network */
+  SilcUInt32 routers;		/* All routers in SILC network */
+  SilcUInt32 server_ops;	/* All server operators in SILC network */
+  SilcUInt32 router_ops;	/* All router operators in SILC network */
+} SilcClientStats;
 /***/
 
 /****d* silcclient/SilcClientAPI/SilcKeyAgreementStatus
@@ -481,9 +411,9 @@ typedef void (*SilcVerifyPublicKey)(SilcBool success, void *context);
  * SYNOPSIS
  *
  *    typedef void (*SilcGetAuthMeth)(SilcBool success,
- *                                    SilcProtocolAuthMeth auth_meth,
- *                                    const unsigned char *auth_data,
- *                                    SilcUInt32 auth_data_len, void *context);
+ *                                    SilcAuthMethod auth_meth,
+ *                                    void *auth, SilcUInt32 auth_len,
+ *                                    void *context);
  *
  * DESCRIPTION
  *
@@ -498,9 +428,9 @@ typedef void (*SilcVerifyPublicKey)(SilcBool success, void *context);
  *
  ***/
 typedef void (*SilcGetAuthMeth)(SilcBool success,
-				SilcProtocolAuthMeth auth_meth,
-				const unsigned char *auth_data,
-				SilcUInt32 auth_data_len, void *context);
+				SilcAuthMethod auth_meth,
+				void *auth, SilcUInt32 auth_len,
+				void *context);
 
 /****d* silcclient/SilcClientAPI/SilcClientMessageType
  *
@@ -521,33 +451,6 @@ typedef enum {
   SILC_CLIENT_MESSAGE_ERROR,	       /* Error */
   SILC_CLIENT_MESSAGE_AUDIT,	       /* Auditable */
 } SilcClientMessageType;
-/***/
-
-/****d* silcclient/SilcClientAPI/SilcClientConnectionStatus
- *
- * NAME
- *
- *    typedef enum { ... } SilcClientConnectionStatus
- *
- * DESCRIPTION
- *
- *    This type is returned to the `connect' client operation to indicate
- *    the status of the created connection.  It can indicate if it was
- *    successful or whether an error occurred.
- *
- * SOURCE
- */
-typedef enum {
-  SILC_CLIENT_CONN_SUCCESS,	       /* Successfully connected */
-  SILC_CLIENT_CONN_SUCCESS_RESUME,     /* Successfully connected and
-					  resumed old detached session */
-  SILC_CLIENT_CONN_ERROR,	       /* Unknown error occurred during
-					  connecting */
-  SILC_CLIENT_CONN_ERROR_KE,	       /* Key Exchange failed */
-  SILC_CLIENT_CONN_ERROR_AUTH,	       /* Authentication failed */
-  SILC_CLIENT_CONN_ERROR_RESUME,       /* Resuming failed */
-  SILC_CLIENT_CONN_ERROR_TIMEOUT,      /* Timeout during connecting */
-} SilcClientConnectionStatus;
 /***/
 
 /****s* silcclient/SilcClientAPI/SilcClientOperations
@@ -609,17 +512,18 @@ typedef struct {
   void (*notify)(SilcClient client, SilcClientConnection conn,
 		 SilcNotifyType type, ...);
 
-  /* Command handler. This function is called always in the command function.
-     If error occurs it will be called as well. `conn' is the associated
-     client connection. `cmd_context' is the command context that was
-     originally sent to the command. `success' is FALSE if error occurred
-     during command. `command' is the command being processed. It must be
-     noted that this is not reply from server. This is merely called just
-     after application has called the command. Just to tell application
-     that the command really was processed. */
+  /* Command handler. This function is called always after application has
+     called a command.  It will be called to indicate that the command
+     was processed.  It will also be called if error occurs while processing
+     the command.  The `success' indicates whether the command was sent
+     or if error occurred.  The `status' indicates the actual error.
+     The `argc' and `argv' are the command line arguments sent to the
+     command by application.  Note that, this is not reply to the command
+     from server, this is merely and indication to application that the
+     command was processed. */
   void (*command)(SilcClient client, SilcClientConnection conn,
-		  SilcClientCommandContext cmd_context, SilcBool success,
-		  SilcCommand command, SilcStatus status);
+		  SilcBool success, SilcCommand command, SilcStatus status,
+		  SilcUInt32 argc, unsigned char **argv);
 
   /* Command reply handler. This function is called always in the command reply
      function. If error occurs it will be called as well. Normal scenario
@@ -644,26 +548,8 @@ typedef struct {
      ID. For example, if Client ID is receives application receives
      SilcClientEntry. */
   void (*command_reply)(SilcClient client, SilcClientConnection conn,
-			SilcCommandPayload cmd_payload, SilcBool success,
-			SilcCommand command, SilcStatus status, ...);
-
-  /* Called to indicate that connection was either successfully established
-     or connecting failed.  This is also the first time application receives
-     the SilcClientConnection object which it should save somewhere.
-     The `status' indicated whether the connection were successful.  If it
-     is error value the application must always call the function
-     silc_client_close_connection. */
-  void (*connected)(SilcClient client, SilcClientConnection conn,
-		    SilcClientConnectionStatus status);
-
-  /* Called to indicate that connection was disconnected to the server.
-     The `status' may tell the reason of the disconnection, and if the
-     `message' is non-NULL it may include the disconnection message
-     received from server. Application must not call the
-     silc_client_close_connection in this callback.  The 'conn' is also
-     invalid after this function returns back to library. */
-  void (*disconnected)(SilcClient client, SilcClientConnection conn,
-		       SilcStatus status, const char *message);
+			SilcCommand command, SilcStatus status,
+			SilcStatus error, va_list ap);
 
   /* Find authentication method and authentication data by hostname and
      port. The hostname may be IP address as well. When the authentication
@@ -680,8 +566,8 @@ typedef struct {
      use. The `completion' must be called after the public key has been
      verified. */
   void (*verify_public_key)(SilcClient client, SilcClientConnection conn,
-			    SilcSocketType conn_type, unsigned char *pk,
-			    SilcUInt32 pk_len, SilcSKEPKType pk_type,
+			    SilcConnectionType conn_type,
+			    SilcPublicKey public_key,
 			    SilcVerifyPublicKey completion, void *context);
 
   /* Ask (interact, that is) a passphrase from user. The passphrase is
@@ -691,16 +577,6 @@ typedef struct {
   void (*ask_passphrase)(SilcClient client, SilcClientConnection conn,
 			 SilcAskPassphrase completion, void *context);
 
-  /* Notifies application that failure packet was received.  This is called
-     if there is some protocol active in the client.  The `protocol' is the
-     protocol context.  The `failure' is opaque pointer to the failure
-     indication.  Note, that the `failure' is protocol dependant and
-     application must explicitly cast it to correct type.  Usually `failure'
-     is 32 bit failure type (see protocol specs for all protocol failure
-     types). */
-  void (*failure)(SilcClient client, SilcClientConnection conn,
-		  SilcProtocol protocol, void *failure);
-
   /* Asks whether the user would like to perform the key agreement protocol.
      This is called after we have received an key agreement packet or an
      reply to our key agreement packet. This returns TRUE if the user wants
@@ -709,9 +585,10 @@ typedef struct {
      silc_client_perform_key_agreement). If TRUE is returned also the
      `completion' and `context' arguments must be set by the application. */
   SilcBool (*key_agreement)(SilcClient client, SilcClientConnection conn,
-		        SilcClientEntry client_entry, const char *hostname,
-		        SilcUInt16 port, SilcKeyAgreementCallback *completion,
-		        void **context);
+			    SilcClientEntry client_entry,
+			    const char *hostname, SilcUInt16 port,
+			    SilcKeyAgreementCallback *completion,
+			    void **context);
 
   /* Notifies application that file transfer protocol session is being
      requested by the remote client indicated by the `client_entry' from
@@ -742,6 +619,10 @@ typedef struct {
   void (*detach)(SilcClient client, SilcClientConnection conn,
 		 const unsigned char *detach_data,
 		 SilcUInt32 detach_data_len);
+
+  /* Called when the client library is up and running.  After this callback
+     is called the application may start using the client library APIs. */
+  void (*running)(SilcClient client, void *application);
 } SilcClientOperations;
 /***/
 
@@ -779,6 +660,13 @@ typedef void (*SilcNicknameFormatParse)(const char *nickname,
  * SOURCE
  */
 typedef struct {
+  /* If this boolean is set to TRUE then the client library will use
+     threads.  Any of the callback functions in the SilcClientOperations
+     and other callbacks may be called at any time in a thread.  The
+     application may need to employ appropriate concurrency control
+     in the callbacks to protect application specific data. */
+  SilcBool threads;
+
   /* Number of maximum tasks the client library's scheduler can handle.
      If set to zero, the default value will be used (200). For WIN32
      systems this should be set to 64 as it is the hard limit dictated
@@ -928,7 +816,7 @@ SilcBool silc_client_init(SilcClient client);
  * DESCRIPTION
  *
  *    Runs the client. This starts the scheduler from the utility library.
- *    When this functions returns the execution of the appliation is over.
+ *    When this functions returns the execution of the application is over.
  *    The client must be initialized before calling this.
  *
  ***/
@@ -969,7 +857,7 @@ void silc_client_run_one(SilcClient client);
 void silc_client_stop(SilcClient client);
 
 
-/* Connecting functions (client.c) */
+/* Connecting functions */
 
 /****s* silcclient/SilcClientAPI/SilcClientConnectionParams
  *
@@ -986,6 +874,49 @@ void silc_client_stop(SilcClient client);
  * SOURCE
  */
 typedef struct {
+  /* If this key repository pointer is non-NULL then public key received in
+     the key exchange protocol will be verified from this repository.  If
+     this is not provided then the `verify_public_key' client operation will
+     be called back to application.  If the boolean `verify_notfound' is set
+     to TRUE then the `verify_public_key' client operation will be called
+     in case the public key is not found in `repository'. */
+  SilcSKR repository;
+  SilcBool verify_notfound;
+
+  /* Authentication data.  Application may set here the authentication data
+     and authentication method to be used in connecting.  If `auth_set'
+     boolean is TRUE then authentication data is provided by application.
+     If the authentication method is public key authentication then the key
+     pair given as argument when connecting will be used and `auth' field
+     is NULL.  If it is passphrase authentication, it can be provided in
+     `auth' and `auth_len' fields.  If `auth_set' is FALSE
+     the `get_auth_method' client operation will be called to get the
+     authentication method and data from application. */
+  SilcBool auth_set;
+  SilcAuthMethod auth_method;
+  void *auth;
+  SilcUInt32 auth_len;
+
+  /* If this boolean is set to TRUE then the client's connection to the
+     remote host will use UDP instead of TCP.  The `local_ip' specifies
+     the local IP address used with the UDP connection, and it must be
+     non-NULL.  If the `local_port' is non-zero it will be used as local
+     port with the UDP connection.  The remote host will also send packets
+     to the specified address and port. */
+  SilcBool udp;
+  char *local_ip;
+  int local_port;
+
+  /* If this boolean is set to TRUE then the key exchange is done with
+     perfect forward secrecy. */
+  SilcBool pfs;
+
+  /* If this boolean is set to TRUE then connection authentication protocol
+     is not performed during connecting.  Only key exchange protocol is
+     performed.  This usually must be set to TRUE when connecting to another
+     client, but must be FALSE with server connections. */
+  SilcBool no_authentication;
+
   /* The SILC session detachment data that was returned by `detach' client
      operation when the application detached from the network.  Application
      is responsible of saving the data and giving it as argument here
@@ -1007,26 +938,74 @@ typedef struct {
  *
  * SYNOPSIS
  *
- *    int silc_client_connect_to_server(SilcClient client,
- *                                      SilcClientConnectionParams *params,
- *                                      int port, char *host, void *context);
+ *    void
+ *    silc_client_connect_to_server(SilcClient client,
+ *                                  SilcClientConnectionParams *params,
+ *                                  SilcPublicKey public_key,
+ *                                  char *remote_host, int port,
+ *                                  SilcClientConnectCallback callback,
+ *                                  void *context);
  *
  * DESCRIPTION
  *
- *    Connects to remote server. This is the main routine used to connect
- *    to SILC server. Returns -1 on error and the created socket otherwise.
- *    The `context' is user context that is saved into the SilcClientConnection
- *    that is created after the connection is created. Note that application
- *    may handle the connecting process outside the library. If this is the
- *    case then this function is not used at all. When the connecting is
- *    done the `connect' client operation is called, and the `context' is
- *    accessible with conn->context, conn being SilcClientConnection.
- *    If the `params' is provided they are used by the routine.
+ *    Connects to remote server `remote_host' at port `port'.  This function
+ *    can be used to create connection to remote SILC server and start
+ *    SILC session in the SILC network.  The `params' may be provided
+ *    to provide various connection parameters.  The `public_key' and the
+ *    `private_key' is your identity used in this connection.  When
+ *    authentication method is based on digital signatures, this key pair
+ *    will be used.  The `callback' with `context' will be called after the
+ *    connection has been created.  It will also be called later when remote
+ *    host disconnects.
+ *
+ *    If application wishes to create the network connection itself, use
+ *    the silc_client_add_connection after creating the connection, instead
+ *    of using this function.
  *
  ***/
-int silc_client_connect_to_server(SilcClient client,
-				  SilcClientConnectionParams *params,
-				  int port, char *host, void *context);
+void silc_client_connect_to_server(SilcClient client,
+				   SilcClientConnectionParams *params,
+				   SilcPublicKey public_key,
+				   SilcPrivateKey private_key,
+				   char *remote_host, int port,
+				   SilcClientConnectCallback callback,
+				   void *context);
+
+/****f* silcclient/SilcClientAPI/silc_client_connect_to_client
+ *
+ * SYNOPSIS
+ *
+ *    void
+ *    silc_client_connect_to_client(SilcClient client,
+ *                                  SilcClientConnectionParams *params,
+ *                                  SilcPublicKey public_key,
+ *                                  char *remote_host, int port,
+ *                                  SilcClientConnectCallback callback,
+ *                                  void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Connects to remote client `remote_host' at port `port'.  This function
+ *    can be used to create peer-to-peer connection to another SILC client,
+ *    for example, for direct conferencing, or file transfer or for other
+ *    purposes.  The `params' may be provided to provide various connection
+ *    parameters.  The `public_key' and the `private_key' is your identity
+ *    used in this connection.  The `callback' with `context' will be called
+ *    after the connection has been created.  It will also be called later
+ *    when remote host disconnects.
+ *
+ *    If application wishes to create the network connection itself, use
+ *    the silc_client_add_connection after creating the connection, instead
+ *    of using this function.
+ *
+ ***/
+void silc_client_connect_to_client(SilcClient client,
+				   SilcClientConnectionParams *params,
+				   SilcPublicKey public_key,
+				   SilcPrivateKey private_key,
+				   char *remote_host, int port,
+				   SilcClientConnectCallback callback,
+				   void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_add_connection
  *
@@ -1035,6 +1014,7 @@ int silc_client_connect_to_server(SilcClient client,
  *
  *    SilcClientConnection
  *    silc_client_add_connection(SilcClient client,
+ *                               SilcConnectionType conn_type,
  *                               SilcClientConnectionParams *params,
  *                               char *hostname, int port, void *context);
  *
@@ -1042,7 +1022,7 @@ int silc_client_connect_to_server(SilcClient client,
  *
  *    Allocates and adds new connection to the client. This adds the allocated
  *    connection to the connection table and returns a pointer to it. A client
- *    can have multiple connections to multiple servers. Every connection must
+ *    can have multiple connections to multiple hosts. Every connection must
  *    be added to the client using this function. User data `context' may
  *    be sent as argument.  If the `params' is provided they are used by
  *    the routine.
@@ -1051,14 +1031,18 @@ int silc_client_connect_to_server(SilcClient client,
  *
  *    This function is normally used only if the application performed
  *    the connecting outside the library, and did not called the
- *    silc_client_connect_to_server function at all. The library
- *    however may use this internally.
+ *    silc_client_connect_to_server function at all.
  *
  ***/
 SilcClientConnection
 silc_client_add_connection(SilcClient client,
+			   SilcConnectionType conn_type,
 			   SilcClientConnectionParams *params,
-			   char *hostname, int port, void *context);
+			   SilcPublicKey public_key,
+			   SilcPrivateKey private_key,
+			   char *remote_host, int port,
+			   SilcClientConnectCallback callback,
+			   void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_del_connection
  *
@@ -1077,45 +1061,13 @@ silc_client_add_connection(SilcClient client,
  ***/
 void silc_client_del_connection(SilcClient client, SilcClientConnection conn);
 
-/****f* silcclient/SilcClientAPI/silc_client_add_socket
- *
- * SYNOPSIS
- *
- *    void silc_client_add_socket(SilcClient client,
- *                                SilcSocketConnection sock);
- *
- * DESCRIPTION
- *
- *    Adds listener socket to the listener sockets table. This function is
- *    used to add socket objects that are listeners to the client.  This should
- *    not be used to add other connection objects.
- *
- ***/
-void silc_client_add_socket(SilcClient client, SilcSocketConnection sock);
-
-/****f* silcclient/SilcClientAPI/silc_client_del_socket
- *
- * SYNOPSIS
- *
- *    void silc_client_del_socket(SilcClient client,
- *                                SilcSocketConnection sock);
- *
- * DESCRIPTION
- *
- *    Deletes listener socket from the listener sockets table.  If the
- *    application has added a socket with silc_client_add_socket it must
- *    also free it using this function.
- *
- ***/
-void silc_client_del_socket(SilcClient client, SilcSocketConnection sock);
-
 /****f* silcclient/SilcClientAPI/silc_client_start_key_exchange
  *
  * SYNOPSIS
  *
  *    void silc_client_start_key_exchange(SilcClient client,
  *                                        SilcClientConnection conn,
- *                                        int fd);
+ *                                        SilcStream stream);
  *
  * DESCRIPTION
  *
@@ -1136,7 +1088,7 @@ void silc_client_del_socket(SilcClient client, SilcSocketConnection sock);
  ***/
 void silc_client_start_key_exchange(SilcClient client,
 				    SilcClientConnection conn,
-				    int fd);
+				    SilcStream stream);
 
 /****f* silcclient/SilcClientAPI/silc_client_close_connection
  *
@@ -1166,13 +1118,12 @@ void silc_client_close_connection(SilcClient client,
  * SYNOPSIS
  *
  *    SilcBool silc_client_send_channel_message(SilcClient client,
- *                                          SilcClientConnection conn,
- *                                          SilcChannelEntry channel,
- *                                          SilcChannelPrivateKey key,
- *                                          SilcMessageFlags flags,
- *                                          unsigned char *data,
- *                                          SilcUInt32 data_len,
- *                                          SilcBool force_send);
+ *                                              SilcClientConnection conn,
+ *                                              SilcChannelEntry channel,
+ *                                              SilcChannelPrivateKey key,
+ *                                              SilcMessageFlags flags,
+ *                                              unsigned char *data,
+ *                                              SilcUInt32 data_len);
  *
  * DESCRIPTION
  *
@@ -1180,8 +1131,7 @@ void silc_client_close_connection(SilcClient client,
  *    differently from "normal" packets. SILC header of the packet is
  *    encrypted with the next receiver's key and the rest of the packet is
  *    encrypted with the channel specific key. Padding and HMAC is computed
- *    with the next receiver's key. The `data' is the channel message. If
- *    the `force_send' is TRUE then the packet is sent immediately.
+ *    with the next receiver's key. The `data' is the channel message.
  *
  *    If `key' is provided then that private key is used to encrypt the
  *    channel message.  If it is not provided, private keys has not been
@@ -1194,341 +1144,57 @@ void silc_client_close_connection(SilcClient client,
  *
  *    Returns TRUE if the message was sent, and FALSE if error occurred or
  *    the sending is not allowed due to channel modes (like sending is
- *    blocked).
+ *    blocked).  This function is thread safe and private messages can be
+ *    sent from multiple threads.
  *
  ***/
 SilcBool silc_client_send_channel_message(SilcClient client,
-				      SilcClientConnection conn,
-				      SilcChannelEntry channel,
-				      SilcChannelPrivateKey key,
-				      SilcMessageFlags flags,
-				      unsigned char *data,
-				      SilcUInt32 data_len,
-				      SilcBool force_send);
+					  SilcClientConnection conn,
+					  SilcChannelEntry channel,
+					  SilcChannelPrivateKey key,
+					  SilcMessageFlags flags,
+					  unsigned char *data,
+					  SilcUInt32 data_len);
+
+/* Block process until channel message from `channel' is received */
+SilcBool
+silc_client_receive_channel_message(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcChannelEntry channel,
+				    SilcClientEntry *return_sender,
+				    SilcMessageFlags *return_flags,
+				    const unsigned char **return_message,
+				    SilcUInt32 *return_message_len);
 
 /****f* silcclient/SilcClientAPI/silc_client_send_private_message
  *
  * SYNOPSIS
  *
  *    SilcBool silc_client_send_private_message(SilcClient client,
- *                                          SilcClientConnection conn,
- *                                          SilcClientEntry client_entry,
- *                                          SilcMessageFlags flags,
- *                                          unsigned char *data,
- *                                          SilcUInt32 data_len,
- *                                          SilcBool force_send);
+ *                                              SilcClientConnection conn,
+ *                                              SilcClientEntry client_entry,
+ *                                              SilcMessageFlags flags,
+ *                                              unsigned char *data,
+ *                                              SilcUInt32 data_len);
  *
  * DESCRIPTION
  *
  *    Sends private message to remote client. If private message key has
  *    not been set with this client then the message will be encrypted using
- *    normal session keys. Private messages are special packets in SILC
- *    network hence we need this own function for them. This is similar
- *    to silc_client_packet_send_to_channel except that we send private
- *    message. The `data' is the private message. If the `force_send' is
- *    TRUE the packet is sent immediately.
- *
- *    If the `flags' includes SILC_MESSAGE_FLAG_SIGNED the message will be
- *    digitally signed with the SILC key pair.
+ *    normal session keys.  If the `flags' includes SILC_MESSAGE_FLAG_SIGNED
+ *    the message will be digitally signed with the SILC key pair.
  *
  *    Returns TRUE if the message was sent, and FALSE if error occurred.
+ *    This function is thread safe and private messages can be sent from
+ *    multiple threads.
  *
  ***/
 SilcBool silc_client_send_private_message(SilcClient client,
-				      SilcClientConnection conn,
-				      SilcClientEntry client_entry,
-				      SilcMessageFlags flags,
-				      unsigned char *data,
-				      SilcUInt32 data_len,
-				      SilcBool force_send);
-
-
-/* Client and Channel entry retrieval (idlist.c) */
-
-/****f* silcclient/SilcClientAPI/SilcGetClientCallback
- *
- * SYNOPSIS
- *
- *    typedef void (*SilcGetClientCallback)(SilcClient client,
- *                                          SilcClientConnection conn,
- *                                          SilcClientEntry *clients,
- *                                          SilcUInt32 clients_count,
- *                                          void *context);
- *
- * DESCRIPTION
- *
- *    Callback function given to the silc_client_get_client function. The
- *    found entries are allocated into the `clients' array. The array must
- *    not be freed by the receiver, the library will free it later. If the
- *    `clients' is NULL, no such clients exist in the SILC Network.
- *
- ***/
-typedef void (*SilcGetClientCallback)(SilcClient client,
-				      SilcClientConnection conn,
-				      SilcClientEntry *clients,
-				      SilcUInt32 clients_count,
-				      void *context);
-
-/****f* silcclient/SilcClientAPI/silc_client_get_clients
- *
- * SYNOPSIS
- *
- *    void silc_client_get_clients(SilcClient client,
- *                                 SilcClientConnection conn,
- *                                 const char *nickname,
- *                                 const char *server,
- *                                 SilcGetClientCallback completion,
- *                                 void *context);
- *
- * DESCRIPTION
- *
- *    Finds client entry or entries by the `nickname' and `server'. The
- *    completion callback will be called when the client entries has been
- *    found.  After the server returns the client information it is cached
- *    and can be accesses locally at a later time.  The resolving is done
- *    with IDENTIFY command.  The `server' may be NULL.
- *
- * NOTES
- *
- *    NOTE: This function is always asynchronous and resolves the client
- *    information from the server. Thus, if you already know the client
- *    information then use the silc_client_get_client_by_id function to
- *    get the client entry since this function may be very slow and should
- *    be used only to initially get the client entries.
- *
- *    Since this routine resolves with IDENTIFY command only the relevant
- *    information (user's nickname and username) is resolved.  For example,
- *    user's real name, channel list and others are not resolved.  Caller
- *    can/must resolve those separately if they are needed (for example,
- *    with silc_client_get_client_by_id_resolve).
- *
- ***/
-void silc_client_get_clients(SilcClient client,
-			     SilcClientConnection conn,
-			     const char *nickname,
-			     const char *server,
-			     SilcGetClientCallback completion,
-			     void *context);
-
-/****f* silcclient/SilcClientAPI/silc_client_get_clients_whois
- *
- * SYNOPSIS
- *
- *    void silc_client_get_clients_whois(SilcClient client,
- *                                       SilcClientConnection conn,
- *                                       const char *nickname,
- *                                       const char *server,
- *                                       SilcBuffer attributes,
- *                                       SilcGetClientCallback completion,
- *                                       void *context);
- *
- * DESCRIPTION
- *
- *    Finds client entry or entries by the `nickname' and `server'. The
- *    completion callback will be called when the client entries has been
- *    found.  After the server returns the client information it is cached
- *    and can be accesses locally at a later time.  The resolving is done
- *    with WHOIS command.  The `server' may be NULL.
- *
- *    If the `attributes' is non-NULL then the buffer includes Requested
- *    Attributes which can be used to fetch very detailed information
- *    about the user. If it is NULL then only normal WHOIS query is
- *    made (for more information about attributes see SilcAttribute).
- *    Caller may create the `attributes' with silc_client_attributes_request
- *    function.
- *
- * NOTES
- *
- *    The resolving is done with WHOIS command. For this reason this
- *    command may take a long time because it resolves detailed user
- *    information.
- *
- ***/
-void silc_client_get_clients_whois(SilcClient client,
-				   SilcClientConnection conn,
-				   const char *nickname,
-				   const char *server,
-				   SilcBuffer attributes,
-				   SilcGetClientCallback completion,
-				   void *context);
-
-/****f* silcclient/SilcClientAPI/silc_client_get_clients_local
- *
- * SYNOPSIS
- *
- *    SilcClientEntry *silc_client_get_clients_local(SilcClient client,
- *                                                   SilcClientConnection conn,
- *                                                   const char *nickname,
- *                                                   const char *format,
- *                                                   SilcUInt32 *clients_count);
- *
- * DESCRIPTION
- *
- *    Same as silc_client_get_clients function but does not resolve anything
- *    from the server. This checks local cache and returns all matching
- *    clients from the local cache. If none was found this returns NULL.
- *    The `nickname' is the real nickname of the client, and the `format'
- *    is the formatted nickname to find exact match from multiple found
- *    entries. The format must be same as given in the SilcClientParams
- *    structure to the client library. If the `format' is NULL all found
- *    clients by `nickname' are returned. The caller must return the
- *    returned array.
- *
- ***/
-SilcClientEntry *silc_client_get_clients_local(SilcClient client,
-					       SilcClientConnection conn,
-					       const char *nickname,
-					       const char *format,
-					       SilcUInt32 *clients_count);
-
-/****f* silcclient/SilcClientAPI/silc_client_get_clients_by_channel
- *
- * SYNOPSIS
- *
- *    void silc_client_get_clients_by_channel(SilcClient client,
- *                                            SilcClientConnection conn,
- *                                            SilcChannelEntry channel,
- *                                            SilcGetClientCallback completion,
- *                                            void *context);
- *
- * DESCRIPTION
- *
- *    Gets client entries by the channel indicated by `channel'. Thus,
- *    it resovles the users currently on that channel. If all users are
- *    already resolved this returns the users from the channel. If the
- *    users are resolved only partially this resolves the complete user
- *    information. If no users are resolved on this channel at all, this
- *    calls USERS command to resolve all users on the channel. The `completion'
- *    will be called after the entries are available. When server returns
- *    the client information it will be cached and can be accessed locally
- *    at a later time.
- *
- *    This function can be used for example in SILC_COMMAND_JOIN command
- *    reply handling in application to resolve users on that channel.  It
- *    also can be used after calling silc_client_get_channel_resolve to
- *    resolve users on that channel.
- *
- * NOTES
- *
- *    The resolving is done with WHOIS command. For this reason this
- *    command may take a long time because it resolves detailed user
- *    information.
- *
- ***/
-void silc_client_get_clients_by_channel(SilcClient client,
-					SilcClientConnection conn,
-					SilcChannelEntry channel,
-					SilcGetClientCallback completion,
-					void *context);
-
-/****f* silcclient/SilcClientAPI/silc_client_get_clients_by_list
- *
- * SYNOPSIS
- *
- *    void silc_client_get_clients_by_list(SilcClient client,
- *                                         SilcClientConnection conn,
- *                                         SilcUInt32 list_count,
- *                                         SilcBuffer client_id_list,
- *                                         SilcGetClientCallback completion,
- *                                         void *context);
- *
- * DESCRIPTION
- *
- *    Gets client entries by the list of client ID's `client_id_list'. This
- *    always resolves those client ID's it does not know yet from the server
- *    so this function might take a while. The `client_id_list' is a list
- *    of ID Payloads added one after other.  JOIN command reply and USERS
- *    command reply for example returns this sort of list. The `completion'
- *    will be called after the entries are available. When server returns
- *    the client information it will be cached and can be accessed locally
- *    at a later time.
- *
- * NOTES
- *
- *    The resolving is done with IDENTIFY command. This means that only
- *    the relevant information of user (it's nickname and username) is
- *    resolved. For example, user's real name, channel lists and others
- *    are not resolved. Caller can/must resolve those separately if they
- *    are needed (for example, with silc_client_get_client_by_id_resolve).
- *
- ***/
-void silc_client_get_clients_by_list(SilcClient client,
-				     SilcClientConnection conn,
-				     SilcUInt32 list_count,
-				     SilcBuffer client_id_list,
-				     SilcGetClientCallback completion,
-				     void *context);
-
-/****f* silcclient/SilcClientAPI/silc_client_get_client_by_id
- *
- * SYNOPSIS
- *
- *    SilcClientEntry silc_client_get_client_by_id(SilcClient client,
- *                                                 SilcClientConnection conn,
- *                                                 SilcClientID *client_id);
- *
- * DESCRIPTION
- *
- *    Find entry for client by the client's ID. Returns the entry or NULL
- *    if the entry was not found.  This checks the local cache and does
- *    not resolve anything from server.
- *
- ***/
-SilcClientEntry silc_client_get_client_by_id(SilcClient client,
-					     SilcClientConnection conn,
-					     SilcClientID *client_id);
-
-/****f* silcclient/SilcClientAPI/silc_client_get_client_by_id_resolve
- *
- * SYNOPSIS
- *
- *    void
- *    silc_client_get_client_by_id_resolve(SilcClient client,
- *                                         SilcClientConnection conn,
- *                                         SilcClientID *client_id,
- *                                         SilcBuffer attributes,
- *                                         SilcGetClientCallback completion,
- *                                         void *context);
- *
- * DESCRIPTION
- *
- *    Same as silc_client_get_client_by_id but will always resolve the
- *    information from the server. Use this only if you know that you
- *    do not have the entry and the only thing you know about the client
- *    is its ID. When server returns the client information it will be
- *    cache and can be accessed locally at a later time. The resolving
- *    is done by sending WHOIS command.
- *
- *    If the `attributes' is non-NULL then the buffer includes Requested
- *    Attributes which can be used to fetch very detailed information
- *    about the user. If it is NULL then only normal WHOIS query is
- *    made (for more information about attributes see SilcAttribute).
- *    Caller may create the `attributes' with silc_client_attributes_request
- *    function.
- *
- ***/
-void silc_client_get_client_by_id_resolve(SilcClient client,
 					  SilcClientConnection conn,
-					  SilcClientID *client_id,
-					  SilcBuffer attributes,
-					  SilcGetClientCallback completion,
-					  void *context);
-
-/****f* silcclient/SilcClientAPI/silc_client_del_client
- *
- * SYNOPSIS
- *
- *    SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
- *                                SilcClientEntry client_entry)
- *
- * DESCRIPTION
- *
- *    Removes client from local cache by the client entry indicated by
- *    the `client_entry'.  Returns TRUE if the deletion were successful.
- *
- ***/
-SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
-			    SilcClientEntry client_entry);
+					  SilcClientEntry client_entry,
+					  SilcMessageFlags flags,
+					  unsigned char *data,
+					  SilcUInt32 data_len);
 
 /****f* silcclient/SilcClientAPI/SilcGetChannelCallback
  *
@@ -1662,7 +1328,7 @@ void silc_client_get_channel_by_id_resolve(SilcClient client,
  *
  ***/
 SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
-			     SilcChannelEntry channel);
+				 SilcChannelEntry channel);
 
 /****f* silcclient/SilcClientAPI/silc_client_get_server
  *
@@ -1714,7 +1380,7 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
  *
  ***/
 SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
-			    SilcServerEntry server);
+				SilcServerEntry server);
 
 /****f* silcclient/SilcClientAPI/silc_client_on_channel
  *
@@ -1733,15 +1399,16 @@ SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
 SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
 				       SilcClientEntry client_entry);
 
-/* Command management (command.c) */
+
+/* Command management */
 
 /****f* silcclient/SilcClientAPI/silc_client_command_call
  *
  * SYNOPSIS
  *
- *    SilcBool silc_client_command_call(SilcClient client,
- *                                  SilcClientConnection conn,
- *                                  const char *command_line, ...);
+ *    SilcUInt16 silc_client_command_call(SilcClient client,
+ *                                        SilcClientConnection conn,
+ *                                        const char *command_line, ...);
  *
  * DESCRIPTION
  *
@@ -1781,45 +1448,69 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
  *    function instead.
  *
  ***/
-SilcBool silc_client_command_call(SilcClient client,
-			      SilcClientConnection conn,
-			      const char *command_line, ...);
+SilcUInt16 silc_client_command_call(SilcClient client,
+				    SilcClientConnection conn,
+				    const char *command_line, ...);
+
+/* If FALSE is returned the callback will not be called again, even if there
+   is more data coming in in the command reply. */
+typedef SilcBool (*SilcClientCommandReply)(SilcClient client,
+					   SilcClientConnection conn,
+					   SilcCommand command,
+					   SilcStatus status,
+					   SilcStatus error,
+					   void *context,
+					   va_list ap);
 
 /****f* silcclient/SilcClientAPI/silc_client_command_send
  *
  * SYNOPSIS
  *
- *    void silc_client_command_send(SilcClient client,
- *                                  SilcClientConnection conn,
- *                                  SilcCommand command, SilcUInt16 ident,
- *                                  SilcUInt32 argc, ...);
+ *    SilcUInt16 silc_client_command_send(SilcClient client,
+ *                                        SilcClientConnection conn,
+ *                                        SilcCommand command,
+ *                                        SilcClientCommandReply reply,
+ *                                        void *reply_context,
+ *                                        SilcUInt32 argc, ...);
  *
  * DESCRIPTION
  *
- *    Generic function to send any command. The arguments must be sent already
- *    encoded into correct form and in correct order. If application wants
- *    to perform the commands by itself, it can do so and send the data
+ *    Generic function to send any command.  The arguments must be given
+ *    already encoded into correct format and in correct order. If application
+ *    wants to perform the commands by itself, it can do so and send the data
  *    directly to the server using this function.  If application is using
  *    the silc_client_command_call, this function is usually not used.
- *    Note that this overriders the Client Librarys commands and sends
- *    the command packet directly to server.
- *
  *    Programmer should get familiar with the SILC protocol commands
  *    specification when using this function, as the arguments needs to
  *    be encoded as specified in the protocol.
  *
- *    The variable arguments are a pair of { type, data, data_length },
- *    and the `argc' is the number of these pairs.
+ *    The variable arguments are a set of { type, data, data_length },
+ *    and the `argc' is the number of these sets.
+ *
+ *    The `reply' callback must be provided, and it is called when the
+ *    command reply is received from the server.  Note that, when using this
+ *    function the default `command_reply' client operation will not be
+ *    called, when reply is received.  Note however that, `reply' is
+ *    identical with `command_reply' callback, and application may forward
+ *    the reply from `reply' to `command_reply' callback, if desired.
+ *
+ *    Returns command identifier for this sent command.  It can be used
+ *    to additionally attach to the command reply using the function
+ *    silc_client_command_pending, if needed.  Returns 0 on error,
  *
  * EXAMPLE
  *
- *    silc_client_command_send(client, conn, SILC_COMMAND_WHOIS, 0, 1,
- *                             1, nickname, strlen(nickname));
+ *    silc_client_command_send(client, conn, SILC_COMMAND_WHOIS,
+ *                             my_whois_command_reply, cmd_ctx,
+ *                             1, 1, nickname, strlen(nickname));
  *
  ***/
-void silc_client_command_send(SilcClient client, SilcClientConnection conn,
-			      SilcCommand command, SilcUInt16 ident,
-			      SilcUInt32 argc, ...);
+SilcUInt16 silc_client_command_send(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcCommand command,
+				    SilcClientCommandReply reply,
+				    void *reply_context,
+				    SilcUInt32 argc, ...);
 
 /****f* silcclient/SilcClientAPI/silc_client_command_pending
  *
@@ -1827,7 +1518,7 @@ void silc_client_command_send(SilcClient client, SilcClientConnection conn,
  *
  *    void silc_client_command_pending(SilcClientConnection conn,
  *                                     SilcCommand reply_cmd,
- *                                     SilcUInt16 ident,
+ *                                     SilcUInt16 cmd-ident,
  *                                     SilcCommandCb callback,
  *                                     void *context);
  *
@@ -1841,7 +1532,7 @@ void silc_client_command_send(SilcClient client, SilcClientConnection conn,
  *    SilcClientCommandReplyContext which includes the internals of the
  *    command reply.
  *
- *    The `ident' is a command identifier which was set for the earlier
+ *    The `cmd_ident' is a command identifier which was set for the earlier
  *    sent command.  The command reply will include the same identifier
  *    and pending command callback will be called when the reply is
  *    received with the same command identifier.  It is possible to
@@ -1872,11 +1563,11 @@ void silc_client_command_send(SilcClient client, SilcClientConnection conn,
  *                                my_ping_handler, my_ping_context);
  *
  ***/
-void silc_client_command_pending(SilcClientConnection conn,
-				 SilcCommand reply_cmd,
-				 SilcUInt16 ident,
-				 SilcCommandCb callback,
-				 void *context);
+SilcBool silc_client_command_pending(SilcClientConnection conn,
+				     SilcCommand command,
+				     SilcUInt16 cmd_ident,
+				     SilcClientCommandReply reply,
+				     void *context);
 
 
 /* Private Message key management (client_prvmsg.c) */
@@ -1885,15 +1576,16 @@ void silc_client_command_pending(SilcClientConnection conn,
  *
  * SYNOPSIS
  *
- *    SilcBool silc_client_add_private_message_key(SilcClient client,
- *                                             SilcClientConnection conn,
- *                                             SilcClientEntry client_entry,
- *                                             const char *cipher,
- *                                             const char *hmac,
- *                                             unsigned char *key,
- *                                             SilcUInt32 key_len,
- *                                             SilcBool generate_key,
- *                                             SilcBool responder);
+ *    SilcBool
+ *    silc_client_add_private_message_key(SilcClient client,
+ *                                        SilcClientConnection conn,
+ *                                        SilcClientEntry client_entry,
+ *                                        const char *cipher,
+ *                                        const char *hmac,
+ *                                        unsigned char *key,
+ *                                        SilcUInt32 key_len,
+ *                                        SilcBool generate_key,
+ *                                        SilcBool responder);
  *
  * DESCRIPTION
  *
@@ -1920,14 +1612,14 @@ void silc_client_command_pending(SilcClientConnection conn,
  *
  ***/
 SilcBool silc_client_add_private_message_key(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcClientEntry client_entry,
-					 const char *cipher,
-					 const char *hmac,
-					 unsigned char *key,
-					 SilcUInt32 key_len,
-					 SilcBool generate_key,
-					 SilcBool responder);
+					     SilcClientConnection conn,
+					     SilcClientEntry client_entry,
+					     const char *cipher,
+					     const char *hmac,
+					     unsigned char *key,
+					     SilcUInt32 key_len,
+					     SilcBool generate_key,
+					     SilcBool responder);
 
 /****f* silcclient/SilcClientAPI/silc_client_add_private_message_key_ske
  *
@@ -1939,7 +1631,7 @@ SilcBool silc_client_add_private_message_key(SilcClient client,
  *                                            SilcClientEntry client_entry,
  *                                            const char *cipher,
  *                                            const char *hmac,
- *                                            SilcSKEKeyMaterial *key);
+ *                                            SilcSKEKeyMaterial key);
  *
  * DESCRIPTION
  *
@@ -1951,12 +1643,12 @@ SilcBool silc_client_add_private_message_key(SilcClient client,
  *
  ***/
 SilcBool silc_client_add_private_message_key_ske(SilcClient client,
-					     SilcClientConnection conn,
-					     SilcClientEntry client_entry,
-					     const char *cipher,
-					     const char *hmac,
-					     SilcSKEKeyMaterial *key,
-					     SilcBool responder);
+						 SilcClientConnection conn,
+						 SilcClientEntry client_entry,
+						 const char *cipher,
+						 const char *hmac,
+						 SilcSKEKeyMaterial key,
+						 SilcBool responder);
 
 /****f* silcclient/SilcClientAPI/silc_client_del_private_message_key
  *
@@ -1974,8 +1666,8 @@ SilcBool silc_client_add_private_message_key_ske(SilcClient client,
  *
  ***/
 SilcBool silc_client_del_private_message_key(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcClientEntry client_entry);
+					     SilcClientConnection conn,
+					     SilcClientEntry client_entry);
 
 /****f* silcclient/SilcClientAPI/silc_client_list_private_message_keys
  *
@@ -2106,14 +1798,14 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
  *
  ***/
 SilcBool silc_client_add_channel_private_key(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcChannelEntry channel,
-					 const char *name,
-					 char *cipher,
-					 char *hmac,
-					 unsigned char *key,
-					 SilcUInt32 key_len,
-					 SilcChannelPrivateKey *ret_key);
+					     SilcClientConnection conn,
+					     SilcChannelEntry channel,
+					     const char *name,
+					     char *cipher,
+					     char *hmac,
+					     unsigned char *key,
+					     SilcUInt32 key_len,
+					     SilcChannelPrivateKey *ret_key);
 
 /****f* silcclient/SilcClientAPI/silc_client_del_channel_private_keys
  *
@@ -2131,8 +1823,8 @@ SilcBool silc_client_add_channel_private_key(SilcClient client,
  *
  ***/
 SilcBool silc_client_del_channel_private_keys(SilcClient client,
-					  SilcClientConnection conn,
-					  SilcChannelEntry channel);
+					      SilcClientConnection conn,
+					      SilcChannelEntry channel);
 
 /****f* silcclient/SilcClientAPI/silc_client_del_channel_private_key
  *
@@ -2154,9 +1846,9 @@ SilcBool silc_client_del_channel_private_keys(SilcClient client,
  *
  ***/
 SilcBool silc_client_del_channel_private_key(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcChannelEntry channel,
-					 SilcChannelPrivateKey key);
+					     SilcClientConnection conn,
+					     SilcChannelEntry channel,
+					     SilcChannelPrivateKey key);
 
 /****f* silcclient/SilcClientAPI/silc_client_list_channel_private_keys
  *
@@ -2831,39 +2523,6 @@ SilcHashTable silc_client_attributes_get(SilcClient client,
  *
  ***/
 SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...);
-
-/* Low level packet sending functions */
-
-/****f* silcclient/SilcClientAPI/silc_client_send_packet
- *
- * SYNOPSIS
- *
- *     SilcBool silc_client_send_packet(SilcClient client,
- *                                  SilcClientConnection conn,
- *                                  SilcPacketType type,
- *                                  const unsigned char *data,
- *                                  SilcUInt32 data_len);
- *
- * DESCRIPTION
- *
- *    This routine can be used by application to send packets directly
- *    to a connection indicated by `conn'.  Usually application does not
- *    need this routine since the Client Library handles the packet
- *    sending.  The `type' indicates the packet type.  If `data' is
- *    NULL then empty packet is sent.  This returns FALSE if packet cannot
- *    be sent.
- *
- ***/
-SilcBool silc_client_send_packet(SilcClient client,
-			     SilcClientConnection conn,
-			     SilcPacketType type,
-			     const unsigned char *data,
-			     SilcUInt32 data_len);
-
-#include "command.h"
-#include "command_reply.h"
-#include "idlist.h"
-#include "protocol.h"
 
 #ifdef __cplusplus
 }

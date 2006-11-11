@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2004 Pekka Riikonen
+  Copyright (C) 2002 - 2004, 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -74,10 +74,9 @@ static void silc_client_attributes_process_foreach(void *key, void *context,
 /* Process list of attributes.  Returns reply to the requested attributes. */
 
 SilcBuffer silc_client_attributes_process(SilcClient client,
-					  SilcSocketConnection sock,
+					  SilcClientConnection conn,
 					  SilcDList attrs)
 {
-  SilcClientConnection conn = sock->user_data;
   SilcBuffer buffer = NULL;
   SilcAttrForeach f;
   SilcAttribute attribute;

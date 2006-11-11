@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2006 Pekka Riikonen
+#  Copyright (C) 2006 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -17,24 +17,11 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-noinst_LTLIBRARIES = libsilcclient.la
+bin_PROGRAMS = 	test_silcclient
 
-libsilcclient_la_SOURCES = 		\
-	client.c 			\
-	client_entry.c 			\
-	client_prvmsg.c			\
-	client_connect.c 		\
-	client_register.c 		\
-	command.c	 		\
-	command_reply.c
+test_silcclient_SOURCES = test_silcclient.c
 
-#ifdef SILC_DIST_TOOLKIT
-include_HEADERS= 	\
-	silcclient.h
-
-SILC_EXTRA_DIST = client_ops_example.c
-#endif SILC_DIST_TOOLKIT
-
-EXTRA_DIST = *.h $(SILC_EXTRA_DIST)
+LIBS = $(SILC_COMMON_LIBS)
+LDADD = -L.. -L../.. -lsilc -lsilcclient
 
 include $(top_srcdir)/Makefile.defines.in

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -17,9 +17,6 @@
 
 */
 /* $Id$ */
-/* This file includes the Notify packet handling. Notify packets are
-   important packets sent by the server. They tell different things to the
-   client such as nick changes, mode changes etc. */
 
 #include "silc.h"
 #include "silcclient.h"

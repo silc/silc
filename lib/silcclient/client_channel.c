@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2004, 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -599,8 +599,8 @@ SilcBool silc_client_add_channel_private_key(SilcClient client,
    on error, TRUE otherwise. */
 
 SilcBool silc_client_del_channel_private_keys(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcChannelEntry channel)
+					      SilcClientConnection conn,
+					      SilcChannelEntry channel)
 {
   SilcChannelPrivateKey entry;
 

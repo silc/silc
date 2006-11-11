@@ -1,10 +1,10 @@
 /*
 
-  idlist.c
+  client_entry.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,524 +22,351 @@
 #include "silcclient.h"
 #include "client_internal.h"
 
-/******************************************************************************
+/* XXX locking */
 
-                         Client Searching Locally
+/************************ Client Searching Locally **************************/
 
-******************************************************************************/
+/* Finds entry for client by the client's ID. Returns the entry or NULL
+   if the entry was not found. */
 
-/* Same as silc_client_get_clients function but does not resolve anything
-   from the server. This checks local cache and returns all matching
-   clients from the local cache. If none was found this returns NULL.
-   The `nickname' is the real nickname of the client, and the `format'
-   is the formatted nickname to find exact match from multiple found
-   entries. The format must be same as given in the SilcClientParams
-   structure to the client library. If the `format' is NULL all found
-   clients by `nickname' are returned. */
-
-SilcClientEntry *silc_client_get_clients_local(SilcClient client,
-					       SilcClientConnection conn,
-					       const char *nickname,
-					       const char *format,
-					       SilcUInt32 *clients_count)
+SilcClientEntry silc_client_get_client_by_id(SilcClient client,
+					     SilcClientConnection conn,
+					     SilcClientID *client_id)
 {
   SilcIDCacheEntry id_cache;
-  SilcIDCacheList list = NULL;
-  SilcClientEntry entry, *clients;
-  int i = 0;
-  SilcBool found = FALSE;
+  SilcClientEntry client_entry;
+
+  if (!client || !conn || !client_id)
+    return NULL;
+
+  SILC_LOG_DEBUG(("Finding client by ID (%s)",
+		  silc_id_render(client_id, SILC_ID_CLIENT)));
+
+  silc_mutex_lock(conn->internal->lock);
+
+  /* Find ID from cache */
+  if (!silc_idcache_find_by_id_one(conn->internal->client_cache, client_id,
+				   &id_cache))
+    return NULL;
+
+  client_entry = id_cache->context;
+
+  /* Reference */
+  silc_client_ref_client(client, conn, client_entry);
+  silc_mutex_lock(conn->internal->lock);
+
+  SILC_LOG_DEBUG(("Found"));
+
+  return client_entry;
+}
+
+/* Finds clients by nickname from local cache. */
+
+SilcDList silc_client_get_clients_local(SilcClient client,
+					SilcClientConnection conn,
+					const char *nickname,
+					const char *format)
+{
+  SilcIDCacheEntry id_cache;
+  SilcList list;
+  SilcDList clients;
+  SilcClientEntry entry;
   char *nicknamec;
 
-  assert(client && conn);
-  if (!nickname)
+  if (!client || !conn || !nickname)
     return NULL;
 
   /* Normalize nickname for search */
   nicknamec = silc_identifier_check(nickname, strlen(nickname),
 				    SILC_STRING_UTF8, 128, NULL);
   if (!nicknamec)
+    silc_free(nicknamec);
     return NULL;
 
-  /* Find ID from cache */
+  clients = silc_dlist_init();
+  if (!clients) {
+    silc_free(nicknamec);
+    return NULL;
+  }
+
+  silc_mutex_lock(conn->internal->lock);
+
+  /* Find from cache */
   if (!silc_idcache_find_by_name(conn->internal->client_cache, nicknamec,
 				 &list)) {
+    silc_mutex_unlock(conn->internal->lock);
     silc_free(nicknamec);
+    silc_dlist_uninit(clients);
     return NULL;
   }
-
-  if (!silc_idcache_list_count(list)) {
-    silc_idcache_list_free(list);
-    silc_free(nicknamec);
-    return NULL;
-  }
-
-  clients = silc_calloc(silc_idcache_list_count(list), sizeof(*clients));
-  *clients_count = silc_idcache_list_count(list);
 
   if (!format) {
     /* Take all without any further checking */
-    silc_idcache_list_first(list, &id_cache);
-    while (id_cache) {
-      clients[i++] = id_cache->context;
-      found = TRUE;
-      if (!silc_idcache_list_next(list, &id_cache))
-	break;
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      silc_client_ref_client(client, conn, entry);
+      silc_dlist_add(clients, id_cache->context);
     }
   } else {
-    /* Check multiple cache entries for match */
-    silc_idcache_list_first(list, &id_cache);
-    while (id_cache) {
-      entry = (SilcClientEntry)id_cache->context;
-      if (!silc_utf8_strcasecmp(entry->nickname, format)) {
-	if (!silc_idcache_list_next(list, &id_cache)) {
-	  break;
-	} else {
-	  continue;
-	}
+    /* Check multiple cache entries for exact match */
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      entry = id_cache->context;
+      if (silc_utf8_strcasecmp(entry->nickname, format)) {
+	silc_client_ref_client(client, conn, entry);
+	silc_dlist_add(clients, entry);
       }
-
-      clients[i++] = id_cache->context;
-      found = TRUE;
-      if (!silc_idcache_list_next(list, &id_cache))
-	break;
     }
   }
 
+  silc_mutex_unlock(conn->internal->lock);
+
+  silc_dlist_start(clients);
+
   silc_free(nicknamec);
-
-  if (list)
-    silc_idcache_list_free(list);
-
-  if (!found) {
-    *clients_count = 0;
-    if (clients)
-      silc_free(clients);
-    return NULL;
-  }
-
   return clients;
 }
 
+/********************** Client Resolving from Server ************************/
 
-/******************************************************************************
-
-                        Client Resolving from Server
-
-******************************************************************************/
-
+/* Resolving context */
 typedef struct {
-  SilcClient client;
-  SilcClientConnection conn;
+  SilcDList clients;
   SilcGetClientCallback completion;
   void *context;
-  char *nickname;
-  SilcClientEntry *clients;
-  SilcUInt32 clients_count;
-} *GetClientInternal;
+} *SilcClientGetClientInternal;
 
-/* Completion for IDENTIFY */
+/* Resolving command callback */
 
-SILC_CLIENT_CMD_FUNC(get_client_callback)
+static SilcBool silc_client_get_clients_cb(SilcClient client,
+					   SilcClientConnection conn,
+					   SilcCommand command,
+					   SilcStatus status,
+					   SilcStatus error,
+					   void *context,
+					   va_list ap)
 {
-  GetClientInternal i = (GetClientInternal)context;
-  SilcClientEntry *clients;
-  SilcUInt32 clients_count;
+  SilcClientGetClientInternal i = context;
+  SilcClientEntry client_entry;
 
-  /* Get the clients */
-  clients = silc_client_get_clients_local(i->client, i->conn,
-					  i->nickname, NULL,
-					  &clients_count);
-  if (clients) {
-    i->completion(i->client, i->conn, clients, clients_count, i->context);
-    silc_free(clients);
-  } else {
-    i->completion(i->client, i->conn, NULL, 0, i->context);
+  if (error != SILC_STATUS_OK) {
+    SILC_LOG_DEBUG(("Resolving failed: %s", silc_get_status_message(error)));
+    if (i->completion)
+      i->completion(client, conn, error, NULL, i->context);
+    goto out;
   }
 
-  silc_free(i->nickname);
-  silc_free(i);
-}
+  /* Add the returned client to list */
+  if (i->completion) {
+    client_entry = va_arg(ap, SilcClientEntry);
+    silc_client_ref_client(client, conn, client_entry);
+    silc_dlist_add(i->clients, client_entry);
+  }
 
-/* Completion for WHOIS */
-
-SILC_CLIENT_CMD_FUNC(get_client_callback_wc)
-{
-  GetClientInternal i = (GetClientInternal)context;
-  SilcClientCommandReplyContext cmd = context2;
-  SilcClientID *client_id = NULL;
-  SilcClientEntry client_entry = NULL;
-  unsigned char *id_data;
-  SilcUInt32 len;
-
-  /* Get the client entry just returned from server */
-  id_data = silc_argument_get_arg_type(cmd->args, 2, &len);
-  if (id_data)
-    client_id = silc_id_payload_parse_id(id_data, len, NULL);
-  if (client_id)
-    client_entry = silc_client_get_client_by_id(i->client,
-						i->conn, client_id);
-  if (!client_entry) {
-    if (!SILC_STATUS_IS_ERROR(cmd->status) &&
-	cmd->status != SILC_STATUS_OK &&
-	cmd->status != SILC_STATUS_LIST_END) {
-      silc_free(client_id);
-      return;
+  if (status == SILC_STATUS_OK || status == SILC_STATUS_LIST_END) {
+    /* Deliver the clients to the caller */
+    if (i->completion) {
+      SILC_LOG_DEBUG(("Resolved %d clients", silc_dlist_count(i->clients)));
+      silc_dlist_start(i->clients);
+      i->completion(client, conn, SILC_STATUS_OK, i->clients, i->context);
     }
-
-    i->completion(i->client, i->conn, i->clients, i->clients_count,
-		  i->context);
-    silc_free(client_id);
-    silc_free(i->clients);
-    silc_free(i->nickname);
-    silc_free(i);
-    return;
+    goto out;
   }
 
-  /* Save the client */
-  i->clients = silc_realloc(i->clients,
-			    (sizeof(*i->clients) * (i->clients_count + 1)));
-  i->clients[i->clients_count] = client_entry;
-  i->clients_count++;
-
-  /* Return if more data is expected */
-  if (cmd->status != SILC_STATUS_OK &&
-      cmd->status != SILC_STATUS_LIST_END) {
-    silc_free(client_id);
-    return;
-  }
-
-  i->completion(i->client, i->conn, i->clients, i->clients_count,
-		i->context);
-
-  silc_free(client_id);
-  silc_free(i->clients);
-  silc_free(i->nickname);
-  silc_free(i);
-}
-
-/* Our own WHOIS reply processor. */
-
-SILC_CLIENT_CMD_FUNC(get_client_callback_w)
-{
-  SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
-  SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  if (!silc_command_get_status(cmd->payload, NULL, NULL)) {
-    if (SILC_STATUS_IS_ERROR(cmd->status))
-      goto out;
-    if (cmd->status == SILC_STATUS_LIST_END)
-      goto out;
-    goto err;
-  }
-
-  /* Save WHOIS info */
-  silc_client_command_reply_whois_save(cmd, cmd->status, FALSE);
-
-  /* Call pending completion for each reply */
-  if (cmd->status != SILC_STATUS_OK &&
-      cmd->status != SILC_STATUS_LIST_END) {
-    if (cmd->callbacks[0].callback)
-      (*cmd->callbacks[0].callback)(cmd->callbacks[0].context, cmd);
-    silc_client_command_reply_free(cmd);
-    return;
-  }
+  return TRUE;
 
  out:
-  SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_WHOIS);
-
- err:
-  /* If we received notify for invalid ID we'll remove the ID if we
-     have it cached. */
-  if (cmd->error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
-    SilcClientEntry client_entry;
-    SilcUInt32 tmp_len;
-    unsigned char *tmp =
-      silc_argument_get_arg_type(silc_command_get_args(cmd->payload),
-				 2, &tmp_len);
-    if (tmp) {
-      SilcClientID *client_id = silc_id_payload_parse_id(tmp, tmp_len, NULL);
-      if (client_id) {
-	client_entry = silc_client_get_client_by_id(cmd->client, conn,
-						    client_id);
-	if (client_entry)
-	  silc_client_del_client(cmd->client, conn, client_entry);
-	silc_free(client_id);
-      }
-    }
-  }
-
-  /* Unregister this command reply */
-  silc_client_command_unregister(cmd->client, SILC_COMMAND_WHOIS,
-				 NULL, silc_client_command_reply_whois_i,
-				 cmd->ident);
-  silc_client_command_reply_free(cmd);
+  silc_client_list_free(client, conn, i->clients);
+  silc_free(i);
+  return FALSE;
 }
 
-/* Finds client entry or entries by the `nickname' and `server'. The
-   completion callback will be called when the client entries has been found.
+/* Resolves client information from server by the client ID. */
 
-   Note: this function is always asynchronous and resolves the client
-   information from the server. Thus, if you already know the client
-   information then use the silc_client_get_client_by_id function to
-   get the client entry since this function may be very slow and should
-   be used only to initially get the client entries. */
-
-void silc_client_get_clients_i(SilcClient client,
-			       SilcClientConnection conn,
-			       SilcCommand command,
-			       const char *nickname,
-			       const char *server,
-			       SilcBuffer attributes,
-			       SilcGetClientCallback completion,
-			       void *context)
+void silc_client_get_client_by_id_resolve(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcClientID *client_id,
+					  SilcBuffer attributes,
+					  SilcGetClientCallback completion,
+					  void *context)
 {
-  GetClientInternal i;
-  int len;
-  char *userhost = NULL;
+  SilcClientGetClientInternal i;
+  SilcBuffer idp;
 
-  assert(client && conn);
-
-  if (!nickname && !attributes)
+  if (!client || !conn | !client_id)
     return;
 
+  SILC_LOG_DEBUG(("Resolve client by ID (%s)",
+		  silc_id_render(client_id, SILC_ID_CLIENT)));
+
   i = silc_calloc(1, sizeof(*i));
-  i->client = client;
-  i->conn = conn;
-  i->nickname = nickname ? strdup(nickname) : NULL;
+  if (!i)
+    return;
   i->completion = completion;
   i->context = context;
 
+  /* Send the command */
+  idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
+  silc_client_command_send(client, conn, SILC_COMMAND_WHOIS,
+			   silc_client_get_clients_cb, i,
+			   2, 3, silc_buffer_datalen(attributes),
+			   4, silc_buffer_datalen(idp));
+  silc_buffer_free(idp);
+}
+
+/* Finds client entry or entries by the `nickname' and `server'. The
+   completion callback will be called when the client entries has been
+   found.  Used internally by the library. */
+
+static SilcUInt16 silc_client_get_clients_i(SilcClient client,
+					    SilcClientConnection conn,
+					    SilcCommand command,
+					    const char *nickname,
+					    const char *server,
+					    SilcBuffer attributes,
+					    SilcGetClientCallback completion,
+					    void *context)
+{
+  SilcClientGetClientInternal i;
+  char userhost[768 + 1];
+  int len;
+
+  SILC_LOG_DEBUG(("Resolve client by %s command",
+		  silc_get_command_name(command)));
+
+  if (!client || !conn)
+    return 0;
+  if (!nickname && !attributes)
+    return 0;
+
+  i = silc_calloc(1, sizeof(*i));
+  if (!i)
+    return 0;
+  i->clients = silc_dlist_init();
+  if (!i->clients)
+    return 0;
+  i->completion = completion;
+  i->context = context;
+
+  memset(userhost, 0, sizeof(userhost));
   if (nickname && server) {
     len = strlen(nickname) + strlen(server) + 3;
-    userhost = silc_calloc(len, sizeof(*userhost));
     silc_strncat(userhost, len, nickname, strlen(nickname));
     silc_strncat(userhost, len, "@", 1);
     silc_strncat(userhost, len, server, strlen(server));
   } else if (nickname) {
-    userhost = silc_memdup(nickname, strlen(nickname));
+    silc_strncat(userhost, sizeof(userhost) - 1, nickname, strlen(nickname));
   }
 
-  /* Register our own command reply for this command */
-  if (command == SILC_COMMAND_IDENTIFY) {
-    silc_client_command_register(client, command, NULL, NULL,
-				 silc_client_command_reply_identify_i, 0,
-				 ++conn->cmd_ident);
-    /* Send the command */
-    silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
-			     conn->cmd_ident, 1, 1, userhost,
-			     strlen(userhost));
-
-    /* Add pending callback */
-    silc_client_command_pending(conn, command, conn->cmd_ident,
-				silc_client_command_get_client_callback,
-				(void *)i);
-  } else {
-    silc_client_command_register(client, command, NULL, NULL,
-				 silc_client_command_get_client_callback_w, 0,
-				 ++conn->cmd_ident);
-    /* Send the command */
-    silc_client_command_send(client, conn, command, conn->cmd_ident, 2,
-			     1, userhost, userhost ? strlen(userhost) : 0,
-			     3, attributes ? attributes->data : NULL,
-			     attributes ? attributes->len : 0);
-
-    /* Add pending callback */
-    silc_client_command_pending(conn, command, conn->cmd_ident,
-				silc_client_command_get_client_callback_wc,
-				(void *)i);
-  }
-  silc_free(userhost);
+  /* Send the command */
+  if (command == SILC_COMMAND_IDENTIFY)
+    return silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
+				    silc_client_get_clients_cb, i,
+				    1, 1, userhost, strlen(userhost));
+  return silc_client_command_send(client, conn, SILC_COMMAND_WHOIS,
+				  silc_client_get_clients_cb, i,
+				  2, 1, userhost, strlen(userhost),
+				  3, silc_buffer_datalen(attributes));
 }
 
-void silc_client_get_clients(SilcClient client,
-			     SilcClientConnection conn,
-			     const char *nickname,
-			     const char *server,
-			     SilcGetClientCallback completion,
-			     void *context)
-{
-  silc_client_get_clients_i(client, conn, SILC_COMMAND_IDENTIFY,
-			    nickname, server, NULL,
-			    completion, context);
-}
+/* Get clients from server with IDENTIFY command */
 
-void silc_client_get_clients_whois(SilcClient client,
+SilcUInt16 silc_client_get_clients(SilcClient client,
 				   SilcClientConnection conn,
 				   const char *nickname,
 				   const char *server,
-				   SilcBuffer attributes,
 				   SilcGetClientCallback completion,
 				   void *context)
 {
-  silc_client_get_clients_i(client, conn, SILC_COMMAND_WHOIS,
-			    nickname, server, attributes,
-			    completion, context);
+  return silc_client_get_clients_i(client, conn, SILC_COMMAND_IDENTIFY,
+				   nickname, server, NULL,
+				   completion, context);
 }
 
-/* The old style function to find client entry. This is used by the
-   library internally. If `query' is TRUE then the client information is
-   requested by the server. The pending command callback must be set
-   by the caller. */
-/* XXX This function should be removed */
+/* Get clients from server with WHOIS command */
 
-SilcClientEntry silc_idlist_get_client(SilcClient client,
-				       SilcClientConnection conn,
-				       const char *nickname,
-				       const char *format,
-				       SilcBool query)
+SilcUInt16 silc_client_get_clients_whois(SilcClient client,
+					 SilcClientConnection conn,
+					 const char *nickname,
+					 const char *server,
+					 SilcBuffer attributes,
+					 SilcGetClientCallback completion,
+					 void *context)
 {
-  SilcIDCacheEntry id_cache;
-  SilcIDCacheList list = NULL;
-  SilcClientEntry entry = NULL;
-  char *nicknamec;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Normalize nickname for search */
-  nicknamec = silc_identifier_check(nickname, strlen(nickname),
-				    SILC_STRING_UTF8, 128, NULL);
-  if (!nicknamec)
-    return NULL;
-
-  /* Find ID from cache */
-  if (!silc_idcache_find_by_name(conn->internal->client_cache,
-				 nicknamec, &list)) {
-  identify:
-
-    if (query) {
-      SILC_LOG_DEBUG(("Requesting Client ID from server"));
-
-      /* Register our own command reply for this command */
-      silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
-				   silc_client_command_reply_identify_i, 0,
-				   ++conn->cmd_ident);
-
-      /* Send the command */
-      silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
-			       conn->cmd_ident, 1, 1, nickname,
-			       strlen(nickname));
-
-      if (list)
-	silc_idcache_list_free(list);
-
-      silc_free(nicknamec);
-      return NULL;
-    }
-
-    silc_free(nicknamec);
-    return NULL;
-  }
-
-  if (!format) {
-    /* Take first found cache entry */
-    if (!silc_idcache_list_first(list, &id_cache))
-      goto identify;
-
-    entry = (SilcClientEntry)id_cache->context;
-  } else {
-    /* Check multiple cache entries for match */
-    silc_idcache_list_first(list, &id_cache);
-    while (id_cache) {
-      entry = (SilcClientEntry)id_cache->context;
-
-      if (!silc_utf8_strcasecmp(entry->nickname, format)) {
-	if (!silc_idcache_list_next(list, &id_cache)) {
-	  entry = NULL;
-	  break;
-	} else {
-	  entry = NULL;
-	  continue;
-	}
-      }
-
-      break;
-    }
-
-    /* If match weren't found, request it */
-    if (!entry)
-      goto identify;
-  }
-
-  silc_free(nicknamec);
-
-  if (list)
-    silc_idcache_list_free(list);
-
-  return entry;
+  return silc_client_get_clients_i(client, conn, SILC_COMMAND_WHOIS,
+				   nickname, server, attributes,
+				   completion, context);
 }
 
+/* ID list resolving context */
 typedef struct {
-  SilcClient client;
-  SilcClientConnection conn;
-  SilcUInt32 list_count;
-  SilcBuffer client_id_list;
   SilcGetClientCallback completion;
   void *context;
-  int res_count;
+  SilcBuffer client_id_list;
+  SilcUInt32 list_count;
 } *GetClientsByListInternal;
 
-SILC_CLIENT_CMD_FUNC(get_clients_list_callback)
+static SilcBool silc_client_get_clients_list_cb(SilcClient client,
+						SilcClientConnection conn,
+						SilcCommand command,
+						SilcStatus status,
+						SilcStatus error,
+						void *context,
+						va_list ap)
 {
-  GetClientsByListInternal i = (GetClientsByListInternal)context;
-  SilcIDCacheEntry id_cache = NULL;
-  SilcBuffer client_id_list = i->client_id_list;
-  SilcClientEntry *clients = NULL;
-  SilcUInt32 clients_count = 0;
-  SilcBool found = FALSE;
+  GetClientsByListInternal i = context;
+  SilcClientEntry client_entry;
+  SilcDList clients;
+  SilcUInt16 idp_len;
+  SilcID id;
   int c;
 
-  SILC_LOG_DEBUG(("Start"));
-
-  if (i->res_count) {
-    i->res_count--;
-    if (i->res_count)
-      return;
-  }
+  /* Process the list after all replies have been received */
+  if (status != SILC_STATUS_OK && !SILC_STATUS_IS_ERROR(status) &&
+      status != SILC_STATUS_LIST_END)
+    return TRUE;
 
   SILC_LOG_DEBUG(("Resolved all clients"));
 
-  clients = silc_calloc(i->list_count, sizeof(*clients));
+  clients = silc_dlist_init();
+  if (!clients) {
+    status = SILC_STATUS_ERR_RESOURCE_LIMIT;
+    goto out;
+  }
 
   for (c = 0; c < i->list_count; c++) {
-    SilcUInt16 idp_len;
-    SilcClientID *client_id;
-
     /* Get Client ID */
-    SILC_GET16_MSB(idp_len, client_id_list->data + 2);
+    SILC_GET16_MSB(idp_len, i->client_id_list->data + 2);
     idp_len += 4;
-    client_id = silc_id_payload_parse_id(client_id_list->data, idp_len, NULL);
-    if (!client_id) {
-      silc_buffer_pull(client_id_list, idp_len);
-      continue;
+    if (!silc_id_payload_parse_id(i->client_id_list->data, idp_len, &id)) {
+      status = SILC_STATUS_ERR_BAD_CLIENT_ID;
+      goto out;
     }
 
-    /* Get the client entry */
-    if (silc_idcache_find_by_id_one_ext(i->conn->internal->client_cache,
-					(void *)client_id,
-					NULL, NULL,
-					silc_hash_client_id_compare, NULL,
-					&id_cache)) {
-      clients[clients_count] = (SilcClientEntry)id_cache->context;
-      clients_count++;
-      found = TRUE;
+    /* Get client entry */
+    client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
+    if (client_entry) {
+      silc_client_ref_client(client, conn, client_entry);
+      silc_dlist_add(clients, client_entry);
     }
 
-    silc_free(client_id);
-    silc_buffer_pull(client_id_list, idp_len);
+    if (!silc_buffer_pull(i->client_id_list, idp_len)) {
+      status = SILC_STATUS_ERR_BAD_CLIENT_ID;
+      goto out;
+    }
   }
 
-  if (found) {
-    i->completion(i->client, i->conn, clients, clients_count, i->context);
-    silc_free(clients);
-  } else {
-    i->completion(i->client, i->conn, NULL, 0, i->context);
-  }
+  silc_dlist_start(clients);
+  status = SILC_STATUS_OK;
+  if (i->completion)
+    i->completion(client, conn, status, clients, i->context);
 
-  if (i->client_id_list)
-    silc_buffer_free(i->client_id_list);
+ out:
+  if (status != SILC_STATUS_OK && i->completion)
+    i->completion(client, conn, status, NULL, i->context);
+  silc_client_list_free(client, conn, clients);
   silc_free(i);
+  return FALSE;
 }
 
 /* Gets client entries by the list of client ID's `client_id_list'. This
@@ -556,131 +383,85 @@ void silc_client_get_clients_by_list(SilcClient client,
 				     SilcGetClientCallback completion,
 				     void *context)
 {
-  SilcIDCacheEntry id_cache = NULL;
-  int i;
+  GetClientsByListInternal in;
+  SilcClientEntry entry;
   unsigned char **res_argv = NULL;
   SilcUInt32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
-  GetClientsByListInternal in;
-  SilcBool wait_res = FALSE;
+  SilcUInt16 idp_len;
+  SilcID id;
+  int i;
 
-  assert(client && conn && client_id_list);
+  SILC_LOG_DEBUG(("Resolve clients from Client ID list"));
 
-  SILC_LOG_DEBUG(("Start"));
+  if (!client || !conn || !client_id_list)
+    return;
 
   in = silc_calloc(1, sizeof(*in));
-  in->client = client;
-  in->conn = conn;
-  in->list_count = list_count;
-  in->client_id_list = silc_buffer_copy(client_id_list);
+  if (!in)
+    return;
   in->completion = completion;
   in->context = context;
+  in->list_count = list_count;
+  in->client_id_list = silc_buffer_copy(client_id_list);
+  if (!in->client_id_list)
+    goto err;
 
   for (i = 0; i < list_count; i++) {
-    SilcUInt16 idp_len;
-    SilcClientID *client_id;
-    SilcClientEntry entry;
-    SilcBool ret;
-
     /* Get Client ID */
     SILC_GET16_MSB(idp_len, client_id_list->data + 2);
     idp_len += 4;
-    client_id = silc_id_payload_parse_id(client_id_list->data, idp_len, NULL);
-    if (!client_id) {
-      silc_buffer_pull(client_id_list, idp_len);
-      continue;
-    }
+    if (!silc_id_payload_parse_id(client_id_list->data, idp_len, &id))
+      goto err;
 
-    /* Check if we have this client cached already. */
-    ret =
-      silc_idcache_find_by_id_one_ext(conn->internal->client_cache,
-				      (void *)client_id, NULL, NULL,
-				      silc_hash_client_id_compare, NULL,
-				      &id_cache);
-
-    /* If we don't have the entry or it has incomplete info, then resolve
-       it from the server. */
-    if (!ret || !((SilcClientEntry)id_cache->context)->nickname) {
-      entry = ret ? (SilcClientEntry)id_cache->context : NULL;
-
-      if (entry) {
-	if (entry->status & SILC_CLIENT_STATUS_RESOLVING) {
-	  /* Attach to this resolving and wait until it finishes */
-	  silc_client_command_pending(
-			    conn, SILC_COMMAND_NONE,
-			    entry->resolve_cmd_ident,
-			    silc_client_command_get_clients_list_callback,
-			    (void *)in);
-	  wait_res = TRUE;
-	  in->res_count++;
-
-	  silc_free(client_id);
-	  silc_buffer_pull(client_id_list, idp_len);
-	  continue;
-	}
-
-	entry->status |= SILC_CLIENT_STATUS_RESOLVING;
-	entry->resolve_cmd_ident = conn->cmd_ident + 1;
+    /* Check if we have this client cached already.  If we don't have the
+       entry or it has incomplete info, then resolve it from the server. */
+    entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
+    if (!entry || !entry->nickname || !entry->username || !entry->realname) {
+      if (!res_argv) {
+	res_argv = silc_calloc(list_count, sizeof(*res_argv));
+	res_argv_lens = silc_calloc(list_count, sizeof(*res_argv_lens));
+	res_argv_types = silc_calloc(list_count, sizeof(*res_argv_types));
+	if (!res_argv || !res_argv_lens || !res_argv_types)
+	  goto err;
       }
 
-      /* No we don't have it, query it from the server. Assemble argument
-	 table that will be sent for the IDENTIFY command later. */
-      res_argv = silc_realloc(res_argv, sizeof(*res_argv) *
-			      (res_argc + 1));
-      res_argv_lens = silc_realloc(res_argv_lens, sizeof(*res_argv_lens) *
-				   (res_argc + 1));
-      res_argv_types = silc_realloc(res_argv_types, sizeof(*res_argv_types) *
-				    (res_argc + 1));
       res_argv[res_argc] = client_id_list->data;
       res_argv_lens[res_argc] = idp_len;
       res_argv_types[res_argc] = res_argc + 5;
       res_argc++;
     }
 
-    silc_free(client_id);
-    silc_buffer_pull(client_id_list, idp_len);
+    if (!silc_buffer_pull(client_id_list, idp_len))
+      goto err;
   }
+  silc_buffer_start(client_id_list);
 
-  silc_buffer_push(client_id_list, client_id_list->data -
-		   client_id_list->head);
-
-  /* Query the client information from server if the list included clients
-     that we don't know about. */
+  /* Query the unknown client information from server */
   if (res_argc) {
-    SilcBuffer res_cmd;
-
-    /* Send the IDENTIFY command to server */
-    res_cmd = silc_command_payload_encode(SILC_COMMAND_IDENTIFY,
-					  res_argc, res_argv, res_argv_lens,
-					  res_argv_types, ++conn->cmd_ident);
-    silc_client_packet_send(client, conn->sock, SILC_PACKET_COMMAND,
-			    NULL, 0, NULL, NULL, res_cmd->data, res_cmd->len,
-			    TRUE);
-
-    /* Register our own command reply for this command */
-    silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
-				 silc_client_command_reply_identify_i, 0,
-				 conn->cmd_ident);
-
-    /* Process the applications request after reply has been received  */
-    silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
-				silc_client_command_get_clients_list_callback,
-				(void *)in);
-    in->res_count++;
-
-    silc_buffer_free(res_cmd);
+    silc_client_command_send_argv(client, conn, SILC_COMMAND_WHOIS,
+				  silc_client_get_clients_list_cb,
+				  in, res_argc, res_argv, res_argv_lens,
+				  res_argv_types);
     silc_free(res_argv);
     silc_free(res_argv_lens);
     silc_free(res_argv_types);
     return;
   }
 
-  if (wait_res)
-    return;
-
   /* We have the clients in cache, get them and call the completion */
-  silc_client_command_get_clients_list_callback((void *)in, NULL);
+  silc_client_get_clients_list_cb(client, conn, SILC_COMMAND_WHOIS,
+				  SILC_STATUS_OK, SILC_STATUS_OK, in, NULL);
+  return;
+
+ err:
+  silc_buffer_free(in->client_id_list);
+  silc_free(in);
+  silc_free(res_argv);
+  silc_free(res_argv_lens);
+  silc_free(res_argv_types);
 }
 
+#if 0
 typedef struct {
   SilcClient client;
   SilcClientConnection conn;
@@ -849,152 +630,57 @@ void silc_client_get_clients_by_channel(SilcClient client,
   /* We have the clients in cache, get them and call the completion */
   silc_client_command_get_clients_by_channel_cb((void *)in, NULL);
 }
-
-/* Finds entry for client by the client's ID. Returns the entry or NULL
-   if the entry was not found. */
-
-SilcClientEntry silc_client_get_client_by_id(SilcClient client,
-					     SilcClientConnection conn,
-					     SilcClientID *client_id)
-{
-  SilcIDCacheEntry id_cache;
-
-  assert(client && conn);
-  if (!client_id)
-    return NULL;
-
-  SILC_LOG_DEBUG(("Finding client by ID (%s)",
-		  silc_id_render(client_id, SILC_ID_CLIENT)));
-
-  /* Find ID from cache */
-  if (!silc_idcache_find_by_id_one_ext(conn->internal->client_cache,
-				       (void *)client_id, NULL, NULL,
-				       silc_hash_client_id_compare, NULL,
-				       &id_cache))
-    return NULL;
-
-  SILC_LOG_DEBUG(("Found"));
-
-  return (SilcClientEntry)id_cache->context;
-}
-
-typedef struct {
-  SilcClient client;
-  SilcClientConnection conn;
-  SilcClientID *client_id;
-  SilcGetClientCallback completion;
-  void *context;
-} *GetClientByIDInternal;
-
-SILC_CLIENT_CMD_FUNC(get_client_by_id_callback)
-{
-  GetClientByIDInternal i = (GetClientByIDInternal)context;
-  SilcClientEntry entry;
-
-  /* Get the client */
-  entry = silc_client_get_client_by_id(i->client, i->conn, i->client_id);
-  if (entry) {
-    if (i->completion)
-      i->completion(i->client, i->conn, &entry, 1, i->context);
-  } else {
-    if (i->completion)
-      i->completion(i->client, i->conn, NULL, 0, i->context);
-  }
-
-  silc_free(i->client_id);
-  silc_free(i);
-}
-
-/* Same as above but will always resolve the information from the server.
-   Use this only if you know that you don't have the entry and the only
-   thing you know about the client is its ID. */
-
-void silc_client_get_client_by_id_resolve(SilcClient client,
-					  SilcClientConnection conn,
-					  SilcClientID *client_id,
-					  SilcBuffer attributes,
-					  SilcGetClientCallback completion,
-					  void *context)
-{
-  SilcBuffer idp;
-  GetClientByIDInternal i = silc_calloc(1, sizeof(*i));
-
-  assert(client && conn && client_id);
-
-  SILC_LOG_DEBUG(("Start"));
-
-  i->client = client;
-  i->conn = conn;
-  i->client_id = silc_id_dup(client_id, SILC_ID_CLIENT);
-  i->completion = completion;
-  i->context = context;
-
-  /* Register our own command reply for this command */
-  silc_client_command_register(client, SILC_COMMAND_WHOIS, NULL, NULL,
-			       silc_client_command_reply_whois_i, 0,
-			       ++conn->cmd_ident);
-
-  /* Send the command */
-  idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
-  silc_client_command_send(client, conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
-			   2, 3, attributes ? attributes->data : NULL,
-			   attributes ? attributes->len : 0,
-			   4, idp->data, idp->len);
-  silc_buffer_free(idp);
-
-  /* Add pending callback */
-  silc_client_command_pending(conn, SILC_COMMAND_WHOIS, conn->cmd_ident,
-			      silc_client_command_get_client_by_id_callback,
-			      (void *)i);
-}
+#endif /* 0 */
 
 
-/******************************************************************************
-
-                Client, Channel and Server entry manipulation
-
-******************************************************************************/
-
+/************************** Client Entry Routines ***************************/
 
 /* Creates new client entry and adds it to the ID cache. Returns pointer
    to the new entry. */
 
-SilcClientEntry
-silc_client_add_client(SilcClient client, SilcClientConnection conn,
-		       char *nickname, char *username,
-		       char *userinfo, SilcClientID *id, SilcUInt32 mode)
+SilcClientEntry silc_client_add_client(SilcClient client,
+				       SilcClientConnection conn,
+				       char *nickname, char *username,
+				       char *userinfo, SilcClientID *id,
+				       SilcUInt32 mode)
 {
   SilcClientEntry client_entry;
   char *nick = NULL;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Adding new client entry"));
 
   /* Save the client infos */
   client_entry = silc_calloc(1, sizeof(*client_entry));
-  client_entry->id = id;
-  client_entry->valid = TRUE;
-  silc_parse_userfqdn(nickname, &nick, &client_entry->server);
-  silc_parse_userfqdn(username, &client_entry->username,
-		      &client_entry->hostname);
-  if (userinfo)
-    client_entry->realname = strdup(userinfo);
+  if (!client_entry)
+    return NULL;
+
+  client_entry->id = *id;
+  client_entry->internal.valid = TRUE;
   client_entry->mode = mode;
-  if (nick)
-    client_entry->nickname = strdup(nick);
+  client_entry->realname = userinfo ? strdup(userinfo) : NULL;
+  silc_parse_userfqdn(nickname, client_entry->nickname,
+		      sizeof(client_entry->nickname),
+		      client_entry->server,
+		      sizeof(client_entry->server));
+  silc_parse_userfqdn(username, client_entry->username,
+		      sizeof(client_entry->username),
+		      client_entry->hostname,
+		      sizeof(client_entry->hostname));
   client_entry->channels = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
 						 NULL, NULL, NULL, TRUE);
+  if (!client_entry->channels) {
+    silc_free(client_entry->realname);
+    silc_free(client_entry);
+    return NULL;
+  }
 
   /* Normalize nickname */
-  if (client_entry->nickname) {
-    silc_free(nick);
+  if (client_entry->nickname[0]) {
     nick = silc_identifier_check(client_entry->nickname,
 				 strlen(client_entry->nickname),
 				 SILC_STRING_UTF8, 128, NULL);
     if (!nick) {
-      silc_free(client_entry->nickname);
-      silc_free(client_entry->username);
-      silc_free(client_entry->hostname);
-      silc_free(client_entry->server);
+      silc_free(client_entry->realname);
       silc_hash_table_free(client_entry->channels);
       silc_free(client_entry);
       return NULL;
@@ -1004,18 +690,17 @@ silc_client_add_client(SilcClient client, SilcClientConnection conn,
   /* Format the nickname */
   silc_client_nickname_format(client, conn, client_entry);
 
-  /* Add client to cache, the non-formatted nickname is saved to cache */
-  if (!silc_idcache_add(conn->internal->client_cache, nick, client_entry->id,
-			(void *)client_entry, 0, NULL)) {
+  /* Add client to cache, the normalized nickname is saved to cache */
+  if (!silc_idcache_add(conn->internal->client_cache, nick,
+			&client_entry->id, client_entry)) {
     silc_free(nick);
-    silc_free(client_entry->nickname);
-    silc_free(client_entry->username);
-    silc_free(client_entry->hostname);
-    silc_free(client_entry->server);
+    silc_free(client_entry->realname);
     silc_hash_table_free(client_entry->channels);
     silc_free(client_entry);
     return NULL;
   }
+
+  client_entry->nickname_normalized = nick;
 
   return client_entry;
 }
@@ -1032,24 +717,22 @@ void silc_client_update_client(SilcClient client,
 {
   char *nick = NULL;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Update client entry"));
 
-  if ((!client_entry->username || !client_entry->hostname) && username) {
-    silc_free(client_entry->username);
-    silc_free(client_entry->hostname);
-    client_entry->username = NULL;
-    client_entry->hostname = NULL;
-    silc_parse_userfqdn(username, &client_entry->username,
-			&client_entry->hostname);
-  }
   if (!client_entry->realname && userinfo)
     client_entry->realname = strdup(userinfo);
-  if (!client_entry->nickname && nickname) {
-    silc_parse_userfqdn(nickname, &nick, &client_entry->server);
-    client_entry->nickname = strdup(nick);
+  if ((!client_entry->username[0] || !client_entry->hostname[0]) && username)
+    silc_parse_userfqdn(username, client_entry->username,
+			sizeof(client_entry->username),
+			client_entry->hostname,
+			sizeof(client_entry->username));
+  if (!client_entry->nickname[0] && nickname) {
+    silc_parse_userfqdn(nickname, client_entry->nickname,
+			sizeof(client_entry->nickname),
+			client_entry->server,
+			sizeof(client_entry->server));
 
     /* Normalize nickname */
-    silc_free(nick);
     nick = silc_identifier_check(client_entry->nickname,
 				 strlen(client_entry->nickname),
 				 SILC_STRING_UTF8, 128, NULL);
@@ -1058,15 +741,14 @@ void silc_client_update_client(SilcClient client,
 
     /* Format nickname */
     silc_client_nickname_format(client, conn, client_entry);
+
+    /* Remove the old cache entry and create a new one */
+    silc_idcache_del_by_context(conn->internal->client_cache, client_entry,
+				NULL);
+    silc_idcache_add(conn->internal->client_cache, nick, &client_entry->id,
+		     client_entry);
   }
   client_entry->mode = mode;
-
-  if (nick) {
-    /* Remove the old cache entry and create a new one */
-    silc_idcache_del_by_context(conn->internal->client_cache, client_entry);
-    silc_idcache_add(conn->internal->client_cache, nick, client_entry->id,
-		     client_entry, 0, NULL);
-  }
 }
 
 /* Deletes the client entry and frees all memory. */
@@ -1077,35 +759,31 @@ void silc_client_del_client_entry(SilcClient client,
 {
   SILC_LOG_DEBUG(("Start"));
 
-  silc_free(client_entry->nickname);
-  silc_free(client_entry->username);
   silc_free(client_entry->realname);
-  silc_free(client_entry->hostname);
-  silc_free(client_entry->server);
-  silc_free(client_entry->id);
-  silc_free(client_entry->fingerprint);
   if (client_entry->public_key)
     silc_pkcs_public_key_free(client_entry->public_key);
   silc_hash_table_free(client_entry->channels);
-  if (client_entry->send_key)
-    silc_cipher_free(client_entry->send_key);
-  if (client_entry->receive_key)
-    silc_cipher_free(client_entry->receive_key);
-  silc_free(client_entry->key);
+  if (client_entry->internal.send_key)
+    silc_cipher_free(client_entry->internal.send_key);
+  if (client_entry->internal.receive_key)
+    silc_cipher_free(client_entry->internal.receive_key);
+  silc_free(client_entry->internal.key);
+#if 0
   silc_client_ftp_session_free_client(conn, client_entry);
-  if (client_entry->ke)
+  if (client_entry->internal->ke)
     silc_client_abort_key_agreement(client, conn, client_entry);
+#endif /* 0 */
   silc_free(client_entry);
 }
 
 /* Removes client from the cache by the client entry. */
 
 SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
-			    SilcClientEntry client_entry)
+				SilcClientEntry client_entry)
 {
   SilcBool ret = silc_idcache_del_by_context(conn->internal->client_cache,
-					 client_entry);
-
+					     client_entry, NULL);
+#if 0
   if (ret) {
     /* Remove from channels */
     silc_client_remove_from_channels(client, conn, client_entry);
@@ -1113,9 +791,46 @@ SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
     /* Free the client entry data */
     silc_client_del_client_entry(client, conn, client_entry);
   }
+#endif
 
   return ret;
 }
+
+/* Take reference of client entry */
+
+void silc_client_ref_client(SilcClient client, SilcClientConnection conn,
+			    SilcClientEntry client_entry)
+{
+  silc_atomic_add_int8(&client_entry->internal.refcnt, 1);
+}
+
+/* Release reference of client entry */
+
+void silc_client_unref_client(SilcClient client, SilcClientConnection conn,
+			      SilcClientEntry client_entry)
+{
+  if (silc_atomic_sub_int8(&client_entry->internal.refcnt, 1) == 0) {
+    silc_client_del_client(client, conn, client_entry);
+    return;
+  }
+}
+
+/* Free client entry list */
+
+void silc_client_list_free(SilcClient client, SilcClientConnection conn,
+			   SilcDList client_list)
+{
+  SilcClientEntry client_entry;
+
+  silc_dlist_start(client_list);
+  while ((client_entry = silc_dlist_get(client_list)))
+    silc_client_unref_client(client, conn, client_entry);
+
+  silc_dlist_uninit(client_list);
+}
+
+
+/************************* Channel Entry Routines ***************************/
 
 /* Add new channel entry to the ID Cache */
 
@@ -1149,7 +864,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
 
   /* Put it to the ID cache */
   if (!silc_idcache_add(conn->internal->channel_cache, channel_namec,
-			(void *)channel->id, (void *)channel, 0, NULL)) {
+			(void *)channel->id, (void *)channel)) {
     silc_free(channel_namec);
     silc_free(channel->channel_name);
     silc_hash_table_free(channel->user_list);
@@ -1179,10 +894,10 @@ static void silc_client_del_channel_foreach(void *key, void *context,
 /* Removes channel from the cache by the channel entry. */
 
 SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
-			     SilcChannelEntry channel)
+				 SilcChannelEntry channel)
 {
   SilcBool ret = silc_idcache_del_by_context(conn->internal->channel_cache,
-					 channel);
+					     channel, NULL);
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1227,9 +942,9 @@ SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
    if the ID could not be changed. */
 
 SilcBool silc_client_replace_channel_id(SilcClient client,
-				    SilcClientConnection conn,
-				    SilcChannelEntry channel,
-				    SilcChannelID *new_id)
+					SilcClientConnection conn,
+					SilcChannelEntry channel,
+					SilcChannelID *new_id)
 {
   char *channel_namec;
 
@@ -1241,7 +956,7 @@ SilcBool silc_client_replace_channel_id(SilcClient client,
   SILC_LOG_DEBUG(("New Channel ID id(%s)",
 		  silc_id_render(new_id, SILC_ID_CHANNEL)));
 
-  silc_idcache_del_by_id(conn->internal->channel_cache, channel->id);
+  silc_idcache_del_by_id(conn->internal->channel_cache, channel->id, NULL);
   silc_free(channel->id);
   channel->id = new_id;
 
@@ -1253,8 +968,7 @@ SilcBool silc_client_replace_channel_id(SilcClient client,
     return FALSE;
 
   return silc_idcache_add(conn->internal->channel_cache, channel_namec,
-			  (void *)channel->id, (void *)channel, 0, NULL);
-
+			  channel->id, channel) != NULL;
 }
 
 /* Finds entry for channel by the channel name. Returns the entry or NULL
@@ -1323,6 +1037,7 @@ SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
   return entry;
 }
 
+#if 0
 typedef struct {
   SilcClient client;
   SilcClientConnection conn;
@@ -1446,6 +1161,7 @@ void silc_client_get_channel_by_id_resolve(SilcClient client,
 			      silc_client_command_get_channel_by_id_callback,
 			      (void *)i);
 }
+#endif /* 0 */
 
 /* Finds entry for server by the server name. */
 
@@ -1543,7 +1259,7 @@ SilcServerEntry silc_client_add_server(SilcClient client,
 
   /* Add server to cache */
   if (!silc_idcache_add(conn->internal->server_cache, server_namec,
-			server_entry->server_id, server_entry, 0, NULL)) {
+			server_entry->server_id, server_entry)) {
     silc_free(server_namec);
     silc_free(server_entry->server_id);
     silc_free(server_entry->server_name);
@@ -1560,7 +1276,8 @@ SilcServerEntry silc_client_add_server(SilcClient client,
 SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
 			    SilcServerEntry server)
 {
-  SilcBool ret = silc_idcache_del_by_context(conn->internal->server_cache, server);
+  SilcBool ret = silc_idcache_del_by_context(conn->internal->server_cache,
+					     server, NULL);
   silc_free(server->server_name);
   silc_free(server->server_info);
   silc_free(server->server_id);
@@ -1584,7 +1301,8 @@ void silc_client_update_server(SilcClient client,
       (!server_entry->server_name ||
        !silc_utf8_strcasecmp(server_entry->server_name, server_name))) {
 
-    silc_idcache_del_by_context(conn->internal->server_cache, server_entry);
+    silc_idcache_del_by_context(conn->internal->server_cache,
+				server_entry, NULL);
     silc_free(server_entry->server_name);
     server_entry->server_name = strdup(server_name);
 
@@ -1596,8 +1314,7 @@ void silc_client_update_server(SilcClient client,
 	return;
 
       silc_idcache_add(conn->internal->server_cache, server_namec,
-		       server_entry->server_id,
-		       server_entry, 0, NULL);
+		       server_entry->server_id, server_entry);
     }
   }
 
@@ -1619,12 +1336,11 @@ void silc_client_nickname_format(SilcClient client,
 				 SilcClientEntry client_entry)
 {
   char *cp;
-  char *newnick = NULL;
+  char newnick[128 + 1];
   int i, off = 0, len;
   SilcBool freebase;
-  SilcClientEntry *clients;
-  SilcUInt32 clients_count = 0;
-  SilcClientEntry unformatted = NULL;
+  SilcDList clients;
+  SilcClientEntry entry, unformatted = NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1638,30 +1354,23 @@ void silc_client_nickname_format(SilcClient client,
      if there aren't any clients with same nickname unless the application
      is forcing us to do so. */
   clients = silc_client_get_clients_local(client, conn,
-					  client_entry->nickname, NULL,
-					  &clients_count);
+					  client_entry->nickname, NULL);
   if (!clients && !client->internal->params->nickname_force_format)
     return;
 
   len = 0;
   freebase = TRUE;
-  for (i = 0; i < clients_count; i++) {
-    if (clients[i]->valid && clients[i] != client_entry)
+  while ((entry = silc_dlist_get(clients))) {
+    if (entry->internal.valid && entry != client_entry)
       len++;
-    if (clients[i]->valid && clients[i] != client_entry &&
-	silc_utf8_strcasecmp(clients[i]->nickname, client_entry->nickname))
+    if (entry->internal.valid && entry != client_entry &&
+	silc_utf8_strcasecmp(entry->nickname, client_entry->nickname)) {
       freebase = FALSE;
+      unformatted = entry;
+    }
   }
   if (!len || freebase)
     return;
-
-  if (clients_count == 1)
-    unformatted = clients[0];
-  else
-    for (i = 0; i < clients_count; i++)
-      if (silc_utf8_strncasecmp(clients[i]->nickname, client_entry->nickname,
-				strlen(clients[i]->nickname)))
-	unformatted = clients[i];
 
   /* If we are changing nickname of our local entry we'll enforce
      that we will always get the unformatted nickname.  Give our
@@ -1669,6 +1378,7 @@ void silc_client_nickname_format(SilcClient client,
   if (unformatted && client_entry == conn->local_entry)
     client_entry = unformatted;
 
+  memset(newnick, 0, sizeof(newnick));
   cp = client->internal->params->nickname_format;
   while (*cp) {
     if (*cp == '%') {
@@ -1679,31 +1389,28 @@ void silc_client_nickname_format(SilcClient client,
     switch(*cp) {
     case 'n':
       /* Nickname */
-      if (!client_entry->nickname)
+      if (!client_entry->nickname[0])
 	break;
       len = strlen(client_entry->nickname);
-      newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
       memcpy(&newnick[off], client_entry->nickname, len);
       off += len;
       break;
     case 'h':
       /* Stripped hostname */
-      if (!client_entry->hostname)
+      if (!client_entry->hostname[0])
 	break;
       len = strcspn(client_entry->hostname, ".");
       i = strcspn(client_entry->hostname, "-");
       if (i < len)
         len = i;
-      newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
       memcpy(&newnick[off], client_entry->hostname, len);
       off += len;
       break;
     case 'H':
       /* Full hostname */
-      if (!client_entry->hostname)
+      if (!client_entry->hostname[0])
 	break;
       len = strlen(client_entry->hostname);
-      newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
       memcpy(&newnick[off], client_entry->hostname, len);
       off += len;
       break;
@@ -1712,7 +1419,6 @@ void silc_client_nickname_format(SilcClient client,
       if (!client_entry->server)
 	break;
       len = strcspn(client_entry->server, ".");
-      newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
       memcpy(&newnick[off], client_entry->server, len);
       off += len;
       break;
@@ -1721,7 +1427,6 @@ void silc_client_nickname_format(SilcClient client,
       if (!client_entry->server)
 	break;
       len = strlen(client_entry->server);
-      newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
       memcpy(&newnick[off], client_entry->server, len);
       off += len;
       break;
@@ -1731,15 +1436,16 @@ void silc_client_nickname_format(SilcClient client,
 	char tmp[6];
 	int num, max = 1;
 
-	if (clients_count == 1)
+	if (silc_dlist_count(clients) == 1)
 	  break;
 
-	for (i = 0; i < clients_count; i++) {
-	  if (!silc_utf8_strncasecmp(clients[i]->nickname, newnick, off))
+	silc_dlist_start(clients);
+	while ((entry = silc_dlist_get(clients))) {
+	  if (!silc_utf8_strncasecmp(entry->nickname, newnick, off))
 	    continue;
-	  if (strlen(clients[i]->nickname) <= off)
+	  if (strlen(entry->nickname) <= off)
 	    continue;
-	  num = atoi(&clients[i]->nickname[off]);
+	  num = atoi(&entry->nickname[off]);
 	  if (num > max)
 	    max = num;
 	}
@@ -1747,14 +1453,12 @@ void silc_client_nickname_format(SilcClient client,
 	memset(tmp, 0, sizeof(tmp));
 	snprintf(tmp, sizeof(tmp) - 1, "%d", ++max);
 	len = strlen(tmp);
-	newnick = silc_realloc(newnick, sizeof(*newnick) * (off + len));
 	memcpy(&newnick[off], tmp, len);
 	off += len;
       }
       break;
     default:
       /* Some other character in the string */
-      newnick = silc_realloc(newnick, sizeof(*newnick) * (off + 1));
       memcpy(&newnick[off], cp, 1);
       off++;
       break;
@@ -1763,10 +1467,7 @@ void silc_client_nickname_format(SilcClient client,
     cp++;
   }
 
-  newnick = silc_realloc(newnick, sizeof(*newnick) * (off + 1));
   newnick[off] = 0;
-
-  silc_free(client_entry->nickname);
-  client_entry->nickname = newnick;
-  silc_free(clients);
+  memcpy(client_entry->nickname, newnick, strlen(newnick));
+  silc_dlist_uninit(clients);
 }

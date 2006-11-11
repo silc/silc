@@ -1,10 +1,10 @@
 /*
 
-  idlist.h 
+  client_entry.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2002 Pekka Riikonen
+  Copyright (C) 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -17,16 +17,14 @@
 
 */
 
-#ifndef IDLIST_H
-#define IDLIST_H
+#ifndef CLIENT_ENTRY_H
+#define CLIENT_ENTRY_H
 
-/* Prototypes. These are used only by the library. Application should not
-   call these directly. */
-
-SilcClientEntry
-silc_client_add_client(SilcClient client, SilcClientConnection conn,
-		       char *nickname, char *username, 
-		       char *userinfo, SilcClientID *id, SilcUInt32 mode);
+SilcClientEntry silc_client_add_client(SilcClient client,
+				       SilcClientConnection conn,
+				       char *nickname, char *username,
+				       char *userinfo, SilcClientID *id,
+				       SilcUInt32 mode);
 void silc_client_update_client(SilcClient client,
 			       SilcClientConnection conn,
 			       SilcClientEntry client_entry,
@@ -34,18 +32,18 @@ void silc_client_update_client(SilcClient client,
 			       const char *username,
 			       const char *userinfo,
 			       SilcUInt32 mode);
-void silc_client_del_client_entry(SilcClient client, 
+void silc_client_del_client_entry(SilcClient client,
 				  SilcClientConnection conn,
 				  SilcClientEntry client_entry);
 SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
 				       const char *nickname,
 				       const char *format,
-				       SilcBool query);
+				       bool query);
 SilcChannelEntry silc_client_add_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 const char *channel_name,
-					 SilcUInt32 mode, 
+					 SilcUInt32 mode,
 					 SilcChannelID *channel_id);
 SilcServerEntry silc_client_add_server(SilcClient client,
 				       SilcClientConnection conn,
@@ -57,12 +55,12 @@ void silc_client_update_server(SilcClient client,
 			       SilcServerEntry server_entry,
 			       const char *server_name,
 			       const char *server_info);
-SilcBool silc_client_replace_channel_id(SilcClient client,
+bool silc_client_replace_channel_id(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcChannelEntry channel,
 				    SilcChannelID *new_id);
-void silc_client_nickname_format(SilcClient client, 
+void silc_client_nickname_format(SilcClient client,
 				 SilcClientConnection conn,
 				 SilcClientEntry client_entry);
 
-#endif
+#endif /* CLIENT_ENTRY_H */

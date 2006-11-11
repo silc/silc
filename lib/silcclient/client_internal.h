@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,6 +19,13 @@
 
 #ifndef CLIENT_INTERNAL_H
 #define CLIENT_INTERNAL_H
+
+#include "command.h"
+#include "command_reply.h"
+#include "client_connect.h"
+#include "client_register.h"
+#include "client_entry.h"
+#include "client_prvmsg.h"
 
 /* Context to hold the connection authentication request callbacks that
    will be called when the server has replied back to our request about
@@ -50,7 +57,6 @@ typedef struct {
   int sock;
   char *host;
   int port;
-  int tries;
   void *context;
 } SilcClientInternalConnectContext;
 
@@ -72,48 +78,79 @@ struct SilcClientAwayStruct {
   struct SilcClientAwayStruct *next;
 };
 
+/* Command and command reply context used to hold registered commands
+   in the SILC client. */
+typedef struct SilcClientCommandStruct {
+  struct SilcClientCommandStruct *next;
+  SilcCommand cmd;		      /* Command type */
+  SilcFSMStateCallback command;	      /* Command function */
+  SilcFSMStateCallback reply;	      /* Command reply callback */
+  char *name;			      /* Name of the command (optional) */
+  SilcUInt8 max_args;		      /* Maximum arguments (optional)  */
+} *SilcClientCommand;
+
+/* Command reply callback structure */
+typedef struct SilcClientCommandReplyCallbackStruct  {
+  struct SilcClientCommandReplyCallbackStruct *next;
+  SilcClientCommandReply reply;	      /* Command reply callback */
+  void *context;		      /* Command reply context */
+  unsigned int do_not_call     : 1;   /* Set to not call the callback */
+} *SilcClientCommandReplyCallback;
+
+/* Command context given as argument to command state functions.  This same
+   context is used when calling, sending and procesing command and command
+   reply. */
+typedef struct SilcClientCommandContextStruct {
+  struct SilcClientCommandContextStruct *next;
+  SilcClientConnection conn;          /* Connection */
+  SilcFSMThreadStruct thread;	      /* FSM thread for command call */
+
+  SilcCommand cmd;		      /* Command */
+  SilcUInt16 cmd_ident;		      /* Command identifier */
+  SilcUInt32 argc;		      /* Number of arguments */
+  unsigned char **argv;		      /* Arguments, may be NULL */
+  SilcUInt32 *argv_lens;	      /* Argument lengths, may be NULL */
+  SilcUInt32 *argv_types;	      /* Argument types, may be NULL */
+
+  SilcList reply_callbacks;	      /* Command reply callbacks */
+  SilcStatus status;		      /* Current command reply status */
+  SilcStatus error;		      /* Current command reply error */
+
+  void *context;		      /* Context for free use */
+  unsigned int processed     : 1;     /* Set when reply was processed  */
+  unsigned int called        : 1;     /* Set when called by application */
+  unsigned int verbose       : 1;     /* Verbose with 'say' client operation */
+  unsigned int resolved      : 1;     /* Set when resolving something */
+} *SilcClientCommandContext;
+
 /* Internal context for the client->internal pointer in the SilcClient. */
 struct SilcClientInternalStruct {
-  /* All client operations that are implemented by the application. */
-  SilcClientOperations *ops;
+  SilcFSMStruct fsm;			 /* Client's FSM */
+  SilcFSMSemaStruct wait_event;		 /* Event signaller */
+  SilcClientOperations *ops;		 /* Client operations */
+  SilcClientParams *params;		 /* Client parameters */
+  SilcPacketEngine packet_engine;        /* Packet engine */
+  SilcMutex lock;			 /* Client lock */
 
-  /* Client Parameters */
-  SilcClientParams *params;
-
-  /* Table of connections in client. All the connection data is saved here. */
-  SilcClientConnection *conns;
-  SilcUInt32 conns_count;
-
-  /* Table of listenning sockets in client.  Client can have listeners
-     (like key agreement protocol server) and those sockets are saved here.
-     This table is checked always if the connection object cannot be found
-     from the `conns' table. */
-  SilcSocketConnection *sockets;
-  SilcUInt32 sockets_count;
+  /* List of connections in client. All the connection data is saved here. */
+  SilcDList conns;
 
   /* Registered commands */
   SilcList commands;
 
   /* Generic cipher and hash objects. */
-  SilcCipher none_cipher;
   SilcHmac md5hmac;
   SilcHmac sha1hmac;
 
   /* Client version. Used to compare to remote host's version strings. */
   char *silc_client_version;
+
+  /* Events */
+  unsigned int run_callback    : 1;	 /* Call running callback */
 };
 
 /* Internal context for conn->internal in SilcClientConnection. */
 struct SilcClientConnectionInternalStruct {
-  /* Keys and stuff negotiated in the SKE protocol */
-  SilcCipher send_key;
-  SilcCipher receive_key;
-  SilcHmac hmac_send;
-  SilcHmac hmac_receive;
-  SilcHash hash;
-  SilcUInt32 psn_send;
-  SilcUInt32 psn_receive;
-
   /* Client ID and Channel ID cache. Messages transmitted in SILC network
      are done using different unique ID's. These are the cache for
      thoses ID's used in the communication. */
@@ -122,7 +159,7 @@ struct SilcClientConnectionInternalStruct {
   SilcIDCache server_cache;
 
   /* Pending command queue for this connection */
-  SilcDList pending_commands;
+  SilcList pending_commands;
 
   /* Requested pings. */
   SilcClientPing *ping;
@@ -130,9 +167,6 @@ struct SilcClientConnectionInternalStruct {
 
   /* Set away message */
   SilcClientAway *away;
-
-  /* Re-key context */
-  SilcClientRekey rekey;
 
   /* Authentication request context. */
   SilcClientConnAuthRequest connauth;
@@ -145,10 +179,68 @@ struct SilcClientConnectionInternalStruct {
   /* Requested Attributes */
   SilcHashTable attrs;
 
-  /* Connection parameters */
-  SilcClientConnectionParams params;
+  SilcFSMStruct fsm;			 /* Connection FSM */
+  SilcFSMThreadStruct packet_thread;     /* FSM thread for packet processor */
+  SilcFSMThreadStruct event_thread;      /* FSM thread for events */
+  SilcFSMSemaStruct wait_event;		 /* Event signaller */
+  SilcMutex lock;		         /* Connection lock */
+  SilcSchedule schedule;		 /* Connection's scheduler */
+  SilcSKE ske;				 /* Key exchange protocol */
+  SilcSKERekeyMaterial rekey;		 /* Rekey material */
+  SilcHash hash;			 /* Negotiated hash function */
+  SilcClientConnectionParams params;	 /* Connection parameters */
+  SilcAtomic16 cmd_ident;		 /* Current command identifier */
+  SilcIDCacheEntry local_entry;		 /* Local client cache entry */
+
+  SilcHashTable privmsg_wait;	         /* Waited private messages */
+
+  /* Events */
+  unsigned int connect            : 1;	 /* Connect remote host */
+  unsigned int disconnected       : 1;	 /* Disconnected by remote host */
+  unsigned int key_exchange       : 1;   /* Start key exchange */
+  unsigned int new_packet         : 1;	 /* New packet received */
+
+  /* Flags */
+  unsigned int verbose            : 1;   /* Notify application */
+  unsigned int registering        : 1;	 /* Set when registering to network */
 };
 
+SILC_FSM_STATE(silc_client_connection_st_packet);
+
+void silc_client_channel_message(SilcClient client,
+				 SilcClientConnection conn,
+				 SilcPacket packet);
+void silc_client_ftp(SilcClient client, SilcClientConnection conn,
+		     SilcPacket packet);
+void silc_client_channel_key(SilcClient client,
+			     SilcClientConnection conn,
+			     SilcPacket packet);
+void silc_client_notify(SilcClient client,
+			SilcClientConnection conn,
+			SilcPacket packet);
+void silc_client_disconnect(SilcClient client,
+			    SilcClientConnection conn,
+			    SilcPacket packet);
+void silc_client_error(SilcClient client,
+		       SilcClientConnection conn,
+		       SilcPacket packet);
+void silc_client_key_agreement(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcPacket packet);
+void silc_client_connection_auth_request(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcPacket packet);
+SilcUInt16 silc_client_command_send_argv(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcCommand command,
+					 SilcClientCommandReply reply,
+					 void *reply_context,
+					 SilcUInt32 argc,
+					 unsigned char **argv,
+					 SilcUInt32 *argv_lens,
+					 SilcUInt32 *argv_types);
+
+#if 0
 /* Session resuming callback */
 typedef void (*SilcClientResumeSessionCallback)(SilcClient client,
 						SilcClientConnection conn,
@@ -213,7 +305,7 @@ do {								\
 
 SILC_TASK_CALLBACK_GLOBAL(silc_client_packet_process);
 void silc_client_packet_send(SilcClient client,
-                             SilcSocketConnection sock,
+                             SilcClientConnection conn,
                              SilcPacketType type,
                              void *dst_id,
                              SilcIdType dst_id_type,
@@ -223,7 +315,7 @@ void silc_client_packet_send(SilcClient client,
                              SilcUInt32 data_len,
                              SilcBool force_send);
 int silc_client_packet_send_real(SilcClient client,
-				 SilcSocketConnection sock,
+				 SilcClientConnection conn,
 				 SilcBool force_send);
 void silc_client_ftp_free_sessions(SilcClient client,
 				   SilcClientConnection conn);
@@ -231,27 +323,13 @@ void silc_client_ftp_session_free(SilcClientFtpSession session);
 void silc_client_ftp_session_free_client(SilcClientConnection conn,
 					 SilcClientEntry client_entry);
 void silc_client_close_connection_real(SilcClient client,
-				       SilcSocketConnection sock,
+				       SilcClientConnection conn,
 				       SilcClientConnection conn);
-void silc_client_disconnected_by_server(SilcClient client,
-					SilcSocketConnection sock,
-					SilcBuffer packet);
-void silc_client_error_by_server(SilcClient client,
-				 SilcSocketConnection sock,
-				 SilcBuffer message);
-void silc_client_receive_new_id(SilcClient client,
-				SilcSocketConnection sock,
-				SilcIDPayload idp);
+
 void silc_client_save_channel_key(SilcClient client,
 				  SilcClientConnection conn,
 				  SilcBuffer key_payload,
 				  SilcChannelEntry channel);
-void silc_client_receive_channel_key(SilcClient client,
-				     SilcSocketConnection sock,
-				     SilcBuffer packet);
-void silc_client_channel_message(SilcClient client,
-				 SilcSocketConnection sock,
-				 SilcPacketContext *packet);
 void silc_client_remove_from_channels(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry client_entry);
@@ -260,26 +338,8 @@ void silc_client_replace_from_channels(SilcClient client,
 				       SilcClientEntry old,
 				       SilcClientEntry newclient);
 void silc_client_process_failure(SilcClient client,
-				 SilcSocketConnection sock,
-				 SilcPacketContext *packet);
-void silc_client_key_agreement(SilcClient client,
-			       SilcSocketConnection sock,
-			       SilcPacketContext *packet);
-void silc_client_notify_by_server(SilcClient client,
-				  SilcSocketConnection sock,
-				  SilcPacketContext *packet);
-void silc_client_private_message(SilcClient client,
-				 SilcSocketConnection sock,
-				 SilcPacketContext *packet);
-void silc_client_private_message_key(SilcClient client,
-				     SilcSocketConnection sock,
-				     SilcPacketContext *packet);
-void silc_client_connection_auth_request(SilcClient client,
-					 SilcSocketConnection sock,
-					 SilcPacketContext *packet);
-void silc_client_ftp(SilcClient client,
-		     SilcSocketConnection sock,
-		     SilcPacketContext *packet);
+				 SilcClientConnection conn,
+				 SilcPacket packet);
 SilcBuffer silc_client_get_detach_data(SilcClient client,
 				       SilcClientConnection conn);
 SilcBool silc_client_process_detach_data(SilcClient client,
@@ -291,14 +351,15 @@ void silc_client_resume_session(SilcClient client,
 				SilcClientResumeSessionCallback callback,
 				void *context);
 SilcBuffer silc_client_attributes_process(SilcClient client,
-					  SilcSocketConnection sock,
+					  SilcClientConnection conn,
 					  SilcDList attrs);
 void silc_client_packet_queue_purge(SilcClient client,
-				    SilcSocketConnection sock);
+				    SilcClientConnection conn);
 SILC_TASK_CALLBACK_GLOBAL(silc_client_rekey_callback);
 void
 silc_client_command_reply_whois_save(SilcClientCommandReplyContext cmd,
 				     SilcStatus status,
 				     SilcBool notify);
+#endif /* 0 */
 
 #endif

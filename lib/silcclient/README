@@ -61,8 +61,7 @@ Using FSM
    set the old SilcPacket to the packet thread's state context and move back
    to the packet processor with silc_fsm_next and silc_fsm_continue_sync
    (always synchronously, never async).  This design may change later,
-   but for now this is it.  This also means that SILC_FSM_CALL must not
-   be used in packet processors because it returns SILC_FSM_WAIT.
+   but for now this is it.
 
 
 When to use FSM semaphore signalling?
