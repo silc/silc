@@ -131,6 +131,7 @@ Table of Contents
   4.9 Command Sending and Reception ............................. 46
   4.10 Closing Connection ....................................... 47
   4.11 Detaching and Resuming a Session ......................... 48
+  4.12 UDP/IP Connections ...................................... XXX
 5 Security Considerations ....................................... 49
 6 References .................................................... 50
 7 Author's Address .............................................. 52
@@ -150,6 +151,7 @@ Figure 3:  Communication Between Cells
 Figure 4:  Router Connections
 Figure 5:  SILC Public Key
 Figure 6:  Counter Block
+Figure 7:  CTR Mode Initialization Vector
 
 
 .ti 0
@@ -188,11 +190,10 @@ key exchange protocol.  The SILC Key Exchange protocol is described
 in [SILC3] along with connection authentication protocol and should
 be read to fully comprehend this document and protocol.
 
-The SILC protocol has been developed to work on TCP/IP network
-protocol, although it could be made to work on other network protocols
-with only minor changes.  However, it is recommended that TCP/IP
-protocol is used under SILC protocol.  Typical implementation would
-be made in client-server model.
+The SILC protocol has been developed to work on both TCP/IP and UDP/IP
+network protocols.  However, typical implementation would use only TCP/IP
+with SILC protocol.  Typical implementation would be made in client-server
+model.
 
 
 .ti 0
@@ -1262,10 +1263,8 @@ In CTR mode only the encryption operation of the cipher is used.  The
 decryption operation is not needed since both encryption and decryption
 process is simple XOR with the plaintext block and the key stream block.
 
-The counter block is used to create the key for the CTR mode.  When
-SILC specifications refer to Initialization Vector (IV) in general cases,
-in case of CTR mode it refers to the counter block.  The format of the
-128 bit counter block is as follows:
+The counter block is used to create the key for the CTR mode.  The format
+of the 128 bit counter block is as follows:
 
 .in 5
 .nf
@@ -1275,7 +1274,8 @@ in case of CTR mode it refers to the counter block.  The format of the
 |                   Truncated HASH from SKE                     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                Sending/Receiving IV from SKE                  |
-|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        Packet Counter                         |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                        Block Counter                          |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -1290,38 +1290,77 @@ o Truncated HASH from SKE (4 bytes) - This value is the first 4
   protocol.  This acts as session identifier and each rekey MUST
   produce a new HASH value.
 
-o Sending/Receiving IV from SKE (8 bytes) - This value is the
-  first 8 bytes from the Sending IV or Receiving IV generated in
-  the SKE protocol.  When this mode is used to encrypt sending
-  traffic the Sending IV is used, when used to decrypt receiving
-  traffic the Receiving IV is used.  This assures that two parties
-  of the protocol use different IV for sending traffic.  Each rekey
-  MUST produce a new value.
+o Sending/Receiving IV from SKE (4 bytes) - If the CTR mode is fully
+  stateful this field MUST include the first 4 bytes from the Sending
+  IV or Receiving IV generated in SKE protocol.  When this mode is
+  used to encrypt sending traffic the Sending IV is used, when used
+  to decrypt receiving traffic the Receiving IV is used.  This assures
+  that two parties of the protocol use different IV for sending
+  traffic.  Each rekey MUST produce a new value.
 
-o Block Counter (4 bytes) - This is the counter value for the
-  counter block and is MSB ordered number starting from one (1)
-  value for first block and incrementing for subsequent blocks.
-  The same value MUST NOT be used twice.  The rekey MUST be
-  performed before this counter value wraps.
+  If the IV Included flag is negotiated in SKE or CTR mode is used
+  where the IV is included in the data payload, this field is the
+  Nonce field from the IV received in the packet, defined below.
+
+o Packet Counter (4 bytes) - This is MSB first ordered monotonically
+  increasing packet counter.  It is set value 1 for first packet and
+  increases for subsequent packets.  After rekey the counter MUST
+  restart from 1.
+
+  If the IV Included flag is negotiated in SKE or CTR mode is used
+  where the IV is included in the data payload, this field is the
+  Packet Counter field from the IV received in the packet, defined
+  below.
+
+o Block Counter (4 bytes) - This is an MSB first ordered block
+  counter starting from 1 for first block and increasing for
+  subsequent blocks.  The counter is always set to value 1 for
+  a new packet.
 .in 3
 
 CTR mode MUST NOT be used with "none" MAC.  Implementations also MUST
 assure that the same counter block is not used to encrypt more than
-one block.  Also, the key material used with CTR mode MUST be fresh
-key material.  Static keys (pre-shared keys) MUST NOT be used with
-CTR mode.  For this reason using CTR mode to encrypt for example
-channel messages or private messages with a pre-shared key is
-inappropriate.  For private messages, the Key Agreement could be
-performed to produce fresh key material.
+one block.  None of the counters must be allowed to wrap without rekey.
+Also, the key material used with CTR mode MUST be fresh key material.
+Static keys (pre-shared keys) MUST NOT be used with CTR mode.  For this
+reason using CTR mode to encrypt for example channel messages or private
+messages with a pre-shared key is inappropriate.  For private messages,
+the Key Agreement could be performed to produce fresh key material.
 
 If the IV Included flag was negotiated in SKE, or CTR mode is used to
 protect channel messages where the counter block will be included in the
-Message Payload, implementations SHOULD still use the same counter block
-format as defined above.  However, implementations are RECOMMENDED to
-replace the Truncated HASH field with a 32 bit random value for each IV
-(counter block) per encrypted SILC packet.  Also note, that in this case
-the decryption process is not stateful and receiver cannot precompute the
-key stream.
+Message Payload, the Initialization Vector (IV) to be used is a 64-bit
+block containing randomness and packet counter.  Also note, that in this
+case the decryption process is not stateful and receiver cannot
+precompute the key stream.  Hence, the Initialization Vector (IV) when
+CTR mode is used is as follows.
+
+.in 5
+.nf
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                            Nonce                              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        Packet Counter                         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+.in 3
+
+.ce
+Figure 7:  CTR Mode Initialization Vector
+
+o Nonce (4 bytes) - This field should be random or otherwise not
+  easily determinable and SHOULD change for each packet.
+
+o Packet Counter (4 bytes) - This is MSB first ordered monotonically
+  increasing packet counter.  It is set value 1 for first packet and
+  increases for subsequent packets.  After rekey the counter MUST
+  restart from 1.
+
+When decrypting the packet the Counter Block is assembled by concatenating
+the truncated hash, with the received nonce and packet counter, and with
+the block counter.  The Counter Block is then used to compute the key
+stream to perform the decryption.
 
 
 .ti 0
@@ -1672,10 +1711,10 @@ if it does not cause practical problems to the implementation.
 
 Identifier strings are special strings in SILC protocol that require
 more careful processing, than the general UTF-8 strings described in the
-previous section.  These strings include the nicknames, server names, 
-hostnames and some other identifier strings.  These strings are prepared 
-using the stringprep [RFC3454] standard.  The Appendix A defines the 
-stringprep profile for SILC identifier strings and conforming 
+previous section.  These strings include the nicknames, server names,
+hostnames and some other identifier strings.  These strings are prepared
+using the stringprep [RFC3454] standard.  The Appendix A defines the
+stringprep profile for SILC identifier strings and conforming
 implementation MUST use the profile to prepare any identifier string.
 
 The stringprep profile describes how identifier strings are prepared,
@@ -2023,8 +2062,6 @@ the SILC network).  More information about this in [SILC2].
 Router server MUST also check whether some client in the local cell
 is watching for the nickname this new client has, and send the
 SILC_NOTIFY_TYPE_WATCH to the watcher.
-
-
 
 
 .ti 0
@@ -2518,6 +2555,46 @@ persistent as long as the server is running.
 
 
 .ti 0
+4.12 UDP/IP Connections
+
+SILC protocol allows the use of UDP/IP instead of TCP/IP.  There may be
+many reasons to use UDP, such as video and audio conferencing might
+be more efficient with UDP.
+
+When UDP/IP is used, in the SILC Key Exchange protocol the IV Included
+flag MUST be set and the first 16-bits of the Cookie field in the Key
+Exchange Start Payload MUST include the port that the other end will use
+as the SILC session port.  The port is in MSB first order.  Both initiator
+and responder will set the port they are going to use and all packets
+after the SKE has been completed with the SILC_PACKET_SUCCESS packet MUST
+be sent to the specified port.  Initiator will send them to the port
+responder specified and vice versa.  When verifying the cookie for
+modifications the first two bytes are to be ignored in case IV Included
+flag has been set.
+
+The default SILC port or port where the SILC server is listenning for
+incoming packets is used only during initial key exchange protocol.  After
+SKE has been completed all packets are sent to the specified ports,
+including connection authentication packets and rekey packets even when
+PFS is used in rekey.
+
+Changing the ports during SILC session is possible only by first detaching
+from the server (with client-server connections) and then performing the
+SILC Key Exchange protocol from the beginning and resuming the detached
+session.
+
+Since the UDP is unreliable transport the SKE packets may not arrive to
+the recipient.  Implementation should support retransmission of SKE
+packets by using exponential backoff algorithm.  Also other SILC packets
+such as messages may drop en route.  With message packets only way to
+assure reliable delivery is to use message acking and retransmit the
+message by using for example exponential backoff algorithm.  With SKE
+packets the initial timeout value should be no more than 1000
+milliseconds.  With message packets the initial timeout value should be
+around 5000 milliseconds.
+
+
+.ti 0
 5 Security Considerations
 
 Security is central to the design of this protocol, and these security
@@ -2672,7 +2749,7 @@ profile to prepare the identifier strings in the SILC protocol.  The
 profile defines the following as required by [RFC3454].
 
 - Intended applicability of the profile:  the following identifiers in
-  the SILC Protocol;  nicknames, usernames, server names, hostnames, 
+  the SILC Protocol;  nicknames, usernames, server names, hostnames,
   service names, algorithm names and other security property names [SILC3],
   and SILC Public Key name.
 
@@ -2725,9 +2802,9 @@ this profile.
 .ti 0
 Appendix B
 
-This appendix defines the stringprep [RFC3454] profile for channel name 
-strings in SILC protocol.  Compliant implementation MUST use this profile 
-to prepare the channel name strings in the SILC protocol.  The profile 
+This appendix defines the stringprep [RFC3454] profile for channel name
+strings in SILC protocol.  Compliant implementation MUST use this profile
+to prepare the channel name strings in the SILC protocol.  The profile
 defines the following as required by [RFC3454].
 
 - Intended applicability of the profile:  channel names.
@@ -2793,7 +2870,7 @@ Appendix D
 This appendix defines additional prohibited characters in the identifier
 strings as defined in the stringprep profile in Appendix A and Appendix B.
 Note that the prohibited character tables listed in the Appendix A and
-Appendix B may include some of the same characters listed in this 
+Appendix B may include some of the same characters listed in this
 appendix as well.
 
 Symbol characters and other symbol like characters

@@ -186,7 +186,10 @@ lib/silcserver.pc
 #endif SILC_DIST_TOOLKIT
 
 #ifdef SILC_DIST_CLIENTLIB
-AC_CONFIG_FILES(lib/silcclient/Makefile)
+AC_CONFIG_FILES(
+lib/silcclient/Makefile
+lib/silcclient/tests/Makefile
+)
 #endif SILC_DIST_CLIENTLIB
 
 #ifdef SILC_DIST_SERVERLIB

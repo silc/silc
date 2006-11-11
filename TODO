@@ -6,6 +6,60 @@ NOTE: Any item that doesn't have (***DONE) in it, isn't done yet.  The
 tested.
 
 
+lib/silcclient, The Client Library
+==================================
+
+ o silcclient.h clean up and API rewrites.
+
+ o silcclient_entry.h finishing, all entry relates APIs to this header.
+
+ o SilcChannelEntry, SilcServerEntry, SilcChannelUser, allocating, 
+   freeing, finding, etc. rewrite.  Also making them reference counted for 
+   multi threads use.
+
+ o Finish all the missing SILC packet processings, rewrites.
+
+ o The client_notify.c rewrite.
+
+ o Resuming to client_register.c (remove client_resume.c)
+
+ o Rekey rewrite.
+
+ o Remove protocol.[ch].
+
+ o File transfer rewrite.
+
+ o Starting key exchange directly, rewrite.
+
+ o Channel messages, channel private keys, channel entires, channel 
+   search, etc. rewrite.
+
+ o For many APIs leave the hash context allocations to the caller instead
+   of using client->sha1hash and client->md5hash, or some kind of thread
+   safe (no locking) concept.
+
+ o Password auth test, public key auth test.
+
+ o Key agreement rewrite.
+
+ o Connecting to remote client, peer-to-peer private messages
+
+ o Private message waiting API (in threads)
+
+ o client_attrs.c, attributes rewrite.
+
+ o No SilcBuffer lists back to application in command_reply operations.
+   Convert them all to real lists and/or structures for easier use.
+
+ o Nickname formatting rewrite.
+
+ o UDP connections.
+
+ o Remove silc_client_run and silc_client_run_one from calling SilcSchedule.
+   Leave the scheduling entirely to application.
+
+ o All packet waiting timeout tests and error condition tests.
+
 
 lib/silccore/silcpacket.[ch]	****DONE****
 ============================
@@ -329,14 +383,3 @@ lib/silcserver
    key ends up being used.
 
  o The CMODE cipher & hmac change problem (#101).
-
-
-lib/silcclient
-==============
-
- o Some form of rewrite to make it more efficient.
-
- o Clear up interfaces.
-
- o Remove silc_client_run and silc_client_run_one from calling SilcSchedule.
-   Leave the scheduling entirely to application.

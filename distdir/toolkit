@@ -5,7 +5,7 @@ bug-report silc-devel@lists.silcnet.org
 # Inherits
 inherit common
 #inherit client
-inherit server
+#inherit server
 
 # License
 license distdir/TOOLKIT
@@ -17,6 +17,9 @@ license-header distdir/GPL-header distdir/TOOLKIT-header
 define SILC_DIST_TOOLKIT
 # SFTP is undefined in server, so force it here
 define SILC_DIST_SFTP
+define SILC_DIST_CLIENTLIB
+#XXX remove
+define SILC_DIST_HTTP
 
 # Includes
 include README.CVS

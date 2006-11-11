@@ -1,3 +1,11 @@
+Thu Nov  9 18:12:15 EET 2006  Pekka Riikonen <priikone@silcnet.org
+
+	* Added silc_show_public_key_file to 
+	  lib/silcapputil/silcapputil.[ch].
+
+	* Added SILC_STR_ADVANCE support for buffer unformatting.
+	  Affected file lib/silcutil/silcbuffmt.c.
+
 Tue Nov  7 18:04:36 EET 2006  Pekka Riikonen <priikone@silcnet.org
 
 	* Added silc_string_split to lib/silcutil/silcstrutil.[ch].

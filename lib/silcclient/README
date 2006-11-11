@@ -1,0 +1,89 @@
+During client library implementation, few things to keep in mind.
+
+Threads and locking in client library
+
+   The client library is multithreaded in so that the actual SilcClient
+   runs in one main thread (may be application main thread or its created
+   thread for the client), and each connection to a remote host runs in
+   an own thread.  There are no other threads in client library.  If there
+   is only one connection in the client, then most likely there is only
+   one thread in addition of main thread.
+
+   The SilcClient context must be protected with lock (client->internal->lock),
+   because it may be accessed from connection threads and by application.
+   It is guaranteed that the client main thread never access the connection
+   thread, and it is guaranteed that no other connection thread access
+   another connection thread.  Even still, the SilcClientConnection has
+   a lock (conn->internal->lock) because it may be accessed by application.
+
+   Practically everything in the client is executed in the connection thread.
+   Receiving packets, commands, notifys, etc all happen in connection thread.
+   It is not possible to receive packets in two different threads that would
+   be destined to one specific connection thread.  But, because packets and
+   commands may be sent from application thread the connection lock is
+   used to protect shared data in the SilcClientConnection.  It is, however,
+   guaranteed that the main client thread, or other connection thread will
+   not send any packets or commands to another connection.  When remembered
+   this makes programming easier.  Everything happens in one thread that
+   has something to do with the connection.  When packet is received and
+   it is processed asynchronously, it is always guaranteed that it is
+   processed in that same thread, even if it is processed asynchronously.
+   No other thread will process it.  If it is processed synchronously, no
+   other packet may arrive at the same time, not for that connection.
+   But it is possible that while we are processing incoming command reply,
+   application sends another command from application thread.  Because of
+   this, the lock exist in the connection context.
+
+
+Using locks
+
+   Use locking only if necessary.  For performance reasons SILC Atomic
+   Operations API should be preferred if it can be used to achieve what
+   needs to be achieved.  All reference counters must be atomic integers
+   and locking must not be used with them.
+
+
+Using FSM
+
+   The client library internals are to be rewritten with SILC FSM and all
+   major operations should be implemented as FSM.
+
+   Always return SILC_FSM_CONTINUE if you need to move to next state
+   synchronously.  Use SILC_FSM_YIELD if you are in FSM thread and
+   peformance is not an issue, but only if there really are other FSM
+   threads that need execution time also.
+
+   In packet processing do not use SILC_FSM_WAIT ever, since in current
+   design all packets are processed in one FSM thread, and if one packet
+   processor puts it into wait state, not other packets are received
+   in the mean time.  Instead go back to silc_client_connection_st_packet
+   with SILC_FSM_CONTINUE, and then in the async function's callback
+   set the old SilcPacket to the packet thread's state context and move back
+   to the packet processor with silc_fsm_next and silc_fsm_continue_sync
+   (always synchronously, never async).  This design may change later,
+   but for now this is it.  This also means that SILC_FSM_CALL must not
+   be used in packet processors because it returns SILC_FSM_WAIT.
+
+
+When to use FSM semaphore signalling?
+
+   FSM semaphore signalling should be used only when multiple threads
+   (FSM threads) may be waiting for something to happen.  If only one thread
+   is waiting for something it should merely return SILC_FSM_WAIT and when
+   that something happens it should use silc_fsm_continue or
+   silc_fsm_continue_sync to continue in the waiting thread.  OTOH, if
+   multiple threads are waiting SILC_FSM_SEMA_POST is the only way to
+   deliver the signal.  Always remember that posting is signal is not
+   donbe synchronously (it won't be delivered immediately).
+
+   OTOH, if there is only one thread waiting for somtehing to happen but
+   there can be multiple threads signalling that something has happened
+   only way to do this is to use semaphore signalling.
+
+   Semaphore signals should be pre-allocated SilcFSMSemaStruct structures
+   and for signalling use they are always initialized as:
+
+     silc_fsm_sema_init(&sema, fsm, 0);
+
+   The call cannot fail.  Semaphores need not be uninitialized and the same
+   context may be reused.

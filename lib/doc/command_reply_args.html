@@ -98,17 +98,19 @@ follows:
 <td><small>
 Returns information about user. The following pointers may be NULL: 'channels',
 'fingerprint', 'channel_usermodes' and 'attrs'.  If 'fingerprint' is valid its
-length is 20 bytes. If 'channels' is valid it can be parsed with
-silc_channel_payload_parse_list function. It is the list of channels user
-has joined. If the 'channel_usermodes' is valid it can be parsed with
-silc_get_mode_list function. It is the list of the user's modes on the
-joined channels. The 'attr' is the Requested Attributes that may have been
-returned by the client and it can be parsed by traversing the SilcDList
-and using silc_attribute_get_attribute function.
+length is 20 bytes. If 'channels' is valid each entry in the list is
+SilcChannelPayload.  If the `channel_usermodes' is valid then the table
+has as many entries as there are entries in the `channels' list, and the
+first entry in the table is the user mode on the first channel in the
+`channels' list.  The `channel_usermodes' is the table of the user's mdoes
+no the joined channels.  The 'attr' is the Requested Attributes that may
+have been returned by the client and it can be parsed by traversing the
+SilcDList and using silc_attribute_get_attribute function.  Each entry in
+the list is SilcAttribute.
 </td>
 <td width="50%"><small>SilcClientEntry client_entry, char *nickname,
-char *username, char *realname, SilcBuffer channels, SilcUInt32 usermode,
-SilcUInt32 idletime, unsigned char *fingerprint, SilcBuffer channel_usermodes,
+char *username, char *realname, SilcDList channels, SilcUInt32 usermode,
+SilcUInt32 idletime, unsigned char *fingerprint, SilcUInt32 *channel_usermodes,
 SilcDList attrs
 </td>
 </tr>
@@ -140,7 +142,7 @@ this command reply.  The 'name' and 'info' may be NULL.
 <td><small>SILC_COMMAND_NICK</td>
 <td><small>
 Returns the new Client ID and new nickname inside the SilcClientEntry.
-The `old_client_id' is the odl Client ID used by the client before the
+The `old_client_id' is the old Client ID used by the client before the
 nickname was changed.
 </td>
 <td width="50%"><small>SilcClientEntry local_entry, char *nickname,
@@ -192,7 +194,8 @@ parsed with silc_argument_payload_parse function.
 <td><small>SILC_COMMAND_KILL</td>
 <td><small>
 Called after killing a client.  Returns the client that was killed.
-The `client_entry' may be NULL.
+The `client_entry' may be NULL.  The `client_entry' will become invalid
+after the command reply has returned from application.
 </td>
 <td width="50%"><small>SilcClientEntry client_entry
 </td>
@@ -211,15 +214,10 @@ char *server_info
 <tr>
 <td><small>SILC_COMMAND_STATS</td>
 <td><small>
-Returns network statistics from the server.  The 'stats_buffer' of length of
-'buffer_length' bytes includes 32-bit integers one after the other each
-representing some statistics.  The integers can be parsed for example with
-SILC_GET32_MSB macro.  The integers in the buffer are: starttime, uptime,
-local_clients, local_channels, local_serverops, local_routerops, cell_clients,
-cell_channels, cell_servers, all_clients, all_channel, all_servers,
-all_routers, all_serverops, all_routerops.  All integers are always present.
+Returns network statistics from the server.  The `stats' structure contains
+the statistics returned by the server.
 </td>
-<td width="50%"><small>unsigned char *stats_buffer, SilcUInt32 buffer_length
+<td width="50%"><small>SilcClientStats *stats
 </td>
 </tr>
 
@@ -317,7 +315,7 @@ SilcClientEntry target_client
 <td><small>SILC_COMMAND_KICK</td>
 <td><small>
 Called after kicking a client.  Returns the client that was kicked from
-the 'channel'.  The `client_entry' and 'channel' may be NULL.
+the 'channel'.
 </td>
 <td width="50%"><small>SilcChannelEntry channel, SilcClientEntry client_entry
 </td>
@@ -377,13 +375,12 @@ invalid after command_reply client operation returns.
 <tr>
 <td><small>SILC_COMMAND_USERS</td>
 <td><small>
-Returns list of users in channel.  If application wishes not to parse
-the raw lists the channel->user_list hash table is updated before calling
-this command reply and application may traverse that table instead of
-parssing the raw lists.
+Returns list of users in channel.  The `user_list' may be traversed with
+silc_hash_table_get function.  Each entry in the `user_list' is
+SilcChannelUser structure, which contains the SilcClientEntry and the
+client's mode on the channel.
 </td>
-<td width="50%"><small>SilcChannelEntry channel, SilcUInt32 list_count,
-SilcBuffer client_id_list, SilcBuffer client_mode_list
+<td width="50%"><small>SilcChannelEntry channel, SilcHashTableList user_list
 </td>
 </tr>
 
