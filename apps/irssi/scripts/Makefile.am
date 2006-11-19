@@ -8,6 +8,7 @@ script_DATA = \
 	beep.pl	\
 	dns.pl	\
 	mail-maildir.pl \
-	silc-mime.pl
+	silc-mime.pl \
+	silc.pl
 
 EXTRA_DIST = $(script_DATA)

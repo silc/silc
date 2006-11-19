@@ -1,3 +1,8 @@
+Sun Nov 19 18:58:26 CET 2006  Jochen Eisinger <coffee@silcnet.org>
+
+	* Import perl script for sign_messages from silc-plugin.  Affected
+	  file apps/irssi/scripts/silc.pl
+
 Tue Oct  3 21:22:00 CEST 2006  Jochen Eisinger <coffee@silcnet.org>
 
 	* When joining channels with a password given in the config file,
