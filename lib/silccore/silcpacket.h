@@ -160,6 +160,9 @@ typedef struct SilcPacketStreamStruct *SilcPacketStream;
  *    IDs are available.  The application must free the packet with the
  *    silc_packet_free function if it takes it in for processing.
  *
+ *    The `buffer' field contains the parsed packet payload and the start
+ *    of the data area will point to the start of the packet payload.
+ *
  *    The list pointer `next' can be used by the application to put the
  *    packet context in a list during processing, if needed.
  *
@@ -798,6 +801,61 @@ SilcBool silc_packet_send_ext(SilcPacketStream stream,
 			      SilcIdType dst_id_type, void *dst_id,
 			      const unsigned char *data, SilcUInt32 data_len,
 			      SilcCipher cipher, SilcHmac hmac);
+
+/****f* silccore/SilcPacketAPI/silc_packet_send_va
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_packet_send_va(SilcPacketStream stream,
+ *                                 SilcPacketType type,
+ *                                 SilcPacketFlags flags, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_packet_send but takes the data in as variable argument
+ *    formatted buffer (see silcbuffmt.h).  The arguments must be ended
+ *    with SILC_STR_END.  Returns FALSE if packet could not be sent or
+ *    the buffer could not be formatted.
+ *
+ * EXAMPLE
+ *
+ *    // Send NEW_CLIENT packet
+ *    silc_packet_send_va(stream, SILC_PACKET_NEW_CLIENT, 0,
+ *                        SILC_STR_UI_SHORT(username_len),
+ *                        SILC_STR_DATA(username, username_len),
+ *                        SILC_STR_UI_SHORT(realname_len),
+ *                        SILC_STR_DATA(realname, realname_len),
+ *                        SILC_STR_END);
+ *
+ ***/
+SilcBool silc_packet_send_va(SilcPacketStream stream,
+			     SilcPacketType type, SilcPacketFlags flags, ...);
+
+/****f* silccore/SilcPacketAPI/silc_packet_send_va_ext
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool
+ *    silc_packet_send_va_ext(SilcPacketStream stream,
+ *                            SilcPacketType type, SilcPacketFlags flags,
+ *                            SilcIdType src_id_type, void *srd_id,
+ *                            SilcIdType dst_id_type, void *dst_id,
+ *                            SilcCipher cipher, SilcHmac hmac, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_packet_send_va but with this function different sending
+ *    parameters can be sent as argument.  This function can be used to
+ *    set specific IDs, cipher and HMAC to be used in packet sending,
+ *    instead of the ones saved in the `stream'.  If any of the extra
+ *    pointers are NULL, default values set to the stream will apply.
+ *
+ ***/
+SilcBool silc_packet_send_va_ext(SilcPacketStream stream,
+				 SilcPacketType type, SilcPacketFlags flags,
+				 SilcIdType src_id_type, void *src_id,
+				 SilcIdType dst_id_type, void *dst_id,
+				 SilcCipher cipher, SilcHmac hmac, ...);
 
 /****f* silccore/SilcPacketAPI/silc_packet_wait
  *

@@ -1108,6 +1108,61 @@ SilcBool silc_packet_send_ext(SilcPacketStream stream,
 			      hmac ? hmac : stream->send_hmac[0]);
 }
 
+/* Sends packet after formatting the arguments to buffer */
+
+SilcBool silc_packet_send_va(SilcPacketStream stream,
+			     SilcPacketType type, SilcPacketFlags flags, ...)
+{
+  SilcBufferStruct buf;
+  SilcBool ret;
+  va_list va;
+
+  va_start(va, flags);
+
+  memset(&buf, 0, sizeof(buf));
+  if (silc_buffer_format_vp(&buf, va) < 0) {
+    va_end(va);
+    return FALSE;
+  }
+
+  ret = silc_packet_send(stream, type, flags, silc_buffer_data(&buf),
+			 silc_buffer_len(&buf));
+
+  silc_buffer_purge(&buf);
+  va_end(va);
+
+  return ret;
+}
+
+/* Sends packet after formatting the arguments to buffer, extended routine */
+
+SilcBool silc_packet_send_va_ext(SilcPacketStream stream,
+				 SilcPacketType type, SilcPacketFlags flags,
+				 SilcIdType src_id_type, void *src_id,
+				 SilcIdType dst_id_type, void *dst_id,
+				 SilcCipher cipher, SilcHmac hmac, ...)
+{
+  SilcBufferStruct buf;
+  SilcBool ret;
+  va_list va;
+
+  va_start(va, hmac);
+
+  memset(&buf, 0, sizeof(buf));
+  if (silc_buffer_format_vp(&buf, va) < 0) {
+    va_end(va);
+    return FALSE;
+  }
+
+  ret = silc_packet_send_ext(stream, type, flags, src_id_type, src_id,
+			     dst_id_type, dst_id, silc_buffer_data(&buf),
+			     silc_buffer_len(&buf), cipher, hmac);
+
+  silc_buffer_purge(&buf);
+  va_end(va);
+
+  return TRUE;
+}
 
 /***************************** Packet Receiving *****************************/
 
