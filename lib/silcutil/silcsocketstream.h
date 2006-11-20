@@ -108,7 +108,8 @@ typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
  *    have valid hostname and IP address, otherwise the stream creation will
  *    fail.  If it is FALSE then only valid IP address is required.  Note that,
  *    if the `lookup' is FALSE then the hostname, IP and port information
- *    will not be available from the socket stream.
+ *    will not be available from the socket stream.  In that case this will
+ *    also return NULL as the `callback' is called immediately.
  *
  ***/
 SilcAsyncOperation
@@ -180,11 +181,12 @@ SilcBool silc_socket_stream_get_info(SilcStream stream,
  *
  *    Use this function to set the hostname, IP address and remote port
  *    information to the socket stream indicated by `stream' if you did not
- *    perform lookup in the silc_socket_create_stream.  This is not mandatory
- *    but if you would like to associate the information with the stream
- *    use this function.  If the lookup was performed when creating the
- *    stream then calling this function is not necessary.  Use the function
- *    silc_socket_stream_get_info to get the information from the stream.
+ *    perform lookup in the silc_socket_tcp_stream_create.  This is not
+ *    mandatory but if you would like to associate the information with the
+ *    stream use this function.  If the lookup was performed when creating
+ *    the stream then calling this function is not necessary.  Use the
+ *    function silc_socket_stream_get_info to get the information from the
+ *    stream.
  *
  ***/
 SilcBool silc_socket_stream_set_info(SilcStream stream,

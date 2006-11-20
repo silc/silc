@@ -263,12 +263,21 @@ SilcBool silc_socket_stream_get_info(SilcStream stream,
 
   if (sock)
     *sock = socket_stream->sock;
-  if (hostname)
+  if (hostname) {
+    if (!socket_stream->hostname)
+      return FALSE;
     *hostname = socket_stream->hostname;
-  if (ip)
+  }
+  if (ip) {
+    if (!socket_stream->ip)
+      return FALSE;
     *ip = socket_stream->ip;
-  if (port)
+  }
+  if (port) {
+    if (!socket_stream->port)
+      return FALSE;
     *port = socket_stream->port;
+  }
 
   return TRUE;
 }
@@ -295,6 +304,11 @@ SilcBool silc_socket_stream_set_info(SilcStream stream,
     socket_stream->ip = strdup(ip);
     if (!socket_stream->ip)
       return FALSE;
+    if (!socket_stream->hostname) {
+      socket_stream->hostname = strdup(ip);
+      if (!socket_stream->hostname)
+	return FALSE;
+    }
   }
   if (port)
     socket_stream->port = port;
