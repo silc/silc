@@ -338,16 +338,16 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap);
  *
  * SYNOPSIS
  *
- *   int silc_buffer_strformat(SilcBuffer dst, ...);
+ *    int silc_buffer_strformat(SilcBuffer dst, ...);
  *
  * DESCRIPTION
  *
- *   Formats a buffer from variable argument list of strings.  Each
- *   string must be NULL-terminated and the variable argument list must
- *   be end with SILC_STR_END argument.  This allows that a string in
- *   the list can be NULL, in which case it is skipped.  This automatically
- *   allocates the space for the buffer data but `dst' must be already
- *   allocated by the caller.
+ *    Formats a buffer from variable argument list of strings.  Each
+ *    string must be NULL-terminated and the variable argument list must
+ *    be end with SILC_STR_END argument.  This allows that a string in
+ *    the list can be NULL, in which case it is skipped.  This automatically
+ *    allocates the space for the buffer data but `dst' must be already
+ *    allocated by the caller.
  *
  * EXAMPLE
  *
@@ -362,17 +362,17 @@ int silc_buffer_strformat(SilcBuffer dst, ...);
  *
  * SYNOPSIS
  *
- *   int silc_buffer_strformat(SilcStack stack, SilcBuffer dst, ...);
+ *    int silc_buffer_strformat(SilcStack stack, SilcBuffer dst, ...);
  *
  * DESCRIPTION
  *
- *   Formats a buffer from variable argument list of strings.  Each
- *   string must be NULL-terminated and the variable argument list must
- *   be end with SILC_STR_END argument.  This allows that a string in
- *   the list can be NULL, in which case it is skipped.  This automatically
- *   allocates the space for the buffer data but `dst' must be already
- *   allocated by the caller.  This function is equivalent to
- *   silc_buffer_strformat but allocates memory from `stack'.
+ *    Formats a buffer from variable argument list of strings.  Each
+ *    string must be NULL-terminated and the variable argument list must
+ *    be end with SILC_STR_END argument.  This allows that a string in
+ *    the list can be NULL, in which case it is skipped.  This automatically
+ *    allocates the space for the buffer data but `dst' must be already
+ *    allocated by the caller.  This function is equivalent to
+ *    silc_buffer_strformat but allocates memory from `stack'.
  *
  ***/
 int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
@@ -759,6 +759,7 @@ typedef enum {
  *    buffer is located at the start of the data.  With SILC_STR_ADVANCE
  *    the buffer will be located at the end of the data.  This makes it
  *    easy to add new data immediately after the previously added data.
+ *    The SILC_STR_ADVANCE may also be used in unformatting.
  *
  * EXAMPLE
  *
@@ -773,7 +774,7 @@ typedef enum {
  *    } while (len > 0);
  *
  *    // Move to beginning of buffer
- *    silc_buffer_push(buffer, silc_buffer_truelen(buffer));
+ *    silc_buffer_start(buffer);
  *
  ***/
 #define SILC_STR_ADVANCE SILC_PARAM_ADVANCE
