@@ -21,13 +21,13 @@
  *
  * DESCRIPTION
  *
- * Implementation of the Argument Payload, that is used to include
- * argument to other payload that needs arguments.
+ * Implementations of the Argument Payload and Argument List Payload, that
+ * is used to include arguments to other payload that needs arguments.
  *
  ***/
 
-#ifndef SILCPAYLOAD_H
-#define SILCPAYLOAD_H
+#ifndef SILCARGUMENT_H
+#define SILCARGUMENT_H
 
 /****s* silccore/SilcArgumentAPI/SilcArgumentPayload
  *
@@ -277,4 +277,77 @@ SilcBool silc_argument_get_decoded(SilcArgumentPayload payload,
 				   void *ret_arg,
 				   void **ret_arg_alloc);
 
-#endif
+/****f* silccore/SilcArgumentAPI/silc_argument_list_parse
+ *
+ * SYNOPSIS
+ *
+ *    SilcArgumentPayload
+ *    silc_argument_list_parse(const unsigned char *payload,
+ *                             SilcUInt32 payload_len);
+ *
+ * DESCRIPTION
+ *
+ *    Parses argument list payload.  Returns parsed SilcArgumentPayload which
+ *    contains all the arguments from the list.  The caller must free the
+ *    returned context with silc_argument_payload_free.
+ *
+ ***/
+SilcArgumentPayload
+silc_argument_list_parse(const unsigned char *payload, SilcUInt32 payload_len);
+
+/****s* silccore/SilcArgumentAPI/SilcArgumentDecodedList
+ *
+ * NAME
+ *
+ *    typedef struct { ... } *SilcArgumentDecodedList;
+ *
+ * DESCRIPTION
+ *
+ *    This structure is in the list returned by the function
+ *    silc_argument_list_payload_parse_decoded.  The caller is responsible
+ *    of freeing the contents of the structure and the structure itself.
+ *
+ ***/
+typedef struct {
+  void *argument;	     /* Decoded argument, caller must know its type */
+  SilcUInt32 arg_type;	     /* Argument type from the payload */
+} *SilcArgumentDecodedList;
+
+/****f* silccore/SilcArgumentAPI/silc_argument_list_parse_decoded
+ *
+ * SYNOPSIS
+ *
+ *    SilcDList
+ *    silc_argument_list_parse_decoded(const unsigned char *payload,
+ *                                     SilcUInt32 payload_len,
+ *                                     SilcArgumentDecodeType dec_type);
+ *
+ * DESCRIPTION
+ *
+ *    Parses argument list payload of arguments of the type `dec_type'.
+ *    The returned list includes the already decoded arguments.  The caller
+ *    is responsible of freeing the the contents of the list and the list
+ *    itself.  Each entry in the list is SilcArgumentDecodedList.  The
+ *    caller must free the returned list with silc_argument_list_free.
+ *
+ ***/
+SilcDList
+silc_argument_list_parse_decoded(const unsigned char *payload,
+				 SilcUInt32 payload_len,
+				 SilcArgumentDecodeType dec_type);
+
+/****f* silccore/SilcArgumentAPI/silc_argument_list_free
+ *
+ * SYNOPSIS
+ *
+ *    void
+ *    silc_argument_list_free(SilcDList list, SilcArgumentDecodeType dec_type);
+ *
+ * DESCRIPTION
+ *
+ *    Free's the decoded argument list and its contents.
+ *
+ ***/
+void silc_argument_list_free(SilcDList list, SilcArgumentDecodeType dec_type);
+
+#endif /* SILCARGUMENT_H */
