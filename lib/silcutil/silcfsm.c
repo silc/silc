@@ -20,7 +20,7 @@
 #include "silc.h"
 
 SILC_TASK_CALLBACK(silc_fsm_run);
-SILC_TASK_CALLBACK(silc_fsm_finish);
+SILC_TASK_CALLBACK(silc_fsm_finish_fsm);
 SILC_TASK_CALLBACK(silc_fsm_sema_timedout);
 SILC_TASK_CALLBACK(silc_fsm_start_real_thread);
 static void *silc_fsm_thread(void *context);
@@ -273,6 +273,32 @@ void silc_fsm_continue_sync(void *fsm)
   silc_fsm_run(f->schedule, silc_schedule_get_context(f->schedule), 0, 0, f);
 }
 
+/* Finish FSM */
+
+void silc_fsm_finish(void *fsm)
+{
+  SilcFSM f = fsm;
+
+  SILC_ASSERT(!f->finished);
+  f->finished = TRUE;
+
+  /* If we are thread and using real threads, the FSM thread will finish
+     after the real thread has finished, in the main thread. */
+  if (f->thread && f->real_thread) {
+    /* Stop the real thread's scheduler to finish the thread */
+    silc_schedule_stop(f->schedule);
+    silc_schedule_wakeup(f->schedule);
+    return;
+  }
+
+  /* Normal FSM operation */
+  if (f->synchronous)
+    silc_fsm_finish_fsm(f->schedule, silc_schedule_get_context(f->schedule),
+			0, 0, fsm);
+  else
+    silc_schedule_task_add_timeout(f->schedule, silc_fsm_finish_fsm, f, 0, 1);
+}
+
 /* Return associated scheduler */
 
 SilcSchedule silc_fsm_get_schedule(void *fsm)
@@ -369,24 +395,7 @@ SILC_TASK_CALLBACK(silc_fsm_run)
   case SILC_FSM_FINISH:
     /* Finish the state machine */
     SILC_LOG_DEBUG(("State finish %p", fsm));
-#if defined(SILC_DEBUG)
-    SILC_ASSERT(!fsm->finished);
-#endif /* SILC_DEBUG */
-    fsm->finished = TRUE;
-
-    /* If we are thread and using real threads, the FSM thread will finish
-       after the real thread has finished, in the main thread. */
-    if (fsm->thread && fsm->real_thread) {
-      silc_schedule_stop(fsm->schedule);
-      break;
-    }
-
-    /* Normal FSM operation */
-    if (fsm->synchronous)
-      silc_fsm_finish(fsm->schedule, app_context, 0, 0, fsm);
-    else
-      silc_schedule_task_add_timeout(fsm->schedule, silc_fsm_finish,
-				     fsm, 0, 1);
+    silc_fsm_finish(fsm);
     break;
 
   default:
@@ -397,7 +406,7 @@ SILC_TASK_CALLBACK(silc_fsm_run)
 /* Finishes the FSM.  This is always executed in the main thread, even
    for FSM threads that were run in real threads. */
 
-SILC_TASK_CALLBACK(silc_fsm_finish)
+SILC_TASK_CALLBACK(silc_fsm_finish_fsm)
 {
   SilcFSM fsm = context;
 
@@ -454,9 +463,7 @@ SilcFSMSema silc_fsm_sema_alloc(SilcFSM fsm, SilcUInt32 value)
 void silc_fsm_sema_init(SilcFSMSema sema, SilcFSM fsm, SilcUInt32 value)
 {
   SILC_LOG_DEBUG(("Initializing semaphore %p", sema));
-#if defined(SILC_DEBUG)
   SILC_ASSERT(!fsm->thread);
-#endif /* SILC_DEBUG */
   memset(sema, 0, sizeof(*sema));
   sema->fsm = fsm;
   sema->refcnt = 0;
@@ -704,7 +711,8 @@ static void *silc_fsm_thread(void *context)
 
   /* Finish the FSM thread in the main thread */
   SILC_ASSERT(fsm->finished);
-  silc_schedule_task_add_timeout(fsm->schedule, silc_fsm_finish, fsm, 0, 1);
+  silc_schedule_task_add_timeout(fsm->schedule, silc_fsm_finish_fsm,
+				 fsm, 0, 1);
   silc_schedule_wakeup(fsm->schedule);
 
   return NULL;

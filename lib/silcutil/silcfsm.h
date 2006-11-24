@@ -679,6 +679,23 @@ void silc_fsm_continue(void *fsm);
  ***/
 void silc_fsm_continue_sync(void *fsm);
 
+/****f* silcutil/SilcFSMAPI/silc_fsm_finish
+ *
+ * SYNOPSIS
+ *
+ *    void silc_fsm_finish(void *fsm);
+ *
+ * DESCRIPTION
+ *
+ *    Finishes the `fsm'.  This function may be used in case the FSM
+ *    needs to be finished outside FSM states.  Usually FSM is finished
+ *    by returning SILC_FSM_FINISH from the state, but if this is not
+ *    possible this function may be called.  This function is used with
+ *    both SilcFSM and SilcFSMThread contexts.
+ *
+ ***/
+void silc_fsm_finish(void *fsm);
+
 /****f* silcutil/SilcFSMAPI/silc_fsm_set_context
  *
  * SYNOPSIS
