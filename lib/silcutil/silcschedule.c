@@ -246,6 +246,57 @@ static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
   silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(ftask->fd));
 }
 
+/* Timeout freelist garbage collection */
+
+SILC_TASK_CALLBACK(silc_schedule_timeout_gc)
+{
+  SilcTaskTimeout t;
+  int c;
+
+  if (!schedule->valid)
+    return;
+
+  SILC_LOG_DEBUG(("Timeout freelist garbage collection"));
+
+  SILC_SCHEDULE_LOCK(schedule);
+
+  if (silc_list_count(schedule->free_tasks) <= 10) {
+    SILC_SCHEDULE_UNLOCK(schedule);
+    silc_schedule_task_add_timeout(schedule, silc_schedule_timeout_gc,
+				   schedule, 3600, 0);
+    return;
+  }
+  if (silc_list_count(schedule->timeout_queue) >
+      silc_list_count(schedule->free_tasks)) {
+    SILC_SCHEDULE_UNLOCK(schedule);
+    silc_schedule_task_add_timeout(schedule, silc_schedule_timeout_gc,
+				   schedule, 3600, 0);
+    return;
+  }
+
+  c = silc_list_count(schedule->free_tasks) / 2;
+  if (c > silc_list_count(schedule->timeout_queue))
+    c = (silc_list_count(schedule->free_tasks) -
+	 silc_list_count(schedule->timeout_queue));
+  if (silc_list_count(schedule->free_tasks) - c < 10)
+    c -= (10 - (silc_list_count(schedule->free_tasks) - c));
+
+  SILC_LOG_DEBUG(("Freeing %d unused tasks, leaving %d", c,
+		  silc_list_count(schedule->free_tasks) - c));
+
+  silc_list_start(schedule->free_tasks);
+  while ((t = silc_list_get(schedule->free_tasks)) && c-- > 0) {
+    silc_list_del(schedule->free_tasks, t);
+    silc_free(t);
+  }
+  silc_list_start(schedule->free_tasks);
+
+  SILC_SCHEDULE_UNLOCK(schedule);
+
+  silc_schedule_task_add_timeout(schedule, silc_schedule_timeout_gc,
+				 schedule, 3600, 0);
+}
+
 #ifdef SILC_DIST_INPLACE
 /* Print schedule statistics to stdout */
 
@@ -303,6 +354,10 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
 
   /* Initialize the platform specific scheduler. */
   schedule->internal = schedule_ops.init(schedule, app_context);
+
+  /* Timeout freelist garbage collection */
+  silc_schedule_task_add_timeout(schedule, silc_schedule_timeout_gc,
+				 schedule, 3600, 0);
 
   return schedule;
 }
