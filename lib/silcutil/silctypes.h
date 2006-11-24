@@ -551,8 +551,7 @@ do {						\
 #if SILC_SIZEOF_VOID_P < 8
 #define SILC_PTR_TO_64(_ptr__) ((SilcUInt64)((SilcUInt32)(_ptr__)))
 #else
-#define SILC_PTR_TO_64(_ptr__) 						\
-  ((SilcUInt64)((SilcUInt64)(_ptr__) & (SilcUInt32)0xFFFFFFFFUL))
+#define SILC_PTR_TO_64(_ptr__) ((SilcUInt64)((SilcUInt64)(_ptr__)))
 #endif
 /***/
 
@@ -560,7 +559,7 @@ do {						\
  *
  * NAME
  *
- *    #define SILC_PTR_TO_32 ...
+ *    #define SILC_32_TO_PTR ...
  *
  * DESCRIPTION
  *
@@ -581,7 +580,7 @@ do {						\
  *
  * NAME
  *
- *    #define SILC_PTR_TO_64 ...
+ *    #define SILC_64_TO_PTR ...
  *
  * DESCRIPTION
  *
