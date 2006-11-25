@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1999 - 2005 Pekka Riikonen
+  Copyright (C) 1999 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -102,6 +102,8 @@ SilcBool silc_hmac_register(const SilcHmacObject *hmac)
   }
 
   new = silc_calloc(1, sizeof(*new));
+  if (!new)
+    return FALSE;
   new->name = strdup(hmac->name);
   new->len = hmac->len;
 
@@ -191,6 +193,8 @@ SilcBool silc_hmac_alloc(const char *name, SilcHash hash, SilcHmac *new_hmac)
 
   /* Allocate the new object */
   *new_hmac = silc_calloc(1, sizeof(**new_hmac));
+  if (!(*new_hmac))
+    return FALSE;
 
   if (!hash) {
     char *tmp = strdup(name), *hname;
@@ -360,9 +364,20 @@ void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
     memset(hmac->key, 0, hmac->key_len);
     silc_free(hmac->key);
   }
-  hmac->key = silc_calloc(key_len, sizeof(unsigned char));
+  hmac->key = silc_malloc(key_len);
+  if (!hmac->key)
+    return;
   hmac->key_len = key_len;
   memcpy(hmac->key, key, key_len);
+}
+
+/* Return HMAC key */
+
+const unsigned char *silc_hmac_get_key(SilcHmac hmac, SilcUInt32 *key_len)
+{
+  if (key_len)
+    *key_len = hmac->key_len;
+  return (const unsigned char *)hmac->key;
 }
 
 /* Create the HMAC. This is thee make_hmac function pointer.  This

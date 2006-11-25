@@ -1,10 +1,10 @@
 /*
 
-  silchmac.h 
+  silchmac.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1999 - 2002 Pekka Riikonen
+  Copyright (C) 1999 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  *
  *    This is the interface for HMAC, or the keyed hash values, that are
  *    used for packet and message authentication.  These routines uses
- *    already implemented hash functions from the SilcHashAPI. These 
+ *    already implemented hash functions from the SilcHashAPI. These
  *    routines were created according to RFC 2104.
  *
  ***/
@@ -34,7 +34,7 @@
 /****s* silccrypt/SilcHMACAPI/SilcHmac
  *
  * NAME
- * 
+ *
  *    typedef struct SilcHmacStruct *SilcHmac;
  *
  * DESCRIPTION
@@ -50,7 +50,7 @@ typedef struct SilcHmacStruct *SilcHmac;
 /****s* silccrypt/SilcHMACAPI/SilcHmacObject
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcHmacObject;
  *
  * DESCRIPTION
@@ -266,6 +266,21 @@ const char *silc_hmac_get_name(SilcHmac hmac);
 void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
 		       SilcUInt32 key_len);
 
+/****f* silccrypt/SilcHMACAPI/silc_hmac_get_key
+ *
+ * SYNOPSIS
+ *
+ *    const unsigned char *
+ *    silc_hmac_get_key(SilcHmac hmac, SilcUInt32 *key_len);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the key data from the `hmac' set with silc_hamc_set_key.
+ *    The caller must not free the returned pointer.
+ *
+ ***/
+const unsigned char *silc_hmac_get_key(SilcHmac hmac, SilcUInt32 *key_len);
+
 /****f* silccrypt/SilcHMACAPI/silc_hmac_make
  *
  * SYNOPSIS
@@ -277,7 +292,7 @@ void silc_hmac_set_key(SilcHmac hmac, const unsigned char *key,
  * DESCRIPTION
  *
  *    Computes a MAC from a data buffer indicated by the `data' of the
- *    length of `data_len'.  The returned MAC is copied into the 
+ *    length of `data_len'.  The returned MAC is copied into the
  *    `return_hash' pointer which must be at least the size of the
  *    value silc_hmac_len returns.  The returned length is still
  *    returned to `return_len'.
@@ -292,7 +307,7 @@ void silc_hmac_make(SilcHmac hmac, unsigned char *data,
  * SYNOPSIS
  *
  *    void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
- *                                 SilcUInt32 data_len, 
+ *                                 SilcUInt32 data_len,
  *                                 unsigned char *key, SilcUInt32 key_len,
  *                                 unsigned char *return_hash,
  *                                 SilcUInt32 *return_len);
@@ -305,7 +320,7 @@ void silc_hmac_make(SilcHmac hmac, unsigned char *data,
  *
  ***/
 void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
-			     SilcUInt32 data_len, 
+			     SilcUInt32 data_len,
 			     unsigned char *key, SilcUInt32 key_len,
 			     unsigned char *return_hash,
 			     SilcUInt32 *return_len);
@@ -314,8 +329,8 @@ void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
  *
  * SYNOPSIS
  *
- *    void silc_hmac_make_truncated(SilcHmac hmac, 
- *                                  unsigned char *data, 
+ *    void silc_hmac_make_truncated(SilcHmac hmac,
+ *                                  unsigned char *data,
  *                                  SilcUInt32 data_len,
  *                                  SilcUInt32 truncated_len,
  *                                  unsigned char *return_hash);
@@ -335,8 +350,8 @@ void silc_hmac_make_with_key(SilcHmac hmac, unsigned char *data,
  *    truncations.
  *
  ***/
-void silc_hmac_make_truncated(SilcHmac hmac, 
-			      unsigned char *data, 
+void silc_hmac_make_truncated(SilcHmac hmac,
+			      unsigned char *data,
 			      SilcUInt32 data_len,
 			      SilcUInt32 truncated_len,
 			      unsigned char *return_hash);
@@ -355,7 +370,7 @@ void silc_hmac_make_truncated(SilcHmac hmac,
  *    put them into a buffer and compute the MAC from the buffer by
  *    calling the silc_hmac_make, or you can use the silc_hmac_init,
  *    silc_hmac_update and silc_hmac_final to do the MAC.  This function
- *    prepares the allocated HMAC context for this kind of MAC 
+ *    prepares the allocated HMAC context for this kind of MAC
  *    computation.  The caller must have been called the function
  *    silc_hmac_set_key before calling this function.  To add the
  *    data to be used in the MAC computation call the silc_hmac_update
@@ -419,7 +434,7 @@ void silc_hmac_update(SilcHmac hmac, const unsigned char *data,
  * DESCRIPTION
  *
  *    This function is used to produce the final MAC from the data
- *    that has been added to the HMAC context by calling the 
+ *    that has been added to the HMAC context by calling the
  *    silc_hmac_update function.  The MAC is copied in to the
  *    `return_hash' pointer which must be at least the size that
  *    the silc_hmac_len returns.  The length of the MAC is still
