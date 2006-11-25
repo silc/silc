@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -69,7 +69,13 @@ SilcBool silc_hash_register(const SilcHashObject *hash)
   }
 
   new = silc_calloc(1, sizeof(*new));
+  if (!new)
+    return FALSE;
   new->name = strdup(hash->name);
+  if (!new->name) {
+    silc_free(new);
+    return FALSE;
+  }
   new->hash_len = hash->hash_len;
   new->block_len = hash->block_len;
   new->init = hash->init;
@@ -185,8 +191,14 @@ SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
 
   if (entry) {
     *new_hash = silc_calloc(1, sizeof(**new_hash));
+    if (!(*new_hash))
+      return FALSE;
     (*new_hash)->hash = entry;
     (*new_hash)->context = silc_calloc(1, entry->context_len());
+    if (!(*new_hash)->context) {
+      silc_free(*new_hash);
+      return FALSE;
+    }
     return TRUE;
   }
 
@@ -335,7 +347,8 @@ char *silc_hash_fingerprint(SilcHash hash, const unsigned char *data,
   char *ret;
 
   if (!hash) {
-    silc_hash_alloc("sha1", &new_hash);
+    if (!silc_hash_alloc("sha1", &new_hash))
+      return NULL;
     hash = new_hash;
   }
 
@@ -365,7 +378,8 @@ char *silc_hash_babbleprint(SilcHash hash, const unsigned char *data,
   int i, k, out_len;
 
   if (!hash) {
-    silc_hash_alloc("sha1", &new_hash);
+    if (!silc_hash_alloc("sha1", &new_hash))
+      return NULL;
     hash = new_hash;
   }
 
@@ -375,6 +389,10 @@ char *silc_hash_babbleprint(SilcHash hash, const unsigned char *data,
   /* Encode babbleprint */
   out_len = (((hash->hash->hash_len + 1) / 2) + 1) * 6;
   babbleprint = silc_calloc(out_len, sizeof(*babbleprint));
+  if (!babbleprint) {
+    silc_hash_free(new_hash);
+    return NULL;
+  }
   babbleprint[0] = co[16];
 
   check = 1;
