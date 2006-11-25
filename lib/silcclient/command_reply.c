@@ -135,10 +135,8 @@ SILC_FSM_STATE(silc_client_command_reply)
   payload = silc_command_payload_parse(silc_buffer_datalen(&packet->buffer));
   silc_packet_free(packet);
   if (!payload) {
-    /** Bad reply payload */
     SILC_LOG_DEBUG(("Bad command reply packet"));
-    silc_fsm_next(fsm, silc_client_connection_st_packet);
-    return SILC_FSM_CONTINUE;
+    return SILC_FSM_FINISH;
   }
 
   cmd_ident = silc_command_get_ident(payload);
@@ -148,16 +146,15 @@ SILC_FSM_STATE(silc_client_command_reply)
   silc_mutex_lock(conn->internal->lock);
   silc_list_start(conn->internal->pending_commands);
   while ((cmd = silc_list_get(conn->internal->pending_commands)))
-    if (cmd->cmd == command && cmd->cmd_ident == cmd_ident)
+    if ((cmd->cmd == command || cmd->cmd == SILC_COMMAND_NONE)
+	&& cmd->cmd_ident == cmd_ident)
       break;
   silc_mutex_unlock(conn->internal->lock);
 
   if (!cmd) {
-    /** Unknown command reply */
     SILC_LOG_DEBUG(("Unknown command reply"));
     silc_command_payload_free(payload);
-    silc_fsm_next(fsm, silc_client_connection_st_packet);
-    return SILC_FSM_CONTINUE;
+    return SILC_FSM_FINISH;
   }
 
   /* Signal command thread that command reply has arrived */
@@ -165,24 +162,31 @@ SILC_FSM_STATE(silc_client_command_reply)
   silc_fsm_next(&cmd->thread, silc_client_command_reply_process);
   silc_fsm_continue_sync(&cmd->thread);
 
-  /** Packet processed */
-  silc_fsm_next(fsm, silc_client_connection_st_packet);
-  return SILC_FSM_CONTINUE;
+  return SILC_FSM_FINISH;
 }
 
 /* Wait here for command reply to arrive from remote host */
 
 SILC_FSM_STATE(silc_client_command_reply_wait)
 {
-  SilcClientCommandContext cmd = fsm_context;
-
   SILC_LOG_DEBUG(("Wait for command reply"));
 
   /** Wait for command reply */
-  cmd->processed = FALSE;
   silc_fsm_set_state_context(fsm, NULL);
-  silc_fsm_next_later(fsm, silc_client_command_reply_process, 20, 0);
+  silc_fsm_next_later(fsm, silc_client_command_reply_timeout, 20, 0);
   return SILC_FSM_WAIT;
+}
+
+/* Timeout occurred while waiting command reply */
+
+SILC_FSM_STATE(silc_client_command_reply_timeout)
+{
+  SilcClientCommandContext cmd = fsm_context;
+  SilcArgumentPayload args = NULL;
+
+  /* Timeout, reply not received in timely fashion */
+  ERROR_CALLBACK(SILC_STATUS_ERR_TIMEDOUT);
+  return SILC_FSM_FINISH;
 }
 
 /* Process received command reply payload */
@@ -192,29 +196,7 @@ SILC_FSM_STATE(silc_client_command_reply_process)
   SilcClientCommandContext cmd = fsm_context;
   SilcCommandPayload payload = state_context;
 
-  if (!payload) {
-    /* Timeout, reply not received in timely fashion */
-    SilcArgumentPayload args = NULL;
-    ERROR_CALLBACK(SILC_STATUS_ERR_TIMEDOUT);
-    return SILC_FSM_FINISH;
-  }
-
-  if (cmd->processed) {
-    /* Command reply processed */
-    silc_command_payload_free(payload);
-
-    if (cmd->status == SILC_STATUS_OK || cmd->status == SILC_STATUS_LIST_END ||
-	SILC_STATUS_IS_ERROR(cmd->status))
-      return SILC_FSM_FINISH;
-
-    /** Wait more command payloads */
-    silc_fsm_next(fsm, silc_client_command_reply_wait);
-    return SILC_FSM_CONTINUE;
-  }
-
   silc_command_get_status(payload, &cmd->status, &cmd->error);
-  silc_fsm_set_state_context(fsm, payload);
-  cmd->processed = TRUE;
 
   switch (cmd->cmd) {
   case SILC_COMMAND_WHOIS:
@@ -290,7 +272,7 @@ SILC_FSM_STATE(silc_client_command_reply_process)
     silc_fsm_next(fsm, silc_client_command_reply_cumode);
     break;
   case SILC_COMMAND_KICK:
-    /** kick */
+    /** KICK */
     silc_fsm_next(fsm, silc_client_command_reply_kick);
     break;
   case SILC_COMMAND_BAN:
@@ -329,6 +311,24 @@ SILC_FSM_STATE(silc_client_command_reply_process)
     return SILC_FSM_FINISH;
   }
 
+  return SILC_FSM_CONTINUE;
+}
+
+/* Completes command reply processing */
+
+SILC_FSM_STATE(silc_client_command_reply_processed)
+{
+  SilcClientCommandContext cmd = fsm_context;
+  SilcCommandPayload payload = state_context;
+
+  silc_command_payload_free(payload);
+
+  if (cmd->status == SILC_STATUS_OK || cmd->status == SILC_STATUS_LIST_END ||
+      SILC_STATUS_IS_ERROR(cmd->status))
+    return SILC_FSM_FINISH;
+
+  /** Wait more command payloads */
+  silc_fsm_next(fsm, silc_client_command_reply_wait);
   return SILC_FSM_CONTINUE;
 }
 
@@ -447,7 +447,7 @@ SILC_FSM_STATE(silc_client_command_reply_whois)
   }
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -495,7 +495,7 @@ SILC_FSM_STATE(silc_client_command_reply_whowas)
 
  out:
   silc_client_unref_client(client, conn, client_entry);
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -571,7 +571,7 @@ SILC_FSM_STATE(silc_client_command_reply_identify)
     } else {
       silc_client_update_server(client, conn, server_entry, name, info);
     }
-    server_entry->resolve_cmd_ident = 0;
+    server_entry->internal.resolve_cmd_ident = 0;
 
     /* Notify application */
     silc_client_command_callback(cmd, server_entry, name, info);
@@ -606,7 +606,7 @@ SILC_FSM_STATE(silc_client_command_reply_identify)
   }
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -679,7 +679,7 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
 			       conn->local_entry->nickname, &old_client_id);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -705,7 +705,7 @@ SILC_FSM_STATE(silc_client_command_reply_list)
   if (!silc_argument_get_decoded(args, 2, SILC_ARGUMENT_ID, &id, NULL)) {
     /* There were no channels in the network. */
     silc_client_command_callback(cmd, NULL, NULL, NULL, 0);
-    silc_fsm_next(fsm, silc_client_command_reply_process);
+    silc_fsm_next(fsm, silc_client_command_reply_processed);
     return SILC_FSM_CONTINUE;
   }
 
@@ -739,7 +739,7 @@ SILC_FSM_STATE(silc_client_command_reply_list)
   silc_client_command_callback(cmd, channel_entry, name, topic, usercount);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -787,7 +787,7 @@ SILC_FSM_STATE(silc_client_command_reply_topic)
   silc_client_command_callback(cmd, channel, channel->topic);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -834,7 +834,7 @@ SILC_FSM_STATE(silc_client_command_reply_invite)
   silc_client_command_callback(cmd, channel, tmp ? &buf : NULL);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -874,7 +874,7 @@ SILC_FSM_STATE(silc_client_command_reply_kill)
   }
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -933,7 +933,7 @@ SILC_FSM_STATE(silc_client_command_reply_info)
 			       server->server_info);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -990,7 +990,7 @@ SILC_FSM_STATE(silc_client_command_reply_stats)
   silc_client_command_callback(cmd, &stats);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1013,7 +1013,7 @@ SILC_FSM_STATE(silc_client_command_reply_ping)
   /* Notify application */
   silc_client_command_callback(cmd);
 
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1029,7 +1029,6 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   SilcCommandPayload payload = state_context;
   SilcArgumentPayload args = silc_command_get_args(payload);
   SilcChannelEntry channel;
-  SilcChannelUser chu;
   SilcUInt32 mode = 0, len, list_count;
   char *topic, *tmp, *channel_name = NULL, *hmac;
   SilcBuffer keyp = NULL, client_id_list = NULL, client_mode_list = NULL;
@@ -1073,7 +1072,7 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   /* Check whether we have this channel entry already. */
   channel = silc_client_get_channel(client, conn, channel_name);
   if (channel) {
-    if (!SILC_ID_CHANNEL_COMPARE(channel->id, &id.u.channel_id))
+    if (!SILC_ID_CHANNEL_COMPARE(&channel->id, &id.u.channel_id))
       silc_client_replace_channel_id(client, conn, channel, &id.u.channel_id);
   } else {
     /* Create new channel entry */
@@ -1091,7 +1090,7 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   /* Get hmac */
   hmac = silc_argument_get_arg_type(args, 11, NULL);
   if (hmac) {
-    if (!silc_hmac_alloc(hmac, NULL, &channel->hmac)) {
+    if (!silc_hmac_alloc(hmac, NULL, &channel->internal.hmac)) {
       if (cmd->verbose)
 	SAY(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	    "Cannot join channel: Unsupported HMAC `%s'", hmac);
@@ -1158,17 +1157,9 @@ SILC_FSM_STATE(silc_client_command_reply_join)
     }
 
     /* Join client to the channel */
-    if (!silc_client_on_channel(channel, client_entry)) {
-      chu = silc_calloc(1, sizeof(*chu));
-      if (!chu) {
-	silc_client_unref_client(client, conn, client_entry);
-	goto out;
-      }
-      chu->client = client_entry;
-      chu->channel = channel;
-      chu->mode = mode;
-      silc_hash_table_add(channel->user_list, client_entry, chu);
-      silc_hash_table_add(client_entry->channels, channel, chu);
+    if (!silc_client_add_to_channel(channel, client_entry, mode)) {
+      silc_client_unref_client(client, conn, client_entry);
+      goto out;
     }
     silc_client_unref_client(client, conn, client_entry);
 
@@ -1223,7 +1214,7 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   silc_buffer_free(keyp);
   silc_buffer_free(client_id_list);
   silc_buffer_free(client_mode_list);
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1277,13 +1268,13 @@ SILC_FSM_STATE(silc_client_command_reply_motd)
   silc_client_command_callback(cmd, motd);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
 /********************************** UMODE ***********************************/
 
-/* Received reply tot he UMODE command. Save the current user mode */
+/* Received reply to the UMODE command. Save the current user mode */
 
 SILC_FSM_STATE(silc_client_command_reply_umode)
 {
@@ -1311,7 +1302,7 @@ SILC_FSM_STATE(silc_client_command_reply_umode)
   silc_client_command_callback(cmd, mode);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1331,7 +1322,7 @@ SILC_FSM_STATE(silc_client_command_reply_cmode)
   SilcChannelEntry channel;
   SilcUInt32 len;
   SilcPublicKey public_key = NULL;
-  SilcBufferStruct channel_pubkeys;
+  SilcDList channel_pubkeys = NULL;
   SilcID id;
 
   /* Sanity checks */
@@ -1377,17 +1368,19 @@ SILC_FSM_STATE(silc_client_command_reply_cmode)
   /* Get channel public key(s) */
   tmp = silc_argument_get_arg_type(args, 5, &len);
   if (tmp)
-    silc_buffer_set(&channel_pubkeys, tmp, len);
+    channel_pubkeys =
+      silc_argument_list_parse_decoded(tmp, len, SILC_ARGUMENT_PUBLIC_KEY);
 
   /* Notify application */
   silc_client_command_callback(cmd, channel, mode, public_key,
-			       tmp ? &channel_pubkeys : NULL,
-			       channel->user_limit);
+			       channel_pubkeys, channel->user_limit);
+
+  silc_argument_list_free(channel_pubkeys, SILC_ARGUMENT_PUBLIC_KEY);
 
  out:
   if (public_key)
     silc_pkcs_public_key_free(public_key);
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1458,7 +1451,7 @@ SILC_FSM_STATE(silc_client_command_reply_cumode)
   silc_client_unref_client(client, conn, client_entry);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1511,7 +1504,7 @@ SILC_FSM_STATE(silc_client_command_reply_kick)
   silc_client_unref_client(client, conn, client_entry);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1530,7 +1523,7 @@ SILC_FSM_STATE(silc_client_command_reply_silcoper)
   /* Notify application */
   silc_client_command_callback(cmd);
 
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1549,7 +1542,7 @@ SILC_FSM_STATE(silc_client_command_reply_oper)
   /* Notify application */
   silc_client_command_callback(cmd);
 
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1582,7 +1575,7 @@ SILC_FSM_STATE(silc_client_command_reply_detach)
   }
 #endif /* 0 */
 
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1601,7 +1594,7 @@ SILC_FSM_STATE(silc_client_command_reply_watch)
   /* Notify application */
   silc_client_command_callback(cmd);
 
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1646,7 +1639,7 @@ SILC_FSM_STATE(silc_client_command_reply_ban)
   silc_client_command_callback(cmd, channel, tmp ? &buf : NULL);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1662,7 +1655,6 @@ SILC_FSM_STATE(silc_client_command_reply_leave)
   SilcCommandPayload payload = state_context;
   SilcArgumentPayload args = silc_command_get_args(payload);
   SilcChannelEntry channel;
-  SilcChannelUser chu;
   SilcID id;
 
   /* Sanity checks */
@@ -1683,12 +1675,7 @@ SILC_FSM_STATE(silc_client_command_reply_leave)
   }
 
   /* Remove us from this channel. */
-  chu = silc_client_on_channel(channel, conn->local_entry);
-  if (chu) {
-    silc_hash_table_del(chu->client->channels, chu->channel);
-    silc_hash_table_del(chu->channel->user_list, chu->client);
-    silc_free(chu);
-  }
+  silc_client_remove_from_channel(channel, conn->local_entry);
 
   /* Notify application */
   silc_client_command_callback(cmd, channel);
@@ -1697,25 +1684,11 @@ SILC_FSM_STATE(silc_client_command_reply_leave)
   silc_client_del_channel(client, conn, channel);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
 /********************************* USERS ************************************/
-
-static SilcBool
-silc_client_command_reply_users_continue(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcCommand command,
-					 SilcStatus status,
-					 SilcStatus error,
-					 void *context,
-					 va_list ap)
-{
-  SilcClientCommandContext cmd = context;
-
-  return TRUE;
-}
 
 /* Continue USERS command after resolving unknown users */
 
@@ -1727,7 +1700,30 @@ silc_client_command_reply_users_resolved(SilcClient client,
 					 void *context)
 {
   SilcClientCommandContext cmd = context;
-  SILC_FSM_CALL_CONTINUE_SYNC(&cmd->thread);
+  SILC_FSM_CALL_CONTINUE(&cmd->thread);
+}
+
+/* Continue USERS command after resolving unknown channel */
+
+static void
+silc_client_command_reply_users_continue(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcStatus status,
+					 SilcDList channels,
+					 void *context)
+{
+  SilcClientCommandContext cmd = context;
+
+  if (!channels) {
+    SilcCommandPayload payload = silc_fsm_get_state_context(&cmd->thread);
+    SilcArgumentPayload args = silc_command_get_args(payload);
+
+    cmd->status = SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID;
+    ERROR_CALLBACK(cmd->status);
+    silc_fsm_next(&cmd->thread, silc_client_command_reply_processed);
+  }
+
+  SILC_FSM_CALL_CONTINUE(&cmd->thread);
 }
 
 /* Reply to USERS command. Received list of client ID's and theirs modes
@@ -1747,7 +1743,6 @@ SILC_FSM_STATE(silc_client_command_reply_users)
   SilcBufferStruct client_id_list, client_mode_list;
   SilcChannelEntry channel;
   SilcClientEntry client_entry;
-  SilcChannelUser chu;
   SilcID id;
   int i;
 
@@ -1765,11 +1760,9 @@ SILC_FSM_STATE(silc_client_command_reply_users)
   channel = silc_client_get_channel_by_id(client, conn, &id.u.channel_id);
   if (!channel) {
     /* Resolve the channel from server */
-#if 0
     SILC_FSM_CALL(silc_client_get_channel_by_id_resolve(
 			client, conn, &id.u.channel_id,
 			silc_client_command_reply_users_continue, cmd));
-#endif /* 0 */
     /* NOT REACHED */
   }
 
@@ -1821,18 +1814,8 @@ SILC_FSM_STATE(silc_client_command_reply_users)
     /* Save the client on this channel.  Unknown clients are ignored as they
        clearly do not exist since the resolving didn't find them. */
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
-    if (client_entry && !silc_client_on_channel(channel, client_entry)) {
-      chu = silc_calloc(1, sizeof(*chu));
-      if (!chu) {
-	silc_client_unref_client(client, conn, client_entry);
-	goto out;
-      }
-      chu->client = client_entry;
-      chu->mode = mode;
-      chu->channel = channel;
-      silc_hash_table_add(channel->user_list, client_entry, chu);
-      silc_hash_table_add(client_entry->channels, channel, chu);
-    }
+    if (client_entry)
+      silc_client_add_to_channel(channel, client_entry, mode);
     silc_client_unref_client(client, conn, client_entry);
 
     if (!silc_buffer_pull(&client_id_list, idp_len))
@@ -1847,7 +1830,7 @@ SILC_FSM_STATE(silc_client_command_reply_users)
   silc_hash_table_list_reset(&htl);
 
  out:
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1920,15 +1903,20 @@ SILC_FSM_STATE(silc_client_command_reply_getkey)
       goto out;
     }
 
+    if (!server_entry->public_key) {
+      server_entry->public_key = public_key;
+      public_key = NULL;
+    }
+
     /* Notify application */
     silc_client_command_callback(cmd, SILC_ID_SERVER, server_entry,
-				 public_key);
+				 server_entry->public_key);
   }
 
  out:
   if (public_key)
     silc_pkcs_public_key_free(public_key);
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1957,7 +1945,7 @@ SILC_FSM_STATE(silc_client_command_reply_service)
   /* Notify application */
   silc_client_command_callback(cmd, service_list, name);
 
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
 
@@ -1967,6 +1955,6 @@ SILC_FSM_STATE(silc_client_command_reply_service)
 
 SILC_FSM_STATE(silc_client_command_reply_quit)
 {
-  silc_fsm_next(fsm, silc_client_command_reply_process);
+  silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }

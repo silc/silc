@@ -27,6 +27,69 @@
 /************************ Static utility functions **************************/
 
 
+/****************************** NEW_ID packet *******************************/
+
+/* Received new ID packet from server during registering to SILC network */
+
+SILC_FSM_STATE(silc_client_new_id)
+{
+  SilcClientConnection conn = fsm_context;
+  SilcClient client = conn->client;
+  SilcPacket packet = state_context;
+  SilcID id;
+
+  if (conn->local_id)
+    goto out;
+
+  SILC_LOG_DEBUG(("New ID received from server"));
+
+  if (!silc_id_payload_parse_id(silc_buffer_data(&packet->buffer),
+				silc_buffer_len(&packet->buffer), &id))
+    goto out;
+
+  /* Create local client entry */
+  conn->local_entry = silc_client_add_client(client, conn,
+					     (client->nickname ?
+					      client->nickname :
+					      client->username),
+					     client->username,
+					     client->realname,
+					     &id.u.client_id, 0);
+  if (!conn->local_entry)
+    goto out;
+
+  /* Save the ID */
+  conn->local_id = &conn->local_entry->id;
+  conn->local_idp = silc_buffer_copy(&packet->buffer);
+
+  /* Save cache entry */
+  silc_idcache_find_by_id_one(conn->internal->client_cache, conn->local_id,
+			      &conn->internal->local_entry);
+
+  /* Save remote ID */
+  if (packet->src_id_len) {
+    conn->remote_idp = silc_id_payload_encode_data(packet->src_id,
+						   packet->src_id_len,
+						   packet->src_id_type);
+    if (!conn->remote_idp)
+      goto out;
+    silc_id_payload_parse_id(silc_buffer_data(conn->remote_idp),
+			     silc_buffer_len(conn->remote_idp),
+			     &conn->remote_id);
+  }
+
+  /* Signal connection that new ID was received so it can continue
+     with the registering. */
+  if (conn->internal->registering)
+    silc_fsm_continue_sync(&conn->internal->event_thread);
+
+ out:
+  /** Packet processed */
+  silc_packet_free(packet);
+  return SILC_FSM_FINISH;
+}
+
+
 /************************ Register to SILC network **************************/
 
 /* Register to network */
@@ -35,36 +98,22 @@ SILC_FSM_STATE(silc_client_st_register)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcBufferStruct buf;
-  int ret;
 
   SILC_LOG_DEBUG(("Register to network"));
 
-  memset(&buf, 0, sizeof(buf));
-  ret = silc_buffer_format(&buf,
+  /* Send NEW_CLIENT packet to register to network */
+  if (!silc_packet_send_va(conn->stream, SILC_PACKET_NEW_CLIENT, 0,
 			   SILC_STR_UI_SHORT(strlen(client->username)),
 			   SILC_STR_DATA(client->username,
 					 strlen(client->username)),
 			   SILC_STR_UI_SHORT(strlen(client->realname)),
 			   SILC_STR_DATA(client->realname,
 					 strlen(client->realname)),
-			   SILC_STR_END);
-  if (ret < 0) {
-    /** Out of memory */
-    silc_fsm_next(fsm, silc_client_st_register_error);
-    return SILC_FSM_CONTINUE;
-  }
-
-  /* Send the packet */
-  if (!silc_packet_send(conn->stream, SILC_PACKET_NEW_CLIENT, 0,
-			silc_buffer_data(&buf), silc_buffer_len(&buf))) {
+			   SILC_STR_END)) {
     /** Error sending packet */
-    silc_buffer_purge(&buf);
     silc_fsm_next(fsm, silc_client_st_register_error);
     return SILC_FSM_CONTINUE;
   }
-
-  silc_buffer_purge(&buf);
 
   /** Wait for new ID */
   conn->internal->registering = TRUE;
@@ -108,7 +157,8 @@ SILC_FSM_STATE(silc_client_st_register_complete)
 			   silc_buffer_len(conn->remote_idp));
 
   /* Call connection callback.  We are now inside SILC network. */
-  conn->callback(client, conn, SILC_CLIENT_CONN_SUCCESS, conn->context);
+  conn->callback(client, conn, SILC_CLIENT_CONN_SUCCESS, 0, NULL,
+		 conn->context);
 
   conn->internal->registering = FALSE;
   return SILC_FSM_FINISH;
@@ -122,7 +172,7 @@ SILC_FSM_STATE(silc_client_st_register_error)
   /* XXX */
   /* Close connection */
 
-  conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, conn->context);
+  conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL, conn->context);
 
   return SILC_FSM_FINISH;
 }

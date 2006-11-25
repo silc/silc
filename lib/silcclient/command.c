@@ -567,7 +567,7 @@ SilcBool silc_client_command_pending(SilcClientConnection conn,
 
   silc_mutex_unlock(conn->internal->lock);
 
-  return FALSE;
+  return TRUE;
 }
 
 /******************************** WHOIS *************************************/
@@ -596,10 +596,10 @@ SILC_FSM_STATE(silc_client_command_whois)
 
   for (i = 1; i < cmd->argc; i++) {
     if (!strcasecmp(cmd->argv[i], "-details")) {
-	details = TRUE;
+      details = TRUE;
     } else if (!strcasecmp(cmd->argv[i], "-pubkey") && cmd->argc > i + 1) {
-	pubkey = cmd->argv[i + 1];
-	i++;
+      pubkey = cmd->argv[i + 1];
+      i++;
     } else {
       /* We assume that the first parameter is the nickname, if it isn't
          -details or -pubkey. The last parameter should always be the count */
@@ -826,7 +826,7 @@ SILC_FSM_STATE(silc_client_command_list)
     /* Get the Channel ID of the channel */
     channel = silc_client_get_channel(conn->client, cmd->conn, cmd->argv[1]);
     if (channel)
-      idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+      idp = silc_id_payload_encode(&channel->id, SILC_ID_CHANNEL);
   }
 
   if (!idp)
@@ -887,7 +887,7 @@ SILC_FSM_STATE(silc_client_command_topic)
     goto out;
   }
 
-  idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  idp = silc_id_payload_encode(&channel->id, SILC_ID_CHANNEL);
 
   /* Send TOPIC command to the server */
   if (cmd->argc > 2)
@@ -1006,7 +1006,7 @@ SILC_FSM_STATE(silc_client_command_invite)
   }
 
   /* Send the command */
-  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  chidp = silc_id_payload_encode(&channel->id, SILC_ID_CHANNEL);
   if (client_entry) {
     clidp = silc_id_payload_encode(&client_entry->id, SILC_ID_CLIENT);
     silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 4,
@@ -1052,10 +1052,13 @@ SILC_FSM_STATE(silc_client_command_quit_final)
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
 
-  /* Close connection */
+  /* Call connection callback */
   conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED,
-		 conn->context);
-  //  silc_client_close_connection(q->client, q->conn->sock->user_data);
+		 0, NULL, conn->context);
+
+  /* Signal to close connection */
+  conn->internal->disconnected = TRUE;
+  SILC_FSM_SEMA_POST(&conn->internal->wait_event);
 
   return SILC_FSM_FINISH;
 }
@@ -1737,7 +1740,7 @@ SILC_FSM_STATE(silc_client_command_cmode)
 
 	if (cmd->argc == 3) {
 	  /* Send empty command to receive the public key list. */
-	  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+	  chidp = silc_id_payload_encode(&channel->id, SILC_ID_CHANNEL);
 	  silc_client_command_send_va(conn, cmd, SILC_COMMAND_CMODE,
 				      NULL, NULL, 1,
 				      1, silc_buffer_datalen(chidp));
@@ -1791,7 +1794,7 @@ SILC_FSM_STATE(silc_client_command_cmode)
     }
   }
 
-  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  chidp = silc_id_payload_encode(&channel->id, SILC_ID_CHANNEL);
   SILC_PUT32_MSB(mode, modebuf);
 
   /* Send the command. We support sending only one mode at once that
@@ -1975,7 +1978,7 @@ SILC_FSM_STATE(silc_client_command_cumode)
     }
   }
 
-  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  chidp = silc_id_payload_encode(&channel->id, SILC_ID_CHANNEL);
   SILC_PUT32_MSB(mode, modebuf);
   clidp = silc_id_payload_encode(&client_entry->id, SILC_ID_CLIENT);
 
@@ -1991,9 +1994,15 @@ SILC_FSM_STATE(silc_client_command_cumode)
   silc_buffer_free(clidp);
   if (auth)
     silc_buffer_free(auth);
+  silc_free(nickname);
+  silc_client_list_free(client, conn, clients);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
+
+  /** Wait for command reply */
+  silc_fsm_next(fsm, silc_client_command_reply_wait);
+  return SILC_FSM_CONTINUE;
 
  out:
   silc_client_list_free(client, conn, clients);
@@ -2064,7 +2073,7 @@ SILC_FSM_STATE(silc_client_command_kick)
   target = silc_dlist_get(clients);
 
   /* Send KICK command to the server */
-  idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  idp = silc_id_payload_encode(&channel->id, SILC_ID_CHANNEL);
   idp2 = silc_id_payload_encode(&target->id, SILC_ID_CLIENT);
   if (cmd->argc == 3)
     silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 2,
@@ -2286,7 +2295,7 @@ SILC_FSM_STATE(silc_client_command_ban)
     }
   }
 
-  chidp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  chidp = silc_id_payload_encode(&channel->id, SILC_ID_CHANNEL);
 
   /* Send the command */
   silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 3,
@@ -2437,7 +2446,7 @@ SILC_FSM_STATE(silc_client_command_leave)
     goto out;
   }
 
-  idp = silc_id_payload_encode(channel->id, SILC_ID_CHANNEL);
+  idp = silc_id_payload_encode(&channel->id, SILC_ID_CHANNEL);
 
   /* Send LEAVE command to the server */
   silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 1,
@@ -2529,8 +2538,10 @@ SILC_FSM_STATE(silc_client_command_getkey)
     client->internal->params->nickname_parse(cmd->argv[1], &nickname);
   else
     nickname = strdup(cmd->argv[1]);
-  if (!nickname)
+  if (!nickname) {
+    COMMAND_ERROR(SILC_STATUS_ERR_RESOURCE_LIMIT);
     return SILC_FSM_FINISH;
+  }
 
   /* Find client entry */
   clients = silc_client_get_clients_local(client, conn, nickname,
@@ -2549,7 +2560,7 @@ SILC_FSM_STATE(silc_client_command_getkey)
 					     2, cmd->argv[1],
 					     strlen(cmd->argv[1])));
     }
-    idp = silc_id_payload_encode(server_entry->server_id, SILC_ID_SERVER);
+    idp = silc_id_payload_encode(&server_entry->id, SILC_ID_SERVER);
   } else {
     client_entry = silc_dlist_get(clients);
     idp = silc_id_payload_encode(&client_entry->id, SILC_ID_CLIENT);
@@ -2748,10 +2759,8 @@ SILC_FSM_STATE(silc_client_command)
   payload = silc_command_payload_parse(packet->buffer.data,
 				       silc_buffer_len(&packet->buffer));
   if (!payload) {
-    /** Bad command payload */
     SILC_LOG_DEBUG(("Bad command packet"));
-    silc_fsm_next(fsm, silc_client_connection_st_packet);
-    return SILC_FSM_CONTINUE;
+    return SILC_FSM_FINISH;
   }
 
   /* Get arguments */
@@ -2774,8 +2783,5 @@ SILC_FSM_STATE(silc_client_command)
   }
 
   silc_command_payload_free(payload);
-
-  /** Packet processed */
-  silc_fsm_next(fsm, silc_client_connection_st_packet);
-  return SILC_FSM_CONTINUE;
+  return SILC_FSM_FINISH;
 }

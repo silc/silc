@@ -22,7 +22,9 @@
 
 SILC_FSM_STATE(silc_client_command_reply);
 SILC_FSM_STATE(silc_client_command_reply_wait);
+SILC_FSM_STATE(silc_client_command_reply_timeout);
 SILC_FSM_STATE(silc_client_command_reply_process);
+SILC_FSM_STATE(silc_client_command_reply_processed);
 SILC_FSM_STATE(silc_client_command_reply_whois);
 SILC_FSM_STATE(silc_client_command_reply_whowas);
 SILC_FSM_STATE(silc_client_command_reply_identify);

@@ -6,23 +6,9 @@
 SilcBool success;
 SilcClientOperations ops;
 
-/* XXX */
-SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
-                                       SilcClientEntry client_entry)
-{
-  return NULL;
-}
-
 SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...)
 {
   return NULL;
-}
-
-SilcBool silc_client_del_channel_private_keys(SilcClient client,
-                                              SilcClientConnection conn,
-                                              SilcChannelEntry channel)
-{
-  return FALSE;
 }
 
 
@@ -40,12 +26,13 @@ typedef struct {
 
 static void
 silc_connected(SilcClient client, SilcClientConnection conn,
-	       SilcClientConnectionStatus status, void *context)
+	       SilcClientConnectionStatus status, const char *message,
+	       void *context)
 {
   MyBot mybot = client->application;
 
   if (status == SILC_CLIENT_CONN_DISCONNECTED) {
-    SILC_LOG_DEBUG(("Disconnected"));
+    SILC_LOG_DEBUG(("Disconnected %s", message ? message : ""));
     silc_client_stop(client);
     return;
   }
@@ -189,7 +176,7 @@ silc_channel_message(SilcClient client, SilcClientConnection conn,
 
 
 /* Private message to the client. The `sender' is the sender of the
-   message. The message is `message'and maybe NULL.  The `flags'  
+   message. The message is `message'and maybe NULL.  The `flags'
    indicates message flags  and it is used to determine how the message
    can be interpreted (like it may tell the message is multimedia
    message). */

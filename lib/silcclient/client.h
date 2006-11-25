@@ -27,13 +27,13 @@
 /* Forward declarations */
 typedef struct SilcClientStruct *SilcClient;
 typedef struct SilcClientConnectionStruct *SilcClientConnection;
-typedef struct SilcClientPingStruct SilcClientPing;
-typedef struct SilcClientAwayStruct SilcClientAway;
-typedef struct SilcClientKeyAgreementStruct *SilcClientKeyAgreement;
-typedef struct SilcClientFtpSessionStruct *SilcClientFtpSession;
 typedef struct SilcClientEntryStruct *SilcClientEntry;
 typedef struct SilcChannelEntryStruct *SilcChannelEntry;
 typedef struct SilcServerEntryStruct *SilcServerEntry;
+
+typedef struct SilcClientAwayStruct SilcClientAway;
+typedef struct SilcClientKeyAgreementStruct *SilcClientKeyAgreement;
+typedef struct SilcClientFtpSessionStruct *SilcClientFtpSession;
 typedef struct SilcClientCommandReplyContextStruct
                                            *SilcClientCommandReplyContext;
 typedef struct SilcChannelUserStruct *SilcChannelUser;
@@ -62,5 +62,30 @@ typedef struct SilcClientEntryInternalStruct {
   SilcUInt16 resolve_cmd_ident;	/* Command identifier when resolving */
   SilcAtomic8 refcnt;		/* Reference counter */
 } SilcClientEntryInternal;
+
+/* Internal channel entry context */
+typedef struct SilcChannelEntryInternalStruct {
+  /* SilcChannelEntry status information */
+  SilcDList old_channel_keys;
+  SilcDList old_hmacs;
+
+  /* Channel private keys */
+  SilcDList private_keys;		     /* List of private keys or NULL */
+  SilcChannelPrivateKey curr_key;	     /* Current private key */
+
+  /* Channel keys */
+  SilcCipher channel_key;                    /* The channel key */
+  SilcHmac hmac;			     /* Current HMAC */
+  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE]; /* Current IV */
+
+  SilcUInt16 resolve_cmd_ident;		     /* Resolving identifier */
+  SilcAtomic8 refcnt;		             /* Reference counter */
+} SilcChannelEntryInternal;
+
+/* Internal server entry context */
+typedef struct SilcServerEntryInternalStruct {
+  SilcUInt16 resolve_cmd_ident;		     /* Resolving identifier */
+  SilcAtomic8 refcnt;		             /* Reference counter */
+} SilcServerEntryInternal;
 
 #endif /* CLIENT_H */

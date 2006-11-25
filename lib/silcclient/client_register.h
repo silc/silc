@@ -20,6 +20,7 @@
 #ifndef CLIENT_REGISTER_H
 #define CLIENT_REGISTER_H
 
+SILC_FSM_STATE(silc_client_new_id);
 SILC_FSM_STATE(silc_client_st_register);
 SILC_FSM_STATE(silc_client_st_register_complete);
 SILC_FSM_STATE(silc_client_st_register_error);

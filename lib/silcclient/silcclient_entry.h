@@ -91,40 +91,31 @@ struct SilcClientEntryStruct {
  *    represented as SilcChannelEntry.  The structure includes information
  *    about the channel.  All strings in the structure are UTF-8 encoded.
  *
+ *    Application may store its own pointer into the context pointer in
+ *    this structure.
+ *
+ * NOTES
+ *
+ *    If application stores the SilcChannelEntry it must always take
+ *    a reference of it by calling silc_client_ref_channel function.  The
+ *    reference must be released after it is not needed anymore by calling
+ *    silc_client_unref_channel function.
+ *
  * SOURCE
  */
 struct SilcChannelEntryStruct {
-  /* General information */
-  char *channel_name;		             /* Channel name */
-  SilcChannelID *id;			     /* Channel ID */
-  SilcUInt32 mode;			     /* Channel mode, ChannelModes. */
-  char *topic;				     /* Current topic, may be NULL */
-  SilcPublicKey founder_key;		     /* Founder key, may be NULL */
-  SilcUInt32 user_limit;		     /* User limit on channel */
+  char *channel_name;		     /* Channel name */
+  char *topic;			     /* Current topic, may be NULL */
+  SilcPublicKey founder_key;	     /* Founder key, may be NULL */
+  SilcChannelID id;		     /* Channel ID */
+  SilcUInt32 mode;		     /* Channel mode, ChannelModes. */
+  SilcUInt32 user_limit;	     /* User limit on channel */
+  SilcHashTable user_list;	     /* Joined users.  Key to hash table is
+					SilcClientEntry, context is
+					SilcChannelUser. */
 
-  /* All clients that has joined this channel.  The key to the table is the
-     SilcClientEntry and the context is SilcChannelUser context. */
-  SilcHashTable user_list;
-
-  /* Channel keys */
-  SilcCipher channel_key;                    /* The channel key */
-  unsigned char *key;			     /* Raw key data */
-  SilcUInt32 key_len;		             /* Raw key data length */
-  unsigned char iv[SILC_CIPHER_MAX_IV_SIZE]; /* Current IV */
-  SilcHmac hmac;			     /* Current HMAC */
-
-  /* Channel private keys */
-  SilcDList private_keys;		     /* List of private keys or NULL */
-  SilcChannelPrivateKey curr_key;	     /* Current private key */
-
-  /* SilcChannelEntry status information */
-  SilcDList old_channel_keys;
-  SilcDList old_hmacs;
-  SilcUInt16 resolve_cmd_ident;		     /* Command identifier when
-						resolving this entry */
-
-  /* Application specific data.  Application may set here whatever it wants. */
-  void *context;
+  void *context;		     /* Application specific context */
+  SilcChannelEntryInternal internal;
 };
 /***/
 
@@ -132,27 +123,38 @@ struct SilcChannelEntryStruct {
  *
  * NAME
  *
- *    typedef struct SilcServerEntryStruct { ... } *SilcServerEntry
+ *    typedef struct SilcServerEntryStruct { ... } *SilcServerEntry;
  *
  * DESCRIPTION
  *
  *    This structure represents a server in the SILC network.  All servers
  *    that the client is aware of and have for example resolved with
  *    SILC_COMMAND_INFO command have their on SilcServerEntry structure.
- *    All strings in the structure are UTF-8 encoded.
+ *    Server's public key is present only if it has been retrieved using
+ *    SILC_COMMAND_GETKEY command.  All strings in the structure are UTF-8
+ *    encoded.
+ *
+ *    Application may store its own pointer into the context pointer in
+ *    this structure.
+ *
+ * NOTES
+ *
+ *    If application stores the SilcServerEntry it must always take
+ *    a reference of it by calling silc_client_ref_server function.  The
+ *    reference must be released after it is not needed anymore by calling
+ *    silc_client_unref_server function.
  *
  * SOURCE
  */
 struct SilcServerEntryStruct {
   /* General information */
-  char *server_name;			     /* Server name */
-  char *server_info;			     /* Server info */
-  SilcServerID *server_id;		     /* Server ID */
-  SilcUInt16 resolve_cmd_ident;		     /* Command identifier when
-					        resolving this entry */
+  char *server_name;		     /* Server name */
+  char *server_info;		     /* Server info */
+  SilcServerID id;		     /* Server ID */
+  SilcPublicKey public_key;	     /* Server public key, may be NULL */
 
-  /* Application specific data.  Application may set here whatever it wants. */
-  void *context;
+  void *context;		     /* Application specific context */
+  SilcServerEntryInternal internal;
 };
 /***/
 
@@ -173,8 +175,9 @@ struct SilcServerEntryStruct {
  *    Callback function given to various client search functions.  The
  *    found entries are allocated into the `clients' list.  The list must
  *    not be freed by the receiver, the library will free it later.  If the
- *    `clients' is NULL, no such clients exist in the SILC Network, and
- *    the `status' will include the error.
+ *    `clients' is NULL, no such clients exist in the SILC network, and
+ *    the `status' will include the error.  Each entry in the `clients'
+ *    is SilcClientEntry.
  *
  * NOTES
  *
@@ -499,21 +502,340 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 					  SilcGetClientCallback completion,
 					  void *context);
 
-/****f* silcclient/SilcClientAPI/silc_client_del_client
+/* SilcChannelEntry routines */
+
+/****f* silcclient/SilcClientAPI/SilcGetChannelCallback
  *
  * SYNOPSIS
  *
- *    SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
- *                                SilcClientEntry client_entry)
+ *    typedef void (*SilcGetChannelCallback)(SilcClient client,
+ *                                           SilcClientConnection conn,
+ *                                           SilcStatus status,
+ *                                           SilcDList channels,
+ *                                           void *context);
  *
  * DESCRIPTION
  *
- *    Removes client from local cache by the client entry indicated by
- *    the `client_entry'.  Returns TRUE if the deletion were successful.
+ *    Callback function given to various channel resolving functions.
+ *    The found entries are included in the `channels' list and each entry
+ *    in the list is SilcChannelEntry.  If `channels' is NULL then no such
+ *    channel exist in the network and the `status' will indicate the error.
+ *
+ * NOTES
+ *
+ *    If the application stores any of the SilcChannelEntry pointers from
+ *    the `channels' list it must reference it with silc_client_ref_channel
+ *    function.
+ *
+ *    Application must not free the returned `channels' list.
  *
  ***/
-SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
-				SilcClientEntry client_entry);
+typedef void (*SilcGetChannelCallback)(SilcClient client,
+				       SilcClientConnection conn,
+				       SilcStatus status,
+				       SilcDList channels,
+				       void *context);
 
+/****f* silcclient/SilcClientAPI/silc_client_ref_channel
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_ref_channel(SilcClient client,
+ *                                 SilcClientConnection conn,
+ *                                 SilcChannelEntry channel_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Takes a reference of the channel entry indicated by `channel_entry'
+ *    The reference must be released by calling silc_client_unref_channel
+ *    after it is not needed anymore.
+ *
+ ***/
+void silc_client_ref_channel(SilcClient client, SilcClientConnection conn,
+			     SilcChannelEntry channel_entry);
+
+/****f* silcclient/SilcClientAPI/silc_client_unref_channel
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_unref_channel(SilcClient client,
+ *                                   SilcClientConnection conn,
+ *                                   SilcChannelEntry channel_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Releases the channel entry reference indicated by `channel_entry'.
+ *
+ ***/
+void silc_client_unref_channel(SilcClient client, SilcClientConnection conn,
+			       SilcChannelEntry channel_entry);
+
+/****f* silcclient/SilcClientAPI/silc_client_list_free_channel
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_list_free_channel(SilcClient client,
+ *                                       SilcClientConnection conn,
+ *                                       SilcDList channel_list);
+ *
+ * DESCRIPTION
+ *
+ *    Free's channel entry list that has been returned by various library
+ *    routines.
+ *
+ ***/
+void silc_client_list_free_channels(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcDList channel_list);
+
+/****f* silcclient/SilcClientAPI/silc_client_get_channel
+ *
+ * SYNOPSIS
+ *
+ *    SilcChannelEntry silc_client_get_channel(SilcClient client,
+ *                                             SilcClientConnection conn,
+ *                                             char *channel_name);
+ *
+ * DESCRIPTION
+ *
+ *    Finds entry for channel by the channel name. Returns the entry or NULL
+ *    if the entry was not found. It is found only if the client is joined
+ *    to the channel.  Use silc_client_get_channel_resolve or
+ *    silc_client_get_channel_by_id_resolve to resolve channel that client
+ *    is not joined.
+ *
+ * NOTES
+ *
+ *    The returned SilcChannelEntry has been referenced by the library and
+ *    the caller must call silc_client_unref_channel after the entry is not
+ *    needed anymore.
+ *
+ ***/
+SilcChannelEntry silc_client_get_channel(SilcClient client,
+					 SilcClientConnection conn,
+					 char *channel_name);
+
+/****f* silcclient/SilcClientAPI/silc_client_get_channel_resolve
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_get_channel_resolve(SilcClient client,
+ *                                         SilcClientConnection conn,
+ *                                         char *channel_name,
+ *                                         SilcGetChannelCallback completion,
+ *                                         void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Resolves entry for channel by the channel name from the server.
+ *    The resolving is done with IDENTIFY command. Note that users on
+ *    the channel are not resolved at the same time. Use for example
+ *    silc_client_get_clients_by_channel to resolve all users on a channel.
+ *
+ ***/
+void silc_client_get_channel_resolve(SilcClient client,
+				     SilcClientConnection conn,
+				     char *channel_name,
+				     SilcGetChannelCallback completion,
+				     void *context);
+
+/****f* silcclient/SilcClientAPI/silc_client_get_channel_by_id
+ *
+ * SYNOPSIS
+ *
+ *    SilcChannelEntry
+ *    silc_client_get_channel_by_id(SilcClient client,
+ *                                  SilcClientConnection conn,
+ *                                  SilcChannelID *channel_id);
+ *
+ * DESCRIPTION
+ *
+ *    Finds channel entry by the channel ID. Returns the entry or NULL
+ *    if the entry was not found.  This checks the local cache and does
+ *    not resolve anything from server.
+ *
+ * NOTES
+ *
+ *    The returned SilcChannelEntry has been referenced by the library and
+ *    the caller must call silc_client_unref_channel after the entry is not
+ *    needed anymore.
+ *
+ ***/
+SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
+					       SilcClientConnection conn,
+					       SilcChannelID *channel_id);
+
+/****f* silcclient/SilcClientAPI/silc_client_get_channel_by_id_resolve
+ *
+ * SYNOPSIS
+ *
+ *    void
+ *    silc_client_get_channel_by_id_resolve(SilcClient client,
+ *                                          SilcClientConnection conn,
+ *                                          SilcChannelID *channel_id,
+ *                                          SilcGetClientCallback completion,
+ *                                          void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Resolves the channel information (its name mainly) from the server
+ *    by the `channel_id'. Use this only if you know that you do not have
+ *    the entry cached locally. The resolving is done with IDENTIFY command.
+ *
+ *    Note that users on the channel are not resolved at the same time.
+ *    Use for example silc_client_get_clients_by_channel to resolve all
+ *    users on a channel.
+ *
+ ***/
+void silc_client_get_channel_by_id_resolve(SilcClient client,
+					   SilcClientConnection conn,
+					   SilcChannelID *channel_id,
+					   SilcGetChannelCallback completion,
+					   void *context);
+
+/* SilcServerEntry routines */
+
+/****f* silcclient/SilcClientAPI/SilcGetServerCallback
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcGetServerCallback)(SilcClient client,
+ *                                          SilcClientConnection conn,
+ *                                          SilcStatus status,
+ *                                          SilcDList servers,
+ *                                          void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Callback function given to various server resolving functions.
+ *    The found entries are included in the `servers' list and each entry
+ *    in the list is SilcServerEntry.  If `server' is NULL then no such
+ *    server exist in the network and the `status' will indicate the error.
+ *
+ * NOTES
+ *
+ *    If the application stores any of the SilcServerEntry pointers from
+ *    the `server' list it must reference it with silc_client_ref_server
+ *    function.
+ *
+ *    Application must not free the returned `server' list.
+ *
+ ***/
+typedef void (*SilcGetServerCallback)(SilcClient client,
+				      SilcClientConnection conn,
+				      SilcStatus status,
+				      SilcDList servers,
+				      void *context);
+
+/****f* silcclient/SilcClientAPI/silc_client_ref_server
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_ref_server(SilcClient client,
+ *                                SilcClientConnection conn,
+ *                                SilcServerEntry server_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Takes a reference of the server entry indicated by `server_entry'
+ *    The reference must be released by calling silc_client_unref_server
+ *    after it is not needed anymore.
+ *
+ ***/
+void silc_client_ref_server(SilcClient client, SilcClientConnection conn,
+			     SilcServerEntry server_entry);
+
+/****f* silcclient/SilcClientAPI/silc_client_unref_server
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_unref_server(SilcClient client,
+ *                                  SilcClientConnection conn,
+ *                                  SilcServerEntry server_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Releases the server entry reference indicated by `server_entry'.
+ *
+ ***/
+void silc_client_unref_server(SilcClient client, SilcClientConnection conn,
+			      SilcServerEntry server_entry);
+
+/****f* silcclient/SilcClientAPI/silc_client_list_free_server
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_list_free_server(SilcClient client,
+ *                                      SilcClientConnection conn,
+ *                                      SilcDList server_list);
+ *
+ * DESCRIPTION
+ *
+ *    Free's server entry list that has been returned by various library
+ *    routines.
+ *
+ ***/
+void silc_client_list_free_servers(SilcClient client,
+				   SilcClientConnection conn,
+				   SilcDList server_list);
+
+/****f* silcclient/SilcClientAPI/silc_client_get_server
+ *
+ * SYNOPSIS
+ *
+ *    SilcServerEntry silc_client_get_server(SilcClient client,
+ *                                           SilcClientConnection conn,
+ *                                           char *server_name)
+ *
+ * DESCRIPTION
+ *
+ *    Finds entry for server by the server name. Returns the entry or NULL
+ *    if the entry was not found.
+ *
+ ***/
+SilcServerEntry silc_client_get_server(SilcClient client,
+				       SilcClientConnection conn,
+				       char *server_name);
+
+/****f* silcclient/SilcClientAPI/silc_client_get_server_by_id
+ *
+ * SYNOPSIS
+ *
+ *    SilcServerEntry silc_client_get_server_by_id(SilcClient client,
+ *                                                 SilcClientConnection conn,
+ *                                                 SilcServerID *server_id);
+ *
+ * DESCRIPTION
+ *
+ *    Finds entry for server by the server ID. Returns the entry or NULL
+ *    if the entry was not found.
+ *
+ ***/
+SilcServerEntry silc_client_get_server_by_id(SilcClient client,
+					     SilcClientConnection conn,
+					     SilcServerID *server_id);
+
+/****f* silcclient/SilcClientAPI/silc_client_get_server_by_id_resolve
+ *
+ * SYNOPSIS
+ *
+ *    void
+ *    silc_client_get_server_by_id_resolve(SilcClient client,
+ *                                         SilcClientConnection conn,
+ *                                         SilcServerID *server_id,
+ *                                         SilcGetServerCallback completion,
+ *                                         void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Resolves the server information by the `server_id'.  The resolved
+ *    server is returned into the `completion' callback.
+ *
+ ***/
+void silc_client_get_server_by_id_resolve(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcServerID *server_id,
+					  SilcGetServerCallback completion,
+					  void *context);
 
 #endif /* SILCCLIENT_ENTRY_H */

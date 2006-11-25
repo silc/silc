@@ -88,28 +88,16 @@ static void silc_client_connect_callback(SilcNetStatus status,
   if (status != SILC_NET_OK) {
     /* Notify application of failure */
     SILC_LOG_DEBUG(("Connecting failed"));
-    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, conn->context);
+    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0,
+		   NULL, conn->context);
     silc_fsm_next(fsm, silc_client_st_connect_error);
     SILC_FSM_CALL_CONTINUE(fsm);
     return;
   }
-
-  SILC_LOG_DEBUG(("Connected"));
-
-  /* Create packet stream */
-  conn->stream = silc_packet_stream_create(client->internal->packet_engine,
-					   conn->internal->schedule, stream);
-  if (!conn->stream) {
-    SILC_LOG_DEBUG(("Could not create packet stream"));
-    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, conn->context);
-    silc_fsm_next(fsm, silc_client_st_connect_error);
-    SILC_FSM_CALL_CONTINUE(fsm);
-    return;
-  }
-
-  silc_packet_set_context(conn->stream, conn);
 
   /* Connection created successfully */
+  SILC_LOG_DEBUG(("Connected"));
+  conn->stream = (void *)stream;
   SILC_FSM_CALL_CONTINUE(fsm);
 }
 
@@ -215,7 +203,8 @@ static void silc_client_ke_completion(SilcSKE ske,
 		       "Error during key exchange with %s: cannot use keys",
 		       conn->remote_host);
 
-    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_KE, conn->context);
+    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_KE, 0, NULL,
+		   conn->context);
 
     silc_fsm_next(fsm, silc_client_st_connect_error);
     SILC_FSM_CALL_CONTINUE(fsm);
@@ -270,7 +259,8 @@ static void silc_client_connect_auth_completion(SilcConnAuth connauth,
 			client, conn, SILC_CLIENT_MESSAGE_ERROR,
 			"Authentication failed");
 
-    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_AUTH, conn->context);
+    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_AUTH, 0, NULL,
+		   conn->context);
     silc_fsm_next(fsm, silc_client_st_connect_error);
   }
 
@@ -289,7 +279,8 @@ SILC_FSM_STATE(silc_client_st_connect)
   SILC_LOG_DEBUG(("Connecting to %s:%d", conn->remote_host,
 		  conn->remote_port));
 
-  silc_fsm_next(fsm, silc_client_st_connect_key_exchange);
+  /** Connect */
+  silc_fsm_next(fsm, silc_client_st_connect_set_stream);
 
   if (conn->internal->params.udp) {
     SilcStream stream;
@@ -297,12 +288,13 @@ SILC_FSM_STATE(silc_client_st_connect)
     if (!conn->internal->params.local_ip) {
       /** IP address not given */
       SILC_LOG_ERROR(("Local UDP IP address not specified"));
-      conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, conn->context);
+      conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
+		     conn->context);
       silc_fsm_next(fsm, silc_client_st_connect_error);
       return SILC_FSM_CONTINUE;
     }
 
-    /** Connect (UDP) */
+    /* Connect (UDP) */
     stream = silc_net_udp_connect(conn->internal->params.local_ip,
 				  conn->internal->params.local_port,
 				  conn->remote_host, conn->remote_port,
@@ -312,12 +304,39 @@ SILC_FSM_STATE(silc_client_st_connect)
 					       SILC_NET_HOST_UNREACHABLE,
 					       stream, fsm));
   } else {
-    /** Connect (TCP) */
+    /* Connect (TCP) */
     SILC_FSM_CALL(silc_net_tcp_connect(NULL, conn->remote_host,
 				       conn->remote_port,
 				       conn->internal->schedule,
 				       silc_client_connect_callback, fsm));
   }
+}
+
+/* Sets the new connection stream into use and creates packet stream */
+
+SILC_FSM_STATE(silc_client_st_connect_set_stream)
+{
+  SilcClientConnection conn = fsm_context;
+  SilcClient client = conn->client;
+
+  /* Create packet stream */
+  conn->stream = silc_packet_stream_create(client->internal->packet_engine,
+					   conn->internal->schedule,
+					   (SilcStream)conn->stream);
+  if (!conn->stream) {
+    /** Cannot create packet stream */
+    SILC_LOG_DEBUG(("Could not create packet stream"));
+    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
+		   conn->context);
+    silc_fsm_next(fsm, silc_client_st_connect_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  silc_packet_set_context(conn->stream, conn);
+
+  /** Start key exchange */
+  silc_fsm_next(fsm, silc_client_st_connect_key_exchange);
+  return SILC_FSM_CONTINUE;
 }
 
 /* Starts key exchange protocol with remote host */
@@ -337,7 +356,8 @@ SILC_FSM_STATE(silc_client_st_connect_key_exchange)
 		   conn->public_key, conn->private_key, fsm);
   if (!conn->internal->ske) {
     /** Out of memory */
-    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_KE, conn->context);
+    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_KE, 0, NULL,
+		   conn->context);
     silc_fsm_next(fsm, silc_client_st_connect_error);
     return SILC_FSM_CONTINUE;
   }
@@ -356,12 +376,14 @@ SILC_FSM_STATE(silc_client_st_connect_key_exchange)
     params.session_port = conn->internal->params.local_port;
   }
 
-  /** Start key exchange */
   if (conn->internal->params.no_authentication)
+    /** Run key exchange (no auth) */
     silc_fsm_next(fsm, silc_client_st_connected);
   else if (conn->internal->params.udp)
+    /** Run key exchange (UDP)*/
     silc_fsm_next(fsm, silc_client_st_connect_setup_udp);
   else
+    /** Run key exchange (TCP) */
     silc_fsm_next(fsm, silc_client_st_connect_auth);
 
   SILC_FSM_CALL(silc_ske_initiator(conn->internal->ske, conn->stream,
@@ -388,7 +410,8 @@ SILC_FSM_STATE(silc_client_st_connect_setup_udp)
 				conn->internal->schedule);
   if (!stream) {
     /** Cannot create UDP stream */
-    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, conn->context);
+    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
+		   conn->context);
     silc_fsm_next(fsm, silc_client_st_connect_error);
     return SILC_FSM_CONTINUE;
   }
@@ -421,10 +444,11 @@ SILC_FSM_STATE(silc_client_st_connect_auth)
 
   /* If authentication data not provided, ask from application */
   if (!conn->internal->params.auth_set)
-    SILC_FSM_CALL(client->internal->ops->
-		  get_auth_method(client, conn,
-				  conn->remote_host, conn->remote_port,
-				  silc_client_connect_auth_method, fsm));
+    SILC_FSM_CALL(client->internal->ops->get_auth_method(
+				    client, conn,
+				    conn->remote_host,
+				    conn->remote_port,
+				    silc_client_connect_auth_method, fsm));
 
   if (conn->internal->params.auth_method == SILC_AUTH_PUBLIC_KEY)
     conn->internal->params.auth = conn->private_key;
@@ -449,7 +473,8 @@ SILC_FSM_STATE(silc_client_st_connect_auth_start)
 				 client->internal->params->rekey_secs);
   if (!connauth) {
     /** Out of memory */
-    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_AUTH, conn->context);
+    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_AUTH, 0, NULL,
+		   conn->context);
     silc_fsm_next(fsm, silc_client_st_connect_error);
     return SILC_FSM_CONTINUE;
   }
@@ -491,7 +516,8 @@ SILC_FSM_STATE(silc_client_st_connected)
   }
 
   /* Call connection callback */
-  conn->callback(client, conn, SILC_CLIENT_CONN_SUCCESS, conn->context);
+  conn->callback(client, conn, SILC_CLIENT_CONN_SUCCESS, 0, NULL,
+		 conn->context);
 
   return SILC_FSM_FINISH;
 }

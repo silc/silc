@@ -21,6 +21,7 @@
 #define CLIENT_PRVMSG_H
 
 SILC_FSM_STATE(silc_client_private_message);
+SILC_FSM_STATE(silc_client_private_message_error);
 SILC_FSM_STATE(silc_client_private_message_key);
 
 #endif /* CLIENT_PRVMSG_H */

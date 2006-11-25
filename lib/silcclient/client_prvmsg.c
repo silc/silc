@@ -30,6 +30,7 @@ SilcBool silc_client_send_private_message(SilcClient client,
 					  SilcClientConnection conn,
 					  SilcClientEntry client_entry,
 					  SilcMessageFlags flags,
+					  SilcHash hash,
 					  unsigned char *data,
 					  SilcUInt32 data_len)
 {
@@ -40,6 +41,8 @@ SilcBool silc_client_send_private_message(SilcClient client,
 
   if (!client || !conn || !client_entry)
     return FALSE;
+  if (flags & SILC_MESSAGE_FLAG_SIGNED && !hash)
+    return FALSE;
 
   /* Encode private message payload */
   buffer =
@@ -49,7 +52,7 @@ SilcBool silc_client_send_private_message(SilcClient client,
 				TRUE, client_entry->internal.send_key,
 				client_entry->internal.hmac_send,
 				client->rng, NULL, conn->private_key,
-				client->sha1hash, NULL);
+				hash, NULL);
   if (!buffer) {
     SILC_LOG_ERROR(("Error encoding private message"));
     return FALSE;
@@ -76,10 +79,7 @@ typedef struct {
   unsigned int stopped      : 1;
 } *SilcClientPrivateMessageWait;
 
-/* Client resolving callback.  This continues the private message packet
-   processing in the packet processor thread, which is in waiting state
-   (for incoming packets) when we get here.  We can safely continue in
-   the thread and then return back to waiting when we do it synchronously. */
+/* Client resolving callback.  Continues with the private message processing */
 
 static void silc_client_private_message_resolved(SilcClient client,
 						 SilcClientConnection conn,
@@ -87,15 +87,12 @@ static void silc_client_private_message_resolved(SilcClient client,
 						 SilcDList clients,
 						 void *context)
 {
-  if (!clients) {
-    silc_packet_free(context);
-    return;
-  }
+  /* If no client found, ignore the private message, a silent error */
+  if (!clients)
+    silc_fsm_next(context, silc_client_private_message_error);
 
   /* Continue processing the private message packet */
-  silc_fsm_set_state_context(&conn->internal->packet_thread, context);
-  silc_fsm_next(&conn->internal->packet_thread, silc_client_private_message);
-  silc_fsm_continue_sync(&conn->internal->packet_thread);
+  SILC_FSM_CALL_CONTINUE(context);
 }
 
 /* Private message received. */
@@ -113,24 +110,31 @@ SILC_FSM_STATE(silc_client_private_message)
   SilcUInt32 message_len;
   SilcClientPrivateMessageWait pmw;
 
-  if (packet->src_id_type != SILC_ID_CLIENT)
-    goto out;
+  SILC_LOG_DEBUG(("Received private message"));
+
+  if (packet->src_id_type != SILC_ID_CLIENT) {
+    /** Invalid packet */
+    silc_fsm_next(fsm, silc_client_private_message_error);
+    return SILC_FSM_CONTINUE;
+  }
 
   if (!silc_id_str2id(packet->src_id, packet->src_id_len, SILC_ID_CLIENT,
-		      &remote_id, sizeof(remote_id)))
-    goto out;
+		      &remote_id, sizeof(remote_id))) {
+    /** Invalid source ID */
+    silc_fsm_next(fsm, silc_client_private_message_error);
+    return SILC_FSM_CONTINUE;
+  }
 
   /* Check whether we know this client already */
   remote_client = silc_client_get_client_by_id(client, conn, &remote_id);
   if (!remote_client || !remote_client->nickname[0]) {
-    /* Resolve the client info.  We return back to packet thread to receive
-       other packets while we wait for the resolving to finish. */
+    /** Resolve client info */
     silc_client_unref_client(client, conn, remote_client);
-    silc_client_get_client_by_id_resolve(client, conn, &remote_id, NULL,
+    SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
+					 client, conn, &remote_id, NULL,
 					 silc_client_private_message_resolved,
-					 packet);
-    silc_fsm_next(fsm, silc_client_connection_st_packet);
-    return SILC_FSM_CONTINUE;
+					 fsm));
+    /* NOT REACHED */
   }
 
   if (packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY &&
@@ -189,19 +193,27 @@ SILC_FSM_STATE(silc_client_private_message)
     /* Send the away message */
     silc_client_send_private_message(client, conn, remote_client,
 				     SILC_MESSAGE_FLAG_AUTOREPLY |
-				     SILC_MESSAGE_FLAG_NOREPLY,
+				     SILC_MESSAGE_FLAG_NOREPLY, NULL,
 				     conn->internal->away->away,
 				     strlen(conn->internal->away->away));
   }
 
  out:
   /** Packet processed */
+  silc_packet_free(packet);
   silc_client_unref_client(client, conn, remote_client);
   if (payload)
     silc_message_payload_free(payload);
+  return SILC_FSM_FINISH;
+}
+
+/* Private message error. */
+
+SILC_FSM_STATE(silc_client_private_message_error)
+{
+  SilcPacket packet = state_context;
   silc_packet_free(packet);
-  silc_fsm_next(fsm, silc_client_connection_st_packet);
-  return SILC_FSM_CONTINUE;
+  return SILC_FSM_FINISH;
 }
 
 #if 0 /* XXX we need to rethink this */
@@ -385,24 +397,21 @@ SILC_FSM_STATE(silc_client_private_message_key)
 
   if (packet->src_id_type != SILC_ID_CLIENT) {
     silc_packet_free(packet);
-    goto out;
+    return SILC_FSM_FINISH;
   }
 
   if (!silc_id_str2id(packet->src_id, packet->src_id_len, SILC_ID_CLIENT,
 		      &remote_id, sizeof(remote_id))) {
     silc_packet_free(packet);
-    goto out;
+    return SILC_FSM_FINISH;
   }
 
   /* Always resolve the remote client.  The actual packet is processed
      in the resolving callback. */
-  silc_client_get_client_by_id_resolve(client, conn, &remote_id, NULL,
+  SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
+				       client, conn, &remote_id, NULL,
 				       silc_client_private_message_key_cb,
-				       packet);
-
- out:
-  silc_fsm_next(fsm, silc_client_connection_st_packet);
-  return SILC_FSM_CONTINUE;
+				       fsm));
 }
 
 /* Adds private message key to the client library. The key will be used to
@@ -584,10 +593,7 @@ silc_client_send_private_message_key_request(SilcClient client,
 					     SilcClientConnection conn,
 					     SilcClientEntry client_entry)
 {
-  SilcBufferStruct buffer;
-  int cipher_len, hmac_len;
   const char *cipher, *hmac;
-  SilcBool ret;
 
   if (!client || !conn || !client_entry)
     return FALSE;
@@ -598,29 +604,18 @@ silc_client_send_private_message_key_request(SilcClient client,
   SILC_LOG_DEBUG(("Sending private message key indicator"));
 
   cipher = silc_cipher_get_name(client_entry->internal.send_key);
-  cipher_len = strlen(cipher);
   hmac = silc_hmac_get_name(client_entry->internal.hmac_send);
-  hmac_len = strlen(hmac);
-
-  /* Create private message key payload */
-  memset(&buffer, 0, sizeof(buffer));
-  if (silc_buffer_format(&buffer,
-			 SILC_STR_UI_SHORT(cipher_len),
-			 SILC_STR_UI_XNSTRING(cipher,
-					      cipher_len),
-			 SILC_STR_UI_SHORT(hmac_len),
-			 SILC_STR_UI_XNSTRING(hmac,
-					      hmac_len),
-			 SILC_STR_END) < 0)
-    return FALSE;
 
   /* Send the packet */
-  ret = silc_packet_send_ext(conn->stream, SILC_PACKET_PRIVATE_MESSAGE_KEY,
-			     0, 0, NULL, SILC_ID_CLIENT, &client_entry->id,
-			     silc_buffer_datalen(&buffer), NULL, NULL);
-  silc_buffer_purge(&buffer);
-
-  return ret;
+  return silc_packet_send_va_ext(conn->stream,
+				 SILC_PACKET_PRIVATE_MESSAGE_KEY,
+				 0, 0, NULL, SILC_ID_CLIENT,
+				 &client_entry->id, NULL, NULL,
+				 SILC_STR_UI_SHORT(strlen(cipher)),
+				 SILC_STR_DATA(cipher, strlen(cipher)),
+				 SILC_STR_UI_SHORT(strlen(hmac)),
+				 SILC_STR_DATA(hmac, strlen(hmac)),
+				 SILC_STR_END);
 }
 
 /* Removes the private message from the library. The key won't be used

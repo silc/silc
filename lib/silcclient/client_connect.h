@@ -22,6 +22,7 @@
 
 /* States */
 SILC_FSM_STATE(silc_client_st_connect);
+SILC_FSM_STATE(silc_client_st_connect_set_stream);
 SILC_FSM_STATE(silc_client_st_connect_key_exchange);
 SILC_FSM_STATE(silc_client_st_connect_setup_udp);
 SILC_FSM_STATE(silc_client_st_connect_auth);

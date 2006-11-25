@@ -53,16 +53,6 @@ Using FSM
    peformance is not an issue, but only if there really are other FSM
    threads that need execution time also.
 
-   In packet processing do not use SILC_FSM_WAIT ever, since in current
-   design all packets are processed in one FSM thread, and if one packet
-   processor puts it into wait state, not other packets are received
-   in the mean time.  Instead go back to silc_client_connection_st_packet
-   with SILC_FSM_CONTINUE, and then in the async function's callback
-   set the old SilcPacket to the packet thread's state context and move back
-   to the packet processor with silc_fsm_next and silc_fsm_continue_sync
-   (always synchronously, never async).  This design may change later,
-   but for now this is it.
-
 
 When to use FSM semaphore signalling?
 

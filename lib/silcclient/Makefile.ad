@@ -23,8 +23,10 @@ libsilcclient_la_SOURCES = 		\
 	client.c 			\
 	client_entry.c 			\
 	client_prvmsg.c			\
+	client_channel.c		\
 	client_connect.c 		\
 	client_register.c 		\
+	client_notify.c 		\
 	command.c	 		\
 	command_reply.c
 

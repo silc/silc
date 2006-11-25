@@ -46,14 +46,16 @@ SilcClientEntry silc_client_get_client_by_id(SilcClient client,
 
   /* Find ID from cache */
   if (!silc_idcache_find_by_id_one(conn->internal->client_cache, client_id,
-				   &id_cache))
+				   &id_cache)) {
+    silc_mutex_unlock(conn->internal->lock);
     return NULL;
+  }
 
   client_entry = id_cache->context;
 
   /* Reference */
   silc_client_ref_client(client, conn, client_entry);
-  silc_mutex_lock(conn->internal->lock);
+  silc_mutex_unlock(conn->internal->lock);
 
   SILC_LOG_DEBUG(("Found"));
 
@@ -161,6 +163,7 @@ static SilcBool silc_client_get_clients_cb(SilcClient client,
     client_entry = va_arg(ap, SilcClientEntry);
     silc_client_ref_client(client, conn, client_entry);
     silc_dlist_add(i->clients, client_entry);
+    client_entry->internal.resolve_cmd_ident = 0;
   }
 
   if (status == SILC_STATUS_OK || status == SILC_STATUS_LIST_END) {
@@ -191,7 +194,9 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 					  void *context)
 {
   SilcClientGetClientInternal i;
+  SilcClientEntry client_entry;
   SilcBuffer idp;
+  SilcUInt16 cmd_ident;
 
   if (!client || !conn | !client_id)
     return;
@@ -204,13 +209,36 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
     return;
   i->completion = completion;
   i->context = context;
+  i->clients = silc_dlist_init();
+  if (!i->clients) {
+    silc_free(i);
+    return;
+  }
+
+  /* Attach to resolving, if on going */
+  client_entry = silc_client_get_client_by_id(client, conn, client_id);
+  if (client_entry && client_entry->internal.resolve_cmd_ident) {
+    SILC_LOG_DEBUG(("Attach to existing resolving"));
+    silc_client_unref_client(client, conn, client_entry);
+    silc_client_command_pending(conn, SILC_COMMAND_NONE,
+				client_entry->internal.resolve_cmd_ident,
+				silc_client_get_clients_cb, i);
+    return;
+  }
 
   /* Send the command */
   idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
-  silc_client_command_send(client, conn, SILC_COMMAND_WHOIS,
-			   silc_client_get_clients_cb, i,
-			   2, 3, silc_buffer_datalen(attributes),
-			   4, silc_buffer_datalen(idp));
+  cmd_ident = silc_client_command_send(client, conn, SILC_COMMAND_WHOIS,
+				       silc_client_get_clients_cb, i,
+				       2, 3, silc_buffer_datalen(attributes),
+				       4, silc_buffer_datalen(idp));
+  if (!cmd_ident)
+    completion(client, conn, SILC_STATUS_ERR_RESOURCE_LIMIT, NULL, context);
+
+  if (client_entry && cmd_ident)
+    client_entry->internal.resolve_cmd_ident = cmd_ident;
+
+  silc_client_unref_client(client, conn, client_entry);
   silc_buffer_free(idp);
 }
 
@@ -243,8 +271,10 @@ static SilcUInt16 silc_client_get_clients_i(SilcClient client,
   if (!i)
     return 0;
   i->clients = silc_dlist_init();
-  if (!i->clients)
+  if (!i->clients) {
+    silc_free(i);
     return 0;
+  }
   i->completion = completion;
   i->context = context;
 
@@ -692,6 +722,8 @@ SilcClientEntry silc_client_add_client(SilcClient client,
   /* Format the nickname */
   silc_client_nickname_format(client, conn, client_entry);
 
+  silc_mutex_lock(conn->internal->lock);
+
   /* Add client to cache, the normalized nickname is saved to cache */
   if (!silc_idcache_add(conn->internal->client_cache, nick,
 			&client_entry->id, client_entry)) {
@@ -699,10 +731,13 @@ SilcClientEntry silc_client_add_client(SilcClient client,
     silc_free(client_entry->realname);
     silc_hash_table_free(client_entry->channels);
     silc_free(client_entry);
+    silc_mutex_unlock(conn->internal->lock);
     return NULL;
   }
 
   client_entry->nickname_normalized = nick;
+
+  silc_mutex_unlock(conn->internal->lock);
 
   return client_entry;
 }
@@ -832,502 +867,6 @@ void silc_client_list_free(SilcClient client, SilcClientConnection conn,
   }
 }
 
-
-/************************* Channel Entry Routines ***************************/
-
-/* Add new channel entry to the ID Cache */
-
-SilcChannelEntry silc_client_add_channel(SilcClient client,
-					 SilcClientConnection conn,
-					 const char *channel_name,
-					 SilcUInt32 mode,
-					 SilcChannelID *channel_id)
-{
-  SilcChannelEntry channel;
-  char *channel_namec;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  channel = silc_calloc(1, sizeof(*channel));
-  channel->channel_name = strdup(channel_name);
-  channel->id = channel_id;
-  channel->mode = mode;
-  channel->user_list = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
-					     NULL, NULL, NULL, TRUE);
-
-  /* Normalize channel name */
-  channel_namec = silc_channel_name_check(channel_name, strlen(channel_name),
-					  SILC_STRING_UTF8, 256, NULL);
-  if (!channel_namec) {
-    silc_free(channel->channel_name);
-    silc_hash_table_free(channel->user_list);
-    silc_free(channel);
-    return NULL;
-  }
-
-  /* Put it to the ID cache */
-  if (!silc_idcache_add(conn->internal->channel_cache, channel_namec,
-			(void *)channel->id, (void *)channel)) {
-    silc_free(channel_namec);
-    silc_free(channel->channel_name);
-    silc_hash_table_free(channel->user_list);
-    silc_free(channel);
-    return NULL;
-  }
-
-  return channel;
-}
-
-/* Foreach callbcak to free all users from the channel when deleting a
-   channel entry. */
-
-static void silc_client_del_channel_foreach(void *key, void *context,
-					    void *user_context)
-{
-  SilcChannelUser chu = (SilcChannelUser)context;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Remove the context from the client's channel hash table as that
-     table and channel's user_list hash table share this same context. */
-  silc_hash_table_del(chu->client->channels, chu->channel);
-  silc_free(chu);
-}
-
-/* Removes channel from the cache by the channel entry. */
-
-SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
-				 SilcChannelEntry channel)
-{
-  SilcBool ret = silc_idcache_del_by_context(conn->internal->channel_cache,
-					     channel, NULL);
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Free all client entrys from the users list. The silc_hash_table_free
-     will free all the entries so they are not freed at the foreach
-     callback. */
-  silc_hash_table_foreach(channel->user_list, silc_client_del_channel_foreach,
-			  NULL);
-  silc_hash_table_free(channel->user_list);
-
-  silc_free(channel->channel_name);
-  silc_free(channel->topic);
-  silc_free(channel->id);
-  if (channel->founder_key)
-    silc_pkcs_public_key_free(channel->founder_key);
-  silc_free(channel->key);
-  if (channel->channel_key)
-    silc_cipher_free(channel->channel_key);
-  if (channel->hmac)
-    silc_hmac_free(channel->hmac);
-  if (channel->old_channel_keys) {
-    SilcCipher key;
-    silc_dlist_start(channel->old_channel_keys);
-    while ((key = silc_dlist_get(channel->old_channel_keys)) != SILC_LIST_END)
-      silc_cipher_free(key);
-    silc_dlist_uninit(channel->old_channel_keys);
-  }
-  if (channel->old_hmacs) {
-    SilcHmac hmac;
-    silc_dlist_start(channel->old_hmacs);
-    while ((hmac = silc_dlist_get(channel->old_hmacs)) != SILC_LIST_END)
-      silc_hmac_free(hmac);
-    silc_dlist_uninit(channel->old_hmacs);
-  }
-  silc_schedule_task_del_by_context(conn->client->schedule, channel);
-  silc_client_del_channel_private_keys(client, conn, channel);
-  silc_free(channel);
-  return ret;
-}
-
-/* Replaces the channel ID of the `channel' to `new_id'. Returns FALSE
-   if the ID could not be changed. */
-
-SilcBool silc_client_replace_channel_id(SilcClient client,
-					SilcClientConnection conn,
-					SilcChannelEntry channel,
-					SilcChannelID *new_id)
-{
-  char *channel_namec;
-
-  if (!new_id)
-    return FALSE;
-
-  SILC_LOG_DEBUG(("Old Channel ID id(%s)",
-		  silc_id_render(channel->id, SILC_ID_CHANNEL)));
-  SILC_LOG_DEBUG(("New Channel ID id(%s)",
-		  silc_id_render(new_id, SILC_ID_CHANNEL)));
-
-  silc_idcache_del_by_id(conn->internal->channel_cache, channel->id, NULL);
-  silc_free(channel->id);
-  channel->id = new_id;
-
-  /* Normalize channel name */
-  channel_namec = silc_channel_name_check(channel->channel_name,
-					  strlen(channel->channel_name),
-					  SILC_STRING_UTF8, 256, NULL);
-  if (!channel_namec)
-    return FALSE;
-
-  return silc_idcache_add(conn->internal->channel_cache, channel_namec,
-			  channel->id, channel) != NULL;
-}
-
-/* Finds entry for channel by the channel name. Returns the entry or NULL
-   if the entry was not found. It is found only if the client is joined
-   to the channel. */
-
-SilcChannelEntry silc_client_get_channel(SilcClient client,
-					 SilcClientConnection conn,
-					 char *channel)
-{
-  SilcIDCacheEntry id_cache;
-  SilcChannelEntry entry;
-
-  assert(client && conn);
-  if (!channel)
-    return NULL;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Normalize name for search */
-  channel = silc_channel_name_check(channel, strlen(channel), SILC_STRING_UTF8,
-				    256, NULL);
-  if (!channel)
-    return NULL;
-
-  if (!silc_idcache_find_by_name_one(conn->internal->channel_cache, channel,
-				     &id_cache)) {
-    silc_free(channel);
-    return NULL;
-  }
-
-  entry = (SilcChannelEntry)id_cache->context;
-
-  SILC_LOG_DEBUG(("Found"));
-
-  silc_free(channel);
-
-  return entry;
-}
-
-/* Finds entry for channel by the channel ID. Returns the entry or NULL
-   if the entry was not found. It is found only if the client is joined
-   to the channel. */
-
-SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
-					       SilcClientConnection conn,
-					       SilcChannelID *channel_id)
-{
-  SilcIDCacheEntry id_cache;
-  SilcChannelEntry entry;
-
-  assert(client && conn);
-  if (!channel_id)
-    return NULL;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  if (!silc_idcache_find_by_id_one(conn->internal->channel_cache, channel_id,
-				   &id_cache))
-    return NULL;
-
-  entry = (SilcChannelEntry)id_cache->context;
-
-  SILC_LOG_DEBUG(("Found"));
-
-  return entry;
-}
-
-#if 0
-typedef struct {
-  SilcClient client;
-  SilcClientConnection conn;
-  union {
-    SilcChannelID *channel_id;
-    char *channel_name;
-  } u;
-  SilcGetChannelCallback completion;
-  void *context;
-} *GetChannelInternal;
-
-SILC_CLIENT_CMD_FUNC(get_channel_resolve_callback)
-{
-  GetChannelInternal i = (GetChannelInternal)context;
-  SilcChannelEntry entry;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Get the channel */
-  entry = silc_client_get_channel(i->client, i->conn, i->u.channel_name);
-  if (entry) {
-    i->completion(i->client, i->conn, &entry, 1, i->context);
-  } else {
-    i->completion(i->client, i->conn, NULL, 0, i->context);
-  }
-
-  silc_free(i->u.channel_name);
-  silc_free(i);
-}
-
-/* Resolves channel entry from the server by the channel name. */
-
-void silc_client_get_channel_resolve(SilcClient client,
-				     SilcClientConnection conn,
-				     char *channel_name,
-				     SilcGetChannelCallback completion,
-				     void *context)
-{
-  GetChannelInternal i = silc_calloc(1, sizeof(*i));
-
-  assert(client && conn && channel_name);
-
-  SILC_LOG_DEBUG(("Start"));
-
-  i->client = client;
-  i->conn = conn;
-  i->u.channel_name = strdup(channel_name);
-  i->completion = completion;
-  i->context = context;
-
-  /* Register our own command reply for this command */
-  silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
-			       silc_client_command_reply_identify_i, 0,
-			       ++conn->cmd_ident);
-
-  /* Send the command */
-  silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
-			   conn->cmd_ident,
-			   1, 3, channel_name, strlen(channel_name));
-
-  /* Add pending callback */
-  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
-			      silc_client_command_get_channel_resolve_callback,
-			      (void *)i);
-}
-
-SILC_CLIENT_CMD_FUNC(get_channel_by_id_callback)
-{
-  GetChannelInternal i = (GetChannelInternal)context;
-  SilcChannelEntry entry;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Get the channel */
-  entry = silc_client_get_channel_by_id(i->client, i->conn, i->u.channel_id);
-  if (entry) {
-    i->completion(i->client, i->conn, &entry, 1, i->context);
-  } else {
-    i->completion(i->client, i->conn, NULL, 0, i->context);
-  }
-
-  silc_free(i->u.channel_id);
-  silc_free(i);
-}
-
-/* Resolves channel information from the server by the channel ID. */
-
-void silc_client_get_channel_by_id_resolve(SilcClient client,
-					   SilcClientConnection conn,
-					   SilcChannelID *channel_id,
-					   SilcGetChannelCallback completion,
-					   void *context)
-{
-  SilcBuffer idp;
-  GetChannelInternal i = silc_calloc(1, sizeof(*i));
-
-  assert(client && conn && channel_id);
-
-  SILC_LOG_DEBUG(("Start"));
-
-  i->client = client;
-  i->conn = conn;
-  i->u.channel_id = silc_id_dup(channel_id, SILC_ID_CHANNEL);
-  i->completion = completion;
-  i->context = context;
-
-  /* Register our own command reply for this command */
-  silc_client_command_register(client, SILC_COMMAND_IDENTIFY, NULL, NULL,
-			       silc_client_command_reply_identify_i, 0,
-			       ++conn->cmd_ident);
-
-  /* Send the command */
-  idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
-  silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
-			   conn->cmd_ident,
-			   1, 5, idp->data, idp->len);
-  silc_buffer_free(idp);
-
-  /* Add pending callback */
-  silc_client_command_pending(conn, SILC_COMMAND_IDENTIFY, conn->cmd_ident,
-			      silc_client_command_get_channel_by_id_callback,
-			      (void *)i);
-}
-#endif /* 0 */
-
-/* Finds entry for server by the server name. */
-
-SilcServerEntry silc_client_get_server(SilcClient client,
-				       SilcClientConnection conn,
-				       char *server_name)
-{
-  SilcIDCacheEntry id_cache;
-  SilcServerEntry entry;
-
-  assert(client && conn);
-  if (!server_name)
-    return NULL;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Normalize server name for search */
-  server_name = silc_identifier_check(server_name, strlen(server_name),
-				      SILC_STRING_UTF8, 256, NULL);
-  if (!server_name)
-    return NULL;
-
-  if (!silc_idcache_find_by_name_one(conn->internal->server_cache,
-				     server_name, &id_cache)) {
-    silc_free(server_name);
-    return NULL;
-  }
-
-  entry = (SilcServerEntry)id_cache->context;
-
-  silc_free(server_name);
-
-  return entry;
-}
-
-/* Finds entry for server by the server ID. */
-
-SilcServerEntry silc_client_get_server_by_id(SilcClient client,
-					     SilcClientConnection conn,
-					     SilcServerID *server_id)
-{
-  SilcIDCacheEntry id_cache;
-  SilcServerEntry entry;
-
-  assert(client && conn);
-  if (!server_id)
-    return NULL;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  if (!silc_idcache_find_by_id_one(conn->internal->server_cache,
-				   (void *)server_id, &id_cache))
-    return NULL;
-
-  entry = (SilcServerEntry)id_cache->context;
-
-  return entry;
-}
-
-/* Add new server entry */
-
-SilcServerEntry silc_client_add_server(SilcClient client,
-				       SilcClientConnection conn,
-				       const char *server_name,
-				       const char *server_info,
-				       SilcServerID *server_id)
-{
-  SilcServerEntry server_entry;
-  char *server_namec = NULL;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  server_entry = silc_calloc(1, sizeof(*server_entry));
-  if (!server_entry || !server_id)
-    return NULL;
-
-  server_entry->server_id = server_id;
-  if (server_name)
-    server_entry->server_name = strdup(server_name);
-  if (server_info)
-    server_entry->server_info = strdup(server_info);
-
-  /* Normalize server name */
-  if (server_name) {
-    server_namec = silc_identifier_check(server_name, strlen(server_name),
-					 SILC_STRING_UTF8, 256, NULL);
-    if (!server_namec) {
-      silc_free(server_entry->server_id);
-      silc_free(server_entry->server_name);
-      silc_free(server_entry->server_info);
-      silc_free(server_entry);
-      return NULL;
-    }
-  }
-
-  /* Add server to cache */
-  if (!silc_idcache_add(conn->internal->server_cache, server_namec,
-			server_entry->server_id, server_entry)) {
-    silc_free(server_namec);
-    silc_free(server_entry->server_id);
-    silc_free(server_entry->server_name);
-    silc_free(server_entry->server_info);
-    silc_free(server_entry);
-    return NULL;
-  }
-
-  return server_entry;
-}
-
-/* Removes server from the cache by the server entry. */
-
-SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
-			    SilcServerEntry server)
-{
-  SilcBool ret = silc_idcache_del_by_context(conn->internal->server_cache,
-					     server, NULL);
-  silc_free(server->server_name);
-  silc_free(server->server_info);
-  silc_free(server->server_id);
-  silc_free(server);
-  return ret;
-}
-
-/* Updates the `server_entry' with the new information sent as argument. */
-
-void silc_client_update_server(SilcClient client,
-			       SilcClientConnection conn,
-			       SilcServerEntry server_entry,
-			       const char *server_name,
-			       const char *server_info)
-{
-  char *server_namec = NULL;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  if (server_name &&
-      (!server_entry->server_name ||
-       !silc_utf8_strcasecmp(server_entry->server_name, server_name))) {
-
-    silc_idcache_del_by_context(conn->internal->server_cache,
-				server_entry, NULL);
-    silc_free(server_entry->server_name);
-    server_entry->server_name = strdup(server_name);
-
-    /* Normalize server name */
-    if (server_name) {
-      server_namec = silc_identifier_check(server_name, strlen(server_name),
-					   SILC_STRING_UTF8, 256, NULL);
-      if (!server_namec)
-	return;
-
-      silc_idcache_add(conn->internal->server_cache, server_namec,
-		       server_entry->server_id, server_entry);
-    }
-  }
-
-  if (server_info &&
-      (!server_entry->server_info ||
-       !silc_utf8_strcasecmp(server_entry->server_info, server_info))) {
-    silc_free(server_entry->server_info);
-    server_entry->server_info = strdup(server_info);
-  }
-}
 
 /* Formats the nickname of the client specified by the `client_entry'.
    If the format is specified by the application this will format the
@@ -1473,4 +1012,749 @@ void silc_client_nickname_format(SilcClient client,
   newnick[off] = 0;
   memcpy(client_entry->nickname, newnick, strlen(newnick));
   silc_client_list_free(client, conn, clients);
+}
+
+/************************ Channel Searching Locally *************************/
+
+/* Finds entry for channel by the channel name. Returns the entry or NULL
+   if the entry was not found. It is found only if the client is joined
+   to the channel. */
+
+SilcChannelEntry silc_client_get_channel(SilcClient client,
+					 SilcClientConnection conn,
+					 char *channel)
+{
+  SilcIDCacheEntry id_cache;
+  SilcChannelEntry entry;
+
+  if (!client || !conn || !channel)
+    return NULL;
+
+  SILC_LOG_DEBUG(("Find channel %s", channel));
+
+  /* Normalize name for search */
+  channel = silc_channel_name_check(channel, strlen(channel), SILC_STRING_UTF8,
+				    256, NULL);
+  if (!channel)
+    return NULL;
+
+  silc_mutex_lock(conn->internal->lock);
+
+  if (!silc_idcache_find_by_name_one(conn->internal->channel_cache, channel,
+				     &id_cache)) {
+    silc_mutex_unlock(conn->internal->lock);
+    silc_free(channel);
+    return NULL;
+  }
+
+  SILC_LOG_DEBUG(("Found"));
+
+  entry = id_cache->context;
+
+  /* Reference */
+  silc_client_ref_channel(client, conn, entry);
+  silc_mutex_unlock(conn->internal->lock);
+
+  silc_free(channel);
+
+  return entry;
+}
+
+/* Finds entry for channel by the channel ID. Returns the entry or NULL
+   if the entry was not found. It is found only if the client is joined
+   to the channel. */
+
+SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
+					       SilcClientConnection conn,
+					       SilcChannelID *channel_id)
+{
+  SilcIDCacheEntry id_cache;
+  SilcChannelEntry entry;
+
+  if (!client || !conn || !channel_id)
+    return NULL;
+
+  SILC_LOG_DEBUG(("Find channel by id %s",
+		  silc_id_render(channel_id, SILC_ID_CHANNEL)));
+
+  silc_mutex_lock(conn->internal->lock);
+
+  if (!silc_idcache_find_by_id_one(conn->internal->channel_cache, channel_id,
+				   &id_cache)) {
+    silc_mutex_unlock(conn->internal->lock);
+    return NULL;
+  }
+
+  SILC_LOG_DEBUG(("Found"));
+
+  entry = id_cache->context;
+
+  /* Reference */
+  silc_client_ref_channel(client, conn, entry);
+  silc_mutex_unlock(conn->internal->lock);
+
+  return entry;
+}
+
+/********************** Channel Resolving from Server ***********************/
+
+/* Channel resolving context */
+typedef struct {
+  SilcDList channels;
+  SilcGetChannelCallback completion;
+  void *context;
+} *SilcClientGetChannelInternal;
+
+/* Resolving command callback */
+
+static SilcBool silc_client_get_channel_cb(SilcClient client,
+					   SilcClientConnection conn,
+					   SilcCommand command,
+					   SilcStatus status,
+					   SilcStatus error,
+					   void *context,
+					   va_list ap)
+{
+  SilcClientGetChannelInternal i = context;
+  SilcChannelEntry entry;
+
+  if (error != SILC_STATUS_OK) {
+    SILC_LOG_DEBUG(("Resolving failed: %s", silc_get_status_message(error)));
+    if (i->completion)
+      i->completion(client, conn, error, NULL, i->context);
+    goto out;
+  }
+
+  /* Add the returned channel to list */
+  if (i->completion) {
+    entry = va_arg(ap, SilcChannelEntry);
+    silc_client_ref_channel(client, conn, entry);
+    silc_dlist_add(i->channels, entry);
+  }
+
+  if (status == SILC_STATUS_OK || status == SILC_STATUS_LIST_END) {
+    /* Deliver the channels to the caller */
+    if (i->completion) {
+      SILC_LOG_DEBUG(("Resolved %d channels", silc_dlist_count(i->channels)));
+      silc_dlist_start(i->channels);
+      i->completion(client, conn, SILC_STATUS_OK, i->channels, i->context);
+    }
+    goto out;
+  }
+
+  return TRUE;
+
+ out:
+  silc_client_list_free_channels(client, conn, i->channels);
+  silc_free(i);
+  return FALSE;
+}
+
+/* Resolves channel entry from the server by the channel name. */
+
+void silc_client_get_channel_resolve(SilcClient client,
+				     SilcClientConnection conn,
+				     char *channel_name,
+				     SilcGetChannelCallback completion,
+				     void *context)
+{
+  SilcClientGetChannelInternal i;
+
+  if (!client || !conn || !channel_name || !completion)
+    return;
+
+  SILC_LOG_DEBUG(("Resolve channel %s", channel_name));
+
+  i = silc_calloc(1, sizeof(*i));
+  if (!i)
+    return;
+  i->completion = completion;
+  i->context = context;
+  i->channels = silc_dlist_init();
+  if (!i->channels) {
+    silc_free(i);
+    return;
+  }
+
+  /* Send the command */
+  if (!silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
+				silc_client_get_channel_cb, i, 1,
+				3, channel_name, strlen(channel_name)))
+    completion(client, conn, SILC_STATUS_ERR_RESOURCE_LIMIT, NULL, context);
+}
+
+/* Resolves channel information from the server by the channel ID. */
+
+void silc_client_get_channel_by_id_resolve(SilcClient client,
+					   SilcClientConnection conn,
+					   SilcChannelID *channel_id,
+					   SilcGetChannelCallback completion,
+					   void *context)
+{
+  SilcClientGetChannelInternal i;
+  SilcChannelEntry channel;
+  SilcBuffer idp;
+  SilcUInt16 cmd_ident;
+
+  if (!client || !conn || !channel_id || !completion)
+    return;
+
+  SILC_LOG_DEBUG(("Resolve channel by id %s",
+		  silc_id_render(channel_id, SILC_ID_CHANNEL)));
+
+  i = silc_calloc(1, sizeof(*i));
+  if (!i)
+    return;
+  i->completion = completion;
+  i->context = context;
+  i->channels = silc_dlist_init();
+  if (!i->channels) {
+    silc_free(i);
+    return;
+  }
+
+  /* Attach to resolving, if on going */
+  channel = silc_client_get_channel_by_id(client, conn, channel_id);
+  if (channel && channel->internal.resolve_cmd_ident) {
+    SILC_LOG_DEBUG(("Attach to existing resolving"));
+    silc_client_unref_channel(client, conn, channel);
+    silc_client_command_pending(conn, SILC_COMMAND_NONE,
+				channel->internal.resolve_cmd_ident,
+				silc_client_get_channel_cb, i);
+    return;
+  }
+
+  /* Send the command */
+  idp = silc_id_payload_encode(channel_id, SILC_ID_CHANNEL);
+  cmd_ident = silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
+				       silc_client_get_channel_cb, i, 1,
+				       5, silc_buffer_datalen(idp));
+  silc_buffer_free(idp);
+  if (!cmd_ident)
+    completion(client, conn, SILC_STATUS_ERR_RESOURCE_LIMIT, NULL, context);
+
+  if (channel && cmd_ident)
+    channel->internal.resolve_cmd_ident = cmd_ident;
+
+  silc_client_unref_channel(client, conn, channel);
+}
+
+/************************* Channel Entry Routines ***************************/
+
+/* Add new channel entry to the ID Cache */
+
+SilcChannelEntry silc_client_add_channel(SilcClient client,
+					 SilcClientConnection conn,
+					 const char *channel_name,
+					 SilcUInt32 mode,
+					 SilcChannelID *channel_id)
+{
+  SilcChannelEntry channel;
+  char *channel_namec;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  channel = silc_calloc(1, sizeof(*channel));
+  if (!channel)
+    return NULL;
+
+  channel->id = *channel_id;
+  channel->mode = mode;
+
+  channel->channel_name = strdup(channel_name);
+  if (!channel->channel_name) {
+    silc_free(channel);
+    return NULL;
+  }
+
+  channel->user_list = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
+					     NULL, NULL, NULL, TRUE);
+  if (!channel->user_list) {
+    silc_free(channel->channel_name);
+    silc_free(channel);
+    return NULL;
+  }
+
+  /* Normalize channel name */
+  channel_namec = silc_channel_name_check(channel_name, strlen(channel_name),
+					  SILC_STRING_UTF8, 256, NULL);
+  if (!channel_namec) {
+    silc_free(channel->channel_name);
+    silc_hash_table_free(channel->user_list);
+    silc_free(channel);
+    return NULL;
+  }
+
+  /* Add channel to cache, the normalized channel name is saved to cache */
+  if (!silc_idcache_add(conn->internal->channel_cache, channel_namec,
+			&channel->id, channel)) {
+    silc_free(channel_namec);
+    silc_free(channel->channel_name);
+    silc_hash_table_free(channel->user_list);
+    silc_free(channel);
+    return NULL;
+  }
+
+  return channel;
+}
+
+/* Foreach callbcak to free all users from the channel when deleting a
+   channel entry. */
+
+static void silc_client_del_channel_foreach(void *key, void *context,
+					    void *user_context)
+{
+  SilcChannelUser chu = (SilcChannelUser)context;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Remove the context from the client's channel hash table as that
+     table and channel's user_list hash table share this same context. */
+  silc_hash_table_del(chu->client->channels, chu->channel);
+  silc_free(chu);
+}
+
+/* Removes channel from the cache by the channel entry. */
+
+SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
+				 SilcChannelEntry channel)
+{
+  SilcBool ret = silc_idcache_del_by_context(conn->internal->channel_cache,
+					     channel, NULL);
+#if 0
+
+  SILC_LOG_DEBUG(("Start"));
+
+  /* Free all client entrys from the users list. The silc_hash_table_free
+     will free all the entries so they are not freed at the foreach
+     callback. */
+  silc_hash_table_foreach(channel->user_list, silc_client_del_channel_foreach,
+			  NULL);
+  silc_hash_table_free(channel->user_list);
+
+  silc_free(channel->channel_name);
+  silc_free(channel->topic);
+  if (channel->founder_key)
+    silc_pkcs_public_key_free(channel->founder_key);
+  silc_free(channel->key);
+  if (channel->channel_key)
+    silc_cipher_free(channel->channel_key);
+  if (channel->hmac)
+    silc_hmac_free(channel->hmac);
+  if (channel->old_channel_keys) {
+    SilcCipher key;
+    silc_dlist_start(channel->old_channel_keys);
+    while ((key = silc_dlist_get(channel->old_channel_keys)) != SILC_LIST_END)
+      silc_cipher_free(key);
+    silc_dlist_uninit(channel->old_channel_keys);
+  }
+  if (channel->old_hmacs) {
+    SilcHmac hmac;
+    silc_dlist_start(channel->old_hmacs);
+    while ((hmac = silc_dlist_get(channel->old_hmacs)) != SILC_LIST_END)
+      silc_hmac_free(hmac);
+    silc_dlist_uninit(channel->old_hmacs);
+  }
+  silc_schedule_task_del_by_context(conn->client->schedule, channel);
+  silc_client_del_channel_private_keys(client, conn, channel);
+  silc_free(channel);
+#endif
+  return ret;
+}
+
+/* Replaces the channel ID of the `channel' to `new_id'. Returns FALSE
+   if the ID could not be changed. */
+
+SilcBool silc_client_replace_channel_id(SilcClient client,
+					SilcClientConnection conn,
+					SilcChannelEntry channel,
+					SilcChannelID *new_id)
+{
+  SilcIDCacheEntry id_cache;
+  SilcBool ret = FALSE;
+
+  if (!new_id)
+    return FALSE;
+
+  SILC_LOG_DEBUG(("Old Channel ID id(%s)",
+		  silc_id_render(&channel->id, SILC_ID_CHANNEL)));
+  SILC_LOG_DEBUG(("New Channel ID id(%s)",
+		  silc_id_render(new_id, SILC_ID_CHANNEL)));
+
+  silc_mutex_lock(conn->internal->lock);
+
+  /* Update the ID */
+  if (silc_idcache_find_by_id_one(conn->internal->channel_cache,
+				   &channel->id, &id_cache))
+    ret = silc_idcache_update(conn->internal->channel_cache, id_cache,
+			      &channel->id, new_id, NULL, NULL, FALSE);
+
+  silc_mutex_unlock(conn->internal->lock);
+
+  return ret;
+}
+
+/* Take reference of channel entry */
+
+void silc_client_ref_channel(SilcClient client, SilcClientConnection conn,
+			     SilcChannelEntry channel_entry)
+{
+  silc_atomic_add_int8(&channel_entry->internal.refcnt, 1);
+}
+
+/* Release reference of channel entry */
+
+void silc_client_unref_channel(SilcClient client, SilcClientConnection conn,
+			       SilcChannelEntry channel_entry)
+{
+  if (channel_entry &&
+      silc_atomic_sub_int8(&channel_entry->internal.refcnt, 1) == 0)
+    silc_client_del_channel(client, conn, channel_entry);
+}
+
+/* Free channel entry list */
+
+void silc_client_list_free_channels(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcDList channel_list)
+{
+  SilcChannelEntry channel_entry;
+
+  if (channel_list) {
+    silc_dlist_start(channel_list);
+    while ((channel_entry = silc_dlist_get(channel_list)))
+      silc_client_unref_channel(client, conn, channel_entry);
+
+    silc_dlist_uninit(channel_list);
+  }
+}
+
+/************************* Server Searching Locally *************************/
+
+/* Finds entry for server by the server name. */
+
+SilcServerEntry silc_client_get_server(SilcClient client,
+				       SilcClientConnection conn,
+				       char *server_name)
+{
+  SilcIDCacheEntry id_cache;
+  SilcServerEntry entry;
+
+  if (!client || !conn || !server_name)
+    return NULL;
+
+  SILC_LOG_DEBUG(("Find server by name %s", server_name));
+
+  /* Normalize server name for search */
+  server_name = silc_identifier_check(server_name, strlen(server_name),
+				      SILC_STRING_UTF8, 256, NULL);
+  if (!server_name)
+    return NULL;
+
+  silc_mutex_lock(conn->internal->lock);
+
+  if (!silc_idcache_find_by_name_one(conn->internal->server_cache,
+				     server_name, &id_cache)) {
+    silc_free(server_name);
+    return NULL;
+  }
+
+  SILC_LOG_DEBUG(("Found"));
+
+  /* Reference */
+  entry = id_cache->context;
+  silc_client_ref_server(client, conn, entry);
+
+  silc_mutex_unlock(conn->internal->lock);
+
+  silc_free(server_name);
+
+  return entry;
+}
+
+/* Finds entry for server by the server ID. */
+
+SilcServerEntry silc_client_get_server_by_id(SilcClient client,
+					     SilcClientConnection conn,
+					     SilcServerID *server_id)
+{
+  SilcIDCacheEntry id_cache;
+  SilcServerEntry entry;
+
+  if (!client || !conn || !server_id)
+    return NULL;
+
+  SILC_LOG_DEBUG(("Find server by id %s",
+		  silc_id_render(server_id, SILC_ID_SERVER)));
+
+  silc_mutex_lock(conn->internal->lock);
+
+  if (!silc_idcache_find_by_id_one(conn->internal->server_cache,
+				   (void *)server_id, &id_cache))
+    return NULL;
+
+  SILC_LOG_DEBUG(("Found"));
+
+  /* Reference */
+  entry = (SilcServerEntry)id_cache->context;
+  silc_client_ref_server(client, conn, entry);
+
+  silc_mutex_unlock(conn->internal->lock);
+
+  return entry;
+}
+
+/*********************** Server Resolving from Server ***********************/
+
+/* Resolving context */
+typedef struct {
+  SilcDList servers;
+  SilcGetServerCallback completion;
+  void *context;
+} *SilcClientGetServerInternal;
+
+/* Resolving command callback */
+
+static SilcBool silc_client_get_server_cb(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcCommand command,
+					  SilcStatus status,
+					  SilcStatus error,
+					  void *context,
+					  va_list ap)
+{
+  SilcClientGetServerInternal i = context;
+  SilcServerEntry server;
+
+  if (error != SILC_STATUS_OK) {
+    SILC_LOG_DEBUG(("Resolving failed: %s", silc_get_status_message(error)));
+    if (i->completion)
+      i->completion(client, conn, error, NULL, i->context);
+    goto out;
+  }
+
+  /* Add the returned servers to list */
+  if (i->completion) {
+    server = va_arg(ap, SilcServerEntry);
+    silc_client_ref_server(client, conn, server);
+    silc_dlist_add(i->servers, server);
+    server->internal.resolve_cmd_ident = 0;
+  }
+
+  if (status == SILC_STATUS_OK || status == SILC_STATUS_LIST_END) {
+    /* Deliver the servers to the caller */
+    if (i->completion) {
+      SILC_LOG_DEBUG(("Resolved %d servers", silc_dlist_count(i->servers)));
+      silc_dlist_start(i->servers);
+      i->completion(client, conn, SILC_STATUS_OK, i->servers, i->context);
+    }
+    goto out;
+  }
+
+  return TRUE;
+
+ out:
+  silc_client_list_free_servers(client, conn, i->servers);
+  silc_free(i);
+  return FALSE;
+}
+
+/* Resolve server by server ID */
+
+void silc_client_get_server_by_id_resolve(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcServerID *server_id,
+					  SilcGetServerCallback completion,
+					  void *context)
+{
+  SilcClientGetServerInternal i;
+  SilcServerEntry server;
+  SilcBuffer idp;
+  SilcUInt16 cmd_ident;
+
+  if (!client || !conn || !server_id || !completion)
+    return;
+
+  SILC_LOG_DEBUG(("Resolve server by id %s",
+		  silc_id_render(server_id, SILC_ID_SERVER)));
+
+  i = silc_calloc(1, sizeof(*i));
+  if (!i)
+    return;
+  i->completion = completion;
+  i->context = context;
+  i->servers = silc_dlist_init();
+  if (!i->servers) {
+    silc_free(i);
+    return;
+  }
+
+  /* Attach to resolving, if on going */
+  server = silc_client_get_server_by_id(client, conn, server_id);
+  if (server && server->internal.resolve_cmd_ident) {
+    SILC_LOG_DEBUG(("Attach to existing resolving"));
+    silc_client_unref_server(client, conn, server);
+    silc_client_command_pending(conn, SILC_COMMAND_NONE,
+				server->internal.resolve_cmd_ident,
+				silc_client_get_server_cb, i);
+    return;
+  }
+
+  /* Send the command */
+  idp = silc_id_payload_encode(server_id, SILC_ID_SERVER);
+  cmd_ident = silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
+				       silc_client_get_server_cb, i, 1,
+				       5, silc_buffer_datalen(idp));
+  silc_buffer_free(idp);
+  if (!cmd_ident)
+    completion(client, conn, SILC_STATUS_ERR_RESOURCE_LIMIT, NULL, context);
+
+  if (server && cmd_ident)
+    server->internal.resolve_cmd_ident = cmd_ident;
+
+  silc_client_unref_server(client, conn, server);
+}
+
+/************************** Server Entry Routines ***************************/
+
+/* Add new server entry */
+
+SilcServerEntry silc_client_add_server(SilcClient client,
+				       SilcClientConnection conn,
+				       const char *server_name,
+				       const char *server_info,
+				       SilcServerID *server_id)
+{
+  SilcServerEntry server_entry;
+  char *server_namec = NULL;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  server_entry = silc_calloc(1, sizeof(*server_entry));
+  if (!server_entry || !server_id)
+    return NULL;
+
+  server_entry->id = *server_id;
+  if (server_name)
+    server_entry->server_name = strdup(server_name);
+  if (server_info)
+    server_entry->server_info = strdup(server_info);
+
+  /* Normalize server name */
+  if (server_name) {
+    server_namec = silc_identifier_check(server_name, strlen(server_name),
+					 SILC_STRING_UTF8, 256, NULL);
+    if (!server_namec) {
+      silc_free(server_entry->server_name);
+      silc_free(server_entry->server_info);
+      silc_free(server_entry);
+      return NULL;
+    }
+  }
+
+  silc_mutex_lock(conn->internal->lock);
+
+  /* Add server to cache */
+  if (!silc_idcache_add(conn->internal->server_cache, server_namec,
+			&server_entry->id, server_entry)) {
+    silc_free(server_namec);
+    silc_free(server_entry->server_name);
+    silc_free(server_entry->server_info);
+    silc_free(server_entry);
+    silc_mutex_unlock(conn->internal->lock);
+    return NULL;
+  }
+
+  silc_mutex_unlock(conn->internal->lock);
+
+  return server_entry;
+}
+
+/* Removes server from the cache by the server entry. */
+
+SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
+				SilcServerEntry server)
+{
+  SilcBool ret = silc_idcache_del_by_context(conn->internal->server_cache,
+					     server, NULL);
+  silc_free(server->server_name);
+  silc_free(server->server_info);
+  silc_free(server);
+  return ret;
+}
+
+/* Updates the `server_entry' with the new information sent as argument. */
+
+void silc_client_update_server(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcServerEntry server_entry,
+			       const char *server_name,
+			       const char *server_info)
+{
+  char *server_namec = NULL;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (server_name &&
+      (!server_entry->server_name ||
+       !silc_utf8_strcasecmp(server_entry->server_name, server_name))) {
+
+    silc_idcache_del_by_context(conn->internal->server_cache,
+				server_entry, NULL);
+    silc_free(server_entry->server_name);
+    server_entry->server_name = strdup(server_name);
+
+    /* Normalize server name */
+    if (server_name) {
+      server_namec = silc_identifier_check(server_name, strlen(server_name),
+					   SILC_STRING_UTF8, 256, NULL);
+      if (!server_namec)
+	return;
+
+      silc_idcache_add(conn->internal->server_cache, server_namec,
+		       &server_entry->id, server_entry);
+    }
+  }
+
+  if (server_info &&
+      (!server_entry->server_info ||
+       !silc_utf8_strcasecmp(server_entry->server_info, server_info))) {
+    silc_free(server_entry->server_info);
+    server_entry->server_info = strdup(server_info);
+  }
+}
+
+/* Take reference of server entry */
+
+void silc_client_ref_server(SilcClient client, SilcClientConnection conn,
+			    SilcServerEntry server_entry)
+{
+  silc_atomic_add_int8(&server_entry->internal.refcnt, 1);
+}
+
+/* Release reference of server entry */
+
+void silc_client_unref_server(SilcClient client, SilcClientConnection conn,
+			      SilcServerEntry server_entry)
+{
+  if (server_entry &&
+      silc_atomic_sub_int8(&server_entry->internal.refcnt, 1) == 0)
+    silc_client_del_server(client, conn, server_entry);
+}
+
+/* Free server entry list */
+
+void silc_client_list_free_servers(SilcClient client,
+				   SilcClientConnection conn,
+				   SilcDList server_list)
+{
+  SilcServerEntry server_entry;
+
+  if (server_list) {
+    silc_dlist_start(server_list);
+    while ((server_entry = silc_dlist_get(server_list)))
+      silc_client_unref_server(client, conn, server_entry);
+
+    silc_dlist_uninit(server_list);
+  }
 }
