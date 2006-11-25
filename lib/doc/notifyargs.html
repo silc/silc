@@ -82,8 +82,8 @@ The 'message' argument may be NULL.
 <tr>
 <td><small>SILC_NOTIFY_TYPE_INVITE</td>
 <td><small>
-Sent to the client if the user is invited on a channel. The 'channel_name'
-argument may be NULL.
+Sent to the client if the user is invited on a channel. The 'channel
+argument may be NULL but the `channel_name' is always provided.
 </td>
 <td width="50%"><small>SilcClientChannel channel, char *channel_name,
 SilcClientEntry inviter
@@ -136,14 +136,13 @@ char *topic, SilcChannelEntry channel
 <tr>
 <td><small>SILC_NOTIFY_TYPE_NICK_CHANGE</td>
 <td><small>
-Sent when someone changes their nickname.  The 'old_client_entry' includes
-the old nickname and the 'new_client_entry' includes the new nickname.
-Application must understand that the 'old_client_entry' pointer becomes
-invalid after returning from the function.  Note that this notify is not
-delivered when user changes its own nickname.
+Sent when someone changes their nickname.  The 'client_entry' is the client
+whose nickname is changed.  The `old_nickname' is the old nickname and the
+`new_nickname' is the new nickname.  It has been already updated into the
+`client_entry'.
 </td>
-<td width="50%"><small>SilcClientEntry old_client_entry,
-SilcClientEntry new_client_entry
+<td width="50%"><small>SilcClientEntry client_entry, const char *old_nickname,
+const char *new_nickname
 </td>
 </tr>
 
@@ -158,13 +157,14 @@ change.  The `cipher_name' is the cipher set for the channel.
 The `hmac_name' is the HMAC set for the channel.  The `passphrase'
 is the passphrase that was set for the channel.  The `founder_key' is the
 founder's public key when it was set for the channel.  The `channel_pubkeys'
-is an Argument List Payload where each argument is Public Key Payload
-containing one channel public key.  The arguments 'cipher_name', 'hmac_name',
-'passphrase', 'founder_key' and 'channel_pubkeys' may be NULL.
+is a list of SilcArgumentDecodedList contexts each containing one channel
+public key.  The library will free the list automatically.  The arguments
+'cipher_name', 'hmac_name', 'passphrase', 'founder_key' and 'channel_pubkeys'
+may be NULL.
 </td>
 <td width="50%"><small>SilcIdType changer_id_type, void *changer_entry,
 SilcUInt32 mode, char *cipher_name, char *hmac_name, char *passphrase,
-SilcPublicKey founder_key, SilcBuffer channel_pubkeys, SilcChannelEntry channel
+SilcPublicKey founder_key, SilcDList channel_pubkeys, SilcChannelEntry channel
 </td>
 </tr>
 
@@ -206,9 +206,9 @@ safely ignore it when received.
 <tr>
 <td><small>SILC_NOTIFY_TYPE_SERVER_SIGNOFF</td>
 <td><small>
-Sent when a server quits the network.  The 'clients' is an array
-SilcClientEntry pointers of size of 'clients_count'.  Each client in the
-entry is one client signing off from the SILC network.
+Sent when a server quits the network.  The 'clients' is a list of
+SilcClientEntry pointers.  Each client in the entry is one client signing
+off from the SILC network.  The library will free the list.
 </td>
 <td width="50%"><small>NULL, SilcClientEntry *clients, SilcUInt32 clients_count
 </td>
@@ -264,7 +264,7 @@ happened for the 'watched_client' (for example
 SILC_NOTIFY_TYPE_NICK_CHANGE if the client changed their nickname).
 </td>
 <td width="50%"><small>SilcClientEntry watched_client, char *new_nickname,
-SilcUInt32 user_mode, SilcNotifyType notification, SilcPublicKey 
+SilcUInt32 user_mode, SilcNotifyType notification, SilcPublicKey
 public_key
 </td>
 </tr>

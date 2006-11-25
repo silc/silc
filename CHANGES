@@ -1,4 +1,12 @@
-Thu Nov  9 18:12:15 EET 2006  Pekka Riikonen <priikone@silcnet.org
+Sat Nov 18 11:33:03 EET 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_packet_send_va[_ext] to send variable argument
+	  formatted buffers.  Affected files lib/silcore/silcpacket.[ch].
+
+	* Timeout freelist garbage collection added to scheduler.
+	  Affected file lib/silcutil/silcschedule.c.
+
+Thu Nov  9 18:12:15 EET 2006  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_show_public_key_file to 
 	  lib/silcapputil/silcapputil.[ch].

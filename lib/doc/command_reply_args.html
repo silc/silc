@@ -291,13 +291,12 @@ Returns the user mode after changing it.
 Returns channel's mode after changing it.  Optionally may also return
 founder's public key when it was set.  It may also return the channel
 public key list when the list was altered.  The 'founder_key' and
-'channel_pubkeys' arguments may be NULL.  The 'channel_pubkeys' is an
-Argument List Payload where each argument includes one Public Key
-Payload.
+'channel_pubkeys' arguments may be NULL.  The 'channel_pubkeys' is a list
+of SilcArgumentDecodedList contexts which each contain one channel public
+key.  The library will automatically free the list.
 </td>
 <td width="50%"><small>SilcChannelEntry channel, SilcUInt32 mode,
-SilcPublicKey founder_key, SilcBuffer channel_pubkeys,
-SilcUint32 user_limit
+SilcPublicKey founder_key, SilcDList channel_pubkeys, SilcUint32 user_limit
 </td>
 </tr>
 
