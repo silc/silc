@@ -136,7 +136,7 @@ typedef struct {
  * DESCRIPTION
  *
  *    This is the key material structure, and is passed as argument by the
- *    application to silc_ske_process_key_material* functions. It includes
+ *    application to silc_ske_process_key_material_data function. It includes
  *    the processed key material which can be used as SILC session keys.
  *
  * SOURCE

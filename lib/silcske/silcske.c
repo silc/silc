@@ -1321,6 +1321,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
       silc_skr_find_set_pkcs_type(find,
 				  silc_pkcs_get_type(ske->prop->public_key));
       silc_skr_find_set_public_key(find, ske->prop->public_key);
+      silc_skr_find_set_usage(find, SILC_SKR_USAGE_KEY_AGREEMENT);
 
       /* Find key from repository */
       SILC_FSM_CALL(silc_skr_find(ske->repository, find,
@@ -1842,6 +1843,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
 	silc_skr_find_set_pkcs_type(find,
 				    silc_pkcs_get_type(ske->prop->public_key));
 	silc_skr_find_set_public_key(find, ske->prop->public_key);
+	silc_skr_find_set_usage(find, SILC_SKR_USAGE_KEY_AGREEMENT);
 
 	/* Find key from repository */
 	SILC_FSM_CALL(silc_skr_find(ske->repository, find,
