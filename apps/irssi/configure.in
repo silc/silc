@@ -111,18 +111,18 @@ if test "x$prefix" != "xNONE"; then
 	perl_prefix_note=yes
 fi
 
-AC_ARG_WITH(with-glib2,
-[  --with-glib2           Use GLIB 2.0 instead of 1.2],
-	if test x$withval = xyes; then
-		want_glib2=yes
-	else
-		if test "x$withval" = xno; then
-			want_glib2=no
-		else
-			want_glib2=yes
-		fi
-	fi,
-	want_glib2=yes)
+AC_ARG_WITH(glib1,
+[  --with-glib1            Use GLIB 1.2 instead of 2.0 if both exist],
+        if test x$withval = xyes; then
+                want_glib1=yes
+        else
+                if test "x$withval" = xno; then
+                        want_glib1=no
+                else
+                        want_glib1=yes
+                fi
+        fi,
+        want_glib1=no)
 
 AC_ARG_WITH(perl-staticlib,
 [  --with-perl-staticlib   Specify that we want to link perl libraries
@@ -323,12 +323,12 @@ AC_DEFUN(AC_CHECK_GLIBDIR,[
 AC_CHECK_GLIBDIR
 
 if test -z "$GLIB_DIR"; then
-  if test "x$with_glib2" = "xyes"; then
-    dnl * check only for glib2
-    checks="3 4"
+  if test "x$want_glib1" = "xyes"; then
+    dnl * check only for glib1
+    checks="1 2"
   else
-    dnl * check glib1 then glib2
-    checks="1 2 3 4"
+    dnl * check glib2 then glib1
+    checks="3 4 1 2"
   fi
 
   for try in $checks; do
@@ -340,11 +340,10 @@ if test -z "$GLIB_DIR"; then
       glib_modules=
     fi
     if test $try = 1 -o $try = 2; then
-      glib_version=1.2.0
+      AM_PATH_GLIB(1.2.0,,, $glib_modules)
     else
-      glib_version=2.0.0
+      AM_PATH_GLIB_2_0(2.0.0,,, $glib_modules)
     fi
-    AM_PATH_GLIB($glib_version,[],[], [$glib_modules])
     if test "$GLIB_LIBS"; then
       if test $glib_modules = gmodule; then
         AC_DEFINE(HAVE_GMODULE)
@@ -362,18 +361,18 @@ if test -z "$GLIB_DIR"; then
     echo "*** Irssi will automatically compile and use it."
     echo
 
-    dnl * I think it's pretty safe to assume GLib 1.2.9 since the next
-    dnl * will be 2.0 (or 1.4?) and it's not sure if irssi compiles
-    dnl * with it (yea, just a few weeks after I put this text for 1.2.8
-    dnl * the 1.2.9 came :) .. and then .10
-    glib_file=glib-1.2.10.tar.gz
+    glib_url=ftp://ftp.gtk.org/pub/gtk/v2.8/
+    glib_file=glib-2.8.3.tar.gz
 
     dlcmd=
-    if test -n "`ncftpget 2>/dev/null|grep -i ncftp`"; then
-      dlcmd="ncftpget ftp://ftp.gtk.org/pub/gtk/v1.2/$glib_file"
-    fi
-    if test -n "`wget 2>/dev/null|grep -i wget`"; then
-      dlcmd="wget http://irssi.org/files/$glib_file"
+    if test -n "`wget --version 2>/dev/null|grep -i wget`"; then
+      dlcmd="wget -c $glib_url$glib_file"
+    elif test -n "`ncftpget --version 2>/dev/null|grep -i ncftp`"; then
+      dlcmd="ncftpget -z $glib_url$glib_file"
+    elif test -n "`lynx --version 2>/dev/null|grep -i lynx`"; then
+      dlcmd="lynx --source $glib_url$glib_file > $glib_file"
+    elif test -n "`curl --version 2>/dev/null|grep -i curl`"; then
+      dlcmd="curl -C - $glib_url$glib_file"
     fi
     if test -n "$dlcmd"; then
       echo "*** I can download GLib for you now. If you don't want to, press CTRL-C now."
@@ -382,11 +381,11 @@ if test -z "$GLIB_DIR"; then
       read answer
       eval $dlcmd
       if `gunzip $glib_file`; then
-	glib_file=`echo $glib_file|$sedpath s/\.gz$//`
-	if `tar xf $glib_file`; then
-	  rm -f $glib_file
-	  AC_CHECK_GLIBDIR
-	fi
+        glib_file=`echo $glib_file|$sedpath s/\.gz$//`
+        if `tar xf $glib_file`; then
+          rm -f $glib_file
+          AC_CHECK_GLIBDIR
+        fi
       fi
     fi
 
@@ -397,6 +396,17 @@ if test -z "$GLIB_DIR"; then
 fi
 
 LIBS="$LIBS $GLIB_LIBS"
+
+dnl **
+dnl ** Recode
+dnl **
+AC_MSG_CHECKING([if we can use recode, requires GLIB2])
+if test "$glib_config_major_version" = "2"; then
+  AC_DEFINE(HAVE_GLIB2)
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no, using glib1])
+fi
 
 dnl **
 dnl ** check if we can link dynamic libraries to modules
@@ -505,6 +515,19 @@ if test "$want_perl" != "no"; then
 	else
 		PERL_CFLAGS=`$perlpath -MExtUtils::Embed -e ccopts 2>/dev/null`
 	fi
+
+        if test "x$ac_cv_prog_gcc" = "xyes" -a -z "`echo $host_os|grep 'bsd\|linux'`"; then
+                dnl * several systems have Perl compiled with native compiler
+                dnl * but irssi is being compiled with GCC. Here we try to
+                dnl * fix those command line options a bit so GCC won't
+                dnl * complain about them. Normally there's only few options
+                dnl * that we want to keep:
+                dnl * -Ddefine -Uundef -I/path -fopt -mopt
+                PERL_CFLAGS=`echo $PERL_CFLAGS | $perlpath -pe 's/^(.* )?-[^DUIfm][^ ]+/\1/g; s/^(.* )?\+[^ ]+/\1/g'`
+
+                PERL_EXTRA_OPTS="CCCDLFLAGS=\"-fPIC\""
+                AC_SUBST(PERL_EXTRA_OPTS)
+        fi
 
 	if test -z "$PERL_CFLAGS"; then
 		if test -n "$perl_check_error"; then
