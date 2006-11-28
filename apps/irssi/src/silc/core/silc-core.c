@@ -2,9 +2,9 @@
 
   silc-core.c
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001, 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -46,8 +46,16 @@ static int opt_bits = 0;
 
 static int idletag = -1;
 
+/* SILC Client */
 SilcClient silc_client = NULL;
 extern SilcClientOperations ops;
+
+/* Our keypair */
+SilcPublicKey irssi_pubkey;
+SilcPrivateKey irssi_privkey;
+
+/* Default hash function */
+SilcHash sha1hash;
 
 void silc_expandos_init(void);
 void silc_expandos_deinit(void);
@@ -91,8 +99,8 @@ static void destroy_server_connect(SERVER_CONNECT_REC *conn)
 
 static void silc_init_userinfo(void)
 {
-  const char *set, *nick, *user_name;
-  char *str;
+  const char *set, *nick, *user_name, *str;
+  char *tmp;
 
   /* check if nick/username/realname wasn't read from setup.. */
   set = settings_get_str("real_name");
@@ -130,9 +138,9 @@ static void silc_init_userinfo(void)
   /* alternate nick */
   set = settings_get_str("alternate_nick");
   if (set == NULL || *set == '\0') {
-    str = g_strconcat(nick, "_", NULL);
-    settings_set_str("alternate_nick", str);
-    g_free(str);
+    tmp = g_strconcat(nick, "_", NULL);
+    settings_set_str("alternate_nick", tmp);
+    g_free(tmp);
   }
 
   /* host name */
@@ -188,7 +196,7 @@ static bool silc_log_misc(SilcLogType type, char *message, void *context)
 static void silc_nickname_format_parse(const char *nickname,
 				       char **ret_nickname)
 {
-  silc_parse_userfqdn(nickname, ret_nickname, NULL);
+  silc_parse_userfqdn(nickname, *ret_nickname, 128 + 1, NULL, 0);
 }
 
 static void silc_register_cipher(SilcClient client, const char *cipher)
@@ -261,6 +269,7 @@ void silc_opt_callback(poptContext con,
 		       const struct poptOption *opt,
 		       const char *arg, void *data)
 {
+#if 0
   if (strcmp(opt->longName, "nick") == 0) {
     g_free(silc_client->nickname);
     silc_client->nickname = g_strdup(arg);
@@ -270,6 +279,7 @@ void silc_opt_callback(poptContext con,
     silc_free(silc_client->hostname);
     silc_client->hostname = g_strdup(arg);
   }
+#endif /* 0 */
 
   if (strcmp(opt->longName, "list-ciphers") == 0) {
     silc_cipher_register_default();
@@ -313,7 +323,7 @@ void silc_opt_callback(poptContext con,
     silc_pkcs_register_default();
     silc_hash_register_default();
     silc_hmac_register_default();
-    silc_create_key_pair(opt_pkcs, opt_bits, NULL, NULL, NULL,
+    silc_create_key_pair(opt_pkcs, opt_bits, NULL, NULL,
 			 NULL, NULL, NULL, NULL, TRUE);
     exit(0);
   }
@@ -334,7 +344,7 @@ void silc_opt_callback(poptContext con,
     silc_pkcs_register_default();
     silc_hash_register_default();
     silc_hmac_register_default();
-    silc_show_public_key((char *)arg);
+    silc_show_public_key_file((char *)arg);
     exit(0);
   }
 }
@@ -350,7 +360,8 @@ static void sig_init_finished(void)
     exit(1);
 
   /* Initialize the SILC client */
-  if (!silc_client_init(silc_client))
+  if (!silc_client_init(silc_client, settings_get_str("user_name"),
+			silc_net_localhost(), settings_get_str("real_name")))
     exit(1);
 
   /* register SILC scheduler */
@@ -454,12 +465,6 @@ void silc_core_init(void)
   silc_register_hmac(silc_client, def_hmac);
   silc_pkcs_register_default();
 
-  /* Get user information */
-  silc_client->username = g_strdup(settings_get_str("user_name"));
-  silc_client->nickname = g_strdup(settings_get_str("nick"));
-  silc_client->hostname = silc_net_localhost();
-  silc_client->realname = g_strdup(settings_get_str("real_name"));
-
   silc_log_set_callback(SILC_LOG_INFO, silc_log_misc, NULL);
   silc_log_set_callback(SILC_LOG_WARNING, silc_log_misc, NULL);
   silc_log_set_callback(SILC_LOG_ERROR, silc_log_misc, NULL);
@@ -519,11 +524,7 @@ void silc_core_deinit(void)
 
   chat_protocol_unregister("SILC");
 
-  g_free(silc_client->username);
-  g_free(silc_client->realname);
-  silc_free(silc_client->hostname);
-  silc_pkcs_free(silc_client->pkcs);
-  silc_pkcs_private_key_free(silc_client->private_key);
-  silc_pkcs_public_key_free(silc_client->public_key);
+  silc_pkcs_private_key_free(irssi_privkey);
+  silc_pkcs_public_key_free(irssi_pubkey);
   silc_client_free(silc_client);
 }

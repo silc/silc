@@ -1,8 +1,8 @@
 /*
   silc-channels.c : irssi
 
-  Copyright (C) 2000 - 2001, 2004 Timo Sirainen
-                            Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Copyright (C) 2000 - 2001, 2004, 2006 Timo Sirainen
+                Pekka Riikonen <priikone@silcnet.org>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -47,33 +47,31 @@
 #include "silc-commands.h"
 
 void sig_mime(SILC_SERVER_REC *server, SILC_CHANNEL_REC *channel,
-               const char *blob, const char *nick, int verified)
+	      const char *blob, const char *nick, int verified)
 {
-  char type[128], enc[128];
-  unsigned char *data, *message;
-  SilcUInt32 data_len, message_len;
+  unsigned char *message;
+  SilcUInt32 message_len;
+  SilcMime mime;
 
   if (!(IS_SILC_SERVER(server)))
     return;
 
   message = silc_unescape_data(blob, &message_len);
 
-  memset(type, 0, sizeof(type));
-  memset(enc, 0, sizeof(enc));
-
-  if (!silc_mime_parse(message, message_len, NULL, 0, type, sizeof(type) - 1,
-      		 enc, sizeof(enc) - 1, &data, &data_len)) {
+  mime = silc_mime_decode(NULL, message, message_len);
+  if (!mime) {
     silc_free(message);
     return;
   }
 
   printformat_module("fe-common/silc", server,
-                      channel == NULL ? NULL : channel->name,
-                      MSGLEVEL_CRAP, SILCTXT_MESSAGE_DATA,
-                      nick == NULL ? "[<unknown>]" : nick, type);
+		     channel == NULL ? NULL : channel->name,
+		     MSGLEVEL_CRAP, SILCTXT_MESSAGE_DATA,
+		     nick == NULL ? "[<unknown>]" : nick,
+		     silc_mime_get_field(mime, "Content-Type"));
 
   silc_free(message);
-
+  silc_mime_free(mime);
 }
 
 SILC_CHANNEL_REC *silc_channel_create(SILC_SERVER_REC *server,
@@ -138,7 +136,7 @@ static void sig_connected(SILC_SERVER_REC *server)
 
 static void sig_server_quit(SILC_SERVER_REC *server, const char *msg)
 {
-  if (IS_SILC_SERVER(server) && server->conn && server->conn->sock)
+  if (IS_SILC_SERVER(server) && server->conn)
     silc_command_exec(server, "QUIT", msg);
 }
 
@@ -523,6 +521,7 @@ static void keyagr_completion(SilcClient client,
     silc_free(i);
 }
 
+#if 0
 /* Local command KEY. This command is used to set and unset private
    keys for channels, set and unset private keys for private messages
    with remote clients and to send key agreement requests and
@@ -1112,7 +1111,6 @@ void silc_list_key(const char *pub_filename, int verbose)
 
 }
 
-
 void silc_list_keys_in_dir(const char *dirname, const char *where)
 {
   DIR *dir;
@@ -1173,6 +1171,7 @@ list_key:
   silc_list_key(path, TRUE);
 
 }
+#endif /* 0 */
 
 /* Lists locally saved client and server public keys. */
 static void command_listkeys(const char *data, SILC_SERVER_REC *server,
@@ -1227,8 +1226,8 @@ void silc_channels_init(void)
   command_bind_silc("action", MODULE_NAME, (SIGNAL_FUNC) command_action);
   command_bind_silc("notice", MODULE_NAME, (SIGNAL_FUNC) command_notice);
   command_bind_silc("away", MODULE_NAME, (SIGNAL_FUNC) command_away);
-  command_bind_silc("key", MODULE_NAME, (SIGNAL_FUNC) command_key);
-  command_bind("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys);
+  //  command_bind_silc("key", MODULE_NAME, (SIGNAL_FUNC) command_key);
+  //  command_bind("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys);
 
   command_set_options("listkeys", "clients servers");
   command_set_options("action", "sign channel");
@@ -1250,8 +1249,8 @@ void silc_channels_deinit(void)
   command_unbind("action", (SIGNAL_FUNC) command_action);
   command_unbind("notice", (SIGNAL_FUNC) command_notice);
   command_unbind("away", (SIGNAL_FUNC) command_away);
-  command_unbind("key", (SIGNAL_FUNC) command_key);
-  command_unbind("listkeys", (SIGNAL_FUNC) command_listkeys);
+  //  command_unbind("key", (SIGNAL_FUNC) command_key);
+  //  command_unbind("listkeys", (SIGNAL_FUNC) command_listkeys);
 
   silc_nicklist_deinit();
 }

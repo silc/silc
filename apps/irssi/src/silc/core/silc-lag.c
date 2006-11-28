@@ -5,11 +5,14 @@
 
 #include "silc-servers.h"
 
-#define	SILC_CLIENT_LAG_PING_ID	0x1337
-
 static int timeout_tag;
-static void lag_event_pong(SILC_SERVER_REC *server, 
-		SilcClientCommandReplyContext cmd);
+static SilcBool lag_event_pong(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcCommand command,
+			       SilcStatus status,
+			       SilcStatus error,
+			       void *context,
+			       va_list ap);
 
 static void lag_get(SILC_SERVER_REC *server)
 {
@@ -17,33 +20,36 @@ static void lag_get(SILC_SERVER_REC *server)
 	g_get_current_time(&server->lag_sent);
 	server->lag_last_check = time(NULL);
 
-	/* register pending callback & send ping */
-	silc_client_command_pending(server->conn, SILC_COMMAND_PING,
-			SILC_CLIENT_LAG_PING_ID,
-			(SilcCommandCb)lag_event_pong, (void *)server);
-	idp = silc_id_payload_encode(server->conn->remote_id, SILC_ID_SERVER);
+	/* Send PING */
+	idp = silc_id_payload_encode(&server->conn->remote_id.u.server_id,
+				     SILC_ID_SERVER);
 	silc_client_command_send(silc_client, server->conn,
-			SILC_COMMAND_PING, SILC_CLIENT_LAG_PING_ID,
-			1, 1, idp->data, idp->len);
+				 SILC_COMMAND_PING, lag_event_pong, server,
+				 1, 1, silc_buffer_data(idp),
+				 silc_buffer_len(idp));
 	silc_buffer_free(idp);
 }
 
-static void lag_event_pong(SILC_SERVER_REC *server,
-			   SilcClientCommandReplyContext cmd)
+static SilcBool lag_event_pong(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcCommand command,
+			       SilcStatus status,
+			       SilcStatus error,
+			       void *context,
+			       va_list ap)
 {
+	SILC_SERVER_REC *server = context;
 	GTimeVal now;
 
-	if (cmd->error != SILC_STATUS_OK) {
-
+	if (status != SILC_STATUS_OK) {
 		/* if the ping failed for some reason, try it again */
 		lag_get(server);
-		return;
-
+		return TRUE;
 	}
 
 	if (server->lag_sent.tv_sec == 0) {
-		/* not expecting lag reply.. */
-		return;
+		/* not expecting lag reply. */
+		return TRUE;
 	}
 
 	g_get_current_time(&now);
@@ -51,6 +57,8 @@ static void lag_event_pong(SILC_SERVER_REC *server,
 	memset(&server->lag_sent, 0, sizeof(server->lag_sent));
 
 	signal_emit("server lag", 1, server);
+
+	return TRUE;
 }
 
 static int sig_check_lag(void)
@@ -95,7 +103,7 @@ void silc_lag_init(void)
 {
 	/* silc-client will need those... silc-plugin uses irc defaults */
 	settings_add_int("misc", "lag_check_time", 60);
-	settings_add_int("misc", "lag_max_before_disconnect", 300); 
+	settings_add_int("misc", "lag_max_before_disconnect", 300);
 
 	timeout_tag = g_timeout_add(1000, (GSourceFunc) sig_check_lag, NULL);
 }

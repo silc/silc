@@ -2,9 +2,9 @@
 
   client_ops.h
 
-  Author: Pekka Riikonen <priikone@poseidon.pspt.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 Pekka Riikonen
+  Copyright (C) 2001, 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,26 +43,20 @@ void silc_private_message(SilcClient client, SilcClientConnection conn,
 void silc_notify(SilcClient client, SilcClientConnection conn,
 		 SilcNotifyType type, ...);
 void silc_command(SilcClient client, SilcClientConnection conn,
-		  SilcClientCommandContext cmd_context, bool success,
-		  SilcCommand command, SilcStatus status);
+		  SilcBool success, SilcCommand command, SilcStatus status,
+		  SilcUInt32 argc, unsigned char **argv);
 void silc_command_reply(SilcClient client, SilcClientConnection conn,
-			SilcCommandPayload cmd_payload, bool success,
-			SilcCommand command, SilcStatus status, ...);
-void silc_connect(SilcClient client, SilcClientConnection conn,
-		  SilcClientConnectionStatus status);
-void silc_disconnect(SilcClient client, SilcClientConnection conn,
-		     SilcStatus status, const char *message);
+			SilcCommand command, SilcStatus status,
+			SilcStatus error, va_list ap);
 void silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
 			 SilcAskPassphrase completion, void *context);
 void silc_verify_public_key(SilcClient client, SilcClientConnection conn,
-			    SilcSocketType conn_type, unsigned char *pk,
-			    SilcUInt32 pk_len, SilcSKEPKType pk_type,
+			    SilcConnectionType conn_type,
+			    SilcPublicKey publi_key,
 			    SilcVerifyPublicKey completion, void *context);
 void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 			  char *hostname, SilcUInt16 port,
 			  SilcGetAuthMeth completion, void *context);
-void silc_failure(SilcClient client, SilcClientConnection conn,
-		  SilcProtocol protocol, void *failure);
 bool silc_key_agreement(SilcClient client, SilcClientConnection conn,
 		        SilcClientEntry client_entry, const char *hostname,
 		        SilcUInt16 port, SilcKeyAgreementCallback *completion,

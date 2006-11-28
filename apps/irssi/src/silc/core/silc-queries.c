@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -247,7 +247,7 @@ void silc_query_attributes_default(SilcClient client,
   const char *sv;
   SilcUInt32 tmp_len, mask;
   SilcAttributeObjService service;
-  SilcAttributeObjMime mime;
+  SilcMime mime;
   SilcAttributeObjGeo geo;
   SilcAttributeObjDevice dev;
   SilcAttributeObjPk pk;
@@ -255,7 +255,6 @@ void silc_query_attributes_default(SilcClient client,
   bool allowed;
 
   memset(&service, 0, sizeof(service));
-  memset(&mime, 0, sizeof(mime));
   memset(&geo, 0, sizeof(geo));
   memset(&dev, 0, sizeof(dev));
   memset(&pk, 0, sizeof(pk));
@@ -387,12 +386,11 @@ void silc_query_attributes_default(SilcClient client,
 			      SILC_ATTRIBUTE_STATUS_MESSAGE, NULL);
     tmp = silc_file_readfile(sv, &tmp_len);
     if (tmp) {
-      tmp[tmp_len] = 0;
-      mime.mime = (const unsigned char *)tmp;
-      mime.mime_len = tmp_len;
-      silc_client_attribute_add(silc_client, conn,
-				SILC_ATTRIBUTE_STATUS_MESSAGE, &mime,
-				sizeof(mime));
+      mime = silc_mime_decode(NULL, tmp, tmp_len);
+      if (mime)
+	silc_client_attribute_add(silc_client, conn,
+				  SILC_ATTRIBUTE_STATUS_MESSAGE, mime,
+				  sizeof(*mime));
     }
     silc_free(tmp);
   }
@@ -555,9 +553,10 @@ typedef struct {
   SILC_SERVER_REC *server;
   char *name;
   SilcAttributeObjPk userpk;
+  SilcPublicKey public_key;
   SilcVCardStruct vcard;
-  SilcAttributeObjMime message;
-  SilcAttributeObjMime extension;
+  SilcMime message;
+  SilcMime extension;
   bool nopk;
 } *AttrVerify;
 
@@ -666,8 +665,11 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 
     case SILC_ATTRIBUTE_STATUS_MESSAGE:
       {
-	if (!silc_attribute_get_object(attr, (void *)&verify->message,
-				       sizeof(verify->message)))
+	verify->message = silc_mime_alloc();
+	if (!verify->message)
+	  continue;
+	if (!silc_attribute_get_object(attr, (void *)verify->message,
+				       sizeof(*verify->message)))
 	  continue;
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_ATTR_STATUS_MESSAGE,
@@ -722,8 +724,11 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 
     case SILC_ATTRIBUTE_EXTENSION:
       {
-	if (!silc_attribute_get_object(attr, (void *)&verify->extension,
-				       sizeof(verify->extension)))
+	verify->extension = silc_mime_alloc();
+	if (!verify->extension)
+	  continue;
+	if (!silc_attribute_get_object(attr, (void *)verify->extension,
+				       sizeof(*verify->extension)))
 	  continue;
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_ATTR_EXTENSION,
@@ -816,72 +821,91 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 
   /* Handle the signature verifications and public key verifying here */
 
-  if (usersign.data && !strcmp(verify->userpk.type, "silc-rsa")) {
+  if (usersign.data) {
     /* Verify the signature now */
     SilcPublicKey public_key;
-    SilcPKCS pkcs;
+    SilcPKCSType type = 0;
     unsigned char *verifyd;
     SilcUInt32 verify_len;
 
-    if (silc_pkcs_public_key_decode(verify->userpk.data,
-				    verify->userpk.data_len,
-				    &public_key)) {
-      silc_pkcs_alloc("rsa", &pkcs);
+    if (!strcmp(verify->userpk.type, "silc-rsa"))
+      type = SILC_PKCS_SILC;
+    else if (!strcmp(verify->userpk.type, "ssh-rsa"))
+      type = SILC_PKCS_SSH2;
+    else if (!strcmp(verify->userpk.type, "x509v3-sign-rsa"))
+      type = SILC_PKCS_X509V3;
+    else if (!strcmp(verify->userpk.type, "pgp-sign-rsa"))
+      type = SILC_PKCS_OPENPGP;
+
+    if (silc_pkcs_public_key_alloc(type, verify->userpk.data,
+				   verify->userpk.data_len,
+				   &verify->public_key)) {
       verifyd = silc_attribute_get_verify_data(attrs, FALSE, &verify_len);
-      if (verifyd && silc_pkcs_public_key_set(pkcs, public_key)){
-	if (silc_pkcs_verify_with_hash(pkcs, client->sha1hash,
-				       usersign.data,
-				       usersign.data_len,
-				       verifyd, verify_len)) {
-	  printformat_module("fe-common/silc", server, NULL,
-			     MSGLEVEL_CRAP, SILCTXT_ATTR_USER_SIGN_VERIFIED);
-	} else {
-	  printformat_module("fe-common/silc", server, NULL,
-			     MSGLEVEL_CRAP, SILCTXT_ATTR_USER_SIGN_FAILED);
-	}
+      if (verifyd && silc_pkcs_verify(verify->public_key,
+				      usersign.data,
+				      usersign.data_len,
+				      verifyd, verify_len,
+				      sha1hash)) {
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_ATTR_USER_SIGN_VERIFIED);
+      } else {
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_ATTR_USER_SIGN_FAILED);
       }
 
-      silc_pkcs_public_key_free(public_key);
       silc_free(verifyd);
+    } else {
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_ATTR_USER_SIGN_FAILED);
     }
   } else {
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_ATTR_USER_SIGN_NOT_PRESENT);
   }
 
-  if (serversign.data && !strcmp(serverpk.type, "silc-rsa")) {
+  if (serversign.data) {
     /* Verify the signature now */
     SilcPublicKey public_key;
-    SilcPKCS pkcs;
+    SilcPKCSType type = 0;
     unsigned char *verifyd;
     SilcUInt32 verify_len;
 
-    if (silc_pkcs_public_key_decode(serverpk.data, serverpk.data_len,
-				    &public_key)) {
-      silc_pkcs_alloc("rsa", &pkcs);
+    if (!strcmp(verify->userpk.type, "silc-rsa"))
+      type = SILC_PKCS_SILC;
+    else if (!strcmp(verify->userpk.type, "ssh-rsa"))
+      type = SILC_PKCS_SSH2;
+    else if (!strcmp(verify->userpk.type, "x509v3-sign-rsa"))
+      type = SILC_PKCS_X509V3;
+    else if (!strcmp(verify->userpk.type, "pgp-sign-rsa"))
+      type = SILC_PKCS_OPENPGP;
+
+    if (silc_pkcs_public_key_alloc(type, serverpk.data,
+				   serverpk.data_len,
+				   &public_key)) {
       verifyd = silc_attribute_get_verify_data(attrs, TRUE, &verify_len);
-      if (verifyd && silc_pkcs_public_key_set(pkcs, public_key)) {
-	if (silc_pkcs_verify_with_hash(pkcs, client->sha1hash,
-				       serversign.data,
-				       serversign.data_len,
-				       verifyd, verify_len)) {
-	  printformat_module("fe-common/silc", server, NULL,
-			     MSGLEVEL_CRAP, SILCTXT_ATTR_SERVER_SIGN_VERIFIED);
-	} else {
-	  printformat_module("fe-common/silc", server, NULL,
-			     MSGLEVEL_CRAP, SILCTXT_ATTR_SERVER_SIGN_FAILED);
-	}
+      if (verifyd && silc_pkcs_verify(public_key,
+				      serversign.data,
+				      serversign.data_len,
+				      verifyd, verify_len,
+				      sha1hash)) {
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_ATTR_SERVER_SIGN_VERIFIED);
+      } else {
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_ATTR_SERVER_SIGN_FAILED);
       }
 
       silc_pkcs_public_key_free(public_key);
       silc_free(verifyd);
+    } else {
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_ATTR_SERVER_SIGN_FAILED);
     }
   }
 
   if (verify->userpk.data) {
-    silc_verify_public_key(client, conn, SILC_SOCKET_TYPE_CLIENT,
-			   verify->userpk.data, verify->userpk.data_len,
-			   SILC_SKE_PK_TYPE_SILC,
+    silc_verify_public_key(client, conn, SILC_CONN_CLIENT,
+			   verify->public_key,
 			   silc_query_attributes_print_final, verify);
   } else {
     verify->nopk = TRUE;
@@ -915,7 +939,7 @@ static void silc_query_attributes_print_final(bool success, void *context)
 		     MSGLEVEL_CRAP, SILCTXT_ATTR_FOOTER);
 
   /* Replace all whitespaces with `_'. */
-  fingerprint = silc_hash_fingerprint(client->sha1hash,
+  fingerprint = silc_hash_fingerprint(sha1hash,
 				      verify->userpk.data,
 				      verify->userpk.data_len);
   for (i = 0; i < strlen(fingerprint); i++)
@@ -963,7 +987,7 @@ static void silc_query_attributes_accept(const char *line, void *context)
       goto out;
 
     /* Replace all whitespaces with `_'. */
-    fingerprint = silc_hash_fingerprint(client->sha1hash,
+    fingerprint = silc_hash_fingerprint(sha1hash,
 					verify->userpk.data,
 					verify->userpk.data_len);
     for (i = 0; i < strlen(fingerprint); i++)
@@ -1010,26 +1034,27 @@ static void silc_query_attributes_accept(const char *line, void *context)
     memset(filename2, 0, sizeof(filename2));
     snprintf(filename2, sizeof(filename2) - 1, "%s/clientkey_%s.pub",
 	     filename, fingerprint);
-    silc_pkcs_save_public_key_data(filename2, verify->userpk.data,
-				   verify->userpk.data_len,
-				   SILC_PKCS_FILE_PEM);
+    silc_pkcs_save_public_key(filename2, verify->public_key,
+			      SILC_PKCS_FILE_BASE64);
 
     /* Save extension data */
-    if (verify->extension.mime) {
+    if (verify->extension) {
       memset(filename2, 0, sizeof(filename2));
       snprintf(filename2, sizeof(filename2) - 1, "%s/extension.mime",
 	       filename);
-      silc_file_writefile(filename2, verify->extension.mime,
-			  verify->extension.mime_len);
+      tmp = silc_mime_encode(verify->extension, &len);
+      if (tmp)
+	silc_file_writefile(filename2, tmp, len);
     }
 
     /* Save MIME message data */
-    if (verify->message.mime) {
+    if (verify->message) {
       memset(filename2, 0, sizeof(filename2));
       snprintf(filename2, sizeof(filename2) - 1, "%s/status_message.mime",
 	       filename);
-      silc_file_writefile(filename2, verify->message.mime,
-			  verify->message.mime_len);
+      tmp = silc_mime_encode(verify->message, &len);
+      if (tmp)
+	silc_file_writefile(filename2, tmp, len);
     }
 
     printformat_module("fe-common/silc", server, NULL,

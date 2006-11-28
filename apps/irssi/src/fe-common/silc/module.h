@@ -4,6 +4,6 @@
 
 #undef PACKAGE
 #undef VERSION
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcclient.h"
 #include "silc-core.h"

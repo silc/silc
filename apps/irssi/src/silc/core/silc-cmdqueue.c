@@ -67,8 +67,8 @@ void silc_queue_disable(SilcClientConnection conn)
 }
 
 bool silc_queue_command_call(SilcClient client,
-			SilcClientConnection conn,
-			const char *command_line, ...)
+			     SilcClientConnection conn,
+			     const char *command_line, ...)
 {
   va_list ap;
   char *cmd = (char *) command_line;
@@ -143,6 +143,7 @@ bool silc_queue_command_call(SilcClient client,
   return TRUE;
 }
 
-bool silc_queue_get_state(SilcClientConnection conn) {
+bool silc_queue_get_state(SilcClientConnection conn)
+{
   return g_hash_table_lookup(cmd_queues, conn) != NULL;
 }

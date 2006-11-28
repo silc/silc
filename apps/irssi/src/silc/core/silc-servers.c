@@ -1,7 +1,7 @@
 /*
   silc-server.c : irssi
 
-  Copyright (C) 2000 - 2005 Timo Sirainen
+  Copyright (C) 2000 - 2006 Timo Sirainen
                             Pekka Riikonen <priikone@silcnet.org>
 
   This program is free software; you can redistribute it and/or modify
@@ -63,9 +63,9 @@ int silc_send_channel(SILC_SERVER_REC *server,
     cmd_return_error_value(CMDERR_NOT_JOINED, FALSE);
   }
 
-  silc_client_send_channel_message(silc_client, server->conn, rec->entry,
-				   NULL, flags, msg, strlen(msg), TRUE);
-  return TRUE;
+  return silc_client_send_channel_message(silc_client, server->conn,
+					  rec->entry, NULL, flags, sha1hash,
+					  msg, strlen(msg));
 }
 
 typedef struct {
@@ -81,43 +81,42 @@ typedef struct {
 
 static void silc_send_msg_clients(SilcClient client,
 				  SilcClientConnection conn,
-				  SilcClientEntry *clients,
-				  SilcUInt32 clients_count,
+				  SilcStatus status,
+				  SilcDList clients,
 				  void *context)
 {
   PRIVMSG_REC *rec = context;
   SILC_SERVER_REC *server = rec->server;
   SilcClientEntry target;
-  char *nickname = NULL;
+  char nickname[128 + 1];
+  SilcDList lclients = NULL;
 
-  if (!clients_count) {
+  if (!clients) {
     printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
 	      "%s: There is no such client", rec->nick);
   } else {
-    if (clients_count > 1) {
-      silc_parse_userfqdn(rec->nick, &nickname, NULL);
+    if (silc_dlist_count(clients) > 1) {
+      silc_parse_userfqdn(rec->nick, nickname, sizeof(nickname), NULL, 0);
 
       /* Find the correct one. The rec->nick might be a formatted nick
 	 so this will find the correct one. */
-      clients = silc_client_get_clients_local(silc_client, server->conn,
-					      nickname, rec->nick,
-					      &clients_count);
+      clients = lclients =
+	silc_client_get_clients_local(silc_client, server->conn,
+				      nickname, rec->nick);
       if (!clients) {
 	printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
 		  "%s: There is no such client", rec->nick);
-	silc_free(nickname);
 	goto out;
       }
-      silc_free(nickname);
     }
 
-    target = clients[0];
+    target = silc_dlist_get(clients);
 
     /* Still check for exact math for nickname, this compares the
        real (formatted) nickname and the nick (maybe formatted) that
-       use gave. This is to assure that `nick' does not match
+       user gave. This is to assure that `nick' does not match
        `nick@host'. */
-    if (!silc_utf8_strcasecmp(rec->nick, clients[0]->nickname)) {
+    if (!silc_utf8_strcasecmp(rec->nick, target->nickname)) {
       printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
 		"%s: There is no such client", rec->nick);
       goto out;
@@ -125,12 +124,12 @@ static void silc_send_msg_clients(SilcClient client,
 
     /* Send the private message */
     silc_client_send_private_message(client, conn, target,
-				     rec->flags,
-				     rec->msg, rec->len,
-				     TRUE);
+				     rec->flags, sha1hash,
+				     rec->msg, rec->len);
   }
 
  out:
+  silc_client_list_free(silc_client, server->conn, lclients);
   g_free(rec->nick);
   g_free(rec->msg);
   g_free(rec);
@@ -140,11 +139,12 @@ int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
 		  int msg_len, SilcMessageFlags flags)
 {
   PRIVMSG_REC *rec;
-  SilcClientEntry *clients;
-  SilcUInt32 clients_count;
-  char *nickname = NULL;
+  char nickname[128 + 1];
+  SilcDList clients;
+  SilcClientEntry target;
+  int ret;
 
-  if (!silc_parse_userfqdn(nick, &nickname, NULL)) {
+  if (!silc_parse_userfqdn(nick, nickname, sizeof(nickname), NULL, 0)) {
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_BAD_NICK, nick);
     return FALSE;
@@ -152,7 +152,7 @@ int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
 
   /* Find client entry */
   clients = silc_client_get_clients_local(silc_client, server->conn,
-					  nickname, nick, &clients_count);
+					  nickname, nick);
   if (!clients) {
     rec = g_new0(PRIVMSG_REC, 1);
     rec->nick = g_strdup(nick);
@@ -169,11 +169,15 @@ int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
   }
 
   /* Send the private message directly */
+  target = silc_dlist_get(clients);
+  ret = silc_client_send_private_message(silc_client, server->conn,
+					 target, flags, sha1hash,
+					 msg, msg_len);
+
   silc_free(nickname);
-  silc_client_send_private_message(silc_client, server->conn,
-				   clients[0], flags,
-				   msg, msg_len, TRUE);
-  return TRUE;
+  silc_client_list_free(silc_client, server->conn, clients);
+
+  return ret;
 }
 
 void silc_send_mime(SILC_SERVER_REC *server, int channel, const char *to,
@@ -206,7 +210,8 @@ void silc_send_mime(SILC_SERVER_REC *server, int channel, const char *to,
     silc_client_send_channel_message(silc_client, server->conn, rec->entry,
 				     NULL, SILC_MESSAGE_FLAG_DATA |
 				     (sign ? SILC_MESSAGE_FLAG_SIGNED : 0),
-				     unescaped_data, unescaped_data_len, TRUE);
+				     sha1hash, unescaped_data,
+				     unescaped_data_len);
   } else {
     silc_send_msg(server, (char *)to, unescaped_data, unescaped_data_len,
 		  SILC_MESSAGE_FLAG_DATA |
@@ -271,68 +276,165 @@ static void send_message(SILC_SERVER_REC *server, char *target,
   silc_free(t);
 }
 
-void silc_send_heartbeat(SilcSocketConnection sock,
-		         void *hb_context)
+/* Connection callback */
+
+static void silc_connect_cb(SilcClient client,
+			    SilcClientConnection conn,
+			    SilcClientConnectionStatus status,
+			    SilcStatus error,
+			    const char *message,
+			    void *context)
 {
-  SILC_SERVER_REC *server = SILC_SERVER(hb_context);
+  SILC_SERVER_REC *server = context;
+  char *file;
 
-  if (server == NULL)
+  if (!server->disconnected) {
+    silc_client_close_connection(client, conn);
     return;
+  }
 
-  silc_client_send_packet(silc_client, server->conn, SILC_PACKET_HEARTBEAT,
-			  NULL, 0);
+  switch (status) {
+  case SILC_CLIENT_CONN_SUCCESS:
+    /* We have successfully connected to server */
+
+    /* Enable queueing until we have our requested nick */
+    if (settings_get_str("nick") &&
+	!strcmp(conn->local_entry->nickname, conn->local_entry->username))
+      silc_queue_enable(conn);
+
+    /* Put default attributes */
+    silc_query_attributes_default(silc_client, conn);
+
+    server->connected = TRUE;
+    server->conn = conn;
+    server->conn->context = server;
+    signal_emit("event connected", 1, server);
+    break;
+
+  case SILC_CLIENT_CONN_SUCCESS_RESUME:
+    /* We have successfully resumed old detached session */
+    server->connected = TRUE;
+    server->conn = conn;
+    server->conn->context = server;
+    signal_emit("event connected", 1, server);
+
+    /* Put default attributes */
+    silc_query_attributes_default(silc_client, conn);
+
+    /* If we resumed old session check whether we need to update
+       our nickname */
+    if (strcmp(server->nick, conn->local_entry->nickname)) {
+      char *old;
+      old = g_strdup(server->nick);
+      server_change_nick(SERVER(server), conn->local_entry->nickname);
+      nicklist_rename_unique(SERVER(server),
+			     conn->local_entry, server->nick,
+			     conn->local_entry, conn->local_entry->nickname);
+      signal_emit("message own_nick", 4, server, server->nick, old, "");
+      g_free(old);
+    }
+
+    /* Remove the detach data now */
+    file = silc_get_session_filename(server);
+    unlink(file);
+    silc_free(file);
+    break;
+
+  case SILC_CLIENT_CONN_DISCONNECTED:
+    /* Server disconnected */
+    if (server->conn && server->conn->local_entry) {
+      nicklist_rename_unique(SERVER(server),
+			     server->conn->local_entry, server->nick,
+			     server->conn->local_entry,
+			     silc_client->username);
+      silc_change_nick(server, silc_client->username);
+    }
+
+    if (message)
+      silc_say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
+	       "Server closed connection: %s (%d) %s",
+	       silc_get_status_message(error), error,
+	       message ? message : "");
+
+    if (server->conn)
+      server->conn->context = NULL;
+    server->conn = NULL;
+    server->connection_lost = TRUE;
+    server_disconnect(SERVER(server));
+    break;
+
+  default:
+    file = silc_get_session_filename(server);
+    if (silc_file_size(file) > 0)
+      printformat_module("fe-common/silc", server, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_REATTACH_FAILED, file);
+
+    silc_free(file);
+
+    server->connection_lost = TRUE;
+    if (server->conn)
+      server->conn->context = NULL;
+    server_disconnect(SERVER(server));
+    break;
+  }
 }
 
-static void sig_connected(SILC_SERVER_REC *server)
+static void sig_connected_stream_created(SilcSocketStreamStatus status,
+					 SilcStream stream, void *context)
 {
-  SilcClientConnection conn;
+  SILC_SERVER_REC *server = context;
   SilcClientConnectionParams params;
   char *file;
-  int fd;
 
-  if (!IS_SILC_SERVER(server))
+  if (!stream) {
+    server->connection_lost = TRUE;
+    server_disconnect(SERVER(server));
     return;
+  }
+
+  if (!server->disconnected) {
+    silc_stream_destroy(stream);
+    return;
+  }
+
+  /* Set connection parameters */
+  memset(&params, 0, sizeof(params));
+  params.nickname = (char *)settings_get_str("nick");
 
   /* Try to read detached session data and use it if found. */
-  memset(&params, 0, sizeof(params));
   file = silc_get_session_filename(server);
   params.detach_data = silc_file_readfile(file, &params.detach_data_len);
   if (params.detach_data)
     params.detach_data[params.detach_data_len] = 0;
-
-  /* Add connection to the client library */
-  conn = silc_client_add_connection(silc_client, &params,
-				    server->connrec->address,
-				    server->connrec->port,
-				    server);
-  server->conn = conn;
-
   if (params.detach_data)
     printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
     			SILCTXT_REATTACH, server->tag);
 
-  silc_free(params.detach_data);
-
-  fd = g_io_channel_unix_get_fd(net_sendbuffer_handle(server->handle));
-
-  /* Start key exchange with the server */
-  silc_client_start_key_exchange(silc_client, conn, fd);
-
-  /* Put default attributes */
-  silc_query_attributes_default(silc_client, conn);
-
-  /* initialize heartbeat sending */
-  if (settings_get_int("heartbeat") > 0)
-    silc_socket_set_heartbeat(conn->sock, settings_get_int("heartbeat"),
-		  		(void *)server,
-				(SilcSocketConnectionHBCb)silc_send_heartbeat,
-				silc_client->schedule);
+  /* Start key exchange */
+  silc_client_key_exchange(silc_client, &params, irssi_pubkey, irssi_privkey,
+			   stream, SILC_CONN_SERVER, silc_connect_cb, server);
 
   server->ftp_sessions = silc_dlist_init();
   server->isnickflag = isnickflag_func;
   server->ischannel = ischannel_func;
   server->get_nick_flags = get_nick_flags;
   server->send_message = (void *) send_message;
+}
+
+static void sig_connected(SILC_SERVER_REC *server)
+{
+  int fd;
+
+  if (!IS_SILC_SERVER(server))
+    return;
+
+  //  server->connrec->address,
+  //  server->connrec->port,
+
+  /* Wrap the socket to TCP stream */
+  fd = g_io_channel_unix_get_fd(net_sendbuffer_handle(server->handle));
+  silc_socket_tcp_stream_create(fd, TRUE, FALSE, silc_client->schedule,
+				sig_connected_stream_created, server);
 }
 
 static void sig_disconnected(SILC_SERVER_REC *server)
@@ -342,7 +444,7 @@ static void sig_disconnected(SILC_SERVER_REC *server)
 
   silc_dlist_uninit(server->ftp_sessions);
 
-  if (server->conn && server->conn->sock != NULL) {
+  if (server->conn) {
     silc_client_close_connection(silc_client, server->conn);
 
     /* SILC closes the handle */
@@ -587,6 +689,7 @@ out:
   cmd_params_free(free_arg);
 }
 
+#if 0
 /* FILE command */
 
 SILC_TASK_CALLBACK(silc_client_file_close_later)
@@ -1083,6 +1186,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
  out:
   silc_free(nickname);
 }
+#endif /* 0 */
 
 void silc_server_init(void)
 {
@@ -1113,7 +1217,7 @@ void silc_server_init(void)
   command_bind_silc("shutdown", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("getkey", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("sconnect", MODULE_NAME, (SIGNAL_FUNC) command_sconnect);
-  command_bind_silc("file", MODULE_NAME, (SIGNAL_FUNC) command_file);
+//  command_bind_silc("file", MODULE_NAME, (SIGNAL_FUNC) command_file);
   command_bind_silc("detach", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("watch", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("stats", MODULE_NAME, (SIGNAL_FUNC) command_self);
@@ -1152,7 +1256,7 @@ void silc_server_deinit(void)
   command_unbind("shutdown", (SIGNAL_FUNC) command_self);
   command_unbind("getkey", (SIGNAL_FUNC) command_self);
   command_unbind("sconnect", (SIGNAL_FUNC) command_sconnect);
-  command_unbind("file", (SIGNAL_FUNC) command_file);
+//  command_unbind("file", (SIGNAL_FUNC) command_file);
   command_unbind("detach", (SIGNAL_FUNC) command_self);
   command_unbind("watch", (SIGNAL_FUNC) command_self);
   command_unbind("stats", (SIGNAL_FUNC) command_self);
@@ -1160,6 +1264,7 @@ void silc_server_deinit(void)
   command_unbind("smsg", (SIGNAL_FUNC) command_smsg);
 }
 
+#if 0
 void silc_server_free_ftp(SILC_SERVER_REC *server,
 			  SilcClientEntry client_entry)
 {
@@ -1174,6 +1279,7 @@ void silc_server_free_ftp(SILC_SERVER_REC *server,
     }
   }
 }
+#endif /* 0 */
 
 bool silc_term_utf8(void)
 {

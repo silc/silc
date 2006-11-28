@@ -1,6 +1,6 @@
 #include "../common/module.h"
 
-#include "silcincludes.h"
+#include "silc.h"
 #include "silcclient.h"
 #include "client_ops.h"
 #include "silc-core.h"

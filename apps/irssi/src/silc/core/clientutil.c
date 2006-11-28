@@ -4,12 +4,12 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2002 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -80,10 +80,10 @@ void silc_client_list_pkcs()
   silc_free(pkcs);
 }
 
-/* This checks stats for various SILC files and directories. First it 
-   checks if ~/.silc directory exist and is owned by the correct user. If 
+/* This checks stats for various SILC files and directories. First it
+   checks if ~/.silc directory exist and is owned by the correct user. If
    it doesn't exist, it will create the directory. After that it checks if
-   user's Public and Private key files exists. If they doesn't exist they 
+   user's Public and Private key files exists. If they doesn't exist they
    will be created after return. */
 
 int silc_client_check_silc_dir()
@@ -107,11 +107,11 @@ int silc_client_check_silc_dir()
 
   /* We'll take home path from /etc/passwd file to be sure. */
   snprintf(filename, sizeof(filename) - 1, "%s/", get_irssi_dir());
-  snprintf(servfilename, sizeof(servfilename) - 1, "%s/serverkeys", 
+  snprintf(servfilename, sizeof(servfilename) - 1, "%s/serverkeys",
 	   get_irssi_dir());
-  snprintf(clientfilename, sizeof(clientfilename) - 1, "%s/clientkeys", 
+  snprintf(clientfilename, sizeof(clientfilename) - 1, "%s/clientkeys",
 	   get_irssi_dir());
-  snprintf(friendsfilename, sizeof(friendsfilename) - 1, "%s/friends", 
+  snprintf(friendsfilename, sizeof(friendsfilename) - 1, "%s/friends",
 	   get_irssi_dir());
 
   /*
@@ -135,19 +135,19 @@ int silc_client_check_silc_dir()
       return FALSE;
     }
   } else {
-    
+
     /* Check the owner of the dir */
-    if (st.st_uid != 0 && st.st_uid != pw->pw_uid) { 
+    if (st.st_uid != 0 && st.st_uid != pw->pw_uid) {
       fprintf(stderr, "You don't seem to own `%s' directory\n",
 	      filename);
       return FALSE;
     }
-    
+
 #if 0
     /* Check the permissions of the dir */
     if ((st.st_mode & 0777) != 0755) {
       if ((chmod(filename, 0755)) == -1) {
-	fprintf(stderr, "Permissions for `%s' directory must be 0755\n", 
+	fprintf(stderr, "Permissions for `%s' directory must be 0755\n",
 		filename);
 	return FALSE;
       }
@@ -176,7 +176,7 @@ int silc_client_check_silc_dir()
       return FALSE;
     }
   }
-  
+
   /*
    * Check ~./silc/clientkeys directory
    */
@@ -198,7 +198,7 @@ int silc_client_check_silc_dir()
       return FALSE;
     }
   }
-  
+
   /*
    * Check ~./silc/friends directory
    */
@@ -220,22 +220,22 @@ int silc_client_check_silc_dir()
       return FALSE;
     }
   }
-  
+
   /*
    * Check Public and Private keys
    */
-  snprintf(file_public_key, sizeof(file_public_key) - 1, "%s%s", 
+  snprintf(file_public_key, sizeof(file_public_key) - 1, "%s%s",
 	   filename, SILC_CLIENT_PUBLIC_KEY_NAME);
-  snprintf(file_private_key, sizeof(file_private_key) - 1, "%s%s", 
+  snprintf(file_private_key, sizeof(file_private_key) - 1, "%s%s",
 	   filename, SILC_CLIENT_PRIVATE_KEY_NAME);
-  
+
   if ((stat(file_public_key, &st)) == -1) {
     /* If file doesn't exist */
     if (errno == ENOENT) {
       fprintf(stdout, "Running SILC for the first time\n");
       silc_create_key_pair(SILC_CLIENT_DEF_PKCS,
 			   SILC_CLIENT_DEF_PKCS_LEN,
-			   file_public_key, file_private_key, NULL,
+			   file_public_key, file_private_key,
 			   NULL, NULL, NULL, NULL, FALSE);
       printf("Press <Enter> to continue...\n");
       getchar();
@@ -244,20 +244,20 @@ int silc_client_check_silc_dir()
       return FALSE;
     }
   }
-  
+
   /* Check the owner of the public key */
-  if (st.st_uid != 0 && st.st_uid != pw->pw_uid) { 
+  if (st.st_uid != 0 && st.st_uid != pw->pw_uid) {
     fprintf(stderr, "You don't seem to own your public key!?\n");
     return FALSE;
   }
-  
+
   if ((stat(file_private_key, &st)) == -1) {
     /* If file doesn't exist */
     if (errno == ENOENT) {
       fprintf(stdout, "Your private key doesn't exist\n");
       silc_create_key_pair(SILC_CLIENT_DEF_PKCS,
 			   SILC_CLIENT_DEF_PKCS_LEN,
-			   file_public_key, file_private_key, NULL,
+			   file_public_key, file_private_key,
 			   NULL, NULL, NULL, NULL, FALSE);
       printf("Press <Enter> to continue...\n");
       getchar();
@@ -266,20 +266,20 @@ int silc_client_check_silc_dir()
       return FALSE;
     }
   }
-    
+
   /* Check the owner of the private key */
-  if (st.st_uid != 0 && st.st_uid != pw->pw_uid) { 
+  if (st.st_uid != 0 && st.st_uid != pw->pw_uid) {
     fprintf(stderr, "You don't seem to own your private key!?\n");
     return FALSE;
   }
-    
+
   /* Check the permissions for the private key */
   if ((st.st_mode & 0777) != 0600) {
     fprintf(stderr, "Wrong permissions in your private key file `%s'!\n"
 	    "Trying to change them ... ", file_private_key);
     if ((chmod(file_private_key, 0600)) == -1) {
       fprintf(stderr,
-	      "Failed to change permissions for private key file!\n" 
+	      "Failed to change permissions for private key file!\n"
 	      "Permissions for your private key file must be 0600.\n");
       return FALSE;
     }
@@ -310,14 +310,13 @@ int silc_client_load_keys(SilcClient client)
   memset(pub, 0, sizeof(pub));
   snprintf(pub, sizeof(pub) - 1, "%s/%s",
 	   get_irssi_dir(), SILC_CLIENT_PUBLIC_KEY_NAME);
-  
+
   /* Try loading first with "" passphrase, for those that didn't set
      passphrase for private key, and only if that fails let it prompt
      for passphrase. */
-  ret = silc_load_key_pair(pub, prv, "", &client->pkcs, &client->public_key,
-			   &client->private_key);
+  ret = silc_load_key_pair(pub, prv, "", &irssi_pubkey, &irssi_privkey);
   if (!ret)
-    ret = silc_load_key_pair(pub, prv, NULL, &client->pkcs,
-			     &client->public_key, &client->private_key);
+    ret = silc_load_key_pair(pub, prv, NULL, &irssi_pubkey, &irssi_privkey);
+
   return ret;
 }

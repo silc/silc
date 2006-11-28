@@ -26,6 +26,9 @@
 #define SILC_CLIENT_DEF_PKCS_LEN 2048
 
 extern SilcClient silc_client;
+extern SilcHash sha1hash;
+extern SilcPublicKey irssi_pubkey;
+extern SilcPrivateKey irssi_privkey;
 
 #define IS_SILC_ITEM(rec) (IS_SILC_CHANNEL(rec) || IS_SILC_QUERY(rec))
 

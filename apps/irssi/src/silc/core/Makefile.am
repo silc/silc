@@ -14,7 +14,6 @@ ADD_INCLUDES = \
 noinst_LIBRARIES=libsilc_core.a
 
 libsilc_core_a_SOURCES = \
-	client_ops.c \
 	clientutil.c \
 	silc-channels.c \
 	silc-core.c \
@@ -25,7 +24,8 @@ libsilc_core_a_SOURCES = \
 	silc-servers-reconnect.c \
 	silc-lag.c \
 	silc-chatnets.c \
-	silc-cmdqueue.c
+	silc-cmdqueue.c \
+	client_ops.c
 
 noinst_HEADERS = \
 	module.h \
