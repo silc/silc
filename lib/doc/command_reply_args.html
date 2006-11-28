@@ -102,7 +102,7 @@ length is 20 bytes. If 'channels' is valid each entry in the list is
 SilcChannelPayload.  If the `channel_usermodes' is valid then the table
 has as many entries as there are entries in the `channels' list, and the
 first entry in the table is the user mode on the first channel in the
-`channels' list.  The `channel_usermodes' is the table of the user's mdoes
+`channels' list.  The `channel_usermodes' is the table of the user's modes
 no the joined channels.  The 'attr' is the Requested Attributes that may
 have been returned by the client and it can be parsed by traversing the
 SilcDList and using silc_attribute_get_attribute function.  Each entry in
@@ -181,12 +181,14 @@ Returns the topic of the channel.
 Returns the invite list of the channel.  Called also even if invite list
 was not modified but SILC_COMMAND_INVITE command was used to invite a user
 into a channel.  In this case the invite list is not returned by the
-server and 'invite_list' is NULL.  The 'invite_list' is list of
-SilcArgumentPayloads.  The first 2 bytes are the number of arguments in
-the list and can be parsed with SILC_GET16_MSB macro.  The list can be
-parsed with silc_argument_payload_parse function.
+server and 'invite_list' is NULL.  The 'invite_list' is SilcArgumenPayload
+which contains one or more arguments, each is one invite list entry.  The
+entries can be retrieved with silc_argument_get_first_arg,
+silc_argument_get_next_arg, silc_argument_get_arg_type and
+silc_argument_get_decoded functions.
 </td>
-<td width="50%"><small>SilcChannelEntry channel, SilcBuffer invite_list
+<td width="50%"><small>SilcChannelEntry channel,
+SilcArgumentPayload invite_list
 </td>
 </tr>
 
@@ -243,27 +245,24 @@ to this reply.
 <tr>
 <td><small>SILC_COMMAND_JOIN</td>
 <td><small>
-Reply received when user joined a channel.  The 'ignored' argument can
-be ignored by the application.  The 'topic' and 'hmac_name' may be NULL.
-The 'key_payload' is usually ignored by the application.  The 'list_count'
-is the number of entries in both 'client_id_list' and 'client_mode_list'.
-The 'client_id_list' is a list of clients on the channel and 'client_mode_list'
-includes those clients' modes on the channel.  If application likes to
-resolve information about the clients on the channel it may call
-silc_client_get_clients_by_list function and pass the 'client_id_list' as
-argument to it.  The 'client_mode_list' includes 32-bit integers one after
-the other and they are in same order as clients in 'client_mode_list'.
-If application resolves the information with silc_client_get_clients_by_list
-parsing the 'client_mode_list' is not necessary.  The 'founder_key' is the
-channel founder's key and may be NULL.  The 'channel_pubkeys' is Argument
-List Payload containing Public Key Payloads of all added channel public
-keys, it may be NULL.
+Reply received when user joined a channel.  The `channel_mode' contains
+the current channel mode.  The `user_list' is the user list on the channel
+and may be traversed with silc_hash_table_get function.  Each entry in the
+`user_list' is SilcChannelUser structure, which contains the SilcClientEntry
+and the client's mode on the channel.  The library will free the list.
+The `topic' is the current topic on channel or NULL if no topic is set.
+The `cipher' is the encryption algorithm used on channel or NULL if it is
+not available.  The `hmac' is the HMAC algorithm used on channel or NULL if
+it is not available.  The `founder_key' is the channel founder's public key
+or NULL if founder public key has not been set.  The `channel_pubkeys' is
+a list of channel public keys (for authentication on joining) or NULL if
+they have not been set.  Each entry in the list is SilcArgumentDecodedList
+each containing one channel public key.  The library will free the list.
 </td>
 <td width="50%"><small>char *channel_name, SilcChannelEntry channel,
-SilcUInt32 channel_mode, int ignored, SilcBuffer key_payload, NULL, NULL,
-char *topic, char *hmac_name, SilcUInt32 list_count, SilcBuffer client_id_list,
-SilcBuffer client_mode_list, SilcPublicKey founder_key,
-SilcBuffer channel_pubkeys, SilcUint32 user_limit
+SilcUInt32 channel_mode, SilcHashTableList *user_list, char *topic,
+char *cipher, char *hmac, SilcPublicKey founder_key,
+SilcDList channel_pubkeys, SilcUint32 user_limit
 </td>
 </tr>
 
@@ -327,7 +326,7 @@ Returns channel's ban list.  The 'ban_list' may be NULL.  The construction
 of that list is equivalent to invite list.  See description of
 SILC_COMMAND_INVITE command reply.
 </td>
-<td width="50%"><small>SilcChannelEntry channel, SilcBuffer ban_list
+<td width="50%"><small>SilcChannelEntry channel, SilcArgumentPayload ban_list
 </td>
 </tr>
 
@@ -379,7 +378,7 @@ silc_hash_table_get function.  Each entry in the `user_list' is
 SilcChannelUser structure, which contains the SilcClientEntry and the
 client's mode on the channel.
 </td>
-<td width="50%"><small>SilcChannelEntry channel, SilcHashTableList user_list
+<td width="50%"><small>SilcChannelEntry channel, SilcHashTableList *user_list
 </td>
 </tr>
 
