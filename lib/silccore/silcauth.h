@@ -57,10 +57,23 @@ typedef SilcUInt16 SilcAuthMethod;
 #define SILC_AUTH_PASSWORD    1		   /* Passphrase authentication */
 #define SILC_AUTH_PUBLIC_KEY  2		   /* Public key authentication */
 
-/* Authentication protocol status message (used by all authentication
-   protocols in the SILC). */
-#define SILC_AUTH_OK          0
-#define SILC_AUTH_FAILED      1
+/****d* silccore/SilcAuthAPI/SilcAuthResult
+ *
+ * NAME
+ *
+ *    typedef SilcUInt32 SilcAuthResult;
+ *
+ * DESCRIPTION
+ *
+ *    Authentication protocol status.  Used by all authentication protocols
+ *    in SILC.
+ *
+ * SOURCE
+ */
+typedef SilcUInt32 SilcAuthResult;
+
+#define SILC_AUTH_OK          0              /* Authentication successful */
+#define SILC_AUTH_FAILED      1		     /* Authentication failed */
 /***/
 
 /****s* silccore/SilcAuthAPI/SilcAuthPayload
