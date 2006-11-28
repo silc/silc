@@ -310,7 +310,7 @@ silc_argument_list_parse(const unsigned char *payload, SilcUInt32 payload_len);
  ***/
 typedef struct {
   void *argument;	     /* Decoded argument, caller must know its type */
-  SilcUInt32 arg_type;	     /* Argument type from the payload */
+  SilcUInt32 arg_type;	     /* Argument type number from the payload */
 } *SilcArgumentDecodedList;
 
 /****f* silccore/SilcArgumentAPI/silc_argument_list_parse_decoded
