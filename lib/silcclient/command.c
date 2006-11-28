@@ -589,8 +589,8 @@ SILC_FSM_STATE(silc_client_command_whois)
   /* Given without arguments fetches client's own information */
   if (cmd->argc < 2) {
     silc_client_command_send(conn->client, conn, SILC_COMMAND_WHOIS,
-			     NULL, NULL, 1,
-			     4, silc_buffer_datalen(conn->local_idp));
+			     NULL, NULL, 1, 4,
+			     silc_buffer_datalen(conn->internal->local_idp));
     goto out;
   }
 
@@ -1054,7 +1054,7 @@ SILC_FSM_STATE(silc_client_command_quit_final)
 
   /* Call connection callback */
   conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED,
-		 0, NULL, conn->context);
+		 0, NULL, conn->callback_context);
 
   /* Signal to close connection */
   conn->internal->disconnected = TRUE;
@@ -1137,7 +1137,7 @@ SILC_FSM_STATE(silc_client_command_kill)
       auth = silc_auth_public_key_auth_generate(conn->public_key,
 						conn->private_key,
 						conn->client->rng,
-						client->sha1hash,
+						conn->internal->sha1hash,
 						&target->id, SILC_ID_CLIENT);
     }
   }
@@ -1202,7 +1202,8 @@ SILC_FSM_STATE(silc_client_command_stats)
 
   /* Send the command */
   silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 1,
-			      1, silc_buffer_datalen(conn->remote_idp));
+			      1, silc_buffer_datalen(conn->internal->
+						     remote_idp));
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -1228,7 +1229,8 @@ SILC_FSM_STATE(silc_client_command_ping)
 
   /* Send the command */
   silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 1,
-			      1, silc_buffer_datalen(conn->remote_idp));
+			      1, silc_buffer_datalen(conn->internal->
+						     remote_idp));
 
   /* Save ping time */
   cmd->context = SILC_64_TO_PTR(silc_time());
@@ -1278,7 +1280,7 @@ SILC_FSM_STATE(silc_client_command_join)
       auth = silc_auth_public_key_auth_generate(conn->public_key,
 						conn->private_key,
 						conn->client->rng,
-						conn->client->sha1hash,
+						conn->internal->sha1hash,
 						conn->local_id,
 						SILC_ID_CLIENT);
     } else if (!strcasecmp(cmd->argv[i], "-auth")) {
@@ -1304,13 +1306,13 @@ SILC_FSM_STATE(silc_client_command_join)
       }
 
       pk = silc_pkcs_public_key_encode(pubkey, &pk_len);
-      silc_hash_make(conn->client->sha1hash, pk, pk_len, pkhash);
+      silc_hash_make(conn->internal->sha1hash, pk, pk_len, pkhash);
       silc_free(pk);
       pubdata = silc_rng_get_rn_data(conn->client->rng, 128);
       memcpy(pubdata, pkhash, 20);
       cauth = silc_auth_public_key_auth_generate_wpub(pubkey, privkey,
 						      pubdata, 128,
-						      conn->client->sha1hash,
+						      conn->internal->sha1hash,
 						      conn->local_id,
 						      SILC_ID_CLIENT);
       memset(pubdata, 0, 128);
@@ -1334,7 +1336,8 @@ SILC_FSM_STATE(silc_client_command_join)
   /* Send JOIN command to the server */
   silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 7,
 			      1, name, strlen(name),
-			      2, silc_buffer_datalen(conn->local_idp),
+			      2, silc_buffer_datalen(conn->internal->
+						     local_idp),
 			      3, passphrase, passphrase_len,
 			      4, cipher, cipher ? strlen(cipher) : 0,
 			      5, hmac, hmac ? strlen(hmac) : 0,
@@ -1519,7 +1522,8 @@ SILC_FSM_STATE(silc_client_command_umode)
 
   /* Send the command */
   silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 2,
-			      1, silc_buffer_datalen(conn->local_idp),
+			      1, silc_buffer_datalen(conn->internal->
+						     local_idp),
 			      2, modebuf, sizeof(modebuf));
 
   /* Notify application */
@@ -1720,7 +1724,7 @@ SILC_FSM_STATE(silc_client_command_cmode)
 	pk = silc_public_key_payload_encode(pubkey);
 	auth = silc_auth_public_key_auth_generate(pubkey, privkey,
 						  conn->client->rng,
-						  conn->client->sha1hash,
+						  conn->internal->sha1hash,
 						  conn->local_id,
 						  SILC_ID_CLIENT);
 	arg = silc_buffer_data(auth);
@@ -1933,7 +1937,7 @@ SILC_FSM_STATE(silc_client_command_cumode)
 
 	auth = silc_auth_public_key_auth_generate(pubkey, privkey,
 						  conn->client->rng,
-						  conn->client->sha1hash,
+						  conn->internal->sha1hash,
 						  conn->local_id,
 						  SILC_ID_CLIENT);
 	mode |= SILC_CHANNEL_UMODE_CHANFO;
@@ -2392,7 +2396,8 @@ SILC_FSM_STATE(silc_client_command_watch)
 
   /* Send the commmand */
   silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 2,
-			      1, silc_buffer_datalen(conn->local_idp),
+			      1, silc_buffer_datalen(conn->internal->
+						     local_idp),
 			      type, pubkey ? args->data : cmd->argv[2],
 			      pubkey ? silc_buffer_len(args) :
 			      cmd->argv_lens[2]);

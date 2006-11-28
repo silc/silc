@@ -23,6 +23,19 @@
 
 /************************** Types and definitions ***************************/
 
+/* Resume session context */
+typedef struct {
+  SilcClient client;
+  SilcClientConnection conn;
+  SilcBufferStruct detach;
+  char *nickname;
+  SilcClientID client_id;
+  SilcUInt32 channel_count;
+  SilcUInt32 *cmd_idents;
+  SilcUInt32 cmd_idents_count;
+  SilcBool success;
+} *SilcClientResumeSession;
+
 
 /************************ Static utility functions **************************/
 
@@ -49,9 +62,7 @@ SILC_FSM_STATE(silc_client_new_id)
 
   /* Create local client entry */
   conn->local_entry = silc_client_add_client(client, conn,
-					     (client->nickname ?
-					      client->nickname :
-					      client->username),
+					     client->username,
 					     client->username,
 					     client->realname,
 					     &id.u.client_id, 0);
@@ -60,7 +71,7 @@ SILC_FSM_STATE(silc_client_new_id)
 
   /* Save the ID */
   conn->local_id = &conn->local_entry->id;
-  conn->local_idp = silc_buffer_copy(&packet->buffer);
+  conn->internal->local_idp = silc_buffer_copy(&packet->buffer);
 
   /* Save cache entry */
   silc_idcache_find_by_id_one(conn->internal->client_cache, conn->local_id,
@@ -68,13 +79,14 @@ SILC_FSM_STATE(silc_client_new_id)
 
   /* Save remote ID */
   if (packet->src_id_len) {
-    conn->remote_idp = silc_id_payload_encode_data(packet->src_id,
-						   packet->src_id_len,
-						   packet->src_id_type);
-    if (!conn->remote_idp)
+    conn->internal->remote_idp =
+      silc_id_payload_encode_data(packet->src_id,
+				  packet->src_id_len,
+				  packet->src_id_type);
+    if (!conn->internal->remote_idp)
       goto out;
-    silc_id_payload_parse_id(silc_buffer_data(conn->remote_idp),
-			     silc_buffer_len(conn->remote_idp),
+    silc_id_payload_parse_id(silc_buffer_data(conn->internal->remote_idp),
+			     silc_buffer_len(conn->internal->remote_idp),
 			     &conn->remote_id);
   }
 
@@ -129,7 +141,7 @@ SILC_FSM_STATE(silc_client_st_register_complete)
   SilcClient client = conn->client;
 
   if (!conn->local_id) {
-    /* Timeout, ID not received */
+    /** Timeout, ID not received */
     conn->internal->registering = FALSE;
     silc_fsm_next(fsm, silc_client_st_register_error);
     return SILC_FSM_CONTINUE;
@@ -140,25 +152,26 @@ SILC_FSM_STATE(silc_client_st_register_complete)
   /* Issue IDENTIFY command for itself to get resolved hostname
      correctly from server. */
   silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY, NULL, NULL,
-			   1, 5, silc_buffer_data(conn->local_idp),
-			   silc_buffer_len(conn->local_idp));
+			   1, 5, silc_buffer_data(conn->internal->local_idp),
+			   silc_buffer_len(conn->internal->local_idp));
 
   /* Send NICK command if the nickname was set by the application (and is
      not same as the username).  Send this with little timeout. */
-  if (client->nickname &&
-      !silc_utf8_strcasecmp(client->nickname, client->username))
+  if (conn->internal->params.nickname &&
+      !silc_utf8_strcasecmp(conn->internal->params.nickname, client->username))
     silc_client_command_send(client, conn, SILC_COMMAND_NICK, NULL, NULL,
-			     1, 1, client->nickname, strlen(client->nickname));
+			     1, 1, conn->internal->params.nickname,
+			     strlen(conn->internal->params.nickname));
 
   /* Issue INFO command to fetch the real server name and server
      information and other stuff. */
   silc_client_command_send(client, conn, SILC_COMMAND_INFO, NULL, NULL,
-			   1, 2, silc_buffer_data(conn->remote_idp),
-			   silc_buffer_len(conn->remote_idp));
+			   1, 2, silc_buffer_data(conn->internal->remote_idp),
+			   silc_buffer_len(conn->internal->remote_idp));
 
   /* Call connection callback.  We are now inside SILC network. */
   conn->callback(client, conn, SILC_CLIENT_CONN_SUCCESS, 0, NULL,
-		 conn->context);
+		 conn->callback_context);
 
   conn->internal->registering = FALSE;
   return SILC_FSM_FINISH;
@@ -172,7 +185,8 @@ SILC_FSM_STATE(silc_client_st_register_error)
   /* XXX */
   /* Close connection */
 
-  conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL, conn->context);
+  conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
+		 conn->callback_context);
 
   return SILC_FSM_FINISH;
 }
@@ -184,13 +198,128 @@ SILC_FSM_STATE(silc_client_st_register_error)
 
 SILC_FSM_STATE(silc_client_st_resume)
 {
+  SilcClientConnection conn = fsm_context;
+  SilcClient client = conn->client;
+  SilcClientResumeSession resume;
+  SilcBuffer auth;
+  unsigned char *id;
+  SilcUInt16 id_len;
+  int ret;
 
-  return SILC_FSM_FINISH;
+  SILC_LOG_DEBUG(("Resuming detached session"));
+
+  resume = silc_calloc(1, sizeof(*resume));
+  if (!resume) {
+    /** Out of memory */
+    silc_fsm_next(fsm, silc_client_st_resume_error);
+    return SILC_FSM_CONTINUE;
+  }
+  silc_fsm_set_state_context(fsm, resume);
+
+  silc_buffer_set(&resume->detach, conn->internal->params.detach_data,
+		  conn->internal->params.detach_data_len);
+  SILC_LOG_HEXDUMP(("Detach data"), silc_buffer_data(&resume->detach),
+		   silc_buffer_len(&resume->detach));
+
+  /* Take the old client ID from the detachment data */
+  ret = silc_buffer_unformat(&resume->detach,
+			     SILC_STR_ADVANCE,
+			     SILC_STR_UI16_NSTRING_ALLOC(&resume->nickname,
+							 NULL),
+			     SILC_STR_UI16_NSTRING(&id, &id_len),
+			     SILC_STR_UI_INT(NULL),
+			     SILC_STR_UI_INT(&resume->channel_count),
+			     SILC_STR_END);
+  if (ret < 0) {
+    /** Malformed detach data */
+    silc_fsm_next(fsm, silc_client_st_resume_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  if (!silc_id_str2id(id, id_len, SILC_ID_CLIENT, &resume->client_id,
+		      sizeof(resume->client_id))) {
+    /** Malformed ID */
+    silc_fsm_next(fsm, silc_client_st_resume_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /* Generate authentication data that server will verify */
+  auth = silc_auth_public_key_auth_generate(conn->public_key,
+					    conn->private_key,
+					    client->rng,
+					    conn->internal->hash,
+					    &resume->client_id,
+					    SILC_ID_CLIENT);
+  if (!auth) {
+    /** Out of memory */
+    silc_fsm_next(fsm, silc_client_st_resume_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /* Send RESUME_CLIENT packet to resume to network */
+  if (!silc_packet_send_va(conn->stream, SILC_PACKET_RESUME_CLIENT, 0,
+			   SILC_STR_UI_SHORT(id_len),
+			   SILC_STR_UI_XNSTRING(id, id_len),
+			   SILC_STR_UI_XNSTRING(silc_buffer_data(auth),
+						silc_buffer_len(auth)),
+			   SILC_STR_END)) {
+    /** Error sending packet */
+    silc_fsm_next(fsm, silc_client_st_resume_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /** Wait for new ID */
+  conn->internal->registering = TRUE;
+  silc_fsm_next_later(fsm, silc_client_st_resume_resolve, 15, 0);
+  return SILC_FSM_WAIT;
 }
 
-SILC_FSM_STATE(silc_client_st_resume_new_id)
+/* Resolve the old session information */
+
+SILC_FSM_STATE(silc_client_st_resume_resolve)
 {
+#if 0
   SilcClientConnection conn = fsm_context;
+  SilcClientResumeSession resume = state_context;
+
+  if (!conn->local_id) {
+    /** Timeout, ID not received */
+    conn->internal->registering = FALSE;
+    silc_fsm_next(fsm, silc_client_st_resume_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+
+  for (i = 0; i < ch_count; i++) {
+    char *channel;
+    unsigned char *chid;
+    SilcUInt16 chid_len;
+    SilcUInt32 ch_mode;
+    SilcChannelID *channel_id;
+    SilcChannelEntry channel_entry;
+
+    len = silc_buffer_unformat(&detach,
+			       SILC_STR_UI16_NSTRING_ALLOC(&channel, NULL),
+			       SILC_STR_UI16_NSTRING(&chid, &chid_len),
+			       SILC_STR_UI_INT(&ch_mode),
+			       SILC_STR_END);
+    if (len == -1)
+      return FALSE;
+
+    /* Add new channel */
+    channel_id = silc_id_str2id(chid, chid_len, SILC_ID_CHANNEL);
+    channel_entry = silc_client_get_channel_by_id(client, conn, channel_id);
+    if (!channel_entry) {
+      channel_entry = silc_client_add_channel(client, conn, channel, ch_mode,
+					      channel_id);
+    } else {
+      silc_free(channel);
+      silc_free(channel_id);
+    }
+
+    silc_buffer_pull(&detach, len);
+  }
+#endif /* 0 */
 
   return SILC_FSM_FINISH;
 }
@@ -201,4 +330,71 @@ SILC_FSM_STATE(silc_client_st_resume_error)
   /* Close connection */
 
   return SILC_FSM_FINISH;
+}
+
+/* Generates the session detachment data. This data can be used later
+   to resume back to the server. */
+
+SilcBuffer silc_client_get_detach_data(SilcClient client,
+				       SilcClientConnection conn)
+{
+  SilcBuffer detach;
+  SilcHashTableList htl;
+  SilcChannelUser chu;
+  int ret, ch_count;
+
+  SILC_LOG_DEBUG(("Creating detachment data"));
+
+  ch_count = silc_hash_table_count(conn->local_entry->channels);
+
+  /* Save the nickname, Client ID and user mode in SILC network */
+  detach = silc_buffer_alloc(0);
+  if (!detach)
+    return NULL;
+  ret =
+    silc_buffer_format(detach,
+		       SILC_STR_ADVANCE,
+		       SILC_STR_UI_SHORT(strlen(conn->local_entry->nickname)),
+		       SILC_STR_DATA(conn->local_entry->nickname,
+				     strlen(conn->local_entry->nickname)),
+		       SILC_STR_UI_SHORT(silc_buffer_len(conn->internal->
+							 local_idp)),
+		       SILC_STR_DATA(silc_buffer_data(conn->internal->
+						      local_idp),
+				     silc_buffer_len(conn->internal->
+						     local_idp)),
+		       SILC_STR_UI_INT(conn->local_entry->mode),
+		       SILC_STR_UI_INT(ch_count),
+		       SILC_STR_END);
+  if (ret < 0) {
+    silc_buffer_free(detach);
+    return NULL;
+  }
+
+  /* Save all joined channels */
+  silc_hash_table_list(conn->local_entry->channels, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
+    unsigned char chid[32];
+    SilcUInt32 chid_len;
+
+    silc_id_id2str(&chu->channel->id, SILC_ID_CHANNEL, chid, sizeof(chid),
+		   &chid_len);
+    silc_buffer_format(detach,
+		       SILC_STR_ADVANCE,
+		       SILC_STR_UI_SHORT(strlen(chu->channel->channel_name)),
+		       SILC_STR_DATA(chu->channel->channel_name,
+				     strlen(chu->channel->channel_name)),
+		       SILC_STR_UI_SHORT(chid_len),
+		       SILC_STR_DATA(chid, chid_len),
+		       SILC_STR_UI_INT(chu->channel->mode),
+		       SILC_STR_END);
+    silc_free(chid);
+  }
+  silc_hash_table_list_reset(&htl);
+
+  silc_buffer_start(detach);
+  SILC_LOG_HEXDUMP(("Detach data"), silc_buffer_data(detach),
+		   silc_buffer_len(detach));
+
+  return detach;
 }

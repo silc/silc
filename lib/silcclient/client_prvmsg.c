@@ -484,7 +484,7 @@ SilcBool silc_client_add_private_message_key(SilcClient client,
 
   /* Produce the key material as the protocol defines */
   keymat = silc_ske_process_key_material_data(key, key_len, 16, 256, 16,
-					      client->sha1hash);
+					      conn->internal->sha1hash);
   if (!keymat)
     return FALSE;
 

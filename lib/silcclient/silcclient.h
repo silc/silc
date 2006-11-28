@@ -130,41 +130,21 @@ typedef void (*SilcClientConnectCallback)(SilcClient client,
  *    is initialized with silc_client_init function, and freed with
  *    silc_client_free function.
  *
+ *    This context represents the client.  Each connection to remote server
+ *    is represented by SilcClientConnection context.
+ *
  * SOURCE
  */
 struct SilcClientStruct {
-  /*
-   * The following fields are set by application. Strings MUST be UTF-8
-   * encoded strings.
-   */
-  char *nickname;               /* Nickname, MAY be set by application  */
-  char *username;               /* Username, MUST be set by application */
-  char *hostname;               /* hostname, MUST be set by application */
-  char *realname;               /* Real name, MUST be set be application */
+  char *username;               /* Username */
+  char *hostname;               /* hostname */
+  char *realname;               /* Real name */
+  SilcSchedule schedule;	/* Client scheduler */
+  SilcRng rng;			/* Random number generator */
+  void *application;		/* Application specific context, set with
+				   silc_client_alloc. */
 
-  /*
-   * The following fields are set by the library
-   */
-
-  /* Scheduler, set by library.  Application may use this pointer. */
-  SilcSchedule schedule;
-
-  /* Random Number Generator. Application should use this as its primary
-     random number generator. */
-  SilcRng rng;
-
-  /* Application specific user data pointer. Client library does not
-     touch this.  This the context sent as argument to silc_client_alloc.
-     Application can use it freely. */
-  void *application;
-
-  /* Generic hash context for application usage */
-  /* XXX remove these; not thread safe */
-  SilcHash md5hash;
-  SilcHash sha1hash;
-
-  /* Internal data for client library. Application cannot access this
-     data at all. */
+  /* Internal data for client library.  Application cannot access this. */
   SilcClientInternal internal;
 };
 /***/
@@ -178,33 +158,21 @@ struct SilcClientStruct {
  *
  * DESCRIPTION
  *
- *    This structure represents a connection.  When connection is created
- *    to server this is context is returned to the application in the
- *    "connected" client operation.  It includes all the important
- *    data for the session, such as nickname, local and remote IDs, and
- *    other information.  All strings in the structure are UTF-8 encoded.
+ *    This structure represents a connection.  It is allocated and freed by
+ *    the library.  It is returned to application in SilcClientConnectCallback.
+ *    It includes all the important data for the session such as local
+ *    client entry (which includes current nickname), local and remote IDs,
+ *    and other information.  All strings in the structure are UTF-8 encoded.
  *
  * SOURCE
  */
 struct SilcClientConnectionStruct {
-  /*
-   * Local data
-   */
-  SilcClientEntry local_entry;	       /* Own Client Entry */
-  SilcClientID *local_id;	       /* Current Client ID */
-  SilcBuffer local_idp;		       /* Current Client ID Payload */
+  SilcClientEntry local_entry;	       /* Our own Client Entry */
+  SilcClientID *local_id;	       /* Our current Client ID */
 
-  /*
-   * Remote data
-   */
-  char *remote_host;		       /* Remote host name, UTF-8 encoded */
+  char *remote_host;		       /* Remote host name */
   int remote_port;		       /* Remote port */
   SilcID remote_id;		       /* Remote ID */
-  SilcBuffer remote_idp;	       /* Remote ID Payload */
-
-  /*
-   * Common data
-   */
 
   SilcChannelEntry current_channel;    /* Current joined channel */
   SilcPublicKey public_key;	       /* Public key used in this connection */
@@ -212,8 +180,11 @@ struct SilcClientConnectionStruct {
   SilcPacketStream stream;	       /* Connection to remote host */
   SilcConnectionType type;	       /* Connection type */
   SilcClientConnectCallback callback;  /* Connection callback */
-  void *context;		       /* Connection context */
+  void *callback_context;	       /* Connection context */
   SilcClient client;		       /* Pointer back to SilcClient */
+
+  /* Application specific data.  Application may set here whatever it wants. */
+  void *context;
 
   /* Internal data for client library.  Application cannot access this. */
   SilcClientConnectionInternal internal;
@@ -673,9 +644,8 @@ typedef struct {
   SilcBool threads;
 
   /* Number of maximum tasks the client library's scheduler can handle.
-     If set to zero, the default value will be used (200). For WIN32
-     systems this should be set to 64 as it is the hard limit dictated
-     by the WIN32. */
+     If set to zero default value will be used.  For WIN32 systems this
+     should be set to 64 as it is the hard limit dictated  by the WIN32. */
   int task_max;
 
   /* Rekey timeout in seconds. The client will perform rekey in this
@@ -801,7 +771,8 @@ void silc_client_free(SilcClient client);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_client_init(SilcClient client);
+ *    SilcBool silc_client_init(SilcClient client, const char *username,
+ *                              const char *hostname, const char *realname);
  *
  * DESCRIPTION
  *
@@ -809,8 +780,14 @@ void silc_client_free(SilcClient client);
  *    the client ready to be run. One must call silc_client_run to run the
  *    client. Returns FALSE if error occurred, TRUE otherwise.
  *
+ *    The `username', `hostname' and `realname' strings must be given and
+ *    they must be UTF-8 encoded.  The `username' is the client's username
+ *    in the operating system, `hostname' is the client's host name and
+ *    the `realname' is the user's real name.
+ *
  ***/
-SilcBool silc_client_init(SilcClient client);
+SilcBool silc_client_init(SilcClient client, const char *username,
+			  const char *hostname, const char *realname);
 
 /****f* silcclient/SilcClientAPI/silc_client_run
  *
@@ -879,6 +856,13 @@ void silc_client_stop(SilcClient client);
  * SOURCE
  */
 typedef struct {
+  /* If this is provided the user's nickname in the network will be the
+     string given here.  If it is given, it must be UTF-8 encoded.  If this
+     string is not given, the user's username by default is used as nickname.
+     The nickname may later be changed by using NICK command.  The maximum
+     length for the nickname string is 128 bytes. */
+  char *nickname;
+
   /* If this key repository pointer is non-NULL then public key received in
      the key exchange protocol will be verified from this repository.  If
      this is not provided then the `verify_public_key' client operation will
@@ -1102,17 +1086,16 @@ SilcBool silc_client_key_exchange(SilcClient client,
  *
  * DESCRIPTION
  *
- *    Closes connection to remote end. Free's all allocated data except
- *    for some information such as nickname etc. that are valid at all time.
- *    Usually application does not need to directly call this, except
- *    when explicitly closing the connection, or if an error occurs
- *    during connection to server (see 'connect' client operation for
- *    more information).
+ *    Closes the remote connection `conn'.  The `conn' will become invalid
+ *    after this call.  Usually this function is called only when explicitly
+ *    closing connection for example in case of error, or when the remote
+ *    connection was created by the application or when the remote is client
+ *    connection.  Server connections are usually closed by sending QUIT
+ *    command to the server.  However, this call may also be used.
  *
  ***/
 void silc_client_close_connection(SilcClient client,
 				  SilcClientConnection conn);
-
 
 /* Message sending functions (client_channel.c and client_prvmsg.c) */
 

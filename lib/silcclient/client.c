@@ -379,7 +379,7 @@ SILC_FSM_STATE(silc_client_disconnect)
 
   /* Call connection callback */
   conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED, status,
-		 message, conn->context);
+		 message, conn->callback_context);
 
   silc_free(message);
   silc_packet_free(packet);
@@ -441,11 +441,6 @@ silc_client_add_connection(SilcClient client,
   conn = silc_calloc(1, sizeof(*conn));
   if (!conn)
     return NULL;
-  conn->internal = silc_calloc(1, sizeof(*conn->internal));
-  if (!conn->internal) {
-    silc_free(conn);
-    return NULL;
-  }
 
   conn->client = client;
   conn->public_key = public_key;
@@ -454,7 +449,21 @@ silc_client_add_connection(SilcClient client,
   conn->remote_port = port ? port : 706;
   conn->type = conn_type;
   conn->callback = callback;
-  conn->context = context;
+  conn->callback_context = context;
+
+  conn->internal = silc_calloc(1, sizeof(*conn->internal));
+  if (!conn->internal) {
+    silc_free(conn);
+    return NULL;
+  }
+
+  if (!silc_hash_alloc("sha1", &conn->internal->sha1hash)) {
+    silc_free(conn);
+    silc_free(conn->internal);
+    return NULL;
+  }
+  if (params)
+    conn->internal->params = *params;
   conn->internal->verbose = TRUE;
   silc_list_init(conn->internal->pending_commands,
 		 struct SilcClientCommandContextStruct, next);
@@ -473,14 +482,6 @@ silc_client_add_connection(SilcClient client,
   }
 
   conn->internal->ftp_sessions = silc_dlist_init();
-
-  if (params) {
-    if (params->detach_data)
-      conn->internal->params.detach_data =
-	silc_memdup(params->detach_data,
-		    params->detach_data_len);
-    conn->internal->params.detach_data_len = params->detach_data_len;
-  }
 
   /* Run the connection state machine.  If threads are in use the machine
      is always run in a real thread. */
@@ -695,6 +696,14 @@ SilcBool silc_client_key_exchange(SilcClient client,
   /* Signal connection to start key exchange */
   conn->internal->key_exchange = TRUE;
   return TRUE;
+}
+
+/* Closes remote connection */
+
+void silc_client_close_connection(SilcClient client,
+				  SilcClientConnection conn)
+{
+
 }
 
 #if 0
@@ -1031,10 +1040,6 @@ void silc_client_free(SilcClient client)
       silc_hmac_unregister_all();
     }
 
-    silc_hash_free(client->md5hash);
-    silc_hash_free(client->sha1hash);
-    silc_hmac_free(client->internal->md5hmac);
-    silc_hmac_free(client->internal->sha1hmac);
     silc_free(client->internal->params);
     silc_free(client->internal->silc_client_version);
     silc_free(client->internal);
@@ -1046,36 +1051,45 @@ void silc_client_free(SilcClient client)
    the client ready to be run. One must call silc_client_run to run the
    client. Returns FALSE if error occured, TRUE otherwise. */
 
-SilcBool silc_client_init(SilcClient client)
+SilcBool silc_client_init(SilcClient client, const char *username,
+			  const char *hostname, const char *realname)
 {
   SILC_LOG_DEBUG(("Initializing client"));
 
-  assert(client);
-  assert(client->username);
-  assert(client->hostname);
-  assert(client->realname);
+  if (!client)
+    return FALSE;
+
+  if (!username || !hostname || !realname) {
+    SILC_LOG_ERROR(("Username, hostname and realname must be given to "
+		    "silc_client_init"));
+    return FALSE;
+  }
 
   /* Validate essential strings */
-  if (client->nickname)
-    if (!silc_identifier_verify(client->nickname, strlen(client->nickname),
-				SILC_STRING_UTF8, 128)) {
-      SILC_LOG_ERROR(("Malformed nickname '%s'", client->nickname));
-      return FALSE;
-    }
-  if (!silc_identifier_verify(client->username, strlen(client->username),
+  if (!silc_identifier_verify(username, strlen(username),
 			      SILC_STRING_UTF8, 128)) {
-    SILC_LOG_ERROR(("Malformed username '%s'", client->username));
+    SILC_LOG_ERROR(("Malformed username '%s'. Username must be UTF-8 string",
+		    client->username));
     return FALSE;
   }
-  if (!silc_identifier_verify(client->hostname, strlen(client->hostname),
+  if (!silc_identifier_verify(hostname, strlen(hostname),
 			      SILC_STRING_UTF8, 256)) {
-    SILC_LOG_ERROR(("Malformed hostname '%s'", client->hostname));
+    SILC_LOG_ERROR(("Malformed hostname '%s'. Hostname must be UTF-8 string",
+		    client->hostname));
     return FALSE;
   }
-  if (!silc_utf8_valid(client->realname, strlen(client->realname))) {
-    SILC_LOG_ERROR(("Malformed realname '%s'", client->realname));
+  if (!silc_utf8_valid(realname, strlen(realname))) {
+    SILC_LOG_ERROR(("Malformed realname '%s'. Realname must be UTF-8 string",
+		    client->realname));
     return FALSE;
   }
+
+  /* Take the name strings */
+  client->username = strdup(username);
+  client->hostname = strdup(hostname);
+  client->realname = strdup(realname);
+  if (!username || !hostname || !realname)
+    return FALSE;
 
   if (!client->internal->params->dont_register_crypto_library) {
     /* Initialize the crypto library.  If application has done this already
@@ -1087,10 +1101,6 @@ SilcBool silc_client_init(SilcClient client)
     silc_hmac_register_default();
   }
 
-  /* Initialize hash functions for client to use */
-  silc_hash_alloc("md5", &client->md5hash);
-  silc_hash_alloc("sha1", &client->sha1hash);
-
   /* Initialize random number generator */
   client->rng = silc_rng_alloc();
   silc_rng_init(client->rng);
@@ -1099,7 +1109,7 @@ SilcBool silc_client_init(SilcClient client)
   /* Initialize the scheduler */
   client->schedule =
     silc_schedule_init(client->internal->params->task_max ?
-		       client->internal->params->task_max : 200, client);
+		       client->internal->params->task_max : 0, client);
   if (!client->schedule)
     return FALSE;
 
@@ -1122,6 +1132,13 @@ SilcBool silc_client_init(SilcClient client)
   /* Register commands */
   silc_client_commands_register(client);
 
+  /* Start the client machine */
+  silc_fsm_start_sync(&client->internal->fsm, silc_client_st_run);
+
+  /* Signal the application when we are running */
+  client->internal->run_callback = TRUE;
+  SILC_FSM_SEMA_POST(&client->internal->wait_event);
+
   return TRUE;
 }
 
@@ -1134,7 +1151,6 @@ void silc_client_stop(SilcClient client)
 
   silc_schedule_stop(client->schedule);
   silc_schedule_uninit(client->schedule);
-
   silc_client_commands_unregister(client);
 
   SILC_LOG_DEBUG(("Client stopped"));
@@ -1146,13 +1162,6 @@ void silc_client_stop(SilcClient client)
 void silc_client_run(SilcClient client)
 {
   SILC_LOG_DEBUG(("Starting SILC client"));
-
-  /* Start the client */
-  silc_fsm_start_sync(&client->internal->fsm, silc_client_st_run);
-
-  /* Signal the application when we are running */
-  client->internal->run_callback = TRUE;
-  SILC_FSM_SEMA_POST(&client->internal->wait_event);
 
   /* Run the scheduler */
   silc_schedule(client->schedule);

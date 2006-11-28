@@ -27,6 +27,7 @@ libsilcclient_la_SOURCES = 		\
 	client_connect.c 		\
 	client_register.c 		\
 	client_notify.c 		\
+	client_attrs.c			\
 	command.c	 		\
 	command_reply.c
 

@@ -26,7 +26,8 @@ typedef struct {
 
 static void
 silc_connected(SilcClient client, SilcClientConnection conn,
-	       SilcClientConnectionStatus status, const char *message,
+	       SilcClientConnectionStatus status,
+	       SilcStatus error, const char *message,
 	       void *context)
 {
   MyBot mybot = client->application;
@@ -72,14 +73,9 @@ int mybot_start(void)
     return 1;
   }
 
-  /* Now fill the allocated client with mandatory parameters the library
-     requires: username, hostname and "real name". */
-  mybot->client->username = silc_get_username();
-  mybot->client->hostname = silc_net_localhost();
-  mybot->client->realname = strdup("I am the MyBot");
-
   /* Now we initialize the client. */
-  if (!silc_client_init(mybot->client)) {
+  if (!silc_client_init(mybot->client, silc_get_username(),
+			silc_net_localhost(), "I am the MyBot")) {
     perror("Could not init client");
     return 1;
   }

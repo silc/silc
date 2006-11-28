@@ -130,10 +130,6 @@ struct SilcClientInternalStruct {
   /* Registered commands */
   SilcList commands;
 
-  /* Generic cipher and hash objects. */
-  SilcHmac md5hmac;
-  SilcHmac sha1hmac;
-
   /* Client version. Used to compare to remote host's version strings. */
   char *silc_client_version;
 
@@ -143,44 +139,29 @@ struct SilcClientInternalStruct {
 
 /* Internal context for conn->internal in SilcClientConnection. */
 struct SilcClientConnectionInternalStruct {
-  /* Client ID and Channel ID cache. Messages transmitted in SILC network
-     are done using different unique ID's. These are the cache for
-     thoses ID's used in the communication. */
-  SilcIDCache client_cache;
-  SilcIDCache channel_cache;
-  SilcIDCache server_cache;
-
-  /* Pending command queue for this connection */
-  SilcList pending_commands;
-
-  /* Set away message */
-  SilcClientAway *away;
-
-  /* Authentication request context. */
-  SilcClientConnAuthRequest connauth;
-
-  /* File transmission sessions */
-  SilcDList ftp_sessions;
-  SilcUInt32 next_session_id;
-  SilcClientFtpSession active_session;
-
-  /* Requested Attributes */
-  SilcHashTable attrs;
+  SilcIDCacheEntry local_entry;		 /* Local client cache entry */
+  SilcClientConnectionParams params;	 /* Connection parameters */
 
   SilcFSMStruct fsm;			 /* Connection FSM */
   SilcFSMThreadStruct event_thread;      /* FSM thread for events */
   SilcFSMSemaStruct wait_event;		 /* Event signaller */
-  SilcMutex lock;		         /* Connection lock */
   SilcSchedule schedule;		 /* Connection's scheduler */
+  SilcMutex lock;		         /* Connection lock */
   SilcSKE ske;				 /* Key exchange protocol */
   SilcSKERekeyMaterial rekey;		 /* Rekey material */
-  SilcHash hash;			 /* Negotiated hash function */
-  SilcClientConnectionParams params;	 /* Connection parameters */
-  SilcAtomic16 cmd_ident;		 /* Current command identifier */
-  SilcIDCacheEntry local_entry;		 /* Local client cache entry */
   SilcList thread_pool;			 /* Packet thread pool */
+  SilcList pending_commands;		 /* Pending commands list */
+  SilcHash hash;			 /* Negotiated hash function */
+  SilcHash sha1hash;			 /* SHA-1 default hash context */
 
-  SilcHashTable privmsg_wait;	         /* Waited private messages */
+  SilcIDCache client_cache;		 /* Client entry cache */
+  SilcIDCache channel_cache;		 /* Channel entry cache */
+  SilcIDCache server_cache;		 /* Server entry cache */
+
+  SilcBuffer local_idp;		         /* Local ID Payload */
+  SilcBuffer remote_idp;		 /* Remote ID Payload */
+
+  SilcAtomic16 cmd_ident;		 /* Current command identifier */
 
   /* Events */
   unsigned int connect            : 1;	 /* Connect remote host */
@@ -190,6 +171,14 @@ struct SilcClientConnectionInternalStruct {
   /* Flags */
   unsigned int verbose            : 1;   /* Notify application */
   unsigned int registering        : 1;	 /* Set when registering to network */
+
+  SilcClientAway *away;
+  SilcClientConnAuthRequest connauth;
+  SilcDList ftp_sessions;
+  SilcUInt32 next_session_id;
+  SilcClientFtpSession active_session;
+  SilcHashTable attrs;
+  SilcHashTable privmsg_wait;	         /* Waited private messages */
 };
 
 SILC_FSM_STATE(silc_client_connection_st_run);

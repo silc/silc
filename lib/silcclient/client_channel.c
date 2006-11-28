@@ -480,7 +480,7 @@ SilcBool silc_client_add_channel_private_key(SilcClient client,
 
   /* Produce the key material */
   keymat = silc_ske_process_key_material_data(key, key_len, 16, 256, 16,
-					      client->sha1hash);
+					      conn->internal->sha1hash);
   if (!keymat)
     return FALSE;
 
@@ -670,7 +670,8 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
   return NULL;
 }
 
-/* Adds client to channel */
+/* Adds client to channel.  Returns TRUE if user was added or is already
+   added to the channel, FALSE on error. */
 
 SilcBool silc_client_add_to_channel(SilcChannelEntry channel,
 				    SilcClientEntry client_entry,
@@ -679,7 +680,7 @@ SilcBool silc_client_add_to_channel(SilcChannelEntry channel,
   SilcChannelUser chu;
 
   if (silc_client_on_channel(channel, client_entry))
-    return FALSE;
+    return TRUE;
 
   chu = silc_calloc(1, sizeof(*chu));
   if (!chu)

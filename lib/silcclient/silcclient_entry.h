@@ -410,12 +410,13 @@ void silc_client_get_clients_by_channel(SilcClient client,
  *
  * SYNOPSIS
  *
- *    void silc_client_get_clients_by_list(SilcClient client,
- *                                         SilcClientConnection conn,
- *                                         SilcUInt32 list_count,
- *                                         SilcBuffer client_id_list,
- *                                         SilcGetClientCallback completion,
- *                                         void *context);
+ *    SilcUInt16
+ *    silc_client_get_clients_by_list(SilcClient client,
+ *                                    SilcClientConnection conn,
+ *                                    SilcUInt32 list_count,
+ *                                    SilcBuffer client_id_list,
+ *                                    SilcGetClientCallback completion,
+ *                                    void *context);
  *
  * DESCRIPTION
  *
@@ -428,18 +429,22 @@ void silc_client_get_clients_by_channel(SilcClient client,
  *    accessed locally at a later time.  The resolving is done with WHOIS
  *    command.
  *
+ *    Returns command identifier for the resolving.  It can be used to attach
+ *    a pending command to it, if needed.  Returns 0 when no resolving was
+ *    done or wasn't needed (completion is called before this returns).
+ *
  * NOTES
  *
  *    If even after resolving some Client ID in the `client_id_list' is
  *    unknown it will be ignored and error is not returned.
  *
  ***/
-void silc_client_get_clients_by_list(SilcClient client,
-				     SilcClientConnection conn,
-				     SilcUInt32 list_count,
-				     SilcBuffer client_id_list,
-				     SilcGetClientCallback completion,
-				     void *context);
+SilcUInt16 silc_client_get_clients_by_list(SilcClient client,
+					   SilcClientConnection conn,
+					   SilcUInt32 list_count,
+					   SilcBuffer client_id_list,
+					   SilcGetClientCallback completion,
+					   void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_get_client_by_id
  *
@@ -470,7 +475,7 @@ SilcClientEntry silc_client_get_client_by_id(SilcClient client,
  *
  * SYNOPSIS
  *
- *    void
+ *    SilcUInt16
  *    silc_client_get_client_by_id_resolve(SilcClient client,
  *                                         SilcClientConnection conn,
  *                                         SilcClientID *client_id,
@@ -487,6 +492,9 @@ SilcClientEntry silc_client_get_client_by_id(SilcClient client,
  *    cache and can be accessed locally at a later time. The resolving
  *    is done by sending WHOIS command.
  *
+ *    Returns command identifier for the resolving.  It can be used to attach
+ *    a pending command to it, if needed.  Returns 0 on error.
+ *
  *    If the `attributes' is non-NULL then the buffer includes Requested
  *    Attributes which can be used to fetch very detailed information
  *    about the user. If it is NULL then only normal WHOIS query is
@@ -495,12 +503,13 @@ SilcClientEntry silc_client_get_client_by_id(SilcClient client,
  *    function.
  *
  ***/
-void silc_client_get_client_by_id_resolve(SilcClient client,
-					  SilcClientConnection conn,
-					  SilcClientID *client_id,
-					  SilcBuffer attributes,
-					  SilcGetClientCallback completion,
-					  void *context);
+SilcUInt16
+silc_client_get_client_by_id_resolve(SilcClient client,
+				     SilcClientConnection conn,
+				     SilcClientID *client_id,
+				     SilcBuffer attributes,
+				     SilcGetClientCallback completion,
+				     void *context);
 
 /* SilcChannelEntry routines */
 
@@ -669,7 +678,7 @@ SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
  *
  * SYNOPSIS
  *
- *    void
+ *    SilcUInt16
  *    silc_client_get_channel_by_id_resolve(SilcClient client,
  *                                          SilcClientConnection conn,
  *                                          SilcChannelID *channel_id,
@@ -682,16 +691,20 @@ SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
  *    by the `channel_id'. Use this only if you know that you do not have
  *    the entry cached locally. The resolving is done with IDENTIFY command.
  *
+ *    Returns command identifier for the resolving.  It can be used to attach
+ *    a pending command to it, if needed.  Returns 0 on error.
+ *
  *    Note that users on the channel are not resolved at the same time.
  *    Use for example silc_client_get_clients_by_channel to resolve all
  *    users on a channel.
  *
  ***/
-void silc_client_get_channel_by_id_resolve(SilcClient client,
-					   SilcClientConnection conn,
-					   SilcChannelID *channel_id,
-					   SilcGetChannelCallback completion,
-					   void *context);
+SilcUInt16
+silc_client_get_channel_by_id_resolve(SilcClient client,
+				      SilcClientConnection conn,
+				      SilcChannelID *channel_id,
+				      SilcGetChannelCallback completion,
+				      void *context);
 
 /* SilcServerEntry routines */
 
@@ -819,7 +832,7 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
  *
  * SYNOPSIS
  *
- *    void
+ *    SilcUInt16
  *    silc_client_get_server_by_id_resolve(SilcClient client,
  *                                         SilcClientConnection conn,
  *                                         SilcServerID *server_id,
@@ -831,11 +844,15 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
  *    Resolves the server information by the `server_id'.  The resolved
  *    server is returned into the `completion' callback.
  *
+ *    Returns command identifier for the resolving.  It can be used to attach
+ *    a pending command to it, if needed.  Returns 0 on error.
+ *
  ***/
-void silc_client_get_server_by_id_resolve(SilcClient client,
-					  SilcClientConnection conn,
-					  SilcServerID *server_id,
-					  SilcGetServerCallback completion,
-					  void *context);
+SilcUInt16
+silc_client_get_server_by_id_resolve(SilcClient client,
+				     SilcClientConnection conn,
+				     SilcServerID *server_id,
+				     SilcGetServerCallback completion,
+				     void *context);
 
 #endif /* SILCCLIENT_ENTRY_H */

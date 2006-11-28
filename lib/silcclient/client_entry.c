@@ -186,12 +186,13 @@ static SilcBool silc_client_get_clients_cb(SilcClient client,
 
 /* Resolves client information from server by the client ID. */
 
-void silc_client_get_client_by_id_resolve(SilcClient client,
-					  SilcClientConnection conn,
-					  SilcClientID *client_id,
-					  SilcBuffer attributes,
-					  SilcGetClientCallback completion,
-					  void *context)
+SilcUInt16
+silc_client_get_client_by_id_resolve(SilcClient client,
+				     SilcClientConnection conn,
+				     SilcClientID *client_id,
+				     SilcBuffer attributes,
+				     SilcGetClientCallback completion,
+				     void *context)
 {
   SilcClientGetClientInternal i;
   SilcClientEntry client_entry;
@@ -199,20 +200,20 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
   SilcUInt16 cmd_ident;
 
   if (!client || !conn | !client_id)
-    return;
+    return 0;
 
   SILC_LOG_DEBUG(("Resolve client by ID (%s)",
 		  silc_id_render(client_id, SILC_ID_CLIENT)));
 
   i = silc_calloc(1, sizeof(*i));
   if (!i)
-    return;
+    return 0;
   i->completion = completion;
   i->context = context;
   i->clients = silc_dlist_init();
   if (!i->clients) {
     silc_free(i);
-    return;
+    return 0;
   }
 
   /* Attach to resolving, if on going */
@@ -223,7 +224,7 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
     silc_client_command_pending(conn, SILC_COMMAND_NONE,
 				client_entry->internal.resolve_cmd_ident,
 				silc_client_get_clients_cb, i);
-    return;
+    return client_entry->internal.resolve_cmd_ident;
   }
 
   /* Send the command */
@@ -232,7 +233,7 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 				       silc_client_get_clients_cb, i,
 				       2, 3, silc_buffer_datalen(attributes),
 				       4, silc_buffer_datalen(idp));
-  if (!cmd_ident)
+  if (!cmd_ident && completion)
     completion(client, conn, SILC_STATUS_ERR_RESOURCE_LIMIT, NULL, context);
 
   if (client_entry && cmd_ident)
@@ -240,6 +241,8 @@ void silc_client_get_client_by_id_resolve(SilcClient client,
 
   silc_client_unref_client(client, conn, client_entry);
   silc_buffer_free(idp);
+
+  return cmd_ident;
 }
 
 /* Finds client entry or entries by the `nickname' and `server'. The
@@ -404,29 +407,29 @@ static SilcBool silc_client_get_clients_list_cb(SilcClient client,
    command reply for example returns this sort of list. The `completion'
    will be called after the entries are available. */
 
-void silc_client_get_clients_by_list(SilcClient client,
-				     SilcClientConnection conn,
-				     SilcUInt32 list_count,
-				     SilcBuffer client_id_list,
-				     SilcGetClientCallback completion,
-				     void *context)
+SilcUInt16 silc_client_get_clients_by_list(SilcClient client,
+					   SilcClientConnection conn,
+					   SilcUInt32 list_count,
+					   SilcBuffer client_id_list,
+					   SilcGetClientCallback completion,
+					   void *context)
 {
   GetClientsByListInternal in;
   SilcClientEntry entry;
   unsigned char **res_argv = NULL;
   SilcUInt32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
-  SilcUInt16 idp_len;
+  SilcUInt16 idp_len, cmd_ident;
   SilcID id;
   int i;
 
   SILC_LOG_DEBUG(("Resolve clients from Client ID list"));
 
   if (!client || !conn || !client_id_list)
-    return;
+    return 0;
 
   in = silc_calloc(1, sizeof(*in));
   if (!in)
-    return;
+    return 0;
   in->completion = completion;
   in->context = context;
   in->list_count = list_count;
@@ -470,20 +473,22 @@ void silc_client_get_clients_by_list(SilcClient client,
 
   /* Query the unknown client information from server */
   if (res_argc) {
-    silc_client_command_send_argv(client, conn, SILC_COMMAND_WHOIS,
-				  silc_client_get_clients_list_cb,
-				  in, res_argc, res_argv, res_argv_lens,
-				  res_argv_types);
+    cmd_ident = silc_client_command_send_argv(client,
+					      conn, SILC_COMMAND_WHOIS,
+					      silc_client_get_clients_list_cb,
+					      in, res_argc, res_argv,
+					      res_argv_lens,
+					      res_argv_types);
     silc_free(res_argv);
     silc_free(res_argv_lens);
     silc_free(res_argv_types);
-    return;
+    return cmd_ident;
   }
 
   /* We have the clients in cache, get them and call the completion */
   silc_client_get_clients_list_cb(client, conn, SILC_COMMAND_WHOIS,
 				  SILC_STATUS_OK, SILC_STATUS_OK, in, NULL);
-  return;
+  return 0;
 
  err:
   silc_buffer_free(in->client_id_list);
@@ -491,6 +496,7 @@ void silc_client_get_clients_by_list(SilcClient client,
   silc_free(res_argv);
   silc_free(res_argv_lens);
   silc_free(res_argv_types);
+  return 0;
 }
 
 #if 0
@@ -1179,17 +1185,20 @@ void silc_client_get_channel_resolve(SilcClient client,
   /* Send the command */
   if (!silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
 				silc_client_get_channel_cb, i, 1,
-				3, channel_name, strlen(channel_name)))
-    completion(client, conn, SILC_STATUS_ERR_RESOURCE_LIMIT, NULL, context);
+				3, channel_name, strlen(channel_name))) {
+    if (completion)
+      completion(client, conn, SILC_STATUS_ERR_RESOURCE_LIMIT, NULL, context);
+  }
 }
 
 /* Resolves channel information from the server by the channel ID. */
 
-void silc_client_get_channel_by_id_resolve(SilcClient client,
-					   SilcClientConnection conn,
-					   SilcChannelID *channel_id,
-					   SilcGetChannelCallback completion,
-					   void *context)
+SilcUInt16
+silc_client_get_channel_by_id_resolve(SilcClient client,
+				      SilcClientConnection conn,
+				      SilcChannelID *channel_id,
+				      SilcGetChannelCallback completion,
+				      void *context)
 {
   SilcClientGetChannelInternal i;
   SilcChannelEntry channel;
@@ -1197,31 +1206,20 @@ void silc_client_get_channel_by_id_resolve(SilcClient client,
   SilcUInt16 cmd_ident;
 
   if (!client || !conn || !channel_id || !completion)
-    return;
+    return 0;
 
   SILC_LOG_DEBUG(("Resolve channel by id %s",
 		  silc_id_render(channel_id, SILC_ID_CHANNEL)));
 
   i = silc_calloc(1, sizeof(*i));
   if (!i)
-    return;
+    return 0;
   i->completion = completion;
   i->context = context;
   i->channels = silc_dlist_init();
   if (!i->channels) {
     silc_free(i);
-    return;
-  }
-
-  /* Attach to resolving, if on going */
-  channel = silc_client_get_channel_by_id(client, conn, channel_id);
-  if (channel && channel->internal.resolve_cmd_ident) {
-    SILC_LOG_DEBUG(("Attach to existing resolving"));
-    silc_client_unref_channel(client, conn, channel);
-    silc_client_command_pending(conn, SILC_COMMAND_NONE,
-				channel->internal.resolve_cmd_ident,
-				silc_client_get_channel_cb, i);
-    return;
+    return 0;
   }
 
   /* Send the command */
@@ -1230,13 +1228,12 @@ void silc_client_get_channel_by_id_resolve(SilcClient client,
 				       silc_client_get_channel_cb, i, 1,
 				       5, silc_buffer_datalen(idp));
   silc_buffer_free(idp);
-  if (!cmd_ident)
+  if (!cmd_ident && completion)
     completion(client, conn, SILC_STATUS_ERR_RESOURCE_LIMIT, NULL, context);
 
-  if (channel && cmd_ident)
-    channel->internal.resolve_cmd_ident = cmd_ident;
-
   silc_client_unref_channel(client, conn, channel);
+
+  return cmd_ident;
 }
 
 /************************* Channel Entry Routines ***************************/
@@ -1285,6 +1282,8 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
     return NULL;
   }
 
+  silc_mutex_lock(conn->internal->lock);
+
   /* Add channel to cache, the normalized channel name is saved to cache */
   if (!silc_idcache_add(conn->internal->channel_cache, channel_namec,
 			&channel->id, channel)) {
@@ -1292,8 +1291,11 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
     silc_free(channel->channel_name);
     silc_hash_table_free(channel->user_list);
     silc_free(channel);
+    silc_mutex_unlock(conn->internal->lock);
     return NULL;
   }
+
+  silc_mutex_unlock(conn->internal->lock);
 
   return channel;
 }
@@ -1490,13 +1492,13 @@ SilcServerEntry silc_client_get_server_by_id(SilcClient client,
   silc_mutex_lock(conn->internal->lock);
 
   if (!silc_idcache_find_by_id_one(conn->internal->server_cache,
-				   (void *)server_id, &id_cache))
+				   server_id, &id_cache))
     return NULL;
 
   SILC_LOG_DEBUG(("Found"));
 
   /* Reference */
-  entry = (SilcServerEntry)id_cache->context;
+  entry = id_cache->context;
   silc_client_ref_server(client, conn, entry);
 
   silc_mutex_unlock(conn->internal->lock);
@@ -1561,11 +1563,12 @@ static SilcBool silc_client_get_server_cb(SilcClient client,
 
 /* Resolve server by server ID */
 
-void silc_client_get_server_by_id_resolve(SilcClient client,
-					  SilcClientConnection conn,
-					  SilcServerID *server_id,
-					  SilcGetServerCallback completion,
-					  void *context)
+SilcUInt16
+silc_client_get_server_by_id_resolve(SilcClient client,
+				     SilcClientConnection conn,
+				     SilcServerID *server_id,
+				     SilcGetServerCallback completion,
+				     void *context)
 {
   SilcClientGetServerInternal i;
   SilcServerEntry server;
@@ -1573,20 +1576,20 @@ void silc_client_get_server_by_id_resolve(SilcClient client,
   SilcUInt16 cmd_ident;
 
   if (!client || !conn || !server_id || !completion)
-    return;
+    return 0;
 
   SILC_LOG_DEBUG(("Resolve server by id %s",
 		  silc_id_render(server_id, SILC_ID_SERVER)));
 
   i = silc_calloc(1, sizeof(*i));
   if (!i)
-    return;
+    return 0;
   i->completion = completion;
   i->context = context;
   i->servers = silc_dlist_init();
   if (!i->servers) {
     silc_free(i);
-    return;
+    return 0;
   }
 
   /* Attach to resolving, if on going */
@@ -1597,7 +1600,7 @@ void silc_client_get_server_by_id_resolve(SilcClient client,
     silc_client_command_pending(conn, SILC_COMMAND_NONE,
 				server->internal.resolve_cmd_ident,
 				silc_client_get_server_cb, i);
-    return;
+    return server->internal.resolve_cmd_ident;
   }
 
   /* Send the command */
@@ -1606,13 +1609,15 @@ void silc_client_get_server_by_id_resolve(SilcClient client,
 				       silc_client_get_server_cb, i, 1,
 				       5, silc_buffer_datalen(idp));
   silc_buffer_free(idp);
-  if (!cmd_ident)
+  if (!cmd_ident && completion)
     completion(client, conn, SILC_STATUS_ERR_RESOURCE_LIMIT, NULL, context);
 
   if (server && cmd_ident)
     server->internal.resolve_cmd_ident = cmd_ident;
 
   silc_client_unref_server(client, conn, server);
+
+  return cmd_ident;
 }
 
 /************************** Server Entry Routines ***************************/

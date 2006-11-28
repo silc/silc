@@ -94,7 +94,7 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
 
   /* Always put our public key. */
   pk.type = "silc-rsa";
-  pk.data = silc_pkcs_public_key_encode(client->public_key, &pk.data_len);
+  pk.data = silc_pkcs_public_key_encode(conn->public_key, &pk.data_len);
   buffer = silc_attribute_payload_encode(buffer,
 					 SILC_ATTRIBUTE_USER_PUBLIC_KEY,
 					 pk.data ? SILC_ATTRIBUTE_FLAG_VALID :
@@ -121,9 +121,9 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
   buffer = f.buffer;
 
   /* Finally compute the digital signature of all the data we provided. */
-  if (silc_pkcs_sign_with_hash(client->pkcs, client->sha1hash,
-			       buffer->data, buffer->len,
-			       sign, &sign_len)) {
+  if (silc_pkcs_sign(conn->private_key, silc_buffer_data(buffer),
+		     silc_buffer_len(buffer), sign, sizeof(sign), &sign_len,
+		     conn->internal->sha1hash)) {
     pk.type = NULL;
     pk.data = sign;
     pk.data_len = sign_len;

@@ -670,8 +670,8 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
   }
   memcpy(conn->local_entry->nickname, nick, strlen(nick));
   conn->local_entry->nickname_normalized = tmp;
-  silc_buffer_enlarge(conn->local_idp, idp_len);
-  silc_buffer_put(conn->local_idp, idp, idp_len);
+  silc_buffer_enlarge(conn->internal->local_idp, idp_len);
+  silc_buffer_put(conn->internal->local_idp, idp, idp_len);
   silc_client_nickname_format(client, conn, conn->local_entry);
 
   /* Notify application */
@@ -805,7 +805,7 @@ SILC_FSM_STATE(silc_client_command_reply_invite)
   SilcChannelEntry channel;
   unsigned char *tmp;
   SilcUInt32 len;
-  SilcBufferStruct buf;
+  SilcArgumentPayload invite_args = NULL;
   SilcID id;
 
   /* Sanity checks */
@@ -828,10 +828,13 @@ SILC_FSM_STATE(silc_client_command_reply_invite)
   /* Get the invite list */
   tmp = silc_argument_get_arg_type(args, 3, &len);
   if (tmp)
-    silc_buffer_set(&buf, tmp, len);
+    invite_args = silc_argument_list_parse(tmp, len);
 
   /* Notify application */
-  silc_client_command_callback(cmd, channel, tmp ? &buf : NULL);
+  silc_client_command_callback(cmd, channel, invite_args);
+
+  if (invite_args)
+    silc_argument_payload_free(invite_args);
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
@@ -1019,6 +1022,25 @@ SILC_FSM_STATE(silc_client_command_reply_ping)
 
 /********************************** JOIN ************************************/
 
+/* Continue JOIN command reply processing after resolving unknown users */
+
+static void
+silc_client_command_reply_join_resolved(SilcClient client,
+					SilcClientConnection conn,
+					SilcStatus status,
+					SilcDList clients,
+					void *context)
+{
+  SilcClientCommandContext cmd = context;
+  SilcChannelEntry channel = cmd->context;
+
+  channel->internal.resolve_cmd_ident = 0;
+  silc_client_unref_channel(client, conn, channel);
+
+  SILC_FSM_CALL_CONTINUE(&cmd->thread);
+}
+
+
 /* Received reply for JOIN command. */
 
 SILC_FSM_STATE(silc_client_command_reply_join)
@@ -1031,8 +1053,10 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   SilcChannelEntry channel;
   SilcUInt32 mode = 0, len, list_count;
   char *topic, *tmp, *channel_name = NULL, *hmac;
-  SilcBuffer keyp = NULL, client_id_list = NULL, client_mode_list = NULL;
-  SilcBufferStruct chpklist;
+  const char *cipher;
+  SilcBufferStruct client_id_list, client_mode_list, keyp;
+  SilcHashTableList htl;
+  SilcDList chpks = NULL;
   SilcID id;
   int i;
 
@@ -1053,22 +1077,6 @@ SILC_FSM_STATE(silc_client_command_reply_join)
     goto out;
   }
 
-  /* Get channel mode */
-  tmp = silc_argument_get_arg_type(args, 5, NULL);
-  if (tmp)
-    SILC_GET32_MSB(mode, tmp);
-
-  /* Get channel key */
-  tmp = silc_argument_get_arg_type(args, 7, &len);
-  if (tmp) {
-    keyp = silc_buffer_alloc_size(len);
-    if (keyp)
-      silc_buffer_put(keyp, tmp, len);
-  }
-
-  /* Get topic */
-  topic = silc_argument_get_arg_type(args, 10, NULL);
-
   /* Check whether we have this channel entry already. */
   channel = silc_client_get_channel(client, conn, channel_name);
   if (channel) {
@@ -1082,21 +1090,7 @@ SILC_FSM_STATE(silc_client_command_reply_join)
       ERROR_CALLBACK(SILC_STATUS_ERR_BAD_CHANNEL);
       goto out;
     }
-  }
-
-  conn->current_channel = channel;
-  channel->mode = mode;
-
-  /* Get hmac */
-  hmac = silc_argument_get_arg_type(args, 11, NULL);
-  if (hmac) {
-    if (!silc_hmac_alloc(hmac, NULL, &channel->internal.hmac)) {
-      if (cmd->verbose)
-	SAY(client, conn, SILC_CLIENT_MESSAGE_ERROR,
-	    "Cannot join channel: Unsupported HMAC `%s'", hmac);
-      ERROR_CALLBACK(SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
-      goto out;
-    }
+    silc_client_ref_channel(client, conn, channel);
   }
 
   /* Get the list count */
@@ -1113,10 +1107,18 @@ SILC_FSM_STATE(silc_client_command_reply_join)
     ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
+  silc_buffer_set(&client_id_list, tmp, len);
 
-  client_id_list = silc_buffer_alloc_size(len);
-  if (client_id_list)
-    silc_buffer_put(client_id_list, tmp, len);
+  /* Resolve users we do not know about */
+  if (!cmd->resolved) {
+    cmd->resolved = TRUE;
+    cmd->context = channel;
+    SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		  silc_client_get_clients_by_list(
+			  client, conn, list_count, &client_id_list,
+			  silc_client_command_reply_join_resolved, cmd));
+    /* NOT REACHED */
+  }
 
   /* Get client mode list */
   tmp = silc_argument_get_arg_type(args, 14, &len);
@@ -1124,10 +1126,7 @@ SILC_FSM_STATE(silc_client_command_reply_join)
     ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
-
-  client_mode_list = silc_buffer_alloc_size(len);
-  if (client_mode_list)
-    silc_buffer_put(client_mode_list, tmp, len);
+  silc_buffer_set(&client_mode_list, tmp, len);
 
   /* Add clients we received in the reply to the channel */
   for (i = 0; i < list_count; i++) {
@@ -1137,45 +1136,60 @@ SILC_FSM_STATE(silc_client_command_reply_join)
     SilcClientEntry client_entry;
 
     /* Client ID */
-    SILC_GET16_MSB(idp_len, client_id_list->data + 2);
+    SILC_GET16_MSB(idp_len, client_id_list.data + 2);
     idp_len += 4;
-    if (!silc_id_payload_parse_id(client_id_list->data, idp_len, &id))
-      goto out;
+    if (!silc_id_payload_parse_id(client_id_list.data, idp_len, &id))
+      continue;
 
     /* Mode */
-    SILC_GET32_MSB(mode, client_mode_list->data);
+    SILC_GET32_MSB(mode, client_mode_list.data);
 
-    /* Check if we have this client cached already. */
+    /* Get client entry */
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
-    if (!client_entry) {
-      /* No, we don't have it, add entry for it. */
-      client_entry =
-	silc_client_add_client(client, conn, NULL, NULL, NULL,
-			       &id.u.client_id, 0);
-      if (!client_entry)
-	goto out;
-    }
+    if (!client_entry)
+      continue;
 
     /* Join client to the channel */
-    if (!silc_client_add_to_channel(channel, client_entry, mode)) {
-      silc_client_unref_client(client, conn, client_entry);
-      goto out;
-    }
+    silc_client_add_to_channel(channel, client_entry, mode);
     silc_client_unref_client(client, conn, client_entry);
 
-    if (!silc_buffer_pull(client_id_list, idp_len))
+    if (!silc_buffer_pull(&client_id_list, idp_len))
       goto out;
-    if (!silc_buffer_pull(client_mode_list, 4))
+    if (!silc_buffer_pull(&client_mode_list, 4))
       goto out;
   }
-  silc_buffer_start(client_id_list);
-  silc_buffer_start(client_mode_list);
 
-  /* Save channel key */
-#if 0
-  if (keyp)
-    silc_client_save_channel_key(client, conn, keyp, channel);
-#endif /* 0 */
+  /* Get hmac */
+  hmac = silc_argument_get_arg_type(args, 11, NULL);
+  if (hmac) {
+    if (!silc_hmac_alloc(hmac, NULL, &channel->internal.hmac)) {
+      if (cmd->verbose)
+	SAY(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	    "Cannot join channel: Unsupported HMAC `%s'", hmac);
+      ERROR_CALLBACK(SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+      goto out;
+    }
+  }
+
+  /* Get channel mode */
+  tmp = silc_argument_get_arg_type(args, 5, NULL);
+  if (tmp)
+    SILC_GET32_MSB(mode, tmp);
+  channel->mode = mode;
+
+  /* Get channel key and save it */
+  tmp = silc_argument_get_arg_type(args, 7, &len);
+  if (tmp) {
+    silc_buffer_set(&keyp, tmp, len);
+    silc_client_save_channel_key(client, conn, &keyp, channel);
+  }
+
+  /* Get topic */
+  topic = silc_argument_get_arg_type(args, 10, NULL);
+  if (topic) {
+    silc_free(channel->topic);
+    channel->topic = silc_memdup(topic, strlen(topic));
+  }
 
   /* Get founder key */
   tmp = silc_argument_get_arg_type(args, 15, &len);
@@ -1196,24 +1210,27 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   /* Get channel public key list */
   tmp = silc_argument_get_arg_type(args, 16, &len);
   if (tmp)
-    silc_buffer_set(&chpklist, tmp, len);
+    chpks = silc_argument_list_parse_decoded(tmp, len,
+					     SILC_ARGUMENT_PUBLIC_KEY);
 
-  if (topic) {
-    silc_free(channel->topic);
-    channel->topic = silc_memdup(topic, strlen(topic));
-  }
+  /* Set current channel */
+  conn->current_channel = channel;
+
+  cipher = (channel->internal.channel_key ?
+	    silc_cipher_get_name(channel->internal.channel_key) : NULL);
+  silc_hash_table_list(channel->user_list, &htl);
 
   /* Notify application */
-  silc_client_command_callback(cmd, channel_name, channel, mode, 0,
-			       keyp ? keyp->head : NULL, NULL,
-			       NULL, topic, hmac, list_count, client_id_list,
-			       client_mode_list, channel->founder_key,
-			       tmp ? &chpklist : NULL, channel->user_limit);
+  silc_client_command_callback(cmd, channel_name, channel, mode, &htl,
+			       topic, cipher, hmac, channel->founder_key,
+			       chpks, channel->user_limit);
+
+  if (chpks)
+    silc_argument_list_free(chpks, SILC_ARGUMENT_PUBLIC_KEY);
+  silc_hash_table_list_reset(&htl);
+  silc_client_unref_channel(client, conn, channel);
 
  out:
-  silc_buffer_free(keyp);
-  silc_buffer_free(client_id_list);
-  silc_buffer_free(client_mode_list);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
@@ -1610,7 +1627,7 @@ SILC_FSM_STATE(silc_client_command_reply_ban)
   SilcChannelEntry channel;
   unsigned char *tmp;
   SilcUInt32 len;
-  SilcBufferStruct buf;
+  SilcArgumentPayload invite_args = NULL;
   SilcID id;
 
   /* Sanity checks */
@@ -1630,13 +1647,16 @@ SILC_FSM_STATE(silc_client_command_reply_ban)
     goto out;
   }
 
-  /* Get the ban list */
+  /* Get the invite list */
   tmp = silc_argument_get_arg_type(args, 3, &len);
   if (tmp)
-    silc_buffer_set(&buf, tmp, len);
+    invite_args = silc_argument_list_parse(tmp, len);
 
   /* Notify application */
-  silc_client_command_callback(cmd, channel, tmp ? &buf : NULL);
+  silc_client_command_callback(cmd, channel, invite_args);
+
+  if (invite_args)
+    silc_argument_payload_free(invite_args);
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
@@ -1690,7 +1710,7 @@ SILC_FSM_STATE(silc_client_command_reply_leave)
 
 /********************************* USERS ************************************/
 
-/* Continue USERS command after resolving unknown users */
+/* Continue USERS command reply processing after resolving unknown users */
 
 static void
 silc_client_command_reply_users_resolved(SilcClient client,
@@ -1702,6 +1722,7 @@ silc_client_command_reply_users_resolved(SilcClient client,
   SilcClientCommandContext cmd = context;
   SILC_FSM_CALL_CONTINUE(&cmd->thread);
 }
+
 
 /* Continue USERS command after resolving unknown channel */
 
@@ -1884,7 +1905,7 @@ SILC_FSM_STATE(silc_client_command_reply_getkey)
 
     /* Save fingerprint */
     if (!client_entry->fingerprint)
-      silc_hash_make(client->sha1hash, tmp + 4, len - 4,
+      silc_hash_make(conn->internal->sha1hash, tmp + 4, len - 4,
 		     client_entry->fingerprint);
     if (!client_entry->public_key) {
       client_entry->public_key = public_key;

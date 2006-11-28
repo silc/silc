@@ -26,6 +26,14 @@
 
 #define NOTIFY conn->client->internal->ops->notify
 
+/* Notify processing context */
+typedef struct {
+  SilcPacket packet;
+  SilcNotifyPayload payload;
+  SilcFSMThread fsm;
+  SilcChannelEntry channel;
+} *SilcClientNotify;
+
 /************************ Static utility functions **************************/
 
 /* Entry resolving callback.  This will continue processing the notify. */
@@ -36,12 +44,40 @@ static void silc_client_notify_resolved(SilcClient client,
 					SilcDList entries,
 					void *context)
 {
+  SilcClientNotify notify = context;
+
   /* If no entries found, just finish the notify processing, a silent error */
   if (!entries)
-    silc_fsm_next(context, silc_client_notify_processed);
+    silc_fsm_next(notify->fsm, silc_client_notify_processed);
+
+  if (notify->channel) {
+    notify->channel->internal.resolve_cmd_ident = 0;
+    silc_client_unref_channel(client, conn, notify->channel);
+  }
 
   /* Continue processing the notify */
-  SILC_FSM_CALL_CONTINUE_SYNC(context);
+  SILC_FSM_CALL_CONTINUE_SYNC(notify->fsm);
+}
+
+/* Continue notify processing after it was suspended while waiting for
+   channel information being resolved. */
+
+static SilcBool silc_client_notify_wait_continue(SilcClient client,
+						 SilcClientConnection conn,
+						 SilcCommand command,
+						 SilcStatus status,
+						 SilcStatus error,
+						 void *context,
+						 va_list ap)
+{
+  SilcClientNotify notify = context;
+
+  /* Continue after last command reply received */
+  if (SILC_STATUS_IS_ERROR(status) || status == SILC_STATUS_OK ||
+      status == SILC_STATUS_LIST_END)
+    SILC_FSM_CALL_CONTINUE(notify->fsm);
+
+  return TRUE;
 }
 
 /********************************* Notify ***********************************/
@@ -51,6 +87,7 @@ static void silc_client_notify_resolved(SilcClient client,
 SILC_FSM_STATE(silc_client_notify)
 {
   SilcPacket packet = state_context;
+  SilcClientNotify notify;
   SilcNotifyPayload payload;
 
   payload = silc_notify_payload_parse(silc_buffer_data(&packet->buffer),
@@ -68,8 +105,18 @@ SILC_FSM_STATE(silc_client_notify)
     return SILC_FSM_FINISH;
   }
 
+  notify = silc_calloc(1, sizeof(*notify));
+  if (!notify) {
+    silc_notify_payload_free(payload);
+    silc_packet_free(packet);
+    return SILC_FSM_FINISH;
+  }
+
   /* Save notify payload to packet context during processing */
-  packet->next = (void *)payload;
+  notify->packet = packet;
+  notify->payload = payload;
+  notify->fsm = fsm;
+  silc_fsm_set_state_context(fsm, notify);
 
   /* Process the notify */
   switch (silc_notify_get_type(payload)) {
@@ -158,6 +205,7 @@ SILC_FSM_STATE(silc_client_notify)
     /** Unknown notify */
     silc_notify_payload_free(payload);
     silc_packet_free(packet);
+    silc_free(notify);
     return SILC_FSM_FINISH;
     break;
   }
@@ -169,10 +217,13 @@ SILC_FSM_STATE(silc_client_notify)
 
 SILC_FSM_STATE(silc_client_notify_processed)
 {
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcPacket packet = notify->packet;
+  SilcNotifyPayload payload = notify->payload;
+
   silc_notify_payload_free(payload);
   silc_packet_free(packet);
+  silc_free(notify);
   return SILC_FSM_FINISH;
 }
 
@@ -182,8 +233,8 @@ SILC_FSM_STATE(silc_client_notify_none)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
 
@@ -203,8 +254,8 @@ SILC_FSM_STATE(silc_client_notify_invite)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry;
@@ -227,6 +278,17 @@ SILC_FSM_STATE(silc_client_notify_invite)
   /* Get the channel entry */
   channel = silc_client_get_channel_by_id(client, conn, &id.u.channel_id);
 
+  /* If channel is being resolved handle notify after resolving */
+  if (channel->internal.resolve_cmd_ident) {
+    silc_client_unref_channel(client, conn, channel);
+    SILC_FSM_CALL(silc_client_command_pending(
+			              conn, SILC_COMMAND_NONE,
+				      channel->internal.resolve_cmd_ident,
+				      silc_client_notify_wait_continue,
+				      fsm));
+    /* NOT REACHED */
+  }
+
   /* Get sender Client ID */
   if (!silc_argument_get_decoded(args, 3, SILC_ARGUMENT_ID, &id, NULL))
     goto out;
@@ -236,7 +298,9 @@ SILC_FSM_STATE(silc_client_notify_invite)
   if (!client_entry || !client_entry->nickname[0]) {
     /** Resolve client */
     silc_client_unref_client(client, conn, client_entry);
-    SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
+    notify->channel = channel;
+    SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		  silc_client_get_client_by_id_resolve(
 					 client, conn, &id.u.client_id, NULL,
 					 silc_client_notify_resolved,
 					 fsm));
@@ -263,8 +327,8 @@ SILC_FSM_STATE(silc_client_notify_join)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry;
@@ -282,6 +346,17 @@ SILC_FSM_STATE(silc_client_notify_join)
   if (!channel)
     goto out;
 
+  /* If channel is being resolved handle notify after resolving */
+  if (channel->internal.resolve_cmd_ident) {
+    silc_client_unref_channel(client, conn, channel);
+    SILC_FSM_CALL(silc_client_command_pending(
+			              conn, SILC_COMMAND_NONE,
+				      channel->internal.resolve_cmd_ident,
+				      silc_client_notify_wait_continue,
+				      fsm));
+    /* NOT REACHED */
+  }
+
   /* Get Client ID */
   if (!silc_argument_get_decoded(args, 1, SILC_ARGUMENT_ID, &id, NULL))
     goto out;
@@ -292,7 +367,9 @@ SILC_FSM_STATE(silc_client_notify_join)
       !client_entry->username[0]) {
     /** Resolve client */
     silc_client_unref_client(client, conn, client_entry);
-    SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
+    notify->channel = channel;
+    SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		  silc_client_get_client_by_id_resolve(
 					 client, conn, &id.u.client_id, NULL,
 					 silc_client_notify_resolved,
 					 fsm));
@@ -303,7 +380,8 @@ SILC_FSM_STATE(silc_client_notify_join)
     silc_client_nickname_format(client, conn, client_entry);
 
   /* Join the client to channel */
-  silc_client_add_to_channel(channel, client_entry, 0);
+  if (!silc_client_add_to_channel(channel, client_entry, 0))
+    goto out;
 
   /* Notify application. */
   NOTIFY(client, conn, type, client_entry, channel);
@@ -325,8 +403,9 @@ SILC_FSM_STATE(silc_client_notify_leave)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
+  SilcPacket packet = notify->packet;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry = NULL;
@@ -343,6 +422,17 @@ SILC_FSM_STATE(silc_client_notify_leave)
   channel = silc_client_get_channel_by_id(client, conn, &id.u.channel_id);
   if (!channel)
     goto out;
+
+  /* If channel is being resolved handle notify after resolving */
+  if (channel->internal.resolve_cmd_ident) {
+    silc_client_unref_channel(client, conn, channel);
+    SILC_FSM_CALL(silc_client_command_pending(
+			              conn, SILC_COMMAND_NONE,
+				      channel->internal.resolve_cmd_ident,
+				      silc_client_notify_wait_continue,
+				      fsm));
+    /* NOT REACHED */
+  }
 
   /* Get Client ID */
   if (!silc_argument_get_decoded(args, 1, SILC_ARGUMENT_ID, &id, NULL))
@@ -399,8 +489,8 @@ SILC_FSM_STATE(silc_client_notify_signoff)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry;
@@ -453,8 +543,9 @@ SILC_FSM_STATE(silc_client_notify_topic_set)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
+  SilcPacket packet = notify->packet;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry = NULL;
@@ -475,6 +566,17 @@ SILC_FSM_STATE(silc_client_notify_topic_set)
   if (!channel)
     goto out;
 
+  /* If channel is being resolved handle notify after resolving */
+  if (channel->internal.resolve_cmd_ident) {
+    silc_client_unref_channel(client, conn, channel);
+    SILC_FSM_CALL(silc_client_command_pending(
+			              conn, SILC_COMMAND_NONE,
+				      channel->internal.resolve_cmd_ident,
+				      silc_client_notify_wait_continue,
+				      fsm));
+    /* NOT REACHED */
+  }
+
   /* Get ID */
   if (!silc_argument_get_decoded(args, 1, SILC_ARGUMENT_ID, &id, NULL))
     goto out;
@@ -490,7 +592,9 @@ SILC_FSM_STATE(silc_client_notify_topic_set)
     if (!client_entry || !client_entry->nickname[0]) {
       /** Resolve client */
       silc_client_unref_client(client, conn, client_entry);
-      SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
+      notify->channel = channel;
+      SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		    silc_client_get_client_by_id_resolve(
 					   client, conn, &id.u.client_id, NULL,
 					   silc_client_notify_resolved,
 					   fsm));
@@ -502,7 +606,9 @@ SILC_FSM_STATE(silc_client_notify_topic_set)
     server = silc_client_get_server_by_id(client, conn, &id.u.server_id);
     if (!server) {
       /** Resolve server */
-      SILC_FSM_CALL(silc_client_get_server_by_id_resolve(
+      notify->channel = channel;
+      SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		    silc_client_get_server_by_id_resolve(
 					   client, conn, &id.u.server_id,
 					   silc_client_notify_resolved,
 					   fsm));
@@ -515,7 +621,9 @@ SILC_FSM_STATE(silc_client_notify_topic_set)
 						  &id.u.channel_id);
     if (!channel_entry) {
       /** Resolve channel */
-      SILC_FSM_CALL(silc_client_get_channel_by_id_resolve(
+      notify->channel = channel;
+      SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		    silc_client_get_channel_by_id_resolve(
 				    client, conn, &id.u.channel_id,
 				    silc_client_notify_resolved,
 				    fsm));
@@ -552,8 +660,8 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry = NULL;
@@ -640,8 +748,9 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
+  SilcPacket packet = notify->packet;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry = NULL;
@@ -665,6 +774,17 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
   if (!channel)
     goto out;
 
+  /* If channel is being resolved handle notify after resolving */
+  if (channel->internal.resolve_cmd_ident) {
+    silc_client_unref_channel(client, conn, channel);
+    SILC_FSM_CALL(silc_client_command_pending(
+			              conn, SILC_COMMAND_NONE,
+				      channel->internal.resolve_cmd_ident,
+				      silc_client_notify_wait_continue,
+				      fsm));
+    /* NOT REACHED */
+  }
+
   /* Get the mode */
   tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
   if (!tmp)
@@ -681,7 +801,9 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
     if (!client_entry || !client_entry->nickname[0]) {
       /** Resolve client */
       silc_client_unref_client(client, conn, client_entry);
-      SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
+      notify->channel = channel;
+      SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		    silc_client_get_client_by_id_resolve(
 					   client, conn, &id.u.client_id, NULL,
 					   silc_client_notify_resolved,
 					   fsm));
@@ -693,7 +815,9 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
     server = silc_client_get_server_by_id(client, conn, &id.u.server_id);
     if (!server) {
       /** Resolve server */
-      SILC_FSM_CALL(silc_client_get_server_by_id_resolve(
+      notify->channel = channel;
+      SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		    silc_client_get_server_by_id_resolve(
 					   client, conn, &id.u.server_id,
 					   silc_client_notify_resolved,
 					   fsm));
@@ -706,7 +830,9 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
 						  &id.u.channel_id);
     if (!channel_entry) {
       /** Resolve channel */
-      SILC_FSM_CALL(silc_client_get_channel_by_id_resolve(
+      notify->channel = channel;
+      SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		    silc_client_get_channel_by_id_resolve(
 				    client, conn, &id.u.channel_id,
 				    silc_client_notify_resolved,
 				    fsm));
@@ -800,8 +926,9 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
+  SilcPacket packet = notify->packet;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry = NULL, client_entry2 = NULL;
@@ -823,6 +950,17 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
   if (!channel)
     goto out;
 
+  /* If channel is being resolved handle notify after resolving */
+  if (channel->internal.resolve_cmd_ident) {
+    silc_client_unref_channel(client, conn, channel);
+    SILC_FSM_CALL(silc_client_command_pending(
+			              conn, SILC_COMMAND_NONE,
+				      channel->internal.resolve_cmd_ident,
+				      silc_client_notify_wait_continue,
+				      fsm));
+    /* NOT REACHED */
+  }
+
   /* Get the mode */
   tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
   if (!tmp)
@@ -839,7 +977,9 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
     if (!client_entry || !client_entry->nickname[0]) {
       /** Resolve client */
       silc_client_unref_client(client, conn, client_entry);
-      SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
+      notify->channel = channel;
+      SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		    silc_client_get_client_by_id_resolve(
 					   client, conn, &id.u.client_id, NULL,
 					   silc_client_notify_resolved,
 					   fsm));
@@ -851,7 +991,9 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
     server = silc_client_get_server_by_id(client, conn, &id.u.server_id);
     if (!server) {
       /** Resolve server */
-      SILC_FSM_CALL(silc_client_get_server_by_id_resolve(
+      notify->channel = channel;
+      SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		    silc_client_get_server_by_id_resolve(
 					   client, conn, &id.u.server_id,
 					   silc_client_notify_resolved,
 					   fsm));
@@ -864,7 +1006,9 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
 						  &id.u.channel_id);
     if (!channel_entry) {
       /** Resolve channel */
-      SILC_FSM_CALL(silc_client_get_channel_by_id_resolve(
+      notify->channel = channel;
+      SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		    silc_client_get_channel_by_id_resolve(
 				    client, conn, &id.u.channel_id,
 				    silc_client_notify_resolved,
 				    fsm));
@@ -921,8 +1065,8 @@ SILC_FSM_STATE(silc_client_notify_motd)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   unsigned char *tmp;
@@ -952,8 +1096,8 @@ SILC_FSM_STATE(silc_client_notify_channel_change)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcChannelEntry channel = NULL;
@@ -969,6 +1113,17 @@ SILC_FSM_STATE(silc_client_notify_channel_change)
   channel = silc_client_get_channel_by_id(client, conn, &id.u.channel_id);
   if (!channel)
     goto out;
+
+  /* If channel is being resolved handle notify after resolving */
+  if (channel->internal.resolve_cmd_ident) {
+    silc_client_unref_channel(client, conn, channel);
+    SILC_FSM_CALL(silc_client_command_pending(
+			              conn, SILC_COMMAND_NONE,
+				      channel->internal.resolve_cmd_ident,
+				      silc_client_notify_wait_continue,
+				      fsm));
+    /* NOT REACHED */
+  }
 
   /* Get the new ID */
   if (!silc_argument_get_decoded(args, 2, SILC_ARGUMENT_ID, &id, NULL))
@@ -996,8 +1151,9 @@ SILC_FSM_STATE(silc_client_notify_kicked)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
+  SilcPacket packet = notify->packet;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry, client_entry2;
@@ -1009,6 +1165,25 @@ SILC_FSM_STATE(silc_client_notify_kicked)
 
   SILC_LOG_DEBUG(("Notify: KICKED"));
 
+  /* Get channel entry */
+  if (!silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CHANNEL,
+		      &id.u.channel_id, sizeof(id.u.channel_id)))
+    goto out;
+  channel = silc_client_get_channel_by_id(client, conn, &id.u.channel_id);
+  if (!channel)
+    goto out;
+
+  /* If channel is being resolved handle notify after resolving */
+  if (channel->internal.resolve_cmd_ident) {
+    silc_client_unref_channel(client, conn, channel);
+    SILC_FSM_CALL(silc_client_command_pending(
+			              conn, SILC_COMMAND_NONE,
+				      channel->internal.resolve_cmd_ident,
+				      silc_client_notify_wait_continue,
+				      fsm));
+    /* NOT REACHED */
+  }
+
   /* Get Client ID */
   if (!silc_argument_get_decoded(args, 1, SILC_ARGUMENT_ID, &id, NULL))
     goto out;
@@ -1016,14 +1191,6 @@ SILC_FSM_STATE(silc_client_notify_kicked)
   /* Find Client entry */
   client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
   if (!client_entry)
-    goto out;
-
-  /* Get channel entry */
-  if (!silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CHANNEL,
-		      &id.u.channel_id, sizeof(id.u.channel_id)))
-    goto out;
-  channel = silc_client_get_channel_by_id(client, conn, &id.u.channel_id);
-  if (!channel)
     goto out;
 
   /* Get kicker's Client ID */
@@ -1036,7 +1203,9 @@ SILC_FSM_STATE(silc_client_notify_kicked)
     /** Resolve client */
     silc_client_unref_client(client, conn, client_entry);
     silc_client_unref_client(client, conn, client_entry2);
-    SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
+    notify->channel = channel;
+    SILC_FSM_CALL(channel->internal.resolve_cmd_ident =
+		  silc_client_get_client_by_id_resolve(
 					 client, conn, &id.u.client_id, NULL,
 					 silc_client_notify_resolved,
 					 fsm));
@@ -1084,8 +1253,8 @@ SILC_FSM_STATE(silc_client_notify_killed)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry = NULL, client_entry2 = NULL;
@@ -1185,8 +1354,8 @@ SILC_FSM_STATE(silc_client_notify_server_signoff)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry;
@@ -1235,8 +1404,8 @@ SILC_FSM_STATE(silc_client_notify_error)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry;
@@ -1281,12 +1450,12 @@ SILC_FSM_STATE(silc_client_notify_watch)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
-  SilcPacket packet = state_context;
-  SilcNotifyPayload payload = (SilcNotifyPayload)packet->next;
+  SilcClientNotify notify = state_context;
+  SilcNotifyPayload payload = notify->payload;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry = NULL;
-  SilcNotifyType notify = 0;
+  SilcNotifyType ntype = 0;
   SilcBool del_client = FALSE;
   unsigned char *pk, *tmp;
   SilcUInt32 mode, pk_len, tmp_len;
@@ -1322,7 +1491,7 @@ SILC_FSM_STATE(silc_client_notify_watch)
   if (tmp && tmp_len != 2)
     goto out;
   if (tmp)
-    SILC_GET16_MSB(notify, tmp);
+    SILC_GET16_MSB(ntype, tmp);
 
   /* Get nickname */
   tmp = silc_argument_get_arg_type(args, 2, NULL);
@@ -1353,7 +1522,7 @@ SILC_FSM_STATE(silc_client_notify_watch)
   }
 
   /* Notify application. */
-  NOTIFY(client, conn, type, client_entry, tmp, mode, notify,
+  NOTIFY(client, conn, type, client_entry, tmp, mode, ntype,
 	 client_entry->public_key);
 
   client_entry->mode = mode;
@@ -1361,12 +1530,12 @@ SILC_FSM_STATE(silc_client_notify_watch)
   /* If nickname was changed, remove the client entry unless the
      client is on some channel */
   /* XXX, why do we need to remove the client entry?? */
-  if (tmp && notify == SILC_NOTIFY_TYPE_NICK_CHANGE &&
+  if (tmp && ntype == SILC_NOTIFY_TYPE_NICK_CHANGE &&
       !silc_hash_table_count(client_entry->channels))
     del_client = TRUE;
-  else if (notify == SILC_NOTIFY_TYPE_SIGNOFF ||
-	   notify == SILC_NOTIFY_TYPE_SERVER_SIGNOFF ||
-	   notify == SILC_NOTIFY_TYPE_KILLED)
+  else if (ntype == SILC_NOTIFY_TYPE_SIGNOFF ||
+	   ntype == SILC_NOTIFY_TYPE_SERVER_SIGNOFF ||
+	   ntype == SILC_NOTIFY_TYPE_KILLED)
     del_client = TRUE;
 
   if (del_client)

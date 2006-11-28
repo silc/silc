@@ -78,7 +78,12 @@ typedef struct SilcChannelEntryInternalStruct {
   SilcHmac hmac;			     /* Current HMAC */
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE]; /* Current IV */
 
-  SilcUInt16 resolve_cmd_ident;		     /* Resolving identifier */
+  SilcUInt16 resolve_cmd_ident;		     /* Channel information resolving
+						identifier. This is used when
+						resolving users, and other
+						stuff that relates to the
+						channel. Not used for the
+						channel resolving itself. */
   SilcAtomic8 refcnt;		             /* Reference counter */
 } SilcChannelEntryInternal;
 
