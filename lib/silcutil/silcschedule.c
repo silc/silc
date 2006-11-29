@@ -188,7 +188,6 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
   /* Save the timeout */
   if (task) {
     schedule->timeout = curtime;
-    schedule->has_timeout = TRUE;
     SILC_LOG_DEBUG(("timeout: sec=%d, usec=%d", schedule->timeout.tv_sec,
 		    schedule->timeout.tv_usec));
   }
