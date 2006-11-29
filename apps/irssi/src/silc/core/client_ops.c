@@ -2314,7 +2314,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   memset(file, 0, sizeof(file));
 
   /* Get remote host information */
-  silc_socket_stream_get_info(conn->stream, NULL, &hostname, &ip, &port);
+  silc_socket_stream_get_info(silc_packet_stream_get_stream(conn->stream), 
+			      NULL, &hostname, &ip, &port);
 
   if (conn_type == SILC_CONN_SERVER ||
       conn_type == SILC_CONN_ROUTER) {
@@ -2592,6 +2593,8 @@ void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
   silc_client_request_authentication_method(client, conn,
 					    silc_get_auth_method_callback,
 					    internal);
+#else
+  completion(TRUE, SILC_AUTH_NONE, NULL, 0, context);
 #endif
 }
 

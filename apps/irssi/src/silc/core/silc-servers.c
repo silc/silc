@@ -288,7 +288,7 @@ static void silc_connect_cb(SilcClient client,
   SILC_SERVER_REC *server = context;
   char *file;
 
-  if (!server->disconnected) {
+  if (server->disconnected) {
     silc_client_close_connection(client, conn);
     return;
   }
@@ -298,9 +298,11 @@ static void silc_connect_cb(SilcClient client,
     /* We have successfully connected to server */
 
     /* Enable queueing until we have our requested nick */
+#if 0
     if (settings_get_str("nick") &&
 	!strcmp(conn->local_entry->nickname, conn->local_entry->username))
       silc_queue_enable(conn);
+#endif
 
     /* Put default attributes */
     silc_query_attributes_default(silc_client, conn);
@@ -392,7 +394,7 @@ static void sig_connected_stream_created(SilcSocketStreamStatus status,
     return;
   }
 
-  if (!server->disconnected) {
+  if (server->disconnected) {
     silc_stream_destroy(stream);
     return;
   }

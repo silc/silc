@@ -1229,7 +1229,7 @@ void silc_channels_init(void)
   //  command_bind_silc("key", MODULE_NAME, (SIGNAL_FUNC) command_key);
   //  command_bind("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys);
 
-  command_set_options("listkeys", "clients servers");
+  //command_set_options("listkeys", "clients servers");
   command_set_options("action", "sign channel");
   command_set_options("notice", "sign channel");
 
