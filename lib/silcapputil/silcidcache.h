@@ -200,7 +200,7 @@ SilcBool silc_idcache_del_by_id(SilcIDCache cache, void *id,
 SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
 				     void *app_context);
 
-/****f* silcapputil/SilcIDCacheAPI/silc_idcache_update_id
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_update
  *
  * SYNOPSIS
  *
@@ -224,6 +224,27 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
 			     void *old_id, void *new_id,
 			     char *old_name, char *new_name,
 			     SilcBool free_old_name);
+
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_update
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool
+ *    silc_idcache_update_by_context(SilcIDCache cache, void *context,
+ *                                   void *old_id, void *new_id,
+ *                                   char *old_name, char *new_name,
+ *                                   SilcBool free_old_name);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_idcache_update but finds the corrent ID cache entry by
+ *    the `context' added to the ID cache.
+ *
+ ***/
+SilcBool silc_idcache_update_by_context(SilcIDCache cache, void *context,
+					void *old_id, void *new_id,
+					char *old_name, char *new_name,
+					SilcBool free_old_name);
 
 /****f* silcapputil/SilcIDCacheAPI/silc_idcache_get_all
  *

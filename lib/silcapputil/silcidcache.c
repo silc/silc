@@ -256,6 +256,22 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
   return TRUE;
 }
 
+/* Update entry by context */
+
+SilcBool silc_idcache_update_by_context(SilcIDCache cache, void *context,
+					void *old_id, void *new_id,
+					char *old_name, char *new_name,
+					SilcBool free_old_name)
+{
+  SilcIDCacheEntry c;
+
+  if (!silc_hash_table_find(cache->context_table, context, NULL, (void **)&c))
+    return FALSE;
+
+  return silc_idcache_update(cache, c, old_id, new_id, old_name, new_name,
+			     free_old_name);
+}
+
 /* Returns all cache entrys from the ID cache to the `ret' ID Cache List. */
 
 SilcBool silc_idcache_get_all(SilcIDCache cache, SilcList *ret_list)
