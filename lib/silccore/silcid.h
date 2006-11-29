@@ -184,6 +184,26 @@ typedef struct {
 
 /* Macros */
 
+/****d* silccore/SilcIDAPI/SILC_ID_GET_ID
+ *
+ * NAME
+ *
+ *    #define SILC_ID_GET_ID ...
+ *
+ * DESCRIPTION
+ *
+ *    Returns the ID type specific pointer from the SilcID structure.  As
+ *    the SilcID is able to house all types of IDs this macro can be used
+ *    to get the specific ID from the structure by its type.
+ *
+ * SOURCE
+ */
+#define SILC_ID_GET_ID(id)						\
+  ((id).type == SILC_ID_CLIENT  ? (void *)&(id).u.client_id :		\
+   (id).type == SILC_ID_SERVER  ? (void *)&(id).u.server_id :		\
+   (void *)&(id).u.channel_id)
+/***/
+
 /****d* silccore/SilcIDAPI/SILC_ID_COMPARE
  *
  * NAME
