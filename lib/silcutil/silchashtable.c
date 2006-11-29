@@ -29,7 +29,7 @@
 #include "silchashtable.h"
 
 /* Define to 1 if you want hash table debug enabled */
-#define SILC_HASH_TABLE_DEBUG 1
+#define SILC_HASH_TABLE_DEBUG 0
 
 #if SILC_HASH_TABLE_DEBUG == 1
 #define SILC_HT_DEBUG(fmt) SILC_LOG_DEBUG(fmt)
