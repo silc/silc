@@ -238,6 +238,9 @@ silc_client_command_add_pending(SilcClientConnection conn,
     silc_list_add(cmd->reply_callbacks, cb);
   }
 
+  SILC_LOG_DEBUG(("pending: cmd %p, command %d, ident %d", cmd, cmd->cmd,
+		  cmd->cmd_ident));
+
   /* Add pending reply */
   silc_list_add(conn->internal->pending_commands, cmd);
 
@@ -410,10 +413,10 @@ SilcUInt16 silc_client_command_call(SilcClient client,
       argv_lens = silc_realloc(argv_lens, sizeof(*argv_lens) * (argc + 1));
       argv_types = silc_realloc(argv_types, sizeof(*argv_types) * (argc + 1));
       if (!argv || !argv_lens || !argv_types)
-	return FALSE;
+	return 0;
       argv[argc] = silc_memdup(arg, strlen(arg));
       if (!argv[argc])
-	return FALSE;
+	return 0;
       argv_lens[argc] = strlen(arg);
       argv_types[argc] = argc;
       argc++;
@@ -588,10 +591,16 @@ SILC_FSM_STATE(silc_client_command_whois)
 
   /* Given without arguments fetches client's own information */
   if (cmd->argc < 2) {
-    silc_client_command_send(conn->client, conn, SILC_COMMAND_WHOIS,
-			     NULL, NULL, 1, 4,
-			     silc_buffer_datalen(conn->internal->local_idp));
-    goto out;
+    silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 1, 4,
+				silc_buffer_data(conn->internal->local_idp),
+				silc_buffer_len(conn->internal->local_idp));
+
+    /* Notify application */
+    COMMAND(SILC_STATUS_OK);
+
+    /** Wait for command reply */
+    silc_fsm_next(fsm, silc_client_command_reply_wait);
+    return SILC_FSM_CONTINUE;
   }
 
   for (i = 1; i < cmd->argc; i++) {

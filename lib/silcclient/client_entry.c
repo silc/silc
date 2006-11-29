@@ -744,6 +744,7 @@ SilcClientEntry silc_client_add_client(SilcClient client,
   client_entry->nickname_normalized = nick;
 
   silc_mutex_unlock(conn->internal->lock);
+  silc_client_ref_client(client, conn, client_entry);
 
   return client_entry;
 }
@@ -1296,6 +1297,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   }
 
   silc_mutex_unlock(conn->internal->lock);
+  silc_client_ref_channel(client, conn, channel);
 
   return channel;
 }
@@ -1671,6 +1673,7 @@ SilcServerEntry silc_client_add_server(SilcClient client,
   }
 
   silc_mutex_unlock(conn->internal->lock);
+  silc_client_ref_server(client, conn, server_entry);
 
   return server_entry;
 }

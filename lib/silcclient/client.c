@@ -406,6 +406,7 @@ SILC_FSM_STATE(silc_client_st_run)
 
   if (client->internal->run_callback && client->internal->ops->running) {
     /* Call running callbcak back to application */
+    SILC_LOG_DEBUG(("We are running, call running callback"));
     client->internal->run_callback = FALSE;
     client->internal->ops->running(client, client->application);
     return SILC_FSM_CONTINUE;

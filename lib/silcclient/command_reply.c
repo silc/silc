@@ -32,7 +32,8 @@ do {								\
     silc_status_get_args(cmd->status, args, &arg1, &arg2);	\
   else								\
     cmd->status = error;					\
-   silc_client_command_callback(cmd, arg1, arg2);		\
+  SILC_LOG_DEBUG(("Error in command reply"));			\
+  silc_client_command_callback(cmd, arg1, arg2);		\
 } while(0)
 
 /* Check for error */
@@ -73,7 +74,9 @@ silc_client_command_callback(SilcClientCommandContext cmd, ...)
 
   /* Default reply callback */
   if (cmd->called) {
+    SILC_LOG_DEBUG(("cp %p, ap %p", cp, ap));
     silc_va_copy(cp, ap);
+    SILC_LOG_DEBUG(("cp %p, ap %p", cp, ap));
     cmd->conn->client->internal->ops->command_reply(
 		       cmd->conn->client, cmd->conn, cmd->cmd, cmd->status,
 		       cmd->error, cp);
@@ -84,7 +87,9 @@ silc_client_command_callback(SilcClientCommandContext cmd, ...)
   silc_list_start(cmd->reply_callbacks);
   while ((cb = silc_list_get(cmd->reply_callbacks)))
     if (!cb->do_not_call) {
+    SILC_LOG_DEBUG(("cp %p, ap %p", cp, ap));
       silc_va_copy(cp, ap);
+    SILC_LOG_DEBUG(("cp %p, ap %p", cp, ap));
       cb->do_not_call = cb->reply(cmd->conn->client, cmd->conn, cmd->cmd,
 				  cmd->status, cmd->error, cb->context, cp);
       va_end(cp);
@@ -145,10 +150,15 @@ SILC_FSM_STATE(silc_client_command_reply)
   /* Find the command pending reply */
   silc_mutex_lock(conn->internal->lock);
   silc_list_start(conn->internal->pending_commands);
-  while ((cmd = silc_list_get(conn->internal->pending_commands)))
+  while ((cmd = silc_list_get(conn->internal->pending_commands))) {
+    SILC_LOG_DEBUG(("cmd %p, command %d, ident %d", cmd, cmd->cmd,
+		    cmd->cmd_ident));
     if ((cmd->cmd == command || cmd->cmd == SILC_COMMAND_NONE)
-	&& cmd->cmd_ident == cmd_ident)
+	&& cmd->cmd_ident == cmd_ident) {
+      silc_list_del(conn->internal->pending_commands, cmd);
       break;
+    }
+  }
   silc_mutex_unlock(conn->internal->lock);
 
   if (!cmd) {
@@ -156,6 +166,8 @@ SILC_FSM_STATE(silc_client_command_reply)
     silc_command_payload_free(payload);
     return SILC_FSM_FINISH;
   }
+
+  SILC_LOG_DEBUG(("cmd %p, command %d", cmd, cmd->cmd));
 
   /* Signal command thread that command reply has arrived */
   silc_fsm_set_state_context(&cmd->thread, payload);
@@ -658,6 +670,7 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
   }
 
   /* Update the client entry */
+  silc_mutex_lock(conn->internal->lock);
   if (!silc_idcache_update(conn->internal->client_cache,
 			   conn->internal->local_entry,
 			   &conn->local_entry->id,
@@ -665,14 +678,18 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
 			   conn->local_entry->nickname_normalized,
 			   tmp, TRUE)) {
     silc_free(tmp);
+    silc_mutex_unlock(conn->internal->lock);
     ERROR_CALLBACK(SILC_STATUS_ERR_BAD_NICKNAME);
     goto out;
   }
-  memcpy(conn->local_entry->nickname, nick, strlen(nick));
+  silc_mutex_unlock(conn->internal->lock);
+  memset(conn->local_entry->nickname, 0, sizeof(conn->local_entry->nickname));
+  memcpy(conn->local_entry->nickname, nick, len);
   conn->local_entry->nickname_normalized = tmp;
   silc_buffer_enlarge(conn->internal->local_idp, idp_len);
   silc_buffer_put(conn->internal->local_idp, idp, idp_len);
   silc_client_nickname_format(client, conn, conn->local_entry);
+  silc_packet_set_ids(conn->stream, SILC_ID_CLIENT, conn->local_id, 0, NULL);
 
   /* Notify application */
   silc_client_command_callback(cmd, conn->local_entry,
@@ -1009,9 +1026,10 @@ SILC_FSM_STATE(silc_client_command_reply_ping)
   SilcInt64 diff;
 
   diff = silc_time() - SILC_PTR_TO_64(cmd->context);
-  SAY(client, conn, SILC_CLIENT_MESSAGE_INFO,
-      "Ping reply from %s: %d second%s", conn->remote_host,
-      (int)diff, diff == 1 ? "" : "s");
+  if (cmd->verbose)
+    SAY(client, conn, SILC_CLIENT_MESSAGE_INFO,
+	"Ping reply from %s: %d second%s", conn->remote_host,
+	(int)diff, diff == 1 ? "" : "s");
 
   /* Notify application */
   silc_client_command_callback(cmd);
@@ -1143,6 +1161,8 @@ SILC_FSM_STATE(silc_client_command_reply_join)
 
     /* Mode */
     SILC_GET32_MSB(mode, client_mode_list.data);
+
+    SILC_LOG_DEBUG(("id %s", silc_id_render(&id.u.client_id, SILC_ID_CLIENT)));
 
     /* Get client entry */
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);

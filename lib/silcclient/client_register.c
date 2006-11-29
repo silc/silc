@@ -60,6 +60,9 @@ SILC_FSM_STATE(silc_client_new_id)
 				silc_buffer_len(&packet->buffer), &id))
     goto out;
 
+  SILC_LOG_DEBUG(("New ID %s", silc_id_render(&id.u.client_id,
+					      SILC_ID_CLIENT)));
+
   /* Create local client entry */
   conn->local_entry = silc_client_add_client(client, conn,
 					     client->username,
@@ -74,8 +77,10 @@ SILC_FSM_STATE(silc_client_new_id)
   conn->internal->local_idp = silc_buffer_copy(&packet->buffer);
 
   /* Save cache entry */
-  silc_idcache_find_by_id_one(conn->internal->client_cache, conn->local_id,
-			      &conn->internal->local_entry);
+  if (!silc_idcache_find_by_id_one(conn->internal->client_cache,
+				   conn->local_id,
+				   &conn->internal->local_entry))
+    goto out;
 
   /* Save remote ID */
   if (packet->src_id_len) {
@@ -89,6 +94,10 @@ SILC_FSM_STATE(silc_client_new_id)
 			     silc_buffer_len(conn->internal->remote_idp),
 			     &conn->remote_id);
   }
+
+  /* Set IDs to the packet stream */
+  silc_packet_set_ids(conn->stream, SILC_ID_CLIENT, conn->local_id,
+		      conn->remote_id.type, SILC_ID_GET_ID(conn->remote_id));
 
   /* Signal connection that new ID was received so it can continue
      with the registering. */
