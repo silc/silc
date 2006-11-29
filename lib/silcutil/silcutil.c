@@ -593,18 +593,3 @@ char *silc_get_input(const char *prompt, SilcBool echo_off)
   return NULL;
 #endif /* SILC_UNIX */
 }
-
-/* Copies va_list */
-
-void silc_va_copy(va_list dest, va_list src)
-{
-#if defined(HAVE_VA_COPY)
-  va_copy(dest, src);
-#elif defined(HAVE___VA_COPY)
-  __va_copy(dest, src);
-#elif defined(SILC_VA_COPY_ARRAY)
-  memmove(dest, src, sizeof(va_list));
-#else
-  dest = src;
-#endif
-}

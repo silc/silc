@@ -452,6 +452,14 @@ char *silc_get_real_name();
  *    each copied list.
  *
  ***/
-void silc_va_copy(va_list dest, va_list src);
+#if defined(HAVE_VA_COPY)
+#define silc_va_copy(dest, src) va_copy(dest, src);
+#elif defined(HAVE___VA_COPY)
+#define silc_va_copy(dest, src) __va_copy(dest, src);
+#elif defined(SILC_VA_COPY_ARRAY)
+#define silc_va_copy(dest, src) memmove(dest, src, sizeof(va_list));
+#else
+#define silc_va_copy(dest, src) dest = src;
+#endif
 
 #endif	/* !SILCUTIL_H */
