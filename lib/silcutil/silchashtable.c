@@ -29,7 +29,7 @@
 #include "silchashtable.h"
 
 /* Define to 1 if you want hash table debug enabled */
-#define SILC_HASH_TABLE_DEBUG 0
+#define SILC_HASH_TABLE_DEBUG 1
 
 #if SILC_HASH_TABLE_DEBUG == 1
 #define SILC_HT_DEBUG(fmt) SILC_LOG_DEBUG(fmt)
@@ -508,12 +508,12 @@ SilcBool silc_hash_table_del(SilcHashTable ht, void *key)
 /* Same as above but with specific hash and compare functions. */
 
 SilcBool silc_hash_table_del_ext(SilcHashTable ht, void *key,
-			     SilcHashFunction hash,
-			     void *hash_user_context,
-			     SilcHashCompare compare,
-			     void *compare_user_context,
-			     SilcHashDestructor destructor,
-			     void *destructor_user_context)
+				 SilcHashFunction hash,
+				 void *hash_user_context,
+				 SilcHashCompare compare,
+				 void *compare_user_context,
+				 SilcHashDestructor destructor,
+				 void *destructor_user_context)
 {
   SilcHashTableEntry *entry, prev, e;
 
@@ -561,7 +561,7 @@ SilcBool silc_hash_table_del_ext(SilcHashTable ht, void *key,
    whether the correct entry is being deleted. */
 
 SilcBool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
-				    void *context)
+					void *context)
 {
   SilcHashTableEntry *entry, prev, e;
 
@@ -599,13 +599,13 @@ SilcBool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
 /* Same as above but with specific hash and compare functions. */
 
 SilcBool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
-					void *context,
-					SilcHashFunction hash,
-					void *hash_user_context,
-					SilcHashCompare compare,
-					void *compare_user_context,
-					SilcHashDestructor destructor,
-					void *destructor_user_context)
+					    void *context,
+					    SilcHashFunction hash,
+					    void *hash_user_context,
+					    SilcHashCompare compare,
+					    void *compare_user_context,
+					    SilcHashDestructor destructor,
+					    void *destructor_user_context)
 {
   SilcHashTableEntry *entry, prev, e;
 
@@ -656,7 +656,7 @@ SilcBool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
    maybe used only to check whether given key exists in the table. */
 
 SilcBool silc_hash_table_find(SilcHashTable ht, void *key,
-			  void **ret_key, void **ret_context)
+			      void **ret_key, void **ret_context)
 {
   return silc_hash_table_find_ext(ht, key, ret_key, ret_context,
 				  NULL, NULL, NULL, NULL);
@@ -665,11 +665,11 @@ SilcBool silc_hash_table_find(SilcHashTable ht, void *key,
 /* Same as above but with specified hash and comparison functions. */
 
 SilcBool silc_hash_table_find_ext(SilcHashTable ht, void *key,
-			      void **ret_key, void **ret_context,
-			      SilcHashFunction hash,
-			      void *hash_user_context,
-			      SilcHashCompare compare,
-			      void *compare_user_context)
+				  void **ret_key, void **ret_context,
+				  SilcHashFunction hash,
+				  void *hash_user_context,
+				  SilcHashCompare compare,
+				  void *compare_user_context)
 {
   SilcHashTableEntry *entry;
 
@@ -697,7 +697,7 @@ SilcBool silc_hash_table_find_ext(SilcHashTable ht, void *key,
 /* Same as silc_hash_table_find but finds with specific context. */
 
 SilcBool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
-				     void *context, void **ret_key)
+					 void *context, void **ret_key)
 {
   return silc_hash_table_find_by_context_ext(ht, key, context, ret_key,
 					     NULL, NULL, NULL, NULL);
@@ -706,11 +706,11 @@ SilcBool silc_hash_table_find_by_context(SilcHashTable ht, void *key,
 /* Same as above but with specified hash and comparison functions. */
 
 SilcBool silc_hash_table_find_by_context_ext(SilcHashTable ht, void *key,
-					 void *context, void **ret_key,
-					 SilcHashFunction hash,
-					 void *hash_user_context,
-					 SilcHashCompare compare,
-					 void *compare_user_context)
+					     void *context, void **ret_key,
+					     SilcHashFunction hash,
+					     void *hash_user_context,
+					     SilcHashCompare compare,
+					     void *compare_user_context)
 {
   SilcHashTableEntry *entry;
 
