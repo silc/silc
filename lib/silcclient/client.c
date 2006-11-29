@@ -1172,5 +1172,5 @@ void silc_client_run(SilcClient client)
 
 void silc_client_run_one(SilcClient client)
 {
-  silc_schedule_one(client->schedule, -1);
+  silc_schedule_one(client->schedule, 0);
 }
