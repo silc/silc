@@ -415,7 +415,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
  * DESCRIPTION
  *
  *    Destroy packet stream and the underlaying stream.  This will also
- *    send end of stream to the underlaying stream.
+ *    close and destroy the underlaying stream.
  *
  ***/
 void silc_packet_stream_destroy(SilcPacketStream stream);

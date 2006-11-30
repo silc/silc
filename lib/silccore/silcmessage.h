@@ -329,9 +329,10 @@ unsigned char *silc_message_get_mac(SilcMessagePayload payload);
  *
  * SYNOPSIS
  *
- *    int silc_message_signed_verify(SilcMessagePayload message,
- *                                   SilcPublicKey remote_public_key,
- *                                   SilcHash hash);
+ *    SilcAuthResult
+ *    silc_message_signed_verify(SilcMessagePayload message,
+ *                               SilcPublicKey remote_public_key,
+ *                               SilcHash hash);
  *
  * DESCRIPTION
  *
@@ -341,9 +342,9 @@ unsigned char *silc_message_get_mac(SilcMessagePayload payload);
  *    returns SILC_AUTH_OK if the signature verification was successful.
  *
  ***/
-int silc_message_signed_verify(SilcMessagePayload message,
-			       SilcPublicKey remote_public_key,
-			       SilcHash hash);
+SilcAuthResult silc_message_signed_verify(SilcMessagePayload message,
+					  SilcPublicKey remote_public_key,
+					  SilcHash hash);
 
 /****f* silccore/SilcMessageAPI/silc_message_signed_get_public_key
  *

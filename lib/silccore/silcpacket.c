@@ -1434,7 +1434,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
   SilcUInt32 paddedlen, mac_len, block_len, ivlen, psnlen;
   unsigned char tmp[SILC_PACKET_MIN_HEADER_LEN], *header;
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE], *packet_seq = NULL;
-  SilcBool normal = TRUE;
+  SilcBool normal;
   int ret;
 
   /* Parse the packets from the data */
@@ -1442,6 +1442,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
     ivlen = psnlen = 0;
     cipher = stream->receive_key[0];
     hmac = stream->receive_hmac[0];
+    normal = FALSE;
 
     if (silc_buffer_len(&stream->inbuf) <
 	(stream->iv_included ? SILC_PACKET_MIN_HEADER_LEN_IV :
@@ -1547,6 +1548,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
       silc_buffer_reset(&stream->inbuf);
       return;
     }
+    packet->stream = stream;
 
     /* Allocate more space to packet buffer, if needed */
     if (silc_buffer_truelen(&packet->buffer) < paddedlen) {
@@ -1616,7 +1618,6 @@ static void silc_packet_read_process(SilcPacketStream stream)
     silc_buffer_pull(&stream->inbuf, paddedlen + mac_len);
 
     /* Dispatch the packet to application */
-    packet->stream = stream;
     silc_packet_dispatch(packet);
   }
 

@@ -281,7 +281,7 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
   if (!private_message || (private_message && static_key))
     iv_len = block_len;
 
-  if (data_len <= (mac_len + iv_len + block_len))
+  if (data_len < (mac_len + iv_len + block_len))
     return FALSE;
 
   if (check_mac) {
@@ -306,8 +306,10 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
 	 silc_cipher_get_iv(cipher));
 
   /* Decrypt block */
-  if (!silc_cipher_decrypt(cipher, data, data, block_len, ivp))
+  if (!silc_cipher_decrypt(cipher, data, data, block_len, ivp)) {
+    SILC_ASSERT(FALSE);
     return FALSE;
+  }
 
   /* Get the payload length and decrypt rest */
   totlen = 2;
@@ -319,8 +321,10 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
   if (totlen >= block_len)
     if (!silc_cipher_decrypt(cipher, data + block_len, data + block_len,
 			     (totlen - block_len) + SILC_MESSAGE_PAD(totlen),
-			     ivp))
+			     ivp)) {
+      SILC_ASSERT(FALSE);
       return FALSE;
+    }
 
   return TRUE;
 }
@@ -648,9 +652,9 @@ unsigned char *silc_message_get_mac(SilcMessagePayload payload)
 
 /* Verify the signature in SILC_MESSAGE_FLAG_SIGNED Payload */
 
-int silc_message_signed_verify(SilcMessagePayload message,
-			       SilcPublicKey remote_public_key,
-			       SilcHash hash)
+SilcAuthResult silc_message_signed_verify(SilcMessagePayload message,
+					  SilcPublicKey remote_public_key,
+					  SilcHash hash)
 {
   int ret = SILC_AUTH_FAILED;
   SilcBuffer sign, tmp;
