@@ -297,6 +297,109 @@ AC_ARG_ENABLE(asm,
   ])
 
 ##
+## va_copy checks
+##
+va_copy=false
+AC_MSG_CHECKING(for va_copy)
+AC_TRY_COMPILE(
+  [
+    #include <stdarg.h>
+    #include <stdlib.h>
+  ],
+  [
+    int t(int x, ...)
+    {
+      va_list va, cp;
+      va_start(va, x);
+      va_copy(cp, va);
+      if (va_arg(cp, int) != 0xff11)
+        return 1;
+      va_end(va);
+      va_end(cp);
+      return 0;
+    }
+    int main()
+    {
+      return t(0, 0xff11);
+    }
+  ],
+  [
+    AC_DEFINE([HAVE_VA_COPY], [], [HAVE_VA_COPY])
+    AC_MSG_RESULT(yes)
+    va_copy=true
+  ],
+  [
+    AC_MSG_RESULT(no)
+    va_copy=false
+  ]
+)
+
+if test x$va_copy = xfalse; then
+  AC_MSG_CHECKING(for __va_copy)
+  AC_TRY_COMPILE(
+  [
+    #include <stdarg.h>
+    #include <stdlib.h>
+  ],
+  [
+    int t(int x, ...)
+    {
+      va_list va, cp;
+      va_start(va, x);
+      __va_copy(cp, va);
+      if (va_arg(cp, int) != 0xff11)
+        return 1;
+      va_end(va);
+      va_end(cp);
+      return 0;
+    }
+    int main()
+    {
+      return t(0, 0xff11);
+    }
+  ],
+  [
+    AC_DEFINE([HAVE___VA_COPY], [], [HAVE___VA_COPY])
+    AC_MSG_RESULT(yes)
+    va_copy=true
+  ],
+  [
+    AC_MSG_RESULT(no)
+    va_copy=false
+  ]
+  )
+fi
+
+if test x$va_copy = xfalse; then
+  AC_RUN_IFELSE(
+    [
+      #include <stdarg.h>
+      #include <stdlib.h>
+      int t(int x, ...)
+      {
+        va_list va, cp;
+        va_start(va, x);
+        cp = va;
+        if (va_arg(cp, int) != 0xff11)
+          return 1;
+        va_end(va);
+        va_end(cp);
+        return 0;
+      }
+      int main()
+      {
+        return t(0, 0xff11);
+      }
+    ],
+    [va_copy=false],
+    [
+      AC_DEFINE([SILC_VA_COPY_ARRAY], [], [SILC_VA_COPY_ARRAY])
+    ],
+    [va=copy=false]
+  )
+fi
+
+##
 ## Compiler and compiler flag checks
 ##
 
