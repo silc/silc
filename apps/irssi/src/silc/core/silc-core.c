@@ -196,7 +196,9 @@ static bool silc_log_misc(SilcLogType type, char *message, void *context)
 static void silc_nickname_format_parse(const char *nickname,
 				       char **ret_nickname)
 {
-  silc_parse_userfqdn(nickname, *ret_nickname, 128 + 1, NULL, 0);
+  char nick[128 + 1];
+  silc_parse_userfqdn(nickname, nick, sizeof(nick), NULL, 0);
+  *ret_nickname = strdup(nick);
 }
 
 static void silc_register_cipher(SilcClient client, const char *cipher)

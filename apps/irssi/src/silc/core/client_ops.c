@@ -1510,7 +1510,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  silc_client_unref_client(client, conn, client_entry);
 	}
 	break;
-      } else if (status != SILC_STATUS_OK) {
+      } else if (SILC_STATUS_IS_ERROR(status)) {
 	silc_say_error("WHOIS: %s", silc_get_status_message(status));
 	return;
       }
@@ -1595,7 +1595,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	  silc_say_error("%s: %s", tmp,
 			 silc_get_status_message(status));
 	break;
-      } else if (status != SILC_STATUS_OK) {
+      } else if (SILC_STATUS_IS_ERROR(status)) {
 	silc_say_error("WHOWAS: %s", silc_get_status_message(status));
 	return;
       }
@@ -1616,7 +1616,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcChannelEntry channel;
       SilcArgumentPayload invite_list;
 
-      if (status != SILC_STATUS_OK)
+      if (SILC_STATUS_IS_ERROR(status))
 	return;
 
       channel = va_arg(vp, SilcChannelEntry);
@@ -1638,7 +1638,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcClientEntry founder = NULL;
       NICK_REC *ownnick;
 
-      if (status != SILC_STATUS_OK)
+      if (SILC_STATUS_IS_ERROR(status))
 	return;
 
       channel = va_arg(vp, char *);
@@ -1724,7 +1724,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcClientEntry client_entry = va_arg(vp, SilcClientEntry);
       GSList *nicks;
 
-      if (status != SILC_STATUS_OK)
+      if (SILC_STATUS_IS_ERROR(status))
 	return;
 
       nicks = nicklist_get_same(SERVER(server), client_entry->nickname);
@@ -1773,13 +1773,11 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       char users[20];
       char tmp[256], *cp, *dm = NULL;
 
-      if (status != SILC_STATUS_OK)
+      if (SILC_STATUS_IS_ERROR(status))
 	return;
 
       (void)va_arg(vp, SilcChannelEntry);
       name = va_arg(vp, char *);
-      if (!name)
-	return;
       topic = va_arg(vp, char *);
       usercount = va_arg(vp, int);
 
@@ -1818,7 +1816,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcUInt32 mode;
       char *reason;
 
-      if (status != SILC_STATUS_OK)
+      if (SILC_STATUS_IS_ERROR(status))
 	return;
 
       mode = va_arg(vp, SilcUInt32);
@@ -1853,7 +1851,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
     break;
 
   case SILC_COMMAND_OPER:
-    if (status != SILC_STATUS_OK)
+    if (SILC_STATUS_IS_ERROR(status))
       return;
 
     server->umode |= SILC_UMODE_SERVER_OPERATOR;
@@ -1864,7 +1862,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
     break;
 
   case SILC_COMMAND_SILCOPER:
-    if (status != SILC_STATUS_OK)
+    if (SILC_STATUS_IS_ERROR(status))
       return;
 
     server->umode |= SILC_UMODE_ROUTER_OPERATOR;
@@ -1880,7 +1878,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcChannelEntry channel;
       SilcChannelUser chu;
 
-      if (status != SILC_STATUS_OK)
+      if (SILC_STATUS_IS_ERROR(status))
 	return;
 
       channel = va_arg(vp, SilcChannelEntry);
@@ -1936,7 +1934,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcChannelEntry channel;
       SilcArgumentPayload invite_list;
 
-      if (status != SILC_STATUS_OK)
+      if (SILC_STATUS_IS_ERROR(status))
 	return;
 
       channel = va_arg(vp, SilcChannelEntry);
@@ -1956,7 +1954,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       GetkeyContext getkey;
       char *name;
 
-      if (status != SILC_STATUS_OK)
+      if (SILC_STATUS_IS_ERROR(status))
 	return;
 
       id_type = va_arg(vp, SilcUInt32);
@@ -1992,7 +1990,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       char *server_name;
       char *server_info;
 
-      if (status != SILC_STATUS_OK)
+      if (SILC_STATUS_IS_ERROR(status))
 	return;
 
       server_entry = va_arg(vp, SilcServerEntry);
@@ -2013,7 +2011,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       char *topic;
       char tmp[256], *cp, *dm = NULL;
 
-      if (status != SILC_STATUS_OK)
+      if (SILC_STATUS_IS_ERROR(status))
 	return;
 
       channel = va_arg(vp, SilcChannelEntry);
@@ -2057,9 +2055,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 
   case SILC_COMMAND_STATS:
     {
-      SilcUInt32 starttime, uptime, my_clients, my_channels, my_server_ops,
-	         my_router_ops, cell_clients, cell_channels, cell_servers,
-	         clients, channels, servers, routers, server_ops, router_ops;
+      SilcClientStats *cstats;
       SilcUInt32 buf_len;
       SilcBufferStruct buf;
       unsigned char *tmp_buf;
@@ -2067,116 +2063,94 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       const char *tmptime;
       int days, hours, mins, secs;
 
-      if (status != SILC_STATUS_OK)
+      if (SILC_STATUS_IS_ERROR(status))
 	return;
 
-      tmp_buf = va_arg(vp, unsigned char *);
-      buf_len = va_arg(vp, SilcUInt32);
-
-      if (!tmp_buf || !buf_len) {
+      cstats = va_arg(vp, SilcClientStats *);
+      if (!cstats) {
 	printtext(server, NULL, MSGLEVEL_CRAP, "No statistics available");
 	return;
       }
 
-      /* Get statistics structure */
-      silc_buffer_set(&buf, tmp_buf, buf_len);
-      silc_buffer_unformat(&buf,
-			   SILC_STR_UI_INT(&starttime),
-			   SILC_STR_UI_INT(&uptime),
-			   SILC_STR_UI_INT(&my_clients),
-			   SILC_STR_UI_INT(&my_channels),
-			   SILC_STR_UI_INT(&my_server_ops),
-			   SILC_STR_UI_INT(&my_router_ops),
-			   SILC_STR_UI_INT(&cell_clients),
-			   SILC_STR_UI_INT(&cell_channels),
-			   SILC_STR_UI_INT(&cell_servers),
-			   SILC_STR_UI_INT(&clients),
-			   SILC_STR_UI_INT(&channels),
-			   SILC_STR_UI_INT(&servers),
-			   SILC_STR_UI_INT(&routers),
-			   SILC_STR_UI_INT(&server_ops),
-			   SILC_STR_UI_INT(&router_ops),
-			   SILC_STR_END);
-
-      tmptime = silc_time_string(starttime);
+      tmptime = silc_time_string(cstats->starttime);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Local server start time", tmptime);
 
-      days = uptime / (24 * 60 * 60);
-      uptime -= days * (24 * 60 * 60);
-      hours = uptime / (60 * 60);
-      uptime -= hours * (60 * 60);
-      mins = uptime / 60;
-      uptime -= mins * 60;
-      secs = uptime;
+      days = cstats->uptime / (24 * 60 * 60);
+      cstats->uptime -= days * (24 * 60 * 60);
+      hours = cstats->uptime / (60 * 60);
+      cstats->uptime -= hours * (60 * 60);
+      mins = cstats->uptime / 60;
+      cstats->uptime -= mins * 60;
+      secs = cstats->uptime;
       snprintf(tmp, sizeof(tmp) - 1, "%d days %d hours %d mins %d secs",
 	       days, hours, mins, secs);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Local server uptime", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)my_clients);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->my_clients);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Local server clients", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)my_channels);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->my_channels);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Local server channels", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)my_server_ops);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->my_server_ops);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Local server operators", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)my_router_ops);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->my_router_ops);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Local router operators", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cell_clients);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->cell_clients);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Local cell clients", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cell_channels);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->cell_channels);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Local cell channels", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cell_servers);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->cell_servers);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Local cell servers", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)clients);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->clients);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Total clients", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)channels);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->channels);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Total channels", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)servers);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->servers);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Total servers", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)routers);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->routers);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Total routers", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)server_ops);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->server_ops);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			   "Total server operators", tmp);
 
-      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)router_ops);
+      snprintf(tmp, sizeof(tmp) - 1, "%d", (int)cstats->router_ops);
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_STATS,
 			 "Total router operators", tmp);
@@ -2193,7 +2167,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       (void)va_arg(vp, SilcPublicKey);
       chpks = va_arg(vp, SilcDList);
 
-      if (status != SILC_STATUS_OK || !cmode_list_chpks ||
+      if (SILC_STATUS_IS_ERROR(status) || !cmode_list_chpks ||
 	  !channel_entry || !channel_entry->channel_name)
 	return;
 
@@ -2314,7 +2288,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   memset(file, 0, sizeof(file));
 
   /* Get remote host information */
-  silc_socket_stream_get_info(silc_packet_stream_get_stream(conn->stream), 
+  silc_socket_stream_get_info(silc_packet_stream_get_stream(conn->stream),
 			      NULL, &hostname, &ip, &port);
 
   if (conn_type == SILC_CONN_SERVER ||
