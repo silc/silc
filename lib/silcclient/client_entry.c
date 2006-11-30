@@ -78,11 +78,12 @@ SilcDList silc_client_get_clients_local(SilcClient client,
   if (!client || !conn || !nickname)
     return NULL;
 
+  SILC_LOG_DEBUG(("Find clients by nickname %s", nickname));
+
   /* Normalize nickname for search */
   nicknamec = silc_identifier_check(nickname, strlen(nickname),
 				    SILC_STRING_UTF8, 128, NULL);
   if (!nicknamec)
-    silc_free(nicknamec);
     return NULL;
 
   clients = silc_dlist_init();
@@ -94,6 +95,7 @@ SilcDList silc_client_get_clients_local(SilcClient client,
   silc_mutex_lock(conn->internal->lock);
 
   /* Find from cache */
+  silc_list_init(list, struct SilcIDCacheEntryStruct, next);
   if (!silc_idcache_find_by_name(conn->internal->client_cache, nicknamec,
 				 &list)) {
     silc_mutex_unlock(conn->internal->lock);
@@ -1210,7 +1212,6 @@ silc_client_get_channel_by_id_resolve(SilcClient client,
 				      void *context)
 {
   SilcClientGetChannelInternal i;
-  SilcChannelEntry channel;
   SilcBuffer idp;
   SilcUInt16 cmd_ident;
 
@@ -1239,8 +1240,6 @@ silc_client_get_channel_by_id_resolve(SilcClient client,
   silc_buffer_free(idp);
   if (!cmd_ident && completion)
     completion(client, conn, SILC_STATUS_ERR_RESOURCE_LIMIT, NULL, context);
-
-  silc_client_unref_channel(client, conn, channel);
 
   return cmd_ident;
 }

@@ -46,7 +46,7 @@ do {								\
 	  msg "%s", silc_get_status_message(cmd->error));		\
     ERROR_CALLBACK(cmd->error);						\
     silc_client_command_process_error(cmd, state_context, cmd->error);	\
-    silc_fsm_next(fsm, silc_client_command_reply_process);		\
+    silc_fsm_next(fsm, silc_client_command_reply_processed);		\
     return SILC_FSM_CONTINUE;						\
   }
 
@@ -55,7 +55,7 @@ do {								\
   if (silc_argument_get_arg_num(args) < min ||			\
       silc_argument_get_arg_num(args) > max) {			\
     ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);		\
-    silc_fsm_next(fsm, silc_client_command_reply_process);	\
+    silc_fsm_next(fsm, silc_client_command_reply_processed);	\
     return SILC_FSM_CONTINUE;					\
   }
 
@@ -157,7 +157,8 @@ SILC_FSM_STATE(silc_client_command_reply)
   silc_mutex_unlock(conn->internal->lock);
 
   if (!cmd) {
-    SILC_LOG_DEBUG(("Unknown command reply"));
+    SILC_LOG_DEBUG(("Unknown command reply %s, ident %d",
+		    silc_get_command_name(command), cmd_ident));
     silc_command_payload_free(payload);
     return SILC_FSM_FINISH;
   }
@@ -582,6 +583,7 @@ SILC_FSM_STATE(silc_client_command_reply_identify)
 	ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	goto out;
       }
+      silc_client_ref_server(client, conn, server_entry);
     } else {
       silc_client_update_server(client, conn, server_entry, name, info);
     }
@@ -589,6 +591,7 @@ SILC_FSM_STATE(silc_client_command_reply_identify)
 
     /* Notify application */
     silc_client_command_callback(cmd, server_entry, name, info);
+    silc_client_unref_server(client, conn, server_entry);
     break;
 
   case SILC_ID_CHANNEL:
@@ -612,10 +615,12 @@ SILC_FSM_STATE(silc_client_command_reply_identify)
 	ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	goto out;
       }
+      silc_client_ref_channel(client, conn, channel_entry);
     }
 
     /* Notify application */
     silc_client_command_callback(cmd, channel_entry, name, info);
+    silc_client_unref_channel(client, conn, channel_entry);
     break;
   }
 
@@ -715,7 +720,7 @@ SILC_FSM_STATE(silc_client_command_reply_list)
   SilcArgumentPayload args = silc_command_get_args(payload);
   unsigned char *tmp, *name, *topic;
   SilcUInt32 usercount = 0;
-  SilcChannelEntry channel_entry;
+  SilcChannelEntry channel_entry = NULL;
   SilcID id;
 
   /* Sanity checks */
@@ -752,12 +757,14 @@ SILC_FSM_STATE(silc_client_command_reply_list)
       ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
+    silc_client_ref_channel(client, conn, channel_entry);
   }
 
   /* Notify application */
   silc_client_command_callback(cmd, channel_entry, name, topic, usercount);
 
  out:
+  silc_client_unref_channel(client, conn, channel_entry);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }

@@ -1201,11 +1201,6 @@ SILC_FSM_STATE(silc_client_command_stats)
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
 
-  if (cmd->argc < 2) {
-    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    return SILC_FSM_FINISH;
-  }
-
   /* Send the command */
   silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 1,
 			      1, silc_buffer_datalen(conn->internal->
@@ -2561,7 +2556,16 @@ SILC_FSM_STATE(silc_client_command_getkey)
     /* Check whether user requested server */
     server_entry = silc_client_get_server(client, conn, cmd->argv[1]);
     if (!server_entry) {
+      if (cmd->resolved) {
+	/* Resolving didn't find anything.  We should never get here as
+	   errors are handled in the resolving callback. */
+	COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_NICK);
+	COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_SERVER);
+	return SILC_FSM_FINISH;
+      }
+
       /* No client or server exist with this name, query for both. */
+      cmd->resolved = TRUE;
       SILC_FSM_CALL(silc_client_command_send(client, conn,
 					     SILC_COMMAND_IDENTIFY,
 					     silc_client_command_continue,
@@ -2570,6 +2574,7 @@ SILC_FSM_STATE(silc_client_command_getkey)
 					     strlen(cmd->argv[1]),
 					     2, cmd->argv[1],
 					     strlen(cmd->argv[1])));
+      /* NOT REACHED */
     }
     idp = silc_id_payload_encode(&server_entry->id, SILC_ID_SERVER);
   } else {
