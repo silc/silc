@@ -164,7 +164,6 @@ int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
     /* Could not find client with that nick, resolve it from server. */
     silc_client_get_clients(silc_client, server->conn,
 			    nickname, NULL, silc_send_msg_clients, rec);
-    silc_free(nickname);
     return TRUE;
   }
 
@@ -174,7 +173,6 @@ int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
 					 target, flags, sha1hash,
 					 msg, msg_len);
 
-  silc_free(nickname);
   silc_client_list_free(silc_client, server->conn, clients);
 
   return ret;
