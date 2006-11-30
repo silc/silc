@@ -32,13 +32,14 @@ do {								\
     silc_status_get_args(cmd->status, args, &arg1, &arg2);	\
   else								\
     cmd->status = error;					\
-  SILC_LOG_DEBUG(("Error in command reply"));			\
+  SILC_LOG_DEBUG(("Error in command reply: %s",			\
+		 silc_get_status_message(cmd->status)));	\
   silc_client_command_callback(cmd, arg1, arg2);		\
 } while(0)
 
 /* Check for error */
 #define CHECK_STATUS(msg)						\
-  SILC_LOG_DEBUG(("Start"));						\
+  SILC_LOG_DEBUG(("%s", silc_get_command_name(cmd->cmd)));		\
   if (cmd->error != SILC_STATUS_OK) {					\
     if (cmd->verbose)							\
       SAY(cmd->conn->client, cmd->conn, SILC_CLIENT_MESSAGE_ERROR,	\
@@ -46,7 +47,7 @@ do {								\
     ERROR_CALLBACK(cmd->error);						\
     silc_client_command_process_error(cmd, state_context, cmd->error);	\
     silc_fsm_next(fsm, silc_client_command_reply_process);		\
-    return SILC_FSM_YIELD;						\
+    return SILC_FSM_CONTINUE;						\
   }
 
 /* Check for correct arguments */
@@ -55,7 +56,7 @@ do {								\
       silc_argument_get_arg_num(args) > max) {			\
     ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);		\
     silc_fsm_next(fsm, silc_client_command_reply_process);	\
-    return SILC_FSM_YIELD;					\
+    return SILC_FSM_CONTINUE;					\
   }
 
 #define SAY cmd->conn->client->internal->ops->say
@@ -74,9 +75,7 @@ silc_client_command_callback(SilcClientCommandContext cmd, ...)
 
   /* Default reply callback */
   if (cmd->called) {
-    SILC_LOG_DEBUG(("cp %p, ap %p", cp, ap));
     silc_va_copy(cp, ap);
-    SILC_LOG_DEBUG(("cp %p, ap %p", cp, ap));
     cmd->conn->client->internal->ops->command_reply(
 		       cmd->conn->client, cmd->conn, cmd->cmd, cmd->status,
 		       cmd->error, cp);
@@ -87,11 +86,9 @@ silc_client_command_callback(SilcClientCommandContext cmd, ...)
   silc_list_start(cmd->reply_callbacks);
   while ((cb = silc_list_get(cmd->reply_callbacks)))
     if (!cb->do_not_call) {
-    SILC_LOG_DEBUG(("cp %p, ap %p", cp, ap));
       silc_va_copy(cp, ap);
-    SILC_LOG_DEBUG(("cp %p, ap %p", cp, ap));
-      cb->do_not_call = cb->reply(cmd->conn->client, cmd->conn, cmd->cmd,
-				  cmd->status, cmd->error, cb->context, cp);
+      cb->do_not_call = !cb->reply(cmd->conn->client, cmd->conn, cmd->cmd,
+				   cmd->status, cmd->error, cb->context, cp);
       va_end(cp);
     }
 
@@ -151,8 +148,6 @@ SILC_FSM_STATE(silc_client_command_reply)
   silc_mutex_lock(conn->internal->lock);
   silc_list_start(conn->internal->pending_commands);
   while ((cmd = silc_list_get(conn->internal->pending_commands))) {
-    SILC_LOG_DEBUG(("cmd %p, command %d, ident %d", cmd, cmd->cmd,
-		    cmd->cmd_ident));
     if ((cmd->cmd == command || cmd->cmd == SILC_COMMAND_NONE)
 	&& cmd->cmd_ident == cmd_ident) {
       silc_list_del(conn->internal->pending_commands, cmd);
@@ -166,8 +161,6 @@ SILC_FSM_STATE(silc_client_command_reply)
     silc_command_payload_free(payload);
     return SILC_FSM_FINISH;
   }
-
-  SILC_LOG_DEBUG(("cmd %p, command %d", cmd, cmd->cmd));
 
   /* Signal command thread that command reply has arrived */
   silc_fsm_set_state_context(&cmd->thread, payload);
@@ -331,6 +324,7 @@ SILC_FSM_STATE(silc_client_command_reply_process)
 SILC_FSM_STATE(silc_client_command_reply_processed)
 {
   SilcClientCommandContext cmd = fsm_context;
+  SilcClientConnection conn = cmd->conn;
   SilcCommandPayload payload = state_context;
 
   silc_command_payload_free(payload);
@@ -338,6 +332,12 @@ SILC_FSM_STATE(silc_client_command_reply_processed)
   if (cmd->status == SILC_STATUS_OK || cmd->status == SILC_STATUS_LIST_END ||
       SILC_STATUS_IS_ERROR(cmd->status))
     return SILC_FSM_FINISH;
+
+  /* Add back to pending command reply list */
+  silc_mutex_lock(conn->internal->lock);
+  cmd->resolved = FALSE;
+  silc_list_add(conn->internal->pending_commands, cmd);
+  silc_mutex_unlock(conn->internal->lock);
 
   /** Wait more command payloads */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
@@ -422,6 +422,7 @@ SILC_FSM_STATE(silc_client_command_reply_whois)
       ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;
     }
+    silc_client_ref_client(client, conn, client_entry);
   } else {
     silc_client_update_client(client, conn, client_entry,
 			      nickname, username, realname, mode);
@@ -557,6 +558,7 @@ SILC_FSM_STATE(silc_client_command_reply_identify)
 	ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	goto out;
       }
+      silc_client_ref_client(client, conn, client_entry);
     } else {
       silc_client_update_client(client, conn, client_entry,
 				name, info, NULL, 0);

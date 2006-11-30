@@ -461,7 +461,7 @@ SilcUInt16 silc_client_get_clients_by_list(SilcClient client,
 
       res_argv[res_argc] = client_id_list->data;
       res_argv_lens[res_argc] = idp_len;
-      res_argv_types[res_argc] = res_argc + 5;
+      res_argv_types[res_argc] = res_argc + 4;
       res_argc++;
     }
     silc_client_unref_client(client, conn, entry);
@@ -692,6 +692,7 @@ SilcClientEntry silc_client_add_client(SilcClient client,
   if (!client_entry)
     return NULL;
 
+  silc_atomic_init8(&client_entry->internal.refcnt, 0);
   client_entry->id = *id;
   client_entry->internal.valid = TRUE;
   client_entry->mode = mode;
@@ -846,6 +847,9 @@ void silc_client_ref_client(SilcClient client, SilcClientConnection conn,
 			    SilcClientEntry client_entry)
 {
   silc_atomic_add_int8(&client_entry->internal.refcnt, 1);
+  SILC_LOG_DEBUG(("Client %p refcnt %d->%d", client_entry,
+		  silc_atomic_get_int8(&client_entry->internal.refcnt) - 1,
+		  silc_atomic_get_int8(&client_entry->internal.refcnt)));
 }
 
 /* Release reference of client entry */
@@ -853,6 +857,10 @@ void silc_client_ref_client(SilcClient client, SilcClientConnection conn,
 void silc_client_unref_client(SilcClient client, SilcClientConnection conn,
 			      SilcClientEntry client_entry)
 {
+  if (client_entry)
+    SILC_LOG_DEBUG(("Client %p refcnt %d->%d", client_entry,
+		    silc_atomic_get_int8(&client_entry->internal.refcnt),
+		    silc_atomic_get_int8(&client_entry->internal.refcnt) - 1));
   if (client_entry &&
       silc_atomic_sub_int8(&client_entry->internal.refcnt, 1) == 0)
     silc_client_del_client(client, conn, client_entry);
@@ -929,7 +937,7 @@ void silc_client_nickname_format(SilcClient client,
 
   memset(newnick, 0, sizeof(newnick));
   cp = client->internal->params->nickname_format;
-  while (*cp) {
+  while (cp && *cp) {
     if (*cp == '%') {
       cp++;
       continue;
@@ -1256,6 +1264,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   if (!channel)
     return NULL;
 
+  silc_atomic_init8(&channel->internal.refcnt, 0);
   channel->id = *channel_id;
   channel->mode = mode;
 
@@ -1641,6 +1650,7 @@ SilcServerEntry silc_client_add_server(SilcClient client,
   if (!server_entry || !server_id)
     return NULL;
 
+  silc_atomic_init8(&server_entry->internal.refcnt, 0);
   server_entry->id = *server_id;
   if (server_name)
     server_entry->server_name = strdup(server_name);

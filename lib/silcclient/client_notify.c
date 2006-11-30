@@ -285,7 +285,7 @@ SILC_FSM_STATE(silc_client_notify_invite)
 			              conn, SILC_COMMAND_NONE,
 				      channel->internal.resolve_cmd_ident,
 				      silc_client_notify_wait_continue,
-				      fsm));
+				      notify));
     /* NOT REACHED */
   }
 
@@ -303,7 +303,7 @@ SILC_FSM_STATE(silc_client_notify_invite)
 		  silc_client_get_client_by_id_resolve(
 					 client, conn, &id.u.client_id, NULL,
 					 silc_client_notify_resolved,
-					 fsm));
+					 notify));
     /* NOT REACHED */
   }
 
@@ -353,7 +353,7 @@ SILC_FSM_STATE(silc_client_notify_join)
 			              conn, SILC_COMMAND_NONE,
 				      channel->internal.resolve_cmd_ident,
 				      silc_client_notify_wait_continue,
-				      fsm));
+				      notify));
     /* NOT REACHED */
   }
 
@@ -372,7 +372,7 @@ SILC_FSM_STATE(silc_client_notify_join)
 		  silc_client_get_client_by_id_resolve(
 					 client, conn, &id.u.client_id, NULL,
 					 silc_client_notify_resolved,
-					 fsm));
+					 notify));
     /* NOT REACHED */
   }
 
@@ -430,7 +430,7 @@ SILC_FSM_STATE(silc_client_notify_leave)
 			              conn, SILC_COMMAND_NONE,
 				      channel->internal.resolve_cmd_ident,
 				      silc_client_notify_wait_continue,
-				      fsm));
+				      notify));
     /* NOT REACHED */
   }
 
@@ -573,7 +573,7 @@ SILC_FSM_STATE(silc_client_notify_topic_set)
 			              conn, SILC_COMMAND_NONE,
 				      channel->internal.resolve_cmd_ident,
 				      silc_client_notify_wait_continue,
-				      fsm));
+				      notify));
     /* NOT REACHED */
   }
 
@@ -597,7 +597,7 @@ SILC_FSM_STATE(silc_client_notify_topic_set)
 		    silc_client_get_client_by_id_resolve(
 					   client, conn, &id.u.client_id, NULL,
 					   silc_client_notify_resolved,
-					   fsm));
+					   notify));
       /* NOT REACHED */
     }
     entry = client_entry;
@@ -611,7 +611,7 @@ SILC_FSM_STATE(silc_client_notify_topic_set)
 		    silc_client_get_server_by_id_resolve(
 					   client, conn, &id.u.server_id,
 					   silc_client_notify_resolved,
-					   fsm));
+					   notify));
       /* NOT REACHED */
     }
     entry = server;
@@ -626,7 +626,7 @@ SILC_FSM_STATE(silc_client_notify_topic_set)
 		    silc_client_get_channel_by_id_resolve(
 				    client, conn, &id.u.channel_id,
 				    silc_client_notify_resolved,
-				    fsm));
+				    notify));
       /* NOT REACHED */
     }
     entry = channel_entry;
@@ -667,7 +667,7 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
   SilcClientEntry client_entry = NULL;
   unsigned char *tmp, *nick, oldnick[128 + 1];
   SilcUInt32 tmp_len;
-  SilcID id;
+  SilcID id, id2;
 
   SILC_LOG_DEBUG(("Notify: NICK_CHANGE"));
 
@@ -680,6 +680,15 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
       SILC_ID_CLIENT_COMPARE(&id.u.client_id, conn->local_id))
     goto out;
 
+  /* Get new Client ID */
+  if (!silc_argument_get_decoded(args, 2, SILC_ARGUMENT_ID, &id2, NULL))
+    goto out;
+
+  /* Ignore my ID */
+  if (conn->local_id &&
+      SILC_ID_CLIENT_COMPARE(&id2.u.client_id, conn->local_id))
+    goto out;
+
   /* Find old Client entry */
   client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
   if (!client_entry || !client_entry->nickname[0]) {
@@ -688,13 +697,9 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
     SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
 					 client, conn, &id.u.client_id, NULL,
 					 silc_client_notify_resolved,
-					 fsm));
+					 notify));
     /* NOT REACHED */
   }
-
-  /* Get new Client ID */
-  if (!silc_argument_get_decoded(args, 2, SILC_ARGUMENT_ID, &id, NULL))
-    goto out;
 
   /* Take the new nickname */
   tmp = silc_argument_get_arg_type(args, 3, &tmp_len);
@@ -704,12 +709,13 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
   /* Check whether nickname changed at all.  It is possible that nick
      change notify is received but nickname didn't change, only the
      ID changes.  If Client ID hash match, nickname didn't change. */
-  if (SILC_ID_COMPARE_HASH(&client_entry->id, &id.u.client_id) &&
+  if (SILC_ID_COMPARE_HASH(&client_entry->id, &id2.u.client_id) &&
       silc_utf8_strcasecmp(tmp, client_entry->nickname)) {
     /* Nickname didn't change.  Update only Client ID.  We don't notify
        application because nickname didn't change. */
     silc_idcache_update(conn->internal->client_cache, client_entry,
-			&client_entry->id, &id.u.client_id, NULL, NULL, FALSE);
+			&client_entry->id, &id2.u.client_id, NULL,
+			NULL, FALSE);
     goto out;
   }
 
@@ -781,7 +787,7 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
 			              conn, SILC_COMMAND_NONE,
 				      channel->internal.resolve_cmd_ident,
 				      silc_client_notify_wait_continue,
-				      fsm));
+				      notify));
     /* NOT REACHED */
   }
 
@@ -806,7 +812,7 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
 		    silc_client_get_client_by_id_resolve(
 					   client, conn, &id.u.client_id, NULL,
 					   silc_client_notify_resolved,
-					   fsm));
+					   notify));
       /* NOT REACHED */
     }
     entry = client_entry;
@@ -820,7 +826,7 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
 		    silc_client_get_server_by_id_resolve(
 					   client, conn, &id.u.server_id,
 					   silc_client_notify_resolved,
-					   fsm));
+					   notify));
       /* NOT REACHED */
     }
     entry = server;
@@ -835,7 +841,7 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
 		    silc_client_get_channel_by_id_resolve(
 				    client, conn, &id.u.channel_id,
 				    silc_client_notify_resolved,
-				    fsm));
+				    notify));
       /* NOT REACHED */
     }
     entry = channel_entry;
@@ -957,7 +963,7 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
 			              conn, SILC_COMMAND_NONE,
 				      channel->internal.resolve_cmd_ident,
 				      silc_client_notify_wait_continue,
-				      fsm));
+				      notify));
     /* NOT REACHED */
   }
 
@@ -982,7 +988,7 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
 		    silc_client_get_client_by_id_resolve(
 					   client, conn, &id.u.client_id, NULL,
 					   silc_client_notify_resolved,
-					   fsm));
+					   notify));
       /* NOT REACHED */
     }
     entry = client_entry;
@@ -996,7 +1002,7 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
 		    silc_client_get_server_by_id_resolve(
 					   client, conn, &id.u.server_id,
 					   silc_client_notify_resolved,
-					   fsm));
+					   notify));
       /* NOT REACHED */
     }
     entry = server;
@@ -1011,7 +1017,7 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
 		    silc_client_get_channel_by_id_resolve(
 				    client, conn, &id.u.channel_id,
 				    silc_client_notify_resolved,
-				    fsm));
+				    notify));
       /* NOT REACHED */
     }
     entry = channel_entry;
@@ -1030,7 +1036,7 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
     SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
 					 client, conn, &id2.u.client_id, NULL,
 					 silc_client_notify_resolved,
-					 fsm));
+					 notify));
     /* NOT REACHED */
   }
 
@@ -1121,7 +1127,7 @@ SILC_FSM_STATE(silc_client_notify_channel_change)
 			              conn, SILC_COMMAND_NONE,
 				      channel->internal.resolve_cmd_ident,
 				      silc_client_notify_wait_continue,
-				      fsm));
+				      notify));
     /* NOT REACHED */
   }
 
@@ -1180,7 +1186,7 @@ SILC_FSM_STATE(silc_client_notify_kicked)
 			              conn, SILC_COMMAND_NONE,
 				      channel->internal.resolve_cmd_ident,
 				      silc_client_notify_wait_continue,
-				      fsm));
+				      notify));
     /* NOT REACHED */
   }
 
@@ -1208,7 +1214,7 @@ SILC_FSM_STATE(silc_client_notify_kicked)
 		  silc_client_get_client_by_id_resolve(
 					 client, conn, &id.u.client_id, NULL,
 					 silc_client_notify_resolved,
-					 fsm));
+					 notify));
     /* NOT REACHED */
   }
 
@@ -1294,7 +1300,7 @@ SILC_FSM_STATE(silc_client_notify_killed)
       SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
 					   client, conn, &id.u.client_id, NULL,
 					   silc_client_notify_resolved,
-					   fsm));
+					   notify));
       /* NOT REACHED */
     }
     entry = client_entry2;
@@ -1306,7 +1312,7 @@ SILC_FSM_STATE(silc_client_notify_killed)
       SILC_FSM_CALL(silc_client_get_server_by_id_resolve(
 					   client, conn, &id.u.server_id,
 					   silc_client_notify_resolved,
-					   fsm));
+					   notify));
       /* NOT REACHED */
     }
     entry = server;
@@ -1319,7 +1325,7 @@ SILC_FSM_STATE(silc_client_notify_killed)
       SILC_FSM_CALL(silc_client_get_channel_by_id_resolve(
 				    client, conn, &id.u.channel_id,
 				    silc_client_notify_resolved,
-				    fsm));
+				    notify));
       /* NOT REACHED */
     }
     entry = channel_entry;
@@ -1476,7 +1482,7 @@ SILC_FSM_STATE(silc_client_notify_watch)
     SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
 					 client, conn, &id.u.client_id, NULL,
 					 silc_client_notify_resolved,
-					 fsm));
+					 notify));
     /* NOT REACHED */
   }
 

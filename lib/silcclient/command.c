@@ -238,9 +238,6 @@ silc_client_command_add_pending(SilcClientConnection conn,
     silc_list_add(cmd->reply_callbacks, cb);
   }
 
-  SILC_LOG_DEBUG(("pending: cmd %p, command %d, ident %d", cmd, cmd->cmd,
-		  cmd->cmd_ident));
-
   /* Add pending reply */
   silc_list_add(conn->internal->pending_commands, cmd);
 
