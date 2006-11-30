@@ -17,6 +17,12 @@ ADD_INCLUDES = \
         -I$(SILC_INCLUDE)/lib/silcske \
         -I$(SILC_INCLUDE)/lib/silcsim \
         -I$(SILC_INCLUDE)/lib/silcutil \
+        -I$(SILC_INCLUDE)/lib/silcapputil \
+        -I$(SILC_INCLUDE)/lib/silcvcard \
+        -I$(SILC_INCLUDE)/lib/silcskr \
+        -I$(SILC_INCLUDE)/lib/silcsftp \
+        -I$(SILC_INCLUDE)/lib/silcasn1 \
+        -I$(SILC_INCLUDE)/lib/silchttp \
         -I$(SILC_INCLUDE)/lib/silcclient \
         -I$(SILC_INCLUDE)/lib/silcmath/gmp \
         -I$(SILC_INCLUDE)/lib/trq
