@@ -157,7 +157,7 @@ SILC_TASK_CALLBACK(silc_fsm_free_final)
 void silc_fsm_free(void *fsm)
 {
   SilcFSM f = fsm;
-  silc_schedule_task_add_timeout(f->schedule, silc_fsm_free_final, f, 0, 1);
+  silc_schedule_task_add_timeout(f->schedule, silc_fsm_free_final, f, 0, 0);
 }
 
 /* Task to start real thread. We start threads through scheduler, not
@@ -194,12 +194,12 @@ void silc_fsm_start(void *fsm, SilcFSMStateCallback start_state)
   /* Start real thread through scheduler */
   if (f->thread && f->real_thread) {
     silc_schedule_task_add_timeout(f->schedule, silc_fsm_start_real_thread,
-				   f, 0, 1);
+				   f, 0, 0);
     return;
   }
 
   /* Normal FSM operation */
-  silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f, 0, 1);
+  silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f, 0, 0);
 }
 
 /* Start FSM in the specified state synchronously */
@@ -257,7 +257,7 @@ void silc_fsm_continue(void *fsm)
     silc_schedule_task_del_by_all(f->schedule, 0, silc_fsm_run, f);
     f->next_later = FALSE;
   }
-  if (!silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f, 0, 1))
+  if (!silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f, 0, 0))
     silc_fsm_run(f->schedule, silc_schedule_get_context(f->schedule), 0, 0, f);
 }
 
@@ -296,7 +296,7 @@ void silc_fsm_finish(void *fsm)
     silc_fsm_finish_fsm(f->schedule, silc_schedule_get_context(f->schedule),
 			0, 0, fsm);
   else
-    silc_schedule_task_add_timeout(f->schedule, silc_fsm_finish_fsm, f, 0, 1);
+    silc_schedule_task_add_timeout(f->schedule, silc_fsm_finish_fsm, f, 0, 0);
 }
 
 /* Return associated scheduler */
@@ -650,7 +650,7 @@ void silc_fsm_sema_post(SilcFSMSema sema)
 
     /* Signal through scheduler.  Wake up destination scheduler in case
        caller is a real thread. */
-    silc_schedule_task_add_timeout(fsm->schedule, silc_fsm_signal, p, 0, 1);
+    silc_schedule_task_add_timeout(fsm->schedule, silc_fsm_signal, p, 0, 0);
     silc_schedule_wakeup(fsm->schedule);
   }
 
@@ -698,7 +698,7 @@ static void *silc_fsm_thread(void *context)
     return NULL;
 
   /* Start the FSM thread */
-  if (!silc_schedule_task_add_timeout(fsm->schedule, silc_fsm_run, fsm, 0, 1))
+  if (!silc_schedule_task_add_timeout(fsm->schedule, silc_fsm_run, fsm, 0, 0))
     return NULL;
 
   /* Run the scheduler */
@@ -712,7 +712,7 @@ static void *silc_fsm_thread(void *context)
   /* Finish the FSM thread in the main thread */
   SILC_ASSERT(fsm->finished);
   silc_schedule_task_add_timeout(fsm->schedule, silc_fsm_finish_fsm,
-				 fsm, 0, 1);
+				 fsm, 0, 0);
   silc_schedule_wakeup(fsm->schedule);
 
   return NULL;

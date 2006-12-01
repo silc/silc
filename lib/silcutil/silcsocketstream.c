@@ -146,7 +146,7 @@ static void *silc_socket_host_lookup_start(void *context)
 
  out:
   silc_schedule_task_add_timeout(schedule, silc_socket_host_lookup_finish,
-				 lookup, 0, 1);
+				 lookup, 0, 0);
   silc_schedule_wakeup(schedule);
   return NULL;
 }
