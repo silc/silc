@@ -48,7 +48,7 @@ SILC_TASK_CALLBACK(cont)
 
   SILC_LOG_DEBUG(("Adding %d timeout tasks", NUM_TTASK / 3));
   for (i = 0; i < NUM_TTASK / 3; i++)
-    silc_schedule_task_add_timeout(schedule, timeout, (void *)i, 0, 1);
+    silc_schedule_task_add_timeout(schedule, timeout, (void *)i, 0, 0);
 
   silc_schedule_task_add_timeout(schedule, cont2, (void *)i, 0, 100);
 }

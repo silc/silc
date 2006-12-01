@@ -123,7 +123,7 @@ static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
       silc_schedule_task_remove(schedule, t);
 
       /* Balance when we have lots of small timeouts */
-      if ((++count) > 50)
+      if ((++count) > 40)
 	break;
     }
   }
@@ -188,6 +188,7 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
   /* Save the timeout */
   if (task) {
     schedule->timeout = curtime;
+    schedule->has_timeout = TRUE;
     SILC_LOG_DEBUG(("timeout: sec=%d, usec=%d", schedule->timeout.tv_sec,
 		    schedule->timeout.tv_usec));
   }
@@ -426,70 +427,76 @@ SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   struct timeval timeout;
   int ret;
 
-  SILC_LOG_DEBUG(("In scheduler loop"));
-
   if (!schedule->is_locked)
     SILC_SCHEDULE_LOCK(schedule);
 
-  /* Deliver signals if any has been set to be called */
-  if (schedule->signal_tasks) {
-    SILC_SCHEDULE_UNLOCK(schedule);
-    schedule_ops.signals_call(schedule, schedule->internal);
-    schedule->signal_tasks = FALSE;
-    SILC_SCHEDULE_LOCK(schedule);
-  }
+  while (1) {
+    SILC_LOG_DEBUG(("In scheduler loop"));
 
-  /* Check if scheduler is valid */
-  if (schedule->valid == FALSE) {
-    SILC_LOG_DEBUG(("Scheduler not valid anymore, exiting"));
-    if (!schedule->is_locked)
+    /* Deliver signals if any has been set to be called */
+    if (schedule->signal_tasks) {
       SILC_SCHEDULE_UNLOCK(schedule);
-    return FALSE;
-  }
+      schedule_ops.signals_call(schedule, schedule->internal);
+      schedule->signal_tasks = FALSE;
+      SILC_SCHEDULE_LOCK(schedule);
+    }
 
-  /* Calculate next timeout for silc_select().  This is the timeout value
-     when at earliest some of the timeout tasks expire.  This may dispatch
-     already expired timeouts. */
-  silc_schedule_select_timeout(schedule);
+    /* Check if scheduler is valid */
+    if (schedule->valid == FALSE) {
+      SILC_LOG_DEBUG(("Scheduler not valid anymore, exiting"));
+      if (!schedule->is_locked)
+	SILC_SCHEDULE_UNLOCK(schedule);
+      return FALSE;
+    }
 
-  /* Check if scheduler is valid */
-  if (schedule->valid == FALSE) {
-    SILC_LOG_DEBUG(("Scheduler not valid anymore, exiting"));
-    if (!schedule->is_locked)
-      SILC_SCHEDULE_UNLOCK(schedule);
-    return FALSE;
-  }
+    /* Calculate next timeout for silc_select().  This is the timeout value
+       when at earliest some of the timeout tasks expire.  This may dispatch
+       already expired timeouts. */
+    silc_schedule_select_timeout(schedule);
 
-  if (timeout_usecs >= 0) {
-    timeout.tv_sec = 0;
-    timeout.tv_usec = timeout_usecs;
-    schedule->timeout = timeout;
-    schedule->has_timeout = TRUE;
-  }
+    /* Check if scheduler is valid */
+    if (schedule->valid == FALSE) {
+      SILC_LOG_DEBUG(("Scheduler not valid anymore, exiting"));
+      if (!schedule->is_locked)
+	SILC_SCHEDULE_UNLOCK(schedule);
+      return FALSE;
+    }
 
-  /* This is the main silc_select(). The program blocks here until some
-     of the selected file descriptors change status or the selected
-     timeout expires. */
-  SILC_LOG_DEBUG(("Select"));
-  ret = schedule_ops.select(schedule, schedule->internal);
+    if (timeout_usecs >= 0) {
+      timeout.tv_sec = 0;
+      timeout.tv_usec = timeout_usecs;
+      schedule->timeout = timeout;
+      schedule->has_timeout = TRUE;
+    }
 
-  switch (ret) {
-  case 0:
-    /* Timeout */
-    SILC_LOG_DEBUG(("Running timeout tasks"));
-    silc_schedule_dispatch_timeout(schedule, FALSE);
-    break;
-  case -1:
-    /* Error */
-    if (errno == EINTR)
+    /* This is the main silc_select(). The program blocks here until some
+       of the selected file descriptors change status or the selected
+       timeout expires. */
+    SILC_LOG_DEBUG(("Select"));
+    ret = schedule_ops.select(schedule, schedule->internal);
+
+    switch (ret) {
+    case 0:
+      /* Timeout */
+      SILC_LOG_DEBUG(("Running timeout tasks"));
+      if (silc_list_count(schedule->timeout_queue))
+	silc_schedule_dispatch_timeout(schedule, FALSE);
       break;
-    SILC_LOG_ERROR(("Error in select(): %s", strerror(errno)));
-    break;
-  default:
-    /* There is some data available now */
-    SILC_LOG_DEBUG(("Running fd tasks"));
-    silc_schedule_dispatch_fd(schedule);
-    break;
+    case -1:
+      /* Error */
+      if (errno == EINTR)
+	break;
+      SILC_LOG_ERROR(("Error in select(): %s", strerror(errno)));
+      break;
+    default:
+      /* There is some data available now */
+      SILC_LOG_DEBUG(("Running fd tasks"));
+      silc_schedule_dispatch_fd(schedule);
+      break;
+    }
+
+    if (timeout_usecs >= 0)
+      break;
   }
 
   if (!schedule->is_locked)
@@ -511,13 +518,10 @@ void silc_schedule(SilcSchedule schedule)
     return;
   }
 
+  /* Start the scheduler loop */
   SILC_SCHEDULE_LOCK(schedule);
   schedule->is_locked = TRUE;
-
-  /* Start the scheduler loop */
-  while (silc_schedule_one(schedule, -1))
-    ;
-
+  silc_schedule_one(schedule, -1);
   SILC_SCHEDULE_UNLOCK(schedule);
 }
 
@@ -579,8 +583,8 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
     ttask->header.valid = TRUE;
 
     /* Add timeout */
+    silc_gettimeofday(&ttask->timeout);
     if ((seconds + useconds) > 0) {
-      silc_gettimeofday(&ttask->timeout);
       ttask->timeout.tv_sec += seconds + (useconds / 1000000L);
       ttask->timeout.tv_usec += (useconds % 1000000L);
       if (ttask->timeout.tv_usec >= 1000000L) {

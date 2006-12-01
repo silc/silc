@@ -381,7 +381,8 @@ void *silc_schedule_get_context(SilcSchedule schedule);
  *    Add timeout task to scheduler.  The `callback' will be called once
  *    the specified timeout has elapsed.  The task will be removed from the
  *    scheduler automatically once the task expires.  The event returned
- *    to the `callback' is SILC_TASK_EXPIRE.
+ *    to the `callback' is SILC_TASK_EXPIRE.  The task added with zero (0)
+ *    timeout will be executed immediately next time tasks are scheduled.
  *
  ***/
 #define silc_schedule_task_add_timeout(schedule, callback, context, s, u) \
