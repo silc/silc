@@ -133,7 +133,7 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
 
   SILC_LOG_DEBUG(("Creating TCP listener"));
 
-  if (port < 1 || !schedule || !callback)
+  if (port < 0 || !schedule || !callback)
     goto err;
 
   listener = silc_calloc(1, sizeof(*listener));
@@ -330,7 +330,7 @@ silc_net_udp_connect(const char *local_ip_addr, int local_port,
   stream =
     silc_socket_udp_stream_create(sock, local_ip_addr ?
 				  silc_net_is_ip6(local_ip_addr) : FALSE,
-				  schedule);
+				  remote_ip_addr ? TRUE : FALSE, schedule);
   if (!stream)
     goto err;
 
@@ -398,6 +398,8 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
       inet_ntop(AF_INET, &s.sin.sin_addr, remote_ip_addr,
 		remote_ip_addr_size);
     }
+
+    SILC_LOG_DEBUG(("UDP packet from %s:%d", remote_ip_addr, remote_port));
   }
 
   return len;
@@ -405,21 +407,41 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
 
 /* Send UDP packet */
 
-void silc_net_udp_send(SilcStream stream,
-		       const char *remote_ip_addr, int remote_port,
-		       const unsigned char *data, SilcUInt32 data_len)
+int silc_net_udp_send(SilcStream stream,
+		      const char *remote_ip_addr, int remote_port,
+		      const unsigned char *data, SilcUInt32 data_len)
 {
   SilcSocketStream sock = stream;
   SilcSockaddr remote;
+  int ret;
 
-  SILC_LOG_DEBUG(("Writing data to UDP socket %d", sock->sock));
+  SILC_LOG_DEBUG(("Sending data to UDP socket %d", sock->sock));
 
-  /* Set sockaddr for server */
+  /* Set sockaddr */
   if (!silc_net_set_sockaddr(&remote, remote_ip_addr, remote_port))
-    return;
+    return -2;
 
   /* Send */
-  sendto(sock->sock, data, data_len, 0, &remote.sa, SIZEOF_SOCKADDR(remote));
+  ret = sendto(sock->sock, data, data_len, 0, &remote.sa,
+	       SIZEOF_SOCKADDR(remote));
+  if (ret < 0) {
+    if (errno == EAGAIN || errno == EINTR) {
+      SILC_LOG_DEBUG(("Could not send immediately, will do it later"));
+      silc_schedule_set_listen_fd(sock->schedule, sock->sock,
+				  SILC_TASK_READ | SILC_TASK_WRITE, FALSE);
+      return -1;
+    }
+    SILC_LOG_DEBUG(("Cannot send to UDP socket: %s", strerror(errno)));
+    silc_schedule_unset_listen_fd(sock->schedule, sock->sock);
+    sock->sock_error = errno;
+    return -2;
+  }
+
+  SILC_LOG_DEBUG(("Sent data %d bytes", ret));
+  silc_schedule_set_listen_fd(sock->schedule, sock->sock,
+			      SILC_TASK_READ, FALSE);
+
+  return ret;
 }
 
 /* Asynchronous TCP/IP connecting */

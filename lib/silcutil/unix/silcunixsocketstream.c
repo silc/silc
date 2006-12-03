@@ -188,19 +188,13 @@ int silc_socket_udp_stream_write(SilcStream stream, const unsigned char *data,
 				 SilcUInt32 data_len)
 {
   SilcSocketStream sock = stream;
-  int ret;
 
-  SILC_LOG_DEBUG(("Writing data to UDP socket %d", sock->sock));
+  /* In connectionless state check if remote IP and port is provided */
+  if (!sock->connected && sock->ip && sock->port)
+    return silc_net_udp_send(stream, sock->ip, sock->port, data, data_len);
 
-  ret = send(sock->sock, data, data_len, 0);
-  if (ret < 0) {
-    /* Ignore error and return success */
-    SILC_LOG_DEBUG(("Cannot write to UDP socket: %s", strerror(errno)));
-    return data_len;
-  }
-
-  SILC_LOG_DEBUG(("Wrote data %d bytes", ret));
-  return ret;
+  /* In connected state use normal writing to socket. */
+  return silc_socket_stream_write(stream, data, data_len);
 }
 
 #if 0
