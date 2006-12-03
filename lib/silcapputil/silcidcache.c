@@ -222,12 +222,11 @@ SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
 /* Update entry */
 
 SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
-			     void *old_id, void *new_id,
-			     char *old_name, char *new_name,
+			     void *new_id, char *new_name,
 			     SilcBool free_old_name)
 {
-  if (old_id && new_id) {
-    if (!silc_hash_table_del_by_context(cache->id_table, old_id, entry))
+  if (new_id) {
+    if (!silc_hash_table_del_by_context(cache->id_table, entry->id, entry))
       return FALSE;
 
     if (cache->id_type == SILC_ID_CLIENT)
@@ -241,8 +240,8 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
       return FALSE;
   }
 
-  if (old_name && new_name) {
-    if (!silc_hash_table_del_by_context(cache->name_table, old_name, entry))
+  if (new_name) {
+    if (!silc_hash_table_del_by_context(cache->name_table, entry->name, entry))
       return FALSE;
 
     if (free_old_name)
@@ -259,8 +258,7 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
 /* Update entry by context */
 
 SilcBool silc_idcache_update_by_context(SilcIDCache cache, void *context,
-					void *old_id, void *new_id,
-					char *old_name, char *new_name,
+					void *new_id, char *new_name,
 					SilcBool free_old_name)
 {
   SilcIDCacheEntry c;
@@ -268,8 +266,7 @@ SilcBool silc_idcache_update_by_context(SilcIDCache cache, void *context,
   if (!silc_hash_table_find(cache->context_table, context, NULL, (void **)&c))
     return FALSE;
 
-  return silc_idcache_update(cache, c, old_id, new_id, old_name, new_name,
-			     free_old_name);
+  return silc_idcache_update(cache, c, new_id, new_name, free_old_name);
 }
 
 /* Returns all cache entrys from the ID cache to the `ret' ID Cache List. */

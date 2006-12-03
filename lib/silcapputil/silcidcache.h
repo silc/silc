@@ -205,8 +205,7 @@ SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
  * SYNOPSIS
  *
  *    SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
- *                                 void *old_id, void *new_id,
- *                                 char *old_name, char *new_name,
+ *                                 void *new_id, char *new_name,
  *                                 SilcBool free_old_name);
  *
  * DESCRIPTION
@@ -221,8 +220,7 @@ SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
  *
  ***/
 SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
-			     void *old_id, void *new_id,
-			     char *old_name, char *new_name,
+			     void *new_id, char *new_name,
 			     SilcBool free_old_name);
 
 /****f* silcapputil/SilcIDCacheAPI/silc_idcache_update
@@ -231,8 +229,7 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
  *
  *    SilcBool
  *    silc_idcache_update_by_context(SilcIDCache cache, void *context,
- *                                   void *old_id, void *new_id,
- *                                   char *old_name, char *new_name,
+ *                                   void *new_id, char *new_name,
  *                                   SilcBool free_old_name);
  *
  * DESCRIPTION
@@ -242,8 +239,7 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
  *
  ***/
 SilcBool silc_idcache_update_by_context(SilcIDCache cache, void *context,
-					void *old_id, void *new_id,
-					char *old_name, char *new_name,
+					void *new_id, char *new_name,
 					SilcBool free_old_name);
 
 /****f* silcapputil/SilcIDCacheAPI/silc_idcache_get_all
