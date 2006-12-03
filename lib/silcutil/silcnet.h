@@ -124,7 +124,11 @@ typedef void (*SilcNetCallback)(SilcNetStatus status,
  *    On success returns the SilcNetListener context, or NULL on error.
  *    If `require_fqdn' is TRUE the listener will require that the incoming
  *    connection has FQDN to be able to connect.  If the `lookup' is TRUE
- *    then the incoming connection hostname will be resolved.
+ *    then the incoming connection hostname will be resolved.  If the `port'
+ *    is zero (0), operating system will define it automatically.
+ *
+ *    The `callback' always delivers valid new stream.  It is not called
+ *    with an error status.
  *
  ***/
 SilcNetListener
@@ -133,6 +137,24 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
 			     SilcBool lookup, SilcBool require_fqdn,
 			     SilcSchedule schedule,
 			     SilcNetCallback callback, void *context);
+
+/****f* silcutil/SilcNetAPI/silc_net_listener_get_port
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt16 silc_net_listener_get_port(SilcNetListener listener);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the ports to where the `listener' is bound.  This can be used
+ *    to get the port if none was specified in silc_net_tcp_create_listener.
+ *    Returns an array of ports of size of `port_count'.  The caller must
+ *    free the array with silc_free.  There are as many ports in the array
+ *    as there were IP addresses provided in silc_net_tcp_create_listener.
+ *
+ ***/
+SilcUInt16 *silc_net_listener_get_port(SilcNetListener listener,
+				       SilcUInt32 *port_count);
 
 /****f* silcutil/SilcNetAPI/silc_net_close_listener
  *
@@ -200,8 +222,9 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
  *    silc_stream_write function and packets may be received using
  *    silc_stream_read function.
  *
- *    If the remote address is not provided then packets may only be received
- *    by using silc_net_udp_receive and sent only by using the function
+ *    If the remote address is not provided the stream is in connectionless
+ *    state.  This means that packets can be received only by using
+ *    silc_net_udp_receive and sent only by using the function
  *    silc_net_udp_send.
  *
  *    To receive packets the silc_stream_set_notifier must be called for the
@@ -260,9 +283,9 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
  *
  * SYNOPSIS
  *
- *    void silc_net_udp_send(SilcStream stream,
- *                           const char *remote_ip_addr, int remote_port,
- *                           const unsigned char *data, SilcUInt32 data_len);
+ *    int silc_net_udp_send(SilcStream stream,
+ *                          const char *remote_ip_addr, int remote_port,
+ *                          const unsigned char *data, SilcUInt32 data_len);
  *
  * DESCRIPTION
  *
@@ -272,13 +295,15 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
  *    used.  In those cases, this function must be used.  This may also be
  *    used even if the stream is connected.
  *
- *    This function always succeeds, however there is no guarantee that the
- *    packet is delivered, as UDP is unreliable transport protocol.
+ *    Returns the amount of data written, -1 if data could not be written
+ *    at this moment, or -2 if error occurred.  If -1 is returned the
+ *    notifier callback will later be called with SILC_STREAM_CAN_WRITE
+ *    status when stream is again ready for writing.
  *
  ***/
-void silc_net_udp_send(SilcStream stream,
-		       const char *remote_ip_addr, int remote_port,
-		       const unsigned char *data, SilcUInt32 data_len);
+int silc_net_udp_send(SilcStream stream,
+		      const char *remote_ip_addr, int remote_port,
+		      const unsigned char *data, SilcUInt32 data_len);
 
 /****f* silcutil/SilcNetAPI/silc_net_close_connection
  *
@@ -393,7 +418,8 @@ SilcBool silc_net_is_ip(const char *addr);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len);
+ *    SilcBool silc_net_addr2bin(const char *addr, void *bin,
+ *                               SilcUInt32 bin_len);
  *
  * DESCRIPTION
  *

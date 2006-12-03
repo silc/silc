@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,6 +19,27 @@
 /* $Id$ */
 
 #include "silc.h"
+
+/* Returns bound port from listener */
+
+SilcUInt16 *silc_net_listener_get_port(SilcNetListener listener,
+				       SilcUInt32 *port_count)
+{
+  SilcUInt16 *ports;
+  int i;
+
+  ports = silc_calloc(listener->socks_count, sizeof(*ports));
+  if (!ports)
+    return NULL;
+
+  for (i = 0; i < listener->socks_count; i++)
+    ports[i] = silc_net_get_local_port(listener->socks[i]);
+
+  if (port_count)
+    *port_count = listener->socks_count;
+
+  return ports;
+}
 
 /* Accepts a connection from a particular socket */
 
