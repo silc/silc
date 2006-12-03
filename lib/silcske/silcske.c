@@ -950,6 +950,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_start)
 			silc_buffer_data(payload_buf),
 			silc_buffer_len(payload_buf))) {
     /** Error sending packet */
+    SILC_LOG_DEBUG(("Error sending packet"));
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
@@ -1234,6 +1235,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
 			silc_buffer_data(payload_buf),
 			silc_buffer_len(payload_buf))) {
     /** Error sending packet */
+    SILC_LOG_DEBUG(("Error sending packet"));
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
@@ -1426,6 +1428,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
   SILC_PUT32_MSB((SilcUInt32)SILC_SKE_STATUS_OK, hash);
   if (!silc_packet_send(ske->stream, SILC_PACKET_SUCCESS, 0, hash, 4)) {
     /** Error sending packet */
+    SILC_LOG_DEBUG(("Error sending packet"));
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
@@ -1485,7 +1488,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
   /* Call the completion callback */
   if (ske->callbacks->completed)
     ske->callbacks->completed(ske, ske->status, ske->prop, ske->keymat,
-			      ske->rekey, ske->user_data);
+			      ske->rekey, ske->callbacks->context);
 
   silc_packet_free(ske->packet);
 
@@ -1529,7 +1532,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_error)
 
   /* Call the completion callback */
   if (ske->callbacks->completed)
-    ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL, NULL);
+    ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL,
+			      ske->callbacks->context);
 
   return SILC_FSM_FINISH;
 }
@@ -1545,7 +1549,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_failure)
 
   /* Call the completion callback */
   if (ske->callbacks->completed)
-    ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL, NULL);
+    ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL,
+			      ske->callbacks->context);
 
   return SILC_FSM_FINISH;
 }
@@ -2035,6 +2040,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
   /* Send the packet. */
   if (!silc_packet_send(ske->stream, SILC_PACKET_KEY_EXCHANGE_2, 0,
 			payload_buf->data, silc_buffer_len(payload_buf))) {
+    SILC_LOG_DEBUG(("Error sending packet"));
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
     return SILC_FSM_CONTINUE;
@@ -2613,12 +2619,6 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
     if (!silc_hash_alloc(silc_hash_get_name(prop->hash), ret_hash))
       return FALSE;
   }
-
-  SILC_LOG_INFO(("Security properties: %s %s %s %s",
-		 ret_send_key ? silc_cipher_get_name(*ret_send_key) : "??",
-		 ret_hmac_send ? silc_hmac_get_name(*ret_hmac_send) : "??",
-		 ret_hash ? silc_hash_get_name(*ret_hash) : "??",
-		 ske->prop->flags & SILC_SKE_SP_FLAG_PFS ? "PFS" : ""));
 
   return TRUE;
 }

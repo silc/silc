@@ -460,9 +460,9 @@ silc_ske_initiator(SilcSKE ske,
  * SYNOPSIS
  *
  *    SilcAsyncOperation
- *    silc_ske_responder_start(SilcSKE ske,
- *                             SilcPacketStream stream,
- *                             SilcSKEParams params);
+ *    silc_ske_responder(SilcSKE ske,
+ *                       SilcPacketStream stream,
+ *                       SilcSKEParams params);
  *
  * DESCRIPTION
  *
