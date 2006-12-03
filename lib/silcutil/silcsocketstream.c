@@ -22,6 +22,7 @@
 /************************** Types and definitions ***************************/
 
 #define SILC_IS_SOCKET_STREAM(s) (s->ops == &silc_socket_stream_ops)
+#define SILC_IS_SOCKET_STREAM_UDP(s) (s->ops == &silc_socket_udp_stream_ops)
 
 const SilcStreamOps silc_socket_stream_ops;
 const SilcStreamOps silc_socket_udp_stream_ops;
@@ -232,6 +233,7 @@ silc_socket_tcp_stream_create(int sock, SilcBool lookup,
 /* Creates UDP socket stream */
 
 SilcStream silc_socket_udp_stream_create(int sock, SilcBool ipv6,
+					 SilcBool connected,
 					 SilcSchedule schedule)
 {
   SilcSocketStream stream;
@@ -246,8 +248,24 @@ SilcStream silc_socket_udp_stream_create(int sock, SilcBool ipv6,
   stream->sock = sock;
   stream->schedule = schedule;
   stream->ipv6 = ipv6;
+  stream->connected = connected;
 
   return (SilcStream)stream;
+}
+
+/* Returns TRUE if the stream is UDP stream */
+
+SilcBool silc_socket_stream_is_udp(SilcStream stream, SilcBool *connected)
+{
+  SilcSocketStream socket_stream = stream;
+
+  if (!SILC_IS_SOCKET_STREAM_UDP(socket_stream))
+    return FALSE;
+
+  if (connected)
+    *connected = socket_stream->connected;
+
+  return TRUE;
 }
 
 /* Returns socket stream information */
@@ -258,7 +276,8 @@ SilcBool silc_socket_stream_get_info(SilcStream stream,
 {
   SilcSocketStream socket_stream = stream;
 
-  if (!SILC_IS_SOCKET_STREAM(socket_stream))
+  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
+      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
     return FALSE;
 
   if (sock)
@@ -290,7 +309,8 @@ SilcBool silc_socket_stream_set_info(SilcStream stream,
 {
   SilcSocketStream socket_stream = stream;
 
-  if (!SILC_IS_SOCKET_STREAM(socket_stream))
+  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
+      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
     return FALSE;
 
   if (hostname) {
@@ -322,7 +342,8 @@ int silc_socket_stream_get_error(SilcStream stream)
 {
   SilcSocketStream socket_stream = stream;
 
-  if (!SILC_IS_SOCKET_STREAM(socket_stream))
+  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
+      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
     return 0;
 
   return socket_stream->sock_error;
@@ -338,7 +359,8 @@ SilcBool silc_socket_stream_set_qos(SilcStream stream,
 {
   SilcSocketStream socket_stream = stream;
 
-  if (!SILC_IS_SOCKET_STREAM(socket_stream))
+  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
+      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
     return FALSE;
 
   SILC_LOG_DEBUG(("Setting QoS for socket stream"));
@@ -380,7 +402,8 @@ SilcBool silc_socket_stream_close(SilcStream stream)
 {
   SilcSocketStream socket_stream = stream;
 
-  if (!SILC_IS_SOCKET_STREAM(socket_stream))
+  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
+      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
     return FALSE;
 
   silc_schedule_unset_listen_fd(socket_stream->schedule, socket_stream->sock);
@@ -395,7 +418,8 @@ void silc_socket_stream_destroy(SilcStream stream)
 {
   SilcSocketStream socket_stream = stream;
 
-  if (!SILC_IS_SOCKET_STREAM(socket_stream))
+  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
+      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
     return;
 
   silc_socket_stream_close(socket_stream);
@@ -428,7 +452,8 @@ void silc_socket_stream_notifier(SilcStream stream,
 {
   SilcSocketStream socket_stream = stream;
 
-  if (!SILC_IS_SOCKET_STREAM(socket_stream))
+  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
+      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
     return;
 
   SILC_LOG_DEBUG(("Setting stream notifier callback"));
@@ -462,7 +487,8 @@ SilcSchedule silc_socket_stream_get_schedule(SilcStream stream)
 {
   SilcSocketStream socket_stream = stream;
 
-  if (!SILC_IS_SOCKET_STREAM(socket_stream))
+  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
+      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
     return NULL;
 
   return socket_stream->schedule;

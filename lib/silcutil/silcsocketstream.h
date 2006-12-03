@@ -124,12 +124,15 @@ silc_socket_tcp_stream_create(int sock, SilcBool lookup,
  * SYNOPSIS
  *
  *    SilcStream silc_socket_udp_stream_create(int sock, SilcBool ipv6,
+ *                                             SilcBool connected,
  *                                             SilcSchedule schedule);
  *
  * DESCRIPTION
  *
  *    Creates UDP socket stream of the UDP connection indicated by `sock'.
  *    The stream can be destroyed by calling the silc_stream_destroy.
+ *    The `connected' defines whether the socket is in connected or in
+ *    connectionless state.
  *
  *    Note that, UDP packets may be read only through the notifier
  *    callback (see silc_stream_set_notifier), when SILC_STREAM_CAN_READ
@@ -138,15 +141,37 @@ silc_socket_tcp_stream_create(int sock, SilcBool lookup,
  *
  *    Note that, UDP packet sending using silc_stream_write and receiving
  *    with silc_stream_read works only if the `sock' is a UDP socket in a
- *    connected state.  If it is not the silc_net_udp_send function and
- *    silc_net_udp_receive functions must be used.  The SILC_STREAM_CAN_WRITE
- *    is never returned to the notifier callback.
+ *    connected state.  In connectionless state sending packets with
+ *    silc_stream_write is possible only if the remote address and port
+ *    has been set with silc_socket_stream_set_info.  If it is not set
+ *    in connectionless state packets may be sent only by using the
+ *    silc_net_udp_send function.  In connectionless state packets may be
+ *    received only by using silc_net_udp_receive.
  *
  *    This function returns the created SilcStream or NULL on error.
  *
  ***/
 SilcStream silc_socket_udp_stream_create(int sock, SilcBool ipv6,
+					 SilcBool connected,
 					 SilcSchedule schedule);
+
+/****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_get_info
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_socket_stream_is_udp(SilcStream stream,
+ *                                       SilcBool *connected);
+ *
+ * DESCRIPTION
+ *
+ *    Returns TRUE if the `stream' is UDP stream.  If the `connected' pointer
+ *    is non-NULL indication whether the UDP stream is in connected state.
+ *    If it is then packets can be read and written using silc_stream_read
+ *    and silc_stream_write.  If it is not then packets need to read and
+ *    written by using silc_net_udp_receive and silc_net_udp_send.
+ *
+ ***/
+SilcBool silc_socket_stream_is_udp(SilcStream stream, SilcBool *connected);
 
 /****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_get_info
  *
