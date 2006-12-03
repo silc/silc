@@ -1,3 +1,14 @@
+Sun Dec  3 22:00:12 EET 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_socket_stream_is_udp.  Affected file is
+	  lib/silcutil/silcsocketstream.[ch].
+
+	* Added UDP transport support to packet engine.  Affected file
+	  is lib/silccore/silcpacket.c.
+
+	* Added silc_socket_stream_is_udp.  Affected file is
+	  lib/silcutil/silcsocketstream.[ch].
+
 Sat Nov 18 11:33:03 EET 2006  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_packet_send_va[_ext] to send variable argument
