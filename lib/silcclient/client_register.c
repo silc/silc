@@ -36,9 +36,21 @@ typedef struct {
   SilcBool success;
 } *SilcClientResumeSession;
 
-
 /************************ Static utility functions **************************/
 
+/* Command callback.  Nothing interesting to do here. */
+
+static SilcBool
+silc_client_register_command_called(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcCommand command,
+				    SilcStatus status,
+				    SilcStatus error,
+				    void *context,
+				    va_list ap)
+{
+  return TRUE;
+}
 
 /****************************** NEW_ID packet *******************************/
 
@@ -77,10 +89,14 @@ SILC_FSM_STATE(silc_client_new_id)
   conn->internal->local_idp = silc_buffer_copy(&packet->buffer);
 
   /* Save cache entry */
+  silc_mutex_lock(conn->internal->lock);
   if (!silc_idcache_find_by_id_one(conn->internal->client_cache,
 				   conn->local_id,
-				   &conn->internal->local_entry))
+				   &conn->internal->local_entry)) {
+    silc_mutex_unlock(conn->internal->lock);
     goto out;
+  }
+  silc_mutex_unlock(conn->internal->lock);
 
   /* Save remote ID */
   if (packet->src_id_len) {
@@ -138,7 +154,8 @@ SILC_FSM_STATE(silc_client_st_register)
 
   /** Wait for new ID */
   conn->internal->registering = TRUE;
-  silc_fsm_next_later(fsm, silc_client_st_register_complete, 15, 0);
+  silc_fsm_next_later(fsm, silc_client_st_register_complete,
+		      conn->internal->retry_timer, 0);
   return SILC_FSM_WAIT;
 }
 
@@ -150,9 +167,21 @@ SILC_FSM_STATE(silc_client_st_register_complete)
   SilcClient client = conn->client;
 
   if (!conn->local_id) {
-    /** Timeout, ID not received */
-    conn->internal->registering = FALSE;
-    silc_fsm_next(fsm, silc_client_st_register_error);
+    if (conn->internal->retry_count++ >= SILC_CLIENT_RETRY_COUNT) {
+      /** Timeout, ID not received */
+      conn->internal->registering = FALSE;
+      conn->internal->retry_count = 0;
+      conn->internal->retry_timer = SILC_CLIENT_RETRY_MIN;
+      silc_fsm_next(fsm, silc_client_st_register_error);
+      return SILC_FSM_CONTINUE;
+    }
+
+    /** Resend registering packet */
+    silc_fsm_next(fsm, silc_client_st_register);
+    conn->internal->retry_timer = ((conn->internal->retry_timer *
+				   SILC_CLIENT_RETRY_MUL) +
+				   (silc_rng_get_rn16(client->rng) %
+				    SILC_CLIENT_RETRY_RAND));
     return SILC_FSM_CONTINUE;
   }
 
@@ -160,21 +189,22 @@ SILC_FSM_STATE(silc_client_st_register_complete)
 
   /* Issue IDENTIFY command for itself to get resolved hostname
      correctly from server. */
-  silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY, NULL, NULL,
+  silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
+			   silc_client_register_command_called, NULL,
 			   1, 5, silc_buffer_data(conn->internal->local_idp),
 			   silc_buffer_len(conn->internal->local_idp));
 
-  /* Send NICK command if the nickname was set by the application (and is
-     not same as the username).  Send this with little timeout. */
+  /* Call NICK command if the nickname was set by the application (and is
+     not same as the username). */
   if (conn->internal->params.nickname &&
       !silc_utf8_strcasecmp(conn->internal->params.nickname, client->username))
-    silc_client_command_send(client, conn, SILC_COMMAND_NICK, NULL, NULL,
-			     1, 1, conn->internal->params.nickname,
-			     strlen(conn->internal->params.nickname));
+    silc_client_command_call(client, conn, NULL,
+			     "NICK", conn->internal->params.nickname, NULL);
 
   /* Issue INFO command to fetch the real server name and server
      information and other stuff. */
-  silc_client_command_send(client, conn, SILC_COMMAND_INFO, NULL, NULL,
+  silc_client_command_send(client, conn, SILC_COMMAND_INFO,
+			   silc_client_register_command_called, NULL,
 			   1, 2, silc_buffer_data(conn->internal->remote_idp),
 			   silc_buffer_len(conn->internal->remote_idp));
 
@@ -186,14 +216,20 @@ SILC_FSM_STATE(silc_client_st_register_complete)
   return SILC_FSM_FINISH;
 }
 
+/* Error registering to network */
+
 SILC_FSM_STATE(silc_client_st_register_error)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
 
-  /* XXX */
-  /* Close connection */
+  SILC_LOG_DEBUG(("Error registering to network"));
 
+  /* Signal to close connection */
+  conn->internal->disconnected = TRUE;
+  SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+
+  /* Call connect callback */
   conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
 		 conn->callback_context);
 

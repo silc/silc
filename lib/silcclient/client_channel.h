@@ -30,13 +30,20 @@ SilcBool silc_client_save_channel_key(SilcClient client,
 				      SilcChannelEntry channel);
 SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
 				       SilcClientEntry client_entry);
-SilcBool silc_client_add_to_channel(SilcChannelEntry channel,
+SilcBool silc_client_add_to_channel(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcChannelEntry channel,
 				    SilcClientEntry client_entry,
 				    SilcUInt32 cumode);
-SilcBool silc_client_remove_from_channel(SilcChannelEntry channel,
+SilcBool silc_client_remove_from_channel(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcChannelEntry channel,
 					 SilcClientEntry client_entry);
 void silc_client_remove_from_channels(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcClientEntry client_entry);
+void silc_client_empty_channel(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcChannelEntry channel);
 
 #endif /* CLIENT_CHANNEL_H */

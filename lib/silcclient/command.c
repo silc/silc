@@ -139,11 +139,17 @@ silc_client_command_register(SilcClient client,
   SilcClientCommand cmd;
 
   cmd = silc_calloc(1, sizeof(*cmd));
+  if (!cmd)
+    return FALSE;
   cmd->cmd = command;
   cmd->command = command_func;
   cmd->reply = command_reply_func;
-  cmd->name = name ? strdup(name) : NULL;
   cmd->max_args = max_args;
+  cmd->name = name ? strdup(name) : NULL;
+  if (!cmd->name) {
+    silc_free(cmd);
+    return FALSE;
+  }
 
   silc_list_add(client->internal->commands, cmd);
 
@@ -189,20 +195,6 @@ static SilcClientCommand silc_client_command_find(SilcClient client,
   }
 
   return NULL;
-}
-
-/* Free command context and its internals */
-
-static void silc_client_command_free(SilcClientCommandContext cmd)
-{
-  int i;
-
-  for (i = 0; i < cmd->argc; i++)
-    silc_free(cmd->argv[i]);
-  silc_free(cmd->argv);
-  silc_free(cmd->argv_lens);
-  silc_free(cmd->argv_types);
-  silc_free(cmd);
 }
 
 /* Command thread destructor */
@@ -353,6 +345,26 @@ static SilcUInt16 silc_client_command_send_va(SilcClientConnection conn,
 
 /****************************** Command API *********************************/
 
+/* Free command context and its internals */
+
+void silc_client_command_free(SilcClientCommandContext cmd)
+{
+  SilcClientCommandReplyCallback cb;
+  int i;
+
+  for (i = 0; i < cmd->argc; i++)
+    silc_free(cmd->argv[i]);
+  silc_free(cmd->argv);
+  silc_free(cmd->argv_lens);
+  silc_free(cmd->argv_types);
+
+  silc_list_start(cmd->reply_callbacks);
+  while ((cb = silc_list_get(cmd->reply_callbacks)))
+    silc_free(cb);
+
+  silc_free(cmd);
+}
+
 /* Executes a command */
 
 SilcUInt16 silc_client_command_call(SilcClient client,
@@ -435,6 +447,8 @@ SilcUInt16 silc_client_command_call(SilcClient client,
   cmd->cmd_ident = silc_client_cmd_ident(conn);
   cmd->called = TRUE;
   cmd->verbose = TRUE;
+  silc_list_init(cmd->reply_callbacks,
+		 struct SilcClientCommandReplyCallbackStruct, next);
 
   /*** Call command */
   SILC_LOG_DEBUG(("Calling %s command", silc_get_command_name(cmd->cmd)));
@@ -467,6 +481,8 @@ SilcUInt16 silc_client_command_send(SilcClient client,
     return 0;
   cmd->conn = conn;
   cmd->cmd = command;
+  silc_list_init(cmd->reply_callbacks,
+		 struct SilcClientCommandReplyCallbackStruct, next);
 
   /* Send the command */
   va_start(ap, argc);
@@ -2577,6 +2593,7 @@ SILC_FSM_STATE(silc_client_command_getkey)
       /* NOT REACHED */
     }
     idp = silc_id_payload_encode(&server_entry->id, SILC_ID_SERVER);
+    silc_client_unref_server(client, conn, server_entry);
   } else {
     client_entry = silc_dlist_get(clients);
     idp = silc_id_payload_encode(&client_entry->id, SILC_ID_CLIENT);

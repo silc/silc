@@ -29,6 +29,18 @@
 #include "client_channel.h"
 #include "client_notify.h"
 
+/****************************** Definitions *********************************/
+
+/* Packet retry counter and timer defines, for exponential backoff algorithm.
+   Meaningful with UDP transport when packets may get lost. */
+#define SILC_CLIENT_RETRY_COUNT   4      /* Max packet retry count */
+#define SILC_CLIENT_RETRY_MUL     2      /* Retry timer interval growth */
+#define SILC_CLIENT_RETRY_RAND    2      /* Randomizer, timeout += rnd % 2 */
+#define SILC_CLIENT_RETRY_MIN     1      /* Min retry timeout, seconds */
+#define SLIC_CLIENT_RETRY_MAX     16	 /* Max retry timeout, seconds */
+
+/********************************** Types ***********************************/
+
 /* Context to hold the connection authentication request callbacks that
    will be called when the server has replied back to our request about
    current authentication method in the session. */
@@ -123,15 +135,8 @@ struct SilcClientInternalStruct {
   SilcClientParams *params;		 /* Client parameters */
   SilcPacketEngine packet_engine;        /* Packet engine */
   SilcMutex lock;			 /* Client lock */
-
-  /* List of connections in client. All the connection data is saved here. */
-  SilcDList conns;
-
-  /* Registered commands */
-  SilcList commands;
-
-  /* Client version. Used to compare to remote host's version strings. */
-  char *silc_client_version;
+  SilcList commands;			 /* Registered commands */
+  char *silc_client_version;		 /* Version set by application */
 
   /* Events */
   unsigned int run_callback    : 1;	 /* Call running callback */
@@ -153,15 +158,17 @@ struct SilcClientConnectionInternalStruct {
   SilcList pending_commands;		 /* Pending commands list */
   SilcHash hash;			 /* Negotiated hash function */
   SilcHash sha1hash;			 /* SHA-1 default hash context */
+  SilcBuffer local_idp;		         /* Local ID Payload */
+  SilcBuffer remote_idp;		 /* Remote ID Payload */
+  SilcAsyncOperation op;	         /* Protocols async operation */
 
   SilcIDCache client_cache;		 /* Client entry cache */
   SilcIDCache channel_cache;		 /* Channel entry cache */
   SilcIDCache server_cache;		 /* Server entry cache */
 
-  SilcBuffer local_idp;		         /* Local ID Payload */
-  SilcBuffer remote_idp;		 /* Remote ID Payload */
-
   SilcAtomic16 cmd_ident;		 /* Current command identifier */
+  SilcUInt8 retry_count;		 /* Packet retry counter */
+  SilcUInt8 retry_timer;		 /* Packet retry timer */
 
   /* Events */
   unsigned int connect            : 1;	 /* Connect remote host */
@@ -203,6 +210,7 @@ SilcUInt16 silc_client_command_send_argv(SilcClient client,
 					 unsigned char **argv,
 					 SilcUInt32 *argv_lens,
 					 SilcUInt32 *argv_types);
+void silc_client_command_free(SilcClientCommandContext cmd);
 
 void silc_client_ftp(SilcClient client, SilcClientConnection conn,
 		     SilcPacket packet);

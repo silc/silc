@@ -188,9 +188,13 @@ SILC_FSM_STATE(silc_client_command_reply_wait)
 SILC_FSM_STATE(silc_client_command_reply_timeout)
 {
   SilcClientCommandContext cmd = fsm_context;
+  SilcClientConnection conn = cmd->conn;
   SilcArgumentPayload args = NULL;
 
+  SILC_LOG_DEBUG(("Command %s timeout", silc_get_command_name(cmd->cmd)));
+
   /* Timeout, reply not received in timely fashion */
+  silc_list_del(conn->internal->pending_commands, cmd);
   ERROR_CALLBACK(SILC_STATUS_ERR_TIMEDOUT);
   return SILC_FSM_FINISH;
 }
@@ -680,10 +684,7 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
   silc_mutex_lock(conn->internal->lock);
   if (!silc_idcache_update(conn->internal->client_cache,
 			   conn->internal->local_entry,
-			   &conn->local_entry->id,
-			   &id.u.client_id,
-			   conn->local_entry->nickname_normalized,
-			   tmp, TRUE)) {
+			   &id.u.client_id, tmp, TRUE)) {
     silc_free(tmp);
     silc_mutex_unlock(conn->internal->lock);
     ERROR_CALLBACK(SILC_STATUS_ERR_BAD_NICKNAME);
@@ -950,16 +951,18 @@ SILC_FSM_STATE(silc_client_command_reply_info)
   /* See whether we have this server cached. If not create it. */
   server = silc_client_get_server_by_id(client, conn, &id.u.server_id);
   if (!server) {
-    SILC_LOG_DEBUG(("New server entry"));
+    SILC_LOG_DEBUG(("Add new server entry (INFO)"));
     server = silc_client_add_server(client, conn, server_name,
 				    server_info, &id.u.server_id);
     if (!server)
       goto out;
+    silc_client_ref_server(client, conn, server);
   }
 
   /* Notify application */
   silc_client_command_callback(cmd, server, server->server_name,
 			       server->server_info);
+  silc_client_unref_server(client, conn, server);
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
@@ -1171,15 +1174,13 @@ SILC_FSM_STATE(silc_client_command_reply_join)
     /* Mode */
     SILC_GET32_MSB(mode, client_mode_list.data);
 
-    SILC_LOG_DEBUG(("id %s", silc_id_render(&id.u.client_id, SILC_ID_CLIENT)));
-
     /* Get client entry */
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
     if (!client_entry)
       continue;
 
     /* Join client to the channel */
-    silc_client_add_to_channel(channel, client_entry, mode);
+    silc_client_add_to_channel(client, conn, channel, client_entry, mode);
     silc_client_unref_client(client, conn, client_entry);
 
     if (!silc_buffer_pull(&client_id_list, idp_len))
@@ -1724,7 +1725,7 @@ SILC_FSM_STATE(silc_client_command_reply_leave)
   }
 
   /* Remove us from this channel. */
-  silc_client_remove_from_channel(channel, conn->local_entry);
+  silc_client_remove_from_channel(client, conn, channel, conn->local_entry);
 
   /* Notify application */
   silc_client_command_callback(cmd, channel);
@@ -1865,7 +1866,7 @@ SILC_FSM_STATE(silc_client_command_reply_users)
        clearly do not exist since the resolving didn't find them. */
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
     if (client_entry)
-      silc_client_add_to_channel(channel, client_entry, mode);
+      silc_client_add_to_channel(client, conn, channel, client_entry, mode);
     silc_client_unref_client(client, conn, client_entry);
 
     if (!silc_buffer_pull(&client_id_list, idp_len))
@@ -1961,6 +1962,7 @@ SILC_FSM_STATE(silc_client_command_reply_getkey)
     /* Notify application */
     silc_client_command_callback(cmd, SILC_ID_SERVER, server_entry,
 				 server_entry->public_key);
+    silc_client_unref_server(client, conn, server_entry);
   }
 
  out:

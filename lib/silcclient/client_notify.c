@@ -238,6 +238,8 @@ SILC_FSM_STATE(silc_client_notify_none)
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
 
+  SILC_LOG_DEBUG(("Notify: NONE"));
+
   /* Notify application */
   NOTIFY(client, conn, type, silc_argument_get_arg_type(args, 1, NULL));
 
@@ -380,7 +382,7 @@ SILC_FSM_STATE(silc_client_notify_join)
     silc_client_nickname_format(client, conn, client_entry);
 
   /* Join the client to channel */
-  if (!silc_client_add_to_channel(channel, client_entry, 0))
+  if (!silc_client_add_to_channel(client, conn, channel, client_entry, 0))
     goto out;
 
   /* Notify application. */
@@ -410,7 +412,6 @@ SILC_FSM_STATE(silc_client_notify_leave)
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry = NULL;
   SilcChannelEntry channel = NULL;
-  SilcChannelUser chu;
   SilcID id;
 
   SILC_LOG_DEBUG(("Notify: LEAVE"));
@@ -444,30 +445,7 @@ SILC_FSM_STATE(silc_client_notify_leave)
     goto out;
 
   /* Remove client from channel */
-  chu = silc_client_on_channel(channel, client_entry);
-  if (chu) {
-    silc_hash_table_del(client_entry->channels, channel);
-    silc_hash_table_del(channel->user_list, client_entry);
-    silc_free(chu);
-  }
-
-#if 0 /* Kind of useless, server will return error if client keeps using
-	 non-existing client, and the entry is removed then. */
-  /* Some client implementations actually quit network by first doing
-     LEAVE and then immediately SIGNOFF.  We'll check for this by doing
-     check for the client after 5 - 34 seconds.  If it is not valid after
-     that we'll remove the client from cache. */
-  if (!silc_hash_table_count(client_entry->channels)) {
-    SilcClientNotifyResolve res = silc_calloc(1, sizeof(*res));
-    res->context = client;
-    res->sock = silc_socket_dup(conn->sock);
-    res->packet = silc_id_dup(client_id, SILC_ID_CLIENT);
-    silc_schedule_task_add(client->schedule, conn->sock->sock,
-			   silc_client_notify_check_client, res,
-			   (5 + (silc_rng_get_rn16(client->rng) % 29)),
-			   0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-  }
-#endif
+  silc_client_remove_from_channel(client, conn, channel, client_entry);
 
   /* Notify application. */
   NOTIFY(client, conn, type, client_entry, channel);
@@ -713,9 +691,10 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
       silc_utf8_strcasecmp(tmp, client_entry->nickname)) {
     /* Nickname didn't change.  Update only Client ID.  We don't notify
        application because nickname didn't change. */
-    silc_idcache_update(conn->internal->client_cache, client_entry,
-			&client_entry->id, &id2.u.client_id, NULL,
-			NULL, FALSE);
+    silc_mutex_lock(conn->internal->lock);
+    silc_idcache_update_by_context(conn->internal->client_cache, client_entry,
+				   &id2.u.client_id, NULL, FALSE);
+    silc_mutex_unlock(conn->internal->lock);
     goto out;
   }
 
@@ -725,12 +704,14 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
     goto out;
 
   /* Update nickname */
-  if (!silc_idcache_update(conn->internal->client_cache, client_entry,
-			   NULL, NULL, client_entry->nickname_normalized,
-			   nick, TRUE)) {
+  silc_mutex_lock(conn->internal->lock);
+  if (!silc_idcache_update_by_context(conn->internal->client_cache,
+				      client_entry, NULL, nick, TRUE)) {
     silc_free(nick);
+    silc_mutex_unlock(conn->internal->lock);
     goto out;
   }
+  silc_mutex_unlock(conn->internal->lock);
   memcpy(oldnick, client_entry->nickname, sizeof(client_entry->nickname));
   memcpy(client_entry->nickname, tmp, tmp_len);
   client_entry->nickname_normalized = nick;
@@ -967,6 +948,22 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
     /* NOT REACHED */
   }
 
+  /* Get target Client ID */
+  if (!silc_argument_get_decoded(args, 3, SILC_ARGUMENT_ID, &id2, NULL))
+    goto out;
+
+  /* Find target Client entry */
+  client_entry2 = silc_client_get_client_by_id(client, conn, &id2.u.client_id);
+  if (!client_entry2 || !client_entry2->nickname[0]) {
+    /** Resolve client */
+    silc_client_unref_client(client, conn, client_entry2);
+    SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
+					 client, conn, &id2.u.client_id, NULL,
+					 silc_client_notify_resolved,
+					 notify));
+    /* NOT REACHED */
+  }
+
   /* Get the mode */
   tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
   if (!tmp)
@@ -1021,23 +1018,6 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
       /* NOT REACHED */
     }
     entry = channel_entry;
-  }
-
-  /* Get target Client ID */
-  if (!silc_argument_get_decoded(args, 3, SILC_ARGUMENT_ID, &id2, NULL))
-    goto out;
-
-  /* Find target Client entry */
-  client_entry2 = silc_client_get_client_by_id(client, conn, &id2.u.client_id);
-  if (!client_entry2 || !client_entry2->nickname[0]) {
-    /** Resolve client */
-    silc_client_unref_client(client, conn, client_entry);
-    silc_client_unref_client(client, conn, client_entry2);
-    SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
-					 client, conn, &id2.u.client_id, NULL,
-					 silc_client_notify_resolved,
-					 notify));
-    /* NOT REACHED */
   }
 
   /* Save the mode */

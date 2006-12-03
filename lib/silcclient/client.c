@@ -293,6 +293,7 @@ SILC_FSM_STATE(silc_client_connection_st_packet)
   case SILC_PACKET_NEW_ID:
     /** New ID */
     silc_fsm_next(fsm, silc_client_new_id);
+    break;
 
   case SILC_PACKET_CONNECTION_AUTH_REQUEST:
     /* Reply to connection authentication request to resolve authentication
@@ -320,7 +321,9 @@ SILC_FSM_STATE(silc_client_connection_st_close)
 
   SILC_LOG_DEBUG(("Closing remote connection"));
 
-  /* XXX abort any ongoing events (protocols) */
+  /* Abort ongoing events */
+  if (conn->internal->op)
+    silc_async_abort(conn->internal->op, NULL, NULL);
 
   /* Close connection */
   silc_packet_stream_destroy(conn->stream);
@@ -457,6 +460,9 @@ silc_client_add_connection(SilcClient client,
     silc_free(conn);
     return NULL;
   }
+  conn->internal->retry_timer = SILC_CLIENT_RETRY_MIN;
+  silc_mutex_alloc(&conn->internal->lock);
+  silc_atomic_init16(&conn->internal->cmd_ident, 0);
 
   if (!silc_hash_alloc("sha1", &conn->internal->sha1hash)) {
     silc_free(conn);
@@ -498,96 +504,66 @@ silc_client_add_connection(SilcClient client,
   return conn;
 }
 
-/* Removes connection from client. Frees all memory. */
+/* Deletes connection.  This is always called from the connection machine
+   destructor.  Do not call this directly other places. */
 
 void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
 {
-#if 0
-  SilcClientConnection c;
-  SilcIDCacheList list;
+  SilcList list;
   SilcIDCacheEntry entry;
-  SilcClientCommandPending *r;
-  SilcBool ret;
+  SilcFSMThread thread;
+  SilcClientCommandContext cmd;
 
-  silc_dlist_start(client->internal->conns);
-  while ((c = silc_dlist_get(client->internal->conns)) != SILC_LIST_END) {
-    if (c != conn)
-      continue;
+  SILC_LOG_DEBUG(("Freeing connection %p", conn));
 
-    /* Free all cache entries */
-    if (silc_idcache_get_all(conn->internal->client_cache, &list)) {
-      ret = silc_idcache_list_first(list, &entry);
-      while (ret) {
-	silc_client_del_client(client, conn, entry->context);
-	ret = silc_idcache_list_next(list, &entry);
-      }
-      silc_idcache_list_free(list);
-    }
-
-    if (silc_idcache_get_all(conn->internal->channel_cache, &list)) {
-      ret = silc_idcache_list_first(list, &entry);
-      while (ret) {
-	silc_client_del_channel(client, conn, entry->context);
-	ret = silc_idcache_list_next(list, &entry);
-      }
-      silc_idcache_list_free(list);
-    }
-
-    if (silc_idcache_get_all(conn->internal->server_cache, &list)) {
-      ret = silc_idcache_list_first(list, &entry);
-      while (ret) {
-	silc_client_del_server(client, conn, entry->context);
-	ret = silc_idcache_list_next(list, &entry);
-      }
-      silc_idcache_list_free(list);
-    }
-
-    /* Clear ID caches */
-    if (conn->internal->client_cache)
-      silc_idcache_free(conn->internal->client_cache);
-    if (conn->internal->channel_cache)
-      silc_idcache_free(conn->internal->channel_cache);
-    if (conn->internal->server_cache)
-      silc_idcache_free(conn->internal->server_cache);
-
-    /* Free data (my ID is freed in above silc_client_del_client).
-       conn->nickname is freed when freeing the local_entry->nickname. */
-    silc_free(conn->remote_host);
-    silc_free(conn->local_id_data);
-    if (conn->internal->send_key)
-      silc_cipher_free(conn->internal->send_key);
-    if (conn->internal->receive_key)
-      silc_cipher_free(conn->internal->receive_key);
-    if (conn->internal->hmac_send)
-      silc_hmac_free(conn->internal->hmac_send);
-    if (conn->internal->hmac_receive)
-      silc_hmac_free(conn->internal->hmac_receive);
-    silc_free(conn->internal->rekey);
-
-    if (conn->internal->active_session) {
-      if (conn->sock)
-	conn->sock->user_data = NULL;
-      silc_client_ftp_session_free(conn->internal->active_session);
-      conn->internal->active_session = NULL;
-    }
-
-    silc_client_ftp_free_sessions(client, conn);
-
-    if (conn->internal->pending_commands) {
-      silc_dlist_start(conn->internal->pending_commands);
-      while ((r = silc_dlist_get(conn->internal->pending_commands))
-	     != SILC_LIST_END)
-	silc_dlist_del(conn->internal->pending_commands, r);
-      silc_dlist_uninit(conn->internal->pending_commands);
-    }
-
-    silc_free(conn->internal);
-    memset(conn, 0, sizeof(*conn));
-    silc_free(conn);
-
-    silc_dlist_del(client->internal->conns, conn);
+  /* Free all cache entries */
+  if (silc_idcache_get_all(conn->internal->client_cache, &list)) {
+    silc_list_start(list);
+    while ((entry = silc_list_get(list)))
+      silc_client_del_client(client, conn, entry->context);
   }
-#endif /* 0 */
+  if (silc_idcache_get_all(conn->internal->channel_cache, &list)) {
+    silc_list_start(list);
+    while ((entry = silc_list_get(list)))
+      silc_client_del_channel(client, conn, entry->context);
+  }
+  if (silc_idcache_get_all(conn->internal->server_cache, &list)) {
+    silc_list_start(list);
+    while ((entry = silc_list_get(list)))
+      silc_client_del_server(client, conn, entry->context);
+  }
+
+  /* Free ID caches */
+  if (conn->internal->client_cache)
+    silc_idcache_free(conn->internal->client_cache);
+  if (conn->internal->channel_cache)
+    silc_idcache_free(conn->internal->channel_cache);
+  if (conn->internal->server_cache)
+    silc_idcache_free(conn->internal->server_cache);
+
+  /* Free thread pool */
+  silc_list_start(conn->internal->thread_pool);
+  while ((thread = silc_list_get(conn->internal->thread_pool)))
+    silc_fsm_free(thread);
+
+  /* Free pending commands */
+  silc_list_start(conn->internal->pending_commands);
+  while ((cmd = silc_list_get(conn->internal->pending_commands)))
+    silc_client_command_free(cmd);
+
+  silc_free(conn->remote_host);
+  silc_buffer_free(conn->internal->local_idp);
+  silc_buffer_free(conn->internal->remote_idp);
+  silc_mutex_free(conn->internal->lock);
+  if (conn->internal->hash)
+    silc_hash_free(conn->internal->hash);
+  if (conn->internal->sha1hash)
+    silc_hash_free(conn->internal->sha1hash);
+  silc_atomic_uninit16(&conn->internal->cmd_ident);
+
+  silc_free(conn->internal);
+  memset(conn, 'F', sizeof(*conn));
+  silc_free(conn);
 }
 
 
@@ -653,10 +629,6 @@ SilcBool silc_client_connect_to_client(SilcClient client,
     return FALSE;
   }
 
-  client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
-			     "Connecting to port %d of client host %s",
-			     port, remote_host);
-
   /* Signal connection machine to start connecting */
   conn->internal->connect = TRUE;
   return TRUE;
@@ -681,8 +653,11 @@ SilcBool silc_client_key_exchange(SilcClient client,
   if (!client || !stream)
     return FALSE;
 
-  if (!silc_socket_stream_get_info(stream, NULL, &host, NULL, &port))
+  if (!silc_socket_stream_get_info(stream, NULL, &host, NULL, &port)) {
+    SILC_LOG_ERROR(("Socket stream does not have remote host name set"));
+    callback(client, NULL, SILC_CLIENT_CONN_ERROR, 0, NULL, context);
     return FALSE;
+  }
 
   /* Add new connection */
   conn = silc_client_add_connection(client, conn_type, params,
@@ -704,7 +679,11 @@ SilcBool silc_client_key_exchange(SilcClient client,
 void silc_client_close_connection(SilcClient client,
 				  SilcClientConnection conn)
 {
+  SILC_LOG_DEBUG(("Closing connection %p", conn));
 
+  /* Signal to close connection */
+  conn->internal->disconnected = TRUE;
+  SILC_FSM_SEMA_POST(&conn->internal->wait_event);
 }
 
 #if 0
@@ -1010,9 +989,6 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
   if (params)
     memcpy(new_client->internal->params, params, sizeof(*params));
 
-  if (!new_client->internal->params->task_max)
-    new_client->internal->params->task_max = 200;
-
   if (!new_client->internal->params->rekey_secs)
     new_client->internal->params->rekey_secs = 3600;
 
@@ -1030,22 +1006,23 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
 
 void silc_client_free(SilcClient client)
 {
-  if (client) {
-    if (client->rng)
-      silc_rng_free(client->rng);
+  if (client->rng)
+    silc_rng_free(client->rng);
 
-    if (!client->internal->params->dont_register_crypto_library) {
-      silc_cipher_unregister_all();
-      silc_pkcs_unregister_all();
-      silc_hash_unregister_all();
-      silc_hmac_unregister_all();
-    }
-
-    silc_free(client->internal->params);
-    silc_free(client->internal->silc_client_version);
-    silc_free(client->internal);
-    silc_free(client);
+  if (!client->internal->params->dont_register_crypto_library) {
+    silc_cipher_unregister_all();
+    silc_pkcs_unregister_all();
+    silc_hash_unregister_all();
+    silc_hmac_unregister_all();
   }
+
+  silc_free(client->username);
+  silc_free(client->hostname);
+  silc_free(client->realname);
+  silc_free(client->internal->params);
+  silc_free(client->internal->silc_client_version);
+  silc_free(client->internal);
+  silc_free(client);
 }
 
 /* Initializes the client. This makes all the necessary steps to make
@@ -1060,11 +1037,13 @@ SilcBool silc_client_init(SilcClient client, const char *username,
   if (!client)
     return FALSE;
 
-  if (!username || !hostname || !realname) {
+  if (!username || !hostname) {
     SILC_LOG_ERROR(("Username, hostname and realname must be given to "
 		    "silc_client_init"));
     return FALSE;
   }
+  if (!realname)
+    realname = username;
 
   /* Validate essential strings */
   if (!silc_identifier_verify(username, strlen(username),
@@ -1104,13 +1083,13 @@ SilcBool silc_client_init(SilcClient client, const char *username,
 
   /* Initialize random number generator */
   client->rng = silc_rng_alloc();
+  if (!client->rng)
+    return FALSE;
   silc_rng_init(client->rng);
   silc_rng_global_init(client->rng);
 
   /* Initialize the scheduler */
-  client->schedule =
-    silc_schedule_init(client->internal->params->task_max ?
-		       client->internal->params->task_max : 0, client);
+  client->schedule = silc_schedule_init(0, client);
   if (!client->schedule)
     return FALSE;
 
@@ -1121,19 +1100,15 @@ SilcBool silc_client_init(SilcClient client, const char *username,
   if (!client->internal->packet_engine)
     return FALSE;
 
-  /* Initialize FSM */
-  if (!silc_fsm_init(&client->internal->fsm, client, NULL, NULL,
-		     client->schedule))
-    return FALSE;
-  silc_fsm_sema_init(&client->internal->wait_event, &client->internal->fsm, 0);
-
   /* Allocate client lock */
   silc_mutex_alloc(&client->internal->lock);
 
   /* Register commands */
   silc_client_commands_register(client);
 
-  /* Start the client machine */
+  /* Initialize and start the client FSM */
+  silc_fsm_init(&client->internal->fsm, client, NULL, NULL, client->schedule);
+  silc_fsm_sema_init(&client->internal->wait_event, &client->internal->fsm, 0);
   silc_fsm_start_sync(&client->internal->fsm, silc_client_st_run);
 
   /* Signal the application when we are running */

@@ -669,12 +669,17 @@ silc_client_list_private_message_keys(SilcClient client,
   if (!client || !conn)
     return NULL;
 
-  if (!silc_idcache_get_all(conn->internal->client_cache, &list))
+  silc_mutex_lock(conn->internal->lock);
+  if (!silc_idcache_get_all(conn->internal->client_cache, &list)) {
+    silc_mutex_unlock(conn->internal->lock);
     return NULL;
+  }
 
   keys = silc_calloc(silc_list_count(list), sizeof(*keys));
-  if (!keys)
+  if (!keys) {
+    silc_mutex_unlock(conn->internal->lock);
     return NULL;
+  }
 
   silc_list_start(list);
   while ((id_cache = silc_list_get(list))) {
@@ -690,6 +695,8 @@ silc_client_list_private_message_keys(SilcClient client,
       count++;
     }
   }
+
+  silc_mutex_unlock(conn->internal->lock);
 
   if (key_count)
     *key_count = count;

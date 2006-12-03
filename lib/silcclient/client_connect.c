@@ -30,7 +30,6 @@ typedef struct {
   void *completion_context;
 } *VerifyKeyContext;
 
-
 /************************ Static utility functions **************************/
 
 /* Callback called after connected to remote host */
@@ -305,7 +304,8 @@ SILC_FSM_STATE(silc_client_st_connect)
 					       stream, fsm));
   } else {
     /* Connect (TCP) */
-    SILC_FSM_CALL(silc_net_tcp_connect(NULL, conn->remote_host,
+    SILC_FSM_CALL(conn->internal->op = silc_net_tcp_connect(
+				       NULL, conn->remote_host,
 				       conn->remote_port,
 				       conn->internal->schedule,
 				       silc_client_connect_callback, fsm));
@@ -386,8 +386,9 @@ SILC_FSM_STATE(silc_client_st_connect_key_exchange)
     /** Run key exchange (TCP) */
     silc_fsm_next(fsm, silc_client_st_connect_auth);
 
-  SILC_FSM_CALL(silc_ske_initiator(conn->internal->ske, conn->stream,
-				   &params, NULL));
+  SILC_FSM_CALL(conn->internal->op = silc_ske_initiator(conn->internal->ske,
+							conn->stream,
+							&params, NULL));
 }
 
 /* For UDP/IP connections, set up the UDP session after successful key
@@ -481,7 +482,8 @@ SILC_FSM_STATE(silc_client_st_connect_auth_start)
 
   /** Start connection authentication */
   silc_fsm_next(fsm, silc_client_st_connected);
-  SILC_FSM_CALL(silc_connauth_initiator(connauth, SILC_CONN_CLIENT,
+  SILC_FSM_CALL(conn->internal->op = silc_connauth_initiator(
+					connauth, SILC_CONN_CLIENT,
 					conn->internal->params.auth_method,
 					conn->internal->params.auth,
 					conn->internal->params.auth_len,
@@ -526,9 +528,11 @@ SILC_FSM_STATE(silc_client_st_connected)
 
 SILC_FSM_STATE(silc_client_st_connect_error)
 {
+  SilcClientConnection conn = fsm_context;
 
-  /* XXX */
-  /* Close connection */
+  /* Signal to close connection */
+  conn->internal->disconnected = TRUE;
+  SILC_FSM_SEMA_POST(&conn->internal->wait_event);
 
   return SILC_FSM_FINISH;
 }

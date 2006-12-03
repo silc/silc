@@ -673,7 +673,9 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
 /* Adds client to channel.  Returns TRUE if user was added or is already
    added to the channel, FALSE on error. */
 
-SilcBool silc_client_add_to_channel(SilcChannelEntry channel,
+SilcBool silc_client_add_to_channel(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcChannelEntry channel,
 				    SilcClientEntry client_entry,
 				    SilcUInt32 cumode)
 {
@@ -689,6 +691,10 @@ SilcBool silc_client_add_to_channel(SilcChannelEntry channel,
   chu->client = client_entry;
   chu->channel = channel;
   chu->mode = cumode;
+
+  silc_client_ref_client(client, conn, client_entry);
+  silc_client_ref_channel(client, conn, channel);
+
   silc_hash_table_add(channel->user_list, client_entry, chu);
   silc_hash_table_add(client_entry->channels, channel, chu);
 
@@ -697,7 +703,9 @@ SilcBool silc_client_add_to_channel(SilcChannelEntry channel,
 
 /* Removes client from a channel */
 
-SilcBool silc_client_remove_from_channel(SilcChannelEntry channel,
+SilcBool silc_client_remove_from_channel(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcChannelEntry channel,
 					 SilcClientEntry client_entry)
 {
   SilcChannelUser chu;
@@ -709,6 +717,9 @@ SilcBool silc_client_remove_from_channel(SilcChannelEntry channel,
   silc_hash_table_del(chu->client->channels, chu->channel);
   silc_hash_table_del(chu->channel->user_list, chu->client);
   silc_free(chu);
+
+  silc_client_unref_client(client, conn, client_entry);
+  silc_client_unref_channel(client, conn, channel);
 
   return TRUE;
 }
@@ -726,8 +737,32 @@ void silc_client_remove_from_channels(SilcClient client,
   while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
     silc_hash_table_del(chu->client->channels, chu->channel);
     silc_hash_table_del(chu->channel->user_list, chu->client);
+    silc_client_unref_client(client, conn, chu->client);
+    silc_client_unref_channel(client, conn, chu->channel);
     silc_free(chu);
   }
 
   silc_hash_table_list_reset(&htl);
+}
+
+/* Empties channel from users. */
+
+void silc_client_empty_channel(SilcClient client,
+			       SilcClientConnection conn,
+			       SilcChannelEntry channel)
+{
+  SilcHashTableList htl;
+  SilcChannelUser chu;
+
+  silc_hash_table_list(channel->user_list, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
+    silc_hash_table_del(chu->client->channels, chu->channel);
+    silc_hash_table_del(chu->channel->user_list, chu->client);
+    silc_client_unref_client(client, conn, chu->client);
+    silc_client_unref_channel(client, conn, chu->channel);
+    silc_free(chu);
+  }
+  silc_hash_table_list_reset(&htl);
+
+  silc_hash_table_free(channel->user_list);
 }

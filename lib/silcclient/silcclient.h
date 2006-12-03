@@ -269,6 +269,7 @@ typedef enum {
   SILC_KEY_AGREEMENT_ABORTED,	       /* The protocol aborted */
   SILC_KEY_AGREEMENT_ALREADY_STARTED,  /* Already started */
   SILC_KEY_AGREEMENT_SELF_DENIED,      /* Negotiationg with itself denied */
+  SILC_KEY_AGREEMENT_NO_MEMORY,        /* System out of memory */
 } SilcKeyAgreementStatus;
 /***/
 
@@ -642,11 +643,6 @@ typedef struct {
      application may need to employ appropriate concurrency control
      in the callbacks to protect application specific data. */
   SilcBool threads;
-
-  /* Number of maximum tasks the client library's scheduler can handle.
-     If set to zero default value will be used.  For WIN32 systems this
-     should be set to 64 as it is the hard limit dictated  by the WIN32. */
-  int task_max;
 
   /* Rekey timeout in seconds. The client will perform rekey in this
      time interval. If set to zero, the default value will be used. */
