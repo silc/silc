@@ -388,7 +388,7 @@ void silc_packet_engine_stop(SilcPacketEngine engine);
  *    Create new packet stream and use the `stream' as underlaying stream.
  *    Usually the `stream' would be a socket stream, but it can be any
  *    stream.  After this function returns, packets can immediately be
- *    sent to or received from the stream.
+ *    sent to and received from the stream.
  *
  * NOTES
  *
@@ -405,6 +405,52 @@ void silc_packet_engine_stop(SilcPacketEngine engine);
 SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
 					   SilcSchedule schedule,
 					   SilcStream stream);
+
+/****f* silccore/SilcPacketAPI/silc_packet_stream_shared_create
+ *
+ * SYNOPSIS
+ *
+ *    SilcPacketStream silc_packet_stream_add_remote(SilcPacketStream stream,
+ *                                                   const char *remote_ip,
+ *                                                   SilcUInt16 remote_port);
+ *
+ * DESCRIPTION
+ *
+ *    This function is used to add remote receivers in packet stream `stream'
+ *    that has UDP/IP socket stream as the underlaying stream.  This function
+ *    cannot be used with other type of streams.  This returns new packet
+ *    stream context that can be used to send to and receive packets from
+ *    the specified remote IP and remote port, or NULL on error.  The `stream'
+ *    is the actual stream that is used to send and receive the data.
+ *
+ *    When the parent `stream' receives packets from remote IP address
+ *    and port that does not have its own remote packet stream, it returns
+ *    the packet to the packet callback set for `stream'.  The sender's
+ *    IP address and port can then be retrieved by using the
+ *    silc_packet_stream_get_sender function and to create new packet
+ *    stream by calling this function.  After that, all packets from that
+ *    IP address and port will be received by the new packet stream.
+ *
+ *    This interface is for connectionless UDP streams.  If it is possible
+ *    to create connected stream it should be done for performance reasons.
+ *
+ * EXAMPLE
+ *
+ *    // Create parent packet stream, it can receive packets from anywhere
+ *    listener = silc_net_udp_connect("0.0.0.0", 500, NULL, 0, schedule);
+ *    parent = silc_packet_stream_create(engine, schedule, listener);
+ *
+ *    ...
+ *    // Received a packet to the parent stream, get the sender information.
+ *    silc_packet_stream_get_sender(parent, &ip, &port);
+ *
+ *    // Create new packet stream for this remote location.
+ *    remote = silc_packet_stream_set_remote(parent, ip, port);
+ *
+ ***/
+SilcPacketStream silc_packet_stream_add_remote(SilcPacketStream stream,
+					       const char *remote_ip,
+					       SilcUInt16 remote_port);
 
 /****f* silccore/SilcPacketAPI/silc_packet_stream_destroy
  *
@@ -559,6 +605,26 @@ SilcBool silc_packet_stream_link(SilcPacketStream stream,
 void silc_packet_stream_unlink(SilcPacketStream stream,
 			       SilcPacketCallbacks *callbacks,
 			       void *callback_context);
+
+/****f* silccore/SilcPacketAPI/silc_packet_stream_get_sender
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_packet_stream_get_sender(SilcPacketStream stream,
+ *                                           const char **sender_ip,
+ *                                           SilcUInt16 *sender_port);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the packet sender's IP address and port from UDP packet stream
+ *    indicated by `stream'.  This can be called only from the packet
+ *    callback to retrieve the information of the packet's sender.  Returns
+ *    FALSE if the information is not available.
+ *
+ ***/
+SilcBool silc_packet_stream_get_sender(SilcPacketStream stream,
+				       const char **sender_ip,
+				       SilcUInt16 *sender_port);
 
 /****f* silccore/SilcPacketAPI/silc_packet_stream_ref
  *
