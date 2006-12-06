@@ -151,10 +151,24 @@ do {									\
 				(s)->stream_context);			\
 } while(0)
 
+static void silc_packet_dispatch(SilcPacket packet);
+static void silc_packet_read_process(SilcPacketStream stream);
 
 /************************ Static utility functions **************************/
 
-static void silc_packet_read_process(SilcPacketStream stream);
+/* Injects packet to new stream created with silc_packet_stream_add_remote. */
+
+SILC_TASK_CALLBACK(silc_packet_stream_inject_packet)
+{
+  SilcPacket packet = context;
+  SilcPacketStream stream = packet->stream;
+
+  SILC_LOG_DEBUG(("Injecting packet %p to stream %p", packet, packet->stream));
+
+  silc_mutex_lock(stream->lock);
+  silc_packet_dispatch(packet);
+  silc_mutex_unlock(stream->lock);
+}
 
 /* Write data to the stream.  Must be called with ps->lock locked.  Unlocks
    the lock inside this function. */
@@ -328,6 +342,7 @@ static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
       }
 
       /* Save sender IP and port */
+      silc_free(ps->remote_udp->remote_ip);
       ps->remote_udp->remote_ip = strdup(remote_ip);
       ps->remote_udp->remote_port = remote_port;
 
@@ -611,7 +626,8 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
 
 SilcPacketStream silc_packet_stream_add_remote(SilcPacketStream stream,
 					       const char *remote_ip,
-					       SilcUInt16 remote_port)
+					       SilcUInt16 remote_port,
+					       SilcPacket packet)
 {
   SilcPacketEngine engine = stream->engine;
   SilcPacketStream ps;
@@ -686,6 +702,14 @@ SilcPacketStream silc_packet_stream_add_remote(SilcPacketStream stream,
   if (!ps->remote_udp->remote_ip) {
     silc_packet_stream_destroy(ps);
     return NULL;
+  }
+
+  if (packet) {
+    /* Inject packet to the new stream */
+    packet->stream = ps;
+    silc_schedule_task_add_timeout(silc_stream_get_schedule(stream->stream),
+				   silc_packet_stream_inject_packet, packet,
+				   0, 0);
   }
 
   return ps;
@@ -888,15 +912,15 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
 
 /* Return packet sender IP and port for UDP packet stream */
 
-SilcBool silc_packet_stream_get_sender(SilcPacketStream stream,
-				       const char **sender_ip,
-				       SilcUInt16 *sender_port)
+SilcBool silc_packet_get_sender(SilcPacket packet,
+				const char **sender_ip,
+				SilcUInt16 *sender_port)
 {
-  if (!stream->remote_udp)
+  if (!packet->stream->remote_udp)
     return FALSE;
 
-  *sender_ip = stream->remote_udp->remote_ip;
-  *sender_port = stream->remote_udp->remote_port;
+  *sender_ip = packet->stream->remote_udp->remote_ip;
+  *sender_port = packet->stream->remote_udp->remote_port;
 
   return TRUE;
 }
@@ -1439,12 +1463,12 @@ SilcBool silc_packet_send_va_ext(SilcPacketStream stream,
 
 /* Checks MAC in the packet. Returns TRUE if MAC is Ok. */
 
-static SilcBool silc_packet_check_mac(SilcHmac hmac,
-				      const unsigned char *data,
-				      SilcUInt32 data_len,
-				      const unsigned char *packet_mac,
-				      const unsigned char *packet_seq,
-				      SilcUInt32 sequence)
+static inline SilcBool silc_packet_check_mac(SilcHmac hmac,
+					     const unsigned char *data,
+					     SilcUInt32 data_len,
+					     const unsigned char *packet_mac,
+					     const unsigned char *packet_seq,
+					     SilcUInt32 sequence)
 {
   /* Check MAC */
   if (hmac) {
@@ -1480,9 +1504,9 @@ static SilcBool silc_packet_check_mac(SilcHmac hmac,
 /* Decrypts SILC packet.  Handles both normal and special packet decryption.
    Return 0 when packet is normal and 1 when it it special, -1 on error. */
 
-static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
-			       SilcUInt32 sequence, SilcBuffer buffer,
-			       SilcBool normal)
+static inline int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
+				      SilcUInt32 sequence, SilcBuffer buffer,
+				      SilcBool normal)
 {
   if (normal == TRUE) {
     if (cipher) {
@@ -1528,7 +1552,7 @@ static int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
    parsed. The buffer sent must be already decrypted before calling this
    function. */
 
-static SilcBool silc_packet_parse(SilcPacket packet)
+static inline SilcBool silc_packet_parse(SilcPacket packet)
 {
   SilcBuffer buffer = &packet->buffer;
   SilcUInt8 padlen = (SilcUInt8)buffer->data[4];
@@ -1546,14 +1570,18 @@ static SilcBool silc_packet_parse(SilcPacket packet)
 			     SILC_STR_UI_CHAR(&src_id_type),
 			     SILC_STR_END);
   if (ret == -1) {
-    SILC_LOG_ERROR(("Malformed packet header, packet dropped"));
+    if (!packet->stream->udp &&
+	!silc_socket_stream_is_udp(packet->stream->stream, NULL))
+      SILC_LOG_ERROR(("Malformed packet header, packet dropped"));
     return FALSE;
   }
 
   if (src_id_len > SILC_PACKET_MAX_ID_LEN ||
       dst_id_len > SILC_PACKET_MAX_ID_LEN) {
-    SILC_LOG_ERROR(("Bad ID lengths in packet (%d and %d)",
-		    packet->src_id_len, packet->dst_id_len));
+    if (!packet->stream->udp &&
+	!silc_socket_stream_is_udp(packet->stream->stream, NULL))
+      SILC_LOG_ERROR(("Bad ID lengths in packet (%d and %d)",
+		      packet->src_id_len, packet->dst_id_len));
     return FALSE;
   }
 
@@ -1565,14 +1593,18 @@ static SilcBool silc_packet_parse(SilcPacket packet)
 			     SILC_STR_OFFSET(padlen),
 			     SILC_STR_END);
   if (ret == -1) {
-    SILC_LOG_ERROR(("Malformed packet header, packet dropped"));
+    if (!packet->stream->udp &&
+	!silc_socket_stream_is_udp(packet->stream->stream, NULL))
+      SILC_LOG_ERROR(("Malformed packet header, packet dropped"));
     return FALSE;
   }
 
   if (src_id_type > SILC_ID_CHANNEL ||
       dst_id_type > SILC_ID_CHANNEL) {
-    SILC_LOG_ERROR(("Bad ID types in packet (%d and %d)",
-		    src_id_type, dst_id_type));
+    if (!packet->stream->udp &&
+	!silc_socket_stream_is_udp(packet->stream->stream, NULL))
+      SILC_LOG_ERROR(("Bad ID types in packet (%d and %d)",
+		      src_id_type, dst_id_type));
     return FALSE;
   }
 
@@ -1599,15 +1631,6 @@ static void silc_packet_dispatch(SilcPacket packet)
   SilcPacketProcess p;
   SilcBool default_sent = FALSE;
   SilcPacketType *pt;
-
-  /* Parse the packet */
-  if (!silc_packet_parse(packet)) {
-    silc_mutex_unlock(stream->lock);
-    SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MALFORMED);
-    silc_mutex_lock(stream->lock);
-    silc_packet_free(packet);
-    return;
-  }
 
   /* Dispatch packet to all packet processors that want it */
 
@@ -1779,7 +1802,8 @@ static void silc_packet_read_process(SilcPacketStream stream)
 
     /* Sanity checks */
     if (packetlen < SILC_PACKET_MIN_LEN) {
-      SILC_LOG_ERROR(("Received too short packet"));
+      if (!stream->udp && !silc_socket_stream_is_udp(stream->stream, NULL))
+	SILC_LOG_ERROR(("Received too short packet"));
       silc_mutex_unlock(stream->lock);
       SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MALFORMED);
       silc_mutex_lock(stream->lock);
@@ -1887,6 +1911,16 @@ static void silc_packet_read_process(SilcPacketStream stream)
 
     /* Pull the packet from inbuf thus we'll get the next one in the inbuf. */
     silc_buffer_pull(&stream->inbuf, paddedlen + mac_len);
+
+    /* Parse the packet */
+    if (!silc_packet_parse(packet)) {
+      silc_mutex_unlock(stream->lock);
+      SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MALFORMED);
+      silc_mutex_lock(stream->lock);
+      silc_packet_free(packet);
+      memset(tmp, 0, sizeof(tmp));
+      return;
+    }
 
     /* Dispatch the packet to application */
     silc_packet_dispatch(packet);
