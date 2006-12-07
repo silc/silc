@@ -495,17 +495,9 @@ SILC_FSM_STATE(silc_client_notify_signoff)
   /* Notify application */
   NOTIFY(client, conn, type, client_entry, tmp);
 
-  /* Remove from all channels */
-  silc_client_remove_from_channels(client, conn, client_entry);
-
-#if 0
-  /* Remove from cache */
-  silc_idcache_del_by_context(conn->internal->client_cache, client_entry);
-#endif
-
-  /* Free data */
+  /* Delete client */
+  silc_client_del_client(client, conn, client_entry);
   silc_client_unref_client(client, conn, client_entry);
-  silc_client_del_client_entry(client, conn, client_entry);
 
  out:
   /** Notify processed */

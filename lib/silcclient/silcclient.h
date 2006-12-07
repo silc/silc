@@ -299,7 +299,7 @@ typedef void (*SilcKeyAgreementCallback)(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcClientEntry client_entry,
 					 SilcKeyAgreementStatus status,
-					 SilcSKEKeyMaterial *key,
+					 SilcSKEKeyMaterial key,
 					 void *context);
 
 /****s* silcclient/SilcClientAPI/SilcPrivateMessageKeys
@@ -320,8 +320,7 @@ typedef struct {
   SilcClientEntry client_entry;       /* The remote client entry */
   char *cipher;			      /* The cipher name */
   unsigned char *key;		      /* The original key, If the appliation
-					 provided it. This is NULL if the
-					 library generated the key or if
+					 provided it. This is NULL if
 					 the SKE key material was used. */
   SilcUInt32 key_len;		      /* The key length */
 } *SilcPrivateMessageKeys;
@@ -554,18 +553,17 @@ typedef struct {
   void (*ask_passphrase)(SilcClient client, SilcClientConnection conn,
 			 SilcAskPassphrase completion, void *context);
 
-  /* Asks whether the user would like to perform the key agreement protocol.
-     This is called after we have received an key agreement packet or an
-     reply to our key agreement packet. This returns TRUE if the user wants
-     the library to perform the key agreement protocol and FALSE if it is not
-     desired (application may start it later by calling the function
-     silc_client_perform_key_agreement). If TRUE is returned also the
-     `completion' and `context' arguments must be set by the application. */
-  SilcBool (*key_agreement)(SilcClient client, SilcClientConnection conn,
-			    SilcClientEntry client_entry,
-			    const char *hostname, SilcUInt16 port,
-			    SilcKeyAgreementCallback *completion,
-			    void **context);
+  /* Called to indicate that incoming key agreement request has been
+     received.  If the application wants to perform key agreement it may
+     call silc_client_perform_key_agreement to initiate key agreementn or
+     silc_client_send_key_agreement to provide connection point to the
+     remote client in case the `hostname' is NULL.  If key agreement is
+     not desired this request can be ignored.  The `protocol' is either
+     value 0 for TCP or value 1 for UDP. */
+  void (*key_agreement)(SilcClient client, SilcClientConnection conn,
+			SilcClientEntry client_entry,
+			const char *hostname, SilcUInt16 protocol,
+			SilcUInt16 port);
 
   /* Notifies application that file transfer protocol session is being
      requested by the remote client indicated by the `client_entry' from
@@ -600,6 +598,7 @@ typedef struct {
   /* Called when the client library is up and running.  After this callback
      is called the application may start using the client library APIs. */
   void (*running)(SilcClient client, void *application);
+
 } SilcClientOperations;
 /***/
 
@@ -847,7 +846,8 @@ void silc_client_stop(SilcClient client);
  *
  *    Client connection parameters.  This can be filled by the application
  *    and given as argument to silc_client_connect_to_server,
- *    silc_client_connect_to_client or silc_client_key_exchange.
+ *    silc_client_connect_to_client, silc_client_key_exchange or
+ *    silc_client_send_key_agreement.
  *
  * SOURCE
  */
@@ -884,14 +884,19 @@ typedef struct {
   void *auth;
   SilcUInt32 auth_len;
 
-  /* If this boolean is set to TRUE then the client's connection to the
-     remote host will use UDP instead of TCP.  The `local_ip' specifies
-     the local IP address used with the UDP connection, and it must be
-     non-NULL.  If the `local_port' is non-zero it will be used as local
-     port with the UDP connection.  The remote host will also send packets
-     to the specified address and port. */
+  /* If this boolean is set to TRUE then the connection will use UDP instead
+     of TCP.  If UDP is set the also the next `local_ip' and `local_port'
+     must be set. */
   SilcBool udp;
+
+  /* The `local_ip' specifies the local IP address used with the connection.
+     It must be non-NULL if `udp' boolean is TRUE.  If the `local_port' is
+     non-zero it will be used as local port with UDP connection.  The remote
+     host will also send packets to the specified address and port.  If the
+     `bind_ip' is non-NULL a listener is bound to that address instead of
+     `local_ip'. */
   char *local_ip;
+  char *bind_ip;
   int local_port;
 
   /* If this boolean is set to TRUE then the key exchange is done with
@@ -918,6 +923,9 @@ typedef struct {
   unsigned char *detach_data;
   SilcUInt32 detach_data_len;
 
+  /* Connection timeout.  If non-zero, the connection will timeout unless
+     the SILC connection is completed in the specified amount of time. */
+  SilcUInt32 timeout_secs;
 } SilcClientConnectionParams;
 /***/
 
@@ -1387,29 +1395,26 @@ SilcBool silc_client_command_pending(SilcClientConnection conn,
  *                                        const char *cipher,
  *                                        const char *hmac,
  *                                        unsigned char *key,
- *                                        SilcUInt32 key_len,
- *                                        SilcBool generate_key,
- *                                        SilcBool responder);
+ *                                        SilcUInt32 key_len);
  *
  * DESCRIPTION
  *
- *    Adds private message key to the client library. The key will be used to
- *    encrypt all private message between the client and the remote client
- *    indicated by the `client_entry'. If the `key' is NULL and the boolean
- *    value `generate_key' is TRUE the library will generate random key.
- *    The `key' maybe for example pre-shared-key, passphrase or similar.
- *    The `cipher' and `hmac' MAY be provided but SHOULD be NULL to assure
- *    that the requirements of the SILC protocol are met. The API, however,
- *    allows to allocate any cipher and HMAC.
+ *    Adds a static private message key to the client library.  The key
+ *    will be used to encrypt all private message between the client and
+ *    the remote client indicated by the `client_entry'.  The `key' can
+ *    be for example a pre-shared-key, passphrase or similar shared secret
+ *    string.  The `cipher' and `hmac' MAY be provided but SHOULD be NULL
+ *    to assure that the requirements of the SILC protocol are met. The
+ *    API, however, allows to allocate any cipher and HMAC.
  *
- *    If `responder' is TRUE then the sending and receiving keys will be
- *    set according the client being the receiver of the private key.  If
- *    FALSE the client is being the sender (or negotiator) of the private
- *    key.
+ *    If the private message key is added to client without first receiving
+ *    a request for it from the remote `client_entry' this function will
+ *    send the request to `client_entry'.  Note that, the actual key is
+ *    not sent to the network.
  *
  *    It is not necessary to set key for normal private message usage. If the
  *    key is not set then the private messages are encrypted using normal
- *    session keys. Setting the private key, however, increases the security.
+ *    session keys.  Setting the private key, however, increases the security.
  *
  *    Returns FALSE if the key is already set for the `client_entry', TRUE
  *    otherwise.
@@ -1421,9 +1426,7 @@ SilcBool silc_client_add_private_message_key(SilcClient client,
 					     const char *cipher,
 					     const char *hmac,
 					     unsigned char *key,
-					     SilcUInt32 key_len,
-					     SilcBool generate_key,
-					     SilcBool responder);
+					     SilcUInt32 key_len);
 
 /****f* silcclient/SilcClientAPI/silc_client_add_private_message_key_ske
  *
@@ -1440,9 +1443,9 @@ SilcBool silc_client_add_private_message_key(SilcClient client,
  * DESCRIPTION
  *
  *    Same as silc_client_add_private_message_key but takes the key material
- *    from the SKE key material structure. This structure is received if
+ *    from the SKE key material structure.  This structure is received if
  *    the application uses the silc_client_send_key_agreement to negotiate
- *    the key material. The `cipher' and `hmac' SHOULD be provided as it is
+ *    the key material.  The `cipher' and `hmac' SHOULD be provided as it is
  *    negotiated also in the SKE protocol.
  *
  ***/
@@ -1451,8 +1454,7 @@ SilcBool silc_client_add_private_message_key_ske(SilcClient client,
 						 SilcClientEntry client_entry,
 						 const char *cipher,
 						 const char *hmac,
-						 SilcSKEKeyMaterial key,
-						 SilcBool responder);
+						 SilcSKEKeyMaterial key);
 
 /****f* silcclient/SilcClientAPI/silc_client_del_private_message_key
  *
@@ -1497,40 +1499,6 @@ SilcPrivateMessageKeys
 silc_client_list_private_message_keys(SilcClient client,
 				      SilcClientConnection conn,
 				      SilcUInt32 *key_count);
-
-/****f* silcclient/SilcClientAPI/silc_client_send_private_message_key_request
- *
- * SYNOPSIS
- *
- *    SilcBool
- *    silc_client_send_private_message_key_request(SilcClient client,
- *                                               SilcClientConnection conn,
- *                                               SilcClientEntry client_entry);
- *
- * DESCRIPTION
- *
- *    This function can be used to send an private message key indicator
- *    request to the remote client indicated by 'client_entry'.  This can
- *    be used when setting a static or pre-shared private message key.
- *    The sender of this packet is the initiator and must set the 'responder'
- *    argument in silc_client_add_private_message_key function to FALSE.
- *    The receiver of this indicator request must set it to TRUE, if the
- *    receiver decides to set a private message key.  By using this
- *    function applications may automate initiator/responder setting in
- *    private message key functions, without asking from user which one is
- *    the initiator and which one is responder.
- *
- * NOTES
- *
- *    The sender of this packet must set the private message key for
- *    'client_entry' before calling this function.  The 'responder'
- *    argument MUST be set to FALSE when setting the key.
- *
- ***/
-SilcBool
-silc_client_send_private_message_key_request(SilcClient client,
-					     SilcClientConnection conn,
-					     SilcClientEntry client_entry);
 
 /****f* silcclient/SilcClientAPI/silc_client_free_private_message_keys
  *
@@ -1698,7 +1666,7 @@ void silc_client_current_channel_private_key(SilcClient client,
 					     SilcChannelPrivateKey key);
 
 
-/* Key Agreement routines (client_keyagr.c) */
+/* Key Agreement routines */
 
 /****f* silcclient/SilcClientAPI/silc_client_send_key_agreement
  *
@@ -1707,62 +1675,46 @@ void silc_client_current_channel_private_key(SilcClient client,
  *    void silc_client_send_key_agreement(SilcClient client,
  *                                        SilcClientConnection conn,
  *                                        SilcClientEntry client_entry,
- *                                        char *hostname,
- *                                        int port,
- *                                        SilcUInt32 timeout_secs,
+ *                                        SilcClientConnectionParams *params,
+ *                                        SilcPublicKey public_key,
+ *                                        SilcPrivateKey private_key,
  *                                        SilcKeyAgreementCallback completion,
  *                                        void *context);
  *
  * DESCRIPTION
  *
  *    Sends key agreement request to the remote client indicated by the
- *    `client_entry'. If the caller provides the `hostname' and the `port'
- *    arguments then the library will bind the client to that hostname and
- *    that port for the key agreement protocol. It also sends the `hostname'
- *    and the `port' in the key agreement packet to the remote client. This
- *    would indicate that the remote client may initiate the key agreement
- *    protocol to the `hostname' on the `port'.  If port is zero then the
- *    bound port is undefined (the operating system defines it).
+ *    `client_entry'.
  *
- *    If the `hostname' and `port' is not provided then empty key agreement
- *    packet is sent to the remote client. The remote client may reply with
- *    the same packet including its hostname and port. If the library receives
- *    the reply from the remote client the `key_agreement' client operation
- *    callback will be called to verify whether the user wants to perform the
- *    key agreement or not.
+ *    If `params' is non-NULL and it has the `local_ip' and `local_port' set
+ *    the caller will provide the connection endpoint for the key agreement
+ *    connection.  The `bind_ip' can be used to bind to that IP instead of
+ *    `local_ip'.  If the `udp' is set to TRUE the connection will be UDP
+ *    instead of TCP.  Caller may also set the `repository', `verify_notfound'
+ *    and `timeout_secs' fields in `params'.  Other fields are ignored.
+ *    If `params' is NULL, then the `client_entry' is expected to provide
+ *    the connection endpoint for us.  It is recommended the `timeout_secs'
+ *    is specified in case the remote client does not reply anything to
+ *    the request.
  *
- * NOTES
+ *    The `public_key' and `private_key' is our identity in the key agreement.
  *
- *    NOTE: If the application provided the `hostname' and the `port' and the
- *    remote side initiates the key agreement protocol it is not verified
- *    from the user anymore whether the protocol should be executed or not.
- *    By setting the `hostname' and `port' the user gives permission to
- *    perform the protocol (we are responder in this case).
+ *    In case we do not provide the connection endpoint, we will receive
+ *    the `key_agreement' client operation when the remote send its own
+ *    key agreement request packet.  We may then there start the key
+ *    agreement with silc_client_perform_key_agreement.  If we provided the
+ *    the connection endpoint, the client operation will not be called.
  *
- *    NOTE: If the remote side decides not to initiate the key agreement
- *    or decides not to reply with the key agreement packet then we cannot
- *    perform the key agreement at all. If the key agreement protocol is
- *    performed the `completion' callback with the `context' will be called.
- *    If remote side decides to ignore the request the `completion' will be
- *    called after the specified timeout, `timeout_secs'.
- *
- *    NOTE: If the `hostname' and the `port' was not provided the `completion'
- *    will not be called at all since this does nothing more than sending
- *    a packet to the remote host.
- *
- *    NOTE: There can be only one active key agreement for one client entry.
- *    Before setting new one, the old one must be finished (it is finished
- *    after calling the completion callback) or the function
- *    silc_client_abort_key_agreement must be called.
+ *    There can be only one active key agreement for `client_entry'.  Old
+ *    key agreement may be aborted by calling silc_client_abort_key_agreement.
  *
  ***/
 void silc_client_send_key_agreement(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcClientEntry client_entry,
-				    const char *hostname,
-				    const char *bindhost,
-				    int port,
-				    SilcUInt32 timeout_secs,
+				    SilcClientConnectionParams *params,
+				    SilcPublicKey public_key,
+				    SilcPrivateKey private_key,
 				    SilcKeyAgreementCallback completion,
 				    void *context);
 
@@ -1774,72 +1726,69 @@ void silc_client_send_key_agreement(SilcClient client,
  *    silc_client_perform_key_agreement(SilcClient client,
  *                                      SilcClientConnection conn,
  *                                      SilcClientEntry client_entry,
- *                                      char *hostname,
- *                                      int port,
+ *                                      SilcClientConnectionParams *params,
+ *                                      SilcPublicKey public_key,
+ *                                      SilcPrivateKey private_key,
+ *                                      char *hostname, int port,
  *                                      SilcKeyAgreementCallback completion,
  *                                      void *context);
  *
  * DESCRIPTION
  *
- *    Performs the actual key agreement protocol. Application may use this
- *    to initiate the key agreement protocol. This can be called for example
- *    after the application has received the `key_agreement' client operation,
- *    and did not return TRUE from it.
+ *    Performs the key agreement protocol.  Application may use this to
+ *    initiate the key agreement protocol.  Usually this is called after
+ *    receiving the `key_agreement' client operation.
  *
  *    The `hostname' is the remote hostname (or IP address) and the `port'
- *    is the remote port. The `completion' callback with the `context' will
+ *    is the remote port.  The `completion' callback with the `context' will
  *    be called after the key agreement protocol.
  *
- * NOTES
- *
- *    NOTE: If the application returns TRUE in the `key_agreement' client
- *    operation the library will automatically start the key agreement. In this
- *    case the application must not call this function. However, application
- *    may choose to just ignore the `key_agreement' client operation (and
- *    merely just print information about it on the screen) and call this
- *    function when the user whishes to do so (by, for example, giving some
- *    specific command). Thus, the API provides both, automatic and manual
- *    initiation of the key agreement. Calling this function is the manual
- *    initiation and returning TRUE in the `key_agreement' client operation
- *    is the automatic initiation.
+ *    The `params' is connection parameters and it may be used to define
+ *    the key agreement connection related parameters.  It may be NULL.
  *
  ***/
 void silc_client_perform_key_agreement(SilcClient client,
 				       SilcClientConnection conn,
 				       SilcClientEntry client_entry,
-				       char *hostname,
-				       int port,
+				       SilcClientConnectionParams *params,
+				       SilcPublicKey public_key,
+				       SilcPrivateKey private_key,
+				       char *hostname, int port,
 				       SilcKeyAgreementCallback completion,
 				       void *context);
 
-/****f* silcclient/SilcClientAPI/silc_client_perform_key_agreement_fd
+/****f* silcclient/SilcClientAPI/silc_client_perform_key_agreement_stream
  *
  * SYNOPSIS
  *
  *    void
- *    silc_client_perform_key_agreement_fd(SilcClient client,
- *                                         SilcClientConnection conn,
- *                                         SilcClientEntry client_entry,
- *                                         int sock,
- *                                         char *hostname,
- *                                         SilcKeyAgreementCallback completion,
- *                                         void *context);
+ *    silc_client_perform_key_agreement_stream(
+ *                                      SilcClient client,
+ *                                      SilcClientConnection conn,
+ *                                      SilcClientEntry client_entry,
+ *                                      SilcClientConnectionParams *params,
+ *                                      SilcPublicKey public_key,
+ *                                      SilcPrivateKey private_key,
+ *                                      SilcStream stream,
+ *                                      SilcKeyAgreementCallback completion,
+ *                                      void *context);
  *
  * DESCRIPTION
  *
- *    Same as above but application has created already the connection to
- *    the remote host. The `sock' is the socket to the remote connection.
- *    Application can use this function if it does not want the client library
- *    to create the connection.
+ *    Same as silc_client_perform_key_agreement but the caller has created
+ *    the connection.  The `stream' is the created connection.
  *
  ***/
-void silc_client_perform_key_agreement_fd(SilcClient client,
-					  SilcClientConnection conn,
-					  SilcClientEntry client_entry,
-					  int sock,
-					  char *hostname,
-					  SilcKeyAgreementCallback completion,
-					  void *context);
+void
+silc_client_perform_key_agreement_stream(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcClientEntry client_entry,
+					 SilcClientConnectionParams *params,
+					 SilcPublicKey public_key,
+					 SilcPrivateKey private_key,
+					 SilcStream stream,
+					 SilcKeyAgreementCallback completion,
+					 void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_abort_key_agreement
  *

@@ -1079,8 +1079,10 @@ SILC_FSM_STATE(silc_client_command_quit_final)
 		 0, NULL, conn->callback_context);
 
   /* Signal to close connection */
-  conn->internal->disconnected = TRUE;
-  SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  if (!conn->internal->disconnected) {
+    conn->internal->disconnected = TRUE;
+    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  }
 
   return SILC_FSM_FINISH;
 }

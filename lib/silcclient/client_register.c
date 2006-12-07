@@ -213,6 +213,8 @@ SILC_FSM_STATE(silc_client_st_register_complete)
 		 conn->callback_context);
 
   conn->internal->registering = FALSE;
+  silc_schedule_task_del_by_context(conn->internal->schedule, conn);
+
   return SILC_FSM_FINISH;
 }
 
@@ -226,12 +228,16 @@ SILC_FSM_STATE(silc_client_st_register_error)
   SILC_LOG_DEBUG(("Error registering to network"));
 
   /* Signal to close connection */
-  conn->internal->disconnected = TRUE;
-  SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  if (!conn->internal->disconnected) {
+    conn->internal->disconnected = TRUE;
+    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  }
 
   /* Call connect callback */
   conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
 		 conn->callback_context);
+
+  silc_schedule_task_del_by_context(conn->internal->schedule, conn);
 
   return SILC_FSM_FINISH;
 }

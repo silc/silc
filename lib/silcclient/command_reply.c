@@ -25,13 +25,13 @@
 /************************** Types and definitions ***************************/
 
 /* Calls error command reply callback back to command sender. */
-#define ERROR_CALLBACK(error)					\
+#define ERROR_CALLBACK(err)					\
 do {								\
   void *arg1 = NULL, *arg2 = NULL;				\
   if (cmd->status != SILC_STATUS_OK)				\
     silc_status_get_args(cmd->status, args, &arg1, &arg2);	\
   else								\
-    cmd->status = error;					\
+    cmd->status = cmd->error = err;				\
   SILC_LOG_DEBUG(("Error in command reply: %s",			\
 		 silc_get_status_message(cmd->status)));	\
   silc_client_command_callback(cmd, arg1, arg2);		\
@@ -424,7 +424,7 @@ SILC_FSM_STATE(silc_client_command_reply_whois)
       silc_client_add_client(client, conn, nickname, username, realname,
 			     &id.u.client_id, mode);
     if (!client_entry) {
-      ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+      ERROR_CALLBACK(SILC_STATUS_ERR_RESOURCE_LIMIT);
       goto out;
     }
     silc_client_ref_client(client, conn, client_entry);
@@ -560,7 +560,7 @@ SILC_FSM_STATE(silc_client_command_reply_identify)
 	silc_client_add_client(client, conn, name, info, NULL,
 			       &id.u.client_id, 0);
       if (!client_entry) {
-	ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	ERROR_CALLBACK(SILC_STATUS_ERR_RESOURCE_LIMIT);
 	goto out;
       }
       silc_client_ref_client(client, conn, client_entry);

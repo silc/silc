@@ -57,8 +57,8 @@ typedef struct SilcClientEntryInternalStruct {
   unsigned int valid       : 1;	/* FALSE if this entry is not valid */
   unsigned int resolving   : 1; /* TRUE when entry is being resolved */
   unsigned int generated   : 1; /* TRUE if library generated `key' */
-  unsigned int prv_resp    : 1; /* TRUE if private message key indicator
-				   has been received (responder). */
+  unsigned int prv_resp    : 1; /* TRUE if we are responder when using
+				   private message keys. */
   SilcUInt16 resolve_cmd_ident;	/* Command identifier when resolving */
   SilcAtomic8 refcnt;		/* Reference counter */
 } SilcClientEntryInternal;

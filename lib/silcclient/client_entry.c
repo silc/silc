@@ -750,6 +750,8 @@ SilcClientEntry silc_client_add_client(SilcClient client,
   silc_mutex_unlock(conn->internal->lock);
   silc_client_ref_client(client, conn, client_entry);
 
+  SILC_LOG_DEBUG(("Added"));
+
   return client_entry;
 }
 
@@ -1326,6 +1328,8 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   silc_mutex_unlock(conn->internal->lock);
   silc_client_ref_channel(client, conn, channel);
 
+  SILC_LOG_DEBUG(("Added"));
+
   return channel;
 }
 
@@ -1693,6 +1697,8 @@ SilcServerEntry silc_client_add_server(SilcClient client,
 
   silc_mutex_unlock(conn->internal->lock);
   silc_client_ref_server(client, conn, server_entry);
+
+  SILC_LOG_DEBUG(("Added"));
 
   return server_entry;
 }

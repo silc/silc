@@ -23,13 +23,6 @@
 
 /************************** Types and definitions ***************************/
 
-/* Public key verification context */
-typedef struct {
-  SilcSKE ske;
-  SilcSKEVerifyCbCompletion completion;
-  void *completion_context;
-} *VerifyKeyContext;
-
 /************************ Static utility functions **************************/
 
 /* Callback called after connected to remote host */
@@ -41,6 +34,7 @@ static void silc_client_connect_callback(SilcNetStatus status,
   SilcClientConnection conn = silc_fsm_get_context(fsm);
   SilcClient client = conn->client;
 
+  conn->internal->op = NULL;
   if (conn->internal->verbose) {
     switch (status) {
     case SILC_NET_OK:
@@ -172,6 +166,7 @@ static void silc_client_ke_completion(SilcSKE ske,
   SilcCipher send_key, receive_key;
   SilcHmac hmac_send, hmac_receive;
 
+  conn->internal->op = NULL;
   if (status != SILC_SKE_STATUS_OK) {
     /* Key exchange failed */
     SILC_LOG_DEBUG(("Error during key exchange with %s: %s (%d)",
@@ -266,6 +261,22 @@ static void silc_client_connect_auth_completion(SilcConnAuth connauth,
   SILC_FSM_CALL_CONTINUE(fsm);
 }
 
+/* Connection timeout callback */
+
+SILC_TASK_CALLBACK(silc_client_connect_timeout)
+{
+  SilcClientConnection conn = context;
+  SilcClient client = conn->client;
+
+  SILC_LOG_DEBUG(("Connection timeout"));
+
+  conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_TIMEOUT, 0, NULL,
+		 conn->callback_context);
+
+  silc_fsm_next(&conn->internal->event_thread, silc_client_st_connect_error);
+  silc_fsm_continue_sync(&conn->internal->event_thread);
+}
+
 /*************************** Connect remote host ****************************/
 
 /* Creates a connection to remote host */
@@ -281,6 +292,12 @@ SILC_FSM_STATE(silc_client_st_connect)
   /** Connect */
   silc_fsm_next(fsm, silc_client_st_connect_set_stream);
 
+  /* Add connection timeout */
+  if (conn->internal->params.timeout_secs)
+    silc_schedule_task_add_timeout(conn->internal->schedule,
+				   silc_client_connect_timeout, conn,
+				   conn->internal->params.timeout_secs, 0);
+
   if (conn->internal->params.udp) {
     SilcStream stream;
 
@@ -294,7 +311,9 @@ SILC_FSM_STATE(silc_client_st_connect)
     }
 
     /* Connect (UDP) */
-    stream = silc_net_udp_connect(conn->internal->params.local_ip,
+    stream = silc_net_udp_connect(conn->internal->params.bind_ip ?
+				  conn->internal->params.bind_ip :
+				  conn->internal->params.local_ip,
 				  conn->internal->params.local_port,
 				  conn->remote_host, conn->remote_port,
 				  conn->internal->schedule);
@@ -517,6 +536,8 @@ SILC_FSM_STATE(silc_client_st_connected)
     return SILC_FSM_CONTINUE;
   }
 
+  silc_schedule_task_del_by_context(conn->internal->schedule, conn);
+
   /* Call connection callback */
   conn->callback(client, conn, SILC_CLIENT_CONN_SUCCESS, 0, NULL,
 		 conn->callback_context);
@@ -531,8 +552,12 @@ SILC_FSM_STATE(silc_client_st_connect_error)
   SilcClientConnection conn = fsm_context;
 
   /* Signal to close connection */
-  conn->internal->disconnected = TRUE;
-  SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  if (!conn->internal->disconnected) {
+    conn->internal->disconnected = TRUE;
+    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  }
+
+  silc_schedule_task_del_by_context(conn->internal->schedule, conn);
 
   return SILC_FSM_FINISH;
 }

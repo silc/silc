@@ -28,6 +28,7 @@
 #include "client_prvmsg.h"
 #include "client_channel.h"
 #include "client_notify.h"
+#include "client_keyagr.h"
 
 /****************************** Definitions *********************************/
 
@@ -40,6 +41,13 @@
 #define SLIC_CLIENT_RETRY_MAX     16	 /* Max retry timeout, seconds */
 
 /********************************** Types ***********************************/
+
+/* Public key verification context */
+typedef struct {
+  SilcSKE ske;
+  SilcSKEVerifyCbCompletion completion;
+  void *completion_context;
+} *VerifyKeyContext;
 
 /* Context to hold the connection authentication request callbacks that
    will be called when the server has replied back to our request about
@@ -214,9 +222,6 @@ void silc_client_command_free(SilcClientCommandContext cmd);
 
 void silc_client_ftp(SilcClient client, SilcClientConnection conn,
 		     SilcPacket packet);
-void silc_client_key_agreement(SilcClient client,
-			       SilcClientConnection conn,
-			       SilcPacket packet);
 void silc_client_connection_auth_request(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcPacket packet);

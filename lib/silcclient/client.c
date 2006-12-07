@@ -281,8 +281,8 @@ SILC_FSM_STATE(silc_client_connection_st_packet)
     break;
 
   case SILC_PACKET_KEY_AGREEMENT:
-    /* Key agreement */
-    //    silc_client_key_agreement(client, conn, packet);
+    /** Key agreement */
+    silc_fsm_next(fsm, silc_client_key_agreement);
     break;
 
   case SILC_PACKET_COMMAND:
@@ -388,8 +388,10 @@ SILC_FSM_STATE(silc_client_disconnect)
   silc_packet_free(packet);
 
   /* Signal to close connection */
-  conn->internal->disconnected = TRUE;
-  SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  if (!conn->internal->disconnected) {
+    conn->internal->disconnected = TRUE;
+    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  }
 
   return SILC_FSM_FINISH;
 }
@@ -682,8 +684,10 @@ void silc_client_close_connection(SilcClient client,
   SILC_LOG_DEBUG(("Closing connection %p", conn));
 
   /* Signal to close connection */
-  conn->internal->disconnected = TRUE;
-  SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  if (!conn->internal->disconnected) {
+    conn->internal->disconnected = TRUE;
+    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  }
 }
 
 #if 0

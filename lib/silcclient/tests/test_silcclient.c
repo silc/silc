@@ -343,11 +343,10 @@ silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
    silc_client_perform_key_agreement). If TRUE is returned also the
    `completion' and `context' arguments must be set by the application. */
 
-static bool
+static void
 silc_key_agreement(SilcClient client, SilcClientConnection conn,
 		   SilcClientEntry client_entry, const char *hostname,
-		   SilcUInt16 port, SilcKeyAgreementCallback *completion,
-		   void **context)
+		   SilcUInt16 port)
 {
   /* MyBot does not support incoming key agreement protocols, it's too
      simple for that. */

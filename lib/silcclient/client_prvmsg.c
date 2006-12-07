@@ -345,6 +345,33 @@ SilcBool silc_client_private_message_wait(SilcClientConnection conn,
 
 /*************************** Private Message Key ****************************/
 
+/* Sends private message key request.  Sender of this packet is initiator
+   when setting the private message key. */
+
+static SilcBool
+silc_client_send_private_message_key_request(SilcClient client,
+					     SilcClientConnection conn,
+					     SilcClientEntry client_entry)
+{
+  const char *cipher, *hmac;
+
+  SILC_LOG_DEBUG(("Sending private message key request"));
+
+  cipher = silc_cipher_get_name(client_entry->internal.send_key);
+  hmac = silc_hmac_get_name(client_entry->internal.hmac_send);
+
+  /* Send the packet */
+  return silc_packet_send_va_ext(conn->stream,
+				 SILC_PACKET_PRIVATE_MESSAGE_KEY,
+				 0, 0, NULL, SILC_ID_CLIENT,
+				 &client_entry->id, NULL, NULL,
+				 SILC_STR_UI_SHORT(strlen(cipher)),
+				 SILC_STR_DATA(cipher, strlen(cipher)),
+				 SILC_STR_UI_SHORT(strlen(hmac)),
+				 SILC_STR_DATA(hmac, strlen(hmac)),
+				 SILC_STR_END);
+}
+
 /* Client resolving callback.  Here we simply mark that we are the responder
    side of this private message key request.  */
 
@@ -377,7 +404,9 @@ static void silc_client_private_message_key_cb(SilcClient client,
   client_entry->internal.prv_resp = TRUE;
 
   /* XXX we should notify application that remote wants to set up the
-     static key */
+     static key.  And we should tell if we already have key with remote.
+     Application should return status telling whether to delete the key
+     or not. */
 
  out:
   silc_free(cipher);
@@ -414,26 +443,9 @@ SILC_FSM_STATE(silc_client_private_message_key)
 				       fsm));
 }
 
-/* Adds private message key to the client library. The key will be used to
-   encrypt all private message between the client and the remote client
-   indicated by the `client_entry'. If the `key' is NULL and the boolean
-   value `generate_key' is TRUE the library will generate random key.
-   The `key' maybe for example pre-shared-key, passphrase or similar.
-   The `cipher' and `hmac' MAY be provided but SHOULD be NULL to assure
-   that the requirements of the SILC protocol are met. The API, however,
-   allows to allocate any cipher and HMAC.
-
-   If `responder' is TRUE then the sending and receiving keys will be
-   set according the client being the receiver of the private key.  If
-   FALSE the client is being the sender (or negotiator) of the private
-   key.
-
-   It is not necessary to set key for normal private message usage. If the
-   key is not set then the private messages are encrypted using normal
-   session keys. Setting the private key, however, increases the security.
-
-   Returns FALSE if the key is already set for the `client_entry', TRUE
-   otherwise. */
+/* Adds new private message key to `client_entry'.  If we are setting this
+   before receiving request for it from `client_entry' we will send the
+   request to the client.  Otherwise, we are responder side. */
 
 SilcBool silc_client_add_private_message_key(SilcClient client,
 					     SilcClientConnection conn,
@@ -441,15 +453,10 @@ SilcBool silc_client_add_private_message_key(SilcClient client,
 					     const char *cipher,
 					     const char *hmac,
 					     unsigned char *key,
-					     SilcUInt32 key_len,
-					     SilcBool generate_key,
-					     SilcBool responder)
+					     SilcUInt32 key_len)
 {
-  unsigned char private_key[32];
-  SilcUInt32 len;
   SilcSKEKeyMaterial keymat;
   SilcBool ret;
-  int i;
 
   if (!client || !client_entry)
     return FALSE;
@@ -469,15 +476,6 @@ SilcBool silc_client_add_private_message_key(SilcClient client,
   if (!silc_hmac_is_supported(hmac))
     return FALSE;
 
-  /* Generate key if not provided */
-  if (generate_key == TRUE) {
-    len = 32;
-    for (i = 0; i < len; i++)
-      private_key[i] = silc_rng_get_byte_fast(client->rng);
-    key = private_key;
-    key_len = len;
-  }
-
   /* Save the key */
   client_entry->internal.key = silc_memdup(key, key_len);
   client_entry->internal.key_len = key_len;
@@ -490,31 +488,29 @@ SilcBool silc_client_add_private_message_key(SilcClient client,
 
   /* Set the key into use */
   ret = silc_client_add_private_message_key_ske(client, conn, client_entry,
-						cipher, hmac, keymat,
-						responder);
-
-  if (!generate_key)
-    client_entry->internal.generated = FALSE;
+						cipher, hmac, keymat);
+  client_entry->internal.generated = FALSE;
 
   /* Free the key material */
   silc_ske_free_key_material(keymat);
+
+  /* If we are setting the key without a request from the remote client,
+     we will send request to remote. */
+  if (!client_entry->internal.prv_resp)
+    silc_client_send_private_message_key_request(client, conn, client_entry);
 
   return ret;
 }
 
 /* Same as above but takes the key material from the SKE key material
-   structure. This structure is received if the application uses the
-   silc_client_send_key_agreement to negotiate the key material. The
-   `cipher' and `hmac' SHOULD be provided as it is negotiated also in
-   the SKE protocol. */
+   structure. */
 
 SilcBool silc_client_add_private_message_key_ske(SilcClient client,
 						 SilcClientConnection conn,
 						 SilcClientEntry client_entry,
 						 const char *cipher,
 						 const char *hmac,
-						 SilcSKEKeyMaterial keymat,
-						 SilcBool responder)
+						 SilcSKEKeyMaterial keymat)
 {
   if (!client || !client_entry)
     return FALSE;
@@ -547,7 +543,7 @@ SilcBool silc_client_add_private_message_key_ske(SilcClient client,
     return FALSE;
 
   /* Set the keys */
-  if (responder == TRUE) {
+  if (client_entry->internal.prv_resp) {
     silc_cipher_set_key(client_entry->internal.send_key,
 			keymat->receive_enc_key,
 			keymat->enc_key_len);
@@ -584,40 +580,6 @@ SilcBool silc_client_add_private_message_key_ske(SilcClient client,
   return TRUE;
 }
 
-/* Sends private message key indicator.  The sender of this packet is
-   going to be the initiator, if and when, the users set up a static
-   private message key (not Key Agreement). */
-
-SilcBool
-silc_client_send_private_message_key_request(SilcClient client,
-					     SilcClientConnection conn,
-					     SilcClientEntry client_entry)
-{
-  const char *cipher, *hmac;
-
-  if (!client || !conn || !client_entry)
-    return FALSE;
-
-  if (!client_entry->internal.send_key && !client_entry->internal.receive_key)
-    return FALSE;
-
-  SILC_LOG_DEBUG(("Sending private message key indicator"));
-
-  cipher = silc_cipher_get_name(client_entry->internal.send_key);
-  hmac = silc_hmac_get_name(client_entry->internal.hmac_send);
-
-  /* Send the packet */
-  return silc_packet_send_va_ext(conn->stream,
-				 SILC_PACKET_PRIVATE_MESSAGE_KEY,
-				 0, 0, NULL, SILC_ID_CLIENT,
-				 &client_entry->id, NULL, NULL,
-				 SILC_STR_UI_SHORT(strlen(cipher)),
-				 SILC_STR_DATA(cipher, strlen(cipher)),
-				 SILC_STR_UI_SHORT(strlen(hmac)),
-				 SILC_STR_DATA(hmac, strlen(hmac)),
-				 SILC_STR_END);
-}
-
 /* Removes the private message from the library. The key won't be used
    after this to protect the private messages with the remote `client_entry'
    client. Returns FALSE on error, TRUE otherwise. */
@@ -643,6 +605,7 @@ SilcBool silc_client_del_private_message_key(SilcClient client,
   client_entry->internal.send_key = NULL;
   client_entry->internal.receive_key = NULL;
   client_entry->internal.key = NULL;
+  client_entry->internal.prv_resp = FALSE;
 
   return TRUE;
 }
