@@ -141,7 +141,9 @@ silc_idcache_add(SilcIDCache cache, char *name, void *id, void *context)
 
   if (id) {
     if (silc_idcache_find_by_id_one(cache, id, NULL)) {
-      SILC_LOG_ERROR(("Attempted to add same ID twice to ID Cache"));
+      SILC_LOG_ERROR(("Attempted to add same ID twice to ID Cache, id %s",
+		     silc_id_render(id, cache->id_type)));
+      SILC_ASSERT(FALSE);
       goto err;
     }
     if (!silc_hash_table_add(cache->id_table, id, c))
