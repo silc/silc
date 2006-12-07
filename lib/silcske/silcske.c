@@ -824,7 +824,8 @@ SILC_TASK_CALLBACK(silc_ske_packet_send_retry)
 {
   SilcSKE ske = context;
 
-  if (ske->retry_count++ >= SILC_SKE_RETRY_COUNT) {
+  if (ske->retry_count++ >= SILC_SKE_RETRY_COUNT ||
+      ske->aborted) {
     SILC_LOG_DEBUG(("Retry limit reached, packet was lost"));
     ske->retry_count = 0;
     ske->retry_timer = SILC_SKE_RETRY_MIN;
@@ -1066,13 +1067,13 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
   if (ske->aborted) {
     /** Aborted */
     silc_packet_free(ske->packet);
+    ske->packet = NULL;
     silc_fsm_next(fsm, silc_ske_st_initiator_aborted);
     return SILC_FSM_CONTINUE;
   }
 
   /* See if received failure from remote */
   if (ske->packet->type == SILC_PACKET_FAILURE) {
-    silc_packet_free(ske->packet);
     silc_fsm_next(fsm, silc_ske_st_initiator_failure);
     return SILC_FSM_CONTINUE;
   }
@@ -1080,6 +1081,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
   if (ske->packet->type != SILC_PACKET_KEY_EXCHANGE) {
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
     silc_packet_free(ske->packet);
+    ske->packet = NULL;
     return SILC_FSM_WAIT;
   }
 
@@ -1088,6 +1090,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
   if (status != SILC_SKE_STATUS_OK) {
     /** Error decoding Start Payload */
     silc_packet_free(ske->packet);
+    ske->packet = NULL;
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
@@ -1107,6 +1110,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
   }
 
   silc_packet_free(ske->packet);
+  ske->packet = NULL;
 
   /* Check that the cookie is returned unmodified.  In case IV included
      flag and session port has been set, the first two bytes of cookie
@@ -1361,13 +1365,13 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
   if (ske->aborted) {
     /** Aborted */
     silc_packet_free(ske->packet);
+    ske->packet = NULL;
     silc_fsm_next(fsm, silc_ske_st_initiator_aborted);
     return SILC_FSM_CONTINUE;
   }
 
   /* See if received failure from remote */
   if (ske->packet->type == SILC_PACKET_FAILURE) {
-    silc_packet_free(ske->packet);
     silc_fsm_next(fsm, silc_ske_st_initiator_failure);
     return SILC_FSM_CONTINUE;
   }
@@ -1375,6 +1379,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
   if (ske->packet->type != SILC_PACKET_KEY_EXCHANGE_2) {
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
     silc_packet_free(ske->packet);
+    ske->packet = NULL;
     return SILC_FSM_WAIT;
   }
 
@@ -1383,11 +1388,13 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
   if (status != SILC_SKE_STATUS_OK) {
     /** Error decoding KE payload */
     silc_packet_free(ske->packet);
+    ske->packet = NULL;
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
   }
   silc_packet_free(ske->packet);
+  ske->packet = NULL;
   ske->ke2_payload = payload;
 
   if (!payload->pk_data && (ske->callbacks->verify_key || ske->repository)) {
@@ -1592,7 +1599,6 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
 
   /* See if received failure from remote */
   if (ske->packet->type == SILC_PACKET_FAILURE) {
-    silc_packet_free(ske->packet);
     silc_fsm_next(fsm, silc_ske_st_initiator_failure);
     return SILC_FSM_CONTINUE;
   }
@@ -1600,6 +1606,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
   if (ske->packet->type != SILC_PACKET_SUCCESS) {
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
     silc_packet_free(ske->packet);
+    ske->packet = NULL;
     return SILC_FSM_WAIT;
   }
 
@@ -1611,6 +1618,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
 			      ske->rekey, ske->callbacks->context);
 
   silc_packet_free(ske->packet);
+  ske->packet = NULL;
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
@@ -1655,7 +1663,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_error)
   silc_ske_packet_send(ske, SILC_PACKET_FAILURE, 0, data, 4);
 
   /* Call the completion callback */
-  if (ske->callbacks->completed)
+  if (!ske->aborted && ske->callbacks->completed)
     ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL,
 			      ske->callbacks->context);
 
@@ -1670,12 +1678,20 @@ SILC_FSM_STATE(silc_ske_st_initiator_error)
 SILC_FSM_STATE(silc_ske_st_initiator_failure)
 {
   SilcSKE ske = fsm_context;
+  SilcUInt32 error = SILC_SKE_STATUS_ERROR;
 
   SILC_LOG_DEBUG(("Error %s (%d) received during key exchange",
 		  silc_ske_map_status(ske->status), ske->status));
 
+  if (ske->packet && silc_buffer_len(&ske->packet->buffer) == 4) {
+    SILC_GET32_MSB(error, ske->packet->buffer.data);
+    ske->status = error;
+    silc_packet_free(ske->packet);
+    ske->packet = NULL;
+  }
+
   /* Call the completion callback */
-  if (ske->callbacks->completed)
+  if (!ske->aborted && ske->callbacks->completed)
     ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL,
 			      ske->callbacks->context);
 
@@ -1786,13 +1802,13 @@ SILC_FSM_STATE(silc_ske_st_responder_phase1)
   if (ske->aborted) {
     /** Aborted */
     silc_packet_free(ske->packet);
+    ske->packet = NULL;
     silc_fsm_next(fsm, silc_ske_st_responder_aborted);
     return SILC_FSM_CONTINUE;
   }
 
   /* See if received failure from remote */
   if (ske->packet->type == SILC_PACKET_FAILURE) {
-    silc_packet_free(ske->packet);
     silc_fsm_next(fsm, silc_ske_st_responder_failure);
     return SILC_FSM_CONTINUE;
   }
@@ -1802,6 +1818,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase1)
   if (status != SILC_SKE_STATUS_OK) {
     /** Error decoding Start Payload */
     silc_packet_free(ske->packet);
+    ske->packet = NULL;
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
     return SILC_FSM_CONTINUE;
@@ -1812,6 +1829,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase1)
   ske->start_payload_copy = silc_buffer_copy(packet_buf);
 
   silc_packet_free(ske->packet);
+  ske->packet = NULL;
 
   /* Force the mutual authentication flag if we want to do it. */
   if (ske->flags & SILC_SKE_SP_FLAG_MUTUAL) {
@@ -1913,6 +1931,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
   if (ske->packet->type != SILC_PACKET_KEY_EXCHANGE_1) {
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
     silc_packet_free(ske->packet);
+    ske->packet = NULL;
     return SILC_FSM_WAIT;
   }
 
@@ -1921,6 +1940,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
   if (status != SILC_SKE_STATUS_OK) {
     /** Error decoding KE payload */
     silc_packet_free(ske->packet);
+    ske->packet = NULL;
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
     return SILC_FSM_CONTINUE;
@@ -1929,6 +1949,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
   ske->ke1_payload = recv_payload;
 
   silc_packet_free(ske->packet);
+  ske->packet = NULL;
 
   /* Verify the received public key and verify the signature if we are
      doing mutual authentication. */
@@ -2211,9 +2232,11 @@ SILC_FSM_STATE(silc_ske_st_responder_end)
   if (ske->packet->type != SILC_PACKET_SUCCESS) {
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
     silc_packet_free(ske->packet);
+    ske->packet = NULL;
     return SILC_FSM_WAIT;
   }
   silc_packet_free(ske->packet);
+  ske->packet = NULL;
 
   /* Process key material */
   key_len = silc_cipher_get_key_len(ske->prop->cipher);
@@ -2271,16 +2294,18 @@ SILC_FSM_STATE(silc_ske_st_responder_failure)
 
   SILC_LOG_DEBUG(("Key exchange protocol failed"));
 
-  if (silc_buffer_len(&ske->packet->buffer) == 4)
+  if (ske->packet && silc_buffer_len(&ske->packet->buffer) == 4) {
     SILC_GET32_MSB(error, ske->packet->buffer.data);
-  ske->status = error;
+    ske->status = error;
+    silc_packet_free(ske->packet);
+    ske->packet = NULL;
+  }
 
   /* Call the completion callback */
-  if (ske->callbacks->completed)
+  if (!ske->aborted && ske->callbacks->completed)
     ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL,
 			      ske->callbacks->context);
 
-  silc_packet_free(ske->packet);
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
