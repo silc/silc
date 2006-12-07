@@ -616,6 +616,20 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
  *
  * SYNOPSIS
  *
+ *    SilcBool silc_packet_stream_is_udp(SilcPacketStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Returns TRUE if the packet stream indicated by `stream' is using
+ *    UDP transport.
+ *
+ ***/
+SilcBool silc_packet_stream_is_udp(SilcPacketStream stream);
+
+/****f* silccore/SilcPacketAPI/silc_packet_get_sender
+ *
+ * SYNOPSIS
+ *
  *    SilcBool silc_packet_get_sender(SilcPacket packet,
  *                                    const char **sender_ip,
  *                                    SilcUInt16 *sender_port);

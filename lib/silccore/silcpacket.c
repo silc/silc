@@ -921,6 +921,13 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
   silc_packet_stream_unref(stream);
 }
 
+/* Returns TRUE if stream is UDP stream */
+
+SilcBool silc_packet_stream_is_udp(SilcPacketStream stream)
+{
+  return stream->udp || silc_socket_stream_is_udp(stream->stream, NULL);
+}
+
 /* Return packet sender IP and port for UDP packet stream */
 
 SilcBool silc_packet_get_sender(SilcPacket packet,
