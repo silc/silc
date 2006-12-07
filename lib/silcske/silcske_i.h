@@ -72,7 +72,9 @@ struct SilcSKEStruct {
   SilcUInt16 session_port;
 
   unsigned int aborted    : 1;
+  unsigned int freed      : 1;
   unsigned int responder  : 1;
+  unsigned int running    : 1;
 };
 
 #endif /* SILCSKE_I_H */

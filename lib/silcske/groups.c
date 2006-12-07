@@ -4,12 +4,12 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2001 Pekka Riikonen
+  Copyright (C) 2000 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -24,7 +24,7 @@
 /* Fixed and public Diffie Hellman Groups defined by the SKE
    protocol. These are equivalent to the OAKLEY Key Determination
    protocol groups (taken from RFC 2412). */
-const struct SilcSKEDiffieHellmanGroupDefStruct silc_ske_groups[] = 
+const struct SilcSKEDiffieHellmanGroupDefStruct silc_ske_groups[] =
 {
   /* 1024 bits modulus (Mandatory group) */
   { 1, "diffie-hellman-group1",
@@ -98,7 +98,7 @@ SilcSKEStatus silc_ske_group_get_by_number(int number,
     silc_mp_set_str(&group->group, silc_ske_groups[i].group, 16);
     silc_mp_set_str(&group->group_order, silc_ske_groups[i].group_order, 16);
     silc_mp_set_str(&group->generator, silc_ske_groups[i].generator, 16);
-    
+
     *ret = group;
   }
 
@@ -134,7 +134,7 @@ SilcSKEStatus silc_ske_group_get_by_name(const char *name,
     silc_mp_set_str(&group->group, silc_ske_groups[i].group, 16);
     silc_mp_set_str(&group->group_order, silc_ske_groups[i].group_order, 16);
     silc_mp_set_str(&group->generator, silc_ske_groups[i].generator, 16);
-    
+
     *ret = group;
   }
 
@@ -163,7 +163,7 @@ char *silc_ske_get_supported_groups()
     len += strlen(silc_ske_groups[i].name);
     list = silc_realloc(list, len + 1);
 
-    memcpy(list + (len - strlen(silc_ske_groups[i].name)), 
+    memcpy(list + (len - strlen(silc_ske_groups[i].name)),
 	   silc_ske_groups[i].name, strlen(silc_ske_groups[i].name));
     memcpy(list + len, ",", 1);
     len++;

@@ -387,8 +387,7 @@ silc_ske_select_security_properties(SilcSKE ske,
   }
 
   /* Save selected cipher to security properties */
-  if (silc_cipher_alloc(payload->enc_alg_list,
-			&(*prop)->cipher) == FALSE) {
+  if (silc_cipher_alloc(payload->enc_alg_list, &(*prop)->cipher) == FALSE) {
     silc_free(payload->ke_grp_list);
     silc_free(payload->pkcs_alg_list);
     silc_free(payload);
@@ -446,8 +445,7 @@ silc_ske_select_security_properties(SilcSKE ske,
   }
 
   /* Save selected hash algorithm to security properties */
-  if (silc_hash_alloc(ske->start_payload->hash_alg_list,
-		      &(*prop)->hash) == FALSE) {
+  if (silc_hash_alloc(payload->hash_alg_list, &(*prop)->hash) == FALSE) {
     silc_free(payload->ke_grp_list);
     silc_free(payload->pkcs_alg_list);
     silc_free(payload->enc_alg_list);
@@ -507,8 +505,7 @@ silc_ske_select_security_properties(SilcSKE ske,
   }
 
   /* Save selected HMACc to security properties */
-  if (silc_hmac_alloc(ske->start_payload->hmac_alg_list, NULL,
-		      &(*prop)->hmac) == FALSE) {
+  if (silc_hmac_alloc(payload->hmac_alg_list, NULL, &(*prop)->hmac) == FALSE) {
     silc_free(payload->ke_grp_list);
     silc_free(payload->pkcs_alg_list);
     silc_free(payload->enc_alg_list);
@@ -812,8 +809,13 @@ SilcSKE silc_ske_alloc(SilcRng rng, SilcSchedule schedule,
 
   SILC_LOG_DEBUG(("Allocating new Key Exchange object"));
 
-  if (!rng || !schedule || !public_key)
+  if (!rng || !schedule)
     return NULL;
+
+  if (!public_key) {
+    SILC_LOG_ERROR(("Public key must be given to silc_ske_alloc"));
+    return NULL;
+  }
 
   ske = silc_calloc(1, sizeof(*ske));
   if (!ske)
@@ -835,46 +837,52 @@ void silc_ske_free(SilcSKE ske)
 {
   SILC_LOG_DEBUG(("Freeing Key Exchange object"));
 
-  if (ske) {
-    /* Free start payload */
-    if (ske->start_payload)
-      silc_ske_payload_start_free(ske->start_payload);
+  if (!ske)
+    return;
 
-    /* Free KE payload */
-    if (ske->ke1_payload)
-      silc_ske_payload_ke_free(ske->ke1_payload);
-    if (ske->ke2_payload)
-      silc_ske_payload_ke_free(ske->ke2_payload);
-    silc_free(ske->remote_version);
-
-    /* Free rest */
-    if (ske->prop) {
-      if (ske->prop->group)
-	silc_ske_group_free(ske->prop->group);
-      if (ske->prop->cipher)
-	silc_cipher_free(ske->prop->cipher);
-      if (ske->prop->hash)
-	silc_hash_free(ske->prop->hash);
-      if (ske->prop->hmac)
-	silc_hmac_free(ske->prop->hmac);
-      silc_free(ske->prop);
-    }
-    if (ske->start_payload_copy)
-      silc_buffer_free(ske->start_payload_copy);
-    if (ske->x) {
-      silc_mp_uninit(ske->x);
-      silc_free(ske->x);
-    }
-    if (ske->KEY) {
-      silc_mp_uninit(ske->KEY);
-      silc_free(ske->KEY);
-    }
-    silc_free(ske->hash);
-    silc_free(ske->callbacks);
-
-    memset(ske, 'F', sizeof(*ske));
-    silc_free(ske);
+  if (ske->running) {
+    ske->freed = TRUE;
+    return;
   }
+
+  /* Free start payload */
+  if (ske->start_payload)
+    silc_ske_payload_start_free(ske->start_payload);
+
+  /* Free KE payload */
+  if (ske->ke1_payload)
+    silc_ske_payload_ke_free(ske->ke1_payload);
+  if (ske->ke2_payload)
+    silc_ske_payload_ke_free(ske->ke2_payload);
+  silc_free(ske->remote_version);
+
+  /* Free rest */
+  if (ske->prop) {
+    if (ske->prop->group)
+      silc_ske_group_free(ske->prop->group);
+    if (ske->prop->cipher)
+      silc_cipher_free(ske->prop->cipher);
+    if (ske->prop->hash)
+      silc_hash_free(ske->prop->hash);
+    if (ske->prop->hmac)
+      silc_hmac_free(ske->prop->hmac);
+      silc_free(ske->prop);
+  }
+  if (ske->start_payload_copy)
+    silc_buffer_free(ske->start_payload_copy);
+  if (ske->x) {
+    silc_mp_uninit(ske->x);
+    silc_free(ske->x);
+  }
+  if (ske->KEY) {
+    silc_mp_uninit(ske->KEY);
+    silc_free(ske->KEY);
+  }
+  silc_free(ske->hash);
+  silc_free(ske->callbacks);
+
+  memset(ske, 'F', sizeof(*ske));
+  silc_free(ske);
 }
 
 /* Return user context */
@@ -972,7 +980,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
   SilcSKEStatus status;
   SilcSKEStartPayload payload;
   SilcSKESecurityProperties prop;
-  SilcSKEDiffieHellmanGroup group;
+  SilcSKEDiffieHellmanGroup group = NULL;
   SilcBuffer packet_buf = &ske->packet->buffer;
   SilcUInt16 remote_port = 0;
   SilcID id;
@@ -1084,9 +1092,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
  err:
   if (payload)
     silc_ske_payload_start_free(payload);
-
-  silc_ske_group_free(group);
-
+  if (group)
+    silc_ske_group_free(group);
   if (prop->cipher)
     silc_cipher_free(prop->cipher);
   if (prop->hash)
@@ -1491,6 +1498,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
 			      ske->rekey, ske->callbacks->context);
 
   silc_packet_free(ske->packet);
+  silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
 
   return SILC_FSM_FINISH;
 }
@@ -1507,6 +1515,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_aborted)
   /* Send FAILURE packet */
   SILC_PUT32_MSB(SILC_SKE_STATUS_ERROR, data);
   silc_packet_send(ske->stream, SILC_PACKET_FAILURE, 0, data, 4);
+  silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
 
   return SILC_FSM_FINISH;
 }
@@ -1535,6 +1544,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_error)
     ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL,
 			      ske->callbacks->context);
 
+  silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
+
   return SILC_FSM_FINISH;
 }
 
@@ -1552,6 +1563,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_failure)
     ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL,
 			      ske->callbacks->context);
 
+  silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
+
   return SILC_FSM_FINISH;
 }
 
@@ -1561,7 +1574,10 @@ static void silc_ske_initiator_finished(SilcFSM fsm, void *fsm_context,
 					void *destructor_context)
 {
   SilcSKE ske = fsm_context;
-  silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
+
+  ske->running = FALSE;
+  if (ske->freed)
+    silc_ske_free(ske);
 }
 
 /* Starts the protocol as initiator */
@@ -1598,6 +1614,7 @@ silc_ske_initiator(SilcSKE ske,
 
   ske->start_payload = start_payload;
   ske->version = params->version;
+  ske->running = TRUE;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;
@@ -2158,7 +2175,6 @@ SILC_FSM_STATE(silc_ske_st_responder_error)
     ske->status = SILC_SKE_STATUS_BAD_PAYLOAD;
   SILC_PUT32_MSB(ske->status, tmp);
   silc_packet_send(ske->stream, SILC_PACKET_FAILURE, 0, tmp, 4);
-
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
 
   return SILC_FSM_FINISH;
@@ -2168,7 +2184,11 @@ SILC_FSM_STATE(silc_ske_st_responder_error)
 static void silc_ske_responder_finished(SilcFSM fsm, void *fsm_context,
 					void *destructor_context)
 {
+  SilcSKE ske = fsm_context;
 
+  ske->running = FALSE;
+  if (ske->freed)
+    silc_ske_free(ske);
 }
 
 /* Starts the protocol as responder. */
@@ -2198,6 +2218,7 @@ silc_ske_responder(SilcSKE ske,
   ske->version = strdup(params->version);
   if (!ske->version)
     return NULL;
+  ske->running = TRUE;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;
@@ -2685,4 +2706,11 @@ SilcBool silc_ske_parse_version(SilcSKE ske,
 SilcSKESecurityProperties silc_ske_get_security_properties(SilcSKE ske)
 {
   return ske->prop;
+}
+
+/* Get key material */
+
+SilcSKEKeyMaterial silc_ske_get_key_material(SilcSKE ske)
+{
+  return ske->keymat;
 }

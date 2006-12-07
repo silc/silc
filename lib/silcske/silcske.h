@@ -74,6 +74,7 @@ typedef enum {
   SILC_SKE_STATUS_BAD_PAYLOAD_LENGTH,	       /* Payload includes garbage */
   SILC_SKE_STATUS_SIGNATURE_ERROR,	       /* Error computing signature */
   SILC_SKE_STATUS_OUT_OF_MEMORY,	       /* System out of memory */
+  SILC_SKE_STATUS_TIMEOUT,	               /* Timeout */
 } SilcSKEStatus;
 /***/
 
@@ -165,7 +166,7 @@ typedef struct {
  *    This context is returned after key exchange protocol to application
  *    in the completion callback.  Application may save it and use it later
  *    to perform the rekey with silc_ske_rekey_initiator_start and/or
- *    silc_ske_rekey_responder_start functions.  If application does not
+ *    silc_ske_rekey_responder functions.  If application does not
  *    need the context, it may free it with silc_free function.
  *
  *    Application may save application specific data to `user_context'.
@@ -455,7 +456,7 @@ silc_ske_initiator(SilcSKE ske,
 		   SilcSKEParams params,
 		   SilcSKEStartPayload start_payload);
 
-/****f* silcske/SilcSKEAPI/silc_ske_responder_start
+/****f* silcske/SilcSKEAPI/silc_ske_responder
  *
  * SYNOPSIS
  *
@@ -564,6 +565,21 @@ SilcBool silc_ske_parse_version(SilcSKE ske,
  *
  ***/
 SilcSKESecurityProperties silc_ske_get_security_properties(SilcSKE ske);
+
+/****f* silcske/SilcSKEAPI/silc_ske_get_key_material
+ *
+ * SYNOPSIS
+ *
+ *    SilcSKEKeyMaterial silc_ske_get_key_material(SilcSKE ske);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the negotiated key material from the `ske' or NULL if the
+ *    key material does not exist.  The caller must not free the returned
+ *    pointer.
+ *
+ ***/
+SilcSKEKeyMaterial silc_ske_get_key_material(SilcSKE ske);
 
 /****f* silcske/SilcSKEAPI/silc_ske_process_key_material_data
  *
