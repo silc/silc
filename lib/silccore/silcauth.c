@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -458,7 +458,8 @@ SilcBool silc_auth_verify_data(const unsigned char *payload,
 struct SilcKeyAgreementPayloadStruct {
   SilcUInt16 hostname_len;
   unsigned char *hostname;
-  SilcUInt32 port;
+  SilcUInt16 protocol;
+  SilcUInt16 port;
 };
 
 /* Parses and returns an allocated Key Agreement payload. */
@@ -473,16 +474,17 @@ silc_key_agreement_payload_parse(const unsigned char *payload,
 
   SILC_LOG_DEBUG(("Parsing Key Agreement Payload"));
 
-  silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
   newp = silc_calloc(1, sizeof(*newp));
   if (!newp)
     return NULL;
 
   /* Parse the payload */
+  silc_buffer_set(&buffer, (unsigned char *)payload, payload_len);
   ret = silc_buffer_unformat(&buffer,
 			     SILC_STR_UI16_NSTRING_ALLOC(&newp->hostname,
 							 &newp->hostname_len),
-			     SILC_STR_UI_INT(&newp->port),
+			     SILC_STR_UI_SHORT(&newp->protocol),
+			     SILC_STR_UI_SHORT(&newp->port),
 			     SILC_STR_END);
   if (ret == -1 || newp->hostname_len > silc_buffer_len(&buffer) - 6) {
     silc_free(newp);
@@ -495,7 +497,8 @@ silc_key_agreement_payload_parse(const unsigned char *payload,
 /* Encodes the Key Agreement protocol and returns the encoded buffer */
 
 SilcBuffer silc_key_agreement_payload_encode(const char *hostname,
-					     SilcUInt32 port)
+					     SilcUInt16 protocol,
+					     SilcUInt16 port)
 {
   SilcBuffer buffer;
   SilcUInt32 len = hostname ? strlen(hostname) : 0;
@@ -508,7 +511,8 @@ SilcBuffer silc_key_agreement_payload_encode(const char *hostname,
   silc_buffer_format(buffer,
 		     SILC_STR_UI_SHORT(len),
 		     SILC_STR_UI_XNSTRING(hostname, len),
-		     SILC_STR_UI_INT(port),
+		     SILC_STR_UI_SHORT(protocol),
+		     SILC_STR_UI_SHORT(port),
 		     SILC_STR_END);
 
   return buffer;
@@ -531,9 +535,16 @@ char *silc_key_agreement_get_hostname(SilcKeyAgreementPayload payload)
   return payload->hostname;
 }
 
+/* Returns the protocol in the payload */
+
+SilcUInt16 silc_key_agreement_get_protocol(SilcKeyAgreementPayload payload)
+{
+  return payload->protocol;
+}
+
 /* Returns the port in the payload */
 
-SilcUInt32 silc_key_agreement_get_port(SilcKeyAgreementPayload payload)
+SilcUInt16 silc_key_agreement_get_port(SilcKeyAgreementPayload payload)
 {
   return payload->port;
 }

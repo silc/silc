@@ -389,7 +389,8 @@ silc_key_agreement_payload_parse(const unsigned char *payload,
  * SYNOPSIS
  *
  *    SilcBuffer silc_key_agreement_payload_encode(char *hostname,
- *                                                 SilcUInt32 port);
+ *                                                 SilcUInt16 protocol,
+ *                                                 SilcUInt16 port);
  *
  * DESCRIPTION
  *
@@ -397,7 +398,8 @@ silc_key_agreement_payload_parse(const unsigned char *payload,
  *
  ***/
 SilcBuffer silc_key_agreement_payload_encode(const char *hostname,
-					     SilcUInt32 port);
+					     SilcUInt16 protocol,
+					     SilcUInt16 port);
 
 /****f* silccore/SilcAuthAPI/silc_key_agreement_payload_free
  *
@@ -427,11 +429,26 @@ void silc_key_agreement_payload_free(SilcKeyAgreementPayload payload);
  ***/
 char *silc_key_agreement_get_hostname(SilcKeyAgreementPayload payload);
 
+/****f* silccore/SilcAuthAPI/silc_key_agreement_get_protocol
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt16
+ *    silc_key_agreement_get_protocol(SilcKeyAgreementPayload payload);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the protocol in the payload.  The protocol is either TCP (0)
+ *    or UDP (1).
+ *
+ ***/
+SilcUInt16 silc_key_agreement_get_protocol(SilcKeyAgreementPayload payload);
+
 /****f* silccore/SilcAuthAPI/silc_key_agreement_get_port
  *
  * SYNOPSIS
  *
- *    SilcUInt32 silc_key_agreement_get_port(SilcKeyAgreementPayload payload);
+ *    SilcUInt16 silc_key_agreement_get_port(SilcKeyAgreementPayload payload);
  *
  * DESCRIPTION
  *
@@ -440,6 +457,6 @@ char *silc_key_agreement_get_hostname(SilcKeyAgreementPayload payload);
  *    the SILC Key Exchange protocol.
  *
  ***/
-SilcUInt32 silc_key_agreement_get_port(SilcKeyAgreementPayload payload);
+SilcUInt16 silc_key_agreement_get_port(SilcKeyAgreementPayload payload);
 
 #endif
