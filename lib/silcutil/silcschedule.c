@@ -430,7 +430,7 @@ SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
   if (!schedule->is_locked)
     SILC_SCHEDULE_LOCK(schedule);
 
-  while (1) {
+  do {
     SILC_LOG_DEBUG(("In scheduler loop"));
 
     /* Deliver signals if any has been set to be called */
@@ -494,10 +494,7 @@ SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
       silc_schedule_dispatch_fd(schedule);
       break;
     }
-
-    if (timeout_usecs >= 0)
-      break;
-  }
+  } while (timeout_usecs == -1);
 
   if (!schedule->is_locked)
     SILC_SCHEDULE_UNLOCK(schedule);

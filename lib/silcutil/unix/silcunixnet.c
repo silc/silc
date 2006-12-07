@@ -399,7 +399,7 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
 		remote_ip_addr_size);
     }
 
-    SILC_LOG_DEBUG(("UDP packet from %s:%d", remote_ip_addr, remote_port));
+    SILC_LOG_DEBUG(("UDP packet from %s:%d", remote_ip_addr, *remote_port));
   }
 
   return len;
