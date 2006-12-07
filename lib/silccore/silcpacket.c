@@ -760,10 +760,20 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
   silc_buffer_purge(&stream->inbuf);
   silc_buffer_purge(&stream->outbuf);
 
+  if (stream->process) {
+    SilcPacketProcess p;
+    silc_dlist_start(stream->process);
+    while ((p = silc_dlist_get(stream->process))) {
+      silc_free(p->types);
+      silc_free(p);
+      silc_dlist_del(stream->process, p);
+    }
+    silc_dlist_uninit(stream->process);
+  }
+
   /* XXX */
 
   silc_atomic_uninit8(&stream->refcnt);
-  silc_dlist_uninit(stream->process);
   silc_mutex_free(stream->lock);
   silc_free(stream);
 }
@@ -896,6 +906,7 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
     if (p->callbacks == callbacks &&
 	p->callback_context == callback_context) {
       silc_dlist_del(stream->process, p);
+      silc_free(p->types);
       silc_free(p);
       break;
     }
