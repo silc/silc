@@ -20,6 +20,12 @@
 #ifndef SILCSKE_I_H
 #define SILCSKE_I_H
 
+/* Packet retry counter and timer defines for UDP transport. */
+#define SILC_SKE_RETRY_COUNT   4          /* Max packet retry count */
+#define SILC_SKE_RETRY_MUL     2          /* Retry timer interval growth */
+#define SILC_SKE_RETRY_RAND    2          /* Randomizer, timeout += rnd % 2 */
+#define SILC_SKE_RETRY_MIN     1	  /* Min retry timeout, seconds */
+
 /* Length of cookie in Start Payload */
 #define SILC_SKE_COOKIE_LEN 16
 
@@ -70,6 +76,16 @@ struct SilcSKEStruct {
   SilcFSMStruct fsm;
   SilcAsyncOperationStruct op;
   SilcUInt16 session_port;
+
+  /* Packet retransmission */
+  SilcUInt16 retry_timer;
+  SilcUInt16 retry_count;
+  struct SilcSKEPacketRetransmission {
+    SilcPacketType type;
+    SilcPacketFlags flags;
+    unsigned char *data;
+    SilcUInt32 data_len;
+  } retrans;
 
   unsigned int aborted    : 1;
   unsigned int freed      : 1;

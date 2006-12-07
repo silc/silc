@@ -1,3 +1,14 @@
+Thu Dec  7 19:07:21 EET 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_ske_get_key_material.  Affected files are
+	  lib/silcske/silcske.[ch].
+
+	* Added silc_packet_stream_is_udp.  Affected files are
+	  lib/silccore/silcpacket.[ch].
+
+	* Added SKE packet retransmission support with UDP transport.
+	  Affected file is lib/silcske/silcske.c.
+
 Sun Dec  3 22:00:12 EET 2006  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_socket_stream_is_udp.  Affected file is
