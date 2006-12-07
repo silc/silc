@@ -2579,20 +2579,22 @@ void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
    desired (application may start it later by calling the function
    silc_client_perform_key_agreement). */
 
-bool silc_key_agreement(SilcClient client, SilcClientConnection conn,
+void silc_key_agreement(SilcClient client, SilcClientConnection conn,
 		        SilcClientEntry client_entry, const char *hostname,
-		        SilcUInt16 port, SilcKeyAgreementCallback *completion,
-		        void **context)
+		        SilcUInt16 protocol, SilcUInt16 port)
 {
-  char portstr[12];
+  char portstr[12], protostr[5];
 
   SILC_LOG_DEBUG(("Start"));
 
   /* We will just display the info on the screen and return FALSE and user
      will have to start the key agreement with a command. */
 
-  if (hostname)
+  if (hostname) {
     snprintf(portstr, sizeof(portstr) - 1, "%d", port);
+    snprintf(protostr, sizeof(protostr) - 1, "%s", protocol == 1 ? "UDP" : 
+	     "TCP");
+  }
 
   if (!hostname)
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
@@ -2600,12 +2602,7 @@ bool silc_key_agreement(SilcClient client, SilcClientConnection conn,
   else
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_KEY_AGREEMENT_REQUEST_HOST,
-		       client_entry->nickname, hostname, portstr);
-
-  *completion = NULL;
-  *context = NULL;
-
-  return FALSE;
+		       client_entry->nickname, hostname, portstr, protostr);
 }
 
 /* Notifies application that file transfer protocol session is being

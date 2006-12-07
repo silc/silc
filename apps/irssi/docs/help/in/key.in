@@ -20,19 +20,15 @@ Types:
 
 Commands:
 
-  set        [<key> [<cipher>] [<hmac>]] [-responder]
+  set        [<key> [<cipher>] [<hmac>]]
 
-    Set the key into use.  If the <key> is provided it is used
-    as the key material.  If the <key> is not provided the
-    negotiated key material is used.  If the negotiation has not
-    been performed this command has no effect.
+    Set the key into use.  The <key> is a pre-shared-key,
+    passphrase or similar shared secret string.  Setting
+    the key without first receiving a request from the
+    remote user, this command will send the request to the
+    remote user.  The actual key is not sent to network.
 
-    If the type is MSG and the <key> is `*' then random key
-    will be generated automatically.  The -responder option
-    may be used ONLY with MSG type.  One of the clients must
-    be the responder side.  The one being the responder must
-    use this option.  The clients setting the key must agree
-    on which one is the responder.
+    Optionally, the <cipher> and <hmac> may also be set.
 
   unset      [<number>]
 
@@ -57,7 +53,7 @@ Commands:
     next key is changed to current channel private key.  By default
     this command is also bound to Meta-K (Alt+Shift+k) key.
 
-  agreement  [<hostname> [<port>]]
+  agreement  [<hostname> [<port>] [<TCP|UDP>]]
 
     Send key agreement request to remote client.  If the
     <hostname> is provided it is sent in the request. The
@@ -68,7 +64,8 @@ Commands:
     not provided then the receiver will never initiate the key
     agreement.  In this case you may start the key agreement
     after receiving the reply to the request, by giving the
-    negotiate command.
+    negotiate command.  By default the key agreement connection
+    is TCP connection.  UDP connection may also be defined.
 
     This command may be used to send reply to the remote client.
     When receiving empty key agreement you can reply to the
@@ -85,13 +82,15 @@ Commands:
     auto_bind_ip is set, silc client will send the auto_bind_ip
     variable's value to the remote client.
 
-  negotiate  [<hostname> [<port>]]
+  negotiate  [<hostname> [<port>] [<TCP|UDP>]]
 
     This may be called to start the key agreement with <nickname>.
     This command has effect only if the <nickname> has replied to
     your key agreement request.  You will see a notify on the
     screen when the reply arrives.  The <hostname> and <port> is the
     hostname and port of the remote client's key agreement server.
+    The request tells the connection protocol used, usually TCP.
+    If UDP was requested it must be provided.
 
 Examples:
 
@@ -99,9 +98,18 @@ Examples:
 
     /KEY CHANNEL * set very_secret_key_this_is
     /KEY CHANNEL * list
-    /KEY MSG nickname set secretkey
-    /KEY MSG nick set secretkey -responder
-    /KEY MSG foo agreement 10.2.1.7 5000
-    /KEY MSG bar negotiate 10.2.1.7 5000
+
+  Set private message key with a friend:
+
+    foobar:  /KEY MSG friend set secretkey
+    friend:  /KEY MSG foobar set secretkey
+
+  Perform key agreement:
+
+    bar:  /KEY MSG foo agreement 10.2.1.7 5000
+    foo:  /KEY MSG bar negotiate 10.2.1.7 5000
+
+    bar:  /KEY MSG foo agreement 10.2.1.7 5000 UDP
+    foo:  /KEY MSG bar negotiate 10.2.1.7 5000 UDP
 
 See also: WHOIS, CHANNEL, GETKEY

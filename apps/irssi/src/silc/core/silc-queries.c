@@ -903,7 +903,7 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
     }
   }
 
-  if (verify->userpk.data) {
+  if (verify->public_key) {
     silc_verify_public_key(client, conn, SILC_CONN_CLIENT,
 			   verify->public_key,
 			   silc_query_attributes_print_final, verify);

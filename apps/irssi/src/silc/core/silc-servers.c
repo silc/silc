@@ -428,9 +428,6 @@ static void sig_connected(SILC_SERVER_REC *server)
   if (!IS_SILC_SERVER(server))
     return;
 
-  //  server->connrec->address,
-  //  server->connrec->port,
-
   /* Wrap the socket to TCP stream */
   fd = g_io_channel_unix_get_fd(net_sendbuffer_handle(server->handle));
   silc_socket_tcp_stream_create(fd, TRUE, FALSE, silc_client->schedule,

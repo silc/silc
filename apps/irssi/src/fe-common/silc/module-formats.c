@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2003 Pekka Riikonen
+  Copyright (C) 2001 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -134,9 +134,9 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "private_key_list_nick", "Private message keys with {nick $0}%:  Client                         Cipher         Key", 1, { 0 } },
 	{ "key_agreement", "Requesting key agreement with {nick $0}", 1, { 0 } },
 	{ "key_agreement_request", "{nick $0} wants to perform key agreement", 1, { 0 } },
-	{ "key_agreement_request_host", "{nick $0} wants to perform key agreement on {nickhost $1} port {hilight $2}", 3, { 0, 0, 0 } },
+	{ "key_agreement_request_host", "{nick $0} wants to perform key agreement on {nickhost $1} port {hilight $2} ($3)", 4, { 0, 0, 0, 0 } },
 	{ "key_agreement_negotiate", "Starting key agreement with {nick $0}", 1, { 0 } },
-	{ "key_agreement_privmsg", "The private messages with {nick $0} are now protected with private key", 1, { 0 } },
+	{ "key_agreement_privmsg", "Pprivate messages with {nick $0} are now protected with private key", 1, { 0 } },
 	{ "key_agreement_ok", "Key agreement completed successfully with {nick $0}", 1, { 0 } },
 	{ "key_agreement_error", "Error occurred during key agreement with {nick $0}", 1, { 0 } },
 	{ "key_agreement_failure", "Key agreement failed with {nick $0}", 1, { 0 } },
