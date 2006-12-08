@@ -15,7 +15,6 @@ AC_ISC_POSIX
 AC_PROG_CC
 AC_PROG_CPP
 AC_STDC_HEADERS
-AC_ARG_PROGRAM
 AM_PROG_LIBTOOL
 
 AC_PATH_PROG(sedpath, sed)
@@ -402,7 +401,7 @@ dnl ** Recode
 dnl **
 AC_MSG_CHECKING([if we can use recode, requires GLIB2])
 if test "$glib_config_major_version" = "2"; then
-  AC_DEFINE(HAVE_GLIB2)
+  AC_DEFINE([HAVE_GLIB2], [], ["HAVE_GLIB2"])
   AC_MSG_RESULT([yes])
 else
   AC_MSG_RESULT([no, using glib1])
