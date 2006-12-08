@@ -48,6 +48,7 @@ esac
 case "$host_cpu" in
   i386)
     AC_DEFINE([SILC_I386], [], [SILC_I386])
+    AC_DEFINE([SILC_I486], [], [SILC_I486])
     ;;
   i?86)
     AC_DEFINE([SILC_I486], [], [SILC_I486])
