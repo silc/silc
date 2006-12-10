@@ -70,7 +70,7 @@ SilcBool silc_net_is_ip4(const char *addr)
   int count = 0;
 
   while (*addr) {
-    if (*addr != '.' && !isdigit(*addr))
+    if (*addr != '.' && !isdigit((int)*addr))
       return FALSE;
     if (*addr == '.')
       count++;
@@ -89,7 +89,7 @@ SilcBool silc_net_is_ip6(const char *addr)
 {
   /* XXX does this work with all kinds of IPv6 addresses? */
   while (*addr) {
-    if (*addr != ':' && !isxdigit(*addr))
+    if (*addr != ':' && !isxdigit((int)*addr))
       return FALSE;
     addr++;
   }

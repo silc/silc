@@ -88,7 +88,7 @@ SilcBool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size)
     return FALSE;
 
   for (i = 0; i < strlen(string); i++)
-    dest[i] = toupper(string[i]);
+    dest[i] = (char)toupper((int)string[i]);
 
   return TRUE;
 }
@@ -103,7 +103,7 @@ SilcBool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size)
     return FALSE;
 
   for (i = 0; i < strlen(string); i++)
-    dest[i] = tolower(string[i]);
+    dest[i] = (char)tolower((int)string[i]);
 
   return TRUE;
 }
@@ -253,7 +253,7 @@ SilcUInt32 silc_hash_string(void *key, void *user_context)
   SilcUInt32 h = 0, g;
 
   while (*s != '\0') {
-    h = (h << 4) + tolower(*s);
+    h = (h << 4) + tolower((int)*s);
     if ((g = h & 0xf0000000)) {
       h = h ^ (g >> 24);
       h = h ^ g;

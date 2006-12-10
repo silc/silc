@@ -4,7 +4,7 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 2002 - 2003 Giovanni Giacobbi
+  Copyright (C) 2002 - 2006 Giovanni Giacobbi
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ char *silc_config_strerror(int errnum)
 static void my_trim_spaces(SilcConfigFile *file)
 {
   register char *r = file->p;
-  while ((*r != '\0' && *r != EOF) && isspace(*r))
+  while ((*r != '\0' && *r != EOF) && isspace((int)*r))
     if (*r++ == '\n') file->line++;
   file->p = r;
 }
@@ -113,7 +113,7 @@ static char *my_next_token(SilcConfigFile *file, char *to)
   register char *o;
   my_trim_spaces(file);
   o = file->p;
-  while (isalnum(*o) || (*o == '_') || (*o == '-'))
+  while (isalnum((int)*o) || (*o == '_') || (*o == '-'))
     *to++ = *o++;
   *to = '\0';
   file->p = o;
@@ -208,7 +208,7 @@ static void *silc_config_marshall(SilcConfigType type, const char *val)
       if (val == val_tmp)
 	return NULL; /* really wrong, there must be at least one digit */
       /* Search for a designator */
-      switch (tolower(val_tmp[0])) {
+      switch (tolower((int)val_tmp[0])) {
 	case '\0': /* None */
 	  break;
 	case 'k': /* Kilobytes */

@@ -1017,8 +1017,6 @@ static inline
 SilcBool silc_atomic_cas32(SilcAtomic32 *atomic, SilcUInt32 old_val,
 			   SilcUInt32 new_val)
 {
-  SilcUInt32 ret;
-
 #if !defined(SILC_THREADS)
   /* No atomic operations */
   if (atomic->value == old_val) {
@@ -1034,6 +1032,7 @@ SilcBool silc_atomic_cas32(SilcAtomic32 *atomic, SilcUInt32 old_val,
 
 #elif defined(__GNUC__) && (defined(SILC_I486) || defined(SILC_X86_64))
   /* GCC + i486 or x86_64 */
+  SilcUInt32 ret;
   __asm __volatile("lock; cmpxchgl %2, %1"
 		   : "=a" (ret), "=m" (atomic->value)
 		   : "r" (new_val), "m" (atomic->value), "0" (old_val));
@@ -1081,8 +1080,6 @@ static inline
 SilcBool silc_atomic_cas16(SilcAtomic16 *atomic, SilcUInt16 old_val,
 			   SilcUInt16 new_val)
 {
-  SilcUInt16 ret;
-
 #if !defined(SILC_THREADS)
   /* No atomic operations */
   if (atomic->value == old_val) {
@@ -1098,6 +1095,7 @@ SilcBool silc_atomic_cas16(SilcAtomic16 *atomic, SilcUInt16 old_val,
 
 #elif defined(__GNUC__) && (defined(SILC_I486) || defined(SILC_X86_64))
   /* GCC + i486 or x86_64 */
+  SilcUInt16 ret;
   __asm __volatile("lock; cmpxchgw %2, %1"
 		   : "=a" (ret), "=m" (atomic->value)
 		   : "c" (new_val), "m" (atomic->value), "0" (old_val));
@@ -1146,8 +1144,6 @@ static inline
 SilcBool silc_atomic_cas8(SilcAtomic8 *atomic, SilcUInt8 old_val,
 			  SilcUInt8 new_val)
 {
-  SilcUInt8 ret;
-
 #if !defined(SILC_THREADS)
   /* No atomic operations */
   if (atomic->value == old_val) {
@@ -1163,6 +1159,7 @@ SilcBool silc_atomic_cas8(SilcAtomic8 *atomic, SilcUInt8 old_val,
 
 #elif defined(__GNUC__) && (defined(SILC_I486) || defined(SILC_X86_64))
   /* GCC + i486 or x86_64 */
+  SilcUInt8 ret;
   __asm __volatile("lock; cmpxchgb %2, %1"
 		   : "=a" (ret), "=m" (atomic->value)
 		   : "c" (new_val), "m" (atomic->value), "0" (old_val));
@@ -1211,8 +1208,6 @@ static inline
 SilcBool silc_atomic_cas_pointer(SilcAtomicPointer *atomic, void *old_val,
 				 void *new_val)
 {
-  void *ret;
-
 #if !defined(SILC_THREADS)
   /* No atomic operations */
   if (atomic->pointer == old_val) {
@@ -1227,6 +1222,7 @@ SilcBool silc_atomic_cas_pointer(SilcAtomicPointer *atomic, void *old_val,
 
 #elif defined(__GNUC__) && defined(SILC_I486)
   /* GCC + i486 */
+  void *ret;
   __asm __volatile("lock; cmpxchgl %2, %1"
 		   : "=a" (ret), "=m" (atomic->pointer)
 		   : "c" (new_val), "m" (atomic->pointer), "0" (old_val));
@@ -1234,6 +1230,7 @@ SilcBool silc_atomic_cas_pointer(SilcAtomicPointer *atomic, void *old_val,
 
 #elif defined(__GNUC__) && defined(SILC_X86_64)
   /* GCC + x86_64 */
+  void *ret;
   __asm __volatile("lock; cmpxchgq %q2, %1"
 		   : "=a" (ret), "=m" (atomic->pointer)
 		   : "c" (new_val), "m" (atomic->pointer), "0" (old_val));

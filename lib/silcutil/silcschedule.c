@@ -232,8 +232,6 @@ static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
 
 	/* Put to free list */
 	silc_list_add(schedule->free_tasks, ttask);
-	if (silc_list_count(schedule->free_tasks) == 1)
-	  silc_list_start(schedule->free_tasks);
 	break;
       }
     }
@@ -566,6 +564,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
   if (type == SILC_TASK_TIMEOUT) {
     SilcTaskTimeout tmp, prev, ttask;
 
+    silc_list_start(schedule->free_tasks);
     ttask = silc_list_get(schedule->free_tasks);
     if (!ttask) {
       ttask = silc_calloc(1, sizeof(*ttask));

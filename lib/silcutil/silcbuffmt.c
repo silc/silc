@@ -85,8 +85,8 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap)
     switch(fmt) {
     case SILC_PARAM_FUNC:
       {
-	SilcBufferFormatFunc func;
-	SilcBufferSFormatFunc funcs;
+	SilcBufferFormatFunc func = NULL;
+	SilcBufferSFormatFunc funcs = NULL;
 	void *val;
 	void *context;
 	int tmp_len;
@@ -322,8 +322,8 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
     switch(fmt) {
     case SILC_PARAM_FUNC:
       {
-	SilcBufferUnformatFunc func;
-	SilcBufferSUnformatFunc funcs;
+	SilcBufferUnformatFunc func = NULL;
+	SilcBufferSUnformatFunc funcs = NULL;
 	void **val;
 	void *context;
 	int tmp_len;
