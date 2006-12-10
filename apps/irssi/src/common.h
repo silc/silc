@@ -17,6 +17,10 @@
 #include "config.h"
 #endif
 
+#ifndef PACKAGE
+#define PACKAGE "SILC Client"
+#endif /* PACKAGE */
+
 #include <stdio.h>
 #include <stddef.h>
 #include <stdarg.h>

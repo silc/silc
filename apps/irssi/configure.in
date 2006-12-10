@@ -28,7 +28,7 @@ fi
 AC_CHECK_HEADERS(string.h stdlib.h unistd.h dirent.h sys/ioctl.h sys/resource.h)
 
 # check posix headers..
-AC_CHECK_HEADERS(sys/time.h sys/utsname.h regex.h)
+AC_CHECK_HEADERS(sys/time.h sys/utsname.h)
 
 AC_ARG_WITH(socks,
 [  --with-socks            Build with socks support],

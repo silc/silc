@@ -66,6 +66,7 @@ Commands:
     after receiving the reply to the request, by giving the
     negotiate command.  By default the key agreement connection
     is TCP connection.  UDP connection may also be defined.
+    (Note that, older SILC clients (1.0.x) does not support UDP).
 
     This command may be used to send reply to the remote client.
     When receiving empty key agreement you can reply to the
