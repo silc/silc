@@ -58,7 +58,8 @@
  *    and `prv_filename' is the public key and private key filenames.
  *    The `pub_identifier' is the public key identifier (for example:
  *    "UN=foobar, HN=hostname"), or if NULL the routine generates it
- *    automatically.
+ *    automatically.  The `return_public_key' and `return_private_key' may
+ *    be NULL.
  *
  *    The `passphrase' is the passphrase that is used to encrypt the
  *    private key file.  It is recommended that you would protect your

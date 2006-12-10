@@ -71,6 +71,8 @@ SilcBool silc_create_key_pair(const char *pkcs_name,
   char *alg = pkcs_name ? strdup(pkcs_name) : NULL;
   char *identifier = pub_identifier ? strdup(pub_identifier) : NULL;
   char *pass = passphrase ? strdup(passphrase) : NULL;
+  SilcPublicKey public_key;
+  SilcPrivateKey private_key;
 
   if (interactive && (!alg || !pub_filename || !prv_filename))
     printf("\
@@ -192,17 +194,27 @@ New pair of keys will be created.  Please, answer to following questions.\n\
 
   /* Generate keys */
   if (!silc_pkcs_silc_generate_key(alg, "pkcs1-no-oid", key_len_bits,
-				   identifier, rng, return_public_key,
-				   return_private_key))
+				   identifier, rng, &public_key,
+				   &private_key))
     return FALSE;
 
   /* Save public key into file */
-  silc_pkcs_save_public_key(pkfile, *return_public_key, SILC_PKCS_FILE_BASE64);
+  silc_pkcs_save_public_key(pkfile, public_key, SILC_PKCS_FILE_BASE64);
 
   /* Save private key into file */
-  silc_pkcs_save_private_key(prvfile, *return_private_key,
+  silc_pkcs_save_private_key(prvfile, private_key,
 			     (const unsigned char *)pass, strlen(pass),
 			     SILC_PKCS_FILE_BIN, rng);
+
+  if (return_public_key)
+    *return_public_key = public_key;
+  else
+    silc_pkcs_public_key_free(public_key);
+
+  if (return_private_key)
+    *return_private_key = private_key;
+  else
+    silc_pkcs_private_key_free(private_key);
 
   printf("Public key has been saved into `%s'.\n", pkfile);
   printf("Private key has been saved into `%s'.\n", prvfile);
