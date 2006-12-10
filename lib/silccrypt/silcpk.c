@@ -370,6 +370,10 @@ SilcBool silc_pkcs_silc_import_public_key(unsigned char *key,
   if (ret == -1)
     goto err;
 
+  /* Backwards compatibility */
+  if (totlen == key_len)
+    totlen -= 4;
+
   if (totlen + 4 != key_len)
     goto err;
 
@@ -816,7 +820,7 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
   /* Check file magic */
   SILC_GET32_MSB(magic, filedata);
   if (magic != SILC_PKCS_PRIVATE_KEY_MAGIC) {
-    SILC_LOG_ERROR(("Private key does not have correct magic"));
+    SILC_LOG_DEBUG(("Private key does not have correct magic"));
     return FALSE;
   }
 
