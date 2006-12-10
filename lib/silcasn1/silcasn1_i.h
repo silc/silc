@@ -100,12 +100,14 @@ struct SilcAsn1Object {
     ret_type = (ret_type & 0xffff) & ~0x8000;				\
   }
 
-#ifdef SILC_DIST_INPLACE
 /* Internal functions */
 
+#if defined(SILC_DEBUG)
 /* Returns string representation of a tag */
 const char *silc_asn1_tag_name(SilcAsn1Tag tag);
+#endif /* SILC_DEBUG */
 
+#ifdef SILC_DIST_INPLACE
 /* Dumps the ASN.1 data block into standard output (stdout). */
 SilcBool silc_asn1_dump(SilcAsn1 asn1, SilcBuffer src);
 #endif /* SILC_DIST_INPLACE */

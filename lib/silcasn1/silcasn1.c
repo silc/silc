@@ -70,7 +70,7 @@ void silc_asn1_uninit(SilcAsn1 asn1)
   silc_stack_free(asn1->stack2);
 }
 
-#ifdef SILC_DIST_INPLACE
+#if defined(SILC_DEBUG)
 /* Returns string representation of a tag */
 
 const char *silc_asn1_tag_name(SilcAsn1Tag tag)
@@ -151,7 +151,9 @@ const char *silc_asn1_tag_name(SilcAsn1Tag tag)
   }
   return "unknown";
 }
+#endif /* SILC_DEBUG */
 
+#ifdef SILC_DIST_TOOLKIT
 /* Dumps the ASN.1 data block into standard output (stdout). */
 
 SilcBool silc_asn1_dump(SilcAsn1 asn1, SilcBuffer src)
@@ -188,5 +190,4 @@ SilcBool silc_asn1_dump(SilcAsn1 asn1, SilcBuffer src)
 
   return TRUE;
 }
-
-#endif /* SILC_DIST_INPLACE */
+#endif /* SILC_DIST_TOOLKIT */
