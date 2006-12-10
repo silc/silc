@@ -68,6 +68,7 @@ SilcBool silc_fsm_init(SilcFSM fsm,
   fsm->schedule = schedule;
   fsm->thread = FALSE;
   fsm->async_call = FALSE;
+  fsm->started = FALSE;
   fsm->u.m.threads = 0;
   fsm->u.m.lock = NULL;
 
@@ -114,6 +115,7 @@ void silc_fsm_thread_init(SilcFSMThread thread,
   thread->schedule = fsm->schedule;
   thread->thread = TRUE;
   thread->async_call = FALSE;
+  thread->started = FALSE;
   thread->real_thread = real_thread;
   thread->u.t.fsm = fsm;
 
@@ -157,7 +159,11 @@ SILC_TASK_CALLBACK(silc_fsm_free_final)
 void silc_fsm_free(void *fsm)
 {
   SilcFSM f = fsm;
-  silc_schedule_task_add_timeout(f->schedule, silc_fsm_free_final, f, 0, 0);
+  if (!f->thread)
+    silc_schedule_task_add_timeout(f->schedule, silc_fsm_free_final, f, 0, 0);
+  else
+    silc_fsm_free_final(f->schedule, silc_schedule_get_context(f->schedule),
+			0, 0, f);
 }
 
 /* Task to start real thread. We start threads through scheduler, not
@@ -190,6 +196,7 @@ void silc_fsm_start(void *fsm, SilcFSMStateCallback start_state)
   f->finished = FALSE;
   f->next_state = start_state;
   f->synchronous = FALSE;
+  f->started = TRUE;
 
   /* Start real thread through scheduler */
   if (f->thread && f->real_thread) {
@@ -213,6 +220,7 @@ void silc_fsm_start_sync(void *fsm, SilcFSMStateCallback start_state)
   f->finished = FALSE;
   f->next_state = start_state;
   f->synchronous = TRUE;
+  f->started = TRUE;
 
   /* Start real thread directly */
   if (f->thread && f->real_thread) {
@@ -281,6 +289,10 @@ void silc_fsm_finish(void *fsm)
 
   SILC_ASSERT(!f->finished);
   f->finished = TRUE;
+  f->started = FALSE;
+
+  silc_schedule_task_del_by_all(f->schedule, 0, silc_fsm_run, f);
+  f->next_later = FALSE;
 
   /* If we are thread and using real threads, the FSM thread will finish
      after the real thread has finished, in the main thread. */
@@ -313,6 +325,18 @@ SilcFSM silc_fsm_get_machine(SilcFSMThread thread)
 {
   SILC_ASSERT(thread->thread);
   return (SilcFSM)thread->u.t.fsm;
+}
+
+/* Returns TRUE if FSM is started and not yet finished */
+
+SilcBool silc_fsm_is_started(void *fsm)
+{
+  SilcFSM f = fsm;
+
+  if (f->started && !f->finished)
+    return TRUE;
+
+  return FALSE;
 }
 
 /* Set context */

@@ -797,6 +797,20 @@ SilcSchedule silc_fsm_get_schedule(void *fsm);
  ***/
 SilcFSM silc_fsm_get_machine(SilcFSMThread thread);
 
+/****f* silcutil/SilcFSMAPI/silc_fsm_is_started
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_fsm_is_started(void *fsm);
+ *
+ * DESCRIPTION
+ *
+ *    Returns TRUE if the machine or thread `fsm' has been started and has
+ *    not been finished yet.  This function is used with both SilcFSM and
+ *    SilcFSMThread contexts.
+ *
+ ***/
+SilcBool silc_fsm_is_started(void *fsm);
 
 /* FSM Semaphores */
 

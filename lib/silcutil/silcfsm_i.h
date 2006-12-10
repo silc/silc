@@ -65,6 +65,7 @@ struct SilcFSMObject {
   unsigned int sema_timedout    : 1;    /* Set if waiting sema timedout */
   unsigned int synchronous      : 1;    /* Set if silc_fsm_start_sync called */
   unsigned int next_later       : 1;    /* Set if silc_fsm_next_later called */
+  unsigned int started          : 1;    /* Set when started and not finished */
 };
 
 /* Semaphore post context */
