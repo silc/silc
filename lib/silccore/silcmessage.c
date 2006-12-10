@@ -192,7 +192,7 @@ silc_message_signed_payload_encode(const unsigned char *message_payload,
     if (!pk)
       return NULL;
   }
-  pk_type = silc_pkcs_get_type(public_key);
+  pk_type = silc_pkcs_get_type(private_key);
 
   /* Encode the data to be signed */
   sign = silc_message_signed_encode_data(message_payload,
