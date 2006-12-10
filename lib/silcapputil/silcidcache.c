@@ -281,6 +281,7 @@ SilcBool silc_idcache_get_all(SilcIDCache cache, SilcList *ret_list)
   if (!silc_hash_table_count(cache->id_table))
     return FALSE;
 
+  silc_list_init(*ret_list, struct SilcIDCacheEntryStruct, next);
   silc_hash_table_foreach(cache->id_table, silc_idcache_get_all_foreach,
 			  ret_list);
 
@@ -301,6 +302,7 @@ SilcBool silc_idcache_find_by_id(SilcIDCache cache, void *id,
   if (!silc_hash_table_count(cache->id_table))
     return FALSE;
 
+  silc_list_init(*ret_list, struct SilcIDCacheEntryStruct, next);
   silc_hash_table_find_foreach(cache->id_table, id,
 			       silc_idcache_get_all_foreach, ret_list);
 
@@ -341,6 +343,7 @@ SilcBool silc_idcache_find_by_name(SilcIDCache cache, char *name,
   if (!silc_hash_table_count(cache->name_table))
     return FALSE;
 
+  silc_list_init(*ret_list, struct SilcIDCacheEntryStruct, next);
   silc_hash_table_find_foreach(cache->name_table, name,
 			       silc_idcache_get_all_foreach, ret_list);
 
