@@ -1,3 +1,21 @@
+Sun Dec 10 13:54:52 EET 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Removed silc_packet_[get|set]_ciphers and
+	  silc_packet_[get|set]_hmacs.  Added silc_packet_set_keys that
+	  handle REKEY_DONE packet sending in rekey.  Affected files
+	  are lib/silccore/silcpacket.[ch].
+
+	* Added silc_fsm_is_started.  Affected files are
+	  lib/silcutil/silcfsm.[ch].
+
+	* Added settings sign_channel_message, sign_private_message
+	  and key_exchange_rekey_pfs to SILC Client.  Added UDP transport
+	  support for key agreement in /KEY command. Affected files
+	  in apps/irssi/src/silc/core/.
+
+	* During SILC Client initialization forward log messages to
+	  stderr.   Affected files in apps/irssi/src/silc/core/.
+
 Thu Dec  7 19:07:21 EET 2006  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_ske_get_key_material.  Affected files are
@@ -30,7 +48,7 @@ Sat Nov 18 11:33:03 EET 2006  Pekka Riikonen <priikone@silcnet.org>
 
 Thu Nov  9 18:12:15 EET 2006  Pekka Riikonen <priikone@silcnet.org>
 
-	* Added silc_show_public_key_file to 
+	* Added silc_show_public_key_file to
 	  lib/silcapputil/silcapputil.[ch].
 
 	* Added SILC_STR_ADVANCE support for buffer unformatting.

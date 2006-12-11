@@ -6,6 +6,9 @@ inherit common
 define SILC_DIST_CLIENT
 define SILC_DIST_CLIENTLIB
 
+# XXX
+undef SILC_DIST_SFTP
+
 pre-hook distdir/pre-run
 post-process-dist-hook distdir/post-process-dist
 post-dist-hook distdir/post-dist

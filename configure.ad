@@ -1149,6 +1149,9 @@ AC_ARG_WITH(silcd,
     without_silcd=true
   ])
 #endif SILC_DIST_TOOLKIT
+#ifdef SILC_DIST_CLIENT
+AM_CONDITIONAL(with_irssi, true)
+#endif SILC_DIST_CLIENT
 #ifdef SILC_DIST_INPLACE
 without_irssi=false
 without_silcd=false
