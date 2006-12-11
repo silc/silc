@@ -165,22 +165,19 @@ typedef struct {
  *
  *    This context is returned after key exchange protocol to application
  *    in the completion callback.  Application may save it and use it later
- *    to perform the rekey with silc_ske_rekey_initiator_start and/or
+ *    to perform the rekey with silc_ske_rekey_initiator and/or
  *    silc_ske_rekey_responder functions.  If application does not
- *    need the context, it may free it with silc_free function.
+ *    need the context, it may free it with silc_ske_free_rekey_material
+ *    function.
  *
- *    Application may save application specific data to `user_context'.
- *
- * SOURCE
- */
+ ***/
 typedef struct {
-  void *user_context;		      /* Application specific data */
   unsigned char *send_enc_key;
+  char *hash;
   unsigned int enc_key_len  : 23;
   unsigned int ske_group    : 8;
   unsigned int pfs          : 1;
 } *SilcSKERekeyMaterial;
-/***/
 
 /****s* silcske/SilcSKEAPI/SilcSKEParams
  *
@@ -288,8 +285,8 @@ typedef void (*SilcSKEVerifyCb)(SilcSKE ske,
  *
  *    typedef void (*SilcSKECompletionCb)(SilcSKE ske,
  *                                        SilcSKEStatus status,
- *                                        SilcSKESecurityProperties prop,
- *                                        SilcSKEKeyMaterial keymat,
+ *                                        const SilcSKESecurityProperties prop,
+ *                                        const SilcSKEKeyMaterial keymat,
  *                                        SilcSKERekeyMaterial rekey,
  *                                        void *context);
  *
@@ -300,15 +297,21 @@ typedef void (*SilcSKEVerifyCb)(SilcSKE ske,
  *    successful the security properties `prop' that was negotiated in the
  *    protocol and the key material `keymat' that can be set into use by
  *    calling silc_ske_set_keys, and the rekey key material `rekey' which
- *    can be used later to start rekey protocol.  The `prop' will remain
- *    valid as long as `ske' is valid.  After `ske' is freed `prop' will
- *    become invalid.
+ *    can be used later to start rekey protocol.  The `prop' and `keymat'
+ *    will remain valid as long as `ske' is valid.  The `rekey' will remain
+ *    valid until silc_ske_free_rekey_material is called.  The application
+ *    must call it to free the `rekey'.
+ *
+ *    When doing rekey, this completion callback delivers the `keymat' and
+ *    new `rekey'.  The `prop' is ignored.  The `keymat' has already been set
+ *    to the packet stream associated with the `ske'.  Thus, after this
+ *    is called the new keys are in use.
  *
  ***/
 typedef void (*SilcSKECompletionCb)(SilcSKE ske,
 				    SilcSKEStatus status,
-				    SilcSKESecurityProperties prop,
-				    SilcSKEKeyMaterial keymat,
+				    const SilcSKESecurityProperties prop,
+				    const SilcSKEKeyMaterial keymat,
 				    SilcSKERekeyMaterial rekey,
 				    void *context);
 
@@ -493,7 +496,6 @@ silc_ske_rekey_initiator(SilcSKE ske,
 SilcAsyncOperation
 silc_ske_rekey_responder(SilcSKE ske,
 			 SilcPacketStream stream,
-			 SilcBuffer ke_payload,
 			 SilcSKERekeyMaterial rekey);
 
 /****f* silcske/SilcSKEAPI/silc_ske_set_keys
@@ -616,6 +618,20 @@ silc_ske_process_key_material_data(unsigned char *data,
  *
  ***/
 void silc_ske_free_key_material(SilcSKEKeyMaterial key);
+
+/****f* silcske/SilcSKEAPI/silc_ske_free_key_material
+ *
+ * SYNOPSIS
+ *
+ *    void silc_ske_free_rekey_material(SilcSKERekeyMaterial rekey);
+ *
+ * DESCRIPTION
+ *
+ *    Utility function to free the rekey material returned in the
+ *    SilcSKECompletionCb callback.
+ *
+ ***/
+void silc_ske_free_rekey_material(SilcSKERekeyMaterial rekey);
 
 /****f* silcske/SilcSKEAPI/silc_ske_map_status
  *

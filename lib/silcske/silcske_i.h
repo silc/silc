@@ -87,10 +87,11 @@ struct SilcSKEStruct {
     SilcUInt32 data_len;
   } retrans;
 
-  unsigned int aborted    : 1;
-  unsigned int freed      : 1;
-  unsigned int responder  : 1;
-  unsigned int running    : 1;
+  unsigned int aborted    : 1;        /* Set when SKE aborted */
+  unsigned int freed      : 1;	      /* Set when freed during session */
+  unsigned int responder  : 1;	      /* Set when we are responder side */
+  unsigned int running    : 1;	      /* Set when SKE is running */
+  unsigned int rekeying   : 1;	      /* Set when rekeying */
 };
 
 #endif /* SILCSKE_I_H */
