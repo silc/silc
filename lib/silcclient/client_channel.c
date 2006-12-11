@@ -763,6 +763,4 @@ void silc_client_empty_channel(SilcClient client,
     silc_free(chu);
   }
   silc_hash_table_list_reset(&htl);
-
-  silc_hash_table_free(channel->user_list);
 }

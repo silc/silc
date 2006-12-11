@@ -29,5 +29,9 @@ SILC_FSM_STATE(silc_client_st_connect_auth);
 SILC_FSM_STATE(silc_client_st_connect_auth_start);
 SILC_FSM_STATE(silc_client_st_connected);
 SILC_FSM_STATE(silc_client_st_connect_error);
+SILC_FSM_STATE(silc_client_st_rekey);
+
+SILC_TASK_CALLBACK(silc_client_connect_timeout);
+SILC_TASK_CALLBACK(silc_client_rekey_timer);
 
 #endif /* CLIENT_CONNECT_H */

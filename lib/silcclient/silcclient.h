@@ -643,10 +643,6 @@ typedef struct {
      in the callbacks to protect application specific data. */
   SilcBool threads;
 
-  /* Rekey timeout in seconds. The client will perform rekey in this
-     time interval. If set to zero, the default value will be used. */
-  unsigned int rekey_secs;
-
   /* Connection authentication method request timeout. If server does not
      reply back the current authentication method when we've requested it
      in this time interval we'll assume the reply will not come at all.
@@ -926,6 +922,12 @@ typedef struct {
   /* Connection timeout.  If non-zero, the connection will timeout unless
      the SILC connection is completed in the specified amount of time. */
   SilcUInt32 timeout_secs;
+
+  /* Rekey timeout in seconds.  The client will perform rekey in this
+     time interval.  If set to zero, the default value will be used
+     (3600 seconds, 1 hour). */
+  unsigned int rekey_secs;
+
 } SilcClientConnectionParams;
 /***/
 

@@ -182,10 +182,12 @@ struct SilcClientConnectionInternalStruct {
   unsigned int connect            : 1;	 /* Connect remote host */
   unsigned int disconnected       : 1;	 /* Disconnected by remote host */
   unsigned int key_exchange       : 1;   /* Start key exchange */
+  unsigned int rekeying           : 1;   /* Start rekey */
 
   /* Flags */
   unsigned int verbose            : 1;   /* Notify application */
   unsigned int registering        : 1;	 /* Set when registering to network */
+  unsigned int rekey_responder    : 1;   /* Set when rekeying as responder */
 
   SilcClientAway *away;
   SilcClientConnAuthRequest connauth;
@@ -219,6 +221,8 @@ SilcUInt16 silc_client_command_send_argv(SilcClient client,
 					 SilcUInt32 *argv_lens,
 					 SilcUInt32 *argv_types);
 void silc_client_command_free(SilcClientCommandContext cmd);
+void silc_client_fsm_destructor(SilcFSM fsm, void *fsm_context,
+				void *destructor_context);
 
 void silc_client_ftp(SilcClient client, SilcClientConnection conn,
 		     SilcPacket packet);

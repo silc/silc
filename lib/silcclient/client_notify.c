@@ -496,6 +496,7 @@ SILC_FSM_STATE(silc_client_notify_signoff)
   NOTIFY(client, conn, type, client_entry, tmp);
 
   /* Delete client */
+  silc_client_remove_from_channels(client, conn, client_entry);
   silc_client_del_client(client, conn, client_entry);
   silc_client_unref_client(client, conn, client_entry);
 
@@ -1136,7 +1137,6 @@ SILC_FSM_STATE(silc_client_notify_kicked)
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry, client_entry2;
   SilcChannelEntry channel = NULL;
-  SilcChannelUser chu;
   unsigned char *tmp;
   SilcUInt32 tmp_len;
   SilcID id;
@@ -1194,14 +1194,8 @@ SILC_FSM_STATE(silc_client_notify_kicked)
   tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
 
   /* Remove kicked client from channel */
-  if (client_entry != conn->local_entry) {
-    chu = silc_client_on_channel(channel, client_entry);
-    if (chu) {
-      silc_hash_table_del(client_entry->channels, channel);
-      silc_hash_table_del(channel->user_list, client_entry);
-      silc_free(chu);
-    }
-  }
+  if (client_entry != conn->local_entry)
+    silc_client_remove_from_channel(client, conn, channel, client_entry);
 
   /* Notify application. */
   NOTIFY(client, conn, type, client_entry, tmp, client_entry2, channel);
@@ -1210,6 +1204,7 @@ SILC_FSM_STATE(silc_client_notify_kicked)
   if (client_entry == conn->local_entry) {
     if (conn->current_channel == channel)
       conn->current_channel = NULL;
+    silc_client_empty_channel(client, conn, channel);
     silc_client_del_channel(client, conn, channel);
   }
 
@@ -1307,8 +1302,10 @@ SILC_FSM_STATE(silc_client_notify_killed)
   NOTIFY(client, conn, type, client_entry, comment, id.type, entry);
 
   /* Delete the killed client */
-  if (client_entry != conn->local_entry)
+  if (client_entry != conn->local_entry) {
+    silc_client_remove_from_channels(client, conn, client_entry);
     silc_client_del_client(client, conn, client_entry);
+  }
 
  out:
   silc_client_unref_client(client, conn, client_entry);
@@ -1341,7 +1338,7 @@ SILC_FSM_STATE(silc_client_notify_server_signoff)
   SilcID id;
   int i;
 
-  SILC_LOG_DEBUG(("Notify: SIGNOFF"));
+  SILC_LOG_DEBUG(("Notify: SERVER_SIGNOFF"));
 
   clients = silc_dlist_init();
   if (!clients)
@@ -1364,8 +1361,10 @@ SILC_FSM_STATE(silc_client_notify_server_signoff)
 
   /* Delete the clients */
   silc_dlist_start(clients);
-  while ((client_entry = silc_dlist_get(clients)))
+  while ((client_entry = silc_dlist_get(clients))) {
+    silc_client_remove_from_channels(client, conn, client_entry);
     silc_client_del_client(client, conn, client_entry);
+  }
 
  out:
   /** Notify processed */
@@ -1406,6 +1405,7 @@ SILC_FSM_STATE(silc_client_notify_error)
       goto out;
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
     if (client_entry) {
+      silc_client_remove_from_channels(client, conn, client_entry);
       silc_client_del_client(client, conn, client_entry);
       silc_client_unref_client(client, conn, client_entry);
     }
@@ -1516,8 +1516,10 @@ SILC_FSM_STATE(silc_client_notify_watch)
 	   ntype == SILC_NOTIFY_TYPE_KILLED)
     del_client = TRUE;
 
-  if (del_client)
+  if (del_client) {
+    silc_client_remove_from_channels(client, conn, client_entry);
     silc_client_del_client(client, conn, client_entry);
+  }
 
   if (public_key)
     silc_pkcs_public_key_free(public_key);

@@ -114,8 +114,9 @@ static void silc_client_command_process_error(SilcClientCommandContext cmd,
 
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
     if (client_entry) {
-      silc_client_unref_client(client, conn, client_entry);
+      silc_client_remove_from_channels(client, conn, client_entry);
       silc_client_del_client(client, conn, client_entry);
+      silc_client_unref_client(client, conn, client_entry);
     }
   }
 }
@@ -175,11 +176,14 @@ SILC_FSM_STATE(silc_client_command_reply)
 
 SILC_FSM_STATE(silc_client_command_reply_wait)
 {
+  SilcClientCommandContext cmd = fsm_context;
+
   SILC_LOG_DEBUG(("Wait for command reply"));
 
   /** Wait for command reply */
   silc_fsm_set_state_context(fsm, NULL);
-  silc_fsm_next_later(fsm, silc_client_command_reply_timeout, 20, 0);
+  silc_fsm_next_later(fsm, silc_client_command_reply_timeout,
+		      cmd->cmd != SILC_COMMAND_PING ? 25 : 60, 0);
   return SILC_FSM_WAIT;
 }
 
@@ -899,6 +903,7 @@ SILC_FSM_STATE(silc_client_command_reply_kill)
 
   /* Remove the client from all channels and free it */
   if (client_entry) {
+    silc_client_remove_from_channels(client, conn, client_entry);
     silc_client_del_client(client, conn, client_entry);
     silc_client_unref_client(client, conn, client_entry);
   }
@@ -1731,6 +1736,7 @@ SILC_FSM_STATE(silc_client_command_reply_leave)
   silc_client_command_callback(cmd, channel);
 
   /* Now delete the channel. */
+  silc_client_empty_channel(client, conn, channel);
   silc_client_del_channel(client, conn, channel);
 
  out:

@@ -37,12 +37,12 @@ SilcBool silc_client_send_private_message(SilcClient client,
   SilcBuffer buffer;
   SilcBool ret;
 
-  SILC_LOG_DEBUG(("Sending private message"));
-
   if (!client || !conn || !client_entry)
     return FALSE;
   if (flags & SILC_MESSAGE_FLAG_SIGNED && !hash)
     return FALSE;
+
+  SILC_LOG_DEBUG(("Sending private message"));
 
   /* Encode private message payload */
   buffer =

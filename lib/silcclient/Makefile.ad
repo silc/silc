@@ -39,6 +39,6 @@ include_HEADERS= 	\
 SILC_EXTRA_DIST = client_ops_example.c
 #endif SILC_DIST_TOOLKIT
 
-EXTRA_DIST = *.h $(SILC_EXTRA_DIST)
+EXTRA_DIST = *.h tests $(SILC_EXTRA_DIST)
 
 include $(top_srcdir)/Makefile.defines.in

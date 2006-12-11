@@ -841,13 +841,10 @@ SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
   if (!client_entry)
     return FALSE;
 
-  SILC_LOG_DEBUG(("Client %p refcnt %d->%d", client_entry,
-		  silc_atomic_get_int8(&client_entry->internal.refcnt),
-		  silc_atomic_get_int8(&client_entry->internal.refcnt) - 1));
   if (silc_atomic_sub_int8(&client_entry->internal.refcnt, 1) > 0)
     return FALSE;
 
-  SILC_LOG_DEBUG(("Deleting client %p"));
+  SILC_LOG_DEBUG(("Deleting client %p", client_entry));
 
   silc_mutex_lock(conn->internal->lock);
   ret = silc_idcache_del_by_context(conn->internal->client_cache,
@@ -881,13 +878,12 @@ void silc_client_ref_client(SilcClient client, SilcClientConnection conn,
 void silc_client_unref_client(SilcClient client, SilcClientConnection conn,
 			      SilcClientEntry client_entry)
 {
-  if (client_entry)
+  if (client_entry) {
     SILC_LOG_DEBUG(("Client %p refcnt %d->%d", client_entry,
 		    silc_atomic_get_int8(&client_entry->internal.refcnt),
 		    silc_atomic_get_int8(&client_entry->internal.refcnt) - 1));
-  if (client_entry &&
-      silc_atomic_sub_int8(&client_entry->internal.refcnt, 1) == 0)
     silc_client_del_client(client, conn, client_entry);
+  }
 }
 
 /* Free client entry list */
@@ -1359,6 +1355,7 @@ SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
     return FALSE;
 
   silc_client_empty_channel(client, conn, channel);
+  silc_hash_table_free(channel->user_list);
   silc_free(channel->channel_name);
   silc_free(channel->topic);
   if (channel->founder_key)
@@ -1420,6 +1417,9 @@ void silc_client_ref_channel(SilcClient client, SilcClientConnection conn,
 			     SilcChannelEntry channel_entry)
 {
   silc_atomic_add_int8(&channel_entry->internal.refcnt, 1);
+  SILC_LOG_DEBUG(("Channel %p refcnt %d->%d", channel_entry,
+		  silc_atomic_get_int8(&channel_entry->internal.refcnt) - 1,
+		  silc_atomic_get_int8(&channel_entry->internal.refcnt)));
 }
 
 /* Release reference of channel entry */
@@ -1427,9 +1427,13 @@ void silc_client_ref_channel(SilcClient client, SilcClientConnection conn,
 void silc_client_unref_channel(SilcClient client, SilcClientConnection conn,
 			       SilcChannelEntry channel_entry)
 {
-  if (channel_entry &&
-      silc_atomic_sub_int8(&channel_entry->internal.refcnt, 1) == 0)
+  if (channel_entry) {
+    SILC_LOG_DEBUG(("Channel %p refcnt %d->%d", channel_entry,
+		    silc_atomic_get_int8(&channel_entry->internal.refcnt),
+		    silc_atomic_get_int8(&channel_entry->internal.refcnt)
+		    - 1));
     silc_client_del_channel(client, conn, channel_entry);
+  }
 }
 
 /* Free channel entry list */
@@ -1787,9 +1791,7 @@ void silc_client_ref_server(SilcClient client, SilcClientConnection conn,
 void silc_client_unref_server(SilcClient client, SilcClientConnection conn,
 			      SilcServerEntry server_entry)
 {
-  if (server_entry &&
-      silc_atomic_sub_int8(&server_entry->internal.refcnt, 1) == 0)
-    silc_client_del_server(client, conn, server_entry);
+  silc_client_del_server(client, conn, server_entry);
 }
 
 /* Free server entry list */

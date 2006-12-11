@@ -78,7 +78,6 @@ static SilcBool silc_client_packet_receive(SilcPacketEngine engine,
   case SILC_PACKET_KEY_EXCHANGE:
   case SILC_PACKET_KEY_EXCHANGE_1:
   case SILC_PACKET_KEY_EXCHANGE_2:
-  case SILC_PACKET_REKEY:
   case SILC_PACKET_REKEY_DONE:
   case SILC_PACKET_CONNECTION_AUTH:
   case SILC_PACKET_CONNECTION_AUTH_REQUEST:
@@ -113,7 +112,20 @@ static void silc_client_packet_eos(SilcPacketEngine engine,
 				   void *callback_context,
 				   void *stream_context)
 {
-  SILC_LOG_DEBUG(("End of stream received"));
+  SilcClientConnection conn = stream_context;
+  SilcClient client = conn->client;
+
+  SILC_LOG_DEBUG(("Remote disconnected connection"));
+
+  /* Call connection callback */
+  conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED, 0, NULL,
+		 conn->callback_context);
+
+  /* Signal to close connection */
+  if (!conn->internal->disconnected) {
+    conn->internal->disconnected = TRUE;
+    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  }
 }
 
 /* Packet engine callback to indicate error */
@@ -124,7 +136,7 @@ static void silc_client_packet_error(SilcPacketEngine engine,
 				     void *callback_context,
 				     void *stream_context)
 {
-
+  /* Nothing */
 }
 
 /* Packet stream callbacks */
@@ -211,6 +223,17 @@ SILC_FSM_STATE(silc_client_connection_st_run)
     return SILC_FSM_CONTINUE;
   }
 
+  if (conn->internal->rekeying) {
+    SILC_LOG_DEBUG(("Event: rekey"));
+    conn->internal->rekeying = FALSE;
+
+    /*** Event: rekey */
+    silc_fsm_thread_init(thread, &conn->internal->fsm, conn,
+			 NULL, NULL, FALSE);
+    silc_fsm_start_sync(thread, silc_client_st_rekey);
+    return SILC_FSM_CONTINUE;
+  }
+
   if (conn->internal->disconnected) {
     /** Event: disconnected */
     SILC_LOG_DEBUG(("Event: disconnected"));
@@ -229,6 +252,7 @@ SILC_FSM_STATE(silc_client_connection_st_run)
 
 SILC_FSM_STATE(silc_client_connection_st_packet)
 {
+  SilcClientConnection conn = fsm_context;
   SilcPacket packet = state_context;
 
   SILC_LOG_DEBUG(("Parsing %s packet", silc_get_packet_name(packet->type)));
@@ -299,6 +323,16 @@ SILC_FSM_STATE(silc_client_connection_st_packet)
     /* Reply to connection authentication request to resolve authentication
        method from server. */
     //    silc_client_connection_auth_request(client, conn, packet);
+    break;
+
+  case SILC_PACKET_REKEY:
+    /* Signal to start rekey */
+    conn->internal->rekey_responder = TRUE;
+    conn->internal->rekeying = TRUE;
+    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+
+    silc_packet_free(packet);
+    return SILC_FSM_FINISH;
     break;
 
   default:
@@ -471,8 +505,17 @@ silc_client_add_connection(SilcClient client,
     silc_free(conn->internal);
     return NULL;
   }
+
+  /* Set parameters */
   if (params)
     conn->internal->params = *params;
+  if (!conn->internal->params.rekey_secs)
+    conn->internal->params.rekey_secs = 3600;
+#ifndef SILC_DIST_INPLACE
+  if (conn->internal->params.rekey_secs < 300)
+    conn->internal->params.rekey_secs = 300;
+#endif /* SILC_DIST_INPLACE */
+
   conn->internal->verbose = TRUE;
   silc_list_init(conn->internal->pending_commands,
 		 struct SilcClientCommandContextStruct, next);
@@ -503,6 +546,8 @@ silc_client_add_connection(SilcClient client,
   }
   silc_fsm_start(thread, silc_client_connection_st_start);
 
+  SILC_LOG_DEBUG(("New connection %p", conn));
+
   return conn;
 }
 
@@ -518,21 +563,25 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
 
   SILC_LOG_DEBUG(("Freeing connection %p", conn));
 
+  silc_schedule_task_del_by_context(conn->internal->schedule, conn);
+
   /* Free all cache entries */
-  if (silc_idcache_get_all(conn->internal->client_cache, &list)) {
-    silc_list_start(list);
-    while ((entry = silc_list_get(list)))
-      silc_client_del_client(client, conn, entry->context);
-  }
-  if (silc_idcache_get_all(conn->internal->channel_cache, &list)) {
-    silc_list_start(list);
-    while ((entry = silc_list_get(list)))
-      silc_client_del_channel(client, conn, entry->context);
-  }
   if (silc_idcache_get_all(conn->internal->server_cache, &list)) {
     silc_list_start(list);
     while ((entry = silc_list_get(list)))
       silc_client_del_server(client, conn, entry->context);
+  }
+  if (silc_idcache_get_all(conn->internal->channel_cache, &list)) {
+    silc_list_start(list);
+    while ((entry = silc_list_get(list))) {
+      silc_client_empty_channel(client, conn, entry->context);
+      silc_client_del_channel(client, conn, entry->context);
+    }
+  }
+  if (silc_idcache_get_all(conn->internal->client_cache, &list)) {
+    silc_list_start(list);
+    while ((entry = silc_list_get(list)))
+      silc_client_del_client(client, conn, entry->context);
   }
 
   /* Free ID caches */
@@ -801,8 +850,6 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
 
   silc_protocol_free(protocol);
   silc_free(ctx->auth_data);
-  if (ctx->ske)
-    silc_ske_free(ctx->ske);
   silc_socket_free(ctx->sock);
   silc_free(ctx);
   conn->sock->protocol = NULL;
@@ -812,8 +859,6 @@ SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
   silc_protocol_free(protocol);
   silc_free(ctx->auth_data);
   silc_free(ctx->dest_id);
-  if (ctx->ske)
-    silc_ske_free(ctx->ske);
   conn->sock->protocol = NULL;
   silc_socket_free(ctx->sock);
 
@@ -992,9 +1037,6 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
 
   if (params)
     memcpy(new_client->internal->params, params, sizeof(*params));
-
-  if (!new_client->internal->params->rekey_secs)
-    new_client->internal->params->rekey_secs = 3600;
 
   if (!new_client->internal->params->connauth_request_secs)
     new_client->internal->params->connauth_request_secs = 2;

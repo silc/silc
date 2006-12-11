@@ -21,8 +21,6 @@
 #include "silcclient.h"
 #include "client_internal.h"
 
-/************************** Types and definitions ***************************/
-
 /************************ Static utility functions **************************/
 
 /* Callback called after connected to remote host */
@@ -178,6 +176,8 @@ static void silc_client_ke_completion(SilcSKE ske,
 				 conn->remote_host,
 				 silc_ske_map_status(status));
 
+    silc_ske_free_rekey_material(rekey);
+
     silc_fsm_next(fsm, silc_client_st_connect_error);
     SILC_FSM_CALL_CONTINUE(fsm);
     return;
@@ -185,7 +185,7 @@ static void silc_client_ke_completion(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Setting keys into use"));
 
-  /* Set the keys into use.  Data will be encrypted after this. */
+  /* Allocate the cipher and HMAC contexts */
   if (!silc_ske_set_keys(ske, keymat, prop, &send_key, &receive_key,
 			 &hmac_send, &hmac_receive, &conn->internal->hash)) {
     /* Error setting keys */
@@ -200,18 +200,80 @@ static void silc_client_ke_completion(SilcSKE ske,
     conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_KE, 0, NULL,
 		   conn->callback_context);
 
+    silc_ske_free_rekey_material(rekey);
+
     silc_fsm_next(fsm, silc_client_st_connect_error);
     SILC_FSM_CALL_CONTINUE(fsm);
     return;
   }
 
-  silc_packet_set_ciphers(conn->stream, send_key, receive_key);
-  silc_packet_set_hmacs(conn->stream, hmac_send, hmac_receive);
+  /* Set the keys into the packet stream.  After this call packets will be
+     encrypted with these keys. */
+  if (!silc_packet_set_keys(conn->stream, send_key, receive_key, hmac_send,
+			    hmac_receive, FALSE)) {
+    /* Error setting keys */
+    SILC_LOG_DEBUG(("Could not set keys into use"));
+
+    if (conn->internal->verbose)
+      client->internal->ops->say(
+		       client, conn, SILC_CLIENT_MESSAGE_ERROR,
+		       "Error during key exchange with %s: cannot use keys",
+		       conn->remote_host);
+
+    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_KE, 0, NULL,
+		   conn->callback_context);
+
+    silc_ske_free_rekey_material(rekey);
+
+    silc_fsm_next(fsm, silc_client_st_connect_error);
+    SILC_FSM_CALL_CONTINUE(fsm);
+    return;
+  }
 
   conn->internal->rekey = rekey;
 
+  SILC_LOG_DEBUG(("Key Exchange completed"));
+
   /* Key exchange done */
   SILC_FSM_CALL_CONTINUE(fsm);
+}
+
+/* Rekey protocol completion callback */
+
+static void silc_client_rekey_completion(SilcSKE ske,
+					 SilcSKEStatus status,
+					 SilcSKESecurityProperties prop,
+					 SilcSKEKeyMaterial keymat,
+					 SilcSKERekeyMaterial rekey,
+					 void *context)
+{
+  SilcFSMThread fsm = context;
+  SilcClientConnection conn = silc_fsm_get_context(fsm);
+  SilcClient client = conn->client;
+
+  conn->internal->op = NULL;
+  if (status != SILC_SKE_STATUS_OK) {
+    /* Rekey failed */
+    SILC_LOG_DEBUG(("Error during rekey with %s: %s (%d)",
+		    conn->remote_host, silc_ske_map_status(status), status));
+
+    if (conn->internal->verbose)
+      client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+				 "Error during rekey with %s: %s",
+				 conn->remote_host,
+				 silc_ske_map_status(status));
+
+    silc_fsm_finish(fsm);
+    return;
+  }
+
+  silc_ske_free_rekey_material(conn->internal->rekey);
+  conn->internal->rekey = rekey;
+
+  SILC_LOG_DEBUG(("Rekey completed"));
+
+  /* Rekey done */
+  silc_fsm_finish(fsm);
 }
 
 /* Callback called by application to return authentication data */
@@ -261,6 +323,8 @@ static void silc_client_connect_auth_completion(SilcConnAuth connauth,
   SILC_FSM_CALL_CONTINUE(fsm);
 }
 
+/*************************** Connect remote host ****************************/
+
 /* Connection timeout callback */
 
 SILC_TASK_CALLBACK(silc_client_connect_timeout)
@@ -276,8 +340,6 @@ SILC_TASK_CALLBACK(silc_client_connect_timeout)
   silc_fsm_next(&conn->internal->event_thread, silc_client_st_connect_error);
   silc_fsm_continue_sync(&conn->internal->event_thread);
 }
-
-/*************************** Connect remote host ****************************/
 
 /* Creates a connection to remote host */
 
@@ -490,7 +552,7 @@ SILC_FSM_STATE(silc_client_st_connect_auth_start)
   /* Allocate connection authentication protocol */
   connauth = silc_connauth_alloc(conn->internal->schedule,
 				 conn->internal->ske,
-				 client->internal->params->rekey_secs);
+				 conn->internal->params.rekey_secs);
   if (!connauth) {
     /** Out of memory */
     conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_AUTH, 0, NULL,
@@ -519,6 +581,14 @@ SILC_FSM_STATE(silc_client_st_connected)
 
   SILC_LOG_DEBUG(("Connection established"));
 
+  silc_ske_free(conn->internal->ske);
+  conn->internal->ske = NULL;
+
+  /* Install rekey timer */
+  silc_schedule_task_add_timeout(conn->internal->schedule,
+				 silc_client_rekey_timer, conn,
+				 conn->internal->params.rekey_secs, 0);
+
   /* If we connected to server, now register to network. */
   if (conn->type == SILC_CONN_SERVER &&
       !conn->internal->params.no_authentication) {
@@ -536,7 +606,8 @@ SILC_FSM_STATE(silc_client_st_connected)
     return SILC_FSM_CONTINUE;
   }
 
-  silc_schedule_task_del_by_context(conn->internal->schedule, conn);
+  silc_schedule_task_del_by_all(conn->internal->schedule, 0,
+				silc_client_connect_timeout, conn);
 
   /* Call connection callback */
   conn->callback(client, conn, SILC_CLIENT_CONN_SUCCESS, 0, NULL,
@@ -551,13 +622,71 @@ SILC_FSM_STATE(silc_client_st_connect_error)
 {
   SilcClientConnection conn = fsm_context;
 
+  if (conn->internal->ske) {
+    silc_ske_free(conn->internal->ske);
+    conn->internal->ske = NULL;
+  }
+
   /* Signal to close connection */
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
     SILC_FSM_SEMA_POST(&conn->internal->wait_event);
   }
 
-  silc_schedule_task_del_by_context(conn->internal->schedule, conn);
+  silc_schedule_task_del_by_all(conn->internal->schedule, 0,
+				silc_client_connect_timeout, conn);
 
   return SILC_FSM_FINISH;
+}
+
+/****************************** Connect rekey *******************************/
+
+/* Connection rekey timer callback */
+
+SILC_TASK_CALLBACK(silc_client_rekey_timer)
+{
+  SilcClientConnection conn = context;
+
+  /* Signal to start rekey */
+  conn->internal->rekeying = TRUE;
+  SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+
+  /* Reinstall rekey timer */
+  silc_schedule_task_add_timeout(conn->internal->schedule,
+				 silc_client_rekey_timer, conn,
+				 conn->internal->params.rekey_secs, 0);
+}
+
+/* Performs rekey */
+
+SILC_FSM_STATE(silc_client_st_rekey)
+{
+  SilcClientConnection conn = fsm_context;
+  SilcClient client = conn->client;
+
+  SILC_LOG_DEBUG(("Rekey"));
+
+  /* Allocate SKE */
+  conn->internal->ske =
+    silc_ske_alloc(client->rng, conn->internal->schedule,
+		   conn->internal->params.repository,
+		   conn->public_key, conn->private_key, fsm);
+  if (!conn->internal->ske)
+    return SILC_FSM_FINISH;
+
+  /* Set SKE callbacks */
+  silc_ske_set_callbacks(conn->internal->ske, NULL,
+			 silc_client_rekey_completion, fsm);
+
+  /** Perform rekey */
+  if (!conn->internal->rekey_responder)
+    SILC_FSM_CALL(conn->internal->op = silc_ske_rekey_initiator(
+						    conn->internal->ske,
+						    conn->stream,
+						    conn->internal->rekey));
+  else
+    SILC_FSM_CALL(conn->internal->op = silc_ske_rekey_responder(
+						    conn->internal->ske,
+						    conn->stream,
+						    conn->internal->rekey));
 }

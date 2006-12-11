@@ -49,6 +49,26 @@ silc_client_register_command_called(SilcClient client,
 				    void *context,
 				    va_list ap)
 {
+  return FALSE;
+}
+
+/* Continues resuming after resolving.  Continue after last reply. */
+
+static SilcBool
+silc_client_resume_continue(SilcClient client,
+			    SilcClientConnection conn,
+			    SilcCommand command,
+			    SilcStatus status,
+			    SilcStatus error,
+			    void *context,
+			    va_list ap)
+{
+  if (status == SILC_STATUS_OK || status == SILC_STATUS_LIST_END ||
+      SILC_STATUS_IS_ERROR(status)) {
+    silc_fsm_continue(&conn->internal->event_thread);
+    return FALSE;
+  }
+
   return TRUE;
 }
 
@@ -179,7 +199,7 @@ SILC_FSM_STATE(silc_client_st_register_complete)
     /** Resend registering packet */
     silc_fsm_next(fsm, silc_client_st_register);
     conn->internal->retry_timer = ((conn->internal->retry_timer *
-				   SILC_CLIENT_RETRY_MUL) +
+				    SILC_CLIENT_RETRY_MUL) +
 				   (silc_rng_get_rn16(client->rng) %
 				    SILC_CLIENT_RETRY_RAND));
     return SILC_FSM_CONTINUE;
@@ -213,7 +233,8 @@ SILC_FSM_STATE(silc_client_st_register_complete)
 		 conn->callback_context);
 
   conn->internal->registering = FALSE;
-  silc_schedule_task_del_by_context(conn->internal->schedule, conn);
+  silc_schedule_task_del_by_all(conn->internal->schedule, 0,
+				silc_client_connect_timeout, conn);
 
   return SILC_FSM_FINISH;
 }
@@ -237,11 +258,11 @@ SILC_FSM_STATE(silc_client_st_register_error)
   conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
 		 conn->callback_context);
 
-  silc_schedule_task_del_by_context(conn->internal->schedule, conn);
+  silc_schedule_task_del_by_all(conn->internal->schedule, 0,
+				silc_client_connect_timeout, conn);
 
   return SILC_FSM_FINISH;
 }
-
 
 /************************* Resume detached session **************************/
 
@@ -310,9 +331,9 @@ SILC_FSM_STATE(silc_client_st_resume)
   /* Send RESUME_CLIENT packet to resume to network */
   if (!silc_packet_send_va(conn->stream, SILC_PACKET_RESUME_CLIENT, 0,
 			   SILC_STR_UI_SHORT(id_len),
-			   SILC_STR_UI_XNSTRING(id, id_len),
-			   SILC_STR_UI_XNSTRING(silc_buffer_data(auth),
-						silc_buffer_len(auth)),
+			   SILC_STR_DATA(id, id_len),
+			   SILC_STR_DATA(silc_buffer_data(auth),
+					 silc_buffer_len(auth)),
 			   SILC_STR_END)) {
     /** Error sending packet */
     silc_fsm_next(fsm, silc_client_st_resume_error);
@@ -321,17 +342,20 @@ SILC_FSM_STATE(silc_client_st_resume)
 
   /** Wait for new ID */
   conn->internal->registering = TRUE;
-  silc_fsm_next_later(fsm, silc_client_st_resume_resolve, 15, 0);
+  silc_fsm_next_later(fsm, silc_client_st_resume_resolve_channels, 15, 0);
   return SILC_FSM_WAIT;
 }
 
-/* Resolve the old session information */
+/* Resolve the old session information, user mode and joined channels. */
 
-SILC_FSM_STATE(silc_client_st_resume_resolve)
+SILC_FSM_STATE(silc_client_st_resume_resolve_channels)
 {
-#if 0
   SilcClientConnection conn = fsm_context;
+  SilcClient client = conn->client;
   SilcClientResumeSession resume = state_context;
+  SilcUInt32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
+  unsigned char **res_argv = NULL;
+  int i;
 
   if (!conn->local_id) {
     /** Timeout, ID not received */
@@ -340,37 +364,77 @@ SILC_FSM_STATE(silc_client_st_resume_resolve)
     return SILC_FSM_CONTINUE;
   }
 
+  /* First, send UMODE command to get our own user mode in the network */
+  SILC_LOG_DEBUG(("Resolving user mode"));
+  silc_client_command_send(client, conn, SILC_COMMAND_UMODE,
+			   silc_client_register_command_called, NULL,
+			   1, 1, silc_buffer_data(conn->internal->local_idp),
+			   silc_buffer_len(conn->internal->local_idp));
 
-  for (i = 0; i < ch_count; i++) {
-    char *channel;
+  /* Second, send IDENTIFY command for all channels we know about.  These
+     are the channels we've joined to according our detachment data. */
+  for (i = 0; i < resume->channel_count; i++) {
+    SilcChannelID channel_id;
     unsigned char *chid;
     SilcUInt16 chid_len;
-    SilcUInt32 ch_mode;
-    SilcChannelID *channel_id;
-    SilcChannelEntry channel_entry;
+    SilcBuffer idp;
 
-    len = silc_buffer_unformat(&detach,
-			       SILC_STR_UI16_NSTRING_ALLOC(&channel, NULL),
-			       SILC_STR_UI16_NSTRING(&chid, &chid_len),
-			       SILC_STR_UI_INT(&ch_mode),
-			       SILC_STR_END);
-    if (len == -1)
-      return FALSE;
+    if (silc_buffer_unformat(&resume->detach,
+			     SILC_STR_ADVANCE,
+			     SILC_STR_UI16_NSTRING(NULL, NULL),
+			     SILC_STR_UI16_NSTRING(&chid, &chid_len),
+			     SILC_STR_UI_INT(NULL),
+			     SILC_STR_END) < 0)
+      continue;
 
-    /* Add new channel */
-    channel_id = silc_id_str2id(chid, chid_len, SILC_ID_CHANNEL);
-    channel_entry = silc_client_get_channel_by_id(client, conn, channel_id);
-    if (!channel_entry) {
-      channel_entry = silc_client_add_channel(client, conn, channel, ch_mode,
-					      channel_id);
-    } else {
-      silc_free(channel);
-      silc_free(channel_id);
-    }
-
-    silc_buffer_pull(&detach, len);
+    idp = silc_id_payload_encode_data(chid, chid_len, SILC_ID_CHANNEL);
+    if (!idp)
+      continue;
+    res_argv = silc_realloc(res_argv, sizeof(*res_argv) * (res_argc + 1));
+    res_argv_lens = silc_realloc(res_argv_lens, sizeof(*res_argv_lens) *
+				 (res_argc + 1));
+    res_argv_types = silc_realloc(res_argv_types, sizeof(*res_argv_types) *
+				  (res_argc + 1));
+    res_argv[res_argc] = silc_buffer_steal(idp, &res_argv_lens[res_argc]);
+    res_argv_types[res_argc] = res_argc + 5;
+    res_argc++;
+    silc_buffer_free(idp);
   }
-#endif /* 0 */
+
+  /* Send IDENTIFY command */
+  SILC_LOG_DEBUG(("Resolving joined channels"));
+  silc_client_command_send_argv(client, conn, SILC_COMMAND_IDENTIFY,
+				silc_client_resume_continue, conn,
+				res_argc, res_argv, res_argv_lens,
+				res_argv_types);
+
+  for (i = 0; i < resume->channel_count; i++)
+    silc_free(res_argv[i]);
+  silc_free(res_argv);
+  silc_free(res_argv_lens);
+  silc_free(res_argv_types);
+
+  /** Wait for channels */
+  silc_fsm_next(fsm, silc_client_st_resume_resolve_cmodes);
+  return SILC_FSM_WAIT;
+}
+
+/* Resolve joined channel modes. */
+
+SILC_FSM_STATE(silc_client_st_resume_resolve_cmodes)
+{
+  SilcClientConnection conn = fsm_context;
+  SilcClientResumeSession resume = state_context;
+  SilcHashTableList htl;
+  SilcChannelUser chu;
+
+  SILC_LOG_DEBUG(("Resolving joined channel modes"));
+
+  silc_hash_table_list(conn->local_entry->channels, &htl);
+  while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
+
+  }
+  silc_hash_table_list_reset(&htl);
 
   return SILC_FSM_FINISH;
 }

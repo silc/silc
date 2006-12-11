@@ -352,6 +352,12 @@ void silc_client_command_free(SilcClientCommandContext cmd)
   SilcClientCommandReplyCallback cb;
   int i;
 
+  /* If command is running, finish it.  Destructor will free the context. */
+  if (silc_fsm_is_started(&cmd->thread)) {
+    silc_fsm_finish(&cmd->thread);
+    return;
+  }
+
   for (i = 0; i < cmd->argc; i++)
     silc_free(cmd->argv[i]);
   silc_free(cmd->argv);
