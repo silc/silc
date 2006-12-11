@@ -720,74 +720,51 @@ void silc_packet_set_context(SilcPacketStream stream, void *stream_context);
  ***/
 void *silc_packet_get_context(SilcPacketStream stream);
 
-/****f* silccore/SilcPacketAPI/silc_packet_set_ciphers
+/****f* silccore/SilcPacketAPI/silc_packet_set_keys
  *
  * SYNOPSIS
  *
- *    void silc_packet_set_ciphers(SilcPacketStream stream, SilcCipher send,
- *                                 SilcCipher receive);
+ *    void silc_packet_set_keys(SilcPacketStream stream, SilcCipher send_key,
+ *                              SilcCipher receive_key, SilcHmac send_hmac,
+ *                              SilcHmac receive_hmac, SilcBool rekey);
  *
  * DESCRIPTION
  *
- *    Set ciphers to be used to encrypt sent packets, and decrypt received
- *    packets.  This can be called multiple times to change the ciphers.
- *    In this case if old cipher is set it will be freed.  If ciphers are
- *    not set packets will not be encrypted or decrypted.
+ *    Set ciphers and HMACs to be used to encrypt sent packets, and decrypt
+ *    received packets.  This can be called multiple times to change the
+ *    ciphers and HMACs.
+ *
+ *    If the `rekey' is TRUE this function will send SILC_PACKET_REKEY_DONE
+ *    to the `stream' and will set the new keys.  If it is FALSE the keys
+ *    are changed but the packet is not changed.
+ *
+ *    When changing keys the old cipher and HMACs will be freed.  If the keys
+ *    are not set at all, packets will not be encrypted or decrypted.
  *
  ***/
-void silc_packet_set_ciphers(SilcPacketStream stream, SilcCipher send,
-			     SilcCipher receive);
+SilcBool silc_packet_set_keys(SilcPacketStream stream, SilcCipher send_key,
+                              SilcCipher receive_key, SilcHmac send_hmac,
+                              SilcHmac receive_hmac, SilcBool rekey);
 
-/****f* silccore/SilcPacketAPI/silc_packet_get_ciphers
+/****f* silccore/SilcPacketAPI/silc_packet_get_keys
  *
  * SYNOPSIS
  *
- *    SilcBool silc_packet_get_ciphers(SilcPacketStream stream,
- *                                     SilcCipher *send,
- *                                     SilcCipher *receive);
+ *    SilcBool silc_packet_get_keys(SilcPacketStream stream,
+ *                                  SilcCipher *send_key,
+ *                                  SilcCipher *receive_key,
+ *                                  SilcHmac *send_hmac,
+ *                                  SilcHmac *receive_hmac);
  *
  * DESCRIPTION
  *
- *    Returns the pointers of current ciphers from the `stream'.  Returns
- *    FALSE if ciphers are not set.
+ *    Returns the pointers of current ciphers and HMACs from the `stream'.
+ *    Returns FALSE if keys are not set.
  *
  ***/
-SilcBool silc_packet_get_ciphers(SilcPacketStream stream, SilcCipher *send,
-				 SilcCipher *receive);
-
-/****f* silccore/SilcPacketAPI/silc_packet_set_hmacs
- *
- * SYNOPSIS
- *
- *    void silc_packet_set_hmacs(SilcPacketStream stream, SilcHmac send,
- *                               SilcHmac receive);
- *
- * DESCRIPTION
- *
- *    Set HMACs to be used to create MACs for sent packets and to check
- *    MAC for received packets.  This can be called multiple times to change
- *    the HMACs.  In this case if old HMAC is set it will be freed.  If
- *    HMACs are not set MACs are not generated or verified for packets.
- *
- ***/
-void silc_packet_set_hmacs(SilcPacketStream stream, SilcHmac send,
-			   SilcHmac receive);
-
-/****f* silccore/SilcPacketAPI/silc_packet_get_hmacs
- *
- * SYNOPSIS
- *
- *    SilcBool silc_packet_get_hmacs(SilcPacketStream stream, SilcHmac *send,
- *                                   SilcHmac *receive);
- *
- * DESCRIPTION
- *
- *    Returns the pointers of current HMACs from the `stream'.  Returns
- *    FALSE if HMACs are not set.
- *
- ***/
-SilcBool silc_packet_get_hmacs(SilcPacketStream stream, SilcHmac *send,
-			       SilcHmac *receive);
+SilcBool silc_packet_get_keys(SilcPacketStream stream,
+			      SilcCipher *send_key, SilcCipher *receive_key,
+			      SilcHmac *send_hmac, SilcHmac *receive_hmac);
 
 /****f* silccore/SilcPacketAPI/silc_packet_set_ids
  *
@@ -846,14 +823,13 @@ SilcBool silc_packet_set_sid(SilcPacketStream stream, SilcUInt8 sid);
  * DESCRIPTION
  *
  *    Send `data' of length of `data_len' to the packet stream indicated by
- *    `stream'.  If ciphers and HMACs were set using silc_packet_set_ciphers
- *    and silc_packet_set_hmacs the packet will be encrypted and MAC will be
- *    computed for it.  If silc_packet_set_ids was used to set source and
- *    destination ID for the packet stream those IDs are used in the
- *    packet.  If IDs have not been set and they need to be provided then
- *    silc_packet_send_ext function should be used.  Otherwise, the packet
- *    will not have IDs set at all.  Returns FALSE if packet could not be
- *    sent.
+ *    `stream'.  If ciphers and HMACs were set using silc_packet_set_keys
+ *    the packet will be encrypted and MAC will be computed for it.  If
+ *    silc_packet_set_ids was used to set source and destination ID for the
+ *    packet stream those IDs are used in the packet.  If IDs have not been
+ *    set and they need to be provided then silc_packet_send_ext function
+ *    should be used.  Otherwise, the packet will not have IDs set at all.
+ *    Returns FALSE if packet could not be sent.
  *
  ***/
 SilcBool silc_packet_send(SilcPacketStream stream,

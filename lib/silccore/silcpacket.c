@@ -153,6 +153,19 @@ do {									\
 
 static void silc_packet_dispatch(SilcPacket packet);
 static void silc_packet_read_process(SilcPacketStream stream);
+static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
+					    SilcPacketType type,
+					    SilcPacketFlags flags,
+					    SilcIdType src_id_type,
+					    unsigned char *src_id,
+					    SilcUInt32 src_id_len,
+					    SilcIdType dst_id_type,
+					    unsigned char *dst_id,
+					    SilcUInt32 dst_id_len,
+					    const unsigned char *data,
+					    SilcUInt32 data_len,
+					    SilcCipher cipher,
+					    SilcHmac hmac);
 
 /************************ Static utility functions **************************/
 
@@ -171,9 +184,11 @@ SILC_TASK_CALLBACK(silc_packet_stream_inject_packet)
 }
 
 /* Write data to the stream.  Must be called with ps->lock locked.  Unlocks
-   the lock inside this function. */
+   the lock inside this function, unless no_unlock is TRUE.  Unlocks always
+   in case it returns FALSE. */
 
-static inline SilcBool silc_packet_stream_write(SilcPacketStream ps)
+static inline SilcBool silc_packet_stream_write(SilcPacketStream ps,
+						SilcBool no_unlock)
 {
   SilcStream stream;
   SilcBool connected;
@@ -194,14 +209,14 @@ static inline SilcBool silc_packet_stream_write(SilcPacketStream ps)
 	if (i == -2) {
 	  /* Error */
 	  silc_buffer_reset(&ps->outbuf);
-	  silc_mutex_unlock(ps->lock);
 	  SILC_PACKET_CALLBACK_ERROR(ps, SILC_PACKET_ERR_WRITE);
 	  return FALSE;
 	}
 
 	if (i == -1) {
 	  /* Cannot write now, write later. */
-	  silc_mutex_unlock(ps->lock);
+	  if (!no_unlock)
+	    silc_mutex_unlock(ps->lock);
 	  return TRUE;
 	}
 
@@ -210,7 +225,8 @@ static inline SilcBool silc_packet_stream_write(SilcPacketStream ps)
       }
 
       silc_buffer_reset(&ps->outbuf);
-      silc_mutex_unlock(ps->lock);
+      if (!no_unlock)
+	silc_mutex_unlock(ps->lock);
 
       return TRUE;
     }
@@ -238,7 +254,8 @@ static inline SilcBool silc_packet_stream_write(SilcPacketStream ps)
 
     if (i == -1) {
       /* Cannot write now, write later. */
-      silc_mutex_unlock(ps->lock);
+      if (!no_unlock)
+	silc_mutex_unlock(ps->lock);
       return TRUE;
     }
 
@@ -247,7 +264,8 @@ static inline SilcBool silc_packet_stream_write(SilcPacketStream ps)
   }
 
   silc_buffer_reset(&ps->outbuf);
-  silc_mutex_unlock(ps->lock);
+  if (!no_unlock)
+    silc_mutex_unlock(ps->lock);
 
   return TRUE;
 }
@@ -407,7 +425,7 @@ static void silc_packet_stream_io(SilcStream stream, SilcStreamStatus status,
     }
 
     /* Write pending data to stream */
-    silc_packet_stream_write(ps);
+    silc_packet_stream_write(ps, FALSE);
     break;
 
   case SILC_STREAM_CAN_READ:
@@ -1004,104 +1022,97 @@ SilcStream silc_packet_stream_get_stream(SilcPacketStream stream)
   return stream->stream;
 }
 
-/* Set ciphers for packet stream */
+/* Set keys. */
 
-void silc_packet_set_ciphers(SilcPacketStream stream, SilcCipher send,
-			     SilcCipher receive)
+SilcBool silc_packet_set_keys(SilcPacketStream stream, SilcCipher send_key,
+                              SilcCipher receive_key, SilcHmac send_hmac,
+                              SilcHmac receive_hmac, SilcBool rekey)
 {
-  SILC_LOG_DEBUG(("Setting new ciphers to packet stream"));
+  SILC_LOG_DEBUG(("Setting new keys to packet stream %p", stream));
 
-  silc_mutex_lock(stream->lock);
+  /* If doing rekey, send REKEY_DONE packet */
+  if (rekey) {
+    /* This will take stream lock. */
+    if (!silc_packet_send_raw(stream, SILC_PACKET_REKEY_DONE, 0,
+			      stream->src_id_type, stream->src_id,
+			      stream->src_id_len, stream->dst_id_type,
+			      stream->dst_id, stream->dst_id_len,
+			      NULL, 0, stream->send_key[0],
+			      stream->send_hmac[0]))
+      return FALSE;
 
-  /* In case IV Included is set, save the old key */
+    /* Write the packet to the stream */
+    if (!silc_packet_stream_write(stream, TRUE))
+      return FALSE;
+  } else {
+    silc_mutex_lock(stream->lock);
+  }
+
+  /* In case IV Included is set, save the old keys */
   if (stream->iv_included) {
-    if (stream->send_key[1]) {
+    if (stream->send_key[1] && send_key) {
       silc_cipher_free(stream->send_key[1]);
       stream->send_key[1] = stream->send_key[0];
     }
-    if (stream->receive_key[1]) {
+    if (stream->receive_key[1] && receive_key) {
       silc_cipher_free(stream->receive_key[1]);
       stream->receive_key[1] = stream->receive_key[0];
     }
-  } else {
-    if (stream->send_key[0])
-      silc_cipher_free(stream->send_key[0]);
-    if (stream->send_key[1])
-      silc_cipher_free(stream->receive_key[0]);
-  }
-
-  stream->send_key[0] = send;
-  stream->receive_key[0] = receive;
-
-  silc_mutex_unlock(stream->lock);
-}
-
-/* Return current ciphers from packet stream */
-
-SilcBool silc_packet_get_ciphers(SilcPacketStream stream, SilcCipher *send,
-				 SilcCipher *receive)
-{
-  if (!stream->send_key[0] && !stream->receive_key[0])
-    return FALSE;
-
-  silc_mutex_lock(stream->lock);
-
-  if (send)
-    *send = stream->send_key[0];
-  if (receive)
-    *receive = stream->receive_key[0];
-
-  silc_mutex_unlock(stream->lock);
-
-  return TRUE;
-}
-
-/* Set HMACs for packet stream */
-
-void silc_packet_set_hmacs(SilcPacketStream stream, SilcHmac send,
-			   SilcHmac receive)
-{
-  SILC_LOG_DEBUG(("Setting new HMACs to packet stream"));
-
-  silc_mutex_lock(stream->lock);
-
-  /* In case IV Included is set, save the old HMAC */
-  if (stream->iv_included) {
-    if (stream->send_hmac[1]) {
+    if (stream->send_hmac[1] && send_hmac) {
       silc_hmac_free(stream->send_hmac[1]);
       stream->send_hmac[1] = stream->send_hmac[0];
     }
-    if (stream->receive_hmac[1]) {
+    if (stream->receive_hmac[1] && receive_hmac) {
       silc_hmac_free(stream->receive_hmac[1]);
       stream->receive_hmac[1] = stream->receive_hmac[0];
     }
   } else {
-    if (stream->send_hmac[0])
+    if (stream->send_key[0] && send_key)
+      silc_cipher_free(stream->send_key[0]);
+    if (stream->send_key[1] && receive_key)
+      silc_cipher_free(stream->receive_key[0]);
+    if (stream->send_hmac[0] && send_hmac)
       silc_hmac_free(stream->send_hmac[0]);
-    if (stream->receive_hmac[0])
+    if (stream->receive_hmac[0] && receive_hmac)
       silc_hmac_free(stream->receive_hmac[0]);
   }
 
-  stream->send_hmac[0] = send;
-  stream->receive_hmac[0] = receive;
+  /* Set keys */
+  if (send_key)
+    stream->send_key[0] = send_key;
+  if (receive_key)
+    stream->receive_key[0] = receive_key;
+  if (send_hmac)
+    stream->send_hmac[0] = send_hmac;
+  if (receive_hmac)
+    stream->receive_hmac[0] = receive_hmac;
 
   silc_mutex_unlock(stream->lock);
+  return TRUE;
 }
 
-/* Return current HMACs from packet stream */
+/* Return current ciphers from packet stream */
 
-SilcBool silc_packet_get_hmacs(SilcPacketStream stream, SilcHmac *send,
-			       SilcHmac *receive)
+SilcBool silc_packet_get_keys(SilcPacketStream stream,
+			      SilcCipher *send_key,
+			      SilcCipher *receive_key,
+			      SilcHmac *send_hmac,
+			      SilcHmac *receive_hmac)
 {
-  if (!stream->send_hmac[0] && !stream->receive_hmac[0])
+  if (!stream->send_key[0] && !stream->receive_key[0] &&
+      !stream->send_hmac[0] && !stream->receive_hmac[0])
     return FALSE;
 
   silc_mutex_lock(stream->lock);
 
-  if (send)
-    *send = stream->send_hmac[0];
-  if (receive)
-    *receive = stream->receive_hmac[0];
+  if (send_key)
+    *send_key = stream->send_key[0];
+  if (receive_key)
+    *receive_key = stream->receive_key[0];
+  if (send_hmac)
+    *send_hmac = stream->send_hmac[0];
+  if (receive_hmac)
+    *receive_hmac = stream->receive_hmac[0];
 
   silc_mutex_unlock(stream->lock);
 
@@ -1202,10 +1213,10 @@ void silc_packet_free(SilcPacket packet)
 /* Prepare outgoing data buffer for packet sending.  Returns the
    pointer to that buffer into the `packet'. */
 
-static SilcBool silc_packet_send_prepare(SilcPacketStream stream,
-					 SilcUInt32 totlen,
-					 SilcHmac hmac,
-					 SilcBuffer packet)
+static inline SilcBool silc_packet_send_prepare(SilcPacketStream stream,
+						SilcUInt32 totlen,
+						SilcHmac hmac,
+						SilcBuffer packet)
 {
   unsigned char *oldptr;
   unsigned int mac_len = hmac ? silc_hmac_len(hmac) : 0;
@@ -1229,21 +1240,23 @@ static SilcBool silc_packet_send_prepare(SilcPacketStream stream,
   return TRUE;
 }
 
-/* Internal routine to send packet */
+/* Internal routine to assemble outgoing packet.  Assembles and encryptes
+   the packet.  The silc_packet_stream_write needs to be called to send it
+   after this returns TRUE. */
 
-static SilcBool silc_packet_send_raw(SilcPacketStream stream,
-				     SilcPacketType type,
-				     SilcPacketFlags flags,
-				     SilcIdType src_id_type,
-				     unsigned char *src_id,
-				     SilcUInt32 src_id_len,
-				     SilcIdType dst_id_type,
-				     unsigned char *dst_id,
-				     SilcUInt32 dst_id_len,
-				     const unsigned char *data,
-				     SilcUInt32 data_len,
-				     SilcCipher cipher,
-				     SilcHmac hmac)
+static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
+					    SilcPacketType type,
+					    SilcPacketFlags flags,
+					    SilcIdType src_id_type,
+					    unsigned char *src_id,
+					    SilcUInt32 src_id_len,
+					    SilcIdType dst_id_type,
+					    unsigned char *dst_id,
+					    SilcUInt32 dst_id_len,
+					    const unsigned char *data,
+					    SilcUInt32 data_len,
+					    SilcCipher cipher,
+					    SilcHmac hmac)
 {
   unsigned char tmppad[SILC_PACKET_MAX_PADLEN], iv[33], psn[4];
   int block_len = (cipher ? silc_cipher_get_block_len(cipher) : 0);
@@ -1366,8 +1379,7 @@ static SilcBool silc_packet_send_raw(SilcPacketStream stream,
     stream->send_psn++;
   }
 
-  /* Write the packet to the stream */
-  return silc_packet_stream_write(stream);
+  return TRUE;
 }
 
 /* Sends a packet */
@@ -1376,16 +1388,21 @@ SilcBool silc_packet_send(SilcPacketStream stream,
 			  SilcPacketType type, SilcPacketFlags flags,
 			  const unsigned char *data, SilcUInt32 data_len)
 {
-  return silc_packet_send_raw(stream, type, flags,
-			      stream->src_id_type,
-			      stream->src_id,
-			      stream->src_id_len,
-			      stream->dst_id_type,
-			      stream->dst_id,
-			      stream->dst_id_len,
-			      data, data_len,
-			      stream->send_key[0],
-			      stream->send_hmac[0]);
+  SilcBool ret;
+
+  ret = silc_packet_send_raw(stream, type, flags,
+			     stream->src_id_type,
+			     stream->src_id,
+			     stream->src_id_len,
+			     stream->dst_id_type,
+			     stream->dst_id,
+			     stream->dst_id_len,
+			     data, data_len,
+			     stream->send_key[0],
+			     stream->send_hmac[0]);
+
+  /* Write the packet to the stream */
+  return ret ? silc_packet_stream_write(stream, FALSE) : FALSE;
 }
 
 /* Sends a packet, extended routine */
@@ -1399,6 +1416,7 @@ SilcBool silc_packet_send_ext(SilcPacketStream stream,
 {
   unsigned char src_id_data[32], dst_id_data[32];
   SilcUInt32 src_id_len, dst_id_len;
+  SilcBool ret;
 
   if (src_id)
     if (!silc_id_id2str(src_id, src_id_type, src_id_data,
@@ -1409,16 +1427,19 @@ SilcBool silc_packet_send_ext(SilcPacketStream stream,
 			sizeof(dst_id_data), &dst_id_len))
       return FALSE;
 
-  return silc_packet_send_raw(stream, type, flags,
-			      src_id ? src_id_type : stream->src_id_type,
-			      src_id ? src_id_data : stream->src_id,
-			      src_id ? src_id_len : stream->src_id_len,
-			      dst_id ? dst_id_type : stream->dst_id_type,
-			      dst_id ? dst_id_data : stream->dst_id,
-			      dst_id ? dst_id_len : stream->dst_id_len,
-			      data, data_len,
-			      cipher ? cipher : stream->send_key[0],
-			      hmac ? hmac : stream->send_hmac[0]);
+  ret = silc_packet_send_raw(stream, type, flags,
+			     src_id ? src_id_type : stream->src_id_type,
+			     src_id ? src_id_data : stream->src_id,
+			     src_id ? src_id_len : stream->src_id_len,
+			     dst_id ? dst_id_type : stream->dst_id_type,
+			     dst_id ? dst_id_data : stream->dst_id,
+			     dst_id ? dst_id_len : stream->dst_id_len,
+			     data, data_len,
+			     cipher ? cipher : stream->send_key[0],
+			     hmac ? hmac : stream->send_hmac[0]);
+
+  /* Write the packet to the stream */
+  return ret ? silc_packet_stream_write(stream, FALSE) : FALSE;
 }
 
 /* Sends packet after formatting the arguments to buffer */
