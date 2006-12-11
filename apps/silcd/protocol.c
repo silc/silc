@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -693,7 +693,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_key_exchange)
      */
 
     /* Send abort notification */
-    silc_ske_abort(ctx->ske, ctx->ske->status);
+    if (ctx->ske)
+      silc_ske_abort(ctx->ske, ctx->ske->status);
 
     /* Unregister the timeout task since the protocol has ended.
        This was the timeout task to be executed if the protocol is
@@ -1652,7 +1653,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_rekey)
      * Error occured
      */
 
-    if (ctx->pfs == TRUE)
+    if (ctx->pfs == TRUE && ctx->ske)
       /* Send abort notification */
       silc_ske_abort(ctx->ske, ctx->ske->status);
 
