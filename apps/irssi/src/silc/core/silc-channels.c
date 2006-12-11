@@ -214,6 +214,7 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
   char *message = NULL;
   int target_type;
   void *free_arg;
+  SilcBool sign = FALSE;
 
   CMD_SILC_SERVER(server);
   if (!IS_SILC_SERVER(server) || !server->connected)
@@ -254,12 +255,14 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
 		     message, len);
   }
 
+  sign = (g_hash_table_lookup(optlist, "sign") ? TRUE :
+	  settings_get_bool("sign_channel_messages") ? TRUE : FALSE);
+
   if (target != NULL) {
     if (target_type == SEND_TARGET_CHANNEL) {
       if (silc_send_channel(server, target, (message != NULL ? message : msg),
 		            SILC_MESSAGE_FLAG_ACTION | SILC_MESSAGE_FLAG_UTF8 |
-		  	    (g_hash_table_lookup(optlist, "sign") != NULL ?
-			     SILC_MESSAGE_FLAG_SIGNED : 0))) {
+			    (sign ? SILC_MESSAGE_FLAG_SIGNED : 0))) {
 	if (g_hash_table_lookup(optlist, "sign"))
           signal_emit("message silc signed_own_action", 3, server, msg, target);
 	else
@@ -269,8 +272,7 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
       if (silc_send_msg(server, target, (message != NULL ? message : msg),
 			(message != NULL ? strlen(message) : strlen(msg)),
 			SILC_MESSAGE_FLAG_ACTION | SILC_MESSAGE_FLAG_UTF8 |
-			(g_hash_table_lookup(optlist, "sign") != NULL ?
-			 SILC_MESSAGE_FLAG_SIGNED : 0))) {
+			(sign ? SILC_MESSAGE_FLAG_SIGNED : 0))) {
 	if (g_hash_table_lookup(optlist, "sign"))
 	  signal_emit("message silc signed_own_private_action", 3,
 			  server, msg, target);
@@ -318,6 +320,7 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
   char *message = NULL;
   int target_type;
   void *free_arg;
+  SilcBool sign;
 
   CMD_SILC_SERVER(server);
   if (!IS_SILC_SERVER(server) || !server->connected)
@@ -358,12 +361,14 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
 		     message, len);
   }
 
+  sign = (g_hash_table_lookup(optlist, "sign") ? TRUE :
+	  settings_get_bool("sign_channel_messages") ? TRUE : FALSE);
+
   if (target != NULL) {
     if (target_type == SEND_TARGET_CHANNEL) {
       if (silc_send_channel(server, target, (message != NULL ? message : msg),
 		            SILC_MESSAGE_FLAG_NOTICE | SILC_MESSAGE_FLAG_UTF8 |
-		  	    (g_hash_table_lookup(optlist, "sign") != NULL ?
-			     SILC_MESSAGE_FLAG_SIGNED : 0))) {
+			    (sign ? SILC_MESSAGE_FLAG_SIGNED : 0))) {
 	if (g_hash_table_lookup(optlist, "sign"))
           signal_emit("message silc signed_own_notice", 3, server, msg, target);
 	else
@@ -373,8 +378,7 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
       if (silc_send_msg(server, target, (message != NULL ? message : msg),
 			(message != NULL ? strlen(message) : strlen(msg)),
 			SILC_MESSAGE_FLAG_NOTICE | SILC_MESSAGE_FLAG_UTF8 |
-			(g_hash_table_lookup(optlist, "sign") != NULL ?
-			 SILC_MESSAGE_FLAG_SIGNED : 0))) {
+			(sign ? SILC_MESSAGE_FLAG_SIGNED : 0))) {
 	if (g_hash_table_lookup(optlist, "sign"))
 	  signal_emit("message silc signed_own_private_notice", 3,
 			  server, msg, target);

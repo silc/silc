@@ -318,5 +318,8 @@ int silc_client_load_keys(SilcClient client)
   if (!ret)
     ret = silc_load_key_pair(pub, prv, NULL, &irssi_pubkey, &irssi_privkey);
 
+  if (!ret)
+    SILC_LOG_ERROR(("Could not load key pair"));
+
   return ret;
 }

@@ -29,6 +29,7 @@ extern SilcClient silc_client;
 extern SilcHash sha1hash;
 extern SilcPublicKey irssi_pubkey;
 extern SilcPrivateKey irssi_privkey;
+extern char *opt_nickname;
 
 #define IS_SILC_ITEM(rec) (IS_SILC_CHANNEL(rec) || IS_SILC_QUERY(rec))
 

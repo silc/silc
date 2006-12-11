@@ -162,8 +162,9 @@ int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
     rec->len = msg_len;
 
     /* Could not find client with that nick, resolve it from server. */
-    silc_client_get_clients(silc_client, server->conn,
-			    nickname, NULL, silc_send_msg_clients, rec);
+    silc_client_get_clients_whois(silc_client, server->conn,
+				  nickname, NULL, NULL,
+				  silc_send_msg_clients, rec);
     return TRUE;
   }
 
@@ -242,6 +243,7 @@ static void send_message(SILC_SERVER_REC *server, char *target,
 {
   char *message = NULL, *t = NULL;
   int len;
+  SilcBool sign;
 
   g_return_if_fail(server != NULL);
   g_return_if_fail(target != NULL);
@@ -254,9 +256,12 @@ static void send_message(SILC_SERVER_REC *server, char *target,
     silc_utf8_encode(msg, strlen(msg), SILC_STRING_LOCALE, message, len);
   }
 
+  sign = settings_get_bool("sign_channel_messages");
+
   if (target_type == SEND_TARGET_CHANNEL)
     silc_send_channel(server, target, message ? message : msg,
-		      SILC_MESSAGE_FLAG_UTF8);
+		      SILC_MESSAGE_FLAG_UTF8 |
+		      (sign ? SILC_MESSAGE_FLAG_SIGNED : 0));
   else {
     if (!silc_term_utf8()) {
       len = silc_utf8_encoded_len(target, strlen(target), SILC_STRING_LOCALE);
@@ -267,7 +272,8 @@ static void send_message(SILC_SERVER_REC *server, char *target,
 
     silc_send_msg(server, t ? t : target, message ? message : msg,
 		  message ? strlen(message) : strlen(msg),
-		  SILC_MESSAGE_FLAG_UTF8);
+		  SILC_MESSAGE_FLAG_UTF8 |
+		  (sign ? SILC_MESSAGE_FLAG_SIGNED : 0));
   }
 
   silc_free(message);
@@ -296,11 +302,12 @@ static void silc_connect_cb(SilcClient client,
     /* We have successfully connected to server */
 
     /* Enable queueing until we have our requested nick */
-#if 0
-    if (settings_get_str("nick") &&
+    if (((opt_nickname &&
+	  strcmp(opt_nickname, conn->local_entry->nickname)) ||
+	 (settings_get_str("nick") &&
+	  strcmp(settings_get_str("nick"), conn->local_entry->nickname))) &&
 	!strcmp(conn->local_entry->nickname, conn->local_entry->username))
       silc_queue_enable(conn);
-#endif
 
     /* Put default attributes */
     silc_query_attributes_default(silc_client, conn);
@@ -399,7 +406,11 @@ static void sig_connected_stream_created(SilcSocketStreamStatus status,
 
   /* Set connection parameters */
   memset(&params, 0, sizeof(params));
-  params.nickname = (char *)settings_get_str("nick");
+  params.nickname = (opt_nickname ? (char *)opt_nickname :
+		     (char *)settings_get_str("nick"));
+  params.timeout_secs = settings_get_int("key_exchange_timeout_secs");
+  params.rekey_secs = settings_get_int("key_exchange_rekey_secs");
+  params.pfs = settings_get_bool("key_exchange_rekey_pfs");
 
   /* Try to read detached session data and use it if found. */
   file = silc_get_session_filename(server);

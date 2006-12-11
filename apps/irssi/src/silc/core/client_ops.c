@@ -256,7 +256,7 @@ int verify_message_signature(SilcClientEntry sender,
   if (pk != NULL) {
     fingerprint = silc_hash_fingerprint(NULL, pk_data, pk_datalen);
 
-    if (sender->fingerprint) {
+    if (sender->fingerprint[0]) {
       fingerprint2 = silc_fingerprint(sender->fingerprint,
 				      sizeof(sender->fingerprint));
       if (strcmp(fingerprint, fingerprint2)) {
@@ -268,7 +268,7 @@ int verify_message_signature(SilcClientEntry sender,
       }
       silc_free(fingerprint2);
     }
-  } else if (sender->fingerprint)
+  } else if (sender->fingerprint[0])
     fingerprint = silc_fingerprint(sender->fingerprint,
 				   sizeof(sender->fingerprint));
   else
@@ -310,7 +310,7 @@ int verify_message_signature(SilcClientEntry sender,
 
   /* the public key is now in pk, our "level of trust" in ret */
   if ((pk) && silc_message_signed_verify(message, pk,
-			  		 sha1hash)!= SILC_AUTH_OK)
+			  		 sha1hash) != SILC_AUTH_OK)
     ret = SILC_MSG_SIGNED_FAILED;
 
   if (pk)
@@ -1151,35 +1151,34 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
        * Server has quit the network.
        */
       int i;
-      SilcClientEntry *clients;
-      SilcUInt32 clients_count;
+      SilcDList clients;
 
-      SILC_LOG_DEBUG(("Notify: SIGNOFF"));
+      SILC_LOG_DEBUG(("Notify: SERVER_SIGNOFF"));
 
       (void)va_arg(va, void *);
-      clients = va_arg(va, SilcClientEntry *);
-      clients_count = va_arg(va, SilcUInt32);
+      clients = va_arg(va, SilcDList);
 
-      for (i = 0; i < clients_count; i++) {
+      silc_dlist_start(clients);
+      while ((client_entry = silc_dlist_get(clients))) {
 	memset(buf, 0, sizeof(buf));
 
 	/* Print only if we have the nickname.  If this client has just quit
 	   when we were only resolving it, it is possible we don't have the
 	   nickname. */
-	if (clients[i]->nickname) {
-	  if (clients[i]->username)
+	if (client_entry->nickname[0]) {
+	  if (client_entry->username[0])
 	    snprintf(buf, sizeof(buf) - 1, "%s@%s",
-		     clients[i]->username, clients[i]->hostname);
-	  signal_emit("message quit", 4, server, clients[i]->nickname,
-		      clients[i]->username ? buf : "",
+		     client_entry->username, client_entry->hostname);
+	  signal_emit("message quit", 4, server, client_entry->nickname,
+		      client_entry->username[0] ? buf : "",
 		      "server signoff");
 	}
 
 #if 0
-	silc_server_free_ftp(server, clients[i]);
+	silc_server_free_ftp(server, client_entry);
 #endif
 
-	list1 = nicklist_get_same_unique(SERVER(server), clients[i]);
+	list1 = nicklist_get_same_unique(SERVER(server), client_entry);
 	for (list_tmp = list1; list_tmp != NULL; list_tmp =
 	       list_tmp->next->next) {
 	  CHANNEL_REC *channel = list_tmp->data;
@@ -1638,8 +1637,10 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcClientEntry founder = NULL;
       NICK_REC *ownnick;
 
-      if (SILC_STATUS_IS_ERROR(status))
+      if (SILC_STATUS_IS_ERROR(status)) {
+	silc_say_error("JOIN: %s", silc_get_status_message(status));
 	return;
+      }
 
       channel = va_arg(vp, char *);
       channel_entry = va_arg(vp, SilcChannelEntry);
@@ -1691,6 +1692,8 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       }
 
       ownnick = NICK(silc_nicklist_find(chanrec, conn->local_entry));
+      if (!ownnick)
+	break;
       nicklist_set_own(CHANNEL(chanrec), ownnick);
       signal_emit("channel joined", 1, chanrec);
       chanrec->entry = channel_entry;
@@ -1724,8 +1727,10 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcClientEntry client_entry = va_arg(vp, SilcClientEntry);
       GSList *nicks;
 
-      if (SILC_STATUS_IS_ERROR(status))
+      if (SILC_STATUS_IS_ERROR(status)) {
+	silc_say_error("NICK: %s", silc_get_status_message(status));
 	return;
+      }
 
       nicks = nicklist_get_same(SERVER(server), client_entry->nickname);
       if ((nicks != NULL) &&
@@ -1878,8 +1883,10 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       SilcChannelEntry channel;
       SilcChannelUser chu;
 
-      if (SILC_STATUS_IS_ERROR(status))
+      if (SILC_STATUS_IS_ERROR(status)) {
+	silc_say_error("USERS: %s", silc_get_status_message(status));
 	return;
+      }
 
       channel = va_arg(vp, SilcChannelEntry);
 
@@ -1954,8 +1961,10 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       GetkeyContext getkey;
       char *name;
 
-      if (SILC_STATUS_IS_ERROR(status))
+      if (SILC_STATUS_IS_ERROR(status)) {
+	silc_say_error("GETKEY: %s", silc_get_status_message(status));
 	return;
+      }
 
       id_type = va_arg(vp, SilcUInt32);
       entry = va_arg(vp, void *);
@@ -2592,7 +2601,7 @@ void silc_key_agreement(SilcClient client, SilcClientConnection conn,
 
   if (hostname) {
     snprintf(portstr, sizeof(portstr) - 1, "%d", port);
-    snprintf(protostr, sizeof(protostr) - 1, "%s", protocol == 1 ? "UDP" : 
+    snprintf(protostr, sizeof(protostr) - 1, "%s", protocol == 1 ? "UDP" :
 	     "TCP");
   }
 

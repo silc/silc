@@ -51,11 +51,14 @@ SilcClient silc_client = NULL;
 extern SilcClientOperations ops;
 
 /* Our keypair */
-SilcPublicKey irssi_pubkey;
-SilcPrivateKey irssi_privkey;
+SilcPublicKey irssi_pubkey = NULL;
+SilcPrivateKey irssi_privkey = NULL;
+
+char *opt_nickname = NULL;
+char *opt_hostname = NULL;
 
 /* Default hash function */
-SilcHash sha1hash;
+SilcHash sha1hash = NULL;
 
 void silc_expandos_init(void);
 void silc_expandos_deinit(void);
@@ -110,6 +113,18 @@ static void silc_init_userinfo(void)
       str = g_getenv("IRCNAME");
     settings_set_str("real_name",
 		     str != NULL ? str : silc_get_real_name());
+  }
+
+  /* Check that real name is UTF-8 encoded */
+  set = settings_get_str("real_name");
+  if (!silc_utf8_valid(set, strlen(set))) {
+    int len = silc_utf8_encoded_len(set, strlen(set), SILC_STRING_LOCALE);
+    tmp = silc_calloc(len, sizeof(*tmp));
+    if (tmp) {
+      silc_utf8_encode(set, strlen(set), SILC_STRING_LOCALE, tmp, len);
+      settings_set_str("real_name", tmp);
+      silc_free(tmp);
+    }
   }
 
   /* username */
@@ -193,6 +208,14 @@ static bool silc_log_misc(SilcLogType type, char *message, void *context)
   return TRUE;
 }
 
+static bool silc_log_stderr(SilcLogType type, char *message, void *context)
+{
+  fprintf(stderr, "%s: %s\n",
+	  (type == SILC_LOG_INFO ? "[Info]" :
+	   type == SILC_LOG_WARNING ? "[Warning]" : "[Error]"), message);
+  return TRUE;
+}
+
 static void silc_nickname_format_parse(const char *nickname,
 				       char **ret_nickname)
 {
@@ -271,17 +294,15 @@ void silc_opt_callback(poptContext con,
 		       const struct poptOption *opt,
 		       const char *arg, void *data)
 {
-#if 0
   if (strcmp(opt->longName, "nick") == 0) {
-    g_free(silc_client->nickname);
-    silc_client->nickname = g_strdup(arg);
+    g_free(opt_nickname);
+    opt_nickname = g_strdup(arg);
   }
 
   if (strcmp(opt->longName, "hostname") == 0) {
-    silc_free(silc_client->hostname);
-    silc_client->hostname = g_strdup(arg);
+    g_free(opt_hostname);
+    opt_hostname = g_strdup(arg);
   }
-#endif /* 0 */
 
   if (strcmp(opt->longName, "list-ciphers") == 0) {
     silc_cipher_register_default();
@@ -354,17 +375,34 @@ void silc_opt_callback(poptContext con,
 static void sig_init_finished(void)
 {
   /* Check ~/.silc directory and public and private keys */
-  if (!silc_client_check_silc_dir())
-    exit(1);
+  if (!silc_client_check_silc_dir()) {
+    sleep(1);
+    signal_emit("gui exit", 0);
+    return;
+  }
 
   /* Load public and private key */
-  if (!silc_client_load_keys(silc_client))
-    exit(1);
+  if (!silc_client_load_keys(silc_client)) {
+    sleep(1);
+    signal_emit("gui exit", 0);
+    return;
+  }
 
   /* Initialize the SILC client */
   if (!silc_client_init(silc_client, settings_get_str("user_name"),
-			silc_net_localhost(), settings_get_str("real_name")))
-    exit(1);
+			opt_hostname ? opt_hostname : silc_net_localhost(),
+			settings_get_str("real_name"))) {
+    sleep(1);
+    signal_emit("gui exit", 0);
+    return;
+  }
+
+  silc_log_set_callback(SILC_LOG_INFO, silc_log_misc, NULL);
+  silc_log_set_callback(SILC_LOG_WARNING, silc_log_misc, NULL);
+  silc_log_set_callback(SILC_LOG_ERROR, silc_log_misc, NULL);
+  silc_log_set_callback(SILC_LOG_FATAL, silc_log_misc, NULL);
+
+  silc_hash_alloc("sha1", &sha1hash);
 
   /* register SILC scheduler */
   idletag = g_timeout_add(5, (GSourceFunc) my_silc_scheduler, NULL);
@@ -419,10 +457,13 @@ void silc_core_init(void)
   settings_add_str("server", "crypto_default_hmac", SILC_DEFAULT_HMAC);
   settings_add_int("server", "key_exchange_timeout_secs", 120);
   settings_add_int("server", "key_exchange_rekey_secs", 3600);
+  settings_add_bool("server", "key_exchange_rekey_pfs", FALSE);
   settings_add_int("server", "connauth_request_secs", 2);
   settings_add_int("server", "heartbeat", 300);
   settings_add_bool("server", "ignore_message_signatures", FALSE);
   settings_add_str("server", "session_filename", "session.$chatnet");
+  settings_add_bool("server", "sign_channel_messages", FALSE);
+  settings_add_bool("server", "sign_private_messages", FALSE);
 
   /* Requested Attributes settings */
   settings_add_bool("silc", "attr_allow", TRUE);
@@ -448,11 +489,15 @@ void silc_core_init(void)
 
   silc_init_userinfo();
 
+  silc_log_set_callback(SILC_LOG_INFO, silc_log_stderr, NULL);
+  silc_log_set_callback(SILC_LOG_WARNING, silc_log_stderr, NULL);
+  silc_log_set_callback(SILC_LOG_ERROR, silc_log_stderr, NULL);
+  silc_log_set_callback(SILC_LOG_FATAL, silc_log_stderr, NULL);
+
   /* Initialize client parameters */
   memset(&params, 0, sizeof(params));
   strcat(params.nickname_format, "%n@%h%a");
   params.nickname_parse = silc_nickname_format_parse;
-  params.rekey_secs = settings_get_int("key_exchange_rekey_secs");
   params.connauth_request_secs = settings_get_int("connauth_request_secs");
 
   /* Allocate SILC client */
@@ -466,11 +511,6 @@ void silc_core_init(void)
   silc_register_hash(silc_client, def_hash);
   silc_register_hmac(silc_client, def_hmac);
   silc_pkcs_register_default();
-
-  silc_log_set_callback(SILC_LOG_INFO, silc_log_misc, NULL);
-  silc_log_set_callback(SILC_LOG_WARNING, silc_log_misc, NULL);
-  silc_log_set_callback(SILC_LOG_ERROR, silc_log_misc, NULL);
-  silc_log_set_callback(SILC_LOG_FATAL, silc_log_misc, NULL);
 
   /* Register SILC to the irssi */
   rec = g_new0(CHAT_PROTOCOL_REC, 1);
