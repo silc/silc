@@ -6,6 +6,18 @@ NOTE: Any item that doesn't have (***DONE) in it, isn't done yet.  The
 tested.
 
 
+SILC Client
+===========
+
+ o Porting to new Toolkit API and new Client Library API
+
+ o Improve help files, especially /cmode, /cumode and /key.
+
+ o in /cmode and /cumode with +r, maybe the public key and private key
+   could be just some "string", which would then match to "string.pub" and
+   "string.prv".
+
+
 lib/silcclient, The Client Library
 ==================================
 

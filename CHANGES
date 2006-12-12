@@ -1,3 +1,10 @@
+Tue Dec 12 18:56:14 EET 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed back the SILC_FSM_THREAD_WAIT operation to not
+	  continue to next state if thread is finished already.  That
+	  check is not done anymore.  Affected files are
+	  lib/silcutil/silcfsm.[ch].
+
 Sun Dec 10 13:54:52 EET 2006  Pekka Riikonen <priikone@silcnet.org>
 
 	* Removed silc_packet_[get|set]_ciphers and
