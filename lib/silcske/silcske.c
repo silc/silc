@@ -806,8 +806,9 @@ silc_ske_make_rekey_material(SilcSKE ske, SilcSKEKeyMaterial keymat)
     return NULL;
 
   if (ske->prop) {
+    if (ske->prop->group)
+      rekey->ske_group = silc_ske_group_get_number(ske->prop->group);
     rekey->pfs = (ske->prop->flags & SILC_SKE_SP_FLAG_PFS ? TRUE : FALSE);
-    rekey->ske_group = silc_ske_group_get_number(ske->prop->group);
     hash = silc_hash_get_name(ske->prop->hash);
     rekey->hash = silc_memdup(hash, strlen(hash));
     if (!rekey->hash)
@@ -816,7 +817,7 @@ silc_ske_make_rekey_material(SilcSKE ske, SilcSKEKeyMaterial keymat)
 
   if (rekey->pfs == FALSE) {
     rekey->send_enc_key = silc_memdup(keymat->send_enc_key,
-				      keymat->enc_key_len);
+				      keymat->enc_key_len / 8);
     if (!rekey->send_enc_key) {
       silc_free(rekey);
       return NULL;
@@ -2550,8 +2551,13 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_end)
 
   /* Generate new rekey material */
   rekey = silc_ske_make_rekey_material(ske, ske->keymat);
+  if (!rekey) {
+    /** No memory */
+    ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+    silc_fsm_next(fsm, silc_ske_st_initiator_error);
+    return SILC_FSM_CONTINUE;
+  }
   rekey->pfs = ske->rekey->pfs;
-  rekey->ske_group = ske->rekey->ske_group;
   ske->rekey = rekey;
 
   ske->prop->cipher = NULL;
@@ -2930,7 +2936,7 @@ void silc_ske_free_rekey_material(SilcSKERekeyMaterial rekey)
   if (!rekey)
     return;
   if (rekey->send_enc_key) {
-    memset(rekey->send_enc_key, 0, rekey->enc_key_len);
+    memset(rekey->send_enc_key, 0, rekey->enc_key_len / 8);
     silc_free(rekey->send_enc_key);
   }
   silc_free(rekey->hash);
