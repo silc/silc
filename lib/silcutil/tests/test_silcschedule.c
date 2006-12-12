@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 
   silc_schedule_task_add_signal(schedule, SIGINT, interrupt, NULL);
 
-  silc_schedule_task_add_timeout(schedule, start, NULL, 0, 1);
+  silc_schedule_task_add_timeout(schedule, start, NULL, 1, 0);
 
   SILC_LOG_DEBUG(("Running scheduler"));
   silc_schedule(schedule);

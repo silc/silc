@@ -160,10 +160,11 @@ void silc_fsm_free(void *fsm)
 {
   SilcFSM f = fsm;
   if (!f->thread)
-    silc_schedule_task_add_timeout(f->schedule, silc_fsm_free_final, f, 0, 0);
-  else
-    silc_fsm_free_final(f->schedule, silc_schedule_get_context(f->schedule),
-			0, 0, f);
+    if (silc_schedule_task_add_timeout(f->schedule, silc_fsm_free_final,
+				       f, 0, 0))
+      return;
+  silc_fsm_free_final(f->schedule, silc_schedule_get_context(f->schedule),
+		      0, 0, f);
 }
 
 /* Task to start real thread. We start threads through scheduler, not
@@ -200,13 +201,18 @@ void silc_fsm_start(void *fsm, SilcFSMStateCallback start_state)
 
   /* Start real thread through scheduler */
   if (f->thread && f->real_thread) {
-    silc_schedule_task_add_timeout(f->schedule, silc_fsm_start_real_thread,
-				   f, 0, 0);
+    if (!silc_schedule_task_add_timeout(f->schedule,
+					silc_fsm_start_real_thread,
+					f, 0, 0))
+      silc_fsm_start_real_thread(f->schedule,
+				 silc_schedule_get_context(f->schedule),
+				 0, 0, f);
     return;
   }
 
   /* Normal FSM operation */
-  silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f, 0, 0);
+  if (!silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f, 0, 0))
+    silc_fsm_run(f->schedule, silc_schedule_get_context(f->schedule), 0, 0, f);
 }
 
 /* Start FSM in the specified state synchronously */
@@ -288,8 +294,13 @@ void silc_fsm_finish(void *fsm)
   SilcFSM f = fsm;
 
   SILC_ASSERT(!f->finished);
-  f->finished = TRUE;
+
+  /* Machine must not have active threads */
+  if (!f->thread && f->u.m.threads)
+    assert(f->u.m.threads == 0);
+
   f->started = FALSE;
+  f->finished = TRUE;
 
   silc_schedule_task_del_by_all(f->schedule, 0, silc_fsm_run, f);
   f->next_later = FALSE;
@@ -304,11 +315,13 @@ void silc_fsm_finish(void *fsm)
   }
 
   /* Normal FSM operation */
-  if (f->synchronous)
-    silc_fsm_finish_fsm(f->schedule, silc_schedule_get_context(f->schedule),
-			0, 0, fsm);
-  else
-    silc_schedule_task_add_timeout(f->schedule, silc_fsm_finish_fsm, f, 0, 0);
+  if (!f->synchronous)
+    if (silc_schedule_task_add_timeout(f->schedule, silc_fsm_finish_fsm,
+				       f, 0, 0))
+      return;
+
+  silc_fsm_finish_fsm(f->schedule, silc_schedule_get_context(f->schedule),
+		      0, 0, fsm);
 }
 
 /* Return associated scheduler */
@@ -327,16 +340,12 @@ SilcFSM silc_fsm_get_machine(SilcFSMThread thread)
   return (SilcFSM)thread->u.t.fsm;
 }
 
-/* Returns TRUE if FSM is started and not yet finished */
+/* Returns TRUE if FSM is started */
 
 SilcBool silc_fsm_is_started(void *fsm)
 {
   SilcFSM f = fsm;
-
-  if (f->started && !f->finished)
-    return TRUE;
-
-  return FALSE;
+  return f->started;
 }
 
 /* Set context */
@@ -379,8 +388,6 @@ SilcBool silc_fsm_thread_wait(void *fsm, void *thread)
 
   SILC_ASSERT(t->thread);
 
-  if (t->finished)
-    return FALSE;
   t->u.t.sema = silc_fsm_sema_alloc(t->u.t.fsm, 0);
   if (!t->u.t.sema)
     return FALSE;

@@ -117,6 +117,19 @@ typedef struct SilcFSMObject SilcFSMThreadStruct;
  *    Status values that the FSM state functions return.  They dicatate
  *    how the machine will behave after returning from the state function.
  *
+ *    The SILC_FSM_CONTINUE always moves to the next state synchronously.
+ *
+ *    The SILC_FSM_YIELD always moves to the next state through the
+ *    scheduler.  Other threads will get running time with SILC_FSM_YIELD.
+ *    When using real threads, using SILC_FSM_YIELD is usually unnecessary.
+ *
+ *    The SILC_FSM_WAIT will suspend the machine until it is awaken.
+ *
+ *    The SILC_FSM_FINISH finished the machine or thread and calls its
+ *    destructor, if defined.  If the machine is finished when it has
+ *    running threads the machine will fatally fail.  User must always
+ *    finish the threads before finishing the machine.
+ *
  * SOURCE
  */
 typedef enum {
@@ -307,9 +320,7 @@ do {						\
  *
  *    Macro used to wait for the `thread' to terminate.  The machine or
  *    thread will be suspended while it is waiting for the thread to
- *    terminate.  If the thread to be waited has already terminated (but
- *    the context has not been freed yet), this will continue immediately
- *    to the following state without waiting.
+ *    terminate.
  *
  * NOTES
  *
@@ -327,9 +338,8 @@ do {						\
  ***/
 #define SILC_FSM_THREAD_WAIT(thread)		\
 do {						\
-  if (silc_fsm_thread_wait(fsm, thread))	\
-    return SILC_FSM_WAIT;			\
-  return SILC_FSM_CONTINUE;			\
+  silc_fsm_thread_wait(fsm, thread);		\
+  return SILC_FSM_WAIT;				\
 } while(0)
 
 /****f* silcutil/SilcFSMAPI/silc_fsm_alloc
@@ -692,6 +702,10 @@ void silc_fsm_continue_sync(void *fsm);
  *    by returning SILC_FSM_FINISH from the state, but if this is not
  *    possible this function may be called.  This function is used with
  *    both SilcFSM and SilcFSMThread contexts.
+ *
+ *    If the `fsm' is a machine and it has running threads, the machine
+ *    will fatally fail.  The caller must first finish the threads and
+ *    then the machine.
  *
  ***/
 void silc_fsm_finish(void *fsm);
