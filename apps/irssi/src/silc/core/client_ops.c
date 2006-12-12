@@ -1150,7 +1150,6 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       /*
        * Server has quit the network.
        */
-      int i;
       SilcDList clients;
 
       SILC_LOG_DEBUG(("Notify: SERVER_SIGNOFF"));
@@ -1537,6 +1536,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	SilcChannelPayload entry;
 	int i = 0;
 
+	memset(buf, 0, sizeof(buf));
 	silc_dlist_start(channels);
 	while ((entry = silc_dlist_get(channels))) {
 	  SilcUInt32 name_len;
@@ -1856,8 +1856,10 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
     break;
 
   case SILC_COMMAND_OPER:
-    if (SILC_STATUS_IS_ERROR(status))
+    if (SILC_STATUS_IS_ERROR(status)) {
+      silc_say_error("OPER: %s", silc_get_status_message(status));
       return;
+    }
 
     server->umode |= SILC_UMODE_SERVER_OPERATOR;
     signal_emit("user mode changed", 2, server, NULL);
@@ -1867,8 +1869,10 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
     break;
 
   case SILC_COMMAND_SILCOPER:
-    if (SILC_STATUS_IS_ERROR(status))
+    if (SILC_STATUS_IS_ERROR(status)) {
+      silc_say_error("SILCOPER: %s", silc_get_status_message(status));
       return;
+    }
 
     server->umode |= SILC_UMODE_ROUTER_OPERATOR;
     signal_emit("user mode changed", 2, server, NULL);
@@ -2065,9 +2069,6 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
   case SILC_COMMAND_STATS:
     {
       SilcClientStats *cstats;
-      SilcUInt32 buf_len;
-      SilcBufferStruct buf;
-      unsigned char *tmp_buf;
       char tmp[40];
       const char *tmptime;
       int days, hours, mins, secs;
@@ -2694,14 +2695,6 @@ silc_detach(SilcClient client, SilcClientConnection conn,
   silc_free(file);
 }
 
-/* Called to indicate the client library is running. */
-
-static void
-silc_running(SilcClient client, void *application)
-{
-  SILC_LOG_DEBUG(("Client library is running"));
-}
-
 /* SILC client operations */
 SilcClientOperations ops = {
   silc_say,
@@ -2716,5 +2709,4 @@ SilcClientOperations ops = {
   silc_key_agreement,
   silc_ftp,
   silc_detach,
-  silc_running,
 };

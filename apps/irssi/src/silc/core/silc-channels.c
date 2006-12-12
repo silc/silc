@@ -140,11 +140,6 @@ static void sig_server_quit(SILC_SERVER_REC *server, const char *msg)
     silc_command_exec(server, "QUIT", msg);
 }
 
-static void sig_gui_quit(SILC_SERVER_REC *server, const char *msg)
-{
-  silc_client_stop(silc_client);
-}
-
 /* Find Irssi channel entry by SILC channel entry */
 
 SILC_CHANNEL_REC *silc_channel_find_entry(SILC_SERVER_REC *server,
@@ -255,11 +250,10 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
 		     message, len);
   }
 
-  sign = (g_hash_table_lookup(optlist, "sign") ? TRUE :
-	  settings_get_bool("sign_channel_messages") ? TRUE : FALSE);
-
   if (target != NULL) {
     if (target_type == SEND_TARGET_CHANNEL) {
+      sign = (g_hash_table_lookup(optlist, "sign") ? TRUE :
+	      settings_get_bool("sign_channel_messages") ? TRUE : FALSE);
       if (silc_send_channel(server, target, (message != NULL ? message : msg),
 		            SILC_MESSAGE_FLAG_ACTION | SILC_MESSAGE_FLAG_UTF8 |
 			    (sign ? SILC_MESSAGE_FLAG_SIGNED : 0))) {
@@ -269,6 +263,8 @@ static void command_action(const char *data, SILC_SERVER_REC *server,
           signal_emit("message silc own_action", 3, server, msg, target);
       }
     } else {
+      sign = (g_hash_table_lookup(optlist, "sign") ? TRUE :
+	      settings_get_bool("sign_private_messages") ? TRUE : FALSE);
       if (silc_send_msg(server, target, (message != NULL ? message : msg),
 			(message != NULL ? strlen(message) : strlen(msg)),
 			SILC_MESSAGE_FLAG_ACTION | SILC_MESSAGE_FLAG_UTF8 |
@@ -361,11 +357,10 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
 		     message, len);
   }
 
-  sign = (g_hash_table_lookup(optlist, "sign") ? TRUE :
-	  settings_get_bool("sign_channel_messages") ? TRUE : FALSE);
-
   if (target != NULL) {
     if (target_type == SEND_TARGET_CHANNEL) {
+      sign = (g_hash_table_lookup(optlist, "sign") ? TRUE :
+	      settings_get_bool("sign_channel_messages") ? TRUE : FALSE);
       if (silc_send_channel(server, target, (message != NULL ? message : msg),
 		            SILC_MESSAGE_FLAG_NOTICE | SILC_MESSAGE_FLAG_UTF8 |
 			    (sign ? SILC_MESSAGE_FLAG_SIGNED : 0))) {
@@ -375,6 +370,8 @@ static void command_notice(const char *data, SILC_SERVER_REC *server,
           signal_emit("message silc own_notice", 3, server, msg, target);
       }
     } else {
+      sign = (g_hash_table_lookup(optlist, "sign") ? TRUE :
+	      settings_get_bool("sign_private_messages") ? TRUE : FALSE);
       if (silc_send_msg(server, target, (message != NULL ? message : msg),
 			(message != NULL ? strlen(message) : strlen(msg)),
 			SILC_MESSAGE_FLAG_NOTICE | SILC_MESSAGE_FLAG_UTF8 |
@@ -1243,7 +1240,6 @@ void silc_channels_init(void)
   signal_add("channel destroyed", (SIGNAL_FUNC) sig_channel_destroyed);
   signal_add("server connected", (SIGNAL_FUNC) sig_connected);
   signal_add("server quit", (SIGNAL_FUNC) sig_server_quit);
-  signal_add("gui exit", (SIGNAL_FUNC) sig_gui_quit);
   signal_add("mime", (SIGNAL_FUNC) sig_mime);
 
   command_bind_silc("part", MODULE_NAME, (SIGNAL_FUNC) command_part);
@@ -1266,7 +1262,6 @@ void silc_channels_deinit(void)
   signal_remove("channel destroyed", (SIGNAL_FUNC) sig_channel_destroyed);
   signal_remove("server connected", (SIGNAL_FUNC) sig_connected);
   signal_remove("server quit", (SIGNAL_FUNC) sig_server_quit);
-  signal_remove("gui exit", (SIGNAL_FUNC) sig_gui_quit);
   signal_remove("mime", (SIGNAL_FUNC) sig_mime);
 
   command_unbind("part", (SIGNAL_FUNC) command_part);

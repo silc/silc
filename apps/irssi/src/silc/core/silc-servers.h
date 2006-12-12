@@ -41,16 +41,17 @@ typedef struct {
 
   SilcDList ftp_sessions;
   FtpSession current_session;
-  
+
   gpointer chanqueries;
   SilcClientConnection conn;
+  SilcAsyncOperation op;
   SilcUInt32 umode;
 } SILC_SERVER_REC;
 
 SERVER_REC *silc_server_init_connect(SERVER_CONNECT_REC *conn);
 void silc_server_connect(SERVER_REC *server);
 
-/* Return a string of all channels in server in server->channels_join() 
+/* Return a string of all channels in server in server->channels_join()
    format */
 char *silc_server_get_channels(SILC_SERVER_REC *server);
 void silc_command_exec(SILC_SERVER_REC *server,

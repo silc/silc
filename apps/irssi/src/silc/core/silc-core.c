@@ -372,28 +372,51 @@ void silc_opt_callback(poptContext con,
   }
 }
 
+/* Called to indicate the client library has stopped. */
+
+static void
+silc_stopped(SilcClient client, void *context)
+{
+  SILC_LOG_DEBUG(("Client library has stopped"));
+  if (idletag != -1)
+    g_source_remove(idletag);
+}
+
+static void sig_gui_quit(SILC_SERVER_REC *server, const char *msg)
+{
+  silc_client_stop(silc_client, silc_stopped, NULL);
+}
+
+/* Called to indicate the client library is running. */
+
+static void
+silc_running(SilcClient client, void *context)
+{
+  SILC_LOG_DEBUG(("Client library is running"));
+}
+
 static void sig_init_finished(void)
 {
   /* Check ~/.silc directory and public and private keys */
   if (!silc_client_check_silc_dir()) {
     sleep(1);
-    signal_emit("gui exit", 0);
+    exit(1);
     return;
   }
 
   /* Load public and private key */
   if (!silc_client_load_keys(silc_client)) {
     sleep(1);
-    signal_emit("gui exit", 0);
+    exit(1);
     return;
   }
 
   /* Initialize the SILC client */
   if (!silc_client_init(silc_client, settings_get_str("user_name"),
 			opt_hostname ? opt_hostname : silc_net_localhost(),
-			settings_get_str("real_name"))) {
+			settings_get_str("real_name"), silc_running, NULL)) {
     sleep(1);
-    signal_emit("gui exit", 0);
+    exit(1);
     return;
   }
 
@@ -486,6 +509,7 @@ void silc_core_init(void)
 
   signal_add("setup changed", (SIGNAL_FUNC) sig_setup_changed);
   signal_add("irssi init finished", (SIGNAL_FUNC) sig_init_finished);
+  signal_add("gui exit", (SIGNAL_FUNC) sig_gui_quit);
 
   silc_init_userinfo();
 
@@ -555,6 +579,7 @@ void silc_core_deinit(void)
       	chat_protocol_find("SILC"));
   signal_remove("setup changed", (SIGNAL_FUNC) sig_setup_changed);
   signal_remove("irssi init finished", (SIGNAL_FUNC) sig_init_finished);
+  signal_remove("gui exit", (SIGNAL_FUNC) sig_gui_quit);
 
   silc_queue_deinit();
   silc_server_deinit();

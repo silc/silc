@@ -256,13 +256,13 @@ static void send_message(SILC_SERVER_REC *server, char *target,
     silc_utf8_encode(msg, strlen(msg), SILC_STRING_LOCALE, message, len);
   }
 
-  sign = settings_get_bool("sign_channel_messages");
-
-  if (target_type == SEND_TARGET_CHANNEL)
+  if (target_type == SEND_TARGET_CHANNEL) {
+    sign = settings_get_bool("sign_channel_messages");
     silc_send_channel(server, target, message ? message : msg,
 		      SILC_MESSAGE_FLAG_UTF8 |
 		      (sign ? SILC_MESSAGE_FLAG_SIGNED : 0));
-  else {
+  } else {
+    sign = settings_get_bool("sign_private_messages");
     if (!silc_term_utf8()) {
       len = silc_utf8_encoded_len(target, strlen(target), SILC_STRING_LOCALE);
       t = silc_calloc(len + 1, sizeof(*t));
@@ -292,13 +292,15 @@ static void silc_connect_cb(SilcClient client,
   SILC_SERVER_REC *server = context;
   char *file;
 
-  if (server->disconnected) {
-    silc_client_close_connection(client, conn);
-    return;
-  }
+  server->op = NULL;
 
   switch (status) {
   case SILC_CLIENT_CONN_SUCCESS:
+    if (server->disconnected) {
+      silc_client_close_connection(client, conn);
+      return;
+    }
+
     /* We have successfully connected to server */
 
     /* Enable queueing until we have our requested nick */
@@ -319,6 +321,11 @@ static void silc_connect_cb(SilcClient client,
     break;
 
   case SILC_CLIENT_CONN_SUCCESS_RESUME:
+    if (server->disconnected) {
+      silc_client_close_connection(client, conn);
+      return;
+    }
+
     /* We have successfully resumed old detached session */
     server->connected = TRUE;
     server->conn = conn;
@@ -367,7 +374,9 @@ static void silc_connect_cb(SilcClient client,
       server->conn->context = NULL;
     server->conn = NULL;
     server->connection_lost = TRUE;
-    server_disconnect(SERVER(server));
+    if (!server->disconnected)
+      server_disconnect(SERVER(server));
+    server_unref(SERVER(server));
     break;
 
   default:
@@ -381,7 +390,9 @@ static void silc_connect_cb(SilcClient client,
     server->connection_lost = TRUE;
     if (server->conn)
       server->conn->context = NULL;
-    server_disconnect(SERVER(server));
+    if (!server->disconnected)
+      server_disconnect(SERVER(server));
+    server_unref(SERVER(server));
     break;
   }
 }
@@ -422,9 +433,18 @@ static void sig_connected_stream_created(SilcSocketStreamStatus status,
     			SILCTXT_REATTACH, server->tag);
 
   /* Start key exchange */
-  silc_client_key_exchange(silc_client, &params, irssi_pubkey, irssi_privkey,
-			   stream, SILC_CONN_SERVER, silc_connect_cb, server);
+  server->op = silc_client_key_exchange(silc_client, &params,
+					irssi_pubkey, irssi_privkey,
+					stream, SILC_CONN_SERVER,
+					silc_connect_cb, server);
+  if (!server->op) {
+    server->connection_lost = TRUE;
+    server_disconnect(SERVER(server));
+    silc_stream_destroy(stream);
+    return;
+  }
 
+  server_ref(SERVER(server));
   server->ftp_sessions = silc_dlist_init();
   server->isnickflag = isnickflag_func;
   server->ischannel = ischannel_func;
@@ -459,6 +479,9 @@ static void sig_disconnected(SILC_SERVER_REC *server)
     g_io_channel_unref(net_sendbuffer_handle(server->handle));
     net_sendbuffer_destroy(server->handle, FALSE);
     server->handle = NULL;
+  } else if (server->op) {
+    silc_async_abort(server->op, NULL, NULL);
+    server->op = NULL;
   }
 }
 
