@@ -750,7 +750,7 @@ SilcClientEntry silc_client_add_client(SilcClient client,
   silc_mutex_unlock(conn->internal->lock);
   silc_client_ref_client(client, conn, client_entry);
 
-  SILC_LOG_DEBUG(("Added"));
+  SILC_LOG_DEBUG(("Added %p", client_entry));
 
   return client_entry;
 }
@@ -1324,7 +1324,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   silc_mutex_unlock(conn->internal->lock);
   silc_client_ref_channel(client, conn, channel);
 
-  SILC_LOG_DEBUG(("Added"));
+  SILC_LOG_DEBUG(("Added %p", channel));
 
   return channel;
 }
@@ -1702,7 +1702,7 @@ SilcServerEntry silc_client_add_server(SilcClient client,
   silc_mutex_unlock(conn->internal->lock);
   silc_client_ref_server(client, conn, server_entry);
 
-  SILC_LOG_DEBUG(("Added"));
+  SILC_LOG_DEBUG(("Added %p", server_entry));
 
   return server_entry;
 }
@@ -1784,6 +1784,9 @@ void silc_client_ref_server(SilcClient client, SilcClientConnection conn,
 			    SilcServerEntry server_entry)
 {
   silc_atomic_add_int8(&server_entry->internal.refcnt, 1);
+  SILC_LOG_DEBUG(("Server %p refcnt %d->%d", server_entry,
+		  silc_atomic_get_int8(&server_entry->internal.refcnt) - 1,
+		  silc_atomic_get_int8(&server_entry->internal.refcnt)));
 }
 
 /* Release reference of server entry */
@@ -1791,7 +1794,13 @@ void silc_client_ref_server(SilcClient client, SilcClientConnection conn,
 void silc_client_unref_server(SilcClient client, SilcClientConnection conn,
 			      SilcServerEntry server_entry)
 {
-  silc_client_del_server(client, conn, server_entry);
+  if (server_entry) {
+    SILC_LOG_DEBUG(("Server %p refcnt %d->%d", server_entry,
+		    silc_atomic_get_int8(&server_entry->internal.refcnt),
+		    silc_atomic_get_int8(&server_entry->internal.refcnt)
+		    - 1));
+    silc_client_del_server(client, conn, server_entry);
+  }
 }
 
 /* Free server entry list */

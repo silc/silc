@@ -37,12 +37,33 @@ static void silc_client_connection_destructor(SilcFSM fsm,
   SilcClientConnection conn = fsm_context;
   SilcFSMThread thread = destructor_context;
 
+  SILC_LOG_DEBUG(("Connection %p finished", conn));
+
   /* Delete connection */
   silc_client_del_connection(conn->client, conn);
 
   /* Finish the thread were this machine was running */
   silc_fsm_finish(thread);
 }
+
+/* Connection thread FSM destructor.  This was the thread where the connection
+   machine was running (may be real thread).  From here we notify client
+   that the connection thread has finished. */
+
+static void silc_client_connection_finished(SilcFSMThread fsm,
+					    void *fsm_context,
+					    void *destructor_context)
+{
+  SilcClient client = silc_fsm_get_state_context(fsm);
+
+  /* Signal client that we have finished */
+  silc_atomic_sub_int16(&client->internal->conns, 1);
+  client->internal->connection_closed = TRUE;
+  SILC_FSM_SEMA_POST(&client->internal->wait_event);
+
+  silc_fsm_free(fsm);
+}
+
 
 /* Packet FSM thread destructor */
 
@@ -118,8 +139,10 @@ static void silc_client_packet_eos(SilcPacketEngine engine,
   SILC_LOG_DEBUG(("Remote disconnected connection"));
 
   /* Call connection callback */
-  conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED, 0, NULL,
-		 conn->callback_context);
+  if (!conn->internal->callback_called)
+    conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED, 0, NULL,
+		   conn->callback_context);
+  conn->internal->callback_called = TRUE;
 
   /* Signal to close connection */
   if (!conn->internal->disconnected) {
@@ -155,6 +178,21 @@ void silc_client_fsm_destructor(SilcFSM fsm, void *fsm_context,
   silc_fsm_free(fsm);
 }
 
+/* Connect abort operation */
+
+static void silc_client_connect_abort(SilcAsyncOperation op, void *context)
+{
+  SilcClientConnection conn = context;
+
+  SILC_LOG_DEBUG(("Connection %p aborted by application", conn));
+  conn->internal->aborted = TRUE;
+
+  /* Signal to close connection */
+  if (!conn->internal->disconnected) {
+    conn->internal->disconnected = TRUE;
+    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  }
+}
 
 /************************** Connection's machine ****************************/
 
@@ -237,9 +275,8 @@ SILC_FSM_STATE(silc_client_connection_st_run)
   if (conn->internal->disconnected) {
     /** Event: disconnected */
     SILC_LOG_DEBUG(("Event: disconnected"));
-    conn->internal->disconnected = FALSE;
     silc_fsm_next(fsm, silc_client_connection_st_close);
-    return SILC_FSM_CONTINUE;
+    return SILC_FSM_YIELD;
   }
 
   /* NOT REACHED */
@@ -344,7 +381,7 @@ SILC_FSM_STATE(silc_client_connection_st_packet)
   return SILC_FSM_CONTINUE;
 }
 
-/* Disconnection even to close remote connection.  We close the connection
+/* Disconnection event to close remote connection.  We close the connection
    and finish the connection machine in this state.  The connection context
    is deleted in the machine destructor.  The connection callback must be
    already called back to application before getting here. */
@@ -352,12 +389,40 @@ SILC_FSM_STATE(silc_client_connection_st_packet)
 SILC_FSM_STATE(silc_client_connection_st_close)
 {
   SilcClientConnection conn = fsm_context;
+  SilcClientCommandContext cmd;
 
-  SILC_LOG_DEBUG(("Closing remote connection"));
+  /* Finish running command threads.  This will also finish waiting packet
+     thread, as they are always waiting for some command.  If any thread is
+     waiting something else than command, they must be finished explicitly. */
+  if (silc_list_count(conn->internal->pending_commands)) {
+    SILC_LOG_DEBUG(("Finish pending commands"));
+    silc_list_start(conn->internal->pending_commands);
+    while ((cmd = silc_list_get(conn->internal->pending_commands))) {
+      if (silc_fsm_is_started(&cmd->thread)) {
+        cmd->verbose = FALSE;
+        silc_fsm_continue_sync(&cmd->thread);
+      }
+    }
+
+    /* Give threads time to finish */
+    return SILC_FSM_YIELD;
+  }
 
   /* Abort ongoing events */
-  if (conn->internal->op)
+  if (conn->internal->op) {
+    SILC_LOG_DEBUG(("Abort event"));
     silc_async_abort(conn->internal->op, NULL, NULL);
+    conn->internal->op = NULL;
+  }
+
+  /* If event thread is running, finish it. */
+  if (silc_fsm_is_started(&conn->internal->event_thread)) {
+    SILC_LOG_DEBUG(("Finish event thread"));
+    silc_fsm_continue_sync(&conn->internal->event_thread);
+    return SILC_FSM_YIELD;
+  }
+
+  SILC_LOG_DEBUG(("Closing remote connection"));
 
   /* Close connection */
   silc_packet_stream_destroy(conn->stream);
@@ -415,8 +480,10 @@ SILC_FSM_STATE(silc_client_disconnect)
 			  silc_buffer_len(&packet->buffer));
 
   /* Call connection callback */
-  conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED, status,
-		 message, conn->callback_context);
+  if (!conn->internal->callback_called)
+    conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED, status,
+		   message, conn->callback_context);
+  conn->internal->callback_called = TRUE;
 
   silc_free(message);
   silc_packet_free(packet);
@@ -443,17 +510,55 @@ SILC_FSM_STATE(silc_client_st_run)
 
   /* Process events */
 
-  if (client->internal->run_callback && client->internal->ops->running) {
+  if (client->internal->run_callback && client->internal->running) {
     /* Call running callbcak back to application */
-    SILC_LOG_DEBUG(("We are running, call running callback"));
+    SILC_LOG_DEBUG(("We are up, call running callback"));
     client->internal->run_callback = FALSE;
-    client->internal->ops->running(client, client->application);
+    client->internal->running(client, client->internal->running_context);
+    return SILC_FSM_CONTINUE;
+  }
+
+  if (client->internal->connection_closed) {
+    /* A connection finished */
+    SILC_LOG_DEBUG(("Event: connection closed"));
+    client->internal->connection_closed = FALSE;
+    if (silc_atomic_get_int16(&client->internal->conns) == 0 &&
+	client->internal->stop)
+      SILC_FSM_SEMA_POST(&client->internal->wait_event);
+    return SILC_FSM_CONTINUE;
+  }
+
+  if (client->internal->stop) {
+    /* Stop client libarry.  If we have running connections, wait until
+       they finish first. */
+    SILC_LOG_DEBUG(("Event: stop"));
+    if (silc_atomic_get_int16(&client->internal->conns) == 0)
+      silc_fsm_next(fsm, silc_client_st_stop);
     return SILC_FSM_CONTINUE;
   }
 
   /* NOT REACHED */
   SILC_ASSERT(FALSE);
   return SILC_FSM_CONTINUE;
+}
+
+/* Stop event.  Stops the client library. */
+
+SILC_FSM_STATE(silc_client_st_stop)
+{
+  SilcClient client = fsm_context;
+
+  SILC_LOG_DEBUG(("Client stopped"));
+
+  /* Stop scheduler */
+  silc_schedule_stop(client->schedule);
+  silc_client_commands_unregister(client);
+
+  /* Call stopped callback to application */
+  if (client->internal->running)
+    client->internal->running(client, client->internal->running_context);
+
+  return SILC_FSM_FINISH;
 }
 
 /******************************* Private API ********************************/
@@ -535,18 +640,29 @@ silc_client_add_connection(SilcClient client,
 
   conn->internal->ftp_sessions = silc_dlist_init();
 
+  /* Initiatlize our async operation so that application may abort us
+     while were connecting. */
+  conn->internal->cop = silc_async_alloc(silc_client_connect_abort,
+					 NULL, conn);
+  if (!conn->internal->cop) {
+    silc_client_del_connection(client, conn);
+    return NULL;
+  }
+
   /* Run the connection state machine.  If threads are in use the machine
      is always run in a real thread. */
   thread = silc_fsm_thread_alloc(&client->internal->fsm, conn,
-				 silc_client_fsm_destructor, NULL,
+				 silc_client_connection_finished, NULL,
 				 client->internal->params->threads);
   if (!thread) {
     silc_client_del_connection(client, conn);
     return NULL;
   }
+  silc_fsm_set_state_context(thread, client);
   silc_fsm_start(thread, silc_client_connection_st_start);
 
   SILC_LOG_DEBUG(("New connection %p", conn));
+  silc_atomic_add_int16(&client->internal->conns, 1);
 
   return conn;
 }
@@ -559,7 +675,6 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
   SilcList list;
   SilcIDCacheEntry entry;
   SilcFSMThread thread;
-  SilcClientCommandContext cmd;
 
   SILC_LOG_DEBUG(("Freeing connection %p", conn));
 
@@ -597,11 +712,6 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
   while ((thread = silc_list_get(conn->internal->thread_pool)))
     silc_fsm_free(thread);
 
-  /* Free pending commands */
-  silc_list_start(conn->internal->pending_commands);
-  while ((cmd = silc_list_get(conn->internal->pending_commands)))
-    silc_client_command_free(cmd);
-
   silc_free(conn->remote_host);
   silc_buffer_free(conn->internal->local_idp);
   silc_buffer_free(conn->internal->remote_idp);
@@ -624,18 +734,19 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
    to remote SILC server.  Performs key exchange also.  Returns the
    connection context to the connection callback. */
 
-SilcBool silc_client_connect_to_server(SilcClient client,
-				       SilcClientConnectionParams *params,
-				       SilcPublicKey public_key,
-				       SilcPrivateKey private_key,
-				       char *remote_host, int port,
-				       SilcClientConnectCallback callback,
-				       void *context)
+SilcAsyncOperation
+silc_client_connect_to_server(SilcClient client,
+			      SilcClientConnectionParams *params,
+			      SilcPublicKey public_key,
+			      SilcPrivateKey private_key,
+			      char *remote_host, int port,
+			      SilcClientConnectCallback callback,
+			      void *context)
 {
   SilcClientConnection conn;
 
   if (!client || !remote_host)
-    return FALSE;
+    return NULL;
 
   /* Add new connection */
   conn = silc_client_add_connection(client, SILC_CONN_SERVER, params,
@@ -643,7 +754,7 @@ SilcBool silc_client_connect_to_server(SilcClient client,
 				    port, callback, context);
   if (!conn) {
     callback(client, NULL, SILC_CLIENT_CONN_ERROR, 0, NULL, context);
-    return FALSE;
+    return NULL;
   }
 
   client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT,
@@ -652,24 +763,25 @@ SilcBool silc_client_connect_to_server(SilcClient client,
 
   /* Signal connection machine to start connecting */
   conn->internal->connect = TRUE;
-  return TRUE;
+  return conn->internal->cop;
 }
 
 /* Connects to remote client.  Performs key exchange also.  Returns the
    connection context to the connection callback. */
 
-SilcBool silc_client_connect_to_client(SilcClient client,
-				       SilcClientConnectionParams *params,
-				       SilcPublicKey public_key,
-				       SilcPrivateKey private_key,
-				       char *remote_host, int port,
-				       SilcClientConnectCallback callback,
-				       void *context)
+SilcAsyncOperation
+silc_client_connect_to_client(SilcClient client,
+			      SilcClientConnectionParams *params,
+			      SilcPublicKey public_key,
+			      SilcPrivateKey private_key,
+			      char *remote_host, int port,
+			      SilcClientConnectCallback callback,
+			      void *context)
 {
   SilcClientConnection conn;
 
   if (!client || !remote_host)
-    return FALSE;
+    return NULL;
 
   /* Add new connection */
   conn = silc_client_add_connection(client, SILC_CONN_CLIENT, params,
@@ -677,37 +789,38 @@ SilcBool silc_client_connect_to_client(SilcClient client,
 				    port, callback, context);
   if (!conn) {
     callback(client, NULL, SILC_CLIENT_CONN_ERROR, 0, NULL, context);
-    return FALSE;
+    return NULL;
   }
 
   /* Signal connection machine to start connecting */
   conn->internal->connect = TRUE;
-  return TRUE;
+  return conn->internal->cop;
 }
 
 /* Starts key exchange in the remote stream indicated by `stream'.  This
    creates the connection context and returns it in the connection callback. */
 
-SilcBool silc_client_key_exchange(SilcClient client,
-				  SilcClientConnectionParams *params,
-				  SilcPublicKey public_key,
-				  SilcPrivateKey private_key,
-				  SilcStream stream,
-				  SilcConnectionType conn_type,
-				  SilcClientConnectCallback callback,
-				  void *context)
+SilcAsyncOperation
+silc_client_key_exchange(SilcClient client,
+			 SilcClientConnectionParams *params,
+			 SilcPublicKey public_key,
+			 SilcPrivateKey private_key,
+			 SilcStream stream,
+			 SilcConnectionType conn_type,
+			 SilcClientConnectCallback callback,
+			 void *context)
 {
   SilcClientConnection conn;
   const char *host;
   SilcUInt16 port;
 
   if (!client || !stream)
-    return FALSE;
+    return NULL;
 
   if (!silc_socket_stream_get_info(stream, NULL, &host, NULL, &port)) {
     SILC_LOG_ERROR(("Socket stream does not have remote host name set"));
     callback(client, NULL, SILC_CLIENT_CONN_ERROR, 0, NULL, context);
-    return FALSE;
+    return NULL;
   }
 
   /* Add new connection */
@@ -716,13 +829,13 @@ SilcBool silc_client_key_exchange(SilcClient client,
 				    (char *)host, port, callback, context);
   if (!conn) {
     callback(client, NULL, SILC_CLIENT_CONN_ERROR, 0, NULL, context);
-    return FALSE;
+    return NULL;
   }
   conn->stream = (void *)stream;
 
   /* Signal connection to start key exchange */
   conn->internal->key_exchange = TRUE;
-  return TRUE;
+  return conn->internal->cop;
 }
 
 /* Closes remote connection */
@@ -1045,6 +1158,8 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
     nickname_format[sizeof(new_client->internal->
 			   params->nickname_format) - 1] = 0;
 
+  silc_atomic_init16(&new_client->internal->conns, 0);
+
   return new_client;
 }
 
@@ -1052,6 +1167,8 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
 
 void silc_client_free(SilcClient client)
 {
+  silc_schedule_uninit(client->schedule);
+
   if (client->rng)
     silc_rng_free(client->rng);
 
@@ -1062,6 +1179,7 @@ void silc_client_free(SilcClient client)
     silc_hmac_unregister_all();
   }
 
+  silc_atomic_uninit16(&client->internal->conns);
   silc_free(client->username);
   silc_free(client->hostname);
   silc_free(client->realname);
@@ -1076,7 +1194,8 @@ void silc_client_free(SilcClient client)
    client. Returns FALSE if error occured, TRUE otherwise. */
 
 SilcBool silc_client_init(SilcClient client, const char *username,
-			  const char *hostname, const char *realname)
+			  const char *hostname, const char *realname,
+			  SilcClientRunning running, void *context)
 {
   SILC_LOG_DEBUG(("Initializing client"));
 
@@ -1153,6 +1272,8 @@ SilcBool silc_client_init(SilcClient client, const char *username,
   silc_client_commands_register(client);
 
   /* Initialize and start the client FSM */
+  client->internal->running = running;
+  client->internal->running_context = context;
   silc_fsm_init(&client->internal->fsm, client, NULL, NULL, client->schedule);
   silc_fsm_sema_init(&client->internal->wait_event, &client->internal->fsm, 0);
   silc_fsm_start_sync(&client->internal->fsm, silc_client_st_run);
@@ -1162,20 +1283,6 @@ SilcBool silc_client_init(SilcClient client, const char *username,
   SILC_FSM_SEMA_POST(&client->internal->wait_event);
 
   return TRUE;
-}
-
-/* Stops the client. This is called to stop the client and thus to stop
-   the program. */
-
-void silc_client_stop(SilcClient client)
-{
-  SILC_LOG_DEBUG(("Stopping client"));
-
-  silc_schedule_stop(client->schedule);
-  silc_schedule_uninit(client->schedule);
-  silc_client_commands_unregister(client);
-
-  SILC_LOG_DEBUG(("Client stopped"));
 }
 
 /* Starts the SILC client FSM machine and blocks here.  When this returns
@@ -1194,5 +1301,22 @@ void silc_client_run(SilcClient client)
 
 void silc_client_run_one(SilcClient client)
 {
-  silc_schedule_one(client->schedule, 0);
+  if (silc_fsm_is_started(&client->internal->fsm))
+    silc_schedule_one(client->schedule, 0);
+}
+
+/* Stops the client. This is called to stop the client and thus to stop
+   the program. */
+
+void silc_client_stop(SilcClient client, SilcClientStopped stopped,
+		      void *context)
+{
+  SILC_LOG_DEBUG(("Stopping client"));
+
+  client->internal->running = (SilcClientRunning)stopped;
+  client->internal->running_context = context;
+
+  /* Signal to stop */
+  client->internal->stop = TRUE;
+  SILC_FSM_SEMA_POST(&client->internal->wait_event);
 }

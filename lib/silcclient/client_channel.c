@@ -47,6 +47,8 @@ SilcBool silc_client_send_channel_message(SilcClient client,
     return FALSE;
   if (flags & SILC_MESSAGE_FLAG_SIGNED && !hash)
     return FALSE;
+  if (conn->internal->disconnected)
+    return FALSE;
 
   chu = silc_client_on_channel(channel, conn->local_entry);
   if (!chu) {

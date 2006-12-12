@@ -145,9 +145,14 @@ struct SilcClientInternalStruct {
   SilcMutex lock;			 /* Client lock */
   SilcList commands;			 /* Registered commands */
   char *silc_client_version;		 /* Version set by application */
+  SilcClientRunning running;	         /* Running/Stopped callback */
+  void *running_context;		 /* Context for runnign callback */
+  SilcAtomic16 conns;			 /* Number of connections in client */
 
   /* Events */
-  unsigned int run_callback    : 1;	 /* Call running callback */
+  unsigned int stop              : 1;	 /* Stop client */
+  unsigned int run_callback      : 1;	 /* Call running/stopped callback */
+  unsigned int connection_closed : 1;	 /* A connection closed */
 };
 
 /* Internal context for conn->internal in SilcClientConnection. */
@@ -169,6 +174,7 @@ struct SilcClientConnectionInternalStruct {
   SilcBuffer local_idp;		         /* Local ID Payload */
   SilcBuffer remote_idp;		 /* Remote ID Payload */
   SilcAsyncOperation op;	         /* Protocols async operation */
+  SilcAsyncOperation cop;	         /* Async operation for application */
 
   SilcIDCache client_cache;		 /* Client entry cache */
   SilcIDCache channel_cache;		 /* Channel entry cache */
@@ -188,6 +194,8 @@ struct SilcClientConnectionInternalStruct {
   unsigned int verbose            : 1;   /* Notify application */
   unsigned int registering        : 1;	 /* Set when registering to network */
   unsigned int rekey_responder    : 1;   /* Set when rekeying as responder */
+  unsigned int callback_called    : 1;   /* Set when connect callback called */
+  unsigned int aborted            : 1;	 /* Set when aborted by application */
 
   SilcClientAway *away;
   SilcClientConnAuthRequest connauth;
@@ -203,6 +211,7 @@ SILC_FSM_STATE(silc_client_connection_st_packet);
 SILC_FSM_STATE(silc_client_connection_st_close);
 SILC_FSM_STATE(silc_client_error);
 SILC_FSM_STATE(silc_client_disconnect);
+SILC_FSM_STATE(silc_client_st_stop);
 
 void silc_client_del_connection(SilcClient client, SilcClientConnection conn);
 SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,

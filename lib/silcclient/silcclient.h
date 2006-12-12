@@ -83,6 +83,39 @@ typedef enum {
 } SilcClientConnectionStatus;
 /***/
 
+/****f* silcclient/SilcClientAPI/SilcClientRunning
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcClientRunning)(SilcClient client, void *context);
+ *
+ * DESCRIPTION
+ *
+ *    The callback given as argument to silc_client_init function.  Once
+ *    this is called the client library is running and application may
+ *    start using the Client library API.
+ *
+ ***/
+typedef void (*SilcClientRunning)(SilcClient client, void *context);
+
+/****f* silcclient/SilcClientAPI/SilcClientStopped
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcClientStopped)(SilcClient client, void *context);
+ *
+ * DESCRIPTION
+ *
+ *    The callback given as argument to silc_client_stop.  Once this is
+ *    called the client library has stopped and can be freed by calling
+ *    silc_client_free.  Note that this won't be called if there are
+ *    active connections in the client.  Connections must first be closed
+ *    by calling silc_client_close_connection or by sending QUIT command to
+ *    the server connection.
+ *
+ ***/
+typedef void (*SilcClientStopped)(SilcClient client, void *context);
+
 /****f* silcclient/SilcClientAPI/SilcClientConnectCallback
  *
  * SYNOPSIS
@@ -594,11 +627,6 @@ typedef struct {
   void (*detach)(SilcClient client, SilcClientConnection conn,
 		 const unsigned char *detach_data,
 		 SilcUInt32 detach_data_len);
-
-  /* Called when the client library is up and running.  After this callback
-     is called the application may start using the client library APIs. */
-  void (*running)(SilcClient client, void *application);
-
 } SilcClientOperations;
 /***/
 
@@ -763,7 +791,8 @@ void silc_client_free(SilcClient client);
  * SYNOPSIS
  *
  *    SilcBool silc_client_init(SilcClient client, const char *username,
- *                              const char *hostname, const char *realname);
+ *                              const char *hostname, const char *realname,
+ *                              SilcClientRunning running, void *context);
  *
  * DESCRIPTION
  *
@@ -776,9 +805,15 @@ void silc_client_free(SilcClient client);
  *    in the operating system, `hostname' is the client's host name and
  *    the `realname' is the user's real name.
  *
+ *    The `running' callback is called after the client is running after
+ *    silc_client_run or silc_client_run_one has been called.  Application
+ *    may start using the Client library API after that.  Setting the
+ *    callback is optional, but recommended.
+ *
  ***/
 SilcBool silc_client_init(SilcClient client, const char *username,
-			  const char *hostname, const char *realname);
+			  const char *hostname, const char *realname,
+			  SilcClientRunning running, void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_run
  *
@@ -788,7 +823,7 @@ SilcBool silc_client_init(SilcClient client, const char *username,
  *
  * DESCRIPTION
  *
- *    Runs the client. This starts the scheduler from the utility library.
+ *    Runs the client.  This starts the scheduler from the utility library.
  *    When this functions returns the execution of the application is over.
  *    The client must be initialized before calling this.
  *
@@ -814,21 +849,30 @@ void silc_client_run(SilcClient client);
  ***/
 void silc_client_run_one(SilcClient client);
 
+
 /****f* silcclient/SilcClientAPI/silc_client_stop
  *
  * SYNOPSIS
  *
- *    void silc_client_stop(SilcClient client);
+ *    void silc_client_stop(SilcClient client, SilcClientStopped stopped,
+ *                          void *context);
  *
  * DESCRIPTION
  *
  *    Stops the client. This is called to stop the client and thus to stop
  *    the program.  The client context must be freed with the silc_client_free
- *    function.
+ *    function.  All connections that exist in this client must be closed
+ *    before calling this function.  Connections can be closed by calling
+ *    silc_client_close_connection.
+ *
+ *    The `stopped' will be called once the client and all connections have
+ *    finished.  The client may be freed after that.  Note that the `stopped'
+ *    won't be called before all connections have finished.  Setting the
+ *    callback is optional.
  *
  ***/
-void silc_client_stop(SilcClient client);
-
+void silc_client_stop(SilcClient client, SilcClientStopped stopped,
+		      void *context);
 
 /* Connecting functions */
 
@@ -935,7 +979,7 @@ typedef struct {
  *
  * SYNOPSIS
  *
- *    SilcBool
+ *    SilcAsyncOperation
  *    silc_client_connect_to_server(SilcClient client,
  *                                  SilcClientConnectionParams *params,
  *                                  SilcPublicKey public_key,
@@ -959,23 +1003,25 @@ typedef struct {
  *    the silc_client_key_exchange after creating the connection to start
  *    key exchange and authentication with the server.
  *
- *    Returns when connecting is started and FALSE if connection was not
- *    created at all.
+ *    Returns SilcAsyncOperation which can be used to cancel the connecting,
+ *    or NULL on error.  Note that the returned pointer becomes invalid
+ *    after the `callback' is called.
  *
  ***/
-SilcBool silc_client_connect_to_server(SilcClient client,
-				       SilcClientConnectionParams *params,
-				       SilcPublicKey public_key,
-				       SilcPrivateKey private_key,
-				       char *remote_host, int port,
-				       SilcClientConnectCallback callback,
-				       void *context);
+SilcAsyncOperation
+silc_client_connect_to_server(SilcClient client,
+			      SilcClientConnectionParams *params,
+			      SilcPublicKey public_key,
+			      SilcPrivateKey private_key,
+			      char *remote_host, int port,
+			      SilcClientConnectCallback callback,
+			      void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_connect_to_client
  *
  * SYNOPSIS
  *
- *    SilcBool
+ *    SilcAsyncOperation
  *    silc_client_connect_to_client(SilcClient client,
  *                                  SilcClientConnectionParams *params,
  *                                  SilcPublicKey public_key,
@@ -998,23 +1044,25 @@ SilcBool silc_client_connect_to_server(SilcClient client,
  *    the silc_client_key_exchange after creating the connection to start
  *    key exchange with the client.
  *
- *    Returns when connecting is started and FALSE if connection was not
- *    created at all.
+ *    Returns SilcAsyncOperation which can be used to cancel the connecting,
+ *    or NULL on error.  Note that the returned pointer becomes invalid
+ *    after the `callback' is called.
  *
  ***/
-SilcBool silc_client_connect_to_client(SilcClient client,
-				       SilcClientConnectionParams *params,
-				       SilcPublicKey public_key,
-				       SilcPrivateKey private_key,
-				       char *remote_host, int port,
-				       SilcClientConnectCallback callback,
-				       void *context);
+SilcAsyncOperation
+silc_client_connect_to_client(SilcClient client,
+			      SilcClientConnectionParams *params,
+			      SilcPublicKey public_key,
+			      SilcPrivateKey private_key,
+			      char *remote_host, int port,
+			      SilcClientConnectCallback callback,
+			      void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_key_exchange
  *
  * SYNOPSIS
  *
- *    SilcBool
+ *    SilcAsyncOperation
  *    silc_client_key_exchange(SilcClient client,
  *                             SilcClientConnectionParams *params,
  *                             SilcPublicKey public_key,
@@ -1047,8 +1095,9 @@ SilcBool silc_client_connect_to_client(SilcClient client,
  *    disconnects.  The `conn_type' is the type of session this is going to
  *    be.
  *
- *    Returns TRUE when key exchange is started and FALSE if it is not started
- *    at all.
+ *    Returns SilcAsyncOperation which can be used to cancel the connecting,
+ *    or NULL on error.  Note that the returned pointer becomes invalid
+ *    after the `callback' is called.
  *
  * EXAMPLE
  *
@@ -1074,14 +1123,15 @@ SilcBool silc_client_connect_to_client(SilcClient client,
  *    }
  *
  ***/
-SilcBool silc_client_key_exchange(SilcClient client,
-				  SilcClientConnectionParams *params,
-				  SilcPublicKey public_key,
-				  SilcPrivateKey private_key,
-				  SilcStream stream,
-				  SilcConnectionType conn_type,
-				  SilcClientConnectCallback callback,
-				  void *context);
+SilcAsyncOperation
+silc_client_key_exchange(SilcClient client,
+			 SilcClientConnectionParams *params,
+			 SilcPublicKey public_key,
+			 SilcPrivateKey private_key,
+			 SilcStream stream,
+			 SilcConnectionType conn_type,
+			 SilcClientConnectCallback callback,
+			 void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_close_connection
  *

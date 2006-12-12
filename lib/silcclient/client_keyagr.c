@@ -362,6 +362,8 @@ void silc_client_send_key_agreement(SilcClient client,
 
   if (!client_entry)
     return;
+  if (conn->internal->disconnected)
+    return;
 
   if (client_entry->internal.ke) {
     completion(client, conn, client_entry, SILC_KEY_AGREEMENT_ALREADY_STARTED,

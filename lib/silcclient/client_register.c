@@ -186,6 +186,18 @@ SILC_FSM_STATE(silc_client_st_register_complete)
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
 
+  if (conn->internal->aborted) {
+    /** Aborted */
+    silc_fsm_next(fsm, silc_client_st_register_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  if (conn->internal->disconnected) {
+    /** Disconnected */
+    silc_fsm_next(fsm, silc_client_st_register_error);
+    return SILC_FSM_CONTINUE;
+  }
+
   if (!conn->local_id) {
     if (conn->internal->retry_count++ >= SILC_CLIENT_RETRY_COUNT) {
       /** Timeout, ID not received */
@@ -255,8 +267,10 @@ SILC_FSM_STATE(silc_client_st_register_error)
   }
 
   /* Call connect callback */
-  conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
-		 conn->callback_context);
+  if (conn->internal->callback_called)
+    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
+		   conn->callback_context);
+  conn->internal->callback_called = TRUE;
 
   silc_schedule_task_del_by_all(conn->internal->schedule, 0,
 				silc_client_connect_timeout, conn);

@@ -195,6 +195,12 @@ SILC_FSM_STATE(silc_client_command_reply_timeout)
   SilcClientConnection conn = cmd->conn;
   SilcArgumentPayload args = NULL;
 
+  if (conn->internal->disconnected) {
+    SILC_LOG_DEBUG(("Command %s canceled", silc_get_command_name(cmd->cmd)));
+    silc_list_del(conn->internal->pending_commands, cmd);
+    return SILC_FSM_FINISH;
+  }
+
   SILC_LOG_DEBUG(("Command %s timeout", silc_get_command_name(cmd->cmd)));
 
   /* Timeout, reply not received in timely fashion */

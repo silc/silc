@@ -41,6 +41,8 @@ SilcBool silc_client_send_private_message(SilcClient client,
     return FALSE;
   if (flags & SILC_MESSAGE_FLAG_SIGNED && !hash)
     return FALSE;
+  if (conn->internal->disconnected)
+    return FALSE;
 
   SILC_LOG_DEBUG(("Sending private message"));
 

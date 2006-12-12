@@ -203,7 +203,14 @@ static void silc_client_command_destructor(SilcFSMThread thread,
 					   void *fsm_context,
 					   void *destructor_context)
 {
-  silc_client_command_free(fsm_context);
+  SilcClientCommandContext cmd = fsm_context;
+  SilcClientConnection conn = cmd->conn;
+
+  /* Removes commands that aren't waiting for reply but are waiting
+     for something.  They may not have been removed yet. */
+  silc_list_del(conn->internal->pending_commands, cmd);
+
+  silc_client_command_free(cmd);
 }
 
 /* Add a command pending a command reply.  Used internally by the library. */
@@ -254,6 +261,9 @@ static SilcUInt16 silc_client_command_send_vap(SilcClient client,
 
   SILC_LOG_DEBUG(("Send command %s", silc_get_command_name(command)));
 
+  if (conn->internal->disconnected)
+    return 0;
+
   if (!cmd->cmd_ident)
     cmd->cmd_ident = silc_client_cmd_ident(conn);
 
@@ -296,6 +306,9 @@ silc_client_command_send_arg_array(SilcClient client,
   SilcBuffer packet;
 
   SILC_LOG_DEBUG(("Send command %s", silc_get_command_name(command)));
+
+  if (conn->internal->disconnected)
+    return 0;
 
   if (!cmd->cmd_ident)
     cmd->cmd_ident = silc_client_cmd_ident(conn);
@@ -351,12 +364,6 @@ void silc_client_command_free(SilcClientCommandContext cmd)
 {
   SilcClientCommandReplyCallback cb;
   int i;
-
-  /* If command is running, finish it.  Destructor will free the context. */
-  if (silc_fsm_is_started(&cmd->thread)) {
-    silc_fsm_finish(&cmd->thread);
-    return;
-  }
 
   for (i = 0; i < cmd->argc; i++)
     silc_free(cmd->argv[i]);
@@ -1077,12 +1084,16 @@ SILC_FSM_STATE(silc_client_command_quit_final)
   SilcClientConnection conn = cmd->conn;
   SilcClient client = conn->client;
 
+  SILC_LOG_DEBUG(("Quitting"));
+
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
 
   /* Call connection callback */
-  conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED,
-		 0, NULL, conn->callback_context);
+  if (!conn->internal->callback_called)
+    conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED,
+		   0, NULL, conn->callback_context);
+  conn->internal->callback_called = TRUE;
 
   /* Signal to close connection */
   if (!conn->internal->disconnected) {
