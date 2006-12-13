@@ -13,10 +13,6 @@ SILC Client
 
  o Improve help files, especially /cmode, /cumode and /key.
 
- o in /cmode and /cumode with +r, maybe the public key and private key
-   could be just some "string", which would then match to "string.pub" and
-   "string.prv".
-
 
 lib/silcclient, The Client Library
 ==================================
@@ -69,6 +65,10 @@ lib/silcclient, The Client Library
 
  o Remove silc_client_run and silc_client_run_one from calling SilcSchedule.
    Leave the scheduling entirely to application.
+
+ o in /cmode and /cumode with +r, maybe the public key and private key
+   could be just some "string", which would then match to "string.pub" and
+   "string.prv".
 
  o All packet waiting timeout tests and error condition tests.
 
@@ -147,6 +147,7 @@ lib/silccrypt			****PARTLY DONE****
  o Add DSS support.
 
  o Cipher optimizations (asm, that this) at least for i386 would be nice.
+   Take Gladman's AES ASM.
 
  o ECDSA and ECDH.
 
