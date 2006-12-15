@@ -1,7 +1,7 @@
 /*
  silc-nicklist.c : irssi
 
-    Copyright (C) 2000, 2003 Timo Sirainen, Pekka Riikonen
+    Copyright (C) 2000, 2003, 2006 Timo Sirainen, Pekka Riikonen
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ SILC_NICK_REC *silc_nicklist_insert(SILC_CHANNEL_REC *channel,
     return NULL;
   if (!user->client)
     return NULL;
-  if (!user->client->nickname)
+  if (!user->client->nickname[0])
     return NULL;
 
   rec = g_new0(SILC_NICK_REC, 1);
@@ -60,7 +60,7 @@ SILC_NICK_REC *silc_nicklist_insert(SILC_CHANNEL_REC *channel,
 SILC_NICK_REC *silc_nicklist_find(SILC_CHANNEL_REC *channel,
 				  SilcClientEntry client)
 {
-  if (!client || !client->nickname)
+  if (!client || !client->nickname[0])
     return NULL;
 
   return (SILC_NICK_REC *)nicklist_find_unique(CHANNEL(channel),

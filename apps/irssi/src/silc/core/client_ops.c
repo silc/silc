@@ -421,6 +421,8 @@ void silc_channel_message(SilcClient client, SilcClientConnection conn,
     SilcChannelUser chu = silc_client_on_channel(channel, sender);
     if (chu)
       nick = silc_nicklist_insert(chanrec, chu, FALSE);
+    if (!nick)
+      return;
   }
 
   /* If the messages is digitally signed, verify it, if possible. */
