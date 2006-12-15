@@ -1,3 +1,11 @@
+Wed Dec 13 18:05:50 EET 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_likely and silc_unlikely macros for GCC branch
+	  prediction optimizations.  Affected file lib/silcutil/silctypes.h.
+
+	* Added assembler AES optimization.  Cleaned up the SILC Cipher
+	  implementation API.  Affected files are in lib/silccrypt/.
+
 Tue Dec 12 18:56:14 EET 2006  Pekka Riikonen <priikone@silcnet.org>
 
 	* Changed back the SILC_FSM_THREAD_WAIT operation to not
