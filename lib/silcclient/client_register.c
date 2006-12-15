@@ -186,12 +186,6 @@ SILC_FSM_STATE(silc_client_st_register_complete)
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
 
-  if (conn->internal->aborted) {
-    /** Aborted */
-    silc_fsm_next(fsm, silc_client_st_register_error);
-    return SILC_FSM_CONTINUE;
-  }
-
   if (conn->internal->disconnected) {
     /** Disconnected */
     silc_fsm_next(fsm, silc_client_st_register_error);

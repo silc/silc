@@ -69,6 +69,7 @@ static inline void
 silc_client_command_callback(SilcClientCommandContext cmd, ...)
 {
   SilcClientCommandReplyCallback cb;
+  SilcList list;
   va_list ap, cp;
 
   va_start(ap, cmd);
@@ -83,8 +84,9 @@ silc_client_command_callback(SilcClientCommandContext cmd, ...)
   }
 
   /* Reply callback */
-  silc_list_start(cmd->reply_callbacks);
-  while ((cb = silc_list_get(cmd->reply_callbacks)))
+  list = cmd->reply_callbacks;
+  silc_list_start(list);
+  while ((cb = silc_list_get(list)))
     if (!cb->do_not_call) {
       silc_va_copy(cp, ap);
       cb->do_not_call = !cb->reply(cmd->conn->client, cmd->conn, cmd->cmd,

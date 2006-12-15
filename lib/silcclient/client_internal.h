@@ -186,7 +186,7 @@ struct SilcClientConnectionInternalStruct {
 
   /* Events */
   unsigned int connect            : 1;	 /* Connect remote host */
-  unsigned int disconnected       : 1;	 /* Disconnected by remote host */
+  unsigned int disconnected       : 1;	 /* Disconnect remote connection */
   unsigned int key_exchange       : 1;   /* Start key exchange */
   unsigned int rekeying           : 1;   /* Start rekey */
 
@@ -195,7 +195,6 @@ struct SilcClientConnectionInternalStruct {
   unsigned int registering        : 1;	 /* Set when registering to network */
   unsigned int rekey_responder    : 1;   /* Set when rekeying as responder */
   unsigned int callback_called    : 1;   /* Set when connect callback called */
-  unsigned int aborted            : 1;	 /* Set when aborted by application */
 
   SilcClientAway *away;
   SilcClientConnAuthRequest connauth;

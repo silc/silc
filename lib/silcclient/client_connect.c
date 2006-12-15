@@ -32,12 +32,6 @@ static void silc_client_connect_callback(SilcNetStatus status,
   SilcClientConnection conn = silc_fsm_get_context(fsm);
   SilcClient client = conn->client;
 
-  if (conn->internal->aborted) {
-    silc_fsm_next(fsm, silc_client_st_connect_error);
-    SILC_FSM_CALL_CONTINUE(fsm);
-    return;
-  }
-
   conn->internal->op = NULL;
   if (conn->internal->verbose) {
     switch (status) {
@@ -127,14 +121,6 @@ static void silc_client_ke_verify_key(SilcSKE ske,
   SilcClient client = conn->client;
   VerifyKeyContext verify;
 
-  if (conn->internal->aborted) {
-    completion(ske, SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY,
-	       completion_context);
-    silc_fsm_next(fsm, silc_client_st_connect_error);
-    SILC_FSM_CALL_CONTINUE(fsm);
-    return;
-  }
-
   /* If we provided repository for SKE and we got here the key was not
      found from the repository. */
   if (conn->internal->params.repository &&
@@ -177,13 +163,6 @@ static void silc_client_ke_completion(SilcSKE ske,
   SilcClient client = conn->client;
   SilcCipher send_key, receive_key;
   SilcHmac hmac_send, hmac_receive;
-
-  if (conn->internal->aborted) {
-    silc_ske_free_rekey_material(rekey);
-    silc_fsm_next(fsm, silc_client_st_connect_error);
-    SILC_FSM_CALL_CONTINUE(fsm);
-    return;
-  }
 
   conn->internal->op = NULL;
   if (status != SILC_SKE_STATUS_OK) {
@@ -327,12 +306,6 @@ static void silc_client_connect_auth_completion(SilcConnAuth connauth,
   SilcFSMThread fsm = context;
   SilcClientConnection conn = silc_fsm_get_context(fsm);
   SilcClient client = conn->client;
-
-  if (conn->internal->aborted) {
-    silc_fsm_next(fsm, silc_client_st_connect_error);
-    SILC_FSM_CALL_CONTINUE(fsm);
-    return;
-  }
 
   conn->internal->op = NULL;
   silc_connauth_free(connauth);

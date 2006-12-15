@@ -185,7 +185,6 @@ static void silc_client_connect_abort(SilcAsyncOperation op, void *context)
   SilcClientConnection conn = context;
 
   SILC_LOG_DEBUG(("Connection %p aborted by application", conn));
-  conn->internal->aborted = TRUE;
 
   /* Signal to close connection */
   if (!conn->internal->disconnected) {
@@ -408,7 +407,7 @@ SILC_FSM_STATE(silc_client_connection_st_close)
     return SILC_FSM_YIELD;
   }
 
-  /* Abort ongoing events */
+  /* Abort ongoing event */
   if (conn->internal->op) {
     SILC_LOG_DEBUG(("Abort event"));
     silc_async_abort(conn->internal->op, NULL, NULL);
@@ -626,6 +625,7 @@ silc_client_add_connection(SilcClient client,
 		 struct SilcClientCommandContextStruct, next);
   silc_list_init(conn->internal->thread_pool, SilcFSMThreadStruct, next);
 
+  /* Allocate client, channel and serve caches */
   conn->internal->client_cache = silc_idcache_alloc(0, SILC_ID_CLIENT,
 						    NULL, NULL);
   conn->internal->channel_cache = silc_idcache_alloc(0, SILC_ID_CHANNEL,
@@ -640,8 +640,8 @@ silc_client_add_connection(SilcClient client,
 
   conn->internal->ftp_sessions = silc_dlist_init();
 
-  /* Initiatlize our async operation so that application may abort us
-     while were connecting. */
+  /* Initialize our async operation so that application may abort us
+     while we're connecting. */
   conn->internal->cop = silc_async_alloc(silc_client_connect_abort,
 					 NULL, conn);
   if (!conn->internal->cop) {
@@ -727,7 +727,6 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
   silc_free(conn);
 }
 
-
 /******************************* Client API *********************************/
 
 /* Connects to remote server.  This is the main routine used to connect
@@ -744,6 +743,8 @@ silc_client_connect_to_server(SilcClient client,
 			      void *context)
 {
   SilcClientConnection conn;
+
+  SILC_LOG_DEBUG(("Connecting to server"));
 
   if (!client || !remote_host)
     return NULL;
@@ -780,6 +781,8 @@ silc_client_connect_to_client(SilcClient client,
 {
   SilcClientConnection conn;
 
+  SILC_LOG_DEBUG(("Connecting to client"));
+
   if (!client || !remote_host)
     return NULL;
 
@@ -813,6 +816,8 @@ silc_client_key_exchange(SilcClient client,
   SilcClientConnection conn;
   const char *host;
   SilcUInt16 port;
+
+  SILC_LOG_DEBUG(("Performing key exchange"));
 
   if (!client || !stream)
     return NULL;
@@ -853,164 +858,6 @@ void silc_client_close_connection(SilcClient client,
 }
 
 #if 0
-/* Finalizes the connection to the remote SILC server. This is called
-   after authentication protocol has been completed. This send our
-   user information to the server to receive our client ID from
-   server. */
-
-SILC_TASK_CALLBACK(silc_client_connect_to_server_final)
-{
-  SilcProtocol protocol = (SilcProtocol)context;
-  SilcClientConnAuthInternalContext *ctx =
-    (SilcClientConnAuthInternalContext *)protocol->context;
-  SilcClient client = (SilcClient)ctx->client;
-  SilcClientConnection conn = (SilcClientConnection)ctx->sock->user_data;
-  SilcBuffer packet;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  if (protocol->state == SILC_PROTOCOL_STATE_ERROR ||
-      protocol->state == SILC_PROTOCOL_STATE_FAILURE) {
-    /* Error occured during protocol */
-    SILC_LOG_DEBUG(("Error during authentication protocol"));
-    ctx->status = SILC_CLIENT_CONN_ERROR_AUTH;
-    goto err;
-  }
-
-  if (conn->internal->params.detach_data) {
-    /* Send RESUME_CLIENT packet to the server, which is used to resume
-       old detached session back. */
-    SilcBuffer auth;
-    SilcClientID *old_client_id;
-    unsigned char *old_id;
-    SilcUInt16 old_id_len;
-
-    if (!silc_client_process_detach_data(client, conn, &old_id, &old_id_len)) {
-      ctx->status = SILC_CLIENT_CONN_ERROR_RESUME;
-      goto err;
-    }
-
-    old_client_id = silc_id_str2id(old_id, old_id_len, SILC_ID_CLIENT);
-    if (!old_client_id) {
-      silc_free(old_id);
-      ctx->status = SILC_CLIENT_CONN_ERROR_RESUME;
-      goto err;
-    }
-
-    /* Generate authentication data that server will verify */
-    auth = silc_auth_public_key_auth_generate(client->public_key,
-					      client->private_key,
-					      client->rng,
-					      conn->internal->hash,
-					      old_client_id, SILC_ID_CLIENT);
-    if (!auth) {
-      silc_free(old_client_id);
-      silc_free(old_id);
-      ctx->status = SILC_CLIENT_CONN_ERROR_RESUME;
-      goto err;
-    }
-
-    packet = silc_buffer_alloc_size(2 + old_id_len + auth->len);
-    silc_buffer_format(packet,
-		       SILC_STR_UI_SHORT(old_id_len),
-		       SILC_STR_UI_XNSTRING(old_id, old_id_len),
-		       SILC_STR_UI_XNSTRING(auth->data, auth->len),
-		       SILC_STR_END);
-
-    /* Send the packet */
-    silc_client_packet_send(client, ctx->sock, SILC_PACKET_RESUME_CLIENT,
-			    NULL, 0, NULL, NULL,
-			    packet->data, packet->len, TRUE);
-    silc_buffer_free(packet);
-    silc_buffer_free(auth);
-    silc_free(old_client_id);
-    silc_free(old_id);
-  } else {
-    /* Send NEW_CLIENT packet to the server. We will become registered
-       to the SILC network after sending this packet and we will receive
-       client ID from the server. */
-    packet = silc_buffer_alloc(2 + 2 + strlen(client->username) +
-			       strlen(client->realname));
-    silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-    silc_buffer_format(packet,
-		       SILC_STR_UI_SHORT(strlen(client->username)),
-		       SILC_STR_UI_XNSTRING(client->username,
-					    strlen(client->username)),
-		       SILC_STR_UI_SHORT(strlen(client->realname)),
-		       SILC_STR_UI_XNSTRING(client->realname,
-					    strlen(client->realname)),
-		       SILC_STR_END);
-
-    /* Send the packet */
-    silc_client_packet_send(client, ctx->sock, SILC_PACKET_NEW_CLIENT,
-			    NULL, 0, NULL, NULL,
-			    packet->data, packet->len, TRUE);
-    silc_buffer_free(packet);
-  }
-
-  /* Save remote ID. */
-  conn->remote_id = ctx->dest_id;
-  conn->remote_id_data = silc_id_id2str(ctx->dest_id, SILC_ID_SERVER);
-  conn->remote_id_data_len = silc_id_get_len(ctx->dest_id, SILC_ID_SERVER);
-
-  /* Register re-key timeout */
-  conn->internal->rekey->timeout = client->internal->params->rekey_secs;
-  conn->internal->rekey->context = (void *)client;
-  silc_schedule_task_add(client->schedule, conn->sock->sock,
-			 silc_client_rekey_callback,
-			 (void *)conn->sock, conn->internal->rekey->timeout, 0,
-			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-
-  silc_protocol_free(protocol);
-  silc_free(ctx->auth_data);
-  silc_socket_free(ctx->sock);
-  silc_free(ctx);
-  conn->sock->protocol = NULL;
-  return;
-
- err:
-  silc_protocol_free(protocol);
-  silc_free(ctx->auth_data);
-  silc_free(ctx->dest_id);
-  conn->sock->protocol = NULL;
-  silc_socket_free(ctx->sock);
-
-  /* Notify application of failure */
-  silc_schedule_task_add(client->schedule, ctx->sock->sock,
-			 silc_client_connect_failure_auth, ctx,
-			 0, 1, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-}
-
-/* Client session resuming callback.  If the session was resumed
-   this callback is called after the resuming is completed.  This
-   will call the `connect' client operation to the application
-   since it has not been called yet. */
-
-static void silc_client_resume_session_cb(SilcClient client,
-					  SilcClientConnection conn,
-					  SilcBool success,
-					  void *context)
-{
-  SilcBuffer sidp;
-
-  /* Notify application that connection is created to server */
-  client->internal->ops->connected(client, conn, success ?
-				   SILC_CLIENT_CONN_SUCCESS_RESUME :
-				   SILC_CLIENT_CONN_ERROR_RESUME);
-
-  if (success) {
-    /* Issue INFO command to fetch the real server name and server
-       information and other stuff. */
-    silc_client_command_register(client, SILC_COMMAND_INFO, NULL, NULL,
-				 silc_client_command_reply_info_i, 0,
-				 ++conn->cmd_ident);
-    sidp = silc_id_payload_encode(conn->remote_id, SILC_ID_SERVER);
-    silc_client_command_send(client, conn, SILC_COMMAND_INFO,
-			     conn->cmd_ident, 1, 2, sidp->data, sidp->len);
-    silc_buffer_free(sidp);
-  }
-}
-
 /* Processes incoming connection authentication method request packet.
    It is a reply to our previously sent request. The packet can be used
    to resolve the authentication method for the current session if the
@@ -1118,7 +965,6 @@ silc_client_request_authentication_method(SilcClient client,
 }
 #endif /* 0 */
 
-
 /* Allocates new client object. This has to be done before client may
    work. After calling this one must call silc_client_init to initialize
    the client. The `application' is application specific user data pointer
@@ -1203,7 +1049,7 @@ SilcBool silc_client_init(SilcClient client, const char *username,
     return FALSE;
 
   if (!username || !hostname) {
-    SILC_LOG_ERROR(("Username, hostname and realname must be given to "
+    SILC_LOG_ERROR(("Username and hostname must be given to "
 		    "silc_client_init"));
     return FALSE;
   }
@@ -1258,18 +1104,18 @@ SilcBool silc_client_init(SilcClient client, const char *username,
   if (!client->schedule)
     return FALSE;
 
+  /* Allocate client lock */
+  silc_mutex_alloc(&client->internal->lock);
+
+  /* Register commands */
+  silc_client_commands_register(client);
+
   /* Start packet engine */
   client->internal->packet_engine =
     silc_packet_engine_start(client->rng, FALSE, &silc_client_stream_cbs,
 			     client);
   if (!client->internal->packet_engine)
     return FALSE;
-
-  /* Allocate client lock */
-  silc_mutex_alloc(&client->internal->lock);
-
-  /* Register commands */
-  silc_client_commands_register(client);
 
   /* Initialize and start the client FSM */
   client->internal->running = running;
@@ -1296,8 +1142,7 @@ void silc_client_run(SilcClient client)
   silc_schedule(client->schedule);
 }
 
-/* Call scheduler one iteration and return.  This cannot be called if threads
-   are in use. */
+/* Call scheduler one iteration and return. */
 
 void silc_client_run_one(SilcClient client)
 {

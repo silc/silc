@@ -202,6 +202,13 @@ SILC_FSM_STATE(silc_client_channel_message)
     return SILC_FSM_CONTINUE;
   }
 
+  /* Check that user is on channel */
+  if (!silc_client_on_channel(channel, client_entry)) {
+    /** User not on channel */
+    silc_fsm_next(fsm, silc_client_channel_message_error);
+    return SILC_FSM_CONTINUE;
+  }
+
   /* If there is no channel private key then just decrypt the message
      with the channel key. If private keys are set then just go through
      all private keys and check what decrypts correctly. */

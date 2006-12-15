@@ -934,19 +934,23 @@ void silc_client_nickname_format(SilcClient client,
   if (!clients && !client->internal->params->nickname_force_format)
     return;
 
-  len = 0;
-  freebase = TRUE;
-  while ((entry = silc_dlist_get(clients))) {
-    if (entry->internal.valid && entry != client_entry)
-      len++;
-    if (entry->internal.valid && entry != client_entry &&
-	silc_utf8_strcasecmp(entry->nickname, client_entry->nickname)) {
-      freebase = FALSE;
-      unformatted = entry;
+  if (clients) {
+    len = 0;
+    freebase = TRUE;
+    while ((entry = silc_dlist_get(clients))) {
+      if (entry->internal.valid && entry != client_entry)
+	len++;
+      if (entry->internal.valid && entry != client_entry &&
+	  silc_utf8_strcasecmp(entry->nickname, client_entry->nickname)) {
+	freebase = FALSE;
+	unformatted = entry;
+      }
+    }
+    if (!len || freebase) {
+      silc_client_list_free(client, conn, clients);
+      return;
     }
   }
-  if (!len || freebase)
-    return;
 
   /* If we are changing nickname of our local entry we'll enforce
      that we will always get the unformatted nickname.  Give our
@@ -1012,18 +1016,20 @@ void silc_client_nickname_format(SilcClient client,
 	char tmp[6];
 	int num, max = 1;
 
-	if (silc_dlist_count(clients) == 1)
+	if (clients && silc_dlist_count(clients) == 1)
 	  break;
 
-	silc_dlist_start(clients);
-	while ((entry = silc_dlist_get(clients))) {
-	  if (!silc_utf8_strncasecmp(entry->nickname, newnick, off))
-	    continue;
-	  if (strlen(entry->nickname) <= off)
-	    continue;
-	  num = atoi(&entry->nickname[off]);
-	  if (num > max)
-	    max = num;
+	if (clients) {
+	  silc_dlist_start(clients);
+	  while ((entry = silc_dlist_get(clients))) {
+	    if (!silc_utf8_strncasecmp(entry->nickname, newnick, off))
+	      continue;
+	    if (strlen(entry->nickname) <= off)
+	      continue;
+	    num = atoi(&entry->nickname[off]);
+	    if (num > max)
+	      max = num;
+	  }
 	}
 
 	memset(tmp, 0, sizeof(tmp));
