@@ -60,7 +60,7 @@ SILC_TASK_CALLBACK(silc_socket_stream_io)
 {
   SilcSocketStream stream = context;
 
-  if (!stream->notifier)
+  if (silc_unlikely(!stream->notifier))
     return;
 
   switch (type) {

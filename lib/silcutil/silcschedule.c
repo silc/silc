@@ -54,11 +54,11 @@ static void silc_schedule_dispatch_fd(SilcSchedule schedule)
   while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
     t = (SilcTask)task;
 
-    if (!t->valid) {
+    if (silc_unlikely(!t->valid)) {
       silc_schedule_task_remove(schedule, t);
       continue;
     }
-    if (!task->events || !task->revents)
+    if (!task->revents || !task->events)
       continue;
 
     /* Is the task ready for reading */
@@ -78,7 +78,7 @@ static void silc_schedule_dispatch_fd(SilcSchedule schedule)
     }
 
     /* Remove if task was invalidated in the task callback */
-    if (!t->valid)
+    if (silc_unlikely(!t->valid))
       silc_schedule_task_remove(schedule, t);
   }
   silc_hash_table_list_reset(&htl);
@@ -102,31 +102,37 @@ static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
 
   /* First task in the task queue has always the earliest timeout. */
   silc_list_start(schedule->timeout_queue);
-  while ((task = silc_list_get(schedule->timeout_queue)) != SILC_LIST_END) {
+  task = silc_list_get(schedule->timeout_queue);
+  do {
     t = (SilcTask)task;
 
     /* Remove invalid task */
-    if (!t->valid) {
+    if (silc_unlikely(!t->valid)) {
       silc_schedule_task_remove(schedule, t);
       continue;
     }
 
+    SILC_SCHEDULE_UNLOCK(schedule);
+
     /* Execute the task if the timeout has expired */
-    if (dispatch_all || silc_compare_timeval(&task->timeout, &curtime)) {
-      t->valid = FALSE;
-      SILC_SCHEDULE_UNLOCK(schedule);
-      t->callback(schedule, schedule->app_context, SILC_TASK_EXPIRE, 0,
-		  t->context);
+    if (!silc_compare_timeval(&task->timeout, &curtime) && !dispatch_all) {
       SILC_SCHEDULE_LOCK(schedule);
-
-      /* Remove the expired task */
-      silc_schedule_task_remove(schedule, t);
-
-      /* Balance when we have lots of small timeouts */
-      if ((++count) > 40)
-	break;
+      break;
     }
-  }
+
+    t->valid = FALSE;
+    t->callback(schedule, schedule->app_context, SILC_TASK_EXPIRE, 0,
+		t->context);
+
+    SILC_SCHEDULE_LOCK(schedule);
+
+    /* Remove the expired task */
+    silc_schedule_task_remove(schedule, t);
+
+    /* Balance when we have lots of small timeouts */
+    if (silc_unlikely((++count) > 40))
+      break;
+  } while (silc_likely((task = silc_list_get(schedule->timeout_queue))));
 }
 
 /* Calculates next timeout. This is the timeout value when at earliest some
@@ -146,11 +152,12 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
 
   /* First task in the task queue has always the earliest timeout. */
   silc_list_start(schedule->timeout_queue);
-  while ((task = silc_list_get(schedule->timeout_queue)) != SILC_LIST_END) {
+  task = silc_list_get(schedule->timeout_queue);
+  do {
     t = (SilcTask)task;
 
     /* Remove invalid task */
-    if (!t->valid) {
+    if (silc_unlikely(!t->valid)) {
       silc_schedule_task_remove(schedule, t);
       continue;
     }
@@ -159,7 +166,7 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
        timeout tasks from the past. */
     if (silc_compare_timeval(&task->timeout, &curtime) && dispatch) {
       silc_schedule_dispatch_timeout(schedule, FALSE);
-      if (!schedule->valid)
+      if (silc_unlikely(!schedule->valid))
 	return;
 
       /* Start selecting new timeout again after dispatch */
@@ -181,9 +188,8 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
 	curtime.tv_sec = 0;
       curtime.tv_usec += 1000000L;
     }
-
     break;
-  }
+  } while ((task = silc_list_get(schedule->timeout_queue)));
 
   /* Save the timeout */
   if (task) {
@@ -200,9 +206,8 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
 static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
 {
   SilcTaskFd ftask;
-  SilcTaskTimeout ttask;
 
-  if (task == SILC_ALL_TASKS) {
+  if (silc_unlikely(task == SILC_ALL_TASKS)) {
     SilcTask task;
     SilcHashTableList htl;
     SilcUInt32 fd;
@@ -223,25 +228,17 @@ static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
     return;
   }
 
-  /* Delete from timeout queue */
-  if (task->type == 1) {
-    silc_list_start(schedule->timeout_queue);
-    while ((ttask = silc_list_get(schedule->timeout_queue)) != SILC_LIST_END) {
-      if (ttask == (SilcTaskTimeout)task) {
-	silc_list_del(schedule->timeout_queue, ttask);
+  if (silc_likely(task->type == 1)) {
+    /* Delete from timeout queue */
+    silc_list_del(schedule->timeout_queue, task);
 
-	/* Put to free list */
-	silc_list_add(schedule->free_tasks, ttask);
-	break;
-      }
-    }
-
-    return;
+    /* Put to free list */
+    silc_list_add(schedule->free_tasks, task);
+  } else {
+    /* Delete from fd queue */
+    ftask = (SilcTaskFd)task;
+    silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(ftask->fd));
   }
-
-  /* Delete from fd queue */
-  ftask = (SilcTaskFd)task;
-  silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(ftask->fd));
 }
 
 /* Timeout freelist garbage collection */
@@ -418,21 +415,18 @@ void silc_schedule_stop(SilcSchedule schedule)
   SILC_SCHEDULE_UNLOCK(schedule);
 }
 
-/* Runs the scheduler once and then returns. */
+/* Runs the scheduler once and then returns.   Must be called locked. */
 
-SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
+static SilcBool silc_schedule_iterate(SilcSchedule schedule, int timeout_usecs)
 {
   struct timeval timeout;
   int ret;
-
-  if (!schedule->is_locked)
-    SILC_SCHEDULE_LOCK(schedule);
 
   do {
     SILC_LOG_DEBUG(("In scheduler loop"));
 
     /* Deliver signals if any has been set to be called */
-    if (schedule->signal_tasks) {
+    if (silc_unlikely(schedule->signal_tasks)) {
       SILC_SCHEDULE_UNLOCK(schedule);
       schedule_ops.signals_call(schedule, schedule->internal);
       schedule->signal_tasks = FALSE;
@@ -440,10 +434,8 @@ SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
     }
 
     /* Check if scheduler is valid */
-    if (schedule->valid == FALSE) {
+    if (silc_unlikely(schedule->valid == FALSE)) {
       SILC_LOG_DEBUG(("Scheduler not valid anymore, exiting"));
-      if (!schedule->is_locked)
-	SILC_SCHEDULE_UNLOCK(schedule);
       return FALSE;
     }
 
@@ -453,10 +445,8 @@ SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
     silc_schedule_select_timeout(schedule);
 
     /* Check if scheduler is valid */
-    if (schedule->valid == FALSE) {
+    if (silc_unlikely(schedule->valid == FALSE)) {
       SILC_LOG_DEBUG(("Scheduler not valid anymore, exiting"));
-      if (!schedule->is_locked)
-	SILC_SCHEDULE_UNLOCK(schedule);
       return FALSE;
     }
 
@@ -473,50 +463,52 @@ SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
     SILC_LOG_DEBUG(("Select"));
     ret = schedule_ops.select(schedule, schedule->internal);
 
-    switch (ret) {
-    case 0:
+    if (silc_likely(ret == 0)) {
       /* Timeout */
       SILC_LOG_DEBUG(("Running timeout tasks"));
-      if (silc_list_count(schedule->timeout_queue))
+      if (silc_likely(silc_list_count(schedule->timeout_queue)))
 	silc_schedule_dispatch_timeout(schedule, FALSE);
-      break;
-    case -1:
-      /* Error */
-      if (errno == EINTR)
-	break;
-      SILC_LOG_ERROR(("Error in select(): %s", strerror(errno)));
-      break;
-    default:
+      continue;
+
+    } else if (silc_likely(ret > 0)) {
       /* There is some data available now */
       SILC_LOG_DEBUG(("Running fd tasks"));
       silc_schedule_dispatch_fd(schedule);
-      break;
+      continue;
+
+    } else {
+      /* Error */
+      if (silc_likely(errno == EINTR))
+	continue;
+      SILC_LOG_ERROR(("Error in select()/poll(): %s", strerror(errno)));
+      continue;
     }
   } while (timeout_usecs == -1);
-
-  if (!schedule->is_locked)
-    SILC_SCHEDULE_UNLOCK(schedule);
 
   return TRUE;
 }
 
-/* The SILC scheduler. This is actually the main routine in SILC programs.
-   When this returns the program is to be ended. Before this function can
-   be called, one must call silc_schedule_init function. */
+/* Runs the scheduler once and then returns. */
+
+SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
+{
+  SilcBool ret;
+  SILC_SCHEDULE_LOCK(schedule);
+  ret = silc_schedule_iterate(schedule, timeout_usecs);
+  SILC_SCHEDULE_UNLOCK(schedule);
+  return ret;
+}
+
+/* Runs the scheduler and blocks here.  When this returns the scheduler
+   has ended. */
 
 void silc_schedule(SilcSchedule schedule)
 {
   SILC_LOG_DEBUG(("Running scheduler"));
 
-  if (schedule->valid == FALSE) {
-    SILC_LOG_ERROR(("Scheduler is not valid, stopping"));
-    return;
-  }
-
   /* Start the scheduler loop */
   SILC_SCHEDULE_LOCK(schedule);
-  schedule->is_locked = TRUE;
-  silc_schedule_one(schedule, -1);
+  silc_schedule_iterate(schedule, -1);
   SILC_SCHEDULE_UNLOCK(schedule);
 }
 
@@ -556,19 +548,20 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 {
   SilcTask task = NULL;
 
-  if (!schedule->valid)
+  if (silc_unlikely(!schedule->valid))
     return NULL;
 
   SILC_SCHEDULE_LOCK(schedule);
 
-  if (type == SILC_TASK_TIMEOUT) {
+  if (silc_likely(type == SILC_TASK_TIMEOUT)) {
     SilcTaskTimeout tmp, prev, ttask;
+    SilcList list;
 
     silc_list_start(schedule->free_tasks);
     ttask = silc_list_get(schedule->free_tasks);
-    if (!ttask) {
+    if (silc_unlikely(!ttask)) {
       ttask = silc_calloc(1, sizeof(*ttask));
-      if (!ttask)
+      if (silc_unlikely(!ttask))
 	goto out;
     }
     silc_list_del(schedule->free_tasks, ttask);
@@ -594,9 +587,10 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 
     /* Add task to correct spot so that the first task in the list has
        the earliest timeout. */
-    silc_list_start(schedule->timeout_queue);
+    list = schedule->timeout_queue;
+    silc_list_start(list);
     prev = NULL;
-    while ((tmp = silc_list_get(schedule->timeout_queue)) != SILC_LIST_END) {
+    while ((tmp = silc_list_get(list)) != SILC_LIST_END) {
       /* If we have shorter timeout, we have found our spot */
       if (silc_compare_timeval(&ttask->timeout, &tmp->timeout)) {
 	silc_list_insert(schedule->timeout_queue, prev, ttask);
@@ -609,21 +603,23 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 
     task = (SilcTask)ttask;
 
-  } else if (type == SILC_TASK_FD) {
+  } else if (silc_likely(type == SILC_TASK_FD)) {
     /* Check if fd is already added */
-    if (silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fd),
-			     NULL, (void **)&task))
+    if (silc_unlikely(silc_hash_table_find(schedule->fd_queue,
+					   SILC_32_TO_PTR(fd),
+					   NULL, (void **)&task)))
       goto out;
 
     /* Check max tasks */
-    if (schedule->max_tasks > 0 &&
-	silc_hash_table_count(schedule->fd_queue) >= schedule->max_tasks) {
+    if (silc_unlikely(schedule->max_tasks > 0 &&
+		      silc_hash_table_count(schedule->fd_queue) >=
+		      schedule->max_tasks)) {
       SILC_LOG_WARNING(("Scheduler task limit reached: cannot add new task"));
       goto out;
     }
 
     SilcTaskFd ftask = silc_calloc(1, sizeof(*ftask));
-    if (!ftask)
+    if (silc_unlikely(!ftask))
       goto out;
 
     SILC_LOG_DEBUG(("New fd task %p fd=%d", ftask, fd));
@@ -640,13 +636,12 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 
     task = (SilcTask)ftask;
 
-  } else if (type == SILC_TASK_SIGNAL) {
+  } else if (silc_unlikely(type == SILC_TASK_SIGNAL)) {
     SILC_SCHEDULE_UNLOCK(schedule);
-    schedule_ops.signal_register(schedule, schedule->internal, (int)fd,
+    schedule_ops.signal_register(schedule, schedule->internal, fd,
 				 callback, context);
     return NULL;
   }
-
 
  out:
   SILC_SCHEDULE_UNLOCK(schedule);
@@ -657,7 +652,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 
 void silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
 {
-  if (task == SILC_ALL_TASKS) {
+  if (silc_unlikely(task == SILC_ALL_TASKS)) {
     SilcHashTableList htl;
 
     SILC_LOG_DEBUG(("Unregister all tasks"));
@@ -697,14 +692,15 @@ void silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd)
   SILC_SCHEDULE_LOCK(schedule);
 
   /* fd is unique, so there is only one task with this fd in the table */
-  if (silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fd), NULL,
-			   (void **)&task))
+  if (silc_likely(silc_hash_table_find(schedule->fd_queue,
+				       SILC_32_TO_PTR(fd), NULL,
+				       (void **)&task)))
     task->valid = FALSE;
 
   SILC_SCHEDULE_UNLOCK(schedule);
 
   /* If it is signal, remove it */
-  if (!task)
+  if (silc_unlikely(!task))
     schedule_ops.signal_unregister(schedule, schedule->internal, fd);
 }
 
@@ -715,6 +711,7 @@ void silc_schedule_task_del_by_callback(SilcSchedule schedule,
 {
   SilcTask task;
   SilcHashTableList htl;
+  SilcList list;
 
   SILC_LOG_DEBUG(("Unregister task by callback"));
 
@@ -729,9 +726,9 @@ void silc_schedule_task_del_by_callback(SilcSchedule schedule,
   silc_hash_table_list_reset(&htl);
 
   /* Delete from timeout queue */
-  silc_list_start(schedule->timeout_queue);
-  while ((task = (SilcTask)silc_list_get(schedule->timeout_queue))
-	 != SILC_LIST_END) {
+  list = schedule->timeout_queue;
+  silc_list_start(list);
+  while ((task = (SilcTask)silc_list_get(list))) {
     if (task->callback == callback)
       task->valid = FALSE;
   }
@@ -745,6 +742,7 @@ void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context)
 {
   SilcTask task;
   SilcHashTableList htl;
+  SilcList list;
 
   SILC_LOG_DEBUG(("Unregister task by context"));
 
@@ -759,9 +757,9 @@ void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context)
   silc_hash_table_list_reset(&htl);
 
   /* Delete from timeout queue */
-  silc_list_start(schedule->timeout_queue);
-  while ((task = (SilcTask)silc_list_get(schedule->timeout_queue))
-	 != SILC_LIST_END) {
+  list = schedule->timeout_queue;
+  silc_list_start(list);
+  while ((task = (SilcTask)silc_list_get(list))) {
     if (task->context == context)
       task->valid = FALSE;
   }
@@ -775,6 +773,7 @@ void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
 				   SilcTaskCallback callback, void *context)
 {
   SilcTask task;
+  SilcList list;
 
   SILC_LOG_DEBUG(("Unregister task by fd, callback and context"));
 
@@ -785,9 +784,9 @@ void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
   SILC_SCHEDULE_LOCK(schedule);
 
   /* Delete from timeout queue */
-  silc_list_start(schedule->timeout_queue);
-  while ((task = (SilcTask)silc_list_get(schedule->timeout_queue))
-	 != SILC_LIST_END) {
+  list = schedule->timeout_queue;
+  silc_list_start(list);
+  while ((task = (SilcTask)silc_list_get(list))) {
     if (task->callback == callback && task->context == context)
       task->valid = FALSE;
   }
@@ -804,7 +803,7 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
 {
   SilcTaskFd task;
 
-  if (!schedule->valid)
+  if (silc_unlikely(!schedule->valid))
     return;
 
   SILC_SCHEDULE_LOCK(schedule);
@@ -812,7 +811,7 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
   if (silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fd),
 			   NULL, (void **)&task)) {
     task->events = mask;
-    if (send_events) {
+    if (silc_unlikely(send_events)) {
       task->revents = mask;
       silc_schedule_dispatch_fd(schedule);
     }

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2005 Pekka Riikonen
+  Copyright (C) 2003 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -155,13 +155,13 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, SilcBool aligned)
   SILC_ST_DEBUG(("Allocating %d bytes (%s) from %p",
 		 size, aligned ? "align" : "not align", stack));
 
-  if (!size) {
+  if (silc_unlikely(!size)) {
     SILC_LOG_ERROR(("Allocation by zero (0)"));
     SILC_STACK_STAT(stack, num_errors, 1);
     return NULL;
   }
 
-  if (size > SILC_STACK_MAX_ALLOC) {
+  if (silc_unlikely(size > SILC_STACK_MAX_ALLOC)) {
     SILC_LOG_ERROR(("Allocating too much"));
     SILC_STACK_STAT(stack, num_errors, 1);
     return NULL;
@@ -193,7 +193,7 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, SilcBool aligned)
     bsize2 <<= 1;
     si++;
   }
-  if (si >= SILC_STACK_BLOCK_NUM) {
+  if (silc_unlikely(si >= SILC_STACK_BLOCK_NUM)) {
     SILC_LOG_ERROR(("Allocating too large block"));
     SILC_STACK_STAT(stack, num_errors, 1);
     return NULL;
@@ -205,7 +205,7 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, SilcBool aligned)
     stack->stack[si] = silc_malloc(bsize2 +
 				   SILC_STACK_ALIGN(sizeof(**stack->stack),
 						    SILC_STACK_DEFAULT_ALIGN));
-    if (!stack->stack[si]) {
+    if (silc_unlikely(!stack->stack[si])) {
       SILC_STACK_STAT(stack, num_errors, 1);
       return NULL;
     }
@@ -244,13 +244,13 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
   SILC_ST_DEBUG(("Reallocating %d bytes (%d) (%s) from %p", size, old_size,
 		 aligned ? "align" : "not align", stack));
 
-  if (!size || !old_size) {
+  if (silc_unlikely(!size || !old_size)) {
     SILC_LOG_ERROR(("Allocation by zero (0)"));
     SILC_STACK_STAT(stack, num_errors, 1);
     return NULL;
   }
 
-  if (size > SILC_STACK_MAX_ALLOC) {
+  if (silc_unlikely(size > SILC_STACK_MAX_ALLOC)) {
     SILC_LOG_ERROR(("Allocating too much"));
     SILC_STACK_STAT(stack, num_errors, 1);
     return NULL;

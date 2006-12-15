@@ -24,19 +24,19 @@
 
 /* Check that buffer has enough room to format data in it, if not
    allocate more. */
-#define FORMAT_HAS_SPACE(s, b, req)		\
-do {						\
-  if (!silc_buffer_senlarge(s, b, req))		\
-    goto fail;					\
-  flen += req;					\
+#define FORMAT_HAS_SPACE(s, b, req)			\
+do {							\
+  if (silc_unlikely(!silc_buffer_senlarge(s, b, req)))	\
+    goto fail;						\
+  flen += req;						\
 } while(0)
 
 /* Check that there is data to be unformatted */
 #define UNFORMAT_HAS_SPACE(b, req)		\
 do {						\
-  if (req > silc_buffer_len(b))			\
+  if (silc_unlikely(req > silc_buffer_len(b)))	\
     goto fail;					\
-  if ((req + 1) <= 0)				\
+  if (silc_unlikely((req + 1) <= 0))		\
     goto fail;					\
 } while(0)
 
@@ -350,7 +350,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
 	unsigned char **x = va_arg(ap, unsigned char **);
 	SilcUInt32 len2 = va_arg(ap, SilcUInt32);
 	UNFORMAT_HAS_SPACE(src, len2);
-	if (len2 && x)
+	if (silc_likely(len2 && x))
 	  *x = src->data;
 	silc_buffer_pull(src, len2);
 	break;
@@ -361,7 +361,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
 	unsigned char **x = va_arg(ap, unsigned char **);
 	SilcUInt32 len2 = va_arg(ap, SilcUInt32);
 	UNFORMAT_HAS_SPACE(src, len2);
-	if (len2 && x) {
+	if (silc_likely(len2 && x)) {
 	  *x = silc_scalloc(stack, len2 + 1, sizeof(unsigned char));
 	  memcpy(*x, src->data, len2);
 	}
@@ -372,7 +372,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
       {
 	unsigned char *x = va_arg(ap, unsigned char *);
 	UNFORMAT_HAS_SPACE(src, 1);
-	if (x)
+	if (silc_likely(x))
 	  *x = src->data[0];
 	silc_buffer_pull(src, 1);
 	break;
@@ -381,7 +381,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
       {
 	SilcUInt16 *x = va_arg(ap, SilcUInt16 *);
 	UNFORMAT_HAS_SPACE(src, 2);
-	if (x)
+	if (silc_likely(x))
 	  SILC_GET16_MSB(*x, src->data);
 	silc_buffer_pull(src, 2);
 	break;
@@ -390,7 +390,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
       {
 	SilcUInt32 *x = va_arg(ap, SilcUInt32 *);
 	UNFORMAT_HAS_SPACE(src, 4);
-	if (x)
+	if (silc_likely(x))
 	  SILC_GET32_MSB(*x, src->data);
 	silc_buffer_pull(src, 4);
 	break;
@@ -399,7 +399,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
       {
 	SilcUInt64 *x = va_arg(ap, SilcUInt64 *);
 	UNFORMAT_HAS_SPACE(src, sizeof(SilcUInt64));
-	if (x)
+	if (silc_likely(x))
 	  SILC_GET64_MSB(*x, src->data);
 	silc_buffer_pull(src, sizeof(SilcUInt64));
 	break;
@@ -408,7 +408,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
       {
 	char *x = va_arg(ap, char *);
 	UNFORMAT_HAS_SPACE(src, 1);
-	if (x)
+	if (silc_likely(x))
 	  *x = src->data[0];
 	silc_buffer_pull(src, 1);
 	break;
@@ -417,7 +417,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
       {
 	SilcInt16 *x = va_arg(ap, SilcInt16 *);
 	UNFORMAT_HAS_SPACE(src, 2);
-	if (x)
+	if (silc_likely(x))
 	  SILC_GET16_MSB(*x, src->data);
 	silc_buffer_pull(src, 2);
 	break;
@@ -426,7 +426,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
       {
 	SilcInt32 *x = va_arg(ap, SilcInt32 *);
 	UNFORMAT_HAS_SPACE(src, 4);
-	if (x)
+	if (silc_likely(x))
 	  SILC_GET32_MSB(*x, src->data);
 	silc_buffer_pull(src, 4);
 	break;
@@ -435,7 +435,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
       {
 	SilcInt64 *x = va_arg(ap, SilcInt64 *);
 	UNFORMAT_HAS_SPACE(src, sizeof(SilcInt64));
-	if (x)
+	if (silc_likely(x))
 	  SILC_GET64_MSB(*x, src->data);
 	silc_buffer_pull(src, sizeof(SilcInt64));
 	break;
@@ -448,7 +448,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
 	len2 = (SilcUInt8)src->data[0];
 	silc_buffer_pull(src, 1);
 	UNFORMAT_HAS_SPACE(src, len2);
-	if (x)
+	if (silc_likely(x))
 	  *x = src->data;
 	silc_buffer_pull(src, len2);
 	break;
@@ -461,7 +461,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
 	SILC_GET16_MSB(len2, src->data);
 	silc_buffer_pull(src, 2);
 	UNFORMAT_HAS_SPACE(src, len2);
-	if (x)
+	if (silc_likely(x))
 	  *x = src->data;
 	silc_buffer_pull(src, len2);
 	break;
@@ -474,7 +474,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
 	len2 = (SilcUInt8)src->data[0];
 	silc_buffer_pull(src, 1);
 	UNFORMAT_HAS_SPACE(src, len2);
-	if (x && len2) {
+	if (silc_likely(x && len2)) {
 	  *x = silc_scalloc(stack, len2 + 1, sizeof(unsigned char));
 	  memcpy(*x, src->data, len2);
 	}
@@ -489,7 +489,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
 	SILC_GET16_MSB(len2, src->data);
 	silc_buffer_pull(src, 2);
 	UNFORMAT_HAS_SPACE(src, len2);
-	if (x && len2) {
+	if (silc_likely(x && len2)) {
 	  *x = silc_scalloc(stack, len2 + 1, sizeof(unsigned char));
 	  memcpy(*x, src->data, len2);
 	}
@@ -504,7 +504,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
 	SILC_GET32_MSB(len2, src->data);
 	silc_buffer_pull(src, 4);
 	UNFORMAT_HAS_SPACE(src, len2);
-	if (x)
+	if (silc_likely(x))
 	  *x = src->data;
 	silc_buffer_pull(src, len2);
 	break;
@@ -517,7 +517,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
 	SILC_GET32_MSB(len2, src->data);
 	silc_buffer_pull(src, 4);
 	UNFORMAT_HAS_SPACE(src, len2);
-	if (x && len2) {
+	if (silc_likely(x && len2)) {
 	  *x = silc_scalloc(stack, len2 + 1, sizeof(unsigned char));
 	  memcpy(*x, src->data, len2);
 	}
@@ -702,7 +702,7 @@ int silc_buffer_strformat(SilcBuffer dst, ...)
 
     slen = strlen(string);
     d = silc_realloc(dst->head, sizeof(*dst->head) * (slen + len + 1));
-    if (!d)
+    if (silc_unlikely(!d))
       return -1;
     dst->head = d;
     memcpy(dst->head + len, string, slen);
@@ -747,7 +747,7 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...)
     slen = strlen(string);
     d = silc_srealloc_ua(stack, len + 1, dst->head,
 			 sizeof(*dst->head) * (slen + len + 1));
-    if (!d)
+    if (silc_unlikely(!d))
       return -1;
     dst->head = d;
     memcpy(dst->head + len, string, slen);

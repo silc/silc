@@ -41,7 +41,7 @@ typedef struct {
 } *SilcUnixScheduler;
 
 typedef struct {
-  SilcUInt32 signal;
+  SilcUInt32 sig;
   SilcTaskCallback callback;
   void *context;
   SilcBool call;
@@ -75,7 +75,7 @@ int silc_poll(SilcSchedule schedule, void *context)
 
       fds = silc_realloc(internal->fds, sizeof(*internal->fds) *
 			 (fds_count + (fds_count / 2)));
-      if (!fds)
+      if (silc_unlikely(!fds))
 	break;
       internal->fds = fds;
       internal->fds_count = fds_count = fds_count + (fds_count / 2);
@@ -264,7 +264,7 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
   internal->app_context = app_context;
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
-    signal_call[i].signal = 0;
+    signal_call[i].sig = 0;
     signal_call[i].call = FALSE;
     signal_call[i].schedule = schedule;
   }
@@ -321,11 +321,11 @@ static void silc_schedule_internal_sighandler(int signal)
   int i;
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
-    if (signal_call[i].signal == signal) {
+    if (signal_call[i].sig == signal) {
       signal_call[i].call = TRUE;
       signal_call[i].schedule->signal_tasks = TRUE;
       SILC_LOG_DEBUG(("Scheduling signal %d to be called",
-		      signal_call[i].signal));
+		      signal_call[i].sig));
       break;
     }
   }
@@ -343,13 +343,13 @@ void silc_schedule_internal_signal_register(SilcSchedule schedule,
   if (!internal)
     return;
 
-  SILC_LOG_DEBUG(("Registering signal %d", signal));
+  SILC_LOG_DEBUG(("Registering signal %d", sig));
 
   silc_schedule_internal_signals_block(schedule, context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
-    if (!signal_call[i].signal) {
-      signal_call[i].signal = sig;
+    if (!signal_call[i].sig) {
+      signal_call[i].sig = sig;
       signal_call[i].callback = callback;
       signal_call[i].context = callback_context;
       signal_call[i].call = FALSE;
@@ -372,13 +372,13 @@ void silc_schedule_internal_signal_unregister(SilcSchedule schedule,
   if (!internal)
     return;
 
-  SILC_LOG_DEBUG(("Unregistering signal %d", signal));
+  SILC_LOG_DEBUG(("Unregistering signal %d", sig));
 
   silc_schedule_internal_signals_block(schedule, context);
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
-    if (signal_call[i].signal == sig) {
-      signal_call[i].signal = 0;
+    if (signal_call[i].sig == sig) {
+      signal_call[i].sig = 0;
       signal_call[i].callback = NULL;
       signal_call[i].context = NULL;
       signal_call[i].call = FALSE;
@@ -408,10 +408,10 @@ void silc_schedule_internal_signals_call(SilcSchedule schedule, void *context)
     if (signal_call[i].call &&
         signal_call[i].callback) {
       SILC_LOG_DEBUG(("Calling signal %d callback",
-		      signal_call[i].signal));
+		      signal_call[i].sig));
       signal_call[i].callback(schedule, internal->app_context,
 			      SILC_TASK_INTERRUPT,
-			      signal_call[i].signal,
+			      signal_call[i].sig,
 			      signal_call[i].context);
       signal_call[i].call = FALSE;
     }

@@ -62,7 +62,6 @@ struct SilcScheduleStruct {
   unsigned int max_tasks     : 28; /* Max FD tasks */
   unsigned int has_timeout   : 1;  /* Set if timeout is set */
   unsigned int valid         : 1;  /* Set if scheduler is valid */
-  unsigned int is_locked     : 1;  /* Set if scheduler is locked */
   unsigned int signal_tasks  : 1;  /* Set if to dispatch signals */
 };
 

@@ -241,13 +241,13 @@ SilcBuffer silc_buffer_alloc(SilcUInt32 len)
 
   /* Allocate new SilcBuffer */
   sb = (SilcBuffer)silc_calloc(1, sizeof(*sb));
-  if (!sb)
+  if (silc_unlikely(!sb))
     return NULL;
 
-  if (len) {
+  if (silc_likely(len)) {
     /* Allocate the actual data area */
     sb->head = (unsigned char *)silc_calloc(len, sizeof(*sb->head));
-    if (!sb->head)
+    if (silc_unlikely(!sb->head))
       return NULL;
 
     /* Set pointers to the new buffer */
@@ -411,7 +411,7 @@ unsigned char *silc_buffer_pull(SilcBuffer sb, SilcUInt32 len)
 #if defined(SILC_DEBUG)
   SILC_ASSERT(len <= silc_buffer_len(sb));
 #else
-  if (len > silc_buffer_len(sb))
+  if (silc_unlikely(len > silc_buffer_len(sb)))
     return NULL;
 #endif
   sb->data += len;
@@ -455,7 +455,7 @@ unsigned char *silc_buffer_push(SilcBuffer sb, SilcUInt32 len)
 #if defined(SILC_DEBUG)
   SILC_ASSERT((sb->data - len) >= sb->head);
 #else
-  if ((sb->data - len) < sb->head)
+  if (silc_unlikely((sb->data - len) < sb->head))
     return NULL;
 #endif
   sb->data -= len;
@@ -499,7 +499,7 @@ unsigned char *silc_buffer_pull_tail(SilcBuffer sb, SilcUInt32 len)
 #if defined(SILC_DEBUG)
   SILC_ASSERT(len <= silc_buffer_taillen(sb));
 #else
-  if (len > silc_buffer_taillen(sb))
+  if (silc_unlikely(len > silc_buffer_taillen(sb)))
     return NULL;
 #endif
   sb->tail += len;
@@ -543,7 +543,7 @@ unsigned char *silc_buffer_push_tail(SilcBuffer sb, SilcUInt32 len)
 #if defined(SILC_DEBUG)
   SILC_ASSERT((sb->tail - len) >= sb->data);
 #else
-  if ((sb->tail - len) < sb->data)
+  if (silc_unlikely((sb->tail - len) < sb->data))
     return NULL;
 #endif
   sb->tail -= len;
@@ -584,7 +584,7 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
 #if defined(SILC_DEBUG)
   SILC_ASSERT(len <= silc_buffer_headlen(sb));
 #else
-  if (len > silc_buffer_headlen(sb))
+  if (silc_unlikely(len > silc_buffer_headlen(sb)))
     return NULL;
 #endif
   return (unsigned char *)memcpy(sb->head, data, len);
@@ -624,7 +624,7 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
 #if defined(SILC_DEBUG)
   SILC_ASSERT(len <= silc_buffer_len(sb));
 #else
-  if (len > silc_buffer_len(sb))
+  if (silc_unlikely(len > silc_buffer_len(sb)))
     return NULL;
 #endif
   return (unsigned char *)memcpy(sb->data, data, len);
@@ -664,7 +664,7 @@ unsigned char *silc_buffer_put_tail(SilcBuffer sb,
 #if defined(SILC_DEBUG)
   SILC_ASSERT(len <= silc_buffer_taillen(sb));
 #else
-  if (len > silc_buffer_taillen(sb))
+  if (silc_unlikely(len > silc_buffer_taillen(sb)))
     return NULL;
 #endif
   return (unsigned char *)memcpy(sb->tail, data, len);
@@ -689,7 +689,7 @@ static inline
 SilcBuffer silc_buffer_alloc_size(SilcUInt32 len)
 {
   SilcBuffer sb = silc_buffer_alloc(len);
-  if (!sb)
+  if (silc_unlikely(!sb))
     return NULL;
   silc_buffer_pull_tail(sb, len);
   return sb;
@@ -800,7 +800,7 @@ SilcBuffer silc_buffer_copy(SilcBuffer sb)
   SilcBuffer sb_new;
 
   sb_new = silc_buffer_alloc_size(silc_buffer_len(sb));
-  if (!sb_new)
+  if (silc_unlikely(!sb_new))
     return NULL;
   silc_buffer_put(sb_new, sb->data, silc_buffer_len(sb));
 
@@ -828,7 +828,7 @@ SilcBuffer silc_buffer_clone(SilcBuffer sb)
   SilcBuffer sb_new;
 
   sb_new = silc_buffer_alloc_size(silc_buffer_truelen(sb));
-  if (!sb_new)
+  if (silc_unlikely(!sb_new))
     return NULL;
   silc_buffer_put(sb_new, sb->head, silc_buffer_truelen(sb));
   sb_new->data = sb_new->head + silc_buffer_headlen(sb);
@@ -862,13 +862,13 @@ SilcBuffer silc_buffer_realloc(SilcBuffer sb, SilcUInt32 newsize)
   if (!sb)
     return silc_buffer_alloc(newsize);
 
-  if (newsize <= silc_buffer_truelen(sb))
+  if (silc_unlikely(newsize <= silc_buffer_truelen(sb)))
     return sb;
 
   hlen = silc_buffer_headlen(sb);
   dlen = silc_buffer_len(sb);
   h = (unsigned char *)silc_realloc(sb->head, newsize);
-  if (!h)
+  if (silc_unlikely(!h))
     return NULL;
   sb->head = h;
   sb->data = sb->head + hlen;
@@ -897,7 +897,7 @@ static inline
 SilcBuffer silc_buffer_realloc_size(SilcBuffer sb, SilcUInt32 newsize)
 {
   sb = silc_buffer_realloc(sb, newsize);
-  if (!sb)
+  if (silc_unlikely(!sb))
     return NULL;
   silc_buffer_pull_tail(sb, silc_buffer_taillen(sb));
   return sb;
@@ -927,9 +927,9 @@ SilcBool silc_buffer_enlarge(SilcBuffer sb, SilcUInt32 size)
 {
   if (size > silc_buffer_len(sb)) {
     if (size > silc_buffer_taillen(sb) + silc_buffer_len(sb))
-      if (!silc_buffer_realloc(sb, silc_buffer_truelen(sb) +
-			       (size - silc_buffer_taillen(sb) -
-				silc_buffer_len(sb))))
+      if (silc_unlikely(!silc_buffer_realloc(sb, silc_buffer_truelen(sb) +
+					     (size - silc_buffer_taillen(sb) -
+					      silc_buffer_len(sb)))))
 	return FALSE;
     silc_buffer_pull_tail(sb, size - silc_buffer_len(sb));
   }
@@ -965,12 +965,12 @@ SilcBuffer silc_buffer_salloc(SilcStack stack, SilcUInt32 len)
 
   /* Allocate new SilcBuffer */
   sb = (SilcBuffer)silc_scalloc(stack, 1, sizeof(*sb));
-  if (!sb)
+  if (silc_unlikely(!sb))
     return NULL;
 
   /* Allocate the actual data area */
   sb->head = (unsigned char *)silc_smalloc_ua(stack, len);
-  if (!sb->head)
+  if (silc_unlikely(!sb->head))
     return NULL;
 
   /* Set pointers to the new buffer */
@@ -1003,7 +1003,7 @@ static inline
 SilcBuffer silc_buffer_salloc_size(SilcStack stack, SilcUInt32 len)
 {
   SilcBuffer sb = silc_buffer_salloc(stack, len);
-  if (!sb)
+  if (silc_unlikely(!sb))
     return NULL;
   silc_buffer_pull_tail(sb, len);
   return sb;
@@ -1052,7 +1052,7 @@ SilcBuffer silc_buffer_srealloc(SilcStack stack,
     /* Do slow and stack wasting realloc.  The old sb->head is lost and
        is freed eventually. */
     h = silc_smalloc_ua(stack, newsize);
-    if (!h)
+    if (silc_unlikely(!h))
       return NULL;
     memcpy(h, sb->head, silc_buffer_truelen(sb));
   }
@@ -1089,7 +1089,7 @@ SilcBuffer silc_buffer_srealloc_size(SilcStack stack,
 				     SilcBuffer sb, SilcUInt32 newsize)
 {
   sb = silc_buffer_srealloc(stack, sb, newsize);
-  if (!sb)
+  if (silc_unlikely(!sb))
     return NULL;
   silc_buffer_pull_tail(sb, silc_buffer_taillen(sb));
   return sb;
@@ -1123,9 +1123,10 @@ SilcBool silc_buffer_senlarge(SilcStack stack, SilcBuffer sb, SilcUInt32 size)
 {
   if (size > silc_buffer_len(sb)) {
     if (size > silc_buffer_taillen(sb) + silc_buffer_len(sb))
-      if (!silc_buffer_srealloc(stack, sb, silc_buffer_truelen(sb) +
-				(size - silc_buffer_taillen(sb) -
-				 silc_buffer_len(sb))))
+      if (silc_unlikely(!silc_buffer_srealloc(stack, sb,
+					      silc_buffer_truelen(sb) +
+					      (size - silc_buffer_taillen(sb) -
+					       silc_buffer_len(sb)))))
 	return FALSE;
     silc_buffer_pull_tail(sb, size - silc_buffer_len(sb));
   }
@@ -1156,7 +1157,7 @@ SilcBuffer silc_buffer_scopy(SilcStack stack, SilcBuffer sb)
   SilcBuffer sb_new;
 
   sb_new = silc_buffer_salloc_size(stack, silc_buffer_len(sb));
-  if (!sb_new)
+  if (silc_unlikely(!sb_new))
     return NULL;
   silc_buffer_put(sb_new, sb->data, silc_buffer_len(sb));
 
@@ -1187,7 +1188,7 @@ SilcBuffer silc_buffer_sclone(SilcStack stack, SilcBuffer sb)
   SilcBuffer sb_new;
 
   sb_new = silc_buffer_salloc_size(stack, silc_buffer_truelen(sb));
-  if (!sb_new)
+  if (silc_unlikely(!sb_new))
     return NULL;
   silc_buffer_put(sb_new, sb->head, silc_buffer_truelen(sb));
   sb_new->data = sb_new->head + silc_buffer_headlen(sb);

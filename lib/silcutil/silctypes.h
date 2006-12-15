@@ -107,7 +107,18 @@ typedef unsigned char SilcBool;
 #endif
 /***/
 
+/* Our offsetof macro */
 #define silc_offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+
+/* silc_likely and silc_unlikely GCC branch prediction macros. Use only if
+   you have profiled the code first. */
+#if __GNUC__ >= 3
+#define silc_likely(expr) __builtin_expect(!!(expr), 1)
+#define silc_unlikely(expr) __builtin_expect(!!(expr), 0)
+#else
+#define silc_likely(expr) (expr)
+#define silc_unlikely(expr) (expr)
+#endif /* __GNUC__ >= 3 */
 
 #if SILC_SIZEOF_SHORT > 2
 #error "size of the short must be 2 bytes"
@@ -285,8 +296,8 @@ typedef SilcUInt32 * void *;
  */
 #define SILC_GET16_MSB(l, cp)				\
 do {							\
-	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0] << 8)	\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[1]);		\
+  (l) = ((SilcUInt32)(SilcUInt8)(cp)[0] << 8)		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[1]);			\
 } while(0)
 /***/
 
@@ -304,10 +315,10 @@ do {							\
  */
 #define SILC_GET32_MSB(l, cp)				\
 do {							\
-	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24	\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)	\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)	\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[3]);		\
+  (l) = ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[3]);			\
 } while(0)
 /***/
 
@@ -325,8 +336,8 @@ do {							\
  */
 #define SILC_GET64_MSB(l, cp)					\
 do {								\
-       (l) = ((((SilcUInt64)SILC_GET_WORD((cp))) << 32) |	\
-	      ((SilcUInt64)SILC_GET_WORD((cp) + 4)));		\
+  (l) = ((((SilcUInt64)SILC_GET_WORD((cp))) << 32) |		\
+	 ((SilcUInt64)SILC_GET_WORD((cp) + 4)));		\
 } while(0)
 /***/
 
@@ -342,11 +353,15 @@ do {								\
  *
  * SOURCE
  */
+#if defined(SILC_I486) && defined(__GNUC__)
+#define SILC_GET16_LSB(l, cp) (l) = (*(SilcUInt16 *)(cp))
+#else
 #define SILC_GET16_LSB(l, cp)				\
 do {							\
-	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0])		\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8);	\
+  (l) = ((SilcUInt32)(SilcUInt8)(cp)[0])		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8);		\
 } while(0)
+#endif /* SILC_I486 && __GNUC__ */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_GET32_LSB
@@ -361,20 +376,28 @@ do {							\
  *
  * SOURCE
  */
+#if defined(SILC_I486) && defined(__GNUC__)
+#define SILC_GET32_LSB(l, cp) (l) = (*(SilcUInt32 *)(cp))
+#else
 #define SILC_GET32_LSB(l, cp)				\
 do {							\
-	(l) = ((SilcUInt32)(SilcUInt8)(cp)[0])		\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)	\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 16)	\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[3] << 24);	\
+  (l) = ((SilcUInt32)(SilcUInt8)(cp)[0])		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 16)		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[3] << 24);		\
 } while(0)
+#endif /* SILC_I486 && __GNUC__ */
 
 /* Same as upper but XOR the result always. Special purpose macro. */
+#if defined(SILC_I486) && defined(__GNUC__)
+#define SILC_GET32_X_LSB(l, cp) (l) ^= (*(SilcUInt32 *)(cp))
+#else
 #define SILC_GET32_X_LSB(l, cp)				\
-	(l) ^= ((SilcUInt32)(SilcUInt8)(cp)[0])		\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)	\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 16)	\
-	    | ((SilcUInt32)(SilcUInt8)(cp)[3] << 24)
+  (l) ^= ((SilcUInt32)(SilcUInt8)(cp)[0])		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 16)		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[3] << 24)
+#endif /* SILC_I486 && __GNUC__ */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_PUT16_MSB
@@ -391,8 +414,8 @@ do {							\
  */
 #define SILC_PUT16_MSB(l, cp)			\
 do {						\
-	(cp)[0] = (SilcUInt8)((l) >> 8);	\
-	(cp)[1] = (SilcUInt8)(l);		\
+  (cp)[0] = (SilcUInt8)((l) >> 8);		\
+  (cp)[1] = (SilcUInt8)(l);			\
 } while(0)
 /***/
 
@@ -410,10 +433,10 @@ do {						\
  */
 #define SILC_PUT32_MSB(l, cp)			\
 do {						\
-	(cp)[0] = (SilcUInt8)((l) >> 24);	\
-	(cp)[1] = (SilcUInt8)((l) >> 16);	\
-	(cp)[2] = (SilcUInt8)((l) >> 8);	\
-	(cp)[3] = (SilcUInt8)(l);		\
+  (cp)[0] = (SilcUInt8)((l) >> 24);		\
+  (cp)[1] = (SilcUInt8)((l) >> 16);		\
+  (cp)[2] = (SilcUInt8)((l) >> 8);		\
+  (cp)[3] = (SilcUInt8)(l);			\
 } while(0)
 /***/
 
@@ -448,11 +471,15 @@ do {								\
  *
  * SOURCE
  */
+#if defined(SILC_I486) && defined(__GNUC__)
+#define SILC_PUT16_LSB(l, cp) (*(SilcUInt16 *)(cp)) = (l)
+#else
 #define SILC_PUT16_LSB(l, cp)			\
 do  {						\
-	(cp)[0] = (SilcUInt8)(l);		\
-	(cp)[1] = (SilcUInt8)((l) >> 8);	\
+  (cp)[0] = (SilcUInt8)(l);			\
+  (cp)[1] = (SilcUInt8)((l) >> 8);		\
 } while(0)
+#endif /* SILC_I486 && __GNUC__ */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_PUT32_LSB
@@ -467,13 +494,17 @@ do  {						\
  *
  * SOURCE
  */
+#if defined(SILC_I486) && defined(__GNUC__)
+#define SILC_PUT32_LSB(l, cp) (*(SilcUInt32 *)(cp)) = (l)
+#else
 #define SILC_PUT32_LSB(l, cp)			\
 do {						\
-	(cp)[0] = (SilcUInt8)(l);		\
-	(cp)[1] = (SilcUInt8)((l) >> 8);	\
-	(cp)[2] = (SilcUInt8)((l) >> 16);	\
-	(cp)[3] = (SilcUInt8)((l) >> 24);	\
+  (cp)[0] = (SilcUInt8)(l);			\
+  (cp)[1] = (SilcUInt8)((l) >> 8);		\
+  (cp)[2] = (SilcUInt8)((l) >> 16);		\
+  (cp)[3] = (SilcUInt8)((l) >> 24);		\
 } while(0)
+#endif /* SILC_I486 && __GNUC__ */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_SWAB_16

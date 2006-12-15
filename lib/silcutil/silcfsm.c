@@ -38,11 +38,11 @@ SilcFSM silc_fsm_alloc(void *fsm_context,
   SilcFSM fsm;
 
   fsm = silc_calloc(1, sizeof(*fsm));
-  if (!fsm)
+  if (silc_unlikely(!fsm))
     return NULL;
 
-  if (!silc_fsm_init(fsm, fsm_context, destructor,
-		     destructor_context, schedule)) {
+  if (silc_unlikely(!silc_fsm_init(fsm, fsm_context, destructor,
+				   destructor_context, schedule))) {
     silc_free(fsm);
     return NULL;
   }
@@ -86,7 +86,7 @@ SilcFSMThread silc_fsm_thread_alloc(SilcFSM fsm,
   SilcFSMThread thread;
 
   thread = silc_calloc(1, sizeof(*thread));
-  if (!thread)
+  if (silc_unlikely(!thread))
     return NULL;
 
   silc_fsm_thread_init(thread, fsm, thread_context, destructor,
@@ -480,7 +480,7 @@ SilcFSMSema silc_fsm_sema_alloc(SilcFSM fsm, SilcUInt32 value)
   SilcFSMSema sema;
 
   sema = silc_calloc(1, sizeof(*sema));
-  if (!sema)
+  if (silc_unlikely(!sema))
     return NULL;
 
   silc_fsm_sema_init(sema, fsm, value);
@@ -673,7 +673,7 @@ void silc_fsm_sema_post(SilcFSMSema sema)
     }
 
     p = silc_calloc(1, sizeof(*p));
-    if (!p)
+    if (silc_unlikely(!p))
       continue;
     p->sema = sema;
     p->fsm = fsm;
@@ -725,11 +725,12 @@ static void *silc_fsm_thread(void *context)
      cannot be used in this thread.  Application may still use it if it
      wants but we use our own. */
   fsm->schedule = silc_schedule_init(0, old);
-  if (!fsm->schedule)
+  if (silc_unlikely(!fsm->schedule))
     return NULL;
 
   /* Start the FSM thread */
-  if (!silc_schedule_task_add_timeout(fsm->schedule, silc_fsm_run, fsm, 0, 0))
+  if (silc_unlikely(!silc_schedule_task_add_timeout(fsm->schedule,
+						    silc_fsm_run, fsm, 0, 0)))
     return NULL;
 
   /* Run the scheduler */

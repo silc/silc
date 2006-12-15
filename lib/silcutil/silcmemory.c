@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1999 - 2005 Pekka Riikonen
+  Copyright (C) 1999 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,12 +27,12 @@
 void *silc_malloc(size_t size)
 {
   void *addr;
-  if (size <= 0 || size >= SILC_MAX_ALLOC) {
+  if (silc_unlikely(size <= 0 || size >= SILC_MAX_ALLOC)) {
     SILC_LOG_ERROR(("Invalid memory allocation"));
     return NULL;
   }
   addr = malloc(size);
-  if (!addr)
+  if (silc_unlikely(!addr))
     SILC_LOG_ERROR(("System out of memory"));
   return addr;
 }
@@ -40,12 +40,12 @@ void *silc_malloc(size_t size)
 void *silc_calloc(size_t items, size_t size)
 {
   void *addr;
-  if (size * items <= 0 || size * items >= SILC_MAX_ALLOC) {
+  if (silc_unlikely(size * items <= 0 || size * items >= SILC_MAX_ALLOC)) {
     SILC_LOG_ERROR(("Invalid memory allocation"));
     return NULL;
   }
   addr = calloc(items, size);
-  if (!addr)
+  if (silc_unlikely(!addr))
     SILC_LOG_ERROR(("System out of memory"));
   return addr;
 }
@@ -53,12 +53,12 @@ void *silc_calloc(size_t items, size_t size)
 void *silc_realloc(void *ptr, size_t size)
 {
   void *addr;
-  if (size <= 0 || size >= SILC_MAX_ALLOC) {
+  if (silc_unlikely(size <= 0 || size >= SILC_MAX_ALLOC)) {
     SILC_LOG_ERROR(("Invalid memory allocation"));
     return NULL;
   }
   addr = realloc(ptr, size);
-  if (!addr)
+  if (silc_unlikely(!addr))
     SILC_LOG_ERROR(("System out of memory"));
   return addr;
 }
@@ -72,7 +72,7 @@ void *silc_memdup(const void *ptr, size_t size)
 {
   unsigned char *addr;
   addr = silc_malloc(size + 1);
-  if (!addr) {
+  if (silc_unlikely(!addr)) {
     SILC_LOG_ERROR(("System out of memory"));
     return NULL;
   }
@@ -103,7 +103,7 @@ void *silc_scalloc(SilcStack stack, SilcUInt32 items, SilcUInt32 size)
     return silc_calloc(items, size);
 
   addr = silc_stack_malloc(stack, items * size, TRUE);
-  if (!addr)
+  if (silc_unlikely(!addr))
     return NULL;
   memset(addr, 0, items * size);
   return (void *)addr;
@@ -131,7 +131,7 @@ void *silc_smemdup(SilcStack stack, const void *ptr, SilcUInt32 size)
     return silc_memdup(ptr, size);
 
   addr = silc_stack_malloc(stack, size + 1, TRUE);
-  if (!addr)
+  if (silc_unlikely(!addr))
     return NULL;
   memcpy((void *)addr, ptr, size);
   addr[size] = '\0';
@@ -147,7 +147,7 @@ char *silc_sstrdup(SilcStack stack, const char *str)
     return silc_memdup(str, size);
 
   addr = silc_stack_malloc(stack, size + 1, FALSE);
-  if (!addr)
+  if (silc_unlikely(!addr))
     return NULL;
   memcpy((void *)addr, str, size);
   addr[size] = '\0';

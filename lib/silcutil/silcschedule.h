@@ -414,8 +414,8 @@ void *silc_schedule_get_context(SilcSchedule schedule);
  *    the signal call silc_schedule_task_del_by_fd.
  *
  ***/
-#define silc_schedule_task_add_signal(schedule, signal, callback, context) \
-  silc_schedule_task_add(schedule, signal, callback, context, 0, 0,	\
+#define silc_schedule_task_add_signal(schedule, sig, callback, context) \
+  silc_schedule_task_add(schedule, sig, callback, context, 0, 0,	\
 			 SILC_TASK_SIGNAL)
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_del
