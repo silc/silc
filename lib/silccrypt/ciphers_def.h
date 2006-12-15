@@ -4,12 +4,12 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1999 - 2000 Pekka Riikonen
+  Copyright (C) 1999 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -24,6 +24,8 @@
 typedef unsigned char u1byte;
 typedef SilcUInt32 u4byte;
 typedef SilcUInt32 u32;
+typedef SilcUInt32 uint_32t;
+typedef SilcUInt8 uint_8t;
 
 #define rotr(x, nr) (((x) >> ((int)(nr))) | ((x) << (32 - (int)(nr))))
 #define rotl(x, nr) (((x) << ((int)(nr))) | ((x) >> (32 - (int)(nr))))

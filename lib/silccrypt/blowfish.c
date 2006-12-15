@@ -37,7 +37,7 @@
 #include "blowfish_internal.h"
 #include "blowfish.h"
 
-/* 
+/*
  * SILC Crypto API for Blowfish
  */
 
@@ -47,14 +47,6 @@ SILC_CIPHER_API_SET_KEY(blowfish)
 {
   blowfish_set_key((BlowfishContext *)context, (unsigned char *)key, keylen);
   return TRUE;
-}
-
-/* Sets the string as a new key for the cipher. The string is first
-   hashed and then used as a new key. */
-
-SILC_CIPHER_API_SET_KEY_WITH_STRING(blowfish)
-{
-  return 1;
 }
 
 /* Returns the size of the cipher context. */
@@ -108,9 +100,9 @@ SILC_CIPHER_API_DECRYPT_CBC(blowfish)
     blowfish_decrypt((BlowfishContext *)context, tmp, tmp2, 16);
     SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
   }
-  
+
   SILC_CBC_PUT_IV(tiv, iv);
-  
+
   return TRUE;
 }
 
@@ -383,7 +375,7 @@ static u32 bf_sbox[256 * 4] =
     0xb74e6132, 0xce77e25b, 0x578fdfe3, 0x3ac372e6,
 };
 
-/* 
+/*
  * Round loop unrolling macros, S is a pointer to a S-Box array
  * organized in 4 SilcUInt32s at a row.
  */
@@ -400,7 +392,7 @@ static u32 bf_sbox[256 * 4] =
 
 /*
  * The blowfish encipher, processes 64-bit blocks.
- * NOTE: This function MUSTN'T respect endianess 
+ * NOTE: This function MUSTN'T respect endianess
  */
 
 int blowfish_encrypt(BlowfishContext *ctx,
@@ -526,7 +518,7 @@ int blowfish_set_key(BlowfishContext *ctx,
     for (i = 0; i < 16 + 2; i += 2)
     {
         blowfish_encrypt(ctx, data, data, 8);
-        
+
         P[i] = data[0];
         P[i + 1] = data[1];
     }

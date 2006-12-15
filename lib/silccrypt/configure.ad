@@ -1,0 +1,57 @@
+#
+#  lib/silccrypt/configure.ad
+#
+#  Author: Pekka Riikonen <priikone@silcnet.org>
+#
+#  Copyright (C) 2006 Pekka Riikonen
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+
+if test x$compile_libs = xtrue; then
+
+AC_MSG_NOTICE([configuring crypto library])
+SILC_CRYPTO_CFLAGS=
+
+aes_asm=false
+case "$host_cpu" in
+  i?86)
+    if test x$have_assembler = xtrue; then
+      aes_asm=true
+      AC_DEFINE([SILC_AES_ASM], [], [SILC_AES_ASM])
+    fi
+    ;;
+  x86_64)
+    if test x$have_assembler = xtrue; then
+      aes_asm=true
+      AC_DEFINE([SILC_AES_ASM], [], [SILC_AES_ASM])
+    fi
+    ;;
+  default)
+    aes_asm=false
+    ;;
+esac
+AM_CONDITIONAL(SILC_AES_ASM, test x$aes_asm = xtrue)
+
+SILC_ADD_CC_FLAGS(SILC_CRYPTO, -fno-regmove)
+if test x$summary_debug = xno; then
+  SILC_ADD_CC_FLAGS(SILC_CRYPTO, -fomit-frame-pointer -O3)
+fi
+
+AC_SUBST(SILC_CRYPTO_CFLAGS)
+
+AC_CONFIG_FILES(
+lib/silccrypt/Makefile
+#ifdef SILC_DIST_INPLACE
+lib/silccrypt/tests/Makefile
+#endif SILC_DIST_INPLACE
+)
+
+fi	# compile_libs

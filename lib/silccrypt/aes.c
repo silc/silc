@@ -1,77 +1,60 @@
-/* Modified for SILC. -Pekka */
-/* The AES */
+/* Modified for SILC -Pekka */
+/* Includes key scheduling in C always, and encryption and decryption in C
+   when assembler optimized version cannot be used. */
+/*
+ ---------------------------------------------------------------------------
+ Copyright (c) 1998-2006, Brian Gladman, Worcester, UK. All rights reserved.
 
-/* This is an independent implementation of the encryption algorithm:   */
-/*                                                                      */
-/*         RIJNDAEL by Joan Daemen and Vincent Rijmen                   */
-/*                                                                      */
-/* which is a candidate algorithm in the Advanced Encryption Standard   */
-/* programme of the US National Institute of Standards and Technology.  */
-/*                                                                      */
-/* Copyright in this implementation is held by Dr B R Gladman but I     */
-/* hereby give permission for its free direct or derivative use subject */
-/* to acknowledgment of its origin and compliance with any conditions   */
-/* that the originators of the algorithm place on its exploitation.     */
-/*                                                                      */
-/* Dr Brian Gladman (gladman@seven77.demon.co.uk) 14th January 1999     */
+ LICENSE TERMS
 
-/* Timing data for Rijndael (rijndael.c)
+ The free distribution and use of this software in both source and binary
+ form is allowed (with or without changes) provided that:
 
-Algorithm: rijndael (rijndael.c)
+   1. distributions of this source code include the above copyright
+      notice, this list of conditions and the following disclaimer;
 
-128 bit key:
-Key Setup:    305/1389 cycles (encrypt/decrypt)
-Encrypt:       374 cycles =    68.4 mbits/sec
-Decrypt:       352 cycles =    72.7 mbits/sec
-Mean:          363 cycles =    70.5 mbits/sec
+   2. distributions in binary form include the above copyright
+      notice, this list of conditions and the following disclaimer
+      in the documentation and/or other associated materials;
 
-192 bit key:
-Key Setup:    277/1595 cycles (encrypt/decrypt)
-Encrypt:       439 cycles =    58.3 mbits/sec
-Decrypt:       425 cycles =    60.2 mbits/sec
-Mean:          432 cycles =    59.3 mbits/sec
+   3. the copyright holder's name is not used to endorse products
+      built using this software without specific written permission.
 
-256 bit key:
-Key Setup:    374/1960 cycles (encrypt/decrypt)
-Encrypt:       502 cycles =    51.0 mbits/sec
-Decrypt:       498 cycles =    51.4 mbits/sec
-Mean:          500 cycles =    51.2 mbits/sec
+ ALTERNATIVELY, provided that this notice is retained in full, this product
+ may be distributed under the terms of the GNU General Public License (GPL),
+ in which case the provisions of the GPL apply INSTEAD OF those given above.
 
+ DISCLAIMER
+
+ This software is provided 'as is' with no explicit or implied warranties
+ in respect of its properties, including, but not limited to, correctness
+ and/or fitness for purpose.
+ ---------------------------------------------------------------------------
+ Issue 09/09/2006
 */
 
 #include "silc.h"
 #include "rijndael_internal.h"
 #include "aes.h"
 
-/* 
- * SILC Crypto API for Rijndael
+/*
+ * SILC Crypto API for AES
  */
 
 /* Sets the key for the cipher. */
 
 SILC_CIPHER_API_SET_KEY(aes)
 {
-  SilcUInt32 k[8];
-
-  SILC_GET_WORD_KEY(key, k, keylen);
-  rijndael_set_key((RijndaelContext *)context, k, keylen);
-
+  aes_encrypt_key(key, keylen, &((AesContext *)context)->enc);
+  aes_decrypt_key(key, keylen, &((AesContext *)context)->dec);
   return TRUE;
-}
-
-/* Sets the string as a new key for the cipher. The string is first
-   hashed and then used as a new key. */
-
-SILC_CIPHER_API_SET_KEY_WITH_STRING(aes)
-{
-  return 1;
 }
 
 /* Returns the size of the cipher context. */
 
 SILC_CIPHER_API_CONTEXT_LEN(aes)
 {
-  return sizeof(RijndaelContext);
+  return sizeof(AesContext);
 }
 
 /* Encrypts with the cipher in CBC mode. Source and destination buffers
@@ -79,22 +62,18 @@ SILC_CIPHER_API_CONTEXT_LEN(aes)
 
 SILC_CIPHER_API_ENCRYPT_CBC(aes)
 {
-  SilcUInt32 tiv[4];
-  int i;
+  int nb = len >> 4;
 
-  SILC_CBC_GET_IV(tiv, iv);
-
-  SILC_CBC_ENC_PRE(tiv, src);
-  rijndael_encrypt((RijndaelContext *)context, tiv, tiv);
-  SILC_CBC_ENC_POST(tiv, dst, src);
-
-  for (i = 16; i < len; i += 16) {
-    SILC_CBC_ENC_PRE(tiv, src);
-    rijndael_encrypt((RijndaelContext *)context, tiv, tiv);
-    SILC_CBC_ENC_POST(tiv, dst, src);
+  while(nb--) {
+    lp32(iv)[0] ^= lp32(src)[0];
+    lp32(iv)[1] ^= lp32(src)[1];
+    lp32(iv)[2] ^= lp32(src)[2];
+    lp32(iv)[3] ^= lp32(src)[3];
+    aes_encrypt(iv, iv, &((AesContext *)context)->enc);
+    memcpy(dst, iv, 16);
+    src += 16;
+    dst += 16;
   }
-
-  SILC_CBC_PUT_IV(tiv, iv);
 
   return TRUE;
 }
@@ -104,364 +83,452 @@ SILC_CIPHER_API_ENCRYPT_CBC(aes)
 
 SILC_CIPHER_API_DECRYPT_CBC(aes)
 {
-  SilcUInt32 tmp[4], tmp2[4], tiv[4];
-  int i;
+  unsigned char tmp[16];
+  int nb = len >> 4;
 
-  SILC_CBC_GET_IV(tiv, iv);
-
-  SILC_CBC_DEC_PRE(tmp, src);
-  rijndael_decrypt((RijndaelContext *)context, tmp, tmp2);
-  SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
-
-  for (i = 16; i < len; i += 16) {
-    SILC_CBC_DEC_PRE(tmp, src);
-    rijndael_decrypt((RijndaelContext *)context, tmp, tmp2); 
-    SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
+  while(nb--) {
+    memcpy(tmp, src, 16);
+    aes_decrypt(src, dst, &((AesContext *)context)->dec);
+    lp32(dst)[0] ^= lp32(iv)[0];
+    lp32(dst)[1] ^= lp32(iv)[1];
+    lp32(dst)[2] ^= lp32(iv)[2];
+    lp32(dst)[3] ^= lp32(iv)[3];
+    memcpy(iv, tmp, 16);
+    src += 16;
+    dst += 16;
   }
-  
-  SILC_CBC_PUT_IV(tiv, iv);
-  
+
   return TRUE;
 }
 
-#define LARGE_TABLES
+/****************************************************************************/
 
-u1byte  pow_tab[256];
-u1byte  log_tab[256];
-u1byte  sbx_tab[256];
-u1byte  isb_tab[256];
-u4byte  rco_tab[ 10];
-u4byte  ft_tab[4][256];
-u4byte  it_tab[4][256];
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
 
-u4byte  fl_tab[4][256];
-u4byte  il_tab[4][256];
-
-u4byte  tab_gen = 0;
-
-#define ff_mult(a,b)    (a && b ? pow_tab[(log_tab[a] + log_tab[b]) % 255] : 0)
-
-#define f_rn(bo, bi, n, k)                          \
-    bo[n] =  ft_tab[0][byte(bi[n],0)] ^             \
-             ft_tab[1][byte(bi[(n + 1) & 3],1)] ^   \
-             ft_tab[2][byte(bi[(n + 2) & 3],2)] ^   \
-             ft_tab[3][byte(bi[(n + 3) & 3],3)] ^ *(k + n)
-
-#define i_rn(bo, bi, n, k)                          \
-    bo[n] =  it_tab[0][byte(bi[n],0)] ^             \
-             it_tab[1][byte(bi[(n + 3) & 3],1)] ^   \
-             it_tab[2][byte(bi[(n + 2) & 3],2)] ^   \
-             it_tab[3][byte(bi[(n + 1) & 3],3)] ^ *(k + n)
-
-#ifdef LARGE_TABLES
-
-#define ls_box(x)                \
-    ( fl_tab[0][byte(x, 0)] ^    \
-      fl_tab[1][byte(x, 1)] ^    \
-      fl_tab[2][byte(x, 2)] ^    \
-      fl_tab[3][byte(x, 3)] )
-
-#define f_rl(bo, bi, n, k)                          \
-    bo[n] =  fl_tab[0][byte(bi[n],0)] ^             \
-             fl_tab[1][byte(bi[(n + 1) & 3],1)] ^   \
-             fl_tab[2][byte(bi[(n + 2) & 3],2)] ^   \
-             fl_tab[3][byte(bi[(n + 3) & 3],3)] ^ *(k + n)
-
-#define i_rl(bo, bi, n, k)                          \
-    bo[n] =  il_tab[0][byte(bi[n],0)] ^             \
-             il_tab[1][byte(bi[(n + 3) & 3],1)] ^   \
-             il_tab[2][byte(bi[(n + 2) & 3],2)] ^   \
-             il_tab[3][byte(bi[(n + 1) & 3],3)] ^ *(k + n)
-
+#if defined( __WATCOMC__ ) && ( __WATCOMC__ >= 1100 )
+#  define XP_DIR __cdecl
 #else
-
-#define ls_box(x)                            \
-    ((u4byte)sbx_tab[byte(x, 0)] <<  0) ^    \
-    ((u4byte)sbx_tab[byte(x, 1)] <<  8) ^    \
-    ((u4byte)sbx_tab[byte(x, 2)] << 16) ^    \
-    ((u4byte)sbx_tab[byte(x, 3)] << 24)
-
-#define f_rl(bo, bi, n, k)                                      \
-    bo[n] = (u4byte)sbx_tab[byte(bi[n],0)] ^                    \
-        rotl(((u4byte)sbx_tab[byte(bi[(n + 1) & 3],1)]),  8) ^  \
-        rotl(((u4byte)sbx_tab[byte(bi[(n + 2) & 3],2)]), 16) ^  \
-        rotl(((u4byte)sbx_tab[byte(bi[(n + 3) & 3],3)]), 24) ^ *(k + n)
-
-#define i_rl(bo, bi, n, k)                                      \
-    bo[n] = (u4byte)isb_tab[byte(bi[n],0)] ^                    \
-        rotl(((u4byte)isb_tab[byte(bi[(n + 3) & 3],1)]),  8) ^  \
-        rotl(((u4byte)isb_tab[byte(bi[(n + 2) & 3],2)]), 16) ^  \
-        rotl(((u4byte)isb_tab[byte(bi[(n + 1) & 3],3)]), 24) ^ *(k + n)
-
+#  define XP_DIR
 #endif
 
-void gen_tabs(void)
-{   u4byte  i, t;
-    u1byte  p, q;
+#define d_1(t,n,b,e)       ALIGN const XP_DIR t n[256]    =   b(e)
+#define d_4(t,n,b,e,f,g,h) ALIGN const XP_DIR t n[4][256] = { b(e), b(f), b(g), b(h) }
+ALIGN const uint_32t t_dec(r,c)[RC_LENGTH] = rc_data(w0);
 
-    /* log and power tables for GF(2**8) finite field with  */
-    /* 0x11b as modular polynomial - the simplest prmitive  */
-    /* root is 0x11, used here to generate the tables       */
+#ifdef SILC_ASM_AES
+d_1(uint_8t, t_dec(i,box), isb_data, h0);
+#endif /* SILC_ASM_AES */
+d_4(uint_32t, t_dec(f,n), sb_data, u0, u1, u2, u3);
+d_4(uint_32t, t_dec(f,l), sb_data, w0, w1, w2, w3);
+d_4(uint_32t, t_dec(i,n), isb_data, v0, v1, v2, v3);
+d_4(uint_32t, t_dec(i,l), isb_data, w0, w1, w2, w3);
+d_4(uint_32t, t_dec(i,m), mm_data, v0, v1, v2, v3);
 
-    for(i = 0,p = 1; i < 256; ++i)
+#define ke4(k,i) \
+{   k[4*(i)+4] = ss[0] ^= ls_box(ss[3],3) ^ t_use(r,c)[i]; \
+    k[4*(i)+5] = ss[1] ^= ss[0]; \
+    k[4*(i)+6] = ss[2] ^= ss[1]; \
+    k[4*(i)+7] = ss[3] ^= ss[2]; \
+}
+
+AES_RETURN aes_encrypt_key128(const unsigned char *key, aes_encrypt_ctx cx[1])
+{   uint_32t    ss[4];
+
+    cx->ks[0] = ss[0] = word_in(key, 0);
+    cx->ks[1] = ss[1] = word_in(key, 1);
+    cx->ks[2] = ss[2] = word_in(key, 2);
+    cx->ks[3] = ss[3] = word_in(key, 3);
+
+    ke4(cx->ks, 0);  ke4(cx->ks, 1);
+    ke4(cx->ks, 2);  ke4(cx->ks, 3);
+    ke4(cx->ks, 4);  ke4(cx->ks, 5);
+    ke4(cx->ks, 6);  ke4(cx->ks, 7);
+    ke4(cx->ks, 8);
+    ke4(cx->ks, 9);
+    cx->inf.l = 0;
+    cx->inf.b[0] = 10 * 16;
+}
+
+#define kef6(k,i) \
+{   k[6*(i)+ 6] = ss[0] ^= ls_box(ss[5],3) ^ t_use(r,c)[i]; \
+    k[6*(i)+ 7] = ss[1] ^= ss[0]; \
+    k[6*(i)+ 8] = ss[2] ^= ss[1]; \
+    k[6*(i)+ 9] = ss[3] ^= ss[2]; \
+}
+
+#define ke6(k,i) \
+{   kef6(k,i); \
+    k[6*(i)+10] = ss[4] ^= ss[3]; \
+    k[6*(i)+11] = ss[5] ^= ss[4]; \
+}
+
+AES_RETURN aes_encrypt_key192(const unsigned char *key, aes_encrypt_ctx cx[1])
+{   uint_32t    ss[6];
+
+    cx->ks[0] = ss[0] = word_in(key, 0);
+    cx->ks[1] = ss[1] = word_in(key, 1);
+    cx->ks[2] = ss[2] = word_in(key, 2);
+    cx->ks[3] = ss[3] = word_in(key, 3);
+    cx->ks[4] = ss[4] = word_in(key, 4);
+    cx->ks[5] = ss[5] = word_in(key, 5);
+
+    ke6(cx->ks, 0);  ke6(cx->ks, 1);
+    ke6(cx->ks, 2);  ke6(cx->ks, 3);
+    ke6(cx->ks, 4);  ke6(cx->ks, 5);
+    ke6(cx->ks, 6);
+    kef6(cx->ks, 7);
+    cx->inf.l = 0;
+    cx->inf.b[0] = 12 * 16;
+}
+
+#define kef8(k,i) \
+{   k[8*(i)+ 8] = ss[0] ^= ls_box(ss[7],3) ^ t_use(r,c)[i]; \
+    k[8*(i)+ 9] = ss[1] ^= ss[0]; \
+    k[8*(i)+10] = ss[2] ^= ss[1]; \
+    k[8*(i)+11] = ss[3] ^= ss[2]; \
+}
+
+#define ke8(k,i) \
+{   kef8(k,i); \
+    k[8*(i)+12] = ss[4] ^= ls_box(ss[3],0); \
+    k[8*(i)+13] = ss[5] ^= ss[4]; \
+    k[8*(i)+14] = ss[6] ^= ss[5]; \
+    k[8*(i)+15] = ss[7] ^= ss[6]; \
+}
+
+AES_RETURN aes_encrypt_key256(const unsigned char *key, aes_encrypt_ctx cx[1])
+{   uint_32t    ss[8];
+
+    cx->ks[0] = ss[0] = word_in(key, 0);
+    cx->ks[1] = ss[1] = word_in(key, 1);
+    cx->ks[2] = ss[2] = word_in(key, 2);
+    cx->ks[3] = ss[3] = word_in(key, 3);
+    cx->ks[4] = ss[4] = word_in(key, 4);
+    cx->ks[5] = ss[5] = word_in(key, 5);
+    cx->ks[6] = ss[6] = word_in(key, 6);
+    cx->ks[7] = ss[7] = word_in(key, 7);
+
+    ke8(cx->ks, 0); ke8(cx->ks, 1);
+    ke8(cx->ks, 2); ke8(cx->ks, 3);
+    ke8(cx->ks, 4); ke8(cx->ks, 5);
+    kef8(cx->ks, 6);
+    cx->inf.l = 0;
+    cx->inf.b[0] = 14 * 16;
+}
+
+AES_RETURN aes_encrypt_key(const unsigned char *key, int key_len, aes_encrypt_ctx cx[1])
+{
+    switch(key_len)
     {
-        pow_tab[i] = (u1byte)p; log_tab[p] = (u1byte)i;
-
-        p = p ^ (p << 1) ^ (p & 0x80 ? 0x01b : 0);
+    case 16: case 128: aes_encrypt_key128(key, cx); return;
+    case 24: case 192: aes_encrypt_key192(key, cx); return;
+    case 32: case 256: aes_encrypt_key256(key, cx); return;
     }
+}
 
-    log_tab[1] = 0; p = 1;
+#define v(n,i)  ((n) - (i) + 2 * ((i) & 3))
+#define k4e(k,i) \
+{   k[v(40,(4*(i))+4)] = ss[0] ^= ls_box(ss[3],3) ^ t_use(r,c)[i]; \
+    k[v(40,(4*(i))+5)] = ss[1] ^= ss[0]; \
+    k[v(40,(4*(i))+6)] = ss[2] ^= ss[1]; \
+    k[v(40,(4*(i))+7)] = ss[3] ^= ss[2]; \
+}
 
-    for(i = 0; i < 10; ++i)
-    {
-        rco_tab[i] = p; 
+#define kdf4(k,i) \
+{   ss[0] = ss[0] ^ ss[2] ^ ss[1] ^ ss[3]; \
+    ss[1] = ss[1] ^ ss[3]; \
+    ss[2] = ss[2] ^ ss[3]; \
+    ss[4] = ls_box(ss[(i+3) % 4], 3) ^ t_use(r,c)[i]; \
+    ss[i % 4] ^= ss[4]; \
+    ss[4] ^= k[v(40,(4*(i)))];   k[v(40,(4*(i))+4)] = ff(ss[4]); \
+    ss[4] ^= k[v(40,(4*(i))+1)]; k[v(40,(4*(i))+5)] = ff(ss[4]); \
+    ss[4] ^= k[v(40,(4*(i))+2)]; k[v(40,(4*(i))+6)] = ff(ss[4]); \
+    ss[4] ^= k[v(40,(4*(i))+3)]; k[v(40,(4*(i))+7)] = ff(ss[4]); \
+}
 
-        p = (p << 1) ^ (p & 0x80 ? 0x1b : 0);
-    }
+#define kd4(k,i) \
+{   ss[4] = ls_box(ss[(i+3) % 4], 3) ^ t_use(r,c)[i]; \
+    ss[i % 4] ^= ss[4]; ss[4] = ff(ss[4]); \
+    k[v(40,(4*(i))+4)] = ss[4] ^= k[v(40,(4*(i)))]; \
+    k[v(40,(4*(i))+5)] = ss[4] ^= k[v(40,(4*(i))+1)]; \
+    k[v(40,(4*(i))+6)] = ss[4] ^= k[v(40,(4*(i))+2)]; \
+    k[v(40,(4*(i))+7)] = ss[4] ^= k[v(40,(4*(i))+3)]; \
+}
 
-    /* note that the affine byte transformation matrix in   */
-    /* rijndael specification is in big endian format with  */
-    /* bit 0 as the most significant bit. In the remainder  */
-    /* of the specification the bits are numbered from the  */
-    /* least significant end of a byte.                     */
+#define kdl4(k,i) \
+{   ss[4] = ls_box(ss[(i+3) % 4], 3) ^ t_use(r,c)[i]; ss[i % 4] ^= ss[4]; \
+    k[v(40,(4*(i))+4)] = (ss[0] ^= ss[1]) ^ ss[2] ^ ss[3]; \
+    k[v(40,(4*(i))+5)] = ss[1] ^ ss[3]; \
+    k[v(40,(4*(i))+6)] = ss[0]; \
+    k[v(40,(4*(i))+7)] = ss[1]; \
+}
 
-    for(i = 0; i < 256; ++i)
-    {   
-        p = (i ? pow_tab[255 - log_tab[i]] : 0); q = p; 
-        q = (q >> 7) | (q << 1); p ^= q; 
-        q = (q >> 7) | (q << 1); p ^= q; 
-        q = (q >> 7) | (q << 1); p ^= q; 
-        q = (q >> 7) | (q << 1); p ^= q ^ 0x63; 
-        sbx_tab[i] = (u1byte)p; isb_tab[p] = (u1byte)i;
-    }
-
-    for(i = 0; i < 256; ++i)
-    {
-        p = sbx_tab[i]; 
-
-#ifdef  LARGE_TABLES        
-        
-        t = p; fl_tab[0][i] = t;
-        fl_tab[1][i] = rotl(t,  8);
-        fl_tab[2][i] = rotl(t, 16);
-        fl_tab[3][i] = rotl(t, 24);
+AES_RETURN aes_decrypt_key128(const unsigned char *key, aes_decrypt_ctx cx[1])
+{   uint_32t    ss[5];
+#if defined( d_vars )
+        d_vars;
 #endif
-        t = ((u4byte)ff_mult(2, p)) |
-            ((u4byte)p <<  8) |
-            ((u4byte)p << 16) |
-            ((u4byte)ff_mult(3, p) << 24);
-        
-        ft_tab[0][i] = t;
-        ft_tab[1][i] = rotl(t,  8);
-        ft_tab[2][i] = rotl(t, 16);
-        ft_tab[3][i] = rotl(t, 24);
+    cx->ks[v(40,(0))] = ss[0] = word_in(key, 0);
+    cx->ks[v(40,(1))] = ss[1] = word_in(key, 1);
+    cx->ks[v(40,(2))] = ss[2] = word_in(key, 2);
+    cx->ks[v(40,(3))] = ss[3] = word_in(key, 3);
 
-        p = isb_tab[i]; 
-
-#ifdef  LARGE_TABLES        
-        
-        t = p; il_tab[0][i] = t; 
-        il_tab[1][i] = rotl(t,  8); 
-        il_tab[2][i] = rotl(t, 16); 
-        il_tab[3][i] = rotl(t, 24);
-#endif 
-        t = ((u4byte)ff_mult(14, p)) |
-            ((u4byte)ff_mult( 9, p) <<  8) |
-            ((u4byte)ff_mult(13, p) << 16) |
-            ((u4byte)ff_mult(11, p) << 24);
-        
-        it_tab[0][i] = t; 
-        it_tab[1][i] = rotl(t,  8); 
-        it_tab[2][i] = rotl(t, 16); 
-        it_tab[3][i] = rotl(t, 24); 
-    }
-
-    tab_gen = 1;
-};
-
-#define star_x(x) (((x) & 0x7f7f7f7f) << 1) ^ ((((x) & 0x80808080) >> 7) * 0x1b)
-
-#define imix_col(y,x)       \
-    u   = star_x(x);        \
-    v   = star_x(u);        \
-    w   = star_x(v);        \
-    t   = w ^ (x);          \
-   (y)  = u ^ v ^ w;        \
-   (y) ^= rotr(u ^ t,  8) ^ \
-          rotr(v ^ t, 16) ^ \
-          rotr(t,24)
-
-/* initialise the key schedule from the user supplied key   */
-
-#define loop4(i)                                    \
-{ \
-   t = ls_box(rotr(t,  8)) ^ rco_tab[i];           \
-    t ^= e_key[4 * i];     e_key[4 * i + 4] = t;    \
-    t ^= e_key[4 * i + 1]; e_key[4 * i + 5] = t;    \
-    t ^= e_key[4 * i + 2]; e_key[4 * i + 6] = t;    \
-    t ^= e_key[4 * i + 3]; e_key[4 * i + 7] = t;    \
+    kdf4(cx->ks, 0);  kd4(cx->ks, 1);
+     kd4(cx->ks, 2);  kd4(cx->ks, 3);
+     kd4(cx->ks, 4);  kd4(cx->ks, 5);
+     kd4(cx->ks, 6);  kd4(cx->ks, 7);
+     kd4(cx->ks, 8); kdl4(cx->ks, 9);
+    cx->inf.l = 0;
+    cx->inf.b[0] = 10 * 16;
 }
 
-#define loop6(i)                                    \
-{   t = ls_box(rotr(t,  8)) ^ rco_tab[i];           \
-    t ^= e_key[6 * i];     e_key[6 * i + 6] = t;    \
-    t ^= e_key[6 * i + 1]; e_key[6 * i + 7] = t;    \
-    t ^= e_key[6 * i + 2]; e_key[6 * i + 8] = t;    \
-    t ^= e_key[6 * i + 3]; e_key[6 * i + 9] = t;    \
-    t ^= e_key[6 * i + 4]; e_key[6 * i + 10] = t;   \
-    t ^= e_key[6 * i + 5]; e_key[6 * i + 11] = t;   \
+#define k6ef(k,i) \
+{   k[v(48,(6*(i))+ 6)] = ss[0] ^= ls_box(ss[5],3) ^ t_use(r,c)[i]; \
+    k[v(48,(6*(i))+ 7)] = ss[1] ^= ss[0]; \
+    k[v(48,(6*(i))+ 8)] = ss[2] ^= ss[1]; \
+    k[v(48,(6*(i))+ 9)] = ss[3] ^= ss[2]; \
 }
 
-#define loop8(i)                                    \
-{   t = ls_box(rotr(t,  8)) ^ rco_tab[i];           \
-    t ^= e_key[8 * i];     e_key[8 * i + 8] = t;    \
-    t ^= e_key[8 * i + 1]; e_key[8 * i + 9] = t;    \
-    t ^= e_key[8 * i + 2]; e_key[8 * i + 10] = t;   \
-    t ^= e_key[8 * i + 3]; e_key[8 * i + 11] = t;   \
-    t  = e_key[8 * i + 4] ^ ls_box(t);              \
-    e_key[8 * i + 12] = t;                          \
-    t ^= e_key[8 * i + 5]; e_key[8 * i + 13] = t;   \
-    t ^= e_key[8 * i + 6]; e_key[8 * i + 14] = t;   \
-    t ^= e_key[8 * i + 7]; e_key[8 * i + 15] = t;   \
+#define k6e(k,i) \
+{   k6ef(k,i); \
+    k[v(48,(6*(i))+10)] = ss[4] ^= ss[3]; \
+    k[v(48,(6*(i))+11)] = ss[5] ^= ss[4]; \
 }
 
-u4byte *rijndael_set_key(RijndaelContext *ctx,
-			 const u4byte in_key[], const u4byte key_len)
-{   
-    u4byte  i, t, u, v, w;
-    u4byte *e_key = ctx->e_key;
-    u4byte *d_key = ctx->d_key;
-    u4byte k_len;
+#define kdf6(k,i) \
+{   ss[0] ^= ls_box(ss[5],3) ^ t_use(r,c)[i]; k[v(48,(6*(i))+ 6)] = ff(ss[0]); \
+    ss[1] ^= ss[0]; k[v(48,(6*(i))+ 7)] = ff(ss[1]); \
+    ss[2] ^= ss[1]; k[v(48,(6*(i))+ 8)] = ff(ss[2]); \
+    ss[3] ^= ss[2]; k[v(48,(6*(i))+ 9)] = ff(ss[3]); \
+    ss[4] ^= ss[3]; k[v(48,(6*(i))+10)] = ff(ss[4]); \
+    ss[5] ^= ss[4]; k[v(48,(6*(i))+11)] = ff(ss[5]); \
+}
 
-    if(!tab_gen)
-        gen_tabs();
+#define kd6(k,i) \
+{   ss[6] = ls_box(ss[5],3) ^ t_use(r,c)[i]; \
+    ss[0] ^= ss[6]; ss[6] = ff(ss[6]); k[v(48,(6*(i))+ 6)] = ss[6] ^= k[v(48,(6*(i)))]; \
+    ss[1] ^= ss[0]; k[v(48,(6*(i))+ 7)] = ss[6] ^= k[v(48,(6*(i))+ 1)]; \
+    ss[2] ^= ss[1]; k[v(48,(6*(i))+ 8)] = ss[6] ^= k[v(48,(6*(i))+ 2)]; \
+    ss[3] ^= ss[2]; k[v(48,(6*(i))+ 9)] = ss[6] ^= k[v(48,(6*(i))+ 3)]; \
+    ss[4] ^= ss[3]; k[v(48,(6*(i))+10)] = ss[6] ^= k[v(48,(6*(i))+ 4)]; \
+    ss[5] ^= ss[4]; k[v(48,(6*(i))+11)] = ss[6] ^= k[v(48,(6*(i))+ 5)]; \
+}
 
-    k_len = ctx->k_len = (key_len + 31) / 32;
+#define kdl6(k,i) \
+{   ss[0] ^= ls_box(ss[5],3) ^ t_use(r,c)[i]; k[v(48,(6*(i))+ 6)] = ss[0]; \
+    ss[1] ^= ss[0]; k[v(48,(6*(i))+ 7)] = ss[1]; \
+    ss[2] ^= ss[1]; k[v(48,(6*(i))+ 8)] = ss[2]; \
+    ss[3] ^= ss[2]; k[v(48,(6*(i))+ 9)] = ss[3]; \
+}
 
-    e_key[0] = in_key[0]; e_key[1] = in_key[1];
-    e_key[2] = in_key[2]; e_key[3] = in_key[3];
+AES_RETURN aes_decrypt_key192(const unsigned char *key, aes_decrypt_ctx cx[1])
+{   uint_32t    ss[7];
+#if defined( d_vars )
+        d_vars;
+#endif
+    cx->ks[v(48,(0))] = ss[0] = word_in(key, 0);
+    cx->ks[v(48,(1))] = ss[1] = word_in(key, 1);
+    cx->ks[v(48,(2))] = ss[2] = word_in(key, 2);
+    cx->ks[v(48,(3))] = ss[3] = word_in(key, 3);
 
-    switch(k_len)
+    cx->ks[v(48,(4))] = ff(ss[4] = word_in(key, 4));
+    cx->ks[v(48,(5))] = ff(ss[5] = word_in(key, 5));
+    kdf6(cx->ks, 0); kd6(cx->ks, 1);
+    kd6(cx->ks, 2);  kd6(cx->ks, 3);
+    kd6(cx->ks, 4);  kd6(cx->ks, 5);
+    kd6(cx->ks, 6); kdl6(cx->ks, 7);
+    cx->inf.l = 0;
+    cx->inf.b[0] = 12 * 16;
+}
+
+#define k8ef(k,i) \
+{   k[v(56,(8*(i))+ 8)] = ss[0] ^= ls_box(ss[7],3) ^ t_use(r,c)[i]; \
+    k[v(56,(8*(i))+ 9)] = ss[1] ^= ss[0]; \
+    k[v(56,(8*(i))+10)] = ss[2] ^= ss[1]; \
+    k[v(56,(8*(i))+11)] = ss[3] ^= ss[2]; \
+}
+
+#define k8e(k,i) \
+{   k8ef(k,i); \
+    k[v(56,(8*(i))+12)] = ss[4] ^= ls_box(ss[3],0); \
+    k[v(56,(8*(i))+13)] = ss[5] ^= ss[4]; \
+    k[v(56,(8*(i))+14)] = ss[6] ^= ss[5]; \
+    k[v(56,(8*(i))+15)] = ss[7] ^= ss[6]; \
+}
+
+#define kdf8(k,i) \
+{   ss[0] ^= ls_box(ss[7],3) ^ t_use(r,c)[i]; k[v(56,(8*(i))+ 8)] = ff(ss[0]); \
+    ss[1] ^= ss[0]; k[v(56,(8*(i))+ 9)] = ff(ss[1]); \
+    ss[2] ^= ss[1]; k[v(56,(8*(i))+10)] = ff(ss[2]); \
+    ss[3] ^= ss[2]; k[v(56,(8*(i))+11)] = ff(ss[3]); \
+    ss[4] ^= ls_box(ss[3],0); k[v(56,(8*(i))+12)] = ff(ss[4]); \
+    ss[5] ^= ss[4]; k[v(56,(8*(i))+13)] = ff(ss[5]); \
+    ss[6] ^= ss[5]; k[v(56,(8*(i))+14)] = ff(ss[6]); \
+    ss[7] ^= ss[6]; k[v(56,(8*(i))+15)] = ff(ss[7]); \
+}
+
+#define kd8(k,i) \
+{   ss[8] = ls_box(ss[7],3) ^ t_use(r,c)[i]; \
+    ss[0] ^= ss[8]; ss[8] = ff(ss[8]); k[v(56,(8*(i))+ 8)] = ss[8] ^= k[v(56,(8*(i)))]; \
+    ss[1] ^= ss[0]; k[v(56,(8*(i))+ 9)] = ss[8] ^= k[v(56,(8*(i))+ 1)]; \
+    ss[2] ^= ss[1]; k[v(56,(8*(i))+10)] = ss[8] ^= k[v(56,(8*(i))+ 2)]; \
+    ss[3] ^= ss[2]; k[v(56,(8*(i))+11)] = ss[8] ^= k[v(56,(8*(i))+ 3)]; \
+    ss[8] = ls_box(ss[3],0); \
+    ss[4] ^= ss[8]; ss[8] = ff(ss[8]); k[v(56,(8*(i))+12)] = ss[8] ^= k[v(56,(8*(i))+ 4)]; \
+    ss[5] ^= ss[4]; k[v(56,(8*(i))+13)] = ss[8] ^= k[v(56,(8*(i))+ 5)]; \
+    ss[6] ^= ss[5]; k[v(56,(8*(i))+14)] = ss[8] ^= k[v(56,(8*(i))+ 6)]; \
+    ss[7] ^= ss[6]; k[v(56,(8*(i))+15)] = ss[8] ^= k[v(56,(8*(i))+ 7)]; \
+}
+
+#define kdl8(k,i) \
+{   ss[0] ^= ls_box(ss[7],3) ^ t_use(r,c)[i]; k[v(56,(8*(i))+ 8)] = ss[0]; \
+    ss[1] ^= ss[0]; k[v(56,(8*(i))+ 9)] = ss[1]; \
+    ss[2] ^= ss[1]; k[v(56,(8*(i))+10)] = ss[2]; \
+    ss[3] ^= ss[2]; k[v(56,(8*(i))+11)] = ss[3]; \
+}
+
+AES_RETURN aes_decrypt_key256(const unsigned char *key, aes_decrypt_ctx cx[1])
+{   uint_32t    ss[9];
+#if defined( d_vars )
+        d_vars;
+#endif
+    cx->ks[v(56,(0))] = ss[0] = word_in(key, 0);
+    cx->ks[v(56,(1))] = ss[1] = word_in(key, 1);
+    cx->ks[v(56,(2))] = ss[2] = word_in(key, 2);
+    cx->ks[v(56,(3))] = ss[3] = word_in(key, 3);
+
+    cx->ks[v(56,(4))] = ff(ss[4] = word_in(key, 4));
+    cx->ks[v(56,(5))] = ff(ss[5] = word_in(key, 5));
+    cx->ks[v(56,(6))] = ff(ss[6] = word_in(key, 6));
+    cx->ks[v(56,(7))] = ff(ss[7] = word_in(key, 7));
+    kdf8(cx->ks, 0); kd8(cx->ks, 1);
+    kd8(cx->ks, 2);  kd8(cx->ks, 3);
+    kd8(cx->ks, 4);  kd8(cx->ks, 5);
+    kdl8(cx->ks, 6);
+    cx->inf.l = 0;
+    cx->inf.b[0] = 14 * 16;
+}
+
+AES_RETURN aes_decrypt_key(const unsigned char *key, int key_len, aes_decrypt_ctx cx[1])
+{
+    switch(key_len)
     {
-        case 4: t = e_key[3];
-                for(i = 0; i < 10; ++i) 
-                    loop4(i);
-                break;
+    case 16: case 128: aes_decrypt_key128(key, cx); return;
+    case 24: case 192: aes_decrypt_key192(key, cx); return;
+    case 32: case 256: aes_decrypt_key256(key, cx); return;
+    }
+}
 
-        case 6: e_key[4] = in_key[4]; t = e_key[5] = in_key[5];
-                for(i = 0; i < 8; ++i) 
-                    loop6(i);
-                break;
+#ifndef SILC_ASM_AES
+/* C version of AES */
 
-        case 8: e_key[4] = in_key[4]; e_key[5] = in_key[5];
-                e_key[6] = in_key[6]; t = e_key[7] = in_key[7];
-                for(i = 0; i < 7; ++i) 
-                    loop8(i);
-                break;
+#define si(y,x,k,c) (s(y,c) = word_in(x, c) ^ (k)[c])
+#define so(y,x,c)   word_out(y, c, s(x,c))
+#define locals(y,x)     x[4],y[4]
+#define l_copy(y, x)    s(y,0) = s(x,0); s(y,1) = s(x,1); \
+                        s(y,2) = s(x,2); s(y,3) = s(x,3);
+#define state_in(y,x,k) si(y,x,k,0); si(y,x,k,1); si(y,x,k,2); si(y,x,k,3)
+#define state_out(y,x)  so(y,x,0); so(y,x,1); so(y,x,2); so(y,x,3)
+#define round(rm,y,x,k) rm(y,x,k,0); rm(y,x,k,1); rm(y,x,k,2); rm(y,x,k,3)
+
+/* Visual C++ .Net v7.1 provides the fastest encryption code when using
+   Pentium optimiation with small code but this is poor for decryption
+   so we need to control this with the following VC++ pragmas
+*/
+
+#if defined( _MSC_VER ) && !defined( _WIN64 )
+#pragma optimize( "s", on )
+#endif
+
+#define fwd_var(x,r,c)\
+ ( r == 0 ? ( c == 0 ? s(x,0) : c == 1 ? s(x,1) : c == 2 ? s(x,2) : s(x,3))\
+ : r == 1 ? ( c == 0 ? s(x,1) : c == 1 ? s(x,2) : c == 2 ? s(x,3) : s(x,0))\
+ : r == 2 ? ( c == 0 ? s(x,2) : c == 1 ? s(x,3) : c == 2 ? s(x,0) : s(x,1))\
+ :          ( c == 0 ? s(x,3) : c == 1 ? s(x,0) : c == 2 ? s(x,1) : s(x,2)))
+#define fwd_rnd(y,x,k,c)    (s(y,c) = (k)[c] ^ four_tables(x,t_use(f,n),fwd_var,rf1,c))
+#define fwd_lrnd(y,x,k,c)   (s(y,c) = (k)[c] ^ four_tables(x,t_use(f,l),fwd_var,rf1,c))
+
+AES_RETURN aes_encrypt(const unsigned char *in, unsigned char *out, const aes_encrypt_ctx cx[1])
+{   uint_32t         locals(b0, b1);
+    const uint_32t   *kp;
+
+    kp = cx->ks;
+    state_in(b0, in, kp);
+
+    switch(cx->inf.b[0])
+    {
+    case 14 * 16:
+        round(fwd_rnd,  b1, b0, kp + 1 * N_COLS);
+        round(fwd_rnd,  b0, b1, kp + 2 * N_COLS);
+        kp += 2 * N_COLS;
+    case 12 * 16:
+        round(fwd_rnd,  b1, b0, kp + 1 * N_COLS);
+        round(fwd_rnd,  b0, b1, kp + 2 * N_COLS);
+        kp += 2 * N_COLS;
+    case 10 * 16:
+        round(fwd_rnd,  b1, b0, kp + 1 * N_COLS);
+        round(fwd_rnd,  b0, b1, kp + 2 * N_COLS);
+        round(fwd_rnd,  b1, b0, kp + 3 * N_COLS);
+        round(fwd_rnd,  b0, b1, kp + 4 * N_COLS);
+        round(fwd_rnd,  b1, b0, kp + 5 * N_COLS);
+        round(fwd_rnd,  b0, b1, kp + 6 * N_COLS);
+        round(fwd_rnd,  b1, b0, kp + 7 * N_COLS);
+        round(fwd_rnd,  b0, b1, kp + 8 * N_COLS);
+        round(fwd_rnd,  b1, b0, kp + 9 * N_COLS);
+        round(fwd_lrnd, b0, b1, kp +10 * N_COLS);
     }
 
-    d_key[0] = e_key[0]; d_key[1] = e_key[1];
-    d_key[2] = e_key[2]; d_key[3] = e_key[3];
+    state_out(out, b0);
+}
 
-    for(i = 4; i < 4 * k_len + 24; ++i)
+#define inv_var(x,r,c)\
+ ( r == 0 ? ( c == 0 ? s(x,0) : c == 1 ? s(x,1) : c == 2 ? s(x,2) : s(x,3))\
+ : r == 1 ? ( c == 0 ? s(x,3) : c == 1 ? s(x,0) : c == 2 ? s(x,1) : s(x,2))\
+ : r == 2 ? ( c == 0 ? s(x,2) : c == 1 ? s(x,3) : c == 2 ? s(x,0) : s(x,1))\
+ :          ( c == 0 ? s(x,1) : c == 1 ? s(x,2) : c == 2 ? s(x,3) : s(x,0)))
+
+#define inv_rnd(y,x,k,c)    (s(y,c) = (k)[c] ^ four_tables(x,t_use(i,n),inv_var,rf1,c))
+#define inv_lrnd(y,x,k,c)   (s(y,c) = (k)[c] ^ four_tables(x,t_use(i,l),inv_var,rf1,c))
+#define key_ofs     0
+#define rnd_key(n)  (kp + n * N_COLS)
+
+AES_RETURN aes_decrypt(const unsigned char *in, unsigned char *out, const aes_decrypt_ctx cx[1])
+{   uint_32t        locals(b0, b1);
+    const uint_32t *kp;
+
+    kp = cx->ks + (key_ofs ? (cx->inf.b[0] >> 2) : 0);
+    state_in(b0, in, kp);
+
+    kp = cx->ks + (key_ofs ? 0 : (cx->inf.b[0] >> 2));
+    switch(cx->inf.b[0])
     {
-        imix_col(d_key[i], e_key[i]);
+    case 14 * 16:
+        round(inv_rnd,  b1, b0, rnd_key(-13));
+        round(inv_rnd,  b0, b1, rnd_key(-12));
+    case 12 * 16:
+        round(inv_rnd,  b1, b0, rnd_key(-11));
+        round(inv_rnd,  b0, b1, rnd_key(-10));
+    case 10 * 16:
+        round(inv_rnd,  b1, b0, rnd_key(-9));
+        round(inv_rnd,  b0, b1, rnd_key(-8));
+        round(inv_rnd,  b1, b0, rnd_key(-7));
+        round(inv_rnd,  b0, b1, rnd_key(-6));
+        round(inv_rnd,  b1, b0, rnd_key(-5));
+        round(inv_rnd,  b0, b1, rnd_key(-4));
+        round(inv_rnd,  b1, b0, rnd_key(-3));
+        round(inv_rnd,  b0, b1, rnd_key(-2));
+        round(inv_rnd,  b1, b0, rnd_key(-1));
+        round(inv_lrnd, b0, b1, rnd_key( 0));
     }
 
-    return e_key;
-};
+    state_out(out, b0);
+}
 
-/* encrypt a block of text  */
+#if defined(__cplusplus)
+}
+#endif
 
-#define f_nround(bo, bi, k) \
-    f_rn(bo, bi, 0, k);     \
-    f_rn(bo, bi, 1, k);     \
-    f_rn(bo, bi, 2, k);     \
-    f_rn(bo, bi, 3, k);     \
-    k += 4
-
-#define f_lround(bo, bi, k) \
-    f_rl(bo, bi, 0, k);     \
-    f_rl(bo, bi, 1, k);     \
-    f_rl(bo, bi, 2, k);     \
-    f_rl(bo, bi, 3, k)
-
-void rijndael_encrypt(RijndaelContext *ctx,
-		      const u4byte in_blk[4], u4byte out_blk[4])
-{   
-    u4byte  b0[4], b1[4], *kp;
-    u4byte *e_key = ctx->e_key;
-    u4byte k_len = ctx->k_len;
-
-    b0[0] = in_blk[0] ^ e_key[0]; b0[1] = in_blk[1] ^ e_key[1];
-    b0[2] = in_blk[2] ^ e_key[2]; b0[3] = in_blk[3] ^ e_key[3];
-
-    kp = e_key + 4;
-
-    if(k_len > 6)
-    {
-        f_nround(b1, b0, kp); f_nround(b0, b1, kp);
-    }
-
-    if(k_len > 4)
-    {
-        f_nround(b1, b0, kp); f_nround(b0, b1, kp);
-    }
-
-    f_nround(b1, b0, kp); f_nround(b0, b1, kp);
-    f_nround(b1, b0, kp); f_nround(b0, b1, kp);
-    f_nround(b1, b0, kp); f_nround(b0, b1, kp);
-    f_nround(b1, b0, kp); f_nround(b0, b1, kp);
-    f_nround(b1, b0, kp); f_lround(b0, b1, kp);
-
-    out_blk[0] = b0[0]; out_blk[1] = b0[1];
-    out_blk[2] = b0[2]; out_blk[3] = b0[3];
-};
-
-/* decrypt a block of text  */
-
-#define i_nround(bo, bi, k) \
-    i_rn(bo, bi, 0, k);     \
-    i_rn(bo, bi, 1, k);     \
-    i_rn(bo, bi, 2, k);     \
-    i_rn(bo, bi, 3, k);     \
-    k -= 4
-
-#define i_lround(bo, bi, k) \
-    i_rl(bo, bi, 0, k);     \
-    i_rl(bo, bi, 1, k);     \
-    i_rl(bo, bi, 2, k);     \
-    i_rl(bo, bi, 3, k)
-
-void rijndael_decrypt(RijndaelContext *ctx,
-		      const u4byte in_blk[4], u4byte out_blk[4])
-{   
-    u4byte  b0[4], b1[4], *kp;
-    u4byte *e_key = ctx->e_key;
-    u4byte *d_key = ctx->d_key;
-    u4byte k_len = ctx->k_len;
-
-    b0[0] = in_blk[0] ^ e_key[4 * k_len + 24]; b0[1] = in_blk[1] ^ e_key[4 * k_len + 25];
-    b0[2] = in_blk[2] ^ e_key[4 * k_len + 26]; b0[3] = in_blk[3] ^ e_key[4 * k_len + 27];
-
-    kp = d_key + 4 * (k_len + 5);
-
-    if(k_len > 6)
-    {
-        i_nround(b1, b0, kp); i_nround(b0, b1, kp);
-    }
-
-    if(k_len > 4)
-    {
-        i_nround(b1, b0, kp); i_nround(b0, b1, kp);
-    }
-
-    i_nround(b1, b0, kp); i_nround(b0, b1, kp);
-    i_nround(b1, b0, kp); i_nround(b0, b1, kp);
-    i_nround(b1, b0, kp); i_nround(b0, b1, kp);
-    i_nround(b1, b0, kp); i_nround(b0, b1, kp);
-    i_nround(b1, b0, kp); i_lround(b0, b1, kp);
-
-    out_blk[0] = b0[0]; out_blk[1] = b0[1];
-    out_blk[2] = b0[2]; out_blk[3] = b0[3];
-};
+#endif /* SILC_ASM_AES */

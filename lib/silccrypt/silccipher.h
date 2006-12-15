@@ -50,7 +50,6 @@ typedef struct SilcCipherStruct *SilcCipher;
 typedef struct {
   char *name;
   SilcBool (*set_key)(void *, const unsigned char *, SilcUInt32);
-  SilcBool (*set_key_with_string)(void *, const unsigned char *, SilcUInt32);
   SilcBool (*encrypt)(void *, const unsigned char *, unsigned char *,
 		  SilcUInt32, unsigned char *);
   SilcBool (*decrypt)(void *, const unsigned char *, unsigned char *,
@@ -81,7 +80,6 @@ extern DLLAPI const SilcCipherObject silc_default_ciphers[];
    of the module. All SILC Crypto API compliant modules must support
    these function names (use macros below to assure this). */
 #define SILC_CIPHER_SIM_SET_KEY "set_key"
-#define SILC_CIPHER_SIM_SET_KEY_WITH_STRING "set_key_with_string"
 #define SILC_CIPHER_SIM_ENCRYPT_CBC "encrypt_cbc"
 #define SILC_CIPHER_SIM_DECRYPT_CBC "decrypt_cbc"
 #define SILC_CIPHER_SIM_CONTEXT_LEN "context_len"
@@ -92,10 +90,6 @@ extern DLLAPI const SilcCipherObject silc_default_ciphers[];
 SilcBool silc_##cipher##_set_key(void *context,		\
 			     const unsigned char *key,	\
 			     SilcUInt32 keylen)
-#define SILC_CIPHER_API_SET_KEY_WITH_STRING(cipher)			\
-SilcBool silc_##cipher##_set_key_with_string(void *context,			\
-	 			 	 const unsigned char *string,	\
-			 	         SilcUInt32 stringlen)
 #define SILC_CIPHER_API_ENCRYPT_CBC(cipher)			\
 SilcBool silc_##cipher##_encrypt_cbc(void *context,			\
 				 const unsigned char *src,	\

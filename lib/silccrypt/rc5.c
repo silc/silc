@@ -30,10 +30,10 @@
  */
 
 /*
- * Based on RC5 reference code and on description of Bruce Schneier's 
+ * Based on RC5 reference code and on description of Bruce Schneier's
  * Applied Cryptography.
  *
- * This implementation has a word size of 32 bits, a rounds of 16 and 
+ * This implementation has a word size of 32 bits, a rounds of 16 and
  * variable key length from 128 and 192 up to 256 bits.
  *
  */
@@ -42,7 +42,7 @@
 #include "rc5_internal.h"
 #include "rc5.h"
 
-/* 
+/*
  * SILC Crypto API for RC5
  */
 
@@ -56,14 +56,6 @@ SILC_CIPHER_API_SET_KEY(rc5)
   rc5_set_key((RC5Context *)context, k, keylen);
 
   return TRUE;
-}
-
-/* Sets the string as a new key for the cipher. The string is first
-   hashed and then used as a new key. */
-
-SILC_CIPHER_API_SET_KEY_WITH_STRING(rc5)
-{
-  return 1;
 }
 
 /* Returns the size of the cipher context. */
@@ -114,12 +106,12 @@ SILC_CIPHER_API_DECRYPT_CBC(rc5)
 
   for (i = 16; i < len; i += 16) {
     SILC_CBC_DEC_PRE(tmp, src);
-    rc5_decrypt((RC5Context *)context, tmp, tmp2); 
+    rc5_decrypt((RC5Context *)context, tmp, tmp2);
     SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
   }
-  
+
   SILC_CBC_PUT_IV(tiv, iv);
-  
+
   return TRUE;
 }
 
@@ -206,9 +198,9 @@ int rc5_decrypt(RC5Context *ctx, u32 *in, u32 *out)
 	A = in[0];
 	B = in[1];
 
-	RC5D(32, A, B); RC5D(30, A, B); 
-	RC5D(28, A, B); RC5D(26, A, B); 
-	RC5D(24, A, B); RC5D(22, A, B); 
+	RC5D(32, A, B); RC5D(30, A, B);
+	RC5D(28, A, B); RC5D(26, A, B);
+	RC5D(24, A, B); RC5D(22, A, B);
 	RC5D(20, A, B); RC5D(18, A, B);
 	RC5D(16, A, B); RC5D(14, A, B);
 	RC5D(12, A, B); RC5D(10, A, B);
@@ -219,4 +211,4 @@ int rc5_decrypt(RC5Context *ctx, u32 *in, u32 *out)
 	out[1] = B - S[1];
 
 	return 0;
-}   
+}
