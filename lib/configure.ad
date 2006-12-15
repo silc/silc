@@ -69,7 +69,7 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcvcard"
 #  - If functions were added, increment [LIB]_AGE
 #  - If functions were removed, set [LIB]_AGE to 0
 #
-# where [LIB] is LIBSILC, LIBSILCCLIENT or LIBSILCSERVER, and where 
+# where [LIB] is LIBSILC, LIBSILCCLIENT or LIBSILCSERVER, and where
 # "functions" means functions public interfaces (API).
 #
 # The LIB_BASE_VERSION defines the SILC software major.minor version and
@@ -106,6 +106,9 @@ AC_SUBST(LIBSILCCLIENT_AGE)
 AC_SUBST(LIBSILCSERVER_CURRENT)
 AC_SUBST(LIBSILCSERVER_REVISION)
 AC_SUBST(LIBSILCSERVER_AGE)
+
+# Check for big-endian machines
+AC_C_BIGENDIAN
 
 #ifdef SILC_DIST_SIM
 # SIM modules directory
@@ -147,6 +150,49 @@ AC_ARG_ENABLE(stack-trace,
   )
 #endif SILC_DIST_TOOLKIT
 
+#ifdef SILC_DIST_INPLACE
+#
+# Profiling options (never delivered to distributions)
+#
+AC_MSG_CHECKING(whether to enable gprof)
+AC_ARG_ENABLE(gprof,
+  [  --enable-gprof          enable gprof profiling],
+  [
+    case "${enableval}" in
+      yes)
+        AC_MSG_RESULT(yes)
+        SILC_ADD_CFLAGS(-pg)
+        LIBS="$LIBS -pg"
+        ;;
+      *)
+        AC_MSG_RESULT(no)
+        ;;
+    esac
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ])
+
+AC_MSG_CHECKING(whether to enable gcov)
+AC_ARG_ENABLE(gcov,
+  [  --enable-gcov           enable gcov],
+  [
+    case "${enableval}" in
+      yes)
+        AC_MSG_RESULT(yes)
+        SILC_ADD_CFLAGS(-fprofile-arcs)
+        LIBS="$LIBS -lgcov"
+        ;;
+      *)
+        AC_MSG_RESULT(no)
+        ;;
+    esac
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ])
+#endif SILC_DIST_INPLACE
+
 #
 # Makefile outputs
 #
@@ -154,7 +200,6 @@ AC_CONFIG_FILES(
 lib/Makefile
 lib/contrib/Makefile
 lib/silccore/Makefile
-lib/silccrypt/Makefile
 #ifdef SILC_DIST_SIM
 lib/silcsim/Makefile
 #endif SILC_DIST_SIM
@@ -171,7 +216,6 @@ lib/silcsftp/Makefile
 #endif SILC_DIST_SFTP
 #ifdef SILC_DIST_INPLACE
 lib/silcutil/tests/Makefile
-lib/silccrypt/tests/Makefile
 lib/silccore/tests/Makefile
 lib/silcsftp/tests/Makefile
 #endif SILC_DIST_INPLACE

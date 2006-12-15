@@ -206,14 +206,14 @@ static inline SilcBool silc_packet_stream_write(SilcPacketStream ps,
 	i = silc_net_udp_send(stream, ps->remote_udp->remote_ip,
 			      ps->remote_udp->remote_port,
 			      ps->outbuf.data, silc_buffer_len(&ps->outbuf));
-	if (i == -2) {
+	if (silc_unlikely(i == -2)) {
 	  /* Error */
 	  silc_buffer_reset(&ps->outbuf);
 	  SILC_PACKET_CALLBACK_ERROR(ps, SILC_PACKET_ERR_WRITE);
 	  return FALSE;
 	}
 
-	if (i == -1) {
+	if (silc_unlikely(i == -1)) {
 	  /* Cannot write now, write later. */
 	  if (!no_unlock)
 	    silc_mutex_unlock(ps->lock);
@@ -236,7 +236,7 @@ static inline SilcBool silc_packet_stream_write(SilcPacketStream ps,
   while (silc_buffer_len(&ps->outbuf) > 0) {
     i = silc_stream_write(stream, ps->outbuf.data,
 			  silc_buffer_len(&ps->outbuf));
-    if (i == 0) {
+    if (silc_unlikely(i == 0)) {
       /* EOS */
       silc_buffer_reset(&ps->outbuf);
       silc_mutex_unlock(ps->lock);
@@ -244,7 +244,7 @@ static inline SilcBool silc_packet_stream_write(SilcPacketStream ps,
       return FALSE;
     }
 
-    if (i == -2) {
+    if (silc_unlikely(i == -2)) {
       /* Error */
       silc_buffer_reset(&ps->outbuf);
       silc_mutex_unlock(ps->lock);
@@ -252,7 +252,7 @@ static inline SilcBool silc_packet_stream_write(SilcPacketStream ps,
       return FALSE;
     }
 
-    if (i == -1) {
+    if (silc_unlikely(i == -1)) {
       /* Cannot write now, write later. */
       if (!no_unlock)
 	silc_mutex_unlock(ps->lock);
@@ -304,7 +304,7 @@ static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
       ret = silc_net_udp_receive(stream, remote_ip, sizeof(remote_ip),
 				 &remote_port, ps->inbuf.tail,
 				 silc_buffer_taillen(&ps->inbuf));
-      if (ret == -2) {
+      if (silc_unlikely(ret == -2)) {
 	/* Error */
 	silc_buffer_reset(&ps->inbuf);
 	silc_mutex_unlock(ps->lock);
@@ -332,7 +332,7 @@ static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
 
 	silc_mutex_lock(remote->lock);
 	if (ret > silc_buffer_taillen(&remote->inbuf))
-	  if (!silc_buffer_realloc(&remote->inbuf, ret)) {
+	  if (silc_unlikely(!silc_buffer_realloc(&remote->inbuf, ret))) {
 	    silc_mutex_unlock(remote->lock);
 	    silc_mutex_unlock(ps->lock);
 	    SILC_PACKET_CALLBACK_ERROR(ps, SILC_PACKET_ERR_NO_MEMORY);
@@ -352,7 +352,7 @@ static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
       /* Unknown sender */
       if (!ps->remote_udp) {
 	ps->remote_udp = silc_calloc(1, sizeof(*ps->remote_udp));
-	if (!ps->remote_udp) {
+	if (silc_unlikely(!ps->remote_udp)) {
 	  silc_mutex_unlock(ps->lock);
 	  SILC_PACKET_CALLBACK_ERROR(ps, SILC_PACKET_ERR_NO_MEMORY);
 	  return FALSE;
@@ -373,7 +373,7 @@ static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
   ret = silc_stream_read(ps->stream, ps->inbuf.tail,
 			 silc_buffer_taillen(&ps->inbuf));
 
-  if (ret == 0) {
+  if (silc_unlikely(ret == 0)) {
     /* EOS */
     silc_buffer_reset(&ps->inbuf);
     silc_mutex_unlock(ps->lock);
@@ -381,7 +381,7 @@ static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
     return FALSE;
   }
 
-  if (ret == -2) {
+  if (silc_unlikely(ret == -2)) {
     /* Error */
     silc_buffer_reset(&ps->inbuf);
     silc_mutex_unlock(ps->lock);
@@ -409,7 +409,7 @@ static void silc_packet_stream_io(SilcStream stream, SilcStreamStatus status,
 
   silc_mutex_lock(ps->lock);
 
-  if (ps->destroyed) {
+  if (silc_unlikely(ps->destroyed)) {
     silc_mutex_unlock(ps->lock);
     return;
   }
@@ -419,7 +419,7 @@ static void silc_packet_stream_io(SilcStream stream, SilcStreamStatus status,
   case SILC_STREAM_CAN_WRITE:
     SILC_LOG_DEBUG(("Writing pending data to stream"));
 
-    if (!silc_buffer_headlen(&ps->outbuf)) {
+    if (silc_unlikely(!silc_buffer_headlen(&ps->outbuf))) {
       silc_mutex_unlock(ps->lock);
       return;
     }
@@ -470,13 +470,13 @@ static SilcPacket silc_packet_alloc(SilcPacketEngine engine)
     silc_mutex_unlock(engine->lock);
 
     packet = silc_calloc(1, sizeof(*packet));
-    if (!packet)
+    if (silc_unlikely(!packet))
       return NULL;
 
     SILC_LOG_DEBUG(("Allocating new packet %p", packet));
 
     tmp = silc_malloc(SILC_PACKET_DEFAULT_SIZE);
-    if (!tmp) {
+    if (silc_unlikely(!tmp)) {
       silc_free(packet);
       return NULL;
     }
@@ -1224,7 +1224,7 @@ static inline SilcBool silc_packet_send_prepare(SilcPacketStream stream,
   totlen += mac_len;
 
   /* Allocate more space if needed */
-  if (silc_buffer_taillen(&stream->outbuf) < totlen) {
+  if (silc_unlikely(silc_buffer_taillen(&stream->outbuf) < totlen)) {
     if (!silc_buffer_realloc(&stream->outbuf,
 			     silc_buffer_truelen(&stream->outbuf) + totlen))
       return FALSE;
@@ -1319,8 +1319,8 @@ static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
   silc_mutex_lock(stream->lock);
 
   /* Get packet pointer from the outgoing buffer */
-  if (!silc_packet_send_prepare(stream, truelen + padlen + ivlen + psnlen,
-				hmac, &packet)) {
+  if (silc_unlikely(!silc_packet_send_prepare(stream, truelen + padlen + ivlen
+					      + psnlen, hmac, &packet))) {
     silc_mutex_unlock(stream->lock);
     return FALSE;
   }
@@ -1346,7 +1346,7 @@ static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
 			 SILC_STR_DATA(tmppad, padlen),
 			 SILC_STR_DATA(data, data_len),
 			 SILC_STR_END);
-  if (i < 0) {
+  if (silc_unlikely(i < 0)) {
     silc_mutex_unlock(stream->lock);
     return FALSE;
   }
@@ -1355,10 +1355,11 @@ static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
 		   silc_buffer_data(&packet), silc_buffer_len(&packet));
 
   /* Encrypt the packet */
-  if (cipher) {
+  if (silc_likely(cipher)) {
     SILC_LOG_DEBUG(("Encrypting packet"));
-    if (!silc_cipher_encrypt(cipher, packet.data + ivlen,
-			     packet.data + ivlen, enclen, NULL)) {
+    if (silc_unlikely(!silc_cipher_encrypt(cipher, packet.data + ivlen,
+					   packet.data + ivlen, enclen,
+					   NULL))) {
       SILC_LOG_ERROR(("Packet encryption failed"));
       silc_mutex_unlock(stream->lock);
       return FALSE;
@@ -1366,7 +1367,7 @@ static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
   }
 
   /* Compute HMAC */
-  if (hmac) {
+  if (silc_likely(hmac)) {
     SilcUInt32 mac_len;
 
     /* MAC is computed from the entire encrypted packet data, and put
@@ -1510,7 +1511,7 @@ static inline SilcBool silc_packet_check_mac(SilcHmac hmac,
 					     SilcUInt32 sequence)
 {
   /* Check MAC */
-  if (hmac) {
+  if (silc_likely(hmac)) {
     unsigned char mac[32], psn[4];
     SilcUInt32 mac_len;
 
@@ -1529,7 +1530,7 @@ static inline SilcBool silc_packet_check_mac(SilcHmac hmac,
     silc_hmac_final(hmac, mac, &mac_len);
 
     /* Compare the MAC's */
-    if (memcmp(packet_mac, mac, mac_len)) {
+    if (silc_unlikely(memcmp(packet_mac, mac, mac_len))) {
       SILC_LOG_DEBUG(("MAC failed"));
       return FALSE;
     }
@@ -1548,18 +1549,19 @@ static inline int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 				      SilcBool normal)
 {
   if (normal == TRUE) {
-    if (cipher) {
+    if (silc_likely(cipher)) {
       /* Decrypt rest of the packet */
       SILC_LOG_DEBUG(("Decrypting the packet"));
-      if (!silc_cipher_decrypt(cipher, buffer->data, buffer->data,
-			       silc_buffer_len(buffer), NULL))
+      if (silc_unlikely(!silc_cipher_decrypt(cipher, buffer->data,
+					     buffer->data,
+					     silc_buffer_len(buffer), NULL)))
 	return -1;
     }
     return 0;
 
   } else {
     /* Decrypt rest of the header plus padding */
-    if (cipher) {
+    if (silc_likely(cipher)) {
       SilcUInt16 len;
       SilcUInt32 block_len = silc_cipher_get_block_len(cipher);
 
@@ -1573,13 +1575,13 @@ static inline int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
 	     block_len);
       silc_buffer_pull(buffer, block_len);
 
-      if (len > silc_buffer_len(buffer)) {
+      if (silc_unlikely(len > silc_buffer_len(buffer))) {
 	SILC_LOG_ERROR(("Garbage in header of packet, bad packet length, "
 			"packet dropped"));
 	return -1;
       }
-      if (!silc_cipher_decrypt(cipher, buffer->data, buffer->data,
-			       len, NULL))
+      if (silc_unlikely(!silc_cipher_decrypt(cipher, buffer->data,
+					     buffer->data, len, NULL)))
 	return -1;
     }
 
@@ -1608,15 +1610,15 @@ static inline SilcBool silc_packet_parse(SilcPacket packet)
 			     SILC_STR_UI_CHAR(&dst_id_len),
 			     SILC_STR_UI_CHAR(&src_id_type),
 			     SILC_STR_END);
-  if (ret == -1) {
+  if (silc_unlikely(ret == -1)) {
     if (!packet->stream->udp &&
 	!silc_socket_stream_is_udp(packet->stream->stream, NULL))
       SILC_LOG_ERROR(("Malformed packet header, packet dropped"));
     return FALSE;
   }
 
-  if (src_id_len > SILC_PACKET_MAX_ID_LEN ||
-      dst_id_len > SILC_PACKET_MAX_ID_LEN) {
+  if (silc_unlikely(src_id_len > SILC_PACKET_MAX_ID_LEN ||
+		    dst_id_len > SILC_PACKET_MAX_ID_LEN)) {
     if (!packet->stream->udp &&
 	!silc_socket_stream_is_udp(packet->stream->stream, NULL))
       SILC_LOG_ERROR(("Bad ID lengths in packet (%d and %d)",
@@ -1631,15 +1633,15 @@ static inline SilcBool silc_packet_parse(SilcPacket packet)
 			     SILC_STR_DATA(&packet->dst_id, dst_id_len),
 			     SILC_STR_OFFSET(padlen),
 			     SILC_STR_END);
-  if (ret == -1) {
+  if (silc_unlikely(ret == -1)) {
     if (!packet->stream->udp &&
 	!silc_socket_stream_is_udp(packet->stream->stream, NULL))
       SILC_LOG_ERROR(("Malformed packet header, packet dropped"));
     return FALSE;
   }
 
-  if (src_id_type > SILC_ID_CHANNEL ||
-      dst_id_type > SILC_ID_CHANNEL) {
+  if (silc_unlikely(src_id_type > SILC_ID_CHANNEL ||
+		    dst_id_type > SILC_ID_CHANNEL)) {
     if (!packet->stream->udp &&
 	!silc_socket_stream_is_udp(packet->stream->stream, NULL))
       SILC_LOG_ERROR(("Bad ID types in packet (%d and %d)",
@@ -1673,14 +1675,14 @@ static void silc_packet_dispatch(SilcPacket packet)
 
   /* Dispatch packet to all packet processors that want it */
 
-  if (!stream->process) {
+  if (silc_likely(!stream->process)) {
     /* Send to default processor as no others exist */
     SILC_LOG_DEBUG(("Dispatching packet to default callbacks"));
     silc_mutex_unlock(stream->lock);
-    if (!stream->engine->callbacks->
-	packet_receive(stream->engine, stream, packet,
-		       stream->engine->callback_context,
-		       stream->stream_context))
+    if (silc_unlikely(!stream->engine->callbacks->
+		      packet_receive(stream->engine, stream, packet,
+				     stream->engine->callback_context,
+				     stream->stream_context)))
       silc_packet_free(packet);
     silc_mutex_lock(stream->lock);
     return;
@@ -1777,20 +1779,20 @@ static void silc_packet_read_process(SilcPacketStream stream)
     hmac = stream->receive_hmac[0];
     normal = FALSE;
 
-    if (silc_buffer_len(&stream->inbuf) <
-	(stream->iv_included ? SILC_PACKET_MIN_HEADER_LEN_IV :
-	 SILC_PACKET_MIN_HEADER_LEN)) {
+    if (silc_unlikely(silc_buffer_len(&stream->inbuf) <
+		      (stream->iv_included ? SILC_PACKET_MIN_HEADER_LEN_IV :
+		       SILC_PACKET_MIN_HEADER_LEN))) {
       SILC_LOG_DEBUG(("Partial packet in queue, waiting for the rest"));
       return;
     }
 
-    if (hmac)
+    if (silc_likely(hmac))
       mac_len = silc_hmac_len(hmac);
     else
       mac_len = 0;
 
     /* Decrypt first block of the packet to get the length field out */
-    if (cipher) {
+    if (silc_likely(cipher)) {
       block_len = silc_cipher_get_block_len(cipher);
 
       if (stream->iv_included) {
@@ -1840,7 +1842,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
     SILC_PACKET_LENGTH(header, packetlen, paddedlen);
 
     /* Sanity checks */
-    if (packetlen < SILC_PACKET_MIN_LEN) {
+    if (silc_unlikely(packetlen < SILC_PACKET_MIN_LEN)) {
       if (!stream->udp && !silc_socket_stream_is_udp(stream->stream, NULL))
 	SILC_LOG_ERROR(("Received too short packet"));
       silc_mutex_unlock(stream->lock);
@@ -1860,10 +1862,11 @@ static void silc_packet_read_process(SilcPacketStream stream)
     }
 
     /* Check MAC of the packet */
-    if (!silc_packet_check_mac(hmac, stream->inbuf.data,
-			       paddedlen + ivlen,
-			       stream->inbuf.data + ivlen + paddedlen,
-			       packet_seq, stream->receive_psn)) {
+    if (silc_unlikely(!silc_packet_check_mac(hmac, stream->inbuf.data,
+					     paddedlen + ivlen,
+					     stream->inbuf.data + ivlen +
+					     paddedlen, packet_seq,
+					     stream->receive_psn))) {
       silc_mutex_unlock(stream->lock);
       SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MAC_FAILED);
       silc_mutex_lock(stream->lock);
@@ -1874,7 +1877,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
 
     /* Get packet */
     packet = silc_packet_alloc(stream->engine);
-    if (!packet) {
+    if (silc_unlikely(!packet)) {
       silc_mutex_unlock(stream->lock);
       SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_NO_MEMORY);
       silc_mutex_lock(stream->lock);
@@ -1885,7 +1888,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
     packet->stream = stream;
 
     /* Allocate more space to packet buffer, if needed */
-    if (silc_buffer_truelen(&packet->buffer) < paddedlen) {
+    if (silc_unlikely(silc_buffer_truelen(&packet->buffer) < paddedlen)) {
       if (!silc_buffer_realloc(&packet->buffer,
 			       silc_buffer_truelen(&packet->buffer) +
 			       (paddedlen -
@@ -1931,11 +1934,11 @@ static void silc_packet_read_process(SilcPacketStream stream)
     silc_buffer_put(&packet->buffer, (stream->inbuf.data + ivlen +
 				      psnlen + (block_len - psnlen)),
 		    paddedlen - ivlen - psnlen - (block_len - psnlen));
-    if (cipher) {
+    if (silc_likely(cipher)) {
       silc_cipher_set_iv(cipher, iv);
       ret = silc_packet_decrypt(cipher, hmac, stream->receive_psn,
 				&packet->buffer, normal);
-      if (ret < 0) {
+      if (silc_unlikely(ret < 0)) {
 	silc_mutex_unlock(stream->lock);
 	SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_DECRYPTION_FAILED);
 	silc_mutex_lock(stream->lock);
@@ -1952,7 +1955,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
     silc_buffer_pull(&stream->inbuf, paddedlen + mac_len);
 
     /* Parse the packet */
-    if (!silc_packet_parse(packet)) {
+    if (silc_unlikely(!silc_packet_parse(packet))) {
       silc_mutex_unlock(stream->lock);
       SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MALFORMED);
       silc_mutex_lock(stream->lock);
