@@ -1,0 +1,4 @@
+# Clean -fprofile-arcs files
+#!/bin/sh
+
+find . -name \*\.gc?? -type f -print | xargs rm -f
