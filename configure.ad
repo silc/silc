@@ -345,14 +345,14 @@ SILC_ASSEMBLER=""
 have_assembler=false
 if test x$want_asm = xtrue; then
   AC_PATH_PROG([NASM], [nasm], [no])
-  if test "x$NASM" != xyes; then
-    SILC_ASSEMBLER="nasm -O2 -felf"
+  if test "x$NASM" != "xno"; then
+    SILC_ASSEMBLER="$NASM -O2 -felf"
     have_assembler=true
   fi
 
   AC_PATH_PROG([YASM], [yasm], [no])
-  if test "x$YASM" != xyes; then
-    SILC_ASSEMBLER="yasm -Xgnu -felf"
+  if test "x$YASM" != "xno"; then
+    SILC_ASSEMBLER="$YASM -Xgnu -felf"
     have_assembler=true
   fi
 fi

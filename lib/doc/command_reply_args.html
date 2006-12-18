@@ -143,7 +143,7 @@ this command reply.  The 'name' and 'info' may be NULL.
 <td><small>
 Returns the new Client ID and new nickname inside the SilcClientEntry.
 The `old_client_id' is the old Client ID used by the client before the
-nickname was changed.
+nickname was changed.  The `nickname' is the new nickname.
 </td>
 <td width="50%"><small>SilcClientEntry local_entry, char *nickname,
 const SilcClientID *old_client_id
@@ -333,10 +333,14 @@ SILC_COMMAND_INVITE command reply.
 <tr>
 <td><small>SILC_COMMAND_DETACH</td>
 <td><small>
-Called after being detached from the SILC network. There is no arguments
-to this reply.
+Called after being detached from the SILC network.  The command reply delivers
+the detachment data buffer `detach_data' that the application should save
+for example into a file.  The data will be needed when resuming back to
+the network.  When resuming the data is saved into SilcClientConnectionParams
+structure and given as argument to silc_client_connect_to_server or
+silc_client_key_exchange functions.
 </td>
-<td width="50%"><small>none
+<td width="50%"><small>SilcBuffer detach_data
 </td>
 </tr>
 

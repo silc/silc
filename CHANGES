@@ -1,3 +1,14 @@
+Sun Dec 17 16:46:55 EET 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Removed `detach' client operation.  The detachment data is
+	  now delivered in SILC_COMMAND_DETACH command reply to
+	  application.  Affected file in lib/silcclient/.
+
+	* Rewrote resuming/detaching in client library.
+
+	* Added boolean encryption indicator for silc_cipher_set_key.
+	  Affected files lib/silccrypt/silccipher.[ch].
+
 Wed Dec 13 18:05:50 EET 2006  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_likely and silc_unlikely macros for GCC branch
