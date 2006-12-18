@@ -51,7 +51,8 @@ static void silc_schedule_dispatch_fd(SilcSchedule schedule)
   SilcUInt32 fd;
 
   silc_hash_table_list(schedule->fd_queue, &htl);
-  while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
+  while (silc_likely(silc_hash_table_get(&htl, (void **)&fd,
+					 (void **)&task))) {
     t = (SilcTask)task;
 
     if (silc_unlikely(!t->valid)) {
@@ -103,6 +104,8 @@ static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
   /* First task in the task queue has always the earliest timeout. */
   silc_list_start(schedule->timeout_queue);
   task = silc_list_get(schedule->timeout_queue);
+  if (silc_unlikely(!task))
+    return;
   do {
     t = (SilcTask)task;
 
@@ -112,18 +115,14 @@ static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
       continue;
     }
 
-    SILC_SCHEDULE_UNLOCK(schedule);
-
     /* Execute the task if the timeout has expired */
-    if (!silc_compare_timeval(&task->timeout, &curtime) && !dispatch_all) {
-      SILC_SCHEDULE_LOCK(schedule);
+    if (!silc_compare_timeval(&task->timeout, &curtime) && !dispatch_all)
       break;
-    }
 
     t->valid = FALSE;
+    SILC_SCHEDULE_UNLOCK(schedule);
     t->callback(schedule, schedule->app_context, SILC_TASK_EXPIRE, 0,
 		t->context);
-
     SILC_SCHEDULE_LOCK(schedule);
 
     /* Remove the expired task */
@@ -153,6 +152,8 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
   /* First task in the task queue has always the earliest timeout. */
   silc_list_start(schedule->timeout_queue);
   task = silc_list_get(schedule->timeout_queue);
+  if (silc_unlikely(!task))
+    return;
   do {
     t = (SilcTask)task;
 

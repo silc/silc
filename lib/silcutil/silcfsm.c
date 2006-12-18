@@ -23,10 +23,10 @@ SILC_TASK_CALLBACK(silc_fsm_run);
 SILC_TASK_CALLBACK(silc_fsm_finish_fsm);
 SILC_TASK_CALLBACK(silc_fsm_sema_timedout);
 SILC_TASK_CALLBACK(silc_fsm_start_real_thread);
-static void *silc_fsm_thread(void *context);
 static void silc_fsm_thread_termination_post(SilcFSMSema sema);
 static void silc_fsm_sema_ref(SilcFSMSema sema);
 static void silc_fsm_sema_unref(SilcFSMSema sema);
+void *silc_fsm_thread(void *context);
 
 /* Allocate FSM */
 
@@ -714,7 +714,7 @@ static void silc_fsm_thread_termination_post(SilcFSMSema sema)
 
 /* Real thread */
 
-static void *silc_fsm_thread(void *context)
+void *silc_fsm_thread(void *context)
 {
   SilcFSM fsm = context;
   SilcSchedule old = fsm->schedule;

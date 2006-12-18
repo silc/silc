@@ -64,12 +64,12 @@ SILC_TASK_CALLBACK(silc_socket_stream_io)
     return;
 
   switch (type) {
-  case SILC_TASK_WRITE:
-    stream->notifier(stream, SILC_STREAM_CAN_WRITE, stream->notifier_context);
-    break;
-
   case SILC_TASK_READ:
     stream->notifier(stream, SILC_STREAM_CAN_READ, stream->notifier_context);
+    break;
+
+  case SILC_TASK_WRITE:
+    stream->notifier(stream, SILC_STREAM_CAN_WRITE, stream->notifier_context);
     break;
 
   default:
