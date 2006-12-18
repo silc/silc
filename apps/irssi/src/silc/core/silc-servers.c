@@ -335,19 +335,6 @@ static void silc_connect_cb(SilcClient client,
     /* Put default attributes */
     silc_query_attributes_default(silc_client, conn);
 
-    /* If we resumed old session check whether we need to update
-       our nickname */
-    if (strcmp(server->nick, conn->local_entry->nickname)) {
-      char *old;
-      old = g_strdup(server->nick);
-      server_change_nick(SERVER(server), conn->local_entry->nickname);
-      nicklist_rename_unique(SERVER(server),
-			     conn->local_entry, server->nick,
-			     conn->local_entry, conn->local_entry->nickname);
-      signal_emit("message own_nick", 4, server, server->nick, old, "");
-      g_free(old);
-    }
-
     /* Remove the detach data now */
     file = silc_get_session_filename(server);
     unlink(file);
@@ -384,7 +371,6 @@ static void silc_connect_cb(SilcClient client,
     if (silc_file_size(file) > 0)
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_REATTACH_FAILED, file);
-
     silc_free(file);
 
     server->connection_lost = TRUE;

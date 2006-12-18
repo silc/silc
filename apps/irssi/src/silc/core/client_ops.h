@@ -63,9 +63,6 @@ void silc_key_agreement(SilcClient client, SilcClientConnection conn,
 void silc_ftp(SilcClient client, SilcClientConnection conn,
 	      SilcClientEntry client_entry, SilcUInt32 session_id,
 	      const char *hostname, SilcUInt16 port);
-void
-silc_detach(SilcClient client, SilcClientConnection conn,
-            const unsigned char *detach_data, SilcUInt32 detach_data_len);
 char *
 silc_unescape_data(const char *escaped_data, SilcUInt32 *length);
 char *

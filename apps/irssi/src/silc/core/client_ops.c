@@ -1736,21 +1736,21 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 
       nicks = nicklist_get_same(SERVER(server), client_entry->nickname);
       if ((nicks != NULL) &&
-        (strcmp(SERVER(server)->nick, client_entry->nickname))) {
+	  (strcmp(SERVER(server)->nick, client_entry->nickname))) {
 	char buf[512];
 	SilcClientEntry collider, old;
 
 	old = ((SILC_NICK_REC *)(nicks->next->data))->silc_user->client;
 	collider = silc_client_get_client_by_id(client, conn, &old->id);
 	if (collider != client_entry) {
-          memset(buf, 0, sizeof(buf));
-          snprintf(buf, sizeof(buf) - 1, "%s@%s",
-	  	   collider->username, collider->hostname);
+	  memset(buf, 0, sizeof(buf));
+	  snprintf(buf, sizeof(buf) - 1, "%s@%s",
+		   collider->username, collider->hostname);
 	  nicklist_rename_unique(SERVER(server),
-			         old, old->nickname,
-			         collider, collider->nickname);
+				 old, old->nickname,
+				 collider, collider->nickname);
 	  silc_print_nick_change(server, collider->nickname,
-			         client_entry->nickname, buf);
+				 client_entry->nickname, buf);
 	}
 	silc_client_unref_client(client, conn, collider);
       }
@@ -2196,11 +2196,30 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 
   case SILC_COMMAND_LEAVE:
     {
-      /* we might be cycling, so disable queueing again */
+      if (SILC_STATUS_IS_ERROR(status))
+	return;
+
+      /* We might be cycling, so disable queueing again */
       silc_queue_disable(conn);
     }
     break;
 
+  case SILC_COMMAND_DETACH:
+    {
+      /* Save the detachment data to file. */
+      char *file;
+      SilcBuffer detach;
+
+      if (SILC_STATUS_IS_ERROR(status))
+	return;
+
+      detach = va_arg(vp, SilcBuffer);
+      file = silc_get_session_filename(server);
+      silc_file_writefile(file, silc_buffer_data(detach),
+			  silc_buffer_len(detach));
+      silc_free(file);
+    }
+    break;
   }
 }
 
@@ -2666,37 +2685,6 @@ void silc_ftp(SilcClient client, SilcClientConnection conn,
 		       client_entry->nickname, hostname, portstr);
 }
 
-/* Delivers SILC session detachment data indicated by `detach_data' to the
-   application.  If application has issued SILC_COMMAND_DETACH command
-   the client session in the SILC network is not quit.  The client remains
-   in the network but is detached.  The detachment data may be used later
-   to resume the session in the SILC Network.  The appliation is
-   responsible of saving the `detach_data', to for example in a file.
-
-   The detachment data can be given as argument to the functions
-   silc_client_connect_to_server, or silc_client_add_connection when
-   creating connection to remote server, inside SilcClientConnectionParams
-   structure.  If it is provided the client library will attempt to resume
-   the session in the network.  After the connection is created
-   successfully, the application is responsible of setting the user
-   interface for user into the same state it was before detaching (showing
-   same channels, channel modes, etc).  It can do this by fetching the
-   information (like joined channels) from the client library. */
-
-void
-silc_detach(SilcClient client, SilcClientConnection conn,
-            const unsigned char *detach_data, SilcUInt32 detach_data_len)
-{
-  SILC_SERVER_REC *server = conn->context;
-  char *file;
-
-  /* Save the detachment data to file. */
-
-  file = silc_get_session_filename(server);
-  silc_file_writefile(file, detach_data, detach_data_len);
-  silc_free(file);
-}
-
 /* SILC client operations */
 SilcClientOperations ops = {
   silc_say,
@@ -2710,5 +2698,4 @@ SilcClientOperations ops = {
   silc_ask_passphrase,
   silc_key_agreement,
   silc_ftp,
-  silc_detach,
 };
