@@ -45,8 +45,10 @@
 
 SILC_CIPHER_API_SET_KEY(aes)
 {
-  aes_encrypt_key(key, keylen, &((AesContext *)context)->enc);
-  aes_decrypt_key(key, keylen, &((AesContext *)context)->dec);
+  if (encryption)
+    aes_encrypt_key(key, keylen, &((AesContext *)context)->u.enc);
+  else
+    aes_decrypt_key(key, keylen, &((AesContext *)context)->u.dec);
   return TRUE;
 }
 
@@ -69,7 +71,7 @@ SILC_CIPHER_API_ENCRYPT_CBC(aes)
     lp32(iv)[1] ^= lp32(src)[1];
     lp32(iv)[2] ^= lp32(src)[2];
     lp32(iv)[3] ^= lp32(src)[3];
-    aes_encrypt(iv, iv, &((AesContext *)context)->enc);
+    aes_encrypt(iv, iv, &((AesContext *)context)->u.enc);
     memcpy(dst, iv, 16);
     src += 16;
     dst += 16;
@@ -88,7 +90,7 @@ SILC_CIPHER_API_DECRYPT_CBC(aes)
 
   while(nb--) {
     memcpy(tmp, src, 16);
-    aes_decrypt(src, dst, &((AesContext *)context)->dec);
+    aes_decrypt(src, dst, &((AesContext *)context)->u.dec);
     lp32(dst)[0] ^= lp32(iv)[0];
     lp32(dst)[1] ^= lp32(iv)[1];
     lp32(dst)[2] ^= lp32(iv)[2];

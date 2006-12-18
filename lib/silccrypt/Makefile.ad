@@ -24,7 +24,7 @@ if SILC_I486
 SILC_AES_S = aes_x86.asm aes.c
 endif
 if SILC_X86_64
-SILC_AES_S = aes_x86_84.asm aes.c
+SILC_AES_S = aes_x86_64.asm aes.c
 endif
 else
 SILC_AES_S = aes.c

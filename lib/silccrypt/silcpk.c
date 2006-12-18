@@ -863,7 +863,7 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
   silc_hash_final(sha1, keymat + 16);
 
   /* Set the key to the cipher */
-  silc_cipher_set_key(aes, keymat, 256);
+  silc_cipher_set_key(aes, keymat, 256, FALSE);
 
   /* First, verify the MAC of the private key data */
   mac_len = silc_hmac_len(sha1hmac);
@@ -1275,7 +1275,7 @@ silc_pkcs_silc_export_private_key_file(void *private_key,
   silc_hash_final(sha1, keymat + 16);
 
   /* Set the key to the cipher */
-  silc_cipher_set_key(aes, keymat, 256);
+  silc_cipher_set_key(aes, keymat, 256, TRUE);
 
   /* Encode the buffer to be encrypted.  Add padding to it too, at least
      block size of the cipher. */

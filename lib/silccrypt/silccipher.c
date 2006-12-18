@@ -333,9 +333,9 @@ SilcBool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 /* Sets the key for the cipher */
 
 SilcBool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
-			     SilcUInt32 keylen)
+			     SilcUInt32 keylen, SilcBool encryption)
 {
-  return cipher->cipher->set_key(cipher->context, key, keylen);
+  return cipher->cipher->set_key(cipher->context, key, keylen, encryption);
 }
 
 /* Sets the IV (initial vector) for the cipher. */

@@ -49,7 +49,7 @@ typedef struct SilcCipherStruct *SilcCipher;
 /* The default SILC Cipher object to represent any cipher in SILC. */
 typedef struct {
   char *name;
-  SilcBool (*set_key)(void *, const unsigned char *, SilcUInt32);
+  SilcBool (*set_key)(void *, const unsigned char *, SilcUInt32, SilcBool);
   SilcBool (*encrypt)(void *, const unsigned char *, unsigned char *,
 		  SilcUInt32, unsigned char *);
   SilcBool (*decrypt)(void *, const unsigned char *, unsigned char *,
@@ -72,7 +72,6 @@ extern DLLAPI const SilcCipherObject silc_default_ciphers[];
 /* Default cipher in the SILC protocol */
 #define SILC_DEFAULT_CIPHER "aes-256-cbc"
 
-
 /* Macros */
 
 /* Function names in SILC Crypto modules. The name of the cipher
@@ -89,7 +88,8 @@ extern DLLAPI const SilcCipherObject silc_default_ciphers[];
 #define SILC_CIPHER_API_SET_KEY(cipher)			\
 SilcBool silc_##cipher##_set_key(void *context,		\
 			     const unsigned char *key,	\
-			     SilcUInt32 keylen)
+			     SilcUInt32 keylen,		\
+			     SilcBool encryption)
 #define SILC_CIPHER_API_ENCRYPT_CBC(cipher)			\
 SilcBool silc_##cipher##_encrypt_cbc(void *context,			\
 				 const unsigned char *src,	\
@@ -102,11 +102,8 @@ SilcBool silc_##cipher##_decrypt_cbc(void *context,			\
 				 unsigned char *dst,		\
 				 SilcUInt32 len,		\
 				 unsigned char *iv)
-
-
 #define SILC_CIPHER_API_CONTEXT_LEN(cipher)			\
 SilcUInt32 silc_##cipher##_context_len()
-
 
 /* Prototypes */
 
@@ -268,16 +265,17 @@ SilcBool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
  * SYNOPSIS
  *
  *    SilcBool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
- *                             SilcUInt32 keylen);
+ *                                 SilcUInt32 keylen, SilcBool encryption);
  *
  * DESCRIPTION
  *
  *    Sets the key for the cipher.  The `keylen' is the key length in
- *    bits.
+ *    bits.  If the `encryption' is TRUE the key is for encryption, if FALSE
+ *    the key is for decryption.
  *
  ***/
 SilcBool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
-			     SilcUInt32 keylen);
+			     SilcUInt32 keylen, SilcBool encryption);
 
 /****f* silccrypt/SilcCipherAPI/silc_cipher_set_iv
  *
@@ -359,4 +357,4 @@ SilcUInt32 silc_cipher_get_iv_len(SilcCipher cipher);
  ***/
 const char *silc_cipher_get_name(SilcCipher cipher);
 
-#endif
+#endif /* SILCCIPHER_H */

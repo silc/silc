@@ -52,8 +52,10 @@ typedef struct {
 } aes_decrypt_ctx;
 
 typedef struct {
-  aes_encrypt_ctx enc;
-  aes_decrypt_ctx dec;
+  union {
+    aes_encrypt_ctx enc;
+    aes_decrypt_ctx dec;
+  } u;
 } AesContext;
 
 #define AES_RETURN void

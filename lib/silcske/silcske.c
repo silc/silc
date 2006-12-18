@@ -2982,12 +2982,12 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
   if (ske->responder) {
     if (ret_send_key) {
       silc_cipher_set_key(*ret_send_key, keymat->receive_enc_key,
-			  keymat->enc_key_len);
+			  keymat->enc_key_len, TRUE);
       silc_cipher_set_iv(*ret_send_key, keymat->receive_iv);
     }
     if (ret_receive_key) {
       silc_cipher_set_key(*ret_receive_key, keymat->send_enc_key,
-			  keymat->enc_key_len);
+			  keymat->enc_key_len, FALSE);
       silc_cipher_set_iv(*ret_receive_key, keymat->send_iv);
     }
     if (ret_hmac_send)
@@ -2999,12 +2999,12 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
   } else {
     if (ret_send_key) {
       silc_cipher_set_key(*ret_send_key, keymat->send_enc_key,
-			  keymat->enc_key_len);
+			  keymat->enc_key_len, TRUE);
       silc_cipher_set_iv(*ret_send_key, keymat->send_iv);
     }
     if (ret_receive_key) {
       silc_cipher_set_key(*ret_receive_key, keymat->receive_enc_key,
-			  keymat->enc_key_len);
+			  keymat->enc_key_len, FALSE);
       silc_cipher_set_iv(*ret_receive_key, keymat->receive_iv);
     }
     if (ret_hmac_send)
