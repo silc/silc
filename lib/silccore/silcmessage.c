@@ -65,7 +65,7 @@ SilcUInt32 silc_message_payload_datalen(SilcUInt32 data_len,
 		      silc_pkcs_private_key_get_len(private_key) / 8 : 0);
   SilcUInt32 dlen = data_len + SILC_MESSAGE_HLEN + header_len + pklen + prlen;
 
-  if (dlen > SILC_MESSAGE_MAX_LEN)
+  if (silc_unlikely(dlen > SILC_MESSAGE_MAX_LEN))
     data_len -= (dlen - SILC_MESSAGE_MAX_LEN);
 
   return data_len;
@@ -281,16 +281,16 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
   if (!private_message || (private_message && static_key))
     iv_len = block_len;
 
-  if (data_len < (mac_len + iv_len + block_len))
+  if (silc_unlikely(data_len < (mac_len + iv_len + block_len)))
     return FALSE;
 
-  if (check_mac) {
+  if (silc_likely(check_mac)) {
     /* Check the MAC of the message */
     SILC_LOG_DEBUG(("Checking message MAC"));
     silc_hmac_init(hmac);
     silc_hmac_update(hmac, data, data_len - mac_len);
     silc_hmac_final(hmac, mac, &mac_len);
-    if (memcmp(data + (data_len - mac_len), mac, mac_len)) {
+    if (silc_unlikely(memcmp(data + (data_len - mac_len), mac, mac_len))) {
       SILC_LOG_DEBUG(("Message MAC does not match"));
       return FALSE;
     }
@@ -306,7 +306,8 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
 	 silc_cipher_get_iv(cipher));
 
   /* Decrypt block */
-  if (!silc_cipher_decrypt(cipher, data, data, block_len, ivp)) {
+  if (silc_unlikely(!silc_cipher_decrypt(cipher, data, data, block_len,
+					 ivp))) {
     SILC_ASSERT(FALSE);
     return FALSE;
   }
@@ -315,13 +316,14 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
   totlen = 2;
   SILC_GET16_MSB(len, data + totlen);
   totlen += 2 + len;
-  if (totlen + iv_len + mac_len + 2 > data_len)
+  if (silc_unlikely(totlen + iv_len + mac_len + 2 > data_len))
     return FALSE;
   totlen += 2;
   if (totlen >= block_len)
-    if (!silc_cipher_decrypt(cipher, data + block_len, data + block_len,
-			     (totlen - block_len) + SILC_MESSAGE_PAD(totlen),
-			     ivp)) {
+    if (silc_unlikely(!silc_cipher_decrypt(cipher, data + block_len,
+					   data + block_len,
+					   (totlen - block_len) +
+					   SILC_MESSAGE_PAD(totlen), ivp))) {
       SILC_ASSERT(FALSE);
       return FALSE;
     }
@@ -353,15 +355,15 @@ silc_message_payload_parse(unsigned char *payload,
   silc_buffer_set(&buffer, payload, payload_len);
 
   /* Decrypt the payload */
-  if (cipher) {
+  if (silc_likely(cipher)) {
     ret = silc_message_payload_decrypt(buffer.data, silc_buffer_len(&buffer),
 				       private_message, static_key,
 				       cipher, hmac, TRUE);
-    if (ret == FALSE)
+    if (silc_unlikely(ret == FALSE))
       return NULL;
   }
 
-  if (hmac)
+  if (silc_likely(hmac))
     mac_len = silc_hmac_len(hmac);
 
   /* IV is present for all channel messages, and private messages when
@@ -371,7 +373,7 @@ silc_message_payload_parse(unsigned char *payload,
 
   if (!message) {
     newp = message = silc_calloc(1, sizeof(*newp));
-    if (!newp)
+    if (silc_unlikely(!newp))
       return NULL;
   }
   memset(message, 0, sizeof(*message));
@@ -394,12 +396,13 @@ silc_message_payload_parse(unsigned char *payload,
 			       SILC_STR_UI16_NSTRING(&message->pad,
 						     &message->pad_len),
 			       SILC_STR_END);
-  if (ret == -1)
+  if (silc_unlikely(ret == -1))
     goto err;
 
-  if ((message->data_len > silc_buffer_len(&buffer) - 6 - mac_len - iv_len) ||
-      (message->pad_len + message->data_len > silc_buffer_len(&buffer) -
-       6 - mac_len - iv_len)) {
+  if (silc_unlikely((message->data_len > silc_buffer_len(&buffer) -
+		     6 - mac_len - iv_len) ||
+		    (message->pad_len + message->data_len >
+		     silc_buffer_len(&buffer) - 6 - mac_len - iv_len))) {
     SILC_LOG_ERROR(("Incorrect Message Payload in packet"));
     goto err;
   }
@@ -447,7 +450,7 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
 				      SilcHmac hmac)
 {
   /* Encrypt payload of the packet */
-  if (!silc_cipher_encrypt(cipher, data, data, data_len, iv))
+  if (silc_unlikely(!silc_cipher_encrypt(cipher, data, data, data_len, iv)))
     return FALSE;
 
   /* Compute the MAC of the encrypted message data */
@@ -470,13 +473,13 @@ static int silc_message_payload_encode_encrypt(SilcBuffer buffer,
     return 0;
 
   mac_len = silc_hmac_len(e->hmac);
-  if (!silc_buffer_enlarge(buffer, mac_len))
+  if (silc_unlikely(!silc_buffer_enlarge(buffer, mac_len)))
     return -1;
 
-  if (!silc_message_payload_encrypt(buffer->head,
-				    e->payload_len,
-				    silc_buffer_headlen(buffer),
-				    e->iv, e->cipher, e->hmac))
+  if (silc_unlikely(!silc_message_payload_encrypt(buffer->head,
+						  e->payload_len,
+						  silc_buffer_headlen(buffer),
+						  e->iv, e->cipher, e->hmac)))
     return -1;
 
   return mac_len;
@@ -498,14 +501,14 @@ static int silc_message_payload_encode_sig(SilcBuffer buffer,
 					   silc_buffer_headlen(buffer),
 					   e->public_key, e->private_key,
 					   e->hash);
-  if (!sig)
+  if (silc_unlikely(!sig))
     return -1;
 
   len = silc_buffer_format(buffer,
 			   SILC_STR_DATA(silc_buffer_data(sig),
 					 silc_buffer_len(sig)),
 			   SILC_STR_END);
-  if (len < 0) {
+  if (silc_unlikely(len < 0)) {
     silc_buffer_free(sig);
     return -1;
   }
@@ -537,14 +540,14 @@ SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
 
   SILC_LOG_DEBUG(("Encoding Message Payload"));
 
-  if (!data_len)
+  if (silc_unlikely(!data_len))
     return NULL;
-  if (!private_message && (!cipher || !hmac))
+  if (silc_unlikely(!private_message && (!cipher || !hmac)))
     return NULL;
 
   if (!buffer) {
     buf = buffer = silc_buffer_alloc(0);
-    if (!buf)
+    if (silc_unlikely(!buf))
       return NULL;
   }
   silc_buffer_reset(buffer);

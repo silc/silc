@@ -151,7 +151,7 @@ do {									\
 				(s)->stream_context);			\
 } while(0)
 
-static void silc_packet_dispatch(SilcPacket packet);
+static SilcBool silc_packet_dispatch(SilcPacket packet);
 static void silc_packet_read_process(SilcPacketStream stream);
 static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
 					    SilcPacketType type,
@@ -179,8 +179,10 @@ SILC_TASK_CALLBACK(silc_packet_stream_inject_packet)
   SILC_LOG_DEBUG(("Injecting packet %p to stream %p", packet, packet->stream));
 
   silc_mutex_lock(stream->lock);
-  silc_packet_dispatch(packet);
+  if (!stream->destroyed)
+    silc_packet_dispatch(packet);
   silc_mutex_unlock(stream->lock);
+  silc_packet_stream_unref(stream);
 }
 
 /* Write data to the stream.  Must be called with ps->lock locked.  Unlocks
@@ -436,6 +438,7 @@ static void silc_packet_stream_io(SilcStream stream, SilcStreamStatus status,
       return;
 
     /* Now process the data */
+    silc_packet_stream_ref(ps);
     if (!remote) {
       silc_packet_read_process(ps);
       silc_mutex_unlock(ps->lock);
@@ -443,6 +446,7 @@ static void silc_packet_stream_io(SilcStream stream, SilcStreamStatus status,
       silc_packet_read_process(remote);
       silc_mutex_unlock(remote->lock);
     }
+    silc_packet_stream_unref(ps);
     break;
 
   default:
@@ -725,6 +729,7 @@ SilcPacketStream silc_packet_stream_add_remote(SilcPacketStream stream,
   if (packet) {
     /* Inject packet to the new stream */
     packet->stream = ps;
+    silc_packet_stream_ref(ps);
     silc_schedule_task_add_timeout(silc_stream_get_schedule(stream->stream),
 				   silc_packet_stream_inject_packet, packet,
 				   0, 0);
@@ -1664,9 +1669,10 @@ static inline SilcBool silc_packet_parse(SilcPacket packet)
   return TRUE;
 }
 
-/* Dispatch packet to application.  Called with stream->lock locked. */
+/* Dispatch packet to application.  Called with stream->lock locked.
+   Returns FALSE if the stream was destroyed while dispatching a packet. */
 
-static void silc_packet_dispatch(SilcPacket packet)
+static SilcBool silc_packet_dispatch(SilcPacket packet)
 {
   SilcPacketStream stream = packet->stream;
   SilcPacketProcess p;
@@ -1685,7 +1691,7 @@ static void silc_packet_dispatch(SilcPacket packet)
 				     stream->stream_context)))
       silc_packet_free(packet);
     silc_mutex_lock(stream->lock);
-    return;
+    return stream->destroyed == FALSE;
   }
 
   silc_dlist_start(stream->process);
@@ -1702,7 +1708,7 @@ static void silc_packet_dispatch(SilcPacket packet)
 			 stream->engine->callback_context,
 			 stream->stream_context)) {
 	silc_mutex_lock(stream->lock);
-	return;
+	return stream->destroyed == FALSE;
       }
       silc_mutex_lock(stream->lock);
     }
@@ -1716,7 +1722,7 @@ static void silc_packet_dispatch(SilcPacket packet)
 				       p->callback_context,
 				       stream->stream_context)) {
 	silc_mutex_lock(stream->lock);
-	return;
+	return stream->destroyed == FALSE;
       }
       silc_mutex_lock(stream->lock);
     } else {
@@ -1730,7 +1736,7 @@ static void silc_packet_dispatch(SilcPacket packet)
 					 p->callback_context,
 					 stream->stream_context)) {
 	  silc_mutex_lock(stream->lock);
-	  return;
+	  return stream->destroyed == FALSE;
 	}
 	silc_mutex_lock(stream->lock);
 	break;
@@ -1747,13 +1753,14 @@ static void silc_packet_dispatch(SilcPacket packet)
 		       stream->engine->callback_context,
 		       stream->stream_context)) {
       silc_mutex_lock(stream->lock);
-      return;
+      return stream->destroyed == FALSE;
     }
     silc_mutex_lock(stream->lock);
   }
 
   /* If we got here, no one wanted the packet, so drop it */
   silc_packet_free(packet);
+  return stream->destroyed == FALSE;
 }
 
 /* Process incoming data and parse packets.  Called with stream->lock
@@ -1965,7 +1972,8 @@ static void silc_packet_read_process(SilcPacketStream stream)
     }
 
     /* Dispatch the packet to application */
-    silc_packet_dispatch(packet);
+    if (!silc_packet_dispatch(packet))
+      break;
   }
 
   silc_buffer_reset(&stream->inbuf);
@@ -2010,7 +2018,7 @@ silc_packet_wait_packet_receive(SilcPacketEngine engine,
   /* Signal the waiting thread for a new packet */
   silc_mutex_lock(pw->wait_lock);
 
-  if (pw->stopped) {
+  if (silc_unlikely(pw->stopped)) {
     silc_mutex_unlock(pw->wait_lock);
     return FALSE;
   }
@@ -2103,7 +2111,7 @@ int silc_packet_wait(void *waiter, int timeout, SilcPacket *return_packet)
 
   /* Wait here until packet has arrived */
   while (silc_list_count(pw->packet_queue) == 0) {
-    if (pw->stopped) {
+    if (silc_unlikely(pw->stopped)) {
       silc_mutex_unlock(pw->wait_lock);
       return -1;
     }
