@@ -37,11 +37,11 @@ SilcBool silc_client_send_private_message(SilcClient client,
   SilcBuffer buffer;
   SilcBool ret;
 
-  if (!client || !conn || !client_entry)
+  if (silc_unlikely(!client || !conn || !client_entry))
     return FALSE;
-  if (flags & SILC_MESSAGE_FLAG_SIGNED && !hash)
+  if (silc_unlikely(flags & SILC_MESSAGE_FLAG_SIGNED && !hash))
     return FALSE;
-  if (conn->internal->disconnected)
+  if (silc_unlikely(conn->internal->disconnected))
     return FALSE;
 
   SILC_LOG_DEBUG(("Sending private message"));
@@ -55,7 +55,7 @@ SilcBool silc_client_send_private_message(SilcClient client,
 				client_entry->internal.hmac_send,
 				client->rng, NULL, conn->private_key,
 				hash, NULL);
-  if (!buffer) {
+  if (silc_unlikely(!buffer)) {
     SILC_LOG_ERROR(("Error encoding private message"));
     return FALSE;
   }
@@ -114,14 +114,15 @@ SILC_FSM_STATE(silc_client_private_message)
 
   SILC_LOG_DEBUG(("Received private message"));
 
-  if (packet->src_id_type != SILC_ID_CLIENT) {
+  if (silc_unlikely(packet->src_id_type != SILC_ID_CLIENT)) {
     /** Invalid packet */
     silc_fsm_next(fsm, silc_client_private_message_error);
     return SILC_FSM_CONTINUE;
   }
 
-  if (!silc_id_str2id(packet->src_id, packet->src_id_len, SILC_ID_CLIENT,
-		      &remote_id, sizeof(remote_id))) {
+  if (silc_unlikely(!silc_id_str2id(packet->src_id, packet->src_id_len,
+				    SILC_ID_CLIENT, &remote_id,
+				    sizeof(remote_id)))) {
     /** Invalid source ID */
     silc_fsm_next(fsm, silc_client_private_message_error);
     return SILC_FSM_CONTINUE;
@@ -139,9 +140,9 @@ SILC_FSM_STATE(silc_client_private_message)
     /* NOT REACHED */
   }
 
-  if (packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY &&
-      !remote_client->internal.receive_key &&
-      !remote_client->internal.hmac_receive)
+  if (silc_unlikely(packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY &&
+		    !remote_client->internal.receive_key &&
+		    !remote_client->internal.hmac_receive))
     goto out;
 
   /* Parse the payload and decrypt it also if private message key is set */
@@ -151,7 +152,7 @@ SILC_FSM_STATE(silc_client_private_message)
 			       remote_client->internal.receive_key,
 			       remote_client->internal.hmac_receive,
 			       NULL, FALSE, NULL);
-  if (!payload)
+  if (silc_unlikely(!payload))
     goto out;
 
 #if 0 /* We need to rethink this.  This doesn't work with multiple
@@ -548,12 +549,12 @@ SilcBool silc_client_add_private_message_key_ske(SilcClient client,
   if (client_entry->internal.prv_resp) {
     silc_cipher_set_key(client_entry->internal.send_key,
 			keymat->receive_enc_key,
-			keymat->enc_key_len);
+			keymat->enc_key_len, TRUE);
     silc_cipher_set_iv(client_entry->internal.send_key,
 		       keymat->receive_iv);
     silc_cipher_set_key(client_entry->internal.receive_key,
 			keymat->send_enc_key,
-			keymat->enc_key_len);
+			keymat->enc_key_len, FALSE);
     silc_cipher_set_iv(client_entry->internal.receive_key, keymat->send_iv);
     silc_hmac_set_key(client_entry->internal.hmac_send,
 		      keymat->receive_hmac_key,
@@ -564,12 +565,12 @@ SilcBool silc_client_add_private_message_key_ske(SilcClient client,
   } else {
     silc_cipher_set_key(client_entry->internal.send_key,
 			keymat->send_enc_key,
-			keymat->enc_key_len);
+			keymat->enc_key_len, TRUE);
     silc_cipher_set_iv(client_entry->internal.send_key,
 		       keymat->send_iv);
     silc_cipher_set_key(client_entry->internal.receive_key,
 			keymat->receive_enc_key,
-			keymat->enc_key_len);
+			keymat->enc_key_len, FALSE);
     silc_cipher_set_iv(client_entry->internal.receive_key, keymat->receive_iv);
     silc_hmac_set_key(client_entry->internal.hmac_send,
 		      keymat->send_hmac_key,

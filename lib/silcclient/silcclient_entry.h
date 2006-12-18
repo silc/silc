@@ -107,6 +107,7 @@ struct SilcChannelEntryStruct {
   char *channel_name;		     /* Channel name */
   char *topic;			     /* Current topic, may be NULL */
   SilcPublicKey founder_key;	     /* Founder key, may be NULL */
+  SilcDList channel_pubkeys;	     /* Channel public keys, may be NULL */
   SilcChannelID id;		     /* Channel ID */
   SilcUInt32 mode;		     /* Channel mode, ChannelModes. */
   SilcUInt32 user_limit;	     /* User limit on channel */

@@ -157,9 +157,7 @@ struct SilcClientInternalStruct {
 
 /* Internal context for conn->internal in SilcClientConnection. */
 struct SilcClientConnectionInternalStruct {
-  SilcIDCacheEntry local_entry;		 /* Local client cache entry */
   SilcClientConnectionParams params;	 /* Connection parameters */
-
   SilcFSMStruct fsm;			 /* Connection FSM */
   SilcFSMThreadStruct event_thread;      /* FSM thread for events */
   SilcFSMSemaStruct wait_event;		 /* Event signaller */

@@ -99,7 +99,7 @@ SILC_FSM_STATE(silc_client_notify)
   }
 
   if (!silc_notify_get_args(payload)) {
-    SILC_LOG_DEBUG(("Malformed notify"));
+    SILC_LOG_DEBUG(("Malformed notify %d", silc_notify_get_type(payload)));
     silc_notify_payload_free(payload);
     silc_packet_free(packet);
     return SILC_FSM_FINISH;
@@ -489,7 +489,7 @@ SILC_FSM_STATE(silc_client_notify_signoff)
 
   /* Get signoff message */
   tmp = silc_argument_get_arg_type(args, 2, &tmp_len);
-  if (tmp_len > 128)
+  if (tmp && tmp_len > 128)
     tmp[128] = '\0';
 
   /* Notify application */
@@ -636,7 +636,7 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry = NULL;
-  unsigned char *tmp, *nick, oldnick[128 + 1];
+  unsigned char *tmp, oldnick[128 + 1];
   SilcUInt32 tmp_len;
   SilcID id, id2;
 
@@ -691,24 +691,11 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
     goto out;
   }
 
-  /* Normalize nickname */
-  nick = silc_identifier_check(tmp, tmp_len, SILC_STRING_UTF8, 128, NULL);
-  if (!nick)
-    goto out;
-
-  /* Update nickname */
-  silc_mutex_lock(conn->internal->lock);
-  if (!silc_idcache_update_by_context(conn->internal->client_cache,
-				      client_entry, NULL, nick, TRUE)) {
-    silc_free(nick);
-    silc_mutex_unlock(conn->internal->lock);
-    goto out;
-  }
-  silc_mutex_unlock(conn->internal->lock);
+  /* Change the nickname */
   memcpy(oldnick, client_entry->nickname, sizeof(client_entry->nickname));
-  memcpy(client_entry->nickname, tmp, tmp_len);
-  client_entry->nickname_normalized = nick;
-  silc_client_nickname_format(client, conn, client_entry);
+  if (!silc_client_change_nickname(client, conn, client_entry, tmp,
+				   &id2.u.client_id, NULL, 0))
+    goto out;
 
   /* Notify application */
   NOTIFY(client, conn, type, client_entry, client_entry->nickname, oldnick);
@@ -875,6 +862,8 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
   if (tmp)
     chpks = silc_argument_list_parse_decoded(tmp, tmp_len,
 					     SILC_ARGUMENT_PUBLIC_KEY);
+
+  /* XXX add to/remove from channel pubkeys channel->channel_pubkeys */
 
   /* Notify application. */
   NOTIFY(client, conn, type, id.type, entry, mode, cipher, hmac,

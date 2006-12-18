@@ -802,6 +802,56 @@ void silc_client_update_client(SilcClient client,
   client_entry->mode = mode;
 }
 
+/* Change a client's nickname */
+
+SilcBool silc_client_change_nickname(SilcClient client,
+				     SilcClientConnection conn,
+				     SilcClientEntry client_entry,
+				     const char *new_nick,
+				     SilcClientID *new_id,
+				     const unsigned char *idp,
+				     SilcUInt32 idp_len)
+{
+  char *tmp;
+
+  SILC_LOG_DEBUG(("Change nickname %s to %s", client_entry->nickname,
+		  new_nick));
+
+  /* Normalize nickname */
+  tmp = silc_identifier_check(new_nick, strlen(new_nick),
+			      SILC_STRING_UTF8, 128, NULL);
+  if (!tmp)
+    return FALSE;
+
+  /* Update the client entry */
+  silc_mutex_lock(conn->internal->lock);
+  if (!silc_idcache_update_by_context(conn->internal->client_cache,
+				      client_entry, new_id, tmp, TRUE)) {
+    silc_free(tmp);
+    silc_mutex_unlock(conn->internal->lock);
+    return FALSE;
+  }
+  silc_mutex_unlock(conn->internal->lock);
+
+  memset(client_entry->nickname, 0, sizeof(client_entry->nickname));
+  memcpy(client_entry->nickname, new_nick, strlen(new_nick));
+  client_entry->nickname_normalized = tmp;
+  silc_client_nickname_format(client, conn, client_entry);
+
+  /* For my client entry, update ID and set new ID to packet stream */
+  if (client_entry == conn->local_entry) {
+    if (idp && idp_len) {
+      silc_buffer_enlarge(conn->internal->local_idp, idp_len);
+      silc_buffer_put(conn->internal->local_idp, idp, idp_len);
+    }
+    if (new_id)
+      silc_packet_set_ids(conn->stream, SILC_ID_CLIENT, conn->local_id,
+			  0, NULL);
+  }
+
+  return TRUE;
+}
+
 /* Deletes the client entry and frees all memory. */
 
 void silc_client_del_client_entry(SilcClient client,
@@ -1286,7 +1336,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   if (!channel)
     return NULL;
 
-  silc_atomic_init8(&channel->internal.refcnt, 0);
+  silc_atomic_init16(&channel->internal.refcnt, 0);
   channel->id = *channel_id;
   channel->mode = mode;
 
@@ -1347,7 +1397,7 @@ SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
   if (!channel)
     return FALSE;
 
-  if (silc_atomic_sub_int8(&channel->internal.refcnt, 1) > 0)
+  if (silc_atomic_sub_int16(&channel->internal.refcnt, 1) > 0)
     return FALSE;
 
   SILC_LOG_DEBUG(("Deleting channel %p", channel));
@@ -1382,8 +1432,11 @@ SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
       silc_hmac_free(hmac);
     silc_dlist_uninit(channel->internal.old_hmacs);
   }
+  if (channel->channel_pubkeys)
+    silc_argument_list_free(channel->channel_pubkeys,
+			    SILC_ARGUMENT_PUBLIC_KEY);
   silc_client_del_channel_private_keys(client, conn, channel);
-  silc_atomic_uninit8(&channel->internal.refcnt);
+  silc_atomic_uninit16(&channel->internal.refcnt);
   silc_schedule_task_del_by_context(conn->client->schedule, channel);
   silc_free(channel);
 
@@ -1422,10 +1475,10 @@ SilcBool silc_client_replace_channel_id(SilcClient client,
 void silc_client_ref_channel(SilcClient client, SilcClientConnection conn,
 			     SilcChannelEntry channel_entry)
 {
-  silc_atomic_add_int8(&channel_entry->internal.refcnt, 1);
+  silc_atomic_add_int16(&channel_entry->internal.refcnt, 1);
   SILC_LOG_DEBUG(("Channel %p refcnt %d->%d", channel_entry,
-		  silc_atomic_get_int8(&channel_entry->internal.refcnt) - 1,
-		  silc_atomic_get_int8(&channel_entry->internal.refcnt)));
+		  silc_atomic_get_int16(&channel_entry->internal.refcnt) - 1,
+		  silc_atomic_get_int16(&channel_entry->internal.refcnt)));
 }
 
 /* Release reference of channel entry */
@@ -1435,8 +1488,8 @@ void silc_client_unref_channel(SilcClient client, SilcClientConnection conn,
 {
   if (channel_entry) {
     SILC_LOG_DEBUG(("Channel %p refcnt %d->%d", channel_entry,
-		    silc_atomic_get_int8(&channel_entry->internal.refcnt),
-		    silc_atomic_get_int8(&channel_entry->internal.refcnt)
+		    silc_atomic_get_int16(&channel_entry->internal.refcnt),
+		    silc_atomic_get_int16(&channel_entry->internal.refcnt)
 		    - 1));
     silc_client_del_channel(client, conn, channel_entry);
   }

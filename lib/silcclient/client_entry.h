@@ -32,6 +32,13 @@ void silc_client_update_client(SilcClient client,
 			       const char *username,
 			       const char *userinfo,
 			       SilcUInt32 mode);
+SilcBool silc_client_change_nickname(SilcClient client,
+				     SilcClientConnection conn,
+				     SilcClientEntry client_entry,
+				     const char *new_nick,
+				     SilcClientID *new_id,
+				     const unsigned char *idp,
+				     SilcUInt32 idp_len);
 void silc_client_del_client_entry(SilcClient client,
 				  SilcClientConnection conn,
 				  SilcClientEntry client_entry);

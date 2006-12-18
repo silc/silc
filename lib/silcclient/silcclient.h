@@ -607,26 +607,6 @@ typedef struct {
   void (*ftp)(SilcClient client, SilcClientConnection conn,
 	      SilcClientEntry client_entry, SilcUInt32 session_id,
 	      const char *hostname, SilcUInt16 port);
-
-  /* Delivers SILC session detachment data indicated by `detach_data' to the
-     application.  If application has issued SILC_COMMAND_DETACH command
-     the client session in the SILC network is not quit.  The client remains
-     in the network but is detached.  The detachment data may be used later
-     to resume the session in the SILC Network.  The appliation is
-     responsible of saving the `detach_data', to for example in a file.
-
-     The detachment data can be given as argument to the functions
-     silc_client_connect_to_server or silc_client_key_exchange when creating
-     connection to remote host, inside SilcClientConnectionParams structure.
-     If it is provided the client library will attempt to resume the session
-     in the network.  After the connection is created successfully, the
-     application is responsible of setting the user interface for user into
-     the same state it was before detaching (showing same channels, channel
-     modes, etc).  It can do this by fetching the information (like joined
-     channels) from the client library. */
-  void (*detach)(SilcClient client, SilcClientConnection conn,
-		 const unsigned char *detach_data,
-		 SilcUInt32 detach_data_len);
 } SilcClientOperations;
 /***/
 
@@ -949,17 +929,14 @@ typedef struct {
      client, but must be FALSE with server connections. */
   SilcBool no_authentication;
 
-  /* The SILC session detachment data that was returned by `detach' client
-     operation when the application detached from the network.  Application
-     is responsible of saving the data and giving it as argument here
-     for resuming the session in the SILC network.
-
-     If this is provided here the client library will attempt to resume
-     the session in the network.  After the connection is created
-     successfully, the application is responsible of setting the user
-     interface for user into the same state it was before detaching (showing
-     same channels, channel modes, etc).  It can do this by fetching the
-     information (like joined channels) from the client library. */
+  /* The SILC session detachment data that was returned in the `command_reply'
+     client operation for SILC_COMMAND_DETACH command.  If this is provided
+     here the client library will attempt to resume the session in the network.
+     After the connection is created and the session has been resumed the
+     client will receive SILC_COMMAND_NICK command_reply for the client's
+     nickname in the network and SILC_COMMAND_JOIN command reply for all the
+     channels that the client has joined in the network.  It may also receive
+     SILC_COMMAND_UMODE command reply to set user's mode on the network. */
   unsigned char *detach_data;
   SilcUInt32 detach_data_len;
 

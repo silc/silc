@@ -27,6 +27,7 @@ SILC_FSM_STATE(silc_client_st_register_error);
 SILC_FSM_STATE(silc_client_st_resume);
 SILC_FSM_STATE(silc_client_st_resume_resolve_channels);
 SILC_FSM_STATE(silc_client_st_resume_resolve_cmodes);
+SILC_FSM_STATE(silc_client_st_resume_completed);
 SILC_FSM_STATE(silc_client_st_resume_error);
 
 SilcBuffer silc_client_get_detach_data(SilcClient client,

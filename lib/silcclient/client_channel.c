@@ -43,15 +43,15 @@ SilcBool silc_client_send_channel_message(SilcClient client,
 
   SILC_LOG_DEBUG(("Sending channel message"));
 
-  if (!client || !conn || !channel)
+  if (silc_unlikely(!client || !conn || !channel))
     return FALSE;
-  if (flags & SILC_MESSAGE_FLAG_SIGNED && !hash)
+  if (silc_unlikely(flags & SILC_MESSAGE_FLAG_SIGNED && !hash))
     return FALSE;
-  if (conn->internal->disconnected)
+  if (silc_unlikely(conn->internal->disconnected))
     return FALSE;
 
   chu = silc_client_on_channel(channel, conn->local_entry);
-  if (!chu) {
+  if (silc_unlikely(!chu)) {
     client->internal->ops->say(conn->client, conn,
 			       SILC_CLIENT_MESSAGE_AUDIT,
 			       "Cannot talk to channel: not joined");
@@ -59,13 +59,14 @@ SilcBool silc_client_send_channel_message(SilcClient client,
   }
 
   /* Check if it is allowed to send messages to this channel by us. */
-  if (channel->mode & SILC_CHANNEL_MODE_SILENCE_USERS && !chu->mode)
+  if (silc_unlikely(channel->mode & SILC_CHANNEL_MODE_SILENCE_USERS &&
+		    !chu->mode))
     return FALSE;
-  if (channel->mode & SILC_CHANNEL_MODE_SILENCE_OPERS &&
-      chu->mode & SILC_CHANNEL_UMODE_CHANOP &&
-      !(chu->mode & SILC_CHANNEL_UMODE_CHANFO))
+  if (silc_unlikely(channel->mode & SILC_CHANNEL_MODE_SILENCE_OPERS &&
+		    chu->mode & SILC_CHANNEL_UMODE_CHANOP &&
+		    !(chu->mode & SILC_CHANNEL_UMODE_CHANFO)))
     return FALSE;
-  if (chu->mode & SILC_CHANNEL_UMODE_QUIET)
+  if (silc_unlikely(chu->mode & SILC_CHANNEL_UMODE_QUIET))
     return FALSE;
 
   /* Take the key to be used */
@@ -102,7 +103,7 @@ SilcBool silc_client_send_channel_message(SilcClient client,
     hmac = channel->internal.hmac;
   }
 
-  if (!cipher || !hmac) {
+  if (silc_unlikely(!cipher || !hmac)) {
     SILC_LOG_ERROR(("No cipher and HMAC for channel"));
     return FALSE;
   }
@@ -111,7 +112,7 @@ SilcBool silc_client_send_channel_message(SilcClient client,
   buffer = silc_message_payload_encode(flags, data, data_len, TRUE, FALSE,
 				       cipher, hmac, client->rng, NULL,
 				       conn->private_key, hash, NULL);
-  if (!buffer) {
+  if (silc_unlikely(!buffer)) {
     SILC_LOG_ERROR(("Error encoding channel message"));
     return FALSE;
   }
@@ -162,14 +163,15 @@ SILC_FSM_STATE(silc_client_channel_message)
 
   SILC_LOG_DEBUG(("Received channel message"));
 
-  if (packet->dst_id_type != SILC_ID_CHANNEL) {
+  if (silc_unlikely(packet->dst_id_type != SILC_ID_CHANNEL)) {
     /** Invalid packet */
     silc_fsm_next(fsm, silc_client_channel_message_error);
     return SILC_FSM_CONTINUE;
   }
 
-  if (!silc_id_str2id(packet->src_id, packet->src_id_len, SILC_ID_CLIENT,
-		      &remote_id, sizeof(remote_id))) {
+  if (silc_unlikely(!silc_id_str2id(packet->src_id,
+				    packet->src_id_len, SILC_ID_CLIENT,
+				    &remote_id, sizeof(remote_id)))) {
     /** Invalid source ID */
     silc_fsm_next(fsm, silc_client_channel_message_error);
     return SILC_FSM_CONTINUE;
@@ -187,8 +189,9 @@ SILC_FSM_STATE(silc_client_channel_message)
     /* NOT REACHED */
   }
 
-  if (!silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CHANNEL,
-		      &channel_id, sizeof(channel_id))) {
+  if (silc_unlikely(!silc_id_str2id(packet->dst_id, packet->dst_id_len,
+				    SILC_ID_CHANNEL, &channel_id,
+				    sizeof(channel_id)))) {
     /** Invalid destination ID */
     silc_fsm_next(fsm, silc_client_channel_message_error);
     return SILC_FSM_CONTINUE;
@@ -196,15 +199,17 @@ SILC_FSM_STATE(silc_client_channel_message)
 
   /* Find the channel */
   channel = silc_client_get_channel_by_id(client, conn, &channel_id);
-  if (!channel) {
+  if (silc_unlikely(!channel)) {
     /** Unknown channel */
     silc_fsm_next(fsm, silc_client_channel_message_error);
     return SILC_FSM_CONTINUE;
   }
 
   /* Check that user is on channel */
-  if (!silc_client_on_channel(channel, client_entry)) {
+  if (silc_unlikely(!silc_client_on_channel(channel, client_entry))) {
     /** User not on channel */
+    SILC_LOG_WARNING(("Message from user not on channel, client or "
+		      "server bug"));
     silc_fsm_next(fsm, silc_client_channel_message_error);
     return SILC_FSM_CONTINUE;
   }
@@ -223,7 +228,7 @@ SILC_FSM_STATE(silc_client_channel_message)
     /* If decryption failed and we have just performed channel key rekey
        we will use the old key in decryption. If that fails too then we
        cannot do more and will drop the packet. */
-    if (!payload) {
+    if (silc_unlikely(!payload)) {
       SilcCipher cipher;
       SilcHmac hmac;
 
@@ -346,6 +351,8 @@ SilcBool silc_client_save_channel_key(SilcClient client,
   SilcChannelID id;
   SilcChannelKeyPayload payload;
 
+  SILC_LOG_DEBUG(("New channel key"));
+
   payload = silc_channel_key_payload_parse(silc_buffer_data(key_payload),
 					   silc_buffer_len(key_payload));
   if (!payload)
@@ -366,6 +373,7 @@ SilcBool silc_client_save_channel_key(SilcClient client,
   if (!channel) {
     channel = silc_client_get_channel_by_id(client, conn, &id);
     if (!channel) {
+      SILC_LOG_DEBUG(("Key for unknown channel"));
       silc_channel_key_payload_free(payload);
       return FALSE;
     }
@@ -404,7 +412,7 @@ SilcBool silc_client_save_channel_key(SilcClient client,
 
   /* Set the cipher key */
   key = silc_channel_key_get_key(payload, &tmp_len);
-  silc_cipher_set_key(channel->internal.channel_key, key, tmp_len * 8);
+  silc_cipher_set_key(channel->internal.channel_key, key, tmp_len * 8, TRUE);
 
   /* Get channel HMAC */
   hmac = (channel->internal.hmac ?
@@ -501,7 +509,7 @@ SilcBool silc_client_add_channel_private_key(SilcClient client,
   }
   entry->name = name ? strdup(name) : NULL;
 
-  /* Allocate the cipher and set the key*/
+  /* Allocate the cipher and set the key */
   if (!silc_cipher_alloc(cipher, &entry->cipher)) {
     silc_free(entry);
     silc_free(entry->name);
@@ -509,7 +517,7 @@ SilcBool silc_client_add_channel_private_key(SilcClient client,
     return FALSE;
   }
   silc_cipher_set_key(entry->cipher, keymat->send_enc_key,
-		      keymat->enc_key_len);
+		      keymat->enc_key_len, TRUE);
 
   /* Generate HMAC key from the channel key data and set it */
   if (!silc_hmac_alloc(hmac, NULL, &entry->hmac)) {

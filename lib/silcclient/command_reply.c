@@ -106,10 +106,11 @@ static void silc_client_command_process_error(SilcClientCommandContext cmd,
   SilcClient client = cmd->conn->client;
   SilcClientConnection conn = cmd->conn;
   SilcArgumentPayload args = silc_command_get_args(payload);
-  SilcClientEntry client_entry;
   SilcID id;
 
   if (cmd->error == SILC_STATUS_ERR_NO_SUCH_CLIENT_ID) {
+    SilcClientEntry client_entry;
+
     /* Remove unknown client entry from cache */
     if (!silc_argument_get_decoded(args, 2, SILC_ARGUMENT_ID, &id, NULL))
       return;
@@ -120,6 +121,38 @@ static void silc_client_command_process_error(SilcClientCommandContext cmd,
       silc_client_del_client(client, conn, client_entry);
       silc_client_unref_client(client, conn, client_entry);
     }
+    return;
+  }
+
+  if (cmd->error == SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID) {
+    SilcChannelEntry channel;
+
+    /* Remove unknown client entry from cache */
+    if (!silc_argument_get_decoded(args, 2, SILC_ARGUMENT_ID, &id, NULL))
+      return;
+
+    channel = silc_client_get_channel_by_id(client, conn, &id.u.channel_id);
+    if (channel) {
+      silc_client_empty_channel(client, conn, channel);
+      silc_client_del_channel(client, conn, channel);
+      silc_client_unref_channel(client, conn, channel);
+    }
+    return;
+  }
+
+  if (cmd->error == SILC_STATUS_ERR_NO_SUCH_SERVER_ID) {
+    SilcServerEntry server_entry;
+
+    /* Remove unknown client entry from cache */
+    if (!silc_argument_get_decoded(args, 2, SILC_ARGUMENT_ID, &id, NULL))
+      return;
+
+    server_entry = silc_client_get_server_by_id(client, conn, &id.u.server_id);
+    if (server_entry) {
+      silc_client_del_server(client, conn, server_entry);
+      silc_client_unref_server(client, conn, server_entry);
+    }
+    return;
   }
 }
 
@@ -617,7 +650,7 @@ SILC_FSM_STATE(silc_client_command_reply_identify)
     channel_entry = silc_client_get_channel_by_id(client, conn,
 						  &id.u.channel_id);
     if (!channel_entry) {
-      SILC_LOG_DEBUG(("Adding new channel entry (IDENTIFY"));
+      SILC_LOG_DEBUG(("Adding new channel entry (IDENTIFY)"));
 
       if (!name) {
 	ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
@@ -656,7 +689,7 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
   SilcClient client = conn->client;
   SilcCommandPayload payload = state_context;
   SilcArgumentPayload args = silc_command_get_args(payload);
-  unsigned char *tmp, *nick, *idp;
+  unsigned char *nick, *idp;
   SilcUInt32 len, idp_len;
   SilcClientID old_client_id;
   SilcID id;
@@ -664,8 +697,6 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
   /* Sanity checks */
   CHECK_STATUS("Cannot set nickname: ");
   CHECK_ARGS(2, 3);
-
-  old_client_id = *conn->local_id;
 
   /* Take received Client ID */
   idp = silc_argument_get_arg_type(args, 2, &idp_len);
@@ -685,31 +716,13 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
     goto out;
   }
 
-  /* Normalize nickname */
-  tmp = silc_identifier_check(nick, len, SILC_STRING_UTF8, 128, NULL);
-  if (!tmp) {
+  /* Change the nickname */
+  old_client_id = *conn->local_id;
+  if (!silc_client_change_nickname(client, conn, conn->local_entry,
+				   nick, &id.u.client_id, idp, idp_len)) {
     ERROR_CALLBACK(SILC_STATUS_ERR_BAD_NICKNAME);
     goto out;
   }
-
-  /* Update the client entry */
-  silc_mutex_lock(conn->internal->lock);
-  if (!silc_idcache_update(conn->internal->client_cache,
-			   conn->internal->local_entry,
-			   &id.u.client_id, tmp, TRUE)) {
-    silc_free(tmp);
-    silc_mutex_unlock(conn->internal->lock);
-    ERROR_CALLBACK(SILC_STATUS_ERR_BAD_NICKNAME);
-    goto out;
-  }
-  silc_mutex_unlock(conn->internal->lock);
-  memset(conn->local_entry->nickname, 0, sizeof(conn->local_entry->nickname));
-  memcpy(conn->local_entry->nickname, nick, len);
-  conn->local_entry->nickname_normalized = tmp;
-  silc_buffer_enlarge(conn->internal->local_idp, idp_len);
-  silc_buffer_put(conn->internal->local_idp, idp, idp_len);
-  silc_client_nickname_format(client, conn, conn->local_entry);
-  silc_packet_set_ids(conn->stream, SILC_ID_CLIENT, conn->local_id, 0, NULL);
 
   /* Notify application */
   silc_client_command_callback(cmd, conn->local_entry,
@@ -1099,7 +1112,6 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   const char *cipher;
   SilcBufferStruct client_id_list, client_mode_list, keyp;
   SilcHashTableList htl;
-  SilcDList chpks = NULL;
   SilcID id;
   int i;
 
@@ -1253,8 +1265,8 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   /* Get channel public key list */
   tmp = silc_argument_get_arg_type(args, 16, &len);
   if (tmp)
-    chpks = silc_argument_list_parse_decoded(tmp, len,
-					     SILC_ARGUMENT_PUBLIC_KEY);
+    channel->channel_pubkeys =
+      silc_argument_list_parse_decoded(tmp, len, SILC_ARGUMENT_PUBLIC_KEY);
 
   /* Set current channel */
   conn->current_channel = channel;
@@ -1266,10 +1278,8 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   /* Notify application */
   silc_client_command_callback(cmd, channel_name, channel, mode, &htl,
 			       topic, cipher, hmac, channel->founder_key,
-			       chpks, channel->user_limit);
+			       channel->channel_pubkeys, channel->user_limit);
 
-  if (chpks)
-    silc_argument_list_free(chpks, SILC_ARGUMENT_PUBLIC_KEY);
   silc_hash_table_list_reset(&htl);
   silc_client_unref_channel(client, conn, channel);
 
@@ -1621,20 +1631,18 @@ SILC_FSM_STATE(silc_client_command_reply_detach)
   CHECK_STATUS("Cannot detach: ");
   CHECK_ARGS(1, 1);
 
-  /* Notify application */
-  silc_client_command_callback(cmd);
-
-#if 0
-  /* Generate the detachment data and deliver it to the client in the
-     detach client operation */
+  /* Get detachment data */
   detach = silc_client_get_detach_data(client, conn);
-  if (detach) {
-    client->internal->ops->detach(client, conn, silc_buffer_data(detach),
-				  silc_buffer_len(detach));
-    silc_buffer_free(detach);
+  if (!detach) {
+    ERROR_CALLBACK(SILC_STATUS_ERR_RESOURCE_LIMIT);
+    goto out;
   }
-#endif /* 0 */
 
+  /* Notify application */
+  silc_client_command_callback(cmd, detach);
+  silc_buffer_free(detach);
+
+ out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }

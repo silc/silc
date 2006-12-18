@@ -84,7 +84,7 @@ typedef struct SilcChannelEntryInternalStruct {
 						stuff that relates to the
 						channel. Not used for the
 						channel resolving itself. */
-  SilcAtomic8 refcnt;		             /* Reference counter */
+  SilcAtomic16 refcnt;		             /* Reference counter */
 } SilcChannelEntryInternal;
 
 /* Internal server entry context */
