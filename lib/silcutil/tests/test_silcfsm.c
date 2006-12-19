@@ -386,43 +386,6 @@ int main(int argc, char **argv)
     silc_log_set_debug_string("*fsm*,*async*");
   }
 
-{
-#define SSILC_GET32_MSB(l, cp)				\
-do {							\
-  (l) = ((SilcUInt32)(SilcUInt8)(cp)[3]) << 24		\
-    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 16)		\
-    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)		\
-    | ((SilcUInt32)(SilcUInt8)(cp)[0]);			\
-} while(0)
-  unsigned char tmp[8], tmp2[8];
-  SilcUInt32 t1, t2, t3, t4;
-
-  tmp[0] = 0x11;
-  tmp[1] = 0x22;
-  tmp[2] = 0x33;
-  tmp[3] = 0x44;
-  tmp[4] = 0x55;
-  tmp[5] = 0x66;
-  tmp[6] = 0x77;
-  tmp[7] = 0x88;
-
-  SILC_LOG_HEXDUMP(("DATA"), tmp, 4);
-
-  SILC_GET32_LSB(t1, tmp);
-  SILC_LOG_DEBUG(("GET_LSB: %x", t1));
-  
-  SSILC_GET32_MSB(t1, tmp);
-  SILC_LOG_DEBUG(("GET_MSB: %x", t1));
-
-  SILC_PUT32_LSB(t1, tmp2);
-  SILC_LOG_HEXDUMP(("PUT_LSB"), tmp2, 4);
-
-  SILC_PUT32_MSB(t1, tmp2);
-  SILC_LOG_HEXDUMP(("PUT_MSB"), tmp2, 4);
-
-  exit(1);
-}
-
   SILC_LOG_DEBUG(("Allocating scheduler"));
   schedule = silc_schedule_init(0, NULL);
 

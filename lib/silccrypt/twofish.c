@@ -49,7 +49,7 @@ Mean:          378 cycles =    67.8 mbits/sec
 
 /* Sets the key for the cipher. */
 
-SILC_CIPHER_API_SET_KEY(twofish)
+SILC_CIPHER_API_SET_KEY(twofish_cbc)
 {
   SilcUInt32 k[8];
 
@@ -61,7 +61,7 @@ SILC_CIPHER_API_SET_KEY(twofish)
 
 /* Returns the size of the cipher context. */
 
-SILC_CIPHER_API_CONTEXT_LEN(twofish)
+SILC_CIPHER_API_CONTEXT_LEN(twofish_cbc)
 {
   return sizeof(TwofishContext);
 }
@@ -69,11 +69,14 @@ SILC_CIPHER_API_CONTEXT_LEN(twofish)
 /* Encrypts with the cipher in CBC mode. Source and destination buffers
    maybe one and same. */
 
-SILC_CIPHER_API_ENCRYPT_CBC(twofish)
+SILC_CIPHER_API_ENCRYPT(twofish_cbc)
 {
   SilcUInt32 tiv[4];
   int i;
 
+  SILC_ASSERT((len & (16 - 1)) == 0);
+  if (len & (16 - 1))
+    return FALSE;
   SILC_CBC_GET_IV(tiv, iv);
 
   SILC_CBC_ENC_PRE(tiv, src);
@@ -94,10 +97,13 @@ SILC_CIPHER_API_ENCRYPT_CBC(twofish)
 /* Decrypts with the cipher in CBC mode. Source and destination buffers
    maybe one and same. */
 
-SILC_CIPHER_API_DECRYPT_CBC(twofish)
+SILC_CIPHER_API_DECRYPT(twofish_cbc)
 {
   SilcUInt32 tmp[4], tmp2[4], tiv[4];
   int i;
+
+  if (len & (16 - 1))
+    return FALSE;
 
   SILC_CBC_GET_IV(tiv, iv);
 

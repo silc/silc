@@ -43,7 +43,7 @@
 
 /* Sets the key for the cipher. */
 
-SILC_CIPHER_API_SET_KEY(blowfish)
+SILC_CIPHER_API_SET_KEY(blowfish_cbc)
 {
   blowfish_set_key((BlowfishContext *)context, (unsigned char *)key, keylen);
   return TRUE;
@@ -51,7 +51,7 @@ SILC_CIPHER_API_SET_KEY(blowfish)
 
 /* Returns the size of the cipher context. */
 
-SILC_CIPHER_API_CONTEXT_LEN(blowfish)
+SILC_CIPHER_API_CONTEXT_LEN(blowfish_cbc)
 {
   return sizeof(BlowfishContext);
 }
@@ -59,7 +59,7 @@ SILC_CIPHER_API_CONTEXT_LEN(blowfish)
 /* Encrypts with the cipher in CBC mode. Source and destination buffers
    maybe one and same. */
 
-SILC_CIPHER_API_ENCRYPT_CBC(blowfish)
+SILC_CIPHER_API_ENCRYPT(blowfish_cbc)
 {
   SilcUInt32 tiv[4];
   int i;
@@ -84,7 +84,7 @@ SILC_CIPHER_API_ENCRYPT_CBC(blowfish)
 /* Decrypts with the cipher in CBC mode. Source and destination buffers
    maybe one and same. */
 
-SILC_CIPHER_API_DECRYPT_CBC(blowfish)
+SILC_CIPHER_API_DECRYPT(blowfish_cbc)
 {
   SilcUInt32 tmp[4], tmp2[4], tiv[4];
   int i;

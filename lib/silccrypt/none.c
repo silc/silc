@@ -34,13 +34,13 @@ SILC_CIPHER_API_CONTEXT_LEN(none)
   return 1;
 }
 
-SILC_CIPHER_API_ENCRYPT_CBC(none)
+SILC_CIPHER_API_ENCRYPT(none)
 {
   memcpy(dst, src, len);
   return TRUE;
 }
 
-SILC_CIPHER_API_DECRYPT_CBC(none)
+SILC_CIPHER_API_DECRYPT(none)
 {
   memcpy(dst, src, len);
   return TRUE;

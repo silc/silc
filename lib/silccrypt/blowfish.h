@@ -24,9 +24,9 @@
  * SILC Crypto API for Blowfish
  */
 
-SILC_CIPHER_API_SET_KEY(blowfish);
-SILC_CIPHER_API_CONTEXT_LEN(blowfish);
-SILC_CIPHER_API_ENCRYPT_CBC(blowfish);
-SILC_CIPHER_API_DECRYPT_CBC(blowfish);
+SILC_CIPHER_API_SET_KEY(blowfish_cbc);
+SILC_CIPHER_API_CONTEXT_LEN(blowfish_cbc);
+SILC_CIPHER_API_ENCRYPT(blowfish_cbc);
+SILC_CIPHER_API_DECRYPT(blowfish_cbc);
 
 #endif

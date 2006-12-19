@@ -70,7 +70,7 @@ Mean:          674 cycles =    38.0 mbits/sec
 
 /* Sets the key for the cipher. */
 
-SILC_CIPHER_API_SET_KEY(cast)
+SILC_CIPHER_API_SET_KEY(cast_cbc)
 {
   SilcUInt32 k[8];
 
@@ -82,7 +82,7 @@ SILC_CIPHER_API_SET_KEY(cast)
 
 /* Returns the size of the cipher context. */
 
-SILC_CIPHER_API_CONTEXT_LEN(cast)
+SILC_CIPHER_API_CONTEXT_LEN(cast_cbc)
 {
   return sizeof(CastContext);
 }
@@ -90,10 +90,14 @@ SILC_CIPHER_API_CONTEXT_LEN(cast)
 /* Encrypts with the cipher in CBC mode. Source and destination buffers
    maybe one and same. */
 
-SILC_CIPHER_API_ENCRYPT_CBC(cast)
+SILC_CIPHER_API_ENCRYPT(cast_cbc)
 {
   SilcUInt32 tiv[4];
   int i;
+
+  SILC_ASSERT((len & (16 - 1)) == 0);
+  if (len & (16 - 1))
+    return FALSE;
 
   SILC_CBC_GET_IV(tiv, iv);
 
@@ -115,10 +119,13 @@ SILC_CIPHER_API_ENCRYPT_CBC(cast)
 /* Decrypts with the cipher in CBC mode. Source and destination buffers
    maybe one and same. */
 
-SILC_CIPHER_API_DECRYPT_CBC(cast)
+SILC_CIPHER_API_DECRYPT(cast_cbc)
 {
   SilcUInt32 tmp[4], tmp2[4], tiv[4];
   int i;
+
+  if (len & (16 - 1))
+    return FALSE;
 
   SILC_CBC_GET_IV(tiv, iv);
 

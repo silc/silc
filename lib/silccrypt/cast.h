@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1999 - 2000 Pekka Riikonen
+  Copyright (C) 1999 - 2000, 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,9 +24,9 @@
  * SILC Crypto API for Cast-256
  */
 
-SILC_CIPHER_API_SET_KEY(cast);
-SILC_CIPHER_API_CONTEXT_LEN(cast);
-SILC_CIPHER_API_ENCRYPT_CBC(cast);
-SILC_CIPHER_API_DECRYPT_CBC(cast);
+SILC_CIPHER_API_SET_KEY(cast_cbc);
+SILC_CIPHER_API_CONTEXT_LEN(cast_cbc);
+SILC_CIPHER_API_ENCRYPT(cast_cbc);
+SILC_CIPHER_API_DECRYPT(cast_cbc);
 
 #endif

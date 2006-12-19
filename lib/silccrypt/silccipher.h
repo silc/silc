@@ -51,9 +51,9 @@ typedef struct {
   char *name;
   SilcBool (*set_key)(void *, const unsigned char *, SilcUInt32, SilcBool);
   SilcBool (*encrypt)(void *, const unsigned char *, unsigned char *,
-		  SilcUInt32, unsigned char *);
+		      SilcUInt32, unsigned char *);
   SilcBool (*decrypt)(void *, const unsigned char *, unsigned char *,
-		  SilcUInt32, unsigned char *);
+		      SilcUInt32, unsigned char *);
   SilcUInt32 (*context_len)();
   unsigned int key_len   : 12;
   unsigned int block_len : 10;
@@ -79,31 +79,34 @@ extern DLLAPI const SilcCipherObject silc_default_ciphers[];
    of the module. All SILC Crypto API compliant modules must support
    these function names (use macros below to assure this). */
 #define SILC_CIPHER_SIM_SET_KEY "set_key"
-#define SILC_CIPHER_SIM_ENCRYPT_CBC "encrypt_cbc"
-#define SILC_CIPHER_SIM_DECRYPT_CBC "decrypt_cbc"
+#define SILC_CIPHER_SIM_ENCRYPT "encrypt"
+#define SILC_CIPHER_SIM_DECRYPT "decrypt"
 #define SILC_CIPHER_SIM_CONTEXT_LEN "context_len"
+#define SILC_CIPHER_SIM_SET_IV "set_iv"
 
 /* These macros can be used to implement the SILC Crypto API and to avoid
    errors in the API these macros should be used always. */
-#define SILC_CIPHER_API_SET_KEY(cipher)			\
+#define SILC_CIPHER_API_SET_KEY(cipher)				\
 SilcBool silc_##cipher##_set_key(void *context,		\
-			     const unsigned char *key,	\
-			     SilcUInt32 keylen,		\
-			     SilcBool encryption)
-#define SILC_CIPHER_API_ENCRYPT_CBC(cipher)			\
-SilcBool silc_##cipher##_encrypt_cbc(void *context,			\
+				 const unsigned char *key,	\
+				 SilcUInt32 keylen,		\
+				 SilcBool encryption)
+#define SILC_CIPHER_API_ENCRYPT(cipher)			\
+SilcBool silc_##cipher##_encrypt(void *context,		\
 				 const unsigned char *src,	\
-		       	         unsigned char *dst,		\
-				 SilcUInt32 len,		\
-			         unsigned char *iv)
-#define SILC_CIPHER_API_DECRYPT_CBC(cipher)			\
-SilcBool silc_##cipher##_decrypt_cbc(void *context,			\
-			      	 const unsigned char *src,	\
 				 unsigned char *dst,		\
 				 SilcUInt32 len,		\
 				 unsigned char *iv)
-#define SILC_CIPHER_API_CONTEXT_LEN(cipher)			\
+#define SILC_CIPHER_API_DECRYPT(cipher)				\
+SilcBool silc_##cipher##_decrypt(void *context,		\
+				 const unsigned char *src,	\
+				 unsigned char *dst,		\
+				 SilcUInt32 len,		\
+				 unsigned char *iv)
+#define SILC_CIPHER_API_CONTEXT_LEN(cipher)	\
 SilcUInt32 silc_##cipher##_context_len()
+#define SILC_CIPHER_API_SET_IV(cipher)	\
+SilcBool silc_##cipher##_set_iv(void *context, const unsigned char *iv)
 
 /* Prototypes */
 

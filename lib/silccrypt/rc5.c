@@ -48,7 +48,7 @@
 
 /* Sets the key for the cipher. */
 
-SILC_CIPHER_API_SET_KEY(rc5)
+SILC_CIPHER_API_SET_KEY(rc5_cbc)
 {
   SilcUInt32 k[8];
 
@@ -60,7 +60,7 @@ SILC_CIPHER_API_SET_KEY(rc5)
 
 /* Returns the size of the cipher context. */
 
-SILC_CIPHER_API_CONTEXT_LEN(rc5)
+SILC_CIPHER_API_CONTEXT_LEN(rc5_cbc)
 {
   return sizeof(RC5Context);
 }
@@ -68,7 +68,7 @@ SILC_CIPHER_API_CONTEXT_LEN(rc5)
 /* Encrypts with the cipher in CBC mode. Source and destination buffers
    maybe one and same. */
 
-SILC_CIPHER_API_ENCRYPT_CBC(rc5)
+SILC_CIPHER_API_ENCRYPT(rc5_cbc)
 {
   SilcUInt32 tiv[4];
   int i;
@@ -93,7 +93,7 @@ SILC_CIPHER_API_ENCRYPT_CBC(rc5)
 /* Decrypts with the cipher in CBC mode. Source and destination buffers
    maybe one and same. */
 
-SILC_CIPHER_API_DECRYPT_CBC(rc5)
+SILC_CIPHER_API_DECRYPT(rc5_cbc)
 {
   SilcUInt32 tmp[4], tmp2[4], tiv[4];
   int i;
