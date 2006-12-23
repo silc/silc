@@ -10,7 +10,7 @@ SilcSchedule schedule;
 
 typedef struct {
   SilcFSM fsm;
-  SilcFSMSemaStruct sema;
+  SilcFSMEventStruct sema;
   SilcAsyncOperation op;
   Callback cb;
   void *cb_context;
@@ -59,7 +59,7 @@ static void async_call_cb(void *context)
   Foo f = context;
   SILC_LOG_DEBUG(("*******Callback, signal and continue to next state"));
   f->op = NULL;
-  SILC_FSM_SEMA_POST(&f->sema);
+  SILC_FSM_EVENT_SIGNAL(&f->sema);
   SILC_FSM_CALL_CONTINUE(f->fsm);
 }
 
@@ -69,7 +69,7 @@ SILC_FSM_STATE(test_st_start)
 
   SILC_LOG_DEBUG(("test_st_start"));
 
-  silc_fsm_sema_init(&f->sema, fsm, 0);
+  silc_fsm_event_init(&f->sema, fsm);
 
   /** Wait async callback */
   SILC_LOG_DEBUG(("Call async call"));
@@ -84,7 +84,7 @@ SILC_FSM_STATE(test_st_second)
 
   SILC_LOG_DEBUG(("test_st_second"));
 
-  SILC_FSM_SEMA_TIMEDWAIT(&f->sema, 0, 1, &timedout);
+  SILC_FSM_EVENT_TIMEDWAIT(&f->sema, 0, 1, &timedout);
 
   if (timedout == TRUE) {
     SILC_LOG_DEBUG(("Sema timedout, aborting async operation"));
@@ -94,7 +94,7 @@ SILC_FSM_STATE(test_st_second)
 
   /** Finish */
   silc_fsm_next_later(fsm, test_st_finish, 2, 0);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 SILC_FSM_STATE(test_st_finish)
@@ -102,7 +102,7 @@ SILC_FSM_STATE(test_st_finish)
   SILC_LOG_DEBUG(("test_st_finish"));
 
   SILC_LOG_DEBUG(("Finish machine"));
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 static void destructor(SilcFSM fsm, void *fsm_context,

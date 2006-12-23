@@ -80,7 +80,7 @@ static SilcBool silc_server_packet_receive(SilcPacketEngine engine,
   /* Signal thread that packet has arrived */
   if (!thread->new_packet) {
     thread->new_packet = TRUE;
-    SILC_FSM_SEMA_POST(&thread->wait_event);
+    SILC_FSM_EVENT_SIGNAL(&thread->wait_event);
   }
 
   return TRUE;
@@ -190,7 +190,7 @@ static void silc_server_accept_connection(SilcNetStatus status,
   /* Signal server of new connection */
   if (!server->new_connection) {
     server->new_connection = TRUE;
-    SILC_FSM_SEMA_POST(&server->wait_event);
+    SILC_FSM_EVENT_SIGNAL(&server->wait_event);
   }
 }
 
@@ -216,14 +216,14 @@ SILC_FSM_STATE(silc_server_thread_st_start)
 
   /*** Run thread's machine */
   silc_fsm_init(&thread->fsm, thread, NULL, NULL, silc_fsm_get_schedule(fsm));
-  silc_fsm_sema_init(&thread->wait_event, &thread->fsm, 0);
+  silc_fsm_event_init(&thread->wait_event, &thread->fsm, 0);
   silc_fsm_start_sync(&thread->fsm, silc_server_thread_st_run);
 
   /* Signal server that we are up */
-  SILC_FSM_SEMA_POST(&thread->server->thread_up);
+  SILC_FSM_EVENT_SIGNAL(&thread->server->thread_up);
 
   /* Wait here for this thread to finish */
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 /* Thread's machine's main state where we wait for various events. */
@@ -235,7 +235,7 @@ SILC_FSM_STATE(silc_server_thread_st_run)
   SILC_LOG_DEBUG(("Start"));
 
   /* Wait for events */
-  SILC_FSM_SEMA_WAIT(&thread->wait_event);
+  SILC_FSM_EVENT_WAIT(&thread->wait_event);
 
   /* Process events */
 
@@ -262,7 +262,7 @@ SILC_FSM_STATE(silc_server_thread_st_run)
     silc_list_init(thread->packet_queue, struct SilcPacketStruct, next);
 
     thread->new_packet = FALSE;
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   silc_mutex_lock(thread->server->lock);
@@ -288,14 +288,14 @@ SILC_FSM_STATE(silc_server_thread_st_run)
 
     thread->new_connection = FALSE;
     silc_mutex_unlock(thread->server->lock);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* NOT REACHED */
 #if defined(SILC_DEBUG)
   assert(FALSE);
 #endif /* SILC_DEBUG */
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 
@@ -310,7 +310,7 @@ SILC_FSM_STATE(silc_server_st_run)
   SILC_LOG_DEBUG(("Start"));
 
   /* Wait for events */
-  SILC_FSM_SEMA_WAIT(&server->wait_event);
+  SILC_FSM_EVENT_WAIT(&server->wait_event);
 
   /* Process events */
 
@@ -318,44 +318,44 @@ SILC_FSM_STATE(silc_server_st_run)
     /* Call running callbcak back to application */
     server->run_callback = FALSE;
     server->running(server, server->running_context);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (server->new_connection) {
     /** New connection */
     silc_fsm_next(fsm, silc_server_st_new_connection);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (server->connect_router) {
     /** Connect to router(s) */
     silc_fsm_next(fsm, silc_server_st_connect_router);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (server->get_statistics) {
     /** Retrieve statistics */
     silc_fsm_next(fsm, silc_server_st_get_stats);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (server->reconfigure) {
     /** Reconfigure server */
     silc_fsm_next(fsm, silc_server_st_reconfigure);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (server->server_shutdown) {
     /** Shutdown server */
     silc_fsm_next(fsm, silc_server_st_stop);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* NOT REACHED */
 #if defined(SILC_DEBUG)
   assert(FALSE);
 #endif /* SILC_DEBUG */
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* New connection received */
@@ -391,7 +391,7 @@ SILC_FSM_STATE(silc_server_st_new_connection)
       }
 
       silc_fsm_next(fsm, silc_server_st_wait_new_thread);
-      return SILC_FSM_CONTINUE;
+      SILC_FSM_CONTINUE;
     }
 
     silc_list_del(server->new_conns, ac);
@@ -406,7 +406,7 @@ SILC_FSM_STATE(silc_server_st_new_connection)
     /* Signal the thread for new connection */
     if (!thread->new_connection) {
       thread->new_connection = TRUE;
-      SILC_FSM_SEMA_POST(&thread->wait_event);
+      SILC_FSM_EVENT_SIGNAL(&thread->wait_event);
     }
     silc_mutex_unlock(server->lock);
   }
@@ -415,7 +415,7 @@ SILC_FSM_STATE(silc_server_st_new_connection)
 
   /** Connections processed */
   silc_fsm_next(fsm, silc_server_st_run);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Wait here until newly created thread is up */
@@ -425,11 +425,11 @@ SILC_FSM_STATE(silc_server_st_wait_new_thread)
   SilcServer server = fsm_context;
 
   /* Wait here until new thread is up */
-  SILC_FSM_SEMA_WAIT(&server->thread_up);
+  SILC_FSM_EVENT_WAIT(&server->thread_up);
 
   /** Process new connections */
   silc_fsm_next(fsm, silc_server_st_new_connection);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Stops server */
@@ -493,7 +493,7 @@ SILC_FSM_STATE(silc_server_st_stop)
 
   /** Wait events */
   silc_fsm_next(fsm, silc_server_st_run);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Reconfigure server */
@@ -507,7 +507,7 @@ SILC_FSM_STATE(silc_server_st_reconfigure)
   /** Wait events */
   server->reconfigure = FALSE;
   silc_fsm_next(fsm, silc_server_st_run);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Get statistics */
@@ -521,7 +521,7 @@ SILC_FSM_STATE(silc_server_st_get_stats)
   /** Wait events */
   server->get_statistics = FALSE;
   silc_fsm_next(fsm, silc_server_st_run);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 
@@ -592,8 +592,8 @@ SilcServer silc_server_alloc(void *app_context, SilcServerParams params,
   silc_fsm_init(&server->fsm, server, silc_server_destructor, NULL, schedule);
 
   /* Init semaphore signallers */
-  silc_fsm_sema_init(&server->wait_event, &server->fsm, 0);
-  silc_fsm_sema_init(&server->thread_up, &server->fsm, 0);
+  silc_fsm_event_init(&server->wait_event, &server->fsm, 0);
+  silc_fsm_event_init(&server->thread_up, &server->fsm, 0);
 
   /* Initialize lists */
   silc_list_init(server->new_conns, struct SilcServerAcceptStruct, next);
@@ -853,16 +853,16 @@ void silc_server_run(SilcServer server, SilcServerRunning running,
 
   /* Signal the application when we are running */
   server->run_callback = TRUE;
-  SILC_FSM_SEMA_POST(&server->wait_event);
+  SILC_FSM_EVENT_SIGNAL(&server->wait_event);
 
   /* Signal to connect to router */
   server->connect_router = TRUE;
-  SILC_FSM_SEMA_POST(&server->wait_event);
+  SILC_FSM_EVENT_SIGNAL(&server->wait_event);
 
   /* Start getting statistics from the network on normal server */
   if (server->server_type != SILC_ROUTER) {
     server->get_statistics = TRUE;
-    SILC_FSM_SEMA_POST(&server->wait_event);
+    SILC_FSM_EVENT_SIGNAL(&server->wait_event);
   }
 }
 
@@ -878,7 +878,7 @@ void silc_server_stop(SilcServer server, SilcServerStop stopped,
 
   /* Signal that server is going down */
   server->server_shutdown = TRUE;
-  SILC_FSM_SEMA_POST(&server->wait_event);
+  SILC_FSM_EVENT_SIGNAL(&server->wait_event);
 }
 
 /* Disconnects remote connection */

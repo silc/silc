@@ -47,7 +47,7 @@ typedef struct SilcServerThreadStruct *SilcServerThread;
 
 /* Pending command context */
 typedef struct {
-  SilcFSMSemaStruct wait_reply;	        /* Pending command signaller */
+  SilcFSMEventStruct wait_reply;	        /* Pending command signaller */
   SilcServerCommand reply;		/* Command reply context */
   SilcUInt16 cmd_ident;			/* Command identifier */
   SilcInt16 refcnt;			/* Reference counter */
@@ -177,7 +177,7 @@ typedef struct SilcServerAcceptStruct {
   SilcStream stream;		     /* Remote connection */
   SilcPacketStream packet_stream;    /* Remote connection */
   SilcConnAuth connauth;	     /* Connection authentication context */
-  SilcFSMSemaStruct wait_register;   /* Signaller when registering received */
+  SilcFSMEventStruct wait_register;   /* Signaller when registering received */
   SilcPacket register_packet;	     /* NEW_CLIENT/NEW_SERVER packet */
 
   SilcServerParamClient cconfig;
@@ -251,7 +251,7 @@ struct SilcServerThreadStruct {
   SilcPacketEngine packet_engine;    /* Packet engine */
   SilcFSMThreadStruct thread;	     /* FSM thread */
   SilcFSMStruct fsm;		     /* Thread's FSM */
-  SilcFSMSemaStruct wait_event;	     /* Thread's event signaller */
+  SilcFSMEventStruct wait_event;	     /* Thread's event signaller */
   SilcUInt32 num_conns;		     /* Number of connections in the thread */
   SilcList new_conns;		     /* New network connections */
   SilcList packet_queue;	     /* Incoming packet queue */
@@ -279,8 +279,8 @@ struct SilcServerStruct {
   SilcList command_pool;	     /* Command context freelist */
   SilcHashTable pending_commands;    /* Pending commands */
 
-  SilcFSMSemaStruct wait_event;	     /* Main state signaller */
-  SilcFSMSemaStruct thread_up;	     /* Signaller when thread is up */
+  SilcFSMEventStruct wait_event;	     /* Main state signaller */
+  SilcFSMEventStruct thread_up;	     /* Signaller when thread is up */
 
   SilcIDCache clients;		     /* Client entry cache */
   SilcIDCache servers;		     /* Server entry cache */

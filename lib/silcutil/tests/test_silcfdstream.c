@@ -32,7 +32,7 @@ SILC_FSM_STATE(st_end)
 {
   unlink("/tmp/test_silcfdstream");
   unlink("/tmp/test_silcfdstream_copy");
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(st_readwrite)
@@ -83,7 +83,7 @@ SILC_FSM_STATE(st_readwrite)
       if (i == -1) {
         SILC_LOG_DEBUG(("Would block, write later"));
         silc_fsm_next(fsm, st_end);
-        return SILC_FSM_WAIT;
+        SILC_FSM_WAIT;
       }
 
       if (i == -2) {
@@ -99,7 +99,7 @@ SILC_FSM_STATE(st_readwrite)
   if (ret == -1) {
     SILC_LOG_DEBUG(("Would block, read later"));
     silc_fsm_next(fsm, st_end);
-    return SILC_FSM_WAIT;
+    SILC_FSM_WAIT;
   }
 
   if (ret == -2) {
@@ -117,11 +117,11 @@ SILC_FSM_STATE(st_readwrite)
   }
 
   silc_fsm_next(fsm, st_end);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 
  err:
   silc_fsm_next(fsm, st_end);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(st_write)
@@ -159,7 +159,7 @@ SILC_FSM_STATE(st_write)
     if (ret == -1) {
       SILC_LOG_DEBUG(("Would block, write later"));
       silc_fsm_next(fsm, st_readwrite);
-      return SILC_FSM_WAIT;
+      SILC_FSM_WAIT;
     }
 
     if (ret == -2) {
@@ -179,11 +179,11 @@ SILC_FSM_STATE(st_write)
 
   SILC_LOG_DEBUG(("Continue to next state"));
   silc_fsm_next(fsm, st_readwrite);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 
  err:
   silc_fsm_next(fsm, st_end);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 static void fsm_dest(SilcFSM fsm, void *fsm_context, void *context)

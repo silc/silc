@@ -71,7 +71,7 @@ SILC_FSM_STATE(silc_server_st_packet_command_reply)
   cmd = silc_server_command_alloc(thread);
   if (!cmd) {
     silc_packet_free(packet);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   cmd->packet = packet;
@@ -82,14 +82,14 @@ SILC_FSM_STATE(silc_server_st_packet_command_reply)
   if (!cmd->payload) {
     SILC_LOG_DEBUG(("Bad command reply payload"));
     silc_server_command_reply_free(cmd);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   /* Client is allowed to send reply only to WHOIS command. */
   if (data->type == SILC_CONN_CLIENT &&
       silc_command_get(cmd->payload) != SILC_COMMAND_WHOIS) {
     silc_server_command_reply_free(cmd);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   /* Get all command pending for this reply */
@@ -171,13 +171,13 @@ SILC_FSM_STATE(silc_server_st_packet_command_reply)
     SILC_LOG_DEBUG(("Unknown command %d", silc_command_get(cmd->payload)));
     cmd->pending = NULL;
     silc_server_command_reply_free(cmd);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
     break;
   }
 
   /* Statistics */
 
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 
@@ -196,7 +196,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_whois)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 
@@ -215,7 +215,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_whowas)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 
@@ -234,7 +234,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_identify)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 
@@ -253,7 +253,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_list)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 
@@ -272,7 +272,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_info)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 
@@ -319,7 +319,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_stats)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 
@@ -338,7 +338,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_ping)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 
@@ -357,7 +357,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_join)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 
@@ -376,7 +376,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_motd)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 
@@ -395,7 +395,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_watch)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 
@@ -414,7 +414,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_users)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 
@@ -493,7 +493,7 @@ SILC_FSM_STATE(silc_server_st_command_reply_getkey)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 
@@ -512,5 +512,5 @@ SILC_FSM_STATE(silc_server_st_command_reply_service)
  err:
   silc_server_command_reply_free(cmd);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }

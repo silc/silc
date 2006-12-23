@@ -6,7 +6,7 @@ SilcSchedule schedule;
 
 typedef struct {
   SilcFSM fsm;
-  SilcFSMSemaStruct sema;
+  SilcFSMEventStruct sema;
   SilcFSMThreadStruct thread;
   SilcNetListener server;
   SilcStream client_stream;
@@ -30,7 +30,7 @@ static void test_accept_connection(SilcNetStatus status, SilcStream stream,
   SILC_LOG_DEBUG(("Accepted new connection"));
   f->client_status = status;
   f->client_stream = stream;
-  SILC_FSM_SEMA_POST(&f->sema);
+  SILC_FSM_EVENT_SIGNAL(&f->sema);
 }
 
 static void test_connected(SilcNetStatus status, SilcStream stream,
@@ -66,13 +66,13 @@ SILC_FSM_STATE(test_st_connected)
 
   if (f->server_status != SILC_NET_OK) {
     SILC_LOG_DEBUG(("Creating connection failed"));
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   silc_socket_stream_get_info(f->server_stream, NULL, &host, &ip, &port);
   SILC_LOG_DEBUG(("Connected to server %s, %s:%d", host, ip, port));
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(test_st_start)
@@ -89,7 +89,7 @@ SILC_FSM_STATE(test_st_start)
     /** Creating network listener failed */
     SILC_LOG_DEBUG(("Listener creation failed"));
     silc_fsm_next(fsm, test_st_finish);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Create thread to connect to the listener */
@@ -98,9 +98,9 @@ SILC_FSM_STATE(test_st_start)
 
   /** Start waiting connection */
   SILC_LOG_DEBUG(("Start waiting for incoming connections"));
-  silc_fsm_sema_init(&f->sema, fsm, 0);
+  silc_fsm_event_init(&f->sema, fsm);
   silc_fsm_next(fsm, test_st_second);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_st_second)
@@ -111,13 +111,13 @@ SILC_FSM_STATE(test_st_second)
 
   SILC_LOG_DEBUG(("test_st_second"));
 
-  SILC_FSM_SEMA_WAIT(&f->sema);
+  SILC_FSM_EVENT_WAIT(&f->sema);
 
   if (f->client_status != SILC_NET_OK) {
     /** Accepting new connection failed */
     SILC_LOG_DEBUG(("Accepting failed %d", f->client_status));
     silc_fsm_next(fsm, test_st_finish);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   silc_socket_stream_get_info(f->client_stream, NULL, &host, &ip, &port);
@@ -148,7 +148,7 @@ SILC_FSM_STATE(test_st_finish)
   silc_net_close_listener(f->server);
 
   SILC_LOG_DEBUG(("Finish machine"));
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 static void destructor(SilcFSM fsm, void *fsm_context,

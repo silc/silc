@@ -1120,7 +1120,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_start)
   if (ske->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_ske_st_initiator_aborted);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Encode the payload */
@@ -1130,7 +1130,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_start)
     /** Error encoding Start Payload */
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Save the the payload buffer for future use. It is later used to
@@ -1145,7 +1145,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_start)
     SILC_LOG_DEBUG(("Error sending packet"));
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* XXX timeout */
@@ -1153,7 +1153,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_start)
   /** Wait for responder proposal */
   SILC_LOG_DEBUG(("Waiting for reponder proposal"));
   silc_fsm_next(fsm, silc_ske_st_initiator_phase1);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 /* Phase-1.  Receives responder's proposal */
@@ -1177,7 +1177,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
     silc_ske_install_retransmission(ske);
     silc_packet_free(ske->packet);
     ske->packet = NULL;
-    return SILC_FSM_WAIT;
+    SILC_FSM_WAIT;
   }
 
   /* Decode the payload */
@@ -1188,7 +1188,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
     ske->packet = NULL;
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Get remote ID and set it to stream */
@@ -1221,7 +1221,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
     SILC_LOG_ERROR(("Invalid cookie, modified or unsupported feature"));
     ske->status = SILC_SKE_STATUS_INVALID_COOKIE;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Check version string */
@@ -1231,7 +1231,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
     /** Version mismatch */
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Free our KE Start Payload context, we don't need it anymore. */
@@ -1274,7 +1274,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
 
   /** Send KE Payload */
   silc_fsm_next(fsm, silc_ske_st_initiator_phase2);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 
  err:
   if (payload)
@@ -1296,7 +1296,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
   /** Error */
   ske->status = status;
   silc_fsm_next(fsm, silc_ske_st_initiator_error);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Phase-2.  Send KE payload */
@@ -1318,7 +1318,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
     /** Out of memory */
     ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
   silc_mp_init(x);
   status =
@@ -1331,7 +1331,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
     silc_free(x);
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Encode the result to Key Exchange Payload. */
@@ -1343,7 +1343,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
     silc_free(x);
     ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
   ske->ke1_payload = payload;
 
@@ -1365,7 +1365,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
     ske->ke1_payload = NULL;
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
   payload->pk_len = pk_len;
   payload->pk_type = silc_pkcs_get_type(ske->public_key);
@@ -1396,7 +1396,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
       ske->ke1_payload = NULL;
       ske->status = SILC_SKE_STATUS_SIGNATURE_ERROR;
       silc_fsm_next(fsm, silc_ske_st_initiator_error);
-      return SILC_FSM_CONTINUE;
+      SILC_FSM_CONTINUE;
     }
     payload->sign_data = silc_memdup(sign, sign_len);
     if (payload->sign_data)
@@ -1416,7 +1416,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
     ske->ke1_payload = NULL;
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   ske->x = x;
@@ -1431,14 +1431,14 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
     SILC_LOG_DEBUG(("Error sending packet"));
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   silc_buffer_free(payload_buf);
 
   /** Waiting responder's KE payload */
   silc_fsm_next(fsm, silc_ske_st_initiator_phase3);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 /* Phase-3.  Process responder's KE payload */
@@ -1458,7 +1458,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
     silc_ske_install_retransmission(ske);
     silc_packet_free(ske->packet);
     ske->packet = NULL;
-    return SILC_FSM_WAIT;
+    SILC_FSM_WAIT;
   }
 
   /* Decode the payload */
@@ -1469,7 +1469,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
     ske->packet = NULL;
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
   silc_packet_free(ske->packet);
   ske->packet = NULL;
@@ -1535,7 +1535,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
 
   /** Process key material */
   silc_fsm_next(fsm, silc_ske_st_initiator_phase4);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 
  err:
   silc_ske_payload_ke_free(payload);
@@ -1551,7 +1551,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
   /** Error */
   ske->status = status;
   silc_fsm_next(fsm, silc_ske_st_initiator_error);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Process key material */
@@ -1568,7 +1568,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
   if (ske->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_ske_st_initiator_aborted);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Check result of public key verification */
@@ -1576,7 +1576,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
     /** Public key not verified */
     SILC_LOG_DEBUG(("Public key verification failed"));
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   payload = ske->ke2_payload;
@@ -1612,7 +1612,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
   if (ske->rekey) {
     /** Finish rekey */
     silc_fsm_next(fsm, silc_ske_st_rekey_initiator_done);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Process key material */
@@ -1635,12 +1635,12 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
     SILC_LOG_DEBUG(("Error sending packet"));
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /** Waiting completion */
   silc_fsm_next(fsm, silc_ske_st_initiator_end);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 
  err:
   memset(hash, 'F', sizeof(hash));
@@ -1663,7 +1663,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
   /** Error */
   ske->status = status;
   silc_fsm_next(fsm, silc_ske_st_initiator_error);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Protocol completed */
@@ -1679,7 +1679,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
     silc_ske_install_retransmission(ske);
     silc_packet_free(ske->packet);
     ske->packet = NULL;
-    return SILC_FSM_WAIT;
+    SILC_FSM_WAIT;
   }
 
   SILC_LOG_DEBUG(("Key exchange completed successfully"));
@@ -1689,7 +1689,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Aborted by application */
@@ -1708,7 +1708,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_aborted)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Error occurred.  Send error to remote host */
@@ -1733,7 +1733,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_error)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Failure received from remote */
@@ -1756,7 +1756,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_failure)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Starts the protocol as initiator */
@@ -1821,7 +1821,7 @@ SILC_FSM_STATE(silc_ske_st_responder_start)
   if (ske->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_ske_st_responder_aborted);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Start timeout */
@@ -1829,7 +1829,7 @@ SILC_FSM_STATE(silc_ske_st_responder_start)
 
   /** Wait for initiator */
   silc_fsm_next(fsm, silc_ske_st_responder_phase1);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 /* Decode initiator's start payload.  Select the security properties from
@@ -1852,7 +1852,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase1)
     ske->packet = NULL;
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Take a copy of the payload buffer for future use. It is used to
@@ -1889,7 +1889,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase1)
     silc_ske_payload_start_free(remote_payload);
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   silc_ske_payload_start_free(remote_payload);
@@ -1910,7 +1910,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase1)
 
   /** Waiting initiator's KE payload */
   silc_fsm_next(fsm, silc_ske_st_responder_phase2);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 
  err:
   if (ske->prop->group)
@@ -1930,7 +1930,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase1)
   /** Error */
   ske->status = status;
   silc_fsm_next(fsm, silc_ske_st_responder_error);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Phase-2.  Decode initiator's KE payload */
@@ -1949,7 +1949,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
     silc_ske_install_retransmission(ske);
     silc_packet_free(ske->packet);
     ske->packet = NULL;
-    return SILC_FSM_WAIT;
+    SILC_FSM_WAIT;
   }
 
   /* Decode Key Exchange Payload */
@@ -1960,7 +1960,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
     ske->packet = NULL;
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   ske->ke1_payload = recv_payload;
@@ -1982,7 +1982,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
 		      "certificate), even though we require it"));
       ske->status = SILC_SKE_STATUS_PUBLIC_KEY_NOT_PROVIDED;
       silc_fsm_next(fsm, silc_ske_st_responder_error);
-      return SILC_FSM_CONTINUE;
+      SILC_FSM_CONTINUE;
     }
 
     /* Decode the remote's public key */
@@ -1995,7 +1995,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
       SILC_LOG_ERROR(("Unsupported/malformed public key received"));
       ske->status = SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY;
       silc_fsm_next(fsm, silc_ske_st_responder_error);
-      return SILC_FSM_CONTINUE;
+      SILC_FSM_CONTINUE;
     }
 
     if (ske->prop->public_key && (ske->callbacks->verify_key ||
@@ -2013,7 +2013,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
 	if (!find) {
 	  ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
 	  silc_fsm_next(fsm, silc_ske_st_responder_error);
-	  return SILC_FSM_CONTINUE;
+	  SILC_FSM_CONTINUE;
 	}
 	silc_skr_find_set_pkcs_type(find,
 				    silc_pkcs_get_type(ske->prop->public_key));
@@ -2035,7 +2035,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
 
   /** Generate KE2 payload */
   silc_fsm_next(fsm, silc_ske_st_responder_phase4);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Phase-4. Generate KE2 payload */
@@ -2050,7 +2050,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
   if (ske->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_ske_st_responder_aborted);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Check result of public key verification */
@@ -2058,7 +2058,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
     /** Public key not verified */
     SILC_LOG_DEBUG(("Public key verification failed"));
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   recv_payload = ske->ke1_payload;
@@ -2078,7 +2078,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
       /** Error computing hash */
       ske->status = status;
       silc_fsm_next(fsm, silc_ske_st_responder_error);
-      return SILC_FSM_CONTINUE;
+      SILC_FSM_CONTINUE;
     }
 
     SILC_LOG_DEBUG(("Verifying signature (HASH_i)"));
@@ -2090,7 +2090,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
       SILC_LOG_ERROR(("Signature verification failed, incorrect signature"));
       ske->status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
       silc_fsm_next(fsm, silc_ske_st_responder_error);
-      return SILC_FSM_CONTINUE;
+      SILC_FSM_CONTINUE;
     }
 
     SILC_LOG_DEBUG(("Signature is Ok"));
@@ -2111,7 +2111,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
     silc_free(x);
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Save the results for later processing */
@@ -2137,7 +2137,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
 
   /** Send KE2 payload */
   silc_fsm_next(fsm, silc_ske_st_responder_phase5);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Phase-5.  Send KE2 payload */
@@ -2161,7 +2161,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
       /** Error encoding public key */
       status = SILC_SKE_STATUS_OUT_OF_MEMORY;
       silc_fsm_next(fsm, silc_ske_st_responder_error);
-      return SILC_FSM_CONTINUE;
+      SILC_FSM_CONTINUE;
     }
     ske->ke2_payload->pk_data = pk;
     ske->ke2_payload->pk_len = pk_len;
@@ -2175,7 +2175,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
       /** Error computing hash */
       ske->status = status;
       silc_fsm_next(fsm, silc_ske_st_responder_error);
-      return SILC_FSM_CONTINUE;
+      SILC_FSM_CONTINUE;
     }
 
     ske->hash = silc_memdup(hash, hash_len);
@@ -2189,7 +2189,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
       /** Error computing signature */
       status = SILC_SKE_STATUS_SIGNATURE_ERROR;
       silc_fsm_next(fsm, silc_ske_st_responder_error);
-      return SILC_FSM_CONTINUE;
+      SILC_FSM_CONTINUE;
     }
     ske->ke2_payload->sign_data = silc_memdup(sign, sign_len);
     ske->ke2_payload->sign_len = sign_len;
@@ -2204,7 +2204,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
     /** Error encoding KE payload */
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Send the packet. */
@@ -2213,14 +2213,14 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
     SILC_LOG_DEBUG(("Error sending packet"));
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   silc_buffer_free(payload_buf);
 
   /** Waiting completion */
   silc_fsm_next(fsm, silc_ske_st_responder_end);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 /* Protocol completed */
@@ -2236,7 +2236,7 @@ SILC_FSM_STATE(silc_ske_st_responder_end)
     silc_ske_install_retransmission(ske);
     silc_packet_free(ske->packet);
     ske->packet = NULL;
-    return SILC_FSM_WAIT;
+    SILC_FSM_WAIT;
   }
   silc_packet_free(ske->packet);
   ske->packet = NULL;
@@ -2252,7 +2252,7 @@ SILC_FSM_STATE(silc_ske_st_responder_end)
     /** Error processing key material */
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Send SUCCESS packet */
@@ -2262,7 +2262,7 @@ SILC_FSM_STATE(silc_ske_st_responder_end)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Aborted by application */
@@ -2281,7 +2281,7 @@ SILC_FSM_STATE(silc_ske_st_responder_aborted)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Failure received from remote */
@@ -2303,7 +2303,7 @@ SILC_FSM_STATE(silc_ske_st_responder_failure)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Error occurred */
@@ -2325,7 +2325,7 @@ SILC_FSM_STATE(silc_ske_st_responder_error)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Starts the protocol as responder. */
@@ -2383,7 +2383,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_start)
   if (ske->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_ske_st_initiator_aborted);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* XXX timeout */
@@ -2393,7 +2393,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_start)
     /** No memory */
     ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Send REKEY packet to start rekey protocol */
@@ -2402,14 +2402,14 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_start)
     SILC_LOG_DEBUG(("Error sending packet"));
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* If doing rekey without PFS, move directly to the end of the protocol. */
   if (!ske->rekey->pfs) {
     /** Rekey without PFS */
     silc_fsm_next(fsm, silc_ske_st_rekey_initiator_done);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   status = silc_ske_group_get_by_number(ske->rekey->ske_group,
@@ -2417,12 +2417,12 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_start)
   if (status != SILC_SKE_STATUS_OK) {
     /** Unknown group */
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /** Rekey with PFS */
   silc_fsm_next(fsm, silc_ske_st_initiator_phase2);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Sends REKEY_DONE packet to finish the protocol. */
@@ -2446,7 +2446,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_done)
     /** Cannot allocate hash */
     ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
   hash_len = silc_hash_len(hash);
 
@@ -2473,7 +2473,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_done)
   if (!ske->keymat) {
     SILC_LOG_ERROR(("Error processing key material"));
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   ske->prop->cipher = send_key;
@@ -2486,7 +2486,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_done)
     /** Cannot get keys */
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Set the new keys into use.  This will also send REKEY_DONE packet.  Any
@@ -2497,12 +2497,12 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_done)
     SILC_LOG_DEBUG(("Cannot set new keys, error sending REKEY_DONE"));
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /** Wait for REKEY_DONE */
   silc_fsm_next(fsm, silc_ske_st_rekey_initiator_end);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 /* Rekey protocol end */
@@ -2520,7 +2520,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_end)
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
     silc_packet_free(ske->packet);
     ske->packet = NULL;
-    return SILC_FSM_WAIT;
+    SILC_FSM_WAIT;
   }
 
   silc_packet_get_keys(ske->stream, NULL, &receive_key, NULL, &hmac_receive);
@@ -2533,7 +2533,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_end)
     /** Cannot get keys */
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Set new receiving keys into use.  All packets received after this will
@@ -2544,7 +2544,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_end)
     SILC_LOG_DEBUG(("Cannot set new keys"));
     ske->status = SILC_SKE_STATUS_ERROR;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   SILC_LOG_DEBUG(("Rekey completed successfully"));
@@ -2555,7 +2555,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_end)
     /** No memory */
     ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
   rekey->pfs = ske->rekey->pfs;
   ske->rekey = rekey;
@@ -2567,7 +2567,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_end)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Starts rekey protocol as initiator */
@@ -2614,7 +2614,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_responder_start);
 
 SILC_FSM_STATE(silc_ske_st_rekey_responder_start)
 {
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Starts rekey protocol as responder */
@@ -2954,6 +2954,8 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
 			   SilcHmac *ret_hmac_receive,
 			   SilcHash *ret_hash)
 {
+  unsigned char iv[32];
+
   /* Allocate ciphers to be used in the communication */
   if (ret_send_key) {
     if (!silc_cipher_alloc((char *)silc_cipher_get_name(prop->cipher),
@@ -2979,16 +2981,31 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
   }
 
   /* Set key material */
+  memset(iv, 0, sizeof(iv));
   if (ske->responder) {
     if (ret_send_key) {
       silc_cipher_set_key(*ret_send_key, keymat->receive_enc_key,
 			  keymat->enc_key_len, TRUE);
-      silc_cipher_set_iv(*ret_send_key, keymat->receive_iv);
+
+      if (silc_cipher_get_mode(*ret_send_key) == SILC_CIPHER_MODE_CTR) {
+        memcpy(iv, ske->hash, 4);
+        memcpy(iv + 4, keymat->receive_iv, 4);
+        silc_cipher_set_iv(*ret_send_key, iv);
+      } else {
+	silc_cipher_set_iv(*ret_send_key, keymat->receive_iv);
+      }
     }
     if (ret_receive_key) {
       silc_cipher_set_key(*ret_receive_key, keymat->send_enc_key,
 			  keymat->enc_key_len, FALSE);
-      silc_cipher_set_iv(*ret_receive_key, keymat->send_iv);
+
+      if (silc_cipher_get_mode(*ret_receive_key) == SILC_CIPHER_MODE_CTR) {
+        memcpy(iv, ske->hash, 4);
+        memcpy(iv + 4, keymat->send_iv, 4);
+        silc_cipher_set_iv(*ret_receive_key, iv);
+      } else {
+	silc_cipher_set_iv(*ret_receive_key, keymat->send_iv);
+      }
     }
     if (ret_hmac_send)
       silc_hmac_set_key(*ret_hmac_send, keymat->receive_hmac_key,
@@ -3000,12 +3017,26 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
     if (ret_send_key) {
       silc_cipher_set_key(*ret_send_key, keymat->send_enc_key,
 			  keymat->enc_key_len, TRUE);
-      silc_cipher_set_iv(*ret_send_key, keymat->send_iv);
+
+      if (silc_cipher_get_mode(*ret_send_key) == SILC_CIPHER_MODE_CTR) {
+        memcpy(iv, ske->hash, 4);
+        memcpy(iv + 4, keymat->send_iv, 4);
+	silc_cipher_set_iv(*ret_send_key, iv);
+      } else {
+	silc_cipher_set_iv(*ret_send_key, keymat->send_iv);
+      }
     }
     if (ret_receive_key) {
       silc_cipher_set_key(*ret_receive_key, keymat->receive_enc_key,
 			  keymat->enc_key_len, FALSE);
-      silc_cipher_set_iv(*ret_receive_key, keymat->receive_iv);
+
+      if (silc_cipher_get_mode(*ret_receive_key) == SILC_CIPHER_MODE_CTR) {
+        memcpy(iv, ske->hash, 4);
+        memcpy(iv + 4, keymat->receive_iv, 4);
+	silc_cipher_set_iv(*ret_receive_key, iv);
+      } else {
+	silc_cipher_set_iv(*ret_receive_key, keymat->receive_iv);
+      }
     }
     if (ret_hmac_send)
       silc_hmac_set_key(*ret_hmac_send, keymat->send_hmac_key,

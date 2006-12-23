@@ -11,7 +11,7 @@ typedef struct FooStruct *Foo;
 
 typedef struct {
   SilcFSMThreadStruct thread;
-  SilcFSMSemaStruct sema;
+  SilcFSMEventStruct sema;
   SilcBool finished;
   int rounds;
   Foo f;
@@ -22,7 +22,7 @@ struct FooStruct {
   SilcFSM fsm;
   SilcFSMThreadStruct thread;
   int timeout;
-  SilcFSMSemaStruct sema;
+  SilcFSMEventStruct sema;
   SilcSchedule schedule;
   Callback cb;
   void *cb_context;
@@ -75,7 +75,7 @@ SILC_FSM_STATE(test_st_start)
   /** Move to second state */
   SILC_LOG_DEBUG(("Move to next state"));
   silc_fsm_next(fsm, test_st_second);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_st_second)
@@ -85,7 +85,7 @@ SILC_FSM_STATE(test_st_second)
   /** Move to second timeout state, timeout */
   SILC_LOG_DEBUG(("Move to next state with 2 second timeout"));
   silc_fsm_next_later(fsm, test_st_second_timeout, 2, 0);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 SILC_TASK_CALLBACK(test_second_timeout)
@@ -111,7 +111,7 @@ SILC_FSM_STATE(test_st_second_timeout)
   silc_fsm_next_later(fsm, test_st_third, 3, 0);
   silc_schedule_task_add_timeout(silc_fsm_get_schedule(fsm),
 				 test_second_timeout, f, 2, 500000);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 static void async_call_cb(void *context)
@@ -167,7 +167,7 @@ SILC_FSM_STATE(test_thread_st_start)
   /** Move to final state, timeout */
   SILC_LOG_DEBUG(("Move to final state with %d second timeout", f->timeout));
   silc_fsm_next_later(fsm, test_thread_st_finish, f->timeout, 0);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 SILC_FSM_STATE(test_thread_st_finish)
@@ -175,7 +175,7 @@ SILC_FSM_STATE(test_thread_st_finish)
   SILC_LOG_DEBUG(("test_thread_st_finish"));
 
   SILC_LOG_DEBUG(("Finishing the thread"));
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(test_st_fifth)
@@ -187,8 +187,8 @@ SILC_FSM_STATE(test_st_fifth)
 
   f->timeout = 7;
 
-  SILC_LOG_DEBUG(("Creating FSM semaphore"));
-  silc_fsm_sema_init(&f->sema, fsm, 0);
+  SILC_LOG_DEBUG(("Creating FSM event"));
+  silc_fsm_event_init(&f->sema, fsm);
 
   SILC_LOG_DEBUG(("Creating FSM thread"));
   silc_fsm_thread_init(&f->thread, fsm, f, NULL, NULL, TRUE);
@@ -198,8 +198,8 @@ SILC_FSM_STATE(test_st_fifth)
   /** Waiting thread to terminate, timeout */
   SILC_LOG_DEBUG(("Waiting for thread to terminate for 5 seconds"));
   silc_fsm_next(fsm, test_st_sixth);
-  SILC_FSM_SEMA_TIMEDWAIT(&f->sema, 5, 0, NULL);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_EVENT_TIMEDWAIT(&f->sema, 5, 0, NULL);
+  SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_thread2_st_start)
@@ -211,7 +211,7 @@ SILC_FSM_STATE(test_thread2_st_start)
   /** Move to final state, timeout */
   SILC_LOG_DEBUG(("Move to final state with %d second timeout", f->timeout));
   silc_fsm_next_later(fsm, test_thread2_st_finish, f->timeout, 0);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 SILC_FSM_STATE(test_thread2_st_finish)
@@ -220,10 +220,10 @@ SILC_FSM_STATE(test_thread2_st_finish)
   SILC_LOG_DEBUG(("test_thread2_st_finish"));
 
   SILC_LOG_DEBUG(("Post semaphore"));
-  SILC_FSM_SEMA_POST(&f->sema);
+  SILC_FSM_EVENT_SIGNAL(&f->sema);
 
   SILC_LOG_DEBUG(("Finishing the thread"));
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(test_st_sixth)
@@ -235,7 +235,7 @@ SILC_FSM_STATE(test_st_sixth)
   /** Move to next state, timeout */
   SILC_LOG_DEBUG(("Continue to next state with 4 second timeout"));
   silc_fsm_next_later(fsm, test_st_seventh, 4, 0);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 SILC_FSM_STATE(test_thread3_st_start)
@@ -243,15 +243,15 @@ SILC_FSM_STATE(test_thread3_st_start)
   T *t = fsm_context;
 
   if (t->rounds == 0) {
-    SILC_FSM_SEMA_POST(&t->sema);
-    return SILC_FSM_FINISH;
+    SILC_FSM_EVENT_SIGNAL(&t->sema);
+    SILC_FSM_FINISH;
   }
 
   t->rounds--;
 
   /** Call in recursive */
   silc_fsm_next(fsm, test_thread3_st_start);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_st_seventh)
@@ -266,7 +266,7 @@ SILC_FSM_STATE(test_st_seventh)
   for (i = 0; i < NUM_THREADS; i++) {
     f->threads[i].rounds = 10;
     f->threads[i].f = f;
-    silc_fsm_sema_init(&f->threads[i].sema, fsm, 0);
+    silc_fsm_event_init(&f->threads[i].sema, fsm);
     silc_fsm_thread_init(&f->threads[i].thread, fsm,
 			 &f->threads[i], NULL, NULL, FALSE);
     silc_fsm_start(&f->threads[i].thread, test_thread3_st_start);
@@ -274,7 +274,7 @@ SILC_FSM_STATE(test_st_seventh)
 
   /** Move to wait threads */
   silc_fsm_next(fsm, test_st_eighth);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_st_eighth)
@@ -284,7 +284,7 @@ SILC_FSM_STATE(test_st_eighth)
 
   for (i = 0; i < NUM_THREADS; i++) {
     if (f->threads[i].finished == FALSE) {
-      SILC_FSM_SEMA_WAIT(&f->threads[i].sema);
+      SILC_FSM_EVENT_WAIT(&f->threads[i].sema);
       f->threads[i].finished = TRUE;
     }
   }
@@ -293,7 +293,7 @@ SILC_FSM_STATE(test_st_eighth)
 
   /** Move to next thread */
   silc_fsm_next(fsm, test_st_ninth);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_thread4_st_start)
@@ -301,15 +301,15 @@ SILC_FSM_STATE(test_thread4_st_start)
   T *t = fsm_context;
 
   if (t->rounds == 0) {
-    SILC_FSM_SEMA_POST(&t->sema);
-    return SILC_FSM_FINISH;
+    SILC_FSM_EVENT_SIGNAL(&t->sema);
+    SILC_FSM_FINISH;
   }
 
   t->rounds--;
 
   /** Call in recursive */
   silc_fsm_next(fsm, test_thread4_st_start);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_st_ninth)
@@ -319,14 +319,14 @@ SILC_FSM_STATE(test_st_ninth)
 
   SILC_LOG_DEBUG(("test_st_ninth"));
 
-  SILC_LOG_DEBUG(("Creating FSM semaphore"));
-  silc_fsm_sema_init(&f->sema, fsm, NUM_THREADS + 1);
+  SILC_LOG_DEBUG(("Creating FSM event"));
+  silc_fsm_event_init(&f->sema, fsm);
 
   SILC_LOG_DEBUG(("Creating %d real FSM threads", NUM_THREADS));
   for (i = 0; i < NUM_THREADS; i++) {
     f->threads2[i].rounds = 10;
     f->threads2[i].f = f;
-    silc_fsm_sema_init(&f->threads2[i].sema, fsm, 0);
+    silc_fsm_event_init(&f->threads2[i].sema, fsm);
     silc_fsm_thread_init(&f->threads2[i].thread, fsm,
 			 &f->threads2[i], NULL, NULL, TRUE);
     silc_fsm_start(&f->threads2[i].thread, test_thread4_st_start);
@@ -334,7 +334,7 @@ SILC_FSM_STATE(test_st_ninth)
 
   /** Move to wait threads */
   silc_fsm_next(fsm, test_st_tenth);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_st_tenth)
@@ -344,7 +344,7 @@ SILC_FSM_STATE(test_st_tenth)
 
   for (i = 0; i < NUM_THREADS; i++)
     if (f->threads2[i].finished == FALSE) {
-      SILC_FSM_SEMA_WAIT(&f->threads2[i].sema);
+      SILC_FSM_EVENT_WAIT(&f->threads2[i].sema);
       f->threads2[i].finished = TRUE;
     }
 
@@ -352,7 +352,7 @@ SILC_FSM_STATE(test_st_tenth)
 
   /** Finished successfully */
   silc_fsm_next_later(fsm, test_st_finish, 2, 0);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 SILC_FSM_STATE(test_st_finish)
@@ -360,7 +360,7 @@ SILC_FSM_STATE(test_st_finish)
   SILC_LOG_DEBUG(("test_st_finish"));
 
   SILC_LOG_DEBUG(("Finish machine"));
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 static void destructor(SilcFSM fsm, void *fsm_context,

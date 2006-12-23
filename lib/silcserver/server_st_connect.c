@@ -32,5 +32,5 @@ SILC_FSM_STATE(silc_server_st_connect_router)
   /** Wait events */
   server->connect_router = FALSE;
   silc_fsm_next(fsm, silc_server_st_run);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
