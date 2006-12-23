@@ -1,3 +1,23 @@
+Thu Dec 21 18:01:51 EET 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Changed SILC_FSM_[CONTINUE|YIELD|WAIT|FINISH] enums to
+	  macros.  SILC_FSM_CONTINUE macro now immediately calls the
+	  next state instead of first returning back to FSM.  Helps
+	  in debugging crashes etc.
+
+          Removed FSM Semaphores.  Introduced FSM Event which is
+	  asynchronous event.   Affected files are in lib/.
+
+	* Added epoll(7) support to SILC Scheduler.  It is used by default
+	  if it is available.  Affected files are
+	  lib/silcutil/silcschedule.[ch],
+	  lib/silcutil/unix/silcunixschedule.c.
+
+Tue Dec 19 20:39:35 EET 2006  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added CTR mode to AES.  Simplified cipher implementation API
+	  more.  Affected files are in lib/silccrypt/.
+
 Sun Dec 17 16:46:55 EET 2006  Pekka Riikonen <priikone@silcnet.org>
 
 	* Removed `detach' client operation.  The detachment data is

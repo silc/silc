@@ -216,14 +216,6 @@ static bool silc_log_stderr(SilcLogType type, char *message, void *context)
   return TRUE;
 }
 
-static void silc_nickname_format_parse(const char *nickname,
-				       char **ret_nickname)
-{
-  char nick[128 + 1];
-  silc_parse_userfqdn(nickname, nick, sizeof(nick), NULL, 0);
-  *ret_nickname = strdup(nick);
-}
-
 static void silc_register_cipher(SilcClient client, const char *cipher)
 {
   int i;
@@ -521,7 +513,6 @@ void silc_core_init(void)
   /* Initialize client parameters */
   memset(&params, 0, sizeof(params));
   strcat(params.nickname_format, "%n@%h%a");
-  params.nickname_parse = silc_nickname_format_parse;
   params.connauth_request_secs = settings_get_int("connauth_request_secs");
 
   /* Allocate SILC client */

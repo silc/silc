@@ -6,7 +6,7 @@ NOTE: Any item that doesn't have (***DONE) in it, isn't done yet.  The
 tested.
 
 
-SILC Client
+SILC Client	****PARTLY DONE****
 ===========
 
  o Porting to new Toolkit API and new Client Library API
@@ -14,7 +14,7 @@ SILC Client
  o Improve help files, especially /cmode, /cumode and /key.
 
 
-lib/silcclient, The Client Library
+lib/silcclient, The Client Library	***PARTLY DONE****
 ==================================
 
  o silcclient.h clean up and API rewrites.
@@ -23,21 +23,22 @@ lib/silcclient, The Client Library
 
  o SilcChannelEntry, SilcServerEntry, SilcChannelUser, allocating, 
    freeing, finding, etc. rewrite.  Also making them reference counted for 
-   multi threads use.
+   multi threads use. (***DONE)
 
  o Finish all the missing SILC packet processings, rewrites.
 
- o The client_notify.c rewrite.
+ o The client_notify.c rewrite. (***TESTING NEEDED)
 
  o Resuming to client_register.c (remove client_resume.c)
+   (***TESTING NEEDED)
 
- o Rekey rewrite.
+ o Rekey rewrite. (***DONE)
 
- o Remove protocol.[ch].
+ o Remove protocol.[ch]. (***DONE)
 
  o File transfer rewrite.
 
- o Starting key exchange directly, rewrite.
+ o Starting key exchange directly, rewrite. (***DONE)
 
  o Channel messages, channel private keys, channel entires, channel 
    search, etc. rewrite.
@@ -48,29 +49,35 @@ lib/silcclient, The Client Library
 
  o Password auth test, public key auth test.
 
- o Key agreement rewrite.
+ o Key agreement rewrite. (***TESTING NEEDED)
 
- o Connecting to remote client, peer-to-peer private messages
+ o Connecting to remote client (***DONE)
+
+ o peer-to-peer private messages
 
  o Private message waiting API (in threads)
 
- o client_attrs.c, attributes rewrite.
+ o client_attrs.c, attributes rewrite. (***TESTING NEEDED)
 
  o No SilcBuffer lists back to application in command_reply operations.
    Convert them all to real lists and/or structures for easier use.
+   (***DONE)
 
- o Nickname formatting rewrite.
+ o Nickname formatting rewrite. (***TESTING NEEDED)
 
- o UDP connections.
-
- o Remove silc_client_run and silc_client_run_one from calling SilcSchedule.
-   Leave the scheduling entirely to application.
+ o UDP connections. (***TESTING NEEDED)
 
  o in /cmode and /cumode with +r, maybe the public key and private key
    could be just some "string", which would then match to "string.pub" and
    "string.prv".
 
  o All packet waiting timeout tests and error condition tests.
+
+
+lib/silcsftp
+============
+
+ o Porting to use the new util library.
 
 
 lib/silccore/silcpacket.[ch]	****DONE****
@@ -112,13 +119,13 @@ lib/silcskr
    be.
 
 
-lib/silcske/silcske.[ch]
+lib/silcske/silcske.[ch] ****PARTLY DONE****
 ========================
 
- o IV Included flag support in SKE (***TESTING NEEDED)
+ o IV Included flag support in SKE (***DONE)
 
  o UDP transport changes; retransmission support by using exponential
-   backoff algorithm.
+   backoff algorithm. (***DONE)
 
  o SilcConnAuth header file documentation.
 
@@ -146,8 +153,7 @@ lib/silccrypt			****PARTLY DONE****
 
  o Add DSS support.
 
- o Cipher optimizations (asm, that this) at least for i386 would be nice.
-   Take Gladman's AES ASM.
+ o Assembler AES (***DONE)
 
  o ECDSA and ECDH.
 
@@ -169,7 +175,6 @@ lib/silcutil			****PARTLY DONE****
 
  o Silc FD Stream to WIN32 (lib/silcutil/silcfdstream.h)
 
-
 lib/silcutil/silcbuffer.h	****DONE****
 =========================
 
@@ -182,7 +187,7 @@ lib/silcutil/silcbuffer.h	****DONE****
    totally 8 bytes of memory per buffer. (***DONE)
 
 
-lib/silcutil/silcbuffmt.[ch]	****PARTLY DONE****
+lib/silcutil/silcbuffmt.[ch]	****DONE****
 ============================
 
  o SilcStack aware silc_buffer_unformat (***DONE)
@@ -218,7 +223,7 @@ lib/silcutil/silcsocketstream.[ch]	****PARTY DONE****
  o Test QoS after the changes made to socket stream
 
 
-lib/silcutil/silcschedule*.[ch]		****DONE****
+lib/silcutil/silcschedule*.[ch]		****PARTLY DONE****
 ===============================
 
  o Scheduler can be optimized for FD tasks by changing the fd_queue
@@ -281,25 +286,6 @@ lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
  o New network interfaces (***DONE)
 
 
-lib/silcsftp
-============
-
- o Porting to use the new util library.
-
-
-lib/silcutil/epoc/*
-===================
-
-  o lib/silcutil/epoc routines missing or not completed.
-
-  o The PKCS#1 also calls global RNG (even though it is not used
-    currently in SILC, the interface allows its use).
-
-  o Something needs to be thought to the logging globals as well,
-    like silc_debug etc.  They won't work on EPOC.  Perhaps logging
-    and debugging is to be disabled on EPOC.
-
-
 lib/silcmath
 ============
 
@@ -322,6 +308,19 @@ lib/silcmath
  o Test on x86_64.
 
  o All utility functions should be made non-allocating ones.
+
+
+lib/silcutil/epoc/*
+===================
+
+  o lib/silcutil/epoc routines missing or not completed.
+
+  o The PKCS#1 also calls global RNG (even though it is not used
+    currently in SILC, the interface allows its use).
+
+  o Something needs to be thought to the logging globals as well,
+    like silc_debug etc.  They won't work on EPOC.  Perhaps logging
+    and debugging is to be disabled on EPOC.
 
 
 lib/silcasn1			****PARTLY DONE****
