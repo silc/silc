@@ -54,27 +54,27 @@ Using FSM
    threads that need execution time also.
 
 
-When to use FSM semaphore signalling?
+When to use FSM event signalling?
 
-   FSM semaphore signalling should be used only when multiple threads
+   FSM event signalling should be used only when multiple threads
    (FSM threads) may be waiting for something to happen.  If only one thread
    is waiting for something it should merely return SILC_FSM_WAIT and when
    that something happens it should use silc_fsm_continue or
    silc_fsm_continue_sync to continue in the waiting thread.  OTOH, if
-   multiple threads are waiting SILC_FSM_SEMA_POST is the only way to
+   multiple threads are waiting SILC_FSM_EVENT_SIGNAL is the only way to
    deliver the signal.  Always remember that posting is signal is not
    donbe synchronously (it won't be delivered immediately).
 
    OTOH, if there is only one thread waiting for somtehing to happen but
    there can be multiple threads signalling that something has happened
-   only way to do this is to use semaphore signalling.
+   only way to do this is to use event signalling.
 
-   Semaphore signals should be pre-allocated SilcFSMSemaStruct structures
+   Event signals should be pre-allocated SilcFSMEventStruct structures
    and for signalling use they are always initialized as:
 
-     silc_fsm_sema_init(&sema, fsm, 0);
+     silc_fsm_event_init(&event, fsm);
 
-   The call cannot fail.  Semaphores need not be uninitialized and the same
+   The call cannot fail.  Events need not be uninitialized and the same
    context may be reused.
 
 Finishing threads when closing connection

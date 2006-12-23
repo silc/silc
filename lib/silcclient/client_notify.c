@@ -95,21 +95,21 @@ SILC_FSM_STATE(silc_client_notify)
   if (!payload) {
     SILC_LOG_DEBUG(("Malformed notify payload"));
     silc_packet_free(packet);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   if (!silc_notify_get_args(payload)) {
     SILC_LOG_DEBUG(("Malformed notify %d", silc_notify_get_type(payload)));
     silc_notify_payload_free(payload);
     silc_packet_free(packet);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   notify = silc_calloc(1, sizeof(*notify));
   if (!notify) {
     silc_notify_payload_free(payload);
     silc_packet_free(packet);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   /* Save notify payload to packet context during processing */
@@ -206,11 +206,11 @@ SILC_FSM_STATE(silc_client_notify)
     silc_notify_payload_free(payload);
     silc_packet_free(packet);
     silc_free(notify);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
     break;
   }
 
-  return SILC_FSM_YIELD;
+  SILC_FSM_YIELD;
 }
 
 /* Notify processed, finish the packet processing thread */
@@ -224,7 +224,7 @@ SILC_FSM_STATE(silc_client_notify_processed)
   silc_notify_payload_free(payload);
   silc_packet_free(packet);
   silc_free(notify);
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /********************************** NONE ************************************/
@@ -245,7 +245,7 @@ SILC_FSM_STATE(silc_client_notify_none)
 
   /** Notify processed */
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************* INVITE ***********************************/
@@ -318,7 +318,7 @@ SILC_FSM_STATE(silc_client_notify_invite)
   /** Notify processed */
   silc_client_unref_channel(client, conn, channel);
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** JOIN ************************************/
@@ -379,7 +379,7 @@ SILC_FSM_STATE(silc_client_notify_join)
   }
 
   if (client_entry != conn->local_entry)
-    silc_client_nickname_format(client, conn, client_entry);
+    silc_client_nickname_format(client, conn, client_entry, FALSE);
 
   /* Join the client to channel */
   if (!silc_client_add_to_channel(client, conn, channel, client_entry, 0))
@@ -394,7 +394,7 @@ SILC_FSM_STATE(silc_client_notify_join)
   /** Notify processed */
   silc_client_unref_channel(client, conn, channel);
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** LEAVE ***********************************/
@@ -456,7 +456,7 @@ SILC_FSM_STATE(silc_client_notify_leave)
   /** Notify processed */
   silc_client_unref_channel(client, conn, channel);
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************* SIGNOFF **********************************/
@@ -503,7 +503,7 @@ SILC_FSM_STATE(silc_client_notify_signoff)
  out:
   /** Notify processed */
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /******************************** TOPIC_SET *********************************/
@@ -620,7 +620,7 @@ SILC_FSM_STATE(silc_client_notify_topic_set)
   /** Notify processed */
   silc_client_unref_channel(client, conn, channel);
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /****************************** NICK_CHANGE *********************************/
@@ -704,7 +704,7 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
   /** Notify processed */
   silc_client_unref_client(client, conn, client_entry);
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /****************************** CMODE_CHANGE ********************************/
@@ -884,7 +884,7 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
 
   /** Notify processed */
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /***************************** CUMODE_CHANGE ********************************/
@@ -1022,7 +1022,7 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
 
   /** Notify processed */
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************* MOTD *************************************/
@@ -1053,7 +1053,7 @@ SILC_FSM_STATE(silc_client_notify_motd)
  out:
   /** Notify processed */
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /**************************** CHANNEL CHANGE ********************************/
@@ -1108,7 +1108,7 @@ SILC_FSM_STATE(silc_client_notify_channel_change)
   /** Notify processed */
   silc_client_unref_channel(client, conn, channel);
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /******************************** KICKED ************************************/
@@ -1204,7 +1204,7 @@ SILC_FSM_STATE(silc_client_notify_kicked)
   /** Notify processed */
   silc_client_unref_channel(client, conn, channel);
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /******************************** KILLED ************************************/
@@ -1307,7 +1307,7 @@ SILC_FSM_STATE(silc_client_notify_killed)
 
   /** Notify processed */
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /**************************** SERVER SIGNOFF ********************************/
@@ -1359,7 +1359,7 @@ SILC_FSM_STATE(silc_client_notify_server_signoff)
   /** Notify processed */
   silc_client_list_free(client, conn, clients);
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /******************************** ERROR *************************************/
@@ -1406,7 +1406,7 @@ SILC_FSM_STATE(silc_client_notify_error)
  out:
   /** Notify processed */
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /******************************** WATCH *************************************/
@@ -1465,11 +1465,8 @@ SILC_FSM_STATE(silc_client_notify_watch)
   if (tmp) {
     char *tmp_nick = NULL;
 
-    if (client->internal->params->nickname_parse)
-      client->internal->params->nickname_parse(client_entry->nickname,
-					       &tmp_nick);
-    else
-      tmp_nick = strdup(tmp);
+    silc_client_nickname_parse(client, conn, client_entry->nickname,
+			       &tmp_nick);
 
     /* If same nick, the client was new to us and has become "present"
        to network.  Send NULL as nick to application. */
@@ -1517,5 +1514,5 @@ SILC_FSM_STATE(silc_client_notify_watch)
   /** Notify processed */
   silc_client_unref_client(client, conn, client_entry);
   silc_fsm_next(fsm, silc_client_notify_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }

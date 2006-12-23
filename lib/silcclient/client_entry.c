@@ -730,7 +730,7 @@ SilcClientEntry silc_client_add_client(SilcClient client,
   }
 
   /* Format the nickname */
-  silc_client_nickname_format(client, conn, client_entry);
+  silc_client_nickname_format(client, conn, client_entry, FALSE);
 
   silc_mutex_lock(conn->internal->lock);
 
@@ -790,7 +790,8 @@ void silc_client_update_client(SilcClient client,
       return;
 
     /* Format nickname */
-    silc_client_nickname_format(client, conn, client_entry);
+    silc_client_nickname_format(client, conn, client_entry,
+				client_entry == conn->local_entry);
 
     /* Update cache entry */
     silc_mutex_lock(conn->internal->lock);
@@ -836,7 +837,8 @@ SilcBool silc_client_change_nickname(SilcClient client,
   memset(client_entry->nickname, 0, sizeof(client_entry->nickname));
   memcpy(client_entry->nickname, new_nick, strlen(new_nick));
   client_entry->nickname_normalized = tmp;
-  silc_client_nickname_format(client, conn, client_entry);
+  silc_client_nickname_format(client, conn, client_entry,
+			      client_entry == conn->local_entry);
 
   /* For my client entry, update ID and set new ID to packet stream */
   if (client_entry == conn->local_entry) {
@@ -955,11 +957,13 @@ void silc_client_list_free(SilcClient client, SilcClientConnection conn,
 /* Formats the nickname of the client specified by the `client_entry'.
    If the format is specified by the application this will format the
    nickname and replace the old nickname in the client entry. If the
-   format string is not specified then this function has no effect. */
+   format string is not specified then this function has no effect.
+   Returns the client entry that was formatted. */
 
-void silc_client_nickname_format(SilcClient client,
-				 SilcClientConnection conn,
-				 SilcClientEntry client_entry)
+SilcClientEntry silc_client_nickname_format(SilcClient client,
+					    SilcClientConnection conn,
+					    SilcClientEntry client_entry,
+					    SilcBool priority)
 {
   char *cp;
   char newnick[128 + 1];
@@ -968,44 +972,45 @@ void silc_client_nickname_format(SilcClient client,
   SilcDList clients;
   SilcClientEntry entry, unformatted = NULL;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Format nickname"));
 
   if (!client->internal->params->nickname_format[0])
-    return;
-
+    return client_entry;
   if (!client_entry->nickname[0])
-    return;
+    return NULL;
 
   /* Get all clients with same nickname. Do not perform the formatting
      if there aren't any clients with same nickname unless the application
      is forcing us to do so. */
   clients = silc_client_get_clients_local(client, conn,
 					  client_entry->nickname, NULL);
-  if (!clients && !client->internal->params->nickname_force_format)
-    return;
-
-  if (clients) {
-    len = 0;
-    freebase = TRUE;
-    while ((entry = silc_dlist_get(clients))) {
-      if (entry->internal.valid && entry != client_entry)
-	len++;
-      if (entry->internal.valid && entry != client_entry &&
-	  silc_utf8_strcasecmp(entry->nickname, client_entry->nickname)) {
-	freebase = FALSE;
-	unformatted = entry;
-      }
-    }
-    if (!len || freebase) {
-      silc_client_list_free(client, conn, clients);
-      return;
-    }
+  if (!clients)
+    return NULL;
+  if (silc_dlist_count(clients) == 1 &&
+      !client->internal->params->nickname_force_format) {
+    silc_client_list_free(client, conn, clients);
+    return client_entry;
   }
 
-  /* If we are changing nickname of our local entry we'll enforce
-     that we will always get the unformatted nickname.  Give our
-     format number to the one that is not formatted now. */
-  if (unformatted && client_entry == conn->local_entry)
+  len = 0;
+  freebase = TRUE;
+  while ((entry = silc_dlist_get(clients))) {
+    if (entry->internal.valid && entry != client_entry)
+      len++;
+    if (entry->internal.valid && entry != client_entry &&
+	silc_utf8_strcasecmp(entry->nickname, client_entry->nickname)) {
+      freebase = FALSE;
+      unformatted = entry;
+      break;
+    }
+  }
+  if (!len || freebase) {
+    silc_client_list_free(client, conn, clients);
+    return client_entry;
+  }
+
+  /* If priority formatting, this client always gets unformatted nickname. */
+  if (unformatted && priority)
     client_entry = unformatted;
 
   memset(newnick, 0, sizeof(newnick));
@@ -1066,20 +1071,18 @@ void silc_client_nickname_format(SilcClient client,
 	char tmp[6];
 	int num, max = 1;
 
-	if (clients && silc_dlist_count(clients) == 1)
+	if (silc_dlist_count(clients) == 1)
 	  break;
 
-	if (clients) {
-	  silc_dlist_start(clients);
-	  while ((entry = silc_dlist_get(clients))) {
-	    if (!silc_utf8_strncasecmp(entry->nickname, newnick, off))
-	      continue;
-	    if (strlen(entry->nickname) <= off)
-	      continue;
-	    num = atoi(&entry->nickname[off]);
-	    if (num > max)
-	      max = num;
-	  }
+	silc_dlist_start(clients);
+	while ((entry = silc_dlist_get(clients))) {
+	  if (!silc_utf8_strncasecmp(entry->nickname, newnick, off))
+	    continue;
+	  if (strlen(entry->nickname) <= off)
+	    continue;
+	  num = atoi(&entry->nickname[off]);
+	  if (num > max)
+	    max = num;
 	}
 
 	memset(tmp, 0, sizeof(tmp));
@@ -1102,6 +1105,79 @@ void silc_client_nickname_format(SilcClient client,
   newnick[off] = 0;
   memcpy(client_entry->nickname, newnick, strlen(newnick));
   silc_client_list_free(client, conn, clients);
+
+  return client_entry;
+}
+
+/* Parses nickname according to nickname format string */
+
+SilcBool silc_client_nickname_parse(SilcClient client,
+				    SilcClientConnection conn,
+				    char *nickname,
+				    char **ret_nick)
+{
+  char *cp, s = 0, e = 0, *nick;
+  SilcBool n = FALSE;
+  int len;
+
+  if (!client->internal->params->nickname_format[0])
+    return TRUE;
+
+  if (!nickname || !nickname[0])
+    return FALSE;
+
+  cp = client->internal->params->nickname_format;
+  while (cp && *cp) {
+    if (*cp == '%') {
+      cp++;
+      continue;
+    }
+
+    switch(*cp) {
+    case 'n':
+      n = TRUE;
+      break;
+
+    case 'h':
+    case 'H':
+    case 's':
+    case 'S':
+    case 'a':
+      break;
+
+    default:
+      /* Get separator character */
+      if (n)
+	e = *cp;
+      else
+	s = *cp;
+      break;
+    }
+
+     cp++;
+  }
+  if (!n)
+    return FALSE;
+
+  /* Parse the nickname */
+  nick = nickname;
+  len = strlen(nick);
+  if (s)
+    if (strchr(nickname, s))
+      nick = strchr(nickname, s) + 1;
+  if (e)
+    if (strchr(nick, e))
+      len = strchr(nick, e) - nick;
+  if (!len)
+    return FALSE;
+
+  *ret_nick = silc_memdup(nick, len);
+  if (!(*ret_nick))
+    return FALSE;
+
+  SILC_LOG_DEBUG(("Parsed nickname: %s", *ret_nick));
+
+  return TRUE;
 }
 
 /************************ Channel Searching Locally *************************/

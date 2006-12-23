@@ -66,8 +66,9 @@ bool silc_client_replace_channel_id(SilcClient client,
 				    SilcClientConnection conn,
 				    SilcChannelEntry channel,
 				    SilcChannelID *new_id);
-void silc_client_nickname_format(SilcClient client,
-				 SilcClientConnection conn,
-				 SilcClientEntry client_entry);
+SilcBool silc_client_nickname_parse(SilcClient client,
+				    SilcClientConnection conn,
+				    char *nickname,
+				    char **ret_nick);
 
 #endif /* CLIENT_ENTRY_H */

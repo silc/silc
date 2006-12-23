@@ -370,7 +370,7 @@ SILC_FSM_STATE(silc_client_st_connect)
       conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
 		     conn->callback_context);
       silc_fsm_next(fsm, silc_client_st_connect_error);
-      return SILC_FSM_CONTINUE;
+      SILC_FSM_CONTINUE;
     }
 
     /* Connect (UDP) */
@@ -404,7 +404,7 @@ SILC_FSM_STATE(silc_client_st_connect_set_stream)
   if (conn->internal->disconnected) {
     /** Disconnected */
     silc_fsm_next(fsm, silc_client_st_connect_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Create packet stream */
@@ -417,14 +417,14 @@ SILC_FSM_STATE(silc_client_st_connect_set_stream)
     conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
 		   conn->callback_context);
     silc_fsm_next(fsm, silc_client_st_connect_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   silc_packet_set_context(conn->stream, conn);
 
   /** Start key exchange */
   silc_fsm_next(fsm, silc_client_st_connect_key_exchange);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Starts key exchange protocol with remote host */
@@ -447,7 +447,7 @@ SILC_FSM_STATE(silc_client_st_connect_key_exchange)
     conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_KE, 0, NULL,
 		   conn->callback_context);
     silc_fsm_next(fsm, silc_client_st_connect_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Set SKE callbacks */
@@ -494,7 +494,7 @@ SILC_FSM_STATE(silc_client_st_connect_setup_udp)
   if (conn->internal->disconnected) {
     /** Disconnected */
     silc_fsm_next(fsm, silc_client_st_connect_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Create new UDP stream */
@@ -508,13 +508,12 @@ SILC_FSM_STATE(silc_client_st_connect_setup_udp)
     conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
 		   conn->callback_context);
     silc_fsm_next(fsm, silc_client_st_connect_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Set the new stream to packet stream */
   old = silc_packet_stream_get_stream(conn->stream);
-  silc_packet_stream_set_stream(conn->stream, stream,
-				conn->internal->schedule);
+  silc_packet_stream_set_stream(conn->stream, stream);
   silc_packet_stream_set_iv_included(conn->stream);
   silc_packet_set_sid(conn->stream, 0);
 
@@ -523,7 +522,7 @@ SILC_FSM_STATE(silc_client_st_connect_setup_udp)
 
   /** Start authentication */
   silc_fsm_next(fsm, silc_client_st_connect_auth);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Get authentication method to be used in authentication protocol */
@@ -538,7 +537,7 @@ SILC_FSM_STATE(silc_client_st_connect_auth)
   if (conn->internal->disconnected) {
     /** Disconnected */
     silc_fsm_next(fsm, silc_client_st_connect_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   silc_fsm_next(fsm, silc_client_st_connect_auth_start);
@@ -555,7 +554,7 @@ SILC_FSM_STATE(silc_client_st_connect_auth)
     conn->internal->params.auth = conn->private_key;
 
   /* We have authentication data */
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Start connection authentication with remote host */
@@ -571,7 +570,7 @@ SILC_FSM_STATE(silc_client_st_connect_auth_start)
   if (conn->internal->disconnected) {
     /** Disconnected */
     silc_fsm_next(fsm, silc_client_st_connect_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Allocate connection authentication protocol */
@@ -583,7 +582,7 @@ SILC_FSM_STATE(silc_client_st_connect_auth_start)
     conn->callback(client, conn, SILC_CLIENT_CONN_ERROR_AUTH, 0, NULL,
 		   conn->callback_context);
     silc_fsm_next(fsm, silc_client_st_connect_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /** Start connection authentication */
@@ -610,7 +609,7 @@ SILC_FSM_STATE(silc_client_st_connected)
   if (conn->internal->disconnected) {
     /** Disconnected */
     silc_fsm_next(fsm, silc_client_st_connect_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   SILC_LOG_DEBUG(("Connection established"));
@@ -634,7 +633,7 @@ SILC_FSM_STATE(silc_client_st_connected)
       silc_fsm_next(fsm, silc_client_st_register);
     }
 
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   silc_schedule_task_del_by_all(conn->internal->schedule, 0,
@@ -644,7 +643,7 @@ SILC_FSM_STATE(silc_client_st_connected)
   conn->callback(client, conn, SILC_CLIENT_CONN_SUCCESS, 0, NULL,
 		 conn->callback_context);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Error during connecting */
@@ -661,13 +660,13 @@ SILC_FSM_STATE(silc_client_st_connect_error)
   /* Signal to close connection */
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
-    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+    SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   }
 
   silc_schedule_task_del_by_all(conn->internal->schedule, 0,
 				silc_client_connect_timeout, conn);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /****************************** Connect rekey *******************************/
@@ -681,7 +680,7 @@ SILC_TASK_CALLBACK(silc_client_rekey_timer)
   /* Signal to start rekey */
   conn->internal->rekey_responder = FALSE;
   conn->internal->rekeying = TRUE;
-  SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+  SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
 
   /* Reinstall rekey timer */
   silc_schedule_task_add_timeout(conn->internal->schedule,
@@ -699,7 +698,7 @@ SILC_FSM_STATE(silc_client_st_rekey)
   SILC_LOG_DEBUG(("Rekey"));
 
   if (conn->internal->disconnected)
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
 
   /* Allocate SKE */
   conn->internal->ske =
@@ -707,7 +706,7 @@ SILC_FSM_STATE(silc_client_st_rekey)
 		   conn->internal->params.repository,
 		   conn->public_key, conn->private_key, fsm);
   if (!conn->internal->ske)
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
 
   /* Set SKE callbacks */
   silc_ske_set_callbacks(conn->internal->ske, NULL,

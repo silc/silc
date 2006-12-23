@@ -166,7 +166,7 @@ SILC_FSM_STATE(silc_client_channel_message)
   if (silc_unlikely(packet->dst_id_type != SILC_ID_CHANNEL)) {
     /** Invalid packet */
     silc_fsm_next(fsm, silc_client_channel_message_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (silc_unlikely(!silc_id_str2id(packet->src_id,
@@ -174,7 +174,7 @@ SILC_FSM_STATE(silc_client_channel_message)
 				    &remote_id, sizeof(remote_id)))) {
     /** Invalid source ID */
     silc_fsm_next(fsm, silc_client_channel_message_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Get sender client entry */
@@ -194,7 +194,7 @@ SILC_FSM_STATE(silc_client_channel_message)
 				    sizeof(channel_id)))) {
     /** Invalid destination ID */
     silc_fsm_next(fsm, silc_client_channel_message_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Find the channel */
@@ -202,7 +202,7 @@ SILC_FSM_STATE(silc_client_channel_message)
   if (silc_unlikely(!channel)) {
     /** Unknown channel */
     silc_fsm_next(fsm, silc_client_channel_message_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Check that user is on channel */
@@ -211,7 +211,7 @@ SILC_FSM_STATE(silc_client_channel_message)
     SILC_LOG_WARNING(("Message from user not on channel, client or "
 		      "server bug"));
     silc_fsm_next(fsm, silc_client_channel_message_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* If there is no channel private key then just decrypt the message
@@ -295,7 +295,7 @@ SILC_FSM_STATE(silc_client_channel_message)
   silc_client_unref_channel(client, conn, channel);
   if (payload)
     silc_message_payload_free(payload);
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Channel message error. */
@@ -304,7 +304,7 @@ SILC_FSM_STATE(silc_client_channel_message_error)
 {
   SilcPacket packet = state_context;
   silc_packet_free(packet);
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /******************************* Channel Key ********************************/
@@ -455,7 +455,7 @@ SILC_FSM_STATE(silc_client_channel_key)
   silc_client_save_channel_key(client, conn, &packet->buffer, NULL);
   silc_packet_free(packet);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /**************************** Channel Private Key ***************************/

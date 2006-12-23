@@ -117,7 +117,7 @@ SILC_FSM_STATE(silc_client_private_message)
   if (silc_unlikely(packet->src_id_type != SILC_ID_CLIENT)) {
     /** Invalid packet */
     silc_fsm_next(fsm, silc_client_private_message_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (silc_unlikely(!silc_id_str2id(packet->src_id, packet->src_id_len,
@@ -125,7 +125,7 @@ SILC_FSM_STATE(silc_client_private_message)
 				    sizeof(remote_id)))) {
     /** Invalid source ID */
     silc_fsm_next(fsm, silc_client_private_message_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Check whether we know this client already */
@@ -207,7 +207,7 @@ SILC_FSM_STATE(silc_client_private_message)
   silc_client_unref_client(client, conn, remote_client);
   if (payload)
     silc_message_payload_free(payload);
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Private message error. */
@@ -216,7 +216,7 @@ SILC_FSM_STATE(silc_client_private_message_error)
 {
   SilcPacket packet = state_context;
   silc_packet_free(packet);
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 #if 0 /* XXX we need to rethink this */
@@ -429,13 +429,13 @@ SILC_FSM_STATE(silc_client_private_message_key)
 
   if (packet->src_id_type != SILC_ID_CLIENT) {
     silc_packet_free(packet);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   if (!silc_id_str2id(packet->src_id, packet->src_id_len, SILC_ID_CLIENT,
 		      &remote_id, sizeof(remote_id))) {
     silc_packet_free(packet);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   /* Always resolve the remote client.  The actual packet is processed

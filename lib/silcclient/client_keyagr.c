@@ -649,14 +649,14 @@ SILC_FSM_STATE(silc_client_key_agreement)
   if (packet->src_id_type != SILC_ID_CLIENT) {
     /** Invalid packet */
     silc_fsm_next(fsm, silc_client_key_agreement_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (!silc_id_str2id(packet->src_id, packet->src_id_len, SILC_ID_CLIENT,
 		      &remote_id, sizeof(remote_id))) {
     /** Invalid source ID */
     silc_fsm_next(fsm, silc_client_key_agreement_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Check whether we know this client already */
@@ -677,7 +677,7 @@ SILC_FSM_STATE(silc_client_key_agreement)
     /** Malformed Payload */
     SILC_LOG_DEBUG(("Malformed key agreement payload"));
     silc_fsm_next(fsm, silc_client_key_agreement_error);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* If remote did not provide connection endpoint, we will assume that we
@@ -697,7 +697,7 @@ SILC_FSM_STATE(silc_client_key_agreement)
   silc_key_agreement_payload_free(payload);
 
   silc_packet_free(packet);
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Key agreement packet processing error */
@@ -706,5 +706,5 @@ SILC_FSM_STATE(silc_client_key_agreement_error)
 {
   SilcPacket packet = state_context;
   silc_packet_free(packet);
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }

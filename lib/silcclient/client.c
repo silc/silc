@@ -59,7 +59,7 @@ static void silc_client_connection_finished(SilcFSMThread fsm,
   /* Signal client that we have finished */
   silc_atomic_sub_int16(&client->internal->conns, 1);
   client->internal->connection_closed = TRUE;
-  SILC_FSM_SEMA_POST(&client->internal->wait_event);
+  SILC_FSM_EVENT_SIGNAL(&client->internal->wait_event);
 
   silc_fsm_free(fsm);
 }
@@ -147,7 +147,7 @@ static void silc_client_packet_eos(SilcPacketEngine engine,
   /* Signal to close connection */
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
-    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+    SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   }
 }
 
@@ -189,7 +189,7 @@ static void silc_client_connect_abort(SilcAsyncOperation op, void *context)
   /* Signal to close connection */
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
-    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+    SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   }
 }
 
@@ -210,17 +210,17 @@ SILC_FSM_STATE(silc_client_connection_st_start)
   connfsm = &conn->internal->fsm;
   silc_fsm_init(connfsm, conn, silc_client_connection_destructor,
 		fsm, conn->internal->schedule);
-  silc_fsm_sema_init(&conn->internal->wait_event, connfsm, 0);
+  silc_fsm_event_init(&conn->internal->wait_event, connfsm);
   silc_fsm_start_sync(connfsm, silc_client_connection_st_run);
 
   /* Schedule any events set in initialization */
   if (conn->internal->connect)
-    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+    SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   if (conn->internal->key_exchange)
-    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+    SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
 
   /* Wait until this thread is terminated from the machine destructor */
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 /* Connection machine main state.  This handles various connection related
@@ -233,7 +233,7 @@ SILC_FSM_STATE(silc_client_connection_st_run)
   SilcFSMThread thread;
 
   /* Wait for events */
-  SILC_FSM_SEMA_WAIT(&conn->internal->wait_event);
+  SILC_FSM_EVENT_WAIT(&conn->internal->wait_event);
 
   /* Process events */
   thread = &conn->internal->event_thread;
@@ -246,7 +246,7 @@ SILC_FSM_STATE(silc_client_connection_st_run)
     silc_fsm_thread_init(thread, &conn->internal->fsm, conn,
 			 NULL, NULL, FALSE);
     silc_fsm_start_sync(thread, silc_client_st_connect);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (conn->internal->key_exchange) {
@@ -257,7 +257,7 @@ SILC_FSM_STATE(silc_client_connection_st_run)
     silc_fsm_thread_init(thread, &conn->internal->fsm, conn,
 			 NULL, NULL, FALSE);
     silc_fsm_start_sync(thread, silc_client_st_connect_set_stream);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (conn->internal->rekeying) {
@@ -268,19 +268,19 @@ SILC_FSM_STATE(silc_client_connection_st_run)
     silc_fsm_thread_init(thread, &conn->internal->fsm, conn,
 			 NULL, NULL, FALSE);
     silc_fsm_start_sync(thread, silc_client_st_rekey);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (conn->internal->disconnected) {
     /** Event: disconnected */
     SILC_LOG_DEBUG(("Event: disconnected"));
     silc_fsm_next(fsm, silc_client_connection_st_close);
-    return SILC_FSM_YIELD;
+    SILC_FSM_YIELD;
   }
 
   /* NOT REACHED */
   SILC_ASSERT(FALSE);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Packet processor thread.  Each incoming packet is processed in FSM
@@ -365,19 +365,19 @@ SILC_FSM_STATE(silc_client_connection_st_packet)
     /* Signal to start rekey */
     conn->internal->rekey_responder = TRUE;
     conn->internal->rekeying = TRUE;
-    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+    SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
 
     silc_packet_free(packet);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
     break;
 
   default:
     silc_packet_free(packet);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
     break;
   }
 
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Disconnection event to close remote connection.  We close the connection
@@ -404,7 +404,7 @@ SILC_FSM_STATE(silc_client_connection_st_close)
     }
 
     /* Give threads time to finish */
-    return SILC_FSM_YIELD;
+    SILC_FSM_YIELD;
   }
 
   /* Abort ongoing event */
@@ -418,7 +418,7 @@ SILC_FSM_STATE(silc_client_connection_st_close)
   if (silc_fsm_is_started(&conn->internal->event_thread)) {
     SILC_LOG_DEBUG(("Finish event thread"));
     silc_fsm_continue_sync(&conn->internal->event_thread);
-    return SILC_FSM_YIELD;
+    SILC_FSM_YIELD;
   }
 
   SILC_LOG_DEBUG(("Closing remote connection"));
@@ -428,7 +428,7 @@ SILC_FSM_STATE(silc_client_connection_st_close)
 
   SILC_LOG_DEBUG(("Finishing connection machine"));
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Received error packet from server.  Send it to application. */
@@ -448,7 +448,7 @@ SILC_FSM_STATE(silc_client_error)
   silc_free(msg);
   silc_packet_free(packet);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Received disconnect packet from server.  We close the connection and
@@ -466,7 +466,7 @@ SILC_FSM_STATE(silc_client_disconnect)
 
   if (silc_buffer_len(&packet->buffer) < 1) {
     silc_packet_free(packet);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   status = (SilcStatus)packet->buffer.data[0];
@@ -490,10 +490,10 @@ SILC_FSM_STATE(silc_client_disconnect)
   /* Signal to close connection */
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
-    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+    SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   }
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /*************************** Main client machine ****************************/
@@ -505,7 +505,7 @@ SILC_FSM_STATE(silc_client_st_run)
   SilcClient client = fsm_context;
 
   /* Wait for events */
-  SILC_FSM_SEMA_WAIT(&client->internal->wait_event);
+  SILC_FSM_EVENT_WAIT(&client->internal->wait_event);
 
   /* Process events */
 
@@ -514,7 +514,7 @@ SILC_FSM_STATE(silc_client_st_run)
     SILC_LOG_DEBUG(("We are up, call running callback"));
     client->internal->run_callback = FALSE;
     client->internal->running(client, client->internal->running_context);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (client->internal->connection_closed) {
@@ -523,8 +523,8 @@ SILC_FSM_STATE(silc_client_st_run)
     client->internal->connection_closed = FALSE;
     if (silc_atomic_get_int16(&client->internal->conns) == 0 &&
 	client->internal->stop)
-      SILC_FSM_SEMA_POST(&client->internal->wait_event);
-    return SILC_FSM_CONTINUE;
+      SILC_FSM_EVENT_SIGNAL(&client->internal->wait_event);
+    SILC_FSM_CONTINUE;
   }
 
   if (client->internal->stop) {
@@ -533,12 +533,12 @@ SILC_FSM_STATE(silc_client_st_run)
     SILC_LOG_DEBUG(("Event: stop"));
     if (silc_atomic_get_int16(&client->internal->conns) == 0)
       silc_fsm_next(fsm, silc_client_st_stop);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* NOT REACHED */
   SILC_ASSERT(FALSE);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Stop event.  Stops the client library. */
@@ -557,7 +557,7 @@ SILC_FSM_STATE(silc_client_st_stop)
   if (client->internal->running)
     client->internal->running(client, client->internal->running_context);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /******************************* Private API ********************************/
@@ -853,7 +853,7 @@ void silc_client_close_connection(SilcClient client,
   /* Signal to close connection */
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
-    SILC_FSM_SEMA_POST(&conn->internal->wait_event);
+    SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   }
 }
 
@@ -1121,12 +1121,12 @@ SilcBool silc_client_init(SilcClient client, const char *username,
   client->internal->running = running;
   client->internal->running_context = context;
   silc_fsm_init(&client->internal->fsm, client, NULL, NULL, client->schedule);
-  silc_fsm_sema_init(&client->internal->wait_event, &client->internal->fsm, 0);
+  silc_fsm_event_init(&client->internal->wait_event, &client->internal->fsm);
   silc_fsm_start_sync(&client->internal->fsm, silc_client_st_run);
 
   /* Signal the application when we are running */
   client->internal->run_callback = TRUE;
-  SILC_FSM_SEMA_POST(&client->internal->wait_event);
+  SILC_FSM_EVENT_SIGNAL(&client->internal->wait_event);
 
   return TRUE;
 }
@@ -1163,5 +1163,5 @@ void silc_client_stop(SilcClient client, SilcClientStopped stopped,
 
   /* Signal to stop */
   client->internal->stop = TRUE;
-  SILC_FSM_SEMA_POST(&client->internal->wait_event);
+  SILC_FSM_EVENT_SIGNAL(&client->internal->wait_event);
 }

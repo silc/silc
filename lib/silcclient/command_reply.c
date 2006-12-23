@@ -47,7 +47,7 @@ do {								\
     ERROR_CALLBACK(cmd->error);						\
     silc_client_command_process_error(cmd, state_context, cmd->error);	\
     silc_fsm_next(fsm, silc_client_command_reply_processed);		\
-    return SILC_FSM_CONTINUE;						\
+    SILC_FSM_CONTINUE;						\
   }
 
 /* Check for correct arguments */
@@ -56,7 +56,7 @@ do {								\
       silc_argument_get_arg_num(args) > max) {			\
     ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);		\
     silc_fsm_next(fsm, silc_client_command_reply_processed);	\
-    return SILC_FSM_CONTINUE;					\
+    SILC_FSM_CONTINUE;					\
   }
 
 #define SAY cmd->conn->client->internal->ops->say
@@ -174,7 +174,7 @@ SILC_FSM_STATE(silc_client_command_reply)
   silc_packet_free(packet);
   if (!payload) {
     SILC_LOG_DEBUG(("Bad command reply packet"));
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   cmd_ident = silc_command_get_ident(payload);
@@ -196,7 +196,7 @@ SILC_FSM_STATE(silc_client_command_reply)
     SILC_LOG_DEBUG(("Unknown command reply %s, ident %d",
 		    silc_get_command_name(command), cmd_ident));
     silc_command_payload_free(payload);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   /* Signal command thread that command reply has arrived */
@@ -204,7 +204,7 @@ SILC_FSM_STATE(silc_client_command_reply)
   silc_fsm_next(&cmd->thread, silc_client_command_reply_process);
   silc_fsm_continue_sync(&cmd->thread);
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Wait here for command reply to arrive from remote host */
@@ -219,7 +219,7 @@ SILC_FSM_STATE(silc_client_command_reply_wait)
   silc_fsm_set_state_context(fsm, NULL);
   silc_fsm_next_later(fsm, silc_client_command_reply_timeout,
 		      cmd->cmd != SILC_COMMAND_PING ? 25 : 60, 0);
-  return SILC_FSM_WAIT;
+  SILC_FSM_WAIT;
 }
 
 /* Timeout occurred while waiting command reply */
@@ -233,7 +233,7 @@ SILC_FSM_STATE(silc_client_command_reply_timeout)
   if (conn->internal->disconnected) {
     SILC_LOG_DEBUG(("Command %s canceled", silc_get_command_name(cmd->cmd)));
     silc_list_del(conn->internal->pending_commands, cmd);
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
   SILC_LOG_DEBUG(("Command %s timeout", silc_get_command_name(cmd->cmd)));
@@ -241,7 +241,7 @@ SILC_FSM_STATE(silc_client_command_reply_timeout)
   /* Timeout, reply not received in timely fashion */
   silc_list_del(conn->internal->pending_commands, cmd);
   ERROR_CALLBACK(SILC_STATUS_ERR_TIMEDOUT);
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 /* Process received command reply payload */
@@ -363,10 +363,10 @@ SILC_FSM_STATE(silc_client_command_reply_process)
     silc_fsm_next(fsm, silc_client_command_reply_service);
     break;
   default:
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
   }
 
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /* Completes command reply processing */
@@ -381,7 +381,7 @@ SILC_FSM_STATE(silc_client_command_reply_processed)
 
   if (cmd->status == SILC_STATUS_OK || cmd->status == SILC_STATUS_LIST_END ||
       SILC_STATUS_IS_ERROR(cmd->status))
-    return SILC_FSM_FINISH;
+    SILC_FSM_FINISH;
 
   /* Add back to pending command reply list */
   silc_mutex_lock(conn->internal->lock);
@@ -391,7 +391,7 @@ SILC_FSM_STATE(silc_client_command_reply_processed)
 
   /** Wait more command payloads */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /******************************** WHOIS *************************************/
@@ -511,7 +511,7 @@ SILC_FSM_STATE(silc_client_command_reply_whois)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /******************************** WHOWAS ************************************/
@@ -559,7 +559,7 @@ SILC_FSM_STATE(silc_client_command_reply_whowas)
  out:
   silc_client_unref_client(client, conn, client_entry);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /******************************** IDENTIFY **********************************/
@@ -675,7 +675,7 @@ SILC_FSM_STATE(silc_client_command_reply_identify)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** NICK ************************************/
@@ -730,7 +730,7 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** LIST ************************************/
@@ -756,7 +756,7 @@ SILC_FSM_STATE(silc_client_command_reply_list)
     /* There were no channels in the network. */
     silc_client_command_callback(cmd, NULL, NULL, NULL, 0);
     silc_fsm_next(fsm, silc_client_command_reply_processed);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   CHECK_ARGS(3, 5);
@@ -792,7 +792,7 @@ SILC_FSM_STATE(silc_client_command_reply_list)
  out:
   silc_client_unref_channel(client, conn, channel_entry);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************* TOPIC ************************************/
@@ -840,7 +840,7 @@ SILC_FSM_STATE(silc_client_command_reply_topic)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************* INVITE ***********************************/
@@ -890,7 +890,7 @@ SILC_FSM_STATE(silc_client_command_reply_invite)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** KILL ************************************/
@@ -931,7 +931,7 @@ SILC_FSM_STATE(silc_client_command_reply_kill)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** INFO ************************************/
@@ -992,7 +992,7 @@ SILC_FSM_STATE(silc_client_command_reply_info)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** STATS ***********************************/
@@ -1049,7 +1049,7 @@ SILC_FSM_STATE(silc_client_command_reply_stats)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** PING ************************************/
@@ -1073,7 +1073,7 @@ SILC_FSM_STATE(silc_client_command_reply_ping)
   silc_client_command_callback(cmd);
 
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** JOIN ************************************/
@@ -1285,7 +1285,7 @@ SILC_FSM_STATE(silc_client_command_reply_join)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** MOTD ************************************/
@@ -1339,7 +1339,7 @@ SILC_FSM_STATE(silc_client_command_reply_motd)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** UMODE ***********************************/
@@ -1373,7 +1373,7 @@ SILC_FSM_STATE(silc_client_command_reply_umode)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** CMODE ***********************************/
@@ -1451,7 +1451,7 @@ SILC_FSM_STATE(silc_client_command_reply_cmode)
   if (public_key)
     silc_pkcs_public_key_free(public_key);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** CUMODE **********************************/
@@ -1522,7 +1522,7 @@ SILC_FSM_STATE(silc_client_command_reply_cumode)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** KICK ************************************/
@@ -1575,7 +1575,7 @@ SILC_FSM_STATE(silc_client_command_reply_kick)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /******************************** SILCOPER **********************************/
@@ -1594,7 +1594,7 @@ SILC_FSM_STATE(silc_client_command_reply_silcoper)
   silc_client_command_callback(cmd);
 
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** OPER ************************************/
@@ -1613,7 +1613,7 @@ SILC_FSM_STATE(silc_client_command_reply_oper)
   silc_client_command_callback(cmd);
 
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************* DETACH ***********************************/
@@ -1644,7 +1644,7 @@ SILC_FSM_STATE(silc_client_command_reply_detach)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** WATCH ***********************************/
@@ -1663,7 +1663,7 @@ SILC_FSM_STATE(silc_client_command_reply_watch)
   silc_client_command_callback(cmd);
 
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /*********************************** BAN ************************************/
@@ -1711,7 +1711,7 @@ SILC_FSM_STATE(silc_client_command_reply_ban)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** LEAVE ***********************************/
@@ -1757,7 +1757,7 @@ SILC_FSM_STATE(silc_client_command_reply_leave)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************* USERS ************************************/
@@ -1904,7 +1904,7 @@ SILC_FSM_STATE(silc_client_command_reply_users)
 
  out:
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** GETKEY **********************************/
@@ -1991,7 +1991,7 @@ SILC_FSM_STATE(silc_client_command_reply_getkey)
   if (public_key)
     silc_pkcs_public_key_free(public_key);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /********************************** SERVICE *********************************/
@@ -2020,7 +2020,7 @@ SILC_FSM_STATE(silc_client_command_reply_service)
   silc_client_command_callback(cmd, service_list, name);
 
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 /*********************************** QUIT ***********************************/
@@ -2030,5 +2030,5 @@ SILC_FSM_STATE(silc_client_command_reply_service)
 SILC_FSM_STATE(silc_client_command_reply_quit)
 {
   silc_fsm_next(fsm, silc_client_command_reply_processed);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }

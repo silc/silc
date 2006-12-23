@@ -610,25 +610,6 @@ typedef struct {
 } SilcClientOperations;
 /***/
 
-/****f* silcclient/SilcClientAPI/SilcNicknameFormatParse
- *
- * SYNOPSIS
- *
- *    typedef void (*SilcNicknameFormatParse)(const char *nickname,
- *                                            char **ret_nickname);
- *
- * DESCRIPTION
- *
- *    A callback function provided by the application for the library in
- *    SilcClientParams structure. This function parses the formatted
- *    nickname string `nickname' and returns the true nickname to the
- *    `ret_nickname' pointer. The library can call this function at
- *    any time.
- *
- ***/
-typedef void (*SilcNicknameFormatParse)(const char *nickname,
-					char **ret_nickname);
-
 /****s* silcclient/SilcClientAPI/SilcClientParams
  *
  * NAME
@@ -661,11 +642,9 @@ typedef struct {
      to save the nicknames in the library in a certain format. Since
      nicknames are not unique in SILC it is possible to have multiple same
      nicknames. Using this format string it is possible to order the library
-     to separate the multiple same nicknames from each other. The format
-     types are defined below and they can appear in any order in the format
-     string. If this is NULL then default format is used which is the
-     default nickname without anything else. The string MUST be NULL
-     terminated.
+     to separate the multiple same nicknames from each other. If this is
+     empty then default format is used which is the default nickname
+     without anything else. The string MUST be NULL terminated.
 
      Following format types are available:
 
@@ -681,11 +660,10 @@ typedef struct {
                              "%a!%n@%s"  (fe. nick@server, 2!nick@server)
 			     "%n@%H"     (fe. nick@host.domain.com)
 
-     By default this format is employed to the nicknames by the libary
-     only when there appears multiple same nicknames. If the library has
-     only one nickname cached the nickname is saved as is and without the
-     defined format. If you want always to save the nickname in the defined
-     format set the boolean field `nickname_force_format' to value TRUE.
+     Note that there must always be some separator characters around '%n'
+     format.  It is not possible to put format characters before or after
+     '%n' without separators (such ash '@').  Also note that the separator
+     character should be a character that cannot be part of normal nickname.
   */
   char nickname_format[32];
 
@@ -696,24 +674,6 @@ typedef struct {
      already saved in the cache. It is recommended to leave this to FALSE
      value. */
   SilcBool nickname_force_format;
-
-  /* A callback function provided by the application for the library to
-     parse the nickname from the formatted nickname string. Even though
-     the libary formats the nicknames the application knows generally the
-     format better so this function should be provided for the library
-     if the application sets the `nickname_format' field. The library
-     will call this to get the true nickname from the provided formatted
-     nickname string whenever it needs the true nickname. */
-  SilcNicknameFormatParse nickname_parse;
-
-  /* If this is set to TRUE then the client will ignore all incoming
-     Requested Attributes queries and does not reply anything back.  This
-     usually leads into situation where server does not anymore send
-     the queries after seeing that client does not reply anything back.
-     If your application does not support Requested Attributes or you do
-     not want to use them set this to TRUE.  See SilcAttribute and
-     silc_client_attribute_add for more information on attributes. */
-  SilcBool ignore_requested_attributes;
 
   /* If this is set to TRUE, the silcclient library will not register and
      deregister the cipher, pkcs, hash and hmac algorithms. The application
@@ -780,10 +740,10 @@ void silc_client_free(SilcClient client);
  *    the client ready to be run. One must call silc_client_run to run the
  *    client. Returns FALSE if error occurred, TRUE otherwise.
  *
- *    The `username', `hostname' and `realname' strings must be given and
- *    they must be UTF-8 encoded.  The `username' is the client's username
- *    in the operating system, `hostname' is the client's host name and
- *    the `realname' is the user's real name.
+ *    The `username' and `hostname' strings must be given and they must be
+ *    UTF-8 encoded.  The `username' is the client's username in the
+ *    operating system, `hostname' is the client's host name and the
+ *    `realname' is the user's real name.
  *
  *    The `running' callback is called after the client is running after
  *    silc_client_run or silc_client_run_one has been called.  Application
@@ -905,7 +865,7 @@ typedef struct {
   SilcUInt32 auth_len;
 
   /* If this boolean is set to TRUE then the connection will use UDP instead
-     of TCP.  If UDP is set the also the next `local_ip' and `local_port'
+     of TCP.  If UDP is set then also the next `local_ip' and `local_port'
      must be set. */
   SilcBool udp;
 
@@ -948,6 +908,15 @@ typedef struct {
      time interval.  If set to zero, the default value will be used
      (3600 seconds, 1 hour). */
   unsigned int rekey_secs;
+
+  /* If this is set to TRUE then the client will ignore all incoming
+     Requested Attributes queries and does not reply anything back.  This
+     usually leads into situation where server does not anymore send
+     the queries after seeing that client does not reply anything back.
+     If your application does not support Requested Attributes or you do
+     not want to use them set this to TRUE.  See SilcAttribute and
+     silc_client_attribute_add for more information on attributes. */
+  SilcBool ignore_requested_attributes;
 
 } SilcClientConnectionParams;
 /***/
@@ -1737,6 +1706,23 @@ void silc_client_current_channel_private_key(SilcClient client,
  *    There can be only one active key agreement for `client_entry'.  Old
  *    key agreement may be aborted by calling silc_client_abort_key_agreement.
  *
+ * EXAMPLE
+ *
+ *    // Send key agreement request (we don't provide connection endpoint)
+ *    silc_client_send_key_agreement(client, conn, remote_client,
+ *                                   NULL, public_key, private_key,
+ *                                   my_keyagr_completion, my_context);
+ *
+ *    // Another example where we provide connection endpoint (TCP).
+ *    SilcClientConnectionParams params;
+ *    memset(&params, 0, sizeof(params));
+ *    params.local_ip = local_ip;
+ *    params.local_port = local_port;
+ *    params.timeout_secs = 60;
+ *    silc_client_send_key_agreement(client, conn, remote_client,
+ *                                   &params, public_key, private_key,
+ *                                   my_keyagr_completion, my_context);
+ *
  ***/
 void silc_client_send_key_agreement(SilcClient client,
 				    SilcClientConnection conn,
@@ -2287,6 +2273,41 @@ SilcHashTable silc_client_attributes_get(SilcClient client,
  *
  ***/
 SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...);
+
+/****f* silcclient/SilcClientAPI/silc_client_nickname_format
+ *
+ * SYNOPSIS
+ *
+ *    SilcClientEntry
+ *    silc_client_nickname_format(SilcClient client,
+ *                                SilcClientConnection conn,
+ *                                SilcClientEntry client_entry,
+ *                                SilcBool priority);
+ *
+ * DESCRIPTION
+ *
+ *    Formats the nickname of `client_entry' according to the nickname
+ *    formatting rules set in SilcClientParams.  If the `priority' is TRUE
+ *    then the `client_entry' will always get the unformatted nickname.
+ *    If FALSE and there are more than one same nicknames in the client
+ *    the nickname will be formatted.
+ *
+ *    This returns NULL on error.  Otherwise, the client entry that was
+ *    formatted is returned.  If `priority' is FALSE this always returns
+ *    the `client_entry'.  If it is TRUE, this may return the client entry
+ *    that was formatted after giving the `client_entry' the unformatted
+ *    nickname.
+ *
+ *    Usually application does not need to call this function, as the library
+ *    automatically formats nicknames.  However, if application wants to
+ *    for example force the `client_entry' to always have the unformatted
+ *    nickname it may call this function to do so.
+ *
+ ***/
+SilcClientEntry silc_client_nickname_format(SilcClient client,
+					    SilcClientConnection conn,
+					    SilcClientEntry client_entry,
+					    SilcBool priority);
 
 #ifdef __cplusplus
 }

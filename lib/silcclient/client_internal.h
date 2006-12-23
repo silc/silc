@@ -138,7 +138,7 @@ typedef struct SilcClientCommandContextStruct {
 /* Internal context for the client->internal pointer in the SilcClient. */
 struct SilcClientInternalStruct {
   SilcFSMStruct fsm;			 /* Client's FSM */
-  SilcFSMSemaStruct wait_event;		 /* Event signaller */
+  SilcFSMEventStruct wait_event;		 /* Event signaller */
   SilcClientOperations *ops;		 /* Client operations */
   SilcClientParams *params;		 /* Client parameters */
   SilcPacketEngine packet_engine;        /* Packet engine */
@@ -160,7 +160,7 @@ struct SilcClientConnectionInternalStruct {
   SilcClientConnectionParams params;	 /* Connection parameters */
   SilcFSMStruct fsm;			 /* Connection FSM */
   SilcFSMThreadStruct event_thread;      /* FSM thread for events */
-  SilcFSMSemaStruct wait_event;		 /* Event signaller */
+  SilcFSMEventStruct wait_event;		 /* Event signaller */
   SilcSchedule schedule;		 /* Connection's scheduler */
   SilcMutex lock;		         /* Connection lock */
   SilcSKE ske;				 /* Key exchange protocol */
