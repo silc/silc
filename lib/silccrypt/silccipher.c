@@ -34,30 +34,42 @@ SilcDList silc_cipher_list = NULL;
 #endif /* SILC_EPOC */
 
 /* Macro to define cipher to cipher list */
-#define SILC_CIPHER_API_DEF(name, cipher, keylen, blocklen, ivlen)	\
+#define SILC_CIPHER_API_DEF(name, cipher, keylen, blocklen, ivlen, mode) \
 { name, silc_##cipher##_set_key, silc_##cipher##_encrypt,		\
   silc_##cipher##_decrypt, silc_##cipher##_context_len,			\
-  keylen, blocklen, ivlen }
+  keylen, blocklen, ivlen, mode }
 
 /* Static list of ciphers for silc_cipher_register_default(). */
 const SilcCipherObject silc_default_ciphers[] =
 {
-  SILC_CIPHER_API_DEF("aes-256-ctr", aes_ctr, 256, 16, 16),
-  SILC_CIPHER_API_DEF("aes-192-ctr", aes_ctr, 192, 16, 16),
-  SILC_CIPHER_API_DEF("aes-128-ctr", aes_ctr, 128, 16, 16),
-  SILC_CIPHER_API_DEF("aes-256-cbc", aes_cbc, 256, 16, 16),
-  SILC_CIPHER_API_DEF("aes-192-cbc", aes_cbc, 192, 16, 16),
-  SILC_CIPHER_API_DEF("aes-128-cbc", aes_cbc, 128, 16, 16),
-  SILC_CIPHER_API_DEF("twofish-256-cbc", twofish_cbc, 256, 16, 16),
-  SILC_CIPHER_API_DEF("twofish-192-cbc", twofish_cbc, 192, 16, 16),
-  SILC_CIPHER_API_DEF("twofish-128-cbc", twofish_cbc, 128, 16, 16),
-  SILC_CIPHER_API_DEF("cast-256-cbc", cast_cbc, 256, 16, 16),
-  SILC_CIPHER_API_DEF("cast-192-cbc", cast_cbc, 192, 16, 16),
-  SILC_CIPHER_API_DEF("cast-128-cbc", cast_cbc, 128, 16, 16),
+  SILC_CIPHER_API_DEF("aes-256-ctr", aes_ctr, 256, 16, 16,
+		      SILC_CIPHER_MODE_CTR),
+  SILC_CIPHER_API_DEF("aes-192-ctr", aes_ctr, 192, 16, 16,
+		      SILC_CIPHER_MODE_CTR),
+  SILC_CIPHER_API_DEF("aes-128-ctr", aes_ctr, 128, 16, 16,
+		      SILC_CIPHER_MODE_CTR),
+  SILC_CIPHER_API_DEF("aes-256-cbc", aes_cbc, 256, 16, 16,
+		      SILC_CIPHER_MODE_CBC),
+  SILC_CIPHER_API_DEF("aes-192-cbc", aes_cbc, 192, 16, 16,
+		      SILC_CIPHER_MODE_CBC),
+  SILC_CIPHER_API_DEF("aes-128-cbc", aes_cbc, 128, 16, 16,
+		      SILC_CIPHER_MODE_CBC),
+  SILC_CIPHER_API_DEF("twofish-256-cbc", twofish_cbc, 256, 16, 16,
+		      SILC_CIPHER_MODE_CBC),
+  SILC_CIPHER_API_DEF("twofish-192-cbc", twofish_cbc, 192, 16, 16,
+		      SILC_CIPHER_MODE_CBC),
+  SILC_CIPHER_API_DEF("twofish-128-cbc", twofish_cbc, 128, 16, 16,
+		      SILC_CIPHER_MODE_CBC),
+  SILC_CIPHER_API_DEF("cast-256-cbc", cast_cbc, 256, 16, 16,
+		      SILC_CIPHER_MODE_CBC),
+  SILC_CIPHER_API_DEF("cast-192-cbc", cast_cbc, 192, 16, 16,
+		      SILC_CIPHER_MODE_CBC),
+  SILC_CIPHER_API_DEF("cast-128-cbc", cast_cbc, 128, 16, 16,
+		      SILC_CIPHER_MODE_CBC),
 #ifdef SILC_DEBUG
-  SILC_CIPHER_API_DEF("none", none, 0, 0, 0),
+  SILC_CIPHER_API_DEF("none", none, 0, 0, 0, 0),
 #endif /* SILC_DEBUG */
-  { NULL, NULL, 0, 0, 0 }
+  { NULL, NULL, 0, 0, 0, 0 }
 };
 
 /* Register a new cipher into SILC. This is used at the initialization of
@@ -91,6 +103,7 @@ SilcBool silc_cipher_register(const SilcCipherObject *cipher)
   new->encrypt = cipher->encrypt;
   new->decrypt = cipher->decrypt;
   new->context_len = cipher->context_len;
+  new->mode = cipher->mode;
 
   /* Add to list */
   if (silc_cipher_list == NULL)
@@ -354,4 +367,11 @@ SilcUInt32 silc_cipher_get_iv_len(SilcCipher cipher)
 const char *silc_cipher_get_name(SilcCipher cipher)
 {
   return (const char *)cipher->cipher->name;
+}
+
+/* Returns cipher mode */
+
+SilcCipherMode silc_cipher_get_mode(SilcCipher cipher)
+{
+  return cipher->cipher->mode;
 }

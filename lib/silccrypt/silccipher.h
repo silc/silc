@@ -55,9 +55,10 @@ typedef struct {
   SilcBool (*decrypt)(void *, const unsigned char *, unsigned char *,
 		      SilcUInt32, unsigned char *);
   SilcUInt32 (*context_len)();
-  unsigned int key_len   : 12;
-  unsigned int block_len : 10;
-  unsigned int iv_len    : 10;
+  unsigned int key_len   : 10;
+  unsigned int block_len : 8;
+  unsigned int iv_len    : 8;
+  unsigned int mode      : 6;
 } SilcCipherObject;
 
 #define SILC_CIPHER_MAX_IV_SIZE 16
@@ -82,31 +83,49 @@ extern DLLAPI const SilcCipherObject silc_default_ciphers[];
 #define SILC_CIPHER_SIM_ENCRYPT "encrypt"
 #define SILC_CIPHER_SIM_DECRYPT "decrypt"
 #define SILC_CIPHER_SIM_CONTEXT_LEN "context_len"
-#define SILC_CIPHER_SIM_SET_IV "set_iv"
 
 /* These macros can be used to implement the SILC Crypto API and to avoid
    errors in the API these macros should be used always. */
 #define SILC_CIPHER_API_SET_KEY(cipher)				\
-SilcBool silc_##cipher##_set_key(void *context,		\
+SilcBool silc_##cipher##_set_key(void *context,			\
 				 const unsigned char *key,	\
 				 SilcUInt32 keylen,		\
 				 SilcBool encryption)
-#define SILC_CIPHER_API_ENCRYPT(cipher)			\
-SilcBool silc_##cipher##_encrypt(void *context,		\
+#define SILC_CIPHER_API_ENCRYPT(cipher)				\
+SilcBool silc_##cipher##_encrypt(void *context,			\
 				 const unsigned char *src,	\
 				 unsigned char *dst,		\
 				 SilcUInt32 len,		\
 				 unsigned char *iv)
 #define SILC_CIPHER_API_DECRYPT(cipher)				\
-SilcBool silc_##cipher##_decrypt(void *context,		\
+SilcBool silc_##cipher##_decrypt(void *context,			\
 				 const unsigned char *src,	\
 				 unsigned char *dst,		\
 				 SilcUInt32 len,		\
 				 unsigned char *iv)
 #define SILC_CIPHER_API_CONTEXT_LEN(cipher)	\
 SilcUInt32 silc_##cipher##_context_len()
-#define SILC_CIPHER_API_SET_IV(cipher)	\
-SilcBool silc_##cipher##_set_iv(void *context, const unsigned char *iv)
+
+/****d* silccrypt/SilcCipherAPI/SilcCipherMode
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcCipherMode;
+ *
+ * DESCRIPTION
+ *
+ *    Cipher modes.
+ *
+ * SOURCE
+ */
+typedef enum {
+  SILC_CIPHER_MODE_ECB = 1,	/* ECB mode */
+  SILC_CIPHER_MODE_CBC = 2,	/* CBC mode */
+  SILC_CIPHER_MODE_CTR = 3,	/* CTR mode */
+  SILC_CIPHER_MODE_CFB = 4,	/* CFB mode */
+  SILC_CIPHER_MODE_OFB = 5,	/* OFB mode */
+} SilcCipherMode;
+/***/
 
 /* Prototypes */
 
@@ -303,7 +322,8 @@ void silc_cipher_set_iv(SilcCipher cipher, const unsigned char *iv);
  * DESCRIPTION
  *
  *    Returns the IV (initial vector) of the cipher.  The returned
- *    pointer must not be freed by the caller.
+ *    pointer must not be freed by the caller.  If the caller modifies
+ *    the returned pointer the IV inside cipher is also modified.
  *
  ***/
 unsigned char *silc_cipher_get_iv(SilcCipher cipher);
@@ -359,5 +379,18 @@ SilcUInt32 silc_cipher_get_iv_len(SilcCipher cipher);
  *
  ***/
 const char *silc_cipher_get_name(SilcCipher cipher);
+
+/****f* silccrypt/SilcCipherAPI/silc_cipher_get_mode
+ *
+ * SYNOPSIS
+ *
+ *    SilcCipherMode silc_cipher_get_mode(SilcCipher cipher);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the cipher mode.
+ *
+ ***/
+SilcCipherMode silc_cipher_get_mode(SilcCipher cipher);
 
 #endif /* SILCCIPHER_H */
