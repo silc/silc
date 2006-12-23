@@ -20,7 +20,9 @@
 
 #include "silc.h"
 
-#if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+#if defined(HAVE_EPOLL_WAIT)
+#include <sys/epoll.h>
+#elif defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
 #include <poll.h>
 #endif
 
@@ -28,7 +30,11 @@ const SilcScheduleOps schedule_ops;
 
 /* Internal context. */
 typedef struct {
-#if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+#if defined(HAVE_EPOLL_WAIT)
+  struct epoll_event *fds;
+  SilcUInt32 fds_count;
+  int epfd;
+#elif defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
   struct rlimit nofile;
   struct pollfd *fds;
   SilcUInt32 fds_count;
@@ -51,7 +57,59 @@ typedef struct {
 #define SIGNAL_COUNT 32
 SilcUnixSignal signal_call[SIGNAL_COUNT];
 
-#if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+#if defined(HAVE_EPOLL_WAIT)
+
+/* Linux's fast epoll system (level triggered) */
+
+int silc_epoll(SilcSchedule schedule, void *context)
+{
+  SilcUnixScheduler internal = context;
+  SilcTaskFd task;
+  struct epoll_event *fds = internal->fds;
+  SilcUInt32 fds_count = internal->fds_count;
+  int ret, i, timeout = -1;
+
+  /* Allocate larger fd table if needed */
+  i = silc_hash_table_count(schedule->fd_queue);
+  if (i > fds_count) {
+    fds = silc_realloc(internal->fds, sizeof(*internal->fds) *
+		       (fds_count + (i / 2)));
+    if (silc_likely(fds)) {
+      internal->fds = fds;
+      internal->fds_count = fds_count = fds_count + (i / 2);
+    }
+  }
+
+  if (schedule->has_timeout)
+    timeout = ((schedule->timeout.tv_sec * 1000) +
+	       (schedule->timeout.tv_usec / 1000));
+
+  SILC_SCHEDULE_UNLOCK(schedule);
+  ret = epoll_wait(internal->epfd, fds, fds_count, timeout);
+  SILC_SCHEDULE_LOCK(schedule);
+  if (ret <= 0)
+    return ret;
+
+  silc_list_init(schedule->fd_dispatch, struct SilcTaskStruct, next);
+
+  for (i = 0; i < ret; i++) {
+    task = fds[i].data.ptr;
+    task->revents = 0;
+    if (!task->header.valid || !task->events) {
+      epoll_ctl(internal->epfd, EPOLL_CTL_DEL, task->fd, &fds[i]);
+      continue;
+    }
+    if (fds[i].events & EPOLLIN)
+      task->revents |= SILC_TASK_READ;
+    if (fds[i].events & EPOLLOUT)
+      task->revents |= SILC_TASK_WRITE;
+    silc_list_add(schedule->fd_dispatch, task);
+  }
+
+  return ret;
+}
+
+#elif defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
 
 /* Calls normal poll() system call. */
 
@@ -97,6 +155,7 @@ int silc_poll(SilcSchedule schedule, void *context)
     i++;
   }
   silc_hash_table_list_reset(&htl);
+  silc_list_init(schedule->fd_dispatch, struct SilcTaskStruct, next);
 
   if (schedule->has_timeout)
     timeout = ((schedule->timeout.tv_sec * 1000) +
@@ -115,12 +174,15 @@ int silc_poll(SilcSchedule schedule, void *context)
     if (!silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fds[i].fd),
 			      NULL, (void **)&task))
       continue;
+    if (!task->header.valid || !task->events)
+      continue;
 
     fd = fds[i].revents;
     if (fd & (POLLIN | POLLPRI | POLLERR | POLLHUP | POLLNVAL))
       task->revents |= SILC_TASK_READ;
     if (fd & POLLOUT)
       task->revents |= SILC_TASK_WRITE;
+    silc_list_add(schedule->fd_dispatch, task);
   }
 
   return ret;
@@ -161,6 +223,7 @@ int silc_select(SilcSchedule schedule, void *context)
     task->revents = 0;
   }
   silc_hash_table_list_reset(&htl);
+  silc_list_init(schedule->fd_dispatch, struct SilcTaskStruct, next);
 
   SILC_SCHEDULE_UNLOCK(schedule);
   ret = select(max_fd + 1, &in, &out, NULL, (schedule->has_timeout ?
@@ -171,7 +234,7 @@ int silc_select(SilcSchedule schedule, void *context)
 
   silc_hash_table_list(schedule->fd_queue, &htl);
   while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
-    if (!task->events)
+    if (!task->header.valid || !task->events)
       continue;
 
 #ifdef FD_SETSIZE
@@ -183,6 +246,7 @@ int silc_select(SilcSchedule schedule, void *context)
       task->revents |= SILC_TASK_READ;
     if (FD_ISSET(fd, &out))
       task->revents |= SILC_TASK_WRITE;
+    silc_list_add(schedule->fd_dispatch, task);
   }
   silc_hash_table_list_reset(&htl);
 
@@ -190,6 +254,44 @@ int silc_select(SilcSchedule schedule, void *context)
 }
 
 #endif /* HAVE_POLL && HAVE_SETRLIMIT && RLIMIT_NOFILE */
+
+/* Schedule `task' with events `event_mask'. Zero `event_mask' unschedules. */
+
+SilcBool silc_schedule_internal_schedule_fd(SilcSchedule schedule,
+					    void *context,
+					    SilcTaskFd task,
+					    SilcTaskEvent event_mask)
+{
+#if defined(HAVE_EPOLL_WAIT)
+  SilcUnixScheduler internal = (SilcUnixScheduler)context;
+  struct epoll_event event;
+
+  event.events = 0;
+  if (task->events & SILC_TASK_READ)
+    event.events |= (EPOLLIN | EPOLLPRI);
+  if (task->events & SILC_TASK_WRITE)
+    event.events |= EPOLLOUT;
+
+  /* Zero mask unschedules task */
+  if (silc_unlikely(!event.events)) {
+    epoll_ctl(internal->epfd, EPOLL_CTL_DEL, task->fd, &event);
+    return TRUE;
+  }
+
+  /* Schedule the task */
+  if (silc_unlikely(!task->scheduled)) {
+    event.data.ptr = task;
+    epoll_ctl(internal->epfd, EPOLL_CTL_ADD, task->fd, &event);
+    task->scheduled = TRUE;
+    return TRUE;
+  }
+
+  /* Schedule for specific mask */
+  event.data.ptr = task;
+  epoll_ctl(internal->epfd, EPOLL_CTL_MOD, task->fd, &event);
+#endif /* HAVE_EPOLL_WAIT */
+  return TRUE;
+}
 
 #ifdef SILC_THREADS
 
@@ -220,7 +322,17 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
   if (!internal)
     return NULL;
 
-#if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+#if defined(HAVE_EPOLL_WAIT)
+  internal->epfd = epoll_create(4);
+  if (internal->epfd < 0)
+    return NULL;
+  internal->fds = silc_calloc(4, sizeof(*internal->fds));
+  if (!internal->fds) {
+    close(internal->epfd);
+    return NULL;
+  }
+  internal->fds_count = 4;
+#elif defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
   getrlimit(RLIMIT_NOFILE, &internal->nofile);
 
   if (schedule->max_tasks > 0) {
@@ -291,7 +403,10 @@ void silc_schedule_internal_uninit(SilcSchedule schedule, void *context)
   close(internal->wakeup_pipe[1]);
 #endif
 
-#if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+#if defined(HAVE_EPOLL_WAIT)
+  close(internal->epfd);
+  silc_free(internal->fds);
+#elif defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
   silc_free(internal->fds);
 #endif /* HAVE_POLL && HAVE_SETRLIMIT && RLIMIT_NOFILE */
 
@@ -449,11 +564,14 @@ const SilcScheduleOps schedule_ops =
 {
   silc_schedule_internal_init,
   silc_schedule_internal_uninit,
-#if defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+#if defined(HAVE_EPOLL_WAIT)
+  silc_epoll,
+#elif defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
   silc_poll,
 #else
   silc_select,
 #endif /* HAVE_POLL && HAVE_SETRLIMIT && RLIMIT_NOFILE */
+  silc_schedule_internal_schedule_fd,
   silc_schedule_internal_wakeup,
   silc_schedule_internal_signal_register,
   silc_schedule_internal_signal_unregister,

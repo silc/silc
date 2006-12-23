@@ -542,6 +542,22 @@ void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
 void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
 				 SilcTaskEvent mask, SilcBool send_events);
 
+/****f* silcutil/SilcScheduleAPI/silc_schedule_get_fd_events
+ *
+ * SYNOPSIS
+ *
+ *    SilcTaskEvent silc_schedule_get_fd_events(SilcSchedule schedule,
+ *                                              SilcUInt32 fd);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the file descriptor `fd' current requested events mask,
+ *    or 0 on error.
+ *
+ ***/
+SilcTaskEvent silc_schedule_get_fd_events(SilcSchedule schedule,
+					  SilcUInt32 fd);
+
 /****f* silcutil/SilcScheduleAPI/silc_schedule_unset_listen_fd
  *
  * SYNOPSIS

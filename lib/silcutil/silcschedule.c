@@ -45,44 +45,34 @@ static void silc_schedule_fd_destructor(void *key, void *context,
 
 static void silc_schedule_dispatch_fd(SilcSchedule schedule)
 {
-  SilcHashTableList htl;
-  SilcTask t;
   SilcTaskFd task;
-  SilcUInt32 fd;
+  SilcTask t;
 
-  silc_hash_table_list(schedule->fd_queue, &htl);
-  while (silc_likely(silc_hash_table_get(&htl, (void **)&fd,
-					 (void **)&task))) {
+  /* The dispatch list includes only valid tasks, and tasks that have
+     something to dispatch.  Dispatching is atomic; no matter if another
+     thread invalidates a task when we unlock, we dispatch to completion. */
+  SILC_SCHEDULE_UNLOCK(schedule);
+  silc_list_start(schedule->fd_dispatch);
+  while ((task = silc_list_get(schedule->fd_dispatch))) {
     t = (SilcTask)task;
 
-    if (silc_unlikely(!t->valid)) {
-      silc_schedule_task_remove(schedule, t);
-      continue;
-    }
-    if (!task->revents || !task->events)
-      continue;
-
     /* Is the task ready for reading */
-    if (task->revents & SILC_TASK_READ) {
-      SILC_SCHEDULE_UNLOCK(schedule);
+    if (task->revents & SILC_TASK_READ)
       t->callback(schedule, schedule->app_context, SILC_TASK_READ,
 		  task->fd, t->context);
-      SILC_SCHEDULE_LOCK(schedule);
-    }
 
     /* Is the task ready for writing */
-    if (t->valid && task->revents & SILC_TASK_WRITE) {
-      SILC_SCHEDULE_UNLOCK(schedule);
+    if (t->valid && task->revents & SILC_TASK_WRITE)
       t->callback(schedule, schedule->app_context, SILC_TASK_WRITE,
 		  task->fd, t->context);
-      SILC_SCHEDULE_LOCK(schedule);
-    }
-
-    /* Remove if task was invalidated in the task callback */
-    if (silc_unlikely(!t->valid))
-      silc_schedule_task_remove(schedule, t);
   }
-  silc_hash_table_list_reset(&htl);
+  SILC_SCHEDULE_LOCK(schedule);
+
+  /* Remove invalidated tasks */
+  silc_list_start(schedule->fd_dispatch);
+  while ((task = silc_list_get(schedule->fd_dispatch)))
+    if (silc_unlikely(!task->header.valid))
+      silc_schedule_task_remove(schedule, (SilcTask)task);
 }
 
 /* Executes all tasks whose timeout has expired. The task is removed from
@@ -338,8 +328,8 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
   if (!schedule->fd_queue)
     return NULL;
 
-  silc_list_init(schedule->timeout_queue, struct SilcTaskTimeoutStruct, next);
-  silc_list_init(schedule->free_tasks, struct SilcTaskTimeoutStruct, next);
+  silc_list_init(schedule->timeout_queue, struct SilcTaskStruct, next);
+  silc_list_init(schedule->free_tasks, struct SilcTaskStruct, next);
 
   schedule->app_context = app_context;
   schedule->valid = TRUE;
@@ -462,7 +452,7 @@ static SilcBool silc_schedule_iterate(SilcSchedule schedule, int timeout_usecs)
        of the selected file descriptors change status or the selected
        timeout expires. */
     SILC_LOG_DEBUG(("Select"));
-    ret = schedule_ops.select(schedule, schedule->internal);
+    ret = schedule_ops.schedule(schedule, schedule->internal);
 
     if (silc_likely(ret == 0)) {
       /* Timeout */
@@ -812,13 +802,34 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
   if (silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fd),
 			   NULL, (void **)&task)) {
     task->events = mask;
-    if (silc_unlikely(send_events)) {
+    schedule_ops.schedule_fd(schedule, schedule->internal, task, mask);
+    if (silc_unlikely(send_events) && mask) {
       task->revents = mask;
       silc_schedule_dispatch_fd(schedule);
     }
   }
 
   SILC_SCHEDULE_UNLOCK(schedule);
+}
+
+/* Returns the file descriptors current requested event mask. */
+
+SilcTaskEvent silc_schedule_get_fd_events(SilcSchedule schedule,
+					  SilcUInt32 fd)
+{
+  SilcTaskFd task;
+  SilcTaskEvent event = 0;
+
+  if (silc_unlikely(!schedule->valid))
+    return 0;
+
+  SILC_SCHEDULE_LOCK(schedule);
+  if (silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fd),
+			   NULL, (void **)&task))
+    event = task->events;
+  SILC_SCHEDULE_UNLOCK(schedule);
+
+  return event;
 }
 
 /* Removes a file descriptor from listen list. */

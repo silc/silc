@@ -438,8 +438,10 @@ int silc_net_udp_send(SilcStream stream,
   }
 
   SILC_LOG_DEBUG(("Sent data %d bytes", ret));
-  silc_schedule_set_listen_fd(sock->schedule, sock->sock,
-			      SILC_TASK_READ, FALSE);
+  if (silc_schedule_get_fd_events(sock->schedule, sock->sock) &
+      SILC_TASK_WRITE)
+    silc_schedule_set_listen_fd(sock->schedule, sock->sock,
+				SILC_TASK_READ, FALSE);
 
   return ret;
 }
@@ -451,7 +453,7 @@ typedef struct {
   SilcSocketStreamStatus stream_status;
   SilcStream stream;
   SilcFSMStruct fsm;
-  SilcFSMSemaStruct sema;
+  SilcFSMEventStruct sema;
   SilcAsyncOperation op;
   SilcAsyncOperation sop;
   char *local_ip;
@@ -473,7 +475,7 @@ SILC_FSM_STATE(silc_net_connect_st_finish);
 SILC_TASK_CALLBACK(silc_net_connect_wait)
 {
   SilcNetConnect conn = context;
-  SILC_FSM_SEMA_POST(&conn->sema);
+  SILC_FSM_EVENT_SIGNAL(&conn->sema);
   silc_schedule_task_del_by_fd(schedule, conn->sock);
 }
 
@@ -487,7 +489,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
   if (conn->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Do host lookup */
@@ -500,14 +502,14 @@ SILC_FSM_STATE(silc_net_connect_st_start)
     /** Network unreachable */
     conn->status = SILC_NET_HOST_UNREACHABLE;
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Set sockaddr for this connection */
   if (!silc_net_set_sockaddr(&desthost, conn->ip_addr, conn->port)) {
     /** Sockaddr failed */
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Create the connection socket */
@@ -523,7 +525,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
     /** Cannot create socket */
     SILC_LOG_ERROR(("Cannot create socket: %s", strerror(errno)));
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Bind to the local address if provided */
@@ -557,7 +559,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
       /** Cannot connect to remote host */
       SILC_LOG_ERROR(("Cannot connect to remote host: %s", strerror(errno)));
       silc_fsm_next(fsm, silc_net_connect_st_finish);
-      return SILC_FSM_CONTINUE;
+      SILC_FSM_CONTINUE;
     }
   }
 
@@ -573,13 +575,13 @@ SILC_FSM_STATE(silc_net_connect_st_start)
 
   /** Wait for connection */
   silc_fsm_next(fsm, silc_net_connect_st_connected);
-  silc_fsm_sema_init(&conn->sema, fsm, 0);
+  silc_fsm_event_init(&conn->sema, fsm);
   silc_schedule_task_add_fd(silc_fsm_get_schedule(fsm), sock,
 			    silc_net_connect_wait, conn);
   silc_schedule_set_listen_fd(silc_fsm_get_schedule(fsm), sock,
 			      SILC_TASK_WRITE, FALSE);
-  SILC_FSM_SEMA_WAIT(&conn->sema);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_EVENT_WAIT(&conn->sema);
+  SILC_FSM_CONTINUE;
 }
 
 static void silc_net_connect_wait_stream(SilcSocketStreamStatus status,
@@ -600,7 +602,7 @@ SILC_FSM_STATE(silc_net_connect_st_connected)
   if (conn->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   ret = silc_net_get_socket_opt(conn->sock, SOL_SOCKET, SO_ERROR,
@@ -616,7 +618,7 @@ SILC_FSM_STATE(silc_net_connect_st_connected)
       conn->retry--;
       silc_net_close_connection(conn->sock);
       silc_fsm_next(fsm, silc_net_connect_st_start);
-      return SILC_FSM_CONTINUE;
+      SILC_FSM_CONTINUE;
     }
 
 #if defined(ECONNREFUSED)
@@ -635,7 +637,7 @@ SILC_FSM_STATE(silc_net_connect_st_connected)
     /** Connecting failed */
     SILC_LOG_DEBUG(("Connecting failed"));
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /** Connection created */
@@ -653,7 +655,7 @@ SILC_FSM_STATE(silc_net_connect_st_stream)
   if (conn->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   if (conn->stream_status != SILC_SOCKET_OK) {
@@ -665,7 +667,7 @@ SILC_FSM_STATE(silc_net_connect_st_stream)
     else
       conn->status = SILC_NET_ERROR;
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    return SILC_FSM_CONTINUE;
+    SILC_FSM_CONTINUE;
   }
 
   /* Set stream information */
@@ -677,7 +679,7 @@ SILC_FSM_STATE(silc_net_connect_st_stream)
   SILC_LOG_DEBUG(("Connected successfully"));
   conn->status = SILC_NET_OK;
   silc_fsm_next(fsm, silc_net_connect_st_finish);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(silc_net_connect_st_finish)
@@ -693,7 +695,7 @@ SILC_FSM_STATE(silc_net_connect_st_finish)
       silc_async_free(conn->sop);
   }
 
-  return SILC_FSM_FINISH;
+  SILC_FSM_FINISH;
 }
 
 static void silc_net_connect_abort(SilcAsyncOperation op, void *context)

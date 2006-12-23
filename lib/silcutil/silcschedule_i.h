@@ -29,6 +29,7 @@
 
 /* Task header */
 struct SilcTaskStruct {
+  struct SilcTaskStruct *next;
   SilcTaskCallback callback;
   void *context;
   unsigned int type    : 1;	/* 0 = fd, 1 = timeout */
@@ -38,15 +39,15 @@ struct SilcTaskStruct {
 /* Timeout task */
 typedef struct SilcTaskTimeoutStruct {
   struct SilcTaskStruct header;
-  struct SilcTaskTimeoutStruct *next;
   struct timeval timeout;
 } *SilcTaskTimeout;
 
 /* Fd task */
-typedef struct {
+typedef struct SilcTaskFdStruct {
   struct SilcTaskStruct header;
-  unsigned int events  : 15;
-  unsigned int revents : 15;
+  unsigned int scheduled  : 1;
+  unsigned int events     : 14;
+  unsigned int revents    : 15;
   SilcUInt32 fd;
 } *SilcTaskFd;
 
@@ -55,11 +56,12 @@ struct SilcScheduleStruct {
   void *internal;
   void *app_context;		   /* Application specific context */
   SilcHashTable fd_queue;	   /* FD task queue */
+  SilcList fd_dispatch;		   /* Dispatched FDs */
   SilcList timeout_queue;	   /* Timeout queue */
   SilcList free_tasks;		   /* Timeout task freelist */
   SilcMutex lock;		   /* Scheduler lock */
   struct timeval timeout;	   /* Current timeout */
-  unsigned int max_tasks     : 28; /* Max FD tasks */
+  unsigned int max_tasks     : 29; /* Max FD tasks */
   unsigned int has_timeout   : 1;  /* Set if timeout is set */
   unsigned int valid         : 1;  /* Set if scheduler is valid */
   unsigned int signal_tasks  : 1;  /* Set if to dispatch signals */
@@ -70,13 +72,13 @@ struct SilcScheduleStruct {
    synchronise signals with SILC Scheduler. */
 #define SILC_SCHEDULE_LOCK(schedule)				\
 do {								\
-  schedule_ops.signals_block(schedule, schedule->internal);	\
   silc_mutex_lock(schedule->lock);				\
+  schedule_ops.signals_block(schedule, schedule->internal);	\
 } while (0)
 #define SILC_SCHEDULE_UNLOCK(schedule)				\
 do {								\
-  silc_mutex_unlock(schedule->lock);				\
   schedule_ops.signals_unblock(schedule, schedule->internal);	\
+  silc_mutex_unlock(schedule->lock);				\
 } while (0)
 
 /* Platform specific scheduler operations */
@@ -90,8 +92,14 @@ typedef struct {
   /* Uninitializes the platform specific scheduler context. */
   void (*uninit)(SilcSchedule schedule, void *context);
 
-  /* System specific select(). Returns same values as normal select(). */
-  int (*select)(SilcSchedule schedule, void *context);
+  /* System specific waiter. This must fill the schedule->fd_dispatch queue
+     with valid tasks that has something to dispatch, when this returns. */
+  int (*schedule)(SilcSchedule schedule, void *context);
+
+  /* Schedule `task' with events `event_mask'. Zero `event_mask'
+     unschedules the task. */
+  SilcBool (*schedule_fd)(SilcSchedule schedule, void *context,
+			  SilcTaskFd task, SilcTaskEvent event_mask);
 
   /* Wakes up the scheduler. This is platform specific routine */
   void (*wakeup)(SilcSchedule schedule, void *context);

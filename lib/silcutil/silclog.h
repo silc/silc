@@ -56,7 +56,7 @@ typedef enum {
  * SYNOPSIS
  *
  *    typedef SilcBool (*SilcLogCb)(SilcLogType type, char *message,
- *                              void *context);
+ *                                  void *context);
  *
  * DESCRIPTION
  *
@@ -79,7 +79,7 @@ typedef SilcBool (*SilcLogCb)(SilcLogType type, char *message, void *context);
  * SYNOPSIS
  *
  *    typedef SilcBool (*SilcLogDebugCb)(char *file, char *function, int line,
- *                                   char *message, void *context);
+ *                                       char *message, void *context);
  *
  * DESCRIPTION
  *
@@ -98,16 +98,17 @@ typedef SilcBool (*SilcLogCb)(SilcLogType type, char *message, void *context);
  *
  ***/
 typedef SilcBool (*SilcLogDebugCb)(char *file, char *function, int line,
-			       char *message, void *context);
+				   char *message, void *context);
 
 /****f* silcutil/SilcLogAPI/SilcLogHexdumpCb
  *
  * SYNOPSIS
  *
- *    typedef SilcBool (*SilcDebugHexdumpCb)(char *file, char *function, int line,
- *                                       unsigned char *data,
- *                                       SilcUInt32 data_len,
- *                                       char *message, void *context;
+ *    typedef SilcBool
+ *    (*SilcDebugHexdumpCb)(char *file, char *function, int line,
+ *                          unsigned char *data,
+ *                          SilcUInt32 data_len,
+ *                          char *message, void *context;
  *
  * DESCRIPTION
  *
@@ -128,8 +129,8 @@ typedef SilcBool (*SilcLogDebugCb)(char *file, char *function, int line,
  *
  ***/
 typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
-				 unsigned char *data, SilcUInt32 data_len,
-				 char *message, void *context);
+				     unsigned char *data, SilcUInt32 data_len,
+				     char *message, void *context);
 
 /* Macros */
 
@@ -294,8 +295,8 @@ typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
  * DESCRIPTION
  *
  *    Assert macro that prints error message to stderr and calls abort()
- *    if the `expression' is is false (ie. compares equal to zero).  If
- *    SILC_DEBUG is not defined this macro as no effect.
+ *    if the `expression' is false (ie. compares equal to zero).  If
+ *    SILC_DEBUG is not defined this macro has no effect.
  *
  * SOURCE
  */

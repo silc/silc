@@ -168,8 +168,10 @@ int silc_socket_stream_write(SilcStream stream, const unsigned char *data,
   }
 
   SILC_LOG_DEBUG(("Wrote data %d bytes", ret));
-  silc_schedule_set_listen_fd(sock->schedule, sock->sock,
-			      SILC_TASK_READ, FALSE);
+  if (silc_schedule_get_fd_events(sock->schedule, sock->sock) &
+      SILC_TASK_WRITE)
+    silc_schedule_set_listen_fd(sock->schedule, sock->sock,
+				SILC_TASK_READ, FALSE);
 
   return ret;
 }
