@@ -686,7 +686,6 @@ SilcBool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...)
   SILC_ASN1_ARGS(asn1, type, tag, ber_class, opts);
   if (!type) {
     va_end(asn1->ap);
-    asn1->ap = NULL;
     return FALSE;
   }
 
@@ -741,7 +740,6 @@ SilcBool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...)
     asn1->stack1 = stack1;
 
   va_end(asn1->ap);
-  asn1->ap = NULL;
 
   return ret;
 }

@@ -987,8 +987,8 @@
 #ifdef LTM3
 #define LTM_LAST
 #endif
-#include <tma_superclass.h>
-#include <tma_class.h>
+#include "tma_superclass.h"
+#include "tma_class.h"
 #else
 #define LTM_LAST
 #endif

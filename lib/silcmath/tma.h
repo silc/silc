@@ -15,13 +15,14 @@
 #ifndef TMA_H
 #define TMA_H
 
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <limits.h>
 
-#include <tma_class.h>
+#include "tma_class.h"
 
 /* Assure these -Pekka */
 #undef MP_8BIT
