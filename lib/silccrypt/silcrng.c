@@ -286,6 +286,7 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   silc_rng_xor(rng, (r.ru_utime.tv_sec ^ r.ru_utime.tv_usec), pos++);
   silc_rng_xor(rng, (r.ru_stime.tv_sec + r.ru_stime.tv_usec), pos++);
   silc_rng_xor(rng, (r.ru_stime.tv_sec ^ r.ru_stime.tv_usec), pos++);
+#ifndef SILC_SYMBIAN
   silc_rng_xor(rng, (r.ru_maxrss + r.ru_ixrss), pos++);
   silc_rng_xor(rng, (r.ru_maxrss ^ r.ru_ixrss), pos++);
   silc_rng_xor(rng, (r.ru_idrss + r.ru_idrss), pos++);
@@ -302,6 +303,7 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   silc_rng_xor(rng, (r.ru_nsignals << 16), pos++);
   silc_rng_xor(rng, (r.ru_nvcsw + r.ru_nivcsw), pos++);
   silc_rng_xor(rng, (r.ru_nvcsw ^ r.ru_nivcsw), pos++);
+#endif /*  SILC_SYMBIAN */
 #endif
   
 #ifdef SILC_RNG_DEBUG
@@ -335,7 +337,7 @@ static void silc_rng_get_medium_noise(SilcRng rng)
 
 static void silc_rng_get_hard_noise(SilcRng rng)
 {
-#ifndef SILC_WIN32
+#if defined(SILC_UNIX)
   unsigned char buf[32];
   int fd, len, i;
 
@@ -367,7 +369,7 @@ static void silc_rng_get_hard_noise(SilcRng rng)
 
 static void silc_rng_exec_command(SilcRng rng, char *command)
 {
-#ifndef SILC_WIN32
+#if defined(SILC_UNIX)
   unsigned char buf[1024];
   FILE *fd;
   int i;
@@ -549,7 +551,7 @@ SilcUInt8 silc_rng_get_byte(SilcRng rng)
 
 SilcUInt8 silc_rng_get_byte_fast(SilcRng rng)
 {
-#ifndef SILC_WIN32
+#if defined(SILC_UNIX)
   unsigned char buf[1];
 
   if (rng->fd_devurandom == -1) {

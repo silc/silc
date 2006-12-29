@@ -173,7 +173,7 @@ u1byte qp(const u4byte n, const u1byte x)
     a3 = a2 ^ b2; b3 = ror4[b2] ^ ashx[a2];
     a4 = qt2[n][a3]; b4 = qt3[n][b3];
     return (b4 << 4) | a4;
-};
+}
 
 #ifdef  Q_TABLES
 
@@ -190,7 +190,7 @@ void gen_qtab(void)
         q(0,i) = qp(0, (u1byte)i);
         q(1,i) = qp(1, (u1byte)i);
     }
-};
+}
 
 #else
 
@@ -216,7 +216,7 @@ void gen_mtab(void)
         m_tab[1][i] = fef + (fef << 8) + (f5b << 16) + (f01 << 24);
         m_tab[3][i] = f5b + (f01 << 8) + (fef << 16) + (f5b << 24);
     }
-};
+}
 
 #define mds(n,x)    m_tab[n][x]
 
@@ -295,7 +295,7 @@ u4byte h_fun(TwofishContext *ctx, const u4byte x, const u4byte key[])
     return b0 | (b3 << 8) | (b2 << 16) | (b1 << 24);
 
 #endif
-};
+}
 
 #ifdef  MK_TABLE
 
@@ -364,7 +364,7 @@ void gen_mk_tab(TwofishContext *ctx, u4byte key[])
 #endif
             }
     }
-};
+}
 
 #  ifdef ONE_STEP
 #    define g0_fun(x) ( mk_tab[0][byte(x,0)] ^ mk_tab[1][byte(x,1)] \
@@ -491,7 +491,7 @@ u4byte *twofish_set_key(TwofishContext *ctx,
 #endif
 
     return l_key;
-};
+}
 
 /* encrypt a block of text  */
 
@@ -522,7 +522,7 @@ void twofish_encrypt(TwofishContext *ctx,
     out_blk[1] = blk[3] ^ l_key[5];
     out_blk[2] = blk[0] ^ l_key[6];
     out_blk[3] = blk[1] ^ l_key[7];
-};
+}
 
 /* decrypt a block of text  */
 
@@ -553,4 +553,4 @@ void twofish_decrypt(TwofishContext *ctx,
     out_blk[1] = blk[3] ^ l_key[1];
     out_blk[2] = blk[0] ^ l_key[2];
     out_blk[3] = blk[1] ^ l_key[3];
-};
+}
