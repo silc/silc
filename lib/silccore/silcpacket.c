@@ -50,10 +50,10 @@ struct SilcPacketEngineStruct {
 
 /* Packet processor context */
 typedef struct SilcPacketProcessStruct {
-  SilcInt32 priority;		         /* Priority */
   SilcPacketType *types;		 /* Packets to process */
   SilcPacketCallbacks *callbacks;	 /* Callbacks or NULL */
   void *callback_context;
+  SilcInt32 priority;		         /* Priority */
 } *SilcPacketProcess;
 
 /* UDP remote stream tuple */
@@ -1398,7 +1398,7 @@ static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
 
   /* Get random padding */
   for (i = 0; i < padlen; i++) tmppad[i] =
-				 silc_rng_get_byte_fast(stream->sc->engine->rng);
+    silc_rng_get_byte_fast(stream->sc->engine->rng);
 
   silc_mutex_lock(stream->lock);
 
@@ -1628,33 +1628,23 @@ static inline SilcBool silc_packet_check_mac(SilcHmac hmac,
 /* Increments/sets counter when decrypting in counter mode. */
 
 static inline void silc_packet_receive_ctr_increment(SilcPacketStream stream,
-						     SilcCipher cipher,
-						     unsigned char *ret_iv)
+						     unsigned char *iv,
+						     unsigned char *packet_iv)
 {
-  unsigned char *iv = silc_cipher_get_iv(cipher);
   SilcUInt32 pc;
 
-  /* Increment packet counter */
-  SILC_GET32_MSB(pc, iv + 8);
-  pc++;
-  SILC_PUT32_MSB(pc, iv + 8);
+  /* If IV Included flag, set the IV from packet to block counter. */
+  if (stream->iv_included) {
+    memcpy(iv + 4, packet_iv, 8);
+  } else {
+    /* Increment packet counter */
+    SILC_GET32_MSB(pc, iv + 8);
+    pc++;
+    SILC_PUT32_MSB(pc, iv + 8);
+  }
 
   /* Reset block counter */
   memset(iv + 12, 0, 4);
-
-  /* If IV Included flag, return the 64-bit IV for inclusion in packet */
-  if (stream->iv_included) {
-    /* Get new nonce */
-    ret_iv[0] = silc_rng_get_byte_fast(stream->sc->engine->rng);
-    ret_iv[1] = ret_iv[0] + iv[4];
-    ret_iv[2] = ret_iv[0] ^ ret_iv[1];
-    ret_iv[3] = ret_iv[0] + ret_iv[2];
-    SILC_PUT32_MSB(pc, ret_iv + 4);
-    SILC_LOG_HEXDUMP(("IV"), ret_iv, 8);
-
-    /* Set new nonce to counter block */
-    memcpy(iv + 4, ret_iv, 4);
-  }
 
   SILC_LOG_HEXDUMP(("Counter Block"), iv, 16);
 }
@@ -1919,8 +1909,17 @@ static void silc_packet_read_process(SilcPacketStream stream)
       if (stream->iv_included) {
 	/* SID, IV and sequence number is included in the ciphertext */
 	sid = (SilcUInt8)inbuf->data[0];
-	memcpy(iv, inbuf->data + 1, block_len);
-	ivlen = block_len + 1;
+
+	if (silc_cipher_get_mode(cipher) == SILC_CIPHER_MODE_CTR) {
+	  /* Set the CTR mode IV from packet to counter block */
+	  memcpy(iv, silc_cipher_get_iv(cipher), block_len);
+	  silc_packet_receive_ctr_increment(stream, iv, inbuf->data + 1);
+	  ivlen = 8 + 1;
+	} else {
+	  /* Get IV from packet */
+	  memcpy(iv, inbuf->data + 1, block_len);
+	  ivlen = block_len + 1;
+	}
 	psnlen = 4;
 
 	/* Check SID, and get correct decryption key */
@@ -1943,6 +1942,10 @@ static void silc_packet_read_process(SilcPacketStream stream)
 	}
       } else {
 	memcpy(iv, silc_cipher_get_iv(cipher), block_len);
+
+	/* If using CTR mode, increment the counter */
+	if (silc_cipher_get_mode(cipher) == SILC_CIPHER_MODE_CTR)
+	  silc_packet_receive_ctr_increment(stream, iv, NULL);
       }
 
       silc_cipher_decrypt(cipher, inbuf->data + ivlen, tmp,
@@ -1955,6 +1958,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
 	header += 4;
       }
     } else {
+      /* Unencrypted packet */
       block_len = SILC_PACKET_MIN_HEADER_LEN;
       header = inbuf->data;
     }
