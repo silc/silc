@@ -279,6 +279,8 @@ SILC_FSM_STATE(silc_client_notify_invite)
 
   /* Get the channel entry */
   channel = silc_client_get_channel_by_id(client, conn, &id.u.channel_id);
+  if (!channel)
+    goto out;
 
   /* If channel is being resolved handle notify after resolving */
   if (channel->internal.resolve_cmd_ident) {
