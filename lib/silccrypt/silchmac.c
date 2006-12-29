@@ -31,10 +31,10 @@ struct SilcHmacStruct {
   unsigned int allocated_hash : 1;   /* TRUE if the hash was allocated */
 };
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
 /* List of dynamically registered HMACs. */
 SilcDList silc_hmac_list = NULL;
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
 /* Default hmacs for silc_hmac_register_default(). */
 const SilcHmacObject silc_default_hmacs[] =
@@ -86,7 +86,7 @@ static void silc_hmac_init_internal(SilcHmac hmac, unsigned char *key,
 
 SilcBool silc_hmac_register(const SilcHmacObject *hmac)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcHmacObject *new;
 
   SILC_LOG_DEBUG(("Registering new HMAC `%s'", hmac->name));
@@ -112,7 +112,7 @@ SilcBool silc_hmac_register(const SilcHmacObject *hmac)
     silc_hmac_list = silc_dlist_init();
   silc_dlist_add(silc_hmac_list, new);
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
@@ -120,7 +120,7 @@ SilcBool silc_hmac_register(const SilcHmacObject *hmac)
 
 SilcBool silc_hmac_unregister(SilcHmacObject *hmac)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcHmacObject *entry;
 
   SILC_LOG_DEBUG(("Unregistering HMAC"));
@@ -144,7 +144,7 @@ SilcBool silc_hmac_unregister(SilcHmacObject *hmac)
     }
   }
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return FALSE;
 }
 
@@ -154,19 +154,19 @@ SilcBool silc_hmac_unregister(SilcHmacObject *hmac)
 
 SilcBool silc_hmac_register_default(void)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   int i;
 
   for (i = 0; silc_default_hmacs[i].name; i++)
     silc_hmac_register(&(silc_default_hmacs[i]));
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
 SilcBool silc_hmac_unregister_all(void)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcHmacObject *entry;
 
   if (!silc_hmac_list)
@@ -178,7 +178,7 @@ SilcBool silc_hmac_unregister_all(void)
     if (!silc_hmac_list)
       break;
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
@@ -218,7 +218,7 @@ SilcBool silc_hmac_alloc(const char *name, SilcHash hash, SilcHmac *new_hmac)
 
   (*new_hmac)->hash = hash;
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   if (silc_hmac_list) {
     SilcHmacObject *entry;
     silc_dlist_start(silc_hmac_list);
@@ -240,7 +240,7 @@ SilcBool silc_hmac_alloc(const char *name, SilcHash hash, SilcHmac *new_hmac)
       }
     }
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
   silc_free(*new_hmac);
   *new_hmac = NULL;
@@ -289,7 +289,7 @@ const char *silc_hmac_get_name(SilcHmac hmac)
 
 SilcBool silc_hmac_is_supported(const char *name)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcHmacObject *entry;
 
   if (!name)
@@ -309,7 +309,7 @@ SilcBool silc_hmac_is_supported(const char *name)
       if (!strcmp(silc_default_hmacs[i].name, name))
 	return TRUE;
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return FALSE;
 }
 
@@ -321,7 +321,7 @@ char *silc_hmac_get_supported()
   char *list = NULL;
   int len = 0;
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   if (silc_hmac_list) {
     silc_dlist_start(silc_hmac_list);
     while ((entry = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
@@ -348,7 +348,7 @@ char *silc_hmac_get_supported()
       len++;
     }
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
   list[len - 1] = 0;
 

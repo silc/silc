@@ -1,7 +1,7 @@
 /* Our own convenience getopt.  Public Domain. */
 #include "silc.h"
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
 #if !defined(HAVE_GETOPT) && !defined(HAVE_GETOPT_H)
 int	opterr = 1;
 int	optind = 1;
@@ -67,4 +67,4 @@ int getopt(int argc, char * const *argv, const char *optstring)
   return c;
 }
 #endif /* !HAVE_GETOPT && !HAVE_GETOPT_H */
-#endif /* !SILC_EPOC */
+#endif /* !SILC_SYMBIAN */

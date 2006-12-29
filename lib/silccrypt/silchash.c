@@ -30,10 +30,10 @@ struct SilcHashStruct {
   void *context;
 };
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
 /* List of dynamically registered hash functions. */
 SilcDList silc_hash_list = NULL;
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
 /* Default hash functions for silc_hash_register_default(). */
 const SilcHashObject silc_default_hash[] =
@@ -53,7 +53,7 @@ const SilcHashObject silc_default_hash[] =
 
 SilcBool silc_hash_register(const SilcHashObject *hash)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcHashObject *new;
 
   SILC_LOG_DEBUG(("Registering new hash function `%s'", hash->name));
@@ -89,7 +89,7 @@ SilcBool silc_hash_register(const SilcHashObject *hash)
     silc_hash_list = silc_dlist_init();
   silc_dlist_add(silc_hash_list, new);
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
@@ -97,7 +97,7 @@ SilcBool silc_hash_register(const SilcHashObject *hash)
 
 SilcBool silc_hash_unregister(SilcHashObject *hash)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcHashObject *entry;
 
   SILC_LOG_DEBUG(("Unregistering hash function"));
@@ -121,7 +121,7 @@ SilcBool silc_hash_unregister(SilcHashObject *hash)
     }
   }
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return FALSE;
 }
 
@@ -131,19 +131,19 @@ SilcBool silc_hash_unregister(SilcHashObject *hash)
 
 SilcBool silc_hash_register_default(void)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   int i;
 
   for (i = 0; silc_default_hash[i].name; i++)
     silc_hash_register(&(silc_default_hash[i]));
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
 SilcBool silc_hash_unregister_all(void)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcHashObject *entry;
 
   if (!silc_hash_list)
@@ -155,7 +155,7 @@ SilcBool silc_hash_unregister_all(void)
     if (!silc_hash_list)
       break;
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
@@ -168,7 +168,7 @@ SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
 
   SILC_LOG_DEBUG(("Allocating new hash object"));
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   if (silc_hash_list) {
     silc_dlist_start(silc_hash_list);
     while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
@@ -187,7 +187,7 @@ SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
       }
     }
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
   if (entry) {
     *new_hash = silc_calloc(1, sizeof(**new_hash));
@@ -240,7 +240,7 @@ const char *silc_hash_get_name(SilcHash hash)
 
 SilcBool silc_hash_is_supported(const unsigned char *name)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcHashObject *entry;
 
   if (silc_hash_list) {
@@ -257,7 +257,7 @@ SilcBool silc_hash_is_supported(const unsigned char *name)
       if (!strcmp(silc_default_hash[i].name, name))
 	return TRUE;
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return FALSE;
 }
 
@@ -269,7 +269,7 @@ char *silc_hash_get_supported(void)
   char *list = NULL;
   int len = 0;
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   if (silc_hash_list) {
     silc_dlist_start(silc_hash_list);
     while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
@@ -296,7 +296,7 @@ char *silc_hash_get_supported(void)
       len++;
     }
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
   list[len - 1] = 0;
 

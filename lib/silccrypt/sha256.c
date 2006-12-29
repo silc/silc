@@ -58,12 +58,12 @@ static inline unsigned RORc(unsigned word, int i)
 }
 
 #else
-#define RORc(x, y) ( ((((unsigned long)(x)&0xFFFFFFFFUL)>>(unsignedlong)((y)&31)) | ((unsigned long)(x)<<(unsigned long)(32-((y)&31)))) &0xFFFFFFFFUL)
+#define RORc(x, y) ( ((((unsigned long)(x)&0xFFFFFFFFUL)>>(unsigned long)((y)&31)) | ((unsigned long)(x)<<(unsigned long)(32-((y)&31)))) &0xFFFFFFFFUL)
 #endif /* _MSC_VER */
 
 /* Various logical functions */
 #define Ch(x,y,z)       (z ^ (x & (y ^ z)))
-#define Maj(x,y,z)      (((x | y) & z) | (x & y)) 
+#define Maj(x,y,z)      (((x | y) & z) | (x & y))
 #define S(x, n)         RORc((x),(n))
 #define R(x, n)         (((x)&0xFFFFFFFFUL)>>(n))
 #define Sigma0(x)       (S(x, 2) ^ S(x, 13) ^ S(x, 22))
@@ -89,7 +89,7 @@ int  sha256_compress(SilcUInt32 *state, unsigned char *buf)
     /* fill W[16..63] */
     for (i = 16; i < 64; i++) {
         W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) + W[i - 16];
-    }        
+    }
 
     /* Compress */
 #define RND(a,b,c,d,e,f,g,h,i,ki)         	     \
@@ -162,8 +162,8 @@ int  sha256_compress(SilcUInt32 *state, unsigned char *buf)
     RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],61,0xa4506ceb);
     RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],62,0xbef9a3f7);
     RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],63,0xc67178f2);
-    
-#undef RND     
+
+#undef RND
 
     /* feedback */
     for (i = 0; i < 8; i++) {
@@ -212,7 +212,7 @@ int sha256_process(sha256_state * md, const unsigned char *in,
     if (md->curlen > block_size)
 	return FALSE;
 
-    while (inlen > 0) {                                                        
+    while (inlen > 0) {
 	if (md->curlen == 0 && inlen >= block_size) {
 	    if ((err = sha256_compress(md->state, (unsigned char *)in)) != TRUE)
 		return err;
@@ -220,7 +220,7 @@ int sha256_process(sha256_state * md, const unsigned char *in,
 	    in             += block_size;
 	    inlen          -= block_size;
 	} else {
-	    n = MIN(inlen, (block_size - md->curlen));              
+	    n = MIN(inlen, (block_size - md->curlen));
 	    memcpy(md->buf + md->curlen, in, (size_t)n);
 	    md->curlen += n;
 	    in             += n;

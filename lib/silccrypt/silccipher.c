@@ -28,10 +28,10 @@ struct SilcCipherStruct {
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE];
 };
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
 /* Dynamically registered list of ciphers. */
 SilcDList silc_cipher_list = NULL;
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
 /* Macro to define cipher to cipher list */
 #define SILC_CIPHER_API_DEF(name, cipher, keylen, blocklen, ivlen, mode) \
@@ -79,7 +79,7 @@ const SilcCipherObject silc_default_ciphers[] =
 
 SilcBool silc_cipher_register(const SilcCipherObject *cipher)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcCipherObject *new;
 
   SILC_LOG_DEBUG(("Registering new cipher `%s'", cipher->name));
@@ -110,7 +110,7 @@ SilcBool silc_cipher_register(const SilcCipherObject *cipher)
     silc_cipher_list = silc_dlist_init();
   silc_dlist_add(silc_cipher_list, new);
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
@@ -118,7 +118,7 @@ SilcBool silc_cipher_register(const SilcCipherObject *cipher)
 
 SilcBool silc_cipher_unregister(SilcCipherObject *cipher)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcCipherObject *entry;
 
   SILC_LOG_DEBUG(("Unregistering cipher"));
@@ -142,7 +142,7 @@ SilcBool silc_cipher_unregister(SilcCipherObject *cipher)
     }
   }
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return FALSE;
 }
 
@@ -152,19 +152,19 @@ SilcBool silc_cipher_unregister(SilcCipherObject *cipher)
 
 SilcBool silc_cipher_register_default(void)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   int i;
 
   for (i = 0; silc_default_ciphers[i].name; i++)
     silc_cipher_register(&(silc_default_ciphers[i]));
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
 SilcBool silc_cipher_unregister_all(void)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcCipherObject *entry;
 
   if (!silc_cipher_list)
@@ -176,7 +176,7 @@ SilcBool silc_cipher_unregister_all(void)
     if (!silc_cipher_list)
       break;
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
@@ -191,7 +191,7 @@ SilcBool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
 
   SILC_LOG_DEBUG(("Allocating new cipher object"));
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   if (silc_cipher_list) {
     silc_dlist_start(silc_cipher_list);
     while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
@@ -210,7 +210,7 @@ SilcBool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
       }
     }
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
   if (entry) {
     *new_cipher = silc_calloc(1, sizeof(**new_cipher));
@@ -236,7 +236,7 @@ void silc_cipher_free(SilcCipher cipher)
 
 SilcBool silc_cipher_is_supported(const unsigned char *name)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcCipherObject *entry;
 
   if (silc_cipher_list) {
@@ -253,7 +253,7 @@ SilcBool silc_cipher_is_supported(const unsigned char *name)
       if (!strcmp(silc_default_ciphers[i].name, name))
 	return TRUE;
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return FALSE;
 }
 
@@ -265,7 +265,7 @@ char *silc_cipher_get_supported(void)
   char *list = NULL;
   int len = 0;
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   if (silc_cipher_list) {
     silc_dlist_start(silc_cipher_list);
     while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
@@ -292,7 +292,7 @@ char *silc_cipher_get_supported(void)
       len++;
     }
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
   list[len - 1] = 0;
 

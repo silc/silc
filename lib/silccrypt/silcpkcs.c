@@ -22,7 +22,7 @@
 #include "silcpk_i.h"
 #include "silcpkcs1_i.h"
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
 /* Dynamically registered list of PKCS. */
 SilcDList silc_pkcs_list = NULL;
 SilcDList silc_pkcs_alg_list = NULL;
@@ -31,7 +31,7 @@ SilcDList silc_pkcs_alg_list = NULL;
 #else
 #define SILC_PKCS_LIST TRUE
 #define SILC_PKCS_ALG_LIST TRUE
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
 /* Static list of PKCS for silc_pkcs_register_default(). */
 const SilcPKCSObject silc_default_pkcs[] =
@@ -125,7 +125,7 @@ const SilcPKCSAlgorithm silc_default_pkcs_alg[] =
 
 SilcBool silc_pkcs_register(const SilcPKCSObject *pkcs)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcPKCSObject *newpkcs;
 
   SILC_LOG_DEBUG(("Registering new PKCS"));
@@ -150,7 +150,7 @@ SilcBool silc_pkcs_register(const SilcPKCSObject *pkcs)
     silc_pkcs_list = silc_dlist_init();
   silc_dlist_add(silc_pkcs_list, newpkcs);
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
@@ -158,7 +158,7 @@ SilcBool silc_pkcs_register(const SilcPKCSObject *pkcs)
 
 SilcBool silc_pkcs_unregister(SilcPKCSObject *pkcs)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcPKCSObject *entry;
 
   SILC_LOG_DEBUG(("Unregistering PKCS"));
@@ -181,7 +181,7 @@ SilcBool silc_pkcs_unregister(SilcPKCSObject *pkcs)
     }
   }
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return FALSE;
 }
 
@@ -189,7 +189,7 @@ SilcBool silc_pkcs_unregister(SilcPKCSObject *pkcs)
 
 SilcBool silc_pkcs_algorithm_register(const SilcPKCSAlgorithm *pkcs)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcPKCSAlgorithm *newalg;
 
   SILC_LOG_DEBUG(("Registering new PKCS algorithm %s",
@@ -229,7 +229,7 @@ SilcBool silc_pkcs_algorithm_register(const SilcPKCSAlgorithm *pkcs)
     silc_pkcs_alg_list = silc_dlist_init();
   silc_dlist_add(silc_pkcs_alg_list, newalg);
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
@@ -237,7 +237,7 @@ SilcBool silc_pkcs_algorithm_register(const SilcPKCSAlgorithm *pkcs)
 
 SilcBool silc_pkcs_algorithm_unregister(SilcPKCSAlgorithm *pkcs)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcPKCSAlgorithm*entry;
 
   SILC_LOG_DEBUG(("Unregistering PKCS algorithm"));
@@ -263,7 +263,7 @@ SilcBool silc_pkcs_algorithm_unregister(SilcPKCSAlgorithm *pkcs)
     }
   }
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return FALSE;
 }
 
@@ -271,7 +271,7 @@ SilcBool silc_pkcs_algorithm_unregister(SilcPKCSAlgorithm *pkcs)
 
 SilcBool silc_pkcs_register_default(void)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   int i;
 
   for (i = 0; silc_default_pkcs[i].type; i++)
@@ -280,13 +280,13 @@ SilcBool silc_pkcs_register_default(void)
   for (i = 0; silc_default_pkcs_alg[i].name; i++)
     silc_pkcs_algorithm_register(&(silc_default_pkcs_alg[i]));
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
 SilcBool silc_pkcs_unregister_all(void)
 {
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   SilcPKCSObject *entry;
   SilcPKCSAlgorithm *alg;
 
@@ -308,7 +308,7 @@ SilcBool silc_pkcs_unregister_all(void)
     }
   }
 
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
   return TRUE;
 }
 
@@ -320,7 +320,7 @@ char *silc_pkcs_get_supported(void)
   char *list = NULL;
   int len = 0;
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   if (silc_pkcs_alg_list) {
     silc_dlist_start(silc_pkcs_alg_list);
     while ((entry = silc_dlist_get(silc_pkcs_alg_list)) != SILC_LIST_END) {
@@ -351,7 +351,7 @@ char *silc_pkcs_get_supported(void)
       len++;
     }
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
   list[len - 1] = 0;
 
@@ -364,7 +364,7 @@ const SilcPKCSObject *silc_pkcs_find_pkcs(SilcPKCSType type)
 {
   SilcPKCSObject *entry;
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   if (silc_pkcs_list) {
     silc_dlist_start(silc_pkcs_list);
     while ((entry = silc_dlist_get(silc_pkcs_list)) != SILC_LIST_END) {
@@ -375,13 +375,13 @@ const SilcPKCSObject *silc_pkcs_find_pkcs(SilcPKCSType type)
 #else
   {
     int i;
-    for (i = 0; silc_default_pkcs[i].name; i++) {
+    for (i = 0; silc_default_pkcs[i].type; i++) {
       entry = (SilcPKCSObject *)&(silc_default_pkcs[i]);
       if (entry->type == type)
 	return (const SilcPKCSObject *)entry;
     }
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
   return NULL;
 }
@@ -393,7 +393,7 @@ const SilcPKCSAlgorithm *silc_pkcs_find_algorithm(const char *algorithm,
 {
   SilcPKCSAlgorithm *entry;
 
-#ifndef SILC_EPOC
+#ifndef SILC_SYMBIAN
   if (silc_pkcs_alg_list) {
     silc_dlist_start(silc_pkcs_alg_list);
     while ((entry = silc_dlist_get(silc_pkcs_alg_list)) != SILC_LIST_END) {
@@ -412,7 +412,7 @@ const SilcPKCSAlgorithm *silc_pkcs_find_algorithm(const char *algorithm,
 	return (const SilcPKCSAlgorithm *)entry;
     }
   }
-#endif /* SILC_EPOC */
+#endif /* SILC_SYMBIAN */
 
   return NULL;
 }

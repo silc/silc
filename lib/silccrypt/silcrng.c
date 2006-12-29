@@ -303,8 +303,8 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   silc_rng_xor(rng, (r.ru_nsignals << 16), pos++);
   silc_rng_xor(rng, (r.ru_nvcsw + r.ru_nivcsw), pos++);
   silc_rng_xor(rng, (r.ru_nvcsw ^ r.ru_nivcsw), pos++);
-#endif /*  SILC_SYMBIAN */
-#endif
+#endif /* SILC_SYMBIAN */
+#endif /* HAVE_GETRUSAGE */
   
 #ifdef SILC_RNG_DEBUG
   SILC_LOG_HEXDUMP(("pool"), rng->pool, sizeof(rng->pool));

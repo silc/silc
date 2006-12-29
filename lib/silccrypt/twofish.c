@@ -443,7 +443,7 @@ u4byte mds_rem(u4byte p0, u4byte p1)
     }
 
     return p1;
-};
+}
 
 /* initialise the key schedule from the user supplied key   */
 
