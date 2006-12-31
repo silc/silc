@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2006 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -46,14 +46,14 @@ SilcBool silc_stream_close(SilcStream stream)
 void silc_stream_destroy(SilcStream stream)
 {
   SilcStreamHeader h = stream;
-  return h->ops->destroy(stream);
+  h->ops->destroy(stream);
 }
 
 void silc_stream_set_notifier(SilcStream stream, SilcSchedule schedule,
 			      SilcStreamNotifier notifier, void *context)
 {
   SilcStreamHeader h = stream;
-  return h->ops->notifier(stream, schedule, notifier, context);
+  h->ops->notifier(stream, schedule, notifier, context);
 }
 
 SilcSchedule silc_stream_get_schedule(SilcStream stream)

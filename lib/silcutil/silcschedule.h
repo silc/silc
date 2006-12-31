@@ -293,6 +293,14 @@ void silc_schedule_stop(SilcSchedule schedule);
  *    When this returns the program is to be ended. Before this function can
  *    be called, one must call silc_schedule_init function.
  *
+ * NOTES
+ *
+ *    On Windows this will block the program, but will continue dispatching
+ *    window messages, and thus can be used as the main loop of the program.
+ *
+ *    On Symbian this will return immediately.  On Symbian calling
+ *    silc_schedule is same as calling silc_schedule_one.
+ *
  ***/
 void silc_schedule(SilcSchedule schedule);
 
@@ -310,6 +318,10 @@ void silc_schedule(SilcSchedule schedule);
  *    the `timeout_usecs' is non-negative a timeout will be added to the
  *    scheduler.  The function will not return in this timeout unless
  *    some other event occurs.
+ *
+ *    Typically this would be called from a timeout or idle task
+ *    periodically (typically from 5-50 ms) to schedule SILC tasks.  In
+ *    this case the `timeout_usecs' is usually 0.
  *
  ***/
 SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs);

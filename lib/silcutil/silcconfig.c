@@ -98,6 +98,7 @@ static void my_trim_spaces(SilcConfigFile *file)
     if (*r++ == '\n') file->line++;
   file->p = r;
 }
+
 /* Skips the current line until newline (lf or cr) */
 static void my_skip_line(SilcConfigFile *file)
 {
@@ -106,6 +107,7 @@ static void my_skip_line(SilcConfigFile *file)
   file->p = ((*r != '\0' && *r != EOF) ? r + 1 : r);
   file->line++;
 }
+
 /* Obtains a text token from the current position until first separator.
  * a separator is any non alphanumeric character nor "_" or "-" */
 static char *my_next_token(SilcConfigFile *file, char *to)
@@ -119,6 +121,7 @@ static char *my_next_token(SilcConfigFile *file, char *to)
   file->p = o;
   return to;
 }
+
 /* Obtains a string from the current position. The only difference from
  * next_token() is that quoted-strings are also accepted */
 static char *my_get_string(SilcConfigFile *file, char *to)
@@ -146,7 +149,8 @@ static char *my_get_string(SilcConfigFile *file, char *to)
   /* we don't need quote parsing, fall-back to token extractor */
   my_next_token(file, to);
   return to;
-};
+}
+
 /* Skips all comment lines and spaces lines until first useful character */
 static void my_skip_comments(SilcConfigFile *file)
 {
@@ -171,6 +175,7 @@ static SilcConfigOption *silc_config_find_option(SilcConfigEntity ent,
   }
   return NULL;
 }
+
 /* Converts a string in the type specified. returns a dynamically
  * allocated pointer. */
 static void *silc_config_marshall(SilcConfigType type, const char *val)
@@ -295,7 +300,7 @@ SilcConfigEntity silc_config_init(SilcConfigFile *file)
   ret = silc_calloc(1, sizeof(*ret));
   ret->file = file;
   return ret;
-};
+}
 
 /* Returns the original filename of the object file */
 

@@ -19,7 +19,7 @@
 
 #include "silc.h"
 #include "silcstringprep.h"
-#include <stringprep.h>
+#include "stringprep.h"
 
 /* We use GNU Libidn which has stringprep to do the magic.  Only bad thing
    is that its interface is idiotic.  We have our own API here in case

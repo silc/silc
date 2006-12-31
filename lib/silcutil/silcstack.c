@@ -267,7 +267,8 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
   /* Check that `ptr' is last allocation */
   sptr = (unsigned char *)stack->stack[si] +
     SILC_STACK_ALIGN(sizeof(**stack->stack), SILC_STACK_DEFAULT_ALIGN);
-  if (stack->stack[si]->bytes_left + old_size + (ptr - sptr) != bsize) {
+  if (stack->stack[si]->bytes_left + old_size +
+      ((unsigned char *)ptr - (unsigned char *)sptr) != bsize) {
     SILC_LOG_DEBUG(("Cannot reallocate"));
     SILC_STACK_STAT(stack, num_errors, 1);
     return NULL;

@@ -1051,7 +1051,7 @@ SilcBuffer silc_buffer_srealloc(SilcStack stack,
   if (!h) {
     /* Do slow and stack wasting realloc.  The old sb->head is lost and
        is freed eventually. */
-    h = silc_smalloc_ua(stack, newsize);
+    h = (unsigned char *)silc_smalloc_ua(stack, newsize);
     if (silc_unlikely(!h))
       return NULL;
     memcpy(h, sb->head, silc_buffer_truelen(sb));

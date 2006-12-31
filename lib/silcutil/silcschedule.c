@@ -595,6 +595,8 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
     task = (SilcTask)ttask;
 
   } else if (silc_likely(type == SILC_TASK_FD)) {
+    SilcTaskFd ftask;
+
     /* Check if fd is already added */
     if (silc_unlikely(silc_hash_table_find(schedule->fd_queue,
 					   SILC_32_TO_PTR(fd),
@@ -609,7 +611,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
       goto out;
     }
 
-    SilcTaskFd ftask = silc_calloc(1, sizeof(*ftask));
+    ftask = silc_calloc(1, sizeof(*ftask));
     if (silc_unlikely(!ftask))
       goto out;
 
