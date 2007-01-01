@@ -29,6 +29,7 @@ $Id$
 
 */
 
+#include "silc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +41,6 @@ $Id$
 
 #include <stdio.h>
 #include <assert.h>
-//#include "silc.h"
 #include "regexpr.h"
 
 #define MACRO_BEGIN do {

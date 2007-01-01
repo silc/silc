@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -236,7 +236,7 @@ char *silc_format(char *fmt, ...)
 
   memset(buf, 0, sizeof(buf));
   va_start(args, fmt);
-  vsnprintf(buf, sizeof(buf) - 1, fmt, args);
+  vsilc_snprintf(buf, sizeof(buf) - 1, fmt, args);
   va_end(args);
 
   return strdup(buf);
@@ -473,14 +473,14 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len)
   memset(fingerprint, 0, sizeof(fingerprint));
   cp = fingerprint;
   for (i = 0; i < data_len; i++) {
-    snprintf(cp, sizeof(fingerprint), "%02X", data[i]);
+    silc_silc_snprintf(cp, sizeof(fingerprint), "%02X", data[i]);
     cp += 2;
 
     if ((i + 1) % 2 == 0)
-      snprintf(cp++, sizeof(fingerprint), " ");
+      silc_silc_snprintf(cp++, sizeof(fingerprint), " ");
 
     if ((i + 1) % 10 == 0)
-      snprintf(cp++, sizeof(fingerprint), " ");
+      silc_silc_snprintf(cp++, sizeof(fingerprint), " ");
   }
   i--;
   if ((i + 1) % 2 == 0)

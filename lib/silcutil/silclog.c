@@ -112,7 +112,7 @@ static void silc_log_checksize(SilcLog log)
   fclose(log->fp);
 
   memset(newname, 0, sizeof(newname));
-  snprintf(newname, sizeof(newname) - 1, "%s.old", log->filename);
+  silc_silc_snprintf(newname, sizeof(newname) - 1, "%s.old", log->filename);
   unlink(newname);
   rename(log->filename, newname);
 

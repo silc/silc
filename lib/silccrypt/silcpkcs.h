@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -155,7 +155,8 @@ typedef struct {
 		      SilcUInt32 src_len,
 		      unsigned char *dst,
 		      SilcUInt32 dst_size,
-		      SilcUInt32 *ret_dst_len);
+		      SilcUInt32 *ret_dst_len,
+		      SilcRng rng);
   SilcBool (*decrypt)(void *private_key,
 		      unsigned char *src,
 		      SilcUInt32 src_len,
@@ -260,7 +261,8 @@ struct SilcPKCSObjectStruct {
 		      SilcUInt32 src_len,
 		      unsigned char *dst,
 		      SilcUInt32 dst_size,
-		      SilcUInt32 *ret_dst_len);
+		      SilcUInt32 *ret_dst_len,
+		      SilcRng rng);
   SilcBool (*decrypt)(void *private_key,
 		      unsigned char *src,
 		      SilcUInt32 src_len,
@@ -656,7 +658,7 @@ void silc_pkcs_private_key_free(SilcPrivateKey private_key);
 SilcBool silc_pkcs_encrypt(SilcPublicKey public_key,
 			   unsigned char *src, SilcUInt32 src_len,
 			   unsigned char *dst, SilcUInt32 dst_size,
-			   SilcUInt32 *dst_len);
+			   SilcUInt32 *dst_len, SilcRng rng);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_decrypt
  *

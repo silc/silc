@@ -1838,6 +1838,10 @@ on channel.  This means that channel uses channel private keys which
 are not server generated.  For this reason server cannot send this
 packet as it does not know the key.
 
+The destination ID in the packet SHOULD be the entity to whom the
+packet is sent.  Using Channel ID as destination ID is not
+necessary as the Channel ID is included in the Channel Key Payload.
+
 The payload may only be sent with SILC_PACKET_CHANNEL_KEY packet.
 It MUST NOT be sent in any other packet type.  The following diagram
 represents the Channel Key Payload.
@@ -2344,7 +2348,7 @@ types.  The following diagram represents the Key Agreement Payload.
 ~                           Hostname                            ~
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                             Port                              |
+|            Protocol           |             Port              |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 .in 3
 
@@ -2361,10 +2365,16 @@ o Hostname (variable length) - The hostname or IP address where
   MAY fill this field when sending the payload.  If the receiver
   sends this payload as reply to the request it MUST fill this field.
 
-o Port (4 bytes) - The port where the SKE protocol is bound.
+o Protocol (2 bytes) - The internet protocol used for the key
+  agreement connection.  Possible values are 0 for TCP and 1 for
+  UDP.  Other values are unsupported.  This is a 16 bit MSB first
+  order value.  If Hostname field is not present, the value in
+  this field is ignored.
+
+o Port (2 bytes) - The port where the SKE protocol is bound.
   The sender MAY fill this field when sending the payload.  If
   the receiver sends this payload as reply to the request it
-  MUST fill this field.  This is a 32 bit MSB first order value.
+  MUST fill this field.  This is a 16 bit MSB first order value.
 .in 3
 
 

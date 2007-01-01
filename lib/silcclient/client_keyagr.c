@@ -416,7 +416,7 @@ void silc_client_send_key_agreement(SilcClient client,
       port = params->local_port;
       if (!port) {
 	/* Get listener port */
-	int sock;
+	SilcSocket sock;
 	silc_socket_stream_get_info(stream, &sock, NULL, NULL, NULL);
 	port = silc_net_get_local_port(sock);
       }

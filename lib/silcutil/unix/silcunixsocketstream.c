@@ -20,6 +20,33 @@
 
 #include "silc.h"
 
+/************************ Static utility functions **************************/
+
+/* The IO process callback that calls the notifier callback to upper layer. */
+
+SILC_TASK_CALLBACK(silc_socket_stream_io)
+{
+  SilcSocketStream stream = context;
+
+  if (silc_unlikely(!stream->notifier))
+    return;
+
+  switch (type) {
+  case SILC_TASK_READ:
+    stream->notifier(stream, SILC_STREAM_CAN_READ, stream->notifier_context);
+    break;
+
+  case SILC_TASK_WRITE:
+    stream->notifier(stream, SILC_STREAM_CAN_WRITE, stream->notifier_context);
+    break;
+
+  default:
+    break;
+  }
+}
+
+/**************************** Stream Operations *****************************/
+
 /* QoS read handler, this will call the read and write events to indicate
    that data is available again after a timeout. */
 
@@ -219,3 +246,90 @@ SilcBool silc_socket_get_error(SilcStream sock, char *error,
   return TRUE;
 }
 #endif /* 0 */
+
+/* Closes socket */
+
+SilcBool silc_socket_stream_close(SilcStream stream)
+{
+  SilcSocketStream socket_stream = stream;
+
+  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
+      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
+    return FALSE;
+
+  silc_schedule_unset_listen_fd(socket_stream->schedule, socket_stream->sock);
+  silc_net_close_connection(socket_stream->sock);
+
+  return TRUE;
+}
+
+/* Destroys the stream */
+
+void silc_socket_stream_destroy(SilcStream stream)
+{
+  SilcSocketStream socket_stream = stream;
+
+  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
+      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
+    return;
+
+  silc_socket_stream_close(socket_stream);
+  silc_free(socket_stream->ip);
+  silc_free(socket_stream->hostname);
+  if (socket_stream->schedule)
+    silc_schedule_task_del_by_fd(socket_stream->schedule, socket_stream->sock);
+
+  if (socket_stream->qos) {
+    silc_schedule_task_del_by_context(socket_stream->schedule,
+				      socket_stream->qos);
+    if (socket_stream->qos->buffer) {
+      memset(socket_stream->qos->buffer, 0,
+	     socket_stream->qos->read_limit_bytes);
+      silc_free(socket_stream->qos->buffer);
+    }
+    silc_free(socket_stream->qos);
+  }
+
+  if (socket_stream->schedule)
+    silc_schedule_wakeup(socket_stream->schedule);
+
+  silc_free(socket_stream);
+}
+
+/* Sets stream notification callback for the stream */
+
+void silc_socket_stream_notifier(SilcStream stream,
+				 SilcSchedule schedule,
+				 SilcStreamNotifier callback,
+				 void *context)
+{
+  SilcSocketStream socket_stream = stream;
+
+  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
+      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
+    return;
+
+  SILC_LOG_DEBUG(("Setting stream notifier callback"));
+
+  socket_stream->notifier = callback;
+  socket_stream->notifier_context = context;
+  socket_stream->schedule = schedule;
+
+  if (socket_stream->notifier) {
+    /* Add the socket to scheduler.  Safe to call if already added. */
+    silc_schedule_task_add_fd(socket_stream->schedule, socket_stream->sock,
+			      silc_socket_stream_io, socket_stream);
+
+    /* Initially set socket for reading */
+    silc_schedule_set_listen_fd(socket_stream->schedule, socket_stream->sock,
+				SILC_TASK_READ, FALSE);
+    silc_schedule_wakeup(socket_stream->schedule);
+  } else {
+    /* Unschedule the socket */
+    silc_schedule_unset_listen_fd(socket_stream->schedule,
+				  socket_stream->sock);
+    silc_schedule_task_del_by_fd(socket_stream->schedule,
+				 socket_stream->sock);
+    silc_schedule_wakeup(socket_stream->schedule);
+  }
+}

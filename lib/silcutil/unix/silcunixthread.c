@@ -163,7 +163,7 @@ void silc_mutex_assert_locked(SilcMutex mutex)
 }
 
 
-/**************************** SILC Cond API ******************************/
+/****************************** SILC Cond API *******************************/
 
 /* SILC Conditional Variable context */
 struct SilcCondStruct {

@@ -24,12 +24,12 @@
 #error "Do not include this header directly"
 #endif
 
-/* Net listenrr context */
+/* Net listener context */
 struct SilcNetListenerStruct {
   SilcSchedule schedule;
   SilcNetCallback callback;
   void *context;
-  int *socks;
+  SilcSocket *socks;
   unsigned int socks_count   : 30;
   unsigned int require_fqdn  : 1;
   unsigned int lookup        : 1;

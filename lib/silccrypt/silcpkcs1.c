@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2006 Pekka Riikonen
+  Copyright (C) 2003 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -74,14 +74,15 @@ SilcBool silc_pkcs1_encode(SilcPkcs1BlockType bt,
 
   case SILC_PKCS1_BT_PUB:
     /* Encryption */
+    if (!rng) {
+      SILC_LOG_ERROR(("Cannot encrypt: random number generator not provided"));
+      return FALSE;
+    }
 
     /* It is guaranteed this routine does not return zero byte. */
-    if (rng)
-      for (i = 2; i < padlen; i++)
-	dest_data[i] = silc_rng_get_byte_fast(rng);
-    else
-      for (i = 2; i < padlen; i++)
-	dest_data[i] = silc_rng_global_get_byte_fast();
+    for (i = 2; i < padlen; i++)
+      dest_data[i] = silc_rng_get_byte_fast(rng);
+
     break;
   }
 
@@ -473,7 +474,8 @@ SilcBool silc_pkcs1_encrypt(void *public_key,
 			    SilcUInt32 src_len,
 			    unsigned char *dst,
 			    SilcUInt32 dst_size,
-			    SilcUInt32 *ret_dst_len)
+			    SilcUInt32 *ret_dst_len,
+			    SilcRng rng)
 {
   RsaPublicKey *key = public_key;
   SilcMPInt mp_tmp;
@@ -488,7 +490,7 @@ SilcBool silc_pkcs1_encrypt(void *public_key,
 
   /* Pad data */
   if (!silc_pkcs1_encode(SILC_PKCS1_BT_PUB, src, src_len,
-			 padded, len, NULL))
+			 padded, len, rng))
     return FALSE;
 
   silc_mp_init(&mp_tmp);

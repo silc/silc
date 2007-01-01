@@ -39,7 +39,7 @@
 
 */
 
-#include "silcincludes.h"	/* Mandatory include for SILC applications */
+#include "silc.h"		/* Mandatory include for SILC applications */
 #include "silcclient.h"		/* SILC Client Library API */
 
 SilcClientOperations ops;

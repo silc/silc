@@ -34,7 +34,7 @@ SilcBuffer silc_http_php(char *php_data)
     return NULL;
 #else
   memset(tmp, 0, sizeof(tmp));
-  snprintf(tmp, sizeof(tmp) - 1, "/tmp/silchttpphpXXXXXX");
+  silc_snprintf(tmp, sizeof(tmp) - 1, "/tmp/silchttpphpXXXXXX");
   if (mkstemp(tmp) == -1)
     return NULL;
   name = tmp;
@@ -66,7 +66,7 @@ SilcBuffer silc_http_php_file(const char *filename)
   SILC_LOG_DEBUG(("Executing PHP"));
 
   memset(tmp, 0, sizeof(tmp));
-  snprintf(tmp, sizeof(tmp) - 1, "php -f %s", filename);
+  silc_snprintf(tmp, sizeof(tmp) - 1, "php -f %s", filename);
 
 #ifdef SILC_WIN32
   fd = _popen(tmp, "r");

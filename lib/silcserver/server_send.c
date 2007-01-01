@@ -47,7 +47,7 @@ SilcBool silc_server_send_error(SilcPacketStream stream, const char *fmt, ...)
 
   memset(buf, 0, sizeof(buf));
   va_start(ap, fmt);
-  vsnprintf(buf, sizeof(buf) - 1, fmt, ap);
+  vsilc_snprintf(buf, sizeof(buf) - 1, fmt, ap);
   va_end(ap);
 
   return silc_packet_send(stream, SILC_PACKET_ERROR, 0, buf, strlen(buf));

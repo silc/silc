@@ -40,7 +40,7 @@ static char *silc_create_pk_identifier(void)
     return NULL;
 
   /* Create default email address, whether it is right or not */
-  snprintf(email, sizeof(email), "%s@%s", username, hostname);
+  silc_snprintf(email, sizeof(email), "%s@%s", username, hostname);
 
   ident = silc_pkcs_silc_encode_identifier(username, hostname, realname,
 					   email, NULL, NULL);
@@ -123,9 +123,9 @@ New pair of keys will be created.  Please, answer to following questions.\n\
     if (interactive) {
       memset(line, 0, sizeof(line));
       if (def)
-	snprintf(line, sizeof(line), "Identifier [%s]: ", def);
+	silc_snprintf(line, sizeof(line), "Identifier [%s]: ", def);
       else
-	snprintf(line, sizeof(line),
+	silc_snprintf(line, sizeof(line),
 	       "Identifier (eg. UN=jon, HN=jon.dummy.com, "
 	       "RN=Jon Johnson, E=jon@dummy.com): ");
 
@@ -153,7 +153,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   if (!pkfile) {
     if (interactive) {
       memset(line, 0, sizeof(line));
-      snprintf(line, sizeof(line), "Public key filename [public_key.pub]: ");
+      silc_snprintf(line, sizeof(line), "Public key filename [public_key.pub]: ");
       pkfile = silc_get_input(line, FALSE);
     }
     if (!pkfile)
@@ -163,7 +163,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   if (!prvfile) {
     if (interactive) {
       memset(line, 0, sizeof(line));
-      snprintf(line, sizeof(line), "Private key filename [private_key.prv]: ");
+      silc_snprintf(line, sizeof(line), "Private key filename [private_key.prv]: ");
       prvfile = silc_get_input(line, FALSE);
     }
     if (!prvfile)
@@ -753,11 +753,11 @@ SilcBool silc_parse_version_string(const char *version,
   min = atoi(cp);
 
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf) - 1, "%d%d", maj, min);
+  silc_snprintf(buf, sizeof(buf) - 1, "%d%d", maj, min);
   if (protocol_version)
     *protocol_version = atoi(buf);
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf) - 1, "%d.%d", maj, min);
+  silc_snprintf(buf, sizeof(buf) - 1, "%d.%d", maj, min);
   if (protocol_version_string)
     *protocol_version_string = strdup(buf);
 
@@ -779,11 +779,11 @@ SilcBool silc_parse_version_string(const char *version,
   }
 
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf) - 1, "%d%d", maj, min);
+  silc_snprintf(buf, sizeof(buf) - 1, "%d%d", maj, min);
   if (software_version)
     *software_version = atoi(buf);
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf) - 1, "%d.%d", maj, min);
+  silc_snprintf(buf, sizeof(buf) - 1, "%d.%d", maj, min);
   if (software_version_string)
     *software_version_string = strdup(buf);
 
@@ -815,7 +815,7 @@ SilcUInt32 silc_version_to_num(const char *version)
     min = atoi(cp + 1);
 
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf) - 1, "%d%d", maj, min);
+  silc_snprintf(buf, sizeof(buf) - 1, "%d%d", maj, min);
   return (SilcUInt32)atoi(buf);
 }
 
@@ -987,11 +987,11 @@ char *silc_id_render(void *id, SilcIdType id_type)
       }
 
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp) - 1, ",%d,", ntohs(server_id->port));
+      silc_snprintf(tmp, sizeof(tmp) - 1, ",%d,", ntohs(server_id->port));
       _PUT_STRING(rid, tmp);
       SILC_PUT16_MSB(server_id->rnd, tmps);
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp) - 1, "[%02x %02x]", tmps[0], tmps[1]);
+      silc_snprintf(tmp, sizeof(tmp) - 1, "[%02x %02x]", tmps[0], tmps[1]);
       _PUT_STRING(rid, tmp);
     }
     break;
@@ -1017,10 +1017,10 @@ char *silc_id_render(void *id, SilcIdType id_type)
       }
 
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp) - 1, ",%02x,", client_id->rnd);
+      silc_snprintf(tmp, sizeof(tmp) - 1, ",%02x,", client_id->rnd);
       _PUT_STRING(rid, tmp);
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp) - 1, "[%02x %02x %02x %02x...]",
+      silc_snprintf(tmp, sizeof(tmp) - 1, "[%02x %02x %02x %02x...]",
 	       client_id->hash[0], client_id->hash[1],
 	       client_id->hash[2], client_id->hash[3]);
       _PUT_STRING(rid, tmp);
@@ -1048,11 +1048,11 @@ char *silc_id_render(void *id, SilcIdType id_type)
       }
 
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp) - 1, ",%d,", ntohs(channel_id->port));
+      silc_snprintf(tmp, sizeof(tmp) - 1, ",%d,", ntohs(channel_id->port));
       _PUT_STRING(rid, tmp);
       SILC_PUT16_MSB(channel_id->rnd, tmps);
       memset(tmp, 0, sizeof(tmp));
-      snprintf(tmp, sizeof(tmp) - 1, "[%02x %02x]", tmps[0], tmps[1]);
+      silc_snprintf(tmp, sizeof(tmp) - 1, "[%02x %02x]", tmps[0], tmps[1]);
       _PUT_STRING(rid, tmp);
     }
     break;

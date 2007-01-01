@@ -788,7 +788,7 @@ void mem_readdir(void *context, SilcSFTP sftp,
     /* Long name format is:
        drwx------   1   324210 Apr  8 08:40 mail/
        1234567890 123 12345678 123456789012 */
-    snprintf(long_name, sizeof(long_name) - 1,
+    silc_snprintf(long_name, sizeof(long_name) - 1,
 	     "%c%c%c%c------ %3d %8llu %12s %s%s",
 	     (entry->directory ? 'd' : '-'),
 	     ((entry->perm & SILC_SFTP_FS_PERM_READ) ? 'r' : '-'),

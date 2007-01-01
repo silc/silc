@@ -49,7 +49,7 @@ SilcBool add_entries()
     e = silc_calloc(1, sizeof(*e));
     if (!e)
       return FALSE;
-    snprintf(e->name, sizeof(e->name), "%d", i);
+    silc_snprintf(e->name, sizeof(e->name), "%d", i);
     e->val = i;
 
     silc_hash_table_add(t, (void *)e, (void *)e->name);
@@ -99,7 +99,7 @@ SilcBool del_n_entries_foreach()
 
   for (i = 0; i < count; i++) {
     memset(&f, 0, sizeof(f));
-    snprintf(f.name, sizeof(f.name), "%d", i);
+    silc_snprintf(f.name, sizeof(f.name), "%d", i);
     f.val = i;
 
     silc_hash_table_find_foreach(t, &f, del_foreach, NULL);
@@ -169,7 +169,7 @@ SilcBool find_entries()
 
   for (i = 0; i < count; i++) {
     memset(&f, 0, sizeof(f));
-    snprintf(f.name, sizeof(f.name), "%d", i);
+    silc_snprintf(f.name, sizeof(f.name), "%d", i);
     f.val = i;
 
     /* Find */

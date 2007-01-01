@@ -275,6 +275,28 @@ typedef SilcInt32 SilcInt64;
 typedef SilcUInt32 * void *;
 #endif
 
+/****d* silcutil/SILCTypes/SilcSocket
+ *
+ * NAME
+ *
+ *    SilcSocket
+ *
+ * DESCRIPTION
+ *
+ *    Platform specific socket.  On POSIX compliant systems this is simply
+ *    an integer, representing the socket. On other systems it is platform
+ *    specific socket context.  Access it only through routines that can
+ *    handle SilcSocket types, unless you know what you are doing.
+ *
+ * SOURCE
+ */
+#if defined(SILC_UNIX) || defined(SILC_WIN32)
+typedef int SilcSocket;
+#elif defined(SILC_SYMBIAN)
+typedef void * SilcSocket;
+#endif
+/***/
+
 /* Macros */
 
 #define SILC_GET_WORD(cp) ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24	\

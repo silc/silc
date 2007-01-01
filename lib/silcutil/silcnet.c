@@ -248,7 +248,8 @@ void silc_net_gethostbyname_async(const char *name,
 
 /* Resolves hostname by IP address. */
 
-SilcBool silc_net_gethostbyaddr(const char *addr, char *name, SilcUInt32 name_len)
+SilcBool silc_net_gethostbyaddr(const char *addr, char *name,
+				SilcUInt32 name_len)
 {
 #ifdef HAVE_IPV6
   struct addrinfo req, *ai;
@@ -300,10 +301,13 @@ void silc_net_gethostbyaddr_async(const char *addr,
   silc_thread_create(silc_net_gethostbyaddr_thread, r, FALSE);
 }
 
+#ifndef SILC_SYMBIAN
+
 /* Performs lookups for remote name and IP address. This peforms reverse
    lookup as well to verify that the IP has FQDN. */
 
-SilcBool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
+SilcBool silc_net_check_host_by_sock(SilcSocket sock, char **hostname,
+				     char **ip)
 {
   char host[1024];
   int rval, len;
@@ -381,7 +385,8 @@ SilcBool silc_net_check_host_by_sock(int sock, char **hostname, char **ip)
 /* Performs lookups for local name and IP address. This peforms reverse
    lookup as well to verify that the IP has FQDN. */
 
-SilcBool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
+SilcBool silc_net_check_local_by_sock(SilcSocket sock, char **hostname,
+				      char **ip)
 {
   char host[1024];
   int rval, len;
@@ -458,7 +463,7 @@ SilcBool silc_net_check_local_by_sock(int sock, char **hostname, char **ip)
 
 /* Return remote port by socket. */
 
-SilcUInt16 silc_net_get_remote_port(int sock)
+SilcUInt16 silc_net_get_remote_port(SilcSocket sock)
 {
 #ifdef HAVE_IPV6
   struct sockaddr_storage remote;
@@ -490,7 +495,7 @@ SilcUInt16 silc_net_get_remote_port(int sock)
 
 /* Return local port by socket. */
 
-SilcUInt16 silc_net_get_local_port(int sock)
+SilcUInt16 silc_net_get_local_port(SilcSocket sock)
 {
 #ifdef HAVE_IPV6
   struct sockaddr_storage local;
@@ -519,6 +524,7 @@ SilcUInt16 silc_net_get_local_port(int sock)
   return ntohs(local.sin_port);
 #endif
 }
+#endif /* !SILC_SYMBIAN */
 
 /* Return name of localhost. */
 

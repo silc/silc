@@ -71,11 +71,12 @@ typedef enum {
  *    Callback function of this type is called after the socket stream
  *    creation is completed.  If the `stream' is NULL the socket stream could
  *    not be created or the socket connection is not otherwise allowed.  The
- *    `status' will indicate the error status.  The `stream' is socket stream
- *    representing the socket connection and silc_socket_stream_* functions
- *    can be used to access the stream.  All other silc_stream_* functions
- *    can also be used to read data, send data, and otherwise handle the
- *    stream.
+ *    `status' will indicate the error status.  In case error ocurrs the
+ *    associated socket has already been destroyed.  The `stream' is socket
+ *    stream representing the socket connection and silc_socket_stream_*
+ *    functions can be used to access the stream.  All other silc_stream_*
+ *    functions can also be used to read data, send data, and otherwise
+ *    handle the stream.
  *
  ***/
 typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
@@ -86,7 +87,7 @@ typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
  * SYNOPSIS
  *
  *    SilcAsyncOperation
- *    silc_socket_tcp_stream_create(int sock, SilcBool lookup,
+ *    silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
  *                                  SilcBool require_fqdn,
  *                                  SilcSchedule schedule,
  *                                  SilcSocketStreamCallback callback,
@@ -113,7 +114,7 @@ typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
  *
  ***/
 SilcAsyncOperation
-silc_socket_tcp_stream_create(int sock, SilcBool lookup,
+silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
 			      SilcBool require_fqdn,
 			      SilcSchedule schedule,
 			      SilcSocketStreamCallback callback,
@@ -123,7 +124,8 @@ silc_socket_tcp_stream_create(int sock, SilcBool lookup,
  *
  * SYNOPSIS
  *
- *    SilcStream silc_socket_udp_stream_create(int sock, SilcBool ipv6,
+ *    SilcStream silc_socket_udp_stream_create(SilcSocket sock,
+ *                                             SilcBool ipv6,
  *                                             SilcBool connected,
  *                                             SilcSchedule schedule);
  *
@@ -151,7 +153,8 @@ silc_socket_tcp_stream_create(int sock, SilcBool lookup,
  *    This function returns the created SilcStream or NULL on error.
  *
  ***/
-SilcStream silc_socket_udp_stream_create(int sock, SilcBool ipv6,
+SilcStream silc_socket_udp_stream_create(SilcSocket sock,
+					 SilcBool ipv6,
 					 SilcBool connected,
 					 SilcSchedule schedule);
 
@@ -179,18 +182,18 @@ SilcBool silc_socket_stream_is_udp(SilcStream stream, SilcBool *connected);
  *
  *    SilcBool
  *    silc_socket_stream_get_info(SilcStream stream,
- *                                int *sock, const char **hostname,
+ *                                SilcSocket *sock, const char **hostname,
  *                                const char **ip, SilcUInt16 *port);
  *
  * DESCRIPTION
  *
- *    Returns socket stream information such as the socket number, hostname,
- *    IP address and the port of the remote socket connection.  Return FALSE
- *    if these informations are not available.
+ *    Returns socket stream information such as the socket, remote hostname,
+ *    remote IP address and the remote port of the remote socket connection.
+ *    Return FALSE if these informations are not available.
  *
  ***/
 SilcBool silc_socket_stream_get_info(SilcStream stream,
-				     int *sock, const char **hostname,
+				     SilcSocket *sock, const char **hostname,
 				     const char **ip, SilcUInt16 *port);
 
 /****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_set_info

@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2006 Pekka Riikonen
+#  Copyright (C) 2000 - 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -178,7 +178,7 @@ AC_CHECK_FUNCS(setrlimit time ctime utime gettimeofday getrusage)
 AC_CHECK_FUNCS(chmod fcntl stat fstat getenv putenv strerror)
 AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid)
 AC_CHECK_FUNCS(setgroups initgroups nl_langinfo epoll_wait)
-AC_CHECK_FUNCS(strchr strstr strcpy strncpy memcpy memset memmove)
+AC_CHECK_FUNCS(strchr snprintf strstr strcpy strncpy memcpy memset memmove)
 
 #ifdef SILC_DIST_SIM
 # SIM support checking
@@ -1142,9 +1142,9 @@ AC_ARG_WITH(win32,
   ])
 AM_CONDITIONAL(SILC_WIN32, test x$win32_support = xtrue)
 
-# Native EPOC support (disabled by default)
+# Native Symbian OS support (disabled by default)
 #
-AM_CONDITIONAL(SILC_EPOC, test xfalse = xtrue)
+AM_CONDITIONAL(SILC_SYMBIAN, test xfalse = xtrue)
 
 # Native BeOS support (disabled by default)
 #

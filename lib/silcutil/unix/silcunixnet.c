@@ -196,7 +196,7 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     }
 
     /* Specify that we are listenning */
-    rval = listen(sock, 5);
+    rval = listen(sock, 64);
     if (rval < 0) {
       SILC_LOG_ERROR(("Cannot set socket listenning: %s", strerror(errno)));
       goto err;
@@ -453,7 +453,7 @@ typedef struct {
   SilcSocketStreamStatus stream_status;
   SilcStream stream;
   SilcFSMStruct fsm;
-  SilcFSMEventStruct sema;
+  SilcFSMEventStruct event;
   SilcAsyncOperation op;
   SilcAsyncOperation sop;
   char *local_ip;
@@ -475,7 +475,7 @@ SILC_FSM_STATE(silc_net_connect_st_finish);
 SILC_TASK_CALLBACK(silc_net_connect_wait)
 {
   SilcNetConnect conn = context;
-  SILC_FSM_EVENT_SIGNAL(&conn->sema);
+  SILC_FSM_EVENT_SIGNAL(&conn->event);
   silc_schedule_task_del_by_fd(schedule, conn->sock);
 }
 
@@ -575,12 +575,12 @@ SILC_FSM_STATE(silc_net_connect_st_start)
 
   /** Wait for connection */
   silc_fsm_next(fsm, silc_net_connect_st_connected);
-  silc_fsm_event_init(&conn->sema, fsm);
+  silc_fsm_event_init(&conn->event, fsm);
   silc_schedule_task_add_fd(silc_fsm_get_schedule(fsm), sock,
 			    silc_net_connect_wait, conn);
   silc_schedule_set_listen_fd(silc_fsm_get_schedule(fsm), sock,
 			      SILC_TASK_WRITE, FALSE);
-  SILC_FSM_EVENT_WAIT(&conn->sema);
+  SILC_FSM_EVENT_WAIT(&conn->event);
   SILC_FSM_CONTINUE;
 }
 
@@ -743,6 +743,7 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   /* Start async operation */
   conn->op = silc_async_alloc(silc_net_connect_abort, NULL, conn);
   if (!conn->op) {
+    silc_free(conn);
     callback(SILC_NET_NO_MEMORY, NULL, context);
     return NULL;
   }
@@ -751,6 +752,9 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
     conn->local_ip = strdup(local_ip_addr);
   conn->remote = strdup(remote_ip_addr);
   if (!conn->remote) {
+    silc_async_free(conn->op);
+    silc_free(conn->local_ip);
+    silc_free(conn);
     callback(SILC_NET_NO_MEMORY, NULL, context);
     return NULL;
   }
@@ -775,9 +779,9 @@ void silc_net_close_connection(int sock)
 
 /* Set's the socket to non-blocking mode. */
 
-int silc_net_set_socket_nonblock(int sock)
+int silc_net_set_socket_nonblock(SilcSocket sock)
 {
-  return fcntl(sock, F_SETFL, fcntl(sock, F_GETFL, 0) | O_NONBLOCK);
+  return fcntl((int)sock, F_SETFL, fcntl(sock, F_GETFL, 0) | O_NONBLOCK);
 }
 
 /* Converts the IP number string from numbers-and-dots notation to

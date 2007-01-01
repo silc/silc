@@ -547,11 +547,11 @@ SilcBool silc_http_server_send(SilcHttpServer httpd,
 
   silc_mime_add_field(conn->headers, "Last-Modified",
 		      silc_time_string(conn->touched));
-  snprintf(tmp, sizeof(tmp), "%d", (int)silc_buffer_len(data));
+  silc_snprintf(tmp, sizeof(tmp), "%d", (int)silc_buffer_len(data));
   silc_mime_add_field(conn->headers, "Content-Length", tmp);
   if (conn->keepalive) {
     silc_mime_add_field(conn->headers, "Connection", "keep-alive");
-    snprintf(tmp, sizeof(tmp), "%d", (int)SILC_HTTP_SERVER_TIMEOUT);
+    silc_snprintf(tmp, sizeof(tmp), "%d", (int)SILC_HTTP_SERVER_TIMEOUT);
     silc_mime_add_field(conn->headers, "Keep-alive", tmp);
   }
 

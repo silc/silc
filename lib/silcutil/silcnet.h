@@ -313,7 +313,8 @@ int silc_net_udp_send(SilcStream stream,
  *
  * DESCRIPTION
  *
- *    Closes the connection by closing the socket connection.
+ *    Closes the connection by closing the socket connection.  This routine
+ *    can only be used with POSIX compliant systems.
  *
  ***/
 void silc_net_close_connection(int sock);
@@ -326,23 +327,12 @@ void silc_net_close_connection(int sock);
  *
  * DESCRIPTION
  *
- *    Accepts a connection from a particular socket.
+ *    Accepts a connection from a particular socket.  This routine can only
+ *    be used with POSIX compliant systems.  This call is equivalent to
+ *    accept(2).
  *
  ***/
 int silc_net_accept_connection(int sock);
-
-/****f* silcutil/SilcNetAPI/silc_net_set_socket_nonblock
- *
- * SYNOPSIS
- *
- *    int silc_net_set_socket_nonblock(int sock);
- *
- * DESCRIPTION
- *
- *    Sets the socket to non-blocking mode.
- *
- ***/
-int silc_net_set_socket_nonblock(int sock);
 
 /****f* silcutil/SilcNetAPI/silc_net_set_socket_opt
  *
@@ -354,7 +344,8 @@ int silc_net_set_socket_nonblock(int sock);
  *
  *    Sets a option for a socket.  This function can be used to set
  *    various options for the socket.  Some of the options might be
- *    system specific.
+ *    system specific.  This routine can only be used with POSIX compliant
+ *    systems.  This call is equivalent to setsockopt(2);
  *
  ***/
 int silc_net_set_socket_opt(int sock, int level, int option, int on);
@@ -368,11 +359,26 @@ int silc_net_set_socket_opt(int sock, int level, int option, int on);
  *
  * DESCRIPTION
  *
- *    Return socket options to the `optval' and `opt_len'.
+ *    Return socket options to the `optval' and `opt_len'.  This routine
+ *    can only be used with POSIX compliant systems.  This call is
+ *    equivalent to getsockopt(2).
  *
  ***/
 int silc_net_get_socket_opt(int sock, int level, int option,
 			    void *optval, int *opt_len);
+
+/****f* silcutil/SilcNetAPI/silc_net_set_socket_nonblock
+ *
+ * SYNOPSIS
+ *
+ *    int silc_net_set_socket_nonblock(SilcSocket sock);
+ *
+ * DESCRIPTION
+ *
+ *    Sets the socket `sock' to non-blocking mode.
+ *
+ ***/
+int silc_net_set_socket_nonblock(SilcSocket sock);
 
 /****f* silcutil/SilcNetAPI/silc_net_is_ip4
  *
@@ -539,7 +545,7 @@ void silc_net_gethostbyaddr_async(const char *addr,
  *
  * SYNOPSIS
  *
- *    SilcBool silc_net_check_host_by_sock(int sock, char **hostname,
+ *    SilcBool silc_net_check_host_by_sock(SilcSocket sock, char **hostname,
  *                                         char **ip);
  *
  * DESCRIPTION
@@ -548,13 +554,14 @@ void silc_net_gethostbyaddr_async(const char *addr,
  *    lookup as well to verify that the IP has FQDN.
  *
  ***/
-SilcBool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
+SilcBool silc_net_check_host_by_sock(SilcSocket sock, char **hostname,
+				     char **ip);
 
 /****f* silcutil/SilcNetAPI/silc_net_check_local_by_sock
  *
  * SYNOPSIS
  *
- *    SilcBool silc_net_check_local_by_sock(int sock, char **hostname,
+ *    SilcBool silc_net_check_local_by_sock(SilcSocket sock, char **hostname,
  *                                          char **ip);
  *
  * DESCRIPTION
@@ -563,33 +570,34 @@ SilcBool silc_net_check_host_by_sock(int sock, char **hostname, char **ip);
  *    lookup as well to verify that the IP has FQDN.
  *
  ***/
-SilcBool silc_net_check_local_by_sock(int sock, char **hostname, char **ip);
+SilcBool silc_net_check_local_by_sock(SilcSocket sock, char **hostname,
+				      char **ip);
 
 /****f* silcutil/SilcNetAPI/silc_net_get_remote_port
  *
  * SYNOPSIS
  *
- *    SilcUInt16 silc_net_get_remote_port(int sock);
+ *    SilcUInt16 silc_net_get_remote_port(SilcSocket sock);
  *
  * DESCRIPTION
  *
  *    Return remote port by socket.
  *
  ***/
-SilcUInt16 silc_net_get_remote_port(int sock);
+SilcUInt16 silc_net_get_remote_port(SilcSocket sock);
 
 /****f* silcutil/SilcNetAPI/silc_net_get_local_port
  *
  * SYNOPSIS
  *
- *    SilcUInt16 silc_net_get_local_port(int sock);
+ *    SilcUInt16 silc_net_get_local_port(SilcSocket sock);
  *
  * DESCRIPTION
  *
  *    Return local port by socket.
  *
  ***/
-SilcUInt16 silc_net_get_local_port(int sock);
+SilcUInt16 silc_net_get_local_port(SilcSocket sock);
 
 /****f* silcutil/SilcNetAPI/silc_net_localhost
  *

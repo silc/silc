@@ -555,8 +555,8 @@ SILC_FSM_STATE(silc_server_st_accept_client)
   ret = silc_parse_userfqdn(username, u, 128, h, sizeof(h));
   if (ret < 2) {
     /* Hostname not present, add it */
-    snprintf(n, sizeof(n), "%s", u);
-    snprintf(u, sizeof(u) - 1, "%s@%s", n, ac->hostname);
+    silc_snprintf(n, sizeof(n), "%s", u);
+    silc_snprintf(u, sizeof(u) - 1, "%s@%s", n, ac->hostname);
   } else {
     /* Verify that hostname is same than resolved hostname */
     if (strcmp(ac->hostname, h)) {
@@ -568,8 +568,8 @@ SILC_FSM_STATE(silc_server_st_accept_client)
       silc_fsm_next(fsm, silc_server_st_accept_error);
       SILC_FSM_CONTINUE;
     }
-    snprintf(n, sizeof(n), "%s", u);
-    snprintf(u, sizeof(u) - 1, "%s@%s", n, h);
+    silc_snprintf(n, sizeof(n), "%s", u);
+    silc_snprintf(u, sizeof(u) - 1, "%s@%s", n, h);
   }
 
   /* If configured as anonymous, scramble the username and hostname */

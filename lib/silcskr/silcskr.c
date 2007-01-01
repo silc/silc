@@ -20,6 +20,8 @@
 #include "silc.h"
 #include "silcskr.h"
 
+/* XXX Locking, when removing keys */
+
 /************************** Types and definitions ***************************/
 
 /* Search constraints */
@@ -77,16 +79,16 @@ static void silc_skr_type_string(SilcSKRFindType type, void *data,
   switch (type) {
   case SILC_SKR_FIND_PKCS_TYPE:
   case SILC_SKR_FIND_USAGE:
-    snprintf(retbuf, retbuf_size, "[%s] [%d]", find_name[type],
+    silc_snprintf(retbuf, retbuf_size, "[%s] [%d]", find_name[type],
 	     (int)SILC_PTR_TO_32(data));
     break;
 
   case SILC_SKR_FIND_PUBLIC_KEY:
-    snprintf(retbuf, retbuf_size, "[%s] [%p]", find_name[type], data);
+    silc_snprintf(retbuf, retbuf_size, "[%s] [%p]", find_name[type], data);
     break;
 
   default:
-    snprintf(retbuf, retbuf_size, "[%s] [%s]", find_name[type],
+    silc_snprintf(retbuf, retbuf_size, "[%s] [%s]", find_name[type],
 	     (char *)data);
   }
 }

@@ -325,7 +325,7 @@ static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
       }
 
       /* See if remote packet stream exist for this sender */
-      snprintf(tuple, sizeof(tuple), "%d%s", remote_port, remote_ip);
+      silc_snprintf(tuple, sizeof(tuple), "%d%s", remote_port, remote_ip);
       silc_mutex_lock(ps->sc->engine->lock);
       if (silc_hash_table_find(ps->sc->engine->udp_remote, tuple, NULL,
 			       (void *)&remote)) {
@@ -796,7 +796,7 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
   } else {
     /* Delete from UDP remote hash table */
     char tuple[64];
-    snprintf(tuple, sizeof(tuple), "%d%s", stream->remote_udp->remote_port,
+    silc_snprintf(tuple, sizeof(tuple), "%d%s", stream->remote_udp->remote_port,
 	     stream->remote_udp->remote_ip);
     silc_mutex_lock(stream->sc->engine->lock);
     silc_hash_table_del(stream->sc->engine->udp_remote, tuple);

@@ -37,35 +37,19 @@ extern "C" {
 #endif
 #endif
 
-#if defined(__EPOC32__)
-#ifndef SILC_EPOC
-#define SILC_EPOC
+#if defined(__EPOC32__) || defined(__SYMBIAN32__)
+#ifndef SILC_SYMBIAN
+#define SILC_SYMBIAN
 #undef SILC_UNIX
-#endif
-#endif
-
-#ifdef BEOS
-#ifndef SILC_BEOS
-#define SILC_BEOS
-#undef SILC_UNIX
-#endif
-#elif defined(__BEOS__)
-#ifndef SILC_BEOS
-#define SILC_BEOS
-#undef SILC_UNIX
-#endif
-#endif
-
-#if defined(OS2)
-#ifndef SILC_OS2
-#define SILC_OS2
-#undef SILC_UNIX
+#undef SILC_WIN32
 #endif
 #endif
 
 #if defined(__MACH__) && defined(__APPLE__)
 #ifndef SILC_MACOSX
 #define SILC_MACOSX
+#undef SILC_WIN32
+#undef SILC_SYMBIAN
 #endif
 #endif
 
@@ -84,8 +68,13 @@ extern "C" {
 
 #if defined(HAVE_SILCDEFS_H)
 /* Automatically generated configuration header */
+#ifndef SILC_SYMBIAN
 #include "silcdefs.h"
 #include "silcdistdefs.h"
+#else
+#include "../symbian/silcdefs.h"
+#include "../symbian/silcdistdefs.h"
+#endif /* SILC_SYMBIAN */
 #endif /* HAVE_SILCDEFS_H */
 
 /* Platform specific includes */
@@ -94,16 +83,8 @@ extern "C" {
 #include "silcwin32.h"
 #endif
 
-#if defined(SILC_EPOC)
-#include "silcepoc.h"
-#endif
-
-#if defined(SILC_BEOS)
-#include "silcbeos.h"
-#endif
-
-#if defined(SILC_OS2)
-#include "silcos2.h"
+#if defined(SILC_SYMBIAN)
+#include "silcsymbian.h"
 #endif
 
 #ifndef DLLAPI
@@ -140,8 +121,11 @@ extern "C" {
 #include <unistd.h>
 #include <sys/time.h>
 #include <pwd.h>
-#include <grp.h>
 #include <sys/times.h>
+
+#ifdef HAVE_GRP_H
+#include <grp.h>
+#endif
 
 #if defined(HAVE_GETOPT_H) && defined(HAVE_GETOPT)
 #include <getopt.h>
@@ -232,6 +216,7 @@ extern "C" {
 
 /* Include generic SILC type definitions */
 #include "silctypes.h"
+#include "silcmutex.h"
 #include "silcatomic.h"
 #include "silcversion.h"
 
@@ -245,7 +230,6 @@ extern "C" {
 
 /* More SILC util library includes */
 #include "silctime.h"
-#include "silcmutex.h"
 #include "silccond.h"
 #include "silcthread.h"
 #include "silcschedule.h"

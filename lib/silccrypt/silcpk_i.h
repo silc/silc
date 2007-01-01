@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005, 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -69,7 +69,8 @@ SilcBool silc_pkcs_silc_encrypt(void *public_key,
 				SilcUInt32 src_len,
 				unsigned char *dst,
 				SilcUInt32 dst_size,
-				SilcUInt32 *ret_dst_len);
+				SilcUInt32 *ret_dst_len,
+				SilcRng rng);
 SilcBool silc_pkcs_silc_decrypt(void *private_key,
 				unsigned char *src,
 				SilcUInt32 src_len,

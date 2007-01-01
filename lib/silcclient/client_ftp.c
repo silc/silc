@@ -317,7 +317,7 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
 
   /* Open the actual local file */
   memset(path, 0, sizeof(path));
-  snprintf(path, sizeof(path) - 1, "%s%s", session->path ?
+  silc_snprintf(path, sizeof(path) - 1, "%s%s", session->path ?
 	   session->path : "", session->filepath);
   session->fd = silc_file_open(path, O_RDWR | O_CREAT | O_EXCL);
   if (session->fd < 0) {

@@ -528,7 +528,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	  /* Set two OID values */
 	  memset(&tmpb, 0, sizeof(tmpb));
 	  memset(tmpstr, 0, sizeof(tmpstr));
-	  snprintf(tmpstr, sizeof(tmpstr) - 1, "%lu.%lu",
+	  silc_snprintf(tmpstr, sizeof(tmpstr) - 1, "%lu.%lu",
 		   (unsigned long)(rdata[0] & 0xff) / 40,
 		   (unsigned long)(rdata[0] & 0xff) % 40);
 	  silc_buffer_sstrformat(asn1->stack1, &tmpb, tmpstr, SILC_STR_END);
@@ -550,7 +550,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	    oid |= rdata[i];
 
 	    memset(tmpstr, 0, sizeof(tmpstr));
-	    snprintf(tmpstr, sizeof(tmpstr) - 1, ".%lu", (unsigned long)oid);
+	    silc_snprintf(tmpstr, sizeof(tmpstr) - 1, ".%lu", (unsigned long)oid);
 	    silc_buffer_sstrformat(asn1->stack1, &tmpb, tmpstr, SILC_STR_END);
 	  }
 	  *oidstr = tmpb.head;

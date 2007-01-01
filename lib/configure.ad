@@ -4,7 +4,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2005 Pekka Riikonen
+#  Copyright (C) 2005, 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -209,7 +209,6 @@ lib/silcutil/unix/Makefile
 lib/silcutil/win32/Makefile
 lib/silcutil/beos/Makefile
 lib/silcutil/os2/Makefile
-lib/silcutil/epoc/Makefile
 lib/silcapputil/Makefile
 #ifdef SILC_DIST_SFTP
 lib/silcsftp/Makefile

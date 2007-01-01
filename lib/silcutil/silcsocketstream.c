@@ -21,13 +21,7 @@
 
 /************************** Types and definitions ***************************/
 
-#define SILC_IS_SOCKET_STREAM(s) (s->ops == &silc_socket_stream_ops)
-#define SILC_IS_SOCKET_STREAM_UDP(s) (s->ops == &silc_socket_udp_stream_ops)
-
-const SilcStreamOps silc_socket_stream_ops;
-const SilcStreamOps silc_socket_udp_stream_ops;
-
-/* Platform specific functions */
+/* Stream operation functions (platform specific) */
 int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
 			    SilcUInt32 buf_len);
 int silc_socket_stream_write(SilcStream stream, const unsigned char *data,
@@ -38,6 +32,13 @@ int silc_socket_udp_stream_read(SilcStream stream, unsigned char *buf,
 				SilcUInt32 buf_len);
 int silc_socket_udp_stream_write(SilcStream stream, const unsigned char *data,
 				 SilcUInt32 data_len);
+SilcBool silc_socket_stream_close(SilcStream stream);
+void silc_socket_stream_destroy(SilcStream stream);
+void silc_socket_stream_notifier(SilcStream stream,
+				 SilcSchedule schedule,
+				 SilcStreamNotifier callback,
+				 void *context);
+SilcSchedule silc_socket_stream_get_schedule(SilcStream stream);
 
 /* Internal async host lookup context. */
 typedef struct {
@@ -53,30 +54,6 @@ typedef struct {
 
 /************************ Static utility functions **************************/
 
-/* The IO process callback that calls the notifier callback to upper
-   layer. */
-
-SILC_TASK_CALLBACK(silc_socket_stream_io)
-{
-  SilcSocketStream stream = context;
-
-  if (silc_unlikely(!stream->notifier))
-    return;
-
-  switch (type) {
-  case SILC_TASK_READ:
-    stream->notifier(stream, SILC_STREAM_CAN_READ, stream->notifier_context);
-    break;
-
-  case SILC_TASK_WRITE:
-    stream->notifier(stream, SILC_STREAM_CAN_WRITE, stream->notifier_context);
-    break;
-
-  default:
-    break;
-  }
-}
-
 /* Finishing timeout callback that will actually call the user specified
    host lookup callback.  This is executed back in the calling thread and
    not in the lookup thread. */
@@ -88,20 +65,16 @@ SILC_TASK_CALLBACK(silc_socket_host_lookup_finish)
 
   if (lookup->aborted) {
     SILC_LOG_DEBUG(("Socket stream creation was aborted"));
-    silc_net_close_connection(stream->sock);
-    silc_free(stream->ip);
-    silc_free(stream->hostname);
-    silc_free(stream);
+    stream->schedule = NULL;
+    silc_socket_stream_destroy(stream);
     silc_free(lookup);
     return;
   }
 
   if (lookup->status != SILC_SOCKET_OK) {
     SILC_LOG_DEBUG(("Socket stream failed"));
-    silc_net_close_connection(stream->sock);
-    silc_free(stream->ip);
-    silc_free(stream->hostname);
-    silc_free(stream);
+    stream->schedule = NULL;
+    silc_socket_stream_destroy(stream);
     stream = lookup->stream = NULL;
   }
 
@@ -170,7 +143,7 @@ static void silc_socket_host_lookup_abort(SilcAsyncOperation op,
 /* Creates TCP socket stream */
 
 SilcAsyncOperation
-silc_socket_tcp_stream_create(int sock, SilcBool lookup,
+silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
 			      SilcBool require_fqdn,
 			      SilcSchedule schedule,
 			      SilcSocketStreamCallback callback,
@@ -178,6 +151,12 @@ silc_socket_tcp_stream_create(int sock, SilcBool lookup,
 {
   SilcSocketStream stream;
   SilcSocketHostLookup l;
+
+  if (!sock) {
+    if (callback)
+      callback(SILC_SOCKET_ERROR, NULL, context);
+    return NULL;
+  }
 
   stream = silc_calloc(1, sizeof(*stream));
   if (!stream) {
@@ -232,7 +211,7 @@ silc_socket_tcp_stream_create(int sock, SilcBool lookup,
 
 /* Creates UDP socket stream */
 
-SilcStream silc_socket_udp_stream_create(int sock, SilcBool ipv6,
+SilcStream silc_socket_udp_stream_create(SilcSocket sock, SilcBool ipv6,
 					 SilcBool connected,
 					 SilcSchedule schedule)
 {
@@ -271,7 +250,7 @@ SilcBool silc_socket_stream_is_udp(SilcStream stream, SilcBool *connected)
 /* Returns socket stream information */
 
 SilcBool silc_socket_stream_get_info(SilcStream stream,
-				     int *sock, const char **hostname,
+				     SilcSocket *sock, const char **hostname,
 				     const char **ip, SilcUInt16 *port)
 {
   SilcSocketStream socket_stream = stream;
@@ -394,91 +373,6 @@ SilcBool silc_socket_stream_set_qos(SilcStream stream,
     return FALSE;
 
   return TRUE;
-}
-
-/* Closes socket */
-
-SilcBool silc_socket_stream_close(SilcStream stream)
-{
-  SilcSocketStream socket_stream = stream;
-
-  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
-      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
-    return FALSE;
-
-  silc_schedule_unset_listen_fd(socket_stream->schedule, socket_stream->sock);
-  silc_net_close_connection(socket_stream->sock);
-
-  return TRUE;
-}
-
-/* Destroys the stream */
-
-void silc_socket_stream_destroy(SilcStream stream)
-{
-  SilcSocketStream socket_stream = stream;
-
-  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
-      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
-    return;
-
-  silc_socket_stream_close(socket_stream);
-  silc_free(socket_stream->ip);
-  silc_free(socket_stream->hostname);
-  silc_schedule_task_del_by_fd(socket_stream->schedule, socket_stream->sock);
-
-  if (socket_stream->qos) {
-    silc_schedule_task_del_by_context(socket_stream->schedule,
-				      socket_stream->qos);
-    if (socket_stream->qos->buffer) {
-      memset(socket_stream->qos->buffer, 0,
-	     socket_stream->qos->read_limit_bytes);
-      silc_free(socket_stream->qos->buffer);
-    }
-    silc_free(socket_stream->qos);
-  }
-
-  silc_schedule_wakeup(socket_stream->schedule);
-
-  silc_free(socket_stream);
-}
-
-/* Sets stream notification callback for the stream */
-
-void silc_socket_stream_notifier(SilcStream stream,
-				 SilcSchedule schedule,
-				 SilcStreamNotifier callback,
-				 void *context)
-{
-  SilcSocketStream socket_stream = stream;
-
-  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
-      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
-    return;
-
-  SILC_LOG_DEBUG(("Setting stream notifier callback"));
-
-  socket_stream->notifier = callback;
-  socket_stream->notifier_context = context;
-  socket_stream->schedule = schedule;
-
-  if (socket_stream->notifier) {
-    /* Add the socket to scheduler.  Safe to call if already added. */
-    silc_schedule_task_add_fd(socket_stream->schedule, socket_stream->sock,
-			      silc_socket_stream_io, socket_stream);
-
-    /* Initially set socket for reading */
-    silc_schedule_set_listen_fd(socket_stream->schedule, socket_stream->sock,
-				SILC_TASK_READ, FALSE);
-    silc_schedule_wakeup(socket_stream->schedule);
-  } else {
-    /* Unschedule the socket */
-    silc_schedule_unset_listen_fd(socket_stream->schedule,
-				  socket_stream->sock);
-    silc_schedule_task_del_by_fd(socket_stream->schedule,
-				 socket_stream->sock);
-    silc_schedule_wakeup(socket_stream->schedule);
-  }
 }
 
 /* Return associated scheduler */

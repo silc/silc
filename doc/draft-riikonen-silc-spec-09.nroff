@@ -1239,10 +1239,10 @@ debugging mode.
 .ti 0
 3.10.1.1 CBC Mode
 
-The "cbc" encryption mode is CBC mode with inter-packet chaining.  This
-means that the Initialization Vector (IV) for the next encryption block
-is the previous ciphertext block.  The very first IV MUST be random and
-is generated as described in [SILC3].
+The "cbc" encryption mode is the standard cipher-block chaining mode.
+The very first IV is derived from the SILC Key Exchange protocol.
+Subsequent IVs for encryption is the previous ciphertext block.  The very
+first IV MUST be random and is generated as described in [SILC3].
 
 
 .ti 0
@@ -1368,19 +1368,12 @@ stream to perform the decryption.
 
 The "rcbc" encryption mode is CBC mode with randomized IV.  This means
 that each IV for each packet MUST be chosen randomly.  When encrypting
-more than one block the normal inter-packet chaining is used, but for
-the first block new random IV is selected in each packet.  In this mode
-the IV is appended at the end of the last ciphertext block and thus
-delivered to the recipient.  This mode increases the ciphertext size by
-one ciphertext block.  Note also that some data payloads in SILC are
-capable of delivering the IV to the recipient.  When explicitly
-encrypting these payloads with randomized CBC the IV MUST NOT be appended
-at the end of the ciphertext, but is placed at the specified location
-in the payload.  However, Message Payload for example has the IV at
-the location which is equivalent to placing it after the last ciphertext
-block.  When using CBC mode with such payloads it is actually equivalent
-to using randomized CBC since the IV is selected in random and included
-in the ciphertext.
+more than one block the normal IV chaining is used, but for the first
+block new random IV is selected in each packet.  In this mode the IV
+is appended to the ciphertext.  If this mode is used to secure the SILC
+session, the IV Included flag must be negotiated in SILC Key Exchange
+protocol.  It may also be used to secure Message Payloads which can
+deliver the IV to the recipient.
 
 
 .ti 0
@@ -2403,7 +2396,9 @@ processing is equivalent to normal SKE negotiation.
 After both parties have regenerated the session key, both MUST send
 SILC_PACKET_REKEY_DONE packet to each other.  These packets are still
 secured with the old key.  After these packets, the subsequent packets
-MUST be protected with the new key.
+MUST be protected with the new key.  Note that, in case SKE was performed
+again the SILC_PACKET_SUCCESS is not sent.  The SILC_PACKET_REKEY_DONE
+is sent in its stead.
 
 
 .ti 0

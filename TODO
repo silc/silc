@@ -161,6 +161,10 @@ lib/silccrypt			****PARTLY DONE****
 lib/silcutil			****PARTLY DONE****
 ============
 
+ o The regex code from lib/contrib might compile fine on all platforms.
+   No need to make it silcutil/unix/ specific.  Add them to generic
+   silcutil.c.
+
  o silc_stringprep to non-allocating version.
 
  o Compression routines are missing.  The protocol supports packet
@@ -310,13 +314,11 @@ lib/silcmath
  o All utility functions should be made non-allocating ones.
 
 
-lib/silcutil/epoc/*
-===================
+lib/silcutil/symbian/		****PARTLY DONE****
+=====================
 
-  o lib/silcutil/epoc routines missing or not completed.
-
-  o The PKCS#1 also calls global RNG (even though it is not used
-    currently in SILC, the interface allows its use).
+  o lib/silcutil/symbian routines missing or not completed.
+    (****TESTING NEEDED)
 
   o Something needs to be thought to the logging globals as well,
     like silc_debug etc.  They won't work on EPOC.  Perhaps logging
