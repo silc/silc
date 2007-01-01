@@ -1,0 +1,58 @@
+Compiling SILC Toolkit for Symbian OS
+=====================================
+
+The SILC Toolkit works on Symbian OS.  This document is intended for those
+that want to compile the SILC Toolkit by itself for Symbian OS, or for
+Symbian OS emulator.  The building environment expects Carbide.c++ and
+WINCW compiler for emulator target and GCCE (variant of GCC) for device
+target.  The SILC Toolkit has not been tested with other compilers or
+build systems.  The build environment expects MS Windows.
+
+
+Installing Build Environment
+============================
+
+If you do not have a working Carbide.c++ and Symbian OS SDK environment 
+installed in your MS Windows system it needs to be done first.
+
+1) Download the freely available Carbide.c++ Express from Nokia at 
+   http://forum.nokia.com.  The exact hyprelink location changes often, so 
+   it is not referenced here.  It is usually under "Tools and SDKs" link.
+
+2) After installation a web browser is opened automatically by the 
+   Carbide.c++ installer.  Follow its instructions by installing the Perl, 
+   CTags and the SDK.  Perl and the SDK are required, but CTags is 
+   optional and if necessary can be omitted.
+
+3) The SILC Toolkit is generic C and C++ code and should work with any
+   SDK.  If you don't have SDK already installed, install the latest 
+   version you can find.  The links to SDKs are found in the Carbide.c++ 
+   instructions after installation.  If you already have SDK in your 
+   system, you should use that.
+
+4) After installation the environment should be ready for SILC Toolkit 
+   building.
+
+
+Building with Carbide.c++
+=========================
+
+After starting the Carbide.c++, you should import one of the SILC Toolkit 
+projects under symbian/ directory in the SILC Toolkit package.  Four 
+projects exist:
+
+	libsilc/		- SILC Core DLL
+	libsilcclient/		- SILC Client DLL
+	libsilc_static/		- SILC Core static library
+	libsilcclient_static/	- SILC Client static library
+
+After loading the project, the first thing to do is to add a path variable 
+to define where the SILC Toolkit sources are located.  Go to Window -> 
+Preferences.  Then, go to General -> Workspace -> Linked Resources.  Add 
+a new SILCROOT path variable.  It should point to the drive and directory 
+where the extracted SILC Toolkit sources are located.  For example, if you 
+extracted the SILC Toolkit package into C:\temp\silc-toolkit-1.1.5 the 
+SILCROOT should point to C:\temp.  This needs to be done only once.
+
+After that, the building is ready to began.  Choose the target you want 
+(emulator or device, debug or release version) and start building.
