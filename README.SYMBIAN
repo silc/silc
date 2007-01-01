@@ -54,5 +54,5 @@ where the extracted SILC Toolkit sources are located.  For example, if you
 extracted the SILC Toolkit package into C:\temp\silc-toolkit-1.1.5 the 
 SILCROOT should point to C:\temp.  This needs to be done only once.
 
-After that, the building is ready to began.  Choose the target you want 
+After that, the building is ready to begin.  Choose the target you want 
 (emulator or device, debug or release version) and start building.
