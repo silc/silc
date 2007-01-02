@@ -1,11 +1,10 @@
-
 /*
 
   silcsymbiansocketstream.cpp
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -69,7 +68,7 @@ public:
   }
 
   /* Sending callback */
-  void RunL()
+  virtual void RunL()
   {
     if (iStatus != KErrNone) {
       if (iStatus == KErrEof)
@@ -86,7 +85,7 @@ public:
   }
 
   /* Cancel */
-  void DoCancel()
+  virtual void DoCancel()
   {
     s->sock->CancelWrite();
   }
@@ -121,7 +120,7 @@ public:
   }
 
   /* Reading callback */
-  void RunL()
+  virtual void RunL()
   {
     if (iStatus != KErrNone) {
       if (iStatus == KErrEof)
@@ -145,7 +144,7 @@ public:
   }
 
   /* Cancel */
-  void DoCancel()
+  virtual void DoCancel()
   {
     s->sock->CancelRecv();
   }
@@ -392,7 +391,7 @@ void silc_socket_stream_destroy(SilcStream stream)
     s->ss->Close();
     delete s->ss;
   }
-  delete s;
+  silc_free(s);
 }
 
 /* Sets stream notification callback for the stream */

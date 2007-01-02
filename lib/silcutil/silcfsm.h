@@ -133,8 +133,12 @@ typedef struct SilcFSMObject SilcFSMThreadStruct;
  *    }
  *
  ***/
+#ifndef SILC_FSM_SMALL_STACK
 #define SILC_FSM_CONTINUE \
   return fsm->next_state(fsm, fsm->fsm_context, fsm->state_context);
+#else
+#define SILC_FSM_CONTINUE return SILC_FSM_ST_CONTINUE;
+#endif /* SILC_FSM_SMALL_STACK */
 
 /****d* silcutil/SilcFSMAPI/SILC_FSM_YIELD
  *

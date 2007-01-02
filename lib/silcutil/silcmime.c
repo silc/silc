@@ -229,10 +229,10 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
       line = strdup(value);
       if (strrchr(line, '"')) {
 	*strrchr(line, '"') = '\0';
-	silc_silc_snprintf(b, sizeof(b) - 1, "--%s", line + 1);
+	silc_snprintf(b, sizeof(b) - 1, "--%s", line + 1);
 	mime->boundary = strdup(line + 1);
       } else {
-	silc_silc_snprintf(b, sizeof(b) - 1, "--%s", line);
+	silc_snprintf(b, sizeof(b) - 1, "--%s", line);
 	mime->boundary = strdup(line);
       }
       silc_free(line);
@@ -325,7 +325,7 @@ unsigned char *silc_mime_encode(SilcMime mime, SilcUInt32 *encoded_len)
   while (silc_hash_table_get(&htl, (void **)&field, (void **)&value)) {
     memset(tmp, 0, sizeof(tmp));
     SILC_LOG_DEBUG(("Header %s: %s", field, value));
-    silc_silc_snprintf(tmp, sizeof(tmp) - 1, "%s: %s\r\n", field, value);
+    silc_snprintf(tmp, sizeof(tmp) - 1, "%s: %s\r\n", field, value);
     silc_buffer_strformat(&buf, tmp, SILC_STRFMT_END);
     i++;
   }
@@ -370,8 +370,8 @@ unsigned char *silc_mime_encode(SilcMime mime, SilcUInt32 *encoded_len)
 
       /* If fields are not present, add extra CRLF */
       if (!silc_hash_table_count(part->fields))
-	silc_silc_snprintf(tmp2, sizeof(tmp2) - 1, "\r\n");
-      silc_silc_snprintf(tmp, sizeof(tmp) - 1, "%s--%s\r\n%s",
+	silc_snprintf(tmp2, sizeof(tmp2) - 1, "\r\n");
+      silc_snprintf(tmp, sizeof(tmp) - 1, "%s--%s\r\n%s",
 	       i != 0 ? "\r\n" : "", mime->boundary, tmp2);
       i = 1;
 
@@ -387,7 +387,7 @@ unsigned char *silc_mime_encode(SilcMime mime, SilcUInt32 *encoded_len)
     }
 
     memset(tmp, 0, sizeof(tmp));
-    silc_silc_snprintf(tmp, sizeof(tmp) - 1, "\r\n--%s--\r\n", mime->boundary);
+    silc_snprintf(tmp, sizeof(tmp) - 1, "\r\n--%s--\r\n", mime->boundary);
     buffer = silc_buffer_realloc(buffer, silc_buffer_truelen(buffer) +
 				 strlen(tmp));
     if (!buffer)
@@ -578,7 +578,7 @@ SilcDList silc_mime_encode_partial(SilcMime mime, int max_size)
     memset(type, 0, sizeof(type));
     gethostname(type, sizeof(type) - 1);
     srand((time(NULL) + buf_len) ^ rand());
-    silc_silc_snprintf(id, sizeof(id) - 1, "%X%X%X%s",
+    silc_snprintf(id, sizeof(id) - 1, "%X%X%X%s",
 	     (unsigned int)rand(), (unsigned int)time(NULL),
 	     (unsigned int)buf_len, type);
 
@@ -590,7 +590,7 @@ SilcDList silc_mime_encode_partial(SilcMime mime, int max_size)
 
     silc_mime_add_field(partial, "MIME-Version", "1.0");
     memset(type, 0, sizeof(type));
-    silc_silc_snprintf(type, sizeof(type) - 1,
+    silc_snprintf(type, sizeof(type) - 1,
 	     "message/partial; id=\"%s\"; number=1", id);
     silc_mime_add_field(partial, "Content-Type", type);
     silc_mime_add_data(partial, buf, max_size);
@@ -620,14 +620,14 @@ SilcDList silc_mime_encode_partial(SilcMime mime, int max_size)
       silc_mime_add_field(partial, "MIME-Version", "1.0");
 
       if (len > max_size) {
-	silc_silc_snprintf(type, sizeof(type) - 1,
+	silc_snprintf(type, sizeof(type) - 1,
 		 "message/partial; id=\"%s\"; number=%d",
 		 id, num++);
 	silc_mime_add_data(partial, buf + off, max_size);
 	off += max_size;
 	len -= max_size;
       } else {
-	silc_silc_snprintf(type, sizeof(type) - 1,
+	silc_snprintf(type, sizeof(type) - 1,
 		 "message/partial; id=\"%s\"; number=%d; total=%d",
 		 id, num, num);
 	silc_mime_add_data(partial, buf + off, len);
@@ -777,7 +777,7 @@ void silc_mime_set_multipart(SilcMime mime, const char *type,
     return;
 
   memset(tmp, 0, sizeof(tmp));
-  silc_silc_snprintf(tmp, sizeof(tmp) - 1, "multipart/%s; boundary=%s", type, boundary);
+  silc_snprintf(tmp, sizeof(tmp) - 1, "multipart/%s; boundary=%s", type, boundary);
   silc_mime_add_field(mime, "Content-Type", tmp);
   silc_free(mime->boundary);
   mime->boundary = strdup(boundary);

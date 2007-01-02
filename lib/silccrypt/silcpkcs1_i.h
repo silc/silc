@@ -45,7 +45,8 @@ SilcBool silc_pkcs1_encrypt(void *public_key,
 			    SilcUInt32 src_len,
 			    unsigned char *dst,
 			    SilcUInt32 dst_size,
-			    SilcUInt32 *ret_dst_len);
+			    SilcUInt32 *ret_dst_len,
+			    SilcRng rng);
 SilcBool silc_pkcs1_decrypt(void *private_key,
 			    unsigned char *src,
 			    SilcUInt32 src_len,

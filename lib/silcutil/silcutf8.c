@@ -491,7 +491,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
 	      if (enclen + 3 > bin_size)
 		return 0;
 	      bin[enclen] = '\\';
-	      silc_silc_snprintf(bin + enclen + 1, 3, "%02X", cv);
+	      silc_snprintf(bin + enclen + 1, 3, "%02X", cv);
 	    }
 	    enclen += 3;
 	    continue;

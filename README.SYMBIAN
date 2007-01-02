@@ -2,9 +2,9 @@ Compiling SILC Toolkit for Symbian OS
 =====================================
 
 The SILC Toolkit works on Symbian OS.  This document is intended for those
-that want to compile the SILC Toolkit by itself for Symbian OS, or for
+that want to compile the SILC Toolkit by themselves for Symbian OS, or for
 Symbian OS emulator.  The building environment expects Carbide.c++ and
-WINCW compiler for emulator target and GCCE (variant of GCC) for device
+WINSCW compiler for emulator target and GCCE (variant of GCC) for device
 target.  The SILC Toolkit has not been tested with other compilers or
 build systems.  The build environment expects MS Windows.
 

@@ -209,7 +209,7 @@ SilcBool silc_time_universal_string(SilcTime time_val, char *ret_string,
 {
   int ret, len = 0;
   memset(ret_string, 0, ret_string_size);
-  ret = silc_silc_snprintf(ret_string, ret_string_size - 1,
+  ret = silc_snprintf(ret_string, ret_string_size - 1,
 		 "%02u%02u%02u%02u%02u%02u",
 		 time_val->year % 100, time_val->month, time_val->day,
 		 time_val->hour, time_val->minute, time_val->second);
@@ -218,12 +218,12 @@ SilcBool silc_time_universal_string(SilcTime time_val, char *ret_string,
   len += ret;
 
   if (!time_val->utc_hour && !time_val->utc_minute) {
-    ret = silc_silc_snprintf(ret_string + len, ret_string_size - 1 - len, "Z");
+    ret = silc_snprintf(ret_string + len, ret_string_size - 1 - len, "Z");
     if (ret < 0)
       return FALSE;
     len += ret;
   } else {
-    ret = silc_silc_snprintf(ret_string + len, ret_string_size - 1 - len,
+    ret = silc_snprintf(ret_string + len, ret_string_size - 1 - len,
 		   "%c%02u%02u", time_val->utc_east ? '+' : '-',
 		   time_val->utc_hour, time_val->utc_minute);
     if (ret < 0)
@@ -319,7 +319,7 @@ SilcBool silc_time_generalized_string(SilcTime time_val, char *ret_string,
 {
   int len = 0, ret;
   memset(ret_string, 0, ret_string_size);
-  ret = silc_silc_snprintf(ret_string, ret_string_size - 1,
+  ret = silc_snprintf(ret_string, ret_string_size - 1,
 		 "%04u%02u%02u%02u%02u%02u",
 		 time_val->year, time_val->month, time_val->day, time_val->hour,
 		 time_val->minute, time_val->second);
@@ -328,7 +328,7 @@ SilcBool silc_time_generalized_string(SilcTime time_val, char *ret_string,
   len += ret;
 
   if (time_val->msecond) {
-    ret = silc_silc_snprintf(ret_string + len, ret_string_size - 1 - len,
+    ret = silc_snprintf(ret_string + len, ret_string_size - 1 - len,
 		   ".%lu", (unsigned long)time_val->msecond);
     if (ret < 0)
       return FALSE;
@@ -336,12 +336,12 @@ SilcBool silc_time_generalized_string(SilcTime time_val, char *ret_string,
   }
 
   if (!time_val->utc_hour && !time_val->utc_minute) {
-    ret = silc_silc_snprintf(ret_string + len, ret_string_size - 1 - len, "Z");
+    ret = silc_snprintf(ret_string + len, ret_string_size - 1 - len, "Z");
     if (ret < 0)
       return FALSE;
     len += ret;
   } else {
-    ret = silc_silc_snprintf(ret_string + len, ret_string_size - 1 - len,
+    ret = silc_snprintf(ret_string + len, ret_string_size - 1 - len,
 		   "%c%02u%02u", time_val->utc_east ? '+' : '-',
 		   time_val->utc_hour, time_val->utc_minute);
     if (ret < 0)

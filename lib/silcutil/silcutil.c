@@ -236,7 +236,7 @@ char *silc_format(char *fmt, ...)
 
   memset(buf, 0, sizeof(buf));
   va_start(args, fmt);
-  vsilc_snprintf(buf, sizeof(buf) - 1, fmt, args);
+  vsnprintf(buf, sizeof(buf) - 1, fmt, args);
   va_end(args);
 
   return strdup(buf);
@@ -473,14 +473,14 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len)
   memset(fingerprint, 0, sizeof(fingerprint));
   cp = fingerprint;
   for (i = 0; i < data_len; i++) {
-    silc_silc_snprintf(cp, sizeof(fingerprint), "%02X", data[i]);
+    silc_snprintf(cp, sizeof(fingerprint), "%02X", data[i]);
     cp += 2;
 
     if ((i + 1) % 2 == 0)
-      silc_silc_snprintf(cp++, sizeof(fingerprint), " ");
+      silc_snprintf(cp++, sizeof(fingerprint), " ");
 
     if ((i + 1) % 10 == 0)
-      silc_silc_snprintf(cp++, sizeof(fingerprint), " ");
+      silc_snprintf(cp++, sizeof(fingerprint), " ");
   }
   i--;
   if ((i + 1) % 2 == 0)

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -60,7 +60,10 @@ public:
     new_conn = new RSocket;
     if (!new_conn)
       return;
-    User::LeaveIfError(new_conn->Open(ss));
+    if (new_conn->Open(ss) != KErrNone) {
+      Listen();
+      return;
+    }
 
     /* Start listenning */
     sock.Accept(*new_conn, iStatus);
@@ -68,7 +71,7 @@ public:
   }
 
   /* Listener callback */
-  void RunL()
+  virtual void RunL()
   {
     if (iStatus != KErrNone) {
       if (new_conn)
@@ -87,13 +90,14 @@ public:
 			listener->lookup, listener->require_fqdn,
 			listener->schedule, silc_net_accept_stream,
 			(void *)listener);
+    new_conn = NULL;
 
     /* Continue listenning */
     Listen();
   }
 
   /* Cancel */
-  void DoCancel()
+  virtual void DoCancel()
   {
     sock.CancelAll();
     ss.Close();
@@ -173,7 +177,7 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     /* Set listener address */
     if (local_ip_addr) {
       server = TInetAddr(port);
-	  tmp = (TText *)local_ip_addr[i];
+      tmp = (TText *)local_ip_addr[i];
       ret = server.Input(tmp);
       if (ret != KErrNone)
 	goto err;
@@ -283,7 +287,7 @@ public:
   }
 
   /* Connection callback */
-  void RunL()
+  virtual void RunL()
   {
     if (iStatus != KErrNone) {
       if (callback)
@@ -292,7 +296,10 @@ public:
       delete sock;
       ss->Close();
       delete ss;
+      sock = NULL;
+      ss = NULL;
       delete this;
+      return;
     }
 
     /* Create stream */
@@ -306,19 +313,24 @@ public:
       delete sock;
       ss->Close();
       delete ss;
+      sock = NULL;
+      ss = NULL;
     }
 
     delete this;
   }
 
   /* Cancel */
-  void DoCancel()
+  virtual void DoCancel()
   {
-    sock->CancelConnect();
-    ss->Close();
-    delete ss;
-    delete sock;
-    delete this;
+    if (ss) {
+      ss->Close();
+      delete ss;
+    }
+    if (sock) {
+      sock->CancelConnect();
+      delete sock;
+    }
   }
 
   RSocket *sock;
@@ -374,7 +386,8 @@ static void silc_net_connect_abort(SilcAsyncOperation op, void *context)
   /* Abort */
   conn->callback = NULL;
   conn->op = NULL;
-  conn->DoCancel();
+  if (conn->sock)
+    sock->CancelConnect();
 }
 
 /* Create TCP/IP connection */
@@ -469,7 +482,7 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   /* Bind to the local address if provided */
   if (local_ip_addr) {
     local = TInetAddr(0);
-	tmp = (TText *)local_ip_addr;
+    tmp = (TText *)local_ip_addr;
     ret = local.Input(tmp);
     if (ret == KErrNone)
       ret = conn->sock->Bind(local);
@@ -547,7 +560,7 @@ SilcStream silc_net_udp_connect(const char *local_ip_addr, int local_port,
   /* Get local bind address */
   if (local_ip_addr) {
     local = TInetAddr(local_port);
-	tmp = (TText *)local_ip_addr;
+    tmp = (TText *)local_ip_addr;
     ret = local.Input(tmp);
     if (ret != KErrNone)
       goto err;
@@ -575,7 +588,7 @@ SilcStream silc_net_udp_connect(const char *local_ip_addr, int local_port,
   /* Set to connected state if remote address is provided. */
   if (remote_ip_addr && remote_port) {
     remote = TInetAddr(remote_port);
-	tmp = (TText *)remote_ip_addr;
+    tmp = (TText *)remote_ip_addr;
     ret = remote.Input(tmp);
     if (ret != KErrNone)
       goto err;

@@ -407,9 +407,9 @@ SILC_TASK_CALLBACK(silc_fsm_run)
   SILC_LOG_DEBUG(("Running %s %p", fsm->thread ? "thread" : "FSM", fsm));
 
   /* Run the states */
-//  do
+  do
     status = fsm->next_state(fsm, fsm->fsm_context, fsm->state_context);
-//  while (status == SILC_FSM_CONTINUE);
+  while (status == SILC_FSM_ST_CONTINUE);
 
   switch (status) {
   case SILC_FSM_ST_YIELD:

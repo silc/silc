@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2006 Pekka Riikonen
+  Copyright (C) 2003 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -105,34 +105,34 @@ SilcInt64 silc_time_usec(void);
  *
  * SYNOPSIS
  *
- *    const char *silc_time_string(SilcInt64 time_val);
+ *    const char *silc_time_string(SilcInt64 time_val_sec);
  *
  * DESCRIPTION
  *
  *    Returns time and date as string.  The caller must not free the string
  *    and next call to this function will delete the old string.  If the
- *    `time_val' is zero (0) returns current time as string, otherwise the
- *    `time_val' as string.  The `time_val' is in seconds since Epoch.
+ *    `time_val_sec' is zero (0) returns current time as string, otherwise the
+ *    `time_val_sec' as string.  The `time_val_sec' is in seconds since Epoch.
  *    Returns NULL on error.
  *
  ***/
-const char *silc_time_string(SilcInt64 time_val);
+const char *silc_time_string(SilcInt64 time_val_sec);
 
 /****f* silcutil/SilcTimeAPI/silc_time_value
  *
  * SYNOPSIS
  *
- *   SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time);
+ *   SilcBool silc_time_value(SilcInt64 time_val_msec, SilcTime ret_time);
  *
  * DESCRIPTION
  *
- *    Returns time and date as SilcTime.  If the `time_val' is zero (0)
- *    returns current time as SilcTime, otherwise the `time_val' as SilcTime.
- *    The `time_val' is in milliseconds since Epoch.  Returns FALSE on error,
- *    TRUE otherwise.
+ *    Returns time and date as SilcTime.  If the `time_val_msec' is zero (0)
+ *    returns current time as SilcTime, otherwise the `time_val_msec' as
+ *    SilcTime.  The `time_val_msec' is in milliseconds since Epoch.  Returns
+ *    FALSE on error, TRUE otherwise.
  *
  ***/
-SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time);
+SilcBool silc_time_value(SilcInt64 time_val_msec, SilcTime ret_time);
 
 /****f* silcutil/SilcTimeAPI/silc_time_universal
  *

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,10 +25,9 @@
 /* Thread structure for Symbian */
 typedef struct {
 #ifdef SILC_THREADS
-  RThread *thread;
   SilcThreadStart start_func;
   void *context;
-  bool waitable;
+  SilcBool waitable;
 #else
   void *tmp;
 #endif
@@ -36,54 +35,69 @@ typedef struct {
 
 /* The actual thread function */
 
-TInt silc_thread_epoc_start(TAny *context)
+static TInt silc_thread_start(TAny *context)
 {
 #ifdef SILC_THREADS
-  SilcSymbianThread thread = (SilcSymbianThread)context;
-  void *ret;
+  SilcSymbianThread tc = (SilcSymbianThread)context;
+  SilcThreadStart start_func = tc->start_func;
+  void *context = tc->context;
+  SilcBool waitable = tc->waitable;
 
-  ret = thread->start_func(thread->context);
-  silc_thread_exit(ret);
+  silc_free(tc);
+
+  /* Call the thread function */
+  if (waitable)
+    silc_thread_exit(start_func(context));
+  else
+    start_func(context);
 
 #endif
-  return 0;
+  return KErrNone;
 }
+
+/* Executed new thread */
 
 SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 			      bool waitable)
 {
 #ifdef SILC_THREADS
-  SilcSymbianThread thread;
+  SilcSymbianThread tc;
+  RThread *thread;
   TInt ret;
   TBuf<32> name;
 
   SILC_LOG_DEBUG(("Creating new thread"));
 
-  thread = (SilcSymbianThread)silc_calloc(1, sizeof(*thread));
-  if (!thread)
+  tc = (SilcSymbianThread)silc_calloc(1, sizeof(*thread));
+  if (!tc)
     return NULL;
-  thread->start_func = start_func;
-  thread->context = context;
-  thread->waitable = waitable;
+  tc->start_func = start_func;
+  tc->context = context;
+  tc->waitable = waitable;
+
+  /* Allocate thread */
+  thread = new RThread();
+  if (!thread) {
+    silc_free(tc);
+    return NULL;
+  }
 
   /* Create the thread */
-  /* XXX Unique name should be given for the thread */
-  thread->thread = new RThread();
-  if (!thread->thread) {
-    silc_free(thread);
+  name = (TText *)silc_time_string(0);
+  ret = thread->Create(name, silc_thread_start, 8192, 4096, 1024 * 1024,
+		       (TAny *)tc);
+  if (ret != KErrNone) {
+    SILC_LOG_ERROR(("Could not create new thread"));
+    delete thread;
+    silc_free(tc);
     return NULL;
   }
 
-  name = (TText *)"silc" + time(NULL);
-  ret = thread->thread->Create(name, silc_thread_epoc_start,
-			       8192, 4096, 1024 * 1024, (TAny *)thread);
-  if (ret != KErrNone) {
-    SILC_LOG_ERROR(("Could not create new thread"));
-    delete thread->thread;
-    silc_free(thread);
-    return NULL;
-  }
-  thread->thread->Resume();
+  /* Start the thread */
+  thread->Resume();
+
+  /* Close our instance to the thread */
+  thread->Close();
 
   return (SilcThread)thread;
 #else
@@ -93,27 +107,35 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 #endif
 }
 
+/* Exits current thread */
+
 void silc_thread_exit(void *exit_value)
 {
 #ifdef SILC_THREADS
-  /* XXX */
+  RThread().Kill((Tint)exit_value);
 #endif
 }
+
+/* Returns current thread context */
 
 SilcThread silc_thread_self(void)
 {
 #ifdef SILC_THREADS
-  /* XXX */
-  return NULL;
+  return (SilcThread)&RThread();
 #else
   return NULL;
 #endif
 }
 
+/* Blocks calling thread to wait for `thread' to finish. */
+
 SilcBool silc_thread_wait(SilcThread thread, void **exit_value)
 {
 #ifdef SILC_THREADS
-  /* XXX */
+  TRequestStatus req;
+  RThread *t = (RThread *)thread;
+  t->Logon(req);
+  User::WaitForAnyRequest();
   return TRUE;
 #else
   return FALSE;
