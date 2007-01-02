@@ -70,11 +70,10 @@ extern "C" {
 /* Automatically generated configuration header */
 #ifndef SILC_SYMBIAN
 #include "silcdefs.h"
-#include "silcdistdefs.h"
 #else
 #include "../symbian/silcdefs.h"
-#include "../symbian/silcdistdefs.h"
 #endif /* SILC_SYMBIAN */
+#include "silcdistdefs.h"
 #endif /* HAVE_SILCDEFS_H */
 
 /* Platform specific includes */
