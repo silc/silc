@@ -111,26 +111,6 @@ char *silc_pem_encode_file(unsigned char *data, SilcUInt32 data_len);
 unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
 			       SilcUInt32 *ret_len);
 
-/****f* silcutil/SilcStrStrUtilAPI/silc_snprintf
- *
- * SYNOPSIS
- *
- *    int silc_snprintf(char *str, SilcUInt32 size, const char *format, ...);
- *
- * DESCRIPTION
- *
- *    Produces output string according to the `format'.  The formatting
- *    is equivalent to silc_snprintf(3) and sprintf(3).  Returns the number of
- *    characters output into `str', at most `size' characters including the
- *    trailing '\0' character.  Returns negative value on error.
- *
- ***/
-#ifndef SILC_SNPRINTF
-int silc_snprintf(char *str, SilcUInt32 size, const char *format, ...);
-#else
-#define silc_snprintf snprintf
-#endif /* SILC_SNPRINTF */
-
 /****f* silcutil/SilcStrStrUtilAPI/silc_strncat
  *
  * SYNOPSIS

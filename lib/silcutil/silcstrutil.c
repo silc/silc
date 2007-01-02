@@ -170,15 +170,6 @@ unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
   return data;
 }
 
-#ifndef HAVE_SNPRINTF
-/* Outputs string according to the `format'. */
-
-int silc_snprintf(char *str, SilcUInt32 size, const char *format, ...)
-{
-
-}
-#endif /* HAVE_SNPRINTF */
-
 /* Concatenates the `src' into `dest'.  If `src_len' is more than the
    size of the `dest' (minus NULL at the end) the `src' will be
    truncated to fit. */

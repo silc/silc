@@ -119,7 +119,7 @@ lib/silcskr
    be.
 
 
-lib/silcske/silcske.[ch] ****PARTLY DONE****
+lib/silcske/silcske.[ch] 	****DONE****
 ========================
 
  o IV Included flag support in SKE (***DONE)
@@ -127,7 +127,7 @@ lib/silcske/silcske.[ch] ****PARTLY DONE****
  o UDP transport changes; retransmission support by using exponential
    backoff algorithm. (***DONE)
 
- o SilcConnAuth header file documentation.
+ o SilcConnAuth header file documentation. (***DONE)
 
 
 lib/silccrypt			****PARTLY DONE****

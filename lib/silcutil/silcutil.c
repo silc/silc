@@ -236,7 +236,7 @@ char *silc_format(char *fmt, ...)
 
   memset(buf, 0, sizeof(buf));
   va_start(args, fmt);
-  vsnprintf(buf, sizeof(buf) - 1, fmt, args);
+  silc_vsnprintf(buf, sizeof(buf) - 1, fmt, args);
   va_end(args);
 
   return strdup(buf);

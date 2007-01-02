@@ -1,3 +1,9 @@
+Tue Jan  2 17:18:46 EET 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added lib/silcutil/silcsnprintf.[ch].  Added in addition
+	  of silc_snprintf, silc_vsnprintf, silc_asprintf and
+	  silc_vasprintf.
+
 Sat Dec 30 23:23:17 EET 2006  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added preliminary Symbian support.  Changes around the source

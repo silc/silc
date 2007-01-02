@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2006 Pekka Riikonen
+#  Copyright (C) 2000 - 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -57,7 +57,8 @@ libsilcutil_la_SOURCES = \
 	silcasync.c	\
 	silctime.c	\
 	silcmime.c	\
-	silcstack.c
+	silcstack.c	\
+	silcsnprintf.c
 
 #ifdef SILC_DIST_TOOLKIT
 include_HEADERS =	\
@@ -92,7 +93,8 @@ include_HEADERS =	\
 	silcasync.h	\
 	silcasync_i.h	\
 	silcstack.h	\
-	silcstack_i.h
+	silcstack_i.h	\
+	silcsnprintf.h
 
 SILC_EXTRA_DIST = tests
 #endif SILC_DIST_TOOLKIT
