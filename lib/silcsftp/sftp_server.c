@@ -26,6 +26,7 @@
 /* SFTP Server context */
 typedef struct {
   SilcStream stream;
+  SilcSchedule schedule;
   SilcSFTPMonitors monitors;
   SilcSFTPMonitor monitor;
   void *monitor_context;
@@ -63,10 +64,19 @@ static void silc_sftp_send_packet(SilcSFTPServer sftp,
 			    silc_buffer_len(sftp->packet));
     if (ret == -2) {
       SILC_LOG_ERROR(("Error sending SFTP packet type %d", type));
-      break;
+      sftp->error((SilcSFTP)sftp, SILC_SFTP_STATUS_NO_CONNECTION,
+		  sftp->context);
+      silc_buffer_reset(sftp->packet);
+      return;
     }
-    if (ret <= 0)
-      break;
+    if (ret == 0) {
+      sftp->error((SilcSFTP)sftp, SILC_SFTP_STATUS_EOF, sftp->context);
+      silc_buffer_reset(sftp->packet);
+      return;
+    }
+    if (ret == -1)
+      return;
+
     silc_buffer_pull(sftp->packet, ret);
   }
 
@@ -355,6 +365,7 @@ SilcSFTP silc_sftp_server_start(SilcStream stream,
   if (!server)
     return NULL;
   server->stream = stream;
+  server->schedule = schedule;
   server->error = error_cb;
   server->context = context;
   server->fs = fs;
@@ -377,6 +388,7 @@ void silc_sftp_server_shutdown(SilcSFTP sftp)
 
   SILC_LOG_DEBUG(("Stopping SFTP server %p", server));
 
+  silc_stream_set_notifier(server->stream, server->schedule, NULL, NULL);
   if (server->packet)
     silc_buffer_free(server->packet);
   silc_free(server);
@@ -396,15 +408,13 @@ void silc_sftp_server_set_monitor(SilcSFTP sftp,
 }
 
 /* Function that is called to process the incmoing SFTP packet. */
-/* XXX Some day this will go away and we have automatic receive callbacks
-   for SilcSocketConnection API or SilcPacketContext API. */
 
 static void silc_sftp_server_receive_process(SilcSFTP sftp, SilcBuffer buffer)
 {
   SilcSFTPServer server = (SilcSFTPServer)sftp;
   SilcSFTPPacket type;
   char *filename = NULL, *path = NULL;
-  const unsigned char *payload = NULL;
+  unsigned char *payload = NULL;
   SilcUInt32 payload_len;
   int ret;
   SilcBufferStruct buf;
@@ -416,16 +426,103 @@ static void silc_sftp_server_receive_process(SilcSFTP sftp, SilcBuffer buffer)
   SILC_LOG_DEBUG(("Start"));
 
   /* Parse the packet */
-  type = silc_sftp_packet_decode(buffer, (unsigned char **)&payload,
-				 &payload_len);
+  type = silc_sftp_packet_decode(buffer, &payload, &payload_len);
   if (!type)
     return;
 
-  silc_buffer_set(&buf, (unsigned char *)payload, payload_len);
+  silc_buffer_set(&buf, payload, payload_len);
 
   memset(&mdata, 0, sizeof(mdata));
 
   switch (type) {
+  case SILC_SFTP_READ:
+    {
+      unsigned char *hdata;
+      SilcUInt32 hdata_len;
+      SilcUInt64 offset;
+      SilcUInt32 len;
+
+      SILC_LOG_DEBUG(("Read request"));
+
+      ret = silc_buffer_unformat(&buf,
+				 SILC_STR_UI_INT(&id),
+				 SILC_STR_UI32_NSTRING(&hdata,
+						       &hdata_len),
+				 SILC_STR_UI_INT64(&offset),
+				 SILC_STR_UI_INT(&len),
+				 SILC_STR_END);
+      if (ret < 0)
+	goto failure;
+
+      /* Get the handle */
+      handle = server->fs->fs->sftp_get_handle(server->fs->fs_context, sftp,
+					       (const unsigned char *)hdata,
+					       hdata_len);
+      if (!handle) {
+	silc_sftp_send_error(server, SILC_SFTP_STATUS_NO_SUCH_FILE, id);
+	break;
+      }
+
+      /* Read operation */
+      server->fs->fs->sftp_read(server->fs->fs_context, sftp,
+				handle, offset, len,
+				silc_sftp_server_data, SILC_32_TO_PTR(id));
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_READ && server->monitor) {
+	mdata.offset = offset;
+	mdata.data_len = len;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_READ, &mdata,
+			   server->monitor_context);
+      }
+    }
+    break;
+
+  case SILC_SFTP_WRITE:
+    {
+      unsigned char *hdata;
+      SilcUInt32 hdata_len;
+      SilcUInt64 offset;
+      unsigned char *data;
+      SilcUInt32 data_len;
+
+      SILC_LOG_DEBUG(("Read request"));
+
+      ret = silc_buffer_unformat(&buf,
+				 SILC_STR_UI_INT(&id),
+				 SILC_STR_UI32_NSTRING(&hdata,
+						       &hdata_len),
+				 SILC_STR_UI_INT64(&offset),
+				 SILC_STR_UI32_NSTRING(&data,
+						       &data_len),
+				 SILC_STR_END);
+      if (ret < 0)
+	goto failure;
+
+      /* Get the handle */
+      handle = server->fs->fs->sftp_get_handle(server->fs->fs_context, sftp,
+					       (const unsigned char *)hdata,
+					       hdata_len);
+      if (!handle) {
+	silc_sftp_send_error(server, SILC_SFTP_STATUS_NO_SUCH_FILE, id);
+	break;
+      }
+
+      /* Write operation */
+      server->fs->fs->sftp_write(server->fs->fs_context, sftp, handle, offset,
+				 (const unsigned char *)data, data_len,
+				 silc_sftp_server_status, SILC_32_TO_PTR(id));
+
+      /* Call monitor */
+      if (server->monitors & SILC_SFTP_MONITOR_WRITE && server->monitor) {
+	mdata.offset = offset;
+	mdata.data_len = data_len;
+	(*server->monitor)(sftp, SILC_SFTP_MONITOR_WRITE, &mdata,
+			   server->monitor_context);
+      }
+    }
+    break;
+
   case SILC_SFTP_INIT:
     {
       SilcSFTPVersion version;
@@ -533,94 +630,6 @@ static void silc_sftp_server_receive_process(SilcSFTP sftp, SilcBuffer buffer)
       server->fs->fs->sftp_close(server->fs->fs_context, sftp, handle,
 				 silc_sftp_server_status, SILC_32_TO_PTR(id));
 
-    }
-    break;
-
-  case SILC_SFTP_READ:
-    {
-      unsigned char *hdata;
-      SilcUInt32 hdata_len;
-      SilcUInt64 offset;
-      SilcUInt32 len;
-
-      SILC_LOG_DEBUG(("Read request"));
-
-      ret = silc_buffer_unformat(&buf,
-				 SILC_STR_UI_INT(&id),
-				 SILC_STR_UI32_NSTRING(&hdata,
-						       &hdata_len),
-				 SILC_STR_UI_INT64(&offset),
-				 SILC_STR_UI_INT(&len),
-				 SILC_STR_END);
-      if (ret < 0)
-	goto failure;
-
-      /* Get the handle */
-      handle = server->fs->fs->sftp_get_handle(server->fs->fs_context, sftp,
-					       (const unsigned char *)hdata,
-					       hdata_len);
-      if (!handle) {
-	silc_sftp_send_error(server, SILC_SFTP_STATUS_NO_SUCH_FILE, id);
-	break;
-      }
-
-      /* Read operation */
-      server->fs->fs->sftp_read(server->fs->fs_context, sftp,
-				handle, offset, len,
-				silc_sftp_server_data, SILC_32_TO_PTR(id));
-
-      /* Call monitor */
-      if (server->monitors & SILC_SFTP_MONITOR_READ && server->monitor) {
-	mdata.offset = offset;
-	mdata.data_len = len;
-	(*server->monitor)(sftp, SILC_SFTP_MONITOR_READ, &mdata,
-			   server->monitor_context);
-      }
-    }
-    break;
-
-  case SILC_SFTP_WRITE:
-    {
-      unsigned char *hdata;
-      SilcUInt32 hdata_len;
-      SilcUInt64 offset;
-      unsigned char *data;
-      SilcUInt32 data_len;
-
-      SILC_LOG_DEBUG(("Read request"));
-
-      ret = silc_buffer_unformat(&buf,
-				 SILC_STR_UI_INT(&id),
-				 SILC_STR_UI32_NSTRING(&hdata,
-						       &hdata_len),
-				 SILC_STR_UI_INT64(&offset),
-				 SILC_STR_UI32_NSTRING(&data,
-						       &data_len),
-				 SILC_STR_END);
-      if (ret < 0)
-	goto failure;
-
-      /* Get the handle */
-      handle = server->fs->fs->sftp_get_handle(server->fs->fs_context, sftp,
-					       (const unsigned char *)hdata,
-					       hdata_len);
-      if (!handle) {
-	silc_sftp_send_error(server, SILC_SFTP_STATUS_NO_SUCH_FILE, id);
-	break;
-      }
-
-      /* Write operation */
-      server->fs->fs->sftp_write(server->fs->fs_context, sftp, handle, offset,
-				 (const unsigned char *)data, data_len,
-				 silc_sftp_server_status, SILC_32_TO_PTR(id));
-
-      /* Call monitor */
-      if (server->monitors & SILC_SFTP_MONITOR_WRITE && server->monitor) {
-	mdata.offset = offset;
-	mdata.data_len = data_len;
-	(*server->monitor)(sftp, SILC_SFTP_MONITOR_WRITE, &mdata,
-			   server->monitor_context);
-      }
     }
     break;
 
@@ -939,7 +948,8 @@ static void silc_sftp_server_receive_process(SilcSFTP sftp, SilcBuffer buffer)
 
       /* Setstat operation */
       server->fs->fs->sftp_setstat(server->fs->fs_context, sftp, path, attrs,
-				   silc_sftp_server_status, SILC_32_TO_PTR(id));
+				   silc_sftp_server_status,
+				   SILC_32_TO_PTR(id));
 
       silc_sftp_attr_free(attrs);
       silc_free(path);
@@ -1050,7 +1060,8 @@ static void silc_sftp_server_receive_process(SilcSFTP sftp, SilcBuffer buffer)
 
       /* Symlink operation */
       server->fs->fs->sftp_symlink(server->fs->fs_context, sftp, path, target,
-				   silc_sftp_server_status, SILC_32_TO_PTR(id));
+				   silc_sftp_server_status,
+				   SILC_32_TO_PTR(id));
 
       silc_free(path);
       silc_free(target);

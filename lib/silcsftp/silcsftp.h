@@ -68,10 +68,8 @@ typedef struct SilcSFTPStruct *SilcSFTP;
  *
  *    SFTP Version type.
  *
- * SOURCE
- */
+ ***/
 typedef SilcUInt32 SilcSFTPVersion;
-/***/
 
 /* SFTP protocol version */
 #define SILC_SFTP_PROTOCOL_VERSION       3
@@ -243,7 +241,9 @@ typedef void (*SilcSFTPVersionCallback)(SilcSFTP sftp,
  *
  *    Error callback is called if a connection error occurs during SFTP
  *    session.  If the connection or stream is closed this callback is
- *    called.  Other errors are delivered in other callbacks.
+ *    called.  Other errors are delivered in other callbacks.  Only the
+ *    SILC_SFTP_STATUS_EOF or SILC_SFTP_STATUS_NO_CONNECTION is delivered
+ *    in this callback.
  *
  ***/
 typedef void (*SilcSFTPErrorCallback)(SilcSFTP sftp,
@@ -403,11 +403,12 @@ typedef void (*SilcSFTPExtendedCallback)(SilcSFTP sftp,
  * DESCRIPTION
  *
  *    Starts SFTP client and returns context to it.  The version callback
- *    indicated by the `callback' will be called after the SFTP session has
+ *    indicated by the `version_cb' will be called after the SFTP session has
  *    been started and server has returned the version of the protocol.  The
  *    SFTP client context is returned in the callback too.  This returns the
  *    allocated SFTP client context or NULL on error.  The `stream' will be
- *    used to read and write the SFTP packets.
+ *    used to read and write the SFTP packets.  The `error_cb' will be called
+ *    in case a stream error occurs, such as end of stream.
  *
  ***/
 SilcSFTP silc_sftp_client_start(SilcStream stream,
@@ -867,10 +868,11 @@ void silc_sftp_extended(SilcSFTP sftp,
  * DESCRIPTION
  *
  *    Starts SFTP server and returns a context to it.  This function returns
- *    the allocated SFTP server context or NULL on error. The `send_packet'
- *    is called by the library when it needs to send a packet. The `fs' is the
- *    filesystem context allocated by the application.  Each socket connection
- *    should start its own server by calling this function.
+ *    the allocated SFTP server context or NULL on error.  The `stream' is
+ *    the stream (connection) to the client.  The `error_cb' will be called
+ *    when the `stream' is ended (SILC_SFTP_STATUS_EOF).  The caller is
+ *    responsible of closing and destroying the `stream'.  The `fs' is the
+ *    filesystem context allocated by the application.
  *
  ***/
 SilcSFTP silc_sftp_server_start(SilcStream stream,

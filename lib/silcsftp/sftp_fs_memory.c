@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2004 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -70,8 +70,8 @@ static char *mem_expand_path(MemFSEntry root, const char *path)
 
 /* Add `entry' to directory `dir'. */
 
-static bool mem_add_entry(MemFSEntry dir, MemFSEntry entry,
-			  bool check_perm)
+static SilcBool mem_add_entry(MemFSEntry dir, MemFSEntry entry,
+			      SilcBool check_perm)
 {
   int i;
 
@@ -115,7 +115,7 @@ static bool mem_add_entry(MemFSEntry dir, MemFSEntry entry,
 
 /* Removes entry `entry' and all entries under it recursively. */
 
-static bool mem_del_entry(MemFSEntry entry, bool check_perm)
+static SilcBool mem_del_entry(MemFSEntry entry, SilcBool check_perm)
 {
   int i;
 
@@ -207,8 +207,8 @@ static MemFSEntry mem_find_entry_path(MemFSEntry dir, const char *p)
 /* Deletes entry by the name `name' from the directory `dir'. This does
    not check subdirectories recursively. */
 
-static bool mem_del_entry_name(MemFSEntry dir, const char *name,
-			       SilcUInt32 name_len, bool check_perm)
+static SilcBool mem_del_entry_name(MemFSEntry dir, const char *name,
+				   SilcUInt32 name_len, SilcBool check_perm)
 {
   MemFSEntry entry;
 
@@ -275,7 +275,7 @@ static MemFSFileHandle mem_create_handle(MemFS fs, int fd, MemFSEntry entry)
 
 /* Deletes the handle and remove it from the open handle list. */
 
-static bool mem_del_handle(MemFS fs, MemFSFileHandle handle)
+static SilcBool mem_del_handle(MemFS fs, MemFSFileHandle handle)
 {
   if (handle->handle > fs->handles_count)
     return FALSE;
@@ -335,9 +335,14 @@ SilcSFTPFilesystem silc_sftp_fs_memory_alloc(SilcSFTPFSMemoryPerm perm)
   fs->root_perm = perm;
   fs->root->directory = TRUE;
   fs->root->name = strdup(DIR_SEPARATOR);
+  if (!fs->root->name) {
+    silc_free(fs->root);
+    silc_free(fs);
+  }
 
   filesystem = silc_calloc(1, sizeof(*filesystem));
   if (!filesystem) {
+    silc_free(fs->root->name);
     silc_free(fs->root);
     silc_free(fs);
     return NULL;
@@ -380,12 +385,19 @@ void *silc_sftp_fs_memory_add_dir(SilcSFTPFilesystem fs, void *dir,
     return NULL;
 
   entry->perm = perm;
-  entry->name = strdup(name);
   entry->directory = TRUE;
   entry->parent = dir ? dir : memfs->root;
-
-  if (!mem_add_entry(dir ? dir : memfs->root, entry, FALSE))
+  entry->name = strdup(name);
+  if (!entry->name) {
+    silc_free(entry);
     return NULL;
+  }
+
+  if (!mem_add_entry(dir ? dir : memfs->root, entry, FALSE)) {
+    silc_free(entry->name);
+    silc_free(entry);
+    return NULL;
+  }
 
   return entry;
 }
@@ -397,10 +409,10 @@ void *silc_sftp_fs_memory_add_dir(SilcSFTPFilesystem fs, void *dir,
    in memory file system. The filesystem does not allow removing directories
    with remote access using the filesystem access function sftp_rmdir. */
 
-bool silc_sftp_fs_memory_del_dir(SilcSFTPFilesystem fs, void *dir)
+SilcBool silc_sftp_fs_memory_del_dir(SilcSFTPFilesystem fs, void *dir)
 {
   MemFS memfs = (MemFS)fs->fs_context;
-  bool ret;
+  SilcBool ret;
 
   if (dir)
     return mem_del_entry(dir, FALSE);
@@ -415,6 +427,11 @@ bool silc_sftp_fs_memory_del_dir(SilcSFTPFilesystem fs, void *dir)
   memfs->root->perm = memfs->root_perm;
   memfs->root->directory = TRUE;
   memfs->root->name = strdup(DIR_SEPARATOR);
+  if (!memfs->root->name) {
+    silc_free(memfs->root);
+    memfs->root = NULL;
+    return FALSE;
+  }
 
   return ret;
 }
@@ -427,10 +444,10 @@ bool silc_sftp_fs_memory_del_dir(SilcSFTPFilesystem fs, void *dir)
    file and they work in POSIX style. Returns TRUE if the file was
    added to the directory. */
 
-bool silc_sftp_fs_memory_add_file(SilcSFTPFilesystem fs, void *dir,
-				  SilcSFTPFSMemoryPerm perm,
-				  const char *filename,
-				  const char *realpath)
+SilcBool silc_sftp_fs_memory_add_file(SilcSFTPFilesystem fs, void *dir,
+				      SilcSFTPFSMemoryPerm perm,
+				      const char *filename,
+				      const char *realpath)
 {
   MemFS memfs = (MemFS)fs->fs_context;
   MemFSEntry entry;
@@ -440,9 +457,15 @@ bool silc_sftp_fs_memory_add_file(SilcSFTPFilesystem fs, void *dir,
     return FALSE;
 
   entry->perm = perm;
+  entry->directory = FALSE;
   entry->name = strdup(filename);
   entry->data = strdup(realpath);
-  entry->directory = FALSE;
+  if (!entry->name || !entry->data) {
+    silc_free(entry->name);
+    silc_free(entry->data);
+    silc_free(entry);
+    return FALSE;
+  }
 
   return mem_add_entry(dir ? dir : memfs->root, entry, FALSE);
 }
@@ -450,8 +473,8 @@ bool silc_sftp_fs_memory_add_file(SilcSFTPFilesystem fs, void *dir,
 /* Removes a file indicated by the `filename' from the directory
    indicated by the `dir'. Returns TRUE if the removing was success. */
 
-bool silc_sftp_fs_memory_del_file(SilcSFTPFilesystem fs, void *dir,
-				  const char *filename)
+SilcBool silc_sftp_fs_memory_del_file(SilcSFTPFilesystem fs, void *dir,
+				      const char *filename)
 {
   MemFS memfs = (MemFS)fs->fs_context;
 

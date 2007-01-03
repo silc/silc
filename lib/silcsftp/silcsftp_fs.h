@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -364,7 +364,7 @@ void *silc_sftp_fs_memory_add_dir(SilcSFTPFilesystem fs, void *dir,
  *
  * SYNOPSIS
  *
- *    bool silc_sftp_fs_memory_del_dir(SilcSFTPFilesystem fs, void *dir);
+ *    SilcBool silc_sftp_fs_memory_del_dir(SilcSFTPFilesystem fs, void *dir);
  *
  * DESCRIPTION
  *
@@ -377,16 +377,16 @@ void *silc_sftp_fs_memory_add_dir(SilcSFTPFilesystem fs, void *dir,
  *    access function sftp_rmdir.
  *
  ***/
-bool silc_sftp_fs_memory_del_dir(SilcSFTPFilesystem fs, void *dir);
+SilcBool silc_sftp_fs_memory_del_dir(SilcSFTPFilesystem fs, void *dir);
 
 /****f* silcsftp/SilcSFTPFSAPI/silc_sftp_fs_memory_add_file
  *
  * SYNOPSIS
  *
- *    bool silc_sftp_fs_memory_add_file(SilcSFTPFilesystem fs, void *dir,
- *                                      SilcSFTPFSMemoryPerm perm,
- *                                      const char *filename,
- *                                      const char *realpath);
+ *    SilcBool silc_sftp_fs_memory_add_file(SilcSFTPFilesystem fs, void *dir,
+ *                                          SilcSFTPFSMemoryPerm perm,
+ *                                          const char *filename,
+ *                                          const char *realpath);
  *
  * DESCRIPTION
  *
@@ -401,17 +401,17 @@ bool silc_sftp_fs_memory_del_dir(SilcSFTPFilesystem fs, void *dir);
  *    was added to the directory.
  *
  ***/
-bool silc_sftp_fs_memory_add_file(SilcSFTPFilesystem fs, void *dir,
-				  SilcSFTPFSMemoryPerm perm,
-				  const char *filename,
-				  const char *realpath);
+SilcBool silc_sftp_fs_memory_add_file(SilcSFTPFilesystem fs, void *dir,
+				      SilcSFTPFSMemoryPerm perm,
+				      const char *filename,
+				      const char *realpath);
 
 /****f* silcsftp/SilcSFTPFSAPI/silc_sftp_fs_memory_del_file
  *
  * SYNOPSIS
  *
- *    bool silc_sftp_fs_memory_del_file(SilcSFTPFilesystem fs, void *dir,
- *                                      const char *filename);
+ *    SilcBool silc_sftp_fs_memory_del_file(SilcSFTPFilesystem fs, void *dir,
+ *                                          const char *filename);
  *
  * DESCRIPTION
  *
@@ -422,7 +422,7 @@ bool silc_sftp_fs_memory_add_file(SilcSFTPFilesystem fs, void *dir,
  *    access function sftp_remove.
  *
  ***/
-bool silc_sftp_fs_memory_del_file(SilcSFTPFilesystem fs, void *dir,
-				  const char *filename);
+SilcBool silc_sftp_fs_memory_del_file(SilcSFTPFilesystem fs, void *dir,
+				      const char *filename);
 
 #endif /* SILCSFTP_FS_H */
