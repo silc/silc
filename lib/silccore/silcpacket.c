@@ -2097,7 +2097,6 @@ static void silc_packet_read_process(SilcPacketStream stream)
   silc_buffer_reset(inbuf);
 }
 
-
 /****************************** Packet Waiting ******************************/
 
 /* Packet wait receive callback */
@@ -2245,3 +2244,210 @@ int silc_packet_wait(void *waiter, int timeout, SilcPacket *return_packet)
 
   return ret == TRUE ? 1 : 0;
 }
+
+/************************** Packet Stream Wrapper ***************************/
+
+/* Packet stream wrapper receive callback */
+static SilcBool
+silc_packet_wrap_packet_receive(SilcPacketEngine engine,
+				SilcPacketStream stream,
+				SilcPacket packet,
+				void *callback_context,
+				void *stream_context);
+
+const SilcStreamOps silc_packet_stream_ops;
+
+/* Packet stream wrapper context */
+typedef struct {
+  const SilcStreamOps *ops;
+  SilcPacketStream stream;
+  SilcStreamNotifier callback;
+  void *context;
+  SilcList in_queue;
+  SilcPacketType type;
+  SilcPacketFlags flags;
+  unsigned int closed        : 1;
+} *SilcPacketWrapperStream;
+
+/* Packet wrapper callbacks */
+static SilcPacketCallbacks silc_packet_wrap_cbs =
+{
+  silc_packet_wrap_packet_receive, NULL, NULL
+};
+
+/* Packet stream wrapper receive callback */
+
+static SilcBool
+silc_packet_wrap_packet_receive(SilcPacketEngine engine,
+				SilcPacketStream stream,
+				SilcPacket packet,
+				void *callback_context,
+				void *stream_context)
+{
+  SilcPacketWrapperStream pws = callback_context;
+
+  if (!pws->closed || !pws->callback)
+    return FALSE;
+
+  silc_list_add(pws->in_queue, packet);
+
+  /* Call notifier callback */
+  pws->callback((SilcStream)pws, SILC_STREAM_CAN_READ, pws->context);
+
+  return TRUE;
+}
+
+/* Read SILC packet */
+
+int silc_packet_wrap_read(SilcStream stream, unsigned char *buf,
+			  SilcUInt32 buf_len)
+{
+  SilcPacketWrapperStream pws = stream;
+  SilcPacket packet;
+  int len;
+
+  if (pws->ops != &silc_packet_stream_ops)
+    return -2;
+  if (!silc_list_count(pws->in_queue))
+    return -1;
+  if (pws->closed)
+    return -2;
+
+  silc_list_start(pws->in_queue);
+  packet = silc_list_get(pws->in_queue);
+  silc_list_del(pws->in_queue, packet);
+
+  len = silc_buffer_len(&packet->buffer);
+  if (len > buf_len)
+    len = buf_len;
+
+  memcpy(buf, packet->buffer.data, len);
+
+  silc_packet_free(packet);
+  return len;
+}
+
+/* Write SILC packet */
+
+int silc_packet_wrap_write(SilcStream stream, const unsigned char *data,
+			   SilcUInt32 data_len)
+{
+  SilcPacketWrapperStream pws = stream;
+
+  if (pws->ops != &silc_packet_stream_ops)
+    return -2;
+
+  /* Send the SILC packet */
+  if (!silc_packet_send(pws->stream, pws->type, pws->flags, data, data_len))
+    return -2;
+
+  return data_len;
+}
+
+/* Close stream */
+
+SilcBool silc_packet_wrap_close(SilcStream stream)
+{
+  SilcPacketWrapperStream pws = stream;
+
+  if (pws->ops != &silc_packet_stream_ops)
+    return FALSE;
+  if (pws->closed)
+    return TRUE;
+
+  /* Unlink */
+  if (pws->callback)
+    silc_packet_stream_unlink(pws->stream, &silc_packet_wrap_cbs, pws);
+  pws->closed = TRUE;
+
+  return TRUE;
+}
+
+/* Destroy wrapper stream */
+
+void silc_packet_wrap_destroy(SilcStream stream)
+
+{
+  SilcPacketWrapperStream pws = stream;
+  SilcPacket packet;
+
+  if (pws->ops != &silc_packet_stream_ops)
+    return;
+
+  SILC_LOG_DEBUG(("Destroying wrapped packet stream %p", pws));
+
+  silc_stream_close(stream);
+  silc_list_start(pws->in_queue);
+  while ((packet = silc_list_get(pws->in_queue)))
+    silc_packet_free(packet);
+  silc_packet_stream_unref(pws->stream);
+
+  silc_free(pws);
+}
+
+/* Link stream to receive packets */
+
+void silc_packet_wrap_notifier(SilcStream stream,
+			       SilcSchedule schedule,
+			       SilcStreamNotifier callback,
+			       void *context)
+{
+  SilcPacketWrapperStream pws = stream;
+
+  if (pws->ops != &silc_packet_stream_ops)
+    return;
+  if (pws->closed)
+    return;
+
+  /* Link to receive packets */
+  if (callback)
+    silc_packet_stream_link(pws->stream, &silc_packet_wrap_cbs, pws,
+			    100000, pws->type, -1);
+  else
+    silc_packet_stream_unlink(pws->stream, &silc_packet_wrap_cbs, pws);
+
+  pws->callback = callback;
+  pws->context = context;
+}
+
+/* Return schedule */
+
+SilcSchedule silc_packet_wrap_get_schedule(SilcStream stream)
+{
+  return NULL;
+}
+
+/* Wraps packet stream into SilcStream. */
+
+SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
+                                   SilcPacketType type,
+                                   SilcPacketFlags flags)
+{
+  SilcPacketWrapperStream pws;
+
+  pws = silc_calloc(1, sizeof(*pws));
+  if (!pws)
+    return NULL;
+
+  SILC_LOG_DEBUG(("Wrapping packet stream %p to stream %p", stream, pws));
+
+  pws->ops = &silc_packet_stream_ops;
+  pws->stream = stream;
+  pws->type = type;
+  pws->flags = flags;
+
+  silc_list_init(pws->in_queue, struct SilcPacketStruct, next);
+  silc_packet_stream_ref(stream);
+
+  return (SilcStream)pws;
+}
+
+const SilcStreamOps silc_packet_stream_ops =
+{
+  silc_packet_wrap_read,
+  silc_packet_wrap_write,
+  silc_packet_wrap_close,
+  silc_packet_wrap_destroy,
+  silc_packet_wrap_notifier,
+  silc_packet_wrap_get_schedule,
+};

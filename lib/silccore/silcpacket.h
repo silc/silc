@@ -611,6 +611,39 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
 			       SilcPacketCallbacks *callbacks,
 			       void *callback_context);
 
+/****f* silccore/SilcPacketAPI/silc_packet_stream_wrap
+ *
+ * SYNOPSIS
+ *
+ *    SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
+ *                                       SilcPacketType type,
+ *                                       SilcPacketFlags flags);
+ *
+ * DESCRIPTION
+ *
+ *    Wraps the packet stream indicated by `stream' into a SilcStream for
+ *    the packet type indicated by `type' with packet flags indicated by
+ *    `flags'.  The returned SilcStream can be used to read and write the
+ *    specified SILC packets with the specified packet flags, by calling
+ *    silc_stream_read and silc_stream_write, respectively.  The returned
+ *    stream can be destroyed by calling silc_stream_destroy.  It does not
+ *    destroy the wrapped packet stream.
+ *
+ *    The silc_stream_set_notifier must be called before the returned stream
+ *    can be used to receive packets.  The SILC_STREAM_CAN_READ will be
+ *    returned to the notifier callback to indicate that a packet is ready
+ *    for reading.  Calling silc_stream_read once returns one complete SILC
+ *    packet data payload (which is of type of `type').
+ *
+ *    The returned SilcStream can be used as any normal stream and all
+ *    SilcStream API functions may be used with the stream.  This returns
+ *    NULL on error.
+ *
+ ***/
+SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
+				   SilcPacketType type,
+				   SilcPacketFlags flags);
+
 /****f* silccore/SilcPacketAPI/silc_packet_get_sender
  *
  * SYNOPSIS
