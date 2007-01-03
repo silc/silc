@@ -38,6 +38,8 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o File transfer rewrite.
 
+ o Connection auth request.
+
  o Starting key exchange directly, rewrite. (***DONE)
 
  o Channel messages, channel private keys, channel entires, channel 
