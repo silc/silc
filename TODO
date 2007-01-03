@@ -76,10 +76,10 @@ lib/silcclient, The Client Library	***PARTLY DONE****
  o All packet waiting timeout tests and error condition tests.
 
 
-lib/silcsftp
+lib/silcsftp			****DONE****
 ============
 
- o Porting to use the new util library.
+ o Porting to use the new util library. (***DONE)
 
 
 lib/silccore/silcpacket.[ch]	****DONE****

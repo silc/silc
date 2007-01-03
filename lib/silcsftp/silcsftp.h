@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,15 +24,20 @@
  *
  * DESCRIPTION
  *
- *    SILC SFTP Interface is the implementation of the Secure File Transfer
- *    Protocol.  The interface defines the SFTP client and the SFTP server.
- *    The SFTP is the mandatory file transfer protocol in the SILC protocol.
- *    The SFTP server implementation is filesystem independent and generic
- *    interface is defined to represent filesystem access.
+ * SILC SFTP Interface is the implementation of the Secure File Transfer
+ * Protocol (or SSH File Transfer Protocol).  The interface defines the SFTP
+ * client and the SFTP server.  The SFTP is the mandatory file transfer
+ * protocol in the SILC protocol, and when used in SILC the SFTP packets are
+ * encapsulated into SILC packets.  The SFTP server implementation is
+ * filesystem independent and generic interface is defined to represent
+ * filesystem access.
  *
- *    The SilcSFTP context is the actual SFTP client or SFTP server, and
- *    each SFTP session (associated to a socket connection) must create
- *    own SFTP context.
+ * The SilcSFTP context is the actual SFTP client or SFTP server, and each
+ * SFTP session should create its own SFTP context.
+ *
+ * The SILC SFTP library is a generic SFTP implementation and not directly
+ * related to either SILC or SSH.  It could be used for any general purpose
+ * SFTP application.
  *
  ***/
 
@@ -92,7 +97,7 @@ typedef enum {
   SILC_SFTP_STATUS_PERMISSION_DENIED   = 3,  /* No sufficient permissions */
   SILC_SFTP_STATUS_FAILURE             = 4,  /* Operation failed */
   SILC_SFTP_STATUS_BAD_MESSAGE         = 5,  /* Bad message received */
-  SILC_SFTP_STATUS_NO_CONNECTION       = 6,  /* No connection to server */
+  SILC_SFTP_STATUS_NO_CONNECTION       = 6,  /* No connection to remote */
   SILC_SFTP_STATUS_CONNECTION_LOST     = 7,  /* Connection lost to server */
   SILC_SFTP_STATUS_OP_UNSUPPORTED      = 8,  /* Operation unsupported */
   SILC_SFTP_STATUS_INVALID_HANDLE      = 9,  /* Invalid file handle */
@@ -205,22 +210,6 @@ typedef struct {
  ***/
 typedef struct SilcSFTPHandleStruct *SilcSFTPHandle;
 
-/****f* silcsftp/SilcSFTPAPI/SilcSFTPSendPacketCallback
- *
- * SYNOPSIS
- *
- *    typedef void (*SilcSFTPSendPacketCallback)(SilcBuffer packet,
- *                                               void *context);
- *
- * DESCRIPTION
- *
- *    Packet sending callback. The caller of this interface will provide this
- *    function for the library. The libary will call this function everytime
- *    it needs to send a packet to the remote host.
- *
- ***/
-typedef void (*SilcSFTPSendPacketCallback)(SilcBuffer packet, void *context);
-
 /****f* silcsftp/SilcSFTPAPI/SilcSFTPVersionCallback
  *
  * SYNOPSIS
@@ -241,6 +230,25 @@ typedef void (*SilcSFTPVersionCallback)(SilcSFTP sftp,
 					SilcSFTPStatus status,
 					SilcSFTPVersion version,
 					void *context);
+
+/****f* silcsftp/SilcSFTPAPI/SilcSFTPErrorCallback
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcSFTPErrorCallback)(SilcSFTP sftp,
+ *                                          SilcSFTPStatus status,
+ *                                          void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Error callback is called if a connection error occurs during SFTP
+ *    session.  If the connection or stream is closed this callback is
+ *    called.  Other errors are delivered in other callbacks.
+ *
+ ***/
+typedef void (*SilcSFTPErrorCallback)(SilcSFTP sftp,
+				      SilcSFTPStatus status,
+				      void *context);
 
 /****f* silcsftp/SilcSFTPAPI/SilcSFTPStatusCallback
  *
@@ -387,7 +395,9 @@ typedef void (*SilcSFTPExtendedCallback)(SilcSFTP sftp,
  * SYNOPSIS
  *
  *    SilcSFTP silc_sftp_client_start(SilcStream stream,
- *                                    SilcSFTPVersionCallback callback,
+ *                                    SilcSchedule schedule,
+ *                                    SilcSFTPVersionCallback version_cb,
+ *                                    SilcSFTPErrorCallback error_cb,
  *                                    void *context);
  *
  * DESCRIPTION
@@ -397,11 +407,13 @@ typedef void (*SilcSFTPExtendedCallback)(SilcSFTP sftp,
  *    been started and server has returned the version of the protocol.  The
  *    SFTP client context is returned in the callback too.  This returns the
  *    allocated SFTP client context or NULL on error.  The `stream' will be
- *    used to read from and write to the SFTP packets.
+ *    used to read and write the SFTP packets.
  *
  ***/
 SilcSFTP silc_sftp_client_start(SilcStream stream,
-				SilcSFTPVersionCallback callback,
+				SilcSchedule schedule,
+				SilcSFTPVersionCallback version_cb,
+				SilcSFTPErrorCallback error_cb,
 				void *context);
 
 /****f* silcsftp/SilcSFTPAPI/silc_sftp_client_shutdown
@@ -846,8 +858,10 @@ void silc_sftp_extended(SilcSFTP sftp,
  *
  * SYNOPSIS
  *
- *    SilcSFTP silc_sftp_server_start(SilcSFTPSendPacketCallback send_packet,
- *                                    void *send_context,
+ *    SilcSFTP silc_sftp_server_start(SilcStream stream,
+ *                                    SilcSchedule schedule,
+ *                                    SilcSFTPErrorCallback error_cb,
+ *                                    void *context,
  *                                    SilcSFTPFilesystem fs);
  *
  * DESCRIPTION
@@ -859,8 +873,10 @@ void silc_sftp_extended(SilcSFTP sftp,
  *    should start its own server by calling this function.
  *
  ***/
-SilcSFTP silc_sftp_server_start(SilcSFTPSendPacketCallback send_packet,
-				void *send_context,
+SilcSFTP silc_sftp_server_start(SilcStream stream,
+				SilcSchedule schedule,
+				SilcSFTPErrorCallback error_cb,
+				void *context,
 				SilcSFTPFilesystem fs);
 
 /****f* silcsftp/SilcSFTPAPI/silc_sftp_server_shutdown

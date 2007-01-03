@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,8 +25,7 @@
 /* Request context. Every request will allocate this context and set
    the correct callback function according the `type' field. */
 typedef struct SilcSFTPRequestStruct {
-  SilcUInt32 id;
-  SilcSFTPPacket type;
+  struct SilcSFTPRequestStruct *next;
   SilcSFTPStatusCallback status;
   SilcSFTPHandleCallback handle;
   SilcSFTPDataCallback data;
@@ -34,17 +33,19 @@ typedef struct SilcSFTPRequestStruct {
   SilcSFTPAttrCallback attr;
   SilcSFTPExtendedCallback extended;
   void *context;
-  struct SilcSFTPRequestStruct *next;
+  SilcUInt32 id;
+  SilcSFTPPacket type;
 } *SilcSFTPRequest;
 
 /* SFTP client context */
 typedef struct {
   SilcStream stream;
   SilcSFTPVersionCallback version;
-  void *version_context;
-  SilcUInt32 id;
+  SilcSFTPErrorCallback error;
+  void *context;
   SilcList requests;
   SilcBuffer packet;
+  SilcUInt32 id;
 } *SilcSFTPClient;
 
 /* File handle */
@@ -54,7 +55,7 @@ struct SilcSFTPHandleStruct {
 };
 
 static void silc_sftp_client_receive_process(SilcSFTP context,
-					     SilcBuffer buffer)
+					     SilcBuffer buffer);
 
 /* Creates SilcSFTPHandle and returns pointer to it. The caller must free
    the context. */
@@ -94,7 +95,7 @@ static void silc_sftp_handle_get(SilcSFTPHandle handle,
   *data_len = handle->data_len;
 }
 
-/* General routine to send SFTP packet to the SFTP server. */
+/* Generic routine to send SFTP packet to the SFTP server. */
 
 static void silc_sftp_send_packet(SilcSFTPClient sftp,
 				  SilcSFTPPacket type,
@@ -102,6 +103,7 @@ static void silc_sftp_send_packet(SilcSFTPClient sftp,
 {
   SilcBuffer tmp;
   va_list vp;
+  int ret;
 
   va_start(vp, len);
   tmp = silc_sftp_packet_encode_vp(type, sftp->packet, len, vp);
@@ -114,8 +116,17 @@ static void silc_sftp_send_packet(SilcSFTPClient sftp,
 		   silc_buffer_len(sftp->packet));
 
   /* Send the packet */
-  silc_stream_write(sftp->stream, sftp->packet->data,
-		    silc_buffer_len(sftp->packet));
+  while (silc_buffer_len(sftp->packet) > 0) {
+    ret = silc_stream_write(sftp->stream, silc_buffer_data(sftp->packet),
+			    silc_buffer_len(sftp->packet));
+    if (ret == -2) {
+      SILC_LOG_ERROR(("Error sending SFTP packet type %d", type));
+      break;
+    }
+    if (ret <= 0)
+      break;
+    silc_buffer_pull(sftp->packet, ret);
+  }
 
   /* Clear packet */
   silc_buffer_reset(sftp->packet);
@@ -136,7 +147,7 @@ static SilcSFTPRequest silc_sftp_find_request(SilcSFTPClient sftp,
       return req;
   }
 
-  SILC_LOG_DEBUG(("Unknown request ID"));
+  SILC_LOG_DEBUG(("Unknown request ID %d", id));
 
   return NULL;
 }
@@ -302,17 +313,37 @@ static void silc_sftp_call_request(SilcSFTPClient sftp,
   va_end(vp);
 }
 
-/* Handles stream IO */
+/* Handles stream I/O */
 
 static void silc_sftp_client_io(SilcStream stream, SilcStreamStatus status,
 				void *context)
 {
   SilcSFTPClient sftp = context;
+  unsigned char inbuf[30720];
+  SilcBufferStruct packet;
+  int ret;
 
   switch (status) {
+  case SILC_STREAM_CAN_READ:
+    SILC_LOG_DEBUG(("Reading data from stream"));
+
+    /* Read data from stream */
+    ret = silc_stream_read(stream, inbuf, sizeof(inbuf));
+    if (ret <= 0) {
+      if (ret == 0)
+	sftp->error(context, SILC_SFTP_STATUS_EOF, sftp->context);
+      if (ret == -2)
+	sftp->error(context, SILC_SFTP_STATUS_NO_CONNECTION, sftp->context);
+      return;
+    }
+
+    /* Now process the SFTP packet */
+    silc_buffer_set(&packet, inbuf, ret);
+    silc_sftp_client_receive_process(context, &packet);
+    break;
 
   case SILC_STREAM_CAN_WRITE:
-    if (!silc_buffer_headlen(&sftp->packet))
+    if (!silc_buffer_headlen(sftp->packet))
       return;
 
     SILC_LOG_DEBUG(("Writing pending data to stream"));
@@ -323,68 +354,23 @@ static void silc_sftp_client_io(SilcStream stream, SilcStreamStatus status,
       ret = silc_stream_write(stream, sftp->packet->data,
 			      silc_buffer_len(sftp->packet));
       if (ret == 0) {
-	/* EOS */
-	/* XXX */
+	sftp->error(context, SILC_SFTP_STATUS_EOF, sftp->context);
 	silc_buffer_reset(sftp->packet);
 	return;
       }
 
-      if (i == -2) {
-	/* Error */
-	/* XXX */
+      if (ret == -2) {
+	sftp->error(context, SILC_SFTP_STATUS_NO_CONNECTION, sftp->context);
 	silc_buffer_reset(sftp->packet);
-	return FALSE;
-      }
-
-      if (ret == -1) {
-	/* Cannot write now, write later. */
-	silc_buffer_pull(sftp->packet, silc_buffer_len(sftp->packet));
 	return;
       }
+
+      if (ret == -1)
+	return;
 
       /* Wrote data */
       silc_buffer_pull(sftp->packet, ret);
     }
-    break;
-
-  case SILC_STREAM_CAN_READ:
-    SILC_LOG_DEBUG(("Reading data from stream"));
-
-    /* Make sure we have fair amount of free space in inbuf */
-    if (silc_buffer_taillen(&ps->inbuf) < SILC_PACKET_DEFAULT_SIZE)
-      if (!silc_buffer_realloc(&ps->inbuf, silc_buffer_truelen(&ps->inbuf) +
-			       SILC_PACKET_DEFAULT_SIZE * 2))
-	return;
-
-    /* Read data from stream */
-    ret = silc_stream_read(ps->stream, &ps->inbuf.tail,
-			   silc_buffer_taillen(&ps->inbuf));
-
-    if (ret == 0) {
-      /* EOS */
-      SILC_PACKET_CALLBACK_EOS(ps);
-      silc_buffer_reset(&ps->inbuf);
-      return;
-    }
-
-    if (ret == -2) {
-      /* Error */
-      SILC_PACKET_CALLBACK_ERROR(ps, SILC_PACKET_ERR_READ);
-      silc_buffer_reset(&ps->inbuf);
-      return;
-    }
-
-    if (ret == -1) {
-      /* Cannot read now, do it later. */
-      silc_buffer_pull(&ps->inbuf, silc_buffer_len(&ps->inbuf));
-      return;
-    }
-
-    /* Read some data */
-    silc_buffer_pull_tail(&ps->inbuf, ret);
-
-    /* Now process the data */
-    silc_sftp_client_receive_process(sftp);
     break;
 
   default:
@@ -395,10 +381,14 @@ static void silc_sftp_client_io(SilcStream stream, SilcStreamStatus status,
 /* Starts SFTP client and returns context for it. */
 
 SilcSFTP silc_sftp_client_start(SilcStream stream,
-				SilcSFTPVersionCallback callback,
+				SilcSchedule schedule,
+				SilcSFTPVersionCallback version_cb,
+				SilcSFTPErrorCallback error_cb,
 				void *context)
 {
   SilcSFTPClient sftp;
+
+  SILC_LOG_DEBUG(("Starting SFTP client"));
 
   if (!stream)
     return NULL;
@@ -407,12 +397,13 @@ SilcSFTP silc_sftp_client_start(SilcStream stream,
   if (!sftp)
     return NULL;
   sftp->stream = stream;
-  sftp->version = callback;
-  sftp->version_context = context;
+  sftp->version = version_cb;
+  sftp->error = error_cb;
+  sftp->context = context;
   silc_list_init(sftp->requests, struct SilcSFTPRequestStruct, next);
 
   /* We handle the stream now */
-  silc_stream_set_notifier(stream, silc_sftp_client_io, sftp);
+  silc_stream_set_notifier(stream, schedule, silc_sftp_client_io, sftp);
 
   /* Send the SFTP session initialization to the server */
   silc_sftp_send_packet(sftp, SILC_SFTP_INIT, 4,
@@ -430,6 +421,7 @@ void silc_sftp_client_shutdown(SilcSFTP context)
 {
   SilcSFTPClient sftp = (SilcSFTPClient)context;
 
+  silc_stream_set_notifier(sftp->stream, NULL, NULL, NULL);
   if (sftp->packet)
     silc_buffer_free(sftp->packet);
   silc_free(sftp);
@@ -448,10 +440,10 @@ void silc_sftp_client_receive_process(SilcSFTP context, SilcBuffer buffer)
   SilcBufferStruct buf;
   SilcUInt32 id;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Process SFTP packet"));
 
   /* Parse the packet */
-  type = silc_sftp_packet_decode(packet->buffer, (unsigned char **)&payload,
+  type = silc_sftp_packet_decode(buffer, (unsigned char **)&payload,
 				 &payload_len);
   if (!type)
     return;
@@ -459,6 +451,31 @@ void silc_sftp_client_receive_process(SilcSFTP context, SilcBuffer buffer)
   silc_buffer_set(&buf, (unsigned char *)payload, payload_len);
 
   switch (type) {
+  case SILC_SFTP_DATA:
+    {
+      unsigned char *data = NULL;
+      SilcUInt32 data_len = 0;
+
+      SILC_LOG_DEBUG(("Data packet"));
+
+      ret = silc_buffer_unformat(&buf,
+				 SILC_STR_UI_INT(&id),
+				 SILC_STR_UI32_NSTRING(&data, &data_len),
+				 SILC_STR_END);
+      if (ret < 0)
+	break;
+
+      /* Get request */
+      req = silc_sftp_find_request(sftp, id);
+      if (!req)
+	break;
+
+      /* Call the callback */
+      silc_sftp_call_request(sftp, req, type, SILC_SFTP_STATUS_OK,
+			     data, data_len);
+    }
+    break;
+
   case SILC_SFTP_VERSION:
     {
       SilcSFTPVersion version;
@@ -470,13 +487,13 @@ void silc_sftp_client_receive_process(SilcSFTP context, SilcBuffer buffer)
 				 SILC_STR_END);
       if (ret < 0) {
 	(*sftp->version)((SilcSFTP)sftp, SILC_SFTP_STATUS_FAILURE, 0,
-			 sftp->version_context);
+			 sftp->context);
 	break;
       }
 
       /* Call the callback */
       (*sftp->version)((SilcSFTP)sftp, SILC_SFTP_STATUS_OK, version,
-		       sftp->version_context);
+		       sftp->context);
     }
     break;
 
@@ -545,31 +562,6 @@ void silc_sftp_client_receive_process(SilcSFTP context, SilcBuffer buffer)
       /* Call the callback */
       silc_sftp_call_request(sftp, req, type, SILC_SFTP_STATUS_OK,
 			     handle, handle_len);
-    }
-    break;
-
-  case SILC_SFTP_DATA:
-    {
-      unsigned char *data = NULL;
-      SilcUInt32 data_len = 0;
-
-      SILC_LOG_DEBUG(("Data packet"));
-
-      ret = silc_buffer_unformat(&buf,
-				 SILC_STR_UI_INT(&id),
-				 SILC_STR_UI32_NSTRING(&data, &data_len),
-				 SILC_STR_END);
-      if (ret < 0)
-	break;
-
-      /* Get request */
-      req = silc_sftp_find_request(sftp, id);
-      if (!req)
-	break;
-
-      /* Call the callback */
-      silc_sftp_call_request(sftp, req, type, SILC_SFTP_STATUS_OK,
-			     data, data_len);
     }
     break;
 

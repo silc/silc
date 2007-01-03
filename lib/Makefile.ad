@@ -17,10 +17,6 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-#ifdef SILC_DIST_SFTP
-#	silcsftp
-#endif SILC_DIST_SFTP
-
 # SILC Library dirs
 SILCLIB_DIRS = 		\
 	contrib 	\
@@ -44,6 +40,9 @@ SILCLIB_DIRS = 		\
 #ifdef SILC_DIST_HTTP
 	silchttp	\
 #endif SILC_DIST_HTTP
+#ifdef SILC_DIST_SFTP
+	silcsftp
+#endif SILC_DIST_SFTP
 #ifdef SILC_DIST_IDCACHE
 	silcvcard	\
 #endif SILC_DIST_IDCACHE

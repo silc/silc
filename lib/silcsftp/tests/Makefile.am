@@ -18,7 +18,7 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-bin_PROGRAMS = sftp_server sftp_client
+bin_PROGRAMS = sftp_client sftp_server 
 sftp_server_SOURCES = sftp_server.c
 sftp_client_SOURCES = sftp_client.c
 

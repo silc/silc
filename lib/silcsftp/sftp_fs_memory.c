@@ -775,7 +775,7 @@ void mem_readdir(void *context, SilcSFTP sftp,
     filesize = sizeof(*entry);
     memset(long_name, 0, sizeof(long_name));
 
-    date = (char *)silc_get_time(entry->created);
+    date = (char *)silc_time_string(entry->created);
     if (strrchr(date, ':'))
       *strrchr(date, ':') = '\0';
 
