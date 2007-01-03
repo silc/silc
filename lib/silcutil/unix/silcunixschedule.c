@@ -99,7 +99,7 @@ int silc_epoll(SilcSchedule schedule, void *context)
       epoll_ctl(internal->epfd, EPOLL_CTL_DEL, task->fd, &fds[i]);
       continue;
     }
-    if (fds[i].events & EPOLLIN)
+    if (fds[i].events & (EPOLLIN | EPOLLPRI | EPOLLHUP))
       task->revents |= SILC_TASK_READ;
     if (fds[i].events & EPOLLOUT)
       task->revents |= SILC_TASK_WRITE;
