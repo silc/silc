@@ -19,6 +19,7 @@
 @LINK=silcfsm.html:Finite State Machine Interface
 @LINK=silcfileutil.html:File Utility Functions
 @LINK=silcstrutil.html:String Utility Interface
+@LINK=silcsnprintf.html:Snprintf Interface
 @LINK=silcutf8.html:UTF-8 String Interface
 @LINK=silcstringprep.html:Stringprep Interface
 @LINK=silcutil.html:Utility Functions

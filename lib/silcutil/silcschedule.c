@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2006 Pekka Riikonen
+  Copyright (C) 1998 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -624,8 +624,10 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
     ftask->events = SILC_TASK_READ;
     ftask->fd = fd;
 
-    /* Add task */
+    /* Add task and schedule it */
     silc_hash_table_add(schedule->fd_queue, SILC_32_TO_PTR(fd), ftask);
+    schedule_ops.schedule_fd(schedule, schedule->internal, ftask,
+			     ftask->events);
 
     task = (SilcTask)ftask;
 

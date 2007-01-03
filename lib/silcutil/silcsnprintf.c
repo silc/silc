@@ -91,6 +91,7 @@
 #define DP_F_ZERO  	(1 << 4)
 #define DP_F_UP    	(1 << 5)
 #define DP_F_UNSIGNED 	(1 << 6)
+#define DP_F_HEXPREFIX 	(1 << 7)
 
 /* Conversion Flags */
 #define DP_C_SHORT   1
@@ -322,8 +323,10 @@ static size_t dopr(char *buffer, size_t maxlen, const char *format,
 	fmtstr (buffer, &currlen, maxlen, strvalue, flags, min, max);
 	break;
       case 'p':
+	flags |= (DP_F_UNSIGNED | DP_F_HEXPREFIX);
 	strvalue = va_arg (args, void *);
-	fmtint (buffer, &currlen, maxlen, (long) strvalue, 16, min, max, flags);
+	fmtint (buffer, &currlen, maxlen, (long )strvalue, 16, min, max,
+		flags);
 	break;
       case 'n':
 	if (cflags == DP_C_SHORT) {
@@ -413,7 +416,7 @@ static void fmtstr(char *buffer, size_t *currlen, size_t maxlen,
 /* Have to handle DP_F_NUM (ie 0x and 0 alternates) */
 
 static void fmtint(char *buffer, size_t *currlen, size_t maxlen,
-		    long value, int base, int min, int max, int flags)
+		   long value, int base, int min, int max, int flags)
 {
   int signvalue = 0;
   unsigned long uvalue;
@@ -466,6 +469,12 @@ static void fmtint(char *buffer, size_t *currlen, size_t maxlen,
   while (spadlen > 0) {
     dopr_outch (buffer, currlen, maxlen, ' ');
     --spadlen;
+  }
+
+  /* 0x prefix */
+  if (flags & DP_F_HEXPREFIX) {
+    dopr_outch (buffer, currlen, maxlen, '0');
+    dopr_outch (buffer, currlen, maxlen, 'x');
   }
 
   /* Sign */

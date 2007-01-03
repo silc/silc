@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2006 Pekka Riikonen
+  Copyright (C) 1998 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -266,6 +266,9 @@ SilcBool silc_schedule_internal_schedule_fd(SilcSchedule schedule,
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
   struct epoll_event event;
 
+  if (!internal)
+    return FALSE;
+
   event.events = 0;
   if (task->events & SILC_TASK_READ)
     event.events |= (EPOLLIN | EPOLLPRI);
@@ -372,6 +375,9 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
     return NULL;
   }
 #endif
+  silc_schedule_internal_schedule_fd(schedule, internal,
+				     (SilcTaskFd)internal->wakeup_task,
+				     SILC_TASK_READ);
 
   internal->app_context = app_context;
 

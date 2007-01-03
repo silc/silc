@@ -17,6 +17,15 @@
 
 */
 
+/****h* silcutil/Snprintf
+ *
+ * DESCRIPTION
+ *
+ * Platform independent version of snprintf and other similar string
+ * formatting routines.
+ *
+ ***/
+
 #ifndef SILCSNPRINTF_H
 #define SILCSNPRINTF_H
 
