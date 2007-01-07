@@ -355,13 +355,7 @@ int silc_net_udp_send(SilcStream stream,
 SilcBool silc_socket_stream_close(SilcStream stream)
 {
   SilcSocketStream socket_stream = (SilcSocketStream)stream;
-  SilcSymbianSocket *s;
-
-  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
-      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
-    return FALSE;
-
-  s = (SilcSymbianSocket *)socket_stream->sock;
+  SilcSymbianSocket *s = (SilcSymbianSocket *)socket_stream->sock;
   s->sock->Close();
 
   return TRUE;
@@ -372,13 +366,7 @@ SilcBool silc_socket_stream_close(SilcStream stream)
 void silc_socket_stream_destroy(SilcStream stream)
 {
   SilcSocketStream socket_stream = (SilcSocketStream)stream;
-  SilcSymbianSocket *s;
-
-  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
-      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
-    return;
-
-  s = (SilcSymbianSocket *)socket_stream->sock;
+  SilcSymbianSocket *s = (SilcSymbianSocket *)socket_stream->sock;
 
   silc_socket_stream_close(stream);
   silc_free(socket_stream->ip);
@@ -402,13 +390,8 @@ void silc_socket_stream_notifier(SilcStream stream,
 				 void *context)
 {
   SilcSocketStream socket_stream = (SilcSocketStream)stream;
-  SilcSymbianSocket *s;
+  SilcSymbianSocket *s = (SilcSymbianSocket *)socket_stream->sock;
 
-  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
-      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
-    return;
-
-  s = (SilcSymbianSocket *)socket_stream->sock;
   if (callback)
     s->stream = socket_stream;
   else

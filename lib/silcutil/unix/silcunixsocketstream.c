@@ -253,10 +253,6 @@ SilcBool silc_socket_stream_close(SilcStream stream)
 {
   SilcSocketStream socket_stream = stream;
 
-  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
-      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
-    return FALSE;
-
   silc_schedule_unset_listen_fd(socket_stream->schedule, socket_stream->sock);
   silc_net_close_connection(socket_stream->sock);
 
@@ -268,10 +264,6 @@ SilcBool silc_socket_stream_close(SilcStream stream)
 void silc_socket_stream_destroy(SilcStream stream)
 {
   SilcSocketStream socket_stream = stream;
-
-  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
-      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
-    return;
 
   silc_socket_stream_close(socket_stream);
   silc_free(socket_stream->ip);
@@ -304,10 +296,6 @@ void silc_socket_stream_notifier(SilcStream stream,
 				 void *context)
 {
   SilcSocketStream socket_stream = stream;
-
-  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
-      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
-    return;
 
   SILC_LOG_DEBUG(("Setting stream notifier callback"));
 

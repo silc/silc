@@ -158,8 +158,6 @@ int silc_fd_stream_read(SilcStream stream, unsigned char *buf,
   SilcFDStream fd_stream = stream;
   int len = 0;
 
-  if (!SILC_IS_FD_STREAM(fd_stream))
-    return -2;
   if (!fd_stream->notifier)
     return -2;
 
@@ -196,8 +194,6 @@ int silc_fd_stream_write(SilcStream stream, const unsigned char *data,
   SilcFDStream fd_stream = stream;
   int ret;
 
-  if (!SILC_IS_FD_STREAM(fd_stream))
-    return -2;
   if (!fd_stream->notifier)
     return -2;
 
@@ -234,9 +230,6 @@ SilcBool silc_fd_stream_close(SilcStream stream)
 {
   SilcFDStream fd_stream = stream;
 
-  if (!SILC_IS_FD_STREAM(fd_stream))
-    return FALSE;
-
   if (fd_stream->fd1 > 0) {
     silc_file_close(fd_stream->fd1);
     silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd1);
@@ -255,9 +248,6 @@ void silc_fd_stream_destroy(SilcStream stream)
 {
   SilcFDStream fd_stream = stream;
 
-  if (!SILC_IS_FD_STREAM(fd_stream))
-    return;
-
   silc_fd_stream_close(stream);
   silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd1);
   silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd2);
@@ -272,9 +262,6 @@ void silc_fd_stream_notifier(SilcStream stream,
 			     void *context)
 {
   SilcFDStream fd_stream = stream;
-
-  if (!SILC_IS_FD_STREAM(fd_stream))
-    return;
 
   SILC_LOG_DEBUG(("Setting stream notifier callback"));
 
@@ -309,10 +296,6 @@ void silc_fd_stream_notifier(SilcStream stream,
 SilcSchedule silc_fd_stream_get_schedule(SilcStream stream)
 {
   SilcFDStream fd_stream = stream;
-
-  if (!SILC_IS_FD_STREAM(fd_stream))
-    return NULL;
-
   return fd_stream->schedule;
 }
 

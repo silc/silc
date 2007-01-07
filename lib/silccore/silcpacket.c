@@ -2306,12 +2306,10 @@ int silc_packet_wrap_read(SilcStream stream, unsigned char *buf,
   SilcPacket packet;
   int len;
 
-  if (pws->ops != &silc_packet_stream_ops)
+  if (pws->closed)
     return -2;
   if (!silc_list_count(pws->in_queue))
     return -1;
-  if (pws->closed)
-    return -2;
 
   silc_list_start(pws->in_queue);
   packet = silc_list_get(pws->in_queue);
@@ -2334,9 +2332,6 @@ int silc_packet_wrap_write(SilcStream stream, const unsigned char *data,
 {
   SilcPacketWrapperStream pws = stream;
 
-  if (pws->ops != &silc_packet_stream_ops)
-    return -2;
-
   /* Send the SILC packet */
   if (!silc_packet_send(pws->stream, pws->type, pws->flags, data, data_len))
     return -2;
@@ -2350,8 +2345,6 @@ SilcBool silc_packet_wrap_close(SilcStream stream)
 {
   SilcPacketWrapperStream pws = stream;
 
-  if (pws->ops != &silc_packet_stream_ops)
-    return FALSE;
   if (pws->closed)
     return TRUE;
 
@@ -2370,9 +2363,6 @@ void silc_packet_wrap_destroy(SilcStream stream)
 {
   SilcPacketWrapperStream pws = stream;
   SilcPacket packet;
-
-  if (pws->ops != &silc_packet_stream_ops)
-    return;
 
   SILC_LOG_DEBUG(("Destroying wrapped packet stream %p", pws));
 
@@ -2394,8 +2384,6 @@ void silc_packet_wrap_notifier(SilcStream stream,
 {
   SilcPacketWrapperStream pws = stream;
 
-  if (pws->ops != &silc_packet_stream_ops)
-    return;
   if (pws->closed)
     return;
 
