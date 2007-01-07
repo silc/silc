@@ -41,11 +41,11 @@ SILCLIB_DIRS = 		\
 	silchttp	\
 #endif SILC_DIST_HTTP
 #ifdef SILC_DIST_SFTP
-	silcsftp
+	silcsftp	\
 #endif SILC_DIST_SFTP
-#ifdef SILC_DIST_IDCACHE
+#ifdef SILC_DIST_VCARD
 	silcvcard	\
-#endif SILC_DIST_IDCACHE
+#endif SILC_DIST_VCARD
 
 SILCLIB = libsilc.a
 
