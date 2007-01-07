@@ -303,7 +303,7 @@ SilcBool silc_pkcs_silc_import_public_key_file(unsigned char *filedata,
 {
   SilcUInt32 i, len;
   unsigned char *data = NULL;
-  SilcBool ret;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing SILC public key file"));
 
@@ -338,14 +338,14 @@ SilcBool silc_pkcs_silc_import_public_key_file(unsigned char *filedata,
 					 ret_public_key);
   silc_free(data);
 
-  return ret;
+  return ret ? TRUE : FALSE;
 }
 
 /* Imports SILC protocol style public key */
 
-SilcBool silc_pkcs_silc_import_public_key(unsigned char *key,
-					  SilcUInt32 key_len,
-					  void **ret_public_key)
+int silc_pkcs_silc_import_public_key(unsigned char *key,
+				     SilcUInt32 key_len,
+				     void **ret_public_key)
 {
   const SilcPKCSAlgorithm *pkcs;
   SilcBufferStruct buf, alg_key;
@@ -359,7 +359,7 @@ SilcBool silc_pkcs_silc_import_public_key(unsigned char *key,
   SILC_LOG_DEBUG(("Parsing SILC public key"));
 
   if (!ret_public_key)
-    return FALSE;
+    return 0;
 
   silc_buffer_set(&buf, key, key_len);
 
@@ -471,10 +471,9 @@ SilcBool silc_pkcs_silc_import_public_key(unsigned char *key,
   }
 
   /* Import PKCS algorithm public key */
-  if (pkcs->import_public_key)
-    if (!pkcs->import_public_key(alg_key.data, silc_buffer_len(&alg_key),
-				 &silc_pubkey->public_key))
-      goto err;
+  if (!pkcs->import_public_key(alg_key.data, silc_buffer_len(&alg_key),
+			       &silc_pubkey->public_key))
+    goto err;
 
   silc_free(pkcs_name);
   silc_free(ident);
@@ -482,7 +481,7 @@ SilcBool silc_pkcs_silc_import_public_key(unsigned char *key,
 
   *ret_public_key = silc_pubkey;
 
-  return TRUE;
+  return key_len;
 
  err:
   silc_free(pkcs_name);
@@ -490,7 +489,7 @@ SilcBool silc_pkcs_silc_import_public_key(unsigned char *key,
   silc_free(silc_pubkey);
   if (asn1)
     silc_asn1_free(asn1);
-  return FALSE;
+  return 0;
 }
 
 /* Exports public key as SILC protocol style public key file */
@@ -785,7 +784,7 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
   SilcUInt32 blocklen;
   unsigned char tmp[32], keymat[64], *data = NULL;
   SilcUInt32 i, len, magic, mac_len;
-  SilcBool ret;
+  int ret;
 
   SILC_LOG_DEBUG(("Parsing SILC private key file"));
 
@@ -909,7 +908,7 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
 
   silc_free(data);
 
-  return ret;
+  return ret ? TRUE : FALSE;
 }
 
 /* Private key version */
@@ -917,9 +916,9 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
 
 /* Imports SILC implementation style private key */
 
-SilcBool silc_pkcs_silc_import_private_key(unsigned char *key,
-					   SilcUInt32 key_len,
-					   void **ret_private_key)
+int silc_pkcs_silc_import_private_key(unsigned char *key,
+				      SilcUInt32 key_len,
+				      void **ret_private_key)
 {
   SilcBufferStruct buf;
   const SilcPKCSAlgorithm *pkcs;
@@ -934,7 +933,7 @@ SilcBool silc_pkcs_silc_import_private_key(unsigned char *key,
   SILC_LOG_DEBUG(("Parsing SILC private key"));
 
   if (!ret_private_key)
-    return FALSE;
+    return 0;
 
   silc_buffer_set(&buf, key, key_len);
 
@@ -1185,24 +1184,23 @@ SilcBool silc_pkcs_silc_import_private_key(unsigned char *key,
   }
 
   /* Import PKCS algorithm private key */
-  if (pkcs->import_private_key)
-    if (!pkcs->import_private_key(alg_key.data, silc_buffer_len(&alg_key),
-				  &silc_privkey->private_key))
-      goto err;
+  if (!pkcs->import_private_key(alg_key.data, silc_buffer_len(&alg_key),
+				&silc_privkey->private_key))
+    goto err;
 
   silc_free(pkcs_name);
   silc_asn1_free(asn1);
 
   *ret_private_key = silc_privkey;
 
-  return TRUE;
+  return key_len;
 
  err:
   silc_free(pkcs_name);
   silc_free(silc_privkey);
   if (asn1)
     silc_asn1_free(asn1);
-  return FALSE;
+  return 0;
 }
 
 /* Exports private key as SILC implementation style private key file */

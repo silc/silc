@@ -31,9 +31,9 @@ SilcBool silc_pkcs_silc_import_public_key_file(unsigned char *filedata,
 					       SilcUInt32 filedata_len,
 					       SilcPKCSFileEncoding encoding,
 					       void **ret_public_key);
-SilcBool silc_pkcs_silc_import_public_key(unsigned char *key,
-					  SilcUInt32 key_len,
-					  void **ret_public_key);
+int silc_pkcs_silc_import_public_key(unsigned char *key,
+				     SilcUInt32 key_len,
+				     void **ret_public_key);
 unsigned char *
 silc_pkcs_silc_export_public_key_file(void *public_key,
 				      SilcPKCSFileEncoding encoding,
@@ -50,9 +50,9 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
 						SilcUInt32 passphrase_len,
 						SilcPKCSFileEncoding encoding,
 						void **ret_private_key);
-SilcBool silc_pkcs_silc_import_private_key(unsigned char *key,
-					   SilcUInt32 key_len,
-					   void **ret_private_key);
+int silc_pkcs_silc_import_private_key(unsigned char *key,
+				      SilcUInt32 key_len,
+				      void **ret_private_key);
 unsigned char *
 silc_pkcs_silc_export_private_key_file(void *private_key,
 				       const char *passphrase,

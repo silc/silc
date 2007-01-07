@@ -42,8 +42,7 @@ typedef struct SilcPKCSObjectStruct SilcPKCSObject;
  *
  * DESCRIPTION
  *
- *    Public key cryptosystem types.  These are defined by the SILC
- *    Key Exchange protocol.
+ *    Supported public key cryptosystem types.
  *
  * SOURCE
  */
@@ -129,10 +128,10 @@ typedef struct {
 			   void **ret_public_key,
 			   void **ret_private_key);
 
-  /* Public key routines */
-  SilcBool (*import_public_key)(unsigned char *key,
-				SilcUInt32 key_len,
-				void **ret_public_key);
+  /* Public key routines. */
+  int (*import_public_key)(unsigned char *key,
+			   SilcUInt32 key_len,
+			   void **ret_public_key);
   unsigned char *(*export_public_key)(void *public_key,
 				      SilcUInt32 *ret_len);
   SilcUInt32 (*public_key_bitlen)(void *public_key);
@@ -141,9 +140,9 @@ typedef struct {
   void (*public_key_free)(void *public_key);
 
   /* Private key routines */
-  SilcBool (*import_private_key)(unsigned char *key,
-				 SilcUInt32 key_len,
-				 void **ret_private_key);
+  int (*import_private_key)(unsigned char *key,
+			    SilcUInt32 key_len,
+			    void **ret_private_key);
   unsigned char *(*export_private_key)(void *private_key,
 				       SilcUInt32 *ret_len);
   SilcUInt32 (*private_key_bitlen)(void *public_key);
@@ -196,10 +195,11 @@ struct SilcPKCSObjectStruct {
 				     SilcPKCSFileEncoding encoding,
 				     void **ret_public_key);
 
-  /* Imports from public key binary data */
-  SilcBool (*import_public_key)(unsigned char *key,
-				SilcUInt32 key_len,
-				void **ret_public_key);
+  /* Imports from public key binary data.  Returns the amount of bytes
+     imported from `key' or 0 on error. */
+  int (*import_public_key)(unsigned char *key,
+			   SilcUInt32 key_len,
+			   void **ret_public_key);
 
   /* Exports public key to file */
   unsigned char *(*export_public_key_file)(void *public_key,
@@ -232,10 +232,11 @@ struct SilcPKCSObjectStruct {
 				      SilcPKCSFileEncoding encoding,
 				      void **ret_private_key);
 
-  /* Imports from private key binary data */
-  SilcBool (*import_private_key)(unsigned char *key,
-				 SilcUInt32 key_len,
-				 void **ret_private_key);
+  /* Imports from private key binary data.  Returns the amount of bytes
+     imported from `key' or 0 on error. */
+  int (*import_private_key)(unsigned char *key,
+			    SilcUInt32 key_len,
+			    void **ret_private_key);
 
   /* Exports private key to file */
   unsigned char *(*export_private_key_file)(void *private_key,
@@ -286,8 +287,8 @@ struct SilcPKCSObjectStruct {
 		     SilcHash hash);
 };
 
-/* Marks for all PKCS in silc. This can be used in silc_pkcs_unregister
-   to unregister all PKCS at once. */
+/* Marks for all PKCS in. This can be used in silc_pkcs_unregister to
+   unregister all PKCS at once. */
 #define SILC_ALL_PKCS ((SilcPKCSObject *)1)
 #define SILC_ALL_PKCS_ALG ((SilcPKCSAlgorithm *)1)
 

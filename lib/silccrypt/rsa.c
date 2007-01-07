@@ -5,7 +5,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -81,8 +81,8 @@
    to compute the modulus n has to be generated before calling this. They
    are then sent as argument for the function. */
 
-SilcBool rsa_generate_keys(SilcUInt32 bits, SilcMPInt *p, SilcMPInt *q,
-			   void **ret_public_key, void **ret_private_key)
+SilcBool silc_rsa_generate_keys(SilcUInt32 bits, SilcMPInt *p, SilcMPInt *q,
+				void **ret_public_key, void **ret_private_key)
 {
   RsaPublicKey *pubkey;
   RsaPrivateKey *privkey;
@@ -167,8 +167,8 @@ SilcBool rsa_generate_keys(SilcUInt32 bits, SilcMPInt *p, SilcMPInt *q,
 
 /* RSA public key operation */
 
-SilcBool rsa_public_operation(RsaPublicKey *key, SilcMPInt *src,
-			      SilcMPInt *dst)
+SilcBool silc_rsa_public_operation(RsaPublicKey *key, SilcMPInt *src,
+				   SilcMPInt *dst)
 {
   /* dst = src ^ e mod n */
   silc_mp_pow_mod(dst, src, &key->e, &key->n);
@@ -177,8 +177,8 @@ SilcBool rsa_public_operation(RsaPublicKey *key, SilcMPInt *src,
 
 /* RSA private key operation */
 
-SilcBool rsa_private_operation(RsaPrivateKey *key, SilcMPInt *src,
-			       SilcMPInt *dst)
+SilcBool silc_rsa_private_operation(RsaPrivateKey *key, SilcMPInt *src,
+				    SilcMPInt *dst)
 {
   SilcMPInt tmp;
 

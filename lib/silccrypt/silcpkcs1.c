@@ -20,6 +20,7 @@
 
 #include "silc.h"
 #include "rsa.h"
+#include "silcpkcs1_i.h"
 
 /************************** PKCS #1 message format ***************************/
 
@@ -204,7 +205,7 @@ SilcBool silc_pkcs1_generate_key(SilcUInt32 keylen,
   }
 
   /* Generate the actual keys */
-  if (!rsa_generate_keys(keylen, &p, &q, ret_public_key, ret_private_key))
+  if (!silc_rsa_generate_keys(keylen, &p, &q, ret_public_key, ret_private_key))
     return FALSE;
 
   silc_mp_uninit(&p);
@@ -215,20 +216,20 @@ SilcBool silc_pkcs1_generate_key(SilcUInt32 keylen,
 
 /* Import PKCS #1 compliant public key */
 
-SilcBool silc_pkcs1_import_public_key(unsigned char *key,
-				      SilcUInt32 key_len,
-				      void **ret_public_key)
+int silc_pkcs1_import_public_key(unsigned char *key,
+				 SilcUInt32 key_len,
+				 void **ret_public_key)
 {
   SilcAsn1 asn1 = NULL;
   SilcBufferStruct alg_key;
   RsaPublicKey *pubkey;
 
   if (!ret_public_key)
-    return FALSE;
+    return 0;
 
   asn1 = silc_asn1_alloc();
   if (!asn1)
-    return FALSE;
+    return 0;
 
   /* Allocate RSA public key */
   *ret_public_key = pubkey = silc_calloc(1, sizeof(*pubkey));
@@ -250,11 +251,12 @@ SilcBool silc_pkcs1_import_public_key(unsigned char *key,
 
   silc_asn1_free(asn1);
 
-  return TRUE;
+  return key_len;
 
  err:
+  silc_free(pubkey);
   silc_asn1_free(asn1);
-  return FALSE;
+  return 0;
 }
 
 /* Export PKCS #1 compliant public key */
@@ -348,9 +350,9 @@ void silc_pkcs1_public_key_free(void *public_key)
 
 /* Import PKCS #1 compliant private key */
 
-SilcBool silc_pkcs1_import_private_key(unsigned char *key,
-				       SilcUInt32 key_len,
-				       void **ret_private_key)
+int silc_pkcs1_import_private_key(unsigned char *key,
+				  SilcUInt32 key_len,
+				  void **ret_private_key)
 {
   SilcAsn1 asn1;
   SilcBufferStruct alg_key;
@@ -358,11 +360,11 @@ SilcBool silc_pkcs1_import_private_key(unsigned char *key,
   SilcUInt32 ver;
 
   if (!ret_private_key)
-    return FALSE;
+    return 0;
 
   asn1 = silc_asn1_alloc();
   if (!asn1)
-    return FALSE;
+    return 0;
 
   /* Allocate RSA private key */
   *ret_private_key = privkey = silc_calloc(1, sizeof(*privkey));
@@ -394,11 +396,12 @@ SilcBool silc_pkcs1_import_private_key(unsigned char *key,
 
   silc_asn1_free(asn1);
 
-  return TRUE;
+  return key_len;
 
  err:
+  silc_free(privkey);
   silc_asn1_free(asn1);
-  return FALSE;
+  return 0;
 }
 
 /* Export PKCS #1 compliant private key */
@@ -500,7 +503,7 @@ SilcBool silc_pkcs1_encrypt(void *public_key,
   silc_mp_bin2mp(padded, len, &mp_tmp);
 
   /* Encrypt */
-  rsa_public_operation(key, &mp_tmp, &mp_dst);
+  silc_rsa_public_operation(key, &mp_tmp, &mp_dst);
 
   /* MP to data */
   silc_mp_mp2bin_noalloc(&mp_dst, dst, len);
@@ -536,7 +539,7 @@ SilcBool silc_pkcs1_decrypt(void *private_key,
   silc_mp_bin2mp(src, src_len, &mp_tmp);
 
   /* Decrypt */
-  rsa_private_operation(key, &mp_tmp, &mp_dst);
+  silc_rsa_private_operation(key, &mp_tmp, &mp_dst);
 
   /* MP to data */
   padded = silc_mp_mp2bin(&mp_dst, (key->bits + 7) / 8, &padded_len);
@@ -624,7 +627,7 @@ SilcBool silc_pkcs1_sign_no_oid(void *private_key,
   silc_mp_bin2mp(padded, len, &mp_tmp);
 
   /* Sign */
-  rsa_private_operation(key, &mp_tmp, &mp_dst);
+  silc_rsa_private_operation(key, &mp_tmp, &mp_dst);
 
   /* MP to data */
   silc_mp_mp2bin_noalloc(&mp_dst, signature, len);
@@ -662,7 +665,7 @@ SilcBool silc_pkcs1_verify_no_oid(void *public_key,
   silc_mp_bin2mp(signature, signature_len, &mp_tmp2);
 
   /* Verify */
-  rsa_public_operation(key, &mp_tmp2, &mp_dst);
+  silc_rsa_public_operation(key, &mp_tmp2, &mp_dst);
 
   /* MP to data */
   verify = silc_mp_mp2bin(&mp_dst, len, &verify_len);

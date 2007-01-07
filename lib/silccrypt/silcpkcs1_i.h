@@ -24,18 +24,18 @@ SilcBool silc_pkcs1_generate_key(SilcUInt32 keylen,
 				 SilcRng rng,
 				 void **ret_public_key,
 				 void **ret_private_key);
-SilcBool silc_pkcs1_import_public_key(unsigned char *key,
-				      SilcUInt32 key_len,
-				      void **ret_public_key);
+int silc_pkcs1_import_public_key(unsigned char *key,
+				 SilcUInt32 key_len,
+				 void **ret_public_key);
 unsigned char *silc_pkcs1_export_public_key(void *public_key,
 					    SilcUInt32 *ret_len);
 SilcUInt32 silc_pkcs1_public_key_bitlen(void *public_key);
 void *silc_pkcs1_public_key_copy(void *public_key);
 SilcBool silc_pkcs1_public_key_compare(void *key1, void *key2);
 void silc_pkcs1_public_key_free(void *public_key);
-SilcBool silc_pkcs1_import_private_key(unsigned char *key,
-				       SilcUInt32 key_len,
-				       void **ret_private_key);
+int silc_pkcs1_import_private_key(unsigned char *key,
+				  SilcUInt32 key_len,
+				  void **ret_private_key);
 unsigned char *silc_pkcs1_export_private_key(void *private_key,
 					     SilcUInt32 *ret_len);
 SilcUInt32 silc_pkcs1_private_key_bitlen(void *private_key);

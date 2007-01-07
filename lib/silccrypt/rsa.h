@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,14 +37,14 @@ typedef struct {
   SilcMPInt q;			/* CRT, q */
   SilcMPInt dP;			/* CRT, d mod p - 1 */
   SilcMPInt dQ;			/* CRT, d mod q - 1 */
-  SilcMPInt qP;			/* CRT, q ^ -1 mod p */
+  SilcMPInt qP;			/* CRT, q ^ -1 mod p (aka u, aka qInv) */
 } RsaPrivateKey;
 
-SilcBool rsa_generate_keys(SilcUInt32 bits, SilcMPInt *p, SilcMPInt *q,
-			   void **ret_public_key, void **ret_private_key);
-SilcBool rsa_public_operation(RsaPublicKey *key, SilcMPInt *src,
-			      SilcMPInt *dst);
-SilcBool rsa_private_operation(RsaPrivateKey *key, SilcMPInt *src,
-			       SilcMPInt *dst);
+SilcBool silc_rsa_generate_keys(SilcUInt32 bits, SilcMPInt *p, SilcMPInt *q,
+				void **ret_public_key, void **ret_private_key);
+SilcBool silc_rsa_public_operation(RsaPublicKey *key, SilcMPInt *src,
+				   SilcMPInt *dst);
+SilcBool silc_rsa_private_operation(RsaPrivateKey *key, SilcMPInt *src,
+				    SilcMPInt *dst);
 
 #endif /* RSA_H */
