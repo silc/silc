@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -85,6 +85,7 @@ typedef SilcUInt8 SilcPacketType;
 #define SILC_PACKET_RESUME_ROUTER        26      /* Backup router resume */
 #define SILC_PACKET_FTP                  27      /* File Transfer */
 #define SILC_PACKET_RESUME_CLIENT        28      /* Client resume */
+#define SILC_PACKET_ACK                  29      /* Acknowledgement */
 
 #define SILC_PACKET_PRIVATE              200     /* Private range start  */
 #define SILC_PACKET_MAX                  255     /* RESERVED */
