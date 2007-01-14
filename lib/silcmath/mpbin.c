@@ -27,25 +27,15 @@
 unsigned char *silc_mp_mp2bin(SilcMPInt *val, SilcUInt32 len,
 			      SilcUInt32 *ret_len)
 {
-  int i;
   SilcUInt32 size;
   unsigned char *ret;
-  SilcMPInt tmp;
 
   size = (len ? len : ((silc_mp_sizeinbase(val, 2) + 7) / 8));
   ret = silc_calloc(size, sizeof(*ret));
   if (!ret)
     return NULL;
 
-  silc_mp_init(&tmp);
-  silc_mp_set(&tmp, val);
-
-  for (i = size; i > 0; i--) {
-    ret[i - 1] = (unsigned char)(silc_mp_get_ui(&tmp) & 0xff);
-    silc_mp_div_2exp(&tmp, &tmp, 8);
-  }
-
-  silc_mp_uninit(&tmp);
+  silc_mp_mp2bin_noalloc(val, ret, size);
 
   if (ret_len)
     *ret_len = size;
