@@ -383,6 +383,8 @@ static void silc_connect_cb(SilcClient client,
   }
 }
 
+/* Called after TCP stream has been created */
+
 static void sig_connected_stream_created(SilcSocketStreamStatus status,
 					 SilcStream stream, void *context)
 {
@@ -466,6 +468,7 @@ static void sig_disconnected(SILC_SERVER_REC *server)
     net_sendbuffer_destroy(server->handle, FALSE);
     server->handle = NULL;
   } else if (server->op) {
+    /* Abort on going connecting (key exchange) */
     silc_async_abort(server->op, NULL, NULL);
     server->op = NULL;
   }

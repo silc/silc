@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001, 2006 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,6 +56,7 @@ void silc_verify_public_key(SilcClient client, SilcClientConnection conn,
 			    SilcVerifyPublicKey completion, void *context);
 void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 			  char *hostname, SilcUInt16 port,
+			  SilcAuthMethod auth_meth,
 			  SilcGetAuthMeth completion, void *context);
 void silc_key_agreement(SilcClient client, SilcClientConnection conn,
 		        SilcClientEntry client_entry, const char *hostname,

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2006 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -1276,7 +1276,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
    after application has called the command. Just to tell application
    that the command really was processed. */
 
-static bool cmode_list_chpks = FALSE;
+static SilcBool cmode_list_chpks = FALSE;
 
 void silc_command(SilcClient client, SilcClientConnection conn,
 		  SilcBool success, SilcCommand command, SilcStatus status,
@@ -2220,6 +2220,28 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       silc_free(file);
     }
     break;
+
+  case SILC_COMMAND_KILL:
+    {
+      SilcClientEntry client_entry;
+
+      if (SILC_STATUS_IS_ERROR(status)) {
+	silc_say_error("KILL: %s", silc_get_status_message(status));
+	return;
+      }
+
+      client_entry = va_arg(vp, SilcClientEntry);
+      if (!client_entry || !client_entry->nickname[0])
+	break;
+
+      /* Print this only if the killed client isn't joined on channels.
+	 If it is, we receive KILLED notify and we'll print this there. */
+      if (!silc_hash_table_count(client_entry->channels))
+	printformat_module("fe-common/silc", server, NULL,
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_KILLED,
+			   client_entry->nickname,
+			   conn->local_entry->nickname, "");
+    }
   }
 }
 
@@ -2525,82 +2547,60 @@ void silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
 typedef struct {
   SilcGetAuthMeth completion;
   void *context;
-} *InternalGetAuthMethod;
+} *GetAuthMethod;
 
-/* Callback called when we've received the authentication method information
-   from the server after we've requested it. This will get the authentication
-   data from the user if needed. */
-
-static void silc_get_auth_method_callback(SilcClient client,
-					  SilcClientConnection conn,
-					  SilcAuthMethod auth_meth,
-					  void *context)
+static void silc_get_auth_ask_passphrase(unsigned char *passphrase,
+					 SilcUInt32 passphrase_len,
+					 void *context)
 {
-  InternalGetAuthMethod internal = (InternalGetAuthMethod)context;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  switch (auth_meth) {
-  case SILC_AUTH_NONE:
-    /* No authentication required. */
-    (*internal->completion)(TRUE, auth_meth, NULL, 0, internal->context);
-    break;
-  case SILC_AUTH_PASSWORD:
-    {
-      /* Check whether we find the password for this server in our
-	 configuration.  If not, then don't provide so library will ask
-	 it from the user. */
-      SERVER_SETUP_REC *setup = server_setup_find_port(conn->remote_host,
-						       conn->remote_port);
-      if (!setup || !setup->password) {
-	(*internal->completion)(TRUE, auth_meth, NULL, 0, internal->context);
-	break;
-      }
-
-      (*internal->completion)(TRUE, auth_meth, setup->password,
-			      strlen(setup->password), internal->context);
-    }
-    break;
-  case SILC_AUTH_PUBLIC_KEY:
-    /* Do not get the authentication data now, the library will generate
-       it using our default key, if we do not provide it here. */
-    /* XXX In the future when we support multiple local keys and multiple
-       local certificates we will need to ask from user which one to use. */
-    (*internal->completion)(TRUE, auth_meth, NULL, 0, internal->context);
-    break;
-  }
-
-  silc_free(internal);
+  GetAuthMethod a = context;
+  a->completion(passphrase ? SILC_AUTH_PASSWORD : SILC_AUTH_NONE,
+		passphrase, passphrase_len, a->context);
+  silc_free(a);
 }
 
-/* Find authentication method and authentication data by hostname and
-   port. The hostname may be IP address as well. The found authentication
-   method and authentication data is returned to `auth_meth', `auth_data'
-   and `auth_data_len'. The function returns TRUE if authentication method
-   is found and FALSE if not. `conn' may be NULL. */
+/* Find authentication data by hostname and port. The hostname may be IP
+   address as well.*/
 
 void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 			  char *hostname, SilcUInt16 port,
+			  SilcAuthMethod auth_meth,
 			  SilcGetAuthMeth completion, void *context)
 {
-  InternalGetAuthMethod internal;
+  SERVER_SETUP_REC *setup;
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* If we do not have this connection configured by the user in a
-     configuration file then resolve the authentication method from the
-     server for this session. */
-  internal = silc_calloc(1, sizeof(*internal));
-  internal->completion = completion;
-  internal->context = context;
+  if (auth_meth == SILC_AUTH_PUBLIC_KEY) {
+    /* Returning NULL will cause library to use our private key configured
+       for this connection */
+    completion(SILC_AUTH_PUBLIC_KEY, NULL, 0, context);
+    return;
+  }
 
-#if 0
-  silc_client_request_authentication_method(client, conn,
-					    silc_get_auth_method_callback,
-					    internal);
-#else
-  completion(TRUE, SILC_AUTH_NONE, NULL, 0, context);
-#endif
+  /* Check whether we find the password for this server in our
+     configuration.  If it's set, always send it server. */
+  setup = server_setup_find_port(hostname, port);
+  if (setup && setup->password) {
+    completion(SILC_AUTH_PASSWORD, setup->password, strlen(setup->password),
+	       context);
+    return;
+  }
+
+  /* Didn't find password.  If server wants it, ask it from user. */
+  if (auth_meth == SILC_AUTH_PASSWORD) {
+    GetAuthMethod a;
+    a = silc_calloc(1, sizeof(*a));
+    if (a) {
+      a->completion = completion;
+      a->context = context;
+      silc_ask_passphrase(client, conn, silc_get_auth_ask_passphrase, a);
+      return;
+    }
+  }
+
+  /* No authentication */
+  completion(SILC_AUTH_NONE, NULL, 0, context);
 }
 
 /* Asks whether the user would like to perform the key agreement protocol.

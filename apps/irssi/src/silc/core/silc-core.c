@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2006 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -473,7 +473,6 @@ void silc_core_init(void)
   settings_add_int("server", "key_exchange_timeout_secs", 120);
   settings_add_int("server", "key_exchange_rekey_secs", 3600);
   settings_add_bool("server", "key_exchange_rekey_pfs", FALSE);
-  settings_add_int("server", "connauth_request_secs", 2);
   settings_add_int("server", "heartbeat", 300);
   settings_add_bool("server", "ignore_message_signatures", FALSE);
   settings_add_str("server", "session_filename", "session.$chatnet");
@@ -513,7 +512,6 @@ void silc_core_init(void)
   /* Initialize client parameters */
   memset(&params, 0, sizeof(params));
   strcat(params.nickname_format, "%n@%h%a");
-  params.connauth_request_secs = settings_get_int("connauth_request_secs");
 
   /* Allocate SILC client */
   silc_client = silc_client_alloc(&ops, &params, NULL, silc_version_string);

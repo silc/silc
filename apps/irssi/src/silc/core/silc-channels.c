@@ -1,7 +1,7 @@
 /*
   silc-channels.c : irssi
 
-  Copyright (C) 2000 - 2001, 2004, 2006 Timo Sirainen
+  Copyright (C) 2000 - 2001, 2004, 2006, 2007 Timo Sirainen
                 Pekka Riikonen <priikone@silcnet.org>
 
   This program is free software; you can redistribute it and/or modify
@@ -582,7 +582,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   unsigned char **argv;
   SilcUInt32 *argv_lens, *argv_types;
   char *bindhost = NULL;
-  SilcChannelEntry ch = NULL;
+  SilcChannelPrivateKey ch = NULL;
   SilcDList ckeys;
   SilcBool udp = FALSE;
   int i;
@@ -751,7 +751,6 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
     }
   }
 
-#if 0
   /* List command */
   if (!strcasecmp(argv[3], "list")) {
     command = 3;
@@ -844,20 +843,20 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
       if (!ckeys)
 	goto out;
 
-      for (k = 0; k < keys_count; k++) {
+      while ((ch = silc_dlist_get(ckeys))) {
 	memset(buf, 0, sizeof(buf));
 	strncat(buf, "  ", 2);
 
-	len = strlen(silc_cipher_get_name(keys[k]->cipher));
-	strncat(buf, silc_cipher_get_name(keys[k]->cipher),
+	len = strlen(silc_cipher_get_name(ch->cipher));
+	strncat(buf, silc_cipher_get_name(ch->cipher),
 		len > 16 ? 16 : len);
 	if (len < 16)
 	  for (i = 0; i < 16 - len; i++)
 	    strcat(buf, " ");
 	strcat(buf, " ");
 
-	len = strlen(silc_hmac_get_name(keys[k]->hmac));
-	strncat(buf, silc_hmac_get_name(keys[k]->hmac), len > 16 ? 16 : len);
+	len = strlen(silc_hmac_get_name(ch->hmac));
+	strncat(buf, silc_hmac_get_name(ch->hmac), len > 16 ? 16 : len);
 	if (len < 16)
 	  for (i = 0; i < 16 - len; i++)
 	    strcat(buf, " ");
@@ -868,12 +867,11 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 	silc_say(silc_client, conn, SILC_CLIENT_MESSAGE_INFO, "%s", buf);
       }
 
-      silc_client_free_channel_private_keys(keys, keys_count);
+      silc_dlist_uninit(ckeys);
     }
 
     goto out;
   }
-#endif /* 0 */
 
   /* Send command is used to send key agreement */
   if (!strcasecmp(argv[3], "agreement")) {
@@ -1046,38 +1044,39 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   return;
 }
 
-#if 0
 void silc_list_key(const char *pub_filename, int verbose)
 {
   SilcPublicKey public_key;
   SilcPublicKeyIdentifier ident;
+  SilcSILCPublicKey silc_pubkey;
   char *fingerprint, *babbleprint;
   unsigned char *pk;
   SilcUInt32 pk_len;
-  SilcPKCS pkcs;
   SilcUInt32 key_len = 0;
   int is_server_key = (strstr(pub_filename, "serverkeys") != NULL);
 
-  if (silc_pkcs_load_public_key((char *)pub_filename, &public_key,
-                                SILC_PKCS_FILE_PEM) == FALSE)
-    if (silc_pkcs_load_public_key((char *)pub_filename, &public_key,
-                                  SILC_PKCS_FILE_BIN) == FALSE) {
-      printformat_module("fe-common/silc", NULL, NULL,
-                         MSGLEVEL_CRAP, SILCTXT_LISTKEY_LOADPUB,
-                         pub_filename);
-      return;
-    }
+  if (!silc_pkcs_load_public_key((char *)pub_filename, &public_key)) {
+    printformat_module("fe-common/silc", NULL, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_LISTKEY_LOADPUB,
+		       pub_filename);
+    return;
+  }
 
-  ident = silc_pkcs_decode_identifier(public_key->identifier);
+  /* Print only SILC public keys */
+  if (silc_pkcs_get_type(public_key) != SILC_PKCS_SILC) {
+    printformat_module("fe-common/silc", NULL, NULL,
+		       MSGLEVEL_CRAP, SILCTXT_LISTKEY_LOADPUB,
+		       pub_filename);
+    return;
+  }
+
+  silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
+  ident = &silc_pubkey->identifier;
 
   pk = silc_pkcs_public_key_encode(public_key, &pk_len);
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
   babbleprint = silc_hash_babbleprint(NULL, pk, pk_len);
-
-  if (silc_pkcs_alloc(public_key->name, &pkcs)) {
-    key_len = silc_pkcs_public_key_set(pkcs, public_key);
-    silc_pkcs_free(pkcs);
-  }
+  key_len = silc_pkcs_public_key_get_len(public_key);
 
   printformat_module("fe-common/silc", NULL, NULL,
                      MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_FILE,
@@ -1086,7 +1085,7 @@ void silc_list_key(const char *pub_filename, int verbose)
   if (verbose)
     printformat_module("fe-common/silc", NULL, NULL,
                        MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_ALG,
-                       public_key->name);
+		       silc_pkcs_get_name(public_key));
   if (key_len && verbose)
     printformat_module("fe-common/silc", NULL, NULL,
                         MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_BITS,
@@ -1129,8 +1128,6 @@ void silc_list_key(const char *pub_filename, int verbose)
   silc_free(babbleprint);
   silc_free(pk);
   silc_pkcs_public_key_free(public_key);
-  silc_pkcs_free_identifier(ident);
-
 }
 
 void silc_list_keys_in_dir(const char *dirname, const char *where)
@@ -1141,7 +1138,7 @@ void silc_list_keys_in_dir(const char *dirname, const char *where)
   dir = opendir(dirname);
 
   if (dir == NULL)
-	  cmd_return_error(CMDERR_ERRNO);
+    cmd_return_error(CMDERR_ERRNO);
 
   printformat_module("fe-common/silc", NULL, NULL,
                      MSGLEVEL_CRAP, SILCTXT_LISTKEY_LIST,
@@ -1191,9 +1188,7 @@ void silc_list_file(const char *filename)
 list_key:
 
   silc_list_key(path, TRUE);
-
 }
-#endif /* 0 */
 
 /* Lists locally saved client and server public keys. */
 static void command_listkeys(const char *data, SILC_SERVER_REC *server,
@@ -1248,9 +1243,9 @@ void silc_channels_init(void)
   command_bind_silc("notice", MODULE_NAME, (SIGNAL_FUNC) command_notice);
   command_bind_silc("away", MODULE_NAME, (SIGNAL_FUNC) command_away);
   command_bind_silc("key", MODULE_NAME, (SIGNAL_FUNC) command_key);
-  //  command_bind("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys);
+  command_bind("listkeys", MODULE_NAME, (SIGNAL_FUNC) command_listkeys);
 
-  //command_set_options("listkeys", "clients servers");
+  command_set_options("listkeys", "clients servers");
   command_set_options("action", "sign channel");
   command_set_options("notice", "sign channel");
 
@@ -1270,7 +1265,7 @@ void silc_channels_deinit(void)
   command_unbind("notice", (SIGNAL_FUNC) command_notice);
   command_unbind("away", (SIGNAL_FUNC) command_away);
   command_unbind("key", (SIGNAL_FUNC) command_key);
-  //  command_unbind("listkeys", (SIGNAL_FUNC) command_listkeys);
+  command_unbind("listkeys", (SIGNAL_FUNC) command_listkeys);
 
   silc_nicklist_deinit();
 }
