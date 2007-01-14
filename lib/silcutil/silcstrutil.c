@@ -24,10 +24,10 @@
 static unsigned char pem_enc[64] =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-/* Encodes data into PEM encoding. Returns NULL terminated PEM encoded
+/* Encodes data into Base 64 encoding. Returns NULL terminated base 64 encoded
    data string. */
 
-char *silc_pem_encode(unsigned char *data, SilcUInt32 len)
+char *silc_base64_encode(unsigned char *data, SilcUInt32 len)
 {
   int i, j;
   SilcUInt32 bits, c, char_count;
@@ -75,13 +75,13 @@ char *silc_pem_encode(unsigned char *data, SilcUInt32 len)
 
 /* Same as above but puts newline ('\n') every 72 characters. */
 
-char *silc_pem_encode_file(unsigned char *data, SilcUInt32 data_len)
+char *silc_base64_encode_file(unsigned char *data, SilcUInt32 data_len)
 {
   int i, j;
   SilcUInt32 len, cols;
   char *pem, *pem2;
 
-  pem = silc_pem_encode(data, data_len);
+  pem = silc_base64_encode(data, data_len);
   len = strlen(pem);
 
   pem2 = silc_calloc(len + (len / 72) + 1, sizeof(*pem2));
@@ -101,10 +101,11 @@ char *silc_pem_encode_file(unsigned char *data, SilcUInt32 data_len)
   return pem2;
 }
 
-/* Decodes PEM into data. Returns the decoded data. */
+/* Decodes Base 64 into data. Returns the decoded data. */
 
-unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
-			       SilcUInt32 *ret_len)
+unsigned char *silc_base64_decode(unsigned char *base64,
+				  SilcUInt32 base64_len,
+				  SilcUInt32 *ret_len)
 {
   int i, j;
   SilcUInt32 len, c, char_count, bits;
@@ -120,15 +121,15 @@ unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
   bits = 0;
   j = 0;
 
-  if (!pem_len)
-    len = strlen(pem);
+  if (!base64_len)
+    len = strlen(base64);
   else
-    len = pem_len;
+    len = base64_len;
 
   data = silc_calloc(((len * 6) / 8), sizeof(*data));
 
   for (i = 0; i < len; i++) {
-    c = pem[i];
+    c = base64[i];
 
     if (c == '=')
       break;

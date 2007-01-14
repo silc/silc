@@ -67,49 +67,50 @@ typedef enum {
 } SilcStringEncoding;
 /***/
 
-/****f* silcutil/SilcStrUtilAPI/silc_pem_encode
+/****f* silcutil/SilcStrUtilAPI/silc_base64_encode
  *
  * SYNOPSIS
  *
- *    char *silc_pem_encode(unsigned char *data, SilcUInt32 len);
+ *    char *silc_base64_encode(unsigned char *data, SilcUInt32 len);
  *
  * DESCRIPTION
  *
- *    Encodes data into PEM encoding. Returns NULL terminated PEM encoded
- *    data string. Note: This is originally public domain code and is
- *    still PD.
+ *    Encodes data into Base 64 (PEM) encoding. Returns NULL terminated
+ *    Base 64 encoded data string.
  *
  ***/
-char *silc_pem_encode(unsigned char *data, SilcUInt32 len);
+char *silc_base64_encode(unsigned char *data, SilcUInt32 len);
 
-/****f* silcutil/SilcStrUtilAPI/silc_pem_encode_file
+/****f* silcutil/SilcStrUtilAPI/silc_base64_encode_file
  *
  * SYNOPSIS
  *
- *    char *silc_pem_encode_file(unsigned char *data, SilcUInt32 data_len);
+ *    char *silc_base64_encode_file(unsigned char *data, SilcUInt32 data_len);
  *
  * DESCRIPTION
  *
- *    Same as silc_pem_encode() but puts newline ('\n') every 72 characters.
+ *    Same as silc_base64_encode() but puts newline ('\n') every 72
+ *    characters.
  *
  ***/
-char *silc_pem_encode_file(unsigned char *data, SilcUInt32 data_len);
+char *silc_base64_encode_file(unsigned char *data, SilcUInt32 data_len);
 
-/****f* silcutil/SilcStrUtilAPI/silc_pem_decode
+/****f* silcutil/SilcStrUtilAPI/silc_base_decode
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
- *                                   SilcUInt32 *ret_len);
+ *    unsigned char *silc_base_decode(unsigned char *base64,
+ *                                    SilcUInt32 base64_len,
+ *                                    SilcUInt32 *ret_len);
  *
  * DESCRIPTION
  *
- *    Decodes PEM into data. Returns the decoded data. Note: This is
- *    originally public domain code and is still PD.
+ *    Decodes Base 64 (PEM) into data. Returns the decoded data.
  *
  ***/
-unsigned char *silc_pem_decode(unsigned char *pem, SilcUInt32 pem_len,
-			       SilcUInt32 *ret_len);
+unsigned char *silc_base64_decode(unsigned char *base64,
+				  SilcUInt32 base64_len,
+				  SilcUInt32 *ret_len);
 
 /****f* silcutil/SilcStrStrUtilAPI/silc_strncat
  *

@@ -344,7 +344,7 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap);
  *
  *    Formats a buffer from variable argument list of strings.  Each
  *    string must be NULL-terminated and the variable argument list must
- *    be end with SILC_STR_END argument.  This allows that a string in
+ *    be end with SILC_STRFMT_END argument.  This allows that a string in
  *    the list can be NULL, in which case it is skipped.  This automatically
  *    allocates the space for the buffer data but `dst' must be already
  *    allocated by the caller.
@@ -368,7 +368,7 @@ int silc_buffer_strformat(SilcBuffer dst, ...);
  *
  *    Formats a buffer from variable argument list of strings.  Each
  *    string must be NULL-terminated and the variable argument list must
- *    be end with SILC_STR_END argument.  This allows that a string in
+ *    be end with SILC_STRFMT_END argument.  This allows that a string in
  *    the list can be NULL, in which case it is skipped.  This automatically
  *    allocates the space for the buffer data but `dst' must be already
  *    allocated by the caller.  This function is equivalent to
@@ -462,9 +462,9 @@ typedef enum {
  *
  *    SilcInt16/SilcUInt16.
  *
- *    Formatting:    SILC_STR_SI_SHORT(short)
+ *    Formatting:    SILC_STR_SI_SHORT(SilcInt16)
  *                   SILC_STR_UI_SHORT(SilcUInt16)
- *    Unformatting:  SILC_STR_SI_SHORT(short *)
+ *    Unformatting:  SILC_STR_SI_SHORT(SilcInt16 *)
  *                   SILC_STR_UI_SHORT(SilcUInt16 *)
  *
  ***/
@@ -482,9 +482,9 @@ typedef enum {
  *
  *    SilcInt32/SilcUInt32.
  *
- *    Formatting:    SILC_STR_SI_INT(int)
+ *    Formatting:    SILC_STR_SI_INT(SilcInt32)
  *                   SILC_STR_UI_INT(SilcUInt32)
- *    Unformatting:  SILC_STR_SI_INT(int *)
+ *    Unformatting:  SILC_STR_SI_INT(SilcInt32 *)
  *                   SILC_STR_UI_INT(SilcUInt32 *)
  *
  ***/
@@ -502,10 +502,10 @@ typedef enum {
  *
  *    SilcInt64/SilcUInt64.
  *
- *     Formatting:    SILC_STR_SI_INT64(int)
- *                    SILC_STR_UI_INT64(SilcUInt32)
- *     Unformatting:  SILC_STR_SI_INT64(int *)
- *                    SILC_STR_UI_INT64(SilcUInt32 *)
+ *     Formatting:    SILC_STR_SI_INT64(SilcInt64)
+ *                    SILC_STR_UI_INT64(SilcUInt64)
+ *     Unformatting:  SILC_STR_SI_INT64(SilcInt64 *)
+ *                    SILC_STR_UI_INT64(SilcUInt64 *)
  *
  ***/
 #define SILC_STR_SI_INT64(x) SILC_PARAM_SI64_INT, (x)
