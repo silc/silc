@@ -327,7 +327,7 @@ SilcBool silc_pkcs_silc_import_public_key_file(unsigned char *filedata,
     break;
 
   case SILC_PKCS_FILE_BASE64:
-    data = silc_pem_decode(filedata, filedata_len, &filedata_len);
+    data = silc_base64_decode(filedata, filedata_len, &filedata_len);
     if (!data)
       return FALSE;
     filedata = data;
@@ -365,6 +365,7 @@ int silc_pkcs_silc_import_public_key(unsigned char *key,
 
   /* Get length */
   ret = silc_buffer_unformat(&buf,
+			     SILC_STR_ADVANCE,
 			     SILC_STR_UI_INT(&totlen),
 			     SILC_STR_END);
   if (ret == -1)
@@ -380,7 +381,7 @@ int silc_pkcs_silc_import_public_key(unsigned char *key,
   /* Get algorithm name and identifier */
   ret =
     silc_buffer_unformat(&buf,
-			 SILC_STR_OFFSET(4),
+			 SILC_STR_ADVANCE,
 			 SILC_STR_UI16_NSTRING_ALLOC(&pkcs_name, &pkcs_len),
 			 SILC_STR_UI16_NSTRING_ALLOC(&ident, &identifier_len),
 			 SILC_STR_END);
@@ -392,11 +393,9 @@ int silc_pkcs_silc_import_public_key(unsigned char *key,
     goto err;
 
   /* Get key data */
-  silc_buffer_pull(&buf, 4 + 2 + pkcs_len + 2 + identifier_len);
   keydata_len = silc_buffer_len(&buf);
   ret = silc_buffer_unformat(&buf,
-			     SILC_STR_UI_XNSTRING(&key_data,
-						  keydata_len),
+			     SILC_STR_DATA(&key_data, keydata_len),
 			     SILC_STR_END);
   if (ret == -1)
     goto err;
@@ -515,7 +514,7 @@ silc_pkcs_silc_export_public_key_file(void *public_key,
     break;
 
   case SILC_PKCS_FILE_BASE64:
-    data = silc_pem_encode_file(key, key_len);
+    data = silc_base64_encode_file(key, key_len);
     if (!data)
       return NULL;
     silc_free(key);
@@ -806,7 +805,7 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
     break;
 
   case SILC_PKCS_FILE_BASE64:
-    data = silc_pem_decode(filedata, filedata_len, &len);
+    data = silc_base64_decode(filedata, filedata_len, &len);
     if (!data)
       return FALSE;
     filedata = data;
@@ -1332,7 +1331,7 @@ silc_pkcs_silc_export_private_key_file(void *private_key,
     break;
 
   case SILC_PKCS_FILE_BASE64:
-    data = silc_pem_encode_file(enc->data, silc_buffer_len(enc));
+    data = silc_base64_encode_file(enc->data, silc_buffer_len(enc));
     if (!data) {
       silc_buffer_clear(enc);
       silc_buffer_free(enc);

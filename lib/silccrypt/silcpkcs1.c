@@ -566,6 +566,8 @@ SilcBool silc_pkcs1_decrypt(void *private_key,
   return TRUE;
 }
 
+/* PKCS #1 sign with appendix, hash OID included in the signature */
+
 SilcBool silc_pkcs1_sign(void *private_key,
 			 unsigned char *src,
 			 SilcUInt32 src_len,
@@ -576,6 +578,8 @@ SilcBool silc_pkcs1_sign(void *private_key,
 {
   return FALSE;
 }
+
+/* PKCS #1 verification with appendix. */
 
 SilcBool silc_pkcs1_verify(void *public_key,
 			   unsigned char *signature,
