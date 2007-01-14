@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet-Draft
-.ds RH XXX
+.ds RH 15 January 2007
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-ke-auth-09.txt                       XXX
-Expires: XXX
+draft-riikonen-silc-ke-auth-09.txt                       15 January 2007
+Expires: 15 July 2007
 
 .in 3
 
@@ -61,10 +61,9 @@ derived from several key exchange protocols.
 
 The second protocol, SILC Connection Authentication protocol provides
 user level authentication used when creating connections in SILC
-network.  The protocol is transparent to the authentication data
-which means that it can be used to authenticate the connection with, for
-example, passphrase (pre-shared secret) or public key (and certificate)
-based on digital signatures.
+network.  The protocol supports passphrase (pre-shared secret)
+authentication and public key (and certificate) authentication based
+on digital signatures.
 
 
 
@@ -77,24 +76,24 @@ Table of Contents
 2 SILC Key Exchange Protocol ....................................  3
   2.1 Key Exchange Payloads .....................................  4
       2.1.1 Key Exchange Start Payload ..........................  4
-      2.1.2 Key Exchange Payload ................................  8
+      2.1.2 Key Exchange Payload ................................  9
   2.2 Key Exchange Procedure .................................... 11
-  2.3 Processing the Key Material ............................... 12
-  2.4 SILC Key Exchange Groups .................................. 14
-      2.4.1 diffie-hellman-group1 ............................... 14
+  2.3 Processing the Key Material ............................... 13
+  2.4 SILC Key Exchange Groups .................................. 15
+      2.4.1 diffie-hellman-group1 ............................... 15
       2.4.2 diffie-hellman-group2 ............................... 15
-      2.4.3 diffie-hellman-group3 ............................... 15
+      2.4.3 diffie-hellman-group3 ............................... 16
   2.5 Key Exchange Status Types ................................. 16
-3 SILC Connection Authentication Protocol ....................... 17
-  3.1 Connection Auth Payload ................................... 18
-  3.2 Connection Authentication Types ........................... 19
-      3.2.1 Passphrase Authentication ........................... 19
-      3.2.2 Public Key Authentication ........................... 20
+3 SILC Connection Authentication Protocol ....................... 18
+  3.1 Connection Auth Payload ................................... 19
+  3.2 Connection Authentication Types ........................... 20
+      3.2.1 Passphrase Authentication ........................... 20
+      3.2.2 Public Key Authentication ........................... 21
   3.3 Connection Authentication Status Types .................... 21
-4 Security Considerations ....................................... 21
-5 References .................................................... 21
+4 Security Considerations ....................................... 22
+5 References .................................................... 22
 6 Author's Address .............................................. 23
-7 Full Copyright Statement ...................................... 23
+7 Full Copyright Statement ...................................... 24
 
 
 .ti 0
@@ -121,9 +120,8 @@ protocol [OAKLEY].
 
 The second protocol, SILC Connection Authentication protocol provides
 user level authentication used when creating connections in SILC
-network.  The protocol is transparent to the authentication data which
-means that it can be used to authenticate the connection with, for example,
-passphrase (pre-shared secret) or public key (and certificate) based
+network.  The protocol supports passphrase (pre-shared secret)
+authentication and public key (and certificate) authentication based
 on digital signatures.
 
 The basis of secure SILC session requires strong and secure key exchange
@@ -184,7 +182,6 @@ There are several payloads used in the key exchange.  As for all SILC
 packets, SILC Packet Header, described in [SILC2], is at the beginning
 of all packets sent in during this protocol.  All the fields in the
 following payloads are in MSB (most significant byte first) order.
-Following descriptions of these payloads.
 
 
 .ti 0
@@ -340,6 +337,14 @@ o Flags (1 byte) - Indicates flags to be used in the key
        however without this flag UDP connection cannot be
        used.  The flag MAY also be used in TCP connection.
 
+       When using with UDP/IP implementations SHOULD use
+       anti-replay methods where an anti-replay window
+       defines what packets are replays.  An example of
+       anti-window protocol is in [RFC2406] Section 3.4.2
+       with example source code in [RFC2401] Appendix C.
+       While [RFC2401] and [RFC2406] does not relate to SILC,
+       the anti-replay method used is applicable in SILC.
+
      PFS                      0x02
 
        Perfect Forward Secrecy (PFS) to be used in the
@@ -443,10 +448,10 @@ two SILC clients.  In normal case, where client is connecting to a
 server, or server is connecting to a router the Mutual Authentication
 flag MAY be omitted.  However, if the connection authentication protocol
 for the connecting entity is not based on digital signatures (it is
-based on pre-shared key) then the Mutual Authentication flag SHOULD be
-enabled.  This way the connecting entity has to provide proof of
-possession of the private key for the public key it will provide in
-this protocol.
+based on pre-shared key or there is no authentication) then the Mutual
+Authentication flag SHOULD be enabled.  This way the connecting entity
+has to provide proof of possession of the private key for the public key
+it will provide in this protocol.
 
 When performing re-key with PFS selected this is the only payload that
 is sent in the SKE protocol.  The Key Exchange Start Payload MUST NOT
@@ -519,7 +524,7 @@ o Public Key Type (2 bytes) - The public key (or certificate)
 
 o Public Key (or certificate) (variable length) - The
   public key or certificate of the party.  This public key
-  is used to verify the digital signature.  The public key
+  may be used to verify the digital signature.  The public key
   or certificate in this field is encoded in the manner as
   defined in their respective definitions; see previous field.
 
@@ -1039,7 +1044,8 @@ Public key authentication may be used if passphrase based authentication
 is not desired.  The public key authentication works by sending a
 digital signature as authentication data to the other end, say, server.
 The server MUST then verify the signature by the public key of the sender,
-which the server has received earlier in SKE protocol.
+which the server has received earlier in SKE protocol, or which the
+server has cached locally at some previous time.
 
 The signature is computed using the private key of the sender by signing
 the HASH value provided by the SKE protocol previously, and the Key
@@ -1100,12 +1106,12 @@ security of this protocol.
 5 References
 
 [SILC1]      Riikonen, P., "Secure Internet Live Conferencing (SILC),
-             Protocol Specification", Internet Draft, June 2003.
+             Protocol Specification", Internet Draft, January 2007.
 
 [SILC2]      Riikonen, P., "SILC Packet Protocol", Internet Draft,
-             June 2003.
+             January 2007.
 
-[SILC4]      Riikonen, P., "SILC Commands", Internet Draft, June 2003.
+[SILC4]      Riikonen, P., "SILC Commands", Internet Draft, January 2007.
 
 [IRC]        Oikarinen, J., and Reed D., "Internet Relay Chat Protocol",
              RFC 1459, May 1993.
@@ -1163,14 +1169,19 @@ security of this protocol.
 [RFC2279]    Yergeau, F., "UTF-8, a transformation format of ISO
              10646", RFC 2279, January 1998.
 
+[RFC2401]    Kent, S., et al, "Security Architecture for the Internet
+             Protocol", RFC 2401, November 1998.
+
+[RFC2406]    Kent, S., et al, "Security Architecture for the Internet
+             Protocol", RFC 2406, November 1998.
+
 
 .ti 0
 6 Author's Address
 
 .nf
 Pekka Riikonen
-Snellmaninkatu 34 A 15
-70100 Kuopio
+Helsinki
 Finland
 
 EMail: priikone@iki.fi

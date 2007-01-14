@@ -1,3 +1,10 @@
+Tue Jan  9 19:37:51 EET 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Rewrote connection auth request in client library.  It is now
+	  done automatically by the library and the resolved method given
+	  as a hint to get_auth_method client operation.  Affected files
+	  are lib/silcclient/.
+
 Wed Jan  3 18:06:33 EET 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_packet_stream_wrap into lib/silccore/silcpacket.[ch].

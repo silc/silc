@@ -38,7 +38,9 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o File transfer rewrite.
 
- o Connection auth request.
+ o Connection auth request. (***DONE)
+
+ o Password auth test, public key auth test.
 
  o Starting key exchange directly, rewrite. (***DONE)
 
@@ -48,8 +50,6 @@ lib/silcclient, The Client Library	***PARTLY DONE****
  o For many APIs leave the hash context allocations to the caller instead
    of using client->sha1hash and client->md5hash, or some kind of thread
    safe (no locking) concept.
-
- o Password auth test, public key auth test.
 
  o Key agreement rewrite. (***TESTING NEEDED)
 
@@ -82,8 +82,10 @@ lib/silcsftp			****DONE****
  o Porting to use the new util library. (***DONE)
 
 
-lib/silccore/silcpacket.[ch]	****DONE****
+lib/silccore/silcpacket.[ch]	****PARTLY DONE****
 ============================
+
+ o Implement ACK packet and packet payload.
 
  o SilcPacketEngine. (***DONE)
 
@@ -134,6 +136,11 @@ lib/silcske/silcske.[ch] 	****DONE****
 
 lib/silccrypt			****PARTLY DONE****
 =============
+
+ o Implement SILC Public Key Version 2 handling in sign/verify.  Implement
+   Version (V) identifier.
+
+ o Implement PKCS #1 sign/verify with hash OID.
 
  o Implement the defined SilcDH API.  The definition is in
    lib/silccrypt/silcdh.h.

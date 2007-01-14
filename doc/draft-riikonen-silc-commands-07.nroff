@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 11 February 2004
+.ds RH 15 January 2007
 .ds CH
 .na
 .hy 0
@@ -16,14 +16,14 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-commands-06.txt                     11 February 2004
-Expires: 11 August 2004
+draft-riikonen-silc-commands-07.txt                      15 January 2007
+Expires: 15 July 2007
 
 .in 3
 
 .ce 2
 SILC Commands
-<draft-riikonen-silc-commands-06.txt>
+<draft-riikonen-silc-commands-07.txt>
 
 .ti 0
 Status of this Memo
@@ -739,7 +739,8 @@ List of all defined commands in SILC follows.
         SILC_NOTIFY_TYPE_SIGNOFF to network and to the destination client.
         The SILC_NOTIFY_TYPE_KILLED MUST NOT be used in this case.  If the
         verification fails the destination client remains in network.
-        The hash function used in <auth payload> computing is SHA1.
+        The hash function used in <auth payload> computing is selected
+        by user or SHA1 otherwise.
 
         Reply messages to the command:
 
@@ -955,7 +956,7 @@ List of all defined commands in SILC follows.
         SILC_COMMAND_CUMODE command to gain founder privileges.  The
         client is still able to join the channel even if the founder
         privileges could not be gained.  The hash function used with
-        the <founder payload> MUST be sha1.
+        the <founder payload> is selected by user or SHA1 otherwise.
 
         If the <channel auth> is present and the channel mode
         SILC_CMODE_CHANNEL_AUTH is set the server MUST verify the
@@ -971,7 +972,7 @@ List of all defined commands in SILC follows.
         are set as defined in [SILC1].  This way server can determine from
         the digest whether that public key exist on the channel and then
         use that key in verification.  The hash function used with
-        <channel auth> MUST be sha1.
+        <channel auth> is selected by user or SHA1 otherwise.
 
         The server MUST check whether the user is allowed to join to
         the requested channel.  Various modes set to the channel affect
@@ -1400,7 +1401,7 @@ List of all defined commands in SILC follows.
               public key MUST be saved as founder's public key.  This
               mode may be set only if the <auth payload> was verified
               successfully.  The hash function used with the <auth
-              payload> MUST be sha1.
+              payload> is selected by user or SHA1 otherwise.
 
               The public key of the founder is sent in the
               SILC_NOTIFY_TYPE_CMODE_CHANGE notify type so that other
@@ -2475,13 +2476,13 @@ security of this protocol.
 5 References
 
 [SILC1]      Riikonen, P., "Secure Internet Live Conferencing (SILC),
-             Protocol Specification", Internet Draft, May 2002.
+             Protocol Specification", Internet Draft, January 2007.
 
 [SILC2]      Riikonen, P., "SILC Packet Protocol", Internet Draft,
-             May 2002.
+             January 2007.
 
 [SILC3]      Riikonen, P., "SILC Key Exchange and Authentication
-             Protocols", Internet Draft, May 2002.
+             Protocols", Internet Draft, January 2007.
 
 [IRC]        Oikarinen, J., and Reed D., "Internet Relay Chat Protocol",
              RFC 1459, May 1993.
@@ -2548,8 +2549,7 @@ security of this protocol.
 
 .nf
 Pekka Riikonen
-Snellmaninkatu 34 A 15
-70100 Kuopio
+Helsinki
 Finland
 
 EMail: priikone@iki.fi

@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2005 Pekka Riikonen
+#  Copyright (C) 2000 - 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,12 +18,13 @@
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 all:
-	touch draft-riikonen-silc-spec-08.txt
+	touch draft-riikonen-silc-spec-09.txt
 	touch draft-riikonen-silc-pp-09.txt
-	touch draft-riikonen-silc-ke-auth-08.txt
-	touch draft-riikonen-silc-commands-06.txt
+	touch draft-riikonen-silc-ke-auth-09.txt
+	touch draft-riikonen-silc-commands-07.txt
 	touch draft-riikonen-silc-flags-payloads-04.txt
-	touch draft-riikonen-presence-attrs-03.txt
+	touch draft-riikonen-silc-multimedia-session-00.txt
+	touch draft-riikonen-presence-attrs-04.txt
 
 #ifdef SILC_DIST_TOOLKIT
 makerfc = $(SILC_TOP_SRCDIR)/scripts/makerfc
@@ -52,35 +53,39 @@ toolkit-ref-pdf:
 
 dist-hook:
 	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
-	touch draft-riikonen-silc-spec-08.txt
+	touch draft-riikonen-silc-spec-09.txt
 	touch draft-riikonen-silc-pp-09.txt
-	touch draft-riikonen-silc-ke-auth-08.txt
-	touch draft-riikonen-silc-commands-06.txt
+	touch draft-riikonen-silc-ke-auth-09.txt
+	touch draft-riikonen-silc-commands-07.txt
 	touch draft-riikonen-silc-flags-payloads-04.txt
-	touch draft-riikonen-presence-attrs-03.txt
-	$(makerfc) draft-riikonen-silc-spec-08.nroff \
-		draft-riikonen-silc-spec-08.txt
+	touch draft-riikonen-silc-multimedia-session-00.txt
+	touch draft-riikonen-presence-attrs-04.txt
+	$(makerfc) draft-riikonen-silc-spec-09.nroff \
+		draft-riikonen-silc-spec-09.txt
 	$(makerfc) draft-riikonen-silc-pp-09.nroff \
 		draft-riikonen-silc-pp-09.txt
-	$(makerfc) draft-riikonen-silc-ke-auth-08.nroff \
-		draft-riikonen-silc-ke-auth-08.txt
-	$(makerfc) draft-riikonen-silc-commands-06.nroff \
-		draft-riikonen-silc-commands-06.txt
+	$(makerfc) draft-riikonen-silc-ke-auth-09.nroff \
+		draft-riikonen-silc-ke-auth-09.txt
+	$(makerfc) draft-riikonen-silc-commands-07.nroff \
+		draft-riikonen-silc-commands-07.txt
 	$(makerfc) draft-riikonen-silc-flags-payloads-04.nroff \
 		draft-riikonen-silc-flags-payloads-04.txt
-	$(makerfc) draft-riikonen-presence-attrs-03.nroff \
-		draft-riikonen-presence-attrs-03.txt
+	$(makerfc) draft-riikonen-silc-multimedia-session-00.nroff \
+		draft-riikonen-silc-multimedia-session-00.txt
+	$(makerfc) draft-riikonen-presence-attrs-04.nroff \
+		draft-riikonen-presence-attrs-04.txt
 
 #else !SILC_DIST_TOOLKIT
 dist-hook:
 	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
 	rm draft-riikonen*.txt
-	touch draft-riikonen-silc-spec-08.txt
+	touch draft-riikonen-silc-spec-09.txt
 	touch draft-riikonen-silc-pp-09.txt
-	touch draft-riikonen-silc-ke-auth-08.txt
-	touch draft-riikonen-silc-commands-06.txt
+	touch draft-riikonen-silc-ke-auth-09.txt
+	touch draft-riikonen-silc-commands-07.txt
 	touch draft-riikonen-silc-flags-payloads-04.txt
-	touch draft-riikonen-presence-attrs-03.txt
+	touch draft-riikonen-silc-multimedia-session-00.txt
+	touch draft-riikonen-presence-attrs-04.txt
 #endif SILC_DIST_TOOLKIT
 
 doc-install:

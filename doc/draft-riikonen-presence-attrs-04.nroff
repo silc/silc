@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH XXXXX
+.ds RH 15 January 2007
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-presence-attrs-03.txt                     XXXx
-Expires: XXX
+draft-riikonen-presence-attrs-04.txt                     15 January 2007
+Expires: 15 July 2007
 
 .in 3
 
@@ -28,24 +28,24 @@ User Online Presence and Information Attributes
 .ti 0
 Status of this Memo
 
-This document is an Internet-Draft and is in full conformance with   
-all provisions of Section 10 of RFC 2026.  Internet-Drafts are   
-working documents of the Internet Engineering Task Force (IETF), its   
-areas, and its working groups.  Note that other groups may also   
-distribute working documents as Internet-Drafts.   
+This document is an Internet-Draft and is in full conformance with
+all provisions of Section 10 of RFC 2026.  Internet-Drafts are
+working documents of the Internet Engineering Task Force (IETF), its
+areas, and its working groups.  Note that other groups may also
+distribute working documents as Internet-Drafts.
 
-Internet-Drafts are draft documents valid for a maximum of six months   
-and may be updated, replaced, or obsoleted by other documents at any   
-time.  It is inappropriate to use Internet-Drafts as reference   
-material or to cite them other than as "work in progress."   
+Internet-Drafts are draft documents valid for a maximum of six months
+and may be updated, replaced, or obsoleted by other documents at any
+time.  It is inappropriate to use Internet-Drafts as reference
+material or to cite them other than as "work in progress."
 
-The list of current Internet-Drafts can be accessed at   
-http://www.ietf.org/ietf/1id-abstracts.txt   
+The list of current Internet-Drafts can be accessed at
+http://www.ietf.org/ietf/1id-abstracts.txt
 
-The list of Internet-Draft Shadow Directories can be accessed at   
-http://www.ietf.org/shadow.html   
+The list of Internet-Draft Shadow Directories can be accessed at
+http://www.ietf.org/shadow.html
 
-The distribution of this memo is unlimited.  
+The distribution of this memo is unlimited.
 
 
 .ti 0
@@ -79,7 +79,7 @@ Table of Contents
   2.3 Attribute Data Types ......................................  4
   2.4 Attribute Payload .........................................  4
   2.5 Attributes ................................................  5
-3 Security Considerations .......................................  11
+3 Security Considerations .......................................  12
 4 References ....................................................  12
 5 Author's Address ..............................................  13
 6 Full Copyright Statement ......................................  13
@@ -117,7 +117,7 @@ suitable for general purpose usage.
 .ti 0
 1.1 Requirements Terminology
 
-The keywords MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, RECOMMENDED, 
+The keywords MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, RECOMMENDED,
 MAY, and OPTIONAL, when they appear in this document, are to be
 interpreted as described in [RFC2119].
 
@@ -297,7 +297,7 @@ multiple same attributes in the packet.
      information, or with the required precision that may be desired in
      some applications.  It is therefore RECOMMENDED that this attribute
      would be used to provide only basic and constant user information,
-     such as name and contact information, but not online status 
+     such as name and contact information, but not online status
      information.
 
      Length       Type       Value
@@ -509,7 +509,7 @@ multiple same attributes in the packet.
      Note that these public keys are intended for signing.  Some
      certificates may have a key usage restrictions and same key cannot
      be used for both encryption and signing.  Therefore, the name
-     of the certificate type indicates if they are intended for 
+     of the certificate type indicates if they are intended for
      signing only.
 
 
@@ -518,7 +518,7 @@ multiple same attributes in the packet.
      This attribute includes a third party server or authority public
      key or CA certificate and MUST be present if the attribute
      ATTRIBUTE_SERVER_DIGITAL_SIGNATURE is also present.  The format
-     for this attribute is identical to the ATTRIBUTE_USER_PUBLIC_KEY 
+     for this attribute is identical to the ATTRIBUTE_USER_PUBLIC_KEY
      attribute.  If there are more than one ATTRIBUTE_SERVER_PUBLIC_KEY
      attributes set and ATTRIBUTE_SERVER_DIGITAL_SIGNATURE is also set,
      the digital signature SHOULD be verifiable with the first set public
@@ -529,8 +529,8 @@ multiple same attributes in the packet.
 
      This attribute value includes digital signature of all Attribute
      Payloads except this attribute.  This signature can be provided by
-     the user.  This attribute SHOULD be last attribute provided in the 
-     reply so that it is easier for the receiver to compute the signature 
+     the user.  This attribute SHOULD be last attribute provided in the
+     reply so that it is easier for the receiver to compute the signature
      data to be verified.  The format and encoding of this attribute
      depends on the public key or certificate used to produce the
      signature.  See the ATTRIBUTE_USER_PUBLIC_KEY for all public keys
@@ -561,7 +561,7 @@ multiple same attributes in the packet.
      information provided by the user.  How it verifies this information
      is out of scope of this document, however it may base its
      information to a previous registration information and current
-     online status of the user in a service.  This attribute SHOULD be 
+     online status of the user in a service.  This attribute SHOULD be
      last when provided, so that it is easier for the receiver to
      compute the signature data to be verified.  The format for this
      attribute is identical to the ATTRIBUTE_USER_DIGITAL_SIGNATURE
@@ -605,7 +605,7 @@ attributes on behalf of the actual user for some of the attributes.
 
 
 .ti 0
-4 References 
+4 References
 
 [RFC2119]    Bradner, S., "Key Words for use in RFCs to Indicate
              Requirement Levels", BCP 14, RFC 2119, March 1997.
@@ -620,16 +620,16 @@ attributes on behalf of the actual user for some of the attributes.
              RFC 2426, September 1998.
 
 [SILC1]      Riikonen, P., "Secure Internet Live Conferencing (SILC),
-             Protocol Specification", Internet Draft, May 2002.
+             Protocol Specification", Internet Draft, January 2007.
 
 [RFC2440]    Callas, J., et al, "OpenPGP Message Format", RFC 2440,
              November 1998.
 
-[RFC2459]    Housley, R., et al, "Internet X.509 Public Key 
+[RFC2459]    Housley, R., et al, "Internet X.509 Public Key
              Infrastructure, Certificate and CRL Profile", RFC 2459,
              January 1999.
 
-[SSH-TRANS]  Ylonen, T., et al, "SSH Transport Layer Protocol", 
+[SSH-TRANS]  Ylonen, T., et al, "SSH Transport Layer Protocol",
              Internet Draft.
 
 [PKCS7]      Kalinski, B., "PKCS #7: Cryptographic Message Syntax,
@@ -642,8 +642,7 @@ attributes on behalf of the actual user for some of the attributes.
 5 Author's Address
 
 Pekka Riikonen
-Snellmaninkatu 34 A 15
-70100 Kuopio
+Helsinki
 Finland
 
 EMail: priikone@iki.fi
@@ -677,4 +676,3 @@ TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
 BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
 HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
 MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
-

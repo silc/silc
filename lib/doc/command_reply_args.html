@@ -197,7 +197,8 @@ SilcArgumentPayload invite_list
 <td><small>
 Called after killing a client.  Returns the client that was killed.
 The `client_entry' may be NULL.  The `client_entry' will become invalid
-after the command reply has returned from application.
+after the command reply has returned from application.  The
+SILC_NOTIFY_TYPE_KILLED will not be delivered for clients that you killed.
 </td>
 <td width="50%"><small>SilcClientEntry client_entry
 </td>

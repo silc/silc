@@ -1,0 +1,393 @@
+.pl 10.0i
+.po 0
+.ll 7.2i
+.lt 7.2i
+.nr LL 7.2i
+.nr LT 7.2i
+.ds LF Riikonen
+.ds RF FORMFEED[Page %]
+.ds CF
+.ds LH Internet-Draft
+.ds RH 15 January 2007
+.ds CH
+.na
+.hy 0
+.in 0
+.nf
+Network Working Group                                        P. Riikonen
+Internet-Draft
+draft-riikonen-silc-multimedia-session-00.txt            15 January 2007
+Expires: 15 July 2007
+
+.in 3
+
+.ce 2
+Multimedia Sessions in SILC protocol
+<draft-riikonen-silc-multimedia-session-00.txt>
+
+.ti 0
+Status of this Memo
+
+This document is an Internet-Draft and is in full conformance with
+all provisions of Section 10 of RFC 2026.  Internet-Drafts are
+working documents of the Internet Engineering Task Force (IETF), its
+areas, and its working groups.  Note that other groups may also
+distribute working documents as Internet-Drafts.
+
+Internet-Drafts are draft documents valid for a maximum of six months
+and may be updated, replaced, or obsoleted by other documents at any
+time.  It is inappropriate to use Internet-Drafts as reference
+material or to cite them other than as "work in progress."
+
+The list of current Internet-Drafts can be accessed at
+http://www.ietf.org/ietf/1id-abstracts.txt
+
+The list of Internet-Draft Shadow Directories can be accessed at
+http://www.ietf.org/shadow.html
+
+The distribution of this memo is unlimited.
+
+
+.ti 0
+Abstract
+
+This document defines the use of multimedia protocols and the set up
+of multimedia sessions in the Secure Internet Live Conferencing (SILC)
+protocol [SILC1].
+
+
+.ti 0
+Table of Contents
+
+.nf
+1 Introduction ..................................................  2
+  1.1 Requirements Terminology ..................................  2
+2 Recommended Protocol ..........................................  2
+3 Session Description Protocol (SDP) ............................  2
+  3.1 SDP field usage in SILC ...................................  3
+  3.2 SDP Examples ..............................................  5
+4 Session Initiation Protocol (SIP) .............................  6
+6 Other Protocols ...............................................  6
+7 Security Considerations .......................................  7
+8 References ....................................................  7
+9 Author's Address ..............................................  7
+10 Full Copyright Statement .....................................  7
+
+
+.ti 0
+1 Introduction
+
+This document defines the use of multimedia protocols and the set up
+of multimedia sessions in the Secure Internet Live Conferencing (SILC)
+protocol [SILC1].  The SILC protocol supports multimedia messages
+with the Message Payload [SILC2] and SILC_MESSAGE_FLAG_DATA which
+has the ability to define what type of content is delievered within
+the payload.  The Message Payload is used to encapsulate the multimedia
+session set up procedure and the actual multimedia session data.  We
+define the recommended multimedia session protocol for SILC and also
+consider some other protocols in the scope of SILC.
+
+
+.ti 0
+1.1 Requirements Terminology
+
+The keywords MUST, MUST NOT, REQUIRED, SHOULD, SHOULD NOT, RECOMMENDED,
+MAY, and OPTIONAL, when they appear in this document, are to be
+interpreted as described in [RFC2119].
+
+
+.ti 0
+2 Recommended Protocol
+
+Since SILC protocol can encapsulate practically any protocol for setting
+up a multimedia session we have selected the Session Description Protocol
+(SDP) as RECOMMENDED protocol.  It was chosen for its maturity, simplicity
+and versatility.  If multimedia features are implemented in SILC
+application it is recommended that at least support for SDP is added.
+
+
+.ti 0
+3 Session Description Protocol (SDP)
+
+The SDP [SDP] protocol defines a general purpose multimedia session
+description protocol.  SDP is one of the simplest protocols to negotiate
+multimedia sessions and is suited perfectly for SILC protocol.  Since SDP
+does not itself define how it is used to set up the session, we define it
+here for SILC.  The definition is based on the [RFC3264] and [RFC4145].
+
+In SILC the SDP messages are sent as data messages (MIME message).  They
+can be destined directly to a client for direct conferencing, or to a
+channel for group conferencing.  It is also possible to send the message
+directly to client to invite them to group conferencing before they have
+joined the channel.  The MIME type used is application/sdp.
+
+To set up a multimedia session a client sends SILC message with
+SILC_MESSAGE_FLAG_DATA and SILC_MESSAGE_FLAG_REQUEST flags set and with
+MIME SDP message in the message payload.  If the receiver wants to
+participate in the multimedia session it sends MIME SDP message back with
+SILC_MESSAGE_FLAG_DATA and SILC_MESSAGE_FLAG_REPLY flags set to the
+sender.  If reply is not received after an application defined period of
+time the message may be retransmitted or the session set up may be
+terminated.
+
+After reply has been received the multimedia session is started according
+to the SDP and all multimedia data is sent using SILC data messages.  When
+performing peer-to-peer connection the SDP defines which party initiates
+the connection.  After initiation the SILC Key Exchange protocol MUST be
+performed.  The resulted key material will be used to protect the multimedia
+session.  Multimedia data transmission may start after the key exchange
+has been performed.  When performing group conferencing all parties
+independently connect to the SILC server specified in the SDP.  In other
+cases when performing the multimedia session inside the SILC network, any
+party may start transmitting the multimedia data after the SDPs have been
+exchanged.
+
+To terminate the session, or to reject incoming request, an MD5 digest
+MUST be computed from the original SDP data, and the digest is sent back
+with the SILC_MESSAGE_FLAG_DATA and SILC_MESSAGE_FLAG_STOP flags set.
+The receiver of such message should verify the MD5 digest and terminate
+the session if it matches any active session.  The session may also be
+terminated by closing network connection.  In group sessions simply by
+leaving the channel terminates the session.  The original sender of the
+SDP message may send the terminating message to notify all clients on the
+channel to terminate the session.  If the original sender on channel
+receives the terminating message it takes no action on it.
+
+.ti 0
+3.1 SDP field usage in SILC
+
+The Encryption Keys (k=) field describes encryption key to protect the
+multimedia session.  As SILC protocol transport and the multimedia session
+is secured by default this field SHOULD NOT be used.
+
+
+The Origin (o=) field describes from where the session originates.  The
+<username> sub-field is the sender's SILC nickname.  Examples:
+
+	o=foobar 2890844521 2890842804 IN IP4 10.2.1.7
+
+
+The Connection Data (c=) field describes the connection information for
+the multimedia session.  When performing peer-to-peer multimedia session
+the <network type> is 'IN', indicating Internet connection.  When
+performing multimedia session inside SILC network it is 'SILC'.  When the
+'SILC' network type is used the <address type> and <connection address>
+sub-fields are omitted.  Examples:
+
+	c=SILC
+	c=IN IP4 10.2.1.7
+
+
+The Media Announcements (m=) field describes the media information for the
+multimedia session.  If the network type in c= field is 'SILC' the <port>
+sub-field MUST be set to 9 (discard).  The <transport> for RTP over UDP is
+'RTP/AVP', for RTP over TCP it is 'TCP/RTP/AVP', and for non-RTP protocol
+over UDP it is 'udp' and over TCP it is 'tcp'.  The <fmt> sub-field
+includes the RTP media payload number when using RTP.  When using non-RTP
+protocol it includes MIME subtype.  Examples:
+
+	c=SILC
+	m=audio 9 TCP/RTP/AVP 3
+	a=rtpmap:3 GSM/8000
+
+	c=SILC
+	m=audio 9 tcp mpeg
+
+
+The Attributes (a=) field can be used to set various session and media
+specific attributes.  For SILC we define attribute "silc".
+
+	a=silc:<session type> <parameters>
+
+The <session type> is either "direct" or "group".  When it is "direct"
+and the c= field defines a connection point the connection will be
+peer-to-peer connection to the remote client.  If it is "group" and the
+the c= field defines a connection point the connection will be to a remote
+SILC server for group conferencing.  If c= field includes "SILC" network
+type, then "direct" is for direct session with a client in SILC network
+and "group" is for group conferencing in SILC network.  If the "silc"
+attribute is omitted the session type is expected to be "direct".  The
+following parameters are defined for attribute "silc".
+
+	channel		The name of the channel for group conferencing.
+			Can be used only with "group" session type.
+			More than one channel parameters may be defined.
+
+
+The [RFC4145] specifies a "setup" attribute that defines which party of the
+session will initiate the connection when performing peer-to-peer session.
+Its use in SILC is as specified in [RFC4145] and MUST be present in SDP
+when the c= field includes an actual connection point and when the "silc"
+attribute session type is "direct", or if the attribute is not present at
+all.  When performing group conferencing each party always need to create
+the connection to the server and the "setup" attribute need not be present
+in SDP.
+
+.ti 0
+3.2 SDP Examples
+
+	v=0
+	o=foobar 2890844521 2890842804 IN IP4 10.2.1.100
+	s=peer-to-peer example
+	t=0 0
+	m=audio 5000 TCP/RTP/AVP 3
+	c=IN IP4 10.2.1.100
+	a=rtpmap:3 GSM/8000
+	a=silc:direct
+	a=setup:active
+
+This example sets up a peer-to-peer session to remote client at
+10.2.1.100 at port 5000.
+
+	v=0
+	o=foobar 2890844521 2890842804 IN IP4 10.2.1.32
+	s=Group conferencing example
+	c=IN IP4 10.2.1.7
+	t=0 0
+	a=silc:group channel=foobar
+	m=audio 706 TCP/RTP/AVP 3
+	a=rtpmap:3 GSM/8000
+
+This example sets up a session to a remote SILC server 10.2.1.7 at port
+706.  Once connected the channel "foobar" will be joined for group
+conferencing.
+
+	v=0
+	o=foobar 2890844521 2890842804 IN IP4 10.2.1.32
+	s=SILC network chat example
+	c=SILC
+	t=0 0
+	m=audio 9 TCP/RTP/AVP 3
+	a=rtpmap:3 GSM/8000
+
+This example sets up a session inside SILC network with the remote user
+"foobar".
+
+	v=0
+	o=foobar 2890844521 2890842804 IN IP4 10.2.1.32
+	s=SILC network group conferencing example
+	t=0 0
+	m=audio 9 TCP/RTP/AVP 3
+	c=SILC
+	a=rtpmap:3 GSM/8000
+	a=silc:group channel=group-chat
+
+This example sets up a group conferencing session inside SILC network on
+channel "group-chat".
+
+
+.ti 0
+4 Session Initiation Protocol (SIP)
+
+The SIP [SIP] protocol is a general purpose protocol for setting up,
+modifying and terminating different kinds of sessions, including
+multimedia sessions.  The SIP protocol use the SDP to describe the
+multimedia session.
+
+In SILC the SIP messages are sent as data messages (MIME message).  They
+can be destined directly to a client for direct conferencing, or to a
+channel for group conferencing.  It is also possible to send the message
+directly to client to invite them to group conferencing before they have
+joined the channel.  The MIME type used is application/sip.  The
+SILC_MESSAGE_FLAG_DATA flag must be set in each message and the message
+payload includes a MIME SIP message.  The actual SIP session set up and
+termination is described in the SIP protocol specification, and SILC
+protocol merely provides a secure transport for the session.  After the
+session is set up all multimedia data is sent using SILC data messages.
+The MIME type for the multimedia data messages is defined during the SIP
+session set up.
+
+The rules for SDP fields described in previous section also applies for
+SDP with SIP in the context of SILC.
+
+Proxy and redirection servers usually would not be used in the context of
+SILC, unless the sessions are redirected to outside SILC network.  This
+may compromise the security of the session.
+
+The S/MIME need not be used when using SIP in SILC protocol.  The SILC
+protocol transport and the created multimedia session is secured by
+default.
+
+
+.ti 0
+6 Other Protocols
+
+There are other open and proprietary protocols for setting up multimedia
+sessions.  One important is H.323 using the H.225 to set up the session.
+This document should later define the use of H.323 with SILC.
+Practically any protocol to set up multimedia sessions may be used with
+SILC by using SILC as a secure transport to set up the session, and to use
+SILC data messages (MIME messages) to secure and deliver the actual
+multimedia data once the session has been established.
+
+
+.ti 0
+7 Security Considerations
+
+Security is central to the design of this protocol, and these security
+considerations permeate the specification.  Common security considerations
+such as keeping private keys truly private and using adequate lengths for
+symmetric and asymmetric keys must be followed in order to maintain the
+security of this protocol.
+
+
+.ti 0
+8 References
+
+[SILC1]      Riikonen, P., "Secure Internet Live Conferencing (SILC),
+             Protocol Specification", Internet Draft, June 2003.
+
+[SILC2]      Riikonen, P., "SILC Packet Protocol", Internet Draft,
+             June 2003.
+
+[RFC3264]    Rosenberg, J., et. al., "An Offer/Answer Model with the
+             Session Description Protocol (SDP)", RFC 3264, June 2002.
+
+[RFC4145]    Yon, D., et. al., "TCP-Based Media Transport in the
+             Session Description Protocol (SDP)", RFC 4145, September
+             2005.
+
+[SIP]        Rosenberg, J., et. al., "SIP: Session Initiation Protocol",
+             RFC 3261, June 2002.
+
+
+
+.ti 0
+9 Author's Address
+
+.nf
+Pekka Riikonen
+Helsinki
+Finland
+
+EMail: priikone@iki.fi
+
+
+.ti 0
+10 Full Copyright Statement
+
+Copyright (C) The Internet Society (2003). All Rights Reserved.
+
+This document and translations of it may be copied and furnished to
+others, and derivative works that comment on or otherwise explain it
+or assist in its implementation may be prepared, copied, published
+and distributed, in whole or in part, without restriction of any
+kind, provided that the above copyright notice and this paragraph are
+included on all such copies and derivative works. However, this
+document itself may not be modified in any way, such as by removing
+the copyright notice or references to the Internet Society or other
+Internet organizations, except as needed for the purpose of
+developing Internet standards in which case the procedures for
+copyrights defined in the Internet Standards process must be
+followed, or as required to translate it into languages other than
+English.
+
+The limited permissions granted above are perpetual and will not be
+revoked by the Internet Society or its successors or assigns.
+
+This document and the information contained herein is provided on an
+"AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.

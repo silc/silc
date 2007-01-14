@@ -8,7 +8,7 @@
 .ds RF FORMFEED[Page %]
 .ds CF
 .ds LH Internet Draft
-.ds RH 11 February 2004
+.ds RH 15 January 2007
 .ds CH
 .na
 .hy 0
@@ -16,8 +16,8 @@
 .nf
 Network Working Group                                        P. Riikonen
 Internet-Draft
-draft-riikonen-silc-spec-09.txt                         XX
-Expires: XXX
+draft-riikonen-silc-spec-09.txt                          15 January 2007
+Expires: 15 July 2007
 
 .in 3
 
@@ -80,66 +80,66 @@ Table of Contents
   2.5 Router Connections ........................................  8
 3 SILC Specification ............................................  9
   3.1 Client ....................................................  9
-      3.1.1 Client ID ...........................................  9
-  3.2 Server .................................................... 10
+      3.1.1 Client ID ........................................... 10
+  3.2 Server .................................................... 11
       3.2.1 Server's Local ID List .............................. 11
       3.2.2 Server ID ........................................... 12
       3.2.3 SILC Server Ports ................................... 12
   3.3 Router .................................................... 13
       3.3.1 Router's Local ID List .............................. 13
       3.3.2 Router's Global ID List ............................. 14
-      3.3.3 Router's Server ID .................................. 14
+      3.3.3 Router's Server ID .................................. 15
   3.4 Channels .................................................. 15
       3.4.1 Channel ID .......................................... 16
-  3.5 Operators ................................................. 16
+  3.5 Operators ................................................. 17
   3.6 SILC Commands ............................................. 17
   3.7 SILC Packets .............................................. 17
-  3.8 Packet Encryption ......................................... 17
+  3.8 Packet Encryption ......................................... 18
       3.8.1 Determination of the Source and the Destination ..... 18
       3.8.2 Client To Client .................................... 19
       3.8.3 Client To Channel ................................... 20
       3.8.4 Server To Server .................................... 21
   3.9 Key Exchange And Authentication ........................... 21
-      3.9.1 Authentication Payload .............................. 21
-  3.10 Algorithms ............................................... 23
-      3.10.1 Ciphers ............................................ 23
+      3.9.1 Authentication Payload .............................. 22
+  3.10 Algorithms ............................................... 24
+      3.10.1 Ciphers ............................................ 24
              3.10.1.1 CBC Mode .................................. 24
-             3.10.1.2 CTR Mode .................................. 24
-             3.10.1.3 Randomized CBC Mode ....................... 26
-      3.10.2 Public Key Algorithms .............................. 26
-             3.10.2.1 Multi-Precision Integers .................. 27
-      3.10.3 Hash Functions ..................................... 27
-      3.10.4 MAC Algorithms ..................................... 27
-      3.10.5 Compression Algorithms ............................. 28
-  3.11 SILC Public Key .......................................... 28
-  3.12 SILC Version Detection ................................... 31
-  3.13 UTF-8 Strings in SILC .................................... 31
-      3.13.1 UTF-8 Identifier Strings ........................... 32
-  3.14 Backup Routers ........................................... 33
-      3.14.1 Switching to Backup Router ......................... 35
-      3.14.2 Resuming Primary Router ............................ 36
-4 SILC Procedures ............................................... 38
-  4.1 Creating Client Connection ................................ 38
-  4.2 Creating Server Connection ................................ 40
-      4.2.1 Announcing Clients, Channels and Servers ............ 40
-  4.3 Joining to a Channel ...................................... 42
-  4.4 Channel Key Generation .................................... 43
-  4.5 Private Message Sending and Reception ..................... 44
-  4.6 Private Message Key Generation ............................ 44
-  4.7 Channel Message Sending and Reception ..................... 45
-  4.8 Session Key Regeneration .................................. 46
-  4.9 Command Sending and Reception ............................. 46
-  4.10 Closing Connection ....................................... 47
-  4.11 Detaching and Resuming a Session ......................... 48
-  4.12 UDP/IP Connections ...................................... XXX
-5 Security Considerations ....................................... 49
-6 References .................................................... 50
-7 Author's Address .............................................. 52
-Appendix A ...................................................... 52
-Appendix B ...................................................... 54
-Appendix C ...................................................... XXX
-Appendix D ...................................................... XXX
-Full Copyright Statement ........................................ XXX
+             3.10.1.2 CTR Mode .................................. 25
+             3.10.1.3 Randomized CBC Mode ....................... 27
+      3.10.2 Public Key Algorithms .............................. 27
+             3.10.2.1 Multi-Precision Integers .................. 28
+      3.10.3 Hash Functions ..................................... 28
+      3.10.4 MAC Algorithms ..................................... 28
+      3.10.5 Compression Algorithms ............................. 29
+  3.11 SILC Public Key .......................................... 29
+  3.12 SILC Version Detection ................................... 32
+  3.13 UTF-8 Strings in SILC .................................... 33
+      3.13.1 UTF-8 Identifier Strings ........................... 33
+  3.14 Backup Routers ........................................... 34
+      3.14.1 Switching to Backup Router ......................... 36
+      3.14.2 Resuming Primary Router ............................ 37
+4 SILC Procedures ............................................... 39
+  4.1 Creating Client Connection ................................ 39
+  4.2 Creating Server Connection ................................ 41
+      4.2.1 Announcing Clients, Channels and Servers ............ 42
+  4.3 Joining to a Channel ...................................... 43
+  4.4 Channel Key Generation .................................... 44
+  4.5 Private Message Sending and Reception ..................... 45
+  4.6 Private Message Key Generation ............................ 46
+  4.7 Channel Message Sending and Reception ..................... 47
+  4.8 Session Key Regeneration .................................. 47
+  4.9 Command Sending and Reception ............................. 48
+  4.10 Closing Connection ....................................... 49
+  4.11 Detaching and Resuming a Session ......................... 49
+  4.12 UDP/IP Connections ......................................  51
+5 Security Considerations ....................................... 52
+6 References .................................................... 53
+7 Author's Address .............................................. 55
+Appendix A ...................................................... 55
+Appendix B ...................................................... 56
+Appendix C ...................................................... 57
+Appendix D ...................................................... 57
+Full Copyright Statement ........................................ 58
 
 .ti 0
 List of Figures
@@ -210,7 +210,7 @@ interpreted as described in [RFC2119].
 This section describes various SILC protocol concepts that forms the
 actual protocol, and in the end, the actual SILC network.  The mission
 of the protocol is to deliver messages from clients to other clients
-through routers and servers in secure manner.  The messages may also
+through servers and routers in secure manner.  The messages may also
 be delivered from one client to many clients forming a group, also
 known as a channel.
 
@@ -235,11 +235,11 @@ SILC servers and SILC router servers.
 A difference between normal server and router server is that routers
 knows all global information and keep the global network state up to date.
 They also do the actual routing of the messages to the correct receiver
-between other cells.  Normal servers knows only local information and
-receive global information only when it is needed.  They do not need to
-keep the global network state up to date.  This makes the network faster
-and scalable as there are less servers that needs to maintain global
-network state.
+within the cell and between other cells.  Normal servers knows only local
+information and receive global information only when it is needed.  They do
+not need to keep the global network state up to date.  This makes the
+network faster and scalable as there are less servers that needs to
+maintain global network state.
 
 This, on the other hand, leads into a cellular like network, where
 routers are in the center of the cell and servers are connected to the
@@ -279,12 +279,14 @@ routes the messages to the other servers in the cell.  Router servers
 on the other hand may connect to other routers to form the actual SILC
 network, as seen in above figure.  However, router is also able to act
 as normal SILC server; clients may connect to it the same way as to
-normal SILC server.  Normal server also cannot have active connections
-to more than one router.  Normal server cannot be connected to two
-different cells.  Router servers, on the other hand, may have as many
-router to router connections as needed.  Other direct routes between
-other routers is also possible in addition of the mandatory ring
-connections.  This leads into a hybrid ring-mesh network topology.
+normal SILC server.  This, however is not a requirement and if needed
+router servers may be hidden from users by not allowing direct client
+connections.  Normal server also cannot have active connections to more
+than one router.  Normal server cannot be connected to two different
+cells.  Router servers, on the other hand, may have as many router to
+router connections as needed.  Other direct routes between other routers
+is also possible in addition of the mandatory ring connections.  This
+leads into a hybrid ring-mesh network topology.
 
 There are many issues in this network topology that needs to be careful
 about.  Issues like routing, the size of the cells, the number of the
@@ -375,6 +377,8 @@ when clients are connected directly to the routers and the messages
 are delivered from one router to the other.
 
 
+
+
 .ti 0
 2.4 Channel Communication
 
@@ -423,9 +427,10 @@ Figure 4:  Router Connections
 
 Example:  Network with three routers.  Router 1. uses Router 2. as its
           primary router.  Router 2. uses Router 3. as its primary router,
-          and Router 3. uses Router 1. as its primary router.  There may
-          be other direct connections between the routers but they must
-          not be used as primary routes.
+          and Router 3. uses Router 1. as its primary router.  When there
+          are four or more routers in th enetwork, there may be other
+          direct connections between the routers but they must not be used
+          as primary routes.
 
 The above example is applicable to any amount of routers in the network
 except for two routers.  If there are only two routers in the network both
@@ -529,7 +534,8 @@ the nickname.  It could be possible to have same truncated hash value
 for two different nicknames.  However, this is not expected to happen
 nor cause any serious problems if it would occur.  Nicknames are usually
 logical and it is unlikely to have two distinct logical nicknames
-produce same truncated hash value.
+produce same truncated hash value.  Use of MD5 in nickname hash is not
+a security feature.
 
 
 .ti 0
@@ -651,10 +657,10 @@ as they could have been set up by untrusted party.
 
 Router server in SILC network is responsible for keeping the cell together
 and routing messages to other servers and to other routers.  Router server
-is also a normal server thus clients may connect to it as it would be
-just normal SILC server.
+may also act as normal server when clients may connect to it.  This is not
+requirement and router servers may be hidden from clients.
 
-However, router servers has a lot of important tasks that normal servers
+However, router servers have a lot of important tasks that normal servers
 do not have.  Router server knows everything and keeps the global state.
 They know all clients currently on SILC, all servers and routers and all
 channels in SILC.  Routers are the only servers in SILC that care about
@@ -734,6 +740,8 @@ channel list       - All channels in SILC
    o Client IDs on channel
    o Client ID modes on channel
 .in 3
+
+
 
 
 
@@ -826,7 +834,7 @@ follows.
 
 o Router's Server ID IP address - Indicates the IP address of
   the router of the cell where this channel is created.  This is
-  taken from the router's Server ID.  This way SILC router knows
+  taken from the router's Server ID.  This way SILC routers know
   where this channel resides in the SILC network.
 
 o Router's Server ID port - Indicates the port of the channel on
@@ -837,6 +845,7 @@ o Random number or counter - To further randomize the Channel ID.
   This makes sure that there are no collisions.  This also means
   that in a cell there can be 2^16 different channels.
 .in 3
+
 
 
 .ti 0
@@ -939,7 +948,7 @@ to be able to route the packets to correct receiver.  This information
 is available in the SILC Packet Header which is included in all packets
 sent in SILC network.  The SILC Packet Header is described in [SILC2].
 
-The header MUST be encrypted with the session key of whom is the next
+The header MUST be encrypted with the session key of who is the next
 receiver of the packet along the route.  The receiver of the packet, for
 example a router along the route, is able to determine the sender and the
 destination of the packet by decrypting the SILC Packet Header and
@@ -959,8 +968,8 @@ valid and correct ID for that sender.
 Note that the packet and the packet header may be encrypted with
 different keys.  For example, packets to channels are encrypted with
 the channel key, however, the header is encrypted with the session key
-as described above.  However, the header and the packet may be encrypted
-with same key.  This is the case, for example, with command packets.
+as described above.  Most other packets have both header and packet
+payload encrypted with the same key, such as command packets.
 
 
 .ti 0
@@ -1002,8 +1011,8 @@ Example:  Private message from client to another client on different
 
 o Client 1 sends encrypted packet to its server.  The packet header
   is encrypted with the session key shared between the client and
-  server, and the private message is encrypted with the private
-  message delivery key shared between clients.
+  server, and the private message payload is encrypted with the
+  private message delivery key shared between clients.
 
 o Server determines the destination of the packet and sends the
   packet to the router.  Header is encrypted with the session key.
@@ -1089,7 +1098,7 @@ to connect to server without explicit authentication.  Servers are
 REQUIRED to use authentication protocol when connecting.  The
 authentication may be based on passphrase (pre-shared secret) or public
 key based on digital signatures.  All passphrases sent in SILC protocol
-MUST be UTF-8 [RFC3629] encoded. The connection authentication protocol
+MUST be UTF-8 [RFC3629] encoded.  The connection authentication protocol
 is described in detail in [SILC3].
 
 
@@ -1188,7 +1197,8 @@ The receiver will compute the signature using the random data received
 in the payload, the ID associated to the connection and the public key
 (or certificate) received in the SKE protocol.  After computing the
 receiver MUST verify the signature.  Also in case of public key
-authentication this payload is encrypted.
+authentication this payload is always encrypted.  This payload is
+always sent as part of some other payload.
 
 
 .ti 0
@@ -1232,7 +1242,7 @@ defined to be used in SILC by using the same name format as above.
 
 Algorithm "none" does not perform any encryption process at all and
 thus is not recommended to be used.  It is recommended that no client
-or server implementation would accept none algorithm except in special
+or server implementation would accept "none" algorithm except in special
 debugging mode.
 
 
@@ -1325,15 +1335,15 @@ Also, the key material used with CTR mode MUST be fresh key material.
 Static keys (pre-shared keys) MUST NOT be used with CTR mode.  For this
 reason using CTR mode to encrypt for example channel messages or private
 messages with a pre-shared key is inappropriate.  For private messages,
-the Key Agreement could be performed to produce fresh key material.
+the Key Agreement [SILC2] could be performed to produce fresh key material.
 
 If the IV Included flag was negotiated in SKE, or CTR mode is used to
-protect channel messages where the counter block will be included in the
-Message Payload, the Initialization Vector (IV) to be used is a 64-bit
-block containing randomness and packet counter.  Also note, that in this
-case the decryption process is not stateful and receiver cannot
-precompute the key stream.  Hence, the Initialization Vector (IV) when
-CTR mode is used is as follows.
+protect channel messages where the IV will be included in the Message
+Payload, the Initialization Vector (IV) to be used is a 64-bit block
+containing randomness and packet counter.  Also note, that in this case
+the decryption process is not stateful and receiver cannot precompute
+the key stream.  Hence, the Initialization Vector (IV) when CTR mode is
+used is as follows.
 
 .in 5
 .nf
@@ -1391,38 +1401,42 @@ dss        DSS  (OPTIONAL)
 .in 3
 
 DSS is described in [Menezes].  The RSA MUST be implemented according
-PKCS #1 [PKCS1].  The mandatory PKCS #1 implementation in SILC MUST be
-compliant to either PKCS #1 version 1.5 or newer with the following
-notes: The signature encoding is always in same format as the encryption
-encoding regardless of the PKCS #1 version.  The signature with appendix
-(with hash algorithm OID in the data) MUST NOT be used in the SILC.  The
-rationale for this is that there is no binding between the PKCS #1 OIDs
-and the hash algorithms used in the SILC protocol.  Hence, the encoding
-is always in PKCS #1 version 1.5 format.
+PKCS #1 [PKCS1].  When using SILC Public Key version 2 the PKCS #1
+implementation MUST be compliant with PKCS #1 version 1.5.  The signatures
+are computed with appendix; the hash OID is included in the signature.
+The user may always select the hash algorithm for the signatures.  When
+using SILC Public Key version 1 the PKCS #1 implementation MUST be
+compliant with PKCS #1 version 1.5 where signatures are computed without
+appendix; the hash OID is not present in the signature.  The hash
+algorithm used is specified separately or the default hash algorithm is
+used, as defined below.
 
 Additional public key algorithms MAY be defined to be used in SILC.
 
 When signatures are computed in SILC the computing of the signature is
-represented as sign().  The signature computing procedure is dependent
-of the public key algorithm, and the public key or certificate encoding.
+denoted as sign().  The signature computing procedure is dependent of
+the public key algorithm, and the public key or certificate encoding.
 When using SILC public key the signature is computed as described in
 previous paragraph for RSA and DSS keys.  If the hash function is not
-specified separately for signing process SHA-1 MUST be used.  When using
+specified separately for signing process SHA-1 MUST be used, except with
+SILC public key version 2 and RSA algorithm when the user MAY always
+select the hash algorithm.  In this case the hash algorithm is included
+in the signature and can be retrieved during verification.  When using
 SSH2 public keys the signature is computed as described in [SSH-TRANS].
 When using X.509 version 3 certificates the signature is computed as
 described in [PKCS7].  When using OpenPGP certificates the signature is
-computed as described in [PGP].
+computed as described in [PGP] and the PGP signature type used is 0x00.
 
 
 .ti 0
 3.10.2.1 Multi-Precision Integers
 
 Multi-Precision (MP) integers in SILC are encoded and decoded as defined
-in PKCS #1 [PKCS1].  MP integers are unsigned, encoded with desired octet
-length.  This means that if the octet length is more than the actual
-length of the integer one or more leading zero octets will appear at the
-start of the encoding.  The actual length of the integer is the bit size
-of the integer not counting any leading zero bits.
+in PKCS #1 [PKCS1].  MP integers are unsigned, encoded with the exact
+octet length of the integer.  No extra leading zero octets may appear.
+The actual length of the integer is the bit size of the integer not
+counting any leading zero bits.  The octet length is derived by calculating
+(bit_length + 7) / 8.
 
 
 .ti 0
@@ -1435,8 +1449,9 @@ in the [SILC3].
 The following Hash algorithm are defined in SILC protocol:
 
 .in 6
-sha1             SHA-1, length = 20      (REQUIRED)
-md5              MD5, length = 16        (RECOMMENDED)
+sha1             SHA-1, length = 20 bytes       (REQUIRED)
+sha256           SHA-256, length = 32 bytes     (RECOMMENDED)
+md5              MD5, length = 16 bytes         (RECOMMENDED)
 .in 3
 
 
@@ -1450,11 +1465,13 @@ MAC for a packet.
 The following MAC algorithms are defined in SILC protocol:
 
 .in 6
-hmac-sha1-96     HMAC-SHA1, length = 12 bytes  (REQUIRED)
-hmac-md5-96      HMAC-MD5, length = 12 bytes   (OPTIONAL)
-hmac-sha1        HMAC-SHA1, length = 20 bytes  (OPTIONAL)
-hmac-md5         HMAC-MD5, length = 16 bytes   (OPTIONAL)
-none             No MAC                        (OPTIONAL)
+hmac-sha1-96     HMAC-SHA1, length = 12 bytes   (REQUIRED)
+hmac-sha256-96   HMAC-SHA256, length = 12 bytes (RECOMMENDED)
+hmac-md5-96      HMAC-MD5, length = 12 bytes    (OPTIONAL)
+hmac-sha1        HMAC-SHA1, length = 20 bytes   (OPTIONAL)
+hmac-sha256      HMAC-SHA256, length = 32 bytes (OPTIONAL)
+hmac-md5         HMAC-MD5, length = 16 bytes    (OPTIONAL)
+none             No MAC                         (OPTIONAL)
 .in 3
 
 The "none" MAC is not recommended to be used as the packet is not
@@ -1464,7 +1481,8 @@ mode.
 
 The HMAC algorithm is described in [HMAC].  The hash algorithms used
 in HMACs, the SHA-1 is described in [RFC3174] and MD5 is described
-in [RFC1321].
+in [RFC1321].  The SHA-256 algorithm and its used with HMAC is described
+in [SHA256].
 
 Additional MAC algorithms MAY be defined to be used in SILC.
 
@@ -1550,30 +1568,30 @@ o Identifier Length (2 bytes) - Indicates the length of
   the Identifier field, not including this field.
 
 o Identifier (variable length) - Indicates the identifier
-  of the public key.  This data can be used to identify
-  the owner of the key.  The identifier is of the following
+  of the public key.  This data can be used to identify the
+  owner of the key.  The identifier may be of the following
   format:
 
-     UN   User name
-     HN   Host name or IP address
-     RN   Real name
-     E    EMail address
-     O    Organization
-     C    Country
-
+     UN     User name
+     HN     Host name or IP address
+     RN     Real name
+     E      EMail address
+     O      Organization
+     C      Country
+     V      Version
 
   Examples of an identifier:
 
     `UN=priikone, HN=poseidon.pspt.fi, E=priikone@poseidon.pspt.fi'
 
-    `UN=sam, HN=dummy.fi, RN=Sammy Sam, O=Company XYZ, C=Finland'
+    `UN=sam, HN=dummy.fi, RN=Sammy Sam, C=Finland, V=2'
 
   At least user name (UN) and host name (HN) MUST be provided as
   identifier.  The fields are separated by commas (`,').  If
   comma is in the identifier string it must be escaped as `\\,',
   for example, `O=Company XYZ\\, Inc.'.  Other characters that
   require escaping are listed in [RFC2253] and are to be escaped
-  as defined therein.
+  as defined therein.  The Version (V) may only be a decimal digit.
 
 o Public Data (variable length) - Includes the actual
   public data of the public key.
@@ -1606,6 +1624,11 @@ o Public Data (variable length) - Includes the actual
   field if they are used.
 .in 3
 
+The SILC Public Key is version is 2.  If the Version (V) identifier is
+not present the SILC Public Key version is expected to be 1.  All new
+implementations SHOULD support version 1 but SHOULD only generate version 2.
+In this case the Version (V) identifier MUST be present.
+
 All fields in the public key are in MSB (most significant byte first)
 order.  All strings in the public key MUST be UTF-8 encoded.
 
@@ -1615,6 +1638,10 @@ and SILC Public Key based on DSS algorithm, respectively, are to be used.
 However, this SILC specification does not use these names directly, and
 they are defined here for external protocols (protocols that may like
 to use SILC Public Key).
+
+A fingerprint from SILC Public Key is computed from the whole encoded
+public key data block.  All fields are included in computation.  Compliant
+implementations MUST support computing a 160-bit SHA-1 fingerprint.
 
 
 .ti 0
@@ -1799,7 +1826,8 @@ be configured accordingly and care must be taken when configuring the
 backup routers, servers and other routers in the network.
 
 It must be noted that some of the channel messages and private messages
-may be lost during the switch to the backup router.  The announcements
+may be lost during the switch to the backup router, unless the message
+flag SILC_MESSAGE_FLAG_ACK is set in the message.  The announcements
 assure that the state of the network is not lost during the switch.
 
 It is RECOMMENDED that there would be at least one backup router in
@@ -1850,6 +1878,9 @@ router, but must try to establish connection back to the primary router.
 If the action is allowed type value 21 is sent back to the server from
 the backup router.  It is RECOMMENDED that implementations use the
 SILC_COMMAND_PING command to detect whether primary router is responsive.
+If the backup router notices that the primary router is unresponsive
+it SHOULD NOT start sending data to server links before the server has
+sent the SILC_PACKET_RESUME_ROUTER with type value 21.
 
 The servers connected to the backup router must then announce their
 clients, channels, channel users, channel user modes, channel modes,
@@ -2090,6 +2121,8 @@ using its own Server ID as Source ID in SILC Packet Header and the
 router's Server ID as Destination when communicating with the router.
 
 
+
+
 .ti 0
 4.2.1 Announcing Clients, Channels and Servers
 
@@ -2256,15 +2289,16 @@ time, and may still be sending messages encrypted with the old key.
 
 When client receives the SILC_PACKET_CHANNEL_KEY packet with the
 Channel Key Payload it MUST process the key data to create encryption
-and decryption key, and to create the HMAC key that is used to compute
+and decryption key, and to create the MAC key that is used to compute
 the MACs of the channel messages.  The processing is as follows:
 
   channel_key  = raw key data
-  HMAC key     = hash(raw key data)
+  MAC key      = hash(raw key data)
 
 The raw key data is the key data received in the Channel Key Payload.
-The hash() function is the hash function used in the HMAC of the channel.
-Note that the server also MUST save the channel key.
+It is used for both encryption and decryption.  The hash() is the hash
+function used with the HMAC of the channel.  Note that the server also
+MUST save the channel key.
 
 
 .ti 0
@@ -2549,6 +2583,7 @@ sessions.  It is RECOMMENDED that the detached sessions would be
 persistent as long as the server is running.
 
 
+
 .ti 0
 4.12 UDP/IP Connections
 
@@ -2610,10 +2645,10 @@ using if they wish to do so.
 
 It however must be noted that if the client requires absolute security
 by not trusting any of the servers or routers in the SILC Network, it can
-be accomplished by negotiating private keys outside the SILC Network,
-either using SKE or some other key exchange protocol, or to use some
-other external means for distributing the keys.  This applies for all
-messages, private messages and channel messages.
+be accomplished by negotiating private secret keys outside the SILC
+Network, either using SKE or some other key exchange protocol, or to use
+some other external means for distributing the keys.  This applies for
+all messages, private messages and channel messages.
 
 It is important to note that SILC, like any other security protocol, is
 not a foolproof system; the SILC servers and routers could very well be
@@ -2643,12 +2678,12 @@ should have a forum to discuss the cell management issues.
 6 References
 
 [SILC2]      Riikonen, P., "SILC Packet Protocol", Internet Draft,
-             May 2002.
+             January 2007.
 
 [SILC3]      Riikonen, P., "SILC Key Exchange and Authentication
-             Protocols", Internet Draft, May 2002.
+             Protocols", Internet Draft, January 2007.
 
-[SILC4]      Riikonen, P., "SILC Commands", Internet Draft, May 2002.
+[SILC4]      Riikonen, P., "SILC Commands", Internet Draft, January 2007.
 
 [IRC]        Oikarinen, J., and Reed D., "Internet Relay Chat Protocol",
              RFC 1459, May 1993.
@@ -2722,14 +2757,17 @@ should have a forum to discuss the cell management issues.
 [RFC3454]    Hoffman, P., et al., "Preparation of Internationalized
              Strings ("stringprep")", RFC 3454, December 2002.
 
+[SHA256]     Eastlake 3rd, D., et al., "US Secure Hash Algorithms (SHA
+             and HMAC-SHA)", RFC 4634, July 2006.
+
+
 
 .ti 0
 7 Author's Address
 
 .nf
 Pekka Riikonen
-Snellmaninkatu 34 A 15
-70100 Kuopio
+Helsinki
 Finland
 
 EMail: priikone@iki.fi
