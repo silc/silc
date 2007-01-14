@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -118,9 +118,6 @@ static void silc_client_command_resolve_continue(SilcClient client,
 
   if (status != SILC_STATUS_OK)
     silc_fsm_next(&cmd->thread, silc_client_command_continue_error);
-
-  if (clients)
-    silc_dlist_uninit(clients);
 
   /* Continue with the command */
   SILC_FSM_CALL_CONTINUE(&cmd->thread);
@@ -854,7 +851,8 @@ SILC_FSM_STATE(silc_client_command_list)
 {
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
-  SilcChannelEntry channel;
+  SilcClient client = conn->client;
+  SilcChannelEntry channel = NULL;
   SilcBuffer idp = NULL;
 
   if (cmd->argc == 2) {
@@ -871,6 +869,7 @@ SILC_FSM_STATE(silc_client_command_list)
 				1, 1, silc_buffer_datalen(idp));
 
   silc_buffer_free(idp);
+  silc_client_unref_channel(client, conn, channel);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -888,6 +887,7 @@ SILC_FSM_STATE(silc_client_command_topic)
 {
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
+  SilcClient client = conn->client;
   SilcChannelEntry channel;
   SilcBuffer idp;
   char *name;
@@ -934,6 +934,7 @@ SILC_FSM_STATE(silc_client_command_topic)
 				1, silc_buffer_datalen(idp));
 
   silc_buffer_free(idp);
+  silc_client_unref_channel(client, conn, channel);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -957,7 +958,7 @@ SILC_FSM_STATE(silc_client_command_invite)
   SilcClientConnection conn = cmd->conn;
   SilcClient client = conn->client;
   SilcClientEntry client_entry = NULL;
-  SilcChannelEntry channel;
+  SilcChannelEntry channel = NULL;
   SilcBuffer clidp, chidp, args = NULL;
   SilcPublicKey pubkey = NULL;
   SilcDList clients = NULL;
@@ -980,6 +981,7 @@ SILC_FSM_STATE(silc_client_command_invite)
     }
 
     channel = conn->current_channel;
+    silc_client_ref_channel(client, conn, channel);
   } else {
     name = cmd->argv[1];
 
@@ -1058,6 +1060,7 @@ SILC_FSM_STATE(silc_client_command_invite)
   silc_buffer_free(args);
   silc_free(nickname);
   silc_client_list_free(client, conn, clients);
+  silc_client_unref_channel(client, conn, channel);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -1280,7 +1283,8 @@ SILC_FSM_STATE(silc_client_command_join)
 {
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
-  SilcChannelEntry channel;
+  SilcClient client = conn->client;
+  SilcChannelEntry channel = NULL;
   SilcBuffer auth = NULL, cauth = NULL;
   char *name, *passphrase = NULL, *pu8, *cipher = NULL, *hmac = NULL;
   int i, passphrase_len = 0;
@@ -1378,6 +1382,7 @@ SILC_FSM_STATE(silc_client_command_join)
   if (passphrase)
     memset(passphrase, 0, strlen(passphrase));
   silc_free(passphrase);
+  silc_client_unref_channel(client, conn, channel);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -1387,6 +1392,7 @@ SILC_FSM_STATE(silc_client_command_join)
   SILC_FSM_CONTINUE;
 
  out:
+  silc_client_unref_channel(client, conn, channel);
   SILC_FSM_FINISH;
 }
 
@@ -1574,7 +1580,7 @@ SILC_FSM_STATE(silc_client_command_cmode)
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
   SilcClient client = conn->client;
-  SilcChannelEntry channel;
+  SilcChannelEntry channel = NULL;
   SilcBuffer chidp, auth = NULL, pk = NULL;
   unsigned char *name, *cp, modebuf[4], tmp[4], *arg = NULL;
   SilcUInt32 mode, add, type, len, arg_len = 0;
@@ -1594,6 +1600,7 @@ SILC_FSM_STATE(silc_client_command_cmode)
     }
 
     channel = conn->current_channel;
+    silc_client_ref_channel(client, conn, channel);
   } else {
     name = cmd->argv[1];
 
@@ -1847,6 +1854,7 @@ SILC_FSM_STATE(silc_client_command_cmode)
   silc_buffer_free(chidp);
   silc_buffer_free(auth);
   silc_buffer_free(pk);
+  silc_client_unref_channel(client, conn, channel);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -1856,6 +1864,7 @@ SILC_FSM_STATE(silc_client_command_cmode)
   SILC_FSM_CONTINUE;
 
  out:
+  silc_client_unref_channel(client, conn, channel);
   SILC_FSM_FINISH;
 }
 
@@ -1868,7 +1877,7 @@ SILC_FSM_STATE(silc_client_command_cumode)
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
   SilcClient client = conn->client;
-  SilcChannelEntry channel;
+  SilcChannelEntry channel = NULL;
   SilcChannelUser chu;
   SilcClientEntry client_entry;
   SilcBuffer clidp, chidp, auth = NULL;
@@ -1892,6 +1901,7 @@ SILC_FSM_STATE(silc_client_command_cumode)
     }
 
     channel = conn->current_channel;
+    silc_client_ref_channel(client, conn, channel);
   } else {
     name = cmd->argv[1];
 
@@ -2026,6 +2036,7 @@ SILC_FSM_STATE(silc_client_command_cumode)
     silc_buffer_free(auth);
   silc_free(nickname);
   silc_client_list_free(client, conn, clients);
+  silc_client_unref_channel(client, conn, channel);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -2035,6 +2046,7 @@ SILC_FSM_STATE(silc_client_command_cumode)
   SILC_FSM_CONTINUE;
 
  out:
+  silc_client_unref_channel(client, conn, channel);
   silc_client_list_free(client, conn, clients);
   silc_free(nickname);
   SILC_FSM_FINISH;
@@ -2049,7 +2061,7 @@ SILC_FSM_STATE(silc_client_command_kick)
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
   SilcClient client = conn->client;
-  SilcChannelEntry channel;
+  SilcChannelEntry channel = NULL;
   SilcBuffer idp, idp2;
   SilcClientEntry target;
   SilcDList clients = NULL;
@@ -2116,6 +2128,7 @@ SILC_FSM_STATE(silc_client_command_kick)
   silc_buffer_free(idp2);
   silc_free(nickname);
   silc_client_list_free(client, conn, clients);
+  silc_client_unref_channel(client, conn, channel);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -2125,6 +2138,7 @@ SILC_FSM_STATE(silc_client_command_kick)
   SILC_FSM_CONTINUE;
 
  out:
+  silc_client_unref_channel(client, conn, channel);
   silc_free(nickname);
   SILC_FSM_FINISH;
 }
@@ -2262,6 +2276,7 @@ SILC_FSM_STATE(silc_client_command_ban)
 {
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
+  SilcClient client = conn->client;
   SilcChannelEntry channel;
   SilcBuffer chidp, args = NULL;
   char *name, *ban = NULL;
@@ -2283,6 +2298,7 @@ SILC_FSM_STATE(silc_client_command_ban)
     }
 
     channel = conn->current_channel;
+    silc_client_ref_channel(client, conn, channel);
   } else {
     name = cmd->argv[1];
 
@@ -2332,6 +2348,7 @@ SILC_FSM_STATE(silc_client_command_ban)
 
   silc_buffer_free(chidp);
   silc_buffer_free(args);
+  silc_client_unref_channel(client, conn, channel);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -2446,6 +2463,7 @@ SILC_FSM_STATE(silc_client_command_leave)
 {
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
+  SilcClient client = conn->client;
   SilcChannelEntry channel;
   SilcBuffer idp;
   char *name;
@@ -2487,6 +2505,8 @@ SILC_FSM_STATE(silc_client_command_leave)
 
   if (conn->current_channel == channel)
     conn->current_channel = NULL;
+
+  silc_client_unref_channel(client, conn, channel);
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -233,6 +233,8 @@ SILC_FSM_STATE(silc_client_command_reply_timeout)
   if (conn->internal->disconnected) {
     SILC_LOG_DEBUG(("Command %s canceled", silc_get_command_name(cmd->cmd)));
     silc_list_del(conn->internal->pending_commands, cmd);
+    if (!cmd->called)
+      ERROR_CALLBACK(SILC_STATUS_ERR_TIMEDOUT);
     SILC_FSM_FINISH;
   }
 
@@ -922,7 +924,7 @@ SILC_FSM_STATE(silc_client_command_reply_kill)
   /* Notify application */
   silc_client_command_callback(cmd, client_entry);
 
-  /* Remove the client from all channels and free it */
+  /* Remove the client */
   if (client_entry) {
     silc_client_remove_from_channels(client, conn, client_entry);
     silc_client_del_client(client, conn, client_entry);
@@ -1814,7 +1816,7 @@ SILC_FSM_STATE(silc_client_command_reply_users)
   SilcUInt16 idp_len, mode;
   SilcHashTableList htl;
   SilcBufferStruct client_id_list, client_mode_list;
-  SilcChannelEntry channel;
+  SilcChannelEntry channel = NULL;
   SilcClientEntry client_entry;
   SilcID id;
   int i;
@@ -1858,6 +1860,7 @@ SILC_FSM_STATE(silc_client_command_reply_users)
   /* Resolve users we do not know about */
   if (!cmd->resolved) {
     cmd->resolved = TRUE;
+    silc_client_unref_channel(client, conn, channel);
     SILC_FSM_CALL(silc_client_get_clients_by_list(
 			  client, conn, list_count, &client_id_list,
 			  silc_client_command_reply_users_resolved, cmd));
@@ -1903,6 +1906,7 @@ SILC_FSM_STATE(silc_client_command_reply_users)
   silc_hash_table_list_reset(&htl);
 
  out:
+  silc_client_unref_channel(client, conn, channel);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
   SILC_FSM_CONTINUE;
 }

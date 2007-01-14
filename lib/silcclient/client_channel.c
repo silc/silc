@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2004, 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -701,6 +701,8 @@ SilcBool silc_client_add_to_channel(SilcClient client,
   if (silc_client_on_channel(channel, client_entry))
     return TRUE;
 
+  SILC_LOG_DEBUG(("Add client %s to channel", client_entry->nickname));
+
   chu = silc_calloc(1, sizeof(*chu));
   if (!chu)
     return FALSE;
@@ -731,9 +733,15 @@ SilcBool silc_client_remove_from_channel(SilcClient client,
   if (!chu)
     return FALSE;
 
+  SILC_LOG_DEBUG(("Remove client %s from channel", client_entry->nickname));
+
   silc_hash_table_del(chu->client->channels, chu->channel);
   silc_hash_table_del(chu->channel->user_list, chu->client);
   silc_free(chu);
+
+  /* If channel became empty, delete it */
+  if (!silc_hash_table_count(channel->user_list))
+    silc_client_del_channel(client, conn, channel);
 
   silc_client_unref_client(client, conn, client_entry);
   silc_client_unref_channel(client, conn, channel);
@@ -750,10 +758,20 @@ void silc_client_remove_from_channels(SilcClient client,
   SilcHashTableList htl;
   SilcChannelUser chu;
 
+  if (!silc_hash_table_count(client_entry->channels))
+    return;
+
+  SILC_LOG_DEBUG(("Remove client from all joined channels"));
+
   silc_hash_table_list(client_entry->channels, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
     silc_hash_table_del(chu->client->channels, chu->channel);
     silc_hash_table_del(chu->channel->user_list, chu->client);
+
+    /* If channel became empty, delete it */
+    if (!silc_hash_table_count(chu->channel->user_list))
+      silc_client_del_channel(client, conn, chu->channel);
+
     silc_client_unref_client(client, conn, chu->client);
     silc_client_unref_channel(client, conn, chu->channel);
     silc_free(chu);

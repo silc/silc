@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ static SilcBool silc_client_notify_wait_continue(SilcClient client,
   /* Continue after last command reply received */
   if (SILC_STATUS_IS_ERROR(status) || status == SILC_STATUS_OK ||
       status == SILC_STATUS_LIST_END)
-    SILC_FSM_CALL_CONTINUE(notify->fsm);
+    SILC_FSM_CALL_CONTINUE_SYNC(notify->fsm);
 
   return TRUE;
 }
@@ -471,10 +471,12 @@ SILC_FSM_STATE(silc_client_notify_signoff)
   SilcClient client = conn->client;
   SilcClientNotify notify = state_context;
   SilcNotifyPayload payload = notify->payload;
+  SilcPacket packet = notify->packet;
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry;
-   unsigned char *tmp;
+  SilcChannelEntry channel;
+  unsigned char *tmp;
   SilcUInt32 tmp_len;
   SilcID id;
 
@@ -497,8 +499,19 @@ SILC_FSM_STATE(silc_client_notify_signoff)
   /* Notify application */
   NOTIFY(client, conn, type, client_entry, tmp);
 
+  /* Remove from channel */
+  if (packet->dst_id_type == SILC_ID_CHANNEL) {
+    if (silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CHANNEL,
+		       &id.u.channel_id, sizeof(id.u.channel_id))) {
+      channel = silc_client_get_channel_by_id(client, conn, &id.u.channel_id);
+      if (channel) {
+	silc_client_remove_from_channel(client, conn, channel, client_entry);
+	silc_client_unref_channel(client, conn, channel);
+      }
+    }
+  }
+
   /* Delete client */
-  silc_client_remove_from_channels(client, conn, client_entry);
   silc_client_del_client(client, conn, client_entry);
   silc_client_unref_client(client, conn, client_entry);
 

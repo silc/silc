@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,39 +48,6 @@ typedef struct {
   SilcSKEVerifyCbCompletion completion;
   void *completion_context;
 } *VerifyKeyContext;
-
-/* Context to hold the connection authentication request callbacks that
-   will be called when the server has replied back to our request about
-   current authentication method in the session. */
-typedef struct {
-  SilcConnectionAuthRequest callback;
-  void *context;
-  SilcTask timeout;
-} *SilcClientConnAuthRequest;
-
-/* Generic rekey context for connections */
-typedef struct {
-  /* Current sending encryption key, provided for re-key. The `pfs'
-     is TRUE if the Perfect Forward Secrecy is performed in re-key. */
-  unsigned char *send_enc_key;
-  SilcUInt32 enc_key_len;
-  int ske_group;
-  SilcBool pfs;
-  SilcUInt32 timeout;
-  void *context;
-} *SilcClientRekey;
-
-/* Internal context for connection process. This is needed as we
-   doing asynchronous connecting. */
-typedef struct {
-  SilcClient client;
-  SilcClientConnection conn;
-  SilcTask task;
-  int sock;
-  char *host;
-  int port;
-  void *context;
-} SilcClientInternalConnectContext;
 
 /* Structure to hold away messages set by user. This is mainly created
    for future extensions where away messages could be set according filters
@@ -160,7 +127,7 @@ struct SilcClientConnectionInternalStruct {
   SilcClientConnectionParams params;	 /* Connection parameters */
   SilcFSMStruct fsm;			 /* Connection FSM */
   SilcFSMThreadStruct event_thread;      /* FSM thread for events */
-  SilcFSMEventStruct wait_event;		 /* Event signaller */
+  SilcFSMEventStruct wait_event;	 /* Event signaller */
   SilcSchedule schedule;		 /* Connection's scheduler */
   SilcMutex lock;		         /* Connection lock */
   SilcSKE ske;				 /* Key exchange protocol */
@@ -173,6 +140,7 @@ struct SilcClientConnectionInternalStruct {
   SilcBuffer remote_idp;		 /* Remote ID Payload */
   SilcAsyncOperation op;	         /* Protocols async operation */
   SilcAsyncOperation cop;	         /* Async operation for application */
+  SilcHashTable attrs;		         /* Configured user attributes */
 
   SilcIDCache client_cache;		 /* Client entry cache */
   SilcIDCache channel_cache;		 /* Channel entry cache */
@@ -193,13 +161,12 @@ struct SilcClientConnectionInternalStruct {
   unsigned int registering        : 1;	 /* Set when registering to network */
   unsigned int rekey_responder    : 1;   /* Set when rekeying as responder */
   unsigned int callback_called    : 1;   /* Set when connect callback called */
+  unsigned int auth_request       : 1;   /* Set when requesting auth method */
 
   SilcClientAway *away;
-  SilcClientConnAuthRequest connauth;
   SilcDList ftp_sessions;
   SilcUInt32 next_session_id;
   SilcClientFtpSession active_session;
-  SilcHashTable attrs;
   SilcHashTable privmsg_wait;	         /* Waited private messages */
 };
 

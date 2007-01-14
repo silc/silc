@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -64,7 +64,6 @@ static void silc_client_connection_finished(SilcFSMThread fsm,
   silc_fsm_free(fsm);
 }
 
-
 /* Packet FSM thread destructor */
 
 static void silc_client_packet_destructor(SilcFSMThread thread,
@@ -101,7 +100,6 @@ static SilcBool silc_client_packet_receive(SilcPacketEngine engine,
   case SILC_PACKET_KEY_EXCHANGE_2:
   case SILC_PACKET_REKEY_DONE:
   case SILC_PACKET_CONNECTION_AUTH:
-  case SILC_PACKET_CONNECTION_AUTH_REQUEST:
     return FALSE;
     break;
   }
@@ -307,7 +305,7 @@ SILC_FSM_STATE(silc_client_connection_st_packet)
 
   case SILC_PACKET_FTP:
     /* File transfer packet */
-    //    silc_client_ftp(client, conn, packet);
+//    silc_fsm_next(fsm, silc_client_ftp);
     break;
 
   case SILC_PACKET_CHANNEL_KEY:
@@ -356,9 +354,8 @@ SILC_FSM_STATE(silc_client_connection_st_packet)
     break;
 
   case SILC_PACKET_CONNECTION_AUTH_REQUEST:
-    /* Reply to connection authentication request to resolve authentication
-       method from server. */
-    //    silc_client_connection_auth_request(client, conn, packet);
+    /** Connection auth resolve reply */
+    silc_fsm_next(fsm, silc_client_connect_auth_request);
     break;
 
   case SILC_PACKET_REKEY:
@@ -427,7 +424,6 @@ SILC_FSM_STATE(silc_client_connection_st_close)
   silc_packet_stream_destroy(conn->stream);
 
   SILC_LOG_DEBUG(("Finishing connection machine"));
-
   SILC_FSM_FINISH;
 }
 
@@ -857,114 +853,6 @@ void silc_client_close_connection(SilcClient client,
   }
 }
 
-#if 0
-/* Processes incoming connection authentication method request packet.
-   It is a reply to our previously sent request. The packet can be used
-   to resolve the authentication method for the current session if the
-   client does not know it beforehand. */
-
-void silc_client_connection_auth_request(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcPacketContext *packet)
-{
-  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
-  SilcUInt16 conn_type, auth_meth;
-  int ret;
-
-  /* If we haven't send our request then ignore this one. */
-  if (!conn->internal->connauth)
-    return;
-
-  /* Parse the payload */
-  ret = silc_buffer_unformat(packet->buffer,
-			     SILC_STR_UI_SHORT(&conn_type),
-			     SILC_STR_UI_SHORT(&auth_meth),
-			     SILC_STR_END);
-  if (ret == -1)
-    auth_meth = SILC_AUTH_NONE;
-
-  /* Call the request callback to notify application for received
-     authentication method information. */
-  if (conn->internal->connauth->callback)
-    (*conn->internal->connauth->callback)(client, conn, auth_meth,
-					  conn->internal->connauth->context);
-
-  silc_schedule_task_del(client->schedule, conn->internal->connauth->timeout);
-
-  silc_free(conn->internal->connauth);
-  conn->internal->connauth = NULL;
-}
-
-/* Timeout task callback called if the server does not reply to our
-   connection authentication method request in the specified time interval. */
-
-SILC_TASK_CALLBACK(silc_client_request_authentication_method_timeout)
-{
-  SilcClientConnection conn = (SilcClientConnection)context;
-  SilcClient client = conn->client;
-
-  if (!conn->internal->connauth)
-    return;
-
-  /* Call the request callback to notify application */
-  if (conn->internal->connauth->callback)
-    (*conn->internal->connauth->callback)(client, conn, SILC_AUTH_NONE,
-					  conn->internal->connauth->context);
-
-  silc_free(conn->internal->connauth);
-  conn->internal->connauth = NULL;
-}
-
-/* This function can be used to request the current authentication method
-   from the server. This may be called when connecting to the server
-   and the client library requests the authentication data from the
-   application. If the application does not know the current authentication
-   method it can request it from the server using this function.
-   The `callback' with `context' will be called after the server has
-   replied back with the current authentication method. */
-
-void
-silc_client_request_authentication_method(SilcClient client,
-					  SilcClientConnection conn,
-					  SilcConnectionAuthRequest callback,
-					  void *context)
-{
-  SilcClientConnAuthRequest connauth;
-  SilcBuffer packet;
-
-  assert(client && conn);
-  connauth = silc_calloc(1, sizeof(*connauth));
-  connauth->callback = callback;
-  connauth->context = context;
-
-  if (conn->internal->connauth)
-    silc_free(conn->internal->connauth);
-
-  conn->internal->connauth = connauth;
-
-  /* Assemble the request packet and send it to the server */
-  packet = silc_buffer_alloc(4);
-  silc_buffer_pull_tail(packet, SILC_BUFFER_END(packet));
-  silc_buffer_format(packet,
-		     SILC_STR_UI_SHORT(SILC_SOCKET_TYPE_CLIENT),
-		     SILC_STR_UI_SHORT(SILC_AUTH_NONE),
-		     SILC_STR_END);
-  silc_client_packet_send(client, conn->sock,
-			  SILC_PACKET_CONNECTION_AUTH_REQUEST,
-			  NULL, 0, NULL, NULL,
-			  packet->data, packet->len, FALSE);
-  silc_buffer_free(packet);
-
-  /* Register a timeout in case server does not reply anything back. */
-  connauth->timeout =
-    silc_schedule_task_add(client->schedule, conn->sock->sock,
-			   silc_client_request_authentication_method_timeout,
-			   conn,
-			   client->internal->params->connauth_request_secs, 0,
-			   SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
-}
-#endif /* 0 */
-
 /* Allocates new client object. This has to be done before client may
    work. After calling this one must call silc_client_init to initialize
    the client. The `application' is application specific user data pointer
@@ -996,9 +884,6 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
 
   if (params)
     memcpy(new_client->internal->params, params, sizeof(*params));
-
-  if (!new_client->internal->params->connauth_request_secs)
-    new_client->internal->params->connauth_request_secs = 2;
 
   new_client->internal->params->
     nickname_format[sizeof(new_client->internal->

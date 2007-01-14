@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -278,21 +278,16 @@ static void silc_client_rekey_completion(SilcSKE ske,
 
 /* Callback called by application to return authentication data */
 
-static void silc_client_connect_auth_method(SilcBool success,
-					    SilcAuthMethod auth_meth,
+static void silc_client_connect_auth_method(SilcAuthMethod auth_meth,
 					    void *auth, SilcUInt32 auth_len,
 					    void *context)
 {
   SilcFSMThread fsm = context;
   SilcClientConnection conn = silc_fsm_get_context(fsm);
 
-  conn->internal->params.auth_method = SILC_AUTH_NONE;
-
-  if (success) {
-    conn->internal->params.auth_method = auth_meth;
-    conn->internal->params.auth = auth;
-    conn->internal->params.auth_len = auth_len;
-  }
+  conn->internal->params.auth_method = auth_meth;
+  conn->internal->params.auth = auth;
+  conn->internal->params.auth_len = auth_len;
 
   SILC_FSM_CALL_CONTINUE(fsm);
 }
@@ -322,6 +317,42 @@ static void silc_client_connect_auth_completion(SilcConnAuth connauth,
   }
 
   SILC_FSM_CALL_CONTINUE(fsm);
+}
+
+/********************** CONNECTION_AUTH_REQUEST packet **********************/
+
+/* Received connection authentication request packet.  We get the
+   required authentication method here. */
+
+SILC_FSM_STATE(silc_client_connect_auth_request)
+{
+  SilcClientConnection conn = fsm_context;
+  SilcPacket packet = state_context;
+  SilcUInt16 conn_type, auth_meth;
+
+  if (!conn->internal->auth_request) {
+    silc_packet_free(packet);
+    SILC_FSM_FINISH;
+  }
+
+  /* Parse the payload */
+  if (silc_buffer_unformat(&packet->buffer,
+			   SILC_STR_UI_SHORT(&conn_type),
+			   SILC_STR_UI_SHORT(&auth_meth),
+			   SILC_STR_END) < 0)
+    auth_meth = SILC_AUTH_NONE;
+
+  silc_packet_free(packet);
+
+  SILC_LOG_DEBUG(("Resolved authentication method: %s",
+		  (auth_meth == SILC_AUTH_NONE ? "none" :
+		   auth_meth == SILC_AUTH_PASSWORD ? "passphrase" :
+		   "public key")));
+  conn->internal->params.auth_method = auth_meth;
+
+  /* Continue authentication */
+  silc_fsm_continue_sync(&conn->internal->event_thread);
+  SILC_FSM_FINISH;
 }
 
 /*************************** Connect remote host ****************************/
@@ -472,7 +503,7 @@ SILC_FSM_STATE(silc_client_st_connect_key_exchange)
     silc_fsm_next(fsm, silc_client_st_connect_setup_udp);
   else
     /** Run key exchange (TCP) */
-    silc_fsm_next(fsm, silc_client_st_connect_auth);
+    silc_fsm_next(fsm, silc_client_st_connect_auth_resolve);
 
   SILC_FSM_CALL(conn->internal->op = silc_ske_initiator(conn->internal->ske,
 							conn->stream,
@@ -521,13 +552,48 @@ SILC_FSM_STATE(silc_client_st_connect_setup_udp)
   silc_stream_destroy(old);
 
   /** Start authentication */
-  silc_fsm_next(fsm, silc_client_st_connect_auth);
+  silc_fsm_next(fsm, silc_client_st_connect_auth_resolve);
   SILC_FSM_CONTINUE;
 }
 
-/* Get authentication method to be used in authentication protocol */
+/* Resolved authentication method to be used in authentication protocol */
 
-SILC_FSM_STATE(silc_client_st_connect_auth)
+SILC_FSM_STATE(silc_client_st_connect_auth_resolve)
+{
+  SilcClientConnection conn = fsm_context;
+
+  SILC_LOG_DEBUG(("Resolve authentication method"));
+
+  if (conn->internal->disconnected) {
+    /** Disconnected */
+    silc_fsm_next(fsm, silc_client_st_connect_error);
+    SILC_FSM_CONTINUE;
+  }
+
+  /* If authentication method and data is set, use them */
+  if (conn->internal->params.auth_set) {
+    /** Got authentication data */
+    silc_fsm_next(fsm, silc_client_st_connect_auth_start);
+    SILC_FSM_CONTINUE;
+  }
+
+  /* Send connection authentication request packet */
+  silc_packet_send_va(conn->stream,
+		      SILC_PACKET_CONNECTION_AUTH_REQUEST, 0,
+		      SILC_STR_UI_SHORT(SILC_CONN_CLIENT),
+		      SILC_STR_UI_SHORT(SILC_AUTH_NONE),
+		      SILC_STR_END);
+
+  /** Wait for authentication method */
+  conn->internal->auth_request = TRUE;
+  conn->internal->params.auth_method = SILC_AUTH_NONE;
+  silc_fsm_next_later(fsm, silc_client_st_connect_auth_data, 2, 0);
+  SILC_FSM_WAIT;
+}
+
+/* Get authentication data to be used in authentication protocol */
+
+SILC_FSM_STATE(silc_client_st_connect_auth_data)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
@@ -540,21 +606,16 @@ SILC_FSM_STATE(silc_client_st_connect_auth)
     SILC_FSM_CONTINUE;
   }
 
-  silc_fsm_next(fsm, silc_client_st_connect_auth_start);
+  conn->internal->auth_request = FALSE;
 
-  /* If authentication data not provided, ask from application */
-  if (!conn->internal->params.auth_set)
-    SILC_FSM_CALL(client->internal->ops->get_auth_method(
+  /** Get authentication data */
+  silc_fsm_next(fsm, silc_client_st_connect_auth_start);
+  SILC_FSM_CALL(client->internal->ops->get_auth_method(
 				    client, conn,
 				    conn->remote_host,
 				    conn->remote_port,
+				    conn->internal->params.auth_method,
 				    silc_client_connect_auth_method, fsm));
-
-  if (conn->internal->params.auth_method == SILC_AUTH_PUBLIC_KEY)
-    conn->internal->params.auth = conn->private_key;
-
-  /* We have authentication data */
-  SILC_FSM_CONTINUE;
 }
 
 /* Start connection authentication with remote host */
@@ -572,6 +633,10 @@ SILC_FSM_STATE(silc_client_st_connect_auth_start)
     silc_fsm_next(fsm, silc_client_st_connect_error);
     SILC_FSM_CONTINUE;
   }
+
+  /* We always use the same key for connection authentication and SKE */
+  if (conn->internal->params.auth_method == SILC_AUTH_PUBLIC_KEY)
+    conn->internal->params.auth = conn->private_key;
 
   /* Allocate connection authentication protocol */
   connauth = silc_connauth_alloc(conn->internal->schedule,

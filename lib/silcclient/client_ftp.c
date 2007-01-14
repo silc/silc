@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2004 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -867,9 +867,7 @@ silc_client_file_send(SilcClient client,
   session->filepath = strdup(filepath);
   silc_dlist_add(conn->internal->ftp_sessions, session);
 
-  path = silc_calloc(strlen(filepath) + 9, sizeof(*path));
-  silc_strncat(path, strlen(filepath) + 9, "file://", 7);
-  silc_strncat(path, strlen(filepath) + 9, filepath, strlen(filepath));
+  silc_asprintf(&path, "file://%s", filepath);
 
   /* Allocate memory filesystem and put the file to it */
   if (strrchr(path, '/'))
@@ -1089,30 +1087,77 @@ SilcClientFileError silc_client_file_close(SilcClient client,
   return SILC_CLIENT_FILE_OK;
 }
 
-/* Callback called after remote client information has been resolved.
-   This will try to find existing session for the client entry.  If found
-   then continue with the key agreement protocol.  If not then it means
-   this is a file transfer request and we let the application know. */
+/************************** FTP Request Processing **************************/
 
-static void silc_client_ftp_resolve_cb(SilcClient client,
-				       SilcClientConnection conn,
-				       SilcClientEntry *clients,
-				       SilcUInt32 clients_count,
-				       void *context)
+/* Client resolving callback.  Continues with the FTP processing */
+
+static void silc_client_ftp_client_resolved(SilcClient client,
+					    SilcClientConnection conn,
+					    SilcStatus status,
+					    SilcDList clients,
+					    void *context)
 {
-  SilcPacketContext *packet = (SilcPacketContext *)context;
-  SilcClientFtpSession session;
-  SilcKeyAgreementPayload payload = NULL;
-  SilcClientEntry client_entry;
+  SilcFSMThread thread = context;
+  SilcPacket packet = silc_fsm_get_state_context(thread);
+
+  /* If no client found, ignore the packet, a silent error */
+  if (!clients) {
+    silc_packet_free(packet);
+    silc_fsm_finish(thread);
+    return;
+  }
+
+  /* Continue processing the packet */
+  SILC_FSM_CALL_CONTINUE(context);
+}
+
+/* Received file transfer packet.  Only file transfer requests get here.
+   The actual file transfer is handled by the SFTP library when we give it
+   the packet stream wrapped into SilcStream context. */
+
+SILC_FSM_STATE(silc_client_ftp)
+{
+  SilcClientConnection conn = fsm_context;
+  SilcClient client = conn->client;
+  SilcPacket packet = state_context;
+  SilcClientID remote_id;
+  SilcClientEntry remote_client;
+  SilcKeyAgreementPayload payload;
+  SilcUInt8 type;
   char *hostname;
   SilcUInt16 port;
+  int ret;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Process file transfer packet"));
 
-  if (!clients)
+  if (silc_buffer_len(&packet->buffer) < 1)
     goto out;
 
-  client_entry = clients[0];
+  /* We support file transfer type number 1 (== SFTP) */
+  if (packet->buffer.data[0] != 0x01) {
+    SILC_LOG_DEBUG(("Unsupported file transfer type %d",
+		    packet->buffer.data[0]));
+    goto out;
+  }
+
+  if (!silc_id_str2id(packet->src_id, packet->src_id_len,
+		      SILC_ID_CLIENT, &remote_id, sizeof(remote_id))) {
+    SILC_LOG_DEBUG(("Invalid client ID"));
+    goto out;
+  }
+
+  /* Check whether we know this client already */
+  remote_client = silc_client_get_client_by_id(client, conn, &remote_id);
+  if (!remote_client || !remote_client->nickname[0]) {
+    /** Resolve client info */
+    silc_client_unref_client(client, conn, remote_client);
+    SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
+					 client, conn, &remote_id, NULL,
+					 silc_client_ftp_client_resolved,
+					 fsm));
+    /* NOT REACHED */
+  }
+
 
   silc_dlist_start(conn->internal->ftp_sessions);
   while ((session = silc_dlist_get(conn->internal->ftp_sessions))
@@ -1123,10 +1168,12 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
   }
 
   /* Parse the key agreement payload */
-  payload = silc_key_agreement_payload_parse(packet->buffer->data,
-					     packet->buffer->len);
-  if (!payload)
+  payload = silc_key_agreement_payload_parse(packet->buffer->data + 1,
+					     packet->buffer->len - 1);
+  if (!payload) {
+    SILC_LOG_DEBUG(("Invalid key agreement payload"));
     goto out;
+  }
 
   hostname = silc_key_agreement_get_hostname(payload);
   port = silc_key_agreement_get_port(payload);
@@ -1185,65 +1232,9 @@ static void silc_client_ftp_resolve_cb(SilcClient client,
 			  session->filepath, session->monitor_context);
   }
 
+
+
  out:
-  if (payload)
-    silc_key_agreement_payload_free(payload);
-  silc_packet_context_free(packet);
-}
-
-/* Called when file transfer packet is received. This will parse the
-   packet and give it to the file transfer protocol. */
-
-void silc_client_ftp(SilcClient client,
-		     SilcSocketConnection sock,
-		     SilcPacketContext *packet)
-{
-  SilcClientConnection conn = (SilcClientConnection)sock->user_data;
-  SilcUInt8 type;
-  int ret;
-
-  SILC_LOG_DEBUG(("Start"));
-
-  /* Parse the payload */
-  ret = silc_buffer_unformat(packet->buffer,
-			     SILC_STR_UI_CHAR(&type),
-			     SILC_STR_END);
-  if (ret == -1)
-    return;
-
-  /* We support only type number 1 (== SFTP) */
-  if (type != 1)
-    return;
-
-  silc_buffer_pull(packet->buffer, 1);
-
-  /* If we have active FTP session then give the packet directly to the
-     protocol processor. */
-  if (conn->internal->active_session) {
-    /* Give it to the SFTP */
-    if (conn->internal->active_session->server)
-      silc_sftp_server_receive_process(conn->internal->active_session->sftp,
-				       sock, packet);
-    else
-      silc_sftp_client_receive_process(conn->internal->active_session->sftp,
-				       sock, packet);
-  } else {
-    /* We don't have active session, resolve the remote client information
-       and then try to find the correct session. */
-    SilcClientID *remote_id;
-
-    if (packet->src_id_type != SILC_ID_CLIENT)
-      return;
-
-    remote_id = silc_id_str2id(packet->src_id, packet->src_id_len,
-			       SILC_ID_CLIENT);
-    if (!remote_id)
-      return;
-
-    /* Resolve the client */
-    silc_client_get_client_by_id_resolve(client, sock->user_data, remote_id,
-					 NULL, silc_client_ftp_resolve_cb,
-					 silc_packet_context_dup(packet));
-    silc_free(remote_id);
-  }
+  silc_packet_free(packet);
+  SILC_FSM_FINISH;
 }
