@@ -26,26 +26,25 @@ Multimedia Sessions in SILC protocol
 <draft-riikonen-silc-multimedia-session-00.txt>
 
 .ti 0
-Status of this Memo
+Status of this Draft
 
-This document is an Internet-Draft and is in full conformance with
-all provisions of Section 10 of RFC 2026.  Internet-Drafts are
-working documents of the Internet Engineering Task Force (IETF), its
-areas, and its working groups.  Note that other groups may also
-distribute working documents as Internet-Drafts.
+By submitting this Internet-Draft, each author represents that any
+applicable patent or other IPR claims of which he or she is aware
+have been or will be disclosed, and any of which he or she becomes
+aware will be disclosed, in accordance with Section 6 of BCP 79.
 
-Internet-Drafts are draft documents valid for a maximum of six months
-and may be updated, replaced, or obsoleted by other documents at any
-time.  It is inappropriate to use Internet-Drafts as reference
-material or to cite them other than as "work in progress."
+Internet-Drafts are working documents of the Internet Engineering
+Task Force (IETF), its areas, and its working groups. Note that
+other groups may also distribute working documents as Internet-
+Drafts. Internet-Drafts are draft documents valid for a maximum of
+six months and may be updated, replaced, or obsoleted by other
+documents at any time. It is inappropriate to use Internet-Drafts as
+reference material or to cite them other than as "work in progress".
 
 The list of current Internet-Drafts can be accessed at
-http://www.ietf.org/ietf/1id-abstracts.txt
-
+http://www.ietf.org/1id-abstracts.html
 The list of Internet-Draft Shadow Directories can be accessed at
-http://www.ietf.org/shadow.html
-
-The distribution of this memo is unlimited.
+http://www.ietf.org/shadow.html.
 
 
 .ti 0
@@ -67,11 +66,11 @@ Table of Contents
   3.1 SDP field usage in SILC ...................................  3
   3.2 SDP Examples ..............................................  5
 4 Session Initiation Protocol (SIP) .............................  6
-6 Other Protocols ...............................................  6
-7 Security Considerations .......................................  7
-8 References ....................................................  7
-9 Author's Address ..............................................  7
-10 Full Copyright Statement .....................................  7
+5 Other Protocols ...............................................  6
+6 Security Considerations .......................................  7
+7 References ....................................................  7
+8 Author's Address ..............................................  7
+9 Full Copyright Statement ......................................  7
 
 
 .ti 0
@@ -310,7 +309,7 @@ default.
 
 
 .ti 0
-6 Other Protocols
+5 Other Protocols
 
 There are other open and proprietary protocols for setting up multimedia
 sessions.  One important is H.323 using the H.225 to set up the session.
@@ -322,7 +321,7 @@ multimedia data once the session has been established.
 
 
 .ti 0
-7 Security Considerations
+6 Security Considerations
 
 Security is central to the design of this protocol, and these security
 considerations permeate the specification.  Common security considerations
@@ -332,7 +331,7 @@ security of this protocol.
 
 
 .ti 0
-8 References
+7 References
 
 [SILC1]      Riikonen, P., "Secure Internet Live Conferencing (SILC),
              Protocol Specification", Internet Draft, June 2003.
@@ -353,7 +352,7 @@ security of this protocol.
 
 
 .ti 0
-9 Author's Address
+8 Author's Address
 
 .nf
 Pekka Riikonen
@@ -364,30 +363,18 @@ EMail: priikone@iki.fi
 
 
 .ti 0
-10 Full Copyright Statement
+9 Full Copyright Statement
 
-Copyright (C) The Internet Society (2003). All Rights Reserved.
+Copyright (C) The Internet Society (2007).
 
-This document and translations of it may be copied and furnished to
-others, and derivative works that comment on or otherwise explain it
-or assist in its implementation may be prepared, copied, published
-and distributed, in whole or in part, without restriction of any
-kind, provided that the above copyright notice and this paragraph are
-included on all such copies and derivative works. However, this
-document itself may not be modified in any way, such as by removing
-the copyright notice or references to the Internet Society or other
-Internet organizations, except as needed for the purpose of
-developing Internet standards in which case the procedures for
-copyrights defined in the Internet Standards process must be
-followed, or as required to translate it into languages other than
-English.
+This document is subject to the rights, licenses and restrictions
+contained in BCP 78, and except as set forth therein, the authors
+retain all their rights.
 
-The limited permissions granted above are perpetual and will not be
-revoked by the Internet Society or its successors or assigns.
-
-This document and the information contained herein is provided on an
-"AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
-TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
-BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
-HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
-MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+This document and the information contained herein are provided on an
+"AS IS" basis and THE CONTRIBUTOR, THE ORGANIZATION HE/SHE REPRESENTS
+OR IS SPONSORED BY (IF ANY), THE INTERNET SOCIETY AND THE INTERNET
+ENGINEERING TASK FORCE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE
+INFORMATION HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED
+WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
