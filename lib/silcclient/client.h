@@ -74,7 +74,8 @@ typedef struct SilcChannelEntryInternalStruct {
   SilcChannelPrivateKey curr_key;	     /* Current private key */
 
   /* Channel keys */
-  SilcCipher channel_key;                    /* The channel key */
+  SilcCipher send_key;                       /* The channel key */
+  SilcCipher receive_key;                    /* The channel key */
   SilcHmac hmac;			     /* Current HMAC */
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE]; /* Current IV */
 

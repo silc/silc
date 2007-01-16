@@ -1273,8 +1273,8 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   /* Set current channel */
   conn->current_channel = channel;
 
-  cipher = (channel->internal.channel_key ?
-	    silc_cipher_get_name(channel->internal.channel_key) : NULL);
+  cipher = (channel->internal.send_key ?
+	    silc_cipher_get_name(channel->internal.send_key) : NULL);
   silc_hash_table_list(channel->user_list, &htl);
 
   /* Notify application */

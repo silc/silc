@@ -571,8 +571,8 @@ SILC_FSM_STATE(silc_client_st_resume_completed)
     const char *cipher, *hmac;
 
     channel = entry->context;
-    cipher = (channel->internal.channel_key ?
-	      silc_cipher_get_name(channel->internal.channel_key) : NULL);
+    cipher = (channel->internal.send_key ?
+	      silc_cipher_get_name(channel->internal.send_key) : NULL);
     hmac = (channel->internal.hmac ?
 	    silc_hmac_get_name(channel->internal.hmac) : NULL);
     silc_hash_table_list(channel->user_list, &htl);

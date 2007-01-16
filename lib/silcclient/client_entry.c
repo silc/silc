@@ -1493,8 +1493,10 @@ SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
   silc_free(channel->topic);
   if (channel->founder_key)
     silc_pkcs_public_key_free(channel->founder_key);
-  if (channel->internal.channel_key)
-    silc_cipher_free(channel->internal.channel_key);
+  if (channel->internal.send_key)
+    silc_cipher_free(channel->internal.send_key);
+  if (channel->internal.receive_key)
+    silc_cipher_free(channel->internal.receive_key);
   if (channel->internal.hmac)
     silc_hmac_free(channel->internal.hmac);
   if (channel->internal.old_channel_keys) {
