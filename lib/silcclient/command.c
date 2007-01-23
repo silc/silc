@@ -68,7 +68,7 @@ static SilcUInt16 silc_client_cmd_ident(SilcClientConnection conn)
 SILC_FSM_STATE(silc_client_command_continue_error)
 {
   /* Destructor will free all resources */
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /* Command reply callback to continue with the execution of a command.
@@ -623,7 +623,7 @@ SILC_FSM_STATE(silc_client_command_whois)
 
     /** Wait for command reply */
     silc_fsm_next(fsm, silc_client_command_reply_wait);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   for (i = 1; i < cmd->argc; i++) {
@@ -714,10 +714,10 @@ SILC_FSM_STATE(silc_client_command_whois)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 
  out:
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /******************************** WHOWAS ************************************/
@@ -737,7 +737,7 @@ SILC_FSM_STATE(silc_client_command_whowas)
 	"Usage: /WHOWAS <nickname>[@<server>] [<count>]");
     COMMAND_ERROR((cmd->argc < 2 ? SILC_STATUS_ERR_NOT_ENOUGH_PARAMS :
 		   SILC_STATUS_ERR_TOO_MANY_PARAMS));
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   if (cmd->argc == 2) {
@@ -756,7 +756,7 @@ SILC_FSM_STATE(silc_client_command_whowas)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /******************************** IDENTIFY **********************************/
@@ -772,7 +772,7 @@ SILC_FSM_STATE(silc_client_command_identify)
   int c;
 
   if (cmd->argc < 2 || cmd->argc > 3)
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
 
   if (cmd->argc == 2) {
     silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL,
@@ -787,7 +787,7 @@ SILC_FSM_STATE(silc_client_command_identify)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /********************************** NICK ************************************/
@@ -837,10 +837,10 @@ SILC_FSM_STATE(silc_client_command_nick)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 
  out:
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /********************************** LIST ************************************/
@@ -876,7 +876,7 @@ SILC_FSM_STATE(silc_client_command_list)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /********************************** TOPIC ***********************************/
@@ -941,10 +941,10 @@ SILC_FSM_STATE(silc_client_command_topic)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 
  out:
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /********************************* INVITE ***********************************/
@@ -1067,11 +1067,11 @@ SILC_FSM_STATE(silc_client_command_invite)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 
  out:
   silc_free(nickname);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /********************************** QUIT ************************************/
@@ -1101,7 +1101,7 @@ SILC_FSM_STATE(silc_client_command_quit_final)
     SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   }
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /* Command QUIT. Closes connection with current server. */
@@ -1122,7 +1122,7 @@ SILC_FSM_STATE(silc_client_command_quit)
 
   /* We close the connection with a little timeout */
   silc_fsm_next_later(fsm, silc_client_command_quit_final, 2, 0);
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 /********************************** KILL ************************************/
@@ -1145,12 +1145,12 @@ SILC_FSM_STATE(silc_client_command_kill)
     SAY(conn->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /KILL <nickname> [<comment>] [-pubkey]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* Parse the typed nickname. */
   if (!silc_client_nickname_parse(client, conn, cmd->argv[1], &nickname))
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
 
   /* Get the target client */
   clients = silc_client_get_clients_local(client, conn, nickname,
@@ -1195,7 +1195,7 @@ SILC_FSM_STATE(silc_client_command_kill)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /********************************** INFO ************************************/
@@ -1220,7 +1220,7 @@ SILC_FSM_STATE(silc_client_command_info)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /********************************** STATS ***********************************/
@@ -1242,7 +1242,7 @@ SILC_FSM_STATE(silc_client_command_stats)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /********************************** PING ************************************/
@@ -1256,7 +1256,7 @@ SILC_FSM_STATE(silc_client_command_ping)
 
   if (cmd->argc < 2) {
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* Send the command */
@@ -1272,7 +1272,7 @@ SILC_FSM_STATE(silc_client_command_ping)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /********************************** JOIN ************************************/
@@ -1389,11 +1389,11 @@ SILC_FSM_STATE(silc_client_command_join)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 
  out:
   silc_client_unref_channel(client, conn, channel);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /********************************** MOTD ************************************/
@@ -1410,7 +1410,7 @@ SILC_FSM_STATE(silc_client_command_motd)
 	"Usage: /MOTD [<server>]");
     COMMAND_ERROR((cmd->argc < 1 ? SILC_STATUS_ERR_NOT_ENOUGH_PARAMS :
 		   SILC_STATUS_ERR_TOO_MANY_PARAMS));
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* Send the command */
@@ -1427,7 +1427,7 @@ SILC_FSM_STATE(silc_client_command_motd)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /********************************** UMODE ***********************************/
@@ -1447,7 +1447,7 @@ SILC_FSM_STATE(silc_client_command_umode)
     SAY(conn->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /UMODE +|-<modes>");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   mode = conn->local_entry->mode;
@@ -1548,7 +1548,7 @@ SILC_FSM_STATE(silc_client_command_umode)
       break;
     default:
       COMMAND_ERROR(SILC_STATUS_ERR_UNKNOWN_MODE);
-      SILC_FSM_FINISH;
+      return SILC_FSM_FINISH;
       break;
     }
   }
@@ -1566,7 +1566,7 @@ SILC_FSM_STATE(silc_client_command_umode)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /********************************** CMODE ***********************************/
@@ -1861,11 +1861,11 @@ SILC_FSM_STATE(silc_client_command_cmode)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 
  out:
   silc_client_unref_channel(client, conn, channel);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /********************************* CUMODE ***********************************/
@@ -2043,13 +2043,13 @@ SILC_FSM_STATE(silc_client_command_cumode)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 
  out:
   silc_client_unref_channel(client, conn, channel);
   silc_client_list_free(client, conn, clients);
   silc_free(nickname);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /********************************** KICK ************************************/
@@ -2135,12 +2135,12 @@ SILC_FSM_STATE(silc_client_command_kick)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 
  out:
   silc_client_unref_channel(client, conn, channel);
   silc_free(nickname);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /***************************** OPER & SILCOPER ******************************/
@@ -2205,7 +2205,7 @@ SILC_FSM_STATE(silc_client_command_oper_send)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /* OPER command. Used to obtain server operator privileges. */
@@ -2220,14 +2220,14 @@ SILC_FSM_STATE(silc_client_command_oper)
     SAY(conn->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /OPER <username> [-pubkey]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* Get passphrase */
   if (cmd->argc < 3) {
     oper = silc_calloc(1, sizeof(*oper));
     if (!oper)
-      SILC_FSM_FINISH;
+      return SILC_FSM_FINISH;
     cmd->context = oper;
     SILC_FSM_CALL(conn->client->internal->
 		  ops->ask_passphrase(conn->client, conn,
@@ -2235,7 +2235,7 @@ SILC_FSM_STATE(silc_client_command_oper)
   }
 
   silc_fsm_next(fsm, silc_client_command_oper_send);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /* SILCOPER command. Used to obtain router operator privileges. */
@@ -2250,14 +2250,14 @@ SILC_FSM_STATE(silc_client_command_silcoper)
     SAY(conn->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /SILCOPER <username> [-pubkey]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* Get passphrase */
   if (cmd->argc < 3) {
     oper = silc_calloc(1, sizeof(*oper));
     if (!oper)
-      SILC_FSM_FINISH;
+      return SILC_FSM_FINISH;
     cmd->context = oper;
     SILC_FSM_CALL(conn->client->internal->
 		  ops->ask_passphrase(conn->client, conn,
@@ -2265,7 +2265,7 @@ SILC_FSM_STATE(silc_client_command_silcoper)
   }
 
   silc_fsm_next(fsm, silc_client_command_oper_send);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /*********************************** BAN ************************************/
@@ -2355,10 +2355,10 @@ SILC_FSM_STATE(silc_client_command_ban)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 
  out:
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /********************************* DETACH ***********************************/
@@ -2377,7 +2377,7 @@ SILC_FSM_STATE(silc_client_command_detach)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /********************************** WATCH ***********************************/
@@ -2449,10 +2449,10 @@ SILC_FSM_STATE(silc_client_command_watch)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 
  out:
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /********************************** LEAVE ***********************************/
@@ -2510,10 +2510,10 @@ SILC_FSM_STATE(silc_client_command_leave)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 
  out:
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /********************************** USERS ***********************************/
@@ -2553,10 +2553,10 @@ SILC_FSM_STATE(silc_client_command_users)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 
  out:
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /********************************* GETKEY ***********************************/
@@ -2578,13 +2578,13 @@ SILC_FSM_STATE(silc_client_command_getkey)
     client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_INFO,
 		     "Usage: /GETKEY <nickname or server name>");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* Parse the typed nickname. */
   if (!silc_client_nickname_parse(client, conn, cmd->argv[1], &nickname)) {
     COMMAND_ERROR(SILC_STATUS_ERR_RESOURCE_LIMIT);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* Find client entry */
@@ -2599,7 +2599,7 @@ SILC_FSM_STATE(silc_client_command_getkey)
 	   errors are handled in the resolving callback. */
 	COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_NICK);
 	COMMAND_ERROR(SILC_STATUS_ERR_NO_SUCH_SERVER);
-	SILC_FSM_FINISH;
+	return SILC_FSM_FINISH;
       }
 
       /* No client or server exist with this name, query for both. */
@@ -2634,7 +2634,7 @@ SILC_FSM_STATE(silc_client_command_getkey)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /********************************* SERVICE **********************************/
@@ -2654,7 +2654,7 @@ SILC_FSM_STATE(silc_client_command_service)
     SAY(conn->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"Usage: /SERVICE [<service name>] [-pubkey]");
     COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   name = cmd->argv[1];
@@ -2674,7 +2674,7 @@ SILC_FSM_STATE(silc_client_command_service)
 
   /** Wait for command reply */
   silc_fsm_next(fsm, silc_client_command_reply_wait);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /* Register all default commands provided by the client library for the
@@ -2815,7 +2815,7 @@ SILC_FSM_STATE(silc_client_command)
 				       silc_buffer_len(&packet->buffer));
   if (!payload) {
     SILC_LOG_DEBUG(("Bad command packet"));
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* Get arguments */
@@ -2838,5 +2838,5 @@ SILC_FSM_STATE(silc_client_command)
   }
 
   silc_command_payload_free(payload);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }

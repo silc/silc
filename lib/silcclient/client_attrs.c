@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2004, 2006 Pekka Riikonen
+  Copyright (C) 2002 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -123,7 +123,7 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
   /* Finally compute the digital signature of all the data we provided. */
   if (silc_pkcs_sign(conn->private_key, silc_buffer_data(buffer),
 		     silc_buffer_len(buffer), sign, sizeof(sign), &sign_len,
-		     conn->internal->sha1hash)) {
+		     TRUE, conn->internal->sha1hash)) {
     pk.type = NULL;
     pk.data = sign;
     pk.data_len = sign_len;
@@ -184,9 +184,9 @@ static void silc_client_attribute_del_foreach(void *key, void *context,
 /* Delete one attribute */
 
 SilcBool silc_client_attribute_del(SilcClient client,
-			       SilcClientConnection conn,
-			       SilcAttribute attribute,
-			       SilcAttributePayload attr)
+				   SilcClientConnection conn,
+				   SilcAttribute attribute,
+				   SilcAttributePayload attr)
 {
   SilcBool ret;
 
@@ -236,6 +236,7 @@ SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...)
 
   if (!attribute)
     return silc_client_attributes_request(SILC_ATTRIBUTE_USER_INFO,
+					  SILC_ATTRIBUTE_USER_ICON,
 					  SILC_ATTRIBUTE_SERVICE,
 					  SILC_ATTRIBUTE_STATUS_MOOD,
 					  SILC_ATTRIBUTE_STATUS_FREETEXT,

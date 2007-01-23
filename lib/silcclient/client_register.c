@@ -144,7 +144,7 @@ SILC_FSM_STATE(silc_client_new_id)
  out:
   /** Packet processed */
   silc_packet_free(packet);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -170,14 +170,14 @@ SILC_FSM_STATE(silc_client_st_register)
 			   SILC_STR_END)) {
     /** Error sending packet */
     silc_fsm_next(fsm, silc_client_st_register_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /** Wait for new ID */
   conn->internal->registering = TRUE;
   silc_fsm_next_later(fsm, silc_client_st_register_complete,
 		      conn->internal->retry_timer, 0);
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 /* Wait for NEW_ID packet to arrive */
@@ -190,7 +190,7 @@ SILC_FSM_STATE(silc_client_st_register_complete)
   if (conn->internal->disconnected) {
     /** Disconnected */
     silc_fsm_next(fsm, silc_client_st_register_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (!conn->local_id) {
@@ -200,7 +200,7 @@ SILC_FSM_STATE(silc_client_st_register_complete)
       conn->internal->retry_count = 0;
       conn->internal->retry_timer = SILC_CLIENT_RETRY_MIN;
       silc_fsm_next(fsm, silc_client_st_register_error);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
 
     /** Resend registering packet */
@@ -209,7 +209,7 @@ SILC_FSM_STATE(silc_client_st_register_complete)
 				    SILC_CLIENT_RETRY_MUL) +
 				   (silc_rng_get_rn16(client->rng) %
 				    SILC_CLIENT_RETRY_RAND));
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   SILC_LOG_DEBUG(("Registered to network"));
@@ -243,7 +243,7 @@ SILC_FSM_STATE(silc_client_st_register_complete)
   silc_schedule_task_del_by_all(conn->internal->schedule, 0,
 				silc_client_connect_timeout, conn);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /* Error registering to network */
@@ -270,7 +270,7 @@ SILC_FSM_STATE(silc_client_st_register_error)
   silc_schedule_task_del_by_all(conn->internal->schedule, 0,
 				silc_client_connect_timeout, conn);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /************************* Resume detached session **************************/
@@ -294,7 +294,7 @@ SILC_FSM_STATE(silc_client_st_resume)
   if (!resume) {
     /** Out of memory */
     silc_fsm_next(fsm, silc_client_st_resume_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
   silc_fsm_set_state_context(fsm, resume);
 
@@ -316,7 +316,7 @@ SILC_FSM_STATE(silc_client_st_resume)
     /** Malformed detach data */
     SILC_LOG_DEBUG(("Malformed detachment data"));
     silc_fsm_next(fsm, silc_client_st_resume_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (!silc_id_str2id(id, id_len, SILC_ID_CLIENT, &client_id,
@@ -324,7 +324,7 @@ SILC_FSM_STATE(silc_client_st_resume)
     /** Malformed ID */
     SILC_LOG_DEBUG(("Malformed ID"));
     silc_fsm_next(fsm, silc_client_st_resume_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Generate authentication data that server will verify */
@@ -336,7 +336,7 @@ SILC_FSM_STATE(silc_client_st_resume)
   if (!auth) {
     /** Out of memory */
     silc_fsm_next(fsm, silc_client_st_resume_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Send RESUME_CLIENT packet to resume to network */
@@ -349,13 +349,13 @@ SILC_FSM_STATE(silc_client_st_resume)
     /** Error sending packet */
     SILC_LOG_DEBUG(("Error sending packet"));
     silc_fsm_next(fsm, silc_client_st_resume_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /** Wait for new ID */
   conn->internal->registering = TRUE;
   silc_fsm_next_later(fsm, silc_client_st_resume_resolve_channels, 15, 0);
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 /* Resolve the old session information, user mode and joined channels. */
@@ -372,14 +372,14 @@ SILC_FSM_STATE(silc_client_st_resume_resolve_channels)
   if (conn->internal->disconnected) {
     /** Disconnected */
     silc_fsm_next(fsm, silc_client_st_resume_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (!conn->local_id) {
     /** Timeout, ID not received */
     conn->internal->registering = FALSE;
     silc_fsm_next(fsm, silc_client_st_resume_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /** Wait for channels */
@@ -397,7 +397,7 @@ SILC_FSM_STATE(silc_client_st_resume_resolve_channels)
 			   silc_buffer_len(conn->internal->local_idp));
 
   if (!resume->channel_count)
-    SILC_FSM_YIELD;
+    return SILC_FSM_YIELD;
 
   /* Send IDENTIFY command for all channels we know about.  These are the
      channels we've joined to according our detachment data. */
@@ -453,7 +453,7 @@ SILC_FSM_STATE(silc_client_st_resume_resolve_channels)
   silc_free(res_argv_lens);
   silc_free(res_argv_types);
 
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 /* Resolve joined channel modes, users and topics. */
@@ -471,7 +471,7 @@ SILC_FSM_STATE(silc_client_st_resume_resolve_cmodes)
   if (conn->internal->disconnected) {
     /** Disconnected */
     silc_fsm_next(fsm, silc_client_st_resume_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   SILC_LOG_DEBUG(("Resolving channel details"));
@@ -480,7 +480,7 @@ SILC_FSM_STATE(silc_client_st_resume_resolve_cmodes)
   silc_fsm_next(fsm, silc_client_st_resume_completed);
 
   if (!silc_idcache_get_all(conn->internal->channel_cache, &channels))
-    SILC_FSM_YIELD;
+    return SILC_FSM_YIELD;
 
   /* Resolve channels' mode, users and topic */
   resume->channel_count = silc_list_count(channels) * 3;
@@ -506,7 +506,7 @@ SILC_FSM_STATE(silc_client_st_resume_resolve_cmodes)
     silc_buffer_free(idp);
   }
 
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 /* Resuming completed */
@@ -523,13 +523,13 @@ SILC_FSM_STATE(silc_client_st_resume_completed)
   if (conn->internal->disconnected) {
     /** Disconnected */
     silc_fsm_next(fsm, silc_client_st_resume_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (resume->channel_count > 0) {
     resume->channel_count--;
     if (resume->channel_count)
-      SILC_FSM_WAIT;
+      return SILC_FSM_WAIT;
   }
 
   SILC_LOG_DEBUG(("Resuming completed"));
@@ -591,7 +591,7 @@ SILC_FSM_STATE(silc_client_st_resume_completed)
   silc_free(resume->nickname);
   silc_free(resume);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /* Error resuming to network */
@@ -607,7 +607,7 @@ SILC_FSM_STATE(silc_client_st_resume_error)
       silc_free(resume->nickname);
       silc_free(resume);
     }
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   SILC_LOG_DEBUG(("Error resuming to network"));
@@ -632,7 +632,7 @@ SILC_FSM_STATE(silc_client_st_resume_error)
     silc_free(resume);
   }
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /* Generates the session detachment data. This data can be used later

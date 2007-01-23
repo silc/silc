@@ -795,7 +795,6 @@ void silc_client_run(SilcClient client);
  ***/
 void silc_client_run_one(SilcClient client);
 
-
 /****f* silcclient/SilcClientAPI/silc_client_stop
  *
  * SYNOPSIS
@@ -913,7 +912,7 @@ typedef struct {
   /* Rekey timeout in seconds.  The client will perform rekey in this
      time interval.  If set to zero, the default value will be used
      (3600 seconds, 1 hour). */
-  unsigned int rekey_secs;
+  SilcUInt32 rekey_secs;
 
   /* If this is set to TRUE then the client will ignore all incoming
      Requested Attributes queries and does not reply anything back.  This
@@ -1107,7 +1106,7 @@ silc_client_key_exchange(SilcClient client,
 void silc_client_close_connection(SilcClient client,
 				  SilcClientConnection conn);
 
-/* Message sending functions (client_channel.c and client_prvmsg.c) */
+/* Message sending functions */
 
 /****f* silcclient/SilcClientAPI/silc_client_send_channel_message
  *
@@ -1137,7 +1136,8 @@ void silc_client_close_connection(SilcClient client,
  *    private key) is used.
  *
  *    If the `flags' includes SILC_MESSAGE_FLAG_SIGNED the message will be
- *    digitally signed with the SILC key pair.
+ *    digitally signed with the SILC key pair.  In this case the `hash'
+ *    pointer must be provided as well.
  *
  *    Returns TRUE if the message was sent, and FALSE if error occurred or
  *    the sending is not allowed due to channel modes (like sending is
@@ -1182,8 +1182,7 @@ silc_client_receive_channel_message(SilcClient client,
  *    not been set with this client then the message will be encrypted using
  *    normal session keys.  If the `flags' includes SILC_MESSAGE_FLAG_SIGNED
  *    the message will be digitally signed with the SILC key pair.  In this
- *    case the caller must also provide the `hash' pointer.  By default, the
- *    hash function must be SHA-1.
+ *    case the caller must also provide the `hash' pointer.
  *
  *    Returns TRUE if the message was sent, and FALSE if error occurred.
  *    This function is thread safe and private messages can be sent from
@@ -1268,10 +1267,40 @@ SilcUInt16 silc_client_command_call(SilcClient client,
 				    SilcClientConnection conn,
 				    const char *command_line, ...);
 
-/* If FALSE is returned the callback will not be called again, even if there
-   is more data coming in in the command reply.  If there are other pending
-   commands waiting for the reply, they will receive it even if some other
-   command reply has returned FALSE. */
+/****f* silcclient/SilcClientAPI/SilcClientCommandReply
+ *
+ * SYNOPSIS
+ *
+ *    typedef SilcBool (*SilcClientCommandReply)(SilcClient client,
+ *                                               SilcClientConnection conn,
+ *                                               SilcCommand command,
+ *                                               SilcStatus status,
+ *                                               SilcStatus error,
+ *                                               void *context,
+ *                                               va_list ap);
+ *
+ * DESCRIPTION
+ *
+ *    The command reply callback function given as argument to functions
+ *    silc_client_command_send and silc_client_command_pending.  This is
+ *    called to deliver the command replies to the caller.  Each command
+ *    reply received from the server to the `command' will be delivered
+ *    separately to the caller by calling this callback.  The `status' will
+ *    indicate whether there is only one reply or multiple replies.  The
+ *    `error' will indicate if an error occurred.  The `ap' will include
+ *    command reply arguments.  They are the same arguments as for
+ *    `command_reply' client operation in SilcClientOperations.
+ *
+ *    If `status' is SILC_STATUS_OK only one reply was received and error
+ *    did not occur.  If it is SILC_STATUS_LIST_START, SILC_STATUS_LIST_ITEM
+ *    or SILC_STATUS_LIST_END, there are will be two or more replies.  The
+ *    first reply is SILC_STATUS_LIST_START and last one SILC_STATUS_LIST_END.
+ *
+ *    If FALSE is returned in this function this callback will not be called
+ *    again for `command' even if there are more comand replies.  By returning
+ *    FALSE the caller my stop the command reply handling when needed.
+ *
+ ***/
 typedef SilcBool (*SilcClientCommandReply)(SilcClient client,
 					   SilcClientConnection conn,
 					   SilcCommand command,
@@ -1308,9 +1337,7 @@ typedef SilcBool (*SilcClientCommandReply)(SilcClient client,
  *    The `reply' callback must be provided, and it is called when the
  *    command reply is received from the server.  Note that, when using this
  *    function the default `command_reply' client operation will not be
- *    called, when reply is received.  Note however that, `reply' is almost
- *    identical with `command_reply' callback, and application may forward
- *    the reply from `reply' to `command_reply' callback, if desired.
+ *    called, when reply is received.
  *
  *    Returns command identifier for this sent command.  It can be used
  *    to additionally attach to the command reply using the function
@@ -1388,7 +1415,7 @@ SilcBool silc_client_command_pending(SilcClientConnection conn,
 				     void *context);
 
 
-/* Private Message key management (client_prvmsg.c) */
+/* Private Message key management */
 
 /****f* silcclient/SilcClientAPI/silc_client_add_private_message_key
  *
@@ -1523,8 +1550,7 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
 					   SilcUInt32 key_count);
 
 
-/* Channel private key management (client_channel.c,
-   SilcChannelPrivateKey is defined in idlist.h) */
+/* Channel private key management */
 
 /****f* silcclient/SilcClientAPI/silc_client_add_channel_private_key
  *
@@ -2042,13 +2068,12 @@ typedef void (*SilcClientFileAskName)(SilcClient client,
  ***/
 SilcClientFileError
 silc_client_file_send(SilcClient client,
-		      SilcClientConnection conn,
+		      SilcClientEntry client_entry,
+		      SilcClientConnectionParams *params,
+		      SilcPublicKey public_key,
+		      SilcPrivateKey private_key,
 		      SilcClientFileMonitor monitor,
 		      void *monitor_context,
-		      const char *local_ip,
-		      SilcUInt32 local_port,
-		      SilcBool do_not_bind,
-		      SilcClientEntry client_entry,
 		      const char *filepath,
 		      SilcUInt32 *session_id);
 

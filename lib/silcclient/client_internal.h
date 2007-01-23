@@ -111,10 +111,12 @@ struct SilcClientInternalStruct {
   SilcPacketEngine packet_engine;        /* Packet engine */
   SilcMutex lock;			 /* Client lock */
   SilcList commands;			 /* Registered commands */
+  SilcDList ftp_sessions;	         /* FTP sessions */
   char *silc_client_version;		 /* Version set by application */
   SilcClientRunning running;	         /* Running/Stopped callback */
   void *running_context;		 /* Context for runnign callback */
   SilcAtomic16 conns;			 /* Number of connections in client */
+  SilcUInt16 next_session_id;		 /* Next FTP session ID */
 
   /* Events */
   unsigned int stop              : 1;	 /* Stop client */
@@ -164,8 +166,6 @@ struct SilcClientConnectionInternalStruct {
   unsigned int auth_request       : 1;   /* Set when requesting auth method */
 
   SilcClientAway *away;
-  SilcDList ftp_sessions;
-  SilcUInt32 next_session_id;
   SilcClientFtpSession active_session;
   SilcHashTable privmsg_wait;	         /* Waited private messages */
 };

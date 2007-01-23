@@ -7,6 +7,7 @@
 @LINK=notifyargs.html:Arguments for <b>notify</b> Client Operation
 @LINK=silcclient_unicode.html:Unicode and UTF-8 Strings in Client Library
 @LINK=silcclient.html:Client Library Interface Reference
+@LINK=silcclient_entry.html:Client Entry Interface Reference
 -->
 
 <big><b>SILC Client Library</b></big>

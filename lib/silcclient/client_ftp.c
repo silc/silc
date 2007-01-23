@@ -821,13 +821,12 @@ void silc_client_ftp_session_free(SilcClientFtpSession session)
 
 SilcClientFileError
 silc_client_file_send(SilcClient client,
-		      SilcClientConnection conn,
+		      SilcClientEntry client_entry,
+		      SilcClientConnectionParams *params,
+		      SilcPublicKey public_key,
+		      SilcPrivateKey private_key,
 		      SilcClientFileMonitor monitor,
 		      void *monitor_context,
-		      const char *local_ip,
-		      SilcUInt32 local_port,
-		      SilcBool do_not_bind,
-		      SilcClientEntry client_entry,
 		      const char *filepath,
 		      SilcUInt32 *session_id)
 {
@@ -836,20 +835,20 @@ silc_client_file_send(SilcClient client,
   char *filename, *path;
   int fd;
 
-  assert(client && conn && client_entry);
+  SILC_LOG_DEBUG(("File send request (file: %s), filepath"));
 
-  SILC_LOG_DEBUG(("Start"));
+  if (!client || !client_entry || !filepath)
+    return SILC_CLIENT_FILE_ERROR;
 
   /* Check for existing session for `filepath'. */
-  silc_dlist_start(conn->internal->ftp_sessions);
-  while ((session = silc_dlist_get(conn->internal->ftp_sessions))
-	 != SILC_LIST_END) {
+  silc_dlist_start(client->internal->ftp_sessions);
+  while ((session = silc_dlist_get(client->internal->ftp_sessions))) {
     if (session->filepath && !strcmp(session->filepath, filepath) &&
 	session->client_entry == client_entry)
       return SILC_CLIENT_FILE_ALREADY_STARTED;
   }
 
-  /* See whether the file exists, and can be opened in generally speaking */
+  /* See whether the file exists and can be opened */
   fd = silc_file_open(filepath, O_RDONLY);
   if (fd < 0)
     return SILC_CLIENT_FILE_NO_SUCH_FILE;
@@ -857,7 +856,9 @@ silc_client_file_send(SilcClient client,
 
   /* Add new session */
   session = silc_calloc(1, sizeof(*session));
-  session->session_id = ++conn->internal->next_session_id;
+  if (!session)
+    return SILC_CLIENT_FILE_ERROR;
+  session->session_id = ++client->internal->next_session_id;
   session->client = client;
   session->conn = conn;
   session->server = TRUE;
@@ -881,34 +882,43 @@ silc_client_file_send(SilcClient client,
 
   session->filesize = silc_file_size(filepath);
 
-  /* Create the listener for incoming key exchange protocol. */
-  if (!do_not_bind) {
-    session->listener = -1;
-    if (local_ip)
-      session->hostname = strdup(local_ip);
-    else
-      silc_net_check_local_by_sock(conn->sock->sock, NULL,
-				   &session->hostname);
-    if (session->hostname)
-      session->listener = silc_net_create_server(local_port,
-						 session->hostname);
-    if (session->listener < 0) {
+  /* If local IP is provided, create listener for incoming key exchange */
+  if (params && (params->local_ip || params->bind_ip)) {
+    ke = silc_calloc(1, sizeof(*ke));
+    if (!ke) {
+      completion(client, conn, client_entry, SILC_KEY_AGREEMENT_NO_MEMORY,
+		 NULL, context);
+      return;
+    }
+
+    /* TCP listener */
+    session->listener =
+      silc_net_tcp_create_listener(params->bind_ip ?
+				   (const char **)&params->bind_ip :
+				   (const char **)&params->local_ip,
+				   1, params->local_port, FALSE, FALSE,
+				   conn->internal->schedule,
+				   silc_client_tcp_accept,
+				   client_entry);
+    if (!session->listener) {
       /* Could not create listener. Do the second best thing; send empty
 	 key agreement packet and let the remote client provide the point
 	 for the key exchange. */
       SILC_LOG_DEBUG(("Could not create listener"));
       silc_free(session->hostname);
-      session->listener = 0;
       session->hostname = NULL;
       session->port = 0;
     } else {
-      /* Listener ready */
       SILC_LOG_DEBUG(("Bound listener"));
-      session->port = silc_net_get_local_port(session->listener);
-      silc_schedule_task_add(client->schedule, session->listener,
-			     silc_client_ftp_process_key_agreement, session,
-			     0, 0, SILC_TASK_FD, SILC_TASK_PRI_NORMAL);
       session->bound = TRUE;
+      session->port = params->local_port;
+      if (!session->port) {
+	/* Get listener port */
+	SilcUInt16 *ports;
+	ports = silc_net_listener_get_port(ke->tcp_listener, NULL);
+	session->port = ports[0];
+	silc_free(ports);
+      }
     }
   }
 
@@ -1236,5 +1246,5 @@ SILC_FSM_STATE(silc_client_ftp)
 
  out:
   silc_packet_free(packet);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }

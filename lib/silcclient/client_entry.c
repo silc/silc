@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2006 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -730,9 +730,6 @@ SilcClientEntry silc_client_add_client(SilcClient client,
     }
   }
 
-  /* Format the nickname */
-  silc_client_nickname_format(client, conn, client_entry, FALSE);
-
   silc_mutex_lock(conn->internal->lock);
 
   /* Add client to cache, the normalized nickname is saved to cache */
@@ -750,6 +747,9 @@ SilcClientEntry silc_client_add_client(SilcClient client,
 
   silc_mutex_unlock(conn->internal->lock);
   silc_client_ref_client(client, conn, client_entry);
+
+  /* Format the nickname */
+  silc_client_nickname_format(client, conn, client_entry, FALSE);
 
   SILC_LOG_DEBUG(("Added %p", client_entry));
 
