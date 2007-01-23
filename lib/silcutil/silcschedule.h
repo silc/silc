@@ -440,97 +440,103 @@ void *silc_schedule_get_context(SilcSchedule schedule);
  *
  * SYNOPSIS
  *
- *    void silc_schedule_task_del(SilcSchedule schedule, SilcTask task);
+ *    SilcBool silc_schedule_task_del(SilcSchedule schedule, SilcTask task);
  *
  * DESCRIPTION
  *
  *    Deletes the `task' from the scheduler indicated by the `schedule'.
  *    After deleting the task it is guaranteed that the task callback
  *    will not be called. If the `task' is SILC_ALL_TASKS then all
- *    tasks is removed from the scheduler.
+ *    tasks is removed from the scheduler.  Returns always TRUE.
  *
  *    It is safe to call this function in any place. Tasks may be removed
  *    in task callbacks (including in the task's own task callback) and
  *    in multi-threaded environment in other threads as well.
  *
  ***/
-void silc_schedule_task_del(SilcSchedule schedule, SilcTask task);
+SilcBool silc_schedule_task_del(SilcSchedule schedule, SilcTask task);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_del_by_fd
  *
  * SYNOPSIS
  *
- *    void silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd);
+ *    SilcBool silc_schedule_task_del_by_fd(SilcSchedule schedule,
+ *                                          SilcUInt32 fd);
  *
  * DESCRIPTION
  *
- *    Deletes a task from the scheduler by the specified `fd'.
+ *    Deletes a task from the scheduler by the specified `fd'.  Returns
+ *    FALSE if such fd task does not exist.
  *
  *    It is safe to call this function in any place. Tasks may be removed
  *    in task callbacks (including in the task's own task callback) and
  *    in multi-threaded environment in other threads as well.
  *
  ***/
-void silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd);
+SilcBool silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_del_by_callback
  *
  * SYNOPSIS
  *
- *    void silc_schedule_task_del_by_callback(SilcSchedule schedule,
- *                                            SilcTaskCallback callback);
+ *    SilcBool silc_schedule_task_del_by_callback(SilcSchedule schedule,
+ *                                                SilcTaskCallback callback);
  *
  * DESCRIPTION
  *
  *    Deletes a task from the scheduler by the specified `callback' task
- *    callback function.
+ *    callback function.  Returns FALSE if such task with such callback
+ *    does not exist.
  *
  *    It is safe to call this function in any place. Tasks may be removed
  *    in task callbacks (including in the task's own task callback) and
  *    in multi-threaded environment in other threads as well.
  *
  ***/
-void silc_schedule_task_del_by_callback(SilcSchedule schedule,
-					SilcTaskCallback callback);
+SilcBool silc_schedule_task_del_by_callback(SilcSchedule schedule,
+					    SilcTaskCallback callback);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_del_by_context
  *
  * SYNOPSIS
  *
- *    void silc_schedule_task_del_by_context(SilcSchedule schedule,
- *                                           void *context);
+ *    SilcBool silc_schedule_task_del_by_context(SilcSchedule schedule,
+ *                                               void *context);
  *
  * DESCRIPTION
  *
- *    Deletes a task from the scheduler by the specified `context'.
+ *    Deletes a task from the scheduler by the specified `context'.  Returns
+ *    FALSE if such task with such context does not exist.
  *
  *    It is safe to call this function in any place. Tasks may be removed
  *    in task callbacks (including in the task's own task callback) and
  *    in multi-threaded environment in other threads as well.
  *
  ***/
-void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context);
+SilcBool silc_schedule_task_del_by_context(SilcSchedule schedule,
+					   void *context);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_del_by_all
  *
  * SYNOPSIS
  *
- *    void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
- *                                       SilcTaskCallback callback,
- *                                       void *context);
+ *    SilcBool silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
+ *                                           SilcTaskCallback callback,
+ *                                           void *context);
  *
  * DESCRIPTION
  *
  *    Deletes a task from the scheduler by the specified `fd', `callback'
- *    and `context'.
+ *    and `context'.  Returns FALSE if such task does not exist.
  *
  *    It is safe to call this function in any place. Tasks may be removed
  *    in task callbacks (including in the task's own task callback) and
  *    in multi-threaded environment in other threads as well.
  *
  ***/
-void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
-				   SilcTaskCallback callback, void *context);
+SilcBool silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
+				       SilcTaskCallback callback,
+				       void *context);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_set_listen_fd
  *

@@ -661,7 +661,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 
 /* Invalidates task */
 
-void silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
+SilcBool silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
 {
   if (silc_unlikely(task == SILC_ALL_TASKS)) {
     SilcHashTableList htl;
@@ -683,20 +683,23 @@ void silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
       task->valid = FALSE;
 
     SILC_SCHEDULE_UNLOCK(schedule);
-    return;
+    return TRUE;
   }
 
   SILC_LOG_DEBUG(("Unregistering task %p", task));
   SILC_SCHEDULE_LOCK(schedule);
   task->valid = FALSE;
   SILC_SCHEDULE_UNLOCK(schedule);
+
+  return TRUE;
 }
 
 /* Invalidate task by fd */
 
-void silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd)
+SilcBool silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd)
 {
   SilcTask task = NULL;
+  SilcBool ret = FALSE;
 
   SILC_LOG_DEBUG(("Unregister task by fd %d", fd));
 
@@ -708,23 +711,29 @@ void silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd)
 				       (void **)&task))) {
     SILC_LOG_DEBUG(("Deleting task %p", task));
     task->valid = FALSE;
+    ret = TRUE;
   }
 
   SILC_SCHEDULE_UNLOCK(schedule);
 
   /* If it is signal, remove it */
-  if (silc_unlikely(!task))
+  if (silc_unlikely(!task)) {
     schedule_ops.signal_unregister(schedule, schedule->internal, fd);
+    ret = TRUE;
+  }
+
+  return ret;
 }
 
 /* Invalidate task by task callback. */
 
-void silc_schedule_task_del_by_callback(SilcSchedule schedule,
-					SilcTaskCallback callback)
+SilcBool silc_schedule_task_del_by_callback(SilcSchedule schedule,
+					    SilcTaskCallback callback)
 {
   SilcTask task;
   SilcHashTableList htl;
   SilcList list;
+  SilcBool ret = FALSE;
 
   SILC_LOG_DEBUG(("Unregister task by callback"));
 
@@ -733,8 +742,10 @@ void silc_schedule_task_del_by_callback(SilcSchedule schedule,
   /* Delete from fd queue */
   silc_hash_table_list(schedule->fd_queue, &htl);
   while (silc_hash_table_get(&htl, NULL, (void **)&task)) {
-    if (task->callback == callback)
+    if (task->callback == callback) {
       task->valid = FALSE;
+      ret = TRUE;
+    }
   }
   silc_hash_table_list_reset(&htl);
 
@@ -742,20 +753,26 @@ void silc_schedule_task_del_by_callback(SilcSchedule schedule,
   list = schedule->timeout_queue;
   silc_list_start(list);
   while ((task = (SilcTask)silc_list_get(list))) {
-    if (task->callback == callback)
+    if (task->callback == callback) {
       task->valid = FALSE;
+      ret = TRUE;
+    }
   }
 
   SILC_SCHEDULE_UNLOCK(schedule);
+
+  return ret;
 }
 
 /* Invalidate task by context. */
 
-void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context)
+SilcBool silc_schedule_task_del_by_context(SilcSchedule schedule,
+					   void *context)
 {
   SilcTask task;
   SilcHashTableList htl;
   SilcList list;
+  SilcBool ret = FALSE;
 
   SILC_LOG_DEBUG(("Unregister task by context"));
 
@@ -764,8 +781,10 @@ void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context)
   /* Delete from fd queue */
   silc_hash_table_list(schedule->fd_queue, &htl);
   while (silc_hash_table_get(&htl, NULL, (void **)&task)) {
-    if (task->context == context)
+    if (task->context == context) {
       task->valid = FALSE;
+      ret = TRUE;
+    }
   }
   silc_hash_table_list_reset(&htl);
 
@@ -773,26 +792,32 @@ void silc_schedule_task_del_by_context(SilcSchedule schedule, void *context)
   list = schedule->timeout_queue;
   silc_list_start(list);
   while ((task = (SilcTask)silc_list_get(list))) {
-    if (task->context == context)
+    if (task->context == context) {
+      ret = TRUE;
       task->valid = FALSE;
+    }
   }
 
   SILC_SCHEDULE_UNLOCK(schedule);
+
+  return ret;
 }
 
 /* Invalidate task by all */
 
-void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
-				   SilcTaskCallback callback, void *context)
+SilcBool silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
+				       SilcTaskCallback callback,
+				       void *context)
 {
   SilcTask task;
   SilcList list;
+  SilcBool ret = FALSE;
 
   SILC_LOG_DEBUG(("Unregister task by fd, callback and context"));
 
   /* For fd task, callback and context is irrelevant as fd is unique */
   if (fd)
-    silc_schedule_task_del_by_fd(schedule, fd);
+    return silc_schedule_task_del_by_fd(schedule, fd);
 
   SILC_SCHEDULE_LOCK(schedule);
 
@@ -800,11 +825,15 @@ void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
   list = schedule->timeout_queue;
   silc_list_start(list);
   while ((task = (SilcTask)silc_list_get(list))) {
-    if (task->callback == callback && task->context == context)
+    if (task->callback == callback && task->context == context) {
       task->valid = FALSE;
+      ret = TRUE;
+    }
   }
 
   SILC_SCHEDULE_UNLOCK(schedule);
+
+  return TRUE;
 }
 
 /* Sets a file descriptor to be listened by scheduler. One can call this
