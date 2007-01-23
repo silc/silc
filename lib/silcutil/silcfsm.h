@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005, 2006 Pekka Riikonen
+  Copyright (C) 2005, 2006, 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -113,13 +113,12 @@ typedef struct SilcFSMObject SilcFSMThreadStruct;
  *
  * NAME
  *
- *    SILC_FSM_CONTINUE
+ *    #define SILC_FSM_CONTINUE ...
  *
  * DESCRIPTION
  *
- *    Moves to next state synchronously.  This macro is used in state
- *    functions to immediately move to next state.  The state function
- *    returns in this macro.  The macro has no arguments.
+ *    Moves to next state synchronously.  This type is used is returned
+ *    from state functions to immediately move to next state.
  *
  * EXAMPLE
  *
@@ -129,64 +128,63 @@ typedef struct SilcFSMObject SilcFSMThreadStruct;
  *
  *      // Move to next state now
  *      silc_fsm_next(fsm, silc_foo_next_state);
- *      SILC_FSM_CONTINUE;
+ *      return SILC_FSM_CONTINUE;
  *    }
  *
  ***/
 #if defined(SILC_DEBUG)
 #define SILC_FSM_CONTINUE \
-  return fsm->next_state(fsm, fsm->fsm_context, fsm->state_context);
+  fsm->next_state(fsm, fsm->fsm_context, fsm->state_context);
 #else
-#define SILC_FSM_CONTINUE return SILC_FSM_ST_CONTINUE;
+#define SILC_FSM_CONTINUE SILC_FSM_ST_CONTINUE;
 #endif /* SILC_DEBUG */
 
 /****d* silcutil/SilcFSMAPI/SILC_FSM_YIELD
  *
  * NAME
  *
- *    SILC_FSM_YIELD
+ *    #define SILC_FSM_YIELD ...
  *
  * DESCRIPTION
  *
  *    Moves to next state through the machine scheduler.  Other threads
  *    running in the machine will get running time with SILC_FSM_YIELD.
  *    When using real threads, using SILC_FSM_YIELD is usually unnecessary.
- *    The state function returns in this macro.  The macro has no arguments.
+ *    This type is returned in the state function.
  *
  ***/
-#define SILC_FSM_YIELD return SILC_FSM_ST_YIELD;
+#define SILC_FSM_YIELD SILC_FSM_ST_YIELD;
 
 /****d* silcutil/SilcFSMAPI/SILC_FSM_WAIT
  *
  * NAME
  *
- *    SILC_FSM_WAIT
+ *    #define SILC_FSM_WAIT ...
  *
  * DESCRIPTION
  *
  *    Suspends the machine or thread until it is awaken.  This is used
  *    when asynchronous call is made or timer is set, or something else
- *    that requires waiting.  The state function returns in this macro.
- *    The macro has no arguments.
+ *    that requires waiting.  This type is returned in the state function.
  *
  ***/
-#define SILC_FSM_WAIT return SILC_FSM_ST_WAIT
+#define SILC_FSM_WAIT SILC_FSM_ST_WAIT
 
 /****d* silcutil/SilcFSMAPI/SILC_FSM_FINISH
  *
  * NAME
  *
- *    SILC_FSM_FINISH
+ *    #define SILC_FSM_FINISH ...
  *
  * DESCRIPTION
  *
  *    Finishes the machine or thread and calls its destructor, if defined.
  *    If the machine is finished when it has running threads the machine
  *    will fatally fail.  User must always finish the threads before
- *    finishing the machine.  The macro has no arguments.
+ *    finishing the machine.  This type is returned in the state function.
  *
  ***/
-#define SILC_FSM_FINISH return SILC_FSM_ST_FINISH
+#define SILC_FSM_FINISH SILC_FSM_ST_FINISH
 
 /****f* silcutil/SilcFSMAPI/SilcFSMDestructor
  *
@@ -199,10 +197,10 @@ typedef struct SilcFSMObject SilcFSMThreadStruct;
  *
  *    The destructor callback that was set in silc_fsm_alloc or in
  *    silc_fsm_init function.  It will be called when a state function
- *    calls SILC_FSM_FINISH.  This function will be called through
+ *    returns SILC_FSM_FINISH.  This function will be called through
  *    the scheduler; it will not be called immediately after the state
- *    function calls SILC_FSM_FINISH, but will be called later.  The `fsm'
- *    may be freed in this function.
+ *    function returns SILC_FSM_FINISH, but will be called later.  The
+ *    `fsm' can be freed in this function.
  *
  ***/
 typedef void (*SilcFSMDestructor)(SilcFSM fsm, void *fsm_context,
@@ -220,9 +218,9 @@ typedef void (*SilcFSMDestructor)(SilcFSM fsm, void *fsm_context,
  *
  *    The destructor callback that was set in silc_fsm_thread_alloc or in
  *    silc_fsm_thread_init function.  It will be called when a state function
- *    calls SILC_FSM_FINISH.  This function will be called through the
+ *    returns SILC_FSM_FINISH.  This function will be called through the
  *    scheduler; it will not be called immediately after the state function
- *    calls SILC_FSM_FINISH, but will be called later.  The `thread' may
+ *    returns SILC_FSM_FINISH, but will be called later.  The `thread' can
  *    be freed in this function.
  *
  * NOTES
@@ -296,8 +294,8 @@ do {						\
   assert(!silc_fsm_set_call(fsm, TRUE));	\
   function;					\
   if (!silc_fsm_set_call(fsm, FALSE))		\
-    SILC_FSM_CONTINUE;				\
-  SILC_FSM_WAIT;				\
+    return SILC_FSM_CONTINUE;			\
+  return SILC_FSM_WAIT;				\
 } while(0)
 
 /****d* silcutil/SilcFSMAPI/SILC_FSM_CALL_CONTINUE
@@ -374,7 +372,7 @@ do {						\
  *
  *    This macro is the only way to safely make sure that the thread has
  *    terminated by the time FSM continues from the waiting state.  Using
- *    FSM events to signal from the thread before SILC_FSM_FINISH is called
+ *    FSM events to signal from the thread before SILC_FSM_FINISH is returned
  *    works with normal FSM threads, but especially with real system threads
  *    it does not guarantee that the FSM won't continue before the thread has
  *    actually terminated.  Usually this is not a problem, but it can be a
@@ -385,7 +383,7 @@ do {						\
 #define SILC_FSM_THREAD_WAIT(thread)		\
 do {						\
   silc_fsm_thread_wait(fsm, thread);		\
-  SILC_FSM_WAIT;				\
+  return SILC_FSM_WAIT;				\
 } while(0)
 
 /****f* silcutil/SilcFSMAPI/silc_fsm_alloc
@@ -636,8 +634,8 @@ void silc_fsm_start_sync(void *fsm, SilcFSMStateCallback start_state);
  * DESCRIPTION
  *
  *    Set the next state to be executed.  If the state function that
- *    call this function calls SILC_FSM_CONTINUE, the `next_state'
- *    will be executed immediately.  If it calls SILC_FSM_YIELD it
+ *    call this function returns SILC_FSM_CONTINUE, the `next_state'
+ *    will be executed immediately.  If it returns SILC_FSM_YIELD it
  *    yields the thread and the `next_state' will be run after other
  *    threads have run first.  This function must always be used to set
  *    the next state in the machine or thread.  This function is used
@@ -647,7 +645,7 @@ void silc_fsm_start_sync(void *fsm, SilcFSMStateCallback start_state);
  *
  *    // Move to next state
  *    silc_fsm_next(fsm, next_state);
- *    SILC_FSM_CONTINUE;
+ *    return SILC_FSM_CONTINUE;
  *
  ***/
 void silc_fsm_next(void *fsm, SilcFSMStateCallback next_state);
@@ -662,7 +660,7 @@ void silc_fsm_next(void *fsm, SilcFSMStateCallback next_state);
  * DESCRIPTION
  *
  *    Set the next state to be executed later, at the specified time.
- *    The SILC_FSM_WAIT must be called in the state function if this
+ *    The SILC_FSM_WAIT must be returned in the state function if this
  *    function is called.  If any other state is returned machine operation
  *    is undefined.  The machine or thread will move to `next_state' after
  *    the specified timeout.  This function is used with both SilcFSM and
@@ -671,7 +669,7 @@ void silc_fsm_next(void *fsm, SilcFSMStateCallback next_state);
  * NOTES
  *
  *    If both `seconds' and `useconds' are 0, the effect is same as calling
- *    silc_fsm_next function, and SILC_FSM_CONTINUE must be called.
+ *    silc_fsm_next function, and SILC_FSM_CONTINUE must be returned.
  *
  *    If silc_fsm_continue or silc_fsm_continue_sync is called while the
  *    machine or thread is in SILC_FSM_WAIT state the timeout is automatically
@@ -681,7 +679,7 @@ void silc_fsm_next(void *fsm, SilcFSMStateCallback next_state);
  *
  *    // Move to next state after 10 seconds
  *    silc_fsm_next_later(fsm, next_state, 10, 0);
- *    SILC_FSM_WAIT;
+ *    return SILC_FSM_WAIT;
  *
  ***/
 void silc_fsm_next_later(void *fsm, SilcFSMStateCallback next_state,
@@ -733,7 +731,7 @@ void silc_fsm_continue_sync(void *fsm);
  *
  *    Finishes the `fsm'.  This function may be used in case the FSM
  *    needs to be finished outside FSM states.  Usually FSM is finished
- *    by calling SILC_FSM_FINISH from the state, but if this is not
+ *    by returning SILC_FSM_FINISH from the state, but if this is not
  *    possible this function may be called.  This function is used with
  *    both SilcFSM and SilcFSMThread contexts.
  *
@@ -980,7 +978,7 @@ void silc_fsm_event_free(SilcFSMEvent event);
 #define SILC_FSM_EVENT_WAIT(event)		\
 do {						\
   if (silc_fsm_event_wait(event, fsm) == 0)	\
-    SILC_FSM_WAIT;				\
+    return SILC_FSM_WAIT;			\
 } while(0)
 
 /****d* silcutil/SilcFSMAPI/SILC_FSM_EVENT_TIMEDWAIT
@@ -1025,7 +1023,7 @@ do {						\
 #define SILC_FSM_EVENT_TIMEDWAIT(event, seconds, useconds, ret_to)	\
 do {									\
   if (silc_fsm_event_timedwait(event, fsm, seconds, useconds, ret_to) == 0) \
-    SILC_FSM_WAIT;							\
+    return SILC_FSM_WAIT;						\
 } while(0)
 
 /****f* silcutil/SilcFSMAPI/SILC_FSM_EVENT_SIGNAL

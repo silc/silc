@@ -69,8 +69,8 @@ SilcBool silc_fsm_init(SilcFSM fsm,
   fsm->thread = FALSE;
   fsm->async_call = FALSE;
   fsm->started = FALSE;
-  fsm->u.m.threads = 0;
   fsm->u.m.lock = NULL;
+  silc_atomic_init32(&fsm->u.m.threads, 0);
 
   return TRUE;
 }
@@ -120,7 +120,7 @@ void silc_fsm_thread_init(SilcFSMThread thread,
   thread->u.t.fsm = fsm;
 
   /* Add to machine */
-  fsm->u.m.threads++;
+  silc_atomic_add_int32(&fsm->u.m.threads, 1);
 
   /* Allocate lock for the machine if using real threads. */
   if (real_thread && !fsm->u.m.lock)
@@ -141,8 +141,8 @@ SILC_TASK_CALLBACK(silc_fsm_free_final)
   SILC_ASSERT(f->finished);
 
   /* Machine must not have active threads */
-  if (!f->thread && f->u.m.threads)
-    SILC_ASSERT(f->u.m.threads == 0);
+  if (!f->thread && silc_atomic_get_int32(&f->u.m.threads))
+    SILC_ASSERT(silc_atomic_get_int32(&f->u.m.threads) == 0);
 #endif /* SILC_DEBUG */
 
   if (!f->thread && f->u.m.lock)
@@ -213,6 +213,11 @@ void silc_fsm_start(void *fsm, SilcFSMStateCallback start_state)
   /* Normal FSM operation */
   if (!silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f, 0, 0))
     silc_fsm_run(f->schedule, silc_schedule_get_context(f->schedule), 0, 0, f);
+
+  /* Wakeup scheduler in case we are starting this thread from another
+     real thread. */
+  if (f->thread)
+    silc_schedule_wakeup(f->schedule);
 }
 
 /* Start FSM in the specified state synchronously */
@@ -296,8 +301,8 @@ void silc_fsm_finish(void *fsm)
   SILC_ASSERT(!f->finished);
 
   /* Machine must not have active threads */
-  if (!f->thread && f->u.m.threads)
-    assert(f->u.m.threads == 0);
+  if (!f->thread && silc_atomic_get_int32(&f->u.m.threads))
+    assert(silc_atomic_get_int32(&f->u.m.threads) == 0);
 
   f->started = FALSE;
   f->finished = TRUE;
@@ -454,7 +459,7 @@ SILC_TASK_CALLBACK(silc_fsm_finish_fsm)
     }
 
     /* Remove the thread from machine */
-    fsm->u.t.fsm->u.m.threads--;
+    silc_atomic_sub_int32(&fsm->u.t.fsm->u.m.threads, 1);
 
     /* Call the destructor callback only if the underlaying machine is
        still valid. */
@@ -466,6 +471,7 @@ SILC_TASK_CALLBACK(silc_fsm_finish_fsm)
       silc_mutex_free(fsm->u.m.lock);
       fsm->u.m.lock = NULL;
     }
+    silc_atomic_uninit32(&fsm->u.m.threads);
 
     /* Call the destructor callback. */
     if (fsm->destructor)

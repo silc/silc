@@ -57,7 +57,7 @@ struct SilcFSMObject {
   union {
     /* Machine */
     struct {
-      SilcUInt32 threads;		/* Number of threads */
+      SilcAtomic32 threads;		/* Number of threads */
       SilcMutex lock;		        /* Lock, valid if using real threads */
     } m;
 
