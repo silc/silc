@@ -37,7 +37,7 @@ do {									\
 				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS,	\
 				     0);				\
     silc_server_command_free(cmd);					\
-    SILC_FSM_FINISH;						\
+    return SILC_FSM_FINISH;						\
   }									\
   if (_argc > max) {							\
     SILC_LOG_DEBUG(("Too many parameters in command"));			\
@@ -46,7 +46,7 @@ do {									\
 				     SILC_STATUS_ERR_TOO_MANY_PARAMS,	\
 				     0);				\
     silc_server_command_free(cmd);					\
-    SILC_FSM_FINISH;						\
+    return SILC_FSM_FINISH;						\
   }									\
 } while(0)
 
@@ -325,7 +325,7 @@ SILC_FSM_STATE(silc_server_st_packet_command)
   cmd = silc_server_command_alloc(thread);
   if (!cmd) {
     silc_packet_free(packet);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   cmd->packet = packet;
@@ -336,7 +336,7 @@ SILC_FSM_STATE(silc_server_st_packet_command)
   if (!cmd->payload) {
     SILC_LOG_ERROR(("Bad command payload"));
     silc_server_command_free(cmd);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* If client executes commands more frequently than once in 2 seconds,
@@ -506,14 +506,14 @@ SILC_FSM_STATE(silc_server_st_packet_command)
   default:
     SILC_LOG_DEBUG(("Unknown command %d", silc_command_get(cmd->payload)));
     silc_server_command_free(cmd);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
     break;
   }
 
   /* Statistics */
   thread->server->stat.commands_received++;
 
-  return timeout ? SILC_FSM_WAIT : SILC_FSM_CONTINUE;
+  return timeout ? SILC_FSM_WAIT : return SILC_FSM_CONTINUE;
 }
 
 /********************************* WHOIS ************************************/
@@ -528,7 +528,7 @@ SILC_FSM_STATE(silc_server_st_command_whois)
   /** WHOIS query */
   silc_fsm_next(fsm, silc_server_st_query_whois);
 
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 
@@ -544,7 +544,7 @@ SILC_FSM_STATE(silc_server_st_command_whowas)
   /** WHOWAS query */
   silc_fsm_next(fsm, silc_server_st_query_whowas);
 
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 
@@ -560,7 +560,7 @@ SILC_FSM_STATE(silc_server_st_command_identify)
   /** IDENTIFY query */
   silc_fsm_next(fsm, silc_server_st_query_identify);
 
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 
@@ -664,7 +664,7 @@ SILC_FSM_STATE(silc_server_st_command_nick)
 
  out:
   silc_server_command_free(cmd);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -676,7 +676,7 @@ SILC_FSM_STATE(silc_server_st_command_list)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -688,7 +688,7 @@ SILC_FSM_STATE(silc_server_st_command_topic)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -700,7 +700,7 @@ SILC_FSM_STATE(silc_server_st_command_invite)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -712,7 +712,7 @@ SILC_FSM_STATE(silc_server_st_command_quit)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -724,7 +724,7 @@ SILC_FSM_STATE(silc_server_st_command_kill)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -732,7 +732,7 @@ SILC_FSM_STATE(silc_server_st_command_kill)
 
 SILC_FSM_STATE(silc_server_st_command_info)
 {
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -744,7 +744,7 @@ SILC_FSM_STATE(silc_server_st_command_stats)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -789,7 +789,7 @@ SILC_FSM_STATE(silc_server_st_command_ping)
 
  out:
   silc_server_command_free(cmd);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -801,7 +801,7 @@ SILC_FSM_STATE(silc_server_st_command_oper)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -813,7 +813,7 @@ SILC_FSM_STATE(silc_server_st_command_join)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -825,7 +825,7 @@ SILC_FSM_STATE(silc_server_st_command_motd)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -837,7 +837,7 @@ SILC_FSM_STATE(silc_server_st_command_umode)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -849,7 +849,7 @@ SILC_FSM_STATE(silc_server_st_command_cmode)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -861,7 +861,7 @@ SILC_FSM_STATE(silc_server_st_command_cumode)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -873,7 +873,7 @@ SILC_FSM_STATE(silc_server_st_command_kick)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -885,7 +885,7 @@ SILC_FSM_STATE(silc_server_st_command_ban)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -897,7 +897,7 @@ SILC_FSM_STATE(silc_server_st_command_detach)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -909,7 +909,7 @@ SILC_FSM_STATE(silc_server_st_command_watch)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -921,7 +921,7 @@ SILC_FSM_STATE(silc_server_st_command_silcoper)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -933,7 +933,7 @@ SILC_FSM_STATE(silc_server_st_command_leave)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -945,7 +945,7 @@ SILC_FSM_STATE(silc_server_st_command_users)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -957,7 +957,7 @@ SILC_FSM_STATE(silc_server_st_command_getkey)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 
@@ -969,5 +969,5 @@ SILC_FSM_STATE(silc_server_st_command_service)
   SilcServerCommand cmd = state_context;
   SilcArgumentPayload args = silc_command_get_args(cmd->payload);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }

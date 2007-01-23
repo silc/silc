@@ -27,5 +27,5 @@ SILC_FSM_STATE(silc_server_st_packet_notify)
   SilcPacket packet = state_context;
   SilcEntryData data = silc_packet_get_context(packet->stream);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }

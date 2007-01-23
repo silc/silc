@@ -90,7 +90,7 @@ SILC_FSM_STATE(silc_server_st_query_whois)
   query = silc_calloc(1, sizeof(*query));
   if (!query) {
     silc_server_command_free(cmd);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   query->querycmd = SILC_COMMAND_WHOIS;
@@ -109,12 +109,12 @@ SILC_FSM_STATE(silc_server_st_query_whois)
 	silc_argument_get_arg_type(args, 3, NULL)))) {
     /** Send query to router */
     silc_fsm_next(fsm, silc_server_st_query_send_router);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /** Parse WHOIS query */
   silc_fsm_next(fsm, silc_server_st_query_parse);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 
@@ -130,7 +130,7 @@ SILC_FSM_STATE(silc_server_st_query_whowas)
   query = silc_calloc(1, sizeof(*query));
   if (!query) {
     silc_server_command_free(cmd);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   query->querycmd = SILC_COMMAND_WHOWAS;
@@ -143,12 +143,12 @@ SILC_FSM_STATE(silc_server_st_query_whowas)
       cmd->packet->stream != SILC_PRIMARY_ROUTE(server)) {
     /** Send query to router */
     silc_fsm_next(fsm, silc_server_st_query_send_router);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /** Parse WHOWAS query */
   silc_fsm_next(fsm, silc_server_st_query_parse);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 
@@ -165,7 +165,7 @@ SILC_FSM_STATE(silc_server_st_query_identify)
   query = silc_calloc(1, sizeof(*query));
   if (!query) {
     silc_server_command_free(cmd);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   query->querycmd = SILC_COMMAND_IDENTIFY;
@@ -180,12 +180,12 @@ SILC_FSM_STATE(silc_server_st_query_identify)
       !silc_argument_get_arg_type(args, 5, NULL)) {
     /** Send query to router */
     silc_fsm_next(fsm, silc_server_st_query_send_router);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /** Parse IDENTIFY query */
   silc_fsm_next(fsm, silc_server_st_query_parse);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 
@@ -216,7 +216,7 @@ SILC_FSM_STATE(silc_server_st_query_send_router)
     silc_server_query_send_error(server, query,
 				 SILC_STATUS_ERR_RESOURCE_LIMIT, 0);
     silc_fsm_next(fsm, silc_server_st_query_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   silc_command_set_ident(query->cmd->payload, old_ident);
@@ -232,13 +232,13 @@ SILC_FSM_STATE(silc_server_st_query_send_router)
     silc_server_query_send_error(server, query,
 				 SILC_STATUS_ERR_RESOURCE_LIMIT, 0);
     silc_fsm_next(fsm, silc_server_st_query_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /** Wait router reply */
   query->resolved = TRUE;
   silc_fsm_next(fsm, silc_server_st_query_router_reply)
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /* Wait for router reply and process the reply when it arrives. */
@@ -259,7 +259,7 @@ SILC_FSM_STATE(silc_server_st_query_router_reply)
     silc_server_command_pending_free(thread, pending);
     silc_server_query_send_error(server, query, SILC_STATUS_ERR_TIMEDOUT, 0);
     silc_fsm_next(fsm, silc_server_st_query_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Check if the query failed */
@@ -285,14 +285,14 @@ SILC_FSM_STATE(silc_server_st_query_router_reply)
     /** Query error received */
     silc_server_command_pending_free(thread, pending);
     silc_fsm_next(fsm, silc_server_st_query_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   silc_server_command_pending_free(thread, pending);
 
   /** Parse query command */
   silc_fsm_next(fsm, silc_server_st_query_parse);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /***************************** Query processing *****************************/
@@ -335,7 +335,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
 
 	/** Not enough arguments */
 	silc_fsm_next(fsm, silc_server_st_query_error);
-	SILC_FSM_CONTINUE;
+	return SILC_FSM_CONTINUE;
       }
 
       /* Get the nickname@server string and parse it */
@@ -346,7 +346,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
 	silc_fsm_next(fsm, silc_server_st_query_error);
-	SILC_FSM_CONTINUE;
+	return SILC_FSM_CONTINUE;
       }
 
       /* Check nickname */
@@ -358,7 +358,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
 	  silc_server_query_send_error(server, query,
 				       SILC_STATUS_ERR_BAD_NICKNAME, 0);
 	  silc_fsm_next(fsm, silc_server_st_query_error);
-	  SILC_FSM_CONTINUE;
+	  return SILC_FSM_CONTINUE;
 	}
 	/* XXX why free nickname */
 	silc_free(query->nickname);
@@ -373,7 +373,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_RESOURCE_LIMIT, 0);
 	silc_fsm_next(fsm, silc_server_st_query_error);
-	SILC_FSM_CONTINUE;
+	return SILC_FSM_CONTINUE;
       }
 
       for (i = 0; i < argc - 3; i++) {
@@ -397,7 +397,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
 	  query->ids = NULL;
 	  query->ids_count = 0;
 	  silc_fsm_next(fsm, silc_server_st_query_send_router);
-	  SILC_FSM_CONTINUE;
+	  return SILC_FSM_CONTINUE;
 	}
 
 	query->ids[query->ids_count] = id;
@@ -419,7 +419,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
       silc_server_query_send_error(server, query,
 				   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
       silc_fsm_next(fsm, silc_server_st_query_error);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
 
     /* Get the nickname@server string and parse it */
@@ -429,7 +429,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
       silc_server_query_send_error(server, query,
 				   SILC_STATUS_ERR_BAD_NICKNAME, 0);
       silc_fsm_next(fsm, silc_server_st_query_error);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
 
     /* Check nickname */
@@ -440,7 +440,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
       silc_server_query_send_error(server, query,
 				   SILC_STATUS_ERR_BAD_NICKNAME, 0);
       silc_fsm_next(fsm, silc_server_st_query_error);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
     /* XXX why free nickname */
     silc_free(query->nickname);
@@ -475,7 +475,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
 	  silc_server_query_send_error(server, query,
 				       SILC_STATUS_ERR_BAD_NICKNAME, 0);
 	  silc_fsm_next(fsm, silc_server_st_query_error);
-	  SILC_FSM_CONTINUE;
+	  return SILC_FSM_CONTINUE;
 	}
 	/* XXX why free nickname */
 	silc_free(query->nickname);
@@ -493,7 +493,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
 	  silc_server_query_send_error(server, query,
 				       SILC_STATUS_ERR_BAD_SERVER, 0);
 	  silc_fsm_next(fsm, silc_server_st_query_error);
-	  SILC_FSM_CONTINUE;
+	  return SILC_FSM_CONTINUE;
 	}
 	query->server_name = tmp;
       }
@@ -509,7 +509,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
 	  silc_server_query_send_error(server, query,
 				       SILC_STATUS_ERR_BAD_CHANNEL, 0);
 	  silc_fsm_next(fsm, silc_server_st_query_error);
-	  SILC_FSM_CONTINUE;
+	  return SILC_FSM_CONTINUE;
 	}
 	query->channel_name = tmp;
       }
@@ -519,7 +519,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
 	silc_fsm_next(fsm, silc_server_st_query_error);
-	SILC_FSM_CONTINUE;
+	return SILC_FSM_CONTINUE;
       }
 
     } else {
@@ -547,7 +547,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
 	      query->ids = NULL;
 	      query->ids_count = 0;
 	      silc_fsm_next(fsm, silc_server_st_query_send_router);
-	      SILC_FSM_CONTINUE;
+	      return SILC_FSM_CONTINUE;
 	    }
 	  } else {
 	    /* For now all other ID's except Client ID's are explicitly
@@ -558,7 +558,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
 	    query->ids = NULL;
 	    query->ids_count = 0;
 	    silc_fsm_next(fsm, silc_server_st_query_send_router);
-	    SILC_FSM_CONTINUE;
+	    return SILC_FSM_CONTINUE;
 	  }
 	}
 
@@ -576,7 +576,7 @@ SILC_FSM_STATE(silc_server_st_query_parse)
 
   /** Find entries for query */
   silc_fsm_next(fsm, silc_server_st_query_find);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /* Find the entries according to the query */
@@ -675,12 +675,12 @@ SILC_FSM_STATE(silc_server_st_query_find)
   if (query->attrs) {
     /** Check user attributes */
     silc_fsm_next(fsm, silc_server_st_query_check_attrs);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /** Process found entries */
   silc_fsm_next(fsm, silc_server_st_query_process);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /* Check user attributes to narrow down clients in WHOIS query */
@@ -690,7 +690,7 @@ SILC_FSM_STATE(silc_server_st_query_check_attrs)
 
   /** Proecss found entries */
   silc_fsm_next(fsm, silc_server_st_query_process);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /* Process found entries */
@@ -723,7 +723,7 @@ SILC_FSM_STATE(silc_server_st_query_process)
       !silc_list_count(query->servers)) {
     /** Nothing found, send errors */
     silc_fsm_next(fsm, silc_server_st_query_reply);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
 #if 0
@@ -852,12 +852,12 @@ SILC_FSM_STATE(silc_server_st_query_process)
   if (silc_list_count(query->resolve)) {
     /** Resolve entries */
     silc_fsm_next(fsm, silc_server_st_query_resolve);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /** Send reply to query */
   silc_fsm_next(fsm, silc_server_st_query_reply);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /* Resolve incomplete client entries.  Other types of entries need not
@@ -991,7 +991,7 @@ SILC_FSM_STATE(silc_server_st_query_resolve)
 	  silc_server_query_send_error(server, query,
 				       SILC_STATUS_ERR_RESOURCE_LIMIT, 0);
 	  silc_fsm_next(fsm, silc_server_st_query_error);
-	  SILC_FSM_CONTINUE;
+	  return SILC_FSM_CONTINUE;
 	}
 
 	silc_packet_send(res->stream, SILC_PACKET_COMMAND, 0,
@@ -1020,7 +1020,7 @@ SILC_FSM_STATE(silc_server_st_query_resolve)
 
   /** Wait all resolvings */
   silc_fsm_next(fsm, silc_server_st_query_resolved);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 /* Wait for resolving command reply */
@@ -1044,7 +1044,7 @@ SILC_FSM_STATE(silc_server_st_query_wait_resolve)
   /* Signal main thread that reply was received */
   SILC_FSM_EVENT_SIGNAL(&query->wait_resolve);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /* Wait here that all resolvings has been received */
@@ -1059,7 +1059,7 @@ SILC_FSM_STATE(silc_server_st_query_resolved)
   /* Wait here until all resolvings has arrived */
   SILC_FSM_EVENT_WAIT(&query->wait_resolve);
   if (silc_list_count(query->resolvings) > 0)
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
 
 }
 

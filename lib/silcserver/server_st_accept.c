@@ -169,7 +169,7 @@ SILC_FSM_STATE(silc_server_st_accept_connection)
     /** Cannot create packet stream */
     ac->error = SILC_STATUS_ERR_RESOURCE_LIMIT;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   silc_packet_set_context(ac->packet_stream, ac);
@@ -180,7 +180,7 @@ SILC_FSM_STATE(silc_server_st_accept_connection)
     /** Out of memory */
     ac->error = SILC_STATUS_ERR_RESOURCE_LIMIT;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (!silc_socket_stream_get_info(ac->stream, NULL, &ac->hostname,
@@ -188,7 +188,7 @@ SILC_FSM_STATE(silc_server_st_accept_connection)
     /** Bad socket stream */
     ac->error = SILC_STATUS_ERR_RESOURCE_LIMIT;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Check whether this connection is denied to connect to us. */
@@ -198,7 +198,7 @@ SILC_FSM_STATE(silc_server_st_accept_connection)
     SILC_LOG_INFO(("Connection %s (%s) is denied", ac->hostname, ac->ip));
     ac->error = SILC_STATUS_ERR_BANNED_FROM_SERVER;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   server->params->refcnt++;
@@ -217,7 +217,7 @@ SILC_FSM_STATE(silc_server_st_accept_connection)
 		   ac->ip));
     ac->error = SILC_STATUS_ERR_BANNED_FROM_SERVER;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   SILC_LOG_INFO(("Incoming connection %s (%s)", ac->hostname, ac->ip));
@@ -241,7 +241,7 @@ SILC_FSM_STATE(silc_server_st_accept_connection)
     /** Out of memory */
     ac->error = SILC_STATUS_ERR_RESOURCE_LIMIT;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
   silc_ske_set_callbacks(ac->data.ske, silc_server_accept_verify_key,
 			 silc_server_accept_completed, ac);
@@ -265,7 +265,7 @@ SILC_FSM_STATE(silc_server_st_accept_set_keys)
 		    silc_ske_map_status(ac->status), ac->hostname, ac->ip));
     ac->error = SILC_STATUS_ERR_KEY_EXCHANGE_FAILED;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   SILC_LOG_DEBUG(("Setting keys into use"));
@@ -277,7 +277,7 @@ SILC_FSM_STATE(silc_server_st_accept_set_keys)
     /** Error setting keys */
     ac->error = SILC_STATUS_ERR_KEY_EXCHANGE_FAILED;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
   silc_packet_set_ciphers(ac->packet_stream, send_key, receive_key);
   silc_packet_set_hmacs(ac->packet_stream, hmac_send, hmac_receive);
@@ -291,7 +291,7 @@ SILC_FSM_STATE(silc_server_st_accept_set_keys)
     /** Error allocating auth protocol */
     ac->error = SILC_STATUS_ERR_RESOURCE_LIMIT;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /** Waiting authentication completion */
@@ -321,7 +321,7 @@ SILC_FSM_STATE(silc_server_st_accept_authenticated)
 		   SILC_CONNTYPE_STRING(ac->data.type)));
     ac->error = SILC_STATUS_ERR_AUTH_FAILED;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   SILC_LOG_DEBUG(("Checking whether connection is allowed"));
@@ -372,7 +372,7 @@ SILC_FSM_STATE(silc_server_st_accept_authenticated)
     ac->error = SILC_STATUS_ERR_BAD_VERSION;
     ac->error_string = strdup("You support too old protocol version");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Match software version */
@@ -384,7 +384,7 @@ SILC_FSM_STATE(silc_server_st_accept_authenticated)
     ac->error = SILC_STATUS_ERR_BAD_VERSION;
     ac->error_string = strdup("You support too old software version");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Regex match vendor version */
@@ -396,7 +396,7 @@ SILC_FSM_STATE(silc_server_st_accept_authenticated)
     ac->error = SILC_STATUS_ERR_BAD_VERSION;
     ac->error_string = strdup("Your software is not supported");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
   silc_free(r_vendor_version);
 
@@ -413,7 +413,7 @@ SILC_FSM_STATE(silc_server_st_accept_authenticated)
     ac->error = SILC_STATUS_ERR_RESOURCE_LIMIT;
     ac->error_string = strdup("Server is full, try again later");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* XXX */
@@ -425,7 +425,7 @@ SILC_FSM_STATE(silc_server_st_accept_authenticated)
     ac->error = SILC_STATUS_ERR_RESOURCE_LIMIT;
     ac->error_string = strdup("Too many connections from your host");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* If we are waiting backup router connection, do not accept any other
@@ -438,7 +438,7 @@ SILC_FSM_STATE(silc_server_st_accept_authenticated)
     ac->error_string = strdup("We do not have connection to backup router "
 			      "established, try later");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* If we are backup router and this is incoming server connection
@@ -454,10 +454,10 @@ SILC_FSM_STATE(silc_server_st_accept_authenticated)
     ac->error_string = strdup("We do not have connection to primary router "
 			      "established, try later");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(silc_server_st_accept_client)
@@ -484,7 +484,7 @@ SILC_FSM_STATE(silc_server_st_accept_client)
 		   ac->hostname, ac->ip));
     ac->error = SILC_STATUS_ERR_NOT_REGISTERED;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   SILC_LOG_DEBUG(("Connection %s (%s) is client", ac->hostname, ac->ip));
@@ -494,7 +494,7 @@ SILC_FSM_STATE(silc_server_st_accept_client)
   if (ac->register_packet->type == SILC_PACKET_RESUME_CLIENT) {
     /** Resume client connection */
     silc_fsm_next(fsm, silc_server_st_accept_resume_client);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Get connection parameters */
@@ -530,7 +530,7 @@ SILC_FSM_STATE(silc_server_st_accept_client)
     ac->error = SILC_STATUS_ERR_INCOMPLETE_INFORMATION;
     ac->error_string = strdup("Bad NEW_CLIENT packet");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (!username) {
@@ -540,7 +540,7 @@ SILC_FSM_STATE(silc_server_st_accept_client)
     ac->error = SILC_STATUS_ERR_INCOMPLETE_INFORMATION;
     ac->error_string = strdup("You did not send username");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (username_len > 128) {
@@ -566,7 +566,7 @@ SILC_FSM_STATE(silc_server_st_accept_client)
       ac->error = SILC_STATUS_ERR_INCOMPLETE_INFORMATION;
       ac->error_string = strdup("You sent wrong hostname string");
       silc_fsm_next(fsm, silc_server_st_accept_error);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
     silc_snprintf(n, sizeof(n), "%s", u);
     silc_snprintf(u, sizeof(u) - 1, "%s@%s", n, h);
@@ -586,7 +586,7 @@ SILC_FSM_STATE(silc_server_st_accept_client)
       /** Out of memory */
       ac->error = SILC_STATUS_ERR_RESOURCE_LIMIT;
       silc_fsm_next(fsm, silc_server_st_accept_error);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
 
     username_len = strlen(scramble);
@@ -610,7 +610,7 @@ SILC_FSM_STATE(silc_server_st_accept_client)
     ac->error = SILC_STATUS_ERR_BAD_NICKNAME;
     ac->error_string = strdup("Bad nickname");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Create client entry */
@@ -621,7 +621,7 @@ SILC_FSM_STATE(silc_server_st_accept_client)
     SILC_LOG_ERROR(("Could not create new client entry"));
     ac->error = SILC_STATUS_ERR_RESOURCE_LIMIT;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Save entry data */
@@ -636,7 +636,7 @@ SILC_FSM_STATE(silc_server_st_accept_client)
     /** Out of memory */
     ac->error = SILC_STATUS_ERR_RESOURCE_LIMIT;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Send the new client ID to the client. */
@@ -671,7 +671,7 @@ SILC_FSM_STATE(silc_server_st_accept_client)
 
   /** Connection accepted */
   silc_fsm_next(fsm, silc_server_st_accept_finish);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(silc_server_st_accept_resume_client)
@@ -679,7 +679,7 @@ SILC_FSM_STATE(silc_server_st_accept_resume_client)
 
   /** Connection accepted */
   silc_fsm_next(fsm, silc_server_st_accept_finish);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(silc_server_st_accept_server)
@@ -712,7 +712,7 @@ SILC_FSM_STATE(silc_server_st_accept_server)
 		   ac->hostname, ac->ip));
     ac->error = SILC_STATUS_ERR_NOT_REGISTERED;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Get connection parameters */
@@ -780,7 +780,7 @@ SILC_FSM_STATE(silc_server_st_accept_server)
     ac->error = SILC_STATUS_ERR_INCOMPLETE_INFORMATION;
     ac->error_string = strdup("Bad NEW_SERVER packet");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (name_len > 256) {
@@ -798,7 +798,7 @@ SILC_FSM_STATE(silc_server_st_accept_server)
     ac->error = SILC_STATUS_ERR_INCOMPLETE_INFORMATION;
     ac->error_string = strdup("Bad Server ID");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Check for valid server ID */
@@ -811,7 +811,7 @@ SILC_FSM_STATE(silc_server_st_accept_server)
     ac->error_string = strdup("Your Server ID is not based on your real "
 			      "IP address.  Check your configuration.");
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Create server entry */
@@ -825,7 +825,7 @@ SILC_FSM_STATE(silc_server_st_accept_server)
     SILC_LOG_ERROR(("Could not create new server entry"));
     ac->error = SILC_STATUS_ERR_RESOURCE_LIMIT;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Save entry data */
@@ -840,7 +840,7 @@ SILC_FSM_STATE(silc_server_st_accept_server)
     /** Out of memory */
     ac->error = SILC_STATUS_ERR_RESOURCE_LIMIT;
     silc_fsm_next(fsm, silc_server_st_accept_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* If the incoming connection is router and marked as backup router
@@ -953,7 +953,7 @@ SILC_FSM_STATE(silc_server_st_accept_server)
 
   /** Connection accepted */
   silc_fsm_next(fsm, silc_server_st_accept_finish);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(silc_server_st_accept_finish)
@@ -963,7 +963,7 @@ SILC_FSM_STATE(silc_server_st_accept_finish)
 
   SILC_LOG_DEBUG(("New connection accepted"));
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_server_st_accept_error)
@@ -985,5 +985,5 @@ SILC_FSM_STATE(silc_server_st_accept_error)
   if (ac->connauth)
     server->stat.auth_failures++;
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }

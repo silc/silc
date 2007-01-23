@@ -34,7 +34,7 @@ SILC_FSM_STATE(silc_server_st_packet_disconnect)
   SilcPacket packet = fsm_context;
   SilcEntryData data = silc_packet_get_context(packet->stream);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_server_st_packet_channel_message)
@@ -51,7 +51,7 @@ SILC_FSM_STATE(silc_server_st_packet_channel_message)
     silc_server_channel_message(server, sock, packet);
 #endif
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_server_st_packet_channel_key)
@@ -68,7 +68,7 @@ SILC_FSM_STATE(silc_server_st_packet_channel_key)
     silc_server_channel_key(server, sock, packet);
 #endif
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_server_st_packet_private_message)
@@ -84,7 +84,7 @@ SILC_FSM_STATE(silc_server_st_packet_private_message)
     silc_server_private_message(server, sock, packet);
 #endif
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_server_st_packet_private_message_key)
@@ -98,7 +98,7 @@ SILC_FSM_STATE(silc_server_st_packet_private_message_key)
     silc_server_private_message_key(server, sock, packet);
 #endif
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_server_st_packet_new_id)
@@ -116,7 +116,7 @@ SILC_FSM_STATE(silc_server_st_packet_new_id)
       silc_server_new_id(server, sock, packet);
 #endif
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_server_st_packet_new_channel)
@@ -132,7 +132,7 @@ SILC_FSM_STATE(silc_server_st_packet_new_channel)
       silc_server_new_channel(server, sock, packet);
 #endif
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_server_st_packet_key_agreement)
@@ -143,7 +143,7 @@ SILC_FSM_STATE(silc_server_st_packet_key_agreement)
     silc_server_key_agreement(server, sock, packet);
 #endif
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_server_st_packet_ftp)
@@ -155,7 +155,7 @@ SILC_FSM_STATE(silc_server_st_packet_ftp)
     silc_server_ftp(server, sock, packet);
 #endif
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_server_st_packet_resume_router)
@@ -168,7 +168,7 @@ SILC_FSM_STATE(silc_server_st_packet_resume_router)
     silc_server_backup_resume_router(server, sock, packet);
 #endif
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_server_st_packet_received)
@@ -186,7 +186,7 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_channel_message);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_PRIVATE_MESSAGE:
@@ -194,13 +194,13 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_private_message);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_NOTIFY:
     /** Packet NOTIFY */
     silc_fsm_next(fsm, silc_server_st_packet_notify);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_COMMAND:
@@ -208,7 +208,7 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_command);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_COMMAND_REPLY:
@@ -216,7 +216,7 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_command_reply);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_CHANNEL_KEY:
@@ -224,13 +224,13 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_channel_key);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_NEW_ID:
     /** Packet NEW_ID */
     silc_fsm_next(fsm, silc_server_st_packet_new_id);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_NEW_CLIENT:
@@ -238,7 +238,7 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_new_client);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_NEW_SERVER:
@@ -246,13 +246,13 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_new_server);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_NEW_CHANNEL:
     /** Packet NEW_CHANNEL */
     silc_fsm_next(fsm, silc_server_st_packet_new_channel);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_KEY_AGREEMENT:
@@ -260,7 +260,7 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_key_agreement);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_FTP:
@@ -268,7 +268,7 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_ftp);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_RESUME_CLIENT:
@@ -276,7 +276,7 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_resume_client);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_RESUME_ROUTER:
@@ -284,7 +284,7 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_resume_router);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_DISCONNECT:
@@ -292,7 +292,7 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_disconnect);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_PRIVATE_MESSAGE_KEY:
@@ -300,7 +300,7 @@ SILC_FSM_STATE(silc_server_st_packet_received)
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
     silc_fsm_next(fsm, silc_server_st_packet_private_message_key);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_PACKET_HEARTBEAT:
@@ -323,7 +323,7 @@ SILC_FSM_STATE(silc_server_st_packet_received)
   }
 
   silc_packet_free(packet);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /* Received NEW_CLIENT packet, used to register client to SILC network. */
@@ -336,14 +336,14 @@ SILC_FSM_STATE(silc_server_st_packet_new_client)
 
   if (!ac || ac->register_packet) {
     silc_packet_free(packet);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* Signal that client registers to network */
   ac->register_packet = packet;
   SILC_FSM_EVENT_SIGNAL(&ac->wait_register);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /* Received NEW_SERVER packet, used to register server to SILC network. */
@@ -356,14 +356,14 @@ SILC_FSM_STATE(silc_server_st_packet_new_server)
 
   if (!ac || ac->register_packet) {
     silc_packet_free(packet);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* Signal that server registers to network */
   ac->register_packet = packet;
   SILC_FSM_EVENT_SIGNAL(&ac->wait_register);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /* Received RESUME_CLIENT packet, used to resume detached session. */
@@ -376,12 +376,12 @@ SILC_FSM_STATE(silc_server_st_packet_resume_client)
 
   if (!ac || ac->register_packet) {
     silc_packet_free(packet);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* Signal that client resumes session */
   ac->register_packet = packet;
   SILC_FSM_EVENT_SIGNAL(&ac->wait_register);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
