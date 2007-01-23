@@ -169,8 +169,8 @@ The Origin (o=) field describes from where the session originates.  The
 The Connection Data (c=) field describes the connection information for
 the multimedia session.  When performing peer-to-peer multimedia session
 the <network type> is 'IN', indicating Internet connection.  When
-performing multimedia session inside SILC network it is 'SILC'.  When the
-'SILC' network type is used the <address type> and <connection address>
+performing multimedia session inside SILC network it is 'SILC'.  When
+the 'SILC' network type is used the <address type> and <connection address>
 sub-fields are omitted.  Examples:
 
 	c=SILC
@@ -179,8 +179,8 @@ sub-fields are omitted.  Examples:
 
 The Media Announcements (m=) field describes the media information for the
 multimedia session.  If the network type in c= field is 'SILC' the <port>
-sub-field MUST be set to 9 (discard).  The <transport> for RTP over UDP is
-'RTP/AVP', for RTP over TCP it is 'TCP/RTP/AVP', and for non-RTP protocol
+sub-field MUST be set to 9 (discard).  The <transport> for RTP over UDP
+is 'RTP/AVP', for RTP over TCP it is 'TCP/RTP/AVP', and for non-RTP protocol
 over UDP it is 'udp' and over TCP it is 'tcp'.  The <fmt> sub-field
 includes the RTP media payload number when using RTP.  When using non-RTP
 protocol it includes MIME subtype.  Examples:
@@ -209,8 +209,8 @@ attribute is omitted the session type is expected to be "direct".  The
 following parameters are defined for attribute "silc".
 
 	channel		The name of the channel for group conferencing.
-			Can be used only with "group" session type.
-			More than one channel parameters may be defined.
+                        Can be used only with "group" session type.
+                        More than one channel parameters may be defined.
 
 
 The [RFC4145] specifies a "setup" attribute that defines which party of the

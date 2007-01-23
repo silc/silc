@@ -11,12 +11,13 @@ differences between platforms.
 <li><a href="#unix">Unix & Linux Implementation</a><br />
 <li><a href="#windows">Windows Implementation</a><br />
 <li><a href="#macosx">Mac OS X Implementation</a>
+<li><a href="#symbian">Symbian Implementation</a>
 
 <br />&nbsp;<br />&nbsp;<br />
 <b>Supported Platforms</b>
 
 <br />&nbsp;<br />
-SILC Toolkit supports by default all Unix and Linux platforms, Windows 
+SILC Toolkit supports by default all Unix and Linux platforms, Windows
 platforms from Windows 98 and newer, and Mac OS X.  In the future there is
 also plans to add support for other platforms such as Symbian OS (EPOC).
 
@@ -58,3 +59,25 @@ All features and components delivered with the SILC Toolkit work on Mac
 OS X platform.  There are no special Mac OS X platform related
 implementation issues with current version of SILC Toolkit.
 
+
+<br />&nbsp;<br />&nbsp;<br />
+<b><a name="symbian"></a>Symbian Implementation</b>
+
+<br />&nbsp;<br />
+Symbian support in SILC Toolkit is still experimental.  By default all
+feature and components delivered with SILC Toolkit are supported on
+Symbian.  However, there are some certain issues with the Symbian version
+of the SILC Toolkit
+
+<br />&nbsp;<br />
+<li>The function <tt>silc_schedule</tt> on Symbian will return immediately,
+instead of blocking the calling thread/process as on other platforms.  On
+symbian the function is equivalent to <tt>silc_schedule_one</tt>, and that
+function should be used instead.  The design of SilcSchedule on Symbian
+enables efficient data I/O even when <tt>silc_schedule_one</tt> is called
+from a timer task.  The data I/O is scheduled separately by the Symbian
+Active Scheduler and the SilcSchedule will merely schedule timeouts.
+
+<li>The function <tt>silc_client_run</tt> on Symbian will return immediately.
+On symbian the <tt>silc_client_run_one<tt> should be used instead.  It can
+used from a timer or from an idle task.

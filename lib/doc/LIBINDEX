@@ -7,7 +7,7 @@
 <br />
 <small>
 Version: @VERSION@<br />
-Copyright &copy; 1997 - 2005 The SILC Project<br />
+Copyright &copy; 1997 - 2007 The SILC Project<br />
 Updated: @DATE@
 </small>
 <br /><br /><br />
@@ -45,7 +45,7 @@ of the Toolkit always delivers the latest version of this reference manual.
 <br /><br />
 <b>Resource Links</b>
 <br /><br />
-Please refer to these outside links for more information about the SILC 
+Please refer to these outside links for more information about the SILC
 project and SILC Protocol.
 
 <br /><br />

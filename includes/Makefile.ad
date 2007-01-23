@@ -21,7 +21,7 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 include_HEADERS = \
 	silc.h \
 	silcwin32.h \
-	silcepoc.h \
+	silcsymbian.h \
 	silcbeos.h \
 	silcos2.h \
 	silcversion.h
@@ -30,7 +30,7 @@ include_HEADERS = \
 EXTRA_DIST = \
 	silc.h \
 	silcwin32.h \
-	silcepoc.h \
+	silcsymbian.h \
 	silcbeos.h \
 	silcos2.h \
 	silcversion.h.in \

@@ -75,7 +75,7 @@ SILC_FSM_STATE(test_st_start)
   /** Move to second state */
   SILC_LOG_DEBUG(("Move to next state"));
   silc_fsm_next(fsm, test_st_second);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_st_second)
@@ -85,7 +85,7 @@ SILC_FSM_STATE(test_st_second)
   /** Move to second timeout state, timeout */
   SILC_LOG_DEBUG(("Move to next state with 2 second timeout"));
   silc_fsm_next_later(fsm, test_st_second_timeout, 2, 0);
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 SILC_TASK_CALLBACK(test_second_timeout)
@@ -111,7 +111,7 @@ SILC_FSM_STATE(test_st_second_timeout)
   silc_fsm_next_later(fsm, test_st_third, 3, 0);
   silc_schedule_task_add_timeout(silc_fsm_get_schedule(fsm),
 				 test_second_timeout, f, 2, 500000);
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 static void async_call_cb(void *context)
@@ -167,7 +167,7 @@ SILC_FSM_STATE(test_thread_st_start)
   /** Move to final state, timeout */
   SILC_LOG_DEBUG(("Move to final state with %d second timeout", f->timeout));
   silc_fsm_next_later(fsm, test_thread_st_finish, f->timeout, 0);
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 SILC_FSM_STATE(test_thread_st_finish)
@@ -175,7 +175,7 @@ SILC_FSM_STATE(test_thread_st_finish)
   SILC_LOG_DEBUG(("test_thread_st_finish"));
 
   SILC_LOG_DEBUG(("Finishing the thread"));
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(test_st_fifth)
@@ -199,7 +199,7 @@ SILC_FSM_STATE(test_st_fifth)
   SILC_LOG_DEBUG(("Waiting for thread to terminate for 5 seconds"));
   silc_fsm_next(fsm, test_st_sixth);
   SILC_FSM_EVENT_TIMEDWAIT(&f->sema, 5, 0, NULL);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_thread2_st_start)
@@ -211,7 +211,7 @@ SILC_FSM_STATE(test_thread2_st_start)
   /** Move to final state, timeout */
   SILC_LOG_DEBUG(("Move to final state with %d second timeout", f->timeout));
   silc_fsm_next_later(fsm, test_thread2_st_finish, f->timeout, 0);
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 SILC_FSM_STATE(test_thread2_st_finish)
@@ -223,7 +223,7 @@ SILC_FSM_STATE(test_thread2_st_finish)
   SILC_FSM_EVENT_SIGNAL(&f->sema);
 
   SILC_LOG_DEBUG(("Finishing the thread"));
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(test_st_sixth)
@@ -235,7 +235,7 @@ SILC_FSM_STATE(test_st_sixth)
   /** Move to next state, timeout */
   SILC_LOG_DEBUG(("Continue to next state with 4 second timeout"));
   silc_fsm_next_later(fsm, test_st_seventh, 4, 0);
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 SILC_FSM_STATE(test_thread3_st_start)
@@ -244,14 +244,14 @@ SILC_FSM_STATE(test_thread3_st_start)
 
   if (t->rounds == 0) {
     SILC_FSM_EVENT_SIGNAL(&t->sema);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   t->rounds--;
 
   /** Call in recursive */
   silc_fsm_next(fsm, test_thread3_st_start);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_st_seventh)
@@ -274,7 +274,7 @@ SILC_FSM_STATE(test_st_seventh)
 
   /** Move to wait threads */
   silc_fsm_next(fsm, test_st_eighth);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_st_eighth)
@@ -293,7 +293,7 @@ SILC_FSM_STATE(test_st_eighth)
 
   /** Move to next thread */
   silc_fsm_next(fsm, test_st_ninth);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_thread4_st_start)
@@ -302,14 +302,14 @@ SILC_FSM_STATE(test_thread4_st_start)
 
   if (t->rounds == 0) {
     SILC_FSM_EVENT_SIGNAL(&t->sema);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   t->rounds--;
 
   /** Call in recursive */
   silc_fsm_next(fsm, test_thread4_st_start);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_st_ninth)
@@ -334,7 +334,7 @@ SILC_FSM_STATE(test_st_ninth)
 
   /** Move to wait threads */
   silc_fsm_next(fsm, test_st_tenth);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(test_st_tenth)
@@ -352,7 +352,7 @@ SILC_FSM_STATE(test_st_tenth)
 
   /** Finished successfully */
   silc_fsm_next_later(fsm, test_st_finish, 2, 0);
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 SILC_FSM_STATE(test_st_finish)
@@ -360,7 +360,7 @@ SILC_FSM_STATE(test_st_finish)
   SILC_LOG_DEBUG(("test_st_finish"));
 
   SILC_LOG_DEBUG(("Finish machine"));
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 static void destructor(SilcFSM fsm, void *fsm_context,

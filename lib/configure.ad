@@ -207,8 +207,6 @@ lib/silcske/Makefile
 lib/silcutil/Makefile
 lib/silcutil/unix/Makefile
 lib/silcutil/win32/Makefile
-lib/silcutil/beos/Makefile
-lib/silcutil/os2/Makefile
 lib/silcapputil/Makefile
 #ifdef SILC_DIST_SFTP
 lib/silcsftp/Makefile

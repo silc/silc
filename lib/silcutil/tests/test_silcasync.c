@@ -94,7 +94,7 @@ SILC_FSM_STATE(test_st_second)
 
   /** Finish */
   silc_fsm_next_later(fsm, test_st_finish, 2, 0);
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 SILC_FSM_STATE(test_st_finish)
@@ -102,7 +102,7 @@ SILC_FSM_STATE(test_st_finish)
   SILC_LOG_DEBUG(("test_st_finish"));
 
   SILC_LOG_DEBUG(("Finish machine"));
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 static void destructor(SilcFSM fsm, void *fsm_context,

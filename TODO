@@ -85,6 +85,8 @@ lib/silcsftp			****DONE****
 lib/silccore/silcpacket.[ch]	****PARTLY DONE****
 ============================
 
+ o Implement silc_packet_engine_stop and silc_packet_stream_destroy.
+
  o Implement ACK packet and packet payload.
 
  o SilcPacketEngine. (***DONE)
@@ -138,9 +140,9 @@ lib/silccrypt			****PARTLY DONE****
 =============
 
  o Implement SILC Public Key Version 2 handling in sign/verify.  Implement
-   Version (V) identifier.
+   Version (V) identifier (***DONE)
 
- o Implement PKCS #1 sign/verify with hash OID.
+ o Implement PKCS #1 sign/verify with hash OID. (***TESTING NEEDED)
 
  o Implement the defined SilcDH API.  The definition is in
    lib/silccrypt/silcdh.h.
