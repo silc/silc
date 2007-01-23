@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -73,14 +73,6 @@ SilcBool silc_client_send_private_message(SilcClient client,
 
 /************************* Private Message Receive **************************/
 
-/* Private message waiting context */
-typedef struct {
-  SilcMutex wait_lock;
-  SilcCond wait_cond;
-  SilcDList message_queue;
-  unsigned int stopped      : 1;
-} *SilcClientPrivateMessageWait;
-
 /* Client resolving callback.  Continues with the private message processing */
 
 static void silc_client_private_message_resolved(SilcClient client,
@@ -110,14 +102,13 @@ SILC_FSM_STATE(silc_client_private_message)
   SilcMessageFlags flags;
   unsigned char *message;
   SilcUInt32 message_len;
-  SilcClientPrivateMessageWait pmw;
 
   SILC_LOG_DEBUG(("Received private message"));
 
   if (silc_unlikely(packet->src_id_type != SILC_ID_CLIENT)) {
     /** Invalid packet */
     silc_fsm_next(fsm, silc_client_private_message_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (silc_unlikely(!silc_id_str2id(packet->src_id, packet->src_id_len,
@@ -125,7 +116,7 @@ SILC_FSM_STATE(silc_client_private_message)
 				    sizeof(remote_id)))) {
     /** Invalid source ID */
     silc_fsm_next(fsm, silc_client_private_message_error);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Check whether we know this client already */
@@ -155,30 +146,6 @@ SILC_FSM_STATE(silc_client_private_message)
   if (silc_unlikely(!payload))
     goto out;
 
-#if 0 /* We need to rethink this.  This doesn't work with multiple
-	 waiters, and performance is suboptimal. */
-  /* Check if some thread is waiting for this private message */
-  silc_mutex_lock(conn->internal->lock);
-  if (conn->internal->privmsg_wait &&
-      silc_hash_table_find_ext(conn->internal->privmsg_wait,
-			       &remote_client->id, NULL, (void **)&pmw,
-			       NULL, NULL, silc_hash_id_compare_full,
-			       SILC_32_TO_PTR(SILC_ID_CLIENT))) {
-    /* Signal that message was received */
-    silc_mutex_unlock(conn->internal->lock);
-    silc_mutex_lock(pmw->wait_lock);
-    if (!pmw->stopped) {
-      silc_dlist_add(pmw->message_queue, payload);
-      silc_cond_broadcast(pmw->wait_cond);
-      silc_mutex_unlock(pmw->wait_lock);
-      silc_packet_free(packet);
-      goto out;
-    }
-    silc_mutex_unlock(pmw->wait_lock);
-  } else
-    silc_mutex_unlock(conn->internal->lock);
-#endif /* 0 */
-
   /* Pass the private message to application */
   flags = silc_message_get_flags(payload);
   message = silc_message_get_data(payload, &message_len);
@@ -207,7 +174,7 @@ SILC_FSM_STATE(silc_client_private_message)
   silc_client_unref_client(client, conn, remote_client);
   if (payload)
     silc_message_payload_free(payload);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 /* Private message error. */
@@ -216,104 +183,10 @@ SILC_FSM_STATE(silc_client_private_message_error)
 {
   SilcPacket packet = state_context;
   silc_packet_free(packet);
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
-#if 0 /* XXX we need to rethink this */
-/* Initialize private message waiting in a thread. */
-
-void *silc_client_private_message_wait_init(SilcClientConnection conn,
-					    SilcClientEntry client_entry)
-{
-  SilcClientPrivateMessageWait pmw;
-
-  pmw = silc_calloc(1, sizeof(*pmw));
-  if (!pmw)
-    return NULL;
-
-  pmw->message_queue = silc_dlist_init();
-  if (!pmw->message_queue) {
-    silc_free(pmw);
-    return NULL;
-  }
-
-  /* Allocate mutex and conditional variable */
-  if (!silc_mutex_alloc(&pmw->wait_lock)) {
-    silc_dlist_uninit(pmw->message_queue);
-    silc_free(pmw);
-    return NULL;
-  }
-  if (!silc_cond_alloc(&pmw->wait_cond)) {
-    silc_dlist_uninit(pmw->message_queue);
-    silc_mutex_free(pmw->wait_lock);
-    silc_free(pmw);
-    return NULL;
-  }
-
-  silc_mutex_lock(conn->internal->lock);
-
-  /* Allocate waiting hash table */
-  if (!conn->internal->privmsg_wait) {
-    conn->internal->privmsg_wait =
-      silc_hash_table_alloc(0, silc_hash_id,
-			    SILC_32_TO_PTR(SILC_ID_CLIENT),
-			    silc_hash_id_compare,
-			    SILC_32_TO_PTR(SILC_ID_CLIENT), NULL, NULL, TRUE);
-    if (!conn->internal->privmsg_wait) {
-      silc_mutex_unlock(conn->internal->lock);
-      silc_dlist_uninit(pmw->message_queue);
-      silc_mutex_free(pmw->wait_lock);
-      silc_cond_free(pmw->wait_cond);
-      silc_free(pmw);
-      return NULL;
-    }
-  }
-
-  /* Add to waiting hash table */
-  silc_hash_table_add(conn->internal->privmsg_wait, client_entry->id, pmw);
-
-  silc_mutex_unlock(conn->internal->lock);
-
-  return (void *)pmw;
-}
-
-/* Uninitialize private message waiting. */
-
-void silc_client_private_message_wait_uninit(SilcClientConnection conn,
-					     SilcClientEntry client_entry,
-					     void *waiter)
-{
-  SilcClientPrivateMessageWait pmw = waiter;
-  SilcMessagePayload payload;
-
-  /* Signal any threads to stop waiting */
-  silc_mutex_lock(pmw->wait_lock);
-  pmw->stopped = TRUE;
-  silc_cond_broadcast(pmw->wait_cond);
-  silc_mutex_unlock(pmw->wait_lock);
-
-  /* Re-acquire lock and free resources */
-  silc_mutex_lock(pmw->wait_lock);
-
-  /* Free any remaining message */
-  silc_dlist_start(pmw->message_queue);
-  while ((payload = silc_dlist_get(pmw->message_queue)))
-    silc_message_payload_free(payload);
-
-  silc_dlist_uninit(pmw->message_queue);
-  silc_cond_free(pmw->wait_cond);
-  silc_mutex_unlock(pmw->wait_lock);
-  silc_mutex_free(pmw->wait_lock);
-
-  silc_mutex_lock(conn->internal->lock);
-  silc_hash_table_del_by_context(conn->internal->privmsg_wait,
-				 client_entry->id, pmw);
-  silc_mutex_unlock(conn->internal->lock);
-
-  silc_free(pmw);
-}
-
-/* Blocks the calling process or thread until a private message has been
+/* Blocks the calling process or thread until private message has been
    received from the specified client. */
 
 SilcBool silc_client_private_message_wait(SilcClientConnection conn,
@@ -321,30 +194,59 @@ SilcBool silc_client_private_message_wait(SilcClientConnection conn,
 					  void *waiter,
 					  SilcMessagePayload *payload)
 {
-  SilcClientPrivateMessageWait pmw = waiter;
   SilcPacket packet;
+  SilcClientID remote_id;
+  SilcFSMThread thread;
 
-  silc_mutex_lock(pmw->wait_lock);
-
-  /* Wait here until private message has been received */
-  while (silc_dlist_count(pmw->message_queue) == 0) {
-    if (pmw->stopped) {
-      silc_mutex_unlock(pmw->wait_lock);
+  /* Block until private message arrives */
+  do {
+    if ((silc_packet_wait(waiter, 0, &packet)) < 0)
       return FALSE;
+
+    /* Parse sender ID */
+    if (!silc_id_str2id(packet->src_id, packet->src_id_len,
+			SILC_ID_CLIENT, &remote_id,
+			sizeof(remote_id))) {
+      silc_packet_free(packet);
+      continue;
     }
-    silc_cond_wait(pmw->wait_cond, pmw->wait_lock);
-  }
 
-  /* Return message */
-  silc_dlist_start(pmw->message_queue);
-  *payload = silc_dlist_get(pmw->message_queue);
-  silc_dlist_del(pmw->message_queue, *payload);
+    /* If the private message is not for the requested client, pass it to
+       normal private message processing. */
+    if (!SILC_ID_CLIENT_COMPARE(&remote_id, &client_entry->id)) {
+      thread = silc_fsm_thread_alloc(&conn->internal->fsm, conn,
+				     silc_client_fsm_destructor, NULL, FALSE);
+      if (!thread) {
+	silc_packet_free(packet);
+	continue;
+      }
 
-  silc_mutex_unlock(pmw->wait_lock);
+      /* The packet will be processed in the connection thread, after this
+	 FSM thread is started. */
+      silc_fsm_set_state_context(thread, packet);
+      silc_fsm_start(thread, silc_client_private_message);
+      continue;
+    }
 
+    /* Parse the payload and decrypt it also if private message key is set */
+    *payload =
+      silc_message_payload_parse(silc_buffer_data(&packet->buffer),
+				 silc_buffer_len(&packet->buffer),
+				 TRUE, !client_entry->internal.generated,
+				 client_entry->internal.receive_key,
+				 client_entry->internal.hmac_receive,
+				 NULL, FALSE, NULL);
+    if (!(*payload)) {
+      silc_packet_free(packet);
+      continue;
+    }
+
+    break;
+  } while (1);
+
+  silc_packet_free(packet);
   return TRUE;
 }
-#endif /* 0 */
 
 /*************************** Private Message Key ****************************/
 
@@ -429,13 +331,13 @@ SILC_FSM_STATE(silc_client_private_message_key)
 
   if (packet->src_id_type != SILC_ID_CLIENT) {
     silc_packet_free(packet);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   if (!silc_id_str2id(packet->src_id, packet->src_id_len, SILC_ID_CLIENT,
 		      &remote_id, sizeof(remote_id))) {
     silc_packet_free(packet);
-    SILC_FSM_FINISH;
+    return SILC_FSM_FINISH;
   }
 
   /* Always resolve the remote client.  The actual packet is processed
