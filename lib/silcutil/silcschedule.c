@@ -600,20 +600,30 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
     /* Check if fd is already added */
     if (silc_unlikely(silc_hash_table_find(schedule->fd_queue,
 					   SILC_32_TO_PTR(fd),
-					   NULL, (void **)&task)))
-      goto out;
+					   NULL, (void **)&task))) {
+      if (task->valid) {
+        task = NULL;
+        goto out;
+      }
+
+      /* Remove invalid task.  We must have unique fd key to hash table. */
+      silc_schedule_task_remove(schedule, task);
+    }
 
     /* Check max tasks */
     if (silc_unlikely(schedule->max_tasks > 0 &&
 		      silc_hash_table_count(schedule->fd_queue) >=
 		      schedule->max_tasks)) {
       SILC_LOG_WARNING(("Scheduler task limit reached: cannot add new task"));
+      task = NULL;
       goto out;
     }
 
     ftask = silc_calloc(1, sizeof(*ftask));
-    if (silc_unlikely(!ftask))
+    if (silc_unlikely(!ftask)) {
+      task = NULL;
       goto out;
+    }
 
     SILC_LOG_DEBUG(("New fd task %p fd=%d", ftask, fd));
 
@@ -625,9 +635,17 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
     ftask->fd = fd;
 
     /* Add task and schedule it */
-    silc_hash_table_add(schedule->fd_queue, SILC_32_TO_PTR(fd), ftask);
-    schedule_ops.schedule_fd(schedule, schedule->internal, ftask,
-			     ftask->events);
+    if (!silc_hash_table_add(schedule->fd_queue, SILC_32_TO_PTR(fd), ftask)) {
+      silc_free(ftask);
+      task = NULL;
+      goto out;
+    }
+    if (!schedule_ops.schedule_fd(schedule, schedule->internal, 
+				  ftask, ftask->events)) {
+      silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(fd));
+      task = NULL;
+      goto out;
+    }
 
     task = (SilcTask)ftask;
 
@@ -689,8 +707,10 @@ void silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd)
   /* fd is unique, so there is only one task with this fd in the table */
   if (silc_likely(silc_hash_table_find(schedule->fd_queue,
 				       SILC_32_TO_PTR(fd), NULL,
-				       (void **)&task)))
+				       (void **)&task))) {
+    SILC_LOG_DEBUG(("Deleting task %p", task));
     task->valid = FALSE;
+  }
 
   SILC_SCHEDULE_UNLOCK(schedule);
 
@@ -793,20 +813,23 @@ void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
    directly if wanted. This can be called multiple times for one file
    descriptor to set different iomasks. */
 
-void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
-				 SilcTaskEvent mask, SilcBool send_events)
+SilcBool silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
+				     SilcTaskEvent mask, SilcBool send_events)
 {
   SilcTaskFd task;
 
   if (silc_unlikely(!schedule->valid))
-    return;
+    return FALSE;
 
   SILC_SCHEDULE_LOCK(schedule);
 
   if (silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fd),
 			   NULL, (void **)&task)) {
+    if (!schedule_ops.schedule_fd(schedule, schedule->internal, task, mask)) {
+      SILC_SCHEDULE_UNLOCK(schedule);
+      return FALSE;
+    }
     task->events = mask;
-    schedule_ops.schedule_fd(schedule, schedule->internal, task, mask);
     if (silc_unlikely(send_events) && mask) {
       task->revents = mask;
       silc_schedule_dispatch_fd(schedule);
@@ -814,9 +837,11 @@ void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
   }
 
   SILC_SCHEDULE_UNLOCK(schedule);
+
+  return TRUE;
 }
 
-/* Returns the file descriptors current requested event mask. */
+/* Returns the file descriptor's current requested event mask. */
 
 SilcTaskEvent silc_schedule_get_fd_events(SilcSchedule schedule,
 					  SilcUInt32 fd)

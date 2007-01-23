@@ -267,31 +267,42 @@ SilcBool silc_schedule_internal_schedule_fd(SilcSchedule schedule,
   struct epoll_event event;
 
   if (!internal)
-    return FALSE;
+    return TRUE;
+
+  SILC_LOG_DEBUG(("Scheduling fd %lu, mask %x", task->fd, event_mask));
 
   event.events = 0;
-  if (task->events & SILC_TASK_READ)
+  if (event_mask & SILC_TASK_READ)
     event.events |= (EPOLLIN | EPOLLPRI);
-  if (task->events & SILC_TASK_WRITE)
+  if (event_mask & SILC_TASK_WRITE)
     event.events |= EPOLLOUT;
 
   /* Zero mask unschedules task */
   if (silc_unlikely(!event.events)) {
-    epoll_ctl(internal->epfd, EPOLL_CTL_DEL, task->fd, &event);
+    if (epoll_ctl(internal->epfd, EPOLL_CTL_DEL, task->fd, &event)) {
+      SILC_LOG_DEBUG(("epoll_ctl (DEL): %s", strerror(errno)));
+      return FALSE;
+    }
     return TRUE;
   }
 
   /* Schedule the task */
   if (silc_unlikely(!task->scheduled)) {
     event.data.ptr = task;
-    epoll_ctl(internal->epfd, EPOLL_CTL_ADD, task->fd, &event);
+    if (epoll_ctl(internal->epfd, EPOLL_CTL_ADD, task->fd, &event)) {
+      SILC_LOG_DEBUG(("epoll_ctl (ADD): %s", strerror(errno)));
+      return FALSE;
+    }
     task->scheduled = TRUE;
     return TRUE;
   }
 
   /* Schedule for specific mask */
   event.data.ptr = task;
-  epoll_ctl(internal->epfd, EPOLL_CTL_MOD, task->fd, &event);
+  if (epoll_ctl(internal->epfd, EPOLL_CTL_MOD, task->fd, &event)) {
+    SILC_LOG_DEBUG(("epoll_ctl (MOD): %s", strerror(errno)));
+    return FALSE;
+  }
 #endif /* HAVE_EPOLL_WAIT */
   return TRUE;
 }

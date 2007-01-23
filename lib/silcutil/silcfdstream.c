@@ -233,10 +233,12 @@ SilcBool silc_fd_stream_close(SilcStream stream)
   if (fd_stream->fd1 > 0) {
     silc_file_close(fd_stream->fd1);
     silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd1);
+    silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd1);
   }
   if (fd_stream->fd2 > 0 && fd_stream->fd2 != fd_stream->fd1) {
     silc_file_close(fd_stream->fd2);
     silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd2);
+    silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd2);
   }
 
   return TRUE;
@@ -246,20 +248,16 @@ SilcBool silc_fd_stream_close(SilcStream stream)
 
 void silc_fd_stream_destroy(SilcStream stream)
 {
-  SilcFDStream fd_stream = stream;
-
   silc_fd_stream_close(stream);
-  silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd1);
-  silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd2);
   silc_free(stream);
 }
 
 /* Sets stream notification callback for the stream */
 
-void silc_fd_stream_notifier(SilcStream stream,
-			     SilcSchedule schedule,
-			     SilcStreamNotifier callback,
-			     void *context)
+SilcBool silc_fd_stream_notifier(SilcStream stream,
+				 SilcSchedule schedule,
+				 SilcStreamNotifier callback,
+				 void *context)
 {
   SilcFDStream fd_stream = stream;
 
@@ -288,7 +286,11 @@ void silc_fd_stream_notifier(SilcStream stream,
   } else {
     silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd1);
     silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd2);
+    silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd1);
+    silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd2);
   }
+
+  return TRUE;
 }
 
 /* Return schedule */

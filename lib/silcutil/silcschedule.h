@@ -375,6 +375,9 @@ void *silc_schedule_get_context(SilcSchedule schedule);
  *    handle.  To receive events for the file descriptor set the correct
  *    request events with silc_schedule_set_listen_fd function.
  *
+ *    The task will be initially set for SILC_TASK_READ events.  Setting that
+ *    event immediately after this call returns is not necessary.
+ *
  ***/
 #define silc_schedule_task_add_fd(schedule, fd, callback, context)	\
   silc_schedule_task_add(schedule, fd, callback, context, 0, 0,	SILC_TASK_FD)
@@ -530,9 +533,10 @@ void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
  *
  * SYNOPSIS
  *
- *    void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
- *                                     SilcTaskEvent mask,
- *                                     SilcBool send_events);
+ *    SilcBool silc_schedule_set_listen_fd(SilcSchedule schedule, 
+ *                                         SilcUInt32 fd,
+ *                                         SilcTaskEvent mask,
+ *                                         SilcBool send_events);
  *
  * DESCRIPTION
  *
@@ -550,9 +554,12 @@ void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
  *    after the event occurs in reality.  In normal cases the `send_events'
  *    is set to FALSE.
  *
+ *    Returns FALSE if the operation could not performed and TRUE if it
+ *    was a success.
+ *
  ***/
-void silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
-				 SilcTaskEvent mask, SilcBool send_events);
+SilcBool silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
+				     SilcTaskEvent mask, SilcBool send_events);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_get_fd_events
  *

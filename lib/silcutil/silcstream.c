@@ -49,11 +49,11 @@ void silc_stream_destroy(SilcStream stream)
   h->ops->destroy(stream);
 }
 
-void silc_stream_set_notifier(SilcStream stream, SilcSchedule schedule,
-			      SilcStreamNotifier notifier, void *context)
+SilcBool silc_stream_set_notifier(SilcStream stream, SilcSchedule schedule,
+				  SilcStreamNotifier notifier, void *context)
 {
   SilcStreamHeader h = stream;
-  h->ops->notifier(stream, schedule, notifier, context);
+  return h->ops->notifier(stream, schedule, notifier, context);
 }
 
 SilcSchedule silc_stream_get_schedule(SilcStream stream)

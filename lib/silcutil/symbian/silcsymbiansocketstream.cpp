@@ -384,10 +384,10 @@ void silc_socket_stream_destroy(SilcStream stream)
 
 /* Sets stream notification callback for the stream */
 
-void silc_socket_stream_notifier(SilcStream stream,
-				 SilcSchedule schedule,
-				 SilcStreamNotifier callback,
-				 void *context)
+SilcBool silc_socket_stream_notifier(SilcStream stream,
+				     SilcSchedule schedule,
+				     SilcStreamNotifier callback,
+				     void *context)
 {
   SilcSocketStream socket_stream = (SilcSocketStream)stream;
   SilcSymbianSocket *s = (SilcSymbianSocket *)socket_stream->sock;
@@ -400,4 +400,6 @@ void silc_socket_stream_notifier(SilcStream stream,
   socket_stream->notifier = callback;
   socket_stream->notifier_context = context;
   socket_stream->schedule = schedule;
+
+  return TRUE;
 }

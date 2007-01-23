@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -489,7 +489,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
   if (conn->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Do host lookup */
@@ -502,14 +502,14 @@ SILC_FSM_STATE(silc_net_connect_st_start)
     /** Network unreachable */
     conn->status = SILC_NET_HOST_UNREACHABLE;
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Set sockaddr for this connection */
   if (!silc_net_set_sockaddr(&desthost, conn->ip_addr, conn->port)) {
     /** Sockaddr failed */
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Create the connection socket */
@@ -525,7 +525,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
     /** Cannot create socket */
     SILC_LOG_ERROR(("Cannot create socket: %s", strerror(errno)));
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Bind to the local address if provided */
@@ -559,7 +559,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
       /** Cannot connect to remote host */
       SILC_LOG_ERROR(("Cannot connect to remote host: %s", strerror(errno)));
       silc_fsm_next(fsm, silc_net_connect_st_finish);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
   }
 
@@ -581,7 +581,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
   silc_schedule_set_listen_fd(silc_fsm_get_schedule(fsm), sock,
 			      SILC_TASK_WRITE, FALSE);
   SILC_FSM_EVENT_WAIT(&conn->event);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 static void silc_net_connect_wait_stream(SilcSocketStreamStatus status,
@@ -602,7 +602,7 @@ SILC_FSM_STATE(silc_net_connect_st_connected)
   if (conn->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   ret = silc_net_get_socket_opt(conn->sock, SOL_SOCKET, SO_ERROR,
@@ -618,7 +618,7 @@ SILC_FSM_STATE(silc_net_connect_st_connected)
       conn->retry--;
       silc_net_close_connection(conn->sock);
       silc_fsm_next(fsm, silc_net_connect_st_start);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
 
 #if defined(ECONNREFUSED)
@@ -637,7 +637,7 @@ SILC_FSM_STATE(silc_net_connect_st_connected)
     /** Connecting failed */
     SILC_LOG_DEBUG(("Connecting failed"));
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /** Connection created */
@@ -655,7 +655,7 @@ SILC_FSM_STATE(silc_net_connect_st_stream)
   if (conn->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (conn->stream_status != SILC_SOCKET_OK) {
@@ -667,7 +667,7 @@ SILC_FSM_STATE(silc_net_connect_st_stream)
     else
       conn->status = SILC_NET_ERROR;
     silc_fsm_next(fsm, silc_net_connect_st_finish);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Set stream information */
@@ -676,10 +676,10 @@ SILC_FSM_STATE(silc_net_connect_st_stream)
 			      conn->ip_addr, conn->ip_addr, conn->port);
 
   /** Stream created successfully */
-  SILC_LOG_DEBUG(("Connected successfully"));
+  SILC_LOG_DEBUG(("Connected successfully, sock %d", conn->sock));
   conn->status = SILC_NET_OK;
   silc_fsm_next(fsm, silc_net_connect_st_finish);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(silc_net_connect_st_finish)
@@ -695,7 +695,7 @@ SILC_FSM_STATE(silc_net_connect_st_finish)
       silc_async_free(conn->sop);
   }
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 static void silc_net_connect_abort(SilcAsyncOperation op, void *context)
@@ -774,6 +774,7 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
 
 void silc_net_close_connection(int sock)
 {
+  SILC_LOG_DEBUG(("Closing sock %d", sock));
   close(sock);
 }
 

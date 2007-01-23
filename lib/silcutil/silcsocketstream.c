@@ -34,10 +34,10 @@ int silc_socket_udp_stream_write(SilcStream stream, const unsigned char *data,
 				 SilcUInt32 data_len);
 SilcBool silc_socket_stream_close(SilcStream stream);
 void silc_socket_stream_destroy(SilcStream stream);
-void silc_socket_stream_notifier(SilcStream stream,
-				 SilcSchedule schedule,
-				 SilcStreamNotifier callback,
-				 void *context);
+SilcBool silc_socket_stream_notifier(SilcStream stream,
+				     SilcSchedule schedule,
+				     SilcStreamNotifier callback,
+				     void *context);
 SilcSchedule silc_socket_stream_get_schedule(SilcStream stream);
 
 /* Internal async host lookup context. */
@@ -165,7 +165,7 @@ silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
     return NULL;
   }
 
-  SILC_LOG_DEBUG(("Creating TCP socket stream %p", stream));
+  SILC_LOG_DEBUG(("Creating TCP socket stream %p, sock %lu", stream, sock));
 
   stream->ops = &silc_socket_stream_ops;
   stream->sock = sock;
