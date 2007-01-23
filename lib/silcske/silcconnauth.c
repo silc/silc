@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -116,7 +116,7 @@ static SilcBool silc_connauth_get_signature(SilcConnAuth connauth,
 
   /* Compute signature */
   if (!silc_pkcs_sign(private_key, auth->data, silc_buffer_len(auth),
-		      *auth_data, len, auth_data_len, ske->prop->hash)) {
+		      *auth_data, len, auth_data_len, TRUE, ske->prop->hash)) {
     silc_free(*auth_data);
     silc_buffer_free(auth);
     return FALSE;
@@ -267,7 +267,7 @@ SILC_FSM_STATE(silc_connauth_st_initiator_start)
   if (connauth->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_connauth_st_initiator_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Start timeout */
@@ -286,7 +286,7 @@ SILC_FSM_STATE(silc_connauth_st_initiator_start)
     if (!auth_data) {
       /** Out of memory */
       silc_fsm_next(fsm, silc_connauth_st_initiator_failure);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
     auth_data_len = connauth->auth_data_len;
     flags = SILC_PACKET_FLAG_LONG_PAD;
@@ -296,7 +296,7 @@ SILC_FSM_STATE(silc_connauth_st_initiator_start)
     if (!silc_connauth_get_signature(connauth, &auth_data, &auth_data_len)) {
       /** Error computing signature */
       silc_fsm_next(fsm, silc_connauth_st_initiator_failure);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
     break;
   }
@@ -306,7 +306,7 @@ SILC_FSM_STATE(silc_connauth_st_initiator_start)
   if (!packet) {
     /** Out of memory */
     silc_fsm_next(fsm, silc_connauth_st_initiator_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   silc_buffer_format(packet,
@@ -320,7 +320,7 @@ SILC_FSM_STATE(silc_connauth_st_initiator_start)
 			flags, packet->data, silc_buffer_len(packet))) {
     /** Error sending packet */
     silc_fsm_next(fsm, silc_connauth_st_initiator_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (auth_data) {
@@ -331,7 +331,7 @@ SILC_FSM_STATE(silc_connauth_st_initiator_start)
 
   /** Wait for responder */
   silc_fsm_next(fsm, silc_connauth_st_initiator_result);
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 SILC_FSM_STATE(silc_connauth_st_initiator_result)
@@ -343,7 +343,7 @@ SILC_FSM_STATE(silc_connauth_st_initiator_result)
   if (connauth->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_connauth_st_initiator_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Check the status of authentication */
@@ -363,7 +363,7 @@ SILC_FSM_STATE(silc_connauth_st_initiator_result)
   /* Call completion callback */
   connauth->completion(connauth, connauth->success, connauth->context);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_connauth_st_initiator_failure)
@@ -384,7 +384,7 @@ SILC_FSM_STATE(silc_connauth_st_initiator_failure)
 			    &silc_connauth_stream_cbs, connauth);
   silc_schedule_task_del_by_context(silc_fsm_get_schedule(fsm), connauth);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SilcAsyncOperation
@@ -447,7 +447,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_start)
   if (connauth->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Start timeout */
@@ -458,7 +458,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_start)
 
   /** Wait for initiator */
   silc_fsm_next(fsm, silc_connauth_st_responder_authenticate);
-  SILC_FSM_WAIT;
+  return SILC_FSM_WAIT;
 }
 
 SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
@@ -477,14 +477,14 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
     /** Aborted */
     silc_packet_free(connauth->packet);
     silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (connauth->packet->type != SILC_PACKET_CONNECTION_AUTH) {
     /** Protocol failure */
     silc_packet_free(connauth->packet);
     silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Parse the received authentication data packet. The received
@@ -498,7 +498,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
     SILC_LOG_ERROR(("Bad payload in authentication packet"));
     silc_packet_free(connauth->packet);
     silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (payload_len != silc_buffer_len(&connauth->packet->buffer)) {
@@ -506,7 +506,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
     SILC_LOG_ERROR(("Bad payload length in authentication packet"));
     silc_packet_free(connauth->packet);
     silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   payload_len -= 4;
@@ -517,7 +517,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
 		    conn_type));
     silc_packet_free(connauth->packet);
     silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (payload_len > 0) {
@@ -532,7 +532,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
       SILC_LOG_DEBUG(("Bad payload in authentication payload"));
       silc_packet_free(connauth->packet);
       silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
   }
   silc_packet_free(connauth->packet);
@@ -546,7 +546,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
     /** Connection not configured */
     SILC_LOG_ERROR(("Remote connection not configured"));
     silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   /* Verify */
@@ -557,7 +557,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
     if (!memcmp(auth_data, passphrase, passphrase_len)) {
       /** Authentication failed */
       silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
   } else if (repository) {
     /* Digital signature */
@@ -574,7 +574,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
     if (!find || !connauth->auth_data) {
       /** Out of memory */
       silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-      SILC_FSM_CONTINUE;
+      return SILC_FSM_CONTINUE;
     }
 
     silc_skr_find_set_pkcs_type(find, connauth->ske->pk_type);
@@ -593,7 +593,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
 
   /** Authentication successful */
   silc_fsm_next(fsm, silc_connauth_st_responder_success);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(silc_connauth_st_responder_authenticate_pk)
@@ -604,14 +604,14 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate_pk)
   if (connauth->aborted) {
     /** Aborted */
     silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   if (connauth->skr_status != SILC_SKR_OK) {
     /** Public key not found */
     SILC_LOG_DEBUG(("Public key not found, error %d", connauth->skr_status));
     silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   SILC_LOG_DEBUG(("Found %d public keys",
@@ -626,14 +626,14 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate_pk)
     SILC_LOG_DEBUG(("Invalid signature"));
     silc_free(connauth->auth_data);
     silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-    SILC_FSM_CONTINUE;
+    return SILC_FSM_CONTINUE;
   }
 
   silc_free(connauth->auth_data);
 
   /** Authentication successful */
   silc_fsm_next(fsm, silc_connauth_st_responder_success);
-  SILC_FSM_CONTINUE;
+  return SILC_FSM_CONTINUE;
 }
 
 SILC_FSM_STATE(silc_connauth_st_responder_success)
@@ -654,7 +654,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_success)
 			    &silc_connauth_stream_cbs, connauth);
   silc_schedule_task_del_by_context(silc_fsm_get_schedule(fsm), connauth);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(silc_connauth_st_responder_failure)
@@ -675,7 +675,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_failure)
 			    &silc_connauth_stream_cbs, connauth);
   silc_schedule_task_del_by_context(silc_fsm_get_schedule(fsm), connauth);
 
-  SILC_FSM_FINISH;
+  return SILC_FSM_FINISH;
 }
 
 SilcAsyncOperation

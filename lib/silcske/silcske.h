@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2006 Pekka Riikonen
+  Copyright (C) 2000 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -207,6 +207,11 @@ typedef struct {
      the key exchange protocol.  Ignored without SILC_SKE_SP_FLAG_IV_INCLUDED
      flag. */
   SilcUInt16 session_port;
+
+  /* Key exchange timeout in seconds.  If key exchange is not completed in
+     this time it will timeout.  If not specified (zero), default value
+     (30 seconds) will be used. */
+  SilcUInt16 timeout_secs;
 } *SilcSKEParams, SilcSKEParamsStruct;
 /***/
 
