@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2006 Pekka Riikonen
+  Copyright (C) 1998 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -378,6 +378,9 @@ void *silc_schedule_get_context(SilcSchedule schedule);
  *    The task will be initially set for SILC_TASK_READ events.  Setting that
  *    event immediately after this call returns is not necessary.
  *
+ *    This returns the new task or NULL on error.  If a task with `fd' has
+ *    already been added this will return the existing task pointer.
+ *
  ***/
 #define silc_schedule_task_add_fd(schedule, fd, callback, context)	\
   silc_schedule_task_add(schedule, fd, callback, context, 0, 0,	SILC_TASK_FD)
@@ -533,7 +536,7 @@ void silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
  *
  * SYNOPSIS
  *
- *    SilcBool silc_schedule_set_listen_fd(SilcSchedule schedule, 
+ *    SilcBool silc_schedule_set_listen_fd(SilcSchedule schedule,
  *                                         SilcUInt32 fd,
  *                                         SilcTaskEvent mask,
  *                                         SilcBool send_events);

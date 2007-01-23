@@ -601,10 +601,8 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
     if (silc_unlikely(silc_hash_table_find(schedule->fd_queue,
 					   SILC_32_TO_PTR(fd),
 					   NULL, (void **)&task))) {
-      if (task->valid) {
-        task = NULL;
+      if (task->valid)
         goto out;
-      }
 
       /* Remove invalid task.  We must have unique fd key to hash table. */
       silc_schedule_task_remove(schedule, task);
@@ -640,7 +638,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
       task = NULL;
       goto out;
     }
-    if (!schedule_ops.schedule_fd(schedule, schedule->internal, 
+    if (!schedule_ops.schedule_fd(schedule, schedule->internal,
 				  ftask, ftask->events)) {
       silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(fd));
       task = NULL;
