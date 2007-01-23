@@ -618,7 +618,8 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
  *
  *    SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
  *                                       SilcPacketType type,
- *                                       SilcPacketFlags flags);
+ *                                       SilcPacketFlags flags,
+ *                                       SilcBool blocking_mode);
  *
  * DESCRIPTION
  *
@@ -630,11 +631,18 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
  *    stream can be destroyed by calling silc_stream_destroy.  It does not
  *    destroy the wrapped packet stream.
  *
- *    The silc_stream_set_notifier must be called before the returned stream
- *    can be used to receive packets.  The SILC_STREAM_CAN_READ will be
- *    returned to the notifier callback to indicate that a packet is ready
- *    for reading.  Calling silc_stream_read once returns one complete SILC
- *    packet data payload (which is of type of `type').
+ *    If the `blocking_mode' mode is TRUE then the silc_stream_read and
+ *    silc_stream_write may block the calling process or thread until SILC
+ *    packet is read or written.  If it is FALSE the stream is in non-blocking
+ *    mode and the calls never block.  The returned stream is thread-safe and
+ *    packets may be read and written in multi-threaded environment.
+ *
+ *    In non-blocking mode the silc_stream_set_notifier must be called before
+ *    the returned stream can be used to read packets.  The stream status
+ *    SILC_STREAM_CAN_READ will be returned to the notifier callback to
+ *    indicate that a packet is ready for reading.  Calling silc_stream_read
+ *    once returns one complete SILC packet data payload (which is of type of
+ *    `type').
  *
  *    The returned SilcStream can be used as any normal stream and all
  *    SilcStream API functions may be used with the stream.  This returns
@@ -643,7 +651,8 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
  ***/
 SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
 				   SilcPacketType type,
-				   SilcPacketFlags flags);
+				   SilcPacketFlags flags,
+				   SilcBool blocking_mode);
 
 /****f* silccore/SilcPacketAPI/silc_packet_get_sender
  *
