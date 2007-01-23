@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2006 Pekka Riikonen
+  Copyright (C) 2003 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -666,7 +666,7 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
  *
  * DESCRIPTION
  *
- *    Macro used to encode or decode boolean value.  Type boolean type
+ *    Macro used to encode or decode boolean value.  The boolean type
  *    is SilcBool.
  *
  *    The `opts' is SilcAsn1Options.  The `tag' is a tag number.
@@ -829,15 +829,10 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
  * DESCRIPTION
  *
  *    Macro used to encode or decode octet string.  The string type is
- *    unsigned char and string length SilcUInt32.
+ *    unsigned char and string length SilcUInt32.  Octet string is
+ *    considered to be 8-bit unsigned binary data.
  *
  *    The `opts' is SilcAsn1Options.  The `tag' is a tag number.
- *
- * NOTES
- *
- *    The string must be in UTF-8 encoding when encoding.  The decoded
- *    string will be in UTF-8 encoding.  The actual data is encoded to
- *    or decoded from 8-bit ASCII.
  *
  ***/
 #define SILC_ASN1_OCTET_STRING(x, xl) SILC_ASN1_U2(OCTET_STRING, x, xl)

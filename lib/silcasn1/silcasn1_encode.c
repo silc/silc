@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2006 Pekka Riikonen
+  Copyright (C) 2003 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -555,8 +555,17 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 
     case SILC_ASN1_TAG_OCTET_STRING:
       {
-	/* Octet string.  We put it in as 8-bit ASCII */
-	SILC_ASN1_ENCODE_STRING(SILC_STRING_ASCII);
+	/* Octet string.  Put data as is. */
+	unsigned char *d = va_arg(asn1->ap, unsigned char *);
+	SilcUInt32 d_len = va_arg(asn1->ap, SilcUInt32);
+
+	len = silc_ber_encoded_len(tag, d_len, indef);
+	dest = silc_buffer_srealloc_size(stack1, dest,
+					 silc_buffer_truelen(dest) + len);
+	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
+			      tag, d, d_len, indef);
+	if (!ret)
+	  goto fail;
 	break;
       }
 

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2006 Pekka Riikonen
+  Copyright (C) 2003 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -665,9 +665,10 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 
       case SILC_ASN1_TAG_OCTET_STRING:
 	{
-	  /* Octet string.  We take it as 8-bit ASCII */
+	  /* Octet string.  Take data as is. */
 	  SILC_ASN1_VAD_UCHAR(asn1, opts, unsigned char, s, s_len);
-	  SILC_ASN1_DECODE_STRING(SILC_STRING_ASCII, s, s_len);
+	  *s = silc_smemdup(stack1, rdata, rdata_len);
+	  *s_len = rdata_len;
 	  break;
 	}
 

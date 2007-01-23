@@ -742,10 +742,13 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("Decoding success"));
   printf("\n");
 
-
-#endif
+#endif /* 1 */
   silc_asn1_free(asn1);
 
+  success = TRUE;
  out:
-  exit(success);
+  SILC_LOG_DEBUG(("Testing was %s", success ? "SUCCESS" : "FAILURE"));
+  fprintf(stderr, "Testing was %s\n", success ? "SUCCESS" : "FAILURE");
+
+  return success;
 }
