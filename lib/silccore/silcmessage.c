@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -207,7 +207,8 @@ silc_message_signed_payload_encode(const unsigned char *message_payload,
 
   /* Compute the hash and the signature. */
   if (!silc_pkcs_sign(private_key, sign->data, silc_buffer_len(sign),
-		      auth_data, sizeof(auth_data) - 1, &auth_len, hash)) {
+		      auth_data, sizeof(auth_data) - 1, &auth_len,
+		      TRUE, hash)) {
     SILC_LOG_ERROR(("Could not compute signature"));
     silc_buffer_clear(sign);
     silc_buffer_free(sign);

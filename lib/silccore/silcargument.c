@@ -355,7 +355,7 @@ static SilcBool silc_argument_decode(unsigned char *data,
     break;
 
   case SILC_ARGUMENT_BOOL:
-    if (data_len != 1)
+    if (data_len != sizeof(SilcBool))
       return FALSE;
 
     if (ret_arg) {
