@@ -83,6 +83,7 @@ SilcBool silc_pkcs_silc_sign(void *private_key,
 			     unsigned char *signature,
 			     SilcUInt32 signature_size,
 			     SilcUInt32 *ret_signature_len,
+			     SilcBool compute_hash,
 			     SilcHash hash);
 SilcBool silc_pkcs_silc_verify(void *public_key,
 			       unsigned char *signature,

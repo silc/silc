@@ -170,6 +170,7 @@ typedef struct {
 		   unsigned char *signature,
 		   SilcUInt32 signature_size,
 		   SilcUInt32 *ret_signature_len,
+		   SilcBool compute_hash,
 		   SilcHash hash);
   SilcBool (*verify)(void *public_key,
 		     unsigned char *signature,
@@ -278,6 +279,7 @@ struct SilcPKCSObjectStruct {
 		   unsigned char *signature,
 		   SilcUInt32 signature_size,
 		   SilcUInt32 *ret_signature_len,
+		   SilcBool compute_hash,
 		   SilcHash hash);
   SilcBool (*verify)(void *public_key,
 		     unsigned char *signature,
@@ -687,18 +689,21 @@ SilcBool silc_pkcs_decrypt(SilcPrivateKey private_key,
  *    SilcBool silc_pkcs_sign(SilcPrivateKey private_key,
  *                            unsigned char *src, SilcUInt32 src_len,
  *                            unsigned char *dst, SilcUInt32 dst_size,
- *                            SilcUInt32 *dst_len, SilcHash hash);
+ *                            SilcUInt32 *dst_len, SilcBool compute_hash,
+ *                            SilcHash hash);
  *
  * DESCRIPTION
  *
  *    Generates signature with the private key.  Returns FALSE on error.
- *    If `hash' is non-NULL the `src' will be hashed before signing.
+ *    If `compute_hash' is TRUE the `hash' will be used to compute a
+ *    digest over the `src'.  The `hash' must always be valid.
  *
  ***/
 SilcBool silc_pkcs_sign(SilcPrivateKey private_key,
 			unsigned char *src, SilcUInt32 src_len,
 			unsigned char *dst, SilcUInt32 dst_size,
-			SilcUInt32 *dst_len, SilcHash hash);
+			SilcUInt32 *dst_len, SilcBool compute_hash,
+			SilcHash hash);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_verify
  *

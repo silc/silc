@@ -247,7 +247,7 @@ int silc_pkcs1_import_public_key(unsigned char *key,
     goto err;
 
   /* Set key length */
-  pubkey->bits = silc_mp_sizeinbase(&pubkey->n, 2);
+  pubkey->bits = ((silc_mp_sizeinbase(&pubkey->n, 2) + 7) / 8) * 8;
 
   silc_asn1_free(asn1);
 
@@ -392,7 +392,7 @@ int silc_pkcs1_import_private_key(unsigned char *key,
     goto err;
 
   /* Set key length */
-  privkey->bits = silc_mp_sizeinbase(&privkey->n, 2);
+  privkey->bits = ((silc_mp_sizeinbase(&privkey->n, 2) + 7) / 8) * 8;
 
   silc_asn1_free(asn1);
 
@@ -574,9 +574,84 @@ SilcBool silc_pkcs1_sign(void *private_key,
 			 unsigned char *signature,
 			 SilcUInt32 signature_size,
 			 SilcUInt32 *ret_signature_len,
+			 SilcBool compute_hash,
 			 SilcHash hash)
 {
-  return FALSE;
+  RsaPrivateKey *key = private_key;
+  unsigned char padded[2048 + 1], hashr[SILC_HASH_MAXLEN];
+  SilcMPInt mp_tmp;
+  SilcMPInt mp_dst;
+  SilcBufferStruct di;
+  SilcUInt32 len = (key->bits + 7) / 8;
+  const char *oid;
+  SilcAsn1 asn1;
+
+  SILC_LOG_DEBUG(("Sign"));
+
+  if (sizeof(padded) < len)
+    return FALSE;
+  if (signature_size < len)
+    return FALSE;
+
+  oid = silc_hash_get_oid(hash);
+  if (!oid)
+    return FALSE;
+
+  asn1 = silc_asn1_alloc();
+  if (!asn1)
+    return FALSE;
+
+  /* Compute hash */
+  if (compute_hash) {
+    silc_hash_make(hash, src, src_len, hashr);
+    src = hashr;
+    src_len = silc_hash_len(hash);
+  }
+
+  /* Encode digest info */
+  memset(&di, 0, sizeof(di));
+  if (!silc_asn1_encode(asn1, &di,
+			SILC_ASN1_SEQUENCE,
+			  SILC_ASN1_SEQUENCE,
+			    SILC_ASN1_OID(oid),
+			    SILC_ASN1_NULL,
+			  SILC_ASN1_END,
+			  SILC_ASN1_OCTET_STRING(src, src_len),
+			SILC_ASN1_END, SILC_ASN1_END)) {
+    silc_asn1_free(asn1);
+    return FALSE;
+  }
+  SILC_LOG_HEXDUMP(("DigestInfo"), silc_buffer_data(&di),
+		   silc_buffer_len(&di));
+
+  /* Pad data */
+  if (!silc_pkcs1_encode(SILC_PKCS1_BT_PRV1, silc_buffer_data(&di),
+			 silc_buffer_len(&di), padded, len, NULL)) {
+    silc_asn1_free(asn1);
+    return FALSE;
+  }
+
+  silc_mp_init(&mp_tmp);
+  silc_mp_init(&mp_dst);
+
+  /* Data to MP */
+  silc_mp_bin2mp(padded, len, &mp_tmp);
+
+  /* Sign */
+  silc_rsa_private_operation(key, &mp_tmp, &mp_dst);
+
+  /* MP to data */
+  silc_mp_mp2bin_noalloc(&mp_dst, signature, len);
+  *ret_signature_len = len;
+
+  memset(padded, 0, sizeof(padded));
+  silc_mp_uninit(&mp_tmp);
+  silc_mp_uninit(&mp_dst);
+  if (compute_hash)
+    memset(hashr, 0, sizeof(hashr));
+  silc_asn1_free(asn1);
+
+  return TRUE;
 }
 
 /* PKCS #1 verification with appendix. */
@@ -588,6 +663,111 @@ SilcBool silc_pkcs1_verify(void *public_key,
 			   SilcUInt32 data_len,
 			   SilcHash hash)
 {
+  RsaPublicKey *key = public_key;
+  SilcBool ret = FALSE;
+  SilcMPInt mp_tmp2;
+  SilcMPInt mp_dst;
+  unsigned char *verify, unpadded[2048 + 1], hashr[SILC_HASH_MAXLEN];
+  SilcUInt32 verify_len, len = (key->bits + 7) / 8;
+  SilcBufferStruct di, ldi;
+  SilcHash ihash = NULL;
+  SilcAsn1 asn1 = NULL;
+  char *oid;
+
+  SILC_LOG_DEBUG(("Verify signature"));
+
+  asn1 = silc_asn1_alloc();
+  if (!asn1)
+    return FALSE;
+
+  silc_mp_init(&mp_tmp2);
+  silc_mp_init(&mp_dst);
+
+  /* Format the signature into MP int */
+  silc_mp_bin2mp(signature, signature_len, &mp_tmp2);
+
+  /* Verify */
+  silc_rsa_public_operation(key, &mp_tmp2, &mp_dst);
+
+  /* MP to data */
+  verify = silc_mp_mp2bin(&mp_dst, len, &verify_len);
+
+  /* Unpad data */
+  if (!silc_pkcs1_decode(SILC_PKCS1_BT_PRV1, verify, verify_len,
+			 unpadded, sizeof(unpadded), &len))
+    goto err;
+  silc_buffer_set(&di, unpadded, len);
+
+  /* If hash isn't given, allocate the one given in digest info */
+  if (!hash) {
+    /* Decode digest info */
+    if (!silc_asn1_decode(asn1, &di,
+			  SILC_ASN1_OPTS(SILC_ASN1_ACCUMUL),
+			  SILC_ASN1_SEQUENCE,
+			    SILC_ASN1_SEQUENCE,
+			      SILC_ASN1_OID(&oid),
+			    SILC_ASN1_END,
+			  SILC_ASN1_END, SILC_ASN1_END))
+      goto err;
+
+    if (!silc_hash_alloc_by_oid(oid, &ihash)) {
+      SILC_LOG_DEBUG(("Unknown OID %s", oid));
+      goto err;
+    }
+    hash = ihash;
+  }
+
+  /* Hash the data */
+  silc_hash_make(hash, data, data_len, hashr);
+  data = hashr;
+  data_len = silc_hash_len(hash);
+  oid = (char *)silc_hash_get_oid(hash);
+
+  /* Encode digest info for comparison */
+  memset(&ldi, 0, sizeof(ldi));
+  if (!silc_asn1_encode(asn1, &ldi,
+			SILC_ASN1_OPTS(SILC_ASN1_ACCUMUL),
+			SILC_ASN1_SEQUENCE,
+			  SILC_ASN1_SEQUENCE,
+			    SILC_ASN1_OID(oid),
+			    SILC_ASN1_NULL,
+			  SILC_ASN1_END,
+			  SILC_ASN1_OCTET_STRING(data, data_len),
+			SILC_ASN1_END, SILC_ASN1_END))
+    goto err;
+
+  SILC_LOG_HEXDUMP(("DigestInfo remote"), silc_buffer_data(&di),
+		   silc_buffer_len(&di));
+  SILC_LOG_HEXDUMP(("DigestInfo local"), silc_buffer_data(&ldi),
+		   silc_buffer_len(&ldi));
+
+  /* Compare */
+  if (silc_buffer_len(&di) == silc_buffer_len(&ldi) &&
+      !memcmp(silc_buffer_data(&di), silc_buffer_data(&ldi),
+	      silc_buffer_len(&ldi)))
+    ret = TRUE;
+
+  memset(verify, 0, verify_len);
+  memset(unpadded, 0, sizeof(unpadded));
+  silc_free(verify);
+  silc_mp_uninit(&mp_tmp2);
+  silc_mp_uninit(&mp_dst);
+  if (hash)
+    memset(hashr, 0, sizeof(hashr));
+  if (ihash)
+    silc_hash_free(ihash);
+  silc_asn1_free(asn1);
+
+  return ret;
+
+ err:
+  memset(verify, 0, verify_len);
+  silc_free(verify);
+  silc_mp_uninit(&mp_tmp2);
+  silc_mp_uninit(&mp_dst);
+  if (ihash)
+    silc_hash_free(ihash);
+  silc_asn1_free(asn1);
   return FALSE;
 }
 
@@ -599,6 +779,7 @@ SilcBool silc_pkcs1_sign_no_oid(void *private_key,
 				unsigned char *signature,
 				SilcUInt32 signature_size,
 				SilcUInt32 *ret_signature_len,
+				SilcBool compute_hash,
 				SilcHash hash)
 {
   RsaPrivateKey *key = private_key;
@@ -607,13 +788,15 @@ SilcBool silc_pkcs1_sign_no_oid(void *private_key,
   unsigned char padded[2048 + 1], hashr[SILC_HASH_MAXLEN];
   SilcUInt32 len = (key->bits + 7) / 8;
 
+  SILC_LOG_DEBUG(("Sign"));
+
   if (sizeof(padded) < len)
     return FALSE;
   if (signature_size < len)
     return FALSE;
 
   /* Compute hash if requested */
-  if (hash) {
+  if (compute_hash) {
     silc_hash_make(hash, src, src_len, hashr);
     src = hashr;
     src_len = silc_hash_len(hash);
@@ -640,7 +823,7 @@ SilcBool silc_pkcs1_sign_no_oid(void *private_key,
   memset(padded, 0, sizeof(padded));
   silc_mp_uninit(&mp_tmp);
   silc_mp_uninit(&mp_dst);
-  if (hash)
+  if (compute_hash)
     memset(hashr, 0, sizeof(hashr));
 
   return TRUE;
@@ -656,11 +839,13 @@ SilcBool silc_pkcs1_verify_no_oid(void *public_key,
 				  SilcHash hash)
 {
   RsaPublicKey *key = public_key;
-  int ret = TRUE;
+  SilcBool ret = FALSE;
   SilcMPInt mp_tmp2;
   SilcMPInt mp_dst;
   unsigned char *verify, unpadded[2048 + 1], hashr[SILC_HASH_MAXLEN];
   SilcUInt32 verify_len, len = (key->bits + 7) / 8;
+
+  SILC_LOG_DEBUG(("Verify signature"));
 
   silc_mp_init(&mp_tmp2);
   silc_mp_init(&mp_dst);
@@ -692,10 +877,8 @@ SilcBool silc_pkcs1_verify_no_oid(void *public_key,
   }
 
   /* Compare */
-  if (len != data_len)
-    ret = FALSE;
-  else if (memcmp(data, unpadded, len))
-    ret = FALSE;
+  if (len == data_len && !memcmp(data, unpadded, len))
+    ret = TRUE;
 
   memset(verify, 0, verify_len);
   memset(unpadded, 0, sizeof(unpadded));

@@ -593,10 +593,11 @@ SilcBool silc_pkcs_decrypt(SilcPrivateKey private_key,
 SilcBool silc_pkcs_sign(SilcPrivateKey private_key,
 			unsigned char *src, SilcUInt32 src_len,
 			unsigned char *dst, SilcUInt32 dst_size,
-			SilcUInt32 *dst_len, SilcHash hash)
+			SilcUInt32 *dst_len, SilcBool compute_hash,
+			SilcHash hash)
 {
   return private_key->pkcs->sign(private_key->private_key, src, src_len,
-				 dst, dst_size, dst_len, hash);
+				 dst, dst_size, dst_len, compute_hash, hash);
 }
 
 /* Verifies signature */

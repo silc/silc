@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -65,8 +65,9 @@ typedef struct SilcHashStruct *SilcHash;
  ***/
 typedef struct {
   char *name;
-  SilcUInt32 hash_len;
-  SilcUInt32 block_len;
+  char *oid;
+  SilcUInt16 hash_len;
+  SilcUInt16 block_len;
 
   void (*init)(void *);
   void (*update)(void *, const unsigned char *, SilcUInt32);
@@ -197,6 +198,21 @@ SilcBool silc_hash_unregister_all(void);
  ***/
 SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash);
 
+/****f* silccrypt/SilcHashAPI/silc_hash_alloc_by_oid
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_hash_alloc_by_oid(const char *oid, SilcHash *new_hash);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_hash_alloc but allocates the hash algorithm by the
+ *    hash algorithm OID string indicated by `oid'. Returns FALSE if such
+ *    hash function does not exist.
+ *
+ ***/
+SilcBool silc_hash_alloc_by_oid(const char *oid, SilcHash *new_hash);
+
 /****f* silccrypt/SilcHashAPI/silc_hash_free
  *
  * SYNOPSIS
@@ -277,6 +293,20 @@ SilcUInt32 silc_hash_block_len(SilcHash hash);
  *
  ***/
 const char *silc_hash_get_name(SilcHash hash);
+
+/****f* silccrypt/SilcHashAPI/silc_hash_get_oid
+ *
+ * SYNOPSIS
+ *
+ *    const char *silc_hash_get_name(SilcHash hash);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the hash OID string.  Returns NULL if the hash doesn't have
+ *    OID string.  Use strlen() to get the OID string length.
+ *
+ ***/
+const char *silc_hash_get_oid(SilcHash hash);
 
 /****f* silccrypt/SilcHashAPI/silc_hash_make
  *

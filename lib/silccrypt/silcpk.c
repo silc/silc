@@ -25,7 +25,6 @@
 /* Generate new SILC key pair. */
 
 SilcBool silc_pkcs_silc_generate_key(const char *algorithm,
-				     const char *scheme,
 				     SilcUInt32 bits_key_len,
 				     const char *identifier,
 				     SilcRng rng,
@@ -36,6 +35,7 @@ SilcBool silc_pkcs_silc_generate_key(const char *algorithm,
   SilcSILCPrivateKey privkey;
   const SilcPKCSAlgorithm *alg;
   const SilcPKCSObject *pkcs;
+  SilcUInt32 version;
 
   SILC_LOG_DEBUG(("Generating SILC %s key pair with key length %d bits",
 		  algorithm, bits_key_len));
@@ -47,21 +47,28 @@ SilcBool silc_pkcs_silc_generate_key(const char *algorithm,
   if (!pkcs)
     return FALSE;
 
-  alg = silc_pkcs_find_algorithm(algorithm, scheme);
-  if (!alg)
-    return FALSE;
-
   /* Allocate SILC public key */
   pubkey = silc_calloc(1, sizeof(*pubkey));
   if (!pubkey)
     return FALSE;
-  pubkey->pkcs = alg;
 
   /* Decode identifier */
-  if (!silc_pkcs_silc_decode_identifier(identifier, &pubkey->identifier)) {
+  if (!silc_pkcs_silc_decode_identifier(identifier, &pubkey->identifier))
+    return FALSE;
+
+  if (pubkey->identifier.version && atoi(pubkey->identifier.version) >= 2)
+    version = 2;
+  else
+    version = 1;
+
+  /* Allocate algorithm */
+  alg = silc_pkcs_find_algorithm(algorithm, (version == 1 ? "pkcs1-no-oid" :
+					     "pkcs1"));
+  if (!alg) {
     silc_free(pubkey);
     return FALSE;
   }
+  pubkey->pkcs = alg;
 
   /* Allocate SILC private key */
   privkey = silc_calloc(1, sizeof(*privkey));
@@ -169,6 +176,8 @@ SilcBool silc_pkcs_silc_decode_identifier(const char *identifier,
       ident->org = strdup(item + strcspn(cp, "=") + 1);
     else if (strstr(item, "C="))
       ident->country = strdup(item + strcspn(cp, "=") + 1);
+    else if (strstr(item, "V="))
+      ident->version = strdup(item + strcspn(cp, "=") + 1);
 
     cp += len;
     if (strlen(cp) < 1)
@@ -189,100 +198,102 @@ SilcBool silc_pkcs_silc_decode_identifier(const char *identifier,
 
 char *silc_pkcs_silc_encode_identifier(char *username, char *host,
 				       char *realname, char *email,
-				       char *org, char *country)
+				       char *org, char *country,
+				       char *version)
 {
-  SilcBuffer buf;
+  SilcBufferStruct buf;
   char *identifier;
-  SilcUInt32 len, tlen = 0;
 
   if (!username || !host)
     return NULL;
-
-  len = (username ? strlen(username) : 0) +
-	(host     ? strlen(host)     : 0) +
-	(realname ? strlen(realname) : 0) +
-	(email    ? strlen(email)    : 0) +
-	(org      ? strlen(org)      : 0) +
-	(country  ? strlen(country)  : 0);
-
-  if (len < 3)
+  if (strlen(username) < 3 || strlen(host) < 3)
     return NULL;
 
-  len += 3 + 5 + 5 + 4 + 4 + 4;
-  buf = silc_buffer_alloc(len);
-  if (!buf)
-    return NULL;
-  silc_buffer_pull_tail(buf, len);
+  memset(&buf, 0, sizeof(buf));
 
-  if (username) {
-    silc_buffer_format(buf,
+  if (username)
+    silc_buffer_format(&buf,
+		       SILC_STR_ADVANCE,
 		       SILC_STR_UI32_STRING("UN="),
 		       SILC_STR_UI32_STRING(username),
 		       SILC_STR_END);
-    silc_buffer_pull(buf, 3 + strlen(username));
-    tlen = 3 + strlen(username);
-  }
 
-  if (host) {
-    silc_buffer_format(buf,
+  if (host)
+    silc_buffer_format(&buf,
+		       SILC_STR_ADVANCE,
 		       SILC_STR_UI32_STRING(", "),
 		       SILC_STR_UI32_STRING("HN="),
 		       SILC_STR_UI32_STRING(host),
 		       SILC_STR_END);
-    silc_buffer_pull(buf, 5 + strlen(host));
-    tlen += 5 + strlen(host);
-  }
 
-  if (realname) {
-    silc_buffer_format(buf,
+  if (realname)
+    silc_buffer_format(&buf,
+		       SILC_STR_ADVANCE,
 		       SILC_STR_UI32_STRING(", "),
 		       SILC_STR_UI32_STRING("RN="),
 		       SILC_STR_UI32_STRING(realname),
 		       SILC_STR_END);
-    silc_buffer_pull(buf, 5 + strlen(realname));
-    tlen += 5 + strlen(realname);
-  }
 
-  if (email) {
-    silc_buffer_format(buf,
+  if (email)
+    silc_buffer_format(&buf,
+		       SILC_STR_ADVANCE,
 		       SILC_STR_UI32_STRING(", "),
 		       SILC_STR_UI32_STRING("E="),
 		       SILC_STR_UI32_STRING(email),
 		       SILC_STR_END);
-    silc_buffer_pull(buf, 4 + strlen(email));
-    tlen += 4 + strlen(email);
-  }
 
-  if (org) {
-    silc_buffer_format(buf,
+  if (org)
+    silc_buffer_format(&buf,
+		       SILC_STR_ADVANCE,
 		       SILC_STR_UI32_STRING(", "),
 		       SILC_STR_UI32_STRING("O="),
 		       SILC_STR_UI32_STRING(org),
 		       SILC_STR_END);
-    silc_buffer_pull(buf, 4 + strlen(org));
-    tlen += 4 + strlen(org);
-  }
 
-  if (country) {
-    silc_buffer_format(buf,
+  if (country)
+    silc_buffer_format(&buf,
+		       SILC_STR_ADVANCE,
 		       SILC_STR_UI32_STRING(", "),
 		       SILC_STR_UI32_STRING("C="),
 		       SILC_STR_UI32_STRING(country),
 		       SILC_STR_END);
-    silc_buffer_pull(buf, 4 + strlen(country));
-    tlen += 4 + strlen(country);
+
+  if (version) {
+    if (strlen(version) > 1 || !isdigit(version[0])) {
+      silc_buffer_purge(&buf);
+      return NULL;
+    }
+    silc_buffer_format(&buf,
+		       SILC_STR_ADVANCE,
+		       SILC_STR_UI32_STRING(", "),
+		       SILC_STR_UI32_STRING("V="),
+		       SILC_STR_UI32_STRING(version),
+		       SILC_STR_END);
   }
 
-  silc_buffer_push(buf, buf->data - buf->head);
-  identifier = silc_calloc(tlen + 1, sizeof(*identifier));
-  if (!identifier)
-    return NULL;
-  memcpy(identifier, buf->data, tlen);
-  silc_buffer_free(buf);
+  silc_buffer_format(&buf, SILC_STR_UI_CHAR(0), SILC_STR_END);
 
+  identifier = silc_buffer_steal(&buf, NULL);
   return identifier;
 }
 
+/* Return SILC public key version */
+
+int silc_pkcs_silc_public_key_version(SilcPublicKey public_key)
+{
+  SilcSILCPublicKey silc_pubkey;
+
+  if (silc_pkcs_get_type(public_key) != SILC_PKCS_SILC)
+    return -1;
+
+  silc_pubkey = public_key->public_key;
+
+  /* If version identifire is not present it is version 1. */
+  if (!silc_pubkey->identifier.version)
+    return 1;
+
+  return atoi(silc_pubkey->identifier.version);
+}
 
 /*************************** Public key routines *****************************/
 
@@ -413,13 +424,25 @@ int silc_pkcs_silc_import_public_key(unsigned char *key,
   if (!asn1)
     goto err;
 
+  SILC_LOG_DEBUG(("Public key version %s",
+		  (!silc_pubkey->identifier.version ? " 1" :
+		   silc_pubkey->identifier.version)));
+
   if (!strcmp(pkcs_name, "rsa")) {
     /* Parse the SILC RSA public key */
     SilcUInt32 e_len, n_len;
     SilcMPInt n, e;
 
-    /* Get PKCS object */
-    pkcs = silc_pkcs_find_algorithm(pkcs_name, "pkcs1-no-oid");
+    /* Get PKCS object.  Different PKCS #1 scheme is used with different
+       versions. */
+    if (!silc_pubkey->identifier.version ||
+	atoi(silc_pubkey->identifier.version) <= 1) {
+      /* Version 1 */
+      pkcs = silc_pkcs_find_algorithm(pkcs_name, "pkcs1-no-oid");
+    } else {
+      /* Version 2 and newer */
+      pkcs = silc_pkcs_find_algorithm(pkcs_name, "pkcs1");
+    }
     if (!pkcs) {
       SILC_LOG_DEBUG(("Unsupported PKCS algorithm"));
       goto err;
@@ -579,7 +602,8 @@ unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
 				     silc_pubkey->identifier.realname,
 				     silc_pubkey->identifier.email,
 				     silc_pubkey->identifier.org,
-				     silc_pubkey->identifier.country);
+				     silc_pubkey->identifier.country,
+				     silc_pubkey->identifier.version);
   if (!identifier)
     goto err;
 
@@ -742,6 +766,12 @@ SilcBool silc_pkcs_silc_public_key_compare(void *key1, void *key2)
        strcmp(k1->identifier.country, k2->identifier.country)))
     return FALSE;
 
+  if ((k1->identifier.version && !k2->identifier.version) ||
+      (!k1->identifier.version && k2->identifier.version) ||
+      (k1->identifier.version && k2->identifier.version &&
+       strcmp(k1->identifier.version, k2->identifier.version)))
+    return FALSE;
+
   return k1->pkcs->public_key_compare(k1->public_key, k2->public_key);
 }
 
@@ -759,6 +789,7 @@ void silc_pkcs_silc_public_key_free(void *public_key)
   silc_free(silc_pubkey->identifier.email);
   silc_free(silc_pubkey->identifier.org);
   silc_free(silc_pubkey->identifier.country);
+  silc_free(silc_pubkey->identifier.version);
   silc_free(silc_pubkey);
 }
 
@@ -912,6 +943,7 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
 
 /* Private key version */
 #define SILC_PRIVATE_KEY_VERSION_1 0x82171273
+#define SILC_PRIVATE_KEY_VERSION_2 0xf911a3d1
 
 /* Imports SILC implementation style private key */
 
@@ -976,17 +1008,8 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
     unsigned char *tmp;
     SilcUInt32 len, ver;
 
-    /* Get PKCS object */
-    pkcs = silc_pkcs_find_algorithm(pkcs_name, "pkcs1-no-oid");
-    if (!pkcs) {
-      SILC_LOG_DEBUG(("Unsupported PKCS algorithm"));
-      goto err;
-    }
-    silc_privkey->pkcs = pkcs;
-
     if (keydata_len < 4)
       goto err;
-
     silc_buffer_set(&k, key_data, keydata_len);
 
     /* Get version.  Key without the version is old style private key
@@ -997,8 +1020,10 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
       goto err;
     silc_buffer_pull(&k, 4);
 
-    if (ver != SILC_PRIVATE_KEY_VERSION_1) {
+    if (ver != SILC_PRIVATE_KEY_VERSION_1 &&
+	ver != SILC_PRIVATE_KEY_VERSION_2) {
       len = ver;
+      ver = 0;
     } else {
       if (silc_buffer_unformat(&k,
 			       SILC_STR_UI_INT(&len),
@@ -1007,9 +1032,28 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
       silc_buffer_pull(&k, 4);
     }
 
+    /* Get PKCS object.  Different PKCS #1 scheme is used with different
+       versions. */
+    if (ver == 0 || ver == SILC_PRIVATE_KEY_VERSION_1) {
+      /* Version 0 and 1 */
+      pkcs = silc_pkcs_find_algorithm(pkcs_name, "pkcs1-no-oid");
+    } else {
+      /* Version 2 and newer */
+      pkcs = silc_pkcs_find_algorithm(pkcs_name, "pkcs1");
+    }
+    if (!pkcs) {
+      SILC_LOG_DEBUG(("Unsupported PKCS algorithm"));
+      goto err;
+    }
+    silc_privkey->pkcs = pkcs;
+
+    SILC_LOG_DEBUG(("Private key version %s",
+		    (ver == SILC_PRIVATE_KEY_VERSION_1 ? "1" :
+		     ver == SILC_PRIVATE_KEY_VERSION_2 ? "2" : "0")));
+
     /* Get e */
     if (silc_buffer_unformat(&k,
-			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_DATA(&tmp, len),
 			     SILC_STR_END) < 0)
       goto err;
     silc_mp_init(&e);
@@ -1023,7 +1067,7 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
       goto err;
     silc_buffer_pull(&k, 4);
     if (silc_buffer_unformat(&k,
-			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_DATA(&tmp, len),
 			     SILC_STR_END) < 0)
       goto err;
     silc_mp_init(&n);
@@ -1037,7 +1081,7 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
       goto err;
     silc_buffer_pull(&k, 4);
     if (silc_buffer_unformat(&k,
-			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_DATA(&tmp, len),
 			     SILC_STR_END) < 0)
       goto err;
     silc_mp_init(&d);
@@ -1051,7 +1095,7 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
       goto err;
     silc_buffer_pull(&k, 4);
     if (silc_buffer_unformat(&k,
-			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_DATA(&tmp, len),
 			     SILC_STR_END) < 0)
       goto err;
     silc_mp_init(&dp);
@@ -1065,14 +1109,14 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
       goto err;
     silc_buffer_pull(&k, 4);
     if (silc_buffer_unformat(&k,
-			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_DATA(&tmp, len),
 			     SILC_STR_END) < 0)
       goto err;
     silc_mp_init(&dq);
     silc_mp_bin2mp(tmp, len, &dq);
     silc_buffer_pull(&k, len);
 
-    if (ver != SILC_PRIVATE_KEY_VERSION_1) {
+    if (ver == 0) {
       /* Old version */
 
       /* Get pQ len */
@@ -1104,7 +1148,7 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
 	goto err;
       silc_buffer_pull(&k, 4);
       if (silc_buffer_unformat(&k,
-			       SILC_STR_UI_XNSTRING(&tmp, len),
+			       SILC_STR_DATA(&tmp, len),
 			       SILC_STR_END) < 0)
 	goto err;
       silc_mp_init(&qp);
@@ -1119,7 +1163,7 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
       goto err;
     silc_buffer_pull(&k, 4);
     if (silc_buffer_unformat(&k,
-			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_DATA(&tmp, len),
 			     SILC_STR_END) < 0)
       goto err;
     silc_mp_init(&p);
@@ -1133,14 +1177,14 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
       goto err;
     silc_buffer_pull(&k, 4);
     if (silc_buffer_unformat(&k,
-			     SILC_STR_UI_XNSTRING(&tmp, len),
+			     SILC_STR_DATA(&tmp, len),
 			     SILC_STR_END) < 0)
       goto err;
     silc_mp_init(&q);
     silc_mp_bin2mp(tmp, len, &q);
     silc_buffer_pull(&k, len);
 
-    if (ver != SILC_PRIVATE_KEY_VERSION_1) {
+    if (ver == 0) {
       /* Old version.  Compute to new version */
       SILC_LOG_DEBUG(("Old version private key"));
       silc_mp_init(&qp);
@@ -1566,6 +1610,7 @@ SilcBool silc_pkcs_silc_sign(void *private_key,
 			     unsigned char *signature,
 			     SilcUInt32 signature_size,
 			     SilcUInt32 *ret_signature_len,
+			     SilcBool compute_hash,
 			     SilcHash hash)
 {
   SilcSILCPrivateKey silc_privkey = private_key;
@@ -1576,7 +1621,7 @@ SilcBool silc_pkcs_silc_sign(void *private_key,
   return silc_privkey->pkcs->sign(silc_privkey->private_key,
 				  src, src_len,
 				  signature, signature_size,
-				  ret_signature_len, hash);
+				  ret_signature_len, compute_hash, hash);
 }
 
 /* Verifies as specified in SILC protocol specification */

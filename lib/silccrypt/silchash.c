@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,14 +38,17 @@ SilcDList silc_hash_list = NULL;
 /* Default hash functions for silc_hash_register_default(). */
 const SilcHashObject silc_default_hash[] =
 {
-  { "sha256", 32, 64, silc_sha256_init, silc_sha256_update, silc_sha256_final,
+  { "sha256", "2.16.840.1.101.3.4.2.1",
+    32, 64, silc_sha256_init, silc_sha256_update, silc_sha256_final,
     silc_sha256_transform, silc_sha256_context_len },
-  { "sha1", 20, 64, silc_sha1_init, silc_sha1_update, silc_sha1_final,
+  { "sha1", "1.3.14.3.2.26",
+    20, 64, silc_sha1_init, silc_sha1_update, silc_sha1_final,
     silc_sha1_transform, silc_sha1_context_len },
-  { "md5", 16, 64, silc_md5_init, silc_md5_update, silc_md5_final,
+  { "md5", "1.2.840.113549.2.5",
+    16, 64, silc_md5_init, silc_md5_update, silc_md5_final,
     silc_md5_transform, silc_md5_context_len },
 
-  { NULL, 0, 0, NULL, NULL, NULL, NULL, NULL }
+  { NULL, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL }
 };
 
 /* Registers a new hash function into the SILC. This function is used at
@@ -73,6 +76,11 @@ SilcBool silc_hash_register(const SilcHashObject *hash)
     return FALSE;
   new->name = strdup(hash->name);
   if (!new->name) {
+    silc_free(new);
+    return FALSE;
+  }
+  new->oid = strdup(hash->oid);
+  if (!new->oid) {
     silc_free(new);
     return FALSE;
   }
@@ -166,7 +174,7 @@ SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
 {
   SilcHashObject *entry = NULL;
 
-  SILC_LOG_DEBUG(("Allocating new hash object"));
+  SILC_LOG_DEBUG(("Allocating new hash %s", name));
 
 #ifndef SILC_SYMBIAN
   if (silc_hash_list) {
@@ -182,6 +190,51 @@ SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
     int i;
     for (i = 0; silc_default_hash[i].name; i++) {
       if (!strcmp(silc_default_hash[i].name, name)) {
+	entry = (SilcHashObject *)&(silc_default_hash[i]);
+	break;
+      }
+    }
+  }
+#endif /* SILC_SYMBIAN */
+
+  if (entry) {
+    *new_hash = silc_calloc(1, sizeof(**new_hash));
+    if (!(*new_hash))
+      return FALSE;
+    (*new_hash)->hash = entry;
+    (*new_hash)->context = silc_calloc(1, entry->context_len());
+    if (!(*new_hash)->context) {
+      silc_free(*new_hash);
+      return FALSE;
+    }
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/* Allocate hash by OID string */
+
+SilcBool silc_hash_alloc_by_oid(const char *oid, SilcHash *new_hash)
+{
+  SilcHashObject *entry = NULL;
+
+  SILC_LOG_DEBUG(("Allocating new hash %s", oid));
+
+#ifndef SILC_SYMBIAN
+  if (silc_hash_list) {
+    silc_dlist_start(silc_hash_list);
+    while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
+      if (!strcmp(entry->oid, oid))
+	break;
+    }
+  }
+#else
+  {
+    /* On EPOC which don't have globals we check our constant hash list. */
+    int i;
+    for (i = 0; silc_default_hash[i].oid; i++) {
+      if (!strcmp(silc_default_hash[i].oid, oid)) {
 	entry = (SilcHashObject *)&(silc_default_hash[i]);
 	break;
       }
@@ -234,6 +287,13 @@ SilcUInt32 silc_hash_block_len(SilcHash hash)
 const char *silc_hash_get_name(SilcHash hash)
 {
   return hash->hash->name;
+}
+
+/* Returns hash OID string */
+
+const char *silc_hash_get_oid(SilcHash hash)
+{
+  return hash->hash->oid;
 }
 
 /* Returns TRUE if hash algorithm `name' is supported. */

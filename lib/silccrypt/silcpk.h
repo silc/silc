@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ typedef struct {
   char *email;
   char *org;
   char *country;
+  char *version;
 } *SilcPublicKeyIdentifier, SilcPublicKeyIdentifierStruct;
 /***/
 
@@ -99,7 +100,6 @@ typedef struct {
  * SYNOPSIS
  *
  *    SilcBool silc_pkcs_silc_generate_key(const char *algorithm,
- *                                         const char *scheme,
  *                                         SilcUInt32 bits_key_len,
  *                                         const char *identifier,
  *                                         SilcRng rng,
@@ -116,12 +116,10 @@ typedef struct {
  *
  *    // Generate RSA key pair with 2048 bit key length, using PKCS #1
  *    // no OID scheme.
- *    silc_pkcs_silc_generate_key("rsa", "pkcs1-no-oid", 2048,
- *                                rng, &public_key, &private_key);
+ *    silc_pkcs_silc_generate_key("rsa", 2048, rng, &public_key, &private_key);
  *
  ***/
 SilcBool silc_pkcs_silc_generate_key(const char *algorithm,
-				     const char *scheme,
 				     SilcUInt32 bits_key_len,
 				     const char *identifier,
 				     SilcRng rng,
@@ -134,7 +132,8 @@ SilcBool silc_pkcs_silc_generate_key(const char *algorithm,
  *
  *    char *silc_pkcs_silc_encode_identifier(char *username, char *host,
  *                                           char *realname, char *email,
- *                                           char *org, char *country)
+ *                                           char *org, char *country,
+ *                                           char *version);
  *
  * DESCRIPTION
  *
@@ -146,7 +145,8 @@ SilcBool silc_pkcs_silc_generate_key(const char *algorithm,
  ***/
 char *silc_pkcs_silc_encode_identifier(char *username, char *host,
 				       char *realname, char *email,
-				       char *org, char *country);
+				       char *org, char *country,
+				       char *version);
 
 /****f* silccrypt/SilcPubkeyAPI/silc_pkcs_silc_decode_identifier
  *
@@ -164,5 +164,20 @@ char *silc_pkcs_silc_encode_identifier(char *username, char *host,
  ***/
 SilcBool silc_pkcs_silc_decode_identifier(const char *identifier,
 					  SilcPublicKeyIdentifier ident);
+
+/****f* silccrypt/SilcPubkeyAPI/silc_pkcs_silc_public_key_version
+ *
+ * SYNOPSIS
+ *
+ *    int silc_pkcs_silc_public_key_version(SilcPublicKey public_key);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the verison of the SILC Public Key indicated by `public_key'.
+ *    Returns -1 if the `public_key' is not a SILC Public Key and the
+ *    version number otherwise.
+ *
+ ***/
+int silc_pkcs_silc_public_key_version(SilcPublicKey public_key);
 
 #endif /* SILCPK_H */
