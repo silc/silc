@@ -246,6 +246,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 
         { "lstkey_file", "Public key file    : $0", 1, { 0 } },
         { "lstkey_alg", "Algorithm          : $0", 1, { 0 } },
+        { "lstkey_ver", "Version            : $0", 1, { 0 } },
         { "lstkey_bits", "Key length (bits)  : $0", 1, { 1 } },
         { "lstkey_rn", "Real name          : $0", 1, { 0 } },
         { "lstkey_un", "Username           : $0", 1, { 0 } },

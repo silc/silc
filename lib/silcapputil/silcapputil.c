@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2006 Pekka Riikonen
+  Copyright (C) 2002 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ static char *silc_create_pk_identifier(void)
   silc_snprintf(email, sizeof(email), "%s@%s", username, hostname);
 
   ident = silc_pkcs_silc_encode_identifier(username, hostname, realname,
-					   email, NULL, NULL);
+					   email, NULL, NULL, NULL);
   if (realname)
     silc_free(realname);
   silc_free(hostname);
@@ -192,8 +192,11 @@ New pair of keys will be created.  Please, answer to following questions.\n\
     }
   }
 
+  if (interactive)
+    printf("\nGenerating the key pair...\n");
+
   /* Generate keys */
-  if (!silc_pkcs_silc_generate_key(alg, "pkcs1-no-oid", key_len_bits,
+  if (!silc_pkcs_silc_generate_key(alg, key_len_bits,
 				   identifier, rng, &public_key,
 				   &private_key))
     return FALSE;
@@ -302,6 +305,8 @@ SilcBool silc_show_public_key(SilcPublicKey public_key)
   printf("Algorithm          : %s\n", silc_pkcs_get_name(public_key));
   if (key_len)
     printf("Key length (bits)  : %d\n", (unsigned int)key_len);
+  if (ident->version)
+    printf("Version            : %s\n", ident->version);
   if (ident->realname)
     printf("Real name          : %s\n", ident->realname);
   if (ident->username)

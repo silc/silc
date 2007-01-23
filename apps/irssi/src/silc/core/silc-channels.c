@@ -1090,6 +1090,10 @@ void silc_list_key(const char *pub_filename, int verbose)
     printformat_module("fe-common/silc", NULL, NULL,
                         MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_BITS,
                         (unsigned int)key_len);
+  if (ident->version && verbose)
+    printformat_module("fe-common/silc", NULL, NULL,
+                        MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_VER,
+                        ident->version);
   if (ident->realname && (!is_server_key || verbose))
     printformat_module("fe-common/silc", NULL, NULL,
                        MSGLEVEL_CRAP, SILCTXT_LISTKEY_PUB_RN,

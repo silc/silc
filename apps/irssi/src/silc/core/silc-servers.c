@@ -1,7 +1,7 @@
 /*
   silc-server.c : irssi
 
-  Copyright (C) 2000 - 2006 Timo Sirainen
+  Copyright (C) 2000 - 2007 Timo Sirainen
                             Pekka Riikonen <priikone@silcnet.org>
 
   This program is free software; you can redistribute it and/or modify
@@ -461,17 +461,18 @@ static void sig_disconnected(SILC_SERVER_REC *server)
   silc_dlist_uninit(server->ftp_sessions);
 
   if (server->conn) {
+    /* Close connection */
     silc_client_close_connection(silc_client, server->conn);
-
-    /* SILC closes the handle */
-    g_io_channel_unref(net_sendbuffer_handle(server->handle));
-    net_sendbuffer_destroy(server->handle, FALSE);
-    server->handle = NULL;
   } else if (server->op) {
     /* Abort on going connecting (key exchange) */
     silc_async_abort(server->op, NULL, NULL);
     server->op = NULL;
   }
+
+  /* SILC closes the handle */
+  g_io_channel_unref(net_sendbuffer_handle(server->handle));
+  net_sendbuffer_destroy(server->handle, FALSE);
+  server->handle = NULL;
 }
 
 SERVER_REC *silc_server_init_connect(SERVER_CONNECT_REC *conn)
