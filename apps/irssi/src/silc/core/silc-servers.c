@@ -223,7 +223,7 @@ void silc_send_mime(SILC_SERVER_REC *server, int channel, const char *to,
   silc_free(unescaped_data);
 }
 
-static int isnickflag_func(char flag)
+static int isnickflag_func(SERVER_REC *server, char flag)
 {
   return flag == '@' || flag == '+';
 }
@@ -233,7 +233,7 @@ static int ischannel_func(SERVER_REC *server, const char *data)
   return FALSE;
 }
 
-const char *get_nick_flags(void)
+const char *get_nick_flags(SERVER_REC *server)
 {
   return "@\0\0";
 }
@@ -291,6 +291,9 @@ static void silc_connect_cb(SilcClient client,
 {
   SILC_SERVER_REC *server = context;
   char *file;
+
+  SILC_LOG_DEBUG(("Connection callback %p, status %d, error %d, message %s",
+		  conn, status, error, message ? message : "N/A"));
 
   server->op = NULL;
 

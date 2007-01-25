@@ -10,7 +10,7 @@
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -52,7 +52,7 @@ static void sig_signed_message_public(SERVER_REC * server, const char *msg,
 				      int verified)
 {
   CHANNEL_REC *chanrec;
-  NICK_REC *nickrec = NULL; /* we cheat here a little to keep the limit of 
+  NICK_REC *nickrec = NULL; /* we cheat here a little to keep the limit of
 			       6 parameters to a signal handler ... */
   const char *nickmode, *printnick;
   int for_me, print_channel, level;
@@ -67,8 +67,8 @@ static void sig_signed_message_public(SERVER_REC * server, const char *msg,
   for_me = !settings_get_bool("hilight_nick_matches") ? FALSE :
       nick_match_msg(chanrec, msg, server->nick);
   color = for_me ? NULL :
-      hilight_match_nick(server, target, nick, address, MSGLEVEL_PUBLIC,
-			 msg);
+    (char *)hilight_match_nick(server, target, nick, address, MSGLEVEL_PUBLIC,
+			       msg);
 
   print_channel = chanrec == NULL ||
       !window_item_is_active((WI_ITEM_REC *) chanrec);
@@ -225,7 +225,7 @@ static void sig_signed_message_own_private(SERVER_REC * server,
   g_free_not_null(freemsg);
 }
 
-static void sig_message_own_action_all(SERVER_REC *server, 
+static void sig_message_own_action_all(SERVER_REC *server,
 					const char *msg, const char *target,
 					bool is_channel, bool is_signed)
 {
@@ -243,7 +243,7 @@ static void sig_message_own_action_all(SERVER_REC *server,
   printformat(server, target,
 	      MSGLEVEL_ACTIONS | MSGLEVEL_NOHILIGHT | MSGLEVEL_NO_ACT |
 	      (is_channel ? MSGLEVEL_PUBLIC : MSGLEVEL_MSGS),
-	      item != NULL ? 
+	      item != NULL ?
 	      (is_signed ? SILCTXT_OWN_ACTION_SIGNED : SILCTXT_OWN_ACTION) :
 	      (is_signed ? SILCTXT_OWN_ACTION_TARGET_SIGNED :
 	                   SILCTXT_OWN_ACTION_TARGET),
@@ -300,11 +300,11 @@ static void sig_message_action_all(SERVER_REC *server, const char *msg,
     msg = freemsg = expand_emphasis(item, msg);
 
   if (is_channel) {
-    /* channel action */ 
+    /* channel action */
     if (window_item_is_active(item)) {
       /* message to active channel in window */
       printformat(server, target, level,
-		  VERIFIED_MSG2(verified, SILCTXT_ACTION_PUBLIC), 
+		  VERIFIED_MSG2(verified, SILCTXT_ACTION_PUBLIC),
 		  nick, target, msg);
     } else {
       /* message to not existing/active channel */
@@ -352,7 +352,7 @@ static void sig_message_private_action_signed(SERVER_REC *server,
   sig_message_action_all(server, msg, nick, address, target, FALSE, verified);
 }
 
-static void sig_message_own_notice_all(SERVER_REC *server, 
+static void sig_message_own_notice_all(SERVER_REC *server,
 					const char *msg, const char *target,
 					bool is_signed)
 {
@@ -383,9 +383,9 @@ static void sig_message_notice_all(SERVER_REC *server, const char *msg,
     return;
 
   if (is_channel) {
-    /* channel notice */ 
+    /* channel notice */
       printformat(server, target, MSGLEVEL_NOTICES,
-		  VERIFIED_MSG2(verified, SILCTXT_NOTICE_PUBLIC), 
+		  VERIFIED_MSG2(verified, SILCTXT_NOTICE_PUBLIC),
 		  nick, target, msg);
   } else {
     /* private notice */

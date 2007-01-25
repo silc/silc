@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2006 Pekka Riikonen
+  Copyright (C) 2002 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -821,12 +821,8 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 
   /* Handle the signature verifications and public key verifying here */
 
-  if (usersign.data) {
-    /* Verify the signature now */
-    SilcPublicKey public_key;
+  if (verify->userpk.data) {
     SilcPKCSType type = 0;
-    unsigned char *verifyd;
-    SilcUInt32 verify_len;
 
     if (!strcmp(verify->userpk.type, "silc-rsa"))
       type = SILC_PKCS_SILC;
@@ -837,9 +833,17 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
     else if (!strcmp(verify->userpk.type, "pgp-sign-rsa"))
       type = SILC_PKCS_OPENPGP;
 
-    if (silc_pkcs_public_key_alloc(type, verify->userpk.data,
-				   verify->userpk.data_len,
-				   &verify->public_key)) {
+    silc_pkcs_public_key_alloc(type, verify->userpk.data,
+			       verify->userpk.data_len,
+			       &verify->public_key);
+  }
+
+  if (usersign.data) {
+    /* Verify the signature now */
+    unsigned char *verifyd;
+    SilcUInt32 verify_len;
+
+    if (verify->public_key) {
       verifyd = silc_attribute_get_verify_data(attrs, FALSE, &verify_len);
       if (verifyd && silc_pkcs_verify(verify->public_key,
 				      usersign.data,
@@ -916,7 +920,6 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 static void silc_query_attributes_print_final(bool success, void *context)
 {
   AttrVerify verify = context;
-  SilcClient client = verify->client;
   SILC_SERVER_REC *server = verify->server;
   char *format = NULL;
   unsigned char filename[256], *fingerprint = NULL, *tmp;
@@ -969,7 +972,6 @@ static void silc_query_attributes_print_final(bool success, void *context)
 static void silc_query_attributes_accept(const char *line, void *context)
 {
   AttrVerify verify = context;
-  SilcClient client = verify->client;
   SILC_SERVER_REC *server = verify->server;
   struct stat st;
   struct passwd *pw;
@@ -1031,11 +1033,13 @@ static void silc_query_attributes_accept(const char *line, void *context)
     }
 
     /* Save public key */
-    memset(filename2, 0, sizeof(filename2));
-    snprintf(filename2, sizeof(filename2) - 1, "%s/clientkey_%s.pub",
-	     filename, fingerprint);
-    silc_pkcs_save_public_key(filename2, verify->public_key,
-			      SILC_PKCS_FILE_BASE64);
+    if (verify->public_key) {
+      memset(filename2, 0, sizeof(filename2));
+      snprintf(filename2, sizeof(filename2) - 1, "%s/clientkey_%s.pub",
+	       filename, fingerprint);
+      silc_pkcs_save_public_key(filename2, verify->public_key,
+				SILC_PKCS_FILE_BASE64);
+    }
 
     /* Save extension data */
     if (verify->extension) {

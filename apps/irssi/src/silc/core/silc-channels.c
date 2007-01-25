@@ -830,7 +830,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
       silc_client_free_private_message_keys(keys, keys_count);
 
     } else if (type == 2) {
-      int k, len;
+      int len;
       char buf[1024];
 
       ckeys = silc_client_list_channel_private_keys(silc_client, conn,
