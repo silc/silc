@@ -23,6 +23,9 @@
 #include "module.h"
 #include "textbuffer-view.h"
 #include "utf8.h"
+#ifdef HAVE_CUIX
+#include "cuix.h"
+#endif
 
 typedef struct {
 	char *name;
@@ -199,16 +202,20 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 		}
 
 		if (!view->utf8) {
-			next_ptr = ptr+1;
-			char_len = 1;
+			/* MH */
+			if (term_type != TERM_TYPE_BIG5 ||
+			    ptr[1] == '\0' || !is_big5(ptr[0], ptr[1]))
+				char_len = 1;
+			else
+				char_len = 2;
+			next_ptr = ptr+char_len;
 		} else {
 			char_len = 1;
 			while (ptr[char_len] != '\0' && char_len < 6)
 				char_len++;
 
 			next_ptr = ptr;
-			chr = get_utf8_char(&next_ptr, char_len);
-			if (chr < 0)
+			if (get_utf8_char(&next_ptr, char_len, &chr) < 0)
 				char_len = 1;
 			else
 				char_len = utf8_width(chr);
@@ -251,7 +258,11 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 			continue;
 		}
 
-		if (*ptr == ' ') {
+		if (!view->utf8 && char_len > 1) {
+			last_space = xpos;
+			last_space_ptr = next_ptr;
+			last_color = color;
+		} else if (*ptr == ' ') {
 			last_space = xpos;
 			last_space_ptr = ptr;
 			last_color = color;
@@ -268,11 +279,13 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 
 	if (rec->count > 1) {
 		for (pos = 0; lines != NULL; pos++) {
-			memcpy(&rec->lines[pos], lines->data,
+			void *data = lines->data;
+
+			memcpy(&rec->lines[pos], data,
 			       sizeof(LINE_CACHE_SUB_REC));
 
-			g_free(lines->data);
-			lines = g_slist_remove(lines, lines->data);
+			lines = g_slist_remove(lines, data);
+			g_free(data);
 		}
 	}
 
@@ -421,10 +434,18 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 
 		end = text;
 		if (view->utf8) {
-			unichar chr = get_utf8_char(&end, 6);
-			char_width = utf8_width(chr);
+			unichar chr;
+			if (get_utf8_char(&end, 6, &chr)<0)
+				char_width = 1;
+			else
+				char_width = utf8_width(chr);
 		} else {
-			char_width = 1;
+			if (term_type == TERM_TYPE_BIG5 &&
+			    is_big5(end[0], end[1]))
+				char_width = 2;
+			else
+				char_width = 1;
+			end += char_width-1;
 		}
 
 		xpos += char_width;
@@ -1040,6 +1061,8 @@ static void view_bookmarks_check(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 			if (new_line != NULL) {
 				g_hash_table_insert(view->bookmarks,
 						    tmp->data, new_line);
+			} else {
+				g_free(tmp->data);
 			}
 		}
 		g_slist_free(rec.remove_list);
@@ -1120,11 +1143,15 @@ static void view_remove_line(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 
 		if (view->startline == line) {
                         /* removing the first line in screen */
+			int is_last = view->startline->next == NULL;
+
 			realcount = view_scroll(view, &view->startline,
 						&view->subline,
 						linecount, FALSE);
 			view->ypos -= realcount;
 			view->empty_linecount += linecount-realcount;
+			if (is_last == 1)
+				view->startline = NULL;
 		}
 	} else {
 		if (textbuffer_line_exists_after(view->bottom_startline,
@@ -1299,6 +1326,9 @@ static int sig_check_linecache(void)
 void textbuffer_view_init(void)
 {
 	linecache_tag = g_timeout_add(LINE_CACHE_CHECK_TIME, (GSourceFunc) sig_check_linecache, NULL);
+#ifdef HAVE_CUIX
+        cuix_active = 0;
+#endif
 }
 
 void textbuffer_view_deinit(void)

@@ -124,8 +124,8 @@ static void hilight_init_rec(HILIGHT_REC *rec)
 void hilight_create(HILIGHT_REC *rec)
 {
 	if (g_slist_find(hilights, rec) != NULL) {
-		hilights = g_slist_remove(hilights, rec);
 		hilight_remove_config(rec);
+		hilights = g_slist_remove(hilights, rec);
 	}
 
 	hilights = g_slist_append(hilights, rec);
@@ -279,7 +279,7 @@ static char *hilight_get_act_color(HILIGHT_REC *rec)
 			settings_get_str("hilight_act_color"));
 }
 
-static char *hilight_get_color(HILIGHT_REC *rec)
+char *hilight_get_color(HILIGHT_REC *rec)
 {
 	const char *color;
 
@@ -291,7 +291,7 @@ static char *hilight_get_color(HILIGHT_REC *rec)
 	return format_string_expand(color, NULL);
 }
 
-static void hilight_update_text_dest(TEXT_DEST_REC *dest, HILIGHT_REC *rec)
+void hilight_update_text_dest(TEXT_DEST_REC *dest, HILIGHT_REC *rec)
 {
 	dest->level |= MSGLEVEL_HILIGHT;
 
@@ -304,6 +304,8 @@ static void hilight_update_text_dest(TEXT_DEST_REC *dest, HILIGHT_REC *rec)
         else
 		dest->hilight_color = hilight_get_act_color(rec);
 }
+
+static void hilight_print(int index, HILIGHT_REC *rec);
 
 static void sig_print_text(TEXT_DEST_REC *dest, const char *text,
 			   const char *stripped)
@@ -398,19 +400,15 @@ static void sig_print_text(TEXT_DEST_REC *dest, const char *text,
 	signal_stop();
 }
 
-char *hilight_match_nick(SERVER_REC *server, const char *channel,
+HILIGHT_REC *hilight_match_nick(SERVER_REC *server, const char *channel,
 			 const char *nick, const char *address,
 			 int level, const char *msg)
 {
         HILIGHT_REC *rec;
-	char *color;
 
 	rec = hilight_match(server, channel, nick, address,
 			    level, msg, NULL, NULL);
-	color = rec == NULL || !rec->nick ? NULL :
-		hilight_get_color(rec);
-
-	return color;
+	return (rec == NULL || !rec->nick) ? NULL : rec;
 }
 
 static void read_hilight_config(void)
@@ -491,8 +489,6 @@ static void hilight_print(int index, HILIGHT_REC *rec)
 #endif
 	}
 
-	if (options->len > 1) g_string_truncate(options, options->len-1);
-
 	if (rec->priority != 0)
 		g_string_sprintfa(options, "-priority %d ", rec->priority);
 	if (rec->color != NULL)
@@ -504,6 +500,8 @@ static void hilight_print(int index, HILIGHT_REC *rec)
 		g_strjoinv(",", rec->channels);
 	levelstr = rec->level == 0 ? NULL :
 		bits2level(rec->level);
+	if (levelstr != NULL)
+		levelstr = g_strconcat(levelstr, " ", NULL);
 	printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP,
 		    TXT_HILIGHT_LINE, index, rec->text,
 		    chans != NULL ? chans : "",
@@ -676,14 +674,14 @@ static void hilight_nick_cache(GHashTable *list, CHANNEL_REC *channel,
 
 static void read_settings(void)
 {
-	default_hilight_level = level2bits(settings_get_str("hilight_level"));
+	default_hilight_level = settings_get_level("hilight_level");
 }
 
 void hilight_text_init(void)
 {
 	settings_add_str("lookandfeel", "hilight_color", "%Y");
 	settings_add_str("lookandfeel", "hilight_act_color", "%M");
-	settings_add_str("lookandfeel", "hilight_level", "PUBLIC DCCMSGS");
+	settings_add_level("lookandfeel", "hilight_level", "PUBLIC DCCMSGS");
 
         read_settings();
 

@@ -70,7 +70,7 @@ WINDOW_REC *window_create(WI_ITEM_REC *item, int automatic)
 
 	rec = g_new0(WINDOW_REC, 1);
 	rec->refnum = window_get_new_refnum();
-	rec->level = level2bits(settings_get_str("window_default_level"));
+	rec->level = settings_get_level("window_default_level");
 
 	windows = g_slist_prepend(windows, rec);
 	signal_emit("window created", 2, rec, GINT_TO_POINTER(automatic));
@@ -308,8 +308,11 @@ WINDOW_REC *window_find_closest(void *server, const char *name, int level)
 			/* match, but if multiple windows have the same level
 			   we could be choosing a bad one here, eg.
 			   name=nick1 would get nick2's query instead of
-			   generic msgs window. */
-			if (g_strcasecmp(name, item->visible_name) == 0)
+			   generic msgs window.
+
+	                   And check for prefixed !channel name --Borys  */
+			if (g_strcasecmp(name, item->visible_name) == 0 ||
+			    g_strcasecmp(name, (char *) window_item_get_target((WI_ITEM_REC *) item)) == 0)
 				return namewindow;
 		}
 	}
@@ -646,7 +649,7 @@ void windows_init(void)
 	settings_add_bool("lookandfeel", "window_auto_change", FALSE);
 	settings_add_bool("lookandfeel", "windows_auto_renumber", TRUE);
 	settings_add_bool("lookandfeel", "window_check_level_first", FALSE);
-	settings_add_str("lookandfeel", "window_default_level", "NONE");
+	settings_add_level("lookandfeel", "window_default_level", "NONE");
 
 	read_settings();
 	signal_add("server looking", (SIGNAL_FUNC) sig_server_connected);

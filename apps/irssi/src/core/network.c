@@ -27,7 +27,7 @@
 #  define INADDR_NONE INADDR_BROADCAST
 #endif
 
-union irssi_sockaddr_union {
+union sockaddr_union {
 	struct sockaddr sa;
 	struct sockaddr_in sin;
 #ifdef HAVE_IPV6
@@ -51,6 +51,11 @@ union irssi_sockaddr_union {
 /* Cygwin need this, don't know others.. */
 /*#define BLOCKING_SOCKETS 1*/
 
+IPADDR ip4_any = {
+	AF_INET,
+	{ INADDR_ANY }
+};
+
 int net_ip_compare(IPADDR *ip1, IPADDR *ip2)
 {
 	if (ip1->family != ip2->family)
@@ -65,13 +70,7 @@ int net_ip_compare(IPADDR *ip1, IPADDR *ip2)
 }
 
 
-/* copy IP to sockaddr */
-#ifdef G_CAN_INLINE
-G_INLINE_FUNC
-#else
-static
-#endif
-void sin_set_ip(union irssi_sockaddr_union *so, const IPADDR *ip)
+static void sin_set_ip(union sockaddr_union *so, const IPADDR *ip)
 {
 	if (ip == NULL) {
 #ifdef HAVE_IPV6
@@ -93,7 +92,7 @@ void sin_set_ip(union irssi_sockaddr_union *so, const IPADDR *ip)
 		memcpy(&so->sin.sin_addr, &ip->ip, 4);
 }
 
-void sin_get_ip(const union irssi_sockaddr_union *so, IPADDR *ip)
+void sin_get_ip(const union sockaddr_union *so, IPADDR *ip)
 {
 	ip->family = so->sin.sin_family;
 
@@ -105,27 +104,17 @@ void sin_get_ip(const union irssi_sockaddr_union *so, IPADDR *ip)
 		memcpy(&ip->ip, &so->sin.sin_addr, 4);
 }
 
-#ifdef G_CAN_INLINE
-G_INLINE_FUNC
-#else
-static
-#endif
-void sin_set_port(union irssi_sockaddr_union *so, int port)
+static void sin_set_port(union sockaddr_union *so, int port)
 {
 #ifdef HAVE_IPV6
 	if (so->sin.sin_family == AF_INET6)
-                so->sin6.sin6_port = htons(port);
+                so->sin6.sin6_port = htons((unsigned short)port);
 	else
 #endif
 		so->sin.sin_port = htons((unsigned short)port);
 }
 
-#ifdef G_CAN_INLINE
-G_INLINE_FUNC
-#else
-static
-#endif
-int sin_get_port(union irssi_sockaddr_union *so)
+static int sin_get_port(union sockaddr_union *so)
 {
 #ifdef HAVE_IPV6
 	if (so->sin.sin_family == AF_INET6)
@@ -173,7 +162,7 @@ GIOChannel *net_connect(const char *addr, int port, IPADDR *my_ip)
 /* Connect to socket with ip address */
 GIOChannel *net_connect_ip(IPADDR *ip, int port, IPADDR *my_ip)
 {
-	union irssi_sockaddr_union so;
+	union sockaddr_union so;
 	int handle, ret, opt = 1;
 
 	if (my_ip != NULL && ip->family != my_ip->family) {
@@ -201,10 +190,12 @@ GIOChannel *net_connect_ip(IPADDR *ip, int port, IPADDR *my_ip)
 	/* set our own address */
 	if (my_ip != NULL) {
 		sin_set_ip(&so, my_ip);
-		if (bind(handle, &so.sa, SIZEOF_SOCKADDR(so)) == -1) {
-			/* failed, set it back to INADDR_ANY */
-			sin_set_ip(&so, NULL);
-			bind(handle, &so.sa, SIZEOF_SOCKADDR(so));
+		if (bind(handle, &so.sa, SIZEOF_SOCKADDR(so)) < 0) {
+			int old_errno = errno;
+
+			close(handle);
+			errno = old_errno;
+			return NULL;
 		}
 	}
 
@@ -274,15 +265,15 @@ void net_disconnect(GIOChannel *handle)
    address. */
 GIOChannel *net_listen(IPADDR *my_ip, int *port)
 {
-	union irssi_sockaddr_union so;
+	union sockaddr_union so;
 	int ret, handle, opt = 1;
 	socklen_t len;
 
 	g_return_val_if_fail(port != NULL, NULL);
 
 	memset(&so, 0, sizeof(so));
-	sin_set_port(&so, *port);
 	sin_set_ip(&so, my_ip);
+	sin_set_port(&so, *port);
 
 	/* create the socket */
 	handle = socket(so.sin.sin_family, SOCK_STREAM, 0);
@@ -331,7 +322,7 @@ GIOChannel *net_listen(IPADDR *my_ip, int *port)
 /* Accept a connection on a socket */
 GIOChannel *net_accept(GIOChannel *handle, IPADDR *addr, int *port)
 {
-	union irssi_sockaddr_union so;
+	union sockaddr_union so;
 	int ret;
 	socklen_t addrlen;
 
@@ -355,7 +346,7 @@ GIOChannel *net_accept(GIOChannel *handle, IPADDR *addr, int *port)
 /* Read data from socket, return number of bytes read, -1 = error */
 int net_receive(GIOChannel *handle, char *buf, int len)
 {
-        unsigned int ret;
+        gsize ret;
 	int err;
 
 	g_return_val_if_fail(handle != NULL, -1);
@@ -374,7 +365,7 @@ int net_receive(GIOChannel *handle, char *buf, int len)
 /* Transmit data, return number of bytes sent, -1 = error */
 int net_transmit(GIOChannel *handle, const char *data, int len)
 {
-        unsigned int ret;
+        gsize ret;
 	int err;
 
 	g_return_val_if_fail(handle != NULL, -1);
@@ -391,7 +382,7 @@ int net_transmit(GIOChannel *handle, const char *data, int len)
 /* Get socket address/port */
 int net_getsockname(GIOChannel *handle, IPADDR *addr, int *port)
 {
-	union irssi_sockaddr_union so;
+	union sockaddr_union so;
 	socklen_t addrlen;
 
 	g_return_val_if_fail(handle != NULL, -1);
@@ -414,11 +405,12 @@ int net_getsockname(GIOChannel *handle, IPADDR *addr, int *port)
 int net_gethostbyname(const char *addr, IPADDR *ip4, IPADDR *ip6)
 {
 #ifdef HAVE_IPV6
-	union irssi_sockaddr_union *so;
+	union sockaddr_union *so;
 	struct addrinfo hints, *ai, *ailist;
-	int ret, count;
+	int ret, count_v4, count_v6, use_v4, use_v6;
 #else
 	struct hostent *hp;
+	int count;
 #endif
 
 	g_return_val_if_fail(addr != NULL, -1);
@@ -435,27 +427,54 @@ int net_gethostbyname(const char *addr, IPADDR *ip4, IPADDR *ip6)
 	if (ret != 0)
 		return ret;
 
-        count = 0;
-	for (ai = ailist; ai != NULL && count < 2; ai = ai->ai_next) {
-		so = (union irssi_sockaddr_union *) ai->ai_addr;
+	/* count IPs */
+        count_v4 = count_v6 = 0;
+	for (ai = ailist; ai != NULL; ai = ai->ai_next) {
+		if (ai->ai_family == AF_INET)
+			count_v4++;
+		else if (ai->ai_family == AF_INET6)
+			count_v6++;
+	}
 
-		if (ai->ai_family == AF_INET6 && ip6->family == 0) {
-			sin_get_ip(so, ip6);
-                        count++;
-		} else if (ai->ai_family == AF_INET && ip4->family == 0) {
-			sin_get_ip(so, ip4);
-                        count++;
+	if (count_v4 == 0 && count_v6 == 0)
+		return HOST_NOT_FOUND; /* shouldn't happen? */
+
+	/* if there are multiple addresses, return random one */
+	use_v4 = count_v4 <= 1 ? 0 : rand() % count_v4;
+	use_v6 = count_v6 <= 1 ? 0 : rand() % count_v6;
+
+	count_v4 = count_v6 = 0;
+	for (ai = ailist; ai != NULL; ai = ai->ai_next) {
+		so = (union sockaddr_union *) ai->ai_addr;
+
+		if (ai->ai_family == AF_INET) {
+			if (use_v4 == count_v4)
+				sin_get_ip(so, ip4);
+                        count_v4++;
+		} else if (ai->ai_family == AF_INET6) {
+			if (use_v6 == count_v6)
+				sin_get_ip(so, ip6);
+			count_v6++;
 		}
 	}
 	freeaddrinfo(ailist);
-	return count > 0 ? 0 : 1;
+	return 0;
 #else
 	hp = gethostbyname(addr);
 	if (hp == NULL)
 		return h_errno;
 
+	/* count IPs */
+	count = 0;
+	while (hp->h_addr_list[count] != NULL)
+		count++;
+
+	if (count == 0)
+		return HOST_NOT_FOUND; /* shouldn't happen? */
+
+	/* if there are multiple addresses, return random one */
 	ip4->family = AF_INET;
-	memcpy(&ip4->ip, hp->h_addr, 4);
+	memcpy(&ip4->ip, hp->h_addr_list[rand() % count], 4);
 
 	return 0;
 #endif
@@ -466,10 +485,9 @@ int net_gethostbyname(const char *addr, IPADDR *ip4, IPADDR *ip6)
 int net_gethostbyaddr(IPADDR *ip, char **name)
 {
 #ifdef HAVE_IPV6
-	struct addrinfo req, *ai;
+	union sockaddr_union so;
 	int host_error;
 	char hostname[NI_MAXHOST];
-	char ipname[MAX_IP_LEN];
 #else
 	struct hostent *hp;
 #endif
@@ -479,29 +497,19 @@ int net_gethostbyaddr(IPADDR *ip, char **name)
 
 	*name = NULL;
 #ifdef HAVE_IPV6
-	net_ip2host(ip, ipname);
-
-	memset(&req, 0, sizeof(struct addrinfo));
-	req.ai_socktype = SOCK_STREAM;
-	req.ai_flags = AI_CANONNAME;
+	memset(&so, 0, sizeof(so));
+	sin_set_ip(&so, ip);
 
 	/* save error to host_error for later use */
-	host_error = getaddrinfo(ipname, NULL, &req, &ai);
-	if (host_error != 0)
-		return host_error;
-        host_error = getnameinfo(ai->ai_addr, ai->ai_addrlen,
-                                 hostname, NI_MAXHOST, NULL, 0, 0);
-        if (host_error != 0) {
-                freeaddrinfo(ai);
+        host_error = getnameinfo((struct sockaddr *) &so, sizeof(so),
+                                 hostname, sizeof(hostname), NULL, 0, 0);
+        if (host_error != 0)
                 return host_error;
-        }
 
 	*name = g_strdup(hostname);
-
-	freeaddrinfo(ai);
 #else
 	if (ip->family != AF_INET) return -1;
-	hp = gethostbyaddr(&ip->ip, 4, AF_INET);
+	hp = gethostbyaddr((const char *) &ip->ip, 4, AF_INET);
 	if (hp == NULL) return -1;
 
 	*name = g_strdup(hp->h_name);
@@ -611,7 +619,11 @@ const char *net_gethosterror(int error)
 int net_hosterror_notfound(int error)
 {
 #ifdef HAVE_IPV6
+#ifdef EAI_NODATA /* NODATA is depricated */
 	return error != 1 && (error == EAI_NONAME || error == EAI_NODATA);
+#else
+	return error != 1 && (error == EAI_NONAME);
+#endif
 #else
 	return error == HOST_NOT_FOUND || error == NO_ADDRESS;
 #endif

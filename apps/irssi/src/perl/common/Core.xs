@@ -3,6 +3,7 @@
 #include "core.h"
 
 #include "pidwait.h"
+#include "session.h"
 
 #define DEFAULT_COMMAND_CATEGORY "Perl scripts' commands"
 
@@ -74,6 +75,8 @@ CODE:
 			p[n-1] = irssi_ref_object(ST(n));
 		else if (SvROK(ST(n)))
 			p[n-1] = (void *) SvIV((SV*)SvRV(ST(n)));
+		else if (SvIOK(ST(n)))
+			p[n-1] = (void *)SvIV(ST(n));
 		else
 			p[n-1] = NULL;
 	}
@@ -93,6 +96,8 @@ CODE:
 			p[n] = irssi_ref_object(ST(n));
 		else if (SvROK(ST(n)))
 			p[n] = (void *) SvIV((SV*)SvRV(ST(n)));
+		else if (SvIOK(ST(n)))
+			p[n] = (void *) SvIV(ST(n));
 		else
 			p[n] = NULL;
 	}
@@ -140,6 +145,39 @@ CODE:
 		perl_signal_add_full((char *)SvPV(ST(0),PL_na), ST(1), SvIV(ST(2)));
 	else
 		perl_signal_add_hash(SvIV(ST(0)), ST(1));
+
+void
+signal_register(...)
+PREINIT:
+	HV *hv;
+        HE *he;
+	I32 len, pos;
+	const char *arr[7];
+CODE:
+	if (items != 1 || !is_hvref(ST(0)))
+		croak("Usage: Irssi::signal_register(hash)");
+
+        hv = hvref(ST(0));
+	hv_iterinit(hv);
+	while ((he = hv_iternext(hv)) != NULL) {
+		const char *key = hv_iterkey(he, &len);
+		SV *val = HeVAL(he);
+		AV *av;
+
+		if (!SvROK(val) || SvTYPE(SvRV(val)) != SVt_PVAV)
+			croak("not array reference");
+
+		av = (AV *) SvRV(val);
+		len = av_len(av)+1;
+		if (len > 6) len = 6;
+		for (pos = 0; pos < len; pos++) {
+                	SV **val = av_fetch(av, pos, 0);
+			arr[pos] = SvPV(*val, PL_na);
+		}
+		arr[pos] = NULL;
+		perl_signal_register(key, arr);
+	}
+
 
 int
 SIGNAL_PRIORITY_LOW()
@@ -545,6 +583,13 @@ char *
 get_irssi_config()
 CODE:
 	RETVAL = (char *) get_irssi_config();
+OUTPUT:
+	RETVAL
+
+char *
+get_irssi_binary()
+CODE:
+	RETVAL = irssi_binary;
 OUTPUT:
 	RETVAL
 

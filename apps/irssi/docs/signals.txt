@@ -84,16 +84,13 @@ server.c:
  "server connect failed", SERVER_REC
  "server disconnected", SERVER_REC
  "server quit", SERVER_REC, char *msg
+ "server sendmsg", SERVER_REC, char *target, char *msg, int target_type
 
 settings.c:
  "setup changed"
  "setup reread", char *fname
  "setup saved", char *fname, int autosaved
 
-signal.c:
-
- "signal", char *name, ...
- "last signal", char *name, ...
 
 IRC core
 --------
@@ -134,6 +131,7 @@ irc.c:
  "server event", SERVER_REC, char *data, char *sender_nick, char *sender_address
  "event "<cmd>, SERVER_REC, char *args, char *sender_nick, char *sender_address
  "default event", SERVER_REC, char *data, char *sender_nick, char *sender_address
+ "whois default event", SERVER_REC, char *args, char *sender_nick, char *sender_address
 
  "server incoming", SERVER_REC, char *data
 
@@ -149,7 +147,7 @@ massjoin.c:
 
 mode-lists.c:
  "ban new", CHANNEL_REC, BAN_REC
- "ban remove", CHANNEL_REC, BAN_REC
+ "ban remove", CHANNEL_REC, BAN_REC, char *setby
 
 modes.c:
  "channel mode changed", CHANNEL_REC, char *setby
@@ -325,11 +323,7 @@ gui-readline.c:
 gui-printtext.c:
  "beep"
 
-SILC
----
+Perl
+----
 
-silc-channels.c:
- "mime", SERVER_REC, WI_ITEM_REC, char *blob, char *nick, int verified
-
-silc-servers.c:
- "mime-send", SERVER_REC, int is_channel, char *to, char *blob, int sign
+"script error", PERL_SCRIPT_REC, char *errormsg

@@ -30,15 +30,18 @@
 #include "printtext.h"
 #include "gui-windows.h"
 #include "textbuffer-reformat.h"
+#ifdef HAVE_CUIX
+#include "cuix.h"
+#endif
 
 /* SYNTAX: CLEAR [-all] [<refnum>] */
 static void cmd_clear(const char *data)
 {
-        WINDOW_REC *window;
+	WINDOW_REC *window;
 	GHashTable *optlist;
-        char *refnum;
+	char *refnum;
 	void *free_arg;
-        GSList *tmp;
+	GSList *tmp;
 
 	g_return_if_fail(data != NULL);
 
@@ -46,19 +49,18 @@ static void cmd_clear(const char *data)
 			    "clear", &optlist, &refnum)) return;
 
 	if (g_hash_table_lookup(optlist, "all") != NULL) {
-                /* clear all windows */
+		/* clear all windows */
 		for (tmp = windows; tmp != NULL; tmp = tmp->next) {
-			WINDOW_REC *window = tmp->data;
-
+			window = tmp->data;
 			textbuffer_view_clear(WINDOW_GUI(window)->view);
 		}
 	} else if (*refnum != '\0') {
-                /* clear specified window */
+		/* clear specified window */
 		window = window_find_refnum(atoi(refnum));
-                if (window != NULL)
+		if (window != NULL)
 			textbuffer_view_clear(WINDOW_GUI(window)->view);
 	} else {
-                /* clear active window */
+		/* clear active window */
 		textbuffer_view_clear(WINDOW_GUI(active_win)->view);
 	}
 
@@ -97,10 +99,37 @@ static void cmd_scrollback(const char *data, SERVER_REC *server,
 	command_runsub("scrollback", data, server, item);
 }
 
-/* SYNTAX: SCROLLBACK CLEAR */
-static void cmd_scrollback_clear(void)
+/* SYNTAX: SCROLLBACK CLEAR [-all] [<refnum>] */
+static void cmd_scrollback_clear(const char *data)
 {
-	textbuffer_view_remove_all_lines(WINDOW_GUI(active_win)->view);
+	WINDOW_REC *window;
+	GHashTable *optlist;
+	char *refnum;
+	void *free_arg;
+	GSList *tmp;
+
+	g_return_if_fail(data != NULL);
+
+	if (!cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS,
+			    "scrollback clear", &optlist, &refnum)) return;
+
+	if (g_hash_table_lookup(optlist, "all") != NULL) {
+		/* clear all windows */
+		for (tmp = windows; tmp != NULL; tmp = tmp->next) {
+			window = tmp->data;
+			textbuffer_view_remove_all_lines(WINDOW_GUI(window)->view);
+		}
+	} else if (*refnum != '\0') {
+		/* clear specified window */
+		window = window_find_refnum(atoi(refnum));
+		if (window != NULL)
+			textbuffer_view_remove_all_lines(WINDOW_GUI(window)->view);
+	} else {
+		/* clear active window */
+		textbuffer_view_remove_all_lines(WINDOW_GUI(active_win)->view);
+	}
+
+	cmd_params_free(free_arg);
 }
 
 static void scrollback_goto_line(int linenum)
@@ -303,6 +332,23 @@ static void sig_away_changed(SERVER_REC *server)
 	}
 }
 
+#ifdef HAVE_CUIX
+static void cmd_cuix(void)
+{
+    if (!cuix_active)
+    {
+        /* textbuffer_view_clear(WINDOW_GUI(active_win)->view); */
+        cuix_active = 1;
+        cuix_create();
+    } else {
+        /* should never been called */
+        /* cuix_destroy (); */
+        cuix_active = 0;
+        /* textbuffer_view_clear(WINDOW_GUI(active_win)->view); */
+    }
+}
+#endif
+
 void textbuffer_commands_init(void)
 {
 	command_bind("clear", NULL, (SIGNAL_FUNC) cmd_clear);
@@ -314,8 +360,12 @@ void textbuffer_commands_init(void)
 	command_bind("scrollback end", NULL, (SIGNAL_FUNC) cmd_scrollback_end);
 	command_bind("scrollback redraw", NULL, (SIGNAL_FUNC) cmd_scrollback_redraw);
 	command_bind("scrollback status", NULL, (SIGNAL_FUNC) cmd_scrollback_status);
+#ifdef HAVE_CUIX
+	command_bind("cuix", NULL, (SIGNAL_FUNC) cmd_cuix);
+#endif
 
 	command_set_options("clear", "all");
+	command_set_options("scrollback clear", "all");
 
 	signal_add("away mode changed", (SIGNAL_FUNC) sig_away_changed);
 }
@@ -331,6 +381,9 @@ void textbuffer_commands_deinit(void)
 	command_unbind("scrollback end", (SIGNAL_FUNC) cmd_scrollback_end);
 	command_unbind("scrollback redraw", (SIGNAL_FUNC) cmd_scrollback_redraw);
 	command_unbind("scrollback status", (SIGNAL_FUNC) cmd_scrollback_status);
+#ifdef HAVE_CUIX
+	command_unbind("cuix", (SIGNAL_FUNC) cmd_cuix);
+#endif
 
 	signal_remove("away mode changed", (SIGNAL_FUNC) sig_away_changed);
 }

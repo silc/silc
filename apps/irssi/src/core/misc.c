@@ -173,37 +173,6 @@ int strarray_find(char **array, const char *item)
 	return -1;
 }
 
-int execute(const char *cmd)
-{
-	char **args;
-#ifndef WIN32
-	int pid;
-#endif
-
-	g_return_val_if_fail(cmd != NULL, -1);
-
-#ifndef WIN32
-	pid = fork();
-	if (pid == -1) return FALSE;
-	if (pid != 0) {
-		pidwait_add(pid);
-		return pid;
-	}
-
-	args = g_strsplit(cmd, " ", -1);
-	execvp(args[0], args);
-	g_strfreev(args);
-
-	_exit(99);
-	return -1;
-#else
-	args = g_strsplit(cmd, " ", -1);
-	_spawnvp(_P_DETACH, args[0], args);
-	g_strfreev(args);
-	return 0;
-#endif
-}
-
 GSList *gslist_find_string(GSList *list, const char *key)
 {
 	for (list = list; list != NULL; list = list->next)
@@ -807,4 +776,150 @@ char *escape_string(const char *str)
 	*p = '\0';
 
 	return ret;
+}
+
+int strocpy(char *dest, const char *src, size_t dstsize)
+{
+	if (dstsize == 0)
+		return -1;
+
+	while (*src != '\0' && dstsize > 1) {
+		*dest++ = *src++;
+		dstsize--;
+	}
+
+	*dest++ = '\0';
+	return *src == '\0' ? 0 : -1;
+}
+
+int nearest_power(int num)
+{
+	int n = 1;
+
+	while (n < num) n <<= 1;
+	return n;
+}
+
+int parse_time_interval(const char *time, int *msecs)
+{
+	const char *desc;
+	int number, sign, len, ret;
+
+	*msecs = 0;
+
+	/* max. return value is around 24 days */
+	number = 0; sign = 1; ret = TRUE;
+	for (;;) {
+		if (*time == '-') {
+			sign = -sign;
+			time++;
+			continue;
+		}
+
+		if (i_isdigit(*time)) {
+			number = number*10 + (*time - '0');
+			time++;
+			continue;
+		}
+
+		/* skip punctuation */
+		while (*time != '\0' && i_ispunct(*time))
+			time++;
+
+		/* get description */
+		for (len = 0, desc = time; i_isalpha(*time); time++)
+			len++;
+
+		if (len == 0) {
+			*msecs += number * 1000; /* assume seconds */
+			*msecs *= sign;
+			return TRUE;
+		}
+
+		if (g_strncasecmp(desc, "days", len) == 0) {
+			if (number > 24) {
+				/* would overflow */
+				return FALSE;
+			}
+			*msecs += number * 1000*3600*24;
+		} else if (g_strncasecmp(desc, "hours", len) == 0)
+			*msecs += number * 1000*3600;
+		else if (g_strncasecmp(desc, "minutes", len) == 0 ||
+			 g_strncasecmp(desc, "mins", len) == 0)
+			*msecs += number * 1000*60;
+		else if (g_strncasecmp(desc, "seconds", len) == 0 ||
+			 g_strncasecmp(desc, "secs", len) == 0)
+			*msecs += number * 1000;
+		else if (g_strncasecmp(desc, "milliseconds", len) == 0 ||
+			 g_strncasecmp(desc, "millisecs", len) == 0 ||
+			 g_strncasecmp(desc, "mseconds", len) == 0 ||
+			 g_strncasecmp(desc, "msecs", len) == 0)
+			*msecs += number;
+		else {
+			ret = FALSE;
+		}
+
+		/* skip punctuation */
+		while (*time != '\0' && i_ispunct(*time))
+			time++;
+
+		if (*time == '\0')
+			break;
+
+		number = 0;
+	}
+
+	*msecs *= sign;
+	return ret;
+}
+
+int parse_size(const char *size, int *bytes)
+{
+	const char *desc;
+	int number, len;
+
+	*bytes = 0;
+
+	/* max. return value is about 1.6 years */
+	number = 0;
+	while (*size != '\0') {
+		if (i_isdigit(*size)) {
+			number = number*10 + (*size - '0');
+			size++;
+			continue;
+		}
+
+		/* skip punctuation */
+		while (*size != '\0' && i_ispunct(*size))
+			size++;
+
+		/* get description */
+		for (len = 0, desc = size; i_isalpha(*size); size++)
+			len++;
+
+		if (len == 0) {
+			if (number == 0) {
+				/* "0" - allow it */
+				return TRUE;
+			}
+
+			*bytes += number*1024; /* assume kilobytes */
+			return FALSE;
+		}
+
+		if (g_strncasecmp(desc, "gbytes", len) == 0)
+			*bytes += number * 1024*1024*1024;
+		if (g_strncasecmp(desc, "mbytes", len) == 0)
+			*bytes += number * 1024*1024;
+		if (g_strncasecmp(desc, "kbytes", len) == 0)
+			*bytes += number * 1024;
+		if (g_strncasecmp(desc, "bytes", len) == 0)
+			*bytes += number;
+
+		/* skip punctuation */
+		while (*size != '\0' && i_ispunct(*size))
+			size++;
+	}
+
+	return TRUE;
 }

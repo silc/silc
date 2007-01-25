@@ -76,22 +76,23 @@
       (Result) |= ((Chars)[(Count)] & 0x3f);				      \
     }
 
-unichar get_utf8_char(const unsigned char **ptr, int len)
+int get_utf8_char(const unsigned char **ptr, int len, unichar *chr_r)
 {
 	int i, result, mask, chrlen;
 
         mask = 0;
 	UTF8_COMPUTE(**ptr, mask, chrlen);
 	if (chrlen == -1)
-		return (unichar) -2;
+		return -2;
 
 	if (chrlen > len)
-                return (unichar) -1;
+                return -1;
 
 	UTF8_GET(result, *ptr, i, mask, chrlen);
 	if (result == -1)
-                return (unichar) -2;
-
+                return -2;
+	
+	*chr_r = (unichar) result;
 	*ptr += chrlen-1;
         return result;
 }
@@ -100,9 +101,10 @@ int strlen_utf8(const char *str)
 {
 	const unsigned char *p = (const unsigned char *) str;
         int len;
+	unichar chr_r;
 
 	len = 0;
-	while (*p != '\0' && get_utf8_char(&p, 6) > 0) {
+	while (*p != '\0' && get_utf8_char(&p, 6, &chr_r) > 0) {
 		len++;
                 p++;
 	}
@@ -176,6 +178,24 @@ void utf16_to_utf8(const unichar *str, char *out)
                 out += len;
 
 		str++;
+	}
+	*out = '\0';
+}
+
+void utf16_to_utf8_with_pos(const unichar *str, int spos, char *out, int *opos)
+{
+	int len;
+	const unichar *sstart = str;
+	char *ostart = out;
+
+	*opos = 0;
+	while (*str != '\0') {
+		len = utf16_char_to_utf8(*str, out);
+                out += len;
+
+		str++;
+		if(str - sstart == spos)
+			*opos = out - ostart;
 	}
 	*out = '\0';
 }

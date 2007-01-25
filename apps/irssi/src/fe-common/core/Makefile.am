@@ -27,11 +27,13 @@ libfe_common_core_a_SOURCES = \
 	fe-queries.c \
 	fe-server.c \
 	fe-settings.c \
+	utf8.c \
 	formats.c \
 	hilight-text.c \
 	keyboard.c \
 	module-formats.c \
 	printtext.c \
+	fe-recode.c \
 	themes.c \
 	translation.c \
 	window-activity.c \
@@ -51,12 +53,14 @@ noinst_HEADERS = \
 	fe-exec.h \
 	fe-messages.h \
 	fe-queries.h \
+	utf8.h \
 	formats.h \
 	hilight-text.h \
 	keyboard.h \
 	module-formats.h \
 	module.h \
 	printtext.h \
+	fe-recode.h \
 	themes.h \
 	translation.h \
 	window-activity.h \

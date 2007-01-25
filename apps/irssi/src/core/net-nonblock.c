@@ -40,7 +40,7 @@ typedef struct {
 
 static int g_io_channel_write_block(GIOChannel *channel, void *data, int len)
 {
-        unsigned int ret;
+        gsize ret;
 	int err, sent;
 
 	sent = 0;
@@ -56,7 +56,7 @@ static int g_io_channel_write_block(GIOChannel *channel, void *data, int len)
 static int g_io_channel_read_block(GIOChannel *channel, void *data, int len)
 {
 	time_t maxwait;
-        unsigned int ret;
+        gsize ret;
 	int err, received;
 
 	maxwait = time(NULL)+2;
@@ -101,6 +101,8 @@ int net_gethostbyname_nonblock(const char *addr, GIOChannel *pipe,
 #endif
 
 	/* child */
+	srand(time(NULL));
+
         memset(&rec, 0, sizeof(rec));
 	rec.error = net_gethostbyname(addr, &rec.ip4, &rec.ip6);
 	if (rec.error == 0) {

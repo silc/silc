@@ -1,3 +1,238 @@
+v0.8.11 200x-xx-xx  The Irssi team <staff@irssi.org>
+	+ Send /QUOTE immediately if server didn't send the 001 event yet
+	+ If dcc_own_ip contains IPv4 address, listen only in IPv4
+	+ Negative scroll_page_count scrolls screensize-n lines
+	  (Patch by Chris Moore)
+	+ Sort nicks with custom prefix by the order defined in isupport in /NAMES
+	+ New perl command send_raw_first, patch by ComradeP (Bug 413)
+	+ Let the module loader also check for fe_common_$protocol files
+	+ Don't wait for all /NAMES replies before syncing if we can't combine
+	  queries anyways (Patch by jilles)
+	+ Renamed irc.efnet.net to irc.efnet.org
+	+ Add support for utf8 to Irssi::settings_get_str and
+	  Irssi::TextUI::Line::get_text
+	+ /SCROLLBACK CLEAR accepts the same arguments as /CLEAR
+	+ Check if binary exists and can be executed before /UPGRADE
+	+ Change default value of override_coredump_limit to OFF
+	+ UPTIME command by Lauri Nurmi with some modifications (Bug 458)
+	+ Remove CR and LF from Perl commands, to make it harder to introduce a
+	  security bug
+	- Fixed segfault on quit introduced in 0.8.10
+	- Fixed a bug where tab-complete didn't worked with utf8/big5 properly
+	- Ignore joins without a nick from broken servers
+	- Fix whois_hide_safe_channel_id: only look at the beginning of a channel
+	  name, not in the middle
+	- Don't assume that 7bit ascii strings are encoded in UTF-8, only
+	  validate the strings when they contain octest with highest bit set
+	  (patch by Mikko Rauhala)
+	- Make random really random when resolving
+	- Don't get confused by a join command with too many arguments, keys
+	  can't have spaces in them (Bug 437)
+	- Don't crash on /QUIT with scripts causing and catching signals on UNLOAD
+	- Fix off-by-one error in gui_entry_draw_from
+	- Fix %k and %K mappings in curses frontend
+	- Fix bold on monochrome terminals in terminfo frontend
+	- Fixed colors with TERM=xterm-{88,256}color in terminfo frontend
+	- Fix building with srcdir != builddir
+	- Don't get confused and keep saying "Netsplit over" on every join for
+	  user that only rejoined some channels
+	- Fix crash with one line high terminal
+	- Fix crash in /EXEC (Bug 439)
+	- Fix format string in printtext_dest call from Perl, patch by loafier
+	- Fix memory leaks in expandos_deinit by Nicolas Collignon (Bug 419)
+	- Detect off_t size using AC_CHECK_SIZEOF because it works also when
+	  cross-compiling in autoconf-2.50 and higher
+	- Fix failed assertion when the config file is unreadable, patch by
+	  Daniel Koning (Bug 164)
+
+v0.8.10 2005-12-11  The Irssi team <staff@irssi.org>
+
+	* Long delayed release, with lots of changes. Most important ones:
+	    + Recode support, by decadix and senneth
+	    + isupport (005 numeric), by David Leadbeater
+	    + Passive DCC support, by Francesco Fracassi
+	    - Many memleak fixes, by Toby Peterson
+
+	+ Moved to subversion
+	+ /SET paste_join_multiline ON - When paste detection is enabled and
+	  you paste lines which look like they're being copy&pasted from irssi
+	  itself, it attempts to merge lines said originally in a single line.
+
+	  How this really works is that all indented lines must have the same
+	  amount of indentation. Indented lines are merged to last
+	  unindented line. If line gets longer than 400 characters, it's split.
+	+ /SET whois_hide_safe_channel_id ON - Hides the channel ID prefix
+	  of !channels in WHOIS replies
+	+ When reconnecting to server, say that it can be aborted with
+	  /RMRECONNS
+	+ /WHOIS -<server tag> is supported now
+	+ /SET whois_hide_safe_channel_id - removes the ugly IDs for !channels
+	  in /WHOIS (default)
+	+ If we can't connect to server using given own IP, show the IP to
+	  user in the error message. Should help figuring out wrong
+	  /SET hostname or /SERVER -host settings.
+	+ If channel has more nicks than /SET channel_max_who_sync, don't ask
+	  /WHO list to avoid getting kicked out of server (Max SendQ exceeded).
+	+ /LOAD script.pl loads the perl script
+	+ /IGNORE -network ignores only on specified network
+	+ /SET use_status_window and /SET use_msgs_window make the effects 
+	  immediately
+	+ Changed the confusing "ircnet" to "network" everywhere
+	+ Don't autoget files sent to channels, unless dcc_autoget_masks is set
+	+ Added a default "*" target which matches everything on the server,
+	  including NULL items associated with it, by jimmy
+	+ /UPGRADE now saves server->version
+	+ If available, send who set topic and when to irssi-proxy clients
+	+ Cleaned up network list: removed smaller networks, added QuakeNet
+	+ New default aliases: MANUAL-WINDOWS, EXEMPTLIST and ATAG
+	+ Recode support: /RECODE for manipulation of the conversion database.
+	  Setting "term_type" has been renamed to "term_charset".
+	  /SET recode OFF to disable recode completely.
+	  /SET recode_out_default_charset <charset> to specify the default
+	  outgoing charset.
+	  /SET recode_fallback <charset> to specify a charset that will be
+	  used when the normal conversion is failing.
+	  /SET recode_transliterate ON to enable character transliteration,
+	  so unavailable characters will be transliterated into something 
+	  readable
+	  <charset> can be almost everything listed by 'iconv -l'
+	+ Added transpose_words, capitalize_word, downcase_word, upcase_word
+	  key bindings
+	+ Avoid accidentaly /VER in a channel, by requiring parameter
+	- Pasted lines weren't added to command history. Some other paste
+	  detection fixes
+	- Fixed /BIND escape_char
+	- Fixes for Chinese multibyte characters handling and cursor movement
+	  by Wang WenRui
+	- Pasting multibyte chars was buggy, patch by Kuang-che Wu
+	- Fixed handling WHOIS printing once and for all. Everything unknown
+	  between "beginning of whois" and "end of whois" events is now printed
+	  as whois_special. Removed whois_registered and whois_help, they're
+	  printed with whois_special as well.
+	- Don't replace channel key when receiving channel mode numeric. It
+	  could be a fake key there.
+	- Don't crash if dcc chated user changes nick
+	- Help files are always lowercased. Make sure /HELP COMMAND works too.
+	- /EXEC crashed with 64bit systems. Patch by Soren Jacobsen
+	- Handle 432 numeric (errorneus nickname) as "nick in use". Fixes
+	  problems with ircnet 2.11 ircd when irssi tries to reconnect using
+	  UID as nick. Patch by Petr Baudis
+	- /SET -default fixes
+	- /DCC SEND didn't actually use /SET dcc_upload_path
+	- Fixed /WHOIS -yes (Bug 67)
+	- Make /JOIN -tag #channel and /JOIN #channel<space> switch to that
+	  channel (Bugs 13 and 93)
+	- Fixed readded (changed) hilights being in config twice, resulted in
+	  duplicate hilights or removed hilights coming back (Bug 39)
+	- Fixed messages to @#channel showed *your* nickmode, not the one of
+	  the sender (part of Bug 80)
+	- Fixed /KNOCK support
+	- Fixed own nick changes in irssi-proxy
+	- Fixed /HILIGHT -actcolor -mask (Bug 131)
+	- Recognise a param of signal_emit/continue in perl script if it's int
+	- Fixed bug 120 where proxy doesn't set the server_rec->away_reason
+	- Fixed /join -invite -window bug if there is no invite
+	- Fixed bug with time settings where hours actually returned 60*hours
+	- Fix multiple entries for local IP in /etc/hosts prevents connecting,
+	  patch by eridius (Bug 167)
+	- Fixed a bug with /me, use the right arguments for 
+	  "message irc own_action"
+	- Update our own nickrec->gone flag on /away <reason> or on /away
+	- Fixed output of /hilight (add a space after -levels if any)
+	- Add libtool's -module flag to get built properly on all platforms,
+	  by Toby Peterson (Bug 212)
+	- Don't apply emphasis on _foo_^ if it's a nick (Bug 52)
+	- Fix displaying of ctcp userinfo and clientinfo (Bug 222)
+	- Remember alternate_nick and max_whois on reconnect (Bug 181)
+	- Fix tr_TR locale problem for glib2 (still a bug with glib1.2)
+	  by David Pashley
+	- Fixed pasting not using the character translation (Bug 151)
+	- Fixed a bug where the channel list to join/rejoin on reconnect
+	  gets too long, not all channels will be joined. (Bug 108)
+	- Print glib errors nicely, by David Pashley
+	- Handle ^Z better, by David Pashley
+	- Fixed /eval recursion crashing, by David Pashley
+	- Fix notify with more nicks than max_whois_in_cmd (Bug 257),
+	  based on patch by Krzysztof Kowalik (Borys)
+	- Fixed irssiproxy sometimes missing (parts of) lines
+	- Fixed remote /WHOWAS
+	- Parse negative time setting values, makes it possible again to do
+	  /SET server_reconnect_time -1 to disable reconnecting
+	- Compile with gcc4
+	- Compile with readonly srcdir
+	- Fixed crash if receiving broken privmsg without source
+	  (which bitlbee can send if you msg yourself)
+	- Fixed crash with invalid TERM and termcap
+	- When looking up IP addresses, return random IP instead of the first one
+
+v0.8.9 2003-12-11  Timo Sirainen <tss@iki.fi>
+
+	* Fixes a remote crash with:
+	    a) non-x86 hardware (one requiring memory alignmentation)
+	    b) script using "gui print text" signal (with x86 hardware too)
+
+	+ /SET auto_whowas OFF allows now disabling automatic /whowas when
+	  /whois doesn't find a nick (by Borys)
+	- If pasted line starts with command char, treat it as command always. 
+	  Paste detection can go on too easily with lagged connections.
+
+v0.8.8 2003-11-23  Timo Sirainen <tss@iki.fi>
+
+	- Just a few fixes to converting old settings automatically
+
+v0.8.7 2003-11-23  Timo Sirainen <tss@iki.fi>
+
+	* Settings changes - we have now "time", "size" and "level" setting
+	  types.
+	    - Level settings should work the same as before.
+	    - Time settings can have units: days, hours, mins, secs,
+	      milliseconds (or msecs). The units can be combined and written
+	      in shorter form as well, for example "5d 30m 10ms"
+	    - Size settings can have units: gbytes, mbytes, kbytes, bytes.
+	      They can be written in shorter form as well, eg. "gb" or "g".
+
+	  Your existing settings should be converted automatically.
+
+	+ Pasting detection. All keys except CR and LF are pasted as-is into
+	  prompt in pasting mode.
+
+	  /SET paste_detect_time controls how closely each others characters
+	  must occur for it to be considered pasting. Paste mode goes on when
+	  first pasted CR/LF is found.
+
+	  The first line may also contain some command characters. They are
+	  executed, but their action in entry line is reverted once pasting
+	  is detected.
+
+	  What this means in practise is that even if you have TABs (assuming
+	  TAB is completion key) in the first pasted line, they get pasted as
+	  TABs.
+
+	  This detection isn't perfect, so if it annoys you it can be disabled
+	  with /SET paste_detect_time 0
+	+ If pasting more lines than /SET paste_verify_line_count, irssi asks
+	  if you actually want to do that. This should be useful to prevent
+	  accidental copy&paste mistakes. Setting it to 0 disables this
+	  entirely.
+	+ Support for sending SSL certificate to server and optionally verify
+	  server's certificate. See the -ssl_* options for /SERVER and
+	  /SERVER ADD. Patch by Joel Eriksson.
+	+ DCC SERVER support by Mark Trumbull
+	+ Support for DCC sending larger files than 2GB if supported by
+	  operating system (ie. 64bit file support). Receiving has always
+	  been possible, but the statistics were wrong with >4GB files
+	  if 64bit support isn't enabled.
+	+ Better displaying of DCC file transfer statistics.
+	- Several other minor fixes and enhancements, see ChangeLog
+
+v0.8.6 2002-11-17  Timo Sirainen <tss@iki.fi>
+
+	* Tons of changes, here's only the largest that come to my mind now:
+
+	+ SSL support by vjt@users.sf.net
+	+ DCC send queues by Heikki Orsila
+	+ Better support for !channels
+
 v0.8.4 2002-03-13  Timo Sirainen <tss@iki.fi>
 
 	* Continuing to fix my stupid mistakes...

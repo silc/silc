@@ -76,6 +76,7 @@ void window_item_activity(WI_ITEM_REC *item, int data_level,
 static void sig_hilight_text(TEXT_DEST_REC *dest, const char *msg)
 {
 	WI_ITEM_REC *item;
+        char *tagtarget;
 	int data_level;
 
 	if (dest->window == active_win || (dest->level & hide_level))
@@ -88,9 +89,20 @@ static void sig_hilight_text(TEXT_DEST_REC *dest, const char *msg)
 			DATA_LEVEL_MSG : DATA_LEVEL_TEXT;
 	}
 
-	if ((dest->level & MSGLEVEL_HILIGHT) == 0 &&
-	    hide_target_activity(data_level, dest->target))
-		return;
+	if ((dest->level & MSGLEVEL_HILIGHT) == 0 && dest->target != NULL) {
+		/* check for both target and tag/target */
+		if (hide_target_activity(data_level, dest->target))
+			return;
+
+		tagtarget = dest->server_tag == NULL ? NULL :
+			g_strdup_printf("%s/%s", dest->server_tag,
+					dest->target);
+		if (hide_target_activity(data_level, tagtarget)) {
+			g_free(tagtarget);
+			return;
+		}
+		g_free(tagtarget);
+	}
 
 	if (dest->target != NULL) {
 		item = window_item_find(dest->server, dest->target);
@@ -127,18 +139,18 @@ static void read_settings(void)
 		g_strsplit(targets, " ", -1);
 
 	hide_level = MSGLEVEL_NEVER | MSGLEVEL_NO_ACT |
-		level2bits(settings_get_str("activity_hide_level"));
-	msg_level = level2bits(settings_get_str("activity_msg_level"));
+		settings_get_level("activity_hide_level");
+	msg_level = settings_get_level("activity_msg_level");
 	hilight_level = MSGLEVEL_HILIGHT |
-		level2bits(settings_get_str("activity_hilight_level"));
+		settings_get_level("activity_hilight_level");
 }
 
 void window_activity_init(void)
 {
 	settings_add_str("lookandfeel", "activity_hide_targets", "");
-	settings_add_str("lookandfeel", "activity_hide_level", "");
-	settings_add_str("lookandfeel", "activity_msg_level", "PUBLIC");
-	settings_add_str("lookandfeel", "activity_hilight_level", "MSGS DCCMSGS");
+	settings_add_level("lookandfeel", "activity_hide_level", "");
+	settings_add_level("lookandfeel", "activity_msg_level", "PUBLIC");
+	settings_add_level("lookandfeel", "activity_hilight_level", "MSGS DCCMSGS");
 
 	read_settings();
 	signal_add("print text", (SIGNAL_FUNC) sig_hilight_text);

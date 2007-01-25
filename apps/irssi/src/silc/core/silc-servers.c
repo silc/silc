@@ -1305,7 +1305,7 @@ void silc_server_free_ftp(SILC_SERVER_REC *server,
 bool silc_term_utf8(void)
 {
   const char *str;
-  str = settings_get_str("term_type");
+  str = settings_get_str("term_charset");
   if (str)
     if (g_strcasecmp(str, "utf-8") == 0)
       return TRUE;

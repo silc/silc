@@ -19,16 +19,19 @@
 */
 
 #include "module.h"
+#include "module-formats.h"
 #include "signals.h"
 #include "misc.h"
 #include "settings.h"
 #include "special-vars.h"
+#include "levels.h"
 #include "servers.h"
 
 #include "completion.h"
 #include "command-history.h"
 #include "keyboard.h"
 #include "translation.h"
+#include "printtext.h"
 
 #include "term.h"
 #include "gui-entry.h"
@@ -51,7 +54,18 @@ static ENTRY_REDIRECT_REC *redir;
 static int escape_next_key;
 
 static int readtag;
-static time_t idle_time;
+static unichar prev_key;
+static GTimeVal last_keypress;
+
+static int paste_detect_time, paste_detect_keycount, paste_verify_line_count;
+static int paste_state, paste_keycount;
+static char *paste_entry, *prev_entry;
+static int paste_entry_pos, prev_entry_pos;
+static GArray *paste_buffer;
+
+static char *paste_old_prompt;
+static int paste_prompt, paste_line_count;
+static int paste_join_multiline;
 
 static void sig_input(void);
 
@@ -113,8 +127,10 @@ static int get_scroll_count(void)
 
 	str = settings_get_str("scroll_page_count");
 	count = atof(str + (*str == '/'));
-	if (count <= 0)
+	if (count == 0)
 		count = 1;
+	else if (count < 0)
+		count = active_mainwin->height-active_mainwin->statusbar_lines+count;
 	else if (count < 1)
                 count = 1.0/count;
 
@@ -134,10 +150,308 @@ static void window_next_page(void)
 	gui_window_scroll(active_win, get_scroll_count());
 }
 
+static void paste_buffer_join_lines(GArray *buf)
+{
+#define IS_WHITE(c) ((c) == ' ' || (c) == '\t')
+	unsigned int i, count, indent, line_len;
+	unichar *arr, *dest, *last_lf_pos;
+	int last_lf;
+
+	/* first check if we actually want to join anything. This is assuming
+	   that we only want to join lines if
+
+	   a) first line doesn't begin with whitespace
+	   b) subsequent lines begin with same amount of whitespace
+	   c) whenever there's no whitespace, goto a)
+
+	   For example:
+
+	   line 1
+	     line 2
+	     line 3
+	   line 4
+	   line 5
+	     line 6
+
+	   ->
+
+	   line1 line2 line 3
+	   line4
+	   line5 line 6
+	*/
+	if (buf->len == 0)
+		return;
+
+	arr = (unichar *) paste_buffer->data;
+
+	/* first line */
+	if (IS_WHITE(arr[0]))
+		return;
+
+	/* find the first beginning of indented line */
+	for (i = 1; i < buf->len; i++) {
+		if (arr[i-1] == '\n' && IS_WHITE(arr[i]))
+			break;
+	}
+	if (i == buf->len)
+		return;
+
+	/* get how much indentation we have.. */
+	for (indent = 0; i < buf->len; i++, indent++) {
+		if (!IS_WHITE(arr[i]))
+			break;
+	}
+	if (i == buf->len)
+		return;
+
+	/* now, enforce these to all subsequent lines */
+	count = indent; last_lf = TRUE;
+	for (; i < buf->len; i++) {
+		if (last_lf) {
+			if (IS_WHITE(arr[i]))
+				count++;
+			else {
+				last_lf = FALSE;
+				if (count != 0 && count != indent)
+					return;
+				count = 0;
+			}
+		}
+		if (arr[i] == '\n')
+			last_lf = TRUE;
+	}
+
+	/* all looks fine - now remove the whitespace, but don't let lines
+	   get longer than 400 chars */
+	dest = arr; last_lf = TRUE; last_lf_pos = NULL; line_len = 0;
+	for (i = 0; i < buf->len; i++) {
+		if (last_lf && IS_WHITE(arr[i])) {
+			/* whitespace, ignore */
+		} else if (arr[i] == '\n') {
+			if (!last_lf && i+1 != buf->len &&
+			    IS_WHITE(arr[i+1])) {
+				last_lf_pos = dest;
+				*dest++ = ' ';
+			} else {
+				*dest++ = '\n'; /* double-LF */
+				line_len = 0;
+				last_lf_pos = NULL;
+			}
+			last_lf = TRUE;
+		} else {
+			last_lf = FALSE;
+			if (++line_len >= 400 && last_lf_pos != NULL) {
+				memmove(last_lf_pos+1, last_lf_pos,
+					dest - last_lf_pos);
+				*last_lf_pos = '\n'; last_lf_pos = NULL;
+				line_len = 0;
+				dest++;
+			}
+			*dest++ = arr[i];
+		}
+	}
+	g_array_set_size(buf, dest - arr);
+}
+
+static void paste_send(void)
+{
+	HISTORY_REC *history;
+	unichar *arr;
+	GString *str;
+	char out[10], *text;
+	unsigned int i;
+
+	if (paste_join_multiline)
+		paste_buffer_join_lines(paste_buffer);
+
+	arr = (unichar *) paste_buffer->data;
+	if (active_entry->text_len == 0)
+		i = 0;
+	else {
+		/* first line has to be kludged kind of to get pasting in the
+		   middle of line right.. */
+		for (i = 0; i < paste_buffer->len; i++) {
+			if (arr[i] == '\r' || arr[i] == '\n') {
+				i++;
+				break;
+			}
+
+			gui_entry_insert_char(active_entry, arr[i]);
+		}
+
+		text = gui_entry_get_text(active_entry);
+		history = command_history_current(active_win);
+		command_history_add(history, text);
+
+		translate_output(text);
+		signal_emit("send command", 3, text,
+			    active_win->active_server, active_win->active);
+		g_free(text);
+	}
+
+	/* rest of the lines */
+	str = g_string_new(NULL);
+	for (; i < paste_buffer->len; i++) {
+		if (arr[i] == '\r' || arr[i] == '\n') {
+			history = command_history_current(active_win);
+			command_history_add(history, str->str);
+
+			translate_output(str->str);
+			signal_emit("send command", 3, str->str,
+				    active_win->active_server,
+				    active_win->active);
+			g_string_truncate(str, 0);
+		} else if (active_entry->utf8) {
+			out[utf16_char_to_utf8(arr[i], out)] = '\0';
+			g_string_append(str, out);
+		} else if (term_type == TERM_TYPE_BIG5) {
+			if (arr[i] > 0xff)
+				g_string_append_c(str, (arr[i] >> 8) & 0xff);
+			g_string_append_c(str, arr[i] & 0xff);
+		} else {
+			g_string_append_c(str, arr[i]);
+		}
+	}
+
+	gui_entry_set_text(active_entry, str->str);
+	g_string_free(str, TRUE);
+}
+
+static void paste_flush(int send)
+{
+	gui_entry_set_text(active_entry, paste_entry);
+	gui_entry_set_pos(active_entry, paste_entry_pos);
+
+	if (send)
+		paste_send();
+	g_array_set_size(paste_buffer, 0);
+
+	gui_entry_set_prompt(active_entry,
+			     paste_old_prompt == NULL ? "" : paste_old_prompt);
+	g_free(paste_old_prompt); paste_old_prompt = NULL;
+	paste_prompt = FALSE;
+
+	paste_line_count = 0;
+	paste_state = 0;
+        paste_keycount = 0;
+
+	gui_entry_redraw(active_entry);
+}
+
+static gboolean paste_timeout(gpointer data)
+{
+	GTimeVal now;
+	char *str;
+	int diff;
+
+	if (paste_state == 0) {
+		/* gone already */
+		return FALSE;
+	}
+
+        g_get_current_time(&now);
+	diff = (now.tv_sec - last_keypress.tv_sec) * 1000 +
+		(now.tv_usec - last_keypress.tv_usec)/1000;
+
+	if (diff < paste_detect_time) {
+		/* still pasting */
+		return TRUE;
+	}
+
+	if (paste_line_count < paste_verify_line_count ||
+	    active_win->active == NULL) {
+		/* paste without asking */
+		paste_flush(TRUE);
+	} else if (!paste_prompt) {
+		paste_prompt = TRUE;
+		paste_old_prompt = g_strdup(active_entry->prompt);
+		printformat_window(active_win, MSGLEVEL_CLIENTNOTICE,
+				   TXT_PASTE_WARNING,
+				   paste_line_count,
+				   active_win->active == NULL ? "window" :
+				   active_win->active->visible_name);
+
+		str = format_get_text(MODULE_NAME, active_win, NULL, NULL,
+				      TXT_PASTE_PROMPT, 0, 0);
+		gui_entry_set_prompt(active_entry, str);
+		gui_entry_set_text(active_entry, "");
+		g_free(str);
+	}
+	return TRUE;
+}
+
+static int check_pasting(unichar key, int diff)
+{
+	if (paste_state < 0)
+		return FALSE;
+
+	if (paste_state == 0) {
+		/* two keys hit together quick. possibly pasting */
+		if (diff > paste_detect_time)
+			return FALSE;
+
+		g_free(paste_entry);
+		paste_entry = g_strdup(prev_entry);
+		paste_entry_pos = prev_entry_pos;
+
+		paste_state++;
+		paste_line_count = 0;
+		paste_keycount = 0;
+		g_array_set_size(paste_buffer, 0);
+		if (prev_key != '\r' && prev_key != '\n')
+			g_array_append_val(paste_buffer, prev_key);
+	} else if (paste_state > 0 && diff > paste_detect_time &&
+		   paste_line_count == 0) {
+		/* reset paste state */
+		paste_state = 0;
+		paste_keycount = 0;
+		return FALSE;
+	}
+
+	/* continuing quick hits */
+	if ((key == 11 || key == 3) && paste_prompt) {
+		paste_flush(key == 11);
+		return TRUE;
+	}
+
+	g_array_append_val(paste_buffer, key);
+	if (key == '\r' || key == '\n') {
+		if (paste_state == 1 &&
+		    paste_keycount < paste_detect_keycount) {
+			/* not enough keypresses to determine if this is
+			   pasting or not. don't reset paste keycount, but
+			   send this line as non-pasted */
+			g_array_set_size(paste_buffer, 0);
+			return FALSE;
+		}
+
+		/* newline - assume this line was pasted */
+		if (paste_state == 1) {
+			paste_state = 2;
+			gui_entry_set_text(active_entry, paste_entry);
+			gui_entry_set_pos(active_entry, paste_entry_pos);
+			if (paste_verify_line_count > 0)
+				g_timeout_add(100, paste_timeout, NULL);
+		}
+
+		if (paste_verify_line_count <= 0) {
+			/* paste previous line */
+			paste_send();
+			g_array_set_size(paste_buffer, 0);
+		} else {
+			paste_line_count++;
+		}
+	}
+
+	return paste_state == 2;
+}
+
 static void sig_gui_key_pressed(gpointer keyp)
 {
+	GTimeVal now;
         unichar key;
 	char str[20];
+	int ret, diff;
 
 	key = GPOINTER_TO_INT(keyp);
 
@@ -146,7 +460,14 @@ static void sig_gui_key_pressed(gpointer keyp)
 		return;
 	}
 
-	idle_time = time(NULL);
+        g_get_current_time(&now);
+	diff = (now.tv_sec - last_keypress.tv_sec) * 1000 +
+		(now.tv_usec - last_keypress.tv_usec)/1000;
+
+	if (check_pasting(key, diff)) {
+		last_keypress = now;
+		return;
+	}
 
 	if (key < 32) {
 		/* control key */
@@ -158,8 +479,14 @@ static void sig_gui_key_pressed(gpointer keyp)
 		str[1] = '?';
                 str[2] = '\0';
 	} else if (!active_entry->utf8) {
-		str[0] = (char)key;
-		str[1] = '\0';
+		if (key <= 0xff) {
+			str[0] = (char)key;
+			str[1] = '\0';
+		} else {
+			str[0] = (char) (key >> 8);
+			str[1] = (char) (key & 0xff);
+			str[2] = '\0';
+		}
 	} else {
                 /* need to convert to utf8 */
 		str[utf16_char_to_utf8(key, str)] = '\0';
@@ -171,18 +498,39 @@ static void sig_gui_key_pressed(gpointer keyp)
 		str[2] = '\0';
 	}
 
-	if (escape_next_key || !key_pressed(keyboard, str)) {
-		/* key wasn't used for anything, print it */
-                escape_next_key = FALSE;
+	g_free(prev_entry);
+	prev_entry = gui_entry_get_text(active_entry);
+	prev_entry_pos = gui_entry_get_pos(active_entry);
+
+	if (escape_next_key) {
+		escape_next_key = FALSE;
 		gui_entry_insert_char(active_entry, key);
+		ret = 1;
+	} else {
+		ret = key_pressed(keyboard, str);
+		if (ret < 0) {
+			/* key wasn't used for anything, print it */
+			gui_entry_insert_char(active_entry, key);
+		}
 	}
+
+	/* ret = 0 : some key create multiple characters - we're in the middle
+	   of one. try to detect the keycombo as a single keypress rather than
+	   multiple small onces to avoid incorrect paste detection.
+
+	   don't count repeated keys so paste detection won't go on when
+	   you're holding some key down */
+	if (ret != 0 && key != prev_key) {
+		last_keypress = now;
+		paste_keycount++;
+	}
+	prev_key = key;
 }
 
 static void key_send_line(void)
 {
 	HISTORY_REC *history;
         char *str, *add_history;
-	gint flags = (redir ? redir->flags : 0);
 
 	str = gui_entry_get_text(active_entry);
 
@@ -198,13 +546,9 @@ static void key_send_line(void)
 			    active_win->active_server,
 			    active_win->active);
 	} else {
-		if (flags & ENTRY_REDIRECT_FLAG_HIDDEN && add_history) {
-			memset(add_history, 0, strlen(add_history));
+		if (redir->flags & ENTRY_REDIRECT_FLAG_HIDDEN)
                         g_free_and_null(add_history);
-		}
 		handle_entry_redirect(str);
-		if (flags & ENTRY_REDIRECT_FLAG_HIDDEN && str)
-			memset(str, 0, strlen(str));
 	}
 
 	if (add_history != NULL) {
@@ -326,6 +670,25 @@ static void key_transpose_characters(void)
 	gui_entry_transpose_chars(active_entry);
 }
 
+static void key_transpose_words(void)
+{
+	gui_entry_transpose_words(active_entry);
+}
+
+static void key_capitalize_word(void)
+{
+	gui_entry_capitalize_word(active_entry);
+}
+
+static void key_downcase_word(void)
+{
+	gui_entry_downcase_word(active_entry);
+}
+static void key_upcase_word(void)
+{
+	gui_entry_upcase_word(active_entry);
+}
+
 static void key_delete_character(void)
 {
 	if (gui_entry_get_pos(active_entry) < active_entry->text_len) {
@@ -384,7 +747,7 @@ static void sig_input(void)
 
 time_t get_idle_time(void)
 {
-	return idle_time;
+	return last_keypress.tv_sec;
 }
 
 static void key_scroll_backward(void)
@@ -417,9 +780,7 @@ static void key_completion(int erase)
 	char *text, *line;
 	int pos;
 
-	pos = gui_entry_get_pos(active_entry);
-
-        text = gui_entry_get_text(active_entry);
+        text = gui_entry_get_text_and_pos(active_entry, &pos);
 	line = word_complete(active_win, text, &pos, erase);
 	g_free(text);
 
@@ -445,9 +806,7 @@ static void key_check_replaces(void)
 	char *text, *line;
 	int pos;
 
-	pos = gui_entry_get_pos(active_entry);
-
-        text = gui_entry_get_text(active_entry);
+        text = gui_entry_get_text_and_pos(active_entry, &pos);
 	line = auto_word_complete(text, &pos);
 	g_free(text);
 
@@ -636,6 +995,22 @@ static void sig_gui_entry_redirect(SIGNAL_FUNC func, const char *entry,
 	gui_entry_set_prompt(active_entry, entry);
 }
 
+static void setup_changed(void)
+{
+	paste_detect_time = settings_get_time("paste_detect_time");
+	if (paste_detect_time == 0)
+		paste_state = -1;
+	else if (paste_state == -1)
+		paste_state = 0;
+
+	paste_detect_keycount = settings_get_int("paste_detect_keycount");
+	if (paste_detect_keycount < 2)
+		paste_state = -1;
+
+	paste_verify_line_count = settings_get_int("paste_verify_line_count");
+	paste_join_multiline = settings_get_bool("paste_join_multiline");
+}
+
 void gui_readline_init(void)
 {
 	static char changekeys[] = "1234567890qwertyuio";
@@ -644,10 +1019,24 @@ void gui_readline_init(void)
 
         escape_next_key = FALSE;
 	redir = NULL;
-	idle_time = time(NULL);
+	prev_entry = NULL;
+	paste_state = 0;
+        paste_keycount = 0;
+	paste_entry = NULL;
+	paste_entry_pos = 0;
+	paste_buffer = g_array_new(FALSE, FALSE, sizeof(unichar));
+        paste_old_prompt = NULL;
+	g_get_current_time(&last_keypress);
         input_listen_init(STDIN_FILENO);
 
 	settings_add_str("history", "scroll_page_count", "/2");
+	settings_add_time("misc", "paste_detect_time", "5msecs");
+	settings_add_int("misc", "paste_detect_keycount", 5);
+	/* NOTE: function keys can generate at least 5 characters long
+	   keycodes. this must be larger to allow them to work. */
+	settings_add_int("misc", "paste_verify_line_count", 5);
+	settings_add_bool("misc", "paste_join_multiline", TRUE);
+        setup_changed();
 
 	keyboard = keyboard_create(NULL);
         key_configure_freeze();
@@ -714,8 +1103,8 @@ void gui_readline_init(void)
 	key_bind("backspace", "", "backspace", NULL, (SIGNAL_FUNC) key_backspace);
 	key_bind("delete_character", "", "delete", NULL, (SIGNAL_FUNC) key_delete_character);
 	key_bind("delete_character", NULL, "^D", NULL, (SIGNAL_FUNC) key_delete_character);
-	key_bind("delete_next_word", "meta-d", NULL, NULL, (SIGNAL_FUNC) key_delete_next_word);
-	key_bind("delete_previous_word", "meta-backspace", NULL, NULL, (SIGNAL_FUNC) key_delete_previous_word);
+	key_bind("delete_next_word", "", "meta-d", NULL, (SIGNAL_FUNC) key_delete_next_word);
+	key_bind("delete_previous_word", "", "meta-backspace", NULL, (SIGNAL_FUNC) key_delete_previous_word);
 	key_bind("delete_to_previous_space", "", "^W", NULL, (SIGNAL_FUNC) key_delete_to_previous_space);
 	key_bind("delete_to_next_space", "", "", NULL, (SIGNAL_FUNC) key_delete_to_next_space);
 	key_bind("erase_line", "", "^U", NULL, (SIGNAL_FUNC) key_erase_line);
@@ -723,6 +1112,10 @@ void gui_readline_init(void)
 	key_bind("erase_to_end_of_line", "", "^K", NULL, (SIGNAL_FUNC) key_erase_to_end_of_line);
 	key_bind("yank_from_cutbuffer", "", "^Y", NULL, (SIGNAL_FUNC) key_yank_from_cutbuffer);
 	key_bind("transpose_characters", "Swap current and previous character", "^T", NULL, (SIGNAL_FUNC) key_transpose_characters);
+	key_bind("transpose_words", "Swap current and previous word", NULL, NULL, (SIGNAL_FUNC) key_transpose_words);
+	key_bind("capitalize_word", "Capitalize word", NULL, NULL, (SIGNAL_FUNC) key_capitalize_word);
+	key_bind("downcase_word", "Downcase word", NULL, NULL, (SIGNAL_FUNC) key_downcase_word);
+	key_bind("upcase_word", "Upcase word", NULL, NULL, (SIGNAL_FUNC) key_upcase_word);
 
         /* line transmitting */
 	key_bind("send_line", "Execute the input line", "return", NULL, (SIGNAL_FUNC) key_send_line);
@@ -773,6 +1166,7 @@ void gui_readline_init(void)
 	signal_add("window changed automatic", (SIGNAL_FUNC) sig_window_auto_changed);
 	signal_add("gui entry redirect", (SIGNAL_FUNC) sig_gui_entry_redirect);
 	signal_add("gui key pressed", (SIGNAL_FUNC) sig_gui_key_pressed);
+	signal_add("setup changed", (SIGNAL_FUNC) setup_changed);
 }
 
 void gui_readline_deinit(void)
@@ -804,6 +1198,11 @@ void gui_readline_deinit(void)
 	key_unbind("erase_to_end_of_line", (SIGNAL_FUNC) key_erase_to_end_of_line);
 	key_unbind("yank_from_cutbuffer", (SIGNAL_FUNC) key_yank_from_cutbuffer);
 	key_unbind("transpose_characters", (SIGNAL_FUNC) key_transpose_characters);
+	key_unbind("transpose_words", (SIGNAL_FUNC) key_transpose_words);
+
+	key_unbind("capitalize_word", (SIGNAL_FUNC) key_capitalize_word);
+	key_unbind("downcase_word", (SIGNAL_FUNC) key_downcase_word);
+	key_unbind("upcase_word", (SIGNAL_FUNC) key_upcase_word);
 
 	key_unbind("send_line", (SIGNAL_FUNC) key_send_line);
 	key_unbind("word_completion", (SIGNAL_FUNC) key_word_completion);
@@ -830,11 +1229,13 @@ void gui_readline_deinit(void)
 	key_unbind("insert_text", (SIGNAL_FUNC) key_insert_text);
 	key_unbind("change_window", (SIGNAL_FUNC) key_change_window);
 	key_unbind("stop_irc", (SIGNAL_FUNC) key_sig_stop);
-        keyboard_destroy(keyboard);
+	keyboard_destroy(keyboard);
+        g_array_free(paste_buffer, TRUE);
 
         key_configure_thaw();
 
 	signal_remove("window changed automatic", (SIGNAL_FUNC) sig_window_auto_changed);
 	signal_remove("gui entry redirect", (SIGNAL_FUNC) sig_gui_entry_redirect);
 	signal_remove("gui key pressed", (SIGNAL_FUNC) sig_gui_key_pressed);
+	signal_remove("setup changed", (SIGNAL_FUNC) setup_changed);
 }

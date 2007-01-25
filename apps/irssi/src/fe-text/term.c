@@ -105,6 +105,11 @@ static void cmd_resize(void)
         term_resize_dirty();
 }
 
+static void cmd_redraw(void)
+{
+	irssi_redraw();
+}
+
 static void read_settings(void)
 {
         const char *str;
@@ -114,7 +119,7 @@ static void read_settings(void)
         term_auto_detach(settings_get_bool("term_auto_detach"));
 
         /* set terminal type */
-	str = settings_get_str("term_type");
+	str = settings_get_str("term_charset");
 	if (g_strcasecmp(str, "utf-8") == 0)
 		term_type = TERM_TYPE_UTF8;
 	else if (g_strcasecmp(str, "big5") == 0)
@@ -147,7 +152,6 @@ void term_common_init(void)
 	settings_add_bool("lookandfeel", "term_force_colors", FALSE);
         settings_add_bool("lookandfeel", "term_auto_detach", FALSE);
         settings_add_bool("lookandfeel", "mirc_blink_fix", FALSE);
-        settings_add_str("lookandfeel", "term_type", "8bit");
 
 	force_colors = FALSE;
 	term_use_colors = term_has_colors() && settings_get_bool("colors");
@@ -163,6 +167,7 @@ void term_common_init(void)
 	signal_add("beep", (SIGNAL_FUNC) term_beep);
 	signal_add("setup changed", (SIGNAL_FUNC) read_settings);
 	command_bind("resize", NULL, (SIGNAL_FUNC) cmd_resize);
+	command_bind("redraw", NULL, (SIGNAL_FUNC) cmd_redraw);
 
 #ifdef SIGWINCH
 	sigemptyset (&act.sa_mask);
@@ -175,6 +180,7 @@ void term_common_init(void)
 void term_common_deinit(void)
 {
 	command_unbind("resize", (SIGNAL_FUNC) cmd_resize);
+	command_unbind("redraw", (SIGNAL_FUNC) cmd_redraw);
 	signal_remove("beep", (SIGNAL_FUNC) term_beep);
 	signal_remove("setup changed", (SIGNAL_FUNC) read_settings);
 }

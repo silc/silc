@@ -40,6 +40,7 @@
 #include "queries.h"
 #include "nicklist.h"
 
+#include "perl-core.h"
 #include "perl-common.h"
 
 typedef struct {
@@ -94,6 +95,31 @@ SV *perl_func_sv_inc(SV *func, const char *package)
         return func;
 }
 
+static int magic_free_object(pTHX_ SV *sv, MAGIC *mg)
+{
+	sv_setiv(sv, 0);
+	return 0;
+}
+
+static MGVTBL vtbl_free_object =
+{
+    NULL, NULL, NULL, NULL, magic_free_object
+};
+
+static SV *create_sv_ptr(void *object)
+{
+	SV *sv;
+
+	sv = newSViv((IV)object);
+
+	sv_magic(sv, NULL, '~', NULL, 0);
+
+	SvMAGIC(sv)->mg_private = 0x1551; /* HF */
+	SvMAGIC(sv)->mg_virtual = &vtbl_free_object;
+
+	return sv;
+}
+
 SV *irssi_bless_iobject(int type, int chat_type, void *object)
 {
         PERL_OBJECT_REC *rec;
@@ -106,13 +132,13 @@ SV *irssi_bless_iobject(int type, int chat_type, void *object)
 				  GINT_TO_POINTER(type | (chat_type << 16)));
 	if (rec == NULL) {
                 /* unknown iobject */
-		return newSViv((IV)object);
+		return create_sv_ptr(object);
 	}
 
 	stash = gv_stashpv(rec->stash, 1);
 
 	hv = newHV();
-	hv_store(hv, "_irssi", 6, newSViv((IV)object), 0);
+	hv_store(hv, "_irssi", 6, create_sv_ptr(object), 0);
         rec->fill_func(hv, object);
 	return sv_bless(newRV_noinc((SV*)hv), stash);
 }
@@ -125,7 +151,7 @@ SV *irssi_bless_plain(const char *stash, void *object)
 	fill_func = g_hash_table_lookup(plain_stashes, stash);
 
 	hv = newHV();
-	hv_store(hv, "_irssi", 6, newSViv((IV)object), 0);
+	hv_store(hv, "_irssi", 6, create_sv_ptr(object), 0);
 	if (fill_func != NULL)
 		fill_func(hv, object);
 	return sv_bless(newRV_noinc((SV*)hv), gv_stashpv((char *)stash, 1));
@@ -150,6 +176,7 @@ void *irssi_ref_object(SV *o)
 {
         SV **sv;
 	HV *hv;
+	void *p;
 
         hv = hvref(o);
 	if (hv == NULL)
@@ -157,8 +184,9 @@ void *irssi_ref_object(SV *o)
 
 	sv = hv_fetch(hv, "_irssi", 6, 0);
 	if (sv == NULL)
-                croak("variable is damaged");
-	return GINT_TO_POINTER(SvIV(*sv));
+		croak("variable is damaged");
+	p = GINT_TO_POINTER(SvIV(*sv));
+	return p;
 }
 
 void irssi_add_object(int type, int chat_type, const char *stash,
@@ -265,6 +293,7 @@ void perl_connect_fill_hash(HV *hv, SERVER_CONNECT_REC *conn)
 	hv_store(hv, "type", 4, new_pv(type), 0);
 	hv_store(hv, "chat_type", 9, new_pv(chat_type), 0);
 
+	hv_store(hv, "tag", 3, new_pv(conn->tag), 0);
 	hv_store(hv, "address", 7, new_pv(conn->address), 0);
 	hv_store(hv, "port", 4, newSViv(conn->port), 0);
 	hv_store(hv, "chatnet", 7, new_pv(conn->chatnet), 0);
@@ -273,6 +302,12 @@ void perl_connect_fill_hash(HV *hv, SERVER_CONNECT_REC *conn)
 	hv_store(hv, "wanted_nick", 11, new_pv(conn->nick), 0);
 	hv_store(hv, "username", 8, new_pv(conn->username), 0);
 	hv_store(hv, "realname", 8, new_pv(conn->realname), 0);
+
+	hv_store(hv, "reconnection", 12, newSViv(conn->reconnection), 0);
+	hv_store(hv, "no_autojoin_channels", 20, newSViv(conn->no_autojoin_channels), 0);
+	hv_store(hv, "unix_socket", 11, newSViv(conn->unix_socket), 0);
+	hv_store(hv, "use_ssl", 7, newSViv(conn->use_ssl), 0);
+	hv_store(hv, "no_connect", 10, newSViv(conn->no_connect), 0);
 }
 
 void perl_server_fill_hash(HV *hv, SERVER_REC *server)
@@ -401,6 +436,7 @@ void perl_nick_fill_hash(HV *hv, NICK_REC *nick)
 	hv_store(hv, "op", 2, newSViv(nick->op), 0);
 	hv_store(hv, "halfop", 6, newSViv(nick->halfop), 0);
 	hv_store(hv, "voice", 5, newSViv(nick->voice), 0);
+	hv_store(hv, "other", 5, newSViv(nick->other), 0);
 
 	hv_store(hv, "last_check", 10, newSViv(nick->last_check), 0);
 	hv_store(hv, "send_massjoin", 13, newSViv(nick->send_massjoin), 0);
@@ -482,6 +518,24 @@ static void perl_reconnect_fill_hash(HV *hv, RECONNECT_REC *reconnect)
 	hv_store(hv, "next_connect", 12, newSViv(reconnect->next_connect), 0);
 }
 
+static void perl_script_fill_hash(HV *hv, PERL_SCRIPT_REC *script)
+{
+	hv_store(hv, "name", 4, new_pv(script->name), 0);
+	hv_store(hv, "package", 7, new_pv(script->package), 0);
+	hv_store(hv, "path", 4, new_pv(script->path), 0);
+	hv_store(hv, "data", 4, new_pv(script->data), 0);
+}
+
+static void remove_newlines(char *str)
+{
+	char *writing = str;
+
+	for (;*str;str++)
+		if (*str != '\n' && *str != '\r')
+			*(writing++) = *str;
+	*writing = '\0';
+}
+
 void perl_command(const char *cmd, SERVER_REC *server, WI_ITEM_REC *item)
 {
         const char *cmdchars;
@@ -494,6 +548,14 @@ void perl_command(const char *cmd, SERVER_REC *server, WI_ITEM_REC *item)
 	if (strchr(cmdchars, *cmd) == NULL) {
 		/* no command char - let's put it there.. */
 		sendcmd = g_strdup_printf("%c%s", *cmdchars, cmd);
+	}
+
+	/* remove \r and \n from commands,
+	   to make it harder to introduce a security bug in a script */
+	if(strpbrk(sendcmd, "\r\n")) {
+		if (sendcmd == cmd)
+			sendcmd = strdup(cmd);
+		remove_newlines(sendcmd);
 	}
 
 	signal_emit("send command", 3, sendcmd, server, item);
@@ -522,8 +584,13 @@ static void perl_register_protocol(CHAT_PROTOCOL_REC *rec)
 	chat_type = chat_protocol_lookup(rec->name);
 	g_return_if_fail(chat_type >= 0);
 
+#if GLIB_MAJOR_VERSION < 2
 	name = g_strdup(rec->name);
 	g_strdown(name+1);
+#else
+	name = g_ascii_strdown(rec->name,-1);
+	*name = *(rec->name);
+#endif
 
 	/* window items: channel, query */
 	type = module_get_uniq_id_str("WINDOW ITEM TYPE", "CHANNEL");
@@ -597,13 +664,14 @@ static int free_iobject_proto(void *key, void *value, void *chat_type)
 
 static void perl_unregister_protocol(CHAT_PROTOCOL_REC *rec)
 {
-        GSList *item;
+	GSList *item;
+	void *data;
 
 	item = gslist_find_icase_string(use_protocols, rec->name);
 	if (item != NULL) {
-		g_free(item->data);
-		use_protocols =
-			g_slist_remove(use_protocols, item->data);
+		data = item->data;
+		use_protocols = g_slist_remove(use_protocols, data);
+		g_free(data);
 	}
 	g_hash_table_foreach_remove(iobject_stashes,
 				    (GHRFunc) free_iobject_proto,
@@ -619,6 +687,7 @@ void perl_common_start(void)
 		{ "Irssi::Logitem", (PERL_OBJECT_FUNC) perl_log_item_fill_hash },
 		{ "Irssi::Rawlog", (PERL_OBJECT_FUNC) perl_rawlog_fill_hash },
 		{ "Irssi::Reconnect", (PERL_OBJECT_FUNC) perl_reconnect_fill_hash },
+		{ "Irssi::Script", (PERL_OBJECT_FUNC) perl_script_fill_hash },
 
 		{ NULL, NULL }
 	};

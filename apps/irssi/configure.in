@@ -7,7 +7,7 @@ if test -n "`grep '^#undef VERSION' config.h.in`"; then
 fi
 
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(SILC-Client, 0.8.6+)
+AM_INIT_AUTOMAKE(SILC-Client, 0.8.11+)
 
 AM_MAINTAINER_MODE
 
@@ -94,6 +94,13 @@ AC_ARG_WITH(terminfo,
 		fi
 	fi,
 	want_terminfo=yes)
+
+AC_ARG_WITH(cuix,
+[  --with-cuix             Use curses ui extended],
+    if test x$withval = xyes; then
+            want_terminfo=no
+            want_cuix=yes
+    fi, want_cuix=no)
 
 AC_ARG_WITH(modules,
 [  --with-modules          Specify what modules to build in binary],
@@ -250,6 +257,36 @@ AC_DEFINE(socklen_t, int, Define to 'int' if <sys/socket.h> doesn't define.)
 fi
 AC_MSG_RESULT($irssi_cv_type_socklen_t)
 
+dnl * off_t checks, try to make it 64bit
+AC_DEFINE_UNQUOTED(_FILE_OFFSET_BITS, $preferred_off_t_bits)
+
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(off_t)
+
+if test $ac_cv_sizeof_off_t = 8; then
+  offt_64bit=yes
+else
+  offt_64bit=no
+fi
+
+if test x$ac_cv_sizeof_off_t = x$ac_cv_sizeof_long; then
+  # try to use unsigned long always first
+  AC_DEFINE_UNQUOTED(PRIuUOFF_T, "lu")
+  AC_DEFINE(UOFF_T_LONG, [], [UOFF_T_LONG])
+elif test x$ac_cv_sizeof_off_t = x$ac_cv_sizeof_int; then
+  # next try int
+  AC_DEFINE_UNQUOTED(PRIuUOFF_T, "u")
+  AC_DEFINE(UOFF_T_INT, [], [UOFF_T_INT])
+elif test x$ac_cv_sizeof_off_t = x$ac_cv_sizeof_long_long; then
+  # and finally long long
+  AC_DEFINE_UNQUOTED(PRIuUOFF_T, "llu")
+  AC_DEFINE(UOFF_T_LONG_LONG, [], [UOFF_T_LONG_LONG])
+else
+  AC_ERROR([Couldn't find integer type for off_t])
+fi
+
 dnl **
 dnl ** check for socks
 dnl **
@@ -266,6 +303,10 @@ if test "x$want_socks" = "xyes"; then
 			CFLAGS="$CFLAGS -Dconnect=Rconnect -Dgetsockname=Rgetsockname -Dgetpeername=Rgetpeername -Dbind=Rbind -Daccept=Raccept -Dlisten=Rlisten -Dselect=Rselect"
 		])
 	])
+fi
+
+if test "x$want_cuix" = "xyes"; then
+    AC_DEFINE([HAVE_CUIX], [1] ,[Enable cuix support])
 fi
 
 dnl **
@@ -687,6 +728,7 @@ AM_CONDITIONAL(HAVE_STATIC_PERL, test "$want_perl" = "static")
 AM_CONDITIONAL(NEED_TPARM, test "$need_tparm" = "yes")
 AM_CONDITIONAL(USE_CURSES, test "$want_terminfo" != "yes" -a "$want_termcap" != "yes")
 AM_CONDITIONAL(BUILD_SERVERTEST, false)
+AM_CONDITIONAL(USE_CUIX, test "$want_cuix" = "yes")
 
 # move LIBS to PROG_LIBS so they're not tried to be used when linking eg. perl libraries
 PROG_LIBS=$LIBS
@@ -819,6 +861,7 @@ src/perl/ui/Makefile.PL
 src/perl/textui/Makefile.PL
 src/perl/silc/Makefile.PL
 scripts/Makefile
+scripts/examples/Makefile
 docs/Makefile
 docs/help/Makefile
 docs/help/in/Makefile

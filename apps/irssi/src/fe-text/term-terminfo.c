@@ -339,7 +339,7 @@ void term_set_color(TERM_WINDOW *window, int col)
 	/* bold */
 	if (col & 0x08)
 		col |= ATTR_BOLD;
-	else if (col & ATTR_BOLD)
+	if (col & ATTR_BOLD)
 		terminfo_set_bold();
 
 	/* underline */
@@ -354,6 +354,7 @@ void term_set_color(TERM_WINDOW *window, int col)
 
 void term_move(TERM_WINDOW *window, int x, int y)
 {
+	if (x >= 0 && y >= 0) {
 	vcmove = TRUE;
 	vcx = x+window->x;
         vcy = y+window->y;
@@ -362,6 +363,7 @@ void term_move(TERM_WINDOW *window, int x, int y)
 		vcx = term_width-1;
 	if (vcy >= term_height)
                 vcy = term_height-1;
+	}
 }
 
 static void term_printed_text(int count)
@@ -421,16 +423,22 @@ void term_add_unichar(TERM_WINDOW *window, unichar chr)
 	if (vcy == term_height-1 && vcx == term_width-1)
 		return; /* last char in screen */
 
-        term_printed_text(1);
 	switch (term_type) {
 	case TERM_TYPE_UTF8:
+	  	term_printed_text(utf8_width(chr));
                 term_addch_utf8(window, chr);
 		break;
 	case TERM_TYPE_BIG5:
-		putc((chr >> 8) & 0xff, window->term->out);
+		if (chr > 0xff) {
+			term_printed_text(2);
+			putc((chr >> 8) & 0xff, window->term->out);
+		} else {
+			term_printed_text(1);
+		}
 		putc((chr & 0xff), window->term->out);
                 break;
 	default:
+		term_printed_text(1);
 		putc(chr, window->term->out);
                 break;
 	}
@@ -443,7 +451,7 @@ void term_addstr(TERM_WINDOW *window, const char *str)
 	if (term_detached) return;
 
 	if (vcmove) term_move_real();
-	len = strlen(str);
+	len = strlen(str); /* FIXME utf8 or big5 */
         term_printed_text(len);
 
 	if (vcy != term_height || vcx != 0)
@@ -537,10 +545,10 @@ void term_attach(FILE *in, FILE *out)
 void term_stop(void)
 {
 	if (term_detached) {
-		kill(getpid(), SIGSTOP);
+		kill(getpid(), SIGTSTP);
 	} else {
 		terminfo_stop(current_term);
-		kill(getpid(), SIGSTOP);
+		kill(getpid(), SIGTSTP);
 		terminfo_cont(current_term);
 		irssi_redraw();
 	}
@@ -550,25 +558,18 @@ static int input_utf8(const unsigned char *buffer, int size, unichar *result)
 {
         const unsigned char *end = buffer;
 
-        *result = get_utf8_char(&end, size);
-	switch (*result) {
-	case (unichar) -2:
+	switch (get_utf8_char(&end, size, result)) {
+	case -2:
 		/* not UTF8 - fallback to 8bit ascii */
 		*result = *buffer;
 		return 1;
-	case (unichar) -1:
+	case -1:
                 /* need more data */
 		return -1;
 	default:
 		return (int) (end-buffer)+1;
 	}
 }
-
-/* XXX I didn't check the encoding range of big5+. This is standard big5. */
-#define is_big5_los(lo) (0x40 <= (lo) && (lo) <= 0x7E) /* standard */
-#define is_big5_lox(lo) (0x80 <= (lo) && (lo) <= 0xFE) /* extended */
-#define is_big5_hi(hi)  (0x81 <= (hi) && (hi) <= 0xFE)
-#define is_big5(hi,lo) (is_big5_hi(hi) && (is_big5_los(lo) || is_big5_lox(lo)))
 
 static int input_big5(const unsigned char *buffer, int size, unichar *result)
 {
@@ -646,7 +647,7 @@ int term_gets(unichar *buffer, int size)
 		if (i >= term_inbuf_pos)
 			term_inbuf_pos = 0;
 		else if (i > 0) {
-			memmove(term_inbuf+i, term_inbuf, term_inbuf_pos-i);
+			memmove(term_inbuf, term_inbuf+i, term_inbuf_pos-i);
                         term_inbuf_pos -= i;
 		}
 	}

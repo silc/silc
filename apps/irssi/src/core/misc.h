@@ -8,14 +8,6 @@
 typedef void* (*FOREACH_FIND_FUNC) (void *item, void *data);
 typedef int (*COLUMN_LEN_FUNC)(void *data);
 
-static inline int nearest_power(int num)
-{
-	int n = 1;
-
-	while (n < num) n <<= 1;
-	return n;
-}
-
 /* Returns 1 if tv1 > tv2, -1 if tv2 > tv1 or 0 if they're equal. */
 int g_timeval_cmp(const GTimeVal *tv1, const GTimeVal *tv2);
 /* Returns "tv1 - tv2", returns the result in milliseconds. Note that
@@ -28,8 +20,6 @@ int find_substr(const char *list, const char *item);
 int strarray_length(char **array);
 /* return index of `item' in `array' or -1 if not found */
 int strarray_find(char **array, const char *item);
-
-int execute(const char *cmd); /* returns pid or -1 = error */
 
 GSList *gslist_find_string(GSList *list, const char *key);
 GSList *gslist_find_icase_string(GSList *list, const char *key);
@@ -110,5 +100,14 @@ int expand_escape(const char **data);
 
 /* Escape all '"', "'" and '\' chars with '\' */
 char *escape_string(const char *str);
+
+/* Like strlcpy(), but return -1 if buffer was overflown, 0 if not. */
+int strocpy(char *dest, const char *src, size_t dstsize);
+
+int nearest_power(int num);
+
+/* Returns TRUE / FALSE */
+int parse_time_interval(const char *time, int *msecs);
+int parse_size(const char *size, int *bytes);
 
 #endif

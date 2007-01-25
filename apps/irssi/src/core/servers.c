@@ -171,12 +171,18 @@ static void server_real_connect(SERVER_REC *server, IPADDR *ip,
 				const char *unix_socket)
 {
 	GIOChannel *handle;
-        IPADDR *own_ip;
+	IPADDR *own_ip = NULL;
+	const char *errmsg;
+	char *errmsg2;
+	char ipaddr[MAX_IP_LEN];
         int port;
 
 	g_return_if_fail(ip != NULL || unix_socket != NULL);
 
 	signal_emit("server connecting", 2, server, ip);
+
+	if (server->connrec->no_connect)
+		return;
 
 	if (ip != NULL) {
 		own_ip = ip == NULL ? NULL :
@@ -185,7 +191,8 @@ static void server_real_connect(SERVER_REC *server, IPADDR *ip,
 		port = server->connrec->proxy != NULL ?
 			server->connrec->proxy_port : server->connrec->port;
 		handle = server->connrec->use_ssl ?
-			net_connect_ip_ssl(ip, port, own_ip) :
+			net_connect_ip_ssl(ip, port, own_ip, server->connrec->ssl_cert, server->connrec->ssl_pkey,
+server->connrec->ssl_cafile, server->connrec->ssl_capath, server->connrec->ssl_verify) :
 			net_connect_ip(ip, port, own_ip);
 	} else {
 		handle = net_connect_unix(unix_socket);
@@ -193,11 +200,22 @@ static void server_real_connect(SERVER_REC *server, IPADDR *ip,
 
 	if (handle == NULL) {
 		/* failed */
+		errmsg = g_strerror(errno);
+		errmsg2 = NULL;
+		if (errno == EADDRNOTAVAIL) {
+			if (own_ip != NULL) {
+				/* show the IP which is causing the error */
+				net_ip2host(own_ip, ipaddr);
+				errmsg2 = g_strconcat(errmsg, ": ", ipaddr, NULL);
+			}
+			server->no_reconnect = TRUE;
+		}
 		if (server->connrec->use_ssl && errno == ENOSYS)
 			server->no_reconnect = TRUE;
 
 		server->connection_lost = TRUE;
-		server_connect_failed(server, g_strerror(errno));
+		server_connect_failed(server, errmsg2 ? errmsg2 : errmsg);
+		g_free(errmsg2);
 	} else {
 		server->handle = net_sendbuffer_create(handle, 0);
 		server->connect_tag =
@@ -579,6 +597,11 @@ void server_connect_unref(SERVER_CONNECT_REC *conn)
         g_free_not_null(conn->nick);
         g_free_not_null(conn->username);
 	g_free_not_null(conn->realname);
+
+	g_free_not_null(conn->ssl_cert);
+	g_free_not_null(conn->ssl_pkey);
+	g_free_not_null(conn->ssl_cafile);
+	g_free_not_null(conn->ssl_capath);
 
 	g_free_not_null(conn->channels);
         g_free_not_null(conn->away_reason);

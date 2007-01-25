@@ -89,6 +89,7 @@ command_module_find_and_remove(COMMAND_REC *rec, SIGNAL_FUNC func)
 			if (cb->func == func) {
 				rec->callbacks =
 					g_slist_remove(rec->callbacks, cb);
+				g_free(cb);
 				return rec;
 			}
 		}
@@ -574,17 +575,17 @@ static int get_cmd_options(char **data, int ignore_unknown,
 			}
 
 			(*data)++;
-			if (**data == '-' && i_isspace((*data)[1])) {
+			if (**data == '-' && (*data)[1] == ' ') {
 				/* -- option means end of options even
 				   if next word starts with - */
 				(*data)++;
-				while (i_isspace(**data)) (*data)++;
+				while (**data == ' ') (*data)++;
 				break;
 			}
 
 			if (**data == '\0')
 				option = "-";
-			else if (!i_isspace(**data))
+			else if (**data != ' ')
 				option = cmd_get_param(data);
 			else {
 				option = "-";
@@ -629,7 +630,7 @@ static int get_cmd_options(char **data, int ignore_unknown,
 			    *optlist[pos] == '!')
 				option = NULL;
 
-			while (i_isspace(**data)) (*data)++;
+			while (**data == ' ') (*data)++;
 			continue;
 		}
 
@@ -647,7 +648,7 @@ static int get_cmd_options(char **data, int ignore_unknown,
 		}
 		option = NULL;
 
-		while (i_isspace(**data)) (*data)++;
+		while (**data == ' ') (*data)++;
 	}
 
 	return 0;
@@ -944,12 +945,18 @@ static void event_command(const char *line, SERVER_REC *server, void *item)
 	parse_command(line, expand_aliases, server, item);
 }
 
+static int eval_recursion_depth=0;
 /* SYNTAX: EVAL <command(s)> */
 static void cmd_eval(const char *data, SERVER_REC *server, void *item)
 {
 	g_return_if_fail(data != NULL);
+	if (eval_recursion_depth > 100) 
+		cmd_return_error(CMDERR_EVAL_MAX_RECURSE);
 
+ 
+	eval_recursion_depth++;
 	eval_special_string(data, "", server, item);
+	eval_recursion_depth--;
 }
 
 /* SYNTAX: CD <directory> */

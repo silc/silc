@@ -110,7 +110,7 @@ static void sig_channel_joined(CHANNEL_REC *channel)
 		fe_channels_nicklist(channel, CHANNEL_NICKLIST_FLAG_ALL);
 }
 
-static void cmd_wjoin_pre(const char *data)
+static void cmd_wjoin_pre(const char *data, SERVER_REC *server)
 {
 	GHashTable *optlist;
 	char *nick;
@@ -121,6 +121,12 @@ static void cmd_wjoin_pre(const char *data)
 			    "join", &optlist, &nick))
                 return;
 
+	/* kludge for /join -invite -window if there is no invite */
+	if (g_hash_table_lookup(optlist, "invite") &&
+            server != NULL && server->last_invite == NULL) {
+            	cmd_params_free(free_arg);
+           	return;
+        }                    
 	if (g_hash_table_lookup(optlist, "window") != NULL) {
 		signal_add("channel created",
 			   (SIGNAL_FUNC) signal_channel_created_curwin);
@@ -132,20 +138,28 @@ static void cmd_join(const char *data, SERVER_REC *server)
 {
 	WINDOW_REC *window;
         CHANNEL_REC *channel;
+	GHashTable *optlist;
+	char *channelname;
+	void *free_arg;
 
-        if (strchr(data, ' ') != NULL || strchr(data, ',') != NULL)
-                return;
-
-        channel = channel_find(server, data);
-	if (channel == NULL)
+	if (!cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS |
+			    PARAM_FLAG_UNKNOWN_OPTIONS,
+			    "join", &optlist, &channelname))
 		return;
 
-	/* already joined to channel, set it active */
-        window = window_item_window(channel);
-	if (window != active_win)
-		window_set_active(window);
+	/* -<server tag> */
+	server = cmd_options_get_server("join", optlist, server);
+	
+	channel = channel_find(server, channelname);
+	if (channel != NULL) {
+		/* already joined to channel, set it active */
+		window = window_item_window(channel);
+		if (window != active_win)
+			window_set_active(window);
 
-	window_item_set_active(active_win, (WI_ITEM_REC *) channel);
+		window_item_set_active(active_win, (WI_ITEM_REC *) channel);
+	}
+	cmd_params_free(free_arg);
 }
 
 static void cmd_wjoin_post(const char *data)
@@ -246,7 +260,7 @@ static void cmd_channel(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 }
 
 /* SYNTAX: CHANNEL ADD [-auto | -noauto] [-bots <masks>] [-botcmd <command>]
-                       <channel> <chatnet> [<password>] */
+                       <channel> <network> [<password>] */
 static void cmd_channel_add(const char *data)
 {
 	GHashTable *optlist;
@@ -298,7 +312,7 @@ static void cmd_channel_add(const char *data)
 	cmd_params_free(free_arg);
 }
 
-/* SYNTAX: CHANNEL REMOVE <channel> <chatnet> */
+/* SYNTAX: CHANNEL REMOVE <channel> <network> */
 static void cmd_channel_remove(const char *data)
 {
 	CHANNEL_SETUP_REC *rec;
@@ -399,7 +413,9 @@ static void display_sorted_nicks(CHANNEL_REC *channel, GSList *nicklist)
 	for (tmp = nicklist; tmp != NULL; tmp = tmp->next) {
 		NICK_REC *rec = tmp->data;
 
-		if (rec->op)
+		if (rec->other)
+			nickmode[0] = rec->other;
+		else if (rec->op)
 			nickmode[0] = '@';
 		else if (rec->halfop)
 			nickmode[0] = '%';
@@ -457,12 +473,14 @@ void fe_channels_nicklist(CHANNEL_REC *channel, int flags)
 	NICK_REC *nick;
 	GSList *tmp, *nicklist, *sorted;
 	int nicks, normal, voices, halfops, ops;
+	const char *nick_flags;
 
 	nicks = normal = voices = halfops = ops = 0;
 	nicklist = nicklist_getnicks(channel);
 	sorted = NULL;
+	nick_flags = channel->server->get_nick_flags(channel->server);
 
-	/* sort the nicklist */
+	/* filter (for flags) and count ops, halfops, voices */
 	for (tmp = nicklist; tmp != NULL; tmp = tmp->next) {
 		nick = tmp->data;
 
@@ -485,10 +503,17 @@ void fe_channels_nicklist(CHANNEL_REC *channel, int flags)
 				continue;
 		}
 
-		sorted = g_slist_insert_sorted(sorted, nick, (GCompareFunc)
-					       nicklist_compare);
+		sorted = g_slist_prepend(sorted, nick);
 	}
 	g_slist_free(nicklist);
+
+	/* sort the nicklist */
+#if GLIB_MAJOR_VERSION < 2
+	/* glib1 doesn't have g_slist_sort_with_data, so non-standard prefixes won't be sorted correctly */
+	sorted = g_slist_sort(sorted, (GCompareFunc)nicklist_compare_glib1);
+#else
+	sorted = g_slist_sort_with_data(sorted, (GCompareDataFunc) nicklist_compare, (void *)nick_flags);
+#endif
 
 	/* display the nicks */
         if ((flags & CHANNEL_NICKLIST_FLAG_COUNT) == 0) {

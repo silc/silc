@@ -109,6 +109,8 @@ static void cmd_log_open(const char *data)
 		targetarg = g_hash_table_lookup(optlist, "targets");
 		if (targetarg != NULL && *targetarg != '\0')
 			log_add_targets(log, targetarg, servertag);
+		else if (servertag != NULL)
+			log_add_targets(log, "*", servertag);
 	}
 
 	if (g_hash_table_lookup(optlist, "autoopen"))
@@ -189,17 +191,20 @@ static char *log_items_get_list(LOG_REC *log)
 	GSList *tmp;
 	GString *str;
 	char *ret;
+	LOG_ITEM_REC *rec = NULL;
 
 	g_return_val_if_fail(log != NULL, NULL);
 	g_return_val_if_fail(log->items != NULL, NULL);
 
 	str = g_string_new(NULL);
 	for (tmp = log->items; tmp != NULL; tmp = tmp->next) {
-		LOG_ITEM_REC *rec = tmp->data;
+		rec = tmp->data;
 
                 g_string_sprintfa(str, "%s, ", rec->name);
 	}
 	g_string_truncate(str, str->len-2);
+	if(rec->servertag != NULL)
+		g_string_sprintfa(str, " (%s)", rec->servertag);
 
 	ret = str->str;
 	g_string_free(str, FALSE);
@@ -671,7 +676,7 @@ static void read_settings(void)
 
 	autolog_path = settings_get_str("autolog_path");
 	autolog_level = !settings_get_bool("autolog") ? 0 :
-		level2bits(settings_get_str("autolog_level"));
+		settings_get_level("autolog_level");
 
 	if (old_autolog && !autolog_level)
 		autologs_close_all();
@@ -704,7 +709,7 @@ void fe_log_init(void)
         settings_add_bool("log", "autolog", FALSE);
 	settings_add_bool("log", "autolog_colors", FALSE);
         settings_add_str("log", "autolog_path", "~/irclogs/$tag/$0.log");
-	settings_add_str("log", "autolog_level", "all -crap -clientcrap -ctcps");
+	settings_add_level("log", "autolog_level", "all -crap -clientcrap -ctcps");
         settings_add_str("log", "log_theme", "");
 
 	autolog_level = 0;

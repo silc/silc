@@ -233,11 +233,27 @@ For example:
 settings_get_str(key)
 settings_get_int(key)
 settings_get_bool(key)
+settings_get_time(key)
+settings_get_level(key)
+settings_get_size(key)
   Return value for setting.
+
+settings_set_str(key, value)
+settings_set_int(key, value)
+settings_set_bool(key, value)
+settings_set_time(key, value)
+settings_set_level(key, value)
+settings_set_size(key, value)
+  Set value for setting.
+  If you change the settings of another module/script with one of these, you
+  must emit a "setup changed" signal afterwards.
 
 settings_add_str(section, key, def)
 settings_add_int(section, key, def)
 settings_add_bool(section, key, def)
+settings_add_time(section, key, def)
+settings_add_level(section, key, def)
+settings_add_size(section, key, def)
   Create new setting.
 
 settings_remove(key)
@@ -273,6 +289,10 @@ signal_stop_by_name(signal)
 timeout_add(msecs, func, data)
   Call `func' every `msecs' milliseconds (1000 = 1 second) with
   parameter `data'. Returns tag which can be used to stop the timeout.
+
+timeout_add_once(msecs, func, data);
+  Call 'func' once after `msecs' milliseconds (1000 = 1 second)
+  with parameter `data'. Returns tag which can be used to stop the timeout.
 
 timeout_remove(tag)
   Remove timeout with tag.
@@ -718,7 +738,7 @@ Nick
 Channel::nick_find_mask(mask)
   Find nick mask from nicklist, wildcards allowed.
 
-Channel::nicks(channel)
+Channel::nicks()
   Return a list of all nicks in channel.
 
 Server::nicks_get_same(nick)
@@ -935,6 +955,13 @@ Server::ctcp_send_reply(data)
   is the full raw command to be sent to server, like
     "NOTICE nick :\001VERSION irssi\001"
 
+Server::isupport(name)
+  Returns the value of the named item in the ISUPPORT (005) numeric to the
+  script. If the item is not present returns undef, if the item has no value
+  then "" is returned use defined $server->isupport("name") if you need to
+  check whether a property is present.
+  See http://www.ietf.org/internet-drafts/draft-brocklesby-irc-isupport-01.txt
+  for more information on the ISUPPORT numeric.
 
  *** IRC channels
 

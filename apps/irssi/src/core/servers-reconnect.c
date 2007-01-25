@@ -71,6 +71,7 @@ static void server_reconnect_add(SERVER_CONNECT_REC *conn,
 	rec->next_connect = next_connect;
 
 	rec->conn = conn;
+	conn->reconnecting = TRUE;
 	server_connect_ref(conn);
 
 	reconnects = g_slist_append(reconnects, rec);
@@ -191,6 +192,11 @@ server_connect_copy_skeleton(SERVER_CONNECT_REC *src, int connect_info)
         dest->no_autojoin_channels = src->no_autojoin_channels;
 
 	dest->use_ssl = src->use_ssl;
+	dest->ssl_cert = g_strdup(src->ssl_cert);
+	dest->ssl_pkey = g_strdup(src->ssl_pkey);
+	dest->ssl_verify = src->ssl_verify;
+	dest->ssl_cafile = g_strdup(src->ssl_cafile);
+	dest->ssl_capath = g_strdup(src->ssl_capath);
 
 	return dest;
 }
@@ -407,7 +413,7 @@ static void cmd_reconnect(const char *data, SERVER_REC *server)
 	if (*data == '\0') {
 		/* reconnect to first server in reconnection list */
 		if (reconnects == NULL)
-			cmd_return_error(CMDERR_NOT_CONNECTED);
+			cmd_param_error(CMDERR_NOT_CONNECTED);
                 rec = reconnects->data;
 	} else {
 		if (g_strncasecmp(data, "RECON-", 6) == 0)
@@ -461,14 +467,14 @@ static void sig_chat_protocol_deinit(CHAT_PROTOCOL_REC *proto)
 
 static void read_settings(void)
 {
-	reconnect_time = settings_get_int("server_reconnect_time");
-        connect_timeout = settings_get_int("server_connect_timeout");
+	reconnect_time = settings_get_time("server_reconnect_time")/1000;
+        connect_timeout = settings_get_time("server_connect_timeout")/1000;
 }
 
 void servers_reconnect_init(void)
 {
-	settings_add_int("server", "server_reconnect_time", 300);
-	settings_add_int("server", "server_connect_timeout", 300);
+	settings_add_time("server", "server_reconnect_time", "5min");
+	settings_add_time("server", "server_connect_timeout", "5min");
 
 	reconnects = NULL;
 	last_reconnect_tag = 0;

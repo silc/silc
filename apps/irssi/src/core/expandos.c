@@ -18,6 +18,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "core.h"
 #include "module.h"
 #include "modules.h"
 #include "signals.h"
@@ -52,7 +53,6 @@ static int timer_tag;
 
 static EXPANDO_REC *char_expandos[255];
 static GHashTable *expandos;
-static time_t client_start_time;
 static char *last_sent_msg, *last_sent_msg_body;
 static char *last_privmsg_from, *last_public_from;
 static char *sysname, *sysrelease, *sysarch;
@@ -133,7 +133,7 @@ void expando_add_signal(const char *key, const char *signal, ExpandoArg arg)
 /* Destroy expando */
 void expando_destroy(const char *key, EXPANDO_FUNC func)
 {
-	gpointer origkey;
+	gpointer origkey, value;
         EXPANDO_REC *rec;
 
 	g_return_if_fail(key != NULL || *key == '\0');
@@ -146,8 +146,9 @@ void expando_destroy(const char *key, EXPANDO_FUNC func)
 			char_expandos[(int) (unsigned char) *key] = NULL;
 			g_free(rec);
 		}
-	} else if (g_hash_table_lookup_extended(expandos, key, &origkey,
-						(gpointer *) &rec)) {
+	} else if (g_hash_table_lookup_extended(expandos, key,
+						&origkey, &value)) {
+		rec = value;
 		if (rec->func == func) {
 			g_hash_table_remove(expandos, key);
 			g_free(origkey);
@@ -259,6 +260,13 @@ EXPANDO_FUNC expando_find_long(const char *key)
 	return rec == NULL ? NULL : rec->func;
 }
 
+static gboolean free_expando(gpointer key, gpointer value, gpointer user_data)
+{
+	g_free(key);
+	g_free(value);
+	return TRUE;
+}
+
 /* last person who sent you a MSG */
 static char *expando_lastmsg(SERVER_REC *server, void *item, int *free_ret)
 {
@@ -333,8 +341,23 @@ static char *expando_cmdchar(SERVER_REC *server, void *item, int *free_ret)
 
 /* modes of current channel, if any */
 static char *expando_chanmode(SERVER_REC *server, void *item, int *free_ret)
-{
-	return !IS_CHANNEL(item) ? NULL : CHANNEL(item)->mode;
+{ 
+	char *cmode;
+
+	*free_ret = FALSE;
+
+	if (!IS_CHANNEL(item))
+		return NULL;
+
+        if (!settings_get_bool("chanmode_expando_strip"))
+		return CHANNEL(item)->mode;
+
+	*free_ret = TRUE;
+	cmode = g_strdup(CHANNEL(item)->mode);
+	if (strchr(cmode, ' ') != NULL)
+		*(strchr(cmode, ' ')) = 0;
+
+	return cmode;
 }
 
 /* current nickname */
@@ -559,8 +582,8 @@ void expandos_init(void)
 #endif
 	settings_add_str("misc", "STATUS_OPER", "*");
 	settings_add_str("lookandfeel", "timestamp_format", "%H:%M");
+	settings_add_bool("lookandfeel", "chanmode_expando_strip", FALSE);
 
-	client_start_time = time(NULL);
 	last_sent_msg = NULL; last_sent_msg_body = NULL;
 	last_privmsg_from = NULL; last_public_from = NULL;
         last_timestamp = 0;
@@ -682,13 +705,7 @@ void expandos_deinit(void)
 	for (n = 0; n < sizeof(char_expandos)/sizeof(char_expandos[0]); n++)
 		g_free_not_null(char_expandos[n]);
 
-	expando_destroy("sysname", expando_sysname);
-	expando_destroy("sysrelease", expando_sysrelease);
-	expando_destroy("sysarch", expando_sysarch);
-	expando_destroy("topic", expando_topic);
-	expando_destroy("tag", expando_servertag);
-	expando_destroy("chatnet", expando_chatnet);
-
+	g_hash_table_foreach_remove(expandos, free_expando, NULL);
         g_hash_table_destroy(expandos);
 
 	g_free_not_null(last_sent_msg); g_free_not_null(last_sent_msg_body);

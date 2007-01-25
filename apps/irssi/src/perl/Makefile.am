@@ -12,8 +12,8 @@ EXTRA_LTLIBRARIES = \
 	libperl_core.la libfe_perl.la \
 	libperl_core_static.la libfe_perl_static.la
 
-libperl_core_la_LDFLAGS = -avoid-version -rpath $(moduledir)
-libfe_perl_la_LDFLAGS = -avoid-version -rpath $(moduledir)
+libperl_core_la_LDFLAGS = -module -avoid-version -rpath $(moduledir)
+libfe_perl_la_LDFLAGS = -module -avoid-version -rpath $(moduledir)
 
 perl-core.c: perl-signals-list.h irssi-core.pl.h
 
@@ -136,9 +136,10 @@ all-local:
 	for dir in $(perl_dirs); do \
 	  cd $$dir && \
 	  if [ ! -f Makefile ]; then \
-            $(perlpath) Makefile.PL $(PERL_MM_PARAMS); \
+	    $(perlpath) Makefile.PL $(PERL_MM_PARAMS); \
 	  fi && \
-	  ($(MAKE) || $(MAKE)) && \
+	  ($(MAKE) CC="$(CC)" CCFLAGS="$(PERL_CFLAGS) $(CFLAGS)" $(PERL_EXTRA_OPTS) || \
+	   $(MAKE) CC="$(CC)" CCFLAGS="$(PERL_CFLAGS) $(CFLAGS)" $(PERL_EXTRA_OPTS)) && \
 	  cd ..; \
 	done
 
@@ -156,8 +157,8 @@ clean-generic:
 
 distclean-generic:
 	for dir in $(perl_dirs); do \
-	  cd $$dir && \
-	  $(MAKE) realclean && rm -f Makefile.PL && \
+	  cd $$dir; \
+	  $(MAKE) realclean; rm -f Makefile.PL Makefile; \
 	  cd ..; \
 	done
 

@@ -40,6 +40,7 @@
 #include "log.h"
 #include "rawlog.h"
 #include "ignore.h"
+#include "recode.h"
 
 #include "channels.h"
 #include "queries.h"
@@ -60,6 +61,7 @@ void log_away_deinit(void);
 int irssi_gui;
 int irssi_init_finished;
 int reload_config;
+time_t client_start_time;
 
 static char *irssi_dir, *irssi_config_file;
 static GSList *dialog_type_queue, *dialog_text_queue;
@@ -155,8 +157,8 @@ static void sig_init_finished(void)
 void core_init_paths(int argc, char *argv[])
 {
 	static struct poptOption options[] = {
-		{ "config", 0, POPT_ARG_STRING, NULL, 0, "Configuration file location (~/.silc/config)", "PATH" },
-		{ "home", 0, POPT_ARG_STRING, NULL, 0, "Irssi home dir location (~/.silc)", "PATH" },
+		{ "config", 0, POPT_ARG_STRING, NULL, 0, "Configuration file location (~/.irssi/config)", "PATH" },
+		{ "home", 0, POPT_ARG_STRING, NULL, 0, "Irssi home dir location (~/.irssi)", "PATH" },
 		{ NULL, '\0', 0, NULL }
 	};
 	const char *home;
@@ -214,6 +216,7 @@ void core_init(int argc, char *argv[])
 {
 	dialog_type_queue = NULL;
 	dialog_text_queue = NULL;
+	client_start_time = time(NULL);
 
 	modules_init();
 #ifndef WIN32
@@ -241,6 +244,7 @@ void core_init(int argc, char *argv[])
 	log_init();
 	log_away_init();
 	rawlog_init();
+	recode_init();
 
 	channels_init();
 	queries_init();
@@ -249,7 +253,7 @@ void core_init(int argc, char *argv[])
 	chat_commands_init();
 
 	settings_add_str("misc", "ignore_signals", "");
-	settings_add_bool("misc", "override_coredump_limit", TRUE);
+	settings_add_bool("misc", "override_coredump_limit", FALSE);
 
 #ifdef HAVE_SYS_RESOURCE_H
 	getrlimit(RLIMIT_CORE, &orig_core_rlimit);
@@ -276,6 +280,7 @@ void core_deinit(void)
 	queries_deinit();
 	channels_deinit();
 
+	recode_deinit();
 	rawlog_deinit();
 	log_away_deinit();
 	log_deinit();

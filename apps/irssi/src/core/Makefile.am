@@ -38,6 +38,7 @@ libcore_a_SOURCES = \
 	pidwait.c \
 	queries.c \
 	rawlog.c \
+	recode.c \
 	servers.c \
 	servers-reconnect.c \
 	servers-setup.c \
@@ -85,6 +86,7 @@ noinst_HEADERS = \
 	pidwait.h \
 	queries.h \
 	rawlog.h \
+	recode.h \
 	servers.h \
 	servers-reconnect.h \
 	servers-setup.h \

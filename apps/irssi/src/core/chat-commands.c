@@ -24,6 +24,7 @@
 #include "commands.h"
 #include "special-vars.h"
 #include "settings.h"
+#include "recode.h"
 
 #include "chat-protocols.h"
 #include "servers.h"
@@ -40,7 +41,7 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr,
         CHAT_PROTOCOL_REC *proto;
 	SERVER_CONNECT_REC *conn;
 	GHashTable *optlist;
-	char *addr, *portstr, *password, *nick, *chatnet, *host;
+	char *addr, *portstr, *password, *nick, *chatnet, *host, *tmp;
 	void *free_arg;
 
 	g_return_val_if_fail(data != NULL, NULL);
@@ -67,6 +68,10 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr,
 	/* connect to server */
 	chatnet = proto == NULL ? NULL :
 		g_hash_table_lookup(optlist, proto->chatnet);
+
+	if (chatnet == NULL)
+		chatnet = g_hash_table_lookup(optlist, "network");
+	
 	conn = server_create_conn(proto != NULL ? proto->id : -1, addr,
 				  atoi(portstr), chatnet, password, nick);
 	if (proto == NULL)
@@ -88,7 +93,22 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr,
 	else if (g_hash_table_lookup(optlist, "4") != NULL)
 		conn->family = AF_INET;
 
-	if(g_hash_table_lookup(optlist, "ssl") != NULL)
+	if (g_hash_table_lookup(optlist, "ssl") != NULL)
+		conn->use_ssl = TRUE;
+	if ((tmp = g_hash_table_lookup(optlist, "ssl_cert")) != NULL)
+		conn->ssl_cert = g_strdup(tmp);
+	if ((tmp = g_hash_table_lookup(optlist, "ssl_pkey")) != NULL)
+		conn->ssl_pkey = g_strdup(tmp);
+	if (g_hash_table_lookup(optlist, "ssl_verify") != NULL)
+		conn->ssl_verify = TRUE;
+	if ((tmp = g_hash_table_lookup(optlist, "ssl_cafile")) != NULL)
+		conn->ssl_cafile = g_strdup(tmp);
+	if ((tmp = g_hash_table_lookup(optlist, "ssl_capath")) != NULL)
+		conn->ssl_capath = g_strdup(tmp);
+	if ((conn->ssl_capath != NULL && conn->ssl_capath[0] != '\0')
+	||  (conn->ssl_cafile != NULL && conn->ssl_cafile[0] != '\0'))
+		conn->ssl_verify = TRUE;
+	if ((conn->ssl_cert != NULL && conn->ssl_cert[0] != '\0') || conn->ssl_verify)
 		conn->use_ssl = TRUE;
 
 	if (g_hash_table_lookup(optlist, "!") != NULL)
@@ -112,9 +132,12 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr,
         return conn;
 }
 
-/* SYNTAX: CONNECT [-4 | -6] [-ssl] [-noproxy] [-silcnet <silcnet>]
-                   [-host <hostname>] [-rawlog <file>]
-                   <address>|<chatnet> [<port> [<password> [<nick>]]] */
+/* SYNTAX: CONNECT [-4 | -6] [-ssl] [-ssl_cert <cert>] [-ssl_pkey <pkey>]
+                   [-ssl_verify] [-ssl_cafile <cafile>] [-ssl_capath <capath>]
+		   [-noproxy] [-network <network>] [-host <hostname>]
+		   [-rawlog <file>]
+		   <address>|<chatnet> [<port> [<password> [<nick>]]] */
+/* NOTE: -network replaces the old -ircnet flag. */
 static void cmd_connect(const char *data)
 {
 	SERVER_CONNECT_REC *conn;
@@ -214,9 +237,12 @@ static void sig_default_command_server(const char *data, SERVER_REC *server,
         signal_emit("command server connect", 3, data, server, item);
 }
 
-/* SYNTAX: SERVER [-4 | -6] [-ssl] [-noproxy] [-silcnet <silcnet>]
-                  [-host <hostname>] [-rawlog <file>]
+/* SYNTAX: SERVER [-4 | -6] [-ssl] [-ssl_cert <cert>] [-ssl_pkey <pkey>]
+                  [-ssl_verify] [-ssl_cafile <cafile>] [-ssl_capath <capath>]
+		  [-noproxy] [-network <network>] [-host <hostname>]
+		  [-rawlog <file>]
                   [+]<address>|<chatnet> [<port> [<password> [<nick>]]] */
+/* NOTE: -network replaces the old -ircnet flag. */
 static void cmd_server_connect(const char *data, SERVER_REC *server)
 {
 	SERVER_CONNECT_REC *conn;
@@ -289,6 +315,7 @@ static void cmd_quit(const char *data)
 	signal_emit("gui exit", 0);
 }
 
+/* SYNTAX: JOIN [-invite] [-<server tag>] <channels> [<keys>] */
 static void cmd_join(const char *data, SERVER_REC *server)
 {
 	GHashTable *optlist;
@@ -319,13 +346,13 @@ static void cmd_join(const char *data, SERVER_REC *server)
 	cmd_params_free(free_arg);
 }
 
-/* SYNTAX: MSG [-channel] <target> <message> */
+/* SYNTAX: MSG [-<server tag>] [-channel | -nick] <targets> <message> */
 static void cmd_msg(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
 	GHashTable *optlist;
-	char *target, *origtarget, *msg;
+	char *target, *origtarget, *msg, *recoded;
 	void *free_arg;
-	int free_ret, target_type;
+	int free_ret, target_type = SEND_TARGET_NICK;
 
 	g_return_if_fail(data != NULL);
 
@@ -344,40 +371,56 @@ static void cmd_msg(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 	if (strcmp(target, ",") == 0 || strcmp(target, ".") == 0) {
 		target = parse_special(&target, server, item,
 				       NULL, &free_ret, NULL, 0);
-		if (target != NULL && *target == '\0')
+		if (target != NULL && *target == '\0') {
+			if (free_ret)
+				g_free(target);
 			target = NULL;
+			free_ret = FALSE;
+		}
 	}
 
-	if (strcmp(target, "*") == 0) {
-                /* send to active channel/query */
-		if (item == NULL)
-			cmd_param_error(CMDERR_NOT_JOINED);
+	if (target != NULL) {
+		if (strcmp(target, "*") == 0) {
+                        /* send to active channel/query */
+			if (item == NULL)
+				cmd_param_error(CMDERR_NOT_JOINED);
 
-		target_type = IS_CHANNEL(item) ?
-			SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
-		target = (char *) window_item_get_target(item);
-	} else if (g_hash_table_lookup(optlist, "channel") != NULL)
-                target_type = SEND_TARGET_CHANNEL;
-	else if (g_hash_table_lookup(optlist, "nick") != NULL)
-		target_type = SEND_TARGET_NICK;
-	else {
-		/* Need to rely on server_ischannel(). If the protocol
-		   doesn't really know if it's channel or nick based on the
-		   name, it should just assume it's nick, because when typing
-		   text to channels it's always sent with /MSG -channel. */
-		target_type = server_ischannel(server, target) ?
-			SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
+			target_type = IS_CHANNEL(item) ?
+				SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
+			target = (char *) window_item_get_target(item);
+		} else if (g_hash_table_lookup(optlist, "channel") != NULL)
+                        target_type = SEND_TARGET_CHANNEL;
+		else if (g_hash_table_lookup(optlist, "nick") != NULL)
+			target_type = SEND_TARGET_NICK;
+		else {
+			/* Need to rely on server_ischannel(). If the protocol
+			   doesn't really know if it's channel or nick based on
+			   the name, it should just assume it's nick, because 
+			   when typing text to channels it's always sent with
+			   /MSG -channel. */
+			target_type = server_ischannel(server, target) ?
+				SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
+		}
 	}
-
-	if (target != NULL)
-		server->send_message(server, target, msg, target_type);
-
+	recoded = recode_out(server, msg, target);
+	if (target != NULL) {
+		signal_emit("server sendmsg", 4, server, target, recoded,
+			    GINT_TO_POINTER(target_type));
+	}
 	signal_emit(target != NULL && target_type == SEND_TARGET_CHANNEL ?
 		    "message own_public" : "message own_private", 4,
-		    server, msg, target, origtarget);
-
+		    server, recoded, target, origtarget);
+		    
+	g_free(recoded);
 	if (free_ret && target != NULL) g_free(target);
 	cmd_params_free(free_arg);
+}
+
+static void sig_server_sendmsg(SERVER_REC *server, const char *target,
+			       const char *msg, void *target_type_p)
+{
+	server->send_message(server, target, msg,
+			     GPOINTER_TO_INT(target_type_p));
 }
 
 static void cmd_foreach(const char *data, SERVER_REC *server,
@@ -442,9 +485,10 @@ void chat_commands_init(void)
 	command_bind("foreach channel", NULL, (SIGNAL_FUNC) cmd_foreach_channel);
 	command_bind("foreach query", NULL, (SIGNAL_FUNC) cmd_foreach_query);
 
-        signal_add("default command server", (SIGNAL_FUNC) sig_default_command_server);
+	signal_add("default command server", (SIGNAL_FUNC) sig_default_command_server);
+	signal_add("server sendmsg", (SIGNAL_FUNC) sig_server_sendmsg);
 
-	command_set_options("connect", "4 6 !! ssl +host noproxy -rawlog");
+	command_set_options("connect", "4 6 !! -network ssl +ssl_cert +ssl_pkey ssl_verify +ssl_cafile +ssl_capath +host noproxy -rawlog");
 	command_set_options("join", "invite");
 	command_set_options("msg", "channel nick");
 }
@@ -464,4 +508,5 @@ void chat_commands_deinit(void)
 	command_unbind("foreach query", (SIGNAL_FUNC) cmd_foreach_query);
 
         signal_remove("default command server", (SIGNAL_FUNC) sig_default_command_server);
+	signal_remove("server sendmsg", (SIGNAL_FUNC) sig_server_sendmsg);
 }

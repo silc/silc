@@ -1,5 +1,6 @@
 #include "module.h"
 #include "misc.h"
+#include "recode.h"
 
 static GHashTable *perl_settings;
 
@@ -68,11 +69,16 @@ void perl_settings_deinit(void)
 MODULE = Irssi::Settings  PACKAGE = Irssi
 PROTOTYPES: ENABLE
 
-char *
+SV *
 settings_get_str(key)
 	char *key
+PREINIT:
+	const char *str;
 CODE:
-	RETVAL = (char *) settings_get_str(key);
+	str = settings_get_str(key);
+	RETVAL = new_pv(str);
+	if (is_utf8())
+		SvUTF8_on(RETVAL);
 OUTPUT:
 	RETVAL
 
@@ -83,6 +89,18 @@ settings_get_int(key)
 int
 settings_get_bool(key)
 	char *key
+
+int
+settings_get_time(key)
+       char *key
+
+int
+settings_get_level(key)
+       char *key
+
+int
+settings_get_size(key)
+       char *key
 
 void
 settings_set_str(key, value)
@@ -98,6 +116,21 @@ void
 settings_set_bool(key, value)
 	char *key
 	int value
+
+int
+settings_set_time(key, value)
+	char *key
+	char *value
+
+int
+settings_set_level(key, value)
+	char *key
+	char *value
+
+int
+settings_set_size(key, value)
+	char *key
+	char *value
 
 void
 settings_add_str(section, key, def)
@@ -125,6 +158,33 @@ settings_add_bool(section, key, def)
 CODE:
         perl_settings_add(key);
 	settings_add_bool_module(MODULE_NAME"/scripts", section, key, def);
+
+void
+settings_add_time(section, key, def)
+	char *section
+	char *key
+	char *def
+CODE:
+        perl_settings_add(key);
+	settings_add_time_module(MODULE_NAME"/scripts", section, key, def);
+
+void
+settings_add_level(section, key, def)
+	char *section
+	char *key
+	char *def
+CODE:
+        perl_settings_add(key);
+	settings_add_level_module(MODULE_NAME"/scripts", section, key, def);
+
+void
+settings_add_size(section, key, def)
+	char *section
+	char *key
+	char *def
+CODE:
+        perl_settings_add(key);
+	settings_add_size_module(MODULE_NAME"/scripts", section, key, def);
 
 void
 settings_remove(key)

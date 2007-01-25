@@ -1,13 +1,18 @@
-scriptdir = $(datadir)/silc/scripts
+SUBDIRS = examples
+
+scriptdir = $(datadir)/irssi/scripts
 
 script_DATA = \
 	autoop.pl \
-	clones.pl \
-	hello.pl \
-	mail.pl	\
-	beep.pl	\
-	dns.pl	\
-	mail-maildir.pl \
-	silc-mime.pl
+	autorejoin.pl \
+	buf.pl \
+	dns.pl \
+	kills.pl \
+	mail.pl \
+	mlock.pl \
+	quitmsg.pl \
+	scriptassist.pl \
+	splitlong.pl \
+	usercount.pl
 
 EXTRA_DIST = $(script_DATA)

@@ -10,6 +10,9 @@ if HAVE_PERL
 PERLDIR=perl
 endif
 
+pkginc_srcdir=$(pkgincludedir)/src
+pkginc_src_HEADERS = \
+	common.h
 noinst_HEADERS = \
 	common.h
 

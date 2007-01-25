@@ -27,12 +27,24 @@
 #undef HAVE_CURSES_RESIZETERM
 #undef HAVE_CURSES_WRESIZE
 
-/* terminfo/termcap */
-#undef HAVE_TERMINFO
-
 /* nls */
 #undef ENABLE_NLS
 #undef HAVE_CATGETS
 #undef HAVE_GETTEXT
 #undef HAVE_LC_MESSAGES
 #undef HAVE_STPCPY
+
+/* terminfo/termcap */
+#undef HAVE_TERMINFO
+
+/* If set to 64, enables 64bit off_t for some systems (eg. Linux, Solaris) */
+#undef _FILE_OFFSET_BITS
+
+/* What type should be used for uoff_t */
+#undef UOFF_T_INT
+#undef UOFF_T_LONG
+#undef UOFF_T_LONG_LONG
+
+/* printf()-format for uoff_t, eg. "u" or "lu" or "llu" */
+#undef PRIuUOFF_T
+

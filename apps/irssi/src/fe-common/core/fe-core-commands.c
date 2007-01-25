@@ -18,6 +18,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "core.h"
 #include "module.h"
 #include "module-formats.h"
 #include "signals.h"
@@ -47,7 +48,11 @@ static int ret_texts[] = {
 	TXT_CHAN_NOT_FOUND,
 	TXT_CHAN_NOT_SYNCED,
         TXT_ILLEGAL_PROTO,
-	TXT_NOT_GOOD_IDEA
+	TXT_NOT_GOOD_IDEA,
+        TXT_INVALID_TIME,
+        TXT_INVALID_CHARSET,
+        TXT_EVAL_MAX_RECURSE,
+        TXT_PROGRAM_NOT_FOUND
 };
 
 int command_hide_output;
@@ -190,6 +195,22 @@ static void cmd_join(const char *data, SERVER_REC *server)
 	cmd_params_free(free_arg);
 }
 
+/* SYNTAX: UPTIME */
+static void cmd_uptime(char *data)
+{
+	time_t uptime;
+
+	g_return_if_fail(data != NULL);
+
+	if (*data == '\0') {
+		uptime = time(NULL) - client_start_time;
+		printtext(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
+			  "Uptime: %ldd %ldh %ldm %lds",
+			  uptime/3600/24, uptime/3600%24,
+			  uptime/60%60, uptime%60);
+	}
+}
+
 static void sig_stop(void)
 {
 	signal_stop();
@@ -214,8 +235,8 @@ static void event_command(const char *data)
 	cmdchar = *data == '\0' ? NULL :
 		strchr(settings_get_str("cmdchars"), *data);
 	if (cmdchar != NULL && (data[1] == '^' ||
-				(data[1] == *cmdchar && data[2] == '^'))) {
-                command_hide_output = TRUE;
+				(data[1] == *cmdchar && data[2] == '^'))
+			    && !command_hide_output++) {
 		signal_add_first("print starting", (SIGNAL_FUNC) sig_stop);
 		signal_add_first("print format", (SIGNAL_FUNC) sig_stop);
 		signal_add_first("print text", (SIGNAL_FUNC) sig_stop);
@@ -224,8 +245,7 @@ static void event_command(const char *data)
 
 static void event_command_last(const char *data)
 {
-	if (command_hide_output) {
-		command_hide_output = FALSE;
+	if (command_hide_output && !--command_hide_output) {
 		signal_remove("print starting", (SIGNAL_FUNC) sig_stop);
 		signal_remove("print format", (SIGNAL_FUNC) sig_stop);
 		signal_remove("print text", (SIGNAL_FUNC) sig_stop);
@@ -315,7 +335,7 @@ static void event_list_subcommands(const char *command)
 
 void fe_core_commands_init(void)
 {
-	command_hide_output = FALSE;
+	command_hide_output = 0;
 
 	command_cmd = FALSE;
 	memset(&time_command_now, 0, sizeof(GTimeVal));
@@ -324,6 +344,7 @@ void fe_core_commands_init(void)
 	command_bind("version", NULL, (SIGNAL_FUNC) cmd_version);
 	command_bind("cat", NULL, (SIGNAL_FUNC) cmd_cat);
 	command_bind("beep", NULL, (SIGNAL_FUNC) cmd_beep);
+	command_bind("uptime", NULL, (SIGNAL_FUNC) cmd_uptime);
 	command_bind_first("nick", NULL, (SIGNAL_FUNC) cmd_nick);
 	command_bind_first("join", NULL, (SIGNAL_FUNC) cmd_join);
 
@@ -342,6 +363,7 @@ void fe_core_commands_deinit(void)
 	command_unbind("version", (SIGNAL_FUNC) cmd_version);
 	command_unbind("cat", (SIGNAL_FUNC) cmd_cat);
 	command_unbind("beep", (SIGNAL_FUNC) cmd_beep);
+	command_unbind("uptime", (SIGNAL_FUNC) cmd_uptime);
 	command_unbind("nick", (SIGNAL_FUNC) cmd_nick);
 	command_unbind("join", (SIGNAL_FUNC) cmd_join);
 

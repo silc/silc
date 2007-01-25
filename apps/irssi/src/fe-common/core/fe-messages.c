@@ -31,6 +31,7 @@
 #include "channels.h"
 #include "nicklist.h"
 #include "ignore.h"
+#include "recode.h"
 
 #include "window-items.h"
 #include "fe-queries.h"
@@ -38,6 +39,10 @@
 #include "printtext.h"
 
 #define ishighalnum(c) ((unsigned char) (c) >= 128 || i_isalnum(c))
+#define isnickchar(a) \
+	(i_isalnum(a) || (a) == '`' || (a) == '-' || (a) == '_' || \
+	(a) == '[' || (a) == ']' || (a) == '{' || (a) == '}' || \
+	(a) == '|' || (a) == '\\' || (a) == '^')
 
 GHashTable *printnicks;
 
@@ -67,7 +72,7 @@ char *expand_emphasis(WI_ITEM_REC *item, const char *text)
 
 		/* check that the beginning marker starts a word, and
 		   that the matching end marker ends a word */
-		if ((pos > 0 && !i_isspace(bgn[-1])) || !ishighalnum(bgn[1]))
+		if ((pos > 0 && bgn[-1] != ' ') || !ishighalnum(bgn[1]))
 			continue;
 		if ((end = strchr(bgn+1, *bgn)) == NULL)
 			continue;
@@ -80,11 +85,24 @@ char *expand_emphasis(WI_ITEM_REC *item, const char *text)
 			   use emphasis on them. */
 			int found;
                         char c;
+			char *end2; 
 
+			/* check if _foo_ is a nick */
 			c = end[1];
                         end[1] = '\0';
                         found = nicklist_find(CHANNEL(item), bgn) != NULL;
 			end[1] = c;
+			if (found) continue;
+			
+			/* check if the whole 'word' (e.g. "_foo_^") is a nick
+			   in "_foo_^ ", end will be the second _, end2 the ^ */
+			end2 = end;
+			while (isnickchar(end2[1]))
+				end2++;
+			c = end2[1];
+			end2[1] = '\0';
+			found = nicklist_find(CHANNEL(item), bgn) != NULL;
+			end2[1] = c;
 			if (found) continue;
 		}
 
@@ -116,11 +134,18 @@ char *expand_emphasis(WI_ITEM_REC *item, const char *text)
 static char *channel_get_nickmode_rec(NICK_REC *nickrec)
 {
         char *emptystr;
+	static char nickmode[2]; /* FIXME: bad */
 
 	if (!settings_get_bool("show_nickmode"))
                 return "";
 
         emptystr = settings_get_bool("show_nickmode_empty") ? " " : "";
+
+	if (nickrec != NULL && nickrec->other) {
+		nickmode[0] = nickrec->other;
+		nickmode[1] = '\0';
+		return nickmode;
+	}
 
 	return nickrec == NULL ? emptystr :
 		nickrec->op ? "@" :
@@ -145,6 +170,7 @@ static void sig_message_public(SERVER_REC *server, const char *msg,
 	const char *nickmode, *printnick;
 	int for_me, print_channel, level;
 	char *color, *freemsg = NULL;
+	HILIGHT_REC *hilight;
 
 	/* NOTE: this may return NULL if some channel is just closed with
 	   /WINDOW CLOSE and server still sends the few last messages */
@@ -154,8 +180,9 @@ static void sig_message_public(SERVER_REC *server, const char *msg,
 
 	for_me = !settings_get_bool("hilight_nick_matches") ? FALSE :
 		nick_match_msg(chanrec, msg, server->nick);
-	color = for_me ? NULL :
+	hilight = for_me ? NULL :
 		hilight_match_nick(server, target, nick, address, MSGLEVEL_PUBLIC, msg);
+	color = (hilight == NULL) ? NULL : hilight_get_color(hilight);
 
 	print_channel = chanrec == NULL ||
 		!window_item_is_active((WI_ITEM_REC *) chanrec);
@@ -164,7 +191,7 @@ static void sig_message_public(SERVER_REC *server, const char *msg,
 		print_channel = TRUE;
 
 	level = MSGLEVEL_PUBLIC;
-	if (for_me || color != NULL)
+	if (for_me)
 		level |= MSGLEVEL_HILIGHT;
 
 	if (settings_get_bool("emphasis"))
@@ -178,34 +205,31 @@ static void sig_message_public(SERVER_REC *server, const char *msg,
 	if (printnick == NULL)
 		printnick = nick;
 
-	if (!print_channel) {
-		/* message to active channel in window */
-		if (color != NULL) {
-			/* highlighted nick */
-			printformat(server, target, level,
-				    TXT_PUBMSG_HILIGHT,
-				    color, printnick, msg, nickmode);
-		} else {
+	if (color != NULL) {
+		/* highlighted nick */
+		TEXT_DEST_REC dest;
+		format_create_dest(&dest, server, target, level, NULL);
+		hilight_update_text_dest(&dest,hilight);
+		if (!print_channel) /* message to active channel in window */
+			printformat_dest(&dest, TXT_PUBMSG_HILIGHT, color,
+				         printnick, msg, nickmode);
+		else /* message to not existing/active channel */
+			printformat_dest(&dest, TXT_PUBMSG_HILIGHT_CHANNEL,
+					 color, printnick, target, msg,
+					 nickmode);
+	} else {
+		if (!print_channel)
 			printformat(server, target, level,
 				    for_me ? TXT_PUBMSG_ME : TXT_PUBMSG,
 				    printnick, msg, nickmode);
-		}
-	} else {
-		/* message to not existing/active channel */
-		if (color != NULL) {
-			/* highlighted nick */
-			printformat(server, target, level,
-				    TXT_PUBMSG_HILIGHT_CHANNEL,
-				    color, printnick, target, msg, nickmode);
-		} else {
+		else
 			printformat(server, target, level,
 				    for_me ? TXT_PUBMSG_ME_CHANNEL :
 				    TXT_PUBMSG_CHANNEL,
 				    printnick, target, msg, nickmode);
-		}
-	}
+	}						
 
-        g_free_not_null(freemsg);
+	g_free_not_null(freemsg);
 	g_free_not_null(color);
 }
 
@@ -233,9 +257,8 @@ static void sig_message_own_public(SERVER_REC *server, const char *msg,
 	WINDOW_REC *window;
 	CHANNEL_REC *channel;
 	const char *nickmode;
-        char *freemsg = NULL;
+        char *freemsg = NULL, *recoded;
 	int print_channel;
-
 	channel = channel_find(server, target);
 	if (channel != NULL)
 		target = channel->visible_name;
@@ -255,14 +278,18 @@ static void sig_message_own_public(SERVER_REC *server, const char *msg,
 	if (settings_get_bool("emphasis"))
 		msg = freemsg = expand_emphasis((WI_ITEM_REC *) channel, msg);
 
+	/* ugly: recode the sent message back for printing */ 
+	recoded = recode_in(server, msg, target);
+	
 	if (!print_channel) {
 		printformat(server, target, MSGLEVEL_PUBLIC | MSGLEVEL_NOHILIGHT | MSGLEVEL_NO_ACT,
-			    TXT_OWN_MSG, server->nick, msg, nickmode);
+			    TXT_OWN_MSG, server->nick, recoded, nickmode);
 	} else {
 		printformat(server, target, MSGLEVEL_PUBLIC | MSGLEVEL_NOHILIGHT | MSGLEVEL_NO_ACT,
-			    TXT_OWN_MSG_CHANNEL, server->nick, target, msg, nickmode);
+			    TXT_OWN_MSG_CHANNEL, server->nick, target, recoded, nickmode);
 	}
 
+	g_free(recoded);
 	g_free_not_null(freemsg);
 }
 
@@ -270,11 +297,10 @@ static void sig_message_own_private(SERVER_REC *server, const char *msg,
 				    const char *target, const char *origtarget)
 {
 	QUERY_REC *query;
-        char *freemsg = NULL;
+        char *freemsg = NULL, *recoded;
 
 	g_return_if_fail(server != NULL);
 	g_return_if_fail(msg != NULL);
-
 	if (target == NULL) {
 		/* this should only happen if some special target failed and
 		   we should display some error message. currently the special
@@ -294,11 +320,15 @@ static void sig_message_own_private(SERVER_REC *server, const char *msg,
 	if (settings_get_bool("emphasis"))
 		msg = freemsg = expand_emphasis((WI_ITEM_REC *) query, msg);
 
+	/* ugly: recode the sent message back for printing */
+	recoded = recode_in(server, msg, target);
+
 	printformat(server, target,
 		    MSGLEVEL_MSGS | MSGLEVEL_NOHILIGHT | MSGLEVEL_NO_ACT,
 		    query == NULL ? TXT_OWN_MSG_PRIVATE :
-		    TXT_OWN_MSG_PRIVATE_QUERY, target, msg, server->nick);
+		    TXT_OWN_MSG_PRIVATE_QUERY, target, recoded, server->nick);
 
+	g_free(recoded);
 	g_free_not_null(freemsg);
 }
 
@@ -323,7 +353,7 @@ static void sig_message_quit(SERVER_REC *server, const char *nick,
 	WINDOW_REC *window;
 	GString *chans;
 	GSList *tmp, *windows;
-	char *print_channel;
+	char *print_channel, *recoded;
 	int once, count;
 
 	if (ignore_check(server, nick, address, NULL, reason, MSGLEVEL_QUITS))
@@ -356,10 +386,12 @@ static void sig_message_quit(SERVER_REC *server, const char *nick,
 			window = window_item_window((WI_ITEM_REC *) rec);
 			if (g_slist_find(windows, window) == NULL) {
 				windows = g_slist_append(windows, window);
+				recoded = recode_in(server, reason, rec->visible_name);
 				printformat(server, rec->visible_name,
 					    MSGLEVEL_QUITS,
-					    TXT_QUIT, nick, address, reason,
+					    TXT_QUIT, nick, address, recoded,
 					    rec->visible_name);
+				g_free(recoded);
 			}
 		}
 		count++;
@@ -371,17 +403,22 @@ static void sig_message_quit(SERVER_REC *server, const char *nick,
 		   display the quit there too */
 		QUERY_REC *query = query_find(server, nick);
 		if (query != NULL) {
+			recoded = recode_in(server, reason, nick);
 			printformat(server, nick, MSGLEVEL_QUITS,
-				    TXT_QUIT, nick, address, reason, "");
+				    TXT_QUIT, nick, address, recoded, "");
+			g_free(recoded);
 		}
 	}
 
 	if (once || count == 0) {
 		if (chans->len > 0)
 			g_string_truncate(chans, chans->len-1);
+		/* at least recode_fallback will be used */
+		recoded = recode_in(server, reason, nick);
 		printformat(server, print_channel, MSGLEVEL_QUITS,
 			    count <= 1 ? TXT_QUIT : TXT_QUIT_ONCE,
-			    nick, address, reason, chans->str);
+			    nick, address, recoded, chans->str);
+		g_free(recoded);
 	}
 	g_string_free(chans, TRUE);
 }

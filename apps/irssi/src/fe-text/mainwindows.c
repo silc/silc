@@ -154,17 +154,14 @@ void mainwindow_change_active(MAIN_WINDOW_REC *mainwin,
 		WINDOW_REC *rec = tmp->data;
 
 		if (rec != skip_window) {
-			if (WINDOW_MAIN(rec) == mainwin) {
-				window_set_active(rec);
-				return;
-			}
-                        other = rec;
+			other = rec;
+			break;
 		}
 	}
 
-	/* no more non-sticky windows, remove main window */
 	window_set_active(other);
-	mainwindow_destroy(mainwin);
+	if (mainwindows->next != NULL)
+		mainwindow_destroy(mainwin);
 }
 
 void mainwindows_recreate(void)
@@ -304,11 +301,13 @@ void mainwindow_destroy(MAIN_WINDOW_REC *window)
 
         term_window_destroy(window->screen_win);
 
-	if (!quitting && mainwindows != NULL) {
+	if (mainwindows != NULL) {
 		gui_windows_remove_parent(window);
-		mainwindows_add_space(window->first_line, window->last_line);
-
-		mainwindows_redraw();
+		if (!quitting) {
+			mainwindows_add_space(window->first_line,
+					      window->last_line);
+			mainwindows_redraw();
+		}
 	}
 
 	g_free(window);

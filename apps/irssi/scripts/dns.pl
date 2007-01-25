@@ -1,10 +1,19 @@
 # /DNS <nick>|<host>|<ip> ...
-# for irssi 0.7.99 by Timo Sirainen
-# version 2.0
 
+use Irssi;
 use strict;
 use Socket;
 use POSIX;
+
+use vars qw($VERSION %IRSSI); 
+$VERSION = "2.1";
+%IRSSI = (
+    authors	=> 'Timo Sirainen',
+    name	=> 'dns',
+    description	=> '/DNS <nick>|<host>|<ip> ...',
+    license	=> 'Public Domain',
+    changed	=> 'Sun Mar 10 23:23 EET 2002'
+);
 
 my (%resolve_hosts, %resolve_nicks, %resolve_print); # resolve queues
 my $userhosts; # number of USERHOSTs currently waiting for reply
@@ -25,6 +34,7 @@ sub cmd_dns {
   my $ask_nicks = "";
   my $print_error = 0;
   foreach my $nick (split(" ", $nicks)) {
+    $nick = lc($nick);
     if ($nick =~ /[\.:]/) {
       # it's an IP or hostname
       $resolve_hosts{$nick} = $tag;
@@ -66,9 +76,9 @@ sub sig_userhost {
   # move resolve_nicks -> resolve_hosts
   foreach my $host (@hosts) {
     if ($host =~ /^([^=\*]*)\*?=.(.*)@(.*)/) {
-      my $nick = $1;
+      my $nick = lc($1);
       my $user = $2;
-      $host = $3;
+      $host = lc($3);
 
       $resolve_hosts{$host} = $resolve_nicks{$nick};
       delete $resolve_nicks{$nick};

@@ -163,13 +163,13 @@ static void print_line(TEXT_DEST_REC *dest, const char *text)
 
 	g_return_if_fail(dest != NULL);
 	g_return_if_fail(text != NULL);
-
+	
         theme = window_get_theme(dest->window);
 	tmp = format_get_level_tag(theme, dest);
 	str = !theme->info_eol ? format_add_linestart(text, tmp) :
 		format_add_lineend(text, tmp);
 	g_free_not_null(tmp);
-
+	
 	/* send both the formatted + stripped (for logging etc.) */
 	stripped = strip_codes(str);
 	signal_emit_id(signal_print_text, 3, dest, str, stripped);
@@ -474,7 +474,7 @@ static void sig_gui_dialog(const char *type, const char *text)
 
 static void read_settings(void)
 {
-	beep_msg_level = level2bits(settings_get_str("beep_msg_level"));
+	beep_msg_level = settings_get_level("beep_msg_level");
 	beep_when_away = settings_get_bool("beep_when_away");
         beep_when_window_active = settings_get_bool("beep_when_window_active");
 }

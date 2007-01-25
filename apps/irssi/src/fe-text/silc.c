@@ -80,13 +80,13 @@ static GMainLoop *main_loop;
 int quitting;
 
 static const char *firsttimer_text =
-	"Looks like this is the first time you run irssi.\n"
+	"Looks like this is the first time you've run irssi.\n"
 	"This is just a reminder that you really should go read\n"
-	"startup-HOWTO if you haven't already. Irssi's default\n"
-	"settings aren't probably what you've used to, and you\n"
-	"shouldn't judge the whole client as crap based on them.\n\n"
-	"You can find startup-HOWTO and more irssi beginner info at\n"
-	"http://irssi.org/beginner/";
+	"startup-HOWTO if you haven't already. You can find it\n"
+	"and more irssi beginner info at http://irssi.org/help/\n"
+	"\n"
+	"For the truly impatient people who don't like any automatic\n"
+	"window creation or closing, just type: /MANUAL-WINDOWS";
 static int display_firsttimer = FALSE;
 
 
@@ -176,9 +176,11 @@ static void textui_finish_init(void)
 		gui_windows_init();
 		statusbar_init();
 		term_refresh_thaw();
+
+		/* don't check settings with dummy mode */
+		settings_check();
 	}
 
-	settings_check();
 	module_register("core", "fe-text");
 
 #ifdef HAVE_STATIC_PERL
@@ -307,6 +309,22 @@ static void winsock_init(void)
 }
 #endif
 
+#ifdef USE_GC
+#ifdef HAVE_GC_H
+#  include <gc.h>
+#else
+#  include <gc/gc.h>
+#endif
+
+GMemVTable gc_mem_table = {
+	GC_malloc,
+	GC_realloc,
+	GC_free,
+
+	NULL, NULL, NULL
+};
+#endif
+
 int main(int argc, char **argv)
 {
 	static struct poptOption options[] = {
@@ -315,6 +333,12 @@ int main(int argc, char **argv)
 #endif
 		{ NULL, '\0', 0, NULL }
 	};
+
+#ifdef USE_GC
+	g_mem_set_vtable(&gc_mem_table);
+#endif
+
+	srand(time(NULL));
 
 	dummy = FALSE;
 	quitting = FALSE;
@@ -334,13 +358,16 @@ int main(int argc, char **argv)
 	textdomain(PACKAGE);
 #endif
 
-        /* setlocale() must be called at the beginning before any callsthat
-           affect it, especially regexps seem to break if they'regenerated
-           before t his call.
+	/* setlocale() must be called at the beginning before any calls that
+	   affect it, especially regexps seem to break if they're generated
+	   before t his call.
 
-           locales aren't actually used for anything else thanautodetection
-           of UTF-8 currently.. */
-        setlocale(LC_CTYPE, "");
+	   locales aren't actually used for anything else than autodetection
+	   of UTF-8 currently..
+
+	   furthermore to get the users's charset with g_get_charset() properly
+	   you have to call setlocale(LC_ALL, "") */
+	setlocale(LC_ALL, "");
 
 	textui_init();
 	args_register(options);
@@ -358,7 +385,19 @@ int main(int argc, char **argv)
 	/* Does the same as g_main_run(main_loop), except we
 	   can call our dirty-checker after each iteration */
 	while (!quitting) {
+#ifdef USE_GC
+		GC_collect_a_little();
+#endif
+		if (!dummy) term_refresh_freeze();
 		g_main_iteration(TRUE);
+		if (!dummy) term_refresh_thaw();
+
+		if (reload_config) {
+			/* SIGHUP received, do /RELOAD */
+			reload_config = FALSE;
+			signal_emit("command reload", 1, "");
+		}
+
                 dirty_check();
 	}
 

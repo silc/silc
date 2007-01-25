@@ -23,12 +23,12 @@
 
 #include "term.h"
 #include "mainwindows.h"
-
-#if defined(USE_NCURSES) && !defined(RENAMED_NCURSES)
-#  include <ncurses.h>
-#else
-#  include <curses.h>
+#ifdef HAVE_CUIX
+#include "cuix.h"
 #endif
+
+#include "term-curses.h"
+
 #include <termios.h>
 #include <signal.h>
 
@@ -43,12 +43,6 @@
 #ifndef _POSIX_VDISABLE
 #  define _POSIX_VDISABLE 0
 #endif
-
-struct _TERM_WINDOW {
-	int x, y;
-        int width, height;
-	WINDOW *win;
-};
 
 TERM_WINDOW *root_window;
 
@@ -276,8 +270,8 @@ static int get_attr(int color)
 
 	if (!term_use_colors)
 		attr = (color & 0x70) ? A_REVERSE : 0;
-	else if (((color & 0x0f) == 8) && (color & ATTR_BOLD) == 0)
-                attr = (A_DIM | COLOR_PAIR(63));
+	else if ((color & 0xff) == 8 || (color & (0xff | ATTR_RESETFG)) == 0)
+		attr = COLOR_PAIR(63);
 	else if ((color & 0x77) == 0)
 		attr = A_NORMAL;
 	else {
@@ -285,7 +279,7 @@ static int get_attr(int color)
 			color &= ~0x0f;
 			color |= settings_get_int("default_color");
 		}
-		attr = (COLOR_PAIR((color&7) + (color&0x70)/2));
+		attr = COLOR_PAIR((color&7) | ((color&0x70)>>1));
 	}
 
 	if ((color & 0x08) || (color & ATTR_BOLD)) attr |= A_BOLD;
@@ -315,6 +309,15 @@ void term_addch(TERM_WINDOW *window, int chr)
 
 void term_add_unichar(TERM_WINDOW *window, unichar chr)
 {
+#ifdef WIDEC_CURSES
+	cchar_t wch;
+	wchar_t temp[2];
+	temp[0] = chr;
+	temp[1] = 0;
+	if (setcchar(&wch, temp, A_NORMAL, 0, NULL) == OK)
+		wadd_wch(window->win, &wch);
+	else
+#endif
         waddch(window->win, chr);
 }
 
@@ -349,20 +352,32 @@ void term_refresh_thaw(void)
 
 void term_refresh(TERM_WINDOW *window)
 {
+#ifdef HAVE_CUIX
+    if (!cuix_active) {
+#endif
 	if (window != NULL)
 		wnoutrefresh(window->win);
 
 	if (freeze_refresh == 0) {
 		move(curs_y, curs_x);
 		wnoutrefresh(stdscr);
+#ifdef HAVE_CUIX
+                cuix_refresh ();
+#endif
 		doupdate();
 	}
+#ifdef HAVE_CUIX
+    } else {
+        update_panels ();
+        doupdate ();
+    }
+#endif
 }
 
 void term_stop(void)
 {
 	term_deinit_int();
-	kill(getpid(), SIGSTOP);
+	kill(getpid(), SIGTSTP);
         term_init_int();
 	irssi_redraw();
 }
@@ -377,20 +392,26 @@ void term_set_input_type(int type)
 
 int term_gets(unichar *buffer, int size)
 {
-	int key, count;
+	int count;
+#ifdef WIDEC_CURSES
+	wint_t key;
+#else
+	int key;
+#endif
 
 	for (count = 0; count < size; ) {
-		key = getch();
+#ifdef WIDEC_CURSES
+		if (get_wch(&key) == ERR)
+#else
+		if ((key = getch()) == ERR)
+#endif
+			break;
 #ifdef KEY_RESIZE
 		if (key == KEY_RESIZE)
 			continue;
 #endif
 
-		if (key == ERR)
-			break;
-
-                buffer[count] = key;
-                count++;
+		buffer[count++] = key;
 	}
 
 	return count;

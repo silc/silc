@@ -71,6 +71,7 @@ FORMAT_REC fecommon_core_formats[] = {
 
 	{ "looking_up", "Looking up {server $0}", 1, { 0 } },
 	{ "connecting", "Connecting to {server $0} [$1] port {hilight $2}", 3, { 0, 0, 1 } },
+	{ "reconnecting", "Reconnecting to {server $0} [$1] port {hilight $2} - use /RMRECONNS to abort", 3, { 0, 0, 1 } },
 	{ "connection_established", "Connection to {server $0} established", 1, { 0 } },
 	{ "cant_connect", "Unable to connect server {server $0} port {hilight $1} {reason $2}", 3, { 0, 1, 0 } },
 	{ "connection_lost", "Connection lost to {server $0}", 1, { 0 } },
@@ -214,6 +215,12 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "chan_not_synced", "Channel not fully synchronized yet, try again after a while", 0 },
 	{ "illegal_proto", "Command isn't designed for the chat protocol of the active server", 0 },
 	{ "not_good_idea", "Doing this is not a good idea. Add -YES option to command if you really mean it", 0 },
+	{ "invalid_time", "Invalid timestamp", 0 },
+	{ "invalid_level", "Invalid message level", 0 },
+	{ "invalid_size", "Invalid size", 0 },
+	{ "invalid_charset", "Invalid charset: $0", 1, { 0 } },
+	{ "eval_max_recurse", "/eval hit maximum recursion limit", 0 },
+	{ "program_not_found", "Could not find file or file is not executable", 0 },
 
 	/* ---- */
 	{ NULL, "Themes", 0 },
@@ -243,10 +250,21 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "ignore_footer", "", 0 },
 
 	/* ---- */
+	{ NULL, "Recode", 0 },
+
+	{ "not_channel_or_query", "The current window is not a channel or query window", 0 },
+	{ "conversion_added", "Added {hilight $0}/{hilight $1} to conversion database", 2, { FORMAT_STRING, FORMAT_STRING } },
+	{ "conversion_removed", "Removed {hilight $0} from conversion database", 1, { FORMAT_STRING } },
+	{ "conversion_not_found", "{hilight $0} not found in conversion database", 1, { FORMAT_STRING } },
+	{ "conversion_no_translits", "Transliterations not supported in this system", 0 },
+	{ "recode_header", "%#Target                         Character set", 0 },
+	{ "recode_line", "%#%|$[!30]0 $1", 2, { FORMAT_STRING, FORMAT_STRING } },
+
+	/* ---- */
 	{ NULL, "Misc", 0 },
 
 	{ "unknown_chat_protocol", "Unknown chat protocol: $0", 1, { 0 } },
-	{ "unknown_chatnet", "Unknown chat network: $0 (create it with /IRCNET ADD)", 1, { 0 } },
+	{ "unknown_chatnet", "Unknown chat network: $0 (create it with /NETWORK ADD)", 1, { 0 } },
 	{ "not_toggle", "Value must be either ON, OFF or TOGGLE", 0 },
 	{ "perl_error", "Perl error: $0", 1, { 0 } },
 	{ "bind_header", "%#Key                  Action", 0 },

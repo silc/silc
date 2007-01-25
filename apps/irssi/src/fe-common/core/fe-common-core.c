@@ -25,10 +25,14 @@
 #include "levels.h"
 #include "settings.h"
 #include "irssi-version.h"
+#ifdef HAVE_NL_LANGINFO
+#  include <langinfo.h>
+#endif
 
 #include "servers.h"
 #include "channels.h"
 #include "servers-setup.h"
+#include "recode.h"
 
 #include "autorun.h"
 #include "fe-core-commands.h"
@@ -46,6 +50,7 @@
 #include "window-activity.h"
 #include "window-items.h"
 #include "windows-layout.h"
+#include "fe-recode.h"
 
 #include <signal.h>
 
@@ -92,6 +97,8 @@ void fe_settings_deinit(void);
 void window_commands_init(void);
 void window_commands_deinit(void);
 
+static void sig_setup_changed(void);
+
 static void print_version(void)
 {
 	printf(PACKAGE" " IRSSI_VERSION" (%d %04d)\n",
@@ -106,7 +113,8 @@ static void sig_connected(SERVER_REC *server)
 
 static void sig_disconnected(SERVER_REC *server)
 {
-	g_free(MODULE_DATA(server));
+	void *data = MODULE_DATA(server);
+	g_free(data);
 	MODULE_DATA_UNSET(server);
 }
 
@@ -117,7 +125,9 @@ static void sig_channel_created(CHANNEL_REC *channel)
 
 static void sig_channel_destroyed(CHANNEL_REC *channel)
 {
-	g_free(MODULE_DATA(channel));
+	void *data = MODULE_DATA(channel);
+
+	g_free(data);
 	MODULE_DATA_UNSET(channel);
 }
 
@@ -132,7 +142,7 @@ void fe_common_core_init(void)
 	static struct poptOption options[] = {
 		{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, version_options, 0, NULL, NULL },
 		POPT_AUTOHELP
-		{ "connect", 'c', POPT_ARG_STRING, &autocon_server, 0, "Automatically connect to server", "SERVER" },
+		{ "connect", 'c', POPT_ARG_STRING, &autocon_server, 0, "Automatically connect to server/network", "SERVER" },
 		{ "password", 'w', POPT_ARG_STRING, &autocon_password, 0, "Autoconnect password", "PASSWORD" },
 		{ "port", 'p', POPT_ARG_INT, &autocon_port, 0, "Autoconnect port", "PORT" },
 		{ "noconnect", '!', POPT_ARG_NONE, &no_autoconnect, 0, "Disable autoconnecting", NULL },
@@ -150,11 +160,11 @@ void fe_common_core_init(void)
 	args_register(options);
 
 	settings_add_bool("lookandfeel", "timestamps", TRUE);
-	settings_add_str("lookandfeel", "timestamp_level", "ALL");
-	settings_add_int("lookandfeel", "timestamp_timeout", 0);
+	settings_add_level("lookandfeel", "timestamp_level", "ALL");
+	settings_add_time("lookandfeel", "timestamp_timeout", "0");
 
 	settings_add_bool("lookandfeel", "bell_beeps", FALSE);
-	settings_add_str("lookandfeel", "beep_msg_level", "");
+	settings_add_level("lookandfeel", "beep_msg_level", "");
 	settings_add_bool("lookandfeel", "beep_when_window_active", TRUE);
 	settings_add_bool("lookandfeel", "beep_when_away", TRUE);
 
@@ -164,7 +174,13 @@ void fe_common_core_init(void)
 
 	settings_add_bool("lookandfeel", "use_status_window", TRUE);
 	settings_add_bool("lookandfeel", "use_msgs_window", FALSE);
-
+#if defined (HAVE_NL_LANGINFO) && defined(CODESET)
+	settings_add_str("lookandfeel", "term_charset", 
+			 *nl_langinfo(CODESET) != '\0' ? 
+			 nl_langinfo(CODESET) : "ISO8859-1");
+#else
+	settings_add_str("lookandfeel", "term_charset", "ISO8859-1");
+#endif
 	themes_init();
         theme_register(fecommon_core_formats);
 
@@ -197,6 +213,7 @@ void fe_common_core_init(void)
 	fe_messages_init();
 	hilight_text_init();
 	fe_ignore_messages_init();
+	fe_recode_init();
 
 	settings_check();
 
@@ -239,10 +256,12 @@ void fe_common_core_deinit(void)
 
 	fe_messages_deinit();
 	fe_ignore_messages_deinit();
+	fe_recode_deinit();
 
         theme_unregister();
 	themes_deinit();
 
+        signal_remove("setup changed", (SIGNAL_FUNC) sig_setup_changed);
         signal_remove("server connected", (SIGNAL_FUNC) sig_connected);
         signal_remove("server disconnected", (SIGNAL_FUNC) sig_disconnected);
         signal_remove("channel created", (SIGNAL_FUNC) sig_channel_created);
@@ -279,25 +298,42 @@ void glog_func(const char *log_domain, GLogLevelFlags log_level,
 static void create_windows(void)
 {
 	WINDOW_REC *window;
+	int have_status = settings_get_bool("use_status_window");
 
-	windows_layout_restore();
-	if (windows != NULL)
-		return;
-
-	if (settings_get_bool("use_status_window")) {
-		window = window_create(NULL, TRUE);
-		window_set_name(window, "(status)");
-		window_set_level(window, MSGLEVEL_ALL ^
-				 (settings_get_bool("use_msgs_window") ?
-				  MSGS_WINDOW_LEVELS : 0));
-                window_set_immortal(window, TRUE);
+	window = window_find_name("(status)");
+	if (have_status) {
+		if (window == NULL) {
+			window = window_create(NULL, TRUE);
+			window_set_refnum(window, 1);
+			window_set_name(window, "(status)");
+			window_set_level(window, MSGLEVEL_ALL ^
+					 (settings_get_bool("use_msgs_window") ?
+					  MSGS_WINDOW_LEVELS : 0));
+			window_set_immortal(window, TRUE);
+		}
+	} else {
+		if (window != NULL) {
+			window_set_name(window, NULL);
+			window_set_level(window, 0);
+			window_set_immortal(window, FALSE);
+		}
 	}
 
+	window = window_find_name("(msgs)");
 	if (settings_get_bool("use_msgs_window")) {
-		window = window_create(NULL, TRUE);
-		window_set_name(window, "(msgs)");
-		window_set_level(window, MSGS_WINDOW_LEVELS);
-                window_set_immortal(window, TRUE);
+		if (window == NULL) {
+			window = window_create(NULL, TRUE);
+			window_set_refnum(window, have_status ? 2 : 1);
+			window_set_name(window, "(msgs)");
+			window_set_level(window, MSGS_WINDOW_LEVELS);
+			window_set_immortal(window, TRUE);
+		}
+	} else {
+		if (window != NULL) {
+			window_set_name(window, NULL);
+			window_set_level(window, 0);
+			window_set_immortal(window, FALSE);
+		}
 	}
 
 	if (windows == NULL) {
@@ -345,6 +381,34 @@ static void autoconnect_servers(void)
 	g_slist_free(chatnets);
 }
 
+static void sig_setup_changed(void)
+{
+	static int firsttime = TRUE;
+	static int status_window = FALSE, msgs_window = FALSE;
+	int changed = FALSE;
+
+	if (settings_get_bool("use_status_window") != status_window) {
+		status_window = !status_window;
+		changed = TRUE;
+	}
+	if (settings_get_bool("use_msgs_window") != msgs_window) {
+		msgs_window = !msgs_window;
+		changed = TRUE;
+	}
+
+	if (firsttime) {
+		firsttime = FALSE;
+		changed = TRUE;
+
+		windows_layout_restore();
+		if (windows != NULL)
+			return;
+	}
+
+	if (changed)
+		create_windows();
+}
+
 void fe_common_core_finish_init(void)
 {
 	int setup_changed;
@@ -356,7 +420,7 @@ void fe_common_core_finish_init(void)
 #endif
 
         setup_changed = FALSE;
-	if (cmdline_nick != NULL) {
+	if (cmdline_nick != NULL && *cmdline_nick != '\0') {
 		/* override nick found from setup */
 		settings_set_str("nick", cmdline_nick);
 		setup_changed = TRUE;
@@ -368,13 +432,22 @@ void fe_common_core_finish_init(void)
 		setup_changed = TRUE;
 	}
 
-	create_windows();
+	sig_setup_changed();
+	signal_add_first("setup changed", (SIGNAL_FUNC) sig_setup_changed);
 
         /* _after_ windows are created.. */
+#if GLIB_CHECK_VERSION(2,6,0)
+	g_log_set_default_handler((GLogFunc) glog_func, NULL);
+#else
 	g_log_set_handler(G_LOG_DOMAIN,
 			  (GLogLevelFlags) (G_LOG_LEVEL_CRITICAL |
 					    G_LOG_LEVEL_WARNING),
 			  (GLogFunc) glog_func, NULL);
+	g_log_set_handler("GLib",
+			  (GLogLevelFlags) (G_LOG_LEVEL_CRITICAL |
+					    G_LOG_LEVEL_WARNING),
+			  (GLogFunc) glog_func, NULL); /* send glib errors to the same place */
+#endif
 
 	if (setup_changed)
                 signal_emit("setup changed", 0);

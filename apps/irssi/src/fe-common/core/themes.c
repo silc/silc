@@ -39,8 +39,9 @@ GHashTable *default_formats;
 
 static int init_finished;
 static char *init_errors;
+static THEME_REC *internal_theme;
 
-static int theme_read(THEME_REC *theme, const char *path, const char *data);
+static int theme_read(THEME_REC *theme, const char *path);
 
 THEME_REC *theme_create(const char *path, const char *name)
 {
@@ -309,7 +310,7 @@ char *theme_format_expand_get(THEME_REC *theme, const char **format)
 	int braces = 1; /* we start with one brace opened */
 
 	str = g_string_new(NULL);
-	while ((**format != '\0') && (braces)) {
+	while (**format != '\0' && braces != 0) {
 		if (**format == '{')
 			braces++;
 		else if (**format == '}')
@@ -325,7 +326,7 @@ char *theme_format_expand_get(THEME_REC *theme, const char **format)
 			continue;
 		}
 		
-		if (!braces) {
+		if (braces == 0) {
 			(*format)++;
 			break;
 		}
@@ -775,6 +776,22 @@ void theme_unregister_module(const char *module)
 	themes_remove_module(module);
 }
 
+void theme_set_default_abstract(const char *key, const char *value)
+{
+	gpointer oldkey, oldvalue;
+
+	if (g_hash_table_lookup_extended(internal_theme->abstracts, key,
+					 &oldkey, &oldvalue)) {
+		/* new values override old ones */
+		g_hash_table_remove(internal_theme->abstracts, oldkey);
+		g_free(oldkey);
+		g_free(oldvalue);
+	}
+
+	g_hash_table_insert(internal_theme->abstracts,
+			    g_strdup(key), g_strdup(value));
+}
+
 static THEME_REC *theme_find(const char *name)
 {
 	GSList *tmp;
@@ -840,7 +857,7 @@ THEME_REC *theme_load(const char *setname)
         oldtheme = theme;
 	theme = theme_create(fname, name);
 	theme->last_modify = statbuf.st_mtime;
-	if (!theme_read(theme, theme->path, NULL)) {
+	if (!theme_read(theme, theme->path)) {
                 /* error reading .theme file */
 		theme_destroy(theme);
 		theme = NULL;
@@ -848,12 +865,25 @@ THEME_REC *theme_load(const char *setname)
 
 	if (oldtheme != NULL && theme != NULL) {
 		theme_destroy(oldtheme);
+		if (current_theme == oldtheme)
+			current_theme = theme;
 		window_themes_update();
 	}
 
 	g_free(fname);
 	g_free(name);
 	return theme;
+}
+
+static void copy_abstract_hash(char *key, char *value, GHashTable *dest)
+{
+	g_hash_table_insert(dest, g_strdup(key), g_strdup(value));
+}
+
+static void theme_copy_abstracts(THEME_REC *dest, THEME_REC *src)
+{
+	g_hash_table_foreach(src->abstracts, (GHFunc) copy_abstract_hash,
+			     dest->abstracts);
 }
 
 typedef struct {
@@ -882,13 +912,13 @@ static void read_error(const char *str)
 	}
 }
 
-static int theme_read(THEME_REC *theme, const char *path, const char *data)
+static int theme_read(THEME_REC *theme, const char *path)
 {
 	CONFIG_REC *config;
 	THEME_READ_REC rec;
         char *str;
 
-	config = config_open(data == NULL ? path : NULL, -1) ;
+	config = config_open(path, -1) ;
 	if (config == NULL) {
 		/* didn't exist or no access? */
 		str = g_strdup_printf("Error reading theme file %s: %s",
@@ -898,8 +928,8 @@ static int theme_read(THEME_REC *theme, const char *path, const char *data)
 		return FALSE;
 	}
 
-	if (data != NULL)
-		config_parse_data(config, data, "internal");
+	if (path == NULL)
+		config_parse_data(config, default_theme, "internal");
         else
 		config_parse(config);
 
@@ -920,15 +950,8 @@ static int theme_read(THEME_REC *theme, const char *path, const char *data)
                 theme->default_color = -1;
 	theme_read_replaces(config, theme);
 
-	if (data == NULL) {
-		/* get the default abstracts from default theme. */
-		CONFIG_REC *default_config;
-
-		default_config = config_open(NULL, -1);
-		config_parse_data(default_config, default_theme, "internal");
-		theme_read_abstracts(default_config, theme);
-		config_close(default_config);
-	}
+	if (path != NULL)
+		theme_copy_abstracts(theme, internal_theme);
 	theme_read_abstracts(config, theme);
 
 	rec.theme = theme;
@@ -1226,12 +1249,13 @@ static void sig_complete_format(GList **list, WINDOW_REC *window,
         ptr = line;
 
 	words = 0;
-	do {
-                ptr++;
-
-		words++;
-                ptr = strchr(ptr, ' ');
-	} while (ptr != NULL);
+	if (*ptr != '\0') {
+		do {
+			ptr++;
+			words++;
+			ptr = strchr(ptr, ' ');
+		} while (ptr != NULL);
+	}
 
 	if (words > 2)
 		return;
@@ -1273,7 +1297,7 @@ static void read_settings(void)
 		change_theme(theme, TRUE);
 }
 
-static void themes_read(void)
+void themes_reload(void)
 {
 	GSList *refs;
 	char *fname;
@@ -1296,7 +1320,7 @@ static void themes_read(void)
 		fname = g_strdup_printf("%s/default.theme", get_irssi_dir());
 		current_theme = theme_create(fname, "default");
 		current_theme->default_color = -1;
-                theme_read(current_theme, NULL, default_theme);
+                theme_read(current_theme, NULL);
 		g_free(fname);
 	}
 
@@ -1309,25 +1333,41 @@ static void themes_read(void)
 	}
 }
 
+static THEME_REC *read_internal_theme(void)
+{
+	CONFIG_REC *config;
+	THEME_REC *theme;
+
+	theme = theme_create("internal", "_internal");
+
+	config = config_open(NULL, -1);
+	config_parse_data(config, default_theme, "internal");
+	theme_read_abstracts(config, theme);
+	config_close(config);
+
+	return theme;
+}
+
 void themes_init(void)
 {
 	settings_add_str("lookandfeel", "theme", "default");
 
 	default_formats = g_hash_table_new((GHashFunc) g_str_hash,
 					   (GCompareFunc) g_str_equal);
+	internal_theme = read_internal_theme();
 
         init_finished = FALSE;
         init_errors = NULL;
 
 	themes = NULL;
-	themes_read();
+	themes_reload();
 
 	command_bind("format", NULL, (SIGNAL_FUNC) cmd_format);
 	command_bind("save", NULL, (SIGNAL_FUNC) cmd_save);
 	signal_add("complete command format", (SIGNAL_FUNC) sig_complete_format);
 	signal_add("irssi init finished", (SIGNAL_FUNC) sig_print_errors);
         signal_add("setup changed", (SIGNAL_FUNC) read_settings);
-	signal_add("setup reread", (SIGNAL_FUNC) themes_read);
+	signal_add("setup reread", (SIGNAL_FUNC) themes_reload);
 
 	command_set_options("format", "delete reset");
 	command_set_options("save", "formats");
@@ -1337,6 +1377,7 @@ void themes_deinit(void)
 {
 	while (themes != NULL)
 		theme_destroy(themes->data);
+	theme_destroy(internal_theme);
 
 	g_hash_table_destroy(default_formats);
 	default_formats = NULL;
@@ -1346,5 +1387,5 @@ void themes_deinit(void)
 	signal_remove("complete command format", (SIGNAL_FUNC) sig_complete_format);
 	signal_remove("irssi init finished", (SIGNAL_FUNC) sig_print_errors);
         signal_remove("setup changed", (SIGNAL_FUNC) read_settings);
-        signal_remove("setup reread", (SIGNAL_FUNC) themes_read);
+        signal_remove("setup reread", (SIGNAL_FUNC) themes_reload);
 }
