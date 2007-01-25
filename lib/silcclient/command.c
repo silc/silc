@@ -1082,20 +1082,14 @@ SILC_FSM_STATE(silc_client_command_quit_final)
 {
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
-  SilcClient client = conn->client;
 
   SILC_LOG_DEBUG(("Quitting"));
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
 
-  /* Call connection callback */
-  if (!conn->internal->callback_called)
-    conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED,
-		   0, NULL, conn->callback_context);
-  conn->internal->callback_called = TRUE;
-
   /* Signal to close connection */
+  conn->internal->status = SILC_CLIENT_CONN_DISCONNECTED;
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
     SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);

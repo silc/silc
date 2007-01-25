@@ -71,7 +71,8 @@ remove:
 	-rm -f libsilcclient.a
 	-rm -f libsilcserver.a
 
-all:	remove $(SILCLIB) $(SILCSERVERLIB) $(SILCCLIENTLIB)
+all:
+	$(MAKE) remove $(SILCLIB) $(SILCSERVERLIB) $(SILCCLIENTLIB)
 
 #ifdef SILC_DIST_TOOLKIT
 install-exec-hook:

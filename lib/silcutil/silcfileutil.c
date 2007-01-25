@@ -82,9 +82,9 @@ int silc_file_writefile(const char *filename, const char *buffer,
     return -1;
   }
 
-  silc_file_close(fd);
+  fsync(fd);
 
-  return 0;
+  return silc_file_close(fd);
 }
 
 /* Writes a buffer to the file.  If the file is created specific mode is
@@ -112,9 +112,9 @@ int silc_file_writefile_mode(const char *filename, const char *buffer,
     return -1;
   }
 
-  silc_file_close(fd);
+  fsync(fd);
 
-  return 0;
+  return silc_file_close(fd);
 }
 
 /* Reads a file to a buffer. The allocated buffer is returned. Length of

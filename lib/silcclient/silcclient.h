@@ -135,7 +135,9 @@ typedef void (*SilcClientStopped)(SilcClient client, void *context);
  *    by the `status'.  It is called after the connection has been
  *    established to the remote host and when connection is disconnected
  *    by the remote host.  The `context' is the context given as argument
- *    to the connecting function.
+ *    to the connecting function.  If the `status' is an error the `error'
+ *    may indicate more detailed error.  If `error' is SILC_STATUS_OK no
+ *    detailed error message is available.
  *
  *    When the `status' is SILC_CLIENT_CONN_DISCONNECTED the `error' will
  *    indicate the reason for disconnection.  If the `message' is non-NULL

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -251,21 +251,15 @@ SILC_FSM_STATE(silc_client_st_register_complete)
 SILC_FSM_STATE(silc_client_st_register_error)
 {
   SilcClientConnection conn = fsm_context;
-  SilcClient client = conn->client;
 
   SILC_LOG_DEBUG(("Error registering to network"));
 
   /* Signal to close connection */
+  conn->internal->status = SILC_CLIENT_CONN_ERROR;
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
     SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   }
-
-  /* Call connect callback */
-  if (conn->internal->callback_called)
-    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
-		   conn->callback_context);
-  conn->internal->callback_called = TRUE;
 
   silc_schedule_task_del_by_all(conn->internal->schedule, 0,
 				silc_client_connect_timeout, conn);
@@ -599,7 +593,6 @@ SILC_FSM_STATE(silc_client_st_resume_completed)
 SILC_FSM_STATE(silc_client_st_resume_error)
 {
   SilcClientConnection conn = fsm_context;
-  SilcClient client = conn->client;
   SilcClientResumeSession resume = state_context;
 
   if (conn->internal->disconnected) {
@@ -613,16 +606,11 @@ SILC_FSM_STATE(silc_client_st_resume_error)
   SILC_LOG_DEBUG(("Error resuming to network"));
 
   /* Signal to close connection */
+  conn->internal->status = SILC_CLIENT_CONN_ERROR;
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
     SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   }
-
-  /* Call connect callback */
-  if (conn->internal->callback_called)
-    conn->callback(client, conn, SILC_CLIENT_CONN_ERROR, 0, NULL,
-		   conn->callback_context);
-  conn->internal->callback_called = TRUE;
 
   silc_schedule_task_del_by_all(conn->internal->schedule, 0,
 				silc_client_connect_timeout, conn);

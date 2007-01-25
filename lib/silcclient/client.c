@@ -132,17 +132,11 @@ static void silc_client_packet_eos(SilcPacketEngine engine,
 				   void *stream_context)
 {
   SilcClientConnection conn = stream_context;
-  SilcClient client = conn->client;
 
   SILC_LOG_DEBUG(("Remote disconnected connection"));
 
-  /* Call connection callback */
-  if (!conn->internal->callback_called)
-    conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED, 0, NULL,
-		   conn->callback_context);
-  conn->internal->callback_called = TRUE;
-
   /* Signal to close connection */
+  conn->internal->status = SILC_CLIENT_CONN_DISCONNECTED;
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
     SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
@@ -183,6 +177,9 @@ static void silc_client_connect_abort(SilcAsyncOperation op, void *context)
   SilcClientConnection conn = context;
 
   SILC_LOG_DEBUG(("Connection %p aborted by application", conn));
+
+  /* Connection callback will not be called after user aborted connecting */
+  conn->callback = NULL;
 
   /* Signal to close connection */
   if (!conn->internal->disconnected) {
@@ -379,8 +376,8 @@ SILC_FSM_STATE(silc_client_connection_st_packet)
 
 /* Disconnection event to close remote connection.  We close the connection
    and finish the connection machine in this state.  The connection context
-   is deleted in the machine destructor.  The connection callback must be
-   already called back to application before getting here. */
+   is deleted in the machine destructor.  The connection callback is called
+   in this state if it set. */
 
 SILC_FSM_STATE(silc_client_connection_st_close)
 {
@@ -418,6 +415,13 @@ SILC_FSM_STATE(silc_client_connection_st_close)
     return SILC_FSM_YIELD;
   }
 
+  /* Call the connection callback */
+  if (conn->callback)
+    conn->callback(conn->client, conn, conn->internal->status,
+		   conn->internal->error, conn->internal->disconnect_message,
+		   conn->callback_context);
+  silc_free(conn->internal->disconnect_message);
+
   SILC_LOG_DEBUG(("Closing remote connection"));
 
   /* Close connection */
@@ -453,7 +457,6 @@ SILC_FSM_STATE(silc_client_error)
 SILC_FSM_STATE(silc_client_disconnect)
 {
   SilcClientConnection conn = fsm_context;
-  SilcClient client = conn->client;
   SilcPacket packet = state_context;
   SilcStatus status;
   char *message = NULL;
@@ -475,19 +478,17 @@ SILC_FSM_STATE(silc_client_disconnect)
 			  silc_buffer_len(&packet->buffer));
 
   /* Call connection callback */
-  if (!conn->internal->callback_called)
-    conn->callback(client, conn, SILC_CLIENT_CONN_DISCONNECTED, status,
-		   message, conn->callback_context);
-  conn->internal->callback_called = TRUE;
-
-  silc_free(message);
-  silc_packet_free(packet);
+  conn->internal->status = SILC_CLIENT_CONN_DISCONNECTED;
+  conn->internal->error = status;
+  conn->internal->disconnect_message = message;
 
   /* Signal to close connection */
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
     SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   }
+
+  silc_packet_free(packet);
 
   return SILC_FSM_FINISH;
 }

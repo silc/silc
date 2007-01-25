@@ -233,7 +233,7 @@ SILC_FSM_STATE(silc_client_command_reply_timeout)
   if (conn->internal->disconnected) {
     SILC_LOG_DEBUG(("Command %s canceled", silc_get_command_name(cmd->cmd)));
     silc_list_del(conn->internal->pending_commands, cmd);
-    if (!cmd->called && cmd->cmd != SILC_COMMAND_PING)
+    if (!cmd->called)
       ERROR_CALLBACK(SILC_STATUS_ERR_TIMEDOUT);
     return SILC_FSM_FINISH;
   }

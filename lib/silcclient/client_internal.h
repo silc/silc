@@ -143,6 +143,7 @@ struct SilcClientConnectionInternalStruct {
   SilcAsyncOperation op;	         /* Protocols async operation */
   SilcAsyncOperation cop;	         /* Async operation for application */
   SilcHashTable attrs;		         /* Configured user attributes */
+  char *disconnect_message;		 /* Disconnection message */
 
   SilcIDCache client_cache;		 /* Client entry cache */
   SilcIDCache channel_cache;		 /* Channel entry cache */
@@ -151,6 +152,8 @@ struct SilcClientConnectionInternalStruct {
   SilcAtomic16 cmd_ident;		 /* Current command identifier */
   SilcUInt8 retry_count;		 /* Packet retry counter */
   SilcUInt8 retry_timer;		 /* Packet retry timer */
+  SilcClientConnectionStatus status;	 /* Connection callback status */
+  SilcStatus error;			 /* Connection callback error */
 
   /* Events */
   unsigned int connect            : 1;	 /* Connect remote host */
@@ -162,7 +165,6 @@ struct SilcClientConnectionInternalStruct {
   unsigned int verbose            : 1;   /* Notify application */
   unsigned int registering        : 1;	 /* Set when registering to network */
   unsigned int rekey_responder    : 1;   /* Set when rekeying as responder */
-  unsigned int callback_called    : 1;   /* Set when connect callback called */
   unsigned int auth_request       : 1;   /* Set when requesting auth method */
 
   SilcClientAway *away;
