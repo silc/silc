@@ -1121,7 +1121,6 @@ SILC_FSM_STATE(silc_client_command_quit)
 
 /********************************** KILL ************************************/
 
-
 /* Command KILL. Router operator can use this command to remove an client
    fromthe SILC Network. */
 

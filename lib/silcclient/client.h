@@ -31,7 +31,6 @@ typedef struct SilcClientEntryStruct *SilcClientEntry;
 typedef struct SilcChannelEntryStruct *SilcChannelEntry;
 typedef struct SilcServerEntryStruct *SilcServerEntry;
 
-typedef struct SilcClientAwayStruct SilcClientAway;
 typedef struct SilcClientKeyAgreementStruct *SilcClientKeyAgreement;
 typedef struct SilcClientFtpSessionStruct *SilcClientFtpSession;
 typedef struct SilcClientCommandReplyContextStruct
@@ -45,6 +44,7 @@ typedef struct SilcChannelPrivateKeyStruct *SilcChannelPrivateKey;
 
 /* Internal client entry context */
 typedef struct SilcClientEntryInternalStruct {
+  SilcRwLock lock;		/* Read/write lock */
   SilcCipher send_key;		/* Private message key for sending */
   SilcCipher receive_key;	/* Private message key for receiving */
   SilcHmac hmac_send;		/* Private mesage key HMAC for sending */
@@ -65,6 +65,8 @@ typedef struct SilcClientEntryInternalStruct {
 
 /* Internal channel entry context */
 typedef struct SilcChannelEntryInternalStruct {
+  SilcRwLock lock;		             /* Read/write lock */
+
   /* SilcChannelEntry status information */
   SilcDList old_channel_keys;
   SilcDList old_hmacs;
@@ -90,6 +92,7 @@ typedef struct SilcChannelEntryInternalStruct {
 
 /* Internal server entry context */
 typedef struct SilcServerEntryInternalStruct {
+  SilcRwLock lock;		             /* Read/write lock */
   SilcUInt16 resolve_cmd_ident;		     /* Resolving identifier */
   SilcAtomic8 refcnt;		             /* Reference counter */
 } SilcServerEntryInternal;

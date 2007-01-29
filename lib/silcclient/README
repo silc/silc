@@ -82,12 +82,12 @@ Finishing threads when closing connection
    When closing SilcClientConnection all threads must first be finished
    before the connection machine is finished.  This is done by finishing
    all running command threads.  That will also finish all waiting packet
-   and notify threads as they are always waiting for a command.  If any 
-   thread is waiting for something else than a command (such as event 
-   threads) they must be explicitly finished.  The threads are finished by 
-   continuing them synchronously.  The threads will detect that we are 
-   disconnected (see below).  SILC_FSM_YIELD must be returned in 
-   st_close() as that gives the FSM scheduler time to finish the threads 
+   and notify threads as they are always waiting for a command.  If any
+   thread is waiting for something else than a command (such as event
+   threads) they must be explicitly finished.  The threads are finished by
+   continuing them synchronously.  The threads will detect that we are
+   disconnected (see below).  SILC_FSM_YIELD must be returned in
+   st_close() as that gives the FSM scheduler time to finish the threads
    first.  After that the machine can be finished.
 
    Also, any thread that runs in SilcClientConnection machine must always
@@ -101,3 +101,13 @@ Finishing threads when closing connection
    If disconnected the thread must finish immediately by returning
    SILC_FSM_FINISH.
 
+Entry locking
+
+   All entires have a read/write lock.  It is used to protect the entries
+   when library updates them at the same time application is reading data
+   from the entries.  An API for application to read-lock the entires
+   exist.  Library only needs to use write-lock.  Using read-lock is not
+   necessary inside library because all connection related stuff, including
+   updating connection related entries are done in one thread.  When library
+   is reading data from the entries it cannot be updating them at the same
+   time.  Hence, using read-lock inside library is not necessary.

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,6 +48,15 @@ SILC_FSM_STATE(silc_client_command_users);
 SILC_FSM_STATE(silc_client_command_getkey);
 SILC_FSM_STATE(silc_client_command_service);
 
+SilcUInt16 silc_client_command_send_argv(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcCommand command,
+					 SilcClientCommandReply reply,
+					 void *reply_context,
+					 SilcUInt32 argc,
+					 unsigned char **argv,
+					 SilcUInt32 *argv_lens,
+					 SilcUInt32 *argv_types);
 void silc_client_commands_register(SilcClient client);
 void silc_client_commands_unregister(SilcClient client);
 

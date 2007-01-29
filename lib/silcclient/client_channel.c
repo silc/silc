@@ -702,7 +702,8 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
 }
 
 /* Adds client to channel.  Returns TRUE if user was added or is already
-   added to the channel, FALSE on error. */
+   added to the channel, FALSE on error.  Must be called with both `channel'
+   and `client_entry' locked. */
 
 SilcBool silc_client_add_to_channel(SilcClient client,
 				    SilcClientConnection conn,
@@ -734,7 +735,7 @@ SilcBool silc_client_add_to_channel(SilcClient client,
   return TRUE;
 }
 
-/* Removes client from a channel */
+/* Removes client from a channel.  This handles entry locking internally. */
 
 SilcBool silc_client_remove_from_channel(SilcClient client,
 					 SilcClientConnection conn,
@@ -749,6 +750,9 @@ SilcBool silc_client_remove_from_channel(SilcClient client,
 
   SILC_LOG_DEBUG(("Remove client %s from channel", client_entry->nickname));
 
+  silc_rwlock_wrlock(client_entry->internal.lock);
+  silc_rwlock_wrlock(channel->internal.lock);
+
   silc_hash_table_del(chu->client->channels, chu->channel);
   silc_hash_table_del(chu->channel->user_list, chu->client);
   silc_free(chu);
@@ -757,13 +761,17 @@ SilcBool silc_client_remove_from_channel(SilcClient client,
   if (!silc_hash_table_count(channel->user_list))
     silc_client_del_channel(client, conn, channel);
 
+  silc_rwlock_unlock(client_entry->internal.lock);
+  silc_rwlock_unlock(channel->internal.lock);
+
   silc_client_unref_client(client, conn, client_entry);
   silc_client_unref_channel(client, conn, channel);
 
   return TRUE;
 }
 
-/* Removes a client entry from all channels it has joined. */
+/* Removes a client entry from all channels it has joined.  This handles
+   entry locking internally. */
 
 void silc_client_remove_from_channels(SilcClient client,
 				      SilcClientConnection conn,
@@ -777,8 +785,12 @@ void silc_client_remove_from_channels(SilcClient client,
 
   SILC_LOG_DEBUG(("Remove client from all joined channels"));
 
+  silc_rwlock_wrlock(client_entry->internal.lock);
+
   silc_hash_table_list(client_entry->channels, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
+    silc_rwlock_wrlock(chu->channel->internal.lock);
+
     silc_hash_table_del(chu->client->channels, chu->channel);
     silc_hash_table_del(chu->channel->user_list, chu->client);
 
@@ -786,15 +798,19 @@ void silc_client_remove_from_channels(SilcClient client,
     if (!silc_hash_table_count(chu->channel->user_list))
       silc_client_del_channel(client, conn, chu->channel);
 
+    silc_rwlock_unlock(chu->channel->internal.lock);
+
     silc_client_unref_client(client, conn, chu->client);
     silc_client_unref_channel(client, conn, chu->channel);
     silc_free(chu);
   }
 
+  silc_rwlock_unlock(client_entry->internal.lock);
+
   silc_hash_table_list_reset(&htl);
 }
 
-/* Empties channel from users. */
+/* Empties channel from users.  This handles entry locking internally. */
 
 void silc_client_empty_channel(SilcClient client,
 			       SilcClientConnection conn,
@@ -802,6 +818,8 @@ void silc_client_empty_channel(SilcClient client,
 {
   SilcHashTableList htl;
   SilcChannelUser chu;
+
+  silc_rwlock_wrlock(channel->internal.lock);
 
   silc_hash_table_list(channel->user_list, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&chu)) {
@@ -811,5 +829,53 @@ void silc_client_empty_channel(SilcClient client,
     silc_client_unref_channel(client, conn, chu->channel);
     silc_free(chu);
   }
+
+  silc_rwlock_unlock(channel->internal.lock);
+
   silc_hash_table_list_reset(&htl);
+}
+
+/* Save public keys to channel public key list.  Removes keys that are
+   marked to be removed.  Must be called with `channel' locked. */
+
+SilcBool silc_client_channel_save_public_keys(SilcChannelEntry channel,
+					      unsigned char *chpk_list,
+					      SilcUInt32 chpk_list_len)
+{
+  SilcArgumentDecodedList a, b;
+  SilcDList chpks;
+  SilcBool found;
+
+  chpks = silc_argument_list_parse_decoded(chpk_list, chpk_list_len,
+					   SILC_ARGUMENT_PUBLIC_KEY);
+  if (!chpks)
+    return FALSE;
+
+  if (!channel->channel_pubkeys) {
+    channel->channel_pubkeys = chpks;
+    return TRUE;
+  }
+
+  silc_dlist_start(chpks);
+  while ((a = silc_dlist_get(chpks))) {
+    found = FALSE;
+    silc_dlist_start(channel->channel_pubkeys);
+    while ((b = silc_dlist_get(channel->channel_pubkeys))) {
+      if (silc_pkcs_public_key_compare(a->argument, b->argument)) {
+	found = TRUE;
+	break;
+      }
+    }
+
+    if ((a->arg_type == 0x00 || a->arg_type == 0x03) && !found) {
+      silc_dlist_add(channel->channel_pubkeys, a);
+      silc_dlist_del(chpks, a);
+    } else if (a->arg_type == 0x01 && found) {
+      silc_dlist_del(channel->channel_pubkeys, b);
+    }
+  }
+
+  silc_argument_list_free(chpks, SILC_ARGUMENT_PUBLIC_KEY);
+
+  return TRUE;
 }

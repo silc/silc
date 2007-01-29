@@ -154,7 +154,7 @@ SILC_FSM_STATE(silc_client_private_message)
 
   /* See if we are away (gone). If we are away we will reply to the
      sender with the set away message. */
-  if (conn->internal->away && conn->internal->away->away &&
+  if (conn->internal->away_message &&
       !(flags & SILC_MESSAGE_FLAG_NOREPLY)) {
     /* If it's me, ignore */
     if (SILC_ID_CLIENT_COMPARE(&remote_id, conn->local_id))
@@ -164,8 +164,8 @@ SILC_FSM_STATE(silc_client_private_message)
     silc_client_send_private_message(client, conn, remote_client,
 				     SILC_MESSAGE_FLAG_AUTOREPLY |
 				     SILC_MESSAGE_FLAG_NOREPLY, NULL,
-				     conn->internal->away->away,
-				     strlen(conn->internal->away->away));
+				     conn->internal->away_message,
+				     strlen(conn->internal->away_message));
   }
 
  out:
@@ -186,21 +186,51 @@ SILC_FSM_STATE(silc_client_private_message_error)
   return SILC_FSM_FINISH;
 }
 
+/* Initialize private message waiter for the `conn' connection. */
+
+SilcBool silc_client_private_message_wait_init(SilcClient client,
+					       SilcClientConnection conn)
+{
+  if (conn->internal->prv_waiter)
+    return TRUE;
+
+  conn->internal->prv_waiter =
+    silc_packet_wait_init(conn->stream, SILC_PACKET_PRIVATE_MESSAGE, -1);
+  if (!conn->internal->prv_waiter)
+    return FALSE;
+
+  return TRUE;
+}
+
+/* Uninitializes private message waiter. */
+
+void silc_client_private_message_wait_uninit(SilcClient client,
+					     SilcClientConnection conn)
+{
+  if (!conn->internal->prv_waiter)
+    return;
+  silc_packet_wait_uninit(conn->internal->prv_waiter, conn->stream);
+  conn->internal->prv_waiter = NULL;
+}
+
 /* Blocks the calling process or thread until private message has been
    received from the specified client. */
 
-SilcBool silc_client_private_message_wait(SilcClientConnection conn,
+SilcBool silc_client_private_message_wait(SilcClient client,
+					  SilcClientConnection conn,
 					  SilcClientEntry client_entry,
-					  void *waiter,
 					  SilcMessagePayload *payload)
 {
   SilcPacket packet;
   SilcClientID remote_id;
   SilcFSMThread thread;
 
+  if (!conn->internal->prv_waiter)
+    return FALSE;
+
   /* Block until private message arrives */
   do {
-    if ((silc_packet_wait(waiter, 0, &packet)) < 0)
+    if ((silc_packet_wait(conn->internal->prv_waiter, 0, &packet)) < 0)
       return FALSE;
 
     /* Parse sender ID */
@@ -589,23 +619,25 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
    new one.  If `message' is NULL the old away message is removed.
    The sender may freely free the memory of the `message'. */
 
-void silc_client_set_away_message(SilcClient client,
-				  SilcClientConnection conn,
-				  char *message)
+SilcBool silc_client_set_away_message(SilcClient client,
+				      SilcClientConnection conn,
+				      char *message)
 {
-  assert(client && conn);
+  if (!client || !conn)
+    return FALSE;
 
-  if (!message && conn->internal->away) {
-    silc_free(conn->internal->away->away);
-    silc_free(conn->internal->away);
-    conn->internal->away = NULL;
+  if (!message) {
+    silc_free(conn->internal->away_message);
+    conn->internal->away_message = NULL;
+    return TRUE;
   }
 
-  if (message) {
-    if (!conn->internal->away)
-      conn->internal->away = silc_calloc(1, sizeof(*conn->internal->away));
-    if (conn->internal->away->away)
-      silc_free(conn->internal->away->away);
-    conn->internal->away->away = strdup(message);
-  }
+  if (conn->internal->away_message)
+    silc_free(conn->internal->away_message);
+
+  conn->internal->away_message = strdup(message);
+  if (!conn->internal->away_message)
+    return FALSE;
+
+  return TRUE;
 }

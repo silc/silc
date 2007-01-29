@@ -480,6 +480,8 @@ SILC_FSM_STATE(silc_client_command_reply_whois)
 			      nickname, username, realname, mode);
   }
 
+  silc_rwlock_wrlock(client_entry->internal.lock);
+
   if (fingerprint && fingerprint_len == sizeof(client_entry->fingerprint))
     memcpy(client_entry->fingerprint, fingerprint, fingerprint_len);
 
@@ -490,6 +492,8 @@ SILC_FSM_STATE(silc_client_command_reply_whois)
       silc_attribute_payload_list_free(client_entry->attrs);
     client_entry->attrs = silc_attribute_payload_parse(tmp, len);
   }
+
+  silc_rwlock_unlock(client_entry->internal.lock);
 
   /* Parse channel and channel user mode list */
   if (has_channels) {
@@ -718,6 +722,8 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
     goto out;
   }
 
+  silc_rwlock_wrlock(conn->local_entry->internal.lock);
+
   /* Change the nickname */
   old_client_id = *conn->local_id;
   if (!silc_client_change_nickname(client, conn, conn->local_entry,
@@ -725,6 +731,8 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
     ERROR_CALLBACK(SILC_STATUS_ERR_BAD_NICKNAME);
     goto out;
   }
+
+  silc_rwlock_unlock(conn->local_entry->internal.lock);
 
   /* Notify application */
   silc_client_command_callback(cmd, conn->local_entry,
@@ -830,12 +838,16 @@ SILC_FSM_STATE(silc_client_command_reply_topic)
     goto out;
   }
 
+  silc_rwlock_wrlock(channel->internal.lock);
+
   /* Take topic */
   topic = silc_argument_get_arg_type(args, 3, &len);
   if (topic) {
     silc_free(channel->topic);
     channel->topic = silc_memdup(topic, len);
   }
+
+  silc_rwlock_unlock(channel->internal.lock);
 
   /* Notify application */
   silc_client_command_callback(cmd, channel, channel->topic);
@@ -1185,6 +1197,8 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   }
   silc_buffer_set(&client_mode_list, tmp, len);
 
+  silc_rwlock_wrlock(channel->internal.lock);
+
   /* Add clients we received in the reply to the channel */
   for (i = 0; i < list_count; i++) {
     SilcUInt16 idp_len;
@@ -1207,13 +1221,19 @@ SILC_FSM_STATE(silc_client_command_reply_join)
       continue;
 
     /* Join client to the channel */
+    silc_rwlock_wrlock(client_entry->internal.lock);
     silc_client_add_to_channel(client, conn, channel, client_entry, mode);
+    silc_rwlock_unlock(client_entry->internal.lock);
     silc_client_unref_client(client, conn, client_entry);
 
-    if (!silc_buffer_pull(&client_id_list, idp_len))
+    if (!silc_buffer_pull(&client_id_list, idp_len)) {
+      silc_rwlock_unlock(channel->internal.lock);
       goto out;
-    if (!silc_buffer_pull(&client_mode_list, 4))
+    }
+    if (!silc_buffer_pull(&client_mode_list, 4)) {
+      silc_rwlock_unlock(channel->internal.lock);
       goto out;
+    }
   }
 
   /* Get hmac */
@@ -1224,6 +1244,7 @@ SILC_FSM_STATE(silc_client_command_reply_join)
 	SAY(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 	    "Cannot join channel: Unsupported HMAC `%s'", hmac);
       ERROR_CALLBACK(SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+      silc_rwlock_unlock(channel->internal.lock);
       goto out;
     }
   }
@@ -1267,11 +1288,12 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   /* Get channel public key list */
   tmp = silc_argument_get_arg_type(args, 16, &len);
   if (tmp)
-    channel->channel_pubkeys =
-      silc_argument_list_parse_decoded(tmp, len, SILC_ARGUMENT_PUBLIC_KEY);
+    silc_client_channel_save_public_keys(channel, tmp, len);
 
   /* Set current channel */
   conn->current_channel = channel;
+
+  silc_rwlock_unlock(channel->internal.lock);
 
   cipher = (channel->internal.send_key ?
 	    silc_cipher_get_name(channel->internal.send_key) : NULL);
@@ -1368,7 +1390,9 @@ SILC_FSM_STATE(silc_client_command_reply_umode)
   }
 
   SILC_GET32_MSB(mode, tmp);
+  silc_rwlock_wrlock(conn->local_entry->internal.lock);
   conn->local_entry->mode = mode;
+  silc_rwlock_unlock(conn->local_entry->internal.lock);
 
   /* Notify application */
   silc_client_command_callback(cmd, mode);
@@ -1421,14 +1445,16 @@ SILC_FSM_STATE(silc_client_command_reply_cmode)
     goto out;
   }
 
-  /* Save the mode */
-  SILC_GET32_MSB(mode, tmp);
-  channel->mode = mode;
-
   /* Get founder public key */
   tmp = silc_argument_get_arg_type(args, 4, &len);
   if (tmp)
     silc_public_key_payload_decode(tmp, len, &public_key);
+
+  silc_rwlock_wrlock(channel->internal.lock);
+
+  /* Save the mode */
+  SILC_GET32_MSB(mode, tmp);
+  channel->mode = mode;
 
   /* Get user limit */
   tmp = silc_argument_get_arg_type(args, 6, &len);
@@ -1440,8 +1466,9 @@ SILC_FSM_STATE(silc_client_command_reply_cmode)
   /* Get channel public key(s) */
   tmp = silc_argument_get_arg_type(args, 5, &len);
   if (tmp)
-    channel_pubkeys =
-      silc_argument_list_parse_decoded(tmp, len, SILC_ARGUMENT_PUBLIC_KEY);
+    silc_client_channel_save_public_keys(channel, tmp, len);
+
+  silc_rwlock_unlock(channel->internal.lock);
 
   /* Notify application */
   silc_client_command_callback(cmd, channel, mode, public_key,
@@ -1513,9 +1540,11 @@ SILC_FSM_STATE(silc_client_command_reply_cumode)
   }
 
   /* Save the mode */
+  silc_rwlock_wrlock(channel->internal.lock);
   chu = silc_client_on_channel(channel, client_entry);
   if (chu)
     chu->mode = mode;
+  silc_rwlock_unlock(channel->internal.lock);
 
   /* Notify application */
   silc_client_command_callback(cmd, mode, channel, client_entry);
@@ -1877,6 +1906,8 @@ SILC_FSM_STATE(silc_client_command_reply_users)
 
   SILC_LOG_DEBUG(("channel %s, %d users", channel->channel_name, list_count));
 
+  silc_rwlock_wrlock(channel->internal.lock);
+
   /* Cache the received Client ID's and modes. */
   for (i = 0; i < list_count; i++) {
     SILC_GET16_MSB(idp_len, client_id_list.data + 2);
@@ -1890,14 +1921,21 @@ SILC_FSM_STATE(silc_client_command_reply_users)
     /* Save the client on this channel.  Unknown clients are ignored as they
        clearly do not exist since the resolving didn't find them. */
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
-    if (client_entry)
+    if (client_entry) {
+      silc_rwlock_wrlock(client_entry->internal.lock);
       silc_client_add_to_channel(client, conn, channel, client_entry, mode);
+      silc_rwlock_unlock(client_entry->internal.lock);
+    }
     silc_client_unref_client(client, conn, client_entry);
 
-    if (!silc_buffer_pull(&client_id_list, idp_len))
+    if (!silc_buffer_pull(&client_id_list, idp_len)) {
+      silc_rwlock_unlock(channel->internal.lock);
       goto out;
-    if (!silc_buffer_pull(&client_mode_list, 4))
+    }
+    if (!silc_buffer_pull(&client_mode_list, 4)) {
+      silc_rwlock_unlock(channel->internal.lock);
       goto out;
+    }
   }
 
   /* Notify application */
@@ -1959,6 +1997,8 @@ SILC_FSM_STATE(silc_client_command_reply_getkey)
       goto out;
     }
 
+    silc_rwlock_wrlock(client_entry->internal.lock);
+
     /* Save fingerprint */
     if (!client_entry->fingerprint)
       silc_hash_make(conn->internal->sha1hash, tmp + 4, len - 4,
@@ -1967,6 +2007,8 @@ SILC_FSM_STATE(silc_client_command_reply_getkey)
       client_entry->public_key = public_key;
       public_key = NULL;
     }
+
+    silc_rwlock_unlock(client_entry->internal.lock);
 
     /* Notify application */
     silc_client_command_callback(cmd, SILC_ID_CLIENT, client_entry,
@@ -1980,10 +2022,14 @@ SILC_FSM_STATE(silc_client_command_reply_getkey)
       goto out;
     }
 
+    silc_rwlock_wrlock(server_entry->internal.lock);
+
     if (!server_entry->public_key) {
       server_entry->public_key = public_key;
       public_key = NULL;
     }
+
+    silc_rwlock_unlock(server_entry->internal.lock);
 
     /* Notify application */
     silc_client_command_callback(cmd, SILC_ID_SERVER, server_entry,

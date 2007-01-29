@@ -95,7 +95,7 @@ static void silc_client_connect_callback(SilcNetStatus status,
 
 static void silc_client_ke_verify_key_cb(SilcBool success, void *context)
 {
-  VerifyKeyContext verify = (VerifyKeyContext)context;
+  SilcVerifyKeyContext verify = context;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -118,7 +118,7 @@ static void silc_client_ke_verify_key(SilcSKE ske,
   SilcFSMThread fsm = context;
   SilcClientConnection conn = silc_fsm_get_context(fsm);
   SilcClient client = conn->client;
-  VerifyKeyContext verify;
+  SilcVerifyKeyContext verify;
 
   /* If we provided repository for SKE and we got here the key was not
      found from the repository. */

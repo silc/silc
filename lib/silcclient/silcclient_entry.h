@@ -195,23 +195,59 @@ typedef void (*SilcGetClientCallback)(SilcClient client,
 				      SilcDList clients,
 				      void *context);
 
+/****f* silcclient/SilcClientAPI/silc_client_lock_client
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_lock_client(SilcClientEntry client_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Acquires lock for the client entry indicate by `client_entry'.  When
+ *    application wants to access `client_entry' it must lock the entry
+ *    before reading any data from the `client_entry'.  The lock must be
+ *    unlocked with silc_client_unlock_client.
+ *
+ *    The entry must be unlocked before calling any Client Library API
+ *    functions where the entry is given as argument.
+ *
+ *    This function is not needed if application is not multithreaded
+ *
+ ***/
+void silc_client_lock_client(SilcClientEntry client_entry);
+
+/****f* silcclient/SilcClientAPI/silc_client_unlock_client
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_unlock_client(SilcClientEntry client_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Releases the lock acquired with silc_client_lock_client.
+ *
+ ***/
+void silc_client_unlock_client(SilcClientEntry client_entry);
+
 /****f* silcclient/SilcClientAPI/silc_client_ref_client
  *
  * SYNOPSIS
  *
- *    void silc_client_ref_client(SilcClient client,
- *                                SilcClientConnection conn,
- *                                SilcClientEntry client_entry);
+ *    SilcClientEntry
+ *    silc_client_ref_client(SilcClient client,
+ *                           SilcClientConnection conn,
+ *                           SilcClientEntry client_entry);
  *
  * DESCRIPTION
  *
  *    Takes a reference of the client entry indicated by `client_entry'
  *    The reference must be released by calling silc_client_unref_client
- *    after it is not needed anymore.
+ *    after it is not needed anymore.  Returns `client_entry'.
  *
  ***/
-void silc_client_ref_client(SilcClient client, SilcClientConnection conn,
-			    SilcClientEntry client_entry);
+SilcClientEntry silc_client_ref_client(SilcClient client, 
+				       SilcClientConnection conn,
+				       SilcClientEntry client_entry);
 
 /****f* silcclient/SilcClientAPI/silc_client_unref_client
  *
@@ -546,23 +582,59 @@ typedef void (*SilcGetChannelCallback)(SilcClient client,
 				       SilcDList channels,
 				       void *context);
 
+/****f* silcclient/SilcClientAPI/silc_client_lock_channel
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_lock_channel(SilcChannelEntry channel_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Acquires lock for the channel entry indicate by `channel_entry'.  When
+ *    application wants to access `channel_entry' it must lock the entry
+ *    before reading any data from the `channel_entry'.  The lock must be
+ *    unlocked with silc_client_unlock_channel.
+ *
+ *    The entry must be unlocked before calling any Client Library API
+ *    functions where the entry is given as argument.
+ *
+ *    This function is not needed if application is not multithreaded
+ *
+ ***/
+void silc_client_lock_channel(SilcChannelEntry channel_entry);
+
+/****f* silcclient/SilcClientAPI/silc_client_unlock_channel
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_unlock_channel(SilcChannelEntry channel_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Releases the lock acquired with silc_client_lock_channel.
+ *
+ ***/
+void silc_client_unlock_channel(SilcChannelEntry channel_entry);
+
 /****f* silcclient/SilcClientAPI/silc_client_ref_channel
  *
  * SYNOPSIS
  *
- *    void silc_client_ref_channel(SilcClient client,
- *                                 SilcClientConnection conn,
- *                                 SilcChannelEntry channel_entry);
+ *    SilcChannelEntry
+ *    silc_client_ref_channel(SilcClient client,
+ *                            SilcClientConnection conn,
+ *                            SilcChannelEntry channel_entry);
  *
  * DESCRIPTION
  *
  *    Takes a reference of the channel entry indicated by `channel_entry'
  *    The reference must be released by calling silc_client_unref_channel
- *    after it is not needed anymore.
+ *    after it is not needed anymore.  Returns `channel_entry'.
  *
  ***/
-void silc_client_ref_channel(SilcClient client, SilcClientConnection conn,
-			     SilcChannelEntry channel_entry);
+SilcChannelEntry silc_client_ref_channel(SilcClient client, 
+					 SilcClientConnection conn,
+					 SilcChannelEntry channel_entry);
 
 /****f* silcclient/SilcClientAPI/silc_client_unref_channel
  *
@@ -741,23 +813,59 @@ typedef void (*SilcGetServerCallback)(SilcClient client,
 				      SilcDList servers,
 				      void *context);
 
+/****f* silcclient/SilcClientAPI/silc_client_lock_server
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_lock_server(SilcServerEntry server_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Acquires lock for the server entry indicate by `server_entry'.  When
+ *    application wants to access `server_entry' it must lock the entry
+ *    before reading any data from the `server_entry'.  The lock must be
+ *    unlocked with silc_client_unlock_server.
+ *
+ *    The entry must be unlocked before calling any Client Library API
+ *    functions where the entry is given as argument.
+ *
+ *    This function is not needed if application is not multithreaded
+ *
+ ***/
+void silc_client_lock_server(SilcServerEntry server_entry);
+
+/****f* silcclient/SilcClientAPI/silc_client_unlock_server
+ *
+ * SYNOPSIS
+ *
+ *    void silc_client_unlock_server(SilcServerEntry server_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Releases the lock acquired with silc_client_lock_server.
+ *
+ ***/
+void silc_client_unlock_server(SilcServerEntry server_entry);
+
 /****f* silcclient/SilcClientAPI/silc_client_ref_server
  *
  * SYNOPSIS
  *
- *    void silc_client_ref_server(SilcClient client,
- *                                SilcClientConnection conn,
- *                                SilcServerEntry server_entry);
+ *    SilcServerEntry
+ *    silc_client_ref_server(SilcClient client,
+ *                           SilcClientConnection conn,
+ *                           SilcServerEntry server_entry);
  *
  * DESCRIPTION
  *
  *    Takes a reference of the server entry indicated by `server_entry'
  *    The reference must be released by calling silc_client_unref_server
- *    after it is not needed anymore.
+ *    after it is not needed anymore.  Returns `server_entry'.
  *
  ***/
-void silc_client_ref_server(SilcClient client, SilcClientConnection conn,
-			     SilcServerEntry server_entry);
+SilcServerEntry silc_client_ref_server(SilcClient client, 
+				       SilcClientConnection conn,
+				       SilcServerEntry server_entry);
 
 /****f* silcclient/SilcClientAPI/silc_client_unref_server
  *

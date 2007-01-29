@@ -45,5 +45,8 @@ void silc_client_remove_from_channels(SilcClient client,
 void silc_client_empty_channel(SilcClient client,
 			       SilcClientConnection conn,
 			       SilcChannelEntry channel);
+SilcBool silc_client_channel_save_public_keys(SilcChannelEntry channel,
+					      unsigned char *chpk_list,
+					      SilcUInt32 chpk_list_len);
 
 #endif /* CLIENT_CHANNEL_H */

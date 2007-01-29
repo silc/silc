@@ -379,12 +379,21 @@ SILC_FSM_STATE(silc_client_notify_join)
     /* NOT REACHED */
   }
 
+  silc_rwlock_wrlock(client_entry->internal.lock);
+  silc_rwlock_wrlock(channel->internal.lock);
+
   if (client_entry != conn->local_entry)
     silc_client_nickname_format(client, conn, client_entry, FALSE);
 
   /* Join the client to channel */
-  if (!silc_client_add_to_channel(client, conn, channel, client_entry, 0))
+  if (!silc_client_add_to_channel(client, conn, channel, client_entry, 0)) {
+    silc_rwlock_unlock(channel->internal.lock);
+    silc_rwlock_unlock(client_entry->internal.lock);
     goto out;
+  }
+
+  silc_rwlock_unlock(channel->internal.lock);
+  silc_rwlock_unlock(client_entry->internal.lock);
 
   /* Notify application. */
   NOTIFY(client, conn, type, client_entry, channel);
@@ -617,8 +626,10 @@ SILC_FSM_STATE(silc_client_notify_topic_set)
     entry = channel_entry;
   }
 
+  silc_rwlock_wrlock(channel->internal.lock);
   silc_free(channel->topic);
   channel->topic = silc_memdup(tmp, strlen(tmp));
+  silc_rwlock_unlock(channel->internal.lock);
 
   /* Notify application. */
   NOTIFY(client, conn, type, id.type, entry, channel->topic, channel);
@@ -691,6 +702,8 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
   if (!tmp)
     goto out;
 
+  silc_rwlock_wrlock(client_entry->internal.lock);
+
   /* Check whether nickname changed at all.  It is possible that nick
      change notify is received but nickname didn't change, only the
      ID changes.  If Client ID hash match, nickname didn't change. */
@@ -702,14 +715,19 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
     silc_idcache_update_by_context(conn->internal->client_cache, client_entry,
 				   &id2.u.client_id, NULL, FALSE);
     silc_mutex_unlock(conn->internal->lock);
+    silc_rwlock_unlock(client_entry->internal.lock);
     goto out;
   }
 
   /* Change the nickname */
   memcpy(oldnick, client_entry->nickname, sizeof(client_entry->nickname));
   if (!silc_client_change_nickname(client, conn, client_entry, tmp,
-				   &id2.u.client_id, NULL, 0))
+				   &id2.u.client_id, NULL, 0)) {
+    silc_rwlock_unlock(client_entry->internal.lock);
     goto out;
+  }
+
+  silc_rwlock_unlock(client_entry->internal.lock);
 
   /* Notify application */
   NOTIFY(client, conn, type, client_entry, client_entry->nickname, oldnick);
@@ -822,11 +840,15 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
     entry = channel_entry;
   }
 
+  silc_rwlock_wrlock(channel->internal.lock);
+
   /* Get the channel founder key if it was set */
   tmp = silc_argument_get_arg_type(args, 6, &tmp_len);
   if (tmp) {
-    if (!silc_public_key_payload_decode(tmp, tmp_len, &founder_key))
+    if (!silc_public_key_payload_decode(tmp, tmp_len, &founder_key)) {
+      silc_rwlock_unlock(channel->internal.lock);
       goto out;
+    }
     if (!channel->founder_key) {
       channel->founder_key = founder_key;
       founder_key = NULL;
@@ -842,8 +864,10 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
     unsigned char hash[SILC_HASH_MAXLEN];
     SilcHmac newhmac;
 
-    if (!silc_hmac_alloc(hmac, NULL, &newhmac))
+    if (!silc_hmac_alloc(hmac, NULL, &newhmac)) {
+      silc_rwlock_unlock(channel->internal.lock);
       goto out;
+    }
 
     /* Get HMAC key from the old HMAC context, and update it to the new one */
     tmp = (unsigned char *)silc_hmac_get_key(channel->internal.hmac, &tmp_len);
@@ -874,10 +898,9 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
   /* Get the channel public key that was added or removed */
   tmp = silc_argument_get_arg_type(args, 7, &tmp_len);
   if (tmp)
-    chpks = silc_argument_list_parse_decoded(tmp, tmp_len,
-					     SILC_ARGUMENT_PUBLIC_KEY);
+    silc_client_channel_save_public_keys(channel, tmp, tmp_len);
 
-  /* XXX add to/remove from channel pubkeys channel->channel_pubkeys */
+  silc_rwlock_unlock(channel->internal.lock);
 
   /* Notify application. */
   NOTIFY(client, conn, type, id.type, entry, mode, cipher, hmac,
@@ -1017,9 +1040,11 @@ SILC_FSM_STATE(silc_client_notify_cumode_change)
   }
 
   /* Save the mode */
+  silc_rwlock_wrlock(channel->internal.lock);
   chu = silc_client_on_channel(channel, client_entry2);
   if (chu)
     chu->mode = mode;
+  silc_rwlock_unlock(channel->internal.lock);
 
   /* Notify application. */
   NOTIFY(client, conn, type, id.type, entry, mode, client_entry2, channel);

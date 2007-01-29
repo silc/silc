@@ -22,25 +22,41 @@
  * DESCRIPTION
  *
  * This interface defines the SILC Client Library API for the application.
- * The client operations are defined first.  These are callback functions that
- * the application MUST implement since the library may call the functions
- * at any time.  At the end of file is the API for the application that
- * it can use from the library.  This is the only file that the application
- * may include from the SIlC Client Library.
+ * The Client Library is a full features SILC client without a user interface.
+ * A simple interface called SILC Client Operations (SilcClientOperations)
+ * is provided for applications to implmeent the necessary functions to use
+ * the client library.  The silcclient.h header file includes client library
+ * API, such as command handling and message sending.  The silcclient_entry.h
+ * header file includes entry handling, such as channel and user entry
+ * handling.
  *
- * o SILC Client Operations
+ * Practically all functions in the Client Library API accepts SilcClient
+ * and SilcClientConnection as their first two argument.  The first argument
+ * is the actual SilcClient context and the second is the SilcClientConnection
+ * context of the connection in question.  Application may create and handle
+ * multiple connections in one SilcClient.  Connections can be created to
+ * servers and other clients.
  *
- *   These functions must be implemented by the application calling the SILC
- *   client library. The client library can call these functions at any time.
+ * The Client Library support multiple threads and is threads safe is used
+ * correctly.  Messages can be sent from multiple threads without any
+ * locking.  Messages however are always received only in one thread unless
+ * message waiting (see silc_client_private_message_wait as an example) is
+ * used.  The threads can be turned on and off by giving a parameter to the
+ * SilcClient.  When turned on, each new connection to remote host is always
+ * executed in an own thread.  All tasks related to that connection are then
+ * executed in that thread.  This means that client operation callbacks for
+ * that connections may be called from threads and application will need to
+ * employ concurrency control if the callbacks need to access shared data
+ * in the application.  Messages are also received in that thread.
  *
- *   To use this structure: define a static SilcClientOperations variable,
- *   fill it and pass its pointer to silc_client_alloc function.
- *
- * o SILC Client Library API
- *
- *   This is the API that is published by the SILC Client Library for the
- *   applications.  These functions are implemented in the SILC Client Library.
- *   Application may freely call these functions from the library.
+ * All entries (SilcClientEntry, SilcChannelEntry and SilcServerEntry) are
+ * reference counted.  If application wishes to save an entry pointer it must
+ * always first acquire a reference.  The reference must be released once the
+ * entry is not needed anymore.  If application wants to read any data from
+ * the entry structure it must first lock the entry.  This protects access to
+ * the entries in multithreaded environment.  If threads are not used, locking
+ * the entries is not needed.  They however still must be referenced even
+ * when threads are not used.
  *
  ***/
 
@@ -1156,16 +1172,6 @@ SilcBool silc_client_send_channel_message(SilcClient client,
 					  unsigned char *data,
 					  SilcUInt32 data_len);
 
-/* Block process until channel message from `channel' is received */
-SilcBool
-silc_client_receive_channel_message(SilcClient client,
-				    SilcClientConnection conn,
-				    SilcChannelEntry channel,
-				    SilcClientEntry *return_sender,
-				    SilcMessageFlags *return_flags,
-				    const unsigned char **return_message,
-				    SilcUInt32 *return_message_len);
-
 /****f* silcclient/SilcClientAPI/silc_client_send_private_message
  *
  * SYNOPSIS
@@ -1198,6 +1204,83 @@ SilcBool silc_client_send_private_message(SilcClient client,
 					  SilcHash hash,
 					  unsigned char *data,
 					  SilcUInt32 data_len);
+
+/****f* silcclient/SilcClientAPI/silc_client_private_message_wait_init
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool
+ *    silc_client_private_message_wait_init(SilcClient client,
+ *                                          SilcClientConnection conn);
+ *
+ * DESCRIPTION
+ *
+ *    Initializes private message waiting functionality for the connection
+ *    indicated by `conn'.  Once this is called private message from remote
+ *    connection indicated by `conn' for any client entry beloning to that
+ *    connection may be waited for, for example in an thread.  The function
+ *    silc_client_private_message_wait is used to block the current thread
+ *    until a private message is received from a specified client entry.
+ *    Return FALSE on error.
+ *
+ ***/
+SilcBool silc_client_private_message_wait_init(SilcClient client,
+					       SilcClientConnection conn);
+
+/****f* silcclient/SilcClientAPI/silc_client_private_message_wait_uninit
+ *
+ * SYNOPSIS
+ *
+ *    void
+ *    silc_client_private_message_wait_uninit(SilcClient client,
+ *                                            SilcClientConnection conn);
+ *
+ * DESCRIPTION
+ *
+ *    Unintializes private message waiting for connection indicated by
+ *    `conn'.  After this call private message cannot be waited anymore.
+ *    This call may be called from any thread.  This call will signal all
+ *    private message waiting threads to stop waiting.
+ *
+ ***/
+void silc_client_private_message_wait_uninit(SilcClient client,
+					     SilcClientConnection conn);
+
+/****f* silcclient/SilcClientAPI/silc_client_private_message_wait
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool
+ *    silc_client_private_message_wait(SilcClient client,
+ *                                     SilcClientConnection conn,
+ *                                     SilcClientEntry client_entry,
+ *                                     SilcMessagePayload *payload);
+ *
+ * DESCRIPTION
+ *
+ *    Blocks current thread or process until a private message has been
+ *    received from the remote client indicated by `client_entry'.  Before
+ *    private messages can be waited the silc_client_private_message_wait_init
+ *    must be called.  This function can be used from a thread to wait for
+ *    private message from the specified client.  Multiple threads can be
+ *    created to wait messages from multiple clients.  Any other private
+ *    message received from the connection indicated by `conn' will be
+ *    forwarded to the normal `private_message' client operation.  The
+ *    private messages from `client_entry' will not be delivered to the
+ *    `private_message' client operation.
+ *
+ *    Returns TRUE and the received private message into `payload'.  The caller
+ *    must free the returned SilcMessagePayload.  If this function returns
+ *    FALSE the private messages cannot be waited anymore.  This happens
+ *    when some other thread calls silc_client_private_message_wait_uninit.
+ *    This returns FALSE also if silc_client_private_message_wait_init has
+ *    not been called.
+ *
+ ***/
+SilcBool silc_client_private_message_wait(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcClientEntry client_entry,
+					  SilcMessagePayload *payload);
 
 /****f* silcclient/SilcClientAPI/silc_client_on_channel
  *
@@ -1871,9 +1954,9 @@ void silc_client_abort_key_agreement(SilcClient client,
  *
  * SYNOPSIS
  *
- *    void silc_client_set_away_message(SilcClient client,
- *                                      SilcClientConnection conn,
- *                                      char *message);
+ *    SilcBool silc_client_set_away_message(SilcClient client,
+ *                                          SilcClientConnection conn,
+ *                                          char *message);
  *
  * DESCRIPTION
  *
@@ -1883,12 +1966,13 @@ void silc_client_abort_key_agreement(SilcClient client,
  *    automatically back to the the client who send private message.  If
  *    away message is already set this replaces the old message with the
  *    new one.  If `message' is NULL the old away message is removed.
- *    The sender may freely free the memory of the `message'.
+ *    The sender may freely free the memory of the `message'.  Returns
+ *    FALSE on error.
  *
  ***/
-void silc_client_set_away_message(SilcClient client,
-				  SilcClientConnection conn,
-				  char *message);
+SilcBool silc_client_set_away_message(SilcClient client,
+				      SilcClientConnection conn,
+				      char *message);
 
 /****d* silcclient/SilcClientAPI/SilcClientMonitorStatus
  *

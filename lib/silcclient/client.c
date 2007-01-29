@@ -236,6 +236,7 @@ SILC_FSM_STATE(silc_client_connection_st_run)
   if (conn->internal->connect) {
     SILC_LOG_DEBUG(("Event: connect"));
     conn->internal->connect = FALSE;
+    SILC_ASSERT(silc_fsm_is_started(thread) == FALSE);
 
     /*** Event: connect */
     silc_fsm_thread_init(thread, &conn->internal->fsm, conn,
@@ -247,6 +248,7 @@ SILC_FSM_STATE(silc_client_connection_st_run)
   if (conn->internal->key_exchange) {
     SILC_LOG_DEBUG(("Event: key exchange"));
     conn->internal->key_exchange = FALSE;
+    SILC_ASSERT(silc_fsm_is_started(thread) == FALSE);
 
     /*** Event: key exchange */
     silc_fsm_thread_init(thread, &conn->internal->fsm, conn,
@@ -258,6 +260,7 @@ SILC_FSM_STATE(silc_client_connection_st_run)
   if (conn->internal->rekeying) {
     SILC_LOG_DEBUG(("Event: rekey"));
     conn->internal->rekeying = FALSE;
+    SILC_ASSERT(silc_fsm_is_started(thread) == FALSE);
 
     /*** Event: rekey */
     silc_fsm_thread_init(thread, &conn->internal->fsm, conn,
@@ -377,7 +380,7 @@ SILC_FSM_STATE(silc_client_connection_st_packet)
 /* Disconnection event to close remote connection.  We close the connection
    and finish the connection machine in this state.  The connection context
    is deleted in the machine destructor.  The connection callback is called
-   in this state if it set. */
+   in this state if it is set. */
 
 SILC_FSM_STATE(silc_client_connection_st_close)
 {
@@ -848,6 +851,7 @@ void silc_client_close_connection(SilcClient client,
   SILC_LOG_DEBUG(("Closing connection %p", conn));
 
   /* Signal to close connection */
+  conn->internal->status = SILC_CLIENT_CONN_DISCONNECTED;
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
     SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);

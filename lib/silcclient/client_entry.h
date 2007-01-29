@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,6 +42,8 @@ SilcBool silc_client_change_nickname(SilcClient client,
 void silc_client_del_client_entry(SilcClient client,
 				  SilcClientConnection conn,
 				  SilcClientEntry client_entry);
+SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
+				SilcClientEntry client_entry);
 SilcClientEntry silc_idlist_get_client(SilcClient client,
 				       SilcClientConnection conn,
 				       const char *nickname,
@@ -52,6 +54,12 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
 					 const char *channel_name,
 					 SilcUInt32 mode,
 					 SilcChannelID *channel_id);
+SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
+				 SilcChannelEntry channel);
+bool silc_client_replace_channel_id(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcChannelEntry channel,
+				    SilcChannelID *new_id);
 SilcServerEntry silc_client_add_server(SilcClient client,
 				       SilcClientConnection conn,
 				       const char *server_name,
@@ -62,10 +70,8 @@ void silc_client_update_server(SilcClient client,
 			       SilcServerEntry server_entry,
 			       const char *server_name,
 			       const char *server_info);
-bool silc_client_replace_channel_id(SilcClient client,
-				    SilcClientConnection conn,
-				    SilcChannelEntry channel,
-				    SilcChannelID *new_id);
+SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
+				SilcServerEntry server);
 SilcBool silc_client_nickname_parse(SilcClient client,
 				    SilcClientConnection conn,
 				    char *nickname,

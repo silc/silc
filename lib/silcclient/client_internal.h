@@ -47,16 +47,7 @@ typedef struct {
   SilcSKE ske;
   SilcSKEVerifyCbCompletion completion;
   void *completion_context;
-} *VerifyKeyContext;
-
-/* Structure to hold away messages set by user. This is mainly created
-   for future extensions where away messages could be set according filters
-   such as nickname and hostname. For now only one away message can
-   be set in one connection. */
-struct SilcClientAwayStruct {
-  char *away;
-  struct SilcClientAwayStruct *next;
-};
+} *SilcVerifyKeyContext;
 
 /* Command and command reply context used to hold registered commands
    in the SILC client. */
@@ -105,7 +96,7 @@ typedef struct SilcClientCommandContextStruct {
 /* Internal context for the client->internal pointer in the SilcClient. */
 struct SilcClientInternalStruct {
   SilcFSMStruct fsm;			 /* Client's FSM */
-  SilcFSMEventStruct wait_event;		 /* Event signaller */
+  SilcFSMEventStruct wait_event;	 /* Event signaller */
   SilcClientOperations *ops;		 /* Client operations */
   SilcClientParams *params;		 /* Client parameters */
   SilcPacketEngine packet_engine;        /* Packet engine */
@@ -144,6 +135,8 @@ struct SilcClientConnectionInternalStruct {
   SilcAsyncOperation cop;	         /* Async operation for application */
   SilcHashTable attrs;		         /* Configured user attributes */
   char *disconnect_message;		 /* Disconnection message */
+  char *away_message;		         /* Away message */
+  void *prv_waiter;		         /* Private message packet waiter */
 
   SilcIDCache client_cache;		 /* Client entry cache */
   SilcIDCache channel_cache;		 /* Channel entry cache */
@@ -166,10 +159,6 @@ struct SilcClientConnectionInternalStruct {
   unsigned int registering        : 1;	 /* Set when registering to network */
   unsigned int rekey_responder    : 1;   /* Set when rekeying as responder */
   unsigned int auth_request       : 1;   /* Set when requesting auth method */
-
-  SilcClientAway *away;
-  SilcClientFtpSession active_session;
-  SilcHashTable privmsg_wait;	         /* Waited private messages */
 };
 
 SILC_FSM_STATE(silc_client_connection_st_run);
@@ -180,29 +169,8 @@ SILC_FSM_STATE(silc_client_disconnect);
 SILC_FSM_STATE(silc_client_st_stop);
 
 void silc_client_del_connection(SilcClient client, SilcClientConnection conn);
-SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
-				SilcClientEntry client_entry);
-SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
-				 SilcChannelEntry channel);
-SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
-				SilcServerEntry server);
-SilcUInt16 silc_client_command_send_argv(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcCommand command,
-					 SilcClientCommandReply reply,
-					 void *reply_context,
-					 SilcUInt32 argc,
-					 unsigned char **argv,
-					 SilcUInt32 *argv_lens,
-					 SilcUInt32 *argv_types);
-void silc_client_command_free(SilcClientCommandContext cmd);
 void silc_client_fsm_destructor(SilcFSM fsm, void *fsm_context,
 				void *destructor_context);
+void silc_client_command_free(SilcClientCommandContext cmd);
 
-void silc_client_ftp(SilcClient client, SilcClientConnection conn,
-		     SilcPacket packet);
-void silc_client_connection_auth_request(SilcClient client,
-					 SilcClientConnection conn,
-					 SilcPacket packet);
-
-#endif
+#endif /* CLIENT_INTERNAL_H */

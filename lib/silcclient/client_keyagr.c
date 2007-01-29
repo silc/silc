@@ -103,7 +103,7 @@ static void silc_client_keyagr_resolved(SilcClient client,
 
 static void silc_client_keyagr_verify_key_cb(SilcBool success, void *context)
 {
-  VerifyKeyContext verify = context;
+  SilcVerifyKeyContext verify = context;
 
   /* Call the completion callback back to the SKE */
   verify->completion(verify->ske, success ? SILC_SKE_STATUS_OK :
@@ -125,7 +125,7 @@ static void silc_client_keyagr_verify_key(SilcSKE ske,
   SilcClientKeyAgreement ke = client_entry->internal.ke;
   SilcClientConnection conn = ke->conn;
   SilcClient client = conn->client;
-  VerifyKeyContext verify;
+  SilcVerifyKeyContext verify;
 
   /* If we provided repository for SKE and we got here the key was not
      found from the repository. */

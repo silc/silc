@@ -696,6 +696,7 @@ SilcClientEntry silc_client_add_client(SilcClient client,
   if (!client_entry)
     return NULL;
 
+  silc_rwlock_alloc(&client_entry->internal.lock);
   silc_atomic_init8(&client_entry->internal.refcnt, 0);
   client_entry->id = *id;
   client_entry->internal.valid = TRUE;
@@ -756,7 +757,8 @@ SilcClientEntry silc_client_add_client(SilcClient client,
   return client_entry;
 }
 
-/* Updates the `client_entry' with the new information sent as argument. */
+/* Updates the `client_entry' with the new information sent as argument.
+   This handles entry locking internally. */
 
 void silc_client_update_client(SilcClient client,
 			       SilcClientConnection conn,
@@ -769,6 +771,8 @@ void silc_client_update_client(SilcClient client,
   char *nick = NULL;
 
   SILC_LOG_DEBUG(("Update client entry"));
+
+  silc_rwlock_wrlock(client_entry->internal.lock);
 
   if (!client_entry->realname && userinfo)
     client_entry->realname = strdup(userinfo);
@@ -787,8 +791,10 @@ void silc_client_update_client(SilcClient client,
     nick = silc_identifier_check(client_entry->nickname,
 				 strlen(client_entry->nickname),
 				 SILC_STRING_UTF8, 128, NULL);
-    if (!nick)
+    if (!nick) {
+      silc_rwlock_unlock(client_entry->internal.lock);
       return;
+    }
 
     /* Format nickname */
     silc_client_nickname_format(client, conn, client_entry,
@@ -802,9 +808,11 @@ void silc_client_update_client(SilcClient client,
     client_entry->nickname_normalized = nick;
   }
   client_entry->mode = mode;
+
+  silc_rwlock_unlock(client_entry->internal.lock);
 }
 
-/* Change a client's nickname */
+/* Change a client's nickname.  Must be called with `client_entry' locked. */
 
 SilcBool silc_client_change_nickname(SilcClient client,
 				     SilcClientConnection conn,
@@ -881,6 +889,7 @@ void silc_client_del_client_entry(SilcClient client,
     silc_client_abort_key_agreement(client, conn, client_entry);
 #endif /* 0 */
   silc_atomic_uninit8(&client_entry->internal.refcnt);
+  silc_rwlock_free(client_entry->internal.lock);
   silc_free(client_entry);
 }
 
@@ -915,15 +924,31 @@ SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
   return ret;
 }
 
+/* Lock client */
+
+void silc_client_lock_client(SilcClientEntry client_entry)
+{
+  silc_rwlock_rdlock(client_entry->internal.lock);
+}
+
+/* Unlock client */
+
+void silc_client_unlock_client(SilcClientEntry client_entry)
+{
+  silc_rwlock_unlock(client_entry->internal.lock);
+}
+
 /* Take reference of client entry */
 
-void silc_client_ref_client(SilcClient client, SilcClientConnection conn,
-			    SilcClientEntry client_entry)
+SilcClientEntry silc_client_ref_client(SilcClient client,
+				       SilcClientConnection conn,
+				       SilcClientEntry client_entry)
 {
   silc_atomic_add_int8(&client_entry->internal.refcnt, 1);
   SILC_LOG_DEBUG(("Client %p refcnt %d->%d", client_entry,
 		  silc_atomic_get_int8(&client_entry->internal.refcnt) - 1,
 		  silc_atomic_get_int8(&client_entry->internal.refcnt)));
+  return client_entry;
 }
 
 /* Release reference of client entry */
@@ -1413,6 +1438,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   if (!channel)
     return NULL;
 
+  silc_rwlock_alloc(&channel->internal.lock);
   silc_atomic_init16(&channel->internal.refcnt, 0);
   channel->id = *channel_id;
   channel->mode = mode;
@@ -1516,6 +1542,7 @@ SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
 			    SILC_ARGUMENT_PUBLIC_KEY);
   silc_client_del_channel_private_keys(client, conn, channel);
   silc_atomic_uninit16(&channel->internal.refcnt);
+  silc_rwlock_free(channel->internal.lock);
   silc_schedule_task_del_by_context(conn->client->schedule, channel);
   silc_free(channel);
 
@@ -1523,7 +1550,7 @@ SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
 }
 
 /* Replaces the channel ID of the `channel' to `new_id'. Returns FALSE
-   if the ID could not be changed. */
+   if the ID could not be changed.  This handles entry locking internally. */
 
 SilcBool silc_client_replace_channel_id(SilcClient client,
 					SilcClientConnection conn,
@@ -1541,23 +1568,41 @@ SilcBool silc_client_replace_channel_id(SilcClient client,
 		  silc_id_render(new_id, SILC_ID_CHANNEL)));
 
   /* Update the ID */
+  silc_rwlock_wrlock(channel->internal.lock);
   silc_mutex_lock(conn->internal->lock);
   silc_idcache_update_by_context(conn->internal->channel_cache, channel,
 				 new_id, NULL, FALSE);
   silc_mutex_unlock(conn->internal->lock);
+  silc_rwlock_unlock(channel->internal.lock);
 
   return ret;
 }
 
+/* Lock channel */
+
+void silc_client_lock_channel(SilcChannelEntry channel_entry)
+{
+  silc_rwlock_rdlock(channel_entry->internal.lock);
+}
+
+/* Unlock client */
+
+void silc_client_unlock_channel(SilcChannelEntry channel_entry)
+{
+  silc_rwlock_unlock(channel_entry->internal.lock);
+}
+
 /* Take reference of channel entry */
 
-void silc_client_ref_channel(SilcClient client, SilcClientConnection conn,
-			     SilcChannelEntry channel_entry)
+SilcChannelEntry silc_client_ref_channel(SilcClient client,
+					 SilcClientConnection conn,
+					 SilcChannelEntry channel_entry)
 {
   silc_atomic_add_int16(&channel_entry->internal.refcnt, 1);
   SILC_LOG_DEBUG(("Channel %p refcnt %d->%d", channel_entry,
 		  silc_atomic_get_int16(&channel_entry->internal.refcnt) - 1,
 		  silc_atomic_get_int16(&channel_entry->internal.refcnt)));
+  return channel_entry;
 }
 
 /* Release reference of channel entry */
@@ -1805,6 +1850,7 @@ SilcServerEntry silc_client_add_server(SilcClient client,
   if (!server_entry)
     return NULL;
 
+  silc_rwlock_alloc(&server_entry->internal.lock);
   silc_atomic_init8(&server_entry->internal.refcnt, 0);
   server_entry->id = *server_id;
   if (server_name)
@@ -1870,6 +1916,7 @@ SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
   if (server->public_key)
     silc_pkcs_public_key_free(server->public_key);
   silc_atomic_uninit8(&server->internal.refcnt);
+  silc_rwlock_free(server->internal.lock);
   silc_free(server);
 
   return ret;
@@ -1916,15 +1963,31 @@ void silc_client_update_server(SilcClient client,
   }
 }
 
+/* Lock server */
+
+void silc_client_lock_server(SilcServerEntry server_entry)
+{
+  silc_rwlock_rdlock(server_entry->internal.lock);
+}
+
+/* Unlock server */
+
+void silc_client_unlock_server(SilcServerEntry server_entry)
+{
+  silc_rwlock_unlock(server_entry->internal.lock);
+}
+
 /* Take reference of server entry */
 
-void silc_client_ref_server(SilcClient client, SilcClientConnection conn,
-			    SilcServerEntry server_entry)
+SilcServerEntry silc_client_ref_server(SilcClient client,
+				       SilcClientConnection conn,
+				       SilcServerEntry server_entry)
 {
   silc_atomic_add_int8(&server_entry->internal.refcnt, 1);
   SILC_LOG_DEBUG(("Server %p refcnt %d->%d", server_entry,
 		  silc_atomic_get_int8(&server_entry->internal.refcnt) - 1,
 		  silc_atomic_get_int8(&server_entry->internal.refcnt)));
+  return server_entry;
 }
 
 /* Release reference of server entry */
