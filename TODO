@@ -176,6 +176,8 @@ lib/silcutil			****PARTLY DONE****
    No need to make it silcutil/unix/ specific.  Add them to generic
    silcutil.c.
 
+ o Fix universal time decoding (doesn't accept all forms) in silctime.c.
+
  o silc_stringprep to non-allocating version.
 
  o Compression routines are missing.  The protocol supports packet

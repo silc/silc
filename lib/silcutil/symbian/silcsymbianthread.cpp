@@ -214,6 +214,92 @@ void silc_mutex_assert_locked(SilcMutex mutex)
 #endif /* SILC_THREADS */
 }
 
+/***************************** SILC Rwlock API *****************************/
+
+/* SILC read/write lock structure */
+struct SilcRwLockStruct {
+#ifdef SILC_THREADS
+  SilcMutex mutex;
+  SilcCond cond;
+#endif /* SILC_THREADS */
+  unsigned int readers : 31;
+  unsigned int locked  : 1;
+};
+
+SilcBool silc_rwlock_alloc(SilcRwLock *rwlock)
+{
+#ifdef SILC_THREADS
+  *rwlock = (SilcRwLock)silc_calloc(1, sizeof(**rwlock));
+  if (!(*rwlock))
+    return FALSE;
+  if (!silc_mutex_alloc(&(*rwlock)->mutex)) {
+    silc_free(*rwlock);
+    return FALSE;
+  }
+  if (!silc_cond_alloc(&(*rwlock)->cond)) {
+    silc_mutex_free((*rwlock)->mutex);
+    silc_free(*rwlock);
+    return FALSE;
+  }
+  return TRUE;
+#else
+  return FALSE;
+#endif /* SILC_THREADS */
+}
+
+void silc_rwlock_free(SilcRwLock rwlock)
+{
+#ifdef SILC_THREADS
+  if (mutex) {
+    silc_mutex_free(rwlock->mutex);
+    silc_cond_free(rwlock->cond);
+    silc_free(rwlock);
+  }
+#endif /* SILC_THREADS */
+}
+
+void silc_rwlock_rdlock(SilcRwLock rwlock)
+{
+#ifdef SILC_THREADS
+  if (rwlock) {
+    silc_mutex_lock(rwlock->mutex);
+    rwlock->readers++;
+    silc_mutex_unlock(rwlock->mutex);
+  }
+#endif /* SILC_THREADS */
+}
+
+void silc_rwlock_wrlock(SilcRwLock rwlock)
+{
+#ifdef SILC_THREADS
+  if (rwlock) {
+    silc_mutex_lock(rwlock->mutex);
+    while (rwlock->readers > 0)
+      silc_cond_wait(rwlock->cond, rwlock->mutex);
+    rwlock->locked = TRUE;
+  }
+#endif /* SILC_THREADS */
+}
+
+void silc_rwlock_unlock(SilcRwLock rwlock)
+{
+#ifdef SILC_THREADS
+  if (rwlock) {
+    if (rwlock->locked) {
+      /* Unlock writer */
+      rwlock->locked = FALSE;
+      silc_mutex_unlock(rwlock->mutex);
+      return;
+    }
+
+    /* Unlock reader */
+    silc_mutex_lock(rwlock->mutex);
+    rwlock->readers--;
+    silc_cond_broadcast(rwlock->cond);
+    silc_mutex_unlock(rwlock->mutex);
+  }
+#endif /* SILC_THREADS */
+}
 
 /****************************** SILC Cond API *******************************/
 

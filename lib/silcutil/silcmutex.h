@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@
  *
  * DESCRIPTION
  *
- * Interface for the SILC Mutex locking implementation. This is platform
- * independent mutual exclusion interface for applications that need
- * concurrency control.
+ * Interface for mutual exclusion locks and read/write locks.  This is
+ * platform independent interface for applications that need concurrency
+ * control.
  *
  ***/
 
@@ -44,6 +44,21 @@
  *
  ***/
 typedef struct SilcMutexStruct *SilcMutex;
+
+/****s* silcutil/SilcMutexAPI/SilcRwLock
+ *
+ * NAME
+ *
+ *    typedef struct SilcRwLockStruct *SilcRwLock;
+ *
+ * DESCRIPTION
+ *
+ *    This context is the actual SILC read/write lock and is allocated
+ *    by silc_rwlock_alloc and given as argument to all silc_rwlock_*
+ *    functions.  It is freed by the silc_rwlock_free function.
+ *
+ ***/
+typedef struct SilcRwLockStruct *SilcRwLock;
 
 /****f* silcutil/SilcMutexAPI/silc_mutex_alloc
  *
@@ -131,5 +146,85 @@ void silc_mutex_unlock(SilcMutex mutex);
  *
  ***/
 void silc_mutex_assert_locked(SilcMutex mutex);
+
+/****f* silcutil/SilcMutexAPI/silc_rwlock_alloc
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_rwlock_alloc(SilcRwLock *rwlock);
+ *
+ * DESCRIPTION
+ *
+ *    Allocates SILC read/write lock.  The read/write lock must be allocated
+ *    before it can be used.  It is freed by the silc_rwlock_free function.
+ *    This returns TRUE and allocated read/write lock in to the `rwlock' and
+ *    FALSE on error.
+ *
+ ***/
+SilcBool silc_rwlock_alloc(SilcRwLock *rwlock);
+
+/****f* silcutil/SilcRwLockAPI/silc_rwlock_free
+ *
+ * SYNOPSIS
+ *
+ *    void silc_rwlock_free(SilcRwLock rwlock);
+ *
+ * DESCRIPTION
+ *
+ *    Free SILC Rwlock object and frees all allocated memory.  If `rwlock'
+ *    is NULL this function has no effect.
+ *
+ ***/
+void silc_rwlock_free(SilcRwLock rwlock);
+
+/****f* silcutil/SilcRwLockAPI/silc_rwlock_rdlock
+ *
+ * SYNOPSIS
+ *
+ *    void silc_rwlock_rdlock(SilcRwLock rwlock);
+ *
+ * DESCRIPTION
+ *
+ *    Acquires read lock of the read/write lock `rwlock'.  If the `rwlock'
+ *    is locked by a writer the current thread will block until the other
+ *    thread has issued silc_rwlock_unlock for the `rwlock'.  This function
+ *    may be called multiple times to acquire the read lock.  There must be
+ *    same amount of silc_rwlock_unlock calls.  If `rwlock' is NULL this
+ *    function has no effect.
+ *
+ ***/
+void silc_rwlock_rdlock(SilcRwLock rwlock);
+
+/****f* silcutil/SilcRwLockAPI/silc_rwlock_wrlock
+ *
+ * SYNOPSIS
+ *
+ *    void silc_rwlock_wrlock(SilcRwLock rwlock);
+ *
+ * DESCRIPTION
+ *
+ *    Acquires write lock of the read/write lock `rwlock'.  If the `rwlock'
+ *    is locked by a writer or a reader the current thread will block until
+ *    the other thread(s) have issued silc_rwlock_unlock for the `rwlock'.
+ *    If `rwlock' is NULL this function has no effect.
+ *
+ ***/
+void silc_rwlock_wrlock(SilcRwLock rwlock);
+
+/****f* silcutil/SilcRwLockAPI/silc_rwlock_unlock
+ *
+ * SYNOPSIS
+ *
+ *    void silc_rwlock_unlock(SilcRwLock rwlock);
+ *
+ * DESCRIPTION
+ *
+ *    Releases the lock of the read/write lock `rwlock'.  If `rwlock' was
+ *    locked by a writer this will release the writer lock.  Otherwise this
+ *    releases the reader lock.  If `rwlock' is NULL this function has no
+ *    effect.
+ *
+ ***/
+void silc_rwlock_unlock(SilcRwLock rwlock);
 
 #endif

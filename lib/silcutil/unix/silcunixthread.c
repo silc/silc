@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2006 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -162,6 +162,63 @@ void silc_mutex_assert_locked(SilcMutex mutex)
 #endif /* SILC_THREADS */
 }
 
+/***************************** SILC Rwlock API ******************************/
+
+/* SILC read/write lock structure */
+struct SilcRwLockStruct {
+#ifdef SILC_THREADS
+  pthread_rwlock_t rwlock;
+#else
+  void *tmp;
+#endif /* SILC_THREADS */
+};
+
+SilcBool silc_rwlock_alloc(SilcRwLock *rwlock)
+{
+#ifdef SILC_THREADS
+  *rwlock = silc_calloc(1, sizeof(**rwlock));
+  if (*rwlock == NULL)
+    return FALSE;
+  pthread_rwlock_init(&(*rwlock)->rwlock, NULL);
+  return TRUE;
+#else
+  return FALSE;
+#endif /* SILC_THREADS */
+}
+
+void silc_rwlock_free(SilcRwLock rwlock)
+{
+#ifdef SILC_THREADS
+  if (rwlock) {
+    pthread_rwlock_destroy(&rwlock->rwlock);
+    silc_free(rwlock);
+  }
+#endif /* SILC_THREADS */
+}
+
+void silc_rwlock_rdlock(SilcRwLock rwlock)
+{
+#ifdef SILC_THREADS
+  if (rwlock)
+    pthread_rwlock_rdlock(&rwlock->rwlock);
+#endif /* SILC_THREADS */
+}
+
+void silc_rwlock_wrlock(SilcRwLock rwlock)
+{
+#ifdef SILC_THREADS
+  if (rwlock)
+    pthread_rwlock_wrlock(&rwlock->rwlock);
+#endif /* SILC_THREADS */
+}
+
+void silc_rwlock_unlock(SilcRwLock rwlock)
+{
+#ifdef SILC_THREADS
+  if (rwlock)
+    pthread_rwlock_unlock(&rwlock->rwlock);
+#endif /* SILC_THREADS */
+}
 
 /****************************** SILC Cond API *******************************/
 
