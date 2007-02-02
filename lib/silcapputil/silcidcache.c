@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2006 Pekka Riikonen
+  Copyright (C) 2000 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -138,17 +138,14 @@ silc_idcache_add(SilcIDCache cache, char *name, void *id, void *context)
   SILC_LOG_DEBUG(("Adding cache entry %p", c));
 
   /* Add the new entry to the hash tables */
-
-  if (id) {
-    if (silc_idcache_find_by_id_one(cache, id, NULL)) {
-      SILC_LOG_ERROR(("Attempted to add same ID twice to ID Cache, id %s",
-		     silc_id_render(id, cache->id_type)));
-      SILC_ASSERT(FALSE);
-      goto err;
-    }
-    if (!silc_hash_table_add(cache->id_table, id, c))
-      goto err;
+  if (silc_idcache_find_by_id_one(cache, id, NULL)) {
+    SILC_LOG_ERROR(("Attempted to add same ID twice to ID Cache, id %s",
+		   silc_id_render(id, cache->id_type)));
+    SILC_ASSERT(FALSE);
+    goto err;
   }
+  if (!silc_hash_table_add(cache->id_table, id, c))
+    goto err;
   if (name)
     if (!silc_hash_table_add(cache->name_table, name, c))
       goto err;
@@ -243,8 +240,10 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
   }
 
   if (new_name) {
-    if (!silc_hash_table_del_by_context(cache->name_table, entry->name, entry))
-      return FALSE;
+    if (entry->name)
+      if (!silc_hash_table_del_by_context(cache->name_table, entry->name,
+					  entry))
+	return FALSE;
 
     if (free_old_name)
       silc_free(entry->name);
