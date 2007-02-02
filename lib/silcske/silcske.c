@@ -176,22 +176,13 @@ static void silc_ske_skr_callback(SilcSKR repository,
 
 static SilcSKEStatus silc_ske_check_version(SilcSKE ske)
 {
-  SilcUInt32 l_protocol_version = 0, r_protocol_version = 0;
   SilcUInt32 r_software_version = 0;
 
   if (!ske->remote_version || !ske->version)
     return SILC_SKE_STATUS_BAD_VERSION;
 
-  if (!silc_parse_version_string(ske->remote_version, &r_protocol_version,
-				 NULL, &r_software_version, NULL, NULL))
-    return SILC_SKE_STATUS_BAD_VERSION;
-
-  if (!silc_parse_version_string(ske->version, &l_protocol_version,
-				 NULL, NULL, NULL, NULL))
-    return SILC_SKE_STATUS_BAD_VERSION;
-
-  /* If remote is too new, don't connect */
-  if (l_protocol_version < r_protocol_version)
+  if (!silc_parse_version_string(ske->remote_version, NULL, NULL,
+				 &r_software_version, NULL, NULL))
     return SILC_SKE_STATUS_BAD_VERSION;
 
   /* Backwards compatibility checks */
