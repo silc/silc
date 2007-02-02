@@ -895,19 +895,18 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     SILC_LOG_DEBUG(("Notify: NICK_CHANGE"));
 
     client_entry = va_arg(va, SilcClientEntry);
-    client_entry2 = va_arg(va, SilcClientEntry);
+    name = va_arg(va, char *);	               /* old nickname */
 
-    if (!strcmp(client_entry->nickname, client_entry2->nickname))
+    if (!strcmp(client_entry->nickname, name))
       break;
 
     memset(buf, 0, sizeof(buf));
     snprintf(buf, sizeof(buf) - 1, "%s@%s",
-	     client_entry2->username, client_entry2->hostname);
+	     client_entry->username, client_entry->hostname);
     nicklist_rename_unique(SERVER(server),
-			   client_entry, client_entry->nickname,
-			   client_entry2, client_entry2->nickname);
-    signal_emit("message nick", 4, server, client_entry2->nickname,
-		client_entry->nickname, buf);
+			   client_entry, name,
+			   client_entry, client_entry->nickname);
+    signal_emit("message nick", 4, server, client_entry->nickname, name, buf);
     break;
 
   case SILC_NOTIFY_TYPE_CMODE_CHANGE:
