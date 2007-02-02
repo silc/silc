@@ -142,6 +142,7 @@ struct SilcClientConnectionInternalStruct {
   SilcIDCache channel_cache;		 /* Channel entry cache */
   SilcIDCache server_cache;		 /* Server entry cache */
 
+  SilcUInt32 remote_version;	         /* Remote SILC protocol version */
   SilcAtomic16 cmd_ident;		 /* Current command identifier */
   SilcUInt8 retry_count;		 /* Packet retry counter */
   SilcUInt8 retry_timer;		 /* Packet retry timer */

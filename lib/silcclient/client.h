@@ -54,8 +54,8 @@ typedef struct SilcClientEntryInternalStruct {
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
 
   /* Flags */
-  unsigned int valid       : 1;	/* FALSE if this entry is not valid */
-  unsigned int resolving   : 1; /* TRUE when entry is being resolved */
+  unsigned int valid       : 1;	/* FALSE if this entry is not valid.  Entry
+				   without nickname is not valid. */
   unsigned int generated   : 1; /* TRUE if library generated `key' */
   unsigned int prv_resp    : 1; /* TRUE if we are responder when using
 				   private message keys. */

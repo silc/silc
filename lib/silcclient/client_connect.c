@@ -658,6 +658,10 @@ SILC_FSM_STATE(silc_client_st_connected)
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
 
+  /* Get SILC protocol version remote supports */
+  silc_ske_parse_version(conn->internal->ske, &conn->internal->remote_version,
+			 NULL, NULL, NULL, NULL);
+
   silc_ske_free(conn->internal->ske);
   conn->internal->ske = NULL;
 
@@ -733,9 +737,11 @@ SILC_TASK_CALLBACK(silc_client_rekey_timer)
   SilcClientConnection conn = context;
 
   /* Signal to start rekey */
-  conn->internal->rekey_responder = FALSE;
-  conn->internal->rekeying = TRUE;
-  SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
+  if (!silc_fsm_is_started(&conn->internal->event_thread)) {
+    conn->internal->rekey_responder = FALSE;
+    conn->internal->rekeying = TRUE;
+    SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
+  }
 
   /* Reinstall rekey timer */
   silc_schedule_task_add_timeout(conn->internal->schedule,

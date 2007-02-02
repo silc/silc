@@ -1217,7 +1217,7 @@ SILC_FSM_STATE(silc_client_command_reply_join)
 
     /* Get client entry */
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
-    if (!client_entry)
+    if (!client_entry || !client_entry->internal.valid)
       continue;
 
     /* Join client to the channel */
@@ -1921,7 +1921,7 @@ SILC_FSM_STATE(silc_client_command_reply_users)
     /* Save the client on this channel.  Unknown clients are ignored as they
        clearly do not exist since the resolving didn't find them. */
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
-    if (client_entry) {
+    if (client_entry && client_entry->internal.valid) {
       silc_rwlock_wrlock(client_entry->internal.lock);
       silc_client_add_to_channel(client, conn, channel, client_entry, mode);
       silc_rwlock_unlock(client_entry->internal.lock);

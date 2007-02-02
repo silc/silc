@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -208,10 +208,17 @@ typedef void (*SilcGetClientCallback)(SilcClient client,
  *    before reading any data from the `client_entry'.  The lock must be
  *    unlocked with silc_client_unlock_client.
  *
- *    The entry must be unlocked before calling any Client Library API
- *    functions where the entry is given as argument.
+ * NOTES
  *
- *    This function is not needed if application is not multithreaded
+ *    The entry must be unlocked before calling any Client Library API
+ *    functions where the entry is given as argument, unless otherwise stated.
+ *
+ *    The entry should not be locked for long periods of time.  For example,
+ *    it is not appropriate to hold the lock while waiting user interface to
+ *    be drawn.  The appropriate way is to read the data and duplicate it if
+ *    necessary, unlock the entry, then draw on the user interface.
+ *
+ *    This function is not needed if application is not multithreaded.
  *
  ***/
 void silc_client_lock_client(SilcClientEntry client_entry);
@@ -245,7 +252,7 @@ void silc_client_unlock_client(SilcClientEntry client_entry);
  *    after it is not needed anymore.  Returns `client_entry'.
  *
  ***/
-SilcClientEntry silc_client_ref_client(SilcClient client, 
+SilcClientEntry silc_client_ref_client(SilcClient client,
 				       SilcClientConnection conn,
 				       SilcClientEntry client_entry);
 
@@ -595,10 +602,17 @@ typedef void (*SilcGetChannelCallback)(SilcClient client,
  *    before reading any data from the `channel_entry'.  The lock must be
  *    unlocked with silc_client_unlock_channel.
  *
- *    The entry must be unlocked before calling any Client Library API
- *    functions where the entry is given as argument.
+ * NOTES
  *
- *    This function is not needed if application is not multithreaded
+ *    The entry must be unlocked before calling any Client Library API
+ *    functions where the entry is given as argument, unless otherwise stated.
+ *
+ *    The entry should not be locked for long periods of time.  For example,
+ *    it is not appropriate to hold the lock while waiting user interface to
+ *    be drawn.  The appropriate way is to read the data and duplicate it if
+ *    necessary, unlock the entry, then draw on the user interface.
+ *
+ *    This function is not needed if application is not multithreaded.
  *
  ***/
 void silc_client_lock_channel(SilcChannelEntry channel_entry);
@@ -632,7 +646,7 @@ void silc_client_unlock_channel(SilcChannelEntry channel_entry);
  *    after it is not needed anymore.  Returns `channel_entry'.
  *
  ***/
-SilcChannelEntry silc_client_ref_channel(SilcClient client, 
+SilcChannelEntry silc_client_ref_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 SilcChannelEntry channel_entry);
 
@@ -826,10 +840,17 @@ typedef void (*SilcGetServerCallback)(SilcClient client,
  *    before reading any data from the `server_entry'.  The lock must be
  *    unlocked with silc_client_unlock_server.
  *
- *    The entry must be unlocked before calling any Client Library API
- *    functions where the entry is given as argument.
+ * NOTES
  *
- *    This function is not needed if application is not multithreaded
+ *    The entry must be unlocked before calling any Client Library API
+ *    functions where the entry is given as argument, unless otherwise stated.
+ *
+ *    The entry should not be locked for long periods of time.  For example,
+ *    it is not appropriate to hold the lock while waiting user interface to
+ *    be drawn.  The appropriate way is to read the data and duplicate it if
+ *    necessary, unlock the entry, then draw on the user interface.
+ *
+ *    This function is not needed if application is not multithreaded.
  *
  ***/
 void silc_client_lock_server(SilcServerEntry server_entry);
@@ -863,7 +884,7 @@ void silc_client_unlock_server(SilcServerEntry server_entry);
  *    after it is not needed anymore.  Returns `server_entry'.
  *
  ***/
-SilcServerEntry silc_client_ref_server(SilcClient client, 
+SilcServerEntry silc_client_ref_server(SilcClient client,
 				       SilcClientConnection conn,
 				       SilcServerEntry server_entry);
 

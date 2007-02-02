@@ -36,6 +36,7 @@ SilcBool silc_client_send_private_message(SilcClient client,
 {
   SilcBuffer buffer;
   SilcBool ret;
+  SilcID sid, rid;
 
   if (silc_unlikely(!client || !conn || !client_entry))
     return FALSE;
@@ -46,6 +47,11 @@ SilcBool silc_client_send_private_message(SilcClient client,
 
   SILC_LOG_DEBUG(("Sending private message"));
 
+  sid.type = SILC_ID_CLIENT;
+  sid.u.client_id = conn->local_entry->id;
+  rid.type = SILC_ID_CLIENT;
+  rid.u.client_id = client_entry->id;
+
   /* Encode private message payload */
   buffer =
     silc_message_payload_encode(flags, data, data_len,
@@ -54,7 +60,7 @@ SilcBool silc_client_send_private_message(SilcClient client,
 				TRUE, client_entry->internal.send_key,
 				client_entry->internal.hmac_send,
 				client->rng, NULL, conn->private_key,
-				hash, NULL);
+				hash, &sid, &rid, NULL);
   if (silc_unlikely(!buffer)) {
     SILC_LOG_ERROR(("Error encoding private message"));
     return FALSE;
@@ -142,6 +148,8 @@ SILC_FSM_STATE(silc_client_private_message)
 			       TRUE, !remote_client->internal.generated,
 			       remote_client->internal.receive_key,
 			       remote_client->internal.hmac_receive,
+			       packet->src_id, packet->src_id_len,
+			       packet->dst_id, packet->dst_id_len,
 			       NULL, FALSE, NULL);
   if (silc_unlikely(!payload))
     goto out;
@@ -265,6 +273,8 @@ SilcBool silc_client_private_message_wait(SilcClient client,
 				 TRUE, !client_entry->internal.generated,
 				 client_entry->internal.receive_key,
 				 client_entry->internal.hmac_receive,
+				 packet->src_id, packet->src_id_len,
+				 packet->dst_id, packet->dst_id_len,
 				 NULL, FALSE, NULL);
     if (!(*payload)) {
       silc_packet_free(packet);
@@ -316,13 +326,15 @@ static void silc_client_private_message_key_cb(SilcClient client,
 					       SilcDList clients,
 					       void *context)
 {
-  SilcPacket packet = context;
+  SilcFSMThread thread = context;
+  SilcPacket packet = silc_fsm_get_state_context(thread);
   unsigned char *cipher = NULL, *hmac = NULL;
   SilcClientEntry client_entry;
   int ret;
 
   if (!clients) {
     silc_packet_free(packet);
+    silc_fsm_finish(thread);
     return;
   }
 
@@ -347,6 +359,7 @@ static void silc_client_private_message_key_cb(SilcClient client,
   silc_free(cipher);
   silc_free(hmac);
   silc_packet_free(packet);
+  silc_fsm_finish(thread);
 }
 
 /* Processes incoming Private Message Key payload to indicate that the

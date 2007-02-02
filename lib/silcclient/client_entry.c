@@ -136,6 +136,7 @@ typedef struct {
   SilcDList clients;
   SilcGetClientCallback completion;
   void *context;
+  SilcClientEntry client_entry;
 } *SilcClientGetClientInternal;
 
 /* Resolving command callback */
@@ -153,6 +154,12 @@ static SilcBool silc_client_get_clients_cb(SilcClient client,
 
   if (error != SILC_STATUS_OK) {
     SILC_LOG_DEBUG(("Resolving failed: %s", silc_get_status_message(error)));
+
+    if (i->client_entry) {
+      i->client_entry->internal.resolve_cmd_ident = 0;
+      silc_client_unref_client(client, conn, i->client_entry);
+    }
+
     if (i->completion)
       i->completion(client, conn, error, NULL, i->context);
     goto out;
@@ -170,6 +177,12 @@ static SilcBool silc_client_get_clients_cb(SilcClient client,
     /* Deliver the clients to the caller */
     if (i->completion) {
       SILC_LOG_DEBUG(("Resolved %d clients", silc_dlist_count(i->clients)));
+
+      if (i->client_entry) {
+	i->client_entry->internal.resolve_cmd_ident = 0;
+	silc_client_unref_client(client, conn, i->client_entry);
+      }
+
       silc_dlist_start(i->clients);
       i->completion(client, conn, SILC_STATUS_OK, i->clients, i->context);
     }
@@ -236,10 +249,13 @@ silc_client_get_client_by_id_resolve(SilcClient client,
   if (!cmd_ident && completion)
     completion(client, conn, SILC_STATUS_ERR_RESOURCE_LIMIT, NULL, context);
 
-  if (client_entry && cmd_ident)
+  if (client_entry && cmd_ident) {
     client_entry->internal.resolve_cmd_ident = cmd_ident;
+    i->client_entry = client_entry;
+  } else {
+    silc_client_unref_client(client, conn, client_entry);
+  }
 
-  silc_client_unref_client(client, conn, client_entry);
   silc_buffer_free(idp);
 
   return cmd_ident;
@@ -699,7 +715,6 @@ SilcClientEntry silc_client_add_client(SilcClient client,
   silc_rwlock_alloc(&client_entry->internal.lock);
   silc_atomic_init8(&client_entry->internal.refcnt, 0);
   client_entry->id = *id;
-  client_entry->internal.valid = TRUE;
   client_entry->mode = mode;
   client_entry->realname = userinfo ? strdup(userinfo) : NULL;
   silc_parse_userfqdn(nickname, client_entry->nickname,
@@ -751,6 +766,9 @@ SilcClientEntry silc_client_add_client(SilcClient client,
 
   /* Format the nickname */
   silc_client_nickname_format(client, conn, client_entry, FALSE);
+
+  if (client_entry->nickname[0])
+    client_entry->internal.valid = TRUE;
 
   SILC_LOG_DEBUG(("Added %p", client_entry));
 
@@ -806,6 +824,7 @@ void silc_client_update_client(SilcClient client,
 				   client_entry, NULL, nick, TRUE);
     silc_mutex_unlock(conn->internal->lock);
     client_entry->nickname_normalized = nick;
+    client_entry->internal.valid = TRUE;
   }
   client_entry->mode = mode;
 
@@ -860,6 +879,7 @@ SilcBool silc_client_change_nickname(SilcClient client,
 			  0, NULL);
   }
 
+  client_entry->internal.valid = TRUE;
   return TRUE;
 }
 
@@ -922,6 +942,27 @@ SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
   }
 
   return ret;
+}
+
+/* Internal routine used to find client by ID and if not found this creates
+   new client entry and returns it. */
+
+SilcClientEntry silc_client_get_client(SilcClient client,
+				       SilcClientConnection conn,
+				       SilcClientID *client_id)
+{
+  SilcClientEntry client_entry;
+
+  client_entry = silc_client_get_client_by_id(client, conn, client_id);
+  if (!client_entry) {
+    client_entry = silc_client_add_client(client, conn, NULL, NULL, NULL,
+					  client_id, 0);
+    if (!client_entry)
+      return NULL;
+    silc_client_ref_client(client, conn, client_entry);
+  }
+
+  return client_entry;
 }
 
 /* Lock client */
@@ -998,12 +1039,12 @@ SilcClientEntry silc_client_nickname_format(SilcClient client,
   SilcDList clients;
   SilcClientEntry entry, unformatted = NULL;
 
-  SILC_LOG_DEBUG(("Format nickname"));
-
   if (!client->internal->params->nickname_format[0])
     return client_entry;
   if (!client_entry->nickname[0])
     return NULL;
+
+  SILC_LOG_DEBUG(("Format nickname"));
 
   /* Get all clients with same nickname. Do not perform the formatting
      if there aren't any clients with same nickname unless the application

@@ -40,6 +40,7 @@ SilcBool silc_client_send_channel_message(SilcClient client,
   SilcCipher cipher;
   SilcHmac hmac;
   SilcBool ret;
+  SilcID sid, rid;
 
   SILC_LOG_DEBUG(("Sending channel message"));
 
@@ -109,9 +110,14 @@ SilcBool silc_client_send_channel_message(SilcClient client,
   }
 
   /* Encode the message payload. This also encrypts the message payload. */
+  sid.type = SILC_ID_CLIENT;
+  sid.u.client_id = chu->client->id;
+  rid.type = SILC_ID_CHANNEL;
+  rid.u.channel_id = chu->channel->id;
   buffer = silc_message_payload_encode(flags, data, data_len, TRUE, FALSE,
 				       cipher, hmac, client->rng, NULL,
-				       conn->private_key, hash, NULL);
+				       conn->private_key, hash, &sid, &rid,
+				       NULL);
   if (silc_unlikely(!buffer)) {
     SILC_LOG_ERROR(("Error encoding channel message"));
     return FALSE;
@@ -182,7 +188,7 @@ SILC_FSM_STATE(silc_client_channel_message)
 
   /* Get sender client entry */
   client_entry = silc_client_get_client_by_id(client, conn, &remote_id);
-  if (!client_entry || !client_entry->nickname[0]) {
+  if (!client_entry || !client_entry->internal.valid) {
     /** Resolve client info */
     silc_client_unref_client(client, conn, client_entry);
     SILC_FSM_CALL(silc_client_get_client_by_id_resolve(
@@ -225,8 +231,10 @@ SILC_FSM_STATE(silc_client_channel_message)
     payload = silc_message_payload_parse(silc_buffer_data(buffer),
 					 silc_buffer_len(buffer), FALSE,
 					 FALSE, channel->internal.receive_key,
-					 channel->internal.hmac, NULL,
-					 FALSE, NULL);
+					 channel->internal.hmac,
+					 packet->src_id, packet->src_id_len,
+					 packet->dst_id, packet->dst_id_len,
+					 NULL, FALSE, NULL);
 
     /* If decryption failed and we have just performed channel key rekey
        we will use the old key in decryption. If that fails too then we
@@ -251,6 +259,10 @@ SILC_FSM_STATE(silc_client_channel_message)
 	payload = silc_message_payload_parse(silc_buffer_data(buffer),
 					     silc_buffer_len(buffer),
 					     FALSE, FALSE, cipher, hmac,
+					     packet->src_id,
+					     packet->src_id_len,
+					     packet->dst_id,
+					     packet->dst_id_len,
 					     NULL, FALSE, NULL);
 	if (payload)
 	  break;
@@ -266,8 +278,12 @@ SILC_FSM_STATE(silc_client_channel_message)
 					   silc_buffer_len(buffer),
 					   FALSE, FALSE,
 					   channel->internal.receive_key,
-					   channel->internal.hmac, NULL,
-					   FALSE, NULL);
+					   channel->internal.hmac,
+					   packet->src_id,
+					   packet->src_id_len,
+					   packet->dst_id,
+					   packet->dst_id_len,
+					   NULL, FALSE, NULL);
 
     if (!payload) {
       silc_dlist_start(channel->internal.private_keys);
@@ -276,7 +292,11 @@ SILC_FSM_STATE(silc_client_channel_message)
 	payload = silc_message_payload_parse(silc_buffer_data(buffer),
 					     silc_buffer_len(buffer),
 					     FALSE, FALSE, key->cipher,
-					     key->hmac, NULL, FALSE, NULL);
+					     key->hmac, packet->src_id,
+					     packet->src_id_len,
+					     packet->dst_id,
+					     packet->dst_id_len,
+					     NULL, FALSE, NULL);
 	if (payload)
 	  break;
       }
@@ -735,7 +755,8 @@ SilcBool silc_client_add_to_channel(SilcClient client,
   return TRUE;
 }
 
-/* Removes client from a channel.  This handles entry locking internally. */
+/* Removes client from a channel.  Returns FALSE if user is not on channel.
+   This handles entry locking internally. */
 
 SilcBool silc_client_remove_from_channel(SilcClient client,
 					 SilcClientConnection conn,

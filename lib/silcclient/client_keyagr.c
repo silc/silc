@@ -661,7 +661,7 @@ SILC_FSM_STATE(silc_client_key_agreement)
 
   /* Check whether we know this client already */
   remote_client = silc_client_get_client_by_id(client, conn, &remote_id);
-  if (!remote_client || !remote_client->nickname[0]) {
+  if (!remote_client || !remote_client->internal.valid) {
     /** Resolve client info */
     silc_client_unref_client(client, conn, remote_client);
     SILC_FSM_CALL(silc_client_get_client_by_id_resolve(

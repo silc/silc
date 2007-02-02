@@ -44,11 +44,9 @@ void silc_client_del_client_entry(SilcClient client,
 				  SilcClientEntry client_entry);
 SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
 				SilcClientEntry client_entry);
-SilcClientEntry silc_idlist_get_client(SilcClient client,
+SilcClientEntry silc_client_get_client(SilcClient client,
 				       SilcClientConnection conn,
-				       const char *nickname,
-				       const char *format,
-				       bool query);
+				       SilcClientID *client_id);
 SilcChannelEntry silc_client_add_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 const char *channel_name,

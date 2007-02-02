@@ -797,7 +797,7 @@ SILC_FSM_STATE(silc_client_command_identify)
 
 SILC_FSM_STATE(silc_client_command_nick)
 {
-  SilcClientCommandContext cmd = fsm_context;
+  SilcClientCommandContext cmd2, cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
 
   if (cmd->argc < 2) {
@@ -824,6 +824,19 @@ SILC_FSM_STATE(silc_client_command_nick)
     COMMAND(SILC_STATUS_OK);
     goto out;
   }
+
+  /* If JOIN command is active, wait for it to finish before sending NICK.
+     To avoid problems locally with changing IDs while joining, we do this. */
+  silc_mutex_lock(conn->internal->lock);
+  silc_list_start(conn->internal->pending_commands);
+  while ((cmd2 = silc_list_get(conn->internal->pending_commands))) {
+    if (cmd2->cmd == SILC_COMMAND_JOIN) {
+      silc_mutex_unlock(conn->internal->lock);
+      silc_fsm_next_later(fsm, silc_client_command_nick, 0, 300000);
+      return SILC_FSM_WAIT;
+    }
+  }
+  silc_mutex_unlock(conn->internal->lock);
 
   if (cmd->argv_lens[1] > 128)
     cmd->argv_lens[1] = 128;
@@ -1274,7 +1287,7 @@ SILC_FSM_STATE(silc_client_command_ping)
 
 SILC_FSM_STATE(silc_client_command_join)
 {
-  SilcClientCommandContext cmd = fsm_context;
+  SilcClientCommandContext cmd2, cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
   SilcClient client = conn->client;
   SilcChannelEntry channel = NULL;
@@ -1291,6 +1304,19 @@ SILC_FSM_STATE(silc_client_command_join)
   channel = silc_client_get_channel(conn->client, conn, cmd->argv[1]);
   if (channel && silc_client_on_channel(channel, conn->local_entry))
     goto out;
+
+  /* If NICK command is active, wait for it to finish before sending JOIN.
+     To avoid problems locally with changing IDs while joining, we do this. */
+  silc_mutex_lock(conn->internal->lock);
+  silc_list_start(conn->internal->pending_commands);
+  while ((cmd2 = silc_list_get(conn->internal->pending_commands))) {
+    if (cmd2->cmd == SILC_COMMAND_NICK) {
+      silc_mutex_unlock(conn->internal->lock);
+      silc_fsm_next_later(fsm, silc_client_command_join, 0, 300000);
+      return SILC_FSM_WAIT;
+    }
+  }
+  silc_mutex_unlock(conn->internal->lock);
 
   if (cmd->argv_lens[1] > 256)
     cmd->argv_lens[1] = 256;
