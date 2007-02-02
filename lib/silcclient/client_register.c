@@ -156,8 +156,14 @@ SILC_FSM_STATE(silc_client_st_register)
 {
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
+  char *nick = NULL;
 
   SILC_LOG_DEBUG(("Register to network"));
+
+  /* From SILC protocol version 1.3, nickname is in NEW_CLIENT packet */
+  if (conn->internal->remote_version >= 13)
+    nick = (conn->internal->params.nickname ?
+	    conn->internal->params.nickname : client->username);
 
   /* Send NEW_CLIENT packet to register to network */
   if (!silc_packet_send_va(conn->stream, SILC_PACKET_NEW_CLIENT, 0,
@@ -167,6 +173,8 @@ SILC_FSM_STATE(silc_client_st_register)
 			   SILC_STR_UI_SHORT(strlen(client->realname)),
 			   SILC_STR_DATA(client->realname,
 					 strlen(client->realname)),
+			   SILC_STR_UI_SHORT(nick ? strlen(nick) : 0),
+			   SILC_STR_DATA(nick, nick ? strlen(nick) : 0),
 			   SILC_STR_END)) {
     /** Error sending packet */
     silc_fsm_next(fsm, silc_client_st_register_error);
@@ -221,9 +229,9 @@ SILC_FSM_STATE(silc_client_st_register_complete)
 			   1, 5, silc_buffer_data(conn->internal->local_idp),
 			   silc_buffer_len(conn->internal->local_idp));
 
-  /* Call NICK command if the nickname was set by the application (and is
-     not same as the username). */
-  if (conn->internal->params.nickname &&
+  /* With SILC protocol version 1.2 call NICK command if the nickname was
+     set by the application. */
+  if (conn->internal->params.nickname && conn->internal->remote_version < 13 &&
       !silc_utf8_strcasecmp(conn->internal->params.nickname, client->username))
     silc_client_command_call(client, conn, NULL,
 			     "NICK", conn->internal->params.nickname, NULL);
