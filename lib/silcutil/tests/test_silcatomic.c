@@ -40,8 +40,8 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("ref16: 31022 + 34000 = %d (65022)", ret16));
   ret16 = silc_atomic_sub_int16(&ref16, 0);
   SILC_LOG_DEBUG(("ref16: 65022 - 0 = %d (65022)", ret16));
-  ret16 = silc_atomic_sub_int16(&ref16, 0xffff);
-  SILC_LOG_DEBUG(("ref16: 65022 - 0xfff = %d (65023) (underflow)", ret16));
+  ret16 = silc_atomic_sub_int16(&ref16, (SilcInt16)0xffff);
+  SILC_LOG_DEBUG(("ref16: 65022 - 0xffff = %d (65023) (underflow)", ret16));
 
   SILC_LOG_DEBUG(("Current value: %d (-513)",
 		  (SilcInt16)silc_atomic_get_int16(&ref16)));
@@ -86,6 +86,23 @@ int main(int argc, char **argv)
     goto err;
   SILC_LOG_DEBUG(("Current ptr: %p (NULL)",
 		  silc_atomic_get_pointer(&refptr)));
+
+  SILC_LOG_DEBUG(("Setting val 34322111 (32-bit)"));
+  silc_atomic_set_int32(&ref32, 34322111);
+  if (silc_atomic_get_int32(&ref32) != 34322111)
+    goto err;
+  SILC_LOG_DEBUG(("Setting val 1432211119 (32-bit)"));
+  silc_atomic_set_int32(&ref32, 1432211119);
+  if (silc_atomic_get_int32(&ref32) != 1432211119)
+    goto err;
+  SILC_LOG_DEBUG(("Setting val 23422 (16-bit)"));
+  silc_atomic_set_int16(&ref16, 23422);
+  if (silc_atomic_get_int16(&ref16) != 23422)
+    goto err;
+  SILC_LOG_DEBUG(("Setting val 124 (8-bit)"));
+  silc_atomic_set_int8(&ref8, 124);
+  if (silc_atomic_get_int8(&ref8) != 124)
+    goto err;
 
   silc_atomic_uninit8(&ref8);
   silc_atomic_uninit16(&ref16);
