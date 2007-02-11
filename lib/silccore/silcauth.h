@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2003, 2006 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -394,7 +394,8 @@ silc_key_agreement_payload_parse(const unsigned char *payload,
  *
  * DESCRIPTION
  *
- *    Encodes the Key Agreement protocol and returns the encoded buffer
+ *    Encodes the Key Agreement payload and returns the encoded buffer.
+ *    The `protocol' is 0 for TCP and 1 for UDP.
  *
  ***/
 SilcBuffer silc_key_agreement_payload_encode(const char *hostname,
@@ -409,7 +410,7 @@ SilcBuffer silc_key_agreement_payload_encode(const char *hostname,
  *
  * DESCRIPTION
  *
- *    Frees the Key Agreement protocol and all data in it.
+ *    Frees the Key Agreement payload and all data in it.
  *
  ***/
 void silc_key_agreement_payload_free(SilcKeyAgreementPayload payload);
