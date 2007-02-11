@@ -1785,11 +1785,10 @@ SILC_FSM_STATE(silc_ske_st_initiator_failure)
 
 /* Starts the protocol as initiator */
 
-SilcAsyncOperation
-silc_ske_initiator(SilcSKE ske,
-		   SilcPacketStream stream,
-		   SilcSKEParams params,
-		   SilcSKEStartPayload start_payload)
+SilcAsyncOperation silc_ske_initiator(SilcSKE ske,
+				      SilcPacketStream stream,
+				      SilcSKEParams params,
+				      SilcSKEStartPayload start_payload)
 {
   SILC_LOG_DEBUG(("Start SKE as initiator"));
 
@@ -2356,10 +2355,9 @@ SILC_FSM_STATE(silc_ske_st_responder_error)
 
 /* Starts the protocol as responder. */
 
-SilcAsyncOperation
-silc_ske_responder(SilcSKE ske,
-		   SilcPacketStream stream,
-		   SilcSKEParams params)
+SilcAsyncOperation silc_ske_responder(SilcSKE ske,
+				      SilcPacketStream stream,
+				      SilcSKEParams params)
 {
   SILC_LOG_DEBUG(("Start SKE as responder"));
 
