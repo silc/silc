@@ -254,4 +254,47 @@ SilcBool silc_compare_timeval(struct timeval *smaller,
  ***/
 int silc_gettimeofday(struct timeval *p);
 
+/****f* silcutil/SilcTimeAPI/silc_usleep
+ *
+ * SYNOPSIS
+ *
+ *    void silc_usleep(long microseconds);
+ *
+ * DESCRIPTION
+ *
+ *    Delays the execution of process/thread for the specified amount of
+ *    time, which is in microseconds.
+ *
+ * NOTES
+ *
+ *    The delay is only approximate and on some platforms the resolution is
+ *    in fact milliseconds.
+ *
+ ***/
+static inline
+void silc_usleep(long microseconds)
+{
+#ifdef SILC_UNIX
+#ifdef HAVE_NANOSLEEP
+  struct timespec tv;
+  tv.tv_sec = 0;
+  tv.tv_nsec = microseconds * 1000;
+#endif /* HAVE_NANOSLEEP */
+#endif /* SILC_UNIX */
+
+#ifdef SILC_UNIX
+#ifdef HAVE_NANOSLEEP
+  nanosleep(&tv, NULL);
+#else
+  usleep(microseconds);
+#endif /* HAVE_NANOSLEEP */
+#endif /* SILC_UNIX */
+#ifdef SILC_WIN32
+  Sleep(microseconds / 1000);
+#endif /* SILC_WIN32 */
+#ifdef SILC_SYMBIAN
+  User::After(microseconds / 1000);
+#endif /* SILC_SYMBIAN */
+}
+
 #endif /* SILCTIME_H */
