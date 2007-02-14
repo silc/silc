@@ -209,9 +209,11 @@ safely ignore it when received.
 <td><small>
 Sent when a server quits the network.  The 'clients' is a list of
 SilcClientEntry pointers.  Each client in the entry is one client signing
-off from the SILC network.  The library will free the list.
+off from the SILC network.  The library will free the list.  The `server'
+is the quitting server, and it is NULL if the server isn't cached in the
+client library.
 </td>
-<td width="50%"><small>NULL, SilcClientEntry *clients, SilcUInt32 clients_count
+<td width="50%"><small>SilcServerEntry server, SilcDList clients
 </td>
 </tr>
 

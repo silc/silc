@@ -179,7 +179,7 @@ AC_CHECK_FUNCS(poll select listen bind shutdown close connect setsockopt)
 AC_CHECK_FUNCS(setrlimit time ctime utime gettimeofday getrusage)
 AC_CHECK_FUNCS(chmod fcntl stat fstat getenv putenv strerror)
 AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid)
-AC_CHECK_FUNCS(setgroups initgroups nl_langinfo epoll_wait)
+AC_CHECK_FUNCS(setgroups initgroups nl_langinfo epoll_wait nanosleep)
 AC_CHECK_FUNCS(strchr snprintf strstr strcpy strncpy memcpy memset memmove)
 
 #ifdef SILC_DIST_SIM

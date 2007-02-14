@@ -11,7 +11,7 @@ typedef struct {
 #define MAX_ROUND 8
 #define MAX_MUL 4
 #define MAX_THREADS 4
-#define MAX_LOCKS 271234567
+#define MAX_LOCKS 471234567
 
 SilcMutex mutex;
 SilcUInt64 cpu_freq = 0;
@@ -90,13 +90,9 @@ void *mutex_thread_hold(void *context)
     silc_mutex_lock(mutex);
     hval2 = i;
     hval3 = 0;
-    hval += hval;
+    hval++;
     hval3 = hval2 + i;
-    if (hval > max_locks)
-      hval = 0;
-    if (hval < max_locks)
-      hval = max_locks;
-    hval += hval;
+    hval += hval2;
     hval3 += hval;
     if (silc_unlikely(hval3 != hval2 + i + hval)) {
       fprintf(stderr, "MUTEX CORRUPT 1\n");
@@ -179,8 +175,9 @@ int main(int argc, char **argv)
 
   fprintf(stderr, "Spinning/holding lock, lock/unlock per second\n");
 
-  sleep(16);
-  for (j = 0; j < MAX_ROUND; j++) {
+  max_locks /= 2;
+  sleep(5);
+  for (j = 0; j < MAX_ROUND / 2; j++) {
     for (i = 0; i < 1; i++)
       c[i].thread = silc_thread_create(mutex_thread_hold, &c[i], TRUE);
 
@@ -190,32 +187,32 @@ int main(int argc, char **argv)
       val += c[i].time;
     }
     fprintf(stderr, "%llu mutex lock/unlock per second (%d threads)\n",
-		      (1000LL * (max_locks / 4)) / val, 1);
+                      (1000LL * (max_locks / 4) * 1) / val, 1);
   }
   puts("");
 
   max_locks2 = max_locks;
+  max_locks2 /= 2;
   for (k = 0; k < MAX_MUL; k++) {
-    sleep(16);
+    sleep(2);
     max_locks = max_locks2 / (k + 1);
-    for (j = 0; j < MAX_ROUND; j++) {
+    for (j = 0; j < MAX_ROUND / 2; j++) {
       hval = hval2 = 1;
       for (i = 0; i < MAX_THREADS * (k + 1); i++)
-	c[i].thread = silc_thread_create(mutex_thread, &c[i], TRUE);
+        c[i].thread = silc_thread_create(mutex_thread_hold, &c[i], TRUE);
 
       val = 0;
       for (i = 0; i < MAX_THREADS * (k + 1); i++) {
-	silc_thread_wait(c[i].thread, NULL);
-	val += c[i].time;
+        silc_thread_wait(c[i].thread, NULL);
+        val += c[i].time;
       }
       fprintf(stderr, "%llu mutex lock/unlock per second (%d threads)\n",
-		      (1000LL * (max_locks / 4) *
-		       (MAX_THREADS * (k + 1))) / val,
-		      MAX_THREADS * (k + 1));
+                      (1000LL * (max_locks / 4) *
+                       (MAX_THREADS * (k + 1))) / val,
+                      MAX_THREADS * (k + 1));
     }
     puts("");
   }
-  max_locks = max_locks2;
 
   success = TRUE;
 

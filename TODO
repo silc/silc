@@ -9,7 +9,7 @@ tested.
 SILC Client	****PARTLY DONE****
 ===========
 
- o Porting to new Toolkit API and new Client Library API
+ o Porting to new Toolkit API and new Client Library API (***TESTING NEEDED)
 
  o Improve help files, especially /cmode, /cumode and /key.
 
@@ -21,11 +21,15 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o silcclient_entry.h finishing, all entry relates APIs to this header.
 
- o SilcChannelEntry, SilcServerEntry, SilcChannelUser, allocating, 
-   freeing, finding, etc. rewrite.  Also making them reference counted for 
+ o SilcChannelEntry, SilcServerEntry, SilcChannelUser, allocating,
+   freeing, finding, etc. rewrite.  Also making them reference counted for
    multi threads use. (***DONE)
 
- o Finish all the missing SILC packet processings, rewrites.
+ o Rewrite silc_client_get_clients_by_channel.
+
+ o Rewrite client side WHOIS command (for whois -details).
+
+ o Finish all the missing SILC packet processings, rewrites. (***DONE)
 
  o The client_notify.c rewrite. (***TESTING NEEDED)
 
@@ -36,7 +40,9 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o Remove protocol.[ch]. (***DONE)
 
- o File transfer rewrite.
+ o File transfer rewrite. (***TESTING NEEDED)
+
+ o File transfer API documentation.
 
  o Connection auth request. (***DONE)
 
@@ -44,7 +50,7 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o Starting key exchange directly, rewrite. (***DONE)
 
- o Channel messages, channel private keys, channel entires, channel 
+ o Channel messages, channel private keys, channel entires, channel
    search, etc. rewrite.
 
  o For many APIs leave the hash context allocations to the caller instead
@@ -141,6 +147,8 @@ lib/silccrypt			****PARTLY DONE****
 
  o Implement SILC Public Key Version 2 handling in sign/verify.  Implement
    Version (V) identifier (***DONE)
+
+ o Add fingerprint to SilcSILCPublicKey and retrieval to silcpk.h.
 
  o Implement PKCS #1 sign/verify with hash OID. (***TESTING NEEDED)
 
