@@ -377,6 +377,7 @@ static void silc_connect_cb(SilcClient client,
     silc_free(file);
 
     server->connection_lost = TRUE;
+    server->conn = NULL;
     if (server->conn)
       server->conn->context = NULL;
     if (!server->disconnected)
@@ -558,7 +559,6 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: WHOIS [<nickname>[@<hostname>]] [-details] [-pubkey <pubkeyfile>] [<count>] */
 /* SYNTAX: WHOWAS <nickname>[@<hostname>] [<count>] */
 /* SYNTAX: CLOSE <server> [<port>] */
-/* SYNTAX: SHUTDOWN */
 /* SYNTAX: MOTD [<server>] */
 /* SYNTAX: LIST [<channel>] */
 /* SYNTAX: ME <message> */
@@ -569,7 +569,6 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
 /* SYNTAX: NOTICE [-sign] [-channel] <target> <message> */
 /* SYNTAX: PART [<channel>] */
 /* SYNTAX: PING */
-/* SYNTAX: SCONNECT <server> [<port>] */
 /* SYNTAX: USERS <channel> */
 /* SYNTAX: FILE SEND <filepath> <nickname> [<local IP> [<local port>]] [-no-listener]*/
 /* SYNTAX: FILE ACCEPT [<nickname>] */
@@ -615,21 +614,6 @@ static void command_self(const char *data, SILC_SERVER_REC *server,
   }
 
   silc_command_exec(server, current_command, data);
-  signal_stop();
-}
-
-/* SCONNECT command.  Calls actually SILC's CONNECT command since Irssi
-   has CONNECT command for other purposes. */
-
-static void command_sconnect(const char *data, SILC_SERVER_REC *server)
-{
-  CMD_SILC_SERVER(server);
-  if (!IS_SILC_SERVER(server) || !server->connected) {
-    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Not connected to server");
-    return;
-  }
-
-  silc_command_exec(server, "CONNECT", data);
   signal_stop();
 }
 
@@ -713,7 +697,6 @@ out:
   cmd_params_free(free_arg);
 }
 
-#if 0
 /* FILE command */
 
 SILC_TASK_CALLBACK(silc_client_file_close_later)
@@ -759,7 +742,8 @@ static void silc_client_file_monitor(SilcClient client,
   if (ftp == SILC_LIST_END)
     return;
 
-  if (status == SILC_CLIENT_FILE_MONITOR_ERROR) {
+  if (status == SILC_CLIENT_FILE_MONITOR_ERROR ||
+      status == SILC_CLIENT_FILE_MONITOR_DISCONNECT) {
     if (error == SILC_CLIENT_FILE_NO_SUCH_FILE)
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_FILE_ERROR_NO_SUCH_FILE,
@@ -772,9 +756,9 @@ static void silc_client_file_monitor(SilcClient client,
     else
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_FILE_ERROR, client_entry->nickname);
-    silc_schedule_task_add(silc_client->schedule, 0,
-			   silc_client_file_close_later, ftp,
-			   1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+    silc_schedule_task_add_timeout(silc_client->schedule,
+				   silc_client_file_close_later, ftp,
+				   1, 0);
     silc_dlist_del(server->ftp_sessions, ftp);
     if (ftp == server->current_session) {
       server->current_session = NULL;
@@ -812,9 +796,9 @@ static void silc_client_file_monitor(SilcClient client,
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_FILE_TRANSMITTED, filepath, fsize,
 			 client_entry->nickname, ftp->kps);
-      silc_schedule_task_add(silc_client->schedule, 0,
-			     silc_client_file_close_later, ftp,
-			     1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+      silc_schedule_task_add_timeout(silc_client->schedule,
+				     silc_client_file_close_later, ftp,
+				     1, 0);
       silc_dlist_del(server->ftp_sessions, ftp);
       if (ftp == server->current_session) {
 	server->current_session = NULL;
@@ -837,9 +821,9 @@ static void silc_client_file_monitor(SilcClient client,
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_FILE_RECEIVED, filepath, fsize,
 			 client_entry->nickname, ftp->kps);
-      silc_schedule_task_add(silc_client->schedule, 0,
-			     silc_client_file_close_later, ftp,
-			     1, 0, SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+      silc_schedule_task_add_timeout(silc_client->schedule,
+				     silc_client_file_close_later, ftp,
+				     1, 0);
       silc_dlist_del(server->ftp_sessions, ftp);
       if (ftp == server->current_session) {
 	server->current_session = NULL;
@@ -860,8 +844,8 @@ typedef struct {
 
 static void silc_client_command_file_get_clients(SilcClient client,
 						 SilcClientConnection conn,
-						 SilcClientEntry *clients,
-						 SilcUInt32 clients_count,
+						 SilcStatus status,
+						 SilcDList clients,
 						 void *context)
 {
   FileGetClients internal = (FileGetClients)context;
@@ -887,10 +871,10 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 			 WI_ITEM_REC *item)
 {
   SilcClientConnection conn;
-  SilcClientEntry *entrys, client_entry;
+  SilcClientEntry client_entry;
+  SilcDList entries;
   SilcClientFileError ret;
-  SilcUInt32 entry_count;
-  char *nickname = NULL, *tmp;
+  char nickname[128 + 1], *tmp;
   unsigned char **argv;
   SilcUInt32 argc;
   SilcUInt32 *argv_lens, *argv_types;
@@ -900,6 +884,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   SilcUInt32 local_port = 0;
   SilcUInt32 session_id;
   bool do_not_bind = FALSE;
+  SilcClientConnectionParams params;
 
   CMD_SILC_SERVER(server);
   if (!server || !IS_SILC_SERVER(server) || !server->connected)
@@ -933,16 +918,16 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
       cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
     /* Parse the typed nickname. */
-    if (!silc_parse_userfqdn(argv[3], &nickname, NULL)) {
+    if (!silc_parse_userfqdn(argv[3], nickname, sizeof(nickname), NULL, 0)) {
       printformat_module("fe-common/silc", server, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[3]);
       goto out;
     }
 
     /* Find client entry */
-    entrys = silc_client_get_clients_local(silc_client, conn, nickname,
-					   argv[3], &entry_count);
-    if (!entrys) {
+    entries = silc_client_get_clients_local(silc_client, conn, nickname,
+					    argv[3]);
+    if (!entries) {
       FileGetClients inter = silc_calloc(1, sizeof(*inter));
       inter->server = server;
       inter->data = strdup(data);
@@ -952,8 +937,8 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 			      silc_client_command_file_get_clients, inter);
       goto out;
     }
-    client_entry = entrys[0];
-    silc_free(entrys);
+    silc_dlist_start(entries);
+    client_entry = silc_dlist_get(entries);
 
     if (argc >= 5) {
       if (!strcasecmp(argv[4], "-no-listener"))
@@ -972,10 +957,31 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 	do_not_bind = TRUE;
     }
 
-    ret =
-      silc_client_file_send(silc_client, conn, silc_client_file_monitor,
-			    server, local_ip, local_port, do_not_bind,
-			    client_entry, argv[2], &session_id);
+    memset(&params, 0, sizeof(params));
+    if (!do_not_bind) {
+      if (local_ip)
+        params.local_ip = strdup(local_ip);
+      params.local_port = local_port;
+      if (!params.local_ip && settings_get_bool("use_auto_addr")) {
+	params.local_ip = (char *)settings_get_str("auto_public_ip");
+	if ((params.local_ip) && (*params.local_ip == '\0')) {
+	  params.local_ip = silc_net_localip();
+	} else {
+	  params.bind_ip = (char *)settings_get_str("auto_bind_ip");
+	  if ((params.bind_ip) && (*params.bind_ip == '\0'))
+	    params.bind_ip = NULL;
+	  params.local_port = settings_get_int("auto_bind_port");
+	}
+      }
+      if (!params.local_ip)
+	params.local_ip = silc_net_localip();
+    }
+    params.timeout_secs = settings_get_int("key_exchange_timeout_secs");
+
+    ret = silc_client_file_send(silc_client, conn, client_entry, &params,
+				irssi_pubkey, irssi_privkey,
+				silc_client_file_monitor, server, argv[2],
+				&session_id);
     if (ret == SILC_CLIENT_FILE_OK) {
       ftp = silc_calloc(1, sizeof(*ftp));
       ftp->session_id = session_id;
@@ -1001,21 +1007,22 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 			   client_entry->nickname, argv[2]);
     }
 
+    silc_client_list_free(silc_client, server->conn, entries);
     break;
 
   case 2:
     /* Parse the typed nickname. */
     if (argc >= 3) {
-      if (!silc_parse_userfqdn(argv[2], &nickname, NULL)) {
+      if (!silc_parse_userfqdn(argv[2], nickname, sizeof(nickname), NULL, 0)) {
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[2]);
 	goto out;
       }
 
       /* Find client entry */
-      entrys = silc_client_get_clients_local(silc_client, conn, nickname,
-					     argv[2], &entry_count);
-      if (!entrys) {
+      entries = silc_client_get_clients_local(silc_client, conn, nickname,
+					      argv[2]);
+      if (!entries) {
 	FileGetClients inter = silc_calloc(1, sizeof(*inter));
 	inter->server = server;
 	inter->data = strdup(data);
@@ -1025,8 +1032,9 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 				silc_client_command_file_get_clients, inter);
 	goto out;
       }
-      client_entry = entrys[0];
-      silc_free(entrys);
+      silc_dlist_start(entries);
+      client_entry = silc_dlist_get(entries);
+      silc_client_list_free(silc_client, server->conn, entries);
     } else {
       if (!server->current_session) {
 	printformat_module("fe-common/silc", server, NULL,
@@ -1034,7 +1042,24 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 	goto out;
       }
 
-      ret = silc_client_file_receive(silc_client, conn,
+      memset(&params, 0, sizeof(params));
+      if (settings_get_bool("use_auto_addr")) {
+	params.local_ip = (char *)settings_get_str("auto_public_ip");
+	if ((params.local_ip) && (*params.local_ip == '\0')) {
+	  params.local_ip = silc_net_localip();
+	} else {
+	  params.bind_ip = (char *)settings_get_str("auto_bind_ip");
+	  if ((params.bind_ip) && (*params.bind_ip == '\0'))
+	    params.bind_ip = NULL;
+	  params.local_port = settings_get_int("auto_bind_port");
+	}
+      }
+      if (!params.local_ip)
+	params.local_ip = silc_net_localip();
+      params.timeout_secs = settings_get_int("key_exchange_timeout_secs");
+
+      ret = silc_client_file_receive(silc_client, conn, &params,
+				     irssi_pubkey, irssi_privkey,
 				     silc_client_file_monitor, server, NULL,
 				     server->current_session->session_id,
 				     NULL, NULL);
@@ -1066,7 +1091,24 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
     silc_dlist_start(server->ftp_sessions);
     while ((ftp = silc_dlist_get(server->ftp_sessions)) != SILC_LIST_END) {
       if (ftp->client_entry == client_entry && !ftp->filepath) {
-	ret = silc_client_file_receive(silc_client, conn,
+	memset(&params, 0, sizeof(params));
+	if (settings_get_bool("use_auto_addr")) {
+	  params.local_ip = (char *)settings_get_str("auto_public_ip");
+	  if ((params.local_ip) && (*params.local_ip == '\0')) {
+	    params.local_ip = silc_net_localip();
+	  } else {
+	    params.bind_ip = (char *)settings_get_str("auto_bind_ip");
+	    if ((params.bind_ip) && (*params.bind_ip == '\0'))
+	      params.bind_ip = NULL;
+	    params.local_port = settings_get_int("auto_bind_port");
+	  }
+	}
+	if (!params.local_ip)
+	  params.local_ip = silc_net_localip();
+	params.timeout_secs = settings_get_int("key_exchange_timeout_secs");
+
+	ret = silc_client_file_receive(silc_client, conn, &params,
+				       irssi_pubkey, irssi_privkey,
 				       silc_client_file_monitor, server,
 				       NULL, ftp->session_id, NULL, NULL);
 	if (ret != SILC_CLIENT_FILE_OK) {
@@ -1104,16 +1146,16 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   case 3:
     /* Parse the typed nickname. */
     if (argc >= 3) {
-      if (!silc_parse_userfqdn(argv[2], &nickname, NULL)) {
+      if (!silc_parse_userfqdn(argv[2], nickname, sizeof(nickname), NULL, 0)) {
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[2]);
 	goto out;
       }
 
       /* Find client entry */
-      entrys = silc_client_get_clients_local(silc_client, conn, nickname,
-					     argv[2], &entry_count);
-      if (!entrys) {
+      entries = silc_client_get_clients_local(silc_client, conn, nickname,
+					      argv[2]);
+      if (!entries) {
 	FileGetClients inter = silc_calloc(1, sizeof(*inter));
 	inter->server = server;
 	inter->data = strdup(data);
@@ -1123,8 +1165,9 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
 				silc_client_command_file_get_clients, inter);
 	goto out;
       }
-      client_entry = entrys[0];
-      silc_free(entrys);
+      silc_dlist_start(entries);
+      client_entry = silc_dlist_get(entries);
+      silc_client_list_free(silc_client, server->conn, entries);
     } else {
       if (!server->current_session) {
 	printformat_module("fe-common/silc", server, NULL,
@@ -1208,9 +1251,8 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   }
 
  out:
-  silc_free(nickname);
+  return;
 }
-#endif /* 0 */
 
 void silc_server_init(void)
 {
@@ -1238,10 +1280,8 @@ void silc_server_init(void)
   command_bind_silc("ping", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("motd", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("close", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind_silc("shutdown", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("getkey", MODULE_NAME, (SIGNAL_FUNC) command_self);
-  command_bind_silc("sconnect", MODULE_NAME, (SIGNAL_FUNC) command_sconnect);
-//  command_bind_silc("file", MODULE_NAME, (SIGNAL_FUNC) command_file);
+  command_bind_silc("file", MODULE_NAME, (SIGNAL_FUNC) command_file);
   command_bind_silc("detach", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("watch", MODULE_NAME, (SIGNAL_FUNC) command_self);
   command_bind_silc("stats", MODULE_NAME, (SIGNAL_FUNC) command_self);
@@ -1277,10 +1317,8 @@ void silc_server_deinit(void)
   command_unbind("motd", (SIGNAL_FUNC) command_self);
   command_unbind("ban", (SIGNAL_FUNC) command_self);
   command_unbind("close", (SIGNAL_FUNC) command_self);
-  command_unbind("shutdown", (SIGNAL_FUNC) command_self);
   command_unbind("getkey", (SIGNAL_FUNC) command_self);
-  command_unbind("sconnect", (SIGNAL_FUNC) command_sconnect);
-//  command_unbind("file", (SIGNAL_FUNC) command_file);
+  command_unbind("file", (SIGNAL_FUNC) command_file);
   command_unbind("detach", (SIGNAL_FUNC) command_self);
   command_unbind("watch", (SIGNAL_FUNC) command_self);
   command_unbind("stats", (SIGNAL_FUNC) command_self);
@@ -1288,7 +1326,6 @@ void silc_server_deinit(void)
   command_unbind("smsg", (SIGNAL_FUNC) command_smsg);
 }
 
-#if 0
 void silc_server_free_ftp(SILC_SERVER_REC *server,
 			  SilcClientEntry client_entry)
 {
@@ -1303,7 +1340,6 @@ void silc_server_free_ftp(SILC_SERVER_REC *server,
     }
   }
 }
-#endif /* 0 */
 
 bool silc_term_utf8(void)
 {

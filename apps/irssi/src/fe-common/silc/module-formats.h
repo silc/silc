@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2003 Pekka Riikonen
+  Copyright (C) 2001 - 2003, 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -105,7 +105,8 @@ enum {
   SILCTXT_NOTICE_PRIVATE_SIGNED,
   SILCTXT_NOTICE_PRIVATE_UNKNOWN,
   SILCTXT_NOTICE_PRIVATE_FAILED,
-
+  SILCTXT_CHANNEL_MANY_NICKS,
+  SILCTXT_CHANNEL_USER_APPEARS,
 
   SILCTXT_FILL_2,
 
@@ -236,7 +237,7 @@ enum {
   SILCTXT_ATTR_SAVED,
 
   SILCTXT_FILL_7,
-  
+
   SILCTXT_LISTKEY_PUB_FILE,
   SILCTXT_LISTKEY_PUB_ALG,
   SILCTXT_LISTKEY_PUB_VER,

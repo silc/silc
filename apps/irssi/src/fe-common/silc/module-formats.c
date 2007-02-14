@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2006 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -108,6 +108,9 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "notice_private_signed", "{notice {flag_signed}$0{pvtnotice_host $1}}$2", 3, { 0, 0, 0 } },
 	{ "notice_private_unknown", "{notice {flag_unknown}$0{pvtnotice_host $1}}$2", 3, { 0, 0, 0 } },
 	{ "notice_private_failed", "{notice {flag_failed}$0{pvtnotice_host $1}}$2", 3, { 0, 0, 0 } },
+	{ "many", "There are now $0 {channick_hilight $1}'s on this channel", 2, { 0, 0 } },
+	{ "user_appears", "{channick_hilight $0} will appear as {channick_hilight $1}", 2, { 0, 0 } },
+
 
 	/* WHOIS, WHOWAS and USERS (alias WHO) messages */
 	{ NULL, "Who Queries", 0 },

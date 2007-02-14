@@ -22,7 +22,7 @@ Commands:
 
       If the <local IP> is provided then the key exchange
       protocol listener will be bound to that address.  If
-      <local port> is defined it is bound to that port. 
+      <local port> is defined it is bound to that port.
       If they are not defined then the local IP address
       of your machine is used to bind the listener.
 
@@ -30,6 +30,17 @@ Commands:
       bind locally but assumes that the <nickname> will provide
       the point of connect.  This is usefull when the sender
       is behind NAT device.
+
+      If the <local IP> and <local port> are ommitted and the
+      -no-listener option is not given, the boolean variable
+      use_auto_addr will be examined.  If it is set the value
+      of auto_bind_ip will be used as the IP address to bound
+      the listener, the value of auto_public_ip will be the IP
+      address sent to the remote client, and the auto_bind_port
+      will be the port value to be bound to and sent to the remote
+      client.  If auto_public_ip is unset, but auto_bind_ip is
+      set, SILC client will send the auto_bind_ip variable's
+      value to the remote client.
 
     ACCEPT  [<nickname>]
 
@@ -42,4 +53,3 @@ Commands:
       Closes the file transfer session, or rejects
       file transfer request.  If this command is given
       during the file transfer process it will be cancelled.
-
