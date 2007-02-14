@@ -476,7 +476,6 @@ SILC_TASK_CALLBACK(silc_net_connect_wait)
 {
   SilcNetConnect conn = context;
   SILC_FSM_EVENT_SIGNAL(&conn->event);
-  silc_schedule_task_del_by_fd(schedule, conn->sock);
 }
 
 SILC_FSM_STATE(silc_net_connect_st_start)
@@ -601,6 +600,8 @@ SILC_FSM_STATE(silc_net_connect_st_connected)
 
   if (conn->aborted) {
     /** Aborted */
+    silc_schedule_unset_listen_fd(schedule, conn->sock);
+    silc_schedule_task_del_by_fd(schedule, conn->sock);
     silc_fsm_next(fsm, silc_net_connect_st_finish);
     return SILC_FSM_CONTINUE;
   }
@@ -608,8 +609,8 @@ SILC_FSM_STATE(silc_net_connect_st_connected)
   ret = silc_net_get_socket_opt(conn->sock, SOL_SOCKET, SO_ERROR,
 				&opt, &optlen);
 
-  silc_schedule_task_del_by_fd(schedule, conn->sock);
   silc_schedule_unset_listen_fd(schedule, conn->sock);
+  silc_schedule_task_del_by_fd(schedule, conn->sock);
 
   if (ret != 0 || opt != 0) {
     if (conn->retry) {
