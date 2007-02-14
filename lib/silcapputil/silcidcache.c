@@ -123,7 +123,7 @@ silc_idcache_add(SilcIDCache cache, char *name, void *id, void *context)
 {
   SilcIDCacheEntry c;
 
-  if (!id)
+  if (!cache || !id)
     return NULL;
 
   /* Allocate new cache entry */
@@ -174,6 +174,9 @@ SilcBool silc_idcache_del(SilcIDCache cache, SilcIDCacheEntry entry,
 {
   SilcBool ret = FALSE;
 
+  if (!cache)
+    return FALSE;
+
   SILC_LOG_DEBUG(("Deleting cache entry %p", entry));
 
   if (entry->name)
@@ -199,6 +202,9 @@ SilcBool silc_idcache_del_by_id(SilcIDCache cache, void *id,
 {
   SilcIDCacheEntry c;
 
+  if (!cache)
+    return FALSE;
+
   if (!silc_hash_table_find(cache->id_table, id, NULL, (void **)&c))
     return FALSE;
 
@@ -212,6 +218,9 @@ SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
 {
   SilcIDCacheEntry c;
 
+  if (!cache)
+    return FALSE;
+
   if (!silc_hash_table_find(cache->context_table, context, NULL, (void **)&c))
     return FALSE;
 
@@ -224,6 +233,9 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
 			     void *new_id, char *new_name,
 			     SilcBool free_old_name)
 {
+  if (!cache)
+    return FALSE;
+
   if (new_id) {
     if (!silc_hash_table_del_by_context(cache->id_table, entry->id, entry))
       return FALSE;
@@ -264,6 +276,9 @@ SilcBool silc_idcache_update_by_context(SilcIDCache cache, void *context,
 {
   SilcIDCacheEntry c;
 
+  if (!cache)
+    return FALSE;
+
   if (!silc_hash_table_find(cache->context_table, context, NULL, (void **)&c))
     return FALSE;
 
@@ -274,7 +289,7 @@ SilcBool silc_idcache_update_by_context(SilcIDCache cache, void *context,
 
 SilcBool silc_idcache_get_all(SilcIDCache cache, SilcList *ret_list)
 {
-  if (!ret_list)
+  if (!cache || !ret_list)
     return FALSE;
 
   if (!silc_hash_table_count(cache->id_table))
@@ -295,7 +310,7 @@ SilcBool silc_idcache_get_all(SilcIDCache cache, SilcList *ret_list)
 SilcBool silc_idcache_find_by_id(SilcIDCache cache, void *id,
 				 SilcList *ret_list)
 {
-  if (!ret_list)
+  if (!cache || !ret_list)
     return FALSE;
 
   if (!silc_hash_table_count(cache->id_table))
@@ -316,6 +331,8 @@ SilcBool silc_idcache_find_by_id(SilcIDCache cache, void *id,
 SilcBool silc_idcache_find_by_id_one(SilcIDCache cache, void *id,
 				     SilcIDCacheEntry *ret)
 {
+  if (!cache)
+    return FALSE;
   return silc_hash_table_find_ext(cache->id_table, id, NULL, (void *)ret,
 				  NULL, NULL,
 				  silc_hash_id_compare_full,
@@ -327,6 +344,8 @@ SilcBool silc_idcache_find_by_id_one(SilcIDCache cache, void *id,
 SilcBool silc_idcache_find_by_context(SilcIDCache cache, void *context,
 				      SilcIDCacheEntry *ret)
 {
+  if (!cache)
+    return FALSE;
   return silc_hash_table_find(cache->context_table, context, NULL,
 			      (void *)ret);
 }
@@ -336,7 +355,7 @@ SilcBool silc_idcache_find_by_context(SilcIDCache cache, void *context,
 SilcBool silc_idcache_find_by_name(SilcIDCache cache, char *name,
 				   SilcList *ret_list)
 {
-  if (!ret_list)
+  if (!cache || !ret_list)
     return FALSE;
 
   if (!silc_hash_table_count(cache->name_table))
@@ -357,5 +376,7 @@ SilcBool silc_idcache_find_by_name(SilcIDCache cache, char *name,
 SilcBool silc_idcache_find_by_name_one(SilcIDCache cache, char *name,
 				       SilcIDCacheEntry *ret)
 {
+  if (!cache)
+    return FALSE;
   return silc_hash_table_find(cache->name_table, name, NULL, (void *)ret);
 }
