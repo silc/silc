@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -93,6 +93,10 @@ typedef SilcUInt16 SilcMessageFlags;
  *                                          SilcBool static_key,
  *                                          SilcCipher cipher,
  *                                          SilcHmac hmac,
+ *                                          unsigned char *sender_id,
+ *                                          SilcUInt32 sender_id_len,
+ *                                          unsigned char *receiver_id,
+ *                                          SilcUInt32 receiver_id_len,
  *                                          SilcBool check_mac);
  *
  * DESCRIPTION
@@ -104,6 +108,9 @@ typedef SilcUInt16 SilcMessageFlags;
  *    and `static_key' must be set to TRUE.  If the key is not static
  *    (Key Agreement was done for the key) then it MUST be FALSE.  For
  *    channel messages the `static_key' is ignored.
+ *
+ *    The `sender_id' and `receiver_id' are the IDs from the packet header
+ *    of the packet where this message payload was received.
  *
  *    This is usually used by the Message Payload interface itself but can
  *    be called by the appliation if separate decryption process is required.
@@ -118,6 +125,10 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
 				      SilcBool static_key,
 				      SilcCipher cipher,
 				      SilcHmac hmac,
+				      unsigned char *sender_id,
+				      SilcUInt32 sender_id_len,
+				      unsigned char *receiver_id,
+				      SilcUInt32 receiver_id_len,
 				      SilcBool check_mac);
 
 /****f* silccore/SilcMessageAPI/silc_message_payload_parse
@@ -131,6 +142,10 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
  *                               SilcBool static_key,
  *                               SilcCipher cipher,
  *                               SilcHmac hmac,
+ *                               unsigned char *sender_id,
+ *                               SilcUInt32 sender_id_len,
+ *                               unsigned char *receiver_id,
+ *                               SilcUInt32 receiver_id_len,
  *                               SilcStack stack,
  *                               SilcBool no_allocation,
  *                               SilcMessagePayload message);
@@ -151,6 +166,9 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
  *    then this assumes that the packet was decrypted with session keys
  *    (no private message key) and this merely decodes the payload.
  *
+ *    The `sender_id' and `receiver_id' are the IDs from the packet header
+ *    of the packet where this message payload was received.
+ *
  *    If the `message' is non-NULL then that pre-allocated context is
  *    used in parsing.  Same context is returned.  Otherwise new context
  *    is allocated and returned.  If the `stack' is non-NULL then memory
@@ -167,6 +185,10 @@ silc_message_payload_parse(unsigned char *payload,
 			   SilcBool static_key,
 			   SilcCipher cipher,
 			   SilcHmac hmac,
+			   unsigned char *sender_id,
+			   SilcUInt32 sender_id_len,
+			   unsigned char *receiver_id,
+			   SilcUInt32 receiver_id_len,
 			   SilcStack stack,
 			   SilcBool no_allocation,
 			   SilcMessagePayload message);
@@ -179,6 +201,8 @@ silc_message_payload_parse(unsigned char *payload,
  *                                          SilcUInt32 data_len,
  *                                          SilcUInt32 true_len,
  *                                          unsigned char *iv,
+ *                                          SilcID *sender_id,
+ *                                          SilcID *receiver_id,
  *                                          SilcCipher cipher,
  *                                          SilcHmac hmac);
  *
@@ -188,6 +212,8 @@ silc_message_payload_parse(unsigned char *payload,
  *    the `data' and `data_len'.  The `data_len' is the data length which
  *    is used to create MAC out of.  The `data' MUST have additional space
  *    after `true_len' bytes for the MAC which is appended to the data.
+ *    The `sender_id' is the ID message sender and `receiver_id' is ID of
+ *    message receiver.
  *
  *    This is usually used by the Message Payload interface itself but can
  *    be called by the appliation if separate encryption process is required.
@@ -200,6 +226,8 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
 				      SilcUInt32 data_len,
 				      SilcUInt32 true_len,
 				      unsigned char *iv,
+				      SilcID *sender_id,
+				      SilcID *receiver_id,
 				      SilcCipher cipher,
 				      SilcHmac hmac);
 
@@ -218,6 +246,8 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
  *                                           SilcPublicKey public_key,
  *                                           SilcPrivateKey private_key,
  *                                           SilcHash hash,
+ *                                           SilcID *sender_id,
+ *                                           SilcID *receiver_id,
  *                                           SilcBuffer buffer);
  *
  * DESCRIPTION
@@ -248,6 +278,9 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
  *    be included in the message.  The `private_message' and `hash' MUST
  *    be provided.  The `hash' SHOULD be SHA1.
  *
+ *    The `sender_id' is the ID message sender and `receiver_id' is ID of
+ *    message receiver.
+ *
  *    If the `buffer' is non-NULL then the payload will be encoded into
  *    that buffer.  The same buffer is returned.  Otherwise new buffer is
  *    allocated and returned.  The `buffer' will be automatically enlarged
@@ -265,6 +298,8 @@ SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
 				       SilcPublicKey public_key,
 				       SilcPrivateKey private_key,
 				       SilcHash hash,
+				       SilcID *sender_id,
+				       SilcID *receiver_id,
 				       SilcBuffer buffer);
 
 /****f* silccore/SilcMessageAPI/silc_message_payload_free

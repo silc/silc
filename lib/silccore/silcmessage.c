@@ -44,6 +44,8 @@ typedef struct {
   SilcHmac hmac;
   unsigned char *iv;
   SilcUInt16 payload_len;
+  SilcID *sid;
+  SilcID *rid;
 } SilcMessageEncode;
 
 
@@ -268,6 +270,10 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
 				      SilcBool static_key,
 				      SilcCipher cipher,
 				      SilcHmac hmac,
+				      unsigned char *sender_id,
+				      SilcUInt32 sender_id_len,
+				      unsigned char *receiver_id,
+				      SilcUInt32 receiver_id_len,
 				      SilcBool check_mac)
 {
   SilcUInt32 mac_len, iv_len = 0, block_len;
@@ -290,10 +296,23 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
     SILC_LOG_DEBUG(("Checking message MAC"));
     silc_hmac_init(hmac);
     silc_hmac_update(hmac, data, data_len - mac_len);
+    silc_hmac_update(hmac, sender_id, sender_id_len);
+    silc_hmac_update(hmac, receiver_id, receiver_id_len);
     silc_hmac_final(hmac, mac, &mac_len);
     if (silc_unlikely(memcmp(data + (data_len - mac_len), mac, mac_len))) {
+#if 0
       SILC_LOG_DEBUG(("Message MAC does not match"));
       return FALSE;
+#else
+      /* Check for old style message MAC.  Remove this check at some point. */
+      silc_hmac_init(hmac);
+      silc_hmac_update(hmac, data, data_len - mac_len);
+      silc_hmac_final(hmac, mac, &mac_len);
+      if (silc_unlikely(memcmp(data + (data_len - mac_len), mac, mac_len))) {
+	SILC_LOG_DEBUG(("Message MAC does not match"));
+#endif
+	return FALSE;
+      }
     }
     SILC_LOG_DEBUG(("MAC is Ok"));
   }
@@ -342,6 +361,10 @@ silc_message_payload_parse(unsigned char *payload,
 			   SilcBool static_key,
 			   SilcCipher cipher,
 			   SilcHmac hmac,
+			   unsigned char *sender_id,
+			   SilcUInt32 sender_id_len,
+			   unsigned char *receiver_id,
+			   SilcUInt32 receiver_id_len,
 			   SilcStack stack,
 			   SilcBool no_allocation,
 			   SilcMessagePayload message)
@@ -359,7 +382,9 @@ silc_message_payload_parse(unsigned char *payload,
   if (silc_likely(cipher)) {
     ret = silc_message_payload_decrypt(buffer.data, silc_buffer_len(&buffer),
 				       private_message, static_key,
-				       cipher, hmac, TRUE);
+				       cipher, hmac, sender_id,
+				       sender_id_len, receiver_id,
+				       receiver_id_len, TRUE);
     if (silc_unlikely(ret == FALSE))
       return NULL;
   }
@@ -447,16 +472,39 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
 				      SilcUInt32 data_len,
 				      SilcUInt32 true_len,
 				      unsigned char *iv,
+				      SilcID *sender_id,
+				      SilcID *receiver_id,
 				      SilcCipher cipher,
 				      SilcHmac hmac)
 {
+#if 0
+  unsigned char sid[32], rid[32];
+  SilcUInt32 sid_len = 0, rid_len = 0;
+#endif /* 0 */
+
   /* Encrypt payload of the packet */
   if (silc_unlikely(!silc_cipher_encrypt(cipher, data, data, data_len, iv)))
     return FALSE;
 
+#if 0 /* For now this is disabled.  Enable at 1.1.x or 1.2 at the latest. */
+  /* Encode IDs */
+  silc_id_id2str(&sender_id->u.client_id, SILC_ID_CLIENT, sid, sizeof(sid),
+		 &sid_len);
+  if (receiver_id->type == SILC_ID_CLIENT)
+    silc_id_id2str(&receiver_id->u.client_id, SILC_ID_CLIENT, rid,
+		   sizeof(rid), &rid_len);
+  else if (receiver_id->type == SILC_ID_CHANNEL)
+    silc_id_id2str(&receiver_id->u.channel_id, SILC_ID_CHANNEL, rid,
+		   sizeof(rid), &rid_len);
+#endif /* 0 */
+
   /* Compute the MAC of the encrypted message data */
   silc_hmac_init(hmac);
   silc_hmac_update(hmac, data, true_len);
+#if 0
+  silc_hmac_update(hmac, sid, sid_len);
+  silc_hmac_update(hmac, rid, rid_len);
+#endif /* 0 */
   silc_hmac_final(hmac, data + true_len, NULL);
 
   return TRUE;
@@ -480,7 +528,8 @@ static int silc_message_payload_encode_encrypt(SilcBuffer buffer,
   if (silc_unlikely(!silc_message_payload_encrypt(buffer->head,
 						  e->payload_len,
 						  silc_buffer_headlen(buffer),
-						  e->iv, e->cipher, e->hmac)))
+						  e->iv, e->sid, e->rid,
+						  e->cipher, e->hmac)))
     return -1;
 
   return mac_len;
@@ -531,6 +580,8 @@ SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
 				       SilcPublicKey public_key,
 				       SilcPrivateKey private_key,
 				       SilcHash hash,
+				       SilcID *sender_id,
+				       SilcID *receiver_id,
 				       SilcBuffer buffer)
 {
   SilcUInt32 pad_len = 0, mac_len = 0, iv_len = 0;
@@ -591,6 +642,8 @@ SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
   e.hash = hash;
   e.cipher = cipher;
   e.hmac = hmac;
+  e.sid = sender_id;
+  e.rid = receiver_id;
   e.iv = iv_len ? iv : NULL;
   e.payload_len = 6 + data_len + pad_len;
 
