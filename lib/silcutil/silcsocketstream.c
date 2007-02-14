@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 - 2006 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -261,20 +261,20 @@ SilcBool silc_socket_stream_get_info(SilcStream stream,
 
   if (sock)
     *sock = socket_stream->sock;
-  if (hostname) {
-    if (!socket_stream->hostname)
+  if (port) {
+    if (!socket_stream->port)
       return FALSE;
-    *hostname = socket_stream->hostname;
+    *port = socket_stream->port;
   }
   if (ip) {
     if (!socket_stream->ip)
       return FALSE;
     *ip = socket_stream->ip;
   }
-  if (port) {
-    if (!socket_stream->port)
+  if (hostname) {
+    if (!socket_stream->hostname)
       return FALSE;
-    *port = socket_stream->port;
+    *hostname = socket_stream->hostname;
   }
 
   return TRUE;
