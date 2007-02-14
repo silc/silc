@@ -34,8 +34,7 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
   SilcList types;
   SilcAsn1Tag type;
   SilcBuffer *retb;
-  SilcUInt32 *retc;
-  SilcAsn1Tag rtag;
+  SilcUInt32 *retc, rtag;
   const unsigned char *rdata;
   SilcUInt32 rdata_len, len = 0;
   SilcBool found = FALSE, rindef;
@@ -94,7 +93,7 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
   assert(type == SILC_ASN1_END);
 
   /* Decode the SEQUENCE or SET */
-  ret = silc_ber_decode(src, NULL, NULL, (SilcUInt32 *)&rtag, &rdata,
+  ret = silc_ber_decode(src, NULL, NULL, &rtag, &rdata,
 			&rdata_len, &rindef, &len);
   if (!ret) {
     SILC_LOG_DEBUG(("Error parsing BER block, malformed ASN.1 data"));
@@ -108,7 +107,7 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
 
   while (silc_buffer_len(src)) {
     /* Decode the BER data. */
-    ret = silc_ber_decode(src, NULL, NULL, (SilcUInt32 *)&rtag, &rdata,
+    ret = silc_ber_decode(src, NULL, NULL, &rtag, &rdata,
 			  &rdata_len, &rindef, &len);
     if (!ret) {
       SILC_LOG_DEBUG(("Error parsing BER block, malformed ASN.1 data"));
@@ -249,11 +248,11 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 		  SilcBool primitive)
 {
   unsigned char *ptr = src->data;
-  SilcAsn1Tag rtype, rtag;
+  SilcAsn1Tag rtype;
   SilcAsn1Options ropts;
   SilcBerClass rclass;
   SilcBerEncoding renc;
-  SilcUInt32 len = 0;
+  SilcUInt32 len = 0, rtag;
   SilcBool ret, indef, rindef, found = FALSE, choice = FALSE;
   const unsigned char *rdata;
   SilcUInt32 rdata_len;
@@ -317,7 +316,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 
     /* Now decode a BER encoded block from the source buffer.  It must be
        exactly the same user is expecting. */
-    ret = silc_ber_decode(src, &rclass, &renc, (SilcUInt32 *)&rtag, &rdata,
+    ret = silc_ber_decode(src, &rclass, &renc, &rtag, &rdata,
 			  &rdata_len, &rindef, &len);
     if (!ret) {
       SILC_LOG_DEBUG(("Error parsing BER block, malformed ASN.1 data"));

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2006 Pekka Riikonen
+  Copyright (C) 2003 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -154,13 +154,14 @@ const char *silc_asn1_tag_name(SilcAsn1Tag tag)
 #endif /* SILC_DEBUG */
 
 #ifdef SILC_DIST_TOOLKIT
+#ifdef SILC_DEBUG
 /* Dumps the ASN.1 data block into standard output (stdout). */
 
 SilcBool silc_asn1_dump(SilcAsn1 asn1, SilcBuffer src)
 {
   SilcBool ret = FALSE;
   SilcBerEncoding renc;
-  SilcAsn1Tag rtag;
+  SilcUInt32 rtag;
   const unsigned char *rdata;
   SilcUInt32 rdata_len, len = 0;
   SilcBool rindef;
@@ -169,7 +170,7 @@ SilcBool silc_asn1_dump(SilcAsn1 asn1, SilcBuffer src)
 
   while (silc_buffer_len(src)) {
     /* Decode the BER block */
-    ret = silc_ber_decode(src, NULL, &renc, (SilcUInt32 *)&rtag, &rdata,
+    ret = silc_ber_decode(src, NULL, &renc, &rtag, &rdata,
 			  &rdata_len, &rindef, &len);
     if (!ret) {
       SILC_LOG_DEBUG(("Error parsing BER block, malformed ASN.1 data"));
@@ -190,4 +191,5 @@ SilcBool silc_asn1_dump(SilcAsn1 asn1, SilcBuffer src)
 
   return TRUE;
 }
+#endif /* SILC_DEBUG */
 #endif /* SILC_DIST_TOOLKIT */
