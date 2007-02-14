@@ -313,6 +313,7 @@ static void silc_sftp_call_request(SilcSFTPClient sftp,
     break;
 
   default:
+    SILC_LOG_DEBUG(("Unknown request type %d", req->type));
     break;
   }
 
@@ -329,7 +330,7 @@ static void silc_sftp_client_io(SilcStream stream, SilcStreamStatus status,
 				void *context)
 {
   SilcSFTPClient sftp = context;
-  unsigned char inbuf[30720];
+  unsigned char inbuf[33792];
   SilcBufferStruct packet;
   int ret;
 
@@ -346,6 +347,8 @@ static void silc_sftp_client_io(SilcStream stream, SilcStreamStatus status,
 	sftp->error(context, SILC_SFTP_STATUS_NO_CONNECTION, sftp->context);
       return;
     }
+
+    SILC_LOG_DEBUG(("Read %d bytes", ret));
 
     /* Now process the SFTP packet */
     silc_buffer_set(&packet, inbuf, ret);
@@ -455,7 +458,7 @@ void silc_sftp_client_receive_process(SilcSFTP context, SilcBuffer buffer)
 
   /* Parse the packet */
   type = silc_sftp_packet_decode(buffer, &payload, &payload_len);
-  if (!type)
+  if (type <= 0)
     return;
 
   silc_buffer_set(&buf, payload, payload_len);

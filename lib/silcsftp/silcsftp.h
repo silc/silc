@@ -426,8 +426,8 @@ SilcSFTP silc_sftp_client_start(SilcStream stream,
  * DESCRIPTION
  *
  *    Shutdown's the SFTP client.  The caller is responsible of closing
- *    the associated socket connection.  The SFTP context is freed and is
- *    invalid after this function returns.
+ *    the associated stream.  The SFTP context is freed and is invalid after
+ *    this function returns.
  *
  ***/
 void silc_sftp_client_shutdown(SilcSFTP sftp);
@@ -889,9 +889,9 @@ SilcSFTP silc_sftp_server_start(SilcStream stream,
  *
  * DESCRIPTION
  *
- *    Shutdown's the SFTP server.  The caller is responsible of closing
- *    the associated socket connection.  The SFTP context is freed and is
- *    invalid after this function returns.
+ *    Shutdown the SFTP server.  The caller is responsible of closing the
+ *    associated stream.  The SFTP context is freed and is invalid after
+ *    this function returns.
  *
  ***/
 void silc_sftp_server_shutdown(SilcSFTP sftp);
@@ -943,7 +943,8 @@ typedef enum {
  *
  *    This structure includes the monitor type specific data.  The
  *    application can check what the client has requested from this
- *    structure.
+ *    structure.  See the comments below what data is available for what
+ *    monitor type.
  *
  * SOURCE
  */

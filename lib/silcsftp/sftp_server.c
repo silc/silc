@@ -90,7 +90,7 @@ static void silc_sftp_server_io(SilcStream stream, SilcStreamStatus status,
 				void *context)
 {
   SilcSFTPServer sftp = context;
-  unsigned char inbuf[30720];
+  unsigned char inbuf[33792];
   SilcBufferStruct packet;
   int ret;
 
@@ -427,7 +427,7 @@ static void silc_sftp_server_receive_process(SilcSFTP sftp, SilcBuffer buffer)
 
   /* Parse the packet */
   type = silc_sftp_packet_decode(buffer, &payload, &payload_len);
-  if (!type)
+  if (type <= 0)
     return;
 
   silc_buffer_set(&buf, payload, payload_len);

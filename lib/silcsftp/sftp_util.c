@@ -90,7 +90,8 @@ SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet,
 
 /* Decodes the SFTP packet data `packet' and return the SFTP packet type.
    The payload of the packet is returned to the `payload' pointer. Returns
-   0 if error occurred during decoding. */
+   0 if error occurred during decoding and -1 if partial packet was
+   received. */
 
 SilcSFTPPacket silc_sftp_packet_decode(SilcBuffer packet,
 				       unsigned char **payload,
@@ -111,7 +112,7 @@ SilcSFTPPacket silc_sftp_packet_decode(SilcBuffer packet,
     return 0;
 
   if (len > (silc_buffer_len(packet) - 5))
-    return 0;
+    return -1;
 
   silc_buffer_pull(packet, 5);
   ret = silc_buffer_unformat(packet,
