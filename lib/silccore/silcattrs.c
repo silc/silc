@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2006 Pekka Riikonen
+  Copyright (C) 2002 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -195,6 +195,27 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
       }
       break;
 
+    case SILC_ATTRIBUTE_PHONE_NUMBER:
+      {
+	SilcAttributeObjPN *pn = object;
+	if (object_size != sizeof(*pn))
+	  return NULL;
+	if (!pn->number || strlen(pn->number) < 5)
+	  return NULL;
+	tmpbuf = silc_buffer_alloc(0);
+	if (!tmpbuf)
+	  return NULL;
+	if (silc_buffer_format(tmpbuf,
+			       SILC_STR_UI_INT(pn->format),
+			       SILC_STR_UI_SHORT(strlen(pn->number)),
+			       SILC_STR_UI16_STRING(pn->number),
+			       SILC_STR_END) < 0)
+	  return NULL;
+	object = tmpbuf->data;
+	object_size = silc_buffer_len(tmpbuf);
+      }
+      break;
+
     case SILC_ATTRIBUTE_USER_PUBLIC_KEY:
     case SILC_ATTRIBUTE_SERVER_PUBLIC_KEY:
       {
@@ -353,7 +374,8 @@ SilcBuffer silc_attribute_payload_encode_data(SilcBuffer attrs,
 
   len = 4 + (SilcUInt16)data_len;
   buffer = silc_buffer_realloc(buffer,
-			       (buffer ? silc_buffer_truelen(buffer) + len : len));
+			       (buffer ? silc_buffer_truelen(buffer) +
+				len : len));
   if (!buffer)
     return NULL;
   silc_buffer_pull(buffer, silc_buffer_len(buffer));
@@ -606,6 +628,28 @@ SilcBool silc_attribute_get_object(SilcAttributePayload payload,
       if (res == -1)
 	break;
       dev->type = type;
+      ret = TRUE;
+    }
+    break;
+
+  case SILC_ATTRIBUTE_PHONE_NUMBER:
+    {
+      SilcAttributeObjPN *pn = object;
+      SilcBufferStruct buffer;
+      SilcUInt32 pn_format;
+      int res;
+      if (object_size != sizeof(*pn))
+	break;
+      silc_buffer_set(&buffer, (unsigned char *)payload->data,
+		      payload->data_len);
+      res =
+	silc_buffer_unformat(&buffer,
+			     SILC_STR_UI_INT(&pn_format),
+			     SILC_STR_UI16_STRING_ALLOC(&pn->number),
+			     SILC_STR_END);
+      if (res == -1)
+	break;
+      pn->format = pn_format;
       ret = TRUE;
     }
     break;

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2006 Pekka Riikonen
+  Copyright (C) 2002 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -83,6 +83,7 @@ typedef SilcUInt8 SilcAttribute;
 #define SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE 14  /* SilcAttributeObjPk */
 #define SILC_ATTRIBUTE_SERVER_DIGITAL_SIGNATURE 15 /* SilcAttributeObjPk */
 #define SILC_ATTRIBUTE_USER_ICON	      16  /* SilcMime */
+#define SILC_ATTRIBUTE_PHONE_NUMBER	      17  /* SilcAttributeObjPN */
 /***/
 
 /* Maximum length of attribute request packet */
@@ -180,6 +181,25 @@ typedef enum {
   SILC_ATTRIBUTE_DEVICE_PDA           = 2,	  /* device is PDA */
   SILC_ATTRIBUTE_DEVICE_TERMINAL      = 3,	  /* device is terminal */
 } SilcAttributeDevice;
+/***/
+
+/****d* silccore/SilcAttributesAPI/SilcAttributePNFormat
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcAttributePNFormat;
+ *
+ * DESCRIPTION
+ *
+ *    The defined phone number formats.
+ *
+ * SOURCE
+ */
+typedef enum {
+  SILC_ATTRIBUTE_NUMBER_ITU_E164        = 0,	  /* ITU E.164 */
+  SILC_ATTRIBUTE_NUMBER_ITU_E123_PHONE  = 1,	  /* ITU E.123 */
+  SILC_ATTRIBUTE_NUMBER_ENUM            = 2,	  /* ENUM, RFC 3761 */
+} SilcAttributePNFormat;
 /***/
 
 /****f* silccore/SilcAttributesAPI/silc_attribute_payload_alloc
@@ -473,6 +493,25 @@ typedef struct SilcAttributeObjPkStruct {
 				   encoding depends of the `type'. */
   SilcUInt32 data_len;		/* data length */
 } SilcAttributeObjPk;
+/***/
+
+/****s* silccore/SilcAttributesAPI/SilcAttributeObjPN
+ *
+ * NAME
+ *
+ *    typedef struct { ... } SilcAttributeObjPN;
+ *
+ * DESCRIPTION
+ *
+ *    SILC_ATTRIBUTE_PHONE_NUMBER type object.  The caller must free the
+ *    phone number string inside the structure.
+ *
+ * SOURCE
+ */
+typedef struct SilcAttributeObjPNStruct {
+  SilcAttributePNFormat format;	/* Phone number format */
+  char *number;			/* Phone number */
+} SilcAttributeObjPN;
 /***/
 
 /****f* silccore/SilcAttributesAPI/silc_attribute_get_object
