@@ -390,7 +390,7 @@ SilcUInt16 silc_client_command_call(SilcClient client,
   char *arg;
 
   if (!conn) {
-    client->internal->ops->say(client, NULL, SILC_CLIENT_MESSAGE_ERROR,
+    client->internal->ops->say(client, NULL, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
       "You are not connected to a server, please connect to server");
     return 0;
   }
@@ -670,7 +670,7 @@ SILC_FSM_STATE(silc_client_command_whois)
     SilcPublicKey pk;
 
     if (!silc_pkcs_load_public_key(pubkey, &pk)) {
-      SAY(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+      SAY(client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
 	  "Could not load public key %s, check the filename",
 	  pubkey);
       COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
@@ -1349,7 +1349,7 @@ SILC_FSM_STATE(silc_client_command_join)
 	}
 	if (!silc_load_key_pair(cmd->argv[i + 1], cmd->argv[i + 2], pass,
 				&pubkey, &privkey)) {
-	  SAY(conn->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	  SAY(conn->client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
 	      "Could not load key pair, check your arguments");
 	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	  goto out;
@@ -1769,7 +1769,7 @@ SILC_FSM_STATE(silc_client_command_cmode)
 	    pass = cmd->argv[5];
 	  if (!silc_load_key_pair(cmd->argv[3], cmd->argv[4], pass,
 				  &pubkey, &privkey)) {
-	    SAY(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	    SAY(client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
 		"Could not load key pair, check your arguments");
 	    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	    goto out;
@@ -1821,7 +1821,7 @@ SILC_FSM_STATE(silc_client_command_cmode)
 	  if (cmd->argv[k][0] == '+')
 	    chadd = TRUE;
 	  if (!silc_pkcs_load_public_key(cmd->argv[k] + 1, &chpk)) {
-	    SAY(conn->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	    SAY(conn->client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
 		"Could not load public key %s, check the filename",
 		cmd->argv[k]);
 	    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
@@ -1983,7 +1983,7 @@ SILC_FSM_STATE(silc_client_command_cumode)
 	    pass = cmd->argv[6];
 	  if (!silc_load_key_pair(cmd->argv[4], cmd->argv[5], pass,
 				  &pubkey, &privkey)) {
-	    SAY(conn->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	    SAY(conn->client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
 		"Could not load key pair, check your arguments");
 	    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 	    goto out;
@@ -2436,7 +2436,7 @@ SILC_FSM_STATE(silc_client_command_watch)
     SilcBuffer buffer;
 
     if (!silc_pkcs_load_public_key(pubkey, &pk)) {
-      SAY(conn->client, conn, SILC_CLIENT_MESSAGE_ERROR,
+      SAY(conn->client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
 	  "Could not load public key %s, check the filename", pubkey);
       COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
       goto out;

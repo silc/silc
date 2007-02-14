@@ -873,8 +873,11 @@ SilcBool silc_client_channel_save_public_keys(SilcChannelEntry channel,
     return FALSE;
 
   if (!channel->channel_pubkeys) {
-    channel->channel_pubkeys = chpks;
-    return TRUE;
+    channel->channel_pubkeys = silc_dlist_init();
+    if (!channel->channel_pubkeys) {
+      silc_argument_list_free(chpks, SILC_ARGUMENT_PUBLIC_KEY);
+      return FALSE;
+    }
   }
 
   silc_dlist_start(chpks);

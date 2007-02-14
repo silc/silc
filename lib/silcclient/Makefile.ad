@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2006 Pekka Riikonen
+#  Copyright (C) 2000 - 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -29,12 +29,16 @@ libsilcclient_la_SOURCES = 		\
 	client_notify.c 		\
 	client_attrs.c			\
 	client_keyagr.c			\
+	client_listener.c		\
+	client_ftp.c			\
 	command.c	 		\
 	command_reply.c
 
 #ifdef SILC_DIST_TOOLKIT
-include_HEADERS= 	\
-	silcclient.h
+include_HEADERS= 		\
+	client.h		\
+	silcclient.h		\
+	silcclient_entry.h
 
 SILC_EXTRA_DIST = client_ops_example.c
 #endif SILC_DIST_TOOLKIT

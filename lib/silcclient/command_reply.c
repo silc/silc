@@ -42,7 +42,7 @@ do {								\
   SILC_LOG_DEBUG(("%s", silc_get_command_name(cmd->cmd)));		\
   if (cmd->error != SILC_STATUS_OK) {					\
     if (cmd->verbose)							\
-      SAY(cmd->conn->client, cmd->conn, SILC_CLIENT_MESSAGE_ERROR,	\
+      SAY(cmd->conn->client, cmd->conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR, \
 	  msg "%s", silc_get_status_message(cmd->error));		\
     ERROR_CALLBACK(cmd->error);						\
     silc_client_command_process_error(cmd, state_context, cmd->error);	\
@@ -199,7 +199,10 @@ SILC_FSM_STATE(silc_client_command_reply)
     return SILC_FSM_FINISH;
   }
 
-  /* Signal command thread that command reply has arrived */
+  /* Signal command thread that command reply has arrived.  We continue
+     command reply processing synchronously because we save the command
+     payload into state context.  No other reply may arrive to this command
+     while we're processing this reply. */
   silc_fsm_set_state_context(&cmd->thread, payload);
   silc_fsm_next(&cmd->thread, silc_client_command_reply_process);
   silc_fsm_continue_sync(&cmd->thread);
@@ -1217,13 +1220,12 @@ SILC_FSM_STATE(silc_client_command_reply_join)
 
     /* Get client entry */
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
-    if (!client_entry || !client_entry->internal.valid)
-      continue;
-
-    /* Join client to the channel */
-    silc_rwlock_wrlock(client_entry->internal.lock);
-    silc_client_add_to_channel(client, conn, channel, client_entry, mode);
-    silc_rwlock_unlock(client_entry->internal.lock);
+    if (client_entry && client_entry->internal.valid) {
+      /* Join client to the channel */
+      silc_rwlock_wrlock(client_entry->internal.lock);
+      silc_client_add_to_channel(client, conn, channel, client_entry, mode);
+      silc_rwlock_unlock(client_entry->internal.lock);
+    }
     silc_client_unref_client(client, conn, client_entry);
 
     if (!silc_buffer_pull(&client_id_list, idp_len)) {
@@ -1241,7 +1243,7 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   if (hmac) {
     if (!silc_hmac_alloc(hmac, NULL, &channel->internal.hmac)) {
       if (cmd->verbose)
-	SAY(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+	SAY(client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
 	    "Cannot join channel: Unsupported HMAC `%s'", hmac);
       ERROR_CALLBACK(SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
       silc_rwlock_unlock(channel->internal.lock);

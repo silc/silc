@@ -29,6 +29,8 @@
 #include "client_channel.h"
 #include "client_notify.h"
 #include "client_keyagr.h"
+#include "client_ftp.h"
+#include "client_listener.h"
 
 /****************************** Definitions *********************************/
 
@@ -173,5 +175,15 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn);
 void silc_client_fsm_destructor(SilcFSM fsm, void *fsm_context,
 				void *destructor_context);
 void silc_client_command_free(SilcClientCommandContext cmd);
+SilcClientConnection
+silc_client_add_connection(SilcClient client,
+			   SilcConnectionType conn_type,
+			   SilcBool connect,
+			   SilcClientConnectionParams *params,
+			   SilcPublicKey public_key,
+			   SilcPrivateKey private_key,
+			   char *remote_host, int port,
+			   SilcClientConnectCallback callback,
+			   void *context);
 
 #endif /* CLIENT_INTERNAL_H */

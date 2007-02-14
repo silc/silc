@@ -27,16 +27,10 @@
 struct SilcClientKeyAgreementStruct {
   SilcClient client;			  /* Client */
   SilcClientConnection conn;		  /* Server connection */
+  SilcClientListener listener;	          /* Listener */
   SilcKeyAgreementCallback completion;	  /* Key agreement completion */
   void *context;			  /* User context */
-  SilcClientConnectionParams params;      /* Connection parameters */
-  SilcPublicKey public_key;		  /* Responder public key */
-  SilcPrivateKey private_key;		  /* Responder private key */
-  SilcNetListener tcp_listener;	          /* TCP listener */
-  SilcPacketStream udp_listener;	  /* UDP listener */
-  SilcPacketStream stream;  		  /* Remote connection (TCP or UDP) */
-  SilcAsyncOperation op;	          /* SKE operation */
-  SilcSKE ske;				  /* SKE */
+  SilcAsyncOperation op;		  /* Async operation, initiator */
 };
 
 /************************ Static utility functions **************************/
@@ -49,21 +43,13 @@ static void silc_client_keyagr_free(SilcClient client,
 {
   SilcClientKeyAgreement ke = client_entry->internal.ke;
 
+  silc_client_listener_free(ke->listener);
   silc_schedule_task_del_by_context(conn->internal->schedule, client_entry);
-
   if (ke->op)
     silc_async_abort(ke->op, NULL, NULL);
-  if (ke->ske)
-    silc_ske_free(ke->ske);
-  if (ke->tcp_listener)
-    silc_net_close_listener(ke->tcp_listener);
-  silc_packet_stream_destroy(ke->stream);
-  silc_packet_stream_destroy(ke->udp_listener);
-
   client_entry->internal.ke = NULL;
   client_entry->internal.prv_resp = FALSE;
   silc_client_unref_client(client, conn, client_entry);
-
   silc_free(ke);
 }
 
@@ -98,198 +84,12 @@ static void silc_client_keyagr_resolved(SilcClient client,
   SILC_FSM_CALL_CONTINUE(context);
 }
 
-/* Called after application has verified remote host's public key.  Responder
-   function. */
+/* Key exchange completion callback.  Called after connected to remote host
+   and performed key exchange, when we are initiator.  As responder, this is
+   called after the remote has connected to us and have performed the key
+   exchange. */
 
-static void silc_client_keyagr_verify_key_cb(SilcBool success, void *context)
-{
-  SilcVerifyKeyContext verify = context;
-
-  /* Call the completion callback back to the SKE */
-  verify->completion(verify->ske, success ? SILC_SKE_STATUS_OK :
-		     SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY,
-		     verify->completion_context);
-
-  silc_free(verify);
-}
-
-/* Verify remote host's public key.  Responder function. */
-
-static void silc_client_keyagr_verify_key(SilcSKE ske,
-					  SilcPublicKey public_key,
-					  void *context,
-					  SilcSKEVerifyCbCompletion completion,
-					  void *completion_context)
-{
-  SilcClientEntry client_entry = context;
-  SilcClientKeyAgreement ke = client_entry->internal.ke;
-  SilcClientConnection conn = ke->conn;
-  SilcClient client = conn->client;
-  SilcVerifyKeyContext verify;
-
-  /* If we provided repository for SKE and we got here the key was not
-     found from the repository. */
-  if (ke->params.repository && !ke->params.verify_notfound) {
-    completion(ske, SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY,
-	       completion_context);
-    return;
-  }
-
-  SILC_LOG_DEBUG(("Verify remote public key"));
-
-  verify = silc_calloc(1, sizeof(*verify));
-  if (!verify) {
-    completion(ske, SILC_SKE_STATUS_UNSUPPORTED_PUBLIC_KEY,
-	       completion_context);
-    return;
-  }
-  verify->ske = ske;
-  verify->completion = completion;
-  verify->completion_context = completion_context;
-
-  /* Verify public key in application */
-  client->internal->ops->verify_public_key(client, conn,
-					   SILC_CONN_CLIENT, public_key,
-					   silc_client_keyagr_verify_key_cb,
-					   verify);
-}
-
-/* Key exchange protocol completion callback.  Responder function. */
-
-static void silc_client_keyagr_completion(SilcSKE ske,
-					  SilcSKEStatus status,
-					  SilcSKESecurityProperties prop,
-					  SilcSKEKeyMaterial keymat,
-					  SilcSKERekeyMaterial rekey,
-					  void *context)
-{
-  SilcClientEntry client_entry = context;
-  SilcClientKeyAgreement ke = client_entry->internal.ke;
-  SilcClientConnection conn = ke->conn;
-  SilcClient client = conn->client;
-
-  if (status != SILC_SKE_STATUS_OK) {
-    /* Key exchange failed */
-    ke->completion(client, conn, client_entry,
-		   status == SILC_SKE_STATUS_TIMEOUT ?
-		   SILC_KEY_AGREEMENT_TIMEOUT :
-		   SILC_KEY_AGREEMENT_FAILURE, NULL, ke->context);
-    silc_client_keyagr_free(client, conn, client_entry);
-    return;
-  }
-
-  /* Returns the negotiated key material to application.  Key agreement
-     was successful. */
-  ke->completion(client, conn, client_entry, SILC_KEY_AGREEMENT_OK,
-		 keymat, ke->context);
-
-  silc_client_keyagr_free(client, conn, client_entry);
-}
-
-/* Starts key agreement as responder. */
-
-static void silc_client_process_key_agreement(SilcClient client,
-					      SilcClientConnection conn,
-					      SilcClientEntry client_entry)
-{
-  SilcClientKeyAgreement ke = client_entry->internal.ke;
-  SilcSKEParamsStruct params;
-
-  SILC_LOG_DEBUG(("Processing key agrement %p session", ke));
-
-  /* Allocate SKE */
-  ke->ske = silc_ske_alloc(client->rng, conn->internal->schedule,
-			   ke->params.repository, ke->public_key,
-			   ke->private_key, client_entry);
-  if (!ke->ske) {
-    ke->completion(client, conn, client_entry, SILC_KEY_AGREEMENT_NO_MEMORY,
-		   NULL, ke->context);
-    silc_client_keyagr_free(client, conn, client_entry);
-    return;
-  }
-
-  /* Set SKE parameters */
-  params.version = client->internal->silc_client_version;
-  params.flags = SILC_SKE_SP_FLAG_MUTUAL;
-  if (ke->params.udp) {
-    params.flags |= SILC_SKE_SP_FLAG_IV_INCLUDED;
-    params.session_port = ke->params.local_port;
-  }
-
-  silc_ske_set_callbacks(ke->ske, silc_client_keyagr_verify_key,
-			 silc_client_keyagr_completion, client_entry);
-
-  /* Start key exchange as responder */
-  ke->op = silc_ske_responder(ke->ske, ke->stream, &params);
-  if (!ke->op) {
-    ke->completion(client, conn, client_entry, SILC_KEY_AGREEMENT_ERROR,
-		   NULL, ke->context);
-    silc_client_keyagr_free(client, conn, client_entry);
-  }
-}
-
-/* TCP network listener callback.  Accepts new key agreement connection.
-   Responder function. */
-
-static void silc_client_tcp_accept(SilcNetStatus status,
-				   SilcStream stream,
-				   void *context)
-{
-  SilcClientEntry client_entry = context;
-  SilcClientKeyAgreement ke = client_entry->internal.ke;
-
-  /* Create packet stream */
-  ke->stream = silc_packet_stream_create(ke->client->internal->packet_engine,
-					 ke->conn->internal->schedule, stream);
-  if (!ke->stream) {
-    silc_stream_destroy(stream);
-    return;
-  }
-
-  /* Process session */
-  silc_client_process_key_agreement(ke->client, ke->conn, client_entry);
-}
-
-/* UDP network listener callback.  Accepts new key agreement session.
-   Responder function. */
-
-static SilcBool silc_client_udp_accept(SilcPacketEngine engine,
-                                       SilcPacketStream stream,
-                                       SilcPacket packet,
-                                       void *callback_context,
-                                       void *stream_context)
-{
-  SilcClientEntry client_entry = callback_context;
-  SilcClientKeyAgreement ke = client_entry->internal.ke;
-  SilcUInt16 port;
-  const char *ip;
-
-  /* We want only key exchange packet.  Eat other packets so that default
-     packet callback doesn't get them. */
-  if (packet->type != SILC_PACKET_KEY_EXCHANGE) {
-    silc_packet_free(packet);
-    return TRUE;
-  }
-
-  /* Create packet stream for this remote UDP session */
-  if (!silc_packet_get_sender(packet, &ip, &port)) {
-    silc_packet_free(packet);
-    return TRUE;
-  }
-  ke->stream = silc_packet_stream_add_remote(stream, ip, port, packet);
-  if (!ke->stream) {
-    silc_packet_free(packet);
-    return TRUE;
-  }
-
-  /* Process session */
-  silc_client_process_key_agreement(ke->client, ke->conn, client_entry);
-  return TRUE;
-}
-
-/* Client connect completion callback.  Initiator function. */
-
-static void silc_client_keyagr_perform_cb(SilcClient client,
+static void silc_client_keyagr_completion(SilcClient client,
 					  SilcClientConnection conn,
 					  SilcClientConnectionStatus status,
 					  SilcStatus error,
@@ -324,18 +124,12 @@ static void silc_client_keyagr_perform_cb(SilcClient client,
     break;
   }
 
-  /* Close the created connection */
+  /* Close the connection */
   if (conn)
     silc_client_close_connection(ke->client, conn);
 
   silc_client_keyagr_free(ke->client, ke->conn, client_entry);
 }
-
-/* Packet stream callbacks */
-static SilcPacketCallbacks silc_client_keyagr_stream_cb =
-{
-  silc_client_udp_accept, NULL, NULL
-};
 
 /*************************** Key Agreement API ******************************/
 
@@ -356,7 +150,6 @@ void silc_client_send_key_agreement(SilcClient client,
   SilcBuffer buffer;
   SilcUInt16 port = 0, protocol = 0;
   char *local_ip = NULL;
-  SilcStream stream;
 
   SILC_LOG_DEBUG(("Sending key agreement"));
 
@@ -377,7 +170,8 @@ void silc_client_send_key_agreement(SilcClient client,
     return;
   }
 
-  /* If local IP is provided, create listener */
+  /* If local IP is provided, create listener.  If this is not provided,
+     we'll just send empty key agreement payload */
   if (params && (params->local_ip || params->bind_ip)) {
     ke = silc_calloc(1, sizeof(*ke));
     if (!ke) {
@@ -386,70 +180,15 @@ void silc_client_send_key_agreement(SilcClient client,
       return;
     }
 
-    /* Create network listener */
-    if (params->udp) {
-      /* UDP listener */
-      stream = silc_net_udp_connect(params->bind_ip ? params->bind_ip :
-				    params->local_ip, params->local_port,
-				    NULL, 0, conn->internal->schedule);
-      ke->udp_listener =
-	silc_packet_stream_create(client->internal->packet_engine,
-				  conn->internal->schedule, stream);
-      if (!ke->udp_listener) {
-	client->internal->ops->say(
-		     client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		     "Cannot create UDP listener on %s on port %d: %s",
-		     params->bind_ip ? params->bind_ip :
-		     params->local_ip, params->local_port, strerror(errno));
-	completion(client, conn, client_entry, SILC_KEY_AGREEMENT_ERROR,
-		   NULL, context);
-	if (stream)
-	  silc_stream_destroy(stream);
-	silc_free(ke);
-	return;
-      }
-      silc_packet_stream_link(ke->udp_listener,
-			      &silc_client_keyagr_stream_cb,
-			      client_entry, 1000000,
-			      SILC_PACKET_ANY, -1);
-
-      port = params->local_port;
-      if (!port) {
-	/* Get listener port */
-	SilcSocket sock;
-	silc_socket_stream_get_info(stream, &sock, NULL, NULL, NULL);
-	port = silc_net_get_local_port(sock);
-      }
-    } else {
-      /* TCP listener */
-      ke->tcp_listener =
-	silc_net_tcp_create_listener(params->bind_ip ?
-				     (const char **)&params->bind_ip :
-				     (const char **)&params->local_ip,
-				     1, params->local_port, FALSE, FALSE,
-				     conn->internal->schedule,
-				     silc_client_tcp_accept,
-				     client_entry);
-      if (!ke->tcp_listener) {
-	client->internal->ops->say(
-		     client, conn, SILC_CLIENT_MESSAGE_ERROR,
-		     "Cannot create listener on %s on port %d: %s",
-		     params->bind_ip ? params->bind_ip :
-		     params->local_ip, params->local_port, strerror(errno));
-	completion(client, conn, client_entry, SILC_KEY_AGREEMENT_ERROR,
-		   NULL, context);
-	silc_free(ke);
-	return;
-      }
-
-      port = params->local_port;
-      if (!port) {
-	/* Get listener port */
-	SilcUInt16 *ports;
-	ports = silc_net_listener_get_port(ke->tcp_listener, NULL);
-	port = ports[0];
-	silc_free(ports);
-      }
+    /* Create listener */
+    ke->listener = silc_client_listener_add(client, conn->internal->schedule,
+					    params, public_key, private_key,
+					    silc_client_keyagr_completion,
+					    client_entry);
+    if (!ke->listener) {
+      completion(client, conn, client_entry, SILC_KEY_AGREEMENT_NO_MEMORY,
+		 NULL, context);
+      return;
     }
 
     local_ip = params->local_ip;
@@ -459,9 +198,6 @@ void silc_client_send_key_agreement(SilcClient client,
     ke->conn = conn;
     ke->completion = completion;
     ke->context = context;
-    ke->params = *params;
-    ke->public_key = public_key;
-    ke->private_key = private_key;
     silc_client_ref_client(client, conn, client_entry);
     client_entry->internal.ke = ke;
     client_entry->internal.prv_resp = TRUE;
@@ -541,10 +277,11 @@ void silc_client_perform_key_agreement(SilcClient client,
     params->no_authentication = TRUE;
 
   /* Connect to the remote client.  Performs key exchange automatically. */
-  if (!silc_client_connect_to_client(client, params, public_key,
-				     private_key, hostname, port,
-				     silc_client_keyagr_perform_cb,
-				     client_entry)) {
+  ke->op = silc_client_connect_to_client(client, params, public_key,
+					 private_key, hostname, port,
+					 silc_client_keyagr_completion,
+					 client_entry);
+  if (!ke->op) {
     completion(client, conn, client_entry, SILC_KEY_AGREEMENT_ERROR,
 	       NULL, context);
     silc_client_keyagr_free(client, conn, client_entry);
@@ -598,10 +335,11 @@ silc_client_perform_key_agreement_stream(SilcClient client,
     params->no_authentication = TRUE;
 
   /* Perform key exchange protocol */
-  if (!silc_client_key_exchange(client, params, public_key,
-				private_key, stream, SILC_CONN_CLIENT,
-				silc_client_keyagr_perform_cb,
-				client_entry)) {
+  ke->op = silc_client_key_exchange(client, params, public_key,
+				    private_key, stream, SILC_CONN_CLIENT,
+				    silc_client_keyagr_completion,
+				    client_entry);
+  if (!ke->op) {
     completion(client, conn, client_entry, SILC_KEY_AGREEMENT_ERROR,
 	       NULL, context);
     silc_client_keyagr_free(client, conn, client_entry);

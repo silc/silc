@@ -1410,6 +1410,7 @@ SILC_FSM_STATE(silc_client_notify_server_signoff)
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry;
+  SilcServerEntry server_entry = NULL;
   SilcDList clients;
   SilcID id;
   int i;
@@ -1419,6 +1420,13 @@ SILC_FSM_STATE(silc_client_notify_server_signoff)
   clients = silc_dlist_init();
   if (!clients)
     goto out;
+
+  /* Get server ID */
+  if (!silc_argument_get_decoded(args, 1, SILC_ARGUMENT_ID, &id, NULL))
+    goto out;
+
+  /* Get server, in case we have it cached */
+  server_entry = silc_client_get_server_by_id(client, conn, &id.u.server_id);
 
   for (i = 1; i < silc_argument_get_arg_num(args); i++) {
     /* Get Client ID */
@@ -1431,9 +1439,8 @@ SILC_FSM_STATE(silc_client_notify_server_signoff)
       silc_dlist_add(clients, client_entry);
   }
 
-  /* Notify application.  We don't keep server entries so the server
-     entry is returned as NULL. The client's are returned as list. */
-  NOTIFY(client, conn, type, NULL, clients);
+  /* Notify application. */
+  NOTIFY(client, conn, type, server_entry, clients);
 
   /* Delete the clients */
   silc_dlist_start(clients);
@@ -1445,6 +1452,7 @@ SILC_FSM_STATE(silc_client_notify_server_signoff)
 
  out:
   /** Notify processed */
+  silc_client_unref_server(client, conn, server_entry);
   silc_client_list_free(client, conn, clients);
   silc_fsm_next(fsm, silc_client_notify_processed);
   return SILC_FSM_CONTINUE;

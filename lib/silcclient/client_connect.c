@@ -232,7 +232,7 @@ static void silc_client_ke_completion(SilcSKE ske,
   SILC_LOG_DEBUG(("Key Exchange completed"));
 
   /* Key exchange done */
-  SILC_FSM_CALL_CONTINUE(fsm);
+  SILC_FSM_CALL_CONTINUE_SYNC(fsm);
 }
 
 /* Rekey protocol completion callback */

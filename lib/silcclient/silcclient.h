@@ -22,7 +22,7 @@
  * DESCRIPTION
  *
  * This interface defines the SILC Client Library API for the application.
- * The Client Library is a full features SILC client without a user interface.
+ * The Client Library is a full featured SILC client without user interface.
  * A simple interface called SILC Client Operations (SilcClientOperations)
  * is provided for applications to implmeent the necessary functions to use
  * the client library.  The silcclient.h header file includes client library
@@ -37,7 +37,7 @@
  * multiple connections in one SilcClient.  Connections can be created to
  * servers and other clients.
  *
- * The Client Library support multiple threads and is threads safe is used
+ * The Client Library support multiple threads and is threads safe if used
  * correctly.  Messages can be sent from multiple threads without any
  * locking.  Messages however are always received only in one thread unless
  * message waiting (see silc_client_private_message_wait as an example) is
@@ -158,6 +158,13 @@ typedef void (*SilcClientStopped)(SilcClient client, void *context);
  *    When the `status' is SILC_CLIENT_CONN_DISCONNECTED the `error' will
  *    indicate the reason for disconnection.  If the `message' is non-NULL
  *    it delivers error or disconnection message.
+ *
+ *    The `conn' is the connection to the remote host.  In case error
+ *    occurred the `conn' may be NULL, however, in some cases a valid `conn'
+ *    is returned even in error.  If `conn' is non-NULL the receiver is
+ *    responsible of closing the connection with silc_client_close_connection
+ *    function, except when SILC_CLINET_CONN_DISCONNECTED or some error
+ *    was received.  In these cases the library will close the connection.
  *
  ***/
 typedef void (*SilcClientConnectCallback)(SilcClient client,
@@ -482,6 +489,7 @@ typedef enum {
   SILC_CLIENT_MESSAGE_INFO,	       /* Informational */
   SILC_CLIENT_MESSAGE_WARNING,	       /* Warning */
   SILC_CLIENT_MESSAGE_ERROR,	       /* Error */
+  SILC_CLIENT_MESSAGE_COMMAND_ERROR,   /* Error during command */
   SILC_CLIENT_MESSAGE_AUDIT,	       /* Auditable */
 } SilcClientMessageType;
 /***/
@@ -1985,15 +1993,39 @@ SilcBool silc_client_set_away_message(SilcClient client,
  *    File transmission session status types.  These will indicate
  *    the status of the file transmission session.
  *
+ *    The SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT is called when session
+ *    is key exchange phase.
+ *
+ *    The SILC_CLIENT_FILE_MONITOR_SEND is called when data is being sent
+ *    to remote client.
+ *
+ *    The SILC_CLIENT_FILE_MONITOR_RECEIVE is called when data is being
+ *    recieved from remote client.
+ *
+ *    The SILC_CLIENT_FILE_MONITOR_CLOSED will be called when the user
+ *    issues silc_client_file_close.  If needed, it may be ignored in the
+ *    monitor callback.
+ *
+ *    The SILC_CLIENT_FILE_MONITOR_DISCONNECT will be called if remote
+ *    disconnects the session connection.  The silc_client_file_close must
+ *    be called when this status is received.  The session is over when 
+ *    this is received.
+ *
+ *    The SILC_CLIENLT_FILE_MONITOR_ERROR is called in case some error
+ *    occured.  The SilcClientFileError will indicate more detailed error
+ *    condition.  The silc_client_file_close must be called when this status
+ *    is received.  The session is over when this is received.
+ *
  * SOURCE
  */
 typedef enum {
   SILC_CLIENT_FILE_MONITOR_KEY_AGREEMENT,    /* In key agreemenet phase */
   SILC_CLIENT_FILE_MONITOR_SEND,	     /* Sending file */
   SILC_CLIENT_FILE_MONITOR_RECEIVE,	     /* Receiving file */
-  SILC_CLIENT_FILE_MONITOR_GET,
-  SILC_CLIENT_FILE_MONITOR_PUT,
+  SILC_CLIENT_FILE_MONITOR_GET,		     /* Unsupported */
+  SILC_CLIENT_FILE_MONITOR_PUT,		     /* Unsupported */
   SILC_CLIENT_FILE_MONITOR_CLOSED,	     /* Session closed */
+  SILC_CLIENT_FILE_MONITOR_DISCONNECT,	     /* Session disconnected */
   SILC_CLIENT_FILE_MONITOR_ERROR,	     /* Error during session */
 } SilcClientMonitorStatus;
 /***/
@@ -2014,12 +2046,15 @@ typedef enum {
  */
 typedef enum {
   SILC_CLIENT_FILE_OK,
-  SILC_CLIENT_FILE_ERROR,
-  SILC_CLIENT_FILE_UNKNOWN_SESSION,
-  SILC_CLIENT_FILE_ALREADY_STARTED,
-  SILC_CLIENT_FILE_NO_SUCH_FILE,
-  SILC_CLIENT_FILE_PERMISSION_DENIED,
-  SILC_CLIENT_FILE_KEY_AGREEMENT_FAILED,
+  SILC_CLIENT_FILE_ERROR,	             /* Generic error */
+  SILC_CLIENT_FILE_UNKNOWN_SESSION,	     /* Unknown session ID */
+  SILC_CLIENT_FILE_ALREADY_STARTED,	     /* Session already started */
+  SILC_CLIENT_FILE_NO_SUCH_FILE,	     /* No such file */
+  SILC_CLIENT_FILE_PERMISSION_DENIED,	     /* Permission denied */
+  SILC_CLIENT_FILE_KEY_AGREEMENT_FAILED,     /* Key exchange failed */
+  SILC_CLIENT_FILE_CONNECT_FAILED,	     /* Error during connecting */
+  SILC_CLIENT_FILE_TIMEOUT,	             /* Connecting timedout */
+  SILC_CLIENT_FILE_NO_MEMORY,		     /* System out of memory */
 } SilcClientFileError;
 /***/
 
@@ -2047,7 +2082,8 @@ typedef enum {
  *    currently transmitted amount of total `filesize'.  The `client_entry'
  *    indicates the remote client, and the transmission session ID is the
  *    `session_id'.  The filename being transmitted is indicated by the
- *    `filepath'.
+ *    `filepath'.  The `conn' is NULL if the connection to remote client
+ *    does not exist yet.
  *
  ***/
 typedef void (*SilcClientFileMonitor)(SilcClient client,
@@ -2154,6 +2190,7 @@ typedef void (*SilcClientFileAskName)(SilcClient client,
  ***/
 SilcClientFileError
 silc_client_file_send(SilcClient client,
+		      SilcClientConnection conn,
 		      SilcClientEntry client_entry,
 		      SilcClientConnectionParams *params,
 		      SilcPublicKey public_key,
@@ -2199,6 +2236,9 @@ silc_client_file_send(SilcClient client,
 SilcClientFileError
 silc_client_file_receive(SilcClient client,
 			 SilcClientConnection conn,
+			 SilcClientConnectionParams *params,
+			 SilcPublicKey public_key,
+			 SilcPrivateKey private_key,
 			 SilcClientFileMonitor monitor,
 			 void *monitor_context,
 			 const char *path,

@@ -305,7 +305,7 @@ SILC_FSM_STATE(silc_client_connection_st_packet)
 
   case SILC_PACKET_FTP:
     /* File transfer packet */
-//    silc_fsm_next(fsm, silc_client_ftp);
+    silc_fsm_next(fsm, silc_client_ftp);
     break;
 
   case SILC_PACKET_CHANNEL_KEY:
@@ -564,9 +564,10 @@ SILC_FSM_STATE(silc_client_st_stop)
 
 /* Adds new connection.  Creates the connection context and returns it. */
 
-static SilcClientConnection
+SilcClientConnection
 silc_client_add_connection(SilcClient client,
 			   SilcConnectionType conn_type,
+			   SilcBool connect,
 			   SilcClientConnectionParams *params,
 			   SilcPublicKey public_key,
 			   SilcPrivateKey private_key,
@@ -626,31 +627,33 @@ silc_client_add_connection(SilcClient client,
   silc_list_init(conn->internal->thread_pool, SilcFSMThreadStruct, next);
 
   /* Allocate client, channel and serve caches */
-  conn->internal->client_cache = silc_idcache_alloc(0, SILC_ID_CLIENT,
-						    NULL, NULL);
-  conn->internal->channel_cache = silc_idcache_alloc(0, SILC_ID_CHANNEL,
-						     NULL, NULL);
-  conn->internal->server_cache = silc_idcache_alloc(0, SILC_ID_SERVER,
-						    NULL, NULL);
-  if (!conn->internal->client_cache || !conn->internal->channel_cache ||
-      !conn->internal->server_cache) {
-    silc_client_del_connection(client, conn);
-    return NULL;
+  if (conn_type != SILC_CONN_CLIENT) {
+    conn->internal->client_cache = silc_idcache_alloc(0, SILC_ID_CLIENT,
+						      NULL, NULL);
+    conn->internal->channel_cache = silc_idcache_alloc(0, SILC_ID_CHANNEL,
+						       NULL, NULL);
+    conn->internal->server_cache = silc_idcache_alloc(0, SILC_ID_SERVER,
+						      NULL, NULL);
+    if (!conn->internal->client_cache || !conn->internal->channel_cache ||
+	!conn->internal->server_cache) {
+      silc_client_del_connection(client, conn);
+      return NULL;
+    }
   }
 
-  //  conn->internal->ftp_sessions = silc_dlist_init();
-
-  /* Initialize our async operation so that application may abort us
-     while we're connecting. */
-  conn->internal->cop = silc_async_alloc(silc_client_connect_abort,
-					 NULL, conn);
-  if (!conn->internal->cop) {
-    silc_client_del_connection(client, conn);
-    return NULL;
+  if (connect) {
+    /* Initialize our async operation so that application may abort us
+       while we're connecting. */
+    conn->internal->cop = silc_async_alloc(silc_client_connect_abort,
+					   NULL, conn);
+    if (!conn->internal->cop) {
+      silc_client_del_connection(client, conn);
+      return NULL;
+    }
   }
 
-  /* Run the connection state machine.  If threads are in use the machine
-     is always run in a real thread. */
+  /* Run the connection state machine.  If threads are in use the connection
+     machine is always run in a real thread. */
   thread = silc_fsm_thread_alloc(&client->internal->fsm, conn,
 				 silc_client_connection_finished, NULL,
 				 client->internal->params->threads);
@@ -681,22 +684,28 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
   silc_schedule_task_del_by_context(conn->internal->schedule, conn);
 
   /* Free all cache entries */
-  if (silc_idcache_get_all(conn->internal->server_cache, &list)) {
-    silc_list_start(list);
-    while ((entry = silc_list_get(list)))
-      silc_client_del_server(client, conn, entry->context);
-  }
-  if (silc_idcache_get_all(conn->internal->channel_cache, &list)) {
-    silc_list_start(list);
-    while ((entry = silc_list_get(list))) {
-      silc_client_empty_channel(client, conn, entry->context);
-      silc_client_del_channel(client, conn, entry->context);
+  if (conn->internal->server_cache) {
+    if (silc_idcache_get_all(conn->internal->server_cache, &list)) {
+      silc_list_start(list);
+      while ((entry = silc_list_get(list)))
+	silc_client_del_server(client, conn, entry->context);
     }
   }
-  if (silc_idcache_get_all(conn->internal->client_cache, &list)) {
-    silc_list_start(list);
-    while ((entry = silc_list_get(list)))
-      silc_client_del_client(client, conn, entry->context);
+  if (conn->internal->channel_cache) {
+    if (silc_idcache_get_all(conn->internal->channel_cache, &list)) {
+      silc_list_start(list);
+      while ((entry = silc_list_get(list))) {
+	silc_client_empty_channel(client, conn, entry->context);
+	silc_client_del_channel(client, conn, entry->context);
+      }
+    }
+  }
+  if (conn->internal->client_cache) {
+    if (silc_idcache_get_all(conn->internal->client_cache, &list)) {
+      silc_list_start(list);
+      while ((entry = silc_list_get(list)))
+	silc_client_del_client(client, conn, entry->context);
+    }
   }
 
   /* Free ID caches */
@@ -750,7 +759,7 @@ silc_client_connect_to_server(SilcClient client,
     return NULL;
 
   /* Add new connection */
-  conn = silc_client_add_connection(client, SILC_CONN_SERVER, params,
+  conn = silc_client_add_connection(client, SILC_CONN_SERVER, TRUE, params,
 				    public_key, private_key, remote_host,
 				    port, callback, context);
   if (!conn) {
@@ -786,8 +795,11 @@ silc_client_connect_to_client(SilcClient client,
   if (!client || !remote_host)
     return NULL;
 
+  if (params)
+    params->no_authentication = TRUE;
+
   /* Add new connection */
-  conn = silc_client_add_connection(client, SILC_CONN_CLIENT, params,
+  conn = silc_client_add_connection(client, SILC_CONN_CLIENT, TRUE, params,
 				    public_key, private_key, remote_host,
 				    port, callback, context);
   if (!conn) {
@@ -829,7 +841,7 @@ silc_client_key_exchange(SilcClient client,
   }
 
   /* Add new connection */
-  conn = silc_client_add_connection(client, conn_type, params,
+  conn = silc_client_add_connection(client, conn_type, TRUE, params,
 				    public_key, private_key,
 				    (char *)host, port, callback, context);
   if (!conn) {
@@ -849,6 +861,13 @@ void silc_client_close_connection(SilcClient client,
 				  SilcClientConnection conn)
 {
   SILC_LOG_DEBUG(("Closing connection %p", conn));
+
+  /* If connection machine is not running, we just delete the connection */
+  if (!silc_fsm_is_started(&conn->internal->fsm)) {
+    silc_packet_stream_destroy(conn->stream);
+    silc_client_del_connection(conn->client, conn);
+    return;
+  }
 
   /* Signal to close connection */
   conn->internal->status = SILC_CLIENT_CONN_DISCONNECTED;
@@ -970,6 +989,10 @@ SilcBool silc_client_init(SilcClient client, const char *username,
   client->hostname = strdup(hostname);
   client->realname = strdup(realname);
   if (!username || !hostname || !realname)
+    return FALSE;
+
+  client->internal->ftp_sessions = silc_dlist_init();
+  if (!client->internal->ftp_sessions)
     return FALSE;
 
   if (!client->internal->params->dont_register_crypto_library) {

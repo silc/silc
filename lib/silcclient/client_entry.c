@@ -903,11 +903,9 @@ void silc_client_del_client_entry(SilcClient client,
     silc_hmac_free(client_entry->internal.hmac_send);
   if (client_entry->internal.hmac_receive)
     silc_hmac_free(client_entry->internal.hmac_receive);
-#if 0
-  silc_client_ftp_session_free_client(conn, client_entry);
-  if (client_entry->internal->ke)
+  silc_client_ftp_session_free_client(client, client_entry);
+  if (client_entry->internal.ke)
     silc_client_abort_key_agreement(client, conn, client_entry);
-#endif /* 0 */
   silc_atomic_uninit8(&client_entry->internal.refcnt);
   silc_rwlock_free(client_entry->internal.lock);
   silc_free(client_entry);
@@ -1626,7 +1624,7 @@ void silc_client_lock_channel(SilcChannelEntry channel_entry)
   silc_rwlock_rdlock(channel_entry->internal.lock);
 }
 
-/* Unlock client */
+/* Unlock channel */
 
 void silc_client_unlock_channel(SilcChannelEntry channel_entry)
 {

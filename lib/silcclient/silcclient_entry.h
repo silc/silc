@@ -49,7 +49,7 @@
  *    it should always duplicated them.
  *
  *    None of the string arrays are set if the first character is '\0'.
- *    All string arrays are always NULL terminated.
+ *    All string arrays are always zero ('\0') terminated.
  *
  *    If application stores the SilcClientEntry it must always take
  *    a reference of it by calling silc_client_ref_client function.  The
@@ -449,46 +449,6 @@ void silc_client_get_clients_by_channel(SilcClient client,
 					SilcChannelEntry channel,
 					SilcGetClientCallback completion,
 					void *context);
-
-/****f* silcclient/SilcClientAPI/silc_client_get_clients_by_list
- *
- * SYNOPSIS
- *
- *    SilcUInt16
- *    silc_client_get_clients_by_list(SilcClient client,
- *                                    SilcClientConnection conn,
- *                                    SilcUInt32 list_count,
- *                                    SilcBuffer client_id_list,
- *                                    SilcGetClientCallback completion,
- *                                    void *context);
- *
- * DESCRIPTION
- *
- *    Gets client entries by the list of client ID's `client_id_list'. This
- *    always resolves those client ID's it doesn't know about from the server.
- *    The `client_id_list' is a list of ID Payloads added one after other.
- *    JOIN command reply and USERS command reply for example returns this sort
- *    of list. The `completion' will be called after the entries are available.
- *    When server returns the client information it will be cached and can be
- *    accessed locally at a later time.  The resolving is done with WHOIS
- *    command.
- *
- *    Returns command identifier for the resolving.  It can be used to attach
- *    a pending command to it, if needed.  Returns 0 when no resolving was
- *    done or wasn't needed (completion is called before this returns).
- *
- * NOTES
- *
- *    If even after resolving some Client ID in the `client_id_list' is
- *    unknown it will be ignored and error is not returned.
- *
- ***/
-SilcUInt16 silc_client_get_clients_by_list(SilcClient client,
-					   SilcClientConnection conn,
-					   SilcUInt32 list_count,
-					   SilcBuffer client_id_list,
-					   SilcGetClientCallback completion,
-					   void *context);
 
 /****f* silcclient/SilcClientAPI/silc_client_get_client_by_id
  *

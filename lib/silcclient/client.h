@@ -41,7 +41,6 @@ typedef struct SilcClientConnectionInternalStruct
      *SilcClientConnectionInternal;
 typedef struct SilcChannelPrivateKeyStruct *SilcChannelPrivateKey;
 
-
 /* Internal client entry context */
 typedef struct SilcClientEntryInternalStruct {
   SilcRwLock lock;		/* Read/write lock */
