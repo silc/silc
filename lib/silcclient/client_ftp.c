@@ -939,6 +939,8 @@ SilcClientFileError silc_client_file_close(SilcClient client,
     session->monitor = NULL;
   }
 
+  silc_schedule_task_del_by_context(client->schedule, session);
+
   session->closed = TRUE;
 
   /* Destroy via timeout */

@@ -1252,8 +1252,8 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   }
 
   /* Get channel mode */
-  tmp = silc_argument_get_arg_type(args, 5, NULL);
-  if (tmp)
+  tmp = silc_argument_get_arg_type(args, 5, &len);
+  if (tmp && len == 4)
     SILC_GET32_MSB(mode, tmp);
   channel->mode = mode;
 
@@ -1440,17 +1440,17 @@ SILC_FSM_STATE(silc_client_command_reply_cmode)
     goto out;
   }
 
+  /* Get founder public key */
+  tmp = silc_argument_get_arg_type(args, 4, &len);
+  if (tmp)
+    silc_public_key_payload_decode(tmp, len, &public_key);
+
   /* Get channel mode */
   tmp = silc_argument_get_arg_type(args, 3, &len);
   if (!tmp || len != 4) {
     ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
-
-  /* Get founder public key */
-  tmp = silc_argument_get_arg_type(args, 4, &len);
-  if (tmp)
-    silc_public_key_payload_decode(tmp, len, &public_key);
 
   silc_rwlock_wrlock(channel->internal.lock);
 

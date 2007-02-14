@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2006 Pekka Riikonen
+  Copyright (C) 2003 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -106,6 +106,7 @@ SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time)
 {
   struct tm *time;
   unsigned int msec = 0;
+  time_t timeval;
 
   if (!ret_time)
     return TRUE;
@@ -116,9 +117,10 @@ SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time)
   msec = time_val % 1000;
   time_val /= 1000;
 
-  time = localtime((time_t *)&time_val);
+  time = localtime(&timeval);
   if (!time)
     return FALSE;
+  time_val = timeval;
 
   memset(ret_time, 0, sizeof(*ret_time));
   if (!silc_time_fill(ret_time, time->tm_year + 1900, time->tm_mon + 1,

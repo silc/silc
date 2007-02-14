@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 - 2006 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -322,7 +322,7 @@ unsigned char *silc_mime_encode(SilcMime mime, SilcUInt32 *encoded_len)
   /* Encode the headers. Order doesn't matter */
   i = 0;
   silc_hash_table_list(mime->fields, &htl);
-  while (silc_hash_table_get(&htl, (void **)&field, (void **)&value)) {
+  while (silc_hash_table_get(&htl, (void *)&field, (void *)&value)) {
     memset(tmp, 0, sizeof(tmp));
     SILC_LOG_DEBUG(("Header %s: %s", field, value));
     silc_snprintf(tmp, sizeof(tmp) - 1, "%s: %s\r\n", field, value);
@@ -461,7 +461,7 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
 
   /* Find fragments with this ID. */
   if (!silc_hash_table_find(assembler->fragments, (void *)id,
-			    NULL, (void **)&f)) {
+			    NULL, (void *)&f)) {
     /* This is new fragment to new message.  Add to hash table and return. */
     f = silc_hash_table_alloc(0, silc_hash_uint, NULL, NULL, NULL,
 			      silc_mime_assemble_dest, NULL, TRUE);
@@ -506,7 +506,7 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
   /* Assemble the complete MIME message now. We get them in order from
      the hash table. */
   for (i = 1; i <= total; i++) {
-    if (!silc_hash_table_find(f, SILC_32_TO_PTR(i), NULL, (void **)&p))
+    if (!silc_hash_table_find(f, SILC_32_TO_PTR(i), NULL, (void *)&p))
       goto err;
 
     /* The fragment is in the data portion of the partial message */
@@ -698,7 +698,7 @@ const char *silc_mime_get_field(SilcMime mime, const char *field)
     return NULL;
 
   if (!silc_hash_table_find(mime->fields, (void *)field,
-			    NULL, (void **)&value))
+			    NULL, (void *)&value))
     return NULL;
 
   return (const char *)value;

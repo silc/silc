@@ -205,7 +205,7 @@ static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
 
     /* Delete from fd queue */
     silc_hash_table_list(schedule->fd_queue, &htl);
-    while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task))
+    while (silc_hash_table_get(&htl, (void *)&fd, (void *)&task))
       silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(fd));
     silc_hash_table_list_reset(&htl);
 
@@ -600,7 +600,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
     /* Check if fd is already added */
     if (silc_unlikely(silc_hash_table_find(schedule->fd_queue,
 					   SILC_32_TO_PTR(fd),
-					   NULL, (void **)&task))) {
+					   NULL, (void *)&task))) {
       if (task->valid)
         goto out;
 
@@ -672,7 +672,7 @@ SilcBool silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
 
     /* Delete from fd queue */
     silc_hash_table_list(schedule->fd_queue, &htl);
-    while (silc_hash_table_get(&htl, NULL, (void **)&task))
+    while (silc_hash_table_get(&htl, NULL, (void *)&task))
       task->valid = FALSE;
     silc_hash_table_list_reset(&htl);
 
@@ -708,7 +708,7 @@ SilcBool silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd)
   /* fd is unique, so there is only one task with this fd in the table */
   if (silc_likely(silc_hash_table_find(schedule->fd_queue,
 				       SILC_32_TO_PTR(fd), NULL,
-				       (void **)&task))) {
+				       (void *)&task))) {
     SILC_LOG_DEBUG(("Deleting task %p", task));
     task->valid = FALSE;
     ret = TRUE;
@@ -741,7 +741,7 @@ SilcBool silc_schedule_task_del_by_callback(SilcSchedule schedule,
 
   /* Delete from fd queue */
   silc_hash_table_list(schedule->fd_queue, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&task)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&task)) {
     if (task->callback == callback) {
       task->valid = FALSE;
       ret = TRUE;
@@ -780,7 +780,7 @@ SilcBool silc_schedule_task_del_by_context(SilcSchedule schedule,
 
   /* Delete from fd queue */
   silc_hash_table_list(schedule->fd_queue, &htl);
-  while (silc_hash_table_get(&htl, NULL, (void **)&task)) {
+  while (silc_hash_table_get(&htl, NULL, (void *)&task)) {
     if (task->context == context) {
       task->valid = FALSE;
       ret = TRUE;
@@ -851,7 +851,7 @@ SilcBool silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
   SILC_SCHEDULE_LOCK(schedule);
 
   if (silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fd),
-			   NULL, (void **)&task)) {
+			   NULL, (void *)&task)) {
     if (!schedule_ops.schedule_fd(schedule, schedule->internal, task, mask)) {
       SILC_SCHEDULE_UNLOCK(schedule);
       return FALSE;
@@ -881,7 +881,7 @@ SilcTaskEvent silc_schedule_get_fd_events(SilcSchedule schedule,
 
   SILC_SCHEDULE_LOCK(schedule);
   if (silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fd),
-			   NULL, (void **)&task))
+			   NULL, (void *)&task))
     event = task->events;
   SILC_SCHEDULE_UNLOCK(schedule);
 

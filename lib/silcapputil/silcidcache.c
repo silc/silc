@@ -205,7 +205,7 @@ SilcBool silc_idcache_del_by_id(SilcIDCache cache, void *id,
   if (!cache)
     return FALSE;
 
-  if (!silc_hash_table_find(cache->id_table, id, NULL, (void **)&c))
+  if (!silc_hash_table_find(cache->id_table, id, NULL, (void *)&c))
     return FALSE;
 
   return silc_idcache_del(cache, c, app_context);
@@ -221,7 +221,7 @@ SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
   if (!cache)
     return FALSE;
 
-  if (!silc_hash_table_find(cache->context_table, context, NULL, (void **)&c))
+  if (!silc_hash_table_find(cache->context_table, context, NULL, (void *)&c))
     return FALSE;
 
   return silc_idcache_del(cache, c, app_context);
@@ -279,7 +279,7 @@ SilcBool silc_idcache_update_by_context(SilcIDCache cache, void *context,
   if (!cache)
     return FALSE;
 
-  if (!silc_hash_table_find(cache->context_table, context, NULL, (void **)&c))
+  if (!silc_hash_table_find(cache->context_table, context, NULL, (void *)&c))
     return FALSE;
 
   return silc_idcache_update(cache, c, new_id, new_name, free_old_name);
