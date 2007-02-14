@@ -110,8 +110,10 @@ static SilcBool silc_ske_packet_receive(SilcPacketEngine engine,
       silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
   }
 
-  /* Handle rekey synchronously */
-  if (ske->rekeying)
+  /* Handle rekey and SUCCESS packets synchronously.  After SUCCESS packets
+     they keys are taken into use immediately, hence the synchronous 
+     processing to get the keys in use as soon as possible. */
+  if (ske->rekeying || packet->type == SILC_PACKET_SUCCESS)
     silc_fsm_continue_sync(&ske->fsm);
   else
     silc_fsm_continue(&ske->fsm);
@@ -957,15 +959,11 @@ static SilcBool silc_ske_packet_send(SilcSKE ske,
   return ret;
 }
 
-/* SKE FSM destructor.  We call completion callback here.  All SKE
-   machines go here and call the completion.  Completion must not be called
-   from any other place. */
+/* Calls completion callback.  Completion is called always in this function
+   and must not be called anywhere else. */
 
-static void silc_ske_finished(SilcFSM fsm, void *fsm_context,
-			      void *destructor_context)
+static void silc_ske_completion(SilcSKE ske)
 {
-  SilcSKE ske = fsm_context;
-
   /* Call the completion callback */
   if (!ske->freed && !ske->aborted && ske->callbacks->completed) {
     if (ske->status != SILC_SKE_STATUS_OK)
@@ -975,7 +973,14 @@ static void silc_ske_finished(SilcFSM fsm, void *fsm_context,
       ske->callbacks->completed(ske, ske->status, ske->prop, ske->keymat,
 			        ske->rekey, ske->callbacks->context);
   }
+}
 
+/* SKE FSM destructor. */
+
+static void silc_ske_finished(SilcFSM fsm, void *fsm_context,
+			      void *destructor_context)
+{
+  SilcSKE ske = fsm_context;
   ske->running = FALSE;
   if (ske->freed)
     silc_ske_free(ske);
@@ -1713,6 +1718,9 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
+  /* Call completion */
+  silc_ske_completion(ske);
+
   return SILC_FSM_FINISH;
 }
 
@@ -1731,6 +1739,9 @@ SILC_FSM_STATE(silc_ske_st_initiator_aborted)
 
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
+
+  /* Call completion */
+  silc_ske_completion(ske);
 
   return SILC_FSM_FINISH;
 }
@@ -1757,6 +1768,9 @@ SILC_FSM_STATE(silc_ske_st_initiator_error)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
+  /* Call completion */
+  silc_ske_completion(ske);
+
   return SILC_FSM_FINISH;
 }
 
@@ -1779,6 +1793,9 @@ SILC_FSM_STATE(silc_ske_st_initiator_failure)
 
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
+
+  /* Call completion */
+  silc_ske_completion(ske);
 
   return SILC_FSM_FINISH;
 }
@@ -2287,6 +2304,9 @@ SILC_FSM_STATE(silc_ske_st_responder_end)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
+  /* Call completion */
+  silc_ske_completion(ske);
+
   return SILC_FSM_FINISH;
 }
 
@@ -2305,6 +2325,9 @@ SILC_FSM_STATE(silc_ske_st_responder_aborted)
 
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
+
+  /* Call completion */
+  silc_ske_completion(ske);
 
   return SILC_FSM_FINISH;
 }
@@ -2328,6 +2351,9 @@ SILC_FSM_STATE(silc_ske_st_responder_failure)
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
 
+  /* Call completion */
+  silc_ske_completion(ske);
+
   return SILC_FSM_FINISH;
 }
 
@@ -2349,6 +2375,9 @@ SILC_FSM_STATE(silc_ske_st_responder_error)
 
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
+
+  /* Call completion */
+  silc_ske_completion(ske);
 
   return SILC_FSM_FINISH;
 }
@@ -2593,6 +2622,9 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_end)
   ske->packet = NULL;
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
+
+  /* Call completion */
+  silc_ske_completion(ske);
 
   return SILC_FSM_FINISH;
 }
