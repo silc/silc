@@ -114,9 +114,10 @@ typedef SilcUInt8 SilcPacketFlags;
 #define SILC_PACKET_FLAG_LIST             0x02	  /* Packet is a list */
 #define SILC_PACKET_FLAG_BROADCAST        0x04	  /* Packet is a broadcast */
 #define SILC_PACKET_FLAG_COMPRESSED       0x08    /* Payload is compressed */
+#define SILC_PACKET_FLAG_ACK              0x10    /* Acknowledge packet */
 
 /* Impelemntation specific flags */
-#define SILC_PACKET_FLAG_LONG_PAD         0x10    /* Use maximum padding */
+#define SILC_PACKET_FLAG_LONG_PAD         0x12    /* Use maximum padding */
 /***/
 
 /****s* silccore/SilcPacketAPI/SilcPacketEngine
@@ -612,6 +613,36 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
 			       SilcPacketCallbacks *callbacks,
 			       void *callback_context);
 
+/****f* silccore/SilcPacketAPI/SilcPacketWrapCoder
+ *
+ * SYNOPSIS
+ *
+ *    typedef SilcBool (*SilcPacketWrapCoder)(SilcStream stream,
+ *                                            SilcStreamStatus status,
+ *                                            SilcBuffer buffer,
+ *                                            void *context);
+ *
+ * DESCRIPTION
+ *
+ *    The encoder/decoder callback for silc_packet_stream_wrap.  If the
+ *    `status' is SILC_STREAM_CAN_WRITE then additional data can be added
+ *    to `buffer'.  It is added before the data that is written with
+ *    silc_stream_write.  The silc_buffer_enlarge should be called to verify
+ *    there is enough room in `buffer' before adding data to it.  The `buffer'
+ *    must not be freed.
+ *
+ *    If the `status' is SILC_STREAM_CAN_READ then data from the `buffer'
+ *    may be read before it is passed to readed when silc_stream_read is
+ *    called.  The `buffer' may be advanced also to hide data in it.
+ *
+ *    This function returns FALSE in case of error.
+ *
+ ***/
+typedef SilcBool (*SilcPacketWrapCoder)(SilcStream stream,
+					SilcStreamStatus status,
+					SilcBuffer buffer,
+					void *context);
+
 /****f* silccore/SilcPacketAPI/silc_packet_stream_wrap
  *
  * SYNOPSIS
@@ -619,7 +650,9 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
  *    SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
  *                                       SilcPacketType type,
  *                                       SilcPacketFlags flags,
- *                                       SilcBool blocking_mode);
+ *                                       SilcBool blocking_mode,
+ *                                       SilcPacketWrapCoder coder,
+ *                                       void *context);
  *
  * DESCRIPTION
  *
@@ -644,6 +677,12 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
  *    once returns one complete SILC packet data payload (which is of type of
  *    `type').
  *
+ *    The `coder' is optional encoder/decoder callback which the packet engine
+ *    will call if it is non-NULL.  It can be used to encode additional data
+ *    into each packet when silc_stream_write is called or decode data before
+ *    it is passed to reader when silc_stream_read is called.  The `context'
+ *    is passed to `coder'.
+ *
  *    The returned SilcStream can be used as any normal stream and all
  *    SilcStream API functions may be used with the stream.  This returns
  *    NULL on error.
@@ -652,7 +691,9 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
 SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
 				   SilcPacketType type,
 				   SilcPacketFlags flags,
-				   SilcBool blocking_mode);
+				   SilcBool blocking_mode,
+				   SilcPacketWrapCoder coder,
+				   void *context);
 
 /****f* silccore/SilcPacketAPI/silc_packet_get_sender
  *
