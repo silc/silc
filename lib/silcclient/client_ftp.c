@@ -27,6 +27,7 @@
 /* File transmission session */
 struct SilcClientFtpSessionStruct {
   SilcClient client;		      /* Client */
+  SilcClientConnection server_conn;   /* Connection to server */
   SilcClientConnection conn;	      /* Connection to remote host */
   SilcClientEntry client_entry;	      /* The client entry */
   SilcClientListener listener;	      /* Listener */
@@ -403,7 +404,7 @@ static void silc_client_ftp_session_free(SilcClientFtpSession session)
   if (session->stream)
     silc_stream_destroy(session->stream);
 
-  silc_client_unref_client(session->client, session->conn,
+  silc_client_unref_client(session->client, session->server_conn,
 			   session->client_entry);
   silc_free(session->hostname);
   silc_free(session->filepath);
@@ -697,6 +698,7 @@ silc_client_file_send(SilcClient client,
     return SILC_CLIENT_FILE_ERROR;
   session->session_id = ++client->internal->next_session_id;
   session->client = client;
+  session->server_conn = conn;
   session->initiator = TRUE;
   session->client_entry = silc_client_ref_client(client, conn, client_entry);
   session->monitor = monitor;
@@ -1037,6 +1039,7 @@ SILC_FSM_STATE(silc_client_ftp)
       goto out;
     session->session_id = ++client->internal->next_session_id;
     session->client = client;
+    session->server_conn = conn;
     session->client_entry = silc_client_ref_client(client, conn,
 						   remote_client);
     if (hostname && port) {
