@@ -619,18 +619,20 @@ void mem_read(void *context, SilcSFTP sftp,
 	      void *callback_context)
 {
   MemFSFileHandle h = (MemFSFileHandle)handle;
-  unsigned char *data;
+  unsigned char *data[32768];
   int ret;
 
   if (len > 32768)
     len = 32768;
 
-  data = silc_malloc(len);
-  if (!data) {
-    (*callback)(sftp, SILC_SFTP_STATUS_EOF, NULL, 0, callback_context);
+  ret = lseek(h->fd, (off_t)offset, SEEK_SET);
+  if (ret < 0) {
+    if (!ret)
+      (*callback)(sftp, SILC_SFTP_STATUS_EOF, NULL, 0, callback_context);
+    else
+      (*callback)(sftp, silc_sftp_map_errno(errno), NULL, 0, callback_context);
     return;
   }
-  lseek(h->fd, (off_t)offset, SEEK_SET);
 
   /* Attempt to read */
   ret = silc_file_read(h->fd, data, len);
@@ -639,15 +641,12 @@ void mem_read(void *context, SilcSFTP sftp,
       (*callback)(sftp, SILC_SFTP_STATUS_EOF, NULL, 0, callback_context);
     else
       (*callback)(sftp, silc_sftp_map_errno(errno), NULL, 0, callback_context);
-    silc_free(data);
     return;
   }
 
   /* Return data */
   (*callback)(sftp, SILC_SFTP_STATUS_OK, (const unsigned char *)data,
 	      ret, callback_context);
-
-  silc_free(data);
 }
 
 void mem_write(void *context, SilcSFTP sftp,
