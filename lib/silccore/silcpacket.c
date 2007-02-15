@@ -31,7 +31,7 @@
 typedef struct {
   SilcSchedule schedule;		 /* The scheduler */
   SilcPacketEngine engine;		 /* Packet engine */
-  SilcBufferStruct inbuf;	         /* Data input buffer */
+  SilcDList inbufs;			 /* Data inbut buffer list */
   SilcUInt32 stream_count;		 /* Number of streams using this */
 } *SilcPacketEngineContext;
 
@@ -72,6 +72,7 @@ struct SilcPacketStreamStruct {
   SilcPacketRemoteUDP remote_udp;	 /* UDP remote stream tuple, or NULL */
   void *stream_context;			 /* Stream context */
   SilcBufferStruct outbuf;		 /* Out buffer */
+  SilcBuffer inbuf;			 /* Inbuf from inbuf list or NULL */
   SilcCipher send_key[2];		 /* Sending key */
   SilcHmac send_hmac[2];		 /* Sending HMAC */
   SilcCipher receive_key[2];		 /* Receiving key */
@@ -291,13 +292,29 @@ static inline SilcBool silc_packet_stream_write(SilcPacketStream ps,
 static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
 					       SilcPacketStream *ret_ps)
 {
-  SilcStream stream;
+  SilcStream stream = ps->stream;
   SilcBuffer inbuf;
   SilcBool connected;
   int ret;
 
-  stream = ps->stream;
-  inbuf = &ps->sc->inbuf;
+  /* Get inbuf.  If there is already some data for this stream in the buffer
+     we already have it.  Otherwise get the current one from list, it will
+     include the data. */
+  inbuf = ps->inbuf;
+  if (!inbuf) {
+    silc_dlist_start(ps->sc->inbufs);
+    inbuf = silc_dlist_get(ps->sc->inbufs);
+    if (!inbuf) {
+      /* Allocate new data input buffer */
+      inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 31);
+      if (!inbuf) {
+        silc_mutex_unlock(ps->lock);
+        return FALSE;
+      }
+      silc_buffer_reset(inbuf);
+      silc_dlist_add(ps->sc->inbufs, inbuf);
+    }
+  }
 
   /* Make sure there is enough room to read */
   if (SILC_PACKET_DEFAULT_SIZE * 2 > silc_buffer_taillen(inbuf))
@@ -505,8 +522,16 @@ static void silc_packet_engine_context_destr(void *key, void *context,
 					     void *user_context)
 {
   SilcPacketEngineContext sc = context;
-  silc_buffer_clear(&sc->inbuf);
-  silc_buffer_purge(&sc->inbuf);
+  SilcBuffer buffer;
+
+  silc_dlist_start(sc->inbufs);
+  while ((buffer = silc_dlist_get(sc->inbufs))) {
+    silc_buffer_clear(buffer);
+    silc_buffer_free(buffer);
+    silc_dlist_del(sc->inbufs, buffer);
+  }
+
+  silc_dlist_uninit(sc->inbufs);
   silc_free(sc);
 }
 
@@ -597,6 +622,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
 					   SilcStream stream)
 {
   SilcPacketStream ps;
+  SilcBuffer inbuf;
   void *tmp;
 
   SILC_LOG_DEBUG(("Creating new packet stream"));
@@ -643,20 +669,31 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
     ps->sc->schedule = schedule;
 
     /* Allocate data input buffer */
-    tmp = silc_malloc(SILC_PACKET_DEFAULT_SIZE * 31);
-    if (!tmp) {
+    inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 31);
+    if (!inbuf) {
       silc_free(ps->sc);
       ps->sc = NULL;
       silc_packet_stream_destroy(ps);
       silc_mutex_unlock(engine->lock);
       return NULL;
     }
-    silc_buffer_set(&ps->sc->inbuf, tmp, SILC_PACKET_DEFAULT_SIZE * 31);
-    silc_buffer_reset(&ps->sc->inbuf);
+    silc_buffer_reset(inbuf);
+
+    ps->sc->inbufs = silc_dlist_init();
+    if (!ps->sc->inbufs) {
+      silc_buffer_free(inbuf);
+      silc_free(ps->sc);
+      ps->sc = NULL;
+      silc_packet_stream_destroy(ps);
+      silc_mutex_unlock(engine->lock);
+      return NULL;
+    }
+    silc_dlist_add(ps->sc->inbufs, inbuf);
 
     /* Add to per scheduler context hash table */
     if (!silc_hash_table_add(engine->contexts, schedule, ps->sc)) {
-      silc_buffer_purge(&ps->sc->inbuf);
+      silc_buffer_free(inbuf);
+      silc_dlist_del(ps->sc->inbufs, inbuf);
       silc_free(ps->sc);
       ps->sc = NULL;
       silc_packet_stream_destroy(ps);
@@ -1897,7 +1934,7 @@ static SilcBool silc_packet_dispatch(SilcPacket packet)
 
 static void silc_packet_read_process(SilcPacketStream stream)
 {
-  SilcBuffer inbuf = &stream->sc->inbuf;
+  SilcBuffer inbuf;
   SilcCipher cipher;
   SilcHmac hmac;
   SilcPacket packet;
@@ -1908,6 +1945,15 @@ static void silc_packet_read_process(SilcPacketStream stream)
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE], *packet_seq = NULL;
   SilcBool normal;
   int ret;
+
+  /* Get inbuf.  If there is already some data for this stream in the buffer
+     we already have it.  Otherwise get the current one from list, it will
+     include the data. */
+  inbuf = stream->inbuf;
+  if (!inbuf) {
+    silc_dlist_start(stream->sc->inbufs);
+    inbuf = silc_dlist_get(stream->sc->inbufs);
+  }
 
   /* Parse the packets from the data */
   while (silc_buffer_len(inbuf) > 0) {
@@ -1920,6 +1966,8 @@ static void silc_packet_read_process(SilcPacketStream stream)
 		      (stream->iv_included ? SILC_PACKET_MIN_HEADER_LEN_IV :
 		       SILC_PACKET_MIN_HEADER_LEN))) {
       SILC_LOG_DEBUG(("Partial packet in queue, waiting for the rest"));
+      silc_dlist_del(stream->sc->inbufs, inbuf);
+      stream->inbuf = inbuf;
       return;
     }
 
@@ -1962,8 +2010,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
 	    silc_mutex_unlock(stream->lock);
 	    SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_UNKNOWN_SID);
 	    silc_mutex_lock(stream->lock);
-	    silc_buffer_reset(inbuf);
-	    return;
+	    goto out;
 	  }
 	}
       } else {
@@ -2000,8 +2047,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
       SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MALFORMED);
       silc_mutex_lock(stream->lock);
       memset(tmp, 0, sizeof(tmp));
-      silc_buffer_reset(inbuf);
-      return;
+      goto out;
     }
 
     if (silc_buffer_len(inbuf) < paddedlen + ivlen + mac_len) {
@@ -2009,6 +2055,8 @@ static void silc_packet_read_process(SilcPacketStream stream)
 		      "(%d bytes)",
 		      paddedlen + mac_len - silc_buffer_len(inbuf)));
       memset(tmp, 0, sizeof(tmp));
+      silc_dlist_del(stream->sc->inbufs, inbuf);
+      stream->inbuf = inbuf;
       return;
     }
 
@@ -2022,8 +2070,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
       SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MAC_FAILED);
       silc_mutex_lock(stream->lock);
       memset(tmp, 0, sizeof(tmp));
-      silc_buffer_reset(inbuf);
-      return;
+      goto out;
     }
 
     /* Get packet */
@@ -2033,8 +2080,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
       SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_NO_MEMORY);
       silc_mutex_lock(stream->lock);
       memset(tmp, 0, sizeof(tmp));
-      silc_buffer_reset(inbuf);
-      return;
+      goto out;
     }
     packet->stream = stream;
 
@@ -2049,8 +2095,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
 	silc_mutex_lock(stream->lock);
 	silc_packet_free(packet);
 	memset(tmp, 0, sizeof(tmp));
-	silc_buffer_reset(inbuf);
-	return;
+	goto out;
       }
     }
 
@@ -2095,7 +2140,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
 	silc_mutex_lock(stream->lock);
 	silc_packet_free(packet);
 	memset(tmp, 0, sizeof(tmp));
-	return;
+	goto out;
       }
 
       stream->receive_psn++;
@@ -2112,12 +2157,19 @@ static void silc_packet_read_process(SilcPacketStream stream)
       silc_mutex_lock(stream->lock);
       silc_packet_free(packet);
       memset(tmp, 0, sizeof(tmp));
-      return;
+      goto out;
     }
 
     /* Dispatch the packet to application */
     if (!silc_packet_dispatch(packet))
       break;
+  }
+
+ out:
+  /* Add inbuf back to free list, if we owned it. */
+  if (stream->inbuf) {
+    silc_dlist_add(stream->sc->inbufs, inbuf);
+    stream->inbuf = NULL;
   }
 
   silc_buffer_reset(inbuf);
