@@ -5,6 +5,9 @@ Thu Feb 15 16:50:34 EET 2007  Pekka Riikonen <priikone@silcnet.org>
 	  can do partial reads to different buffers.  Affected file is
 	  lib/silccore/silcpacket.c.
 
+	* Fixed WATCH notify handling in client library.  Affected file
+	  is lib/silcclient/client_notify.c.
+
 Wed Feb 14 17:05:38 EET 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed packet wrapper stream API to support encoder/decoder

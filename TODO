@@ -40,7 +40,7 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o Remove protocol.[ch]. (***DONE)
 
- o File transfer rewrite. (***TESTING NEEDED)
+ o File transfer rewrite. (***DONE)
 
  o File transfer API documentation.
 
@@ -51,7 +51,7 @@ lib/silcclient, The Client Library	***PARTLY DONE****
  o Starting key exchange directly, rewrite. (***DONE)
 
  o Channel messages, channel private keys, channel entires, channel
-   search, etc. rewrite.
+   search, etc. rewrite. (***TESTING NEEDED */
 
  o For many APIs leave the hash context allocations to the caller instead
    of using client->sha1hash and client->md5hash, or some kind of thread
@@ -74,6 +74,8 @@ lib/silcclient, The Client Library	***PARTLY DONE****
  o Nickname formatting rewrite. (***TESTING NEEDED)
 
  o UDP connections. (***TESTING NEEDED)
+
+ o Message ACKing.
 
  o in /cmode and /cumode with +r, maybe the public key and private key
    could be just some "string", which would then match to "string.pub" and
@@ -104,6 +106,8 @@ lib/silccore/silcpacket.[ch]	****PARTLY DONE****
 ============================
 
  o IV Included flag support, UDP transport support (***TESTING NEEDED)
+
+ o SILC_PACKET_FLAG_ACK support.
 
 
 lib/silccore/silcid.[ch]	****DONE****

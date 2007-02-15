@@ -1519,7 +1519,6 @@ SILC_FSM_STATE(silc_client_notify_watch)
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry = NULL;
   SilcNotifyType ntype = 0;
-  SilcBool del_client = FALSE;
   unsigned char *pk, *tmp;
   SilcUInt32 mode, pk_len, tmp_len;
   SilcPublicKey public_key = NULL;
@@ -1587,19 +1586,12 @@ SILC_FSM_STATE(silc_client_notify_watch)
 
   client_entry->mode = mode;
 
-  /* If nickname was changed, remove the client entry unless the
-     client is on some channel */
-  /* XXX, why do we need to remove the client entry?? */
-  if (tmp && ntype == SILC_NOTIFY_TYPE_NICK_CHANGE &&
-      !silc_hash_table_count(client_entry->channels))
-    del_client = TRUE;
-  else if (ntype == SILC_NOTIFY_TYPE_SIGNOFF ||
-	   ntype == SILC_NOTIFY_TYPE_SERVER_SIGNOFF ||
-	   ntype == SILC_NOTIFY_TYPE_KILLED)
-    del_client = TRUE;
-
-  if (del_client) {
+  /* Remove client that left the network. */
+  if (ntype == SILC_NOTIFY_TYPE_SIGNOFF ||
+      ntype == SILC_NOTIFY_TYPE_SERVER_SIGNOFF ||
+      ntype == SILC_NOTIFY_TYPE_KILLED) {
     silc_client_remove_from_channels(client, conn, client_entry);
+    client_entry->internal.valid = FALSE;
     silc_client_del_client(client, conn, client_entry);
   }
 

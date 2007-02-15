@@ -267,7 +267,7 @@ static void silc_client_rekey_completion(SilcSKE ske,
   silc_ske_free_rekey_material(conn->internal->rekey);
   conn->internal->rekey = rekey;
 
-  SILC_LOG_DEBUG(("Rekey completed"));
+  SILC_LOG_DEBUG(("Rekey completed conn %p", conn));
 
   /* Rekey done */
   silc_fsm_finish(fsm);
@@ -674,9 +674,10 @@ SILC_FSM_STATE(silc_client_st_connected)
   SILC_LOG_DEBUG(("Connection established"));
 
   /* Install rekey timer */
-  silc_schedule_task_add_timeout(conn->internal->schedule,
-				 silc_client_rekey_timer, conn,
-				 conn->internal->params.rekey_secs, 0);
+  if (conn->type != SILC_CONN_CLIENT)
+    silc_schedule_task_add_timeout(conn->internal->schedule,
+				   silc_client_rekey_timer, conn,
+				   conn->internal->params.rekey_secs, 0);
 
   /* If we connected to server, now register to network. */
   if (conn->type == SILC_CONN_SERVER &&
@@ -756,7 +757,7 @@ SILC_FSM_STATE(silc_client_st_rekey)
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
 
-  SILC_LOG_DEBUG(("Rekey"));
+  SILC_LOG_DEBUG(("Rekey conn %p", conn));
 
   if (conn->internal->disconnected)
     return SILC_FSM_FINISH;

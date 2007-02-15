@@ -123,6 +123,32 @@ static void silc_client_command_resolve_continue(SilcClient client,
   SILC_FSM_CALL_CONTINUE(&cmd->thread);
 }
 
+/* Dummy command callback.  Nothing interesting to do here.  Use this when
+   you just send command but don't care about reply. */
+
+SilcBool silc_client_command_called_dummy(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcCommand command,
+					  SilcStatus status,
+					  SilcStatus error,
+					  void *context,
+					  va_list ap)
+{
+  return FALSE;
+}
+
+/* Dummy resolving callback.  Nothing interesting to do here.  Use this
+   when you just resolve entires but don't care about reply. */
+
+void silc_client_command_resolve_dummy(SilcClient client,
+				       SilcClientConnection conn,
+				       SilcStatus status,
+				       SilcDList clients,
+				       void *context)
+{
+  /* Nothing */
+}
+
 /* Register command to client */
 
 static SilcBool
@@ -2452,6 +2478,12 @@ SILC_FSM_STATE(silc_client_command_watch)
     silc_buffer_free(buffer);
     silc_pkcs_public_key_free(pk);
   }
+
+  /* If watching by nickname, resolve all users with that nickname so that
+     we get their information immediately. */
+  if (type == 2)
+    silc_client_get_clients(conn->client, conn, cmd->argv[2], NULL,
+			    silc_client_command_resolve_dummy, NULL);
 
   /* Send the commmand */
   silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 2,

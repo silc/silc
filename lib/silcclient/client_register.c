@@ -34,20 +34,6 @@ typedef struct {
 
 /************************ Static utility functions **************************/
 
-/* Command callback.  Nothing interesting to do here. */
-
-static SilcBool
-silc_client_register_command_called(SilcClient client,
-				    SilcClientConnection conn,
-				    SilcCommand command,
-				    SilcStatus status,
-				    SilcStatus error,
-				    void *context,
-				    va_list ap)
-{
-  return FALSE;
-}
-
 /* Continues resuming after resolving.  Continue after last reply. */
 
 static SilcBool
@@ -225,7 +211,7 @@ SILC_FSM_STATE(silc_client_st_register_complete)
   /* Issue IDENTIFY command for itself to get resolved hostname
      correctly from server. */
   silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
-			   silc_client_register_command_called, NULL,
+			   silc_client_command_called_dummy, NULL,
 			   1, 5, silc_buffer_data(conn->internal->local_idp),
 			   silc_buffer_len(conn->internal->local_idp));
 
@@ -239,7 +225,7 @@ SILC_FSM_STATE(silc_client_st_register_complete)
   /* Issue INFO command to fetch the real server name and server
      information and other stuff. */
   silc_client_command_send(client, conn, SILC_COMMAND_INFO,
-			   silc_client_register_command_called, NULL,
+			   silc_client_command_called_dummy, NULL,
 			   1, 2, silc_buffer_data(conn->internal->remote_idp),
 			   silc_buffer_len(conn->internal->remote_idp));
 
@@ -394,7 +380,7 @@ SILC_FSM_STATE(silc_client_st_resume_resolve_channels)
   /* Send UMODE command to get our own user mode in the network */
   SILC_LOG_DEBUG(("Resolving user mode"));
   silc_client_command_send(client, conn, SILC_COMMAND_UMODE,
-			   silc_client_register_command_called, NULL,
+			   silc_client_command_called_dummy, NULL,
 			   1, 1, silc_buffer_data(conn->internal->local_idp),
 			   silc_buffer_len(conn->internal->local_idp));
 
@@ -539,14 +525,14 @@ SILC_FSM_STATE(silc_client_st_resume_completed)
   /* Issue IDENTIFY command for itself to get resolved hostname
      correctly from server. */
   silc_client_command_send(client, conn, SILC_COMMAND_IDENTIFY,
-			   silc_client_register_command_called, NULL,
+			   silc_client_command_called_dummy, NULL,
 			   1, 5, silc_buffer_data(conn->internal->local_idp),
 			   silc_buffer_len(conn->internal->local_idp));
 
   /* Issue INFO command to fetch the real server name and server
      information and other stuff. */
   silc_client_command_send(client, conn, SILC_COMMAND_INFO,
-			   silc_client_register_command_called, NULL,
+			   silc_client_command_called_dummy, NULL,
 			   1, 2, silc_buffer_data(conn->internal->remote_idp),
 			   silc_buffer_len(conn->internal->remote_idp));
 

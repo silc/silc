@@ -59,5 +59,17 @@ SilcUInt16 silc_client_command_send_argv(SilcClient client,
 					 SilcUInt32 *argv_types);
 void silc_client_commands_register(SilcClient client);
 void silc_client_commands_unregister(SilcClient client);
+SilcBool silc_client_command_called_dummy(SilcClient client,
+					  SilcClientConnection conn,
+					  SilcCommand command,
+					  SilcStatus status,
+					  SilcStatus error,
+					  void *context,
+					  va_list ap);
+void silc_client_command_resolve_dummy(SilcClient client,
+				       SilcClientConnection conn,
+				       SilcStatus status,
+				       SilcDList clients,
+				       void *context);
 
 #endif /* COMMAND_H */
