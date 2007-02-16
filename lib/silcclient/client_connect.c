@@ -703,6 +703,9 @@ SILC_FSM_STATE(silc_client_st_connected)
   conn->callback(client, conn, SILC_CLIENT_CONN_SUCCESS, 0, NULL,
 		 conn->callback_context);
 
+  silc_async_free(conn->internal->cop);
+  conn->internal->cop = NULL;
+
   return SILC_FSM_FINISH;
 }
 

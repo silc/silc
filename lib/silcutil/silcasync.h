@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -101,8 +101,8 @@ typedef void (*SilcAsyncOperationAbort)(SilcAsyncOperation op,
  * SYNOPSIS
  *
  *    typedef SilcBool (*SilcAsyncOperationPause)(SilcAsyncOperation op,
- *                                            SilcBool pause_operation,
- *                                            void *context);
+ *                                                SilcBool pause_operation,
+ *                                                void *context);
  *
  * DESCRIPTION
  *
@@ -240,9 +240,9 @@ SilcAsyncOperation silc_async_alloc(SilcAsyncOperationAbort abort_cb,
  * SYNOPSIS
  *
  *    SilcBool silc_async_init(SilcAsyncOperation op,
- *                         SilcAsyncOperationAbort abort_cb,
- *                         SilcAsyncOperationPause pause_cb,
- *                         void *context);
+ *                             SilcAsyncOperationAbort abort_cb,
+ *                             SilcAsyncOperationPause pause_cb,
+ *                             void *context);
  *
  * DESCRIPTION
  *
@@ -251,7 +251,8 @@ SilcAsyncOperation silc_async_alloc(SilcAsyncOperationAbort abort_cb,
  *    layer to abort the asynchronous operation, by calling the
  *    silc_async_abort.  Since this use pre-allocated context, the function
  *    silc_async_free need not be called.  This function is equivalent
- *    to silc_async_alloc except this does not allocate any memory.
+ *    to silc_async_alloc except this does not allocate any memory.  The `op'
+ *    needs not be uninitialized.
  *
  *    If the `pause_cb' is provided then the upper layer may also halt and
  *    then later resume the execution of the operation, by calling the

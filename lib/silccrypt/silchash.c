@@ -118,6 +118,7 @@ SilcBool silc_hash_unregister(SilcHashObject *hash)
     if (hash == SILC_ALL_HASH_FUNCTIONS || entry == hash) {
       silc_dlist_del(silc_hash_list, entry);
       silc_free(entry->name);
+      silc_free(entry->oid);
       silc_free(entry);
 
       if (silc_dlist_count(silc_hash_list) == 0) {

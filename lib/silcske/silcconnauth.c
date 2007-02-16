@@ -32,6 +32,7 @@ static SilcBool silc_connauth_packet_receive(SilcPacketEngine engine,
 struct SilcConnAuthStruct {
   SilcSKE ske;
   SilcFSM fsm;
+  SilcAsyncOperationStruct op;
   SilcConnectionType conn_type;
   SilcAuthMethod auth_method;
   void *auth_data;
@@ -395,8 +396,6 @@ silc_connauth_initiator(SilcConnAuth connauth,
 			SilcConnAuthCompletion completion,
 			void *context)
 {
-  SilcAsyncOperation op;
-
   SILC_LOG_DEBUG(("Connection authentication as initiator"));
 
   if (auth_method == SILC_AUTH_PASSWORD && !auth_data) {
@@ -423,10 +422,10 @@ silc_connauth_initiator(SilcConnAuth connauth,
 			  SILC_PACKET_FAILURE, -1);
 
   /* Start the protocol */
-  op = silc_async_alloc(silc_connauth_abort, NULL, connauth);
+  silc_async_init(&connauth->op, silc_connauth_abort, NULL, connauth);
   silc_fsm_start(connauth->fsm, silc_connauth_st_initiator_start);
 
-  return op;
+  return &connauth->op;
 }
 
 
@@ -684,8 +683,6 @@ silc_connauth_responder(SilcConnAuth connauth,
 			SilcConnAuthCompletion completion,
 			void *context)
 {
-  SilcAsyncOperation op;
-
   SILC_LOG_DEBUG(("Connection authentication as responder"));
 
   connauth->get_auth_data = get_auth_data;
@@ -699,8 +696,8 @@ silc_connauth_responder(SilcConnAuth connauth,
 			  SILC_PACKET_FAILURE, -1);
 
   /* Start the protocol */
-  op = silc_async_alloc(silc_connauth_abort, NULL, connauth);
+  silc_async_init(&connauth->op, silc_connauth_abort, NULL, connauth);
   silc_fsm_start(connauth->fsm, silc_connauth_st_responder_start);
 
-  return op;
+  return &connauth->op;
 }

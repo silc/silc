@@ -604,14 +604,22 @@ silc_packet_engine_start(SilcRng rng, SilcBool router,
 
 void silc_packet_engine_stop(SilcPacketEngine engine)
 {
+  SilcPacket packet;
 
   SILC_LOG_DEBUG(("Stopping packet engine"));
 
   if (!engine)
     return;
 
-  /* XXX */
+  /* Free packet free list */
+  silc_list_start(engine->packet_pool);
+  while ((packet = silc_list_get(engine->packet_pool))) {
+    silc_buffer_purge(&packet->buffer);
+    silc_free(packet);
+  }
 
+  silc_hash_table_free(engine->contexts);
+  silc_mutex_free(engine->lock);
   silc_free(engine);
 }
 
@@ -879,7 +887,27 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
     silc_dlist_uninit(stream->process);
   }
 
-  /* XXX */
+  /* Destroy ciphers and HMACs */
+  if (stream->send_key[0])
+    silc_cipher_free(stream->send_key[0]);
+  if (stream->receive_key[0])
+    silc_cipher_free(stream->receive_key[0]);
+  if (stream->send_hmac[0])
+    silc_hmac_free(stream->send_hmac[0]);
+  if (stream->receive_hmac[0])
+    silc_hmac_free(stream->receive_hmac[0]);
+  if (stream->send_key[1])
+    silc_cipher_free(stream->send_key[1]);
+  if (stream->receive_key[1])
+    silc_cipher_free(stream->receive_key[1]);
+  if (stream->send_hmac[1])
+    silc_hmac_free(stream->send_hmac[1]);
+  if (stream->receive_hmac[1])
+    silc_hmac_free(stream->receive_hmac[1]);
+
+  /* Free IDs */
+  silc_free(stream->src_id);
+  silc_free(stream->dst_id);
 
   silc_atomic_uninit8(&stream->refcnt);
   silc_mutex_free(stream->lock);
@@ -1167,7 +1195,7 @@ SilcBool silc_packet_set_keys(SilcPacketStream stream, SilcCipher send_key,
   } else {
     if (stream->send_key[0] && send_key)
       silc_cipher_free(stream->send_key[0]);
-    if (stream->send_key[1] && receive_key)
+    if (stream->receive_key[0] && receive_key)
       silc_cipher_free(stream->receive_key[0]);
     if (stream->send_hmac[0] && send_hmac)
       silc_hmac_free(stream->send_hmac[0]);
@@ -2447,7 +2475,7 @@ int silc_packet_wrap_read(SilcStream stream, unsigned char *buf,
   if (read_more && !pws->blocking) {
     /* More data will be available (in blocking mode not supported). */
     silc_buffer_pull(&packet->buffer, len);
-    silc_list_insert(pws->in_queue, NULL, packet); 
+    silc_list_insert(pws->in_queue, NULL, packet);
     silc_schedule_task_add_timeout(pws->stream->sc->schedule,
 				   silc_packet_wrap_read_more, pws, 0, 0);
     pws->read_more = TRUE;

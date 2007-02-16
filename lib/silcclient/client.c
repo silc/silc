@@ -731,6 +731,12 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
     silc_hash_free(conn->internal->sha1hash);
   silc_atomic_uninit16(&conn->internal->cmd_ident);
 
+  if (conn->internal->rekey)
+    silc_ske_free_rekey_material(conn->internal->rekey);
+
+  if (conn->internal->cop)
+    silc_async_free(conn->internal->cop);
+
   silc_free(conn->internal);
   memset(conn, 'F', sizeof(*conn));
   silc_free(conn);
@@ -934,7 +940,10 @@ void silc_client_free(SilcClient client)
     silc_hmac_unregister_all();
   }
 
+  silc_packet_engine_stop(client->internal->packet_engine);
+  silc_dlist_uninit(client->internal->ftp_sessions);
   silc_atomic_uninit16(&client->internal->conns);
+  silc_mutex_free(client->internal->lock);
   silc_free(client->username);
   silc_free(client->hostname);
   silc_free(client->realname);

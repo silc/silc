@@ -489,6 +489,7 @@ SilcBool silc_pkcs_public_key_alloc(SilcPKCSType type,
 void silc_pkcs_public_key_free(SilcPublicKey public_key)
 {
   public_key->pkcs->public_key_free(public_key->public_key);
+  silc_free(public_key);
 }
 
 /* Exports public key */
@@ -564,6 +565,7 @@ SilcUInt32 silc_pkcs_private_key_get_len(SilcPrivateKey private_key)
 void silc_pkcs_private_key_free(SilcPrivateKey private_key)
 {
   private_key->pkcs->private_key_free(private_key->private_key);
+  silc_free(private_key);
 }
 
 /* Encrypts */

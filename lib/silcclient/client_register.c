@@ -236,6 +236,8 @@ SILC_FSM_STATE(silc_client_st_register_complete)
   conn->internal->registering = FALSE;
   silc_schedule_task_del_by_all(conn->internal->schedule, 0,
 				silc_client_connect_timeout, conn);
+  silc_async_free(conn->internal->cop);
+  conn->internal->cop = NULL;
 
   return SILC_FSM_FINISH;
 }
@@ -578,6 +580,8 @@ SILC_FSM_STATE(silc_client_st_resume_completed)
 				silc_client_connect_timeout, conn);
   silc_free(resume->nickname);
   silc_free(resume);
+  silc_async_free(conn->internal->cop);
+  conn->internal->cop = NULL;
 
   return SILC_FSM_FINISH;
 }

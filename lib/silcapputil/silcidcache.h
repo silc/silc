@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2006 Pekka Riikonen
+  Copyright (C) 2000 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -140,11 +140,8 @@ void silc_idcache_free(SilcIDCache cache);
  *    Add new entry to the cache.  Returns the allocated cache entry if the
  *    entry was added successfully, or NULL if error occurred.  The `name' is
  *    the name associated with the ID, the `id' the actual ID and the
- *    `context' a caller specific context.
- *
- *    The `name', `id' and `context' pointers will be stored in the cache,
- *    and if the caller frees these pointers the caller is also responsible
- *    of deleting the cache entry.
+ *    `context' a caller specific context.  The caller is responsible of
+ *    freeing the `name' and `id' when the entry is deleted.
  *
  ***/
 SilcIDCacheEntry

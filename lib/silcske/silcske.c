@@ -111,7 +111,7 @@ static SilcBool silc_ske_packet_receive(SilcPacketEngine engine,
   }
 
   /* Handle rekey and SUCCESS packets synchronously.  After SUCCESS packets
-     they keys are taken into use immediately, hence the synchronous 
+     they keys are taken into use immediately, hence the synchronous
      processing to get the keys in use as soon as possible. */
   if (ske->rekeying || packet->type == SILC_PACKET_SUCCESS)
     silc_fsm_continue_sync(&ske->fsm);
@@ -1085,6 +1085,8 @@ void silc_ske_free(SilcSKE ske)
       silc_hash_free(ske->prop->hash);
     if (ske->prop->hmac)
       silc_hmac_free(ske->prop->hmac);
+    if (ske->prop->public_key)
+      silc_pkcs_public_key_free(ske->prop->public_key);
     silc_free(ske->prop);
   }
   if (ske->keymat)

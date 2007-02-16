@@ -1,10 +1,10 @@
 /*
 
-  stacktrace.c 
+  stacktrace.c
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002, 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,11 @@ static unsigned long st_blocks_count = 0;
 static SilcBool dump = FALSE;
 static SilcBool malloc_check = FALSE;
 
-#define SILC_ST_DEPTH 10
+#ifdef SILC_DEBUG
+#define SILC_ST_DEPTH 15
+#else
+#define SILC_ST_DEPTH 8
+#endif /* SILC_DEBUG */
 
 /* Memory block with stack trace */
 typedef struct SilcStBlockStruct {
@@ -191,7 +195,7 @@ void silc_st_dump(void)
     for (s = stack; s; s = s->next) {
       if (s->file == stack->file && s->line == stack->line &&
 	  s->depth == stack->depth &&
-	  !memcmp(s->stack, stack->stack, 
+	  !memcmp(s->stack, stack->stack,
 		  (s->depth * sizeof(stack->stack[0])))) {
 	blocks++;
 	bytes += s->size;
@@ -210,7 +214,7 @@ void silc_st_dump(void)
   if (!leaks) {
     fprintf(stderr, "\nNo memory leaks\n");
   } else {
-    fprintf(stderr, 
+    fprintf(stderr,
 	    "-----------------------------------------\n"
 	    "-----------------------------------------\n"
 	    " Memory leaks dumped to 'stacktrace.log'\n"

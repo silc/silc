@@ -1,7 +1,7 @@
 /*
  irssi.c : irssi
 
-    Copyright (C) 1999-2000 Timo Sirainen
+    Copyright (C) 1999-2000, 2007 Timo Sirainen
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -78,21 +78,29 @@ static int dirty, full_redraw, dummy;
 
 static GMainLoop *main_loop;
 int quitting;
+int quit_signalled;
+int protocols_deinit;
 
-static const char *firsttimer_text =
-	"Looks like this is the first time you've run irssi.\n"
-	"This is just a reminder that you really should go read\n"
-	"startup-HOWTO if you haven't already. You can find it\n"
-	"and more irssi beginner info at http://irssi.org/help/\n"
-	"\n"
-	"For the truly impatient people who don't like any automatic\n"
-	"window creation or closing, just type: /MANUAL-WINDOWS";
 static int display_firsttimer = FALSE;
 
+/* Protocol exit signal to tell protocol has gone away.  Safe to quit. */
+
+static void sig_protocol_exit(void)
+{
+  protocols_deinit = TRUE;
+  if (!quitting && quit_signalled)
+    quitting = TRUE;
+}
 
 static void sig_exit(void)
 {
-        quitting = TRUE;
+  quit_signalled = TRUE;
+
+  /* If protocol hasn't finished yet, wait untill it sends "chat protocol
+     deinit" signal. */
+  if (!protocols_deinit)
+    return;
+  quitting = TRUE;
 }
 
 /* redraw irssi's screen.. */
@@ -152,11 +160,15 @@ static void textui_init(void)
 
 	theme_register(gui_text_formats);
 	signal_add_last("gui exit", (SIGNAL_FUNC) sig_exit);
+	signal_add_last("chat protocol deinit",
+			(SIGNAL_FUNC) sig_protocol_exit);
 }
 
 static void textui_finish_init(void)
 {
 	quitting = FALSE;
+	quit_signalled = FALSE;
+	protocols_deinit = FALSE;
 
 	if (dummy)
 		term_dummy_init();
@@ -192,13 +204,6 @@ static void textui_finish_init(void)
 
 	fe_common_core_finish_init();
 	signal_emit("irssi init finished", 0);
-
-#if 0
-	if (display_firsttimer) {
-		printtext_window(active_win, MSGLEVEL_CLIENTNOTICE,
-				 "%s", firsttimer_text);
-	}
-#endif
 }
 
 static void textui_deinit(void)
@@ -216,6 +221,7 @@ static void textui_deinit(void)
 
         dirty_check(); /* one last time to print any quit messages */
 	signal_remove("gui exit", (SIGNAL_FUNC) sig_exit);
+	signal_remove("chat protocol deinit", (SIGNAL_FUNC) sig_protocol_exit);
 
 	if (dummy)
 		term_dummy_deinit();
@@ -342,6 +348,8 @@ int main(int argc, char **argv)
 
 	dummy = FALSE;
 	quitting = FALSE;
+	quit_signalled = FALSE;
+	protocols_deinit = FALSE;
 	core_init_paths(argc, argv);
 
 	check_files();

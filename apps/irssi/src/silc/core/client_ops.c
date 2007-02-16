@@ -2348,6 +2348,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   if (!pw) {
     if (completion)
       completion(FALSE, context);
+    silc_free(pk);
     return;
   }
 
@@ -2429,6 +2430,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 			    format, 0, verify);
     g_free(format);
     silc_free(fingerprint);
+    silc_free(babbleprint);
+    silc_free(pk);
     return;
   } else {
     /* The key already exists, verify it. */
@@ -2453,6 +2456,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 			      format, 0, verify);
       g_free(format);
       silc_free(fingerprint);
+      silc_free(babbleprint);
+      silc_free(pk);
       return;
     }
 
@@ -2474,8 +2479,11 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 			      format, 0, verify);
       g_free(format);
       silc_free(fingerprint);
+      silc_free(babbleprint);
+      silc_free(pk);
       return;
     }
+    silc_pkcs_public_key_free(local_pubkey);
 
     /* Compare the keys */
     if (memcmp(encpk, pk, encpk_len)) {
@@ -2500,7 +2508,9 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 			      format, 0, verify);
       g_free(format);
       silc_free(fingerprint);
+      silc_free(babbleprint);
       silc_free(encpk);
+      silc_free(pk);
       return;
     }
 
@@ -2509,10 +2519,12 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
       completion(TRUE, context);
     silc_free(encpk);
     silc_free(fingerprint);
+    silc_free(babbleprint);
     silc_free(verify->filename);
     silc_free(verify->entity);
     silc_free(verify->entity_name);
     silc_free(verify);
+    silc_free(pk);
   }
 }
 

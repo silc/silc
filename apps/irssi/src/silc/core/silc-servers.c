@@ -423,6 +423,7 @@ static void sig_connected_stream_created(SilcSocketStreamStatus status,
   if (params.detach_data)
     printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
     			SILCTXT_REATTACH, server->tag);
+  silc_free(file);
 
   /* Start key exchange */
   server->op = silc_client_key_exchange(silc_client, &params,
