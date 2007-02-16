@@ -677,6 +677,7 @@ unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
   silc_buffer_free(buf);
   silc_free(key);
   silc_free(identifier);
+  silc_buffer_purge(&alg_key);
   silc_asn1_free(asn1);
 
   return ret;
@@ -1529,6 +1530,7 @@ unsigned char *silc_pkcs_silc_export_private_key(void *private_key,
   silc_buffer_free(buf);
   silc_free(prv);
   silc_free(key);
+  silc_buffer_purge(&alg_key);
   silc_asn1_free(asn1);
 
   return ret;

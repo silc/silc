@@ -21,6 +21,8 @@
 #include "silcasn1.h"
 #include "silcber.h"
 
+#define SILC_ASN1_BUFFER_FREE(b, stack) if (!stack) silc_buffer_purge(b);
+
 /************************** ASN.1 Encoder routines **************************/
 
 /* Encode string from UTF-8 string to other string encodings.  Encodes
@@ -136,10 +138,10 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
       ret = silc_asn1_encoder(asn1, stack2, stack1, type, type,
 			      SILC_BER_CLASS_UNIVERSAL, opts,
 			      &buf, depth + 1, primitive);
-      silc_stack_pop(stack2);
 
       if (!ret) {
 	SILC_LOG_DEBUG(("Error encoding explicit tag"));
+	silc_stack_pop(stack2);
 	goto fail;
       }
 
@@ -149,6 +151,8 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 				       silc_buffer_truelen(dest) + len);
       ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_CONSTRUCTED,
 			    tag, buf.data, silc_buffer_len(&buf), FALSE);
+      SILC_ASN1_BUFFER_FREE(&buf, stack2);
+      silc_stack_pop(stack2);
       if (!ret)
 	goto fail;
       if (primitive) {
@@ -237,9 +241,9 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	silc_stack_push(stack2, &frame);
 	ret = silc_asn1_encoder(asn1, stack2, stack1, rtype, rtag, rclass,
 				ropts, &buf, depth + 1, FALSE);
-	silc_stack_pop(stack2);
 	if (!ret) {
 	  SILC_LOG_DEBUG(("Error traversing a SEQUENCE/SET"));
+	  silc_stack_pop(stack2);
 	  goto fail;
 	}
 
@@ -249,6 +253,8 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_CONSTRUCTED,
 			      tag, buf.data, silc_buffer_len(&buf), indef);
+	SILC_ASN1_BUFFER_FREE(&buf, stack2);
+	silc_stack_pop(stack2);
 	if (!ret)
 	  goto fail;
 	break;
@@ -286,6 +292,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, buf.data, silc_buffer_len(&buf), FALSE);
+	SILC_ASN1_BUFFER_FREE(&buf, stack2);
 	silc_stack_pop(stack2);
 	if (!ret)
 	  goto fail;
@@ -324,6 +331,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, buf.data, silc_buffer_len(&buf), FALSE);
+	SILC_ASN1_BUFFER_FREE(&buf, stack2);
 	silc_stack_pop(stack2);
 	if (!ret)
 	  goto fail;
@@ -414,6 +422,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, buf.data, silc_buffer_len(&buf), FALSE);
+	SILC_ASN1_BUFFER_FREE(&buf, stack2);
 	silc_stack_pop(stack2);
 	if (!ret)
 	  goto fail;
@@ -463,6 +472,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, buf.data, silc_buffer_len(&buf), indef);
+	SILC_ASN1_BUFFER_FREE(&buf, stack2);
 	silc_stack_pop(stack2);
 	if (!ret)
 	  goto fail;

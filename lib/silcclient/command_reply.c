@@ -514,7 +514,7 @@ SILC_FSM_STATE(silc_client_command_reply_whois)
 
   silc_client_unref_client(client, conn, client_entry);
   if (has_channels) {
-    silc_dlist_uninit(channel_list);
+    silc_channel_payload_list_free(channel_list);
     silc_free(umodes);
   }
 

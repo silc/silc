@@ -730,10 +730,9 @@ void silc_client_del_connection(SilcClient client, SilcClientConnection conn)
   if (conn->internal->sha1hash)
     silc_hash_free(conn->internal->sha1hash);
   silc_atomic_uninit16(&conn->internal->cmd_ident);
-
+  silc_free(conn->internal->away_message);
   if (conn->internal->rekey)
     silc_ske_free_rekey_material(conn->internal->rekey);
-
   if (conn->internal->cop)
     silc_async_free(conn->internal->cop);
 

@@ -469,6 +469,7 @@ SilcBool silc_client_save_channel_key(SilcClient client,
   silc_hmac_set_key(channel->internal.hmac, hash,
 		    silc_hash_len(silc_hmac_get_hash(channel->internal.hmac)));
   memset(hash, 0, sizeof(hash));
+  silc_channel_key_payload_free(payload);
 
   silc_client_unref_channel(client, conn, channel);
 
