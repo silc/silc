@@ -203,7 +203,7 @@ void silc_st_dump(void)
       fprintf(fp, "<stacktrace>%s:%d: #blocks=%lu, bytes=%lu\n",
 	      stack->file, stack->line, blocks, bytes);
       for (i = 0; i < stack->depth; i++)
-	fprintf(fp, "<pc>%p\n", stack->stack[i]);
+	fprintf(fp, "\tpc=%p\n", stack->stack[i]);
     }
   }
 

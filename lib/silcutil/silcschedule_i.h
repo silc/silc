@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2006 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -86,7 +86,8 @@ typedef struct {
   /* Initializes the platform specific scheduler.  This for example initializes
      the wakeup mechanism of the scheduler.  In multi-threaded environment
      the scheduler needs to be wakenup when tasks are added or removed from
-     the task queues.  Returns context to the platform specific scheduler. */
+     the task queues.  Returns context to the platform specific scheduler.
+     If this returns NULL the scheduler initialization will fail. */
   void *(*init)(SilcSchedule schedule, void *app_context);
 
   /* Uninitializes the platform specific scheduler context. */

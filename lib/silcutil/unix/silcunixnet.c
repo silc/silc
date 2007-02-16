@@ -641,6 +641,8 @@ SILC_FSM_STATE(silc_net_connect_st_connected)
     return SILC_FSM_CONTINUE;
   }
 
+  SILC_LOG_DEBUG(("TCP connection established"));
+
   /** Connection created */
   silc_fsm_next(fsm, silc_net_connect_st_stream);
   SILC_FSM_CALL((conn->sop = silc_socket_tcp_stream_create(

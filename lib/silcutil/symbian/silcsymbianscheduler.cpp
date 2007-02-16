@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2006 Pekka Riikonen
+  Copyright (C) 1998 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
 				  void *app_context)
 {
   /* Nothing to do */
-  return NULL;
+  return (void *)1;
 }
 
 

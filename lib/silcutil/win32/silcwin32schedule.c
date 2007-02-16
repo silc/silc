@@ -242,7 +242,7 @@ void *silc_schedule_internal_init(SilcSchedule schedule, void *app_context)
 
   return (void *)wakeup;
 #else
-  return NULL;
+  return (void *)1;
 #endif
 }
 

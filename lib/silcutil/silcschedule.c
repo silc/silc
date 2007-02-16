@@ -325,8 +325,10 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
   schedule->fd_queue =
     silc_hash_table_alloc(0, silc_hash_uint, NULL, NULL, NULL,
 			  silc_schedule_fd_destructor, NULL, TRUE);
-  if (!schedule->fd_queue)
+  if (!schedule->fd_queue) {
+    silc_free(schedule);
     return NULL;
+  }
 
   silc_list_init(schedule->timeout_queue, struct SilcTaskStruct, next);
   silc_list_init(schedule->free_tasks, struct SilcTaskStruct, next);
@@ -340,6 +342,12 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
 
   /* Initialize the platform specific scheduler. */
   schedule->internal = schedule_ops.init(schedule, app_context);
+  if (!schedule->internal) {
+    silc_hash_table_free(schedule->fd_queue);
+    silc_mutex_free(schedule->lock);
+    silc_free(schedule);
+    return NULL;
+  }
 
   /* Timeout freelist garbage collection */
   silc_schedule_task_add_timeout(schedule, silc_schedule_timeout_gc,

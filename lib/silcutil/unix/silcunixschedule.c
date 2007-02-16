@@ -338,8 +338,10 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
 
 #if defined(HAVE_EPOLL_WAIT)
   internal->epfd = epoll_create(4);
-  if (internal->epfd < 0)
+  if (internal->epfd < 0) {
+    SILC_LOG_ERROR(("epoll_create() failed: %s", strerror(errno)));
     return NULL;
+  }
   internal->fds = silc_calloc(4, sizeof(*internal->fds));
   if (!internal->fds) {
     close(internal->epfd);
