@@ -110,6 +110,27 @@ AC_SUBST(LIBSILCSERVER_AGE)
 # Check for big-endian machines
 AC_C_BIGENDIAN
 
+# Check for epoll_wait and verify that epoll_create works
+AC_CHECK_FUNC(epoll_wait,
+  [
+    AC_RUN_IFELSE(
+      [
+        #include <sys/epoll.h>
+        int main()
+        {
+          int ret = epoll_create(5);
+          if (ret < 0)
+            return 1;
+          close(ret);
+          return 0;
+        }
+      ],
+      [
+        AC_DEFINE([HAVE_EPOLL_WAIT], [1], [HAVE_EPOLL_WAIT])
+      ],
+    )
+  ])
+
 #ifdef SILC_DIST_SIM
 # SIM modules directory
 #
