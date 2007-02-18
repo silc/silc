@@ -54,6 +54,13 @@ SILC_CIPHER_API_SET_KEY(aes_cbc)
   return TRUE;
 }
 
+/* Sets IV for the cipher. */
+
+SILC_CIPHER_API_SET_IV(aes_cbc)
+{
+
+}
+
 /* Returns the size of the cipher context. */
 
 SILC_CIPHER_API_CONTEXT_LEN(aes_cbc)
@@ -124,6 +131,16 @@ SILC_CIPHER_API_SET_KEY(aes_ctr)
   return TRUE;
 }
 
+/* Sets IV for the cipher. */
+
+SILC_CIPHER_API_SET_IV(aes_ctr)
+{
+  AesContext *aes = context;
+
+  /* Starts new block. */
+  aes->u.enc.inf.b[2] = 0;
+}
+
 /* Returns the size of the cipher context. */
 
 SILC_CIPHER_API_CONTEXT_LEN(aes_ctr)
@@ -138,7 +155,7 @@ SILC_CIPHER_API_ENCRYPT(aes_ctr)
 {
   AesContext *aes = context;
   SilcUInt32 ctr[4];
-  int i;
+  int i = 16;
 
   SILC_GET32_MSB(ctr[0], iv);
   SILC_GET32_MSB(ctr[1], iv + 4);

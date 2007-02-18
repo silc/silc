@@ -58,6 +58,13 @@ SILC_CIPHER_API_SET_KEY(rc5_cbc)
   return TRUE;
 }
 
+/* Sets IV for the cipher. */
+
+SILC_CIPHER_API_SET_IV(rc5_cbc)
+{
+
+}
+
 /* Returns the size of the cipher context. */
 
 SILC_CIPHER_API_CONTEXT_LEN(rc5_cbc)

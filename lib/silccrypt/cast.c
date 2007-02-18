@@ -80,6 +80,13 @@ SILC_CIPHER_API_SET_KEY(cast_cbc)
   return TRUE;
 }
 
+/* Sets IV for the cipher. */
+
+SILC_CIPHER_API_SET_IV(cast_cbc)
+{
+
+}
+
 /* Returns the size of the cipher context. */
 
 SILC_CIPHER_API_CONTEXT_LEN(cast_cbc)

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ typedef struct SilcCipherStruct *SilcCipher;
 typedef struct {
   char *name;
   SilcBool (*set_key)(void *, const unsigned char *, SilcUInt32, SilcBool);
+  void (*set_iv)(void *, const unsigned char *);
   SilcBool (*encrypt)(void *, const unsigned char *, unsigned char *,
 		      SilcUInt32, unsigned char *);
   SilcBool (*decrypt)(void *, const unsigned char *, unsigned char *,
@@ -91,6 +92,9 @@ SilcBool silc_##cipher##_set_key(void *context,			\
 				 const unsigned char *key,	\
 				 SilcUInt32 keylen,		\
 				 SilcBool encryption)
+#define SILC_CIPHER_API_SET_IV(cipher)				\
+void silc_##cipher##_set_iv(void *context,			\
+			    const unsigned char *iv)
 #define SILC_CIPHER_API_ENCRYPT(cipher)				\
 SilcBool silc_##cipher##_encrypt(void *context,			\
 				 const unsigned char *src,	\
@@ -191,7 +195,7 @@ SilcBool silc_cipher_unregister_all(void);
  * SYNOPSIS
  *
  *    SilcBool silc_cipher_alloc(const unsigned char *name,
- *                           SilcCipher *new_cipher);
+ *                               SilcCipher *new_cipher);
  *
  * DESCRIPTION
  *
@@ -199,6 +203,31 @@ SilcBool silc_cipher_unregister_all(void);
  *    on error. The allocated cipher is returned in new_cipher argument. The
  *    caller must set the key to the cipher after this function has returned
  *    by calling the ciphers set_key function.
+ *
+ *    The following ciphers are supported:
+ *
+ *    aes-256-ctr            AES-256, Counter mode
+ *    aes-192-ctr            AES-192, Counter mode
+ *    aes-128-ctr            AES,128, Counter mode
+ *    aes-256-cbc            AES-256, Cipher block chaining mode
+ *    aes-192-cbc            AES-192, Cipher block chaining mode
+ *    aes-128-cbc            AES,128, Cipher block chaining mode
+ *    twofish-256-cbc        Twofish-256, Cipher block chaining mode
+ *    twofish-192-cbc        Twofish-192, Cipher block chaining mode
+ *    twofish-128-cbc        Twofish-128, Cipher block chaining mode
+ *
+ *    Notes about modes:
+ *
+ *    The CTR is normal counter mode.  The CTR mode does not require the
+ *    plaintext length to be multiple by the cipher block size.  If the last
+ *    plaintext block is shorter the remaining bits of the key stream are
+ *    used next time silc_cipher_encrypt is called.  If silc_cipher_set_iv
+ *    is called it will reset the counter for a new block (discarding any
+ *    remaining bits from previous key stream).
+ *
+ *    The CBC is mode is a standard CBC mode.  The plaintext length must be
+ *    multiple by the cipher block size.  If it isn't the plaintext must be
+ *    padded.
  *
  ***/
 SilcBool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher);
@@ -308,7 +337,11 @@ SilcBool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
  * DESCRIPTION
  *
  *    Sets the IV (initial vector) for the cipher.  The `iv' must be
- *    the size of the block size of the cipher.
+ *    the size of the block size of the cipher.  If `iv' is NULL this
+ *    does not do anything.
+ *
+ *    If the encryption mode is CTR (Counter mode) this also resets the
+ *    the counter for a new block.  This is done also if `iv' is NULL.
  *
  ***/
 void silc_cipher_set_iv(SilcCipher cipher, const unsigned char *iv);

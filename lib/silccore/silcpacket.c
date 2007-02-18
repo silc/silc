@@ -1373,12 +1373,15 @@ static inline void silc_packet_send_ctr_increment(SilcPacketStream stream,
 						  unsigned char *ret_iv)
 {
   unsigned char *iv = silc_cipher_get_iv(cipher);
-  SilcUInt32 pc;
+  SilcUInt32 pc1, pc2;
 
-  /* Increment packet counter */
-  SILC_GET32_MSB(pc, iv + 8);
-  pc++;
-  SILC_PUT32_MSB(pc, iv + 8);
+  /* Increment 64-bit packet counter.*/
+  SILC_GET32_MSB(pc1, iv + 4);
+  SILC_GET32_MSB(pc2, iv + 8);
+  if (++pc2 == 0)
+    ++pc1;
+  SILC_PUT32_MSB(pc1, iv + 4);
+  SILC_PUT32_MSB(pc2, iv + 8);
 
   /* Reset block counter */
   memset(iv + 12, 0, 4);
@@ -1390,7 +1393,7 @@ static inline void silc_packet_send_ctr_increment(SilcPacketStream stream,
     ret_iv[1] = ret_iv[0] + iv[4];
     ret_iv[2] = ret_iv[0] ^ ret_iv[1];
     ret_iv[3] = ret_iv[0] + ret_iv[2];
-    SILC_PUT32_MSB(pc, ret_iv + 4);
+    SILC_PUT32_MSB(pc2, ret_iv + 4);
     SILC_LOG_HEXDUMP(("IV"), ret_iv, 8);
 
     /* Set new nonce to counter block */
@@ -1532,6 +1535,7 @@ static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
   /* Encrypt the packet */
   if (silc_likely(cipher)) {
     SILC_LOG_DEBUG(("Encrypting packet"));
+    silc_cipher_set_iv(cipher, NULL);
     if (silc_unlikely(!silc_cipher_encrypt(cipher, packet.data + ivlen,
 					   packet.data + ivlen, enclen,
 					   NULL))) {
@@ -1722,16 +1726,19 @@ static inline void silc_packet_receive_ctr_increment(SilcPacketStream stream,
 						     unsigned char *iv,
 						     unsigned char *packet_iv)
 {
-  SilcUInt32 pc;
+  SilcUInt32 pc1, pc2;
 
   /* If IV Included flag, set the IV from packet to block counter. */
   if (stream->iv_included) {
     memcpy(iv + 4, packet_iv, 8);
   } else {
-    /* Increment packet counter */
-    SILC_GET32_MSB(pc, iv + 8);
-    pc++;
-    SILC_PUT32_MSB(pc, iv + 8);
+    /* Increment 64-bit packet counter. */
+    SILC_GET32_MSB(pc1, iv + 4);
+    SILC_GET32_MSB(pc2, iv + 8);
+    if (++pc2 == 0)
+      ++pc1;
+    SILC_PUT32_MSB(pc1, iv + 4);
+    SILC_PUT32_MSB(pc2, iv + 8);
   }
 
   /* Reset block counter */
@@ -2049,8 +2056,9 @@ static void silc_packet_read_process(SilcPacketStream stream)
 	  silc_packet_receive_ctr_increment(stream, iv, NULL);
       }
 
-      silc_cipher_decrypt(cipher, inbuf->data + ivlen, tmp,
-			  block_len, iv);
+      if (silc_cipher_get_mode(cipher) == SILC_CIPHER_MODE_CTR)
+	silc_cipher_set_iv(cipher, NULL);
+      silc_cipher_decrypt(cipher, inbuf->data + ivlen, tmp, block_len, iv);
 
       header = tmp;
       if (stream->iv_included) {

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,9 +35,9 @@ SilcDList silc_cipher_list = NULL;
 
 /* Macro to define cipher to cipher list */
 #define SILC_CIPHER_API_DEF(name, cipher, keylen, blocklen, ivlen, mode) \
-{ name, silc_##cipher##_set_key, silc_##cipher##_encrypt,		\
-  silc_##cipher##_decrypt, silc_##cipher##_context_len,			\
-  keylen, blocklen, ivlen, mode }
+{ name, silc_##cipher##_set_key, silc_##cipher##_set_iv,		\
+  silc_##cipher##_encrypt, silc_##cipher##_decrypt,			\
+  silc_##cipher##_context_len, keylen, blocklen, ivlen, mode }
 
 /* Static list of ciphers for silc_cipher_register_default(). */
 const SilcCipherObject silc_default_ciphers[] =
@@ -100,6 +100,7 @@ SilcBool silc_cipher_register(const SilcCipherObject *cipher)
   new->block_len = cipher->block_len;
   new->iv_len = cipher->iv_len;
   new->set_key = cipher->set_key;
+  new->set_iv = cipher->set_iv;
   new->encrypt = cipher->encrypt;
   new->decrypt = cipher->decrypt;
   new->context_len = cipher->context_len;
@@ -331,7 +332,9 @@ SilcBool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
 
 void silc_cipher_set_iv(SilcCipher cipher, const unsigned char *iv)
 {
-  memcpy(&cipher->iv, iv, cipher->cipher->iv_len);
+  if (iv)
+    memmove(&cipher->iv, iv, cipher->cipher->iv_len);
+  cipher->cipher->set_iv(cipher->context, iv);
 }
 
 /* Returns the IV (initial vector) of the cipher. */

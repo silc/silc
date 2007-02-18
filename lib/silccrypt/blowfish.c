@@ -49,6 +49,13 @@ SILC_CIPHER_API_SET_KEY(blowfish_cbc)
   return TRUE;
 }
 
+/* Sets IV for the cipher. */
+
+SILC_CIPHER_API_SET_IV(blowfish_cbc)
+{
+
+}
+
 /* Returns the size of the cipher context. */
 
 SILC_CIPHER_API_CONTEXT_LEN(blowfish_cbc)
