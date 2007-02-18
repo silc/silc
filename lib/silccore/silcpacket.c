@@ -2633,11 +2633,7 @@ SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
     }
   } else {
     /* Non-blocking mode */
-    if (!silc_mutex_alloc(&pws->lock)) {
-      silc_free(pws);
-      return NULL;
-    }
-
+    silc_mutex_alloc(&pws->lock);
     silc_list_init(pws->in_queue, struct SilcPacketStruct, next);
   }
 

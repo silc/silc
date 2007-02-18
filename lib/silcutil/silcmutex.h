@@ -71,7 +71,8 @@ typedef struct SilcRwLockStruct *SilcRwLock;
  *    Allocates SILC Mutex object.  The mutex object must be allocated
  *    before it can be used.  It is freed by the silc_mutex_free function.
  *    This returns TRUE and allocated mutex in to the `mutex' and FALSE
- *    on error.
+ *    on error.  If threads support is not compiled in this returns FALSE,
+ *    but should not be considered as an error.
  *
  ***/
 SilcBool silc_mutex_alloc(SilcMutex *mutex);

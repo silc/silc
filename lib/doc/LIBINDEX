@@ -25,6 +25,8 @@ Toolkit sources, and the documentation is constantly evolving.  New versions
 of the Toolkit always delivers the latest version of this reference manual.
 
 <br /><br /><br />
+<li><a href="new.html">What's new in Toolkit 1.1</a><br />
+<li><a href="porting.html">Porting from Toolkit 1.0 to 1.1</a><br />
 <li><a href="intro_reference.html">Introduction to the Manual</a><br />
 <li><a href="programming_conv.html">Programming Conventions</a><br />
 <li><a href="building.html">Building the Toolkit</a>

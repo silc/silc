@@ -867,13 +867,6 @@ void silc_client_close_connection(SilcClient client,
 {
   SILC_LOG_DEBUG(("Closing connection %p", conn));
 
-  /* If connection machine is not running, we just delete the connection */
-  if (!silc_fsm_is_started(&conn->internal->fsm)) {
-    silc_packet_stream_destroy(conn->stream);
-    silc_client_del_connection(conn->client, conn);
-    return;
-  }
-
   /* Signal to close connection */
   conn->internal->status = SILC_CLIENT_CONN_DISCONNECTED;
   if (!conn->internal->disconnected) {

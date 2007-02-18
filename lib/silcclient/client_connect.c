@@ -267,6 +267,9 @@ static void silc_client_rekey_completion(SilcSKE ske,
   silc_ske_free_rekey_material(conn->internal->rekey);
   conn->internal->rekey = rekey;
 
+  silc_ske_free(conn->internal->ske);
+  conn->internal->ske = NULL;
+
   SILC_LOG_DEBUG(("Rekey completed conn %p", conn));
 
   /* Rekey done */

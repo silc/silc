@@ -967,7 +967,7 @@ SILC_FSM_STATE(silc_client_ftp)
   SilcClientFtpSession session;
   SilcClientID remote_id;
   SilcClientEntry remote_client;
-  SilcKeyAgreementPayload payload;
+  SilcKeyAgreementPayload payload = NULL;
   char *hostname;
   SilcUInt16 port;
 
@@ -1079,6 +1079,8 @@ SILC_FSM_STATE(silc_client_ftp)
   }
 
  out:
+  if (payload)
+    silc_key_agreement_payload_free(payload);
   silc_packet_free(packet);
   return SILC_FSM_FINISH;
 }
