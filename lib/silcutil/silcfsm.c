@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 - 2006 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -632,6 +632,9 @@ SILC_TASK_CALLBACK(silc_fsm_signal)
 {
   SilcFSMEventSignal p = context;
   SilcMutex lock = p->event->fsm->u.m.lock;
+  SilcFSM fsm;
+
+  /* We have to check couple of things before delivering the signal. */
 
   /* If the event value has went to zero while we've been waiting this
      callback, the event has been been signalled already.  It can happen
@@ -639,6 +642,18 @@ SILC_TASK_CALLBACK(silc_fsm_signal)
      when the sempahore is posted. */
   silc_mutex_lock(lock);
   if (!p->event->value) {
+    silc_mutex_unlock(lock);
+    silc_fsm_event_unref(p->event);
+    silc_free(p);
+    return;
+  }
+
+  /* If the waiter is not waiting anymore, don't deliver the signal */
+  silc_list_start(p->event->waiters);
+  while ((fsm = silc_list_get(p->event->waiters)))
+    if (fsm == p->fsm)
+      break;
+  if (!fsm) {
     silc_mutex_unlock(lock);
     silc_fsm_event_unref(p->event);
     silc_free(p);
@@ -706,7 +721,7 @@ static void silc_fsm_thread_termination_signal(SilcFSMEvent event)
   silc_mutex_lock(lock);
 
   silc_list_start(event->waiters);
-  while ((fsm = silc_list_get(event->waiters)) != SILC_LIST_END) {
+  while ((fsm = silc_list_get(event->waiters))) {
     /* Signal on thread termination.  Wake up destination scheduler in case
        caller is a real thread. */
     silc_list_del(event->waiters, fsm);
