@@ -396,6 +396,7 @@ static void sig_connected_stream_created(SilcSocketStreamStatus status,
   SilcClientConnectionParams params;
   char *file;
 
+  server->tcp_op = NULL;
   if (!stream) {
     server->connection_lost = TRUE;
     server_disconnect(SERVER(server));
@@ -454,8 +455,10 @@ static void sig_connected(SILC_SERVER_REC *server)
 
   /* Wrap the socket to TCP stream */
   fd = g_io_channel_unix_get_fd(net_sendbuffer_handle(server->handle));
-  silc_socket_tcp_stream_create(fd, TRUE, FALSE, silc_client->schedule,
-				sig_connected_stream_created, server);
+  server->tcp_op =
+    silc_socket_tcp_stream_create(fd, TRUE, FALSE, 
+				  silc_client->schedule,
+				  sig_connected_stream_created, server);
 }
 
 static void sig_disconnected(SILC_SERVER_REC *server)
@@ -472,6 +475,10 @@ static void sig_disconnected(SILC_SERVER_REC *server)
     /* Abort on going connecting (key exchange) */
     silc_async_abort(server->op, NULL, NULL);
     server->op = NULL;
+  } else if (server->tcp_op) {
+    /* Abort on going TCP stream creation */
+    silc_async_abort(server->tcp_op, NULL, NULL);
+    server->tcp_op = NULL;
   }
 
   /* SILC closes the handle */

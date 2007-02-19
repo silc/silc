@@ -779,10 +779,10 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 	break;
       }
       silc_snprintf(tmp, sizeof(tmp), "%d", silc_dlist_count(clients));
-      printformat_module("fe-common/silc", server, NULL,
+      printformat_module("fe-common/silc", server, channel->channel_name,
 			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_MANY_NICKS,
 			 tmp, nick);
-      printformat_module("fe-common/silc", server, NULL,
+      printformat_module("fe-common/silc", server, channel->channel_name,
 			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_USER_APPEARS,
 			 buf, client_entry->nickname);
       silc_client_list_free(client, conn, clients);
