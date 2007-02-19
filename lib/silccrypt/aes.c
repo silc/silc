@@ -149,13 +149,13 @@ SILC_CIPHER_API_CONTEXT_LEN(aes_ctr)
 }
 
 /* Encrypts with the cipher in CTR mode. Source and destination buffers
-   maybe one and same.  Assumes MSB first ordered counter. */
+   may be one and same.  Assumes MSB first ordered counter. */
 
 SILC_CIPHER_API_ENCRYPT(aes_ctr)
 {
   AesContext *aes = context;
   SilcUInt32 ctr[4];
-  int i = 16;
+  int i;
 
   SILC_GET32_MSB(ctr[0], iv);
   SILC_GET32_MSB(ctr[1], iv + 4);
