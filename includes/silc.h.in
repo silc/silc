@@ -93,13 +93,13 @@ extern "C" {
 #ifdef SILC_HAVE_PTHREAD
 /* For pthreads rwlock support */
 #ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 500
+#define _XOPEN_SOURCE 600
 #else
-#ifdef _XOPEN_SOURCE < 500
+#ifdef _XOPEN_SOURCE < 600
 #define _XOPEN_SOURCE_SAVE _XOPEN_SOURCE
 #undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 500
-#endif /* _XOPEN_SOURCE < 500 */
+#define _XOPEN_SOURCE 600
+#endif /* _XOPEN_SOURCE < 600 */
 #endif /* _XOPEN_SOURCE */
 #endif /* SILC_HAVE_PTHREAD */
 
