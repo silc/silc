@@ -253,8 +253,12 @@ SilcBool silc_socket_stream_close(SilcStream stream)
 {
   SilcSocketStream socket_stream = stream;
 
-  silc_schedule_unset_listen_fd(socket_stream->schedule, socket_stream->sock);
-  silc_schedule_task_del_by_fd(socket_stream->schedule, socket_stream->sock);
+  if (socket_stream->schedule) {
+    silc_schedule_unset_listen_fd(socket_stream->schedule,
+				  socket_stream->sock);
+    silc_schedule_task_del_by_fd(socket_stream->schedule,
+				 socket_stream->sock);
+  }
   silc_net_close_connection(socket_stream->sock);
 
   return TRUE;
@@ -304,7 +308,7 @@ SilcBool silc_socket_stream_notifier(SilcStream stream,
   socket_stream->notifier_context = context;
   socket_stream->schedule = schedule;
 
-  if (socket_stream->notifier) {
+  if (socket_stream->notifier && socket_stream->schedule) {
     /* Add the socket to scheduler.  Safe to call if already added. */
     if (!silc_schedule_task_add_fd(socket_stream->schedule,
 				   socket_stream->sock,
@@ -316,7 +320,7 @@ SilcBool silc_socket_stream_notifier(SilcStream stream,
 				     socket_stream->sock,
 				     SILC_TASK_READ, FALSE))
       return FALSE;
-  } else {
+  } else if (socket_stream->schedule) {
     /* Unschedule the socket */
     silc_schedule_unset_listen_fd(socket_stream->schedule,
 				  socket_stream->sock);
@@ -324,6 +328,8 @@ SilcBool silc_socket_stream_notifier(SilcStream stream,
 				 socket_stream->sock);
   }
 
-  silc_schedule_wakeup(socket_stream->schedule);
+  if (socket_stream->schedule)
+    silc_schedule_wakeup(socket_stream->schedule);
+
   return TRUE;
 }
