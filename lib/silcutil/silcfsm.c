@@ -560,9 +560,13 @@ SilcUInt32 silc_fsm_event_wait(SilcFSMEvent event, void *fsm)
 
   SILC_LOG_DEBUG(("Received event %p", event));
 
-  /* It is possible that this FSM is in the list so remove it */
+  /* Remove from waiting */
   silc_list_del(event->waiters, fsm);
-  event->value--;
+
+  /* Decrease the counter only after all waiters have acquired the signal. */
+  if (!silc_list_count(event->waiters))
+    event->value--;
+
   silc_mutex_unlock(lock);
   return 1;
 }
@@ -634,12 +638,12 @@ SILC_TASK_CALLBACK(silc_fsm_signal)
   SilcMutex lock = p->event->fsm->u.m.lock;
   SilcFSM fsm;
 
-  /* We have to check couple of things before delivering the signal. */
+  /* We have to check for couple of things before delivering the signal. */
 
   /* If the event value has went to zero while we've been waiting this
      callback, the event has been been signalled already.  It can happen
      when using real threads because the FSM may not be in waiting state
-     when the sempahore is posted. */
+     when the event is signalled. */
   silc_mutex_lock(lock);
   if (!p->event->value) {
     silc_mutex_unlock(lock);
@@ -648,7 +652,9 @@ SILC_TASK_CALLBACK(silc_fsm_signal)
     return;
   }
 
-  /* If the waiter is not waiting anymore, don't deliver the signal */
+  /* If the waiter is not waiting anymore, don't deliver the signal.  It
+     can happen if there were multiple signallers and the waiter went away
+     after the first signal. */
   silc_list_start(p->event->waiters);
   while ((fsm = silc_list_get(p->event->waiters)))
     if (fsm == p->fsm)
@@ -685,7 +691,7 @@ void silc_fsm_event_signal(SilcFSMEvent event)
 
   event->value++;
   silc_list_start(event->waiters);
-  while ((fsm = silc_list_get(event->waiters)) != SILC_LIST_END) {
+  while ((fsm = silc_list_get(event->waiters))) {
     if (fsm->event) {
       silc_schedule_task_del_by_all(fsm->schedule, 0, silc_fsm_event_timedout,
 				    fsm);

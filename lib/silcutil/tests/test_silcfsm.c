@@ -23,12 +23,15 @@ struct FooStruct {
   SilcFSMThreadStruct thread;
   int timeout;
   SilcFSMEventStruct sema;
+  SilcFSMEventStruct wait2;
   SilcSchedule schedule;
   Callback cb;
   void *cb_context;
   T threads[NUM_THREADS];
   T threads2[NUM_THREADS];
   int c;
+  int got_wait1 : 1;
+  int got_wait2 : 1;
 };
 
 SILC_FSM_STATE(test_st_start);
@@ -44,12 +47,23 @@ SILC_FSM_STATE(test_st_ninth);
 SILC_FSM_STATE(test_st_tenth);
 SILC_FSM_STATE(test_st_finish);
 
+SILC_FSM_STATE(test_st_wait1);
+SILC_FSM_STATE(test_st_wait2);
+SILC_FSM_STATE(test_st_signal1);
+SILC_FSM_STATE(test_st_signal1_check);
+
 SILC_FSM_STATE(test_thread_st_start);
 SILC_FSM_STATE(test_thread_st_finish);
 SILC_FSM_STATE(test_thread2_st_start);
 SILC_FSM_STATE(test_thread2_st_finish);
 SILC_FSM_STATE(test_thread3_st_start);
 SILC_FSM_STATE(test_thread4_st_start);
+
+static void test_fsm_destr(SilcFSMThread thread, void *thread_context,
+			   void *user_context)
+{
+  silc_fsm_free(thread);
+}
 
 SILC_TASK_CALLBACK(async_call_timeout)
 {
@@ -141,6 +155,7 @@ SILC_FSM_STATE(test_st_third)
 SILC_FSM_STATE(test_st_fourth)
 {
   Foo f = fsm_context;
+  SilcFSMThread t;
 
   SILC_LOG_DEBUG(("test_st_fourth"));
 
@@ -152,10 +167,62 @@ SILC_FSM_STATE(test_st_fourth)
   /*** Start thread */
   silc_fsm_start(&f->thread, test_thread_st_start);
 
+  SILC_LOG_DEBUG(("Creating two waiting threads"));
+  silc_fsm_event_init(&f->wait2, fsm);
+  t = silc_fsm_thread_alloc(fsm, f, test_fsm_destr, NULL, FALSE);
+  silc_fsm_start(t, test_st_wait1);
+  t = silc_fsm_thread_alloc(fsm, f, test_fsm_destr, NULL, FALSE);
+  silc_fsm_start(t, test_st_wait2);
+
+  SILC_LOG_DEBUG(("Create signaller thread"));
+  t = silc_fsm_thread_alloc(fsm, f, test_fsm_destr, NULL, FALSE);
+  silc_fsm_start(t, test_st_signal1);
+
   /** Waiting thread to terminate */
   SILC_LOG_DEBUG(("Waiting for thread to terminate"));
   silc_fsm_next(fsm, test_st_fifth);
   SILC_FSM_THREAD_WAIT(&f->thread);
+}
+
+SILC_FSM_STATE(test_st_wait1)
+{
+  Foo f = fsm_context;
+
+  SILC_LOG_DEBUG(("Waiter 1"));
+  SILC_FSM_EVENT_WAIT(&f->wait2);
+  SILC_LOG_DEBUG(("Waiter 1 signalled"));
+  f->got_wait1 = 1;
+  return SILC_FSM_FINISH;
+}
+
+SILC_FSM_STATE(test_st_wait2)
+{
+  Foo f = fsm_context;
+
+  SILC_LOG_DEBUG(("Waiter 2"));
+  SILC_FSM_EVENT_WAIT(&f->wait2);
+  SILC_LOG_DEBUG(("Waiter 2 signalled"));
+  f->got_wait2 = 1;
+  return SILC_FSM_FINISH;
+}
+
+SILC_FSM_STATE(test_st_signal1)
+{
+  Foo f = fsm_context;
+
+  SILC_LOG_DEBUG(("Signaller 1"));
+  SILC_FSM_EVENT_SIGNAL(&f->wait2);
+  silc_fsm_next_later(fsm, test_st_signal1_check, 0, 500000); 
+  return SILC_FSM_WAIT;;
+}
+
+SILC_FSM_STATE(test_st_signal1_check)
+{
+  Foo f = fsm_context;
+
+  SILC_LOG_DEBUG(("Signal check"));
+  assert(f->got_wait1 && f->got_wait2);
+  return SILC_FSM_FINISH;
 }
 
 SILC_FSM_STATE(test_thread_st_start)
