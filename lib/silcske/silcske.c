@@ -1035,6 +1035,7 @@ SilcSKE silc_ske_alloc(SilcRng rng, SilcSchedule schedule,
   ske->public_key = public_key;
   ske->private_key = private_key;
   ske->retry_timer = SILC_SKE_RETRY_MIN;
+  ske->refcnt = 1;
 
   return ske;
 }
@@ -1063,6 +1064,10 @@ void silc_ske_free(SilcSKE ske)
     }
     return;
   }
+
+  ske->refcnt--;
+  if (ske->refcnt > 0)
+    return;
 
   /* Free start payload */
   if (ske->start_payload)

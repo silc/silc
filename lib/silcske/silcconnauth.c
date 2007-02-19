@@ -227,6 +227,7 @@ SilcConnAuth silc_connauth_alloc(SilcSchedule schedule,
 
   connauth->timeout_secs = timeout_secs;
   connauth->ske = ske;
+  ske->refcnt++;
 
   return connauth;
 }
@@ -237,6 +238,10 @@ void silc_connauth_free(SilcConnAuth connauth)
 {
   if (connauth->public_keys)
     silc_dlist_uninit(connauth->public_keys);
+
+  /* Free reference */
+  silc_ske_free(connauth->ske);
+
   silc_free(connauth);
 }
 
@@ -374,12 +379,14 @@ SILC_FSM_STATE(silc_connauth_st_initiator_failure)
 
   SILC_LOG_DEBUG(("Start"));
 
-  /* Send FAILURE packet */
-  SILC_PUT32_MSB(SILC_AUTH_FAILED, error);
-  silc_packet_send(connauth->ske->stream, SILC_PACKET_FAILURE, 0, error, 4);
+  if (!connauth->aborted) {
+    /* Send FAILURE packet */
+    SILC_PUT32_MSB(SILC_AUTH_FAILED, error);
+    silc_packet_send(connauth->ske->stream, SILC_PACKET_FAILURE, 0, error, 4);
 
-  /* Call completion callback */
-  connauth->completion(connauth, FALSE, connauth->context);
+    /* Call completion callback */
+    connauth->completion(connauth, FALSE, connauth->context);
+  }
 
   silc_packet_stream_unlink(connauth->ske->stream,
 			    &silc_connauth_stream_cbs, connauth);
@@ -663,12 +670,14 @@ SILC_FSM_STATE(silc_connauth_st_responder_failure)
 
   SILC_LOG_ERROR(("Authentication failed"));
 
-  /* Send FAILURE packet */
-  SILC_PUT32_MSB(SILC_AUTH_FAILED, error);
-  silc_packet_send(connauth->ske->stream, SILC_PACKET_FAILURE, 0, error, 4);
+  if (!connauth->aborted) {
+    /* Send FAILURE packet */
+    SILC_PUT32_MSB(SILC_AUTH_FAILED, error);
+    silc_packet_send(connauth->ske->stream, SILC_PACKET_FAILURE, 0, error, 4);
 
-  /* Call completion callback */
-  connauth->completion(connauth, FALSE, connauth->context);
+    /* Call completion callback */
+    connauth->completion(connauth, FALSE, connauth->context);
+  }
 
   silc_packet_stream_unlink(connauth->ske->stream,
 			    &silc_connauth_stream_cbs, connauth);

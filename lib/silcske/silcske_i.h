@@ -88,6 +88,7 @@ struct SilcSKEStruct {
   } retrans;
 
   SilcUInt16 timeout;		      /* SKE timeout */
+  SilcUInt16 refcnt;		      /* Reference counter */
 
   unsigned int aborted    : 1;        /* Set when SKE aborted */
   unsigned int freed      : 1;	      /* Set when freed during session */

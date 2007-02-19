@@ -316,7 +316,7 @@ static void silc_client_connect_auth_completion(SilcConnAuth connauth,
     silc_fsm_next(fsm, silc_client_st_connect_error);
   }
 
-  SILC_FSM_CALL_CONTINUE(fsm);
+  SILC_FSM_CALL_CONTINUE_SYNC(fsm);
 }
 
 /********************** CONNECTION_AUTH_REQUEST packet **********************/
