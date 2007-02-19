@@ -863,7 +863,7 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
     char tuple[64];
     engine = stream->sc->engine;
     silc_snprintf(tuple, sizeof(tuple), "%d%s",
-		  stream->remote_udp->remote_port
+		  stream->remote_udp->remote_port,
 		  stream->remote_udp->remote_ip);
     silc_mutex_lock(engine->lock);
     silc_hash_table_del(engine->udp_remote, tuple);
