@@ -426,7 +426,7 @@ void silc_ske_set_callbacks(SilcSKE ske,
 			    SilcSKECompletionCb completed,
 			    void *context);
 
-/****f* silcske/SilcSKEAPI/silc_ske_initiator_start
+/****f* silcske/SilcSKEAPI/silc_ske_initiator
  *
  * SYNOPSIS
  *
@@ -664,7 +664,7 @@ silc_ske_process_key_material_data(unsigned char *data,
  ***/
 void silc_ske_free_key_material(SilcSKEKeyMaterial key);
 
-/****f* silcske/SilcSKEAPI/silc_ske_free_key_material
+/****f* silcske/SilcSKEAPI/silc_ske_free_rekey_material
  *
  * SYNOPSIS
  *

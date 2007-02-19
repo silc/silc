@@ -220,7 +220,7 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
 			     void *new_id, char *new_name,
 			     SilcBool free_old_name);
 
-/****f* silcapputil/SilcIDCacheAPI/silc_idcache_update
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_update_by_context
  *
  * SYNOPSIS
  *

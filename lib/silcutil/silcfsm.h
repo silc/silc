@@ -94,7 +94,7 @@ typedef struct SilcFSMObject SilcFSMStruct;
  ***/
 typedef struct SilcFSMObject *SilcFSMThread;
 
-/****s* silcutil/SilcFSMAPI/SilcFSM
+/****s* silcutil/SilcFSMAPI/SilcFSMThreadStruct
  *
  * NAME
  *

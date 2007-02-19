@@ -680,7 +680,7 @@ void *silc_atomic_get_pointer(SilcAtomicPointer *atomic)
  *
  ***/
 
-/****f* silcutil/SilcAtomicAPI/silc_atomic_add_int32
+/****f* silcutil/SilcAtomicAPI/silc_atomic_add_int16
  *
  * SYNOPSIS
  *

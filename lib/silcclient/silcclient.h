@@ -49,15 +49,6 @@
  * employ concurrency control if the callbacks need to access shared data
  * in the application.  Messages are also received in that thread.
  *
- * All entries (SilcClientEntry, SilcChannelEntry and SilcServerEntry) are
- * reference counted.  If application wishes to save an entry pointer it must
- * always first acquire a reference.  The reference must be released once the
- * entry is not needed anymore.  If application wants to read any data from
- * the entry structure it must first lock the entry.  This protects access to
- * the entries in multithreaded environment.  If threads are not used, locking
- * the entries is not needed.  They however still must be referenced even
- * when threads are not used.
- *
  ***/
 
 #ifndef SILCCLIENT_H
@@ -2008,7 +1999,7 @@ SilcBool silc_client_set_away_message(SilcClient client,
  *
  *    The SILC_CLIENT_FILE_MONITOR_DISCONNECT will be called if remote
  *    disconnects the session connection.  The silc_client_file_close must
- *    be called when this status is received.  The session is over when 
+ *    be called when this status is received.  The session is over when
  *    this is received.
  *
  *    The SILC_CLIENLT_FILE_MONITOR_ERROR is called in case some error

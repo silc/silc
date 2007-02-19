@@ -126,7 +126,7 @@ SilcBool silc_pkcs_silc_generate_key(const char *algorithm,
 				     SilcPublicKey *ret_public_key,
 				     SilcPrivateKey *ret_private_key);
 
-/****f* silccrypt/SilcPubkeyAPI/silc_pkcs_silc_decode_identifier
+/****f* silccrypt/SilcPubkeyAPI/silc_pkcs_silc_encode_identifier
  *
  * SYNOPSIS
  *

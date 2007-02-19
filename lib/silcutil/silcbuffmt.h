@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -253,11 +253,11 @@ int silc_buffer_sformat(SilcStack stack, SilcBuffer dst, ...);
  ***/
 int silc_buffer_format_vp(SilcBuffer dst, va_list ap);
 
-/****f* silcutil/SilcBufferFormatAPI/silc_buffer_format_vp
+/****f* silcutil/SilcBufferFormatAPI/silc_buffer_sformat_vp
  *
  * SYNOPSIS
  *
- *    int silc_buffer_format_vp(SilcBuffer dst, va_list vp);
+ *    int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list vp);
  *
  * DESCRIPTION
  *

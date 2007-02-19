@@ -12,6 +12,7 @@
 @LINK=silcargument.html:SILC Argument Interface
 @LINK=silcattrs.html:SILC Attributes Interface
 @LINK=silcpacket.html:Packet Protocol Interface
+@LINK=silcpubkey.html:SILC Public Key Payload Interface
 -->
 
 <big><b>SILC Core Library</b></big>

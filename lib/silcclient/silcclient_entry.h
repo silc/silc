@@ -17,6 +17,25 @@
 
 */
 
+/****h* silcclient/Client Library Interface
+ *
+ * DESCRIPTION
+ *
+ * This header file includes the SilcClientEntry, SilcChannelEntry and
+ * SilcServer entry structures and various routines to search, resolve and
+ * handle these structures.
+ *
+ * All entries (SilcClientEntry, SilcChannelEntry and SilcServerEntry) are
+ * reference counted.  If application wishes to save an entry pointer it must
+ * always first acquire a reference.  The reference must be released once the
+ * entry is not needed anymore.  If application wants to read any data from
+ * the entry structure it must first lock the entry.  This protects access to
+ * the entries in multithreaded environment.  If threads are not used, locking
+ * the entries is not needed.  They however still must be referenced even
+ * when threads are not used.
+ *
+ ***/
+
 #ifndef SILCCLIENT_ENTRY_H
 #define SILCCLIENT_ENTRY_H
 

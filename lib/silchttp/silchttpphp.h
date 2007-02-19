@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@
  ***/
 SilcBuffer silc_http_php(char *php_data);
 
-/****f* silchttp/SilcHTTPServer/silc_http_php
+/****f* silchttp/SilcHTTPServer/silc_http_php_file
  *
  * SYNOPSIS
  *

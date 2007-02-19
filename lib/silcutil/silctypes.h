@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2006 Pekka Riikonen
+  Copyright (C) 2002 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,29 @@
 
 #ifndef SILCTYPES_H
 #define SILCTYPES_H
+
+/****d* silcutil/SILCTypes/SilcBool
+ *
+ * NAME
+ *
+ *    typedef unigned char SilcBool;
+ *
+ * DESCRIPTION
+ *
+ *    Boolean value, and is always 8-bits.  Represents value 0 or 1.
+ *
+ ***/
+typedef unsigned char SilcBool;
+
+/* The bool macro is deprecated.  Use SilcBool instead. */
+#ifdef SILC_MACOSX
+#define bool _Bool
+#endif
+#ifndef __cplusplus
+#ifndef bool
+#define bool unsigned char
+#endif
+#endif
 
 /****d* silcutil/SILCTypes/TRUE
  *
@@ -62,48 +85,6 @@
  */
 #ifndef FALSE
 #define FALSE 0
-#endif
-/***/
-
-/****d* silcutil/SILCTypes/SilcBool
- *
- * NAME
- *
- *    typedef unigned char SilcBool;
- *
- * DESCRIPTION
- *
- *    Boolean value, and is always 8-bits.  Represents value 0 or 1.
- *
- ***/
-typedef unsigned char SilcBool;
-
-/****d* silcutil/SILCTypes/bool
- *
- * NAME
- *
- *    #define SilcBool ...
- *
- * DESCRIPTION
- *
- *    Boolean value, and is 8-bits.  Represents value 0 or 1.  In
- *    C++ code this type is defined by the C++, and this definition is
- *    not used.
- *
- * NOTES
- *
- *    This macro is deprecated.  Use SilcBool instead.
- *
- * SOURCE
- */
-#ifdef SILC_MACOSX
-#define bool _Bool
-#endif
-
-#ifndef __cplusplus
-#ifndef bool
-#define bool unsigned char
-#endif
 #endif
 /***/
 

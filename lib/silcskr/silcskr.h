@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -442,7 +442,7 @@ SilcBool silc_skr_find_set_country(SilcSKRFind find, const char *country);
 SilcBool silc_skr_find_set_public_key(SilcSKRFind find,
 				      SilcPublicKey public_key);
 
-/****f* silcskr/SilcSKRAPI/silc_skr_find_set_public_key
+/****f* silcskr/SilcSKRAPI/silc_skr_find_set_context
  *
  * SYNOPSIS
  *

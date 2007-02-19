@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -196,7 +196,7 @@ void silc_net_close_listener(SilcNetListener listener);
  *    using silc_async_abort the `callback' will not be called.  If NULL
  *    is returned the operation cannot be aborted.
  *
- */
+ ***/
 SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
 					const char *remote_ip_addr,
 					int remote_port,

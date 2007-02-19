@@ -17,7 +17,7 @@
 
 */
 
-/****h* silccore/Packet Protocol Interface
+/****h* silccore/SILC Packet Engine Interface
  *
  * DESCRIPTION
  *
@@ -310,11 +310,11 @@ typedef void (*SilcPacketErrorCb)(SilcPacketEngine engine,
 				  void *callback_context,
 				  void *stream_context);
 
-/****s* silccore/SilcPacketAPI/SilcPacketStream
+/****s* silccore/SilcPacketAPI/SilcPacketCallbacks
  *
  * NAME
  *
- *    typedef struct SilcPacketStreamStruct *SilcPacketStream;
+ *    typedef struct { ... } *SilcPacketCallbacks;
  *
  * DESCRIPTION
  *
@@ -695,7 +695,7 @@ SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
 				   SilcPacketWrapCoder coder,
 				   void *context);
 
-/****f* silccore/SilcPacketAPI/silc_packet_get_sender
+/****f* silccore/SilcPacketAPI/silc_packet_stream_is_udp
  *
  * SYNOPSIS
  *
@@ -1037,7 +1037,7 @@ SilcBool silc_packet_send_va_ext(SilcPacketStream stream,
  ***/
 void *silc_packet_wait_init(SilcPacketStream stream, ...);
 
-/****f* silccore/SilcPacketAPI/silc_packet_wait
+/****f* silccore/SilcPacketAPI/silc_packet_wait_uninit
  *
  * SYNOPSIS
  *

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -17,12 +17,12 @@
 
 */
 
-/****h* silcutil/SILC Conditional Variable Interface
+/****h* silcutil/SILC Condition Variable Interface
  *
  * DESCRIPTION
  *
- * A conditional variable interface for multi-thread synchronization.
- * Conditional variables enable threads to suspend execution and yield
+ * A condition variable interface for multi-thread synchronization.
+ * Condition variables enable threads to suspend execution and yield
  * the processors until some predicate on some shared data is satisfied.
  *
  ***/
@@ -38,7 +38,7 @@
  *
  * DESCRIPTION
  *
- *    This context is the actual conditional variable and is allocated
+ *    This context is the actual condition variable and is allocated
  *    by silc_cond_alloc and given as argument to all silc_cond_*
  *    functions.  It is freed by the silc_cond_free function.
  *
@@ -53,10 +53,10 @@ typedef struct SilcCondStruct *SilcCond;
  *
  * DESCRIPTION
  *
- *    Allocates SILC Conditional variable context.  The conditional must
+ *    Allocates SILC Condition variable context.  The condition must
  *    be allocated before it can be used.  It is freed by the
  *    silc_cond_free function.  This returns TRUE and allocated
- *    conditional in to the `cond' pointer and FALSE on error.
+ *    condition in to the `cond' pointer and FALSE on error.
  *
  ***/
 SilcBool silc_cond_alloc(SilcCond *cond);
@@ -69,7 +69,7 @@ SilcBool silc_cond_alloc(SilcCond *cond);
  *
  * DESCRIPTION
  *
- *    Free conditional variable context.  If `cond' is NULL this function
+ *    Free condition variable context.  If `cond' is NULL this function
  *    has no effect.
  *
  ***/
@@ -83,8 +83,8 @@ void silc_cond_free(SilcCond cond);
  *
  * DESCRIPTION
  *
- *    Waits for conditional variable `cond' to be signalled.  This function
- *    will block the calling thread until the conditional variable is
+ *    Waits for condition variable `cond' to be signalled.  This function
+ *    will block the calling thread until the condition variable is
  *    signalled.  The `mutex' must be locked before calling this function.
  *    The `mutex' will be unlocked inside this function.  After this
  *    function returns the `mutex' is in locked state again.
@@ -108,11 +108,11 @@ void silc_cond_wait(SilcCond cond, SilcMutex mutex);
  *
  * DESCRIPTION
  *
- *    Waits for conditional variable `cond' to be signalled or for the
+ *    Waits for condition variable `cond' to be signalled or for the
  *    `timeout' to expire.  The timeout is in milliseconds.  If it is 0
  *    no timeout exist.  Returns FALSE if timeout expired, TRUE when
  *    signalled.  This function will block the calling thread until the
- *    conditional variable is signalled.  The `mutex' must be locked before
+ *    condition variable is signalled.  The `mutex' must be locked before
  *    calling this function.  The `mutex' will be unlocked inside this
  *    function.  After this function returns the `mutex' is in locked
  *    state again.

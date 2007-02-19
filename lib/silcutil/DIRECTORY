@@ -13,9 +13,9 @@
 @LINK=silcatomic.html:Atomic Operations Interface
 @LINK=silcnet.html:Network (TCP and UDP) Interface
 @LINK=silcschedule.html:Scheduler Interface
+@LINK=silcstream.html:Abstract Stream Interface
 @LINK=silcsocketstream.html:Socket Stream Interface
 @LINK=silcfdstream.html:File Descriptor Stream Interface
-@LINK=silcstream.html:Abstract Stream Interface
 @LINK=silcfsm.html:Finite State Machine Interface
 @LINK=silcfileutil.html:File Utility Functions
 @LINK=silcstrutil.html:String Utility Interface
@@ -41,12 +41,12 @@
 <b>Introduction</b>
 
 <br /><br />
-SILC Utility Library provides various utility routines for the applications.
-For example, it provides the application's main loop, called the SILC
-Scheduler.  It can handle all kinds of tasks, like socket connections and
-timeout tasks.  The SILC Utility Library also provides various buffer
-management routines.  All of these routines work on multiple platforms
-such as Unix and WIN32.
+SILC Utility Library provides a full featured runtime library for
+applications.  It provides the application's main loop, called SILC
+Scheduler, threads, locks, file utilities, file streams, socket streams,
+TCP and UDP network routines, a finite state machine, lists, a hash table,
+UTF-8 routines and other string utilities, and many other utility routines.
+The library works on multiple platforms.
 
 <br /><br />
 @LINKS@

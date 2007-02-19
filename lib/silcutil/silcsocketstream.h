@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 - 2006 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -158,7 +158,7 @@ SilcStream silc_socket_udp_stream_create(SilcSocket sock,
 					 SilcBool connected,
 					 SilcSchedule schedule);
 
-/****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_get_info
+/****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_is_udp
  *
  * SYNOPSIS
  *
