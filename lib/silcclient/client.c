@@ -180,11 +180,16 @@ static void silc_client_connect_abort(SilcAsyncOperation op, void *context)
 
   /* Connection callback will not be called after user aborted connecting */
   conn->callback = NULL;
+  conn->internal->cop = NULL;
 
   /* Signal to close connection */
   if (!conn->internal->disconnected) {
     conn->internal->disconnected = TRUE;
-    SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
+
+    /* If user aborts before connection machine is even up yet, then don't
+       send signal yet.  It will process this event when it comes up. */
+    if (silc_fsm_is_started(&conn->internal->fsm))
+      SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   }
 }
 
@@ -208,7 +213,9 @@ SILC_FSM_STATE(silc_client_connection_st_start)
   silc_fsm_event_init(&conn->internal->wait_event, connfsm);
   silc_fsm_start_sync(connfsm, silc_client_connection_st_run);
 
-  /* Schedule any events set in initialization */
+  /* Schedule any events possibly set in initialization */
+  if (conn->internal->disconnected)
+    SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   if (conn->internal->connect)
     SILC_FSM_EVENT_SIGNAL(&conn->internal->wait_event);
   if (conn->internal->key_exchange)
@@ -232,6 +239,13 @@ SILC_FSM_STATE(silc_client_connection_st_run)
 
   /* Process events */
   thread = &conn->internal->event_thread;
+
+  if (conn->internal->disconnected) {
+    /** Event: disconnected */
+    SILC_LOG_DEBUG(("Event: disconnected"));
+    silc_fsm_next(fsm, silc_client_connection_st_close);
+    return SILC_FSM_YIELD;
+  }
 
   if (conn->internal->connect) {
     SILC_LOG_DEBUG(("Event: connect"));
@@ -267,13 +281,6 @@ SILC_FSM_STATE(silc_client_connection_st_run)
 			 NULL, NULL, FALSE);
     silc_fsm_start_sync(thread, silc_client_st_rekey);
     return SILC_FSM_CONTINUE;
-  }
-
-  if (conn->internal->disconnected) {
-    /** Event: disconnected */
-    SILC_LOG_DEBUG(("Event: disconnected"));
-    silc_fsm_next(fsm, silc_client_connection_st_close);
-    return SILC_FSM_YIELD;
   }
 
   /* NOT REACHED */
@@ -427,8 +434,9 @@ SILC_FSM_STATE(silc_client_connection_st_close)
 
   SILC_LOG_DEBUG(("Closing remote connection"));
 
-  /* Close connection */
-  silc_packet_stream_destroy(conn->stream);
+  /* Close connection. */
+  if (conn->stream)
+    silc_packet_stream_destroy(conn->stream);
 
   SILC_LOG_DEBUG(("Finishing connection machine"));
   return SILC_FSM_FINISH;
@@ -853,7 +861,7 @@ silc_client_key_exchange(SilcClient client,
     callback(client, NULL, SILC_CLIENT_CONN_ERROR, 0, NULL, context);
     return NULL;
   }
-  conn->stream = (void *)stream;
+  conn->internal->user_stream = stream;
 
   /* Signal connection to start key exchange */
   conn->internal->key_exchange = TRUE;

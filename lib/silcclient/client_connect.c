@@ -87,7 +87,7 @@ static void silc_client_connect_callback(SilcNetStatus status,
 
   /* Connection created successfully */
   SILC_LOG_DEBUG(("Connected"));
-  conn->stream = (void *)stream;
+  conn->internal->user_stream = stream;
   SILC_FSM_CALL_CONTINUE(fsm);
 }
 
@@ -438,7 +438,7 @@ SILC_FSM_STATE(silc_client_st_connect_set_stream)
   /* Create packet stream */
   conn->stream = silc_packet_stream_create(client->internal->packet_engine,
 					   conn->internal->schedule,
-					   (SilcStream)conn->stream);
+					   conn->internal->user_stream);
   if (!conn->stream) {
     /** Cannot create packet stream */
     SILC_LOG_DEBUG(("Could not create packet stream"));
@@ -550,7 +550,7 @@ SILC_FSM_STATE(silc_client_st_connect_setup_udp)
   return SILC_FSM_CONTINUE;
 }
 
-/* Resolved authentication method to be used in authentication protocol */
+/* Resolve authentication method to be used in authentication protocol */
 
 SILC_FSM_STATE(silc_client_st_connect_auth_resolve)
 {

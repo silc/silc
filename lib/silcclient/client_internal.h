@@ -136,6 +136,7 @@ struct SilcClientConnectionInternalStruct {
   SilcAsyncOperation op;	         /* Protocols async operation */
   SilcAsyncOperation cop;	         /* Async operation for application */
   SilcHashTable attrs;		         /* Configured user attributes */
+  SilcStream user_stream;		 /* Low level stream in connecting */
   char *disconnect_message;		 /* Disconnection message */
   char *away_message;		         /* Away message */
   void *prv_waiter;		         /* Private message packet waiter */
