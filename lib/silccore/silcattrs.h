@@ -197,7 +197,7 @@ typedef enum {
  */
 typedef enum {
   SILC_ATTRIBUTE_NUMBER_ITU_E164        = 0,	  /* ITU E.164 */
-  SILC_ATTRIBUTE_NUMBER_ITU_E123_PHONE  = 1,	  /* ITU E.123 */
+  SILC_ATTRIBUTE_NUMBER_ITU_E123        = 1,	  /* ITU E.123 */
   SILC_ATTRIBUTE_NUMBER_ENUM            = 2,	  /* ENUM, RFC 3761 */
 } SilcAttributePNFormat;
 /***/

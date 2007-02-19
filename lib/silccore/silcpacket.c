@@ -825,6 +825,8 @@ SilcPacketStream silc_packet_stream_add_remote(SilcPacketStream stream,
 
 void silc_packet_stream_destroy(SilcPacketStream stream)
 {
+  SilcPacketEngine engine;
+
   if (!stream)
     return;
 
@@ -841,17 +843,17 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
 
   if (!stream->udp) {
     /* Delete from engine */
-    silc_mutex_lock(stream->sc->engine->lock);
-    silc_list_del(stream->sc->engine->streams, stream);
+    engine = stream->sc->engine;
+    silc_mutex_lock(engine->lock);
+    silc_list_del(engine->streams, stream);
 
     /* Remove per scheduler context, if it is not used anymore */
     if (stream->sc) {
       stream->sc->stream_count--;
       if (!stream->sc->stream_count)
-	silc_hash_table_del(stream->sc->engine->contexts,
-			    stream->sc->schedule);
+	silc_hash_table_del(engine->contexts, stream->sc->schedule);
     }
-    silc_mutex_unlock(stream->sc->engine->lock);
+    silc_mutex_unlock(engine->lock);
 
     /* Destroy the underlaying stream */
     if (stream->stream)
@@ -859,11 +861,12 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
   } else {
     /* Delete from UDP remote hash table */
     char tuple[64];
+    engine = stream->sc->engine;
     silc_snprintf(tuple, sizeof(tuple), "%d%s", stream->remote_udp->remote_port,
 	     stream->remote_udp->remote_ip);
-    silc_mutex_lock(stream->sc->engine->lock);
-    silc_hash_table_del(stream->sc->engine->udp_remote, tuple);
-    silc_mutex_unlock(stream->sc->engine->lock);
+    silc_mutex_lock(engine->lock);
+    silc_hash_table_del(engine->udp_remote, tuple);
+    silc_mutex_unlock(engine->lock);
 
     silc_free(stream->remote_udp->remote_ip);
     silc_free(stream->remote_udp);
@@ -1375,7 +1378,7 @@ static inline void silc_packet_send_ctr_increment(SilcPacketStream stream,
   unsigned char *iv = silc_cipher_get_iv(cipher);
   SilcUInt32 pc1, pc2;
 
-  /* Increment 64-bit packet counter.*/
+  /* Increment 64-bit packet counter */
   SILC_GET32_MSB(pc1, iv + 4);
   SILC_GET32_MSB(pc2, iv + 8);
   if (++pc2 == 0)
