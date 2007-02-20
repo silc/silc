@@ -1,0 +1,69 @@
+The SILC Core Library
+
+This library contains the implementation of various SILC protocol packet
+payloads and other routines.  It also implements the SILC Packet Engine.
+
+
+The SILC Packet Engine
+
+The SILC Packet engine (silcpacket.[ch]) is the heart of sending and
+receiving SILC packets.  The engine works in single thread but is thread
+safe and has the notion of per-thread contexts for optimized processing.
+The per-thread processing is actually per-scheduler, but in reality multiple
+schedulers are run only when they are used in threads.
+
+The packet engine has a lock (engine->lock) that protects various engine
+wide data.  Currently this includes SILC Packet freelist, which could
+perhaps later be in the per-thread SilcPacketEngineContext context.  The
+engine also keeps list of all streams (SilcPacketStream) that has been
+added to the engine.
+
+The SilcPacketStream contains all stream related data, including encryption
+and decryption keys, IDs, and outgoing buffer.  The outgoing buffer is
+per-stream so that data can be sent in multiple pieces from the outbuffer
+if writing would block.  Incoming buffer is not in stream context unless
+it is necessary.  The incoming buffer is in the per-thread context which
+actually has a list of incoming buffers.  If reading blocks for the given
+stream, that incoming buffer is given to the SilcPacketStream context from
+the list of buffers.  When data is again available for that stream it is
+read into the buffer the stream already has.  Other stream will read to
+the per-thread buffer, unless they would block also.  The stream also
+has a lock (stream->lock) because application can modify various data in
+the stream.
+
+The packet callback has packet callbacks that is used to deliver the read
+packet to application.  The callbacks also deliver error and end of stream
+status to application.  It is also possible to attach additional packet
+callbacks to stream so that there may be multiple receivers for one packet.
+In the callback application may decide whether it wants to take the packet
+or whether to pass it for the next receiver.  The callbacks can be added
+with priority.
+
+
+Locking in packet engine
+
+Currently the engine lock is used only when the packet free list is accessed,
+or new stream is added or removed.  The packet free list, however, is
+accessed for all incoming packets.  Application free's the packet context so
+the lock must later be acquired be putting the unused packet context back
+to the free list.  It might be possible to later put the packet free list to
+per-thread context.
+
+Stream lock is taken everytime data is read from the underlaying stream or
+sent to the underlaying stream.  In principal it would be possible to read
+without locking, because we use per-thread incoming buffers but in reality
+many platforms would not suppots reading and writing to the same underlaying
+stream (effectively socket) at the same time.  And even if they would, some
+rare race conditions with closing the stream might occur.  One way of dealing
+with this would be to make sure that any stream used with SilcPacketStream
+must itself be thread-safe.  In that case the locking would move to the
+underlaying stream.
+
+When reading data from stream, the lock is held during reading and during
+data processing.  The lock is released when the packet is dispatched to
+a packet callback.
+
+When sending packet the lock is acquired only when actually accessing the
+outgoing buffer and writing to the stream.  This includes encryption.  This
+means that if two threads send to same stream the encryption is not in
+parallel.

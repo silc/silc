@@ -1,7 +1,7 @@
 <!--
 @LIBRARY=SILC Utility Library
 @FILENAME=silcutillib.html
-@LINK=silctypes.html:Basic SILC Types
+@LINK=silctypes.html:Basic Types and Definitions
 @LINK=silcbuffer.html:Data Buffer Interface
 @LINK=silcbuffmt.html:Data Buffer Format Interface
 @LINK=silchashtable.html:Hash Table Interface
@@ -13,6 +13,7 @@
 @LINK=silcatomic.html:Atomic Operations Interface
 @LINK=silcnet.html:Network (TCP and UDP) Interface
 @LINK=silcschedule.html:Scheduler Interface
+@LINK=silcasync.html:Asynchronous Operation Interface
 @LINK=silcstream.html:Abstract Stream Interface
 @LINK=silcsocketstream.html:Socket Stream Interface
 @LINK=silcfdstream.html:File Descriptor Stream Interface
@@ -25,7 +26,6 @@
 @LINK=silcutil.html:Utility Functions
 @LINK=silclist.html:List Interface
 @LINK=silcdlist.html:Dynamic List Interface
-@LINK=silcasync.html:Asynchronous Operation Interface
 @LINK=silcmime.html:MIME Interface
 @LINK=silctime.html:Time Utility Functions
 @LINK=silclog.html:Logging Interface

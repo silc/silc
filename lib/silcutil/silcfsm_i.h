@@ -96,7 +96,7 @@ SilcBool silc_fsm_set_call(struct SilcFSMObject *fsm, SilcBool async_call)
 /* Wait for thread to terminate */
 SilcBool silc_fsm_thread_wait(void *fsm, void *thread);
 
-/* Eventphores */
+/* Events */
 SilcUInt32 silc_fsm_event_wait(SilcFSMEvent event, void *fsm);
 SilcUInt32 silc_fsm_event_timedwait(SilcFSMEvent event, void *fsm,
 				    SilcUInt32 seconds, SilcUInt32 useconds,
