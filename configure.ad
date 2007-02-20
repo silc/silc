@@ -36,6 +36,9 @@ case "$target" in
   *-*-freebsd*)
     check_threads=true
     ;;
+  *-*-netbsd*)
+    check_threads=true
+    ;;
   *-*-*bsd*)
     check_threads=false
     ;;
@@ -1121,7 +1124,35 @@ if test x$has_threads = xtrue; then
       ;;
    esac
 
+  # Check for threads
   AC_CHECK_FUNC(pthread_create)
+
+  # Check for read/write locks
+  AC_CHECK_FUNC(pthread_rwlock_init,
+  [
+    AC_RUN_IFELSE(
+      [
+        #include <pthread.h>
+        int main()
+        {
+          pthread_rwlock_t rwlock;
+          pthread_rwlock_init(&rwlock, NULL);
+          pthread_rwlock_destroy(&rwlock);
+          return 0;
+        }
+      ],
+      [],
+      [
+	# Rwlock not defined
+        CFLAGS="$CFLAGS -D_XOPEN_SOURCE=600"
+      ]
+    )
+  ],
+  [
+    # Rwlock not defined
+    CFLAGS="$CFLAGS -D_XOPEN_SOURCE=600"
+  ])
+
   AC_DEFINE([SILC_HAVE_PTHREAD], [], [HAVE_PTHREAD])
   AC_DEFINE([SILC_THREADS], [], [HAVE_THREAD])
   __SILC_HAVE_PTHREAD="#define __SILC_HAVE_PTHREAD 1"

@@ -90,19 +90,6 @@ extern "C" {
 #define DLLAPI
 #endif
 
-#ifdef SILC_HAVE_PTHREAD
-/* For pthreads rwlock support */
-#ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 600
-#else
-#ifdef _XOPEN_SOURCE < 600
-#define _XOPEN_SOURCE_SAVE _XOPEN_SOURCE
-#undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 600
-#endif /* _XOPEN_SOURCE < 600 */
-#endif /* _XOPEN_SOURCE */
-#endif /* SILC_HAVE_PTHREAD */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -194,11 +181,6 @@ extern "C" {
 
 #ifdef SILC_HAVE_PTHREAD
 #include <pthread.h>
-#ifdef _XOPEN_SOURCE_SAVE
-#undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE _XOPEN_SOURCE_SAVE
-#undef _XOPEN_SOURCE_SAVE
-#endif /* _XOPEN_SOURCE_SAVE */
 #endif
 
 #ifdef HAVE_STDDEF_H
