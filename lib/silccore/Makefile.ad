@@ -37,6 +37,7 @@ include_HEADERS =	\
 	silcauth.h	\
 	silcchannel.h	\
 	silcmessage.h	\
+	silcmessage_i.h	\
 	silccommand.h	\
 	silcid.h	\
 	silcmode.h	\

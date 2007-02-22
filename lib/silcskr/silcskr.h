@@ -491,6 +491,18 @@ SilcBool silc_skr_find_set_usage(SilcSKRFind find, SilcSKRKeyUsage usage);
  *    to return found keys.  If this returns NULL the finding was not
  *    asynchronous, and the `callback' has been called already.
  *
+ * EXAMPLE
+ *
+ *   SilcSKRFind find;
+ *
+ *   // Find all SILC public keys originating from Finland
+ *   find = silc_skr_find_alloc();
+ *   silc_skr_find_set_pkcs_type(find, SILC_PKCS_SILC);
+ *   silc_skr_find_set_country(find, "FI");
+ *
+ *   // Find
+ *   silc_skr_find(skr, find, find_callback, cb_context);
+ *
  ***/
 SilcAsyncOperation silc_skr_find(SilcSKR skr, SilcSKRFind find,
 				 SilcSKRFindCallback callback,

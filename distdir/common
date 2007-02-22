@@ -10,6 +10,7 @@ define SILC_DIST_SFTP
 define SILC_DIST_COMPILER
 define SILC_DIST_IDCACHE
 define SILC_DIST_VCARD
+define SILC_DIST_CRYPTO
 
 # Math library, define only TMA or TFM, not both.
 define SILC_DIST_MATH

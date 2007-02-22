@@ -6,7 +6,6 @@ includedir=@includedir@
 Name: @PACKAGE@ (client library)
 Description: SILC Client Library
 Version: @VERSION@
-Conflicts: libsilc <= 0.9.12
 Requires: silc = @VERSION@
 Libs: -L${libdir} -lsilcclient @LIBS@
 Cflags: -I${includedir}

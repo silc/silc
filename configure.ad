@@ -4,7 +4,7 @@
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
 #  Copyright (C) 2000 - 2007 Pekka Riikonen
-#
+s#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; version 2 of the License.
@@ -182,7 +182,7 @@ AC_CHECK_FUNCS(poll select listen bind shutdown close connect setsockopt)
 AC_CHECK_FUNCS(setrlimit time ctime utime gettimeofday getrusage)
 AC_CHECK_FUNCS(chmod fcntl stat fstat getenv putenv strerror)
 AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid)
-AC_CHECK_FUNCS(setgroups initgroups nl_langinfo nanosleep)
+AC_CHECK_FUNCS(setgroups initgroups nl_langinfo nanosleep tzset)
 AC_CHECK_FUNCS(strchr snprintf strstr strcpy strncpy memcpy memset memmove)
 
 #ifdef SILC_DIST_SIM
@@ -1187,38 +1187,9 @@ AM_CONDITIONAL(SILC_BEOS, test xfalse = xtrue)
 #
 AM_CONDITIONAL(SILC_OS2, test xfalse = xtrue)
 
-#ifdef SILC_DIST_TOOLKIT
-# --with-irssi
-#
-without_irssi=true
-AC_MSG_CHECKING(whether to compile Irssi SILC Client)
-AC_ARG_WITH(irssi,
-  [  --with-irssi            compile with Irssi SILC Client],
-  [
-    AC_MSG_RESULT(yes)
-    without_irssi=false
-  ],
-  [
-    AC_MSG_RESULT(no)
-    without_irssi=true
-  ])
-AM_CONDITIONAL(with_irssi, test xwithout_irssi = xfalse)
-
-# --with-silcd
-#
-without_silcd=true
-AC_MSG_CHECKING(whether to compile SILC Server)
-AC_ARG_WITH(silcd,
-  [  --with-silcd            compile with SILC Server],
-  [
-    AC_MSG_RESULT(yes)
-    without_silcd=false
-  ],
-  [
-    AC_MSG_RESULT(no)
-    without_silcd=true
-  ])
-#endif SILC_DIST_TOOLKIT
+#ifdef SILC_DIST_SERVER
+without_silcd=false
+#endif SILC_DIST_SERVER
 #ifdef SILC_DIST_CLIENT
 AM_CONDITIONAL(with_irssi, true)
 #endif SILC_DIST_CLIENT
@@ -1343,20 +1314,17 @@ echo " include directory .............: $s_includedir"
 #endif SILC_DIST_INCLUDES
 echo ""
 
-#ifdef SILC_DIST_TOOLKIT
+#ifdef SILC_DIST_CLIENT
 if test x$without_irssi = xtrue; then
   irssi="no"
 fi
-if test x$without_silcd = xtrue; then
-  silcd="no"
-fi
-#endif SILC_DIST_TOOLKIT
-
-#ifdef SILC_DIST_CLIENT
 echo " Compile SILC Client ...........: $irssi"
 #endif SILC_DIST_CLIENT
 
 #ifdef SILC_DIST_SERVER
+if test x$without_silcd = xtrue; then
+  silcd="no"
+fi
 echo " Compile SILC Server ...........: $silcd"
 #endif SILC_DIST_SERVER
 

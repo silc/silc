@@ -22,8 +22,6 @@ include_HEADERS = \
 	silc.h \
 	silcwin32.h \
 	silcsymbian.h \
-	silcbeos.h \
-	silcos2.h \
 	silcversion.h
 #endif SILC_DIST_TOOLKIT
 
@@ -31,7 +29,5 @@ EXTRA_DIST = \
 	silc.h \
 	silcwin32.h \
 	silcsymbian.h \
-	silcbeos.h \
-	silcos2.h \
 	silcversion.h.in \
 	silcdistdefs.h

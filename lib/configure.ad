@@ -26,7 +26,9 @@ AC_MSG_NOTICE([Configuring SILC libraries])
 # SILC Library directories
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/contrib"
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silccore"
+#ifdef SILC_DIST_CRYPTO
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silccrypt"
+#endif SILC_DIST_CRYPTO
 #ifdef SILC_DIST_MATH
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcmath"
 #endif SILC_DIST_MATH
@@ -228,6 +230,7 @@ lib/silcske/Makefile
 lib/silcutil/Makefile
 lib/silcutil/unix/Makefile
 lib/silcutil/win32/Makefile
+lib/silcutil/symbian/Makefile
 lib/silcapputil/Makefile
 #ifdef SILC_DIST_SFTP
 lib/silcsftp/Makefile

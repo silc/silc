@@ -11,7 +11,9 @@ that mode.  Other modes both channel operator and founder may manage.
 The following modes are available:
 
     p               Set/unset channel as private channel
-    s               Set/unset channel as secret channel
+    s               Set/unset channel as secret channel.  Secret
+                    channel are not shown in user's channel list
+                    or with /LIST command.
     k               Enable/disable channel private key usage (*)
     i               Set/unset channel as invite only channel
     t               Set/unset that only channel operator or

@@ -23,7 +23,9 @@ SILCLIB_DIRS = 		\
 	silccore	\
 	silcutil 	\
 	silcapputil 	\
+#ifdef SILC_DIST_CRYPTO
 	silccrypt 	\
+#endif SILC_DIST_CRYPTO
 #ifdef SILC_DIST_SKR
 	silcskr 	\
 #endif SILC_DIST_SKR
@@ -63,13 +65,11 @@ SILCSERVERLIB = libsilcserver.a
 
 SUBDIRS = $(SILCLIB_DIRS) $(SILCSERVERLIB_DIRS) $(SILCCLIENTLIB_DIRS)
 
-CLEANFILES = libsilc.a libsilcclient.a libsilcserver.a
-DISTCLEANFILES = libsilc.a libsilcclient.a libsilcserver.a
+CLEANFILES = libsilc.a $(SILCCLIENTLIB) $(SILCSERVERLIB)
+DISTCLEANFILES = libsilc.a $(SILCCLIENTLIB) $(SILCSERVERLIB)
 
 remove:
-	-rm -f libsilc.a
-	-rm -f libsilcclient.a
-	-rm -f libsilcserver.a
+	-rm -f $(CLEANFILES)
 
 all:
 	$(MAKE) remove $(SILCLIB) $(SILCSERVERLIB) $(SILCCLIENTLIB)
@@ -78,11 +78,15 @@ all:
 install-exec-hook:
 	-mkdir -p $(DESTDIR)$(libdir)
 	-$(LIBTOOL) $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
+#ifdef SILC_DIST_CLIENTLIB
 	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(DESTDIR)$(libdir)/
+#endif SILC_DIST_CLIENTLIB
+#ifdef SILC_DIST_SERVERLIB
 	-$(LIBTOOL) $(INSTALL) libsilcserver.la $(DESTDIR)$(libdir)/
+#endif SILC_DIST_SERVERLIB
 #else !SILC_DIST_TOOLKIT
 
-#ifdef SILC_DIST_SERVER
+#ifdef SILC_DIST_SERVERLIB
 install-exec-hook:
 if SILC_ENABLE_SHARED
 	-mkdir -p $(libdir)
@@ -91,9 +95,9 @@ if SILC_ENABLE_SHARED
 	-rm -rf $(DESTDIR)$(libdir)/libsilc.a
 	-rm -rf $(DESTDIR)$(libdir)/libsilcserver.a
 endif
-#endif SILC_DIST_SERVER
+#endif SILC_DIST_SERVERLIB
 
-#ifdef SILC_DIST_CLIENT
+#ifdef SILC_DIST_CLIENTLIB
 install-exec-hook:
 if SILC_ENABLE_SHARED
 	-mkdir -p $(libdir)
@@ -102,7 +106,7 @@ if SILC_ENABLE_SHARED
 	-rm -rf $(DESTDIR)$(libdir)/libsilc.a
 	-rm -rf $(DESTDIR)$(libdir)/libsilcclient.a
 endif
-#endif SILC_DIST_CLIENT
+#endif SILC_DIST_CLIENTLIB
 #endif SILC_DIST_TOOLKIT
 
 LIB_BASE_VERSION=@LIB_BASE_VERSION@
@@ -142,12 +146,22 @@ libsilcserver.a:
 
 #ifdef SILC_DIST_TOOLKIT
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = silc.pc silcclient.pc silcserver.pc
+pkgconfig_DATA = silc.pc		\
+#ifdef SILC_DIST_CLIENTLIB
+		silcclient.pc		\
+#endif SILC_DIST_CLIENTLIB
+#ifdef SILC_DIST_SERVERLIB
+		silcserver.pc
+#endif SILC_DIST_SERVERLIB
 
-EXTRA_DIST = silc.pc.in silcclient.pc.in silcserver.pc.in
-#endif SILC_DIST_TOOLKIT
+EXTRA_DIST = 	silc.pc.in		\
+#ifdef SILC_DIST_CLIENTLIB
+		silcclient.pc.in	\
+#endif SILC_DIST_CLIENTLIB
+#ifdef SILC_DIST_SERVERLIB
+		silcserver.pc.in
+#endif SILC_DIST_SERVERLIB
 
-#ifdef SILC_DIST_TOOLKIT
 toolkit-install:
 	-mkdir -p $(docdir)/toolkit/
 	-$(INSTALL_DATA) $(top_srcdir)/doc/toolkit/* $(docdir)/toolkit

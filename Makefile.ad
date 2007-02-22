@@ -36,6 +36,9 @@ SUBDIRS = 		\
 
 EXTRA_DIST = 		\
 	silcdefs.h.in	\
+#ifdef SILC_DIST_TOOLKIT
+	symbian		\
+#endif SILC_DIST_TOOLKIT
 #ifdef SILC_DIST_SILC
 	libtoolfix 	\
 	CHANGES CREDITS

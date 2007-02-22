@@ -27,14 +27,13 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o Rewrite silc_client_get_clients_by_channel.
 
- o Rewrite client side WHOIS command (for whois -details).
+ o Rewrite client side WHOIS command (for whois -details). (***DONE)
 
  o Finish all the missing SILC packet processings, rewrites. (***DONE)
 
  o The client_notify.c rewrite. (***DONE)
 
- o Resuming to client_register.c (remove client_resume.c)
-   (***TESTING NEEDED)
+ o Resuming to client_register.c (remove client_resume.c) (***DONE)
 
  o Rekey rewrite. (***DONE)
 
@@ -55,7 +54,7 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o For many APIs leave the hash context allocations to the caller instead
    of using client->sha1hash and client->md5hash, or some kind of thread
-   safe (no locking) concept.
+   safe (no locking) concept. (***DONE)
 
  o Key agreement rewrite. (***TESTING NEEDED)
 
@@ -63,7 +62,7 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o peer-to-peer private messages
 
- o Private message waiting API (in threads)
+ o Private message waiting API (in threads) (***TESING NEEDED)
 
  o client_attrs.c, attributes rewrite. (***TESTING NEEDED)
 
@@ -135,6 +134,8 @@ lib/silcskr
 
  o Removing key from the repository is not possible currently.  It should
    be.
+
+ o Add fingerprint as search constraint.
 
 
 lib/silcske/silcske.[ch] 	****DONE****

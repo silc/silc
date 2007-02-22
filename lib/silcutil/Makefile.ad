@@ -81,7 +81,10 @@ include_HEADERS =	\
 	silclog_i.h	\
 	silcmemory.h	\
 	silcmutex.h	\
+	silcatomic.h	\
+	silccond.h	\
 	silcnet.h	\
+	silcnet_i.h	\
 	silcschedule.h	\
 	silcschedule_i.h \
 	silcthread.h	\
@@ -96,10 +99,12 @@ include_HEADERS =	\
 	silcstream.h	\
 	silcfdstream.h \
 	silcsocketstream.h \
+	silcsocketstream_i.h \
 	silcfsm.h	\
 	silcfsm_i.h	\
 	silctime.h	\
 	silcmime.h	\
+	silcmime_i.h	\
 	silcasync.h	\
 	silcasync_i.h	\
 	silcstack.h	\

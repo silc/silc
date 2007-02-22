@@ -234,7 +234,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "attr_geolocation",    " Geolocation        : $0", 1, { 0 } },
 	{ "attr_device_info",    " Device Info        : $0", 1, { 0 } },
 	{ "attr_public_keys",    " Public keys        : $0", 1, { 0 } },
-	{ "attr_timezone",       " Timezone           : $0", 1, { 0 } },
+	{ "attr_timezone",       " Timezone (GMT)     : $0", 1, { 0 } },
 	{ "attr_timezone_allow", " Sending timezone   : $0", 1, { 0 } },
 	{ "attr_user_sign_verified",  " User's signature   : verified successfully", 0 },
 	{ "attr_user_sign_failed",    " User's signature   : {hilight signature failed}", 0 },

@@ -6,7 +6,6 @@ includedir=@includedir@
 Name: @PACKAGE@
 Description: SILC Library
 Version: @VERSION@
-Conflicts: libsilc <= 0.9.12
 Libs: -L${libdir} -lsilc @LIBS@
 Cflags: -I${includedir}
 

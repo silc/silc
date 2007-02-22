@@ -30,6 +30,7 @@ include_HEADERS = 		\
 	silcske_groups.h	\
 	silcske_payload.h	\
 	silcske.h		\
+	silcske_i.h		\
 	silcconnauth.h
 #endif SILC_DIST_TOOLKIT
 

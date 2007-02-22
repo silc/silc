@@ -32,7 +32,7 @@ include_HEADERS =		\
 	silcidcache.h
 #endif SILC_DIST_IDCACHE
 
-SILC_EXTRA_DIST = tests
+SILC_EXTRA_DIST = 
 #endif SILC_DIST_TOOLKIT
 
 EXTRA_DIST = *.h $(SILC_EXTRA_DIST)

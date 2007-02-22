@@ -4,8 +4,6 @@ bug-report silc-devel@lists.silcnet.org
 
 # Inherits
 inherit common
-#inherit client
-#inherit server
 
 # License
 license distdir/TOOLKIT
@@ -15,10 +13,7 @@ license-header distdir/GPL-header distdir/TOOLKIT-header
 
 # Distdefs
 define SILC_DIST_TOOLKIT
-# SFTP is undefined in server, so force it here
-define SILC_DIST_SFTP
 define SILC_DIST_CLIENTLIB
-#XXX remove
 define SILC_DIST_HTTP
 
 # Includes
@@ -26,7 +21,6 @@ include README.CVS
 include README.WIN32
 include README.MACOSX
 include apps/silcer
-include apps/silc
 include tutorial
 
 # Noprocess to optimize packaging and avoid re-licensing of certain files
@@ -34,6 +28,7 @@ noprocess COPYING GPL BSD
 noprocess doc/toolkit/
 noprocess apps/
 noprocess win32/
+noprocess symbian/
 
 pre-hook distdir/pre-run
 post-process-dist-hook distdir/post-process-dist
