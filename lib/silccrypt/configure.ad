@@ -1,9 +1,10 @@
+#ifdef SILC_DIST_CRYPTO
 #
 #  lib/silccrypt/configure.ad
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2006 Pekka Riikonen
+#  Copyright (C) 2006 - 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -23,13 +24,14 @@ SILC_CRYPTO_CFLAGS=
 aes_asm=false
 case "$host_cpu" in
   i?86)
-    if test x$have_assembler = xtrue; then
+    # Don't enable ASM AES with shared libs as the code doesn't support PIC.
+    if test x$have_assembler = xtrue -a "$enable_shared" != "yes"; then
       aes_asm=true
       AC_DEFINE([SILC_AES_ASM], [], [SILC_AES_ASM])
     fi
     ;;
   x86_64)
-    if test x$have_assembler = xtrue; then
+    if test x$have_assembler = xtrue -a "$enable_shared" != "yes"; then
       aes_asm=true
       AC_DEFINE([SILC_AES_ASM], [], [SILC_AES_ASM])
     fi
@@ -38,7 +40,6 @@ case "$host_cpu" in
     aes_asm=false
     ;;
 esac
-AM_CONDITIONAL(SILC_AES_ASM, test x$aes_asm = xtrue)
 
 SILC_ADD_CC_FLAGS(SILC_CRYPTO, -fno-regmove)
 if test x$summary_debug = xno; then
@@ -55,3 +56,8 @@ lib/silccrypt/tests/Makefile
 )
 
 fi	# compile_libs
+
+# AM_CONDITIONAL is so bad that it itself cannot be defined in conditional
+AM_CONDITIONAL(SILC_AES_ASM, test x$aes_asm = xtrue)
+
+#endif SILC_DIST_CRYPTO

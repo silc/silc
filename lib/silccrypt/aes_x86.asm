@@ -219,10 +219,6 @@ stk_spc equ    20   ; stack space
 %define eltab_2(x)  [t_fl+2048+4*x]
 %define eltab_3(x)  [t_fl+3072+4*x]
 
-%else
-
-%define etab_b(x)   byte [t_fn+3072+4*x]
-
 %endif
 
 ; ROUND FUNCTION.  Build column[2] on ESI and column[3] on EDI that have the
@@ -300,25 +296,6 @@ stk_spc equ    20   ; stack space
     %macro  lr_mov  4
         movzx   %4,%2
         mov     %1,eltab_%3(%4)
-    %endmacro
-
-%else
-
-    %macro  lr_xor  4
-        movzx   %4,%2
-        movzx   %4,etab_b(%4)
-    %if %3 != 0
-        shl     %4,8*%3
-    %endif
-        xor     %1,%4
-    %endmacro
-
-    %macro  lr_mov  4
-        movzx   %4,%2
-        movzx   %1,etab_b(%4)
-    %if %3 != 0
-        shl     %1,8*%3
-    %endif
     %endmacro
 
 %endif
@@ -442,12 +419,6 @@ stk_spc equ    20   ; stack space
 %define dltab_2(x)  [t_il+2048+4*x]
 %define dltab_3(x)  [t_il+3072+4*x]
 
-%else
-
-    extern  t_ibox
-
-%define dtab_x(x)   byte [t_ibox+x]
-
 %endif
 
 %macro irn_fun 2
@@ -503,25 +474,6 @@ stk_spc equ    20   ; stack space
     movzx   %4,%2
     mov     %1,dltab_%3(%4)
 %endmacro
-
-%else
-
-    %macro  li_xor  4
-        movzx   %4,%2
-        movzx   %4,dtab_x(%4)
-    %if %3 != 0
-        shl     %4,8*%3
-    %endif
-        xor     %1,%4
-    %endmacro
-
-    %macro  li_mov  4
-        movzx   %4,%2
-        movzx   %1,dtab_x(%4)
-    %if %3 != 0
-        shl     %1,8*%3
-    %endif
-    %endmacro
 
 %endif
 

@@ -218,9 +218,9 @@ extern "C"
 #define d_4(t,n,b,e,f,g,h) ALIGN const XP_DIR t n[4][256] = { b(e), b(f), b(g), b(h) }
 ALIGN const uint_32t t_dec(r,c)[RC_LENGTH] = rc_data(w0);
 
-#ifdef SILC_ASM_AES
+#ifdef SILC_AES_ASM
 d_1(uint_8t, t_dec(i,box), isb_data, h0);
-#endif /* SILC_ASM_AES */
+#endif /* SILC_AES_ASM */
 d_4(uint_32t, t_dec(f,n), sb_data, u0, u1, u2, u3);
 d_4(uint_32t, t_dec(f,l), sb_data, w0, w1, w2, w3);
 d_4(uint_32t, t_dec(i,n), isb_data, v0, v1, v2, v3);
@@ -522,7 +522,7 @@ AES_RETURN aes_decrypt_key(const unsigned char *key, int key_len, aes_decrypt_ct
     }
 }
 
-#ifndef SILC_ASM_AES
+#ifndef SILC_AES_ASM
 /* C version of AES */
 
 #define si(y,x,k,c) (s(y,c) = word_in(x, c) ^ (k)[c])
@@ -631,4 +631,4 @@ AES_RETURN aes_decrypt(const unsigned char *in, unsigned char *out, const aes_de
 }
 #endif
 
-#endif /* SILC_ASM_AES */
+#endif /* SILC_AES_ASM */

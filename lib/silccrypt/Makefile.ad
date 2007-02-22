@@ -60,27 +60,12 @@ CFLAGS = $(LTFLAGS) @SILC_CRYPTO_CFLAGS@
 
 #ifdef SILC_DIST_TOOLKIT
 include_HEADERS =		\
-	aes.h			\
-	blowfish.h		\
-	cast.h			\
-	ciphers_def.h		\
-	ciphers.h		\
-	md5.h			\
-	none.h			\
-	rc5.h			\
-	rsa.h			\
-	sha1.h			\
-	sha1_internal.h		\
-	sha256.h		\
-	sha256_internal.h 	\
 	silccipher.h		\
-	silcdh.h		\
 	silchash.h		\
 	silchmac.h		\
 	silcpkcs.h		\
 	silcrng.h		\
 	silcpkcs1.h		\
-	twofish.h		\
 	silcpk.h
 
 SILC_EXTRA_DIST = tests
