@@ -134,6 +134,24 @@ const char *silc_time_string(SilcInt64 time_val_sec);
  ***/
 SilcBool silc_time_value(SilcInt64 time_val_msec, SilcTime ret_time);
 
+/****f* silcutil/SilcTimeAPI/silc_timezone
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_timezone(char *timezone, SilcUInt32 timezone_size);
+ *
+ * DESCRIPTION
+ *
+ *    Returns current timezone in Universal time format into the `timezone'
+ *    buffer of size of `timezone_size'.  The possible values this function
+ *    returns are: Z (For UTC timezone), +hh (UTC + hours) -hh (UTC - hours),
+ *    +hh:mm (UTC + hours:minutes) or -hh:mm (UTC - hours:minutes).
+ *
+ *    Returns FALSE on error, TRUE otherwise.
+ *
+ ***/
+SilcBool silc_timezone(char *timezone, SilcUInt32 timezone_size);
+
 /****f* silcutil/SilcTimeAPI/silc_time_universal
  *
  * SYNOPSIS

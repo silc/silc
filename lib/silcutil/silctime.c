@@ -114,13 +114,12 @@ SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time)
   if (!time_val)
     time_val = silc_time_msec();
 
-  msec = time_val % 1000;
-  time_val /= 1000;
+  msec = (SilcUInt64)time_val % (SilcUInt64)1000;
+  timeval = (time_t)((SilcUInt64)time_val / (SilcUInt64)1000);
 
   time = localtime(&timeval);
   if (!time)
     return FALSE;
-  time_val = timeval;
 
   memset(ret_time, 0, sizeof(*ret_time));
   if (!silc_time_fill(ret_time, time->tm_year + 1900, time->tm_mon + 1,
@@ -144,6 +143,31 @@ SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time)
 			  timezone % 3600);
 #endif /* HAVE_TZSET */
 #endif /* SILC_WIN32 */
+
+  return TRUE;
+}
+
+/* Returns timezone */
+
+SilcBool silc_timezone(char *timezone, SilcUInt32 timezone_size)
+{
+  SilcTimeStruct curtime;
+
+  if (timezone_size < 6)
+    return FALSE;
+  
+  if (!silc_time_value(0, &curtime))
+    return FALSE;
+
+  if (!curtime.utc_hour && curtime.utc_minute)
+    silc_snprintf(timezone, timezone_size, "Z");
+  else if (curtime.utc_minute)
+    silc_snprintf(timezone, timezone_size, "%c%02d:%02d", 
+		  curtime.utc_east ? '+' : '-', curtime.utc_hour,
+		  curtime.utc_minute);
+  else
+    silc_snprintf(timezone, timezone_size, "%c%02d",
+		  curtime.utc_east ? '+' : '-', curtime.utc_hour);
 
   return TRUE;
 }
