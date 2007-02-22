@@ -2807,7 +2807,6 @@ static void silc_client_command_process_whois(SilcClient client,
 					      SilcCommandPayload payload,
 					      SilcArgumentPayload args)
 {
-#if 0
   SilcDList attrs;
   unsigned char *tmp;
   SilcUInt32 tmp_len;
@@ -2831,18 +2830,25 @@ static void silc_client_command_process_whois(SilcClient client,
     return;
   }
 
-  /* Send the attributes back */
+  /* Send the attributes back in COMMAND_REPLY packet */
   packet =
     silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
 					 SILC_STATUS_OK, 0,
 					 silc_command_get_ident(payload),
-					 1, 11, buffer->data, buffer->len);
-  silc_client_packet_send(client, sock, SILC_PACKET_COMMAND_REPLY,
-			  NULL, 0, NULL, NULL, packet->data,
-			  packet->len, TRUE);
+					 1, 11, buffer->data,
+					 silc_buffer_len(buffer));
+  if (!packet) {
+    silc_buffer_free(buffer);
+    return;
+  }
+
+  SILC_LOG_DEBUG(("Sending back requested WHOIS attributes"));
+
+  silc_packet_send(conn->stream, SILC_PACKET_COMMAND_REPLY, 0,
+		   silc_buffer_datalen(packet));
+
   silc_buffer_free(packet);
   silc_buffer_free(buffer);
-#endif /* 0 */
 }
 
 /* Client is able to receive some command packets even though they are

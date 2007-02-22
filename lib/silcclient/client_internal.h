@@ -186,5 +186,8 @@ silc_client_add_connection(SilcClient client,
 			   char *remote_host, int port,
 			   SilcClientConnectCallback callback,
 			   void *context);
+SilcBuffer silc_client_attributes_process(SilcClient client,
+                                          SilcClientConnection conn,
+                                          SilcDList attrs);
 
 #endif /* CLIENT_INTERNAL_H */

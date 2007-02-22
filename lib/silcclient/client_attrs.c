@@ -35,6 +35,7 @@ static void silc_client_attributes_process_foreach(void *key, void *context,
   SilcAttributePayload attr = context;
   SilcAttrForeach *f = user_context;
   const unsigned char *data;
+  unsigned char tmp[32];
   SilcUInt32 data_len;
 
   if (!context) {
@@ -54,17 +55,17 @@ static void silc_client_attributes_process_foreach(void *key, void *context,
   SILC_LOG_DEBUG(("Attribute %d found", attribute));
   data = silc_attribute_get_data(attr, &data_len);
 
-#if 0
   /* We replace the TIMEZONE with valid value here */
   if (attribute == SILC_ATTRIBUTE_TIMEZONE) {
-    data = (const unsigned char *)silc_get_time(0);
-    data_len = strlen(data);
-    f->buffer = silc_attribute_payload_encode(f->buffer, attribute,
-					      SILC_ATTRIBUTE_FLAG_VALID,
-					      (void *)data, data_len);
+    if (silc_timezone(tmp, sizeof(tmp))) {
+      data = tmp;
+      data_len = strlen(tmp);
+      f->buffer = silc_attribute_payload_encode(f->buffer, attribute,
+						SILC_ATTRIBUTE_FLAG_VALID,
+						(void *)data, data_len);
+    }
     return;
   }
-#endif
 
   f->buffer = silc_attribute_payload_encode_data(f->buffer, attribute,
 						 SILC_ATTRIBUTE_FLAG_VALID,
@@ -89,8 +90,10 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
 
   /* If nothing is set by application assume that we don't want to use
      attributes, ignore the request. */
-  if (!conn->internal->attrs)
+  if (!conn->internal->attrs) {
+    SILC_LOG_DEBUG(("User has not set any attributes"));
     return NULL;
+  }
 
   /* Always put our public key. */
   pk.type = "silc-rsa";
