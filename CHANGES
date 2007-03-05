@@ -1,3 +1,8 @@
+Mon Mar  5 23:27:32 CET 2007  Jochen Eisinger <coffee@silcnet.org>
+
+	* Update patch to makefile from trunk so parallel make will link
+	  the silc-client correctly.  Affected file lib/Makefile.ad
+
 Sun Nov 19 18:58:26 CET 2006  Jochen Eisinger <coffee@silcnet.org>
 
 	* Import perl script for sign_messages from silc-plugin.  Affected
