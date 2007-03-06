@@ -20,9 +20,6 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 if SILC_WIN32
 SUBDIRS=win32
 else
-if SILC_EPOC
-SUBDIRS=epoc
-else
 if SILC_BEOS
 SUBDIRS=beos
 else
@@ -33,9 +30,8 @@ SUBDIRS=unix
 endif
 endif
 endif
-endif
 
-DIST_SUBDIRS=win32 epoc beos os2 unix
+DIST_SUBDIRS=win32 beos os2 unix
 
 #ifdef SILC_DIST_TOOLKIT
 SILC_DIST_SOURCE = stacktrace.c
