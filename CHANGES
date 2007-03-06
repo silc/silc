@@ -1,3 +1,9 @@
+Tue Mar  6 22:48:25 CET 2007  Patrik Weiskircher <pat@icore.at>
+
+	* Applied patch from Frank Benkstein. If invalid hmac or cipher
+	  was specified on joining a channel, server crashed. Affected
+	  file apps/silcd/command.c.
+
 Tue Mar  6 22:19:44 CET 2007  Patrik Weiskircher <pat@icore.at>
 
 	* Removed references to lib/silcutil/epoc, fixed a bug in
