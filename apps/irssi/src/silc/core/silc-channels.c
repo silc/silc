@@ -135,7 +135,7 @@ static void silc_channels_join(SILC_SERVER_REC *server,
     schannel = channel_setup_find(channel, server->connrec->chatnet);
     if (key && *key != '\0')
 	    g_string_sprintfa(tmpstr, "%s %s", channel, key);
-    else if (schannel->password && schannel->password[0] != '\0')
+    else if (schannel && schannel->password && schannel->password[0] != '\0')
 	    g_string_sprintfa(tmpstr, "%s %s", channel, schannel->password);
     else
 	    g_string_sprintfa(tmpstr, "%s", channel);
