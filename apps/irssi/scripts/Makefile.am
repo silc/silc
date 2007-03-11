@@ -12,6 +12,7 @@ script_DATA = \
 	mlock.pl \
 	quitmsg.pl \
 	scriptassist.pl \
+	silc.pl \
 	splitlong.pl \
 	usercount.pl
 
