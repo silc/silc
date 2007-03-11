@@ -33,6 +33,7 @@
 #include "settings.h"
 
 #include "servers-setup.h"
+#include "channels-setup.h"
 
 #include "client_ops.h"
 #include "silc-servers.h"
@@ -534,8 +535,14 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
   chans = g_string_new(NULL);
   for (tmp = server->channels; tmp != NULL; tmp = tmp->next) {
     CHANNEL_REC *channel = tmp->data;
+    CHANNEL_SETUP_REC *schannel;
 
-    g_string_sprintfa(chans, "%s,", channel->name);
+    if ((schannel = channel_setup_find(channel->name, server->connrec->chatnet)) && 
+        schannel->password) 
+      g_string_sprintfa(chans, "%s %s,", channel->name,
+		      	schannel->password);
+    else
+      g_string_sprintfa(chans, "%s,", channel->name);
   }
 
   if (chans->len > 0)

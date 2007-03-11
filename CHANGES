@@ -1,3 +1,11 @@
+Sun Mar 11 17:43:18 CET 2007  Jochen Eisinger <coffee@silcnet.org>
+
+	* When joining channels with a password given in the config file,
+	  use it.  Also use it when cycling (it would be better to get
+	  the password from the server, but this isn't possible in SILC).
+	  Affected files apps/irssi/src/silc/core/silc-servers.c,
+	  apps/irssi/src/silc/core/silc-channels.c
+
 Sun Mar 11 15:22:42 CET 2007  Jochen Eisinger <coffee@silcnet.org>
 
 	* Import perl script for sign_messages from silc-plugin.  Affected
