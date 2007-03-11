@@ -67,8 +67,8 @@ static int sig_check_lag(void)
 	time_t now;
 	int lag_check_time, max_lag;
 
-	lag_check_time = settings_get_int("lag_check_time");
-	max_lag = settings_get_int("lag_max_before_disconnect");
+	lag_check_time = settings_get_time("lag_check_time") / 1000;
+	max_lag = settings_get_time("lag_max_before_disconnect") / 1000;
 
 	if (lag_check_time <= 0)
 		return 1;
@@ -102,8 +102,8 @@ static int sig_check_lag(void)
 void silc_lag_init(void)
 {
 	/* silc-client will need those... silc-plugin uses irc defaults */
-	settings_add_int("misc", "lag_check_time", 60);
-	settings_add_int("misc", "lag_max_before_disconnect", 300);
+	settings_add_time("misc", "lag_check_time", "1min");
+	settings_add_time("misc", "lag_max_before_disconnect", "5min");
 
 	timeout_tag = g_timeout_add(1000, (GSourceFunc) sig_check_lag, NULL);
 }
