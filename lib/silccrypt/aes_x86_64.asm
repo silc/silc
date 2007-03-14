@@ -689,7 +689,7 @@ enc_tab:
     align   16
 aes_encrypt:
 
-%ifdef __GNUC__
+%ifndef WIN32
     sub     rsp, 4*8        ; gnu/linux binary interface
     mov     [rsp+0*8], rsi  ; output pointer
     mov     r8, rdx         ; context
@@ -753,7 +753,7 @@ aes_encrypt:
     mov     rbx, [rsp+1*8]
     mov     rbp, [rsp+2*8]
     mov     r12, [rsp+3*8]
-%ifdef __GNUC__
+%ifndef WIN32
     add     rsp, 4*8
 %else
     mov     rsi, [rsp+4*8]
@@ -783,7 +783,7 @@ dec_tab:
     align   16
 aes_decrypt:
 
-%ifdef __GNUC__
+%ifndef WIN32
     sub     rsp, 4*8        ; gnu/linux binary interface
     mov     [rsp+0*8], rsi  ; output pointer
     mov     r8, rdx         ; context
@@ -852,7 +852,7 @@ aes_decrypt:
 .4: mov     rbx, [rsp+1*8]
     mov     rbp, [rsp+2*8]
     mov     r12, [rsp+3*8]
-%ifdef __GNUC__
+%ifndef WIN32
     add     rsp, 4*8
 %else
     mov     rsi, [rsp+4*8]
