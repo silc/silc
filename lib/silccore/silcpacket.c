@@ -2319,6 +2319,7 @@ void silc_packet_wait_uninit(void *waiter, SilcPacketStream stream)
   pw->stopped = TRUE;
   silc_cond_broadcast(pw->wait_cond);
   silc_mutex_unlock(pw->wait_lock);
+  silc_thread_yield();
 
   /* Re-acquire lock and free resources */
   silc_mutex_lock(pw->wait_lock);
@@ -2507,7 +2508,7 @@ int silc_packet_wrap_write(SilcStream stream, const unsigned char *data,
   SilcPacketWrapperStream pws = stream;
   SilcBool ret = FALSE;
 
-  /* Call decoder if set */
+  /* Call encoder if set */
   if (pws->coder) {
     silc_buffer_reset(pws->encbuf);
     ret = pws->coder(stream, SILC_STREAM_CAN_WRITE, pws->encbuf,
