@@ -114,9 +114,9 @@ typedef struct {
  *
  * EXAMPLE
  *
- *    // Generate RSA key pair with 2048 bit key length, using PKCS #1
- *    // no OID scheme.
- *    silc_pkcs_silc_generate_key("rsa", 2048, rng, &public_key, &private_key);
+ *    // Generate RSA key pair with 2048 bit key length
+ *    silc_pkcs_silc_generate_key("rsa", 2048, ident_string, rng,
+ *                                &public_key, &private_key);
  *
  ***/
 SilcBool silc_pkcs_silc_generate_key(const char *algorithm,

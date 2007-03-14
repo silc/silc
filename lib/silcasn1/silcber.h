@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2006 Pekka Riikonen
+  Copyright (C) 2003 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@
  *
  *    Defines the BER classes.
  *
- */
+ ***/
 typedef enum {
   SILC_BER_CLASS_UNIVERSAL       = 0x00,   /* Universal */
   SILC_BER_CLASS_APPLICATION     = 0x01,   /* Application */
@@ -64,7 +64,7 @@ typedef enum {
  *
  *    Defines the BER encoding type.
  *
- */
+ ***/
 typedef enum {
   SILC_BER_ENC_PRIMITIVE         = 0x00,
   SILC_BER_ENC_CONSTRUCTED       = 0x01,

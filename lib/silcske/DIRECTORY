@@ -2,6 +2,7 @@
 @LIBRARY=SILC Key Exchange Library
 @FILENAME=silcskelib.html
 @LINK=silcske.html:SILC SKE Interface
+@LINK=silcconnauth.html:SILC Connection Authentication Interface
 -->
 
 <big><b>SILC Key Exchange Library</b></big>
