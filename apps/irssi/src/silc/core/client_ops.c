@@ -771,6 +771,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     /* If there are multiple same nicknames on channel now, tell it to user. */
     if (client_entry != server->conn->local_entry) {
       char nick[128 + 1], tmp[32];
+      int count = 0;
 
       silc_parse_userfqdn(client_entry->nickname, nick, sizeof(nick), NULL, 0);
       clients = silc_client_get_clients_local(client, conn, nick, NULL);
@@ -778,13 +779,19 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 	silc_client_list_free(client, conn, clients);
 	break;
       }
-      silc_snprintf(tmp, sizeof(tmp), "%d", silc_dlist_count(clients));
-      printformat_module("fe-common/silc", server, channel->channel_name,
-			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_MANY_NICKS,
-			 tmp, nick);
-      printformat_module("fe-common/silc", server, channel->channel_name,
-			 MSGLEVEL_CRAP, SILCTXT_CHANNEL_USER_APPEARS,
-			 buf, client_entry->nickname);
+      silc_dlist_start(clients);
+      while ((client_entry2 = silc_dlist_get(clients)))
+	if (silc_client_on_channel(channel, client_entry2))
+	  count++;
+      if (count > 1) {
+	silc_snprintf(tmp, sizeof(tmp), "%d", silc_dlist_count(clients));
+	printformat_module("fe-common/silc", server, channel->channel_name,
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_MANY_NICKS,
+			   tmp, nick);
+	printformat_module("fe-common/silc", server, channel->channel_name,
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_USER_APPEARS,
+			   buf, client_entry->nickname);
+      }
       silc_client_list_free(client, conn, clients);
     }
     break;
