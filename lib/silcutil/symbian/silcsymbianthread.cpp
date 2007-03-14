@@ -142,6 +142,15 @@ SilcBool silc_thread_wait(SilcThread thread, void **exit_value)
 #endif
 }
 
+/* Yield processor */
+
+void silc_thread_yield(void)
+{
+#ifdef SILC_THREADS
+  User::After(1);
+#endif /* SILC_THREADS */
+}
+
 /***************************** SILC Mutex API *******************************/
 
 /* SILC Mutex structure */

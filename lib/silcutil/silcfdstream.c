@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 - 2006 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -102,9 +102,12 @@ SilcStream silc_fd_stream_file(const char *filename,
 			       SilcBool reading, SilcBool writing)
 {
   int fd, flags = 0;
+  SilcStream stream;
 
   if (!filename)
     return NULL;
+
+  SILC_LOG_DEBUG(("Creating new fd stream for file `%s'", filename));
 
   if (reading)
     flags |= O_RDONLY;
@@ -117,7 +120,11 @@ SilcStream silc_fd_stream_file(const char *filename,
   if (fd < 0)
     return NULL;
 
-  return silc_fd_stream_create(fd);
+  stream = silc_fd_stream_create(fd);
+  if (!stream)
+    silc_file_close(fd);
+
+  return stream;
 }
 
 /* Return fds */
@@ -232,13 +239,17 @@ SilcBool silc_fd_stream_close(SilcStream stream)
 
   if (fd_stream->fd1 > 0) {
     silc_file_close(fd_stream->fd1);
-    silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd1);
-    silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd1);
+    if (fd_stream->schedule) {
+      silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd1);
+      silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd1);
+    }
   }
   if (fd_stream->fd2 > 0 && fd_stream->fd2 != fd_stream->fd1) {
     silc_file_close(fd_stream->fd2);
-    silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd2);
-    silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd2);
+    if (fd_stream->schedule) {
+      silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd2);
+      silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd2);
+    }
   }
 
   return TRUE;
@@ -284,10 +295,12 @@ SilcBool silc_fd_stream_notifier(SilcStream stream,
 	fd_stream->fd2 = fd_stream->fd1;
     }
   } else {
-    silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd1);
-    silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd2);
-    silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd1);
-    silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd2);
+    if (fd_stream->schedule) {
+      silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd1);
+      silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd2);
+      silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd1);
+      silc_schedule_task_del_by_fd(fd_stream->schedule, fd_stream->fd2);
+    }
   }
 
   return TRUE;

@@ -102,7 +102,7 @@ typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
  *    socket connection information, such as hostname and IP address are
  *    resolved, so SilcAsyncOperation is returned which can be used to cancel
  *    the creation process.  The `callback' will be called to return the
- *    created socket stream.  To destroy the stream call silc_stream_destroy.
+ *    created socket stream.
  *
  *    If the `lookup' is TRUE then this will perform IP and hostname lookup
  *    for the socket.  If the `require_fqdn' is TRUE then the socket must
@@ -168,10 +168,11 @@ SilcStream silc_socket_udp_stream_create(SilcSocket sock,
  * DESCRIPTION
  *
  *    Returns TRUE if the `stream' is UDP stream.  If the `connected' pointer
- *    is non-NULL indication whether the UDP stream is in connected state.
- *    If it is then packets can be read and written using silc_stream_read
- *    and silc_stream_write.  If it is not then packets need to read and
- *    written by using silc_net_udp_receive and silc_net_udp_send.
+ *    is non-NULL it will have indication whether the UDP stream is in
+ *    connected state.  If it is then packets can be read and written using
+ *    silc_stream_read and silc_stream_write.  If it is not then packets
+ *    need to read and written by using silc_net_udp_receive and
+ *    silc_net_udp_send.
  *
  ***/
 SilcBool silc_socket_stream_is_udp(SilcStream stream, SilcBool *connected);

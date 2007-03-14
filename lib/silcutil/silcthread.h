@@ -144,4 +144,18 @@ SilcThread silc_thread_self(void);
  ***/
 SilcBool silc_thread_wait(SilcThread thread, void **exit_value);
 
+/****f* silcutil/SilcThreadAPI/silc_thread_yield
+ *
+ * SYNOPSIS
+ *
+ *    void silc_thread_yield(void);
+ *
+ * DESCRIPTION
+ *
+ *    Yield the processor.  The calling thread will yield the processor and
+ *    give execution time for other threads, until its turn comes up again.
+ *
+ ***/
+void silc_thread_yield(void);
+
 #endif

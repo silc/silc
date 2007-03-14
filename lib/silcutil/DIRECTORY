@@ -7,9 +7,10 @@
 @LINK=silchashtable.html:Hash Table Interface
 @LINK=silcmemory.html:Memory Allocation Interface
 @LINK=silcstack.html:Data Stack (memory pool) Interface
+@LINK=silcfsm.html:Finite State Machine Interface
 @LINK=silcthread.html:Thread Interface
 @LINK=silcmutex.html:Mutual Exclusion Lock Interface
-@LINK=silccond.html:Conditional Variable Interface
+@LINK=silccond.html:Condition Variable Interface
 @LINK=silcatomic.html:Atomic Operations Interface
 @LINK=silcnet.html:Network (TCP and UDP) Interface
 @LINK=silcschedule.html:Scheduler Interface
@@ -17,7 +18,6 @@
 @LINK=silcstream.html:Abstract Stream Interface
 @LINK=silcsocketstream.html:Socket Stream Interface
 @LINK=silcfdstream.html:File Descriptor Stream Interface
-@LINK=silcfsm.html:Finite State Machine Interface
 @LINK=silcfileutil.html:File Utility Functions
 @LINK=silcstrutil.html:String Utility Interface
 @LINK=silcsnprintf.html:Snprintf Interface

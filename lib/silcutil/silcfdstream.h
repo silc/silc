@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -47,7 +47,8 @@
  *    with the silc_stream_destroy.
  *
  *    The silc_stream_set_notifier must be called in order to be able to read
- *    from and write to this file descriptor stream.
+ *    from and write to this file descriptor stream if the `fd' is in
+ *    non-blocking mode.
  *
  ***/
 SilcStream silc_fd_stream_create(int fd);
@@ -66,7 +67,8 @@ SilcStream silc_fd_stream_create(int fd);
  *    silc_stream_close and destroyed with the silc_stream_destroy.
  *
  *    The silc_stream_set_notifier must be called in order to be able to read
- *    from and write to this file descriptor stream.
+ *    from and write to this file descriptor stream if the `fd' is in
+ *    non-blocking mode.
  *
  ***/
 SilcStream silc_fd_stream_create2(int read_fd, int write_fd);
@@ -86,7 +88,8 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd);
  *    for writing.
  *
  *    The silc_stream_set_notifier must be called in order to be able to read
- *    from and write to this file descriptor stream.
+ *    from and write to this file descriptor stream if the `fd' is in
+ *    non-blocking mode.
  *
  ***/
 SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,

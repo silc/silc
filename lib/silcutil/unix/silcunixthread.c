@@ -97,6 +97,14 @@ SilcBool silc_thread_wait(SilcThread thread, void **exit_value)
 #endif
 }
 
+void silc_thread_yield(void)
+{
+#ifdef SILC_THREADS
+#ifdef HAVE_SCHED_YIELD
+  sched_yield();
+#endif /* HAVE_SCHED_YIELD */
+#endif /* SILC_THREADS */
+}
 
 /***************************** SILC Mutex API *******************************/
 

@@ -123,7 +123,7 @@ int silc_poll(SilcSchedule schedule, void *context)
   int fd, ret, i = 0, timeout = -1;
 
   silc_hash_table_list(schedule->fd_queue, &htl);
-  while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
+  while (silc_hash_table_get(&htl, (void *)&fd, (void *)&task)) {
     if (!task->events)
       continue;
 
@@ -172,7 +172,7 @@ int silc_poll(SilcSchedule schedule, void *context)
     if (!fds[i].revents)
       continue;
     if (!silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fds[i].fd),
-			      NULL, (void **)&task))
+			      NULL, (void *)&task))
       continue;
     if (!task->header.valid || !task->events)
       continue;
@@ -203,7 +203,7 @@ int silc_select(SilcSchedule schedule, void *context)
   FD_ZERO(&out);
 
   silc_hash_table_list(schedule->fd_queue, &htl);
-  while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
+  while (silc_hash_table_get(&htl, (void *)&fd, (void *)&task)) {
     if (!task->events)
       continue;
 
@@ -233,7 +233,7 @@ int silc_select(SilcSchedule schedule, void *context)
     return ret;
 
   silc_hash_table_list(schedule->fd_queue, &htl);
-  while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
+  while (silc_hash_table_get(&htl, (void *)&fd, (void *)&task)) {
     if (!task->header.valid || !task->events)
       continue;
 
