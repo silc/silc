@@ -106,15 +106,19 @@ SilcDList silc_client_get_clients_local(SilcClient client,
     /* Take all without any further checking */
     silc_list_start(list);
     while ((id_cache = silc_list_get(list))) {
-      silc_client_ref_client(client, conn, id_cache->context);
-      silc_dlist_add(clients, id_cache->context);
+      entry = id_cache->context;
+      if (entry->internal.valid) {
+	silc_client_ref_client(client, conn, id_cache->context);
+	silc_dlist_add(clients, id_cache->context);
+      }
     }
   } else {
     /* Check multiple cache entries for exact match */
     silc_list_start(list);
     while ((id_cache = silc_list_get(list))) {
       entry = id_cache->context;
-      if (silc_utf8_strcasecmp(entry->nickname, format)) {
+      if (silc_utf8_strcasecmp(entry->nickname, format) &&
+	  entry->internal.valid) {
 	silc_client_ref_client(client, conn, entry);
 	silc_dlist_add(clients, entry);
       }

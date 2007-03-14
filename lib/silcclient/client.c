@@ -538,9 +538,10 @@ SILC_FSM_STATE(silc_client_st_run)
   if (client->internal->stop) {
     /* Stop client libarry.  If we have running connections, wait until
        they finish first. */
-    SILC_LOG_DEBUG(("Event: stop"));
-    if (silc_atomic_get_int16(&client->internal->conns) == 0)
+    if (silc_atomic_get_int16(&client->internal->conns) == 0) {
+      SILC_LOG_DEBUG(("Event: stop"));
       silc_fsm_next(fsm, silc_client_st_stop);
+    }
     return SILC_FSM_CONTINUE;
   }
 
