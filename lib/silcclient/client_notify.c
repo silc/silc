@@ -33,6 +33,7 @@ typedef struct {
   SilcFSMThread fsm;		      /* Notify FSM thread */
   SilcChannelEntry channel;	      /* Channel entry being resolved */
   SilcClientEntry client_entry;	      /* Client entry being resolved */
+  SilcUInt32 resolve_retry;	      /* Resolving retry counter */
 } *SilcClientNotify;
 
 /************************ Static utility functions **************************/
@@ -54,7 +55,9 @@ static void silc_client_notify_resolved(SilcClient client,
 
   /* If entry is still invalid, resolving failed.  Finish notify processing. */
   if (notify->client_entry && !notify->client_entry->internal.valid) {
-    silc_fsm_next(notify->fsm, silc_client_notify_processed);
+    /* If resolving timedout try it again many times. */
+    if (status != SILC_STATUS_ERR_TIMEDOUT || ++notify->resolve_retry > 1000)
+      silc_fsm_next(notify->fsm, silc_client_notify_processed);
     silc_client_unref_client(client, conn, notify->client_entry);
   }
 
