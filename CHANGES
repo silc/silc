@@ -1,3 +1,15 @@
+Wed Mar 14 17:31:28 EET 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* In notify handling resolve user entries many times if the
+	  resolving timedout.  Affected file lib/silcclient/client_notify.c.
+
+	* silc_client_get_clients_local do not return any invalid entries.
+	  Affected file is lib/silcclient/client_entry.c.
+
+	* Do not print "there are now xx user on this channel" for users
+	  that actually aren't anymore on the channel.  Affected file
+	  is apps/irssi/src/client_ops.c.
+
 Sun Mar 11 17:43:18 CET 2007  Jochen Eisinger <coffee@silcnet.org>
 
 	* When joining channels with a password given in the config file,
@@ -21,6 +33,11 @@ Sun Mar 11 13:50:53 CET 2007  Jochen Eisinger <coffee@silcnet.org>
 
 	* Use time settings for lag settings.  Affected file is
 	  apps/irssi/src/silc/core/silc-lag.c
+
+Tue Feb 27 17:07:34 EET 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_thread_yield.  Affected file is 
+	  lib/silcutil/silcmutex.h.
 
 Wed Feb 21 17:01:01 EET 2007  Pekka Riikonen <priikone@silcnet.org>
 
