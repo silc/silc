@@ -619,11 +619,11 @@ void mem_read(void *context, SilcSFTP sftp,
 	      void *callback_context)
 {
   MemFSFileHandle h = (MemFSFileHandle)handle;
-  unsigned char data[32768];
+  unsigned char data[63488];
   int ret;
 
-  if (len > 32768)
-    len = 32768;
+  if (len > 63488)
+    len = 63488;
 
   ret = lseek(h->fd, (off_t)offset, SEEK_SET);
   if (ret < 0) {
