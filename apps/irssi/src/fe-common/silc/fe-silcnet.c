@@ -31,6 +31,14 @@
 #include "silc-chatnets.h"
 #include "printtext.h"
 
+void silcnet_create(SILC_CHATNET_REC *rec)
+{
+	g_return_if_fail(rec != NULL);
+
+	rec->chat_type = SILC_PROTOCOL;
+        chatnet_create((CHATNET_REC *) rec);
+}
+
 static void cmd_silcnet_list(void)
 {
 	GString *str;

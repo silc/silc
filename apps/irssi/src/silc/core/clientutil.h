@@ -31,4 +31,14 @@ void silc_client_list_pkcs();
 int silc_client_check_silc_dir();
 int silc_client_load_keys(SilcClient client);
 
+#ifdef SILC_PLUGIN
+typedef struct {
+  char *old, *passphrase, *file, *pkcs;
+  int bits;
+} CREATE_KEY_REC;
+
+void create_key_passphrase(const char *answer, CREATE_KEY_REC *rec);
+void change_private_key_passphrase(const char *answer, CREATE_KEY_REC *rec);
+#endif
+
 #endif

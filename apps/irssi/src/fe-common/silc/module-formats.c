@@ -272,5 +272,25 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "silcnet_line", "%#$0: $1", 2, { 0, 0 } },
 	{ "silcnet_footer", "", 0 },
 
+#ifdef SILC_PLUGIN
+	/* command line option handling */
+	{ NULL, "Command Line Option Handling", 0 },
+
+	{ "config_debug", "Run-time debugging is {hilight $0}", 1, { 0 } },
+	{ "config_nodebug", "Run-time debugging is {hilight disabled}. To enable it recompile the client with {hilight --enable-debug} configuration option.", 0 },
+	{ "config_unknown", "Unknown option: $0", 1, { 0 } },
+	{ "config_list", " - $0", 1, { 0 } },
+	{ "config_algos", "Supported {hilight $0} algorithms:", 1, { 0 } },
+	{ "config_nexttime", "{hilight NOTE:} You need to reload the plugin for these changes to take effect!", 0 },
+	{ "config_pass_ask1", "Current Passphrase:", 0 },
+	{ "config_pass_ask2", "New Passphrase:", 0 },
+	{ "config_pass_ask3", "Retype new Passphrasse:", 0 },
+	{ "config_passmismatch", "The passphrases do not match!", 0 },
+	{ "config_passchange", "Changed the private key passphrase sucessfully", 0, { 0 } },
+	{ "config_passchange_fail", "Failed to change the passphrase!", 0, { 0 } },
+	{ "config_create", "Created a new key pair successfully", 0, { 0 } },
+	{ "config_create_fail", "Failed to create a new key pair", 0, { 0 } },
+#endif
+
 	{ NULL, NULL, 0 }
 };

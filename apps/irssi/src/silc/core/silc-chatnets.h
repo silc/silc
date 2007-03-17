@@ -20,8 +20,6 @@ struct _SILC_CHATNET_REC {
 
 typedef struct _SILC_CHATNET_REC SILC_CHATNET_REC;
 
-void silcnet_create(SILC_CHATNET_REC *rec);
-
 #define silc_chatnet_find(name) \
 	SILC_CHATNET(chatnet_find(name))
 #define silcnet_find(name) silc_chatnet_find(name)
