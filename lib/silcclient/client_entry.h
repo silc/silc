@@ -70,10 +70,6 @@ void silc_client_update_server(SilcClient client,
 			       const char *server_info);
 SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
 				SilcServerEntry server);
-SilcBool silc_client_nickname_parse(SilcClient client,
-				    SilcClientConnection conn,
-				    char *nickname,
-				    char **ret_nick);
 SilcUInt16 silc_client_get_clients_by_list(SilcClient client,
 					   SilcClientConnection conn,
 					   SilcUInt32 list_count,

@@ -672,20 +672,18 @@ typedef struct {
      Following format types are available:
 
      %n  nickname      - the real nickname returned by the server (mandatory)
+     %a  number        - ascending number in case there are several
+                         same nicknames (fe. nick#2 and nick#3)
      %h  hostname      - the stripped hostname of the client
      %H  full hostname - the full hostname of the client
-     %s  server name   - the server name the client is connected
-     %S  full server   - the full server name the client is connected
-     %a  number        - ascending number in case there are several
-                         same nicknames (fe. nick@host and nick@host2)
 
-     Example format strings: "%n@%h%a"   (fe. nick@host, nick@host2)
-                             "%a!%n@%s"  (fe. nick@server, 2!nick@server)
-			     "%n@%H"     (fe. nick@host.domain.com)
+     Example format strings: "%n#%a"     (fe. nick#2, nick#3)
+                             "%n@%h%a"   (fe. nick@host, nick@host2)
+                             "%a!%n@%h"  (fe. nick@host, 2!nick@host)
 
      Note that there must always be some separator characters around '%n'
      format.  It is not possible to put format characters before or after
-     '%n' without separators (such ash '@').  Also note that the separator
+     '%n' without separators (such ash '#').  Also note that the separator
      character should be a character that cannot be part of normal nickname.
   */
   char nickname_format[32];
@@ -2408,6 +2406,30 @@ SilcClientEntry silc_client_nickname_format(SilcClient client,
 					    SilcClientConnection conn,
 					    SilcClientEntry client_entry,
 					    SilcBool priority);
+
+/****f* silcclient/SilcClientAPI/silc_client_nickname_parse
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_client_nickname_parse(SilcClient client,
+ *                                        SilcClientConnection conn,
+ *                                        char *nickname,
+ *                                        char **ret_nick);
+ *
+ * DESCRIPTION
+ *
+ *    Parses the `nickname' according to the format string given in the
+ *    SilcClientParams.  Returns the parsed nickname into the `ret_nick'.
+ *    The caller must free the returned pointer.  Returns FALSE if error
+ *    occurred during parsing.  Returns TRUE if the nickname was parsed,
+ *    it was not formatted or if the format string has not been specified
+ *    in SilcClientParams.
+ *
+ ***/
+SilcBool silc_client_nickname_parse(SilcClient client,
+				    SilcClientConnection conn,
+				    char *nickname,
+				    char **ret_nick);
 
 #ifdef __cplusplus
 }

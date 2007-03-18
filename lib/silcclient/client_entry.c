@@ -62,31 +62,47 @@ SilcClientEntry silc_client_get_client_by_id(SilcClient client,
 
 /* Finds clients by nickname from local cache. */
 
-SilcDList silc_client_get_clients_local(SilcClient client,
-					SilcClientConnection conn,
-					const char *nickname,
-					const char *format)
+SilcDList silc_client_get_clients_local_ext(SilcClient client,
+					    SilcClientConnection conn,
+					    const char *nickname,
+					    SilcBool get_all,
+					    SilcBool get_valid)
 {
   SilcIDCacheEntry id_cache;
   SilcList list;
   SilcDList clients;
   SilcClientEntry entry;
-  char *nicknamec;
+  char *nicknamec, *parsed = NULL, *format = NULL;
 
   if (!client || !conn || !nickname)
     return NULL;
 
-  SILC_LOG_DEBUG(("Find clients by nickname %s", nickname));
+  /* Parse nickname if it is formatted */
+  if (!silc_client_nickname_parse(client, conn, (char *)nickname, &parsed))
+    return NULL;
+
+  if (!get_all && parsed)
+    format = (char *)nickname;
+  if (!parsed) {
+    parsed = silc_memdup(nickname, strlen(nickname));
+    if (!parsed)
+      return NULL;
+  }
+
+  SILC_LOG_DEBUG(("Find clients by nickname %s", parsed));
 
   /* Normalize nickname for search */
-  nicknamec = silc_identifier_check(nickname, strlen(nickname),
+  nicknamec = silc_identifier_check(parsed, strlen(parsed),
 				    SILC_STRING_UTF8, 128, NULL);
-  if (!nicknamec)
+  if (!nicknamec) {
+    silc_free(parsed);
     return NULL;
+  }
 
   clients = silc_dlist_init();
   if (!clients) {
     silc_free(nicknamec);
+    silc_free(parsed);
     return NULL;
   }
 
@@ -98,39 +114,62 @@ SilcDList silc_client_get_clients_local(SilcClient client,
 				 &list)) {
     silc_mutex_unlock(conn->internal->lock);
     silc_free(nicknamec);
+    silc_free(parsed);
     silc_dlist_uninit(clients);
     return NULL;
   }
+  silc_list_start(list);
 
-  if (!format) {
+  if (!format && get_all) {
     /* Take all without any further checking */
-    silc_list_start(list);
     while ((id_cache = silc_list_get(list))) {
       entry = id_cache->context;
-      if (entry->internal.valid) {
+      if (!get_valid || entry->internal.valid) {
 	silc_client_ref_client(client, conn, id_cache->context);
 	silc_dlist_add(clients, id_cache->context);
       }
     }
   } else {
     /* Check multiple cache entries for exact match */
-    silc_list_start(list);
     while ((id_cache = silc_list_get(list))) {
       entry = id_cache->context;
-      if (silc_utf8_strcasecmp(entry->nickname, format) &&
-	  entry->internal.valid) {
+      if (silc_utf8_strcasecmp(entry->nickname,
+			       format ? format : parsed) &&
+	  (!get_valid || entry->internal.valid)) {
 	silc_client_ref_client(client, conn, entry);
 	silc_dlist_add(clients, entry);
+
+	/* If format is NULL, we find one exact match with the base
+	   nickname (parsed). */
+	if (!format)
+	  break;
       }
     }
   }
 
   silc_mutex_unlock(conn->internal->lock);
 
-  silc_dlist_start(clients);
-
   silc_free(nicknamec);
+  silc_free(parsed);
+
+  if (!silc_dlist_count(clients)) {
+    silc_dlist_uninit(clients);
+    return NULL;
+  }
+
+  silc_dlist_start(clients);
   return clients;
+}
+
+/* Finds clients by nickname from local cache. */
+
+SilcDList silc_client_get_clients_local(SilcClient client,
+					SilcClientConnection conn,
+					const char *nickname,
+					SilcBool return_all)
+{
+  return silc_client_get_clients_local_ext(client, conn, nickname, return_all,
+					   TRUE);
 }
 
 /********************** Client Resolving from Server ************************/
@@ -1051,8 +1090,9 @@ SilcClientEntry silc_client_nickname_format(SilcClient client,
   /* Get all clients with same nickname. Do not perform the formatting
      if there aren't any clients with same nickname unless the application
      is forcing us to do so. */
-  clients = silc_client_get_clients_local(client, conn,
-					  client_entry->nickname, NULL);
+  clients = silc_client_get_clients_local_ext(client, conn,
+					      client_entry->nickname,
+					      TRUE, FALSE);
   if (!clients)
     return NULL;
   if (silc_dlist_count(clients) == 1 &&
@@ -1118,22 +1158,6 @@ SilcClientEntry silc_client_nickname_format(SilcClient client,
       memcpy(&newnick[off], client_entry->hostname, len);
       off += len;
       break;
-    case 's':
-      /* Stripped server name */
-      if (!client_entry->server)
-	break;
-      len = strcspn(client_entry->server, ".");
-      memcpy(&newnick[off], client_entry->server, len);
-      off += len;
-      break;
-    case 'S':
-      /* Full server name */
-      if (!client_entry->server)
-	break;
-      len = strlen(client_entry->server);
-      memcpy(&newnick[off], client_entry->server, len);
-      off += len;
-      break;
     case 'a':
       /* Ascending number */
       {
@@ -1189,8 +1213,10 @@ SilcBool silc_client_nickname_parse(SilcClient client,
   SilcBool n = FALSE;
   int len;
 
-  if (!client->internal->params->nickname_format[0])
+  if (!client->internal->params->nickname_format[0]) {
+    *ret_nick = NULL;
     return TRUE;
+  }
 
   if (!nickname || !nickname[0])
     return FALSE;
@@ -1209,8 +1235,6 @@ SilcBool silc_client_nickname_parse(SilcClient client,
 
     case 'h':
     case 'H':
-    case 's':
-    case 'S':
     case 'a':
       break;
 
@@ -1223,7 +1247,7 @@ SilcBool silc_client_nickname_parse(SilcClient client,
       break;
     }
 
-     cp++;
+    cp++;
   }
   if (!n)
     return FALSE;

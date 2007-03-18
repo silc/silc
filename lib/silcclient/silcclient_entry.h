@@ -325,8 +325,10 @@ void silc_client_list_free(SilcClient client, SilcClientConnection conn,
  *    completion callback will be called when the client entries has been
  *    found.  After the server returns the client information it is cached
  *    and can be accesses locally at a later time.  The resolving is done
- *    with IDENTIFY command.  The `server' may be NULL.  Returns 0 on
- *    error and the command identifier used with the command otherwise.
+ *    with IDENTIFY command.  The `server' may be NULL.  The server
+ *    associated with the nickname may be in the `nickname' (nick@server).
+ *    Returns 0 on error and the command identifier used with the command
+ *    otherwise.
  *
  * NOTES
  *
@@ -368,8 +370,10 @@ SilcUInt16 silc_client_get_clients(SilcClient client,
  *    completion callback will be called when the client entries has been
  *    found.  After the server returns the client information it is cached
  *    and can be accesses locally at a later time.  The resolving is done
- *    with WHOIS command.  The `server' may be NULL.  Returns 0 on error,
- *    and the command identifier used with the command otherwise.
+ *    with WHOIS command.  The `server' may be NULL.  The server
+ *    associated with the nickname may be in the `nickname' (nick@server).
+ *    Returns 0 on error and the command identifier used with the command
+ *    otherwise.
  *
  *    If the `attributes' is non-NULL then the buffer includes Requested
  *    Attributes which can be used to fetch very detailed information
@@ -400,19 +404,20 @@ SilcUInt16 silc_client_get_clients_whois(SilcClient client,
  *    SilcDList silc_client_get_clients_local(SilcClient client,
  *                                            SilcClientConnection conn,
  *                                            const char *nickname,
- *                                            const char *format);
+ *                                            SilcBool return_all);
  *
  * DESCRIPTION
  *
  *    Same as silc_client_get_clients function but does not resolve anything
- *    from the server.  This checks local cache and returns all matching
- *    clients from the local cache.  If none was found this returns NULL.
- *    The `nickname' is the real nickname of the client, and the `format'
- *    is the formatted nickname to find exact match from multiple found
- *    entries.  The format must be same as given in the SilcClientParams
- *    structure to the client library.  If the `format' is NULL all found
- *    clients by `nickname' are returned.  The caller must free the
- *    returned list by silc_client_list_free function.
+ *    from the server.  This checks local cache and returns matching clients
+ *    from the local cache.  If none was found this returns NULL.  The
+ *    `nickname' is the nickname to find and it may be a formatted nickname
+ *    or a base nickname.  If the `return_all' is TRUE this call will return
+ *    all clients matching the `nickname' base.  If it is FALSE this will
+ *    return the exact match if `nickname' is a formatted nickname or the
+ *    first matching nickname if it is not formatted.  The formatted nickname
+ *    must of the format specified in SilcClientParams.  The caller must free
+ *    the returned list by calling silc_client_list_free function.
  *
  * NOTES
  *
@@ -427,7 +432,7 @@ SilcUInt16 silc_client_get_clients_whois(SilcClient client,
 SilcDList silc_client_get_clients_local(SilcClient client,
 					SilcClientConnection conn,
 					const char *nickname,
-					const char *format);
+					SilcBool return_all);
 
 /****f* silcclient/SilcClientAPI/silc_client_get_clients_by_channel
  *

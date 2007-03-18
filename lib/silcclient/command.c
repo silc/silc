@@ -636,6 +636,7 @@ SILC_FSM_STATE(silc_client_command_whois)
   unsigned char count[4], *tmp = NULL;
   SilcBool details = FALSE, nick = FALSE;
   unsigned char *pubkey = NULL;
+  char *nickname = NULL;
   int i;
 
   /* Given without arguments fetches client's own information */
@@ -728,12 +729,17 @@ SILC_FSM_STATE(silc_client_command_whois)
                                           &obj, sizeof(obj));
   }
 
+  silc_client_nickname_parse(client, conn, cmd->argv[1], &nickname);
+  if (!nickname)
+    nickname = strdup(cmd->argv[1]);
+
   /* Send command */
   silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL,
-			      3, 1, nick ? cmd->argv[1] : NULL,
-			      nick ? cmd->argv_lens[1] : 0,
+			      3, 1, nick ? nickname : NULL,
+			      nick ? strlen(nickname) : 0,
 			      2, tmp ? tmp : NULL, tmp ? 4 : 0,
 			      3, silc_buffer_datalen(attrs));
+  silc_free(nickname);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -1037,13 +1043,12 @@ SILC_FSM_STATE(silc_client_command_invite)
       silc_client_nickname_parse(client, conn, cmd->argv[2], &nickname);
 
       /* Find client entry */
-      clients = silc_client_get_clients_local(client, conn, nickname,
-					      cmd->argv[2]);
+      clients = silc_client_get_clients_local(client, conn, cmd->argv[2],
+					      FALSE);
       if (!clients)
 	/* Resolve client information */
 	SILC_FSM_CALL(silc_client_get_clients(
-				      client, conn, nickname,
-				      cmd->argv[2],
+				      client, conn, nickname, NULL,
 				      silc_client_command_resolve_continue,
 				      cmd));
 
@@ -1185,12 +1190,10 @@ SILC_FSM_STATE(silc_client_command_kill)
     return SILC_FSM_FINISH;
 
   /* Get the target client */
-  clients = silc_client_get_clients_local(client, conn, nickname,
-					  cmd->argv[1]);
+  clients = silc_client_get_clients_local(client, conn, cmd->argv[1], FALSE);
   if (!clients)
     /* Resolve client information */
-    SILC_FSM_CALL(silc_client_get_clients(client, conn, nickname,
-					  cmd->argv[1],
+    SILC_FSM_CALL(silc_client_get_clients(client, conn, nickname, NULL,
 					  silc_client_command_resolve_continue,
 					  cmd));
 
@@ -1961,11 +1964,10 @@ SILC_FSM_STATE(silc_client_command_cumode)
   silc_client_nickname_parse(client, conn, cmd->argv[3], &nickname);
 
   /* Find client entry */
-  clients = silc_client_get_clients_local(client, conn, nickname,
-					  cmd->argv[3]);
+  clients = silc_client_get_clients_local(client, conn, cmd->argv[3], FALSE);
   if (!clients)
     /* Resolve client information */
-    SILC_FSM_CALL(silc_client_get_clients(client, conn, nickname, cmd->argv[3],
+    SILC_FSM_CALL(silc_client_get_clients(client, conn, nickname, NULL,
 					  silc_client_command_resolve_continue,
 					  cmd));
 
@@ -2111,7 +2113,6 @@ SILC_FSM_STATE(silc_client_command_kick)
   SilcClientEntry target;
   SilcDList clients = NULL;
   char *name;
-  char *nickname = NULL;
 
   if (cmd->argc < 3) {
     SAY(conn->client, conn, SILC_CLIENT_MESSAGE_INFO,
@@ -2142,12 +2143,8 @@ SILC_FSM_STATE(silc_client_command_kick)
     goto out;
   }
 
-  /* Parse the typed nickname. */
-  silc_client_nickname_parse(client, conn, cmd->argv[2], &nickname);
-
   /* Get the target client */
-  clients = silc_client_get_clients_local(client, conn, nickname,
-					  cmd->argv[2]);
+  clients = silc_client_get_clients_local(client, conn, cmd->argv[2], FALSE);
   if (!clients) {
     SAY(conn->client, conn, SILC_CLIENT_MESSAGE_INFO,
 	"No such client: %s", cmd->argv[2]);
@@ -2171,7 +2168,6 @@ SILC_FSM_STATE(silc_client_command_kick)
 
   silc_buffer_free(idp);
   silc_buffer_free(idp2);
-  silc_free(nickname);
   silc_client_list_free(client, conn, clients);
   silc_client_unref_channel(client, conn, channel);
 
@@ -2184,7 +2180,6 @@ SILC_FSM_STATE(silc_client_command_kick)
 
  out:
   silc_client_unref_channel(client, conn, channel);
-  silc_free(nickname);
   return SILC_FSM_FINISH;
 }
 
@@ -2622,7 +2617,6 @@ SILC_FSM_STATE(silc_client_command_getkey)
   SilcClientEntry client_entry;
   SilcServerEntry server_entry;
   SilcDList clients;
-  char *nickname = NULL;
   SilcBuffer idp;
 
   if (cmd->argc < 2) {
@@ -2632,15 +2626,8 @@ SILC_FSM_STATE(silc_client_command_getkey)
     return SILC_FSM_FINISH;
   }
 
-  /* Parse the typed nickname. */
-  if (!silc_client_nickname_parse(client, conn, cmd->argv[1], &nickname)) {
-    COMMAND_ERROR(SILC_STATUS_ERR_RESOURCE_LIMIT);
-    return SILC_FSM_FINISH;
-  }
-
   /* Find client entry */
-  clients = silc_client_get_clients_local(client, conn, nickname,
-					  cmd->argv[1]);
+  clients = silc_client_get_clients_local(client, conn, cmd->argv[1], FALSE);
   if (!clients) {
     /* Check whether user requested server */
     server_entry = silc_client_get_server(client, conn, cmd->argv[1]);
@@ -2678,7 +2665,6 @@ SILC_FSM_STATE(silc_client_command_getkey)
 			      1, silc_buffer_datalen(idp));
 
   silc_buffer_free(idp);
-  silc_free(nickname);
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
