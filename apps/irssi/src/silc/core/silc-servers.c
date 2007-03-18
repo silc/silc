@@ -89,48 +89,33 @@ static void silc_send_msg_clients(SilcClient client,
   PRIVMSG_REC *rec = context;
   SILC_SERVER_REC *server = rec->server;
   SilcClientEntry target;
-  char nickname[128 + 1];
-  SilcDList lclients = NULL;
 
   if (!clients) {
     printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
 	      "%s: There is no such client", rec->nick);
-  } else {
-    if (silc_dlist_count(clients) > 1) {
-      silc_parse_userfqdn(rec->nick, nickname, sizeof(nickname), NULL, 0);
-
-      /* Find the correct one. The rec->nick might be a formatted nick
-	 so this will find the correct one. */
-      clients = lclients =
-	silc_client_get_clients_local(silc_client, server->conn,
-				      nickname, rec->nick);
-      if (!clients) {
-	printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
-		  "%s: There is no such client", rec->nick);
-	goto out;
-      }
-    }
-
-    target = silc_dlist_get(clients);
-
-    /* Still check for exact math for nickname, this compares the
-       real (formatted) nickname and the nick (maybe formatted) that
-       user gave. This is to assure that `nick' does not match
-       `nick@host'. */
-    if (!silc_utf8_strcasecmp(rec->nick, target->nickname)) {
-      printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
-		"%s: There is no such client", rec->nick);
-      goto out;
-    }
-
-    /* Send the private message */
-    silc_client_send_private_message(client, conn, target,
-				     rec->flags, sha1hash,
-				     rec->msg, rec->len);
+    goto out;
   }
 
+  /* Find the correct one. The rec->nick might be a formatted nick
+     so this will find the correct one. */
+  target = silc_dlist_get(clients);
+  clients = silc_client_get_clients_local(silc_client, server->conn,
+					  rec->nick, FALSE);
+  if (!clients) {
+    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
+	      "%s: There is no such client (did you mean %s?)", rec->nick,
+	      target->nickname);
+    goto out;
+  }
+
+  /* Send the private message */
+  silc_dlist_start(clients);
+  target = silc_dlist_get(clients);
+  silc_client_send_private_message(client, conn, target, rec->flags, sha1hash,
+				   rec->msg, rec->len);
+
  out:
-  silc_client_list_free(silc_client, server->conn, lclients);
+  silc_client_list_free(silc_client, server->conn, clients);
   g_free(rec->nick);
   g_free(rec->msg);
   g_free(rec);
@@ -140,21 +125,16 @@ int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
 		  int msg_len, SilcMessageFlags flags)
 {
   PRIVMSG_REC *rec;
-  char nickname[128 + 1];
   SilcDList clients;
   SilcClientEntry target;
   int ret;
 
-  if (!silc_parse_userfqdn(nick, nickname, sizeof(nickname), NULL, 0)) {
-    printformat_module("fe-common/silc", server, NULL,
-		       MSGLEVEL_CRAP, SILCTXT_BAD_NICK, nick);
-    return FALSE;
-  }
-
   /* Find client entry */
-  clients = silc_client_get_clients_local(silc_client, server->conn,
-					  nickname, nick);
+  clients = silc_client_get_clients_local(silc_client, server->conn, nick,
+					  FALSE);
   if (!clients) {
+    char *nickname = NULL;
+
     rec = g_new0(PRIVMSG_REC, 1);
     rec->nick = g_strdup(nick);
     rec->msg = g_strdup(msg);
@@ -162,10 +142,14 @@ int silc_send_msg(SILC_SERVER_REC *server, char *nick, char *msg,
     rec->flags = flags;
     rec->len = msg_len;
 
+    silc_client_nickname_parse(silc_client, server->conn, nick, &nickname);
+    if (!nickname)
+      nickname = strdup(nick);
+
     /* Could not find client with that nick, resolve it from server. */
-    silc_client_get_clients_whois(silc_client, server->conn,
-				  nickname, NULL, NULL,
-				  silc_send_msg_clients, rec);
+    silc_client_get_clients_whois(silc_client, server->conn, nickname,
+				  NULL, NULL, silc_send_msg_clients, rec);
+    silc_free(nickname);
     return TRUE;
   }
 
@@ -457,7 +441,7 @@ static void sig_connected(SILC_SERVER_REC *server)
   /* Wrap the socket to TCP stream */
   fd = g_io_channel_unix_get_fd(net_sendbuffer_handle(server->handle));
   server->tcp_op =
-    silc_socket_tcp_stream_create(fd, TRUE, FALSE, 
+    silc_socket_tcp_stream_create(fd, TRUE, FALSE,
 				  silc_client->schedule,
 				  sig_connected_stream_created, server);
 }
@@ -537,8 +521,8 @@ char *silc_server_get_channels(SILC_SERVER_REC *server)
     CHANNEL_REC *channel = tmp->data;
     CHANNEL_SETUP_REC *schannel;
 
-    if ((schannel = channel_setup_find(channel->name, server->connrec->chatnet)) && 
-        schannel->password) 
+    if ((schannel = channel_setup_find(channel->name, server->connrec->chatnet)) &&
+        schannel->password)
       g_string_sprintfa(chans, "%s %s,", channel->name,
 		      	schannel->password);
     else
@@ -866,8 +850,8 @@ static void silc_client_command_file_get_clients(SilcClient client,
   FileGetClients internal = (FileGetClients)context;
 
   if (!clients) {
-    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR, "Unknown nick: %s",
-	      internal->nick);
+    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
+	      "There was no such nickname: %s", internal->nick);
     silc_free(internal->data);
     silc_free(internal->nick);
     silc_free(internal);
@@ -889,7 +873,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   SilcClientEntry client_entry;
   SilcDList entries;
   SilcClientFileError ret;
-  char nickname[128 + 1], *tmp;
+  char *nickname = NULL, *tmp;
   unsigned char **argv;
   SilcUInt32 argc;
   SilcUInt32 *argv_lens, *argv_types;
@@ -933,22 +917,19 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
       cmd_return_error(CMDERR_NOT_ENOUGH_PARAMS);
 
     /* Parse the typed nickname. */
-    if (!silc_parse_userfqdn(argv[3], nickname, sizeof(nickname), NULL, 0)) {
-      printformat_module("fe-common/silc", server, NULL,
-			 MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[3]);
-      goto out;
-    }
+    silc_client_nickname_parse(silc_client, conn, argv[3], &nickname);
+    if (!nickname)
+      nickname = strdup(argv[3]);
 
     /* Find client entry */
-    entries = silc_client_get_clients_local(silc_client, conn, nickname,
-					    argv[3]);
+    entries = silc_client_get_clients_local(silc_client, conn, argv[3], FALSE);
     if (!entries) {
       FileGetClients inter = silc_calloc(1, sizeof(*inter));
       inter->server = server;
       inter->data = strdup(data);
       inter->nick = strdup(nickname);
       inter->item = item;
-      silc_client_get_clients(silc_client, conn, nickname, argv[3],
+      silc_client_get_clients(silc_client, conn, nickname, NULL,
 			      silc_client_command_file_get_clients, inter);
       goto out;
     }
@@ -1028,22 +1009,21 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   case 2:
     /* Parse the typed nickname. */
     if (argc >= 3) {
-      if (!silc_parse_userfqdn(argv[2], nickname, sizeof(nickname), NULL, 0)) {
-	printformat_module("fe-common/silc", server, NULL,
-			   MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[2]);
-	goto out;
-      }
+      /* Parse the typed nickname. */
+      silc_client_nickname_parse(silc_client, conn, argv[2], &nickname);
+      if (!nickname)
+	nickname = strdup(argv[2]);
 
       /* Find client entry */
-      entries = silc_client_get_clients_local(silc_client, conn, nickname,
-					      argv[2]);
+      entries = silc_client_get_clients_local(silc_client, conn, argv[2],
+					      FALSE);
       if (!entries) {
 	FileGetClients inter = silc_calloc(1, sizeof(*inter));
 	inter->server = server;
 	inter->data = strdup(data);
 	inter->nick = strdup(nickname);
 	inter->item = item;
-	silc_client_get_clients(silc_client, conn, nickname, argv[2],
+	silc_client_get_clients(silc_client, conn, nickname, NULL,
 				silc_client_command_file_get_clients, inter);
 	goto out;
       }
@@ -1161,22 +1141,21 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   case 3:
     /* Parse the typed nickname. */
     if (argc >= 3) {
-      if (!silc_parse_userfqdn(argv[2], nickname, sizeof(nickname), NULL, 0)) {
-	printformat_module("fe-common/silc", server, NULL,
-			   MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[2]);
-	goto out;
-      }
+      /* Parse the typed nickname. */
+      silc_client_nickname_parse(silc_client, conn, argv[2], &nickname);
+      if (!nickname)
+	nickname = strdup(argv[2]);
 
       /* Find client entry */
-      entries = silc_client_get_clients_local(silc_client, conn, nickname,
-					      argv[2]);
+      entries = silc_client_get_clients_local(silc_client, conn, argv[2],
+					      FALSE);
       if (!entries) {
 	FileGetClients inter = silc_calloc(1, sizeof(*inter));
 	inter->server = server;
 	inter->data = strdup(data);
 	inter->nick = strdup(nickname);
 	inter->item = item;
-	silc_client_get_clients(silc_client, conn, nickname, argv[2],
+	silc_client_get_clients(silc_client, conn, nickname, NULL,
 				silc_client_command_file_get_clients, inter);
 	goto out;
       }
@@ -1266,6 +1245,7 @@ static void command_file(const char *data, SILC_SERVER_REC *server,
   }
 
  out:
+  silc_free(nickname);
   return;
 }
 

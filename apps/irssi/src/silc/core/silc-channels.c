@@ -595,7 +595,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   SilcDList clients;
   SILC_CHANNEL_REC *chanrec = NULL;
   SilcChannelEntry channel_entry = NULL;
-  char nickname[128 + 1], *tmp;
+  char *nickname = NULL, *tmp;
   int command = 0, port = 0, type = 0;
   char *hostname = NULL;
   KeyInternal internal = NULL;
@@ -634,25 +634,23 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 
   if (type == 1) {
     if (argv[2][0] == '*') {
-      strcpy(nickname, "*");
+      nickname = strdup("*");
     } else {
       /* Parse the typed nickname. */
-      if (!silc_parse_userfqdn(argv[2], nickname, sizeof(nickname), NULL, 0)) {
-	printformat_module("fe-common/silc", server, NULL,
-			   MSGLEVEL_CRAP, SILCTXT_BAD_NICK, argv[2]);
-	return;
-      }
+      silc_client_nickname_parse(silc_client, conn, argv[2], &nickname);
+      if (!nickname)
+	nickname = strdup(argv[2]);
 
       /* Find client entry */
-      clients = silc_client_get_clients_local(silc_client, conn, nickname,
-					      argv[2]);
+      clients = silc_client_get_clients_local(silc_client, conn, argv[2],
+					      FALSE);
       if (!clients) {
 	KeyGetClients inter = silc_calloc(1, sizeof(*inter));
 	inter->server = server;
 	inter->data = strdup(data);
 	inter->nick = strdup(nickname);
 	inter->item = item;
-	silc_client_get_clients(silc_client, conn, nickname, argv[2],
+	silc_client_get_clients(silc_client, conn, nickname, NULL,
 				silc_client_command_key_get_clients, inter);
 	goto out;
       }
@@ -667,20 +665,16 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
     char *name;
 
     if (argv[2][0] == '*') {
-      if (!conn->current_channel) {
-	silc_free(nickname);
+      if (!conn->current_channel)
 	cmd_return_error(CMDERR_NOT_JOINED);
-      }
       name = conn->current_channel->channel_name;
     } else {
       name = argv[2];
     }
 
     chanrec = silc_channel_find(server, name);
-    if (chanrec == NULL) {
-      silc_free(nickname);
+    if (chanrec == NULL)
       cmd_return_error(CMDERR_CHAN_NOT_FOUND);
-    }
     channel_entry = chanrec->entry;
   }
 
@@ -1062,6 +1056,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
   }
 
  out:
+  silc_free(nickname);
   return;
 }
 

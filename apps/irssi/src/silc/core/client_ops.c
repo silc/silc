@@ -774,7 +774,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       int count = 0;
 
       silc_parse_userfqdn(client_entry->nickname, nick, sizeof(nick), NULL, 0);
-      clients = silc_client_get_clients_local(client, conn, nick, NULL);
+      clients = silc_client_get_clients_local(client, conn, nick, TRUE);
       if (!clients || silc_dlist_count(clients) < 2) {
 	silc_client_list_free(client, conn, clients);
 	break;

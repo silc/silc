@@ -326,7 +326,7 @@ void silc_opt_callback(poptContext con,
   SilcUInt32 *argv_lens=NULL, *argv_types=NULL, argc=0;
   int i;
   unsigned char privkey[128], pubkey[128];
-   
+
   memset(privkey, 0, sizeof(privkey));
   memset(pubkey, 0, sizeof(pubkey));
   snprintf(pubkey, sizeof(pubkey) - 1, "%s/%s", get_irssi_dir(),
@@ -431,7 +431,7 @@ void silc_opt_callback(poptContext con,
     sig_setup_changed();
     printformat_module("fe-common/silc", NULL, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_CONFIG_DEBUG,
-		       (settings_get_bool("debug") == TRUE ? 
+		       (settings_get_bool("debug") == TRUE ?
 			"enabled" : "disabled"));
     goto out;
 #endif
@@ -473,7 +473,7 @@ void silc_opt_callback(poptContext con,
     rec = g_new0(CREATE_KEY_REC, 1);
     rec->pkcs = (pkcs == NULL ? NULL : g_strdup(pkcs));
     rec->bits = bits;
-	      
+
     keyboard_entry_redirect((SIGNAL_FUNC) create_key_passphrase,
 		    	    format_get_text("fe-common/silc", NULL, NULL,
 				    	    NULL, SILCTXT_CONFIG_PASS_ASK2),
@@ -500,7 +500,7 @@ void silc_opt_callback(poptContext con,
     /* Change the passphrase of the private key file */
 #ifdef SILC_PLUGIN
     CREATE_KEY_REC *rec;
-    
+
     rec = g_new0(CREATE_KEY_REC, 1);
     rec->file = g_strdup((argc == 3 ? argv[2] : privkey));
 
@@ -683,6 +683,7 @@ void silc_core_init(void)
   settings_add_str("server", "session_filename", "session.$chatnet");
   settings_add_bool("server", "sign_channel_messages", FALSE);
   settings_add_bool("server", "sign_private_messages", FALSE);
+  settings_add_str("silc", "nickname_format", "%n#%a");
 
   /* Requested Attributes settings */
   settings_add_bool("silc", "attr_allow", TRUE);
@@ -723,7 +724,7 @@ void silc_core_init(void)
 
   /* Initialize client parameters */
   memset(&params, 0, sizeof(params));
-  strcat(params.nickname_format, "%n@%h%a");
+  strcat(params.nickname_format, settings_get_str("nickname_format"));
 
   /* Allocate SILC client */
   silc_client = silc_client_alloc(&ops, &params, NULL, silc_version_string);
