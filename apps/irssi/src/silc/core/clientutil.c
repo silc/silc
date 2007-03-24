@@ -416,6 +416,7 @@ void create_key_passphrase(const char *answer, CREATE_KEY_REC *rec)
   g_free(rec->passphrase);
   g_free(rec->pkcs);
   g_free(rec);
+  irssi_redraw();
   
 }
 
