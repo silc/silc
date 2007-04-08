@@ -80,9 +80,6 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd)
 {
   SilcFDStream stream;
 
-  if (read_fd < 1)
-    return NULL;
-
   stream = silc_calloc(1, sizeof(*stream));
   if (!stream)
     return NULL;
@@ -98,31 +95,52 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd)
 
 /* Create by opening file */
 
-SilcStream silc_fd_stream_file(const char *filename,
-			       SilcBool reading, SilcBool writing)
+SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
+			       SilcBool writing)
 {
-  int fd, flags = 0;
-  SilcStream stream;
+  const char *read_file = NULL, *write_file = NULL;
 
   if (!filename)
     return NULL;
 
-  SILC_LOG_DEBUG(("Creating new fd stream for file `%s'", filename));
-
-  if (reading)
-    flags |= O_RDONLY;
   if (writing)
-    flags |= O_CREAT | O_WRONLY;
-  if (reading && writing)
-    flags = O_CREAT | O_RDWR;
+    write_file = filename;
+  if (reading)
+    read_file = filename;
 
-  fd = silc_file_open(filename, flags);
-  if (fd < 0)
-    return NULL;
+  return silc_fd_stream_file2(read_file, write_file);
+}
 
-  stream = silc_fd_stream_create(fd);
-  if (!stream)
-    silc_file_close(fd);
+/* Create by opening two files */
+
+SilcStream silc_fd_stream_file2(const char *read_file, const char *write_file)
+{
+  SilcStream stream;
+  int fd1 = 0, fd2 = 0;
+
+  SILC_LOG_DEBUG(("Creating new fd stream for reading `%s' and writing `%s'",
+		  read_file ? read_file : "(none)",
+		  write_file ? write_file : "(none)"));
+
+  if (write_file) {
+    fd2 = silc_file_open(write_file, O_CREAT | O_WRONLY);
+    if (fd2 < 0) {
+      silc_file_close(fd1);
+      return NULL;
+    }
+  }
+
+  if (read_file) {
+    fd1 = silc_file_open(read_file, O_RDONLY);
+    if (fd1 < 0)
+      return NULL;
+  }
+
+  stream = silc_fd_stream_create2(fd1, fd2);
+  if (!stream) {
+    silc_file_close(fd1);
+    silc_file_close(fd2);
+  }
 
   return stream;
 }
@@ -290,7 +308,7 @@ SilcBool silc_fd_stream_notifier(SilcStream stream,
 				silc_fd_stream_io, stream);
       silc_schedule_set_listen_fd(schedule, fd_stream->fd1,
 				  SILC_TASK_READ, FALSE);
-      silc_file_set_nonblock(fd_stream->fd1);;
+      silc_file_set_nonblock(fd_stream->fd1);
       if (fd_stream->fd2 < 1)
 	fd_stream->fd2 = fd_stream->fd1;
     }

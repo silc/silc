@@ -46,8 +46,7 @@
  *    by `fd'.  The stream is closed with the silc_stream_close and destroyed
  *    with the silc_stream_destroy.
  *
- *    The silc_stream_set_notifier must be called in order to be able to read
- *    from and write to this file descriptor stream if the `fd' is in
+ *    If the silc_stream_set_notifier is called the stream is set to
  *    non-blocking mode.
  *
  ***/
@@ -66,8 +65,7 @@ SilcStream silc_fd_stream_create(int fd);
  *    and `write_fd' opened for writing.  The stream is closed with the
  *    silc_stream_close and destroyed with the silc_stream_destroy.
  *
- *    The silc_stream_set_notifier must be called in order to be able to read
- *    from and write to this file descriptor stream if the `fd' is in
+ *    If the silc_stream_set_notifier is called the stream is set to
  *    non-blocking mode.
  *
  ***/
@@ -87,13 +85,30 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd);
  *    opened for reading.  If the `writing' is TRUE the file is opened
  *    for writing.
  *
- *    The silc_stream_set_notifier must be called in order to be able to read
- *    from and write to this file descriptor stream if the `fd' is in
+ *    If the silc_stream_set_notifier is called the stream is set to
  *    non-blocking mode.
  *
  ***/
 SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
 			       SilcBool writing);
+
+/****f* silcutil/SilcFDStreamAPI/silc_fd_stream_file
+ *
+ * SYNOPSIS
+ *
+ *    SilcStream silc_fd_stream_file2(const char *read_file,
+ *                                    const char *write_file);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_fd_stream_file but creates the stream by opening `read_file'
+ *    for reading and `write_file' for writing.
+ *
+ *    If the silc_stream_set_notifier is called the stream is set to
+ *    non-blocking mode.
+ *
+ ***/
+SilcStream silc_fd_stream_file2(const char *read_file, const char *write_file);
 
 /****f* silcutil/SilcFDStreamAPI/silc_fd_stream_get_info
  *
