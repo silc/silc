@@ -371,8 +371,6 @@ int silc_client_load_keys(SilcClient client)
 }
 
 #ifdef SILC_PLUGIN
-extern void irssi_redraw(void); /* dirty, I know */
-
 void create_key_passphrase(const char *answer, CREATE_KEY_REC *rec)
 {
   char priv_key_file[128], pub_key_file[128];
@@ -418,8 +416,6 @@ void create_key_passphrase(const char *answer, CREATE_KEY_REC *rec)
   g_free(rec->passphrase);
   g_free(rec->pkcs);
   g_free(rec);
-  irssi_redraw();
-  
 }
 
 void change_private_key_passphrase(const char *answer, CREATE_KEY_REC *rec)
