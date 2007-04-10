@@ -49,6 +49,12 @@ SILCLIB_DIRS = 		\
 	silcvcard	\
 #endif SILC_DIST_VCARD
 
+if SILC_ENABLE_SHARED
+LIBTOOL_OPTS= -rpath $(DESTDIR)$(libdir)
+else
+LIBTOOL_OPTS=
+endif
+
 SILCLIB = libsilc.a
 
 #ifdef SILC_DIST_CLIENTLIB
@@ -118,7 +124,7 @@ libsilc.a:
 	find $(SILCLIB_DIRS) -type f -name *.lo | xargs \
 	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
 	-version-info $(LIBSILC_CURRENT):$(LIBSILC_REVISION):$(LIBSILC_AGE) \
-	-release $(LIB_BASE_VERSION) -rpath $(DESTDIR)$(libdir) -o libsilc.la
+	-release $(LIB_BASE_VERSION) $(LIBTOOL_OPTS) -o libsilc.la
 
 #ifdef SILC_DIST_CLIENTLIB
 LIBSILCCLIENT_CURRENT=@LIBSILCCLIENT_CURRENT@
@@ -129,7 +135,7 @@ libsilcclient.a:
 	find $(SILCCLIENTLIB_DIRS) -type f -name *.lo | xargs \
 	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
 	-version-info $(LIBSILCCLIENT_CURRENT):$(LIBSILCCLIENT_REVISION):$(LIBSILCCLIENT_AGE) \
-	-release $(LIB_BASE_VERSION) -rpath $(DESTDIR)$(libdir) -o libsilcclient.la
+	-release $(LIB_BASE_VERSION) $(LIBTOOL_OPTS) -o libsilcclient.la
 #endif SILC_DIST_CLIENTLIB
 
 #ifdef SILC_DIST_SERVERLIB
@@ -141,7 +147,7 @@ libsilcserver.a:
 	find $(SILCSERVERLIB_DIRS) -type f -name *.lo | xargs \
 	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
 	-version-info $(LIBSILCSERVER_CURRENT):$(LIBSILCSERVER_REVISION):$(LIBSILCSERVER_AGE) \
-	-release $(LIB_BASE_VERSION) -rpath $(DESTDIR)$(libdir) -o libsilcserver.la
+	-release $(LIB_BASE_VERSION) $(LIBTOOL_OPTS) -o libsilcserver.la
 #endif SILC_DIST_SERVERLIB
 
 #ifdef SILC_DIST_TOOLKIT

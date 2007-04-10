@@ -1,3 +1,9 @@
+Tue Apr 10 12:40:19 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
+
+	* Only pass -rpath to libtool when building shared libraries.
+	  Affected file lib/Makefile.ad
+	* Removing the stray "s" in configure.ad
+
 Sat Mar 24 19:13:58 CET 2007  Jochen Eisinger <coffee@silcnet.org>
 
 	* Redraw the screen after creating a new key.  Affected file
