@@ -1,5 +1,19 @@
 IRSSI_INCLUDE=../../..
 
+if SILCPLUGIN
+EXTRA_CFLAGS=-DSILC_PLUGIN
+NILB=
+LTLB= libfe_common_silc.la
+LDFLGS= \
+	-avoid-version \
+	-rpath $(moduledir)
+else
+EXTRA_CFLAGS=
+NILB= libfe_common_silc.la
+LTLB=
+LDFLGS=
+endif
+
 include $(top_srcdir)/Makefile.defines.in
 
 ADD_INCLUDES = \
@@ -25,11 +39,16 @@ ADD_INCLUDES = \
         -I$(SILC_INCLUDE)/lib/silchttp \
         -I$(SILC_INCLUDE)/lib/silcclient \
         -I$(SILC_INCLUDE)/lib/silcmath/gmp \
-        -I$(SILC_INCLUDE)/lib/trq
+        -I$(SILC_INCLUDE)/lib/trq \
+	$(EXTRA_CFLAGS)
 
-noinst_LIBRARIES = libfe_common_silc.a
+noinst_LTLIBRARIES = $(NILB)
+module_LTLIBRARIES = $(LTLB)
 
-libfe_common_silc_a_SOURCES = \
+libfe_common_silc_la_LDFLAGS = \
+	$(LDFGS)
+
+libfe_common_silc_la_SOURCES = \
 	fe-silc-channels.c \
 	fe-common-silc.c \
 	module-formats.c \

@@ -10,10 +10,17 @@ if HAVE_PERL
 PERLDIR=perl
 endif
 
+if SILCPLUGIN
+SBDRS=
+TEXTUI=
+else
+SBDRS=lib-popt lib-config core
+endif
+
 pkginc_srcdir=$(pkgincludedir)/src
 pkginc_src_HEADERS = \
 	common.h
 noinst_HEADERS = \
 	common.h
 
-SUBDIRS = lib-popt lib-config core silc fe-common $(PERLDIR) $(TEXTUI) $(BOTUI)
+SUBDIRS = $(SBDRS) silc fe-common $(PERLDIR) $(TEXTUI) $(BOTUI)

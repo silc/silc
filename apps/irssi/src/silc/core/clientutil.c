@@ -371,6 +371,8 @@ int silc_client_load_keys(SilcClient client)
 }
 
 #ifdef SILC_PLUGIN
+extern void irssi_redraw(void); /* dirty, I know */
+
 void create_key_passphrase(const char *answer, CREATE_KEY_REC *rec)
 {
   char priv_key_file[128], pub_key_file[128];
@@ -406,7 +408,7 @@ void create_key_passphrase(const char *answer, CREATE_KEY_REC *rec)
 
   if (silc_create_key_pair(rec->pkcs, rec->bits, pub_key_file, priv_key_file,
 		       NULL, (rec->passphrase == NULL ? "" : rec->passphrase),
-		       NULL, NULL, NULL, FALSE) == TRUE)
+		       NULL, NULL, FALSE) == TRUE)
     printformat_module("fe-common/silc", NULL, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_CONFIG_CREATE);
   else

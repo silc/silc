@@ -1,1 +1,7 @@
-SUBDIRS = core silc
+if SILCPLUGIN
+SBDRS=
+else
+SBDRS=core
+endif
+
+SUBDIRS = $(SBDRS) silc

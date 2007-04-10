@@ -244,7 +244,7 @@ static void silc_register_cipher(SilcClient client, const char *cipher)
       SILC_LOG_ERROR(("Unknown cipher `%s'", cipher));
 #ifdef SILC_PLUGIN
       init_failed = -1;
-      returnn;
+      return;
 #else
       exit(1);
 #endif
@@ -270,7 +270,7 @@ static void silc_register_hash(SilcClient client, const char *hash)
       SILC_LOG_ERROR(("Unknown hash function `%s'", hash));
 #ifdef SILC_PLUGIN
       init_failed = -1;
-      returnn;
+      return;
 #else
       exit(1);
 #endif
@@ -296,7 +296,7 @@ static void silc_register_hmac(SilcClient client, const char *hmac)
       SILC_LOG_ERROR(("Unknown HMAC `%s'", hmac));
 #ifdef SILC_PLUGIN
       init_failed = -1;
-      returnn;
+      return;
 #else
       exit(1);
 #endif
@@ -549,20 +549,11 @@ out:
 #undef FUNCTION_EXIT
 
 /* Called to indicate the client library has stopped. */
-
 static void
 silc_stopped(SilcClient client, void *context)
 {
   SILC_LOG_DEBUG(("Client library has stopped"));
-  if (idletag != -1)
-    g_source_remove(idletag);
-  signal_emit("chat protocol deinit", 1,
-	      chat_protocol_find("SILC"));
-}
-
-static void sig_gui_quit(SILC_SERVER_REC *server, const char *msg)
-{
-  silc_client_stop(silc_client, silc_stopped, NULL);
+  *(int*)context = -1;
 }
 
 /* Called to indicate the client library is running. */
@@ -708,7 +699,6 @@ void silc_core_init(void)
 #ifndef SILC_PLUGIN
   signal_add("irssi init finished", (SIGNAL_FUNC) sig_init_finished);
 #endif
-  signal_add("gui exit", (SIGNAL_FUNC) sig_gui_quit);
 
 #if defined (SILC_PLUGIN) && defined (SILC_DEBUG)
   if (settings_get_bool("debug") == TRUE)
@@ -801,18 +791,25 @@ void silc_core_deinit(void)
   if (idletag != -1)
     g_source_remove(idletag);
 
+  int stopped = 0;
+  silc_client_stop(silc_client, silc_stopped, &stopped);
+
+  while (!stopped)
+    silc_client_run_one(silc_client);
+
   if (opt_hostname)
     silc_free(opt_hostname);
   if (opt_nickname)
     g_free(opt_nickname);
 
   signal_remove("setup changed", (SIGNAL_FUNC) sig_setup_changed);
-  signal_remove("gui exit", (SIGNAL_FUNC) sig_gui_quit);
 #ifdef SILC_PLUGIN
   command_unbind("silc", (SIGNAL_FUNC) silc_opt_callback);
 #else
   signal_remove("irssi init finished", (SIGNAL_FUNC) sig_init_finished);
 #endif
+
+  signal_emit("chat protocol deinit", 1, chat_protocol_find("SILC"));
 
   silc_hash_free(sha1hash);
 

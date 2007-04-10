@@ -1,3 +1,18 @@
+Tue Apr 10 15:55:42 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
+
+	* Add option --enable-silc-plugin.  Affected files are
+	  apps/irssi/configure.{ad,in}
+	* Only compile the SILC Plugin if required.  Affected files are
+	  apps/irssi/src/Makefile.am, apps/irssi/src/fe-common/Makefile.am
+	* Conditionally build the SILC Plugin.  Affected files are
+	  apps/irssi/src/silc/core/Makefile.am, 
+	  apps/irssi/src/fe-common/silc/Makefile.am
+	* Backout delayed protocol exit and replace with a lame busy
+	  wait.  Affected files are apps/irssi/src/fe-text/silc.c,
+	  apps/irssi/src/silc/core/silc-core.c
+	* Fix key generation for SILC Plugin.  Affected file
+	  apps/irssi/src/silc/core/clientutil.c
+
 Tue Apr 10 12:40:19 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
 
 	* Only pass -rpath to libtool when building shared libraries.
