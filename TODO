@@ -6,6 +6,25 @@ NOTE: Any item that doesn't have (***DONE) in it, isn't done yet.  The
 tested.
 
 
+apps/silcd, The SILC Server	****PARTLY DONE****
+===========================
+
+ o Port all code to use SILC Toolkit 1.1 APIs.
+
+ o Remove protocol.[ch].
+
+ o Rewrite connecting accepting.
+
+ o Rewrite async connecting
+
+ o Connecting from SILC router to SILC server.
+
+ o Rewrite rehash, HUP.
+
+ o Add Web statistics module using lib/silchttp.  Give out server
+   statistics.
+
+
 SILC Client	****PARTLY DONE****
 ===========
 
@@ -16,6 +35,11 @@ SILC Client	****PARTLY DONE****
 
 lib/silcclient, The Client Library	***PARTLY DONE****
 ==================================
+
+ o in JOIN notify handle resolving that timedout.  Currently the user is
+   never joined the channel if this happens.  What to do if message is
+   received from user that hasn't been resolved/joined?  (maybe 1.1, latest
+   1.2)
 
  o silcclient.h clean up and API rewrites.
 
@@ -121,14 +145,6 @@ lib/silccore/silcid.[ch]	****DONE****
  o silc_id_str2id, silc_id2str to non-allocating routines. (***DONE)
 
 
-lib/silccore
-============
-
- o All payload encoding routines should take SilcStack as argument.
-
- o All payload test routines into lib/silccore/tests/.
-
-
 lib/silcskr
 ===========
 
@@ -138,8 +154,10 @@ lib/silcskr
  o Add fingerprint as search constraint.
 
 
-lib/silcske/silcske.[ch] 	****DONE****
+lib/silcske/silcske.[ch] 	***PARTLY DONE****
 ========================
+
+ o Ratelimit to UDP/IP transport for incoming packets.
 
  o IV Included flag support in SKE (***DONE)
 
@@ -159,15 +177,6 @@ lib/silccrypt			****PARTLY DONE****
 
  o Implement PKCS #1 sign/verify with hash OID. (***TESTING NEEDED)
 
- o Implement the defined SilcDH API.  The definition is in
-   lib/silccrypt/silcdh.h.
-
- o SSH2 public keys support, allowing the use of SSH2 public keys in
-   SILC.
-
- o OpenPGP certificate support, allowing the use of PGP public keys
-   in SILC.
-
  o SILC PKCS (silcpkcs.h) reorganizing when other PK supports added.
    Move the SILC Public Key routines away from the crypto library into
    the core library (silccore).  silc_pkcs_public/private_key_* routines
@@ -177,11 +186,17 @@ lib/silccrypt			****PARTLY DONE****
    also include the Public Key Payload encoding and decoding routines.
    (***DONE)
 
- o Add DSS support.
-
  o Assembler AES (***DONE)
 
- o ECDSA and ECDH.
+ o Implement the defined SilcDH API.  The definition is in
+   lib/silccrypt/silcdh.h. (1.2)
+
+ o SSH2 public keys support, allowing the use of SSH2 public keys in
+   SILC. (1.2)
+
+ o Add DSS support (1.2)
+
+ o ECDSA and ECDH (1.2)
 
 
 lib/silcutil			****PARTLY DONE****
@@ -191,21 +206,20 @@ lib/silcutil			****PARTLY DONE****
    No need to make it silcutil/unix/ specific.  Add them to generic
    silcutil.c.
 
- o Fix universal time decoding (doesn't accept all forms) in silctime.c.
-
  o silc_stringprep to non-allocating version.
 
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Zip API must be
    defined.
 
- o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
-   SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
-   in separately.
-
  o bool -> SilcBool (***DONE)
 
  o Silc FD Stream to WIN32 (lib/silcutil/silcfdstream.h)
+
+ o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
+   SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
+   in separately. (1.2)
+
 
 lib/silcutil/silcbuffer.h	****DONE****
 =========================
@@ -294,12 +308,14 @@ lib/silcutil/silcasync.[ch]	****DONE****
    (***DONE)
 
 
-lib/silcutil/silctime.[ch]	****DONE****
+lib/silcutil/silctime.[ch]	****PARTLY DONE****
 ===========================
 
  o SilcTime. (***DONE)
 
  o system time, universal, generalized. (***DONE)
+
+ o Fix universal time decoding (doesn't accept all forms) in silctime.c.
 
 
 lib/silcutil/silcfsm.[ch]	****DONE****
@@ -365,13 +381,28 @@ lib/silcasn1			****PARTLY DONE****
  o Negative integer encoding
 
 
-lib/silcpkix
+lib/silccore
+============
+
+ o All payload encoding routines should take SilcStack as argument. (1.2)
+
+ o All payload test routines into lib/silccore/tests/.
+
+
+lib/silcpkix (1.2)
 ============
 
  o PKIX implementation
 
 
-lib/silcserver
+lib/silcpgp (1.2)
+===========
+
+ o OpenPGP certificate support, allowing the use of PGP public keys
+   in SILC.
+
+
+lib/silcserver (1.2)
 ==============
 
  o (Re)write commands/command replys.
