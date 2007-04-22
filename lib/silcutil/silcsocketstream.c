@@ -152,7 +152,8 @@ silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
   SilcSocketStream stream;
   SilcSocketHostLookup l;
 
-  if (!sock) {
+  if (!sock || !schedule) {
+    SILC_LOG_ERROR(("Missing arguments to silc_socket_tcp_stream_create"));
     if (callback)
       callback(SILC_SOCKET_ERROR, NULL, context);
     return NULL;
