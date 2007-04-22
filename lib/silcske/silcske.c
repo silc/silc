@@ -1558,8 +1558,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
       silc_skr_find_set_usage(find, SILC_SKR_USAGE_KEY_AGREEMENT);
 
       /* Find key from repository */
-      SILC_FSM_CALL(silc_skr_find(ske->repository, find,
-				  silc_ske_skr_callback, ske));
+      SILC_FSM_CALL(silc_skr_find(ske->repository, silc_fsm_get_schedule(fsm),
+				  find, silc_ske_skr_callback, ske));
     } else {
       /* Verify from application */
       SILC_FSM_CALL(ske->callbacks->verify_key(ske, ske->prop->public_key,
@@ -2070,7 +2070,8 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
 	silc_skr_find_set_usage(find, SILC_SKR_USAGE_KEY_AGREEMENT);
 
 	/* Find key from repository */
-	SILC_FSM_CALL(silc_skr_find(ske->repository, find,
+	SILC_FSM_CALL(silc_skr_find(ske->repository,
+				    silc_fsm_get_schedule(fsm), find,
 				    silc_ske_skr_callback, ske));
       } else {
 	/* Verify from application */

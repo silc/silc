@@ -359,7 +359,7 @@ typedef void (*SilcSKECompletionCb)(SilcSKE ske,
  *    params.flags = SILC_SKE_SP_FLAG_PFS | SILC_SKE_SP_FLAG_MUTUAL;
  *    ske = silc_ske_alloc(rng, scheduler, NULL, pk, prv, app);
  *    silc_ske_set_callbacks(ske, verify_public_key, completion, app);
- *    silc_ske_initiator_start(ske, stream, &params, NULL);
+ *    silc_ske_initiator(ske, stream, &params, NULL);
  *
  ***/
 SilcSKE silc_ske_alloc(SilcRng rng, SilcSchedule schedule,
@@ -505,7 +505,10 @@ SilcAsyncOperation silc_ske_responder(SilcSKE ske,
  *    Starts SILC Key Exchange key regeneration (rekey) protocol.  The `rekey'
  *    is the rekey material received earlier in SilcSKECompletionCb.  That
  *    same callback is called after the rekey protocol is over to deliver new
- *    key material and new rekey material.
+ *    key material and new rekey material.  When the rekey is completed the
+ *    SKE library will automatically update the new keys into `stream'.  The
+ *    completion callback is called after the new keys has been taken into
+ *    use.
  *
  *    This function returns SilcAsyncOperation operation context which can
  *    be used to control the protocol from the application.  Application may
@@ -532,6 +535,9 @@ SilcAsyncOperation silc_ske_rekey_initiator(SilcSKE ske,
  *    The `rekey' is the rekey material received earlier in
  *    SilcSKECompletionCb.  That same callback is called after the rekey
  *    protocol is over to deliver new key material and new rekey material.
+ *    When the rekey is completed the SKE library will automatically update
+ *    the new keys into `stream'.  The completion callback is called after
+ *    the new keys has been taken into use.
  *
  *    This function returns SilcAsyncOperation operation context which can
  *    be used to control the protocol from the application.  Application may

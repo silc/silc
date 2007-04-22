@@ -85,7 +85,9 @@ typedef enum {
  *    method is passphrase it must be returned to `passphrase' pointer.
  *    If it is digital signatures the key repository pointer must be
  *    returned into `repository' pointer, which the library will use to
- *    find the correct public key to verify the digital signature.
+ *    find the correct public key to verify the digital signature.  If
+ *    neither `passphrase' or `repository' is set but TRUE is returned,
+ *    authentication is not required.
  *
  *    If this connection is not configured at all this returns FALSE which
  *    will result into authentication failure.  Otherwise TRUE must be

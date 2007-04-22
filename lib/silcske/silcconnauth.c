@@ -590,7 +590,8 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
 
     /** Find public key */
     silc_fsm_next(fsm, silc_connauth_st_responder_authenticate_pk);
-    SILC_FSM_CALL(silc_skr_find(repository, find, silc_connauth_skr_callback,
+    SILC_FSM_CALL(silc_skr_find(repository, silc_fsm_get_schedule(fsm),
+				find, silc_connauth_skr_callback,
 				connauth));
     /* NOT REACHED */
   }
