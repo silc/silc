@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 - 2006 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -494,7 +494,7 @@ static SilcBool silc_skr_results_and(SilcDList list, SilcSKRStatus *status,
 
 /* Allocate key repository */
 
-SilcSKR silc_skr_alloc(SilcSchedule scheduler)
+SilcSKR silc_skr_alloc(void)
 {
   SilcSKR skr;
 
@@ -502,7 +502,7 @@ SilcSKR silc_skr_alloc(SilcSchedule scheduler)
   if (!skr)
     return NULL;
 
-  if (!silc_skr_init(skr, scheduler)) {
+  if (!silc_skr_init(skr)) {
     silc_skr_free(skr);
     return NULL;
   }
@@ -520,13 +520,8 @@ void silc_skr_free(SilcSKR skr)
 
 /* Initializes key repository */
 
-SilcBool silc_skr_init(SilcSKR skr, SilcSchedule scheduler)
+SilcBool silc_skr_init(SilcSKR skr)
 {
-  if (!scheduler)
-    return FALSE;
-
-  skr->scheduler = scheduler;
-
   if (!silc_mutex_alloc(&skr->lock))
     return FALSE;
 
@@ -730,7 +725,8 @@ SilcBool silc_skr_find_set_usage(SilcSKRFind find, SilcSKRKeyUsage usage)
    once keys has been found. */
 /* This is now synchronous function but may later change async */
 
-SilcAsyncOperation silc_skr_find(SilcSKR skr, SilcSKRFind find,
+SilcAsyncOperation silc_skr_find(SilcSKR skr, SilcSchedule schedule,
+				 SilcSKRFind find,
 				 SilcSKRFindCallback callback,
 				 void *callback_context)
 {

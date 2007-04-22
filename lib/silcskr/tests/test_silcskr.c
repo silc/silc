@@ -41,7 +41,7 @@ int main(int argc, char **argv)
   schedule = silc_schedule_init(0, NULL);
 
   SILC_LOG_DEBUG(("Allocating SKR"));
-  skr = silc_skr_alloc(schedule);
+  skr = silc_skr_alloc();
   if (!skr)
     goto err;
 
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("Finding public key by email"));
   find = silc_skr_find_alloc();
   silc_skr_find_set_email(find, "foo@foo.com");
-  silc_skr_find(skr, find, skr_found, NULL);
+  silc_skr_find(skr, schedule, find, skr_found, NULL);
   silc_skr_find_free(find);
   if (!found)
     goto err;
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("Finding public key by country"));
   find = silc_skr_find_alloc();
   silc_skr_find_set_country(find, "FI");
-  silc_skr_find(skr, find, skr_found, NULL);
+  silc_skr_find(skr, schedule, find, skr_found, NULL);
   silc_skr_find_free(find);
   if (!found)
     goto err;
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
   silc_skr_find_set_country(find, "FI");
   silc_skr_find_set_org(find, "ORG");
   silc_skr_find_set_host(find, "foo.com");
-  silc_skr_find(skr, find, skr_found, NULL);
+  silc_skr_find(skr, schedule, find, skr_found, NULL);
   silc_skr_find_free(find);
   if (!found)
     goto err;
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
   find = silc_skr_find_alloc();
   silc_skr_find_set_country(find, "FI");
   silc_skr_find_set_usage(find, SILC_SKR_USAGE_ENC);
-  silc_skr_find(skr, find, skr_found, NULL);
+  silc_skr_find(skr, schedule, find, skr_found, NULL);
   silc_skr_find_free(find);
   if (found)
     goto err;
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
   find = silc_skr_find_alloc();
   silc_skr_find_set_country(find, "FI");
   silc_skr_find_set_usage(find, SILC_SKR_USAGE_IDENTIFICATION);
-  silc_skr_find(skr, find, skr_found, NULL);
+  silc_skr_find(skr, schedule, find, skr_found, NULL);
   silc_skr_find_free(find);
   if (!found)
     goto err;

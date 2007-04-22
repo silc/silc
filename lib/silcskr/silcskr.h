@@ -73,7 +73,7 @@ typedef struct SilcSKRFindStruct *SilcSKRFind;
  *
  *    Indicates the usage of the key.  Keys can be added for different
  *    reasons and for different purpose to the repository.  SilcSKRKeyUsage
- *    indicates what for the key exists in the repository.  The default
+ *    indicates for what reason the key exists in the repository.  The default
  *    usage is SILC_SKR_USAGE_ANY and allows any kind of usage for the key.
  *    If the usage should be limited then specific usage bitmask can be
  *    specified when adding the key.  When searching keys from the
@@ -83,11 +83,14 @@ typedef struct SilcSKRFindStruct *SilcSKRFind;
  * SOURCE
  */
 typedef enum {
-  SILC_SKR_USAGE_ANY            = 0x0000,  /* Any usage */
-  SILC_SKR_USAGE_AUTH           = 0x0001,  /* Signatures/verification */
-  SILC_SKR_USAGE_ENC            = 0x0002,  /* Encryption/decryption */
-  SILC_SKR_USAGE_KEY_AGREEMENT  = 0x0004,  /* Key agreement protocol */
-  SILC_SKR_USAGE_IDENTIFICATION = 0x0008,  /* Identifying key owner */
+  SILC_SKR_USAGE_ANY                   = 0x0000,  /* Any usage */
+  SILC_SKR_USAGE_AUTH                  = 0x0001,  /* Signatures/verification */
+  SILC_SKR_USAGE_ENC                   = 0x0002,  /* Encryption/decryption */
+  SILC_SKR_USAGE_KEY_AGREEMENT         = 0x0004,  /* Key agreement protocol */
+  SILC_SKR_USAGE_IDENTIFICATION        = 0x0008,  /* Identifying key owner */
+  SILC_SKR_USAGE_SERVICE_AUTHORIZATION = 0x0010,  /* Service authorization */
+
+  /* From 0x0100 reserved for private/application use. */
 } SilcSKRKeyUsage;
 /***/
 
@@ -169,14 +172,14 @@ typedef void (*SilcSKRFindCallback)(SilcSKR skr, SilcSKRFind find,
  *
  * SYNOPSIS
  *
- *    SilcSKR silc_skr_alloc(SilcSchedule scheduler);
+ *    SilcSKR silc_skr_alloc(void);
  *
  * DESCRIPTION
  *
  *    Allocates key repository context.
  *
  ***/
-SilcSKR silc_skr_alloc(SilcSchedule scheduler);
+SilcSKR silc_skr_alloc(void);
 
 /****f* silcskr/SilcSKRAPI/silc_skr_free
  *
@@ -195,7 +198,7 @@ void silc_skr_free(SilcSKR skr);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_skr_init(SilcSKR skr, SilcSchedule scheduler);
+ *    SilcBool silc_skr_init(SilcSKR skr);
  *
  * DESCRIPTION
  *
@@ -204,7 +207,7 @@ void silc_skr_free(SilcSKR skr);
  *    argument.  Returns FALSE if initialization failed.
  *
  ***/
-SilcBool silc_skr_init(SilcSKR skr, SilcSchedule scheduler);
+SilcBool silc_skr_init(SilcSKR skr);
 
 /****f* silcskr/SilcSKRAPI/silc_skr_uninit
  *
@@ -478,7 +481,8 @@ SilcBool silc_skr_find_set_usage(SilcSKRFind find, SilcSKRKeyUsage usage);
  *
  * SYNOPSIS
  *
- *    SilcAsyncOperation silc_skr_find(SilcSKR skr, SilcSKRFind find,
+ *    SilcAsyncOperation silc_skr_find(SilcSKR skr, SilcSchedule schedule,
+ *                                     SilcSKRFind find,
  *                                     SilcSKRFindCallback callback,
  *                                     void *callback_context);
  *
@@ -501,10 +505,11 @@ SilcBool silc_skr_find_set_usage(SilcSKRFind find, SilcSKRKeyUsage usage);
  *   silc_skr_find_set_country(find, "FI");
  *
  *   // Find
- *   silc_skr_find(skr, find, find_callback, cb_context);
+ *   silc_skr_find(skr, schedule, find, find_callback, cb_context);
  *
  ***/
-SilcAsyncOperation silc_skr_find(SilcSKR skr, SilcSKRFind find,
+SilcAsyncOperation silc_skr_find(SilcSKR skr, SilcSchedule schedule,
+				 SilcSKRFind find,
 				 SilcSKRFindCallback callback,
 				 void *callback_context);
 
