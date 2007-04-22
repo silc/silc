@@ -95,7 +95,13 @@ SilcBool silc_cipher_register(const SilcCipherObject *cipher)
   }
 
   new = silc_calloc(1, sizeof(*new));
+  if (!new)
+    return FALSE;
   new->name = strdup(cipher->name);
+  if (!new->name) {
+    silc_free(new);
+    return FALSE;
+  }
   new->key_len = cipher->key_len;
   new->block_len = cipher->block_len;
   new->iv_len = cipher->iv_len;
@@ -215,8 +221,14 @@ SilcBool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
 
   if (entry) {
     *new_cipher = silc_calloc(1, sizeof(**new_cipher));
+    if (!(*new_cipher))
+      return FALSE;
     (*new_cipher)->cipher = entry;
     (*new_cipher)->context = silc_calloc(1, entry->context_len());
+    if (!(*new_cipher)->context) {
+      silc_free(*new_cipher);
+      return FALSE;
+    }
     return TRUE;
   }
 
