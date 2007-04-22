@@ -41,6 +41,72 @@ SilcUInt16 *silc_net_listener_get_port(SilcNetListener listener,
   return ports;
 }
 
+/* Return bound IP from listener */
+
+char **silc_net_listener_get_ip(SilcNetListener listener,
+				SilcUInt32 *ip_count)
+{
+  char **ips = NULL, *ip;
+  int i, k;
+
+  ips = silc_calloc(listener->socks_count, sizeof(*ips));
+  if (!ips)
+    return NULL;
+
+  for (i = 0, k = 0; i < listener->socks_count; i++) {
+    if (silc_net_check_local_by_sock(listener->socks[i], NULL, &ip))
+      ips[k++] = ip;
+  }
+
+  if (ip_count)
+    *ip_count = k;
+
+  return ips;
+}
+
+/* Return bound hostname from listener */
+
+char **silc_net_listener_get_hostname(SilcNetListener listener,
+				      SilcUInt32 *hostname_count)
+{
+  char **hs = NULL, *h;
+  int i, k;
+
+  hs = silc_calloc(listener->socks_count, sizeof(*hs));
+  if (!hs)
+    return NULL;
+
+  for (i = 0, k = 0; i < listener->socks_count; i++) {
+    if (silc_net_check_local_by_sock(listener->socks[i], &h, NULL))
+      hs[k++] = h;
+  }
+
+  if (hostname_count)
+    *hostname_count = k;
+
+  return hs;
+}
+
+static const char *silc_net_error[] = {
+  "Ok",
+  "Unknown IP address",
+  "Unknown hostname",
+  "Destination unreachable",
+  "Connection refused",
+  "Connection timeout",
+  "System out of memory",
+  "Unexpected error",
+};
+
+/* Return error as string */
+
+const char *silc_net_get_error_string(SilcNetStatus error)
+{
+  if (error < SILC_NET_OK || error > SILC_NET_ERROR)
+    return "";
+  return silc_net_error[error];
+}
+
 /* Accepts a connection from a particular socket */
 
 int silc_net_accept_connection(int sock)

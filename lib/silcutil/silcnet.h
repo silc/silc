@@ -156,6 +156,40 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
 SilcUInt16 *silc_net_listener_get_port(SilcNetListener listener,
 				       SilcUInt32 *port_count);
 
+/****f* silcutil/SilcNetAPI/silc_net_listener_get_ip
+ *
+ * SYNOPSIS
+ *
+ *    char **silc_net_listener_get_ip(SilcNetListener listener,
+ *                                    SilcUInt32 *ip_count);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the IP's to where the `listener' is bound.  Returns an array
+ *    of IP addresses of size of `port_count'.  The caller must free the
+ *    array and its strings with silc_free.
+ *
+ ***/
+char **silc_net_listener_get_ip(SilcNetListener listener,
+				SilcUInt32 *ip_count);
+
+/****f* silcutil/SilcNetAPI/silc_net_listener_get_hostname
+ *
+ * SYNOPSIS
+ *
+ *    char **silc_net_listener_get_hostname(SilcNetListener listener,
+ *                                          SilcUInt32 *hostname_count);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the hostnames to where the `listener' is bound.  Returns an
+ *    array of hostnames of size of `port_count'.  The caller must free the
+ *    array and its strings with silc_free.
+ *
+ ***/
+char **silc_net_listener_get_hostname(SilcNetListener listener,
+				      SilcUInt32 *hostname_count);
+
 /****f* silcutil/SilcNetAPI/silc_net_close_listener
  *
  * SYNOPSIS
@@ -304,6 +338,19 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
 int silc_net_udp_send(SilcStream stream,
 		      const char *remote_ip_addr, int remote_port,
 		      const unsigned char *data, SilcUInt32 data_len);
+
+/****f* silcutil/SilcNetAPI/silc_net_get_error_string
+ *
+ * SYNOPSIS
+ *
+ *    const char silc_net_get_error_string(SilcNetStatus error);
+ *
+ * DESCRIPTION
+ *
+ *    Return `error' as a string.
+ *
+ ***/
+const char *silc_net_get_error_string(SilcNetStatus error);
 
 /****f* silcutil/SilcNetAPI/silc_net_close_connection
  *
