@@ -1,15 +1,41 @@
+Sun Apr 22 21:13:28 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Preliminary SILC Server 1.1 changes committed to apps/silcd/.
+
+	* Added SILC_SKR_USAGE_SERVICE_AUTHORIZATION SKR key usage type.
+	  Changed silc_skr_find to have SilcSchedule argument and removed
+	  it from silc_skr_[alloc|init].  Affected files are
+	  lib/silcskr/silcskr.[ch].
+
+	* Allow NULL id for silc_idcache_add.  Affected file is
+	  lib/silcapputil/silcidcache.c.
+
+	* Added silc_packet_stream_is_valid, silc_packet_get_ids and
+	  silc_packet_engine_get_streams to lib/silccore/silcpacket.[ch].
+	  Fixed also channel message encryption with router-to-router
+	  packets.
+
+	* Added silc_id_str2id2 to lib/silccore/silcid.[ch].
+
+	* Added silc_net_get_error_string, silc_net_listener_get_ip and
+	  silc_net_listener_get_hostname to lib/silcutil/silcnet.[ch].
+
 Tue Apr 10 15:55:42 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
 
 	* Add option --enable-silc-plugin.  Affected files are
 	  apps/irssi/configure.{ad,in}
+
 	* Only compile the SILC Plugin if required.  Affected files are
 	  apps/irssi/src/Makefile.am, apps/irssi/src/fe-common/Makefile.am
+
 	* Conditionally build the SILC Plugin.  Affected files are
-	  apps/irssi/src/silc/core/Makefile.am, 
+	  apps/irssi/src/silc/core/Makefile.am,
 	  apps/irssi/src/fe-common/silc/Makefile.am
+
 	* Backout delayed protocol exit and replace with a lame busy
 	  wait.  Affected files are apps/irssi/src/fe-text/silc.c,
 	  apps/irssi/src/silc/core/silc-core.c
+
 	* Fix key generation for SILC Plugin.  Affected file
 	  apps/irssi/src/silc/core/clientutil.c
 
@@ -17,6 +43,7 @@ Tue Apr 10 12:40:19 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
 
 	* Only pass -rpath to libtool when building shared libraries.
 	  Affected file lib/Makefile.ad
+
 	* Removing the stray "s" in configure.ad
 
 Sat Mar 24 19:13:58 CET 2007  Jochen Eisinger <coffee@silcnet.org>
@@ -28,7 +55,7 @@ Sun Mar 18 15:54:10 EET 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC Client setting /set nickname_format that specifies
 	  the nickname format string.  Changed default nickname format
-	  string to "%n#%a".  Affected file is 
+	  string to "%n#%a".  Affected file is
           apps/irssi/src/silc/core/silc-core.c, apps/irssi/silc.conf.
 
 	* Fixed nickname parsing with WHOIS command to accept formatted
@@ -91,7 +118,7 @@ Sun Mar 11 13:50:53 CET 2007  Jochen Eisinger <coffee@silcnet.org>
 
 Tue Feb 27 17:07:34 EET 2007  Pekka Riikonen <priikone@silcnet.org>
 
-	* Added silc_thread_yield.  Affected file is 
+	* Added silc_thread_yield.  Affected file is
 	  lib/silcutil/silcmutex.h.
 
 Wed Feb 21 17:01:01 EET 2007  Pekka Riikonen <priikone@silcnet.org>
@@ -110,7 +137,7 @@ Tue Feb 20 08:31:28 EET 2007  Pekka Riikonen <priikone@silcnet.org>
 Mon Feb 19 16:06:27 EET 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed client to properly abort TCP stream creation when
-	  giving /QUIT.  Affected file 
+	  giving /QUIT.  Affected file
 	  apps/irssi/src/silc/core/silc-servers.c.
 
 	* Fixed several connecting aborting crashes from the client

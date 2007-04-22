@@ -11,15 +11,19 @@ apps/silcd, The SILC Server	****PARTLY DONE****
 
  o Port all code to use SILC Toolkit 1.1 APIs.
 
- o Remove protocol.[ch].
+ o Remove protocol.[ch].  ***DONE
 
  o Rewrite connecting accepting.
 
- o Rewrite async connecting
+ o Rewrite async connecting.
 
  o Connecting from SILC router to SILC server.
 
  o Rewrite rehash, HUP.
+
+ o Test backup router resuming protocol.
+
+ o Check all packet receive routines that they call silc_packet_free.
 
  o Add Web statistics module using lib/silchttp.  Give out server
    statistics.
@@ -156,6 +160,8 @@ lib/silcskr
 
 lib/silcske/silcske.[ch] 	***PARTLY DONE****
 ========================
+
+ o Responder rekey
 
  o Ratelimit to UDP/IP transport for incoming packets.
 
