@@ -92,7 +92,7 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd);
 SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
 			       SilcBool writing);
 
-/****f* silcutil/SilcFDStreamAPI/silc_fd_stream_file
+/****f* silcutil/SilcFDStreamAPI/silc_fd_stream_file2
  *
  * SYNOPSIS
  *
