@@ -116,10 +116,12 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap)
     case SILC_PARAM_UI32_STRING_ALLOC:
       {
 	unsigned char *x = va_arg(ap, unsigned char *);
-	SilcUInt32 tmp_len = strlen(x);
-	FORMAT_HAS_SPACE(stack, dst, tmp_len);
-	silc_buffer_put(dst, x, tmp_len);
-	silc_buffer_pull(dst, tmp_len);
+	SilcUInt32 tmp_len = x ? strlen(x) : 0;
+	if (x && tmp_len) {
+	  FORMAT_HAS_SPACE(stack, dst, tmp_len);
+	  silc_buffer_put(dst, x, tmp_len);
+	  silc_buffer_pull(dst, tmp_len);
+	}
 	break;
       }
     case SILC_PARAM_UI8_NSTRING:
