@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -491,6 +491,22 @@ SilcBool silc_id_id2str(const void *id, SilcIdType type,
  ***/
 SilcBool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
 			SilcIdType type, void *ret_id, SilcUInt32 ret_id_size);
+
+/****f* silccore/SilcIDAPI/silc_id_str2id2
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_id_str2id2(const unsigned char *id, SilcUInt32 id_len,
+ *                             SilcIdType type, SilcID *ret_id);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_id_str2id but returns the ID into SilcID structure in
+ *    `ret_id' pointer.  This does not allocate any memory.
+ *
+ ***/
+SilcBool silc_id_str2id2(const unsigned char *id, SilcUInt32 id_len,
+			 SilcIdType type, SilcID *ret_id);
 
 /****f* silccore/SilcIDAPI/silc_id_get_len
  *

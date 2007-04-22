@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -334,6 +334,36 @@ SilcBool silc_id_str2id(const unsigned char *id, SilcUInt32 id_len,
       SILC_GET16_MSB(channel_id->rnd, &id[channel_id->ip.data_len + 2]);
       return TRUE;
     }
+    break;
+  }
+
+  return FALSE;
+}
+
+/* Converts string to ID */
+
+SilcBool silc_id_str2id2(const unsigned char *id, SilcUInt32 id_len,
+			 SilcIdType type, SilcID *ret_id)
+{
+  if (!ret_id)
+    return FALSE;
+
+  ret_id->type = type;
+
+  switch (type) {
+  case SILC_ID_CLIENT:
+    return silc_id_str2id(id, id_len, type, &ret_id->u.client_id,
+			  sizeof(ret_id->u.client_id));
+    break;
+
+  case SILC_ID_SERVER:
+    return silc_id_str2id(id, id_len, type, &ret_id->u.server_id,
+			  sizeof(ret_id->u.server_id));
+    break;
+
+  case SILC_ID_CHANNEL:
+    return silc_id_str2id(id, id_len, type, &ret_id->u.channel_id,
+			  sizeof(ret_id->u.channel_id));
     break;
   }
 
