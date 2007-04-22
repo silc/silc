@@ -377,6 +377,20 @@ silc_packet_engine_start(SilcRng rng, SilcBool router,
  ***/
 void silc_packet_engine_stop(SilcPacketEngine engine);
 
+/****f* silccore/SilcPacketAPI/silc_packet_engine_get_streams
+ *
+ * SYNOPSIS
+ *
+ *    SilcDList silc_packet_engine_get_streams(SilcPacketEngine engine);
+ *
+ * DESCRIPTION
+ *
+ *    Returns list of packet streams added to the packet engine.  The caller
+ *    must free the list with silc_dlist_uninit.
+ *
+ ***/
+SilcDList silc_packet_engine_get_streams(SilcPacketEngine engine);
+
 /****f* silccore/SilcPacketAPI/silc_packet_stream_create
  *
  * SYNOPSIS
@@ -473,6 +487,20 @@ SilcPacketStream silc_packet_stream_add_remote(SilcPacketStream stream,
  *
  ***/
 void silc_packet_stream_destroy(SilcPacketStream stream);
+
+/****f* silccore/SilcPacketAPI/silc_packet_stream_is_valid
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_packet_stream_is_valid(SilcPacketStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Returns TRUE if the packet stream indicated by `stream' is valid and
+ *    has not been disconnected or destroyed.
+ *
+ ***/
+SilcBool silc_packet_stream_is_valid(SilcPacketStream stream);
 
 /****f* silccore/SilcPacketAPI/silc_packet_stream_set_router
  *
@@ -859,7 +887,7 @@ SilcBool silc_packet_get_keys(SilcPacketStream stream,
  *
  * DESCRIPTION
  *
- *    Set the source ID and destinaion ID to be used when sending packets to
+ *    Set the source ID and destination ID to be used when sending packets to
  *    this packet stream.  The IDs to be used for a packet stream can be
  *    overridden when sending packets.  However, if the IDs do not ever change
  *    for the packet stream it is recommended they are set using this function.
@@ -870,6 +898,25 @@ SilcBool silc_packet_get_keys(SilcPacketStream stream,
 SilcBool silc_packet_set_ids(SilcPacketStream stream,
 			     SilcIdType src_id_type, const void *src_id,
 			     SilcIdType dst_id_type, const void *dst_id);
+
+/****f* silccore/SilcPacketAPI/silc_packet_set_ids
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_packet_get_ids(SilcPacketStream stream,
+ *                                 SilcBool *src_id_set, SilcID *src_id,
+ *                                 SilcBool *dst_id_set, SilcID *dst_id);
+ *
+ * DESCRIPTION
+ *
+ *    Returns source and destination IDs from the packet stream.  The
+ *    `src_id_set' is set to TRUE if the source ID was returned.  The
+ *    `dst_id_set' is set to TRUE if the destination ID was returned.
+ *
+ ***/
+SilcBool silc_packet_get_ids(SilcPacketStream stream,
+			     SilcBool *src_id_set, SilcID *src_id,
+			     SilcBool *dst_id_set, SilcID *dst_id);
 
 /****f* silccore/SilcPacketAPI/silc_packet_set_sid
  *

@@ -623,6 +623,26 @@ void silc_packet_engine_stop(SilcPacketEngine engine)
   silc_free(engine);
 }
 
+/* Return list of packet streams in the engine */
+
+SilcDList silc_packet_engine_get_streams(SilcPacketEngine engine)
+{
+  SilcDList list;
+  SilcPacketStream ps;
+
+  list = silc_dlist_init();
+  if (!list)
+    return NULL;
+
+  silc_mutex_lock(engine->lock);
+  silc_list_start(engine->streams);
+  while ((ps = silc_list_get(engine->streams)))
+    silc_dlist_add(list, ps);
+  silc_mutex_unlock(engine->lock);
+
+  return list;
+}
+
 /* Create new packet stream */
 
 SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
@@ -916,6 +936,13 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
   silc_atomic_uninit8(&stream->refcnt);
   silc_mutex_free(stream->lock);
   silc_free(stream);
+}
+
+/* Return TRUE if the stream is valid */
+
+SilcBool silc_packet_stream_is_valid(SilcPacketStream stream)
+{
+  return stream->destroyed == FALSE;
 }
 
 /* Marks as router stream */
@@ -1300,6 +1327,49 @@ SilcBool silc_packet_set_ids(SilcPacketStream stream,
   return TRUE;
 }
 
+/* Return IDs from the packet stream */
+
+SilcBool silc_packet_get_ids(SilcPacketStream stream,
+			     SilcBool *src_id_set, SilcID *src_id,
+			     SilcBool *dst_id_set, SilcID *dst_id)
+{
+  if (src_id && stream->src_id) {
+    (*src_id).type = stream->src_id_type;
+    switch (stream->src_id_type) {
+    case SILC_ID_CLIENT:
+      (*src_id).u.client_id = *(SilcClientID *)stream->src_id;
+      break;
+    case SILC_ID_SERVER:
+      (*src_id).u.server_id = *(SilcServerID *)stream->src_id;
+      break;
+    case SILC_ID_CHANNEL:
+      (*src_id).u.channel_id = *(SilcChannelID *)stream->src_id;
+      break;
+    }
+    if (src_id_set)
+      *src_id_set = TRUE;
+  }
+
+  if (dst_id && stream->dst_id) {
+    (*dst_id).type = stream->dst_id_type;
+    switch (stream->dst_id_type) {
+    case SILC_ID_CLIENT:
+      (*dst_id).u.client_id = *(SilcClientID *)stream->dst_id;
+      break;
+    case SILC_ID_SERVER:
+      (*dst_id).u.server_id = *(SilcServerID *)stream->dst_id;
+      break;
+    case SILC_ID_CHANNEL:
+      (*dst_id).u.channel_id = *(SilcChannelID *)stream->dst_id;
+      break;
+    }
+    if (dst_id_set)
+      *dst_id_set = TRUE;
+  }
+
+  return TRUE;
+}
+
 /* Adds Security ID (SID) */
 
 SilcBool silc_packet_set_sid(SilcPacketStream stream, SilcUInt8 sid)
@@ -1468,10 +1538,8 @@ static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
      type and flags, and calculate correct length.  Private messages with
      private keys and channel messages are special packets as their
      payload is encrypted already. */
-  if ((type == SILC_PACKET_PRIVATE_MESSAGE &&
-       flags & SILC_PACKET_FLAG_PRIVMSG_KEY) ||
-      type == SILC_PACKET_CHANNEL_MESSAGE) {
-
+  if (type == SILC_PACKET_PRIVATE_MESSAGE &&
+      flags & SILC_PACKET_FLAG_PRIVMSG_KEY) {
     /* Padding is calculated from header + IDs */
     if (!ctr)
       SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN + src_id_len + dst_id_len +
@@ -1480,8 +1548,26 @@ static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
     /* Length to encrypt, header + IDs + padding. */
     enclen = (SILC_PACKET_HEADER_LEN + src_id_len + dst_id_len +
 	      padlen + psnlen);
-  } else {
 
+  } else if (type == SILC_PACKET_CHANNEL_MESSAGE) {
+    if (stream->sc->engine->local_is_router && stream->is_router) {
+      /* Channel messages between routers are encrypted as normal packets.
+	 Padding is calculated from true length of the packet. */
+      if (!ctr)
+	SILC_PACKET_PADLEN(truelen + psnlen, block_len, padlen);
+
+      enclen += padlen + psnlen;
+    } else {
+      /* Padding is calculated from header + IDs */
+      if (!ctr)
+	SILC_PACKET_PADLEN((SILC_PACKET_HEADER_LEN + src_id_len + dst_id_len +
+			    psnlen), block_len, padlen);
+
+      /* Length to encrypt, header + IDs + padding. */
+      enclen = (SILC_PACKET_HEADER_LEN + src_id_len + dst_id_len +
+		padlen + psnlen);
+    }
+  } else {
     /* Padding is calculated from true length of the packet */
     if (flags & SILC_PACKET_FLAG_LONG_PAD)
       SILC_PACKET_PADLEN_MAX(truelen + psnlen, block_len, padlen);
