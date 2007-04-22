@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,13 +34,7 @@
 
 void silc_idlist_add_data(void *entry, SilcIDListData idata)
 {
-  SilcIDListData data = (SilcIDListData)entry;
-  data->send_key = idata->send_key;
-  data->receive_key = idata->receive_key;
-  data->hmac_send = idata->hmac_send;
-  data->hmac_receive = idata->hmac_receive;
-  data->psn_send = idata->psn_send;
-  data->psn_receive = idata->psn_receive;
+  SilcIDListData data = entry;
   data->hash = idata->hash;
   data->public_key = idata->public_key;
   memcpy(data->fingerprint, idata->fingerprint, sizeof(data->fingerprint));
@@ -48,7 +42,6 @@ void silc_idlist_add_data(void *entry, SilcIDListData idata)
   data->last_receive = idata->last_receive;
   data->last_sent = idata->last_sent;
   data->status = idata->status;
-
   data->created = time(0);	/* Update creation time */
 }
 
@@ -57,48 +50,31 @@ void silc_idlist_add_data(void *entry, SilcIDListData idata)
 void silc_idlist_del_data(void *entry)
 {
   SilcIDListData idata = (SilcIDListData)entry;
-  if (idata->send_key)
-    silc_cipher_free(idata->send_key);
-  if (idata->receive_key)
-    silc_cipher_free(idata->receive_key);
-  if (idata->rekey) {
-    if (idata->rekey->send_enc_key) {
-      memset(idata->rekey->send_enc_key, 0, idata->rekey->enc_key_len);
-      silc_free(idata->rekey->send_enc_key);
-    }
-    silc_free(idata->rekey);
-  }
-  if (idata->hmac_send)
-    silc_hmac_free(idata->hmac_send);
-  if (idata->hmac_receive)
-    silc_hmac_free(idata->hmac_receive);
+
   if (idata->hash)
     silc_hash_free(idata->hash);
   if (idata->public_key)
     silc_pkcs_public_key_free(idata->public_key);
 
-  idata->send_key = NULL;
-  idata->receive_key = NULL;
-  idata->rekey = NULL;
-  idata->hmac_send = NULL;
-  idata->hmac_receive = NULL;
   idata->hash = NULL;
   idata->public_key = NULL;
 }
 
 /* Purges ID cache */
 
-SILC_TASK_CALLBACK_GLOBAL(silc_idlist_purge)
+SILC_TASK_CALLBACK(silc_idlist_purge)
 {
   SilcServer server = app_context;
   SilcIDListPurge i = (SilcIDListPurge)context;
 
   SILC_LOG_DEBUG(("Purging cache"));
 
+#if 0
+  /* XXX */
   silc_idcache_purge(i->cache);
-  silc_schedule_task_add(server->schedule, 0, silc_idlist_purge,
-			 (void *)i, i->timeout, 0,
-			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_LOW);
+  silc_schedule_task_add_timeout(server->schedule, silc_idlist_purge, i,
+				 i->timeout, 0);
+#endif
 }
 
 /******************************************************************************
@@ -139,7 +115,7 @@ silc_idlist_add_server(SilcIDList id_list,
   server->connection = connection;
 
   if (!silc_idcache_add(id_list->servers, server_namec,
-			(void *)server->id, (void *)server, 0, NULL)) {
+			(void *)server->id, (void *)server)) {
     silc_free(server);
     silc_free(server_namec);
     return NULL;
@@ -152,7 +128,7 @@ silc_idlist_add_server(SilcIDList id_list,
 
 SilcServerEntry
 silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
-			      bool registered, SilcIDCacheEntry *ret_entry)
+			      SilcBool registered, SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheEntry id_cache = NULL;
   SilcServerEntry server;
@@ -163,8 +139,7 @@ silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
   SILC_LOG_DEBUG(("Server ID (%s)",
 		  silc_id_render(id, SILC_ID_SERVER)));
 
-  if (!silc_idcache_find_by_id_one(id_list->servers, (void *)id,
-				   &id_cache))
+  if (!silc_idcache_find_by_id_one(id_list->servers, (void *)id, &id_cache))
     return NULL;
 
   server = (SilcServerEntry)id_cache->context;
@@ -185,7 +160,7 @@ silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
 
 SilcServerEntry
 silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
-				bool registered, SilcIDCacheEntry *ret_entry)
+				SilcBool registered, SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheEntry id_cache = NULL;
   SilcServerEntry server;
@@ -213,41 +188,35 @@ silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
 
 SilcServerEntry
 silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
-				int port, bool registered,
+				int port, SilcBool registered,
 				SilcIDCacheEntry *ret_entry)
 {
-  SilcIDCacheList list = NULL;
+  SilcList list;
   SilcIDCacheEntry id_cache = NULL;
   SilcServerEntry server = NULL;
-  SilcSocketConnection sock;
+  SilcPacketStream sock;
+  const char *host = NULL, *ip = NULL;
 
   SILC_LOG_DEBUG(("Server by hostname %s and port %d", hostname, port));
 
   if (!silc_idcache_get_all(id_list->servers, &list))
     return NULL;
 
-  if (!silc_idcache_list_first(list, &id_cache)) {
-    silc_idcache_list_free(list);
-    return NULL;
-  }
+  silc_list_start(list);
+  while ((id_cache = silc_list_get(list))) {
+    server = id_cache->context;
+    sock = server->connection;
 
-  while (id_cache) {
-    server = (SilcServerEntry)id_cache->context;
-    sock = (SilcSocketConnection)server->connection;
-
-    if (sock && ((sock->hostname && !strcasecmp(sock->hostname, hostname)) ||
-		 (sock->ip && !strcasecmp(sock->ip, hostname)))
-	&& server->id->port == SILC_SWAB_16(port))
-      break;
+    if (sock && silc_socket_stream_get_info(sock, NULL, &host, &ip, NULL)) {
+      if (((host && !strcasecmp(host, hostname)) ||
+	   (ip && !strcasecmp(ip, hostname))) &&
+	  server->id->port == SILC_SWAB_16(port))
+	break;
+    }
 
     id_cache = NULL;
     server = NULL;
-
-    if (!silc_idcache_list_next(list, &id_cache))
-      break;
   }
-
-  silc_idcache_list_free(list);
 
   if (server && registered &&
       !(server->data.status & SILC_IDLIST_STATUS_REGISTERED))
@@ -276,8 +245,7 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 
   SILC_LOG_DEBUG(("Replacing Server ID"));
 
-  if (!silc_idcache_find_by_id_one(id_list->servers, (void *)old_id,
-				   &id_cache))
+  if (!silc_idcache_find_by_id_one(id_list->servers, (void *)old_id, &id_cache))
     return NULL;
 
   server = (SilcServerEntry)id_cache->context;
@@ -285,12 +253,9 @@ silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 
   /* Remove the old entry and add a new one */
 
-  silc_idcache_del_by_id(id_list->servers, (void *)server->id);
-
-  silc_free(server->id);
-  server->id = new_id;
-
-  silc_idcache_add(id_list->servers, name, server->id, server, 0, NULL);
+  silc_idcache_del_by_id(id_list->servers, (void *)server->id, NULL);
+  *server->id = *new_id;
+  silc_idcache_add(id_list->servers, name, server->id, server);
 
   SILC_LOG_DEBUG(("Found"));
 
@@ -303,7 +268,7 @@ int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
 {
   if (entry) {
     /* Remove from cache */
-    if (!silc_idcache_del_by_context(id_list->servers, entry)) {
+    if (!silc_idcache_del_by_context(id_list->servers, entry, NULL)) {
       SILC_LOG_DEBUG(("Unknown server, did not delete"));
       return FALSE;
     }
@@ -344,8 +309,7 @@ int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 		       char *userinfo, SilcClientID *id,
-		       SilcServerEntry router, void *connection,
-		       int expire)
+		       SilcServerEntry router, void *connection)
 {
   SilcClientEntry client;
   char *nicknamec = NULL;
@@ -362,20 +326,17 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 
   /* Check username. */
   if (username) {
-    char *u = NULL, *h = NULL;
-    silc_parse_userfqdn(username, &u, &h);
+    char u[128 + 1], h[256 + 1];
+    int ret;
+
+    ret = silc_parse_userfqdn(username, u, sizeof(u), h, sizeof(h));
     if (!u)
       return NULL;
-    if (!silc_identifier_verify(u, strlen(u), SILC_STRING_UTF8, 128)) {
-      silc_free(u);
-      silc_free(h);
+    if (!silc_identifier_verify(u, strlen(u), SILC_STRING_UTF8, 128))
       return NULL;
-    }
-    if (h && !silc_identifier_verify(h, strlen(h), SILC_STRING_UTF8, 256)) {
-      silc_free(u);
-      silc_free(h);
+    if (ret > 1 && !silc_identifier_verify(h, strlen(h),
+					   SILC_STRING_UTF8, 256))
       return NULL;
-    }
   }
 
   client = silc_calloc(1, sizeof(*client));
@@ -389,7 +350,7 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 					   NULL, NULL, NULL, NULL, TRUE);
 
   if (!silc_idcache_add(id_list->clients, nicknamec, (void *)client->id,
-			(void *)client, expire, NULL)) {
+			(void *)client)) {
     silc_hash_table_free(client->channels);
     silc_free(client);
     silc_free(nicknamec);
@@ -407,7 +368,7 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
   SILC_LOG_DEBUG(("Start"));
 
   if (entry) {
-    if (!silc_idcache_del_by_context(id_list->clients, entry)) {
+    if (!silc_idcache_del_by_context(id_list->clients, entry, NULL /* XXX */)) {
       SILC_LOG_DEBUG(("Unknown client, did not delete"));
       return FALSE;
     }
@@ -435,9 +396,10 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 
 void silc_idlist_client_destructor(SilcIDCache cache,
 				   SilcIDCacheEntry entry,
-				   void *context)
+				   void *dest_context,
+				   void *app_context)
 {
-  SilcServer server = context;
+  SilcServer server = app_context;
   SilcClientEntry client;
 
   client = (SilcClientEntry)entry->context;
@@ -472,7 +434,7 @@ int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 					SilcClientEntry **clients,
 					SilcUInt32 *clients_count)
 {
-  SilcIDCacheList list = NULL;
+  SilcList list;
   SilcIDCacheEntry id_cache = NULL;
 
   SILC_LOG_DEBUG(("Start"));
@@ -481,15 +443,12 @@ int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
     return FALSE;
 
   *clients = silc_realloc(*clients,
-			  (silc_idcache_list_count(list) + *clients_count) *
+			  (silc_list_count(list) + *clients_count) *
 			  sizeof(**clients));
 
-  silc_idcache_list_first(list, &id_cache);
-  (*clients)[(*clients_count)++] = (SilcClientEntry)id_cache->context;
-
-  while (silc_idcache_list_next(list, &id_cache))
-    (*clients)[(*clients_count)++] = (SilcClientEntry)id_cache->context;
-  silc_idcache_list_free(list);
+  silc_list_start(list);
+  while ((id_cache = silc_list_get(list)))
+    (*clients)[(*clients_count)++] = id_cache->context;
 
   SILC_LOG_DEBUG(("Found total %d clients", *clients_count));
 
@@ -505,7 +464,7 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 				    SilcClientEntry **clients,
 				    SilcUInt32 *clients_count)
 {
-  SilcIDCacheList list = NULL;
+  SilcList list;
   SilcIDCacheEntry id_cache = NULL;
   unsigned char hash[SILC_HASH_MAXLEN];
   SilcClientID client_id;
@@ -524,16 +483,12 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
     return FALSE;
 
   *clients = silc_realloc(*clients,
-			  (silc_idcache_list_count(list) + *clients_count) *
+			  (silc_list_count(list) + *clients_count) *
 			  sizeof(**clients));
 
-  silc_idcache_list_first(list, &id_cache);
-  (*clients)[(*clients_count)++] = (SilcClientEntry)id_cache->context;
-
-  while (silc_idcache_list_next(list, &id_cache))
-    (*clients)[(*clients_count)++] = (SilcClientEntry)id_cache->context;
-
-  silc_idcache_list_free(list);
+  silc_list_start(list);
+  while ((id_cache = silc_list_get(list)))
+    (*clients)[(*clients_count)++] = id_cache->context;
 
   SILC_LOG_DEBUG(("Found total %d clients", *clients_count));
 
@@ -544,7 +499,7 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 
 SilcClientEntry
 silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
-			      bool registered, SilcIDCacheEntry *ret_entry)
+			      SilcBool registered, SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client;
@@ -555,14 +510,8 @@ silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
   SILC_LOG_DEBUG(("Client ID (%s)",
 		  silc_id_render(id, SILC_ID_CLIENT)));
 
-  /* Do extended search since the normal ID comparison function for
-     Client ID's compares only the hash from the Client ID and not the
-     entire ID. The silc_hash_client_id_compare compares the entire
-     Client ID as we want to find one specific Client ID. */
-  if (!silc_idcache_find_by_id_one_ext(id_list->clients, (void *)id,
-				       NULL, NULL,
-				       silc_hash_client_id_compare, NULL,
-				       &id_cache))
+  /* Find the exact client with the exact Client ID */
+  if (!silc_idcache_find_by_id_one(id_list->clients, (void *)id, &id_cache))
     return NULL;
 
   client = (SilcClientEntry)id_cache->context;
@@ -603,21 +552,15 @@ silc_idlist_replace_client_id(SilcServer server,
       return NULL;
   }
 
-  /* Do extended search since the normal ID comparison function for
-     Client ID's compares only the hash from the Client ID and not the
-     entire ID. The silc_hash_client_id_compare compares the entire
-     Client ID as we want to find one specific Client ID. */
-  if (!silc_idcache_find_by_id_one_ext(id_list->clients, (void *)old_id,
-				       NULL, NULL,
-				       silc_hash_client_id_compare, NULL,
-				       &id_cache))
+  /* Find exact client with exact Client ID */
+  if (!silc_idcache_find_by_id_one(id_list->clients, old_id, &id_cache))
     return NULL;
 
   client = (SilcClientEntry)id_cache->context;
 
   /* Remove the old entry and add a new one */
 
-  if (!silc_idcache_del_by_context(id_list->clients, client))
+  if (!silc_idcache_del_by_context(id_list->clients, client, server))
     return NULL;
 
   /* Check if anyone is watching old nickname */
@@ -625,9 +568,8 @@ silc_idlist_replace_client_id(SilcServer server,
     silc_server_check_watcher_list(server, client, nickname,
 				   SILC_NOTIFY_TYPE_NICK_CHANGE);
 
-  silc_free(client->id);
   silc_free(client->nickname);
-  client->id = new_id;
+  *client->id = *new_id;
   client->nickname = nickname ? strdup(nickname) : NULL;
 
   /* Check if anyone is watching new nickname */
@@ -636,7 +578,7 @@ silc_idlist_replace_client_id(SilcServer server,
 				   SILC_NOTIFY_TYPE_NICK_CHANGE);
 
   if (!silc_idcache_add(id_list->clients, nicknamec, client->id,
-			client, 0, NULL))
+			client))
     return NULL;
 
   SILC_LOG_DEBUG(("Replaced"));
@@ -657,8 +599,8 @@ silc_idlist_replace_client_id(SilcServer server,
 SilcChannelEntry
 silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 			SilcChannelID *id, SilcServerEntry router,
-			SilcCipher channel_key, SilcHmac hmac,
-			int expire)
+			SilcCipher send_key, SilcCipher receive_key,
+			SilcHmac hmac)
 {
   SilcChannelEntry channel;
   char *channel_namec = NULL;
@@ -678,7 +620,8 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
   channel->mode = mode;
   channel->id = id;
   channel->router = router;
-  channel->channel_key = channel_key;
+  channel->send_key = send_key;
+  channel->receive_key = receive_key;
   channel->hmac = hmac;
   channel->created = channel->updated = time(0);
   if (!channel->hmac)
@@ -691,7 +634,7 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 					     NULL, NULL, NULL, TRUE);
 
   if (!silc_idcache_add(id_list->channels, channel_namec,
-			(void *)channel->id, (void *)channel, expire, NULL)) {
+			(void *)channel->id, (void *)channel /*XXX, expire */)) {
     silc_hmac_free(channel->hmac);
     silc_hash_table_free(channel->user_list);
     silc_free(channel);
@@ -726,7 +669,7 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
 {
   if (entry) {
     /* Remove from cache */
-    if (!silc_idcache_del_by_context(id_list->channels, entry)) {
+    if (!silc_idcache_del_by_context(id_list->channels, entry, NULL)) {
       SILC_LOG_DEBUG(("Unknown channel, did not delete"));
       return FALSE;
     }
@@ -750,8 +693,10 @@ int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry)
     if (entry->ban_list)
       silc_hash_table_free(entry->ban_list);
 
-    if (entry->channel_key)
-      silc_cipher_free(entry->channel_key);
+    if (entry->send_key)
+      silc_cipher_free(entry->send_key);
+    if (entry->receive_key)
+      silc_cipher_free(entry->receive_key);
     if (entry->key) {
       memset(entry->key, 0, entry->key_len / 8);
       silc_free(entry->key);
@@ -855,12 +800,9 @@ silc_idlist_replace_channel_id(SilcIDList id_list, SilcChannelID *old_id,
 
   /* Remove the old entry and add a new one */
 
-  silc_idcache_del_by_id(id_list->channels, (void *)channel->id);
-
-  silc_free(channel->id);
-  channel->id = new_id;
-
-  silc_idcache_add(id_list->channels, name, channel->id, channel, 0, NULL);
+  silc_idcache_del_by_id(id_list->channels, (void *)channel->id, NULL);
+  *channel->id = *new_id;
+  silc_idcache_add(id_list->channels, name, channel->id, channel);
 
   SILC_LOG_DEBUG(("Replaced"));
 
@@ -877,7 +819,7 @@ SilcChannelEntry *
 silc_idlist_get_channels(SilcIDList id_list, SilcChannelID *channel_id,
 			 SilcUInt32 *channels_count)
 {
-  SilcIDCacheList list = NULL;
+  SilcList list;
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry *channels = NULL;
   int i = 0;
@@ -888,16 +830,12 @@ silc_idlist_get_channels(SilcIDList id_list, SilcChannelID *channel_id,
     if (!silc_idcache_get_all(id_list->channels, &list))
       return NULL;
 
-    channels = silc_calloc(silc_idcache_list_count(list), sizeof(*channels));
+    channels = silc_calloc(silc_list_count(list), sizeof(*channels));
 
     i = 0;
-    silc_idcache_list_first(list, &id_cache);
-    channels[i++] = (SilcChannelEntry)id_cache->context;
-
-    while (silc_idcache_list_next(list, &id_cache))
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list)))
       channels[i++] = (SilcChannelEntry)id_cache->context;
-
-    silc_idcache_list_free(list);
   } else {
     if (!silc_idcache_find_by_id_one(id_list->channels, channel_id, &id_cache))
       return NULL;

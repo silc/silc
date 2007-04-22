@@ -4,7 +4,7 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -67,14 +67,7 @@
 /* Free the authentication fields in the specified struct
  * Expands to two instructions */
 #define CONFIG_FREE_AUTH(__section__)			\
-  silc_free(__section__->passphrase);			\
-  if (__section__->publickeys)				\
-    silc_hash_table_free(__section__->publickeys);
-
-static void my_free_public_key(void *key, void *context, void *user_data)
-{
-  silc_pkcs_public_key_free(context);
-}
+  silc_free(__section__->passphrase);
 
 /* Set default values to those parameters that have not been defined */
 static void
@@ -118,9 +111,25 @@ my_find_param(SilcServerConfig config, const char *name)
   return NULL;
 }
 
+/* SKR find callbcak */
+
+static void my_find_callback(SilcSKR skr, SilcSKRFind find,
+			     SilcSKRStatus status, SilcDList keys,
+			     void *context)
+{
+  SilcSKRStatus *s = context;
+
+  *s = status;
+  if (keys)
+    silc_dlist_uninit(keys);
+
+  silc_skr_find_free(find);
+}
+
 /* parse an authdata according to its auth method */
-static bool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
-			      void **auth_data, SilcUInt32 *auth_data_len)
+static SilcBool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
+				  void **auth_data, SilcUInt32 *auth_data_len,
+				  SilcSKRKeyUsage usage, void *key_context)
 {
   if (auth_meth == SILC_AUTH_PASSWORD) {
     /* p is a plain text password */
@@ -139,43 +148,42 @@ static bool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
   } else if (auth_meth == SILC_AUTH_PUBLIC_KEY) {
     /* p is a public key file name */
     SilcPublicKey public_key;
-    SilcPublicKey cached_key;
+    SilcSKR skr = *auth_data;
+    SilcSKRFind find;
+    SilcSKRStatus status;
 
-    if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_PEM))
-      if (!silc_pkcs_load_public_key(p, &public_key, SILC_PKCS_FILE_BIN)) {
-	SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
-			       "Could not load public key file!"));
-	return FALSE;
-      }
+    if (!silc_pkcs_load_public_key(p, &public_key)) {
+      SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
+			     "Could not load public key file!"));
+      return FALSE;
+    }
 
-    if (*auth_data &&
-	silc_hash_table_find_ext(*auth_data, public_key, (void *)&cached_key,
-				 NULL, silc_hash_public_key, NULL,
-				 silc_hash_public_key_compare, NULL)) {
+    find = silc_skr_find_alloc();
+    silc_skr_find_set_public_key(find, public_key);
+    silc_skr_find_set_usage(find, usage);
+    silc_skr_find_set_context(find, key_context ? key_context : (void *)usage);
+    silc_skr_find(skr, NULL, find, my_find_callback, &status);
+    if (status != SILC_SKR_OK) {
       silc_pkcs_public_key_free(public_key);
       SILC_SERVER_LOG_WARNING(("Warning: public key file \"%s\" already "
 			       "configured, ignoring this key", p));
       return TRUE; /* non fatal error */
     }
 
-    /* The auth_data is a pointer to the hash table of public keys. */
-    if (auth_data) {
-      if (*auth_data == NULL)
-	*auth_data = silc_hash_table_alloc(1, silc_hash_public_key, NULL,
-					   NULL, NULL,
-					   my_free_public_key, NULL,
-					   TRUE);
-      SILC_LOG_DEBUG(("Adding public key '%s' to authentication cache",
-		     public_key->identifier));
-      silc_hash_table_add(*auth_data, public_key, public_key);
+    /* Add the public key to repository */
+    if (silc_skr_add_public_key(skr, public_key, usage,
+				key_context ? key_context : (void *)usage) !=
+	SILC_SKR_OK) {
+      SILC_SERVER_LOG_ERROR(("Error while adding public key \"%s\"", p));
+      return FALSE;
     }
-  } else
-    abort();
+  }
 
   return TRUE;
 }
 
-static bool my_parse_publickeydir(const char *dirname, void **auth_data)
+static SilcBool my_parse_publickeydir(const char *dirname, void **auth_data,
+				      SilcSKRKeyUsage usage)
 {
   int total = 0;
   struct dirent *get_file;
@@ -207,7 +215,8 @@ static bool my_parse_publickeydir(const char *dirname, void **auth_data)
       SILC_SERVER_LOG_ERROR(("Error stating file %s: %s", buf,
 			     strerror(errno)));
     } else if (S_ISREG(check_file.st_mode)) {
-      my_parse_authdata(SILC_AUTH_PUBLIC_KEY, buf, auth_data, NULL);
+      my_parse_authdata(SILC_AUTH_PUBLIC_KEY, buf, auth_data, NULL,
+			usage, NULL);
       total++;
     }
   }
@@ -228,10 +237,10 @@ SILC_CONFIG_CALLBACK(fetch_generic)
     config->module_path = (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "prefer_passphrase_auth")) {
-    config->prefer_passphrase_auth = *(bool *)val;
+    config->prefer_passphrase_auth = *(SilcBool *)val;
   }
   else if (!strcmp(name, "require_reverse_lookup")) {
-    config->require_reverse_lookup = *(bool *)val;
+    config->require_reverse_lookup = *(SilcBool *)val;
   }
   else if (!strcmp(name, "connections_max")) {
     config->param.connections_max = (SilcUInt32) *(int *)val;
@@ -252,13 +261,13 @@ SILC_CONFIG_CALLBACK(fetch_generic)
     config->param.reconnect_interval_max = (SilcUInt32) *(int *)val;
   }
   else if (!strcmp(name, "reconnect_keep_trying")) {
-    config->param.reconnect_keep_trying = *(bool *)val;
+    config->param.reconnect_keep_trying = *(SilcBool *)val;
   }
   else if (!strcmp(name, "key_exchange_rekey")) {
     config->param.key_exchange_rekey = (SilcUInt32) *(int *)val;
   }
   else if (!strcmp(name, "key_exchange_pfs")) {
-    config->param.key_exchange_pfs = *(bool *)val;
+    config->param.key_exchange_pfs = *(SilcBool *)val;
   }
   else if (!strcmp(name, "channel_rekey_secs")) {
     config->channel_rekey_secs = (SilcUInt32) *(int *)val;
@@ -285,13 +294,13 @@ SILC_CONFIG_CALLBACK(fetch_generic)
       (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "detach_disabled")) {
-    config->detach_disabled = *(bool *)val;
+    config->detach_disabled = *(SilcBool *)val;
   }
   else if (!strcmp(name, "detach_timeout")) {
     config->detach_timeout = (SilcUInt32) *(int *)val;
   }
   else if (!strcmp(name, "qos")) {
-    config->param.qos = *(bool *)val;
+    config->param.qos = *(SilcBool *)val;
   }
   else if (!strcmp(name, "qos_rate_limit")) {
     config->param.qos_rate_limit = *(SilcUInt32 *)val;
@@ -604,13 +613,10 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
     CONFIG_IS_DOUBLE(server_info->public_key);
 
     /* Try to load specified file, if fail stop config parsing */
-    if (!silc_pkcs_load_public_key(file_tmp, &server_info->public_key,
-				   SILC_PKCS_FILE_PEM))
-      if (!silc_pkcs_load_public_key(file_tmp, &server_info->public_key,
-				     SILC_PKCS_FILE_BIN)) {
-	SILC_SERVER_LOG_ERROR(("Error: Could not load public key file."));
-	return SILC_CONFIG_EPRINTLINE;
-      }
+    if (!silc_pkcs_load_public_key(file_tmp, &server_info->public_key)) {
+      SILC_SERVER_LOG_ERROR(("Error: Could not load public key file."));
+      return SILC_CONFIG_EPRINTLINE;
+    }
   }
   else if (!strcmp(name, "privatekey")) {
     struct stat st;
@@ -628,13 +634,11 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
     }
 
     /* Try to load specified file, if fail stop config parsing */
-    if (!silc_pkcs_load_private_key(file_tmp, &server_info->private_key,
-				    "", 0, SILC_PKCS_FILE_BIN))
-      if (!silc_pkcs_load_private_key(file_tmp, &server_info->private_key,
-				      "", 0, SILC_PKCS_FILE_PEM)) {
-	SILC_SERVER_LOG_ERROR(("Error: Could not load private key file."));
-	return SILC_CONFIG_EPRINTLINE;
-      }
+    if (!silc_pkcs_load_private_key(file_tmp, "", 0,
+				    &server_info->private_key)) {
+      SILC_SERVER_LOG_ERROR(("Error: Could not load private key file."));
+      return SILC_CONFIG_EPRINTLINE;
+    }
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -656,10 +660,10 @@ SILC_CONFIG_CALLBACK(fetch_logging)
   SILC_SERVER_CONFIG_SECTION_INIT(SilcServerConfigLogging);
 
   if (!strcmp(name, "timestamp")) {
-    config->logging_timestamp = *(bool *)val;
+    config->logging_timestamp = *(SilcBool *)val;
   }
   else if (!strcmp(name, "quicklogs")) {
-    config->logging_quick = *(bool *)val;
+    config->logging_quick = *(SilcBool *)val;
   }
   else if (!strcmp(name, "flushdelay")) {
     int flushdelay = *(int *)val;
@@ -763,13 +767,13 @@ SILC_CONFIG_CALLBACK(fetch_connparam)
     tmp->reconnect_interval_max = *(SilcUInt32 *)val;
   }
   else if (!strcmp(name, "reconnect_keep_trying")) {
-    tmp->reconnect_keep_trying = *(bool *)val;
+    tmp->reconnect_keep_trying = *(SilcBool *)val;
   }
   else if (!strcmp(name, "key_exchange_rekey")) {
     tmp->key_exchange_rekey = *(SilcUInt32 *)val;
   }
   else if (!strcmp(name, "key_exchange_pfs")) {
-    tmp->key_exchange_pfs = *(bool *)val;
+    tmp->key_exchange_pfs = *(SilcBool *)val;
   }
   else if (!strcmp(name, "version_protocol")) {
     CONFIG_IS_DOUBLE(tmp->version_protocol);
@@ -785,10 +789,10 @@ SILC_CONFIG_CALLBACK(fetch_connparam)
       (*(char *)val ? strdup((char *) val) : NULL);
   }
   else if (!strcmp(name, "anonymous")) {
-    tmp->anonymous = *(bool *)val;
+    tmp->anonymous = *(SilcBool *)val;
   }
   else if (!strcmp(name, "qos")) {
-    tmp->qos = *(bool *)val;
+    tmp->qos = *(SilcBool *)val;
   }
   else if (!strcmp(name, "qos_rate_limit")) {
     tmp->qos_rate_limit = *(SilcUInt32 *)val;
@@ -840,20 +844,23 @@ SILC_CONFIG_CALLBACK(fetch_client)
     CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
 			   (void *)&tmp->passphrase,
-			   &tmp->passphrase_len)) {
+			   &tmp->passphrase_len, 0, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
   else if (!strcmp(name, "publickey")) {
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
-			   (void *)&tmp->publickeys, NULL)) {
+			   (void *)&config->server->repository, NULL,
+			   SILC_SKR_USAGE_KEY_AGREEMENT, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
   else if (!strcmp(name, "publickeydir")) {
-    if (!my_parse_publickeydir((char *) val, (void *)&tmp->publickeys)) {
+    if (!my_parse_publickeydir((char *) val,
+			       (void *)&config->server->repository,
+			       SILC_SKR_USAGE_KEY_AGREEMENT)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -912,14 +919,15 @@ SILC_CONFIG_CALLBACK(fetch_admin)
     CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
 			   (void *)&tmp->passphrase,
-			   &tmp->passphrase_len)) {
+			   &tmp->passphrase_len, 0, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
   }
   else if (!strcmp(name, "publickey")) {
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
-			   (void *)&tmp->publickeys, NULL)) {
+			   (void *)&config->server->repository, NULL,
+			   SILC_SKR_USAGE_SERVICE_AUTHORIZATION, tmp)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1011,7 +1019,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
     CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
 			   (void *)&tmp->passphrase,
-			   &tmp->passphrase_len)) {
+			   &tmp->passphrase_len, 0, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1019,7 +1027,8 @@ SILC_CONFIG_CALLBACK(fetch_server)
   else if (!strcmp(name, "publickey")) {
     CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
-			   (void *)&tmp->publickeys, NULL)) {
+			   (void *)&config->server->repository, NULL,
+			   SILC_SKR_USAGE_KEY_AGREEMENT, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1033,7 +1042,7 @@ SILC_CONFIG_CALLBACK(fetch_server)
     }
   }
   else if (!strcmp(name, "backup")) {
-    tmp->backup_router = *(bool *)val;
+    tmp->backup_router = *(SilcBool *)val;
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -1087,7 +1096,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
     CONFIG_IS_DOUBLE(tmp->passphrase);
     if (!my_parse_authdata(SILC_AUTH_PASSWORD, (char *) val,
 			   (void *)&tmp->passphrase,
-			   &tmp->passphrase_len)) {
+			   &tmp->passphrase_len, 0, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1095,7 +1104,8 @@ SILC_CONFIG_CALLBACK(fetch_router)
   else if (!strcmp(name, "publickey")) {
     CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
-			   (void *)&tmp->publickeys, NULL)) {
+			   (void *)&config->server->repository, NULL,
+			   SILC_SKR_USAGE_KEY_AGREEMENT, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
@@ -1109,7 +1119,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
     }
   }
   else if (!strcmp(name, "initiator")) {
-    tmp->initiator = *(bool *)val;
+    tmp->initiator = *(SilcBool *)val;
   }
   else if (!strcmp(name, "backuphost")) {
     CONFIG_IS_DOUBLE(tmp->backup_replace_ip);
@@ -1128,7 +1138,7 @@ SILC_CONFIG_CALLBACK(fetch_router)
     tmp->backup_replace_port = (SilcUInt16) port;
   }
   else if (!strcmp(name, "backuplocal")) {
-    tmp->backup_local = *(bool *)val;
+    tmp->backup_local = *(SilcBool *)val;
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -1353,12 +1363,12 @@ static void silc_server_config_set_defaults(SilcServerConfig config)
 
 /* Check for correctness of the configuration */
 
-static bool silc_server_config_check(SilcServerConfig config)
+static SilcBool silc_server_config_check(SilcServerConfig config)
 {
-  bool ret = TRUE;
+  SilcBool ret = TRUE;
   SilcServerConfigServer *s;
   SilcServerConfigRouter *r;
-  bool b = FALSE;
+  SilcBool b = FALSE;
 
   /* ServerConfig is mandatory */
   if (!config->server_info) {
@@ -1440,7 +1450,8 @@ static bool silc_server_config_check(SilcServerConfig config)
    configuration object. The SilcServerConfig must be freed by calling
    the silc_server_config_destroy function. */
 
-SilcServerConfig silc_server_config_alloc(const char *filename)
+SilcServerConfig silc_server_config_alloc(const char *filename,
+					  SilcServer server)
 {
   SilcServerConfig config_new;
   SilcConfigEntity ent;
@@ -1457,6 +1468,7 @@ SilcServerConfig silc_server_config_alloc(const char *filename)
   config_new->refcount = 1;
   config_new->logging_timestamp = TRUE;
   config_new->param.reconnect_keep_trying = TRUE;
+  config_new->server = server;
 
   /* obtain a config file object */
   file = silc_config_open(filename);
@@ -1666,7 +1678,7 @@ void silc_server_config_destroy(SilcServerConfig config)
 /* Registers configured ciphers. These can then be allocated by the
    server when needed. */
 
-bool silc_server_config_register_ciphers(SilcServer server)
+SilcBool silc_server_config_register_ciphers(SilcServer server)
 {
   SilcServerConfig config = server->config;
   SilcServerConfigCipher *cipher = config->cipher;
@@ -1692,70 +1704,6 @@ bool silc_server_config_register_ciphers(SilcServer server)
 	silc_server_stop(server);
 	exit(1);
       }
-    } else {
-#ifdef SILC_SIM
-      /* Load (try at least) the crypto SIM module */
-      char buf[1023], *alg_name;
-      SilcCipherObject cipher_obj;
-      SilcSim sim;
-
-      memset(&cipher_obj, 0, sizeof(cipher_obj));
-      cipher_obj.name = cipher->name;
-      cipher_obj.block_len = cipher->block_length;
-      cipher_obj.key_len = cipher->key_length * 8;
-
-      /* build the libname */
-      snprintf(buf, sizeof(buf), "%s/%s", config->module_path,
-		cipher->module);
-      sim = silc_sim_alloc(SILC_SIM_CIPHER, buf, 0);
-
-      alg_name = strdup(cipher->name);
-      if (strchr(alg_name, '-'))
-	*strchr(alg_name, '-') = '\0';
-
-      if (silc_sim_load(sim)) {
-	cipher_obj.set_key =
-	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
-						SILC_CIPHER_SIM_SET_KEY));
-	SILC_LOG_DEBUG(("set_key=%p", cipher_obj.set_key));
-	cipher_obj.set_key_with_string =
-	  silc_sim_getsym(sim,
-	    silc_sim_symname(alg_name,
-	      SILC_CIPHER_SIM_SET_KEY_WITH_STRING));
-	SILC_LOG_DEBUG(("set_key_with_string=%p",
-	  cipher_obj.set_key_with_string));
-	cipher_obj.encrypt =
-	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
-						SILC_CIPHER_SIM_ENCRYPT_CBC));
-	SILC_LOG_DEBUG(("encrypt_cbc=%p", cipher_obj.encrypt));
-        cipher_obj.decrypt =
-	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
-						SILC_CIPHER_SIM_DECRYPT_CBC));
-	SILC_LOG_DEBUG(("decrypt_cbc=%p", cipher_obj.decrypt));
-        cipher_obj.context_len =
-	  silc_sim_getsym(sim, silc_sim_symname(alg_name,
-						SILC_CIPHER_SIM_CONTEXT_LEN));
-	SILC_LOG_DEBUG(("context_len=%p", cipher_obj.context_len));
-
-	/* Put the SIM to the list of all SIM's in server */
-	silc_dlist_add(server->sim, sim);
-
-	silc_free(alg_name);
-      } else {
-	SILC_LOG_ERROR(("Error configuring ciphers"));
-        silc_sim_free(sim);
-	silc_server_stop(server);
-	exit(1);
-      }
-
-      /* Register the cipher */
-      silc_cipher_register(&cipher_obj);
-#else
-      SILC_LOG_ERROR(("Dynamic module support not compiled, "
-			"can't load modules!"));
-      silc_server_stop(server);
-      exit(1);
-#endif
     }
     cipher = cipher->next;
   } /* while */
@@ -1766,7 +1714,7 @@ bool silc_server_config_register_ciphers(SilcServer server)
 /* Registers configured hash functions. These can then be allocated by the
    server when needed. */
 
-bool silc_server_config_register_hashfuncs(SilcServer server)
+SilcBool silc_server_config_register_hashfuncs(SilcServer server)
 {
   SilcServerConfig config = server->config;
   SilcServerConfigHash *hash = config->hash;
@@ -1792,54 +1740,6 @@ bool silc_server_config_register_hashfuncs(SilcServer server)
 	silc_server_stop(server);
 	exit(1);
       }
-    } else {
-#ifdef SILC_SIM
-      /* Load (try at least) the hash SIM module */
-      SilcHashObject hash_obj;
-      SilcSim sim;
-
-      memset(&hash_obj, 0, sizeof(hash_obj));
-      hash_obj.name = hash->name;
-      hash_obj.block_len = hash->block_length;
-      hash_obj.hash_len = hash->digest_length;
-
-      sim = silc_sim_alloc(SILC_SIM_HASH, hash->module, 0);
-
-      if ((silc_sim_load(sim))) {
-	hash_obj.init =
-	  silc_sim_getsym(sim, silc_sim_symname(hash->name,
-						SILC_HASH_SIM_INIT));
-	SILC_LOG_DEBUG(("init=%p", hash_obj.init));
-	hash_obj.update =
-	  silc_sim_getsym(sim, silc_sim_symname(hash->name,
-						SILC_HASH_SIM_UPDATE));
-	SILC_LOG_DEBUG(("update=%p", hash_obj.update));
-        hash_obj.final =
-	  silc_sim_getsym(sim, silc_sim_symname(hash->name,
-						SILC_HASH_SIM_FINAL));
-	SILC_LOG_DEBUG(("final=%p", hash_obj.final));
-        hash_obj.context_len =
-	  silc_sim_getsym(sim, silc_sim_symname(hash->name,
-						SILC_HASH_SIM_CONTEXT_LEN));
-	SILC_LOG_DEBUG(("context_len=%p", hash_obj.context_len));
-
-	/* Put the SIM to the table of all SIM's in server */
-	silc_dlist_add(server->sim, sim);
-      } else {
-	SILC_LOG_ERROR(("Error configuring hash functions"));
-        silc_sim_free(sim);
-	silc_server_stop(server);
-	exit(1);
-      }
-
-      /* Register the hash function */
-      silc_hash_register(&hash_obj);
-#else
-      SILC_LOG_ERROR(("Dynamic module support not compiled, "
-			"can't load modules!"));
-      silc_server_stop(server);
-      exit(1);
-#endif
     }
     hash = hash->next;
   } /* while */
@@ -1850,7 +1750,7 @@ bool silc_server_config_register_hashfuncs(SilcServer server)
 /* Registers configure HMACs. These can then be allocated by the server
    when needed. */
 
-bool silc_server_config_register_hmacs(SilcServer server)
+SilcBool silc_server_config_register_hmacs(SilcServer server)
 {
   SilcServerConfig config = server->config;
   SilcServerConfigHmac *hmac = config->hmac;
@@ -1882,31 +1782,8 @@ bool silc_server_config_register_hmacs(SilcServer server)
 
 /* Registers configured PKCS's. */
 
-bool silc_server_config_register_pkcs(SilcServer server)
+SilcBool silc_server_config_register_pkcs(SilcServer server)
 {
-  SilcServerConfig config = server->config;
-  SilcServerConfigPkcs *pkcs = config->pkcs;
-
-  SILC_LOG_DEBUG(("Registering configured PKCS"));
-
-  if (!pkcs)
-    return FALSE;
-
-  while (pkcs) {
-    int i;
-    for (i = 0; silc_default_pkcs[i].name; i++)
-      if (!strcmp(silc_default_pkcs[i].name, pkcs->name)) {
-	silc_pkcs_register((SilcPKCSObject *)&silc_default_pkcs[i]);
-	break;
-      }
-    if (!silc_pkcs_is_supported(pkcs->name)) {
-      SILC_LOG_ERROR(("Unknown PKCS `%s'", pkcs->name));
-      silc_server_stop(server);
-      exit(1);
-    }
-    pkcs = pkcs->next;
-  } /* while */
-
   return TRUE;
 }
 
@@ -2094,12 +1971,12 @@ silc_server_config_find_backup_conn(SilcServer server, char *host)
 /* Returns TRUE if configuration for a router connection that we are
    initiating exists. */
 
-bool silc_server_config_is_primary_route(SilcServer server)
+SilcBool silc_server_config_is_primary_route(SilcServer server)
 {
   SilcServerConfig config = server->config;
   SilcServerConfigRouter *serv = NULL;
   int i;
-  bool found = FALSE;
+  SilcBool found = FALSE;
 
   serv = config->routers;
   for (i = 0; serv; i++) {

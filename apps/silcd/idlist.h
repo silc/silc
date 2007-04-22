@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,10 +21,7 @@
 #ifndef IDLIST_H
 #define IDLIST_H
 
-/* Forward declarations */
-typedef struct SilcServerEntryStruct *SilcServerEntry;
-typedef struct SilcClientEntryStruct *SilcClientEntry;
-typedef struct SilcChannelEntryStruct *SilcChannelEntry;
+#include "serverconfig.h"
 
 /* Context for holding cache information to periodically purge
    the cache. */
@@ -39,18 +36,6 @@ typedef struct {
   SilcUInt32 key_len;
   SilcTask task;
 } *SilcServerChannelRekey;
-
-/* Generic rekey context for connections */
-typedef struct {
-  /* Current sending encryption key, provided for re-key. The `pfs'
-     is TRUE if the Perfect Forward Secrecy is performed in re-key. */
-  unsigned char *send_enc_key;
-  SilcUInt32 enc_key_len;
-  int ske_group;
-  bool pfs;
-  SilcUInt32 timeout;
-  void *context;
-} *SilcServerRekey;
 
 /* ID List Entry status flags. */
 typedef SilcUInt8 SilcIDListStatus;
@@ -80,28 +65,15 @@ typedef SilcUInt8 SilcIDListStatus;
    Note that some of the fields may be NULL.
 
 */
-typedef struct {
-  /* Send and receive symmetric keys */
-  SilcCipher send_key;
-  SilcCipher receive_key;
-
-  /* HMAC */
-  SilcHmac hmac_send;
-  SilcHmac hmac_receive;
-
-  /* Packet sequence numbers */
-  SilcUInt32 psn_send;
-  SilcUInt32 psn_receive;
-
-  /* Hash selected in the SKE protocol, NULL if not needed at all */
+struct SilcIDListDataObject {
+  SilcConnectionType conn_type;      /* Connection type */
+  SilcServerConnection sconn;	     /* Connection context */
+  SilcSKERekeyMaterial rekey;	     /* Rekey material */
   SilcHash hash;
 
   /* Public key */
   SilcPublicKey public_key;
   unsigned char fingerprint[20];
-
-  /* Re-key context */
-  SilcServerRekey rekey;
 
   long last_receive;		/* Time last received data */
   long last_sent;		/* Time last sent data */
@@ -109,7 +81,7 @@ typedef struct {
   unsigned long created;	/* Time when entry was created */
 
   SilcIDListStatus status;	/* Status mask of the entry */
-} *SilcIDListData, SilcIDListDataStruct;
+};
 
 /*
    SILC Server entry object.
@@ -410,7 +382,7 @@ struct SilcClientEntryStruct {
        ID of the channel. This includes all the information SILC will ever
        need.
 
-   bool global_users
+   SilcBool global_users
 
        Boolean value to tell whether there are users outside this server
        on this channel. This is set to TRUE if router sends message to
@@ -452,7 +424,8 @@ struct SilcClientEntryStruct {
        whose cell this channel belongs to. This is used to route messages
        to this channel.
 
-   SilcCipher channel_key
+   SilcCipher send_key
+   SilcCipher receive_key
 
        The key of the channel (the cipher actually).
 
@@ -498,7 +471,8 @@ struct SilcChannelEntryStruct {
   SilcServerEntry router;
 
   /* Channel keys */
-  SilcCipher channel_key;
+  SilcCipher send_key;
+  SilcCipher receive_key;
   unsigned char *key;
   SilcUInt32 key_len;
   SilcHmac hmac;
@@ -549,11 +523,11 @@ struct SilcChannelEntryStruct {
    channel entry).
 
 */
-typedef struct SilcIDListStruct {
+struct SilcIDListStruct {
   SilcIDCache servers;
   SilcIDCache clients;
   SilcIDCache channels;
-} *SilcIDList;
+};
 
 /*
    ID Entry for Unknown connections.
@@ -569,12 +543,19 @@ typedef struct SilcIDListStruct {
 typedef struct {
   /* Generic data structure. DO NOT add anything before this! */
   SilcIDListDataStruct data;
+  SilcServerConfigRef cconfig;
+  SilcServerConfigRef sconfig;
+  SilcServerConfigRef rconfig;
+  SilcServer server;
+  const char *hostname;
+  const char *ip;
+  SilcUInt16 port;
 } *SilcUnknownEntry;
 
 /* Prototypes */
 void silc_idlist_add_data(void *entry, SilcIDListData idata);
 void silc_idlist_del_data(void *entry);
-SILC_TASK_CALLBACK_GLOBAL(silc_idlist_purge);
+SILC_TASK_CALLBACK(silc_idlist_purge);
 SilcServerEntry
 silc_idlist_add_server(SilcIDList id_list,
 		       char *server_name, int server_type,
@@ -582,13 +563,13 @@ silc_idlist_add_server(SilcIDList id_list,
 		       void *connection);
 SilcServerEntry
 silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
-			      bool registered, SilcIDCacheEntry *ret_entry);
+			      SilcBool registered, SilcIDCacheEntry *ret_entry);
 SilcServerEntry
 silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
-				bool registered, SilcIDCacheEntry *ret_entry);
+				SilcBool registered, SilcIDCacheEntry *ret_entry);
 SilcServerEntry
 silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
-				int port, bool registered,
+				int port, SilcBool registered,
 				SilcIDCacheEntry *ret_entry);
 SilcServerEntry
 silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
@@ -597,8 +578,7 @@ int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry);
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 		       char *userinfo, SilcClientID *id,
-		       SilcServerEntry router, void *connection,
-		       int expire);
+		       SilcServerEntry router, void *connection);
 int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry);
 int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 					char *server,
@@ -610,19 +590,20 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
 				    SilcUInt32 *clients_count);
 SilcClientEntry
 silc_idlist_find_client_by_id(SilcIDList id_list, SilcClientID *id,
-			      bool registered, SilcIDCacheEntry *ret_entry);
+			      SilcBool registered, SilcIDCacheEntry *ret_entry);
 SilcClientEntry
 silc_idlist_replace_client_id(SilcServer server,
 			      SilcIDList id_list, SilcClientID *old_id,
 			      SilcClientID *new_id, const char *nickname);
 void silc_idlist_client_destructor(SilcIDCache cache,
 				   SilcIDCacheEntry entry,
-				   void *context);
+				   void *dest_context,
+				   void *app_context);
 SilcChannelEntry
 silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 			SilcChannelID *id, SilcServerEntry router,
-			SilcCipher channel_key, SilcHmac hmac,
-			int expire);
+			SilcCipher send_key, SilcCipher receive_key,
+			SilcHmac hmac);
 int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry);
 SilcChannelEntry
 silc_idlist_find_channel_by_name(SilcIDList id_list, char *name,

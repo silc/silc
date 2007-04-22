@@ -10,7 +10,7 @@
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -30,7 +30,5 @@
 
 #define SILC_SERVER_PUBLIC_KEY_NAME "/silcd.pub"
 #define SILC_SERVER_PRIVATE_KEY_NAME "/silcd.prv"
-
-#define SERVER_KEY_EXPIRATION_DAYS 180
 
 #endif

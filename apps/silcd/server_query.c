@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2005 Pekka Riikonen
+  Copyright (C) 2002 - 2005, 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #include "server_internal.h"
 
 typedef struct {
-  SilcSocketConnection sock;	    /* Connection of this query */
+  SilcPacketStream sock;	    /* Connection of this query */
   unsigned char **arg;		    /* Query argument */
   SilcUInt32 *arg_lens;		    /* Query argument lengths */
   SilcUInt32 *arg_types;	    /* Query argument types */
@@ -51,8 +51,8 @@ typedef struct {
 /* Query session context */
 typedef struct {
   /* Queried data */
-  char *nickname;		    /* Queried nickname, normalized */
-  char *nick_server;		    /* Queried nickname's server */
+  char nickname[128 + 1];	    /* Queried nickname, normalized */
+  char nick_server[128 + 1];	    /* Queried nickname's server */
   char *server_name;		    /* Queried server name, normalized */
   char *channel_name;		    /* Queried channel name, normalized */
   SilcServerQueryID ids;	    /* Queried IDs */
@@ -91,9 +91,9 @@ void silc_server_query_send_router(SilcServer server, SilcServerQuery query);
 void silc_server_query_send_router_reply(void *context, void *reply);
 void silc_server_query_parse(SilcServer server, SilcServerQuery query);
 void silc_server_query_process(SilcServer server, SilcServerQuery query,
-			       bool resolve);
+			       SilcBool resolve);
 void silc_server_query_resolve(SilcServer server, SilcServerQuery query,
-			       SilcSocketConnection sock,
+			       SilcPacketStream sock,
 			       SilcClientEntry client_entry);
 void silc_server_query_resolve_reply(void *context, void *reply);
 void silc_server_query_send_reply(SilcServer server,
@@ -120,8 +120,6 @@ void silc_server_query_free(SilcServerQuery query)
     silc_free(query->queries[i].id);
   silc_free(query->queries);
 
-  silc_free(query->nickname);
-  silc_free(query->nick_server);
   silc_free(query->server_name);
   silc_free(query->channel_name);
 
@@ -222,7 +220,7 @@ void silc_server_query_add_error_id(SilcServer server,
    to the entity who sent this query to us automatically.  Returns
    TRUE if the query is being processed or FALSE on error. */
 
-bool silc_server_query_command(SilcServer server, SilcCommand querycmd,
+SilcBool silc_server_query_command(SilcServer server, SilcCommand querycmd,
 			       SilcServerCommandContext cmd)
 {
   SilcServerQuery query;
@@ -304,7 +302,7 @@ void silc_server_query_send_router(SilcServer server, SilcServerQuery query)
   silc_server_packet_send(server,
 			  SILC_PRIMARY_ROUTE(server),
 			  SILC_PACKET_COMMAND, 0,
-			  tmpbuf->data, tmpbuf->len, TRUE);
+			  tmpbuf->data, silc_buffer_len(tmpbuf));
   silc_command_set_ident(query->cmd->payload, old_ident);
   silc_buffer_free(tmpbuf);
 
@@ -327,7 +325,7 @@ void silc_server_query_send_router_reply(void *context, void *reply)
   SILC_LOG_DEBUG(("Received reply from router to query"));
 
   /* If the original command caller has gone away, just stop. */
-  if (query->cmd->sock->users == 1) {
+  if (!silc_packet_stream_is_valid(query->cmd->sock)) {
     SILC_LOG_DEBUG(("Original command caller vanished"));
     silc_server_query_free(query);
     return;
@@ -349,7 +347,7 @@ void silc_server_query_send_router_reply(void *context, void *reply)
     buffer = silc_command_payload_encode_payload(cmdr->payload);
     silc_server_packet_send(server, query->cmd->sock,
 			    SILC_PACKET_COMMAND_REPLY, 0,
-			    buffer->data, buffer->len, FALSE);
+			    buffer->data, silc_buffer_len(buffer));
     silc_buffer_free(buffer);
     silc_server_query_free(query);
     return;
@@ -364,10 +362,10 @@ void silc_server_query_send_router_reply(void *context, void *reply)
 void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 {
   SilcServerCommandContext cmd = query->cmd;
+  SilcIDListData idata = silc_packet_get_context(cmd->sock);
   unsigned char *tmp;
   SilcUInt32 tmp_len, argc = silc_argument_get_arg_num(cmd->args);
-  void *id;
-  SilcIdType id_type;
+  SilcID id;
   int i;
 
   SILC_LOG_DEBUG(("Parsing %s query",
@@ -384,9 +382,8 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       /* When Requested Attributes is present we will assure that this
 	 client cannot execute the WHOIS command too fast.  This would be
 	 same as having SILC_CF_LAG_STRICT. */
-      if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT &&
-          cmd->sock->user_data)
-	((SilcClientEntry)cmd->sock->user_data)->fast_command = 6;
+      if (idata && idata->conn_type == SILC_CONN_CLIENT)
+	((SilcClientEntry)idata)->fast_command = 6;
     }
 
     /* Get Client IDs if present. Take IDs always instead of nickname. */
@@ -405,7 +402,10 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 
       /* Get the nickname@server string and parse it */
       if (tmp && ((tmp_len > 128) ||
-	  !silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server))) {
+		  !silc_parse_userfqdn(tmp, query->nickname,
+				       sizeof(query->nickname),
+				       query->nick_server,
+				       sizeof(query->nick_server)))) {
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
 	silc_server_query_free(query);
@@ -422,8 +422,9 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	  silc_server_query_free(query);
 	  return;
 	}
-	silc_free(query->nickname);
-	query->nickname = tmp;
+	memset(query->nickname, 0, sizeof(query->nickname));
+	silc_snprintf(query->nickname, sizeof(query->nickname), "%s", tmp);
+	silc_free(tmp);
       }
 
     } else {
@@ -435,8 +436,8 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	if (!tmp)
 	  continue;
 
-	id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
-	if (!id || id_type != SILC_ID_CLIENT) {
+	if (!silc_id_payload_parse_id(tmp, tmp_len, &id) ||
+	    id.type != SILC_ID_CLIENT) {
 	  silc_server_query_add_error(server, query, 1, i + 4,
 				      SILC_STATUS_ERR_BAD_CLIENT_ID);
 	  continue;
@@ -446,23 +447,23 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	   send the query to router, unless done so already */
 	if (server->server_type == SILC_SERVER && !query->resolved) {
 	  if (!silc_idlist_find_client_by_id(server->local_list,
-					     id, TRUE, NULL)) {
-	    if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT ||
+					     &id.u.client_id, TRUE, NULL)) {
+	    if (idata->conn_type != SILC_CONN_CLIENT ||
 		!silc_idlist_find_client_by_id(server->global_list,
-					       id, TRUE, NULL)) {
+					       &id.u.client_id, TRUE, NULL)) {
 	      silc_server_query_send_router(server, query);
 	      for (i = 0; i < query->ids_count; i++)
 		silc_free(query->ids[i].id);
 	      silc_free(query->ids);
 	      query->ids = NULL;
 	      query->ids_count = 0;
-	      silc_free(id);
 	      return;
 	    }
 	  }
 	}
 
-	query->ids[query->ids_count].id = id;
+	query->ids[query->ids_count].id = silc_id_dup(&id.u.client_id,
+						      SILC_ID_CLIENT);
 	query->ids[query->ids_count].id_type = SILC_ID_CLIENT;
 	query->ids_count++;
       }
@@ -486,7 +487,8 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 
     /* Get the nickname@server string and parse it */
     if (tmp_len > 128 ||
-	!silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server)) {
+	!silc_parse_userfqdn(tmp, query->nickname, sizeof(query->nickname),
+			     query->nick_server, sizeof(query->nick_server))) {
       silc_server_query_send_error(server, query,
 				   SILC_STATUS_ERR_BAD_NICKNAME, 0);
       silc_server_query_free(query);
@@ -502,8 +504,9 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       silc_server_query_free(query);
       return;
     }
-    silc_free(query->nickname);
-    query->nickname = tmp;
+    memset(query->nickname, 0, sizeof(query->nickname));
+    silc_snprintf(query->nickname, sizeof(query->nickname), "%s", tmp);
+    silc_free(tmp);
 
     /* Get the max count of reply messages allowed */
     tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
@@ -521,7 +524,10 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       if (tmp) {
 	/* Get the nickname@server string and parse it */
 	if (tmp_len > 128 ||
-	    !silc_parse_userfqdn(tmp, &query->nickname, &query->nick_server))
+	    !silc_parse_userfqdn(tmp, query->nickname,
+				 sizeof(query->nickname),
+				 query->nick_server,
+				 sizeof(query->nick_server)))
 	  silc_server_query_add_error(server, query, 1, 1,
 				      SILC_STATUS_ERR_BAD_NICKNAME);
 
@@ -534,8 +540,9 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	  silc_server_query_free(query);
 	  return;
 	}
-	silc_free(query->nickname);
-	query->nickname = tmp;
+	memset(query->nickname, 0, sizeof(query->nickname));
+	silc_snprintf(query->nickname, sizeof(query->nickname), "%s", tmp);
+	silc_free(tmp);
       }
 
       /* Try get server name */
@@ -568,7 +575,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	query->channel_name = tmp;
       }
 
-      if (!query->nickname && !query->server_name && !query->channel_name) {
+      if (!query->nickname[0] && !query->server_name && !query->channel_name) {
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
 	silc_server_query_free(query);
@@ -584,8 +591,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	if (!tmp)
 	  continue;
 
-	id = silc_id_payload_parse_id(tmp, tmp_len, &id_type);
-	if (!id) {
+	if (!silc_id_payload_parse_id(tmp, tmp_len, &id)) {
 	  silc_server_query_add_error(server, query, 1, i + 5,
 				      SILC_STATUS_ERR_BAD_CLIENT_ID);
 	  continue;
@@ -594,19 +600,19 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	/* Normal server must check whether this ID exist, and if not then
 	   send the query to router, unless done so already */
 	if (server->server_type == SILC_SERVER && !query->resolved) {
-	  if (id_type == SILC_ID_CLIENT) {
+	  if (id.type == SILC_ID_CLIENT) {
 	    if (!silc_idlist_find_client_by_id(server->local_list,
-					       id, TRUE, NULL)) {
-	      if (cmd->sock->type != SILC_SOCKET_TYPE_CLIENT ||
+					       &id.u.client_id, TRUE, NULL)) {
+	      if (idata->conn_type != SILC_CONN_CLIENT ||
 		  !silc_idlist_find_client_by_id(server->global_list,
-						 id, TRUE, NULL)) {
+						 &id.u.client_id, TRUE,
+						 NULL)) {
 		silc_server_query_send_router(server, query);
 		for (i = 0; i < query->ids_count; i++)
 		  silc_free(query->ids[i].id);
 		silc_free(query->ids);
 		query->ids = NULL;
 		query->ids_count = 0;
-		silc_free(id);
 		return;
 	      }
 	    }
@@ -619,13 +625,20 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	    silc_free(query->ids);
 	    query->ids = NULL;
 	    query->ids_count = 0;
-	    silc_free(id);
 	    return;
 	  }
 	}
 
-	query->ids[query->ids_count].id = id;
-	query->ids[query->ids_count].id_type = id_type;
+	if (id.type == SILC_ID_CLIENT)
+	  query->ids[query->ids_count].id = silc_id_dup(&id.u.client_id,
+						        SILC_ID_CLIENT);
+	if (id.type == SILC_ID_SERVER)
+	  query->ids[query->ids_count].id = silc_id_dup(&id.u.server_id,
+						        SILC_ID_SERVER);
+	if (id.type == SILC_ID_CHANNEL)
+	  query->ids[query->ids_count].id = silc_id_dup(&id.u.channel_id,
+						        SILC_ID_CHANNEL);
+	query->ids[query->ids_count].id_type = id.type;
 	query->ids_count++;
       }
     }
@@ -645,7 +658,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 typedef struct {
   SilcClientEntry **clients;
   SilcUInt32 *clients_count;
-  bool found;
+  SilcBool found;
 } *SilcServerPublicKeyUser, SilcServerPublicKeyUserStruct;
 
 void silc_server_public_key_hash_foreach(void *key, void *context,
@@ -679,14 +692,15 @@ void silc_server_query_check_attributes(SilcServer server,
   SilcAttribute attribute;
   SilcAttributeObjPk pk;
   SilcPublicKey publickey;
+  SilcPKCSType type;
+  SilcBool found = FALSE, no_clients = FALSE;
   int i;
-  bool found = FALSE, no_clients = FALSE;
 
   /* If no clients were found, we only check the attributes
      if the user wasn't searching for nickname/ids */
   if (!(*clients)) {
     no_clients = TRUE;
-    if (query->nickname || query->ids_count)
+    if (query->nickname[0] || query->ids_count)
       return;
   }
 
@@ -701,8 +715,19 @@ void silc_server_query_check_attributes(SilcServer server,
 	if (!silc_attribute_get_object(attr, &pk, sizeof(pk)))
 	  continue;
 
-	if (!silc_pkcs_public_key_decode(pk.data, pk.data_len,
-	                                 &publickey)) {
+	if (!strcmp(pk.type, "silc-rsa"))
+	  type = SILC_PKCS_SILC;
+	else if (!strcmp(pk.type, "ssh-rsa"))
+	  type = SILC_PKCS_SSH2;
+	else if (!strcmp(pk.type, "x509v3-sign-rsa"))
+	  type = SILC_PKCS_X509V3;
+	else if (!strcmp(pk.type, "pgp-sign-rsa"))
+	  type = SILC_PKCS_OPENPGP;
+	else
+	  continue;
+
+	if (!silc_pkcs_public_key_alloc(type, pk.data, pk.data_len,
+	                                &publickey)) {
 	  silc_free(pk.type);
 	  silc_free(pk.data);
 	  continue;
@@ -745,7 +770,7 @@ void silc_server_query_check_attributes(SilcServer server,
     }
   }
 
-  if (!found && !query->nickname && !query->ids)
+  if (!found && !query->nickname[0] && !query->ids)
     silc_server_query_add_error(server, query, 2, 0,
                                 SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 }
@@ -755,10 +780,11 @@ void silc_server_query_check_attributes(SilcServer server,
    sender of the query command. */
 
 void silc_server_query_process(SilcServer server, SilcServerQuery query,
-			       bool resolve)
+			       SilcBool resolve)
 {
   SilcServerCommandContext cmd = query->cmd;
-  bool check_global = FALSE;
+  SilcIDListData idata = silc_packet_get_context(cmd->sock);
+  SilcBool check_global = FALSE;
   void *entry;
   SilcClientEntry *clients = NULL, client_entry;
   SilcChannelEntry *channels = NULL;
@@ -771,12 +797,12 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
 
   /* Check global lists if query is coming from client or we are not
      normal server (we know global information). */
-  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT)
+  if (idata->conn_type == SILC_CONN_CLIENT)
     check_global = TRUE;
   else if (server->server_type != SILC_SERVER)
     check_global = TRUE;
 
-  if (query->nickname) {
+  if (query->nickname[0]) {
     /* Get all clients matching nickname from local list */
     if (!silc_idlist_get_clients_by_hash(server->local_list,
 					 query->nickname, server->md5hash,
@@ -784,6 +810,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
       silc_idlist_get_clients_by_nickname(server->local_list,
 					  query->nickname,
 					  query->nick_server,
+					 /* XXX nick_server may not be set */
 					  &clients, &clients_count);
 
     /* Check global list as well */
@@ -794,6 +821,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
 	silc_idlist_get_clients_by_nickname(server->global_list,
 					    query->nickname,
 					    query->nick_server,
+					 /* XXX nick_server may not be set */
 					    &clients, &clients_count);
     }
 
@@ -1064,7 +1092,7 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
    client entry calls this function to do the resolving. */
 
 void silc_server_query_resolve(SilcServer server, SilcServerQuery query,
-			       SilcSocketConnection sock,
+			       SilcPacketStream sock,
 			       SilcClientEntry client_entry)
 {
   SilcServerCommandContext cmd = query->cmd;
@@ -1116,7 +1144,7 @@ void silc_server_query_resolve(SilcServer server, SilcServerQuery query,
 					    r->argc, r->arg, r->arg_lens,
 					    r->arg_types, r->ident);
       silc_server_packet_send(server, r->sock, SILC_PACKET_COMMAND, 0,
-			      res_cmd->data, res_cmd->len, FALSE);
+			      res_cmd->data, silc_buffer_len(res_cmd));
       silc_buffer_free(res_cmd);
 
       /* Reprocess this packet after received reply */
@@ -1187,8 +1215,8 @@ void silc_server_query_resolve(SilcServer server, SilcServerQuery query,
 
       /* Add the client entry to be resolved */
       idp = silc_id_payload_encode(client_entry->id, SILC_ID_CLIENT);
-      r->arg[r->argc] = silc_memdup(idp->data, idp->len);
-      r->arg_lens[r->argc] = idp->len;
+      r->arg[r->argc] = silc_memdup(idp->data, silc_buffer_len(idp));
+      r->arg_lens[r->argc] = silc_buffer_len(idp);
       r->arg_types[r->argc] = r->argc + 4;
       r->argc++;
       silc_buffer_free(idp);
@@ -1300,7 +1328,7 @@ void silc_server_query_resolve_reply(void *context, void *reply)
   SILC_LOG_DEBUG(("Reprocess the query"));
 
   /* If the original command caller has gone away, just stop. */
-  if (query->cmd->sock->users == 1) {
+  if (!silc_packet_stream_is_valid(query->cmd->sock)) {
     SILC_LOG_DEBUG(("Original command caller vanished"));
     silc_server_query_free(query);
     return;
@@ -1333,6 +1361,7 @@ void silc_server_query_send_reply(SilcServer server,
 				  SilcUInt32 channels_count)
 {
   SilcServerCommandContext cmd = query->cmd;
+  SilcIDListData idata = silc_packet_get_context(cmd->sock);
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   SilcStatus status;
   unsigned char *tmp;
@@ -1340,7 +1369,7 @@ void silc_server_query_send_reply(SilcServer server,
   SilcBuffer idp;
   int i, k, valid_count;
   char nh[384], uh[384];
-  bool sent_reply = FALSE;
+  SilcBool sent_reply = FALSE;
 
   SILC_LOG_DEBUG(("Sending reply to query"));
   SILC_LOG_DEBUG(("Sending %d clients", clients_count));
@@ -1353,7 +1382,7 @@ void silc_server_query_send_reply(SilcServer server,
   /* Send clients */
   if (clients_count) {
     SilcClientEntry entry;
-    SilcSocketConnection hsock;
+    SilcPacketStream hsock;
 
     /* Mark all invalid entries */
     for (i = 0, valid_count = 0; i < clients_count; i++) {
@@ -1461,11 +1490,12 @@ void silc_server_query_send_reply(SilcServer server,
 	  if (!strchr(entry->username, '@') && entry->connection) {
 	    hsock = entry->connection;
 	    silc_strncat(uh, sizeof(uh), "@", 1);
-	    len = strlen(hsock->hostname);
-	    silc_strncat(uh, sizeof(uh), hsock->hostname, len);
+	    silc_socket_stream_get_info(hsock, NULL, (const char **)&tmp,
+					NULL, NULL);
+	    silc_strncat(uh, sizeof(uh), tmp, strlen(tmp));
 	  }
 
-	  if (cmd->sock->type == SILC_SOCKET_TYPE_CLIENT)
+	  if (idata->conn_type == SILC_CONN_CLIENT)
 	    channels =
 	      silc_server_get_client_channel_list(server, entry, FALSE,
 						  FALSE, &umode_list);
@@ -1500,19 +1530,21 @@ void silc_server_query_send_reply(SilcServer server,
 	  /* Send command reply */
 	  silc_server_send_command_reply(server, cmd->sock, query->querycmd,
 					 status, 0, ident, 10,
-					 2, idp->data, idp->len,
+					 2, idp->data, silc_buffer_len(idp),
 					 3, nh, strlen(nh),
 					 4, uh, strlen(uh),
 					 5, entry->userinfo,
 					 strlen(entry->userinfo),
 					 6, channels ? channels->data : NULL,
-					 channels ? channels->len : 0,
+					 channels ? silc_buffer_len(channels)
+					 : 0,
 					 7, mode, 4,
 					 8, idle, 4,
 					 9, fingerprint,
 					 fingerprint ? 20 : 0,
 					 10, umode_list ? umode_list->data :
-					 NULL, umode_list ? umode_list->len :
+					 NULL, umode_list ?
+					 silc_buffer_len(umode_list) :
 					 0, 11, attrs, len);
 
 	  sent_reply = TRUE;
@@ -1539,7 +1571,7 @@ void silc_server_query_send_reply(SilcServer server,
 	if (!entry->username) {
 	  silc_server_send_command_reply(server, cmd->sock, query->querycmd,
 					 status, 0, ident, 2,
-					 2, idp->data, idp->len,
+					 2, idp->data, silc_buffer_len(idp),
 					 3, nh, strlen(nh));
 	  sent_reply = TRUE;
 	} else {
@@ -1549,13 +1581,14 @@ void silc_server_query_send_reply(SilcServer server,
 	  if (!strchr(entry->username, '@') && entry->connection) {
 	    hsock = entry->connection;
 	    silc_strncat(uh, sizeof(uh), "@", 1);
-	    len = strlen(hsock->hostname);
-	    silc_strncat(uh, sizeof(uh), hsock->hostname, len);
+	    silc_socket_stream_get_info(hsock, NULL, (const char **)&tmp,
+					NULL, NULL);
+	    silc_strncat(uh, sizeof(uh), tmp, strlen(tmp));
 	  }
 
 	  silc_server_send_command_reply(server, cmd->sock, query->querycmd,
 					 status, 0, ident, 3,
-					 2, idp->data, idp->len,
+					 2, idp->data, silc_buffer_len(idp),
 					 3, nh, strlen(nh),
 					 4, uh, strlen(uh));
 	  sent_reply = TRUE;
@@ -1571,7 +1604,7 @@ void silc_server_query_send_reply(SilcServer server,
 	/* Send command reply */
 	silc_server_send_command_reply(server, cmd->sock, query->querycmd,
 				       status, 0, ident, 4,
-				       2, idp->data, idp->len,
+				       2, idp->data, silc_buffer_len(idp),
 				       3, nh, strlen(nh),
 				       4, uh, strlen(uh),
 				       5, entry->userinfo,
@@ -1592,7 +1625,7 @@ void silc_server_query_send_reply(SilcServer server,
       /* Not one valid entry was found, send error.  If nickname was used
 	 in query send error based on that, otherwise the query->errors
 	 already includes proper errors. */
-      if (query->nickname || (!query->ids && query->attrs))
+      if (query->nickname[0] || (!query->ids && query->attrs))
 	silc_server_query_add_error(server, query, 1, 1,
 				    SILC_STATUS_ERR_NO_SUCH_NICK);
 
@@ -1637,7 +1670,7 @@ void silc_server_query_send_reply(SilcServer server,
       idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
       silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_IDENTIFY,
 				     status, 0, ident, 2,
-				     2, idp->data, idp->len,
+				     2, idp->data, silc_buffer_len(idp),
 				     3, entry->server_name,
 				     entry->server_name ?
 				     strlen(entry->server_name) : 0);
@@ -1684,7 +1717,7 @@ void silc_server_query_send_reply(SilcServer server,
       idp = silc_id_payload_encode(entry->id, SILC_ID_CHANNEL);
       silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_IDENTIFY,
 				     status, 0, ident, 2,
-				     2, idp->data, idp->len,
+				     2, idp->data, silc_buffer_len(idp),
 				     3, entry->channel_name,
 				     entry->channel_name ?
 				     strlen(entry->channel_name) : 0);
@@ -1726,14 +1759,14 @@ void silc_server_query_send_reply(SilcServer server,
 	  silc_id_payload_encode(query->ids[query->errors[i].index].id,
 				 query->ids[query->errors[k].index].id_type);
 	tmp = idp->data;
-	len = idp->len;
+	len = silc_buffer_len(idp);
 	type = 2;
       } else {
 	/* Take added ID. */
 	idp = silc_id_payload_encode(query->errors[i].id,
 				     query->errors[k].id_type);
 	tmp = idp->data;
-	len = idp->len;
+	len = silc_buffer_len(idp);
 	type = 2;
       }
 
@@ -1924,10 +1957,11 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
   /* Finally compute the digital signature of all the data we provided
      as an indication that we provided rightfull information, and this
      also authenticates our public key. */
-  if (silc_pkcs_get_key_len(server->pkcs) / 8 <= sizeof(sign) -1  &&
-      silc_pkcs_sign_with_hash(server->pkcs, server->sha1hash,
-			       buffer->data, buffer->len,
-			       sign, &sign_len)) {
+  if (silc_pkcs_private_key_get_len(server->private_key) / 8 <=
+      sizeof(sign) -1  &&
+      silc_pkcs_sign(server->private_key, buffer->data,
+		     silc_buffer_len(buffer), sign, sizeof(sign), &sign_len,
+		     TRUE, server->sha1hash)) {
     pk.type = NULL;
     pk.data = sign;
     pk.data_len = sign_len;
@@ -1953,8 +1987,8 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
 
 SilcClientEntry silc_server_query_client(SilcServer server,
 					 const SilcClientID *client_id,
-					 bool always_resolve,
-					 bool *resolved)
+					 SilcBool always_resolve,
+					 SilcBool *resolved)
 {
   SilcClientEntry client;
 
@@ -1993,11 +2027,12 @@ SilcClientEntry silc_server_query_client(SilcServer server,
     idp = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
     buffer = silc_command_payload_encode_va(SILC_COMMAND_WHOIS,
 					    server->cmd_ident, 1,
-					    4, idp->data, idp->len);
+					    4, idp->data,
+					    silc_buffer_len(idp));
     silc_server_packet_send(server, client ? client->router->connection :
 			    SILC_PRIMARY_ROUTE(server),
 			    SILC_PACKET_COMMAND, 0,
-			    buffer->data, buffer->len, FALSE);
+			    buffer->data, silc_buffer_len(buffer));
     silc_buffer_free(idp);
     silc_buffer_free(buffer);
 

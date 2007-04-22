@@ -71,7 +71,6 @@ typedef struct {
 */
 struct SilcServerStruct {
   char *server_name;
-  int sock;
   SilcServerEntry id_entry;
   SilcServerID *id;
   unsigned char *id_string;
@@ -96,6 +95,8 @@ struct SilcServerStruct {
   unsigned int server_shutdown: 1;   /* Set when shutting down */
   unsigned int no_reconnect   : 1;   /* If set, server won't reconnect to
 					router after disconnection. */
+  unsigned int no_conf        : 1;   /* Set when connecting without
+					configuration. */
 
   SilcServerEntry router;	     /* Pointer to the primary router */
   unsigned long router_connect;	     /* Time when router was connected */
@@ -115,11 +116,15 @@ struct SilcServerStruct {
   SilcHashTable watcher_list;
   SilcHashTable watcher_list_pk;
 
+  SilcDList listeners;		     /* TCP listeners */
+  SilcPacketEngine packet_engine;    /* Packet engine */
+  SilcDList conns;
+  SilcSKR repository;
+
   /* Table of connected sockets */
-  SilcSocketConnection *sockets;
+  SilcPacketStream *sockets;
 
   /* Server public key */
-  SilcPKCS pkcs;
   SilcPublicKey public_key;
   SilcPrivateKey private_key;
 
@@ -145,11 +150,6 @@ struct SilcServerStruct {
   SilcIDListPurge purge_i;
   SilcIDListPurge purge_g;
 
-#ifdef SILC_SIM
-  /* SIM (SILC Module) list */
-  SilcDList sim;
-#endif
-
   /* Hash table for public keys of all clients */
   SilcHashTable pk_hash;
 };
@@ -158,7 +158,7 @@ struct SilcServerStruct {
    Failure packets are processed with timeout and data is saved in this
    structure. */
 typedef struct {
-  SilcSocketConnection sock;
+  SilcPacketStream sock;
   SilcUInt32 failure;
 } *SilcServerFailureContext;
 
@@ -234,15 +234,20 @@ do {						\
 #define SILC_GET_SKE_FLAGS(x, p)			\
   if ((x)) {						\
     if ((x)->param && (x)->param->key_exchange_pfs)	\
-      (p)->flags |= SILC_SKE_SP_FLAG_PFS;		\
+      (p) |= SILC_SKE_SP_FLAG_PFS;			\
     if (!(x)->publickeys)				\
-      (p)->flags |= SILC_SKE_SP_FLAG_MUTUAL;		\
+      (p) |= SILC_SKE_SP_FLAG_MUTUAL;			\
   }
 
+#define SILC_CONNTYPE_STRING(ctype)			\
+  (ctype == SILC_CONN_CLIENT ? "Client" :		\
+   ctype == SILC_CONN_SERVER ? "Server" :		\
+   ctype == SILC_CONN_ROUTER ? "Router" : "Unknown")
+
 /* Prototypes */
-SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_final);
-SILC_TASK_CALLBACK_GLOBAL(silc_server_rekey_callback);
-SILC_TASK_CALLBACK_GLOBAL(silc_server_connect_to_router);
+SILC_TASK_CALLBACK(silc_server_rekey_final);
+SILC_TASK_CALLBACK(silc_server_rekey_callback);
+SILC_TASK_CALLBACK(silc_server_connect_to_router);
 void silc_server_watcher_list_destroy(void *key, void *context,
 				      void *user_context);
 

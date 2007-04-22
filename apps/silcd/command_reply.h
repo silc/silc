@@ -41,7 +41,7 @@ typedef struct {
 /* Context sent as argument to all command reply functions */
 typedef struct {
   SilcServer server;
-  SilcSocketConnection sock;
+  SilcPacketStream sock;
   SilcCommandPayload payload;
   SilcArgumentPayload args;
 
@@ -64,7 +64,7 @@ void silc_server_command_reply_##func(void *context, void *context2)
 /* Prototypes */
 void silc_server_command_reply_free(SilcServerCommandReplyContext cmd);
 void silc_server_command_reply_process(SilcServer server,
-				       SilcSocketConnection sock,
+				       SilcPacketStream sock,
 				       SilcBuffer buffer);
 SILC_SERVER_CMD_REPLY_FUNC(whois);
 SILC_SERVER_CMD_REPLY_FUNC(whowas);

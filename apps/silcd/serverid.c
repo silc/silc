@@ -54,14 +54,14 @@ void silc_id_create_server_id(const char *ip, SilcUInt16 port, SilcRng rng,
    caller must recall the function with different nickname. If this returns
    TRUE the new ID was created successfully. */
 
-bool silc_id_create_client_id(SilcServer server,
-			      SilcServerID *server_id, SilcRng rng,
-			      SilcHash md5hash,
-			      unsigned char *nickname, SilcUInt32 nick_len,
-			      SilcClientID **new_id)
+SilcBool silc_id_create_client_id(SilcServer server,
+				  SilcServerID *server_id, SilcRng rng,
+				  SilcHash md5hash,
+				  unsigned char *nickname, SilcUInt32 nick_len,
+				  SilcClientID **new_id)
 {
   unsigned char hash[16];
-  bool finding = FALSE;
+  SilcBool finding = FALSE;
 
   SILC_LOG_DEBUG(("Creating new Client ID"));
 
@@ -107,11 +107,11 @@ bool silc_id_create_client_id(SilcServer server,
 
 /* Creates Channel ID */
 
-bool silc_id_create_channel_id(SilcServer server,
-			       SilcServerID *router_id, SilcRng rng,
-			       SilcChannelID **new_id)
+SilcBool silc_id_create_channel_id(SilcServer server,
+				   SilcServerID *router_id, SilcRng rng,
+				   SilcChannelID **new_id)
 {
-  bool finding = TRUE;
+  SilcBool finding = TRUE;
 
   SILC_LOG_DEBUG(("Creating new Channel ID"));
 
@@ -148,16 +148,19 @@ bool silc_id_create_channel_id(SilcServer server,
 /* Checks whether the `server_id' is valid.  It must be based to the
    IP address provided in the `remote' socket connection. */
 
-bool silc_id_is_valid_server_id(SilcServer server,
-				SilcServerID *server_id,
-				SilcSocketConnection remote)
+SilcBool silc_id_is_valid_server_id(SilcServer server,
+				    SilcServerID *server_id,
+				    SilcPacketStream remote)
 {
   unsigned char ip[16];
+  const char *remote_ip;
+  SilcStream stream = silc_packet_stream_get_stream(remote);
 
-  if (!silc_net_addr2bin(remote->ip, ip, sizeof(ip)))
+  silc_socket_stream_get_info(stream, NULL, NULL, &remote_ip, NULL);
+  if (!silc_net_addr2bin(remote_ip, ip, sizeof(ip)))
     return FALSE;
 
-  if (silc_net_is_ip4(remote->ip)) {
+  if (silc_net_is_ip4(remote_ip)) {
     if (!memcmp(server_id->ip.data, ip, 4))
       return TRUE;
   } else {

@@ -73,7 +73,7 @@ void silc_server_route_add(SilcUInt32 index, unsigned int dest,
 			   SilcServerEntry router);
 SilcServerEntry silc_server_route_check(SilcUInt32 dest, 
 					SilcUInt16 port);
-SilcSocketConnection silc_server_route_get(SilcServer server, void *id,
+SilcPacketStream silc_server_route_get(SilcServer server, void *id,
 					   SilcIdType id_type);
 
 #endif

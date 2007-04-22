@@ -1,6 +1,6 @@
 /*
 
-  server_query.h 
+  server_query.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -26,8 +26,8 @@
    SILC_COMMAND_IDENTIFY.  This function handles the reply sending
    to the entity who sent this query to us automatically.  Returns
    TRUE if the query is being processed or FALSE on error. */
-bool silc_server_query_command(SilcServer server, SilcCommand querycmd,
-			       SilcServerCommandContext cmd);
+SilcBool silc_server_query_command(SilcServer server, SilcCommand querycmd,
+				   SilcServerCommandContext cmd);
 
 /* Find client by the Client ID indicated by the `client_id', and if not
    found then query it by using WHOIS command.  The client information
@@ -40,7 +40,7 @@ bool silc_server_query_command(SilcServer server, SilcCommand querycmd,
    function.  The server->cmd_ident includes the query identifier. */
 SilcClientEntry silc_server_query_client(SilcServer server,
 					 const SilcClientID *client_id,
-					 bool always_resolve,
-					 bool *resolved);
+					 SilcBool always_resolve,
+					 SilcBool *resolved);
 
 #endif /* SERVER_QUERY_H */

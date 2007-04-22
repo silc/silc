@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -234,12 +234,6 @@ static void silc_server_daemonise(SilcServer server)
      to stderr are changed to SILC_SERVER_LOG_ERROR() */
 }
 
-static void signal_handler(int sig)
-{
-  /* Mark the signal to be caller after this signal is over. */
-  silc_schedule_signal_call(silcd->schedule, sig);
-}
-
 SILC_TASK_CALLBACK(got_hup)
 {
   /* First, reset all log files (they might have been deleted) */
@@ -333,10 +327,11 @@ SILC_TASK_CALLBACK(dump_stats)
     fprintf(fdd, "  primary router         : %s\n",
       silcd->router->server_name ? silcd->router->server_name : "");
 
+#if 0
   /* Dump socket connections */
   {
     int i;
-    SilcSocketConnection s;
+    SilcPacketStream s;
 
     fprintf(fdd, "\nDumping socket connections\n");
     for (i = 0; i < silcd->config->param.connections_max; i++) {
@@ -349,10 +344,11 @@ SILC_TASK_CALLBACK(dump_stats)
 	      (unsigned int)s->flags);
     }
   }
+#endif
 
   /* Dump lists */
   {
-    SilcIDCacheList list = NULL;
+    SilcList list;
     SilcIDCacheEntry id_cache = NULL;
     SilcServerEntry server_entry;
     SilcClientEntry client_entry;
@@ -362,46 +358,35 @@ SILC_TASK_CALLBACK(dump_stats)
     fprintf(fdd, "\nDumping databases\n");
 
     if (silc_idcache_get_all(silcd->local_list->servers, &list)) {
-      if (silc_idcache_list_first(list, &id_cache)) {
-	fprintf(fdd, "\nServers in local-list:\n");
-	c = 1;
-	while (id_cache) {
+      c = 1;
+      fprintf(fdd, "\nServers in local-list:\n");
+      while ((id_cache = silc_list_get(list))) {
 	  server_entry = (SilcServerEntry)id_cache->context;
 	  fprintf(fdd, "  %d: name %s id %s status 0x%x\n", c,
 		  server_entry->server_name ? server_entry->server_name :
 		  "N/A", server_entry->id ?
 		  silc_id_render(server_entry->id, SILC_ID_SERVER) : "N/A",
 		  server_entry->data.status);
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
 	  c++;
-	}
       }
-      silc_idcache_list_free(list);
     }
     if (silc_idcache_get_all(silcd->global_list->servers, &list)) {
-      if (silc_idcache_list_first(list, &id_cache)) {
 	fprintf(fdd, "\nServers in global-list:\n");
 	c = 1;
-	while (id_cache) {
+        while ((id_cache = silc_list_get(list))) {
 	  server_entry = (SilcServerEntry)id_cache->context;
 	  fprintf(fdd, "  %d: name %s id %s status 0x%x\n", c,
 		  server_entry->server_name ? server_entry->server_name :
 		  "N/A", server_entry->id ?
 		  silc_id_render(server_entry->id, SILC_ID_SERVER) : "N/A",
 		  server_entry->data.status);
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
 	  c++;
-	}
-      }
-      silc_idcache_list_free(list);
+        }
     }
     if (silc_idcache_get_all(silcd->local_list->clients, &list)) {
-      if (silc_idcache_list_first(list, &id_cache)) {
 	fprintf(fdd, "\nClients in local-list:\n");
 	c = 1;
-	while (id_cache) {
+        while ((id_cache = silc_list_get(list))) {
 	  client_entry = (SilcClientEntry)id_cache->context;
 	  server_entry = client_entry->router;
 	  fprintf(fdd, "  %d: name %s id %s status 0x%x from %s\n", c,
@@ -411,18 +396,13 @@ SILC_TASK_CALLBACK(dump_stats)
 		  client_entry->data.status, server_entry ?
 		  server_entry->server_name ? server_entry->server_name :
 		  "N/A" : "local");
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
 	  c++;
 	}
-      }
-      silc_idcache_list_free(list);
     }
     if (silc_idcache_get_all(silcd->global_list->clients, &list)) {
-      if (silc_idcache_list_first(list, &id_cache)) {
 	fprintf(fdd, "\nClients in global-list:\n");
 	c = 1;
-	while (id_cache) {
+        while ((id_cache = silc_list_get(list))) {
 	  client_entry = (SilcClientEntry)id_cache->context;
 	  server_entry = client_entry->router;
 	  fprintf(fdd, "  %d: name %s id %s status 0x%x from %s\n", c,
@@ -432,46 +412,32 @@ SILC_TASK_CALLBACK(dump_stats)
 		  client_entry->data.status, server_entry ?
 		  server_entry->server_name ? server_entry->server_name :
 		  "N/A" : "local");
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
 	  c++;
 	}
-      }
-      silc_idcache_list_free(list);
     }
     if (silc_idcache_get_all(silcd->local_list->channels, &list)) {
-      if (silc_idcache_list_first(list, &id_cache)) {
 	fprintf(fdd, "\nChannels in local-list:\n");
 	c = 1;
-	while (id_cache) {
+        while ((id_cache = silc_list_get(list))) {
 	  channel_entry = (SilcChannelEntry)id_cache->context;
 	  fprintf(fdd, "  %d: name %s id %s\n", c,
 		  channel_entry->channel_name ? channel_entry->channel_name :
 		  "N/A", channel_entry->id ?
 		  silc_id_render(channel_entry->id, SILC_ID_CHANNEL) : "N/A");
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
 	  c++;
 	}
-      }
-      silc_idcache_list_free(list);
     }
     if (silc_idcache_get_all(silcd->global_list->channels, &list)) {
-      if (silc_idcache_list_first(list, &id_cache)) {
 	fprintf(fdd, "\nChannels in global-list:\n");
 	c = 1;
-	while (id_cache) {
+        while ((id_cache = silc_list_get(list))) {
 	  channel_entry = (SilcChannelEntry)id_cache->context;
 	  fprintf(fdd, "  %d: name %s id %s\n", c,
 		  channel_entry->channel_name ? channel_entry->channel_name :
 		  "N/A", channel_entry->id ?
 		  silc_id_render(channel_entry->id, SILC_ID_CHANNEL) : "N/A");
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
 	  c++;
 	}
-      }
-      silc_idcache_list_free(list);
     }
   }
 #endif
@@ -593,8 +559,8 @@ void silc_server_stderr(SilcLogType type, char *message)
 int main(int argc, char **argv)
 {
   int ret, opt, option_index;
-  bool foreground = FALSE;
-  bool opt_create_keypair = FALSE;
+  SilcBool foreground = FALSE;
+  SilcBool opt_create_keypair = FALSE;
   char *silcd_config_file = NULL;
   struct sigaction sa;
 
@@ -614,7 +580,7 @@ int main(int argc, char **argv)
 	  printf("SILCd Secure Internet Live Conferencing daemon, "
 		 "version %s (base: SILC Toolkit %s)\n",
 		 silc_dist_version, silc_version);
-	  printf("(c) 1997 - 2005 Pekka Riikonen "
+	  printf("(c) 1997 - 2007 Pekka Riikonen "
 		 "<priikone@silcnet.org>\n");
 	  exit(0);
 	  break;
@@ -705,7 +671,7 @@ int main(int argc, char **argv)
     silc_hash_register_default();
     silc_hmac_register_default();
     silc_create_key_pair(opt_pkcs, opt_bits, pubfile, prvfile,
-			 opt_identifier, "", NULL, NULL, NULL, FALSE);
+			 opt_identifier, "", NULL, NULL, FALSE);
     exit(0);
   }
 
@@ -726,7 +692,7 @@ int main(int argc, char **argv)
   silc_hmac_register_default();
 
   /* Read configuration files */
-  silcd->config = silc_server_config_alloc(silcd_config_file);
+  silcd->config = silc_server_config_alloc(silcd_config_file, silcd);
   if (silcd->config == NULL)
     goto fail;
   silcd->config_file = silcd_config_file;
@@ -759,15 +725,10 @@ int main(int argc, char **argv)
 #endif /* SIGXCPU */
 
   /* Handle specificly some other signals. */
-  sa.sa_handler = signal_handler;
-  sigaction(SIGHUP, &sa, NULL);
-  sigaction(SIGTERM, &sa, NULL);
-  sigaction(SIGINT, &sa, NULL);
-  sigaction(SIGUSR1, &sa, NULL);
-  silc_schedule_signal_register(silcd->schedule, SIGHUP, got_hup, NULL);
-  silc_schedule_signal_register(silcd->schedule, SIGTERM, stop_server, NULL);
-  silc_schedule_signal_register(silcd->schedule, SIGINT, stop_server, NULL);
-  silc_schedule_signal_register(silcd->schedule, SIGUSR1, dump_stats, NULL);
+  silc_schedule_task_add_signal(silcd->schedule, SIGHUP, got_hup, NULL);
+  silc_schedule_task_add_signal(silcd->schedule, SIGTERM, stop_server, NULL);
+  silc_schedule_task_add_signal(silcd->schedule, SIGINT, stop_server, NULL);
+  silc_schedule_task_add_signal(silcd->schedule, SIGUSR1, dump_stats, NULL);
 
   if (!foreground) {
     /* Before running the server, fork to background. */

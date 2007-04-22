@@ -1,10 +1,11 @@
+
 /*
 
   servercommand.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -49,10 +50,10 @@ extern SilcServerCommand silc_command_list[];
 /* Context sent as argument to all commands */
 typedef struct {
   SilcServer server;
-  SilcSocketConnection sock;
+  SilcPacketStream sock;
   SilcCommandPayload payload;
   SilcArgumentPayload args;
-  SilcPacketContext *packet;
+  SilcPacket packet;
   int pending;			/* Command is being re-processed when TRUE */
   int users;			/* Reference counter */
 } *SilcServerCommandContext;
@@ -99,18 +100,18 @@ do {									\
 
 /* Prototypes */
 void silc_server_command_process(SilcServer server,
-				 SilcSocketConnection sock,
-				 SilcPacketContext *packet);
+				 SilcPacketStream sock,
+				 SilcPacket packet);
 SilcServerCommandContext silc_server_command_alloc();
 void silc_server_command_free(SilcServerCommandContext ctx);
 SilcServerCommandContext
 silc_server_command_dup(SilcServerCommandContext ctx);
-bool silc_server_command_pending(SilcServer server,
+SilcBool silc_server_command_pending(SilcServer server,
 				 SilcCommand reply_cmd,
 				 SilcUInt16 ident,
 				 SilcCommandCb callback,
 				 void *context);
-bool silc_server_command_pending_timed(SilcServer server,
+SilcBool silc_server_command_pending_timed(SilcServer server,
 				       SilcCommand reply_cmd,
 				       SilcUInt16 ident,
 				       SilcCommandCb callback,

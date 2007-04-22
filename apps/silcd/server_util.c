@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -127,12 +127,12 @@ silc_server_remove_clients_channels(SilcServer server,
    too.  If `server_signoff' is TRUE then SERVER_SIGNOFF notify is
    distributed to our local clients. */
 
-bool silc_server_remove_clients_by_server(SilcServer server,
-					  SilcServerEntry router,
-					  SilcServerEntry entry,
-					  bool server_signoff)
+SilcBool silc_server_remove_clients_by_server(SilcServer server,
+					      SilcServerEntry router,
+					      SilcServerEntry entry,
+					      SilcBool server_signoff)
 {
-  SilcIDCacheList list = NULL;
+  SilcList list;
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client = NULL;
   SilcBuffer idp;
@@ -165,145 +165,126 @@ bool silc_server_remove_clients_by_server(SilcServer server,
     argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
     argv_lens = silc_realloc(argv_lens,  sizeof(*argv_lens) * (argc + 1));
     argv_types = silc_realloc(argv_types, sizeof(*argv_types) * (argc + 1));
-    argv[argc] = silc_calloc(idp->len, sizeof(*argv[0]));
-    memcpy(argv[argc], idp->data, idp->len);
-    argv_lens[argc] = idp->len;
+    argv[argc] = silc_calloc(silc_buffer_len(idp), sizeof(*argv[0]));
+    memcpy(argv[argc], idp->data, silc_buffer_len(idp));
+    argv_lens[argc] = silc_buffer_len(idp);
     argv_types[argc] = argc + 1;
     argc++;
     silc_buffer_free(idp);
   }
 
   if (silc_idcache_get_all(server->local_list->clients, &list)) {
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	client = (SilcClientEntry)id_cache->context;
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      client = (SilcClientEntry)id_cache->context;
 
-	/* If client is not registered, is not originated from `router'
-	   and is not owned by `entry', skip it. */
-	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
-	    client->router != router ||
-	    (router != entry && !SILC_ID_COMPARE(client->id, entry->id,
-						 client->id->ip.data_len))) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
+      /* If client is not registered, is not originated from `router'
+	 and is not owned by `entry', skip it. */
+      if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
+	  client->router != router ||
+	  (router != entry && !SILC_ID_COMPARE(client->id, entry->id,
+					       client->id->ip.data_len))) {
+	continue;
+      }
 
-	if (server_signoff) {
-	  idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-	  argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
-	  argv_lens = silc_realloc(argv_lens, sizeof(*argv_lens) *
-				   (argc + 1));
-	  argv_types = silc_realloc(argv_types, sizeof(*argv_types) *
-				    (argc + 1));
-	  argv[argc] = silc_calloc(idp->len, sizeof(*argv[0]));
-	  memcpy(argv[argc], idp->data, idp->len);
-	  argv_lens[argc] = idp->len;
-	  argv_types[argc] = argc + 1;
-	  argc++;
-	  silc_buffer_free(idp);
-	}
+      if (server_signoff) {
+	idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+	argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
+	argv_lens = silc_realloc(argv_lens, sizeof(*argv_lens) *
+				 (argc + 1));
+	argv_types = silc_realloc(argv_types, sizeof(*argv_types) *
+				  (argc + 1));
+	argv[argc] = silc_calloc(silc_buffer_len(idp), sizeof(*argv[0]));
+	memcpy(argv[argc], idp->data, silc_buffer_len(idp));
+	argv_lens[argc] = silc_buffer_len(idp);
+	argv_types[argc] = argc + 1;
+	argc++;
+	silc_buffer_free(idp);
+      }
 
-	/* Update statistics */
-	server->stat.clients--;
-	if (server->stat.cell_clients)
-	  server->stat.cell_clients--;
-	SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
-	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
+      /* Update statistics */
+      server->stat.clients--;
+      if (server->stat.cell_clients)
+	server->stat.cell_clients--;
+      SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
+      SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
-	if (client->data.public_key)
-	  silc_hash_table_del_by_context(server->pk_hash,
-	                                 client->data.public_key,
-	    			         client);
-	silc_server_remove_clients_channels(server, entry, clients,
-					    client, channels);
-	silc_server_del_from_watcher_list(server, client);
+      if (client->data.public_key)
+	silc_hash_table_del_by_context(server->pk_hash,
+				       client->data.public_key,
+				       client);
+      silc_server_remove_clients_channels(server, entry, clients,
+					  client, channels);
+      silc_server_del_from_watcher_list(server, client);
 
-	/* Remove the client entry */
-	if (!server_signoff) {
-	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
-	  client->mode = 0;
-	  client->router = NULL;
-	  client->connection = NULL;
-	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
-	} else {
-	  silc_idlist_del_data(client);
-	  silc_idlist_del_client(server->local_list, client);
-	}
-
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
+      /* Remove the client entry */
+      if (!server_signoff) {
+	client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+	client->mode = 0;
+	client->router = NULL;
+	client->connection = NULL;
+      } else {
+	silc_idlist_del_data(client);
+	silc_idlist_del_client(server->local_list, client);
       }
     }
-    silc_idcache_list_free(list);
   }
 
   if (silc_idcache_get_all(server->global_list->clients, &list)) {
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      client = (SilcClientEntry)id_cache->context;
 
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	client = (SilcClientEntry)id_cache->context;
+      /* If client is not registered, is not originated from `router'
+	 and is not owned by `entry', skip it. */
+      if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
+	  client->router != router ||
+	  (router != entry && !SILC_ID_COMPARE(client->id, entry->id,
+					       client->id->ip.data_len))) {
+	continue;
+      }
 
-	/* If client is not registered, is not originated from `router'
-	   and is not owned by `entry', skip it. */
-	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
-	    client->router != router ||
-	    (router != entry && !SILC_ID_COMPARE(client->id, entry->id,
-						 client->id->ip.data_len))) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
+      if (server_signoff) {
+	idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+	argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
+	argv_lens = silc_realloc(argv_lens, sizeof(*argv_lens) *
+				 (argc + 1));
+	argv_types = silc_realloc(argv_types, sizeof(*argv_types) *
+				  (argc + 1));
+	argv[argc] = silc_calloc(silc_buffer_len(idp), sizeof(*argv[0]));
+	memcpy(argv[argc], idp->data, silc_buffer_len(idp));
+	argv_lens[argc] = silc_buffer_len(idp);
+	argv_types[argc] = argc + 1;
+	argc++;
+	silc_buffer_free(idp);
+      }
 
-	if (server_signoff) {
-	  idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-	  argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
-	  argv_lens = silc_realloc(argv_lens, sizeof(*argv_lens) *
-				   (argc + 1));
-	  argv_types = silc_realloc(argv_types, sizeof(*argv_types) *
-				    (argc + 1));
-	  argv[argc] = silc_calloc(idp->len, sizeof(*argv[0]));
-	  memcpy(argv[argc], idp->data, idp->len);
-	  argv_lens[argc] = idp->len;
-	  argv_types[argc] = argc + 1;
-	  argc++;
-	  silc_buffer_free(idp);
-	}
+      /* Update statistics */
+      server->stat.clients--;
+      if (server->stat.cell_clients)
+	server->stat.cell_clients--;
+      SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
+      SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
-	/* Update statistics */
-	server->stat.clients--;
-	if (server->stat.cell_clients)
-	  server->stat.cell_clients--;
-	SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
-	SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
+      if (client->data.public_key)
+	silc_hash_table_del_by_context(server->pk_hash,
+				       client->data.public_key,
+				       client);
+      silc_server_remove_clients_channels(server, entry, clients,
+					  client, channels);
+      silc_server_del_from_watcher_list(server, client);
 
-	if (client->data.public_key)
-	  silc_hash_table_del_by_context(server->pk_hash,
-	                                 client->data.public_key,
-	    			         client);
-	silc_server_remove_clients_channels(server, entry, clients,
-					    client, channels);
-	silc_server_del_from_watcher_list(server, client);
-
-	/* Remove the client entry */
-	if (!server_signoff) {
-	  client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
-	  client->mode = 0;
-	  client->router = NULL;
-	  client->connection = NULL;
-	  id_cache->expire = SILC_ID_CACHE_EXPIRE_DEF;
-	} else {
-	  silc_idlist_del_data(client);
-	  silc_idlist_del_client(server->global_list, client);
-	}
-
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
+      /* Remove the client entry */
+      if (!server_signoff) {
+	client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
+	client->mode = 0;
+	client->router = NULL;
+	client->connection = NULL;
+      } else {
+	silc_idlist_del_data(client);
+	silc_idlist_del_client(server->global_list, client);
       }
     }
-    silc_idcache_list_free(list);
   }
 
   /* Return now if we are shutting down */
@@ -347,11 +328,11 @@ bool silc_server_remove_clients_by_server(SilcServer server,
 					  argc, args);
     silc_server_packet_send_clients(server, clients,
 				    SILC_PACKET_NOTIFY, 0, FALSE,
-				    not->data, not->len, FALSE);
+				    not->data, silc_buffer_len(not));
 
     /* Send notify also to local backup routers */
     silc_server_backup_send(server, NULL, SILC_PACKET_NOTIFY, 0,
-			    not->data, not->len, FALSE, TRUE);
+			    not->data, silc_buffer_len(not), FALSE, TRUE);
 
     silc_buffer_free(args);
     silc_buffer_free(not);
@@ -375,7 +356,7 @@ bool silc_server_remove_clients_by_server(SilcServer server,
     }
 
     /* Do not send the channel key if private channel key mode is set */
-    if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY || !channel->channel_key)
+    if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY || !channel->send_key)
       continue;
 
     silc_server_send_channel_key(server, NULL, channel,
@@ -393,121 +374,108 @@ silc_server_update_clients_by_real_server(SilcServer server,
 					  SilcServerEntry from,
 					  SilcServerEntry to,
 					  SilcClientEntry client,
-					  bool local,
+					  SilcBool local,
 					  SilcIDCacheEntry client_cache)
 {
   SilcServerEntry server_entry;
   SilcIDCacheEntry id_cache = NULL;
-  SilcIDCacheList list;
-  bool tolocal = (to == server->id_entry);
+  SilcList list;
+  SilcBool tolocal = (to == server->id_entry);
 
   SILC_LOG_DEBUG(("Start"));
 
   if (!silc_idcache_get_all(server->local_list->servers, &list))
     return NULL;
 
-  if (silc_idcache_list_first(list, &id_cache)) {
-    while (id_cache) {
-      server_entry = (SilcServerEntry)id_cache->context;
-      if (server_entry != from &&
-	  (tolocal || server_entry != server->id_entry) &&
-	  SILC_ID_COMPARE(server_entry->id, client->id,
-			  client->id->ip.data_len)) {
-	SILC_LOG_DEBUG(("Found (local) %s",
-			silc_id_render(server_entry->id, SILC_ID_SERVER)));
+  silc_list_start(list);
+  while ((id_cache = silc_list_get(list))) {
+    server_entry = (SilcServerEntry)id_cache->context;
+    if (server_entry != from &&
+	(tolocal || server_entry != server->id_entry) &&
+	SILC_ID_COMPARE(server_entry->id, client->id,
+			client->id->ip.data_len)) {
+      SILC_LOG_DEBUG(("Found (local) %s",
+		      silc_id_render(server_entry->id, SILC_ID_SERVER)));
 
-	if (!server_entry->data.send_key && server_entry->router) {
-	  SILC_LOG_DEBUG(("Server not locally connected, use its router"));
-	  /* If the client is not marked as local then move it to local list
-	     since the server is local. */
-	  if (!local) {
-	    SILC_LOG_DEBUG(("Moving client to local list"));
-	    silc_idcache_add(server->local_list->clients, client_cache->name,
-			     client_cache->id, client_cache->context,
-			     client_cache->expire, NULL);
-	    silc_idcache_del_by_context(server->global_list->clients, client);
-	  }
-	  server_entry = server_entry->router;
-	} else {
-	  SILC_LOG_DEBUG(("Server locally connected"));
-	  /* If the client is not marked as local then move it to local list
-	     since the server is local. */
-	  if (server_entry->server_type != SILC_BACKUP_ROUTER && !local) {
-	    SILC_LOG_DEBUG(("Moving client to local list"));
-	    silc_idcache_add(server->local_list->clients, client_cache->name,
-			     client_cache->id, client_cache->context,
-			     client_cache->expire, NULL);
-	    silc_idcache_del_by_context(server->global_list->clients, client);
-
-	  } else if (server->server_type == SILC_BACKUP_ROUTER && local) {
-	    /* If we are backup router and this client is on local list, we
-	       must move it to global list, as it is not currently local to
-	       us (we are not primary). */
-	    SILC_LOG_DEBUG(("Moving client to global list"));
-	    silc_idcache_add(server->global_list->clients, client_cache->name,
-			     client_cache->id, client_cache->context,
-			     client_cache->expire, NULL);
-	    silc_idcache_del_by_context(server->local_list->clients, client);
-	  }
+      if (!SILC_IS_LOCAL(server_entry) && server_entry->router) {
+	SILC_LOG_DEBUG(("Server not locally connected, use its router"));
+	/* If the client is not marked as local then move it to local list
+	   since the server is local. */
+	if (!local) {
+	  SILC_LOG_DEBUG(("Moving client to local list"));
+	  silc_idcache_add(server->local_list->clients, client_cache->name,
+			   client_cache->id, client_cache->context);
+	  silc_idcache_del_by_context(server->global_list->clients, client,
+				      NULL);
 	}
+	server_entry = server_entry->router;
+      } else {
+	SILC_LOG_DEBUG(("Server locally connected"));
+	/* If the client is not marked as local then move it to local list
+	   since the server is local. */
+	if (server_entry->server_type != SILC_BACKUP_ROUTER && !local) {
+	  SILC_LOG_DEBUG(("Moving client to local list"));
+	  silc_idcache_add(server->local_list->clients, client_cache->name,
+			   client_cache->id, client_cache->context);
+	  silc_idcache_del_by_context(server->global_list->clients, client,
+				      NULL);
 
-	silc_idcache_list_free(list);
-	return server_entry;
+	} else if (server->server_type == SILC_BACKUP_ROUTER && local) {
+	  /* If we are backup router and this client is on local list, we
+	     must move it to global list, as it is not currently local to
+	     us (we are not primary). */
+	  SILC_LOG_DEBUG(("Moving client to global list"));
+	  silc_idcache_add(server->global_list->clients, client_cache->name,
+			   client_cache->id, client_cache->context);
+	  silc_idcache_del_by_context(server->local_list->clients, client,
+				      NULL);
+	}
       }
 
-      if (!silc_idcache_list_next(list, &id_cache))
-	break;
+      return server_entry;
     }
   }
-
-  silc_idcache_list_free(list);
 
   if (!silc_idcache_get_all(server->global_list->servers, &list))
     return NULL;
 
-  if (silc_idcache_list_first(list, &id_cache)) {
-    while (id_cache) {
-      server_entry = (SilcServerEntry)id_cache->context;
-      if (server_entry != from && server_entry != server->id_entry &&
-	  (tolocal || server_entry != server->id_entry) &&
-	  SILC_ID_COMPARE(server_entry->id, client->id,
-			  client->id->ip.data_len)) {
-	SILC_LOG_DEBUG(("Found (global) %s",
-			silc_id_render(server_entry->id, SILC_ID_SERVER)));
+  silc_list_start(list);
+  while ((id_cache = silc_list_get(list))) {
+    server_entry = (SilcServerEntry)id_cache->context;
+    if (server_entry != from && server_entry != server->id_entry &&
+	(tolocal || server_entry != server->id_entry) &&
+	SILC_ID_COMPARE(server_entry->id, client->id,
+			client->id->ip.data_len)) {
+      SILC_LOG_DEBUG(("Found (global) %s",
+		      silc_id_render(server_entry->id, SILC_ID_SERVER)));
 
-	if (!server_entry->data.send_key && server_entry->router) {
-	  SILC_LOG_DEBUG(("Server not locally connected, use its router"));
-	  /* If the client is marked as local then move it to global list
-	     since the server is global. */
-	  if (local) {
-	    SILC_LOG_DEBUG(("Moving client to global list"));
-	    silc_idcache_add(server->global_list->clients, client_cache->name,
-			     client_cache->id, client_cache->context, 0, NULL);
-	    silc_idcache_del_by_context(server->local_list->clients, client);
-	  }
-	  server_entry = server_entry->router;
-	} else {
-	  SILC_LOG_DEBUG(("Server locally connected"));
-	  /* If the client is marked as local then move it to global list
-	     since the server is global. */
-	  if (server_entry->server_type != SILC_BACKUP_ROUTER && local) {
-	    SILC_LOG_DEBUG(("Moving client to global list"));
-	    silc_idcache_add(server->global_list->clients, client_cache->name,
-			     client_cache->id, client_cache->context, 0, NULL);
-	    silc_idcache_del_by_context(server->local_list->clients, client);
-	  }
+      if (!SILC_IS_LOCAL(server_entry) && server_entry->router) {
+	SILC_LOG_DEBUG(("Server not locally connected, use its router"));
+	/* If the client is marked as local then move it to global list
+	   since the server is global. */
+	if (local) {
+	  SILC_LOG_DEBUG(("Moving client to global list"));
+	  silc_idcache_add(server->global_list->clients, client_cache->name,
+			   client_cache->id, client_cache->context);
+	  silc_idcache_del_by_context(server->local_list->clients, client,
+				      NULL);
 	}
-
-	silc_idcache_list_free(list);
-	return server_entry;
+	server_entry = server_entry->router;
+      } else {
+	SILC_LOG_DEBUG(("Server locally connected"));
+	/* If the client is marked as local then move it to global list
+	   since the server is global. */
+	if (server_entry->server_type != SILC_BACKUP_ROUTER && local) {
+	  SILC_LOG_DEBUG(("Moving client to global list"));
+	  silc_idcache_add(server->global_list->clients, client_cache->name,
+			   client_cache->id, client_cache->context);
+	  silc_idcache_del_by_context(server->local_list->clients, client,
+				      NULL);
+	}
       }
-
-      if (!silc_idcache_list_next(list, &id_cache))
-	break;
+      return server_entry;
     }
   }
-
-  silc_idcache_list_free(list);
 
   return NULL;
 }
@@ -522,12 +490,12 @@ silc_server_update_clients_by_real_server(SilcServer server,
 void silc_server_update_clients_by_server(SilcServer server,
 					  SilcServerEntry from,
 					  SilcServerEntry to,
-					  bool resolve_real_server)
+					  SilcBool resolve_real_server)
 {
-  SilcIDCacheList list = NULL;
+  SilcList list;
   SilcIDCacheEntry id_cache = NULL;
   SilcClientEntry client = NULL;
-  bool local;
+  SilcBool local;
 
   if (from && from->id) {
     SILC_LOG_DEBUG(("Changing from server %s",
@@ -541,123 +509,105 @@ void silc_server_update_clients_by_server(SilcServer server,
   SILC_LOG_DEBUG(("global list"));
   local = FALSE;
   if (silc_idcache_get_all(server->global_list->clients, &list)) {
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	client = (SilcClientEntry)id_cache->context;
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      client = (SilcClientEntry)id_cache->context;
 
-	/* If entry is disabled skip it.  If entry is local to us, do not
-	   switch it to anyone else, it is ours so skip it. */
-	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
-	    SILC_IS_LOCAL(client)) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
+      /* If entry is disabled skip it.  If entry is local to us, do not
+	 switch it to anyone else, it is ours so skip it. */
+      if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
+	  SILC_IS_LOCAL(client))
+	continue;
 
-	SILC_LOG_DEBUG(("Client %s",
-			silc_id_render(client->id, SILC_ID_CLIENT)));
-	if (client->router && client->router->id)
-	  SILC_LOG_DEBUG(("Client->router %s",
-			  silc_id_render(client->router->id, SILC_ID_SERVER)));
+      SILC_LOG_DEBUG(("Client %s",
+		      silc_id_render(client->id, SILC_ID_CLIENT)));
+      if (client->router && client->router->id)
+	SILC_LOG_DEBUG(("Client->router %s",
+			silc_id_render(client->router->id, SILC_ID_SERVER)));
 
-	if (from) {
-	  if (client->router == from) {
-	    if (resolve_real_server) {
-	      client->router =
-		silc_server_update_clients_by_real_server(server, from, to,
-							  client, local,
-							  id_cache);
-	      if (!client->router) {
-		if (server->server_type == SILC_ROUTER)
-		  client->router = from;
-		else
-		  client->router = to;
-	      }
-	    } else {
-	      client->router = to;
+      if (from) {
+	if (client->router == from) {
+	  if (resolve_real_server) {
+	    client->router =
+	      silc_server_update_clients_by_real_server(server, from, to,
+							client, local,
+							id_cache);
+	    if (!client->router) {
+	      if (server->server_type == SILC_ROUTER)
+		client->router = from;
+	      else
+		client->router = to;
 	    }
+	  } else {
+	    client->router = to;
 	  }
-	} else {
-	  /* All are changed */
-	  if (resolve_real_server)
-	    /* Call this so that the entry is moved to correct list if
-	       needed.  No resolving by real server is actually done. */
-	    silc_server_update_clients_by_real_server(server, NULL, to,
-						      client, local,
-						      id_cache);
-
-	  client->router = to;
 	}
+      } else {
+	/* All are changed */
+	if (resolve_real_server)
+	  /* Call this so that the entry is moved to correct list if
+	     needed.  No resolving by real server is actually done. */
+	  silc_server_update_clients_by_real_server(server, NULL, to,
+						    client, local,
+						    id_cache);
 
-	if (client->router && client->router->id)
-	  SILC_LOG_DEBUG(("Client changed to %s",
-			  silc_id_render(client->router->id, SILC_ID_SERVER)));
-
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
+	client->router = to;
       }
+
+      if (client->router && client->router->id)
+	SILC_LOG_DEBUG(("Client changed to %s",
+			silc_id_render(client->router->id, SILC_ID_SERVER)));
     }
-    silc_idcache_list_free(list);
   }
 
   SILC_LOG_DEBUG(("local list"));
   local = TRUE;
   if (silc_idcache_get_all(server->local_list->clients, &list)) {
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	client = (SilcClientEntry)id_cache->context;
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      client = (SilcClientEntry)id_cache->context;
 
-	/* If entry is disabled skip it.  If entry is local to us, do not
-	   switch it to anyone else, it is ours so skip it. */
-	if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
-	    SILC_IS_LOCAL(client)) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
+      /* If entry is disabled skip it.  If entry is local to us, do not
+	 switch it to anyone else, it is ours so skip it. */
+      if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED) ||
+	  SILC_IS_LOCAL(client))
+	continue;
 
-	SILC_LOG_DEBUG(("Client %s",
-			silc_id_render(client->id, SILC_ID_CLIENT)));
-	if (client->router && client->router->id)
-	  SILC_LOG_DEBUG(("Client->router %s",
-			  silc_id_render(client->router->id, SILC_ID_SERVER)));
+      SILC_LOG_DEBUG(("Client %s",
+		      silc_id_render(client->id, SILC_ID_CLIENT)));
+      if (client->router && client->router->id)
+	SILC_LOG_DEBUG(("Client->router %s",
+			silc_id_render(client->router->id, SILC_ID_SERVER)));
 
-	if (from) {
-	  if (client->router == from) {
-	    if (resolve_real_server) {
-	      client->router =
-		silc_server_update_clients_by_real_server(server, from, to,
-							  client, local,
-							  id_cache);
-	      if (!client->router)
-		client->router = from;
-	    } else {
-	      client->router = to;
-	    }
+      if (from) {
+	if (client->router == from) {
+	  if (resolve_real_server) {
+	    client->router =
+	      silc_server_update_clients_by_real_server(server, from, to,
+							client, local,
+							id_cache);
+	    if (!client->router)
+	      client->router = from;
+	  } else {
+	    client->router = to;
 	  }
-	} else {
-	  /* All are changed */
-	  if (resolve_real_server)
-	    /* Call this so that the entry is moved to correct list if
-	       needed.  No resolving by real server is actually done. */
-	    silc_server_update_clients_by_real_server(server, NULL, to,
-						      client, local,
-						      id_cache);
-
-	  client->router = to;
 	}
+      } else {
+	/* All are changed */
+	if (resolve_real_server)
+	  /* Call this so that the entry is moved to correct list if
+	     needed.  No resolving by real server is actually done. */
+	  silc_server_update_clients_by_real_server(server, NULL, to,
+						    client, local,
+						    id_cache);
 
-	if (client->router && client->router->id)
-	  SILC_LOG_DEBUG(("Client changed to %s",
-			  silc_id_render(client->router->id, SILC_ID_SERVER)));
-
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
+	client->router = to;
       }
+
+      if (client->router && client->router->id)
+	SILC_LOG_DEBUG(("Client changed to %s",
+			silc_id_render(client->router->id, SILC_ID_SERVER)));
     }
-    silc_idcache_list_free(list);
   }
 }
 
@@ -668,120 +618,102 @@ void silc_server_update_servers_by_server(SilcServer server,
 					  SilcServerEntry from,
 					  SilcServerEntry to)
 {
-  SilcIDCacheList list = NULL;
+  SilcList list;
   SilcIDCacheEntry id_cache = NULL;
   SilcServerEntry server_entry = NULL;
 
   SILC_LOG_DEBUG(("Updating servers"));
 
   if (silc_idcache_get_all(server->local_list->servers, &list)) {
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	server_entry = (SilcServerEntry)id_cache->context;
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      server_entry = (SilcServerEntry)id_cache->context;
 
-	/* If entry is local to us, do not switch it to any anyone else,
-	   it is ours. */
-	if (SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry ||
-	    server_entry == from) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
+      /* If entry is local to us, do not switch it to any anyone else,
+	 it is ours. */
+      if (SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry ||
+	  server_entry == from)
+	continue;
 
-	/* If we are standalone router, any server that is not directly
-	   connected to cannot exist anymore.  If we are not standalone
-	   we update it correctly. */
-	if (server->server_type == SILC_ROUTER && server->standalone) {
-	  silc_server_backup_del(server, server_entry);
-	  silc_server_backup_replaced_del(server, server_entry);
-	  silc_idlist_del_data(server_entry);
-	  silc_idlist_del_server(server->local_list, server_entry);
-	  server->stat.servers--;
-	  server->stat.cell_servers--;
-	} else {
-	  /* XXX if we are not standalone, do a check from local config
-	     whether this server is in our cell, but not connected to
-	     us (in which case we must remove it). */
+      /* If we are standalone router, any server that is not directly
+	 connected to cannot exist anymore.  If we are not standalone
+	 we update it correctly. */
+      if (server->server_type == SILC_ROUTER && server->standalone) {
+	silc_server_backup_del(server, server_entry);
+	silc_server_backup_replaced_del(server, server_entry);
+	silc_idlist_del_data(server_entry);
+	silc_idlist_del_server(server->local_list, server_entry);
+	server->stat.servers--;
+	server->stat.cell_servers--;
+      } else {
+	/* XXX if we are not standalone, do a check from local config
+	   whether this server is in our cell, but not connected to
+	   us (in which case we must remove it). */
 
-	  if (from) {
-	    if (server_entry->router == from) {
-	      SILC_LOG_DEBUG(("Updating server (local) %s",
-			      server_entry->server_name ?
-			      server_entry->server_name : ""));
-	      server_entry->router = to;
-	      server_entry->connection = to->connection;
-	    }
-	  } else {
-	    /* Update all */
+	if (from) {
+	  if (server_entry->router == from) {
 	    SILC_LOG_DEBUG(("Updating server (local) %s",
 			    server_entry->server_name ?
 			    server_entry->server_name : ""));
 	    server_entry->router = to;
 	    server_entry->connection = to->connection;
 	  }
+	} else {
+	  /* Update all */
+	  SILC_LOG_DEBUG(("Updating server (local) %s",
+			  server_entry->server_name ?
+			  server_entry->server_name : ""));
+	  server_entry->router = to;
+	  server_entry->connection = to->connection;
 	}
-
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
       }
     }
-    silc_idcache_list_free(list);
   }
 
   if (silc_idcache_get_all(server->global_list->servers, &list)) {
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	server_entry = (SilcServerEntry)id_cache->context;
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      server_entry = (SilcServerEntry)id_cache->context;
 
-	/* If entry is local to us, do not switch it to anyone else,
-	   it is ours. */
-	if (SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry ||
-	    server_entry == from) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
+      /* If entry is local to us, do not switch it to anyone else,
+	 it is ours. */
+      if (SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry ||
+	  server_entry == from)
+	continue;
 
-	/* If we are standalone router, any server that is not directly
-	   connected to cannot exist anymore.  If we are not standalone
-	   we update it correctly. */
-	if (server->server_type == SILC_ROUTER && server->standalone) {
-	  silc_server_backup_del(server, server_entry);
-	  silc_server_backup_replaced_del(server, server_entry);
-	  silc_idlist_del_data(server_entry);
-	  silc_idlist_del_server(server->global_list, server_entry);
-	  server->stat.servers--;
-	  server->stat.cell_servers--;
-	} else {
-	  /* XXX if we are not standalone, do a check from local config
-	     whether this server is in our cell, but not connected to
-	     us (in which case we must remove it). */
+      /* If we are standalone router, any server that is not directly
+	 connected to cannot exist anymore.  If we are not standalone
+	 we update it correctly. */
+      if (server->server_type == SILC_ROUTER && server->standalone) {
+	silc_server_backup_del(server, server_entry);
+	silc_server_backup_replaced_del(server, server_entry);
+	silc_idlist_del_data(server_entry);
+	silc_idlist_del_server(server->global_list, server_entry);
+	server->stat.servers--;
+	server->stat.cell_servers--;
+      } else {
+	/* XXX if we are not standalone, do a check from local config
+	   whether this server is in our cell, but not connected to
+	   us (in which case we must remove it). */
 
-	  if (from) {
-	    if (server_entry->router == from) {
-	      SILC_LOG_DEBUG(("Updating server (global) %s",
-			      server_entry->server_name ?
-			      server_entry->server_name : ""));
-	      server_entry->router = to;
-	      server_entry->connection = to->connection;
-	    }
-	  } else {
-	    /* Update all */
+	if (from) {
+	  if (server_entry->router == from) {
 	    SILC_LOG_DEBUG(("Updating server (global) %s",
 			    server_entry->server_name ?
 			    server_entry->server_name : ""));
 	    server_entry->router = to;
 	    server_entry->connection = to->connection;
 	  }
+	} else {
+	  /* Update all */
+	  SILC_LOG_DEBUG(("Updating server (global) %s",
+			  server_entry->server_name ?
+			  server_entry->server_name : ""));
+	  server_entry->router = to;
+	  server_entry->connection = to->connection;
 	}
-
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
       }
     }
-    silc_idcache_list_free(list);
   }
 }
 
@@ -791,56 +723,40 @@ void silc_server_update_servers_by_server(SilcServer server,
    dropped if `toggle_enabled' is FALSE, after this function is called. */
 
 void silc_server_local_servers_toggle_enabled(SilcServer server,
-					      bool toggle_enabled)
+					      SilcBool toggle_enabled)
 {
-  SilcIDCacheList list = NULL;
+  SilcList list;
   SilcIDCacheEntry id_cache = NULL;
   SilcServerEntry server_entry = NULL;
 
   if (silc_idcache_get_all(server->local_list->servers, &list)) {
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	server_entry = (SilcServerEntry)id_cache->context;
-	if (!SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      server_entry = (SilcServerEntry)id_cache->context;
+      if (!SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry)
+	continue;
 
-	if (toggle_enabled)
-	  server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
-	else
-	  server_entry->data.status |= SILC_IDLIST_STATUS_DISABLED;
+      if (toggle_enabled)
+	server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
+      else
+	server_entry->data.status |= SILC_IDLIST_STATUS_DISABLED;
 
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
-      }
     }
-    silc_idcache_list_free(list);
   }
 
   if (silc_idcache_get_all(server->global_list->servers, &list)) {
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	server_entry = (SilcServerEntry)id_cache->context;
-	if (!SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      server_entry = (SilcServerEntry)id_cache->context;
+      if (!SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry)
+	continue;
 
-	if (toggle_enabled)
-	  server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
-	else
-	  server_entry->data.status |= SILC_IDLIST_STATUS_DISABLED;
+      if (toggle_enabled)
+	server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
+      else
+	server_entry->data.status |= SILC_IDLIST_STATUS_DISABLED;
 
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
-      }
     }
-    silc_idcache_list_free(list);
   }
 }
 
@@ -852,9 +768,9 @@ void silc_server_local_servers_toggle_enabled(SilcServer server,
 
 void silc_server_remove_servers_by_server(SilcServer server,
 					  SilcServerEntry from,
-					  bool remove_clients)
+					  SilcBool remove_clients)
 {
-  SilcIDCacheList list = NULL;
+  SilcList list;
   SilcIDCacheEntry id_cache = NULL;
   SilcServerEntry server_entry = NULL;
 
@@ -862,59 +778,41 @@ void silc_server_remove_servers_by_server(SilcServer server,
 		  from->server_name ? from->server_name : "server"));
 
   if (silc_idcache_get_all(server->local_list->servers, &list)) {
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	server_entry = (SilcServerEntry)id_cache->context;
-	if (SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry ||
-	  server_entry->router != from || server_entry == from) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      server_entry = (SilcServerEntry)id_cache->context;
+      if (SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry ||
+	  server_entry->router != from || server_entry == from)
+	continue;
 
-	/* Remove clients owned by this server */
-	if (remove_clients)
-	  silc_server_remove_clients_by_server(server, from, server_entry,
-					       TRUE);
+      /* Remove clients owned by this server */
+      if (remove_clients)
+	silc_server_remove_clients_by_server(server, from, server_entry,
+					     TRUE);
 
-	/* Remove the server */
-	silc_server_backup_del(server, server_entry);
-	silc_idlist_del_server(server->local_list, server_entry);
-
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
-      }
+      /* Remove the server */
+      silc_server_backup_del(server, server_entry);
+      silc_idlist_del_server(server->local_list, server_entry);
     }
-    silc_idcache_list_free(list);
   }
 
   if (silc_idcache_get_all(server->global_list->servers, &list)) {
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	server_entry = (SilcServerEntry)id_cache->context;
-	if (SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry ||
-	  server_entry->router != from || server_entry == from) {
-	  if (!silc_idcache_list_next(list, &id_cache))
-	    break;
-	  else
-	    continue;
-	}
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      server_entry = (SilcServerEntry)id_cache->context;
+      if (SILC_IS_LOCAL(server_entry) || server_entry == server->id_entry ||
+	  server_entry->router != from || server_entry == from)
+	continue;
 
-	/* Remove clients owned by this server */
-	if (remove_clients)
-	  silc_server_remove_clients_by_server(server, from, server_entry,
-					       TRUE);
+      /* Remove clients owned by this server */
+      if (remove_clients)
+	silc_server_remove_clients_by_server(server, from, server_entry,
+					     TRUE);
 
-	/* Remove the server */
-	silc_server_backup_del(server, server_entry);
-	silc_idlist_del_server(server->global_list, server_entry);
-
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
-      }
+      /* Remove the server */
+      silc_server_backup_del(server, server_entry);
+      silc_idlist_del_server(server->global_list, server_entry);
     }
-    silc_idcache_list_free(list);
   }
 }
 
@@ -923,23 +821,19 @@ void silc_server_remove_servers_by_server(SilcServer server,
 void silc_server_remove_channels_by_server(SilcServer server,
 					   SilcServerEntry from)
 {
-  SilcIDCacheList list = NULL;
+  SilcList list;
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel = NULL;
 
   SILC_LOG_DEBUG(("Removing channels by server"));
 
   if (silc_idcache_get_all(server->global_list->channels, &list)) {
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	channel = (SilcChannelEntry)id_cache->context;
-	if (channel->router == from)
-	  silc_idlist_del_channel(server->global_list, channel);
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
-      }
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      channel = (SilcChannelEntry)id_cache->context;
+      if (channel->router == from)
+	silc_idlist_del_channel(server->global_list, channel);
     }
-    silc_idcache_list_free(list);
   }
 }
 
@@ -949,35 +843,31 @@ void silc_server_update_channels_by_server(SilcServer server,
 					   SilcServerEntry from,
 					   SilcServerEntry to)
 {
-  SilcIDCacheList list = NULL;
+  SilcList list;
   SilcIDCacheEntry id_cache = NULL;
   SilcChannelEntry channel = NULL;
 
   SILC_LOG_DEBUG(("Updating channels by server"));
 
   if (silc_idcache_get_all(server->global_list->channels, &list)) {
-    if (silc_idcache_list_first(list, &id_cache)) {
-      while (id_cache) {
-	channel = (SilcChannelEntry)id_cache->context;
-	if (from) {
-	  if (channel->router == from)
-	    channel->router = to;
-	} else {
-	  /* Update all */
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      channel = (SilcChannelEntry)id_cache->context;
+      if (from) {
+	if (channel->router == from)
 	  channel->router = to;
-	}
-	if (!silc_idcache_list_next(list, &id_cache))
-	  break;
+      } else {
+	/* Update all */
+	channel->router = to;
       }
     }
-    silc_idcache_list_free(list);
   }
 }
 
 /* Checks whether given channel has global users.  If it does this returns
    TRUE and FALSE if there is only locally connected clients on the channel. */
 
-bool silc_server_channel_has_global(SilcChannelEntry channel)
+SilcBool silc_server_channel_has_global(SilcChannelEntry channel)
 {
   SilcChannelClientEntry chl;
   SilcHashTableList htl;
@@ -997,7 +887,7 @@ bool silc_server_channel_has_global(SilcChannelEntry channel)
 /* Checks whether given channel has locally connected users.  If it does this
    returns TRUE and FALSE if there is not one locally connected client. */
 
-bool silc_server_channel_has_local(SilcChannelEntry channel)
+SilcBool silc_server_channel_has_local(SilcChannelEntry channel)
 {
   SilcChannelClientEntry chl;
   SilcHashTableList htl;
@@ -1019,12 +909,12 @@ bool silc_server_channel_has_local(SilcChannelEntry channel)
    users are removed from the channel.  Returns TRUE if the channel is
    destroyed totally, and FALSE if it is permanent and remains. */
 
-bool silc_server_channel_delete(SilcServer server,
-				SilcChannelEntry channel)
+SilcBool silc_server_channel_delete(SilcServer server,
+				    SilcChannelEntry channel)
 {
   SilcChannelClientEntry chl;
   SilcHashTableList htl;
-  bool delchan = !(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH);
+  SilcBool delchan = !(channel->mode & SILC_CHANNEL_MODE_FOUNDER_AUTH);
 
   SILC_LOG_DEBUG(("Deleting channel %s", channel->channel_name));
 
@@ -1082,9 +972,9 @@ bool silc_server_channel_delete(SilcServer server,
    always in up to date thus we can only check the channel list from
    `client' which is faster than checking the user list from `channel'. */
 
-bool silc_server_client_on_channel(SilcClientEntry client,
-				   SilcChannelEntry channel,
-				   SilcChannelClientEntry *chl)
+SilcBool silc_server_client_on_channel(SilcClientEntry client,
+				       SilcChannelEntry channel,
+				       SilcChannelClientEntry *chl)
 {
   if (!client || !channel)
     return FALSE;
@@ -1094,22 +984,55 @@ bool silc_server_client_on_channel(SilcClientEntry client,
 }
 
 /* Find number of sockets by IP address indicated by `ip'. Returns 0 if
-   socket connections with the IP address does not exist. */
+   socket connections with the IP address does not exist.  Counts only
+   fully established connections. */
 
 SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
-					 SilcSocketType type)
+					 SilcConnectionType type)
 {
-  int i, count;
+  SilcServerConnection conn;
+  SilcIDListData idata;
+  const char *ipaddr;
+  int count = 0;
 
-  for (i = 0, count = 0; i < server->config->param.connections_max; i++) {
-    if (server->sockets[i] && !SILC_IS_LISTENER(server->sockets[i]) &&
-	!SILC_IS_HOST_LOOKUP(server->sockets[i]) &&
-	!strcmp(server->sockets[i]->ip, ip) &&
-	server->sockets[i]->type == type)
+  silc_dlist_start(server->conns);
+  while ((conn = silc_dlist_get(server->conns))) {
+    if (!conn->sock)
+      continue;
+    silc_socket_stream_get_info(conn->sock, NULL, NULL, &ipaddr, NULL);
+    idata = silc_packet_get_context(conn->sock);
+    if (!strcmp(ipaddr, ip) && idata && idata->conn_type == type)
       count++;
   }
 
   return count;
+}
+
+/* Find active socket connection by the IP address and port indicated by
+   `ip' and `port', and socket connection type of `type'. */
+
+SilcPacketStream
+silc_server_find_socket_by_host(SilcServer server,
+				SilcConnectionType type,
+				const char *ip, SilcUInt16 port)
+{
+  SilcServerConnection conn;
+  SilcIDListData idata;
+  const char *ipaddr;
+
+  silc_dlist_start(server->conns);
+  while ((conn = silc_dlist_get(server->conns))) {
+    if (!conn->sock)
+      continue;
+    idata = silc_packet_get_context(conn->sock);
+    silc_socket_stream_get_info(conn->sock, NULL, NULL, &ipaddr, NULL);
+    if (!strcmp(ipaddr, ip) &&
+	(!port || conn->remote_port == port) &&
+	idata->conn_type == type)
+      return conn->sock;
+  }
+
+  return NULL;
 }
 
 /* Find number of sockets by IP address indicated by remote host, indicatd
@@ -1119,99 +1042,91 @@ SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
 SilcUInt32 silc_server_num_sockets_by_remote(SilcServer server,
 					     const char *ip,
 					     const char *hostname,
-					     SilcUInt16 port,
-					     SilcSocketType type)
+					     SilcUInt16 port)
 {
-  int i, count;
+  SilcServerConnection conn;
+  int count = 0;
 
   if (!ip && !hostname)
     return 0;
 
-  for (i = 0, count = 0; i < server->config->param.connections_max; i++) {
-    if (server->sockets[i] && !SILC_IS_LISTENER(server->sockets[i]) &&
-	!SILC_IS_HOST_LOOKUP(server->sockets[i]) &&
-	((ip && !strcmp(server->sockets[i]->ip, ip)) ||
-	 (hostname && !strcmp(server->sockets[i]->hostname, hostname))) &&
-	server->sockets[i]->port == port &&
-	server->sockets[i]->type == type)
+  silc_dlist_start(server->conns);
+  while ((conn = silc_dlist_get(server->conns))) {
+    if (((ip && !strcmp(conn->remote_host, ip)) ||
+	 (hostname && !strcmp(conn->remote_host, hostname))) &&
+	conn->remote_port == port)
       count++;
   }
 
   return count;
 }
 
-/* Finds locally cached public key by the public key received in the SKE.
-   If we have it locally cached then we trust it and will use it in the
-   authentication protocol.  Returns the locally cached public key or NULL
-   if we do not find the public key.  */
+/* SKR find callbcak */
 
-SilcPublicKey silc_server_find_public_key(SilcServer server,
-					  SilcHashTable local_public_keys,
-					  SilcPublicKey remote_public_key)
+static void find_callback(SilcSKR skr, SilcSKRFind find,
+			  SilcSKRStatus status, SilcDList keys,
+			  void *context)
 {
-  SilcPublicKey cached_key;
+  SilcPublicKey *public_key = context;
+  SilcSKRKey key;
 
-  SILC_LOG_DEBUG(("Find remote public key (%d keys in local cache)",
-		  silc_hash_table_count(local_public_keys)));
-
-  if (!silc_hash_table_find_ext(local_public_keys, remote_public_key,
-				(void *)&cached_key, NULL,
-				silc_hash_public_key, NULL,
-				silc_hash_public_key_compare, NULL)) {
-    SILC_LOG_ERROR(("Public key not found"));
-    return NULL;
+  if (keys) {
+    silc_dlist_start(keys);
+    key = silc_dlist_get(keys);
+    *public_key = key->key;
+    silc_dlist_uninit(keys);
   }
 
-  SILC_LOG_DEBUG(("Found public key"));
-
-  return cached_key;
+  silc_skr_find_free(find);
 }
 
-/* This returns the first public key from the table of public keys.  This
-   is used only in cases where single public key exists in the table and
-   we want to get a pointer to it.  For public key tables that has multiple
-   keys in it the silc_server_find_public_key must be used. */
+/* Get public key. For public key tables that has multiple keys in it the
+   silc_server_find_public_key must be used. */
 
 SilcPublicKey silc_server_get_public_key(SilcServer server,
-					 SilcHashTable local_public_keys)
+					 SilcSKRKeyUsage usage,
+					 void *key_context)
 {
-  SilcPublicKey cached_key;
-  SilcHashTableList htl;
+  SilcSKRFind find;
+  SilcPublicKey public_key = NULL;
 
   SILC_LOG_DEBUG(("Start"));
 
-  assert(silc_hash_table_count(local_public_keys) < 2);
-
-  silc_hash_table_list(local_public_keys, &htl);
-  if (!silc_hash_table_get(&htl, NULL, (void *)&cached_key)) {
-    silc_hash_table_list_reset(&htl);
+  find = silc_skr_find_alloc();
+  if (!find)
     return NULL;
-  }
-  silc_hash_table_list_reset(&htl);
 
-  return cached_key;
+  silc_skr_find_set_usage(find, usage);
+  silc_skr_find_set_context(find, key_context);
+  silc_skr_find(server->repository, server->schedule,
+		find, find_callback, &public_key);
+
+  return public_key;
 }
 
 /* Check whether the connection `sock' is allowed to connect to us.  This
    checks for example whether there is too much connections for this host,
    and required version for the host etc. */
 
-bool silc_server_connection_allowed(SilcServer server,
-				    SilcSocketConnection sock,
-				    SilcSocketType type,
-				    SilcServerConfigConnParams *global,
-				    SilcServerConfigConnParams *params,
-				    SilcSKE ske)
+SilcBool silc_server_connection_allowed(SilcServer server,
+					SilcPacketStream sock,
+					SilcConnectionType type,
+					SilcServerConfigConnParams *global,
+					SilcServerConfigConnParams *params,
+					SilcSKE ske)
 {
-  SilcUInt32 conn_number = (type == SILC_SOCKET_TYPE_CLIENT ?
+  SilcUInt32 conn_number = (type == SILC_CONN_CLIENT ?
 			    server->stat.my_clients :
-			    type == SILC_SOCKET_TYPE_SERVER ?
+			    type == SILC_CONN_SERVER ?
 			    server->stat.my_servers :
 			    server->stat.my_routers);
   SilcUInt32 num_sockets, max_hosts, max_per_host;
   SilcUInt32 r_protocol_version, l_protocol_version;
   SilcUInt32 r_software_version, l_software_version;
   char *r_vendor_version = NULL, *l_vendor_version;
+  const char *hostname, *ip;
+
+  silc_socket_stream_get_info(sock, NULL, &hostname, &ip, NULL);
 
   SILC_LOG_DEBUG(("Checking whether connection is allowed"));
 
@@ -1232,14 +1147,11 @@ bool silc_server_connection_allowed(SilcServer server,
   if (ske && silc_ske_parse_version(ske, &r_protocol_version, NULL,
 				    &r_software_version, NULL,
 				    &r_vendor_version)) {
-    sock->version = r_protocol_version;
-
     /* Match protocol version */
     if (l_protocol_version && r_protocol_version &&
 	r_protocol_version < l_protocol_version) {
       SILC_LOG_INFO(("Connection %s (%s) is too old version",
-		     sock->hostname, sock->ip));
-      sock->protocol = NULL;
+		     hostname, ip));
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_BAD_VERSION,
 				    "You support too old protocol version");
@@ -1250,8 +1162,7 @@ bool silc_server_connection_allowed(SilcServer server,
     if (l_software_version && r_software_version &&
 	r_software_version < l_software_version) {
       SILC_LOG_INFO(("Connection %s (%s) is too old version",
-		     sock->hostname, sock->ip));
-      sock->protocol = NULL;
+		     hostname, ip));
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_BAD_VERSION,
 				    "You support too old software version");
@@ -1262,8 +1173,7 @@ bool silc_server_connection_allowed(SilcServer server,
     if (l_vendor_version && r_vendor_version &&
 	!silc_string_match(l_vendor_version, r_vendor_version)) {
       SILC_LOG_INFO(("Connection %s (%s) is unsupported version",
-		     sock->hostname, sock->ip));
-      sock->protocol = NULL;
+		     hostname, ip));
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_BAD_VERSION,
 				    "Your software is not supported");
@@ -1274,15 +1184,14 @@ bool silc_server_connection_allowed(SilcServer server,
 
   /* Check for maximum connections limit */
 
-  num_sockets = silc_server_num_sockets_by_ip(server, sock->ip, type);
+  num_sockets = silc_server_num_sockets_by_ip(server, ip, type);
   max_hosts = (params ? params->connections_max : global->connections_max);
   max_per_host = (params ? params->connections_max_per_host :
 		  global->connections_max_per_host);
 
   if (max_hosts && conn_number >= max_hosts) {
     SILC_LOG_INFO(("Server is full, closing %s (%s) connection",
-		   sock->hostname, sock->ip));
-    sock->protocol = NULL;
+		   hostname, ip));
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT,
 				  "Server is full, try again later");
@@ -1291,8 +1200,7 @@ bool silc_server_connection_allowed(SilcServer server,
 
   if (num_sockets >= max_per_host) {
     SILC_LOG_INFO(("Too many connections from %s (%s), closing connection",
-		   sock->hostname, sock->ip));
-    sock->protocol = NULL;
+		   hostname, ip));
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT,
 				  "Too many connections from your host");
@@ -1305,13 +1213,13 @@ bool silc_server_connection_allowed(SilcServer server,
 /* Checks that client has rights to add or remove channel modes. If any
    of the checks fails FALSE is returned. */
 
-bool silc_server_check_cmode_rights(SilcServer server,
+SilcBool silc_server_check_cmode_rights(SilcServer server,
 				    SilcChannelEntry channel,
 				    SilcChannelClientEntry client,
 				    SilcUInt32 mode)
 {
-  bool is_op = client->mode & SILC_CHANNEL_UMODE_CHANOP;
-  bool is_fo = client->mode & SILC_CHANNEL_UMODE_CHANFO;
+  SilcBool is_op = client->mode & SILC_CHANNEL_UMODE_CHANOP;
+  SilcBool is_fo = client->mode & SILC_CHANNEL_UMODE_CHANFO;
 
   /* Check whether has rights to change anything */
   if (!is_op && !is_fo)
@@ -1417,11 +1325,11 @@ bool silc_server_check_cmode_rights(SilcServer server,
 /* Check that the client has rights to change its user mode.  Returns
    FALSE if setting some mode is not allowed. */
 
-bool silc_server_check_umode_rights(SilcServer server,
+SilcBool silc_server_check_umode_rights(SilcServer server,
 				    SilcClientEntry client,
 				    SilcUInt32 mode)
 {
-  bool server_op = FALSE, router_op = FALSE;
+  SilcBool server_op = FALSE, router_op = FALSE;
 
   if (mode & SILC_UMODE_SERVER_OPERATOR) {
     /* Cannot set server operator mode (must use OPER command) */
@@ -1455,10 +1363,10 @@ bool silc_server_check_umode_rights(SilcServer server,
    incoming client connection. */
 
 void silc_server_send_connect_notifys(SilcServer server,
-				      SilcSocketConnection sock,
+				      SilcPacketStream sock,
 				      SilcClientEntry client)
 {
-  SilcIDListData idata = (SilcIDListData)client;
+  SilcCipher key;
 
   SILC_LOG_DEBUG(("Send welcome notifys"));
 
@@ -1519,11 +1427,12 @@ void silc_server_send_connect_notifys(SilcServer server,
 			     server->stat.my_router_ops +
 			     server->stat.my_server_ops));
 
+  silc_packet_get_keys(sock, &key, NULL, NULL, NULL);
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Your connection is secured with %s cipher, "
 			   "key length %d bits",
-			   silc_cipher_get_name(idata->send_key),
-			   silc_cipher_get_key_len(idata->send_key)));
+			   silc_cipher_get_name(key),
+			   silc_cipher_get_key_len(key)));
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Your current nickname is %s",
 			   client->nickname));
@@ -1559,9 +1468,9 @@ void silc_server_kill_client(SilcServer server,
      to the channel. */
   silc_server_send_notify_on_channels(server, remote_client,
 				      remote_client, SILC_NOTIFY_TYPE_KILLED,
-				      3, killed->data, killed->len,
+				      3, killed->data, silc_buffer_len(killed),
 				      comment, comment ? strlen(comment) : 0,
-				      killer->data, killer->len);
+				      killer->data, silc_buffer_len(killer));
 
   /* Send KILLED notify to primary route */
   silc_server_send_notify_killed(server, SILC_PRIMARY_ROUTE(server),
@@ -1585,7 +1494,7 @@ void silc_server_kill_client(SilcServer server,
      disconnect the client here */
   if (remote_client->connection) {
     /* Remove locally conneted client */
-    SilcSocketConnection sock = remote_client->connection;
+    SilcPacketStream sock = remote_client->connection;
     silc_server_free_client_data(server, sock, remote_client, FALSE, NULL);
     silc_server_close_connection(server, sock);
   } else {
@@ -1632,7 +1541,7 @@ silc_server_check_watcher_list_foreach(void *key, void *context,
 {
   WatcherNotifyContext *notify = user_context;
   SilcClientEntry entry = context;
-  SilcSocketConnection sock;
+  SilcPacketStream sock;
 
   if (!context)
     return;
@@ -1660,7 +1569,7 @@ silc_server_check_watcher_list_foreach(void *key, void *context,
    public key is being watched by someone, and notifies the watcher of the
    notify change of notify type indicated by `notify'. */
 
-bool silc_server_check_watcher_list(SilcServer server,
+SilcBool silc_server_check_watcher_list(SilcServer server,
 				    SilcClientEntry client,
 				    const char *new_nick,
 				    SilcNotifyType notify)
@@ -1711,13 +1620,13 @@ bool silc_server_check_watcher_list(SilcServer server,
 /* Remove the `client' from watcher list. After calling this the `client'
    is not watching any nicknames. */
 
-bool silc_server_del_from_watcher_list(SilcServer server,
+SilcBool silc_server_del_from_watcher_list(SilcServer server,
 				       SilcClientEntry client)
 {
   SilcHashTableList htl;
   void *key;
   SilcClientEntry entry;
-  bool found = FALSE;
+  SilcBool found = FALSE;
 
   silc_hash_table_list(server->watcher_list, &htl);
   while (silc_hash_table_get(&htl, &key, (void *)&entry)) {
@@ -1763,11 +1672,11 @@ bool silc_server_del_from_watcher_list(SilcServer server,
 /* Force the client indicated by `chl' to change the channel user mode
    on channel indicated by `channel' to `forced_mode'. */
 
-bool silc_server_force_cumode_change(SilcServer server,
-				     SilcSocketConnection sock,
-				     SilcChannelEntry channel,
-				     SilcChannelClientEntry chl,
-				     SilcUInt32 forced_mode)
+SilcBool silc_server_force_cumode_change(SilcServer server,
+					 SilcPacketStream sock,
+					 SilcChannelEntry channel,
+					 SilcChannelClientEntry chl,
+					 SilcUInt32 forced_mode)
 {
   SilcBuffer idp1, idp2;
   unsigned char cumode[4];
@@ -1784,47 +1693,25 @@ bool silc_server_force_cumode_change(SilcServer server,
   SILC_PUT32_MSB(forced_mode, cumode);
   silc_server_send_notify_to_channel(server, sock, channel, FALSE, TRUE,
 				     SILC_NOTIFY_TYPE_CUMODE_CHANGE,
-				     3, idp1->data, idp1->len,
+				     3, idp1->data, silc_buffer_len(idp1),
 				     cumode, sizeof(cumode),
-				     idp2->data, idp2->len);
+				     idp2->data, silc_buffer_len(idp2));
   silc_buffer_free(idp1);
   silc_buffer_free(idp2);
 
   return TRUE;
 }
 
-/* Find active socket connection by the IP address and port indicated by
-   `ip' and `port', and socket connection type of `type'. */
-
-SilcSocketConnection
-silc_server_find_socket_by_host(SilcServer server,
-				SilcSocketType type,
-				const char *ip, SilcUInt16 port)
-{
-  int i;
-
-  for (i = 0; i < server->config->param.connections_max; i++) {
-    if (!server->sockets[i] || SILC_IS_HOST_LOOKUP(server->sockets[i]))
-      continue;
-    if (!strcmp(server->sockets[i]->ip, ip) &&
-	(!port || server->sockets[i]->port == port) &&
-	server->sockets[i]->type == type)
-      return server->sockets[i];
-  }
-
-  return NULL;
-}
-
 /* This function can be used to match the invite and ban lists. */
 
-bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
-				 SilcUInt8 type, void *check)
+SilcBool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
+				     SilcUInt8 type, void *check)
 {
   unsigned char *tmp = NULL;
   SilcUInt32 len = 0, t;
   SilcHashTableList htl;
   SilcBuffer entry, idp = NULL, pkp = NULL;
-  bool ret = FALSE;
+  SilcBool ret = FALSE;
 
   SILC_LOG_DEBUG(("Matching invite/ban"));
 
@@ -1837,18 +1724,18 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
       return FALSE;
   }
   if (type == 2) {
-    pkp = silc_pkcs_public_key_payload_encode(check);
+    pkp = silc_public_key_payload_encode(check);
     if (!pkp)
       return FALSE;
     tmp = pkp->data;
-    len = pkp->len;
+    len = silc_buffer_len(pkp);
   }
   if (type == 3) {
     idp = silc_id_payload_encode(check, SILC_ID_CLIENT);
     if (!idp)
       return FALSE;
     tmp = idp->data;
-    len = idp->len;
+    len = silc_buffer_len(idp);
   }
 
   /* Compare the list */
@@ -1877,7 +1764,7 @@ bool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
 
 /* Process invite or ban information */
 
-bool silc_server_inviteban_process(SilcServer server, SilcHashTable list,
+SilcBool silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 				   SilcUInt8 action, SilcArgumentPayload args)
 {
   unsigned char *tmp;
@@ -1931,7 +1818,7 @@ bool silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	SilcPublicKey pk;
 
 	/* Verify validity of the public key */
-	if (!silc_pkcs_public_key_payload_decode(tmp, len, &pk)) {
+	if (!silc_public_key_payload_decode(tmp, len, &pk)) {
 	  tmp = silc_argument_get_next_arg(args, &type, &len);
 	  continue;
 	}
@@ -2011,7 +1898,7 @@ bool silc_server_inviteban_process(SilcServer server, SilcHashTable list,
 	SilcPublicKey pk;
 
 	/* Verify validity of the public key */
-	if (!silc_pkcs_public_key_payload_decode(tmp, len, &pk)) {
+	if (!silc_public_key_payload_decode(tmp, len, &pk)) {
 	  tmp = silc_argument_get_next_arg(args, &type, &len);
 	  continue;
 	}
@@ -2062,9 +1949,8 @@ void silc_server_create_connections(SilcServer server)
 {
   silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_connect_to_router);
-  silc_schedule_task_add(server->schedule, 0,
-			 silc_server_connect_to_router, server, 0, 1,
-			 SILC_TASK_TIMEOUT, SILC_TASK_PRI_NORMAL);
+  silc_schedule_task_add_timeout(server->schedule,
+				 silc_server_connect_to_router, server, 0, 1);
 }
 
 static void
@@ -2092,7 +1978,7 @@ silc_server_process_channel_pk(SilcServer server,
     return SILC_STATUS_ERR_NOT_ENOUGH_PARAMS;
 
   /* Decode the public key */
-  if (!silc_pkcs_public_key_payload_decode((unsigned char *)pk, pk_len, &chpk))
+  if (!silc_public_key_payload_decode((unsigned char *)pk, pk_len, &chpk))
     return SILC_STATUS_ERR_UNSUPPORTED_PUBLIC_KEY;
 
   /* Create channel public key list (hash table) if needed */
@@ -2109,8 +1995,8 @@ silc_server_process_channel_pk(SilcServer server,
 
   if (type == 0x00) {
     /* Add new public key to channel public key list */
-    SILC_LOG_DEBUG(("Add new channel public key %s to channel %s",
-		    chpk->identifier, channel->channel_name));
+    SILC_LOG_DEBUG(("Add new channel public key to channel %s",
+		    channel->channel_name));
 
     /* Check for resource limit */
     if (silc_hash_table_count(channel->channel_pubkeys) > 64) {
@@ -2141,8 +2027,8 @@ silc_server_process_channel_pk(SilcServer server,
 
 SilcBuffer silc_server_get_channel_pk_list(SilcServer server,
 					   SilcChannelEntry channel,
-					   bool announce,
-					   bool delete)
+					   SilcBool announce,
+					   SilcBool delete)
 {
   SilcHashTableList htl;
   SilcBuffer list, pkp;
@@ -2163,8 +2049,9 @@ SilcBuffer silc_server_get_channel_pk_list(SilcServer server,
 
   silc_hash_table_list(channel->channel_pubkeys, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&pk)) {
-    pkp = silc_pkcs_public_key_payload_encode(pk);
-    list = silc_argument_payload_encode_one(list, pkp->data, pkp->len,
+    pkp = silc_public_key_payload_encode(pk);
+    list = silc_argument_payload_encode_one(list, pkp->data,
+					    silc_buffer_len(pkp),
 					    announce ? 0x03 :
 					    delete ? 0x01 : 0x00);
     silc_buffer_free(pkp);
@@ -2177,7 +2064,7 @@ SilcBuffer silc_server_get_channel_pk_list(SilcServer server,
 /* Sets the channel public keys into channel from the list of public keys. */
 
 SilcStatus silc_server_set_channel_pk_list(SilcServer server,
-					   SilcSocketConnection sender,
+					   SilcPacketStream sender,
 					   SilcChannelEntry channel,
 					   const unsigned char *pklist,
 					   SilcUInt32 pklist_len)
@@ -2229,7 +2116,7 @@ SilcStatus silc_server_set_channel_pk_list(SilcServer server,
       SILC_PUT32_MSB(channel->user_limit, ulimit);
     silc_server_send_notify_to_channel(server, NULL, channel, FALSE, TRUE,
 				       SILC_NOTIFY_TYPE_CMODE_CHANGE, 8,
-				       sidp->data, sidp->len,
+				       sidp->data, silc_buffer_len(sidp),
 				       mask, 4,
 				       channel->cipher,
 				       channel->cipher ?
@@ -2267,7 +2154,7 @@ SilcStatus silc_server_set_channel_pk_list(SilcServer server,
 /* Verifies the Authentication Payload `auth' with one of the public keys
    on the `channel' public key list. */
 
-bool silc_server_verify_channel_auth(SilcServer server,
+SilcBool silc_server_verify_channel_auth(SilcServer server,
 				     SilcChannelEntry channel,
 				     SilcClientID *client_id,
 				     const unsigned char *auth,
@@ -2277,7 +2164,7 @@ bool silc_server_verify_channel_auth(SilcServer server,
   SilcPublicKey chpk;
   unsigned char *pkhash;
   SilcUInt32 pkhash_len;
-  bool ret = FALSE;
+  SilcBool ret = FALSE;
 
   SILC_LOG_DEBUG(("Verifying channel authentication"));
 

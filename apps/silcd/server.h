@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,37 +20,47 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-/* Forward declaration of backup server context */
+/* Forward declarations */
+typedef struct SilcServerEntryStruct *SilcServerEntry;
+typedef struct SilcClientEntryStruct *SilcClientEntry;
+typedef struct SilcChannelEntryStruct *SilcChannelEntry;
 typedef struct SilcServerBackupStruct *SilcServerBackup;
+typedef struct SilcIDListDataObject *SilcIDListData, SilcIDListDataStruct;
+typedef struct SilcIDListStruct *SilcIDList;
 
 /* Callback function that is called after the key exchange and connection
    authentication protocols has been completed with a remote router. The
    `server_entry' is the remote router entry or NULL on error. */
-typedef void (*SilcServerConnectRouterCallback)(SilcServer server,
-						SilcServerEntry server_entry,
-						void *context);
+typedef void (*SilcServerConnectCallback)(SilcServer server,
+					  SilcServerEntry server_entry,
+					  void *context);
 
 /* Connection structure used when connection to remote */
-typedef struct {
-  SilcSocketConnection sock;
+typedef struct SilcServerConnectionStruct {
+  SilcServer server;
+  SilcStream stream;
+  SilcPacketStream sock;
+  SilcAsyncOperation op;
+  SilcServerConfigRef conn;
 
-  /* Remote host name and port */
   char *remote_host;
   int remote_port;
-  bool backup;
+
   char *backup_replace_ip;
   int backup_replace_port;
-  bool no_reconnect;
-
-  /* Connection configuration (maybe NULL) */
-  SilcServerConfigRef conn;
 
   /* Current connection retry info */
   SilcUInt32 retry_count;
   SilcUInt32 retry_timeout;
-
-  SilcServerConnectRouterCallback callback;
+  SilcServerConnectCallback callback;
   void *callback_context;
+  int rekey_timeout;
+
+  unsigned int backup          : 1;   /* Set when backup router connection */
+  unsigned int backup_resuming : 1;   /* Set when running resuming protocol */
+  unsigned int no_reconnect    : 1;   /* Set when to not reconnect */
+  unsigned int no_conf         : 1;   /* Set when connecting without pre-
+					 configuration. */
 } *SilcServerConnection;
 
 /* General definitions */
@@ -115,11 +125,6 @@ do {									\
   (sock->protocol && sock->protocol->protocol && 			\
    sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY)
 
-/* Check whether backup resuming protocol is active */
-#define SILC_SERVER_IS_BACKUP(sock)					\
-  (sock->protocol && sock->protocol->protocol && 			\
-   sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_BACKUP)
-
 /* Output a message to stderr or to the appropriate log facility wether
    we are in the background or not. */
 #define SILC_SERVER_LOG_INFO(fmt)					\
@@ -132,45 +137,41 @@ do {									\
   silc_server_stderr(SILC_LOG_WARNING, silc_format fmt)
 
 /* Prototypes */
-int silc_server_alloc(SilcServer *new_server);
+SilcBool silc_server_alloc(SilcServer *new_server);
 void silc_server_free(SilcServer server);
-bool silc_server_init(SilcServer server);
-bool silc_server_rehash(SilcServer server);
+SilcBool silc_server_init(SilcServer server);
+SilcBool silc_server_rehash(SilcServer server);
 void silc_server_run(SilcServer server);
 void silc_server_stop(SilcServer server);
-void silc_server_start_key_exchange(SilcServer server,
-				    SilcServerConnection sconn,
-				    int sock);
-bool silc_server_packet_parse(SilcPacketParserContext *parser_context,
-			      void *context);
-void silc_server_packet_parse_type(SilcServer server,
-				   SilcSocketConnection sock,
-				   SilcPacketContext *packet);
+void silc_server_start_key_exchange(SilcServerConnection sconn);
 void silc_server_create_connection(SilcServer server,
-				   const char *remote_host, SilcUInt32 port);
+				   SilcBool reconnect,
+				   const char *remote_host, SilcUInt32 port,
+				   SilcServerConnectCallback callback,
+				   void *context);
 void silc_server_close_connection(SilcServer server,
-				  SilcSocketConnection sock);
+				  SilcPacketStream sock);
 void silc_server_free_client_data(SilcServer server,
-				  SilcSocketConnection sock,
+				  SilcPacketStream sock,
 				  SilcClientEntry client,
 				  int notify,
 				  const char *signoff);
 void silc_server_free_sock_user_data(SilcServer server,
-				     SilcSocketConnection sock,
+				     SilcPacketStream sock,
 				     const char *signoff_message);
 void silc_server_remove_from_channels(SilcServer server,
-				      SilcSocketConnection sock,
+				      SilcPacketStream sock,
 				      SilcClientEntry client,
-				      bool notify,
+				      SilcBool notify,
 				      const char *signoff_message,
-				      bool keygen, bool killed);
-bool silc_server_remove_from_one_channel(SilcServer server,
-					 SilcSocketConnection sock,
+				      SilcBool keygen, bool killed);
+SilcBool silc_server_remove_from_one_channel(SilcServer server,
+					 SilcPacketStream sock,
 					 SilcChannelEntry channel,
 					 SilcClientEntry client,
-					 bool notify);
+					 SilcBool notify);
 void silc_server_disconnect_remote(SilcServer server,
-				   SilcSocketConnection sock,
+				   SilcPacketStream sock,
 				   SilcStatus status, ...);
 SilcChannelEntry silc_server_create_new_channel(SilcServer server,
 						SilcServerID *router_id,
@@ -185,13 +186,13 @@ silc_server_create_new_channel_with_id(SilcServer server,
 				       char *channel_name,
 				       SilcChannelID *channel_id,
 				       int broadcast);
-bool silc_server_create_channel_key(SilcServer server,
+SilcBool silc_server_create_channel_key(SilcServer server,
 				    SilcChannelEntry channel,
 				    SilcUInt32 key_len);
 SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 					      SilcBuffer key_payload,
 					      SilcChannelEntry channel);
-void silc_server_perform_heartbeat(SilcSocketConnection sock,
+void silc_server_perform_heartbeat(SilcPacketStream sock,
 				   void *hb_context);
 void silc_server_announce_get_channel_topic(SilcServer server,
 					    SilcChannelEntry channel,
@@ -213,35 +214,35 @@ void silc_server_announce_get_channels(SilcServer server,
 				       SilcBuffer **channel_bans,
 				       SilcChannelID ***channel_ids,
 				       unsigned long creation_time);
-void silc_server_announce_servers(SilcServer server, bool global,
+void silc_server_announce_servers(SilcServer server, SilcBool global,
 				  unsigned long creation_time,
-				  SilcSocketConnection remote);
+				  SilcPacketStream remote);
 void silc_server_announce_clients(SilcServer server,
 				  unsigned long creation_time,
-				  SilcSocketConnection remote);
+				  SilcPacketStream remote);
 void silc_server_announce_channels(SilcServer server,
 				   unsigned long creation_time,
-				   SilcSocketConnection remote);
+				   SilcPacketStream remote);
 void silc_server_announce_watches(SilcServer server,
-				  SilcSocketConnection remote);
-bool silc_server_get_users_on_channel(SilcServer server,
+				  SilcPacketStream remote);
+SilcBool silc_server_get_users_on_channel(SilcServer server,
 				      SilcChannelEntry channel,
 				      SilcBuffer *user_list,
 				      SilcBuffer *mode_list,
 				      SilcUInt32 *user_count);
 void silc_server_save_users_on_channel(SilcServer server,
-				       SilcSocketConnection sock,
+				       SilcPacketStream sock,
 				       SilcChannelEntry channel,
 				       SilcClientID *noadd,
 				       SilcBuffer user_list,
 				       SilcBuffer mode_list,
 				       SilcUInt32 user_count);
 void silc_server_save_user_channels(SilcServer server,
-				    SilcSocketConnection sock,
+				    SilcPacketStream sock,
 				    SilcClientEntry client,
 				    SilcBuffer channels,
 				    SilcBuffer channels_user_modes);
-SilcSocketConnection
+SilcPacketStream
 silc_server_get_client_route(SilcServer server,
 			     unsigned char *id_data,
 			     SilcUInt32 id_len,
@@ -250,8 +251,8 @@ silc_server_get_client_route(SilcServer server,
 			     SilcClientEntry *client_entry);
 SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 					       SilcClientEntry client,
-					       bool get_private,
-					       bool get_secret,
+					       SilcBool get_private,
+					       SilcBool get_secret,
 					       SilcBuffer *user_mode_list);
 void silc_server_stderr(SilcLogType type, char *message);
 

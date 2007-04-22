@@ -4,7 +4,7 @@
 
   Author: Giovanni Giacobbi <giovanni@giacobbi.net>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -105,7 +105,7 @@ typedef struct SilcServerConfigClientStruct {
   char *host;
   unsigned char *passphrase;
   SilcUInt32 passphrase_len;
-  SilcHashTable publickeys;
+  SilcBool publickeys;
   SilcServerConfigConnParams *param;
   struct SilcServerConfigClientStruct *next;
 } SilcServerConfigClient;
@@ -117,7 +117,7 @@ typedef struct SilcServerConfigAdminStruct {
   char *nick;
   unsigned char *passphrase;
   SilcUInt32 passphrase_len;
-  SilcHashTable publickeys;
+  SilcBool publickeys;
   struct SilcServerConfigAdminStruct *next;
 } SilcServerConfigAdmin;
 
@@ -133,9 +133,9 @@ typedef struct SilcServerConfigServerStruct {
   char *host;
   unsigned char *passphrase;
   SilcUInt32 passphrase_len;
-  SilcHashTable publickeys;
+  SilcBool publickeys;
   SilcServerConfigConnParams *param;
-  bool backup_router;
+  SilcBool backup_router;
   struct SilcServerConfigServerStruct *next;
 } SilcServerConfigServer;
 
@@ -144,19 +144,20 @@ typedef struct SilcServerConfigRouterStruct {
   char *host;
   unsigned char *passphrase;
   SilcUInt32 passphrase_len;
-  SilcHashTable publickeys;
+  SilcBool publickeys;
   SilcUInt16 port;
   SilcServerConfigConnParams *param;
-  bool initiator;
-  bool backup_router;
+  SilcBool initiator;
+  SilcBool backup_router;
   char *backup_replace_ip;
   SilcUInt16 backup_replace_port;
-  bool backup_local;
+  SilcBool backup_local;
   struct SilcServerConfigRouterStruct *next;
 } SilcServerConfigRouter;
 
 /* define the SilcServerConfig object */
 typedef struct {
+  SilcServer server;
   void *tmp;
 
   /* Reference count (when this reaches zero, config object is destroyed) */
@@ -164,16 +165,16 @@ typedef struct {
 
   /* The General section */
   char *module_path;
-  bool prefer_passphrase_auth;
-  bool require_reverse_lookup;
+  SilcBool prefer_passphrase_auth;
+  SilcBool require_reverse_lookup;
   SilcUInt32 channel_rekey_secs;
   SilcUInt32 key_exchange_timeout;
   SilcUInt32 conn_auth_timeout;
   SilcServerConfigConnParams param;
-  bool detach_disabled;
+  SilcBool detach_disabled;
   SilcUInt32 detach_timeout;
-  bool logging_timestamp;
-  bool logging_quick;
+  SilcBool logging_timestamp;
+  SilcBool logging_quick;
   long logging_flushdelay;
   char *debug_string;
 
@@ -203,17 +204,18 @@ typedef struct {
 /* Prototypes */
 
 /* Basic config operations */
-SilcServerConfig silc_server_config_alloc(const char *filename);
+SilcServerConfig silc_server_config_alloc(const char *filename,
+					  SilcServer server);
 void silc_server_config_destroy(SilcServerConfig config);
 void silc_server_config_ref(SilcServerConfigRef *ref, SilcServerConfig config,
 			    void *ref_ptr);
 void silc_server_config_unref(SilcServerConfigRef *ref);
 
 /* Algorithm registering and reset functions */
-bool silc_server_config_register_ciphers(SilcServer server);
-bool silc_server_config_register_hashfuncs(SilcServer server);
-bool silc_server_config_register_hmacs(SilcServer server);
-bool silc_server_config_register_pkcs(SilcServer server);
+SilcBool silc_server_config_register_ciphers(SilcServer server);
+SilcBool silc_server_config_register_hashfuncs(SilcServer server);
+SilcBool silc_server_config_register_hmacs(SilcServer server);
+SilcBool silc_server_config_register_pkcs(SilcServer server);
 void silc_server_config_setlogfiles(SilcServer server);
 
 /* Run-time config access functions */
@@ -230,7 +232,7 @@ SilcServerConfigRouter *
 silc_server_config_find_router_conn(SilcServer server, char *host, int port);
 SilcServerConfigRouter *
 silc_server_config_find_backup_conn(SilcServer server, char *host);
-bool silc_server_config_is_primary_route(SilcServer server);
+SilcBool silc_server_config_is_primary_route(SilcServer server);
 SilcServerConfigRouter *
 silc_server_config_get_primary_router(SilcServer server);
 SilcServerConfigRouter *

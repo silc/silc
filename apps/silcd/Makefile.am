@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2005 Pekka Riikonen
+#  Copyright (C) 2000 - 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -20,21 +20,20 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 sbin_PROGRAMS = silcd
 
 silcd_SOURCES = \
-	protocol.c \
+	serverconfig.c \
+	silcd.c \
+	server_version.c \
+	serverid.c \
 	route.c \
+	idlist.c \
+	server_query.c \
+	server.c \
 	packet_send.c \
 	packet_receive.c \
-	idlist.c \
 	command.c \
 	command_reply.c \
-	silcd.c \
-	server.c \
 	server_util.c \
-	server_backup.c \
-	serverconfig.c \
-	server_query.c \
-	serverid.c \
-	server_version.c
+	server_backup.c
 
 LIBS = $(SILC_COMMON_LIBS)
 LDADD =
