@@ -123,7 +123,9 @@ silc_idcache_add(SilcIDCache cache, char *name, void *id, void *context)
 {
   SilcIDCacheEntry c;
 
-  if (!cache || !id)
+  if (!cache)
+    return NULL;
+  if (!name && !id && !context)
     return NULL;
 
   /* Allocate new cache entry */
@@ -137,15 +139,20 @@ silc_idcache_add(SilcIDCache cache, char *name, void *id, void *context)
 
   SILC_LOG_DEBUG(("Adding cache entry %p", c));
 
-  /* Add the new entry to the hash tables */
-  if (silc_idcache_find_by_id_one(cache, id, NULL)) {
-    SILC_LOG_ERROR(("Attempted to add same ID twice to ID Cache, id %s",
-		   silc_id_render(id, cache->id_type)));
-    SILC_ASSERT(FALSE);
-    goto err;
+  if (id) {
+    /* See if this entry is added already to cache */
+    if (silc_idcache_find_by_id_one(cache, id, NULL)) {
+      SILC_LOG_ERROR(("Attempted to add same ID twice to ID Cache, id %s",
+		      silc_id_render(id, cache->id_type)));
+      SILC_ASSERT(FALSE);
+      goto err;
+    }
   }
-  if (!silc_hash_table_add(cache->id_table, id, c))
-    goto err;
+
+  /* Add the new entry to the hash tables */
+  if (id)
+    if (!silc_hash_table_add(cache->id_table, id, c))
+      goto err;
   if (name)
     if (!silc_hash_table_add(cache->name_table, name, c))
       goto err;
