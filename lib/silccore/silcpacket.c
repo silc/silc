@@ -1346,9 +1346,9 @@ SilcBool silc_packet_get_ids(SilcPacketStream stream,
       (*src_id).u.channel_id = *(SilcChannelID *)stream->src_id;
       break;
     }
-    if (src_id_set)
-      *src_id_set = TRUE;
   }
+  if (stream->src_id && src_id_set)
+    *src_id_set = TRUE;
 
   if (dst_id && stream->dst_id) {
     (*dst_id).type = stream->dst_id_type;
@@ -1363,9 +1363,9 @@ SilcBool silc_packet_get_ids(SilcPacketStream stream,
       (*dst_id).u.channel_id = *(SilcChannelID *)stream->dst_id;
       break;
     }
-    if (dst_id_set)
-      *dst_id_set = TRUE;
   }
+  if (stream->dst_id && dst_id_set)
+    *dst_id_set = TRUE;
 
   return TRUE;
 }
