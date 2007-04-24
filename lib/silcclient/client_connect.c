@@ -260,6 +260,8 @@ static void silc_client_rekey_completion(SilcSKE ske,
 				 conn->remote_host,
 				 silc_ske_map_status(status));
 
+    silc_ske_free(conn->internal->ske);
+    conn->internal->ske = NULL;
     silc_fsm_finish(fsm);
     return;
   }
@@ -790,5 +792,6 @@ SILC_FSM_STATE(silc_client_st_rekey)
     SILC_FSM_CALL(conn->internal->op = silc_ske_rekey_responder(
 						    conn->internal->ske,
 						    conn->stream,
-						    conn->internal->rekey));
+						    conn->internal->rekey,
+						    NULL));
 }

@@ -1492,7 +1492,7 @@ SILC_FSM_STATE(silc_client_notify_error)
     if (!silc_argument_get_decoded(args, 2, SILC_ARGUMENT_ID, &id, NULL))
       goto out;
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
-    if (client_entry) {
+    if (client_entry && client_entry != conn->local_entry) {
       silc_client_remove_from_channels(client, conn, client_entry);
       silc_client_del_client(client, conn, client_entry);
       silc_client_unref_client(client, conn, client_entry);

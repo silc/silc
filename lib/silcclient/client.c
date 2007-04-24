@@ -22,9 +22,6 @@
 #include "silcclient.h"
 #include "client_internal.h"
 
-/************************** Types and definitions ***************************/
-
-
 /************************ Static utility functions **************************/
 
 /* Connection machine FSM destructor.  This will finish the thread where
@@ -42,7 +39,8 @@ static void silc_client_connection_destructor(SilcFSM fsm,
   /* Delete connection */
   silc_client_del_connection(conn->client, conn);
 
-  /* Finish the thread were this machine was running */
+  /* Finish the thread were this machine was running.  Its destructor is the
+     silc_client_connection_finished. */
   silc_fsm_finish(thread);
 }
 

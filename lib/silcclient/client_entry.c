@@ -157,6 +157,8 @@ SilcDList silc_client_get_clients_local_ext(SilcClient client,
     return NULL;
   }
 
+  SILC_LOG_DEBUG(("Found %d clients", silc_dlist_count(clients)));
+
   silc_dlist_start(clients);
   return clients;
 }

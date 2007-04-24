@@ -78,6 +78,7 @@ SILC_FSM_STATE(silc_client_new_id)
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
   SilcPacket packet = state_context;
+  char *nick;
   SilcID id;
 
   if (conn->local_id)
@@ -92,9 +93,15 @@ SILC_FSM_STATE(silc_client_new_id)
   SILC_LOG_DEBUG(("New ID %s", silc_id_render(&id.u.client_id,
 					      SILC_ID_CLIENT)));
 
+  /* From SILC protocol version 1.3, nickname is in NEW_CLIENT packet */
+  if (conn->internal->remote_version >= 13)
+    nick = (conn->internal->params.nickname ?
+	    conn->internal->params.nickname : client->username);
+  else
+    nick = client->username;
+
   /* Create local client entry */
-  conn->local_entry = silc_client_add_client(client, conn,
-					     client->username,
+  conn->local_entry = silc_client_add_client(client, conn, nick,
 					     client->username,
 					     client->realname,
 					     &id.u.client_id, 0);
