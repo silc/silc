@@ -293,10 +293,13 @@ static void silc_connect_cb(SilcClient client,
 
     /* Enable queueing until we have our requested nick */
     if (((opt_nickname &&
-	  silc_utf8_strcasecmp(opt_nickname, conn->local_entry->nickname)) ||
+	  !silc_utf8_strcasecmp(opt_nickname,
+				conn->local_entry->nickname)) ||
 	 (settings_get_str("nick") &&
-	  silc_utf8_strcasecmp(settings_get_str("nick"), conn->local_entry->nickname))) &&
-	!silc_utf8_strcasecmp(conn->local_entry->nickname, conn->local_entry->username))
+	  !silc_utf8_strcasecmp(settings_get_str("nick"),
+				conn->local_entry->nickname))) &&
+	silc_utf8_strcasecmp(conn->local_entry->nickname,
+			     conn->local_entry->username))
       silc_queue_enable(conn);
 
     /* Put default attributes */
