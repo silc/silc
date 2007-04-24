@@ -137,10 +137,8 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     goto err;
 
   listener = silc_calloc(1, sizeof(*listener));
-  if (!listener) {
-    callback(SILC_NET_NO_MEMORY, NULL, context);
+  if (!listener)
     return NULL;
-  }
   listener->schedule = schedule;
   listener->callback = callback;
   listener->context = context;
@@ -149,16 +147,12 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
 
   if (local_ip_count > 0) {
     listener->socks = silc_calloc(local_ip_count, sizeof(*listener->socks));
-    if (!listener->socks) {
-      callback(SILC_NET_NO_MEMORY, NULL, context);
+    if (!listener->socks)
       return NULL;
-    }
   } else {
     listener->socks = silc_calloc(1, sizeof(*listener->socks));
-    if (!listener->socks) {
-      callback(SILC_NET_NO_MEMORY, NULL, context);
+    if (!listener->socks)
       return NULL;
-    }
 
     local_ip_count = 1;
   }
@@ -191,7 +185,7 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     /* Bind the listener socket */
     rval = bind(sock, &server.sa, SIZEOF_SOCKADDR(server));
     if (rval < 0) {
-      SILC_LOG_DEBUG(("Cannot bind socket: %s", strerror(errno)));
+      SILC_LOG_ERROR(("Cannot bind socket: %s", strerror(errno)));
       goto err;
     }
 
@@ -216,8 +210,6 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
   return listener;
 
  err:
-  if (callback)
-    callback(SILC_NET_ERROR, NULL, context);
   if (listener)
     silc_net_close_listener(listener);
   return NULL;
