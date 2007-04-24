@@ -55,6 +55,10 @@ SILC_FSM_STATE(silc_ske_st_responder_error);
 SILC_FSM_STATE(silc_ske_st_rekey_initiator_start);
 SILC_FSM_STATE(silc_ske_st_rekey_initiator_done);
 SILC_FSM_STATE(silc_ske_st_rekey_initiator_end);
+SILC_FSM_STATE(silc_ske_st_rekey_responder_wait);
+SILC_FSM_STATE(silc_ske_st_rekey_responder_start);
+SILC_FSM_STATE(silc_ske_st_rekey_responder_done);
+SILC_FSM_STATE(silc_ske_st_rekey_responder_end);
 SILC_TASK_CALLBACK(silc_ske_packet_send_retry);
 
 SilcSKEKeyMaterial
@@ -179,24 +183,39 @@ static void silc_ske_skr_callback(SilcSKR repository,
 static SilcSKEStatus silc_ske_check_version(SilcSKE ske)
 {
   SilcUInt32 r_software_version = 0;
+  char *r_software_string = NULL;
+  SilcBool src_set = FALSE;
 
   if (!ske->remote_version || !ske->version)
     return SILC_SKE_STATUS_BAD_VERSION;
 
   if (!silc_parse_version_string(ske->remote_version, NULL, NULL,
-				 &r_software_version, NULL, NULL))
+				 &r_software_version,
+				 &r_software_string, NULL))
     return SILC_SKE_STATUS_BAD_VERSION;
 
   /* Backwards compatibility checks */
 
   /* Old server versions requires "valid" looking Source ID in the SILC
      packets during initial key exchange.  All version before 1.1.0. */
-  if (r_software_version < 110) {
-    SilcClientID id;
-    memset(&id, 0, sizeof(id));
-    id.ip.data_len = 4;
+  silc_packet_get_ids(ske->stream, &src_set, NULL, NULL, NULL);
+  if (!src_set && !ske->responder && r_software_string &&
+      r_software_version < 110) {
     SILC_LOG_DEBUG(("Remote is old version, add dummy Source ID to packets"));
-    silc_packet_set_ids(ske->stream, SILC_ID_CLIENT, &id, 0, NULL);
+
+    if (strstr(r_software_string, "server")) {
+      SilcServerID sid;
+      memset(&sid, 0, sizeof(sid));
+      sid.ip.data_len = 4;
+      silc_packet_set_ids(ske->stream, SILC_ID_SERVER, &sid, 0, NULL);
+    }
+
+    if (strstr(r_software_string, "client")) {
+      SilcClientID cid;
+      memset(&cid, 0, sizeof(cid));
+      cid.ip.data_len = 4;
+      silc_packet_set_ids(ske->stream, SILC_ID_CLIENT, &cid, 0, NULL);
+    }
   }
 
   return SILC_SKE_STATUS_OK;
@@ -2268,6 +2287,13 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
 
   silc_buffer_free(payload_buf);
 
+  /* In case we are doing rekey move to finish it.  */
+  if (ske->rekey) {
+    /** Finish rekey */
+    silc_fsm_next(fsm, silc_ske_st_rekey_responder_done);
+    return SILC_FSM_CONTINUE;
+  }
+
   /** Waiting completion */
   silc_fsm_next(fsm, silc_ske_st_responder_end);
   return SILC_FSM_WAIT;
@@ -2677,10 +2703,225 @@ silc_ske_rekey_initiator(SilcSKE ske,
 
 /***************************** Responder Rekey ******************************/
 
-SILC_FSM_STATE(silc_ske_st_rekey_responder_start);
+/* Wait for initiator's packet */
+
+SILC_FSM_STATE(silc_ske_st_rekey_responder_wait)
+{
+  SilcSKE ske = fsm_context;
+
+  SILC_LOG_DEBUG(("Start rekey (%s)", ske->rekey->pfs ? "PFS" : "No PFS"));
+
+  if (ske->aborted) {
+    /** Aborted */
+    silc_fsm_next(fsm, silc_ske_st_responder_aborted);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /* Add rekey exchange timeout */
+  silc_schedule_task_add_timeout(ske->schedule, silc_ske_timeout,
+				 ske, 30, 0);
+
+
+  silc_fsm_next(fsm, silc_ske_st_rekey_responder_start);
+
+  /* If REKEY packet already received process it directly */
+  if (ske->packet && ske->packet->type == SILC_PACKET_REKEY)
+    return SILC_FSM_CONTINUE;
+
+  /* Wait for REKEY */
+  return SILC_FSM_WAIT;
+}
+
+/* Process initiator's REKEY packet */
 
 SILC_FSM_STATE(silc_ske_st_rekey_responder_start)
 {
+  SilcSKE ske = fsm_context;
+  SilcSKEStatus status;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (ske->packet->type != SILC_PACKET_REKEY) {
+    ske->status = SILC_SKE_STATUS_ERROR;
+    silc_packet_free(ske->packet);
+    ske->packet = NULL;
+    silc_fsm_next(fsm, silc_ske_st_responder_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  ske->prop = silc_calloc(1, sizeof(*ske->prop));
+  if (!ske->prop) {
+    /** No memory */
+    ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+    silc_fsm_next(fsm, silc_ske_st_responder_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /* If doing rekey without PFS, move directly to the end of the protocol. */
+  if (!ske->rekey->pfs) {
+    /** Rekey without PFS */
+    silc_fsm_next(fsm, silc_ske_st_rekey_responder_done);
+    return SILC_FSM_CONTINUE;
+  }
+
+  status = silc_ske_group_get_by_number(ske->rekey->ske_group,
+					&ske->prop->group);
+  if (status != SILC_SKE_STATUS_OK) {
+    /** Unknown group */
+    silc_fsm_next(fsm, silc_ske_st_responder_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /** Rekey with PFS */
+  silc_fsm_next(fsm, silc_ske_st_responder_phase2);
+  return SILC_FSM_WAIT;
+}
+
+/* Sends REKEY_DONE packet to finish the protocol. */
+
+SILC_FSM_STATE(silc_ske_st_rekey_responder_done)
+{
+  SilcSKE ske = fsm_context;
+  SilcCipher send_key;
+  SilcHmac hmac_send;
+  SilcHash hash;
+  SilcUInt32 key_len, block_len, hash_len, x_len;
+  unsigned char *pfsbuf;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  silc_packet_get_keys(ske->stream, &send_key, NULL, &hmac_send, NULL);
+  key_len = silc_cipher_get_key_len(send_key);
+  block_len = silc_cipher_get_block_len(send_key);
+
+  if (!silc_hash_alloc(ske->rekey->hash, &hash)) {
+    /** Cannot allocate hash */
+    ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+    silc_fsm_next(fsm, silc_ske_st_responder_error);
+    return SILC_FSM_CONTINUE;
+  }
+  hash_len = silc_hash_len(hash);
+
+  /* Process key material */
+  if (ske->rekey->pfs) {
+    /* PFS */
+    pfsbuf = silc_mp_mp2bin(ske->KEY, 0, &x_len);
+    if (pfsbuf) {
+      ske->keymat = silc_ske_process_key_material_data(pfsbuf, x_len,
+						       block_len, key_len,
+						       hash_len, hash);
+      memset(pfsbuf, 0, x_len);
+      silc_free(pfsbuf);
+    }
+  } else {
+    /* No PFS */
+    ske->keymat =
+      silc_ske_process_key_material_data(ske->rekey->send_enc_key,
+					 ske->rekey->enc_key_len / 8,
+					 block_len, key_len,
+					 hash_len, hash);
+  }
+
+  if (!ske->keymat) {
+    SILC_LOG_ERROR(("Error processing key material"));
+    silc_fsm_next(fsm, silc_ske_st_responder_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  ske->prop->cipher = send_key;
+  ske->prop->hmac = hmac_send;
+  ske->prop->hash = hash;
+
+  /* Get sending keys */
+  if (!silc_ske_set_keys(ske, ske->keymat, ske->prop, &send_key, NULL,
+			 &hmac_send, NULL, NULL)) {
+    /** Cannot get keys */
+    ske->status = SILC_SKE_STATUS_ERROR;
+    silc_fsm_next(fsm, silc_ske_st_responder_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /* Set the new keys into use.  This will also send REKEY_DONE packet.  Any
+     packet sent after this call will be protected with the new keys. */
+  if (!silc_packet_set_keys(ske->stream, send_key, NULL, hmac_send, NULL,
+			    TRUE)) {
+    /** Cannot set keys */
+    SILC_LOG_DEBUG(("Cannot set new keys, error sending REKEY_DONE"));
+    ske->status = SILC_SKE_STATUS_ERROR;
+    silc_fsm_next(fsm, silc_ske_st_responder_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /** Wait for REKEY_DONE */
+  silc_fsm_next(fsm, silc_ske_st_rekey_responder_end);
+  return SILC_FSM_WAIT;
+}
+
+/* Rekey protocol end */
+
+SILC_FSM_STATE(silc_ske_st_rekey_responder_end)
+{
+  SilcSKE ske = fsm_context;
+  SilcCipher receive_key;
+  SilcHmac hmac_receive;
+  SilcSKERekeyMaterial rekey;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  if (ske->packet->type != SILC_PACKET_REKEY_DONE) {
+    SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
+    silc_packet_free(ske->packet);
+    ske->packet = NULL;
+    return SILC_FSM_WAIT;
+  }
+
+  silc_packet_get_keys(ske->stream, NULL, &receive_key, NULL, &hmac_receive);
+  ske->prop->cipher = receive_key;
+  ske->prop->hmac = hmac_receive;
+
+  /* Get receiving keys */
+  if (!silc_ske_set_keys(ske, ske->keymat, ske->prop, NULL, &receive_key,
+			 NULL, &hmac_receive, NULL)) {
+    /** Cannot get keys */
+    ske->status = SILC_SKE_STATUS_ERROR;
+    silc_fsm_next(fsm, silc_ske_st_responder_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /* Set new receiving keys into use.  All packets received after this will
+     be decrypted with the new keys. */
+  if (!silc_packet_set_keys(ske->stream, NULL, receive_key, NULL,
+			    hmac_receive, FALSE)) {
+    /** Cannot set keys */
+    SILC_LOG_DEBUG(("Cannot set new keys"));
+    ske->status = SILC_SKE_STATUS_ERROR;
+    silc_fsm_next(fsm, silc_ske_st_responder_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  SILC_LOG_DEBUG(("Rekey completed successfully"));
+
+  /* Generate new rekey material */
+  rekey = silc_ske_make_rekey_material(ske, ske->keymat);
+  if (!rekey) {
+    /** No memory */
+    ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+    silc_fsm_next(fsm, silc_ske_st_responder_error);
+    return SILC_FSM_CONTINUE;
+  }
+  rekey->pfs = ske->rekey->pfs;
+  ske->rekey = rekey;
+
+  ske->prop->cipher = NULL;
+  ske->prop->hmac = NULL;
+  silc_packet_free(ske->packet);
+  ske->packet = NULL;
+  silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
+  silc_schedule_task_del_by_context(ske->schedule, ske);
+
+  /* Call completion */
+  silc_ske_completion(ske);
+
   return SILC_FSM_FINISH;
 }
 
@@ -2689,7 +2930,8 @@ SILC_FSM_STATE(silc_ske_st_rekey_responder_start)
 SilcAsyncOperation
 silc_ske_rekey_responder(SilcSKE ske,
 			 SilcPacketStream stream,
-			 SilcSKERekeyMaterial rekey)
+			 SilcSKERekeyMaterial rekey,
+			 SilcPacket packet)
 {
   SILC_LOG_DEBUG(("Start SKE rekey as responder"));
 
@@ -2706,6 +2948,7 @@ silc_ske_rekey_responder(SilcSKE ske,
   ske->responder = TRUE;
   ske->running = TRUE;
   ske->rekeying = TRUE;
+  ske->packet = packet;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;
@@ -2717,7 +2960,7 @@ silc_ske_rekey_responder(SilcSKE ske,
 			  SILC_PACKET_FAILURE, -1);
 
   /* Start SKE rekey as responder */
-  silc_fsm_start(&ske->fsm, silc_ske_st_rekey_responder_start);
+  silc_fsm_start_sync(&ske->fsm, silc_ske_st_rekey_responder_wait);
 
   return &ske->op;
 }
@@ -3127,7 +3370,7 @@ const char *silc_ske_status_string[] =
 {
   /* Official */
   "Ok",
-  "Unkown error occurred",
+  "Unexpected error occurred",
   "Bad payload in packet",
   "Unsupported group",
   "Unsupported cipher",

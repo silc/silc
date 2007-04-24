@@ -527,7 +527,8 @@ SilcAsyncOperation silc_ske_rekey_initiator(SilcSKE ske,
  *    SilcAsyncOperation
  *    silc_ske_rekey_responder(SilcSKE ske,
  *                             SilcPacketStream stream,
- *                             SilcSKERekeyMaterial rekey);
+ *                             SilcSKERekeyMaterial rekey,
+ *                             SilcPacket packet);
  *
  * DESCRIPTION
  *
@@ -539,6 +540,10 @@ SilcAsyncOperation silc_ske_rekey_initiator(SilcSKE ske,
  *    the new keys into `stream'.  The completion callback is called after
  *    the new keys has been taken into use.
  *
+ *    The `packet' is the SILC_PACKET_REKEY received to start the rekey
+ *    protocol.  If `packet' is NULL it is assumed that the packet will be
+ *    received from the `stream'.
+ *
  *    This function returns SilcAsyncOperation operation context which can
  *    be used to control the protocol from the application.  Application may
  *    for example safely abort the protocol at any point, if needed.  Returns
@@ -547,7 +552,8 @@ SilcAsyncOperation silc_ske_rekey_initiator(SilcSKE ske,
  ***/
 SilcAsyncOperation silc_ske_rekey_responder(SilcSKE ske,
 					    SilcPacketStream stream,
-					    SilcSKERekeyMaterial rekey);
+					    SilcSKERekeyMaterial rekey,
+					    SilcPacket packet);
 
 /****f* silcske/SilcSKEAPI/silc_ske_set_keys
  *
