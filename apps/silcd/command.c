@@ -271,7 +271,7 @@ void silc_server_command_process(SilcServer server,
     else
       silc_schedule_task_add_timeout(server->schedule,
 				     silc_server_command_process_timeout,
-				     timeout, 0, 1);
+				     timeout, 0, 0);
     return;
   }
 
@@ -653,8 +653,8 @@ SILC_SERVER_CMD_FUNC(nick)
 
   /* Truncate over long nicks */
   if (nick_len > 128) {
-    nick[128] = '\0';
     nick_len = 128;
+    nick[nick_len - 1] = '\0';
   }
 
   /* Check for valid nickname string.  This is cached, original is saved
@@ -699,18 +699,12 @@ SILC_SERVER_CMD_FUNC(nick)
 
   oidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
-  /* Remove old cache entry */
-  silc_idcache_del_by_context(server->local_list->clients, client, NULL);
-
-  silc_free(client->id);
-  client->id = new_id;
-
+  /* Update client entry */
+  silc_idcache_update_by_context(server->local_list->clients, client,
+				 new_id, nickc, TRUE);
+  silc_free(new_id);
   silc_free(client->nickname);
   client->nickname = strdup(nick);
-
-  /* Update client cache */
-  silc_idcache_add(server->local_list->clients, nickc,
-		   client->id, (void *)client);
 
   nidp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
@@ -861,6 +855,7 @@ SILC_SERVER_CMD_FUNC(list)
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SilcServer server = cmd->server;
   SilcID id;
+  SilcChannelID *channel_id = NULL;
   SilcChannelEntry *lchannels = NULL, *gchannels = NULL;
   SilcUInt32 lch_count = 0, gch_count = 0;
 
@@ -895,18 +890,15 @@ SILC_SERVER_CMD_FUNC(list)
   }
 
   /* Get Channel ID */
-  if (!silc_argument_get_decoded(cmd->args, 1, SILC_ARGUMENT_ID, &id, NULL)) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_LIST,
-					  SILC_STATUS_ERR_NO_CHANNEL_ID, 0);
-    goto out;
-  }
+  if (silc_argument_get_decoded(cmd->args, 1, SILC_ARGUMENT_ID, &id, NULL))
+    channel_id = SILC_ID_GET_ID(id);
 
   /* Get the channels from local list */
-  lchannels = silc_idlist_get_channels(server->local_list, SILC_ID_GET_ID(id),
+  lchannels = silc_idlist_get_channels(server->local_list, channel_id,
 				       &lch_count);
 
   /* Get the channels from global list */
-  gchannels = silc_idlist_get_channels(server->global_list, SILC_ID_GET_ID(id),
+  gchannels = silc_idlist_get_channels(server->global_list, channel_id,
 				       &gch_count);
 
   /* Send the reply */
@@ -1733,6 +1725,9 @@ SILC_SERVER_CMD_FUNC(stats)
     goto out;
   }
 
+  SILC_LOG_DEBUG(("id %s", silc_id_render(SILC_ID_GET_ID(id),
+					  id.type)));
+
   /* The ID must be ours */
   if (!SILC_ID_SERVER_COMPARE(server->id, SILC_ID_GET_ID(id))) {
     tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
@@ -1844,7 +1839,8 @@ static void silc_server_command_join_channel(SilcServer server,
   if (!channel)
     return;
 
-  silc_socket_stream_get_info(sock, NULL, &hostname, &ip, NULL);
+  silc_socket_stream_get_info(silc_packet_stream_get_stream(sock),
+			      NULL, &hostname, &ip, NULL);
 
   /* Get the client entry */
   if (idata->conn_type == SILC_CONN_CLIENT) {
@@ -3839,7 +3835,8 @@ SILC_SERVER_CMD_FUNC(oper)
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_OPER, cmd, 1, 2);
 
-  silc_socket_stream_get_info(cmd->sock, NULL, &hostname, &ip, NULL);
+  silc_socket_stream_get_info(silc_packet_stream_get_stream(cmd->sock),
+			      NULL, &hostname, &ip, NULL);
 
   /* Get the username */
   username = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
@@ -4367,7 +4364,8 @@ SILC_SERVER_CMD_FUNC(silcoper)
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_SILCOPER, cmd, 1, 2);
 
-  silc_socket_stream_get_info(cmd->sock, NULL, &hostname, &ip, NULL);
+  silc_socket_stream_get_info(silc_packet_stream_get_stream(cmd->sock),
+			      NULL, &hostname, &ip, NULL);
 
   if (server->server_type != SILC_ROUTER) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,

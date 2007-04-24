@@ -163,7 +163,7 @@ static SilcBool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
     silc_skr_find_set_usage(find, usage);
     silc_skr_find_set_context(find, key_context ? key_context : (void *)usage);
     silc_skr_find(skr, NULL, find, my_find_callback, &status);
-    if (status != SILC_SKR_OK) {
+    if (status == SILC_SKR_ALREADY_EXIST) {
       silc_pkcs_public_key_free(public_key);
       SILC_SERVER_LOG_WARNING(("Warning: public key file \"%s\" already "
 			       "configured, ignoring this key", p));
@@ -1605,8 +1605,10 @@ void silc_server_config_destroy(SilcServerConfig config)
     silc_free(si->group);
     silc_free(si->motd_file);
     silc_free(si->pid_file);
-    silc_pkcs_public_key_free(si->public_key);
-    silc_pkcs_private_key_free(si->private_key);
+    if (si->public_key)
+      silc_pkcs_public_key_free(si->public_key);
+    if (si->private_key)
+      silc_pkcs_private_key_free(si->private_key);
     silc_free(si);
   }
 
@@ -1784,7 +1786,7 @@ SilcBool silc_server_config_register_hmacs(SilcServer server)
 
 SilcBool silc_server_config_register_pkcs(SilcServer server)
 {
-  return TRUE;
+  return FALSE;
 }
 
 /* Sets log files where log messages are saved by the server logger. */

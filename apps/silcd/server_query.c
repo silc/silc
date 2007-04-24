@@ -1490,8 +1490,8 @@ void silc_server_query_send_reply(SilcServer server,
 	  if (!strchr(entry->username, '@') && entry->connection) {
 	    hsock = entry->connection;
 	    silc_strncat(uh, sizeof(uh), "@", 1);
-	    silc_socket_stream_get_info(hsock, NULL, (const char **)&tmp,
-					NULL, NULL);
+	    silc_socket_stream_get_info(silc_packet_stream_get_stream(hsock),
+					NULL, (const char **)&tmp, NULL, NULL);
 	    silc_strncat(uh, sizeof(uh), tmp, strlen(tmp));
 	  }
 
@@ -1581,7 +1581,8 @@ void silc_server_query_send_reply(SilcServer server,
 	  if (!strchr(entry->username, '@') && entry->connection) {
 	    hsock = entry->connection;
 	    silc_strncat(uh, sizeof(uh), "@", 1);
-	    silc_socket_stream_get_info(hsock, NULL, (const char **)&tmp,
+	    silc_socket_stream_get_info(silc_packet_stream_get_stream(hsock),
+					NULL, (const char **)&tmp,
 					NULL, NULL);
 	    silc_strncat(uh, sizeof(uh), tmp, strlen(tmp));
 	  }

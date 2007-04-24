@@ -179,7 +179,8 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
   SilcUInt32 mode = 0, len, len2, id_len, flen;
   const char *hostname, *ip;
 
-  silc_socket_stream_get_info(cmd->sock, NULL, &hostname, &ip, NULL);
+  silc_socket_stream_get_info(silc_packet_stream_get_stream(cmd->sock),
+			      NULL, &hostname, &ip, NULL);
 
   id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);
@@ -458,7 +459,8 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
   int global = FALSE;
   const char *hostname, *ip;
 
-  silc_socket_stream_get_info(cmd->sock, NULL, &hostname, &ip, NULL);
+  silc_socket_stream_get_info(silc_packet_stream_get_stream(cmd->sock),
+			      NULL, &hostname, &ip, NULL);
 
   id_data = silc_argument_get_arg_type(cmd->args, 2, &id_len);
   nickname = silc_argument_get_arg_type(cmd->args, 3, &len);

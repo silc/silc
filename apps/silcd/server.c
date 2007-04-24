@@ -31,6 +31,8 @@ static void silc_server_accept_new_connection(SilcNetStatus status,
 static void silc_server_packet_parse_type(SilcServer server,
 					  SilcPacketStream sock,
 					  SilcPacket packet);
+static void silc_server_rekey(SilcServer server, SilcPacketStream sock,
+			      SilcPacket packet);
 
 
 /************************ Static utility functions **************************/
@@ -96,6 +98,7 @@ static SilcBool silc_server_packet_receive(SilcPacketEngine engine,
        !(idata->status & SILC_IDLIST_STATUS_REGISTERED)) &&
       packet->type != SILC_PACKET_NEW_CLIENT &&
       packet->type != SILC_PACKET_NEW_SERVER &&
+      packet->type != SILC_PACKET_CONNECTION_AUTH_REQUEST &&
       packet->type != SILC_PACKET_DISCONNECT)
     return FALSE;
 
@@ -371,7 +374,7 @@ static void silc_server_packet_parse_type(SilcServer server,
      */
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
-    /* XXX handle rekey */
+    silc_server_rekey(server, sock, packet);
     break;
 
   case SILC_PACKET_FTP:
@@ -436,6 +439,9 @@ SilcBool silc_server_alloc(SilcServer *new_server)
     return FALSE;
   server->repository = silc_skr_alloc();
   if (!server->repository)
+    return FALSE;
+  server->conns = silc_dlist_init();
+  if (!server->conns)
     return FALSE;
 
   *new_server = server;
@@ -554,6 +560,7 @@ silc_server_listen(SilcServer server, const char *server_ip, SilcUInt16 port)
 
 SilcBool silc_server_init_secondary(SilcServer server)
 {
+  return TRUE;
 #if 0
   int sock = 0;
   SilcPacketStream newsocket = NULL;
@@ -730,25 +737,6 @@ SilcBool silc_server_init(SilcServer server)
 
   silc_dlist_add(server->listeners, listener);
 
-#if 0
-  /* Perform name and address lookups to resolve the listenning address
-     and port. */
-  if (!silc_net_check_local_by_sock(sock, &newsocket->hostname,
-				    &newsocket->ip)) {
-    if ((server->config->require_reverse_lookup && !newsocket->hostname) ||
-	!newsocket->ip) {
-      SILC_LOG_ERROR(("IP/DNS lookup failed for local host %s",
-		      newsocket->hostname ? newsocket->hostname :
-		      newsocket->ip ? newsocket->ip : ""));
-      server->stat.conn_failures++;
-      goto err;
-    }
-    if (!newsocket->hostname)
-      newsocket->hostname = strdup(newsocket->ip);
-  }
-  newsocket->port = silc_net_get_local_port(sock);
-#endif
-
   /* Create a Server ID for the server. */
   port = silc_net_listener_get_port(listener, NULL);
   ip = silc_net_listener_get_ip(listener, NULL);
@@ -772,7 +760,7 @@ SilcBool silc_server_init(SilcServer server)
     silc_idlist_add_server(server->local_list, strdup(server->server_name),
 			   server->server_type, server->id, NULL, NULL);
   if (!id_entry) {
-    SILC_LOG_ERROR(("Could not add ourselves to cache"));
+    SILC_LOG_ERROR(("Could not add local server to cache"));
     goto err;
   }
   id_entry->data.status |= SILC_IDLIST_STATUS_REGISTERED;
@@ -1141,6 +1129,7 @@ void silc_server_stop(SilcServer server)
       silc_server_free_sock_user_data(server, ps,
 				      "Server is shutting down");
     }
+    silc_dlist_uninit(list);
   }
 
   /* We are not connected to network anymore */
@@ -1615,7 +1604,7 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
   server->stat.conn_num++;
 
   /* Set source ID to packet stream */
-  if (!silc_packet_set_ids(sconn->sock, SILC_ID_SERVER, &server->id,
+  if (!silc_packet_set_ids(sconn->sock, SILC_ID_SERVER, server->id,
 			   0, NULL)) {
     silc_packet_stream_destroy(sconn->sock);
     silc_server_connection_free(sconn);
@@ -1989,9 +1978,16 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 {
   SilcPacketStream sock = context;
   SilcUnknownEntry entry = silc_packet_get_context(sock);
+  SilcIDListData idata = (SilcIDListData)entry;
   SilcServer server = entry->server;
   SilcServerConfigConnParams *param;
+  SilcServerConnection sconn;
   void *id_entry;
+  const char *hostname;
+  SilcUInt16 port;
+
+  silc_socket_stream_get_info(silc_packet_stream_get_stream(sock),
+			      NULL, &hostname, NULL, &port);
 
   if (success == FALSE) {
     /* Authentication failed */
@@ -2091,12 +2087,11 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 	  client->mode |= SILC_UMODE_ANONYMOUS;
       }
 
-      /* Add public key to hash list (for whois using attributes) */
-      if (!silc_hash_table_find_by_context(server->pk_hash,
-					   entry->data.public_key,
-					   client, NULL))
-	silc_hash_table_add(server->pk_hash,
-			    entry->data.public_key, client);
+      /* Add public key to repository */
+      if (!silc_server_get_public_key_by_client(server, client, NULL))
+	silc_skr_add_public_key_simple(server->repository,
+				       entry->data.public_key,
+				       SILC_SKR_USAGE_IDENTIFICATION, client);
 
       id_entry = (void *)client;
       break;
@@ -2312,6 +2307,16 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
     break;
   }
 
+  /* Add connection to server->conns so that we know we have connection
+     to this peer. */
+  sconn = silc_calloc(1, sizeof(*sconn));
+  sconn->server = server;
+  sconn->sock = sock;
+  sconn->remote_host = strdup(hostname);
+  sconn->remote_port = port;
+  silc_dlist_add(server->conns, sconn);
+  idata->sconn = sconn;
+
   /* Add the common data structure to the ID entry. */
   silc_idlist_add_data(id_entry, (SilcIDListData)entry);
   silc_packet_set_context(sock, id_entry);
@@ -2319,9 +2324,6 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
   /* Connection has been fully established now. Everything is ok. */
   SILC_LOG_DEBUG(("New connection authenticated"));
 
-  /* XXX Add connection to server->conns so that we know we have connection
-     to this peer. */
-  /* XXX */
 
 #if 0
   /* Perform keepalive. */
@@ -2358,6 +2360,7 @@ silc_server_accept_completed(SilcSKE ske, SilcSKEStatus status,
 {
   SilcPacketStream sock = context;
   SilcUnknownEntry entry = silc_packet_get_context(sock);
+  SilcIDListData idata = (SilcIDListData)entry;
   SilcServer server = entry->server;
   SilcConnAuth connauth;
   SilcCipher send_key, receive_key;
@@ -2387,6 +2390,9 @@ silc_server_accept_completed(SilcSKE ske, SilcSKEStatus status,
   }
   silc_packet_set_keys(sock, send_key, receive_key, hmac_send,
 		       hmac_receive, FALSE);
+
+  idata->rekey = rekey;
+  idata->public_key = silc_pkcs_public_key_copy(prop->public_key);
 
   SILC_LOG_DEBUG(("Starting connection authentication"));
   server->stat.auth_attempts++;
@@ -2459,7 +2465,7 @@ static void silc_server_accept_new_connection(SilcNetStatus status,
   server->stat.conn_num++;
 
   /* Set source ID to packet stream */
-  if (!silc_packet_set_ids(packet_stream, SILC_ID_SERVER, &server->id,
+  if (!silc_packet_set_ids(packet_stream, SILC_ID_SERVER, server->id,
 			   0, NULL)) {
     /* Out of memory */
     server->stat.conn_failures++;
@@ -2622,6 +2628,62 @@ SILC_TASK_CALLBACK(silc_server_do_rekey)
   idata->sconn->op = silc_ske_rekey_initiator(ske, sock, idata->rekey);
 }
 
+/* Responder rekey completion callback */
+
+static void
+silc_server_rekey_resp_completion(SilcSKE ske,
+				  SilcSKEStatus status,
+				  const SilcSKESecurityProperties prop,
+				  const SilcSKEKeyMaterial keymat,
+				  SilcSKERekeyMaterial rekey,
+				  void *context)
+{
+  SilcPacketStream sock = context;
+  SilcIDListData idata = silc_packet_get_context(sock);
+
+  idata->sconn->op = NULL;
+  if (status != SILC_SKE_STATUS_OK) {
+    SILC_LOG_ERROR(("Error during rekey protocol with %s",
+		    idata->sconn->remote_host));
+    return;
+  }
+
+  SILC_LOG_DEBUG(("Rekey protocol completed with %s:%d [%s]",
+		  idata->sconn->remote_host, idata->sconn->remote_port,
+		  SILC_CONNTYPE_STRING(idata->conn_type)));
+
+  /* Save rekey data for next rekey */
+  idata->rekey = rekey;
+}
+
+/* Start rekey as responder */
+
+static void silc_server_rekey(SilcServer server, SilcPacketStream sock,
+			      SilcPacket packet)
+{
+  SilcIDListData idata = silc_packet_get_context(sock);
+  SilcSKE ske;
+
+  SILC_LOG_DEBUG(("Executing rekey protocol with %s:%d [%s]",
+		  idata->sconn->remote_host, idata->sconn->remote_port,
+		  SILC_CONNTYPE_STRING(idata->conn_type)));
+
+  /* Allocate SKE */
+  ske = silc_ske_alloc(server->rng, server->schedule, server->repository,
+		       server->public_key, server->private_key, sock);
+  if (!ske) {
+    silc_packet_free(packet);
+    return;
+  }
+
+  /* Set SKE callbacks */
+  silc_ske_set_callbacks(ske, NULL, silc_server_rekey_resp_completion, sock);
+
+  /* Perform rekey */
+  idata->sconn->op = silc_ske_rekey_responder(ske, sock, idata->rekey,
+					      packet);
+}
+
 
 /****************************** Disconnection *******************************/
 
@@ -2658,7 +2720,8 @@ void silc_server_close_connection(SilcServer server,
 
   memset(tmp, 0, sizeof(tmp));
   //  silc_socket_get_error(sock, tmp, sizeof(tmp));
-  silc_socket_stream_get_info(sock, NULL, &hostname, NULL, &port);
+  silc_socket_stream_get_info(silc_packet_stream_get_stream(sock),
+			      NULL, &hostname, NULL, &port);
   SILC_LOG_INFO(("Closing connection %s:%d [%s] %s", hostname, port,
 		 SILC_CONNTYPE_STRING(idata->conn_type),
 		 tmp[0] ? tmp : ""));
@@ -4716,7 +4779,7 @@ silc_server_get_client_route(SilcServer server,
 
   /* Decode destination Client ID */
   if (!client_id) {
-    if (!silc_id_str2id(id_data, id_len, SILC_ID_CHANNEL, &clid, sizeof(clid)))
+    if (!silc_id_str2id(id_data, id_len, SILC_ID_CLIENT, &clid, sizeof(clid)))
       return NULL;
     id = silc_id_dup(&clid, SILC_ID_CLIENT);
   } else {

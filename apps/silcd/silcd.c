@@ -699,7 +699,8 @@ int main(int argc, char **argv)
 
   /* Unregister the default crypto stuff so that configuration takes effect */
   silc_cipher_unregister_all();
-  silc_pkcs_unregister_all();
+  /* silc_pkcs_unregister_all();  MUST NOT do this anymore; SilcPublicKey
+     parsed from config file references pointers so we cannot unregister */
   silc_hash_unregister_all();
   silc_hmac_unregister_all();
 

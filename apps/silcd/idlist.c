@@ -35,6 +35,8 @@
 void silc_idlist_add_data(void *entry, SilcIDListData idata)
 {
   SilcIDListData data = entry;
+  data->conn_type = idata->conn_type;
+  data->sconn = idata->sconn;
   data->hash = idata->hash;
   data->public_key = idata->public_key;
   memcpy(data->fingerprint, idata->fingerprint, sizeof(data->fingerprint));
@@ -207,7 +209,9 @@ silc_idlist_find_server_by_conn(SilcIDList id_list, char *hostname,
     server = id_cache->context;
     sock = server->connection;
 
-    if (sock && silc_socket_stream_get_info(sock, NULL, &host, &ip, NULL)) {
+    if (sock && silc_socket_stream_get_info(
+			    silc_packet_stream_get_stream(sock),
+			    NULL, &host, &ip, NULL)) {
       if (((host && !strcasecmp(host, hostname)) ||
 	   (ip && !strcasecmp(ip, hostname))) &&
 	  server->id->port == SILC_SWAB_16(port))
@@ -368,24 +372,11 @@ int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
   SILC_LOG_DEBUG(("Start"));
 
   if (entry) {
-    if (!silc_idcache_del_by_context(id_list->clients, entry, NULL /* XXX */)) {
+    /* Delete client, destructor will free data */
+    if (!silc_idcache_del_by_context(id_list->clients, entry, NULL)) {
       SILC_LOG_DEBUG(("Unknown client, did not delete"));
       return FALSE;
     }
-
-    assert(!silc_hash_table_count(entry->channels));
-
-    silc_free(entry->nickname);
-    silc_free(entry->servername);
-    silc_free(entry->username);
-    silc_free(entry->userinfo);
-    silc_free(entry->id);
-    silc_free(entry->attrs);
-    silc_hash_table_free(entry->channels);
-
-    memset(entry, 'F', sizeof(*entry));
-    silc_free(entry);
-
     return TRUE;
   }
 

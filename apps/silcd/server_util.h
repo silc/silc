@@ -84,15 +84,15 @@ SilcBool silc_server_channel_has_local(SilcChannelEntry channel);
    users are removed from the channel.  Returns TRUE if the channel is
    destroyed totally, and FALSE if it is permanent and remains. */
 SilcBool silc_server_channel_delete(SilcServer server,
-				SilcChannelEntry channel);
+				    SilcChannelEntry channel);
 
 /* Returns TRUE if the given client is on the channel.  FALSE if not.
    This works because we assure that the user list on the channel is
    always in up to date thus we can only check the channel list from
    `client' which is faster than checking the user list from `channel'. */
 SilcBool silc_server_client_on_channel(SilcClientEntry client,
-				   SilcChannelEntry channel,
-				   SilcChannelClientEntry *chl);
+				       SilcChannelEntry channel,
+				       SilcChannelClientEntry *chl);
 
 /* Find number of sockets by IP address indicated by `ip'. Returns 0 if
    socket connections with the IP address does not exist. */
@@ -112,6 +112,12 @@ SilcPublicKey silc_server_get_public_key(SilcServer server,
 					 SilcSKRKeyUsage usage,
 					 void *key_context);
 
+/* Find public key by client for identification purposes.  Finds keys
+   with SILC_SKR_USAGE_IDENTIFICATION. */
+SilcBool silc_server_get_public_key_by_client(SilcServer server,
+					      SilcClientEntry client,
+					      SilcPublicKey *public_key);
+
 /* Check whether the connection `sock' is allowed to connect to us.  This
    checks for example whether there is too much connections for this host,
    and required version for the host etc. */
@@ -125,9 +131,9 @@ SilcBool silc_server_connection_allowed(SilcServer server,
 /* Checks that client has rights to add or remove channel modes. If any
    of the checks fails FALSE is returned. */
 SilcBool silc_server_check_cmode_rights(SilcServer server,
-				    SilcChannelEntry channel,
-				    SilcChannelClientEntry client,
-				    SilcUInt32 mode);
+					SilcChannelEntry channel,
+					SilcChannelClientEntry client,
+					SilcUInt32 mode);
 
 /* Check that the client has rights to change its user mode.  Returns
    FALSE if setting some mode is not allowed. */

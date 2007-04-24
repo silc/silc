@@ -999,7 +999,8 @@ SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
   while ((conn = silc_dlist_get(server->conns))) {
     if (!conn->sock)
       continue;
-    silc_socket_stream_get_info(conn->sock, NULL, NULL, &ipaddr, NULL);
+    silc_socket_stream_get_info(silc_packet_stream_get_stream(conn->sock),
+				NULL, NULL, &ipaddr, NULL);
     idata = silc_packet_get_context(conn->sock);
     if (!strcmp(ipaddr, ip) && idata && idata->conn_type == type)
       count++;
@@ -1025,7 +1026,8 @@ silc_server_find_socket_by_host(SilcServer server,
     if (!conn->sock)
       continue;
     idata = silc_packet_get_context(conn->sock);
-    silc_socket_stream_get_info(conn->sock, NULL, NULL, &ipaddr, NULL);
+    silc_socket_stream_get_info(silc_packet_stream_get_stream(conn->sock),
+				NULL, NULL, &ipaddr, NULL);
     if (!strcmp(ipaddr, ip) &&
 	(!port || conn->remote_port == port) &&
 	idata->conn_type == type)
@@ -1104,6 +1106,27 @@ SilcPublicKey silc_server_get_public_key(SilcServer server,
   return public_key;
 }
 
+/* Find public key by client for identification purposes.  Finds keys
+   with SILC_SKR_USAGE_IDENTIFICATION. */
+
+SilcBool silc_server_get_public_key_by_client(SilcServer server,
+					      SilcClientEntry client,
+					      SilcPublicKey *public_key)
+{
+  SilcPublicKey pubkey = NULL;
+  SilcBool ret = FALSE;
+
+  pubkey = silc_server_get_public_key(server, SILC_SKR_USAGE_IDENTIFICATION,
+				      client);
+  if (pubkey)
+    ret = TRUE;
+
+  if (public_key)
+    *public_key = pubkey;
+
+  return ret;
+}
+
 /* Check whether the connection `sock' is allowed to connect to us.  This
    checks for example whether there is too much connections for this host,
    and required version for the host etc. */
@@ -1126,7 +1149,8 @@ SilcBool silc_server_connection_allowed(SilcServer server,
   char *r_vendor_version = NULL, *l_vendor_version;
   const char *hostname, *ip;
 
-  silc_socket_stream_get_info(sock, NULL, &hostname, &ip, NULL);
+  silc_socket_stream_get_info(silc_packet_stream_get_stream(sock),
+			      NULL, &hostname, &ip, NULL);
 
   SILC_LOG_DEBUG(("Checking whether connection is allowed"));
 
