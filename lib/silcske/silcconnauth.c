@@ -384,8 +384,13 @@ SILC_FSM_STATE(silc_connauth_st_initiator_failure)
     SILC_PUT32_MSB(SILC_AUTH_FAILED, error);
     silc_packet_send(connauth->ske->stream, SILC_PACKET_FAILURE, 0, error, 4);
 
+    silc_packet_stream_unlink(connauth->ske->stream,
+			      &silc_connauth_stream_cbs, connauth);
+    silc_schedule_task_del_by_context(silc_fsm_get_schedule(fsm), connauth);
+
     /* Call completion callback */
     connauth->completion(connauth, FALSE, connauth->context);
+    return SILC_FSM_FINISH;
   }
 
   silc_packet_stream_unlink(connauth->ske->stream,
@@ -654,12 +659,12 @@ SILC_FSM_STATE(silc_connauth_st_responder_success)
   SILC_PUT32_MSB(SILC_AUTH_OK, tmp);
   silc_packet_send(connauth->ske->stream, SILC_PACKET_SUCCESS, 0, tmp, 4);
 
-  /* Call completion callback */
-  connauth->completion(connauth, TRUE, connauth->context);
-
   silc_packet_stream_unlink(connauth->ske->stream,
 			    &silc_connauth_stream_cbs, connauth);
   silc_schedule_task_del_by_context(silc_fsm_get_schedule(fsm), connauth);
+
+  /* Call completion callback */
+  connauth->completion(connauth, TRUE, connauth->context);
 
   return SILC_FSM_FINISH;
 }
@@ -676,8 +681,14 @@ SILC_FSM_STATE(silc_connauth_st_responder_failure)
     SILC_PUT32_MSB(SILC_AUTH_FAILED, error);
     silc_packet_send(connauth->ske->stream, SILC_PACKET_FAILURE, 0, error, 4);
 
+    silc_packet_stream_unlink(connauth->ske->stream,
+			      &silc_connauth_stream_cbs, connauth);
+    silc_schedule_task_del_by_context(silc_fsm_get_schedule(fsm), connauth);
+
     /* Call completion callback */
     connauth->completion(connauth, FALSE, connauth->context);
+
+    return SILC_FSM_FINISH;
   }
 
   silc_packet_stream_unlink(connauth->ske->stream,
