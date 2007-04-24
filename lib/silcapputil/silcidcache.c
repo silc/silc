@@ -244,15 +244,19 @@ SilcBool silc_idcache_update(SilcIDCache cache, SilcIDCacheEntry entry,
     return FALSE;
 
   if (new_id) {
-    if (!silc_hash_table_del_by_context(cache->id_table, entry->id, entry))
-      return FALSE;
+    if (entry->id) {
+      if (!silc_hash_table_del_by_context(cache->id_table, entry->id, entry))
+	return FALSE;
 
-    if (cache->id_type == SILC_ID_CLIENT)
-      *(SilcClientID *)entry->id = *(SilcClientID *)new_id;
-    if (cache->id_type == SILC_ID_SERVER)
-      *(SilcServerID *)entry->id = *(SilcServerID *)new_id;
-    if (cache->id_type == SILC_ID_CHANNEL)
-      *(SilcChannelID *)entry->id = *(SilcChannelID *)new_id;
+      if (cache->id_type == SILC_ID_CLIENT)
+	*(SilcClientID *)entry->id = *(SilcClientID *)new_id;
+      if (cache->id_type == SILC_ID_SERVER)
+	*(SilcServerID *)entry->id = *(SilcServerID *)new_id;
+      if (cache->id_type == SILC_ID_CHANNEL)
+	*(SilcChannelID *)entry->id = *(SilcChannelID *)new_id;
+    } else {
+      entry->id = new_id;
+    }
 
     if (!silc_hash_table_add(cache->id_table, entry->id, entry))
       return FALSE;

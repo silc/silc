@@ -208,7 +208,8 @@ SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
  * DESCRIPTION
  *
  *    Updates cache `entry' with new values.  If the `new_id' is non-NULL
- *    then the new value will be copied over the old value in the `entry'.
+ *    then the new value will be copied over the old value in the `entry'
+ *    unless the ID doesn't exist, when the `new_id' will be stored in `entry'.
  *    If the `new_name' is non-NULL then the `entry' will be updated with
  *    `new_name'.  The caller is responsible of freeing the old name if it
  *    was updated with new one.  The old ID value does not need to be freed
