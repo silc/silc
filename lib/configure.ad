@@ -228,9 +228,20 @@ lib/silcsim/Makefile
 #endif SILC_DIST_SIM
 lib/silcske/Makefile
 lib/silcutil/Makefile
+#ifdef SILC_DIST_TOOLKIT
 lib/silcutil/unix/Makefile
 lib/silcutil/win32/Makefile
 lib/silcutil/symbian/Makefile
+#else !SILC_DIST_TOOLKIT
+#ifdef SILC_DIST_CLIENT
+lib/silcutil/unix/Makefile
+lib/silcutil/win32/Makefile
+#else !SILC_DIST_CLIENT
+#ifdef SILC_DIST_SERVER
+lib/silcutil/unix/Makefile
+#endif SILC_DIST_SERVER
+#endif SILC_DIST_CLIENT
+#endif SILC_DIST_TOOLKIT
 lib/silcapputil/Makefile
 #ifdef SILC_DIST_SFTP
 lib/silcsftp/Makefile
@@ -285,7 +296,9 @@ lib/silcskr/tests/Makefile
 #ifdef SILC_DIST_HTTP
 AC_CONFIG_FILES(
 lib/silchttp/Makefile
+#ifdef SILC_DIST_INPLACE
 lib/silchttp/tests/Makefile
+#endif SILC_DIST_INPLACE
 )
 #endif SILC_DIST_HTTP
 

@@ -78,7 +78,7 @@ dist-hook:
 #else !SILC_DIST_TOOLKIT
 dist-hook:
 	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
-	rm draft-riikonen*.txt
+	rm -f draft-riikonen*.txt
 	touch draft-riikonen-silc-spec-09.txt
 	touch draft-riikonen-silc-pp-09.txt
 	touch draft-riikonen-silc-ke-auth-09.txt
