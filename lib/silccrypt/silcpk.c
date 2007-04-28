@@ -425,7 +425,7 @@ int silc_pkcs_silc_import_public_key(unsigned char *key,
     goto err;
 
   SILC_LOG_DEBUG(("Public key version %s",
-		  (!silc_pubkey->identifier.version ? " 1" :
+		  (!silc_pubkey->identifier.version ? "1" :
 		   silc_pubkey->identifier.version)));
 
   if (!strcmp(pkcs_name, "rsa")) {
@@ -444,7 +444,7 @@ int silc_pkcs_silc_import_public_key(unsigned char *key,
       pkcs = silc_pkcs_find_algorithm(pkcs_name, "pkcs1");
     }
     if (!pkcs) {
-      SILC_LOG_DEBUG(("Unsupported PKCS algorithm"));
+      SILC_LOG_DEBUG(("Unsupported PKCS algorithm: rsa"));
       goto err;
     }
     silc_pubkey->pkcs = pkcs;
@@ -706,6 +706,7 @@ SilcUInt32 silc_pkcs_silc_public_key_bitlen(void *public_key)
 void *silc_pkcs_silc_public_key_copy(void *public_key)
 {
   SilcSILCPublicKey silc_pubkey = public_key, new_pubkey;
+  SilcPublicKeyIdentifier ident = &silc_pubkey->identifier;
 
   new_pubkey = silc_calloc(1, sizeof(*new_pubkey));
   if (!new_pubkey)
@@ -718,6 +719,28 @@ void *silc_pkcs_silc_public_key_copy(void *public_key)
     silc_free(new_pubkey);
     return NULL;
   }
+
+  if (ident->username)
+    new_pubkey->identifier.username =
+      silc_memdup(ident->username, strlen(ident->username));
+  if (ident->host)
+    new_pubkey->identifier.host =
+      silc_memdup(ident->host, strlen(ident->host));
+  if (ident->realname)
+    new_pubkey->identifier.realname =
+      silc_memdup(ident->realname, strlen(ident->realname));
+  if (ident->email)
+    new_pubkey->identifier.email =
+      silc_memdup(ident->email, strlen(ident->email));
+  if (ident->org)
+    new_pubkey->identifier.org =
+      silc_memdup(ident->org, strlen(ident->org));
+  if (ident->country)
+    new_pubkey->identifier.country =
+      silc_memdup(ident->country, strlen(ident->country));
+  if (ident->version)
+    new_pubkey->identifier.version =
+      silc_memdup(ident->version, strlen(ident->version));
 
   return new_pubkey;
 }
