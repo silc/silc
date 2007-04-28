@@ -342,6 +342,7 @@ unsigned char *silc_mime_encode(SilcMime mime, SilcUInt32 *encoded_len)
   if (silc_buffer_len(&buf)) {
     silc_buffer_put(buffer, buf.head, silc_buffer_len(&buf));
     silc_buffer_pull(buffer, silc_buffer_len(&buf));
+    silc_buffer_purge(&buf);
   }
 
   /* Add data */
