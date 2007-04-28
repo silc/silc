@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ struct SilcHttpServerStruct {
 /* HTTP connection context */
 struct SilcHttpConnectionStruct {
   struct SilcHttpConnectionStruct *next;
+  struct SilcHttpConnectionStruct *next2;
   SilcHttpServer httpd;		    /* Server */
   SilcStream stream;		    /* Connection stream */
   SilcBuffer inbuf;		    /* Read data buffer */
@@ -81,6 +82,7 @@ static void silc_http_server_close_connection(SilcHttpConnection conn)
   silc_schedule_task_del_by_context(conn->httpd->schedule, conn);
   silc_stream_set_notifier(conn->stream, conn->httpd->schedule, NULL, NULL);
   silc_stream_destroy(conn->stream);
+  conn->stream = NULL;
 
   /* Add to free list */
   silc_list_add(conn->httpd->conns, conn);
@@ -476,6 +478,9 @@ SilcHttpServer silc_http_server_alloc(const char *ip, SilcUInt16 port,
   httpd->callback = callback;
   httpd->context = context;
 
+  silc_list_init(httpd->conns, struct SilcHttpConnectionStruct, next);
+  silc_list_init(httpd->allconns, struct SilcHttpConnectionStruct, next2);
+
   /* Allocate connections list */
   for (i = 0; i < SILC_HTTP_SERVER_CONNS; i++) {
     conn = silc_http_server_alloc_connection();
@@ -483,6 +488,7 @@ SilcHttpServer silc_http_server_alloc(const char *ip, SilcUInt16 port,
       break;
     silc_list_add(httpd->conns, conn);
     silc_list_add(httpd->allconns, conn);
+    conn->httpd = httpd;
   }
 
   SILC_LOG_DEBUG(("HTTP Server started"));
@@ -499,7 +505,8 @@ void silc_http_server_free(SilcHttpServer httpd)
   silc_list_start(httpd->allconns);
   while ((conn = silc_list_get(httpd->allconns))) {
     conn->keepalive = FALSE;
-    silc_http_server_close_connection(conn);
+    if (conn->httpd && conn->stream)
+      silc_http_server_close_connection(conn);
     silc_buffer_free(conn->inbuf);
     silc_buffer_free(conn->outbuf);
     silc_free(conn);
