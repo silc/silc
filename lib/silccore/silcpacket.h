@@ -198,6 +198,9 @@ typedef struct SilcPacketStruct {
  *    from the actual stream.  It can retrieve the underlaying stream from
  *    the packet stream by calling silc_packet_stream_get_stream function.
  *
+ *    You may retrieve string version of the SilcPacketError by calling
+ *    silc_packet_error_string.
+ *
  * SOURCE
  */
 typedef enum {
@@ -376,6 +379,19 @@ silc_packet_engine_start(SilcRng rng, SilcBool router,
  *
  ***/
 void silc_packet_engine_stop(SilcPacketEngine engine);
+
+/****f* silccore/SilcPacketAPI/silc_packet_error_string
+ *
+ * SYNOPSIS
+ *
+ *    const char *silc_packet_error_string(SilcPacketError error);
+ *
+ * DESCRIPTION
+ *
+ *    Return the packet error as string.
+ *
+ ***/
+const char *silc_packet_error_string(SilcPacketError error);
 
 /****f* silccore/SilcPacketAPI/silc_packet_engine_get_streams
  *

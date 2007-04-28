@@ -623,6 +623,25 @@ void silc_packet_engine_stop(SilcPacketEngine engine)
   silc_free(engine);
 }
 
+static const char *packet_error[] = {
+  "Cannot read from stream",
+  "Cannot write to stream",
+  "Packet MAC failed",
+  "Packet decryption failed",
+  "Unknown SID",
+  "Packet is malformed",
+  "System out of memory",
+};
+
+/* Return packet error string */
+
+const char *silc_packet_error_string(SilcPacketError error)
+{
+  if (error < SILC_PACKET_ERR_READ || error > SILC_PACKET_ERR_NO_MEMORY)
+    return "";
+  return packet_error[error];
+}
+
 /* Return list of packet streams in the engine */
 
 SilcDList silc_packet_engine_get_streams(SilcPacketEngine engine)
