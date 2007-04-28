@@ -326,28 +326,13 @@ int silc_server_protocol_ke_set_keys(SilcServer server,
 SilcSKEStatus silc_ske_check_version(SilcSKE ske, unsigned char *version,
 				     SilcUInt32 len, void *context)
 {
-  SilcUInt32 l_protocol_version = 0, r_protocol_version = 0;
+  SilcUInt32 r_protocol_version = 0;
 
   SILC_LOG_INFO(("%s (%s) is version %s", ske->sock->hostname,
 		 ske->sock->ip, version));
 
   if (!silc_parse_version_string(version, &r_protocol_version, NULL, NULL,
 				 NULL, NULL)) {
-    SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version",
-		    ske->sock->hostname, ske->sock->ip, version));
-    return SILC_SKE_STATUS_BAD_VERSION;
-  }
-
-  if (!silc_parse_version_string(silc_version_string,
-				 &l_protocol_version, NULL, NULL,
-				 NULL, NULL)) {
-    SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version",
-		    ske->sock->hostname, ske->sock->ip, version));
-    return SILC_SKE_STATUS_BAD_VERSION;
-  }
-
-  /* If remote is too new, don't connect */
-  if (l_protocol_version < r_protocol_version) {
     SILC_LOG_ERROR(("%s (%s) %s is not allowed/supported version",
 		    ske->sock->hostname, ske->sock->ip, version));
     return SILC_SKE_STATUS_BAD_VERSION;

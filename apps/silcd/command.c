@@ -4486,7 +4486,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   username = silc_identifier_check(username, tmp_len, SILC_STRING_UTF8, 128,
 				   &tmp_len);
   if (!username) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
 					  SILC_STATUS_ERR_BAD_USERNAME,
 					  0);
     goto out;
@@ -4533,7 +4533,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   }
   if (!result) {
     /* Authentication failed */
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
 					  SILC_STATUS_ERR_AUTH_FAILED, 0);
     goto out;
   }
