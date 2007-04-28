@@ -2263,6 +2263,8 @@ SILC_FSM_STATE(silc_client_command_oper)
     return SILC_FSM_FINISH;
   }
 
+  silc_fsm_next(fsm, silc_client_command_oper_send);
+
   /* Get passphrase */
   if (cmd->argc < 3) {
     oper = silc_calloc(1, sizeof(*oper));
@@ -2274,7 +2276,6 @@ SILC_FSM_STATE(silc_client_command_oper)
 				      silc_client_command_oper_cb, cmd));
   }
 
-  silc_fsm_next(fsm, silc_client_command_oper_send);
   return SILC_FSM_CONTINUE;
 }
 
@@ -2293,6 +2294,8 @@ SILC_FSM_STATE(silc_client_command_silcoper)
     return SILC_FSM_FINISH;
   }
 
+  silc_fsm_next(fsm, silc_client_command_oper_send);
+
   /* Get passphrase */
   if (cmd->argc < 3) {
     oper = silc_calloc(1, sizeof(*oper));
@@ -2304,7 +2307,6 @@ SILC_FSM_STATE(silc_client_command_silcoper)
 				      silc_client_command_oper_cb, cmd));
   }
 
-  silc_fsm_next(fsm, silc_client_command_oper_send);
   return SILC_FSM_CONTINUE;
 }
 
