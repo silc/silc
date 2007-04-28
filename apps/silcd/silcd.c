@@ -327,24 +327,27 @@ SILC_TASK_CALLBACK(dump_stats)
     fprintf(fdd, "  primary router         : %s\n",
       silcd->router->server_name ? silcd->router->server_name : "");
 
-#if 0
-  /* Dump socket connections */
+  /* Dump connections */
   {
-    int i;
     SilcPacketStream s;
+    SilcDList conns = silc_packet_engine_get_streams(silcd->packet_engine);
 
-    fprintf(fdd, "\nDumping socket connections\n");
-    for (i = 0; i < silcd->config->param.connections_max; i++) {
-      s = silcd->sockets[i];
-      if (!s)
-        continue;
-      fprintf(fdd, "  %d: host %s ip %s port %d type %d flags 0x%x\n",
-	      s->sock, s->hostname ? s->hostname : "N/A",
-	      s->ip ? s->ip : "N/A", s->port, s->type,
-	      (unsigned int)s->flags);
+    fprintf(fdd, "\nDumping connections\n");
+    silc_dlist_start(conns);
+    while ((s = silc_dlist_get(conns))) {
+      const char *hostname, *ip;
+      SilcUInt16 port;
+      SilcSocket sock;
+      SilcIDListData idata = silc_packet_get_context(s);
+      if (!silc_socket_stream_get_info(silc_packet_stream_get_stream(s), 
+				       &sock, &hostname, &ip, &port))
+	continue;
+      fprintf(fdd, "  %d: host %s ip %s port %d type %d\n",
+	      sock, hostname ? hostname : "N/A",
+	      ip ? ip : "N/A", port, idata ? idata->conn_type : 0);
     }
+    silc_dlist_uninit(conns);
   }
-#endif
 
   /* Dump lists */
   {

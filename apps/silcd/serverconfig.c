@@ -172,8 +172,8 @@ static SilcBool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
 
     /* Add the public key to repository */
     if (silc_skr_add_public_key(skr, public_key, usage,
-				key_context ? key_context : (void *)usage) !=
-	SILC_SKR_OK) {
+				key_context ? key_context : (void *)usage,
+				NULL) != SILC_SKR_OK) {
       SILC_SERVER_LOG_ERROR(("Error while adding public key \"%s\"", p));
       return FALSE;
     }
@@ -320,6 +320,23 @@ SILC_CONFIG_CALLBACK(fetch_generic)
   else if (!strcmp(name, "debug_string")) {
     CONFIG_IS_DOUBLE(config->debug_string);
     config->debug_string = (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  else if (!strcmp(name, "http_server")) {
+    config->httpd = *(SilcBool *)val;
+  }
+  else if (!strcmp(name, "http_server_ip")) {
+    CONFIG_IS_DOUBLE(config->httpd_ip);
+    config->httpd_ip = (*(char *)val ? strdup((char *) val) : NULL);
+  }
+  else if (!strcmp(name, "http_server_port")) {
+    int port = *(int *)val;
+    if ((port <= 0) || (port > 65535)) {
+      SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
+			     "Invalid port number!"));
+      got_errno = SILC_CONFIG_EPRINTLINE;
+      goto got_err;
+    }
+    config->httpd_port = (SilcUInt16)port;
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -1183,6 +1200,9 @@ static const SilcConfigTable table_general[] = {
   { "qos_limit_usec",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "channel_join_limit",    	SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { "debug_string",    		SILC_CONFIG_ARG_STR,	fetch_generic,	NULL },
+  { "http_server",    		SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
+  { "http_server_ip",  		SILC_CONFIG_ARG_STRE,	fetch_generic,	NULL },
+  { "http_server_port",		SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -1569,6 +1589,7 @@ void silc_server_config_destroy(SilcServerConfig config)
   silc_free(config->param.version_protocol);
   silc_free(config->param.version_software);
   silc_free(config->param.version_software_vendor);
+  silc_free(config->httpd_ip);
 
   /* Destroy Logging channels */
   if (config->logging_info)

@@ -316,10 +316,12 @@ static void silc_server_notify_process(SilcServer server,
     SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
     silc_schedule_task_del_by_context(server->schedule, client);
 
-    /* Remove from public key hash table. */
-    if (client->data.public_key)
-      silc_hash_table_del_by_context(server->pk_hash, client->data.public_key,
-                                     client);
+    /* Remove client's public key from repository, this will free it too. */
+    if (client->data.public_key) {
+      silc_skr_del_public_key(server->repository, client->data.public_key,
+			      client);
+      client->data.public_key = NULL;
+    }
 
     /* Remove the client from all channels. */
     silc_server_remove_from_channels(server, NULL, client, TRUE,
@@ -337,6 +339,7 @@ static void silc_server_notify_process(SilcServer server,
     client->mode = 0;
     client->router = NULL;
     client->connection = NULL;
+    silc_dlist_add(server->expired_clients, client);
     break;
 
   case SILC_NOTIFY_TYPE_TOPIC_SET:
@@ -1237,12 +1240,6 @@ static void silc_server_notify_process(SilcServer server,
 	    if (local)
 	      silc_server_del_from_watcher_list(server, client);
 
-	    /* Remove from public key hash table. */
-	    if (client->data.public_key)
-	      silc_hash_table_del_by_context(server->pk_hash,
-                                             client->data.public_key,
-                                             client);
-
 	    /* Remove the client */
 	    silc_idlist_del_data(client);
 	    silc_idlist_del_client(local ? server->local_list :
@@ -1459,11 +1456,12 @@ static void silc_server_notify_process(SilcServer server,
 	silc_server_check_watcher_list(server, client, NULL,
 				       SILC_NOTIFY_TYPE_KILLED);
 
-      /* Remove from public key hash table. */
-      if (client->data.public_key)
-	silc_hash_table_del_by_context(server->pk_hash,
-	                               client->data.public_key,
-	  			       client);
+      /* Remove client's public key from repository, this will free it too. */
+      if (client->data.public_key) {
+	silc_skr_del_public_key(server->repository, client->data.public_key,
+				client);
+	client->data.public_key = NULL;
+      }
 
       /* Update statistics */
       server->stat.clients--;
@@ -1483,6 +1481,7 @@ static void silc_server_notify_process(SilcServer server,
       client->mode = 0;
       client->router = NULL;
       client->connection = NULL;
+      silc_dlist_add(server->expired_clients, client);
       break;
     }
 
@@ -1638,11 +1637,6 @@ static void silc_server_notify_process(SilcServer server,
 					       FALSE, NULL);
 	if (!client)
 	  goto out;
-
-	if (client->data.public_key)
-	  silc_hash_table_del_by_context(server->pk_hash,
-					 client->data.public_key,
-					 client);
 
 	silc_server_remove_from_channels(server, NULL, client, TRUE,
 					 NULL, TRUE, FALSE);
@@ -1891,7 +1885,6 @@ void silc_server_channel_message(SilcServer server,
   SilcChannelID id;
   SilcClientID cid;
   SilcID sid;
-  void *sender_id = NULL;
   SilcClientEntry sender_entry = NULL;
   SilcIDListData idata;
   SilcChannelClientEntry chl;
@@ -1998,9 +1991,9 @@ void silc_server_channel_message(SilcServer server,
 
   /* Distribute the packet to our local clients. This will send the
      packet for further routing as well, if needed. */
-  silc_server_packet_relay_to_channel(server, sock, channel, sender_id,
-				      packet->src_id_type, sender_entry,
-				      packet->buffer.data,
+  silc_server_packet_relay_to_channel(server, sock, channel,
+				      SILC_ID_GET_ID(sid), sid.type,
+				      sender_entry, packet->buffer.data,
 				      silc_buffer_len(&packet->buffer));
 
  out:
@@ -2123,22 +2116,6 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     username[username_len - 1] = '\0';
   }
 
-  /* Check for valid username string */
-  nicknamec = silc_identifier_check(username, username_len,
-				    SILC_STRING_UTF8, 128, &tmp_len);
-  if (!nicknamec) {
-    silc_free(username);
-    silc_free(realname);
-    SILC_LOG_ERROR(("Client %s (%s) sent bad username string '%s', closing "
-		    "connection", hostname, ip, username));
-    silc_server_disconnect_remote(server, sock,
-				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
-				  NULL);
-    silc_server_free_sock_user_data(server, sock, NULL);
-    silc_packet_free(packet);
-    return NULL;
-  }
-
   /* Take nickname from NEW_CLIENT packet, if present */
   if (silc_buffer_unformat(buffer,
 			   SILC_STR_UI16_NSTRING_ALLOC(&nickname,
@@ -2151,8 +2128,27 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   }
 
   /* Nickname is initially same as username, if not present in NEW_CLIENT */
-  if (!nickname)
+  if (!nickname) {
     nickname = strdup(username);
+    nickname_len = strlen(nickname);
+  }
+
+  /* Check for valid username string */
+  nicknamec = silc_identifier_check(nickname, nickname_len,
+				    SILC_STRING_UTF8, 128, &tmp_len);
+  if (!nicknamec) {
+    silc_free(username);
+    silc_free(realname);
+    silc_free(nickname);
+    SILC_LOG_ERROR(("Client %s (%s) sent bad username string '%s', closing "
+		    "connection", hostname, ip, username));
+    silc_server_disconnect_remote(server, sock,
+				  SILC_STATUS_ERR_INCOMPLETE_INFORMATION,
+				  NULL);
+    silc_server_free_sock_user_data(server, sock, NULL);
+    silc_packet_free(packet);
+    return NULL;
+  }
 
   /* Make sanity checks for the hostname of the client. If the hostname
      is provided in the `username' check that it is the same than the
@@ -2167,6 +2163,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     host = silc_memdup(username + tlen + 1, strlen(username) - tlen - 1);
 
     if (strcmp(hostname, ip) && strcmp(hostname, host)) {
+      silc_free(nickname);
       silc_free(username);
       silc_free(host);
       silc_free(realname);
@@ -2184,6 +2181,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
 					client->data.public_key);
     phostname = strdup(silc_pubkey->identifier.host);
     if (!strcmp(hostname, ip) && phostname && strcmp(phostname, host)) {
+      silc_free(nickname);
       silc_free(username);
       silc_free(host);
       silc_free(phostname);
@@ -2659,19 +2657,20 @@ static void silc_server_new_id_real(SilcServer server,
 	silc_server_check_watcher_list(server, entry, NULL, 0);
 
       if (server->server_type == SILC_ROUTER) {
-	/* Add the client's public key to hash table or get the key with
+	/* Add the client's public key to repository or get the key with
 	   GETKEY command. */
         if (entry->data.public_key) {
-	  if (!silc_hash_table_find_by_context(server->pk_hash,
-					       entry->data.public_key,
-					       entry, NULL))
-	    silc_hash_table_add(server->pk_hash, entry->data.public_key,
-				entry);
-	} else
+	  if (!silc_server_get_public_key_by_client(server, entry, NULL))
+	    silc_skr_add_public_key_simple(server->repository,
+					   entry->data.public_key,
+					   SILC_SKR_USAGE_IDENTIFICATION,
+					   entry, NULL);
+	} else {
 	  silc_server_send_command(server, router_sock,
 				   SILC_COMMAND_GETKEY, ++server->cmd_ident,
 				   1, 1, buffer->data,
 				   silc_buffer_len(buffer));
+	}
       }
     }
     break;
@@ -3401,6 +3400,7 @@ void silc_server_resume_client(SilcServer server,
   SilcHashTableList htl;
   SilcChannelClientEntry chl;
   SilcServerResumeResolve r;
+  SilcPublicKey public_key;
   const char *cipher, *hostname, *ip;
 
   silc_socket_stream_get_info(silc_packet_stream_get_stream(sock),
@@ -3647,21 +3647,34 @@ void silc_server_resume_client(SilcServer server,
     silc_packet_set_context(sock, detached_client);
     detached_client->connection = sock;
 
-    if (detached_client->data.public_key)
-      silc_hash_table_del_by_context(server->pk_hash,
-	                             detached_client->data.public_key,
-				     detached_client);
-    if (idata->public_key)
-      silc_hash_table_del_by_context(server->pk_hash,
-				     idata->public_key, idata);
+    if (detached_client->data.public_key) {
+      /* Delete the detached client's public key from repository */
+      silc_skr_del_public_key(server->repository,
+			      detached_client->data.public_key,
+			      detached_client);
+      detached_client->data.public_key = NULL;
+    }
+
+    if (idata->public_key) {
+      /* Delete the resuming client's public key from repository.  It will
+	 be added later again. */
+      public_key = silc_pkcs_public_key_copy(idata->public_key);
+      silc_skr_del_public_key(server->repository, idata->public_key, idata);
+      idata->public_key = public_key;
+    }
 
     /* Take new keys and stuff into use in the old entry */
     silc_idlist_del_data(detached_client);
     silc_idlist_add_data(detached_client, idata);
 
-    if (detached_client->data.public_key)
-      silc_hash_table_add(server->pk_hash,
-			  detached_client->data.public_key, detached_client);
+    if (detached_client->data.public_key) {
+      /* Add the resumed client's public key back to repository. */
+      if (!silc_server_get_public_key_by_client(server, detached_client, NULL))
+	silc_skr_add_public_key_simple(server->repository,
+				       detached_client->data.public_key,
+				       SILC_SKR_USAGE_IDENTIFICATION,
+				       detached_client, NULL);
+    }
 
     detached_client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
@@ -3889,15 +3902,19 @@ void silc_server_resume_client(SilcServer server,
     /* Client is detached, and now it is resumed.  Remove the detached
        mode and mark that it is resumed. */
 
-    if (detached_client->data.public_key)
-      silc_hash_table_del_by_context(server->pk_hash,
-	                             detached_client->data.public_key,
-				     detached_client);
+    if (detached_client->data.public_key) {
+      /* Delete the detached client's public key from repository */
+      silc_skr_del_public_key(server->repository,
+			      detached_client->data.public_key,
+			      detached_client);
+      detached_client->data.public_key = NULL;
+    }
 
     silc_idlist_del_data(detached_client);
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
     detached_client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
+    silc_dlist_del(server->expired_clients, detached_client);
 
     /* Check if anyone is watching this client */
     if (server->server_type == SILC_ROUTER)

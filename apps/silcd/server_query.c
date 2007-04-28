@@ -661,22 +661,32 @@ typedef struct {
   SilcBool found;
 } *SilcServerPublicKeyUser, SilcServerPublicKeyUserStruct;
 
-void silc_server_public_key_hash_foreach(void *key, void *context,
-                                         void *user_context)
+/* SKR find callbcak */
+
+static void silc_server_query_skr_callback(SilcSKR skr,
+					   SilcSKRFind find,
+					   SilcSKRStatus status,
+					   SilcDList keys,
+					   void *context)
 {
-  SilcServerPublicKeyUser uc = user_context;
-  SilcClientEntry entry = context;
+  SilcServerPublicKeyUser uc = context;
+  SilcSKRKey key;
 
-  /* Nothing was found, just return */
-  if (!context)
-    return;
+  if (keys) {
+    (*uc->clients) = silc_realloc((*uc->clients),
+				  sizeof((**uc->clients)) *
+				  ((*uc->clients_count) +
+				   silc_dlist_count(keys)));
 
-  uc->found = TRUE;
+    silc_dlist_start(keys);
+    while ((key = silc_dlist_get(keys)))
+      (*uc->clients)[(*uc->clients_count)++] = key->key_context;
 
-  (*uc->clients) = silc_realloc((*uc->clients),
-                                sizeof((**uc->clients)) *
-				((*uc->clients_count) + 1));
-  (*uc->clients)[(*uc->clients_count)++] = entry;
+    uc->found = TRUE;
+    silc_dlist_uninit(keys);
+  }
+
+  silc_skr_find_free(find);
 }
 
 /* If clients are set, limit the found clients using the attributes in
@@ -691,7 +701,7 @@ void silc_server_query_check_attributes(SilcServer server,
   SilcAttributePayload attr;
   SilcAttribute attribute;
   SilcAttributeObjPk pk;
-  SilcPublicKey publickey;
+  SilcPublicKey publickey, cmp_pubkey;
   SilcPKCSType type;
   SilcBool found = FALSE, no_clients = FALSE;
   int i;
@@ -733,19 +743,24 @@ void silc_server_query_check_attributes(SilcServer server,
 	  continue;
 	}
 
-	/* If no clients were set on calling this function, we
-	   just search for clients, otherwise we try to limit
-	   the clients */
+	/* If no clients were set on calling this function, we just search
+	   for clients, otherwise we try to limit the clients. */
 	if (no_clients) {
 	  SilcServerPublicKeyUserStruct usercontext;
+	  SilcSKRFind find;
 
 	  usercontext.clients = clients;
 	  usercontext.clients_count = clients_count;
 	  usercontext.found = FALSE;
 
-	  silc_hash_table_find_foreach(server->pk_hash, publickey,
-	                               silc_server_public_key_hash_foreach,
-	                               &usercontext);
+	  find = silc_skr_find_alloc();
+	  if (!find)
+	    continue;
+
+	  silc_skr_find_set_public_key(find, publickey);
+	  silc_skr_find_set_usage(find, SILC_SKR_USAGE_IDENTIFICATION);
+	  silc_skr_find(server->repository, server->schedule,
+			find, silc_server_query_skr_callback, &usercontext);
 
 	  if (usercontext.found == TRUE)
 	    found = TRUE;
@@ -756,11 +771,15 @@ void silc_server_query_check_attributes(SilcServer server,
 	    if (!entry->data.public_key)
 	      continue;
 
-	    if (!silc_hash_table_find_by_context(server->pk_hash, publickey,
-		                                 entry, NULL))
-	      (*clients)[i] = NULL;
-	    else
-	      found = TRUE;
+	    if (silc_server_get_public_key_by_client(server, entry,
+						     &cmp_pubkey)) {
+	      if (silc_pkcs_public_key_compare(cmp_pubkey, publickey)) {
+		found = TRUE;
+		continue;
+	      }
+	    }
+
+	    (*clients)[i] = NULL;
 	  }
 	}
 	silc_free(pk.type);

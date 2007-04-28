@@ -177,6 +177,9 @@ typedef struct {
   SilcBool logging_quick;
   long logging_flushdelay;
   char *debug_string;
+  SilcBool httpd;
+  char *httpd_ip;
+  SilcUInt16 httpd_port;
 
   /* Other configuration sections */
   SilcServerConfigCipher *cipher;

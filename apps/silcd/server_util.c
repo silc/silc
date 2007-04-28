@@ -209,10 +209,13 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
       SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
       SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
-      if (client->data.public_key)
-	silc_hash_table_del_by_context(server->pk_hash,
-				       client->data.public_key,
-				       client);
+      /* Remove client's public key from repository, this will free it too. */
+      if (client->data.public_key) {
+	silc_skr_del_public_key(server->repository, client->data.public_key,
+				client);
+	client->data.public_key = NULL;
+      }
+
       silc_server_remove_clients_channels(server, entry, clients,
 					  client, channels);
       silc_server_del_from_watcher_list(server, client);
@@ -223,6 +226,7 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
 	client->mode = 0;
 	client->router = NULL;
 	client->connection = NULL;
+	silc_dlist_add(server->expired_clients, client);
       } else {
 	silc_idlist_del_data(client);
 	silc_idlist_del_client(server->local_list, client);
@@ -266,10 +270,13 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
       SILC_OPER_STATS_UPDATE(client, server, SILC_UMODE_SERVER_OPERATOR);
       SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
-      if (client->data.public_key)
-	silc_hash_table_del_by_context(server->pk_hash,
-				       client->data.public_key,
-				       client);
+      /* Remove client's public key from repository, this will free it too. */
+      if (client->data.public_key) {
+	silc_skr_del_public_key(server->repository, client->data.public_key,
+				client);
+	client->data.public_key = NULL;
+      }
+
       silc_server_remove_clients_channels(server, entry, clients,
 					  client, channels);
       silc_server_del_from_watcher_list(server, client);
@@ -280,6 +287,7 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
 	client->mode = 0;
 	client->router = NULL;
 	client->connection = NULL;
+	silc_dlist_add(server->expired_clients, client);
       } else {
 	silc_idlist_del_data(client);
 	silc_idlist_del_client(server->global_list, client);
@@ -1082,8 +1090,7 @@ static void find_callback(SilcSKR skr, SilcSKRFind find,
   silc_skr_find_free(find);
 }
 
-/* Get public key. For public key tables that has multiple keys in it the
-   silc_server_find_public_key must be used. */
+/* Get public key by key usage and key context. */
 
 SilcPublicKey silc_server_get_public_key(SilcServer server,
 					 SilcSKRKeyUsage usage,
@@ -1238,9 +1245,9 @@ SilcBool silc_server_connection_allowed(SilcServer server,
    of the checks fails FALSE is returned. */
 
 SilcBool silc_server_check_cmode_rights(SilcServer server,
-				    SilcChannelEntry channel,
-				    SilcChannelClientEntry client,
-				    SilcUInt32 mode)
+					SilcChannelEntry channel,
+					SilcChannelClientEntry client,
+					SilcUInt32 mode)
 {
   SilcBool is_op = client->mode & SILC_CHANNEL_UMODE_CHANOP;
   SilcBool is_fo = client->mode & SILC_CHANNEL_UMODE_CHANFO;
@@ -1529,10 +1536,12 @@ void silc_server_kill_client(SilcServer server,
     SILC_OPER_STATS_UPDATE(remote_client, server, SILC_UMODE_SERVER_OPERATOR);
     SILC_OPER_STATS_UPDATE(remote_client, router, SILC_UMODE_ROUTER_OPERATOR);
 
-    if (remote_client->data.public_key)
-      silc_hash_table_del_by_context(server->pk_hash,
-                                     remote_client->data.public_key,
-                                     remote_client);
+    /* Remove client's public key from repository, this will free it too. */
+    if (remote_client->data.public_key) {
+      silc_skr_del_public_key(server->repository,
+			      remote_client->data.public_key, remote_client);
+      remote_client->data.public_key = NULL;
+    }
 
     if (SILC_IS_LOCAL(remote_client)) {
       server->stat.my_clients--;
@@ -1594,9 +1603,9 @@ silc_server_check_watcher_list_foreach(void *key, void *context,
    notify change of notify type indicated by `notify'. */
 
 SilcBool silc_server_check_watcher_list(SilcServer server,
-				    SilcClientEntry client,
-				    const char *new_nick,
-				    SilcNotifyType notify)
+					SilcClientEntry client,
+					const char *new_nick,
+					SilcNotifyType notify)
 {
   unsigned char hash[16];
   WatcherNotifyContext n;
@@ -1645,7 +1654,7 @@ SilcBool silc_server_check_watcher_list(SilcServer server,
    is not watching any nicknames. */
 
 SilcBool silc_server_del_from_watcher_list(SilcServer server,
-				       SilcClientEntry client)
+					   SilcClientEntry client)
 {
   SilcHashTableList htl;
   void *key;
@@ -1788,8 +1797,10 @@ SilcBool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
 
 /* Process invite or ban information */
 
-SilcBool silc_server_inviteban_process(SilcServer server, SilcHashTable list,
-				   SilcUInt8 action, SilcArgumentPayload args)
+SilcBool silc_server_inviteban_process(SilcServer server,
+				       SilcHashTable list,
+				       SilcUInt8 action,
+				       SilcArgumentPayload args)
 {
   unsigned char *tmp;
   SilcUInt32 type, len;
@@ -2179,10 +2190,10 @@ SilcStatus silc_server_set_channel_pk_list(SilcServer server,
    on the `channel' public key list. */
 
 SilcBool silc_server_verify_channel_auth(SilcServer server,
-				     SilcChannelEntry channel,
-				     SilcClientID *client_id,
-				     const unsigned char *auth,
-				     SilcUInt32 auth_len)
+					 SilcChannelEntry channel,
+					 SilcClientID *client_id,
+					 const unsigned char *auth,
+					 SilcUInt32 auth_len)
 {
   SilcAuthPayload ap;
   SilcPublicKey chpk;

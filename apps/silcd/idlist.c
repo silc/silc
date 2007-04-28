@@ -162,7 +162,8 @@ silc_idlist_find_server_by_id(SilcIDList id_list, SilcServerID *id,
 
 SilcServerEntry
 silc_idlist_find_server_by_name(SilcIDList id_list, char *name,
-				SilcBool registered, SilcIDCacheEntry *ret_entry)
+				SilcBool registered,
+				SilcIDCacheEntry *ret_entry)
 {
   SilcIDCacheEntry id_cache = NULL;
   SilcServerEntry server;
@@ -295,6 +296,16 @@ int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry)
   return FALSE;
 }
 
+/* ID Cache destructor */
+
+void silc_idlist_server_destructor(SilcIDCache cache,
+				   SilcIDCacheEntry entry,
+				   void *dest_context,
+				   void *app_context)
+{
+  silc_free(entry->name);
+}
+
 /******************************************************************************
 
                           Client entry functions
@@ -390,15 +401,15 @@ void silc_idlist_client_destructor(SilcIDCache cache,
 				   void *dest_context,
 				   void *app_context)
 {
-  SilcServer server = app_context;
+  SilcServer server = dest_context;
   SilcClientEntry client;
 
   client = (SilcClientEntry)entry->context;
   if (client) {
-    /* Remove this client from the public key hash list */
+    /* Remove client's public key from repository, this will free it too. */
     if (client->data.public_key)
-      silc_hash_table_del_by_context(server->pk_hash,
-				     client->data.public_key, client);
+      silc_skr_del_public_key(server->repository, client->data.public_key,
+			      client);
 
     assert(!silc_hash_table_count(client->channels));
     silc_free(client->nickname);
@@ -407,8 +418,6 @@ void silc_idlist_client_destructor(SilcIDCache cache,
     silc_free(client->userinfo);
     silc_free(client->id);
     silc_free(client->attrs);
-    if (client->data.public_key)
-      silc_pkcs_public_key_free(client->data.public_key);
     silc_hash_table_free(client->channels);
 
     memset(client, 'A', sizeof(*client));
@@ -625,7 +634,7 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 					     NULL, NULL, NULL, TRUE);
 
   if (!silc_idcache_add(id_list->channels, channel_namec,
-			(void *)channel->id, (void *)channel /*XXX, expire */)) {
+			(void *)channel->id, (void *)channel)) {
     silc_hmac_free(channel->hmac);
     silc_hash_table_free(channel->user_list);
     silc_free(channel);
@@ -634,6 +643,16 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
   }
 
   return channel;
+}
+
+/* ID Cache destructor */
+
+void silc_idlist_channel_destructor(SilcIDCache cache,
+				    SilcIDCacheEntry entry,
+				    void *dest_context,
+				    void *app_context)
+{
+  silc_free(entry->name);
 }
 
 /* Foreach callbcak to free all users from the channel when deleting a

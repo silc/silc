@@ -575,6 +575,10 @@ SilcServerEntry
 silc_idlist_replace_server_id(SilcIDList id_list, SilcServerID *old_id,
 			      SilcServerID *new_id);
 int silc_idlist_del_server(SilcIDList id_list, SilcServerEntry entry);
+void silc_idlist_server_destructor(SilcIDCache cache,
+				   SilcIDCacheEntry entry,
+				   void *dest_context,
+				   void *app_context);
 SilcClientEntry
 silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 		       char *userinfo, SilcClientID *id,
@@ -604,6 +608,10 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
 			SilcChannelID *id, SilcServerEntry router,
 			SilcCipher send_key, SilcCipher receive_key,
 			SilcHmac hmac);
+void silc_idlist_channel_destructor(SilcIDCache cache,
+				    SilcIDCacheEntry entry,
+				    void *dest_context,
+				    void *app_context);
 int silc_idlist_del_channel(SilcIDList id_list, SilcChannelEntry entry);
 SilcChannelEntry
 silc_idlist_find_channel_by_name(SilcIDList id_list, char *name,

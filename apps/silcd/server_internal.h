@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -70,33 +70,22 @@ typedef struct {
 
 */
 struct SilcServerStruct {
-  char *server_name;
-  SilcServerEntry id_entry;
-  SilcServerID *id;
-  unsigned char *id_string;
-  SilcUInt32 id_string_len;
-  SilcUInt32 starttime;
+  SilcSchedule schedule;	     /* Server scheduler */
+  SilcDList listeners;		     /* TCP listeners */
+  SilcPacketEngine packet_engine;    /* Packet engine */
+  SilcDList conns;		     /* Connections in server */
+  SilcSKR repository;		     /* Public key repository */
+  SilcPublicKey public_key;	     /* Server public key */
+  SilcPrivateKey private_key;	     /* Server private key */
+  SilcDList expired_clients;	     /* Expired client entries */
+  SilcHttpServer httpd;		     /* HTTP server */
 
-  unsigned int server_type    : 2;   /* Server type (server.h) */
-  unsigned int standalone     : 1;   /* Set if server is standalone, and
-					does not have connection to network. */
-  unsigned int listenning     : 1;   /* Set if server is listenning for
-					incoming connections. */
-  unsigned int background     : 1;   /* Set when server is on background */
-  unsigned int backup_router  : 1;   /* Set if this is backup router */
-  unsigned int backup_primary : 1;   /* Set if we've switched our primary
-				        router to a backup router. */
-  unsigned int backup_noswitch: 1;   /* Set if we've won't switch to
-					become primary (we are backup) */
-  unsigned int backup_closed  : 1;   /* Set if backup closed connection.
-					Do not allow resuming in this case. */
-  unsigned int wait_backup    : 1;   /* Set if we are waiting for backup
-				        router to connect to us. */
-  unsigned int server_shutdown: 1;   /* Set when shutting down */
-  unsigned int no_reconnect   : 1;   /* If set, server won't reconnect to
-					router after disconnection. */
-  unsigned int no_conf        : 1;   /* Set when connecting without
-					configuration. */
+  char *server_name;		     /* Server's name */
+  SilcServerEntry id_entry;	     /* Server's local entry */
+  SilcServerID *id;		     /* Server's ID */
+  unsigned char id_string[32];	     /* Server's ID as string */
+  SilcUInt32 id_string_len;
+  SilcUInt32 starttime;		     /* Server start time */
 
   SilcServerEntry router;	     /* Pointer to the primary router */
   unsigned long router_connect;	     /* Time when router was connected */
@@ -107,26 +96,11 @@ struct SilcServerStruct {
   /* Current command identifier, 0 not used */
   SilcUInt16 cmd_ident;
 
-  /* SILC server scheduler */
-  SilcSchedule schedule;
-
   /* ID lists. */
   SilcIDList local_list;
   SilcIDList global_list;
   SilcHashTable watcher_list;
   SilcHashTable watcher_list_pk;
-
-  SilcDList listeners;		     /* TCP listeners */
-  SilcPacketEngine packet_engine;    /* Packet engine */
-  SilcDList conns;
-  SilcSKR repository;
-
-  /* Table of connected sockets */
-  SilcPacketStream *sockets;
-
-  /* Server public key */
-  SilcPublicKey public_key;
-  SilcPrivateKey private_key;
 
   /* Hash objects for general hashing */
   SilcHash md5hash;
@@ -150,8 +124,26 @@ struct SilcServerStruct {
   SilcIDListPurge purge_i;
   SilcIDListPurge purge_g;
 
-  /* Hash table for public keys of all clients */
-  SilcHashTable pk_hash;
+  unsigned int server_type    : 2;   /* Server type (server.h) */
+  unsigned int standalone     : 1;   /* Set if server is standalone, and
+					does not have connection to network. */
+  unsigned int listenning     : 1;   /* Set if server is listenning for
+					incoming connections. */
+  unsigned int background     : 1;   /* Set when server is on background */
+  unsigned int backup_router  : 1;   /* Set if this is backup router */
+  unsigned int backup_primary : 1;   /* Set if we've switched our primary
+				        router to a backup router. */
+  unsigned int backup_noswitch: 1;   /* Set if we've won't switch to
+					become primary (we are backup) */
+  unsigned int backup_closed  : 1;   /* Set if backup closed connection.
+					Do not allow resuming in this case. */
+  unsigned int wait_backup    : 1;   /* Set if we are waiting for backup
+				        router to connect to us. */
+  unsigned int server_shutdown: 1;   /* Set when shutting down */
+  unsigned int no_reconnect   : 1;   /* If set, server won't reconnect to
+					router after disconnection. */
+  unsigned int no_conf        : 1;   /* Set when connecting without
+					configuration. */
 };
 
 /* Failure context. This is allocated when failure packet is received.

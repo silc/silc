@@ -20,11 +20,12 @@
 #include "serverincludes.h"
 #include "server_internal.h"
 
-/************************* Types and definitions ***************************/
+/************************* Types and definitions ****************************/
 
 SILC_TASK_CALLBACK(silc_server_get_stats);
 SILC_TASK_CALLBACK(silc_server_connect_router);
 SILC_TASK_CALLBACK(silc_server_do_rekey);
+SILC_TASK_CALLBACK(silc_server_purge_expired_clients);
 static void silc_server_accept_new_connection(SilcNetStatus status,
 					      SilcStream stream,
 					      void *context);
@@ -109,6 +110,68 @@ static SilcBool silc_server_packet_receive(SilcPacketEngine engine,
       (idata->status & SILC_IDLIST_STATUS_REGISTERED))
     return FALSE;
 
+  /* Ignore packets from disabled connection */
+  if (idata->status & SILC_IDLIST_STATUS_DISABLED &&
+      packet->type != SILC_PACKET_HEARTBEAT &&
+      packet->type != SILC_PACKET_RESUME_ROUTER &&
+      packet->type != SILC_PACKET_REKEY)
+    return FALSE;
+
+  /* Check that the the current client ID is same as in the client's packet. */
+  if (idata->conn_type == SILC_CONN_CLIENT) {
+    SilcClientEntry client = (SilcClientEntry)silc_packet_get_context(stream);
+    SilcClientID client_id;
+
+    if (client->id && packet->src_id &&
+	silc_id_str2id(packet->src_id, packet->src_id_len,
+		       packet->src_id_type, &client_id, sizeof(client_id))) {
+      if (!SILC_ID_CLIENT_COMPARE(client->id, &client_id)) {
+	SILC_LOG_DEBUG(("Packet source is not same as sender"));
+	return FALSE;
+      }
+    }
+  }
+
+  if (server->server_type == SILC_ROUTER) {
+    /* Route the packet if it is not destined to us. Other ID types but
+       server are handled separately after processing them. */
+    if (packet->dst_id &&
+	!(packet->flags & SILC_PACKET_FLAG_BROADCAST) &&
+	packet->dst_id_type == SILC_ID_SERVER &&
+	idata->conn_type != SILC_CONN_CLIENT &&
+	memcmp(packet->dst_id, server->id_string, server->id_string_len)) {
+      SilcPacketStream conn;
+      SilcServerID server_id;
+
+      silc_id_str2id(packet->dst_id, packet->dst_id_len, packet->dst_id_type,
+		     &server_id, sizeof(server_id));
+
+      conn = silc_server_route_get(server, &server_id, SILC_ID_SERVER);
+      if (!conn) {
+	SILC_LOG_WARNING(("Packet to unknown server ID %s, dropped (no route)",
+			  silc_id_render(&server_id, SILC_ID_SERVER)));
+	return FALSE;
+      }
+
+      silc_server_packet_route(server, conn, packet);
+      silc_packet_free(packet);
+      return TRUE;
+    }
+  }
+
+  /* Broadcast packet if it is marked as broadcast packet and it is
+     originated from router and we are router. */
+  if (server->server_type == SILC_ROUTER &&
+      idata->conn_type == SILC_CONN_ROUTER &&
+      packet->flags & SILC_PACKET_FLAG_BROADCAST) {
+    /* Broadcast to our primary route */
+    silc_server_packet_broadcast(server, SILC_PRIMARY_ROUTE(server), packet);
+
+    /* If we have backup routers then we need to feed all broadcast
+       data to those servers. */
+    silc_server_backup_broadcast(server, stream, packet);
+  }
+
   /* Process packet */
   silc_server_packet_parse_type(server, stream, packet);
 
@@ -122,7 +185,30 @@ static void silc_server_packet_eos(SilcPacketEngine engine,
 				   void *callback_context,
 				   void *stream_context)
 {
+  SilcServer server = callback_context;
+  SilcIDListData idata = silc_packet_get_context(stream);
+
   SILC_LOG_DEBUG(("End of stream received"));
+
+  if (!idata)
+    return;
+
+  if (server->router_conn && server->router_conn->sock == stream &&
+      !server->router && server->standalone) {
+    silc_server_create_connections(server);
+  } else {
+    /* If backup disconnected then mark that resuming will not be allowed */
+     if (server->server_type == SILC_ROUTER && !server->backup_router &&
+         idata->conn_type == SILC_CONN_SERVER) {
+      SilcServerEntry server_entry = (SilcServerEntry)idata;
+      if (server_entry->server_type == SILC_BACKUP_ROUTER)
+        server->backup_closed = TRUE;
+    }
+
+    silc_server_free_sock_user_data(server, stream, NULL);
+  }
+
+  silc_server_close_connection(server, stream);
 }
 
 /* Packet engine callback to indicate error */
@@ -133,7 +219,20 @@ static void silc_server_packet_error(SilcPacketEngine engine,
 				     void *callback_context,
 				     void *stream_context)
 {
+  SilcIDListData idata = silc_packet_get_context(stream);
+  SilcStream sock = silc_packet_stream_get_stream(stream);
+  const char *ip;
+  SilcUInt16 port;
 
+  if (!idata || !sock)
+    return;
+
+  if (!silc_socket_stream_get_info(sock, NULL, NULL, &ip, &port))
+    return;
+
+  SILC_LOG_ERROR(("Connection %s:%d [%s]: %s",
+		  SILC_CONNTYPE_STRING(idata->conn_type), ip, port,
+		  silc_packet_error_string(error)));
 }
 
 /* Packet stream callbacks */
@@ -229,6 +328,7 @@ static void silc_server_packet_parse_type(SilcServer server,
     {
       SilcStatus status;
       char *message = NULL;
+      const char *hostname, *ip;
 
       if (packet->flags & SILC_PACKET_FLAG_LIST)
 	break;
@@ -241,12 +341,13 @@ static void silc_server_packet_parse_type(SilcServer server,
 	message = silc_memdup(packet->buffer.data + 1,
 			      silc_buffer_len(&packet->buffer) - 1);
 
-#if 0
-      SILC_LOG_INFO(("Disconnected by %s (%s): %s (%d) %s",
-		     sock->ip, sock->hostname,
+      if (!silc_socket_stream_get_info(sock, NULL, &hostname, &ip, NULL))
+	break;
+
+      SILC_LOG_INFO(("Disconnected by %s (%s): %s (%d) %s", ip, hostname,
 		     silc_get_status_message(status), status,
 		     message ? message : ""));
-#endif
+
       silc_free(message);
 
       /* Do not switch to backup in case of error */
@@ -443,6 +544,9 @@ SilcBool silc_server_alloc(SilcServer *new_server)
   server->conns = silc_dlist_init();
   if (!server->conns)
     return FALSE;
+  server->expired_clients = silc_dlist_init();
+  if (!server->expired_clients)
+    return FALSE;
 
   *new_server = server;
 
@@ -462,8 +566,6 @@ void silc_server_free(SilcServer server)
 
   silc_server_backup_free(server);
   silc_server_config_unref(&server->config_ref);
-  if (server->pk_hash)
-    silc_hash_table_free(server->pk_hash);
   if (server->rng)
     silc_rng_free(server->rng);
   if (server->public_key)
@@ -518,21 +620,26 @@ void silc_server_free(SilcServer server)
   silc_idcache_free(server->global_list->channels);
   silc_hash_table_free(server->watcher_list);
   silc_hash_table_free(server->watcher_list_pk);
-
   silc_hash_free(server->md5hash);
   silc_hash_free(server->sha1hash);
-  silc_hmac_unregister_all();
-  silc_hash_unregister_all();
-  silc_cipher_unregister_all();
-  silc_pkcs_unregister_all();
+
+  silc_dlist_uninit(server->listeners);
+  silc_dlist_uninit(server->conns);
+  silc_dlist_uninit(server->expired_clients);
+  silc_skr_free(server->repository);
+  silc_packet_engine_stop(server->packet_engine);
 
   silc_free(server->local_list);
   silc_free(server->global_list);
   silc_free(server->server_name);
-  silc_free(server->id_string);
   silc_free(server->purge_i);
   silc_free(server->purge_g);
   silc_free(server);
+
+  silc_hmac_unregister_all();
+  silc_hash_unregister_all();
+  silc_cipher_unregister_all();
+  silc_pkcs_unregister_all();
 }
 
 /* Creates a new server listener. */
@@ -687,9 +794,11 @@ SilcBool silc_server_init(SilcServer server)
     silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor,
 		       server);
   server->local_list->servers =
-    silc_idcache_alloc(0, SILC_ID_SERVER, NULL, NULL);
+    silc_idcache_alloc(0, SILC_ID_SERVER, silc_idlist_server_destructor,
+		       server);
   server->local_list->channels =
-    silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL, NULL);
+    silc_idcache_alloc(0, SILC_ID_CHANNEL, silc_idlist_channel_destructor,
+		       NULL);
 
   /* These are allocated for normal server as well as these hold some
      global information that the server has fetched from its router. For
@@ -698,9 +807,11 @@ SilcBool silc_server_init(SilcServer server)
     silc_idcache_alloc(0, SILC_ID_CLIENT, silc_idlist_client_destructor,
 		       server);
   server->global_list->servers =
-    silc_idcache_alloc(0, SILC_ID_SERVER, NULL, NULL);
+    silc_idcache_alloc(0, SILC_ID_SERVER, silc_idlist_server_destructor,
+		       server);
   server->global_list->channels =
-    silc_idcache_alloc(0, SILC_ID_CHANNEL, NULL, NULL);
+    silc_idcache_alloc(0, SILC_ID_CHANNEL, silc_idlist_channel_destructor,
+		       NULL);
 
   /* Init watcher lists */
   server->watcher_list =
@@ -714,15 +825,6 @@ SilcBool silc_server_init(SilcServer server)
 			  silc_hash_public_key_compare, NULL,
 			  NULL, NULL, TRUE);
   if (!server->watcher_list_pk)
-    goto err;
-
-  /* Init public key list */
-  server->pk_hash =
-    silc_hash_table_alloc(0, silc_hash_public_key, NULL,
-                          silc_hash_public_key_compare, NULL,
-                          NULL, NULL, TRUE);
-
-  if (!server->pk_hash)
     goto err;
 
   /* Create TCP listener */
@@ -751,6 +853,8 @@ SilcBool silc_server_init(SilcServer server)
   server->id = id;
   server->server_name = server->config->server_info->server_name;
   server->config->server_info->server_name = NULL;
+  silc_id_id2str(server->id, SILC_ID_SERVER, server->id_string,
+		 sizeof(server->id_string), &server->id_string_len);
 
   /* Add ourselves to the server list. We don't have a router yet
      beacuse we haven't established a route yet. It will be done later.
@@ -770,19 +874,10 @@ SilcBool silc_server_init(SilcServer server)
   if (silc_server_init_secondary(server) == FALSE)
     goto err;
 
-  /* Create connections to configured routers. */
-  silc_server_create_connections(server);
-
   server->listenning = TRUE;
 
-  /* Allocate the entire socket list that is used in server. Eventually
-     all connections will have entry in this table (it is a table of
-     pointers to the actual object that is allocated individually
-     later). */
-  server->sockets = silc_calloc(server->config->param.connections_max,
-				sizeof(*server->sockets));
-  if (!server->sockets)
-    goto err;
+  /* Create connections to configured routers. */
+  silc_server_create_connections(server);
 
   /* If server connections has been configured then we must be router as
      normal server cannot have server connections, only router connections. */
@@ -833,6 +928,14 @@ SilcBool silc_server_init(SilcServer server)
 			     &silc_server_stream_cbs, server);
   if (!server->packet_engine)
     goto err;
+
+  /* Register client entry expiration timeout */
+  silc_schedule_task_add_timeout(server->schedule,
+				 silc_server_purge_expired_clients, server,
+				 600, 0);
+
+  /* Initialize HTTP server */
+  silc_server_http_init(server);
 
   SILC_LOG_DEBUG(("Server initialized"));
 
@@ -1108,6 +1211,7 @@ void silc_server_stop(SilcServer server)
 {
   SilcDList list;
   SilcPacketStream ps;
+  SilcNetListener listener;
 
   SILC_LOG_INFO(("SILC Server shutting down"));
 
@@ -1135,6 +1239,12 @@ void silc_server_stop(SilcServer server)
   /* We are not connected to network anymore */
   server->standalone = TRUE;
 
+  silc_dlist_start(server->listeners);
+  while ((listener = silc_dlist_get(server->listeners)))
+    silc_net_close_listener(listener);
+
+  silc_server_http_uninit(server);
+
   silc_schedule_stop(server->schedule);
   silc_schedule_uninit(server->schedule);
   server->schedule = NULL;
@@ -1142,110 +1252,33 @@ void silc_server_stop(SilcServer server)
   SILC_LOG_DEBUG(("Server stopped"));
 }
 
-#if 0
-/* Parses whole packet, received earlier. */
+/* Purge expired client entries from the server */
 
-SILC_TASK_CALLBACK(silc_server_packet_parse_real)
+SILC_TASK_CALLBACK(silc_server_purge_expired_clients)
 {
-  SilcPacketParserContext *parse_ctx = (SilcPacketParserContext *)context;
-  SilcServer server = (SilcServer)parse_ctx->context;
-  SilcPacketStream sock = parse_ctx->sock;
-  SilcPacket *packet = parse_ctx->packet;
-  SilcIDListData idata = (SilcIDListData)sock->user_data;
-  int ret;
+  SilcServer server = context;
+  SilcClientEntry client;
+  SilcIDList id_list;
 
-  if (SILC_IS_DISCONNECTING(sock) || SILC_IS_DISCONNECTED(sock)) {
-    SILC_LOG_DEBUG(("Connection is disconnected"));
-    goto out;
+  SILC_LOG_DEBUG(("Expire timeout"));
+
+  silc_dlist_start(server->expired_clients);
+  while ((client = silc_dlist_get(server->expired_clients))) {
+    if (client->data.status & SILC_IDLIST_STATUS_REGISTERED)
+      continue;
+
+    id_list = (client->data.status & SILC_IDLIST_STATUS_LOCAL ?
+	       server->local_list : server->global_list);
+
+    silc_idlist_del_data(client);
+    silc_idlist_del_client(id_list, client);
+    silc_dlist_del(server->expired_clients, client);
   }
 
-  server->stat.packets_received++;
-
-  /* Parse the packet */
-  if (parse_ctx->normal)
-    ret = silc_packet_parse(packet, idata ? idata->receive_key : NULL);
-  else
-    ret = silc_packet_parse_special(packet, idata ? idata->receive_key : NULL);
-
-  /* If entry is disabled ignore what we got. */
-  if (idata && idata->status & SILC_IDLIST_STATUS_DISABLED &&
-      ret != SILC_PACKET_HEARTBEAT && ret != SILC_PACKET_RESUME_ROUTER &&
-      ret != SILC_PACKET_REKEY && ret != SILC_PACKET_REKEY_DONE &&
-      ret != SILC_PACKET_KEY_EXCHANGE_1 && ret != SILC_PACKET_KEY_EXCHANGE_2) {
-    SILC_LOG_DEBUG(("Connection is disabled (packet %s dropped)",
-		    silc_get_packet_name(ret)));
-    goto out;
-  }
-
-  if (ret == SILC_PACKET_NONE) {
-    SILC_LOG_DEBUG(("Error parsing packet"));
-    goto out;
-  }
-
-  /* Check that the the current client ID is same as in the client's packet. */
-  if (sock->type == SILC_CONN_CLIENT) {
-    SilcClientEntry client = (SilcClientEntry)sock->user_data;
-    if (client && client->id && packet->src_id) {
-      void *id = silc_id_str2id(packet->src_id, packet->src_id_len,
-				packet->src_id_type);
-      if (!id || !SILC_ID_CLIENT_COMPARE(client->id, id)) {
-	silc_free(id);
-	SILC_LOG_DEBUG(("Packet source is not same as sender"));
-	goto out;
-      }
-      silc_free(id);
-    }
-  }
-
-  if (server->server_type == SILC_ROUTER) {
-    /* Route the packet if it is not destined to us. Other ID types but
-       server are handled separately after processing them. */
-    if (packet->dst_id && !(packet->flags & SILC_PACKET_FLAG_BROADCAST) &&
-	packet->dst_id_type == SILC_ID_SERVER &&
-	sock->type != SILC_CONN_CLIENT &&
-	memcmp(packet->dst_id, server->id_string, server->id_string_len)) {
-      SilcPacketStream conn;
-
-      /* Route the packet to fastest route for the destination ID */
-      void *id = silc_id_str2id(packet->dst_id, packet->dst_id_len,
-				packet->dst_id_type);
-      if (!id)
-	goto out;
-
-      conn = silc_server_route_get(server, id, packet->dst_id_type);
-      if (!conn) {
-	SILC_LOG_WARNING(("Packet to unknown server ID %s, dropped (no route)",
-			  silc_id_render(id, SILC_ID_SERVER)));
-	goto out;
-      }
-
-      silc_server_packet_route(server, conn, packet);
-      silc_free(id);
-      goto out;
-    }
-  }
-
-  /* Parse the incoming packet type */
-  silc_server_packet_parse_type(server, sock, packet);
-
-  /* Broadcast packet if it is marked as broadcast packet and it is
-     originated from router and we are router. */
-  if (server->server_type == SILC_ROUTER &&
-      sock->type == SILC_CONN_ROUTER &&
-      packet->flags & SILC_PACKET_FLAG_BROADCAST) {
-    /* Broadcast to our primary route */
-    silc_server_packet_broadcast(server, SILC_PRIMARY_ROUTE(server), packet);
-
-    /* If we have backup routers then we need to feed all broadcast
-       data to those servers. */
-    silc_server_backup_broadcast(server, sock, packet);
-  }
-
- out:
-  silc_packet_context_free(packet);
-  silc_free(parse_ctx);
+  silc_schedule_task_add_timeout(server->schedule,
+				 silc_server_purge_expired_clients, server,
+				 600, 0);
 }
-#endif /* 0 */
 
 
 /******************************* Connecting *********************************/
@@ -1980,7 +2013,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
   SilcUnknownEntry entry = silc_packet_get_context(sock);
   SilcIDListData idata = (SilcIDListData)entry;
   SilcServer server = entry->server;
-  SilcServerConfigConnParams *param;
+  SilcServerConfigConnParams *param = &server->config->param;
   SilcServerConnection sconn;
   void *id_entry;
   const char *hostname;
@@ -2091,7 +2124,8 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
       if (!silc_server_get_public_key_by_client(server, client, NULL))
 	silc_skr_add_public_key_simple(server->repository,
 				       entry->data.public_key,
-				       SILC_SKR_USAGE_IDENTIFICATION, client);
+				       SILC_SKR_USAGE_IDENTIFICATION, client,
+				       NULL);
 
       id_entry = (void *)client;
       break;
@@ -2316,6 +2350,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
   sconn->remote_port = port;
   silc_dlist_add(server->conns, sconn);
   idata->sconn = sconn;
+  idata->last_receive = time(NULL);
 
   /* Add the common data structure to the ID entry. */
   silc_idlist_add_data(id_entry, (SilcIDListData)entry);
@@ -2324,20 +2359,19 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
   /* Connection has been fully established now. Everything is ok. */
   SILC_LOG_DEBUG(("New connection authenticated"));
 
-
 #if 0
   /* Perform keepalive. */
   if (param->keepalive_secs)
     silc_socket_set_heartbeat(sock, param->keepalive_secs, server,
 			      silc_server_perform_heartbeat,
 			      server->schedule);
+#endif
 
   /* Perform Quality of Service */
   if (param->qos)
-    silc_socket_set_qos(sock, param->qos_rate_limit, param->qos_bytes_limit,
-			param->qos_limit_sec, param->qos_limit_usec,
-			server->schedule);
-#endif
+    silc_socket_stream_set_qos(silc_packet_stream_get_stream(sock),
+			       param->qos_rate_limit, param->qos_bytes_limit,
+			       param->qos_limit_sec, param->qos_limit_usec);
 
   silc_server_config_unref(&entry->cconfig);
   silc_server_config_unref(&entry->sconfig);
@@ -2434,15 +2468,13 @@ static void silc_server_accept_new_connection(SilcNetStatus status,
 
   /* Check for maximum allowed connections */
   server->stat.conn_attempts++;
-#if 0
-  if (silc_server_num_connections(server) >
+  if (silc_dlist_count(server->conns) >
       server->config->param.connections_max) {
     SILC_LOG_ERROR(("Refusing connection, server is full"));
     server->stat.conn_failures++;
     silc_stream_destroy(stream);
     return;
   }
-#endif
 
   /* Get hostname, IP and port */
   if (!silc_socket_stream_get_info(stream, NULL, (const char **)&hostname,
@@ -2723,7 +2755,7 @@ void silc_server_close_connection(SilcServer server,
   silc_socket_stream_get_info(silc_packet_stream_get_stream(sock),
 			      NULL, &hostname, NULL, &port);
   SILC_LOG_INFO(("Closing connection %s:%d [%s] %s", hostname, port,
-		 SILC_CONNTYPE_STRING(idata->conn_type),
+		 idata ? SILC_CONNTYPE_STRING(idata->conn_type) : "",
 		 tmp[0] ? tmp : ""));
 
   //  silc_socket_set_qos(sock, 0, 0, 0, 0, NULL);
@@ -2811,10 +2843,12 @@ void silc_server_free_client_data(SilcServer server,
   /* Remove this client from watcher list if it is */
   silc_server_del_from_watcher_list(server, client);
 
-  /* Remove this client from the public key hash list */
-  if (client->data.public_key)
-    silc_hash_table_del_by_context(server->pk_hash,
-                                   client->data.public_key, client);
+  /* Remove client's public key from repository, this will free it too. */
+  if (client->data.public_key) {
+    silc_skr_del_public_key(server->repository, client->data.public_key,
+			    client);
+    client->data.public_key = NULL;
+  }
 
   /* Update statistics */
   server->stat.my_clients--;
@@ -2863,6 +2897,7 @@ void silc_server_free_sock_user_data(SilcServer server,
       SilcClientEntry client_entry = (SilcClientEntry)idata;
       silc_server_free_client_data(server, sock, client_entry, TRUE,
 				   signoff_message);
+      silc_packet_set_context(sock, NULL);
       break;
     }
 
@@ -3052,6 +3087,8 @@ void silc_server_free_sock_user_data(SilcServer server,
 	silc_server_announce_channels(server, time(0) - 300,
 				      backup_router->connection);
       }
+
+      silc_packet_set_context(sock, NULL);
       break;
     }
 
@@ -3063,6 +3100,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 
       silc_idlist_del_data(idata);
       silc_free(entry);
+      silc_packet_set_context(sock, NULL);
       break;
     }
   }
@@ -3283,48 +3321,6 @@ SilcBool silc_server_remove_from_one_channel(SilcServer server,
   silc_buffer_free(clidp);
   return TRUE;
 }
-
-#if 0
-/* Timeout callback. This is called if connection is idle or for some
-   other reason is not responding within some period of time. This
-   disconnects the remote end. */
-
-SILC_TASK_CALLBACK(silc_server_timeout_remote)
-{
-  SilcServer server = (SilcServer)context;
-  SilcPacketStream sock = server->sockets[fd];
-
-  SILC_LOG_DEBUG(("Start"));
-
-  if (!sock)
-    return;
-
-  SILC_LOG_ERROR(("No response from %s (%s), Connection timeout",
-		  sock->hostname, sock->ip));
-
-  /* If we have protocol active we must assure that we call the protocol's
-     final callback so that all the memory is freed. */
-  if (sock->protocol && sock->protocol->protocol &&
-      sock->protocol->protocol->type != SILC_PROTOCOL_SERVER_BACKUP) {
-    protocol = sock->protocol->protocol->type;
-    silc_protocol_cancel(sock->protocol, server->schedule);
-    sock->protocol->state = SILC_PROTOCOL_STATE_ERROR;
-    silc_protocol_execute_final(sock->protocol, server->schedule);
-    sock->protocol = NULL;
-    return;
-  }
-
-  silc_server_disconnect_remote(server, sock,
-				protocol ==
-				SILC_PROTOCOL_SERVER_CONNECTION_AUTH ?
-				SILC_STATUS_ERR_AUTH_FAILED :
-				SILC_STATUS_ERR_KEY_EXCHANGE_FAILED,
-				"Connection timeout");
-
-  if (sock->user_data)
-    silc_server_free_sock_user_data(server, sock, NULL);
-}
-#endif /* 0 */
 
 /* Creates new channel. Sends NEW_CHANNEL packet to primary route. This
    function may be used only by router. In real SILC network all channels

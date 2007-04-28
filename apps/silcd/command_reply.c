@@ -150,11 +150,6 @@ silc_server_command_process_error(SilcServerCommandReplyContext cmd,
       if (!client)
 	return;
 
-      if (client->data.public_key)
-	silc_hash_table_del_by_context(server->pk_hash,
-				       client->data.public_key,
-				       client);
-
       silc_server_remove_from_channels(server, NULL, client, TRUE,
 				       NULL, TRUE, FALSE);
       silc_idlist_del_data(client);
@@ -360,12 +355,12 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
 
 	    SILC_LOG_DEBUG(("Saved client public key from attributes"));
 
-	    /* Add to public key hash table */
-	    if (!silc_hash_table_find_by_context(server->pk_hash,
-						 client->data.public_key,
-						 client, NULL))
-	      silc_hash_table_add(server->pk_hash,
-				  client->data.public_key, client);
+	    /* Add client's public key to repository */
+	    if (!silc_server_get_public_key_by_client(server, client, NULL))
+	      silc_skr_add_public_key_simple(server->repository,
+					     client->data.public_key,
+					     SILC_SKR_USAGE_IDENTIFICATION,
+					     client, NULL);
 
 	    silc_free(pk.type);
 	    silc_free(pk.data);
@@ -549,6 +544,15 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     silc_idcache_add(global ? server->global_list->clients :
 		     server->local_list->clients, nickname, client->id,
 		     client);
+  }
+
+  /* If client is global and is not on any channel then add that we'll
+     expire the entry after a while. */
+  if (global) {
+    silc_idlist_find_client_by_id(server->global_list, client->id,
+				  FALSE, &cache);
+    if (!silc_hash_table_count(client->channels))
+      silc_dlist_add(server->expired_clients, client);
   }
 
   return TRUE;
@@ -1383,10 +1387,12 @@ SILC_SERVER_CMD_REPLY_FUNC(getkey)
     }
 
     if (!client->data.public_key) {
-      if (!silc_hash_table_find_by_context(server->pk_hash, public_key,
-					   client, NULL))
-	silc_hash_table_add(server->pk_hash, public_key, client);
-
+      /* Add client's public key to repository */
+      if (!silc_server_get_public_key_by_client(server, client, NULL))
+	silc_skr_add_public_key_simple(server->repository,
+				       public_key,
+				       SILC_SKR_USAGE_IDENTIFICATION,
+				       client, NULL);
       client->data.public_key = public_key;
       public_key = NULL;
     }

@@ -4592,10 +4592,12 @@ SILC_SERVER_CMD_FUNC(ban)
 		       SILC_STR_END);
     silc_hash_table_list(channel->ban_list, &htl);
     while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2))
-      list = silc_argument_payload_encode_one(list, tmp2->data, silc_buffer_len(tmp2),
-					      type);
+      list = silc_argument_payload_encode_one(list, tmp2->data,
+					      silc_buffer_len(tmp2), type);
     silc_hash_table_list_reset(&htl);
   }
+
+  tmp_id = silc_argument_get_arg_type(cmd->args, 1, &id_len);
 
   /* Send BAN notify type to local servers (but not clients) and to
      network. */
@@ -4606,7 +4608,7 @@ SILC_SERVER_CMD_FUNC(ban)
     if (server->server_type == SILC_ROUTER)
       silc_server_send_notify_to_channel(server, NULL, channel, FALSE, FALSE,
                                          SILC_NOTIFY_TYPE_BAN, 3,
-					 id, id_len,
+					 tmp_id, id_len,
 					 atype, 1,
 					 tmp ? blist.data : NULL,
 					 tmp ? silc_buffer_len(&blist) : 0);
@@ -4620,7 +4622,7 @@ SILC_SERVER_CMD_FUNC(ban)
   /* Send the reply back to the client */
   silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_BAN,
 				 SILC_STATUS_OK, 0, ident, 2,
-				 2, id, id_len,
+				 2, tmp_id, id_len,
 				 3, list ? list->data : NULL,
 				 list ? silc_buffer_len(list) : 0);
   silc_buffer_free(list);

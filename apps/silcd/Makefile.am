@@ -33,7 +33,8 @@ silcd_SOURCES = \
 	command.c \
 	command_reply.c \
 	server_util.c \
-	server_backup.c
+	server_backup.c \
+	server_http.c
 
 LIBS = $(SILC_COMMON_LIBS)
 LDADD =

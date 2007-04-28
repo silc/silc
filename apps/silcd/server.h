@@ -255,5 +255,7 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 					       SilcBool get_secret,
 					       SilcBuffer *user_mode_list);
 void silc_server_stderr(SilcLogType type, char *message);
+void silc_server_http_init(SilcServer server);
+void silc_server_http_uninit(SilcServer server);
 
 #endif
