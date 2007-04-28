@@ -11,6 +11,10 @@ apps/silcd, The SILC Server	****PARTLY DONE****
 
  o Port all code to use SILC Toolkit 1.1 APIs.
 
+ o Fix/test GETKEY.
+
+ o Fix/test MOTD.
+
  o Remove protocol.[ch].  ***DONE
 
  o Rewrite connecting accepting.
@@ -20,6 +24,8 @@ apps/silcd, The SILC Server	****PARTLY DONE****
  o Connecting from SILC router to SILC server.
 
  o Rewrite rehash, HUP.
+
+ o Heartbeat-keepalive.
 
  o Test backup router resuming protocol.
 
@@ -149,11 +155,11 @@ lib/silccore/silcid.[ch]	****DONE****
  o silc_id_str2id, silc_id2str to non-allocating routines. (***DONE)
 
 
-lib/silcskr
+lib/silcskr	****PARTLY DONE****
 ===========
 
  o Removing key from the repository is not possible currently.  It should
-   be.
+   be. (***DONE)
 
  o Add fingerprint as search constraint.
 
