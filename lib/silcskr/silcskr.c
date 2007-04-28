@@ -20,8 +20,6 @@
 #include "silc.h"
 #include "silcskr.h"
 
-/* XXX Locking, when removing keys */
-
 /************************** Types and definitions ***************************/
 
 /* Search constraints */
@@ -84,6 +82,7 @@ static void silc_skr_type_string(SilcSKRFindType type, void *data,
     break;
 
   case SILC_SKR_FIND_PUBLIC_KEY:
+  case SILC_SKR_FIND_CONTEXT:
     silc_snprintf(retbuf, retbuf_size, "[%s] [%p]", find_name[type], data);
     break;
 
@@ -92,7 +91,6 @@ static void silc_skr_type_string(SilcSKRFindType type, void *data,
 	     (char *)data);
   }
 }
-
 #endif /* SILC_DEBUG */
 
 /* Hash table destructor for search constraints */
@@ -101,6 +99,7 @@ static void silc_skr_find_destructor(void *key, void *context,
 				     void *user_context)
 {
   SilcSKRFindType type = SILC_PTR_TO_32(key);
+  SilcPKCSType pkcs_type = SILC_PTR_TO_32(user_context);
 
   switch (type) {
   case SILC_SKR_FIND_PKCS_TYPE:
@@ -113,6 +112,12 @@ static void silc_skr_find_destructor(void *key, void *context,
     break;
 
   default:
+    /* In SILC Public key all entries are referenced from the public key
+       so don't free them.  This test is valid only when removing key
+       from the repository. */
+    if (pkcs_type == SILC_PKCS_SILC)
+      break;
+
     silc_free(context);
   }
 }
@@ -123,17 +128,21 @@ static void silc_skr_destructor(void *key, void *context, void *user_context)
 {
   SilcSKREntry type = key;
   SilcSKRKeyInternal entry = context;
+  SilcPKCSType pkcs_type = silc_pkcs_get_type(entry->key.key);
 
   /* Destroy search data, except for SILC_SKR_FIND_PUBLIC_KEY because it
      shares same context with the key entry. */
   if (SILC_PTR_TO_32(type->type) != SILC_SKR_FIND_PUBLIC_KEY)
-    silc_skr_find_destructor(SILC_32_TO_PTR(type->type), type->data, NULL);
+    silc_skr_find_destructor(SILC_32_TO_PTR(type->type), type->data,
+			     SILC_32_TO_PTR(pkcs_type));
   silc_free(type);
 
   /* Destroy key */
   entry->refcnt--;
   if (entry->refcnt > 0)
     return;
+
+  SILC_LOG_DEBUG(("Freeing public key %p", entry->key.key));
 
   silc_pkcs_public_key_free(entry->key.key);
   silc_free(entry);
@@ -272,12 +281,83 @@ static SilcBool silc_skr_add_entry(SilcSKR skr, SilcSKRFindType type,
   return silc_hash_table_add(skr->keys, entry, key);
 }
 
+/* Delete a key by search constraint type from repository */
+
+static SilcBool silc_skr_del_entry(SilcSKR skr, SilcSKRFindType type,
+				   void *type_data, SilcSKRKeyInternal key)
+{
+  SilcSKREntryStruct entry;
+
+  if (!type_data)
+    return FALSE;
+
+  entry.type = type;
+  entry.data = type_data;
+
+  return silc_hash_table_del_by_context(skr->keys, &entry, key);
+}
+
+/* This performs AND operation.  Any entry already in `results' that is not
+   in `list' will be removed from `results'. */
+
+static SilcBool silc_skr_results_and(SilcDList list, SilcSKRStatus *status,
+				     SilcDList *results)
+{
+  SilcSKRKeyInternal entry, r;
+
+  if (*results == NULL) {
+    *results = silc_dlist_init();
+    if (*results == NULL) {
+      *status |= SILC_SKR_NO_MEMORY;
+      return FALSE;
+    }
+  }
+
+  /* If results is empty, just add all entries from list to results */
+  if (!silc_dlist_count(*results)) {
+    silc_dlist_start(list);
+    while ((entry = silc_dlist_get(list)) != SILC_LIST_END)
+      silc_dlist_add(*results, entry);
+
+    return TRUE;
+  }
+
+  silc_dlist_start(*results);
+  while ((entry = silc_dlist_get(*results)) != SILC_LIST_END) {
+
+    /* Check if this entry is in list  */
+    silc_dlist_start(list);
+    while ((r = silc_dlist_get(list)) != SILC_LIST_END) {
+      if (r == entry)
+	break;
+    }
+    if (r != SILC_LIST_END)
+      continue;
+
+    /* Remove from results */
+    silc_dlist_del(*results, entry);
+  }
+
+  /* If results became empty, we did not find any key */
+  if (!silc_dlist_count(*results)) {
+    SILC_LOG_DEBUG(("Not all search constraints found"));
+    *status |= SILC_SKR_NOT_FOUND;
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+
+/***************************** SILC Public Key ******************************/
+
 /* Add SILC style public key to repository */
 
 static SilcSKRStatus silc_skr_add_silc(SilcSKR skr,
 				       SilcPublicKey public_key,
 				       SilcSKRKeyUsage usage,
-				       void *key_context)
+				       void *key_context,
+				       SilcSKRKey *return_key)
 {
   SilcSKRKeyInternal key;
   SilcSKRStatus status = SILC_SKR_ERROR;
@@ -374,6 +454,9 @@ static SilcSKRStatus silc_skr_add_silc(SilcSKR skr,
 
   silc_mutex_unlock(skr->lock);
 
+  if (return_key)
+    *return_key = (SilcSKRKey)key;
+
   return SILC_SKR_OK;
 
  err:
@@ -387,7 +470,8 @@ static SilcSKRStatus silc_skr_add_silc(SilcSKR skr,
 static SilcSKRStatus silc_skr_add_silc_simple(SilcSKR skr,
 					      SilcPublicKey public_key,
 					      SilcSKRKeyUsage usage,
-					      void *key_context)
+					      void *key_context,
+					      SilcSKRKey *return_key)
 {
   SilcSKRKeyInternal key;
   SilcSKRStatus status = SILC_SKR_ERROR;
@@ -431,6 +515,9 @@ static SilcSKRStatus silc_skr_add_silc_simple(SilcSKR skr,
 
   silc_mutex_unlock(skr->lock);
 
+  if (return_key)
+    *return_key = (SilcSKRKey)key;
+
   return SILC_SKR_OK;
 
  err:
@@ -438,55 +525,52 @@ static SilcSKRStatus silc_skr_add_silc_simple(SilcSKR skr,
   return status;
 }
 
-/* This performs AND operation.  Any entry already in `results' that is not
-   in `list' will be removed from `results'. */
+/* Deletes SILC public key from repository */
 
-static SilcBool silc_skr_results_and(SilcDList list, SilcSKRStatus *status,
-				     SilcDList *results)
+static SilcSKRStatus silc_skr_del_silc_public_key(SilcSKR skr,
+						  SilcPublicKey public_key,
+						  void *key_context)
 {
-  SilcSKRKeyInternal entry, r;
+  SilcSKRStatus status = SILC_SKR_ERROR;
+  SilcPublicKeyIdentifier ident;
+  SilcSILCPublicKey silc_pubkey;
+  SilcSKRKeyInternal key;
+  SilcDList entry;
 
-  if (*results == NULL) {
-    *results = silc_dlist_init();
-    if (*results == NULL) {
-      *status |= SILC_SKR_NO_MEMORY;
-      return FALSE;
-    }
+  /* Get the SILC public key */
+  silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
+  ident = &silc_pubkey->identifier;
+
+  SILC_LOG_DEBUG(("Deleting SILC public key [%s]", ident->username));
+
+  silc_mutex_lock(skr->lock);
+
+  /* Check that this key exists */
+  if (!silc_skr_find_entry(skr, &status, SILC_SKR_FIND_PUBLIC_KEY,
+			   public_key, &entry, key_context, 0)) {
+    silc_mutex_unlock(skr->lock);
+    SILC_LOG_DEBUG(("Key does not exist"));
+    return status | SILC_SKR_NOT_FOUND;
   }
 
-  /* If results is empty, just add all entries from list to results */
-  if (!silc_dlist_count(*results)) {
-    silc_dlist_start(list);
-    while ((entry = silc_dlist_get(list)) != SILC_LIST_END)
-      silc_dlist_add(*results, entry);
+  silc_dlist_start(entry);
+  key = silc_dlist_get(entry);
+  silc_dlist_uninit(entry);
 
-    return TRUE;
-  }
+  silc_skr_del_entry(skr, SILC_SKR_FIND_PUBLIC_KEY, public_key, key);
+  silc_skr_del_entry(skr, SILC_SKR_FIND_PKCS_TYPE,
+		     SILC_32_TO_PTR(SILC_PKCS_SILC), key);
+  silc_skr_del_entry(skr, SILC_SKR_FIND_USERNAME, ident->username, key);
+  silc_skr_del_entry(skr, SILC_SKR_FIND_HOST, ident->host, key);
+  silc_skr_del_entry(skr, SILC_SKR_FIND_REALNAME, ident->realname, key);
+  silc_skr_del_entry(skr, SILC_SKR_FIND_EMAIL, ident->email, key);
+  silc_skr_del_entry(skr, SILC_SKR_FIND_ORG, ident->org, key);
+  silc_skr_del_entry(skr, SILC_SKR_FIND_COUNTRY, ident->country, key);
+  silc_skr_del_entry(skr, SILC_SKR_FIND_CONTEXT, key_context, key);
 
-  silc_dlist_start(*results);
-  while ((entry = silc_dlist_get(*results)) != SILC_LIST_END) {
+  silc_mutex_unlock(skr->lock);
 
-    /* Check if this entry is in list  */
-    silc_dlist_start(list);
-    while ((r = silc_dlist_get(list)) != SILC_LIST_END) {
-      if (r == entry)
-	break;
-    }
-    if (r != SILC_LIST_END)
-      continue;
-
-    /* Remove from results */
-    silc_dlist_del(*results, entry);
-  }
-
-  /* If results became empty, we did not find any key */
-  if (!silc_dlist_count(*results)) {
-    SILC_LOG_DEBUG(("Not all search constraints found"));
-    *status |= SILC_SKR_NOT_FOUND;
-    return FALSE;
-  }
-
-  return TRUE;
+  return SILC_SKR_OK;
 }
 
 
@@ -548,7 +632,8 @@ void silc_skr_uninit(SilcSKR skr)
 SilcSKRStatus silc_skr_add_public_key(SilcSKR skr,
 				      SilcPublicKey public_key,
 				      SilcSKRKeyUsage usage,
-				      void *key_context)
+				      void *key_context,
+				      SilcSKRKey *return_key)
 {
   SilcPKCSType type;
 
@@ -557,12 +642,12 @@ SilcSKRStatus silc_skr_add_public_key(SilcSKR skr,
 
   type = silc_pkcs_get_type(public_key);
 
-  SILC_LOG_DEBUG(("Adding public key to repository"));
+  SILC_LOG_DEBUG(("Adding public key %p to repository", public_key));
 
   switch (type) {
 
   case SILC_PKCS_SILC:
-    return silc_skr_add_silc(skr, public_key, usage, key_context);
+    return silc_skr_add_silc(skr, public_key, usage, key_context, return_key);
     break;
 
   default:
@@ -577,7 +662,8 @@ SilcSKRStatus silc_skr_add_public_key(SilcSKR skr,
 SilcSKRStatus silc_skr_add_public_key_simple(SilcSKR skr,
 					     SilcPublicKey public_key,
 					     SilcSKRKeyUsage usage,
-					     void *key_context)
+					     void *key_context,
+					     SilcSKRKey *return_key)
 {
   SilcPKCSType type;
 
@@ -586,12 +672,13 @@ SilcSKRStatus silc_skr_add_public_key_simple(SilcSKR skr,
 
   type = silc_pkcs_get_type(public_key);
 
-  SILC_LOG_DEBUG(("Adding public key to repository"));
+  SILC_LOG_DEBUG(("Adding public key %p to repository", public_key));
 
   switch (type) {
 
   case SILC_PKCS_SILC:
-    return silc_skr_add_silc_simple(skr, public_key, usage, key_context);
+    return silc_skr_add_silc_simple(skr, public_key, usage, key_context,
+				    return_key);
     break;
 
   default:
@@ -599,6 +686,67 @@ SilcSKRStatus silc_skr_add_public_key_simple(SilcSKR skr,
   }
 
   return SILC_SKR_ERROR;
+}
+
+/* Remove key from repository */
+
+SilcSKRStatus silc_skr_del_public_key(SilcSKR skr,
+				      SilcPublicKey public_key,
+				      void *key_context)
+{
+  SilcPKCSType type;
+
+  if (!public_key)
+    return SILC_SKR_ERROR;
+
+  type = silc_pkcs_get_type(public_key);
+
+  SILC_LOG_DEBUG(("Deleting public key %p from repository", public_key));
+
+  switch (type) {
+
+  case SILC_PKCS_SILC:
+    return silc_skr_del_silc_public_key(skr, public_key, key_context);
+    break;
+
+  default:
+    break;
+  }
+
+  return SILC_SKR_ERROR;
+}
+
+/* Reference key */
+
+void silc_skr_ref_public_key(SilcSKR skr, SilcSKRKey key)
+{
+  SilcSKRKeyInternal k = (SilcSKRKeyInternal)key;
+
+  silc_mutex_lock(skr->lock);
+  SILC_LOG_DEBUG(("SKR key %p ref %d -> %d", k->refcnt, k->refcnt + 1));
+  k->refcnt++;
+  silc_mutex_unlock(skr->lock);
+}
+
+/* Release key reference. */
+
+void silc_skr_unref_public_key(SilcSKR skr, SilcSKRKey key)
+{
+  SilcSKRKeyInternal k = (SilcSKRKeyInternal)key;
+
+  silc_mutex_lock(skr->lock);
+
+  SILC_LOG_DEBUG(("SKR key %p ref %d -> %d", k->refcnt, k->refcnt - 1));
+  k->refcnt--;
+
+  if (k->refcnt == 0) {
+    /* If reference is zero, the key has been removed from the repository
+       already.  Just destroy the public key. */
+    silc_pkcs_public_key_free(key->key);
+    silc_free(key);
+  }
+
+  silc_mutex_unlock(skr->lock);
 }
 
 

@@ -21,7 +21,9 @@
  *
  * DESCRIPTION
  *
- * SILC Key Repository
+ * SILC Key repository is a generic public key and certificate repository
+ * which allows fast and versatile ways to retrieve public keys from the
+ * the repository.
  *
  * SILC Key Repository is thread safe.  Same key repository context can be
  * safely used in multi threaded environment.
@@ -133,6 +135,9 @@ typedef struct SilcSKRKeyStruct {
  *    then at least SILC_SKR_ERROR is set, and possibly other error
  *    status also.
  *
+ *    If the SILC_SKR_UNSUPPORTED_TYPE is returned the repository does not
+ *    support the public key type and it cannot be added to the repository.
+ *
  * SOURCE
  */
 typedef enum {
@@ -230,7 +235,8 @@ void silc_skr_uninit(SilcSKR skr);
  *    SilcSKRStatus silc_skr_add_public_key(SilcSKR skr,
  *                                          SilcPublicKey public_key,
  *                                          SilcSKRKeyUsage usage,
- *                                          void *key_context);
+ *                                          void *key_context,
+ *                                          SilcSKRKey *return_key);
  *
  * DESCRIPTION
  *
@@ -241,21 +247,28 @@ void silc_skr_uninit(SilcSKR skr);
  *    repository.  To add same key more than once to repository different
  *    `key_context' must be used each time.
  *
+ *    Returns an entry of the added public key in the repository to the
+ *    `return_key' pointer, if it is non-NULL.  The returned entry remains
+ *    valid as long as the public key is in the repository, however a
+ *    reference may be taken with silc_skr_ref_public_key to assure the
+ *    entry remains valid.
+ *
  *    Returns SILC_SKR_OK if the key was added successfully, and error
  *    status if key could not be added, or has been added already.
  *
  * EXAMPLE
  *
  *    // Add a key to repository
- *    if (silc_skr_add_public_key(repository, public_key,
- *                                SILC_SKR_USAGE_ANY, NULL) != SILC_SKR_OK)
+ *    if (silc_skr_add_public_key(repository, pubkey, SILC_SKR_USAGE_ANY,
+ *                                NULL, NULL) != SILC_SKR_OK)
  *      goto error;
  *
  ***/
 SilcSKRStatus silc_skr_add_public_key(SilcSKR skr,
 				      SilcPublicKey public_key,
 				      SilcSKRKeyUsage usage,
-				      void *key_context);
+				      void *key_context,
+				      SilcSKRKey *return_key);
 
 /****f* silcskr/SilcSKRAPI/silc_skr_add_public_key_simple
  *
@@ -264,7 +277,8 @@ SilcSKRStatus silc_skr_add_public_key(SilcSKR skr,
  *    SilcSKRStatus silc_skr_add_public_key_simple(SilcSKR skr,
  *                                                 SilcPublicKey public_key,
  *                                                 SilcSKRKeyUsage usage,
- *                                                 void *key_context);
+ *                                                 void *key_context,
+ *                                                 SilcSKRKey *return_key);
  *
  * DESCRIPTION
  *
@@ -275,6 +289,12 @@ SilcSKRStatus silc_skr_add_public_key(SilcSKR skr,
  *    key with as little memory as possible to the repository, and makes
  *    it a good way to cheaply store large amounts of public keys.
  *
+ *    Returns an entry of the added public key in the repository to the
+ *    `return_key' pointer, if it is non-NULL.  The returned entry remains
+ *    valid as long as the public key is in the repository, however a
+ *    reference may be taken with silc_skr_ref_public_key to assure the
+ *    entry remains valid.
+ *
  *    Returns SILC_SKR_OK if the key was added successfully, and error
  *    status if key could not be added, or has been added already.
  *
@@ -282,7 +302,59 @@ SilcSKRStatus silc_skr_add_public_key(SilcSKR skr,
 SilcSKRStatus silc_skr_add_public_key_simple(SilcSKR skr,
 					     SilcPublicKey public_key,
 					     SilcSKRKeyUsage usage,
-					     void *key_context);
+					     void *key_context,
+					     SilcSKRKey *return_key);
+
+/****f* silcskr/SilcSKRAPI/silc_skr_del_public_key
+ *
+ * SYNOPSIS
+ *
+ *    SilcSKRStatus silc_skr_del_public_key(SilcSKR skr,
+ *                                          SilcPublicKey public_key,
+ *                                          void *key_context);
+ *
+ * DESCRIPTION
+ *
+ *    Removes and destroyes the public key from the repository.  The
+ *    public_key will become invalid after this call returns.
+ *
+ *    Returns SILC_SKR_OK if the key was added successfully, and error
+ *    status if key could not be added, or has been added already.
+ *
+ ***/
+SilcSKRStatus silc_skr_del_public_key(SilcSKR skr,
+				      SilcPublicKey public_key,
+				      void *key_context);
+
+/****f* silcskr/SilcSKRAPI/silc_skr_ref_public_key
+ *
+ * SYNOPSIS
+ *
+ *    void silc_skr_ref_public_key(SilcSKR skr, SilcSKRKey key);
+ *
+ * DESCRIPTION
+ *
+ *    Takes a reference of the public key added to repository indicated
+ *    by `key'.  The reference must be released by calling the function
+ *    silc_skr_unref_public_key when it is not needed anymore.
+ *
+ ***/
+void silc_skr_ref_public_key(SilcSKR skr, SilcSKRKey key);
+
+/****f* silcskr/SilcSKRAPI/silc_skr_unref_public_key
+ *
+ * SYNOPSIS
+ *
+ *    void silc_skr_unref_public_key(SilcSKR skr, SilcSKRKey key);
+ *
+ * DESCRIPTION
+ *
+ *    Releases the reference of the public key added to the repository
+ *    indicated by `key'.  If the released reference is the last reference
+ *    to the key it will become invalid after this function returns.
+ *
+ ***/
+void silc_skr_unref_public_key(SilcSKR skr, SilcSKRKey key);
 
 /****f* silcskr/SilcSKRAPI/silc_skr_find_alloc
  *
