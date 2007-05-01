@@ -338,7 +338,7 @@ char *silc_string_regexify(const char *string)
 
   regex = silc_calloc(len + count + 1, sizeof(*regex));
   if (!regex)
-    reeturn NULL;
+    return NULL;
 
   count = 0;
   regex[count++] = '(';
