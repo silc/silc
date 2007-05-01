@@ -180,7 +180,7 @@ static void silc_client_ke_completion(SilcSKE ske,
     silc_ske_free_rekey_material(rekey);
 
     silc_fsm_next(fsm, silc_client_st_connect_error);
-    SILC_FSM_CALL_CONTINUE(fsm);
+    SILC_FSM_CALL_CONTINUE_SYNC(fsm);
     return;
   }
 
@@ -202,7 +202,7 @@ static void silc_client_ke_completion(SilcSKE ske,
     silc_ske_free_rekey_material(rekey);
 
     silc_fsm_next(fsm, silc_client_st_connect_error);
-    SILC_FSM_CALL_CONTINUE(fsm);
+    SILC_FSM_CALL_CONTINUE_SYNC(fsm);
     return;
   }
 
@@ -223,7 +223,7 @@ static void silc_client_ke_completion(SilcSKE ske,
     silc_ske_free_rekey_material(rekey);
 
     silc_fsm_next(fsm, silc_client_st_connect_error);
-    SILC_FSM_CALL_CONTINUE(fsm);
+    SILC_FSM_CALL_CONTINUE_SYNC(fsm);
     return;
   }
 
@@ -463,6 +463,7 @@ SILC_FSM_STATE(silc_client_st_connect_key_exchange)
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
   SilcSKEParamsStruct params;
+  SilcClientID cid;
 
   SILC_LOG_DEBUG(("Starting key exchange protocol"));
 
@@ -502,6 +503,12 @@ SILC_FSM_STATE(silc_client_st_connect_key_exchange)
   else
     /** Run key exchange (TCP) */
     silc_fsm_next(fsm, silc_client_st_connect_auth_resolve);
+
+  /* Old server version requires empty Client ID in packets.  Remove this
+     backwards support somepoint after 1.1 server is released. */
+  memset(&cid, 0, sizeof(cid));
+  cid.ip.data_len = 4;
+  silc_packet_set_ids(conn->stream, SILC_ID_CLIENT, &cid, 0, NULL);
 
   SILC_FSM_CALL(conn->internal->op = silc_ske_initiator(conn->internal->ske,
 							conn->stream,
