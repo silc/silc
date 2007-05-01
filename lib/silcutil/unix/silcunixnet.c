@@ -21,6 +21,8 @@
 #include "silc.h"
 #include "silcnet.h"
 
+/************************** Types and definitions ***************************/
+
 #ifdef HAVE_IPV6
 #define SIZEOF_SOCKADDR(so) ((so).sa.sa_family == AF_INET6 ?	\
   sizeof(so.sin6) : sizeof(so.sin))
@@ -35,6 +37,8 @@ typedef union {
   struct sockaddr_in6 sin6;
 #endif
 } SilcSockaddr;
+
+/************************ Static utility functions **************************/
 
 static SilcBool silc_net_set_sockaddr(SilcSockaddr *addr, const char *ip_addr,
 				      int port)
@@ -80,6 +84,8 @@ static SilcBool silc_net_set_sockaddr(SilcSockaddr *addr, const char *ip_addr,
 
   return TRUE;
 }
+
+/****************************** TCP Listener ********************************/
 
 /* Deliver new stream to upper layer */
 
@@ -179,6 +185,7 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
     if (rval < 0) {
       SILC_LOG_ERROR(("Cannot set socket options: %s", strerror(errno)));
+      close(sock);
       goto err;
     }
 
@@ -186,6 +193,7 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     rval = bind(sock, &server.sa, SIZEOF_SOCKADDR(server));
     if (rval < 0) {
       SILC_LOG_ERROR(("Cannot bind socket: %s", strerror(errno)));
+      close(sock);
       goto err;
     }
 
@@ -193,6 +201,7 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     rval = listen(sock, 64);
     if (rval < 0) {
       SILC_LOG_ERROR(("Cannot set socket listenning: %s", strerror(errno)));
+      close(sock);
       goto err;
     }
 
@@ -232,6 +241,8 @@ void silc_net_close_listener(SilcNetListener listener)
   silc_free(listener->socks);
   silc_free(listener);
 }
+
+/******************************* UDP Stream *********************************/
 
 /* Create UDP stream */
 
@@ -304,17 +315,23 @@ silc_net_udp_connect(const char *local_ip_addr, int local_port,
 
   /* Set send and receive buffer size */
 #ifdef SO_SNDBUF
-  rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_SNDBUF, 65535);
+  rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_SNDBUF, 765535);
   if (rval < 0) {
-    SILC_LOG_ERROR(("Cannot set socket options: %s", strerror(errno)));
-    goto err;
+    rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_SNDBUF, 65535);
+    if (rval < 0) {
+      SILC_LOG_ERROR(("Cannot set socket options: %s", strerror(errno)));
+      goto err;
+    }
   }
 #endif /* SO_SNDBUF */
 #ifdef SO_RCVBUF
-  rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_RCVBUF, 65535);
+  rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_RCVBUF, 765535);
   if (rval < 0) {
-    SILC_LOG_ERROR(("Cannot set socket options: %s", strerror(errno)));
-    goto err;
+    rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_RCVBUF, 65535);
+    if (rval < 0) {
+      SILC_LOG_ERROR(("Cannot set socket options: %s", strerror(errno)));
+      goto err;
+    }
   }
 #endif /* SO_RCVBUF */
 
@@ -438,6 +455,8 @@ int silc_net_udp_send(SilcStream stream,
   return ret;
 }
 
+/******************************* TCP Stream *********************************/
+
 /* Asynchronous TCP/IP connecting */
 
 typedef struct {
@@ -535,17 +554,14 @@ SILC_FSM_STATE(silc_net_connect_st_start)
   rval = connect(sock, &desthost.sa, SIZEOF_SOCKADDR(desthost));
   if (rval < 0) {
     if (errno != EINPROGRESS) {
-      /* retry using an IPv4 adress, if IPv6 didn't work */
-      if (prefer_ipv6 && silc_net_is_ip6(conn->ip_addr)) {
-        shutdown(sock, 2);
-        close(sock);
+      shutdown(sock, 2);
+      close(sock);
 
+      /* Retry using an IPv4 adress, if IPv6 didn't work */
+      if (prefer_ipv6 && silc_net_is_ip6(conn->ip_addr)) {
         prefer_ipv6 = FALSE;
         goto retry;
       }
-
-      shutdown(sock, 2);
-      close(sock);
 
       /** Cannot connect to remote host */
       SILC_LOG_ERROR(("Cannot connect to remote host: %s", strerror(errno)));
@@ -700,7 +716,7 @@ static void silc_net_connect_abort(SilcAsyncOperation op, void *context)
 
   /* Abort underlaying stream creation too */
   if (conn->sop)
-    silc_async_abort(conn->op, NULL, NULL);
+    silc_async_abort(conn->sop, NULL, NULL);
 }
 
 static void silc_net_connect_destructor(SilcFSM fsm, void *fsm_context,

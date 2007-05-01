@@ -80,6 +80,8 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
       if (errno == EAGAIN || errno == EINTR) {
 	SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
 	silc_schedule_set_listen_fd(sock->schedule, sock->sock,
+				    silc_schedule_get_fd_events(sock->schedule,
+								sock->sock) |
 				    SILC_TASK_READ, FALSE);
 	return -1;
       }
@@ -122,6 +124,8 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
     if (errno == EAGAIN || errno == EINTR) {
       SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
       silc_schedule_set_listen_fd(sock->schedule, sock->sock,
+				  silc_schedule_get_fd_events(sock->schedule,
+							      sock->sock) |
 				  SILC_TASK_READ, FALSE);
       return -1;
     }
@@ -245,7 +249,7 @@ SilcBool silc_socket_get_error(SilcStream sock, char *error,
   memcpy(error, err, strlen(err));
   return TRUE;
 }
-#endif /* 0 */
+#endif
 
 /* Closes socket */
 
