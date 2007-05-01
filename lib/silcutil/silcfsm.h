@@ -364,7 +364,8 @@ do {						\
  *
  *    Macro used to wait for the `thread' to terminate.  The machine or
  *    thread will be suspended while it is waiting for the thread to
- *    terminate.
+ *    terminate.  The machine or thread will continue once the waited
+ *    thread has terminated.
  *
  * NOTES
  *
