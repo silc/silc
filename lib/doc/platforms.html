@@ -44,12 +44,6 @@ execute the Client Library.  Instead the <tt>silc_client_run_one</tt> should
 be used, for example as an timer task and the Windows application's own
 message loop should be used as the main message loop.
 
-<li>The function <tt>silc_net_create_connection_async</tt> is not actually
-asynchronous on Windows, but synchronous and it will block the process
-while the connection is created.  This means also that the function
-<tt>silc_client_connect_to_server</tt> is not asynchronous but
-synchronous.
-
 
 <br />&nbsp;<br />&nbsp;<br />
 <b><a name="macosx"></a>Mac OS X Implementation</b>
@@ -77,7 +71,3 @@ function should be used instead.  The design of SilcSchedule on Symbian
 enables efficient data I/O even when <tt>silc_schedule_one</tt> is called
 from a timer task.  The data I/O is scheduled separately by the Symbian
 Active Scheduler and the SilcSchedule will merely schedule timeouts.
-
-<li>The function <tt>silc_client_run</tt> on Symbian will return immediately.
-On symbian the <tt>silc_client_run_one<tt> should be used instead.  It can
-used from a timer or from an idle task.
