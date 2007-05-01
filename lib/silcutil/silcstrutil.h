@@ -141,8 +141,6 @@ char *silc_strncat(char *dest, SilcUInt32 dest_size,
  *    be used by the GNU regex library. A comma (`,') in the `string' means
  *    that the string is list.
  *
- *    This function is system dependant.
- *
  ***/
 char *silc_string_regexify(const char *string);
 
@@ -155,8 +153,6 @@ char *silc_string_regexify(const char *string);
  * DESCRIPTION
  *
  *    Matches the two strings and returns TRUE if the strings match.
- *
- *    This function is system dependant.
  *
  ***/
 int silc_string_regex_match(const char *regex, const char *string);
@@ -171,8 +167,6 @@ int silc_string_regex_match(const char *regex, const char *string);
  *
  *    Do regex match to the two strings `string1' and `string2'. If the
  *    `string2' matches the `string1' this returns TRUE.
- *
- *    This function is system dependant.
  *
  ***/
 int silc_string_match(const char *string1, const char *string2);
