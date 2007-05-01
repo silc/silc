@@ -184,7 +184,6 @@ static SilcSKEStatus silc_ske_check_version(SilcSKE ske)
 {
   SilcUInt32 r_software_version = 0;
   char *r_software_string = NULL;
-  SilcBool src_set = FALSE;
 
   if (!ske->remote_version || !ske->version)
     return SILC_SKE_STATUS_BAD_VERSION;
@@ -193,30 +192,6 @@ static SilcSKEStatus silc_ske_check_version(SilcSKE ske)
 				 &r_software_version,
 				 &r_software_string, NULL))
     return SILC_SKE_STATUS_BAD_VERSION;
-
-  /* Backwards compatibility checks */
-
-  /* Old server versions requires "valid" looking Source ID in the SILC
-     packets during initial key exchange.  All version before 1.1.0. */
-  silc_packet_get_ids(ske->stream, &src_set, NULL, NULL, NULL);
-  if (!src_set && !ske->responder && r_software_string &&
-      r_software_version < 110) {
-    SILC_LOG_DEBUG(("Remote is old version, add dummy Source ID to packets"));
-
-    if (strstr(r_software_string, "server")) {
-      SilcServerID sid;
-      memset(&sid, 0, sizeof(sid));
-      sid.ip.data_len = 4;
-      silc_packet_set_ids(ske->stream, SILC_ID_SERVER, &sid, 0, NULL);
-    }
-
-    if (strstr(r_software_string, "client")) {
-      SilcClientID cid;
-      memset(&cid, 0, sizeof(cid));
-      cid.ip.data_len = 4;
-      silc_packet_set_ids(ske->stream, SILC_ID_CLIENT, &cid, 0, NULL);
-    }
-  }
 
   return SILC_SKE_STATUS_OK;
 }
@@ -1807,15 +1782,15 @@ SILC_FSM_STATE(silc_ske_st_initiator_failure)
   SilcSKE ske = fsm_context;
   SilcUInt32 error = SILC_SKE_STATUS_ERROR;
 
-  SILC_LOG_DEBUG(("Error %s (%d) received during key exchange",
-		  silc_ske_map_status(ske->status), ske->status));
-
   if (ske->packet && silc_buffer_len(&ske->packet->buffer) == 4) {
     SILC_GET32_MSB(error, ske->packet->buffer.data);
     ske->status = error;
     silc_packet_free(ske->packet);
     ske->packet = NULL;
   }
+
+  SILC_LOG_DEBUG(("Error %s (%d) received during key exchange",
+		  silc_ske_map_status(ske->status), ske->status));
 
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
