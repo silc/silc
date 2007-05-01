@@ -271,8 +271,10 @@ typedef SilcUInt32 * void *;
  *
  * SOURCE
  */
-#if defined(SILC_UNIX) || defined(SILC_WIN32)
+#if defined(SILC_UNIX)
 typedef int SilcSocket;
+#elif defined(SILC_WIN32)
+typedef SOCKET SilcSocket;
 #elif defined(SILC_SYMBIAN)
 typedef void * SilcSocket;
 #endif
