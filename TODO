@@ -1,5 +1,5 @@
-TODO for 1.1 And Beyond
-=======================
+TODO for 1.1
+============
 
 NOTE: Any item that doesn't have (***DONE) in it, isn't done yet.  The
 (***TESTING NEEDED) means that the item has been done but not yet properly
@@ -45,11 +45,6 @@ SILC Client	****PARTLY DONE****
 
 lib/silcclient, The Client Library	***PARTLY DONE****
 ==================================
-
- o in JOIN notify handle resolving that timedout.  Currently the user is
-   never joined the channel if this happens.  What to do if message is
-   received from user that hasn't been resolved/joined?  (maybe 1.1, latest
-   1.2)
 
  o silcclient.h clean up and API rewrites.
 
@@ -108,21 +103,11 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o UDP connections. (***TESTING NEEDED)
 
- o Message ACKing.
-
- o in /cmode and /cumode with +r, maybe the public key and private key
-   could be just some "string", which would then match to "string.pub" and
-   "string.prv".
-
- o All packet waiting timeout tests and error condition tests.
-
 
 lib/silcsftp			****DONE****
 ============
 
  o Porting to use the new util library. (***DONE)
-
- o Read-ahead (1.2)
 
 
 lib/silccore/silcpacket.[ch]	****PARTLY DONE****
@@ -135,8 +120,6 @@ lib/silccore/silcpacket.[ch]	****PARTLY DONE****
  o Implement silc_packet_engine_stop and silc_packet_stream_destroy. (***DONE)
 
  o IV Included flag support, UDP transport support (***TESTING NEEDED)
-
- o SILC_PACKET_FLAG_ACK support.  Implement ACK packet and packet payload.
 
 
 lib/silccore/silcid.[ch]	****DONE****
@@ -155,8 +138,6 @@ lib/silcskr	****PARTLY DONE****
  o Removing key from the repository is not possible currently.  It should
    be. (***DONE)
 
- o Add fingerprint as search constraint. (1.2)
-
 
 lib/silcske/silcske.[ch] 	***PARTLY DONE****
 ========================
@@ -169,8 +150,6 @@ lib/silcske/silcske.[ch] 	***PARTLY DONE****
    backoff algorithm. (***DONE)
 
  o SilcConnAuth header file documentation. (***DONE)
-
- o Ratelimit to UDP/IP transport for incoming packets. (1.2)
 
 
 lib/silccrypt			****PARTLY DONE****
@@ -194,16 +173,6 @@ lib/silccrypt			****PARTLY DONE****
 
  o Assembler AES (***DONE)
 
- o Implement the defined SilcDH API.  The definition is in
-   lib/silccrypt/silcdh.h. (1.2)
-
- o SSH2 public keys support, allowing the use of SSH2 public keys in
-   SILC. (1.2)
-
- o Add DSS support (1.2)
-
- o ECDSA and ECDH (1.2)
-
 
 lib/silcutil			****PARTLY DONE****
 ============
@@ -212,19 +181,9 @@ lib/silcutil			****PARTLY DONE****
    No need to make it silcutil/unix/ specific.  Add them to generic
    silcutil.c. (***TESTNG NEEDED)
 
- o silc_stringprep to non-allocating version.
+ o Silc FD Stream to WIN32 (lib/silcutil/silcfdstream.h) (***TESTING NEEDED)
 
  o bool -> SilcBool (***DONE)
-
- o Silc FD Stream to WIN32 (lib/silcutil/silcfdstream.h)
-
- o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
-   SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
-   in separately. (1.2)
-
- o Compression routines are missing.  The protocol supports packet
-   compression thus it must be implemented.  SILC Zip API must be
-   defined. (1.2)
 
 
 lib/silcutil/silcbuffer.h	****DONE****
@@ -319,8 +278,6 @@ lib/silcutil/silctime.[ch]	****PARTLY DONE****
 
  o system time, universal, generalized. (***DONE)
 
- o Fix universal time decoding (doesn't accept all forms) in silctime.c.
-
 
 lib/silcutil/silcfsm.[ch]	****DONE****
 =========================
@@ -341,25 +298,11 @@ lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
 lib/silcmath
 ============
 
- o Import TFM.  Talk to Tom to add the missing functions.  Use TFM in
-   client and client library, but TMA in server, due to the significantly
-   increased memory consumption with TFM, and the rare need for public
-   key operations in server.
+ o Test on x86_64.
 
  o Change LTM and TFM function names when importing to SILC tree to avoid
    rare linking problems on system that has same named symbols already in
    the system.
-
- o The SILC MP API function must start returning indication of success
-   and failure of the operation.
-
- o Do SilcStack support for silc_mp_init, silc_mp_init_size and other
-   any other MP function (including utility ones) that may allocate
-   memory.
-
- o Test on x86_64.
-
- o All utility functions should be made non-allocating ones.
 
 
 lib/silcutil/symbian/		****PARTLY DONE****
@@ -381,82 +324,3 @@ lib/silcasn1			****PARTLY DONE****
  o Header documentation missing. (***DONE)
 
  o Some string encodings missing (copy/paste matter). (***DONE)
-
- o Negative integer encoding
-
-
-lib/silccore
-============
-
- o All payload encoding routines should take SilcStack as argument. (1.2)
-
- o All payload test routines into lib/silccore/tests/.
-
-
-lib/silcpkix (1.2)
-============
-
- o PKIX implementation
-
-
-lib/silcpgp (1.2)
-===========
-
- o OpenPGP certificate support, allowing the use of PGP public keys
-   in SILC.
-
-
-lib/silcserver (1.2)
-==============
-
- o (Re)write commands/command replys.
-
- o (Re)write notify handling.
-
- o The SERVER_SIGNOFF notify handing is not optimal, because it'll
-   cause sending of multiple SIGNOFF notify's instead of the one
-   SERVER_SIGNOFF notify that the server received.  This should be
-   optimized so that the only SERVER_SIGNOFF is sent and not
-   SIGNOFF of notify at all (using SIGNOFF takes the idea about
-   SERVER_SIGNOFF away entirely).
-
- o Another SERVER_SIGNOFF opt/bugfix:  Currently the signoff is
-   sent to a client if it is on same channel as the client that
-   signoffed.  However, the entire SERVER_SIGNOFF list is sent to
-   the client, ie. it may receive clients that was not on the
-   same channel.  This is actually against the specs.  It must be
-   done per channel.  It shouldn't receive the whole list just
-   because one client happened to be on same channel.
-
- o MAYBE: The SilcChannelClientEntry can be:
-	SilcUInt32 address;
-	SilcUInt32 mode;
-
-  where address is SilcClientEntry address XOR SilcChannelEntry.
-  You can get SilcClientEntry by doing client = chl->address XOR channel,
-  and SilcChannelEntry by doing channel = chl->address XOR client.
-  As long as the other pointer is always available when accessing the
-  structure this can be done.
-
- o Add reference counters to all Silc*Entry structures
-
- o SERVICEs support (plugin, SIM)
-
- o If client's public key is saved in the server (and doing public key
-   authentication) then the hostname and the username information could
-   be taken from the public key.  Should be a configuration option!
-
- o Add a timeout to handling incoming JOIN commands.  It should be
-   enforced that JOIN command is executed only once in a second or two
-   seconds.  Now it is possible to accept n incoming JOIN commands
-   and process them without any timeouts.  THis must be employed because
-   each JOIN command will create and distribute the new channel key
-   to everybody on the channel (Fix this to 0.9.x).
-
- o Related to above.  If multiple JOINs are received in sequence perhaps
-   new key should be created only once, if the JOINs are handeled at the same
-   time.  Now we create multiple keys and never end up using them because
-   many JOINs are processed at the same time in sequence.  Only the last
-   key ends up being used.
-
- o The CMODE cipher & hmac change problem (#101).
