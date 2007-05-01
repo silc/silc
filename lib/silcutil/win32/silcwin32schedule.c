@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2006 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ int silc_select(SilcSchedule schedule, void *context);
   DWORD ready, curtime;
   LONG timeo;
   MSG msg;
-  int nhandles = 0, i, fd;
+  int nhandles = 0, fd;
 
   silc_hash_table_list(schedule->fd_queue, &htl);
   while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
@@ -77,6 +77,7 @@ int silc_select(SilcSchedule schedule, void *context);
     task->revents = 0;
   }
   silc_hash_table_list_reset(&htl);
+  silc_list_init(schedule->fd_dispatch, struct SilcTaskStruct, next);
 
   timeo = (schedule->has_timeout ? ((schedule->timeout.tv_sec * 1000) +
 				    (schedule->timeout.tv_usec / 1000))
@@ -153,7 +154,7 @@ int silc_select(SilcSchedule schedule, void *context);
     }
 
     /* Give the wait another try */
-   goto retry;
+    goto retry;
   } else if (ready >= WAIT_OBJECT_0 && ready < WAIT_OBJECT_0 + nhandles) {
     /* Some other event, like SOCKET or something. */
 
@@ -162,19 +163,15 @@ int silc_select(SilcSchedule schedule, void *context);
     nhandles = silc_hash_table_count(schedule->fd_queue);
     ready -= WAIT_OBJECT_0;
     do {
-      i = 0;
-      silc_hash_table_list(schedule->fd_queue, &htl);
-      while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
-	if (!task->events)
-	  continue;
+      if (!silc_hash_table_find(schedule->fd_queue,
+				SILC_32_TO_PTR((SilcUInt32)handles[ready]),
+				NULL, (void *)&task))
+	break;
 
-	if (fd == (int)handles[ready]) {
-	  i++;
-	  task->revents |= SILC_TASK_READ;
-	  break;
-	}
+      if (task->header.valid && task->events) {
+	task->revents |= SILC_TASK_READ;
+	silc_list_add(schedule->fd_dispatch, task);
       }
-      silc_hash_table_list_reset(&htl);
 
       /* Check the status of the next handle and set its fd to the fd
 	 set if data is available. */
@@ -185,7 +182,7 @@ int silc_select(SilcSchedule schedule, void *context);
       SILC_SCHEDULE_LOCK(schedule);
     } while (ready < nhandles);
 
-    return i + 1;
+    return silc_list_count(schedule->fd_dispatch);
   }
 
   return -1;
@@ -261,6 +258,16 @@ void silc_schedule_internal_uninit(SilcSchedule schedule, void *context)
 #endif
 }
 
+/* Schedule `task' with events `event_mask'. Zero `event_mask' unschedules. */
+
+SilcBool silc_schedule_internal_schedule_fd(SilcSchedule schedule,
+					    void *context,
+					    SilcTaskFd task,
+					    SilcTaskEvent event_mask)
+{
+  return TRUE;
+}
+
 /* Wakes up the scheduler */
 
 void silc_schedule_internal_wakeup(SilcSchedule schedule, void *context)
@@ -298,8 +305,7 @@ void silc_schedule_internal_signal_unregister(SilcSchedule schedule,
 /* Call all signals */
 
 void silc_schedule_internal_signals_call(SilcSchedule schedule,
-					 void *context,
-                                         SilcSchedule schedule)
+					 void *context)
 {
 
 }
@@ -325,6 +331,7 @@ const SilcScheduleOps schedule_ops =
   silc_schedule_internal_init,
   silc_schedule_internal_uninit,
   silc_select,
+  silc_schedule_internal_schedule_fd,
   silc_schedule_internal_wakeup,
   silc_schedule_internal_signal_register,
   silc_schedule_internal_signal_unregister,

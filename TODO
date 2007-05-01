@@ -17,9 +17,9 @@ apps/silcd, The SILC Server	****PARTLY DONE****
 
  o Remove protocol.[ch].  ***DONE
 
- o Rewrite connecting accepting.
+ o Rewrite connecting accepting. (***TESTING NEEDED)
 
- o Rewrite async connecting.
+ o Rewrite async connecting. (***TESTING NEEDED)
 
  o Connecting from SILC router to SILC server.
 
@@ -128,21 +128,15 @@ lib/silcsftp			****DONE****
 lib/silccore/silcpacket.[ch]	****PARTLY DONE****
 ============================
 
- o Implement silc_packet_engine_stop and silc_packet_stream_destroy.
-
- o Implement ACK packet and packet payload.
-
  o SilcPacketEngine. (***DONE)
 
  o New SILC Packet API. (***DONE)
 
-
-lib/silccore/silcpacket.[ch]	****PARTLY DONE****
-============================
+ o Implement silc_packet_engine_stop and silc_packet_stream_destroy. (***DONE)
 
  o IV Included flag support, UDP transport support (***TESTING NEEDED)
 
- o SILC_PACKET_FLAG_ACK support.
+ o SILC_PACKET_FLAG_ACK support.  Implement ACK packet and packet payload.
 
 
 lib/silccore/silcid.[ch]	****DONE****
@@ -161,15 +155,13 @@ lib/silcskr	****PARTLY DONE****
  o Removing key from the repository is not possible currently.  It should
    be. (***DONE)
 
- o Add fingerprint as search constraint.
+ o Add fingerprint as search constraint. (1.2)
 
 
 lib/silcske/silcske.[ch] 	***PARTLY DONE****
 ========================
 
- o Responder rekey
-
- o Ratelimit to UDP/IP transport for incoming packets.
+ o Responder rekey (***TESTING NEEDED)
 
  o IV Included flag support in SKE (***DONE)
 
@@ -178,16 +170,18 @@ lib/silcske/silcske.[ch] 	***PARTLY DONE****
 
  o SilcConnAuth header file documentation. (***DONE)
 
+ o Ratelimit to UDP/IP transport for incoming packets. (1.2)
+
 
 lib/silccrypt			****PARTLY DONE****
 =============
+
+ o Implement PKCS #1 sign/verify with hash OID. (***TESTING NEEDED)
 
  o Implement SILC Public Key Version 2 handling in sign/verify.  Implement
    Version (V) identifier (***DONE)
 
  o Add fingerprint to SilcSILCPublicKey and retrieval to silcpk.h.
-
- o Implement PKCS #1 sign/verify with hash OID. (***TESTING NEEDED)
 
  o SILC PKCS (silcpkcs.h) reorganizing when other PK supports added.
    Move the SILC Public Key routines away from the crypto library into
@@ -216,13 +210,9 @@ lib/silcutil			****PARTLY DONE****
 
  o The regex code from lib/contrib might compile fine on all platforms.
    No need to make it silcutil/unix/ specific.  Add them to generic
-   silcutil.c.
+   silcutil.c. (***TESTNG NEEDED)
 
  o silc_stringprep to non-allocating version.
-
- o Compression routines are missing.  The protocol supports packet
-   compression thus it must be implemented.  SILC Zip API must be
-   defined.
 
  o bool -> SilcBool (***DONE)
 
@@ -231,6 +221,10 @@ lib/silcutil			****PARTLY DONE****
  o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
    SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
    in separately. (1.2)
+
+ o Compression routines are missing.  The protocol supports packet
+   compression thus it must be implemented.  SILC Zip API must be
+   defined. (1.2)
 
 
 lib/silcutil/silcbuffer.h	****DONE****
@@ -274,9 +268,7 @@ lib/silcutil/silcsocketstream.[ch]	****PARTY DONE****
 
  o Add SilcSocketStream (***DONE)
 
- o Add SilcSocketStream for WIN32
-
- o Handle EOS sending to upper layer properly
+ o Add SilcSocketStream for WIN32 (***TESTING NEEDED)
 
  o Test QoS after the changes made to socket stream
 
@@ -309,7 +301,7 @@ lib/silcutil/silcschedule*.[ch]		****PARTLY DONE****
  o Change SILC_TASK_CALLBACK to non-static, and remove the macro
    SILC_TASK_CALLBACK_GLOBAL. (***DONE)
 
- o SILC Schedule API changes to WIN32.
+ o SILC Schedule API changes to WIN32. (***TESTING NEEDED)
 
 
 lib/silcutil/silcasync.[ch]	****DONE****
@@ -341,7 +333,7 @@ lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
 
  o Add UDP interface (***DONE)
 
- o Add UDP interface for WIN32
+ o Add UDP interface for WIN32 (***TESTING NEEDED)
 
  o New network interfaces (***DONE)
 
