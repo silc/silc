@@ -744,7 +744,7 @@ SilcBool silc_parse_version_string(const char *version,
     return FALSE;
 
   cp = (char *)version + 5;
-  if (!cp)
+  if (!cp || !(*cp))
     return FALSE;
 
   /* Take protocol version */
@@ -796,6 +796,10 @@ SilcBool silc_parse_version_string(const char *version,
 
   if (strchr(cp, '.')) {
     cp = strchr(cp, '.') + 1;
+    if (cp && *cp && vendor_version)
+      *vendor_version = strdup(cp);
+  } else if (strchr(cp, ' ')) {
+    cp = strchr(cp, ' ') + 1;
     if (cp && *cp && vendor_version)
       *vendor_version = strdup(cp);
   }
