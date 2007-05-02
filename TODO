@@ -15,7 +15,7 @@ apps/silcd, The SILC Server	****PARTLY DONE****
 
  o Fix/test MOTD.
 
- o Remove protocol.[ch].  ***DONE
+ o Remove protocol.[ch].  (***DONE)
 
  o Rewrite connecting accepting. (***TESTING NEEDED)
 
@@ -32,7 +32,7 @@ apps/silcd, The SILC Server	****PARTLY DONE****
  o Check all packet receive routines that they call silc_packet_free.
 
  o Add Web statistics module using lib/silchttp.  Give out server
-   statistics.
+   statistics. (***DONE)
 
 
 SILC Client	****PARTLY DONE****

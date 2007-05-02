@@ -1623,6 +1623,9 @@ SILC_FSM_STATE(silc_client_command_reply_silcoper)
   CHECK_STATUS("Cannot change mode: ");
   CHECK_ARGS(1, 1);
 
+  /* Set user mode */
+  cmd->conn->local_entry->mode |= SILC_UMODE_ROUTER_OPERATOR;
+
   /* Notify application */
   silc_client_command_callback(cmd);
 
@@ -1641,6 +1644,9 @@ SILC_FSM_STATE(silc_client_command_reply_oper)
   /* Sanity checks */
   CHECK_STATUS("Cannot change mode: ");
   CHECK_ARGS(1, 1);
+
+  /* Set user mode */
+  cmd->conn->local_entry->mode |= SILC_UMODE_SERVER_OPERATOR;
 
   /* Notify application */
   silc_client_command_callback(cmd);
