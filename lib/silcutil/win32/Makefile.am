@@ -23,7 +23,7 @@ noinst_LTLIBRARIES = libsilcwin32util.la
 libsilcwin32util_la_SOURCES = 	\
 	silcwin32net.c		\
 	silcwin32schedule.c	\
-	silcwin32sockconn.c	\
+	silcwin32socketstream.c	\
 	silcwin32util.c		\
 	silcwin32thread.c
 
