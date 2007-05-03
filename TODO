@@ -130,7 +130,7 @@ lib/silccore/silcid.[ch]	****DONE****
  o silc_id_str2id, silc_id2str to non-allocating routines. (***DONE)
 
 
-lib/silcskr	****PARTLY DONE****
+lib/silcskr	****DONE****
 ===========
 
  o Removing key from the repository is not possible currently.  It should
@@ -312,7 +312,7 @@ lib/silcutil/symbian/		****PARTLY DONE****
     and debugging is to be disabled on EPOC.
 
 
-lib/silcasn1			****PARTLY DONE****
+lib/silcasn1			****DONE****
 ============
 
  o ASN.1 library (***DONE)
