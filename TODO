@@ -71,11 +71,11 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o File transfer rewrite. (***DONE)
 
- o File transfer API documentation.
+ o File transfer API documentation. (***DONE)
 
  o Connection auth request. (***DONE)
 
- o Password auth test, public key auth test.
+ o Password auth test, public key auth test. (***TESTING NEEDED)
 
  o Starting key exchange directly, rewrite. (***DONE)
 

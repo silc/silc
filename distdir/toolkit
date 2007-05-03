@@ -20,7 +20,7 @@ define SILC_DIST_HTTP
 include README.CVS
 include README.WIN32
 include README.MACOSX
-include apps/silcer
+include README.SYMBIAN
 include tutorial
 
 # Noprocess to optimize packaging and avoid re-licensing of certain files
