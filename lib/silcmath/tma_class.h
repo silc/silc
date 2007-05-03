@@ -8,6 +8,7 @@
 #define LTM1
 
 #if defined(LTM_ALL)
+#define BN_MP_DIV_SMALL              // -Pekka
 #define BN_ERROR_C
 #define BN_FAST_MP_INVMOD_C
 #define BN_FAST_MP_MONTGOMERY_REDUCE_C
@@ -34,9 +35,9 @@
 #define BN_MP_DIV_2D_C
 #define BN_MP_DIV_3_C
 #define BN_MP_DIV_D_C
-#undef BN_MP_DR_IS_MODULUS_C
-#undef BN_MP_DR_REDUCE_C
-#undef BN_MP_DR_SETUP_C
+#define BN_MP_DR_IS_MODULUS_C
+#define BN_MP_DR_REDUCE_C
+#define BN_MP_DR_SETUP_C
 #define BN_MP_EXCH_C
 #define BN_MP_EXPT_D_C
 #define BN_MP_EXPTMOD_C
@@ -56,7 +57,7 @@
 #define BN_MP_INVMOD_C
 #define BN_MP_INVMOD_SLOW_C
 #define BN_MP_IS_SQUARE_C
-#undef BN_MP_JACOBI_C
+#define BN_MP_JACOBI_C
 #define BN_MP_KARATSUBA_MUL_C
 #define BN_MP_KARATSUBA_SQR_C
 #define BN_MP_LCM_C
@@ -75,13 +76,13 @@
 #define BN_MP_N_ROOT_C
 #define BN_MP_NEG_C
 #define BN_MP_OR_C
-#undef BN_MP_PRIME_FERMAT_C
-#undef BN_MP_PRIME_IS_DIVISIBLE_C
-#undef BN_MP_PRIME_IS_PRIME_C
-#undef BN_MP_PRIME_MILLER_RABIN_C
-#undef BN_MP_PRIME_NEXT_PRIME_C
-#undef BN_MP_PRIME_RABIN_MILLER_TRIALS_C
-#undef BN_MP_PRIME_RANDOM_EX_C
+#define BN_MP_PRIME_FERMAT_C
+#define BN_MP_PRIME_IS_DIVISIBLE_C
+#define BN_MP_PRIME_IS_PRIME_C
+#define BN_MP_PRIME_MILLER_RABIN_C
+#define BN_MP_PRIME_NEXT_PRIME_C
+#define BN_MP_PRIME_RABIN_MILLER_TRIALS_C
+#define BN_MP_PRIME_RANDOM_EX_C
 #define BN_MP_RADIX_SIZE_C
 #define BN_MP_RADIX_SMAP_C
 #define BN_MP_RAND_C
@@ -111,8 +112,8 @@
 #define BN_MP_TO_SIGNED_BIN_N_C
 #define BN_MP_TO_UNSIGNED_BIN_C
 #define BN_MP_TO_UNSIGNED_BIN_N_C
-#undef BN_MP_TOOM_MUL_C
-#undef BN_MP_TOOM_SQR_C
+#define BN_MP_TOOM_MUL_C
+#define BN_MP_TOOM_SQR_C
 #define BN_MP_TORADIX_C
 #define BN_MP_TORADIX_N_C
 #define BN_MP_UNSIGNED_BIN_SIZE_C
@@ -331,7 +332,7 @@
    #define BN_MP_CLEAR_MULTI_C
    #define BN_MP_REDUCE_IS_2K_L_C
    #define BN_S_MP_EXPTMOD_C
-   #undef BN_MP_DR_IS_MODULUS_C
+   #define BN_MP_DR_IS_MODULUS_C
    #define BN_MP_REDUCE_IS_2K_C
    #define BN_MP_ISODD_C
    #define BN_MP_EXPTMOD_FAST_C
@@ -344,8 +345,8 @@
    #define BN_MP_MONTGOMERY_SETUP_C
    #define BN_FAST_MP_MONTGOMERY_REDUCE_C
    #define BN_MP_MONTGOMERY_REDUCE_C
-   #undef BN_MP_DR_SETUP_C
-   #undef BN_MP_DR_REDUCE_C
+   #define BN_MP_DR_SETUP_C
+   #define BN_MP_DR_REDUCE_C
    #define BN_MP_REDUCE_2K_SETUP_C
    #define BN_MP_REDUCE_2K_C
    #define BN_MP_MONTGOMERY_CALC_NORMALIZATION_C
@@ -552,7 +553,7 @@
 #endif
 
 #if defined(BN_MP_MUL_C)
-   #undef BN_MP_TOOM_MUL_C
+   #define BN_MP_TOOM_MUL_C
    #define BN_MP_KARATSUBA_MUL_C
    #define BN_FAST_S_MP_MUL_DIGS_C
    #define BN_S_MP_MUL_C
@@ -687,6 +688,7 @@
 #if defined(BN_MP_READ_RADIX_C)
    #define BN_MP_ZERO_C
    #define BN_MP_S_RMAP_C
+   #define BN_MP_RADIX_SMAP_C
    #define BN_MP_MUL_D_C
    #define BN_MP_ADD_D_C
    #define BN_MP_ISZERO_C
@@ -795,7 +797,7 @@
 #endif
 
 #if defined(BN_MP_SQR_C)
-   #undef BN_MP_TOOM_SQR_C
+   #define BN_MP_TOOM_SQR_C
    #define BN_MP_KARATSUBA_SQR_C
    #define BN_FAST_S_MP_SQR_C
    #define BN_S_MP_SQR_C
@@ -992,3 +994,7 @@
 #else
 #define LTM_LAST
 #endif
+
+/* $Source$ */
+/* $Revision$ */
+/* $Date$ */

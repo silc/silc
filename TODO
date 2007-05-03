@@ -89,8 +89,6 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o Connecting to remote client (***DONE)
 
- o peer-to-peer private messages
-
  o Private message waiting API (in threads) (***TESING NEEDED)
 
  o client_attrs.c, attributes rewrite. (***TESTING NEEDED)
@@ -159,8 +157,6 @@ lib/silccrypt			****PARTLY DONE****
 
  o Implement SILC Public Key Version 2 handling in sign/verify.  Implement
    Version (V) identifier (***DONE)
-
- o Add fingerprint to SilcSILCPublicKey and retrieval to silcpk.h.
 
  o SILC PKCS (silcpkcs.h) reorganizing when other PK supports added.
    Move the SILC Public Key routines away from the crypto library into
@@ -271,7 +267,7 @@ lib/silcutil/silcasync.[ch]	****DONE****
    (***DONE)
 
 
-lib/silcutil/silctime.[ch]	****PARTLY DONE****
+lib/silcutil/silctime.[ch]	****DONE****
 ===========================
 
  o SilcTime. (***DONE)
@@ -295,14 +291,14 @@ lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
  o New network interfaces (***DONE)
 
 
-lib/silcmath
+lib/silcmath			****PARTLY DONE****
 ============
 
  o Test on x86_64.
 
  o Change LTM and TFM function names when importing to SILC tree to avoid
    rare linking problems on system that has same named symbols already in
-   the system.
+   the system. (***DONE)
 
 
 lib/silcutil/symbian/		****PARTLY DONE****

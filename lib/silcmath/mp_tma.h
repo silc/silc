@@ -22,6 +22,6 @@
 
 #include "tma.h"
 
-#define SILC_MP_INT mp_int
+#define SILC_MP_INT tma_mp_int
 
 #endif
