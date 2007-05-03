@@ -853,6 +853,11 @@ silc_client_file_receive(SilcClient client,
     /* Add the listener for the key agreement */
     SILC_LOG_DEBUG(("Creating listener for file transfer"));
     if (!params || (!params->local_ip && !params->bind_ip)) {
+      session->client->internal->ops->say(session->client, session->conn,
+					  SILC_CLIENT_MESSAGE_ERROR,
+					  "Cannot create listener for file "
+					  "transfer; IP address and/or port "
+					  "not provided");
       silc_free(session);
       return SILC_CLIENT_FILE_ERROR;
     }

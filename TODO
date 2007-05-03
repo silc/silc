@@ -46,9 +46,10 @@ SILC Client	****PARTLY DONE****
 lib/silcclient, The Client Library	***PARTLY DONE****
 ==================================
 
- o silcclient.h clean up and API rewrites.
+ o silcclient.h clean up and API rewrites. (***DONE)
 
  o silcclient_entry.h finishing, all entry relates APIs to this header.
+   (***DONE)
 
  o SilcChannelEntry, SilcServerEntry, SilcChannelUser, allocating,
    freeing, finding, etc. rewrite.  Also making them reference counted for
