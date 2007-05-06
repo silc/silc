@@ -155,14 +155,14 @@ SilcBool silc_timezone(char *timezone, SilcUInt32 timezone_size)
 
   if (timezone_size < 6)
     return FALSE;
-  
+
   if (!silc_time_value(0, &curtime))
     return FALSE;
 
   if (!curtime.utc_hour && curtime.utc_minute)
     silc_snprintf(timezone, timezone_size, "Z");
   else if (curtime.utc_minute)
-    silc_snprintf(timezone, timezone_size, "%c%02d:%02d", 
+    silc_snprintf(timezone, timezone_size, "%c%02d:%02d",
 		  curtime.utc_east ? '+' : '-', curtime.utc_hour,
 		  curtime.utc_minute);
   else

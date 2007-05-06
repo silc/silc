@@ -145,7 +145,8 @@ SilcBool silc_time_value(SilcInt64 time_val_msec, SilcTime ret_time);
  *    Returns current timezone in Universal time format into the `timezone'
  *    buffer of size of `timezone_size'.  The possible values this function
  *    returns are: Z (For UTC timezone), +hh (UTC + hours) -hh (UTC - hours),
- *    +hh:mm (UTC + hours:minutes) or -hh:mm (UTC - hours:minutes).
+ *    +hh:mm (UTC + hours:minutes) or -hh:mm (UTC - hours:minutes).  The
+ *    returned values are always offsets to UTC.
  *
  *    Returns FALSE on error, TRUE otherwise.
  *
