@@ -671,6 +671,7 @@ SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
 
 void silc_message_payload_free(SilcMessagePayload payload)
 {
+  silc_message_signed_payload_free(&payload->sig);
   if (payload->data) {
     memset(payload->data, 0, payload->data_len);
     if (payload->allocated)
@@ -680,7 +681,6 @@ void silc_message_payload_free(SilcMessagePayload payload)
     silc_free(payload->pad);
     silc_free(payload);
   }
-  silc_message_signed_payload_free(&payload->sig);
 }
 
 /* Return flags */
