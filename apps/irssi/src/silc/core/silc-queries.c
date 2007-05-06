@@ -874,13 +874,13 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
     unsigned char *verifyd;
     SilcUInt32 verify_len;
 
-    if (!strcmp(verify->userpk.type, "silc-rsa"))
+    if (!strcmp(serverpk.type, "silc-rsa"))
       type = SILC_PKCS_SILC;
-    else if (!strcmp(verify->userpk.type, "ssh-rsa"))
+    else if (!strcmp(serverpk.type, "ssh-rsa"))
       type = SILC_PKCS_SSH2;
-    else if (!strcmp(verify->userpk.type, "x509v3-sign-rsa"))
+    else if (!strcmp(serverpk.type, "x509v3-sign-rsa"))
       type = SILC_PKCS_X509V3;
-    else if (!strcmp(verify->userpk.type, "pgp-sign-rsa"))
+    else if (!strcmp(serverpk.type, "pgp-sign-rsa"))
       type = SILC_PKCS_OPENPGP;
 
     if (silc_pkcs_public_key_alloc(type, serverpk.data,
