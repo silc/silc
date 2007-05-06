@@ -727,11 +727,14 @@ SILC_FSM_STATE(silc_client_command_whois)
                                           SILC_ATTRIBUTE_USER_PUBLIC_KEY,
                                           SILC_ATTRIBUTE_FLAG_VALID,
                                           &obj, sizeof(obj));
+    silc_free(obj.data);
   }
 
-  silc_client_nickname_parse(client, conn, cmd->argv[1], &nickname);
-  if (!nickname)
-    nickname = strdup(cmd->argv[1]);
+  if (nick) {
+    silc_client_nickname_parse(client, conn, cmd->argv[1], &nickname);
+    if (!nickname)
+      nickname = strdup(cmd->argv[1]);
+  }
 
   /* Send command */
   silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL,

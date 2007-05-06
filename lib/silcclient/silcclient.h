@@ -754,10 +754,10 @@ void silc_client_free(SilcClient client);
  *    operating system, `hostname' is the client's host name and the
  *    `realname' is the user's real name.
  *
- *    The `running' callback is called after the client is running after
- *    silc_client_run or silc_client_run_one has been called.  Application
- *    may start using the Client library API after that.  Setting the
- *    callback is optional, but recommended.
+ *    The `running' callback with `context' is called after the client is
+ *    running after silc_client_run or silc_client_run_one has been called.
+ *    Application may start using the Client library API after that.  Setting
+ *    the callback is optional, but recommended.
  *
  ***/
 SilcBool silc_client_init(SilcClient client, const char *username,
@@ -1049,7 +1049,8 @@ silc_client_connect_to_client(SilcClient client,
  *    session.  The `callback' with `context' will be called after the session
  *    has been set up.  It will also be called later when remote host
  *    disconnects.  The `conn_type' is the type of session this is going to
- *    be.
+ *    be.  If the remote is SILC server it is SILC_CONN_SERVER or if it is
+ *    SILC client it is SILC_CONN_CLIENT.
  *
  *    Returns SilcAsyncOperation which can be used to cancel the connecting,
  *    or NULL on error.  Note that the returned pointer becomes invalid
