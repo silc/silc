@@ -103,7 +103,7 @@ SilcChannelPayload.  If the `channel_usermodes' is valid then the table
 has as many entries as there are entries in the `channels' list, and the
 first entry in the table is the user mode on the first channel in the
 `channels' list.  The `channel_usermodes' is the table of the user's modes
-no the joined channels.  The 'attr' is the Requested Attributes that may
+on the joined channels.  The 'attr' is the Requested Attributes that may
 have been returned by the client and it can be parsed by traversing the
 SilcDList and using silc_attribute_get_attribute function.  Each entry in
 the list is SilcAttribute.
@@ -143,7 +143,9 @@ this command reply.  The 'name' and 'info' may be NULL.
 <td><small>
 Returns the new Client ID and new nickname inside the SilcClientEntry.
 The `old_client_id' is the old Client ID used by the client before the
-nickname was changed.  The `nickname' is the new nickname.
+nickname was changed.  The `nickname' is the new nickname.  Note that,
+when user changes nickname SILC_NOTIFY_TYPE_NICK_CHANGE is not delivered
+to application.  Instead this SILC_COMMAND_NICK command reply is delivered.
 </td>
 <td width="50%"><small>SilcClientEntry local_entry, char *nickname,
 const SilcClientID *old_client_id
@@ -258,7 +260,7 @@ it is not available.  The `founder_key' is the channel founder's public key
 or NULL if founder public key has not been set.  The `channel_pubkeys' is
 a list of channel public keys (for authentication on joining) or NULL if
 they have not been set.  Each entry in the list is SilcArgumentDecodedList
-each containing one channel public key.  The library will free the list.
+each containing one channel SilcPublicKey.  The library will free the list.
 </td>
 <td width="50%"><small>char *channel_name, SilcChannelEntry channel,
 SilcUInt32 channel_mode, SilcHashTableList *user_list, char *topic,
