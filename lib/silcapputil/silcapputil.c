@@ -618,6 +618,7 @@ static const SilcStatusMessage silc_status_messages[] = {
   { STAT(OPERATION_ALLOWED), "Operation is not allowed" },
   { STAT(BAD_SERVER), "Bad server name" },
   { STAT(BAD_USERNAME), "Bad user name" },
+  { STAT(NO_SUCH_PUBLIC_KEY), "Unknown public key" },
 
   { 0, NULL }
 };
