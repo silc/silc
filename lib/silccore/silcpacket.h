@@ -34,8 +34,6 @@
 #ifndef SILCPACKET_H
 #define SILCPACKET_H
 
-/* XXX many of these could go to silcpacket_i.h */
-
 /* Maximum packet length */
 #define SILC_PACKET_MAX_LEN 0xffff
 
