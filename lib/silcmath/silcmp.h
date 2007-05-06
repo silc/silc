@@ -75,6 +75,8 @@ typedef SILC_MP_INT SilcMPInt;
  ***/
 void silc_mp_init(SilcMPInt *mp);
 
+void silc_mp_sinit(SilcStack stack, SilcMPInt *mp);
+
 /****f* silcmath/SilcMPAPI/silc_mp_uninit
  *
  * SYNOPSIS
