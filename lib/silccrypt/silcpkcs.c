@@ -513,7 +513,7 @@ SilcUInt32 silc_pkcs_public_key_get_len(SilcPublicKey public_key)
 void *silc_pkcs_get_context(SilcPKCSType type, SilcPublicKey public_key)
 {
   if (public_key->pkcs->type != type)
-    return FALSE;
+    return NULL;
   return public_key->public_key;
 }
 

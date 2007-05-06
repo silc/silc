@@ -323,11 +323,15 @@ SilcBool silc_pkcs_silc_import_public_key_file(unsigned char *filedata,
 
   /* Check start of file and remove header from the data. */
   len = strlen(SILC_PKCS_PUBLIC_KEYFILE_BEGIN);
-  if (filedata_len < len + strlen(SILC_PKCS_PUBLIC_KEYFILE_END))
+  if (filedata_len < len + strlen(SILC_PKCS_PUBLIC_KEYFILE_END)) {
+    SILC_LOG_ERROR(("Malformed SILC public key header"));
     return FALSE;
+  }
   for (i = 0; i < len; i++) {
-    if (*filedata != SILC_PKCS_PUBLIC_KEYFILE_BEGIN[i])
+    if (*filedata != SILC_PKCS_PUBLIC_KEYFILE_BEGIN[i]) {
+      SILC_LOG_ERROR(("Malformed SILC public key header"));
       return FALSE;
+    }
     filedata++;
   }
   filedata_len -= (strlen(SILC_PKCS_PUBLIC_KEYFILE_BEGIN) +
@@ -339,8 +343,10 @@ SilcBool silc_pkcs_silc_import_public_key_file(unsigned char *filedata,
 
   case SILC_PKCS_FILE_BASE64:
     data = silc_base64_decode(filedata, filedata_len, &filedata_len);
-    if (!data)
+    if (!data) {
+      SILC_LOG_ERROR(("Malformed SILC public key encoding"));
       return FALSE;
+    }
     filedata = data;
     break;
   }
@@ -511,6 +517,7 @@ int silc_pkcs_silc_import_public_key(unsigned char *key,
   silc_free(silc_pubkey);
   if (asn1)
     silc_asn1_free(asn1);
+  SILC_LOG_ERROR(("Malformed SILC public key"));
   return 0;
 }
 
@@ -844,11 +851,15 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
 
   /* Check start of file and remove header from the data. */
   len = strlen(SILC_PKCS_PRIVATE_KEYFILE_BEGIN);
-  if (filedata_len < len + strlen(SILC_PKCS_PRIVATE_KEYFILE_END))
+  if (filedata_len < len + strlen(SILC_PKCS_PRIVATE_KEYFILE_END)) {
+    SILC_LOG_ERROR(("Malformed SILC private key header"));
     return FALSE;
+  }
   for (i = 0; i < len; i++) {
-    if (*filedata != SILC_PKCS_PRIVATE_KEYFILE_BEGIN[i])
+    if (*filedata != SILC_PKCS_PRIVATE_KEYFILE_BEGIN[i]) {
+      SILC_LOG_ERROR(("Malformed SILC private key header"));
       return FALSE;
+    }
     filedata++;
   }
 
@@ -861,8 +872,10 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
 
   case SILC_PKCS_FILE_BASE64:
     data = silc_base64_decode(filedata, filedata_len, &len);
-    if (!data)
+    if (!data) {
+      SILC_LOG_ERROR(("Malformed SILC private key encoding"));
       return FALSE;
+    }
     filedata = data;
     break;
   }
@@ -1267,6 +1280,7 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
   silc_free(silc_privkey);
   if (asn1)
     silc_asn1_free(asn1);
+  SILC_LOG_ERROR(("Malformed SILC private key "));
   return 0;
 }
 
