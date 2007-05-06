@@ -148,10 +148,10 @@ typedef struct {
   SilcUInt32 iv_len;
   unsigned char *send_enc_key;
   unsigned char *receive_enc_key;
-  SilcUInt32 enc_key_len;
+  SilcUInt32 enc_key_len;	       /* Key length in bits */
   unsigned char *send_hmac_key;
   unsigned char *receive_hmac_key;
-  SilcUInt32 hmac_key_len;
+  SilcUInt32 hmac_key_len;	       /* Key length in bytes */
 } *SilcSKEKeyMaterial;
 /***/
 

@@ -67,6 +67,8 @@ typedef enum {
  *    The `message' parameter points to a null-terminated buffer containing
  *    the received message, while `context' is the caller-specified context.
  *    The message must not be modified or freed by the callback function.
+ *    If the function returns TRUE, SilcLog will assume the message was
+ *    handled and won't run its default handler.
  *
  * SEE ALSO
  *    silc_log_set_callback
