@@ -74,12 +74,12 @@ SilcBool silc_client_send_channel_message(SilcClient client,
   if (channel->internal.private_keys) {
     if (key) {
       /* Use key application specified */
-      cipher = key->cipher;
+      cipher = key->send_key;
       hmac = key->hmac;
     } else if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY &&
 	       channel->internal.curr_key) {
       /* Use current private key */
-      cipher = channel->internal.curr_key->cipher;
+      cipher = channel->internal.curr_key->send_key;
       hmac = channel->internal.curr_key->hmac;
     } else if (channel->mode & SILC_CHANNEL_MODE_PRIVKEY &&
 	       !channel->internal.curr_key &&
@@ -88,7 +88,7 @@ SilcBool silc_client_send_channel_message(SilcClient client,
 	 and private keys are set. */
       silc_dlist_start(channel->internal.private_keys);
       key = silc_dlist_get(channel->internal.private_keys);
-      cipher = key->cipher;
+      cipher = key->send_key;
       hmac = key->hmac;
 
       /* Use this key as current private key */
@@ -291,7 +291,7 @@ SILC_FSM_STATE(silc_client_channel_message)
 	/* Parse the message payload. This also decrypts the payload */
 	payload = silc_message_payload_parse(silc_buffer_data(buffer),
 					     silc_buffer_len(buffer),
-					     FALSE, FALSE, key->cipher,
+					     FALSE, FALSE, key->receive_key,
 					     key->hmac, packet->src_id,
 					     packet->src_id_len,
 					     packet->dst_id,
@@ -463,6 +463,9 @@ SilcBool silc_client_save_channel_key(SilcClient client,
     return FALSE;
   }
 
+  channel->cipher = silc_cipher_get_name(channel->internal.send_key);
+  channel->hmac = silc_hmac_get_name(channel->internal.hmac);
+
   /* Set HMAC key */
   silc_hash_make(silc_hmac_get_hash(channel->internal.hmac), key,
 		 tmp_len, hash);
@@ -545,20 +548,30 @@ SilcBool silc_client_add_channel_private_key(SilcClient client,
   entry->name = name ? strdup(name) : NULL;
 
   /* Allocate the cipher and set the key */
-  if (!silc_cipher_alloc(cipher, &entry->cipher)) {
+  if (!silc_cipher_alloc(cipher, &entry->send_key)) {
     silc_free(entry);
     silc_free(entry->name);
     silc_ske_free_key_material(keymat);
     return FALSE;
   }
-  silc_cipher_set_key(entry->cipher, keymat->send_enc_key,
+  if (!silc_cipher_alloc(cipher, &entry->receive_key)) {
+    silc_free(entry);
+    silc_free(entry->name);
+    silc_cipher_free(entry->send_key);
+    silc_ske_free_key_material(keymat);
+    return FALSE;
+  }
+  silc_cipher_set_key(entry->send_key, keymat->send_enc_key,
 		      keymat->enc_key_len, TRUE);
+  silc_cipher_set_key(entry->receive_key, keymat->send_enc_key,
+		      keymat->enc_key_len, FALSE);
 
   /* Generate HMAC key from the channel key data and set it */
   if (!silc_hmac_alloc(hmac, NULL, &entry->hmac)) {
     silc_free(entry);
     silc_free(entry->name);
-    silc_cipher_free(entry->cipher);
+    silc_cipher_free(entry->send_key);
+    silc_cipher_free(entry->receive_key);
     silc_ske_free_key_material(keymat);
     return FALSE;
   }
@@ -571,8 +584,11 @@ SilcBool silc_client_add_channel_private_key(SilcClient client,
   /* Add to the private keys list */
   silc_dlist_add(channel->internal.private_keys, entry);
 
-  if (!channel->internal.curr_key)
+  if (!channel->internal.curr_key) {
     channel->internal.curr_key = entry;
+    channel->cipher = silc_cipher_get_name(entry->send_key);
+    channel->hmac = silc_cipher_get_name(entry->send_key);
+  }
 
   /* Free the key material */
   silc_ske_free_key_material(keymat);
@@ -603,12 +619,15 @@ SilcBool silc_client_del_channel_private_keys(SilcClient client,
   while ((entry = silc_dlist_get(channel->internal.private_keys))) {
     silc_dlist_del(channel->internal.private_keys, entry);
     silc_free(entry->name);
-    silc_cipher_free(entry->cipher);
+    silc_cipher_free(entry->send_key);
+    silc_cipher_free(entry->receive_key);
     silc_hmac_free(entry->hmac);
     silc_free(entry);
   }
 
   channel->internal.curr_key = NULL;
+  channel->cipher = silc_cipher_get_name(channel->internal.send_key);
+  channel->hmac = silc_hmac_get_name(channel->internal.hmac);
 
   silc_dlist_uninit(channel->internal.private_keys);
   channel->internal.private_keys = NULL;
@@ -640,12 +659,16 @@ SilcBool silc_client_del_channel_private_key(SilcClient client,
     if (entry != key)
       continue;
 
-    if (channel->internal.curr_key == entry)
+    if (channel->internal.curr_key == entry) {
       channel->internal.curr_key = NULL;
+      channel->cipher = silc_cipher_get_name(channel->internal.send_key);
+      channel->hmac = silc_hmac_get_name(channel->internal.hmac);
+    }
 
     silc_dlist_del(channel->internal.private_keys, entry);
     silc_free(entry->name);
-    silc_cipher_free(entry->cipher);
+    silc_cipher_free(entry->send_key);
+    silc_cipher_free(entry->receive_key);
     silc_hmac_free(entry->hmac);
     silc_free(entry);
 
@@ -702,6 +725,8 @@ void silc_client_current_channel_private_key(SilcClient client,
   if (!channel)
     return;
   channel->internal.curr_key = key;
+  channel->cipher = silc_cipher_get_name(key->send_key);
+  channel->hmac = silc_hmac_get_name(key->hmac);
 }
 
 /***************************** Utility routines *****************************/

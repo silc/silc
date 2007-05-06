@@ -176,7 +176,6 @@ static void silc_client_ke_completion(SilcSKE ske,
 				 silc_ske_map_status(status));
 
     conn->internal->status = SILC_CLIENT_CONN_ERROR_KE;
-    conn->internal->error = status;
     silc_ske_free_rekey_material(rekey);
 
     silc_fsm_next(fsm, silc_client_st_connect_error);

@@ -77,7 +77,7 @@ SilcDList silc_client_get_clients_local_ext(SilcClient client,
   if (!client || !conn || !nickname)
     return NULL;
 
-  /* Parse nickname if it is formatted */
+  /* Parse nickname in case it is formatted */
   if (!silc_client_nickname_parse(client, conn, (char *)nickname, &parsed))
     return NULL;
 
@@ -320,7 +320,7 @@ static SilcUInt16 silc_client_get_clients_i(SilcClient client,
 					    void *context)
 {
   SilcClientGetClientInternal i;
-  char userhost[768 + 1];
+  char nick[128 + 1], serv[256 + 1], userhost[768 + 1], *parsed = NULL;
   int len;
 
   SILC_LOG_DEBUG(("Resolve client by %s command",
@@ -331,11 +331,24 @@ static SilcUInt16 silc_client_get_clients_i(SilcClient client,
   if (!nickname && !attributes)
     return 0;
 
+  /* Parse server name from the nickname if set */
+  if (silc_parse_userfqdn(nickname, nick, sizeof(nick),
+			  serv, sizeof(serv) == 2))
+    server = (const char *)serv;
+  nickname = (const char *)nick;
+
+  /* Parse nickname in case it is formatted */
+  if (silc_client_nickname_parse(client, conn, (char *)nickname, &parsed))
+    nickname = (const char *)parsed;
+
   i = silc_calloc(1, sizeof(*i));
-  if (!i)
+  if (!i) {
+    silc_free(parsed);
     return 0;
+  }
   i->clients = silc_dlist_init();
   if (!i->clients) {
+    silc_free(parsed);
     silc_free(i);
     return 0;
   }
@@ -351,6 +364,7 @@ static SilcUInt16 silc_client_get_clients_i(SilcClient client,
   } else if (nickname) {
     silc_strncat(userhost, sizeof(userhost) - 1, nickname, strlen(nickname));
   }
+  silc_free(parsed);
 
   /* Send the command */
   if (command == SILC_COMMAND_IDENTIFY)

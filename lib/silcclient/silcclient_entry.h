@@ -133,6 +133,8 @@ struct SilcChannelEntryStruct {
   SilcHashTable user_list;	     /* Joined users.  Key to hash table is
 					SilcClientEntry, context is
 					SilcChannelUser. */
+  const char *cipher;		     /* Current channel cipher algorithm*/
+  const char *hmac;		     /* Current channel HMAC algorithm */
 
   void *context;		     /* Application specific context */
   SilcChannelEntryInternal internal;
@@ -327,6 +329,9 @@ void silc_client_list_free(SilcClient client, SilcClientConnection conn,
  *    and can be accesses locally at a later time.  The resolving is done
  *    with IDENTIFY command.  The `server' may be NULL.  The server
  *    associated with the nickname may be in the `nickname' (nick@server).
+ *    The `nickname' may also be a formatted nickname in which case the
+ *    formatting is ignored and the base nickname is used.  If the nickname
+ *    is formatted it must be formatted as defined in SilcClientParams.
  *    Returns 0 on error and the command identifier used with the command
  *    otherwise.
  *
@@ -372,6 +377,9 @@ SilcUInt16 silc_client_get_clients(SilcClient client,
  *    and can be accesses locally at a later time.  The resolving is done
  *    with WHOIS command.  The `server' may be NULL.  The server
  *    associated with the nickname may be in the `nickname' (nick@server).
+ *    The `nickname' may also be a formatted nickname in which case the
+ *    formatting is ignored and the base nickname is used.  If the nickname
+ *    is formatted it must be formatted as defined in SilcClientParams.
  *    Returns 0 on error and the command identifier used with the command
  *    otherwise.
  *

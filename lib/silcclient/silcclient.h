@@ -391,7 +391,8 @@ typedef struct {
  */
 struct SilcChannelPrivateKeyStruct {
   char *name;			      /* Application given name */
-  SilcCipher cipher;		      /* The cipher and key */
+  SilcCipher send_key;		      /* The cipher and key */
+  SilcCipher receive_key;	      /* The cipher and key */
   SilcHmac hmac;		      /* The HMAC and hmac key */
 };
 /***/
@@ -1552,9 +1553,10 @@ SilcBool silc_client_add_private_message_key_ske(SilcClient client,
  *
  * SYNOPSIS
  *
- *    SilcBool silc_client_del_private_message_key(SilcClient client,
- *                                             SilcClientConnection conn,
- *                                             SilcClientEntry client_entry);
+ *    SilcBool
+ *    silc_client_del_private_message_key(SilcClient client,
+ *                                        SilcClientConnection conn,
+ *                                        SilcClientEntry client_entry);
  *
  * DESCRIPTION
  *
