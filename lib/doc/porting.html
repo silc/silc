@@ -1,0 +1,645 @@
+<big><b>Porting from Toolkit 1.0 to 1.1</b></big>
+
+<br />&nbsp;<br />
+This documents describes the differences between the SILC Toolkit 1.0 and
+1.1 and should help application programmers to port their SILC applications
+to the new Toolkit version.
+
+<br />&nbsp;<br />
+<li><a href="#general">General</a><br />
+<li><a href="#client">Client library</a><br />
+<li><a href="#util">Utility library</a><br />
+<li><a href="#apputil">Application utility library</a>
+<li><a href="#crypto">Crypto library</a>
+<li><a href="#skr">Key Repository library</a>
+<li><a href="#vcard">VCard library</a>
+<li><a href="#http">HTTP library</a>
+<li><a href="#asn1">ASN.1 library</a>
+<li><a href="#other">Other libraries</a>
+
+<br />&nbsp;<br />
+<h3><a name="general"></a>General changes</h3>
+
+The main SILC Toolkit header file has changed its name from silcincludes.h
+to silc.h.  The first task in porting from 1.0 to 1.1 is to change these
+filenames in your source tree.
+
+
+<br />&nbsp;<br />
+<h3><a name="client"></a>Client library, lib/silcclient/</h3>
+
+The client library in Toolkit 1.1 has been partially rewritten.  It was
+rewritten to work out some technical issues and to increase performance
+and decrease memory consumption.  The client library API has also faced
+some changes, altough most of it has remained the same.  Most major change
+in the client library is that is now fully supports multiple threads.  In
+the past making multithreaded SILC client application was always a bit hard
+but with Toolkit 1.1 it should be relatively straightforward.
+
+<h4>SilcClientOperations structure</h4>
+
+The SilcClientOperation structure has changed significantly.  It no longer
+has `connected', `disconnected' and `failure' function pointers.  Instead a
+new SilcClientConnectCallback has been defined that is given as argument to
+functions like silc_client_connect_to_server, silc_client_connect_to_client
+and silc_client_key_exchange (last two being entirely new functions in the
+API).  That callback is called when connection is established and when it
+is disconnected, or if a protocol failure occurred during connecting.  That
+callback also delivers a detailed error information when error occurs.  New
+connection related status types in SilcClientConnectionStatus has also been
+added, see the API for the details.
+
+<br />&nbsp;<br />
+Also the `detach' client operation function pointer has been removed.  Instead
+the detachment data is now simply delivered in the SILC_COMMNAD_DETACH
+command reply.
+
+<br />&nbsp;<br />
+Some of the remaining client operation function pointers have changed a bit.
+Most major change is the `command' operation now having the arguments that
+user gave on the user interface sent back to application.  The `command_reply'
+does not anymore include the SilcCommandPayload as an argument.  Also the
+variable argument lis is now delivered as va_list.  Also the boolean
+success indicator is removed and SilcStatus error argument instead is telling
+the exact error if the SilcStatus status is other than SILC_STATUS_OK.
+
+<br />&nbsp;<br />
+The `get_auth_method' client operation now includes the authentication method
+that has been resolved from the remote server.  The application no longer
+needs to resolve it and the function silc_client_request_authentication_method
+has been removed from the API.
+
+<br />&nbsp;<br />
+The `verify_public_key' client operation now include the SilcPublicKey pointer
+instead of the public key in raw encoded form.  Also the connection type
+argument has changed to SilcConnectionType.
+
+<br />&nbsp;<br />
+The `key_agreement' client operation now includes a new protocol argument
+which tells whether the key agremeent is supposed to be done on TCP or on
+UDP transport.  The new Toolkit 1.1 supports both.
+
+<h4>SilcClient</h4>
+
+The SilcClientParams includes new fields and some fields have been removed
+or moved to other places.  All connection timeout related fields have been
+moved to SilcClientConnectionParams.  The nickname_parse callback pointer has
+also been removed from SilcClientParams.  The Toolkit 1.1 now automatically
+parses formatted nicknames.
+
+<br />&nbsp;<br />
+The new field boolean `threads' can be used to tell whether the new SilcClient
+is to use multiple threads or not. If threads support has been compiled in
+and that field is set to TRUE then the client library will create new thread
+for each new connection to a remote host.  If you are going to use several
+connections or some of the connections are high throughput connections (like
+multimedia connections) then using threads is recommended for performance.
+Note that your application needs to be multithreaded and, if necessary to,
+perform concurrencly control in client operation callbacks which may be
+called from multiple threads at the same time for different connections.
+However, it is always guaranteed that for one connection the client
+operations cannot be called from multiple threads.  The multithreads
+support in Toolkit 1.1 client library means that each new connection and
+everything related to that connection is handled in own dedicated thread.
+
+<br />&nbsp;<br />
+The silc_client_init function now takes several new arguments.  It now takes
+the username, hostname and realname as argument that used to be required
+by the application to update directly to SilcClient pointer.  This is not
+longer required.  Also the nickname is no longer required to be put to
+SilcClient context as it has been made SilcClientConnection specific.
+The function also takes a SilcClientRunning callback as argument which will
+be called when the client library is running.  After that callback the
+xapplication may start using other client library API functions.
+
+<br />&nbsp;<br />
+The silc_client_stop function takes new SilcClientStopped callback as
+argument, and it will be called after the client library has been completely
+stopped.  The application should not quit before that is called in order
+to clean up all resources allocation by the client library.
+
+<br />&nbsp;<br />
+It is also not required to put the public key pair (SilcPublicKey and
+SilcPrivateKey) into SilcClient.  They have been made connection specific so
+you simply give them as argument when you create new connection.  This way
+it is now possible to use different key pairs with different connections,
+one that was not possible in Toolkit 1.0 without creating new SilcClient
+instance for each new connection.
+
+<h4>SilcClientConnection</h4>
+
+The SilcClientConnection represents connection to a remote host.  In new
+Toolkit 1.1 this structure now includes all connection related data and
+no connection related data is anymore included in SilcClient.  For this
+reason it is no longer necessary to create multiple SilcClient instances
+just because you want to create multiple connections.
+
+<br />&nbsp;<br />
+The SilcClientConnectionParams structure has many new fields.  This structure
+is given as argument to any function that is able to create a new connection
+or to create a network listener or to create a new SILC sessions.  See the
+API documentation for all the details but the following one field of special
+relevance when creating new SILC server connections.  The nickname field is
+now included in this structure and it is the nickname user would like to
+initially use in the SILC network.
+
+<br />&nbsp;<br />
+The functions silc_client_connect_to_server, silc_client_connect_to_client
+and silc_client_key_exchange can all be used to create new SILC session with
+a remote.  To connect SILC server use silc_client_connect_to_server.  You
+now give the SilcClientCnnectionParams as argument which includes the nickname
+user wants to use, you now can give the public key pair as argument that is
+to be used in the connecting.  The new SilcClientConnectCallback will be
+called once the connection has been established and it delivers the
+SilcClientConection context to the application.  It will be later called
+again to indicated disconnection from the remote host.  These functions
+now return SilcAsyncOperation context which can be used to cancel the
+connecting, if necessary.  In the past canceling connection was not possible.
+
+<br />&nbsp;<br />
+<pre>
+SilcAsyncOperations op;
+SilcClientConnectionParams params;
+
+memset(&params, 0, sizeof(params));
+
+/* Set nickname user wants to use */
+params.nickname = nickname;
+
+/* Set perfect forward secery for key exchange */
+params.pfs = TRUE;
+
+/* Example of creating, and then canceling a connection */
+op = silc_client_connect_to_server(client, params, public_key, private_key,
+                                   remote_host, remote_port, connection_cb,
+				   app_context);
+if (!op) {
+  fatal("Connecting failed immediately"));
+  exit(1);
+}
+
+...
+
+/* Cancel connecting.  After canceling the `connection_cb' will not be
+   called. */
+silc_async_abort(op);
+</pre>
+
+<br />&nbsp;<br />
+The old function silc_client_start_key_exchange has been replaced with
+silc_client_key_exchange function.  Semantically it is equivalent to
+silc_client_connect_to_server but it does not create new connection.  Instead,
+it accepts SilcStream as argument which is already established connection
+to a remote host and it merely starts the key exchange.  See an example
+in the API documentation on how to use the silc_client_key_exchange, if
+your application wishes itself to create connection instead of using the
+client library to do it.
+
+The functions silc_client_add_connection, silc_client_del_connection and
+silc_client_del_socket has been removed.  They are no longer needed.
+
+<h4>Entries</h4>
+
+Just like in Toolkit 1.0 we now have SilcClientEntry to represent user,
+SilcChannelEntry to represent channel and SilcServerEntry to represent
+server.  In the past these structures and all API functions that dealt
+with them were in silcclient.h file.  They are now in silcclient_entry.h
+in Toolkit 1.1.
+
+<br />&nbsp;<br />
+As an general convention each of these new entries now are reference
+counted and they have locks when using them in multithreaded application.
+Even in one-threaded application the application must always acquire a
+reference of the entry if it wishes to save the entry pointer in the
+application.  The reference must be released once the entry pointer is
+not needed anymore.  This ensures that the library cannot free the entry
+pointer underneath the application.  An own API for taking and releasing
+the reference is in Toolkit 1.1.
+
+<br />&nbsp;<br />
+<pre>
+/* Take reference of the client entry I save to my own context. */
+my_context->client_entry = silc_client_ref_client(client, conn, client_entry);
+</pre>
+
+<br />&nbsp;<br />
+If multiple threads are used and application wants to access the entry it
+must always first lock the entry.  After application has read the information
+it needs from the entry it must release the entry lock.  The entry lock
+should be held only for short periods of time and failure to release the
+lock will result into deadlock.   An own API for taking and releasing the
+entry lock is in Toolkit 1.1.  If you application is not multithreaded
+you do not need to use the entry locking.
+
+<br />&nbsp;<br />
+<pre>
+/* Read data from client entry in multithreaded environment */
+silc_client_lock_client(client_entry);
+fprintf(stdout, "%s\n", client_entry->nickname);
+fprintf(stdout, "%s\n", silc_id_render(SILC_ID_CLIENT, &client_entry->id));
+silc_client_unlock_client(client_entry);
+</pre>
+
+<br />&nbsp;<br />
+From the entries all unnecessary information for application has been either
+removed or moved to internal structure that is not accessible by the
+application.  As a result the entry structures are much smaller and cleaner.
+
+<br />&nbsp;<br />
+The SilcClientEntry now includes nickname_normalized field and it is the
+normalized version of the user's nickname, in case application needs it.
+It is also guaranteed in Toolkit 1.1 that the nickname inside SilcCientEntry
+is always valid nickname.
+
+<br />&nbsp;<br />
+The SilcChannelEntry now includes new channel_pubkeys list, which includes
+the channel public keys if they have added to the channel.  This information
+was not present in Toolkit 1.0.
+
+<br />&nbsp;<br />
+The SilcServerEntry now includes new field public_key, which is the server's
+public key if we have resolved it.  This information was not present in
+Toolkit 1.0.
+
+<br />&nbsp;<br />
+In Toolkit 1.1 it is now easier to search and resolve entries.  As a new
+feature it now also possible to search and resolve server entries from the
+SILC network.  See the API documentation for all the details on searching
+entries from the client library cache and from the SILC network.
+
+<h4>Sending/Receiving messages</h4>
+
+Sending messages has not much changed from the Toolkit 1.1.  In Toolkit 1.1
+the message may now safely be sent in from multiple threads for same client
+or for same channel.  In case the message are digitally signed the hash
+function used in the signature computation must now be given as argument.
+If this is done in multiple threads, each thread must use different SilcHash
+context because SilcHash does not support multiple threads.  Simply allocate
+new SilcHash for each thread where you send digitally signed messages.
+
+<br />&nbsp;<br />
+Receiving message is same as in Toolkit 1.0.  You receive private_message
+or channel_message client operation.  It is always guaranteed that even in
+multithreaded application the messages are received in one thread.  You need
+concurrency control in your application only if you access shared data in
+your client operation callbacks.
+
+<br />&nbsp;<br />
+In Toolkit 1.1 as a new feature it is also possible to wait for incoming
+private messages in a thread.  New function silc_client_private_message_wait
+can be used to block the calling process or thread until private message
+for the specified client is received.
+
+<h4>Calling and sending commands</h4>
+
+Just like in Toolkit 1.0 in Toolkit 1.1 you can call command implemented
+inside the client library with silc_client_command_call.  The command_reply
+client operation will be called once the command reply has arrived.
+
+<br />&nbsp;<br />
+As a major change in semantics of sending commands with the
+silc_client_command_send function is the way the command reply is handled
+in Toolkit 1.1.  In the new Toolkit the command_reply client operation will
+not be anymore called for commands that has been sent with
+silc_client_command_send.  The command_reply client operation is called only
+when silc_client_command_call function is used.  With silc_client_command_send
+you can give the command reply callback, SilcClientCommandReply, as argument,
+and it will be called for each command reply that is received from the
+server.
+
+<br />&nbsp;<br />
+Just likein 1.0 in 1.1 it is also possible to attach to pending commands
+by using silc_client_command_pending.  As a difference to 1.0 the command
+identifier is not anymore available to application from the
+SilcClientConnection context.  Instead the silc_client_command_call and
+silc_client_command_send return the command identifier, and application needs
+to save it in order to be able to attach to it at later time.  However,
+this feature is not expected to be very important for application
+programmers as the new silc_client_command_send already includes the
+command reply callback.
+
+<br />&nbsp;<br />
+<pre>
+Comparison between 1.0 and 1.1
+
+Toolkit 1.0:
+/* Send ping command.  The reply will be in the attached command reply
+   and in the command_reply client operation. */
+silc_client_command_send(client, conn, SILC_COMMAND_PING, ++conn->cmd_ident,
+			 1, 1, server_id, server_id_len);
+silc_client_command_pending(conn, SILC_COMMAND_PING, conn->cmd_ident,
+                            ping_command_reply, context);
+
+Toolkit 1.1:
+/* Send ping command.  The reply will be ping_command_reply function. */
+silc_client_command_send(client, conn, SILC_COMMAND_PING,
+                         ping_command_reply, context,
+			 1, 1, server_id, server_id_len);
+
+</pre>
+
+<h4>Notify arguments</h4>
+
+In Toolkit 1.1 the following notify arguments have had changes.  See
+the <a href="notifyargs.html">Notify Arguments</a> for details.  You should
+go through your application and change the handling of the following notify
+messages for Toolkit 1.1.
+
+<br />&nbsp;<br />
+SILC_NOTIFY_TYPE_NICK_CHANGE<br />
+SILC_NOTIFY_TYPE_CMODE_CHANGE<br />
+SILC_NOTIFY_TYPE_SERVER_SIGNOFF<br />
+
+<br />&nbsp;<br />
+The basic changes in notify arguments from Toolkit 1.0 is that the
+Toolkit 1.1 parses various lists and other raw data for the application as
+opposed to sending them in the raw format.  This makes programming easier.
+
+<h4>Command reply arguments</h4>
+
+In Toolkit 1.1 the following command reply arguments have had changes.  See
+the <a href="command_reply_args.html">Command Reply Arguments</a> for
+details.  You should go through your application and change the handling
+of the following command replies for Toolkit 1.1.
+
+<br />&nbsp;<br />
+SILC_COMMAND_WHOIS<br />
+SILC_COMMAND_INVITE<br />
+SILC_COMMAND_STATS<br />
+SILC_COMMAND_JOIN<br />
+SILC_COMMAND_CMODE<br />
+SILC_COMMAND_BAN<br />
+SILC_COMMAND_DETACH<br />
+SILC_COMMAND_USERS<br />
+
+<br />&nbsp;<br />
+The basic changes in command reply arguments from Toolkit 1.0 is that the
+Toolkit 1.1 parses various lists and other raw data for the application as
+opposed to sending them in the raw format..  This makes programming easier.
+
+<h4>Other changes in client library</h4>
+
+There are many other smaller changes in Toolkit 1.1 that require you to
+change your application when porting from Toolkit 1.0.  We are not listing
+all of them here but briefly mention some API changes.
+
+<br />&nbsp;<br />
+Listing channel private keys now return SilcDList instead of an array.
+
+<br />&nbsp;<br />
+The key agreement API has changed a little bit and is now more cleaner and
+supports all the features that are needed in full featured key agreement.
+The silc_client_peform_key_agreement_fd has been replaced by
+silc_client_perform_key_agreement_stream.
+
+<br />&nbsp;<br />
+The private message key API has slight changes also.  It is no longer
+necessary for the caller to specify whether the private message key is for
+responder or initiator use.
+
+<br />&nbsp;<br />
+The file transfer API has changed a little bit and is now more cleaner and
+supports all the features that are needed in full featured file transfer.
+It is now easier to send files when you are behind NAT when you can
+specifically define the IPs that are used in both file sending and
+receiving.
+
+<br />&nbsp;<br />
+As a new function silc_client_nickname_format can now be used to format
+the nickname of a client entry.  The client library automatically formats
+the nicknames but in some cases application might like to change the
+nickname of a certain client entry.
+
+
+<br />&nbsp;<br />
+<h3><a name="util"></a>Utility library, lib/silcutil/</h3>
+
+The Utility library (runtime library) has had several changes and has several
+new interfaces.  Some interfaces has also been removed or moved to some
+other library.  Removed interfaces rae: silcprotocol.h and silcsockconn.h.
+Moved interfaces are: silcapputil.h and silcvcard.h.
+
+<h4>SILC Async Operation Interface</h4>
+
+A new asynchronous operation API (silcasync.h) has been added.  It can be
+used to control asynchronous operations, like to cancel them.  Many
+asynchronous routines in SILC Toolkit now return SilcAsyncOperation context
+so that the operation can be controlled by the caller.  It especiallly
+provides a generic way to cancel asynchronous operations which
+can be difficult.
+
+<h4>SILC Atomic Operations Interface</h4>
+
+A new atomic operations API (silcatomic.h) has been added.  It provides
+routines to perform various operations on integeres and pointers atomically.
+
+<h4>SILC Data Stack Interface</h4>
+
+A new data stack (memory pool system) API (silcstack.h) has been added.
+It provides a fast memory allocation system.  Many routines in the SILC Toolkit
+are SilcStack aware thus enabling them to use the SilcStack as their source
+for memory allocation.  All routines that are SilcStack aware automatically
+revert back to normal memory allocation if SilcStack is not given as
+argument.  See silcstack.h for list of utility routines that support SilcStack
+by default.
+
+<h4>SILC Condition Variable Interface</h4>
+
+A new condition variable API (silccond.h) has been added.  It provides
+condition variables for multithreaded applications.
+
+<h4>SILC Stream Interface</h4>
+
+A new abstract stream API (silcstream.h) has been added.  The SilcStream
+provides an abstract way of representing different kinds of streams.  The
+API provides functions that can be used to read, write, control and destroy
+streams.  The API is not used to create streams but separate interfaces
+exist for streams that use the SilcStream abstraction.  For example,
+socket stream and file descriptor stream exist.
+
+<h4>SILC FD Stream Interface</h4>
+
+A new file descriptor stream API (silcfdstream.h) has been added.  It
+provides a blocking and non-blocking file descriptor stream through the
+SilcStream abstraction.
+
+<h4>SILC Socket Stream Interface</h4>
+
+A new socket stream API (silcsocketstream.h) has been added.  It provides
+a blocking and non-blocking socket stream through the SilcStream
+abstraction.
+
+<h4>SILC FSM Interface</h4>
+
+A new Finite State Machine API (silcfsm.h) has been added.  It provides
+an FSM that can be used to implement all kinds of machines and protocols.
+The machine also supports threads, and threads that are actually executed
+in real system threads.  The SILC FSM API also supports asynchronous
+events.
+
+<h4>SILC Time Interface</h4>
+
+A new SILC Time API (silctime.h) has been added.  It provides utility
+functions to retrieve and represent time in different ways.  It supports
+Universal and Generalized time string creation and parsing and adds a new
+SilcTime structure to represent time.
+
+<h4>SILC Snprintf Interface</h4>
+
+A new snprintf API (silcsnprintf.h) has been added.  It provides snprintf
+and other string formatting routines.
+
+<h4>SILC Mutex Interface changes</h4>
+
+The SILC Mutex API (silcmutex) has several changes.  A support for read/write
+locks has been added (SilcRwLock).  Also silc_mutex_assert_locked function
+is added.
+
+<h4>SILC Network Interface changes</h4>
+
+The SILC Network API (silcnet.h) has several changes.  The API is almost
+entirely rewritten and most of the old functions have been removed.  The
+API has now both TCP and UDP support, and as previously supports IPv4
+and IPv6.  New functions are silc_net_tcp_create_listener,
+silc_net_listener_get_port, silc_net_close_listener, silc_net_tcp_connnect,
+silc_net_udp_connect, silc_net_udp_receive, silc_net_udp_send.
+
+<h4>SILC Scheduler Interface changes</h4>
+
+The SILC Schedule API (silcschedule.h) has several changes.  The scheduler
+has been entirely rewritten but most of the API remains the same.
+The SILC_TASK_GENERIC and SILC_TASK_CALLBACK_GLOCAL have been removed.
+The way signal are dispatched has been changed.  The SILC Schedule is now
+able to itself dispatch all signals.  New functions are
+silc_schedule_task_add_fd, silc_schedule_task_add_timeout,
+silc_schedule_task_add_signal, silc_task_del_by_all,
+silc_schedule_get_fd_events.  The functions silc_schedule_signal_register,
+silc_schedule_signal_unregister and silc_schedule_signal_call have been
+removed.
+
+<h4>SILC Types Interface changes</h4>
+
+The SILC Type API (silctypes.h) has several changes.  The bool type is
+replaced with SilcBool.  Sockets are now represented by SilcSocket.
+
+<h4>SILC String util Interface changes</h4>
+
+The SILC string utility API (silcstrutil.h) has changes.  The PEM encoding
+and decoding routines has been renamed, silc_base64_encode,
+silc_base64_encode_file and silc_base64_decode.  The silc_mime_parse has
+been removed.  A new silc_string_split function has been added.
+
+<h4>SILC Utility Interface changes</h4>
+
+
+<h4>SILC File Util Interface changes</h4>
+
+The SILC file utility API (silcfileutil.h) has changes.  A new function
+silc_file_set_nonblock has been added.
+
+<h4>SILC List and Dynamic List Interface changes</h4>
+
+The SILC List (silclist.h) and SILC Dynamic List (silcdlist.h) APIs have
+changes. New functions silc_list_insert and silc_dlist_insert have been
+added.
+
+<h4>SILC Buffer Interface changes</h4>
+
+The SILC Buffer API (silcbuffer.h) has several changes.  The SilcBuffer
+structure no longer contain the buffer length and true length fields
+but silc_buffer_len() and silc_buffr_truelen() macros are available
+instead.  Also silc_buffer_data(), silc_buffer_datalen(), silc_buffer_purge(),
+silc_buffer_reset(), silc_buffer_start(), silc_buffer_end() and
+silc_buffer_enlarge() has been added.  The API also supports SilcStack.
+
+<h4>SILC Buffer Formatting Interface changes</h4>
+
+The SILC Buffer Formatting API (silcbuffmt.h) has several changes.  The
+silc_buffer_format now automatically allocates memory to the destination
+buffer if it does not have space.  Also new the following new formatters
+have been added: SILC_STR_DATA (replaces SILC_STR_UI_XNSTRING),
+SILC_STR_BUFFER, SILC_STR_FUNC, SILC_STF_OFFSET and SILC_STR_ADVANCE.
+The API also supports SilcStack.
+
+<h4>SILC Memory Interface changes</h4>
+
+The memory allocation API (silcmemory.h) has several changes.  It supports
+now SilcStack as memory source.  Also all memory allocation routines can
+now fail and return NULL as opposed to fatally failing when memory allocation
+fails.
+
+<br />&nbsp;<br />
+<h3><a name="apputil"></a>SILC Application Utility library, lib/silcapputil/</h3>
+
+A new SILC Application Utility library has been added.  It provides
+various application specific utility libraries that are not part of
+the runtime library (lib/silcutil/).  The interfaces in the Application
+utility library were in other libraries in Toolkit 1.0 and the library
+does not contain any entirely new interfaces.
+
+<h4>SILC Application Utility Interface</h4>
+
+The silcapputil.h contains various application utility functions.  It
+existed in Toolkit 1.0 but some of the APIs has been changed.  The
+silc_create_key_pair, silc_load_key_pair and silc_show_public_key APIs
+has changed.  A new silc_show_public_key_file has been added.  Functions
+silc_identifier_check, silc_identifier_verify, silc_channel_name_check,
+silc_channel_name_verify, silc_get_mode_list silc_get_status_message,
+silc_get_packet_name, silc_get_command_name, silc_parse_version_string,
+silc_version_to_num, silc_client_chmode, silc_client_chumode,
+silc_client_chumode_char and silc_id_render has been moved from other
+libraries into this interface in Toolkit 1.1.
+
+<h4>SILC ID Cache Interface</h4>
+
+The ID Cache interface (silcidcache.h) has been moved from lib/silccore
+into lib/silcapputil/.
+
+<br />&nbsp;<br />
+<h3><a name="skr"></a>SILC Key Repository library, lib/silcskr/</h3>
+
+A new SILC Key Repository library has been added.  The library provides
+a SILC Key Repository API (silcskr.h) which provides a repository for
+storing and retrieving public keys.
+
+<br />&nbsp;<br />
+<h3><a name="vcard"></a>SILC VCard library, lib/silcvcard/</h3>
+
+A new SILC VCard library has been added.  The SILC VCard API has been
+moved from utility library to own library in lib/silcvcard/.
+
+<br />&nbsp;<br />
+<h3><a name="http"></a>SILC HTTP library, lib/silchttp/</h3>
+
+A new SILC HTTP library has been added.  The library includes SILC HTTP
+Server Interface and SILC HTTP PHP Translator Interface.
+
+<h4>SILC HTTP Server Interface</h4>
+
+The SILC HTTP Server API (silchttpservder.h) provides a simple HTTP
+server implementation for applications that want to integrate a small
+HTTP server.
+
+<h4>SILC HTTP PHP Translator Interface</h4>
+
+The SILC HTTP PHP Translator API (silchttpphp.h) provides PHP translates
+PHP code into HTML.  It can be used to serve PHP pages in HTTP server.
+
+<br />&nbsp;<br />
+<h3><a name="asn1"></a>SILC ASN.1 library, lib/silcasn1/</h3>
+
+A new Abstract Syntax Notation One (ASN.1) library has been added.  The
+library provides SILC ASN.1 encoder and decoder interface and SILC BER
+encoder and decoder interface.
+
+<h4>SILC ASN.1 Interface</h4>
+
+The SILC ASN.1 API (silcasn1.h) provides ASN.1 encoder and decoder.  The
+interface provides efficient encoder and decoder and is support SilcStack
+as memory source.  The interface is simple and it supports almost all ASN.1
+features.
+
+<h4>SILC BER Interface</h4>
+
+The SILC BER API (silcber.h) provides BER/DER encoder and decoder.  It is
+integral part of the ASN.1 library and the ASN.1 encoder and decoder.
