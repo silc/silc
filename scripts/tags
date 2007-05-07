@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+# Add emacs TAGS from the entire source tree.
+#
+# Usage: sh scripts/tags
+# 
+find -name "*.[ch]" | grep -v CVS | grep -v tests | xargs etags -a
