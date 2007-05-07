@@ -887,12 +887,29 @@ void silc_client_empty_channel(SilcClient client,
 
 SilcBool silc_client_channel_save_public_keys(SilcChannelEntry channel,
 					      unsigned char *chpk_list,
-					      SilcUInt32 chpk_list_len)
+					      SilcUInt32 chpk_list_len,
+					      SilcBool remove_all)
 {
   SilcArgumentDecodedList a, b;
   SilcDList chpks;
   SilcBool found;
 
+  if (remove_all) {
+    /* Remove all channel public keys */
+    if (!channel->channel_pubkeys)
+      return FALSE;
+
+    silc_dlist_start(channel->channel_pubkeys);
+    while ((b = silc_dlist_get(channel->channel_pubkeys)))
+      silc_dlist_del(channel->channel_pubkeys, b);
+
+    silc_dlist_uninit(channel->channel_pubkeys);
+    channel->channel_pubkeys = NULL;
+
+    return TRUE;
+  }
+
+  /* Parse channel public key list and add or remove public keys */
   chpks = silc_argument_list_parse_decoded(chpk_list, chpk_list_len,
 					   SILC_ARGUMENT_PUBLIC_KEY);
   if (!chpks)

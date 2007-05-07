@@ -928,13 +928,15 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
   if (!(channel->mode & SILC_CHANNEL_MODE_ULIMIT))
     channel->user_limit = 0;
 
-  /* Save the new mode */
-  channel->mode = mode;
-
   /* Get the channel public key that was added or removed */
   tmp = silc_argument_get_arg_type(args, 7, &tmp_len);
   if (tmp)
-    silc_client_channel_save_public_keys(channel, tmp, tmp_len);
+    silc_client_channel_save_public_keys(channel, tmp, tmp_len, FALSE);
+  else if (channel->mode & SILC_CHANNEL_MODE_CHANNEL_AUTH)
+    silc_client_channel_save_public_keys(channel, NULL, 0, TRUE);
+
+  /* Save the new mode */
+  channel->mode = mode;
 
   silc_rwlock_unlock(channel->internal.lock);
 

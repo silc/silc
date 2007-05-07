@@ -257,8 +257,11 @@ silc_client_get_client_by_id_resolve(SilcClient client,
   SilcBuffer idp;
   SilcUInt16 cmd_ident;
 
-  if (!client || !conn | !client_id)
+  if (!client || !conn | !client_id) {
+    SILC_LOG_ERROR(("Missing arguments to "
+		    "silc_client_get_clients_by_id_resolve call"));
     return 0;
+  }
 
   SILC_LOG_DEBUG(("Resolve client by ID (%s)",
 		  silc_id_render(client_id, SILC_ID_CLIENT)));
@@ -326,10 +329,14 @@ static SilcUInt16 silc_client_get_clients_i(SilcClient client,
   SILC_LOG_DEBUG(("Resolve client by %s command",
 		  silc_get_command_name(command)));
 
-  if (!client || !conn)
+  if (!client || !conn) {
+    SILC_LOG_ERROR(("Missing arguments to silc_client_get_clients call"));
     return 0;
-  if (!nickname && !attributes)
+  }
+  if (!nickname && !attributes) {
+    SILC_LOG_ERROR(("Missing arguments to silc_client_get_clients call"));
     return 0;
+  }
 
   /* Parse server name from the nickname if set */
   if (silc_parse_userfqdn(nickname, nick, sizeof(nick),

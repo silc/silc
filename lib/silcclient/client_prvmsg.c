@@ -624,6 +624,16 @@ void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
   silc_free(keys);
 }
 
+/* Return private message key from the client entry. */
+
+SilcBool
+silc_client_private_message_key_is_set(SilcClient client,
+				       SilcClientConnection conn,
+				       SilcClientEntry client_entry)
+{
+  return client_entry->internal.send_key != NULL;
+}
+
 /* Sets away `message'.  The away message may be set when the client's
    mode is changed to SILC_UMODE_GONE and the client whishes to reply
    to anyone who sends private message.  The `message' will be sent

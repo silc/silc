@@ -1836,10 +1836,14 @@ SILC_FSM_STATE(silc_client_command_cmode)
 				      NULL, NULL, 1,
 				      1, silc_buffer_datalen(chidp));
 	  silc_buffer_free(chidp);
+	  silc_client_unref_channel(client, conn, channel);
 
 	  /* Notify application */
 	  COMMAND(SILC_STATUS_OK);
-	  goto out;
+
+	  /** Wait for command reply */
+	  silc_fsm_next(fsm, silc_client_command_reply_wait);
+	  return SILC_FSM_CONTINUE;
 	}
 
 	if (cmd->argc >= 4) {

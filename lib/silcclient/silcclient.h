@@ -1611,6 +1611,26 @@ silc_client_list_private_message_keys(SilcClient client,
 void silc_client_free_private_message_keys(SilcPrivateMessageKeys keys,
 					   SilcUInt32 key_count);
 
+/****f* silcclient/SilcClientAPI/silc_client_private_message_key_is_set
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool
+ *    silc_client_private_message_key_is_set(SilcClient client,
+ *                                           SilcClientConnection conn,
+ *                                           SilcClientEntry client_entry);
+ *
+ * DESCRIPTION
+ *
+ *    Returns TRUE if the private message key has been set for the client
+ *    entry indicated by `client_entry'.
+ *
+ ***/
+SilcBool
+silc_client_private_message_key_is_set(SilcClient client,
+				       SilcClientConnection conn,
+				       SilcClientEntry client_entry);
+
 
 /* Channel private key management */
 

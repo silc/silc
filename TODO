@@ -38,7 +38,7 @@ apps/silcd, The SILC Server	****PARTLY DONE****
 SILC Client	****PARTLY DONE****
 ===========
 
- o Porting to new Toolkit API and new Client Library API (***TESTING NEEDED)
+ o Porting to new Toolkit API and new Client Library API (***DONE)
 
  o Improve help files, especially /cmode, /cumode and /key.
 

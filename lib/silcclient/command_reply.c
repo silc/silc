@@ -1290,7 +1290,7 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   /* Get channel public key list */
   tmp = silc_argument_get_arg_type(args, 16, &len);
   if (tmp)
-    silc_client_channel_save_public_keys(channel, tmp, len);
+    silc_client_channel_save_public_keys(channel, tmp, len, FALSE);
 
   /* Set current channel */
   conn->current_channel = channel;
@@ -1420,7 +1420,6 @@ SILC_FSM_STATE(silc_client_command_reply_cmode)
   SilcChannelEntry channel;
   SilcUInt32 len;
   SilcPublicKey public_key = NULL;
-  SilcDList channel_pubkeys = NULL;
   SilcID id;
 
   /* Sanity checks */
@@ -1451,12 +1450,9 @@ SILC_FSM_STATE(silc_client_command_reply_cmode)
     ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
+  SILC_GET32_MSB(mode, tmp);
 
   silc_rwlock_wrlock(channel->internal.lock);
-
-  /* Save the mode */
-  SILC_GET32_MSB(mode, tmp);
-  channel->mode = mode;
 
   /* Get user limit */
   tmp = silc_argument_get_arg_type(args, 6, &len);
@@ -1468,15 +1464,18 @@ SILC_FSM_STATE(silc_client_command_reply_cmode)
   /* Get channel public key(s) */
   tmp = silc_argument_get_arg_type(args, 5, &len);
   if (tmp)
-    silc_client_channel_save_public_keys(channel, tmp, len);
+    silc_client_channel_save_public_keys(channel, tmp, len, FALSE);
+  else if (channel->mode & SILC_CHANNEL_MODE_CHANNEL_AUTH)
+    silc_client_channel_save_public_keys(channel, NULL, 0, TRUE);
+
+  /* Save the mode */
+  channel->mode = mode;
 
   silc_rwlock_unlock(channel->internal.lock);
 
   /* Notify application */
   silc_client_command_callback(cmd, channel, mode, public_key,
-			       channel_pubkeys, channel->user_limit);
-
-  silc_argument_list_free(channel_pubkeys, SILC_ARGUMENT_PUBLIC_KEY);
+			       channel->channel_pubkeys, channel->user_limit);
 
  out:
   if (public_key)
