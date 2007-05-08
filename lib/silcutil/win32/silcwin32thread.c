@@ -116,7 +116,7 @@ SilcThread silc_thread_self(void)
   }
 
   return (SilcThread)self;
-	#else
+#else
   return NULL;
 #endif
 }
@@ -254,7 +254,7 @@ SilcBool silc_rwlock_alloc(SilcRwLock *rwlock)
 void silc_rwlock_free(SilcRwLock rwlock)
 {
 #ifdef SILC_THREADS
-  if (mutex) {
+  if (rwlock) {
     silc_mutex_free(rwlock->mutex);
     silc_cond_free(rwlock->cond);
     silc_free(rwlock);
@@ -357,7 +357,7 @@ void silc_cond_broadcast(SilcCond cond)
 void silc_cond_wait(SilcCond cond, SilcMutex mutex)
 {
 #ifdef SILC_THREADS
-  silc_cond_timedwait(cond, mutex, NULL);
+  silc_cond_timedwait(cond, mutex, 0);
 #endif /* SILC_THREADS*/
 }
 

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -136,7 +136,7 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
   SilcNetListener listener = NULL;
   SOCKET sock;
   SilcSockaddr server;
-  int i, sock, rval;
+  int i, rval;
   const char *ipany = "0.0.0.0";
 
   SILC_LOG_DEBUG(("Creating TCP listener"));
@@ -348,8 +348,10 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
 
   if (remote_ip_addr && remote_port) {
     if (sock->ipv6) {
+#ifdef HAVE_IPV6
       from = (struct sockaddr *)&s.sin6;
       flen = sizeof(s.sin6);
+#endif /* HAVE_IPV6 */
     } else {
       from = (struct sockaddr *)&s.sin;
       flen = sizeof(s.sin);
@@ -380,13 +382,16 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
   /* Return remote address */
   if (remote_ip_addr && remote_port) {
     if (sock->ipv6) {
+#ifdef HAVE_IPV6
       *remote_port = ntohs(s.sin6.sin6_port);
       inet_ntop(AF_INET6, &s.sin6.sin6_addr, remote_ip_addr,
 		remote_ip_addr_size);
+#endif /* HAVE_IPV6 */
     } else {
+      const char *ip = inet_ntoa(s.sin.sin_addr);
+      if (ip)
+	silc_snprintf(remote_ip_addr, remote_ip_addr_size, ip);
       *remote_port = ntohs(s.sin.sin_port);
-      inet_ntop(AF_INET, &s.sin.sin_addr, remote_ip_addr,
-		remote_ip_addr_size);
     }
 
     SILC_LOG_DEBUG(("UDP packet from %s:%d", remote_ip_addr, *remote_port));
@@ -476,10 +481,10 @@ static void silc_net_connect_wait_stream(SilcSocketStreamStatus status,
 
 SILC_FSM_STATE(silc_net_connect_st_thread)
 {
-  SilcNetConnect conn = context;
+  SilcNetConnect conn = fsm_context;
 
   /* Connect in real thread as as to not block the application. */
-  silc_fsm_thread_init(&conn->thread, conn, NULL, NULL, TRUE);
+  silc_fsm_thread_init(&conn->thread, fsm, conn, NULL, NULL, TRUE);
   silc_fsm_start(&conn->thread, silc_net_connect_st_start);
 
   /* Wait for the thread to finish */
@@ -590,7 +595,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
   silc_fsm_next(fsm, silc_net_connect_st_stream);
   SILC_FSM_CALL((conn->sop = silc_socket_tcp_stream_create(
 				     conn->sock, FALSE, FALSE,
-				     schedule,
+				     silc_fsm_get_schedule(fsm),
 				     silc_net_connect_wait_stream, conn)));
 }
 
@@ -739,6 +744,7 @@ SilcBool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
     memcpy(bin, (unsigned char *)&ret, 4);
     return ret != INADDR_NONE;
   } else {
+#ifdef HAVE_IPV6
     struct addrinfo hints, *ai;
     SilcSockaddr *s;
 
@@ -758,12 +764,15 @@ SilcBool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
     }
 
     return TRUE;
+#else
+    return FALSE;
+#endif /* HAVE_IPV6 */
   }
 }
 
 /* Set socket to non-blocking mode. */
 
-int silc_net_set_socket_nonblock(int sock)
+int silc_net_set_socket_nonblock(SilcSocket sock)
 {
   unsigned long on = 1;
   return ioctlsocket(sock, FIONBIO, &on);

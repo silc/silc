@@ -20,6 +20,8 @@
 
 #include "silc.h"
 
+const SilcScheduleOps schedule_ops;
+
 /* Our "select()" for WIN32. This mimics the behaviour of select() system
    call. It does not call the Winsock's select() though. Its functions
    are derived from GLib's g_poll() and from some old Xemacs's sys_select().
@@ -48,13 +50,14 @@
 
 */
 
-int silc_select(SilcSchedule schedule, void *context);
+int silc_select(SilcSchedule schedule, void *context)
 {
   SilcHashTableList htl;
   SilcTaskFd task;
   HANDLE handles[MAXIMUM_WAIT_OBJECTS];
   DWORD ready, curtime;
   LONG timeo;
+  UINT timer;
   MSG msg;
   int nhandles = 0, fd;
 
@@ -87,7 +90,7 @@ int silc_select(SilcSchedule schedule, void *context);
      and wait just for windows messages. */
   if (nhandles == 0 && schedule->has_timeout) {
     SILC_SCHEDULE_UNLOCK(schedule);
-    UINT timer = SetTimer(NULL, 0, timeo, NULL);
+    timer = SetTimer(NULL, 0, timeo, NULL);
     curtime = GetTickCount();
     while (timer) {
       WaitMessage();

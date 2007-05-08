@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "MP_API_COMPATIBLE" /D "HAVE_SILCDEFS_H" /YX /FD /Zm300 /c
+# ADD CPP /nologo /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /I "..\..\lib\silcapputil" /I "..\..\lib\silcvcard" /I "..\..\lib\silchttp" /I "..\..\lib\silcskr" /I "..\..\lib\silcasn1" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "MP_API_COMPATIBLE" /D "HAVE_SILCDEFS_H" /YX /FD /Zm400 /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -64,8 +64,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /W2 /Gm /GX /ZI /Od /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "MP_API_COMPATIBLE" /D "HAVE_SILCDEFS_H" /YX /FD /GZ /c
-# SUBTRACT CPP /WX
+# ADD CPP /nologo /W2 /Gm /GX /ZI /Od /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /I "..\..\lib\silcapputil" /I "..\..\lib\silcvcard" /I "..\..\lib\silchttp" /I "..\..\lib\silcskr" /I "..\..\lib\silcasn1" /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "MP_API_COMPATIBLE" /D "HAVE_SILCDEFS_H" /YX /FD /Zm400 /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -113,10 +112,6 @@ SOURCE=..\..\lib\silccore\silcid.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silccore\silcidcache.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silccore\silcmessage.c
 # End Source File
 # Begin Source File
@@ -126,6 +121,10 @@ SOURCE=..\..\lib\silccore\silcnotify.c
 # Begin Source File
 
 SOURCE=..\..\lib\silccore\silcpacket.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccore\silcpubkey.c
 # End Source File
 # Begin Source File
 
@@ -145,6 +144,10 @@ SOURCE=..\..\lib\silcske\payload.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcske\silcconnauth.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcske\silcske.c
 # End Source File
 # End Group
@@ -153,7 +156,7 @@ SOURCE=..\..\lib\silcske\silcske.c
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\silcapputil.c
+SOURCE=..\..\lib\silcutil\silcasync.c
 # End Source File
 # Begin Source File
 
@@ -162,6 +165,14 @@ SOURCE=..\..\lib\silcutil\silcbuffmt.c
 # Begin Source File
 
 SOURCE=..\..\lib\silcutil\silcconfig.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcfdstream.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcfsm.c
 # End Source File
 # Begin Source File
 
@@ -177,11 +188,11 @@ SOURCE=..\..\lib\silcutil\silcmemory.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\silcnet.c
+SOURCE=..\..\lib\silcutil\silcmime.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\silcprotocol.c
+SOURCE=..\..\lib\silcutil\silcnet.c
 # End Source File
 # Begin Source File
 
@@ -189,7 +200,23 @@ SOURCE=..\..\lib\silcutil\silcschedule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\silcsockconn.c
+SOURCE=..\..\lib\silcutil\silcsnprintf.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcsocketstream.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcstack.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcstream.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcstringprep.c
 # End Source File
 # Begin Source File
 
@@ -197,15 +224,15 @@ SOURCE=..\..\lib\silcutil\silcstrutil.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcutil\silctime.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcutf8.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcutil\silcutil.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silcutil\silcvcard.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silcutil\win32\silcwin32mutex.c
 # End Source File
 # Begin Source File
 
@@ -217,7 +244,7 @@ SOURCE=..\..\lib\silcutil\win32\silcwin32schedule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\win32\silcwin32sockconn.c
+SOURCE=..\..\lib\silcutil\win32\silcwin32socketstream.c
 # End Source File
 # Begin Source File
 
@@ -289,6 +316,10 @@ SOURCE=..\..\lib\silccrypt\sha1.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silccrypt\sha256.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silccrypt\silccipher.c
 # End Source File
 # Begin Source File
@@ -298,6 +329,10 @@ SOURCE=..\..\lib\silccrypt\silchash.c
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\silchmac.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccrypt\silcpk.c
 # End Source File
 # Begin Source File
 
@@ -336,6 +371,86 @@ SOURCE=..\..\lib\silcsftp\sftp_server.c
 SOURCE=..\..\lib\silcsftp\sftp_util.c
 # End Source File
 # End Group
+# Begin Group "silcapputil"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silcapputil\silcapputil.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcapputil\silcidcache.c
+# End Source File
+# End Group
+# Begin Group "silcvcard"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silcvcard\silcvcard.c
+# End Source File
+# End Group
+# Begin Group "silcskr"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silcskr\silcskr.c
+# End Source File
+# End Group
+# Begin Group "silchttp"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silchttp\silchttpphp.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silchttp\silchttpserver.c
+# End Source File
+# End Group
+# Begin Group "silcasn1"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silcasn1\silcasn1.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcasn1\silcasn1_decode.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcasn1\silcasn1_encode.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcasn1\silcber.c
+# End Source File
+# End Group
+# Begin Group "contrib"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\nfkc.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\regexpr.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\rfc3454.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\stringprep.c
+# End Source File
+# End Group
 # End Group
 # Begin Group "Header Files"
 
@@ -369,10 +484,6 @@ SOURCE=..\..\lib\silccore\silcid.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silccore\silcidcache.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silccore\silcmessage.h
 # End Source File
 # Begin Source File
@@ -385,7 +496,15 @@ SOURCE=..\..\lib\silccore\silcnotify.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silccore\silcprivate.h
+SOURCE=..\..\lib\silccore\silcpacket.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccore\silcpubkey.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccore\silcstatus.h
 # End Source File
 # End Group
 # Begin Group "silcske No. 1"
@@ -393,19 +512,27 @@ SOURCE=..\..\lib\silccore\silcprivate.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\lib\silcske\groups.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silcske\groups_internal.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcske\payload.h
+SOURCE=..\..\lib\silcske\silcconnauth.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\lib\silcske\silcske.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcske\silcske_groups.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcske\silcske_i.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcske\silcske_payload.h
 # End Source File
 # Begin Source File
 
@@ -417,7 +544,15 @@ SOURCE=..\..\lib\silcske\silcske_status.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\silcapputil.h
+SOURCE=..\..\lib\silcutil\silcasync.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcasync_i.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcatomic.h
 # End Source File
 # Begin Source File
 
@@ -429,7 +564,7 @@ SOURCE=..\..\lib\silcutil\silcbuffmt.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\silcbufutil.h
+SOURCE=..\..\lib\silcutil\silccond.h
 # End Source File
 # Begin Source File
 
@@ -441,7 +576,19 @@ SOURCE=..\..\lib\silcutil\silcdlist.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\silcfileutil.c
+SOURCE=..\..\lib\silcutil\silcfdstream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcfileutil.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcfsm.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcfsm_i.h
 # End Source File
 # Begin Source File
 
@@ -457,7 +604,19 @@ SOURCE=..\..\lib\silcutil\silclog.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcutil\silclog_i.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcutil\silcmemory.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcmime.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcmime_i.h
 # End Source File
 # Begin Source File
 
@@ -469,7 +628,7 @@ SOURCE=..\..\lib\silcutil\silcnet.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\silcprotocol.h
+SOURCE=..\..\lib\silcutil\silcnet_i.h
 # End Source File
 # Begin Source File
 
@@ -481,7 +640,35 @@ SOURCE=..\..\lib\silcutil\silcschedule_i.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\silcsockconn.h
+SOURCE=..\..\lib\silcutil\silcsnprintf.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcsocketstream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcsocketstream_i.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcstack.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcstack_i.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcstream.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcstringprep.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcutil\silcstrutil.h
 # End Source File
 # Begin Source File
 
@@ -489,15 +676,19 @@ SOURCE=..\..\lib\silcutil\silcthread.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcutil\silctime.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcutil\silctypes.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\silcutil.h
+SOURCE=..\..\lib\silcutil\silcutf8.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcutil\silcvcard.h
+SOURCE=..\..\lib\silcutil\silcutil.h
 # End Source File
 # End Group
 # Begin Group "silcmath No. 1"
@@ -534,6 +725,10 @@ SOURCE=..\..\lib\silcmath\tma_superclass.h
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\aes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccrypt\aesopt.h
 # End Source File
 # Begin Source File
 
@@ -589,15 +784,19 @@ SOURCE=..\..\lib\silccrypt\rsa.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silccrypt\rsa_internal.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silccrypt\sha1.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\sha1_internal.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccrypt\sha256.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccrypt\sha256_internal.h
 # End Source File
 # Begin Source File
 
@@ -617,7 +816,23 @@ SOURCE=..\..\lib\silccrypt\silchmac.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silccrypt\silcpk.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccrypt\silcpk_i.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silccrypt\silcpkcs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccrypt\silcpkcs1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silccrypt\silcpkcs1_i.h
 # End Source File
 # Begin Source File
 
@@ -646,6 +861,86 @@ SOURCE=..\..\lib\silcsftp\silcsftp.h
 # Begin Source File
 
 SOURCE=..\..\lib\silcsftp\silcsftp_fs.h
+# End Source File
+# End Group
+# Begin Group "silcapputil No. 1"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silcapputil\silcapputil.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcapputil\silcidcache.h
+# End Source File
+# End Group
+# Begin Group "silcvcard No. 1"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silcvcard\silcvcard.h
+# End Source File
+# End Group
+# Begin Group "silcskr No. 1"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silcskr\silcskr.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcskr\silcskr_i.h
+# End Source File
+# End Group
+# Begin Group "silchttp No. 1"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silchttp\silchttpphp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silchttp\silchttpserver.h
+# End Source File
+# End Group
+# Begin Group "silcasn1 No. 1"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\silcasn1\silcasn1.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcasn1\silcasn1_i.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcasn1\silcber.h
+# End Source File
+# End Group
+# Begin Group "contrib No. 1"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\gunicomp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\gunidecomp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\regexpr.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\contrib\stringprep.h
 # End Source File
 # End Group
 # End Group

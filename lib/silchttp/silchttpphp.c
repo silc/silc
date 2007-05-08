@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -81,7 +81,11 @@ SilcBuffer silc_http_php_file(const char *filename)
     len = fread(tmp, 1, sizeof(tmp), fd);
     if (len < 0) {
       silc_buffer_free(ret);
+#ifdef SILC_WIN32
+      _pclose(fd);
+#else
       pclose(fd);
+#endif /* SILC_WIN32 */
       return NULL;
     }
 
@@ -89,7 +93,11 @@ SilcBuffer silc_http_php_file(const char *filename)
       if (!ret) {
 	ret = silc_buffer_alloc(0);
 	if (!ret) {
-	  pclose(fd);
+#ifdef SILC_WIN32
+      _pclose(fd);
+#else
+      pclose(fd);
+#endif /* SILC_WIN32 */
 	  return NULL;
 	}
       }

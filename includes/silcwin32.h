@@ -25,6 +25,10 @@
 #include <io.h>
 #include <process.h>
 
+#if defined(HAVE_SILCDEFS_H)
+#include "regexpr.h"
+#endif /* HAVE_SILCDEFS_H */
+
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
 

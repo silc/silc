@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcclient" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "MP_API_COMPATIBLE" /D "HAVE_SILCDEFS_H" /YX /FD /Zm300 /c
+# ADD CPP /nologo /W2 /GX /O2 /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /I "..\..\lib\silcapputil" /I "..\..\lib\silcvcard" /I "..\..\lib\silchttp" /I "..\..\lib\silcskr" /I "..\..\lib\silcasn1" /D "NDEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "MP_API_COMPATIBLE" /D "HAVE_SILCDEFS_H" /YX /FD /Zm400 /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -64,7 +64,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /W2 /Gm /GX /ZI /Od /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcclient" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "MP_API_COMPATIBLE" /D "HAVE_SILCDEFS_H" /YX /FD /GZ /c
+# ADD CPP /nologo /W2 /Gm /GX /ZI /Od /I ".\\" /I "..\\" /I "..\..\\" /I "..\..\includes" /I "..\..\lib\silccore" /I "..\..\lib\silcske" /I "..\..\lib\silcmath" /I "..\..\lib\silcmath\mpi" /I "..\..\lib\silcutil" /I "..\..\lib\silccrypt" /I "..\..\lib\silcsim" /I "..\..\lib\trq" /I "..\..\lib\silcsftp" /I "..\..\lib\contrib" /I "..\..\lib\silcapputil" /I "..\..\lib\silcvcard" /I "..\..\lib\silchttp" /I "..\..\lib\silcskr" /I "..\..\lib\silcasn1" /D "_DEBUG" /D "WIN32" /D "_MBCS" /D "_LIB" /D "MP_API_COMPATIBLE" /D "HAVE_SILCDEFS_H" /YX /FD /Zm400 /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -100,11 +100,23 @@ SOURCE=..\..\lib\silcclient\client_channel.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcclient\client_connect.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcclient\client_entry.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcclient\client_ftp.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\lib\silcclient\client_keyagr.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcclient\client_listener.c
 # End Source File
 # Begin Source File
 
@@ -116,7 +128,7 @@ SOURCE=..\..\lib\silcclient\client_prvmsg.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcclient\client_resume.c
+SOURCE=..\..\lib\silcclient\client_register.c
 # End Source File
 # Begin Source File
 
@@ -125,14 +137,6 @@ SOURCE=..\..\lib\silcclient\command.c
 # Begin Source File
 
 SOURCE=..\..\lib\silcclient\command_reply.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silcclient\idlist.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silcclient\protocol.c
 # End Source File
 # End Group
 # End Group
@@ -148,7 +152,43 @@ SOURCE=..\..\lib\silcclient\client.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\lib\silcclient\client_channel.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcclient\client_connect.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcclient\client_entry.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcclient\client_ftp.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\lib\silcclient\client_internal.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcclient\client_keyagr.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcclient\client_listener.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcclient\client_notify.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcclient\client_prvmsg.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\lib\silcclient\client_register.h
 # End Source File
 # Begin Source File
 
@@ -160,15 +200,11 @@ SOURCE=..\..\lib\silcclient\command_reply.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcclient\idlist.h
+SOURCE=..\..\lib\silcclient\silcclient.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silcclient\protocol.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silcclient\silcapi.h
+SOURCE=..\..\lib\silcclient\silcclient_entry.h
 # End Source File
 # End Group
 # End Group

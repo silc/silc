@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -82,7 +82,9 @@ int silc_file_writefile(const char *filename, const char *buffer,
     return -1;
   }
 
+#ifdef SILC_UNIX
   fsync(fd);
+#endif /* SILC_UNIX */
 
   return silc_file_close(fd);
 }
@@ -112,7 +114,9 @@ int silc_file_writefile_mode(const char *filename, const char *buffer,
     return -1;
   }
 
+#ifdef SILC_UNIX
   fsync(fd);
+#endif /* SILC_UNIX */
 
   return silc_file_close(fd);
 }

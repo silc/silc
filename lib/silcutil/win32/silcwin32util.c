@@ -55,5 +55,5 @@ char *silc_get_real_name(void)
 
 int silc_file_set_nonblock(int fd)
 {
-  return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+  return 0;
 }
