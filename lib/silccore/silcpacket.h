@@ -1067,19 +1067,26 @@ SilcBool silc_packet_send_va_ext(SilcPacketStream stream,
  *
  * SYNOPSIS
  *
- *    void *silc_packet_wait_init(SilcPacketStream stream, ...);
+ *    void *silc_packet_wait_init(SilcPacketStream stream,
+ *                                const SilcID *source_id, ...);
  *
  * DESCRIPTION
  *
  *    Initializes a packet waiter for the packet stream `stream' and
  *    for the variable argument list of packet types.  The function
  *    silc_packet_wait can be used to block the thread until a packet
- *    has been received.  This function is used to initialize the waiting
- *    and to give the list of packet types that caller wish to receive.
- *    The variable argument list must end with -1.  To receive all
- *    packets use SILC_PACKET_ANY.  Returns a context that must be given
- *    to the silc_packet_wait function as argument.  Returns NULL on
- *    error.  To uninitialize the waiting call silc_packet_wait_uninit.
+ *    has been received.
+ *
+ *    This function is used to initialize the waiting and to give the list
+ *    of packet types that caller wish to receive.  The variable argument
+ *    list must end with -1.  To receive all packets use SILC_PACKET_ANY.
+ *    If the `source_id' is non-NULL then only packets of the specified
+ *    type from the specified `source_id' are received.  If it is NULL
+ *    then the packet source is ignored.
+ *
+ *    Returns a context that must be given to the silc_packet_wait function
+ *    as argument.  Returns NULL on error.  To uninitialize the waiting
+ *    call silc_packet_wait_uninit.
  *
  * NOTES
  *
@@ -1091,12 +1098,12 @@ SilcBool silc_packet_send_va_ext(SilcPacketStream stream,
  *    void *waiter;
  *
  *    // Will wait for private message packets
- *    waiter = silc_packet_wait_init(stream,
+ *    waiter = silc_packet_wait_init(stream, NULL,
  *                                   SILC_PACKET_PRIVATE_MESSAGE, -1);
  *
- *
  ***/
-void *silc_packet_wait_init(SilcPacketStream stream, ...);
+void *silc_packet_wait_init(SilcPacketStream stream,
+			    const SilcID *source_id, ...);
 
 /****f* silccore/SilcPacketAPI/silc_packet_wait_uninit
  *

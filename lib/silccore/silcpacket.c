@@ -306,7 +306,7 @@ static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
     inbuf = silc_dlist_get(ps->sc->inbufs);
     if (!inbuf) {
       /* Allocate new data input buffer */
-      inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 31);
+      inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 61);
       if (!inbuf) {
         silc_mutex_unlock(ps->lock);
         return FALSE;
@@ -716,7 +716,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
     ps->sc->schedule = schedule;
 
     /* Allocate data input buffer */
-    inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 31);
+    inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 61);
     if (!inbuf) {
       silc_free(ps->sc);
       ps->sc = NULL;
@@ -2341,6 +2341,9 @@ typedef struct {
   SilcMutex wait_lock;
   SilcCond wait_cond;
   SilcList packet_queue;
+  unsigned char id[28];
+  unsigned int id_type     : 2;
+  unsigned int id_len      : 5;
   unsigned int stopped     : 1;
 } *SilcPacketWait;
 
@@ -2354,6 +2357,13 @@ silc_packet_wait_packet_receive(SilcPacketEngine engine,
 				void *stream_context)
 {
   SilcPacketWait pw = callback_context;
+
+  /* If source ID is specified check for it */
+  if (pw->id_len) {
+    if (pw->id_type != packet->src_id_type ||
+	memcmp(pw->id, packet->src_id, pw->id_len))
+      return FALSE;
+  }
 
   /* Signal the waiting thread for a new packet */
   silc_mutex_lock(pw->wait_lock);
@@ -2373,7 +2383,8 @@ silc_packet_wait_packet_receive(SilcPacketEngine engine,
 
 /* Initialize packet waiting */
 
-void *silc_packet_wait_init(SilcPacketStream stream, ...)
+void *silc_packet_wait_init(SilcPacketStream stream,
+			    const SilcID *source_id, ...)
 {
   SilcPacketWait pw;
   SilcBool ret;
@@ -2395,7 +2406,7 @@ void *silc_packet_wait_init(SilcPacketStream stream, ...)
   }
 
   /* Link to the packet stream for the requested packet types */
-  va_start(ap, stream);
+  va_start(ap, source_id);
   ret = silc_packet_stream_link_va(stream, &silc_packet_wait_cbs, pw,
 				   10000000, ap);
   va_end(ap);
@@ -2408,6 +2419,14 @@ void *silc_packet_wait_init(SilcPacketStream stream, ...)
 
   /* Initialize packet queue */
   silc_list_init(pw->packet_queue, struct SilcPacketStruct, next);
+
+  if (source_id) {
+    SilcUInt32 id_len;
+    silc_id_id2str(SILC_ID_GET_ID(*source_id), source_id->type, pw->id,
+		   sizeof(pw->id), &id_len);
+    pw->id_type = source_id->type;
+    pw->id_len = id_len;
+  }
 
   return (void *)pw;
 }
@@ -2744,7 +2763,7 @@ SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
 
   if (pws->blocking) {
     /* Blocking mode.  Use packet waiter to do the thing. */
-    pws->waiter = silc_packet_wait_init(pws->stream, pws->type, -1);
+    pws->waiter = silc_packet_wait_init(pws->stream, NULL, pws->type, -1);
     if (!pws->waiter) {
       silc_free(pws);
       return NULL;
