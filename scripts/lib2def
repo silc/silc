@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# Generate .DEF file from .a file for Win32 DLLs.  This attempts to take
+# public SILC Toolkit routines only.
+#
+# The file ALWAYS must be edited by hand to remove some internal functions.
+#
+# Usage: lib2def <lib.a>
+#
+
+nm $1 | grep " T " | cut -dT -f2 | grep silc_ | grep -v _st_ | sed 's/^ /\t/' | awk 'BEGIN { N=1; print "EXPORTS" } { print $0 " @ " N " ;"; N++; }'
