@@ -43,6 +43,7 @@ typedef struct SilcChannelPrivateKeyStruct *SilcChannelPrivateKey;
 
 /* Internal client entry context */
 typedef struct SilcClientEntryInternalStruct {
+  void *prv_waiter;		/* Private message packet waiter */
   SilcRwLock lock;		/* Read/write lock */
   SilcCipher send_key;		/* Private message key for sending */
   SilcCipher receive_key;	/* Private message key for receiving */

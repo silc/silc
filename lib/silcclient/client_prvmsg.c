@@ -197,14 +197,21 @@ SILC_FSM_STATE(silc_client_private_message_error)
 /* Initialize private message waiter for the `conn' connection. */
 
 SilcBool silc_client_private_message_wait_init(SilcClient client,
-					       SilcClientConnection conn)
+					       SilcClientConnection conn,
+					       SilcClientEntry client_entry)
 {
-  if (conn->internal->prv_waiter)
+  SilcID id;
+
+  if (client_entry->internal.prv_waiter)
     return TRUE;
 
-  conn->internal->prv_waiter =
-    silc_packet_wait_init(conn->stream, SILC_PACKET_PRIVATE_MESSAGE, -1);
-  if (!conn->internal->prv_waiter)
+  /* We want SILC_PACKET_PRIVATE_MESSAGE packets from this source ID. */
+  id.type = SILC_ID_CLIENT;
+  id.u.client_id = client_entry->id;
+
+  client_entry->internal.prv_waiter =
+    silc_packet_wait_init(conn->stream, &id, SILC_PACKET_PRIVATE_MESSAGE, -1);
+  if (!client_entry->internal.prv_waiter)
     return FALSE;
 
   return TRUE;
@@ -213,12 +220,13 @@ SilcBool silc_client_private_message_wait_init(SilcClient client,
 /* Uninitializes private message waiter. */
 
 void silc_client_private_message_wait_uninit(SilcClient client,
-					     SilcClientConnection conn)
+					     SilcClientConnection conn,
+					     SilcClientEntry client_entry)
 {
-  if (!conn->internal->prv_waiter)
+  if (!client_entry->internal.prv_waiter)
     return;
-  silc_packet_wait_uninit(conn->internal->prv_waiter, conn->stream);
-  conn->internal->prv_waiter = NULL;
+  silc_packet_wait_uninit(client_entry->internal.prv_waiter, conn->stream);
+  client_entry->internal.prv_waiter = NULL;
 }
 
 /* Blocks the calling process or thread until private message has been
@@ -230,41 +238,14 @@ SilcBool silc_client_private_message_wait(SilcClient client,
 					  SilcMessagePayload *payload)
 {
   SilcPacket packet;
-  SilcClientID remote_id;
-  SilcFSMThread thread;
 
-  if (!conn->internal->prv_waiter)
+  if (!client_entry->internal.prv_waiter)
     return FALSE;
 
   /* Block until private message arrives */
   do {
-    if ((silc_packet_wait(conn->internal->prv_waiter, 0, &packet)) < 0)
+    if ((silc_packet_wait(client_entry->internal.prv_waiter, 0, &packet)) < 0)
       return FALSE;
-
-    /* Parse sender ID */
-    if (!silc_id_str2id(packet->src_id, packet->src_id_len,
-			SILC_ID_CLIENT, &remote_id,
-			sizeof(remote_id))) {
-      silc_packet_free(packet);
-      continue;
-    }
-
-    /* If the private message is not for the requested client, pass it to
-       normal private message processing. */
-    if (!SILC_ID_CLIENT_COMPARE(&remote_id, &client_entry->id)) {
-      thread = silc_fsm_thread_alloc(&conn->internal->fsm, conn,
-				     silc_client_fsm_destructor, NULL, FALSE);
-      if (!thread) {
-	silc_packet_free(packet);
-	continue;
-      }
-
-      /* The packet will be processed in the connection thread, after this
-	 FSM thread is started. */
-      silc_fsm_set_state_context(thread, packet);
-      silc_fsm_start(thread, silc_client_private_message);
-      continue;
-    }
 
     /* Parse the payload and decrypt it also if private message key is set */
     *payload =

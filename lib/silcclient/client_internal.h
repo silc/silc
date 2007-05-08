@@ -139,7 +139,6 @@ struct SilcClientConnectionInternalStruct {
   SilcStream user_stream;		 /* Low level stream in connecting */
   char *disconnect_message;		 /* Disconnection message */
   char *away_message;		         /* Away message */
-  void *prv_waiter;		         /* Private message packet waiter */
 
   SilcIDCache client_cache;		 /* Client entry cache */
   SilcIDCache channel_cache;		 /* Channel entry cache */

@@ -1195,21 +1195,23 @@ SilcBool silc_client_send_private_message(SilcClient client,
  *
  *    SilcBool
  *    silc_client_private_message_wait_init(SilcClient client,
- *                                          SilcClientConnection conn);
+ *                                          SilcClientConnection conn,
+ *                                          SilcClientEntry client_entry);
  *
  * DESCRIPTION
  *
- *    Initializes private message waiting functionality for the connection
- *    indicated by `conn'.  Once this is called private message from remote
- *    connection indicated by `conn' for any client entry beloning to that
- *    connection may be waited for, for example in a thread.  The function
+ *    Initializes private message waiting functionality for the client
+ *    indicated by `client_entry'.  Once this is called private message
+ *    from remote connection indicated by `conn' for `client_entry' may
+ *    be waiter for, for example in a thread.  The function
  *    silc_client_private_message_wait is used to block the current thread
  *    until a private message is received from a specified client entry.
  *    Return FALSE in case an internal error occurred.
  *
  ***/
 SilcBool silc_client_private_message_wait_init(SilcClient client,
-					       SilcClientConnection conn);
+					       SilcClientConnection conn,
+					       SilcClientEntry client_entry);
 
 /****f* silcclient/SilcClientAPI/silc_client_private_message_wait_uninit
  *
@@ -1217,18 +1219,20 @@ SilcBool silc_client_private_message_wait_init(SilcClient client,
  *
  *    void
  *    silc_client_private_message_wait_uninit(SilcClient client,
- *                                            SilcClientConnection conn);
+ *                                            SilcClientConnection conn,
+ *                                            SilcClientEntry client_entry);
  *
  * DESCRIPTION
  *
- *    Unintializes private message waiting for connection indicated by
- *    `conn'.  After this call private message cannot be waited anymore.
- *    This call may be called from any thread.  This call will signal all
- *    private message waiting threads to stop waiting.
+ *    Unintializes private message waiting for client indicated by
+ *    `client_entry'.  After this call private message cannot be waited
+ *    anymore and silc_client_private_message_wait will return with FALSE
+ *    value.
  *
  ***/
 void silc_client_private_message_wait_uninit(SilcClient client,
-					     SilcClientConnection conn);
+					     SilcClientConnection conn,
+					     SilcClientEntry client_entry);
 
 /****f* silcclient/SilcClientAPI/silc_client_private_message_wait
  *

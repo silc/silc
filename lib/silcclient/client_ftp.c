@@ -108,7 +108,7 @@ static void silc_client_ftp_data(SilcSFTP sftp,
     silc_sftp_close(sftp, session->read_handle, NULL, NULL);
     session->read_handle = NULL;
 
-    /* Close the read file descriptor */
+    /* Close the real file descriptor */
     silc_file_close(session->fd);
     return;
   }
@@ -130,7 +130,7 @@ static void silc_client_ftp_data(SilcSFTP sftp,
     silc_sftp_close(sftp, session->read_handle, NULL, NULL);
     session->read_handle = NULL;
 
-    /* Close the read file descriptor */
+    /* Close the real file descriptor */
     silc_file_close(session->fd);
     return;
   }
@@ -379,6 +379,8 @@ static void silc_client_ftp_error(SilcSFTP sftp, SilcSFTPStatus status,
 static void silc_client_ftp_session_free(SilcClientFtpSession session)
 {
   SILC_LOG_DEBUG(("Free session %d", session->session_id));
+
+  silc_schedule_task_del_by_context(session->client->schedule, session);
 
   silc_dlist_del(session->client->internal->ftp_sessions, session);
 
