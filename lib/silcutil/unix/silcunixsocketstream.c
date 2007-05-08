@@ -150,7 +150,7 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
   /* If we have passed the rate time limit, set our new time limit,
      and zero the rate limit.  This limits reads per second. */
   silc_gettimeofday(&curtime);
-  if (!silc_compare_timeval(&curtime, &sock->qos->next_limit)) {
+  if (silc_compare_timeval(&curtime, &sock->qos->next_limit) > 0) {
     curtime.tv_sec++;
     sock->qos->next_limit = curtime;
     sock->qos->cur_rate = 0;

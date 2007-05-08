@@ -291,7 +291,7 @@ typedef int (*SilcFSMStateCallback)(struct SilcFSMObject *fsm,
  ***/
 #define SILC_FSM_CALL(function)			\
 do {						\
-  assert(!silc_fsm_set_call(fsm, TRUE));	\
+  SILC_ASSERT(!silc_fsm_set_call(fsm, TRUE));	\
   function;					\
   if (!silc_fsm_set_call(fsm, FALSE))		\
     return SILC_FSM_CONTINUE;			\

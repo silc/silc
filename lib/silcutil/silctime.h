@@ -247,17 +247,16 @@ SilcBool silc_time_generalized_string(SilcTime time_val, char *ret_string,
  *
  * SYNOPSIS
  *
- *    SilcBool silc_compare_timeval(struct time_val *smaller,
- *                                  struct time_val *bigger)
+ *    int silc_compare_timeval(struct time_val *t1, struct time_val *t2);
  *
  * DESCRIPTION
  *
- *    Compare two timeval structures and return TRUE if the first
- *    time value is smaller than the second time value.
+ *    Compares `t1' and `t2' time structures and returns less than zero, 
+ *    zero or more than zero when `t1' is smaller, equal or bigger than
+ *    `t2', respectively.
  *
  ***/
-SilcBool silc_compare_timeval(struct timeval *smaller,
-			      struct timeval *bigger);
+int silc_compare_timeval(struct timeval *t1, struct timeval *t2);
 
 /****f* silcutil/SilcTimeAPI/silc_gettimeofday
  *

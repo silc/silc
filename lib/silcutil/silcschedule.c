@@ -106,7 +106,7 @@ static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
     }
 
     /* Execute the task if the timeout has expired */
-    if (!silc_compare_timeval(&task->timeout, &curtime) && !dispatch_all)
+    if (silc_compare_timeval(&task->timeout, &curtime) > 0 && !dispatch_all)
       break;
 
     t->valid = FALSE;
@@ -155,7 +155,7 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
 
     /* If the timeout is in past, we will run the task and all other
        timeout tasks from the past. */
-    if (silc_compare_timeval(&task->timeout, &curtime) && dispatch) {
+    if (silc_compare_timeval(&task->timeout, &curtime) <= 0 && dispatch) {
       silc_schedule_dispatch_timeout(schedule, FALSE);
       if (silc_unlikely(!schedule->valid))
 	return;
@@ -591,7 +591,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
     prev = NULL;
     while ((tmp = silc_list_get(list)) != SILC_LIST_END) {
       /* If we have shorter timeout, we have found our spot */
-      if (silc_compare_timeval(&ttask->timeout, &tmp->timeout)) {
+      if (silc_compare_timeval(&ttask->timeout, &tmp->timeout) < 0) {
 	silc_list_insert(schedule->timeout_queue, prev, ttask);
 	break;
       }
