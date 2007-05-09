@@ -323,7 +323,7 @@ SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
 
 /* Initializes the platform specific scheduler.  This for example initializes
    the wakeup mechanism of the scheduler.  In multi-threaded environment
-   the scheduler needs to be wakenup when tasks are added or removed from
+   the scheduler needs to be woken up when tasks are added or removed from
    the task queues.  Returns context to the platform specific scheduler. */
 
 void *silc_schedule_internal_init(SilcSchedule schedule,
@@ -387,10 +387,10 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
     silc_free(internal);
     return NULL;
   }
-#endif
   silc_schedule_internal_schedule_fd(schedule, internal,
 				     (SilcTaskFd)internal->wakeup_task,
 				     SILC_TASK_READ);
+#endif /* SILC_THREADS */
 
   internal->app_context = app_context;
 
@@ -439,7 +439,7 @@ void silc_schedule_internal_wakeup(SilcSchedule schedule, void *context)
 #ifdef SILC_THREADS
   SilcUnixScheduler internal = (SilcUnixScheduler)context;
 
-  if (!internal)
+  if (!internal || !internal->wakeup_task)
     return;
 
   SILC_LOG_DEBUG(("Wakeup"));
