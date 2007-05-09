@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 - 2006 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -242,12 +242,12 @@ void silc_stream_destroy(SilcStream stream);
  *
  * DESCRIPTION
  *
- *    Set a notifier callback for the stream indicated by `stream' to be called
- *    when some action takes place on the stream.  This effectively means
- *    scheduling the stream for various actions, that then eventually will
- *    be delivered to caller in the `notifier' callback.  It is called for
- *    example when data is available for reading or writing, or if an error
- *    occurs.  This can be called at any time for valid stream.
+ *    Schedule `stream' for stream events.  Set the `notifier' callback to
+ *    be called when some event takes place on the stream.  The event will
+ *    be delievered to the `notifier' callback with the `context'.  It is
+ *    called for example when data is available for reading or writing, or
+ *    if an error occurs.  This can be called at any time for valid stream.
+ *    This call will also set the `stream' into non-blocking mode.
  *
  *    If `notifier' is set to NULL no callback will be called for the stream,
  *    and the stream is not scheduled anymore.

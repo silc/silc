@@ -72,7 +72,7 @@ SILC_TASK_CALLBACK(silc_socket_host_lookup_finish)
   }
 
   if (lookup->status != SILC_SOCKET_OK) {
-    SILC_LOG_DEBUG(("Socket stream failed"));
+    SILC_LOG_DEBUG(("Socket stream lookup failed"));
     stream->schedule = NULL;
     silc_socket_stream_destroy(stream);
     stream = lookup->stream = NULL;

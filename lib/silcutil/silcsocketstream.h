@@ -78,6 +78,9 @@ typedef enum {
  *    functions can also be used to read data, send data, and otherwise
  *    handle the stream.
  *
+ *    If the silc_stream_set_notifier is called the stream will be set to
+ *    non-blocking mode.
+ *
  ***/
 typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
 					 SilcStream stream, void *context);
@@ -111,6 +114,9 @@ typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
  *    if the `lookup' is FALSE then the hostname, IP and port information
  *    will not be available from the socket stream.  In that case this will
  *    also return NULL as the `callback' is called immediately.
+ *
+ *    If the silc_stream_set_notifier is called the stream is set to
+ *    non-blocking mode.
  *
  ***/
 SilcAsyncOperation
@@ -151,6 +157,9 @@ silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
  *    received only by using silc_net_udp_receive.
  *
  *    This function returns the created SilcStream or NULL on error.
+ *
+ *    If the silc_stream_set_notifier is called the stream is set to
+ *    non-blocking mode.
  *
  ***/
 SilcStream silc_socket_udp_stream_create(SilcSocket sock,
