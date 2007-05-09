@@ -115,7 +115,6 @@ SILC_TASK_CALLBACK(silc_net_accept)
     return;
 
   /* Set socket options */
-  silc_net_set_socket_nonblock(sock);
   silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
 
   /* Create socket stream */
@@ -207,9 +206,6 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
       goto err;
     }
 
-    /* Set the server socket to non-blocking mode.  Dunno if this works. */
-    silc_net_set_socket_nonblock(sock);
-
     /* Schedule for incoming connections */
     silc_schedule_task_add_fd(schedule, sock, silc_net_accept, listener);
 
@@ -233,6 +229,9 @@ void silc_net_close_listener(SilcNetListener listener)
   int i;
 
   SILC_LOG_DEBUG(("Closing network listener"));
+
+  if (!listener)
+    return;
 
   for (i = 0; i < listener->socks_count; i++) {
     silc_schedule_task_del_by_fd(listener->schedule, listener->socks[i]);
@@ -474,7 +473,7 @@ static void silc_net_connect_wait_stream(SilcSocketStreamStatus status,
   SilcNetConnect conn = context;
   conn->stream_status = status;
   conn->stream = stream;
-  SILC_FSM_CALL_CONTINUE(&conn->fsm);
+  SILC_FSM_CALL_CONTINUE(&conn->thread);
 }
 
 /* Start connecting.  Create a real thread where we connect. */
@@ -595,7 +594,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
   silc_fsm_next(fsm, silc_net_connect_st_stream);
   SILC_FSM_CALL((conn->sop = silc_socket_tcp_stream_create(
 				     conn->sock, FALSE, FALSE,
-				     silc_fsm_get_schedule(fsm),
+				     silc_fsm_get_schedule(&conn->fsm),
 				     silc_net_connect_wait_stream, conn)));
 }
 
@@ -732,17 +731,35 @@ void silc_net_close_connection(int sock)
 
 SilcBool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
 {
-  unsigned long ret;
-
   if (silc_net_is_ip4(addr)) {
     /* IPv4 address */
-    ret = inet_addr(addr);
+    int i = 0, c = 0, d = 0, len = strlen(addr);
+    unsigned char ret[4];
 
-    if (bin_len < 4)
+    memset(ret, 0, sizeof(ret));
+    while (len-- > 0) {
+      if (addr[i++] == '.') {
+	ret[c++] = d;
+	d = 0;
+	if (c > 3)
+	  return FALSE;
+	continue;
+      }
+
+      if (!isdigit((int)addr[i - 1]))
+	return FALSE;
+
+      d = 10 * d + addr[i - 1] - '0';
+      if (d > 255)
+	return FALSE;
+    }
+    ret[c] = d;
+
+    if (bin_len < sizeof(ret))
       return FALSE;
 
-    memcpy(bin, (unsigned char *)&ret, 4);
-    return ret != INADDR_NONE;
+    memcpy(bin, ret, sizeof(ret));
+    return TRUE;
   } else {
 #ifdef HAVE_IPV6
     struct addrinfo hints, *ai;
@@ -776,33 +793,4 @@ int silc_net_set_socket_nonblock(SilcSocket sock)
 {
   unsigned long on = 1;
   return ioctlsocket(sock, FIONBIO, &on);
-}
-
-/* Init Winsock2. */
-
-SilcBool silc_net_win32_init(void)
-{
-  int ret, sopt = SO_SYNCHRONOUS_NONALERT;
-  WSADATA wdata;
-  WORD ver = MAKEWORD(1, 1);
-
-  ret = WSAStartup(ver, &wdata);
-  if (ret)
-    return FALSE;
-
-  /* Allow using the SOCKET's as file descriptors so that we can poll
-     them with SILC Scheduler. */
-  ret = setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, (char *)&sopt,
-		   sizeof(sopt));
-  if (ret)
-    return FALSE;
-
-  return TRUE;
-}
-
-/* Uninit Winsock2 */
-
-void silc_net_win32_uninit(void)
-{
-  WSACleanup();
 }
