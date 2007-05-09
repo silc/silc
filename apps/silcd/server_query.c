@@ -221,7 +221,7 @@ void silc_server_query_add_error_id(SilcServer server,
    TRUE if the query is being processed or FALSE on error. */
 
 SilcBool silc_server_query_command(SilcServer server, SilcCommand querycmd,
-			       SilcServerCommandContext cmd)
+				   SilcServerCommandContext cmd)
 {
   SilcServerQuery query;
 
@@ -703,7 +703,7 @@ void silc_server_query_check_attributes(SilcServer server,
   SilcAttributeObjPk pk;
   SilcPublicKey publickey, cmp_pubkey;
   SilcPKCSType type;
-  SilcBool found = FALSE, no_clients = FALSE;
+  SilcBool found = FALSE, no_clients = FALSE, search_pubkey = FALSE;
   int i;
 
   /* If no clients were found, we only check the attributes
@@ -742,6 +742,7 @@ void silc_server_query_check_attributes(SilcServer server,
 	  silc_free(pk.data);
 	  continue;
 	}
+	search_pubkey = TRUE;
 
 	/* If no clients were set on calling this function, we just search
 	   for clients, otherwise we try to limit the clients. */
@@ -791,7 +792,9 @@ void silc_server_query_check_attributes(SilcServer server,
 
   if (!found && !query->nickname[0] && !query->ids)
     silc_server_query_add_error(server, query, 2, 0,
-                                SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+				search_pubkey ?
+                                SILC_STATUS_ERR_NO_SUCH_PUBLIC_KEY :
+				SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
 }
 
 /* Processes the parsed query.  This does the actual finding of the

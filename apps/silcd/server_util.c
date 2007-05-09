@@ -1357,8 +1357,8 @@ SilcBool silc_server_check_cmode_rights(SilcServer server,
    FALSE if setting some mode is not allowed. */
 
 SilcBool silc_server_check_umode_rights(SilcServer server,
-				    SilcClientEntry client,
-				    SilcUInt32 mode)
+					SilcClientEntry client,
+					SilcUInt32 mode)
 {
   SilcBool server_op = FALSE, router_op = FALSE;
 
