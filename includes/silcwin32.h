@@ -24,6 +24,8 @@
 #include <windows.h>
 #include <io.h>
 #include <process.h>
+#include <fcntl.h>
+#include <assert.h>
 
 #if defined(HAVE_SILCDEFS_H)
 #include "regexpr.h"
