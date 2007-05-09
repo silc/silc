@@ -458,6 +458,12 @@ void silc_log_output_debug(char *file, const char *function,
       goto end;
   }
 
+#ifdef SILC_WIN32
+  if (strrchr(function, '\\'))
+    fprintf(stderr, "%s:%d: %s\n", strrchr(function, '\\') + 1, line, string);
+  else
+#endif /* SILC_WIN32 */
+
   fprintf(stderr, "%s:%d: %s\n", function, line, string);
   fflush(stderr);
 

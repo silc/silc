@@ -26,7 +26,7 @@
 
 #if defined(WIN32)
 #ifndef __FUNCTION__
-#define __FUNCTION__ ""
+#define __FUNCTION__ __LINE__
 #endif
 #endif
 
