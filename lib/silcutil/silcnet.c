@@ -333,7 +333,7 @@ SilcBool silc_net_gethostbyaddr(const char *addr, char *name,
   freeaddrinfo(ai);
 #else
   struct hostent *hp;
-  unsigned char a[16];
+  unsigned char a[4];
 
   if (!silc_net_addr2bin(addr, a, sizeof(a)))
     return FALSE;
