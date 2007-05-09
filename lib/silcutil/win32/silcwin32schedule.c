@@ -22,126 +22,79 @@
 
 const SilcScheduleOps schedule_ops;
 
-/* Our "select()" for WIN32. This mimics the behaviour of select() system
-   call. It does not call the Winsock's select() though. Its functions
-   are derived from GLib's g_poll() and from some old Xemacs's sys_select().
+#define SILC_WM_EVENT WM_USER + 1
 
-   This makes following assumptions, which I don't know whether they
-   are correct or not:
+typedef struct {
+  HWND window;			/* Hidden window for receiving socket events */
+  WNDCLASS wclass;		/* Window class */
+  HANDLE wakeup_sema;		/* Scheduler wakeup semaphore */
+  unsigned int in_schedule   : 1;
+} *SilcWin32Scheduler;
 
-   o SILC_TASK_WRITE is ignored, if set this will return immediately.
-   o If all arguments except timeout are NULL then this will register
-     a timeout with SetTimer and will wait just for Windows messages
-     with WaitMessage.
-   o MsgWaitForMultipleObjects is used to wait all kind of events, this
-     includes SOCKETs and Windows messages.
-   o All Windows messages are dispatched from this function.
-   o The Operating System has Winsock 2.
-
-   References:
-
-   o http://msdn.microsoft.com/library/default.asp?
-     url=/library/en-us/winui/hh/winui/messques_77zk.asp
-   o http://msdn.microsoft.com/library/default.asp?
-     url=/library/en-us/winsock/hh/winsock/apistart_9g1e.asp
-   o http://msdn.microsoft.com/library/default.asp?
-     url=/library/en-us/dnmgmt/html/msdn_getpeek.asp
-   o http://developer.novell.com/support/winsock/doc/toc.htm
-
-*/
+/* Our select() call.  This simply waits for some events to happen.  It also
+   dispatches window messages so it can be used as the main loop of Windows
+   application.  This doesn't wait for fds or sockets but does receive
+   notifications via wakeup semaphore when event occurs on some fd or socket.
+   The fds and sockets are scheduled via WSAAsyncSelect. */
 
 int silc_select(SilcSchedule schedule, void *context)
 {
+  SilcWin32Scheduler internal = (SilcWin32Scheduler)context;
   SilcHashTableList htl;
-  SilcTaskFd task;
   HANDLE handles[MAXIMUM_WAIT_OBJECTS];
   DWORD ready, curtime;
-  LONG timeo;
+  LONG timeo = INFINITE;
   UINT timer;
   MSG msg;
-  int nhandles = 0, fd;
+  int nhandles = 0;
 
-  silc_hash_table_list(schedule->fd_queue, &htl);
-  while (silc_hash_table_get(&htl, (void **)&fd, (void **)&task)) {
-    if (!task->events)
-      continue;
-    if (nhandles >= MAXIMUM_WAIT_OBJECTS)
-      break;
-
-    if (task->events & SILC_TASK_READ)
-      handles[nhandles++] = (HANDLE)fd;
-
-    /* If writing then just set the bit and return */
-    if (task->events & SILC_TASK_WRITE) {
-      task->revents = SILC_TASK_WRITE;
-      return 1;
-    }
-
-    task->revents = 0;
+  if (!internal->in_schedule) {
+    internal->in_schedule = TRUE;
+    silc_list_init(schedule->fd_dispatch, struct SilcTaskStruct, next);
   }
-  silc_hash_table_list_reset(&htl);
-  silc_list_init(schedule->fd_dispatch, struct SilcTaskStruct, next);
 
-  timeo = (schedule->has_timeout ? ((schedule->timeout.tv_sec * 1000) +
-				    (schedule->timeout.tv_usec / 1000))
-	   : INFINITE);
+  /* Add wakeup semaphore to events */
+  handles[nhandles++] = (HANDLE)internal->wakeup_sema;
 
-  /* If we have nothing to wait and timeout is set then register a timeout
-     and wait just for windows messages. */
-  if (nhandles == 0 && schedule->has_timeout) {
-    SILC_SCHEDULE_UNLOCK(schedule);
-    timer = SetTimer(NULL, 0, timeo, NULL);
-    curtime = GetTickCount();
-    while (timer) {
-      WaitMessage();
-
-      while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-	if (msg.message == WM_TIMER) {
-	  KillTimer(NULL, timer);
-	  SILC_SCHEDULE_LOCK(schedule);
-	  return 0;
-	}
-	TranslateMessage(&msg);
-	DispatchMessage(&msg);
-      }
-
-      KillTimer(NULL, timer);
-      if (timeo != INFINITE) {
-	timeo -= GetTickCount() - curtime;
-	curtime = GetTickCount();
-	if (timeo < 0)
-	  timeo = 0;
-      }
-      timer = SetTimer(NULL, 0, timeo, NULL);
-    }
-    SILC_SCHEDULE_LOCK(schedule);
-  }
+  /* Get timeout */
+  if (schedule->has_timeout)
+    timeo = ((schedule->timeout.tv_sec * 1000) +
+	     (schedule->timeout.tv_usec / 1000));
 
   SILC_SCHEDULE_UNLOCK(schedule);
  retry:
   curtime = GetTickCount();
   ready = MsgWaitForMultipleObjects(nhandles, handles, FALSE, timeo,
 				    QS_ALLINPUT);
-  SILC_SCHEDULE_LOCK(schedule);
 
   if (ready == WAIT_FAILED) {
     /* Wait failed with error */
     SILC_LOG_WARNING(("WaitForMultipleObjects() failed"));
+    SILC_SCHEDULE_LOCK(schedule);
+    internal->in_schedule = FALSE;
     return -1;
+
   } else if (ready >= WAIT_ABANDONED_0 &&
 	     ready < WAIT_ABANDONED_0 + nhandles) {
     /* Signal abandoned */
     SILC_LOG_WARNING(("WaitForMultipleObjects() failed (ABANDONED)"));
+    SILC_SCHEDULE_LOCK(schedule);
+    internal->in_schedule = FALSE;
     return -1;
+
   } else if (ready == WAIT_TIMEOUT) {
     /* Timeout */
+    SILC_LOG_DEBUG(("Timeout"));
+    SILC_SCHEDULE_LOCK(schedule);
+    internal->in_schedule = FALSE;
     return 0;
+
   } else if (ready == WAIT_OBJECT_0 + nhandles) {
     /* Windows messages. The MSDN online says that if the application
        creates a window then its main loop (and we're assuming that
        it is our SILC Scheduler) must handle the Windows messages, so do
        it here as the MSDN suggests. */
-    SILC_SCHEDULE_UNLOCK(schedule);
+    SILC_LOG_DEBUG(("Dispatch window messages"));
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
@@ -158,53 +111,125 @@ int silc_select(SilcSchedule schedule, void *context)
 
     /* Give the wait another try */
     goto retry;
+
   } else if (ready >= WAIT_OBJECT_0 && ready < WAIT_OBJECT_0 + nhandles) {
-    /* Some other event, like SOCKET or something. */
-
-    /* Go through all fds even though only one was set. This is to avoid
-       starvation of high numbered fds. */
-    nhandles = silc_hash_table_count(schedule->fd_queue);
-    ready -= WAIT_OBJECT_0;
-    do {
-      if (!silc_hash_table_find(schedule->fd_queue,
-				SILC_32_TO_PTR((SilcUInt32)handles[ready]),
-				NULL, (void *)&task))
-	break;
-
-      if (task->header.valid && task->events) {
-	task->revents |= SILC_TASK_READ;
-	silc_list_add(schedule->fd_dispatch, task);
-      }
-
-      /* Check the status of the next handle and set its fd to the fd
-	 set if data is available. */
-      SILC_SCHEDULE_UNLOCK(schedule);
-      while (++ready < nhandles)
-	if (WaitForSingleObject(handles[ready], 0) == WAIT_OBJECT_0)
-	  break;
-      SILC_SCHEDULE_LOCK(schedule);
-    } while (ready < nhandles);
-
-    return silc_list_count(schedule->fd_dispatch);
+    /* Some event occurred. */
+    SILC_LOG_DEBUG(("Dispatch events"));
+    SILC_SCHEDULE_LOCK(schedule);
+    internal->in_schedule = FALSE;
+    return silc_list_count(schedule->fd_dispatch) + 1;
   }
 
+  internal->in_schedule = FALSE;
   return -1;
 }
 
-#ifdef SILC_THREADS
+/* Window callback.  We get here when some event occurs on file descriptor
+   or socket that has been scheduled.  We add them to dispatch queue and
+   notify the scheduler handle them. */
 
-/* Internal wakeup context. */
-typedef struct {
-  HANDLE wakeup_sema;
-  SilcTask wakeup_task;
-} *SilcWin32Wakeup;
-
-SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
+static LRESULT CALLBACK
+silc_schedule_wnd_proc(HWND hwnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
 {
-  /* Nothing */
+  SilcSchedule schedule = (SilcSchedule)GetWindowLong(hwnd, GWL_USERDATA);
+  SilcWin32Scheduler internal;
+  SilcUInt32 fd;
+  SilcTaskFd task;
+
+  switch (wMsg) {
+  case SILC_WM_EVENT:
+    internal = (SilcWin32Scheduler)schedule->internal;
+    fd = (SilcUInt32)wParam;
+
+    SILC_LOG_DEBUG(("SILC_WM_EVENT fd %d", fd));
+    SILC_SCHEDULE_LOCK(schedule);
+
+    if (!internal->in_schedule) {
+      /* We are not in scheduler so set up the dispatch queue now */
+      internal->in_schedule = TRUE;
+      silc_list_init(schedule->fd_dispatch, struct SilcTaskStruct, next);
+    }
+
+    /* Find task by fd */
+    if (!silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fd),
+			      NULL, (void *)&task)) {
+      SILC_SCHEDULE_UNLOCK(schedule);
+      break;
+    }
+
+    /* Ignore the event if the task not valid anymore */
+    if (!task->header.valid || !task->events) {
+      SILC_SCHEDULE_UNLOCK(schedule);
+      break;
+    }
+
+    /* Handle event */
+    switch (WSAGETSELECTEVENT(lParam)) {
+    case FD_READ:
+    case FD_OOB:
+      SILC_LOG_DEBUG(("FD_READ"));
+      task->revents |= SILC_TASK_READ;
+      silc_list_add(schedule->fd_dispatch, task);
+      break;
+
+    case FD_WRITE:
+      SILC_LOG_DEBUG(("FD_WRITE"));
+      task->revents |= SILC_TASK_WRITE;
+      silc_list_add(schedule->fd_dispatch, task);
+      break;
+
+    case FD_ACCEPT:
+      SILC_LOG_DEBUG(("FD_ACCEPT"));
+      task->revents |= SILC_TASK_READ;
+      silc_list_add(schedule->fd_dispatch, task);
+      break;
+
+    default:
+      break;
+    }
+
+    /* Wakeup scheduler */
+    ReleaseSemaphore(internal->wakeup_sema, 1, NULL);
+
+    SILC_SCHEDULE_UNLOCK(schedule);
+    return TRUE;
+    break;
+
+  default:
+    break;
+  }
+
+  return DefWindowProc(hwnd, wMsg, wParam, lParam);
 }
 
-#endif /* SILC_THREADS */
+/* Init Winsock2. */
+
+static SilcBool silc_net_win32_init(void)
+{
+  int ret, sopt = SO_SYNCHRONOUS_NONALERT;
+  WSADATA wdata;
+  WORD ver = MAKEWORD(2, 2);
+
+  ret = WSAStartup(ver, &wdata);
+  if (ret)
+    return FALSE;
+
+  /* Allow using the SOCKET's as file descriptors so that we can poll
+     them with SILC Scheduler. */
+  ret = setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, (char *)&sopt,
+		   sizeof(sopt));
+  if (ret)
+    return FALSE;
+
+  return TRUE;
+}
+
+/* Uninit Winsock2 */
+
+static void silc_net_win32_uninit(void)
+{
+  WSACleanup();
+}
 
 /* Initializes the platform specific scheduler.  This for example initializes
    the wakeup mechanism of the scheduler.  In multi-threaded environment
@@ -213,52 +238,67 @@ SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
 
 void *silc_schedule_internal_init(SilcSchedule schedule, void *app_context)
 {
-#ifdef SILC_THREADS
-  SilcWin32Wakeup wakeup;
-#endif
+  SilcWin32Scheduler internal;
+  char n[32];
+
+  /* Initialize Winsock */
+  silc_net_win32_init();
+
+  internal = silc_calloc(1, sizeof(*internal));
+  if (!internal)
+    return NULL;
 
   schedule->max_tasks = MAXIMUM_WAIT_OBJECTS;
 
-#ifdef SILC_THREADS
-  wakeup = silc_calloc(1, sizeof(*wakeup));
-  if (!wakeup)
-    return NULL;
-
-  wakeup->wakeup_sema = CreateSemaphore(NULL, 0, 100, NULL);
-  if (!wakeup->wakeup_sema) {
-    silc_free(wakeup);
-    return NULL;
-  }
-
-  wakeup->wakeup_task =
-    silc_schedule_task_add(schedule, (int)wakeup->wakeup_sema,
-			   silc_schedule_wakeup_cb, wakeup,
-			   0, 0, SILC_TASK_FD);
-  if (!wakeup->wakeup_task) {
-    CloseHandle(wakeup->wakeup_sema);
-    silc_free(wakeup);
+  /* Create hidden window.  We need window so that we can use WSAAsyncSelect
+     to set socket events.  */
+  silc_snprintf(n, sizeof(n), "SilcSchedule-%p", schedule);
+  internal->wclass.lpfnWndProc = silc_schedule_wnd_proc;
+  internal->wclass.cbWndExtra = sizeof(schedule);
+  internal->wclass.lpszClassName = (CHAR *)strdup(n);
+  RegisterClass(&internal->wclass);
+  internal->window = CreateWindow((CHAR *)internal->wclass.lpszClassName, "",
+				  0, 0, 0, 0, 0, NULL, NULL, NULL, NULL);
+  if (!internal->window) {
+    SILC_LOG_ERROR(("Could not create hidden window for scheduler"));
+    DestroyWindow(internal->window);
+    UnregisterClass((CHAR *)n, NULL);
+    silc_free(internal);
     return NULL;
   }
 
-  return (void *)wakeup;
-#else
-  return (void *)1;
-#endif
+  /* Set the scheduler as the window's context */
+  SetWindowLong(internal->window, GWL_USERDATA, (void *)schedule);
+  SetWindowPos(internal->window, HWND_BOTTOM, 0, 0, 0, 0, SWP_FRAMECHANGED);
+
+  internal->wakeup_sema = CreateSemaphore(NULL, 0, 100, NULL);
+  if (!internal->wakeup_sema) {
+    SILC_LOG_ERROR(("Could not create wakeup semaphore for scheduler"));
+    silc_free(internal);
+    return NULL;
+  }
+
+  return (void *)internal;
 }
 
 /* Uninitializes the platform specific scheduler context. */
 
 void silc_schedule_internal_uninit(SilcSchedule schedule, void *context)
 {
-#ifdef SILC_THREADS
-  SilcWin32Wakeup wakeup = (SilcWin32Wakeup)context;
+  SilcWin32Scheduler internal = (SilcWin32Scheduler)context;
+  char n[32];
 
-  if (!wakeup)
+  if (!internal)
     return;
 
-  CloseHandle(wakeup->wakeup_sema);
-  silc_free(wakeup);
-#endif
+  silc_snprintf(n, sizeof(n), "SilcSchedule-%p", schedule);
+  DestroyWindow(internal->window);
+  UnregisterClass((CHAR *)n, NULL);
+
+  CloseHandle(internal->wakeup_sema);
+  silc_net_win32_uninit();
+
+  silc_free(internal);
 }
 
 /* Schedule `task' with events `event_mask'. Zero `event_mask' unschedules. */
@@ -268,6 +308,23 @@ SilcBool silc_schedule_internal_schedule_fd(SilcSchedule schedule,
 					    SilcTaskFd task,
 					    SilcTaskEvent event_mask)
 {
+  SilcWin32Scheduler internal = (SilcWin32Scheduler)context;
+  int events = 0;
+
+  if (!internal)
+    return TRUE;
+
+  SILC_LOG_DEBUG(("Scheduling fd %d for events %d", task->fd, event_mask));
+
+  if (event_mask & SILC_TASK_READ)
+    events |= FD_READ | FD_ACCEPT | FD_OOB;
+  if (event_mask & SILC_TASK_WRITE)
+    events |= FD_WRITE;
+
+  /* Schedule for events.  The silc_schedule_wnd_proc will be called to
+     deliver the events for this fd. */
+  WSAAsyncSelect(task->fd, internal->window, SILC_WM_EVENT, events);
+
   return TRUE;
 }
 
@@ -276,13 +333,9 @@ SilcBool silc_schedule_internal_schedule_fd(SilcSchedule schedule,
 void silc_schedule_internal_wakeup(SilcSchedule schedule, void *context)
 {
 #ifdef SILC_THREADS
-  SilcWin32Wakeup wakeup = (SilcWin32Wakeup)context;
-
-  if (!wakeup)
-    return;
-
-  ReleaseSemaphore(wakeup->wakeup_sema, 1, NULL);
-#endif
+  SilcWin32Scheduler internal = (SilcWin32Scheduler)context;
+  ReleaseSemaphore(internal->wakeup_sema, 1, NULL);
+#endif /* SILC_THREADS */
 }
 
 /* Register signal */
