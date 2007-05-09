@@ -114,7 +114,6 @@ SILC_TASK_CALLBACK(silc_net_accept)
     return;
 
   /* Set socket options */
-  silc_net_set_socket_nonblock(sock);
   silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
 
   /* Create socket stream */
@@ -297,9 +296,6 @@ silc_net_udp_connect(const char *local_ip_addr, int local_port,
     SILC_LOG_DEBUG(("Cannot bind socket: %s", strerror(errno)));
     goto err;
   }
-
-  /* Set socket to non-blocking mode */
-  silc_net_set_socket_nonblock(sock);
 
   /* Set to connected state if remote address is provided. */
   if (remote_ip_addr && remote_port) {

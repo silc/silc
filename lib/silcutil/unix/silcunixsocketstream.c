@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -313,6 +313,9 @@ SilcBool silc_socket_stream_notifier(SilcStream stream,
   socket_stream->schedule = schedule;
 
   if (socket_stream->notifier && socket_stream->schedule) {
+    /* Set the socket to non-blocking mode */
+    silc_net_set_socket_nonblock(socket_stream->sock);
+
     /* Add the socket to scheduler.  Safe to call if already added. */
     if (!silc_schedule_task_add_fd(socket_stream->schedule,
 				   socket_stream->sock,
