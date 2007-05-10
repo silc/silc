@@ -1,3 +1,16 @@
+Thu May 10 18:21:10 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed silc_net_tcp_connect crash on Unix and Win32.  Handle
+	  the socket async operation correctly.  Changed that DNS lookup
+	  is now done during connecting.  Affected files are
+	  lib/silcutil/[unix|win32]/silc[unix|win32]net.c.
+
+	* Changed also silc_net_tcp_connect on Symbian to do DNS lookup.
+	  Affected file is lib/silcutil/symbian/silcsymbiannet.c.
+
+	* Optimize silc_net_gethostbyname to check if the name is already
+	  IP address.  Affected file is lib/silcutil/silcnet.c.
+
 Wed May  9 19:51:28 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Print filename instead of empty function name in debug output
