@@ -276,6 +276,14 @@ SilcBool silc_net_gethostbyname(const char *name,
   struct in_addr ip;
   char *tmp;
 
+  if (silc_net_is_ip4(name)) {
+    memset(address, 0, address_len);
+    if (address_len < strlen(name))
+      return FALSE;
+    strncpy(address, name, strlen(name));
+    return TRUE;
+  }
+
   hp = gethostbyname(name);
   if (!hp)
     return FALSE;
