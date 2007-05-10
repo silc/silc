@@ -40,7 +40,6 @@ typedef struct {
 int silc_select(SilcSchedule schedule, void *context)
 {
   SilcWin32Scheduler internal = (SilcWin32Scheduler)context;
-  SilcHashTableList htl;
   HANDLE handles[MAXIMUM_WAIT_OBJECTS];
   DWORD ready, curtime;
   LONG timeo = INFINITE;
@@ -54,7 +53,7 @@ int silc_select(SilcSchedule schedule, void *context)
   }
 
   /* Add wakeup semaphore to events */
-  handles[nhandles++] = (HANDLE)internal->wakeup_sema;
+  handles[nhandles++] = internal->wakeup_sema;
 
   /* Get timeout */
   if (schedule->has_timeout)
@@ -126,7 +125,7 @@ int silc_select(SilcSchedule schedule, void *context)
 
 /* Window callback.  We get here when some event occurs on file descriptor
    or socket that has been scheduled.  We add them to dispatch queue and
-   notify the scheduler handle them. */
+   notify the scheduler to handle them. */
 
 static LRESULT CALLBACK
 silc_schedule_wnd_proc(HWND hwnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
@@ -157,11 +156,12 @@ silc_schedule_wnd_proc(HWND hwnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
       break;
     }
 
-    /* Ignore the event if the task not valid anymore */
+    /* Ignore the event if the task is not valid anymore */
     if (!task->header.valid || !task->events) {
       SILC_SCHEDULE_UNLOCK(schedule);
       break;
     }
+    task->revents = 0;
 
     /* Handle event */
     switch (WSAGETSELECTEVENT(lParam)) {
@@ -324,6 +324,7 @@ SilcBool silc_schedule_internal_schedule_fd(SilcSchedule schedule,
   /* Schedule for events.  The silc_schedule_wnd_proc will be called to
      deliver the events for this fd. */
   WSAAsyncSelect(task->fd, internal->window, SILC_WM_EVENT, events);
+  task->revents = 0;
 
   return TRUE;
 }
