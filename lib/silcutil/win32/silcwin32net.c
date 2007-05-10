@@ -57,16 +57,19 @@ static SilcBool silc_net_set_sockaddr(SilcSockaddr *addr, const char *ip_addr,
     if (silc_net_is_ip4(ip_addr)) {
       /* IPv4 address */
       len = sizeof(addr->sin.sin_addr);
-      silc_net_addr2bin(ip_addr,
-			(unsigned char *)&addr->sin.sin_addr.s_addr, len);
+      if (!silc_net_addr2bin(ip_addr,
+			     (unsigned char *)&addr->sin.sin_addr.s_addr,
+			     len))
+	return FALSE;
       addr->sin.sin_family = AF_INET;
       addr->sin.sin_port = port ? htons(port) : 0;
     } else {
 #ifdef HAVE_IPV6
       /* IPv6 address */
       len = sizeof(addr->sin6.sin6_addr);
-      silc_net_addr2bin(ip_addr,
-			(unsigned char *)&addr->sin6.sin6_addr, len);
+      if (!silc_net_addr2bin(ip_addr,
+			     (unsigned char *)&addr->sin6.sin6_addr, len))
+	return FALSE;
       addr->sin6.sin6_family = AF_INET6;
       addr->sin6.sin6_port = port ? htons(port) : 0;
 #else
@@ -178,14 +181,15 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     /* Create the socket */
     sock = socket(server.sin.sin_family, SOCK_STREAM, 0);
     if (sock == INVALID_SOCKET) {
-      SILC_LOG_ERROR(("Cannot create socket"));
+      SILC_LOG_ERROR(("Cannot create socket, error %d", WSAGetLastError()));
       goto err;
     }
 
     /* Set the socket options */
     rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
     if (rval == SOCKET_ERROR) {
-      SILC_LOG_ERROR(("Cannot set socket options"));
+      SILC_LOG_ERROR(("Cannot set socket options, error %d",
+		     WSAGetLastError()));
       closesocket(sock);
       goto err;
     }
@@ -193,7 +197,7 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     /* Bind the listener socket */
     rval = bind(sock, &server.sa, SIZEOF_SOCKADDR(server));
     if (rval == SOCKET_ERROR) {
-      SILC_LOG_ERROR(("Cannot bind socket"));
+      SILC_LOG_ERROR(("Cannot bind socket, error %d", WSAGetLastError()));
       closesocket(sock);
       goto err;
     }
@@ -201,7 +205,8 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     /* Specify that we are listenning */
     rval = listen(sock, SOMAXCONN);
     if (rval == SOCKET_ERROR) {
-      SILC_LOG_ERROR(("Cannot set socket listenning"));
+      SILC_LOG_ERROR(("Cannot set socket listenning, error %d",
+		     WSAGetLastError()));
       closesocket(sock);
       goto err;
     }
@@ -299,9 +304,6 @@ silc_net_udp_connect(const char *local_ip_addr, int local_port,
     SILC_LOG_DEBUG(("Cannot bind socket"));
     goto err;
   }
-
-  /* Set socket to non-blocking mode */
-  silc_net_set_socket_nonblock(sock);
 
   /* Set to connected state if remote address is provided. */
   if (remote_ip_addr && remote_port) {
@@ -471,6 +473,7 @@ static void silc_net_connect_wait_stream(SilcSocketStreamStatus status,
 					 SilcStream stream, void *context)
 {
   SilcNetConnect conn = context;
+  conn->sop = NULL;
   conn->stream_status = status;
   conn->stream = stream;
   SILC_FSM_CALL_CONTINUE(&conn->thread);
@@ -482,7 +485,7 @@ SILC_FSM_STATE(silc_net_connect_st_thread)
 {
   SilcNetConnect conn = fsm_context;
 
-  /* Connect in real thread as as to not block the application. */
+  /* Connect in real thread so as to not block the application. */
   silc_fsm_thread_init(&conn->thread, fsm, conn, NULL, NULL, TRUE);
   silc_fsm_start(&conn->thread, silc_net_connect_st_start);
 
@@ -509,7 +512,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
   if (!silc_net_gethostbyname(conn->remote, prefer_ipv6,
 			      conn->ip_addr, sizeof(conn->ip_addr))) {
     SILC_LOG_ERROR(("Network (%s) unreachable: could not resolve the "
-		    "host", conn->remote));
+		    "host, error %d", conn->remote, WSAGetLastError()));
 
     /** Network unreachable */
     conn->status = SILC_NET_HOST_UNREACHABLE;
@@ -531,7 +534,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
     }
 
     /** Cannot create socket */
-    SILC_LOG_ERROR(("Cannot create socket"));
+    SILC_LOG_ERROR(("Cannot create socket, error %d", WSAGetLastError()));
     return SILC_FSM_FINISH;
   }
 
@@ -552,7 +555,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
       shutdown(sock, 2);
       closesocket(sock);
 
-      /* Retry using an IPv4 adress, if IPv6 didn't work */
+      /* Retry using an IPv4 address, if IPv6 didn't work */
       if (prefer_ipv6 && silc_net_is_ip6(conn->ip_addr)) {
 	prefer_ipv6 = FALSE;
 	goto retry;
@@ -572,7 +575,8 @@ SILC_FSM_STATE(silc_net_connect_st_start)
 	break;
       }
 
-      SILC_LOG_ERROR(("Cannot connect to remote host"));
+      SILC_LOG_ERROR(("Cannot connect to remote host, error %d",
+		      WSAGetLastError()));
       return SILC_FSM_FINISH;
     }
   }
@@ -593,7 +597,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
   /** Connection created */
   silc_fsm_next(fsm, silc_net_connect_st_stream);
   SILC_FSM_CALL((conn->sop = silc_socket_tcp_stream_create(
-				     conn->sock, FALSE, FALSE,
+				     conn->sock, TRUE, FALSE,
 				     silc_fsm_get_schedule(&conn->fsm),
 				     silc_net_connect_wait_stream, conn)));
 }
@@ -619,11 +623,6 @@ SILC_FSM_STATE(silc_net_connect_st_stream)
     return SILC_FSM_FINISH;
   }
 
-  /* Set stream information */
-  silc_socket_stream_set_info(conn->stream,
-			      !silc_net_is_ip(conn->remote) ? conn->remote :
-			      conn->ip_addr, conn->ip_addr, conn->port);
-
   /** Stream created successfully */
   SILC_LOG_DEBUG(("Connected successfully, sock %d", conn->sock));
   conn->status = SILC_NET_OK;
@@ -639,8 +638,6 @@ SILC_FSM_STATE(silc_net_connect_st_finish)
     conn->callback(conn->status, conn->stream, conn->context);
     if (conn->op)
       silc_async_free(conn->op);
-    if (conn->sop)
-      silc_async_free(conn->sop);
   }
 
   return SILC_FSM_FINISH;
@@ -652,8 +649,10 @@ static void silc_net_connect_abort(SilcAsyncOperation op, void *context)
   conn->aborted = TRUE;
 
   /* Abort underlaying stream creation too */
-  if (conn->sop)
+  if (conn->sop) {
     silc_async_abort(conn->sop, NULL, NULL);
+    conn->sop = NULL;
+  }
 }
 
 static void silc_net_connect_destructor(SilcFSM fsm, void *fsm_context,
@@ -753,6 +752,8 @@ SilcBool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
       if (d > 255)
 	return FALSE;
     }
+    if (c != 3)
+      return FALSE;
     ret[c] = d;
 
     if (bin_len < sizeof(ret))

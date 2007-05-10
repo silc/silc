@@ -306,7 +306,7 @@ public:
     if (callback) {
       silc_socket_tcp_stream_create(
 			     (SilcSocket)silc_create_symbian_socket(sock, ss),
-			     FALSE, FALSE, schedule, silc_net_connect_stream,
+			     TRUE, FALSE, schedule, silc_net_connect_stream,
 			     (void *)this);
     } else {
       sock->Close();
@@ -361,12 +361,6 @@ static void silc_net_connect_stream(SilcSocketStreamStatus status,
     else
       net_status = SILC_NET_ERROR;
   }
-
-  /* Set stream information */
-  if (stream && conn->callback)
-    silc_socket_stream_set_info(stream,
-				!silc_net_is_ip(conn->remote) ? conn->remote :
-				conn->remote_ip, conn->remote_ip, conn->port);
 
   /* Call connection callback */
   if (conn->callback)

@@ -591,6 +591,7 @@ static void silc_net_connect_wait_stream(SilcSocketStreamStatus status,
 					 SilcStream stream, void *context)
 {
   SilcNetConnect conn = context;
+  conn->sop = NULL;
   conn->stream_status = status;
   conn->stream = stream;
   SILC_FSM_CALL_CONTINUE(&conn->fsm);
@@ -650,8 +651,7 @@ SILC_FSM_STATE(silc_net_connect_st_connected)
   /** Connection created */
   silc_fsm_next(fsm, silc_net_connect_st_stream);
   SILC_FSM_CALL((conn->sop = silc_socket_tcp_stream_create(
-				     conn->sock, FALSE, FALSE,
-				     schedule,
+				     conn->sock, TRUE, FALSE, schedule,
 				     silc_net_connect_wait_stream, conn)));
 }
 
@@ -677,11 +677,6 @@ SILC_FSM_STATE(silc_net_connect_st_stream)
     return SILC_FSM_CONTINUE;
   }
 
-  /* Set stream information */
-  silc_socket_stream_set_info(conn->stream,
-			      !silc_net_is_ip(conn->remote) ? conn->remote :
-			      conn->ip_addr, conn->ip_addr, conn->port);
-
   /** Stream created successfully */
   SILC_LOG_DEBUG(("Connected successfully, sock %d", conn->sock));
   conn->status = SILC_NET_OK;
@@ -698,8 +693,6 @@ SILC_FSM_STATE(silc_net_connect_st_finish)
     conn->callback(conn->status, conn->stream, conn->context);
     if (conn->op)
       silc_async_free(conn->op);
-    if (conn->sop)
-      silc_async_free(conn->sop);
   }
 
   return SILC_FSM_FINISH;
@@ -711,8 +704,10 @@ static void silc_net_connect_abort(SilcAsyncOperation op, void *context)
   conn->aborted = TRUE;
 
   /* Abort underlaying stream creation too */
-  if (conn->sop)
+  if (conn->sop) {
     silc_async_abort(conn->sop, NULL, NULL);
+    conn->sop = NULL;
+  }
 }
 
 static void silc_net_connect_destructor(SilcFSM fsm, void *fsm_context,
