@@ -308,7 +308,7 @@ void silc_schedule(SilcSchedule schedule);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_schedule_one(SilcSchedule schedule, int block);
+ *    SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs);
  *
  * DESCRIPTION
  *
