@@ -207,6 +207,7 @@ void silc_fsm_start(void *fsm, SilcFSMStateCallback start_state)
       silc_fsm_start_real_thread(f->schedule,
 				 silc_schedule_get_context(f->schedule),
 				 0, 0, f);
+    silc_schedule_wakeup(f->schedule);
     return;
   }
 
@@ -259,12 +260,18 @@ void silc_fsm_next_later(void *fsm, SilcFSMStateCallback next_state,
 			 SilcUInt32 seconds, SilcUInt32 useconds)
 {
   SilcFSM f = fsm;
+
   f->next_state = next_state;
   if (!seconds && !useconds)
     return;
+
   silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f,
 				 seconds, useconds);
   f->next_later = TRUE;
+
+  /* Wakeup up the scheduler just in case this was called from another
+     thread. */
+  silc_schedule_wakeup(f->schedule);
 }
 
 /* Continue after callback or async operation */
@@ -272,12 +279,19 @@ void silc_fsm_next_later(void *fsm, SilcFSMStateCallback next_state,
 void silc_fsm_continue(void *fsm)
 {
   SilcFSM f = fsm;
+
   if (f->next_later) {
+    /* Cancel next_later timeout */
     silc_schedule_task_del_by_all(f->schedule, 0, silc_fsm_run, f);
     f->next_later = FALSE;
   }
+
   if (!silc_schedule_task_add_timeout(f->schedule, silc_fsm_run, f, 0, 0))
     silc_fsm_run(f->schedule, silc_schedule_get_context(f->schedule), 0, 0, f);
+
+  /* Wakeup up the scheduler just in case this was called from another
+     thread. */
+  silc_schedule_wakeup(f->schedule);
 }
 
 /* Continue after callback or async operation immediately */
