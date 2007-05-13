@@ -86,7 +86,9 @@ void silc_command(SilcClient client, SilcClientConnection conn,
    arguments are same as received from the server except for ID's.  If
    ID is received application receives the corresponding entry to the
    ID. For example, if Client ID is receives application receives
-   SilcClientEntry. */
+   SilcClientEntry.
+
+   See: http://silcnet.org/docs/toolkit/command_reply_args.html */
 void silc_command_reply(SilcClient client, SilcClientConnection conn,
 			SilcCommand command, SilcStatus status,
 			SilcStatus error, va_list ap);

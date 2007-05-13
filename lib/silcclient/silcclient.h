@@ -757,7 +757,7 @@ void silc_client_free(SilcClient client);
  *    The `running' callback with `context' is called after the client is
  *    running after silc_client_run or silc_client_run_one has been called.
  *    Application may start using the Client library API after that.  Setting
- *    the callback is optional, but recommended.
+ *    the callback is optional, but highly recommended.
  *
  ***/
 SilcBool silc_client_init(SilcClient client, const char *username,

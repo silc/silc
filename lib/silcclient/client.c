@@ -515,11 +515,13 @@ SILC_FSM_STATE(silc_client_st_run)
 
   /* Process events */
 
-  if (client->internal->run_callback && client->internal->running) {
+  if (client->internal->run_callback) {
     /* Call running callbcak back to application */
-    SILC_LOG_DEBUG(("We are up, call running callback"));
     client->internal->run_callback = FALSE;
-    client->internal->running(client, client->internal->running_context);
+    if (client->internal->running) {
+      SILC_LOG_DEBUG(("We are up, call running callback"));
+      client->internal->running(client, client->internal->running_context);
+    }
     return SILC_FSM_CONTINUE;
   }
 
@@ -770,6 +772,12 @@ silc_client_connect_to_server(SilcClient client,
   if (!client || !remote_host)
     return NULL;
 
+  if (client->internal->run_callback) {
+    SILC_LOG_ERROR(("Client library is not started yet. SilcClientRunning "
+		    "callback has not been called yet."));
+    return NULL;
+  }
+
   /* Add new connection */
   conn = silc_client_add_connection(client, SILC_CONN_SERVER, TRUE, params,
 				    public_key, private_key, remote_host,
@@ -806,6 +814,12 @@ silc_client_connect_to_client(SilcClient client,
 
   if (!client || !remote_host)
     return NULL;
+
+  if (client->internal->run_callback) {
+    SILC_LOG_ERROR(("Client library is not started yet. SilcClientRunning "
+		    "callback has not been called yet."));
+    return NULL;
+  }
 
   if (params)
     params->no_authentication = TRUE;
@@ -845,6 +859,12 @@ silc_client_key_exchange(SilcClient client,
 
   if (!client || !stream)
     return NULL;
+
+  if (client->internal->run_callback) {
+    SILC_LOG_ERROR(("Client library is not started yet. SilcClientRunning "
+		    "callback has not been called yet."));
+    return NULL;
+  }
 
   if (!silc_socket_stream_get_info(stream, NULL, &host, NULL, &port)) {
     SILC_LOG_ERROR(("Socket stream does not have remote host name set"));
