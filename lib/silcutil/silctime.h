@@ -311,7 +311,7 @@ void silc_usleep(long microseconds)
   Sleep(microseconds / 1000);
 #endif /* SILC_WIN32 */
 #ifdef SILC_SYMBIAN
-  User::After(microseconds / 1000);
+  silc_symbian_usleep(microseconds);
 #endif /* SILC_SYMBIAN */
 }
 

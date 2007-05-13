@@ -948,11 +948,15 @@ void mem_lstat(void *context, SilcSFTP sftp,
   }
 
   /* Get real stat */
-#ifndef SILC_WIN32
-  ret = lstat(entry->data + 7, &stats);
-#else
+#ifdef SILC_WIN32
   ret = stat(entry->data + 7, &stats);
-#endif
+#endif /* SILC_WIN32 */
+#ifdef SILC_UNIX
+  ret = lstat(entry->data + 7, &stats);
+#endif /* SILC_UNIX */
+#ifdef SILC_SYMBIAN
+  ret = stat(entry->data + 7, &stats);
+#endif /* SILC_SYMBIAN */
   if (ret == -1) {
     (*callback)(sftp, silc_sftp_map_errno(errno), NULL, callback_context);
     return;
