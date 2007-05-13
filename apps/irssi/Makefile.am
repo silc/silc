@@ -21,7 +21,11 @@ include $(top_srcdir)/Makefile.defines.in
 confdir = $(silc_etcdir)
 conffile = silc.conf
 
+if SILCPLUGIN
+themedir = $(datadir)/irssi/themes
+else
 themedir = $(datadir)/silc/themes
+endif
 theme_DATA = default.theme
 
 noinst_HEADERS = irssi-version.h.in
@@ -58,7 +62,7 @@ doc-install-client:
 
 etc-install-client:
 	-@if test -d $(silc_top_srcdir)/apps/irssi ; then \
-	  -mkdir -p $(etcdir) \
+	  mkdir -p $(etcdir) ; \
 	  if test '!' -f $(etcdir)/silc.conf ; then \
 	    $(INSTALL_DATA) $(silc_top_srcdir)/apps/irssi/silc.conf \
 	    	$(etcdir)/silc.conf; \
@@ -66,12 +70,12 @@ etc-install-client:
 	fi
 
 if SILCPLUGIN
-ETCINSTALL=etc-install-client
-else
 ETCINSTALL=
+else
+ETCINSTALL=etc-install-client
 endif
 
 install-data-hook: 		\
 	install-dirs-client	\
 	doc-install-client	\
-	etc-install-client
+	$(ETCINSTALL)

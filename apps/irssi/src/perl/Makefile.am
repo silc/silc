@@ -4,7 +4,14 @@ include $(top_srcdir)/Makefile.defines.in
 
 moduledir = $(silc_modulesdir)
 
+if SILCPLUGIN
+perl_dirs = silc
+SCRIPTDIR="$(datadir)/irssi/scripts"
+else
 perl_dirs = common ui textui silc
+SCRIPTDIR="$(datadir)/silc/scripts"
+endif
+
 
 module_LTLIBRARIES = $(perl_module_lib) $(perl_module_fe_lib)
 noinst_LTLIBRARIES = $(perl_static_lib) $(perl_static_fe_lib)
@@ -23,7 +30,7 @@ INCLUDES += \
 	-I$(top_srcdir)/src/fe-common/core \
 	-I$(top_srcdir)/src/fe-common/silc \
 	$(GLIB_CFLAGS) \
-	-DSCRIPTDIR=\""$(datadir)/silc/scripts"\" \
+	-DSCRIPTDIR=\""$(SCRIPTDIR)"\" \
 	-DPERL_USE_LIB=\""$(PERL_USE_LIB)"\" \
 	-DPERL_STATIC_LIBS=$(PERL_STATIC_LIBS) \
 	$(PERL_CFLAGS)
