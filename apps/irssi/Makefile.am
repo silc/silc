@@ -45,3 +45,33 @@ EXTRA_DIST = \
 rpm: Makefile
 	$(MAKE) dist
 	rpm -ta --clean $(PACKAGE)-$(VERSION).tar.gz
+
+install-dirs-client:
+	-mkdir -p $(helpdir)
+	-mkdir -p $(mandir)/man1
+
+doc-install-client:
+	$(INSTALL_DATA) $(silc_top_srcdir)/apps/irssi/silc.conf $(docdir)/example_silc.conf
+	-@if test -f $(silc_top_srcdir)/doc/silc.1 ; then \
+	 $(INSTALL_DATA) $(silc_top_srcdir)/doc/silc.1 $(mandir)/man1; \
+	fi
+
+etc-install-client:
+	-@if test -d $(silc_top_srcdir)/apps/irssi ; then \
+	  -mkdir -p $(etcdir) \
+	  if test '!' -f $(etcdir)/silc.conf ; then \
+	    $(INSTALL_DATA) $(silc_top_srcdir)/apps/irssi/silc.conf \
+	    	$(etcdir)/silc.conf; \
+	  fi; \
+	fi
+
+if SILCPLUGIN
+ETCINSTALL=etc-install-client
+else
+ETCINSTALL=
+endif
+
+install-data-hook: 		\
+	install-dirs-client	\
+	doc-install-client	\
+	etc-install-client

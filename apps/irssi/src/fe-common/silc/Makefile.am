@@ -1,3 +1,6 @@
+modulesdir=dummy
+include $(top_srcdir)/Makefile.defines.in
+
 IRSSI_INCLUDE=../../..
 
 if SILCPLUGIN
@@ -6,7 +9,7 @@ NILB=
 LTLB= libfe_common_silc.la
 LDFLGS= \
 	-avoid-version \
-	-rpath $(moduledir)
+	-rpath $(modulesdir)
 else
 EXTRA_CFLAGS=
 NILB= libfe_common_silc.la
@@ -14,7 +17,6 @@ LTLB=
 LDFLGS=
 endif
 
-include $(top_srcdir)/Makefile.defines.in
 
 ADD_INCLUDES = \
         $(GLIB_CFLAGS) \
@@ -43,7 +45,7 @@ ADD_INCLUDES = \
 	$(EXTRA_CFLAGS)
 
 noinst_LTLIBRARIES = $(NILB)
-module_LTLIBRARIES = $(LTLB)
+modules_LTLIBRARIES = $(LTLB)
 
 libfe_common_silc_la_LDFLAGS = \
 	$(LDFGS)

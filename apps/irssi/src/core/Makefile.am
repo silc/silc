@@ -2,7 +2,7 @@ noinst_LIBRARIES = libcore.a
 
 include $(top_srcdir)/Makefile.defines.in
 
-INCLUDES = \
+INCLUDES += \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/core \
 	$(GLIB_CFLAGS) \

@@ -1,3 +1,4 @@
+modulesdir=dummy
 include $(top_srcdir)/Makefile.defines.in
 
 IRSSI_INCLUDE=../../..
@@ -11,7 +12,7 @@ LTLB= libsilc_core.la
 NILB=
 LBLDFLGS= \
 	-avoid-version \
-	-rpath $(moduledir)
+	-rpath $(modulesdir)
 else
 EXTRA_CFLAGS=
 LBDD=
@@ -31,7 +32,7 @@ ADD_INCLUDES = \
 	$(EXTRA_CFLAGS)
 
 noinst_LTLIBRARIES= $(NILB)
-module_LTLIBRARIES = $(LTLB)
+modules_LTLIBRARIES = $(LTLB)
 
 libsilc_core_la_SOURCES = \
 	clientutil.c \

@@ -2,7 +2,7 @@ bin_PROGRAMS = silc
 
 include $(top_srcdir)/Makefile.defines.in
 
-INCLUDES = \
+INCLUDES += \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/core/ \
 	-I$(top_srcdir)/src/fe-common/core/ \
