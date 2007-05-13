@@ -61,8 +61,8 @@ static void silc_running(SilcClient client, void *application)
 
   SILC_LOG_DEBUG(("Client is running"));
 
-  /* Start connecting to server.  This is asynchronous connecting so the
-     connection is actually created later after we run the client. */
+  /* Connect to server.  The silc_connected callback will be called after
+     the connection is established or if an error occurs during connecting. */
   silc_client_connect_to_server(mybot->client, NULL,
 				mybot->public_key, mybot->private_key,
 				"silc.silcnet.org", 706,
@@ -298,6 +298,7 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
      different arguments the client library returns. */
   if (command == SILC_COMMAND_JOIN) {
     SilcChannelEntry channel;
+    SilcHash sha1hash;
 
     (void)va_arg(ap, SilcClientEntry);
     channel = va_arg(ap, SilcChannelEntry);
@@ -309,11 +310,14 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 				     "hello", strlen("hello"));
     fprintf(stdout, "MyBot: Sent 'hello' to channel\n");
 
-    /* Now send digitally signed "hello" to the channel */
+    /* Now send digitally signed "hello" to the channel.  We have to allocate
+       hash function for the signature process. */
+    silc_hash_alloc("sha1", &sha1hash);
     silc_client_send_channel_message(client, conn, channel, NULL,
-				     SILC_MESSAGE_FLAG_SIGNED, NULL,
+				     SILC_MESSAGE_FLAG_SIGNED, sha1hash,
 				     "hello, with signature",
 				     strlen("hello, with signature"));
+    silc_hash_free(sha1hash);
     fprintf(stdout, "MyBot: Sent 'hello, with signature' to channel\n");
   }
 }
@@ -350,6 +354,7 @@ silc_verify_public_key(SilcClient client, SilcClientConnection conn,
 	 	       SilcPublicKey public_key,
 		       SilcVerifyPublicKey completion, void *context)
 {
+  fprintf(stdout, "MyBot: server's public key\n");
   silc_show_public_key(public_key);
   completion(TRUE, context);
 }

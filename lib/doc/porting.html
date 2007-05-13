@@ -109,8 +109,11 @@ by the application to update directly to SilcClient pointer.  This is not
 longer required.  Also the nickname is no longer required to be put to
 SilcClient context as it has been made SilcClientConnection specific.
 The function also takes a SilcClientRunning callback as argument which will
-be called when the client library is running.  After that callback the
-xapplication may start using other client library API functions.
+be called when the client library is running.  Only after the callback is
+delivered may the application start using other client library API functions.
+For example, connecting to a server will fail if it is performed before
+the SilcClientRunning callback is called.  The callback is called after the
+silc_client_run or silc_client_run_one has been called.
 
 <br />&nbsp;<br />
 The silc_client_stop function takes new SilcClientStopped callback as
