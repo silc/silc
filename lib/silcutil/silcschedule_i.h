@@ -27,6 +27,25 @@
 #include "silchashtable.h"
 #include "silclist.h"
 
+/* Task types */
+typedef enum {
+  /* File descriptor task that performs some event over file descriptors.
+     These tasks are for example network connections. */
+  SILC_TASK_FD           = 0,
+
+  /* Timeout tasks are tasks that are executed after the specified
+     time has elapsed. After the task is executed the task is removed
+     automatically from the scheduler. It is safe to re-register the
+     task in task callback. It is also safe to unregister a task in
+     the task callback. */
+  SILC_TASK_TIMEOUT,
+
+  /* Platform specific process signal task.  On Unix systems this is one of
+     the signals described in signal(7).  On other platforms this may not
+     be available at all.  Only one callback per signal may be added. */
+  SILC_TASK_SIGNAL
+} SilcTaskType;
+
 /* Task header */
 struct SilcTaskStruct {
   struct SilcTaskStruct *next;

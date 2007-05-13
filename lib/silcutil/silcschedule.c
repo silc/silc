@@ -562,8 +562,8 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
       ttask = silc_calloc(1, sizeof(*ttask));
       if (silc_unlikely(!ttask))
 	goto out;
-    }
-    silc_list_del(schedule->free_tasks, ttask);
+    } else
+      silc_list_del(schedule->free_tasks, ttask);
 
     ttask->header.type = 1;
     ttask->header.callback = callback;
