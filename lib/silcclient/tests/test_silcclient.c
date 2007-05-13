@@ -3,14 +3,10 @@
 #include "silc.h"
 #include "silcclient.h"
 
-SilcBool success;
 SilcClientOperations ops;
 
-SilcBuffer silc_client_attributes_request(SilcAttribute attribute, ...)
-{
-  return NULL;
-}
-
+static void silc_running(SilcClient client, void *application);
+static void silc_stopped(SilcClient client, void *context);
 
 /******* MyBot code **********************************************************/
 
@@ -22,7 +18,7 @@ typedef struct {
   SilcPrivateKey private_key;   /* My private key */
 } *MyBot;
 
-/* Connect callback */
+/* Connect callback called after connected to remote server. */
 
 static void
 silc_connected(SilcClient client, SilcClientConnection conn,
@@ -34,21 +30,51 @@ silc_connected(SilcClient client, SilcClientConnection conn,
 
   if (status == SILC_CLIENT_CONN_DISCONNECTED) {
     SILC_LOG_DEBUG(("Disconnected %s", message ? message : ""));
-    silc_client_stop(client);
+    silc_client_stop(client, silc_stopped, mybot);
     return;
   }
 
   if (status != SILC_CLIENT_CONN_SUCCESS &&
       status != SILC_CLIENT_CONN_SUCCESS_RESUME) {
     SILC_LOG_DEBUG(("Error connecting to server %d", status));
-    silc_client_stop(client);
+    silc_client_stop(client, silc_stopped, mybot);
     return;
   }
 
-  SILC_LOG_DEBUG(("Connected to server"));
+  fprintf(stdout, "\nMyBot: Connected to server\n\n");
+
+  /* Now that we have connected to server, let's join a channel named
+     "mybot". */
+  silc_client_command_call(client, conn, "JOIN mybot");
 
   /* Save the connection context */
   mybot->conn = conn;
+}
+
+/* Running callback given to silc_client_init called to indicate that the
+   Client Library is running.  After this Client API functions can be
+   called. */
+
+static void silc_running(SilcClient client, void *application)
+{
+  MyBot mybot = application;
+
+  SILC_LOG_DEBUG(("Client is running"));
+
+  /* Start connecting to server.  This is asynchronous connecting so the
+     connection is actually created later after we run the client. */
+  silc_client_connect_to_server(mybot->client, NULL,
+				mybot->public_key, mybot->private_key,
+				"silc.silcnet.org", 706,
+				silc_connected, mybot);
+}
+
+/* Client stopped callback given to silc_client_stop.  Called to indicate
+   that Client Library is stopped. */
+
+static void silc_stopped(SilcClient client, void *context)
+{
+  SILC_LOG_DEBUG(("Client stopped"));
 }
 
 /* Start the MyBot, by creating the SILC Client entity by using the
@@ -75,7 +101,8 @@ int mybot_start(void)
 
   /* Now we initialize the client. */
   if (!silc_client_init(mybot->client, silc_get_username(),
-			silc_net_localhost(), "I am the MyBot")) {
+			silc_net_localhost(), "I am the MyBot",
+			silc_running, mybot)) {
     perror("Could not init client");
     return 1;
   }
@@ -114,22 +141,6 @@ int mybot_start(void)
    is required or something else.  Since our MyBot is really simple client
    we don't need most of the operations, so we just define them and don't
    do anything in them. */
-
-static void
-silc_running(SilcClient client, void *application)
-{
-  MyBot mybot = application;
-
-  SILC_LOG_DEBUG(("Client is running"));
-
-  /* Start connecting to server.  This is asynchronous connecting so the
-     connection is actually created later after we run the client. */
-  silc_client_connect_to_server(mybot->client, NULL,
-				mybot->public_key, mybot->private_key,
-				"10.2.1.100", 1334,
-				silc_connected, mybot);
-}
-
 
 /* "say" client operation is a message from the client library to the
    application.  It may include error messages or something else.  We
@@ -282,6 +293,29 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 	    silc_get_command_name(command),
 	    silc_get_status_message(status));
 
+  /* Check for successful JOIN.  See
+     http://silcnet.org/docs/toolkit/command_reply_args.html for the
+     different arguments the client library returns. */
+  if (command == SILC_COMMAND_JOIN) {
+    SilcChannelEntry channel;
+
+    (void)va_arg(ap, SilcClientEntry);
+    channel = va_arg(ap, SilcChannelEntry);
+
+    fprintf(stdout, "MyBot: Joined '%s' channel\n", channel->channel_name);
+
+    /* Now send the "hello" to the channel */
+    silc_client_send_channel_message(client, conn, channel, NULL, 0, NULL,
+				     "hello", strlen("hello"));
+    fprintf(stdout, "MyBot: Sent 'hello' to channel\n");
+
+    /* Now send digitally signed "hello" to the channel */
+    silc_client_send_channel_message(client, conn, channel, NULL,
+				     SILC_MESSAGE_FLAG_SIGNED, NULL,
+				     "hello, with signature",
+				     strlen("hello, with signature"));
+    fprintf(stdout, "MyBot: Sent 'hello, with signature' to channel\n");
+  }
 }
 
 /* Find authentication method and authentication data by hostname and
@@ -293,13 +327,14 @@ silc_command_reply(SilcClient client, SilcClientConnection conn,
 static void
 silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 		     char *hostname, SilcUInt16 port,
+		     SilcAuthMethod auth_method,
 		     SilcGetAuthMeth completion,
 		     void *context)
 {
   /* MyBot assumes that there is no authentication requirement in the
      server and sends nothing as authentication.  We just reply with
      TRUE, meaning we know what is the authentication method. :). */
-  completion(TRUE, SILC_AUTH_NONE, NULL, 0, context);
+  completion(SILC_AUTH_NONE, NULL, 0, context);
 }
 
 
@@ -346,11 +381,10 @@ silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
 static void
 silc_key_agreement(SilcClient client, SilcClientConnection conn,
 		   SilcClientEntry client_entry, const char *hostname,
-		   SilcUInt16 port)
+		   SilcUInt16 protocol, SilcUInt16 port)
 {
   /* MyBot does not support incoming key agreement protocols, it's too
      simple for that. */
-  return FALSE;
 }
 
 
@@ -370,30 +404,6 @@ silc_ftp(SilcClient client, SilcClientConnection conn,
 }
 
 
-/* Delivers SILC session detachment data indicated by `detach_data' to the
-   application.  If application has issued SILC_COMMAND_DETACH command
-   the client session in the SILC network is not quit.  The client remains
-   in the network but is detached.  The detachment data may be used later
-   to resume the session in the SILC Network.  The appliation is
-   responsible of saving the `detach_data', to for example in a file.
-
-   The detachment data can be given as argument to the functions
-   silc_client_connect_to_server, or silc_client_add_connection when
-   creating connection to remote server, inside SilcClientConnectionParams
-   structure.  If it is provided the client library will attempt to resume
-   the session in the network.  After the connection is created
-   successfully, the application is responsible of setting the user
-   interface for user into the same state it was before detaching (showing
-   same channels, channel modes, etc).  It can do this by fetching the
-   information (like joined channels) from the client library. */
-
-static void
-silc_detach(SilcClient client, SilcClientConnection conn,
-	    const unsigned char *detach_data, SilcUInt32 detach_data_len)
-{
-  /* Oh, and MyBot does not support session detaching either. */
-}
-
 /* Our client operations for the MyBot.  This structure is filled with
    functions and given as argument to the silc_client_alloc function.
    Even though our little bot does not need all these functions we must
@@ -411,28 +421,20 @@ SilcClientOperations ops = {
   silc_verify_public_key,
   silc_ask_passphrase,
   silc_key_agreement,
-  silc_ftp,
-  silc_detach,
-  silc_running
+  silc_ftp
 };
 
 int main(int argc, char **argv)
 {
-  SilcSchedule schedule;
-
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_log_debug(TRUE);
     silc_log_debug_hexdump(TRUE);
     silc_log_quick(TRUE);
-    silc_log_set_debug_string("*client*,*packet*,*net*,*stream*,*ske*,*buffer*");
+    silc_log_set_debug_string("*client*,*message*");
   }
 
   /* Start the bot */
   mybot_start();
 
- err:
-  SILC_LOG_DEBUG(("Testing was %s", success ? "SUCCESS" : "FAILURE"));
-  fprintf(stderr, "Testing was %s\n", success ? "SUCCESS" : "FAILURE");
-
-  return success;
+  return 0;
 }
