@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2005 Pekka Riikonen
+  Copyright (C) 2002 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * DESCRIPTION
  *
  * Implementation of the SilcList interface.  This interface provides
- * simple linked list.
+ * simple linked list.  This interface does not allocate any memory.
  *
  * SILC List is not thread-safe.  If the same list context must be used
  * in multithreaded environment concurrency control must be employed.
